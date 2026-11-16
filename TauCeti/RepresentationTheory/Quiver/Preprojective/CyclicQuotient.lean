@@ -11,9 +11,11 @@ public import Mathlib.Combinatorics.SimpleGraph.CycleGraph
 public import TauCeti.Algebra.Algebra.CyclicQuotient
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.GraphOrientation
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.Augmentation
+import Mathlib.Algebra.Group.Fin.Basic
 import TauCeti.Combinatorics.SimpleGraph.CycleGraph
-import TauCeti.RepresentationTheory.Quiver.PathAlgebra.OfArrows
-import TauCeti.RepresentationTheory.Quiver.Preprojective.Isomorphism
+import TauCeti.RepresentationTheory.Quiver.Preprojective.BaseChange.Basic
+import TauCeti.RepresentationTheory.Quiver.Preprojective.InducedSubgraph
+import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.MatrixRepresentation
 
 /-!
 # Cyclic quotients of preprojective algebras from their paths
@@ -27,15 +29,17 @@ This file collects the general facts about graded pieces of this cyclic quotient
   the vanishing transfers to the additive preprojective algebra of every orientation. The only
   paths which need a graph-specific argument are the closed ones: a path between distinct vertices
   is a commutator with its target idempotent.
-* Vanishing of a graded piece of the signless cyclic quotient is invariant under graph
-  isomorphisms, and for a bipartite graph it agrees with vanishing of the same graded piece for
-  every orientation.
-* Conversely, if a finite simple graph contains a cycle of length `m ≥ 3`, sending each forward
-  arrow of the cycle to the shift matrix unit `E_{r+1, r}` and every other arrow to zero defines a
-  matrix representation of both the signless preprojective algebra and the additive preprojective
-  algebra of every orientation (without assuming bipartiteness). The closed cycle path has path
-  degree `m` and trace `1`, so the degree-`m` piece of the cyclic quotient is nonzero over every
-  nontrivial commutative ring.
+* Vanishing of a graded piece of the additive preprojective cyclic quotient transfers along any
+  coefficient ring homomorphism via `RingHom.preprojectiveBaseChange`.
+* Vanishing of a graded piece of the signless cyclic quotient descends along any induced-subgraph
+  embedding `f : G ↪g H`, is therefore invariant under graph isomorphisms, and for a two-coloured
+  (or bipartite) graph agrees with vanishing of the same graded piece for every orientation.
+* Conversely, if a finite simple graph contains a cycle of length `m ≥ 3`, extending the `1 × 1`
+  forward-shift matrix family on `Cₘ` by zero along the copy defines a matrix representation of
+  both the signless preprojective algebra and the additive preprojective algebra of every
+  orientation (without assuming bipartiteness). The closed cycle path has path degree `m` and
+  trace `1`, so the degree-`m` piece of the cyclic quotient is nonzero over every nontrivial
+  commutative ring.
 
 ## Main results
 
@@ -44,14 +48,18 @@ This file collects the general facts about graded pieces of this cyclic quotient
 * `TauCeti.signlessPreprojectiveGrade_le_commutatorSubmodule` and
   `TauCeti.preprojectiveGrade_le_commutatorSubmodule`: if every path of positive length is a sum of
   commutators, then so is every graded piece of positive degree.
+* `TauCeti.preprojectiveGrade_le_commutatorSubmodule_of_ringHom`: vanishing of a graded piece of
+  the cyclic quotient transfers along any coefficient ring homomorphism.
 * `TauCeti.commutatorSubmodule_signlessPreprojectiveAlgebra_eq_ker`: if every path of positive
   length is a sum of commutators, the commutator submodule is the augmentation kernel.
 * `TauCeti.signlessPreprojectiveCyclicQuotientEquiv` and
   `TauCeti.finrank_cyclicQuotient_signlessPreprojectiveAlgebra`: in that case the augmentation
   identifies the cyclic quotient with the module of vertex coefficients, of dimension the number of
   vertices over a nontrivial ring.
-* `TauCeti.signlessPreprojectiveGrade_le_commutatorSubmodule_iff_of_iso`: graph isomorphisms
-  preserve and reflect vanishing of each graded piece of the signless cyclic quotient.
+* `TauCeti.signlessPreprojectiveGrade_le_commutatorSubmodule_of_embedding` and
+  `TauCeti.signlessPreprojectiveGrade_le_commutatorSubmodule_iff_of_iso`: vanishing of each graded
+  piece of the signless cyclic quotient descends along induced-subgraph embeddings and is invariant
+  under graph isomorphisms.
 * `TauCeti.exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_cycleGraph_copy`,
   `TauCeti.exists_mem_preprojectiveGrade_notMem_commutatorSubmodule_of_cycleGraph_copy`,
   `TauCeti.exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_not_isAcyclic`, and
@@ -61,8 +69,10 @@ This file collects the general facts about graded pieces of this cyclic quotient
 * `SimpleGraph.Coloring.preprojectiveMk_ofPath_mem_commutatorSubmodule`: for a two-coloured graph,
   the vanishing for paths of positive length transfers from the signless algebra to the additive
   preprojective algebra of every orientation.
-* `SimpleGraph.IsBipartite.preprojectiveGrade_le_commutatorSubmodule_iff`: for a bipartite graph,
-  vanishing of a graded piece agrees between the signless algebra and every orientation.
+* `SimpleGraph.Coloring.preprojectiveGrade_le_commutatorSubmodule_iff` and
+  `SimpleGraph.IsBipartite.preprojectiveGrade_le_commutatorSubmodule_iff`: for a two-coloured or
+  bipartite graph, vanishing of a graded piece agrees between the signless algebra and every
+  orientation.
 
 ## References
 
@@ -177,11 +187,48 @@ theorem preprojectiveGrade_le_commutatorSubmodule
   rintro _ ⟨⟨p, hp⟩, rfl⟩
   exact h p (hp ▸ hd)
 
+/-- **Vanishing of a graded piece of the cyclic quotient transfers along any coefficient ring
+homomorphism**, via `RingHom.preprojectiveBaseChange`: each path of length `d` over `l` is the
+base-change image of the same path over `k`, and ring homomorphisms preserve commutators. -/
+theorem preprojectiveGrade_le_commutatorSubmodule_of_ringHom {l : Type*} [CommRing l]
+    (f : k →+* l) (d : ℕ)
+    (h : preprojectiveGrade k Q d ≤ commutatorSubmodule k (preprojectiveAlgebra k Q)) :
+    preprojectiveGrade l Q d ≤ commutatorSubmodule l (preprojectiveAlgebra l Q) := by
+  intro y hy
+  obtain ⟨z, hz, rfl⟩ := (mem_preprojectiveGrade_iff l Q).mp hy
+  rw [grade_eq_span_range] at hz
+  refine (Submodule.span_le
+    (p := (commutatorSubmodule l (preprojectiveAlgebra l Q)).comap
+      (preprojectiveMk l Q).toLinearMap)).2 ?_ hz
+  rintro _ ⟨⟨p, hp⟩, rfl⟩
+  have hx : preprojectiveMk k Q (ofPath p) ∈ preprojectiveGrade k Q d :=
+    preprojectiveMk_mem_preprojectiveGrade k Q (ofPath_mem_grade_of_length hp)
+  have hmap := map_mem_commutatorSubmodule_of_ringHom (l := l)
+    (RingHom.preprojectiveBaseChange (Q := Q) f) (h hx)
+  simpa only [SetLike.mem_coe, Submodule.mem_comap, AlgHom.toLinearMap_apply,
+    RingHom.preprojectiveBaseChange_preprojectiveMk_ofPath] using hmap
+
 end Preprojective
 
 section Isomorphism
 
 open DoubledQuiver
+
+/-- **Vanishing of a graded piece of the signless cyclic quotient descends to induced subgraphs**:
+for any graph embedding `f : G ↪g H`, if the degree-`d` piece of `Π⁺(H)` lies in the commutator
+submodule, then so does the degree-`d` piece of `Π⁺(G)`. -/
+theorem signlessPreprojectiveGrade_le_commutatorSubmodule_of_embedding (k : Type w) [CommRing k]
+    {U V : Type*} [Finite U] [Finite V] {G : SimpleGraph U} {H : SimpleGraph V}
+    [∀ i, Fintype (G.neighborSet i)] [∀ j, Fintype (H.neighborSet j)]
+    (f : G ↪g H) (d : ℕ)
+    (hH : signlessPreprojectiveGrade k (DoubledQuiver H) d ≤
+      commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver H))) :
+    signlessPreprojectiveGrade k (DoubledQuiver G) d ≤
+      commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver G)) := by
+  intro x hx
+  rw [← map_signlessPreprojectiveEmbeddingHom_signlessPreprojectiveGrade k f d] at hx
+  obtain ⟨y, hy, rfl⟩ := hx
+  exact map_mem_commutatorSubmodule (signlessPreprojectiveEmbeddingHom k f) (hH hy)
 
 /-- **Vanishing of a graded piece of the signless cyclic quotient is invariant under graph
 isomorphism.** -/
@@ -192,18 +239,9 @@ theorem signlessPreprojectiveGrade_le_commutatorSubmodule_iff_of_iso (k : Type w
     signlessPreprojectiveGrade k (DoubledQuiver G) d ≤
         commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver G)) ↔
       signlessPreprojectiveGrade k (DoubledQuiver H) d ≤
-        commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver H)) := by
-  let φ := signlessPreprojectiveAlgebraEquiv k e
-  constructor
-  · intro hG y hy
-    have hx : φ.symm y ∈ signlessPreprojectiveGrade k (DoubledQuiver G) d := by
-      simpa only [φ, signlessPreprojectiveAlgebraEquiv_symm] using
-        (signlessPreprojectiveAlgebraEquiv_mem_signlessPreprojectiveGrade_iff k e.symm).mpr hy
-    simpa only [AlgEquiv.apply_symm_apply] using map_mem_commutatorSubmodule φ (hG hx)
-  · intro hH x hx
-    have hy : φ x ∈ signlessPreprojectiveGrade k (DoubledQuiver H) d :=
-      (signlessPreprojectiveAlgebraEquiv_mem_signlessPreprojectiveGrade_iff k e).mpr hx
-    simpa only [AlgEquiv.symm_apply_apply] using map_mem_commutatorSubmodule φ.symm (hH hy)
+        commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver H)) :=
+  ⟨signlessPreprojectiveGrade_le_commutatorSubmodule_of_embedding k e.symm.toEmbedding d,
+   signlessPreprojectiveGrade_le_commutatorSubmodule_of_embedding k e.toEmbedding d⟩
 
 end Isomorphism
 
@@ -211,7 +249,8 @@ end Isomorphism
 
 section Cycle
 
-open DoubledQuiver SimpleGraph
+open DoubledQuiver SimpleGraph Matrix
+open scoped Fin.NatCast Kronecker
 
 variable {V : Type u} {G : SimpleGraph V}
 
@@ -221,19 +260,16 @@ section Path
 
 variable {m : ℕ} [NeZero m]
 
-private theorem fin_ofNat_succ (r : ℕ) : Fin.ofNat m (r + 1) = Fin.ofNat m r + 1 :=
-  Fin.ext (by simp [Fin.val_add, Nat.add_mod])
-
 /-- The `r`-th forward arrow around a copy of `Cₘ`. -/
 private def cycleStep (hm : 3 ≤ m) (f : (cycleGraph m).Copy G) (r : ℕ) :
-    vertex G (f (Fin.ofNat m r)) ⟶ vertex G (f (Fin.ofNat m (r + 1))) :=
+    vertex G (f (r : Fin m)) ⟶ vertex G (f ((r + 1 : ℕ) : Fin m)) :=
   arrow G (f.toHom.map_adj (by
-    rw [fin_ofNat_succ]
-    exact cycleGraph_adj_add_one hm (Fin.ofNat m r)))
+    rw [Nat.cast_succ]
+    exact cycleGraph_adj_add_one hm (r : Fin m)))
 
 /-- The directed path of length `r` around a copy of `Cₘ` starting at `f 0`. -/
 private def cyclePath (hm : 3 ≤ m) (f : (cycleGraph m).Copy G) :
-    ∀ r : ℕ, _root_.Quiver.Path (vertex G (f (Fin.ofNat m 0))) (vertex G (f (Fin.ofNat m r)))
+    ∀ r : ℕ, _root_.Quiver.Path (vertex G (f ((0 : ℕ) : Fin m))) (vertex G (f (r : Fin m)))
   | 0 => .nil
   | r + 1 => (cyclePath hm f r).cons (cycleStep hm f r)
 
@@ -245,138 +281,55 @@ private theorem cyclePath_length (hm : 3 ≤ m) (f : (cycleGraph m).Copy G) (r :
 
 end Path
 
-variable (k : Type w) [CommRing k] [DecidableEq V] {m : ℕ}
+variable (k : Type w) [CommRing k] {m : ℕ} [NeZero m]
 
-/-- The projection matrix at a vertex `v` for a copy of `Cₘ` in `G`: `E_{r, r}` if `v = f r`,
-and zero outside the image of the cycle. -/
-private def cycleVertex (f : (cycleGraph m).Copy G) (v : DoubledQuiver G) :
-    Matrix (Fin m) (Fin m) k :=
-  ∑ r : Fin m, if f r = (vertexEquiv G).symm v then Matrix.single r r 1 else 0
+/-- The `1 × 1` forward-shift matrix family on `cycleGraph m`: `1` on forward edges `r → r + 1`
+and `0` on all other vertex pairs. -/
+private def cycleBlock (r s : Fin m) : Matrix Unit Unit k :=
+  if s = r + 1 then 1 else 0
 
-section Arrows
+private theorem cycleBlock_mul_symm (hm : 3 ≤ m) (r s : Fin m) :
+    cycleBlock k s r * cycleBlock k r s = 0 := by
+  simp only [cycleBlock]
+  split_ifs with h1 h2
+  · exact absurd (h1.trans (congrArg (· + 1) h2)) (add_one_add_one_ne_self hm r).symm
+  all_goals simp
 
-variable [NeZero m]
+variable [DecidableEq V] [DecidableRel (cycleGraph m).Adj]
 
-/-- The matrix of an arrow `i ⟶ j` for a copy of `Cₘ` in `G`: `E_{r + 1, r}` if `(i, j)` is the
-forward edge `(f r, f (r + 1))` of the cycle, and zero otherwise. -/
-private def cycleArrow (f : (cycleGraph m).Copy G) {i j : DoubledQuiver G} (_ : i ⟶ j) :
-    Matrix (Fin m) (Fin m) k :=
-  ∑ r : Fin m,
-    if f r = (vertexEquiv G).symm i ∧ f (r + 1) = (vertexEquiv G).symm j then
-      Matrix.single (r + 1) r 1
-    else 0
-
-private theorem cycleVertex_mul_cycleArrow (f : (cycleGraph m).Copy G)
-    {i j : DoubledQuiver G} (a : i ⟶ j) :
-    cycleVertex k f j * cycleArrow k f a = cycleArrow k f a := by
-  simp only [cycleVertex, cycleArrow]
-  rw [Finset.mul_sum]
-  refine Finset.sum_congr rfl fun r _ => ?_
-  rw [Finset.sum_mul]
-  by_cases hr : f r = (vertexEquiv G).symm i ∧ f (r + 1) = (vertexEquiv G).symm j
-  · simp only [hr, and_self, ↓reduceIte]
-    rw [Finset.sum_eq_single (r + 1)]
-    · simp [hr.2]
-    · intro s _ hs
+private theorem extendByZero_cycleBlock_mul_symm (hm : 3 ≤ m) (f : (cycleGraph m).Copy G)
+    (v w : V) :
+    f.extendByZero (cycleBlock k) w v * f.extendByZero (cycleBlock k) v w = 0 := by
+  by_cases hv : v ∈ Set.range f
+  · by_cases hw : w ∈ Set.range f
+    · obtain ⟨r, rfl⟩ := hv
+      obtain ⟨s, rfl⟩ := hw
+      simp only [SimpleGraph.Copy.extendByZero_apply_apply]
       split_ifs
-      · simp [hs]
-      · exact zero_mul _
-    · intro h
-      exact absurd (Finset.mem_univ _) h
-  · simp [hr]
-
-private theorem cycleArrow_mul_cycleVertex (f : (cycleGraph m).Copy G)
-    {i j : DoubledQuiver G} (a : i ⟶ j) :
-    cycleArrow k f a * cycleVertex k f i = cycleArrow k f a := by
-  simp only [cycleVertex, cycleArrow]
-  rw [Finset.sum_mul]
-  refine Finset.sum_congr rfl fun r _ => ?_
-  rw [Finset.mul_sum]
-  by_cases hr : f r = (vertexEquiv G).symm i ∧ f (r + 1) = (vertexEquiv G).symm j
-  · simp only [hr, and_self, ↓reduceIte]
-    rw [Finset.sum_eq_single r]
-    · simp [hr.1]
-    · intro s _ hs
-      split_ifs
-      · simp [hs.symm]
-      · exact mul_zero _
-    · intro h
-      exact absurd (Finset.mem_univ _) h
-  · simp [hr]
-
-private theorem cycleArrow_mul_cycleArrow_eq_zero (hm : 3 ≤ m) (f : (cycleGraph m).Copy G)
-    {i j : DoubledQuiver G} (a : i ⟶ j) (b : j ⟶ i) :
-    cycleArrow k f a * cycleArrow k f b = 0 := by
-  simp only [cycleArrow]
-  rw [Finset.sum_mul]
-  refine Finset.sum_eq_zero fun r _ => ?_
-  rw [Finset.mul_sum]
-  refine Finset.sum_eq_zero fun s _ => ?_
-  split_ifs with hr hs
-  · rcases eq_or_ne r (s + 1) with rfl | hrs
-    · exact absurd (f.toEmbedding.injective (hr.2.trans hs.1.symm))
-        (add_one_add_one_ne_self hm s)
-    · simp [hrs]
-  · exact mul_zero _
-  · exact zero_mul _
-  · exact mul_zero _
-
-end Arrows
+      · exact cycleBlock_mul_symm k hm r s
+      all_goals simp
+    · rw [SimpleGraph.Copy.extendByZero_eq_zero_of_notMem_range_left _ _ hw, zero_mul]
+  · rw [SimpleGraph.Copy.extendByZero_eq_zero_of_notMem_range_right _ _ _ hv, zero_mul]
 
 variable [Fintype V]
 
-private theorem completeOrthogonalIdempotents_cycleVertex (f : (cycleGraph m).Copy G) :
-    CompleteOrthogonalIdempotents (cycleVertex k f) := by
-  rw [CompleteOrthogonalIdempotents.iff_ortho_complete]
-  refine ⟨fun v w hvw => ?_, ?_⟩
-  · simp only [cycleVertex]
-    rw [Finset.sum_mul]
-    refine Finset.sum_eq_zero fun r _ => ?_
-    rw [Finset.mul_sum]
-    refine Finset.sum_eq_zero fun s _ => ?_
-    split_ifs with hr hs
-    · rcases eq_or_ne r s with rfl | hrs
-      · exact absurd ((vertexEquiv G).symm.injective (hr.symm.trans hs)) hvw
-      · simp [hrs]
-    · exact mul_zero _
-    · exact zero_mul _
-    · exact mul_zero _
-  · rw [← (vertexEquiv G).sum_comp]
-    simp only [cycleVertex, Equiv.symm_apply_apply]
-    rw [Finset.sum_comm]
-    ext a b
-    simp only [Matrix.sum_apply, Finset.sum_ite_eq, Finset.mem_univ, ↓reduceIte,
-      Matrix.single_apply, Matrix.one_apply]
-    by_cases hab : a = b
-    · subst hab
-      simp
-    · simp only [hab, ↓reduceIte]
-      exact Finset.sum_eq_zero fun r _ => ite_eq_right fun ⟨h1, h2⟩ => hab (h1.symm.trans h2)
+private theorem matrixPathAlgHom_cycleBlock_ofPath_mul_ofPath (hm : 3 ≤ m)
+    (f : (cycleGraph m).Copy G) {u v : DoubledQuiver G} (e₁ : u ⟶ v) (e₂ : v ⟶ u) :
+    matrixPathAlgHom k (f.extendByZero (cycleBlock k)) (ofPath ⟨u, v, e₁.toPath⟩) *
+      matrixPathAlgHom k (f.extendByZero (cycleBlock k)) (ofPath ⟨v, u, e₂.toPath⟩) = 0 := by
+  obtain ⟨i, rfl⟩ := exists_eq_vertex G u
+  obtain ⟨j, rfl⟩ := exists_eq_vertex G v
+  have he₁ : e₁ = arrow G (by simpa using e₁.down) := Subsingleton.elim _ _
+  have he₂ : e₂ = arrow G (by simpa using e₂.down) := Subsingleton.elim _ _
+  rw [he₁, he₂, matrixPathAlgHom_ofPath_toPath, matrixPathAlgHom_ofPath_toPath,
+    ← mul_kronecker_mul, single_mul_single_same, mul_one,
+    extendByZero_cycleBlock_mul_symm k hm f j i, kronecker_zero]
 
-variable [NeZero m]
-
-/-- The path-algebra homomorphism sending forward edges of a copy of `Cₘ` to shift matrices
-and all other arrows to zero. -/
-private noncomputable def cyclePathAlgHom (f : (cycleGraph m).Copy G) :
-    pathAlgebra k (DoubledQuiver G) →ₐ[k] Matrix (Fin m) (Fin m) k :=
-  liftAlgHomOfArrows k (cycleVertex k f) (completeOrthogonalIdempotents_cycleVertex k f)
-    (cycleArrow k f) (cycleVertex_mul_cycleArrow k f) (cycleArrow_mul_cycleVertex k f)
-
-private theorem cyclePathAlgHom_signlessPreprojectiveRelator (hm : 3 ≤ m)
-    (f : (cycleGraph m).Copy G) [∀ v, Fintype (G.neighborSet v)] (x : DoubledQuiver G) :
-    cyclePathAlgHom k f (signlessPreprojectiveRelator k x) = 0 := by
-  obtain ⟨v, rfl⟩ := exists_eq_vertex G x
-  rw [signlessPreprojectiveRelator_congr k (vertex G v) _ (instFintypeStarVertex G v),
-    signlessPreprojectiveRelator_vertex, map_sum]
-  refine Finset.sum_eq_zero fun w _ => ?_
-  rw [← ofArrow_symm_mul_ofArrow, map_mul, ofArrow_eq_ofPath, ofArrow_eq_ofPath,
-    cyclePathAlgHom, liftAlgHomOfArrows_ofPath_toPath, liftAlgHomOfArrows_ofPath_toPath]
-  exact cycleArrow_mul_cycleArrow_eq_zero k hm f _ _
-
-private theorem cyclePathAlgHom_comp_orientation_preprojectiveRelator (hm : 3 ≤ m)
+private theorem matrixPathAlgHom_cycleBlock_comp_orientation_preprojectiveRelator (hm : 3 ≤ m)
     (f : (cycleGraph m).Copy G) (o : Orientation G) :
-    (cyclePathAlgHom k f).comp (orientationPathAlgebraEquiv o k).symm.toAlgHom
-      (preprojectiveRelator k (OrientedQuiver G o)) = 0 := by
+    (matrixPathAlgHom k (f.extendByZero (cycleBlock k))).comp
+        (orientationPathAlgebraEquiv o k).symm.toAlgHom
+        (preprojectiveRelator k (OrientedQuiver G o)) = 0 := by
   rw [preprojectiveRelator_def, map_sum]
   refine Finset.sum_eq_zero fun i _ => ?_
   rw [map_sum]
@@ -387,34 +340,26 @@ private theorem cyclePathAlgHom_comp_orientation_preprojectiveRelator (hm : 3 �
     ← ofArrow_reverse_mul_ofArrow_eq_tailBacktrackElem, map_mul, map_mul]
   simp only [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, ofArrow_eq_ofPath,
     orientationPathAlgebraEquiv_symm_ofPath, Prefunctor.mapTotalPath_mk,
-    Prefunctor.mapPath_toPath, cyclePathAlgHom, liftAlgHomOfArrows_ofPath_toPath]
-  rw [cycleArrow_mul_cycleArrow_eq_zero k hm f _ _,
-    cycleArrow_mul_cycleArrow_eq_zero k hm f _ _, sub_self]
+    Prefunctor.mapPath_toPath]
+  rw [matrixPathAlgHom_cycleBlock_ofPath_mul_ofPath k hm f _ _,
+    matrixPathAlgHom_cycleBlock_ofPath_mul_ofPath k hm f _ _, sub_self]
 
-private theorem cyclePathAlgHom_cyclePath (hm : 3 ≤ m) (f : (cycleGraph m).Copy G) (r : ℕ) :
-    cyclePathAlgHom k f (ofPath ⟨_, _, cyclePath hm f r⟩) = Matrix.single (Fin.ofNat m r) 0 1 := by
+private theorem matrixPathAlgHom_cyclePath (hm : 3 ≤ m) (f : (cycleGraph m).Copy G) (r : ℕ) :
+    matrixPathAlgHom k (f.extendByZero (cycleBlock k)) (ofPath ⟨_, _, cyclePath hm f r⟩) =
+      single (f (r : Fin m)) (f 0) 1 ⊗ₖ 1 := by
   induction r with
   | zero =>
-    rw [cyclePath, cyclePathAlgHom, liftAlgHomOfArrows_ofPath_nil, cycleVertex]
-    have h0 : Fin.ofNat m 0 = 0 := rfl
-    rw [h0, vertexEquiv_symm_vertex, Finset.sum_eq_single (0 : Fin m)]
-    · simp
-    · intro s _ hs
-      exact ite_eq_right fun h => absurd (f.toEmbedding.injective h) hs
-    · intro h
-      exact absurd (Finset.mem_univ _) h
+    rw [cyclePath, ← vertexIdempotent_eq_ofPath, matrixPathAlgHom_vertexIdempotent, Nat.cast_zero]
   | succ r ih =>
-    have harr : cycleArrow k f (cycleStep hm f r) =
-        Matrix.single (Fin.ofNat m r + 1) (Fin.ofNat m r) 1 := by
-      simp only [cycleArrow, vertexEquiv_symm_vertex, fin_ofNat_succ]
-      rw [Finset.sum_eq_single (Fin.ofNat m r)]
-      · simp
-      · intro s _ hs
-        exact ite_eq_right fun ⟨h, _⟩ => absurd (f.toEmbedding.injective h) hs
-      · intro h
-        exact absurd (Finset.mem_univ _) h
-    rw [cyclePath, cyclePathAlgHom, liftAlgHomOfArrows_ofPath_cons, ← cyclePathAlgHom, ih, harr,
-      Matrix.single_mul_single_same, one_mul, fin_ofNat_succ]
+    have hadj : (cycleGraph m).Adj (r : Fin m) ((r + 1 : ℕ) : Fin m) := by
+      rw [Nat.cast_succ]
+      exact cycleGraph_adj_add_one hm (r : Fin m)
+    have hadjG : G.Adj (f (r : Fin m)) (f ((r + 1 : ℕ) : Fin m)) := f.toHom.map_adj hadj
+    have hstep : cycleStep hm f r = arrow G hadjG := Subsingleton.elim _ _
+    rw [cyclePath, ← ofArrow_mul_ofPath, map_mul, ih, hstep, matrixPathAlgHom_ofArrow,
+      SimpleGraph.Copy.extendByZero_apply_apply_of_adj _ _ hadj,
+      cycleBlock, Nat.cast_succ, ite_eq_left rfl, ← mul_kronecker_mul, single_mul_single_same,
+      mul_one, mul_one]
 
 end CycleRep
 
@@ -423,23 +368,26 @@ preprojective algebra.** If `G` contains a copy of `Cₘ` with `m ≥ 3`, then o
 commutative ring some element of path degree `m` of `Π⁺(G)` does not lie in `[Π⁺(G), Π⁺(G)]`. -/
 theorem exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_cycleGraph_copy
     (k : Type w) [CommRing k] [Nontrivial k] [Finite V]
-    [∀ v, Fintype (G.neighborSet v)] {m : ℕ} (hm : 3 ≤ m) (f : (cycleGraph m).Copy G) :
+    [inst : ∀ v, Fintype (G.neighborSet v)] {m : ℕ} (hm : 3 ≤ m) (f : (cycleGraph m).Copy G) :
     ∃ x ∈ signlessPreprojectiveGrade k (DoubledQuiver G) m,
       x ∉ commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver G)) := by
   classical
   have : Fintype V := Fintype.ofFinite V
   have : NeZero m := ⟨by omega⟩
-  let φ := signlessPreprojectiveLift (cyclePathAlgHom k f)
-    (cyclePathAlgHom_signlessPreprojectiveRelator k hm f)
+  obtain rfl : inst = fun v => Subtype.fintype (Membership.mem (G.neighborSet v)) :=
+    Subsingleton.elim _ _
+  let φ := signlessMatrixRepresentation k (f.extendByZero (cycleBlock k))
+    (f.sum_extendByZero_mul_extendByZero (cycleBlock k)
+      fun r => Finset.sum_eq_zero fun s _ => cycleBlock_mul_symm k hm r s)
   let x := signlessPreprojectiveMk k (DoubledQuiver G) (ofPath ⟨_, _, cyclePath hm f m⟩)
   refine ⟨x, signlessPreprojectiveMk_mem_grade k _
     (ofPath_mem_grade_of_length (cyclePath_length hm f m)), fun hx => one_ne_zero (α := k) ?_⟩
   have htr := trace_map_eq_zero_of_mem_commutatorSubmodule φ hx
-  have hm0 : Fin.ofNat m m = 0 := Fin.ext (by simp)
-  have hfx : φ x = Matrix.single (0 : Fin m) 0 1 := by
-    simpa only [φ, x, signlessPreprojectiveLift_signlessPreprojectiveMk, hm0] using
-      cyclePathAlgHom_cyclePath k hm f m
-  rw [hfx, Matrix.trace_single_eq_same] at htr
+  have hfx : φ x = single (f 0) (f 0) 1 ⊗ₖ (1 : Matrix Unit Unit k) := by
+    simpa only [φ, x, signlessMatrixRepresentation_signlessPreprojectiveMk, Fin.natCast_self] using
+      matrixPathAlgHom_cyclePath k hm f m
+  rw [hfx, trace_kronecker, trace_single_eq_same, Matrix.trace_one, Fintype.card_unit, Nat.cast_one,
+    mul_one] at htr
   exact htr
 
 /-- **A cycle subgraph produces a nonzero cyclic class of the same degree in the preprojective
@@ -455,8 +403,10 @@ theorem exists_mem_preprojectiveGrade_notMem_commutatorSubmodule_of_cycleGraph_c
   classical
   have : Fintype V := Fintype.ofFinite V
   have : NeZero m := ⟨by omega⟩
-  let ψ := (cyclePathAlgHom k f).comp (orientationPathAlgebraEquiv o k).symm.toAlgHom
-  let φ := preprojectiveLift ψ (cyclePathAlgHom_comp_orientation_preprojectiveRelator k hm f o)
+  let ψ := (matrixPathAlgHom k (f.extendByZero (cycleBlock k))).comp
+    (orientationPathAlgebraEquiv o k).symm.toAlgHom
+  let φ := preprojectiveLift ψ
+    (matrixPathAlgHom_cycleBlock_comp_orientation_preprojectiveRelator k hm f o)
   let p := orientationPathAlgebraEquiv o k (ofPath ⟨_, _, cyclePath hm f m⟩)
   let x := preprojectiveMk k (OrientedQuiver G o) p
   have hp : p ∈ grade k (Symmetrify (OrientedQuiver G o)) m := by
@@ -466,12 +416,12 @@ theorem exists_mem_preprojectiveGrade_notMem_commutatorSubmodule_of_cycleGraph_c
       ((Prefunctor.length_mapTotalPath _ _).trans (cyclePath_length hm f m))
   refine ⟨x, preprojectiveMk_mem_preprojectiveGrade k _ hp, fun hx => one_ne_zero (α := k) ?_⟩
   have htr := trace_map_eq_zero_of_mem_commutatorSubmodule φ hx
-  have hm0 : Fin.ofNat m m = 0 := Fin.ext (by simp)
-  have hfx : φ x = Matrix.single (0 : Fin m) 0 1 := by
+  have hfx : φ x = single (f 0) (f 0) 1 ⊗ₖ (1 : Matrix Unit Unit k) := by
     simpa only [φ, ψ, x, p, preprojectiveLift_preprojectiveMk, AlgHom.comp_apply,
-      AlgEquiv.coe_toAlgHom, AlgEquiv.symm_apply_apply, hm0] using
-      cyclePathAlgHom_cyclePath k hm f m
-  rw [hfx, Matrix.trace_single_eq_same] at htr
+      AlgEquiv.coe_toAlgHom, AlgEquiv.symm_apply_apply, Fin.natCast_self] using
+      matrixPathAlgHom_cyclePath k hm f m
+  rw [hfx, trace_kronecker, trace_single_eq_same, Matrix.trace_one, Fintype.card_unit, Nat.cast_one,
+    mul_one] at htr
   exact htr
 
 /-- **A finite graph with a cycle has a nonzero cyclic class in path degree at least three** in its
@@ -514,6 +464,8 @@ open TauCeti TauCeti.DoubledQuiver TauCeti.PathAlgebra _root_.Quiver
 
 universe u w
 
+section Paths
+
 attribute [local instance] Fintype.ofFinite
 
 variable {V : Type u} {G : SimpleGraph V} (k : Type w) [CommRing k] [Finite V]
@@ -538,6 +490,29 @@ theorem preprojectiveMk_ofPath_mem_commutatorSubmodule (C : G.Coloring Bool) (o 
   have hmap := map_mem_commutatorSubmodule e hsymm
   rwa [AlgEquiv.apply_symm_apply] at hmap
 
+end Paths
+
+variable {V : Type u} {G : SimpleGraph V}
+
+/-- **For a two-coloured graph, vanishing of a graded piece of the cyclic quotient agrees between
+the signless algebra and the additive preprojective algebra of every orientation.** -/
+theorem preprojectiveGrade_le_commutatorSubmodule_iff (C : G.Coloring Bool)
+    (k : Type w) [CommRing k] [Finite V]
+    [inst : ∀ i, Fintype (G.neighborSet i)] (o : Orientation G) (d : ℕ) :
+    preprojectiveGrade k (OrientedQuiver G o) d ≤
+        commutatorSubmodule k (preprojectiveAlgebra k (OrientedQuiver G o)) ↔
+      signlessPreprojectiveGrade k (DoubledQuiver G) d ≤
+        commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver G)) := by
+  obtain rfl : inst = fun i => Fintype.ofFinite _ := Subsingleton.elim _ _
+  let φ := C.signlessPreprojectiveAlgebraEquiv k o
+  constructor
+  · intro hO x hx
+    have hy := hO (C.signlessPreprojectiveAlgebraEquiv_mem_preprojectiveGrade k o hx)
+    simpa only [φ, AlgEquiv.symm_apply_apply] using map_mem_commutatorSubmodule φ.symm hy
+  · intro hS y hy
+    have hx := hS (C.signlessPreprojectiveAlgebraEquiv_symm_mem_signlessPreprojectiveGrade k o hy)
+    simpa only [φ, AlgEquiv.apply_symm_apply] using map_mem_commutatorSubmodule φ hx
+
 end SimpleGraph.Coloring
 
 namespace SimpleGraph.IsBipartite
@@ -552,19 +527,11 @@ variable {V : Type u} {G : SimpleGraph V}
 signless algebra and the additive preprojective algebra of every orientation.** -/
 theorem preprojectiveGrade_le_commutatorSubmodule_iff (hG : G.IsBipartite)
     (k : Type w) [CommRing k] [Finite V]
-    [inst : ∀ i, Fintype (G.neighborSet i)] (o : Orientation G) (d : ℕ) :
+    [∀ i, Fintype (G.neighborSet i)] (o : Orientation G) (d : ℕ) :
     preprojectiveGrade k (OrientedQuiver G o) d ≤
         commutatorSubmodule k (preprojectiveAlgebra k (OrientedQuiver G o)) ↔
       signlessPreprojectiveGrade k (DoubledQuiver G) d ≤
-        commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver G)) := by
-  obtain rfl : inst = fun i => Fintype.ofFinite _ := Subsingleton.elim _ _
-  let φ := hG.signlessPreprojectiveAlgebraEquiv k o
-  constructor
-  · intro hO x hx
-    have hy := hO (hG.signlessPreprojectiveAlgebraEquiv_mem_preprojectiveGrade k o hx)
-    simpa only [φ, AlgEquiv.symm_apply_apply] using map_mem_commutatorSubmodule φ.symm hy
-  · intro hS y hy
-    have hx := hS (hG.signlessPreprojectiveAlgebraEquiv_symm_mem_signlessPreprojectiveGrade k o hy)
-    simpa only [φ, AlgEquiv.apply_symm_apply] using map_mem_commutatorSubmodule φ hx
+        commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver G)) :=
+  hG.coloringBool.preprojectiveGrade_le_commutatorSubmodule_iff k o d
 
 end SimpleGraph.IsBipartite

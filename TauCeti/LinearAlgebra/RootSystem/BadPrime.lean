@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.CharP.Defs
+public import Mathlib.Algebra.Field.Defs
 public import Mathlib.Data.Nat.Prime.Defs
 public import TauCeti.LinearAlgebra.RootSystem.DynkinType
-import Mathlib.Data.Nat.Prime.Basic
+import Mathlib.Algebra.CharP.Basic
 
 /-!
 # Bad primes of Dynkin types
@@ -25,7 +27,9 @@ This file defines `TauCeti.DynkinType.IsBadPrime` by family constructor on `TauC
 parallel to `TauCeti.DynkinType.IsSimplyLaced`. For every valid type (`TauCeti.DynkinType.Valid`)
 this agrees with the primes dividing a coefficient of the highest root; outside the valid rank
 ranges (such as `B₁`, `C₁` or `D₃`) it follows the family rule. Passing `ringChar k` treats
-characteristic zero as good for every type (`TauCeti.DynkinType.not_isBadPrime_zero`).
+characteristic zero as good for every type (`TauCeti.DynkinType.not_isBadPrime_zero`), and over a
+division semiring (in particular a field) inverting every bad prime is equivalent to `ringChar k`
+not being bad (`TauCeti.DynkinType.forall_isBadPrime_isUnit_iff_not_isBadPrime_ringChar`).
 
 ## Main definitions
 
@@ -38,6 +42,8 @@ characteristic zero as good for every type (`TauCeti.DynkinType.not_isBadPrime_z
 * `TauCeti.DynkinType.IsBadPrime.prime`: every bad number is prime.
 * `TauCeti.DynkinType.not_isBadPrime_of_six_le`: no integer `p ≥ 6` (in particular, no prime
   `p ≥ 7`) is bad for any Dynkin type.
+* `TauCeti.DynkinType.forall_isBadPrime_isUnit_iff_not_isBadPrime_ringChar`: over a division
+  semiring, every bad prime of `t` is a unit if and only if `ringChar k` is not bad for `t`.
 
 ## References
 
@@ -109,6 +115,15 @@ theorem IsBadPrime.prime {t : DynkinType} {p : ℕ} (h : t.IsBadPrime p) : p.Pri
 /-- No integer at least `6` (in particular, no prime `p ≥ 7`) is bad for any Dynkin type. -/
 theorem not_isBadPrime_of_six_le (t : DynkinType) {p : ℕ} (hp : 6 ≤ p) : ¬ t.IsBadPrime p := by
   cases t <;> simp <;> omega
+
+/-- Over a division semiring (in particular a field), every bad prime of `t` is invertible if and
+only if `ringChar k` is not a bad prime of `t`. -/
+theorem forall_isBadPrime_isUnit_iff_not_isBadPrime_ringChar (k : Type*) [DivisionSemiring k]
+    (t : DynkinType) :
+    (∀ p, t.IsBadPrime p → IsUnit (p : k)) ↔ ¬ t.IsBadPrime (ringChar k) :=
+  ⟨fun h hbad => isUnit_iff_ne_zero.mp (h _ hbad) ringChar.Nat.cast_ringChar,
+   fun h _ hp => isUnit_iff_ne_zero.mpr <|
+     CharP.cast_ne_zero_of_ne_of_prime k (p := ringChar k) hp.prime (fun h' => h (h' ▸ hp))⟩
 
 end DynkinType
 
