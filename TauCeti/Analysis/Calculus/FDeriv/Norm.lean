@@ -24,7 +24,8 @@ sum of the squared partial derivatives of its components along `1` and `I`
 
 The function `y ↦ √(a - ‖y‖²)`, whose graph over the ball of radius `√a` is a hemisphere, has
 derivative `-(√(a - ‖x‖²))⁻¹ ⟪x, ·⟫` wherever `a - ‖x‖² ≠ 0`; in particular it is flat at the
-origin.
+origin. Over the open unit ball the height `√(1 - ‖x‖²)` of the unit hemisphere is positive
+(`TauCeti.sqrt_one_sub_norm_sq_pos`).
 -/
 
 public section
@@ -95,6 +96,11 @@ theorem hasFDerivAt_sqrt_sub_norm_sq {a : ℝ} {x : F} (hx : a - ‖x‖ ^ 2 ≠
   simp only [id_eq, one_div, mul_inv_rev, ContinuousLinearMap.comp_id, smul_neg, neg_apply,
     smul_apply, coe_innerSL_apply, nsmul_eq_mul, Nat.cast_ofNat, smul_eq_mul, neg_smul, neg_inj]
   ring
+
+/-- Over the open unit ball the height `√(1 - ‖x‖²)` of the unit hemisphere is positive. -/
+theorem sqrt_one_sub_norm_sq_pos {G : Type*} [SeminormedAddCommGroup G] {x : G} (hx : ‖x‖ < 1) :
+    0 < √(1 - ‖x‖ ^ 2) :=
+  Real.sqrt_pos.2 (by nlinarith [norm_nonneg x])
 
 /-- The Fréchet derivative of `y ↦ ‖y - x₀‖ ^ 2` at `x` is `2 • innerSL ℝ (x - x₀)`. -/
 theorem hasFDerivAt_norm_sq_sub (x₀ x : F) :
