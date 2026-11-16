@@ -301,6 +301,8 @@ theorem legendreF_add_pi {k : ℝ} (hk : k ^ 2 < 1) (φ : ℝ) :
     legendreF (φ + π) k = legendreF φ k + 2 * legendreK k := by
   simpa using legendreF_add_int_mul_pi hk φ 1
 
+/-- `F(nπ, k) = 2 n K(k)` for every integer `n`, with no restriction on the modulus `k` (if the
+integrand is not integrable on `[0, π/2]`, both sides are `0`). -/
 theorem legendreF_int_mul_pi (k : ℝ) (n : ℤ) :
     legendreF (n * π) k = 2 * n * legendreK k :=
   integral_comp_sin_sq_int_mul_pi (fun s ↦ (1 - k ^ 2 * s) ^ (-1 / 2 : ℝ)) n
