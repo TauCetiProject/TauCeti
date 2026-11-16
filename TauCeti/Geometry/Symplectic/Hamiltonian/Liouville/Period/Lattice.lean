@@ -152,9 +152,9 @@ omit [T2Space M] [BoundarylessManifold I M] [I.Boundaryless] [FiniteDimensional 
 include h in
 /-- The number of coordinates is half the dimension of `M`. -/
 private theorem two_mul_card_eq (x : M) :
-    2 * Fintype.card (Fin (finrank ℝ F)) = finrank ℝ E := by
+    2 * Fintype.card (Fin (finrank ℝ F)) = finrank ℝ E :=
   have : Nonempty M := ⟨x⟩
-  rw [Fintype.card_fin, h.two_mul_finrank]
+  h.two_mul_card_fin_finrank
 
 omit [FiniteDimensional ℝ E] [T2Space M] [BoundarylessManifold I M] [I.Boundaryless] in
 private theorem contMDiff_coord_comp :
@@ -169,8 +169,7 @@ private theorem contMDiff_coord_apply (i : Fin (finrank ℝ F)) :
 omit [T2Space M] [BoundarylessManifold I M] [I.Boundaryless] in
 private theorem poissonBracket_coord_comp (i j : Fin (finrank ℝ F)) (y : M) :
     σ.poissonBracket ((h.coord b ∘ π) · i) ((h.coord b ∘ π) · j) y = 0 :=
-  h.poissonBracket_comp_eq_zero ((h.contMDiff_coord_apply b i).mdifferentiableAt (by simp))
-    ((h.contMDiff_coord_apply b j).mdifferentiableAt (by simp))
+  h.poissonBracket_comp_apply_eq_zero (((h.coord_spec b).1 _).mdifferentiableAt (by simp)) i j
 
 omit [I.Boundaryless] in
 private theorem isCompleteVectorField_coord_comp (i : Fin (finrank ℝ F)) :
@@ -283,6 +282,7 @@ abbrev fiberAddAction : AddAction (F →L[ℝ] ℝ) (π ⁻¹' {b}) where
   add_vadd := h.fiberAction_add hσc b
 
 /-- The covector `α` acts on `x` for `fiberAddAction` by `fiberAction α x`. -/
+@[simp]
 theorem fiberAddAction_vadd (α : F →L[ℝ] ℝ) (x : π ⁻¹' {b}) :
     (letI := h.fiberAddAction hσc b; α +ᵥ x) = h.fiberAction hσc b α x :=
   rfl

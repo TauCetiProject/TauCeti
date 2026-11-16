@@ -11,6 +11,7 @@ public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.Algebra.Group.Basic
 public import Mathlib.Topology.Algebra.Group.ClosedSubgroup
 public import Mathlib.Topology.Compactness.Compact
+public import TauCeti.GroupTheory.QuotientGroup.Basic
 
 /-!
 # Closed subgroups of topological groups
@@ -144,16 +145,6 @@ theorem coe_subgroupMap_apply (e : G ≃ₜ* H) (K : Subgroup G) (g : K) :
 theorem coe_subgroupMap_symm_apply (e : G ≃ₜ* H) (K : Subgroup G)
     (h : K.map ((e : G ≃* H) : G →* H)) : ((e.subgroupMap K).symm h : G) = e.symm h :=
   (rfl)
-
-/-- `QuotientAddGroup.congr` sends the class of an element to the class of its image. This is the
-additive form of `QuotientGroup.congr_mk`, which Mathlib states only for groups. -/
-theorem _root_.QuotientAddGroup.congr_mk {G H : Type*} [AddGroup G] [AddGroup H]
-    (G' : AddSubgroup G) (H' : AddSubgroup H) [G'.Normal] [H'.Normal] (e : G ≃+ H)
-    (he : G'.map (e : G →+ H) = H') (x : G) :
-    QuotientAddGroup.congr G' H' e he (x : G ⧸ G') = (e x : H ⧸ H') :=
-  rfl
-
-attribute [to_additive existing] QuotientGroup.congr_mk
 
 /-- A topological group isomorphism carrying a normal subgroup onto a normal subgroup induces an
 isomorphism of the quotient topological groups.  This is `QuotientGroup.congr` together with the

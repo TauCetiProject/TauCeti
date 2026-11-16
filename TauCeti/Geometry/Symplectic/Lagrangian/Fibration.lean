@@ -122,6 +122,12 @@ theorem two_mul_finrank [FiniteDimensional ℝ E] [Nonempty M] :
   change 2 * finrank ℝ (mfderiv I J π x).ker = finrank ℝ E at hL
   omega
 
+/-- The dimension of `M` is twice the number of coordinates `Fin (dim B)` on the base. This is
+`two_mul_finrank`, in the form taken by the Liouville–Arnold theorem for `dim B` functions. -/
+theorem two_mul_card_fin_finrank [FiniteDimensional ℝ E] [Nonempty M] :
+    2 * Fintype.card (Fin (finrank ℝ F)) = finrank ℝ E := by
+  rw [Fintype.card_fin, h.two_mul_finrank]
+
 /-- **Hamiltonian vector fields of pulled-back functions are vertical.** If `g` is differentiable
 at `π x`, the Hamiltonian vector of `g ∘ π` at `x` is tangent to the fibre: it lies in `ker dπ_x`.
 -/
@@ -150,6 +156,21 @@ theorem poissonBracket_comp_eq_zero [FiniteDimensional ℝ E] {g k : B → ℝ} 
   rw [hσ.poissonBracket_eq_mvfderiv, mvfderiv_comp_apply x hg (h.mdifferentiableAt x),
     h.mfderiv_hamiltonianVectorField_comp_eq_zero hk, map_zero]
 
+/-- The components of a family `κ ∘ π` of functions pulled back from the base Poisson-commute at
+`x` when `κ` is differentiable at `π x`. -/
+theorem poissonBracket_comp_apply_eq_zero [FiniteDimensional ℝ E] {ι : Type*} [Fintype ι]
+    {κ : B → ι → ℝ} {x : M} (hκ : MDifferentiableAt J 𝓘(ℝ, ι → ℝ) κ (π x)) (i j : ι) :
+    σ.poissonBracket ((κ ∘ π) · i) ((κ ∘ π) · j) x = 0 :=
+  h.poissonBracket_comp_eq_zero (mdifferentiableAt_pi_space.1 hκ i)
+    (mdifferentiableAt_pi_space.1 hκ j)
+
+/-- The Hamiltonian vector field of a `C²` pulled-back function `g ∘ π` is `C¹`. -/
+theorem contMDiff_hamiltonianVectorField_comp [FiniteDimensional ℝ E] {g : B → ℝ}
+    (hg : ContMDiff J 𝓘(ℝ) 2 g) :
+    ContMDiff I I.tangent 1 (T% (σ.hamiltonianVectorField (g ∘ π))) :=
+  hσ.contMDiff_hamiltonianVectorField (by simp)
+    (by rw [one_add_one_eq_two]; exact hg.comp (h.contMDiff.of_le (by simp)))
+
 /-- **Vertical Hamiltonian flows stay in their fibre.** Along the maximal integral curve through
 `x` of the Hamiltonian vector field of a `C²` pulled-back function `g ∘ π`, the projection `π` is
 constant. -/
@@ -158,8 +179,7 @@ theorem apply_maximalIntegralCurve_hamiltonianVectorField_comp [FiniteDimensiona
     (hg : ContMDiff J 𝓘(ℝ) 2 g) {x : M} {t : ℝ}
     (ht : t ∈ maximalIntegralCurveInterval (σ.hamiltonianVectorField (g ∘ π)) x) :
     π (maximalIntegralCurve (σ.hamiltonianVectorField (g ∘ π)) x t) = π x := by
-  have hv := hσ.contMDiff_hamiltonianVectorField (n := 1) (f := g ∘ π) (by simp)
-    (by rw [one_add_one_eq_two]; exact hg.comp (h.contMDiff.of_le (by simp)))
+  have hv := h.contMDiff_hamiltonianVectorField_comp hg
   have h0 := zero_mem_maximalIntegralCurveInterval_of_mem ht
   conv_rhs => rw [← maximalIntegralCurve_zero (v := σ.hamiltonianVectorField (g ∘ π)) (x := x)]
   exact (isMIntegralCurveOn_maximalIntegralCurve hv).apply_eq_of_mfderiv_apply_eq_zero
@@ -175,9 +195,7 @@ theorem isCompleteVectorField_hamiltonianVectorField_comp [FiniteDimensional ℝ
     [BoundarylessManifold I M] [IsManifold J 1 B] (hπ : IsProperMap π) {g : B → ℝ}
     (hg : ContMDiff J 𝓘(ℝ) 2 g) :
     IsCompleteVectorField (σ.hamiltonianVectorField (g ∘ π)) :=
-  isCompleteVectorField_of_isProperMap
-    (hσ.contMDiff_hamiltonianVectorField (n := 1) (by simp)
-      (by rw [one_add_one_eq_two]; exact hg.comp (h.contMDiff.of_le (by simp)))) hπ
+  isCompleteVectorField_of_isProperMap (h.contMDiff_hamiltonianVectorField_comp hg) hπ
     fun _ _ ht ↦ h.apply_maximalIntegralCurve_hamiltonianVectorField_comp hg ht
 
 /-- **Vertical Hamiltonian flows depend only on the differential at the base point.** Let `π` be
@@ -190,14 +208,10 @@ theorem flowOf_hamiltonianVectorField_comp_eq [FiniteDimensional ℝ E] [T2Space
     (hgg' : mvfderiv J g (π x) = mvfderiv J g' (π x)) (t : ℝ) :
     flowOf (σ.hamiltonianVectorField (g ∘ π)) t x =
       flowOf (σ.hamiltonianVectorField (g' ∘ π)) t x := by
-  have hv (k : B → ℝ) (hk : ContMDiff J 𝓘(ℝ) 2 k) : ContMDiff I I.tangent 1
-      (fun y ↦ (⟨y, σ.hamiltonianVectorField (k ∘ π) y⟩ : TangentBundle I M)) :=
-    hσ.contMDiff_hamiltonianVectorField (n := 1) (by simp)
-      (by rw [one_add_one_eq_two]; exact hk.comp (h.contMDiff.of_le (by simp)))
   have hc := h.isCompleteVectorField_hamiltonianVectorField_comp hπ hg
   set γ := maximalIntegralCurve (σ.hamiltonianVectorField (g ∘ π)) x
   have hγ : IsMIntegralCurve γ (σ.hamiltonianVectorField (g ∘ π)) :=
-    isMIntegralCurve_maximalIntegralCurve_of_eq_univ (hv g hg)
+    isMIntegralCurve_maximalIntegralCurve_of_eq_univ (h.contMDiff_hamiltonianVectorField_comp hg)
       (hc.maximalIntegralCurveInterval_eq_univ x)
   -- The flow line of `g ∘ π` through `x` is also an integral curve of `g' ∘ π`.
   have hγ' : IsMIntegralCurve γ (σ.hamiltonianVectorField (g' ∘ π)) := by
@@ -213,7 +227,7 @@ theorem flowOf_hamiltonianVectorField_comp_eq [FiniteDimensional ℝ E] [T2Space
     rw [← hX]
     exact hγ s
   have h0 : γ 0 = x := maximalIntegralCurve_zero
-  have h1 := hγ'.maximalIntegralCurve_eq (hv g' hg') t
+  have h1 := hγ'.maximalIntegralCurve_eq (h.contMDiff_hamiltonianVectorField_comp hg') t
   rw [h0] at h1
   rw [flowOf_apply, flowOf_apply, h1]
 

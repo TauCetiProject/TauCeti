@@ -153,12 +153,9 @@ theorem nonempty_homeomorph_unitAddTorus (h : hσ.IsLagrangianTorusFibration J �
   have : Nonempty M := ⟨x⟩
   obtain ⟨κ, -, hκ, -, hreg, hcomp⟩ := h.exists_coordinates b
   have hσS : σ.IsSymplectic := ⟨hσc, hσ⟩
-  have hκi (i : Fin (finrank ℝ F)) : ContMDiff J 𝓘(ℝ) ∞ fun c ↦ κ c i :=
-    contMDiff_pi_module_iff.1 hκ i
   obtain ⟨φ⟩ := hσS.nonempty_homeomorph_unitAddTorus (hκ.comp h.contMDiff)
-    (fun i j y ↦ h.poissonBracket_comp_eq_zero ((hκi i).mdifferentiableAt (by simp))
-      ((hκi j).mdifferentiableAt (by simp)))
-    (fun y hy ↦ hreg y (hcomp x hx ▸ hy)) (by rw [Fintype.card_fin, h.two_mul_finrank])
+    (fun i j _ ↦ h.poissonBracket_comp_apply_eq_zero ((hκ _).mdifferentiableAt (by simp)) i j)
+    (fun y hy ↦ hreg y (hcomp x hx ▸ hy)) h.two_mul_card_fin_finrank
     (hcomp x hx ▸ h.isCompact_preimage_singleton b)
   exact ⟨(Homeomorph.setCongr (hcomp x hx).symm).trans φ⟩
 
