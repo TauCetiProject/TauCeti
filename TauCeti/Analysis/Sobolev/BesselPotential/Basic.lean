@@ -34,8 +34,9 @@ descriptions.
 
 ## Main declarations
 
-* `MeasureTheory.Lp.exists_real_lp_lineDeriv_of_memSobolev_zero`: an order-zero Bessel-potential
-  representative of a derivative of a real `Lᵖ` function may be chosen real.
+* `MeasureTheory.Lp.exists_lineDerivOp_toTemperedDistribution_ofReal_eq_of_memSobolev_zero`:
+  an order-zero Bessel-potential representative of a derivative of a real `Lᵖ` function may be
+  chosen real.
 * `MeasureTheory.Lp.memSobolev_natCast_iff_exists_wkp_value_eq`: `H^{k,p}(ℝⁿ) = W^{k,p}(ℝⁿ)` for
   every natural `k` and `1 < p < ∞`.
 * `TemperedDistribution.exists_w1p_value_ae_eq_of_mem_realSobolevFunctions`: a real function in
@@ -71,7 +72,8 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
 function has Bessel-potential order zero, then it is represented by a real `Lᵖ` function.
 
 This real representative makes the derivative available to the real weak-gradient interface. -/
-theorem exists_real_lp_lineDeriv_of_memSobolev_zero {p : ENNReal} [Fact (1 ≤ p)]
+theorem exists_lineDerivOp_toTemperedDistribution_ofReal_eq_of_memSobolev_zero
+    {p : ENNReal} [Fact (1 ≤ p)]
     (u : Lp ℝ p (volume : Measure E)) (v : E)
     (h : MemSobolev 0 p
       (∂_{v} (Lp.toTemperedDistribution (Complex.ofRealCLM.compLp u)))) :
@@ -125,7 +127,7 @@ theorem memSobolev_natCast_iff_exists_wkp_value_eq {p : ENNReal} [Fact (1 ≤ p)
       · -- an `H^{k,p}` derivative is an `Lᵖ` function, hence by induction the value of a
         -- `W^{k,p}` function
         obtain ⟨u', hu'⟩ :=
-          exists_real_lp_lineDeriv_of_memSobolev_zero u v
+          exists_lineDerivOp_toTemperedDistribution_ofReal_eq_of_memSobolev_zero u v
             ((h.2 v).mono_of_one_lt hp hp_top (Nat.cast_nonneg k))
         obtain ⟨d, hd⟩ := (ih u').mp (hu' ▸ h.2 v)
         refine ⟨d, ?_⟩
@@ -176,7 +178,8 @@ theorem fderiv_apply_mem_realSobolevFunctions {p : ℝ≥0∞} [Fact (1 ≤ p)] 
       (∂_{v} (Lp.toTemperedDistribution (Complex.ofRealCLM.compLp u))) := by
     simpa using hu.lineDerivOp_of_one_lt hp hp_top (m := v)
   obtain ⟨u', hu'⟩ :=
-    Lp.exists_real_lp_lineDeriv_of_memSobolev_zero u v (hd.mono_of_one_lt hp hp_top hs)
+    Lp.exists_lineDerivOp_toTemperedDistribution_ofReal_eq_of_memSobolev_zero u v
+      (hd.mono_of_one_lt hp hp_top hs)
   have hline : HasWeakLineDerivOn volume ⊤ f u' v :=
     ((hasWeakLineDerivOn_iff_lineDerivOp_toTemperedDistribution_ofReal_eq u u' v).2 hu').congr_ae
       (by simpa only [Opens.coe_top, Measure.restrict_univ] using huf)

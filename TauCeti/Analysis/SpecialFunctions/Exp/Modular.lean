@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Exponential
+public import Mathlib.Analysis.Convex.Function
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
+import Mathlib.Analysis.Convex.SpecificFunctions.Basic
 import TauCeti.Analysis.SpecialFunctions.Sqrt
 
 /-!
@@ -26,6 +28,7 @@ vortices.
 ## Main results
 
 * `Real.exp_two_mul_sub_one_sub_two_mul_nonneg`: for every real `t`, `0 ≤ exp (2t) - 1 - 2t`.
+* `Real.convexOn_exp_two_mul_sub_one_sub_two_mul`: the potential `exp (2t) - 1 - 2t` is convex.
 * `Real.sqrt_one_add_sq_sub_one_le_exp_two_mul_sub_one_sub_two_mul`: for every real `t`,
   `√(1 + t²) - 1 ≤ exp (2t) - 1 - 2t`.
 -/
@@ -37,6 +40,18 @@ namespace Real
 /-- The potential `exp (2t) - 1 - 2t` is nonnegative. -/
 theorem exp_two_mul_sub_one_sub_two_mul_nonneg (t : ℝ) : 0 ≤ exp (2 * t) - 1 - 2 * t := by
   linarith [add_one_le_exp (2 * t)]
+
+/-- The potential `exp (2t) - 1 - 2t` is convex: it is the convex function `exp (2t)` minus an
+affine function. -/
+theorem convexOn_exp_two_mul_sub_one_sub_two_mul :
+    ConvexOn ℝ Set.univ fun t : ℝ ↦ exp (2 * t) - 1 - 2 * t := by
+  refine ⟨convex_univ, fun x _ y _ a b ha hb hab ↦ ?_⟩
+  have h := convexOn_exp.2 (Set.mem_univ (2 * x)) (Set.mem_univ (2 * y)) ha hb hab
+  simp only [smul_eq_mul] at h ⊢
+  -- Rewrite the convex combination of the arguments `2x` and `2y` as `2` times that of `x`, `y`.
+  have harg : a * (2 * x) + b * (2 * y) = 2 * (a * x + b * y) := by ring
+  rw [harg] at h
+  linarith
 
 /-- The potential `exp (2t) - 1 - 2t` dominates the modular `√(1 + t²) - 1`. -/
 theorem sqrt_one_add_sq_sub_one_le_exp_two_mul_sub_one_sub_two_mul (t : ℝ) :
