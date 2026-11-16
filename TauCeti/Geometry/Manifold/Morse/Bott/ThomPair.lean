@@ -43,7 +43,8 @@ fibre metric such frames exist
 
 So whenever the region across a level is such an attachment of the negative disc bundle of a
 critical submanifold, its relative homology is that of the Thom pair of the negative normal bundle,
-which the Thom isomorphism computes from the homology of the submanifold, shifted by the index.
+which the Thom isomorphism computes from the homology of the submanifold with coefficients twisted
+by the orientation local system of `ν⁻`, shifted by the index.
 
 The proof equips `ν⁻` with the inner product `-(2ε)⁻¹ Hessₛ`, which is positive definite and so
 defines the topology of the finite-dimensional fibres
@@ -276,15 +277,24 @@ private theorem attach_discSpherePairIso_hom_comp (hε : 0 < ε) {Z : Type u} [T
   let := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g)
   let := h.negativeNormalNorm hn g hε
   let e := TopCat.homeoOfIso (TopPair.proj₁.mapIso (h.discSpherePairIso hn P g r hε))
+  -- `e` is the first component of `discSpherePairIso` as a homeomorphism: `TopCat.homeoOfIso`,
+  -- `Functor.mapIso` and `TopPair.proj₁` keep the underlying function of `TopPair.Hom.fst`, and
+  -- the first component of a composite of maps of pairs is the composite of first components.
   have he : ⇑(TopPair.Hom.fst ((h.discSpherePairIso hn P g r hε).hom ≫ φ)) =
       TopPair.Hom.fst φ ∘ e := rfl
   refine ⟨he ▸ hφ.comp e.isClosedEmbedding, fun v hv ↦ ?_, ?_⟩
   · exact mem_sphereBundle.2 ((h.norm_eq_one_iff hn g hε _).2 (hφX _ hv))
-  · rw [← hφcover]
-    congr 1
-    ext y
-    refine ⟨fun ⟨v, hv⟩ ↦ ⟨_, hv⟩, fun ⟨x, hx⟩ ↦ ⟨e.symm x, ?_⟩⟩
-    exact (congrFun he _).trans ((congrArg _ (e.apply_symm_apply x)).trans hx)
+  · exact (congrArg (X ∪ ·) ((congrArg range he).trans (e.surjective.range_comp _))).trans hφcover
+
+/-- The isomorphism `discSpherePairIso` induces isomorphisms on relative singular cohomology, by
+functoriality of `TopPair.singularCohomologyFunctor`. -/
+private theorem isIso_singularCohomologyMap_discSpherePairIso_hom (hε : 0 < ε) {C : Type*}
+    [Category C] [HasCoproducts.{u} C] [Abelian C] (R : C) (K : Type*) [Ring K] [Linear K C]
+    (N : C) (k : ℕ) :
+    IsIso (TopPair.singularCohomologyMap (R := R) (k := K) (M := N)
+      (h.discSpherePairIso hn P g r hε).hom k) :=
+  ((TopPair.singularCohomologyFunctor R K N k).mapIso
+    (h.discSpherePairIso hn P g r hε).op).isIso_hom
 
 end Comparison
 
@@ -300,6 +310,7 @@ private theorem continuous_normalHessian_apply_self
     Continuous fun x : TotalSpace P (fun s ↦ i.NormalSpace s hn) ↦
       h.normalHessian hn x.proj x.2 x.2 := by
   let := i.normalSpaceFiberBundle hn hdim
+  -- Adapt the smoothness degrees of `contMDiff_normalHessian_apply_self` to `k = 0`.
   have : IsManifold I (0 + 2) M := by rwa [zero_add]
   have : IsManifold J (0 + 1) S := by rwa [zero_add]
   exact (h.contMDiff_normalHessian_apply_self hn (k := 0)
@@ -372,15 +383,9 @@ theorem isIso_singularCohomologyMap_negativeDiscThomPairMap
   have := isIso_singularCohomologyMap_discSpherePairMap (Fin r → ℝ)
     (fun s ↦ h.negativeNormalSpace hn g s) (h.continuous_norm_negativeNormalNorm hn g r hdim hε)
     R K N k
-  rw [← h.discSpherePairIso_hom_comp_negativeDiscThomPairMap hn P g r hε,
-    TopPair.singularCohomologyMap_comp] at this
-  have : IsIso (TopPair.singularCohomologyMap (R := R) (k := K) (M := N)
-      (h.discSpherePairIso hn P g r hε).hom k) :=
-    ((TopPair.singularCohomologyFunctor R K N k).mapIso
-      (h.discSpherePairIso hn P g r hε).op).isIso_hom
-  exact IsIso.of_isIso_comp_right _
-    (TopPair.singularCohomologyMap (R := R) (k := K) (M := N)
-      (h.discSpherePairIso hn P g r hε).hom k)
+  have hiso := h.isIso_singularCohomologyMap_discSpherePairIso_hom hn P g r hε R K N k
+  rwa [← h.discSpherePairIso_hom_comp_negativeDiscThomPairMap hn P g r hε,
+    TopPair.singularCohomologyMap_comp, isIso_comp_right_iff] at this
 
 /-- **Attaching the negative disc bundle induces isomorphisms on relative homology.** Let `Z` be
 obtained from a closed subset `X` by attaching the negative disc bundle `D_ε`, `ε > 0`, along
@@ -441,14 +446,8 @@ theorem isIso_singularCohomologyMap_of_attach_negativeDiscBundle
   obtain ⟨h₁, h₂, h₃⟩ := h.attach_discSpherePairIso_hom_comp hn P g r hε φ hφ hφX hφcover
   have := isIso_singularCohomologyMap_of_attach_discBundle
     (h.continuous_norm_negativeNormalNorm hn g r hdim hε) hX R k K N h₁ h₂ h₃
-  rw [TopPair.singularCohomologyMap_comp] at this
-  have : IsIso (TopPair.singularCohomologyMap (R := R) (k := K) (M := N)
-      (h.discSpherePairIso hn P g r hε).hom k) :=
-    ((TopPair.singularCohomologyFunctor R K N k).mapIso
-      (h.discSpherePairIso hn P g r hε).op).isIso_hom
-  exact IsIso.of_isIso_comp_right _
-    (TopPair.singularCohomologyMap (R := R) (k := K) (M := N)
-      (h.discSpherePairIso hn P g r hε).hom k)
+  have hiso := h.isIso_singularCohomologyMap_discSpherePairIso_hom hn P g r hε R K N k
+  rwa [TopPair.singularCohomologyMap_comp, isIso_comp_right_iff] at this
 
 end Thom
 
