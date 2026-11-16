@@ -21,19 +21,15 @@ modules definitionally unchanged, while the continuous cohomology groups
 `continuousCohomology i (ofDiscreteModule ℤ G M)` inside the predicates are formed at two different
 universe parameters of Mathlib's construction.
 
-Because `TauCeti.ContinuousCohomology.universeCast` is an isomorphism of topological modules
-between those two continuous cohomology groups, it preserves both triviality (`Subsingleton`) and
-the vanishing of `p`-primary components (`AddCommGroup.primaryComponent`). Consequently, both
+Because continuous cohomology is independent of that extra universe parameter
+(`TauCeti.ContinuousCohomology.subsingleton_continuousCohomology_max_universe_iff` and
+`TauCeti.ContinuousCohomology.primaryComponent_continuousCohomology_eq_bot_max_universe_iff`), both
 vanishing predicates and all three dimension invariants agree between `max u v` and `v`, and in
 particular between `u` and `0`, for every topological group `G` without compactness or
 profiniteness assumptions.
 
 ## Main results
 
-* `TauCeti.ContinuousCohomology.primaryComponent_continuousCohomology_eq_bot_max_universe_iff`,
-  `TauCeti.ContinuousCohomology.primaryComponent_continuousCohomology_eq_bot_universe_iff`:
-  vanishing of the `p`-primary component of `continuousCohomology n X` is independent of the extra
-  universe parameter.
 * `TauCeti.cohomologicalDimensionLE_max_universe_iff`,
   `TauCeti.cohomologicalDimensionLE_universe_iff`: universe independence of
   `CohomologicalDimensionLE`.
@@ -59,43 +55,6 @@ profiniteness assumptions.
 
 public section
 
-namespace TauCeti.ContinuousCohomology
-
-universe w u v
-
-variable {R : Type u} [Ring R] [TopologicalSpace R]
-  {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-
--- None of the `*_max_universe_*` or `*_universe_*` lemmas in this file is marked `@[simp]`: at
--- `w = v` (respectively `u = 0`) the two sides are syntactically identical, so `simp` would loop.
-
-/-- Vanishing of the `p`-primary component of `continuousCohomology n X` is independent of the
-extra universe parameter `w`. -/
-theorem primaryComponent_continuousCohomology_eq_bot_max_universe_iff
-    (X : TopRep.{max v w} R G) (p n : ℕ) :
-    AddCommGroup.primaryComponent (continuousCohomology.{u, v, max v w} n X) p = ⊥ ↔
-      AddCommGroup.primaryComponent (continuousCohomology.{u, v, w} n X) p = ⊥ := by
-  set e := (universeCast.{w} X n).toContinuousLinearEquiv
-  constructor <;> intro h <;> refine (AddSubgroup.eq_bot_iff_forall _).2 fun x ⟨k, hk⟩ ↦ ?_
-  · have hx : e.symm x ∈ AddCommGroup.primaryComponent _ p :=
-      ⟨k, by rw [← map_nsmul, hk, map_zero]⟩
-    rw [h, AddSubgroup.mem_bot] at hx
-    rw [← e.apply_symm_apply x, hx, map_zero]
-  · have hx : e x ∈ AddCommGroup.primaryComponent _ p :=
-      ⟨k, by rw [← map_nsmul, hk, map_zero]⟩
-    rw [h, AddSubgroup.mem_bot] at hx
-    exact e.injective (hx.trans (map_zero e).symm)
-
-/-- For `X : TopRep.{v} R G`, vanishing of the `p`-primary component of `continuousCohomology n X`
-at extra universe `v` is equivalent to vanishing at extra universe `0`. -/
-theorem primaryComponent_continuousCohomology_eq_bot_universe_iff
-    (X : TopRep.{v} R G) (p n : ℕ) :
-    AddCommGroup.primaryComponent (continuousCohomology.{u, v, v} n X) p = ⊥ ↔
-      AddCommGroup.primaryComponent (continuousCohomology.{u, v, 0} n X) p = ⊥ :=
-  primaryComponent_continuousCohomology_eq_bot_max_universe_iff.{0} X p n
-
-end TauCeti.ContinuousCohomology
-
 namespace TauCeti
 
 open _root_.TauCeti.ContinuousCohomology
@@ -103,6 +62,9 @@ open _root_.TauCeti.ContinuousCohomology
 universe v u
 
 variable (p : ℕ) (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+
+-- None of the `*_max_universe_*` or `*_universe_*` lemmas in this file is marked `@[simp]`: at
+-- `v = u` (respectively `u = 0`) the two sides are syntactically identical, so `simp` would loop.
 
 /-- The ordinary vanishing predicate `CohomologicalDimensionLE` is unchanged upon replacing the
 extra coefficient universe `v` by `max u v`. -/

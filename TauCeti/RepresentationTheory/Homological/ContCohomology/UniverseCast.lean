@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.GroupTheory.Torsion
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.DegreeZero
 
 /-!
@@ -71,11 +72,32 @@ instantiating the extra universe `w` explicitly (for example, `universeCast.{0} 
   `TauCeti.ContinuousCohomology.res_comp_universeCast_hom`,
   `TauCeti.ContinuousCohomology.infl_comp_universeCast_hom`: compatibility of `universeCast` with
   compatible-pair functoriality and its named specializations.
+* `TauCeti.ContinuousCohomology.subsingleton_continuousCohomology_max_universe_iff`,
+  `TauCeti.ContinuousCohomology.primaryComponent_continuousCohomology_eq_bot_max_universe_iff`:
+  triviality and `p`-primary component vanishing of `continuousCohomology n X` are independent of
+  the extra universe parameter.
 -/
 
 public section
 
 open CategoryTheory
+
+private theorem eqToHom_apply_heq.{u, w} {R : Type u} [Ring R] [TopologicalSpace R]
+    {A₁ A₂ : TopModuleCat.{w} R} (h : A₁ = A₂) (x : A₁) :
+    (eqToHom h) x ≍ x := by
+  subst h
+  simp
+
+private theorem cochainComplex_of_eq {V : Type*} [Category* V] [Limits.HasZeroMorphisms V]
+    {F₁ F₂ : ℕ → V} (hF : F₁ = F₂)
+    {d₁ : ∀ n, F₁ n ⟶ F₁ (n + 1)} {d₂ : ∀ n, F₂ n ⟶ F₂ (n + 1)}
+    (hd : ∀ n, d₁ n ≍ d₂ n) (hc₁ : ∀ n, d₁ n ≫ d₁ (n + 1) = 0)
+    (hc₂ : ∀ n, d₂ n ≫ d₂ (n + 1) = 0) :
+    CochainComplex.of F₁ d₁ hc₁ = CochainComplex.of F₂ d₂ hc₂ := by
+  refine HomologicalComplex.ext hF ?_
+  rintro i _ rfl
+  simp only [CochainComplex.of_d, comp_eqToHom_iff, Category.assoc]
+  exact (conj_eqToHom_iff_heq' _ _ _ _).2 (hd i)
 
 namespace TopRep
 
@@ -129,16 +151,8 @@ theorem d_universe_heq (X : TopRep.{v} R G) (n : ℕ) :
 /-- The coinduced resolution `TopRep.resolution X` is independent of the extra universe parameter
 `w`. -/
 theorem resolution_max_universe_eq (X : TopRep.{max v w} R G) :
-    resolution.{u, v, max v w} X = resolution.{u, v, w} X := by
-  have aux : ∀ {F₁ F₂ : ℕ → TopRep.{max v w} R G} (_ : F₁ = F₂)
-      {d₁ : ∀ n, F₁ n ⟶ F₁ (n + 1)} {d₂ : ∀ n, F₂ n ⟶ F₂ (n + 1)}
-      (_ : ∀ n, d₁ n ≍ d₂ n) (hc₁ : ∀ n, d₁ n ≫ d₁ (n + 1) = 0)
-      (hc₂ : ∀ n, d₂ n ≫ d₂ (n + 1) = 0),
-      CochainComplex.of F₁ d₁ hc₁ = CochainComplex.of F₂ d₂ hc₂ := by
-    rintro F _ rfl d₁ d₂ hd hc₁ hc₂
-    obtain rfl : d₁ = d₂ := funext fun n ↦ eq_of_heq (hd n)
-    rfl
-  exact aux (funext (X.resolutionX_max_universe_eq.{w})) (X.d_max_universe_heq.{w}) _ _
+    resolution.{u, v, max v w} X = resolution.{u, v, w} X :=
+  cochainComplex_of_eq (funext (X.resolutionX_max_universe_eq.{w})) (X.d_max_universe_heq.{w}) _ _
 
 /-- For `X : TopRep.{v} R G`, `TopRep.resolution X` at extra universe `v` equals that at extra
 universe `0`. -/
@@ -149,16 +163,8 @@ theorem resolution_universe_eq (X : TopRep.{v} R G) :
 /-- The shifted coinduced resolution `TopRep.resolution' X` is independent of the extra universe
 parameter `w`. -/
 theorem resolution'_max_universe_eq (X : TopRep.{max v w} R G) :
-    resolution'.{u, v, max v w} X = resolution'.{u, v, w} X := by
-  have aux : ∀ {F₁ F₂ : ℕ → TopRep.{max v w} R G} (_ : F₁ = F₂)
-      {d₁ : ∀ n, F₁ n ⟶ F₁ (n + 1)} {d₂ : ∀ n, F₂ n ⟶ F₂ (n + 1)}
-      (_ : ∀ n, d₁ n ≍ d₂ n) (hc₁ : ∀ n, d₁ n ≫ d₁ (n + 1) = 0)
-      (hc₂ : ∀ n, d₂ n ≫ d₂ (n + 1) = 0),
-      CochainComplex.of F₁ d₁ hc₁ = CochainComplex.of F₂ d₂ hc₂ := by
-    rintro F _ rfl d₁ d₂ hd hc₁ hc₂
-    obtain rfl : d₁ = d₂ := funext fun n ↦ eq_of_heq (hd n)
-    rfl
-  exact aux (funext fun n ↦ X.resolutionX_max_universe_eq.{w} (n + 1))
+    resolution'.{u, v, max v w} X = resolution'.{u, v, w} X :=
+  cochainComplex_of_eq (funext fun n ↦ X.resolutionX_max_universe_eq.{w} (n + 1))
     (fun n ↦ X.d_max_universe_heq.{w} (n + 1)) _ _
 
 /-- For `X : TopRep.{v} R G`, `TopRep.resolution' X` at extra universe `v` equals that at extra
@@ -192,29 +198,32 @@ theorem homogeneousCochainsUniverseCast_eq_eqToIso (X : TopRep.{max v w} R G) :
     X.homogeneousCochainsUniverseCast.{w} = eqToIso (X.homogeneousCochains_max_universe_eq.{w}) :=
   (rfl)
 
+/-- At `max v w`, `homogeneousCochainsUniverseCast` is the identity isomorphism. -/
+theorem homogeneousCochainsUniverseCast_max_self (X : TopRep.{max v w} R G) :
+    X.homogeneousCochainsUniverseCast.{max v w} = Iso.refl _ := by
+  simp [homogeneousCochainsUniverseCast_eq_eqToIso]
+
 /-- At `w = v`, `homogeneousCochainsUniverseCast` is the identity isomorphism. -/
 @[simp]
 theorem homogeneousCochainsUniverseCast_self (X : TopRep.{v} R G) :
-    X.homogeneousCochainsUniverseCast.{v} = Iso.refl _ := by
-  simp [homogeneousCochainsUniverseCast_eq_eqToIso]
+    X.homogeneousCochainsUniverseCast.{v} = Iso.refl _ :=
+  X.homogeneousCochainsUniverseCast_max_self.{0}
 
 /-- `homogeneousCochainsUniverseCast` preserves homogeneous cochains in every degree up to
 heterogeneous equality. -/
 theorem homogeneousCochainsUniverseCast_hom_f_apply_heq (X : TopRep.{max v w} R G) (n : ℕ)
     (a : (homogeneousCochains.{u, v, max v w} X).X n) :
     (X.homogeneousCochainsUniverseCast.{w}).hom.f n a ≍ a := by
-  have aux : ∀ {C₁ C₂ : CochainComplex (TopModuleCat R) ℕ} (h : C₁ = C₂) (a : C₁.X n),
-      (eqToIso h).hom.f n a ≍ a := by rintro C _ rfl a; simp
-  exact aux (X.homogeneousCochains_max_universe_eq.{w}) a
+  rw [homogeneousCochainsUniverseCast_eq_eqToIso, eqToIso.hom, HomologicalComplex.eqToHom_f]
+  exact eqToHom_apply_heq _ a
 
 /-- The inverse of `homogeneousCochainsUniverseCast` preserves homogeneous cochains in every degree
 up to heterogeneous equality. -/
 theorem homogeneousCochainsUniverseCast_inv_f_apply_heq (X : TopRep.{max v w} R G) (n : ℕ)
     (a : (homogeneousCochains.{u, v, w} X).X n) :
     (X.homogeneousCochainsUniverseCast.{w}).inv.f n a ≍ a := by
-  have aux : ∀ {C₁ C₂ : CochainComplex (TopModuleCat R) ℕ} (h : C₁ = C₂) (a : C₂.X n),
-      (eqToIso h).inv.f n a ≍ a := by rintro C _ rfl a; simp
-  exact aux (X.homogeneousCochains_max_universe_eq.{w}) a
+  rw [homogeneousCochainsUniverseCast_eq_eqToIso, eqToIso.inv, HomologicalComplex.eqToHom_f]
+  exact eqToHom_apply_heq _ a
 
 -- Not `@[simp]`: `simp` rewrites the implicit carrier `(homogeneousCochains X).X k` through
 -- `CategoryTheory.Functor.mapHomologicalComplex_obj_X`, so these statements are for `rw`.
@@ -309,11 +318,16 @@ theorem cocyclesUniverseCast_eq_eqToIso (X : TopRep.{max v w} R G) (n : ℕ) :
   rw [cocyclesUniverseCast, homogeneousCochainsUniverseCast_eq_eqToIso, eqToIso_map]
   rfl
 
+/-- At `max v w`, `cocyclesUniverseCast` is the identity isomorphism. -/
+theorem cocyclesUniverseCast_max_self (X : TopRep.{max v w} R G) (n : ℕ) :
+    cocyclesUniverseCast.{max v w} X n = Iso.refl _ := by
+  simp [cocyclesUniverseCast_eq_eqToIso]
+
 /-- At `w = v`, `cocyclesUniverseCast` is the identity isomorphism. -/
 @[simp]
 theorem cocyclesUniverseCast_self (X : TopRep.{v} R G) (n : ℕ) :
-    cocyclesUniverseCast.{v} X n = Iso.refl _ := by
-  simp [cocyclesUniverseCast_eq_eqToIso]
+    cocyclesUniverseCast.{v} X n = Iso.refl _ :=
+  cocyclesUniverseCast_max_self.{0} X n
 
 /-- **Transport of continuous cohomology across the extra universe parameter**: the canonical
 isomorphism `continuousCohomology.{u, v, max v w} n X ≅ continuousCohomology.{u, v, w} n X` in
@@ -329,29 +343,30 @@ theorem universeCast_eq_eqToIso (X : TopRep.{max v w} R G) (n : ℕ) :
   rw [universeCast, homogeneousCochainsUniverseCast_eq_eqToIso, eqToIso_map]
   rfl
 
+/-- At `max v w`, `universeCast` is the identity isomorphism. -/
+theorem universeCast_max_self (X : TopRep.{max v w} R G) (n : ℕ) :
+    universeCast.{max v w} X n = Iso.refl _ := by
+  simp [universeCast_eq_eqToIso]
+
 /-- At `w = v`, `universeCast` is the identity isomorphism. -/
 @[simp]
 theorem universeCast_self (X : TopRep.{v} R G) (n : ℕ) :
-    universeCast.{v} X n = Iso.refl _ := by
-  simp [universeCast_eq_eqToIso]
+    universeCast.{v} X n = Iso.refl _ :=
+  universeCast_max_self.{0} X n
 
 /-- `universeCast` preserves classes up to heterogeneous equality. -/
 theorem universeCast_hom_apply_heq (X : TopRep.{max v w} R G) (n : ℕ)
     (x : continuousCohomology.{u, v, max v w} n X) :
     (universeCast.{w} X n).hom x ≍ x := by
-  rw [universeCast_eq_eqToIso]
-  have aux : ∀ {A₁ A₂ : TopModuleCat.{max v w} R} (h : A₁ = A₂) (x : A₁),
-      (eqToIso h).hom x ≍ x := by rintro A _ rfl x; simp
-  exact aux (continuousCohomology_max_universe_eq.{w} X n) x
+  rw [universeCast_eq_eqToIso, eqToIso.hom]
+  exact eqToHom_apply_heq _ x
 
 /-- The inverse of `universeCast` preserves classes up to heterogeneous equality. -/
 theorem universeCast_inv_apply_heq (X : TopRep.{max v w} R G) (n : ℕ)
     (x : continuousCohomology.{u, v, w} n X) :
     (universeCast.{w} X n).inv x ≍ x := by
-  rw [universeCast_eq_eqToIso]
-  have aux : ∀ {A₁ A₂ : TopModuleCat.{max v w} R} (h : A₁ = A₂) (x : A₂),
-      (eqToIso h).inv x ≍ x := by rintro A _ rfl x; simp
-  exact aux (continuousCohomology_max_universe_eq.{w} X n) x
+  rw [universeCast_eq_eqToIso, eqToIso.inv]
+  exact eqToHom_apply_heq _ x
 
 /-! ### Compatibility with cocycles and homogeneous cocycle classes -/
 
@@ -426,12 +441,12 @@ theorem universeCast_hom_cochainClass (X : TopRep.{max v w} R G) (n : ℕ)
     (haa' : a ≍ a') :
     (universeCast.{w} X n).hom (TopRep.cochainClass.{u, v, max v w} X n a ha) =
       TopRep.cochainClass.{u, v, w} X n a' ha' := by
-  rw [cochainClass_def, cochainClass_def, universeCast_hom_π]
-  congr 1
-  apply (homogeneousCochains.{u, v, w} X).iCycles_injective n
-  rw [iCycles_cocyclesUniverseCast_hom_apply, HomologicalComplex.iCycles_cyclesMkOfEq,
-    HomologicalComplex.iCycles_cyclesMkOfEq]
-  exact eq_of_heq ((X.homogeneousCochainsUniverseCast_hom_f_apply_heq.{w} n a).trans haa')
+  obtain rfl : ((X.homogeneousCochainsUniverseCast.{w}).hom.f n).hom a = a' :=
+    eq_of_heq ((X.homogeneousCochainsUniverseCast_hom_f_apply_heq.{w} n a).trans haa')
+  rw [cochainClass_def, cochainClass_def, universeCast, Functor.mapIso_hom,
+    HomologicalComplex.homologyFunctor_map]
+  exact HomologicalComplex.homologyMap_homologyπ_cyclesMkOfEq
+    (X.homogeneousCochainsUniverseCast.{w}).hom a (n + 1) (CochainComplex.next ℕ n) ha
 
 /-- The inverse of `universeCast` sends the class of a homogeneous cocycle `a'` to the class of any
 heterogeneously equal homogeneous cocycle `a`. -/
@@ -443,12 +458,7 @@ theorem universeCast_inv_cochainClass (X : TopRep.{max v w} R G) (n : ℕ)
     (haa' : a' ≍ a) :
     (universeCast.{w} X n).inv (TopRep.cochainClass.{u, v, w} X n a' ha') =
       TopRep.cochainClass.{u, v, max v w} X n a ha := by
-  rw [cochainClass_def, cochainClass_def, universeCast_inv_π]
-  congr 1
-  apply (homogeneousCochains.{u, v, max v w} X).iCycles_injective n
-  rw [iCycles_cocyclesUniverseCast_inv_apply, HomologicalComplex.iCycles_cyclesMkOfEq,
-    HomologicalComplex.iCycles_cyclesMkOfEq]
-  exact eq_of_heq ((X.homogeneousCochainsUniverseCast_inv_f_apply_heq.{w} n a').trans haa')
+  rw [← universeCast_hom_cochainClass.{w} X n a ha a' ha' haa'.symm, Iso.hom_inv_id_apply]
 
 /-- In degree `0`, `universeCast` preserves the class of any homogeneous cocycle. -/
 @[simp]
@@ -566,6 +576,17 @@ theorem universeCast_inv_degreeZeroClass (X : TopRep.{max v w} R G) (x : X.V)
 
 /-! ### Compatibility with functoriality -/
 
+omit [TopologicalSpace G] [IsTopologicalGroup G] [TopologicalSpace H] [IsTopologicalGroup H] in
+private theorem resHom_heq_congr {α : TopRep.{max v w} R G → TopRep.{max v w} R H → Sort*}
+    (φ : H →* G) (F : ∀ A B, (TopRep.res φ A ⟶ B) → α A B)
+    {A₁ A₂ : TopRep.{max v w} R G} {B₁ B₂ : TopRep.{max v w} R H}
+    (hA : A₁ = A₂) (hB : B₁ = B₂)
+    {g₁ : TopRep.res φ A₁ ⟶ B₁} {g₂ : TopRep.res φ A₂ ⟶ B₂} (hg : g₁ ≍ g₂) :
+    F A₁ B₁ g₁ ≍ F A₂ B₂ g₂ := by
+  subst hA hB
+  cases eq_of_heq hg
+  rfl
+
 /-- Every degree of `ContinuousCohomology.resolutionMap` is heterogeneously independent of the extra
 universe parameter `w`. -/
 theorem resolutionMap_max_universe_heq (φ : H →ₜ* G)
@@ -577,18 +598,9 @@ theorem resolutionMap_max_universe_heq (φ : H →ₜ* G)
   | zero => rfl
   | succ n ih =>
     simp only [_root_.ContinuousCohomology.resolutionMap_succ]
-    have aux : ∀ {A₁ A₂ : TopRep.{max v w} R G} {B₁ B₂ : TopRep.{max v w} R H}
-        (_ : A₁ = A₂) (_ : B₁ = B₂)
-        (g₁ : TopRep.res (φ : H →* G) A₁ ⟶ B₁)
-        (g₂ : TopRep.res (φ : H →* G) A₂ ⟶ B₂), g₁ ≍ g₂ →
-        (ofHom (ContRepresentation.coind₁ResMap φ g₁.hom) :
-            TopRep.res (φ : H →* G) A₁.coind₁ ⟶ B₁.coind₁) ≍
-          (ofHom (ContRepresentation.coind₁ResMap φ g₂.hom) :
-            TopRep.res (φ : H →* G) A₂.coind₁ ⟶ B₂.coind₁) := by
-      rintro A _ B _ rfl rfl g₁ g₂ hg
-      cases eq_of_heq hg
-      rfl
-    exact aux (X.resolutionX_max_universe_eq.{w} n) (Y.resolutionX_max_universe_eq.{w} n) _ _ ih
+    exact resHom_heq_congr (φ : H →* G)
+      (fun _ _ g ↦ ofHom (ContRepresentation.coind₁ResMap φ g.hom))
+      (X.resolutionX_max_universe_eq.{w} n) (Y.resolutionX_max_universe_eq.{w} n) ih
 
 /-- For `X : TopRep.{v} R G` and `Y : TopRep.{v} R H`, `ContinuousCohomology.resolutionMap` at extra
 universe `v` is heterogeneously equal to that at extra universe `0`. -/
@@ -606,29 +618,16 @@ theorem cochainsMap_max_universe_heq (φ : H →ₜ* G)
     (f : TopRep.res (φ : H →* G) X ⟶ Y) :
     _root_.ContinuousCohomology.cochainsMap.{u, v, max v w} φ f ≍
       _root_.ContinuousCohomology.cochainsMap.{u, v, w} φ f := by
-  have hX := X.homogeneousCochains_max_universe_eq.{w}
-  have hY := Y.homogeneousCochains_max_universe_eq.{w}
-  have hf : ∀ n, (_root_.ContinuousCohomology.cochainsMap.{u, v, max v w} φ f).f n ≍
-      (_root_.ContinuousCohomology.cochainsMap.{u, v, w} φ f).f n := by
-    intro n
-    simp only [_root_.ContinuousCohomology.cochainsMap_f]
-    have aux : ∀ {A₁ A₂ : TopRep.{max v w} R G} {B₁ B₂ : TopRep.{max v w} R H}
-        (_ : A₁ = A₂) (_ : B₁ = B₂)
-        (g₁ : TopRep.res (φ : H →* G) A₁ ⟶ B₁)
-        (g₂ : TopRep.res (φ : H →* G) A₂ ⟶ B₂), g₁ ≍ g₂ →
-        TopRep.invariantsResMap (φ : H →* G) g₁ ≍ TopRep.invariantsResMap (φ : H →* G) g₂ := by
-      rintro A _ B _ rfl rfl g₁ g₂ hg
-      cases eq_of_heq hg
-      rfl
-    exact aux (X.resolutionX_max_universe_eq.{w} (n + 1))
-      (Y.resolutionX_max_universe_eq.{w} (n + 1)) _ _
+  rw [← conj_eqToHom_iff_heq _ _ (X.homogeneousCochains_max_universe_eq.{w})
+    (Y.homogeneousCochains_max_universe_eq.{w})]
+  refine HomologicalComplex.hom_ext _ _ fun n ↦ ?_
+  simp only [HomologicalComplex.comp_f, HomologicalComplex.eqToHom_f,
+    _root_.ContinuousCohomology.cochainsMap_f]
+  exact (conj_eqToHom_iff_heq' _ _ _ _).2 <|
+    resHom_heq_congr (φ : H →* G) (fun _ _ ↦ TopRep.invariantsResMap (φ : H →* G))
+      (X.resolutionX_max_universe_eq.{w} (n + 1))
+      (Y.resolutionX_max_universe_eq.{w} (n + 1))
       (resolutionMap_max_universe_heq.{w} φ f (n + 1))
-  have aux : ∀ {C₁ C₂ D₁ D₂ : CochainComplex (TopModuleCat R) ℕ}
-      (_ : C₁ = C₂) (_ : D₁ = D₂) (m₁ : C₁ ⟶ D₁) (m₂ : C₂ ⟶ D₂),
-      (∀ n, m₁.f n ≍ m₂.f n) → m₁ ≍ m₂ := by
-    rintro C _ D _ rfl rfl m₁ m₂ hm
-    exact heq_of_eq (HomologicalComplex.hom_ext _ _ fun n ↦ eq_of_heq (hm n))
-  exact aux hX hY _ _ hf
 
 /-- For `X : TopRep.{v} R G` and `Y : TopRep.{v} R H`, `ContinuousCohomology.cochainsMap` at extra
 universe `v` is heterogeneously equal to that at extra universe `0`. -/
@@ -649,15 +648,8 @@ theorem cochainsMap_comp_homogeneousCochainsUniverseCast_hom (φ : H →ₜ* G)
       (X.homogeneousCochainsUniverseCast.{w}).hom ≫
         _root_.ContinuousCohomology.cochainsMap.{u, v, w} φ f := by
   rw [homogeneousCochainsUniverseCast_eq_eqToIso, homogeneousCochainsUniverseCast_eq_eqToIso,
-    eqToIso.hom, eqToIso.hom]
-  have aux : ∀ {C₁ C₂ D₁ D₂ : CochainComplex (TopModuleCat R) ℕ}
-      (hC : C₁ = C₂) (hD : D₁ = D₂) (m₁ : C₁ ⟶ D₁) (m₂ : C₂ ⟶ D₂),
-      m₁ ≍ m₂ → m₁ ≫ eqToHom hD = eqToHom hC ≫ m₂ := by
-    rintro C _ D _ rfl rfl m₁ m₂ hm
-    cases eq_of_heq hm
-    simp
-  exact aux (X.homogeneousCochains_max_universe_eq.{w}) (Y.homogeneousCochains_max_universe_eq.{w})
-    _ _ (cochainsMap_max_universe_heq.{w} φ f)
+    eqToIso.hom, eqToIso.hom, comp_eqToHom_iff, Category.assoc]
+  exact (conj_eqToHom_iff_heq' _ _ _ _).2 (cochainsMap_max_universe_heq.{w} φ f)
 
 /-- The inverse of `homogeneousCochainsUniverseCast` commutes with compatible-pair maps on
 homogeneous cochains. -/
@@ -793,5 +785,21 @@ theorem subsingleton_continuousCohomology_universe_iff (X : TopRep.{v} R G) (n :
     Subsingleton (continuousCohomology.{u, v, v} n X) ↔
       Subsingleton (continuousCohomology.{u, v, 0} n X) :=
   subsingleton_continuousCohomology_max_universe_iff.{0} X n
+
+/-- Vanishing of the `p`-primary component of `continuousCohomology n X` is independent of the
+extra universe parameter `w`. -/
+theorem primaryComponent_continuousCohomology_eq_bot_max_universe_iff
+    (X : TopRep.{max v w} R G) (p n : ℕ) :
+    AddCommGroup.primaryComponent (continuousCohomology.{u, v, max v w} n X) p = ⊥ ↔
+      AddCommGroup.primaryComponent (continuousCohomology.{u, v, w} n X) p = ⊥ := by
+  rw [continuousCohomology_max_universe_eq.{w} X n]
+
+/-- For `X : TopRep.{v} R G`, vanishing of the `p`-primary component of `continuousCohomology n X`
+at extra universe `v` is equivalent to vanishing at extra universe `0`. -/
+theorem primaryComponent_continuousCohomology_eq_bot_universe_iff
+    (X : TopRep.{v} R G) (p n : ℕ) :
+    AddCommGroup.primaryComponent (continuousCohomology.{u, v, v} n X) p = ⊥ ↔
+      AddCommGroup.primaryComponent (continuousCohomology.{u, v, 0} n X) p = ⊥ :=
+  primaryComponent_continuousCohomology_eq_bot_max_universe_iff.{0} X p n
 
 end TauCeti.ContinuousCohomology
