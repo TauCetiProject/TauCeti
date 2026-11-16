@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors, Axel Delaval, Jie Xu, Shitan Xu
 module
 
 public import Mathlib.Data.Matrix.Basic
-public import Mathlib.RingTheory.Localization.Free
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import TauCeti.RingTheory.KrullDimension.FiniteType
+import Mathlib.RingTheory.Localization.Free
 import Mathlib.LinearAlgebra.Matrix.Invertible
 import Mathlib.LinearAlgebra.Matrix.Module
 import TauCeti.LinearAlgebra.Matrix.BlockSucc

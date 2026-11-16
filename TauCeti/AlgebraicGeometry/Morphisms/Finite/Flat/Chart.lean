@@ -9,7 +9,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Finite
 public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 public import Mathlib.AlgebraicGeometry.Morphisms.FinitePresentation
 
-public import TauCeti.RingTheory.NoetherNormalization
+import TauCeti.RingTheory.NoetherNormalization
 import TauCeti.AlgebraicGeometry.Morphisms.FiniteType
 
 /-!
