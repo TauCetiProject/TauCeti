@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
+import TauCeti.Analysis.Distribution.SchwartzSpace.LittlewoodPaley
 import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.Distribution.TemperedDistribution.Convolution
 import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
@@ -120,14 +121,12 @@ private def bump : ContDiffBump (0 : E) := ⟨2, 3, two_pos, by norm_num⟩
 /-- The symbol `ξ ↦ χ (R⁻¹ • ξ)`, equal to one on the ball of radius `2 R`, as a Schwartz
 function. -/
 private def cutoff {R : ℝ} (hR : 0 < R) : 𝓢(E, ℂ) :=
-  HasCompactSupport.toSchwartzMap (f := fun ξ ↦ ((bump : ContDiffBump (0 : E)) (R⁻¹ • ξ) : ℂ))
-    ((bump.hasCompactSupport.comp_smul (inv_ne_zero hR.ne')).comp_left Complex.ofReal_zero)
-    (Complex.ofRealCLM.contDiff.comp (bump.contDiff.comp (contDiff_const_smul _)))
+  (bump : ContDiffBump (0 : E)).lowPassSchwartz hR.ne'
 
 omit [MeasurableSpace E] [BorelSpace E] in
 private theorem cutoff_apply {R : ℝ} (hR : 0 < R) (ξ : E) :
     cutoff hR ξ = ((bump : ContDiffBump (0 : E)) (R⁻¹ • ξ) : ℂ) :=
-  rfl
+  ContDiffBump.lowPassSchwartz_apply _ hR.ne' ξ
 
 omit [MeasurableSpace E] [BorelSpace E] in
 /-- The cutoff at scale `R` equals one outside a closed set disjoint from the closed ball of

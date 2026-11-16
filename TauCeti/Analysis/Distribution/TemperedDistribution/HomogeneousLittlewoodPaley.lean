@@ -6,12 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Distribution.TemperedDistribution.LittlewoodPaley
-import Mathlib.Analysis.Distribution.SchwartzSpace.CompactSupport
 import TauCeti.Analysis.Distribution.TemperedDistribution.Bernstein
 import TauCeti.Analysis.Distribution.TemperedDistribution.Convolution
 import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
 import TauCeti.Analysis.Fourier.ChangeOfVariables
-import TauCeti.Analysis.Normed.Module.Ball
+import TauCeti.Analysis.SpecificLimits.ZPow
 
 /-!
 # The homogeneous Littlewood–Paley decomposition of a tempered distribution
@@ -50,8 +49,9 @@ nontrivial space. The truncation `Sₐ f` of `f ∈ Lᵖ` has spectrum in the ba
 by a constant times `2^{a n / p} ‖f‖_p`, where `n ≥ 1` is the dimension
 (`TemperedDistribution.exists_fourierMultiplierCLM_inv_smul_eq_and_norm_le_mul_rpow`). This tends
 to `0` as `a → -∞`, so `Sₐ f → 0` and `f = ∑_{j ∈ ℤ} Pⱼ f`
-(`TemperedDistribution.tendsto_sum_homogeneousLittlewoodPaleyBlock_of_ne_top`). At `p = ∞` the
-constants show that this fails.
+(`TemperedDistribution.tendsto_sum_homogeneousLittlewoodPaleyBlock_of_ne_top`). At `p = ∞` this
+fails: a nonzero constant function lies in `L^∞` but has no homogeneous blocks
+(`TemperedDistribution.homogeneousLittlewoodPaleyBlock_eq_zero_of_isVanishingOn_compl_zero`).
 
 Like the inhomogeneous blocks, the homogeneous blocks are bounded on every `Lᵖ`, `1 ≤ p ≤ ∞`,
 uniformly in `j ∈ ℤ`: the kernel `𝓕⁻ ψⱼ` is the `L¹`-normalised dilate of `𝓕⁻ ψ₀`. They are
@@ -70,9 +70,8 @@ inequalities on annuli apply.
   block lies in its dyadic annulus.
 * `TemperedDistribution.exists_homogeneousLittlewoodPaleyBlock_compL_eq_zero`: almost
   orthogonality, also between the blocks of two bump functions.
-* `TemperedDistribution.exists_homogeneousLittlewoodPaleyBlock_eq_and_norm_le` and
-  `TemperedDistribution.exists_fourierMultiplierCLM_inv_smul_eq_and_norm_le`: the blocks and the
-  low-pass truncations are bounded on `Lᵖ`, uniformly in the scale, and
+* `TemperedDistribution.exists_homogeneousLittlewoodPaleyBlock_eq_and_norm_le`: the blocks are
+  bounded on `Lᵖ`, uniformly in `j ∈ ℤ`, and
   `TemperedDistribution.exists_fourierMultiplierCLM_inv_smul_eq_and_norm_le_mul_rpow`: the
   truncation at scale `R` of an `Lᵖ` function is `O(R ^ (n / p))` in `L^∞`.
 * `TemperedDistribution.tendsto_fourierMultiplierCLM_two_zpow_atTop`: `Sᵦ u → u` as `b → ∞`.
@@ -130,23 +129,6 @@ private theorem hasTemperateGrowth_ofReal_littlewoodPaley (j : ℤ) :
     (fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)).HasTemperateGrowth := by
   fun_prop
 
-/-- The low-pass symbol `φ (R⁻¹ ·)`, as a complex Schwartz function. -/
-private noncomputable def lowPassSymbol {R : ℝ} (hR : R ≠ 0) : 𝓢(E, ℂ) :=
-  HasCompactSupport.toSchwartzMap (f := fun ξ ↦ (φ (R⁻¹ • ξ) : ℂ))
-    ((φ.hasCompactSupport.comp_smul (inv_ne_zero hR)).comp_left Complex.ofReal_zero)
-    (Complex.ofRealCLM.contDiff.comp (φ.contDiff.comp (contDiff_const_smul _)))
-
-omit [MeasurableSpace E] [BorelSpace E] in
-private theorem coe_lowPassSymbol {R : ℝ} (hR : R ≠ 0) :
-    ⇑(lowPassSymbol φ hR) = fun ξ ↦ (φ (R⁻¹ • ξ) : ℂ) :=
-  rfl
-
-omit [MeasurableSpace E] [BorelSpace E] in
-private theorem hasTemperateGrowth_lowPassSymbol (a : ℤ) :
-    (fun ξ ↦ (φ (((2 : ℝ) ^ a)⁻¹ • ξ) : ℂ)).HasTemperateGrowth :=
-  coe_lowPassSymbol φ (zpow_ne_zero a two_ne_zero) ▸
-    (lowPassSymbol φ (zpow_ne_zero a two_ne_zero)).hasTemperateGrowth
-
 /-- For `j ≥ 1` the homogeneous block `Pⱼ` is the inhomogeneous block `Δⱼ`. -/
 theorem homogeneousLittlewoodPaleyBlock_natCast {j : ℕ} (hj : j ≠ 0) :
     homogeneousLittlewoodPaleyBlock F φ j = littlewoodPaleyBlock F φ j := by
@@ -168,7 +150,8 @@ theorem sum_homogeneousLittlewoodPaleyBlock_Ioc {a b : ℤ} (hab : a ≤ b) :
   have hadd := fourierMultiplierCLM_add (F := F)
     (Function.HasTemperateGrowth.sum (s := Finset.Ioc a b) fun j _ ↦
       hasTemperateGrowth_ofReal_littlewoodPaley φ j)
-    (hasTemperateGrowth_lowPassSymbol φ a)
+    (φ.coe_lowPassSchwartz (zpow_ne_zero a two_ne_zero) ▸
+      (φ.lowPassSchwartz (zpow_ne_zero a two_ne_zero)).hasTemperateGrowth)
   rw [hsum, fourierMultiplierCLM_sum F fun j _ ↦ hasTemperateGrowth_ofReal_littlewoodPaley φ j]
     at hadd
   simp_rw [homogeneousLittlewoodPaleyBlock_eq_fourierMultiplierCLM]
@@ -245,45 +228,32 @@ theorem exists_homogeneousLittlewoodPaleyBlock_compL_eq_zero (φ' : ContDiffBump
 /-! ### Reconstruction -/
 
 omit [MeasurableSpace E] [BorelSpace E] in
-/-- The low-pass symbol `φ (R⁻¹ ·)` vanishes outside the closed ball of radius `R φ.rOut`. -/
+/-- The complex low-pass symbol `φ (R⁻¹ ·)`, `R > 0`, vanishes outside the closed ball of radius
+`R φ.rOut`. -/
 private theorem ofReal_inv_smul_eq_zero {R : ℝ} (hR : 0 < R) :
-    ∀ ξ ∈ (Metric.closedBall (0 : E) (R * φ.rOut))ᶜ, (φ (R⁻¹ • ξ) : ℂ) = 0 := by
-  intro ξ hξ
+    ∀ ξ ∈ (Metric.closedBall (0 : E) (R * φ.rOut))ᶜ, (φ (R⁻¹ • ξ) : ℂ) = 0 := fun ξ hξ ↦ by
   rw [Set.mem_compl_iff, Metric.mem_closedBall, dist_zero_right, not_le] at hξ
-  rw [φ.zero_of_le_dist (by
-    rw [dist_zero_right, TauCeti.norm_inv_smul_of_nonneg hR.le, le_div_iff₀ hR, mul_comm]
-    exact hξ.le), Complex.ofReal_zero]
-
-/-- `2^b → ∞` as `b → ∞` along the integers. -/
-private theorem tendsto_two_zpow_atTop : Tendsto (fun b : ℤ ↦ (2 : ℝ) ^ b) atTop atTop := by
-  simpa only [Function.comp_def, id_eq, Real.rpow_intCast] using
-    (tendsto_rpow_atTop_of_base_gt_one 2 one_lt_two).comp
-      ((tendsto_intCast_atTop_iff (R := ℝ)).2 tendsto_id)
-
-/-- `2^a → 0` as `a → -∞` along the integers. -/
-private theorem tendsto_two_zpow_atBot : Tendsto (fun a : ℤ ↦ (2 : ℝ) ^ a) atBot (𝓝 0) := by
-  simpa only [Function.comp_def, id_eq, Real.rpow_intCast] using
-    (tendsto_rpow_atBot_of_base_gt_one 2 one_lt_two).comp
-      ((tendsto_intCast_atBot_iff (R := ℝ)).2 tendsto_id)
+  rw [φ.apply_inv_smul_eq_zero_of_le_norm hR hξ.le, Complex.ofReal_zero]
 
 /-- **High-frequency reconstruction.** For every tempered distribution `u`, the low-pass
 truncations `𝓕⁻ (φ (2^{-b} ·) • 𝓕 u)` converge to `u` as `b → ∞`. -/
 theorem tendsto_fourierMultiplierCLM_two_zpow_atTop (u : 𝓢'(E, F)) :
     Tendsto (fun b : ℤ ↦ fourierMultiplierCLM F (fun ξ ↦ (φ (((2 : ℝ) ^ b)⁻¹ • ξ) : ℂ)) u)
-      atTop (𝓝 u) := by
-  refine PointwiseConvergenceCLM.tendsto_iff_forall_tendsto.2 fun f ↦ ?_
-  simp only [fourierMultiplierCLM_apply_apply]
-  have h := ((map_continuous u).tendsto _).comp <|
-    ((fourierCLM ℂ 𝓢(E, ℂ)).continuous.tendsto _).comp <|
-      (SchwartzMap.tendsto_smulLeftCLM_comp_smul φ.contDiff φ.hasCompactSupport φ.eventuallyEq_one
-        (𝓕⁻ f)).comp (tendsto_inv_atTop_zero.comp tendsto_two_zpow_atTop)
-  rw [fourierCLM_apply, FourierTransform.fourier_fourierInv_eq] at h
-  refine h.congr fun b ↦ ?_
-  have hc : (fun ξ ↦ φ (((2 : ℝ) ^ b)⁻¹ • ξ)).HasTemperateGrowth :=
-    φ.hasCompactSupport.hasTemperateGrowth φ.contDiff |>.comp
-      ((((2 : ℝ) ^ b)⁻¹ • ContinuousLinearMap.id ℝ E).hasTemperateGrowth)
-  simp only [Function.comp_apply, fourierCLM_apply]
-  rw [← SchwartzMap.smulLeftCLM_ofReal ℂ hc, RCLike.ofReal_eq_complex_ofReal]
+      atTop (𝓝 u) :=
+  tendsto_fourierMultiplierCLM_contDiffBump φ
+    (TauCeti.tendsto_zpow_atTop_atTop_of_one_lt one_lt_two) u
+
+/-- Eventually along `a → -∞`, `b → ∞`, the two-sided partial sum `∑_{a < j ≤ b} Pⱼ u` is the
+difference `Sᵦ u - Sₐ u` of the low-pass truncations. -/
+private theorem sum_homogeneousLittlewoodPaleyBlock_Ioc_eventuallyEq (u : 𝓢'(E, F)) :
+    (fun ab : ℤ × ℤ ↦ ∑ j ∈ Finset.Ioc ab.1 ab.2, homogeneousLittlewoodPaleyBlock F φ j u)
+      =ᶠ[atBot ×ˢ atTop] fun ab ↦
+        fourierMultiplierCLM F (fun ξ ↦ (φ (((2 : ℝ) ^ ab.2)⁻¹ • ξ) : ℂ)) u -
+          fourierMultiplierCLM F (fun ξ ↦ (φ (((2 : ℝ) ^ ab.1)⁻¹ • ξ) : ℂ)) u := by
+  filter_upwards [tendsto_fst.eventually (eventually_le_atBot (0 : ℤ)),
+    tendsto_snd.eventually (eventually_ge_atTop (0 : ℤ))] with ab ha hb
+  rw [← _root_.sum_apply, sum_homogeneousLittlewoodPaleyBlock_Ioc φ (ha.trans hb),
+    _root_.sub_apply]
 
 /-- If the two-sided partial sums of the homogeneous blocks of `u` converge to `v`, then the
 low-pass truncations `𝓕⁻ (φ (2^{-a} ·) • 𝓕 u)` converge to `u - v` as `a → -∞`. -/
@@ -297,11 +267,8 @@ private theorem tendsto_fourierMultiplierCLM_two_zpow_atBot_of_tendsto_sum {u v 
   have hb := (tendsto_fourierMultiplierCLM_two_zpow_atTop φ u).comp
     (tendsto_snd (f := (atBot : Filter ℤ)))
   refine (hb.sub h).congr' ?_
-  filter_upwards [tendsto_fst.eventually (eventually_le_atBot (0 : ℤ)),
-    tendsto_snd.eventually (eventually_ge_atTop (0 : ℤ))] with ab ha hb
-  simp only [Function.comp_apply, ← _root_.sum_apply,
-    sum_homogeneousLittlewoodPaleyBlock_Ioc φ (ha.trans hb), _root_.sub_apply,
-    sub_sub_cancel]
+  filter_upwards [sum_homogeneousLittlewoodPaleyBlock_Ioc_eventuallyEq φ u] with ab hab
+  rw [Function.comp_apply, Function.comp_apply, hab, sub_sub_cancel]
 
 /-- **Homogeneous Littlewood–Paley reconstruction.** The two-sided partial sums
 `∑_{a < j ≤ b} Pⱼ u` converge to `u` as `a → -∞` and `b → ∞` exactly when the low-pass
@@ -314,13 +281,9 @@ theorem tendsto_sum_homogeneousLittlewoodPaleyBlock_iff (u : 𝓢'(E, F)) :
         atBot (𝓝 0) := by
   refine ⟨fun h ↦ by simpa using tendsto_fourierMultiplierCLM_two_zpow_atBot_of_tendsto_sum φ h,
     fun h ↦ ?_⟩
-  have hb := (tendsto_fourierMultiplierCLM_two_zpow_atTop φ u).comp
-    (tendsto_snd (f := (atBot : Filter ℤ)))
-  refine (sub_zero u ▸ hb.sub (h.comp tendsto_fst)).congr' ?_
-  filter_upwards [tendsto_fst.eventually (eventually_le_atBot (0 : ℤ)),
-    tendsto_snd.eventually (eventually_ge_atTop (0 : ℤ))] with ab ha hb
-  simp only [Function.comp_apply, ← _root_.sum_apply,
-    sum_homogeneousLittlewoodPaleyBlock_Ioc φ (ha.trans hb), _root_.sub_apply]
+  refine (sub_zero u ▸ ((tendsto_fourierMultiplierCLM_two_zpow_atTop φ u).comp
+    tendsto_snd).sub (h.comp tendsto_fst)).congr' ?_
+  exact (sum_homogeneousLittlewoodPaleyBlock_Ioc_eventuallyEq φ u).symm
 
 open Distribution in
 /-- **Reconstruction modulo polynomials.** If the two-sided partial sums `∑_{a < j ≤ b} Pⱼ u`
@@ -342,7 +305,7 @@ theorem isVanishingOn_fourier_sub_of_tendsto_sum_homogeneousLittlewoodPaleyBlock
   refine tendsto_nhds_unique hlim (tendsto_const_nhds.congr' ?_)
   -- Once `2^a φ.rOut < r`, the spectrum of the truncation misses the support of `ψ`.
   have hsmall : ∀ᶠ a : ℤ in atBot, (2 : ℝ) ^ a * φ.rOut < r :=
-    (tendsto_two_zpow_atBot.mul_const φ.rOut).eventually
+    ((TauCeti.tendsto_zpow_atBot_nhds_zero_of_one_lt one_lt_two).mul_const φ.rOut).eventually
       (gt_mem_nhds (by rwa [zero_mul] : 0 * φ.rOut < r))
   filter_upwards [hsmall] with a ha
   simp only [Function.comp_apply, fourierCLM_apply]
@@ -382,19 +345,6 @@ theorem exists_homogeneousLittlewoodPaleyBlock_eq_and_norm_le :
     simp [σ]
   · rwa [hσ, TauCeti.integral_norm_fourierInv_comp_smul (fun ξ ↦ (φ.littlewoodPaley 0 ξ : ℂ))
       (inv_ne_zero (zpow_ne_zero j two_ne_zero))] at hgf
-
-/-- **The low-pass truncations are bounded on `Lᵖ` uniformly in the scale.** For every
-`1 ≤ p ≤ ∞`, every `R ≠ 0` and every `f ∈ Lᵖ`, the truncation `𝓕⁻ (φ (R⁻¹ ·) • 𝓕 f)` is a
-function in `Lᵖ` with norm at most `‖𝓕⁻ φ‖₁ ‖f‖_p`. -/
-theorem exists_fourierMultiplierCLM_inv_smul_eq_and_norm_le {p : ℝ≥0∞} [Fact (1 ≤ p)] {R : ℝ}
-    (hR : R ≠ 0) (f : Lp F p (volume : Measure E)) :
-    ∃ g : Lp F p (volume : Measure E),
-      fourierMultiplierCLM F (fun ξ ↦ (φ (R⁻¹ • ξ) : ℂ)) (f : 𝓢'(E, F)) = g ∧
-        ‖g‖ ≤ (∫ x, ‖𝓕⁻ (fun ξ ↦ (φ ξ : ℂ)) x‖) * ‖f‖ := by
-  obtain ⟨g, hg, hgf⟩ := exists_fourierMultiplierCLM_eq_and_norm_le (lowPassSymbol φ hR) f
-  rw [coe_lowPassSymbol, TauCeti.integral_norm_fourierInv_comp_smul (fun ξ ↦ (φ ξ : ℂ))
-    (inv_ne_zero hR)] at hgf
-  exact ⟨g, by rw [← hg, coe_lowPassSymbol], hgf⟩
 
 /-- **Low-pass truncations of `Lᵖ` functions are small in `L^∞`.** There is `C`, depending only on
 `φ` and `p`, such that for every `R > 0` and every `f ∈ Lᵖ`, the truncation
@@ -445,7 +395,8 @@ theorem tendsto_fourierMultiplierCLM_two_zpow_atBot [Nontrivial E] {p : ℝ≥0�
   -- The `L^∞` norms of the truncations tend to `0`.
   have hbound : Tendsto (fun a : ℤ ↦ C * ((2 : ℝ) ^ a) ^ ((Module.finrank ℝ E : ℝ) * p.toReal⁻¹)
       * ‖f‖) atBot (𝓝 0) := by
-    have := ((tendsto_two_zpow_atBot.rpow_const (Or.inr he.le)).const_mul C).mul_const ‖f‖
+    have := (((TauCeti.tendsto_zpow_atBot_nhds_zero_of_one_lt one_lt_two).rpow_const
+      (Or.inr he.le)).const_mul C).mul_const ‖f‖
     rwa [Real.zero_rpow he.ne', mul_zero, zero_mul] at this
   have hg0 : Tendsto g atBot (𝓝 0) :=
     squeeze_zero_norm (fun a ↦ hgn a) hbound

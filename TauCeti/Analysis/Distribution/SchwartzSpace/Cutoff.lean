@@ -41,7 +41,9 @@ Altogether the `(k, n)` seminorm of the difference is `O(R⁻¹)`.
   `𝓢(E, F)`.
 * `SchwartzMap.hasCompactSupport_smulLeftCLM_comp_inv_smul`: the truncations are compactly
   supported.
-* `SchwartzMap.tendsto_smulLeftCLM_contDiffBump_two_pow`: the dyadic truncations
+* `SchwartzMap.tendsto_smulLeftCLM_contDiffBump`: the truncations `φ (R⁻¹ ·) • f` by a
+  `ContDiffBump` converge to `f` as `R → ∞`, for complex-valued multipliers, and
+  `SchwartzMap.tendsto_smulLeftCLM_contDiffBump_two_pow`: the dyadic truncations
   `φ (2^{-N} ·) • f` by a `ContDiffBump` converge to `f`, for complex-valued multipliers.
 * Mathlib's `SchwartzMap.dense_hasCompactSupport`: compactly supported functions are dense in
   `𝓢(E, F)` for finite-dimensional `E`.
@@ -217,18 +219,26 @@ section Truncation
 
 variable [FiniteDimensional ℝ E] {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G]
 
+/-- The low-pass truncations `φ (R⁻¹ ·) • f` of a Schwartz function by a `ContDiffBump`, for
+complex-valued multipliers, converge to `f` in the Schwartz topology along any family of scales
+`R → ∞`. -/
+theorem tendsto_smulLeftCLM_contDiffBump {α : Type*} {l : Filter α} {R : α → ℝ}
+    (hR : Tendsto R l atTop) (φ : ContDiffBump (0 : E)) (f : 𝓢(E, G)) :
+    Tendsto (fun a ↦ smulLeftCLM G (fun ξ ↦ (φ ((R a)⁻¹ • ξ) : ℂ)) f) l (𝓝 f) := by
+  have hφ : (⇑φ).HasTemperateGrowth := φ.hasCompactSupport.hasTemperateGrowth φ.contDiff
+  have h := (tendsto_smulLeftCLM_comp_smul φ.contDiff φ.hasCompactSupport φ.eventuallyEq_one
+    f).comp (tendsto_inv_atTop_zero.comp hR)
+  refine h.congr fun a ↦ ?_
+  have hc : (fun ξ ↦ φ ((R a)⁻¹ • ξ)).HasTemperateGrowth := by fun_prop
+  rw [Function.comp_apply, Function.comp_apply, ← smulLeftCLM_ofReal ℂ hc,
+    RCLike.ofReal_eq_complex_ofReal]
+
 /-- The low-pass truncations `φ (2^{-N} ·) • f` of a Schwartz function converge to `f` in the
 Schwartz topology. -/
 theorem tendsto_smulLeftCLM_contDiffBump_two_pow (φ : ContDiffBump (0 : E)) (f : 𝓢(E, G)) :
     Tendsto (fun N : ℕ ↦ smulLeftCLM G (fun ξ ↦ (φ (((2 : ℝ) ^ N)⁻¹ • ξ) : ℂ)) f) atTop
-      (𝓝 f) := by
-  have hφ : (⇑φ).HasTemperateGrowth := φ.hasCompactSupport.hasTemperateGrowth φ.contDiff
-  have h := (tendsto_smulLeftCLM_comp_smul φ.contDiff φ.hasCompactSupport φ.eventuallyEq_one
-    f).comp (tendsto_inv_atTop_zero.comp (tendsto_pow_atTop_atTop_of_one_lt (one_lt_two (α := ℝ))))
-  refine h.congr fun N ↦ ?_
-  have hc : (fun ξ ↦ φ (((2 : ℝ) ^ N)⁻¹ • ξ)).HasTemperateGrowth := by fun_prop
-  rw [Function.comp_apply, Function.comp_apply, ← smulLeftCLM_ofReal ℂ hc,
-    RCLike.ofReal_eq_complex_ofReal]
+      (𝓝 f) :=
+  tendsto_smulLeftCLM_contDiffBump (tendsto_pow_atTop_atTop_of_one_lt one_lt_two) φ f
 
 end Truncation
 

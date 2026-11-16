@@ -86,18 +86,15 @@ section Kernel
 
 variable (φ : ContDiffBump (0 : E))
 
-/-- The low-pass symbol `ξ ↦ φ (2^{-N} ξ)`, equal to one on the ball of radius `2^N φ.rIn`, as a
-Schwartz function. -/
+/-- The low-pass symbol `ξ ↦ φ (2^{-N} ξ)` at the dyadic scale `2^N`, equal to one on the ball of
+radius `2^N φ.rIn` (`ContDiffBump.lowPassSchwartz`). -/
 private def lowPass (N : ℕ) : 𝓢(E, ℂ) :=
-  HasCompactSupport.toSchwartzMap (f := fun ξ ↦ ((φ (((2 : ℝ) ^ N)⁻¹ • ξ) : ℝ) : ℂ))
-    ((φ.hasCompactSupport.comp_smul (inv_ne_zero (pow_ne_zero _ two_ne_zero))).comp_left
-      Complex.ofReal_zero)
-    (Complex.ofRealCLM.contDiff.comp (φ.contDiff.comp (contDiff_const_smul _)))
+  φ.lowPassSchwartz (pow_ne_zero N two_ne_zero)
 
 omit [MeasurableSpace E] [BorelSpace E] in
 private theorem coe_lowPass (N : ℕ) :
     ⇑(lowPass φ N) = fun ξ ↦ ((φ (((2 : ℝ) ^ N)⁻¹ • ξ) : ℝ) : ℂ) :=
-  funext (HasCompactSupport.toSchwartzMap_toFun _ _)
+  φ.coe_lowPassSchwartz _
 
 omit [MeasurableSpace E] [BorelSpace E] in
 private theorem coe_lowPass_eq_comp (N : ℕ) :
