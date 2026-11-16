@@ -59,9 +59,9 @@ variable {R A Λ : Type*} [CommRing R] [Ring A] [Algebra R A] [Preorder Λ]
   {M : Λ → Type*} [∀ μ, Fintype (M μ)] (c : CellularBasis R A M)
   (S : Type*) [CommRing S] [Algebra R S]
 
-private theorem span_basis_baseChange_image_lt (μ : Λ) :
-    span S (c.basis.baseChange S '' {i | i.1 < μ}) = (c.lowerSpan μ).baseChange S := by
-  rw [lowerSpan_def, Submodule.baseChange_span, ← Set.image_comp]
+private theorem span_basis_baseChange_image (s : Set (Σ μ, M μ × M μ)) :
+    span S (c.basis.baseChange S '' s) = (span R (c.basis '' s)).baseChange S := by
+  rw [Submodule.baseChange_span, ← Set.image_comp]
   exact congrArg (span S) (congrArg (· '' _)
     (funext fun i ↦ c.basis.baseChange_apply S i))
 
@@ -76,7 +76,7 @@ noncomputable def baseChange : CellularBasis S (S ⊗[R] A) M where
     refine TensorProduct.inductionOn z (fun s' a ↦ ?_) (fun x y hx hy ↦ ?_)
     · obtain ⟨r, hr⟩ := c.exists_mul_basis a μ s
       refine ⟨fun u ↦ r u • s', fun t ↦ ?_⟩
-      rw [c.span_basis_baseChange_image_lt S μ]
+      rw [c.span_basis_baseChange_image S]
       have hsmul (u : M μ) :
           (r u • s') • c.basis.baseChange S ⟨μ, u, t⟩ =
             s' ⊗ₜ[R] (r u • c.basis ⟨μ, u, t⟩) := by
@@ -89,10 +89,7 @@ noncomputable def baseChange : CellularBasis S (S ⊗[R] A) M where
           Basis.baseChange_apply, Algebra.TensorProduct.tmul_mul_tmul, mul_one,
           ← TensorProduct.tmul_sub]
       rw [hterm]
-      have hmem : a * c.basis ⟨μ, s, t⟩ - ∑ u, r u • c.basis ⟨μ, u, t⟩ ∈ c.lowerSpan μ := by
-        rw [lowerSpan_def]
-        exact hr t
-      exact Submodule.tmul_mem_baseChange_of_mem s' hmem
+      exact Submodule.tmul_mem_baseChange_of_mem s' (hr t)
     · obtain ⟨rx, hrx⟩ := hx
       obtain ⟨ry, hry⟩ := hy
       refine ⟨rx + ry, fun t ↦ ?_⟩
@@ -127,12 +124,24 @@ theorem unop_antiInvolution_baseChange_tmul (s : S) (a : A) :
 @[simp]
 theorem lowerSpan_baseChange (μ : Λ) :
     (c.baseChange S).lowerSpan μ = (c.lowerSpan μ).baseChange S := by
-  rw [lowerSpan_def, baseChange, c.span_basis_baseChange_image_lt]
+  rw [lowerSpan_def, lowerSpan_def, baseChange, c.span_basis_baseChange_image]
 
 /-- Pure tensors with right factor in `c.lowerSpan μ` lie in `(c.baseChange S).lowerSpan μ`. -/
 theorem tmul_mem_lowerSpan_baseChange {μ : Λ} (s : S) {a : A} (ha : a ∈ c.lowerSpan μ) :
     s ⊗ₜ[R] a ∈ (c.baseChange S).lowerSpan μ := by
   rw [lowerSpan_baseChange]
+  exact Submodule.tmul_mem_baseChange_of_mem s ha
+
+/-- Inclusive cell spans commute with submodule base change. -/
+@[simp]
+theorem leSpan_baseChange (μ : Λ) :
+    (c.baseChange S).leSpan μ = (c.leSpan μ).baseChange S := by
+  rw [leSpan_def, leSpan_def, baseChange, c.span_basis_baseChange_image]
+
+/-- Pure tensors with right factor in `c.leSpan μ` lie in `(c.baseChange S).leSpan μ`. -/
+theorem tmul_mem_leSpan_baseChange {μ : Λ} (s : S) {a : A} (ha : a ∈ c.leSpan μ) :
+    s ⊗ₜ[R] a ∈ (c.baseChange S).leSpan μ := by
+  rw [leSpan_baseChange]
   exact Submodule.tmul_mem_baseChange_of_mem s ha
 
 /-- The canonical `S`-linear equivalence identifying the base-changed cell module

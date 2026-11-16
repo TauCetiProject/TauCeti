@@ -12,20 +12,10 @@ import TauCeti.RingTheory.Semisimple.Schur
 /-!
 # Classification of simple modules of a cellular algebra
 
-Over a commutative ring `R`, the inclusive cell spans `A(≤μ)` (`TauCeti.CellularBasis.leSpan`)
-assemble into an anti-involution-stable two-sided ideal filtration of a cellular `R`-algebra `A`
-whose stages annihilate `c.CellModule τ` and `c.CellModule τ ⧸ c.cellRadical τ` whenever
-`¬ τ ≤ μ`.
-
 Over a field `K`, Graham and Lehrer classify the simple left modules of a cellular `K`-algebra `B`
 in terms of its cell modules `d.CellModule μ` and the radicals `d.cellRadical μ` of their canonical
 bilinear forms `d.cellForm μ`:
 
-* **Inclusive cell filtration and cyclic generation (Lemma 2.5):** whenever `d.cellForm ν ≠ 0`,
-  `d.CellModule ν` is generated over `d.leSpan ν` by a single standard basis vector
-  (`TauCeti.CellularBasis.exists_cellBasis_forall_exists_mem_leSpan_smul_eq`), so any nonzero
-  `B`-linear map `d.CellModule ν →ₗ[B] d.CellModule μ` forces `μ ≤ ν`
-  (`TauCeti.CellularBasis.le_of_cellModule_linearMap_ne_zero`).
 * **Scalar endomorphisms (Proposition 2.6):** whenever `d.cellForm μ ≠ 0`, every `B`-linear
   endomorphism of the simple quotient `L(μ) = d.CellModule μ ⧸ d.cellRadical μ` is given by scalar
   multiplication from `K` (`TauCeti.CellularBasis.endCellModuleQuotientAlgEquiv`), without assuming
@@ -41,15 +31,13 @@ bilinear forms `d.cellForm μ`:
   subsingleton (`TauCeti.CellularBasis.subsingleton_linearMap_cellModule_quotient_of_ne`).
 * **Exhaustiveness (Theorem 3.4(ii)):** when `<` on `Λ` is well-founded (in particular for any
   finite cell preorder), every simple `B`-module is `B`-linearly equivalent to `L(μ)` for a unique
-  cell `μ`, which automatically satisfies `d.cellForm μ ≠ 0`
-  (`TauCeti.CellularBasis.existsUnique_cellForm_ne_zero_and_nonempty_linearEquiv`,
-  `TauCeti.CellularBasis.existsUnique_cellModule_quotient_linearEquiv`), and its `B`-endomorphism
-  algebra is isomorphic to `K` (`TauCeti.CellularBasis.endAlgEquivOfIsSimpleModule`).
+  cell `μ` with `d.cellForm μ ≠ 0`
+  (`TauCeti.CellularBasis.existsUnique_cellForm_ne_zero_and_nonempty_linearEquiv`), and its
+  `B`-endomorphism algebra is isomorphic to `K`
+  (`TauCeti.CellularBasis.endAlgEquivOfIsSimpleModule`).
 
 ## Main definitions
 
-* `TauCeti.CellularBasis.leSpan`: the inclusive two-sided ideal `A(≤μ)` spanned by basis vectors in
-  cells `ν ≤ μ`.
 * `TauCeti.CellularBasis.endCellModuleQuotientAlgEquiv`: the `K`-algebra isomorphism
   `Module.End B (d.CellModule μ ⧸ d.cellRadical μ) ≃ₐ[K] K` for a cell with `d.cellForm μ ≠ 0`.
 * `TauCeti.CellularBasis.endAlgEquivOfIsSimpleModule`: the `K`-algebra isomorphism
@@ -57,26 +45,20 @@ bilinear forms `d.cellForm μ`:
 
 ## Main results
 
-* `TauCeti.CellularBasis.mul_mem_leSpan`, `TauCeti.CellularBasis.mem_leSpan_mul`: `A(≤μ)` is a
-  two-sided ideal annihilating `CellModule τ` when `¬ τ ≤ μ`
-  (`TauCeti.CellularBasis.smul_eq_zero_of_mem_leSpan`).
-* `TauCeti.CellularBasis.le_of_cellModule_linearMap_ne_zero`: when `d.cellForm ν ≠ 0`, a nonzero
-  map `d.CellModule ν →ₗ[B] d.CellModule μ` implies `μ ≤ ν`.
 * `TauCeti.CellularBasis.eq_or_lt_of_linearMap_cellModule_quotient_ne_zero`,
   `TauCeti.CellularBasis.le_of_linearMap_cellModule_quotient_ne_zero`: a nonzero map
   `d.CellModule ν →ₗ[B] d.CellModule μ ⧸ d.cellRadical μ` implies `ν = μ ∨ ν < μ` (and `ν ≤ μ`).
 * `TauCeti.CellularBasis.nonempty_cellModule_quotient_linearEquiv_iff`: simple cell quotients at
   `μ` and `ν` are isomorphic if and only if `μ = ν`.
-* `TauCeti.CellularBasis.existsUnique_cellForm_ne_zero_and_nonempty_linearEquiv`,
-  `TauCeti.CellularBasis.existsUnique_cellModule_quotient_linearEquiv`: every simple `B`-module is
-  isomorphic to a unique `d.CellModule μ ⧸ d.cellRadical μ` (with `d.cellForm μ ≠ 0`).
+* `TauCeti.CellularBasis.existsUnique_cellForm_ne_zero_and_nonempty_linearEquiv`: every simple
+  `B`-module is isomorphic to a unique `d.CellModule μ ⧸ d.cellRadical μ` with `d.cellForm μ ≠ 0`.
 * `TauCeti.CellularBasis.finrank_end_eq_one_of_isSimpleModule`: every simple `B`-module has
   one-dimensional endomorphism algebra over `K`.
 
 ## References
 
 * J. J. Graham and G. I. Lehrer, *Cellular algebras*, Invent. Math. 123 (1996), 1–34,
-  Lemma 2.5, Proposition 2.6, Proposition 3.2, and Theorem 3.4.
+  Proposition 2.6, Proposition 3.2, and Theorem 3.4.
 -/
 
 public section
@@ -86,160 +68,11 @@ open scoped Matrix
 
 namespace TauCeti.CellularBasis
 
-section CommRing
-
-variable {R A Λ : Type*} [CommRing R] [Ring A] [Algebra R A] [Preorder Λ]
-  {M : Λ → Type*} [∀ μ, Fintype (M μ)] (c : CellularBasis R A M)
-
-/-- The span `A(≤μ)` of the cellular basis vectors in cells `ν ≤ μ`. -/
-noncomputable def leSpan (μ : Λ) : Submodule R A :=
-  span R (c.basis '' {i | i.1 ≤ μ})
-
-/-- `A(≤μ)` is the span of the basis vectors `C ν s t` with `ν ≤ μ`. -/
-theorem leSpan_def (μ : Λ) : c.leSpan μ = span R (c.basis '' {i | i.1 ≤ μ}) :=
-  (rfl)
-
-/-- An element lies in `A(≤μ)` exactly when its coordinates outside `{ν | ν ≤ μ}` vanish. -/
-theorem mem_leSpan_iff {μ : Λ} {x : A} :
-    x ∈ c.leSpan μ ↔ ∀ i : Σ μ, M μ × M μ, ¬ i.1 ≤ μ → c.basis.repr x i = 0 := by
-  rw [leSpan_def, c.basis.mem_span_image]
-  exact ⟨fun h i hi ↦ by_contra fun hx ↦ hi (h (Finsupp.mem_support_iff.2 hx)),
-    fun h i hi ↦ by_contra fun hx ↦ Finsupp.mem_support_iff.1 hi (h i hx)⟩
-
-/-- The basis vectors of a cell `ν ≤ μ` lie in `A(≤μ)`. -/
-theorem basis_mem_leSpan {ν μ : Λ} (h : ν ≤ μ) (s t : M ν) :
-    c.basis ⟨ν, s, t⟩ ∈ c.leSpan μ :=
-  subset_span ⟨_, h, rfl⟩
-
-/-- The basis vectors of the cell `μ` itself lie in `A(≤μ)`. -/
-theorem basis_self_mem_leSpan (μ : Λ) (s t : M μ) :
-    c.basis ⟨μ, s, t⟩ ∈ c.leSpan μ :=
-  c.basis_mem_leSpan le_rfl s t
-
-/-- The strict lower span `A(<μ)` is contained in `A(≤μ)`. -/
-theorem lowerSpan_le_leSpan (μ : Λ) : c.lowerSpan μ ≤ c.leSpan μ := by
-  rw [lowerSpan_def, leSpan_def]
-  exact span_mono <| Set.image_mono fun _ hi ↦ le_of_lt hi
-
-/-- `A(≤μ)` grows with `μ`. -/
-theorem leSpan_mono : Monotone c.leSpan := fun _ _ h ↦
-  span_mono <| Set.image_mono fun _ hi ↦ le_trans hi h
-
-/-- `A(≤μ)` is a left ideal. -/
-theorem mul_mem_leSpan (a : A) {μ : Λ} {x : A} (hx : x ∈ c.leSpan μ) :
-    a * x ∈ c.leSpan μ := by
-  classical
-  induction hx using Submodule.span_induction with
-  | mem y hy =>
-    obtain ⟨⟨ν, s, t⟩, hν : ν ≤ μ, rfl⟩ := hy
-    have hlow : a * c.basis ⟨ν, s, t⟩ - ∑ u, c.cellRep ν a u s • c.basis ⟨ν, u, t⟩ ∈ c.leSpan μ :=
-      c.leSpan_mono hν (c.lowerSpan_le_leSpan ν (c.mul_basis_sub_sum_mem a ν s t))
-    have hsum : ∑ u, c.cellRep ν a u s • c.basis ⟨ν, u, t⟩ ∈ c.leSpan μ :=
-      sum_mem fun u _ ↦ smul_mem _ _ (c.basis_mem_leSpan hν u t)
-    simpa using add_mem hlow hsum
-  | zero => simp
-  | add x y _ _ hx hy => rw [mul_add]; exact add_mem hx hy
-  | smul r x _ hx => rw [mul_smul_comm]; exact smul_mem _ r hx
-
-/-- The anti-involution preserves `A(≤μ)`. -/
-theorem unop_antiInvolution_mem_leSpan {μ : Λ} {x : A} (hx : x ∈ c.leSpan μ) :
-    (c.antiInvolution x).unop ∈ c.leSpan μ := by
-  induction hx using Submodule.span_induction with
-  | mem y hy =>
-    obtain ⟨⟨ν, s, t⟩, hν, rfl⟩ := hy
-    simpa using c.basis_mem_leSpan hν t s
-  | zero => simp
-  | add x y _ _ hx hy => simpa using add_mem hx hy
-  | smul r x _ hx => simpa using smul_mem _ r hx
-
-/-- `A(≤μ)` is a right ideal. -/
-theorem mem_leSpan_mul (a : A) {μ : Λ} {x : A} (hx : x ∈ c.leSpan μ) :
-    x * a ∈ c.leSpan μ := by
-  simpa using c.unop_antiInvolution_mem_leSpan
-    (c.mul_mem_leSpan (c.antiInvolution a).unop (c.unop_antiInvolution_mem_leSpan hx))
-
-section DecidableEq
-
-variable [∀ μ, DecidableEq (M μ)]
-
-/-- The cell representation of `μ` annihilates `A(≤ν)` whenever `¬ μ ≤ ν`. -/
-theorem cellRep_eq_zero_of_mem_leSpan {ν μ : Λ} (h : ¬ μ ≤ ν) {x : A} (hx : x ∈ c.leSpan ν) :
-    c.cellRep μ x = 0 := by
-  ext u s
-  rw [cellRep_apply, Matrix.zero_apply]
-  exact c.mem_leSpan_iff.1 (c.mem_leSpan_mul _ hx) ⟨μ, u, s⟩ h
-
-/-- `A(≤ν)` acts as zero on `CellModule μ` whenever `¬ μ ≤ ν`. -/
-theorem smul_eq_zero_of_mem_leSpan {ν μ : Λ} (h : ¬ μ ≤ ν) {x : A} (hx : x ∈ c.leSpan ν)
-    (m : c.CellModule μ) : x • m = 0 := by
-  apply (c.cellModuleEquiv μ).injective
-  simp [c.cellRep_eq_zero_of_mem_leSpan h hx]
-
-/-- `A(≤ν)` acts as zero on `CellModule μ ⧸ cellRadical μ` whenever `¬ μ ≤ ν`. -/
-theorem smul_quotient_eq_zero_of_mem_leSpan {ν μ : Λ} (h : ¬ μ ≤ ν) {x : A} (hx : x ∈ c.leSpan ν)
-    (m : c.CellModule μ ⧸ c.cellRadical μ) : x • m = 0 := by
-  induction m using Submodule.Quotient.induction_on with
-  | _ y =>
-    rw [← Submodule.Quotient.mk_smul, c.smul_eq_zero_of_mem_leSpan h hx, Submodule.Quotient.mk_zero]
-
-/-- The cell radical is the whole cell module precisely when the Gram matrix vanishes. -/
-theorem cellRadical_eq_top_iff_gramMatrix_eq_zero (μ : Λ) :
-    c.cellRadical μ = ⊤ ↔ c.gramMatrix μ = 0 := by
-  rw [c.cellRadical_eq_top_iff, c.cellForm_eq_zero_iff]
-
-end DecidableEq
-
-end CommRing
-
 section Field
 
 variable {K B Λ : Type*} [Field K] [Ring B] [Algebra K B] [Preorder Λ]
   {M : Λ → Type*} [∀ μ, Fintype (M μ)] [∀ μ, DecidableEq (M μ)]
   (d : CellularBasis K B M)
-
-/-- Over a field, a cell module whose form is nonzero is itself simple precisely when its radical is
-trivial. -/
-theorem isSimpleModule_cellModule_iff_of_cellForm_ne_zero {μ : Λ} (h : d.cellForm μ ≠ 0) :
-    IsSimpleModule B (d.CellModule μ) ↔ d.cellRadical μ = ⊥ := by
-  have hcoatom : IsCoatom (d.cellRadical μ) := d.isCoatom_cellRadical μ h
-  refine ⟨fun _ ↦ (eq_bot_or_eq_top (d.cellRadical μ)).resolve_right hcoatom.1, fun hbot ↦ ?_⟩
-  exact (Submodule.quotEquivOfEqBot _ hbot).symm.isSimpleModule_iff.mpr
-    ((d.isSimpleModule_cellModule_quotient_iff μ).mpr h)
-
-/-- Over a field, when `d.cellForm ν ≠ 0`, there is a standard basis vector of `d.CellModule ν`
-whose `d.leSpan ν`-orbit is the entire cell module (Graham–Lehrer, Lemma 2.5). -/
-theorem exists_cellBasis_forall_exists_mem_leSpan_smul_eq {ν : Λ} (hν : d.cellForm ν ≠ 0) :
-    ∃ s : M ν, ∀ x : d.CellModule ν, ∃ a ∈ d.leSpan ν, a • d.cellBasis ν s = x := by
-  obtain ⟨t, s, hts⟩ := d.exists_gramMatrix_ne_zero hν
-  refine ⟨s, fun x ↦ ?_⟩
-  refine ⟨∑ u, ((d.cellBasis ν).repr x u * (d.gramMatrix ν t s)⁻¹) • d.basis ⟨ν, u, t⟩,
-    sum_mem fun u _ ↦ smul_mem _ _ (d.basis_self_mem_leSpan ν u t), ?_⟩
-  have hstep (u : M ν) :
-      (((d.cellBasis ν).repr x u * (d.gramMatrix ν t s)⁻¹) • d.basis ⟨ν, u, t⟩) •
-          d.cellBasis ν s = (d.cellBasis ν).repr x u • d.cellBasis ν u := by
-    rw [smul_assoc, d.basis_smul, d.cellForm_cellBasis, smul_smul, inv_mul_cancel_right₀ hts]
-  rw [Finset.sum_smul]
-  simp_rw [hstep]
-  exact (d.cellBasis ν).sum_repr x
-
-/-- A nonzero `B`-linear map from a cell module with nonzero form into another cell module reverses
-the cell order (Graham–Lehrer, Lemma 2.5 / Proposition 2.6). -/
-theorem le_of_cellModule_linearMap_ne_zero {ν μ : Λ} (hν : d.cellForm ν ≠ 0)
-    {f : d.CellModule ν →ₗ[B] d.CellModule μ} (hf : f ≠ 0) : μ ≤ ν := by
-  by_contra hle
-  obtain ⟨s, hgen⟩ := d.exists_cellBasis_forall_exists_mem_leSpan_smul_eq hν
-  apply hf
-  ext x
-  obtain ⟨a, ha, rfl⟩ := hgen x
-  rw [map_smul, d.smul_eq_zero_of_mem_leSpan hle ha, LinearMap.zero_apply]
-
-/-- If `d.CellModule μ ⧸ d.cellRadical μ` is isomorphic to a simple `B`-module `S`, then
-`d.cellForm μ ≠ 0`. -/
-theorem cellForm_ne_zero_of_nonempty_cellModule_quotient_linearEquiv
-    {S : Type*} [AddCommGroup S] [Module B S] [IsSimpleModule B S] {μ : Λ}
-    (h : Nonempty ((d.CellModule μ ⧸ d.cellRadical μ) ≃ₗ[B] S)) : d.cellForm μ ≠ 0 := by
-  obtain ⟨e⟩ := h
-  exact (d.isSimpleModule_cellModule_quotient_iff μ).mp (e.isSimpleModule_iff.mpr ‹_›)
 
 /-- A cell with nonzero form admits indices `s t : M μ` such that `d.gramMatrix μ s t ≠ 0` and the
 image of `d.cellBasis μ t` in `d.CellModule μ ⧸ d.cellRadical μ` is nonzero. -/
@@ -456,15 +289,6 @@ theorem existsUnique_cellForm_ne_zero_and_nonempty_linearEquiv (S : Type*) [AddC
   obtain ⟨μ, hμ, ⟨e⟩⟩ := d.exists_cellForm_ne_zero_and_nonempty_linearEquiv S
   refine ⟨μ, ⟨hμ, ⟨e⟩⟩, fun ν ⟨hν, ⟨e'⟩⟩ ↦ ?_⟩
   exact (d.nonempty_cellModule_quotient_linearEquiv_iff hν).1 ⟨e'.trans e.symm⟩
-
-/-- Over a field `K`, when `<` on `Λ` is well-founded, every simple left `B`-module is `B`-linearly
-equivalent to `d.CellModule μ ⧸ d.cellRadical μ` for a unique cell `μ : Λ`. -/
-theorem existsUnique_cellModule_quotient_linearEquiv (S : Type*) [AddCommGroup S]
-    [Module B S] [IsSimpleModule B S] :
-    ∃! μ : Λ, Nonempty ((d.CellModule μ ⧸ d.cellRadical μ) ≃ₗ[B] S) := by
-  obtain ⟨μ, ⟨-, ⟨e⟩⟩, huniq⟩ := d.existsUnique_cellForm_ne_zero_and_nonempty_linearEquiv S
-  exact ⟨μ, ⟨e⟩, fun ν hν ↦
-    huniq ν ⟨d.cellForm_ne_zero_of_nonempty_cellModule_quotient_linearEquiv hν, hν⟩⟩
 
 omit [∀ μ, DecidableEq (M μ)] in
 /-- Every simple module over a cellular `K`-algebra (with well-founded cell order) is absolutely
