@@ -18,9 +18,10 @@ function `g` that is not almost everywhere measurable. In that case Mathlib's pu
 nonzero measure is a fallback Dirac measure, the same for `g` and for `g ∘ f`, and for the zero
 measure both pushforwards are zero.
 
-For an ordered target with a greatest element, an a.e. measurable function has a measurable
-majorant agreeing with it almost everywhere. This permits replacement of representatives
-while preserving pointwise upper bounds.
+For an ordered target, if a function `f` is bounded almost everywhere by an a.e. measurable
+function `g` and pointwise by a measurable majorant `u`, then `g` has a measurable representative
+that still bounds `f` everywhere; when the target has a greatest element, taking `u = ⊤` yields a
+measurable majorant of an a.e. measurable function in its own a.e. equivalence class.
 
 ## Main results
 
@@ -28,6 +29,8 @@ while preserving pointwise upper bounds.
   almost everywhere measurable `f`, with no hypothesis on `s`.
 * `MeasurableEmbedding.map_map_measure` — `(μ.map f).map g = μ.map (g ∘ f)` for a measurable
   embedding `f`, with no measurability assumption on `g`.
+* `AEMeasurable.exists_measurable_ge_ae_eq_of_ae_le`: a measurable representative of an a.e.
+  measurable a.e. majorant that still dominates pointwise.
 * `AEMeasurable.exists_measurable_ge_ae_eq`: a measurable majorant in the same
   a.e. equivalence class.
 -/
@@ -38,24 +41,35 @@ namespace AEMeasurable
 
 open MeasureTheory
 
+/-- Given a function `f` bounded almost everywhere by an a.e. measurable function `g` and
+pointwise by a measurable majorant `u`, there is a measurable representative `g'` of `g` that
+bounds `f` everywhere. -/
+theorem exists_measurable_ge_ae_eq_of_ae_le {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
+    [LE β] {μ : Measure α} {f g u : α → β} (hg : AEMeasurable g μ) (hfg : f ≤ᵐ[μ] g)
+    (hu : Measurable u) (hfu : f ≤ u) :
+    ∃ g' : α → β, Measurable g' ∧ f ≤ g' ∧ g =ᵐ[μ] g' := by
+  classical
+  have hfg' : ∀ᵐ x ∂μ, f x ≤ hg.mk g x :=
+    (hfg.and hg.ae_eq_mk).mono fun _ ⟨h1, h2⟩ ↦ h2 ▸ h1
+  obtain ⟨s, hs, hsm, hsμ⟩ := exists_measurable_superset_of_null (ae_iff.mp hfg')
+  refine ⟨s.piecewise u (hg.mk g), hu.piecewise hsm hg.measurable_mk, ?_, ?_⟩
+  · intro x
+    by_cases hx : x ∈ s
+    · simp [hx, hfu x]
+    · have hle : f x ≤ hg.mk g x := by
+        by_contra h
+        exact hx (hs h)
+      simp [hx, hle]
+  · filter_upwards [hg.ae_eq_mk, compl_mem_ae_iff.mpr hsμ] with x hx hxs
+    simpa only [Set.piecewise_eq_of_notMem s _ _ hxs] using hx
+
 /-- An a.e. measurable function into an ordered space with a greatest element admits a
 measurable majorant that agrees with it almost everywhere. -/
 theorem exists_measurable_ge_ae_eq {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
     [Preorder β] [OrderTop β] {μ : Measure α} {f : α → β} (hf : AEMeasurable f μ) :
-    ∃ g : α → β, Measurable g ∧ f ≤ g ∧ f =ᵐ[μ] g := by
-  classical
-  obtain ⟨s, hs, hsm, hsμ⟩ := exists_measurable_superset_of_null hf.ae_eq_mk
-  refine ⟨s.piecewise (fun _ => ⊤) (hf.mk f),
-    measurable_const.piecewise hsm hf.measurable_mk, ?_, ?_⟩
-  · intro x
-    by_cases hx : x ∈ s
-    · simp [hx]
-    · have heq : f x = hf.mk f x := by
-        by_contra h
-        exact hx (hs h)
-      simp [hx, heq]
-  · filter_upwards [hf.ae_eq_mk, compl_mem_ae_iff.mpr hsμ] with x hx hxs
-    simpa only [Set.piecewise_eq_of_notMem s _ _ hxs] using hx
+    ∃ g : α → β, Measurable g ∧ f ≤ g ∧ f =ᵐ[μ] g :=
+  hf.exists_measurable_ge_ae_eq_of_ae_le (ae_of_all _ fun _ ↦ le_rfl) measurable_const
+    fun _ ↦ le_top
 
 end AEMeasurable
 
