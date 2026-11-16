@@ -18,7 +18,8 @@ Over `ℂ` with nonzero self-adjoint weights `r : V → ℂ`, `walkTrace` on `Pa
 faithful positive tracial functional, identifying `htr.traceRadical n` with the kernel of
 `walkStarRep` and descending under an injective unit-step height to
 `htr.Quotient n ≃⋆ₐ[ℂ] PathAlgebra ℂ G v₀ n` (`quotientPathAlgebraEquiv`), yielding multimatrix
-decompositions across `δ ∈ jonesLoopParameters`. -/
+decompositions across `δ = 2 cos (π / m)` (`m ≥ 2`) and `δ ≥ 2`, and the complete real-parameter
+positivity classification `δ = 0 ∨ δ ∈ jonesLoopParameters`. -/
 public section
 noncomputable section
 open scoped ComplexOrder
@@ -156,40 +157,38 @@ def discretePathWeight (m : ℕ) (t : Fin (m - 1)) : ℂ :=
   ((√(qInt ℝ (2 * cos (π / m)) (t.val + 1)) : ℝ) : ℂ)
 /-- Quantum-integer vertex weight `√[t + 1]` on `A_∞` (`hasse ℕ`). -/
 def genericPathWeight (δ : ℝ) (t : ℕ) : ℂ := ((√(qInt ℝ δ (t + 1)) : ℝ) : ℂ)
-theorem discretePathWeight_ne_zero {m : ℕ} (hm : 3 ≤ m) (t : Fin (m - 1)) :
-    discretePathWeight m t ≠ 0 :=
+theorem discretePathWeight_ne_zero {m : ℕ} (t : Fin (m - 1)) : discretePathWeight m t ≠ 0 :=
   Complex.ofReal_ne_zero.2 (Real.sqrt_pos.2 (qInt_two_mul_cos_pi_div_pos (by omega) (by omega))).ne'
 theorem isSelfAdjoint_discretePathWeight (m : ℕ) (t : Fin (m - 1)) :
     IsSelfAdjoint (discretePathWeight m t) := Complex.conj_ofReal _
-theorem sum_neighborFinset_discretePathWeight_sq {m : ℕ} (hm : 3 ≤ m) (v : Fin (m - 1)) :
+private theorem sum_neighborFinset_hasse_qInt (δ : ℝ) (v : ℕ) :
+    ∑ u ∈ (hasse ℕ).neighborFinset v, qInt ℝ δ (u + 1) = δ * qInt ℝ δ (v + 1) := by
+  cases v with
+  | zero =>
+    have h := qInt_add_two (R := ℝ) (δ := δ) 0; simp only [zero_add, qInt_zero, qInt_one] at h
+    simp [neighborFinset_hasse_nat_zero, h]
+  | succ k =>
+    rw [neighborFinset_hasse_nat_succ, Finset.sum_pair (by omega), qInt_add_two (R := ℝ) δ (k + 1)]
+    ring
+theorem sum_neighborFinset_discretePathWeight_sq {m : ℕ} (v : Fin (m - 1)) :
     ∑ u ∈ (pathGraph (m - 1)).neighborFinset v, discretePathWeight m u ^ 2 =
       ((2 * cos (π / m) : ℝ) : ℂ) * discretePathWeight m v ^ 2 := by
-  obtain ⟨k, rfl⟩ : ∃ k, m = k + 2 := ⟨m - 2, by omega⟩
-  have hsq (t : Fin (k + 1)) :
-      discretePathWeight (k + 2) t ^ 2 = (qInt ℝ (2 * cos (π / (k + 2 : ℕ))) (t.val + 1) : ℂ) := by
+  have hm : 2 ≤ m := by have := v.isLt; omega
+  have hsq (t : Fin (m - 1)) :
+      discretePathWeight m t ^ 2 = (qInt ℝ (2 * cos (π / m)) (t.val + 1) : ℂ) := by
     rw [discretePathWeight, ← Complex.ofReal_pow,
       Real.sq_sqrt (qInt_two_mul_cos_pi_div_pos (Nat.succ_pos _) (by omega)).le]
-  simp_rw [hsq]; norm_cast; set δ := 2 * cos (π / (k + 2 : ℕ))
-  rw [neighborFinset_eq_filter, Finset.sum_filter]; simp only [pathGraph_adj]
-  rw [Fin.sum_univ_eq_sum_range
-    (fun j ↦ if v.val + 1 = j ∨ j + 1 = v.val then qInt ℝ δ (j + 1) else 0),
-    Finset.sum_congr rfl fun j _ ↦ show (if v.val + 1 = j ∨ j + 1 = v.val then qInt ℝ δ (j + 1)
-      else 0) = (if v.val + 1 = j then qInt ℝ δ (j + 1) else 0) +
-        (if j + 1 = v.val then qInt ℝ δ (j + 1) else 0) by
-          split_ifs <;> first | ring1 | (exfalso; omega),
-    Finset.sum_add_distrib, Finset.sum_ite_eq,
-    show Finset.range (k + 2 - 1) = Finset.range (k + 1) from rfl]
-  have h1 : (if v.val + 1 ∈ Finset.range (k + 1) then qInt ℝ δ (v.val + 1 + 1) else 0) =
-      qInt ℝ δ (v.val + 2) := by
-    split_ifs with hv; · rfl
-    rw [show v.val + 2 = k + 2 by simp at hv; omega]
-    exact (qInt_two_mul_cos_pi_div_eq_zero (by omega)).symm
-  have h2 : ∑ j ∈ Finset.range (k + 1), (if j + 1 = v.val then qInt ℝ δ (j + 1) else 0) =
-      qInt ℝ δ v.val := by
-    obtain ⟨_ | w, hw⟩ := v; · simp
-    simp only [Nat.add_right_cancel_iff]
-    rw [Finset.sum_ite_eq', ite_eq_left (Finset.mem_range.2 (by omega))]
-  rw [h1, h2, qInt_add_two]; ring
+  simp_rw [hsq]; norm_cast
+  rw [← sum_neighborFinset_hasse_qInt, ← Finset.sum_image (f := fun j ↦ qInt ℝ _ (j + 1))
+    (fun _ _ _ _ h ↦ Fin.ext h)]
+  refine Finset.sum_subset (fun j hj ↦ ?_) (fun j hj hnj ↦ ?_)
+  · rcases Finset.mem_image.1 hj with ⟨u, hu, rfl⟩
+    simpa [hasse_nat_adj, pathGraph_adj] using hu
+  · rw [mem_neighborFinset, hasse_nat_adj] at hj
+    have hjge : m - 1 ≤ j := by
+      by_contra hlt; exact hnj <| Finset.mem_image.2
+        ⟨⟨j, by omega⟩, by simpa [pathGraph_adj] using hj, rfl⟩
+    rw [show j + 1 = m by omega]; exact qInt_two_mul_cos_pi_div_eq_zero hm
 theorem genericPathWeight_ne_zero {δ : ℝ} (hδ : 2 ≤ δ) (t : ℕ) : genericPathWeight δ t ≠ 0 :=
   Complex.ofReal_ne_zero.2 (Real.sqrt_pos.2 (qInt_pos_of_two_le hδ (Nat.succ_pos t))).ne'
 theorem isSelfAdjoint_genericPathWeight (δ : ℝ) (t : ℕ) :
@@ -200,13 +199,7 @@ theorem sum_neighborFinset_genericPathWeight_sq {δ : ℝ} (hδ : 2 ≤ δ) (v :
   have hsq (t : ℕ) : genericPathWeight δ t ^ 2 = (qInt ℝ δ (t + 1) : ℂ) := by
     rw [genericPathWeight, ← Complex.ofReal_pow,
       Real.sq_sqrt (qInt_pos_of_two_le hδ (Nat.succ_pos t)).le]
-  simp_rw [hsq]; norm_cast; cases v with
-  | zero =>
-    have h := qInt_add_two (R := ℝ) (δ := δ) 0; simp only [zero_add, qInt_zero, qInt_one] at h
-    simp [neighborFinset_hasse_nat_zero, h]
-  | succ k =>
-    rw [neighborFinset_hasse_nat_succ, Finset.sum_pair (by omega), qInt_add_two (R := ℝ) δ (k + 1)]
-    ring
+  simp_rw [hsq]; exact_mod_cast sum_neighborFinset_hasse_qInt δ v
 theorem one_le_of_mem_jonesLoopParameters {δ : ℝ} (hδ : δ ∈ jonesLoopParameters) : 1 ≤ δ := by
   rcases mem_jonesLoopParameters.1 hδ with ⟨m, hm, rfl⟩ | h2
   · have hle : π / m ≤ π / 3 :=
@@ -224,20 +217,25 @@ open Real SimpleGraph
 variable {δ : ℝ} [Fact (IsSelfAdjoint (δ : ℂ))]
   {tr : ∀ n : ℕ, TemperleyLieb ℂ (δ : ℂ) n →ₗ[ℂ] ℂ} (htr : IsMarkovTrace ℂ (δ : ℂ) tr)
 include htr in
-theorem isPositive_iff_mem_jonesLoopParameters (hδ : δ ≠ 0) :
+/-- **Complete positivity classification** for a Markov trace over `ℂ` at any real `δ`: all forms
+`x ↦ tr n (star x * x)` are nonnegative iff `δ = 0` or `δ ∈ jonesLoopParameters`. -/
+theorem forall_map_star_mul_self_nonneg_iff_eq_zero_or_mem_jonesLoopParameters :
     (∀ (n : ℕ) (x : TemperleyLieb ℂ (δ : ℂ) n), 0 ≤ tr n (star x * x)) ↔
-      δ ∈ jonesLoopParameters := by
-  refine ⟨fun h ↦ ?_, fun hJ ↦
-    (htr.forall_map_star_mul_self_nonneg_iff (pos_of_mem_jonesLoopParameters hJ)).2 hJ⟩
-  have h0 : 0 ≤ δ := Complex.zero_le_real.1 (by simpa [htr.map_one] using h 1 1)
-  exact (htr.forall_map_star_mul_self_nonneg_iff (lt_of_le_of_ne h0 hδ.symm)).1 h
-/-- **Discrete Jones quotient decomposition** at `δ = 2 cos (π / m)` (`m ≥ 3`) on `A_(m-1)`. -/
-def discreteQuotientEquiv {m : ℕ} (hm : 3 ≤ m) (hδ : δ = 2 * cos (π / m)) (n : ℕ) :
+      δ = 0 ∨ δ ∈ jonesLoopParameters := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · have h0 : 0 ≤ δ := Complex.zero_le_real.1 (by simpa [htr.map_one] using h 1 1)
+    exact (eq_or_lt_of_le h0).imp Eq.symm fun hp ↦
+      (htr.forall_map_star_mul_self_nonneg_iff hp).1 h
+  · rcases h with rfl | hJ
+    · exact fun _ ↦ htr.map_star_mul_self_nonneg_of_eq_two_mul_cos (m := 2) le_rfl (by simp)
+    · exact (htr.forall_map_star_mul_self_nonneg_iff (pos_of_mem_jonesLoopParameters hJ)).2 hJ
+/-- **Discrete Jones quotient decomposition** at `δ = 2 cos (π / m)` (`m ≥ 2`) on `A_(m-1)`. -/
+def discreteQuotientEquiv {m : ℕ} (hm : 2 ≤ m) (hδ : δ = 2 * cos (π / m)) (n : ℕ) :
     htr.Quotient n ≃⋆ₐ[ℂ]
       PathAlgebra ℂ (pathGraph (m - 1)) ⟨0, Nat.sub_pos_of_lt (by omega)⟩ n :=
   htr.quotientPathAlgebraEquiv (pathGraph (m - 1)) ⟨0, Nat.sub_pos_of_lt (by omega)⟩
-    (discretePathWeight_ne_zero hm) (isSelfAdjoint_discretePathWeight m)
-    (fun v ↦ by rw [hδ]; exact sum_neighborFinset_discretePathWeight_sq hm v)
+    discretePathWeight_ne_zero (isSelfAdjoint_discretePathWeight m)
+    (fun v ↦ by rw [hδ]; exact sum_neighborFinset_discretePathWeight_sq v)
     Fin.val_injective rfl (fun h ↦ pathGraph_adj.1 h) n
 /-- **Generic Jones quotient decomposition** for `δ ≥ 2` on `A_∞` (`hasse ℕ`). -/
 def genericQuotientEquiv (hδ : 2 ≤ δ) (n : ℕ) :
@@ -274,23 +272,29 @@ theorem positiveQuotientTrace_mul_comm (hδ : δ ∈ jonesLoopParameters) {n : �
 theorem finiteDimensional_quotient (hδ : δ ∈ jonesLoopParameters) (n : ℕ) :
     FiniteDimensional ℂ (htr.Quotient n) := by
   rcases mem_jonesLoopParameters.1 hδ with ⟨m, hm, hδm⟩ | h2
-  · exact (htr.discreteQuotientEquiv hm hδm n).symm.toAlgEquiv.toLinearEquiv.finiteDimensional
+  · exact (htr.discreteQuotientEquiv (by omega) hδm n).symm
+      |>.toAlgEquiv.toLinearEquiv.finiteDimensional
   · exact (htr.genericQuotientEquiv h2 n).symm.toAlgEquiv.toLinearEquiv.finiteDimensional
 end JonesQuotients
 end IsMarkovTrace
-theorem exists_positive_markovTrace_iff_mem_jonesLoopParameters {δ : ℝ}
-    [Fact (IsSelfAdjoint (δ : ℂ))] (hδ₀ : δ ≠ 0) :
+/-- **Complete existence classification of positive semidefinite Markov traces over `ℂ`.** A real
+`δ` admits one iff `δ = 0` (`A_1`) or `δ ∈ jonesLoopParameters` (`A_(m-1)` / `A_∞`). -/
+theorem exists_isMarkovTrace_forall_nonneg_iff_eq_zero_or_mem_jonesLoopParameters {δ : ℝ}
+    [Fact (IsSelfAdjoint (δ : ℂ))] :
     (∃ tr : ∀ n : ℕ, TemperleyLieb ℂ (δ : ℂ) n →ₗ[ℂ] ℂ, IsMarkovTrace ℂ (δ : ℂ) tr ∧
       ∀ (n : ℕ) (x : TemperleyLieb ℂ (δ : ℂ) n), 0 ≤ tr n (star x * x)) ↔
-      δ ∈ jonesLoopParameters := by
-  refine ⟨fun ⟨_, htr, hpos⟩ ↦ (htr.isPositive_iff_mem_jonesLoopParameters hδ₀).1 hpos,
-    fun hδ ↦ ?_⟩
-  rcases mem_jonesLoopParameters.1 hδ with ⟨m, hm, hδm⟩ | h2
+      δ = 0 ∨ δ ∈ jonesLoopParameters := by
+  refine ⟨fun ⟨_, htr, hpos⟩ ↦
+    htr.forall_map_star_mul_self_nonneg_iff_eq_zero_or_mem_jonesLoopParameters.1 hpos, fun hδ ↦ ?_⟩
+  have h : (∃ m : ℕ, 2 ≤ m ∧ δ = 2 * Real.cos (Real.pi / m)) ∨ 2 ≤ δ :=
+    hδ.elim (fun h0 ↦ Or.inl ⟨2, le_rfl, by simp [h0]⟩)
+      fun hJ ↦ (mem_jonesLoopParameters.1 hJ).imp (fun ⟨m, hm, hmδ⟩ ↦ ⟨m, by omega, hmδ⟩) id
+  rcases h with ⟨m, hm, hδm⟩ | h2
   · let htr := isMarkovTrace_walkTrace (δ := (δ : ℂ)) (SimpleGraph.pathGraph (m - 1))
-      ⟨0, Nat.sub_pos_of_lt (by omega)⟩ (discretePathWeight_ne_zero hm)
-      (fun v ↦ by rw [hδm]; exact sum_neighborFinset_discretePathWeight_sq hm v)
-    exact ⟨_, htr, (htr.isPositive_iff_mem_jonesLoopParameters hδ₀).2 hδ⟩
+      ⟨0, Nat.sub_pos_of_lt (by omega)⟩ discretePathWeight_ne_zero
+      (fun v ↦ by rw [hδm]; exact sum_neighborFinset_discretePathWeight_sq v)
+    exact ⟨_, htr, htr.forall_map_star_mul_self_nonneg_iff_eq_zero_or_mem_jonesLoopParameters.2 hδ⟩
   · let htr := isMarkovTrace_walkTrace (δ := (δ : ℂ)) (SimpleGraph.hasse ℕ) 0
       (genericPathWeight_ne_zero h2) (sum_neighborFinset_genericPathWeight_sq h2)
-    exact ⟨_, htr, (htr.isPositive_iff_mem_jonesLoopParameters hδ₀).2 hδ⟩
+    exact ⟨_, htr, htr.forall_map_star_mul_self_nonneg_iff_eq_zero_or_mem_jonesLoopParameters.2 hδ⟩
 end TauCeti.TemperleyLieb

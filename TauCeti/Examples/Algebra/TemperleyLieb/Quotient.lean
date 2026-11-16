@@ -44,7 +44,7 @@ theorem finrank_quotient_one {tr : ∀ n : ℕ, TemperleyLieb ℂ ((1 : ℝ) : �
     (htr : IsMarkovTrace ℂ ((1 : ℝ) : ℂ) tr) (n : ℕ) :
     Module.finrank ℂ (htr.Quotient n) = 1 := by
   have hcos : (1 : ℝ) = 2 * cos (π / (3 : ℕ)) := by rw [Nat.cast_ofNat, cos_pi_div_three]; ring
-  rw [(htr.discreteQuotientEquiv (m := 3) le_rfl hcos n).toAlgEquiv.toLinearEquiv.finrank_eq,
+  rw [(htr.discreteQuotientEquiv (m := 3) (by omega) hcos n).toAlgEquiv.toLinearEquiv.finrank_eq,
     finrank_pathAlgebra_fintype, Fin.sum_univ_two]
   rcases Nat.mod_two_eq_zero_or_one n with hn | hn <;> simp [card_endpointWalk_pathGraph_two, hn]
 theorem traceRadical_two_ne_jacobson_at_one {tr : ∀ n : ℕ, TemperleyLieb ℂ 1 n →ₗ[ℂ] ℂ}

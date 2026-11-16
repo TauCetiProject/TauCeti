@@ -304,9 +304,9 @@ private def jonesModel {δ : ℝ} (hδ : δ ∈ jonesLoopParameters) : JonesMode
   exact if hm : ∃ m : ℕ, 3 ≤ m ∧ δ = 2 * cos (π / m) then
     let m := Classical.choose hm; have hm_spec := Classical.choose_spec hm
     { V := Fin (m - 1), G := pathGraph (m - 1), v₀ := ⟨0, Nat.sub_pos_of_lt (by omega)⟩,
-      r := discretePathWeight m, hr := discretePathWeight_ne_zero hm_spec.1,
+      r := discretePathWeight m, hr := discretePathWeight_ne_zero,
       hrs := isSelfAdjoint_discretePathWeight m,
-      hδ := fun v ↦ by rw [hm_spec.2]; exact sum_neighborFinset_discretePathWeight_sq hm_spec.1 v,
+      hδ := fun v ↦ by rw [hm_spec.2]; exact sum_neighborFinset_discretePathWeight_sq v,
       f := Fin.val, hf := Fin.val_injective, hf₀ := rfl, hadj := fun h ↦ pathGraph_adj.1 h }
   else
     have h2 : 2 ≤ δ := (mem_jonesLoopParameters.1 hδ).resolve_left hm
