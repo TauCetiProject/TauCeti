@@ -8,7 +8,9 @@ module
 public import TauCeti.Algebra.Homology.HomotopyCofiber
 public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import Mathlib.LinearAlgebra.Basis.Prod
+public import Mathlib.LinearAlgebra.Determinant
 import TauCeti.Algebra.Category.ModuleCat.Biproducts
+import TauCeti.LinearAlgebra.Determinant.Basic
 
 /-!
 # Mapping cones of complexes of modules
@@ -17,9 +19,18 @@ Let `φ : K ⟶ L` be a morphism of homological complexes of modules over a ring
 with `c.Rel i j`, the term of the mapping cone `homotopyCofiber φ` is `K.X j ⊞ L.X i`; composing
 Mathlib's `HomologicalComplex.homotopyCofiber.XIsoBiprod` with `ModuleCat.biprodIsoProd` gives the
 linear equivalence `HomologicalComplex.homotopyCofiber.XEquiv` with `L.X i × K.X j`, whose
-coordinates are the projections `sndX` and `fstX`. For chain complexes indexed by `ℤ`, bases of
-`K` and `L` give the mapping cone the basis `HomologicalComplex.homotopyCofiber.basis`: the basis
-of `L.X i` followed by that of `K.X (i - 1)`.
+coordinates are the projections `sndX` and `fstX`. The inclusions `inrX` and `inlX` have
+coordinates `(x, 0)` and `(0, x)` (`HomologicalComplex.homotopyCofiber.XEquiv_inrX`,
+`HomologicalComplex.homotopyCofiber.XEquiv_inlX`), so `inrX` is injective, and on elements the
+differential of the cone is `d (inrX x) = inrX (d x)` and `d (inlX x) = -inlX (d x) + inrX (φ x)`
+(`HomologicalComplex.homotopyCofiber.d_inrX_apply`,
+`HomologicalComplex.homotopyCofiber.d_inlX_apply`).
+
+For chain complexes indexed by `ℤ`, bases of `K` and `L` give the mapping cone the basis
+`HomologicalComplex.homotopyCofiber.basis`: the basis of `L.X i` followed by that of
+`K.X (i - 1)`. The determinant in this basis of a family made of vectors of `L.X i` followed by
+vectors of `K.X (i - 1)` is the product of the determinants of the two blocks
+(`HomologicalComplex.homotopyCofiber.basis_det_eq_mul`).
 
 The mapping cone of `K ⟶ 0` is `K` shifted by one degree: its terms are identified with those of
 `K` by `HomologicalComplex.homotopyCofiber.zeroEquiv`, under which its differentials become the
@@ -99,6 +110,32 @@ theorem zeroEquiv_d {i j k : ι} (hij : c.Rel i j) (hjk : c.Rel j k)
       -(K.d j k).hom (zeroEquiv K hij x) :=
   congr(($(d_fstX (0 : K ⟶ 0) i j k hij hjk)).hom x)
 
+/-- The coordinates of an element of `L.X i` included into the mapping cone. -/
+theorem XEquiv_inrX {i j : ι} (hij : c.Rel i j) (x : L.X i) :
+    XEquiv φ hij ((inrX φ i).hom x) = (x, 0) :=
+  ((XEquiv φ hij).symm_apply_eq.1 (by simp)).symm
+
+/-- The coordinates of an element of `K.X j` included into the mapping cone. -/
+theorem XEquiv_inlX {i j : ι} (hij : c.Rel i j) (x : K.X j) :
+    XEquiv φ hij ((inlX φ j i hij).hom x) = (0, x) :=
+  ((XEquiv φ hij).symm_apply_eq.1 (by simp)).symm
+
+/-- The inclusion `inrX` of `L.X i` into the mapping cone is injective. -/
+theorem inrX_hom_injective (i : ι) : Function.Injective (inrX φ i).hom :=
+  Function.LeftInverse.injective (g := (sndX φ i).hom) fun x ↦ congr(($(inrX_sndX φ i)).hom x)
+
+/-- The differential of the mapping cone on an element of `L`. -/
+@[simp]
+theorem d_inrX_apply (i j : ι) (x : L.X i) :
+    (d φ i j).hom ((inrX φ i).hom x) = (inrX φ j).hom ((L.d i j).hom x) :=
+  congr(($(inrX_d φ i j)).hom x)
+
+/-- The differential of the mapping cone on an element of `K`. -/
+theorem d_inlX_apply {i j k : ι} (hij : c.Rel i j) (hjk : c.Rel j k) (x : K.X j) :
+    (d φ i j).hom ((inlX φ j i hij).hom x) =
+      -(inlX φ k j hjk).hom ((K.d j k).hom x) + (inrX φ j).hom ((φ.f j).hom x) :=
+  congr(($(inlX_d φ i j k hij hjk)).hom x)
+
 end XEquiv
 
 section Basis
@@ -154,5 +191,25 @@ theorem zeroEquiv_zeroBasis (i : ℤ) (k : Fin (nK (i + 1 - 1))) :
   exact key _ (by simp) k _
 
 end Basis
+
+section Det
+
+variable {S : Type*} [CommRing S] {K L : ChainComplex (ModuleCat S) ℤ} (φ : K ⟶ L)
+  {nK nL : ℤ → ℕ} (cK : ∀ i, Basis (Fin (nK i)) S (K.X i))
+  (cL : ∀ i, Basis (Fin (nL i)) S (L.X i))
+
+/-- The determinant, in the basis `homotopyCofiber.basis` of the mapping cone, of a family whose
+first `nL i` members come from `L.X i` and whose last `nK (i - 1)` members come from
+`K.X (i - 1)` is the product of the determinants of the two blocks. -/
+theorem basis_det_eq_mul (i : ℤ) (w : Fin (nL i + nK (i - 1)) → (homotopyCofiber φ).X i)
+    (u : Fin (nL i) → L.X i) (v : Fin (nK (i - 1)) → K.X (i - 1))
+    (hu : ∀ k, w (Fin.castAdd _ k) = (inrX φ i).hom (u k))
+    (hv : ∀ k, w (Fin.natAdd _ k) = (inlX φ (i - 1) i (by simp)).hom (v k)) :
+    (basis φ cK cL i).det w = (cL i).det u * (cK (i - 1)).det v := by
+  rw [basis, Basis.det_reindex, Basis.det_map, ← Basis.prod_det_sumElim]
+  congr 1
+  ext (k | k) <;> simp [hu, hv, -XEquiv_apply, XEquiv_inrX, XEquiv_inlX]
+
+end Det
 
 end HomologicalComplex.homotopyCofiber
