@@ -6,10 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.Multiplier
-public import Mathlib.Topology.ContinuousMap.ZeroAtInfty
 public import TauCeti.Analysis.Normed.Algebra.DoubleCentralizer
-import Mathlib.Topology.Algebra.Support
-import Mathlib.Topology.UrysohnsLemma
+public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Basic
 
 /-!
 # Multiplier algebra of `C₀(X, A)`
@@ -21,20 +19,19 @@ infinity `C₀(X, A)` on both sides, yielding a unital algebra homomorphism
 compatible involution) that extends the canonical inclusion `C₀(X, A) → 𝓜(𝕜, C₀(X, A))`.
 
 When `X` is a weakly locally compact `R₁` space (in particular, any locally compact Hausdorff or
-compact Hausdorff space) and `A` is a real normed space (covering `ℝ`, `ℂ`, and every complex
-Banach or C⋆-algebra), Urysohn cutoffs yield an inverse `DoubleCentralizer.toBCF :
-𝓜(𝕜, C₀(X, A)) → (X →ᵇ A)`. Evaluating the centrality relation `m.snd e * g = e * m.fst g` against
-a compactly supported bump `e` equal to `1` on a compact neighborhood of `x` identifies `m.fst g`
-as pointwise left multiplication by `m.toBCF` and `m.snd g` as pointwise right multiplication by
-`m.toBCF`, establishing `DoubleCentralizer.toBCFAlgEquiv : 𝓜(𝕜, C₀(X, A)) ≃ₐ[𝕜] (X →ᵇ A)` and
+compact Hausdorff space) and `A` is a unital normed `𝕜`-algebra that is also a real normed space
+(covering `ℝ`, `ℂ`, and every unital complex Banach or C⋆-algebra), Urysohn cutoffs yield an
+inverse `DoubleCentralizer.toBCF : 𝓜(𝕜, C₀(X, A)) → (X →ᵇ A)`. Evaluating the centrality relation
+`m.snd e * g = e * m.fst g` against a compactly supported bump `e` equal to `1` on a compact
+neighborhood of `x` identifies `m.fst g` as pointwise left multiplication by `m.toBCF` and
+`m.snd g` as pointwise right multiplication by `m.toBCF`, establishing
+`DoubleCentralizer.toBCFAlgEquiv : 𝓜(𝕜, C₀(X, A)) ≃ₐ[𝕜] (X →ᵇ A)` and
 `DoubleCentralizer.toBCFStarAlgEquiv : 𝓜(𝕜, C₀(X, A)) ≃⋆ₐ[𝕜] (X →ᵇ A)`. When `‖(1 : A)‖ = 1`
-(`NormOneClass A`, automatic for `ℝ`, `ℂ`, and nontrivial C⋆-algebras), this equivalence is
+(`NormOneClass A`, automatic for `ℝ`, `ℂ`, and nontrivial unital C⋆-algebras), this equivalence is
 isometric (`DoubleCentralizer.toBCFLinearIsometryEquiv`).
 
 ## Main definitions
 
-* `ZeroAtInftyContinuousMap.toBCFNonUnitalStarAlgHom`: the canonical inclusion
-  `C₀(X, A) →⋆ₙₐ[𝕜] (X →ᵇ A)`.
 * `BoundedContinuousFunction.toDoubleCentralizer`: the multiplier of `C₀(X, A)` given by
   pointwise left and right multiplication by `f : X →ᵇ A`, bundled as
   `toDoubleCentralizerAlgHom` and `toDoubleCentralizerStarAlgHom`.
@@ -48,8 +45,9 @@ isometric (`DoubleCentralizer.toBCFLinearIsometryEquiv`).
   pointwise action of a multiplier of `C₀(X, A)` via `m.toBCF`.
 * `DoubleCentralizer.norm_toBCF`, `BoundedContinuousFunction.norm_toDoubleCentralizer`:
   the identification `𝓜(𝕜, C₀(X, A)) ≃ (X →ᵇ A)` is isometric when `[NormOneClass A]`.
-* `DoubleCentralizer.mem_range_coe_iff_tendsto_cocompact`: a multiplier lies in the canonical
-  image of `C₀(X, A)` if and only if its bounded continuous function vanishes at infinity.
+* `DoubleCentralizer.mem_range_coe_iff_tendsto_cocompact_nhds_zero`: a multiplier lies in the
+  canonical image of `C₀(X, A)` if and only if its bounded continuous function vanishes at
+  infinity.
 
 ## References
 
@@ -64,34 +62,6 @@ noncomputable section
 
 open Filter Topology
 open scoped BoundedContinuousFunction MultiplierAlgebra ZeroAtInfty
-
-namespace ZeroAtInftyContinuousMap
-
-section ToBCFHom
-
-variable {𝕜 X A : Type*} [TopologicalSpace X] [SeminormedRing 𝕜]
-  [NonUnitalSeminormedRing A] [StarRing A] [NormedStarGroup A] [Module 𝕜 A] [IsBoundedSMul 𝕜 A]
-
-variable (𝕜 X A) in
-/-- The canonical inclusion `C₀(X, A) →⋆ₙₐ[𝕜] (X →ᵇ A)` as a non-unital `⋆`-algebra
-homomorphism. -/
-def toBCFNonUnitalStarAlgHom : C₀(X, A) →⋆ₙₐ[𝕜] (X →ᵇ A) where
-  toFun := toBCF
-  map_smul' _ _ := rfl
-  map_zero' := rfl
-  map_add' _ _ := rfl
-  map_mul' _ _ := rfl
-  map_star' _ := rfl
-
-/-- Applying `toBCFNonUnitalStarAlgHom` evaluates to `ZeroAtInftyContinuousMap.toBCF`. -/
-@[simp]
-theorem toBCFNonUnitalStarAlgHom_apply (f : C₀(X, A)) :
-    toBCFNonUnitalStarAlgHom 𝕜 X A f = f.toBCF :=
-  (rfl)
-
-end ToBCFHom
-
-end ZeroAtInftyContinuousMap
 
 namespace BoundedContinuousFunction
 
@@ -320,7 +290,7 @@ theorem toDoubleCentralizerStarAlgHom_comp_toBCFNonUnitalStarAlgHom :
       (ZeroAtInftyContinuousMap.toBCFNonUnitalStarAlgHom 𝕜 X A) =
         DoubleCentralizer.coeHom (𝕜 := 𝕜) := by
   ext g : 1
-  exact toDoubleCentralizer_zeroAtInfty g
+  simp
 
 end Unital
 
@@ -335,28 +305,6 @@ section ToBCF
 variable {𝕜 X A : Type*} [TopologicalSpace X] [WeaklyLocallyCompactSpace X] [R1Space X]
   [NontriviallyNormedField 𝕜] [NormedRing A] [NormedAlgebra 𝕜 A] [NormedSpace ℝ A]
 
-/-- A compactly supported cutoff in `C₀(X, A)` equal to `1` on a compact set `K` and bounded in
-norm by `‖(1 : A)‖`. -/
-private theorem exists_bump_on_compact {K : Set X} (hK : IsCompact K) :
-    ∃ e : C₀(X, A), (∀ x ∈ K, e x = 1) ∧ ‖e‖ ≤ ‖(1 : A)‖ := by
-  obtain ⟨χ, hχK, -, hχ_supp, hχ_range⟩ :=
-    exists_continuous_one_zero_of_isCompact hK isClosed_empty (Set.disjoint_empty K)
-  refine ⟨⟨⟨fun x => χ x • (1 : A), χ.continuous.smul continuous_const⟩,
-    (hχ_supp.comp_left (g := fun r : ℝ => r • (1 : A)) (zero_smul ℝ (1 : A))).is_zero_at_infty⟩,
-    fun x hx => ?_, ?_⟩
-  · simp [hχK hx]
-  · rw [← ZeroAtInftyContinuousMap.norm_toBCF_eq_norm,
-      BoundedContinuousFunction.norm_le (norm_nonneg _)]
-    intro x
-    have h0 : 0 ≤ χ x := (hχ_range x).1
-    have h1 : χ x ≤ 1 := (hχ_range x).2
-    simpa [norm_smul, Real.norm_of_nonneg h0] using
-      mul_le_mul_of_nonneg_right h1 (norm_nonneg (1 : A))
-
-private theorem exists_bump_at (x : X) : ∃ e : C₀(X, A), e x = 1 ∧ ‖e‖ ≤ ‖(1 : A)‖ := by
-  obtain ⟨e, he, hnorm⟩ := exists_bump_on_compact (A := A) (isCompact_singleton (x := x))
-  exact ⟨e, he x rfl, hnorm⟩
-
 omit [WeaklyLocallyCompactSpace X] [R1Space X] [NormedSpace ℝ A] in
 private theorem snd_apply_eq_of_eq_one (m : 𝓜(𝕜, C₀(X, A))) {e₁ e₂ : C₀(X, A)} {x : X}
     (h₁ : e₁ x = 1) (h₂ : e₂ x = 1) : m.snd e₁ x = m.snd e₂ x := by
@@ -367,11 +315,12 @@ private theorem snd_apply_eq_of_eq_one (m : 𝓜(𝕜, C₀(X, A))) {e₁ e₂ :
   exact h12.trans h22.symm
 
 private def toBCFFun (m : 𝓜(𝕜, C₀(X, A))) (x : X) : A :=
-  m.snd (exists_bump_at (A := A) x).choose x
+  m.snd (ZeroAtInftyContinuousMap.exists_apply_eq_norm_le x (1 : A)).choose x
 
 private theorem toBCFFun_eq_snd (m : 𝓜(𝕜, C₀(X, A))) {e : C₀(X, A)} {x : X} (he : e x = 1) :
     toBCFFun m x = m.snd e x :=
-  snd_apply_eq_of_eq_one m (exists_bump_at (A := A) x).choose_spec.1 he
+  snd_apply_eq_of_eq_one m
+    (ZeroAtInftyContinuousMap.exists_apply_eq_norm_le x (1 : A)).choose_spec.1 he
 
 private theorem toBCFFun_eq_fst (m : 𝓜(𝕜, C₀(X, A))) {e : C₀(X, A)} {x : X} (he : e x = 1) :
     toBCFFun m x = m.fst e x := by
@@ -382,15 +331,16 @@ private theorem continuous_toBCFFun (m : 𝓜(𝕜, C₀(X, A))) : Continuous (t
   rw [continuous_iff_continuousAt]
   intro x
   obtain ⟨K, hK, hKx⟩ := exists_compact_mem_nhds x
-  obtain ⟨e, heK, -⟩ := exists_bump_on_compact (A := A) hK
+  obtain ⟨e, heK, -, -⟩ := ZeroAtInftyContinuousMap.exists_eqOn_const_of_isCompact hK (1 : A)
   refine (m.snd e).continuous.continuousAt.congr ?_
   filter_upwards [hKx] with y hy
-  exact (toBCFFun_eq_snd m (heK y hy)).symm
+  exact (toBCFFun_eq_snd m (heK hy)).symm
 
 private theorem norm_toBCFFun_le (m : 𝓜(𝕜, C₀(X, A))) (x : X) :
     ‖toBCFFun m x‖ ≤ ‖m.snd‖ * ‖(1 : A)‖ := by
-  set e := (exists_bump_at (A := A) x).choose
-  have hnorm : ‖e‖ ≤ ‖(1 : A)‖ := (exists_bump_at (A := A) x).choose_spec.2
+  set e := (ZeroAtInftyContinuousMap.exists_apply_eq_norm_le x (1 : A)).choose
+  have hnorm : ‖e‖ ≤ ‖(1 : A)‖ :=
+    (ZeroAtInftyContinuousMap.exists_apply_eq_norm_le x (1 : A)).choose_spec.2
   calc ‖toBCFFun m x‖ = ‖m.snd e x‖ := rfl
     _ ≤ ‖m.snd e‖ := (m.snd e).toBCF.norm_coe_le_norm x
     _ ≤ ‖m.snd‖ * ‖e‖ := m.snd.le_opNorm e
@@ -415,7 +365,7 @@ theorem toBCF_apply_eq_fst (m : 𝓜(𝕜, C₀(X, A))) {e : C₀(X, A)} {x : X}
 `m.toBCF`. -/
 theorem fst_apply_eq_toBCF_mul (m : 𝓜(𝕜, C₀(X, A))) (g : C₀(X, A)) (x : X) :
     m.fst g x = m.toBCF x * g x := by
-  obtain ⟨e, he, -⟩ := exists_bump_at (A := A) x
+  obtain ⟨e, he, -⟩ := ZeroAtInftyContinuousMap.exists_apply_eq_norm_le x (1 : A)
   rw [toBCF_apply_eq_snd m he]
   simpa [he] using congr($(m.central e g) x).symm
 
@@ -423,7 +373,7 @@ theorem fst_apply_eq_toBCF_mul (m : 𝓜(𝕜, C₀(X, A))) (g : C₀(X, A)) (x 
 `m.toBCF`. -/
 theorem snd_apply_eq_mul_toBCF (m : 𝓜(𝕜, C₀(X, A))) (g : C₀(X, A)) (x : X) :
     m.snd g x = g x * m.toBCF x := by
-  obtain ⟨e, he, -⟩ := exists_bump_at (A := A) x
+  obtain ⟨e, he, -⟩ := ZeroAtInftyContinuousMap.exists_apply_eq_norm_le x (1 : A)
   rw [toBCF_apply_eq_fst m he]
   simpa [he] using congr($(m.central g e) x)
 
@@ -431,7 +381,7 @@ theorem snd_apply_eq_mul_toBCF (m : 𝓜(𝕜, C₀(X, A))) (g : C₀(X, A)) (x 
 @[simp]
 theorem toBCF_toDoubleCentralizer (f : X →ᵇ A) : (f.toDoubleCentralizer 𝕜).toBCF = f := by
   ext x
-  obtain ⟨e, he, -⟩ := exists_bump_at (A := A) x
+  obtain ⟨e, he, -⟩ := ZeroAtInftyContinuousMap.exists_apply_eq_norm_le x (1 : A)
   simp [toBCF_apply_eq_snd _ he, he]
 
 /-- Reconstructing a multiplier from `m.toBCF` recovers `m`. -/
@@ -555,18 +505,17 @@ theorem _root_.BoundedContinuousFunction.isometry_toDoubleCentralizer [NormOneCl
 
 /-- A multiplier `m : 𝓜(𝕜, C₀(X, A))` lies in the canonical image of `C₀(X, A)` if and only if
 `m.toBCF` vanishes at infinity. -/
-theorem mem_range_coe_iff_tendsto_cocompact (m : 𝓜(𝕜, C₀(X, A))) :
+theorem mem_range_coe_iff_tendsto_cocompact_nhds_zero (m : 𝓜(𝕜, C₀(X, A))) :
     m ∈ Set.range (DoubleCentralizer.coe 𝕜 : C₀(X, A) → 𝓜(𝕜, C₀(X, A))) ↔
       Tendsto m.toBCF (cocompact X) (𝓝 0) := by
   refine ⟨?_, fun hm => ?_⟩
   · rintro ⟨g, rfl⟩
     rw [toBCF_coe]
     exact zero_at_infty g
-  · refine ⟨⟨m.toBCF.toContinuousMap, hm⟩, ?_⟩
+  · refine ⟨{ toFun := m.toBCF, continuous_toFun := m.toBCF.continuous, zero_at_infty' := hm }, ?_⟩
     apply toBCF_injective
     ext x
-    rw [toBCF_coe]
-    rfl
+    simp
 
 variable (𝕜 X A) in
 /-- The canonical algebra equivalence `𝓜(𝕜, C₀(X, A)) ≃ₐ[𝕜] (X →ᵇ A)` for a weakly locally

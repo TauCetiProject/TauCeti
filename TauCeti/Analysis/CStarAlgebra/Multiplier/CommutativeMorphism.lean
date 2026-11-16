@@ -6,26 +6,21 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.ContinuousMap
-public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.Topology.Maps.Proper.Basic
 public import TauCeti.Analysis.CStarAlgebra.Multiplier.Nondegenerate
 public import TauCeti.Analysis.CStarAlgebra.Multiplier.ZeroAtInfty
-import Mathlib.Analysis.CStarAlgebra.ApproximateUnit
-import Mathlib.Analysis.Normed.Algebra.Spectrum
-import Mathlib.Topology.Algebra.Support
-import Mathlib.Topology.ContinuousMap.Ideals
-import Mathlib.Topology.ContinuousMap.ZeroAtInftyUnitization
-import Mathlib.Topology.Maps.Proper.CompactlyGenerated
-import Mathlib.Topology.UrysohnsLemma
+import TauCeti.Analysis.CStarAlgebra.ApproximateUnit
+import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Pullback
 
 /-!
 # Commutative multiplier morphisms
 
-For a continuous map `h : C(X, Y)`, precomposition defines a non-unital `⋆`-algebra homomorphism
-`ContinuousMap.compZeroAtInftyToBCF : C₀(Y, A) →⋆ₙₐ[𝕜] (X →ᵇ A)` and, via
+For a continuous map `h : C(X, Y)`, precomposition defines a pullback into bounded continuous
+functions `ContinuousMap.compZeroAtInftyToBCF : C₀(Y, A) →⋆ₙₐ[𝕜] (X →ᵇ A)` (in
+`TauCeti.Topology.ContinuousMap.ZeroAtInfty.Pullback`) and, via
 `BoundedContinuousFunction.toDoubleCentralizer`, a multiplier homomorphism
 `ContinuousMap.compZeroAtInftyToMultiplier : C₀(Y, A) →⋆ₙₐ[𝕜] 𝓜(𝕜, C₀(X, A))`. No properness of
-`h` is required for the image to land in `X →ᵇ A` or `𝓜(𝕜, C₀(X, A))`.
+`h` is required for the image to land in `𝓜(𝕜, C₀(X, A))`.
 
 When `Y` is weakly locally compact `R₁` and `A` is any (possibly non-unital) C⋆-algebra, Urysohn
 cutoffs on compact images `h '' K` paired with an approximate unit of `A` show that
@@ -38,21 +33,18 @@ representing bounded continuous function with `h`
 (`ContinuousMap.extendToMultiplier_compZeroAtInftyToMultiplier`).
 
 In the scalar case `A = ℂ` (with `X` weakly locally compact `R₁` and `Y` weakly locally compact
-Hausdorff), every nondegenerate `φ : C₀(Y, ℂ) →⋆ₙₐ[ℂ] 𝓜(ℂ, C₀(X, ℂ))` yields a nonzero character
-`f ↦ (φ f).toBCF x` at every `x : X`. Lifting through the one-point compactification recovers a
-unique continuous map `h : C(X, Y)` with `(φ f).toBCF = f ∘ h`, establishing the contravariant
-bijection `ContinuousMap.multiplierMorphismEquiv` between `C(X, Y)` and nondegenerate multiplier
-homomorphisms `C₀(Y, ℂ) →⋆ₙₐ[ℂ] 𝓜(ℂ, C₀(X, ℂ))`, as well as the `RCLike`-scalar version
-`ContinuousMap.bcfMorphismEquiv` into `X →ᵇ 𝕜`. Finally, `h.compZeroAtInftyToMultiplier` lands in
-the canonical image of `C₀(X, A)` if and only if `h` is proper
+Hausdorff), nondegeneracy of any `φ : A →⋆ₙₐ[ℂ] 𝓜(ℂ, C₀(X, ℂ))` is equivalent to pointwise
+nonvanishing of `a ↦ (φ a).toBCF x`
+(`NonUnitalStarAlgHom.isMultiplierNondegenerate_iff_forall_exists_toBCF_ne_zero`). Combining this
+with `ContinuousMap.bcfMorphismEquiv` establishes the contravariant bijection
+`ContinuousMap.multiplierMorphismEquiv` between `C(X, Y)` and nondegenerate multiplier
+homomorphisms `C₀(Y, ℂ) →⋆ₙₐ[ℂ] 𝓜(ℂ, C₀(X, ℂ))`. Finally, `h.compZeroAtInftyToMultiplier` lands
+in the canonical image of `C₀(X, A)` if and only if `h` is proper
 (`ContinuousMap.isProperMap_iff_range_compZeroAtInftyToMultiplier_subset`).
 
 ## Main definitions
 
-* `ContinuousMap.compZeroAtInftyToBCF`: pullback `C₀(Y, A) →⋆ₙₐ[𝕜] (X →ᵇ A)` along `h : C(X, Y)`.
 * `ContinuousMap.compZeroAtInftyToMultiplier`: pullback `C₀(Y, A) →⋆ₙₐ[𝕜] 𝓜(𝕜, C₀(X, A))`.
-* `ContinuousMap.bcfMorphismEquiv`: bijection between `C(X, Y)` and pointwise-nonvanishing
-  `⋆`-homomorphisms `C₀(Y, 𝕜) →⋆ₙₐ[𝕜] (X →ᵇ 𝕜)`.
 * `ContinuousMap.multiplierMorphismEquiv`: bijection between `C(X, Y)` and nondegenerate
   `⋆`-homomorphisms `C₀(Y, ℂ) →⋆ₙₐ[ℂ] 𝓜(ℂ, C₀(X, ℂ))`.
 
@@ -66,10 +58,9 @@ the canonical image of `C₀(X, A)` if and only if `h` is proper
 * `NonUnitalStarAlgHom.isMultiplierNondegenerate_iff_forall_exists_toBCF_ne_zero`: nondegeneracy
   of `φ : A →⋆ₙₐ[ℂ] 𝓜(ℂ, C₀(X, ℂ))` for any (possibly non-unital) C⋆-algebra `A` is equivalent
   to pointwise nonvanishing of `a ↦ (φ a).toBCF x`.
-* `ContinuousMap.isProperMap_iff_forall_tendsto_zeroAtInfty`,
-  `ContinuousMap.isProperMap_iff_range_compZeroAtInftyToBCF_subset`,
-  `ContinuousMap.isProperMap_iff_range_compZeroAtInftyToMultiplier_subset`: characterization of
-  proper maps as those whose pullback lands in `C₀(X, A)`.
+* `ContinuousMap.isProperMap_iff_range_compZeroAtInftyToMultiplier_subset` and
+  `ContinuousMap.isProperMap_multiplierMorphismEquiv_symm_iff`: characterization of proper maps as
+  those whose multiplier pullback lands in `C₀(X, A)`.
 
 ## References
 
@@ -91,42 +82,7 @@ namespace ContinuousMap
 section Pullback
 
 variable {𝕜 X Y A : Type*} [TopologicalSpace X] [TopologicalSpace Y]
-
-section ToBCF
-
-variable [SeminormedRing 𝕜] [NonUnitalSeminormedRing A] [StarRing A] [NormedStarGroup A]
-  [Module 𝕜 A] [IsBoundedSMul 𝕜 A]
-
-variable (𝕜 A) in
-/-- Precomposition by a continuous map `h : C(X, Y)` defines a non-unital `⋆`-algebra homomorphism
-`C₀(Y, A) →⋆ₙₐ[𝕜] (X →ᵇ A)`. -/
-def compZeroAtInftyToBCF (h : C(X, Y)) : C₀(Y, A) →⋆ₙₐ[𝕜] (X →ᵇ A) where
-  toFun f := f.toBCF.compContinuous h
-  map_smul' _ _ := rfl
-  map_zero' := rfl
-  map_add' _ _ := rfl
-  map_mul' _ _ := rfl
-  map_star' _ := rfl
-
-/-- Applying `compZeroAtInftyToBCF` precomposes `f.toBCF` with `h`. -/
-@[simp]
-theorem compZeroAtInftyToBCF_apply (h : C(X, Y)) (f : C₀(Y, A)) :
-    h.compZeroAtInftyToBCF 𝕜 A f = f.toBCF.compContinuous h :=
-  (rfl)
-
-/-- Pullback along the identity map is the canonical inclusion `C₀(X, A) →⋆ₙₐ[𝕜] (X →ᵇ A)`. -/
-@[simp]
-theorem compZeroAtInftyToBCF_id :
-    (ContinuousMap.id X).compZeroAtInftyToBCF 𝕜 A =
-      ZeroAtInftyContinuousMap.toBCFNonUnitalStarAlgHom 𝕜 X A := by
-  ext f x
-  simp
-
-end ToBCF
-
-section ToMultiplier
-
-variable [NontriviallyNormedField 𝕜] [StarRing 𝕜] [NonUnitalNormedRing A] [StarRing A]
+  [NontriviallyNormedField 𝕜] [StarRing 𝕜] [NonUnitalNormedRing A] [StarRing A]
   [NormedStarGroup A] [NormedSpace 𝕜 A] [SMulCommClass 𝕜 A A] [IsScalarTower 𝕜 A A]
   [StarModule 𝕜 A]
 
@@ -165,47 +121,17 @@ theorem compZeroAtInftyToMultiplier_id :
 
 /-- On a cocompact map `h : CocompactMap X Y`, pullback into the multiplier algebra agrees with
 `ZeroAtInftyContinuousMap.comp` composed with `DoubleCentralizer.coe`. -/
-theorem compZeroAtInftyToMultiplier_cocompact (h : CocompactMap X Y) (f : C₀(Y, A)) :
+theorem compZeroAtInftyToMultiplier_apply_eq_coe_comp (h : CocompactMap X Y) (f : C₀(Y, A)) :
     h.toContinuousMap.compZeroAtInftyToMultiplier 𝕜 A f = (f.comp h : 𝓜(𝕜, C₀(X, A))) :=
   DoubleCentralizer.ext_fst_snd
     (fun _ => ZeroAtInftyContinuousMap.ext fun _ => by simp)
     (fun _ => ZeroAtInftyContinuousMap.ext fun _ => by simp)
-
-end ToMultiplier
 
 end Pullback
 
 section Nondegenerate
 
 variable {X Y Z A : Type*} [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z]
-
-private theorem exists_approx_unit_on_compact [NonUnitalCStarAlgebra A]
-    {K : Set A} (hK : IsCompact K) {δ : ℝ} (hδ : 0 < δ) :
-    ∃ e : A, ‖e‖ ≤ 1 ∧ ∀ a ∈ K, ‖e * a - a‖ < δ := by
-  have hδ3 : 0 < δ / 3 := by positivity
-  obtain ⟨s, hs⟩ := hK.elim_finite_subcover
-    (fun a : A => Metric.ball a (δ / 3)) (fun _ => Metric.isOpen_ball)
-    (fun y _ => Set.mem_iUnion.2 ⟨y, Metric.mem_ball_self hδ3⟩)
-  let := CStarAlgebra.spectralOrder A
-  have := CStarAlgebra.spectralOrderedRing A
-  have hl := CStarAlgebra.increasingApproximateUnit A
-  have := hl.neBot
-  have hev : ∀ᶠ e in CStarAlgebra.approximateUnit A,
-      ‖e‖ ≤ 1 ∧ ∀ a ∈ s, ‖e * a - a‖ < δ / 3 :=
-    hl.eventually_norm.and <| (Filter.eventually_all_finset s).2 fun a _ => by
-      simpa [dist_eq_norm] using Metric.tendsto_nhds.1 (hl.tendsto_mul_right a) (δ / 3) hδ3
-  obtain ⟨e, he_norm, he_mul⟩ := hev.exists
-  refine ⟨e, he_norm, fun y hy => ?_⟩
-  obtain ⟨a, ha, hya⟩ := Set.mem_iUnion₂.1 (hs hy)
-  rw [Metric.mem_ball, dist_eq_norm] at hya
-  have hdecomp : e * y - y = e * (y - a) + (e * a - a) - (y - a) := by rw [mul_sub]; abel
-  have h1 : ‖e * (y - a)‖ ≤ δ / 3 :=
-    (norm_mul_le _ _).trans <| by
-      simpa using mul_le_mul he_norm hya.le (norm_nonneg _) zero_le_one
-  have h2 : ‖e * y - y‖ ≤ ‖e * (y - a)‖ + ‖e * a - a‖ + ‖y - a‖ := by
-    rw [hdecomp]
-    exact (norm_sub_le _ _).trans (by gcongr; exact norm_add_le _ _)
-  linarith [he_mul a ha]
 
 /-- Pullback along any continuous map `h : C(X, Y)` into a weakly locally compact `R₁` space is a
 nondegenerate multiplier homomorphism `C₀(Y, A) →⋆ₙₐ[ℂ] 𝓜(ℂ, C₀(X, A))` for every (possibly
@@ -217,34 +143,32 @@ theorem isMultiplierNondegenerate_compZeroAtInftyToMultiplier [WeaklyLocallyComp
   intro g ε hε
   obtain ⟨K, hK, hKg⟩ := mem_cocompact.1 <|
     Metric.tendsto_nhds.1 (zero_at_infty g) (ε / 4) (by positivity)
-  obtain ⟨e, he_norm, he_mul⟩ :=
-    exists_approx_unit_on_compact (hK.image g.continuous) (half_pos hε)
-  obtain ⟨χ, hχK, -, hχ_supp, hχ_range⟩ :=
-    exists_continuous_one_zero_of_isCompact (hK.image h.continuous) isClosed_empty
-      (Set.disjoint_empty _)
-  let f : C₀(Y, A) :=
-    ⟨⟨fun y => χ y • e, χ.continuous.smul continuous_const⟩,
-      (hχ_supp.comp_left (g := fun r : ℝ => r • e) (zero_smul ℝ e)).is_zero_at_infty⟩
+  let := CStarAlgebra.spectralOrder A
+  have := CStarAlgebra.spectralOrderedRing A
+  have hl := CStarAlgebra.increasingApproximateUnit A
+  have := hl.neBot
+  obtain ⟨e, he_norm, he_mul⟩ := (hl.eventually_norm.and <|
+    Metric.tendstoUniformlyOn_iff.1 (hl.tendstoUniformlyOn_mul_right (hK.image g.continuous))
+      (ε / 2) (half_pos hε)).exists
+  obtain ⟨f, hfK, -, hf_norm⟩ :=
+    ZeroAtInftyContinuousMap.exists_eqOn_const_of_isCompact (hK.image h.continuous) e
   refine ⟨(h.compZeroAtInftyToMultiplier ℂ A f).fst g, ?_,
     Submodule.subset_span <| Set.mem_iUnion.2 ⟨f, g, rfl⟩⟩
   rw [Metric.mem_ball, dist_eq_norm]
   have hle : ‖(h.compZeroAtInftyToMultiplier ℂ A f).fst g - g‖ ≤ ε / 2 := by
-    rw [← ZeroAtInftyContinuousMap.norm_toBCF_eq_norm,
-      BoundedContinuousFunction.norm_le (half_pos hε).le]
+    rw [ZeroAtInftyContinuousMap.norm_le (half_pos hε).le]
     intro x
     have hval : ((h.compZeroAtInftyToMultiplier ℂ A f).fst g - g) x =
-        (χ (h x) • e) * g x - g x := by simp [f]
-    rw [ZeroAtInftyContinuousMap.toBCF_apply, hval]
+        f (h x) * g x - g x := by simp
+    rw [hval]
     by_cases hx : x ∈ K
-    · rw [hχK ⟨x, hx, rfl⟩, Pi.one_apply, one_smul]
-      exact (he_mul (g x) ⟨x, hx, rfl⟩).le
+    · rw [hfK ⟨x, hx, rfl⟩, norm_sub_rev]
+      simpa [dist_eq_norm] using (he_mul (g x) ⟨x, hx, rfl⟩).le
     · have hdist : ‖g x‖ < ε / 4 := by simpa [dist_zero_right] using hKg hx
-      have hχe : ‖χ (h x) • e‖ ≤ 1 := by
-        rw [norm_smul, Real.norm_of_nonneg (hχ_range (h x)).1]
-        simpa using mul_le_mul (hχ_range (h x)).2 he_norm (norm_nonneg e) zero_le_one
-      have hmul : ‖(χ (h x) • e) * g x‖ ≤ ‖g x‖ :=
-        (norm_mul_le _ _).trans <| by simpa using mul_le_mul_of_nonneg_right hχe (norm_nonneg (g x))
-      linarith [norm_sub_le ((χ (h x) • e) * g x) (g x)]
+      have hf_le : ‖f (h x)‖ ≤ 1 := (f.norm_coe_le_norm (h x)).trans (hf_norm.trans he_norm)
+      have hmul : ‖f (h x) * g x‖ ≤ ‖g x‖ :=
+        (norm_mul_le _ _).trans <| by simpa using mul_le_mul_of_nonneg_right hf_le (norm_nonneg _)
+      linarith [norm_sub_le (f (h x) * g x) (g x)]
   exact hle.trans_lt (half_lt_self hε)
 
 /-- The unique multiplier extension of `h.compZeroAtInftyToMultiplier ℂ A` acts on
@@ -280,148 +204,6 @@ theorem extendToMultiplier_comp_compZeroAtInftyToMultiplier [NonUnitalCStarAlgeb
   simp
 
 end Nondegenerate
-
-section CharacterRecovery
-
-variable {𝕜 X Y : Type*} [RCLike 𝕜] [TopologicalSpace X] [TopologicalSpace Y]
-  [WeaklyLocallyCompactSpace Y] [T2Space Y]
-
-/-- Every nonzero algebra character `C₀(Y, 𝕜) →ₙₐ[𝕜] 𝕜` on a weakly locally compact Hausdorff space
-is point evaluation at a unique point of `Y`. -/
-private theorem existsUnique_eval_of_ne_zero (ψ : C₀(Y, 𝕜) →ₙₐ[𝕜] 𝕜) (hψ : ψ ≠ 0) :
-    ∃! y : Y, ∀ f : C₀(Y, 𝕜), ψ f = f y := by
-  let χ : C(OnePoint Y, 𝕜) →ₐ[𝕜] 𝕜 :=
-    (Unitization.lift ψ).comp (ZeroAtInftyContinuousMap.unitizationAlgEquiv Y 𝕜 𝕜).symm.toAlgHom
-  obtain ⟨z, hz⟩ :=
-    (WeakDual.CharacterSpace.continuousMapEval_bijective (OnePoint Y) 𝕜).2
-      (WeakDual.CharacterSpace.equivAlgHom.symm χ)
-  have hval (f : C₀(Y, 𝕜)) : ψ f = f.toOnePoint z := by
-    have h1 := congr($hz f.toOnePoint)
-    simp only [WeakDual.CharacterSpace.continuousMapEval_apply_apply,
-      WeakDual.CharacterSpace.equivAlgHom_symm_coe] at h1
-    rw [h1]
-    simp only [χ, AlgHom.comp_apply, AlgEquiv.toAlgHom_apply,
-      ZeroAtInftyContinuousMap.coe_unitizationAlgEquiv_symm]
-    rw [← ZeroAtInftyContinuousMap.unitizationEquiv_inr, Equiv.symm_apply_apply]
-    simp [Unitization.lift]
-  cases z with
-  | infty =>
-    exfalso
-    apply hψ
-    ext f
-    simpa using hval f
-  | coe y =>
-    refine ⟨y, fun f => by simpa using hval f, fun y' hy' => ?_⟩
-    by_contra hne
-    obtain ⟨u, hu1, hu0, hu_supp, -⟩ :=
-      exists_continuous_one_zero_of_isCompact (isCompact_singleton (x := y))
-        isClosed_singleton (Set.disjoint_singleton.2 (Ne.symm hne))
-    let f : C₀(Y, 𝕜) :=
-      ⟨⟨fun w => (u w : 𝕜), RCLike.continuous_ofReal.comp u.continuous⟩,
-        (hu_supp.comp_left (g := RCLike.ofReal) (map_zero _)).is_zero_at_infty⟩
-    have hf : f y = f y' := by
-      have hy : ψ f = f y := by simpa using hval f
-      rw [← hy, hy' f]
-    simp [f, hu1 rfl, hu0 rfl] at hf
-
-private def recoverFun (φ : C₀(Y, 𝕜) →⋆ₙₐ[𝕜] (X →ᵇ 𝕜)) (hφ : ∀ x, ∃ f, φ f x ≠ 0) (x : X) :
-    Y :=
-  let ev : C₀(Y, 𝕜) →ₙₐ[𝕜] 𝕜 :=
-    { toFun f := φ f x
-      map_smul' c f := by simp
-      map_zero' := by simp
-      map_add' f g := by simp
-      map_mul' f g := by simp }
-  (existsUnique_eval_of_ne_zero ev fun hev => by
-    obtain ⟨f, hf⟩ := hφ x
-    exact hf (congr($hev f))).choose
-
-private theorem recoverFun_spec (φ : C₀(Y, 𝕜) →⋆ₙₐ[𝕜] (X →ᵇ 𝕜)) (hφ : ∀ x, ∃ f, φ f x ≠ 0)
-    (f : C₀(Y, 𝕜)) (x : X) : φ f x = f (recoverFun φ hφ x) :=
-  (existsUnique_eval_of_ne_zero
-    ({ toFun f := φ f x
-       map_smul' _ _ := by simp
-       map_zero' := by simp
-       map_add' _ _ := by simp
-       map_mul' _ _ := by simp } : C₀(Y, 𝕜) →ₙₐ[𝕜] 𝕜)
-    fun hev => let ⟨g, hg⟩ := hφ x; hg (congr($hev g))).choose_spec.1 f
-
-private theorem continuous_recoverFun (φ : C₀(Y, 𝕜) →⋆ₙₐ[𝕜] (X →ᵇ 𝕜))
-    (hφ : ∀ x, ∃ f, φ f x ≠ 0) : Continuous (recoverFun φ hφ) := by
-  rw [continuous_iff_continuousAt]
-  intro x
-  rw [ContinuousAt, tendsto_nhds]
-  intro U hU hxU
-  obtain ⟨u, hu1, hu0, hu_supp, -⟩ :=
-    exists_continuous_one_zero_of_isCompact (isCompact_singleton (x := recoverFun φ hφ x))
-      hU.isClosed_compl (Set.disjoint_singleton_left.2 (Set.notMem_compl_iff.2 hxU))
-  let f : C₀(Y, 𝕜) :=
-    ⟨⟨fun w => (u w : 𝕜), RCLike.continuous_ofReal.comp u.continuous⟩,
-      (hu_supp.comp_left (g := RCLike.ofReal) (map_zero _)).is_zero_at_infty⟩
-  have hmem : {x' : X | φ f x' ≠ 0} ∈ 𝓝 x :=
-    (isOpen_ne.preimage (φ f).continuous).mem_nhds <| by
-      simp only [Set.mem_preimage, Set.mem_ofPred]
-      rw [recoverFun_spec φ hφ f x]
-      simp [f, hu1 rfl]
-  filter_upwards [hmem] with x' hx'
-  by_contra hx'U
-  apply hx'
-  rw [recoverFun_spec φ hφ f x']
-  simp [f, hu0 hx'U]
-
-private theorem exists_apply_ne_zero_of_compZeroAtInftyToBCF (h : C(X, Y)) (x : X) :
-    ∃ f : C₀(Y, 𝕜), h.compZeroAtInftyToBCF 𝕜 𝕜 f x ≠ 0 := by
-  obtain ⟨u, hu1, -, hu_supp, -⟩ :=
-    exists_continuous_one_zero_of_isCompact (isCompact_singleton (x := h x)) isClosed_empty
-      (Set.disjoint_empty _)
-  let f : C₀(Y, 𝕜) :=
-    ⟨⟨fun w => (u w : 𝕜), RCLike.continuous_ofReal.comp u.continuous⟩,
-      (hu_supp.comp_left (g := RCLike.ofReal) (map_zero _)).is_zero_at_infty⟩
-  exact ⟨f, by simp [f, hu1 rfl]⟩
-
-variable (𝕜 X Y) in
-/-- Bijection between continuous maps `C(X, Y)` and pointwise-nonvanishing `⋆`-homomorphisms
-`C₀(Y, 𝕜) →⋆ₙₐ[𝕜] (X →ᵇ 𝕜)` for an `RCLike` field `𝕜`, any topological space `X`, and a weakly
-locally compact Hausdorff space `Y`. -/
-def bcfMorphismEquiv :
-    C(X, Y) ≃ {φ : C₀(Y, 𝕜) →⋆ₙₐ[𝕜] (X →ᵇ 𝕜) // ∀ x, ∃ f, φ f x ≠ 0} where
-  toFun h := ⟨h.compZeroAtInftyToBCF 𝕜 𝕜, exists_apply_ne_zero_of_compZeroAtInftyToBCF h⟩
-  invFun φ := ⟨recoverFun φ.1 φ.2, continuous_recoverFun φ.1 φ.2⟩
-  left_inv h := by
-    ext x
-    let ev : C₀(Y, 𝕜) →ₙₐ[𝕜] 𝕜 :=
-      { toFun f := f (h x)
-        map_smul' _ _ := by simp
-        map_zero' := by simp
-        map_add' _ _ := by simp
-        map_mul' _ _ := by simp }
-    have hev : ev ≠ 0 := fun h0 => by
-      obtain ⟨f, hf⟩ := exists_apply_ne_zero_of_compZeroAtInftyToBCF (𝕜 := 𝕜) h x
-      exact hf (congr($h0 f))
-    exact (existsUnique_eval_of_ne_zero ev hev).unique
-      (fun f => recoverFun_spec (h.compZeroAtInftyToBCF 𝕜 𝕜)
-        (exists_apply_ne_zero_of_compZeroAtInftyToBCF h) f x)
-      (fun _ => rfl)
-  right_inv φ := by
-    apply Subtype.ext
-    ext f x
-    exact (recoverFun_spec φ.1 φ.2 f x).symm
-
-/-- Applying `bcfMorphismEquiv` gives `ContinuousMap.compZeroAtInftyToBCF`. -/
-@[simp]
-theorem bcfMorphismEquiv_apply (h : C(X, Y)) :
-    (bcfMorphismEquiv 𝕜 X Y h : C₀(Y, 𝕜) →⋆ₙₐ[𝕜] (X →ᵇ 𝕜)) = h.compZeroAtInftyToBCF 𝕜 𝕜 :=
-  (rfl)
-
-/-- Evaluating `f` at the recovered continuous map `(bcfMorphismEquiv 𝕜 X Y).symm φ x` returns
-`φ.1 f x`. -/
-@[simp]
-theorem bcfMorphismEquiv_symm_apply_spec
-    (φ : {φ : C₀(Y, 𝕜) →⋆ₙₐ[𝕜] (X →ᵇ 𝕜) // ∀ x, ∃ f, φ f x ≠ 0}) (f : C₀(Y, 𝕜)) (x : X) :
-    f ((bcfMorphismEquiv 𝕜 X Y).symm φ x) = φ.1 f x :=
-  (recoverFun_spec φ.1 φ.2 f x).symm
-
-end CharacterRecovery
 
 end ContinuousMap
 
@@ -509,13 +291,7 @@ theorem IsMultiplierNondegenerate.exists_toBCF_ne_zero
     | smul c _ _ hu => simpa using congr(c * $(hu))
   have hall : ∀ g : C₀(X, ℂ), g x = 0 := fun g =>
     hclosed.closure_subset_iff.2 hsub (isMultiplierNondegenerate_iff_dense.1 hφ g)
-  obtain ⟨u, hu1, -, hu_supp, -⟩ :=
-    exists_continuous_one_zero_of_isCompact (isCompact_singleton (x := x)) isClosed_empty
-      (Set.disjoint_empty _)
-  let e : C₀(X, ℂ) :=
-    ⟨⟨fun w => (u w : ℂ), Complex.continuous_ofReal.comp u.continuous⟩,
-      (hu_supp.comp_left (g := Complex.ofReal) Complex.ofReal_zero).is_zero_at_infty⟩
-  have he1 : e x = 1 := by simp [e, hu1 rfl]
+  obtain ⟨e, he1, -⟩ := ZeroAtInftyContinuousMap.exists_apply_eq_norm_le x (1 : ℂ)
   exact one_ne_zero (he1.symm.trans (hall e))
 
 /-- When `X` is weakly locally compact `R₁`, a homomorphism `φ : A →⋆ₙₐ[ℂ] 𝓜(ℂ, C₀(X, ℂ))` from
@@ -680,45 +456,6 @@ section Properness
 variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
   [WeaklyLocallyCompactSpace Y] [T2Space Y]
 
-/-- A continuous map `h : C(X, Y)` into a weakly locally compact Hausdorff space is proper if and
-only if `f ∘ h` vanishes at infinity for every `f : C₀(Y, A)`. -/
-theorem isProperMap_iff_forall_tendsto_zeroAtInfty (A : Type*) [NormedAddCommGroup A]
-    [NormedSpace ℝ A] [Nontrivial A] (h : C(X, Y)) :
-    IsProperMap h ↔ ∀ f : C₀(Y, A), Tendsto (f ∘ h) (cocompact X) (𝓝 0) := by
-  refine ⟨fun hh f => (zero_at_infty f).comp (isProperMap_iff_tendsto_cocompact.1 hh).2,
-    fun H => ?_⟩
-  rw [isProperMap_iff_isCompact_preimage]
-  refine ⟨h.continuous, fun K hK => ?_⟩
-  obtain ⟨a, ha⟩ := exists_ne (0 : A)
-  obtain ⟨χ, hχK, -, hχ_supp, -⟩ :=
-    exists_continuous_one_zero_of_isCompact hK isClosed_empty (Set.disjoint_empty K)
-  let f : C₀(Y, A) :=
-    ⟨⟨fun y => χ y • a, χ.continuous.smul continuous_const⟩,
-      (hχ_supp.comp_left (g := fun r : ℝ => r • a) (zero_smul ℝ a)).is_zero_at_infty⟩
-  have hapos : 0 < ‖a‖ := norm_pos_iff.2 ha
-  obtain ⟨L, hL, hLf⟩ := mem_cocompact.1 (Metric.tendsto_nhds.1 (H f) ‖a‖ hapos)
-  refine hL.of_isClosed_subset (hK.isClosed.preimage h.continuous) fun x hx => ?_
-  by_contra hxL
-  have hlt : ‖f (h x)‖ < ‖a‖ := by simpa [dist_zero_right] using hLf hxL
-  have heq : f (h x) = a := by simp [f, hχK hx]
-  exact hlt.ne (congrArg norm heq)
-
-/-- A continuous map `h : C(X, Y)` into a weakly locally compact Hausdorff space is proper if and
-only if `h.compZeroAtInftyToBCF 𝕜 A` lands in the canonical image of `C₀(X, A)` inside `X →ᵇ A`. -/
-theorem isProperMap_iff_range_compZeroAtInftyToBCF_subset (𝕜 A : Type*) [SeminormedRing 𝕜]
-    [NonUnitalNormedRing A] [StarRing A] [NormedStarGroup A] [Module 𝕜 A] [IsBoundedSMul 𝕜 A]
-    [NormedSpace ℝ A] [Nontrivial A] (h : C(X, Y)) :
-    IsProperMap h ↔
-      Set.range (h.compZeroAtInftyToBCF 𝕜 A) ⊆
-        Set.range (ZeroAtInftyContinuousMap.toBCF : C₀(X, A) → (X →ᵇ A)) := by
-  rw [isProperMap_iff_forall_tendsto_zeroAtInfty A h]
-  refine ⟨fun H _ ⟨f, hf⟩ => hf ▸ ⟨⟨f.toContinuousMap.comp h, H f⟩, by ext x; rfl⟩,
-    fun H f => ?_⟩
-  obtain ⟨g, hg⟩ := H ⟨f, rfl⟩
-  have heq : (f ∘ h : X → A) = g := funext fun x => (congr($hg x)).symm
-  rw [heq]
-  exact zero_at_infty g
-
 /-- For weakly locally compact `R₁` `X` and weakly locally compact Hausdorff `Y`, a continuous map
 `h : C(X, Y)` is proper if and only if `h.compZeroAtInftyToMultiplier 𝕜 A` lands in the canonical
 image of `C₀(X, A)` inside `𝓜(𝕜, C₀(X, A))`. -/
@@ -729,12 +466,12 @@ theorem isProperMap_iff_range_compZeroAtInftyToMultiplier_subset [WeaklyLocallyC
     IsProperMap h ↔
       Set.range (h.compZeroAtInftyToMultiplier 𝕜 A) ⊆
         Set.range (DoubleCentralizer.coe 𝕜 : C₀(X, A) → 𝓜(𝕜, C₀(X, A))) := by
-  rw [isProperMap_iff_forall_tendsto_zeroAtInfty A h]
+  rw [isProperMap_iff_forall_tendsto_cocompact_nhds_zero A h]
   refine ⟨fun H _ ⟨f, hf⟩ => ?_, fun H f => ?_⟩
-  · rw [← hf, DoubleCentralizer.mem_range_coe_iff_tendsto_cocompact]
+  · rw [← hf, DoubleCentralizer.mem_range_coe_iff_tendsto_cocompact_nhds_zero]
     simpa [Function.comp_def] using H f
   · have hmem := H ⟨f, rfl⟩
-    rw [DoubleCentralizer.mem_range_coe_iff_tendsto_cocompact] at hmem
+    rw [DoubleCentralizer.mem_range_coe_iff_tendsto_cocompact_nhds_zero] at hmem
     simpa [Function.comp_def] using hmem
 
 /-- Under `multiplierMorphismEquiv`, the recovered continuous map

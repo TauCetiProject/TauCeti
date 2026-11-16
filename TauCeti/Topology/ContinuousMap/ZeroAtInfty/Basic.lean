@@ -6,14 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.ContinuousMap.ZeroAtInfty
+import Mathlib.Topology.UrysohnsLemma
 import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
-# Scalar actions and pointwise norms on `C₀(α, β)`
+# Scalar actions, homomorphisms, and cutoffs on `C₀(α, β)`
 
 Mathlib equips the space `C₀(α, β)` of continuous functions vanishing at infinity with the sup
 distance and, for normed fields, with a normed-space structure. This file supplies the structure
-needed for scalar actions beyond normed fields:
+needed for scalar actions beyond normed fields, bundled homomorphisms, and Urysohn cutoffs:
 
 * `ZeroAtInftyContinuousMap.instIsBoundedSMul`: a bounded scalar action on `β` induces one on
   `C₀(α, β)`, so for instance `C₀(α, R)` is a module with contractive action over a seminormed
@@ -22,8 +23,15 @@ needed for scalar actions beyond normed fields:
   on an additive uniform group `β` induces continuous fixed-scalar multiplication on `C₀(α, β)`;
 * `ZeroAtInftyContinuousMap.norm_le` and `ZeroAtInftyContinuousMap.norm_eq_iSup_norm`: the norm
   on `C₀(α, β)` is the supremum of the pointwise norms;
-* `ZeroAtInftyContinuousMap.evalCLM`: evaluation at a point as a continuous linear map over an
+* `ZeroAtInftyContinuousMap.evalCLM` and `ZeroAtInftyContinuousMap.evalNonUnitalAlgHom`:
+  evaluation at a point as a continuous linear map or non-unital algebra homomorphism over an
   arbitrary semiring of scalars;
+* `ZeroAtInftyContinuousMap.toBCFNonUnitalStarAlgHom`: the canonical inclusion
+  `C₀(α, β) →⋆ₙₐ[𝕜] (α →ᵇ β)`;
+* `ZeroAtInftyContinuousMap.exists_eqOn_const_zero_of_isCompact`,
+  `ZeroAtInftyContinuousMap.exists_eqOn_const_of_isCompact`, and
+  `ZeroAtInftyContinuousMap.exists_apply_eq_norm_le`: compactly supported Urysohn cutoffs in
+  `C₀(α, β)` on regular locally compact spaces;
 * `ZeroAtInftyContinuousMap.compLeftFamily`: a strongly continuous family `u : α → E →L[R] F` of
   continuous linear maps with a uniform bound `‖u x e‖ ≤ C * ‖e‖` acts pointwise as a continuous
   linear map `C₀(α, E) →L[R] C₀(α, F)`, by `f ↦ (x ↦ u x (f x))`;
@@ -234,5 +242,93 @@ theorem congrLeft_compLeft (e : α ≃ₜ β) (u : E →L[R] F) (hu : ∃ C, ∀
     (f : C₀(α, E)) : congrLeft R F e (compLeft u hu f) = compLeft u hu (congrLeft R E e f) := (rfl)
 
 end Comparison
+
+section EvalNonUnitalAlgHom
+
+variable (𝕜 : Type*) [Semiring 𝕜] [TopologicalSpace β] [NonUnitalNonAssocSemiring β]
+  [IsTopologicalSemiring β] [Module 𝕜 β] [ContinuousConstSMul 𝕜 β]
+
+/-- Evaluation at a point, bundled as a non-unital algebra homomorphism `C₀(α, β) →ₙₐ[𝕜] β`. -/
+def evalNonUnitalAlgHom (x : α) : C₀(α, β) →ₙₐ[𝕜] β where
+  toFun f := f x
+  map_smul' _ _ := rfl
+  map_zero' := rfl
+  map_add' _ _ := rfl
+  map_mul' _ _ := rfl
+
+/-- `evalNonUnitalAlgHom 𝕜 x` evaluates at `x`. -/
+@[simp]
+theorem evalNonUnitalAlgHom_apply (x : α) (f : C₀(α, β)) :
+    evalNonUnitalAlgHom 𝕜 x f = f x :=
+  (rfl)
+
+end EvalNonUnitalAlgHom
+
+section ToBCFHom
+
+/-- The canonical inclusion `C₀(α, β) →⋆ₙₐ[𝕜] (α →ᵇ β)` as a non-unital `⋆`-algebra
+homomorphism. -/
+def toBCFNonUnitalStarAlgHom (𝕜 α β : Type*) [TopologicalSpace α] [SeminormedRing 𝕜]
+    [NonUnitalSeminormedRing β] [StarRing β] [NormedStarGroup β] [Module 𝕜 β]
+    [IsBoundedSMul 𝕜 β] : C₀(α, β) →⋆ₙₐ[𝕜] (α →ᵇ β) where
+  toFun := toBCF
+  map_smul' _ _ := rfl
+  map_zero' := rfl
+  map_add' _ _ := rfl
+  map_mul' _ _ := rfl
+  map_star' _ := rfl
+
+/-- Applying `toBCFNonUnitalStarAlgHom` evaluates to `ZeroAtInftyContinuousMap.toBCF`. -/
+@[simp]
+theorem toBCFNonUnitalStarAlgHom_apply {𝕜 : Type*} [SeminormedRing 𝕜]
+    [NonUnitalSeminormedRing β] [StarRing β] [NormedStarGroup β] [Module 𝕜 β]
+    [IsBoundedSMul 𝕜 β] (f : C₀(α, β)) :
+    toBCFNonUnitalStarAlgHom 𝕜 α β f = f.toBCF :=
+  (rfl)
+
+end ToBCFHom
+
+section Urysohn
+
+variable [RegularSpace α] [LocallyCompactSpace α]
+
+/-- Urysohn cutoff in `C₀(α, β)`: for disjoint compact `s` and closed `t` in a regular locally
+compact space `α` and any `a : β`, there exists a compactly supported `f : C₀(α, β)` equal to `a`
+on `s`, zero on `t`, and taking values of the form `r • a` with `r ∈ [0, 1]`. -/
+theorem exists_eqOn_const_zero_of_isCompact [TopologicalSpace β] [Zero β]
+    [MulActionWithZero ℝ β] [ContinuousSMul ℝ β]
+    {s t : Set α} (hs : IsCompact s) (ht : IsClosed t) (hd : Disjoint s t) (a : β) :
+    ∃ f : C₀(α, β), Set.EqOn f (fun _ => a) s ∧ Set.EqOn f 0 t ∧
+      HasCompactSupport f ∧ ∀ x, ∃ r ∈ Set.Icc (0 : ℝ) 1, f x = r • a := by
+  obtain ⟨χ, hχs, hχt, hχ_supp, hχ_range⟩ := exists_continuous_one_zero_of_isCompact hs ht hd
+  have hsupp : HasCompactSupport (fun x => χ x • a) :=
+    hχ_supp.comp_left (g := fun r : ℝ => r • a) (zero_smul ℝ a)
+  refine ⟨⟨⟨fun x => χ x • a, χ.continuous.smul continuous_const⟩, hsupp.is_zero_at_infty⟩,
+    fun x hx => ?_, fun x hx => ?_, hsupp, fun x => ⟨χ x, hχ_range x, rfl⟩⟩
+  · simp [hχs hx]
+  · simp [hχt hx]
+
+/-- Compactly supported Urysohn cutoff in `C₀(α, β)` equal to `a` on a compact set `s`, with norm
+bounded by `‖a‖`. -/
+theorem exists_eqOn_const_of_isCompact [SeminormedAddCommGroup β] [MulActionWithZero ℝ β]
+    [IsBoundedSMul ℝ β] {s : Set α} (hs : IsCompact s) (a : β) :
+    ∃ f : C₀(α, β), Set.EqOn f (fun _ => a) s ∧ HasCompactSupport f ∧ ‖f‖ ≤ ‖a‖ := by
+  obtain ⟨f, hfs, -, hsupp, hrange⟩ :=
+    exists_eqOn_const_zero_of_isCompact hs isClosed_empty (Set.disjoint_empty s) a
+  refine ⟨f, hfs, hsupp, (norm_le (norm_nonneg a)).2 fun x => ?_⟩
+  obtain ⟨r, ⟨hr0, hr1⟩, hfx⟩ := hrange x
+  rw [hfx]
+  refine (norm_smul_le r a).trans ?_
+  rw [Real.norm_of_nonneg hr0]
+  simpa using mul_le_mul_of_nonneg_right hr1 (norm_nonneg a)
+
+/-- On a regular locally compact space `α`, for any `x : α` and `a : β`, there exists `f : C₀(α, β)`
+taking the value `a` at `x` with `‖f‖ ≤ ‖a‖`. -/
+theorem exists_apply_eq_norm_le [SeminormedAddCommGroup β] [MulActionWithZero ℝ β]
+    [IsBoundedSMul ℝ β] (x : α) (a : β) : ∃ f : C₀(α, β), f x = a ∧ ‖f‖ ≤ ‖a‖ := by
+  obtain ⟨f, hfx, -, hnorm⟩ := exists_eqOn_const_of_isCompact (isCompact_singleton (x := x)) a
+  exact ⟨f, hfx rfl, hnorm⟩
+
+end Urysohn
 
 end ZeroAtInftyContinuousMap

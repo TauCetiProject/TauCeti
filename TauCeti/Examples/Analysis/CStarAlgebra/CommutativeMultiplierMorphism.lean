@@ -82,7 +82,7 @@ theorem one_notMem_range_coe_Ioo :
       exact ⟨le_rfl, zero_le_one⟩
     exact lt_irrefl 0 h0.1
   have : NeBot (cocompact (Set.Ioo (0 : ℝ) 1)) := Filter.cocompact_neBot_iff.2 hnc
-  rw [DoubleCentralizer.mem_range_coe_iff_tendsto_cocompact]
+  rw [DoubleCentralizer.mem_range_coe_iff_tendsto_cocompact_nhds_zero]
   intro h
   have h1 : Tendsto (fun _ : Set.Ioo (0 : ℝ) 1 => (1 : ℂ))
       (cocompact (Set.Ioo (0 : ℝ) 1)) (𝓝 0) := by
@@ -149,7 +149,8 @@ theorem isEmpty_multiplierMorphism_emptyCodomain (X : Type*) [TopologicalSpace X
 
 /-! ### Identity versus constant map on `ℝ` -/
 
-/-- Pullback along the identity on `ℝ` is `DoubleCentralizer.coeHom` and lands in `C₀(ℝ, ℂ)`. -/
+/-- Pullback along the identity on `ℝ` lands in the canonical image of `C₀(ℝ, ℂ)` since the
+identity is proper. -/
 theorem range_idReal_subset :
     Set.range ((ContinuousMap.id ℝ).compZeroAtInftyToMultiplier ℂ ℂ) ⊆
       Set.range (DoubleCentralizer.coe ℂ : C₀(ℝ, ℂ) → 𝓜(ℂ, C₀(ℝ, ℂ))) :=
@@ -200,16 +201,13 @@ theorem norm_sinMultiplier : ‖sinMultiplier‖ = 1 := by
   rw [sinMultiplier, BoundedContinuousFunction.norm_toDoubleCentralizer]
   refine le_antisymm ?_ ?_
   · exact BoundedContinuousFunction.norm_ofNormedAddCommGroup_le _ zero_le_one _
-  · have hpi := sinBCF.norm_coe_le_norm (Real.pi / 2)
-    rw [sinBCF, BoundedContinuousFunction.coe_ofNormedAddCommGroup, Real.sin_pi_div_two,
-      Complex.ofReal_one, norm_one] at hpi
-    exact hpi
+  · simpa [sinBCF] using sinBCF.norm_coe_le_norm (Real.pi / 2)
 
 /-- The oscillatory multiplier `sinMultiplier` does not lie in the canonical image of
 `C₀(ℝ, ℂ)`. -/
 theorem sinMultiplier_notMem_range_coe :
     sinMultiplier ∉ Set.range (DoubleCentralizer.coe ℂ : C₀(ℝ, ℂ) → 𝓜(ℂ, C₀(ℝ, ℂ))) := by
-  rw [DoubleCentralizer.mem_range_coe_iff_tendsto_cocompact]
+  rw [DoubleCentralizer.mem_range_coe_iff_tendsto_cocompact_nhds_zero]
   intro h
   obtain ⟨K, hK, hKsin⟩ := mem_cocompact.1 (Metric.tendsto_nhds.1 h 1 zero_lt_one)
   obtain ⟨C, hC⟩ := hK.isBounded.subset_closedBall (0 : ℝ)
@@ -228,8 +226,6 @@ theorem sinMultiplier_notMem_range_coe :
   have hsin : Real.sin t = 1 := by
     have ht : t = Real.pi / 2 + (n : ℝ) * (2 * Real.pi) := by ring
     rw [ht, Real.sin_add_nat_mul_two_pi, Real.sin_pi_div_two]
-  rw [sinMultiplier, DoubleCentralizer.toBCF_toDoubleCentralizer, sinBCF,
-    BoundedContinuousFunction.coe_ofNormedAddCommGroup, hsin, Complex.ofReal_one, norm_one] at hlt
-  exact lt_irrefl 1 hlt
+  simp [sinMultiplier, sinBCF, -Complex.ofReal_sin, hsin] at hlt
 
 end TauCeti.CommutativeMultiplierMorphismExample
