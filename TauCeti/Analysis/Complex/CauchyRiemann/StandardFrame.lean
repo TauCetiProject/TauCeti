@@ -235,8 +235,11 @@ theorem aestronglyMeasurable_frameCoeff {U : Set ℂ} (hU : MeasurableSet U)
     AEStronglyMeasurable (frameCoeff J C Φ DΦ) (volume.restrict U) := by
   have hA : ContinuousOn (fun z ↦ DΦ z 1 + J z ∘L DΦ z I) U := fun z hz ↦
     continuousWithinAt_frameCoeffAux (hJ z hz) (hDΦ z hz)
-  rw [show frameCoeff J C Φ DΦ = fun z ↦ compL ℝ V V V (Ring.inverse (Φ z))
-      ((DΦ z 1 + J z ∘L DΦ z I) + compL ℝ V V V (C z) (Φ z)) from funext fun z ↦ frameCoeff_def]
+  have hC' : frameCoeff J C Φ DΦ = fun z ↦ compL ℝ V V V (Ring.inverse (Φ z))
+      ((DΦ z 1 + J z ∘L DΦ z I) + compL ℝ V V V (C z) (Φ z)) := by
+    ext1 z
+    rw [frameCoeff_def, compL_apply, compL_apply]
+  rw [hC']
   exact (compL ℝ V V V).aestronglyMeasurable_comp₂ (hΨ.aestronglyMeasurable hU)
     ((hA.aestronglyMeasurable hU).add
       ((compL ℝ V V V).aestronglyMeasurable_comp₂ hC (hΦ.aestronglyMeasurable hU)))
