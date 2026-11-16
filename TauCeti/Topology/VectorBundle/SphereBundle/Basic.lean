@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.VectorBundle.EulerClass
+public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Basic
 import TauCeti.Topology.Homotopy.DeformationRetract
 import TauCeti.Topology.VectorBundle.Smul
 
@@ -16,7 +17,14 @@ Let `E → B` be a real vector bundle whose fibres carry norms, such that the fi
 continuous function on the total space; for instance a continuous Riemannian vector bundle
 (`TauCeti.continuous_norm_bundle`). Its unit disc bundle `D(E)` and unit sphere bundle `S(E)` are
 the vectors of norm at most one and exactly one (`TauCeti.discBundle`, `TauCeti.sphereBundle`).
-The sphere bundle projects continuously onto the base (`TauCeti.sphereBundleProj`).
+The sphere bundle projects continuously onto the base (`TauCeti.sphereBundleProj`). Both are
+closed in the total space (`TauCeti.isClosed_discBundle`, `TauCeti.isClosed_sphereBundle`). For a
+finite-rank bundle whose fibres carry inner products, the projection of the disc bundle onto the
+base is proper (`TauCeti.isProperMap_discBundle_proj`): every vector of norm at most one is an
+orthonormal frame applied to a vector of the unit ball, and the orthonormal frame bundle is proper
+over the base. So the projection to the base of a closed part of the disc bundle is closed
+(`TauCeti.isClosed_image_proj_of_subset_discBundle`), and the unit disc of each fibre is compact
+(`TauCeti.isCompact_discBundle_inter_proj_preimage_singleton`).
 
 Radial rescaling compares them with the Thom pair `(E, E₀)` of the bundle, where `E₀` is the
 complement of the zero section:
@@ -89,6 +97,12 @@ theorem sphereBundle_subset_zeroSectionCompl : sphereBundle F E ⊆ zeroSectionC
   fun _ hv ↦
   mem_zeroSectionCompl.2 (norm_ne_zero_iff.1 ((mem_sphereBundle.1 hv).symm ▸ one_ne_zero))
 
+variable {F E} in
+/-- The vectors of norm less than one miss the sphere bundle. -/
+theorem disjoint_norm_lt_one_sphereBundle :
+    Disjoint {v : TotalSpace F E | ‖v.2‖ < 1} (sphereBundle F E) :=
+  Set.disjoint_left.2 fun _ hv hv' ↦ (mem_ofPred_eq ▸ hv).ne (mem_sphereBundle.1 hv')
+
 variable [TopologicalSpace (TotalSpace F E)]
 
 /-- The disc-sphere pair `(D(E), S(E))` of a bundle with normed fibres. -/
@@ -129,6 +143,81 @@ theorem sphereBundleProj_apply (v : sphereBundle F E) :
   (rfl)
 
 end Proj
+
+section Closed
+
+variable {B : Type w} (F : Type*) (E : B → Type w)
+  [∀ b, NormedAddCommGroup (E b)] [TopologicalSpace (TotalSpace F E)] [ContinuousFiberNorm F E]
+
+/-- The unit disc bundle is closed in the total space when the fibre norm is continuous. -/
+theorem isClosed_discBundle : IsClosed (discBundle F E) :=
+  isClosed_le ContinuousFiberNorm.continuous_norm continuous_const
+
+/-- The unit sphere bundle is closed in the total space when the fibre norm is continuous. -/
+theorem isClosed_sphereBundle : IsClosed (sphereBundle F E) :=
+  isClosed_eq ContinuousFiberNorm.continuous_norm continuous_const
+
+end Closed
+
+section Proper
+
+variable (𝕜 : Type*) [RCLike 𝕜] {B : Type w} [TopologicalSpace B] (F : Type*)
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [FiniteDimensional 𝕜 F] (E : B → Type w)
+  [∀ b, NormedAddCommGroup (E b)] [∀ b, InnerProductSpace 𝕜 (E b)]
+  [TopologicalSpace (TotalSpace F E)] [FiberBundle F E] [VectorBundle 𝕜 F E]
+  [ContinuousFiberNorm F E]
+
+include 𝕜
+
+/-- **The disc bundle is proper over the base.** For a finite-rank real or complex vector bundle
+whose fibres carry inner products with norm continuous on the total space, the projection of the
+unit disc bundle `D(E)` onto the base is a proper map. In particular it is a closed map, and the
+unit disc of each fibre is compact. -/
+theorem isProperMap_discBundle_proj :
+    IsProperMap fun v : discBundle F E ↦ (v : TotalSpace F E).proj := by
+  let V := EuclideanSpace 𝕜 (Fin (Module.finrank 𝕜 F))
+  have hV : Module.finrank 𝕜 V = Module.finrank 𝕜 F := finrank_euclideanSpace_fin
+  have : CompactSpace (Metric.closedBall (0 : V) 1) :=
+    isCompact_iff_compactSpace.1 (isCompact_closedBall 0 1)
+  -- The disc bundle is the image of the orthonormal frames paired with the unit ball of `V`, over
+  -- which the projection is proper.
+  let ev : OrthonormalFrameBundle 𝕜 F E V × Metric.closedBall (0 : V) 1 → discBundle F E :=
+    fun q ↦ ⟨⟨q.1.proj, q.1.frame q.2⟩,
+      mem_discBundle.2 ((q.1.frame.norm_map _).trans_le (mem_closedBall_zero_iff.1 q.2.2))⟩
+  refine isProperMap_of_comp_of_surj (f := ev)
+    ((OrthonormalFrameBundle.continuous_totalSpaceMk_frame_apply.comp
+      (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd))).subtype_mk _)
+    ((FiberBundle.continuous_proj F E).comp continuous_subtype_val)
+    ((OrthonormalFrameBundle.isProperMap_proj hV).comp isProperMap_fst_of_compactSpace) ?_
+  -- Every vector of norm at most one is an orthonormal frame applied to a vector of norm at most
+  -- one.
+  rintro ⟨⟨b, v⟩, hv⟩
+  let φ := (trivializationAt F E b).orthonormalFrame (Module.finBasisOfFinrankEq 𝕜 F hV.symm)
+    (stdOrthonormalBasis 𝕜 V) ⟨b, mem_baseSet_trivializationAt F E b⟩
+  exact ⟨(⟨b, φ⟩, ⟨φ.symm v, by simpa using hv⟩), by simp [ev]⟩
+
+variable {F E} in
+/-- The projection to the base of a closed subset of the disc bundle is closed. -/
+theorem isClosed_image_proj_of_subset_discBundle {S : Set (TotalSpace F E)}
+    (hS : IsClosed S) (hSD : S ⊆ discBundle F E) : IsClosed (TotalSpace.proj '' S) := by
+  have h := (isProperMap_discBundle_proj 𝕜 F E).isClosedMap _ (hS.preimage continuous_subtype_val)
+  convert h using 1
+  ext b
+  simp only [mem_image, mem_preimage, Subtype.exists, exists_and_left, exists_prop]
+  exact ⟨fun ⟨v, hv, hvb⟩ ↦ ⟨v, hv, hSD hv, hvb⟩, fun ⟨v, hv, _, hvb⟩ ↦ ⟨v, hv, hvb⟩⟩
+
+/-- The unit disc of each fibre is compact. -/
+theorem isCompact_discBundle_inter_proj_preimage_singleton (b : B) :
+    IsCompact (discBundle F E ∩ TotalSpace.proj ⁻¹' {b}) := by
+  have h := ((isProperMap_discBundle_proj 𝕜 F E).isCompact_preimage
+    (isCompact_singleton (x := b))).image continuous_subtype_val
+  convert h using 1
+  ext v
+  simp only [mem_inter_iff, mem_preimage, mem_image, Subtype.exists, exists_and_right,
+    exists_eq_right]
+  exact ⟨fun ⟨hv, hvb⟩ ↦ ⟨hv, hvb⟩, fun ⟨hv, hvb⟩ ↦ ⟨hv, hvb⟩⟩
+
+end Proper
 
 variable {B : Type w} [TopologicalSpace B] (F : Type*) [NormedAddCommGroup F] [NormedSpace ℝ F]
   (E : B → Type w) [∀ b, NormedAddCommGroup (E b)] [∀ b, NormedSpace ℝ (E b)]
