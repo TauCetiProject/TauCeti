@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Calculus.BumpFunction.SquarePartition
 public import TauCeti.Analysis.Calculus.WittenLaplacian.Energy
 public import TauCeti.Analysis.Calculus.WittenLaplacian.Localization
+import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
@@ -268,21 +269,6 @@ theorem mul_integral_le_integral_sum_euclideanWittenLaplacian_mul_of_sq_add_sum_
   simp only [mul_add] at h₂
   linarith
 
-omit [LinearOrder ι] in
-/-- A `C¹` function `u` on `ℝ^ι` whose derivative has compact support has bounded squared gradient
-`∑ᵢ (∂ᵢ u)²`. -/
-theorem exists_forall_sum_fderiv_single_sq_le_of_hasCompactSupport_fderiv [DecidableEq ι]
-    {u : (ι → ℝ) → ℝ} (hu : ContDiff ℝ 1 u) (hcs : HasCompactSupport (fderiv ℝ u)) :
-    ∃ K, ∀ x, ∑ i, fderiv ℝ u x (Pi.single i 1) ^ 2 ≤ K := by
-  obtain ⟨B, hB⟩ :=
-    (hu.continuous_fderiv one_ne_zero).norm.bddAbove_range_of_hasCompactSupport hcs.norm
-  refine ⟨Fintype.card ι * B ^ 2, fun x ↦ ?_⟩
-  refine (Finset.sum_le_sum fun i _ ↦ (?_ : _ ≤ B ^ 2)).trans_eq (by simp)
-  rw [← sq_abs, ← Real.norm_eq_abs]
-  refine pow_le_pow_left₀ (norm_nonneg _) (((fderiv ℝ u x).le_opNorm _).trans ?_) 2
-  rw [Pi.norm_single, norm_one, mul_one]
-  exact hB ⟨x, rfl⟩
-
 /-- **The gap of the Witten Laplacian in a degree that is no Morse index.** Let `f` be a `C²`
 function on `ℝ^ι` and `P` a finite set of points at mutual distance at least `2 r`. Suppose that
 on the ball of radius `r` around each `p ∈ P`, `f` is the quadratic model
@@ -305,9 +291,10 @@ theorem exists_forall_mul_integral_le_integral_sum_euclideanWittenLaplacian_mul
       t * c * ∫ x, ∑ s, φ x s ^ 2 ≤ ∫ x, ∑ s, euclideanWittenLaplacian f t φ x s * φ x s := by
   obtain ⟨J₀, J, hJ₀, hJ, hJ1, hJr, hJ₀ρ, hJ₀c, hJc⟩ := exists_sq_add_sum_sq_eq_one hρ hρr hP
   obtain ⟨K₀, hK₀⟩ :=
-    exists_forall_sum_fderiv_single_sq_le_of_hasCompactSupport_fderiv (hJ₀.of_le (by simp)) hJ₀c
-  choose K hK using fun p ↦ exists_forall_sum_fderiv_single_sq_le_of_hasCompactSupport_fderiv
-    ((hJ p).of_le (by simp)) ((hJc p).fderiv (𝕜 := ℝ))
+    (hJ₀.of_le (by simp)).exists_forall_sum_fderiv_single_sq_le_of_hasCompactSupport_fderiv hJ₀c
+  choose K hK using fun p ↦
+    ((hJ p).of_le (by simp)).exists_forall_sum_fderiv_single_sq_le_of_hasCompactSupport_fderiv
+      ((hJc p).fderiv (𝕜 := ℝ))
   refine ⟨max ((2 * c + h) / c₀) ((K₀ + ∑ p ∈ P, K p) / c), fun t ht φ hφ hφc hφm ↦ ?_⟩
   have ht₁ : 2 * c + h ≤ t * c₀ := (div_le_iff₀ hc₀).1 ((le_max_left _ _).trans ht)
   have ht₂ : K₀ + ∑ p ∈ P, K p ≤ t * c := (div_le_iff₀ hc).1 ((le_max_right _ _).trans ht)
