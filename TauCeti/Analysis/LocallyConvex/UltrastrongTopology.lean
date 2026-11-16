@@ -462,16 +462,12 @@ theorem exists_strongDual_ampliation_apply_eq
     gcongr
     exact hξ A
   -- `φ` is bounded by `C * ‖Φ ·‖`, so it factors through `Φ` and extends by Hahn–Banach.
-  let f : Module.Dual 𝕜 (LinearMap.range Φ) :=
+  let f : StrongDual 𝕜 (LinearMap.range Φ) :=
     (φ : ContinuousLinearMapUltrastrong 𝕜 E F →ₗ[𝕜] 𝕜).compLeftInverse Φ
   have hf (A : ContinuousLinearMapUltrastrong 𝕜 E F) :
       f ⟨Φ A, LinearMap.mem_range_self Φ A⟩ = φ A :=
     LinearMap.compLeftInverse_apply_of_bdd _ _ ⟨C, hbound⟩ A (Φ A) rfl
-  obtain ⟨G, hG, -⟩ := Module.Dual.exists_continuous_extension_of_le_seminorm
-    (LinearMap.range Φ) f (p := C • normSeminorm 𝕜 ℓ²(ℕ, F))
-    (continuous_norm.const_smul (C : ℝ)) (by
-      rintro ⟨-, A, rfl⟩
-      simpa [hf, NNReal.smul_def] using hbound A)
+  obtain ⟨G, hG⟩ := StrongDual.exists_extension (LinearMap.range Φ) f
   exact ⟨ξ, G, fun A ↦ by rw [← hf, ← hG]; rfl⟩
 
 end ContinuousLinearMapUltrastrong
