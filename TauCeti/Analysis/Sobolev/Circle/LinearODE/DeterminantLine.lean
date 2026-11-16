@@ -320,12 +320,9 @@ theorem isInvertible_loopOperator_iff_det_ne_zero :
       LinearMap.det (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : E →ₗ[ℝ] E)) ≠ 0 := by
   rw [Ne, LinearMap.det_eq_zero_iff_ker_ne_bot, not_not, LinearMap.ker_eq_bot,
     ← injective_loopOperator_iff]
-  refine ⟨fun h ↦ ?_, fun h ↦
+  exact ⟨fun h ↦ h.injective, fun h ↦
     (isFredholm_loopOperator T S).isInvertible_of_injective_of_index_eq_zero h
       (index_loopOperator T S)⟩
-  obtain ⟨e, he⟩ := h
-  rw [← he]
-  exact e.injective
 
 /-- **The determinant line of a nondegenerate loop operator.** Let `L_S ζ = ζ' - S ζ`,
 `H¹(E) → H⁰(E)`, be bijective, equivalently `det (1 - Ψ(T)) ≠ 0`. Transporting the determinant line
