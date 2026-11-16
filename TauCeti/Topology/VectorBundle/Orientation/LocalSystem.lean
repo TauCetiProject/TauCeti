@@ -8,6 +8,8 @@ module
 public import TauCeti.AlgebraicTopology.LocalCoefficient.Sign.Tensor
 public import TauCeti.Topology.VectorBundle.Orientation.Cover
 
+import TauCeti.Topology.Homotopy.Covering
+
 /-!
 # The orientation local system of a real vector bundle
 
@@ -222,9 +224,8 @@ theorem signLocalSystem_map_mk_signLocalSystemFiberEquiv_symm (b₀ : B) (ω : O
     Path.Homotopic.Quotient.mk γ
   -- Transport along `q` evaluates at the endpoint of the lift of the reversed path.
   have hm : cov.monodromy (inv q) c₀ = ⟨⟨x, (e.mapOrientation ι hx).symm ω⟩, rfl⟩ := by
-    have hmon : ((cov.monodromy (inv q) c₀ : _) : VectorBundleOrientationCover F E ι) = Γ 1 := by
-      rw [← Groupoid.inv_eq_inv]
-      exact cov.monodromy_eq_apply_one (cov.liftPath_lifts _ _ _) (cov.liftPath_zero _ _ _)
+    have hmon : ((cov.monodromy (inv q) c₀ : _) : VectorBundleOrientationCover F E ι) = Γ 1 :=
+      cov.coe_monodromy_inv_mk γ c₀
     have hsheet := mem_sheet_of_continuous hι b₀ ω hΓ h₀ 1
     rw [← hmon] at hsheet
     obtain ⟨hm, hω⟩ := mem_sheet_iff.1 hsheet

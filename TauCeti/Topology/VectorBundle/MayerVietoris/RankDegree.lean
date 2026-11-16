@@ -96,7 +96,8 @@ theorem isIso_thomPairOver_union_of_isIso
     simp only [S, φ, biprod.lift_desc, Preadditive.neg_comp, Preadditive.comp_add,
       Preadditive.comp_neg, reassoc_of% (hres inter_subset_left),
       reassoc_of% (hres inter_subset_right), ← Functor.map_comp, add_neg_eq_zero]
-    rfl
+    -- Both composites are morphisms `U ∩ V ⟶ U ∪ V` of the preorder of subsets.
+    exact congrArg A.map (Subsingleton.elim _ _)
   let Φ := hS.gIsCokernel.desc (CokernelCofork.ofπ φ hφ)
   have hgΦ : S.g ≫ Φ = φ := hS.gIsCokernel.fac (CokernelCofork.ofπ φ hφ) WalkingParallelPair.one
   refine ⟨Φ, (cancel_epi (biprod.desc (A.map (homOfLE (subset_union_left : U ⊆ U ∪ V)))
@@ -121,20 +122,6 @@ theorem isIso_thomPairOver_union_of_isIso
     exact (biprod.inr_desc _ _).symm
 
 end MayerVietoris
-
-section FiniteTrivializingUnion
-
-variable {B : Type w} [TopologicalSpace B] {F : Type w} [TopologicalSpace F] {E : B → Type w}
-  [TopologicalSpace (TotalSpace F E)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
-
-variable (F E) in
-/-- The finite unions of the trivializing open sets of the bundle atlas increase with the finite
-set of points. -/
-theorem monotone_biUnion_baseSet_trivializationAt :
-    Monotone fun s : Finset B ↦ ⋃ b ∈ s, (trivializationAt F E b).baseSet :=
-  fun _ _ h ↦ biUnion_subset_biUnion_left h
-
-end FiniteTrivializingUnion
 
 section Gluing
 

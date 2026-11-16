@@ -75,37 +75,32 @@ section Fiber
 variable (K : Type w) [CommRing K] (F : Type w) [NormedAddCommGroup F] [NormedSpace ℝ F]
   [FiniteDimensional ℝ F]
 
-/-- The generator of `Hᵣ(F, F ∖ {0}; K)` corresponding to the class of the point in `H₀(pt; K)`. -/
-private abbrev complZeroPairGenerator :
-    ((TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F)).singularHomology (ModuleCat.of K K)
-      (finrank ℝ F) : ModuleCat.{w} K) :=
-  complZeroPairPointHom (ModuleCat.of K K) F (finrank ℝ F) rfl (1 : K)
-
-/-- The fibre inclusion over a point `x` of `W` carries the generator to the class of `x` under
-`Hᵣ(W × F, W × (F ∖ {0}); K) ≅ H₀(W; K)`. -/
-private theorem singularHomologyMap_prodThomPairFiberMap_complZeroPairGenerator
+/-- The fibre inclusion over a point `x` of `W` carries the point class of `1` to the class of `x`
+under `Hᵣ(W × F, W × (F ∖ {0}); K) ≅ H₀(W; K)`. -/
+private theorem singularHomologyMap_prodThomPairFiberMap_complZeroPairPointHom_one
     {W : Type w} [TopologicalSpace W] (x : W) :
     TopPair.singularHomologyMap (prodThomPairFiberMap F x) (ModuleCat.of K K) (finrank ℝ F)
-        (complZeroPairGenerator K F) =
+        (complZeroPairPointHom (ModuleCat.of K K) F (finrank ℝ F) rfl (1 : K)) =
       (prodThomPairSingularHomologyIso (ModuleCat.of K K) W F 0 (finrank ℝ F)).inv
         (singularHomology₀Section (ModuleCat.of K K) (X := TopCat.of W) x 1) :=
   ConcreteCategory.congr_hom (complZeroPairPointHom_comp_singularHomologyMap_prodThomPairFiberMap
     (ModuleCat.of K K) W F (finrank ℝ F) rfl x) (1 : K)
 
-private theorem span_complZeroPairGenerator :
-    Submodule.span K {complZeroPairGenerator K F} = ⊤ :=
+private theorem span_complZeroPairPointHom_one :
+    Submodule.span K {complZeroPairPointHom (ModuleCat.of K K) F (finrank ℝ F) rfl (1 : K)} = ⊤ :=
   (ModuleCat.span_singleton_apply_eq_top_iff _).2 Ideal.span_singleton_one
 
 variable [Subsingleton Kˣ]
 
 /-- With coefficients in a ring whose only unit is `1`, the module `Hᵣ(F, F ∖ {0}; K) ≅ K` has a
 single generator. -/
-private theorem eq_complZeroPairGenerator {x : ((TopPair.ofSubset (X := TopCat.of F)
+private theorem eq_complZeroPairPointHom_one {x : ((TopPair.ofSubset (X := TopCat.of F)
     ({0}ᶜ : Set F)).singularHomology (ModuleCat.of K K) (finrank ℝ F) : ModuleCat.{w} K)}
-    (hx : Submodule.span K {x} = ⊤) : x = complZeroPairGenerator K F :=
+    (hx : Submodule.span K {x} = ⊤) :
+    x = complZeroPairPointHom (ModuleCat.of K K) F (finrank ℝ F) rfl (1 : K) :=
   LinearEquiv.eq_of_span_singleton_eq_top (singularHomologyComplSingletonFinrankIso
       (ModuleCat.of K K) (OpenPartialHomeomorph.refl F) (mem_univ 0)).toLinearEquiv hx
-    (span_complZeroPairGenerator K F)
+    (span_complZeroPairPointHom_one K F)
 
 end Fiber
 
@@ -123,10 +118,10 @@ private def fiberGenerator (b : B) :
       (ModuleCat.of K K) (finrank ℝ F) : ModuleCat.{w} K) :=
   TopPair.singularHomologyMap ((trivializationAt F E b).continuousLinearEquivAt ℝ b
       (mem_baseSet_trivializationAt F E b)).complZeroPairIso.inv (ModuleCat.of K K) (finrank ℝ F)
-    (complZeroPairGenerator K F)
+    (complZeroPairPointHom (ModuleCat.of K K) F (finrank ℝ F) rfl (1 : K))
 
 private theorem span_fiberGenerator (b : B) : Submodule.span K {fiberGenerator K F E b} = ⊤ :=
-  (ModuleCat.span_singleton_apply_eq_top_iff _).2 (span_complZeroPairGenerator K F)
+  (ModuleCat.span_singleton_apply_eq_top_iff _).2 (span_complZeroPairPointHom_one K F)
 
 variable (K F E) in
 /-- The fibre class over a point `x` of `W`: the image of the fibre generator in
@@ -153,8 +148,8 @@ private theorem eq_fiberGenerator {b : B} {x : ((TopPair.ofSubset (X := TopCat.o
   let L := (trivializationAt F E b).continuousLinearEquivAt ℝ b (mem_baseSet_trivializationAt F E b)
   apply (ModuleCat.mono_iff_injective (TopPair.singularHomologyMap L.complZeroPairIso.hom
     (ModuleCat.of K K) (finrank ℝ F))).1 inferInstance
-  rw [eq_complZeroPairGenerator K F ((ModuleCat.span_singleton_apply_eq_top_iff _).2 hx),
-    eq_complZeroPairGenerator K F
+  rw [eq_complZeroPairPointHom_one K F ((ModuleCat.span_singleton_apply_eq_top_iff _).2 hx),
+    eq_complZeroPairPointHom_one K F
       ((ModuleCat.span_singleton_apply_eq_top_iff _).2 (span_fiberGenerator b))]
 
 /-- A linear trivialization at `b` carries the fibre generator to the generator of
@@ -162,8 +157,9 @@ private theorem eq_fiberGenerator {b : B} {x : ((TopPair.ofSubset (X := TopCat.o
 private theorem singularHomologyMap_complZeroPairIso_fiberGenerator
     (e : Trivialization F (π F E)) [e.IsLinear ℝ] {b : B} (hb : b ∈ e.baseSet) :
     TopPair.singularHomologyMap (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.hom
-      (ModuleCat.of K K) (finrank ℝ F) (fiberGenerator K F E b) = complZeroPairGenerator K F :=
-  eq_complZeroPairGenerator K F
+      (ModuleCat.of K K) (finrank ℝ F) (fiberGenerator K F E b) =
+        complZeroPairPointHom (ModuleCat.of K K) F (finrank ℝ F) rfl (1 : K) :=
+  eq_complZeroPairPointHom_one K F
     ((ModuleCat.span_singleton_apply_eq_top_iff _).2 (span_fiberGenerator b))
 
 /-- **The fibre classes over a trivializing set are the classes of the points**: a linear
@@ -180,7 +176,7 @@ private theorem singularHomologyMap_thomPairOverIso_fiberClassOver (e : Triviali
     Bundle.Trivialization.fiberThomPairOverMap_comp_thomPairOverIso_hom ℝ e hW x.2,
     TopPair.singularHomologyMap_comp, ConcreteCategory.comp_apply,
     singularHomologyMap_complZeroPairIso_fiberGenerator e (hW x.2), Subtype.coe_eta,
-    singularHomologyMap_prodThomPairFiberMap_complZeroPairGenerator]
+    singularHomologyMap_prodThomPairFiberMap_complZeroPairPointHom_one]
 
 /-- The fibre classes over two points of `W` joined by a path in `W` over the base set of a linear
 trivialization agree. -/
@@ -347,29 +343,6 @@ private def isColimitSingularHomologyBaseFiniteTrivializingUnion :
           mem_iUnion.2 ⟨b, mem_baseSet_trivializationAt F E b⟩
       exact ⟨s, fun b hb ↦ ⟨⟨b, hs hb⟩, rfl⟩⟩
 
-omit [FiniteDimensional ℝ F] [∀ b, Module ℝ (E b)] [VectorBundle ℝ F E] [Subsingleton Kˣ] in
-/-- The zeroth homology over `U ∪ V` is generated by the classes over `U` and over `V`. -/
-private theorem epi_biprod_desc_map_subsetTopCatFunctor (U V : Set B) :
-    Epi (biprod.desc
-      ((subsetTopCatFunctor B ⋙ (singularHomologyFunctor (ModuleCat.{w} K) 0).obj
-        (ModuleCat.of K K)).map (homOfLE (subset_union_left : U ⊆ U ∪ V)))
-      ((subsetTopCatFunctor B ⋙ (singularHomologyFunctor (ModuleCat.{w} K) 0).obj
-        (ModuleCat.of K K)).map (homOfLE (subset_union_right : V ⊆ U ∪ V)))) := by
-  refine ⟨fun f g hfg ↦ singularHomology₀_hom_ext _ fun x ↦ ?_⟩
-  obtain ⟨x, hx | hx⟩ := x
-  · have := congrArg (biprod.inl ≫ ·) hfg
-    simp only [biprod.inl_desc_assoc] at this
-    have hn := singularHomology₀Section_naturality (ModuleCat.of K K)
-      (TopCat.ofHom (ContinuousMap.inclusion (subset_union_left : U ⊆ U ∪ V))) ⟨x, hx⟩
-    exact (eq_whisker hn f).symm.trans ((Category.assoc _ _ _).trans ((whisker_eq _ this).trans
-      ((Category.assoc _ _ _).symm.trans (eq_whisker hn g))))
-  · have := congrArg (biprod.inr ≫ ·) hfg
-    simp only [biprod.inr_desc_assoc] at this
-    have hn := singularHomology₀Section_naturality (ModuleCat.of K K)
-      (TopCat.ofHom (ContinuousMap.inclusion (subset_union_right : V ⊆ U ∪ V))) ⟨x, hx⟩
-    exact (eq_whisker hn f).symm.trans ((Category.assoc _ _ _).trans ((whisker_eq _ this).trans
-      ((Category.assoc _ _ _).symm.trans (eq_whisker hn g))))
-
 /-- **The passage to the whole base**: the homologies of the base and of the Thom pair are the
 filtered colimits of their homologies over the finite unions of the chosen trivializing sets, and
 over these the map is an isomorphism by the Mayer–Vietoris argument. -/
@@ -379,7 +352,7 @@ private instance : IsIso (thomPairSingularHomologyFinrankInv K F E) :=
       (ModuleCat.of K K))
     (ψ := thomPairOverSingularHomologyFinrankInv K F E) le_rfl
     (fun h ↦ thomPairOverSingularHomologyFinrankInv_naturality h)
-    (fun _ _ ↦ epi_biprod_desc_map_subsetTopCatFunctor _ _)
+    (fun _ _ ↦ epi_biprod_desc_singularHomologyMap_inclusion _ _ _)
     (isZero_singularHomologyFunctor_zero_of_isEmpty _ (TopCat.of (∅ : Set B)))
     (fun b _ hW ↦
       isIso_thomPairOverSingularHomologyFinrankInv_of_subset (trivializationAt F E b) hW)

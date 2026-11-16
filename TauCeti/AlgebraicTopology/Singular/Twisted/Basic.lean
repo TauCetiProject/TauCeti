@@ -1334,7 +1334,7 @@ def subsetTwistedChainComplexMap (h : A ⊆ B) :
 
 /-- The map induced by `A ⊆ B` is the comparison of coefficients followed by the map induced by
 the inclusion of `A` into `B`. -/
-lemma subsetTwistedChainComplexMap_eq (h : A ⊆ B) :
+lemma subsetTwistedChainComplexMap_def (h : A ⊆ B) :
     subsetTwistedChainComplexMap L h = twistedChainComplexCoefficientMap
       ((pullbackCompIso (TopCat.ofHom (ContinuousMap.inclusion h)).hom
         (TopCat.ofHom (ContinuousMap.subtypeVal B)).hom).hom.app L) ≫

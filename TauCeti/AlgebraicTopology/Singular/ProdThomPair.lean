@@ -15,6 +15,7 @@ public import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 public import TauCeti.AlgebraicTopology.Singular.MayerVietoris.SubspaceCompl
 public import TauCeti.Topology.Homotopy.HomotopyEquiv
 
+public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Basic
 public import TauCeti.AlgebraicTopology.Singular.Reduced
 import TauCeti.Topology.Homotopy.PuncturedStarConvex
 
@@ -70,6 +71,8 @@ The isomorphism is built from a choice of such a step for each proper subspace o
 * `TauCeti.complZeroPairPointHom`: the isomorphism `R ≅ Hᵣ(F, F ∖ {0})` given by the class of
   the point under `Hᵣ(F, F ∖ {0}) ≅ H₀(pt)`; the fibre inclusion over `b` carries it to the class of
   `b` (`TauCeti.complZeroPairPointHom_comp_singularHomologyMap_prodThomPairFiberMap`).
+* `TauCeti.isLocalOrientation_complZeroPairPointHom_one`: with integral coefficients the point
+  class of `1` is a local orientation of `(F, F ∖ {0})`.
 * `TauCeti.singularHomologyMap_prodThomPairFiberMap_eq_of_joined`: fibre inclusions over points
   joined by a path agree on `Hᵣ`.
 * `TauCeti.singularHomology_prodThomPair_hom_ext`: morphisms out of
@@ -473,6 +476,14 @@ instance isIso_complZeroPairPointHom (d : ℕ) (hd : finrank ℝ F = d) :
   rw [complZeroPairPointHom]
   infer_instance
 
+/-- With integral coefficients, the point class of `1` is a local orientation of `(F, F ∖ {0})`:
+it generates `H_d(F, F ∖ {0}; ℤ) ≅ ℤ`. -/
+theorem isLocalOrientation_complZeroPairPointHom_one (d : ℕ) (hd : finrank ℝ F = d) :
+    IsLocalOrientation (0 : F) d
+      (complZeroPairPointHom (ModuleCat.of ℤ (ULift.{w} ℤ)) F d hd (ULift.up 1)) :=
+  isLocalOrientation_inv_one
+    (asIso (complZeroPairPointHom (ModuleCat.of ℤ (ULift.{w} ℤ)) F d hd)).symm
+
 /-- The fibre inclusion over `b` carries the point class of the fibre pair to the class of `b` in
 `H₀(B) ≅ H_d(B × F, B × (F ∖ {0}))`. -/
 @[reassoc]
@@ -490,8 +501,7 @@ theorem complZeroPairPointHom_comp_singularHomologyMap_prodThomPairFiberMap (d :
   rw [complZeroPairPointHom, complZeroPairIsoProdThomPair_inv, Category.assoc, Category.assoc,
     ← TopPair.singularHomologyMap_comp, hc,
     prodThomPairSingularHomologyIso_inv_naturality R PUnit.{w + 1} F c 0 d, ← Category.assoc,
-    singularHomology₀Section_naturality]
-  rfl
+    singularHomology₀Section_naturality, TopCat.ofHom_apply, ContinuousMap.const_apply]
 
 variable {B} in
 /-- Fibre inclusions over points joined by a path induce the same map on the homology of the Thom
