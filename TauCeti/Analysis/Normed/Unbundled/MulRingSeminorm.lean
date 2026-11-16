@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Normed.Unbundled.SmoothingSeminorm
 
+import Mathlib.Analysis.Normed.Unbundled.IsPowMulFaithful
 import Mathlib.Analysis.Normed.Unbundled.SeminormFromConst
 import Mathlib.Order.Zorn
 
@@ -34,8 +35,8 @@ formula on the Gel'fand spectrum of a normed commutative ring.
 
 ## Main results
 
-* `MulRingSeminorm.le_of_le_mul`, `MulRingSeminorm.le_smoothingFun_of_le_mul`: a multiplicative
-  seminorm bounded by `C * μ` is bounded by `μ` and (over a commutative ring) by `smoothingFun μ`.
+* `MulRingSeminorm.le_smoothingFun_of_le_mul`: over a commutative ring, a multiplicative seminorm
+  bounded by `C * μ` is bounded by `smoothingFun μ`.
 * `RingSeminorm.exists_mulRingSeminorm_le_and_apply_eq`: for a nonzero power-multiplicative ring
   seminorm `ρ` on a commutative ring and any `x₀`, some `α : MulRingSeminorm R` satisfies
   `α ≤ ρ` and `α x₀ = ρ x₀`.
@@ -52,8 +53,6 @@ formula on the Gel'fand spectrum of a normed commutative ring.
 -/
 
 public section
-
-open Filter Topology
 
 namespace MulRingSeminorm
 
@@ -137,33 +136,6 @@ theorem eq_zero_of_isNilpotent (α : MulRingSeminorm R) {x : R} (hx : IsNilpoten
   obtain ⟨n, hn⟩ := hx
   exact eq_zero_of_pow_eq_zero (by rw [← map_pow, hn, map_zero])
 
-/-- **Multiplicativity absorbs constant factors.** If `α : MulRingSeminorm R` satisfies
-`α x ≤ C * μ x` for a ring seminorm `μ` and every `x`, then in fact `α x ≤ μ x`. -/
-theorem le_of_le_mul (α : MulRingSeminorm R) {μ : RingSeminorm R} {C : ℝ}
-    (h : ∀ x, α x ≤ C * μ x) (x : R) : α x ≤ μ x := by
-  set D := max C 1
-  have hD : 0 < D := zero_lt_one.trans_le (le_max_right _ _)
-  have hlim : Tendsto (fun n : ℕ ↦ D ^ (1 / n : ℝ) * μ x) atTop (𝓝 (μ x)) := by
-    have hD1 : Tendsto (fun n : ℕ ↦ D ^ (1 / n : ℝ)) atTop (𝓝 1) := by
-      simpa [Function.comp_def] using ((Real.continuousAt_const_rpow hD.ne').tendsto).comp
-        (tendsto_one_div_atTop_nhds_zero_nat (𝕜 := ℝ))
-    simpa using hD1.mul_const (μ x)
-  refine ge_of_tendsto hlim (eventually_atTop.2 ⟨1, fun n hn ↦ ?_⟩)
-  have hn0 : n ≠ 0 := Nat.one_le_iff_ne_zero.1 hn
-  calc α x = (α x ^ n) ^ (1 / n : ℝ) := by
-        rw [one_div, Real.pow_rpow_inv_natCast (apply_nonneg α x) hn0]
-    _ = α (x ^ n) ^ (1 / n : ℝ) := by rw [map_pow]
-    _ ≤ (D * μ (x ^ n)) ^ (1 / n : ℝ) := by
-        gcongr
-        exact (h _).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (apply_nonneg μ _))
-    _ ≤ (D * μ x ^ n) ^ (1 / n : ℝ) := by
-        gcongr
-        exact map_pow_le_pow μ x hn0
-    _ = D ^ (1 / n : ℝ) * (μ x ^ n) ^ (1 / n : ℝ) :=
-        Real.mul_rpow hD.le (pow_nonneg (apply_nonneg μ x) n)
-    _ = D ^ (1 / n : ℝ) * μ x := by
-        rw [one_div, Real.pow_rpow_inv_natCast (apply_nonneg μ x) hn0]
-
 end Ring
 
 section CommRing
@@ -174,24 +146,15 @@ variable {R : Type*} [CommRing R]
 then `α x ≤ smoothingFun μ x` for every `x`. -/
 theorem le_smoothingFun_of_le_mul (α : MulRingSeminorm R) {μ : RingSeminorm R} {C : ℝ}
     (h : ∀ x, α x ≤ C * μ x) (x : R) : α x ≤ smoothingFun μ x := by
-  set D := max C 1
-  have hD : 0 < D := zero_lt_one.trans_le (le_max_right _ _)
-  have hlim : Tendsto (fun n : ℕ ↦ D ^ (1 / n : ℝ) * smoothingSeminormSeq μ x n) atTop
-      (𝓝 (smoothingFun μ x)) := by
-    have hD1 : Tendsto (fun n : ℕ ↦ D ^ (1 / n : ℝ)) atTop (𝓝 1) := by
-      simpa [Function.comp_def] using ((Real.continuousAt_const_rpow hD.ne').tendsto).comp
-        (tendsto_one_div_atTop_nhds_zero_nat (𝕜 := ℝ))
-    simpa using hD1.mul (μ.tendsto_smoothingFun x)
-  refine ge_of_tendsto hlim (eventually_atTop.2 ⟨1, fun n hn ↦ ?_⟩)
-  have hn0 : n ≠ 0 := Nat.one_le_iff_ne_zero.1 hn
-  calc α x = (α x ^ n) ^ (1 / n : ℝ) := by
-        rw [one_div, Real.pow_rpow_inv_natCast (apply_nonneg α x) hn0]
-    _ = α (x ^ n) ^ (1 / n : ℝ) := by rw [map_pow]
-    _ ≤ (D * μ (x ^ n)) ^ (1 / n : ℝ) := by
-        gcongr
-        exact (h _).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (apply_nonneg μ _))
-    _ = D ^ (1 / n : ℝ) * smoothingSeminormSeq μ x n :=
-        Real.mul_rpow hD.le (apply_nonneg μ _)
+  have hle : ∀ y, α y ≤ μ y :=
+    contraction_of_isPowMul_of_boundedWrt μ α.isPowMul (f := RingHom.id R)
+      ⟨max C 1, zero_lt_one.trans_le (le_max_right _ _),
+        fun y ↦ (h y).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (apply_nonneg μ _))⟩
+  refine le_ciInf fun n ↦ ?_
+  calc α x = (α x ^ (n : ℕ)) ^ (1 / (n : ℝ)) := by
+        rw [one_div, Real.pow_rpow_inv_natCast (apply_nonneg α x) n.ne_zero]
+    _ = α (x ^ (n : ℕ)) ^ (1 / (n : ℝ)) := by rw [map_pow]
+    _ ≤ μ (x ^ (n : ℕ)) ^ (1 / (n : ℝ)) := by gcongr; exact hle _
 
 end CommRing
 

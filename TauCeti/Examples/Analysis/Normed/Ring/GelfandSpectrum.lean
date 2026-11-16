@@ -273,10 +273,8 @@ theorem const_one_not_mulRingSeminorm (R : Type*) [NonAssocRing R] :
 /-- Pullback along bounded ring homomorphisms preserves `0` and `1`, acts as the identity on
 `RingHom.id`, and composes contravariantly. -/
 theorem comap_checks {A B C : Type*} [SeminormedRing A] [SeminormedRing B] [SeminormedRing C]
-    (φ : A →+* B) (hφ : ∃ C₁ > 0, ∀ x, ‖φ x‖ ≤ C₁ * ‖x‖)
-    (ψ : B →+* C) (hψ : ∃ C₂ > 0, ∀ y, ‖ψ y‖ ≤ C₂ * ‖y‖)
-    (hψφ : ∃ C₃ > 0, ∀ x, ‖(ψ.comp φ) x‖ ≤ C₃ * ‖x‖)
-    (hid : ∃ C₀ > 0, ∀ x : A, ‖x‖ ≤ C₀ * ‖x‖)
+    (φ : A →+* B) (hφ : φ.IsBounded) (ψ : B →+* C) (hψ : ψ.IsBounded)
+    (hψφ : (ψ.comp φ).IsBounded) (hid : (RingHom.id A).IsBounded)
     (α : GelfandSpectrum A) (β : GelfandSpectrum B) (γ : GelfandSpectrum C) :
     comap φ hφ β 0 = 0 ∧
       comap φ hφ β 1 = 1 ∧

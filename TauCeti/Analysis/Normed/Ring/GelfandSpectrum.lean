@@ -7,13 +7,15 @@ module
 
 public import TauCeti.Analysis.Normed.Unbundled.MulRingSeminorm
 
+import Mathlib.Analysis.Normed.Unbundled.IsPowMulFaithful
+
 /-!
 # The Gel'fand spectrum of a seminormed ring and Berkovich's spectral formula
 
 The *Gel'fand spectrum* (or *Berkovich spectrum*) `TauCeti.GelfandSpectrum A` of a seminormed ring
-`A` is the type of multiplicative ring seminorms `α : MulRingSeminorm A` bounded by a positive
-constant multiple of the ambient norm (`∃ C > 0, ∀ x, α x ≤ C * ‖x‖`), equipped with the topology
-of pointwise convergence induced from `A → ℝ`.
+`A` is the type of multiplicative ring seminorms `α : MulRingSeminorm A` bounded with respect to
+the ambient norm (`(RingHom.id A).IsBoundedWrt norm α`, i.e., `∃ C > 0, ∀ x, α x ≤ C * ‖x‖`),
+equipped with the topology of pointwise convergence induced from `A → ℝ`.
 
 Because `α (x ^ n) = α x ^ n`, any bound `α x ≤ C * ‖x‖` forces contractivity `α x ≤ ‖x‖` in the
 limit `n → ∞` (`GelfandSpectrum.apply_le_norm`), and over a commutative ring it sharpens to
@@ -29,12 +31,13 @@ Bosch–Güntzer–Remmert Theorem 1.3.2/2 (`RingSeminorm.exists_mulRingSeminorm
 when `normRingSeminorm A ≠ 0` (in particular on every nontrivial normed commutative ring) the
 spectrum is nonempty and the maximum is attained at a point of `GelfandSpectrum A`.
 
-Bounded ring homomorphisms `φ : A →+* B` act contravariantly on Gel'fand spectra by continuous
-pullback (`GelfandSpectrum.comap`, `GelfandSpectrum.continuous_comap`), and retractions whose error
-is pointwise nilpotent induce homeomorphisms of spectra (`GelfandSpectrum.retractHomeomorph`). When
-the ambient norm is itself multiplicative and normalized (`[NormMulClass A] [NormOneClass A]`), it
-defines the top point `GelfandSpectrum.normPoint A`; on any `NormedDivisionRing` it is the unique
-point of the spectrum (`GelfandSpectrum.instUnique`).
+Bounded ring homomorphisms `φ : A →+* B` (`φ.IsBounded`) act contravariantly on Gel'fand spectra by
+continuous pullback (`GelfandSpectrum.comap`, `GelfandSpectrum.continuous_comap`), and retractions
+whose error is pointwise nilpotent induce homeomorphisms of spectra
+(`GelfandSpectrum.retractHomeomorph`). When the ambient norm is itself multiplicative and
+normalized (`[NormMulClass A] [NormOneClass A]`), it defines the top point
+`GelfandSpectrum.normPoint A`; on any `NormedDivisionRing` it is the unique point of the spectrum
+(`GelfandSpectrum.instUnique`).
 
 ## Main definitions
 
@@ -49,7 +52,7 @@ point of the spectrum (`GelfandSpectrum.instUnique`).
 
 ## Main results
 
-* `TauCeti.GelfandSpectrum.apply_le_norm`, `TauCeti.GelfandSpectrum.exists_le_mul_norm_iff`:
+* `TauCeti.GelfandSpectrum.apply_le_norm`, `TauCeti.GelfandSpectrum.isBoundedWrt_norm_iff`:
   every bounded multiplicative seminorm is contractive (`α x ≤ ‖x‖`).
 * `TauCeti.GelfandSpectrum.isClosedEmbedding_coeFn`, `TauCeti.GelfandSpectrum.instT2Space`,
   `TauCeti.GelfandSpectrum.instCompactSpace`: `GelfandSpectrum A` embeds as a closed subset of
@@ -73,19 +76,16 @@ point of the spectrum (`GelfandSpectrum.instUnique`).
 
 public section
 
-open Filter Topology
-
 namespace TauCeti
 
 /-- The **Gel'fand spectrum** (or **Berkovich spectrum**) `M(A)` of a seminormed ring `A`: the
-multiplicative ring seminorms on `A` bounded by a positive constant multiple of the norm, equipped
-with the topology of pointwise convergence. Every such seminorm is contractive
-(`GelfandSpectrum.apply_le_norm`). -/
+multiplicative ring seminorms on `A` bounded with respect to the norm, equipped with the topology
+of pointwise convergence. Every such seminorm is contractive (`GelfandSpectrum.apply_le_norm`). -/
 structure GelfandSpectrum (A : Type*) [SeminormedRing A] where
   /-- The underlying multiplicative ring seminorm. -/
   toMulRingSeminorm : MulRingSeminorm A
-  /-- The multiplicative seminorm is bounded by a positive constant multiple of the norm. -/
-  bound' : ∃ C > 0, ∀ x, toMulRingSeminorm x ≤ C * ‖x‖
+  /-- The multiplicative seminorm is bounded with respect to the norm. -/
+  bound' : (RingHom.id A).IsBoundedWrt norm toMulRingSeminorm
 
 namespace GelfandSpectrum
 
@@ -127,7 +127,7 @@ theorem toMulRingSeminorm_injective :
 
 /-- Evaluating a constructed spectrum point applies the underlying seminorm. -/
 @[simp]
-theorem mk_apply (α : MulRingSeminorm A) (h : ∃ C > 0, ∀ x, α x ≤ C * ‖x‖) (x : A) :
+theorem mk_apply (α : MulRingSeminorm A) (h : (RingHom.id A).IsBoundedWrt norm α) (x : A) :
     (⟨α, h⟩ : GelfandSpectrum A) x = α x :=
   (rfl)
 
@@ -136,19 +136,19 @@ theorem mk_apply (α : MulRingSeminorm A) (h : ∃ C > 0, ∀ x, α x ≤ C * �
 theorem ext {α β : GelfandSpectrum A} (h : ∀ x, α x = β x) : α = β :=
   DFunLike.ext α β h
 
-/-- Every point of `GelfandSpectrum A` is bounded by a positive multiple of the norm. -/
-theorem bound (α : GelfandSpectrum A) : ∃ C > 0, ∀ x, α x ≤ C * ‖x‖ :=
+/-- Every point of `GelfandSpectrum A` is bounded with respect to the norm. -/
+theorem bound (α : GelfandSpectrum A) : (RingHom.id A).IsBoundedWrt norm α :=
   α.bound'
 
 /-- **Contractivity of spectrum points.** Every `α : GelfandSpectrum A` satisfies `α x ≤ ‖x‖` for
 all `x : A`, because `α (x ^ n) = α x ^ n` absorbs multiplicative constants as `n → ∞`. -/
-theorem apply_le_norm (α : GelfandSpectrum A) (x : A) : α x ≤ ‖x‖ := by
-  obtain ⟨C, -, hC⟩ := α.bound'
-  exact α.toMulRingSeminorm.le_of_le_mul (μ := normRingSeminorm A) hC x
+theorem apply_le_norm (α : GelfandSpectrum A) (x : A) : α x ≤ ‖x‖ :=
+  contraction_of_isPowMul_of_boundedWrt (normRingSeminorm A) α.toMulRingSeminorm.isPowMul
+    α.bound' x
 
 /-- Construct a point of `GelfandSpectrum A` from a contractive multiplicative ring seminorm. -/
 def ofLeNorm (α : MulRingSeminorm A) (h : ∀ x, α x ≤ ‖x‖) : GelfandSpectrum A :=
-  ⟨α, 1, zero_lt_one, fun x ↦ by simpa only [one_mul] using h x⟩
+  ⟨α, 1, zero_lt_one, fun x ↦ by simpa only [RingHom.id_apply, one_mul] using h x⟩
 
 /-- Evaluating `ofLeNorm α h` applies `α`. -/
 @[simp]
@@ -162,12 +162,12 @@ theorem toMulRingSeminorm_ofLeNorm (α : MulRingSeminorm A) (h : ∀ x, α x ≤
     (ofLeNorm α h).toMulRingSeminorm = α :=
   (rfl)
 
-/-- A multiplicative ring seminorm is bounded by some positive multiple of the norm if and only if
-it is bounded by the norm itself. -/
-theorem exists_le_mul_norm_iff {α : MulRingSeminorm A} :
-    (∃ C > 0, ∀ x, α x ≤ C * ‖x‖) ↔ ∀ x, α x ≤ ‖x‖ :=
+/-- A multiplicative ring seminorm is bounded with respect to the norm if and only if it is bounded
+above by the norm itself. -/
+theorem isBoundedWrt_norm_iff {α : MulRingSeminorm A} :
+    (RingHom.id A).IsBoundedWrt norm α ↔ ∀ x, α x ≤ ‖x‖ :=
   ⟨fun h x ↦ (⟨α, h⟩ : GelfandSpectrum A).apply_le_norm x,
-    fun h ↦ ⟨1, zero_lt_one, fun x ↦ by simpa only [one_mul] using h x⟩⟩
+    fun h ↦ ⟨1, zero_lt_one, fun x ↦ by simpa only [RingHom.id_apply, one_mul] using h x⟩⟩
 
 /-- Every point of `GelfandSpectrum A` is `1`-Lipschitz on `A`: `|α x - α y| ≤ ‖x - y‖`. -/
 theorem abs_apply_sub_le_norm_sub (α : GelfandSpectrum A) (x y : A) :
@@ -303,53 +303,48 @@ instance instCompactSpace : CompactSpace (GelfandSpectrum A) := by
 /-! ### Contravariant functoriality -/
 
 /-- Contravariant pullback of Gel'fand spectra along a bounded ring homomorphism `φ : A →+* B`. -/
-def comap (φ : A →+* B) (hφ : ∃ C > 0, ∀ x, ‖φ x‖ ≤ C * ‖x‖)
-    (β : GelfandSpectrum B) : GelfandSpectrum A :=
+def comap (φ : A →+* B) (hφ : φ.IsBounded) (β : GelfandSpectrum B) : GelfandSpectrum A :=
   ⟨β.toMulRingSeminorm.comp φ,
     let ⟨C, hC0, hC⟩ := hφ
     ⟨C, hC0, fun x ↦ by
-      rw [MulRingSeminorm.comp_apply, toMulRingSeminorm_apply]
+      rw [RingHom.id_apply, MulRingSeminorm.comp_apply, toMulRingSeminorm_apply]
       exact (β.apply_le_norm (φ x)).trans (hC x)⟩⟩
 
 /-- Evaluating `comap φ hφ β` at `x` evaluates `β` at `φ x`. -/
 @[simp]
-theorem comap_apply (φ : A →+* B) (hφ : ∃ C > 0, ∀ x, ‖φ x‖ ≤ C * ‖x‖)
-    (β : GelfandSpectrum B) (x : A) :
+theorem comap_apply (φ : A →+* B) (hφ : φ.IsBounded) (β : GelfandSpectrum B) (x : A) :
     comap φ hφ β x = β (φ x) :=
   MulRingSeminorm.comp_apply β.toMulRingSeminorm φ x
 
 /-- The underlying `MulRingSeminorm` of `comap φ hφ β` is `β.toMulRingSeminorm.comp φ`. -/
 @[simp]
-theorem toMulRingSeminorm_comap (φ : A →+* B) (hφ : ∃ C > 0, ∀ x, ‖φ x‖ ≤ C * ‖x‖)
-    (β : GelfandSpectrum B) :
+theorem toMulRingSeminorm_comap (φ : A →+* B) (hφ : φ.IsBounded) (β : GelfandSpectrum B) :
     (comap φ hφ β).toMulRingSeminorm = β.toMulRingSeminorm.comp φ :=
   (rfl)
 
 /-- `comap φ hφ` is continuous for the pointwise convergence topologies. -/
 @[continuity, fun_prop]
-theorem continuous_comap (φ : A →+* B) (hφ : ∃ C > 0, ∀ x, ‖φ x‖ ≤ C * ‖x‖) :
+theorem continuous_comap (φ : A →+* B) (hφ : φ.IsBounded) :
     Continuous (comap φ hφ) :=
   continuous_iff.2 fun x ↦ by simpa only [comap_apply] using continuous_eval (φ x)
 
 /-- Pullback along the identity ring homomorphism is the identity on `GelfandSpectrum A`. -/
 @[simp]
-theorem comap_id (h : ∃ C > 0, ∀ x : A, ‖x‖ ≤ C * ‖x‖) (α : GelfandSpectrum A) :
+theorem comap_id (h : (RingHom.id A).IsBounded) (α : GelfandSpectrum A) :
     comap (RingHom.id A) h α = α :=
   ext fun _ ↦ by simp
 
 /-- Pullback of Gel'fand spectra is contravariant under composition of bounded ring homomorphisms:
 pulling back along `ψ.comp φ` first pulls back along `ψ`, then along `φ`. -/
-theorem comap_comp (ψ : B →+* C) (hψ : ∃ C₁ > 0, ∀ y, ‖ψ y‖ ≤ C₁ * ‖y‖)
-    (φ : A →+* B) (hφ : ∃ C₂ > 0, ∀ x, ‖φ x‖ ≤ C₂ * ‖x‖)
-    (hψφ : ∃ C₃ > 0, ∀ x, ‖(ψ.comp φ) x‖ ≤ C₃ * ‖x‖) (γ : GelfandSpectrum C) :
+theorem comap_comp (ψ : B →+* C) (hψ : ψ.IsBounded) (φ : A →+* B) (hφ : φ.IsBounded)
+    (hψφ : (ψ.comp φ).IsBounded) (γ : GelfandSpectrum C) :
     comap φ hφ (comap ψ hψ γ) = comap (ψ.comp φ) hψφ γ :=
   ext fun _ ↦ by simp
 
 /-- If `φ : A →+* B` and `ψ : B →+* A` are bounded ring homomorphisms with `ψ ∘ φ = id` such that
 `y - φ (ψ y)` is nilpotent for every `y : B`, then `comap φ` and `comap ψ` form a homeomorphism
 `GelfandSpectrum B ≃ₜ GelfandSpectrum A`. -/
-def retractHomeomorph (φ : A →+* B) (hφ : ∃ C₁ > 0, ∀ x, ‖φ x‖ ≤ C₁ * ‖x‖)
-    (ψ : B →+* A) (hψ : ∃ C₂ > 0, ∀ y, ‖ψ y‖ ≤ C₂ * ‖y‖)
+def retractHomeomorph (φ : A →+* B) (hφ : φ.IsBounded) (ψ : B →+* A) (hψ : ψ.IsBounded)
     (hψφ : ∀ x : A, ψ (φ x) = x) (hnil : ∀ y : B, IsNilpotent (y - φ (ψ y))) :
     GelfandSpectrum B ≃ₜ GelfandSpectrum A where
   toFun := comap φ hφ
@@ -364,8 +359,7 @@ def retractHomeomorph (φ : A →+* B) (hφ : ∃ C₁ > 0, ∀ x, ‖φ x‖ �
 
 /-- Applying `retractHomeomorph` pulls back along `φ`. -/
 @[simp]
-theorem retractHomeomorph_apply (φ : A →+* B) (hφ : ∃ C₁ > 0, ∀ x, ‖φ x‖ ≤ C₁ * ‖x‖)
-    (ψ : B →+* A) (hψ : ∃ C₂ > 0, ∀ y, ‖ψ y‖ ≤ C₂ * ‖y‖)
+theorem retractHomeomorph_apply (φ : A →+* B) (hφ : φ.IsBounded) (ψ : B →+* A) (hψ : ψ.IsBounded)
     (hψφ : ∀ x : A, ψ (φ x) = x) (hnil : ∀ y : B, IsNilpotent (y - φ (ψ y)))
     (β : GelfandSpectrum B) (x : A) :
     retractHomeomorph φ hφ ψ hψ hψφ hnil β x = β (φ x) :=
@@ -373,9 +367,8 @@ theorem retractHomeomorph_apply (φ : A →+* B) (hφ : ∃ C₁ > 0, ∀ x, ‖
 
 /-- Applying `(retractHomeomorph ...).symm` pulls back along `ψ`. -/
 @[simp]
-theorem retractHomeomorph_symm_apply (φ : A →+* B) (hφ : ∃ C₁ > 0, ∀ x, ‖φ x‖ ≤ C₁ * ‖x‖)
-    (ψ : B →+* A) (hψ : ∃ C₂ > 0, ∀ y, ‖ψ y‖ ≤ C₂ * ‖y‖)
-    (hψφ : ∀ x : A, ψ (φ x) = x) (hnil : ∀ y : B, IsNilpotent (y - φ (ψ y)))
+theorem retractHomeomorph_symm_apply (φ : A →+* B) (hφ : φ.IsBounded) (ψ : B →+* A)
+    (hψ : ψ.IsBounded) (hψφ : ∀ x : A, ψ (φ x) = x) (hnil : ∀ y : B, IsNilpotent (y - φ (ψ y)))
     (α : GelfandSpectrum A) (y : B) :
     (retractHomeomorph φ hφ ψ hψ hψφ hnil).symm α y = α (ψ y) :=
   comap_apply ψ hψ α y

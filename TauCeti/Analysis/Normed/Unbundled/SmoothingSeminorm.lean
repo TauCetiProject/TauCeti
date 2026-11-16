@@ -97,20 +97,6 @@ end RingHom
 
 namespace RingSeminorm
 
-private theorem map_mul_natCast_le {T : Type*} [Ring T] (μ : RingSeminorm T) (x : T) :
-    ∀ n : ℕ, μ (x * n) ≤ n * μ x
-  | 0 => by simp
-  | n + 1 => by
-    rw [Nat.cast_add_one, mul_add, mul_one, Nat.cast_add_one, add_mul, one_mul]
-    exact (map_add_le_add μ _ _).trans (add_le_add_left (map_mul_natCast_le μ x n) _)
-
-private theorem map_sum_range_le {T : Type*} [NonUnitalRing T] (μ : RingSeminorm T) (f : ℕ → T) :
-    ∀ m : ℕ, μ (∑ k ∈ Finset.range m, f k) ≤ ∑ k ∈ Finset.range m, μ (f k)
-  | 0 => by simp
-  | m + 1 => by
-    rw [Finset.sum_range_succ, Finset.sum_range_succ]
-    exact (map_add_le_add μ _ _).trans (add_le_add (map_sum_range_le μ f m) le_rfl)
-
 private theorem exists_pow_le_const_mul_pow (μ : RingSeminorm R) (hμ1 : μ 1 ≤ 1) (x : R)
     {a : ℝ} (ha : smoothingFun μ x < a) :
     ∃ C : ℝ, 1 ≤ C ∧ ∀ k : ℕ, μ (x ^ k) ≤ C * a ^ k := by
@@ -167,10 +153,14 @@ theorem smoothingFun_add_le_of_map_one_le_one (μ : RingSeminorm R) (hμ1 : μ 1
         = μ (∑ k ∈ Finset.range (n + 1), x ^ k * y ^ (n - k) * n.choose k) := by
           rw [add_pow]
       _ ≤ ∑ k ∈ Finset.range (n + 1), μ (x ^ k * y ^ (n - k) * n.choose k) :=
-          map_sum_range_le μ _ (n + 1)
+          Finset.map_sum_le_sum μ (Finset.range (n + 1)) _
       _ ≤ ∑ k ∈ Finset.range (n + 1), (n.choose k : ℝ) * (μ (x ^ k) * μ (y ^ (n - k))) := by
           gcongr with k
-          exact (map_mul_natCast_le μ _ _).trans
+          have hchoose : μ (x ^ k * y ^ (n - k) * n.choose k) ≤
+              (n.choose k : ℝ) * μ (x ^ k * y ^ (n - k)) := by
+            simpa only [Finset.sum_const, Finset.card_range, ← nsmul_eq_mul', nsmul_eq_mul] using
+              Finset.map_sum_le_sum μ (Finset.range (n.choose k)) (fun _ ↦ x ^ k * y ^ (n - k))
+          exact hchoose.trans
             (mul_le_mul_of_nonneg_left (map_mul_le_mul μ _ _) (Nat.cast_nonneg _))
       _ ≤ ∑ k ∈ Finset.range (n + 1), (n.choose k : ℝ) * ((Cx * a ^ k) * (Cy * b ^ (n - k))) := by
           gcongr with k
