@@ -56,6 +56,7 @@ The brackets are written out as `(1 + ‖x‖ ^ 2) ^ (s / 2)`, the weight of Mat
   between its two factors.
 * `TauCeti.one_add_norm_sq_rpow_le_one_add_norm_pow`: `⟨x⟩ ^ N ≤ (1 + ‖x‖) ^ N` for natural `N`.
 * `TauCeti.one_add_norm_sq_rpow_add`: `⟨x⟩ ^ (s + t) = ⟨x⟩ ^ s ⟨x⟩ ^ t`.
+* `TauCeti.one_add_norm_sq_rpow_neg_mul_rpow`: `⟨x⟩ ^ (-s) ⟨x⟩ ^ s = 1`.
 * `TauCeti.one_add_norm_sq_rpow_le_of_mul_norm_lt_norm_sub`: if `c ‖x‖ < ‖x - y‖`, then
   `⟨y⟩ ^ s ≤ (c⁻¹ + 1) ^ |s| (1 + ‖x - y‖) ^ |s|`; this separates frequencies outside a cone
   from those inside it.
@@ -283,12 +284,16 @@ theorem one_add_norm_sq_rpow_add (x : E) (s t : ℝ) :
   rw [← Real.rpow_add (by positivity)]
   ring_nf
 
-omit [SeminormedAddGroup E] in
+/-- Opposite powers of the Japanese bracket cancel: `⟨x⟩ ^ (-s) ⟨x⟩ ^ s = 1`. -/
+theorem one_add_norm_sq_rpow_neg_mul_rpow (x : E) (s : ℝ) :
+    (1 + ‖x‖ ^ 2) ^ (-s / 2) * (1 + ‖x‖ ^ 2) ^ (s / 2) = 1 := by
+  rw [← one_add_norm_sq_rpow_add, neg_add_cancel, zero_div, Real.rpow_zero]
+
 /-- **The bracket away from a cone.** If `y` lies outside the ball of radius `c ‖x‖` about `x`,
 `c > 0`, then `‖y‖` is controlled by `‖x - y‖`, and so is the bracket at `y`:
 `⟨y⟩ ^ s ≤ (c⁻¹ + 1) ^ |s| (1 + ‖x - y‖) ^ |s|` for every real `s`. -/
-theorem one_add_norm_sq_rpow_le_of_mul_norm_lt_norm_sub [SeminormedAddCommGroup E] {c : ℝ}
-    (hc : 0 < c) {x y : E} (h : c * ‖x‖ < ‖x - y‖) (s : ℝ) :
+theorem one_add_norm_sq_rpow_le_of_mul_norm_lt_norm_sub {c : ℝ} (hc : 0 < c) {x y : E}
+    (h : c * ‖x‖ < ‖x - y‖) (s : ℝ) :
     (1 + ‖y‖ ^ 2) ^ (s / 2) ≤ (c⁻¹ + 1) ^ |s| * (1 + ‖x - y‖) ^ |s| := by
   have hx : ‖x‖ ≤ c⁻¹ * ‖x - y‖ := by
     rw [inv_mul_eq_div, le_div_iff₀ hc, mul_comm]

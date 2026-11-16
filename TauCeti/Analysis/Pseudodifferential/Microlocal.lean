@@ -10,7 +10,6 @@ public import TauCeti.Analysis.Distribution.TemperedDistribution.Cutoff
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Basic
 import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Localization
 import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Tempered
-import TauCeti.Analysis.Convolution.Young
 import TauCeti.Analysis.Normed.Module.Cone
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
@@ -53,7 +52,8 @@ For `ξ ∈ Γ'` split the integral at `Γ`. For `ζ ∈ Γ`, Peetre's inequalit
 For `ζ ∉ Γ` the frequencies are separated, `‖ξ - ζ‖ > c ‖ξ‖`, hence `‖ζ‖` is at most a multiple of
 `1 + ‖ξ - ζ‖`, and the rapid decay of `â` in its first variable absorbs the missing weight
 `⟨ζ⟩ ^ (s - t)`, leaving `k(ξ - ζ) ⟨ζ⟩ ^ t ‖𝓕 u ζ‖`, which is controlled by the `H^t` norm. Schur's
-test applied to both pieces gives the square integrability on `Γ'`
+test (`TauCeti.memLp_lintegral_mul`) for the kernel `k(ξ - ζ)` applied to the sum of both pieces
+gives the square integrability on `Γ'`
 (`TauCeti.Symbol.HasCompactSpatialSupport.memLp_smul_fourier_toLp_quantizeSobolev`).
 
 ## Main results
@@ -110,141 +110,10 @@ private theorem HasCompactSpatialSupport.continuous_uncurry_fourierKernel
     ((hw (-t)).comp continuous_snd))).smul hslice
 
 omit [CompleteSpace V] [CompleteSpace W] in
-/-- The weighted kernel is bounded by `B k(ξ - ζ)` for an integrable `k = (1 + ‖·‖) ^ (-r)`. -/
-private theorem HasCompactSpatialSupport.exists_norm_fourierKernel_le
-    (ha : a.HasCompactSpatialSupport) (t : ℝ) :
-    ∃ B r : ℝ, 0 ≤ B ∧ (n : ℝ) < r ∧ ∀ ξ ζ : CoordinateSpace n,
-      ‖a.fourierKernel t ξ ζ‖ ≤ B * (1 + ‖ξ - ζ‖) ^ (-r) := by
-  set N : ℕ := ⌈|t - m|⌉₊ + n + 1
-  obtain ⟨C₀, hC₀, hdecay⟩ := ha.exists_one_add_norm_pow_mul_norm_fourier_le N
-  refine ⟨2 ^ (|t - m| / 2) * C₀ * (2 * π) ^ |m|, N - |t - m|, by positivity, ?_,
-    fun ξ ζ ↦ ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun v ↦ ?_⟩
-  · have := Nat.le_ceil |t - m|
-    push_cast [N]
-    linarith
-  have hpt := rpow_mul_norm_fourier_apply_le (s := t) hC₀ hdecay ξ ζ v
-  have hw : (1 + ‖ζ‖ ^ 2) ^ (t / 2) * (1 + ‖ζ‖ ^ 2) ^ (-t / 2) = 1 := by
-    rw [← one_add_norm_sq_rpow_add, add_neg_cancel, zero_div, Real.rpow_zero]
-  rw [fourierKernel, smul_apply, norm_smul, Complex.norm_real,
-    Real.norm_of_nonneg (by positivity), mul_comm ((1 + ‖ξ‖ ^ 2) ^ ((t - m) / 2)), mul_assoc]
-  calc (1 + ‖ζ‖ ^ 2) ^ (-t / 2) * ((1 + ‖ξ‖ ^ 2) ^ ((t - m) / 2) *
-        ‖𝓕 (fun x ↦ a.coefficient (x, (2 * π) • ζ)) (ξ - ζ) v‖)
-      ≤ (1 + ‖ζ‖ ^ 2) ^ (-t / 2) * (2 ^ (|t - m| / 2) * C₀ * (2 * π) ^ |m| *
-          (1 + ‖ξ - ζ‖) ^ (-((N : ℝ) - |t - m|)) * ((1 + ‖ζ‖ ^ 2) ^ (t / 2) * ‖v‖)) := by
-        gcongr
-    _ = 2 ^ (|t - m| / 2) * C₀ * (2 * π) ^ |m| * (1 + ‖ξ - ζ‖) ^ (-((N : ℝ) - |t - m|)) *
-          ‖v‖ * ((1 + ‖ζ‖ ^ 2) ^ (t / 2) * (1 + ‖ζ‖ ^ 2) ^ (-t / 2)) := by ring
-    _ = _ := by rw [hw, mul_one]
-
-omit [CompleteSpace V] [CompleteSpace W] in
-/-- The row and column integrals of the weighted kernel are bounded. -/
-private theorem HasCompactSpatialSupport.exists_lintegral_enorm_fourierKernel_le
-    (ha : a.HasCompactSpatialSupport) (t : ℝ) :
-    ∃ A : ℝ≥0, (∀ ξ, ∫⁻ ζ, ‖a.fourierKernel t ξ ζ‖ₑ ≤ A) ∧
-      ∀ ζ, ∫⁻ ξ, ‖a.fourierKernel t ξ ζ‖ₑ ≤ A := by
-  obtain ⟨B, r, hB, hr, hK⟩ := ha.exists_norm_fourierKernel_le t
-  set k : CoordinateSpace n → ℝ := fun η ↦ B * (1 + ‖η‖) ^ (-r)
-  have hk : Integrable k := (integrable_one_add_norm (by
-    rwa [finrank_euclideanSpace, Fintype.card_fin])).const_mul B
-  have hk0 : ∀ η, 0 ≤ k η := fun η ↦ mul_nonneg hB (by positivity)
-  have hint : ∫⁻ η, ENNReal.ofReal (k η) = ((∫ η, k η).toNNReal : ℝ≥0∞) :=
-    (ofReal_integral_eq_lintegral_ofReal hk (.of_forall hk0)).symm
-  have hle (ξ ζ : CoordinateSpace n) : ‖a.fourierKernel t ξ ζ‖ₑ ≤ ENNReal.ofReal (k (ξ - ζ)) := by
-    rw [← ofReal_norm]
-    exact ENNReal.ofReal_le_ofReal (hK ξ ζ)
-  exact ⟨(∫ η, k η).toNNReal,
-    fun ξ ↦ (lintegral_mono (hle ξ)).trans
-      ((lintegral_sub_left_eq_self (fun η ↦ ENNReal.ofReal (k η)) ξ).trans hint).le,
-    fun ζ ↦ (lintegral_mono (hle · ζ)).trans
-      ((lintegral_sub_right_eq_self (fun η ↦ ENNReal.ofReal (k η)) ζ).trans hint).le⟩
-
-/-- The convolution formula for a Schwartz function `v`: the integral operator of the weighted
-kernel sends `⟨ζ⟩ ^ t 𝓕 v` to `⟨ξ⟩ ^ (t - m) 𝓕 (Op(a) v)`. -/
-private theorem HasCompactSpatialSupport.fourier_toLp_quantizeSobolev_toBesselPotentialSpaceCLM
-    (ha : a.HasCompactSpatialSupport) (t : ℝ) (v : 𝓢(CoordinateSpace n, V)) {A : ℝ≥0}
-    (hrow : ∀ᵐ ξ, ∫⁻ ζ, ‖a.fourierKernel t ξ ζ‖ₑ ≤ A)
-    (hcol : ∀ᵐ ζ, ∫⁻ ξ, ‖a.fourierKernel t ξ ζ‖ₑ ≤ A)
-    (hK : AEStronglyMeasurable (uncurry (a.fourierKernel t)) (volume.prod volume)) :
-    𝓕 (a.quantizeSobolev ha t (SchwartzMap.toBesselPotentialSpaceCLM t 2 v)).toLp =
-      integralOperatorLp (a.fourierKernel t) 2 hK hrow hcol
-        (𝓕 (SchwartzMap.toBesselPotentialSpaceCLM t 2 v).toLp) := by
-  have hw (r : ℝ) :
-      (fun x : CoordinateSpace n ↦ (((1 + ‖x‖ ^ 2) ^ (r / 2) : ℝ) : ℂ)).HasTemperateGrowth := by
-    fun_prop
-  set w := (ha.hasCompactSupport_quantizeSchwartzValue v).toSchwartzMap
-    (a.contDiff_quantizeSchwartzValue v)
-  rw [ha.quantizeSobolev_toBesselPotentialSpaceCLM,
-    SchwartzMap.fourier_toLp_toBesselPotentialSpaceCLM,
-    SchwartzMap.fourier_toLp_toBesselPotentialSpaceCLM]
-  refine Lp.ext ?_
-  filter_upwards [SchwartzMap.coeFn_toLp (SchwartzMap.smulLeftCLM W
-      (fun x : CoordinateSpace n ↦ (((1 + ‖x‖ ^ 2) ^ ((t - m) / 2) : ℝ) : ℂ)) (𝓕 w)) 2,
-    coeFn_integralOperatorLp (hA := hrow) (hB := hcol) ((SchwartzMap.smulLeftCLM V
-      (fun x : CoordinateSpace n ↦ (((1 + ‖x‖ ^ 2) ^ (t / 2) : ℝ) : ℂ)) (𝓕 v)).toLp 2)]
-    with ξ h₁ h₂
-  have hwq : ⇑w = quantizeSchwartzValue a.coefficient v :=
-    funext (HasCompactSupport.toSchwartzMap_toFun _ _)
-  rw [h₁, h₂, SchwartzMap.smulLeftCLM_apply_apply (hw _), SchwartzMap.fourier_coe, hwq,
-    ha.fourier_quantizeSchwartzValue,
-    ← integral_smul]
-  refine integral_congr_ae ?_
-  filter_upwards [SchwartzMap.coeFn_toLp (SchwartzMap.smulLeftCLM V
-    (fun x : CoordinateSpace n ↦ (((1 + ‖x‖ ^ 2) ^ (t / 2) : ℝ) : ℂ)) (𝓕 v)) 2] with ζ hζ
-  rw [hζ, SchwartzMap.smulLeftCLM_apply_apply (hw _), fourierKernel, smul_apply, map_smul,
-    smul_smul, ← Complex.ofReal_mul, mul_assoc, ← one_add_norm_sq_rpow_add, neg_add_cancel,
-    zero_div, Real.rpow_zero, mul_one]
-
-/-- **The convolution formula on `H^t`.** For a symbol `a` of order `m` with compact spatial
-support and `u ∈ H^t`, the Fourier transform of `Op(a) u` is, almost everywhere,
-`𝓕 (Op(a) u) ξ = ∫ â(ξ - ζ, 2πζ) 𝓕 u ζ dζ`, where `â(η, ξ)` is the Fourier transform of the position
-slice `x ↦ a(x, ξ)` at `η`. Both sides are written through the `L²` representatives
-`𝓕 u.toLp = ⟨ζ⟩ ^ t 𝓕 u` of `u ∈ H^t` and `⟨ξ⟩ ^ (t - m) 𝓕 (Op(a) u)` of `Op(a) u ∈ H^{t - m}`. -/
-theorem HasCompactSpatialSupport.fourier_toLp_quantizeSobolev_ae_eq
-    (ha : a.HasCompactSpatialSupport) (t : ℝ) (u : H^{t}(CoordinateSpace n, V)) :
-    ⇑(𝓕 (a.quantizeSobolev ha t u).toLp : Lp W 2 _)
-      =ᵐ[volume] fun ξ ↦ (((1 + ‖ξ‖ ^ 2) ^ ((t - m) / 2) : ℝ) : ℂ) •
-        ∫ ζ, 𝓕 (fun x ↦ a.coefficient (x, (2 * π) • ζ)) (ξ - ζ)
-          ((((1 + ‖ζ‖ ^ 2) ^ (-t / 2) : ℝ) : ℂ) •
-            (𝓕 u.toLp : Lp V 2 _) ζ) := by
-  obtain ⟨A, hrow, hcol⟩ := ha.exists_lintegral_enorm_fourierKernel_le t
-  have hK : AEStronglyMeasurable (uncurry (a.fourierKernel t)) (volume.prod volume) :=
-    (ha.continuous_uncurry_fourierKernel t).aestronglyMeasurable
-  set T := integralOperatorLp (a.fourierKernel t) 2 hK (A := A) (B := A) (.of_forall hrow)
-    (.of_forall hcol)
-  set L₂ :=
-    (Lp.fourierTransformₗᵢ (CoordinateSpace n) V).toContinuousLinearEquiv.toContinuousLinearMap
-  set M₂ :=
-    (Lp.fourierTransformₗᵢ (CoordinateSpace n) W).toContinuousLinearEquiv.toContinuousLinearMap
-  -- Both sides as continuous linear maps of `u ∈ H^t`; they agree on Schwartz functions.
-  have key : M₂ ∘L (BesselPotentialSpace.toLpₗᵢ (CoordinateSpace n) W (t - m) 2
-        ).toContinuousLinearEquiv.toContinuousLinearMap ∘L a.quantizeSobolev ha t =
-      T ∘L L₂ ∘L (BesselPotentialSpace.toLpₗᵢ (CoordinateSpace n) V t 2
-        ).toContinuousLinearEquiv.toContinuousLinearMap := by
-    refine BesselPotentialSpace.continuousLinearMap_ext ENNReal.ofNat_ne_top fun v ↦ ?_
-    have hv := ha.fourier_toLp_quantizeSobolev_toBesselPotentialSpaceCLM t v
-      (.of_forall hrow) (.of_forall hcol) hK
-    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-      LinearIsometryEquiv.coe_toContinuousLinearEquiv, BesselPotentialSpace.toLpₗᵢ_apply, L₂, M₂]
-    exact hv
-  have hu : 𝓕 (a.quantizeSobolev ha t u).toLp = T (𝓕 u.toLp) := by
-    have h := congrArg (fun F ↦ F u) key
-    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-      LinearIsometryEquiv.coe_toContinuousLinearEquiv, BesselPotentialSpace.toLpₗᵢ_apply, L₂,
-      M₂] at h
-    exact h
-  rw [hu]
-  filter_upwards [coeFn_integralOperatorLp (hA := .of_forall hrow) (hB := .of_forall hcol)
-    (𝓕 u.toLp)] with ξ hξ
-  rw [hξ, ← integral_smul]
-  refine integral_congr_ae (.of_forall fun ζ ↦ ?_)
-  simp only [fourierKernel, smul_apply, map_smul, smul_smul, Complex.ofReal_mul]
-
-/-! ### Conic regularity -/
-
-omit [CompleteSpace V] [CompleteSpace W] in
-/-- The pointwise kernel bounds behind conic regularity: for an integrable `k = B (1 + ‖·‖) ^ (-r)`,
-`⟨ξ⟩ ^ (s - m) ‖â(ξ - ζ, 2πζ) v‖` is at most `k(ξ - ζ) ⟨ζ⟩ ^ s ‖v‖`, and at most
-`k(ξ - ζ) ⟨ζ⟩ ^ t ‖v‖` when `ζ` is separated from `ξ` by `c ‖ξ‖ < ‖ξ - ζ‖`. -/
+/-- The pointwise kernel bounds behind the convolution formula and conic regularity: for an
+integrable `k = B (1 + ‖·‖) ^ (-r)`, `⟨ξ⟩ ^ (s - m) ‖â(ξ - ζ, 2πζ) v‖` is at most
+`k(ξ - ζ) ⟨ζ⟩ ^ s ‖v‖`, and at most `k(ξ - ζ) ⟨ζ⟩ ^ t ‖v‖` when `ζ` is separated from `ξ` by
+`c ‖ξ‖ < ‖ξ - ζ‖`. -/
 private theorem HasCompactSpatialSupport.exists_rpow_mul_norm_fourier_apply_le
     (ha : a.HasCompactSpatialSupport) (s t : ℝ) {c : ℝ} (hc : 0 < c) :
     ∃ B r : ℝ, 0 ≤ B ∧ (n : ℝ) < r ∧ ∀ (ξ ζ : CoordinateSpace n) (v : V),
@@ -294,6 +163,130 @@ private theorem HasCompactSpatialSupport.exists_rpow_mul_norm_fourier_apply_le
       _ = _ := by rw [hsplit]
 
 omit [CompleteSpace V] [CompleteSpace W] in
+/-- The weighted kernel is bounded by `B k(ξ - ζ)` for an integrable `k = (1 + ‖·‖) ^ (-r)`. -/
+private theorem HasCompactSpatialSupport.exists_norm_fourierKernel_le
+    (ha : a.HasCompactSpatialSupport) (t : ℝ) :
+    ∃ B r : ℝ, 0 ≤ B ∧ (n : ℝ) < r ∧ ∀ ξ ζ : CoordinateSpace n,
+      ‖a.fourierKernel t ξ ζ‖ ≤ B * (1 + ‖ξ - ζ‖) ^ (-r) := by
+  obtain ⟨B, r, hB, hr, hpt⟩ := ha.exists_rpow_mul_norm_fourier_apply_le t t one_pos
+  refine ⟨B, r, hB, hr, fun ξ ζ ↦ ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun v ↦ ?_⟩
+  rw [fourierKernel, smul_apply, norm_smul, Complex.norm_real, Real.norm_of_nonneg (by positivity)]
+  refine ((by ring : _ = _).trans_le (mul_le_mul_of_nonneg_left (hpt ξ ζ v).1
+    (by positivity : 0 ≤ (1 + ‖ζ‖ ^ 2) ^ (-t / 2)))).trans_eq ?_
+  linear_combination (B * (1 + ‖ξ - ζ‖) ^ (-r) * ‖v‖) * one_add_norm_sq_rpow_neg_mul_rpow ζ t
+
+/-- The kernel `B (1 + ‖ξ - ζ‖) ^ (-r)`, `r > n`, has bounded row and column integrals. -/
+private theorem exists_lintegral_ofReal_mul_one_add_norm_sub_rpow_le {B r : ℝ} (hB : 0 ≤ B)
+    (hr : (n : ℝ) < r) :
+    ∃ A : ℝ≥0, (∀ ξ : CoordinateSpace n, ∫⁻ ζ, ENNReal.ofReal (B * (1 + ‖ξ - ζ‖) ^ (-r)) ≤ A) ∧
+      ∀ ζ : CoordinateSpace n, ∫⁻ ξ, ENNReal.ofReal (B * (1 + ‖ξ - ζ‖) ^ (-r)) ≤ A := by
+  set k : CoordinateSpace n → ℝ := fun η ↦ B * (1 + ‖η‖) ^ (-r)
+  have hk : Integrable k := (integrable_one_add_norm (by
+    rwa [finrank_euclideanSpace, Fintype.card_fin])).const_mul B
+  have hint : ∫⁻ η, ENNReal.ofReal (k η) = ((∫ η, k η).toNNReal : ℝ≥0∞) :=
+    (ofReal_integral_eq_lintegral_ofReal hk (.of_forall fun η ↦ mul_nonneg hB (by positivity))).symm
+  exact ⟨(∫ η, k η).toNNReal,
+    fun ξ ↦ ((lintegral_sub_left_eq_self (fun η ↦ ENNReal.ofReal (k η)) ξ).trans hint).le,
+    fun ζ ↦ ((lintegral_sub_right_eq_self (fun η ↦ ENNReal.ofReal (k η)) ζ).trans hint).le⟩
+
+omit [CompleteSpace V] [CompleteSpace W] in
+/-- The row and column integrals of the weighted kernel are bounded. -/
+private theorem HasCompactSpatialSupport.exists_lintegral_enorm_fourierKernel_le
+    (ha : a.HasCompactSpatialSupport) (t : ℝ) :
+    ∃ A : ℝ≥0, (∀ ξ, ∫⁻ ζ, ‖a.fourierKernel t ξ ζ‖ₑ ≤ A) ∧
+      ∀ ζ, ∫⁻ ξ, ‖a.fourierKernel t ξ ζ‖ₑ ≤ A := by
+  obtain ⟨B, r, hB, hr, hK⟩ := ha.exists_norm_fourierKernel_le t
+  obtain ⟨A, hrow, hcol⟩ := exists_lintegral_ofReal_mul_one_add_norm_sub_rpow_le (n := n) hB hr
+  have hle (ξ ζ : CoordinateSpace n) :
+      ‖a.fourierKernel t ξ ζ‖ₑ ≤ ENNReal.ofReal (B * (1 + ‖ξ - ζ‖) ^ (-r)) := by
+    rw [← ofReal_norm]
+    exact ENNReal.ofReal_le_ofReal (hK ξ ζ)
+  exact ⟨A, fun ξ ↦ (lintegral_mono (hle ξ)).trans (hrow ξ),
+    fun ζ ↦ (lintegral_mono (hle · ζ)).trans (hcol ζ)⟩
+
+/-- The convolution formula for a Schwartz function `v`: the integral operator of the weighted
+kernel sends `⟨ζ⟩ ^ t 𝓕 v` to `⟨ξ⟩ ^ (t - m) 𝓕 (Op(a) v)`. -/
+private theorem HasCompactSpatialSupport.fourier_toLp_quantizeSobolev_toBesselPotentialSpaceCLM
+    (ha : a.HasCompactSpatialSupport) (t : ℝ) (v : 𝓢(CoordinateSpace n, V)) {A : ℝ≥0}
+    (hrow : ∀ᵐ ξ, ∫⁻ ζ, ‖a.fourierKernel t ξ ζ‖ₑ ≤ A)
+    (hcol : ∀ᵐ ζ, ∫⁻ ξ, ‖a.fourierKernel t ξ ζ‖ₑ ≤ A)
+    (hK : AEStronglyMeasurable (uncurry (a.fourierKernel t)) (volume.prod volume)) :
+    𝓕 (a.quantizeSobolev ha t (SchwartzMap.toBesselPotentialSpaceCLM t 2 v)).toLp =
+      integralOperatorLp (a.fourierKernel t) 2 hK hrow hcol
+        (𝓕 (SchwartzMap.toBesselPotentialSpaceCLM t 2 v).toLp) := by
+  have hw (r : ℝ) :
+      (fun x : CoordinateSpace n ↦ (((1 + ‖x‖ ^ 2) ^ (r / 2) : ℝ) : ℂ)).HasTemperateGrowth := by
+    fun_prop
+  set w := (ha.hasCompactSupport_quantizeSchwartzValue v).toSchwartzMap
+    (a.contDiff_quantizeSchwartzValue v)
+  rw [ha.quantizeSobolev_toBesselPotentialSpaceCLM,
+    SchwartzMap.fourier_toLp_toBesselPotentialSpaceCLM,
+    SchwartzMap.fourier_toLp_toBesselPotentialSpaceCLM]
+  refine Lp.ext ?_
+  filter_upwards [SchwartzMap.coeFn_toLp (SchwartzMap.smulLeftCLM W
+      (fun x : CoordinateSpace n ↦ (((1 + ‖x‖ ^ 2) ^ ((t - m) / 2) : ℝ) : ℂ)) (𝓕 w)) 2,
+    coeFn_integralOperatorLp (hA := hrow) (hB := hcol) ((SchwartzMap.smulLeftCLM V
+      (fun x : CoordinateSpace n ↦ (((1 + ‖x‖ ^ 2) ^ (t / 2) : ℝ) : ℂ)) (𝓕 v)).toLp 2)]
+    with ξ h₁ h₂
+  have hwq : ⇑w = quantizeSchwartzValue a.coefficient v :=
+    funext (HasCompactSupport.toSchwartzMap_toFun _ _)
+  rw [h₁, h₂, SchwartzMap.smulLeftCLM_apply_apply (hw _), SchwartzMap.fourier_coe, hwq,
+    ha.fourier_quantizeSchwartzValue,
+    ← integral_smul]
+  refine integral_congr_ae ?_
+  filter_upwards [SchwartzMap.coeFn_toLp (SchwartzMap.smulLeftCLM V
+    (fun x : CoordinateSpace n ↦ (((1 + ‖x‖ ^ 2) ^ (t / 2) : ℝ) : ℂ)) (𝓕 v)) 2] with ζ hζ
+  rw [hζ, SchwartzMap.smulLeftCLM_apply_apply (hw _), fourierKernel, smul_apply, map_smul,
+    smul_smul, ← Complex.ofReal_mul, mul_assoc, one_add_norm_sq_rpow_neg_mul_rpow, mul_one]
+
+/-- **The convolution formula on `H^t`.** For a symbol `a` of order `m` with compact spatial
+support and `u ∈ H^t`, the Fourier transform of `Op(a) u` is, almost everywhere,
+`𝓕 (Op(a) u) ξ = ∫ â(ξ - ζ, 2πζ) 𝓕 u ζ dζ`, where `â(η, ξ)` is the Fourier transform of the position
+slice `x ↦ a(x, ξ)` at `η`. Both sides are written through the `L²` representatives
+`𝓕 u.toLp = ⟨ζ⟩ ^ t 𝓕 u` of `u ∈ H^t` and `⟨ξ⟩ ^ (t - m) 𝓕 (Op(a) u)` of `Op(a) u ∈ H^{t - m}`. -/
+theorem HasCompactSpatialSupport.fourier_toLp_quantizeSobolev_ae_eq
+    (ha : a.HasCompactSpatialSupport) (t : ℝ) (u : H^{t}(CoordinateSpace n, V)) :
+    ⇑(𝓕 (a.quantizeSobolev ha t u).toLp : Lp W 2 _)
+      =ᵐ[volume] fun ξ ↦ (((1 + ‖ξ‖ ^ 2) ^ ((t - m) / 2) : ℝ) : ℂ) •
+        ∫ ζ, 𝓕 (fun x ↦ a.coefficient (x, (2 * π) • ζ)) (ξ - ζ)
+          ((((1 + ‖ζ‖ ^ 2) ^ (-t / 2) : ℝ) : ℂ) •
+            (𝓕 u.toLp : Lp V 2 _) ζ) := by
+  obtain ⟨A, hrow, hcol⟩ := ha.exists_lintegral_enorm_fourierKernel_le t
+  have hK : AEStronglyMeasurable (uncurry (a.fourierKernel t)) (volume.prod volume) :=
+    (ha.continuous_uncurry_fourierKernel t).aestronglyMeasurable
+  set T := integralOperatorLp (a.fourierKernel t) 2 hK (A := A) (B := A) (.of_forall hrow)
+    (.of_forall hcol)
+  set L₂ :=
+    (Lp.fourierTransformₗᵢ (CoordinateSpace n) V).toContinuousLinearEquiv.toContinuousLinearMap
+  set M₂ :=
+    (Lp.fourierTransformₗᵢ (CoordinateSpace n) W).toContinuousLinearEquiv.toContinuousLinearMap
+  -- Both sides as continuous linear maps of `u ∈ H^t`; they agree on Schwartz functions.
+  have key : M₂ ∘L (BesselPotentialSpace.toLpₗᵢ (CoordinateSpace n) W (t - m) 2
+        ).toContinuousLinearEquiv.toContinuousLinearMap ∘L a.quantizeSobolev ha t =
+      T ∘L L₂ ∘L (BesselPotentialSpace.toLpₗᵢ (CoordinateSpace n) V t 2
+        ).toContinuousLinearEquiv.toContinuousLinearMap := by
+    refine BesselPotentialSpace.continuousLinearMap_ext ENNReal.ofNat_ne_top fun v ↦ ?_
+    have hv := ha.fourier_toLp_quantizeSobolev_toBesselPotentialSpaceCLM t v
+      (.of_forall hrow) (.of_forall hcol) hK
+    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+      LinearIsometryEquiv.coe_toContinuousLinearEquiv, BesselPotentialSpace.toLpₗᵢ_apply, L₂, M₂]
+    exact hv
+  have hu : 𝓕 (a.quantizeSobolev ha t u).toLp = T (𝓕 u.toLp) := by
+    have h := congrArg (fun F ↦ F u) key
+    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+      LinearIsometryEquiv.coe_toContinuousLinearEquiv, BesselPotentialSpace.toLpₗᵢ_apply, L₂,
+      M₂] at h
+    exact h
+  rw [hu]
+  filter_upwards [coeFn_integralOperatorLp (hA := .of_forall hrow) (hB := .of_forall hcol)
+    (𝓕 u.toLp)] with ξ hξ
+  rw [hξ, ← integral_smul]
+  refine integral_congr_ae (.of_forall fun ζ ↦ ?_)
+  simp only [fourierKernel, smul_apply, map_smul, smul_smul, Complex.ofReal_mul]
+
+/-! ### Conic regularity -/
+
+omit [CompleteSpace V] [CompleteSpace W] in
 /-- The pointwise bound of the integrand of the convolution formula on `Γ'`: it is at most
 `k(ξ - ζ)` times `⟨ζ⟩ ^ (s - t) ‖G ζ‖` for `ζ ∈ Γ`, and times `‖G ζ‖` for `ζ ∉ Γ`. -/
 private theorem enorm_fourier_slice_apply_le {s t B r c : ℝ} (hB : 0 ≤ B)
@@ -334,27 +327,16 @@ private theorem enorm_fourier_slice_apply_le {s t B r c : ℝ} (hB : 0 ≤ B)
     exact le_add_self
 
 /-- Convolution with the integrable kernel `B (1 + ‖·‖) ^ (-r)`, `r > n`, preserves finiteness of
-the `L²` norm (Young's inequality `L¹ ⋆ L² ⊆ L²`). -/
+the `L²` norm, by Schur's test. -/
 private theorem eLpNorm_lintegral_ofReal_mul_lt_top {B r : ℝ} (hB : 0 ≤ B) (hr : (n : ℝ) < r)
-    {g : CoordinateSpace n → ℝ≥0∞} (hg : AEMeasurable g) (hg2 : eLpNorm g 2 volume < ⊤) :
+    {g : CoordinateSpace n → ℝ≥0∞} (hg : eLpNorm g 2 volume < ⊤) :
     eLpNorm (fun ξ ↦ ∫⁻ ζ, ENNReal.ofReal (B * (1 + ‖ξ - ζ‖) ^ (-r)) * g ζ) 2 volume < ⊤ := by
-  set κ : CoordinateSpace n → ℝ≥0∞ := fun η ↦ ENNReal.ofReal (B * (1 + ‖η‖) ^ (-r))
-  have hk : Integrable fun η : CoordinateSpace n ↦ B * (1 + ‖η‖) ^ (-r) :=
-    (integrable_one_add_norm (by rwa [finrank_euclideanSpace, Fintype.card_fin])).const_mul B
-  have hκm : AEMeasurable κ := hk.aemeasurable.ennreal_ofReal
-  have hκ : eLpNorm κ 1 volume < ⊤ := by
-    rw [eLpNorm_one_eq_lintegral_eNorm hκm.aestronglyMeasurable]
-    simp only [eNorm_eq_self, κ]
-    rw [← ofReal_integral_eq_lintegral_ofReal hk (.of_forall fun η ↦ mul_nonneg hB (by positivity))]
-    exact ENNReal.ofReal_lt_top
-  have hconv : (fun ξ ↦ ∫⁻ ζ, κ (ξ - ζ) * g ζ) = κ ⋆ₗ[volume] g := by
-    funext ξ
-    rw [lconvolution_def]
-    refine Eq.trans ?_ (lintegral_sub_left_eq_self (fun y ↦ κ y * g (-y + ξ)) ξ)
-    simp only [neg_sub, sub_add_cancel]
-  rw [hconv]
-  exact (eLpNorm_lconvolution_le le_rfl one_le_two (by simp) hκm hg).trans_lt
-    (ENNReal.mul_lt_top hκ hg2)
+  obtain ⟨A, hrow, hcol⟩ := exists_lintegral_ofReal_mul_one_add_norm_sub_rpow_le (n := n) hB hr
+  have hk : AEMeasurable (uncurry fun ξ ζ : CoordinateSpace n ↦
+      ENNReal.ofReal (B * (1 + ‖ξ - ζ‖) ^ (-r))) (volume.prod volume) := by
+    fun_prop
+  exact (memLp_lintegral_mul hk (memLp_iff.2 hg) one_le_two
+    (.of_forall hrow) (.of_forall hcol)).eLpNorm_lt_top
 
 /-- **Microlocal Sobolev mapping.** Let `a` be a symbol of order `m` with compact spatial support
 and `u ∈ H^t`. If `⟨ζ⟩ ^ s 𝓕 u` is square integrable on a measurable set of frequencies `Γ`, and
@@ -398,8 +380,7 @@ theorem HasCompactSpatialSupport.memLp_smul_fourier_toLp_quantizeSobolev
       (𝓕 (a.quantizeSobolev ha t u).toLp : Lp W 2 _) ξ) :=
     (contDiff_ofReal_one_add_norm_sq_rpow (n := 0) _).continuous.aestronglyMeasurable.smul
       (Lp.aestronglyMeasurable _)
-  refine lt_of_le_of_lt ?_ (eLpNorm_lintegral_ofReal_mul_lt_top hB hr
-    ((hwG.eNorm.indicator hΓ).add hGm.eNorm) hg)
+  refine lt_of_le_of_lt ?_ (eLpNorm_lintegral_ofReal_mul_lt_top hB hr hg)
   refine (eLpNorm_mono_eNorm_ae hfm.restrict ?_).trans
     (eLpNorm_mono_measure _ Measure.restrict_le_self)
   filter_upwards [ae_restrict_of_ae (ha.fourier_toLp_quantizeSobolev_ae_eq t u),
