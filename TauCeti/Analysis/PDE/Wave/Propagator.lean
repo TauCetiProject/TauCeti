@@ -148,8 +148,8 @@ theorem hasDerivAt_waveCosSymbol (t : ℝ) (ξ : E) :
     HasDerivAt (fun s ↦ waveCosSymbol s ξ) (laplacianSymbol ξ * waveSinSymbol t ξ) t := by
   have h : (laplacianSymbol ξ : ℂ) * waveSinSymbol t ξ =
       ((-(Real.sin (t * sqrtNegLaplacianSymbol ξ) * sqrtNegLaplacianSymbol ξ) : ℝ) : ℂ) := by
-    rw [← neg_neg (laplacianSymbol ξ), ← sq_sqrtNegLaplacianSymbol, Complex.ofReal_neg,
-      Complex.ofReal_pow, sq, neg_mul, mul_assoc, sqrtNegLaplacianSymbol_mul_waveSinSymbol]
+    rw [laplacianSymbol_eq_neg_sq, Complex.ofReal_neg, Complex.ofReal_pow, sq, neg_mul,
+      mul_assoc, sqrtNegLaplacianSymbol_mul_waveSinSymbol]
     push_cast
     ring
   simp only [waveCosSymbol_apply, h]
@@ -334,17 +334,18 @@ theorem hasDerivAt_waveCosPropagator_apply {f h : Lp F 2 (volume : Measure E)}
     (memLp_waveSinSymbol t) (a := fun ξ ↦ (laplacianSymbol ξ : ℂ)) (C := 2 * |t| + 1)
     ((Lp.laplacian_toTemperedDistribution_eq_iff f h).1 hfh)
     (Eventually.of_forall fun ξ ↦ hasDerivAt_waveCosSymbol t ξ) ?_
-  filter_upwards [nhdsWithin_le_nhds (Metric.ball_mem_nhds t one_pos)] with s hs
+  filter_upwards [nhdsWithin_le_nhds (continuous_abs.continuousAt.eventually_lt
+    continuousAt_const (lt_add_one |t|))] with s hs
   refine Eventually.of_forall fun ξ ↦ ?_
   rcases eq_or_ne s t with rfl | hst
   · simp only [sub_self, smul_zero, norm_zero]
     positivity
-  have hs' : |s| ≤ |t| + 1 := by simpa only [Real.norm_eq_abs] using (norm_lt_of_mem_ball hs).le
   rw [norm_smul, norm_inv, Real.norm_eq_abs, inv_mul_le_iff₀ (abs_pos.2 (sub_ne_zero.2 hst))]
   refine (norm_waveCosSymbol_sub_le s t ξ).trans ?_
-  rw [mul_comm |s - t|, mul_comm (2 * |t| + 1)]
-  exact mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left (by linarith) (norm_nonneg _))
-    (abs_nonneg _)
+  have : |s| + |t| ≤ 2 * |t| + 1 := by linarith
+  calc ‖(laplacianSymbol ξ : ℂ)‖ * (|s| + |t|) * |s - t|
+      ≤ ‖(laplacianSymbol ξ : ℂ)‖ * (2 * |t| + 1) * |s - t| := by gcongr
+    _ = |s - t| * ((2 * |t| + 1) * ‖(laplacianSymbol ξ : ℂ)‖) := by ring
 
 /-- `cos(tD)` commutes with `Δ`: if `Δ f = h` with `h ∈ L²`, then `Δ (cos(tD) f) = cos(tD) h`. -/
 theorem laplacian_waveCosPropagator_apply {f h : Lp F 2 (volume : Measure E)}

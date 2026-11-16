@@ -151,9 +151,9 @@ private theorem memLp_cutoffSqrt (R : ℝ) : MemLp (cutoffSqrt (E := E) R) ∞ v
       Metric.isClosed_closedBall.measurableSet)) (2 * Real.pi * |R|)
     (Eventually.of_forall fun ξ ↦ ?_)
   by_cases h : ξ ∈ Metric.closedBall (0 : E) R
-  · rw [cutoffSqrt, Set.indicator_of_mem h, Complex.norm_real, Real.norm_eq_abs,
-      abs_of_nonneg (sqrtNegLaplacianSymbol_nonneg ξ), sqrtNegLaplacianSymbol_apply]
-    have := (mem_closedBall_zero_iff.1 h).trans (le_abs_self R)
+  · have := (mem_closedBall_zero_iff.1 h).trans (le_abs_self R)
+    simp only [cutoffSqrt, h, Set.indicator_of_mem, Complex.norm_real, Real.norm_eq_abs,
+      sqrtNegLaplacianSymbol_apply, abs_mul, abs_two, abs_of_pos Real.pi_pos, abs_norm]
     gcongr
   · rw [cutoffSqrt, Set.indicator_of_notMem h, norm_zero]
     positivity
@@ -186,8 +186,8 @@ private theorem inner_truncate_eq {x y : Lp F 2 (volume : Measure E)}
   rw [h₂, h₃, h₄, h₅, h₁]
   by_cases h : ξ ∈ Metric.closedBall (0 : E) R
   · rw [cutoff, cutoffSqrt, Set.indicator_of_mem h, Set.indicator_of_mem h, one_smul, one_smul,
-      inner_smul_left, inner_smul_right, inner_smul_right, ← neg_neg (laplacianSymbol ξ),
-      ← sq_sqrtNegLaplacianSymbol, Complex.conj_ofReal]
+      inner_smul_left, inner_smul_right, inner_smul_right, laplacianSymbol_eq_neg_sq,
+      Complex.conj_ofReal]
     push_cast
     ring
   · simp [cutoff, cutoffSqrt, Set.indicator_of_notMem h]
@@ -280,8 +280,7 @@ theorem IsWaveSolutionOn.eq_zero [s.OrdConnected] (hu : IsWaveSolutionOn u u' u'
     have hneg := Lp.re_inner_nonpos_of_laplacian_toTemperedDistribution_eq
       (hu.laplacian_eq_of_zero hτ)
     rw [h₀, h₁, norm_zero, inner_zero_left, Complex.zero_re] at hE
-    have : ‖u' τ‖ ^ 2 ≤ 0 := by linarith
-    exact norm_eq_zero.1 (pow_eq_zero_iff two_ne_zero |>.1 (le_antisymm this (sq_nonneg _)))
+    exact norm_eq_zero.1 (by nlinarith [norm_nonneg (u' τ)])
   rw [← h₀]
   exact (Set.OrdConnected.isPreconnected ‹_›).eq_of_hasDerivWithinAt_zero
     (fun τ hτ ↦ hu' τ hτ ▸ hu.hasDerivWithinAt τ hτ) ht ht₀
@@ -316,11 +315,10 @@ private theorem hasDerivWithinAt_duhamel (hu : IsWaveSolutionOn u u' u'' G s) (t
     (((continuous_waveSinPropagator_apply (u'' τ)).comp
       (continuous_const.sub continuous_id)).continuousWithinAt.tendsto)
     (by
-      filter_upwards [nhdsWithin_le_nhds (Metric.ball_mem_nhds τ one_pos)] with σ hσ
+      filter_upwards [nhdsWithin_le_nhds ((continuous_const.sub continuous_id).abs.continuousAt
+        |>.eventually_lt continuousAt_const (lt_add_one |t - τ|))] with σ hσ
       rw [ContinuousLinearMap.norm_restrictScalars]
-      refine (norm_waveSinPropagator_le _).trans ?_
-      simpa only [Real.norm_eq_abs] using
-        (norm_lt_of_mem_ball (Metric.mem_ball.2 ((dist_sub_left t σ τ).trans_lt hσ))).le)
+      exact (norm_waveSinPropagator_le _).trans hσ.le)
   have h := hC.add hS
   simp only [ContinuousLinearMap.coe_restrictScalars'] at h
   convert h using 1

@@ -32,7 +32,8 @@ symbol identity `(2π ‖ξ‖)² = -(-4π² ‖ξ‖²)` (`TauCeti.sq_sqrtNegLa
 * `SchwartzMap.laplacian_eq_fourierMultiplierCLM_laplacianSymbol`: on Schwartz functions, `Δ` is the
   Fourier multiplier with symbol `TauCeti.laplacianSymbol`.
 * `TauCeti.sqrtNegLaplacianSymbol`: the symbol `2π ‖ξ‖` of `√(-Δ)`.
-* `TauCeti.sq_sqrtNegLaplacianSymbol`: its square is the symbol of `-Δ`.
+* `TauCeti.sq_sqrtNegLaplacianSymbol`, `TauCeti.laplacianSymbol_eq_neg_sq`: its square is the
+  symbol of `-Δ`.
 * `MeasureTheory.Lp.laplacian_toTemperedDistribution_eq_iff`: for `f, h ∈ L²`, the distributional
   Laplacian of `f` is `h` exactly when `𝓕 h = -4π² ‖ξ‖² • 𝓕 f` almost everywhere, for the
   Fourier transform on `L²`.
@@ -80,6 +81,11 @@ theorem sq_sqrtNegLaplacianSymbol (ξ : E) :
     sqrtNegLaplacianSymbol ξ ^ 2 = -laplacianSymbol ξ := by
   rw [sqrtNegLaplacianSymbol_apply, laplacianSymbol_apply]
   ring
+
+/-- `Δ = -D²` on the level of symbols. -/
+theorem laplacianSymbol_eq_neg_sq (ξ : E) :
+    laplacianSymbol ξ = -sqrtNegLaplacianSymbol ξ ^ 2 := by
+  rw [sq_sqrtNegLaplacianSymbol, neg_neg]
 
 section Homogeneity
 
