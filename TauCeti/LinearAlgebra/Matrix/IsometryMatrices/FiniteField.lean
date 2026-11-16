@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.IsometryMatrices.Field
-public import TauCeti.NumberTheory.LegendreSymbol.QuadraticChar.Quadric
+public import Mathlib.NumberTheory.LegendreSymbol.QuadraticChar.Basic
 import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
+import TauCeti.NumberTheory.LegendreSymbol.QuadraticChar.Quadric
 
 /-!
 # Orders of finite orthogonal groups
