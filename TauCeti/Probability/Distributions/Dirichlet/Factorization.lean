@@ -173,8 +173,6 @@ theorem map_dirichletNormalize_add_prod_gammaMeasure {a b r : ℝ}
     ((gammaMeasure a r).prod (gammaMeasure b r)).map
         (fun z ↦ (dirichletNormalize ![z.1, z.2], z.1 + z.2)) =
       (dirichletMeasure ![a, b]).prod (gammaMeasure (a + b) r) := by
-  let _ := isProbabilityMeasure_gammaMeasure ha hr
-  let _ := isProbabilityMeasure_gammaMeasure hb hr
   have hab : ∀ i : Fin 2, 0 < ![a, b] i := Fin.forall_fin_two.2 ⟨ha, hb⟩
   have hvec : Measure.pi ![gammaMeasure a r, gammaMeasure b r] =
       Measure.pi fun i : Fin 2 ↦ gammaMeasure (![a, b] i) r := by
@@ -221,7 +219,6 @@ theorem IndepFun.hasLaw_dirichletNormalize_add_prod_gammaMeasure {X Y : Ω → �
     HasLaw (fun ω ↦ (dirichletNormalize ![X ω, Y ω], X ω + Y ω))
       ((dirichletMeasure ![a, b]).prod (gammaMeasure (a + b) r)) P := by
   let _ := isProbabilityMeasure_gammaMeasure ha hr
-  let _ := isProbabilityMeasure_gammaMeasure hb hr
   let _ : IsProbabilityMeasure P := hX.isProbabilityMeasure
   have hmap : HasLaw (fun z : ℝ × ℝ ↦ (dirichletNormalize ![z.1, z.2], z.1 + z.2))
       ((dirichletMeasure ![a, b]).prod (gammaMeasure (a + b) r))
@@ -237,7 +234,6 @@ theorem IndepFun.hasLaw_dirichletNormalize_gammaMeasure {X Y : Ω → ℝ} {a b 
     (hY : HasLaw Y (gammaMeasure b r) P) (ha : 0 < a) (hb : 0 < b) (hr : 0 < r) :
     HasLaw (fun ω ↦ dirichletNormalize ![X ω, Y ω]) (dirichletMeasure ![a, b]) P := by
   let _ := isProbabilityMeasure_gammaMeasure ha hr
-  let _ := isProbabilityMeasure_gammaMeasure hb hr
   let _ : IsProbabilityMeasure P := hX.isProbabilityMeasure
   have hmap : HasLaw (fun z : ℝ × ℝ ↦ dirichletNormalize ![z.1, z.2])
       (dirichletMeasure ![a, b]) ((gammaMeasure a r).prod (gammaMeasure b r)) :=
@@ -254,7 +250,6 @@ theorem IndepFun.indepFun_dirichletNormalize_add_of_hasLaw_gammaMeasure {X Y : �
   have hab : ∀ i : Fin 2, 0 < ![a, b] i := Fin.forall_fin_two.2 ⟨ha, hb⟩
   let _ := isProbabilityMeasure_gammaMeasure ha hr
   let _ := isProbabilityMeasure_dirichletMeasure hab
-  let _ := isProbabilityMeasure_gammaMeasure (add_pos ha hb) hr
   let _ : IsProbabilityMeasure P := hX.isProbabilityMeasure
   have hjoint := hXY.hasLaw_dirichletNormalize_add_prod_gammaMeasure hX hY ha hb hr
   have hnorm := hXY.hasLaw_dirichletNormalize_gammaMeasure hX hY ha hb hr
