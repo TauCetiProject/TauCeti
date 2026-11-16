@@ -5,12 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
 public import TauCeti.NumberTheory.Transcendental.EFunction.Basic
 import Mathlib.NumberTheory.Chebyshev
 
 /-!
 # Siegel's G-functions
+
+Siegel introduced G-functions alongside E-functions in 1929 to study Diophantine approximation and
+linear/algebraic relations among values at algebraic points of locally analytic solutions to linear
+differential equations over `ℚ̄(z)` — including algebraic functions, logarithms, polylogarithms,
+Gauss hypergeometric series, and periods of algebraic families of varieties (later developed by
+Galochkin, Bombieri, Chudnovsky, and André).
 
 A formal power series `∑ aₙ Xⁿ` defines a *G-function* (`TauCeti.IsGFunction a`) when its
 coefficient sequence `a : ℕ → ℂ` satisfies the same arithmetic growth conditions as an E-function
@@ -28,8 +33,9 @@ defines an E-function (`TauCeti.isGFunction_iff_isEFunction`). Consequently all 
 G-function lie in a common number field, while the geometric modulus bound `‖aₙ‖ ≤ C ^ (n + 1)`
 implies that `PowerSeries.mk a` has positive convergence radius at least `C⁻¹`
 (`TauCeti.IsGFunction.radius_pos`) and represents an analytic function on a disc around `0`.
-G-functions are closed under addition, scalar multiplication, shifts, rescaling, Galois
-conjugation, formal differentiation, and Cauchy convolution (`TauCeti.IsGFunction.mul`).
+G-functions are closed under addition, scalar multiplication, shifts
+(`TauCeti.IsGFunction.shift`, `TauCeti.IsGFunction.comp_add_right`), rescaling, Galois conjugation,
+formal differentiation, and Cauchy convolution (`TauCeti.IsGFunction.sum_antidiagonal_mul`).
 
 ## Main definitions
 
@@ -40,10 +46,11 @@ conjugation, formal differentiation, and Cauchy convolution (`TauCeti.IsGFunctio
 * `TauCeti.isGFunction_iff_isEFunction`: `IsGFunction a ↔ IsEFunction a` (Borel transform).
 * `TauCeti.IsGFunction.exists_numberField`: all coefficients lie in a single number field.
 * `TauCeti.IsGFunction.radius_pos`, `TauCeti.IsGFunction.hasFPowerSeriesOnBall`,
-  `TauCeti.IsGFunction.exists_hasFPowerSeriesOnBall`: positive convergence radius and analyticity
-  around `0`.
-* `TauCeti.IsGFunction.add`, `TauCeti.IsGFunction.mul`, `TauCeti.IsGFunction.derivative`: closure
-  under sums, Cauchy products, and formal differentiation.
+  `TauCeti.IsGFunction.exists_hasFPowerSeriesOnBall`, `TauCeti.IsGFunction.exists_summable`:
+  positive convergence radius and analyticity around `0`.
+* `TauCeti.IsGFunction.add`, `TauCeti.IsGFunction.comp_add_right`,
+  `TauCeti.IsGFunction.sum_antidiagonal_mul`, `TauCeti.IsGFunction.derivative`: closure under sums,
+  shifts, Cauchy products, and formal differentiation.
 * `TauCeti.isGFunction_const_one`, `TauCeti.isGFunction_one_div_natCast`,
   `TauCeti.not_isGFunction_one_div_factorial`: `1 / (1 - z)` and `-log (1 - z)` are G-functions
   (the latter via Chebyshev's bound on `lcm {1, …, n}`), whereas `exp z = ∑ zⁿ / n!` is not.
@@ -53,8 +60,8 @@ conjugation, formal differentiation, and Cauchy convolution (`TauCeti.IsGFunctio
 * C. L. Siegel, *Über einige Anwendungen diophantischer Approximationen*, Abh. Preuß. Akad. Wiss.,
   Phys.-Math. Kl. 1929, Nr. 1.
 * F. Beukers, *E-functions and G-functions*, lecture notes, Arizona Winter School, 2008, §4.1.
-* S. Fischler and T. Rivoal, *Arithmetic theory of E-operators*, J. Éc. polytech. Math. **3**
-  (2016), 31–65, Definition 1.
+* S. Fischler and T. Rivoal, *On Siegel's problem for E-functions*, Math. Z. **301** (2022),
+  1429–1453 (arXiv:1910.06817), Definition 1.
 -/
 
 public section
@@ -71,9 +78,17 @@ namespace TauCeti
 bounded by `C ^ (n + 1)`, and positive integers `dₙ ≤ D ^ (n + 1)` clear the denominators of
 `a₀, …, aₙ` simultaneously. -/
 structure IsGFunction (a : ℕ → ℂ) : Prop where
+  /-- Every Taylor coefficient `aₙ` is algebraic over `ℚ`. -/
   isAlgebraic : ∀ n, IsAlgebraic ℚ (a n)
+  /-- The ordinary generating series `PowerSeries.mk a = ∑ aₙ Xⁿ` satisfies a nonzero linear
+  differential equation with polynomial coefficients over `ℚ̄`. -/
   isDFinite : PowerSeries.IsDFinite (algebraicClosure ℚ ℂ) (PowerSeries.mk a)
+  /-- Geometric house bound: every complex root of `minpoly ℚ (aₙ)` has modulus at most
+  `C ^ (n + 1)` for a uniform constant `C > 0` (using exponent `n + 1` so `n = 0` is included
+  without an extra multiplicative factor). -/
   size_le : ∃ C : ℝ, 0 < C ∧ ∀ n, ∀ z ∈ (minpoly ℚ (a n)).aroots ℂ, ‖z‖ ≤ C ^ (n + 1)
+  /-- Geometric common-denominator bound: positive integers `dₙ ≤ D ^ (n + 1)` make `dₙ * aₘ`
+  an algebraic integer simultaneously for all `m ≤ n`. -/
   den_le : ∃ D : ℝ, 0 < D ∧ ∃ d : ℕ → ℕ,
     ∀ n, 1 ≤ d n ∧ (d n : ℝ) ≤ D ^ (n + 1) ∧ ∀ m ≤ n, IsIntegral ℤ ((d n : ℂ) * a m)
 
@@ -145,9 +160,8 @@ theorem hasFPowerSeriesOnBall {a : ℕ → ℂ} (ha : IsGFunction a) :
     HasFPowerSeriesOnBall (fun z ↦ ∑' n, a n * z ^ n)
       (FormalMultilinearSeries.ofScalars ℂ a) 0 (PowerSeries.mk a).radius := by
   set p := FormalMultilinearSeries.ofScalars ℂ a
-  have hrad : p.radius = (PowerSeries.mk a).radius :=
-    (PowerSeries.radius_eq_radius_of_norm_eq (f := PowerSeries.mk a) p
-      fun n ↦ by simp [p]).symm
+  have hrad : p.radius = (PowerSeries.mk a).radius := by
+    simpa [p] using (PowerSeries.radius_eq_radius_ofScalars ℂ (PowerSeries.mk a)).symm
   have hp := p.hasFPowerSeriesOnBall (hrad ▸ ha.radius_pos)
   rw [hrad] at hp
   have hsum : p.sum = fun z ↦ ∑' n, a n * z ^ n := by
@@ -171,16 +185,13 @@ theorem exists_hasFPowerSeriesOnBall {a : ℕ → ℂ} (ha : IsGFunction a) :
 radius `r > 0`. -/
 theorem exists_summable {a : ℕ → ℂ} (ha : IsGFunction a) :
     ∃ r : ℝ, 0 < r ∧ ∀ z : ℂ, ‖z‖ < r → Summable fun n : ℕ ↦ a n * z ^ n := by
-  obtain ⟨C, hC, hnorm⟩ := ha.exists_norm_le
-  refine ⟨C⁻¹, inv_pos.mpr hC, fun z hz ↦ ?_⟩
-  have hCz : C * ‖z‖ < 1 :=
-    (mul_lt_mul_of_pos_left hz hC).trans_eq (mul_inv_cancel₀ hC.ne')
-  refine Summable.of_norm_bounded
-    ((summable_geometric_of_lt_one (by positivity) hCz).mul_left C) fun n ↦ ?_
-  calc ‖a n * z ^ n‖
-      = ‖a n‖ * ‖z‖ ^ n := by rw [norm_mul, norm_pow]
-    _ ≤ C ^ (n + 1) * ‖z‖ ^ n := by gcongr; exact hnorm n
-    _ = C * (C * ‖z‖) ^ n := by rw [pow_succ', mul_pow, mul_assoc]
+  obtain ⟨r, hr, hp⟩ := ha.exists_hasFPowerSeriesOnBall
+  refine ⟨r, hr, fun z hz ↦ ?_⟩
+  have hmem : z ∈ Metric.eball (0 : ℂ) r := by
+    rw [mem_eball_zero_iff, eNorm_eq_nnNorm, ENNReal.coe_lt_coe, ← NNReal.coe_lt_coe, coe_nnNorm]
+    exact hz
+  simpa [FormalMultilinearSeries.ofScalars_apply_eq, smul_eq_mul, mul_comm] using
+    (hp.hasSum hmem).summable
 
 /-- The analytic sum `z ↦ ∑' n, a n * z ^ n` of a G-function is analytic at `0`. -/
 theorem analyticAt_zero {a : ℕ → ℂ} (ha : IsGFunction a) :
@@ -236,6 +247,11 @@ protected theorem shift {a : ℕ → ℂ} (ha : IsGFunction a) :
     IsGFunction fun n ↦ a (n + 1) :=
   ha.isEFunction.shift.isGFunction
 
+/-- Shifting the coefficient sequence by `m` (`aₙ ↦ a_{n + m}`) preserves G-functions. -/
+protected theorem comp_add_right {a : ℕ → ℂ} (ha : IsGFunction a) (m : ℕ) :
+    IsGFunction fun n ↦ a (n + m) :=
+  (ha.isEFunction.comp_add_right m).isGFunction
+
 /-- Rescaling by an algebraic number `α` (`aₙ ↦ αⁿ aₙ`) preserves G-functions. -/
 protected theorem rescale {α : ℂ} (hα : IsAlgebraic ℚ α) {a : ℕ → ℂ} (ha : IsGFunction a) :
     IsGFunction fun n ↦ α ^ n * a n :=
@@ -255,10 +271,7 @@ private theorem house_sum_antidiagonal_mul_le {a b : ℕ → ℂ} {C₁ C₂ : �
   have hB1 : 1 ≤ B := le_max_left _ _
   have hC₁B : C₁ ≤ B := (le_max_left C₁ C₂).trans (le_max_right _ _)
   have hC₂B : C₂ ≤ B := (le_max_right C₁ C₂).trans (le_max_right _ _)
-  have hterm_alg (i j : ℕ) : IsAlgebraic ℚ (a i * b j) := by
-    rw [← mem_algebraicClosure_iff]
-    exact mul_mem (mem_algebraicClosure_iff.mpr (halg_a i))
-      (mem_algebraicClosure_iff.mpr (halg_b j))
+  have hterm_alg (i j : ℕ) : IsAlgebraic ℚ (a i * b j) := (halg_a i).mul (halg_b j)
   calc house (∑ ij ∈ Finset.antidiagonal n, a ij.1 * b ij.2)
       ≤ ∑ ij ∈ Finset.antidiagonal n, house (a ij.1 * b ij.2) :=
         house_sum_le _ fun ij _ ↦ hterm_alg ij.1 ij.2
@@ -283,7 +296,7 @@ private theorem house_sum_antidiagonal_mul_le {a b : ℕ → ℂ} {C₁ C₂ : �
           (by positivity) (by positivity)
 
 /-- **Cauchy products of G-functions are G-functions.** -/
-protected theorem mul {a b : ℕ → ℂ} (ha : IsGFunction a) (hb : IsGFunction b) :
+protected theorem sum_antidiagonal_mul {a b : ℕ → ℂ} (ha : IsGFunction a) (hb : IsGFunction b) :
     IsGFunction fun n ↦ ∑ ij ∈ Finset.antidiagonal n, a ij.1 * b ij.2 := by
   obtain ⟨C₁, hC₁, hha⟩ := ha.exists_house_le
   obtain ⟨C₂, hC₂, hhb⟩ := hb.exists_house_le
@@ -291,8 +304,8 @@ protected theorem mul {a b : ℕ → ℂ} (ha : IsGFunction a) (hb : IsGFunction
   obtain ⟨D₂, hD₂, d₂, hd₂⟩ := hb.den_le
   have halg (n : ℕ) : IsAlgebraic ℚ (∑ ij ∈ Finset.antidiagonal n, a ij.1 * b ij.2) := by
     rw [← mem_algebraicClosure_iff]
-    exact sum_mem fun ij _ ↦ mul_mem (mem_algebraicClosure_iff.mpr (ha.isAlgebraic ij.1))
-      (mem_algebraicClosure_iff.mpr (hb.isAlgebraic ij.2))
+    exact sum_mem fun ij _ ↦
+      mem_algebraicClosure_iff.mpr ((ha.isAlgebraic ij.1).mul (hb.isAlgebraic ij.2))
   have hmk : (PowerSeries.mk fun n ↦ ∑ ij ∈ Finset.antidiagonal n, a ij.1 * b ij.2) =
       PowerSeries.mk a * PowerSeries.mk b := by
     ext n
@@ -320,10 +333,8 @@ protected theorem derivative {a : ℕ → ℂ} (ha : IsGFunction a) :
   have hb : IsGFunction fun n ↦ a (n + 1) := ha.shift
   obtain ⟨C, hC, hhb⟩ := hb.exists_house_le
   obtain ⟨D, hD, d, hd⟩ := hb.den_le
-  have halg (n : ℕ) : IsAlgebraic ℚ ((n + 1 : ℂ) * a (n + 1)) := by
-    rw [← mem_algebraicClosure_iff]
-    exact mul_mem (add_mem (natCast_mem _ n) (one_mem _))
-      (mem_algebraicClosure_iff.mpr (hb.isAlgebraic n))
+  have halg (n : ℕ) : IsAlgebraic ℚ ((n + 1 : ℂ) * a (n + 1)) :=
+    ((isAlgebraic_natCast n).add isAlgebraic_one).mul (hb.isAlgebraic n)
   have hmk : (PowerSeries.mk fun n ↦ (n + 1 : ℂ) * a (n + 1)) = d⁄dX (PowerSeries.mk a) := by
     ext n
     simp [PowerSeries.coeff_derivative, mul_comm]
@@ -395,48 +406,25 @@ theorem isGFunction_one_div_natCast : IsGFunction fun n : ℕ ↦ 1 / (n : ℂ) 
         rw [hval]
         exact isIntegral_natCast q
 
-/-- On the open unit disc `‖z‖ < 1`, the G-function `n ↦ 1 / (n : ℂ)` sums to
-`-Complex.log (1 - z)`. -/
-theorem hasSum_one_div_natCast_mul_pow {z : ℂ} (hz : ‖z‖ < 1) :
-    HasSum (fun n : ℕ ↦ (1 / (n : ℂ)) * z ^ n) (-Complex.log (1 - z)) := by
-  convert Complex.hasSum_taylorSeries_neg_log hz using 2 with n
-  ring
-
 /-- The reciprocal-factorial sequence `n ↦ 1 / (n! : ℂ)` (the Taylor coefficients of `Complex.exp`)
 is not a G-function. -/
 theorem not_isGFunction_one_div_factorial : ¬IsGFunction fun n ↦ 1 / (n.factorial : ℂ) := by
   intro ha
-  obtain ⟨D, hD, d, hd⟩ := ha.den_le
-  have hle : ∀ n : ℕ, (n.factorial : ℝ) ≤ D ^ (n + 1) := by
-    intro n
-    have hint : IsIntegral ℤ ((d n : ℂ) * (1 / (n.factorial : ℂ))) := (hd n).2.2 n le_rfl
-    have hcast : (d n : ℂ) * (1 / (n.factorial : ℂ)) =
-        algebraMap ℚ ℂ ((d n : ℚ) / n.factorial) := by
-      simp [div_eq_mul_inv]
-    rw [hcast, isIntegral_algebraMap_iff] at hint
-    obtain ⟨z, hz⟩ := IsIntegrallyClosed.isIntegral_iff.mp hint
-    have hnf_q : (n.factorial : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero n)
-    have hmul_q : (z : ℚ) * n.factorial = d n := by
-      have hz' : (z : ℚ) = (d n : ℚ) / n.factorial := hz
-      exact ((div_eq_iff hnf_q).mp hz'.symm).symm
-    have hmul_z : z * (n.factorial : ℤ) = d n := by exact_mod_cast hmul_q
-    have hd_pos : (0 : ℤ) < d n := by exact_mod_cast (hd n).1
-    have hnf_pos : (0 : ℤ) < n.factorial := Nat.cast_pos.mpr (Nat.factorial_pos n)
-    have hz1 : 1 ≤ z := by
-      have hz0 : 0 < z := pos_of_mul_pos_left (hmul_z.symm ▸ hd_pos) hnf_pos.le
-      omega
-    have hfn_le : (n.factorial : ℤ) ≤ d n := by
-      calc (n.factorial : ℤ) = 1 * n.factorial := (one_mul _).symm
-        _ ≤ z * n.factorial := Int.mul_le_mul_of_nonneg_right hz1 hnf_pos.le
-        _ = d n := hmul_z
-    exact ((Int.cast_le (R := ℝ)).mpr hfn_le).trans (by exact_mod_cast (hd n).2.1)
-  have hlim := (Real.summable_pow_div_factorial D).tendsto_atTop_zero
-  have hge : ∀ n : ℕ, D⁻¹ ≤ D ^ n / n.factorial := by
-    intro n
-    have hnf : (0 : ℝ) < n.factorial := Nat.cast_pos.mpr (Nat.factorial_pos n)
-    rw [inv_eq_one_div, div_le_div_iff₀ hD hnf]
-    simpa [pow_succ] using hle n
-  have hle0 : D⁻¹ ≤ 0 := ge_of_tendsto' hlim hge
-  linarith [inv_pos.mpr hD]
+  obtain ⟨D, _, d, hd⟩ := ha.den_le
+  obtain ⟨n, hn⟩ := (FloorSemiring.eventually_mul_pow_lt_factorial_sub D D 0).exists
+  let q : ℚ := (d n : ℚ) / n.factorial
+  have hq : (q : ℂ) = (d n : ℂ) * (1 / (n.factorial : ℂ)) := by
+    simp [q, div_eq_mul_inv]
+  have hq0 : (q : ℂ) ≠ 0 := by
+    rw [hq]
+    exact mul_ne_zero (Nat.cast_ne_zero.mpr (Nat.one_le_iff_ne_zero.mp (hd n).1))
+      (one_div_ne_zero (Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero n)))
+  have h1 : 1 ≤ (d n : ℝ) / n.factorial := by
+    have hh := one_le_house (hq ▸ (hd n).2.2 n le_rfl) hq0
+    rwa [house_ratCast, Rat.cast_div, Rat.cast_natCast, Rat.cast_natCast,
+      abs_of_nonneg (by positivity)] at hh
+  have hfn : (n.factorial : ℝ) ≤ d n :=
+    (one_le_div (Nat.cast_pos.mpr (Nat.factorial_pos n))).mp h1
+  exact hn.not_ge ((hfn.trans (hd n).2.1).trans_eq (pow_succ' D n))
 
 end TauCeti

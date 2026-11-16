@@ -8,12 +8,11 @@ module
 public import Mathlib.Analysis.Analytic.OfScalars
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Analysis.SpecialFunctions.Exponential
-public import TauCeti.RingTheory.PowerSeries.DFinite.Borel
+public import TauCeti.RingTheory.PowerSeries.Borel
+public import TauCeti.RingTheory.PowerSeries.Entire.Eval
 public import TauCeti.RingTheory.PowerSeries.Radius
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.Calculus.SmoothSeries
-import Mathlib.Analysis.Convex.Topology
-import Mathlib.Analysis.Normed.Ring.InfiniteSum
 import Mathlib.Topology.Algebra.InfiniteSum.NatInt
 
 /-!
@@ -23,7 +22,15 @@ Given a complex sequence `a : ℕ → ℂ`, this file defines the factorial-divi
 
   `eFun a z = ∑' n, aₙ * zⁿ / n!`
 
-corresponding to the formal Borel series `TauCeti.ePowerSeries a = ∑ (aₙ / n!) Xⁿ`.
+corresponding to the formal Borel series `TauCeti.ePowerSeries a = ∑ (aₙ / n!) Xⁿ`, so that
+`eFun a z = (ePowerSeries a).evalAt z` (`TauCeti.eFun_eq_evalAt_ePowerSeries`).
+
+In transcendence theory, Siegel's E-functions are entire functions of the form `eFun a` whose
+coefficients satisfy algebraic, differential, and arithmetic growth hypotheses. Separating out the
+purely analytic consequences of the geometric modulus bound `‖aₙ‖ ≤ C ^ (n + 1)` allows entireness,
+Taylor-series representation, termwise complex differentiation, and evaluation of sums, differences,
+and Hurwitz products (including auxiliary quotient series such as `divOneSubSeq`) to be applied
+before establishing full E-function closure.
 
 Whenever `‖aₙ‖ ≤ C ^ (n + 1)` for all `n` (with any real constant `C`, automatically nonnegative
 from `n = 0`), `ePowerSeries a` has infinite radius of convergence, `eFun a` is represented by its
@@ -38,13 +45,15 @@ eFun b z`).
 
 ## Main results
 
-* `TauCeti.radius_ePowerSeries_of_norm_le`, `TauCeti.hasFPowerSeriesOnBall_eFun_of_norm_le`,
-  `TauCeti.analyticOnNhd_eFun_of_norm_le`: infinite convergence radius and entireness under
-  `‖aₙ‖ ≤ C ^ (n + 1)`.
+* `TauCeti.eFun_eq_evalAt_ePowerSeries`: `eFun a z = (ePowerSeries a).evalAt z`.
+* `TauCeti.radius_ePowerSeries_of_norm_le`, `TauCeti.isEntire_ePowerSeries_of_norm_le`,
+  `TauCeti.hasFPowerSeriesOnBall_eFun_of_norm_le`, `TauCeti.analyticOnNhd_eFun_of_norm_le`:
+  infinite convergence radius and entireness under `‖aₙ‖ ≤ C ^ (n + 1)`.
 * `TauCeti.hasDerivAt_eFun_of_norm_le`, `TauCeti.deriv_eFun_of_norm_le`,
   `TauCeti.iteratedDeriv_eFun_of_norm_le`: termwise differentiation shifts `a`.
-* `TauCeti.eFun_hurwitzMul_of_norm_le`: Hurwitz convolution corresponds to pointwise multiplication
-  of `eFun`.
+* `TauCeti.eFun_add_of_norm_le`, `TauCeti.eFun_sub_of_norm_le`,
+  `TauCeti.eFun_hurwitzMul_of_norm_le`: `eFun` preserves addition, subtraction, and Hurwitz
+  products under geometric coefficient bounds.
 -/
 
 public section
@@ -65,9 +74,14 @@ theorem eFun_def (a : ℕ → ℂ) (z : ℂ) :
     eFun a z = ∑' n : ℕ, a n * z ^ n / n.factorial :=
   (rfl)
 
-/-- Evaluating `eFun a` at `0` recovers `a 0`. -/
+/-- Evaluating `eFun a` at `z` agrees with `PowerSeries.evalAt` on `ePowerSeries a`. -/
+theorem eFun_eq_evalAt_ePowerSeries (a : ℕ → ℂ) (z : ℂ) :
+    eFun a z = (ePowerSeries a).evalAt z := by
+  simp [eFun_def, PowerSeries.evalAt_def, div_mul_eq_mul_div]
+
+/-- Applying `eFun a` at `0` recovers `a 0`. -/
 @[simp]
-theorem eFun_eval_zero (a : ℕ → ℂ) : eFun a 0 = a 0 := by
+theorem eFun_apply_zero (a : ℕ → ℂ) : eFun a 0 = a 0 := by
   rw [eFun_def, tsum_eq_single 0]
   · simp
   · intro n hn
@@ -91,9 +105,9 @@ theorem eFun_single (n : ℕ) (c z : ℂ) :
 theorem eFun_single_zero (c z : ℂ) : eFun (Pi.single 0 c) z = c := by
   simp [eFun_single]
 
-/-- `eFun` on `Pi.single 1 1` is the identity `z`. -/
+/-- `eFun` on `Pi.single 1 c` is the linear function `c * z`. -/
 @[simp]
-theorem eFun_single_one (z : ℂ) : eFun (Pi.single 1 1) z = z := by
+theorem eFun_single_one (c z : ℂ) : eFun (Pi.single 1 c) z = c * z := by
   simp [eFun_single]
 
 /-- The constant-one sequence sums to `Complex.exp`. -/
@@ -107,6 +121,7 @@ theorem eFun_neg (a : ℕ → ℂ) (z : ℂ) : eFun (-a) z = -eFun a z := by
   simp only [eFun_def, Pi.neg_apply, neg_mul, neg_div, tsum_neg]
 
 /-- `eFun` commutes with complex scalar multiplication. -/
+@[simp]
 theorem eFun_smul (c : ℂ) (a : ℕ → ℂ) (z : ℂ) : eFun (c • a) z = c * eFun a z := by
   simp only [eFun_def, Pi.smul_apply, smul_eq_mul, mul_assoc, mul_div_assoc, tsum_mul_left]
 
@@ -173,9 +188,9 @@ theorem hasFPowerSeriesOnBall_eFun_of_norm_le {a : ℕ → ℂ} {C : ℝ}
       (FormalMultilinearSeries.ofScalars ℂ fun n ↦ a n / n.factorial) 0 ⊤ := by
   set p := FormalMultilinearSeries.ofScalars ℂ fun n ↦ a n / n.factorial
   have hrad : p.radius = ⊤ := by
-    rw [← PowerSeries.radius_eq_radius_of_norm_eq (f := ePowerSeries a) p
-      (fun n ↦ by simp [p, coeff_ePowerSeries])]
-    exact radius_ePowerSeries_of_norm_le ha
+    simpa [p, coeff_ePowerSeries] using
+      (PowerSeries.radius_eq_radius_ofScalars ℂ (ePowerSeries a)).symm.trans
+        (radius_ePowerSeries_of_norm_le ha)
   have hp := p.hasFPowerSeriesOnBall (hrad ▸ ENNReal.zero_lt_top)
   rw [hrad] at hp
   have hsum : p.sum = eFun a := by
@@ -278,41 +293,22 @@ theorem iteratedDeriv_eFun_of_norm_le {a : ℕ → ℂ} {C : ℝ}
 theorem eFun_add_of_norm_le {a b : ℕ → ℂ} {C₁ C₂ : ℝ}
     (ha : ∀ n, ‖a n‖ ≤ C₁ ^ (n + 1)) (hb : ∀ n, ‖b n‖ ≤ C₂ ^ (n + 1)) (z : ℂ) :
     eFun (a + b) z = eFun a z + eFun b z := by
-  rw [eFun_def, eFun_def, eFun_def,
-    ← (summable_eFun_term_of_norm_le ha z).tsum_add (summable_eFun_term_of_norm_le hb z)]
-  refine tsum_congr fun n ↦ ?_
-  simp [add_mul, add_div]
+  simp only [eFun_eq_evalAt_ePowerSeries, ePowerSeries_add]
+  exact (isEntire_ePowerSeries_of_norm_le ha).evalAt_add (isEntire_ePowerSeries_of_norm_le hb) z
+
+/-- Under geometric bounds, `eFun` preserves subtraction. -/
+theorem eFun_sub_of_norm_le {a b : ℕ → ℂ} {C₁ C₂ : ℝ}
+    (ha : ∀ n, ‖a n‖ ≤ C₁ ^ (n + 1)) (hb : ∀ n, ‖b n‖ ≤ C₂ ^ (n + 1)) (z : ℂ) :
+    eFun (a - b) z = eFun a z - eFun b z := by
+  simp only [eFun_eq_evalAt_ePowerSeries, ePowerSeries_sub]
+  exact (isEntire_ePowerSeries_of_norm_le ha).evalAt_sub (isEntire_ePowerSeries_of_norm_le hb) z
 
 /-- **Hurwitz product evaluates to analytic product.** Under geometric coefficient bounds,
 `eFun (hurwitzMul a b) z = eFun a z * eFun b z` for every `z : ℂ`. -/
 theorem eFun_hurwitzMul_of_norm_le {a b : ℕ → ℂ} {C₁ C₂ : ℝ}
     (ha : ∀ n, ‖a n‖ ≤ C₁ ^ (n + 1)) (hb : ∀ n, ‖b n‖ ≤ C₂ ^ (n + 1)) (z : ℂ) :
     eFun (hurwitzMul a b) z = eFun a z * eFun b z := by
-  have hna : Summable fun n : ℕ ↦ ‖a n * z ^ n / n.factorial‖ := by
-    simpa using summable_norm_eFun_term_of_norm_le ha (norm_nonneg z)
-  have hnb : Summable fun n : ℕ ↦ ‖b n * z ^ n / n.factorial‖ := by
-    simpa using summable_norm_eFun_term_of_norm_le hb (norm_nonneg z)
-  rw [eFun_def, eFun_def, eFun_def,
-    tsum_mul_tsum_eq_tsum_sum_antidiagonal_of_summable_norm hna hnb]
-  refine tsum_congr fun n ↦ ?_
-  rw [hurwitzMul_eq_sum_antidiagonal, Finset.sum_mul, div_eq_mul_inv, Finset.sum_mul]
-  refine Finset.sum_congr rfl fun ij hij ↦ ?_
-  have hsum := Finset.mem_antidiagonal.mp hij
-  have hi : (ij.1.factorial : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero _)
-  have hj : (ij.2.factorial : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero _)
-  have hn : (n.factorial : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero _)
-  have hchoose : (n.choose ij.1 : ℂ) * ij.1.factorial * ij.2.factorial = n.factorial := by
-    have hij2 : n - ij.1 = ij.2 := by omega
-    exact_mod_cast hij2 ▸ Nat.choose_mul_factorial_mul_factorial (by omega : ij.1 ≤ n)
-  rw [← div_eq_mul_inv, nsmul_eq_mul, div_mul_div_comm, ← hsum, pow_add,
-    div_eq_div_iff (by rw [hsum]; exact hn) (mul_ne_zero hi hj)]
-  calc ((ij.1 + ij.2).choose ij.1 : ℂ) * (a ij.1 * b ij.2) * (z ^ ij.1 * z ^ ij.2) *
-          (ij.1.factorial * ij.2.factorial)
-      = a ij.1 * z ^ ij.1 * (b ij.2 * z ^ ij.2) *
-          ((n.choose ij.1 : ℂ) * ij.1.factorial * ij.2.factorial) := by
-        rw [hsum]
-        ring
-    _ = a ij.1 * z ^ ij.1 * (b ij.2 * z ^ ij.2) * (ij.1 + ij.2).factorial := by
-        rw [hchoose, hsum]
+  simp only [eFun_eq_evalAt_ePowerSeries, ePowerSeries_hurwitzMul]
+  exact (isEntire_ePowerSeries_of_norm_le ha).evalAt_mul (isEntire_ePowerSeries_of_norm_le hb) z
 
 end TauCeti

@@ -20,18 +20,23 @@ single finite-dimensional intermediate field `E` of `K / F`
 that all coefficients of `f` lie in a single number field
 (`PowerSeries.IsDFinite.exists_numberField`).
 
-The proof uses the polynomial recurrence `∑ i ≤ r, qᵢ(n) aₙ₊ᵢ = 0` satisfied by the coefficients
-(`PowerSeries.isDFinite_iff_pRecursive`). Since `q_r ≠ 0` and `k` has characteristic zero, `q_r`
-vanishes at only finitely many natural numbers, say below `N`. Adjoining to `F` the finitely many
-coefficients of the polynomials `qᵢ` together with the initial coefficients `a₀, …, a_{N + r - 1}`
-produces a finite extension `E / F` containing every subsequent `aₘ` by strong induction.
+In Diophantine approximation and transcendence theory, Siegel's E-functions and G-functions are
+defined a priori with Taylor coefficients in `ℚ̄` satisfying a linear differential equation over
+`ℚ̄[X]`. Because a nontrivial polynomial recurrence in characteristic zero expresses all
+sufficiently late coefficients rationally in terms of finitely many initial terms and the
+coefficients of the recurrence polynomials, the coefficients cannot generate an infinite algebraic
+extension: this reduces all height, denominator, and Siegel-lemma constructions for an E- or
+G-function to a single number field of finite degree over `ℚ`.
 
 ## Main results
 
-* `PowerSeries.IsDFinite.exists_finiteDimensional_intermediateField`: all algebraic coefficients
-  of a D-finite series over an algebraic base field lie in a common finite extension.
-* `PowerSeries.IsDFinite.exists_numberField`: specialization to `F = ℚ`, producing a common
-  intermediate `NumberField`.
+* `PowerSeries.IsDFinite.exists_finiteDimensional_intermediateField`: if `f : K⟦X⟧` is D-finite
+  over an algebraic extension `k` of `F` in characteristic zero and every coefficient of `f` is
+  algebraic over `F`, then all coefficients of `f` lie in a common finite-dimensional intermediate
+  field of `K / F`.
+* `PowerSeries.IsDFinite.exists_numberField`: if `f : K⟦X⟧` is D-finite over an algebraic
+  extension `k` of `ℚ` in characteristic zero and every coefficient of `f` is algebraic over `ℚ`,
+  then all coefficients of `f` lie in a common intermediate `NumberField`.
 
 ## References
 
@@ -134,8 +139,9 @@ theorem IsDFinite.exists_finiteDimensional_intermediateField
   exact Finset.mem_coe.mpr (Finset.mem_union_right _
     (Finset.mem_image_of_mem _ (Finset.mem_range.mpr hm)))
 
-/-- All algebraic coefficients of a power series `f : K⟦X⟧` that is D-finite over an algebraic
-extension `k` of `ℚ` lie in a common intermediate number field of `K`. -/
+/-- If `f : K⟦X⟧` is D-finite over an algebraic extension `k` of `ℚ`, in characteristic zero, and
+every coefficient of `f` is algebraic over `ℚ`, then all coefficients of `f` lie in a common
+intermediate number field of `K`. -/
 theorem IsDFinite.exists_numberField
     {k K : Type*} [Field k] [Field K] [CharZero K] [Algebra k K] [Algebra ℚ k]
     [IsScalarTower ℚ k K] [Algebra.IsAlgebraic ℚ k]

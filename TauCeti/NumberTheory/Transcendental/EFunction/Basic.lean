@@ -10,10 +10,17 @@ public import TauCeti.NumberTheory.Height.House
 public import TauCeti.NumberTheory.Transcendental.EFunction.Series
 public import TauCeti.RingTheory.Algebraic.Denominator
 public import TauCeti.RingTheory.PowerSeries.DFinite.Algebraic
+public import TauCeti.RingTheory.PowerSeries.DFinite.Borel
 import Mathlib.Topology.Algebra.InfiniteSum.NatInt
 
 /-!
 # Siegel's E-functions
+
+Siegel introduced E-functions in 1929 to generalize the Lindemann–Weierstrass theorem and prove
+the transcendence and algebraic independence over `ℚ̄` of values at algebraic points of entire
+solutions to linear differential equations over `ℚ̄(z)` — including exponential, Bessel, and
+confluent hypergeometric functions (the Siegel–Shidlovskii theorem and its refinements by André
+and Beukers).
 
 Following Beukers and Fischler–Rivoal (the geometric-growth refinement of Siegel's 1929
 definition), an analytic function
@@ -36,31 +43,36 @@ class of E-functions is closed under sums, differences, algebraic scalar multipl
 products (analytic multiplication), forward shifts (analytic differentiation), algebraic rescaling
 `z ↦ α z`, and coefficientwise ring endomorphisms of `ℂ` (Galois conjugation).
 
-When `a` has rational coefficients and `eFun a 1 = 0`, dividing `eFun a z` by `1 - z` produces an
-E-function with coefficients `divOneSubSeq a n = n! * ∑ k ≤ n, aₖ / k!`
-(`TauCeti.IsEFunction.divOneSubSeq`); the identity `eFun a 1 = 0` rewrites the partial sum as minus
-the convergent tail `-∑' m, a_{n + 1 + m} / (n + 1 + m)!`, supplying the geometric bound on `bₙ`.
+Dividing an E-series `eFun a` vanishing at `1` by `1 - z` produces the quotient coefficient
+sequence `divOneSubSeq a n = n! * ∑ k ≤ n, aₖ / k!`. Whenever `‖aₙ‖ ≤ C ^ (n + 1)` and
+`eFun a 1 = 0`, `divOneSubSeq a` satisfies a geometric modulus bound
+(`TauCeti.norm_divOneSubSeq_le`) and the analytic quotient identity
+`(1 - z) * eFun (divOneSubSeq a) z = eFun a z`
+(`TauCeti.one_sub_mul_eFun_divOneSubSeq_of_norm_le`). When `a` also has rational coefficients,
+`divOneSubSeq a` is itself an E-function (`TauCeti.IsEFunction.divOneSubSeq`), providing the base
+case for factoring out linear divisors at nonzero algebraic zeros in Beukers's proof of the refined
+Siegel–Shidlovskii theorem.
 
 ## Main definitions
 
 * `TauCeti.IsEFunction a`: the E-function predicate on a coefficient sequence `a : ℕ → ℂ`.
 * `TauCeti.divOneSubSeq a`: the coefficient sequence `n ↦ n! * ∑ k ≤ n, aₖ / k!` of the quotient
   by `1 - z`.
-* `TauCeti.expSqSeq`: the normalized E-coefficient sequence of `exp (z ^ 2)`, equal to
-  `(2k)! / k!` at `n = 2k` and `0` at odd `n`.
 
 ## Main results
 
 * `TauCeti.IsEFunction.exists_numberField`: all coefficients of an E-function lie in a common
   number field.
-* `TauCeti.IsEFunction.add`, `TauCeti.IsEFunction.hurwitzMul`, `TauCeti.IsEFunction.shift`,
+* `TauCeti.IsEFunction.add`, `TauCeti.IsEFunction.sub`, `TauCeti.IsEFunction.hurwitzMul`,
+  `TauCeti.IsEFunction.shift`, `TauCeti.IsEFunction.comp_add_right`,
   `TauCeti.IsEFunction.rescale`, `TauCeti.IsEFunction.comp_ringHom`: closure of E-functions.
-* `TauCeti.IsEFunction.divOneSubSeq`, `TauCeti.IsEFunction.one_sub_mul_eFun_divOneSubSeq`: quotient
-  by `1 - z` for rational E-coefficients vanishing at `1`.
-* `TauCeti.isEFunction_const_one`, `TauCeti.isEFunction_sub_one`,
-  `TauCeti.not_isEFunction_factorial`, `TauCeti.not_isEFunction_expSqSeq`: concrete examples and
-  non-examples (`exp z` and `(z - 1) exp z` are E-functions; `1 / (1 - z)` and `exp (z ^ 2)` are
-  not).
+* `TauCeti.norm_divOneSubSeq_le`, `TauCeti.one_sub_mul_eFun_divOneSubSeq_of_norm_le`,
+  `TauCeti.IsEFunction.one_sub_mul_eFun_divOneSubSeq`, `TauCeti.IsEFunction.divOneSubSeq`:
+  quotient by `1 - z` at a zero at `1`.
+* `TauCeti.isEFunction_const_one`, `TauCeti.isEFunction_natCast_sub_one`,
+  `TauCeti.not_isEFunction_factorial`, `TauCeti.not_exists_isEFunction_eFun_eq_exp_sq`: concrete
+  examples and non-examples (`exp z` and `(z - 1) exp z` are E-functions; `1 / (1 - z)` and
+  `exp (z ^ 2)` are not).
 
 ## References
 
@@ -70,8 +82,8 @@ the convergent tail `-∑' m, a_{n + 1 + m} / (n + 1 + m)!`, supplying the geome
   (2006), 369–379, §1–2, Corollary 2.2.
 * F. Beukers, *E-functions and G-functions*, lecture notes, Arizona Winter School, 2008, §3.1–3.4,
   Proposition 3.2.1, Corollary 3.4.2.
-* S. Fischler and T. Rivoal, *Arithmetic theory of E-operators*, J. Éc. polytech. Math. **3**
-  (2016), 31–65, Definition 1.
+* S. Fischler and T. Rivoal, *On Siegel's problem for E-functions*, Math. Z. **301** (2022),
+  1429–1453 (arXiv:1910.06817), Definition 1.
 -/
 
 public section
@@ -88,9 +100,17 @@ namespace TauCeti
 bounded by `C ^ (n + 1)`, and positive integers `dₙ ≤ D ^ (n + 1)` clear the denominators of
 `a₀, …, aₙ` simultaneously. -/
 structure IsEFunction (a : ℕ → ℂ) : Prop where
+  /-- Every normalized Taylor coefficient `aₙ` is algebraic over `ℚ`. -/
   isAlgebraic : ∀ n, IsAlgebraic ℚ (a n)
+  /-- The factorial-divided formal power series `ePowerSeries a = ∑ (aₙ / n!) Xⁿ` satisfies a
+  nonzero linear differential equation with polynomial coefficients over `ℚ̄`. -/
   isDFinite : PowerSeries.IsDFinite (algebraicClosure ℚ ℂ) (ePowerSeries a)
+  /-- Geometric house bound: every complex root of `minpoly ℚ (aₙ)` has modulus at most
+  `C ^ (n + 1)` for a uniform constant `C > 0` (using exponent `n + 1` so `n = 0` is included
+  without an extra multiplicative factor). -/
   size_le : ∃ C : ℝ, 0 < C ∧ ∀ n, ∀ z ∈ (minpoly ℚ (a n)).aroots ℂ, ‖z‖ ≤ C ^ (n + 1)
+  /-- Geometric common-denominator bound: positive integers `dₙ ≤ D ^ (n + 1)` make `dₙ * aₘ`
+  an algebraic integer simultaneously for all `m ≤ n`. -/
   den_le : ∃ D : ℝ, 0 < D ∧ ∃ d : ℕ → ℕ,
     ∀ n, 1 ≤ d n ∧ (d n : ℝ) ≤ D ^ (n + 1) ∧ ∀ m ≤ n, IsIntegral ℤ ((d n : ℂ) * a m)
 
@@ -170,17 +190,29 @@ theorem differentiable_eFun {a : ℕ → ℂ} (ha : IsEFunction a) :
   obtain ⟨_, _, hnorm⟩ := ha.exists_norm_le
   exact differentiable_eFun_of_norm_le hnorm
 
+/-- For an E-function `a`, `eFun a` has complex derivative `eFun (fun n ↦ a (n + 1)) z` at every
+`z : ℂ`. -/
+theorem hasDerivAt_eFun {a : ℕ → ℂ} (ha : IsEFunction a) (z : ℂ) :
+    HasDerivAt (eFun a) (eFun (fun n ↦ a (n + 1)) z) z := by
+  obtain ⟨_, _, hnorm⟩ := ha.exists_norm_le
+  exact hasDerivAt_eFun_of_norm_le hnorm z
+
 /-- Complex differentiation of `eFun a` shifts the coefficients of an E-function by `1`. -/
 theorem deriv_eFun {a : ℕ → ℂ} (ha : IsEFunction a) :
     deriv (eFun a) = eFun fun n ↦ a (n + 1) := by
   obtain ⟨_, _, hnorm⟩ := ha.exists_norm_le
   exact deriv_eFun_of_norm_le hnorm
 
-/-- The `m`-th derivative at `0` of `eFun a` is `a m`. -/
-theorem iteratedDeriv_eFun_eval_zero {a : ℕ → ℂ} (ha : IsEFunction a) (m : ℕ) :
-    iteratedDeriv m (eFun a) 0 = a m := by
+/-- The `m`-th complex derivative of `eFun a` shifts the coefficients of an E-function by `m`. -/
+theorem iteratedDeriv_eFun {a : ℕ → ℂ} (ha : IsEFunction a) (m : ℕ) :
+    iteratedDeriv m (eFun a) = eFun fun n ↦ a (n + m) := by
   obtain ⟨_, _, hnorm⟩ := ha.exists_norm_le
-  rw [iteratedDeriv_eFun_of_norm_le hnorm m, eFun_eval_zero, zero_add]
+  exact iteratedDeriv_eFun_of_norm_le hnorm m
+
+/-- Applying the `m`-th derivative of `eFun a` at `0` recovers `a m`. -/
+theorem iteratedDeriv_eFun_apply_zero {a : ℕ → ℂ} (ha : IsEFunction a) (m : ℕ) :
+    iteratedDeriv m (eFun a) 0 = a m := by
+  rw [ha.iteratedDeriv_eFun m, eFun_apply_zero, zero_add]
 
 /-- For two E-functions `a` and `b`, `eFun (a + b) z = eFun a z + eFun b z`. -/
 theorem eFun_add {a b : ℕ → ℂ} (ha : IsEFunction a) (hb : IsEFunction b) (z : ℂ) :
@@ -188,6 +220,13 @@ theorem eFun_add {a b : ℕ → ℂ} (ha : IsEFunction a) (hb : IsEFunction b) (
   obtain ⟨_, _, hna⟩ := ha.exists_norm_le
   obtain ⟨_, _, hnb⟩ := hb.exists_norm_le
   exact eFun_add_of_norm_le hna hnb z
+
+/-- For two E-functions `a` and `b`, `eFun (a - b) z = eFun a z - eFun b z`. -/
+theorem eFun_sub {a b : ℕ → ℂ} (ha : IsEFunction a) (hb : IsEFunction b) (z : ℂ) :
+    eFun (a - b) z = eFun a z - eFun b z := by
+  obtain ⟨_, _, hna⟩ := ha.exists_norm_le
+  obtain ⟨_, _, hnb⟩ := hb.exists_norm_le
+  exact eFun_sub_of_norm_le hna hnb z
 
 /-- For two E-functions `a` and `b`, `eFun (hurwitzMul a b) z = eFun a z * eFun b z`. -/
 theorem eFun_hurwitzMul {a b : ℕ → ℂ} (ha : IsEFunction a) (hb : IsEFunction b) (z : ℂ) :
@@ -272,11 +311,8 @@ protected theorem add {a b : ℕ → ℂ} (ha : IsEFunction a) (hb : IsEFunction
   obtain ⟨C₂, hC₂, hhb⟩ := hb.exists_house_le
   obtain ⟨D₁, hD₁, d₁, hd₁⟩ := ha.den_le
   obtain ⟨D₂, hD₂, d₂, hd₂⟩ := hb.den_le
-  have halg (n : ℕ) : IsAlgebraic ℚ (a n + b n) := by
-    rw [← mem_algebraicClosure_iff]
-    exact add_mem (mem_algebraicClosure_iff.mpr (ha.isAlgebraic n))
-      (mem_algebraicClosure_iff.mpr (hb.isAlgebraic n))
-  refine of_house_le halg (by rw [ePowerSeries_add]; exact ha.isDFinite.add hb.isDFinite) ?_ ?_
+  refine of_house_le (fun n ↦ (ha.isAlgebraic n).add (hb.isAlgebraic n))
+    (by rw [ePowerSeries_add]; exact ha.isDFinite.add hb.isDFinite) ?_ ?_
   · refine ⟨2 * max C₁ C₂, by positivity, fun n ↦ ?_⟩
     calc house (a n + b n)
         ≤ house (a n) + house (b n) := house_add_le (ha.isAlgebraic n) (hb.isAlgebraic n)
@@ -315,11 +351,8 @@ protected theorem smul {c : ℂ} (hc : IsAlgebraic ℚ c) {a : ℕ → ℂ} (ha 
     Nat.one_le_iff_ne_zero.mpr (Algebra.natDenominator_ne_zero_of_isAlgebraic_rat hc)
   have hqint : IsIntegral ℤ ((q : ℂ) * c) := by
     simpa [q, nsmul_eq_mul] using Algebra.isIntegral_natDenominator_smul c
-  have halg (n : ℕ) : IsAlgebraic ℚ (c * a n) := by
-    rw [← mem_algebraicClosure_iff]
-    exact mul_mem (mem_algebraicClosure_iff.mpr hc)
-      (mem_algebraicClosure_iff.mpr (ha.isAlgebraic n))
-  refine of_house_le halg (by rw [ePowerSeries_smul]; exact ha.isDFinite.smul c) ?_ ?_
+  refine of_house_le (fun n ↦ hc.mul (ha.isAlgebraic n))
+    (by rw [ePowerSeries_smul]; exact ha.isDFinite.smul c) ?_ ?_
   · set B := max 1 (house c) * C
     refine ⟨B, by positivity, fun n ↦ ?_⟩
     have hc_le : house c ≤ max 1 (house c) ^ (n + 1) :=
@@ -349,11 +382,8 @@ private theorem house_hurwitzMul_le {a b : ℕ → ℂ} {C₁ C₂ : ℝ} (hC₁
   have hB1 : 1 ≤ B := le_max_left _ _
   have hC₁B : C₁ ≤ B := (le_max_left C₁ C₂).trans (le_max_right _ _)
   have hC₂B : C₂ ≤ B := (le_max_right C₁ C₂).trans (le_max_right _ _)
-  have hterm_alg (k : ℕ) : IsAlgebraic ℚ ((n.choose k : ℂ) * (a k * b (n - k))) := by
-    rw [← mem_algebraicClosure_iff]
-    exact mul_mem (natCast_mem _ _)
-      (mul_mem (mem_algebraicClosure_iff.mpr (halg_a k))
-        (mem_algebraicClosure_iff.mpr (halg_b (n - k))))
+  have hterm_alg (k : ℕ) : IsAlgebraic ℚ ((n.choose k : ℂ) * (a k * b (n - k))) :=
+    (isAlgebraic_natCast _).mul ((halg_a k).mul (halg_b (n - k)))
   rw [hurwitzMul_def]
   have hnsmul : (∑ k ∈ Finset.range (n + 1), n.choose k • (a k * b (n - k))) =
       ∑ k ∈ Finset.range (n + 1), (n.choose k : ℂ) * (a k * b (n - k)) :=
@@ -366,10 +396,7 @@ private theorem house_hurwitzMul_le {a b : ℕ → ℂ} {C₁ C₂ : ℝ} (hC₁
         refine Finset.sum_le_sum fun k hk ↦ ?_
         have hkn : k ≤ n := Nat.lt_succ_iff.mp (Finset.mem_range.mp hk)
         have hexp : k + 1 + (n - k + 1) = n + 2 := by omega
-        have hab : IsAlgebraic ℚ (a k * b (n - k)) := by
-          rw [← mem_algebraicClosure_iff]
-          exact mul_mem (mem_algebraicClosure_iff.mpr (halg_a k))
-            (mem_algebraicClosure_iff.mpr (halg_b (n - k)))
+        have hab : IsAlgebraic ℚ (a k * b (n - k)) := (halg_a k).mul (halg_b (n - k))
         have hak : house (a k) ≤ B ^ (k + 1) :=
           (hha k).trans (pow_le_pow_left₀ hC₁.le hC₁B _)
         have hbk : house (b (n - k)) ≤ B ^ (n - k + 1) :=
@@ -401,11 +428,8 @@ protected theorem hurwitzMul {a b : ℕ → ℂ} (ha : IsEFunction a) (hb : IsEF
   obtain ⟨D₂, hD₂, d₂, hd₂⟩ := hb.den_le
   have halg (n : ℕ) : IsAlgebraic ℚ (TauCeti.hurwitzMul a b n) := by
     rw [hurwitzMul_def, ← mem_algebraicClosure_iff]
-    refine sum_mem fun k _ ↦ ?_
-    rw [nsmul_eq_mul]
-    exact mul_mem (natCast_mem _ _)
-      (mul_mem (mem_algebraicClosure_iff.mpr (ha.isAlgebraic k))
-        (mem_algebraicClosure_iff.mpr (hb.isAlgebraic (n - k))))
+    refine sum_mem fun k _ ↦ mem_algebraicClosure_iff.mpr ?_
+    exact ((ha.isAlgebraic k).mul (hb.isAlgebraic (n - k))).nsmul _
   refine of_house_le halg (by rw [ePowerSeries_hurwitzMul]; exact ha.isDFinite.mul hb.isDFinite)
     ⟨2 * max 1 (max C₁ C₂) ^ 2, by positivity,
       house_hurwitzMul_le hC₁ hC₂ ha.isAlgebraic hb.isAlgebraic hha hhb⟩ ?_
@@ -443,25 +467,30 @@ protected theorem shift {a : ℕ → ℂ} (ha : IsEFunction a) :
         _ = (max 1 D ^ 2) ^ (n + 1) := by rw [pow_mul]
     · exact fun m hm ↦ (hd (n + 1)).2.2 (m + 1) (Nat.succ_le_succ hm)
 
+/-- **Iterated derivatives of E-functions are E-functions.** Shifting the coefficient sequence by
+`m` preserves `IsEFunction`. -/
+protected theorem comp_add_right {a : ℕ → ℂ} (ha : IsEFunction a) (m : ℕ) :
+    IsEFunction fun n ↦ a (n + m) := by
+  induction m generalizing a with
+  | zero => simpa using ha
+  | succ m ih =>
+    simpa only [Nat.add_assoc, Nat.add_comm 1 m] using ih ha.shift
+
 /-- Rescaling the variable by an algebraic number `α` (`aₙ ↦ αⁿ aₙ`) preserves `IsEFunction`. -/
 protected theorem rescale {α : ℂ} (hα : IsAlgebraic ℚ α) {a : ℕ → ℂ} (ha : IsEFunction a) :
     IsEFunction fun n ↦ α ^ n * a n := by
   obtain ⟨C, hC, hha⟩ := ha.exists_house_le
   obtain ⟨D, hD, d, hd⟩ := ha.den_le
   let α₀ : algebraicClosure ℚ ℂ := ⟨α, mem_algebraicClosure_iff.mpr hα⟩
-  have halg (n : ℕ) : IsAlgebraic ℚ (α ^ n * a n) := by
-    rw [← mem_algebraicClosure_iff]
-    exact mul_mem (pow_mem α₀.2 n) (mem_algebraicClosure_iff.mpr (ha.isAlgebraic n))
-  refine of_house_le halg
+  refine of_house_le (fun n ↦ (hα.pow n).mul (ha.isAlgebraic n))
     (by rw [← rescale_ePowerSeries]; exact ha.isDFinite.rescale α₀) ?_ ?_
   · set B := max 1 (house α) * C
     refine ⟨B, by positivity, fun n ↦ ?_⟩
-    have hαn : IsAlgebraic ℚ (α ^ n) := mem_algebraicClosure_iff.mp (pow_mem α₀.2 n)
     have hα_le : house α ^ n ≤ max 1 (house α) ^ (n + 1) :=
       (pow_le_pow_left₀ (house_nonneg α) (le_max_right 1 (house α)) n).trans
         (pow_le_pow_right₀ (le_max_left 1 (house α)) (Nat.le_succ n))
     calc house (α ^ n * a n)
-        ≤ house (α ^ n) * house (a n) := house_mul_le hαn (ha.isAlgebraic n)
+        ≤ house (α ^ n) * house (a n) := house_mul_le (hα.pow n) (ha.isAlgebraic n)
       _ = house α ^ n * house (a n) := by rw [house_pow]
       _ ≤ max 1 (house α) ^ (n + 1) * C ^ (n + 1) :=
           mul_le_mul hα_le (hha n) (house_nonneg _) (by positivity)
@@ -498,11 +527,7 @@ protected theorem comp_ringHom {a : ℕ → ℂ} (ha : IsEFunction a) (σ : ℂ 
       map_mul' := fun x y ↦ Subtype.ext (σ.map_mul x y)
       map_zero' := Subtype.ext σ.map_zero
       map_add' := fun x y ↦ Subtype.ext (σ.map_add x y) }
-  have halg (n : ℕ) : IsAlgebraic ℚ (σ (a n)) :=
-    mem_algebraicClosure_iff.mp
-      ((map_mem_algebraicClosure_iff σ.toRatAlgHom).mpr
-        (mem_algebraicClosure_iff.mpr (ha.isAlgebraic n)))
-  refine of_house_le halg
+  refine of_house_le (fun n ↦ (ha.isAlgebraic n).algHom σ.toRatAlgHom)
     (by rw [← map_ePowerSeries]; exact ha.isDFinite.map σ₀ σ fun _ ↦ rfl)
     ⟨C, hC, fun n ↦ by simpa [Function.comp_apply] using hha n⟩
     ⟨D, hD, d, fun n ↦ ⟨(hd n).1, (hd n).2.1, fun m hm ↦ ?_⟩⟩
@@ -516,7 +541,7 @@ end IsEFunction
 theorem isEFunction_pow {α : ℂ} (hα : IsAlgebraic ℚ α) : IsEFunction (α ^ ·) := by
   simpa using isEFunction_const_one.rescale hα
 
-/-! ### Division by `1 - z` for rational E-coefficients vanishing at `1` -/
+/-! ### Division by `1 - z` at a zero at `1` -/
 
 /-- Given `a : ℕ → ℂ`, the normalized coefficient sequence
 `divOneSubSeq a n = n! * ∑ k ∈ Finset.range (n + 1), a k / k!` of `(1 - X)⁻¹ * ePowerSeries a`. -/
@@ -528,16 +553,36 @@ theorem divOneSubSeq_def (a : ℕ → ℂ) (n : ℕ) :
     divOneSubSeq a n = n.factorial * ∑ k ∈ Finset.range (n + 1), a k / k.factorial :=
   (rfl)
 
-/-- At `n = 0`, `divOneSubSeq a 0 = a 0`. -/
+/-- Applying `divOneSubSeq a` at `0` gives `a 0`. -/
 @[simp]
-theorem divOneSubSeq_zero (a : ℕ → ℂ) : divOneSubSeq a 0 = a 0 := by
+theorem divOneSubSeq_apply_zero (a : ℕ → ℂ) : divOneSubSeq a 0 = a 0 := by
   simp [divOneSubSeq_def]
 
 /-- `divOneSubSeq` maps the zero sequence to `0`. -/
 @[simp]
-theorem divOneSubSeq_zero_seq : divOneSubSeq 0 = 0 := by
+theorem divOneSubSeq_zero : divOneSubSeq 0 = 0 := by
   ext n
   simp [divOneSubSeq_def]
+
+/-- Step recurrence for `divOneSubSeq`:
+`divOneSubSeq a (n + 1) = (n + 1) * divOneSubSeq a n + a (n + 1)`. -/
+theorem divOneSubSeq_succ (a : ℕ → ℂ) (n : ℕ) :
+    divOneSubSeq a (n + 1) = (n + 1) * divOneSubSeq a n + a (n + 1) := by
+  have hnf : ((n + 1).factorial : ℂ) ≠ 0 :=
+    Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero (n + 1))
+  rw [divOneSubSeq_def, divOneSubSeq_def, Finset.sum_range_succ, mul_add,
+    mul_div_cancel₀ _ hnf, Nat.factorial_succ, Nat.cast_mul, Nat.cast_add, Nat.cast_one,
+    mul_assoc]
+
+/-- Applying a ring endomorphism `σ : ℂ →+* ℂ` commutes with `divOneSubSeq` at each index. -/
+theorem map_divOneSubSeq (σ : ℂ →+* ℂ) (a : ℕ → ℂ) (n : ℕ) :
+    σ (divOneSubSeq a n) = divOneSubSeq (σ ∘ a) n := by
+  simp [divOneSubSeq_def]
+
+/-- Post-composing with a ring endomorphism `σ : ℂ →+* ℂ` commutes with `divOneSubSeq`. -/
+theorem comp_divOneSubSeq (σ : ℂ →+* ℂ) (a : ℕ → ℂ) :
+    σ ∘ divOneSubSeq a = divOneSubSeq (σ ∘ a) :=
+  funext (map_divOneSubSeq σ a)
 
 /-- Formal identity `(1 - X) * ePowerSeries (divOneSubSeq a) = ePowerSeries a`. -/
 @[simp]
@@ -555,11 +600,14 @@ theorem one_sub_X_mul_ePowerSeries_divOneSubSeq (a : ℕ → ℂ) :
     rw [sub_mul, one_mul, map_sub, PowerSeries.coeff_succ_X_mul, hcoeff, hcoeff,
       Finset.sum_range_succ, add_sub_cancel_left, coeff_ePowerSeries]
 
-private theorem norm_divOneSubSeq_le {a : ℕ → ℂ} {C : ℝ} (hC : 0 < C)
-    (hnorm : ∀ n, ‖a n‖ ≤ C ^ (n + 1)) (hz : eFun a 1 = 0) (n : ℕ) :
+/-- If `‖a n‖ ≤ C ^ (n + 1)` for all `n` and `eFun a 1 = 0`, then `divOneSubSeq a` satisfies the
+geometric modulus bound `‖divOneSubSeq a n‖ ≤ (max 1 C ^ 2 * Real.exp C) ^ (n + 1)`. -/
+theorem norm_divOneSubSeq_le {a : ℕ → ℂ} {C : ℝ}
+    (ha : ∀ n, ‖a n‖ ≤ C ^ (n + 1)) (hz : eFun a 1 = 0) (n : ℕ) :
     ‖divOneSubSeq a n‖ ≤ (max 1 C ^ 2 * Real.exp C) ^ (n + 1) := by
+  have hC : 0 ≤ C := by simpa using (norm_nonneg (a 0)).trans (ha 0)
   have hsum1 : Summable fun k : ℕ ↦ a k / k.factorial := by
-    simpa using summable_eFun_term_of_norm_le hnorm 1
+    simpa using summable_eFun_term_of_norm_le ha 1
   have hz0 : (∑' k : ℕ, a k / k.factorial) = 0 := by simpa [eFun_def] using hz
   have hsplit := hsum1.sum_add_tsum_nat_add (n + 1)
   rw [hz0] at hsplit
@@ -583,7 +631,7 @@ private theorem norm_divOneSubSeq_le {a : ℕ → ℂ} {C : ℝ} (hC : 0 < C)
     calc (n.factorial : ℝ) * (‖a (m + (n + 1))‖ / (m + (n + 1)).factorial)
         ≤ (n.factorial : ℝ) * (C ^ (m + (n + 1) + 1) / (n.factorial * m.factorial)) := by
           gcongr
-          · exact hnorm _
+          · exact ha _
           · exact_mod_cast hfac_le
       _ = C ^ (n + 2) * (C ^ m / m.factorial) := by
           rw [hexp, pow_add]
@@ -603,8 +651,21 @@ private theorem norm_divOneSubSeq_le {a : ℕ → ℂ} {C : ℝ} (hC : 0 < C)
     (calc C ^ (n + 2) ≤ max 1 C ^ (n + 2) := by gcongr; exact le_max_right 1 C
       _ ≤ max 1 C ^ (2 * (n + 1)) := pow_le_pow_right₀ (le_max_left 1 C) (by omega)
       _ = (max 1 C ^ 2) ^ (n + 1) := by rw [pow_mul])
-    (le_self_pow₀ (Real.one_le_exp hC.le) (Nat.succ_ne_zero n))
+    (le_self_pow₀ (Real.one_le_exp hC) (Nat.succ_ne_zero n))
     (Real.exp_pos C).le (by positivity)
+
+/-- Under `‖a n‖ ≤ C ^ (n + 1)` and `eFun a 1 = 0`, the quotient sequence `divOneSubSeq a`
+satisfies `(1 - z) * eFun (divOneSubSeq a) z = eFun a z` for all `z : ℂ`. -/
+theorem one_sub_mul_eFun_divOneSubSeq_of_norm_le {a : ℕ → ℂ} {C : ℝ}
+    (ha : ∀ n, ‖a n‖ ≤ C ^ (n + 1)) (hz : eFun a 1 = 0) (z : ℂ) :
+    (1 - z) * eFun (divOneSubSeq a) z = eFun a z := by
+  have hb := isEntire_ePowerSeries_of_norm_le (norm_divOneSubSeq_le ha hz)
+  have h1X : (1 - PowerSeries.X : ℂ⟦X⟧).IsEntire :=
+    PowerSeries.isEntire_one.sub PowerSeries.isEntire_X
+  have heval1X : (1 - PowerSeries.X : ℂ⟦X⟧).evalAt z = 1 - z := by
+    simpa using PowerSeries.isEntire_one.evalAt_sub (R := ℂ) PowerSeries.isEntire_X z
+  rw [eFun_eq_evalAt_ePowerSeries, eFun_eq_evalAt_ePowerSeries, ← heval1X,
+    ← h1X.evalAt_mul hb z, one_sub_X_mul_ePowerSeries_divOneSubSeq]
 
 /-- **Quotient by `1 - z` at a zero.** If `a` is an E-function with rational coefficients and
 `eFun a 1 = 0`, then `divOneSubSeq a` is an E-function. -/
@@ -616,7 +677,7 @@ protected theorem IsEFunction.divOneSubSeq {a : ℕ → ℂ} (ha : IsEFunction a
       ((n.factorial * ∑ k ∈ Finset.range (n + 1), q k / k.factorial : ℚ) : ℂ) := by
     rw [divOneSubSeq_def]; push_cast
     congr 1; exact Finset.sum_congr rfl fun k _ ↦ by rw [hq k]
-  obtain ⟨C, hC, hnorm⟩ := ha.exists_norm_le
+  obtain ⟨C, _, hnorm⟩ := ha.exists_norm_le
   obtain ⟨D, hD, d, hd⟩ := ha.den_le
   refine IsEFunction.of_house_le
     (fun n ↦ by rw [hbq n, ← eq_ratCast (algebraMap ℚ ℂ)]; exact isAlgebraic_algebraMap _)
@@ -624,7 +685,7 @@ protected theorem IsEFunction.divOneSubSeq {a : ℕ → ℂ} (ha : IsEFunction a
       (by rw [one_sub_X_mul_ePowerSeries_divOneSubSeq]; exact ha.isDFinite))
     ⟨max 1 C ^ 2 * Real.exp C, by positivity, fun n ↦ ?_⟩ ?_
   · rw [hbq n, house_ratCast, ← Complex.norm_ratCast, ← hbq n]
-    exact norm_divOneSubSeq_le hC hnorm hz n
+    exact norm_divOneSubSeq_le hnorm hz n
   · refine ⟨D, hD, d, fun n ↦ ⟨(hd n).1, (hd n).2.1, fun m hm ↦ ?_⟩⟩
     rw [divOneSubSeq_def, ← mul_assoc, mul_comm (d n : ℂ), mul_assoc, Finset.mul_sum,
       Finset.mul_sum, ← mem_integralClosure_iff]
@@ -640,50 +701,38 @@ protected theorem IsEFunction.divOneSubSeq {a : ℕ → ℂ} (ha : IsEFunction a
     rw [hdiv]
     exact (isIntegral_natCast u).mul ((hd n).2.2 k (hkm.trans hm))
 
-/-- Analytic quotient identity `(1 - z) * eFun (divOneSubSeq a) z = eFun a z`. -/
+/-- For an E-function `a` vanishing at `1` (`eFun a 1 = 0`), the quotient sequence `divOneSubSeq a`
+satisfies `(1 - z) * eFun (divOneSubSeq a) z = eFun a z` for all `z : ℂ`. -/
 theorem IsEFunction.one_sub_mul_eFun_divOneSubSeq {a : ℕ → ℂ} (ha : IsEFunction a)
-    (hrat : ∀ n, ∃ q : ℚ, a n = q) (hz : eFun a 1 = 0) (z : ℂ) :
+    (hz : eFun a 1 = 0) (z : ℂ) :
     (1 - z) * eFun (divOneSubSeq a) z = eFun a z := by
-  have hb : IsEFunction (divOneSubSeq a) := ha.divOneSubSeq hrat hz
-  let p : ℕ → ℂ := Pi.single 0 1 - Pi.single 1 1
-  have hp : IsEFunction p := (isEFunction_single_zero isAlgebraic_one).sub
-    (isEFunction_single 1 isAlgebraic_one)
-  have hp_ps : ePowerSeries p = 1 - PowerSeries.X := by
-    simp [p, ePowerSeries_single 1 (1 : ℂ)]
-  have hmul_seq : hurwitzMul p (divOneSubSeq a) = a := by
-    apply ePowerSeries_injective
-    rw [ePowerSeries_hurwitzMul, hp_ps, one_sub_X_mul_ePowerSeries_divOneSubSeq]
-  have hp_eval : eFun p z = 1 - z := by
-    have hadd : eFun p z = eFun (Pi.single 0 1) z + eFun (-Pi.single 1 1) z :=
-      (isEFunction_single_zero isAlgebraic_one).eFun_add
-        (isEFunction_single 1 isAlgebraic_one).neg z
-    simpa [sub_eq_add_neg] using hadd
-  rw [← hp_eval, ← hp.eFun_hurwitzMul hb z, hmul_seq]
+  obtain ⟨_, _, hnorm⟩ := ha.exists_norm_le
+  exact one_sub_mul_eFun_divOneSubSeq_of_norm_le hnorm hz z
 
 /-! ### Concrete examples and non-examples -/
 
-private theorem sub_one_eq_hurwitzMul :
+private theorem natCast_sub_one_eq_hurwitzMul :
     (fun n : ℕ ↦ (n : ℂ) - 1) = hurwitzMul (Pi.single 1 1 - Pi.single 0 1) (fun _ ↦ 1) := by
   ext n
   rw [hurwitzMul_sub_left]
   cases n with
-  | zero => simp [hurwitzMul_single_left]
+  | zero => simp
   | succ n => simp [hurwitzMul_single_left]
 
 /-- The sequence `n ↦ (n : ℂ) - 1` evaluates under `eFun` to `(z - 1) * Complex.exp z`. -/
-theorem eFun_sub_one (z : ℂ) :
+theorem eFun_natCast_sub_one (z : ℂ) :
     eFun (fun n ↦ (n : ℂ) - 1) z = (z - 1) * Complex.exp z := by
-  have hp1 : IsEFunction (Pi.single 1 1 - Pi.single 0 1) :=
+  have hp1 : IsEFunction (Pi.single 1 (1 : ℂ) - Pi.single 0 1) :=
     (isEFunction_single 1 isAlgebraic_one).sub (isEFunction_single_zero isAlgebraic_one)
-  have hp1_eval : eFun (Pi.single 1 1 - Pi.single 0 1) z = z - 1 := by
-    have h := (isEFunction_single 1 isAlgebraic_one).eFun_add
-      (isEFunction_single_zero isAlgebraic_one).neg z
-    simpa [sub_eq_add_neg] using h
-  rw [sub_one_eq_hurwitzMul, hp1.eFun_hurwitzMul isEFunction_const_one z, hp1_eval, eFun_const_one]
+  have hp1_eval : eFun (Pi.single 1 (1 : ℂ) - Pi.single 0 1) z = z - 1 := by
+    simpa using (isEFunction_single 1 isAlgebraic_one).eFun_sub
+      (isEFunction_single_zero isAlgebraic_one) z
+  rw [natCast_sub_one_eq_hurwitzMul, hp1.eFun_hurwitzMul isEFunction_const_one z, hp1_eval,
+    eFun_const_one]
 
 /-- The sequence `n ↦ (n : ℂ) - 1` (representing `(z - 1) * exp z`) is an E-function. -/
-theorem isEFunction_sub_one : IsEFunction fun n ↦ (n : ℂ) - 1 := by
-  rw [sub_one_eq_hurwitzMul]
+theorem isEFunction_natCast_sub_one : IsEFunction fun n ↦ (n : ℂ) - 1 := by
+  rw [natCast_sub_one_eq_hurwitzMul]
   exact ((isEFunction_single 1 isAlgebraic_one).sub
     (isEFunction_single_zero isAlgebraic_one)).hurwitzMul isEFunction_const_one
 
@@ -691,41 +740,22 @@ theorem isEFunction_sub_one : IsEFunction fun n ↦ (n : ℂ) - 1 := by
 E-function. -/
 theorem not_isEFunction_factorial : ¬IsEFunction fun n ↦ (n.factorial : ℂ) := by
   intro ha
-  obtain ⟨C, hC, hnorm⟩ := ha.exists_norm_le
-  have hlim := (Real.summable_pow_div_factorial C).tendsto_atTop_zero
-  have hge : ∀ n : ℕ, C⁻¹ ≤ C ^ n / n.factorial := by
-    intro n
-    have h1 : (n.factorial : ℝ) ≤ C ^ (n + 1) := by simpa using hnorm n
-    have hnf : (0 : ℝ) < n.factorial := Nat.cast_pos.mpr (Nat.factorial_pos n)
-    rw [inv_eq_one_div, div_le_div_iff₀ hC hnf]
-    simpa [pow_succ] using h1
-  have hle0 : C⁻¹ ≤ 0 := ge_of_tendsto' hlim hge
-  linarith [inv_pos.mpr hC]
+  obtain ⟨C, _, hnorm⟩ := ha.exists_norm_le
+  obtain ⟨n, hn⟩ := (FloorSemiring.eventually_mul_pow_lt_factorial_sub C C 0).exists
+  exact hn.not_ge (by simpa [pow_succ'] using hnorm n)
 
-/-- The normalized E-coefficient sequence of `exp (z ^ 2)`: `(2k)! / k!` at `n = 2k` and `0` at odd
-`n`. -/
-noncomputable def expSqSeq (n : ℕ) : ℂ :=
+private noncomputable def expSqSeq (n : ℕ) : ℂ :=
   if Even n then (n.factorial : ℂ) / (n / 2).factorial else 0
 
-/-- At `n = 0`, `expSqSeq 0 = 1`. -/
-@[simp]
-theorem expSqSeq_zero : expSqSeq 0 = 1 := by
-  simp [expSqSeq]
-
-/-- At even indices `2 * k`, `expSqSeq (2 * k) = (2 * k)! / k!`. -/
-@[simp]
-theorem expSqSeq_two_mul (k : ℕ) :
+private theorem expSqSeq_two_mul (k : ℕ) :
     expSqSeq (2 * k) = ((2 * k).factorial : ℂ) / k.factorial := by
   simp [expSqSeq]
 
-/-- At odd indices `2 * k + 1`, `expSqSeq (2 * k + 1) = 0`. -/
-@[simp]
-theorem expSqSeq_two_mul_add_one (k : ℕ) : expSqSeq (2 * k + 1) = 0 := by
+private theorem expSqSeq_two_mul_add_one (k : ℕ) : expSqSeq (2 * k + 1) = 0 := by
   have hne : ¬Even (2 * k + 1) := by simp
   simp [expSqSeq, hne]
 
-/-- `eFun expSqSeq z` evaluates to `Complex.exp (z ^ 2)`. -/
-theorem eFun_expSqSeq (z : ℂ) : eFun expSqSeq z = Complex.exp (z ^ 2) := by
+private theorem eFun_expSqSeq (z : ℂ) : eFun expSqSeq z = Complex.exp (z ^ 2) := by
   have heven (k : ℕ) :
       expSqSeq (2 * k) * z ^ (2 * k) / (2 * k).factorial = (z ^ 2) ^ k / k.factorial := by
     have hf : ((2 * k).factorial : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero _)
@@ -742,8 +772,24 @@ theorem eFun_expSqSeq (z : ℂ) : eFun expSqSeq z = Complex.exp (z ^ 2) := by
   simp_rw [heven, expSqSeq_two_mul_add_one, zero_mul, zero_div, tsum_zero, add_zero]
   rw [Complex.exp_eq_exp_ℂ, NormedSpace.exp_eq_tsum_div]
 
-/-- The normalized E-coefficient sequence `expSqSeq` of `exp (z ^ 2)` is not an E-function. -/
-theorem not_isEFunction_expSqSeq : ¬IsEFunction expSqSeq := by
+private theorem isEntire_ePowerSeries_expSqSeq : (ePowerSeries expSqSeq).IsEntire := by
+  refine PowerSeries.radius_eq_top_iff.mp (ENNReal.eq_top_of_forall_nnreal_le fun r ↦ ?_)
+  have hsum : Summable fun k : ℕ ↦ ((r : ℝ) ^ 2) ^ k / k.factorial :=
+    Real.summable_pow_div_factorial ((r : ℝ) ^ 2)
+  obtain ⟨B, hB⟩ := hsum.tendsto_atTop_zero.bddAbove_range
+  refine PowerSeries.le_radius_of_bound (max 0 B) fun n ↦ ?_
+  by_cases hn : Even n
+  · obtain ⟨k, rfl⟩ := hn
+    have h2k : k + k = 2 * k := (two_mul k).symm
+    have hf : ((2 * k).factorial : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero _)
+    have hmem : ((r : ℝ) ^ 2) ^ k / k.factorial ∈
+        Set.range (fun m : ℕ ↦ ((r : ℝ) ^ 2) ^ m / m.factorial) := ⟨k, rfl⟩
+    rw [h2k, coeff_ePowerSeries, expSqSeq_two_mul, div_right_comm, div_self hf, norm_div,
+      norm_one, Complex.norm_natCast, pow_mul, one_div_mul_eq_div]
+    exact (hB hmem).trans (le_max_right 0 B)
+  · simp [coeff_ePowerSeries, expSqSeq, hn]
+
+private theorem not_isEFunction_expSqSeq : ¬IsEFunction expSqSeq := by
   intro ha
   obtain ⟨C, _, hnorm⟩ := ha.exists_norm_le
   set B : ℝ := max 1 C ^ 3
@@ -771,5 +817,20 @@ theorem not_isEFunction_expSqSeq : ¬IsEFunction expSqSeq := by
     pow_lt_pow_left₀ (hk.trans (by exact_mod_cast Nat.lt_succ_self k))
       (by positivity) (Nat.succ_ne_zero m)
   linarith
+
+/-- The entire D-finite function `z ↦ Complex.exp (z ^ 2)` is not represented by any E-function
+`eFun a`: its normalized Taylor coefficients at even indices `2k` equal `(2k)! / k!`, which grow
+faster than geometric powers. -/
+theorem not_exists_isEFunction_eFun_eq_exp_sq :
+    ¬∃ a : ℕ → ℂ, IsEFunction a ∧ ∀ z : ℂ, eFun a z = Complex.exp (z ^ 2) := by
+  rintro ⟨a, ha, heq⟩
+  have hfreq : ∃ᶠ z in 𝓝 (0 : ℂ), z ∈ nonZeroDivisors ℂ :=
+    (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℂ)).frequently <|
+      (Eventually.of_forall fun n : ℕ ↦
+        mem_nonZeroDivisors_of_ne_zero (one_div_ne_zero (Nat.cast_add_one_ne_zero n))).frequently
+  have hps : ePowerSeries a = ePowerSeries expSqSeq :=
+    ha.isEntire_ePowerSeries.eq_of_forall_evalAt_eq isEntire_ePowerSeries_expSqSeq hfreq fun z ↦ by
+      rw [← eFun_eq_evalAt_ePowerSeries, ← eFun_eq_evalAt_ePowerSeries, heq z, eFun_expSqSeq]
+  exact not_isEFunction_expSqSeq (ePowerSeries_injective hps ▸ ha)
 
 end TauCeti
