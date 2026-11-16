@@ -119,12 +119,9 @@ variable [Fintype κ]
 private theorem sum_sq_relativeDensity_ofTriple_le_one {S : PairSkeleton3 κ₂ V}
     (x : {x : Fin 3 → V // Function.Injective x}) :
     ∑ c, (H.relativeDensity c (Polyad3.ofTriple S x) : ℝ) ^ 2 ≤ 1 := by
-  calc ∑ c, (H.relativeDensity c (Polyad3.ofTriple S x) : ℝ) ^ 2
-      ≤ ∑ c, (H.relativeDensity c (Polyad3.ofTriple S x) : ℝ) :=
-        sum_le_sum fun c _ ↦ pow_le_of_le_one (mod_cast H.relativeDensity_nonneg c _)
-          (mod_cast H.relativeDensity_le_one c _) two_ne_zero
-    _ = 1 := mod_cast H.sum_relativeDensity (P := Polyad3.ofTriple S x)
-        ⟨x, Polyad3.mem_support_ofTriple x⟩
+  simpa only [relativeDensity_def] using
+    (mod_cast H.sum_sq_relDensityOn_le_one (Polyad3.ofTriple S x).support :
+      ∑ c, (H.relDensityOn c (Polyad3.ofTriple S x).support : ℝ) ^ 2 ≤ 1)
 
 variable (S : PairSkeleton3 κ₂ V)
 
@@ -229,28 +226,15 @@ theorem polyadDensityDeviation_abs_le {ε : ℝ} (hgap : H.polyadEnergy T - H.po
         |(H.relativeDensity c (Polyad3.ofTriple T x) : ℝ) -
           H.relativeDensity c (Polyad3.ofTriple S x)| ≤
       √ε * (Fintype.card V).descFactorial 3 := by
-  obtain hD | hD := eq_or_ne ((Fintype.card V).descFactorial 3) 0
-  · -- Without injective triples both sides vanish.
-    have : IsEmpty {x : Fin 3 → V // Function.Injective x} := by
-      rw [← Fintype.card_eq_zero_iff, Fintype.card_subtype_injective, Fintype.card_fin, hD]
-    rw [univ_eq_empty, sum_empty, hD, Nat.cast_zero, mul_zero]
-  set D : ℝ := ((Fintype.card V).descFactorial 3 : ℝ)
-  have hD₀ : 0 < D := Nat.cast_pos.2 (Nat.pos_of_ne_zero hD)
+  have hcard : #(univ : Finset {x : Fin 3 → V // Function.Injective x}) =
+      (Fintype.card V).descFactorial 3 := by
+    rw [card_univ, Fintype.card_subtype_injective, Fintype.card_fin]
   rw [← H.polyadDensityDeviation_sq h] at hgap
-  have hw : ∑ _x : {x : Fin 3 → V // Function.Injective x}, D⁻¹ ≤ 1 := by
-    rw [sum_const, card_univ, Fintype.card_subtype_injective, Fintype.card_fin, nsmul_eq_mul,
-      mul_inv_cancel₀ hD₀.ne']
-  have hε : ∑ x : {x : Fin 3 → V // Function.Injective x}, D⁻¹ *
-      ((H.relativeDensity c (Polyad3.ofTriple T x) : ℝ) -
-        H.relativeDensity c (Polyad3.ofTriple S x)) ^ 2 ≤ ε := by
-    refine le_trans ?_ hgap
-    rw [← mul_sum, inv_mul_eq_div]
-    gcongr with x
-    exact single_le_sum (f := fun c ↦ ((H.relativeDensity c (Polyad3.ofTriple T x) : ℝ) -
-      H.relativeDensity c (Polyad3.ofTriple S x)) ^ 2) (fun _ _ ↦ sq_nonneg _) (mem_univ c)
-  have := weighted_sum_abs_le_sqrt univ (fun _ ↦ D⁻¹) _ (fun _ _ ↦ inv_nonneg.2 hD₀.le) hw hε
-  rw [← mul_sum, inv_mul_le_iff₀ hD₀] at this
-  linarith
+  rw [← hcard] at hgap ⊢
+  refine univ.sum_abs_le_sqrt _ (le_trans ?_ hgap)
+  gcongr with x
+  exact single_le_sum (f := fun c ↦ ((H.relativeDensity c (Polyad3.ofTriple T x) : ℝ) -
+    H.relativeDensity c (Polyad3.ofTriple S x)) ^ 2) (fun _ _ ↦ sq_nonneg _) (mem_univ c)
 
 /-- **Energy gap controls total-variation deviation.** If every polyad over `T` lies in a polyad
 over `S` and the energy gap is at most `ε`, then the sum over all colors of the absolute deviations
@@ -262,35 +246,14 @@ theorem polyadDensityDeviation_sum_abs_le {ε : ℝ}
         |(H.relativeDensity c (Polyad3.ofTriple T x) : ℝ) -
           H.relativeDensity c (Polyad3.ofTriple S x)| ≤
       √(Fintype.card κ * ε) * (Fintype.card V).descFactorial 3 := by
-  obtain hD | hD := eq_or_ne ((Fintype.card V).descFactorial 3) 0
-  · have : IsEmpty {x : Fin 3 → V // Function.Injective x} := by
-      rw [← Fintype.card_eq_zero_iff, Fintype.card_subtype_injective, Fintype.card_fin, hD]
-    rw [univ_eq_empty, sum_empty, hD, Nat.cast_zero, mul_zero]
+  have hcard : #(univ : Finset {x : Fin 3 → V // Function.Injective x}) =
+      (Fintype.card V).descFactorial 3 := by
+    rw [card_univ, Fintype.card_subtype_injective, Fintype.card_fin]
   rw [← H.polyadDensityDeviation_sq h] at hgap
-  set D : ℝ := ((Fintype.card V).descFactorial 3 : ℝ)
-  set Q : ℝ := (Fintype.card κ : ℝ)
-  have hD₀ : 0 < D := Nat.cast_pos.2 (Nat.pos_of_ne_zero hD)
-  have hε₀ : 0 ≤ ε :=
-    (div_nonneg (sum_nonneg fun _ _ ↦ sum_nonneg fun _ _ ↦ sq_nonneg _) hD₀.le).trans hgap
-  let f : {x : Fin 3 → V // Function.Injective x} × κ → ℝ := fun p ↦
-    (H.relativeDensity p.2 (Polyad3.ofTriple T p.1) : ℝ) -
-      H.relativeDensity p.2 (Polyad3.ofTriple S p.1)
-  have hsq : ∑ x : {x : Fin 3 → V // Function.Injective x}, ∑ c : κ, f (x, c) ^ 2 ≤ ε * D :=
-    (div_le_iff₀ hD₀).1 hgap
-  have hcs := Real.sum_mul_le_sqrt_mul_sqrt
-    ((univ : Finset {x : Fin 3 → V // Function.Injective x}) ×ˢ (univ : Finset κ))
-    (fun p ↦ |f p|) 1
-  simp only [Pi.one_apply, mul_one, sq_abs, one_pow, sum_const, card_product, card_univ,
-    Fintype.card_subtype_injective, Fintype.card_fin, nsmul_one, Nat.cast_mul, sum_product] at hcs
-  calc ∑ x, ∑ c, |f (x, c)|
-      ≤ √(ε * D) * √(D * Q) :=
-        hcs.trans (mul_le_mul_of_nonneg_right (Real.sqrt_le_sqrt hsq) (Real.sqrt_nonneg _))
-    _ = √((Q * ε) * D ^ 2) := by
-        rw [← Real.sqrt_mul (mul_nonneg hε₀ hD₀.le)]
-        congr 1
-        ring
-    _ = √(Q * ε) * D := by
-        rw [Real.sqrt_mul (mul_nonneg (Nat.cast_nonneg _) hε₀), Real.sqrt_sq hD₀.le]
+  rw [← hcard] at hgap ⊢
+  simpa [card_univ] using univ.sum_sum_abs_le_sqrt univ
+    (fun x c ↦ (H.relativeDensity c (Polyad3.ofTriple T x) : ℝ) -
+      H.relativeDensity c (Polyad3.ofTriple S x)) hgap
 
 end Refinement
 

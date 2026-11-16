@@ -139,92 +139,6 @@ section Subset
 
 variable [DecidableEq V]
 
-/-- Shrinking a support to a subsupport changes the count-scaled density by at most the number
-of removed triples. Empty supports are allowed. -/
-theorem abs_relDensityOn_sub_mul_card_le_card_sdiff (H : Colored3Graph κ V) (c : κ)
-    {A B : Finset {x : Fin 3 → V // Function.Injective x}} (hAB : A ⊆ B) :
-    |H.relDensityOn c B - H.relDensityOn c A| * #B ≤ (#(B \ A) : ℚ) := by
-  have hB := H.relDensityOn_mul_card c B
-  have hA := H.relDensityOn_mul_card c A
-  have hcard : (#(B \ A) : ℚ) + #A = #B := by exact_mod_cast card_sdiff_add_card_eq_card hAB
-  -- The colored triples of `B` are those of `A` together with at most the removed ones.
-  have hlow := card_le_card (filter_subset_filter
-    (fun x ↦ H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c) hAB)
-  have hsub : {x ∈ B | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c} ⊆
-      {x ∈ A | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c} ∪ (B \ A) := by
-    intro x hx
-    obtain ⟨hxB, hx⟩ := mem_filter.1 hx
-    by_cases hxA : x ∈ A
-    · exact mem_union_left _ (mem_filter.2 ⟨hxA, hx⟩)
-    · exact mem_union_right _ (mem_sdiff.2 ⟨hxB, hxA⟩)
-  have hhigh := (card_le_card hsub).trans (card_union_le _ _)
-  have h₀ := H.relDensityOn_nonneg c A
-  have h₁ := H.relDensityOn_le_one c A
-  rw [← abs_of_nonneg (Nat.cast_nonneg (α := ℚ) #B), ← abs_mul, sub_mul, hB, ← hcard, mul_add,
-    hA, abs_le]
-  have hlow' : (_ : ℚ) ≤ _ := Nat.cast_le.2 hlow
-  have hhigh' : (_ : ℚ) ≤ _ := Nat.cast_le.2 hhigh
-  push_cast at hlow' hhigh'
-  constructor <;> nlinarith
-
-/-- If at most `η N` triples are removed from a support `B` with `ε N ≤ #B`, the density of every
-color changes by at most `η / ε`. Empty supports are allowed. -/
-theorem abs_relDensityOn_sub_le_div_of_card_sdiff_le (H : Colored3Graph κ V) (c : κ)
-    {A B : Finset {x : Fin 3 → V // Function.Injective x}} {N ε η : ℝ} (hAB : A ⊆ B)
-    (hε : 0 < ε) (hη : 0 ≤ η) (hsize : ε * N ≤ #B) (hsdiff : (#(B \ A) : ℝ) ≤ η * N) :
-    |(H.relDensityOn c B : ℝ) - H.relDensityOn c A| ≤ η / ε := by
-  obtain rfl | hB := B.eq_empty_or_nonempty
-  · simp [subset_empty.1 hAB, div_nonneg hη hε.le]
-  have hBpos : (0 : ℝ) < #B := Nat.cast_pos.2 hB.card_pos
-  have hd : |(H.relDensityOn c B : ℝ) - H.relDensityOn c A| * #B ≤ #(B \ A) := by
-    exact_mod_cast H.abs_relDensityOn_sub_mul_card_le_card_sdiff c hAB
-  have hN : η * N ≤ η / ε * #B := by
-    rw [div_mul_eq_mul_div, le_div_iff₀ hε, mul_assoc]
-    exact mul_le_mul_of_nonneg_left (by linarith) hη
-  exact le_of_mul_le_mul_right (hd.trans (hsdiff.trans hN)) hBpos
-
-end Subset
-
-/-- Every relative density over the empty support is `0`. -/
-@[simp]
-theorem relDensityOn_empty (H : Colored3Graph κ V) (c : κ) : H.relDensityOn c ∅ = 0 := by
-  simp [relDensityOn_def]
-
-/-- The relative density of the color of a constant coloring is one on a nonempty support. -/
-theorem relDensityOn_const_self {c : κ} {supp : Finset {x : Fin 3 → V // Function.Injective x}}
-    (h : supp.Nonempty) : (const c : Colored3Graph κ V).relDensityOn c supp = 1 := by
-  rw [relDensityOn_def, div_eq_one_iff_eq (by exact_mod_cast h.card_pos.ne')]
-  simp
-
-/-- The relative density of any other color of a constant coloring is zero. -/
-@[simp]
-theorem relDensityOn_const_of_ne {c₀ c : κ} (h : c₀ ≠ c)
-    (supp : Finset {x : Fin 3 → V // Function.Injective x}) :
-    (const c₀ : Colored3Graph κ V).relDensityOn c supp = 0 := by
-  simp [relDensityOn_def, h]
-
-/-- **The relative densities of all colors sum to one** on a nonempty support. -/
-theorem sum_relDensityOn [Fintype κ] (H : Colored3Graph κ V)
-    {supp : Finset {x : Fin 3 → V // Function.Injective x}} (h : supp.Nonempty) :
-    ∑ c, H.relDensityOn c supp = 1 := by
-  simp only [relDensityOn_def, ← sum_div]
-  rw [div_eq_one_iff_eq (by exact_mod_cast h.card_pos.ne')]
-  -- Every supported triple has exactly one color.
-  exact_mod_cast (card_eq_sum_card_fiberwise fun _ _ => mem_univ _).symm
-
-/-- The relative densities of all colors sum to at most one on every support, including the empty
-support where they vanish. -/
-theorem sum_relDensityOn_le_one [Fintype κ] (H : Colored3Graph κ V)
-    (supp : Finset {x : Fin 3 → V // Function.Injective x}) :
-    ∑ c, H.relDensityOn c supp ≤ 1 := by
-  obtain rfl | hs := supp.eq_empty_or_nonempty
-  · simp
-  · exact (H.sum_relDensityOn hs).le
-
-section Perturbation
-
-variable [DecidableEq V]
-
 /-- Decompose the count-scaled difference of a color density between any two supports into the
 triples added to `W \ U` and those removed from `U \ W`, valid also on empty supports. -/
 private theorem relDensityOn_sub_mul_card_eq_sdiff (H : Colored3Graph κ V) (c : κ)
@@ -285,6 +199,78 @@ theorem abs_relDensityOn_sub_mul_card_le (H : Colored3Graph κ V) (c : κ)
       #{x ∈ W \ U | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c},
       Nat.cast_nonneg (α := ℚ)
       #{x ∈ U \ W | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c}]
+
+/-- Shrinking a support to a subsupport changes the count-scaled density by at most the number
+of removed triples. Empty supports are allowed. -/
+theorem abs_relDensityOn_sub_mul_card_le_card_sdiff (H : Colored3Graph κ V) (c : κ)
+    {A B : Finset {x : Fin 3 → V // Function.Injective x}} (hAB : A ⊆ B) :
+    |H.relDensityOn c B - H.relDensityOn c A| * #B ≤ (#(B \ A) : ℚ) := by
+  simpa [sdiff_eq_empty_iff_subset.2 hAB] using H.abs_relDensityOn_sub_mul_card_le c B A
+
+/-- If at most `η N` triples are removed from a support `B` with `ε N ≤ #B`, the density of every
+color changes by at most `η / ε`. Empty supports are allowed. -/
+theorem abs_relDensityOn_sub_le_div_of_card_sdiff_le (H : Colored3Graph κ V) (c : κ)
+    {A B : Finset {x : Fin 3 → V // Function.Injective x}} {N ε η : ℝ} (hAB : A ⊆ B)
+    (hε : 0 < ε) (hη : 0 ≤ η) (hsize : ε * N ≤ #B) (hsdiff : (#(B \ A) : ℝ) ≤ η * N) :
+    |(H.relDensityOn c B : ℝ) - H.relDensityOn c A| ≤ η / ε := by
+  obtain rfl | hB := B.eq_empty_or_nonempty
+  · simp [subset_empty.1 hAB, div_nonneg hη hε.le]
+  have hBpos : (0 : ℝ) < #B := Nat.cast_pos.2 hB.card_pos
+  have hd : |(H.relDensityOn c B : ℝ) - H.relDensityOn c A| * #B ≤ #(B \ A) := by
+    exact_mod_cast H.abs_relDensityOn_sub_mul_card_le_card_sdiff c hAB
+  have hN : η * N ≤ η / ε * #B := by
+    rw [div_mul_eq_mul_div, le_div_iff₀ hε, mul_assoc]
+    exact mul_le_mul_of_nonneg_left (by linarith) hη
+  exact le_of_mul_le_mul_right (hd.trans (hsdiff.trans hN)) hBpos
+
+end Subset
+
+/-- Every relative density over the empty support is `0`. -/
+@[simp]
+theorem relDensityOn_empty (H : Colored3Graph κ V) (c : κ) : H.relDensityOn c ∅ = 0 := by
+  simp [relDensityOn_def]
+
+/-- The relative density of the color of a constant coloring is one on a nonempty support. -/
+theorem relDensityOn_const_self {c : κ} {supp : Finset {x : Fin 3 → V // Function.Injective x}}
+    (h : supp.Nonempty) : (const c : Colored3Graph κ V).relDensityOn c supp = 1 := by
+  rw [relDensityOn_def, div_eq_one_iff_eq (by exact_mod_cast h.card_pos.ne')]
+  simp
+
+/-- The relative density of any other color of a constant coloring is zero. -/
+@[simp]
+theorem relDensityOn_const_of_ne {c₀ c : κ} (h : c₀ ≠ c)
+    (supp : Finset {x : Fin 3 → V // Function.Injective x}) :
+    (const c₀ : Colored3Graph κ V).relDensityOn c supp = 0 := by
+  simp [relDensityOn_def, h]
+
+/-- **The relative densities of all colors sum to one** on a nonempty support. -/
+theorem sum_relDensityOn [Fintype κ] (H : Colored3Graph κ V)
+    {supp : Finset {x : Fin 3 → V // Function.Injective x}} (h : supp.Nonempty) :
+    ∑ c, H.relDensityOn c supp = 1 := by
+  simp only [relDensityOn_def, ← sum_div]
+  rw [div_eq_one_iff_eq (by exact_mod_cast h.card_pos.ne')]
+  -- Every supported triple has exactly one color.
+  exact_mod_cast (card_eq_sum_card_fiberwise fun _ _ => mem_univ _).symm
+
+/-- The relative densities of all colors sum to at most one on every support, including the empty
+support where they vanish. -/
+theorem sum_relDensityOn_le_one [Fintype κ] (H : Colored3Graph κ V)
+    (supp : Finset {x : Fin 3 → V // Function.Injective x}) :
+    ∑ c, H.relDensityOn c supp ≤ 1 := by
+  obtain rfl | hs := supp.eq_empty_or_nonempty
+  · simp
+  · exact (H.sum_relDensityOn hs).le
+
+/-- The squared relative densities of all colors sum to at most one on every support. -/
+theorem sum_sq_relDensityOn_le_one [Fintype κ] (H : Colored3Graph κ V)
+    (supp : Finset {x : Fin 3 → V // Function.Injective x}) :
+    ∑ c, H.relDensityOn c supp ^ 2 ≤ 1 :=
+  (sum_le_sum fun c _ ↦ pow_le_of_le_one (H.relDensityOn_nonneg c supp)
+    (H.relDensityOn_le_one c supp) two_ne_zero).trans (H.sum_relDensityOn_le_one supp)
+
+section Perturbation
+
+variable [DecidableEq V]
 
 /-- **Total-variation support stability.** Summing the count-scaled density differences between
 `W` and `U` over all colors gives at most `2 (#(W \ U) + #(U \ W))`, with no factor depending on
@@ -351,7 +337,8 @@ private theorem card_mul_sq_relDensityOn_sub_of_subset (H : Colored3Graph κ V) 
 
 /-- Shrinking a support `U` to `I ⊆ U` increases the sum over colors of `#I * d(c | I)²` beyond
 `#U * d(c | U)²` by at most `#(U \ I)`. -/
-theorem neg_card_sdiff_le_sum_card_mul_sq_relDensityOn_sub [Fintype κ] (H : Colored3Graph κ V)
+private theorem neg_card_sdiff_le_sum_card_mul_sq_relDensityOn_sub [Fintype κ]
+    (H : Colored3Graph κ V)
     {I U : Finset {x : Fin 3 → V // Function.Injective x}} (hIU : I ⊆ U) :
     -(#(U \ I) : ℚ) ≤
       ∑ c, (#U : ℚ) * H.relDensityOn c U ^ 2 - ∑ c, (#I : ℚ) * H.relDensityOn c I ^ 2 := by
@@ -375,7 +362,8 @@ theorem neg_card_sdiff_le_sum_card_mul_sq_relDensityOn_sub [Fintype κ] (H : Col
 
 /-- Shrinking a support `U` to `I ⊆ U` decreases the sum over colors of `#U * d(c | U)²` by at
 most `2 #(U \ I)`, independently of the palette size. -/
-theorem sum_card_mul_sq_relDensityOn_sub_le_two_mul_card_sdiff [Fintype κ] (H : Colored3Graph κ V)
+private theorem sum_card_mul_sq_relDensityOn_sub_le_two_mul_card_sdiff [Fintype κ]
+    (H : Colored3Graph κ V)
     {I U : Finset {x : Fin 3 → V // Function.Injective x}} (hIU : I ⊆ U) :
     ∑ c, (#U : ℚ) * H.relDensityOn c U ^ 2 - ∑ c, (#I : ℚ) * H.relDensityOn c I ^ 2 ≤
       2 * (#(U \ I) : ℚ) := by
