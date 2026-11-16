@@ -29,13 +29,14 @@ whether `E` is orientable:
   identification sends the class of an element of any fibre to the residue of its value at
   either orientation of that fibre.
 
-With integer coefficients and `B` locally path-connected, `H₀(B; o(E))` is therefore `ℤ` or
-`ℤ/2`, and it is isomorphic to `ℤ` exactly when `E` is orientable
-(`TauCeti.VectorBundleOrientation.nonempty_iff_nonempty_twistedHomology₀_linearEquiv_int`). For
-instance, for the Möbius line over the circle, which is not orientable, it is `ℤ/2`, not the `ℤ`
-of constant coefficients. This group is the coefficient group in the bottom degree of the Thom
-isomorphism `H_{n+r}(E, E₀; ℤ) ≅ H_n(B; o(E))` of a rank `r` bundle, for instance across the level
-of a Morse–Bott critical submanifold, where `E` is its negative normal bundle.
+When `2 ≠ 0` in `R` and `B` is locally path-connected, `H₀(B; o(E))` is therefore isomorphic
+to `R` exactly when `E` is orientable
+(`TauCeti.VectorBundleOrientation.nonempty_iff_nonempty_twistedHomology₀_linearEquiv`); with
+integer coefficients it is `ℤ` or `ℤ/2`. For instance, for the Möbius line over the circle,
+which is not orientable, it is `ℤ/2`, not the `ℤ` of constant coefficients. This group is the
+coefficient group in the bottom degree of the Thom isomorphism `H_{n+r}(E, E₀; ℤ) ≅ H_n(B; o(E))`
+of a rank `r` bundle, for instance across the level of a Morse–Bott critical submanifold, where
+`E` is its negative normal bundle.
 
 ## Main definitions
 
@@ -46,9 +47,9 @@ of a Morse–Bott critical submanifold, where `E` is its negative normal bundle.
 
 ## Main results
 
-* `TauCeti.VectorBundleOrientation.nonempty_iff_nonempty_twistedHomology₀_linearEquiv_int`: a
-  bundle over a connected, locally path-connected base is orientable exactly when
-  `H₀(B; o(E); ℤ) ≅ ℤ`.
+* `TauCeti.VectorBundleOrientation.nonempty_iff_nonempty_twistedHomology₀_linearEquiv`: if
+  `2 ≠ 0` in `R`, a bundle over a connected, locally path-connected base is orientable exactly
+  when `H₀(B; o(E); R) ≅ R`.
 
 ## References
 
@@ -233,30 +234,31 @@ theorem twistedHomology₀Equiv_eq [PathConnectedSpace B] (o : VectorBundleOrien
   LinearEquiv.symm_bijective.injective <| LinearEquiv.ext fun r ↦ by
     rw [twistedHomology₀Equiv_symm_apply hι o b b r, twistedHomology₀Equiv_symm_apply hι o b' b r]
 
-/-- **Orientability from zeroth twisted homology.** A real vector bundle over a connected, locally
-path-connected base is orientable exactly when the zeroth homology of its integral orientation
-local system is isomorphic to `ℤ`. Otherwise it is `ℤ/2`
+/-- **Orientability from zeroth twisted homology.** If `2 ≠ 0` in `R`, a real vector bundle over a
+connected, locally path-connected base is orientable exactly when the zeroth homology of its
+orientation local system with coefficients in `R` is isomorphic to `R`. Otherwise it is `R ⧸ 2R`
 (`TauCeti.VectorBundleOrientationCover.twistedHomology₀EquivQuotientTwo`). -/
-theorem nonempty_iff_nonempty_twistedHomology₀_linearEquiv_int [ConnectedSpace B]
-    [LocallyPathConnectedSpace B] :
+theorem nonempty_iff_nonempty_twistedHomology₀_linearEquiv [ConnectedSpace B]
+    [LocallyPathConnectedSpace B] (h2 : (2 : R) ≠ 0) :
     Nonempty (VectorBundleOrientation F E ι) ↔
-      Nonempty (twistedHomology.{0, uB, max uE uι}
-        (VectorBundleOrientationCover.signLocalSystem F E ℤ hι) 0 ≃ₗ[ℤ] ℤ) := by
+      Nonempty (twistedHomology.{u, uB, max uE uι u}
+        (VectorBundleOrientationCover.signLocalSystem F E R hι) 0 ≃ₗ[R] R) := by
   have : PathConnectedSpace B := PathConnectedSpace.of_locallyPathConnectedSpace
   obtain ⟨b⟩ := (inferInstance : Nonempty B)
   refine ⟨fun ⟨o⟩ ↦ ⟨twistedHomology₀Equiv hι o b⟩, fun ⟨φ⟩ ↦ ?_⟩
   by_contra h
   obtain ⟨q, -⟩ := VectorBundleOrientationCover.surjective_proj (F := F) (E := E) hι b
-  -- Otherwise `H₀(B; o(E)) ≅ ℤ ⧸ 2ℤ`, whose elements are killed by `2`, unlike `1 : ℤ`.
+  -- Otherwise `H₀(B; o(E)) ≅ R ⧸ 2R`, whose elements are killed by `2`, unlike `1 : R`.
   let ψ := (VectorBundleOrientationCover.twistedHomology₀EquivQuotientTwo hι (not_nonempty_iff.1 h)
     q.orientation).symm ≪≫ₗ φ
   obtain ⟨n, hn⟩ := Ideal.Quotient.mk_surjective (ψ.symm 1)
-  have h2 : (2 : ℤ) • ψ.symm 1 = 0 := by
-    rw [← hn, ← map_zsmul, Ideal.Quotient.eq_zero_iff_mem, smul_eq_mul]
+  have h2' : (2 : R) • ψ.symm 1 = 0 := by
+    rw [← hn, Algebra.smul_def, Ideal.Quotient.algebraMap_eq, ← map_mul,
+      Ideal.Quotient.eq_zero_iff_mem]
     exact Ideal.mul_mem_right _ _ (Ideal.mem_span_singleton_self 2)
-  have := congrArg ψ h2
-  rw [map_zsmul, LinearEquiv.apply_symm_apply, map_zero] at this
-  norm_num at this
+  have := congrArg ψ h2'
+  rw [map_smul, LinearEquiv.apply_symm_apply, map_zero] at this
+  exact h2 (by simpa using this)
 
 end VectorBundleOrientation
 
