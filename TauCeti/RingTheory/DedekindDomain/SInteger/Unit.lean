@@ -28,8 +28,6 @@ for global fields"*. This file supplies the finite-generation half.
   the form the arithmetic actually applies, since a caller holds `Rˣ` and not the `∅`-units. An
   `instance`; the hypothesis is the `Monoid` form because that is the one Mathlib registers for
   `𝒪 K`.
-* `Subgroup.FG.exists_finset_le_pi_unit`: a finitely generated group of tuples in `Kˣ`
-  is contained in a product of S-unit groups for one finite set of primes.
 * `Set.unitValuation_ker`: the kernel of the `S`-valuation map is the `∅`-units, which is the
   left-exactness `1 → Rˣ → (S.integer K)ˣ → ∏_{v∈S} ℤ`. This is in the same spirit as the TODO
   `RingTheory/DedekindDomain/SInteger.lean` records — "proof that `S`-units is the kernel of a map
@@ -68,7 +66,7 @@ being reconciled name by name. **`unit_fg_of_units` and
 `algebraMap_unitEmptyEquivUnits_apply` are the exceptions: they have no #40791 analogue, so at
 bump time they must be re-homed onto Mathlib's `Set.unit_fg`, not dropped with the rest.**
 
-**Five declarations here are not that PR's**, and are marked as such where they occur:
+**Four declarations here are not that PR's**, and are marked as such where they occur:
 
 * `mem_unit_iff` is the membership lemma for `Set.unit`, which neither #40791 nor Mathlib states;
   it is the companion of `Set.mem_integer_iff` next door, and `@[simp]` for the same reason.
@@ -77,8 +75,6 @@ bump time they must be re-homed onto Mathlib's `Set.unit_fg`, not dropped with t
 * **`unit_fg_of_units` is new here**, with no counterpart in #40791: upstream gives
   `unitEmptyEquivUnits` its consumer in the rank formula, which is not ported, so without this
   form the theorem is awkward to apply — a caller holds `Rˣ`, not the `∅`-units.
-* `Subgroup.FG.exists_finset_le_pi_unit` collects the supports of finitely many generators;
-  it is not part of that PR.
 * **`algebraMap_unitEmptyEquivUnits_apply` is new here**, with no counterpart in #40791: it is the
   element-level characterisation of the three-fold composite `unitEmptyEquivUnits`, so that a
   future user of that equiv need not unfold it.
@@ -227,25 +223,5 @@ instance unit_fg_of_units [Finite S] [Monoid.FG Rˣ] : Group.FG (S.unit K) :=
     (unitEmptyEquivUnits K).symm.surjective
 
 end Set
-
-/-- A finitely generated group of tuples in a fraction field is contained in a product of
-S-unit groups for one finite set of primes. -/
-theorem Subgroup.FG.exists_finset_le_pi_unit {R K ι : Type*}
-    [CommRing R] [IsDedekindDomain R] [Field K] [Algebra R K] [IsFractionRing R K]
-    [Finite ι] {Γ : Subgroup (ι → Kˣ)} (hΓ : Γ.FG) :
-    ∃ S : Finset (HeightOneSpectrum R),
-      Γ ≤ Subgroup.pi Set.univ (fun _ : ι ↦ (S : Set (HeightOneSpectrum R)).unit K) := by
-  classical
-  obtain ⟨s, hs, hsf⟩ := (Subgroup.fg_iff Γ).mp hΓ
-  have hfin := hsf.biUnion fun x _ ↦ Set.finite_iUnion fun i ↦
-    HeightOneSpectrum.finite_setOfPred_valuation_ne_one (R := R) (x i).ne_zero
-  rw [← hs]
-  refine ⟨hfin.toFinset, ?_⟩
-  rw [Subgroup.closure_le]
-  intro x hx
-  refine (Subgroup.mem_pi Set.univ).mpr fun i _ ↦ (Set.mem_unit_iff _ _).mpr fun v hv ↦ ?_
-  by_contra hvx
-  apply hv
-  exact hfin.mem_toFinset.mpr (Set.mem_biUnion hx (Set.mem_iUnion.mpr ⟨i, hvx⟩))
 
 end

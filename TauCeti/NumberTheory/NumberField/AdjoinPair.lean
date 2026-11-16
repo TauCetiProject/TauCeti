@@ -70,19 +70,18 @@ theorem exists_numberField_map_eq {Γ : Subgroup (ι → Fˣ)} (hΓ : Γ.FG)
   obtain ⟨E, hE, y, hy⟩ := TauCeti.exists_numberField_comp
     (x := fun p : s × ι ↦ ((p.1.1 p.2 : Fˣ) : F))
     (fun p ↦ hΓalg p.1.1 (hs ▸ Subgroup.subset_closure p.1.2) p.2)
-  have hy' (x : s) (i : ι) : (y (x, i) : F) = (x.1 i : F) := congr_fun hy (x, i)
+  have hy' (x : s) (i : ι) : algebraMap E F (y (x, i)) = (x.1 i : F) := by
+    simpa only [Function.comp_apply] using congr_fun hy (x, i)
   have hy0 (x : s) (i : ι) : y (x, i) ≠ 0 := by
     intro h
-    exact (x.1 i).ne_zero (by simpa [h] using (hy' x i).symm)
+    exact (x.1 i).ne_zero (by rw [← hy' x i, h, map_zero])
   let g : s → ι → Eˣ := fun x i ↦ Units.mk0 (y (x, i)) (hy0 x i)
   let f := (Units.map (algebraMap E F).toMonoidHom).compLeft ι
   have hfg (x : s) : f (g x) = x.1 := by
     ext i
-    exact hy' x i
+    simp [f, g, hy']
   have himage : f '' Set.range g = (s : Set (ι → Fˣ)) := by
-    rw [← Set.range_comp]
-    simp only [Function.comp_def, hfg, Subtype.range_coe_subtype]
-    rfl
+    simp [← Set.range_comp, Function.comp_def, hfg]
   refine ⟨E, hE, Subgroup.closure (Set.range g), inferInstance, ?_⟩
   rw [MonoidHom.map_closure, himage]
   exact hs

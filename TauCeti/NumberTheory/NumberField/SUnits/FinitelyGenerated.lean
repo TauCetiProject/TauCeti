@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.AdjoinPair
-public import TauCeti.RingTheory.DedekindDomain.SInteger.Unit
+public import TauCeti.RingTheory.DedekindDomain.SInteger.Unit.FiniteSupport
 
 /-!
 # S-unit models of finitely generated groups of algebraic tuples
@@ -37,9 +37,11 @@ namespace Subgroup.FG
 variable {ι F : Type*} [Finite ι] [Field F] [CharZero F]
 
 /-- A finitely generated group of algebraic tuples is isomorphic to a subgroup of a finite
-product of S-unit groups over one intermediate number field. The isomorphism preserves every
-coordinate under the field inclusion, so it preserves rank, torsion and multiplicative relations. -/
-theorem exists_sUnit_mulEquiv {Γ : Subgroup (ι → Fˣ)} (hΓ : Γ.FG)
+product of S-unit groups over one intermediate number field. As a group isomorphism, `e`
+preserves rank, torsion and multiplicative relations; in addition, each coordinate of `e x` maps
+to the corresponding coordinate of `x` under the field inclusion `E → F`, so quantities defined
+from the coordinates in `F`, such as heights, are unchanged. -/
+theorem exists_numberField_subgroup_pi_unit_mulEquiv {Γ : Subgroup (ι → Fˣ)} (hΓ : Γ.FG)
     (hΓalg : ∀ x ∈ Γ, ∀ i, IsAlgebraic ℚ ((x i : Fˣ) : F)) :
     ∃ (E : IntermediateField ℚ F) (_ : NumberField E)
       (S : Finset (HeightOneSpectrum (𝓞 E)))
@@ -48,27 +50,32 @@ theorem exists_sUnit_mulEquiv {Γ : Subgroup (ι → Fˣ)} (hΓ : Γ.FG)
   obtain ⟨E, hE, ΓE, hΓE, hmap⟩ :=
     exists_numberField_map_eq (Γ := Γ) hΓ hΓalg
   let f := (Units.map (algebraMap E F).toMonoidHom).compLeft ι
+  have hf_apply (y : ι → Eˣ) (i : ι) : ((f y i : Fˣ) : F) = algebraMap E F (y i : E) := by
+    simp [f]
   have hf : Function.Injective f := by
     intro x y h
     funext i
-    exact Units.map_injective (algebraMap E F).injective (congr_fun h i)
+    exact Units.ext ((algebraMap E F).injective <| by rw [← hf_apply, ← hf_apply, h])
   let e : Γ ≃* ΓE :=
     ((ΓE.equivMapOfInjective f hf).trans (MulEquiv.subgroupCongr hmap)).symm
-  obtain ⟨S, hS⟩ := exists_finset_le_pi_unit (R := 𝓞 E) (Γ := ΓE) hΓE
+  obtain ⟨S, hS⟩ := exists_finset_le_pi_unit (𝓞 E) hΓE
   let g : ΓE →* (ι → (S : Set (HeightOneSpectrum (𝓞 E))).unit E) :=
     MonoidHom.pi fun i ↦ ((Pi.evalMonoidHom (fun _ : ι ↦ Eˣ) i).comp ΓE.subtype).codRestrict
-      ((S : Set (HeightOneSpectrum (𝓞 E))).unit E) fun x ↦ hS x.2 i (Set.mem_univ i)
+      ((S : Set (HeightOneSpectrum (𝓞 E))).unit E) fun x ↦ by
+        simpa using (Subgroup.mem_pi _).mp (hS x.2) i (Set.mem_univ i)
+  have hg_apply (y : ΓE) (i : ι) : (g y i : Eˣ) = y.1 i := by
+    simp [g]
   have hg : Function.Injective g := by
     intro x y h
     apply Subtype.ext
     funext i
-    exact congrArg Subtype.val (congr_fun h i)
+    rw [← hg_apply, ← hg_apply, h]
   refine ⟨E, hE, S, g.range, e.trans (MonoidHom.ofInjective hg), ?_⟩
   intro x i
   have he (y : ΓE) : (e.symm y).1 = f y.1 := by
     simp [e, Subgroup.coe_equivMapOfInjective_apply]
   have hx : f (e x).1 = x.1 := (he (e x)).symm.trans
     (congrArg Subtype.val (e.symm_apply_apply x))
-  exact congrArg (fun z : ι → Fˣ ↦ (z i : F)) hx
+  rw [MulEquiv.trans_apply, MonoidHom.ofInjective_apply, hg_apply, ← hf_apply, hx]
 
 end Subgroup.FG
