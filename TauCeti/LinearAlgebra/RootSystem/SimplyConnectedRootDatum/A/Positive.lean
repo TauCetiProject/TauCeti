@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.HighestRoot.Coefficients
+public import TauCeti.LinearAlgebra.RootSystem.CoefficientReflection
+public import TauCeti.LinearAlgebra.RootSystem.HighestRoot.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.SimplyLaced
 
@@ -22,7 +23,7 @@ These formulas identify the actual index of the highest root as that of `e₀ - 
 coefficients equal to `1` and height `n`. Every root lies below it in the positive root cone. The
 datum is not irreducible over `ℤ` in the sense of `RootPairing.IsIrreducible`, so these statements
 are proved from the coefficients rather than from the general highest-root theory, through the
-coefficient-dominance criteria of `TauCeti.LinearAlgebra.RootSystem.HighestRoot.Coefficients`.
+coefficient-dominance criteria of `TauCeti.LinearAlgebra.RootSystem.CoefficientReflection`.
 The arguments follow the type `C` file
 `TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.C.Positive`.
 
@@ -124,8 +125,8 @@ theorem isPos_typeAIndexEquiv_iff (p : TypeAIndex n) :
 enumerated root index. -/
 theorem highestRoot_typeASimplyConnectedBase [NeZero n] :
     (b).highestRoot = typeAIndexEquiv n ⟨(0, Fin.last n), Fin.last_pos'.ne⟩ := by
-  refine (b).highestRoot_eq_of_rootCoefficients_le fun k ↦ ?_
-  refine (rootCoefficients_typeA_le_one _ k).trans_eq (Eq.symm ?_)
+  refine ((b).eq_highestRoot_of_forall_rootCoefficients_le fun j k ↦ ?_).symm
+  refine (rootCoefficients_typeA_le_one j k).trans_eq (Eq.symm ?_)
   obtain ⟨i, rfl⟩ := (simpleEquiv n).surjective k
   simp [simpleEquiv, Fin.le_def]
 

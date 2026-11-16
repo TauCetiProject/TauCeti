@@ -19,9 +19,9 @@ pathwise, on every finite horizon outside one common null set. These are domains
 stochastic integration, not assertions that a stochastic integral has already been constructed.
 
 For s-finite `P`, the expected-energy domain embeds into the pathwise-energy domain by Tonelli
-and a countable cofinal family of horizons. Both are closed under addition and scaling.
-The expected-energy domain is also closed under multiplication by predictable processes
-that are essentially bounded on each finite horizon.
+and a countable cofinal family of horizons. Both are closed under addition, scaling and
+restriction to predictable sets. The expected-energy domain is also closed under multiplication
+by predictable processes that are essentially bounded on each finite horizon.
 Product-almost-everywhere replacement by predictable processes preserves the expected-energy
 domain, and, for s-finite `P`, the pathwise-energy domain. A finite initial-measurable random
 variable, held constant in time, belongs to the pathwise domain without any moment assumption.
@@ -144,6 +144,23 @@ theorem LocallyBrownianIntegrable.const_mul (h : LocallyBrownianIntegrable ℱ P
     LocallyBrownianIntegrable ℱ P (fun t ω ↦ c * H t ω) :=
   ⟨h.isStronglyPredictable.const_mul c,
     h.ae_memLp.mono fun _ hω T ↦ (hω T).const_mul c⟩
+
+/-- Restriction to a predictable set preserves finite expected square energy. -/
+theorem BrownianIntegrable.indicator (hH : BrownianIntegrable ℱ P H)
+    {A : Set (ℝ≥0 × Ω)} (hA : MeasurableSet[ℱ.predictable] A) :
+    BrownianIntegrable ℱ P (fun t ω ↦ A.indicator (Function.uncurry H) (t, ω)) := by
+  refine ⟨hH.isStronglyPredictable.indicator hA, fun T ↦ ?_⟩
+  exact (hH.memLp T).indicator (ℱ.predictable_le_prod A hA).nullMeasurableSet
+
+/-- Restriction to a predictable set preserves finite pathwise square energy. -/
+theorem LocallyBrownianIntegrable.indicator (hH : LocallyBrownianIntegrable ℱ P H)
+    {A : Set (ℝ≥0 × Ω)} (hA : MeasurableSet[ℱ.predictable] A) :
+    LocallyBrownianIntegrable ℱ P (fun t ω ↦ A.indicator (Function.uncurry H) (t, ω)) := by
+  refine ⟨hH.isStronglyPredictable.indicator hA, ?_⟩
+  filter_upwards [hH.ae_memLp] with ω hω
+  intro T
+  exact (hω T).indicator ((ℱ.predictable_le_prod A hA).preimage
+    (measurable_id.prodMk measurable_const)).nullMeasurableSet
 
 /-- Product-a.e. replacement preserves the expected-energy domain, provided the new
 representative is predictable. -/

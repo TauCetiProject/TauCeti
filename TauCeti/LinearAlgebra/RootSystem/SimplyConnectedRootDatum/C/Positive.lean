@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.HighestRoot.Coefficients
+public import TauCeti.LinearAlgebra.RootSystem.CoefficientReflection
+public import TauCeti.LinearAlgebra.RootSystem.HighestRoot.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.C.Datum
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.C.Classical
 
@@ -158,9 +159,9 @@ theorem rootCoefficients_typeC_le (j : Fin (2 * n ^ 2)) (k : Fin n) :
 classical coordinates `2e₀`. This specifies its actual enumerated root index. -/
 theorem highestRoot_typeCSimplyConnectedBase [NeZero n] :
     (b).highestRoot = typeCIndexEquiv n (0, 0, false) := by
-  refine (b).highestRoot_eq_of_rootCoefficients_le fun k ↦ ?_
+  refine ((b).eq_highestRoot_of_forall_rootCoefficients_le fun j k ↦ ?_).symm
   obtain ⟨i, rfl⟩ := (simpleEquiv n).surjective k
-  simpa [simpleEquiv, Fin.le_def] using rootCoefficients_typeC_le (b).highestRoot i
+  simpa [simpleEquiv, Fin.le_def] using rootCoefficients_typeC_le j i
 
 /-- The simple-root coefficients of the highest root of type `Cₙ` are
 `(2, …, 2, 1)` in the pinned Bourbaki numbering. -/
@@ -174,10 +175,11 @@ theorem rootCoefficients_highestRoot_typeC [NeZero n] (k : Fin n) :
 /-- The highest root of the integral type `Cₙ` datum lies above every root in
 the positive root cone. No integral spanning or irreducibility assumption is needed. -/
 theorem root_highestRoot_sub_mem_posRootCone_typeC [NeZero n] (j : Fin (2 * n ^ 2)) :
-    (P).root (b).highestRoot - (P).root j ∈ posRootCone P b :=
-  (b).root_sub_root_mem_posRootCone_iff.mpr fun k ↦ by
-    obtain ⟨i, rfl⟩ := (simpleEquiv n).surjective k
-    exact (rootCoefficients_typeC_le j i).trans_eq (rootCoefficients_highestRoot_typeC i).symm
+    (P).root (b).highestRoot - (P).root j ∈ posRootCone P b := by
+  rw [RootPairing.Base.root_sub_root_mem_posRootCone_iff]
+  intro k
+  obtain ⟨i, rfl⟩ := (simpleEquiv n).surjective k
+  exact (rootCoefficients_typeC_le j i).trans_eq (rootCoefficients_highestRoot_typeC i).symm
 
 /-- The height of the highest root of type `Cₙ` is `2n - 1`. -/
 @[simp]
