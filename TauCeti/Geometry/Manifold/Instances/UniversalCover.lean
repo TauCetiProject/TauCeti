@@ -44,6 +44,10 @@ Lie group.
   cover of a `C^n` manifold is a `C^n` manifold over the same model.
 * `TauCeti.UniversalCover.isLocalDiffeomorph_proj`: the projection is a `C^n` local
   diffeomorphism.
+* `TauCeti.UniversalCover.isInvertible_mfderiv_proj`: the differential of the projection is
+  invertible at every point.
+* `TauCeti.Manifold.exists_universalCover`: a connected, Hausdorff, second-countable manifold
+  has a simply connected, Hausdorff, second-countable covering manifold.
 * `TauCeti.UniversalCover.instChartedSpaceSubgroupQuotient`,
   `TauCeti.UniversalCover.instIsManifoldSubgroupQuotient`: the analogous atlas and manifold
   structure for an arbitrary subgroup cover.

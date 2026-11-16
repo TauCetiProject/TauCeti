@@ -11,16 +11,16 @@ public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Pullback
 /-!
 # The Riemannian universal cover
 
-Let `g` be a smooth Riemannian metric on a smooth manifold `M`, which is locally path-connected
+Let `g` be a `C^n` Riemannian metric on a `C¹` manifold `M`, which is locally path-connected
 and semilocally simply connected (as every manifold is), and let `x₀ ∈ M`. The projection
 `p : UniversalCover x₀ → M` of the based-path universal cover, with the atlas pulled back along
-`p`, is a smooth local diffeomorphism, so its differential is invertible at every point. Hence
-the pullback `p^* g`, given by `(p^* g)(v, w) = g(dp v, dp w)`, is a smooth Riemannian metric on
+`p`, is a local diffeomorphism with invertible differential at every point. Hence
+the pullback `p^* g`, given by `(p^* g)(v, w) = g(dp v, dp w)`, is a `C^n` Riemannian metric on
 the universal cover (`Bundle.ContMDiffRiemannianMetric.universalCover`), and `p` is a local
 Riemannian isometry from `p^* g` to `g`
 (`Bundle.ContMDiffRiemannianMetric.isLocalRiemannianIsometry_universalCoverProj`).
-In particular `p` preserves
-scalar and sectional curvature
+For a smooth metric on a smooth Hausdorff manifold, `p` also preserves scalar and sectional
+curvature
 (`Bundle.ContMDiffRiemannianMetric.scalarCurvature_universalCover`,
 `Bundle.ContMDiffRiemannianMetric.sectionalCurvature_universalCover`).
 
