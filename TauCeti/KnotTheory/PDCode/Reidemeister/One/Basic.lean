@@ -107,9 +107,9 @@ private theorem kinkPerm_inl_of_ne {x : α} (hx : x ≠ h) (hx' : x ≠ e h) :
   have h₁ : e x ≠ e h := fun hxh => hx (e.injective hxh)
   simp [kinkPerm, swap_apply_of_ne_of_ne, hx', h₁]
 
-/-- Closing the new crossing by a local pairing `r` of its four slots, after the arcs of the kink,
-is the old traversal `T * e` together with `r` followed by the `A`-type smoothing
-`slotSmoothing true`, with slot `1` spliced in after `h` and slot `0` after `e h`. -/
+/-- For any permutation `r` of the four slots, `Perm.sumCongr T r * kinkPerm e h` is
+`Perm.sumCongr (T * e) (r * slotSmoothing true)` (that is, `slotSmoothing true` followed by `r` on
+the slots), multiplied on the right by `swap (.inl h) (.inr 1)` and `swap (.inl (e h)) (.inr 0)`. -/
 private theorem sumCongr_mul_kinkPerm (T : Perm α) (r : Perm (Fin 4)) :
     Perm.sumCongr T r * kinkPerm e h =
       Perm.sumCongr (T * e) (r * slotSmoothing true) * swap (.inl h) (.inr 1) *
@@ -124,7 +124,7 @@ private theorem sumCongr_mul_kinkPerm (T : Perm α) (r : Perm (Fin 4)) :
 
 /-- Closing the new crossing by a perfect matching `τ` of its four slots, after the arcs of the
 kink, leaves the orbits of the old traversal `T * e`, plus two more exactly when `τ` is the
-`A`-type smoothing `slotSmoothing true`: that is the one cutting off the loop. -/
+`true` smoothing `slotSmoothing true`, which pairs slots `0`-`1` and `2`-`3`. -/
 private theorem orbitCount_sumCongr_mul_kinkPerm [Finite α] (T : Perm α) {τ : Perm (Fin 4)}
     (hτ : IsPerfectMatching τ) :
     orbitCount (Perm.sumCongr T τ * kinkPerm e h) =
