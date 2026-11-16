@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.ENat.Lattice
+public import TauCeti.Data.ENat.Lattice
 public import TauCeti.CategoryTheory.Abelian.Injective.MinimalCoresolution
 public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
 
@@ -154,20 +154,9 @@ theorem HasProjectiveInjectiveCoresolution.of_shortExact {S : ShortComplex C} (h
 Coresolutions can be truncated, so the set of such `n` is downward closed. -/
 theorem natCast_le_dominantDimension_iff {X : C} {n : ℕ} :
     (n : ℕ∞) ≤ dominantDimension X ↔ HasProjectiveInjectiveCoresolution X n := by
-  refine ⟨fun hn ↦ ?_, fun h ↦ le_iSup₂ (f := fun (m : ℕ) _ ↦ (m : ℕ∞)) n h⟩
-  by_contra h
-  have h0 : n ≠ 0 := by
-    rintro rfl
-    exact h (hasProjectiveInjectiveCoresolution_zero X)
-  have : dominantDimension X ≤ ((n - 1 : ℕ) : ℕ∞) := by
-    refine iSup₂_le fun m hm ↦ ?_
-    have : m < n := by
-      by_contra hmn
-      exact h (hm.of_le (by omega))
-    exact_mod_cast (by omega : m ≤ n - 1)
-  have := hn.trans this
-  norm_cast at this
-  omega
+  rw [dominantDimension_def]
+  exact Antitone.natCast_le_iSup_iff (fun _ _ hmn h ↦ h.of_le hmn)
+    (hasProjectiveInjectiveCoresolution_zero X)
 
 theorem dominantDimension_eq_top_iff {X : C} :
     dominantDimension X = ⊤ ↔ ∀ n : ℕ, HasProjectiveInjectiveCoresolution X n := by

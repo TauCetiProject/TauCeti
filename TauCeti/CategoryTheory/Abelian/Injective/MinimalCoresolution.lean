@@ -102,7 +102,7 @@ theorem IsMinimalInjectiveCoresolution.isEssentialMono_cosyzygyι
 theorem IsMinimalInjectiveCoresolution.isEssentialMono_map'_one_two
     {S : ComposableArrows C (n + 1)} (hS : S.IsMinimalInjectiveCoresolution) (hn : 1 ≤ n) :
     IsEssentialMono (S.map' 1 2) :=
-  (isEssentialMono_cokernelDesc_of_eq_zero (hS.isZero_left.eq_of_src _ _) _).1
+  (isEssentialMono_cokernelDesc_iff_of_eq_zero (hS.isZero_left.eq_of_src _ _) _).1
     (hS.isEssentialMono 0 (by omega))
 
 /-- An injective coresolution is minimal exactly when each cosyzygy embeds into the next term by
@@ -217,7 +217,7 @@ theorem IsMinimalInjectiveCoresolution.coresolutionCons [Injective I] {e : coker
   isEssentialMono i hi := by
     match i, hi with
     | 0, _ =>
-      refine (isEssentialMono_cokernelDesc_of_eq_zero (coresolutionCons_map'_zero_one ι T e)
+      refine (isEssentialMono_cokernelDesc_iff_of_eq_zero (coresolutionCons_map'_zero_one ι T e)
         _).2 ?_
       rw [coresolutionCons_map'_one_two ι T e]
       exact hι
@@ -243,7 +243,8 @@ theorem IsMinimalInjectiveCoresolution.coresolutionCons [Injective I] {e : coker
       refine (isEssentialMono_cokernelDesc_congr (coresolutionCons_map'_two_three ι T e (by omega))
         (coresolutionCons_map'_add_three ι T e 0 (by omega)) _ w).2 ?_
       refine (isEssentialMono_cokernelDesc_congr (Category.assoc _ _ _).symm rfl w w').2 ?_
-      exact (isEssentialMono_cokernelDesc_epi_comp _ _ w' h₁₂₃).2 (hT.isEssentialMono 1 (by omega))
+      exact (isEssentialMono_cokernelDesc_epi_comp_iff _ _ w' h₁₂₃).2
+        (hT.isEssentialMono 1 (by omega))
     | k + 3, _ =>
       exact (isEssentialMono_cokernelDesc_congr (coresolutionCons_map'_add_three ι T e k (by omega))
         (coresolutionCons_map'_add_three ι T e (k + 1) (by omega)) _
@@ -270,7 +271,7 @@ theorem IsMinimalInjectiveCoresolution.tail (hS : S.IsMinimalInjectiveCoresoluti
     have hS' := hS.toIsCoresolution
     match i, hi with
     | 0, _ =>
-      refine (isEssentialMono_cokernelDesc_of_eq_zero hS'.tail_map'_zero_one _).2 ?_
+      refine (isEssentialMono_cokernelDesc_iff_of_eq_zero hS'.tail_map'_zero_one _).2 ?_
       rw [hS'.tail_map'_one_two (by omega)]
       exact hS.isEssentialMono_cosyzygyι 1 (by omega)
     | 1, _ =>
@@ -283,7 +284,7 @@ theorem IsMinimalInjectiveCoresolution.tail (hS : S.IsMinimalInjectiveCoresoluti
         exact w
       refine (isEssentialMono_cokernelDesc_congr (hS'.tail_map'_one_two (by omega))
         (hS'.tail_map'_add_two 0 (by omega)) _ w').2 ?_
-      refine (isEssentialMono_cokernelDesc_epi_comp (cokernel.π (S.map' 1 2)) _ w w').1 ?_
+      refine (isEssentialMono_cokernelDesc_epi_comp_iff (cokernel.π (S.map' 1 2)) _ w w').1 ?_
       exact (isEssentialMono_cokernelDesc_congr (hS'.π_cosyzygyι 1) rfl w h₂₃₄).2
         (hS.isEssentialMono 2 (by omega))
     | k + 2, _ =>

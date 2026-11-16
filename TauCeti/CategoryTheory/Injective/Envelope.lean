@@ -44,8 +44,8 @@ categories, in particular to representations of a quiver.
   injective object receives the envelope by a split monomorphism.
 * `TauCeti.IsEssentialMono.comp` and `TauCeti.isEssentialMono_of_isIso`: essential monomorphisms
   are closed under composition and contain the isomorphisms.
-* `TauCeti.isEssentialMono_cokernelDesc_of_eq_zero` and
-  `TauCeti.isEssentialMono_cokernelDesc_epi_comp`: the map out of a cokernel induced by `g` is
+* `TauCeti.isEssentialMono_cokernelDesc_iff_of_eq_zero` and
+  `TauCeti.isEssentialMono_cokernelDesc_epi_comp_iff`: the map out of a cokernel induced by `g` is
   essential exactly when `g` is, if the morphism divided out is zero, and dividing out `p ≫ f` for
   an epimorphism `p` is the same as dividing out `f`.
 * `CategoryTheory.Functor.isEssentialMono_map_iff`: equivalences preserve and reflect essential
@@ -172,7 +172,7 @@ theorem isEssentialMono_cokernelDesc_congr {A B D : C} {f f' : A ⟶ B} {g g' : 
   rfl
 
 /-- Dividing out by a zero morphism does not change essentiality. -/
-theorem isEssentialMono_cokernelDesc_of_eq_zero {A B D : C} {f : A ⟶ B} [HasCokernel f]
+theorem isEssentialMono_cokernelDesc_iff_of_eq_zero {A B D : C} {f : A ⟶ B} [HasCokernel f]
     (hf : f = 0) {g : B ⟶ D} (w : f ≫ g = 0) :
     IsEssentialMono (cokernel.desc f g w) ↔ IsEssentialMono g := by
   subst hf
@@ -182,7 +182,7 @@ theorem isEssentialMono_cokernelDesc_of_eq_zero {A B D : C} {f : A ⟶ B} [HasCo
 
 /-- Precomposing with an epimorphism does not change the essentiality of the induced map out of
 the cokernel. -/
-theorem isEssentialMono_cokernelDesc_epi_comp {A A' B D : C} (p : A' ⟶ A) [Epi p]
+theorem isEssentialMono_cokernelDesc_epi_comp_iff {A A' B D : C} (p : A' ⟶ A) [Epi p]
     (f : A ⟶ B) [HasCokernel f] {g : B ⟶ D} (w : (p ≫ f) ≫ g = 0) (w' : f ≫ g = 0) :
     IsEssentialMono (cokernel.desc (p ≫ f) g w) ↔ IsEssentialMono (cokernel.desc f g w') := by
   have : cokernel.desc (p ≫ f) g w = (cokernelEpiComp p f).hom ≫ cokernel.desc f g w' := by
