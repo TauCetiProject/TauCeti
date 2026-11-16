@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Exchangeability.Arrays.AldousHoover.Basic
 import TauCeti.Probability.Process.Array.AldousHoover.NoiseSplit
 import TauCeti.MeasureTheory.Measure.Measurability
+import TauCeti.MeasureTheory.Measure.Prod
 import TauCeti.Probability.Exchangeability.Arrays.Block.Basic
 import TauCeti.Probability.Exchangeability.Arrays.Strip.Cell.OffDiagonalCoding
 import TauCeti.Probability.Exchangeability.Arrays.Strip.VertexCoding
@@ -340,19 +341,9 @@ private theorem ae_map_swap_pairCoding_eq [IsFiniteMeasure ρ]
     measurable_swap.comp (hg.comp (hsw.prodMap measurable_id))
   have hcode' : (L.prod (volume : Measure I)).map (fun p => (p.1, (g (sw p.1) p.2).swap)) =
       (L.prod (volume : Measure I)).map (fun p => (p.1, g p.1 p.2)) := by
-    -- Swapping the square context twice restores it.
-    have hsw₂ (z) : sw (sw z) = z := by simp [sw]
-    have hfun : (fun p : _ × I => (p.1, (g (sw p.1) p.2).swap)) ∘ Prod.map sw id =
-        Prod.map sw Prod.swap ∘ fun p => (p.1, g p.1 p.2) := by
-      funext p
-      simp [hsw₂]
-    have hF : Measurable fun p : _ × I => (p.1, g p.1 p.2) := measurable_fst.prodMk hg
-    have hF' : Measurable fun p : _ × I => (p.1, (g (sw p.1) p.2).swap) :=
-      measurable_fst.prodMk hg'
-    conv_lhs => rw [← hL, ← Measure.map_id (μ := (volume : Measure I)),
-      Measure.map_prod_map _ _ hsw measurable_id,
-      Measure.map_map hF' (hsw.prodMap measurable_id), hfun,
-      ← Measure.map_map (hsw.prodMap measurable_swap) hF, hcode, hsym, ← hcode]
+    refine Measure.map_prod_swap_apply_eq hsw (fun z => by simp [sw]) hL hg ?_
+    rw [hcode]
+    exact hsym
   -- Equal joint laws with the square context have almost everywhere equal fibre laws.
   exact ae_map_eq_of_map_prod_eq _ hg' hg hcode'
 
