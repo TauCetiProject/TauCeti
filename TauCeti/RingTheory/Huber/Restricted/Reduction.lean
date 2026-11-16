@@ -214,20 +214,20 @@ theorem continuous_restrictedCompletionReduction (J : Ideal A)
   simp [restrictedCompletionReduction, restrictedReduction]
 
 /-- Completed reduction sends a constant to the corresponding constant polynomial. -/
-@[simp] theorem restrictedCompletionReduction_algebraMap (J : Ideal A) (hJ : IsOpen (J : Set A))
+theorem restrictedCompletionReduction_algebraMap (J : Ideal A) (hJ : IsOpen (J : Set A))
     (a : A) : restrictedCompletionReduction (k := k) J hJ (algebraMap A (WComp k A) a) =
       MvPolynomial.C (Ideal.Quotient.mk J a) := by
   rw [algebraMap_completion_weightedRestrictedSubring_apply, restrictedCompletionReduction_coe,
     restrictedReduction_weightedC]
 
 /-- Completed reduction preserves each coordinate variable. -/
-@[simp] theorem restrictedCompletionReduction_weightedX (J : Ideal A) (hJ : IsOpen (J : Set A))
+theorem restrictedCompletionReduction_weightedX (J : Ideal A) (hJ : IsOpen (J : Set A))
     (i : Fin k) :
     restrictedCompletionReduction J hJ ((WX k A i : WSub k A) : WComp k A) = MvPolynomial.X i := by
   rw [restrictedCompletionReduction_coe, restrictedReduction_weightedX]
 
 /-- On embedded polynomials, completed reduction reduces coefficients modulo `J`. -/
-@[simp] theorem restrictedCompletionReduction_weightedPolynomialHom
+theorem restrictedCompletionReduction_weightedPolynomialHom
     (J : Ideal A) (hJ : IsOpen (J : Set A)) (p : MvPolynomial (Fin k) A) :
     restrictedCompletionReduction J hJ ((WPoly k A p : WSub k A) : WComp k A) =
       MvPolynomial.map (Ideal.Quotient.mk J) p := by
