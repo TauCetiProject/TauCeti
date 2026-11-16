@@ -15,9 +15,10 @@ The site-level closure properties of direct sums of sheaves of modules
 (`TauCeti/Algebra/Category/ModuleCat/Sheaf/Quasicoherent/Biprod.lean`) specialize to a scheme `X`
 by taking the sheaf of rings to be the structure sheaf of `X`. Since `X.Modules` carries its own
 category and abelian structures, instance search does not find the site-level instances for
-`M ⊞ N`, and they are restated here. This file also specializes the zero and finite-product
-closure instances for finite presentation. These specializations pre-elaborate the ringed-site
-hypotheses to stay within the default typeclass search-size bound.
+`M ⊞ N`, and they are restated here. This file also specializes the zero, finite-product, and
+finite-biproduct closure instances for quasi-coherence and finite presentation. These
+specializations pre-elaborate the ringed-site hypotheses to stay within the default typeclass
+search-size bound.
 
 ## Main declarations
 
@@ -79,17 +80,13 @@ instance isLocallyFree_biprod [M.IsLocallyFree]
 -- instances directly for `X.ringCatSheaf` exceeds the default typeclass search size (128).
 /-- The zero module sheaf is quasi-coherent. -/
 instance containsZero_isQuasicoherent (X : Scheme.{u}) :
-    (SheafOfModules.isQuasicoherent X.ringCatSheaf).ContainsZero where
-  exists_zero := ⟨_, TauCeti.SheafOfModules.isZero_free (S := X.ringCatSheaf) PEmpty.{u + 1},
-    inferInstance⟩
+    (SheafOfModules.isQuasicoherent X.ringCatSheaf).ContainsZero :=
+  TauCeti.SheafOfModules.containsZero_isQuasicoherent (R := X.ringCatSheaf)
 
 /-- Quasi-coherent sheaves are closed under binary products, computed as direct sums. -/
 instance isClosedUnderBinaryProducts_isQuasicoherent (X : Scheme.{u}) :
     (SheafOfModules.isQuasicoherent X.ringCatSheaf).IsClosedUnderBinaryProducts :=
-  ObjectProperty.isClosedUnderBinaryProducts_of_prop_biprod _ fun A B hA hB ↦ by
-    let := hA
-    let := hB
-    exact isQuasicoherent_biprod A B
+  TauCeti.SheafOfModules.isClosedUnderBinaryProducts_isQuasicoherent (R := X.ringCatSheaf)
 
 /-- Quasi-coherent sheaves are closed under finite products. -/
 instance isClosedUnderFiniteProducts_isQuasicoherent (X : Scheme.{u}) :
@@ -109,6 +106,8 @@ instance isClosedUnderBinaryProducts_isFinitePresentation (X : Scheme.{u}) :
 instance isClosedUnderFiniteProducts_isFinitePresentation (X : Scheme.{u}) :
     (SheafOfModules.isFinitePresentation X.ringCatSheaf).IsClosedUnderFiniteProducts := .mk'
 
+-- `X.Modules` carries its own `Preadditive` and `HasBiproduct` instances, so `biproduct.isLimit F`
+-- in `X.Modules` is passed directly to the specialized finite-product closure instances above.
 /-- A finite biproduct of quasi-coherent `𝒪ₓ`-modules is quasi-coherent. -/
 instance isQuasicoherent_biproduct {J : Type*} [Finite J] (F : J → X.Modules)
     [HasBiproduct F] [∀ j, (F j).IsQuasicoherent] :

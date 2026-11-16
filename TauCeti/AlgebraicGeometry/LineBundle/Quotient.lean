@@ -8,11 +8,10 @@ module
 public import TauCeti.AlgebraicGeometry.LineBundle.Ample
 public import TauCeti.AlgebraicGeometry.LineBundle.GlobalGeneration.Basic
 public import TauCeti.AlgebraicGeometry.LineBundle.Power
-public import TauCeti.AlgebraicGeometry.LineBundle.TwistedSections
 public import TauCeti.AlgebraicGeometry.Modules.Biprod
-public import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Basic
-public import TauCeti.AlgebraicGeometry.Modules.Sheaf
-public import TauCeti.AlgebraicGeometry.Modules.Tensor.AffineSections
+import TauCeti.AlgebraicGeometry.LineBundle.TwistedSections
+import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.FiniteType
+import TauCeti.AlgebraicGeometry.Modules.Sheaf
 
 /-!
 # Global generation and quotient presentations via ample line bundles
@@ -26,26 +25,19 @@ Noetherian hypothesis on `X` is needed.
 Applying this to the structure sheaf `𝒪_X` shows that all sufficiently high powers of an ample
 line bundle on a quasi-separated scheme are globally generated. Tensoring the resulting finite free
 presentation `𝒪_X^k ↠ F ⊗ K` on the right with a line bundle `K'` of inverse class `(aⁿ)⁻¹`
-exhibits `F` as a quotient of a finite direct sum `⨁_{i : Fin k} K'` of negative ample twists.
+exhibits `F` as a quotient of a finite direct sum `⨁_{i : Fin k} K'` of negative ample twists
+(`AlgebraicGeometry.Scheme.Modules.exists_epi_biproduct_of_generatingSections`).
 
-The proof upgrades the extension of sections from a nonvanishing locus `X_s` (`TwistedSections`)
-from a single exponent to all sufficiently large exponents using the recursive action of
-`TauCeti.tensorPowSuccIso` on tensor powers of sections. Covering `X` by finitely many affine
-nonvanishing loci `X_{s_i}` of positive powers `a^{d_i}`, Euclidean division `n = d_i * q + r`
-separates `n` into a bounded remainder `r < d_i` and a large quotient `q = n / d_i`, allowing finite
-generating sets of `Γ(F ⊗ L^r, X_{s_i})` to extend simultaneously to global sections once `q`
-exceeds the thresholds for all finitely many pairs `(i, r)`.
+Covering `X` by finitely many affine nonvanishing loci `X_{s_i}` of positive powers `a^{d_i}`,
+Euclidean division `n = d_i * q + r` separates `n` into a bounded remainder `r < d_i` and a large
+quotient `q = n / d_i`, allowing finite generating sets of `Γ(F ⊗ L^r, X_{s_i})` to extend
+simultaneously to global sections once `q` exceeds the uniform extension thresholds
+(`AlgebraicGeometry.Scheme.Modules.exists_forall_ge_exists_map_eq_tmulRight_tensorPowSection`) for
+all finitely many pairs `(i, r)` and assemble into global generators via
+`AlgebraicGeometry.Scheme.Modules.generatingSectionsOfSpanEqTop`.
 
 ## Main declarations
 
-* `AlgebraicGeometry.Scheme.Modules.exists_forall_ge_exists_map_eq_tmulRight_tensorPowSection`:
-  for a section `t` of a quasi-coherent module `F` over `X_s`, there exists `n₀` such that `t ⊗ sⁿ`
-  extends to `U` for all `n ≥ n₀`.
-* `AlgebraicGeometry.Scheme.Modules.generatingSectionsOfSpanEqTop`: global sections of a
-  quasi-coherent module whose restrictions span over every member of an affine open cover form a
-  `SheafOfModules.GeneratingSections`.
-* `AlgebraicGeometry.Scheme.Modules.exists_epi_biproduct_of_generatingSections`: finite global
-  generation of `F ⊗ P` with `P ⊗ Q ≅ 𝒪_X` yields an epimorphism `(⨁_{Fin k} Q) ⟶ F`.
 * `TauCeti.AlgebraicGeometry.LineBundleClass.IsAmple.exists_forall_ge_generatingSections`:
   Serre's global generation theorem for twists of a quasi-coherent module of finite type by all
   sufficiently high powers of an ample line-bundle class.
@@ -70,193 +62,6 @@ open CategoryTheory Limits MonoidalCategory AlgebraicGeometry Opposite Topologic
 universe u
 
 noncomputable section
-
-namespace AlgebraicGeometry.Scheme.Modules
-
-variable {X : Scheme.{u}}
-
-/-- If `t ⊗ sⁿ` extends from `X_s` to `U`, then `t ⊗ sⁿ⁺¹` also extends from `X_s` to `U`. -/
-private theorem exists_map_eq_tmulRight_tensorPowSection_succ (F : X.Modules) {L : X.Modules}
-    [TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible X L]
-    {U : X.Opens} (s : Γ(L, U)) (t : Γ(F, L.nonvanishingLocus s)) {n : ℕ}
-    {t' : Γ(F ⊗ tensorPow L n, U)}
-    (ht' : (F ⊗ tensorPow L n).presheaf.map (homOfLE (L.nonvanishingLocus_le s)).op t' =
-      tmulRight F
-        (tensorPowSection (L.presheaf.map (homOfLE (L.nonvanishingLocus_le s)).op s) n) t) :
-    ∃ t'' : Γ(F ⊗ tensorPow L (n + 1), U),
-      (F ⊗ tensorPow L (n + 1)).presheaf.map (homOfLE (L.nonvanishingLocus_le s)).op t'' =
-        tmulRight F
-          (tensorPowSection (L.presheaf.map (homOfLE (L.nonvanishingLocus_le s)).op s) (n + 1))
-          t := by
-  let φ : (F ⊗ tensorPow L n) ⊗ L ⟶ F ⊗ tensorPow L (n + 1) :=
-    (α_ F (tensorPow L n) L).hom ≫ F ◁ (tensorPowSuccIso L n).hom
-  let i : L.nonvanishingLocus s ⟶ U := homOfLE (L.nonvanishingLocus_le s)
-  refine ⟨φ.app U (tmulRight (F ⊗ tensorPow L n) s t'), ?_⟩
-  have hnat : φ.app (L.nonvanishingLocus s)
-      (((F ⊗ tensorPow L n) ⊗ L).presheaf.map i.op (tmulRight (F ⊗ tensorPow L n) s t')) =
-      (F ⊗ tensorPow L (n + 1)).presheaf.map i.op (φ.app U (tmulRight (F ⊗ tensorPow L n) s t')) :=
-    φ.mapPresheaf.naturality_apply i.op _
-  rw [← hnat, map_tmulRight, ht']
-  simp only [φ, Hom.comp_app, ConcreteCategory.comp_apply]
-  rw [associator_hom_app_tmulRight, whiskerLeft_app_tmulRight,
-    tensorPowSuccIso_hom_app_tmulRight_tensorPowSection]
-
-/-- **Uniform extension of sections from a nonvanishing locus**: for quasi-coherent `F`, invertible
-`L`, a quasi-compact quasi-separated open `U`, and a section `t` of `F` over `X_s`, there exists
-`n₀` such that `t ⊗ sⁿ` extends to a section of `F ⊗ Lⁿ` over `U` for *every* `n ≥ n₀`. -/
-theorem exists_forall_ge_exists_map_eq_tmulRight_tensorPowSection (F : X.Modules)
-    [F.IsQuasicoherent] {L : X.Modules}
-    [TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible X L] {U : X.Opens}
-    (hU : IsCompact (U : Set X)) (hU' : IsQuasiSeparated (U : Set X)) (s : Γ(L, U))
-    (t : Γ(F, L.nonvanishingLocus s)) :
-    ∃ n₀ : ℕ, ∀ n ≥ n₀, ∃ t' : Γ(F ⊗ tensorPow L n, U),
-      (F ⊗ tensorPow L n).presheaf.map (homOfLE (L.nonvanishingLocus_le s)).op t' =
-        tmulRight F
-          (tensorPowSection (L.presheaf.map (homOfLE (L.nonvanishingLocus_le s)).op s) n) t := by
-  obtain ⟨n₀, t₀, ht₀⟩ := exists_map_eq_tmulRight_tensorPowSection F hU hU' s t
-  refine ⟨n₀, fun n hn ↦ ?_⟩
-  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hn
-  induction k with
-  | zero => exact ⟨t₀, ht₀⟩
-  | succ k ih =>
-    obtain ⟨t', ht'⟩ := ih (Nat.le_add_right n₀ k)
-    exact exists_map_eq_tmulRight_tensorPowSection_succ F s t ht'
-
-/-! ### Global generation from affine covers and quotient presentations -/
-
-private theorem isLocallySurjective_freeHomEquiv_symm_of_span_eq_top (E : X.Modules)
-    [E.IsQuasicoherent] {ι : Type*} {U : ι → X.Opens} (hU : ∀ i, IsAffineOpen (U i))
-    (hcover : ⨆ i, U i = ⊤) {I : Type u} [Finite I] (σ : I → Γ(E, ⊤))
-    (hspan : ∀ i, Submodule.span Γ(X, U i)
-      (Set.range fun k ↦ E.presheaf.map (U i).leTop.op (σ k)) = ⊤) :
-    Sheaf.IsLocallySurjective
-      ((TauCeti.AlgebraicGeometry.Scheme.Modules.toSheaf X).map
-        ((SheafOfModules.freeHomEquiv E).symm fun k ↦ E.sectionsEquivTop.symm (σ k))) := by
-  cases nonempty_fintype I
-  let s : I → E.sections := fun k ↦ E.sectionsEquivTop.symm (σ k)
-  refine ⟨fun {W} m x hxW ↦ ?_⟩
-  obtain ⟨i, hxU⟩ := Opens.mem_iSup.mp (hcover.symm ▸ Opens.mem_top x)
-  obtain ⟨f, hfW, hxf⟩ := (hU i).exists_basicOpen_le ⟨x, hxW⟩ hxU
-  let D := X.basicOpen f
-  let m' : Γ(E, D) := E.presheaf.map (homOfLE hfW).op m
-  have := E.isLocalizedModule_basicOpenRestrict (hU i) f
-  obtain ⟨⟨y, ⟨_, d, rfl⟩⟩, hy⟩ :=
-    IsLocalizedModule.surj (.powers f) (E.basicOpenRestrict f) m'
-  rw [basicOpenRestrict_apply] at hy
-  obtain ⟨c, hc⟩ := (Submodule.mem_span_range_iff_exists_fun Γ(X, U i)).mp
-    (hspan i ▸ Submodule.mem_top (x := y))
-  have hu : IsUnit (X.presheaf.map (homOfLE (X.basicOpen_le f)).op (f ^ d)) := by
-    rw [map_pow]; exact (X.toRingedSpace.isUnit_res_basicOpen f).pow d
-  let uinv : Γ(X, D) := ↑hu.unit⁻¹
-  let a₀ : I → Γ(X, D) := fun k ↦ uinv * X.presheaf.map (homOfLE (X.basicOpen_le f)).op (c k)
-  let a : I → X.ringCatSheaf.obj.obj (op D) := a₀
-  refine ⟨D, homOfLE hfW, ⟨∑ k, a k •
-    (SheafOfModules.freeSection (R := X.ringCatSheaf) k).eval (op D), ?_⟩, hxf⟩
-  refine (TauCeti.SheafOfModules.freeHomEquiv_symm_val_app_sum_smul s (op D) a).trans ?_
-  have hterm (k : I) : a k • (s k).eval (op D) =
-      a₀ k • E.presheaf.map (homOfLE (X.basicOpen_le f)).op
-        (E.presheaf.map (U i).leTop.op (σ k)) := by
-    rw [PresheafOfModules.sections.eval, sectionsEquivTop_symm_val, ← Functor.map_comp_apply,
-      ← op_comp]
-    rfl
-  have hmap_y : E.presheaf.map (homOfLE (X.basicOpen_le f)).op y =
-      ∑ k, X.presheaf.map (homOfLE (X.basicOpen_le f)).op (c k) •
-        E.presheaf.map (homOfLE (X.basicOpen_le f)).op (E.presheaf.map (U i).leTop.op (σ k)) := by
-    rw [← hc, map_sum]; exact Finset.sum_congr rfl fun k _ ↦ by rw [E.map_smul]
-  have hsum : ∑ k, a₀ k • E.presheaf.map (homOfLE (X.basicOpen_le f)).op
-        (E.presheaf.map (U i).leTop.op (σ k)) =
-      uinv • E.presheaf.map (homOfLE (X.basicOpen_le f)).op y := by
-    rw [hmap_y, Finset.smul_sum]; exact Finset.sum_congr rfl fun k _ ↦ mul_smul _ _ _
-  have hm : (hu.unit : Γ(X, D)) • m' = E.presheaf.map (homOfLE (X.basicOpen_le f)).op y := by
-    rw [IsUnit.unit_spec]; exact hy
-  have hgoal : ∑ k, a₀ k • E.presheaf.map (homOfLE (X.basicOpen_le f)).op
-        (E.presheaf.map (U i).leTop.op (σ k)) = m' := by
-    rw [hsum, ← hm, ← mul_smul, Units.inv_mul, one_smul]
-  exact (Finset.sum_congr rfl fun k _ ↦ hterm k).trans hgoal
-
-/-- If a family of global sections of a quasi-coherent module `E` spans `Γ(E, U i)` over every
-member `U i` of an affine open cover of `X`, then it defines a `GeneratingSections` of `E`. -/
--- Exposed so the dependent field `.s` accepts indices `k : I` directly in public signatures.
-@[expose]
-def generatingSectionsOfSpanEqTop (E : X.Modules) [E.IsQuasicoherent]
-    {ι : Type*} {U : ι → X.Opens} (hU : ∀ i, IsAffineOpen (U i)) (hcover : ⨆ i, U i = ⊤)
-    {I : Type u} [Finite I] (σ : I → Γ(E, ⊤))
-    (hspan : ∀ i, Submodule.span Γ(X, U i)
-      (Set.range fun k ↦ E.presheaf.map (U i).leTop.op (σ k)) = ⊤) :
-    E.GeneratingSections where
-  I := I
-  s k := E.sectionsEquivTop.symm (σ k)
-  epi := by
-    have := isLocallySurjective_freeHomEquiv_symm_of_span_eq_top E hU hcover σ hspan
-    exact (TauCeti.AlgebraicGeometry.Scheme.Modules.toSheaf X).epi_of_epi_map
-      (Sheaf.epi_of_isLocallySurjective _)
-
-/-- The indexing type of `generatingSectionsOfSpanEqTop` is `I`. -/
-@[simp]
-theorem generatingSectionsOfSpanEqTop_I (E : X.Modules) [E.IsQuasicoherent]
-    {ι : Type*} {U : ι → X.Opens} (hU : ∀ i, IsAffineOpen (U i)) (hcover : ⨆ i, U i = ⊤)
-    {I : Type u} [Finite I] (σ : I → Γ(E, ⊤))
-    (hspan : ∀ i, Submodule.span Γ(X, U i)
-      (Set.range fun k ↦ E.presheaf.map (U i).leTop.op (σ k)) = ⊤) :
-    (generatingSectionsOfSpanEqTop E hU hcover σ hspan).I = I :=
-  (rfl)
-
-/-- The generating sections of `generatingSectionsOfSpanEqTop` correspond to `σ` via
-`sectionsEquivTop.symm`. -/
-@[simp]
-theorem generatingSectionsOfSpanEqTop_s (E : X.Modules) [E.IsQuasicoherent]
-    {ι : Type*} {U : ι → X.Opens} (hU : ∀ i, IsAffineOpen (U i)) (hcover : ⨆ i, U i = ⊤)
-    {I : Type u} [Finite I] (σ : I → Γ(E, ⊤))
-    (hspan : ∀ i, Submodule.span Γ(X, U i)
-      (Set.range fun k ↦ E.presheaf.map (U i).leTop.op (σ k)) = ⊤) (k : I) :
-    (generatingSectionsOfSpanEqTop E hU hcover σ hspan).s k = E.sectionsEquivTop.symm (σ k) :=
-  (rfl)
-
-/-- `generatingSectionsOfSpanEqTop` indexed by a finite type is of finite type. -/
-instance isFiniteType_generatingSectionsOfSpanEqTop (E : X.Modules) [E.IsQuasicoherent]
-    {ι : Type*} {U : ι → X.Opens} (hU : ∀ i, IsAffineOpen (U i)) (hcover : ⨆ i, U i = ⊤)
-    {I : Type u} [Finite I] (σ : I → Γ(E, ⊤))
-    (hspan : ∀ i, Submodule.span Γ(X, U i)
-      (Set.range fun k ↦ E.presheaf.map (U i).leTop.op (σ k)) = ⊤) :
-    (generatingSectionsOfSpanEqTop E hU hcover σ hspan).IsFiniteType where
-  finite := ‹Finite I›
-
-/-- If `F ⊗ P` is generated by finitely many global sections and `P ⊗ Q ≅ 𝒪_X`, then `F` is a
-quotient of a finite biproduct of copies of `Q`. -/
-theorem exists_epi_biproduct_of_generatingSections {F P Q : X.Modules} (e : P ⊗ Q ≅ 𝟙_ X.Modules)
-    (G : (F ⊗ P).GeneratingSections) [hG : G.IsFiniteType] :
-    ∃ (k : ℕ) (p : (⨁ fun _ : Fin k ↦ Q) ⟶ F), Epi p := by
-  have : Finite G.I := hG.finite
-  obtain ⟨k, ⟨ek⟩⟩ := Finite.exists_equiv_fin G.I
-  have : (tensorRight Q).IsEquivalence :=
-    MonoidalCategory.isEquivalence_tensorRight_of_iso (β_ Q P ≪≫ e)
-  have : (tensorRight Q).Additive := Functor.additive_of_preserves_binary_products _
-  have : Epi G.π := G.epi
-  let ι : Fin k → ((𝟙_ X.Modules : X.Modules) ⟶ F ⊗ P) := fun j ↦
-    (SheafOfModules.ιFree (ek.symm j) : (𝟙_ X.Modules : X.Modules) ⟶
-      (SheafOfModules.free G.I : X.Modules)) ≫ G.π
-  let q : (⨁ fun _ : Fin k ↦ (𝟙_ X.Modules : X.Modules)) ⟶ F ⊗ P := biproduct.desc ι
-  have hq : Epi q := ⟨fun {N} f₁ f₂ hf ↦ by
-    apply (cancel_epi G.π).mp
-    let f₁' : (F ⊗ P : SheafOfModules X.ringCatSheaf) ⟶ (N : SheafOfModules X.ringCatSheaf) := f₁
-    let f₂' : (F ⊗ P : SheafOfModules X.ringCatSheaf) ⟶ (N : SheafOfModules X.ringCatSheaf) := f₂
-    -- `X.Modules` and `SheafOfModules X.ringCatSheaf` share the same morphism type and composition.
-    change G.π ≫ f₁' = G.π ≫ f₂'
-    refine Cofan.IsColimit.hom_ext (SheafOfModules.isColimitFreeCofan G.I) _ _ fun i ↦ ?_
-    have hi : biproduct.ι _ (ek i) ≫ q = ι (ek i) := biproduct.ι_desc ι (ek i)
-    have hcomp : (biproduct.ι _ (ek i) ≫ q) ≫ f₁ = (biproduct.ι _ (ek i) ≫ q) ≫ f₂ := by
-      rw [Category.assoc, Category.assoc, hf]
-    rw [hi] at hcomp
-    simp only [ι, ek.symm_apply_apply] at hcomp
-    exact SheafOfModules.Hom.ext (congrArg SheafOfModules.Hom.val hcomp)⟩
-  refine ⟨k,
-    (biproduct.mapIso fun _ : Fin k ↦ (λ_ Q).symm).hom ≫
-      ((tensorRight Q).mapBiproduct fun _ : Fin k ↦ (𝟙_ X.Modules : X.Modules)).inv ≫
-      (tensorRight Q).map q ≫
-      (α_ F P Q).hom ≫ F ◁ e.hom ≫ (ρ_ F).hom,
-    inferInstance⟩
-
-end AlgebraicGeometry.Scheme.Modules
 
 namespace TauCeti.AlgebraicGeometry.LineBundleClass
 
@@ -297,25 +102,19 @@ private theorem exists_finite_span_and_forall_ge_map_eq [QuasiSeparatedSpace X] 
                 (homOfLE (M.obj.nonvanishingLocus_le s)).op s) q) (g j) := by
   let U := M.obj.nonvanishingLocus s
   have : (L.obj : X.Modules).IsQuasicoherent := L.isQuasicoherent_obj
+  have : (L.obj : X.Modules).IsFiniteType := by
+    have : (L.obj : X.Modules).IsFinitePresentation := inferInstance
+    infer_instance
   have : Module.Finite Γ(X, U) Γ(F ⊗ TauCeti.tensorPow (L.obj : X.Modules) r, U) :=
-    finite_sections_tensor_tensorPow_of_isAffineOpen F L.obj hU
-      (F.finite_sections_of_isAffineOpen U hU)
-      ((L.obj : X.Modules).finite_sections_of_isAffineOpen U hU) r
-  obtain ⟨S, hS⟩ := Module.Finite.fg_top
+    (F ⊗ TauCeti.tensorPow (L.obj : X.Modules) r).finite_sections_of_isAffineOpen U hU
+  obtain ⟨k, g, hg⟩ := Module.Finite.exists_fin
     (R := Γ(X, U)) (M := Γ(F ⊗ TauCeti.tensorPow (L.obj : X.Modules) r, U))
-  let eS := S.equivFin.symm
-  let g : Fin S.card → Γ(F ⊗ TauCeti.tensorPow (L.obj : X.Modules) r, U) := fun j ↦ (eS j).1
-  have hg : Submodule.span Γ(X, U) (Set.range g) = ⊤ := by
-    have hr : Set.range g = (S : Set _) := by
-      ext x
-      exact ⟨fun ⟨j, hj⟩ ↦ hj ▸ (eS j).2, fun hx ↦ ⟨eS.symm ⟨x, hx⟩, by simp [g]⟩⟩
-    rw [hr, hS]
   have htop_cpt : IsCompact (⊤ : X.Opens).1 := isCompact_univ
   have htop_qs : IsQuasiSeparated (⊤ : X.Opens).1 := isQuasiSeparated_univ
-  choose qj hqj using fun j : Fin S.card ↦
+  choose qj hqj using fun j : Fin k ↦
     exists_forall_ge_exists_map_eq_tmulRight_tensorPowSection
       (F ⊗ TauCeti.tensorPow (L.obj : X.Modules) r) htop_cpt htop_qs s (g j)
-  exact ⟨S.card, g, Finset.univ.sup qj, hg, fun q hq j ↦
+  exact ⟨k, g, Finset.univ.sup qj, hg, fun q hq j ↦
     hqj j q ((Finset.le_sup (f := qj) (Finset.mem_univ j)).trans hq)⟩
 
 /-- Local chart step for Serre's theorem: on an affine nonvanishing locus `U = X_s` of a global

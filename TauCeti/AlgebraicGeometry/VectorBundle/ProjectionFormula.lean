@@ -76,22 +76,33 @@ def pushforwardTensorLeftIso :
         (dual ((pullback f).obj E)).obj)).ofNatIsoLeft e.symm)
 
 /-- Right-hand form of the projection formula for a finite locally free sheaf `E` on `Y` and any
-morphism `f : X ⟶ Y`: `(f_* N) ⊗ E ≅ f_* (N ⊗ f^* E)`. -/
-def pushforwardTensorRightIso (N : X.Modules) :
-    (Scheme.Modules.pushforward f).obj N ⊗ E.obj ≅
-      (Scheme.Modules.pushforward f).obj (N ⊗ (Scheme.Modules.pullback f).obj E.obj) :=
-  β_ _ _ ≪≫ (pushforwardTensorLeftIso f E).app N ≪≫
-    (Scheme.Modules.pushforward f).mapIso
-      (β_ _ _ ≪≫ (tensorLeft N).mapIso (eqToIso (pullback_obj_obj f E)))
+morphism `f : X ⟶ Y`: `(f_* N) ⊗ E ≅ f_* (N ⊗ f^* E)`, naturally in the sheaf of modules `N` on
+`X`. -/
+def pushforwardTensorRightIso :
+    Scheme.Modules.pushforward f ⋙ tensorRight E.obj ≅
+      tensorRight ((Scheme.Modules.pullback f).obj E.obj) ⋙ Scheme.Modules.pushforward f :=
+  NatIso.ofComponents
+    (fun N ↦ β_ _ _ ≪≫ (pushforwardTensorLeftIso f E).app N ≪≫
+      (Scheme.Modules.pushforward f).mapIso
+        (β_ _ _ ≪≫ (tensorLeft N).mapIso (eqToIso (pullback_obj_obj f E))))
+    fun {_ _} φ ↦ by
+      have hL := (pushforwardTensorLeftIso f E).hom.naturality φ
+      dsimp at hL ⊢
+      rw [BraidedCategory.braiding_naturality_left_assoc, reassoc_of% hL, Category.assoc,
+        Category.assoc, ← Functor.map_comp, ← Functor.map_comp]
+      refine whisker_eq _ (whisker_eq _ (congrArg (Scheme.Modules.pushforward f).map ?_))
+      rw [Category.assoc, BraidedCategory.braiding_naturality_right_assoc]
+      exact whisker_eq _ (MonoidalCategory.whisker_exchange φ (eqToHom (pullback_obj_obj f E))).symm
 
-/-- `pushforwardTensorRightIso` conjugates `pushforwardTensorLeftIso` by the braiding of the
+/-- `pushforwardTensorRightIso` conjugates `pushforwardTensorLeftIso` at `N` by the braiding of the
 tensor product. -/
-theorem pushforwardTensorRightIso_def (N : X.Modules) :
-    pushforwardTensorRightIso f E N =
+@[simp]
+theorem pushforwardTensorRightIso_app (N : X.Modules) :
+    (pushforwardTensorRightIso f E).app N =
       β_ _ _ ≪≫ (pushforwardTensorLeftIso f E).app N ≪≫
         (Scheme.Modules.pushforward f).mapIso
           (β_ _ _ ≪≫ (tensorLeft N).mapIso (eqToIso (pullback_obj_obj f E))) :=
-  (rfl)
+  Iso.ext rfl
 
 /-- The projection formula for the direct image of the structure sheaf:
 `E ⊗ f_* 𝒪_X ≅ f_* (f^* E)`. For a closed immersion `f` this identifies the restriction of `E` to

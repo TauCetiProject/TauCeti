@@ -21,7 +21,7 @@ finite locally free sheaf
 ## Main declarations
 
 * `AlgebraicGeometry.Scheme.Hom.cohomologyPushforwardTensorRightIso`: the additive isomorphism
-  `Hⁿ(Y, (f_* F) ⊗ E) ≅ Hⁿ(X, F ⊗ f^* E)`.
+  `Hⁿ(Y, (f_* F) ⊗ E) ≅ Hⁿ(X, F ⊗ f^* E)`, natural in `F`.
 * `AlgebraicGeometry.Scheme.Hom.subsingleton_cohomology_pushforward_tensor_iff` and
   `AlgebraicGeometry.Scheme.Hom.subsingleton_cohomology_pushforward_tensor_iff_of_isInvertible`:
   equivalence of cohomology vanishing for `(f_* F) ⊗ E` on `Y` and `F ⊗ f^* E` on `X`.
@@ -51,7 +51,7 @@ isomorphism `Hⁿ(Y, (f_* F) ⊗ E) ≅ Hⁿ(X, F ⊗ f^* E)`. -/
 def cohomologyPushforwardTensorRightIso (F : X.Modules) (E : FiniteLocallyFreeSheaf Y) (n : ℕ) :
     AddCommGrpCat.of (Cohomology ((pushforward f).obj F ⊗ E.obj) n) ≅
       AddCommGrpCat.of (Cohomology (F ⊗ (pullback f).obj E.obj) n) :=
-  (cohomologyFunctor Y n).mapIso (FiniteLocallyFreeSheaf.pushforwardTensorRightIso f E F) ≪≫
+  (cohomologyFunctor Y n).mapIso ((FiniteLocallyFreeSheaf.pushforwardTensorRightIso f E).app F) ≪≫
     cohomologyPushforwardIso f (F ⊗ (pullback f).obj E.obj) n
 
 /-- The forward map of `cohomologyPushforwardTensorRightIso` applies `pushforwardTensorRightIso` on
@@ -60,9 +60,45 @@ cohomology followed by `cohomologyPushforwardIso`. -/
 theorem cohomologyPushforwardTensorRightIso_hom (F : X.Modules) (E : FiniteLocallyFreeSheaf Y)
     (n : ℕ) :
     (f.cohomologyPushforwardTensorRightIso F E n).hom =
-      (cohomologyFunctor Y n).map (FiniteLocallyFreeSheaf.pushforwardTensorRightIso f E F).hom ≫
+      (cohomologyFunctor Y n).map
+          ((FiniteLocallyFreeSheaf.pushforwardTensorRightIso f E).app F).hom ≫
         (cohomologyPushforwardIso f (F ⊗ (pullback f).obj E.obj) n).hom :=
   (rfl)
+
+/-- The inverse of `cohomologyPushforwardTensorRightIso` applies the inverse of
+`cohomologyPushforwardIso` followed by the inverse of `pushforwardTensorRightIso` on cohomology. -/
+@[simp]
+theorem cohomologyPushforwardTensorRightIso_inv (F : X.Modules) (E : FiniteLocallyFreeSheaf Y)
+    (n : ℕ) :
+    (f.cohomologyPushforwardTensorRightIso F E n).inv =
+      (cohomologyPushforwardIso f (F ⊗ (pullback f).obj E.obj) n).inv ≫
+        (cohomologyFunctor Y n).map
+          ((FiniteLocallyFreeSheaf.pushforwardTensorRightIso f E).app F).inv :=
+  (rfl)
+
+/-- `cohomologyPushforwardTensorRightIso` is natural in morphisms `φ : F₁ ⟶ F₂` of `𝒪_X`-modules. -/
+@[reassoc]
+theorem cohomologyPushforwardTensorRightIso_naturality {F₁ F₂ : X.Modules} (φ : F₁ ⟶ F₂)
+    (E : FiniteLocallyFreeSheaf Y) (n : ℕ) :
+    (cohomologyFunctor Y n).map ((pushforward f).map φ ▷ E.obj) ≫
+        (f.cohomologyPushforwardTensorRightIso F₂ E n).hom =
+      (f.cohomologyPushforwardTensorRightIso F₁ E n).hom ≫
+        (cohomologyFunctor X n).map (φ ▷ (pullback f).obj E.obj) := by
+  have hnat :
+      (cohomologyFunctor Y n).map ((pushforward f).map φ ▷ E.obj) ≫
+          (cohomologyFunctor Y n).map
+            ((FiniteLocallyFreeSheaf.pushforwardTensorRightIso f E).app F₂).hom =
+        (cohomologyFunctor Y n).map
+            ((FiniteLocallyFreeSheaf.pushforwardTensorRightIso f E).app F₁).hom ≫
+          (pushforward f ⋙ cohomologyFunctor Y n).map (φ ▷ (pullback f).obj E.obj) :=
+    ((cohomologyFunctor Y n).map_comp _ _).symm.trans
+      ((congrArg (cohomologyFunctor Y n).map
+        ((FiniteLocallyFreeSheaf.pushforwardTensorRightIso f E).hom.naturality φ)).trans
+        ((cohomologyFunctor Y n).map_comp _ _))
+  exact (Category.assoc _ _ _).symm.trans ((eq_whisker hnat _).trans
+    ((Category.assoc _ _ _).trans ((whisker_eq _
+      (cohomologyPushforwardIso_naturality f (φ ▷ (pullback f).obj E.obj) n)).trans
+      (Category.assoc _ _ _).symm)))
 
 /-- Along a closed immersion `f : X ⟶ Y`, `Hⁿ(Y, (f_* F) ⊗ E)` vanishes if and only if
 `Hⁿ(X, F ⊗ f^* E)` vanishes, for any finite locally free sheaf `E` on `Y`. -/

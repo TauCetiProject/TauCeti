@@ -21,8 +21,9 @@ Let `R` be a sheaf of rings on a site with pullbacks. This file shows that the b
 (direct sum) `M ⊞ N` of two sheaves of `R`-modules is quasi-coherent, of finite type, finitely
 presented, or locally free as soon as `M` and `N` are. In particular, direct sums of finite
 locally free sheaves (locally free and finitely presented) are finite locally free.
-The finite-presentation object property is closed under binary products; when the site also has
-binary products, it contains a zero object and is closed under finite products.
+The quasi-coherence and finite-presentation object properties are closed under binary products;
+when the site also has binary products, they contain a zero object and are closed under finite
+products and finite biproducts.
 
 The local input is that generating sections, and presentations, of `M` and `N` give generating
 sections, and a presentation, of `M ⊞ N`: the free sheaf on `I ⊕ I'` is `free I ⊞ free I'`
@@ -42,7 +43,9 @@ The common-refinement construction follows the tensor-product closure formalizat
   local versions, on a common refinement of the two covers;
 * `TauCeti.SheafOfModules.isQuasicoherent_biprod`, `TauCeti.SheafOfModules.isFiniteType_biprod`,
   `TauCeti.SheafOfModules.isFinitePresentation_biprod` and
-  `TauCeti.SheafOfModules.isLocallyFree_biprod`.
+  `TauCeti.SheafOfModules.isLocallyFree_biprod`;
+* `TauCeti.SheafOfModules.isQuasicoherent_biproduct` and
+  `TauCeti.SheafOfModules.isFinitePresentation_biproduct`.
 -/
 
 public section
@@ -334,6 +337,23 @@ variable {C : Type u₁} [Category.{v₁} C] {J : GrothendieckTopology C} {R : S
   [∀ X, HasSheafify (J.over X) AddCommGrpCat.{u}]
   [∀ X, (J.over X).WEqualsLocallyBijective AddCommGrpCat.{u}]
 
+/-- The zero sheaf of modules is quasi-coherent. -/
+instance containsZero_isQuasicoherent [HasBinaryProducts C] :
+    (isQuasicoherent R).ContainsZero where
+  exists_zero := ⟨_, isZero_free PEmpty, inferInstance⟩
+
+/-- Quasi-coherent sheaves are closed under binary products, computed as direct sums. -/
+instance isClosedUnderBinaryProducts_isQuasicoherent [HasPullbacks C] :
+    (isQuasicoherent R).IsClosedUnderBinaryProducts :=
+  ObjectProperty.isClosedUnderBinaryProducts_of_prop_biprod _ fun A B hA hB ↦ by
+    let := hA
+    let := hB
+    exact isQuasicoherent_biprod
+
+/-- Quasi-coherent sheaves are closed under finite products. -/
+instance isClosedUnderFiniteProducts_isQuasicoherent [HasPullbacks C] [HasBinaryProducts C] :
+    (isQuasicoherent R).IsClosedUnderFiniteProducts := .mk'
+
 /-- The zero sheaf of modules is finitely presented. -/
 instance containsZero_isFinitePresentation [HasBinaryProducts C] :
     (isFinitePresentation R).ContainsZero where
@@ -350,6 +370,20 @@ instance isClosedUnderBinaryProducts_isFinitePresentation [HasPullbacks C] :
 /-- Finitely presented sheaves are closed under finite products. -/
 instance isClosedUnderFiniteProducts_isFinitePresentation [HasPullbacks C] [HasBinaryProducts C] :
     (isFinitePresentation R).IsClosedUnderFiniteProducts := .mk'
+
+/-- A finite biproduct of quasi-coherent sheaves of modules is quasi-coherent. -/
+instance isQuasicoherent_biproduct [HasPullbacks C] [HasBinaryProducts C]
+    {ι : Type*} [Finite ι] (F : ι → SheafOfModules.{u} R)
+    [HasBiproduct F] [∀ i, (F i).IsQuasicoherent] :
+    (⨁ F).IsQuasicoherent :=
+  (isQuasicoherent R).prop_of_isLimit_fan (biproduct.isLimit F) fun _ ↦ inferInstance
+
+/-- A finite biproduct of finitely presented sheaves of modules is finitely presented. -/
+instance isFinitePresentation_biproduct [HasPullbacks C] [HasBinaryProducts C]
+    {ι : Type*} [Finite ι] (F : ι → SheafOfModules.{u} R)
+    [HasBiproduct F] [∀ i, (F i).IsFinitePresentation] :
+    (⨁ F).IsFinitePresentation :=
+  (isFinitePresentation R).prop_of_isLimit_fan (biproduct.isLimit F) fun _ ↦ inferInstance
 
 end FiniteProducts
 

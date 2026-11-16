@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Finiteness.Finsupp
-public import Mathlib.RingTheory.Noetherian.Defs
+public import Mathlib.RingTheory.Noetherian.Basic
 
-import Mathlib.RingTheory.Noetherian.Basic
 import TauCeti.LinearAlgebra.Exact
 
 /-!
@@ -16,16 +15,16 @@ import TauCeti.LinearAlgebra.Exact
 
 For linear maps `f : M → N` and `g : N → P`, the cokernels fit into an exact sequence
 `N ⧸ range f → P ⧸ range (g ∘ f) → P ⧸ range g → 0` (`LinearMap.exact_cokerToCokerComp_factor`),
-so the cokernel of `g ∘ f` is finitely generated when those of `f` and `g` are. Over a noetherian
-ring, any module sitting in an exact sequence between two finitely generated modules is finitely
-generated without assuming the right-hand map is surjective, and the kernel of `g ∘ f` is likewise
-finitely generated when those of `f` and `g` are: it is an extension of a submodule of `ker g` by
-`ker f`.
+so the cokernel of `g ∘ f` is finitely generated when those of `f` and `g` are. Any module sitting
+in an exact sequence between a finitely generated module and a Noetherian module is finitely
+generated without assuming the right-hand map is surjective; over a noetherian ring, the kernel of
+`g ∘ f` is likewise finitely generated when those of `f` and `g` are, as an extension of a submodule
+of `ker g` by `ker f`.
 
 ## Main results
 
-* `Module.Finite.of_exact_of_isNoetherianRing`: over a noetherian ring, if `M → N → P` is exact and
-  `M` and `P` are finite, then `N` is finite.
+* `Module.Finite.of_exact_of_isNoetherian`: if `M → N → P` is exact with `M` finite and `P`
+  Noetherian, then `N` is finite.
 * `Module.Finite.quotient_range_comp`: the cokernel of `g ∘ f` is finite if those of `f` and `g`
   are.
 * `Module.Finite.ker_comp`: over a noetherian ring, the kernel of `g ∘ f` is finite if those of `f`
@@ -43,10 +42,10 @@ namespace Module.Finite
 
 open LinearMap (ker_le_ker_comp)
 
-/-- Over a noetherian ring, a module sitting in an exact sequence between two finitely generated
-modules is finitely generated (without assuming the right-hand map is surjective). -/
-theorem of_exact_of_isNoetherianRing [IsNoetherianRing R] {f : M →ₗ[R] N} {g : N →ₗ[R] P}
-    (hfg : Function.Exact f g) [Module.Finite R M] [Module.Finite R P] :
+/-- A module sitting in an exact sequence between a finitely generated module and a Noetherian
+module is finitely generated (without assuming the right-hand map is surjective). -/
+theorem of_exact_of_isNoetherian {f : M →ₗ[R] N} {g : N →ₗ[R] P}
+    (hfg : Function.Exact f g) [Module.Finite R M] [IsNoetherian R P] :
     Module.Finite R N :=
   of_exact (f := f) (g := g.rangeRestrict)
     (fun y ↦ Subtype.ext_iff.trans (hfg y)) g.surjective_rangeRestrict

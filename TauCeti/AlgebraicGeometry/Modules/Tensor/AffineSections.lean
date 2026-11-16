@@ -36,8 +36,8 @@ localizations. The proof follows that of
 * `AlgebraicGeometry.Scheme.Modules.bijective_μ_sectionsFunctor`: the tensor map
   `Γ(M, U) ⊗[Γ(X, U)] Γ(N, U) → Γ(M ⊗ N, U)` of the sections functor is bijective;
 * `AlgebraicGeometry.Scheme.Modules.finite_sections_tensorObj_of_isAffineOpen` and
-  `AlgebraicGeometry.Scheme.Modules.finite_sections_tensor_tensorPow_of_isAffineOpen`: tensor
-  products and twists by tensor powers preserve finite generation of sections over affine opens.
+  `AlgebraicGeometry.Scheme.Modules.finite_sections_tensorPow_of_isAffineOpen`: tensor products and
+  tensor powers preserve finite generation of sections over affine opens.
 
 ## References
 
@@ -183,13 +183,5 @@ theorem finite_sections_tensorPow_of_isAffineOpen (hU : IsAffineOpen U)
   induction n with
   | zero => exact inferInstanceAs (Module.Finite Γ(X, U) Γ(X, U))
   | succ n ih => exact finite_sections_tensorObj_of_isAffineOpen M (TauCeti.tensorPow M n) hU hM ih
-
-/-- Over an affine open `U`, twisting a quasi-coherent module `M` by any tensor power of a
-quasi-coherent module `N` preserves finite generation of sections over `Γ(X, U)`. -/
-theorem finite_sections_tensor_tensorPow_of_isAffineOpen (hU : IsAffineOpen U)
-    (hM : Module.Finite Γ(X, U) Γ(M, U)) (hN : Module.Finite Γ(X, U) Γ(N, U)) (n : ℕ) :
-    Module.Finite Γ(X, U) Γ(M ⊗ TauCeti.tensorPow N n, U) :=
-  finite_sections_tensorObj_of_isAffineOpen M (TauCeti.tensorPow N n) hU hM
-    (finite_sections_tensorPow_of_isAffineOpen N hU hN n)
 
 end AlgebraicGeometry.Scheme.Modules
