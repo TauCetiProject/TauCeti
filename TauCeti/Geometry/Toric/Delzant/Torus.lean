@@ -79,8 +79,9 @@ points.
   the kernel of `π`.
 * `TauCeti.Toric.eq_zero_of_mem_ker_facetTorusHom`: the kernel of `π` meets the coordinate
   subtorus of a lattice basis of normals trivially.
-* `TauCeti.Toric.exists_basis_iff_forall_mem_ker_facetTorusHom`: conversely, for `p ≠ 0`, normals
-  spanning `V` whose coordinate subtorus meets the kernel of `π` trivially form a lattice basis.
+* `TauCeti.Toric.exists_basis_iff_forall_eq_zero_of_mem_ker_facetTorusHom`: conversely, for
+  `p ≠ 0`, normals spanning `V` whose coordinate subtorus meets the kernel of `π` trivially form a
+  lattice basis.
 * `TauCeti.Toric.IsIntegralLattice.isClosed_ker_facetTorusHom`: for an integral lattice, the
   kernel of `π` is closed.
 * `TauCeti.Toric.mem_faceSubtorus_iff_exists_facetTorusHom_eq`: the face subtorus of `s` is the
@@ -291,13 +292,11 @@ private theorem linearIndepOn_of_forall_mem_ker (hp : p ≠ 0) {s : Set ι}
     -- Rescale the relation so that its `j`-th coefficient is `p / 2`, which is not in `pℤ`.
     obtain ⟨k, hk⟩ := exists_eq_intCast_mul_of_forall_mem_ker h (t := (p / (2 * l j)) • ⇑l)
       (fun j' hj' ↦ by simp [(Finsupp.mem_supported' ℝ l).1 hl j' hj'])
-      ⟨0, by rw [map_smul, hlc, smul_zero, map_zero]⟩ j
-    have hk' : ((2 * k - 1 : ℤ) : ℝ) * p = 0 := by
-      rw [Pi.smul_apply, smul_eq_mul, div_mul_eq_mul_div, mul_div_mul_comm, div_self hj,
-        mul_one] at hk
-      push_cast
-      linarith
-    have : (2 * k - 1 : ℤ) = 0 := by exact_mod_cast (mul_eq_zero.1 hk').resolve_right hp
+      ⟨0, by simp [hlc]⟩ j
+    have hj' : l j ≠ 0 := hj
+    simp only [Pi.smul_apply, smul_eq_mul] at hk
+    field_simp at hk
+    have : (1 : ℤ) = 2 * k := by exact_mod_cast hk
     omega
   exact LinearIndependent.of_comp i.toIntLinearMap (hR.restrict_scalars' ℤ)
 
@@ -340,8 +339,8 @@ exactly when the only element of the kernel of `(ℝ / pℤ)^ι → V / p i(N)` 
 outside `s` vanish is zero. The forward direction is
 `TauCeti.Toric.eq_zero_of_mem_ker_facetTorusHom`, which needs neither `p ≠ 0` nor the spanning
 hypothesis. -/
-theorem exists_basis_iff_forall_mem_ker_facetTorusHom (hi : IsIntegralLattice i) (hp : p ≠ 0)
-    {s : Set ι} (hs : Submodule.span ℝ ((fun j ↦ i (u j)) '' s) = ⊤) :
+theorem exists_basis_iff_forall_eq_zero_of_mem_ker_facetTorusHom (hi : IsIntegralLattice i)
+    (hp : p ≠ 0) {s : Set ι} (hs : Submodule.span ℝ ((fun j ↦ i (u j)) '' s) = ⊤) :
     (∃ b : Module.Basis s ℤ N, ∀ j, b j = u j) ↔
       ∀ θ ∈ (facetTorusHom i u p).ker, (∀ j ∉ s, θ j = 0) → θ = 0 := by
   refine ⟨fun hb θ hθ hθs ↦ eq_zero_of_mem_ker_facetTorusHom hi hb hθ hθs, fun h ↦ ?_⟩

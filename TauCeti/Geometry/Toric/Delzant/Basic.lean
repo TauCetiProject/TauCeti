@@ -65,7 +65,9 @@ constraints (`TauCeti.Toric.facetPolyhedron_nsmul`, `TauCeti.Toric.activeSet_nsm
 labelled polytopes of Lerman and Tolman, whose labels record the finite isotropy along the facets
 of a toric orbifold. A point is a smooth vertex of the labelled presentation exactly when it is
 one of `(u, c)` and every constraint active there has label one
-(`TauCeti.Toric.isSmoothVertex_nsmul_iff`), because a member of a lattice basis is primitive.
+(`TauCeti.Toric.isSmoothVertex_nsmul_iff`), because a member of a lattice basis is primitive. So
+the labelled presentation is Delzant exactly when `(u, c)` is Delzant and every label is one
+(`TauCeti.Toric.isDelzant_nsmul_iff`).
 
 ## Main definitions
 
@@ -93,7 +95,8 @@ one of `(u, c)` and every constraint active there has label one
 * `TauCeti.Toric.IsDelzant.exists_activeSet_eq_empty`: for an injective lattice map, a Delzant
   polytope has a point on none of its facets.
 * `TauCeti.Toric.facetPolyhedron_add`, `TauCeti.Toric.isDelzant_add_iff`: translations.
-* `TauCeti.Toric.facetPolyhedron_nsmul`, `TauCeti.Toric.isSmoothVertex_nsmul_iff`: labels.
+* `TauCeti.Toric.facetPolyhedron_nsmul`, `TauCeti.Toric.isSmoothVertex_nsmul_iff`,
+  `TauCeti.Toric.isDelzant_nsmul_iff`: labels.
 
 ## References
 
@@ -469,6 +472,30 @@ theorem isSmoothVertex_nsmul_iff (hm : ∀ j, m j ≠ 0) {y : StrongDual ℝ V} 
     exact ⟨h1, b, fun j ↦ by rw [hb, h1 j j.2, one_smul]⟩
   · rintro ⟨h1, b, hb⟩
     exact ⟨b, fun j ↦ by rw [hb, h1 j j.2, one_smul]⟩
+
+/-- **Labelled Delzant presentations.** The labelled presentation with normals `m j • u j` and
+support constants `m j * c j` is Delzant exactly when every label is one and `(u, c)` is Delzant:
+each facet of a Delzant polytope contains a vertex, where its label must be one. -/
+theorem isDelzant_nsmul_iff [FiniteDimensional ℝ V] (hm : ∀ j, m j ≠ 0) :
+    IsDelzant i (fun j ↦ m j • u j) (fun j ↦ m j * c j) ↔ (∀ j, m j = 1) ∧ IsDelzant i u c := by
+  have hP := facetPolyhedron_nsmul (i := i) (u := u) (c := c) hm
+  have hirr : (∀ j, ∃ y ∈ facetPolyhedron i (fun j ↦ m j • u j) (fun j ↦ m j * c j),
+      activeSet (facetPairing i (fun j ↦ m j • u j)) (fun j ↦ m j * c j) y = {j}) ↔
+      ∀ j, ∃ y ∈ facetPolyhedron i u c, activeSet (facetPairing i u) c y = {j} := by
+    simp only [hP, activeSet_nsmul hm]
+  constructor
+  · rintro ⟨hb, hv, hj⟩
+    rw [hP] at hb hv
+    have hm1 (j : ι) : m j = 1 := by
+      -- The facet `j` is the only constraint active at some point, hence active at some vertex.
+      obtain ⟨y, hy, hjy⟩ := hirr.1 hj j
+      obtain ⟨v, hv', hsub⟩ := exists_mem_extremePoints_activeSet_subset
+        (Metric.isCompact_of_isClosed_isBounded isClosed_facetPolyhedron hb) hy
+      exact ((isSmoothVertex_nsmul_iff hm).1 (hv v hv')).1 j (hsub (hjy ▸ mem_singleton j))
+    exact ⟨hm1, hb, fun y hy ↦ ((isSmoothVertex_nsmul_iff hm).1 (hv y hy)).2, hirr.1 hj⟩
+  · rintro ⟨h1, hb, hv, hj⟩
+    exact ⟨hP ▸ hb, fun y hy ↦ (isSmoothVertex_nsmul_iff hm).2 ⟨fun j _ ↦ h1 j, hv y (hP ▸ hy)⟩,
+      hirr.2 hj⟩
 
 end Label
 
