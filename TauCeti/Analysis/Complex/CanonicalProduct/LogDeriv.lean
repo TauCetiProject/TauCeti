@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Complex.CanonicalProduct.Convergence
 public import Mathlib.Analysis.Calculus.LogDerivUniformlyOn
 public import Mathlib.Topology.Algebra.InfiniteSum.TsumUniformlyOn
-import TauCeti.Order.Filter.AtTopBot.Finset
+import TauCeti.Topology.Algebra.InfiniteSum.UniformOn
 
 /-!
 # Paired logarithmic derivatives of genus-one products
@@ -112,16 +112,10 @@ theorem hasSumUniformlyOn_natCast_mul_logDerivWeierstrassFactorOneMul
     {K : Set ℂ} (hK : IsCompact K) :
     HasSumUniformlyOn (fun i z ↦ (m i : ℂ) * (logDerivWeierstrassFactorOneMul (a i) z))
       (fun z ↦ ∑' i, (m i : ℂ) * (logDerivWeierstrassFactorOneMul (a i) z)) K := by
-  have h0 := HasSumUniformlyOn.tendstoUniformlyOn
-    (hasSumUniformlyOn_logDerivWeierstrassFactorOneMul (fun p : Σ i, Fin (m i) ↦ a p.1)
-      ((TauCeti.summable_sigma_fin_iff (fun i ↦ sq_nonneg ‖a i‖) m).mpr hm) hK)
-  rw [hasSumUniformlyOn_iff_tendstoUniformlyOn]
-  intro u hu
-  filter_upwards [(TauCeti.tendsto_finset_sigma_univ_atTop (κ := fun i ↦ Fin (m i))).eventually
-    (h0 u hu)] with s hs z hz
-  have hsz := hs z hz
-  simpa only [← tsum_natCast_mul_logDerivWeierstrassFactorOneMul_eq_sigma a m hm,
-    Finset.sum_sigma, Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul] using hsz
+  have h := (hasSumUniformlyOn_logDerivWeierstrassFactorOneMul (fun p : Σ i, Fin (m i) ↦ a p.1)
+    ((TauCeti.summable_sigma_fin_iff (fun i ↦ sq_nonneg ‖a i‖) m).mpr hm) hK).sigma_of_finite
+  simpa only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul,
+    ← tsum_natCast_mul_logDerivWeierstrassFactorOneMul_eq_sigma a m hm] using h
 
 /-- The weighted paired rational series converges locally uniformly on the plane. -/
 theorem hasSumLocallyUniformlyOn_natCast_mul_logDerivWeierstrassFactorOneMul :

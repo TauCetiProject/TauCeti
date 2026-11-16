@@ -52,6 +52,10 @@ term takes.
   summable, then `r` is summable (the converse of Mathlib's `Summable.clog_one_sub`).
 * `Complex.tsum_taylorSeries_neg_log`: for every `r` with `‖r i‖ < 1`, the sum over `ι × ℕ` is
   `∑' i, -log (1 - r i)` (both sides are `0` when `r` is not summable).
+* `Complex.logTaylor_succ_neg`: `logTaylor (p + 1) (-z) = -∑ k ∈ range p, z ^ (k + 1) / (k + 1)`.
+* `Complex.norm_log_one_sub_add_sum_range_le`,
+  `Complex.norm_log_one_sub_add_sum_range_le_of_le_half`: Taylor remainder bounds for
+  `log (1 - z) + ∑ k ∈ range p, z ^ (k + 1) / (k + 1)` on `‖z‖ < 1` and `‖z‖ ≤ 1 / 2`.
 * `Complex.norm_log_one_sub_inv_sub_sum_Icc_le`: the truncation error of the same Taylor series
   for a single `z`, with its `n`-th partial sum `∑ j ∈ Icc 1 n, z ^ j / j`.
 * `Complex.norm_log_one_sub_div_inv_sub_sum_Icc_le`: the same truncation error at `z = w / p`,
@@ -142,6 +146,45 @@ theorem norm_neg_one_pow_div_add_one (n : ℕ) :
   rw [norm_div, norm_pow, norm_neg, norm_one, one_pow, one_div, ← Nat.cast_add_one,
     Complex.norm_natCast, Nat.cast_add_one]
 
+/-- Explicit formula for `Complex.logTaylor (p + 1) (-z)` as the negated partial sum of the Taylor
+series of `-log (1 - z)`. -/
+theorem logTaylor_succ_neg (p : ℕ) (z : ℂ) :
+    logTaylor (p + 1) (-z) = -∑ k ∈ Finset.range p, z ^ (k + 1) / (k + 1) := by
+  rw [logTaylor, Finset.sum_range_succ', ← Finset.sum_neg_distrib]
+  simp only [Nat.cast_zero, div_zero, add_zero]
+  refine Finset.sum_congr rfl fun k _ ↦ ?_
+  rw [neg_pow z, ← mul_assoc, ← pow_add, show k + 1 + 1 + (k + 1) = 2 * (k + 1) + 1 by omega,
+    pow_succ, pow_mul]
+  simp [neg_div]
+
+/-- On the open unit disc `‖z‖ < 1`, the `p`-th Taylor remainder of `log (1 - z)` is bounded by
+`‖z‖ ^ (p + 1) * (1 - ‖z‖)⁻¹ / (p + 1)`. -/
+theorem norm_log_one_sub_add_sum_range_le (p : ℕ) {z : ℂ} (hz : ‖z‖ < 1) :
+    ‖log (1 - z) + ∑ k ∈ Finset.range p, z ^ (k + 1) / (k + 1)‖ ≤
+      ‖z‖ ^ (p + 1) * (1 - ‖z‖)⁻¹ / (p + 1) := by
+  have h := norm_log_sub_logTaylor_le p (show ‖-z‖ < 1 by simpa using hz)
+  simpa [sub_eq_add_neg, logTaylor_succ_neg] using h
+
+/-- On the closed half-radius disc `‖z‖ ≤ 1 / 2`, the `p`-th Taylor remainder of `log (1 - z)` is
+bounded by `2 / (p + 1) * ‖z‖ ^ (p + 1)`. -/
+theorem norm_log_one_sub_add_sum_range_le_of_le_half (p : ℕ) {z : ℂ} (hz : ‖z‖ ≤ 1 / 2) :
+    ‖log (1 - z) + ∑ k ∈ Finset.range p, z ^ (k + 1) / (k + 1)‖ ≤
+      2 / (p + 1) * ‖z‖ ^ (p + 1) := by
+  have hz1 : ‖z‖ < 1 := lt_of_le_of_lt hz (by norm_num)
+  have hinv : (1 - ‖z‖)⁻¹ ≤ 2 := by
+    rw [inv_le_comm₀ (by linarith) (by norm_num)]
+    linarith
+  calc
+    _ ≤ ‖z‖ ^ (p + 1) * (1 - ‖z‖)⁻¹ / (p + 1) := norm_log_one_sub_add_sum_range_le p hz1
+    _ ≤ ‖z‖ ^ (p + 1) * 2 / (p + 1) := by gcongr
+    _ = 2 / (p + 1) * ‖z‖ ^ (p + 1) := by ring
+
+private theorem sum_Icc_one_pow_div (n : ℕ) (z : ℂ) :
+    ∑ j ∈ Finset.Icc 1 n, z ^ j / j = ∑ k ∈ Finset.range n, z ^ (k + 1) / (k + 1) := by
+  rw [← Finset.Ico_add_one_right_eq_Icc, Finset.sum_Ico_eq_sum_range, Nat.add_sub_cancel]
+  refine Finset.sum_congr rfl fun k _ ↦ ?_
+  rw [add_comm 1 k, Nat.cast_add, Nat.cast_one]
+
 /-- **The truncation error of the Taylor series of `log (1 - z)⁻¹`.** For `‖z‖ < 1`, the partial
 sum `∑ j ∈ Icc 1 n, z ^ j / j` approximates `log (1 - z)⁻¹ = -log (1 - z)` to within
 `‖z‖ ^ (n + 1) / ((1 - ‖z‖) (n + 1))`. This restates Mathlib's
@@ -149,17 +192,8 @@ sum `∑ j ∈ Icc 1 n, z ^ j / j` approximates `log (1 - z)⁻¹ = -log (1 - z)
 theorem norm_log_one_sub_inv_sub_sum_Icc_le (n : ℕ) {z : ℂ} (hz : ‖z‖ < 1) :
     ‖log (1 - z)⁻¹ - ∑ j ∈ Finset.Icc 1 n, z ^ j / j‖ ≤
       ‖z‖ ^ (n + 1) * (1 - ‖z‖)⁻¹ / (n + 1) := by
-  have hT : ∀ n : ℕ, logTaylor (n + 1) (-z) = -∑ j ∈ Finset.Icc 1 n, z ^ j / j := by
-    intro n
-    induction n with
-    | zero => simp [logTaylor_succ, logTaylor_zero]
-    | succ n ih =>
-      rw [logTaylor_succ, Pi.add_apply, ih, Finset.sum_Icc_succ_top (by lia), neg_pow z]
-      have : ((-1 : ℂ) ^ (n + 1 + 1) * (-1) ^ (n + 1)) = -1 := by
-        rw [← pow_add, show n + 1 + 1 + (n + 1) = 2 * (n + 1) + 1 by ring, pow_succ, pow_mul]
-        simp
-      linear_combination (z ^ (n + 1) / ((n + 1 : ℕ) : ℂ)) * this
-  simpa [hT, sub_eq_add_neg] using norm_log_one_sub_inv_add_logTaylor_neg_le n hz
+  simpa [logTaylor_succ_neg, sum_Icc_one_pow_div, sub_eq_add_neg] using
+    norm_log_one_sub_inv_add_logTaylor_neg_le n hz
 
 /-- For `2 ≤ p` and `‖w‖ ≤ 1`, the partial sum of the Taylor series of `log (1 - w / p)⁻¹` up to
 degree `K` is within `2 / p ^ (K + 1)` of it. This is the local comparison at a single prime in an
@@ -173,16 +207,18 @@ theorem norm_log_one_sub_div_inv_sub_sum_Icc_le {p : ℕ} (hp : 2 ≤ p) {w : �
     rw [norm_div, norm_natCast, div_eq_mul_inv]
     exact mul_le_of_le_one_left (by positivity) hw
   have hz1 : ‖w / p‖ ≤ 1 / 2 := hz.trans (by rw [one_div]; gcongr)
-  have hpos : 0 < 1 - ‖w / p‖ := by linarith
-  refine (norm_log_one_sub_inv_sub_sum_Icc_le K (by linarith)).trans ?_
-  have h2 : (1 - ‖w / p‖)⁻¹ ≤ 2 := by
-    rw [inv_le_comm₀ hpos two_pos]
-    linarith
-  calc ‖w / p‖ ^ (K + 1) * (1 - ‖w / p‖)⁻¹ / (K + 1)
-      ≤ ‖w / p‖ ^ (K + 1) * (1 - ‖w / p‖)⁻¹ :=
-        div_le_self (by have := inv_pos.mpr hpos; positivity) (by simp)
-    _ ≤ ((p : ℝ)⁻¹) ^ (K + 1) * 2 := by gcongr
-    _ = 2 * ((p : ℝ) ^ (K + 1))⁻¹ := by rw [inv_pow, mul_comm]
+  have hlt1 : ‖w / p‖ < 1 := lt_of_le_of_lt hz1 (by norm_num)
+  have hlog : log (1 - w / p)⁻¹ = -log (1 - w / p) := by
+    rw [sub_eq_add_neg, log_inv _ <| slitPlane_arg_ne_pi <|
+      mem_slitPlane_of_norm_lt_one <| (norm_neg (w / p)).symm ▸ hlt1]
+  rw [hlog, sum_Icc_one_pow_div, ← neg_add', norm_neg]
+  calc
+    _ ≤ 2 / (K + 1) * ‖w / p‖ ^ (K + 1) := norm_log_one_sub_add_sum_range_le_of_le_half K hz1
+    _ ≤ 2 * ((p : ℝ)⁻¹) ^ (K + 1) := by
+      have hdiv : (2 : ℝ) / ((K : ℝ) + 1) ≤ 2 :=
+        div_le_self (by norm_num) (by linarith [Nat.cast_nonneg (α := ℝ) K])
+      gcongr
+    _ = 2 * ((p : ℝ) ^ (K + 1))⁻¹ := by rw [inv_pow]
 
 /-- For `1 < p` and `‖w‖ ≤ 1`, the Euler factor `1 - w / p` is nonzero. -/
 theorem one_sub_div_natCast_ne_zero {p : ℕ} (hp : 1 < p) {w : ℂ} (hw : ‖w‖ ≤ 1) :

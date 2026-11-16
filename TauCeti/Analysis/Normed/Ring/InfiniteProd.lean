@@ -22,6 +22,13 @@ exponential bounds on its factors and a common bound on all finite sums of the e
 `TauCeti.norm_tprod_le_exp_of_sum_le` gives the corresponding totalized product bound.
 The same argument, from Mathlib's `Finset.norm_prod_one_add_sub_one_le`, bounds the distance
 `‖∏' i, (1 + f i) - 1‖` by `exp (∑' i, ‖f i‖) - 1`, which controls such a product near the identity.
+
+Building on Mathlib's `tprod_one_add_ne_zero_of_summable` and `multipliable_one_add_of_summable`
+(`Mathlib.Analysis.SpecialFunctions.Log.Summable`), we also record the pointwise vanishing
+characterization `TauCeti.tprod_one_add_eq_zero_iff_of_summable`, finiteness of vanishing factors
+`TauCeti.finite_one_add_eq_zero_of_summable`, finite-set factor extraction
+`TauCeti.tprod_one_add_eq_prod_mul_tprod_compl`, and nonvanishing of the complementary tail
+`TauCeti.tprod_one_add_compl_ne_zero_of_summable`.
 -/
 
 public section
@@ -81,5 +88,44 @@ theorem norm_tprod_one_add_sub_one_le {f : ι → R} (hf : Summable fun i ↦ �
       (Real.exp_le_exp.2 (hf.sum_le_tsum s fun _ _ ↦ norm_nonneg _)) 1
   · rw [tprod_eq_one_of_not_multipliable h, sub_self, norm_zero, sub_nonneg]
     exact Real.one_le_exp (tsum_nonneg fun _ ↦ norm_nonneg _)
+
+/-- Under absolute summability of `f`, the product `∏' i, (1 + f i)` in a complete normed
+commutative ring with multiplicative norm vanishes if and only if one of its factors vanishes. -/
+theorem tprod_one_add_eq_zero_iff_of_summable [NormMulClass R] [CompleteSpace R] {f : ι → R}
+    (hf : Summable fun i ↦ ‖f i‖) :
+    (∏' i, (1 + f i)) = 0 ↔ ∃ i, 1 + f i = 0 := by
+  refine ⟨fun h ↦ ?_, tprod_of_exists_eq_zero⟩
+  by_contra! hne
+  exact tprod_one_add_ne_zero_of_summable hne hf h
+
+/-- Under summability of `‖f i‖` in a normed commutative ring with `‖(1 : R)‖ = 1`, only finitely
+many factors `1 + f i` can vanish. -/
+theorem finite_one_add_eq_zero_of_summable {f : ι → R} (hf : Summable fun i ↦ ‖f i‖) :
+    {i | 1 + f i = 0}.Finite := by
+  have hev : ∀ᶠ i in Filter.cofinite, 1 + f i ≠ 0 := by
+    filter_upwards [hf.tendsto_cofinite_zero.eventually (gt_mem_nhds zero_lt_one)] with i hi hzero
+    have hnorm : ‖f i‖ = 1 := by
+      rw [← norm_neg, ← eq_neg_of_add_eq_zero_left hzero, norm_one]
+    exact lt_irrefl (1 : ℝ) (hnorm ▸ hi)
+  simpa only [Filter.eventually_cofinite, not_not] using hev
+
+/-- Under summability of `‖f i‖` in a complete normed commutative ring, any finite set `s` of
+factors splits off from `∏' i, (1 + f i)` leaving the complementary subtype product. -/
+theorem tprod_one_add_eq_prod_mul_tprod_compl [CompleteSpace R] {f : ι → R}
+    (hf : Summable fun i ↦ ‖f i‖) (s : Finset ι) :
+    (∏' i, (1 + f i)) = (∏ i ∈ s, (1 + f i)) * ∏' i : {i // i ∉ s}, (1 + f i) := by
+  have htail : Multipliable fun i : {i // i ∉ s} ↦ 1 + f i :=
+    multipliable_one_add_of_summable (hf.subtype _)
+  have hsplit := Multipliable.tprod_mul_tprod_compl (s := (s : Set ι)) (f := fun i ↦ 1 + f i)
+    Multipliable.of_finite htail
+  rw [s.tprod_subtype' (fun i ↦ 1 + f i)] at hsplit
+  exact hsplit.symm
+
+/-- Under absolute summability of `f`, extracting a finite set `s` containing all vanishing factors
+leaves a nonzero complementary product. -/
+theorem tprod_one_add_compl_ne_zero_of_summable [NormMulClass R] [CompleteSpace R] {f : ι → R}
+    (hf : Summable fun i ↦ ‖f i‖) {s : Finset ι} (hs : ∀ i, 1 + f i = 0 → i ∈ s) :
+    (∏' i : {i // i ∉ s}, (1 + f i)) ≠ 0 :=
+  tprod_one_add_ne_zero_of_summable (fun i hi ↦ i.property (hs i hi)) (hf.subtype _)
 
 end TauCeti

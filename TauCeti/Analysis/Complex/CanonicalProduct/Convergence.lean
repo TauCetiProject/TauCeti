@@ -11,7 +11,7 @@ public import Mathlib.Analysis.Normed.Module.MultipliableUniformlyOn
 public import Mathlib.Analysis.SpecialFunctions.Log.Summable
 public import Mathlib.Analysis.Complex.LocallyUniformLimit
 public import TauCeti.Analysis.Analytic.Order
-import TauCeti.Order.Filter.AtTopBot.Finset
+import TauCeti.Topology.Algebra.InfiniteSum.UniformOn
 
 /-!
 # Convergence and multiplicities of genus-one canonical products
@@ -259,16 +259,11 @@ theorem analyticOrderAt_tprod_weierstrassFactorOne_pow_of_injective {z : ℂ} {i
 theorem hasProdUniformlyOn_weierstrassFactorOne_pow {K : Set ℂ} (hK : IsCompact K) :
     HasProdUniformlyOn (fun i z ↦ weierstrassFactorOne (a i * z) ^ m i)
       (fun z ↦ ∏' i, weierstrassFactorOne (a i * z) ^ m i) K := by
-  have h0 := HasProdUniformlyOn.tendstoUniformlyOn
-    (hasProdUniformlyOn_weierstrassFactorOne
-      (fun p : Σ i, Fin (m i) ↦ a p.1) (summable_sigma_norm_sq_weierstrass a m hm) hK)
-  rw [hasProdUniformlyOn_iff_tendstoUniformlyOn]
-  intro u hu
-  filter_upwards [(TauCeti.tendsto_finset_sigma_univ_atTop (κ := fun i ↦ Fin (m i))).eventually
-    (h0 u hu)] with s hs z hz
-  have hsz := hs z hz
-  simpa only [← tprod_weierstrassFactorOne_pow_eq_sigma a m hm,
-    Finset.prod_sigma, Finset.prod_const, Finset.card_univ, Fintype.card_fin] using hsz
+  have h := (hasProdUniformlyOn_weierstrassFactorOne
+    (fun p : Σ i, Fin (m i) ↦ a p.1) (summable_sigma_norm_sq_weierstrass a m hm)
+    hK).sigma_of_finite
+  simpa only [Finset.prod_const, Finset.card_univ, Fintype.card_fin,
+    ← tprod_weierstrassFactorOne_pow_eq_sigma a m hm] using h
 
 /-- Products with natural multiplicities converge locally uniformly on the whole plane. -/
 theorem hasProdLocallyUniformlyOn_weierstrassFactorOne_pow :

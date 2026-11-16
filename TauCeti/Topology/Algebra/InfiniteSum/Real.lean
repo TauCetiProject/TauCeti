@@ -47,6 +47,9 @@ analogue of the power-rule integral identity for tails.
   exactly when `∑ i, m i * a i` is.
 * `TauCeti.eventually_mul_le_one_of_summable_sq`: a square-summable family eventually satisfies
   `b i * C ≤ 1`.
+* `Filter.Tendsto.exists_summable_mul_div_pow`: if `r : ι → ℝ` tends to infinity along
+  `Filter.cofinite`, then for any natural multiplicities `m : ι → ℕ` there exist exponents
+  `p : ι → ℕ` such that `∑' i, m i * (R / r i) ^ (p i + 1) < ∞` for every `R > 0`.
 -/
 
 public section
@@ -215,3 +218,45 @@ theorem eventually_mul_le_one_of_summable_sq {ι : Type*} {b : ι → ℝ}
   nlinarith
 
 end TauCeti
+
+/-- If `r : ι → ℝ` tends to infinity along the cofinite filter, then for any multiplicity function
+`m : ι → ℕ` there exist exponents `p : ι → ℕ` such that `∑' i, m i * (R / r i) ^ (p i + 1) < ∞`
+for every `R > 0`. -/
+theorem Filter.Tendsto.exists_summable_mul_div_pow {ι : Type*} {r : ι → ℝ}
+    (hr : Tendsto r cofinite atTop) (m : ι → ℕ) :
+    ∃ p : ι → ℕ, ∀ R : ℝ, 0 < R → Summable fun i ↦ (m i : ℝ) * (R / r i) ^ (p i + 1) := by
+  have hfin (B : ℝ) : {i | r i ≤ B}.Finite := by
+    simpa only [eventually_cofinite, not_lt] using hr.eventually_gt_atTop B
+  have : Countable ι := Set.countable_univ_iff.mp <|
+    (Set.countable_iUnion fun n : ℕ ↦ (hfin n).countable).mono fun i _ ↦
+      Set.mem_iUnion.mpr ⟨⌈r i⌉₊, Nat.le_ceil (r i)⟩
+  obtain ⟨idx, hidx⟩ := Countable.exists_injective_nat ι
+  refine ⟨fun i ↦ idx i + m i, fun R hR ↦ ?_⟩
+  have hgeom : Summable fun i ↦ (1 / 2 : ℝ) ^ (idx i + 1) :=
+    ((summable_nat_add_iff 1).mpr summable_geometric_two).comp_injective hidx
+  classical
+  refine (hgeom.of_nonneg_of_le
+    (g := fun i ↦ if 2 * R < r i then (m i : ℝ) * (R / r i) ^ (idx i + m i + 1) else 0)
+    (fun i ↦ ?_) (fun i ↦ ?_)).congr_cofinite ?_
+  · split_ifs with hi
+    · have hr_pos : 0 < r i := by linarith
+      positivity
+    · exact le_rfl
+  · split_ifs with hi
+    · have hr_pos : 0 < r i := by linarith
+      have hhalf : R / r i ≤ 1 / 2 := (div_le_iff₀ hr_pos).mpr (by linarith)
+      have hm_two : (m i : ℝ) * (1 / 2 : ℝ) ^ m i ≤ 1 := by
+        have hlt : (m i : ℝ) ≤ (2 : ℝ) ^ m i := by exact_mod_cast (m i).lt_two_pow_self.le
+        calc (m i : ℝ) * (1 / 2 : ℝ) ^ m i ≤ (2 : ℝ) ^ m i * (1 / 2 : ℝ) ^ m i := by gcongr
+          _ = 1 := by rw [← mul_pow]; norm_num
+      calc
+        (m i : ℝ) * (R / r i) ^ (idx i + m i + 1)
+          ≤ (m i : ℝ) * (1 / 2 : ℝ) ^ (idx i + m i + 1) := by gcongr
+        _ = ((m i : ℝ) * (1 / 2 : ℝ) ^ m i) * (1 / 2 : ℝ) ^ (idx i + 1) := by
+            rw [show idx i + m i + 1 = m i + (idx i + 1) by omega, pow_add]; ring
+        _ ≤ 1 * (1 / 2 : ℝ) ^ (idx i + 1) := by gcongr
+        _ = (1 / 2 : ℝ) ^ (idx i + 1) := one_mul _
+    · positivity
+  · filter_upwards [hr.eventually_gt_atTop (2 * R)] with i hi
+    simp [hi]
+
