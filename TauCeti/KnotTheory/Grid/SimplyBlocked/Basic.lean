@@ -37,7 +37,7 @@ specialization.
 * `TauCeti.simplyBlockedRenameEquiv`: rename surviving variables and transport the blocked column.
 * `TauCeti.simplyBlockedRenameRingHomInvPair`, `TauCeti.simplyBlockedRenameRingHomInvPairSymm`:
   the renaming and its inverse form a `RingHomInvPair`.
-* `TauCeti.simplyBlockedMap`: the endomorphism of `GC^` induced by an endomorphism of `GC⁻`.
+* `TauCeti.simplyBlockedMap`: coefficient specialization of a semilinear map of `GC⁻`.
 * `TauCeti.GridChain.simplyBlockedRelabelColumnsEquiv`: relabel the columns of a specialized
   chain by a permutation and rename its surviving variables, transporting the blocked column.
 * `TauCeti.GridDiagram.simplyBlockedRectangles`: the empty, `X`-avoiding rectangles which also
@@ -53,8 +53,8 @@ specialization.
 * `TauCeti.simplyBlockedSpecialization_relabelRowsEquiv` and
   `TauCeti.simplyBlockedSpecialization_relabelColumnsRenameEquiv`: row and column relabelings
   commute with specialization.
-* `TauCeti.simplyBlockedSpecialization_apply_linearMap`: specialization intertwines an
-  endomorphism of `GC⁻` with its specialization `TauCeti.simplyBlockedMap`.
+* `TauCeti.simplyBlockedMap_simplyBlockedSpecialization`: specialization intertwines an
+  unblocked semilinear map with its specialization `TauCeti.simplyBlockedMap`.
 * `TauCeti.simplyBlockedSpecialization_surjective` and
   `TauCeti.exact_X_smul_simplyBlockedSpecialization`: specialization presents the specialized
   chain module as the quotient of `GC⁻` by the multiples of `V_i`, which
@@ -234,48 +234,69 @@ theorem simplyBlockedSpecialization_apply_eq_of_single
     simp only [map_add, map_smul, LinearMap.map_smulₛₗ, h, ih,
       simplyBlockedSpecialization_single, map_one]
 
-/-- The endomorphism of `GC^` obtained from an endomorphism `f` of `GC⁻` by setting `V_i = 0`:
-it sends each generator to the specialization of its image under `f`. -/
-noncomputable def simplyBlockedMap
-    (f : GridChainMinus R n →ₗ[MvPolynomial (Fin n) R] GridChainMinus R n) :
-    GridChainHat R n i →ₗ[MvPolynomial {c : Fin n // c ≠ i} R] GridChainHat R n i :=
-  Finsupp.linearCombination _ fun x => simplyBlockedSpecialization R i (f (Finsupp.single x 1))
+end LinearMap
 
-variable (f : GridChainMinus R n →ₗ[MvPolynomial (Fin n) R] GridChainMinus R n)
+section SemilinearMap
 
-/-- On a generator, the specialized map is the specialization of the original map. -/
-theorem simplyBlockedMap_single (x : GridState n) :
-    simplyBlockedMap R i f (Finsupp.single x 1) =
-      simplyBlockedSpecialization R i (f (Finsupp.single x 1)) := by
-  rw [simplyBlockedMap, Finsupp.linearCombination_single, one_smul]
+variable {n m : ℕ} (R : Type*) [CommSemiring R] (i : Fin n) (j : Fin m)
 
-/-- The matrix entries of the specialized map are the specialized matrix entries. -/
-@[simp]
-theorem simplyBlockedMap_single_apply (x y : GridState n) :
-    simplyBlockedMap R i f (Finsupp.single x 1) y =
-      MvPolynomial.killCompl (f := Subtype.val) Subtype.val_injective
-        (f (Finsupp.single x 1) y) := by
-  rw [simplyBlockedMap_single, simplyBlockedSpecialization_apply]
+variable {σ : MvPolynomial (Fin m) R →+* MvPolynomial (Fin n) R}
+  (τ : MvPolynomial {c : Fin m // c ≠ j} R →+* MvPolynomial {c : Fin n // c ≠ i} R)
+  (f : GridChainMinus R m →ₛₗ[σ] GridChainMinus R n)
 
-/-- The specialized map multiplies a chain by the specialized matrix. -/
+/-- Specialize the matrix coefficients of a semilinear unblocked grid map along a homomorphism
+`τ` of surviving coefficient rings. The full coefficient homomorphism `σ` need not be a variable
+renaming, and compatibility with blocking is needed only for the descent equations. -/
+noncomputable def simplyBlockedMap :
+    GridChainHat R m j →ₛₗ[τ] GridChainHat R n i :=
+  (Finsupp.linearCombination _ fun x : GridState m =>
+    simplyBlockedSpecialization R i (f (Finsupp.single x 1))).comp
+      (Finsupp.mapRange.linearMap τ.toSemilinearMap)
+
+/-- The specialized map on a single coefficient. -/
+theorem simplyBlockedMap_single (x : GridState m)
+    (p : MvPolynomial {c : Fin m // c ≠ j} R) :
+    simplyBlockedMap R i j τ f (Finsupp.single x p) =
+      τ p • simplyBlockedSpecialization R i (f (Finsupp.single x 1)) := by
+  simp [simplyBlockedMap]
+
+/-- Matrix evaluation of the specialized map. -/
 @[simp 900] -- Prefer the generator formula to the general chain expansion.
-theorem simplyBlockedMap_apply_apply (c : GridChainHat R n i) (y : GridState n) :
-    simplyBlockedMap R i f c y =
-      c.sum fun x p => p * MvPolynomial.killCompl (f := Subtype.val) Subtype.val_injective
-        (f (Finsupp.single x 1) y) := by
-  rw [simplyBlockedMap, Finsupp.linearCombination_apply]
-  simp only [Finsupp.sum_apply, Finsupp.smul_apply, smul_eq_mul,
-    simplyBlockedSpecialization_apply]
+theorem simplyBlockedMap_apply_apply (c : GridChainHat R m j) (y : GridState n) :
+    simplyBlockedMap R i j τ f c y = c.sum fun x p =>
+      τ p * simplyBlockedRingHom R i (f (Finsupp.single x 1) y) := by
+  simp only [simplyBlockedMap, LinearMap.comp_apply, Finsupp.linearCombination_apply,
+    Finsupp.mapRange.linearMap_apply, Finsupp.sum_apply, Finsupp.smul_apply, smul_eq_mul,
+    simplyBlockedSpecialization_apply, simplyBlockedRingHom_apply]
+  exact Finsupp.sum_mapRange_index fun _ => zero_mul _
 
-/-- Specialization at `V_i = 0` intertwines a map of `GC⁻` with its specialization.
+/-- Specialization intertwines the unblocked map with its specialized map. -/
+theorem simplyBlockedMap_simplyBlockedSpecialization
+    (hστ : ∀ p, τ (simplyBlockedRingHom R j p) = simplyBlockedRingHom R i (σ p))
+    (c : GridChainMinus R m) :
+    simplyBlockedMap R i j τ f (simplyBlockedSpecialization R j c) =
+      simplyBlockedSpecialization R i (f c) := by
+  induction c using Finsupp.induction_linear with
+  | zero => simp only [map_zero]
+  | add c d hc hd => simp only [map_add, hc, hd]
+  | single x p =>
+    rw [simplyBlockedSpecialization_single, simplyBlockedMap_single,
+      ← simplyBlockedRingHom_apply, hστ,
+      ← Finsupp.smul_single_one x p, map_smulₛₗ, map_smulₛₗ]
 
-Not a `simp` lemma: its left-hand side matches every specialized linear-map application, which
-would bypass the intertwining lemmas of named specialized maps. -/
-theorem simplyBlockedSpecialization_apply_linearMap (c : GridChainMinus R n) :
-    simplyBlockedSpecialization R i (f c) =
-      simplyBlockedMap R i f (simplyBlockedSpecialization R i c) :=
-  simplyBlockedSpecialization_apply_eq_of_single R i
-    (fun x => (simplyBlockedMap_single R i f x).symm) c
+/-- The matrix entry on a basis generator is the specialized original matrix entry. -/
+@[simp]
+theorem simplyBlockedMap_single_apply (x : GridState m) (y : GridState n) :
+    simplyBlockedMap R i j τ f (Finsupp.single x 1) y =
+      simplyBlockedRingHom R i (f (Finsupp.single x 1) y) := by
+  rw [simplyBlockedMap_single, map_one, one_smul, simplyBlockedSpecialization_apply,
+    simplyBlockedRingHom_apply]
+
+end SemilinearMap
+
+section LinearMap
+
+variable {n : ℕ} (R : Type*) [CommSemiring R] (i : Fin n)
 
 /-- Setting `V_i = 0` in a squarefree monomial discards it if it contains `V_i`; otherwise it
 leaves the product of the same variables. -/
