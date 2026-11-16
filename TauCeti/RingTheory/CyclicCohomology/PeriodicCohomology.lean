@@ -365,7 +365,7 @@ theorem isZero_periodicCyclicCohomology_self_one :
   have := ModuleCat.isZero_iff_subsingleton.1 (isZero_hochschildCohomology_self R M one_ne_zero)
   have h : Limits.IsZero ((cyclicTotalComplex R R M).homology 1) :=
     ModuleCat.isZero_iff_subsingleton.2
-      injective_homologyMap_cyclicTotalComplexToHochschild_one.subsingleton
+      (injective_homologyMap_cyclicTotalComplexToHochschild_one R R M).subsingleton
   exact h.of_iso (asIso (periodicCyclicCohomology.ι R R M 1 0)).symm
 
 end GroundRing
