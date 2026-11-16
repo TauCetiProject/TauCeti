@@ -106,7 +106,7 @@ theorem presented_isProjective_eq_top (hP : IsProgenerator P) :
 
 /-- For a progenerator `P` of an abelian category `C`, the inclusion `proj C ⥤ add P` is an
 equivalence of categories, since `proj C = add P`. -/
-instance isEquivalence_ιOfLE_isProjective_additiveClosure (hP : IsProgenerator P) :
+theorem isEquivalence_ιOfLE_isProjective_additiveClosure (hP : IsProgenerator P) :
     (ObjectProperty.ιOfLE hP.isProjective_le_additiveClosure).IsEquivalence :=
   (ObjectProperty.isEquivalence_ιOfLE_iff _).mpr
     (hP.additiveClosure_le_isProjective.trans (isProjective C).le_isoClosure)
@@ -114,6 +114,9 @@ instance isEquivalence_ιOfLE_isProjective_additiveClosure (hP : IsProgenerator 
 /-- **Projectivization of `proj C`.** For a progenerator `P` of an abelian category `C`, `Hom(P, -)`
 induces an equivalence between `proj C` (`(isProjective C).FullSubcategory`) and the finitely
 generated projective right `End P`-modules. -/
+-- Exposed so `(hP.projectiveEquivalence.functor.obj X).obj` is definitionally
+-- `(preadditiveCoyonedaObj P).obj X.obj` in the public signature of
+-- `projectiveEquivalence_functor_map_hom`.
 @[expose] noncomputable def projectiveEquivalence (hP : IsProgenerator P) :
     (isProjective C).FullSubcategory ≌ (finiteProjectiveModules (End P)ᵐᵒᵖ).FullSubcategory :=
   have := hP.isEquivalence_ιOfLE_isProjective_additiveClosure
@@ -202,6 +205,9 @@ theorem finitePresentationModules_le_essImage (hP : IsProgenerator P) :
 
 /-- For a progenerator `P` of an abelian category `C`, `Hom(P, -)` as a functor from `C` to the
 finitely presented `(End P)ᵐᵒᵖ`-modules. -/
+-- Exposed so `(hP.progeneratorFunctor.obj X).obj` is definitionally
+-- `(preadditiveCoyonedaObj P).obj X` in the public signatures of `progeneratorFunctor_map_hom`
+-- and `*_hom_app`/`*_inv_app`.
 @[expose] noncomputable def progeneratorFunctor (hP : IsProgenerator P) :
     C ⥤ (finitePresentationModules (End P)ᵐᵒᵖ).FullSubcategory :=
   (finitePresentationModules (End P)ᵐᵒᵖ).lift (preadditiveCoyonedaObj P)
