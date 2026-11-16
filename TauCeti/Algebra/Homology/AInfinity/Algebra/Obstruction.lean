@@ -61,6 +61,12 @@ transformation adds `[m_𝒜, φ]` to the Taylor map, and `[m_𝒜, φ]` agrees 
   of a graded algebra raises the arity of a cochain concentrated in one arity by one.
 * `TauCeti.AInfinityAlgebra.hochschildDifferential_obstruction`: the first obstruction to the
   formality of a minimal `A∞` structure on a graded algebra is a Hochschild cocycle.
+* `TauCeti.AInfinityAlgebra.hochschildDifferential_apply_lengthProj_eq_zero`: on the words of
+  length `n + 2`, the Hochschild differential of a graded algebra sees a cochain only through its
+  component of length `n + 1`.
+* `TauCeti.AInfinityAlgebra.hochschildDifferential_comp_lengthProj_eq_obstruction`: if `m_𝒜 - m_ℋ`
+  is the Hochschild differential of `χ` on the words of length at most `n + 2`, the obstruction in
+  arity `n + 2` is the differential of the component of `χ` of length `n + 1`.
 * `TauCeti.AInfinityAlgebra.IsMinimal.taylor_gauge_apply_eq_of_hochschildDifferential`: a gauge
   transformation by a cochain bounding the obstruction removes it.
 
@@ -258,6 +264,74 @@ theorem hochschildDifferential_obstruction (hℋ : ℋ.IsMinimal) (hm : ∀ k, 3
     hℋ.hochschildDifferential_apply_eq_zero_of_mem_filtration_add_one 1 hdiff hz, zero_add]
   exact hochschildDifferential_taylor_sub_taylor_apply_eq_zero hG h
     (filtration_monotone R A (by omega) hz)
+
+/-! ### The obstruction as a coboundary -/
+
+/-- For a graded algebra `ℋ`, the Hochschild differential of a cochain without component of
+length `n + 1` vanishes on the words of length `n + 2`: the differential of the component of
+length `j + 1` is concentrated on the words of length `j + 2`. -/
+theorem hochschildDifferential_apply_lengthProj_eq_zero (hℋ : ℋ.IsMinimal)
+    (hm : ∀ k, 3 ≤ k → ℋ.m k = 0) (q : ℤ) {n : ℕ} {ψ : ReducedTensorWords R A →ₗ[R] A}
+    (hψ : ψ ∘ₗ lengthProj R A ⟨n + 1, n.succ_pos⟩ = 0) (z : ReducedTensorWords R A) :
+    ℋ.hochschildDifferential q ψ (lengthProj R A ⟨n + 2, by omega⟩ z) = 0 := by
+  have hz := lengthProj_mem_filtration R A ⟨n + 2, by omega⟩ z
+  -- Remove the components of `ψ` of lengths `1, …, n` one at a time, from the shortest up; a
+  -- cochain vanishing on the words of length at most `n + 1` has differential vanishing on those
+  -- of length at most `n + 2`.
+  suffices H : ∀ d j, j + d = n → ∀ ψ : ReducedTensorWords R A →ₗ[R] A,
+      ψ ∘ₗ lengthProj R A ⟨n + 1, n.succ_pos⟩ = 0 → (∀ w ∈ filtration R A j, ψ w = 0) →
+      ℋ.hochschildDifferential q ψ (lengthProj R A ⟨n + 2, by omega⟩ z) = 0 from
+    H n 0 (zero_add n) ψ hψ (apply_eq_zero_of_mem_filtration_zero R A ψ)
+  intro d
+  induction d with
+  | zero =>
+    intro j hj ψ hψ hψj
+    obtain rfl : j = n := by omega
+    refine hℋ.hochschildDifferential_apply_eq_zero_of_mem_filtration_add_one q (fun w hw ↦ ?_) hz
+    rw [← apply_lengthProj_of_mem_filtration R A hψj hw, ← LinearMap.comp_apply, hψ,
+      LinearMap.zero_apply]
+  | succ d ih =>
+    intro j hj ψ hψ hψj
+    have hφ : (ψ ∘ₗ lengthProj R A ⟨j + 1, j.succ_pos⟩) ∘ₗ lengthProj R A ⟨j + 1, j.succ_pos⟩ =
+        ψ ∘ₗ lengthProj R A ⟨j + 1, j.succ_pos⟩ := comp_lengthProj_comp_lengthProj R A ψ _
+    rw [← sub_add_cancel ψ (ψ ∘ₗ lengthProj R A ⟨j + 1, j.succ_pos⟩), hochschildDifferential_add,
+      LinearMap.add_apply,
+      ← hochschildDifferential_comp_lengthProj (hℋ.taylor_comp_lengthProj_two hm) q hφ,
+      LinearMap.comp_apply,
+      lengthProj_lengthProj_of_ne R A fun h ↦ absurd (congrArg Subtype.val h) (by dsimp; omega),
+      map_zero, add_zero]
+    refine ih (j + 1) (by omega) _ (LinearMap.ext fun w ↦ ?_) fun w hw ↦ ?_
+    · rw [LinearMap.comp_apply, LinearMap.sub_apply, LinearMap.comp_apply,
+        lengthProj_lengthProj_of_ne R A fun h ↦ absurd (congrArg Subtype.val h) (by dsimp; omega),
+        map_zero, sub_zero, ← LinearMap.comp_apply, hψ, LinearMap.zero_apply]
+    · rw [LinearMap.sub_apply, LinearMap.comp_apply, apply_lengthProj_of_mem_filtration R A hψj hw,
+        sub_self]
+
+/-- Let `ℋ` be a graded algebra and `χ` a cochain whose Hochschild differential is `m_𝒜 - m_ℋ` on
+the words of length at most `n + 2`.  Then the obstruction `mₙ₊₂` is the Hochschild differential
+of the component of `χ` of length `n + 1`, as the differential of the other components vanishes on
+the words of length `n + 2`. -/
+theorem hochschildDifferential_comp_lengthProj_eq_obstruction (hℋ : ℋ.IsMinimal)
+    (hm : ∀ k, 3 ≤ k → ℋ.m k = 0) {n : ℕ} {χ : ReducedTensorWords R A →ₗ[R] A}
+    (hχ : ∀ z ∈ filtration R A (n + 2),
+      𝒜.taylor z - ℋ.taylor z = ℋ.hochschildDifferential 0 χ z) :
+    ℋ.hochschildDifferential 0 (χ ∘ₗ lengthProj R A ⟨n + 1, n.succ_pos⟩) =
+      𝒜.obstruction ℋ ⟨n + 2, by omega⟩ := by
+  have hφ : (χ ∘ₗ lengthProj R A ⟨n + 1, n.succ_pos⟩) ∘ₗ lengthProj R A ⟨n + 1, n.succ_pos⟩ =
+      χ ∘ₗ lengthProj R A ⟨n + 1, n.succ_pos⟩ := comp_lengthProj_comp_lengthProj R A χ _
+  have hd : (χ - χ ∘ₗ lengthProj R A ⟨n + 1, n.succ_pos⟩) ∘ₗ lengthProj R A ⟨n + 1, n.succ_pos⟩ =
+      0 := by
+    rw [LinearMap.sub_comp, hφ, sub_self]
+  have hsplit : ℋ.hochschildDifferential 0 χ =
+      ℋ.hochschildDifferential 0 (χ - χ ∘ₗ lengthProj R A ⟨n + 1, n.succ_pos⟩) +
+        ℋ.hochschildDifferential 0 (χ ∘ₗ lengthProj R A ⟨n + 1, n.succ_pos⟩) := by
+    rw [← hochschildDifferential_add, sub_add_cancel]
+  -- Both sides are concentrated on the words of length `n + 2`.
+  refine LinearMap.ext fun z ↦ ?_
+  rw [← hochschildDifferential_comp_lengthProj (hℋ.taylor_comp_lengthProj_two hm) 0 hφ,
+    obstruction_def, LinearMap.comp_apply, LinearMap.comp_apply, LinearMap.sub_apply,
+    hχ _ (lengthProj_mem_filtration R A ⟨n + 2, by omega⟩ z), hsplit, LinearMap.add_apply,
+    hochschildDifferential_apply_lengthProj_eq_zero hℋ hm 0 hd z, zero_add]
 
 /-! ### Removing the obstruction by a gauge transformation -/
 
