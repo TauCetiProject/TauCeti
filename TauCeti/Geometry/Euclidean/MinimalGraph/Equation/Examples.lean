@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Euclidean.MinimalGraph.Equation.Operator
+public import Mathlib.Analysis.Calculus.ContDiff.WithLp
+public import Mathlib.Analysis.Calculus.FDeriv.WithLp
 public import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.ArctanDeriv
 public import TauCeti.Analysis.Calculus.Gradient
@@ -100,7 +102,7 @@ theorem nondivergenceOperator_norm_sq_pos (x : Plane) :
   positivity
 
 /-- Exchange the two Cartesian coordinates of the Euclidean plane. -/
-def coordinateSwap : Plane →L[ℝ] Plane where
+private def coordinateSwap : Plane →L[ℝ] Plane where
   toFun x := WithLp.toLp 2 ![x 1, x 0]
   map_add' x y := by
     ext i
@@ -109,8 +111,11 @@ def coordinateSwap : Plane →L[ℝ] Plane where
     ext i
     fin_cases i <;> simp
 
-@[simp] theorem coordinateSwap_apply_zero (x : Plane) : (coordinateSwap x) 0 = x 1 := (rfl)
-@[simp] theorem coordinateSwap_apply_one (x : Plane) : (coordinateSwap x) 1 = x 0 := (rfl)
+private theorem coordinateSwap_apply (x : Plane) :
+    coordinateSwap x = WithLp.toLp 2 ![x 1, x 0] := (rfl)
+
+@[simp] private theorem coordinateSwap_apply_zero (x : Plane) : (coordinateSwap x) 0 = x 1 := (rfl)
+@[simp] private theorem coordinateSwap_apply_one (x : Plane) : (coordinateSwap x) 1 = x 0 := (rfl)
 
 /-- The saddle height `xy` in Cartesian coordinates. -/
 def saddleHeight (x : Plane) : ℝ := x 0 * x 1
@@ -118,28 +123,24 @@ def saddleHeight (x : Plane) : ℝ := x 0 * x 1
 @[simp] theorem saddleHeight_apply (x : Plane) : saddleHeight x = x 0 * x 1 := (rfl)
 
 /-- The saddle height has gradient `(y,x)`. -/
-theorem gradient_saddleHeight (x : Plane) : ∇ saddleHeight x = coordinateSwap x := by
+theorem gradient_saddleHeight (x : Plane) :
+    ∇ saddleHeight x = WithLp.toLp 2 ![x 1, x 0] := by
   apply (InnerProductSpace.toDual ℝ Plane).injective
   rw [toDual_gradient]
   unfold saddleHeight
-  have h0 := (EuclideanSpace.proj 0 : Plane →L[ℝ] ℝ).differentiableAt (x := x)
-  have h1 := (EuclideanSpace.proj 1 : Plane →L[ℝ] ℝ).differentiableAt (x := x)
-  have hd := fderiv_fun_mul h0 h1
-  simp only [EuclideanSpace.coe_proj] at hd
-  rw [hd]
-  have hd0 := (EuclideanSpace.proj 0 : Plane →L[ℝ] ℝ).fderiv (x := x)
-  have hd1 := (EuclideanSpace.proj 1 : Plane →L[ℝ] ℝ).fderiv (x := x)
-  simp only [EuclideanSpace.coe_proj] at hd0 hd1
+  rw [fderiv_fun_mul (PiLp.hasFDerivAt_apply (𝕜 := ℝ) 2 x 0).differentiableAt
+    (PiLp.hasFDerivAt_apply (𝕜 := ℝ) 2 x 1).differentiableAt]
   ext v
-  simp [hd0, hd1, InnerProductSpace.toDual_apply_apply,
-    EuclideanSpace.inner_eq_star_dotProduct, dotProduct, Fin.sum_univ_two, mul_comm]
-  ring
+  simp [(PiLp.hasFDerivAt_apply (𝕜 := ℝ) 2 x 0).fderiv,
+    (PiLp.hasFDerivAt_apply (𝕜 := ℝ) 2 x 1).fderiv, InnerProductSpace.toDual_apply_apply,
+    EuclideanSpace.inner_eq_star_dotProduct, dotProduct, Fin.sum_univ_two, mul_comm, add_comm]
 
 /-- The saddle height `xy` is harmonic. -/
 theorem laplacian_saddleHeight (x : Plane) : Δ saddleHeight x = 0 := by
   rw [TauCeti.laplacian_eq_trace_iteratedGradientChain_one,
     TauCeti.iteratedGradientChain_succ, TauCeti.iteratedGradientChain_zero]
-  have hgrad : (∇ saddleHeight) = coordinateSwap := funext gradient_saddleHeight
+  have hgrad : (∇ saddleHeight) = coordinateSwap :=
+    funext fun y ↦ (gradient_saddleHeight y).trans (coordinateSwap_apply y).symm
   rw [hgrad, ContinuousLinearMap.fderiv]
   rw [LinearMap.trace_eq_sum_inner _ (EuclideanSpace.basisFun (Fin 2) ℝ)]
   simp [Fin.sum_univ_two, EuclideanSpace.inner_single_left]
@@ -149,7 +150,7 @@ private theorem fderiv_saddleHeight_eq :
     fderiv ℝ saddleHeight =
       (InnerProductSpace.toDual ℝ Plane).toContinuousLinearMap.comp coordinateSwap := by
   funext x
-  rw [← toDual_gradient, gradient_saddleHeight]
+  rw [← toDual_gradient, gradient_saddleHeight, ← coordinateSwap_apply]
   ext v
   simp [ContinuousLinearMap.comp_apply, InnerProductSpace.toDual_apply_apply]
 
@@ -159,7 +160,12 @@ theorem nondivergenceOperator_saddleHeight (x : Plane) :
   rw [nondivergenceOperator_eq, laplacian_saddleHeight, gradient_saddleHeight,
     fderiv_saddleHeight_eq, ContinuousLinearMap.fderiv]
   simp only [mul_zero, zero_sub, ContinuousLinearMap.comp_apply]
-  simp [EuclideanSpace.inner_eq_star_dotProduct, dotProduct, Fin.sum_univ_two]
+  simp only [Nat.succ_eq_add_one, Nat.reduceAdd, Fin.isValue,
+    LinearMap.coe_toContinuousLinearMap', LinearEquiv.coe_coe,
+    LinearIsometryEquiv.coe_toLinearEquiv, InnerProductSpace.toDual_apply_apply,
+    EuclideanSpace.inner_eq_star_dotProduct, dotProduct, Pi.star_apply, star_trivial,
+    Fin.sum_univ_two, Matrix.cons_val_zero, coordinateSwap_apply_zero,
+    Matrix.cons_val_one, Matrix.cons_val_fin_one, coordinateSwap_apply_one, neg_add_rev, neg_mul]
   ring
 
 /-- Away from the coordinate axes, the harmonic saddle graph is not minimal. -/
@@ -181,41 +187,27 @@ theorem gradient_separableHeight (f g : ℝ → ℝ) (x : Plane)
       WithLp.toLp 2 ![deriv f (x 0), deriv g (x 1)] := by
   apply (InnerProductSpace.toDual ℝ Plane).injective
   rw [toDual_gradient]
-  have h0 := (EuclideanSpace.proj 0 : Plane →L[ℝ] ℝ).differentiableAt (x := x)
-  have h1 := (EuclideanSpace.proj 1 : Plane →L[ℝ] ℝ).differentiableAt (x := x)
+  have h0 := (PiLp.hasFDerivAt_apply (𝕜 := ℝ) 2 x 0).differentiableAt
+  have h1 := (PiLp.hasFDerivAt_apply (𝕜 := ℝ) 2 x 1).differentiableAt
   have hd0 := fderiv_comp x hf h0
   have hd1 := fderiv_comp x hg h1
   have hd := fderiv_fun_add (hf.comp x h0) (hg.comp x h1)
-  simp only [EuclideanSpace.coe_proj, Function.comp_def] at hd hd0 hd1
+  simp only [Function.comp_def] at hd hd0 hd1
   unfold separableHeight
   rw [hd, hd0, hd1]
-  have hp0 := (EuclideanSpace.proj 0 : Plane →L[ℝ] ℝ).fderiv (x := x)
-  have hp1 := (EuclideanSpace.proj 1 : Plane →L[ℝ] ℝ).fderiv (x := x)
-  simp only [EuclideanSpace.coe_proj] at hp0 hp1
   ext v
-  simp [hp0, hp1, InnerProductSpace.toDual_apply_apply,
+  simp [(PiLp.hasFDerivAt_apply (𝕜 := ℝ) 2 x 0).fderiv,
+    (PiLp.hasFDerivAt_apply (𝕜 := ℝ) 2 x 1).fderiv, InnerProductSpace.toDual_apply_apply,
     EuclideanSpace.inner_eq_star_dotProduct, dotProduct, Fin.sum_univ_two]
 
-private theorem secondDerivative_separableHeight (f g : ℝ → ℝ) (x v w : Plane)
+/-- The Hessian of a separated height is diagonal in Cartesian coordinates. -/
+theorem fderiv_fderiv_separableHeight_apply (f g : ℝ → ℝ) (x v w : Plane)
     (hf : ContDiffAt ℝ 2 f (x 0)) (hg : ContDiffAt ℝ 2 g (x 1)) :
     fderiv ℝ (fderiv ℝ (separableHeight f g)) x v w =
       iteratedDeriv 2 f (x 0) * v 0 * w 0 +
         iteratedDeriv 2 g (x 1) * v 1 * w 1 := by
-  have hp0 : ContDiffAt ℝ 2 (EuclideanSpace.proj 0 : Plane →L[ℝ] ℝ) x :=
-    (EuclideanSpace.proj 0 : Plane →L[ℝ] ℝ).contDiff.contDiffAt
-  have hp1 : ContDiffAt ℝ 2 (EuclideanSpace.proj 1 : Plane →L[ℝ] ℝ) x :=
-    (EuclideanSpace.proj 1 : Plane →L[ℝ] ℝ).contDiff.contDiffAt
-  simp only [EuclideanSpace.coe_proj] at hp0 hp1
-  have hd0 : fderiv ℝ (fun y : Plane ↦ y 0) = fun _ ↦ EuclideanSpace.proj 0 :=
-    funext fun y ↦ (EuclideanSpace.proj 0 : Plane →L[ℝ] ℝ).fderiv (x := y)
-  have hd1 : fderiv ℝ (fun y : Plane ↦ y 1) = fun _ ↦ EuclideanSpace.proj 1 :=
-    funext fun y ↦ (EuclideanSpace.proj 1 : Plane →L[ℝ] ℝ).fderiv (x := y)
-  have hdd0 : fderiv ℝ (fderiv ℝ (fun y : Plane ↦ y 0)) x = 0 := by
-    rw [hd0]
-    simp
-  have hdd1 : fderiv ℝ (fderiv ℝ (fun y : Plane ↦ y 1)) x = 0 := by
-    rw [hd1]
-    simp
+  have hp0 : ContDiffAt ℝ 2 (fun y : Plane ↦ y 0) x := contDiffAt_piLp_apply 2
+  have hp1 : ContDiffAt ℝ 2 (fun y : Plane ↦ y 1) x := contDiffAt_piLp_apply 2
   have hfcomp := TauCeti.fderiv_fderiv_comp_apply
     (f := f) (φ := fun y : Plane ↦ y 0) hf hp0 v w
   have hgcomp := TauCeti.fderiv_fderiv_comp_apply
@@ -228,8 +220,10 @@ private theorem secondDerivative_separableHeight (f g : ℝ → ℝ) (x v w : Pl
   simp only [Function.comp_def] at hfcomp hgcomp
   unfold separableHeight
   rw [hsum', hfcomp, hgcomp]
-  rw [hdd0, hdd1]
-  simp only [zero_apply, map_zero, add_zero, hd0, hd1]
+  have hproj (i : Fin 2) : fderiv ℝ (fun y : Plane ↦ y i) =
+      fun _ ↦ EuclideanSpace.proj i :=
+    funext fun y ↦ (PiLp.hasFDerivAt_apply (𝕜 := ℝ) 2 y i).fderiv
+  simp only [hproj, fderiv_const_apply, zero_apply, map_zero, add_zero]
   rw [TauCeti.fderiv_fderiv_apply_eq_smul_iteratedDeriv,
     TauCeti.fderiv_fderiv_apply_eq_smul_iteratedDeriv]
   simp only [smul_eq_mul, EuclideanSpace.coe_proj]
@@ -244,8 +238,8 @@ theorem laplacian_separableHeight (f g : ℝ → ℝ) (x : Plane)
     (separableHeight f g) (EuclideanSpace.basisFun (Fin 2) ℝ)) x]
   simp only [Fin.sum_univ_two, iteratedFDeriv_two_apply,
     Matrix.cons_val_zero, Matrix.cons_val_one]
-  rw [secondDerivative_separableHeight f g x _ _ hf hg,
-    secondDerivative_separableHeight f g x _ _ hf hg]
+  rw [fderiv_fderiv_separableHeight_apply f g x _ _ hf hg,
+    fderiv_fderiv_separableHeight_apply f g x _ _ hf hg]
   simp [EuclideanSpace.basisFun_apply]
 
 /-- The minimal graph operator on a separated height has the standard diagonal form. -/
@@ -258,7 +252,7 @@ theorem nondivergenceOperator_separableHeight (f g : ℝ → ℝ) (x : Plane)
     gradient_separableHeight f g x (hf.differentiableAt (by norm_num))
       (hg.differentiableAt (by norm_num)),
     laplacian_separableHeight f g x hf hg,
-    secondDerivative_separableHeight f g x _ _ hf hg,
+    fderiv_fderiv_separableHeight_apply f g x _ _ hf hg,
     EuclideanSpace.real_norm_sq_eq]
   simp only [Fin.sum_univ_two, Matrix.cons_val_zero,
     Matrix.cons_val_one]
@@ -327,14 +321,10 @@ theorem fluxDivergence_scherkHeight (x : Plane)
     fluxDivergence scherkHeight x = 0 := by
   have hcx : Real.cos (x 0) ≠ 0 := (Real.cos_pos_of_mem_Ioo hx).ne'
   have hcy : Real.cos (x 1) ≠ 0 := (Real.cos_pos_of_mem_Ioo hy).ne'
-  have h0 : ContDiffAt ℝ 2 (EuclideanSpace.proj 0 : Plane →L[ℝ] ℝ) x :=
-    (EuclideanSpace.proj 0 : Plane →L[ℝ] ℝ).contDiff.contDiffAt
-  have h1 : ContDiffAt ℝ 2 (EuclideanSpace.proj 1 : Plane →L[ℝ] ℝ) x :=
-    (EuclideanSpace.proj 1 : Plane →L[ℝ] ℝ).contDiff.contDiffAt
   have hu : ContDiffAt ℝ 2 scherkHeight x := by
     unfold scherkHeight
-    exact ((contDiffAt_logCos hcx).comp x h0).sub
-      ((contDiffAt_logCos hcy).comp x h1)
+    exact ((contDiffAt_logCos hcx).comp x (contDiffAt_piLp_apply 2)).sub
+      ((contDiffAt_logCos hcy).comp x (contDiffAt_piLp_apply 2))
   have hgrad : DifferentiableAt ℝ (∇ scherkHeight) x :=
     (hu.gradient_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
   exact (fluxDivergence_eq_zero_iff hgrad).2 (nondivergenceOperator_scherkHeight x hx hy)

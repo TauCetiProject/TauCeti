@@ -100,6 +100,12 @@ def nondivergenceOperator (u : E → ℝ) (x : E) : ℝ :=
       LinearMap.trace ℝ E (fderiv ℝ (∇ u) x).toLinearMap -
     inner ℝ (∇ u x) (fderiv ℝ (∇ u) x (∇ u x))
 
+/-- The trace formula defining the nondivergence minimal graph operator. -/
+theorem nondivergenceOperator_def (u : E → ℝ) (x : E) :
+    nondivergenceOperator u x = (1 + ‖∇ u x‖ ^ 2) *
+      LinearMap.trace ℝ E (fderiv ℝ (∇ u) x).toLinearMap -
+        inner ℝ (∇ u x) (fderiv ℝ (∇ u) x (∇ u x)) := (rfl)
+
 /-- The divergence form is a positive multiple of the nondivergence form. -/
 theorem fluxDivergence_eq_rpow_mul_nondivergenceOperator {u : E → ℝ} {x : E}
     (hgrad : DifferentiableAt ℝ (∇ u) x) :

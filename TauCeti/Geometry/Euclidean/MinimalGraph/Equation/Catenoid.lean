@@ -50,17 +50,17 @@ theorem catenoidRadialFlux_eq_deriv {ρ : ℝ} (hρ : 1 < ρ) :
 theorem catenoidRadialFlux_eq_one {ρ : ℝ} (hρ : 1 < ρ) :
     catenoidRadialFlux ρ = 1 := by
   have hsq : 0 < ρ ^ 2 - 1 := by nlinarith
-  let s := Real.sqrt (ρ ^ 2 - 1)
-  have hs : 0 < s := Real.sqrt_pos.2 hsq
-  have hs2 : s ^ 2 = ρ ^ 2 - 1 := Real.sq_sqrt hsq.le
+  rw [catenoidRadialFlux_apply]
+  set s := Real.sqrt (ρ ^ 2 - 1) with hs_def
+  have hs : 0 < s := by rw [hs_def]; exact Real.sqrt_pos.2 hsq
+  have hs2 : s ^ 2 = ρ ^ 2 - 1 := by rw [hs_def]; exact Real.sq_sqrt hsq.le
   have hsqrt : Real.sqrt (1 + s⁻¹ ^ 2) = ρ / s := by
     have hnonneg : 0 ≤ ρ / s := div_nonneg (by linarith) hs.le
     apply (Real.sqrt_eq_iff_eq_sq (by positivity) hnonneg).2
     field_simp
     linear_combination hs2
-  rw [catenoidRadialFlux_apply, hsqrt]
+  rw [hsqrt]
   field_simp
-  simp only [s]
 
 /-- The radial flux has zero derivative on the half-catenoid graph domain. -/
 theorem deriv_catenoidRadialFlux_eq_zero {ρ : ℝ} (hρ : 1 < ρ) :
@@ -77,7 +77,8 @@ omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] in
 @[simp] theorem upperCatenoidHeight_apply (x : E) :
     upperCatenoidHeight x = Real.arcosh ‖x‖ := (rfl)
 
-private theorem hasGradientAt_upperCatenoidHeight {x : E} (hx : 1 < ‖x‖) :
+/-- The gradient of the upper half-catenoid height outside the unit ball. -/
+theorem hasGradientAt_upperCatenoidHeight {x : E} (hx : 1 < ‖x‖) :
     HasGradientAt upperCatenoidHeight
       ((Real.sqrt (‖x‖ ^ 2 - 1))⁻¹ • (‖x‖⁻¹ • x)) x := by
   have hn : HasGradientAt (fun y : E ↦ ‖y‖) (‖x‖⁻¹ • x) x := by
