@@ -201,6 +201,7 @@ theorem summable_norm_sum_Iic_smul_mul_pow {ι A G : Type*} [Fintype ι] [Decida
     Summable fun ν : ι → ℕ ↦ ‖∑ β ∈ Iic ν, a β • b (ν - β)‖ * ρ ^ (∑ i, ν i) := by
   have hprod := ha.mul_of_nonneg hb (fun _ ↦ by positivity) (fun _ ↦ by positivity)
   have hsig := (sigmaIicEquivProd.summable_iff.2 hprod).sigma
+  simp only [Function.comp_apply, sigmaIicEquivProd_apply] at hsig
   refine Summable.of_nonneg_of_le (fun _ ↦ by positivity) (fun ν ↦ ?_) hsig
   calc ‖∑ β ∈ Iic ν, a β • b (ν - β)‖ * ρ ^ (∑ i, ν i)
       ≤ (∑ β ∈ Iic ν, ‖a β‖ * ‖b (ν - β)‖) * ρ ^ (∑ i, ν i) := by
@@ -249,6 +250,7 @@ theorem hasSum_prod_pow_smul_sum_Iic_smul {𝕜 ι A F : Type*} [CommMonoid 𝕜
     rw [smul_assoc (∏ i, y i ^ β i) (a β), ← smul_comm (∏ i, y i ^ (ν - β) i) (a β),
       smul_smul, hpow]
   rw [hfib]
+  simp only [Function.comp_apply, sigmaIicEquivProd_apply]
   exact hasSum_fintype _
 
 end TauCeti

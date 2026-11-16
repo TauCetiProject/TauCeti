@@ -34,7 +34,6 @@ variable {α : Type*} [AddCommSemigroup α] [PartialOrder α] [CanonicallyOrdere
 
 /-- Bijection between the sigma type `Σ a, Iic a` of pairs `(a, b)` with `b ≤ a` and `α × α`,
 sending `(a, b)` to `(b, a - b)` and `(b, c)` to `(b + c, b)`. -/
-@[expose, simps]
 def sigmaIicEquivProd : (Σ a : α, Iic a) ≃ α × α where
   toFun x := (x.2.1, x.1 - x.2.1)
   invFun p := ⟨p.1 + p.2, ⟨p.1, mem_Iic.2 le_self_add⟩⟩
@@ -43,5 +42,13 @@ def sigmaIicEquivProd : (Σ a : α, Iic a) ≃ α × α where
     exact Sigma.subtype_ext (add_tsub_cancel_of_le (mem_Iic.1 hb)) rfl
   right_inv p := by
     ext <;> simp
+
+@[simp]
+theorem sigmaIicEquivProd_apply (x : Σ a : α, Iic a) :
+    sigmaIicEquivProd x = (x.2.1, x.1 - x.2.1) := (rfl)
+
+@[simp]
+theorem sigmaIicEquivProd_symm_apply (p : α × α) :
+    sigmaIicEquivProd.symm p = ⟨p.1 + p.2, ⟨p.1, mem_Iic.2 le_self_add⟩⟩ := (rfl)
 
 end Finset
