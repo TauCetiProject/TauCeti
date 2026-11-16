@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Seminorm
 public import Mathlib.Topology.Compactness.LocallyFinite
 public import Mathlib.Topology.MetricSpace.Thickening
+import TauCeti.Geometry.Manifold.ContMDiffMap.Basic
 import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.CoordinateChange
 import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.WithSeminorms
 import TauCeti.Geometry.Manifold.ExtChartAt
@@ -249,6 +250,37 @@ theorem ball_empty (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯) :
     (empty : StrongCkControl I M n).ball f = univ :=
   eq_univ_of_forall fun _ ↦ mem_ball.mpr fun i ↦ i.elim
 
+/-- The `C⁰` control at a locally finite family of points `x i`, with tolerance `ε i` there: its
+compact coordinate sets are the coordinates of the points in their own charts. -/
+def ofPoints {ι : Type u} (x : ι → M) (hx : LocallyFinite fun i ↦ ({x i} : Set M)) (ε : ι → ℝ)
+    (hε : ∀ i, 0 < ε i) : StrongCkControl I M n where
+  ι := ι
+  center := x
+  compact i := ⟨{⟨_, mem_extChartAt_target (x i)⟩}, isCompact_singleton⟩
+  order := 0
+  order_le := by simp
+  tolerance := ε
+  tolerance_pos := hε
+  locallyFinite := by simpa only [Compacts.coe_mk, image_singleton, extChartAt_to_inv] using hx
+
+/-- The neighbourhood of `f` of a pointwise control consists of the maps whose values at each point
+`x i` differ from that of `f` by less than `ε i`. -/
+theorem mem_ball_ofPoints {ι : Type u} {x : ι → M} {hx : LocallyFinite fun i ↦ ({x i} : Set M)}
+    {ε : ι → ℝ} {hε : ∀ i, 0 < ε i} {f g : C^n⟮I, M; 𝓘(𝕜, F), F⟯} :
+    g ∈ (ofPoints (I := I) (n := n) x hx ε hε).ball f ↔ ∀ i, ‖g (x i) - f (x i)‖ < ε i := by
+  refine mem_ball.trans <| forall_congr' fun (i : ι) ↦ ?_
+  change chartCkSeminorm (x i) ⟨{⟨_, mem_extChartAt_target (x i)⟩}, isCompact_singleton⟩ 0
+    (by simp) (g - f) < ε i ↔ _
+  rw [chartCkSeminorm_lt_iff _ _ _ _ _ (hε i)]
+  have hval : ‖chartIteratedFDeriv (g - f) (x i) 0 (by simp)
+      ⟨_, mem_extChartAt_target (x i)⟩‖ = ‖g (x i) - f (x i)‖ := by
+    rw [chartIteratedFDeriv_self_target_apply, norm_iteratedFDerivWithin_zero, Function.comp_apply,
+      extChartAt_to_inv, coe_sub, Pi.sub_apply]
+  refine ⟨fun h ↦ hval ▸ h 0 le_rfl _ rfl, fun h m hm z hz ↦ ?_⟩
+  obtain rfl := Nat.le_zero.mp hm
+  obtain rfl := mem_singleton_iff.mp hz
+  exact hval ▸ h
+
 end StrongCkControl
 
 variable [IsManifold I n M]
@@ -415,25 +447,12 @@ private theorem exists_strongCkControl_forall_const_notMem_ball [SigmaCompactSpa
     refine ⟨K N, hN, ((finite_Iio N).preimage ULift.down_injective.injOn).subset ?_⟩
     rintro j ⟨_, rfl, hj⟩
     exact lt_of_not_ge fun hNj ↦ hx j.down (K.subset hNj hj)
-  refine ⟨{ ι := ULift.{u} ℕ
-            center := fun j ↦ x j.down
-            compact := fun j ↦ ⟨{⟨_, mem_extChartAt_target (x j.down)⟩}, isCompact_singleton⟩
-            order := 0
-            order_le := by simp
-            tolerance := fun j ↦ 1 / (j.down + 1)
-            tolerance_pos := fun _ ↦ Nat.one_div_pos_of_nat
-            locallyFinite := by simpa only [Compacts.coe_mk, image_singleton,
-              extChartAt_to_inv] using hfin }, fun v hv hmem ↦ ?_⟩
+  refine ⟨.ofPoints (fun j : ULift.{u} ℕ ↦ x j.down) hfin (fun j ↦ 1 / (j.down + 1))
+    fun _ ↦ Nat.one_div_pos_of_nat, fun v hv hmem ↦ ?_⟩
   obtain ⟨j, hj⟩ := exists_nat_one_div_lt (norm_pos_iff.mpr hv)
-  have hlt := StrongCkControl.mem_ball_iff_forall_norm_sub_lt.mp hmem ⟨j⟩ 0 le_rfl _ rfl
-  simp only [chartIteratedFDeriv_zero, ContinuousMap.zero_apply, sub_zero] at hlt
-  have hval : chartIteratedFDeriv (ContMDiffMap.const (n := n) (I := I) v) (x j) 0 (by simp)
-      ⟨_, mem_extChartAt_target (x j)⟩ (fun i ↦ Fin.elim0 i) = v :=
-    chartIteratedFDeriv_zero_apply _ (x j) ⟨_, mem_extChartAt_target (x j)⟩ fun i ↦ Fin.elim0 i
-  refine (hj.trans_le ?_).not_gt hlt
-  calc ‖v‖ = ‖chartIteratedFDeriv (ContMDiffMap.const (n := n) (I := I) v) (x j) 0 (by simp)
-        ⟨_, mem_extChartAt_target (x j)⟩ (fun i ↦ Fin.elim0 i)‖ := by rw [hval]
-    _ ≤ _ := (ContinuousMultilinearMap.le_opNorm _ _).trans_eq (by simp)
+  have hlt := StrongCkControl.mem_ball_ofPoints.mp hmem ⟨j⟩
+  rw [const_apply, coe_zero, Pi.zero_apply, sub_zero] at hlt
+  exact hj.not_gt hlt
 
 /-- **On a noncompact manifold the strong Whitney topology is strictly finer than the weak one.**
 Along a sequence of points `xⱼ` leaving every compact set, the maps `g` with `‖g xⱼ‖ < 1 / (j + 1)`
@@ -459,7 +478,7 @@ theorem manifoldStrongWhitneyTopology_ne_manifoldWeakWhitneyTopology [Nontrivial
   obtain ⟨δ, hδ, hδ0⟩ :=
     ((ht.eventually (hopen.mem_nhds (c.mem_ball_self 0))).and self_mem_nhdsWithin).exists
   have hconst : δ • (ContMDiffMap.const v : C^n⟮I, M; 𝓘(𝕜, F), F⟯) = ContMDiffMap.const (δ • v) :=
-    ContMDiffMap.ext fun _ ↦ rfl
+    ContMDiffMap.ext fun _ ↦ by rw [coe_smul, Pi.smul_apply, const_apply, const_apply]
   exact hc (δ • v) (smul_ne_zero hδ0 hv) (hconst ▸ hδ)
 
 /-- **The strong and weak Whitney topologies agree exactly on compact manifolds**, for a
