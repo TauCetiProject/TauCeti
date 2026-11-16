@@ -214,19 +214,37 @@ variable {V : Type u} [NormedAddCommGroup V] {E B : _root_.TopCat.{u}}
 
 variable [T1Space B]
 
+include hb in
+/-- Excision onto the part of `E` over `e.chartBall b ε` is an isomorphism on homology. -/
+private lemma isIso_singularHomologyMap_excisionMap_chartBall (hε₀ : 0 < ε) (m : ℕ) :
+    IsIso (TopPair.singularHomologyMap
+      (TopPair.excisionMap (X := E) (p ⁻¹' e.chartBall b ε) (p ⁻¹' {b})ᶜ) (ModuleCat.of R R) m) :=
+  TopPair.isIso_singularHomologyMap_excisionMap_of_isClosed_subset (ModuleCat.of R R)
+    (X := E) ((e.isOpen_chartBall b ε).preimage p.hom.continuous)
+    (isClosed_singleton.preimage p.hom.continuous)
+    (preimage_mono (singleton_subset_iff.2 (e.mem_chartBall_self hb hε₀))) m
+
 /-- Excision onto the part of `E` over `e.chartBall b ε`, followed by
 `OpenPartialHomeomorph.chartBallComplFiberPairIso`. -/
 private def excisionIso (hε₀ : 0 < ε) (m : ℕ) :
     (TopPair.ofSubset (p ⁻¹' {b})ᶜ).singularHomology (ModuleCat.of R R) m ≅
       (TopPair.ofSubset (e.chartBallProj hε p ⁻¹' {x | (x : V) ≠ 0})).singularHomology
         (ModuleCat.of R R) m :=
-  haveI := TopPair.isIso_singularHomologyMap_excisionMap_of_isClosed_subset (ModuleCat.of R R)
-    (X := E) ((e.isOpen_chartBall b ε).preimage p.hom.continuous)
-    (isClosed_singleton.preimage p.hom.continuous)
-    (preimage_mono (singleton_subset_iff.2 (e.mem_chartBall_self hb hε₀))) m
+  haveI := isIso_singularHomologyMap_excisionMap_chartBall (p := p) R e hb hε₀ m
   (asIso (TopPair.singularHomologyMap
       (TopPair.excisionMap (X := E) (p ⁻¹' e.chartBall b ε) (p ⁻¹' {b})ᶜ) _ m)).symm ≪≫
     TopPair.singularHomologyMapIso _ (e.chartBallComplFiberPairIso hb hε p) m
+
+/-- The defining square of `excisionIso`: after the excision inclusion it is the map induced by
+`OpenPartialHomeomorph.chartBallComplFiberPairIso`. -/
+@[reassoc]
+private lemma singularHomologyMap_excisionMap_comp_excisionIso_hom (hε₀ : 0 < ε) (m : ℕ) :
+    TopPair.singularHomologyMap
+        (TopPair.excisionMap (X := E) (p ⁻¹' e.chartBall b ε) (p ⁻¹' {b})ᶜ)
+        (ModuleCat.of R R) m ≫ (excisionIso R e hb hε hε₀ m).hom =
+      TopPair.singularHomologyMap (e.chartBallComplFiberPairIso hb hε p).hom
+        (ModuleCat.of R R) m := by
+  simp [excisionIso]
 
 variable [NormedSpace ℝ V] [FiniteDimensional ℝ V]
 
@@ -347,26 +365,13 @@ private lemma excisionIso_hom_naturality (hε₀ : 0 < ε) (hf : f ≫ p' = p) (
         TopPair.ofSubsetMap_fst_apply, TopPair.ofSubsetMap_fst_apply]
       exact (TopCat.Hom.coe_preimageMap_apply f hf _ x).trans
         (TopPair.interPairMap_fst_apply _ _ _ x).symm)
-  have hexc := (TopPair.singularHomologyMap_comp _ _ _ _).symm.trans
-    ((congrArg (TopPair.singularHomologyMap · (ModuleCat.of R R) m) hQ).trans
-      (TopPair.singularHomologyMap_comp _ _ _ _))
-  have hcb := (TopPair.singularHomologyMap_comp _ _ _ _).symm.trans
-    ((congrArg (TopPair.singularHomologyMap · (ModuleCat.of R R) m) hQ').trans
-      (TopPair.singularHomologyMap_comp _ _ _ _))
-  have := TopPair.isIso_singularHomologyMap_excisionMap_of_isClosed_subset (ModuleCat.of R R)
-    (X := E) ((e.isOpen_chartBall b ε).preimage p.hom.continuous)
-    (isClosed_singleton.preimage p.hom.continuous)
-    (preimage_mono (singleton_subset_iff.2 (e.mem_chartBall_self hb hε₀))) m
-  have := TopPair.isIso_singularHomologyMap_excisionMap_of_isClosed_subset (ModuleCat.of R R)
-    (X := E') ((e.isOpen_chartBall b ε).preimage p'.hom.continuous)
-    (isClosed_singleton.preimage p'.hom.continuous)
-    (preimage_mono (singleton_subset_iff.2 (e.mem_chartBall_self hb hε₀))) m
-  simp only [excisionIso, Iso.trans_hom, Iso.symm_hom, asIso_inv,
-    TopPair.singularHomologyMapIso_hom, Category.assoc]
-  rw [hcb, ← Category.assoc, ← Category.assoc (inv _)]
-  congr 1
-  rw [IsIso.eq_inv_comp, ← Category.assoc, hexc, Category.assoc, IsIso.hom_inv_id,
-    Category.comp_id]
+  have := isIso_singularHomologyMap_excisionMap_chartBall (p := p) R e hb hε₀ m
+  rw [← cancel_epi (TopPair.singularHomologyMap
+      (TopPair.excisionMap (X := E) (p ⁻¹' e.chartBall b ε) (p ⁻¹' {b})ᶜ) (ModuleCat.of R R) m),
+    singularHomologyMap_excisionMap_comp_excisionIso_hom_assoc,
+    ← TopPair.singularHomologyMap_comp_assoc, hQ, TopPair.singularHomologyMap_comp_assoc,
+    singularHomologyMap_excisionMap_comp_excisionIso_hom, ← TopPair.singularHomologyMap_comp,
+    ← TopPair.singularHomologyMap_comp, hQ']
 
 omit [T1Space B] [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
 /-- The identifications `OpenPartialHomeomorph.chartBallProjFiberHomeomorph` of the fibres over `0`
