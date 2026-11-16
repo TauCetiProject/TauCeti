@@ -12,15 +12,16 @@ public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 # Manifold structures read through an ambient manifold
 
 Let `M` be a charted space over `H`, with model `I : ModelWithCorners 𝕜 E H`, and let `j : M → N`
-be a map into a charted space `N` over `I'`. Say that `j` *reads the chart `e` of `M` smoothly*
-when there are maps `F : N → E` and `G : E → N`, `C^n` on sets `U ⊆ N` and `V ⊆ E`, such that
-for every point `z` of the source of `e`, `j z ∈ U`, `I (e z) ∈ V`, `F (j z) = I (e z)` and
-`G (I (e z)) = j z`. Thus `F` reads `I ∘ e` off `j`, and `G` reads `j` back off the coordinates.
+be a map into a charted space `N` over `I'`. The map `j` *reads the chart `e` of `M` smoothly*
+(`TauCeti.ReadsChartSmoothly`) when there are maps `F : N → E` and `G : E → N`, `C^n` on sets
+`U ⊆ N` and `V ⊆ E`, such that for every point `z` of the source of `e`, `j z ∈ U`, `I (e z) ∈ V`,
+`F (j z) = I (e z)` and `G (I (e z)) = j z`. Thus `F` reads `I ∘ e` off `j`, and `G` reads `j`
+back off the coordinates.
 
 If `j` reads every chart of `M` smoothly, then the transition map from `e` to `e'`, written in the
 model vector space, is `F' ∘ G` on its domain, so it is `C^n`: the atlas of `M` is a `C^n` manifold
-(`TauCeti.isManifold_of_forall_mem_atlas_exists_contMDiffOn`), and `j` is `C^n` for it
-(`TauCeti.contMDiff_of_forall_mem_atlas_exists_contMDiffOn`).
+(`TauCeti.isManifold_of_forall_mem_atlas_readsChartSmoothly`), and `j` is `C^n` for it
+(`TauCeti.contMDiff_of_forall_mem_atlas_readsChartSmoothly`).
 
 The charts of `M` need not belong to the model of `N`, and `j` need not be injective. A typical
 use is a subset of a boundaryless manifold, such as one side of a hypersurface, charted on a
@@ -45,14 +46,21 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
 
+variable (I I' n) in
+/-- The map `j : M → N` *reads the chart `e` of `M` smoothly* when there are maps `F : N → E` and
+`G : E → N`, `C^n` on sets `U` and `V`, such that every point `z` of the source of `e` has
+`j z ∈ U`, `I (e z) ∈ V`, `F (j z) = I (e z)` and `G (I (e z)) = j z`: `F` reads the coordinates
+`I ∘ e` off `j`, and `G` reads `j` back off them. -/
+@[expose]
+def ReadsChartSmoothly (j : M → N) (e : OpenPartialHomeomorph M H) : Prop :=
+  ∃ (F : N → E) (G : E → N) (U : Set N) (V : Set E),
+    ContMDiffOn I' 𝓘(𝕜, E) n F U ∧ ContMDiffOn 𝓘(𝕜, E) I' n G V ∧
+      ∀ z ∈ e.source, j z ∈ U ∧ I (e z) ∈ V ∧ F (j z) = I (e z) ∧ G (I (e z)) = j z
+
 /-- **Atlases read smoothly through an ambient manifold.** If a map `j : M → N` reads every chart
-`e` of `M` through maps `F : N → E` and `G : E → N` which are `C^n` on sets `U` and `V`, in the
-sense that every point `z` of the source of `e` has `j z ∈ U`, `I (e z) ∈ V`, `F (j z) = I (e z)`
-and `G (I (e z)) = j z`, then `M` is a `C^n` manifold. -/
-theorem isManifold_of_forall_mem_atlas_exists_contMDiffOn (j : M → N)
-    (h : ∀ e ∈ atlas H M, ∃ (F : N → E) (G : E → N) (U : Set N) (V : Set E),
-      ContMDiffOn I' 𝓘(𝕜, E) n F U ∧ ContMDiffOn 𝓘(𝕜, E) I' n G V ∧
-        ∀ z ∈ e.source, j z ∈ U ∧ I (e z) ∈ V ∧ F (j z) = I (e z) ∧ G (I (e z)) = j z) :
+of `M` smoothly (`TauCeti.ReadsChartSmoothly`), then `M` is a `C^n` manifold. -/
+theorem isManifold_of_forall_mem_atlas_readsChartSmoothly (j : M → N)
+    (h : ∀ e ∈ atlas H M, ReadsChartSmoothly I I' n j e) :
     IsManifold I n M := by
   refine isManifold_of_contDiffOn I n M fun e₁ e₂ he₁ he₂ => ?_
   obtain ⟨_, G, _, V, -, hG, hGe⟩ := h e₁ he₁
@@ -76,15 +84,13 @@ theorem isManifold_of_forall_mem_atlas_exists_contMDiffOn (j : M → N)
     simp only [Function.comp_apply, OpenPartialHomeomorph.coe_trans, I.left_inv,
       e₁.left_inv hz, (hGe z hz).2.2.2, (hFe z hz₂).2.2.1]
 
-/-- **Maps reading an atlas smoothly are smooth.** Under the hypotheses of
-`TauCeti.isManifold_of_forall_mem_atlas_exists_contMDiffOn`, the map `j : M → N` is `C^n` for the
-`C^n` manifold structure of `M`. -/
-theorem contMDiff_of_forall_mem_atlas_exists_contMDiffOn (j : M → N)
-    (h : ∀ e ∈ atlas H M, ∃ (F : N → E) (G : E → N) (U : Set N) (V : Set E),
-      ContMDiffOn I' 𝓘(𝕜, E) n F U ∧ ContMDiffOn 𝓘(𝕜, E) I' n G V ∧
-        ∀ z ∈ e.source, j z ∈ U ∧ I (e z) ∈ V ∧ F (j z) = I (e z) ∧ G (I (e z)) = j z) :
+/-- **Maps reading an atlas smoothly are smooth.** If a map `j : M → N` reads every chart of `M`
+smoothly (`TauCeti.ReadsChartSmoothly`), then `j` is `C^n` for the `C^n` manifold structure of `M`
+given by `TauCeti.isManifold_of_forall_mem_atlas_readsChartSmoothly`. -/
+theorem contMDiff_of_forall_mem_atlas_readsChartSmoothly (j : M → N)
+    (h : ∀ e ∈ atlas H M, ReadsChartSmoothly I I' n j e) :
     ContMDiff I I' n j := by
-  have := isManifold_of_forall_mem_atlas_exists_contMDiffOn j h
+  have := isManifold_of_forall_mem_atlas_readsChartSmoothly j h
   intro z
   obtain ⟨_, G, _, V, -, hG, hGe⟩ := h _ (chart_mem_atlas H z)
   rw [contMDiffAt_iff_source_of_mem_source (mem_chart_source H z)]

@@ -361,10 +361,8 @@ theorem coe_interiorEmbedding_interiorCoord {n : ℕ} {w : EuclideanSpace ℝ (F
 @[simp]
 theorem interiorCoord_coe_interiorEmbedding {n : ℕ} (v : EuclideanSpace ℝ (Fin (n + 1))) :
     interiorCoord (EuclideanHalfSpace.interiorEmbedding n v).1 = v := by
-  rw [interiorCoord, EuclideanHalfSpace.interiorEmbedding_coe_apply_zero, Real.log_exp,
-    EuclideanHalfSpace.coe_interiorEmbedding, ContinuousLinearEquiv.symm_apply_apply,
-    ← euclideanHalfSpaceBoundaryNormalEquiv_symm_apply_snd]
-  exact (euclideanHalfSpaceBoundaryNormalEquiv n).apply_symm_apply v
+  ext i
+  induction i using Fin.cases <;> simp
 
 /-- The ambient inverse coordinates are smooth, indeed analytic, on the open half-space. -/
 theorem contDiffOn_interiorCoord {n : ℕ} {k : WithTop ℕ∞} :

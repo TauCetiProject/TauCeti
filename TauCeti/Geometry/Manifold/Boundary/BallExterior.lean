@@ -40,7 +40,7 @@ boundary is the sphere `φ '' sphere 0 r`
 (`Topology.IsOpenEmbedding.frontier_ballExterior`).
 
 If `X` is a `C^k` manifold and `φ` is a `C^k` local diffeomorphism, then so is the bicollar
-(`Topology.IsOpenEmbedding.isLocalDiffeomorph_sphereBicollar`, for `1 ≤ k`), and the same charts
+(`TauCeti.isLocalDiffeomorph_sphereBicollar`), and the same charts
 make the exterior a `C^k` manifold with boundary
 (`Topology.IsOpenEmbedding.isManifold_ballExteriorChartedSpace`) whose inclusion into `X` is `C^k`
 (`Topology.IsOpenEmbedding.contMDiff_subtype_val_ballExterior`). This is the smooth complement of
@@ -68,7 +68,7 @@ This is the ball-exterior counterpart of the knot exterior of
   ball.
 * `Topology.IsOpenEmbedding.frontier_ballExterior`: the frontier of the exterior in `X` is the
   sphere of radius `r`.
-* `Topology.IsOpenEmbedding.isLocalDiffeomorph_sphereBicollar`: for a `C^k` local diffeomorphism
+* `TauCeti.isLocalDiffeomorph_sphereBicollar`: for a `C^k` local diffeomorphism
   `φ`, the bicollar of the sphere is a `C^k` local diffeomorphism.
 * `Topology.IsOpenEmbedding.isManifold_ballExteriorChartedSpace` and
   `Topology.IsOpenEmbedding.contMDiff_subtype_val_ballExterior`: for a `C^k` local diffeomorphism
@@ -238,19 +238,27 @@ sphere is a `C^k` local diffeomorphism, so the exterior is a `C^k` manifold with
 variable {k : WithTop ℕ∞}
 
 omit [T2Space X] in
-/-- **The bicollar of a sphere is smooth.** If the open embedding `φ : E → X` is a `C^k` local
-diffeomorphism and `r > 0`, then the bicollar `(u, t) ↦ φ ((r * exp t) • u)` of the sphere of
-radius `r` is a `C^k` local diffeomorphism. -/
-theorem isLocalDiffeomorph_sphereBicollar (hφ : IsOpenEmbedding φ)
+/-- **The bicollar of a sphere is smooth.** If `φ : E → X` is a `C^k` local diffeomorphism and
+`r > 0`, then the bicollar `(u, t) ↦ φ ((r * exp t) • u)` of the sphere of radius `r` is a `C^k`
+local diffeomorphism. -/
+theorem _root_.TauCeti.isLocalDiffeomorph_sphereBicollar
     (hφd : IsLocalDiffeomorph 𝓘(ℝ, E) (𝓡 (n + 1)) k φ) (hr : 0 < r) :
     IsLocalDiffeomorph ((𝓡 n).prod 𝓘(ℝ)) (𝓡 (n + 1)) k (sphereBicollar φ r) := by
   have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
+  -- The bicollar is `φ` after the polar map `(u, t) ↦ (r * exp t) • u`, so it suffices that the
+  -- polar map is a `C^k` local diffeomorphism.
+  suffices hpolar : IsLocalDiffeomorph ((𝓡 n).prod 𝓘(ℝ)) 𝓘(ℝ, E) k
+      fun p : sphere (0 : E) 1 × ℝ => (r * Real.exp p.2) • (p.1 : E) from
+    fun p => IsLocalDiffeomorphAt.comp (hf := hpolar p) (hg := hφd _)
   rcases eq_or_ne k 0 with rfl | hk
-  · -- In regularity `0` a local diffeomorphism is a local homeomorphism, and the bicollar is an
+  · -- In regularity `0` a local diffeomorphism is a local homeomorphism, and the polar map is an
     -- open embedding.
     intro p
     have : Nonempty (sphere (0 : E) 1 × ℝ) := ⟨p⟩
-    let e := (hφ.isBicollar_sphereBicollar hr).isOpenEmbedding.toOpenPartialHomeomorph _
+    have hρ : IsOpenEmbedding fun p : sphere (0 : E) 1 × ℝ => (r * Real.exp p.2) • (p.1 : E) :=
+      ((Homeomorph.mulLeft₀ r hr.ne').isOpenEmbedding.comp
+        Real.isOpenEmbedding_exp).smul_coe_sphere fun t => mul_pos hr (Real.exp_pos t)
+    let e := hρ.toOpenPartialHomeomorph _
     refine isLocalDiffeomorphAt_of_eqOn (Φ :=
       { toPartialEquiv := e.toPartialEquiv
         open_source := e.open_source
@@ -259,25 +267,21 @@ theorem isLocalDiffeomorph_sphereBicollar (hφ : IsOpenEmbedding φ)
         contMDiffOn_invFun := contMDiffOn_zero_iff.2 e.continuousOn_symm }) ?_ fun q _ => ?_
     · simp [e]
     · simp [e]
-  -- The polar map `(u, t) ↦ (r * exp t) • u` is the dilation by `r` of the polar coordinates
-  -- `(u, t) ↦ exp t • u`, whose differential is invertible, so it is a local diffeomorphism by the
-  -- inverse function theorem.
+  -- The polar map is the dilation by `r` of the polar coordinates `(u, t) ↦ exp t • u`, whose
+  -- differential is invertible, so it is a local diffeomorphism by the inverse function theorem.
   let L : E ≃L[ℝ] E := (LinearEquiv.smulOfNeZero ℝ E r hr.ne').toContinuousLinearEquiv
   have hρ : (fun p : sphere (0 : E) 1 × ℝ => (r * Real.exp p.2) • (p.1 : E)) =
       L ∘ fun p : sphere (0 : E) 1 × ℝ => Real.exp p.2 • (p.1 : E) :=
     funext fun p => by
       rw [Function.comp_apply, LinearEquiv.coe_toContinuousLinearEquiv',
         LinearEquiv.smulOfNeZero_apply, mul_smul]
-  have hpolar : IsLocalDiffeomorph ((𝓡 n).prod 𝓘(ℝ)) 𝓘(ℝ, E) k
-      fun p : sphere (0 : E) 1 × ℝ => (r * Real.exp p.2) • (p.1 : E) := by
-    refine isLocalDiffeomorph_of_mfderiv_eq ?_ (ENat.one_le_iff_ne_zero_withTop.2 hk) fun p => ?_
-    · rw [hρ]
-      exact L.contDiff.contMDiff.comp contMDiff_exp_smul_coe_sphere
-    · rw [hρ]
-      refine isInvertible_mfderiv_comp ?_ (isInvertible_mfderiv_exp_smul_coe_sphere p)
-      rw [mfderiv_eq_fderiv, L.fderiv]
-      exact ⟨L, rfl⟩
-  exact fun p => IsLocalDiffeomorphAt.comp (hf := hpolar p) (hg := hφd _)
+  refine isLocalDiffeomorph_of_mfderiv_eq ?_ (ENat.one_le_iff_ne_zero_withTop.2 hk) fun p => ?_
+  · rw [hρ]
+    exact L.contDiff.contMDiff.comp contMDiff_exp_smul_coe_sphere
+  · rw [hρ]
+    refine isInvertible_mfderiv_comp ?_ (isInvertible_mfderiv_exp_smul_coe_sphere p)
+    rw [mfderiv_eq_fderiv, L.fderiv]
+    exact ⟨L, rfl⟩
 
 variable [IsManifold (𝓡 (n + 1)) k X]
 
@@ -293,7 +297,7 @@ theorem isManifold_ballExteriorChartedSpace (hφ : IsOpenEmbedding φ)
   haveI : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
   (hφ.isBicollar_sphereBicollar hr).isManifold_sideChartedSpace
     (preimage_sphereBicollar_ballExterior hφ.injective hr) (hφ.isOpen_ballExterior_sdiff_range hr)
-    (hφ.isLocalDiffeomorph_sphereBicollar hφd hr)
+    (isLocalDiffeomorph_sphereBicollar hφd hr)
 
 /-- The inclusion of the exterior of a smooth ball into `X` is `C^k`. -/
 theorem contMDiff_subtype_val_ballExterior (hφ : IsOpenEmbedding φ)
@@ -303,7 +307,7 @@ theorem contMDiff_subtype_val_ballExterior (hφ : IsOpenEmbedding φ)
   haveI : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
   (hφ.isBicollar_sphereBicollar hr).contMDiff_subtype_val_sideChartedSpace
     (preimage_sphereBicollar_ballExterior hφ.injective hr) (hφ.isOpen_ballExterior_sdiff_range hr)
-    (hφ.isLocalDiffeomorph_sphereBicollar hφd hr)
+    (isLocalDiffeomorph_sphereBicollar hφd hr)
 
 end Smooth
 
