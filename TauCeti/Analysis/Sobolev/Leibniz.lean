@@ -57,8 +57,9 @@ everywhere by the Lebesgue differentiation theorem. The identity tested against 
 passes to the limit: uniform convergence handles the `ψₙ` terms
 (`ContDiffBump.tendsto_integral_normed_convolution_smul`) and dominated convergence the
 `∂_v ψₙ` term (`LipschitzWith.tendsto_integral_fderiv_normed_convolution_apply_smul`). For a
-factor that is also bounded, an `Lᵖ` weak derivative of `u` gives one of `ψ u`
-(`TauCeti.HasWeakLineDerivOn.exists_lp_lipschitzOnWith_smul`).
+factor that is also bounded, an `Lᵖ` weak derivative of `u` gives one of `ψ u`, with the `Lᵖ`
+bound `‖∂_v (ψ u)‖ ≤ M ‖∂_v u‖ + K ‖v‖ ‖u‖` for `|ψ| ≤ M`
+(`TauCeti.HasWeakLineDerivOn.exists_norm_le_lipschitzOnWith_smul`).
 
 ## Why this is the localization tool
 
@@ -85,8 +86,8 @@ explicit, non-asymptotic formula is the point.
 * `TauCeti.HasWeakLineDerivOn.contDiffOn_smul_of_ne_zero`,
   `TauCeti.HasWeakFDerivOn.contDiffOn_smul_of_ne_zero`: the rule in both forms for a factor that
   is `C^n` on `Ω` with `n ≠ 0` (at least `C¹`), for an additive Haar measure.
-* `TauCeti.HasWeakLineDerivOn.exists_lp_lipschitzOnWith_smul`: a bounded Lipschitz factor keeps
-  an `Lᵖ` weak derivative in `Lᵖ`.
+* `TauCeti.HasWeakLineDerivOn.exists_norm_le_lipschitzOnWith_smul`: a bounded Lipschitz factor
+  keeps an `Lᵖ` weak derivative in `Lᵖ`, with an explicit bound.
 * `TauCeti.eLpNorm_smul_add_fderiv_smulRight_le`: for `1 ≤ p`, the `Lᵖ` bound
   `‖ψ Du + Dψ ⊗ u‖_{Lᵖ} ≤ A ‖Du‖_{Lᵖ} + B ‖u‖_{Lᵖ}` when `|ψ| ≤ A` and `‖Dψ‖ ≤ B` almost
   everywhere.
@@ -397,20 +398,60 @@ theorem HasWeakFDerivOn.contDiffOn_smul_of_ne_zero {n : WithTop ℕ∞} {U : E �
   convert hv using 2 with x
   simp
 
-/-- **A bounded Lipschitz factor keeps an `Lᵖ` weak derivative.** If `u ∈ Lᵖ(Ω)` has a weak
-derivative `u' ∈ Lᵖ(Ω)` in the direction `v` and `ψ` is bounded and Lipschitz on `Ω`, then `ψ u`
-has a weak derivative in the direction `v` that lies in `Lᵖ(Ω)`, namely `ψ u' + (∂_v ψ) u` from
-`TauCeti.HasWeakLineDerivOn.lipschitzOnWith_smul`. -/
-theorem HasWeakLineDerivOn.exists_lp_lipschitzOnWith_smul {p : ℝ≥0∞} {M : ℝ}
-    (h : HasWeakLineDerivOn μ Ω u u' v) (hψ : LipschitzOnWith K ψ Ω)
+/-- **A bounded Lipschitz factor keeps an `Lᵖ` weak derivative.** Let `1 ≤ p`. If `u ∈ Lᵖ(Ω)` has
+a weak derivative `u' ∈ Lᵖ(Ω)` in the direction `v` and `ψ` is `K`-Lipschitz on `Ω` with
+`‖ψ‖ ≤ M` there, then `ψ u` has a weak derivative `G` in the direction `v` that lies in `Lᵖ(Ω)`,
+namely `ψ u' + (∂_v ψ) u` from `TauCeti.HasWeakLineDerivOn.lipschitzOnWith_smul`, with
+
+`‖G‖_{Lᵖ(Ω)} ≤ M ‖u'‖_{Lᵖ(Ω)} + K ‖v‖ ‖u‖_{Lᵖ(Ω)}`. -/
+theorem HasWeakLineDerivOn.exists_norm_le_lipschitzOnWith_smul {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    {M : ℝ} (h : HasWeakLineDerivOn μ Ω u u' v) (hψ : LipschitzOnWith K ψ Ω)
     (hψb : ∀ x ∈ (Ω : Set E), ‖ψ x‖ ≤ M) (hu : MemLp u p (μ.restrict Ω))
     (hu' : MemLp u' p (μ.restrict Ω)) :
-    ∃ G : Lp F p (μ.restrict Ω), HasWeakLineDerivOn μ Ω (fun x => ψ x • u x) G v := by
+    ∃ G : Lp F p (μ.restrict Ω),
+      ‖G‖ ≤ M * (eLpNorm u' p (μ.restrict Ω)).toReal +
+          K * ‖v‖ * (eLpNorm u p (μ.restrict Ω)).toReal ∧
+        HasWeakLineDerivOn μ Ω (fun x => ψ x • u x) G v := by
   have hΩm : MeasurableSet (Ω : Set E) := Ω.isOpen.measurableSet
   have hm := ((memLp_top_of_bound (hψ.continuousOn.aestronglyMeasurable hΩm) M
     ((ae_restrict_mem hΩm).mono hψb)).smul (r := p) hu').add
     ((hψ.memLp_lineDeriv Ω.isOpen v).smul (r := p) hu)
-  exact ⟨hm.toLp _, (h.lipschitzOnWith_smul hψ).congr_ae_deriv hm.coeFn_toLp.symm⟩
+  refine ⟨hm.toLp _, ?_, (h.lipschitzOnWith_smul hψ).congr_ae_deriv hm.coeFn_toLp.symm⟩
+  rcases (Ω : Set E).eq_empty_or_nonempty with hΩ | ⟨x₀, hx₀⟩
+  · simp [Lp.norm_toLp, hΩ]
+  have hM : 0 ≤ M := (norm_nonneg _).trans (hψb x₀ hx₀)
+  have hKv : (0 : ℝ) ≤ K * ‖v‖ := by positivity
+  -- Pointwise, `|ψ| ≤ M` and `|∂_v ψ| ≤ K ‖v‖` on `Ω`.
+  have hpt : ∀ᵐ x ∂μ.restrict Ω, ‖ψ x • u' x + lineDeriv ℝ ψ x v • u x‖ ≤
+      (M • (fun x => ‖u' x‖) + (K * ‖v‖) • fun x => ‖u x‖) x := by
+    filter_upwards [ae_restrict_mem hΩm] with x hx
+    refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
+    · rw [norm_smul]
+      exact mul_le_mul_of_nonneg_right (hψb x hx) (norm_nonneg _)
+    · rw [norm_smul]
+      exact mul_le_mul_of_nonneg_right
+        (norm_lineDeriv_le_of_lipschitzOn ℝ (Ω.isOpen.mem_nhds hx) hψ) (norm_nonneg _)
+  have hle : eLpNorm (fun x => ψ x • u' x + lineDeriv ℝ ψ x v • u x) p (μ.restrict Ω) ≤
+      ENNReal.ofReal M * eLpNorm u' p (μ.restrict Ω) +
+        ENNReal.ofReal (K * ‖v‖) * eLpNorm u p (μ.restrict Ω) := by
+    calc _ ≤ eLpNorm (M • (fun x => ‖u' x‖) + (K * ‖v‖) • fun x => ‖u x‖) p (μ.restrict Ω) :=
+          eLpNorm_mono_ae_real hm.aestronglyMeasurable hpt
+      _ ≤ eLpNorm (M • fun x => ‖u' x‖) p (μ.restrict Ω) +
+            eLpNorm ((K * ‖v‖) • fun x => ‖u x‖) p (μ.restrict Ω) :=
+          eLpNorm_add_le Fact.out
+      _ = _ := by
+          rw [eLpNorm_const_smul, eLpNorm_const_smul, eLpNorm_norm, eLpNorm_norm,
+            Real.eNorm_eq_ofReal hM, Real.eNorm_eq_ofReal hKv]
+          exacts [hu.aestronglyMeasurable, hu'.aestronglyMeasurable]
+  rw [Lp.norm_toLp]
+  calc _ ≤ (ENNReal.ofReal M * eLpNorm u' p (μ.restrict Ω) +
+        ENNReal.ofReal (K * ‖v‖) * eLpNorm u p (μ.restrict Ω)).toReal :=
+        ENNReal.toReal_mono (ENNReal.add_ne_top.2 ⟨ENNReal.mul_ne_top ENNReal.ofReal_ne_top
+          hu'.eLpNorm_ne_top, ENNReal.mul_ne_top ENNReal.ofReal_ne_top hu.eLpNorm_ne_top⟩) hle
+    _ = _ := by
+        rw [ENNReal.toReal_add (ENNReal.mul_ne_top ENNReal.ofReal_ne_top hu'.eLpNorm_ne_top)
+          (ENNReal.mul_ne_top ENNReal.ofReal_ne_top hu.eLpNorm_ne_top), ENNReal.toReal_mul,
+          ENNReal.toReal_mul, ENNReal.toReal_ofReal hM, ENNReal.toReal_ofReal hKv]
 
 end Lipschitz
 

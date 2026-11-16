@@ -167,8 +167,10 @@ theorem UniformlyEllipticOn.exists_lowerOrder_eq_restrictL_of_mapsTo (hν : ν �
     rw [h1, h3, indicator_of_mem (hΩVΩ₁ hx), hxV.1, hxV.2, one_smul, smul_zero, add_zero, h2]
   -- The global theorem on `H` gives the second derivatives.
   exact W1p.exists_lowerOrder_eq_of_gradient_eq_of_hasWeakLineDerivOn
-    (EuclideanSpace.basisFun ι ℝ) hΩV hgradV fun i j =>
-      ha'.exists_hasWeakLineDerivOn_gradient_of_mapsTo hν hH hK'.lipschitzOnWith hw _ _
+    (EuclideanSpace.basisFun ι ℝ) hΩV hgradV fun i j => by
+      obtain ⟨G, -, hG⟩ :=
+        ha'.exists_norm_le_hasWeakLineDerivOn_gradient_of_mapsTo hν hH hK'.lipschitzOnWith hw _ _
+      exact ⟨G, hG⟩
 
 /-- **Local `H²` regularity near the boundary of a half-space.** Let `H = {x | c₀ < ⟪x, ν⟫}` with
 `ν ≠ 0`, and let `Ω` and `U` be open with `Ω ∩ U = H ∩ U`, so that `∂Ω ∩ U` is a piece of the
