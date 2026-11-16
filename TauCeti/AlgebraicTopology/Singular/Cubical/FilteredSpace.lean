@@ -76,11 +76,8 @@ variable (k : Type u) [Ring k] {Y : TopCat.{u}} {X : ℤ → Set Y}
 /-- The stage of the filtration of normalized cubical chains at an empty subset is zero. -/
 @[simp]
 lemma cubicalChainFiltration_eq_bot {a : ℤ} (ha : X a = ∅) :
-    chainFiltration (normalizedCubicalChainComplex k) X a = ⊥ := by
-  have : IsEmpty (TopPair.ofSubset (X a)).snd := by
-    rw [ha]
-    exact Set.isEmpty_coe_sort.2 rfl
-  exact chainFiltration_eq_bot_of_isZero _ (isZero_normalizedCubicalChainComplex_obj_of_isEmpty _)
+    chainFiltration (normalizedCubicalChainComplex k) X a = ⊥ :=
+  chainFiltration_eq_bot _ (fun _ _ ↦ isZero_normalizedCubicalChainComplex_obj_of_isEmpty _) ha
 
 variable (hX : Monotone X)
 

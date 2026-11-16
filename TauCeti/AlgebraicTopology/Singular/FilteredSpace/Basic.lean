@@ -28,7 +28,8 @@ indexed by `ℤ`, so singular chains in degree `n` are placed in degree `-n` alo
 
 The filtration itself (`TauCeti.chainFiltration`), the identification of its stages with the
 chains of the `X q` (`TauCeti.chainFiltrationIso`), its extreme stages
-(`TauCeti.chainFiltration_eq_bot_of_isZero`, `TauCeti.chainFiltration_eq_top`) and the abutment
+(`TauCeti.chainFiltration_eq_bot_of_isZero`, `TauCeti.chainFiltration_eq_bot`,
+`TauCeti.chainFiltration_eq_top`) and the abutment
 (`TauCeti.chainFiltrationAbutmentIso`) are built for any functor `F` from spaces to chain complexes
 sending subspace inclusions to monomorphisms, so that they apply to singular and to cubical
 chains alike. So is the morphism of filtrations induced by a natural transformation `F ⟶ G`
@@ -181,6 +182,12 @@ lemma chainFiltration_eq_bot_of_isZero {a : ℤ}
   Subobject.mk_eq_bot_iff_zero.2 <|
     ((ComplexShape.embeddingDownNat.extendFunctor A).map_isZero ha).eq_of_src _ _
 
+/-- The stage of the filtration at an empty subset is zero, when `F` has zero chains on empty
+spaces. -/
+lemma chainFiltration_eq_bot (hF : ∀ Z : TopCat.{w}, IsEmpty Z → IsZero (F.obj Z)) {a : ℤ}
+    (ha : X a = ∅) : chainFiltration F X a = ⊥ :=
+  chainFiltration_eq_bot_of_isZero F (hF _ (by rw [ha]; exact Set.isEmpty_coe_sort.2 rfl))
+
 /-- The stage of the filtration at the whole space is everything. -/
 @[simp]
 lemma chainFiltration_eq_top {b : ℤ} (hb : X b = Set.univ) : chainFiltration F X b = ⊤ := by
@@ -219,16 +226,17 @@ lemma chainFiltrationι_comp_extendMap (q : ℤ) :
           ComplexShape.embeddingDownNat ≫
         chainFiltrationι G X' q := by
   -- The map of pairs `(Y, X q) ⟶ (Y', X' q)` induced by `g` commutes with the inclusions; push
-  -- this square through `F` and use the naturality of `α`. The ambient space of the pair
-  -- `(Y, X q)` is `Y` only up to definitional unfolding, so the composites are formed with `exact`
-  -- rather than `rw`.
-  have h := congrArg (F.map · ≫ α.app Y') (TopPair.Hom.w (TopPair.ofSubsetMap g (hg q)))
-  rw [TopPair.ofSubsetMap_fst] at h
-  rw [chainFiltrationι_def, chainFiltrationι_def]
-  exact (extendMap_comp _ _ _).symm.trans <| (congrArg (extendMap · _)
-    ((F.map_comp_assoc _ _ _).symm.trans <| h.symm.trans <| (F.map_comp_assoc _ _ _).trans <|
-      (congrArg (_ ≫ ·) (α.naturality _)).trans (Category.assoc _ _ _).symm)).trans
-    (extendMap_comp _ _ _)
+  -- this square through `F` and use the naturality of `α`.
+  have h : F.map (TopPair.ofSubset (X q)).map ≫ F.map g ≫ α.app Y' =
+      (F.map (TopPair.Hom.snd (TopPair.ofSubsetMap g (hg q))) ≫ α.app _) ≫
+        G.map (TopPair.ofSubset (X' q)).map := by
+    simp only [Category.assoc, ← α.naturality, ← F.map_comp_assoc, TopPair.Hom.w,
+      TopPair.ofSubsetMap_fst]
+    exact (F.map_comp_assoc _ _ _).symm
+  -- The ambient space of the pair `(Y, X q)` is `Y` only up to definitional unfolding, which
+  -- blocks `simp` and `rw` with `extendMap_comp`; apply it on both sides of `h` explicitly.
+  exact (extendMap_comp _ _ _).symm.trans <|
+    (congrArg (extendMap · _) h).trans (extendMap_comp _ _ _)
 
 variable [∀ P : TopPair.{w}, Mono (F.map P.map)] [∀ P : TopPair.{w}, Mono (G.map P.map)]
 
@@ -326,12 +334,13 @@ variable [HasCoproducts.{w} A] (R : A) {X : ℤ → Set Y}
 /-- The stage of the filtration of singular chains at an empty subset is zero. -/
 @[simp]
 lemma singularChainFiltration_eq_bot {a : ℤ} (ha : X a = ∅) :
-    chainFiltration ((singularChainComplexFunctor A).obj R) X a = ⊥ := by
-  have : IsEmpty (TopPair.ofSubset (X a)).snd := by
-    rw [ha]
-    exact Set.isEmpty_coe_sort.2 rfl
-  exact chainFiltration_eq_bot_of_isZero _
-    (SSet.isZero_chainComplex (X := (TopPair.toSSetPair.obj (TopPair.ofSubset (X a))).left) R)
+    chainFiltration ((singularChainComplexFunctor A).obj R) X a = ⊥ :=
+  chainFiltration_eq_bot _ (fun Z _ ↦
+    -- An empty space has no singular simplices.
+    have : (TopCat.toSSet.obj Z).HasDimensionLT 0 :=
+      (SSet.notNonempty_iff_hasDimensionLT_zero _).mp fun ⟨σ⟩ ↦
+        isEmptyElim (TopCat.toSSetObj₀Equiv σ)
+    SSet.isZero_chainComplex _ R) ha
 
 /-- The quotient `F_b / F_a` of two stages of the filtration of the singular chains of `Y` by
 the singular chains of the `X q` is the relative singular chain complex of the pair `(X b, X a)`,
@@ -723,16 +732,18 @@ private lemma chainFiltrationMap_app_comp_singularChainFiltrationIso_hom (b : �
           (chainFiltrationIso ((singularChainComplexFunctor A).obj R) X b).hom ≫
             extendMap (((singularChainComplexFunctor A).obj R).map
               (TopPair.Hom.snd (TopPair.ofSubsetMap g (hg b)))) ComplexShape.embeddingDownNat := by
-  refine (cancel_mono (chainFiltrationι ((singularChainComplexFunctor A).obj R) X' b)).1 ?_
-  -- The generic statements carry the components of the natural transformation, here the identity
-  -- of singular chains; drop them.
-  have h := chainFiltrationι_comp_extendMap (𝟙 ((singularChainComplexFunctor A).obj R)) g hg b
-  have h' := chainFiltrationMap_app_comp (𝟙 ((singularChainComplexFunctor A).obj R)) hX hX' g hg b
-  simp only [NatTrans.id_app, Category.comp_id] at h h'
-  simp only [Category.assoc, chainFiltrationIso_hom_comp_chainFiltrationι, ← h,
-    chainFiltrationIso_hom_comp_chainFiltrationι_assoc, Subobject.ofLE_arrow,
-    Subobject.ofLE_arrow_assoc]
-  exact h'.trans (Category.assoc _ _ _)
+  -- These identifications of the stages are `CochainComplex.filtrationFunctorObjIsoOfEqMk`, so this
+  -- is the generic statement for the identity of singular chains.
+  have e {Z : TopCat.{w}} {Xz : ℤ → Set Z} (hXz : Monotone Xz) :
+      (CochainComplex.filtrationFunctorObjIso _
+          (monotone_chainFiltration ((singularChainComplexFunctor A).obj R) hXz) b).hom ≫
+        Subobject.ofLE _ _ (CochainComplex.filtrationEInt_coe _ b).le ≫
+          (chainFiltrationIso ((singularChainComplexFunctor A).obj R) Xz b).hom =
+        (CochainComplex.filtrationFunctorObjIsoOfEqMk _ _ (chainFiltrationι _ Xz)
+          (chainFiltration_def _ Xz) b).hom :=
+    (cancel_mono (chainFiltrationι _ Xz b)).1 (by simp)
+  simpa only [reassoc_of% (e hX), e hX', NatTrans.id_app, Category.comp_id] using
+    chainFiltrationMap_app_comp_filtrationFunctorObjIsoOfEqMk_hom (𝟙 _) hX hX' g hg b
 
 /-- On the graded pieces `F_b / F_a`, identified with relative singular chains, the morphism of
 filtrations induced by `g` is the chain map induced by `g` on the pairs `(X b, X a)`. -/
