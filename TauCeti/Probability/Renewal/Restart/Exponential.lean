@@ -123,6 +123,6 @@ theorem hasLaw_renewalCountNat_sub_poissonMeasure
       (poissonMeasure (r * s)) P := by
   have h := (identDistrib_renewalCountNat_sub_of_expMeasure hT hindep hlaw t).comp
     (measurable_pi_apply s)
-  exact h.symm.hasLaw (hasLaw_renewalCountNat_poissonMeasure hT hindep hlaw s)
+  exact h.symm.hasLaw (hasLaw_renewalCountNat_poissonMeasure hindep hlaw s)
 
 end TauCeti.Probability

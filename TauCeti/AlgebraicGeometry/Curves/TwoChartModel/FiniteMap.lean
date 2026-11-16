@@ -42,15 +42,12 @@ theorem isFinite_map (hF : IsFunctionField k F) (hF' : IsFunctionField k F')
     {x : F} (hx : x ≠ 0) {x' : F'} (hx' : x' ≠ 0)
     (h : algebraMap F F' x = x') (hxt : Transcendental k x) :
     IsFinite (map hF hF' hx hx' h) := by
-  have hxt' : Transcendental k x' := by
-    rw [← h]
-    exact (transcendental_algebraMap_iff (algebraMap F F').injective).mpr hxt
   let f := map hF hF' hx hx' h
   have hproper : IsProper f := by
     have : IsProper (f ≫ (twoChartModel hF hx ↘ Spec (.of k))) := by
       rw [(Scheme.Hom.isOver_iff (Spec (.of k))).mp
         (inferInstance : f.IsOver (Spec (.of k)))]
-      exact isProper hxt'
+      infer_instance
     exact IsProper.of_comp f (twoChartModel hF hx ↘ Spec (.of k))
   have hqf : LocallyQuasiFinite f := by
     have hloc : IsZariskiLocalAtSource @LocallyQuasiFinite :=

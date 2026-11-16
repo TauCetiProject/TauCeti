@@ -86,6 +86,6 @@ example {X : TopCat} {R S : Type} [CommRing R] [CommRing S] (φ : R →+* S)
 -- This coefficient map kills the integral injection given by multiplication by two.
 example : (ModuleCat.extendScalars (Int.castRingHom (ZMod 2))).map
     ((2 : ℤ) • 𝟙 (ModuleCat.of ℤ ℤ)) = 0 := by
-  rw [TauCeti.ModuleCat.extendScalars_map_smul_id]
+  rw [ModuleCat.extendScalars_map_smul_id]
   have h2 : (Int.castRingHom (ZMod 2)) (2 : ℤ) = 0 := by decide
   rw [h2, zero_smul]

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.SpecificGroups.CFSG.Index
+public import TauCeti.GroupTheory.SpecificGroups.CFSG.SuzukiRee
 
 /-!
 # The index of the Ree family of type `G₂`
@@ -125,6 +125,17 @@ theorem fieldOrder_eq_three_pow (d : ReeG2LieIndex) :
 half-Frobenius. -/
 abbrev toSuzukiReeIndex (d : ReeG2LieIndex) : SuzukiReeIndex :=
   ⟨d.1, LieTypeIndex.usesHalfFrobenius_of_isReeG2 d.2⟩
+
+/-- The indexed length permutation is the node swap in the short-root carrier. -/
+theorem finCongr_lengthPerm (d : ReeG2LieIndex) (i : Fin d.1.rank) :
+    finCongr d.rank_eq_two (d.toSuzukiReeIndex.lengthPerm i) =
+      Equiv.swap 0 1 (finCongr d.rank_eq_two i) := by
+  obtain ⟨m, hvalid, rfl⟩ := d.exists_eq_of
+  have hswap : lengthPermRankTwo = Equiv.swap 0 1 := by
+    ext j
+    rw [lengthPermRankTwo_apply]
+    fin_cases j <;> decide
+  simp [toSuzukiReeIndex, SuzukiReeIndex.lengthPerm_reeG2, Equiv.permCongr_def, hswap]
 
 end ReeG2LieIndex
 

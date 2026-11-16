@@ -360,9 +360,9 @@ theorem isLocalDiffeomorph_iff_forall_comp [ChartedSpace H M]
     [NormedSpace 𝕜 E'] {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
     {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] {g : M → N} :
     IsLocalDiffeomorph I I' n g ↔ ∀ j, IsLocalDiffeomorph I I' n (g ∘ φ j) := by
-  refine ⟨fun hg j y ↦ (hφM j y).isLocalDiffeomorphAt_comp_iff.2 (hg _), fun hg x ↦ ?_⟩
+  refine ⟨fun hg j y ↦ (hφM j y).comp_iff_right.2 (hg _), fun hg x ↦ ?_⟩
   obtain ⟨j, y, rfl⟩ := hcover x
-  exact (hφM j y).isLocalDiffeomorphAt_comp_iff.1 (hg j y)
+  exact (hφM j y).comp_iff_right.1 (hg j y)
 
 include hdeck in
 /-- **Local diffeomorphisms out of a glued space.** A map out of `M` is a `C^n` local
@@ -395,9 +395,9 @@ theorem maximalAtlas_eq_of_forall_isLocalDiffeomorph {c c' : ChartedSpace H M}
         ∀ j y, φ j y ∈ e.source → IsLocalDiffeomorphAt I I n (e ∘ φ j) y := by
     let := c
     rw [IsManifold.mem_maximalAtlas_iff_forall_isLocalDiffeomorphAt]
-    refine ⟨fun h j y hy ↦ (hφc j y).isLocalDiffeomorphAt_comp_iff.2 (h _ hy), fun h x hx ↦ ?_⟩
+    refine ⟨fun h j y hy ↦ (hφc j y).comp_iff_right.2 (h _ hy), fun h x hx ↦ ?_⟩
     obtain ⟨j, y, rfl⟩ := hcover x
-    exact (hφc j y).isLocalDiffeomorphAt_comp_iff.1 (h j y hx)
+    exact (hφc j y).comp_iff_right.1 (h j y hx)
   ext e
   rw [key c hc hφc, key c' hc' hφc']
 

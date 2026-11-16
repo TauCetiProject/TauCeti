@@ -14,6 +14,7 @@ public import TauCeti.MeasureTheory.Group.Convolution.Tail
 A compound Poisson sum inherits a finite power-law right-tail constant from its jump law,
 multiplied by the Poisson rate. Reflection gives the corresponding left-tail statement.
 The jumps can have either sign, and no moment or opposite-tail assumption is imposed.
+Nonpositive exponents are included; they are degenerate, since the tail constant is then `0`.
 In particular the theorem applies to finite-intensity large-jump components of stable laws.
 
 The underlying random-sum theorem uses a polynomial union bound and the finite moments
@@ -38,23 +39,27 @@ namespace TauCeti.Probability
 /-- A power-law right-tail constant of the jump distribution is multiplied by the rate
 under compound Poisson summation, including rate zero and zero tail constants. -/
 theorem tendsto_rpow_mul_compoundPoissonMeasure_real_Ioi
-    {μ : Measure ℝ} [IsProbabilityMeasure μ] (r : ℝ≥0) {α C : ℝ} (hα : 0 < α)
+    {μ : Measure ℝ} [IsProbabilityMeasure μ] (r : ℝ≥0) {α C : ℝ}
     (hμ : Tendsto (fun x : ℝ ↦ x ^ α * μ.real (Ioi x)) atTop (𝓝 C)) :
     Tendsto (fun x : ℝ ↦ x ^ α * (compoundPoissonMeasure r μ).real (Ioi x)) atTop
       (𝓝 ((r : ℝ) * C)) := by
+  rcases le_or_gt α 0 with hα | hα
+  · -- For a nonpositive exponent every weighted tail tends to zero, so `C = 0`.
+    obtain rfl := tendsto_nhds_unique hμ (μ.tendsto_rpow_mul_measureReal_Ioi_of_nonpos hα)
+    simpa using (compoundPoissonMeasure r μ).tendsto_rpow_mul_measureReal_Ioi_of_nonpos hα
   simpa only [compoundPoissonMeasure_def, integral_natCast_poissonMeasure] using
-    Measure.tendsto_rpow_mul_bind_convolutionPower_real_Ioi hα hμ
+    Measure.tendsto_rpow_mul_bind_convolutionPower_real_Ioi hμ
       (integrable_natCast_rpow_poissonMeasure r (by linarith : 0 ≤ α + 1))
 
 /-- A power-law left-tail constant of the jump distribution is multiplied by the rate
 under compound Poisson summation, without a right-tail or moment assumption. -/
 theorem tendsto_rpow_mul_compoundPoissonMeasure_real_Iio_neg
-    {μ : Measure ℝ} [IsProbabilityMeasure μ] (r : ℝ≥0) {α C : ℝ} (hα : 0 < α)
+    {μ : Measure ℝ} [IsProbabilityMeasure μ] (r : ℝ≥0) {α C : ℝ}
     (hμ : Tendsto (fun x : ℝ ↦ x ^ α * μ.real (Iio (-x))) atTop (𝓝 C)) :
     Tendsto (fun x : ℝ ↦ x ^ α * (compoundPoissonMeasure r μ).real (Iio (-x))) atTop
       (𝓝 ((r : ℝ) * C)) := by
   have h := tendsto_rpow_mul_compoundPoissonMeasure_real_Ioi
-    (μ := μ.map (fun y ↦ -y)) r hα (by simpa only [Measure.map_neg_real_Ioi] using hμ)
+    (μ := μ.map (fun y ↦ -y)) r (by simpa only [Measure.map_neg_real_Ioi] using hμ)
   rw [← map_neg_compoundPoissonMeasure] at h
   simpa only [Measure.map_neg_real_Ioi] using h
 

@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Quotient.Descent
 public import TauCeti.Geometry.Manifold.Submersion.LocalDiffeomorph
 public import TauCeti.Geometry.Manifold.VectorBundle.FrameTrivialization
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Fiberwise
+public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Graph
 public import TauCeti.Geometry.Symplectic.Lagrangian.Fibration
 public import TauCeti.Geometry.Symplectic.Manifold.Quotient
 public import TauCeti.Topology.FiberBundle.Countable
@@ -47,7 +48,8 @@ are Lagrangian when the `α i` are closed.
   so `ω` descends to a symplectic form on `T*B/Λ`
   (`TauCeti.CotangentBundle.LatticeQuotient.symplecticForm`). Since the fibres of `T*B → B` are
   Lagrangian (`TauCeti.CotangentBundle.isLagrangian_ker_mfderiv_proj`), so are the fibres of
-  `T*B/Λ → B`.
+  `T*B/Λ → B`. The section `x ↦ [β x]` of `T*B/Λ` defined by a one-form `β` is Lagrangian
+  exactly when `β` is closed; in particular the zero section descends to a Lagrangian section.
 
 This is the canonical model of action-angle theory for a period lattice spanned by global closed
 one-forms, such as the differentials of global action coordinates.
@@ -81,6 +83,8 @@ one-forms, such as the differentials of global action coordinates.
   projection are Lagrangian.
 * `TauCeti.CotangentBundle.LatticeQuotient.isLagrangianTorusFibration_proj`: the projection is a
   regular Lagrangian torus fibration.
+* `TauCeti.CotangentBundle.LatticeQuotient.isLagrangianMap_mk_comp_section_iff`: the section
+  defined by a one-form is Lagrangian exactly when the form is closed.
 
 ## References
 
@@ -586,6 +590,47 @@ theorem isLagrangianTorusFibration_proj (hclosed : ∀ i, (α i).IsClosed) :
   isLagrangian_ker_mfderiv := isLagrangian_ker_mfderiv_proj hα hclosed
   isProperMap := isProperMap_proj hα
   isConnected_preimage_singleton := isConnected_proj_preimage_singleton hα
+
+/-! ### Lagrangian sections -/
+
+/-- The section `x ↦ [β x]` of `T*B/Λ` defined by a one-form `β` pulls the descended symplectic
+form back to `-dβ`. -/
+theorem mpullback_mk_comp_section_symplecticForm (hclosed : ∀ i, (α i).IsClosed)
+    (β : SmoothForm I B ℝ 1) :
+    SmoothForm.mpullback
+        (fun x ↦ mk hα (TotalSpace.mk' (E →L[ℝ] ℝ) x (SmoothForm.degreeOneEquiv β x)))
+        ((contMDiff_mk hα).comp (SmoothForm.degreeOneEquiv β).contMDiff)
+        (symplecticForm hα hclosed) =
+      -mextDerivₗ I 1 β := by
+  rw [← mpullback_symplecticForm β, ← mpullback_mk_symplecticForm hα hclosed,
+    SmoothForm.mpullback_mpullback]
+  rfl
+
+/-- **Lagrangian sections.** The section `x ↦ [β x]` of `T*B/Λ` defined by a one-form `β` is a
+Lagrangian map exactly when `β` is closed. In particular the zero section of `T*B` descends to a
+Lagrangian section of `T*B/Λ`. -/
+theorem isLagrangianMap_mk_comp_section_iff (hclosed : ∀ i, (α i).IsClosed)
+    (β : SmoothForm I B ℝ 1) :
+    (isSymplectic_symplecticForm hα hclosed).isNondegenerate.IsLagrangianMap I
+        (fun x ↦ mk hα (TotalSpace.mk' (E →L[ℝ] ℝ) x (SmoothForm.degreeOneEquiv β x))) ↔
+      β.IsClosed := by
+  have hs : ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ∞
+      (fun x ↦ mk hα (TotalSpace.mk' (E →L[ℝ] ℝ) x (SmoothForm.degreeOneEquiv β x))) :=
+    (contMDiff_mk hα).comp (SmoothForm.degreeOneEquiv β).contMDiff
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · rw [SmoothForm.isClosed_iff_mextDerivₗ_eq_zero, ← neg_eq_zero,
+      ← mpullback_mk_comp_section_symplecticForm hα hclosed β]
+    exact (SmoothTwoForm.IsNondegenerate.isIsotropicMap_iff_mpullback_eq_zero hs).1
+      h.isIsotropicMap
+  refine SmoothTwoForm.IsNondegenerate.IsIsotropicMap.isLagrangianMap_of_finrank
+    ((SmoothTwoForm.IsNondegenerate.isIsotropicMap_iff_mpullback_eq_zero hs).2 ?_)
+    (fun x ↦ ?_) ?_
+  · rw [mpullback_mk_comp_section_symplecticForm hα hclosed,
+      (SmoothForm.isClosed_iff_mextDerivₗ_eq_zero β).1 h, neg_zero]
+  · -- The projection `T*B/Λ → B` is a left inverse of the section.
+    exact mfderiv_injective_of_leftInverse ((contMDiff_proj hα _).mdifferentiableAt (by simp))
+      ((hs x).mdifferentiableAt (by simp)) fun _ ↦ proj_mk hα _
+  · rw [Module.finrank_prod, ContinuousLinearMap.dual_finrank_eq, two_mul]
 
 end Manifold
 
