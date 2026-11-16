@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Adjunction.Limits
+public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Kernels
 public import Mathlib.CategoryTheory.Preadditive.Injective.Basic
 
 /-!
@@ -50,6 +52,8 @@ categories, in particular to representations of a quiver.
   an epimorphism `p` is the same as dividing out `f`.
 * `CategoryTheory.Functor.isEssentialMono_map_iff`: equivalences preserve and reflect essential
   monomorphisms.
+* `TauCeti.isEssentialMono_cokernelDesc_map_iff`: equivalences preserve the essentiality of the
+  map out of a cokernel.
 
 ## References
 
@@ -210,5 +214,21 @@ theorem _root_.CategoryTheory.Functor.isEssentialMono_map_iff {D : Type*} [Categ
       infer_instance
     have : Mono (g ≫ e.inv) := hg' ▸ F.map_mono g'
     exact mono_of_mono g e.inv
+
+
+open Limits in
+/-- **Equivalences preserve the essentiality of the map out of a cokernel**: for `w : f ≫ g = 0`,
+the map `cokernel (F.map f) ⟶ F.obj Z` induced by `F.map g` is an essential monomorphism exactly
+when `cokernel.desc f g w` is. -/
+theorem isEssentialMono_cokernelDesc_map_iff {D : Type*} [Category* D] [HasZeroMorphisms C]
+    [HasZeroMorphisms D] (F : C ⥤ D) [F.IsEquivalence] {A B Z : C} (f : A ⟶ B) [HasCokernel f]
+    [HasCokernel (F.map f)] (g : B ⟶ Z) (w : f ≫ g = 0) (w' : F.map f ≫ F.map g = 0) :
+    IsEssentialMono (cokernel.desc (F.map f) (F.map g) w') ↔
+      IsEssentialMono (cokernel.desc f g w) := by
+  have : cokernel.desc (F.map f) (F.map g) w' =
+      cokernelComparison f F ≫ F.map (cokernel.desc f g w) := by
+    ext
+    simp
+  rw [this, isEssentialMono_isIso_comp_iff, F.isEssentialMono_map_iff]
 
 end TauCeti

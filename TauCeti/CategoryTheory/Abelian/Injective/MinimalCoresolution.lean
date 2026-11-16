@@ -169,17 +169,6 @@ theorem IsInjectiveCoresolution.map [F.PreservesZeroMorphisms] [F.PreservesHomol
   toIsCoresolution := hS.toIsCoresolution.map F
   injective i hi := F.injective_obj_of_injective (hS.injective i hi)
 
-/-- An equivalence preserves the essentiality of the map out of a cokernel induced by `g`. -/
-private theorem isEssentialMono_cokernelDesc_map_iff [F.IsEquivalence] {A B Z : C} (f : A ⟶ B)
-    (g : B ⟶ Z) (w : f ≫ g = 0) (w' : F.map f ≫ F.map g = 0) :
-    IsEssentialMono (cokernel.desc (F.map f) (F.map g) w') ↔
-      IsEssentialMono (cokernel.desc f g w) := by
-  have : cokernel.desc (F.map f) (F.map g) w' =
-      cokernelComparison f F ≫ F.map (cokernel.desc f g w) := by
-    ext
-    simp
-  rw [this, isEssentialMono_isIso_comp_iff, F.isEssentialMono_map_iff]
-
 /-- **Equivalences carry minimal injective coresolutions to minimal injective coresolutions.** -/
 theorem IsMinimalInjectiveCoresolution.map [F.IsEquivalence]
     (hS : S.IsMinimalInjectiveCoresolution) :
