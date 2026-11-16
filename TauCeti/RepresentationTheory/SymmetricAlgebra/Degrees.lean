@@ -51,7 +51,9 @@ average over `G` of `det(1 - t g)⁻¹` through the degrees.
 
 * `Representation.ne_zero_of_injective_aeval_symmetricAlgebraInvariants`: algebraically
   independent homogeneous invariants have positive degrees.
-* `natCard_eq_one_eq_finrank_invariants_of_bijective_aeval_symmetricAlgebraInvariants` and
+* `Representation.two_le_of_injective_aeval_symmetricAlgebraInvariants`: if `ρ.invariants = ⊥`,
+  algebraically independent homogeneous invariants have degree at least `2`.
+* `natCard_subtype_eq_one_eq_finrank_invariants_of_bijective_aeval_symmetricAlgebraInvariants` and
   `card_filter_eq_one_of_bijective_aeval_symmetricAlgebraInvariants` (in the namespace
   `Representation`): the number of basic invariants of degree `1` equals
   `Module.finrank R ρ.invariants`.
@@ -164,11 +166,28 @@ section LinearInvariants
 variable [CommRing R] [Nontrivial R] [Group G] [AddCommGroup M] [Module R M]
   (ρ : Representation R G M) {f : ι → ρ.symmetricAlgebraInvariants} {d : ι → ℕ}
 
+/-- If `ρ` has no nonzero linear invariants (`ρ.invariants = ⊥`), then every algebraically
+independent homogeneous invariant has degree at least `2`. -/
+theorem two_le_of_injective_aeval_symmetricAlgebraInvariants
+    (hinv : ρ.invariants = ⊥)
+    (hf : ∀ i, (f i : SymmetricAlgebra R M) ∈ homogeneousSubmodule R M (d i))
+    (hinj : Function.Injective (aeval (R := R) f)) (i : ι) : 2 ≤ d i := by
+  have hd0 := ρ.ne_zero_of_injective_aeval_symmetricAlgebraInvariants hf hinj i
+  have hd1 : d i ≠ 1 := fun hi1 ↦ by
+    have hm : homogeneousSubmoduleOneEquiv R M ⟨f i, hi1 ▸ hf i⟩ ∈ ρ.invariants := by
+      rw [mem_invariants, ← ι_mem_symmetricAlgebraInvariants_iff,
+        ι_homogeneousSubmoduleOneEquiv_apply]
+      exact (f i).2
+    rw [hinv, Submodule.mem_bot] at hm
+    have hfi0 : f i = 0 := Subtype.ext <| by
+      simpa [hm] using (ι_homogeneousSubmoduleOneEquiv_apply R M ⟨f i, hi1 ▸ hf i⟩).symm
+    exact X_ne_zero i (hinj (by rw [aeval_X, hfi0, map_zero]))
+  omega
+
 /-- **The number of basic invariants of degree one equals the rank of the linear invariants.**
-If `Sym(M)^G` is a polynomial algebra on invariants `f i` homogeneous of degrees `d i`, then the
-indices `i` with `d i = 1` correspond bijectively to the weight-`1` monomials, so their
-cardinality equals `Module.finrank R ρ.invariants`. -/
-theorem natCard_eq_one_eq_finrank_invariants_of_bijective_aeval_symmetricAlgebraInvariants
+If `Sym(M)^G` is a polynomial algebra on invariants `f i` homogeneous of degrees `d i`, then
+`Nat.card {i : ι // d i = 1}` equals `Module.finrank R ρ.invariants`. -/
+theorem natCard_subtype_eq_one_eq_finrank_invariants_of_bijective_aeval_symmetricAlgebraInvariants
     (hf : ∀ i, (f i : SymmetricAlgebra R M) ∈ homogeneousSubmodule R M (d i))
     (hbij : Function.Bijective (aeval (R := R) f)) :
     Nat.card {i : ι // d i = 1} = Module.finrank R ρ.invariants := by
@@ -204,7 +223,8 @@ theorem card_filter_eq_one_of_bijective_aeval_symmetricAlgebraInvariants [Fintyp
     (hbij : Function.Bijective (aeval (R := R) f)) :
     Finset.card {i : ι | d i = 1} = Module.finrank R ρ.invariants := by
   rw [← Fintype.card_subtype, ← Nat.card_eq_fintype_card]
-  exact ρ.natCard_eq_one_eq_finrank_invariants_of_bijective_aeval_symmetricAlgebraInvariants hf hbij
+  exact ρ.natCard_subtype_eq_one_eq_finrank_invariants_of_bijective_aeval_symmetricAlgebraInvariants
+    hf hbij
 
 end LinearInvariants
 

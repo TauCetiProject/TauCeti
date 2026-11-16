@@ -7,46 +7,59 @@ module
 
 public import TauCeti.RepresentationTheory.SymmetricAlgebra.Hyperplane.Jacobian
 public import TauCeti.RepresentationTheory.SymmetricAlgebra.RegularEigenvector
-public import TauCeti.RepresentationTheory.SymmetricAlgebra.Weyl.Reflections
+public import TauCeti.RepresentationTheory.Weyl.Reflections
 import TauCeti.RepresentationTheory.SymmetricAlgebra.Degrees
 import TauCeti.RepresentationTheory.SymmetricAlgebra.ShephardTodd
 
 /-!
 # Polynomial invariants, degrees, and Jacobian of a Weyl group
 
-Let `P : RootPairing ι K M N` be a root pairing over a field `K`. Under the contragredient action
-`P.weylGroupRootRep.dual` of `P.weylGroup` on `Module.Dual K M`, the symmetric algebra
-`SymmetricAlgebra K (Module.Dual K M)` is the algebra of polynomial functions on the weight space
+Let `P : RootPairing ι R M N` be a root pairing. Under the contragredient action
+`P.weylGroupRootRep.dual` of `P.weylGroup` on `Module.Dual R M`, the symmetric algebra
+`SymmetricAlgebra R (Module.Dual R M)` is the algebra of polynomial functions on the weight space
 `M`. Combining the reflection geometry of `P.weylGroupRootRep` with the Chevalley–Shephard–Todd
 theorem, the Molien degree identities, and the hyperplane Jacobian formula yields the invariant
 theory of finite Weyl groups:
 
-* **Chevalley's theorem**
-  (`exists_bijective_aeval_symmetricAlgebraInvariants_weylGroupRootRep_dual`): when `2 ≠ 0` in `K`
-  and `P.weylGroup` is finite of order invertible in `K`, the invariant subalgebra `Sym(M*)^W` is a
-  polynomial algebra on `finrank K M` homogeneous invariants of positive degree. In characteristic
-  zero, a base of a finite crystallographic pairing suffices
-  (`exists_bijective_aeval_weylGroupRootRep_dual_of_base`).
+* **No degree-one invariants for root systems**
+  (`two_le_of_injective_aeval_weylGroupRootRep_dual`,
+  `card_filter_eq_one_eq_zero_of_injective_aeval_weylGroupRootRep_dual`): over an integral domain
+  `R` with `2 ≠ 0`, when `P.IsRootSystem` holds, every algebraically independent homogeneous
+  invariant in `Sym(M*)^W` has degree at least `2` (and hence none has degree `1`).
+* **Chevalley's theorem** (`exists_bijective_aeval_weylGroupRootRep_dual`,
+  `exists_bijective_aeval_weylGroupRootRep_dual_of_base`): over a field `K` with `2 ≠ 0`, when `M`
+  is finite-dimensional and `P.weylGroup` is finite of order nonzero in `K`, the invariant
+  subalgebra `Sym(M*)^W` is a polynomial algebra on `finrank K M` homogeneous invariants of positive
+  degree. Over a field of characteristic zero with `M` finite-dimensional, a base `b : P.Base` of a
+  finite reduced crystallographic pairing suffices.
 * **Rank and degree-one invariants**
   (`natCard_eq_finrank_of_bijective_aeval_weylGroupRootRep_dual`,
-  `card_filter_eq_one_of_bijective_aeval_weylGroupRootRep_dual`,
-  `two_le_of_injective_aeval_weylGroupRootRep_dual`): any homogeneous polynomial generating family
-  of `Sym(M*)^W` has `finrank K M` members, of which `finrank K M - finrank K (P.rootSpan K)` have
-  degree `1`; when `P.IsRootSystem` holds, every basic invariant has degree at least `2`.
+  `card_filter_eq_one_of_bijective_aeval_weylGroupRootRep_dual`): over a field `K`, for a finite
+  Weyl group `P.weylGroup`, any polynomial generating system of `Sym(M*)^W` has `finrank K M`
+  members; when `2 ≠ 0` in `K` and `M` is finite-dimensional, any finite homogeneous basic invariant
+  system has `finrank K M - finrank K (P.rootSpan K)` members of degree `1`.
+* **Inertia groups of coroot hyperplanes** (`mem_dual_inertia_coroot'_iff`,
+  `natCard_inertia_coroot'_weylGroup`): over a field `K` with `2 ≠ 0`, when `P.flip` is reduced,
+  the inertia group in `P.weylGroup` of the ideal `(ι (P.coroot' α))` in `Sym(M*)` is
+  `{1, weylGroup.ofIdx P α}`, of order `2`.
 * **Degrees and exponents**
   (`prod_eq_natCard_weylGroup_of_bijective_aeval_weylGroupRootRep_dual`,
   `sum_sub_one_eq_ncard_posRoots_of_bijective_aeval_weylGroupRootRep_dual`,
-  `sum_eq_finrank_add_ncard_posRoots_of_bijective_aeval_weylGroupRootRep_dual`): in characteristic
-  zero, the product of the degrees `d k` is `#W`, the sum of the exponents `d k - 1` is the number
-  of positive roots `|Φ⁺|`, and `∑ k, d k = dim M + |Φ⁺|`.
+  `sum_eq_finrank_add_ncard_posRoots_of_bijective_aeval_weylGroupRootRep_dual`): over a field `K` of
+  characteristic zero with `M` finite-dimensional, for a finite `P.weylGroup`, the product of the
+  degrees `d k` of a finite homogeneous basic invariant system is `#W`; given a base `b : P.Base`
+  of a finite reduced crystallographic pairing, the sum of the exponents `d k - 1` is the number of
+  positive roots `|Φ⁺|`, and `∑ k, d k = dim M + |Φ⁺|`.
 * **Weyl Jacobian and regular eigenvectors**
   (`exists_jacobian_eq_algebraMap_mul_prod_posRootsFinset`,
+  `lift_jacobian_eq_zero_iff_not_isRegularWeight`,
   `lift_jacobian_ne_zero_iff_isRegularWeight`,
-  `charpoly_weylGroupRootRep_of_isRegularWeight_smul`): up to a nonzero scalar, the Jacobian of a
-  homogeneous basic invariant system is the product `∏ α ∈ Φ⁺, α∨` of the positive coroots; it is
-  nonzero at `x ∈ M` precisely when `x` is a regular weight, and at any regular eigenvector of `w`
-  with unit eigenvalue `c`, the characteristic polynomial of `w` on `M` is
-  `∏ k, (X - c⁻¹ ^ (d k - 1))`.
+  `charpoly_weylGroupRootRep_of_isRegularWeight_of_smul_eq`): over a field `K` of characteristic
+  zero with `M` finite-dimensional, for a finite reduced crystallographic pairing with a base
+  `b : P.Base`, up to a nonzero scalar the Jacobian of a finite homogeneous basic invariant system
+  is the product `∏ α ∈ Φ⁺, α∨` of the positive coroots; it is nonzero at `x ∈ M` precisely when
+  `x` is a regular weight, and at any regular eigenvector of `w` with unit eigenvalue `c`, the
+  characteristic polynomial of `w` on `M` is `∏ k, (X - c⁻¹ ^ (d k - 1))`.
 
 ## References
 
@@ -66,15 +79,76 @@ open SymmetricAlgebra TauCeti TauCeti.SymmetricAlgebra
 
 namespace RootPairing
 
+section Domain
+
+variable {ι R M N κ : Type*} [CommRing R] [IsDomain R] [NeZero (2 : R)]
+  [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N] (P : RootPairing ι R M N)
+
+/-- **Every algebraically independent homogeneous invariant of a root system has degree at least
+`2`**, over an integral domain with `2 ≠ 0`, so every basic-invariant exponent `d k - 1` is
+positive. -/
+theorem two_le_of_injective_aeval_weylGroupRootRep_dual
+    [P.IsRootSystem]
+    {f : κ → P.weylGroupRootRep.dual.symmetricAlgebraInvariants} {d : κ → ℕ}
+    (hf : ∀ k, (f k : SymmetricAlgebra R (Module.Dual R M)) ∈
+      homogeneousSubmodule R (Module.Dual R M) (d k))
+    (hinj : Function.Injective (MvPolynomial.aeval (R := R) f)) (k : κ) :
+    2 ≤ d k :=
+  P.weylGroupRootRep.dual.two_le_of_injective_aeval_symmetricAlgebraInvariants
+    (by rw [P.invariants_weylGroupRootRep_dual, rootSpan, IsRootSystem.span_root_eq_top,
+      Submodule.dualAnnihilator_top])
+    hf hinj k
+
+/-- Over an integral domain with `2 ≠ 0`, when the roots span `M` (`P.IsRootSystem`), no
+algebraically independent homogeneous invariant of `Sym(M*)^W` has degree `1`. -/
+theorem card_filter_eq_one_eq_zero_of_injective_aeval_weylGroupRootRep_dual
+    [P.IsRootSystem] [Fintype κ]
+    {f : κ → P.weylGroupRootRep.dual.symmetricAlgebraInvariants} {d : κ → ℕ}
+    (hf : ∀ k, (f k : SymmetricAlgebra R (Module.Dual R M)) ∈
+      homogeneousSubmodule R (Module.Dual R M) (d k))
+    (hinj : Function.Injective (MvPolynomial.aeval (R := R) f)) :
+    Finset.card {k : κ | d k = 1} = 0 :=
+  Finset.card_eq_zero.mpr <| Finset.filter_eq_empty_iff.mpr fun k _ ↦ by
+    have := P.two_le_of_injective_aeval_weylGroupRootRep_dual hf hinj k
+    omega
+
+end Domain
+
 section Field
 
 variable {ι K M N κ : Type*} [Field K] [AddCommGroup M] [Module K M] [AddCommGroup N] [Module K N]
   (P : RootPairing ι K M N)
 
+/-- Membership in the inertia group of the ideal `(ι (P.coroot' α))` of `Sym(M*)` in `P.weylGroup`:
+over a field with `2 ≠ 0` when `P.flip` is reduced, its elements are `1` and
+`weylGroup.ofIdx P α`. -/
+theorem mem_dual_inertia_coroot'_iff [NeZero (2 : K)] [P.flip.IsReduced]
+    (α : ι) (w : P.weylGroup) :
+    letI := P.weylGroupRootRep.dual.symmetricAlgebraMulSemiringAction
+    w ∈ (Ideal.span {SymmetricAlgebra.ι K (Module.Dual K M) (P.coroot' α)}).inertia P.weylGroup ↔
+      w = 1 ∨ w = weylGroup.ofIdx P α := by
+  let _ := P.weylGroupRootRep.dual.symmetricAlgebraMulSemiringAction
+  exact P.weylGroupRootRep.mem_dual_inertia_span_singleton_ι_iff_le_fixedSubmodule.trans
+    P.ker_coroot'_le_fixedSubmodule_weylGroupRootRep_iff
+
+/-- **The inertia group of a coroot hyperplane ideal in `P.weylGroup` has order `2`**, over a field
+with `2 ≠ 0` when `P.flip` is reduced. -/
+theorem natCard_inertia_coroot'_weylGroup [NeZero (2 : K)] [P.flip.IsReduced] (α : ι) :
+    letI := P.weylGroupRootRep.dual.symmetricAlgebraMulSemiringAction
+    Nat.card
+      ((Ideal.span {SymmetricAlgebra.ι K (Module.Dual K M) (P.coroot' α)}).inertia P.weylGroup) =
+      2 := by
+  let _ := P.weylGroupRootRep.dual.symmetricAlgebraMulSemiringAction
+  have hset : ((Ideal.span {SymmetricAlgebra.ι K (Module.Dual K M) (P.coroot' α)}).inertia
+      P.weylGroup : Set P.weylGroup) = {1, weylGroup.ofIdx P α} :=
+    Set.ext (P.mem_dual_inertia_coroot'_iff α)
+  rw [← SetLike.coe_sort_coe, Nat.card_coe_set_eq, hset,
+    Set.ncard_pair (weylGroup.ofIdx_ne_one P α).symm]
+
 /-- **Chevalley's theorem for the Weyl group.** If `2 ≠ 0` in `K`, `M` is finite-dimensional, and
 `P.weylGroup` is finite of order nonzero in `K`, then the `W`-invariant polynomial functions
 `Sym(M*)^W` form a polynomial algebra on `finrank K M` homogeneous invariants of positive degree. -/
-theorem exists_bijective_aeval_symmetricAlgebraInvariants_weylGroupRootRep_dual
+theorem exists_bijective_aeval_weylGroupRootRep_dual
     [NeZero (2 : K)] [FiniteDimensional K M] [Finite P.weylGroup]
     (hcard : (Nat.card P.weylGroup : K) ≠ 0) :
     ∃ f : Fin (Module.finrank K M) → P.weylGroupRootRep.dual.symmetricAlgebraInvariants,
@@ -91,7 +165,7 @@ theorem exists_bijective_aeval_symmetricAlgebraInvariants_weylGroupRootRep_dual
       P.pseudoreflectionSubgroup_weylGroupRootRep_eq_top
 
 /-- **Chevalley's theorem in characteristic zero** for a finite reduced crystallographic root
-pairing with a base. -/
+pairing on a finite-dimensional space `M` with a base. -/
 theorem exists_bijective_aeval_weylGroupRootRep_dual_of_base
     [CharZero K] [FiniteDimensional K M] [Finite ι] [P.IsCrystallographic] [P.IsReduced]
     (b : P.Base) :
@@ -101,11 +175,11 @@ theorem exists_bijective_aeval_weylGroupRootRep_dual_of_base
           homogeneousSubmodule K (Module.Dual K M) d) ∧
         Function.Bijective (MvPolynomial.aeval (R := K) f) := by
   let _ : Finite P.weylGroup := P.finite_weylGroup_of_base b
-  exact P.exists_bijective_aeval_symmetricAlgebraInvariants_weylGroupRootRep_dual
+  exact P.exists_bijective_aeval_weylGroupRootRep_dual
     (Nat.cast_ne_zero.mpr Nat.card_pos.ne')
 
-/-- **Number of basic invariants of a Weyl group:** any polynomial generating system of `Sym(M*)^W`
-has `finrank K M` members. -/
+/-- **Number of basic invariants of a Weyl group:** for a finite Weyl group over a field, any
+polynomial generating system of `Sym(M*)^W` has `finrank K M` members. -/
 theorem natCard_eq_finrank_of_bijective_aeval_weylGroupRootRep_dual
     [Finite P.weylGroup]
     {f : κ → P.weylGroupRootRep.dual.symmetricAlgebraInvariants}
@@ -114,9 +188,10 @@ theorem natCard_eq_finrank_of_bijective_aeval_weylGroupRootRep_dual
   (P.weylGroupRootRep.dual.card_eq_finrank_of_bijective_aeval_symmetricAlgebraInvariants hbij).trans
     Subspace.dual_finrank_eq
 
-/-- **Number of degree-one basic invariants of a Weyl group:** in any homogeneous basic invariant
-system of `Sym(M*)^W`, the number of generators of degree `1` equals the codimension
-`finrank K M - finrank K (P.rootSpan K)` of the root span. -/
+/-- **Number of degree-one basic invariants of a Weyl group:** over a field with `2 ≠ 0` and
+finite-dimensional `M`, in any finite homogeneous basic invariant system of `Sym(M*)^W`, the number
+of generators of degree `1` equals the codimension `finrank K M - finrank K (P.rootSpan K)` of the
+root span. -/
 theorem card_filter_eq_one_of_bijective_aeval_weylGroupRootRep_dual
     [NeZero (2 : K)] [FiniteDimensional K M] [Fintype κ]
     {f : κ → P.weylGroupRootRep.dual.symmetricAlgebraInvariants} {d : κ → ℕ}
@@ -129,42 +204,6 @@ theorem card_filter_eq_one_of_bijective_aeval_weylGroupRootRep_dual
   have h := Subspace.finrank_add_finrank_dualAnnihilator_eq (P.rootSpan K)
   omega
 
-/-- When the roots span `M` (`P.IsRootSystem`), no basic invariant of `Sym(M*)^W` has degree `1`. -/
-theorem card_filter_eq_one_eq_zero_of_bijective_aeval_weylGroupRootRep_dual
-    [NeZero (2 : K)] [FiniteDimensional K M] [P.IsRootSystem] [Fintype κ]
-    {f : κ → P.weylGroupRootRep.dual.symmetricAlgebraInvariants} {d : κ → ℕ}
-    (hf : ∀ k, (f k : SymmetricAlgebra K (Module.Dual K M)) ∈
-      homogeneousSubmodule K (Module.Dual K M) (d k))
-    (hbij : Function.Bijective (MvPolynomial.aeval (R := K) f)) :
-    Finset.card {k : κ | d k = 1} = 0 := by
-  rw [P.card_filter_eq_one_of_bijective_aeval_weylGroupRootRep_dual hf hbij, rootSpan,
-    IsRootSystem.span_root_eq_top, finrank_top, Nat.sub_self]
-
-/-- **Every algebraically independent homogeneous invariant of a semisimple root system has degree
-at least `2`**, so every basic-invariant exponent `d k - 1` is positive. -/
-theorem two_le_of_injective_aeval_weylGroupRootRep_dual
-    [NeZero (2 : K)] [P.IsRootSystem]
-    {f : κ → P.weylGroupRootRep.dual.symmetricAlgebraInvariants} {d : κ → ℕ}
-    (hf : ∀ k, (f k : SymmetricAlgebra K (Module.Dual K M)) ∈
-      homogeneousSubmodule K (Module.Dual K M) (d k))
-    (hinj : Function.Injective (MvPolynomial.aeval (R := K) f)) (k : κ) :
-    2 ≤ d k := by
-  have hd0 :=
-    P.weylGroupRootRep.dual.ne_zero_of_injective_aeval_symmetricAlgebraInvariants hf hinj k
-  have hd1 : d k ≠ 1 := fun hk1 ↦ by
-    have hφ : homogeneousSubmoduleOneEquiv K (Module.Dual K M) ⟨f k, hk1 ▸ hf k⟩ ∈
-        P.weylGroupRootRep.dual.invariants := by
-      rw [Representation.mem_invariants, ← Representation.ι_mem_symmetricAlgebraInvariants_iff,
-        ι_homogeneousSubmoduleOneEquiv_apply]
-      exact (f k).2
-    rw [P.invariants_weylGroupRootRep_dual, rootSpan, IsRootSystem.span_root_eq_top,
-      Submodule.dualAnnihilator_top, Submodule.mem_bot] at hφ
-    have hfk0 : f k = 0 := Subtype.ext <| by
-      simpa [hφ] using
-        (ι_homogeneousSubmoduleOneEquiv_apply K (Module.Dual K M) ⟨f k, hk1 ▸ hf k⟩).symm
-    exact MvPolynomial.X_ne_zero k (hinj (by rw [MvPolynomial.aeval_X, hfk0, map_zero]))
-  omega
-
 end Field
 
 section CharZero
@@ -172,9 +211,9 @@ section CharZero
 variable {ι K M N κ : Type*} [Field K] [CharZero K] [AddCommGroup M] [Module K M]
   [FiniteDimensional K M] [AddCommGroup N] [Module K N] (P : RootPairing ι K M N)
 
-/-- **Product of the invariant degrees of a Weyl group:** in characteristic zero, the product of
-the degrees of any homogeneous basic invariant system of `Sym(M*)^W` equals the order of
-`P.weylGroup`. -/
+/-- **Product of the invariant degrees of a Weyl group:** in characteristic zero on a
+finite-dimensional space `M`, for a finite Weyl group, the product of the degrees of any finite
+homogeneous basic invariant system of `Sym(M*)^W` equals the order of `P.weylGroup`. -/
 theorem prod_eq_natCard_weylGroup_of_bijective_aeval_weylGroupRootRep_dual
     [Finite P.weylGroup] [Fintype κ]
     {f : κ → P.weylGroupRootRep.dual.symmetricAlgebraInvariants} {d : κ → ℕ}
@@ -192,8 +231,9 @@ section Base
 variable [Finite ι] [P.IsCrystallographic] [P.IsReduced]
 
 /-- **Sum of the exponents of a Weyl group:** for a base `b` of a finite reduced crystallographic
-root pairing in characteristic zero, the sum of the exponents `d k - 1` of any homogeneous basic
-invariant system of `Sym(M*)^W` equals the number of positive roots `(posRoots P b).ncard`. -/
+root pairing on a finite-dimensional space `M` in characteristic zero, the sum of the exponents
+`d k - 1` of any finite homogeneous basic invariant system of `Sym(M*)^W` equals the number of
+positive roots `(posRoots P b).ncard`. -/
 theorem sum_sub_one_eq_ncard_posRoots_of_bijective_aeval_weylGroupRootRep_dual
     [Fintype κ] (b : P.Base)
     {f : κ → P.weylGroupRootRep.dual.symmetricAlgebraInvariants} {d : κ → ℕ}
@@ -208,7 +248,9 @@ theorem sum_sub_one_eq_ncard_posRoots_of_bijective_aeval_weylGroupRootRep_dual
     ← Fintype.card_subtype, ← Nat.card_eq_fintype_card,
     P.natCard_pseudoreflections_weylGroupRootRep b]
 
-/-- **Sum of the invariant degrees of a Weyl group:** `∑ k, d k = finrank K M + |Φ⁺|`. -/
+/-- **Sum of the invariant degrees of a Weyl group:** for a base `b` of a finite reduced
+crystallographic root pairing on a finite-dimensional space `M` in characteristic zero,
+`∑ k, d k = finrank K M + |Φ⁺|`. -/
 theorem sum_eq_finrank_add_ncard_posRoots_of_bijective_aeval_weylGroupRootRep_dual
     [Fintype κ] (b : P.Base)
     {f : κ → P.weylGroupRootRep.dual.symmetricAlgebraInvariants} {d : κ → ℕ}
@@ -223,9 +265,10 @@ theorem sum_eq_finrank_add_ncard_posRoots_of_bijective_aeval_weylGroupRootRep_du
     ← Fintype.card_subtype, ← Nat.card_eq_fintype_card,
     P.natCard_pseudoreflections_weylGroupRootRep b]
 
-/-- **Exact Weyl Jacobian formula:** up to a nonzero scalar in `K`, the Jacobian of any
-homogeneous basic invariant system of `Sym(M*)^W` is the product of the positive coroots
-`∏ α ∈ posRootsFinset P b, ι (P.coroot' α)`. -/
+/-- **Exact Weyl Jacobian formula:** for a base `b` of a finite reduced crystallographic root
+pairing on a finite-dimensional space `M` in characteristic zero, up to a nonzero scalar in `K`,
+the Jacobian of any finite homogeneous basic invariant system of `Sym(M*)^W` is the product of the
+positive coroots `∏ α ∈ posRootsFinset P b, ι (P.coroot' α)`. -/
 theorem exists_jacobian_eq_algebraMap_mul_prod_posRootsFinset
     [Fintype κ] [DecidableEq κ] (b : P.Base) (B : Module.Basis κ K (Module.Dual K M))
     {f : κ → P.weylGroupRootRep.dual.symmetricAlgebraInvariants} {d : κ → ℕ}
@@ -263,8 +306,10 @@ theorem exists_jacobian_eq_algebraMap_mul_prod_posRootsFinset
   simp only [e.symm_apply_apply]
   exact (eFin.prod_comp _).symm.trans (Finset.prod_coe_sort (posRootsFinset P b) g)
 
-/-- The Jacobian of homogeneous basic invariants of `Sym(M*)^W` vanishes at `x ∈ M` precisely when
-`x` is not a regular weight (that is, `x` lies on at least one root hyperplane). -/
+/-- For a base `b` of a finite reduced crystallographic root pairing on a finite-dimensional space
+`M` in characteristic zero, the Jacobian of finite homogeneous basic invariants of `Sym(M*)^W`
+vanishes at `x ∈ M` precisely when `x` is not a regular weight (that is, `x` lies on at least one
+root hyperplane). -/
 theorem lift_jacobian_eq_zero_iff_not_isRegularWeight
     [Fintype κ] [DecidableEq κ] (b : P.Base) (B : Module.Basis κ K (Module.Dual K M))
     {f : κ → P.weylGroupRootRep.dual.symmetricAlgebraInvariants} {d : κ → ℕ}
@@ -279,8 +324,9 @@ theorem lift_jacobian_eq_zero_iff_not_isRegularWeight
     P.weylGroupRootRep_injective B hf hbij x).trans
     (P.exists_mem_reflectingHyperplanes_weylGroupRootRep_iff b x)
 
-/-- The Jacobian of homogeneous basic invariants of `Sym(M*)^W` is nonzero at `x ∈ M` precisely
-when `x` is a regular weight. -/
+/-- For a base `b` of a finite reduced crystallographic root pairing on a finite-dimensional space
+`M` in characteristic zero, the Jacobian of finite homogeneous basic invariants of `Sym(M*)^W` is
+nonzero at `x ∈ M` precisely when `x` is a regular weight. -/
 theorem lift_jacobian_ne_zero_iff_isRegularWeight
     [Fintype κ] [DecidableEq κ] (b : P.Base) (B : Module.Basis κ K (Module.Dual K M))
     {f : κ → P.weylGroupRootRep.dual.symmetricAlgebraInvariants} {d : κ → ℕ}
@@ -292,11 +338,12 @@ theorem lift_jacobian_ne_zero_iff_isRegularWeight
       P.IsRegularWeight x := by
   rw [ne_eq, P.lift_jacobian_eq_zero_iff_not_isRegularWeight b B hf hbij x, not_not]
 
-/-- **Characteristic polynomial at a regular Weyl eigenvector (Springer).** If `x ∈ M` is a
-regular weight and `w • x = c • x` for a unit `c : Kˣ`, then the characteristic polynomial of `w`
-acting on `M` is `∏ k, (X - c⁻¹ ^ (d k - 1))`, where `d k` are the degrees of any homogeneous
-basic invariant system of `Sym(M*)^W`. -/
-theorem charpoly_weylGroupRootRep_of_isRegularWeight_smul
+/-- **Characteristic polynomial at a regular Weyl eigenvector (Springer).** For a base `b` of a
+finite reduced crystallographic root pairing on a finite-dimensional space `M` in characteristic
+zero, if `x ∈ M` is a regular weight and `w • x = c • x` for a unit `c : Kˣ`, then the
+characteristic polynomial of `w` acting on `M` is `∏ k, (X - c⁻¹ ^ (d k - 1))`, where `d k` are the
+degrees of any finite homogeneous basic invariant system of `Sym(M*)^W`. -/
+theorem charpoly_weylGroupRootRep_of_isRegularWeight_of_smul_eq
     [Fintype κ] (b : P.Base)
     {f : κ → P.weylGroupRootRep.dual.symmetricAlgebraInvariants} {d : κ → ℕ}
     (hf : ∀ k, (f k : SymmetricAlgebra K (Module.Dual K M)) ∈
