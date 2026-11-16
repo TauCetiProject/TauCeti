@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Flow.TimeDependent
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
-public import TauCeti.Geometry.Manifold.VectorBundle.FirstJet
+public import TauCeti.Geometry.Manifold.VectorBundle.FirstJet.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 import TauCeti.Dynamics.Flow.RestPoint
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LocalFrame
