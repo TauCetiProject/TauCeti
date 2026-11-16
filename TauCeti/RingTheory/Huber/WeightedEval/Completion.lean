@@ -204,10 +204,9 @@ end UniversalProperty
 
 section LinearTopology
 
-variable {B : Type*} [CommRing B] [UniformSpace B] [IsUniformAddGroup B] [IsTopologicalRing B]
+variable {B : Type*} [CommRing B] [UniformSpace B] [IsUniformAddGroup B]
   [IsLinearTopology B B] [CompleteSpace B] [T2Space B]
 
-omit [IsTopologicalRing B] in
 /-- **The universal property of `A⟨X₁, …, Xₖ⟩` for linearly topologised targets.** A continuous
 ring homomorphism `φ : A → B` into a complete Hausdorff linearly topologised ring, such as an
 adic ring, extends to exactly one continuous ring homomorphism `A⟨X₁, …, Xₖ⟩ → B` sending each
