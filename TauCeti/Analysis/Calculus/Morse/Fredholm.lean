@@ -109,6 +109,8 @@ implicit function theorem gives a chart of the zero set near `0` onto an open su
 * `ContDiff.hasStrictFDerivAt_trajectorySection_neg_gradient`: along a path with bounded range,
   the trajectory section of `-∇f` is strictly differentiable at every `ξ₀`, with derivative
   `ξ ↦ ξ' + Hess f(γ + ξ₀) ξ`.
+* `ContDiff.contDiff_trajectorySection_neg_gradient`: for a `C^{n+1}` function `f` and a
+  continuous path with bounded range, the trajectory section of `-∇f` is `Cⁿ`.
 * `IsIntegralCurve.exists_openPartialHomeomorph_setOf_trajectorySection_neg_gradient_eq_zero`: if
   the linearized operator is surjective, the zeros of the trajectory section near `0`, that is
   the negative gradient trajectories `γ + ξ` with `ξ ∈ W^{1,2}(ℝ, E)` near `0`, are parametrized
@@ -175,6 +177,16 @@ theorem ContDiff.hasStrictFDerivAt_trajectorySection_neg_gradient (hf : ContDiff
     (fun x ↦ ContDiffAt.hasFDerivAt_neg_gradient hf.contDiffAt) hH.neg ?_
   filter_upwards [hAL] with s hs
   rw [hs, neg_neg]
+
+/-- **The trajectory section of `-∇f` is `Cⁿ`.** Let `f` be a `C^{n+1}` function, `n ≤ ∞`, on a
+finite-dimensional real inner product space whose gradient is Lipschitz, and let `γ` be a
+continuous path with bounded range. Then the trajectory section `ξ ↦ ξ' + ∇f(γ + ξ) - ∇f(γ)` of
+`-∇f` around `γ`, from `W^{1,r}(ℝ, E)` to `Lʳ(ℝ, E)`, is `Cⁿ`. -/
+theorem ContDiff.contDiff_trajectorySection_neg_gradient {n : ℕ∞}
+    (hf : ContDiff ℝ (n + 1) f) {K : ℝ≥0} (hK : LipschitzWith K (∇ f)) (hγ : Continuous γ)
+    (hb : Bornology.IsBounded (range γ)) {r : ℝ≥0∞} [Fact (1 ≤ r)] (hr : r ≠ ∞) :
+    ContDiff ℝ n (trajectorySection (-∇ f) γ hK.neg hγ.aestronglyMeasurable hr) :=
+  contDiff_trajectorySection_of_contDiff hK.neg hγ hb hr (hf.gradient_right le_rfl).neg
 
 end TrajectorySection
 
