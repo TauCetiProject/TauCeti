@@ -35,6 +35,10 @@ and the inner product together.
   `∑ i, ∑ j, A i j * B i j`.
 * `Matrix.frobenius_inner_eq_trace_conjTranspose_mul` — over `𝕜` itself, the inner product is
   `(Aᴴ * B).trace`.
+* `Matrix.frobenius_real_inner_eq_re_trace_conjTranspose_mul` — the real inner product is
+  `Re tr(Aᴴ * B)`.
+* `Matrix.UnitaryGroup.frobenius_real_inner_conj` — unitary conjugation preserves the real
+  Frobenius inner product.
 * `Matrix.frobenius_norm_sq_eq_sum_normSq` — the squared complex Frobenius norm is the sum of
   the squared norms of the entries.
 * `Matrix.frobenius_norm_sq_conj_unitary` — unitary conjugation preserves the squared norm.
@@ -123,6 +127,28 @@ theorem frobenius_inner_eq_trace_conjTranspose_mul (A B : Matrix m n 𝕜) :
     conjTranspose_apply,
     RCLike.star_def]
   exact Finset.sum_comm
+
+/-- The real Frobenius inner product is the real part of the trace pairing. -/
+theorem frobenius_real_inner_eq_re_trace_conjTranspose_mul (X Y : Matrix m n 𝕜) :
+    ⟪X, Y⟫_ℝ = RCLike.re (Xᴴ * Y).trace := by
+  rw [← frobenius_inner_eq_trace_conjTranspose_mul]
+  simp only [frobenius_inner_def, real_inner_eq_re_inner 𝕜, map_sum]
+
+/-- Unitary conjugation preserves the real Frobenius inner product on all matrices. -/
+theorem UnitaryGroup.frobenius_real_inner_conj {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (U : Matrix.unitaryGroup ι 𝕜) (X Y : Matrix ι ι 𝕜) :
+    ⟪(U : Matrix ι ι 𝕜) * X * (U : Matrix ι ι 𝕜)ᴴ,
+      (U : Matrix ι ι 𝕜) * Y * (U : Matrix ι ι 𝕜)ᴴ⟫_ℝ = ⟪X, Y⟫_ℝ := by
+  have hU : (U : Matrix ι ι 𝕜)ᴴ * U = 1 := by
+    simpa only [star_eq_conjTranspose] using mem_unitaryGroup_iff'.mp U.property
+  rw [frobenius_real_inner_eq_re_trace_conjTranspose_mul,
+    frobenius_real_inner_eq_re_trace_conjTranspose_mul]
+  congr 1
+  simp only [conjTranspose_mul, conjTranspose_conjTranspose, Matrix.mul_assoc,
+    ← Matrix.mul_assoc (U : Matrix ι ι 𝕜)ᴴ (U : Matrix ι ι 𝕜), hU, one_mul]
+  rw [trace_mul_comm]
+  simp only [← Matrix.mul_assoc]
+  rw [Matrix.mul_assoc (Xᴴ * Y), hU, mul_one]
 
 /-- The squared Frobenius norm of a complex matrix is the sum of its entrywise squared norms. -/
 theorem frobenius_norm_sq_eq_sum_normSq (A : Matrix m n ℂ) :
