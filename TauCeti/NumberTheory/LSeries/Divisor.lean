@@ -14,7 +14,7 @@ import TauCeti.NumberTheory.ArithmeticFunction.DivisorBounds
 import TauCeti.NumberTheory.LSeries.EulerProduct
 
 /-!
-# The Dirichlet series of the squared divisor count
+# Dirichlet series of divisor counts with a `ζ(2s)` correction
 
 On `Re s > 1`, the squared number of divisors has an absolutely convergent Dirichlet series
 with value `ζ(s)^4 / ζ(2s)`. The coefficient is zero at index zero, because `Nat.divisors 0` is
@@ -23,12 +23,16 @@ provided. The factor `ζ(2s)` is the Euler correction relating the squared divis
 the fourth power of the Riemann zeta function: at each prime, the divisor-square series has
 local factor `(1 + X) / (1 - X)³`, rather than the factor `(1 - X)⁻⁴` of `ζ(s)⁴`.
 
-The statement corresponds to `zeta_pow_four_eq` in the PNT+ development.
+Likewise the divisor count `τ(n²) = σ₀(n²)` of `n²` has an absolutely convergent Dirichlet series
+with value `ζ(s)^3 / ζ(2s)` on `Re s > 1`: since `τ(p^(2k)) = 2k + 1`, its local factor is
+`(1 + X) / (1 - X)² = (1 - X)⁻³ (1 - X²)`.
+
+The statements correspond to `zeta_pow_four_eq` and `zeta_pow_three_eq` in the PNT+ development.
 
 ## References
 
 * Alex Kontorovich, Terence Tao and contributors, [Prime Number Theorem and More][PNTDivisorSquare],
-  `IwaniecKowalskiCh1.lean`, `zeta_pow_four_eq`.
+  `IwaniecKowalskiCh1.lean`, `zeta_pow_four_eq` and `zeta_pow_three_eq`.
 
 [PNTDivisorSquare]: https://github.com/TauCetiProject/PrimeNumberTheoremAnd/blob/a90b1493fe9af9011c800856033c1ba7ac5fcc84/PrimeNumberTheoremAnd/IwaniecKowalskiCh1.lean
 -/
@@ -188,5 +192,16 @@ theorem LSeriesHasSum_sigma_zero_sq {s : ℂ} (hs : 1 < s.re) :
     (eq_div_iff (riemannZeta_ne_zero_of_one_lt_re hs2)).mpr
       (by simpa only [mul_comm] using H.unique ((riemannZeta_eulerProduct_hasProd hs).pow 3))
   exact heq ▸ hsum.LSeriesHasSum
+
+/-- The Euler identity `ζ(s)^3 = ζ(2s) L(τ(n²),s)` on `Re s > 1`. -/
+theorem riemannZeta_pow_three_eq_mul_LSeries_sigma_zero_sq {s : ℂ} (hs : 1 < s.re) :
+    riemannZeta s ^ 3 = riemannZeta (2 * s) *
+      _root_.LSeries (fun n : ℕ ↦ (ArithmeticFunction.sigma 0 (n ^ 2) : ℂ)) s := by
+  have h := LSeriesHasSum_sigma_zero_sq hs
+  have hs2 : 1 < (2 * s).re := by
+    simp only [Complex.mul_re, Complex.re_ofNat, Complex.im_ofNat, zero_mul, sub_zero]
+    linarith
+  simpa only [mul_comm] using
+    ((eq_div_iff (riemannZeta_ne_zero_of_one_lt_re hs2)).mp h.LSeries_eq).symm
 
 end TauCeti
