@@ -341,4 +341,16 @@ theorem hasDerivAt_zero_of_isLocalExtr_of_fderiv_eq
 
 end Variation
 
+/-- A negative-second-derivative upper support is incompatible with a local minimum. -/
+theorem not_isLocalMin_of_strict_upper_support {f B : ℝ → ℝ} {c : ℝ}
+    (hcontact : B c = f c) (hupper : ∀ᶠ t in 𝓝 c, f t ≤ B t)
+    (hcont : ContinuousAt B c) (hsecond : deriv (deriv B) c < 0) :
+    ¬ IsLocalMin f c := by
+  intro hmin
+  have hBmin : IsLocalMin B c := by
+    filter_upwards [hmin, hupper] with t ht htB
+    exact hcontact.trans_le (ht.trans htB)
+  exact (deriv_deriv_nonneg_of_isLocalMin hcont hBmin).not_gt hsecond
+
+
 end TauCeti
