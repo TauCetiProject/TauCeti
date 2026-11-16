@@ -26,7 +26,7 @@ For an element `u` of the Bessel-potential space `H^s` this value decays like `�
 Fourier transform of `φ e_η` is the translate `𝓕 φ (· + η)`
 (`TestFunction.fourier_fourierAtomMulSchwartzMap`), so by Peetre's inequality the
 `H^{-s}` norm of `φ e_η` is at most a constant times `⟨η⟩ ^ (-s)`, and `u` pairs `H^s` with
-`H^{-s}` (`TemperedDistribution.exists_norm_toDistr_fourierAtomMulSchwartzMap_le`). In particular a
+`H^{-s}` (`TestFunction.exists_norm_toDistr_fourierAtomMulSchwartzMap_le`). In particular a
 tempered distribution lying in every `H^s` has empty wave front set
 (`TemperedDistribution.waveFrontSet_toDistribution_eq_empty`).
 
@@ -37,7 +37,7 @@ tempered distribution lying in every `H^s` has empty wave front set
   `TestFunction.fourierAtomMulSchwartzMap`.
 * `TestFunction.exists_norm_toBesselPotentialSpaceCLM_fourierAtomMulSchwartzMap_le`:
   `‖φ e_η‖_{H^{-s}} ≤ C ⟨η⟩ ^ (-s)`.
-* `TemperedDistribution.exists_norm_toDistr_fourierAtomMulSchwartzMap_le`:
+* `TestFunction.exists_norm_toDistr_fourierAtomMulSchwartzMap_le`:
   `‖u (φ e_η)‖ ≤ C ‖u‖_{H^s} ⟨η⟩ ^ (-s)`.
 * `TemperedDistribution.waveFrontSet_toDistribution_eq_empty`: a tempered distribution in every
   `H^s` has empty wave front set.
@@ -122,12 +122,6 @@ theorem exists_norm_toBesselPotentialSpaceCLM_fourierAtomMulSchwartzMap_le (s : 
         rw [hcs, ENNReal.toReal_mul, toReal_eNorm, Real.norm_of_nonneg (by positivity)]
         ring
 
-end TestFunction
-
-namespace TemperedDistribution
-
-variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
-
 /-- **Decay of the localized Fourier transform on `H^s`.** For a cutoff `φ` and an order `s`
 there is a constant `C` with `‖u (φ e_η)‖ ≤ C ‖u‖ ⟨η⟩ ^ (-s)` for every `u ∈ H^s` and every
 frequency `η`. -/
@@ -145,6 +139,12 @@ theorem exists_norm_toDistr_fourierAtomMulSchwartzMap_le (s : ℝ) (φ : 𝓓(Ω
         B.norm_besselPotentialPairing_le s u _
     _ ≤ ‖B‖ * ‖u‖ * (C * (1 + ‖η‖ ^ 2) ^ (-s / 2)) := by gcongr; exact hC η
     _ = ‖B‖ * C * ‖u‖ * (1 + ‖η‖ ^ 2) ^ (-s / 2) := by ring
+
+end TestFunction
+
+namespace TemperedDistribution
+
+variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
 /-- **Tempered distributions in every `H^s` have empty wave front set.** If `S` lies in the
 Bessel-potential space `H^s` for every real `s`, its restriction to any open set is microlocally
