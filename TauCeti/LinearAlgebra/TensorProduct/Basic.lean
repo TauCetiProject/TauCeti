@@ -51,6 +51,10 @@ pure tensors over a finite spanning family of the right factor.
 * `TensorProduct.nontrivial_right`: the right factor is nontrivial when the tensor product is.
 * `TensorProduct.tensorTensorTensorComm_comm_tmul_comm`: exchanging the factors of both arguments
   of `tensorTensorTensorComm` exchanges the factors of its value.
+* `TensorProduct.assoc_rTensor_tensorTensorTensorComm_tmul`: reassociating both arguments of
+  `tensorTensorTensorComm` reassociates its value, and
+  `TensorProduct.assoc_rTensor_comp_map_tensorTensorTensorComm_tmul` is its form after maps into
+  the first two factors.
 
 ## References
 
@@ -414,6 +418,67 @@ theorem tensorTensorTensorComm_comm_tmul_comm (x : M ⊗[R] N) (y : P ⊗[R] Q) 
     induction y using TensorProduct.inductionOn with
     | add y y' h h' => simp only [map_add, tmul_add, h, h']
     | tmul p q => simp
+
+variable {O S : Type*} [AddCommMonoid O] [Module R O] [AddCommMonoid S] [Module R S]
+
+/-- **Reassociating both arguments of `tensorTensorTensorComm` reassociates its value.** The
+rearrangement `((m ⊗ n) ⊗ o) ⊗ ((p ⊗ q) ⊗ s) ↦ (m ⊗ p) ⊗ ((n ⊗ q) ⊗ (o ⊗ s))`, applying
+`tensorTensorTensorComm` to the outer factors, then to the first, and reassociating, agrees with
+reassociating both arguments, `(m ⊗ (n ⊗ o)) ⊗ (p ⊗ (q ⊗ s))`, and then applying
+`tensorTensorTensorComm` to the outer factors and to the second. -/
+theorem assoc_rTensor_tensorTensorTensorComm_tmul (x : (M ⊗[R] N) ⊗[R] O)
+    (y : (P ⊗[R] Q) ⊗[R] S) :
+    TensorProduct.assoc R _ _ _ ((tensorTensorTensorComm R M N P Q).toLinearMap.rTensor _
+        (tensorTensorTensorComm R _ O _ S (x ⊗ₜ y))) =
+      (tensorTensorTensorComm R N O Q S).toLinearMap.lTensor _
+        (tensorTensorTensorComm R M _ P _
+          (TensorProduct.assoc R M N O x ⊗ₜ TensorProduct.assoc R P Q S y)) := by
+  induction x using TensorProduct.inductionOn with
+  | add x x' h h' => simp only [map_add, add_tmul, h, h']
+  | tmul mn o =>
+    induction mn using TensorProduct.inductionOn with
+    | add z z' h h' => simp only [map_add, add_tmul, h, h']
+    | tmul m n =>
+      induction y using TensorProduct.inductionOn with
+      | add y y' h h' => simp only [map_add, tmul_add, h, h']
+      | tmul pq s =>
+        induction pq using TensorProduct.inductionOn with
+        | add z z' h h' => simp only [map_add, add_tmul, tmul_add, h, h']
+        | tmul p q => simp
+
+variable {X Y X' Y' : Type*} [AddCommMonoid X] [Module R X] [AddCommMonoid Y] [Module R Y]
+  [AddCommMonoid X'] [Module R X'] [AddCommMonoid Y'] [Module R Y']
+
+/-- **`TensorProduct.assoc_rTensor_tensorTensorTensorComm_tmul` after maps into the first two
+factors.** Let `p : X → M ⊗ N`, `q : Y → P ⊗ Q`, `p' : X' → N ⊗ O` and `q' : Y' → Q ⊗ S`, and let
+`x`, `y`, `x'`, `y'` be tensors whose images under `p ⊗ 1` and `q ⊗ 1`, reassociated, are the
+images of `x'` and `y'` under `1 ⊗ p'` and `1 ⊗ q'`. Then rearranging `x ⊗ y` by
+`tensorTensorTensorComm` and applying `tensorTensorTensorComm ∘ (p ⊗ q)` to the first factor gives,
+after reassociation, the rearrangement of `x' ⊗ y'` with `tensorTensorTensorComm ∘ (p' ⊗ q')`
+applied to the second factor. -/
+theorem assoc_rTensor_comp_map_tensorTensorTensorComm_tmul {p : X →ₗ[R] M ⊗[R] N}
+    {q : Y →ₗ[R] P ⊗[R] Q} {p' : X' →ₗ[R] N ⊗[R] O} {q' : Y' →ₗ[R] Q ⊗[R] S}
+    {x : X ⊗[R] O} {y : Y ⊗[R] S} {x' : M ⊗[R] X'} {y' : P ⊗[R] Y'}
+    (hx : TensorProduct.assoc R M N O (p.rTensor O x) = p'.lTensor M x')
+    (hy : TensorProduct.assoc R P Q S (q.rTensor S y) = q'.lTensor P y') :
+    TensorProduct.assoc R _ _ _
+        (((tensorTensorTensorComm R M N P Q).toLinearMap ∘ₗ map p q).rTensor _
+          (tensorTensorTensorComm R X O Y S (x ⊗ₜ y))) =
+      ((tensorTensorTensorComm R N O Q S).toLinearMap ∘ₗ map p' q').lTensor _
+        (tensorTensorTensorComm R M X' P Y' (x' ⊗ₜ y')) := by
+  -- Move `p ⊗ q` and `p' ⊗ q'` inside the rearrangements (`tensorTensorTensorComm_comp_map`).
+  have hl : (map p q).rTensor (O ⊗[R] S) (tensorTensorTensorComm R X O Y S (x ⊗ₜ y)) =
+      tensorTensorTensorComm R _ O _ S (p.rTensor O x ⊗ₜ q.rTensor S y) := by
+    have := LinearMap.congr_fun (tensorTensorTensorComm_comp_map R p LinearMap.id q LinearMap.id)
+      (x ⊗ₜ y)
+    simpa [map_id, LinearMap.rTensor_def] using this.symm
+  have hr : (map p' q').lTensor (M ⊗[R] P) (tensorTensorTensorComm R M X' P Y' (x' ⊗ₜ y')) =
+      tensorTensorTensorComm R M _ P _ (p'.lTensor M x' ⊗ₜ q'.lTensor P y') := by
+    have := LinearMap.congr_fun (tensorTensorTensorComm_comp_map R LinearMap.id p' LinearMap.id q')
+      (x' ⊗ₜ y')
+    simpa [map_id, LinearMap.lTensor_def] using this.symm
+  rw [LinearMap.rTensor_comp_apply, hl, assoc_rTensor_tensorTensorTensorComm_tmul, hx, hy,
+    LinearMap.lTensor_comp_apply, hr]
 
 /-- If `M ⊗[R] N` is nontrivial then so is `N`: were `N` trivial, the tensor product would be
 trivial too (`TensorProduct.uniqueRight`). -/
