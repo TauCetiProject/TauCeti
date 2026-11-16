@@ -288,25 +288,17 @@ theorem Icc_le_of_dist_le_sqrt_mul_sqrt {F : Type*} [PseudoMetricSpace F]
       dist (h v) (h u) ≤ √(f v - f u) * √(g v - g u)) :
     eVariationOn h (Icc s t) ≤ ENNReal.ofReal (√(f t - f s) * √(g t - g s)) := by
   refine iSup_le fun ⟨n, u, humono, humem⟩ ↦ ?_
-  have hed : ∑ i ∈ Finset.range n, edist (h (u (i + 1))) (h (u i)) =
-      ENNReal.ofReal (∑ i ∈ Finset.range n, dist (h (u (i + 1))) (h (u i))) := by
+  rw [show ∑ i ∈ Finset.range n, edist (h (u (i + 1))) (h (u i)) =
+      ENNReal.ofReal (∑ i ∈ Finset.range n, dist (h (u (i + 1))) (h (u i))) by
     rw [ENNReal.ofReal_sum_of_nonneg fun _ _ ↦ dist_nonneg]
-    exact Finset.sum_congr rfl fun _ _ ↦ edist_dist _ _
-  rw [hed]
-  refine ENNReal.ofReal_le_ofReal ?_
-  calc
-    ∑ i ∈ Finset.range n, dist (h (u (i + 1))) (h (u i))
-      ≤ ∑ i ∈ Finset.range n, √(f (u (i + 1)) - f (u i)) * √(g (u (i + 1)) - g (u i)) :=
-        Finset.sum_le_sum fun i _ ↦ hle _ (humem i) _ (humem (i + 1)) (humono i.le_succ)
-    _ ≤ √(∑ i ∈ Finset.range n, (f (u (i + 1)) - f (u i))) *
-          √(∑ i ∈ Finset.range n, (g (u (i + 1)) - g (u i))) :=
-        Real.sum_sqrt_mul_sqrt_le _ (fun i ↦ sub_nonneg.2 (hf (humono i.le_succ)))
-          (fun i ↦ sub_nonneg.2 (hg (humono i.le_succ)))
-    _ = √(f (u n) - f (u 0)) * √(g (u n) - g (u 0)) := by
-        rw [Finset.sum_range_sub (f <| u ·), Finset.sum_range_sub (g <| u ·)]
-    _ ≤ √(f t - f s) * √(g t - g s) :=
-        mul_le_mul (Real.sqrt_le_sqrt (sub_le_sub (hf (humem n).2) (hf (humem 0).1)))
-          (Real.sqrt_le_sqrt (sub_le_sub (hg (humem n).2) (hg (humem 0).1)))
-          (Real.sqrt_nonneg _) (Real.sqrt_nonneg _)
+    exact Finset.sum_congr rfl fun _ _ ↦ edist_dist _ _]
+  refine ENNReal.ofReal_le_ofReal <| (Finset.sum_le_sum fun i _ ↦
+    hle _ (humem i) _ (humem (i + 1)) (humono i.le_succ)).trans <|
+    (Real.sum_sqrt_mul_sqrt_le _ (fun i ↦ sub_nonneg.2 (hf (humono i.le_succ)))
+      (fun i ↦ sub_nonneg.2 (hg (humono i.le_succ)))).trans ?_
+  rw [Finset.sum_range_sub (f <| u ·), Finset.sum_range_sub (g <| u ·)]
+  exact mul_le_mul (Real.sqrt_le_sqrt (sub_le_sub (hf (humem n).2) (hf (humem 0).1)))
+    (Real.sqrt_le_sqrt (sub_le_sub (hg (humem n).2) (hg (humem 0).1)))
+    (Real.sqrt_nonneg _) (Real.sqrt_nonneg _)
 
 end eVariationOn

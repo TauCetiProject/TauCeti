@@ -261,10 +261,8 @@ theorem Martingale.integral_sq_sub [SigmaFiniteFiltration μ ℱ] (hY : Martinga
     ∫ ω, (Y j ω - Y i ω) ^ 2 ∂μ = ∫ ω, Y j ω ^ 2 ∂μ - ∫ ω, Y i ω ^ 2 ∂μ := by
   have hi : MemLp (Y i) 2 μ := (hj.condExp (m := ℱ i) one_le_two).ae_eq (hY.condExp_ae_eq hij)
   have hcond := integral_congr_ae (hY.condExp_sq hij hj)
-  rw [integral_condExp (ℱ.le i),
-    integral_add hi.integrable_sq integrable_condExp,
-    integral_condExp (ℱ.le i)] at hcond
-  linarith
+  rw [integral_condExp (ℱ.le i), integral_add hi.integrable_sq integrable_condExp,
+    integral_condExp (ℱ.le i)] at hcond; linarith
 
 /-- Along a finite nondecreasing grid, the expected squared increments of a square-integrable
 real martingale sum to the difference of endpoint expected squares. -/
@@ -272,17 +270,12 @@ theorem Martingale.sum_integral_sq_sub [SigmaFiniteFiltration μ ℱ] (hY : Mart
     {g : ℕ → ι} {n : ℕ} (hg : MonotoneOn g (Set.Iic n)) (hn : MemLp (Y (g n)) 2 μ) :
     ∑ k ∈ Finset.range n, ∫ ω, (Y (g (k + 1)) ω - Y (g k) ω) ^ 2 ∂μ =
       ∫ ω, Y (g n) ω ^ 2 ∂μ - ∫ ω, Y (g 0) ω ^ 2 ∂μ := by
-  have hstep (k : ℕ) (hk : k ∈ Finset.range n) :
-      ∫ ω, (Y (g (k + 1)) ω - Y (g k) ω) ^ 2 ∂μ =
-        ∫ ω, Y (g (k + 1)) ω ^ 2 ∂μ - ∫ ω, Y (g k) ω ^ 2 ∂μ := by
-    have hkn : k + 1 ≤ n := Nat.succ_le_of_lt (Finset.mem_range.mp hk)
-    have hgk : g k ≤ g (k + 1) :=
-      hg (Set.mem_Iic.mpr (Nat.le_trans k.le_succ hkn)) (Set.mem_Iic.mpr hkn) k.le_succ
-    have hgn : g (k + 1) ≤ g n := hg (Set.mem_Iic.mpr hkn) (Set.mem_Iic.mpr le_rfl) hkn
-    exact hY.integral_sq_sub hgk ((hn.condExp (m := ℱ (g (k + 1))) one_le_two).ae_eq
-      (hY.condExp_ae_eq hgn))
-  rw [Finset.sum_congr rfl hstep,
-    Finset.sum_range_sub (fun k ↦ ∫ ω, Y (g k) ω ^ 2 ∂μ) n]
+  rw [← Finset.sum_range_sub (fun k ↦ ∫ ω, Y (g k) ω ^ 2 ∂μ) n]
+  refine Finset.sum_congr rfl fun k hk ↦ ?_
+  have hkn : k + 1 ≤ n := Nat.succ_le_of_lt (Finset.mem_range.mp hk)
+  exact hY.integral_sq_sub (hg (k.le_succ.trans hkn) hkn k.le_succ)
+    ((hn.condExp (m := ℱ (g (k + 1))) one_le_two).ae_eq
+      (hY.condExp_ae_eq (hg hkn (le_rfl : n ≤ n) hkn)))
 
 end NormAndMultipliers
 
