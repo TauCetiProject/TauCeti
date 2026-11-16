@@ -131,7 +131,11 @@ end Linear
 variable (𝕜 : Type*) [NontriviallyNormedField 𝕜] {F : Type*} [NormedAddCommGroup F]
   [NormedSpace 𝕜 F] {E : B → Type*} [TopologicalSpace (TotalSpace F E)]
   [∀ b, AddCommMonoid (E b)] [∀ b, Module 𝕜 (E b)]
-  [∀ b, TopologicalSpace (E b)] [FiberBundle F E] (e : Trivialization F (π F E)) [e.IsLinear 𝕜]
+
+section FiberBundle
+
+variable [∀ b, TopologicalSpace (E b)] [FiberBundle F E] (e : Trivialization F (π F E))
+  [e.IsLinear 𝕜]
 
 theorem homeomorphTrivial_apply_eq_continuousLinearEquivAt (he : e.baseSet = Set.univ)
     (v : TotalSpace F E) :
@@ -175,15 +179,22 @@ theorem continuousLinearEquivAt_trans_coordChangeL (hb : b ∈ e.baseSet) (hb' :
   ext x
   simp only [ContinuousLinearEquiv.trans_apply, ContinuousLinearEquiv.symm_apply_apply]
 
-omit [∀ b, TopologicalSpace (E b)] [FiberBundle F E] in
+end FiberBundle
+
+section CoordChangeL
+
+variable (e : Trivialization F (π F E)) [e.IsLinear 𝕜]
+
 /-- The coordinate change from a linear trivialization to itself is the identity over its base
 set. -/
 @[simp]
-theorem coordChangeL_same_apply (hb : b ∈ e.baseSet) (v : F) : e.coordChangeL 𝕜 e b v = v := by
+theorem coordChangeL_same_apply {b : B} (hb : b ∈ e.baseSet) (v : F) :
+    e.coordChangeL 𝕜 e b v = v := by
   rw [e.coordChangeL_apply' e ⟨hb, hb⟩]
   exact e.coordChange_same_apply hb v
 
-omit [∀ b, TopologicalSpace (E b)] [FiberBundle F E] in
+variable (e' : Trivialization F (π F E)) [e'.IsLinear 𝕜] {b : B}
+
 /-- **Cocycle law for linear coordinate changes**: over the intersection of three base sets, the
 coordinate change from `e` to `e'` followed by the one from `e'` to `e''` is the coordinate change
 from `e` to `e''`. -/
@@ -195,13 +206,14 @@ theorem coordChangeL_coordChangeL_apply (e'' : Trivialization F (π F E)) [e''.I
     e.coordChangeL_apply' e'' ⟨hb, hb''⟩]
   exact e.coordChange_coordChange e' e'' hb hb' v
 
-omit [∀ b, TopologicalSpace (E b)] [FiberBundle F E] in
 /-- The linear coordinate change from `e` to `e'` sends the coordinate of a point in `e` to its
 coordinate in `e'`. -/
 theorem coordChangeL_apply_snd {p : TotalSpace F E} (hb : p.proj ∈ e.baseSet)
     (hb' : p.proj ∈ e'.baseSet) : e.coordChangeL 𝕜 e' p.proj (e p).2 = (e' p).2 := by
   rw [e.coordChangeL_apply' e' ⟨hb, hb'⟩]
   exact e.coordChange_apply_snd e' hb
+
+end CoordChangeL
 
 end Bundle.Trivialization
 
