@@ -360,6 +360,20 @@ theorem InternalGrading.mem_piece_of_piece_eq_bot {R M : Type*} [Semiring R] [Ad
     (hG : ∀ j, j ≠ i → G.piece j = ⊥) (x : M) : x ∈ G.piece i :=
   DirectSum.mem_of_forall_ne_eq_bot hG x
 
+/-- An element whose homogeneous components outside degree `i` vanish lies in `G.piece i`. -/
+theorem InternalGrading.mem_piece_of_decompose_eq_zero {R M : Type*} [Semiring R]
+    [AddCommMonoid M] [Module R M] {ι : Type*} [DecidableEq ι] (G : InternalGrading R M ι)
+    {i : ι} {x : M} (hx : ∀ j, j ≠ i → (DirectSum.decompose G.piece x j : M) = 0) :
+    x ∈ G.piece i := by
+  classical
+  rw [← DirectSum.sum_support_decompose G.piece x]
+  refine Submodule.sum_mem _ fun j _ ↦ ?_
+  by_cases hj : j = i
+  · subst hj
+    exact (DirectSum.decompose G.piece x j).2
+  · rw [hx j hj]
+    exact Submodule.zero_mem _
+
 namespace LinearMap.IsHomogeneous
 
 variable {R S : Type*} {M : Type v} {N : Type w} [Semiring R] [Semiring S]
@@ -398,6 +412,22 @@ theorem linearEquiv_symm {ι : Type*} [DecidableEq ι] [AddMonoid ι]
     rw [← e.symm_apply_apply (x : M)]
     exact congrArg e.symm (congrArg Subtype.val hx).symm
   simpa only [add_zero, LinearEquiv.coe_coe, hxy] using x.2
+
+/-- A degree-zero homogeneous linear equivalence `e : M ≃ₗ[S] N` intertwining `ψ (e x) = φ x`
+transports homogeneity of `φ` into any target grading `L` to `ψ`. -/
+theorem _root_.LinearEquiv.isHomogeneous_of_apply_eq {ι P σP : Type*} [DecidableEq ι]
+    [AddMonoid ι] [AddCommMonoid P] [Module S P] [SetLike σP P]
+    (e : M ≃ₗ[S] N) (G : InternalGrading R M ι) (H : InternalGrading R N ι)
+    {L : ι → σP} {φ : M →ₗ[S] P} {ψ : N →ₗ[S] P}
+    (he : LinearMap.IsHomogeneous e.toLinearMap G.piece H.piece 0)
+    (hφψ : ∀ x, ψ (e x) = φ x) {d : ι}
+    (hφ : LinearMap.IsHomogeneous φ G.piece L d) :
+    LinearMap.IsHomogeneous ψ H.piece L d := by
+  have hψ : ψ = φ.comp e.symm.toLinearMap := by
+    ext y
+    simpa using hφψ (e.symm y)
+  rw [hψ]
+  simpa using hφ.comp he.linearEquiv_symm
 
 section Decompose
 

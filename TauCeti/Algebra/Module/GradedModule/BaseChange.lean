@@ -28,14 +28,19 @@ tensor products.
 
 * `TauCeti.InternalGrading.baseChange`: the internal `S`-grading on `S ⊗[R] M`.
 * `TauCeti.coarsenGrading_baseChange`, `TauCeti.parityGrading_baseChange`,
-  `TauCeti.parityGrading_baseChange_eq_bot`: coarsening and parity commute with base change, so
-  even support is preserved.
-* `TauCeti.LinearMap.IsHomogeneous.baseChange`: base-changing a homogeneous linear map preserves
-  its degree.
+  `TauCeti.parityGrading_baseChange_eq_bot`, `TauCeti.InternalGrading.coarsen_baseChange`,
+  `TauCeti.InternalGrading.parity_baseChange`,
+  `TauCeti.InternalGrading.parityGrading_baseChange_piece_eq_bot`: coarsening and parity commute
+  with base change, so even support is preserved.
+* `TauCeti.LinearMap.IsHomogeneous.baseChange`,
+  `TauCeti.LinearMap.IsHomogeneous.baseChange_piece`: base-changing a homogeneous linear map
+  preserves its degree.
 * `TauCeti.InternalGrading.instGradedMonoidBaseChange`: scalar extension preserves graded monoid
   structures on internal gradings.
-* `TauCeti.InternalGrading.dualBaseChange_mem_dualPiece`: `Module.Dual.baseChange` preserves dual
-  degree.
+* `TauCeti.InternalGrading.dualBaseChange_mem_dualPiece`,
+  `TauCeti.InternalGrading.isHomogeneous_dualBaseChange`,
+  `TauCeti.InternalGrading.isHomogeneous_restrictScalars_dualBaseChange`: `Module.Dual.baseChange`
+  preserves degree.
 * `TauCeti.InternalGrading.isHomogeneous_distribBaseChange`,
   `TauCeti.InternalGrading.isHomogeneous_distribBaseChange_symm`: the canonical isomorphism
   `S ⊗[R] (M ⊗[R] N) ≃ₗ[S] (S ⊗[R] M) ⊗[S] (S ⊗[R] N)` and its inverse have degree zero.
@@ -79,7 +84,7 @@ variable {R M N ι : Type*} [CommSemiring R] [AddMonoid ι]
 
 /-- Extending scalars of a homogeneous linear map preserves its degree. -/
 theorem baseChange {f : M →ₗ[R] N} {ℳ : ι → Submodule R M} {𝒩 : ι → Submodule R N} {q : ι}
-    (hf : LinearMap.IsHomogeneous f ℳ 𝒩 q) (S : Type*) [CommSemiring S] [Algebra R S] :
+    (hf : LinearMap.IsHomogeneous f ℳ 𝒩 q) (S : Type*) [Semiring S] [Algebra R S] :
     LinearMap.IsHomogeneous (f.baseChange S) (fun p ↦ (ℳ p).baseChange S)
       (fun p ↦ (𝒩 p).baseChange S) q := by
   rw [LinearMap.isHomogeneous_def]
@@ -102,26 +107,29 @@ variable [DecidableEq ι]
 
 /-- Scalar extension of an internal grading along a commutative `R`-algebra `S`. -/
 noncomputable def baseChange (G : InternalGrading R M ι) (S : Type*) [CommSemiring S]
-    [Algebra R S] : InternalGrading S (S ⊗[R] M) ι where
-  piece p := (G.piece p).baseChange S
-  isInternal := DirectSum.Decomposition.isInternal (fun p ↦ (G.piece p).baseChange S)
+    [Algebra R S] : InternalGrading S (S ⊗[R] M) ι :=
+  ofDecomposition fun p ↦ (G.piece p).baseChange S
 
+/-- The homogeneous pieces of `G.baseChange S` are the scalar extensions of `G.piece`. -/
 @[simp]
-theorem baseChange_piece (G : InternalGrading R M ι) (S : Type*) [CommSemiring S] [Algebra R S]
-    (p : ι) : (G.baseChange S).piece p = (G.piece p).baseChange S := (rfl)
+theorem baseChange_piece (G : InternalGrading R M ι) (S : Type*) [CommSemiring S] [Algebra R S] :
+    (G.baseChange S).piece = fun p ↦ (G.piece p).baseChange S := by
+  simp [baseChange]
 
 /-- A pure tensor `s ⊗ₜ x` with `x ∈ G.piece p` lies in degree `p` of `G.baseChange S`. -/
 theorem tmul_mem_baseChange (G : InternalGrading R M ι) (S : Type*) [CommSemiring S] [Algebra R S]
     {p : ι} (s : S) {x : M} (hx : x ∈ G.piece p) :
-    s ⊗ₜ[R] x ∈ (G.baseChange S).piece p :=
-  Submodule.tmul_mem_baseChange_of_mem s hx
+    s ⊗ₜ[R] x ∈ (G.baseChange S).piece p := by
+  rw [baseChange_piece]
+  exact Submodule.tmul_mem_baseChange_of_mem s hx
 
 /-- An `S`-submodule containing `1 ⊗ₜ x` for every `x ∈ G.piece p` contains the whole degree-`p`
 piece of `G.baseChange S`. -/
 theorem baseChange_piece_le (G : InternalGrading R M ι) (S : Type*) [CommSemiring S] [Algebra R S]
     {p : ι} {C : Submodule S (S ⊗[R] M)} (h : ∀ x ∈ G.piece p, 1 ⊗ₜ[R] x ∈ C) :
-    (G.baseChange S).piece p ≤ C :=
-  Submodule.baseChange_le_iff_le_comap.mpr h
+    (G.baseChange S).piece p ≤ C := by
+  rw [baseChange_piece]
+  exact Submodule.baseChange_le_iff_le_comap.mpr h
 
 /-- Homogeneous projection for `G.baseChange S` acts on pure tensors via the second factor. -/
 @[simp]
@@ -129,10 +137,16 @@ theorem coe_decompose_baseChange_tmul (G : InternalGrading R M ι) (S : Type*) [
     [Algebra R S] (s : S) (x : M) (p : ι) :
     (DirectSum.decompose (G.baseChange S).piece (s ⊗ₜ[R] x) p : S ⊗[R] M) =
       s ⊗ₜ[R] (DirectSum.decompose G.piece x p : M) := by
-  have heq : G.baseChange S = ofDecomposition (fun q ↦ (G.piece q).baseChange S) := by
-    ext q
-    simp
-  rw [heq, coe_decompose_ofDecomposition_piece_apply, DirectSum.coe_decompose_baseChange_tmul]
+  rw [baseChange, coe_decompose_ofDecomposition_piece_apply,
+    DirectSum.coe_decompose_baseChange_tmul]
+
+/-- Coarsening an internal grading commutes with scalar extension. -/
+@[simp]
+theorem coarsen_baseChange {κ : Type*} [DecidableEq κ] (G : InternalGrading R M ι) (S : Type*)
+    [CommSemiring S] [Algebra R S] (f : ι → κ) :
+    (G.baseChange S).coarsen f = (G.coarsen f).baseChange S := by
+  refine InternalGrading.ext fun k ↦ ?_
+  simpa using coarsenGrading_baseChange G.piece S f k
 
 /-- Scalar extension preserves graded monoid compatibility on internal gradings of algebras. -/
 instance instGradedMonoidBaseChange {A : Type*} [Semiring A] [Algebra R A] [AddMonoid ι]
@@ -152,6 +166,27 @@ end GeneralIndex
 
 section IntGrading
 
+/-- Parity pieces of `G.baseChange S` are scalar extensions of the parity pieces of `G`. -/
+theorem parityGrading_baseChange_piece (G : InternalGrading R M ℤ) (S : Type*) [CommSemiring S]
+    [Algebra R S] (i : ZMod 2) :
+    parityGrading (G.baseChange S).piece i = (parityGrading G.piece i).baseChange S := by
+  rw [baseChange_piece]
+  exact coarsenGrading_baseChange G.piece S (Int.castAddHom (ZMod 2)) i
+
+/-- Taking the parity internal grading commutes with scalar extension. -/
+@[simp]
+theorem parity_baseChange (G : InternalGrading R M ℤ) (S : Type*) [CommSemiring S] [Algebra R S] :
+    (G.baseChange S).parity = G.parity.baseChange S := by
+  refine InternalGrading.ext fun i ↦ ?_
+  rw [parity_piece, G.parityGrading_baseChange_piece S i, G.parity.baseChange_piece S,
+    parity_piece]
+
+/-- Scalar extension of an internal grading preserves vanishing of a parity piece. -/
+theorem parityGrading_baseChange_piece_eq_bot {G : InternalGrading R M ℤ} (S : Type*)
+    [CommSemiring S] [Algebra R S] {i : ZMod 2} (h : parityGrading G.piece i = ⊥) :
+    parityGrading (G.baseChange S).piece i = ⊥ := by
+  rw [G.parityGrading_baseChange_piece S i, h, Submodule.baseChange_bot]
+
 /-- Extending scalars of a functional via `Module.Dual.baseChange` preserves its dual degree. -/
 theorem dualBaseChange_mem_dualPiece (G : InternalGrading R M ℤ) (S : Type*) [CommSemiring S]
     [Algebra R S] {p : ℤ} {φ : Module.Dual R M} (hφ : φ ∈ G.dualPiece p) :
@@ -162,6 +197,39 @@ theorem dualBaseChange_mem_dualPiece (G : InternalGrading R M ℤ) (S : Type*) [
     G.baseChange_piece_le S fun x hx ↦ by
       simp [(mem_dualPiece_iff G p φ).mp hφ q x hx hq]
   exact hle hz
+
+/-- Extending scalars of a degree-`d` functional `φ : M →ₗ[R] R` along an ungraded commutative
+`R`-algebra `S` gives an `S`-linear functional of degree `d` for `G.baseChange S`. -/
+theorem isHomogeneous_dualBaseChange (G : InternalGrading R M ℤ) (S : Type*) [CommSemiring S]
+    [Algebra R S] {φ : Module.Dual R M} {d : ℤ}
+    (hφ : LinearMap.IsHomogeneous φ G.piece (trivialGrading R R) d) :
+    LinearMap.IsHomogeneous (Module.Dual.baseChange S φ)
+      (G.baseChange S).piece (trivialGrading S S) d := by
+  rw [isHomogeneous_trivialGrading_iff_mem_dualPiece] at hφ ⊢
+  exact G.dualBaseChange_mem_dualPiece S hφ
+
+/-- When `S` carries an internal `ℤ`-grading `GS` over `R`, the scalar-extended functional
+`Module.Dual.baseChange S φ : S ⊗[R] M →ₗ[S] S` restricted to `R` has degree `d` from
+`(GS.tensorProduct G).piece` into `GS.piece`. -/
+theorem isHomogeneous_restrictScalars_dualBaseChange (G : InternalGrading R M ℤ) {S : Type*}
+    [CommSemiring S] [Algebra R S] (GS : InternalGrading R S ℤ) {φ : Module.Dual R M} {d : ℤ}
+    (hφ : LinearMap.IsHomogeneous φ G.piece (trivialGrading R R) d) :
+    LinearMap.IsHomogeneous ((Module.Dual.baseChange S φ).restrictScalars R)
+      (GS.tensorProduct G).piece GS.piece d := by
+  have hφ' := (G.isHomogeneous_trivialGrading_iff_mem_dualPiece φ d).mp hφ
+  rw [LinearMap.isHomogeneous_def]
+  intro n z hz
+  refine GS.tensorProduct_piece_le G
+    (C := (GS.piece (n + d)).comap ((Module.Dual.baseChange S φ).restrictScalars R))
+    (fun p s hs x hx ↦ ?_) hz
+  simp only [Submodule.mem_comap, _root_.LinearMap.coe_restrictScalars,
+    Module.Dual.baseChange_apply_tmul]
+  by_cases hx_deg : n - p = -d
+  · have hp : p = n + d := by omega
+    rw [← hp]
+    exact Submodule.smul_mem _ (φ x) hs
+  · rw [G.dualPiece_apply_eq_zero_of_mem_piece_of_add_ne_zero hφ' hx (by omega), zero_smul]
+    exact Submodule.zero_mem _
 
 /-- The canonical isomorphism `S ⊗[R] (M ⊗[R] N) ≃ₗ[S] (S ⊗[R] M) ⊗[S] (S ⊗[R] N)` has degree zero
 for the base-changed total-degree gradings. -/
@@ -202,5 +270,19 @@ theorem isHomogeneous_distribBaseChange_symm (G : InternalGrading R M ℤ) (H : 
 end IntGrading
 
 end InternalGrading
+
+namespace LinearMap.IsHomogeneous
+
+/-- Extending scalars of a homogeneous linear map between internally graded modules preserves its
+degree for `InternalGrading.baseChange`. -/
+theorem baseChange_piece {R M N ι : Type*} [CommSemiring R] [DecidableEq ι] [AddMonoid ι]
+    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+    {G : InternalGrading R M ι} {H : InternalGrading R N ι} {f : M →ₗ[R] N} {q : ι}
+    (hf : LinearMap.IsHomogeneous f G.piece H.piece q) (S : Type*) [CommSemiring S]
+    [Algebra R S] :
+    LinearMap.IsHomogeneous (f.baseChange S) (G.baseChange S).piece (H.baseChange S).piece q := by
+  simpa using hf.baseChange S
+
+end LinearMap.IsHomogeneous
 
 end TauCeti

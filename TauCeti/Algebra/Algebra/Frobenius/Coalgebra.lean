@@ -281,17 +281,17 @@ theorem frobeniusCoalgebra_comul_eq_sum_mul_left {ι : Type*} [Fintype ι]
 each basis vector times its trace-dual. -/
 theorem frobeniusCoalgebra_handle_eq_sum {ι : Type*} [Fintype ι]
     (b : Module.Basis ι R A) :
-    (letI := frobeniusCoalgebra ε; Coalgebra.handle R A) =
+    (letI := frobeniusCoalgebra ε; TauCeti.Coalgebra.handle R A) =
       ∑ i, b i * traceDualBasis ε b i := by
   let := frobeniusCoalgebra ε
-  rw [Coalgebra.handle_def, frobeniusCoalgebra_comul_one_eq_sum ε b, map_sum]
+  rw [TauCeti.Coalgebra.handle_def, frobeniusCoalgebra_comul_one_eq_sum ε b, map_sum]
   simp
 
 /-- Evaluating the trace on the reconstructed handle element returns the rank in any finite
 basis. -/
 theorem apply_frobeniusCoalgebra_handle {ι : Type*} [Fintype ι]
     (b : Module.Basis ι R A) :
-    ε (letI := frobeniusCoalgebra ε; Coalgebra.handle R A) = Fintype.card ι := by
+    ε (letI := frobeniusCoalgebra ε; TauCeti.Coalgebra.handle R A) = Fintype.card ι := by
   classical
   rw [frobeniusCoalgebra_handle_eq_sum ε b, map_sum]
   have hterm (i : ι) : ε (b i * traceDualBasis ε b i) = 1 := by
@@ -300,39 +300,41 @@ theorem apply_frobeniusCoalgebra_handle {ι : Type*} [Fintype ι]
 
 end LinearMap
 
-namespace Coalgebra.IsFrobenius
+namespace TauCeti.Coalgebra.IsFrobenius
 
 variable {R A : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
-  [c : Coalgebra R A] [IsFrobenius R A]
+  [c : _root_.Coalgebra R A] [_root_.Coalgebra.IsFrobenius R A]
 
 /-- Reconstructing a Frobenius coalgebra on a commutative algebra from its counit recovers the
 given coalgebra. -/
 @[simp] theorem frobeniusCoalgebra_counit_eq :
-    (Coalgebra.counit (R := R) (A := A)).frobeniusCoalgebra = c :=
-  LinearMap.frobeniusCoalgebra_eq (Coalgebra.counit (R := R) (A := A)) c rfl inferInstance
+    (CoalgebraStruct.counit (R := R) (A := A)).frobeniusCoalgebra = c :=
+  LinearMap.frobeniusCoalgebra_eq (CoalgebraStruct.counit (R := R) (A := A)) c rfl inferInstance
 
 /-- Dual-basis formula for the comultiplication of a commutative Frobenius coalgebra. -/
 theorem comul_eq_sum_traceDualBasis {ι : Type*} [Fintype ι] (b : Module.Basis ι R A) (a : A) :
-    Coalgebra.comul (R := R) a =
-      ∑ i, b i ⊗ₜ[R] (LinearMap.traceDualBasis (Coalgebra.counit (R := R)) b i * a) := by
-  have h := LinearMap.frobeniusCoalgebra_comul_eq_sum (Coalgebra.counit (R := R) (A := A)) b a
+    CoalgebraStruct.comul (R := R) a =
+      ∑ i, b i ⊗ₜ[R] (LinearMap.traceDualBasis (CoalgebraStruct.counit (R := R)) b i * a) := by
+  have h :=
+    LinearMap.frobeniusCoalgebra_comul_eq_sum (CoalgebraStruct.counit (R := R) (A := A)) b a
   rwa [frobeniusCoalgebra_counit_eq] at h
 
 /-- Dual-basis formula for the handle element of a commutative Frobenius coalgebra. -/
 theorem handle_eq_sum_traceDualBasis {ι : Type*} [Fintype ι] (b : Module.Basis ι R A) :
-    Coalgebra.handle R A =
-      ∑ i, b i * LinearMap.traceDualBasis (Coalgebra.counit (R := R)) b i := by
-  have h := LinearMap.frobeniusCoalgebra_handle_eq_sum (Coalgebra.counit (R := R) (A := A)) b
+    TauCeti.Coalgebra.handle R A =
+      ∑ i, b i * LinearMap.traceDualBasis (CoalgebraStruct.counit (R := R)) b i := by
+  have h :=
+    LinearMap.frobeniusCoalgebra_handle_eq_sum (CoalgebraStruct.counit (R := R) (A := A)) b
   rwa [frobeniusCoalgebra_counit_eq] at h
 
 /-- Applying the counit of a commutative Frobenius coalgebra to its handle element gives the
 cardinality of any finite basis. -/
 theorem counit_handle_eq_card {ι : Type*} [Fintype ι] (b : Module.Basis ι R A) :
-    Coalgebra.counit (R := R) (Coalgebra.handle R A) = Fintype.card ι := by
-  have h := LinearMap.apply_frobeniusCoalgebra_handle (Coalgebra.counit (R := R) (A := A)) b
+    CoalgebraStruct.counit (R := R) (TauCeti.Coalgebra.handle R A) = Fintype.card ι := by
+  have h := LinearMap.apply_frobeniusCoalgebra_handle (CoalgebraStruct.counit (R := R) (A := A)) b
   rwa [frobeniusCoalgebra_counit_eq] at h
 
-end Coalgebra.IsFrobenius
+end TauCeti.Coalgebra.IsFrobenius
 
 namespace TauCeti
 

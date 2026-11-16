@@ -97,4 +97,14 @@ theorem dualNumberTracePairing_mul_assoc (x y z : DualNumber k) :
   rw [dualNumberTracePairing, LinearMap.compr₂_apply, LinearMap.compr₂_apply,
     LinearMap.mul_apply', LinearMap.mul_apply', mul_assoc]
 
+/-- The multiplication pairing of `sndHom k k` equals `dualNumberTracePairing k`. -/
+theorem compr₂_mul_sndHom_eq_dualNumberTracePairing :
+    (LinearMap.mul k (DualNumber k)).compr₂ (TrivSqZeroExt.sndHom k k) =
+      dualNumberTracePairing k := (rfl)
+
+/-- Unfolded perfect-pairing instance for `(LinearMap.mul k (DualNumber k)).compr₂ (sndHom k k)`. -/
+instance isPerfPair_compr₂_mul_sndHom :
+    ((LinearMap.mul k (DualNumber k)).compr₂ (TrivSqZeroExt.sndHom k k)).IsPerfPair :=
+  dualNumberTracePairing_isPerfPair k
+
 end TauCeti
