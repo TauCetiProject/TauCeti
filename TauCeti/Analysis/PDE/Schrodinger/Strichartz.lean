@@ -315,17 +315,18 @@ section TwoPairs
 
 variable {p q p₁ q₁ : ℝ≥0} {r r' r₁ r₁' : ℝ≥0∞} [r'.HolderConjugate r] [r₁'.HolderConjugate r₁]
 
-/-- The dual Strichartz estimate, with `S(-s)` written as the adjoint `S(s)*`. -/
+/-- The dual Strichartz estimate, with `S(-s)` written as the adjoint `S(s)*` of the phase
+propagator `S(s)`. -/
 private theorem enorm_integral_adjoint_schrodingerPropagator_le {a b : ℝ≥0∞} {C : ℝ≥0}
     (hC : ∀ F : ℝ → Lp ℂ 2 (volume : Measure E), AEStronglyMeasurable F →
       Integrable (fun s ↦ schrodingerPropagator ℂ (-s) (F s)) →
       ‖∫ s, schrodingerPropagator ℂ (-s) (F s)‖ₑ ≤ C * eLpNorm (fun s ↦ eLpNorm (F s) a volume) b)
     (F : ℝ → Lp ℂ 2 (volume : Measure E)) (hF : AEStronglyMeasurable F)
-    (hSF : Integrable (fun s ↦ ((schrodingerPropagator ℂ s)†) (F s))) :
-    ‖∫ s, ((schrodingerPropagator ℂ s)†) (F s)‖ₑ ≤
+    (hSF : Integrable (fun s ↦ ((phasePropagator (E := E) ℂ laplacianSymbol s)†) (F s))) :
+    ‖∫ s, ((phasePropagator (E := E) ℂ laplacianSymbol s)†) (F s)‖ₑ ≤
       C * eLpNorm (fun s ↦ eLpNorm (F s) a volume) b := by
-  simpa only [adjoint_phasePropagator] using
-    hC F hF (by simpa only [adjoint_phasePropagator] using hSF)
+  simpa only [schrodingerPropagator_def, adjoint_phasePropagator] using
+    hC F hF (by simpa only [schrodingerPropagator_def, adjoint_phasePropagator] using hSF)
 
 /-- **The inhomogeneous Strichartz estimate for the Schrödinger equation** in every dimension `n`,
 in weak form, for two non-endpoint admissible pairs: `2 < q, q₁ < ∞` with `2 / q + n / r = n / 2`
@@ -358,17 +359,7 @@ theorem exists_enorm_integral_setIntegral_Iio_inner_schrodingerPropagator_sub_le
     hqr
   -- The time exponents satisfy `1 / p₁ + 1 / p > 1`, since `q, q₁ > 2`.
   have hp : (1 : ℝ≥0∞) ≤ p := by exact_mod_cast hpq.lt.le
-  have hpp : 1 < (p₁ : ℝ≥0∞)⁻¹ + (p : ℝ≥0∞)⁻¹ := by
-    have h := hpq.coe.inv_add_inv_eq_one
-    have h₁ := hpq₁.coe.inv_add_inv_eq_one
-    have hq' : (q : ℝ)⁻¹ < 2⁻¹ := inv_strictAnti₀ two_pos (by exact_mod_cast hq)
-    have hq₁' : (q₁ : ℝ)⁻¹ < 2⁻¹ := inv_strictAnti₀ two_pos (by exact_mod_cast hq₁)
-    have hlt : (1 : ℝ≥0) < p₁⁻¹ + p⁻¹ := by
-      rw [← NNReal.coe_lt_coe]
-      push_cast
-      linarith
-    simp only [← ENNReal.coe_inv hpq.ne_zero, ← ENNReal.coe_inv hpq₁.ne_zero]
-    exact_mod_cast hlt
+  have hpp := one_lt_inv_add_inv_of_holderConjugate hpq hpq₁ hq hq₁
   set K : ℝ≥0∞ := (1 - 2 ^ (-((p₁ : ℝ≥0∞)⁻¹ + (p : ℝ≥0∞)⁻¹ - 1).toReal))⁻¹
   have hK : K ≠ ∞ :=
     inv_one_sub_two_rpow_neg_ne_top (ENNReal.coe_ne_zero.2 hpq₁.ne_zero) hp hpp
@@ -378,8 +369,8 @@ theorem exists_enorm_integral_setIntegral_Iio_inner_schrodingerPropagator_sub_le
   exact enorm_integral_setIntegral_Iio_inner_adjoint_le hp hpp
     (enorm_integral_adjoint_schrodingerPropagator_le hC₁)
     (enorm_integral_adjoint_schrodingerPropagator_le hC) hF hG
-    (by simpa only [adjoint_phasePropagator] using hSF)
-    (by simpa only [adjoint_phasePropagator] using hSG)
+    (by simpa only [schrodingerPropagator_def, adjoint_phasePropagator] using hSF)
+    (by simpa only [schrodingerPropagator_def, adjoint_phasePropagator] using hSG)
 
 end TwoPairs
 

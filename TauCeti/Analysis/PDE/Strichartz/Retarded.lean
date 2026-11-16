@@ -47,6 +47,8 @@ The mixed norm of a function `F : ℝ → L²(X, μ)` is written
 
 * `TauCeti.enorm_integral_setIntegral_Iio_inner_adjoint_le`: the retarded estimate from the two
   dual estimates.
+* `TauCeti.one_lt_inv_add_inv_of_holderConjugate`: two non-endpoint time exponents satisfy the
+  Christ–Kiselev condition `q₁' < q`.
 
 ## References
 
@@ -66,6 +68,23 @@ namespace TauCeti
 variable {𝕜 X E H : Type*} [RCLike 𝕜] {mX : MeasurableSpace X} {μ : Measure X}
   [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
   [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] [CompleteSpace H] [NormedSpace ℝ H]
+
+/-- Two non-endpoint time exponents `2 < q, q₁` satisfy the Christ–Kiselev condition of
+`TauCeti.enorm_integral_setIntegral_Iio_inner_adjoint_le` for their Hölder conjugates `p = q'`
+and `p₁ = q₁'`: `1 / p₁ + 1 / p > 1`, that is `q₁' < q`. -/
+theorem one_lt_inv_add_inv_of_holderConjugate {p q p₁ q₁ : ℝ≥0} (hpq : p.HolderConjugate q)
+    (hpq₁ : p₁.HolderConjugate q₁) (hq : 2 < q) (hq₁ : 2 < q₁) :
+    1 < (p₁ : ℝ≥0∞)⁻¹ + (p : ℝ≥0∞)⁻¹ := by
+  have h := hpq.coe.inv_add_inv_eq_one
+  have h₁ := hpq₁.coe.inv_add_inv_eq_one
+  have hq' : (q : ℝ)⁻¹ < 2⁻¹ := inv_strictAnti₀ two_pos (by exact_mod_cast hq)
+  have hq₁' : (q₁ : ℝ)⁻¹ < 2⁻¹ := inv_strictAnti₀ two_pos (by exact_mod_cast hq₁)
+  have hlt : (1 : ℝ≥0) < p₁⁻¹ + p⁻¹ := by
+    rw [← NNReal.coe_lt_coe]
+    push_cast
+    linarith
+  simp only [← ENNReal.coe_inv hpq.ne_zero, ← ENNReal.coe_inv hpq₁.ne_zero]
+  exact_mod_cast hlt
 
 /-- A dual estimate applies to the restriction of `F` to a set of times `I`, and bounds
 `∫_I U(s)* F(s) ds` by the mixed norm of `1_I F`. -/
