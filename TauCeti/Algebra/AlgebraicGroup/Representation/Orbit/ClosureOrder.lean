@@ -9,7 +9,8 @@ public import TauCeti.Algebra.AlgebraicGroup.Representation.Orbit.Basic
 import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.ClosureOrder
 import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Points
 import TauCeti.AlgebraicGeometry.AugmentationPoint.Dense
-import TauCeti.LinearAlgebra.SymmetricAlgebra.Semilinear
+import TauCeti.LinearAlgebra.SymmetricAlgebra.Functoriality
+import TauCeti.RingTheory.GradedAlgebra.Homogenization
 
 /-!
 # The closure order on orbits of vectors
@@ -154,38 +155,22 @@ theorem lift_eval_eq_zero_of_mk_le_mk_of_forall_lift_eval_basePointsRepresentati
     (hp : ∀ g : WithConv (H →ₐ[k] k),
       SymmetricAlgebra.lift (Module.Dual.eval k M (basePointsRepresentation M g v)) p = 0) :
     SymmetricAlgebra.lift (Module.Dual.eval k M w) p = 0 := by
-  classical
-  -- Homogenize `p` to degree `d` against the trivial projective coordinate `t` on `M × k`.
-  let 𝒜_M := TauCeti.SymmetricAlgebra.homogeneousSubmodule k (Module.Dual k M)
+  -- Homogenize `p` against the trivial projective coordinate on `M × k`.
   let 𝒜 := TauCeti.SymmetricAlgebra.homogeneousSubmodule k (Module.Dual k (M × k))
-  let F := SymmetricAlgebra.map k (LinearMap.fst k M k).dualMap
-  let t : SymmetricAlgebra k (Module.Dual k (M × k)) :=
-    SymmetricAlgebra.ι k (Module.Dual k (M × k)) (LinearMap.snd k M k)
-  let d : ℕ := (DirectSum.decompose 𝒜_M p).support.sup id + 1
-  let P : SymmetricAlgebra k (Module.Dual k (M × k)) :=
-    ∑ i ∈ (DirectSum.decompose 𝒜_M p).support,
-      F (DirectSum.decompose 𝒜_M p i : SymmetricAlgebra k (Module.Dual k M)) * t ^ (d - i)
-  have hP : P ∈ 𝒜 d := by
-    refine Submodule.sum_mem _ fun i hi ↦ ?_
-    have hid : i ≤ d :=
-      (Finset.le_sup (f := id) hi).trans (Nat.le_succ _)
-    have hFi : F (DirectSum.decompose 𝒜_M p i : SymmetricAlgebra k (Module.Dual k M)) ∈ 𝒜 i :=
-      TauCeti.SymmetricAlgebra.map_mem_homogeneousSubmodule _ (SetLike.coe_mem _)
-    have ht : t ^ (d - i) ∈ 𝒜 (d - i) :=
-      Submodule.pow_mem_pow _ (LinearMap.mem_range_self _ (LinearMap.snd k M k)) (d - i)
-    have hmul := SetLike.mul_mem_graded hFi ht
-    rwa [Nat.add_sub_of_le hid] at hmul
+  obtain ⟨d, P, hP, hPeval⟩ :=
+    TauCeti.GradedAlgebra.exists_mem_grade_and_forall_map_eq_of_mem_one 𝒜
+      (TauCeti.SymmetricAlgebra.ι_mem_homogeneousSubmodule k _ (LinearMap.snd k M k))
+      (SymmetricAlgebra.map k (LinearMap.fst k M k).dualMap p)
   have heval (u : M) :
       SymmetricAlgebra.lift (Module.Dual.eval k (M × k) (u, 1)) P =
         SymmetricAlgebra.lift (Module.Dual.eval k M u) p := by
-    have hF : (SymmetricAlgebra.lift (Module.Dual.eval k (M × k) (u, 1))).comp F =
+    have hF : (SymmetricAlgebra.lift (Module.Dual.eval k (M × k) (u, 1))).comp
+        (SymmetricAlgebra.map k (LinearMap.fst k M k).dualMap) =
         SymmetricAlgebra.lift (Module.Dual.eval k M u) := by
       ext φ
-      simp [F]
-    have ht : SymmetricAlgebra.lift (Module.Dual.eval k (M × k) (u, 1)) t = 1 := by simp [t]
-    conv_rhs => rw [← DirectSum.sum_support_decompose 𝒜_M p]
-    simp only [P, map_sum, map_mul, map_pow, ht, one_pow, mul_one]
-    exact Finset.sum_congr rfl fun i _ ↦ DFunLike.congr_fun hF _
+      simp
+    simpa [← hF] using
+      hPeval (SymmetricAlgebra.lift (Module.Dual.eval k (M × k) (u, 1))).toRingHom (by simp)
   have hrange : Set.range (projectiveOrbitMap (H := H) ((v, 1) : M × k)
       (Module.isUnimodular_mk_one v)) ⊆ (Proj.basicOpen 𝒜 P : Set (Proj 𝒜))ᶜ := by
     rintro _ ⟨x, rfl⟩

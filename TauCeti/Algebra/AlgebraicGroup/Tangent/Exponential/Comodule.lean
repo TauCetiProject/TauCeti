@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.Nilpotent.Exp
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Differential
 public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Exponential.Basic
+import Mathlib.RingTheory.Finiteness.Nilpotent
 
 /-!
 # Exponential points on comodules
@@ -132,19 +133,10 @@ theorem isNilpotent_differential_of_finite_of_forall_exists_iterate_leftInvarian
     [Module.Finite R M]
     {d : Derivation R H (Bialgebra.CounitAlgebra R H R)}
     (hd : ∀ h, ∃ n, (Bialgebra.leftInvariantDerivation d)^[n] h = 0) :
-    IsNilpotent (differential (R := R) (H := H) (M := M) d) := by
-  classical
-  obtain ⟨s, hs⟩ := Module.Finite.fg_top (R := R) (M := M)
-  choose n hn using
-    exists_pow_differential_apply_eq_zero_of_forall_exists_iterate_leftInvariantDerivation_eq_zero
-      (M := M) hd
-  refine ⟨s.sup n, LinearMap.ext fun m ↦ ?_⟩
-  have hm : m ∈ Submodule.span R (s : Set M) := hs.symm ▸ Submodule.mem_top
-  rw [LinearMap.zero_apply]
-  refine Submodule.span_induction (fun x hx ↦ ?_) (map_zero _)
-    (fun _ _ _ _ hx hy ↦ by rw [map_add, hx, hy, add_zero])
-    (fun r _ _ hx ↦ by rw [map_smul, hx, smul_zero]) hm
-  exact Module.End.pow_map_zero_of_le (Finset.le_sup hx) (hn x)
+    IsNilpotent (differential (R := R) (H := H) (M := M) d) :=
+  Module.End.isNilpotent_iff_of_finite.mpr
+    (exists_pow_differential_apply_eq_zero_of_forall_exists_iterate_leftInvariantDerivation_eq_zero
+      hd)
 
 end Bialgebra
 
