@@ -34,7 +34,7 @@ whose smooth degree at every point `q ≠ ±p` is `1 + (-1)ᵐ`
 
 Comparing the smooth degree with the homological pushforward of the fundamental class across the
 product model `(𝓡 m).prod (𝓡 1)` and the target model `𝓡 (m + 1)`
-(`TauCeti.Manifold.Orientation.mapFundamentalClass_eq_degreeAtRegularValue_smul_fundamentalClass`)
+(`TauCeti.Manifold.Orientation.mapFundamentalClass_eq_degreeAtRegularValue_smul`)
 gives the second, direct proof of Proposition 6.34 of Barraud–Damian–Humilière–Oancea:
 
 * `Sᵐ⁺¹` is `(1 + (-1)ᵐ)`-covered by `C^k` diffeomorphisms for every `m`, every homological
@@ -307,7 +307,7 @@ theorem isCoveredByDiffeomorphisms_sphere_one_add_neg_one_pow
     Complex.orientation.sphereOrientation
   refine .of_homologyMap (sphereRotationDiffFamily x₀ k) oDom.fundamentalClass ?_
   rw [← oDom.mapFundamentalClass_def, evalAt_comp_sphereRotationDiffFamily,
-    oDom.mapFundamentalClass_eq_degreeAtRegularValue_smul_fundamentalClass oE.sphereOrientation
+    oDom.mapFundamentalClass_eq_degreeAtRegularValue_smul oE.sphereOrientation
       (isRegularValue_sphereRotationFamily x₀ hqx₀ hqneg),
     ContinuousMap.coe_mk, oE.degreeAtRegularValue_sphereRotationFamily x₀ hqx₀ hqneg,
     oE.sphereOrientation.fundamentalClass_euclideanSpace, o₀.mapFundamentalClass_id]

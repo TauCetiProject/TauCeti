@@ -11,9 +11,11 @@ import TauCeti.Geometry.Manifold.RegularValue.Diffeomorph
 /-!
 # Mapping degree under diffeomorphisms
 
-Precomposing or postcomposing an arbitrary map `f` between oriented manifolds with a `C^n`
-diffeomorphism (`n ≠ 0`) transforms regular-value degrees and mapping degrees according to the
-orientation sign of the diffeomorphism, without any differentiability assumption on `f`.
+Postcomposing an arbitrary map `f` between oriented manifolds with a `C^n` diffeomorphism
+(`n ≠ 0`) multiplies `degreeAtRegularValue` by the orientation sign of the diffeomorphism at the
+target point, while precomposing with a diffeomorphism that preserves or reverses orientations along
+the fibre (respectively everywhere) preserves or negates `degreeAtRegularValue` (respectively
+`TauCeti.degree`), without any differentiability assumption on `f`.
 
 These invariance properties allow smooth-degree computations to rechart either manifold along a
 diffeomorphism, such as `TauCeti.BoundarylessModel.diffeomorph` or
@@ -24,9 +26,9 @@ diffeomorphism, such as `TauCeti.BoundarylessModel.diffeomorph` or
 * `Diffeomorph.degreeAtRegularValue_diffeomorph_comp_apply`,
   `Diffeomorph.degreeAtRegularValue_diffeomorph_comp`: postcomposing `f` with a diffeomorphism `h`
   multiplies `degreeAtRegularValue` by the orientation sign of `h`.
-* `Diffeomorph.degreeAtRegularValue_diffeomorph_comp_of_isOrientationPreservingAt`,
-  `Diffeomorph.degreeAtRegularValue_diffeomorph_comp_of_isOrientationReversingAt`: invariance and
-  negation of `degreeAtRegularValue` under orientation-preserving or orientation-reversing
+* `Diffeomorph.degreeAtRegularValue_diffeomorph_comp_apply_of_isOrientationPreservingAt`,
+  `Diffeomorph.degreeAtRegularValue_diffeomorph_comp_apply_of_isOrientationReversingAt`: invariance
+  and negation of `degreeAtRegularValue` under orientation-preserving or orientation-reversing
   postcomposition.
 * `Diffeomorph.degreeAtRegularValue_comp_diffeomorph_of_isOrientationPreservingAt`,
   `Diffeomorph.degreeAtRegularValue_comp_diffeomorph_of_isOrientationReversingAt`: invariance and
@@ -91,7 +93,7 @@ theorem degreeAtRegularValue_diffeomorph_comp (h : N ≃ₘ^n⟮J, K⟯ P) (hn :
 
 /-- Postcomposing `f` with a `C^n` diffeomorphism `h` (`n ≠ 0`) that preserves orientations at `y`
 leaves the signed preimage count over `y` unchanged. -/
-theorem degreeAtRegularValue_diffeomorph_comp_of_isOrientationPreservingAt
+theorem degreeAtRegularValue_diffeomorph_comp_apply_of_isOrientationPreservingAt
     (h : N ≃ₘ^n⟮J, K⟯ P) (hn : n ≠ 0) {o : Manifold.Orientation I M ι}
     {o' : Manifold.Orientation J N ι} {o'' : Manifold.Orientation K P ι} (f : M → N) {y : N}
     (hh : IsOrientationPreservingAt o' o'' h y) :
@@ -101,7 +103,7 @@ theorem degreeAtRegularValue_diffeomorph_comp_of_isOrientationPreservingAt
 
 /-- Postcomposing `f` with a `C^n` diffeomorphism `h` (`n ≠ 0`) that reverses orientations at `y`
 negates the signed preimage count over `y`. -/
-theorem degreeAtRegularValue_diffeomorph_comp_of_isOrientationReversingAt
+theorem degreeAtRegularValue_diffeomorph_comp_apply_of_isOrientationReversingAt
     (h : N ≃ₘ^n⟮J, K⟯ P) (hn : n ≠ 0) {o : Manifold.Orientation I M ι}
     {o' : Manifold.Orientation J N ι} {o'' : Manifold.Orientation K P ι} (f : M → N) {y : N}
     (hh : IsOrientationReversingAt o' o'' h y) :

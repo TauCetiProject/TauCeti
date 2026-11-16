@@ -39,7 +39,8 @@ compatibility with composition characterizes the transport
   `Hₖ(M; N) → Hₖ(M, M ∖ {x}; N)` from singular homology to the local homology at `x`.
 * `TauCeti.localHomologyMap`: for a continuous map `j : M → N` with `j ⁻¹' T ⊆ S`, the map
   `Hₖ(M, M ∖ S) ⟶ Hₖ(N, N ∖ T)` induced by `j`. It is functorial, is the restriction map for `j`
-  the identity, and is compatible with restriction on both sides.
+  the identity, is compatible with restriction on both sides, and intertwines chart local homology
+  isomorphisms (`TauCeti.localHomologyMap_comp_singularHomologyComplSingletonIsoOfChart_hom`).
 * `TauCeti.isZero_localHomology_empty`: `Hₖ(M, M) = 0`.
 * `TauCeti.isIso_localHomologyRestriction_symm_image`: the restriction from a compact set in a
   chart, star-convex about one of its points, to that point is an isomorphism.
@@ -242,6 +243,47 @@ theorem localHomologyMap_eq_of_homotopy {j₀ j₁ : C(M, N)} (F : j₀.Homotopy
   (TopPair.ofSubsetHomotopy (g₀ := TopCat.ofHom j₀) (g₁ := TopCat.ofHom j₁)
     (B := (Sᶜ : Set (TopCat.of M))) (B' := (Tᶜ : Set (TopCat.of N))) F
     fun τ y hy ↦ hF τ y hy).congr_singularHomologyMap R k
+
+/-- Naturality of `TauCeti.singularHomologyComplSingletonIsoOfChart` under continuous maps
+`j : C(M, N)` and `f : C(E, F)` intertwining charts `φ` and `ψ` on `φ.source`. -/
+@[reassoc]
+theorem localHomologyMap_comp_singularHomologyComplSingletonIsoOfChart_hom
+    {E F : Type w} [T1Space M] [T1Space N] [TopologicalSpace E] [T1Space E]
+    [TopologicalSpace F] [T1Space F]
+    (f : C(E, F)) (φ : OpenPartialHomeomorph M E) (ψ : OpenPartialHomeomorph N F)
+    {x : M} (hx : x ∈ φ.source) (hjφ : Set.MapsTo j φ.source ψ.source)
+    (hφψ : ∀ z ∈ φ.source, ψ (j z) = f (φ z))
+    (hj : j ⁻¹' {j x} ⊆ {x}) (hf : f ⁻¹' {ψ (j x)} ⊆ {φ x}) (k : ℕ) :
+    localHomologyMap R j hj k ≫
+        (singularHomologyComplSingletonIsoOfChart R ψ (hjφ hx) k).hom =
+      (singularHomologyComplSingletonIsoOfChart R φ hx k).hom ≫ localHomologyMap R f hf k := by
+  have := TopPair.isIso_singularHomologyMap_excisionMap_of_isClosed_subset R (X := TopCat.of M)
+    φ.open_source isClosed_singleton (singleton_subset_iff.2 hx) k
+  rw [← cancel_epi (TopPair.singularHomologyMap
+    (TopPair.excisionMap (X := TopCat.of M) φ.source {x}ᶜ) R k),
+    singularHomologyMap_excisionMap_comp_singularHomologyComplSingletonIsoOfChart_hom_assoc,
+    localHomologyMap_def, localHomologyMap_def, ← TopPair.singularHomologyMap_comp_assoc,
+    ← TopPair.interPairMap_comp_excisionMap (TopCat.ofHom j)
+      (A := φ.source) (A' := ψ.source) hjφ _,
+    TopPair.singularHomologyMap_comp_assoc,
+    singularHomologyMap_excisionMap_comp_singularHomologyComplSingletonIsoOfChart_hom,
+    ← TopPair.singularHomologyMap_comp, ← TopPair.singularHomologyMap_comp,
+    ← TopPair.singularHomologyMap_comp, ← TopPair.singularHomologyMap_comp]
+  congr 1
+  apply TopPair.hom_ext_of_fst
+  ext z
+  simp only [TopPair.Hom.fst_comp, ConcreteCategory.comp_apply]
+  -- `TopPair.ofSubset` and `TopPair.interPair` expose their ambient spaces only after unfolding.
+  erw [TopPair.excisionMap_fst_apply, TopPair.excisionMap_fst_apply,
+    TopPair.ofSubsetIso_hom, TopPair.ofSubsetIso_hom,
+    TopPair.ofSubsetMap_fst_apply, TopPair.ofSubsetMap_fst_apply,
+    TopPair.ofSubsetMap_fst_apply]
+  simp only [TopCat.hom_ofHom, ContinuousMap.coe_ofClass]
+  erw [OpenPartialHomeomorph.toHomeomorphSourceTarget_apply_coe,
+    OpenPartialHomeomorph.toHomeomorphSourceTarget_apply_coe,
+    TopPair.interPairMap_fst_apply]
+  simp only [TopCat.hom_ofHom]
+  exact hφψ z.1 z.2
 
 end Map
 

@@ -13,9 +13,6 @@ public import TauCeti.Geometry.Manifold.RegularValue.Fibre
 import Mathlib.Analysis.InnerProductSpace.PiL2
 import TauCeti.Geometry.Manifold.Degree.Diffeomorph
 import TauCeti.Geometry.Manifold.MFDeriv.LocalInjectivity
-import TauCeti.Geometry.Manifold.ModelTransport.Interior
-import TauCeti.Geometry.Manifold.ModelWithCorners.LinearEquiv
-import TauCeti.Geometry.Manifold.Orientation.Pullback
 import TauCeti.Geometry.Manifold.RegularValue.Diffeomorph
 
 /-!
@@ -45,15 +42,15 @@ homological degree of a proper map onto a preconnected manifold is the signed co
 `degreeAtRegularValue o o' f y` (`TauCeti.Manifold.Orientation.degree_toHomologicalOrientation`).
 For a map between compact manifolds, with `N` preconnected, this reads
 `f_*[M] = (degreeAtRegularValue o o' f y) • [N]` in `Hₙ₊₁(N; ℤ)`
-(`TauCeti.Manifold.Orientation.mapFundamentalClass_eq_degreeAtRegularValue_smul`), so a degree
-computed by counting preimages with signs computes the image of the fundamental class.
+(`Manifold.Orientation.mapFundamentalClass_toHomologicalOrientation_eq_degreeAtRegularValue_smul`),
+so a degree computed by counting preimages with signs computes the image of the fundamental class.
 
 Using the general smooth fundamental class `TauCeti.Manifold.Orientation.fundamentalClass` and its
 naturality under orientation-preserving homeomorphisms, the same formula extends to any pair of
 compact boundaryless `C¹` manifolds `(M, I)` and `(N, J)` (`[BoundarylessManifold I M]`,
 `[BoundarylessManifold J N]`): whenever `N` is preconnected and `y` is a regular value of a
 continuous map `f : C(M, N)`, we have `f_*[M] = (degreeAtRegularValue o o' f y) • [N]`
-(`TauCeti.Manifold.Orientation.mapFundamentalClass_eq_degreeAtRegularValue_smul_fundamentalClass`).
+(`TauCeti.Manifold.Orientation.mapFundamentalClass_eq_degreeAtRegularValue_smul`).
 
 ## Main results
 
@@ -61,12 +58,12 @@ continuous map `f : C(M, N)`, we have `f_*[M] = (degreeAtRegularValue o o' f y) 
   derivative the local index is the orientation sign.
 * `TauCeti.Manifold.Orientation.degree_toHomologicalOrientation`: the degree of a proper map onto
   a preconnected manifold is the signed count of preimages of any regular value.
-* `TauCeti.Manifold.Orientation.mapFundamentalClass_eq_degreeAtRegularValue_smul`: for a map
-  between compact manifolds on the same inner product model, with preconnected target, `f_*[M]` is
-  the signed count of preimages of a regular value times `[N]`.
-* `TauCeti.Manifold.Orientation.mapFundamentalClass_eq_degreeAtRegularValue_smul_fundamentalClass`:
-  for a continuous map `f : C(M, N)` between compact boundaryless `C¹` manifolds `(M, I)` and
-  `(N, J)` with `N` preconnected and `y` a regular value of `f`,
+* `Manifold.Orientation.mapFundamentalClass_toHomologicalOrientation_eq_degreeAtRegularValue_smul`:
+  for a map between compact manifolds on the same inner product model, with preconnected target,
+  `f_*[M]` is the signed count of preimages of a regular value times `[N]`.
+* `TauCeti.Manifold.Orientation.mapFundamentalClass_eq_degreeAtRegularValue_smul`: for a continuous
+  map `f : C(M, N)` between compact boundaryless `C¹` manifolds `(M, I)` and `(N, J)` with `N`
+  preconnected and `y` a regular value of `f`,
   `f_*[M] = (degreeAtRegularValue o o' f y) • [N]`.
 
 ## References
@@ -183,8 +180,9 @@ theorem degree_toHomologicalOrientation [PreconnectedSpace N] {f : C(M, N)} (hf 
 map `f : M → N` between compact manifolds, with `N` preconnected, and a regular value `y` of `f`,
 `f_*[M] = (degreeAtRegularValue o o' f y) • [N]` in `Hₙ₊₁(N; ℤ)`, for the fundamental classes of
 the homological orientations of `o` and `o'`. -/
-theorem mapFundamentalClass_eq_degreeAtRegularValue_smul [CompactSpace M] [CompactSpace N]
-    [PreconnectedSpace N] {f : C(M, N)} {y : N} (hy : IsRegularValue 𝓘(ℝ, E) 𝓘(ℝ, E) f y) :
+theorem mapFundamentalClass_toHomologicalOrientation_eq_degreeAtRegularValue_smul
+    [CompactSpace M] [CompactSpace N] [PreconnectedSpace N]
+    {f : C(M, N)} {y : N} (hy : IsRegularValue 𝓘(ℝ, E) 𝓘(ℝ, E) f y) :
     (o.toHomologicalOrientation hE).mapFundamentalClass hE f =
       degreeAtRegularValue o o' f y • (o'.toHomologicalOrientation hE).fundamentalClass hE := by
   rw [HomologicalOrientation.mapFundamentalClass_eq_degree_smul _ _ hE hE,
@@ -237,7 +235,7 @@ private theorem mapFundamentalClass_eq_degreeAtRegularValue_smul_of_diffeomorph
     exact (Φ.symm.isRegularValue_comp_diffeomorph_iff one_ne_zero f y).2 hy
   have hdeg : degreeAtRegularValue o₁ o₁' g (Ψ y) = degreeAtRegularValue o o' f y := by
     rw [hg_coe,
-      Ψ.degreeAtRegularValue_diffeomorph_comp_of_isOrientationPreservingAt one_ne_zero
+      Ψ.degreeAtRegularValue_diffeomorph_comp_apply_of_isOrientationPreservingAt one_ne_zero
         (f ∘ Φ.symm) (hΨ y),
       Φ.symm.degreeAtRegularValue_comp_diffeomorph_of_isOrientationPreservingAt one_ne_zero f
         fun z _ ↦ hΦs z]
@@ -250,11 +248,8 @@ private theorem mapFundamentalClass_eq_degreeAtRegularValue_smul_of_diffeomorph
     mapFundamentalClass_homeomorph o₁ o Φ.symm.toHomeomorph fun z ↦ by
       rw [Diffeomorph.coe_toHomeomorph]
       exact hΦs z
-  have hΨs : ∀ w, IsOrientationPreservingAt o₁' o' Ψ.symm w := fun w ↦ by
-    refine (hΨ (Ψ.symm w)).of_comp ?_ (Ψ.symm.mdifferentiable one_ne_zero w)
-    have hid : ⇑Ψ ∘ ⇑Ψ.symm = id := funext Ψ.apply_symm_apply
-    rw [hid]
-    exact isOrientationPreservingAt_id o₁' w
+  have hΨs : ∀ w, IsOrientationPreservingAt o₁' o' Ψ.symm w :=
+    fun w ↦ (hΨ (Ψ.symm w)).diffeomorph_symm one_ne_zero
   have hΨc : o₁'.mapFundamentalClass (Ψ.symm.toHomeomorph : C(N₁, N)) = o'.fundamentalClass :=
     mapFundamentalClass_homeomorph o₁' o' Ψ.symm.toHomeomorph fun w ↦ by
       rw [Diffeomorph.coe_toHomeomorph]
@@ -262,9 +257,8 @@ private theorem mapFundamentalClass_eq_degreeAtRegularValue_smul_of_diffeomorph
   rw [o.mapFundamentalClass_def, ← hΦc, ← o₁.mapFundamentalClass_comp, hfg,
     o₁.mapFundamentalClass_comp, hbase hyg, hdeg, map_zsmul, ← o₁'.mapFundamentalClass_def, hΨc]
 
-/-- Self-modelled case of `mapFundamentalClass_eq_degreeAtRegularValue_smul_fundamentalClass`,
-reduced to `𝓡 (n + 1)` via `ModelWithCorners.transContinuousLinearEquiv` and
-`BoundarylessModel.diffeomorph`. -/
+/-- Self-modelled case of `mapFundamentalClass_eq_degreeAtRegularValue_smul`, reduced to
+`𝓡 (n + 1)` via `BoundarylessModel.diffeomorphTransContinuousLinearEquiv`. -/
 private theorem mapFundamentalClass_eq_degreeAtRegularValue_smul_self
     {E F : Type*} {M N : Type} {n : ℕ}
     [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
@@ -276,32 +270,19 @@ private theorem mapFundamentalClass_eq_degreeAtRegularValue_smul_self
     (o' : Manifold.Orientation 𝓘(ℝ, F) N (Fin (n + 1)))
     {f : C(M, N)} {y : N} (hy : IsRegularValue 𝓘(ℝ, E) 𝓘(ℝ, F) f y) :
     o.mapFundamentalClass f = degreeAtRegularValue o o' f y • o'.fundamentalClass := by
-  let eE : E ≃L[ℝ] EuclideanSpace ℝ (Fin (n + 1)) :=
-    ContinuousLinearEquiv.ofFinrankEq (by rw [← o.card_eq, Fintype.card_fin,
-      finrank_euclideanSpace_fin])
-  let eF : F ≃L[ℝ] EuclideanSpace ℝ (Fin (n + 1)) :=
-    ContinuousLinearEquiv.ofFinrankEq (by rw [← o'.card_eq, Fintype.card_fin,
-      finrank_euclideanSpace_fin])
-  let Φ := (eE.toTransContinuousLinearEquiv (n := 1) 𝓘(ℝ, E) M).trans
-    (BoundarylessModel.diffeomorph (𝓘(ℝ, E).transContinuousLinearEquiv eE) 1)
-  let Ψ := (eF.toTransContinuousLinearEquiv (n := 1) 𝓘(ℝ, F) N).trans
-    (BoundarylessModel.diffeomorph (𝓘(ℝ, F).transContinuousLinearEquiv eF) 1)
-  let o₁ : Manifold.Orientation (𝓡 (n + 1))
-      (BoundarylessModel (𝓘(ℝ, E).transContinuousLinearEquiv eE) M) (Fin (n + 1)) :=
-    o.pullback Φ.symm.contMDiff (fun _ ↦ Φ.symm.isInvertible_mfderiv one_ne_zero) (by simp)
-  let o₁' : Manifold.Orientation (𝓡 (n + 1))
-      (BoundarylessModel (𝓘(ℝ, F).transContinuousLinearEquiv eF) N) (Fin (n + 1)) :=
-    o'.pullback Ψ.symm.contMDiff (fun _ ↦ Ψ.symm.isInvertible_mfderiv one_ne_zero) (by simp)
-  have hΨ : ∀ z, IsOrientationPreservingAt o' o₁' Ψ z := fun z ↦ by
-    refine (isOrientationPreservingAt_pullback _ _ _ _ (Ψ z)).of_comp ?_
-      (Ψ.mdifferentiable one_ne_zero z)
-    have hid : ⇑Ψ.symm ∘ ⇑Ψ = id := funext Ψ.symm_apply_apply
-    rw [hid]
-    exact isOrientationPreservingAt_id o' z
-  refine mapFundamentalClass_eq_degreeAtRegularValue_smul_of_diffeomorph o o' o₁ o₁' Φ Ψ
-    (isOrientationPreservingAt_pullback _ _ _ _) hΨ hy fun hyg ↦ ?_
+  let Φ := BoundarylessModel.diffeomorphTransContinuousLinearEquiv 𝓘(ℝ, E) (M := M)
+    o.modelEquivEuclidean 1
+  let Ψ := BoundarylessModel.diffeomorphTransContinuousLinearEquiv 𝓘(ℝ, F) (M := N)
+    o'.modelEquivEuclidean 1
+  refine mapFundamentalClass_eq_degreeAtRegularValue_smul_of_diffeomorph o o'
+    (o.boundarylessTransContinuousLinearEquiv o.modelEquivEuclidean)
+    (o'.boundarylessTransContinuousLinearEquiv o'.modelEquivEuclidean) Φ Ψ
+    (o.isOrientationPreservingAt_diffeomorphTransContinuousLinearEquiv_symm o.modelEquivEuclidean 1)
+    (o'.isOrientationPreservingAt_diffeomorphTransContinuousLinearEquiv o'.modelEquivEuclidean 1)
+    hy fun hyg ↦ ?_
   rw [mapFundamentalClass_euclideanSpace, fundamentalClass_euclideanSpace]
-  exact mapFundamentalClass_eq_degreeAtRegularValue_smul finrank_euclideanSpace_fin o₁ o₁' hyg
+  exact mapFundamentalClass_toHomologicalOrientation_eq_degreeAtRegularValue_smul
+    finrank_euclideanSpace_fin _ _ hyg
 
 variable {E F H H' : Type*} {M N : Type}
   [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
@@ -319,28 +300,19 @@ boundaryless manifolds.** Let `(M, I)` and `(N, J)` be compact boundaryless `C¹
 dimension `n + 1` (`[BoundarylessManifold I M]`, `[BoundarylessManifold J N]`) with `N`
 preconnected, oriented by `o` and `o'`. For any continuous map `f : C(M, N)` and any regular value
 `y` of `f`, `f_*[M] = (degreeAtRegularValue o o' f y) • [N]` in `Hₙ₊₁(N; ℤ)`. -/
-theorem mapFundamentalClass_eq_degreeAtRegularValue_smul_fundamentalClass [PreconnectedSpace N]
+theorem mapFundamentalClass_eq_degreeAtRegularValue_smul [PreconnectedSpace N]
     (o : Manifold.Orientation I M (Fin (n + 1)))
     (o' : Manifold.Orientation J N (Fin (n + 1)))
     {f : C(M, N)} {y : N} (hy : IsRegularValue I J f y) :
     o.mapFundamentalClass f = degreeAtRegularValue o o' f y • o'.fundamentalClass := by
   let : ChartedSpace E (BoundarylessModel I M) := BoundarylessModel.interiorChartedSpace I
   let : ChartedSpace F (BoundarylessModel J N) := BoundarylessModel.interiorChartedSpace J
-  let Φ := BoundarylessModel.interiorDiffeomorph I (M := M) 1
-  let Ψ := BoundarylessModel.interiorDiffeomorph J (M := N) 1
-  let o₀ : Manifold.Orientation 𝓘(ℝ, E) (BoundarylessModel I M) (Fin (n + 1)) :=
-    o.pullback Φ.symm.contMDiff (fun _ ↦ Φ.symm.isInvertible_mfderiv one_ne_zero) o.card_eq
-  let o₀' : Manifold.Orientation 𝓘(ℝ, F) (BoundarylessModel J N) (Fin (n + 1)) :=
-    o'.pullback Ψ.symm.contMDiff (fun _ ↦ Ψ.symm.isInvertible_mfderiv one_ne_zero) o'.card_eq
-  have hΨ : ∀ z, IsOrientationPreservingAt o' o₀' Ψ z := fun z ↦ by
-    refine (isOrientationPreservingAt_pullback _ _ _ _ (Ψ z)).of_comp ?_
-      (Ψ.mdifferentiable one_ne_zero z)
-    have hid : ⇑Ψ.symm ∘ ⇑Ψ = id := funext Ψ.symm_apply_apply
-    rw [hid]
-    exact isOrientationPreservingAt_id o' z
-  exact mapFundamentalClass_eq_degreeAtRegularValue_smul_of_diffeomorph o o' o₀ o₀' Φ Ψ
-    (isOrientationPreservingAt_pullback _ _ _ _) hΨ hy fun hyg ↦
-      mapFundamentalClass_eq_degreeAtRegularValue_smul_self o₀ o₀' hyg
+  exact mapFundamentalClass_eq_degreeAtRegularValue_smul_of_diffeomorph o o'
+    o.interiorOrientation o'.interiorOrientation
+    (BoundarylessModel.interiorDiffeomorph I 1) (BoundarylessModel.interiorDiffeomorph J 1)
+    (o.isOrientationPreservingAt_interiorDiffeomorph_symm 1)
+    (o'.isOrientationPreservingAt_interiorDiffeomorph 1) hy fun hyg ↦
+      mapFundamentalClass_eq_degreeAtRegularValue_smul_self _ _ hyg
 
 end Boundaryless
 
