@@ -68,7 +68,8 @@ the `a = 1` cases of the Gamma results in `TauCeti.Probability.Distributions.Gam
 * `hasLaw_min_expMeasure_of_indepFun` — minimum of independent exponentials;
 * `hasLaw_min_iid_expMeasure` — minimum of `d` i.i.d. exponentials of rate `r` is exponential of
   rate `d * r`.
-* `nnrealExpMeasure` — the exponential measure transported to `ℝ≥0`.
+* `nnrealExpMeasure`, `hasLaw_nnrealExpMeasure_iff` — the exponential measure transported to `ℝ≥0`
+  and its law equivalence with `expMeasure`.
 
 ## References
 
@@ -533,5 +534,48 @@ theorem isProbabilityMeasure_nnrealExpMeasure {r : ℝ} (hr : 0 < r) :
   let _ := isProbabilityMeasure_expMeasure hr
   rw [nnrealExpMeasure_def]
   infer_instance
+
+/-- Coercing `nnrealExpMeasure r` back to `ℝ` recovers `expMeasure r`, for every rate `r`
+(including nonpositive rates, where both measures are zero). -/
+@[simp]
+theorem nnrealExpMeasure_map_coe (r : ℝ) :
+    (nnrealExpMeasure r).map ((↑) : ℝ≥0 → ℝ) = expMeasure r := by
+  rw [nnrealExpMeasure_def, Measure.map_map measurable_coe_nnreal_real measurable_real_toNNReal]
+  calc
+    (expMeasure r).map (((↑) : ℝ≥0 → ℝ) ∘ Real.toNNReal) = (expMeasure r).map id := by
+      apply Measure.map_congr
+      filter_upwards [ae_pos_expMeasure r] with x hx
+      exact Real.coe_toNNReal x hx.le
+    _ = expMeasure r := Measure.map_id
+
+/-- Coercing `nnrealExpMeasure r` to `ℝ≥0∞` agrees with pushing `expMeasure r` forward by
+`ENNReal.ofReal`, for every rate `r`. -/
+@[simp]
+theorem nnrealExpMeasure_map_coe_ennreal (r : ℝ) :
+    (nnrealExpMeasure r).map ((↑) : ℝ≥0 → ℝ≥0∞) = (expMeasure r).map ENNReal.ofReal := by
+  rw [nnrealExpMeasure_def, Measure.map_map measurable_coe_nnreal_ennreal measurable_real_toNNReal]
+  rfl
+
+/-- Pushing `expMeasure r` forward to `ℝ≥0∞` via `ENNReal.ofReal` and back via `ENNReal.toReal`
+recovers `expMeasure r`, for every rate `r`. -/
+@[simp]
+theorem expMeasure_map_ofReal_map_toReal (r : ℝ) :
+    ((expMeasure r).map ENNReal.ofReal).map ENNReal.toReal = expMeasure r := by
+  rw [← nnrealExpMeasure_map_coe_ennreal,
+    Measure.map_map ENNReal.measurable_toReal measurable_coe_nnreal_ennreal]
+  simpa only [Function.comp_def, ENNReal.coe_toReal] using nnrealExpMeasure_map_coe r
+
+/-- A nonnegative random variable has law `nnrealExpMeasure r` exactly when its real coercion has
+law `expMeasure r`. This holds for every rate `r`, including nonpositive rates. -/
+theorem hasLaw_nnrealExpMeasure_iff {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    {X : Ω → ℝ≥0} {r : ℝ} :
+    HasLaw X (nnrealExpMeasure r) P ↔ HasLaw (fun ω => (X ω : ℝ)) (expMeasure r) P := by
+  constructor
+  · intro hX
+    have h := (hasLaw_map (P := nnrealExpMeasure r) measurable_coe_nnreal_real.aemeasurable).comp hX
+    simpa only [nnrealExpMeasure_map_coe, Function.comp_def] using h
+  · intro hX
+    have h := (hasLaw_map (P := expMeasure r) measurable_real_toNNReal.aemeasurable).comp hX
+    simpa only [← nnrealExpMeasure_def, Function.comp_def, Real.toNNReal_coe] using h
 
 end TauCeti.Probability
