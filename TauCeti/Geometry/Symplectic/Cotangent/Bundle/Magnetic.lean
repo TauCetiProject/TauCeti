@@ -114,9 +114,8 @@ theorem mpullback_vectorBundleTranslateDiffeomorph_neg_symplecticForm (σ : Smoo
 theorem isSymplectic_magneticSymplecticForm (σ : SmoothForm I M ℝ 1) :
     (magneticSymplecticForm σ).IsSymplectic := by
   rw [← mpullback_vectorBundleTranslateDiffeomorph_neg_symplecticForm]
-  exact ⟨isSymplectic_symplecticForm.isClosed.mpullback _ _,
-    isSymplectic_symplecticForm.isNondegenerate.isNondegenerate_mpullback_of_isLocalDiffeomorph
-      (Diffeomorph.isLocalDiffeomorph _)⟩
+  exact ((Diffeomorph.isLocalDiffeomorph _).isSymplectic_mpullback_iff
+    (Diffeomorph.toEquiv _).surjective).2 isSymplectic_symplecticForm
 
 variable [FiniteDimensional ℝ E]
 
