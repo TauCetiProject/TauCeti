@@ -103,6 +103,34 @@ theorem mk_flatMap_substituteLetter (f : α → List (β × Bool)) (w : List (α
     | mk x b =>
       cases b <;> simp [substituteLetter, inv_mk, lift_mk]
 
+/-- If substituting words for the generators of a word, without free reduction, gives a reduced
+word, every generator occurring in the word is assigned a reduced word. -/
+theorem IsReduced.of_flatMap_substituteLetter_of_mem {f : α → List (β × Bool)}
+    {w : List (α × Bool)} (h : IsReduced (w.flatMap (substituteLetter f))) {a : α} {b : Bool}
+    (ha : (a, b) ∈ w) : IsReduced (f a) := by
+  obtain ⟨l₁, l₂, rfl⟩ := List.append_of_mem ha
+  rw [List.flatMap_append, List.flatMap_cons] at h
+  have := h.infix ⟨_, _, List.append_assoc ..⟩
+  cases b <;> simpa using this
+
+/-- If substituting words for the generators of a word, without free reduction, gives a reduced
+word, and the generators occurring in the word are assigned nonempty words, then the word was
+already reduced: a cancelling pair of letters is replaced by a nonempty word followed by its formal
+inverse. -/
+theorem IsReduced.of_flatMap_substituteLetter {f : α → List (β × Bool)} {w : List (α × Bool)}
+    (hf : ∀ a ∈ w, f a.1 ≠ []) (h : IsReduced (w.flatMap (substituteLetter f))) :
+    IsReduced w := by
+  refine IsReduced.of_forall_not_step fun w' hstep => ?_
+  obtain @⟨L₁, L₂, y, b⟩ := hstep
+  have hy := hf (y, b) (by simp)
+  have hinv : substituteLetter f (y, !b) = FreeGroup.invRev (substituteLetter f (y, b)) := by
+    cases b <;> simp [FreeGroup.invRev_invRev]
+  have hred : IsReduced (substituteLetter f (y, b) ++ substituteLetter f (y, !b)) :=
+    h.infix ⟨L₁.flatMap (substituteLetter f), L₂.flatMap (substituteLetter f), by simp⟩
+  have hnil := hred.eq_of_mk_eq .nil <| by
+    rw [hinv, ← mul_mk, ← inv_mk, mul_inv_cancel, one_eq_mk]
+  cases b <;> simp [hy] at hnil
+
 /-- Substitute words for the generators of a word and freely reduce the result. -/
 def substituteWord [DecidableEq β] (f : α → List (β × Bool))
     (w : List (α × Bool)) : List (β × Bool) :=
@@ -210,11 +238,8 @@ theorem isReduced_substituteVars_cond (U : X → List (A × Bool)) (s : Bool)
 assigned a reduced word. -/
 theorem IsReduced.of_substituteVars_of_mem {U : X → List (A × Bool)} {w : List ((X ⊕ A) × Bool)}
     (h : IsReduced (substituteVars U w)) {x : X} {b : Bool} (hx : (Sum.inl x, b) ∈ w) :
-    IsReduced (U x) := by
-  obtain ⟨l₁, l₂, rfl⟩ := List.append_of_mem hx
-  rw [substituteVars_append, substituteVars_cons] at h
-  have := h.infix ⟨_, _, List.append_assoc ..⟩
-  cases b <;> simpa using this
+    IsReduced (U x) :=
+  h.of_flatMap_substituteLetter_of_mem hx
 
 /-- Substitution followed by free reduction is evaluation in the free group. -/
 theorem mk_substituteVars (U : X → List (A × Bool)) (w : List ((X ⊕ A) × Bool)) :
@@ -231,22 +256,10 @@ letters was already reduced: a cancelling pair of letters is replaced by a nonem
 by its formal inverse. -/
 theorem IsReduced.of_substituteVars {U : X → List (A × Bool)} {w : List ((X ⊕ A) × Bool)}
     (hU : ∀ x b, (Sum.inl x, b) ∈ w → U x ≠ []) (h : IsReduced (substituteVars U w)) :
-    IsReduced w := by
-  refine IsReduced.of_forall_not_step fun w' hstep => ?_
-  obtain @⟨L₁, L₂, y, b⟩ := hstep
-  have hinv : substituteVars U [(y, !b)] = FreeGroup.invRev (substituteVars U [(y, b)]) := by
-    rw [← substituteVars_invRev]
-    simp [FreeGroup.invRev]
-  have hred : IsReduced (substituteVars U [(y, b)] ++ substituteVars U [(y, !b)]) := by
-    refine h.infix ⟨substituteVars U L₁, substituteVars U L₂, ?_⟩
-    rw [← substituteVars_append, ← substituteVars_append, ← substituteVars_append]
-    simp
-  have hnil := hred.eq_of_mk_eq .nil <| by
-    rw [hinv, ← mul_mk, ← inv_mk, mul_inv_cancel, one_eq_mk]
-  obtain x | a := y
-  · have hx := hU x b (by simp)
-    cases b <;> simp [hx] at hnil
-  · cases b <;> simp at hnil
+    IsReduced w :=
+  h.of_flatMap_substituteLetter fun
+    | (.inl x, b), hx => hU x b hx
+    | (.inr _, _), _ => List.cons_ne_nil _ _
 
 end Vars
 

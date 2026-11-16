@@ -43,8 +43,6 @@ solutions of their generalised equations.
 * `TauCeti.GenEq.IsSolutionTable.substituteVars_wordMap`: the word maps `P_x(U)` of the solution
   spell the reduced word of `W x` for every variable `x` occurring in `r`.
 * `TauCeti.GenEq.IsSolutionTable.eval_eq_one`: an assignment with a table is a solution.
-* `TauCeti.GenEq.IsSolutionTable.exists_solution`: `Ω_T` has a solution `U` with `P_x(U) = W x`
-  graphically for every variable `x` occurring in `r`.
 
 ## Implementation notes
 
@@ -175,15 +173,9 @@ the sign `s`, spells the reduced word of `W x`. -/
 theorem IsSolutionTable.substituteVars_cond [DecidableEq A] (h : IsSolutionTable r W T u)
     {o : Occurrence r} {x : X} {s : Bool} (hx : r[o.1][o.2] = (Sum.inl x, s)) :
     substituteVars u (cond s (T o) (FreeGroup.invRev (T o))) = (W x).toWord := by
-  have hmk := h.mk_substituteVars o
-  rw [hx, EqIneqSystem.eval_eq_lift, FreeGroup.lift_mk_singleton] at hmk
-  refine FreeGroup.IsReduced.eq_of_mk_eq
-    (FreeGroup.isReduced_substituteVars_cond u _ _ (h.isReduced_substituteVars o))
-    FreeGroup.isReduced_toWord ?_
-  rw [FreeGroup.mk_toWord]
-  cases s
-  · simpa [FreeGroup.substituteVars_invRev, ← FreeGroup.inv_mk, inv_eq_iff_eq_inv] using hmk
-  · simpa using hmk
+  have hw := h.substituteVars_eq_toWord o
+  rw [hx, EqIneqSystem.eval_eq_lift, FreeGroup.lift_mk_singleton] at hw
+  cases s <;> simp [FreeGroup.substituteVars_invRev, hw, FreeGroup.invRev_invRev]
 
 /-- `IsSolutionTable.substituteVars_cond` for an entry of the table. -/
 private theorem IsSolutionTable.substituteVars_cond_of_mem [DecidableEq A]
@@ -193,18 +185,6 @@ private theorem IsSolutionTable.substituteVars_cond_of_mem [DecidableEq A]
   obtain ⟨o, rfl⟩ := mem_tableEntries.1 he
   exact h.substituteVars_cond (Prod.ext hx rfl)
 
-/-- A letter of `Z` carried by an item of the generalised equation of a table occurs in a word of
-the table. -/
-private theorem exists_mem_of_itemLetter_eq {c : Fin (ofEntries (tableEntries r T)).numItems}
-    {z : Z} {s : Bool} (hc : itemLetter (tableEntries r T) c = (Sum.inl z, s)) :
-    ∃ o, (Sum.inl z, s) ∈ T o := by
-  have : (Sum.inl z, s) ∈ (tableEntries r T).flatMap Prod.snd := by
-    rw [← hc, ← map_itemLetter_finRange]
-    exact List.mem_map_of_mem (List.mem_finRange c)
-  obtain ⟨e, he, hz⟩ := List.mem_flatMap.1 this
-  obtain ⟨o, rfl⟩ := mem_tableEntries.1 he
-  exact ⟨o, hz⟩
-
 /-- **Kharlampovich–Myasnikov, §4.2, proof of Lemma 14.** The solution `U` of the generalised
 equation `Ω_T` of a table `T` of an assignment, given by the words of the letters of the table:
 an item carrying `z ^ ±1` gets `(u z) ^ ±1`, and an item carrying a letter of `A^{±1}` gets that
@@ -212,8 +192,8 @@ letter. -/
 def IsSolutionTable.solution (h : IsSolutionTable r W T u) :
     (ofEntries (tableEntries r T)).Solution :=
   Solution.ofLetterWords (tableEntries r T) u
-    (fun _ _ _ hc => (exists_mem_of_itemLetter_eq hc).elim fun o ho => h.isReduced_of_mem o ho)
-    (fun _ _ _ hc => (exists_mem_of_itemLetter_eq hc).elim fun o ho => h.ne_nil_of_mem o ho)
+    (fun c _ _ hc => (exists_itemLetter_mem T c).elim fun o ho => h.isReduced_of_mem o (hc ▸ ho))
+    (fun c _ _ hc => (exists_itemLetter_mem T c).elim fun o ho => h.ne_nil_of_mem o (hc ▸ ho))
     (fun p _ => by
       obtain ⟨o, ho⟩ := mem_tableEntries.1 (List.getElem_mem p.1.isLt)
       rw [Fin.getElem_fin, ← ho]
@@ -273,16 +253,6 @@ theorem IsSolutionTable.eval_eq_one (h : IsSolutionTable r W T u) {w : List ((X 
   obtain ⟨o, ho⟩ := exists_occurrence_of_mem hw hj
   exact (h.mk_substituteVars_wordMap (o := o) (by rw [ho, hjx])).symm
 
-/-- **Kharlampovich–Myasnikov, §4.2, proof of Lemma 14.** The words of the letters of a table of
-the assignment `W` give a solution `U` of the generalised equation of the table, and the word
-maps send `U` to `W`: `P_x(U)` is the reduced word of `W x` for every variable `x` occurring in
-the system. -/
-theorem IsSolutionTable.exists_solution [DecidableEq A] (h : IsSolutionTable r W T u) :
-    ∃ U : (ofEntries (tableEntries r T)).Solution, ∀ (o : Occurrence r) (x : X),
-      r[o.1][o.2].1 = Sum.inl x →
-        substituteVars U.word (wordMap (tableEntries r T) x) = (W x).toWord :=
-  ⟨h.solution, fun _ _ => h.substituteVars_wordMap⟩
-
 /-! ### Examples -/
 
 section Examples
@@ -321,10 +291,11 @@ private theorem isSolutionTable_xyTable :
 example : xyTable ∈ cancellationFamily xyEqAB ∧
     ∃ U : (ofEntries (tableEntries xyEqAB xyTable)).Solution,
       substituteVars U.word (wordMap (tableEntries xyEqAB xyTable) 0) = [(0, true)] ∧
-        substituteVars U.word (wordMap (tableEntries xyEqAB xyTable) 1) = [(1, true)] := by
-  obtain ⟨U, hU⟩ := isSolutionTable_xyTable.exists_solution
-  exact ⟨mem_cancellationFamily.2 isSolutionTable_xyTable.isPartitionTable, U,
-    by simpa using hU ⟨0, 0, by decide⟩ 0 rfl, by simpa using hU ⟨0, 1, by decide⟩ 1 rfl⟩
+        substituteVars U.word (wordMap (tableEntries xyEqAB xyTable) 1) = [(1, true)] :=
+  have h := isSolutionTable_xyTable
+  ⟨mem_cancellationFamily.2 h.isPartitionTable, h.solution,
+    by simpa using h.substituteVars_wordMap (o := ⟨0, 0, by decide⟩) (x := 0) rfl,
+    by simpa using h.substituteVars_wordMap (o := ⟨0, 1, by decide⟩) (x := 1) rfl⟩
 
 /-- The letter `z` of the cancelling segment, the first of the `|S| = 12` letters of a table of
 `x y = a b`. -/
@@ -367,10 +338,11 @@ example (c : List (Fin 2 × Bool)) (hc₀ : c ≠ []) (hx : FreeGroup.IsReduced 
       substituteVars U.word (wordMap (tableEntries xyEqAB xyCancelTable) 1) =
         FreeGroup.invRev c ++ [(1, true)] := by
   have h := isSolutionTable_xyCancelTable c hc₀ hx hy
-  obtain ⟨U, hU⟩ := h.exists_solution
-  refine ⟨mem_cancellationFamily.2 h.isPartitionTable, U, ?_, ?_⟩
-  · simpa [FreeGroup.toWord_mk, hx.reduce_eq] using hU ⟨0, 0, by decide⟩ 0 rfl
-  · simpa [FreeGroup.toWord_mk, hy.reduce_eq] using hU ⟨0, 1, by decide⟩ 1 rfl
+  refine ⟨mem_cancellationFamily.2 h.isPartitionTable, h.solution, ?_, ?_⟩
+  · simpa [FreeGroup.toWord_mk, hx.reduce_eq] using
+      h.substituteVars_wordMap (o := ⟨0, 0, by decide⟩) (x := 0) rfl
+  · simpa [FreeGroup.toWord_mk, hy.reduce_eq] using
+      h.substituteVars_wordMap (o := ⟨0, 1, by decide⟩) (x := 1) rfl
 
 end Examples
 

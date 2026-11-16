@@ -248,6 +248,11 @@ theorem map_itemLetter_finRange :
     (List.finRange (ofEntries E).numItems).map (itemLetter E) = E.flatMap Prod.snd := by
   apply List.ext_getElem <;> simp [itemLetter_def]
 
+/-- The letter of an item is a letter of the concatenated word. -/
+theorem itemLetter_mem_flatMap (c : Fin (ofEntries E).numItems) :
+    itemLetter E c ∈ E.flatMap Prod.snd :=
+  List.getElem_mem _
+
 /-- The items spanned by the word of an entry are as many as the letters of that word. -/
 theorem length_segment_entryStart {k : ℕ} (hk : k < E.length) (s : Bool) :
     ((ofEntries E).segment (entryStart E k) (entryStart E (k + 1)) s).length = E[k].2.length := by
@@ -603,6 +608,15 @@ theorem exists_getElem_tableEntries (o : Occurrence r) :
     ∃ i : Fin (tableEntries r T).length, (tableEntries r T)[i] = (r[o.1][o.2], T o) := by
   obtain ⟨i, hi, h⟩ := List.getElem_of_mem (mem_tableEntries.2 ⟨o, rfl⟩)
   exact ⟨⟨i, hi⟩, h⟩
+
+variable (T) in
+/-- The letter of an item of the generalised equation of a table is a letter of the word of an
+occurrence. -/
+theorem exists_itemLetter_mem (c : Fin (ofEntries (tableEntries r T)).numItems) :
+    ∃ o : Occurrence r, itemLetter (tableEntries r T) c ∈ T o := by
+  obtain ⟨e, he, hc⟩ := List.mem_flatMap.1 (itemLetter_mem_flatMap _ c)
+  obtain ⟨o, rfl⟩ := mem_tableEntries.1 he
+  exact ⟨o, hc⟩
 
 /-- In a partition table, two entries of the same letter have words which are empty together. -/
 theorem IsPartitionTable.eq_nil_iff_of_mem_tableEntries (hT : IsPartitionTable r T)
