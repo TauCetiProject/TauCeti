@@ -9,11 +9,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.PotentialGood
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateModule.GoodReduction
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateModule.Inertia
 
-import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.VariableChange
-import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
-import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
 import TauCeti.NumberTheory.LocalField.AlgebraicExtension.DiscreteValuationRing
-import TauCeti.NumberTheory.LocalField.FiniteExtension.IntermediateField
 import TauCeti.NumberTheory.LocalField.NatCastValuation
 import TauCeti.NumberTheory.LocalField.Unramified.Inertia.Extension
 
@@ -65,6 +61,9 @@ Shafarevich
 * `WeierstrassCurve.exists_tateModuleGaloisRepresentation_eq_one_of_finite_image`: if the image of
   `I_K` on `T_ℓ E` is finite, the elements of `I_K` fixing some finite extension of `K` act
   trivially on `T_ℓ E`.
+* `WeierstrassCurve.hasPotentialGoodReduction_of_finite_image_tateModuleGaloisRepresentation`: if
+  the image of `I_K` on `T_ℓ E` is finite, then `W` has potential good reduction (the converse
+  implication of Silverman AEC VII.7.3).
 * `WeierstrassCurve.hasPotentialGoodReduction_iff_finite_image_tateModuleGaloisRepresentation`:
   `W` has potential good reduction exactly when the image of `I_K` on `T_ℓ E` is finite.
 

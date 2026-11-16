@@ -29,9 +29,15 @@ preserve the Floer equation and the energy, `u ∘ φ'_q` solves the Floer equat
 for `H'_q` beyond `T₀`
 (`TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_comp_positiveEndChart`), and its
 energy over a half-cylinder `(a, ∞) × [0, 1]` with `a ≥ max T₀ 0` is at most the energy of `u`
-over `S` (`TauCeti.SymplecticForm.setLIntegral_floerEnergyDensity_comp_positiveEndChart_le`). So
-the results of `TauCeti.Geometry.Symplectic.Floer.HalfCylinder.Basic` about finite-energy Floer
-half-cylinders apply at each end of the pair of pants.
+over `S` (`TauCeti.SymplecticForm.setLIntegral_floerEnergyDensity_comp_positiveEndChart_le`).
+If the almost complex structure is cylindrical on the end, `J(φ_q(±s, t)) = J_q(t, u(φ_q(±s, t)))`,
+then in the positive end chart it is `J'_q(t, x) = J_q(±t, x)`
+(`TauCeti.Floer.eq_comp_positiveEndChart`,
+`TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_comp_positiveEndChart_of_cylindrical`),
+and `u ∘ φ'_q` is a finite-energy Floer half-cylinder for `H'_q` and `J'_q`
+(`TauCeti.SymplecticForm.floer_comp_positiveEndChart_of_cylindrical`). So the results of
+`TauCeti.Geometry.Symplectic.Floer.HalfCylinder.Basic` about finite-energy Floer half-cylinders
+apply at each end of the pair of pants.
 
 **Orbits at the ends.** Reversing the time of an orbit of `H'_∞` gives an orbit of `H_∞`, and
 reversing the time of a loop negates its action for the reversed Hamiltonian
@@ -215,6 +221,38 @@ theorem isComplexLinearMap_perturbedFDeriv_comp_positiveEndChart
     (differentiableAt_perturbation_positiveEndChart hKH hHd hζ Complex.I _)
     (isComplexLinearMap_fderiv_positiveEndChart q ζ) hfloer
 
+/-- **A cylindrical end of a Floer pair of pants is a Floer half-cylinder.** Let `K` be equal to
+`H_q(t) dt` beyond `T₀` on each end `q`, and let `u` be differentiable on `S` and solve the Floer
+equation `(du - X_K)^{0,1} = 0` there. Suppose that on the end `q` beyond `T₀` the almost complex
+structure is cylindrical, `J(φ_q(±s, t)) = J_q(t, u(φ_q(±s, t)))`. Then at every point `ζ` of the
+positive end chart `φ'_q` with `s > max T₀ 0`, the map `u ∘ φ'_q` solves the Floer equation
+`∂_s v + J'_q(t, v) (∂_t v - X_{H'_q(t)}(v)) = 0` of a half-cylinder, for the end Hamiltonian
+`H'_q` and the structure `J'_q(t, x) = J_q(±t, x)` of the positive end. -/
+theorem isComplexLinearMap_perturbedFDeriv_comp_positiveEndChart_of_cylindrical
+    (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
+      K w x = H q (q.endCoord w).im x • q.endAngularForm w)
+    (hH : ∀ q, Periodic (H q) 1) (hHd : ∀ q t, Differentiable ℝ (H q t)) {u : ℝ × ℝ → V}
+    (hu : DifferentiableOn ℝ u thricePuncturedSphereReal) {J : ℝ × ℝ → AlmostComplexStructure V}
+    (hfloer : ∀ z ∈ thricePuncturedSphereReal,
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
+        (ω.perturbedFDeriv (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z : ℝ × ℝ →ₗ[ℝ] V))
+    {q : Puncture} {Jq : ℝ → V → AlmostComplexStructure V}
+    (hJ : ∀ s t, T₀ ≤ s →
+      J (endChart q (q.endSign * s, t)) = Jq t (u (endChart q (q.endSign * s, t))))
+    {ζ : ℝ × ℝ} (hζ : max T₀ 0 < ζ.1) :
+    IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (Jq (q.endSign * ζ.2) ((u ∘ positiveEndChart q) ζ))
+      (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ positiveEndHamiltonian H q w.2)
+        (u ∘ positiveEndChart q) ζ : ℝ × ℝ →ₗ[ℝ] V) := by
+  have hmem : positiveEndChart q ζ ∈ thricePuncturedSphereReal :=
+    positiveEndChart_mem_thricePuncturedSphereReal ((le_max_right _ _).trans_lt hζ)
+  rw [← eq_comp_positiveEndChart hJ ((le_max_left _ _).trans hζ.le)]
+  exact isComplexLinearMap_perturbedFDeriv_comp_positiveEndChart hKH hH hHd
+    ((le_max_left _ _).trans hζ.le)
+    ((hu _ hmem).differentiableAt (isOpen_thricePuncturedSphereReal.mem_nhds hmem))
+    (hfloer _ hmem)
+
 /-- **The energy of an end of a Floer pair of pants.** Under the hypotheses of
 `TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_comp_positiveEndChart`, the energy of
 `u ∘ φ'_q` for the end Hamiltonian `H'_q` over the half-cylinder `(a, ∞) × [0, 1]`, for
@@ -262,6 +300,71 @@ theorem setLIntegral_floerEnergyDensity_comp_positiveEndChart_le
   rintro _ ⟨ζ, hζ, rfl⟩
   exact positiveEndChart_mem_thricePuncturedSphereReal (ha₀.trans_lt hζ.1)
 
+/-- **A cylindrical end of a finite-energy Floer pair of pants is a finite-energy Floer
+half-cylinder.** Let `K` be equal to `H_q(t) dt` beyond `T₀` on each end `q`, and let `u` be `Cⁿ`
+on `S` for some `n ≠ 0`, with image in `B`, solving the Floer equation `(du - X_K)^{0,1} = 0` on
+`S` with finite energy. Suppose that on the end `q` beyond `T₀` the almost complex structure is
+cylindrical, `J(φ_q(±s, t)) = J_q(t, u(φ_q(±s, t)))`, for a `1`-periodic family `J_q(t, x)` which
+is `Cᵐ` on an open set `W ⊇ ℝ × B` and tamed by `ω` on `ℝ × B`. Then:
+
+* the structure `J'_q(t, x) = J_q(±t, x)` of the positive end is `Cᵐ` on the open set
+  `{(t, x) | (±t, x) ∈ W} ⊇ ℝ × B`, `1`-periodic and tamed by `ω` on `ℝ × B`;
+* on the half-cylinder `s > max T₀ 0` of the positive end chart, `u ∘ φ'_q` is `Cⁿ`, has
+  `1`-periodic loops with image in `B`, solves the Floer equation for the end Hamiltonian `H'_q`
+  and `J'_q`, and has finite energy.
+
+These are the hypotheses on `J'_q` and `u ∘ φ'_q` of the results about finite-energy Floer
+half-cylinders, such as `TauCeti.SymplecticForm.exists_forall_norm_fderiv_le_of_floer`. -/
+theorem floer_comp_positiveEndChart_of_cylindrical
+    (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
+      K w x = H q (q.endCoord w).im x • q.endAngularForm w)
+    (hH : ∀ q, Periodic (H q) 1) (hHd : ∀ q t, Differentiable ℝ (H q t)) {u : ℝ × ℝ → V}
+    {n : WithTop ℕ∞} (hu : ContDiffOn ℝ n u thricePuncturedSphereReal) (hn : n ≠ 0) {B : Set V}
+    (huB : ∀ z ∈ thricePuncturedSphereReal, u z ∈ B) {J : ℝ × ℝ → AlmostComplexStructure V}
+    (hfloer : ∀ z ∈ thricePuncturedSphereReal,
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
+        (ω.perturbedFDeriv (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z : ℝ × ℝ →ₗ[ℝ] V))
+    (hE : ∫⁻ z in thricePuncturedSphereReal, ENNReal.ofReal (ω.floerEnergyDensity
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z) ≠ ⊤)
+    {q : Puncture} {W : Set (ℝ × V)} (hW : IsOpen W) {Jq : ℝ → V → AlmostComplexStructure V}
+    {m : WithTop ℕ∞}
+    (hJq : ContDiffOn ℝ m (fun p : ℝ × V ↦ (Jq p.1 p.2).toLinearMap.toContinuousLinearMap) W)
+    (hJqper : Periodic Jq 1) (hBW : univ ×ˢ B ⊆ W) (hJqt : ∀ t, ∀ x ∈ B, ω.Tames (Jq t x))
+    (hJ : ∀ s t, T₀ ≤ s →
+      J (endChart q (q.endSign * s, t)) = Jq t (u (endChart q (q.endSign * s, t)))) :
+    IsOpen ((fun p : ℝ × V ↦ (q.endSign * p.1, p.2)) ⁻¹' W) ∧
+      ContDiffOn ℝ m
+        (fun p : ℝ × V ↦ (Jq (q.endSign * p.1) p.2).toLinearMap.toContinuousLinearMap)
+        ((fun p : ℝ × V ↦ (q.endSign * p.1, p.2)) ⁻¹' W) ∧
+      Periodic (fun t ↦ Jq (q.endSign * t)) 1 ∧
+      univ ×ˢ B ⊆ (fun p : ℝ × V ↦ (q.endSign * p.1, p.2)) ⁻¹' W ∧
+      (∀ t, ∀ x ∈ B, ω.Tames (Jq (q.endSign * t) x)) ∧
+      ContDiffOn ℝ n (u ∘ positiveEndChart q) (Ioi (max T₀ 0) ×ˢ univ) ∧
+      (∀ s, max T₀ 0 < s → Periodic (fun t ↦ (u ∘ positiveEndChart q) (s, t)) 1) ∧
+      (∀ s, max T₀ 0 < s → ∀ t, (u ∘ positiveEndChart q) (s, t) ∈ B) ∧
+      (∀ z ∈ Ioi (max T₀ 0) ×ˢ Icc 0 1, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+        (Jq (q.endSign * z.2) ((u ∘ positiveEndChart q) z))
+        (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ positiveEndHamiltonian H q w.2)
+          (u ∘ positiveEndChart q) z : ℝ × ℝ →ₗ[ℝ] V)) ∧
+      ∫⁻ z in Ioi (max T₀ 0) ×ˢ Icc 0 1, ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0)
+        (fun w ↦ positiveEndHamiltonian H q w.2) (u ∘ positiveEndChart q) z) ≠ ⊤ := by
+  have hmem (z : ℝ × ℝ) (hz : max T₀ 0 < z.1) : positiveEndChart q z ∈ thricePuncturedSphereReal :=
+    positiveEndChart_mem_thricePuncturedSphereReal ((le_max_right _ _).trans_lt hz)
+  -- In the positive end chart the structure is `J'(t, x) = J_q(±t, x)`.
+  set g : ℝ × V → ℝ × V := fun p ↦ (q.endSign * p.1, p.2)
+  have hg : ContDiff ℝ m g := (contDiff_const.mul contDiff_fst).prodMk contDiff_snd
+  exact ⟨hW.preimage hg.continuous, hJq.comp hg.contDiffOn (mapsTo_preimage g W),
+    periodic_comp_endSign_mul hJqper, fun p hp ↦ hBW ⟨mem_univ _, hp.2⟩, fun t ↦ hJqt _,
+    hu.comp (contDiff_positiveEndChart q n).contDiffOn fun z hz ↦ hmem z hz.1,
+    fun s _ t ↦ by simp only [comp_apply, positiveEndChart_add_one],
+    fun s hs t ↦ huB _ (hmem (s, t) hs),
+    fun z hz ↦ isComplexLinearMap_perturbedFDeriv_comp_positiveEndChart_of_cylindrical hKH hH hHd
+      (hu.differentiableOn hn) hfloer hJ hz.1,
+    ne_top_of_le_ne_top hE (setLIntegral_floerEnergyDensity_comp_positiveEndChart_le hKH hH hHd
+      (hu.differentiableOn hn) q (le_max_right _ _) (le_max_left _ _))⟩
+
 /-! ### Asymptotic orbits at the ends -/
 
 variable {u : ℝ × ℝ → V} {J : ℝ × ℝ → AlmostComplexStructure V} {B : Set V} {c M : ℝ}
@@ -277,14 +380,6 @@ private theorem apply_pos_of_tame (hc : 0 < c)
 private theorem mapsTo_positiveEndChart (q : Puncture) :
     MapsTo (positiveEndChart q) (Ioi (max T₀ 0) ×ˢ univ) thricePuncturedSphereReal :=
   fun _ hz ↦ positiveEndChart_mem_thricePuncturedSphereReal ((le_max_right _ _).trans_lt hz.1)
-
-omit [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
-/-- Reading the end loop of `u ∘ φ'_q` with the time `±t` of the end gives the end loop of `u`. -/
-private theorem comp_endChart_eq_comp_positiveEndChart (q : Puncture) (s : ℝ) :
-    (fun t ↦ u (endChart q (q.endSign * s, t))) =
-      (fun t ↦ (u ∘ positiveEndChart q) (s, t)) ∘ fun t ↦ q.endSign * t := by
-  funext t
-  simp only [comp_apply, endChart_eq_positiveEndChart]
 
 /-- The hypotheses on `u` over `S` give the hypotheses of a finite-energy Floer half-cylinder for
 `u ∘ φ'_q` over `(max T₀ 0, ∞) × [0, 1]`. -/
@@ -363,7 +458,7 @@ theorem exists_periodic_hasDerivAt_tendstoUniformly_endChart_of_floer
     hE'
   refine ⟨fun t ↦ x (q.endSign * t), periodic_comp_endSign_mul hxper,
     hasDerivAt_comp_endSign_mul hx, φ, hφ, ?_⟩
-  rw [funext fun n ↦ comp_endChart_eq_comp_positiveEndChart (u := u) q (φ n)]
+  rw [funext fun n ↦ comp_endChart_eq_comp_positiveEndChart u q (φ n)]
   exact hux.comp _
 
 /-- **The actions at the ends of a finite-energy Floer pair of pants.** Under the hypotheses of
@@ -404,7 +499,7 @@ theorem exists_periodic_hasDerivAt_tendsto_hamiltonianAction_endChart_of_floer
       (fun s _ ↦ hper s) hB huB' hc hJc' hJM' hfloer' hE'
   refine ⟨fun t ↦ x (q.endSign * t), periodic_comp_endSign_mul hxper,
     hasDerivAt_comp_endSign_mul hx, ⟨φ, hφ, ?_⟩, ?_⟩
-  · rw [funext fun n ↦ comp_endChart_eq_comp_positiveEndChart (u := u) q (φ n)]
+  · rw [funext fun n ↦ comp_endChart_eq_comp_positiveEndChart u q (φ n)]
     exact hux.comp _
   -- Reading the loops with the time `±t` of the end multiplies their actions by `±1`.
   have hAq (y : ℝ → V) (hy : Periodic y 1) :
@@ -416,7 +511,7 @@ theorem exists_periodic_hasDerivAt_tendsto_hamiltonianAction_endChart_of_floer
       fun s ↦ q.endSign * ω.hamiltonianAction (positiveEndHamiltonian H q)
         (fun t ↦ (u ∘ positiveEndChart q) (s, t)) :=
     funext fun s ↦ by
-      rw [comp_endChart_eq_comp_positiveEndChart q s]
+      rw [comp_endChart_eq_comp_positiveEndChart u q s]
       exact hAq _ (hper s)
   rw [hAs, hAq _ hxper]
   exact hA.const_mul _

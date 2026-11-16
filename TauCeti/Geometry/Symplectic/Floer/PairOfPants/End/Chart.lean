@@ -590,6 +590,42 @@ theorem endChart_eq_positiveEndChart (q : Puncture) (s t : ℝ) :
     endChart q (q.endSign * s, t) = positiveEndChart q (s, q.endSign * t) := by
   rw [positiveEndChart_mk, ← mul_assoc, endSign_mul_self, one_mul]
 
+/-- The end loop `t ↦ u(φ_q(±s, t))` is the loop of `u ∘ φ'_q` at the height `s`, read with the
+time `±t` of the end. -/
+theorem comp_endChart_eq_comp_positiveEndChart {α : Type*} (u : ℝ × ℝ → α) (q : Puncture)
+    (s : ℝ) :
+    (fun t ↦ u (endChart q (q.endSign * s, t))) =
+      (fun t ↦ (u ∘ positiveEndChart q) (s, t)) ∘ fun t ↦ q.endSign * t := by
+  funext t
+  simp only [comp_apply, endChart_eq_positiveEndChart]
+
+/-- A family which is `J_q(t, u)` along the end `q` beyond `T₀` is `J_q(±t, u)` in the positive end
+chart. -/
+theorem eq_comp_positiveEndChart {α β : Type*} {u : ℝ × ℝ → α} {J : ℝ × ℝ → β}
+    {Jq : ℝ → α → β} {q : Puncture} {T₀ : ℝ}
+    (hJ : ∀ s t, T₀ ≤ s →
+      J (endChart q (q.endSign * s, t)) = Jq t (u (endChart q (q.endSign * s, t))))
+    {z : ℝ × ℝ} (hz : T₀ ≤ z.1) :
+    J (positiveEndChart q z) = Jq (q.endSign * z.2) ((u ∘ positiveEndChart q) z) := by
+  obtain ⟨s, t⟩ := z
+  simp only [comp_apply, positiveEndChart_mk]
+  exact hJ s _ hz
+
+/-- If the end loops `t ↦ u(φ_q(±s, t))` converge uniformly to `y`, then the loops of `u ∘ φ'_q`
+converge uniformly to `t ↦ y(±t)`. -/
+theorem tendstoUniformly_comp_positiveEndChart {α : Type*} [UniformSpace α] {u : ℝ × ℝ → α}
+    {q : Puncture} {y : ℝ → α} {l : Filter ℝ}
+    (h : TendstoUniformly (fun s t ↦ u (endChart q (q.endSign * s, t))) y l) :
+    TendstoUniformly (fun s t ↦ (u ∘ positiveEndChart q) (s, t)) (fun t ↦ y (q.endSign * t))
+      l := by
+  have hloop (s : ℝ) : (fun t ↦ (u ∘ positiveEndChart q) (s, t)) =
+      (fun t ↦ u (endChart q (q.endSign * s, t))) ∘ fun t ↦ q.endSign * t := by
+    rw [comp_endChart_eq_comp_positiveEndChart]
+    funext t
+    simp only [comp_apply, endSign_mul_endSign_mul]
+  rw [funext hloop]
+  exact h.comp _
+
 /-- The positive end chart is `1`-periodic in the angular coordinate. -/
 theorem positiveEndChart_add_one (q : Puncture) (s t : ℝ) :
     positiveEndChart q (s, t + 1) = positiveEndChart q (s, t) := by
@@ -610,6 +646,18 @@ theorem hasFDerivAt_positiveEndChart (q : Puncture) (z : ℝ × ℝ) :
 theorem fderiv_positiveEndChart_apply (q : Puncture) (z v : ℝ × ℝ) :
     fderiv ℝ (positiveEndChart q) z v = q.endSign • fderiv ℝ (endChart q) (q.endSign • z) v := by
   simp [(hasFDerivAt_positiveEndChart q z).fderiv]
+
+/-- The end chart is the positive end chart after the reflection `z ↦ ±z`, so a map read in the end
+chart has, at `z`, the derivative of the map read in the positive end chart at `±z`, composed with
+the reflection. -/
+theorem fderiv_comp_endChart {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] (q : Puncture)
+    (u : ℝ × ℝ → E) (z : ℝ × ℝ) :
+    fderiv ℝ (u ∘ endChart q) z =
+      q.endSign • fderiv ℝ (u ∘ positiveEndChart q) (q.endSign • z) := by
+  have h : u ∘ endChart q = fun z ↦ (u ∘ positiveEndChart q) (q.endSign • z) := by
+    funext z
+    simp [positiveEndChart_apply, smul_smul]
+  rw [h, fderiv_comp_smul]
 
 theorem contDiff_positiveEndChart (q : Puncture) (n : WithTop ℕ∞) :
     ContDiff ℝ n (positiveEndChart q) :=
