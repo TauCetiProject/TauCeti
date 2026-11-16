@@ -67,9 +67,9 @@ only asked to be differentiable within the closed strip, as a solution smooth up
 is.
 
 The statements are in local coordinates, with `ρ`, `α` and `J` on the model space `V`. A
-Hamiltonian term which does not vanish on `{ρ > R}` is not treated here. The statements for a
-compact set and for a strip with boundary lines in `{ρ ≤ R}`, for curves in an almost complex
-manifold, are in `TauCeti/Geometry/Symplectic/Manifold/MaximumPrinciple.lean`.
+Hamiltonian term which does not vanish on `{ρ > R}` is not treated here. The same statements for
+curves in an almost complex manifold are in
+`TauCeti/Geometry/Symplectic/Manifold/MaximumPrinciple.lean`.
 
 The results live in the organisational namespace `TauCeti.JHolomorphic`: their names describe
 conclusions about `ρ ∘ u`, which only hold for curves solving the Cauchy--Riemann equation.
