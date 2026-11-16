@@ -9,7 +9,7 @@ public import TauCeti.Analysis.PDE.Vortex.LogVariation
 public import TauCeti.Analysis.PDE.Vortex.PrincipalPart
 public import TauCeti.Analysis.PDE.Vortex.TranslationKernel
 import TauCeti.Analysis.Meromorphic.PrincipalPart
-import TauCeti.Analysis.PDE.Vortex.KernelExistence
+import TauCeti.Analysis.PDE.Vortex.Kernel.Existence
 import TauCeti.Analysis.Complex.Wirtinger.DolbeaultLemma
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 

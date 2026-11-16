@@ -72,7 +72,7 @@ identification of the kernel of `L_x` with the tangent space of the divisor spac
 through the principal parts of `δα / α`. The principal-part map itself, which needs the local
 structure of `δα / α` at a zero of `α`, is in `TauCeti.Analysis.PDE.Vortex.PrincipalPart`.
 Kernel elements with prescribed principal parts are constructed in
-`TauCeti.Analysis.PDE.Vortex.KernelExistence` and `TauCeti.Analysis.PDE.Vortex.ZeroMode`.
+`TauCeti.Analysis.PDE.Vortex.Kernel.Existence` and `TauCeti.Analysis.PDE.Vortex.ZeroMode`.
 
 ## References
 
