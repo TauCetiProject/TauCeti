@@ -57,6 +57,9 @@ completeness (`TauCeti.eq_zero_of_forall_inner_toLp_harmonicSphereRestriction_eq
 
 ## Main results
 
+* `MvPolynomial.sphereEval_addMonoidAlgebra_map_apply`,
+  `MvPolynomial.harmonicSphereRestriction_mapHarmonicSubmodule_apply`: coefficientwise `ℝ`-linear
+  maps intertwine with `sphereEval` and `harmonicSphereRestriction`.
 * `MvPolynomial.sphereEval_normSq`: `sphereEval (normSq σ R) = 1`.
 * `MvPolynomial.IsHomogeneous.norm_pow_smul_sphereExtend_sphereEval`: `‖x‖ ^ d` times the
   `0`-homogeneous radial extension of `sphereEval p` recovers `p` on `ℝ^σ \ {0}`.
@@ -120,9 +123,34 @@ theorem sphereEval_apply (p : MvPolynomial σ R)
   rw [sphereEval, ← ContinuousMap.evalAlgHom_apply R R x, comp_aeval_apply]
   simp only [ContinuousMap.evalAlgHom_apply, sphereCoord_apply, aeval_eq_eval]
 
+/-- Applying an `ℝ`-linear map coefficientwise to a polynomial intertwines with `sphereEval`,
+since the coordinates of points on the unit sphere are real. -/
+theorem sphereEval_addMonoidAlgebra_map_apply {S : Type*} [CommSemiring S] [Algebra ℝ S]
+    [TopologicalSpace S] [IsTopologicalSemiring S] [ContinuousSMul ℝ S]
+    (φ : R →ₗ[ℝ] S) (p : MvPolynomial σ R)
+    (x : Metric.sphere (0 : EuclideanSpace ℝ σ) 1) :
+    sphereEval (AddMonoidAlgebra.map φ.toAddMonoidHom p : MvPolynomial σ S) x =
+      φ (sphereEval p x) := by
+  induction p using MvPolynomial.induction_on' with
+  | monomial s r =>
+    have hmap : (AddMonoidAlgebra.map φ.toAddMonoidHom (monomial s r) : MvPolynomial σ S) =
+        monomial s (φ r) := by
+      simp only [monomial, AddMonoidAlgebra.lsingle_apply, AddMonoidAlgebra.map_single,
+        LinearMap.toAddMonoidHom_coe]
+    rw [hmap]
+    simp only [sphereEval_apply, eval_monomial]
+    have hprod : ∏ i ∈ s.support, algebraMap ℝ R (x.val i) ^ s i =
+        algebraMap ℝ R (∏ i ∈ s.support, x.val i ^ s i) := by simp
+    have hprodS : ∏ i ∈ s.support, algebraMap ℝ S (x.val i) ^ s i =
+        algebraMap ℝ S (∏ i ∈ s.support, x.val i ^ s i) := by simp
+    rw [Finsupp.prod, Finsupp.prod, hprod, hprodS, mul_comm r, ← Algebra.smul_def,
+      map_smul, Algebra.smul_def, mul_comm]
+  | add p q hp hq =>
+    simp [AddMonoidAlgebra.map_add, hp, hq]
+
 /-- Restricting a real polynomial after extending scalars to `R` agrees with applying
 `algebraMap ℝ R` to its real restriction. -/
-theorem sphereEval_map_algebraMap (p : MvPolynomial σ ℝ)
+theorem sphereEval_map_algebraMap_apply (p : MvPolynomial σ ℝ)
     (x : Metric.sphere (0 : EuclideanSpace ℝ σ) 1) :
     sphereEval (map (algebraMap ℝ R) p) x = algebraMap ℝ R (sphereEval p x) := by
   simp only [sphereEval_apply, Algebra.algebraMap_self, RingHom.id_apply, map_eval]
@@ -133,7 +161,7 @@ sphere. -/
 @[simp]
 theorem sphereEval_normSq : sphereEval (normSq σ R) = 1 := by
   ext x
-  rw [← map_normSq (σ := σ) (algebraMap ℝ R), sphereEval_map_algebraMap, sphereEval_apply]
+  rw [← map_normSq (σ := σ) (algebraMap ℝ R), sphereEval_map_algebraMap_apply, sphereEval_apply]
   simp only [Algebra.algebraMap_self, RingHom.id_apply, eval_normSq,
     ← EuclideanSpace.real_norm_sq_eq, mem_sphere_zero_iff_norm.1 x.property, one_pow, map_one,
     ContinuousMap.one_apply]
@@ -150,14 +178,6 @@ theorem IsHomogeneous.eval_algebraMap_eq_norm_pow_smul_sphereEval {p : MvPolynom
   rw [sphereEval_apply, Algebra.smul_def, map_pow]
   refine (congrArg (eval · p) (_root_.funext fun i ↦ ?_)).trans hscale
   simp [← map_mul, ← mul_assoc, mul_inv_cancel₀ hnorm]
-
-/-- Radial homogeneity reconstructs a real homogeneous polynomial from its unit-sphere values at
-every nonzero vector. -/
-theorem IsHomogeneous.eval_eq_norm_pow_mul_sphereEval {p : MvPolynomial σ ℝ} {d : ℕ}
-    (hp : p.IsHomogeneous d) {x : EuclideanSpace ℝ σ} (hx : x ≠ 0) :
-    eval (fun i ↦ x i) p = ‖x‖ ^ d * sphereEval p
-      ⟨‖x‖⁻¹ • x, mem_sphere_zero_iff_norm.2 (norm_smul_inv_norm hx)⟩ := by
-  simpa using hp.eval_algebraMap_eq_norm_pow_smul_sphereEval hx
 
 /-- Away from the origin, scaling the `0`-homogeneous radial extension `TauCeti.sphereExtend` of
 a degree-`d` homogeneous polynomial's unit-sphere restriction by `‖x‖ ^ d` recovers its evaluation
@@ -181,6 +201,17 @@ def harmonicSphereRestriction (σ : Type*) [Fintype σ] {R : Type*} [CommSemirin
 theorem harmonicSphereRestriction_coe (d : ℕ) (p : harmonicSubmodule σ R d) :
     harmonicSphereRestriction σ d p = sphereEval (p : MvPolynomial σ R) := (rfl)
 
+/-- Applying an `ℝ`-linear map coefficientwise to a harmonic homogeneous polynomial intertwines
+with `harmonicSphereRestriction`. -/
+theorem harmonicSphereRestriction_mapHarmonicSubmodule_apply {S : Type*} [CommSemiring S]
+    [Algebra ℝ S] [TopologicalSpace S] [IsTopologicalSemiring S] [ContinuousSMul ℝ S]
+    (φ : R →ₗ[ℝ] S) {d : ℕ} (p : harmonicSubmodule σ R d)
+    (x : Metric.sphere (0 : EuclideanSpace ℝ σ) 1) :
+    harmonicSphereRestriction σ d (mapHarmonicSubmodule φ.toAddMonoidHom d p) x =
+      φ (harmonicSphereRestriction σ d p x) := by
+  rw [harmonicSphereRestriction_coe, harmonicSphereRestriction_coe,
+    coe_mapHarmonicSubmodule_apply, sphereEval_addMonoidAlgebra_map_apply]
+
 /-- **Spherical Fischer decomposition**: the space of polynomial functions on the unit sphere equals
 the span of spherical harmonics of all degrees. -/
 theorem range_sphereEval_eq_iSup_range_harmonicSphereRestriction :
@@ -192,6 +223,8 @@ theorem range_sphereEval_eq_iSup_range_harmonicSphereRestriction :
   let f : MvPolynomial σ ℝ →ₗ[ℝ] C(Metric.sphere (0 : EuclideanSpace ℝ σ) 1, R) :=
     (sphereEval (σ := σ) (R := R)).toLinearMap.restrictScalars ℝ ∘ₗ
       (mapAlgHom (Algebra.ofId ℝ R)).toLinearMap
+  have hf_apply (r : MvPolynomial σ ℝ) : f r = sphereEval (map (algebraMap ℝ R) r) := by
+    simp [f]
   have hhom_real (d : ℕ) {q : MvPolynomial σ ℝ} (hq : q.IsHomogeneous d) :
       sphereEval (map (algebraMap ℝ R) q) ∈
         ⨆ e, LinearMap.range (harmonicSphereRestriction (R := R) σ e) := by
@@ -209,7 +242,8 @@ theorem range_sphereEval_eq_iSup_range_harmonicSphereRestriction :
         le_iSup (fun e ↦ LinearMap.range (harmonicSphereRestriction (R := R) σ e)) (d - 2 * k)
           ⟨⟨map (algebraMap ℝ R) h, map_mem_harmonicSubmodule (algebraMap ℝ R) hh⟩, ?_⟩
       simp [f, harmonicSphereRestriction_coe, map_normSq]
-    exact hle ⟨q, hq_mem, rfl⟩
+    rw [← hf_apply]
+    exact (Submodule.restrictScalars_mem ℝ _ _).1 (hle (Submodule.mem_map_of_mem hq_mem))
   intro y hy
   obtain ⟨p, rfl⟩ := (AlgHom.mem_range (φ := sphereEval (σ := σ) (R := R))).1 hy
   rw [p.as_sum, map_sum]
@@ -287,7 +321,8 @@ private theorem eq_zero_of_sphereEval_eq_zero_real {p : MvPolynomial σ ℝ} {d 
     have hcoord : (fun i ↦ (WithLp.toLp 2 x : EuclideanSpace ℝ σ) i) = x := by
       ext i
       exact PiLp.toLp_apply 2 (fun _ : σ ↦ ℝ) x i
-    have hrad := hp.eval_eq_norm_pow_mul_sphereEval hnonzero
+    have hrad := hp.eval_algebraMap_eq_norm_pow_smul_sphereEval hnonzero
+    simp only [Algebra.algebraMap_self, RingHom.id_apply, smul_eq_mul] at hrad
     rw [hcoord] at hrad
     rw [hrad, h]
     simp
@@ -300,27 +335,15 @@ sphere is zero, including in degree zero. The nonempty variable type ensures tha
 is nonempty. -/
 theorem IsHomogeneous.eq_zero_of_sphereEval_eq_zero {p : MvPolynomial σ R} {d : ℕ}
     (hp : p.IsHomogeneous d) (h : sphereEval p = 0) : p = 0 := by
-  classical
   ext m
   rw [AddMonoidAlgebra.coeff_zero, Finsupp.zero_apply, ← Module.forall_dual_apply_eq_zero_iff ℝ]
   intro φ
-  let q : MvPolynomial σ ℝ := .ofCoeff (Finsupp.mapRange.linearMap φ p.coeff)
-  have hq_coeff (n : σ →₀ ℕ) : q.coeff n = φ (p.coeff n) := by
-    simp only [q, Finsupp.mapRange.linearMap_apply, Finsupp.mapRange_apply]
-  have hq_hom : q.IsHomogeneous d := fun n hn ↦ hp fun h0 ↦ hn (by simp [hq_coeff, h0])
-  have hq_eval : sphereEval q = 0 := by
+  have hq_eval :
+      sphereEval (AddMonoidAlgebra.map φ.toAddMonoidHom p : MvPolynomial σ ℝ) = 0 := by
     ext x
-    have hx : φ (sphereEval p x) = 0 := by simp [h]
-    rw [ContinuousMap.zero_apply, ← hx, sphereEval_apply, sphereEval_apply, ← aeval_eq_eval,
-      ← aeval_eq_eval, hq_hom.aeval_eq_sum_finsuppAntidiag, hp.aeval_eq_sum_finsuppAntidiag,
-      map_sum]
-    refine Finset.sum_congr rfl fun s _ ↦ ?_
-    have hprod : ∏ i, algebraMap ℝ R (x.val i) ^ s i = algebraMap ℝ R (∏ i, x.val i ^ s i) := by
-      simp
-    simp only [Algebra.algebraMap_self, RingHom.id_apply, hq_coeff, hprod]
-    rw [mul_comm (p.coeff s), ← Algebra.smul_def, map_smul, smul_eq_mul, mul_comm]
-  simpa [hq_coeff] using congrArg (fun f : MvPolynomial σ ℝ ↦ f.coeff m)
-    (eq_zero_of_sphereEval_eq_zero_real hq_hom hq_eval)
+    simp only [sphereEval_addMonoidAlgebra_map_apply, h, ContinuousMap.zero_apply, map_zero]
+  have hq0 := eq_zero_of_sphereEval_eq_zero_real (hp.addMonoidAlgebra_map φ.toAddMonoidHom) hq_eval
+  simpa using congrArg (fun f : MvPolynomial σ ℝ ↦ f.coeff m) hq0
 
 /-- Homogeneous polynomials of the same degree over a commutative topological `ℝ`-algebra are
 determined by their restrictions to the unit sphere. No harmonicity assumption is needed. -/
@@ -461,19 +484,9 @@ theorem topologicalClosure_iSup_map_toLp_harmonicSphereRestriction {σ 𝕜 : Ty
     Submodule.topologicalClosure
       (⨆ d, (LinearMap.range (MvPolynomial.harmonicSphereRestriction (R := 𝕜) σ d)).map
         (ContinuousMap.toLp (E := 𝕜) p μ 𝕜).toLinearMap) = ⊤ := by
-  let T := ContinuousMap.toLp (E := 𝕜) p μ 𝕜
-  let S₀ : Submodule 𝕜 C(Metric.sphere (0 : EuclideanSpace ℝ σ) 1, 𝕜) :=
-    ⨆ d, LinearMap.range (MvPolynomial.harmonicSphereRestriction (R := 𝕜) σ d)
   rw [← Submodule.map_iSup]
-  have hS₀ : Dense (S₀ : Set C(Metric.sphere (0 : EuclideanSpace ℝ σ) 1, 𝕜)) := by
-    intro f
-    rw [← Submodule.topologicalClosure_coe,
-      MvPolynomial.topologicalClosure_iSup_range_harmonicSphereRestriction]
-    trivial
-  have hd : Dense ((S₀.map T.toLinearMap : Submodule 𝕜 (Lp 𝕜 p μ)) : Set (Lp 𝕜 p μ)) := by
-    rw [Submodule.map_coe]
-    exact (ContinuousMap.toLp_denseRange (p := p) 𝕜 μ 𝕜 hp).dense_image T.continuous hS₀
-  exact eq_top_iff.2 fun g _ ↦ hd g
+  exact (ContinuousMap.toLp_denseRange (p := p) 𝕜 μ 𝕜 hp).topologicalClosure_map_submodule
+    MvPolynomial.topologicalClosure_iSup_range_harmonicSphereRestriction
 
 /-- An element of `L²(S, μ; 𝕜)` (for any finite Borel measure `μ` on the unit sphere `S`)
 orthogonal to all spherical harmonics (of every degree `d : ℕ`) is zero. -/

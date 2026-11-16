@@ -11,7 +11,6 @@ public import Mathlib.MeasureTheory.Function.LpSpace.ContinuousFunctions
 public import TauCeti.Analysis.MvPolynomial.Sphere
 public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Laplacian
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
-import Mathlib.Analysis.Analytic.Polynomial
 import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Analysis.MvPolynomial.Jacobian
@@ -93,7 +92,7 @@ theorem contMDiff_sphereEval {σ R : Type*} [Fintype σ] {m : ℕ}
       (fun x : EuclideanSpace ℝ σ ↦ eval (fun i ↦ algebraMap ℝ R (x i)) p) ∘ Subtype.val :=
     funext fun x ↦ sphereEval_apply p x
   rw [heq]
-  exact (contDiff_eval_algebraMap p).contMDiff.comp contMDiff_coe_sphere
+  exact (contDiff_eval_euclidean_algebraMap p).contMDiff.comp contMDiff_coe_sphere
 
 end MvPolynomial
 
@@ -123,17 +122,19 @@ theorem laplaceBeltrami_harmonicSphereRestriction (d : ℕ)
   obtain ⟨hp_hom, hp_lap⟩ := MvPolynomial.mem_harmonicSubmodule_iff.1 p.2
   let F : EuclideanSpace ℝ σ → ℝ := fun y ↦ MvPolynomial.eval y (p : MvPolynomial σ ℝ)
   have hF : ContDiffAt ℝ 2 F x := by
-    have h := (AnalyticOnNhd.eval_continuousLinearMap
-      (EuclideanSpace.equiv σ ℝ).toContinuousLinearMap p.1).contDiff (n := 2)
-    simpa only [F, ContinuousLinearEquiv.coe_coe, PiLp.coe_continuousLinearEquiv] using
-      h.contDiffAt (x := (x : EuclideanSpace ℝ σ))
+    simpa only [F, Algebra.algebraMap_self, RingHom.id_apply] using
+      (MvPolynomial.contDiff_eval_euclidean_algebraMap (R := ℝ) (k := 2) p.1).contDiffAt
+        (x := (x : EuclideanSpace ℝ σ))
   have hrestr : ⇑(MvPolynomial.harmonicSphereRestriction σ d p) = F ∘ Subtype.val := by
     funext y
     simp only [MvPolynomial.harmonicSphereRestriction_coe, MvPolynomial.sphereEval_apply,
       Algebra.algebraMap_self, RingHom.id_apply, Function.comp_apply, F]
-  have hsmul (t : ℝ) (_ : 0 < t) : F (t • (x : EuclideanSpace ℝ σ)) = t ^ (d : ℝ) * F x := by
-    rw [Real.rpow_natCast]
-    exact hp_hom.eval_smul t (x : EuclideanSpace ℝ σ)
+  have hsmul : (fun t : ℝ ↦ F (t • (x : EuclideanSpace ℝ σ))) =ᶠ[𝓝 (1 : ℝ)]
+      fun t ↦ t ^ (d : ℝ) * F x :=
+    Filter.Eventually.of_forall fun t ↦ by
+      dsimp only
+      rw [Real.rpow_natCast]
+      exact hp_hom.eval_smul t (x : EuclideanSpace ℝ σ)
   have hΔ : Δ F x = 0 := by
     rw [congrFun (MvPolynomial.laplacian_eval_euclidean p.1) x, hp_lap, map_zero]
   rw [hrestr, laplaceBeltrami_comp_coe_sphere_of_smul hF hsmul, hΔ]
@@ -174,50 +175,6 @@ theorem integral_harmonicSphereRestriction_mul_eq_zero (hm : 1 ≤ m) {d₁ d₂
     (fun x ↦ by rw [laplaceBeltrami_harmonicSphereRestriction]; ring)
     ((strictMono_natCast_mul_add_sub_one hm).injective.ne hd.symm) p₁
 
-/-- Apply an `ℝ`-linear functional coefficientwise to a harmonic homogeneous polynomial. -/
-private def mapLinearHarmonic {𝕜 : Type*} [RCLike 𝕜] {d : ℕ} (φ : 𝕜 →ₗ[ℝ] ℝ)
-    (p : MvPolynomial.harmonicSubmodule σ 𝕜 d) : MvPolynomial.harmonicSubmodule σ ℝ d := by
-  classical
-  let q : MvPolynomial σ ℝ := .ofCoeff (Finsupp.mapRange.linearMap φ p.1.coeff)
-  have hq_coeff (n : σ →₀ ℕ) : q.coeff n = φ (p.1.coeff n) := by
-    simp only [q, Finsupp.mapRange.linearMap_apply, Finsupp.mapRange_apply]
-  have hhom : q.IsHomogeneous d :=
-    fun n hn ↦ (MvPolynomial.mem_harmonicSubmodule_iff.1 p.2).1 fun h0 ↦ hn (by simp [hq_coeff, h0])
-  have hlap : MvPolynomial.laplacian q = 0 := by
-    ext n
-    rw [MvPolynomial.laplacian_apply, MvPolynomial.coeff_sum, AddMonoidAlgebra.coeff_zero,
-      Finsupp.zero_apply]
-    have hcoeff (i : σ) : (MvPolynomial.pderiv i (MvPolynomial.pderiv i q)).coeff n =
-        φ ((MvPolynomial.pderiv i (MvPolynomial.pderiv i p.1)).coeff n) := by
-      simp only [MvPolynomial.coeff_pderiv, hq_coeff, ← Nat.cast_add_one]
-      rw [mul_comm _ ((_ : ℕ) : ℝ), mul_comm _ ((_ : ℕ) : ℝ), ← nsmul_eq_mul, ← nsmul_eq_mul,
-        mul_comm _ ((_ : ℕ) : 𝕜), mul_comm _ ((_ : ℕ) : 𝕜), ← nsmul_eq_mul, ← nsmul_eq_mul,
-        map_nsmul, map_nsmul]
-    rw [Finset.sum_congr rfl fun i _ ↦ hcoeff i, ← map_sum, ← MvPolynomial.coeff_sum,
-      ← MvPolynomial.laplacian_apply, (MvPolynomial.mem_harmonicSubmodule_iff.1 p.2).2,
-      AddMonoidAlgebra.coeff_zero, Finsupp.zero_apply, map_zero]
-  exact ⟨q, MvPolynomial.mem_harmonicSubmodule_iff.2 ⟨hhom, hlap⟩⟩
-
-private theorem harmonicSphereRestriction_mapLinearHarmonic {𝕜 : Type*} [RCLike 𝕜] {d : ℕ}
-    (φ : 𝕜 →ₗ[ℝ] ℝ) (p : MvPolynomial.harmonicSubmodule σ 𝕜 d)
-    (x : sphere (0 : EuclideanSpace ℝ σ) 1) :
-    MvPolynomial.harmonicSphereRestriction σ d (mapLinearHarmonic φ p) x =
-      φ (MvPolynomial.harmonicSphereRestriction σ d p x) := by
-  classical
-  have hq_hom := (MvPolynomial.mem_harmonicSubmodule_iff.1 (mapLinearHarmonic φ p).2).1
-  have hp_hom := (MvPolynomial.mem_harmonicSubmodule_iff.1 p.2).1
-  have hq_coeff (n : σ →₀ ℕ) : (mapLinearHarmonic φ p).1.coeff n = φ (p.1.coeff n) := by
-    simp only [mapLinearHarmonic, Finsupp.mapRange.linearMap_apply, Finsupp.mapRange_apply]
-  rw [MvPolynomial.harmonicSphereRestriction_coe, MvPolynomial.harmonicSphereRestriction_coe,
-    MvPolynomial.sphereEval_apply, MvPolynomial.sphereEval_apply, ← MvPolynomial.aeval_eq_eval,
-    ← MvPolynomial.aeval_eq_eval, hq_hom.aeval_eq_sum_finsuppAntidiag,
-    hp_hom.aeval_eq_sum_finsuppAntidiag, map_sum]
-  refine Finset.sum_congr rfl fun s _ ↦ ?_
-  have hprod : ∏ i, algebraMap ℝ 𝕜 (x.val i) ^ s i = algebraMap ℝ 𝕜 (∏ i, x.val i ^ s i) := by
-    simp
-  simp only [Algebra.algebraMap_self, RingHom.id_apply, hq_coeff, hprod]
-  rw [mul_comm (p.1.coeff s), ← Algebra.smul_def, map_smul, smul_eq_mul, mul_comm]
-
 /-- In `L²(Sᵐ, 𝕜)` with the round Riemannian volume (`m ≥ 1`, `[RCLike 𝕜]`), spherical harmonics of
 distinct degrees are orthogonal. -/
 theorem inner_toLp_harmonicSphereRestriction_eq_zero {𝕜 : Type*} [RCLike 𝕜] (hm : 1 ≤ m)
@@ -233,10 +190,10 @@ theorem inner_toLp_harmonicSphereRestriction_eq_zero {𝕜 : Type*} [RCLike 𝕜
   let f₂ := MvPolynomial.harmonicSphereRestriction σ d₂ p₂
   let h₁ := MvPolynomial.harmonicSphereRestriction (R := ℝ) σ d₁
   let h₂ := MvPolynomial.harmonicSphereRestriction (R := ℝ) σ d₂
-  let r₁ := mapLinearHarmonic (RCLike.reLm : 𝕜 →ₗ[ℝ] ℝ) p₁
-  let i₁ := mapLinearHarmonic (RCLike.imLm : 𝕜 →ₗ[ℝ] ℝ) p₁
-  let r₂ := mapLinearHarmonic (RCLike.reLm : 𝕜 →ₗ[ℝ] ℝ) p₂
-  let i₂ := mapLinearHarmonic (RCLike.imLm : 𝕜 →ₗ[ℝ] ℝ) p₂
+  let r₁ := MvPolynomial.mapHarmonicSubmodule (RCLike.reLm (K := 𝕜)).toAddMonoidHom d₁ p₁
+  let i₁ := MvPolynomial.mapHarmonicSubmodule (RCLike.imLm (K := 𝕜)).toAddMonoidHom d₁ p₁
+  let r₂ := MvPolynomial.mapHarmonicSubmodule (RCLike.reLm (K := 𝕜)).toAddMonoidHom d₂ p₂
+  let i₂ := MvPolynomial.mapHarmonicSubmodule (RCLike.imLm (K := 𝕜)).toAddMonoidHom d₂ p₂
   have hint : Integrable (fun x ↦ f₂ x * starRingEnd 𝕜 (f₁ x)) μ :=
     (f₂.continuous.mul ((RCLike.conjCLE (K := 𝕜)).continuous.comp
       f₁.continuous)).integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace _)
@@ -251,16 +208,16 @@ theorem inner_toLp_harmonicSphereRestriction_eq_zero {𝕜 : Type*} [RCLike 𝕜
     have hre : (fun x ↦ RCLike.reCLM (f₂ x * starRingEnd 𝕜 (f₁ x))) =
         fun x ↦ h₁ r₁ x * h₂ r₂ x + h₁ i₁ x * h₂ i₂ x := funext fun x ↦ by
       simp only [RCLike.reCLM_apply, RCLike.mul_re, RCLike.conj_re, RCLike.conj_im,
-        harmonicSphereRestriction_mapLinearHarmonic, RCLike.reLm_coe, RCLike.imLm_coe,
-        f₁, f₂, h₁, h₂, r₁, i₁, r₂, i₂]
+        MvPolynomial.harmonicSphereRestriction_mapHarmonicSubmodule_apply, RCLike.reLm_coe,
+        RCLike.imLm_coe, f₁, f₂, h₁, h₂, r₁, i₁, r₂, i₂]
       ring
     rw [hre, integral_add (hintMul r₁ r₂) (hintMul i₁ i₂), hmul r₁ r₂, hmul i₁ i₂, add_zero]
   · rw [map_zero, ← RCLike.imCLM_apply, ← RCLike.imCLM.integral_comp_comm hint]
     have him : (fun x ↦ RCLike.imCLM (f₂ x * starRingEnd 𝕜 (f₁ x))) =
         fun x ↦ h₁ r₁ x * h₂ i₂ x - h₁ i₁ x * h₂ r₂ x := funext fun x ↦ by
       simp only [RCLike.imCLM_apply, RCLike.mul_im, RCLike.conj_re, RCLike.conj_im,
-        harmonicSphereRestriction_mapLinearHarmonic, RCLike.reLm_coe, RCLike.imLm_coe,
-        f₁, f₂, h₁, h₂, r₁, i₁, r₂, i₂]
+        MvPolynomial.harmonicSphereRestriction_mapHarmonicSubmodule_apply, RCLike.reLm_coe,
+        RCLike.imLm_coe, f₁, f₂, h₁, h₂, r₁, i₁, r₂, i₂]
       ring
     rw [him, integral_sub (hintMul r₁ i₂) (hintMul i₁ r₂), hmul r₁ i₂, hmul i₁ r₂, sub_zero]
 
@@ -285,13 +242,13 @@ theorem laplaceBeltrami_eq_neg_mul_iff_exists_harmonicSphereRestriction (hm : 1 
     let fC : C(sphere (0 : EuclideanSpace ℝ σ) 1, ℝ) := ⟨f, hf.continuous⟩
     let K : Submodule ℝ (Lp ℝ 2 μ) :=
       LinearMap.range (T.toLinearMap.comp (MvPolynomial.harmonicSphereRestriction (R := ℝ) σ d))
-    obtain ⟨p, hp⟩ : ∃ p, T (MvPolynomial.harmonicSphereRestriction σ d p) =
-        K.starProjection (T fC) := (K.orthogonalProjectionOnto (T fC)).2
+    obtain ⟨p, hp⟩ := LinearMap.mem_range.1 (K.starProjection_apply_mem (T fC))
+    simp only [LinearMap.comp_apply, ContinuousLinearMap.coe_coe] at hp
     have hr_mem : T fC - K.starProjection (T fC) ∈ Kᗮ := K.sub_starProjection_mem_orthogonal (T fC)
     have hr_zero : T fC - K.starProjection (T fC) = 0 := by
       refine eq_zero_of_forall_inner_toLp_harmonicSphereRestriction_eq_zero fun e q ↦ ?_
       rcases eq_or_ne e d with rfl | hed
-      · exact (K.mem_orthogonal _).1 hr_mem _ ⟨q, rfl⟩
+      · exact (K.mem_orthogonal _).1 hr_mem _ (LinearMap.mem_range.2 ⟨q, by simp [T]⟩)
       · rw [inner_sub_right, ← hp, inner_toLp_harmonicSphereRestriction_eq_zero hm hed q p,
           sub_zero, ContinuousMap.inner_toLp]
         have hne := (strictMono_natCast_mul_add_sub_one hm).injective.ne hed.symm

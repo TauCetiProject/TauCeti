@@ -12,9 +12,11 @@ public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Basic
 import Mathlib.Analysis.Calculus.LineDeriv.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Norm
 import TauCeti.Analysis.Calculus.Gradient
+import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Homogeneous
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.InnerProductSpace.NormPow
+import TauCeti.Analysis.InnerProductSpace.OrthogonalLast
 import TauCeti.Geometry.Manifold.Instances.Sphere
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.Riemannian.Sphere.Gradient
@@ -35,7 +37,7 @@ the ambient restriction formula for the round Laplace–Beltrami operator `Δ_{S
 
 `Δ_{Sⁿ}(F|_{Sⁿ})(p) = Δ_E F(p) - D²F(p)(p, p) - n ⟪∇F(p), p⟫`.
 
-When `F` is positively homogeneous of real degree `μ` along the ray `t • p` (`t > 0`), Euler's
+When `F` is positively homogeneous of real degree `μ` along the ray `t • p` near `t = 1`, Euler's
 identities `⟪∇F(p), p⟫ = μ F(p)` and `D²F(p)(p, p) = μ (μ - 1) F(p)` collapse this to
 
 `Δ_{Sⁿ}(F|_{Sⁿ})(p) = Δ_E F(p) - μ (μ + n - 1) F(p)`.
@@ -140,18 +142,11 @@ theorem hessian_inner_coe_sphere (a : E) (p : sphere (0 : E) 1) (v w : TangentSp
       -inner ℝ a (p : E) * inner ℝ v w := by
   have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
   have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
-  have hgrad : ∇ (toDual ℝ E a) p = a :=
-    (hasGradientAt_iff_hasFDerivAt.2 (toDual ℝ E a).hasFDerivAt).gradient
-  have hfn : (fun q : sphere (0 : E) 1 ↦ inner ℝ a (q : E)) = (toDual ℝ E a) ∘ ι :=
-    funext fun q ↦ toDual_apply_apply.symm
-  have h2 : iteratedFDeriv ℝ 2 (toDual ℝ E a) p
-      ![mvfderiv (𝓡 n) ι p v, mvfderiv (𝓡 n) ι p w] = 0 := by
-    rw [iteratedFDeriv_two_apply]
-    have hf : fderiv ℝ (toDual ℝ E a) = fun _ ↦ toDual ℝ E a :=
-      funext fun _ ↦ (toDual ℝ E a).fderiv
-    rw [hf, fderiv_fun_const, Pi.zero_apply, zero_apply, zero_apply]
-  rw [hfn, hessian_comp_coe_sphere (toDual ℝ E a).contDiff.contDiffAt, h2, hgrad]
-  ring
+  have hfn : (fun q : sphere (0 : E) 1 ↦ inner ℝ a (q : E)) = (innerSL ℝ a) ∘ ι :=
+    funext fun q ↦ (innerSL_apply_apply ℝ a (q : E)).symm
+  rw [hfn, hessian_comp_coe_sphere (innerSL ℝ a).contDiff.contDiffAt,
+    (innerSL ℝ a).iteratedFDeriv_add_two 0 (p : E)]
+  simp
 
 /-- **Round Laplace–Beltrami of a restricted ambient function.** For `F : E → ℝ` that is `C²` at
 `p ∈ Sⁿ`, `Δ_{Sⁿ}(F|_{Sⁿ})(p) = Δ_E F(p) - D²F(p)(p, p) - n ⟪∇ F p, p⟫`. -/
@@ -159,30 +154,25 @@ theorem laplaceBeltrami_comp_coe_sphere [FiniteDimensional ℝ E] {F : E → ℝ
     {p : sphere (0 : E) 1} (hF : ContDiffAt ℝ 2 F p) :
     Manifold.laplaceBeltrami (𝓡 n) (F ∘ ι) p =
       Δ F p - iteratedFDeriv ℝ 2 F p ![p, p] - n * inner ℝ (∇ F p) (p : E) := by
-  let b : OrthonormalBasis (Fin n) ℝ (TangentSpace (𝓡 n) p) :=
-    (OrthonormalBasis.fromOrthogonalSpanSingleton (𝕜 := ℝ) n
-      (ne_zero_of_mem_unit_sphere p)).map (sphereTangentEquiv p).symm
-  set e : Fin (n + 1) → E := Fin.cons (p : E) fun i ↦ mvfderiv (𝓡 n) ι p (b i)
-  have he : Orthonormal ℝ e := by
-    refine ⟨Fin.cases ?_ fun i ↦ ?_, Fin.cases ?_ fun i ↦ ?_⟩
-    · exact norm_eq_of_mem_sphere p
-    · exact (norm_tangentSpace_sphere p (b i)).symm.trans (b.orthonormal.1 i)
-    · exact Fin.cases (fun h ↦ (h rfl).elim) fun j _ ↦ inner_coe_mvfderiv_subtypeVal_sphere p (b j)
-    · refine Fin.cases (fun _ ↦ ?_) fun j hij ↦ ?_
-      · exact (real_inner_comm _ _).trans (inner_coe_mvfderiv_subtypeVal_sphere p (b i))
-      · exact (inner_tangentSpace_sphere p (b i) (b j)).symm.trans
-          (b.orthonormal.2 (Fin.succ_inj.not.1 hij))
-  have hcard : Fintype.card (Fin (n + 1)) = finrank ℝ E := by
+  have hcard : finrank ℝ E = Fintype.card (Fin (n + 1)) := by
     rw [Fintype.card_fin, (Fact.out : finrank ℝ E = n + 1)]
-  let B₀ := basisOfLinearIndependentOfCardEqFinrank' e he.linearIndependent hcard
-  have hB₀ : ⇑B₀ = e := coe_basisOfLinearIndependentOfCardEqFinrank' _ _ _
-  let B : OrthonormalBasis (Fin (n + 1)) ℝ E := B₀.toOrthonormalBasis (hB₀.symm ▸ he)
-  have hB : ⇑B = e := (Module.Basis.coe_toOrthonormalBasis _ _).trans hB₀
+  have hv : Orthonormal ℝ (({Fin.last n} : Set (Fin (n + 1))).domRestrict fun _ ↦ (p : E)) :=
+    ⟨fun _ ↦ norm_eq_of_mem_sphere p, fun x y hxy ↦
+      (hxy (Subtype.ext ((Set.mem_singleton_iff.1 x.2).trans
+        (Set.mem_singleton_iff.1 y.2).symm))).elim⟩
+  obtain ⟨B, hB⟩ := hv.exists_orthonormalBasis_extension_of_card_eq hcard
+  have hBlast : B (Fin.last n) = (p : E) := hB (Fin.last n) rfl
+  let b : OrthonormalBasis (Fin n) ℝ (TangentSpace (𝓡 n) p) :=
+    (B.orthogonalLast.map (.ofEq _ _ (by rw [hBlast]))).map (sphereTangentEquiv p).symm
+  have hb (i : Fin n) : mvfderiv (𝓡 n) ι p (b i) = B i.castSucc := by
+    rw [mvfderiv_subtypeVal_sphere_eq_sphereTangentEquiv]
+    simp [b]
   have hΔ : Δ F p = iteratedFDeriv ℝ 2 F p ![p, p] +
       ∑ i : Fin n,
         iteratedFDeriv ℝ 2 F p ![mvfderiv (𝓡 n) ι p (b i), mvfderiv (𝓡 n) ι p (b i)] := by
-    rw [congrFun (laplacian_eq_iteratedFDeriv_orthonormalBasis F B) p, hB, Fin.sum_univ_succ]
-    simp only [e, Fin.cons_zero, Fin.cons_succ]
+    rw [congrFun (laplacian_eq_iteratedFDeriv_orthonormalBasis F B) p, Fin.sum_univ_castSucc,
+      hBlast, add_comm]
+    simp only [hb]
   rw [Manifold.laplaceBeltrami_eq_sum_hessian (𝓡 n) (F ∘ ι) p b]
   simp only [hessian_comp_coe_sphere hF, real_inner_self_eq_norm_sq, b.orthonormal.norm_eq_one,
     one_pow, mul_one, Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
@@ -200,14 +190,14 @@ theorem laplaceBeltrami_inner_coe_sphere (a : E) (p : sphere (0 : E) 1) :
   ring
 
 /-- **Euler homogeneity reduction for the round Laplace–Beltrami operator.** If `F : E → ℝ` is `C²`
-at `p ∈ Sⁿ` and satisfies `F (t • p) = t ^ μ * F p` for `t > 0`, then
+at `p ∈ Sⁿ` and satisfies `F (t • p) = t ^ μ * F p` for `t` near `1`, then
 `Δ_{Sⁿ}(F|_{Sⁿ})(p) = Δ_E F(p) - μ (μ + n - 1) F(p)`. -/
 theorem laplaceBeltrami_comp_coe_sphere_of_smul [FiniteDimensional ℝ E] {F : E → ℝ}
     {p : sphere (0 : E) 1} {μ : ℝ} (hF : ContDiffAt ℝ 2 F p)
-    (hsmul : ∀ t : ℝ, 0 < t → F (t • (p : E)) = t ^ μ * F p) :
+    (hsmul : (fun t : ℝ ↦ F (t • (p : E))) =ᶠ[𝓝 (1 : ℝ)] fun t ↦ t ^ μ * F p) :
     Manifold.laplaceBeltrami (𝓡 n) (F ∘ ι) p = Δ F p - μ * (μ + n - 1) * F p := by
-  have hhom : (fun t : ℝ ↦ F (t • (p : E))) =ᶠ[𝓝 (1 : ℝ)] fun t ↦ t ^ μ • F p :=
-    Filter.eventually_of_mem (Ioi_mem_nhds zero_lt_one) fun t ht ↦ hsmul t ht
+  have hhom : (fun t : ℝ ↦ F (t • (p : E))) =ᶠ[𝓝 (1 : ℝ)] fun t ↦ t ^ μ • F p := by
+    simpa only [smul_eq_mul] using hsmul
   have hFd : ∀ᶠ t in 𝓝 (1 : ℝ), DifferentiableAt ℝ F (t • (p : E)) := by
     have hF_ev : ∀ᶠ y in 𝓝 (p : E), DifferentiableAt ℝ F y :=
       (hF.eventually (by simp)).mono fun y hy ↦ hy.differentiableAt (by simp)
@@ -261,7 +251,8 @@ theorem laplacian_sphereExtend {f : sphere (0 : E) 1 → ℝ} {x : E} (hx : x �
   have hunit : Manifold.laplaceBeltrami (𝓡 n) f p = Δ (sphereExtend f) p := by
     have h := laplaceBeltrami_comp_coe_sphere_of_smul (n := n) (μ := 0)
       (contDiffAt_sphereExtend (ne_zero_of_mem_unit_sphere p) hfp)
-      (fun t ht ↦ by simp [sphereExtend_smul_of_pos f ht])
+      (Filter.eventually_of_mem (Ioi_mem_nhds zero_lt_one) fun t ht ↦ by
+        simp [sphereExtend_smul_of_pos f ht])
     simpa [sphereExtend_comp_coe] using h
   have hr : 0 < ‖x‖ := norm_pos_iff.2 hx
   have hscale := congrFun (laplacian_comp_smul_right ‖x‖ (sphereExtend f)) p
@@ -312,21 +303,17 @@ theorem laplacian_norm_rpow_mul_sphereExtend (μ : ℝ) {f : sphere (0 : E) 1 �
   have hnorm : 0 < ‖x‖ := norm_pos_iff.2 hx
   have hg : ContDiffAt ℝ 2 (fun r : ℝ ↦ r ^ μ) ‖x‖ :=
     contDiffAt_id.rpow_const_of_ne hnorm.ne'
-  have hd1 : deriv (fun r : ℝ ↦ r ^ μ) =ᶠ[𝓝 ‖x‖] fun r ↦ μ * r ^ (μ - 1) :=
-    Filter.eventually_of_mem (Ioi_mem_nhds hnorm) fun r hr ↦
-      (Real.hasDerivAt_rpow_const (p := μ) (Or.inl hr.ne')).deriv
-  have hd2 : deriv (deriv (fun r : ℝ ↦ r ^ μ)) ‖x‖ = μ * (μ - 1) * ‖x‖ ^ (μ - 2) := by
-    rw [hd1.deriv_eq]
-    simpa [mul_assoc, sub_sub, one_add_one_eq_two] using
-      ((Real.hasDerivAt_rpow_const (p := μ - 1) (Or.inl hnorm.ne')).const_mul μ).deriv
-  have hrpow1 : ‖x‖ ^ (μ - 1) / ‖x‖ = ‖x‖ ^ (μ - 2) := by
-    rw [div_eq_mul_inv, ← Real.rpow_neg_one, ← Real.rpow_add hnorm]
-    ring_nf
-  have hrpow2 : ‖x‖ ^ μ / ‖x‖ ^ 2 = ‖x‖ ^ (μ - 2) := by
-    rw [div_eq_mul_inv, ← Real.rpow_natCast, ← Real.rpow_neg hnorm.le, ← Real.rpow_add hnorm]
-    ring_nf
-  rw [laplacian_comp_norm_mul_sphereExtend hx hg hf, hd1.eq_of_nhds, hd2,
-    mul_div_assoc, mul_div_assoc, hrpow1, mul_div_right_comm, hrpow2]
+  have hrad : deriv (deriv (fun r : ℝ ↦ r ^ μ)) ‖x‖ +
+      n * deriv (fun r : ℝ ↦ r ^ μ) ‖x‖ / ‖x‖ = μ * (μ + n - 1) * ‖x‖ ^ (μ - 2) := by
+    have h := (hg.laplacian_comp_norm hx).symm.trans (laplacian_norm_rpow_of_ne μ hx)
+    rw [(Fact.out : finrank ℝ E = n + 1)] at h
+    push_cast at h
+    rw [add_sub_cancel_right] at h
+    rw [h]
+    ring
+  have hrpow : ‖x‖ ^ μ / ‖x‖ ^ 2 = ‖x‖ ^ (μ - 2) := by
+    rw [← Real.rpow_two, ← Real.rpow_sub hnorm]
+  rw [laplacian_comp_norm_mul_sphereExtend hx hg hf, hrad, mul_div_right_comm, hrpow]
   ring
 
 end PolarLaplacian

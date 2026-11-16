@@ -10,7 +10,6 @@ public import Mathlib.Analysis.Calculus.ContDiff.Comp
 public import Mathlib.Analysis.Calculus.FDeriv.Measurable
 public import Mathlib.Analysis.InnerProductSpace.Symmetric
 public import Mathlib.MeasureTheory.Function.LpSpace.Indicator
-public import TauCeti.Analysis.Normed.Module.Ball.Radial.Cone
 public import TauCeti.Topology.MetricSpace.Holder
 -- Private: the derivative sum and scalar rules and the symmetry of second derivatives are used
 -- only inside the proofs below.
@@ -68,9 +67,9 @@ chain rule for the gradient of a real profile composed with a real function.
   `y ↦ ‖y - x₀‖ ^ 2` has gradient `2 • (x - x₀)` at `x`.
 * `HasDerivAt.comp_hasGradientAt`: over `ℝ`, the chain rule for the gradient of `f ∘ g`, namely
   `f' • g'` when `f` has derivative `f'` at `g x` and `g` has gradient `g'` at `x`.
+* `TauCeti.gradient_inner_left`: `∇ (fun y ↦ ⟪a, y⟫_𝕜) x = a`.
 * `TauCeti.inner_fderiv_gradient`: over `ℝ`,
   `⟪fderiv ℝ (∇ f) x v, w⟫ = iteratedFDeriv ℝ 2 f x ![v, w]`.
-* `TauCeti.inner_gradient_sphereExtend_self`: `⟪∇ (sphereExtend f) x, x⟫ = 0` unconditionally.
 * `TauCeti.isSymmetric_of_hasFDerivAt_gradient`: over `ℝ`, the derivative of the gradient (the
   Hessian as an endomorphism of `E`) is a symmetric operator wherever it exists, provided the
   function is differentiable nearby.
@@ -150,6 +149,12 @@ theorem gradient_of_notMem_tsupport (h : x ∉ tsupport f) : ∇ f x = 0 := by
 /-- The gradient vanishes exactly where the Fréchet derivative does: `toDual` is injective. -/
 theorem gradient_eq_zero_iff : ∇ f x = 0 ↔ fderiv 𝕜 f x = 0 := by
   rw [gradient, map_eq_zero_iff _ (toDual 𝕜 F).symm.injective]
+
+/-- The gradient of the continuous linear functional `y ↦ ⟪a, y⟫` is constantly `a`. -/
+@[simp]
+theorem gradient_inner_left (a x : F) : ∇ (fun y : F ↦ inner 𝕜 a y) x = a := by
+  have h : (fun y : F ↦ inner 𝕜 a y) = ⇑(toDual 𝕜 F a) := funext fun _ ↦ toDual_apply_apply.symm
+  exact (hasGradientAt_iff_hasFDerivAt.2 (h ▸ (toDual 𝕜 F a).hasFDerivAt)).gradient
 
 /-- The gradient of a compactly supported function is compactly supported, as is its Fréchet
 derivative (`HasCompactSupport.fderiv`). -/
@@ -371,16 +376,7 @@ differentiability assumption is needed. -/
 theorem inner_fderiv_gradient {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
     [CompleteSpace E] (f : E → ℝ) (x v w : E) :
     ⟪fderiv ℝ (∇ f) x v, w⟫_ℝ = iteratedFDeriv ℝ 2 f x ![v, w] := by
-  have hLF : (toDual ℝ E) ∘ ∇ f = fderiv ℝ f := funext fun _ ↦ toDual_gradient
-  rw [iteratedFDeriv_two_apply, ← hLF, LinearIsometryEquiv.comp_fderiv,
-    ContinuousLinearMap.comp_apply, LinearIsometryEquiv.coe_coe'', toDual_apply_apply,
-    Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_zero]
-
-/-- The Euclidean gradient of `sphereExtend f` is everywhere orthogonal to the position vector, with
-no regularity or dimension assumptions. -/
-theorem inner_gradient_sphereExtend_self {E : Type*} [NormedAddCommGroup E]
-    [InnerProductSpace ℝ E] [CompleteSpace E] (f : Metric.sphere (0 : E) 1 → ℝ) (x : E) :
-    ⟪∇ (sphereExtend f) x, x⟫_ℝ = 0 := by
-  rw [inner_gradient_left, fderiv_sphereExtend_self]
+  rw [iteratedFDeriv_two_apply, ← toDual_comp_gradient, LinearIsometryEquiv.comp_fderiv]
+  simpa using (toDual_apply_apply (𝕜 := ℝ)).symm
 
 end TauCeti

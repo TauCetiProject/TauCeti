@@ -23,8 +23,8 @@ matrix is, and the evaluation map of the family is analytic.
 
 For real or complex Euclidean coordinate spaces, we also give the derivative applied to an
 arbitrary direction and to a standard coordinate direction, and record that evaluating a polynomial
-over any normed commutative `ℝ`-algebra on `EuclideanSpace ℝ σ` is `C^k` for every `k : ℕ∞ω`
-(`MvPolynomial.contDiff_eval_algebraMap`).
+over any normed commutative `𝕜`-algebra (`[RCLike 𝕜]`) on `EuclideanSpace 𝕜 σ` is `C^k` for every
+`k : ℕ∞ω` (`MvPolynomial.contDiff_eval_euclidean_algebraMap`).
 -/
 
 public section
@@ -88,20 +88,20 @@ theorem fderiv_eval_euclidean_single [Finite σ] [DecidableEq σ] (p : MvPolynom
   let := Fintype.ofFinite σ
   simp [fderiv_eval_euclidean_apply, PiLp.single_apply]
 
+open scoped ContDiff in
+/-- Evaluating a polynomial over a normed commutative `𝕜`-algebra (`[RCLike 𝕜]`) on
+`EuclideanSpace 𝕜 σ` is `C^k` for every `k : ℕ∞ω` (in particular analytic for `k = ω`). -/
+theorem contDiff_eval_euclidean_algebraMap {R : Type*} [NormedCommRing R] [NormedAlgebra 𝕜 R]
+    {k : ℕ∞ω} (p : MvPolynomial σ R) :
+    ContDiff 𝕜 k fun x : EuclideanSpace 𝕜 σ ↦ eval (fun i ↦ algebraMap 𝕜 R (x i)) p := by
+  have h := (AnalyticOnNhd.eval_continuousLinearMap'
+    (fun i ↦ (algebraMapCLM 𝕜 R).comp (EuclideanSpace.proj i)) p).contDiff (n := k)
+  simpa only [ContinuousLinearMap.comp_apply, EuclideanSpace.coe_proj,
+    algebraMapCLM_apply] using h
+
 end MvPolynomial
 
 end
-
-open scoped ContDiff in
-/-- Evaluating a polynomial over a normed commutative `ℝ`-algebra on `EuclideanSpace ℝ σ` is `C^k`
-for every `k : ℕ∞ω` (in particular real-analytic for `k = ω`). -/
-theorem MvPolynomial.contDiff_eval_algebraMap {σ R : Type*} [Fintype σ]
-    [NormedCommRing R] [NormedAlgebra ℝ R] {k : ℕ∞ω} (p : MvPolynomial σ R) :
-    ContDiff ℝ k fun x : EuclideanSpace ℝ σ ↦ eval (fun i ↦ algebraMap ℝ R (x i)) p := by
-  have h := (AnalyticOnNhd.eval_continuousLinearMap'
-    (fun i ↦ (algebraMapCLM ℝ R).comp (EuclideanSpace.proj i)) p).contDiff (n := k)
-  simpa only [ContinuousLinearMap.comp_apply, EuclideanSpace.coe_proj,
-    algebraMapCLM_apply] using h
 
 namespace TauCeti
 

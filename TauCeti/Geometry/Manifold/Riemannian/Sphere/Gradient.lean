@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Basic
+import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
@@ -115,12 +116,8 @@ theorem mvfderiv_coe_mgradient_inner_coe_sphere (a : E) (p : sphere (0 : E) 1) :
       a - inner ℝ a (p : E) • (p : E) := by
   have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
   have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
-  have hgrad : ∇ (toDual ℝ E a) p = a :=
-    (hasGradientAt_iff_hasFDerivAt.2 (toDual ℝ E a).hasFDerivAt).gradient
-  have hfn : (fun q : sphere (0 : E) 1 ↦ inner ℝ a (q : E)) =
-      (toDual ℝ E a) ∘ ((↑) : sphere (0 : E) 1 → E) :=
-    funext fun q ↦ toDual_apply_apply.symm
-  rw [hfn, mvfderiv_coe_mgradient_comp_coe_sphere (toDual ℝ E a).differentiableAt, hgrad]
+  simpa only [Function.comp_def, coe_innerSL_apply, gradient_inner_left] using
+    mvfderiv_coe_mgradient_comp_coe_sphere (n := n) (p := p) (innerSL ℝ a).differentiableAt
 
 /-- **The length of the round gradient of a height function.** The squared length at `p` of the
 round gradient of `q ↦ ⟪a, q⟫` is `‖a‖² - ⟪a, p⟫²`. -/
@@ -129,11 +126,7 @@ theorem norm_mgradient_inner_coe_sphere_sq (a : E) (p : sphere (0 : E) 1) :
       ‖a‖ ^ 2 - inner ℝ a (p : E) ^ 2 := by
   have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
   have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
-  have hgrad : ∇ (toDual ℝ E a) p = a :=
-    (hasGradientAt_iff_hasFDerivAt.2 (toDual ℝ E a).hasFDerivAt).gradient
-  have hfn : (fun q : sphere (0 : E) 1 ↦ inner ℝ a (q : E)) =
-      (toDual ℝ E a) ∘ ((↑) : sphere (0 : E) 1 → E) :=
-    funext fun q ↦ toDual_apply_apply.symm
-  rw [hfn, norm_mgradient_comp_coe_sphere_sq (toDual ℝ E a).differentiableAt, hgrad]
+  simpa only [Function.comp_def, coe_innerSL_apply, gradient_inner_left] using
+    norm_mgradient_comp_coe_sphere_sq (n := n) (p := p) (innerSL ℝ a).differentiableAt
 
 end TauCeti

@@ -34,8 +34,10 @@ polynomials of degree at most one, `hp.homogeneousComponent_mul_right` records t
 multiplying on the right by a homogeneous polynomial of degree `d` shifts homogeneous components
 by `d`, and `hp.not_dvd_X` records that over a domain a homogeneous polynomial of degree at least
 two divides no variable. Without zero divisors, the factors of a nonzero homogeneous product are
-homogeneous (`hp.of_mul_left`, `hp.of_mul_right`). `TauCeti.eval_coe_homogeneousSubmodule_eq_sum`
-restates the expansion of values for `eval` on elements of `homogeneousSubmodule`.
+homogeneous (`hp.of_mul_left`, `hp.of_mul_right`), and mapping coefficients along an additive
+monoid homomorphism preserves homogeneity (`hp.addMonoidAlgebra_map`).
+`TauCeti.eval_coe_homogeneousSubmodule_eq_sum` restates the expansion of values for `eval` on
+elements of `homogeneousSubmodule`.
 
 The file also records `MvPolynomial.isHomogeneous_coeff_prod_X_sub_C`: the coefficients of a
 product of linear factors `X - C Ψ` with homogeneous `Ψ` of degree `m` are homogeneous, and
@@ -222,6 +224,12 @@ degree its total degree. -/
 theorem of_mul_right {σ R : Type*} [CommSemiring R] [NoZeroDivisors R] {p q : MvPolynomial σ R}
     {n : ℕ} (h : (p * q).IsHomogeneous n) (hpq : p * q ≠ 0) : q.IsHomogeneous q.totalDegree :=
   of_mul_left (mul_comm p q ▸ h) (mul_comm p q ▸ hpq)
+
+/-- Mapping coefficients along an additive monoid homomorphism preserves homogeneity. -/
+protected theorem addMonoidAlgebra_map {σ R S : Type*} [CommSemiring R] [CommSemiring S]
+    {p : MvPolynomial σ R} {n : ℕ} (hp : p.IsHomogeneous n) (f : R →+ S) :
+    MvPolynomial.IsHomogeneous (AddMonoidAlgebra.map f p) n :=
+  fun d hd ↦ hp fun h0 ↦ hd (by simp [AddMonoidAlgebra.coeff_map, h0])
 
 end MvPolynomial.IsHomogeneous
 
