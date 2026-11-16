@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Algebra.Homology.DG.Module.Right.Defs
 public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Unit
+public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Grading.Basic
 import TauCeti.Algebra.Ring.NegOnePow
-import TauCeti.LinearAlgebra.TensorProduct.Balanced.Grading.Basic
 
 /-!
 # The differential on a balanced tensor product of DG modules
@@ -47,6 +47,10 @@ on the quotient and outer bimodule actions are separate constructions.
   the differentials commutes with the tensor differential.
 * `TauCeti.BalancedTensorProduct.map_eq_leibnizDifferential_comp_map_add_map_comp_add`: a
   homotopy `k` in the first factor gives the homotopy `k ⊗ g` of tensored maps.
+* `TauCeti.BalancedTensorProduct.tmul_sub_tmul_eq_add_koszulMapRight`: an odd graded linear
+  homotopy `k` in the second factor gives the homotopy `m ⊗ x ↦ (-1) ^ |m| m ⊗ k x`
+  (`TauCeti.BalancedTensorProduct.koszulMapRight`) for any tensor differentials given by the
+  signed Leibniz formula on pure tensors.
 
 ## References
 
@@ -233,6 +237,48 @@ theorem map_eq_leibnizDifferential_comp_map_add_map_comp_add
   abel
 
 end Map
+
+section SecondFactor
+
+variable {N' : Type*} [AddCommGroup N'] [Module R N'] [Module A N'] {ℳN' : ℤ → Submodule R N'}
+  [DirectSum.Decomposition ℳN'] [SetLike.GradedSMul 𝒜 ℳN'] {dN' : N' →ₗ[R] N'}
+  {k : N →ₗ[R] N'}
+
+/-- **Homotopies in the second factor.** Let `D` and `D'` be endomorphisms of `M ⊗_A N` and
+`M ⊗_A N'` given on homogeneous pure tensors by the signed tensor differential
+`m ⊗ x ↦ dM m ⊗ x + (-1) ^ |m| m ⊗ d x`, such as `leibnizDifferential`. If equivariant maps
+satisfy `g₁ - g₂ = dN' ∘ k + k ∘ dN` for an odd graded linear map `k`, then on pure tensors
+`m ⊗ g₁ x - m ⊗ g₂ x = D' (h (m ⊗ x)) + h (D (m ⊗ x))` for the Koszul-signed tensor
+`h = koszulMapRight ℳ hk` of `k`. -/
+theorem tmul_sub_tmul_eq_add_koszulMapRight (hMd : LinearMap.IsHomogeneous dM ℳ ℳ 1)
+    (hk : ∀ {p : ℤ} {a : A}, a ∈ 𝒜 p → ∀ x : N, k (a • x) = p.negOnePow • (a • k x))
+    {g₁ g₂ : N →ₗ[R] N'} (hgk : ∀ x, g₁ x - g₂ x = dN' (k x) + k (dN x))
+    {D : BalancedTensorProduct R A M N →ₗ[R] BalancedTensorProduct R A M N}
+    {D' : BalancedTensorProduct R A M N' →ₗ[R] BalancedTensorProduct R A M N'}
+    (hD : ∀ {q : ℤ} {m : M}, m ∈ ℳ q → ∀ x : N,
+      D (tmul R A m x) = tmul R A (dM m) x + q.negOnePow • tmul R A m (dN x))
+    (hD' : ∀ {q : ℤ} {m : M}, m ∈ ℳ q → ∀ x : N',
+      D' (tmul R A m x) = tmul R A (dM m) x + q.negOnePow • tmul R A m (dN' x))
+    (m : M) (x : N) :
+    tmul R A m (g₁ x) - tmul R A m (g₂ x) =
+      D' (koszulMapRight ℳ hk (tmul R A m x)) + koszulMapRight ℳ hk (D (tmul R A m x)) := by
+  induction m using DirectSum.Decomposition.inductionOn ℳ with
+  | zero => simp [zero_tmul]
+  | add m m' hm hm' =>
+    simp only [add_tmul, map_add]
+    rw [add_sub_add_comm, hm, hm']
+    abel
+  | @homogeneous q m =>
+    rw [← tmul_sub, hgk, tmul_add, koszulMapRight_tmul_of_mem hk m.2, map_smul, hD' m.2, hD m.2,
+      map_add, map_zsmul_unit, koszulMapRight_tmul_of_mem hk (hMd.map_mem m.2),
+      koszulMapRight_tmul_of_mem hk m.2, Int.negOnePow_succ]
+    -- The two terms involving `dM m` cancel, and the remaining sign appears twice.
+    simp only [Units.smul_def, ← Int.cast_smul_eq_zsmul R, Units.val_neg, Int.cast_neg,
+      neg_smul, smul_add, smul_smul, ← Int.cast_mul, ← Units.val_mul, Int.units_mul_self,
+      Units.val_one, Int.cast_one, one_smul]
+    abel
+
+end SecondFactor
 
 end Leibniz
 

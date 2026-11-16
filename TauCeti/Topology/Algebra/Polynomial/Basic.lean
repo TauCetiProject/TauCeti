@@ -46,6 +46,8 @@ the monic polynomial `TauCeti.Polynomial.monicOfCoeff a` as a function of its co
   continuous in `a`.
 * `TauCeti.Polynomial.continuous_coeff_prod_X_sub_C`: the coefficients of `∏ i ∈ s, (X - C (f i))`
   are continuous in the tuple of roots `f`.
+* `TauCeti.isProperMap_pow`: on a proper normed ring with multiplicative norm, `x ↦ xᵏ` is proper
+  for `k ≠ 0`.
 -/
 
 public section
@@ -196,3 +198,15 @@ theorem continuous_coeff_prod_X_sub_C {ι R : Type*} [CommRing R] [TopologicalSp
     | exact (continuous_const.sub (continuous_apply i)).continuousAt
 
 end TauCeti.Polynomial
+
+namespace TauCeti
+
+/-- On a proper normed ring with multiplicative norm, such as a proper normed field, the power
+map `x ↦ xᵏ` is proper for `k ≠ 0`, as evaluation of the nonconstant monomial `Xᵏ`. -/
+theorem isProperMap_pow {R : Type*} [NormedRing R] [IsAbsoluteValue (norm : R → ℝ)]
+    [ProperSpace R] {k : ℕ} (hk : k ≠ 0) : IsProperMap fun x : R ↦ x ^ k := by
+  cases subsingleton_or_nontrivial R
+  · exact (continuous_pow k).isProperMap
+  simpa using (Polynomial.monomial k (1 : R)).isProperMap_eval (by simp [Nat.pos_of_ne_zero hk])
+
+end TauCeti

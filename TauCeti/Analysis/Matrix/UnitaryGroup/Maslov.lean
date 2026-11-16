@@ -64,9 +64,10 @@ The index is natural under the real orthogonal group, which preserves `ℝⁿ`: 
 frames by a fixed real orthogonal matrix does not change it
 (`Matrix.UnitaryGroup.maslovIndex_map_mul_left`). The localization axiom for nondiagonal `A` is
 deduced from the diagonal case in `TauCeti.Analysis.Matrix.UnitaryGroup.Maslov.Localization`.
-The zero axiom of Robbin and Salamon, that the index vanishes on a path along which the dimension
-of `U t ℝⁿ ∩ ℝⁿ` is constant, is not proved here, nor is the comparison with the definition of
-the index by crossing forms.
+For paths of graphs, the comparison with the definition of the index by crossing forms is in
+`TauCeti.Analysis.Matrix.UnitaryGroup.Maslov.Crossing`. The zero axiom of Robbin and Salamon, that
+the index vanishes on a path along which the dimension of `U t ℝⁿ ∩ ℝⁿ` is constant, is not proved
+here.
 
 ## Main declarations
 

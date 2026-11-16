@@ -159,20 +159,9 @@ theorem rootCoefficients_typeC_le (j : Fin (2 * n ^ 2)) (k : Fin n) :
 classical coordinates `2e₀`. This specifies its actual enumerated root index. -/
 theorem highestRoot_typeCSimplyConnectedBase [NeZero n] :
     (b).highestRoot = typeCIndexEquiv n (0, 0, false) := by
-  let θ := typeCIndexEquiv n (0, 0, false)
-  have hle (k : (b).support) : (b).rootCoefficients (b).highestRoot k ≤
-      (b).rootCoefficients θ k := by
-    obtain ⟨i, rfl⟩ := (simpleEquiv n).surjective k
-    simpa [simpleEquiv, θ, Fin.le_def] using rootCoefficients_typeC_le (b).highestRoot i
-  by_contra hne
-  obtain ⟨k, hk⟩ : ∃ k, (b).rootCoefficients (b).highestRoot k ≠
-      (b).rootCoefficients θ k := by
-    by_contra! heq
-    exact hne ((b).rootCoefficients_injective (funext heq))
-  have hlt := Finset.sum_lt_sum (fun k (_ : k ∈ univ) ↦ hle k)
-    ⟨k, mem_univ k, (hle k).lt_of_ne hk⟩
-  rw [(b).sum_rootCoefficients_eq_height, (b).sum_rootCoefficients_eq_height] at hlt
-  exact hlt.not_ge ((b).height_le_height_highestRoot θ)
+  refine ((b).eq_highestRoot_of_forall_rootCoefficients_le fun j k ↦ ?_).symm
+  obtain ⟨i, rfl⟩ := (simpleEquiv n).surjective k
+  simpa [simpleEquiv, Fin.le_def] using rootCoefficients_typeC_le j i
 
 /-- The simple-root coefficients of the highest root of type `Cₙ` are
 `(2, …, 2, 1)` in the pinned Bourbaki numbering. -/
@@ -187,17 +176,10 @@ theorem rootCoefficients_highestRoot_typeC [NeZero n] (k : Fin n) :
 the positive root cone. No integral spanning or irreducibility assumption is needed. -/
 theorem root_highestRoot_sub_mem_posRootCone_typeC [NeZero n] (j : Fin (2 * n ^ 2)) :
     (P).root (b).highestRoot - (P).root j ∈ posRootCone P b := by
-  rw [← (b).sum_rootCoefficients_smul_root (b).highestRoot,
-    ← (b).sum_rootCoefficients_smul_root j, ← Finset.sum_sub_distrib]
-  apply AddSubmonoid.sum_mem
-  intro k _
-  rw [← sub_smul]
-  have hle : (b).rootCoefficients j k ≤ (b).rootCoefficients (b).highestRoot k := by
-    obtain ⟨i, rfl⟩ := (simpleEquiv n).surjective k
-    exact (rootCoefficients_typeC_le j i).trans_eq (rootCoefficients_highestRoot_typeC i).symm
-  rw [← Int.toNat_of_nonneg (sub_nonneg.mpr hle), natCast_zsmul]
-  exact (posRootCone P b).nsmul_mem (root_mem_posRootCone_of_mem_posRoots P b
-    ((mem_posRoots P b _).mpr (RootPairing.Base.isPos_of_mem_support k.2))) _
+  rw [RootPairing.Base.root_sub_root_mem_posRootCone_iff]
+  intro k
+  obtain ⟨i, rfl⟩ := (simpleEquiv n).surjective k
+  exact (rootCoefficients_typeC_le j i).trans_eq (rootCoefficients_highestRoot_typeC i).symm
 
 /-- The height of the highest root of type `Cₙ` is `2n - 1`. -/
 @[simp]
