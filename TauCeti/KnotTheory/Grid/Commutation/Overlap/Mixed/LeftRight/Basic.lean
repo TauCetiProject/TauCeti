@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Commutation.Overlap.Weight
+import TauCeti.Algebra.BigOperators.Finset.SDiff
 
 /-!
 # Recutting a rectangle that starts on the replaced line before a pentagon
@@ -531,12 +532,9 @@ theorem add_sum_rectanglePentagonWeight_eq_add_sum_iff_sdiff_leftRightOverlap
           G.rectanglePentagonWeight C R D =
         B + ∑ E ∈ G.pentagonRectangleDecompositions C x z \ G.leftRightOverlapPartners C x z,
           G.pentagonRectangleWeight C R E := by
-  rw [← Finset.sum_sdiff (G.leftRightOverlapSources_subset C)
-      (f := G.rectanglePentagonWeight C R),
-    ← Finset.sum_sdiff (G.leftRightOverlapPartners_subset C)
-      (f := G.pentagonRectangleWeight C R),
-    G.sum_rectanglePentagonWeight_leftRightOverlapSources_eq_sum_partners C x z R,
-    ← add_assoc, ← add_assoc]
-  exact add_right_cancel_iff
+  exact Finset.add_sum_eq_add_sum_iff_sdiff
+    (G.leftRightOverlapSources_subset C)
+    (G.leftRightOverlapPartners_subset C)
+    (G.sum_rectanglePentagonWeight_leftRightOverlapSources_eq_sum_partners C x z R)
 
 end TauCeti.GridDiagram
