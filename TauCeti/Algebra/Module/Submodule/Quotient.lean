@@ -39,6 +39,8 @@ induces when it is injective or surjective.  The submodule-map facts behind thes
   coefficients.
 * `Submodule.quotientEquivPiZModOfBasis`: over `ℤ`, such a quotient is a product of cyclic groups
   with the specified diagonal orders.
+* `Submodule.bijective_smul_quotient`: if scalar multiplication by `r` is bijective on `M` and
+  surjective on `S ≤ M`, then it is bijective on `M ⧸ S`.
 
 ## References
 
@@ -377,5 +379,29 @@ theorem quotientEquivPiZModOfBasis_mk_apply (N : Submodule ℤ M)
   simp [quotientEquivPiZModOfBasis]
 
 end DiagonalQuotient
+
+/-- If scalar multiplication by `r : R` is bijective on an `R`-module `M` and surjective on a
+submodule `S ≤ M`, then scalar multiplication by `r` is bijective on the quotient `M ⧸ S`. -/
+theorem bijective_smul_quotient {R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
+    (S : Submodule R M) (r : R)
+    (hM : Function.Bijective (fun x : M ↦ r • x))
+    (hS : Function.Surjective (fun x : S ↦ r • x)) :
+    Function.Bijective (fun q : M ⧸ S ↦ r • q) := by
+  constructor
+  · intro q₁ q₂ hq
+    induction q₁ using Submodule.Quotient.induction_on with | _ x =>
+    induction q₂ using Submodule.Quotient.induction_on with | _ y =>
+    have hmem : r • (x - y) ∈ S := by
+      rw [smul_sub, ← Submodule.Quotient.mk_eq_zero, Submodule.Quotient.mk_sub,
+        Submodule.Quotient.mk_smul, Submodule.Quotient.mk_smul, sub_eq_zero]
+      exact hq
+    obtain ⟨⟨s, hs⟩, hrs⟩ := hS ⟨r • (x - y), hmem⟩
+    have hxy : x - y = s := hM.injective (by simpa [Subtype.ext_iff] using hrs.symm)
+    rw [Submodule.Quotient.eq, hxy]
+    exact hs
+  · intro q
+    induction q using Submodule.Quotient.induction_on with | _ x =>
+    obtain ⟨y, rfl⟩ := hM.surjective x
+    exact ⟨Submodule.Quotient.mk y, (Submodule.Quotient.mk_smul S r y).symm⟩
 
 end Submodule
