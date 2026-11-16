@@ -51,6 +51,8 @@ algebraic closedness, and the answer names the basis vectors involved.
 * `Module.Basis.eigenspace_eq_span_image` and `Module.Basis.finrank_eigenspace_eq_card`: with
   repeated eigenvalues allowed, the `μ`-eigenspace is spanned by the basis vectors of eigenvalue
   `μ`, and its dimension is their number.
+* `Module.Basis.apply_eq_smul_of_apply_eq_smul`: a linear map scaling each basis vector `b i` by
+  `φ (a i)` acts on every `μ`-eigenvector of `f` as scalar multiplication by `φ μ`.
 -/
 
 public section
@@ -277,6 +279,23 @@ theorem _root_.Module.Basis.finrank_eigenspace_eq_card [Nontrivial K] (b : Modul
   rw [b.eigenspace_eq_span_image hf μ, ← Subtype.range_coe_subtype, ← Set.range_comp,
     finrank_span_eq_card (b.linearIndependent.comp _ Subtype.val_injective),
     Nat.card_eq_fintype_card]
+
+/-- If `f` is diagonal in a basis `b` with eigenvalues `a` and `g` scales each `b i` by `φ (a i)`,
+then `g` acts on every `μ`-eigenvector of `f` as scalar multiplication by `φ μ`. -/
+theorem _root_.Module.Basis.apply_eq_smul_of_apply_eq_smul (b : Module.Basis ι K V)
+    {g : Module.End K V} {φ : K → K} (hf : ∀ i, f (b i) = a i • b i)
+    (hg : ∀ i, g (b i) = φ (a i) • b i) {v : V} {μ : K} (hv : f v = μ • v) :
+    g v = φ μ • v := by
+  have hv_mem : v ∈ Submodule.span K (b '' {i | a i = μ}) := by
+    rw [← b.eigenspace_eq_span_image hf μ]
+    exact Module.End.mem_eigenspace_iff.mpr hv
+  have hle : Submodule.span K (b '' {i | a i = μ}) ≤
+      LinearMap.eqLocus g (φ μ • LinearMap.id) := by
+    refine Submodule.span_le.mpr ?_
+    rintro _ ⟨i, hi, rfl⟩
+    rw [SetLike.mem_coe, LinearMap.mem_eqLocus, LinearMap.smul_apply, LinearMap.id_apply,
+      hg i, Set.mem_ofPred_eq.mp hi]
+  simpa using LinearMap.mem_eqLocus.mp (hle hv_mem)
 
 end Eigenspace
 
