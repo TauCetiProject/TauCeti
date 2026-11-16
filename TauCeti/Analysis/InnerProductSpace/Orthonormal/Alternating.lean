@@ -114,52 +114,40 @@ theorem norm_alternatizeUncurryFin_smulRight_le (α : E →L[ℝ] ℝ) (ω : E [
   · have hv0 (i : Fin (k + 1)) : α (v i) = 0 := by
       simpa [αW, w] using DFunLike.congr_fun hαW (w i)
     have hzero : alternatizeUncurryFin (α.smulRight ω) v = 0 := by
-      rw [alternatizeUncurryFin_apply]
-      simp [hv0]
+      simp [alternatizeUncurryFin_apply, hv0]
     rw [hzero, norm_zero]
     positivity
   · let u : W := (InnerProductSpace.toDual ℝ W).symm αW
-    have hu0 : u ≠ 0 := by simpa [u] using hαW
-    have hu_norm : ‖(u : E)‖ ≠ 0 := by simpa using hu0
+    have hu_norm : ‖(u : E)‖ ≠ 0 := by simpa [u] using hαW
     let u₀ : W := ‖u‖⁻¹ • u
     have hu₀_norm : ‖u₀‖ = 1 := by simp [u₀, norm_smul, inv_mul_cancel₀ hu_norm]
-    have hcard : finrank ℝ W = Fintype.card (Fin (k + 1)) := by
-      simpa using finrank_span_eq_card hv.linearIndependent
     have horth : Orthonormal ℝ (({0} : Set (Fin (k + 1))).domRestrict fun _ ↦ u₀) :=
       ⟨fun _ ↦ hu₀_norm, fun i j hij ↦ False.elim (hij (Subsingleton.elim i j))⟩
-    obtain ⟨b, hb0⟩ := horth.exists_orthonormalBasis_extension_of_card_eq hcard
-    have hb0' : b 0 = u₀ := hb0 0 (mem_singleton 0)
+    obtain ⟨b, hb0⟩ := horth.exists_orthonormalBasis_extension_of_card_eq
+      (by simpa using finrank_span_eq_card hv.linearIndependent)
     have hb_succ (j : Fin k) : α (b j.succ : E) = 0 := by
+      have h0 : ⟪u₀, b j.succ⟫ = 0 :=
+        hb0 0 (mem_singleton 0) ▸ b.orthonormal.2 (Fin.succ_ne_zero j).symm
       have hinner : ⟪u, b j.succ⟫ = 0 := by
-        have h0 : ⟪u₀, b j.succ⟫ = 0 := by
-          rw [← hb0']
-          exact b.orthonormal.2 (Fin.succ_ne_zero j).symm
-        calc ⟪u, b j.succ⟫ = ‖(u : E)‖ * ⟪u₀, b j.succ⟫ := by
-              simp [u₀, real_inner_smul_left, ← mul_assoc, mul_inv_cancel₀ hu_norm]
-          _ = 0 := by simp [h0]
+        simpa [u₀, real_inner_smul_left, inv_eq_zero, hu_norm] using h0
       simpa [u, αW] using (InnerProductSpace.toDual_symm_apply (𝕜 := ℝ) (E := W)).symm.trans hinner
     let ψ := (alternatizeUncurryFin (α.smulRight ω)).compContinuousLinearMap W.subtypeL
-    have hw_norm (i : Fin (k + 1)) : ‖w i‖ = 1 := hv.norm_eq_one i
     have hle : ‖alternatizeUncurryFin (α.smulRight ω) v‖ ≤ ‖ψ‖ := by
-      simpa [ψ, w, Function.comp_def, hw_norm] using ψ.le_opNorm w
+      simpa [ψ, w, Function.comp_def, fun i ↦ hv.norm_eq_one i] using ψ.le_opNorm w
     refine hle.trans ?_
     rw [ψ.norm_eq_norm_apply_orthonormalBasis b]
-    have hbE (i : Fin (k + 1)) : ‖(b i : E)‖ = 1 := b.orthonormal.norm_eq_one i
-    have hremove : Fin.removeNth 0 (fun i : Fin (k + 1) ↦ (b i : E)) =
-        fun j : Fin k ↦ (b j.succ : E) := by
-      ext j
-      simp [Fin.removeNth]
     have hψb : ψ b = α (b 0 : E) • ω (fun j ↦ (b j.succ : E)) := by
       change alternatizeUncurryFin (α.smulRight ω) (fun i ↦ (b i : E)) = _
       rw [alternatizeUncurryFin_apply, Fin.sum_univ_succ]
-      simp [hb_succ, hremove]
+      simp [hb_succ, show Fin.removeNth 0 (fun i : Fin (k + 1) ↦ (b i : E)) =
+        fun j : Fin k ↦ (b j.succ : E) by ext j; simp [Fin.removeNth]]
     rw [hψb, norm_smul, Real.norm_eq_abs]
     calc |α (b 0 : E)| * ‖ω (fun j ↦ (b j.succ : E))‖
         ≤ (‖α‖ * ‖(b 0 : E)‖) * (‖ω‖ * ∏ j : Fin k, ‖(b j.succ : E)‖) := by
           gcongr
           · exact α.le_opNorm (b 0 : E)
           · exact ω.le_opNorm _
-      _ = ‖α‖ * ‖ω‖ := by simp [hbE]
+      _ = ‖α‖ * ‖ω‖ := by simp [show ∀ i, ‖(b i : E)‖ = 1 from b.orthonormal.norm_eq_one]
 
 /-- Extended-norm form of `ContinuousAlternatingMap.norm_alternatizeUncurryFin_smulRight_le`. -/
 theorem enorm_alternatizeUncurryFin_smulRight_le (α : E →L[ℝ] ℝ) (ω : E [⋀^Fin k]→L[ℝ] F) :
