@@ -23,7 +23,9 @@ from `j`, since its value at `j` is its value at `i`. The equivalence
 functions identifying two given points, as in collision bounds for uniform sampling.
 
 The file also records that the transposition of two points of a linear order is the transposition
-of their minimum and maximum (`Equiv.swap_min_max`).
+of their minimum and maximum (`Equiv.swap_min_max`), and that updating a dependent function at a
+single coordinate by an involutive map on that fibre gives an involutive permutation
+(`Function.Involutive.update`, `Function.Involutive.updatePerm`).
 -/
 
 public section
@@ -99,3 +101,35 @@ theorem swap_min_max {α : Type*} [LinearOrder α] (a b : α) :
   · rw [min_eq_right h, max_eq_left h, swap_comm]
 
 end Equiv
+
+namespace Function.Involutive
+
+variable {ι : Sort*} [DecidableEq ι] {β : ι → Sort*}
+
+/-- Updating a dependent function at coordinate `i` by an involutive map on that fibre is an
+involution. -/
+protected theorem update (i : ι) {f : β i → β i} (hf : Involutive f) :
+    Involutive (fun s : ∀ j, β j ↦ Function.update s i (f (s i))) := fun s ↦ by
+  funext j
+  obtain rfl | hj := eq_or_ne j i
+  · simp [hf (s j)]
+  · simp [hj]
+
+/-- The permutation of `∀ j, β j` that applies an involutive map `f` to coordinate `i` and leaves
+all other coordinates unchanged. -/
+def updatePerm (i : ι) {f : β i → β i} (hf : Involutive f) : Equiv.Perm (∀ j, β j) :=
+  (Function.Involutive.update i hf).toPerm
+
+/-- `Function.Involutive.updatePerm i hf` updates a function at `i` by `f`. -/
+@[simp]
+theorem updatePerm_apply (i : ι) {f : β i → β i} (hf : Involutive f) (s : ∀ j, β j) :
+    updatePerm i hf s = Function.update s i (f (s i)) :=
+  (rfl)
+
+/-- `Function.Involutive.updatePerm i hf` is its own inverse. -/
+@[simp]
+theorem updatePerm_symm (i : ι) {f : β i → β i} (hf : Involutive f) :
+    (updatePerm i hf).symm = updatePerm i hf :=
+  (Function.Involutive.update i hf).toPerm_symm
+
+end Function.Involutive

@@ -10,7 +10,8 @@ public import TauCeti.KnotTheory.PDCode.ChangeCrossing
 public import TauCeti.KnotTheory.PDCode.VertexResolution
 import Mathlib.Algebra.Field.Rat
 import TauCeti.KnotTheory.Khovanov.Parity
-import TauCeti.KnotTheory.PDCode.Oriented.VertexResolution
+import TauCeti.KnotTheory.PDCode.Oriented.Component
+import TauCeti.Logic.Equiv.Basic
 
 /-!
 # The normalized enhanced-state Euler sum and nonvanishing of Khovanov homology
@@ -25,8 +26,8 @@ enhanced-state Euler sum**
 `B`-smoothed crossings, `n₋` is the number of negative crossings, and `k(s)` is the number of
 resolved circles.
 
-Switching a single crossing `i` exchanges its `A`- and `B`-smoothings and shifts `n₋` by `±1`; the
-explicit state-toggling involution `TauCeti.PDCode.toggleStateEquiv` changes `|S|` by `±1` while
+Switching a single crossing `i` exchanges its `A`- and `B`-smoothings and shifts `n₋` by `±1`;
+toggling each state at `i` via `Function.Involutive.updatePerm` changes `|S|` by `±1` while
 preserving `k(s)`, so `E(D)` is invariant under crossing changes without any planarity assumption
 (`TauCeti.OrientedPDCode.normalizedEulerSum_changeCrossing`).
 
@@ -139,11 +140,7 @@ theorem eval₂_one_enhancedStateSum {S : Type*} [CommRing S] (D : OrientedPDCod
     eval₂ (Int.castRingHom S) 1 D.enhancedStateSum = (D.normalizedEulerSum : S) := by
   rw [enhancedStateSum_eq_sum, normalizedEulerSum_def, map_sum, Int.cast_sum]
   refine Finset.sum_congr rfl fun s _ ↦ ?_
-  rw [map_mul, map_pow, map_add, Units.smul_def, zsmul_eq_mul, map_mul, map_intCast,
-    eval₂_T, eval₂_T, eval₂_T, one_zpow, one_zpow, one_zpow, Units.val_one, mul_one,
-    one_add_one_eq_two, negOnePow_stateCochainDegree_eq]
-  push_cast
-  rfl
+  simp [Units.smul_def, zsmul_eq_mul, negOnePow_stateCochainDegree_eq, one_add_one_eq_two]
 
 /-- **Evaluating the enhanced state sum at `1 : ℤˣ`** gives `D.normalizedEulerSum`. -/
 @[simp] theorem laurentEval_one_enhancedStateSum (D : OrientedPDCode n) :
@@ -154,7 +151,7 @@ theorem eval₂_one_enhancedStateSum {S : Type*} [CommRing S] (D : OrientedPDCod
 /-! ### Crossing-free diagrams, symmetries, and crossing-change invariance -/
 
 /-- A crossing-free diagram has normalized Euler sum `2 ^ c`. -/
-theorem normalizedEulerSum_zero (D : OrientedPDCode 0) :
+theorem normalizedEulerSum_eq_two_pow_of_zero_crossings (D : OrientedPDCode 0) :
     D.normalizedEulerSum = 2 ^ D.componentCount := by
   have h := congrArg (laurentEval (R := ℤ) (1 : ℤˣ)) (enhancedStateSum_eq_pow D)
   simpa [PDCode.componentCount_eq, one_add_one_eq_two] using h
@@ -198,11 +195,7 @@ theorem normalizedEulerSum_zero (D : OrientedPDCode 0) :
 /-- Mirroring preserves `normalizedEulerSum`. -/
 @[simp] theorem normalizedEulerSum_mirror (D : OrientedPDCode n) :
     D.mirror.normalizedEulerSum = D.normalizedEulerSum := by
-  let negState : (Fin n → Bool) ≃ (Fin n → Bool) :=
-    { toFun := fun s i ↦ !s i
-      invFun := fun s i ↦ !s i
-      left_inv := fun s ↦ by funext i; simp
-      right_inv := fun s ↦ by funext i; simp }
+  let negState : (Fin n → Bool) ≃ (Fin n → Bool) := Equiv.piCongrRight fun _ ↦ Equiv.boolNot
   rw [normalizedEulerSum_def, normalizedEulerSum_def, ← Equiv.sum_comp negState]
   refine Finset.sum_congr rfl fun s _ ↦ ?_
   have hnot : ({i : Fin n | negState s i = false} : Finset (Fin n)) =
@@ -225,34 +218,35 @@ theorem normalizedEulerSum_zero (D : OrientedPDCode 0) :
     simp [negState]
   rw [hsign, hloop]
 
-/-- **Crossing-change invariance of the normalized Euler sum.** Toggling each state at `i` via
-`TauCeti.PDCode.toggleStateEquiv` preserves `stateLoopCount` and shifts `|S| + n₋` by an even
-integer (`-2`, `0`, or `+2`), without any planarity assumption. -/
+/-- **Crossing-change invariance of the normalized Euler sum.** Switching any crossing leaves
+`normalizedEulerSum` unchanged, without any planarity assumption. -/
 @[simp] theorem normalizedEulerSum_changeCrossing (D : OrientedPDCode n) (i : Fin n) :
     (D.changeCrossing i).normalizedEulerSum = D.normalizedEulerSum := by
-  rw [normalizedEulerSum_def, normalizedEulerSum_def, ← Equiv.sum_comp (PDCode.toggleStateEquiv i)]
+  -- Toggling each state at `i` preserves `stateLoopCount` and shifts `|S| + n₋` by an even integer.
+  let toggle : Equiv.Perm (Fin n → Bool) := Bool.involutive_not.updatePerm i
+  rw [normalizedEulerSum_def, normalizedEulerSum_def, ← Equiv.sum_comp toggle]
   refine Finset.sum_congr rfl fun s _ ↦ ?_
-  have hloop : (D.changeCrossing i).stateLoopCount (PDCode.toggleStateEquiv i s) =
-      D.stateLoopCount s := by
-    rw [toPDCode_changeCrossing, PDCode.stateLoopCount_changeCrossing,
-      PDCode.toggleStateEquiv_apply]
+  have hloop : (D.changeCrossing i).stateLoopCount (toggle s) = D.stateLoopCount s := by
+    rw [toPDCode_changeCrossing, PDCode.stateLoopCount_changeCrossing]
+    simp only [toggle, Function.Involutive.updatePerm_apply]
     congr 1
     funext j
     by_cases hj : j = i
     · subst hj; simp
     · simp [hj]
-  have hcard : #{j | PDCode.toggleStateEquiv i s j = false} + (if s i = false then 1 else 0) =
+  have hcard : #{j | toggle s j = false} + (if s i = false then 1 else 0) =
       #{j | s j = false} + (if (!s i) = false then 1 else 0) := by
     rw [Finset.card_filter, Finset.card_filter, Fintype.sum_eq_add_sum_compl i,
       Fintype.sum_eq_add_sum_compl i (fun j ↦ if s j = false then 1 else 0)]
-    have hcompl : ∑ x ∈ ({i}ᶜ : Finset (Fin n)),
-        (if PDCode.toggleStateEquiv i s x = false then 1 else 0) =
-          ∑ x ∈ ({i}ᶜ : Finset (Fin n)), (if s x = false then 1 else 0) :=
+    have hcompl : ∑ x ∈ ({i}ᶜ : Finset (Fin n)), (if toggle s x = false then 1 else 0) =
+        ∑ x ∈ ({i}ᶜ : Finset (Fin n)), (if s x = false then 1 else 0) :=
       Finset.sum_congr rfl fun x hx ↦ by
-        rw [PDCode.toggleStateEquiv_apply, Function.update_of_ne (by simpa using hx)]
-    rw [hcompl, PDCode.toggleStateEquiv_apply, Function.update_self]
+        simp only [toggle, Function.Involutive.updatePerm_apply,
+          Function.update_of_ne (by simpa using hx)]
+    rw [hcompl]
+    simp only [toggle, Function.Involutive.updatePerm_apply, Function.update_self]
     omega
-  have hsign : (-1 : ℤ) ^ (#{j | PDCode.toggleStateEquiv i s j = false} +
+  have hsign : (-1 : ℤ) ^ (#{j | toggle s j = false} +
         (D.changeCrossing i).negativeCrossingCount) =
       (-1 : ℤ) ^ (#{j | s j = false} + D.negativeCrossingCount) := by
     refine neg_one_pow_congr ?_
@@ -294,6 +288,25 @@ theorem normalizedEulerSum_eq_of_toPDCode_eq {D E : OrientedPDCode n} (hD : D.to
   rw [D.neg_one_pow_card_false_add_negativeCrossingCount hD s,
     E.neg_one_pow_card_false_add_negativeCrossingCount hE s, h]
 
+private theorem normalizedEulerSum_insertNth_term (D : OrientedPDCode (n + 1))
+    (hD : D.toPDCode.IsPlanar) (c : Fin (n + 1)) (t : Bool) {E : OrientedPDCode n}
+    (hE : E.toPDCode.IsPlanar) (ht : E.toPDCode = D.toPDCode.resolveCrossing c t)
+    (s : Fin n → Bool) :
+    (-1 : ℤ) ^
+        (#{i | c.insertNth (α := fun _ ↦ Bool) t s i = false} + D.negativeCrossingCount) *
+        2 ^ D.stateLoopCount (c.insertNth (α := fun _ ↦ Bool) t s) =
+      -(-1 : ℤ) ^ D.componentCount * ((-1 : ℤ) ^ E.componentCount *
+        ((-1 : ℤ) ^ (#{i | s i = false} + E.negativeCrossingCount) *
+          2 ^ E.stateLoopCount s)) := by
+  rw [D.neg_one_pow_card_false_add_negativeCrossingCount hD
+      (c.insertNth (α := fun _ ↦ Bool) t s),
+    E.neg_one_pow_card_false_add_negativeCrossingCount hE s,
+    D.toPDCode.stateLoopCount_insertNth c t s, ← ht]
+  set cD := D.componentCount
+  set cE := E.componentCount
+  simp only [pow_add, pow_one]
+  rcases neg_one_pow_eq_or ℤ cE with hcE | hcE <;> rw [hcE] <;> ring
+
 /-- **Normalized skein recurrence for `normalizedEulerSum`.** Let `D` be a planar oriented code
 with `n + 1` crossings, `c` one of its crossings, and `D_A`, `D_B` any oriented codes whose
 underlying unoriented codes are the `A`- and `B`-resolutions of `D` at `c`. Then
@@ -309,47 +322,20 @@ theorem normalizedEulerSum_eq_resolveCrossing (D : OrientedPDCode (n + 1))
           (-1 : ℤ) ^ D_B.componentCount * D_B.normalizedEulerSum) := by
   have hPA : D_A.toPDCode.IsPlanar := hA ▸ hD.resolveCrossing _ c true
   have hPB : D_B.toPDCode.IsPlanar := hB ▸ hD.resolveCrossing _ c false
-  have hterm (t : Bool) (E : OrientedPDCode n) (hE : E.toPDCode.IsPlanar)
-      (ht : E.toPDCode = D.toPDCode.resolveCrossing c t) (s : Fin n → Bool) :
-      (-1 : ℤ) ^
-          (#{i | c.insertNth (α := fun _ ↦ Bool) t s i = false} + D.negativeCrossingCount) *
-          2 ^ D.stateLoopCount (c.insertNth (α := fun _ ↦ Bool) t s) =
-        -(-1 : ℤ) ^ D.componentCount * ((-1 : ℤ) ^ E.componentCount *
-          ((-1 : ℤ) ^ (#{i | s i = false} + E.negativeCrossingCount) *
-            2 ^ E.stateLoopCount s)) := by
-    rw [D.neg_one_pow_card_false_add_negativeCrossingCount hD
-        (c.insertNth (α := fun _ ↦ Bool) t s),
-      E.neg_one_pow_card_false_add_negativeCrossingCount hE s,
-      D.toPDCode.stateLoopCount_insertNth c t s, ← ht]
-    set cD := D.componentCount
-    set cE := E.componentCount
-    have hsq : (-1 : ℤ) ^ cE * (-1 : ℤ) ^ cE = 1 := by
-      rw [← pow_add, ← two_mul, pow_mul]
-      norm_num
-    simp only [pow_add, pow_one]
-    calc (-1 : ℤ) ^ cD * (-1) ^ E.stateLoopCount s * ((-1) ^ n * -1) *
-          2 ^ E.stateLoopCount s
-      _ = ((-1 : ℤ) ^ cE * (-1) ^ cE) *
-            ((-1) ^ cD * (-1) ^ E.stateLoopCount s * ((-1) ^ n * -1) *
-              2 ^ E.stateLoopCount s) := by rw [hsq, one_mul]
-      _ = -(-1 : ℤ) ^ cD * ((-1) ^ cE *
-            ((-1) ^ cE * (-1) ^ E.stateLoopCount s * (-1) ^ n *
-              2 ^ E.stateLoopCount s)) := by ring
-  rw [D.normalizedEulerSum_def, ← (Fin.insertNthEquiv (fun _ ↦ Bool) c).sum_comp,
-    Fintype.sum_prod_type, Fintype.sum_bool, D_A.normalizedEulerSum_def,
-    D_B.normalizedEulerSum_def, Finset.mul_sum, Finset.mul_sum, mul_add, Finset.mul_sum,
-    Finset.mul_sum]
-  simp only [Fin.insertNthEquiv_apply]
+  -- Split the state sum at `c` into its `A`- (`true`) and `B`- (`false`) faces via `insertNth`.
+  rw [D.normalizedEulerSum_def, ← (Fin.insertNthEquiv (fun _ ↦ Bool) c).sum_comp]
+  simp only [Fintype.sum_prod_type, Fintype.sum_bool, Fin.insertNthEquiv_apply,
+    D_A.normalizedEulerSum_def, D_B.normalizedEulerSum_def, mul_add, Finset.mul_sum]
   exact congrArg₂ (· + ·)
-    (Finset.sum_congr rfl fun s _ ↦ hterm true D_A hPA hA s)
-    (Finset.sum_congr rfl fun s _ ↦ hterm false D_B hPB hB s)
+    (Finset.sum_congr rfl fun s _ ↦ D.normalizedEulerSum_insertNth_term hD c true hPA hA s)
+    (Finset.sum_congr rfl fun s _ ↦ D.normalizedEulerSum_insertNth_term hD c false hPB hB s)
 
 /-- **The normalized enhanced-state Euler sum of a planar oriented PD-code with `c` components is
 `2 ^ c`**, including crossing-free codes and the empty diagram (`c = 0`, `2 ^ 0 = 1`). -/
 theorem normalizedEulerSum_eq_two_pow (D : OrientedPDCode n) (hD : D.toPDCode.IsPlanar) :
     D.normalizedEulerSum = 2 ^ D.componentCount := by
   induction n with
-  | zero => exact D.normalizedEulerSum_zero
+  | zero => exact D.normalizedEulerSum_eq_two_pow_of_zero_crossings
   | succ n ih =>
     obtain ⟨D_A, hA⟩ := (D.toPDCode.resolveCrossing 0 true).exists_orientedPDCode
     obtain ⟨D_B, hB⟩ := (D.toPDCode.resolveCrossing 0 false).exists_orientedPDCode
@@ -367,25 +353,13 @@ theorem normalizedEulerSum_eq_two_pow (D : OrientedPDCode n) (hD : D.toPDCode.Is
       have hk : (D.toPDCode.resolveCrossing 0 false).componentCount = k := by omega
       have hDk : D.componentCount = k + 1 := by omega
       rw [hk, hDk, pow_succ (-1 : ℤ) k, pow_succ (2 : ℤ) k]
-      have hsq : (-1 : ℤ) ^ k * (-1 : ℤ) ^ k = 1 := by
-        rw [← pow_add, ← two_mul, pow_mul]; norm_num
-      calc -((-1 : ℤ) ^ k * -1) * ((-1) ^ k * 2 ^ k + (-1) ^ k * 2 ^ k)
-        _ = ((-1 : ℤ) ^ k * (-1) ^ k) * (2 ^ k * 2) := by ring
-        _ = 2 ^ k * 2 := by rw [hsq, one_mul]
+      rcases neg_one_pow_eq_or ℤ k with hk' | hk' <;> rw [hk'] <;> ring
     · set k := D.toPDCode.componentCount
       rw [h₁, h₂, pow_succ (-1 : ℤ) k, pow_succ (2 : ℤ) k]
-      have hsq : (-1 : ℤ) ^ k * (-1 : ℤ) ^ k = 1 := by
-        rw [← pow_add, ← two_mul, pow_mul]; norm_num
-      calc -(-1 : ℤ) ^ k * ((-1) ^ k * 2 ^ k + ((-1) ^ k * -1) * (2 ^ k * 2))
-        _ = ((-1 : ℤ) ^ k * (-1) ^ k) * 2 ^ k := by ring
-        _ = 2 ^ k := by rw [hsq, one_mul]
+      rcases neg_one_pow_eq_or ℤ k with hk' | hk' <;> rw [hk'] <;> ring
     · set k := D.toPDCode.componentCount
       rw [h₁, h₂, pow_succ (-1 : ℤ) k, pow_succ (2 : ℤ) k]
-      have hsq : (-1 : ℤ) ^ k * (-1 : ℤ) ^ k = 1 := by
-        rw [← pow_add, ← two_mul, pow_mul]; norm_num
-      calc -(-1 : ℤ) ^ k * (((-1) ^ k * -1) * (2 ^ k * 2) + (-1) ^ k * 2 ^ k)
-        _ = ((-1 : ℤ) ^ k * (-1) ^ k) * 2 ^ k := by ring
-        _ = 2 ^ k := by rw [hsq, one_mul]
+      rcases neg_one_pow_eq_or ℤ k with hk' | hk' <;> rw [hk'] <;> ring
 
 /-! ### Consequences for the enhanced state sum, Jones polynomial, and Khovanov homology -/
 
@@ -397,9 +371,7 @@ include hD
 /-- Evaluating `D.enhancedStateSum` at `1` in `S` gives `2 ^ D.componentCount`. -/
 theorem eval₂_one_enhancedStateSum_eq_two_pow {S : Type*} [CommRing S] :
     eval₂ (Int.castRingHom S) 1 D.enhancedStateSum = 2 ^ D.componentCount := by
-  rw [D.eval₂_one_enhancedStateSum, D.normalizedEulerSum_eq_two_pow hD]
-  push_cast
-  rfl
+  simp [D.eval₂_one_enhancedStateSum, D.normalizedEulerSum_eq_two_pow hD]
 
 /-- Evaluating `D.enhancedStateSum` at `1 : ℤˣ` gives `2 ^ D.componentCount`. -/
 theorem laurentEval_one_enhancedStateSum_eq_two_pow :
@@ -414,7 +386,9 @@ theorem enhancedStateSum_ne_zero : D.enhancedStateSum ≠ 0 := by
   exact pow_ne_zero _ (by decide : (2 : ℤ) ≠ 0) h0
 
 /-- **Evaluating the Jones polynomial of a nonempty planar diagram at `t ^ (1/2) = -1`** gives
-`2 ^ (c - 1)` (Lickorish, Proposition 3.6). -/
+`2 ^ (c - 1)` (cf. Lickorish, Proposition 3.6, whose `(-2) ^ (c - 1)` at `t ^ (1/2) = 1` becomes
+`2 ^ (c - 1)` at `t ^ (1/2) = -1` since the exponents of `t ^ (1/2)` have the parity of
+`c - 1`). -/
 theorem laurentEval_neg_one_jonesPolynomial (hc : 0 < D.componentCount) :
     laurentEval (-1 : ℤˣ) D.jonesPolynomial = 2 ^ (D.componentCount - 1) := by
   let g : ℤ[T;T⁻¹] →ₐ[ℤ] ℤ := laurentEval (1 : ℤˣ)

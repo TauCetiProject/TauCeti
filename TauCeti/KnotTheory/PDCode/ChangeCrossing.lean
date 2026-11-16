@@ -29,7 +29,6 @@ writhe by `-2 * D.crossingSign i`.
 ## Main definitions
 
 * `TauCeti.PDCode.changeCrossing`: switch the over- and under-strands at crossing `i`.
-* `TauCeti.PDCode.toggleStateEquiv`: the involution on `Fin n → Bool` toggling crossing `i`.
 * `TauCeti.OrientedPDCode.changeCrossing`: switch crossing `i` of an oriented PD-code while
   preserving all component orientations.
 
@@ -257,30 +256,6 @@ crossing change. -/
   simp [stateLoopCount_def]
 
 end ChangeCrossing
-
-/-- The state-toggling involution on `Fin n → Bool` at crossing `i`: it exchanges the `A`- and
-`B`-smoothings at `i` while leaving all other crossings fixed. -/
-def toggleStateEquiv (i : Fin n) : Perm (Fin n → Bool) where
-  toFun s := Function.update s i (!s i)
-  invFun s := Function.update s i (!s i)
-  left_inv s := by
-    funext j
-    by_cases hj : j = i
-    · subst hj; simp
-    · simp [hj]
-  right_inv s := by
-    funext j
-    by_cases hj : j = i
-    · subst hj; simp
-    · simp [hj]
-
-/-- `toggleStateEquiv i` updates a state at `i` by boolean negation. -/
-@[simp] theorem toggleStateEquiv_apply (i : Fin n) (s : Fin n → Bool) :
-    toggleStateEquiv i s = Function.update s i (!s i) := (rfl)
-
-/-- `toggleStateEquiv i` is its own inverse. -/
-@[simp] theorem toggleStateEquiv_symm (i : Fin n) :
-    (toggleStateEquiv i).symm = toggleStateEquiv i := (rfl)
 
 end PDCode
 
