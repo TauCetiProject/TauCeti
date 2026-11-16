@@ -63,6 +63,9 @@ orbits of bounded period in a compact window is an open condition on the vector 
 * `TauCeti.maximalIntegralCurveInterval_verticalField`, `TauCeti.mem_flowDomain_verticalField_iff`,
   `TauCeti.flowOf_verticalField`: the flow of the vertical field is the flow of the fields of the
   family, with the parameter fixed.
+* `ContMDiff.apply_param`: the fields of a `C^n` family are `C^n`.
+* `TauCeti.eventually_mem_flowDomain_param`, `TauCeti.contMDiffAt_flowOf_param`: the flow of a
+  `C^n` family is defined on an open set of parameters, times and points, and is `C^n` there.
 * `TauCeti.eventually_contMDiffAt_and_mvfderiv_apply_ne_zero`: transversality of a function to
   the fields of a continuous family is an open condition in the parameter and the point.
 * `TauCeti.eventually_eventuallyEq_snd_flowTransition_verticalField`: near `(T₀, (a₀, p))`, the
@@ -146,6 +149,16 @@ theorem contMDiff_verticalField [IsManifold J 1 N] [IsManifold I 1 M] {n : ℕ�
     ContMDiff (J.prod I) (J.prod I).tangent n
       (fun z : N × M ↦ (⟨z, verticalField J v z⟩ : TangentBundle (J.prod I) (N × M))) :=
   fun z ↦ contMDiffAt_verticalField (hv z)
+
+/-- Each field `v a` of a jointly `C^n` family of vector fields is a `C^n` vector field. This is
+Mathlib's `ContMDiff.curry_right` for the sections `y ↦ (y, v a y)` of the tangent bundle, whose
+uncurried form it cannot recover by unification. -/
+theorem _root_.ContMDiff.apply_param [IsManifold I 1 M] {n : ℕ∞ω}
+    {v : N → (x : M) → TangentSpace I x}
+    (hv : ContMDiff (J.prod I) I.tangent n
+      (fun z : N × M ↦ (⟨z.2, v z.1 z.2⟩ : TangentBundle I M))) (a : N) :
+    CMDiff n (fun y ↦ (⟨y, v a y⟩ : TangentBundle I M)) :=
+  ContMDiff.curry_right (f := fun a y ↦ (⟨y, v a y⟩ : TangentBundle I M)) hv
 
 /-- The map `x ↦ (a, x)` carries `v a` to the vertical field. -/
 theorem mfderiv_prodMk_apply_verticalField (v : N → (x : M) → TangentSpace I x) (a : N)
@@ -253,6 +266,49 @@ theorem eventually_contMDiffAt_and_mvfderiv_apply_ne_zero [IsManifold I 1 M] {F'
       (f := fun z : N × M ↦ (⟨z.2, v z.1 z.2⟩ : TangentBundle I M)) (x := (a₀, q)) hv).eventually_ne
         hgv)
 
+/-! ### The flows of the fields of a family -/
+
+section Flow
+
+variable [T2Space M] [BoundarylessManifold I M] [CompleteSpace E] [CompleteSpace F] [T2Space N]
+  [BoundarylessManifold J N] [IsManifold I 1 M] [IsManifold J 1 N]
+  {v : N → (x : M) → TangentSpace I x} {a₀ : N} {t : ℝ} {x : M}
+
+/-- **The flow domain of a family is open.** If the flow of `v a₀` is defined at `(t, x)`,
+then for `(a, t', x')` near `(a₀, t, x)` the flow of `v a` is defined at `(t', x')`, provided the
+family `v` is jointly `C¹`. -/
+theorem eventually_mem_flowDomain_param
+    (hv : ContMDiff (J.prod I) I.tangent 1
+      (fun z : N × M ↦ (⟨z.2, v z.1 z.2⟩ : TangentBundle I M)))
+    (hP : (t, x) ∈ flowDomain (v a₀)) :
+    ∀ᶠ y in 𝓝 (a₀, t, x), y.2 ∈ flowDomain (v y.1) := by
+  -- Read `(a, t', x')` as the point `(t', (a, x'))` of the flow domain of the vertical field.
+  have h := (isOpen_setOf_mem_flowDomain (contMDiff_verticalField hv)
+    (τ := fun y : N × ℝ × M ↦ y.2.1) (f := fun y ↦ (y.1, y.2.2)) continuous_snd.fst
+    (continuous_fst.prodMk continuous_snd.snd)).mem_nhds (x := (a₀, t, x))
+    (mem_flowDomain_verticalField_iff.2 hP)
+  filter_upwards [h] with y hy
+  exact mem_flowDomain_verticalField_iff.1 hy
+
+/-- **The flow of a family is `C^n` in the parameter, the time and the point.** If the family `v`
+is jointly `C^n` with `1 ≤ n` and the flow of `v a₀` is defined at `(t, x)`, then
+`(a, t', x') ↦ flowOf (v a) t' x'` is `C^n` at `(a₀, t, x)`. -/
+theorem contMDiffAt_flowOf_param {n : ℕ∞} (hn : 1 ≤ n) [IsManifold I n M] [IsManifold J n N]
+    (hv : ContMDiff (J.prod I) I.tangent n
+      (fun z : N × M ↦ (⟨z.2, v z.1 z.2⟩ : TangentBundle I M)))
+    (hP : (t, x) ∈ flowDomain (v a₀)) :
+    ContMDiffAt (J.prod (𝓘(ℝ).prod I)) I n (fun y : N × ℝ × M ↦ flowOf (v y.1) y.2.1 y.2.2)
+      (a₀, t, x) := by
+  have hn1 : ((1 : ℕ∞) : WithTop ℕ∞) ≤ n := by exact_mod_cast hn
+  -- The flow of the vertical field at `(t', (a, x'))` is `(a, flowOf (v a) t' x')`.
+  refine (contMDiffAt_snd.comp _ (contMDiffAt_flowOf_comp hn (contMDiff_verticalField hv)
+    contMDiffAt_snd.fst (contMDiffAt_fst.prodMk contMDiffAt_snd.snd)
+    (mem_flowDomain_verticalField_iff.2 hP))).congr_of_eventuallyEq
+    (Eventually.of_forall fun y ↦ ?_)
+  simp only [comp_apply, flowOf_verticalField ((hv.apply_param y.1).of_le hn1)]
+
+end Flow
+
 /-! ### Continuation of nondegenerate closed orbits -/
 
 section Continuation
@@ -279,13 +335,11 @@ theorem eventually_eventuallyEq_snd_flowTransition_verticalField [CompleteSpace 
       (fun x ↦ (flowTransition (verticalField J v) (g ∘ Prod.snd) T₀ (a₀, p) (y.2.1, x)).2)
         =ᶠ[𝓝 y.2.2] flowTransition (v y.2.1) g y.1 y.2.2 := by
   set q₀ := flowOf (v a₀) T₀ p
-  have hva (a : N) : CMDiff 1 (fun y ↦ (⟨y, v a y⟩ : TangentBundle I M)) :=
-    hv.comp (contMDiff_const.prodMk contMDiff_id)
   have hV := contMDiff_verticalField hv
   have hT : (T₀, (a₀, p)) ∈ flowDomain (verticalField J v) :=
     mem_flowDomain_verticalField_iff.2 hP
   have hflow : flowOf (verticalField J v) T₀ (a₀, p) = (a₀, q₀) :=
-    flowOf_verticalField (hva a₀) T₀ p
+    flowOf_verticalField (hv.apply_param a₀) T₀ p
   -- Near `(a₀, q₀)`, `g` is still `C¹` and transverse to the fields of the family.
   have hgnear :=
     eventually_contMDiffAt_and_mvfderiv_apply_ne_zero hv.continuous.continuousAt hg hgv
@@ -304,10 +358,10 @@ theorem eventually_eventuallyEq_snd_flowTransition_verticalField [CompleteSpace 
     hflowNear.eventually hgnear] with ⟨t, a, q⟩ hW hdom hgq hlevel
   dsimp only at hW hdom hgq hlevel ⊢
   rw [mem_flowDomain_verticalField_iff] at hdom
-  rw [flowOf_verticalField (hva a)] at hgq
+  rw [flowOf_verticalField (hv.apply_param a)] at hgq
   -- Near `q`, the hitting time of the section along `v a` is the hitting time of the vertical
   -- field: it is continuous at `q` with value `t`, so the points `(h x, (a, x))` stay in `W`.
-  have hlev := eventually_flowHittingTime (hva a) hdom hgq.1 hgq.2
+  have hlev := eventually_flowHittingTime (hv.apply_param a) hdom hgq.1 hgq.2
   have hhW : ∀ᶠ x in 𝓝 q, (flowHittingTime (v a) g t q x, (a, x)) ∈ W := by
     have h := (continuousAt_flowHittingTime (v := v a) (g := g) (T := t) (p := q)).tendsto
       |>.prodMk_nhds ((continuous_const.prodMk continuous_id).tendsto (f := fun x : M ↦ (a, x)) q)
@@ -316,8 +370,8 @@ theorem eventually_eventuallyEq_snd_flowTransition_verticalField [CompleteSpace 
   filter_upwards [hlev, hhW] with x hx hxW
   have hσ : flowHittingTime (v a) g t q x =
       flowHittingTime (verticalField J v) (g ∘ Prod.snd) T₀ (a₀, p) (a, x) :=
-    (hWsub hxW).1 (by rw [flowOf_verticalField (hva a), hx.2, hlevel])
-  rw [flowTransition_apply, flowTransition_apply, ← hσ, flowOf_verticalField (hva a)]
+    (hWsub hxW).1 (by rw [flowOf_verticalField (hv.apply_param a), hx.2, hlevel])
+  rw [flowTransition_apply, flowTransition_apply, ← hσ, flowOf_verticalField (hv.apply_param a)]
 
 /-- **Continuation of nondegenerate closed orbits.** Let `M` be a Hausdorff boundaryless manifold
 modelled on a finite-dimensional space, `N` a Hausdorff boundaryless manifold modelled on a Banach
@@ -358,7 +412,7 @@ theorem exists_contMDiffAt_closedOrbit_continuation [FiniteDimensional ℝ E] [I
   have hV : CMDiff n (fun z : N × M ↦ (⟨z, V z⟩ : TangentBundle (J.prod I) (N × M))) :=
     contMDiff_verticalField hv
   have hva (a : N) : CMDiff 1 (fun y ↦ (⟨y, v a y⟩ : TangentBundle I M)) :=
-    (hv.comp (contMDiff_const.prodMk contMDiff_id)).of_le hn1
+    (hv.apply_param a).of_le hn1
   -- The closed orbit of `v a₀` through `p` is a closed orbit of the vertical field through
   -- `(a₀, p)`, and `g ∘ Prod.snd` cuts out a transverse section through it.
   have hT : (T₀, (a₀, p)) ∈ flowDomain V := mem_flowDomain_verticalField_iff.2 hP
