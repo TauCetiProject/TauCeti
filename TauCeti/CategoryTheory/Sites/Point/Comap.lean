@@ -14,26 +14,19 @@ public import TauCeti.CategoryTheory.Sites.Point.Category
 /-!
 # Fibres and left exactness of pullback sheaves
 
-Let `F : C ⥤ D` be a continuous functor between sites `(C, J)` and `(D, K)`, let `Φ` be a point of
-`(D, K)`, and let `Ψ` be a point of `(C, J)` equipped with a natural isomorphism
-`e : F ⋙ Φ.fiber ≅ Ψ.fiber`.
+For a continuous functor `F : (C, J) ⥤ (D, K)` and points `Φ` of `(D, K)` and `Ψ` of `(C, J)` with
+`e : F ⋙ Φ.fiber ≅ Ψ.fiber`:
 
-* **Skyscraper and stalk comparison**: pushing forward skyscraper sheaves at `Φ` along `F` produces
-  skyscraper sheaves at `Ψ` (`Point.skyscraperSheafFunctorCompSheafPushforwardContinuousIso`), so
-  taking mates identifies the stalk of a pullback sheaf `F^* G` at `Φ` with the stalk of `G` at `Ψ`
-  (`Point.sheafPullbackCompSheafFiberIso`), without assuming `RepresentablyFlat F` or
-  `CoverPreserving J K F`. Its action on germs is recorded by
-  `Point.toPresheafFiber_sheafPullbackCompSheafFiberIso_inv_app` and
-  `Point.unit_toPresheafFiber_sheafPullbackCompSheafFiberIso_hom_app`.
-* **Inverse image point**: when `F` is representably flat and cover-preserving,
-  `(F ⋙ Φ.fiber).Elements` inherits initial smallness from `Ψ` via `initiallySmall_elements_of_iso`,
-  yielding `Φ.comap F hF ≅ Ψ` (`Point.comapIsoOfFiberIso`) and identifying
-  `sheafPullbackCompSheafFiberIso` with `sheafFiberComapIso` composed with `sheafFiberIso`.
-* **Left exactness of sheaf pullback**: if a family of points `Φ i` of `(D, K)` has fibre functors
-  in `A` that jointly reflect isomorphisms and each `F ⋙ (Φ i).fiber` is isomorphic to `(Ψ i).fiber`
-  for a point `Ψ i` of `(C, J)`, and `A` satisfies `AB5OfSize.{w, w}`, then `F.sheafPullback A J K`
-  preserves finite limits
-  (`Functor.preservesFiniteLimits_sheafPullback_of_jointlyReflectIsomorphisms`).
+* `Point.skyscraperSheafFunctorCompSheafPushforwardContinuousIso` and
+  `Point.sheafPullbackCompSheafFiberIso` identify stalks of `F^* G` at `Φ` with stalks of `G` at
+  `Ψ` (with action on germs `Point.toPresheafFiber_sheafPullbackCompSheafFiberIso_inv_app`,
+  `Point.unit_toPresheafFiber_sheafPullbackCompSheafFiberIso_hom_app`), without assuming
+  `RepresentablyFlat F` or `CoverPreserving J K F`.
+* When `F` is representably flat and cover-preserving, `Point.comapIsoOfFiberIso` yields
+  `Φ.comap F hF ≅ Ψ` and `Point.sheafPullbackCompSheafFiberIso_eq_sheafFiberComapIso` compares
+  with Mathlib's `sheafFiberComapIso`.
+* `Functor.preservesFiniteLimits_sheafPullback_of_jointlyReflectIsomorphisms` deduces left
+  exactness of `F.sheafPullback A J K` in an `AB5` category from a conservative family of points.
 
 ## References
 
@@ -55,12 +48,15 @@ section Comap
 variable {C D : Type*} [Category* C] [Category* D] {J : GrothendieckTopology C}
   {K : GrothendieckTopology D} (Φ : Point.{w} K) (F : C ⥤ D) {Ψ : Point.{w} J}
 
+section Skyscraper
+
+variable (e : F ⋙ Φ.fiber ≅ Ψ.fiber) (A : Type*) [Category* A] [HasProducts.{w} A]
+  [F.IsContinuous J K]
+
 /-- Given a continuous functor `F : C ⥤ D` between sites `(C, J)` and `(D, K)`, points `Φ` of
 `(D, K)` and `Ψ` of `(C, J)`, and a natural isomorphism `e : F ⋙ Φ.fiber ≅ Ψ.fiber`, pushing
 forward skyscraper sheaves at `Φ` along `F` yields skyscraper sheaves at `Ψ`. -/
-noncomputable def skyscraperSheafFunctorCompSheafPushforwardContinuousIso
-    (e : F ⋙ Φ.fiber ≅ Ψ.fiber) (A : Type*) [Category* A] [HasProducts.{w} A]
-    [F.IsContinuous J K] :
+noncomputable def skyscraperSheafFunctorCompSheafPushforwardContinuousIso :
     Φ.skyscraperSheafFunctor ⋙ F.sheafPushforwardContinuous A J K ≅
       Ψ.skyscraperSheafFunctor :=
   NatIso.ofComponents
@@ -76,8 +72,7 @@ noncomputable def skyscraperSheafFunctorCompSheafPushforwardContinuousIso
 
 @[simp]
 lemma skyscraperSheafFunctorCompSheafPushforwardContinuousIso_hom_app_hom_app_π
-    (e : F ⋙ Φ.fiber ≅ Ψ.fiber) (A : Type*) [Category* A] [HasProducts.{w} A]
-    [F.IsContinuous J K] (M : A) (X : C) (y : Ψ.fiber.obj X) :
+    (M : A) (X : C) (y : Ψ.fiber.obj X) :
     ((Φ.skyscraperSheafFunctorCompSheafPushforwardContinuousIso F e A).hom.app M).hom.app
         (op X) ≫ Pi.π (fun (_ : Ψ.fiber.obj X) ↦ M) y =
       Pi.π (fun (_ : Φ.fiber.obj (F.obj X)) ↦ M) (e.inv.app X y) :=
@@ -85,8 +80,7 @@ lemma skyscraperSheafFunctorCompSheafPushforwardContinuousIso_hom_app_hom_app_π
 
 @[simp]
 lemma skyscraperSheafFunctorCompSheafPushforwardContinuousIso_hom_app_hom_app_π_assoc
-    (e : F ⋙ Φ.fiber ≅ Ψ.fiber) (A : Type*) [Category* A] [HasProducts.{w} A]
-    [F.IsContinuous J K] (M : A) (X : C) (y : Ψ.fiber.obj X) {Z : A} (h : M ⟶ Z) :
+    (M : A) (X : C) (y : Ψ.fiber.obj X) {Z : A} (h : M ⟶ Z) :
     ((Φ.skyscraperSheafFunctorCompSheafPushforwardContinuousIso F e A).hom.app M).hom.app
         (op X) ≫ Pi.π (fun (_ : Ψ.fiber.obj X) ↦ M) y ≫ h =
       Pi.π (fun (_ : Φ.fiber.obj (F.obj X)) ↦ M) (e.inv.app X y) ≫ h :=
@@ -95,8 +89,7 @@ lemma skyscraperSheafFunctorCompSheafPushforwardContinuousIso_hom_app_hom_app_π
 
 @[simp]
 lemma skyscraperSheafFunctorCompSheafPushforwardContinuousIso_inv_app_hom_app_π
-    (e : F ⋙ Φ.fiber ≅ Ψ.fiber) (A : Type*) [Category* A] [HasProducts.{w} A]
-    [F.IsContinuous J K] (M : A) (X : C) (x : Φ.fiber.obj (F.obj X)) :
+    (M : A) (X : C) (x : Φ.fiber.obj (F.obj X)) :
     ((Φ.skyscraperSheafFunctorCompSheafPushforwardContinuousIso F e A).inv.app M).hom.app
         (op X) ≫ Pi.π (fun (_ : Φ.fiber.obj (F.obj X)) ↦ M) x =
       Pi.π (fun (_ : Ψ.fiber.obj X) ↦ M) (e.hom.app X x) :=
@@ -104,28 +97,25 @@ lemma skyscraperSheafFunctorCompSheafPushforwardContinuousIso_inv_app_hom_app_π
 
 @[simp]
 lemma skyscraperSheafFunctorCompSheafPushforwardContinuousIso_inv_app_hom_app_π_assoc
-    (e : F ⋙ Φ.fiber ≅ Ψ.fiber) (A : Type*) [Category* A] [HasProducts.{w} A]
-    [F.IsContinuous J K] (M : A) (X : C) (x : Φ.fiber.obj (F.obj X)) {Z : A} (h : M ⟶ Z) :
+    (M : A) (X : C) (x : Φ.fiber.obj (F.obj X)) {Z : A} (h : M ⟶ Z) :
     ((Φ.skyscraperSheafFunctorCompSheafPushforwardContinuousIso F e A).inv.app M).hom.app
         (op X) ≫ Pi.π (fun (_ : Φ.fiber.obj (F.obj X)) ↦ M) x ≫ h =
       Pi.π (fun (_ : Ψ.fiber.obj X) ↦ M) (e.hom.app X x) ≫ h :=
   (Category.assoc _ _ _).symm.trans (congrArg (· ≫ h)
     (Φ.skyscraperSheafFunctorCompSheafPushforwardContinuousIso_inv_app_hom_app_π F e A M X x))
 
+variable [HasColimitsOfSize.{w, w} A] [(F.sheafPushforwardContinuous A J K).IsRightAdjoint]
+
 /-- When `F : (C, J) ⥤ (D, K)` is continuous and `e : F ⋙ Φ.fiber ≅ Ψ.fiber`, taking the stalk at
 `Φ` after sheaf pullback along `F` is naturally isomorphic to taking the stalk at `Ψ`. -/
-noncomputable def sheafPullbackCompSheafFiberIso (e : F ⋙ Φ.fiber ≅ Ψ.fiber)
-    (A : Type*) [Category* A] [HasProducts.{w} A] [HasColimitsOfSize.{w, w} A]
-    [F.IsContinuous J K] [(F.sheafPushforwardContinuous A J K).IsRightAdjoint] :
+noncomputable def sheafPullbackCompSheafFiberIso :
     F.sheafPullback A J K ⋙ Φ.sheafFiber ≅ Ψ.sheafFiber :=
   ((conjugateIsoEquiv ((F.sheafAdjunctionContinuous A J K).comp Φ.skyscraperSheafAdjunction)
     Ψ.skyscraperSheafAdjunction).symm
       (Φ.skyscraperSheafFunctorCompSheafPushforwardContinuousIso F e A)).symm
 
 @[simp]
-lemma conjugateEquiv_sheafPullbackCompSheafFiberIso_inv (e : F ⋙ Φ.fiber ≅ Ψ.fiber)
-    (A : Type*) [Category* A] [HasProducts.{w} A] [HasColimitsOfSize.{w, w} A]
-    [F.IsContinuous J K] [(F.sheafPushforwardContinuous A J K).IsRightAdjoint] :
+lemma conjugateEquiv_sheafPullbackCompSheafFiberIso_inv :
     conjugateEquiv ((F.sheafAdjunctionContinuous A J K).comp Φ.skyscraperSheafAdjunction)
       Ψ.skyscraperSheafAdjunction (Φ.sheafPullbackCompSheafFiberIso F e A).inv =
       (Φ.skyscraperSheafFunctorCompSheafPushforwardContinuousIso F e A).hom := by
@@ -134,9 +124,7 @@ lemma conjugateEquiv_sheafPullbackCompSheafFiberIso_inv (e : F ⋙ Φ.fiber ≅ 
 /-- Under the inverse of `sheafPullbackCompSheafFiberIso`, the germ at `Ψ` of a section of `G` over
 `X` maps to the germ at `Φ` of its pullback along the adjunction unit. -/
 @[simp]
-lemma toPresheafFiber_sheafPullbackCompSheafFiberIso_inv_app (e : F ⋙ Φ.fiber ≅ Ψ.fiber)
-    (A : Type*) [Category* A] [HasProducts.{w} A] [HasColimitsOfSize.{w, w} A]
-    [F.IsContinuous J K] [(F.sheafPushforwardContinuous A J K).IsRightAdjoint]
+lemma toPresheafFiber_sheafPullbackCompSheafFiberIso_inv_app
     (G : Sheaf J A) (X : C) (y : Ψ.fiber.obj X) :
     Ψ.toPresheafFiber X y G.obj ≫ (Φ.sheafPullbackCompSheafFiberIso F e A).inv.app G =
       ((F.sheafAdjunctionContinuous A J K).unit.app G).hom.app (op X) ≫
@@ -147,92 +135,68 @@ lemma toPresheafFiber_sheafPullbackCompSheafFiberIso_inv_app (e : F ⋙ Φ.fiber
   rw [conjugateEquiv_sheafPullbackCompSheafFiberIso_inv] at h
   let α : Ψ.presheafFiber.obj G.obj ⟶ (F.sheafPullback A J K ⋙ Φ.sheafFiber).obj G :=
     (Φ.sheafPullbackCompSheafFiberIso F e A).inv.app G
-  have hrhs : (Ψ.skyscraperSheafAdjunction.unit.app G ≫
-      Ψ.skyscraperSheafFunctor.map ((Φ.sheafPullbackCompSheafFiberIso F e A).inv.app G)).hom =
-      Ψ.skyscraperPresheafHomEquiv α :=
-    (congrArg (·.hom) (Ψ.skyscraperSheafAdjunction.homEquiv_unit G _ α).symm).trans
-      (Ψ.skyscraperSheafAdjunction_homEquiv_apply_hom α)
   let idΦ : Φ.presheafFiber.obj ((F.sheafPullback A J K).obj G).obj ⟶
       (F.sheafPullback A J K ⋙ Φ.sheafFiber).obj G := 𝟙 _
+  have hrhs : (Ψ.skyscraperSheafAdjunction.unit.app G ≫
+      Ψ.skyscraperSheafFunctor.map α).hom = Ψ.skyscraperPresheafHomEquiv α :=
+    (congrArg (·.hom) (Ψ.skyscraperSheafAdjunction.homEquiv_unit G _ α).symm).trans
+      (Ψ.skyscraperSheafAdjunction_homEquiv_apply_hom α)
   have hlhs : (Φ.skyscraperSheafAdjunction.unit.app ((F.sheafPullback A J K).obj G)).hom =
       Φ.skyscraperPresheafHomEquiv idΦ :=
     (congrArg (fun (f : (F.sheafPullback A J K).obj G ⟶ _) ↦ f.hom)
       (Φ.skyscraperSheafAdjunction.homEquiv_id ((F.sheafPullback A J K).obj G)).symm).trans
       (Φ.skyscraperSheafAdjunction_homEquiv_apply_hom idΦ)
-  have h1 : (Ψ.skyscraperPresheafHomEquiv α).app (op X) ≫ Pi.π _ y =
-      (((F.sheafAdjunctionContinuous A J K).comp Φ.skyscraperSheafAdjunction).unit.app G ≫
-        (Φ.skyscraperSheafFunctorCompSheafPushforwardContinuousIso F e A).hom.app _).hom.app
-          (op X) ≫ Pi.π _ y :=
-    congrArg (fun (f : G.obj ⟶ _) ↦ f.app (op X) ≫ Pi.π _ y)
-      (hrhs.symm.trans (congrArg (·.hom) h.symm))
-  have h2 : (((F.sheafAdjunctionContinuous A J K).comp Φ.skyscraperSheafAdjunction).unit.app G ≫
-        (Φ.skyscraperSheafFunctorCompSheafPushforwardContinuousIso F e A).hom.app _).hom.app
-          (op X) ≫ Pi.π _ y =
-      ((F.sheafAdjunctionContinuous A J K).unit.app G).hom.app (op X) ≫
-        (Φ.skyscraperPresheafHomEquiv idΦ).app (op (F.obj X)) ≫ Pi.π _ (e.inv.app X y) := by
-    simp only [Adjunction.comp_unit_app]
-    refine (Category.assoc _ _ _).trans ?_
-    have hπ :=
-      Φ.skyscraperSheafFunctorCompSheafPushforwardContinuousIso_hom_app_hom_app_π F e A
-        ((F.sheafPullback A J K ⋙ Φ.sheafFiber).obj G) X y
-    refine (congrArg (_ ≫ ·) hπ).trans ?_
-    refine (Category.assoc _ _ _).trans ?_
-    exact congrArg (fun (f : ((F.sheafPullback A J K).obj G).obj ⟶
-        Φ.skyscraperPresheaf ((F.sheafPullback A J K ⋙ Φ.sheafFiber).obj G)) ↦
-      ((F.sheafAdjunctionContinuous A J K).unit.app G).hom.app (op X) ≫
-        f.app (op (F.obj X)) ≫ Pi.π _ (e.inv.app X y)) hlhs
-  exact (Ψ.skyscraperPresheafHomEquiv_app_π α X y).symm.trans
-    (h1.trans (h2.trans (congrArg (_ ≫ ·)
-      ((Φ.skyscraperPresheafHomEquiv_app_π idΦ (F.obj X) (e.inv.app X y)).trans
-        (Category.comp_id _)))))
+  have h1 := congrArg (fun f : G.obj ⟶ _ ↦ f.app (op X) ≫ Pi.π _ y)
+    (hrhs.symm.trans (congrArg (·.hom) h.symm))
+  refine (Ψ.skyscraperPresheafHomEquiv_app_π α X y).symm.trans (h1.trans ?_)
+  simp only [Adjunction.comp_unit_app]
+  refine (Category.assoc _ _ _).trans ?_
+  refine (congrArg (_ ≫ ·)
+    (Φ.skyscraperSheafFunctorCompSheafPushforwardContinuousIso_hom_app_hom_app_π F e A _ X y)).trans
+    ?_
+  refine (Category.assoc _ _ _).trans (congrArg (_ ≫ ·) ?_)
+  exact (congrArg (fun (f : ((F.sheafPullback A J K).obj G).obj ⟶ _) ↦
+    f.app (op (F.obj X)) ≫ Pi.π _ (e.inv.app X y)) hlhs).trans
+    ((Φ.skyscraperPresheafHomEquiv_app_π idΦ (F.obj X) (e.inv.app X y)).trans (Category.comp_id _))
 
 @[simp]
-lemma toPresheafFiber_sheafPullbackCompSheafFiberIso_inv_app_assoc (e : F ⋙ Φ.fiber ≅ Ψ.fiber)
-    (A : Type*) [Category* A] [HasProducts.{w} A] [HasColimitsOfSize.{w, w} A]
-    [F.IsContinuous J K] [(F.sheafPushforwardContinuous A J K).IsRightAdjoint]
+lemma toPresheafFiber_sheafPullbackCompSheafFiberIso_inv_app_assoc
     (G : Sheaf J A) (X : C) (y : Ψ.fiber.obj X) {Z : A}
     (h : Φ.sheafFiber.obj ((F.sheafPullback A J K).obj G) ⟶ Z) :
     Ψ.toPresheafFiber X y G.obj ≫ (Φ.sheafPullbackCompSheafFiberIso F e A).inv.app G ≫ h =
       ((F.sheafAdjunctionContinuous A J K).unit.app G).hom.app (op X) ≫
         Φ.toPresheafFiber (F.obj X) (e.inv.app X y) ((F.sheafPullback A J K).obj G).obj ≫ h :=
-  (Category.assoc _ _ _).symm.trans
-    ((congrArg (· ≫ h)
-      (Φ.toPresheafFiber_sheafPullbackCompSheafFiberIso_inv_app F e A G X y)).trans
-      (Category.assoc _ _ _))
+  (Category.assoc _ _ _).symm.trans ((congrArg (· ≫ h)
+    (Φ.toPresheafFiber_sheafPullbackCompSheafFiberIso_inv_app F e A G X y)).trans
+    (Category.assoc _ _ _))
 
 /-- Under `sheafPullbackCompSheafFiberIso`, the germ at `Φ` of the pullback of a section of `G`
 over `X` along the adjunction unit maps to its germ at `Ψ`. -/
 @[simp]
-lemma unit_toPresheafFiber_sheafPullbackCompSheafFiberIso_hom_app (e : F ⋙ Φ.fiber ≅ Ψ.fiber)
-    (A : Type*) [Category* A] [HasProducts.{w} A] [HasColimitsOfSize.{w, w} A]
-    [F.IsContinuous J K] [(F.sheafPushforwardContinuous A J K).IsRightAdjoint]
+lemma unit_toPresheafFiber_sheafPullbackCompSheafFiberIso_hom_app
     (G : Sheaf J A) (X : C) (x : Φ.fiber.obj (F.obj X)) :
     ((F.sheafAdjunctionContinuous A J K).unit.app G).hom.app (op X) ≫
         Φ.toPresheafFiber (F.obj X) x ((F.sheafPullback A J K).obj G).obj ≫
           (Φ.sheafPullbackCompSheafFiberIso F e A).hom.app G =
       Ψ.toPresheafFiber X (e.hom.app X x) G.obj := by
   have h := Φ.toPresheafFiber_sheafPullbackCompSheafFiberIso_inv_app F e A G X (e.hom.app X x)
-  have hx : e.inv.app X (e.hom.app X x) = x := by simp
-  rw [hx] at h
-  exact (Category.assoc _ _ _).symm.trans
-    ((congrArg (· ≫ _) h.symm).trans
-      ((Category.assoc _ _ _).trans
-        ((congrArg (_ ≫ ·) ((Φ.sheafPullbackCompSheafFiberIso F e A).inv_hom_id_app G)).trans
-          (Category.comp_id _))))
+  rw [Iso.hom_inv_id_app_apply] at h
+  exact (Category.assoc _ _ _).symm.trans ((congrArg (· ≫ _) h.symm).trans
+    ((Category.assoc _ _ _).trans ((congrArg (_ ≫ ·)
+      ((Φ.sheafPullbackCompSheafFiberIso F e A).inv_hom_id_app G)).trans (Category.comp_id _))))
 
 @[simp]
 lemma unit_toPresheafFiber_sheafPullbackCompSheafFiberIso_hom_app_assoc
-    (e : F ⋙ Φ.fiber ≅ Ψ.fiber)
-    (A : Type*) [Category* A] [HasProducts.{w} A] [HasColimitsOfSize.{w, w} A]
-    [F.IsContinuous J K] [(F.sheafPushforwardContinuous A J K).IsRightAdjoint]
     (G : Sheaf J A) (X : C) (x : Φ.fiber.obj (F.obj X)) {Z : A} (h : Ψ.sheafFiber.obj G ⟶ Z) :
     ((F.sheafAdjunctionContinuous A J K).unit.app G).hom.app (op X) ≫
         Φ.toPresheafFiber (F.obj X) x ((F.sheafPullback A J K).obj G).obj ≫
           (Φ.sheafPullbackCompSheafFiberIso F e A).hom.app G ≫ h =
       Ψ.toPresheafFiber X (e.hom.app X x) G.obj ≫ h :=
-  (congrArg (_ ≫ ·) (Category.assoc _ _ _).symm).trans
-    ((Category.assoc _ _ _).symm.trans (congrArg (· ≫ h)
+  (congrArg (_ ≫ ·) (Category.assoc _ _ _).symm).trans ((Category.assoc _ _ _).symm.trans
+    (congrArg (· ≫ h)
       (Φ.unit_toPresheafFiber_sheafPullbackCompSheafFiberIso_hom_app F e A G X x)))
+
+end Skyscraper
 
 variable [RepresentablyFlat F] (hF : CoverPreserving J K F)
 
@@ -267,47 +231,28 @@ lemma sheafPullbackCompSheafFiberIso_eq_sheafFiberComapIso (e : F ⋙ Φ.fiber �
       (Φ.sheafFiberComapIso F hF A).symm ≪≫ sheafFiberIso (Φ.comapIsoOfFiberIso F hF e) A := by
   let := initiallySmall_elements_of_iso.{w} e
   let e₀ : F ⋙ Φ.fiber ≅ (Φ.comap F hF).fiber := Iso.refl _
-  have hrefl :
-      Φ.sheafPullbackCompSheafFiberIso F (Ψ := Φ.comap F hF) e₀ A =
-        (Φ.sheafFiberComapIso F hF A).symm := by
-    apply Iso.symm_eq_iff.mp
-    apply Iso.ext
-    apply (conjugateEquiv ((F.sheafAdjunctionContinuous A J K).comp Φ.skyscraperSheafAdjunction)
-      (Φ.comap F hF).skyscraperSheafAdjunction).injective
-    rw [Iso.symm_hom, conjugateEquiv_sheafPullbackCompSheafFiberIso_inv]
-    have hcomap :
-        conjugateEquiv ((F.sheafAdjunctionContinuous A J K).comp Φ.skyscraperSheafAdjunction)
-          (Φ.comap F hF).skyscraperSheafAdjunction (Φ.sheafFiberComapIso F hF A).hom =
-          (Φ.skyscraperSheafFunctorCompSheafPushforwardContinuous F hF A).hom := by
-      simp [sheafFiberComapIso]
-    rw [Iso.symm_hom, Iso.symm_inv, hcomap]
-    ext M X
-    apply Pi.hom_ext
-    intro x
+  have hrefl : Φ.sheafPullbackCompSheafFiberIso F (Ψ := Φ.comap F hF) e₀ A =
+      (Φ.sheafFiberComapIso F hF A).symm := by
+    refine Iso.symm_eq_iff.mp (Iso.ext ((conjugateEquiv
+      ((F.sheafAdjunctionContinuous A J K).comp Φ.skyscraperSheafAdjunction)
+      (Φ.comap F hF).skyscraperSheafAdjunction).injective ?_))
+    simp only [Iso.symm_hom, Iso.symm_inv, conjugateEquiv_sheafPullbackCompSheafFiberIso_inv,
+      sheafFiberComapIso, conjugateIsoEquiv_symm_apply_hom, Equiv.apply_symm_apply]
+    ext M X; apply Pi.hom_ext; intro x
     exact (Φ.skyscraperSheafFunctorCompSheafPushforwardContinuousIso_hom_app_hom_app_π F
       (Ψ := Φ.comap F hF) e₀ A M X.unop x).trans (Category.id_comp _).symm
-  apply Iso.symm_eq_iff.mp
-  apply Iso.ext
+  refine Iso.symm_eq_iff.mp (Iso.ext ?_)
   ext G : 2
-  apply Ψ.presheafFiber_hom_ext
-  intro X y
-  refine (Φ.toPresheafFiber_sheafPullbackCompSheafFiberIso_inv_app F e A G X y).trans ?_
-  have hcomp :
-      Ψ.toPresheafFiber X y G.obj ≫
-          ((Φ.sheafFiberComapIso F hF A).symm ≪≫
-            sheafFiberIso (Φ.comapIsoOfFiberIso F hF e) A).inv.app G =
-        (Φ.comap F hF).toPresheafFiber X (e.inv.app X y) G.obj ≫
-          (Φ.sheafFiberComapIso F hF A).hom.app G := by
-    simp only [Iso.trans_inv, Iso.symm_inv, sheafFiberIso_inv]
-    refine (Category.assoc _ _ _).symm.trans ?_
-    refine congrArg (· ≫ _) ?_
-    simp only [Functor.whiskerLeft_app, Hom.presheafFiber_app, comapIsoOfFiberIso_hom_hom]
-    exact Ψ.toPresheafFiber_presheafFiberDesc _ _ X y
-  refine Eq.trans ?_ hcomp.symm
-  have h0 := Φ.toPresheafFiber_sheafPullbackCompSheafFiberIso_inv_app F (Ψ := Φ.comap F hF)
-    e₀ A G X (e.inv.app X y)
+  refine Ψ.presheafFiber_hom_ext fun X y ↦
+    (Φ.toPresheafFiber_sheafPullbackCompSheafFiberIso_inv_app F e A G X y).trans ?_
+  have h0 := Φ.toPresheafFiber_sheafPullbackCompSheafFiberIso_inv_app F
+    (Ψ := Φ.comap F hF) e₀ A G X (e.inv.app X y)
   rw [hrefl] at h0
-  exact h0.symm
+  refine h0.symm.trans ?_
+  simp only [Iso.symm_hom, Iso.trans_inv, Iso.symm_inv, sheafFiberIso_inv]
+  refine Eq.symm ((Category.assoc _ _ _).symm.trans (congrArg (· ≫ _) ?_))
+  simp only [Functor.whiskerLeft_app, Hom.presheafFiber_app, comapIsoOfFiberIso_hom_hom]
+  exact Ψ.toPresheafFiber_presheafFiberDesc _ _ X y
 
 end Comap
 

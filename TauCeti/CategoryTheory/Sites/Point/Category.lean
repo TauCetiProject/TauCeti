@@ -36,14 +36,10 @@ def isoMk (e : Φ₂.fiber ≅ Φ₁.fiber) : Φ₁ ≅ Φ₂ where
   inv := ⟨e.inv⟩
 
 @[simp]
-lemma isoMk_hom_hom (e : Φ₂.fiber ≅ Φ₁.fiber) :
-    (isoMk e).hom.hom = e.hom :=
-  (rfl)
+lemma isoMk_hom_hom (e : Φ₂.fiber ≅ Φ₁.fiber) : (isoMk e).hom.hom = e.hom := (rfl)
 
 @[simp]
-lemma isoMk_inv_hom (e : Φ₂.fiber ≅ Φ₁.fiber) :
-    (isoMk e).inv.hom = e.inv :=
-  (rfl)
+lemma isoMk_inv_hom (e : Φ₂.fiber ≅ Φ₁.fiber) : (isoMk e).inv.hom = e.inv := (rfl)
 
 /-- An isomorphism `Φ₁ ≅ Φ₂` of points induces a natural isomorphism of presheaf fibre functors. -/
 noncomputable def presheafFiberIso (e : Φ₁ ≅ Φ₂) (A : Type*) [Category* A]
@@ -56,13 +52,11 @@ noncomputable def presheafFiberIso (e : Φ₁ ≅ Φ₂) (A : Type*) [Category* 
 
 @[simp]
 lemma presheafFiberIso_hom (e : Φ₁ ≅ Φ₂) (A : Type*) [Category* A] [HasColimitsOfSize.{w, w} A] :
-    (presheafFiberIso e A).hom = e.inv.presheafFiber :=
-  (rfl)
+    (presheafFiberIso e A).hom = e.inv.presheafFiber := (rfl)
 
 @[simp]
 lemma presheafFiberIso_inv (e : Φ₁ ≅ Φ₂) (A : Type*) [Category* A] [HasColimitsOfSize.{w, w} A] :
-    (presheafFiberIso e A).inv = e.hom.presheafFiber :=
-  (rfl)
+    (presheafFiberIso e A).inv = e.hom.presheafFiber := (rfl)
 
 /-- An isomorphism `Φ₁ ≅ Φ₂` of points induces a natural isomorphism of sheaf fibre functors. -/
 noncomputable def sheafFiberIso (e : Φ₁ ≅ Φ₂) (A : Type*) [Category* A]
@@ -72,12 +66,10 @@ noncomputable def sheafFiberIso (e : Φ₁ ≅ Φ₂) (A : Type*) [Category* A]
 
 @[simp]
 lemma sheafFiberIso_hom (e : Φ₁ ≅ Φ₂) (A : Type*) [Category* A] [HasColimitsOfSize.{w, w} A] :
-    (sheafFiberIso e A).hom = Functor.whiskerLeft (sheafToPresheaf J A) e.inv.presheafFiber :=
-  (rfl)
+    (sheafFiberIso e A).hom = Functor.whiskerLeft _ e.inv.presheafFiber := (rfl)
 
 @[simp]
 lemma sheafFiberIso_inv (e : Φ₁ ≅ Φ₂) (A : Type*) [Category* A] [HasColimitsOfSize.{w, w} A] :
-    (sheafFiberIso e A).inv = Functor.whiskerLeft (sheafToPresheaf J A) e.hom.presheafFiber :=
-  (rfl)
+    (sheafFiberIso e A).inv = Functor.whiskerLeft _ e.hom.presheafFiber := (rfl)
 
 end CategoryTheory.GrothendieckTopology.Point

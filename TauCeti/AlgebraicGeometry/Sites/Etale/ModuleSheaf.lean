@@ -305,32 +305,32 @@ theorem IsFiniteLisse.smallEtalePullback {X Y : Scheme.{u}}
     ((f.smallEtalePullback (ModuleCat.{u} Λ)).obj F).IsFiniteLisse :=
   IsLocallyConstantIn.smallEtalePullback hF f
 
+section Descent
+
+variable (F : Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ))
+
 /-- **Étale descent for finite lisse sheaves.** An étale sheaf of `Λ`-modules on `S` is finite
-lisse if and only if its pullbacks along a jointly surjective family of étale morphisms
-`u : ∀ i, U i ⟶ S` are finite lisse. -/
-theorem isFiniteLisse_iff_of_etaleCover (F : Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ))
-    {ι : Type*} {U : ι → Scheme.{u}} (u : ∀ i, U i ⟶ S) [∀ i, Etale (u i)]
-    (hu : ⋃ i, Set.range (u i) = .univ) :
-    F.IsFiniteLisse ↔
-      ∀ i, (((u i).smallEtalePullback (ModuleCat.{u} Λ)).obj F).IsFiniteLisse :=
+lisse if and only if its pullbacks along a jointly surjective étale family `u : ∀ i, U i ⟶ S` are
+finite lisse. -/
+theorem isFiniteLisse_iff_of_etaleCover {ι : Type*} {U : ι → Scheme.{u}}
+    (u : ∀ i, U i ⟶ S) [∀ i, Etale (u i)] (hu : ⋃ i, Set.range (u i) = .univ) :
+    F.IsFiniteLisse ↔ ∀ i, (((u i).smallEtalePullback (ModuleCat.{u} Λ)).obj F).IsFiniteLisse :=
   F.isLocallyConstantIn_smallEtaleTopology_iff_of_etaleCover _ u hu
 
 /-- An étale sheaf of `Λ`-modules on `S` is finite lisse if and only if its pullback along a
 surjective étale morphism `u : U ⟶ S` is finite lisse. -/
-theorem isFiniteLisse_iff_of_etale_of_surjective
-    (F : Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ))
-    {U : Scheme.{u}} (u : U ⟶ S) [Etale u] [Surjective u] :
-    F.IsFiniteLisse ↔
-      ((u.smallEtalePullback (ModuleCat.{u} Λ)).obj F).IsFiniteLisse :=
+theorem isFiniteLisse_iff_of_etale_of_surjective {U : Scheme.{u}} (u : U ⟶ S)
+    [Etale u] [Surjective u] :
+    F.IsFiniteLisse ↔ ((u.smallEtalePullback (ModuleCat.{u} Λ)).obj F).IsFiniteLisse :=
   F.isLocallyConstantIn_smallEtaleTopology_iff_of_etale_of_surjective _ u
 
 /-- **Zariski descent for finite lisse sheaves.** An étale sheaf of `Λ`-modules on `S` is finite
 lisse if and only if its restrictions to the pieces of an open cover `𝒰 : S.OpenCover` are finite
 lisse. -/
-theorem isFiniteLisse_iff_of_openCover (F : Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ))
-    (𝒰 : S.OpenCover) :
-    F.IsFiniteLisse ↔
-      ∀ i, (((𝒰.f i).smallEtalePullback (ModuleCat.{u} Λ)).obj F).IsFiniteLisse :=
+theorem isFiniteLisse_iff_of_openCover (𝒰 : S.OpenCover) :
+    F.IsFiniteLisse ↔ ∀ i, (((𝒰.f i).smallEtalePullback (ModuleCat.{u} Λ)).obj F).IsFiniteLisse :=
   F.isLocallyConstantIn_smallEtaleTopology_iff_of_openCover _ 𝒰
+
+end Descent
 
 end CategoryTheory.Sheaf

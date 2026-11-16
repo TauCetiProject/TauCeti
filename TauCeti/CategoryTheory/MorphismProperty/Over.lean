@@ -89,26 +89,11 @@ variable {C : Type*} [Category* C] {P : MorphismProperty C} [P.IsStableUnderComp
 /-- The inverse functor of `CategoryTheory.Over U ≌ P.Over ⊤ U.left`, sending `W : P.Over ⊤ U.left`
 to `(Over.map ⊤ U.prop).obj W` equipped with the structure morphism `W.hom` over `U`. -/
 -- The body is exposed so dependent `.left` and `.hom` types of mapped morphisms compute.
-@[expose]
+@[expose, simps! obj_left obj_hom_left map_left_left]
 def iteratedSliceBackward : P.Over ⊤ U.left ⥤ CategoryTheory.Over U where
   obj W := CategoryTheory.Over.mk (Over.homMk W.hom rfl : (Over.map ⊤ U.prop).obj W ⟶ U)
   map g := CategoryTheory.Over.homMk ((Over.map ⊤ U.prop).map g)
     (Over.Hom.ext (Over.w g))
-
-@[simp]
-lemma iteratedSliceBackward_obj_left (W : P.Over ⊤ U.left) :
-    ((iteratedSliceBackward U).obj W).left = (Over.map ⊤ U.prop).obj W :=
-  (rfl)
-
-@[simp]
-lemma iteratedSliceBackward_obj_hom_left (W : P.Over ⊤ U.left) :
-    (((iteratedSliceBackward U).obj W).hom).left = W.hom :=
-  (rfl)
-
-@[simp]
-lemma iteratedSliceBackward_map_left_left {V W : P.Over ⊤ U.left} (g : V ⟶ W) :
-    (((iteratedSliceBackward U).map g).left).left = g.left :=
-  (rfl)
 
 /-- Postcomposing `iteratedSliceBackward U` with `CategoryTheory.Over.forget U` recovers
 `MorphismProperty.Over.map ⊤ U.prop : P.Over ⊤ U.left ⥤ P.Over ⊤ X`. -/
@@ -120,13 +105,11 @@ def iteratedSliceBackwardCompForgetIso :
 
 @[simp]
 lemma iteratedSliceBackwardCompForgetIso_hom_app_left (W : P.Over ⊤ U.left) :
-    ((iteratedSliceBackwardCompForgetIso U).hom.app W).left = 𝟙 W.left :=
-  (rfl)
+    ((iteratedSliceBackwardCompForgetIso U).hom.app W).left = 𝟙 W.left := (rfl)
 
 @[simp]
 lemma iteratedSliceBackwardCompForgetIso_inv_app_left (W : P.Over ⊤ U.left) :
-    ((iteratedSliceBackwardCompForgetIso U).inv.app W).left = 𝟙 W.left :=
-  (rfl)
+    ((iteratedSliceBackwardCompForgetIso U).inv.app W).left = 𝟙 W.left := (rfl)
 
 end Backward
 
@@ -138,26 +121,11 @@ variable {C : Type*} [Category* C] {P : MorphismProperty C} [P.HasOfPostcompProp
 /-- The forward functor of `CategoryTheory.Over U ≌ P.Over ⊤ U.left`, sending an object `V` of
 `CategoryTheory.Over U` to `V.left.left ⟶ U.left` in `P.Over ⊤ U.left`. -/
 -- The body is exposed so dependent `.left` and `.hom` types of mapped morphisms compute.
-@[expose]
+@[expose, simps! obj_left obj_hom map_left]
 def iteratedSliceForward : CategoryTheory.Over U ⥤ P.Over ⊤ U.left where
   obj V := Over.mk ⊤ V.hom.left
     (P.of_postcomp V.hom.left U.hom U.prop ((Over.w V.hom).symm ▸ V.left.prop))
   map f := Over.homMk f.left.left (congrArg (·.left) (CategoryTheory.Over.w f))
-
-@[simp]
-lemma iteratedSliceForward_obj_left (V : CategoryTheory.Over U) :
-    ((iteratedSliceForward U).obj V).left = V.left.left :=
-  (rfl)
-
-@[simp]
-lemma iteratedSliceForward_obj_hom (V : CategoryTheory.Over U) :
-    ((iteratedSliceForward U).obj V).hom = V.hom.left :=
-  (rfl)
-
-@[simp]
-lemma iteratedSliceForward_map_left {V W : CategoryTheory.Over U} (f : V ⟶ W) :
-    ((iteratedSliceForward U).map f).left = f.left.left :=
-  (rfl)
 
 end Forward
 
@@ -171,7 +139,8 @@ variable {C : Type*} [Category* C] {P : MorphismProperty C}
 `CategoryTheory.Over U` over `U : P.Over ⊤ X` is equivalent to `P.Over ⊤ U.left`. -/
 -- The body is exposed so `functor` and `inverse` reduce to `iteratedSliceForward` and
 -- `iteratedSliceBackward` in dependent `.left` and `.hom` types.
-@[expose]
+@[expose, simps! functor inverse unitIso_hom_app_left_left unitIso_inv_app_left_left
+  counitIso_hom_app_left counitIso_inv_app_left]
 def iteratedSliceEquiv : CategoryTheory.Over U ≌ P.Over ⊤ U.left where
   functor := iteratedSliceForward U
   inverse := iteratedSliceBackward U
@@ -186,36 +155,6 @@ def iteratedSliceEquiv : CategoryTheory.Over U ≌ P.Over ⊤ U.left where
     (fun _ ↦ Over.Hom.ext ((Category.comp_id _).trans (Category.id_comp _).symm))
   functor_unitIso_comp _ := Over.Hom.ext (Category.id_comp _)
 
-@[simp]
-lemma iteratedSliceEquiv_functor :
-    (iteratedSliceEquiv U).functor = iteratedSliceForward U :=
-  (rfl)
-
-@[simp]
-lemma iteratedSliceEquiv_inverse :
-    (iteratedSliceEquiv U).inverse = iteratedSliceBackward U :=
-  (rfl)
-
-@[simp]
-lemma iteratedSliceEquiv_unitIso_hom_app_left_left (V : CategoryTheory.Over U) :
-    (((iteratedSliceEquiv U).unitIso.hom.app V).left).left = 𝟙 V.left.left :=
-  (rfl)
-
-@[simp]
-lemma iteratedSliceEquiv_unitIso_inv_app_left_left (V : CategoryTheory.Over U) :
-    (((iteratedSliceEquiv U).unitIso.inv.app V).left).left = 𝟙 V.left.left :=
-  (rfl)
-
-@[simp]
-lemma iteratedSliceEquiv_counitIso_hom_app_left (W : P.Over ⊤ U.left) :
-    ((iteratedSliceEquiv U).counitIso.hom.app W).left = 𝟙 W.left :=
-  (rfl)
-
-@[simp]
-lemma iteratedSliceEquiv_counitIso_inv_app_left (W : P.Over ⊤ U.left) :
-    ((iteratedSliceEquiv U).counitIso.inv.app W).left = 𝟙 W.left :=
-  (rfl)
-
 /-- Postcomposing `iteratedSliceForward U` with `MorphismProperty.Over.map ⊤ U.prop` recovers
 `CategoryTheory.Over.forget U : CategoryTheory.Over U ⥤ P.Over ⊤ X`. -/
 def iteratedSliceForwardCompMapIso :
@@ -226,13 +165,11 @@ def iteratedSliceForwardCompMapIso :
 
 @[simp]
 lemma iteratedSliceForwardCompMapIso_hom_app_left (V : CategoryTheory.Over U) :
-    ((iteratedSliceForwardCompMapIso U).hom.app V).left = 𝟙 V.left.left :=
-  (rfl)
+    ((iteratedSliceForwardCompMapIso U).hom.app V).left = 𝟙 V.left.left := (rfl)
 
 @[simp]
 lemma iteratedSliceForwardCompMapIso_inv_app_left (V : CategoryTheory.Over U) :
-    ((iteratedSliceForwardCompMapIso U).inv.app V).left = 𝟙 V.left.left :=
-  (rfl)
+    ((iteratedSliceForwardCompMapIso U).inv.app V).left = 𝟙 V.left.left := (rfl)
 
 end Equiv
 
