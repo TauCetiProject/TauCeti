@@ -150,8 +150,9 @@ theorem mem_areaDiscChart_target {a : ℝ} (ha : 0 < a) {y : ℂ} :
 theorem volume_areaDiscChart_target {a : ℝ} (ha : 0 < a) :
     MeasureTheory.volume (areaDiscChart a).target = ENNReal.ofReal a := by
   rw [areaDiscChart_target ha, Complex.volume_ball, ← ENNReal.ofReal_pow (Real.sqrt_nonneg _),
-    Real.sq_sqrt (div_pos ha Real.pi_pos).le, ← ENNReal.ofReal_coe_nnreal, NNReal.coe_real_pi,
-    ← ENNReal.ofReal_mul (div_pos ha Real.pi_pos).le, div_mul_cancel₀ _ Real.pi_ne_zero]
+    ← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul (by positivity)]
+  congr 1
+  simp [Real.sq_sqrt (div_pos ha Real.pi_pos).le, Real.pi_ne_zero]
 
 /-- The disc chart in the affine coordinate: `z ↦ √(a / π) z / √(1 + |z|²)`. -/
 theorem areaDiscChart_coe {a : ℝ} (ha : 0 < a) (z : ℂ) :
@@ -192,16 +193,6 @@ theorem mvfderiv_areaDiscChart_coe {a : ℝ} (ha : 0 < a) (z v : ℂ) :
       (√(a / Real.pi) / √(1 + ‖z‖ ^ 2)) • v -
         (√(a / Real.pi) / √(1 + ‖z‖ ^ 2) ^ 3 * ⟪z, v⟫_ℝ) • z)
 
-/-- A real-linear map `v ↦ α v - β ⟪z, v⟫ z` of `ℂ` scales the area form by its determinant
-`α (α - β |z|²)`. -/
-private theorem stdComplexSymplecticForm_smul_sub_smul (α β : ℝ) (z v w : ℂ) :
-    stdComplexSymplecticForm (α • v - (β * ⟪z, v⟫_ℝ) • z) (α • w - (β * ⟪z, w⟫_ℝ) • z) =
-      α * (α - β * ‖z‖ ^ 2) * stdComplexSymplecticForm v w := by
-  simp only [stdComplexSymplecticForm_apply, Complex.inner, Complex.sub_re, Complex.sub_im,
-    Complex.real_smul, Complex.mul_re, Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im,
-    Complex.conj_re, Complex.conj_im, Complex.sq_norm, Complex.normSq_apply]
-  ring
-
 /-- The pointwise identity behind `eval₂_smul_fubiniStudyForm_eq_mvfderiv_areaDiscChart`, in the
 affine coordinate `z`: `a ρ(z) Im (conj v * w)` is the area of the images of `v` and `w` under the
 derivative of the disc chart. -/
@@ -214,14 +205,19 @@ private theorem smul_fubiniStudyDensity_mul_eq {a : ℝ} (ha : 0 < a) (z v w : �
           (√(a / Real.pi) / √(1 + ‖z‖ ^ 2) ^ 3 * ⟪z, w⟫_ℝ) • z) := by
   rw [stdComplexSymplecticForm_smul_sub_smul, stdComplexSymplecticForm_apply,
     fubiniStudyDensity_def, smul_eq_mul, Complex.mul_im, Complex.conj_re, Complex.conj_im]
-  have hS : √(1 + ‖z‖ ^ 2) ^ 2 = 1 + ‖z‖ ^ 2 := Real.sq_sqrt (by positivity)
-  have hr : √(a / Real.pi) ^ 2 = a / Real.pi := Real.sq_sqrt (div_pos ha Real.pi_pos).le
-  have hS0 : √(1 + ‖z‖ ^ 2) ≠ 0 := (Real.sqrt_pos.2 (by positivity)).ne'
-  -- Clearing denominators leaves `√(1 + |z|²)⁴ = (1 + |z|²)²` times the area of `v` and `w`.
-  field_simp
-  rw [hS, hr]
-  field_simp
-  linear_combination (v.re * w.im - v.im * w.re) * (√(1 + ‖z‖ ^ 2) ^ 2 + 1 + ‖z‖ ^ 2) * hS
+  set s := √(1 + ‖z‖ ^ 2)
+  set r := √(a / Real.pi)
+  have hS : s ^ 2 = 1 + ‖z‖ ^ 2 := Real.sq_sqrt (by positivity)
+  have hr : r ^ 2 = a / Real.pi := Real.sq_sqrt (div_pos ha Real.pi_pos).le
+  have hS0 : s ≠ 0 := (Real.sqrt_pos.2 (by positivity)).ne'
+  -- The scaling factor `α (α - β |z|²)` is `r² (s² - |z|²) / s⁴`, and `s² - |z|² = 1`.
+  have hcoef : r / s * (r / s - r / s ^ 3 * ‖z‖ ^ 2) = a * (Real.pi * (1 + ‖z‖ ^ 2) ^ 2)⁻¹ :=
+    calc r / s * (r / s - r / s ^ 3 * ‖z‖ ^ 2) = r ^ 2 * (s ^ 2 - ‖z‖ ^ 2) / (s ^ 2) ^ 2 := by
+          field_simp
+      _ = a * (Real.pi * (1 + ‖z‖ ^ 2) ^ 2)⁻¹ := by
+          rw [hS, hr, add_sub_cancel_right, mul_one, div_div, div_eq_mul_inv]
+  rw [hcoef]
+  ring
 
 /-- **The disc chart is a Darboux chart for `a • ω_FS`.** For `a > 0`, the standard area form
 `dx ∧ dy` of `ℂ` pulls back along the disc chart to the Fubini–Study form scaled to total area

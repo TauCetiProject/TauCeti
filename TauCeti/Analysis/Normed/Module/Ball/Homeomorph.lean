@@ -91,12 +91,11 @@ theorem OpenPartialHomeomorph.univBall_symm_apply {r : ℝ} (hr : 0 < r) (c y : 
   -- `unitBallBall`, then that of `univUnitBall`.
   change univUnitBall.symm ((unitBallBall c r hr).symm y) = _
   have hsq : √(r ^ 2 - ‖y - c‖ ^ 2) = r * √(1 - ‖r⁻¹ • (y - c)‖ ^ 2) := by
-    rw [norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos hr, ← Real.sqrt_sq hr.le,
-      ← Real.sqrt_mul (sq_nonneg r), Real.sqrt_sq hr.le]
-    congr 1
-    field_simp
-  rw [unitBallBall_symm_apply, univUnitBall_symm_apply, vsub_eq_sub, smul_smul, hsq, mul_inv,
-    mul_comm]
+    have h : r ^ 2 - ‖y - c‖ ^ 2 = r ^ 2 * (1 - ‖r⁻¹ • (y - c)‖ ^ 2) := by
+      simp [norm_smul, abs_of_pos hr]
+      field_simp
+    rw [h, Real.sqrt_mul (sq_nonneg r), Real.sqrt_sq hr.le]
+  simp [unitBallBall_symm_apply, univUnitBall_symm_apply, smul_smul, hsq, mul_comm]
 
 namespace ContinuousLinearEquiv
 
