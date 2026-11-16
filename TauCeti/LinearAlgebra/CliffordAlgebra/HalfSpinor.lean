@@ -17,6 +17,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
 import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Conjugation
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
+import TauCeti.LinearAlgebra.Eigenspace.Separation
 import TauCeti.LinearAlgebra.End.Adjugate
 
 /-!
@@ -74,8 +75,10 @@ products. Consequently `ρ(x* x) = det(ρ x)` on `W^ε`.
   `CliffordAlgebra.map_star_mul_self_apply_of_mem_even` state both on vectors.
 * `CliffordAlgebra.map_ι_apply_mem_eigenspace_chirality_neg`: `c(v)` maps the `ε`-eigenspace of
   `Γ` into the `-ε`-eigenspace.
-* `CliffordAlgebra.finrank_eigenspace_chirality_neg`: the two eigenspaces have the same
-  dimension.
+* `CliffordAlgebra.finrank_eigenspace_chirality_neg`,
+  `CliffordAlgebra.isCompl_eigenspace_chirality`, and
+  `CliffordAlgebra.finrank_eq_two_mul_finrank_positiveHalfSpinors`: the `±1` eigenspaces are
+  complementary of equal dimension, so `dim_ℂ W = 2 * dim_ℂ W⁺`.
 * `CliffordAlgebra.eq_zero_of_forall_re_inner_map_ι_apply_eq_zero`: if
   `Re ⟪c(v) ψ, χ⟫ = 0` for all `v`, with `ψ ≠ 0` in a two-dimensional `ε`-eigenspace and `χ` in
   the opposite eigenspace, then `χ = 0`.
@@ -387,7 +390,26 @@ theorem finrank_eigenspace_chirality_neg (ε : ℂ) :
   · obtain ⟨v, hv⟩ := not_forall.1 hQ₀
     exact (halfSpinCliffordMulEquiv o ρ ε hv).finrank_eq.symm
 
+variable (ρ) in
+omit hQ in
+/-- **The chirality decomposition on a real Clifford module**: when `Q v = -‖v‖²`, every complex
+Clifford module `W` splits as the direct sum of `positiveHalfSpinors o ρ` and the `-1`-eigenspace
+of `Γ`. -/
+theorem isCompl_eigenspace_chirality (hQ : ∀ v, Q v = -‖v‖ ^ 2) :
+    IsCompl (positiveHalfSpinors o ρ) (eigenspace (ρ (chirality Q o)) (-1)) := by
+  rw [positiveHalfSpinors_eq_eigenspace]
+  exact TauCeti.isCompl_eigenspace_one_neg_one (two_ne_zero : (2 : ℂ) ≠ 0).isUnit fun w ↦ by
+    rw [← mul_apply_eq_comp, ← map_mul, chirality_mul_self o hQ, map_one, one_apply_eq_self]
+
 variable [FiniteDimensional ℂ W]
+
+variable (ρ) in
+omit hQ in
+/-- **Total spinor dimension is twice the positive half-spinor dimension.** -/
+theorem finrank_eq_two_mul_finrank_positiveHalfSpinors (hQ : ∀ v, Q v = -‖v‖ ^ 2) :
+    finrank ℂ W = 2 * finrank ℂ (positiveHalfSpinors o ρ) := by
+  have hsum := (Submodule.finrank_add_eq_of_isCompl (isCompl_eigenspace_chirality o ρ hQ)).symm
+  rw [hsum, positiveHalfSpinors_eq_eigenspace, finrank_eigenspace_chirality_neg o ρ 1, two_mul]
 
 /-- **Clifford multiplication by a nonzero spinor is a real isomorphism.** For a nonzero `ψ` in
 the `ε`-eigenspace of `Γ`, when that eigenspace has complex dimension two, the real-linear map

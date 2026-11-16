@@ -13,69 +13,46 @@ import Mathlib.Analysis.InnerProductSpace.Spectrum
 import Mathlib.LinearAlgebra.FreeModule.Finite.Matrix
 import Mathlib.LinearAlgebra.GeneralLinearGroup.AlgEquiv
 import Mathlib.RingTheory.SimpleRing.Basic
+import TauCeti.Analysis.InnerProductSpace.LinearIsometry.Rescale
 import TauCeti.LinearAlgebra.CliffordAlgebra.CentralSimple.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
 import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
 import TauCeti.LinearAlgebra.CliffordAlgebra.Hermitian.Complex
-import TauCeti.LinearAlgebra.Eigenspace.Separation
 import TauCeti.LinearAlgebra.Eigenspace.Transport
 import TauCeti.LinearAlgebra.QuadraticForm.BaseChange
 
 /-!
 # Unitary Clifford intertwiners and Hermitian half-spinors
 
-A real Clifford algebra map `ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W` into the complex
-endomorphisms of `W` extends uniquely to a complex algebra homomorphism
-`CliffordAlgebra.complexifyAction ρ : CliffordAlgebra (Q.baseChange ℂ) →ₐ[ℂ] Module.End ℂ W`.
-When `Q` is nondegenerate on a real space of even dimension `2 * m` and `W` has complex dimension
-`2 ^ m`, the complexified Clifford algebra is simple of dimension `4 ^ m = (dim_ℂ W)²`, so
-`complexifyAction ρ` is an algebra isomorphism onto `Module.End ℂ W`.
+A real Clifford algebra map `ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W` extends uniquely to
+`CliffordAlgebra.complexifyAction ρ : CliffordAlgebra (Q.baseChange ℂ) →ₐ[ℂ] Module.End ℂ W`, which
+is bijective when `Q` is nondegenerate in dimension `2 * m` and `dim_ℂ W = 2 ^ m`. Combining
+Skolem–Noether with Schur's lemma (`CliffordAlgebra.existsUnique_pos_mul_inner_of_surjective`) gives
+existence (`CliffordAlgebra.exists_unitary_intertwiner_of_finrank_eq`) and `Circle`-torsor
+uniqueness (`CliffordAlgebra.existsUnique_circle_smul_intertwiner`) of unitary Clifford intertwiners
+along linear isometries `f : V ≃ₗᵢ[ℝ] V'`.
 
-Combining this fullness criterion with the Skolem–Noether theorem for endomorphism algebras and
-Schur's lemma for compatible Hermitian metrics
-(`CliffordAlgebra.existsUnique_pos_mul_inner_of_surjective`) classifies unitary Clifford
-intertwiners along linear isometries `f : V ≃ₗᵢ[ℝ] V'`:
-
-* **Existence** (`CliffordAlgebra.exists_unitary_intertwiner_of_finrank_eq`): for negative-definite
-  norm-square forms in dimension `2 * m`, any two Hermitian Clifford modules of complex dimension
-  `2 ^ m` are intertwined along `f` by a complex linear isometry equivalence `U : W ≃ₗᵢ[ℂ] W'`.
-* **Uniqueness up to a phase** (`CliffordAlgebra.existsUnique_circle_smul_intertwiner`): whenever
-  `complexifyAction ρ` is surjective on a nontrivial module `W`, any two unitary intertwiners along
-  `f` differ by multiplication by a unique element of `Circle`.
-
-In dimension four, the chirality element `Γ` splits any Clifford module with `Q v = -‖v‖²` into
-complementary `±1` eigenspaces of equal complex dimension
-(`CliffordAlgebra.isCompl_eigenspace_chirality`,
-`CliffordAlgebra.finrank_eq_two_mul_finrank_positiveHalfSpinors`), which are mutually orthogonal
-when the generators act skew-adjointly
-(`CliffordAlgebra.inner_eq_zero_of_mem_eigenspace_chirality`). Consequently half-spin rank two
-(`dim_ℂ W⁺ = 2`) implies `dim_ℂ W = 4`, making `complexifyAction ρ` bijective. Every unitary
-Clifford intertwiner along an orientation-preserving isometry restricts to unitary equivalences on
-all chirality eigenspaces (`CliffordAlgebra.halfSpinLinearIsometryEquiv`) that intertwine odd
-Clifford multiplication (`CliffordAlgebra.halfSpinCliffordMul`), and the induced conjugation of
-linear maps between chirality eigenspaces is independent of the choice of unitary intertwiner
-because the `Circle` phase cancels (`CliffordAlgebra.conj_halfSpinLinearIsometryEquiv_eq`).
+In dimension four with `Q v = -‖v‖²`, skew-adjoint generators make the chirality eigenspaces
+mutually orthogonal (`CliffordAlgebra.inner_eq_zero_of_mem_eigenspace_chirality`), half-spin rank
+two implies `dim_ℂ W = 4` (`CliffordAlgebra.finrank_eq_two_mul_finrank_positiveHalfSpinors`), and
+every unitary intertwiner along an orientation-preserving isometry restricts to unitary chirality
+equivalences (`CliffordAlgebra.halfSpinLinearIsometryEquiv`) whose operator conjugation is
+independent of the `Circle` phase (`CliffordAlgebra.conj_halfSpinLinearIsometryEquiv_eq`).
 
 ## Main definitions
 
-* `CliffordAlgebra.complexifyAction ρ`: the `ℂ`-algebra extension of `ρ : CliffordAlgebra Q →ₐ[ℝ]
-  Module.End ℂ W` to `CliffordAlgebra (Q.baseChange ℂ)`.
-* `CliffordAlgebra.halfSpinLinearIsometryEquiv`: the restriction of a unitary Clifford intertwiner
-  along an orientation-preserving four-dimensional isometry to the `ε`-eigenspaces of `Γ`.
+* `CliffordAlgebra.complexifyAction ρ`: `ℂ`-algebra extension of `ρ` to `Q.baseChange ℂ`.
+* `CliffordAlgebra.halfSpinLinearIsometryEquiv`: unitary restriction to `ε`-eigenspaces of `Γ`.
 
 ## Main results
 
-* `CliffordAlgebra.complexifyAction_bijective_of_finrank_eq`: fullness in even dimension `2 * m` at
-  spinor dimension `2 ^ m`.
-* `CliffordAlgebra.existsUnique_circle_smul_intertwiner` and
-  `CliffordAlgebra.exists_unitary_intertwiner_of_finrank_eq`: `Circle`-torsor classification of
-  unitary Clifford intertwiners.
+* `CliffordAlgebra.complexifyAction_bijective_of_finrank_eq`,
+  `CliffordAlgebra.existsUnique_circle_smul_intertwiner`,
+  `CliffordAlgebra.exists_unitary_intertwiner_of_finrank_eq`.
 * `CliffordAlgebra.adjoint_evenHalfSpinAction`,
-  `CliffordAlgebra.coe_adjoint_halfSpinCliffordMul_apply`, and
-  `CliffordAlgebra.norm_halfSpinCliffordMul_apply`: adjoint and norm laws for the even half-spin
-  action and chiral Clifford multiplication.
-* `CliffordAlgebra.conj_halfSpinLinearIsometryEquiv_eq`: canonical conjugation of operators between
-  chirality eigenspaces, independent of the chosen unitary intertwiner.
+  `CliffordAlgebra.coe_adjoint_halfSpinCliffordMul_apply`,
+  `CliffordAlgebra.norm_halfSpinCliffordMul_apply`,
+  `CliffordAlgebra.conj_halfSpinLinearIsometryEquiv_eq`.
 
 ## References
 
@@ -202,11 +179,12 @@ theorem existsUnique_circle_smul_intertwiner [NormedAddCommGroup W] [InnerProduc
   have hcomm_ι (v : V) : L.toLinearEquiv.toLinearMap ∘ₗ ρ (ι Q v) =
       ρ (ι Q v) ∘ₗ L.toLinearEquiv.toLinearMap := by
     ext w
-    refine U₁.injective ?_
-    change U₁ (L (ρ (ι Q v) w)) = U₁ (ρ (ι Q v) (L w))
-    rw [hU₁L, show U₂ _ = _ from LinearMap.congr_fun (hU₂ v) w,
-      show U₁ _ = _ from LinearMap.congr_fun (hU₁ v) (L w)]
-    exact congrArg (ρ' (ι Q' (f v))) (hU₁L w).symm
+    apply U₁.injective
+    have hw₂ : U₂ (ρ (ι Q v) w) = ρ' (ι Q' (f v)) (U₂ w) := LinearMap.congr_fun (hU₂ v) w
+    have hw₁ : U₁ (ρ (ι Q v) (L w)) = ρ' (ι Q' (f v)) (U₁ (L w)) :=
+      LinearMap.congr_fun (hU₁ v) (L w)
+    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearIsometryEquiv.coe_toLinearEquiv]
+    rw [hU₁L, hw₂, hw₁, hU₁L]
   have hcenter : L.toLinearEquiv.toLinearMap ∈ Subalgebra.center ℂ (Module.End ℂ W) :=
     Subalgebra.mem_center_iff.mpr fun B ↦ by
       obtain ⟨a, rfl⟩ := hsurj B
@@ -223,31 +201,6 @@ theorem existsUnique_circle_smul_intertwiner [NormedAddCommGroup W] [InnerProduc
     rw [sub_smul, ← hz u, ← map_smul, ← hLw u, hU₁L, sub_self]
   have hu₁ : U₁ u ≠ 0 := fun h0 ↦ by simpa [h0, hu] using U₁.norm_map u
   exact sub_eq_zero.mp ((smul_eq_zero.mp hzu).resolve_right hu₁)
-
-/-- Rescaling a linear equivalence that scales the inner product by a positive real constant `r`
-yields a linear isometry equivalence. -/
-private def rescaleLinearIsometryEquiv [NormedAddCommGroup W] [InnerProductSpace ℂ W]
-    [NormedAddCommGroup W'] [InnerProductSpace ℂ W'] (T : W ≃ₗ[ℂ] W') {r : ℝ} (hr : 0 < r)
-    (hT : ∀ x y, ⟪T x, T y⟫_ℂ = (r : ℂ) * ⟪x, y⟫_ℂ) : W ≃ₗᵢ[ℂ] W' where
-  toFun x := (((Real.sqrt r)⁻¹ : ℝ) : ℂ) • T x
-  invFun y := ((Real.sqrt r : ℝ) : ℂ) • T.symm y
-  map_add' x y := by simp [smul_add]
-  map_smul' c x := by simp [smul_smul, mul_comm]
-  left_inv x := by
-    dsimp only
-    rw [T.symm.map_smul, T.symm_apply_apply, smul_smul, Complex.ofReal_inv,
-      mul_inv_cancel₀ (Complex.ofReal_ne_zero.mpr (Real.sqrt_ne_zero'.mpr hr)), one_smul]
-  right_inv y := by
-    dsimp only
-    rw [T.map_smul, T.apply_symm_apply, smul_smul, Complex.ofReal_inv,
-      inv_mul_cancel₀ (Complex.ofReal_ne_zero.mpr (Real.sqrt_ne_zero'.mpr hr)), one_smul]
-  norm_map' x := by
-    refine (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).mp ?_
-    have hreal : ‖T x‖ ^ 2 = r * ‖x‖ ^ 2 := Complex.ofReal_injective <| by
-      simpa [inner_self_eq_norm_sq_to_K] using hT x x
-    change ‖(((Real.sqrt r)⁻¹ : ℝ) : ℂ) • T x‖ ^ 2 = ‖x‖ ^ 2
-    rw [norm_smul, Complex.norm_real, Real.norm_eq_abs, mul_pow, sq_abs, hreal, inv_pow,
-      Real.sq_sqrt hr.le, inv_mul_cancel_left₀ hr.ne']
 
 /-- **Existence of unitary Clifford intertwiners.** Let `V` and `V'` be real inner product spaces
 of even dimension `2 * m` with negative norm-square forms `Q` and `Q'`, and let `f : V ≃ₗᵢ[ℝ] V'`
@@ -306,15 +259,14 @@ theorem exists_unitary_intertwiner_of_finrank_eq
     (fun v x y ↦ by
       rw [hH_apply, hH_apply, complexifyAction_ι_tmul, one_smul, hT_ι,
         ← LinearMap.adjoint_inner_right, hρ', LinearMap.neg_apply, inner_neg_right, ← hT_ι])
-  refine ⟨rescaleLinearIsometryEquiv T hr hrH, fun v ↦ ?_⟩
+  simp only [hH_apply] at hrH
+  refine ⟨T.rescaleLinearIsometryEquiv hr hrH, fun v ↦ ?_⟩
   ext w
-  change (((Real.sqrt r)⁻¹ : ℝ) : ℂ) • T (ρ (ι Q v) w) =
-    ρ' (ι Q' (f v)) ((((Real.sqrt r)⁻¹ : ℝ) : ℂ) • T w)
-  rw [hT_ι, map_smul]
+  simp [hT_ι]
 
 end Intertwiners
 
-/-! ### Chirality decomposition, Hermitian half-spinors, and unitary restrictions in dimension 4 -/
+/-! ### Hermitian half-spinors and unitary restrictions in dimension 4 -/
 
 section DimensionFour
 
@@ -323,24 +275,6 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Fact (fin
 
 /-- The dimension `Fact` makes the oriented four-space finite-dimensional. -/
 local instance : FiniteDimensional ℝ V := .of_fact_finrank_eq_succ 3
-
-/-- **The chirality decomposition on a real Clifford module**: when `Q v = -‖v‖²`, every complex
-Clifford module `W` splits as the direct sum of `positiveHalfSpinors o ρ` and the `-1`-eigenspace
-of `Γ`. -/
-theorem isCompl_eigenspace_chirality {W : Type*} [AddCommGroup W] [Module ℂ W]
-    (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W) (hQ : ∀ v, Q v = -‖v‖ ^ 2) :
-    IsCompl (positiveHalfSpinors o ρ) (eigenspace (ρ (chirality Q o)) (-1)) := by
-  rw [positiveHalfSpinors_eq_eigenspace]
-  exact TauCeti.isCompl_eigenspace_one_neg_one (two_ne_zero : (2 : ℂ) ≠ 0).isUnit fun w ↦ by
-    rw [← mul_apply_eq_comp, ← map_mul, chirality_mul_self o hQ, map_one, one_apply_eq_self]
-
-/-- **Total spinor dimension is twice the positive half-spinor dimension.** -/
-theorem finrank_eq_two_mul_finrank_positiveHalfSpinors {W : Type*} [AddCommGroup W] [Module ℂ W]
-    [FiniteDimensional ℂ W] (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W)
-    (hQ : ∀ v, Q v = -‖v‖ ^ 2) :
-    finrank ℂ W = 2 * finrank ℂ (positiveHalfSpinors o ρ) := by
-  have hsum := (Submodule.finrank_add_eq_of_isCompl (isCompl_eigenspace_chirality o ρ hQ)).symm
-  rw [hsum, positiveHalfSpinors_eq_eigenspace, finrank_eigenspace_chirality_neg o ρ 1, two_mul]
 
 /-- **Half-spin rank two forces fullness of the complexified Clifford action** in dimension four. -/
 theorem complexifyAction_bijective_of_finrank_positiveHalfSpinors_eq_two
@@ -381,15 +315,16 @@ theorem coe_adjoint_halfSpinCliffordMul_apply
   let A : eigenspace (ρ (chirality Q o)) (-ε) →ₗ[ℂ] eigenspace (ρ (chirality Q o)) ε :=
     { toFun η := ⟨-ρ (ι Q v) η, Submodule.neg_mem _
         (by simpa only [neg_neg] using map_ι_apply_mem_eigenspace_chirality_neg o η.2 v)⟩
-      map_add' _ _ := Subtype.ext (by simp only [Submodule.coe_add, map_add, neg_add])
-      map_smul' _ _ := Subtype.ext (by simp only [SetLike.val_smul, map_smul, smul_neg,
+      map_add' _ _ := Subtype.ext (by simp only [map_add, neg_add, Submodule.coe_add])
+      map_smul' _ _ := Subtype.ext (by simp only [map_smul, smul_neg, SetLike.val_smul,
         RingHom.id_apply]) }
-  rw [← (LinearMap.eq_adjoint_iff A (halfSpinCliffordMul o ρ ε v)).mpr fun η ψ ↦ by
-    rw [Submodule.coe_inner, Submodule.coe_inner, coe_halfSpinCliffordMul_apply_apply]
-    change ⟪-ρ (ι Q v) (η : W), (ψ : W)⟫_ℂ = ⟪(η : W), ρ (ι Q v) (ψ : W)⟫_ℂ
-    rw [inner_neg_left, ← LinearMap.adjoint_inner_right, hρ, LinearMap.neg_apply, inner_neg_right,
-      neg_neg]]
-  rfl
+  have hA_coe (η : eigenspace (ρ (chirality Q o)) (-ε)) : (A η : W) = -ρ (ι Q v) η := rfl
+  have hA : A = LinearMap.adjoint (halfSpinCliffordMul o ρ ε v) :=
+    (LinearMap.eq_adjoint_iff A _).mpr fun η ψ ↦ by
+      rw [Submodule.coe_inner, Submodule.coe_inner, hA_coe, coe_halfSpinCliffordMul_apply_apply,
+        inner_neg_left, ← LinearMap.adjoint_inner_right, hρ, LinearMap.neg_apply,
+        inner_neg_right, neg_neg]
+  rw [← hA, hA_coe]
 
 /-- **Norm law for chiral Clifford multiplication**: for `Q v = -‖v‖²` and skew-adjoint generators,
 `halfSpinCliffordMul` scales spinor norms by `‖v‖`. -/

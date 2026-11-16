@@ -12,77 +12,43 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.TorusCharacter
 import TauCeti.Algebra.Algebra.Prod
 import TauCeti.LinearAlgebra.CliffordAlgebra.Hermitian.HalfSpinor
 import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
-import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Frame
-import TauCeti.LinearAlgebra.Eigenspace.Separation
+import TauCeti.RepresentationTheory.Quaternion.Complex
 
 /-!
 # Quaternion and `SU(2)` models of the compact four-dimensional half-spin representations
 
-Under the compact Spin isomorphism
-`TauCeti.realSpinFourEquivQuaternionUnitaryProd : Spin(4) ≃* unitary ℍ[ℝ] × unitary ℍ[ℝ]` and its
-complex matrix form `TauCeti.realSpinFourEquivSpecialUnitaryProd : Spin(4) ≃* SU(2) × SU(2)`,
-`TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Chirality` identifies the kernels of the half-spin
-representations along a positively oriented orthonormal frame `b` of an oriented four-space `(V, o)`
-with `Q v = -‖v‖²`. This file upgrades that kernel comparison to explicit algebra actions,
-orthonormal half-spinor bases, characters on the full compact `Spin(4)` and `Spinᶜ(4)` groups, and
-the quaternion coordinates of the coordinate-plane torus `OrthonormalBasis.spinTorus`.
+Under `TauCeti.realSpinFourEquivQuaternionUnitaryProd : Spin(4) ≃* unitary ℍ[ℝ] × unitary ℍ[ℝ]` and
+`TauCeti.realSpinFourEquivSpecialUnitaryProd : Spin(4) ≃* SU(2) × SU(2)`, a positively oriented
+orthonormal frame `b` (`hb : b.toBasis.orientation = o`) of `(V, o)` with `Q v = -‖v‖²` factors the
+even Clifford actions on `W⁺` and `W⁻` into `ℝ`-algebra homomorphisms from `ℍ[ℝ]`
+(`CliffordAlgebra.positiveQuaternionAction`, `CliffordAlgebra.negativeQuaternionAction`), so that
+`halfSpinRep` at `b.realSpinGroupEquiv hQ s` acts via the **second** factor on `W⁺` and the
+**first** factor on `W⁻`.
 
-Specifically, for a positively oriented orthonormal basis `b` (`hb : b.toBasis.orientation = o`):
-
-* `CliffordAlgebra.positiveQuaternionAction` and `CliffordAlgebra.negativeQuaternionAction` factor
-  the even Clifford actions on `W⁺` and `W⁻` into unital `ℝ`-algebra homomorphisms from `ℍ[ℝ]`, so
-  that `halfSpinRep o ρ 1 (b.realSpinGroupEquiv hQ s)` is the action of the **second** unit
-  quaternion `(realSpinFourEquivQuaternionUnitaryProd s).2` and
-  `halfSpinRep o ρ (-1) (b.realSpinGroupEquiv hQ s)` is the action of the **first** unit quaternion
-  `(realSpinFourEquivQuaternionUnitaryProd s).1`.
-* On a Hermitian Clifford module (`c(v)* = -c(v)`), both quaternion actions send quaternion
-  conjugation to the Hilbert-space adjoint (`adjoint_positiveQuaternionAction`,
-  `adjoint_negativeQuaternionAction`). When `dim_ℂ W⁺ = 2`, there exist orthonormal bases of `W⁺`
-  and `W⁻` in which the matrices of `halfSpinRep` at `b.realSpinGroupEquiv hQ s` are literally the
-  second and first `SU(2)` factors `(realSpinFourEquivSpecialUnitaryProd s).2` and
-  `(realSpinFourEquivSpecialUnitaryProd s).1`
-  (`exists_orthonormalBasis_toMatrix_halfSpinRep_one`,
-  `exists_orthonormalBasis_toMatrix_halfSpinRep_neg_one`).
-* Since the imaginary quaternion units are commutators in `ℍ[ℝ]`, every `ℝ`-algebra action of `ℍ[ℝ]`
-  on a finite-dimensional complex space `S` has trace `q.re * dim_ℂ S`. This yields closed-form
-  character formulas on the entire groups `Spin(4)` and `Spinᶜ(4)` in terms of the real parts of the
-  unit quaternions and the traces of the two `SU(2)` matrices.
-* Along `OrthonormalBasis.spinTorus`, the torus element `(w₁, w₂)` corresponds in
-  `unitary ℍ[ℝ] × unitary ℍ[ℝ]` to `(re(w₁ w₂⁻¹) + im(w₁ w₂⁻¹) k, re(w₁ w₂) + im(w₁ w₂) k)`
-  (`OrthonormalBasis.coe_realSpinFourEquivQuaternionUnitaryProd_symm_spinTorus`), matching the
-  weights `w₁ w₂⁻¹` on `W⁻` and `w₁ w₂` on `W⁺`.
-* In any dimension `n`, changing between two equally oriented orthonormal frames conjugates both
-  `OrthonormalBasis.realSpinGroupEquiv` and `OrthonormalBasis.realSpinCGroupHom` by a compact Spin
-  element (`OrthonormalBasis.exists_realSpinGroupEquiv_eq_conj`,
-  `OrthonormalBasis.exists_realSpinCGroupHom_eq_conj`).
+On a Hermitian Clifford module of half-spin rank two, both actions intertwine quaternion conjugation
+with `LinearMap.adjoint`, admit orthonormal bases realizing the `SU(2)` factors as matrices, yield
+closed-form `Spin(4)` and `Spinᶜ(4)` character formulas via `TauCeti.trace_quaternionAlgHom`, and
+send `OrthonormalBasis.spinTorus` at `(w₁, w₂)` to the quaternion pair `(w₁ w₂⁻¹, w₁ w₂)` along
+`1, k`.
 
 ## Main definitions
 
-* `CliffordAlgebra.positiveQuaternionAction o hQ b ρ hb`: the `ℝ`-algebra action of `ℍ[ℝ]` on `W⁺`
-  through which the second factor of `Spin(4)` acts.
-* `CliffordAlgebra.negativeQuaternionAction o hQ b ρ hb`: the `ℝ`-algebra action of `ℍ[ℝ]` on `W⁻`
-  through which the first factor of `Spin(4)` acts.
+* `CliffordAlgebra.positiveQuaternionAction`, `CliffordAlgebra.negativeQuaternionAction`:
+  `ℝ`-algebra actions of `ℍ[ℝ]` on `W⁺` (second factor) and `W⁻` (first factor).
 
 ## Main results
 
 * `CliffordAlgebra.halfSpinRep_one_realSpinGroupEquiv_eq`,
-  `CliffordAlgebra.halfSpinRep_neg_one_realSpinGroupEquiv_eq`: factorization of `halfSpinRep`
-  through the second and first unit-quaternion factors.
-* `CliffordAlgebra.adjoint_positiveQuaternionAction`,
-  `CliffordAlgebra.adjoint_negativeQuaternionAction`: compatibility with `star` and `adjoint`.
+  `CliffordAlgebra.halfSpinRep_neg_one_realSpinGroupEquiv_eq`,
+  `CliffordAlgebra.adjoint_positiveQuaternionAction`,
+  `CliffordAlgebra.adjoint_negativeQuaternionAction`.
 * `CliffordAlgebra.exists_orthonormalBasis_toMatrix_halfSpinRep_one`,
-  `CliffordAlgebra.exists_orthonormalBasis_toMatrix_halfSpinRep_neg_one`: orthonormal half-spinor
-  bases realizing `SU(2)₊` (second factor) on `W⁺` and `SU(2)₋` (first factor) on `W⁻`.
+  `CliffordAlgebra.exists_orthonormalBasis_toMatrix_halfSpinRep_neg_one`.
 * `CliffordAlgebra.trace_halfSpinRep_one_realSpinGroupEquiv_specialUnitary`,
   `CliffordAlgebra.trace_halfSpinRep_neg_one_realSpinGroupEquiv_specialUnitary`,
   `CliffordAlgebra.trace_spinCGroupHalfSpinRep_one_realSpinCGroupHom`,
-  `CliffordAlgebra.trace_spinCGroupHalfSpinRep_neg_one_realSpinCGroupHom`: characters on `Spin(4)`
-  and `Spinᶜ(4)`.
-* `OrthonormalBasis.coe_realSpinFourEquivQuaternionUnitaryProd_symm_spinTorus`: quaternion-pair
-  coordinates of `OrthonormalBasis.spinTorus`.
-* `OrthonormalBasis.exists_realSpinGroupEquiv_eq_conj`,
-  `OrthonormalBasis.exists_realSpinCGroupHom_eq_conj`: inner-automorphism comparison of
-  `realSpinGroupEquiv` and `realSpinCGroupHom` across equally oriented orthonormal frames.
+  `CliffordAlgebra.trace_spinCGroupHalfSpinRep_neg_one_realSpinCGroupHom`,
+  `OrthonormalBasis.coe_realSpinFourEquivQuaternionUnitaryProd_symm_spinTorus`.
 
 ## References
 
@@ -97,147 +63,6 @@ noncomputable section
 
 open Module Module.End CliffordAlgebra TauCeti
 open scoped InnerProductSpace Matrix Quaternion
-
-/-! ### Private helpers on complex representations of `ℍ[ℝ]` -/
-
-section QuaternionHelpers
-
-private theorem quaternionAlgHom_map_smul {S : Type*} [AddCommGroup S] [Module ℂ S]
-    (ψ : ℍ[ℝ] →ₐ[ℝ] Module.End ℂ S) (r : ℝ) (q : ℍ[ℝ]) :
-    ψ (r • q) = ((r : ℝ) : ℂ) • ψ q := by
-  rw [Algebra.smul_def, map_mul, AlgHom.commutes,
-    IsScalarTower.algebraMap_apply ℝ ℂ (Module.End ℂ S),
-    Algebra.algebraMap_eq_smul_one, smul_mul_assoc, one_mul]
-  rfl
-
-private theorem trace_quaternionAlgHom {S : Type*} [AddCommGroup S] [Module ℂ S]
-    [FiniteDimensional ℂ S] (ψ : ℍ[ℝ] →ₐ[ℝ] Module.End ℂ S) (q : ℍ[ℝ]) :
-    LinearMap.trace ℂ S (ψ q) = (q.re : ℂ) * finrank ℂ S := by
-  have h0 {a b c : ℍ[ℝ]} (h : c = (2⁻¹ : ℝ) • (a * b - b * a)) :
-      LinearMap.trace ℂ S (ψ c) = 0 := by
-    rw [h, quaternionAlgHom_map_smul, map_smul, map_sub, map_mul, map_mul, map_sub,
-      LinearMap.trace_mul_comm, sub_self, smul_zero]
-  have hi := h0 (a := ⟨0, 0, 1, 0⟩) (b := ⟨0, 0, 0, 1⟩) (c := ⟨0, 1, 0, 0⟩) (by ext <;> norm_num)
-  have hj := h0 (a := ⟨0, 0, 0, 1⟩) (b := ⟨0, 1, 0, 0⟩) (c := ⟨0, 0, 1, 0⟩) (by ext <;> norm_num)
-  have hk := h0 (a := ⟨0, 1, 0, 0⟩) (b := ⟨0, 0, 1, 0⟩) (c := ⟨0, 0, 0, 1⟩) (by ext <;> norm_num)
-  have hdecomp : q = algebraMap ℝ ℍ[ℝ] q.re + q.imI • (⟨0, 1, 0, 0⟩ : ℍ[ℝ]) +
-      q.imJ • (⟨0, 0, 1, 0⟩ : ℍ[ℝ]) + q.imK • (⟨0, 0, 0, 1⟩ : ℍ[ℝ]) := by ext <;> simp
-  conv_lhs => rw [hdecomp]
-  simp only [map_add, Algebra.algebraMap_eq_smul_one, quaternionAlgHom_map_smul]
-  simp [hi, hj, hk]
-
-private theorem exists_unit_eigenvector_quaternionAlgHom_i
-    {S : Type*} [NormedAddCommGroup S] [InnerProductSpace ℂ S] [FiniteDimensional ℂ S]
-    (hS : finrank ℂ S = 2) (ψ : ℍ[ℝ] →ₐ[ℝ] Module.End ℂ S) :
-    ∃ e₀ : S, ‖e₀‖ = 1 ∧ ψ ⟨0, 1, 0, 0⟩ e₀ = Complex.I • e₀ := by
-  let A : Module.End ℂ S := (-Complex.I) • ψ ⟨0, 1, 0, 0⟩
-  have hA_inv (x : S) : A (A x) = x := by
-    have hmul : (⟨0, 1, 0, 0⟩ : ℍ[ℝ]) * ⟨0, 1, 0, 0⟩ = -1 := by ext <;> simp
-    have hsq : A * A = 1 := by simp [A, ← map_mul, hmul, smul_smul]
-    exact LinearMap.congr_fun hsq x
-  have hcompl := TauCeti.isCompl_eigenspace_one_neg_one (two_ne_zero : (2 : ℂ) ≠ 0).isUnit hA_inv
-  have hne : eigenspace A 1 ≠ ⊥ := fun hbot ↦ by
-    have htop : eigenspace A (-1) = ⊤ := by simpa [hbot] using hcompl.sup_eq_top
-    have hA_neg : A = -1 := LinearMap.ext fun x ↦ by
-      simpa [mem_eigenspace_iff] using (htop ▸ Submodule.mem_top : x ∈ eigenspace A (-1))
-    have htr₀ : LinearMap.trace ℂ S A = 0 := by simp [A, trace_quaternionAlgHom]
-    rw [hA_neg, map_neg, LinearMap.trace_one, hS] at htr₀
-    norm_num at htr₀
-  have : Nontrivial (eigenspace A 1) := Submodule.nontrivial_iff_ne_bot.mpr hne
-  let := NormedSpace.restrictScalars ℝ ℂ (eigenspace A 1)
-  obtain ⟨u, hu⟩ := exists_norm_eq (eigenspace A 1) zero_le_one
-  have huA : (-Complex.I) • ψ ⟨0, 1, 0, 0⟩ u = (u : S) := by
-    simpa [A, mem_eigenspace_iff] using u.2
-  refine ⟨u, by simpa using hu, ?_⟩
-  calc ψ ⟨0, 1, 0, 0⟩ u = Complex.I • ((-Complex.I) • ψ ⟨0, 1, 0, 0⟩ u) := by simp [smul_smul]
-    _ = Complex.I • (u : S) := by rw [huA]
-
-private theorem orthonormal_pair_of_quaternionAlgHom
-    {S : Type*} [NormedAddCommGroup S] [InnerProductSpace ℂ S] [FiniteDimensional ℂ S]
-    (ψ : ℍ[ℝ] →ₐ[ℝ] Module.End ℂ S) (hstar : ∀ q, LinearMap.adjoint (ψ q) = ψ (star q))
-    {e₀ : S} (he₀_norm : ‖e₀‖ = 1) (he₀_i : ψ ⟨0, 1, 0, 0⟩ e₀ = Complex.I • e₀) :
-    Orthonormal ℂ ![e₀, -(ψ ⟨0, 0, 1, 0⟩ e₀)] ∧
-      ψ ⟨0, 1, 0, 0⟩ (-(ψ ⟨0, 0, 1, 0⟩ e₀)) = -Complex.I • -(ψ ⟨0, 0, 1, 0⟩ e₀) ∧
-      ψ ⟨0, 0, 1, 0⟩ (-(ψ ⟨0, 0, 1, 0⟩ e₀)) = e₀ := by
-  set e₁ : S := -(ψ ⟨0, 0, 1, 0⟩ e₀)
-  have he₁_j : ψ ⟨0, 0, 1, 0⟩ e₁ = e₀ := by
-    have hjj : (⟨0, 0, 1, 0⟩ : ℍ[ℝ]) * ⟨0, 0, 1, 0⟩ = -1 := by ext <;> simp
-    simp [e₁, ← mul_apply_eq_comp, ← map_mul, hjj]
-  have he₁_i : ψ ⟨0, 1, 0, 0⟩ e₁ = -Complex.I • e₁ := by
-    have hij : (⟨0, 1, 0, 0⟩ : ℍ[ℝ]) * ⟨0, 0, 1, 0⟩ =
-        -((⟨0, 0, 1, 0⟩ : ℍ[ℝ]) * ⟨0, 1, 0, 0⟩) := by ext <;> simp
-    calc ψ ⟨0, 1, 0, 0⟩ e₁ = -((ψ ⟨0, 1, 0, 0⟩ * ψ ⟨0, 0, 1, 0⟩) e₀) := by
-          simp [e₁, mul_apply_eq_comp]
-      _ = (ψ ⟨0, 0, 1, 0⟩ * ψ ⟨0, 1, 0, 0⟩) e₀ := by
-          rw [← map_mul, hij, map_neg, LinearMap.neg_apply, neg_neg, map_mul]
-      _ = -Complex.I • e₁ := by simp [mul_apply_eq_comp, he₀_i, e₁]
-  have hadj_i : LinearMap.adjoint (ψ ⟨0, 1, 0, 0⟩) = -ψ ⟨0, 1, 0, 0⟩ := by
-    rw [hstar, show star (⟨0, 1, 0, 0⟩ : ℍ[ℝ]) = -⟨0, 1, 0, 0⟩ by ext <;> simp, map_neg]
-  have hadj_j : LinearMap.adjoint (ψ ⟨0, 0, 1, 0⟩) = -ψ ⟨0, 0, 1, 0⟩ := by
-    rw [hstar, show star (⟨0, 0, 1, 0⟩ : ℍ[ℝ]) = -⟨0, 0, 1, 0⟩ by ext <;> simp, map_neg]
-  have horth : ⟪e₀, e₁⟫_ℂ = 0 := by
-    have h₁ : Complex.I * ⟪e₀, e₁⟫_ℂ = -Complex.I * ⟪e₀, e₁⟫_ℂ := calc
-      Complex.I * ⟪e₀, e₁⟫_ℂ = ⟪LinearMap.adjoint (ψ ⟨0, 1, 0, 0⟩) e₀, e₁⟫_ℂ := by
-        rw [hadj_i, LinearMap.neg_apply, he₀_i]; simp [inner_smul_left]
-      _ = -Complex.I * ⟪e₀, e₁⟫_ℂ := by
-        rw [LinearMap.adjoint_inner_left, he₁_i, inner_smul_right]
-    have h₂ : (2 * Complex.I) * ⟪e₀, e₁⟫_ℂ = 0 := by linear_combination h₁
-    exact (mul_eq_zero.mp h₂).resolve_left (mul_ne_zero two_ne_zero Complex.I_ne_zero)
-  have he₁_norm : ‖e₁‖ = 1 := by
-    refine (sq_eq_sq₀ (norm_nonneg _) zero_le_one).mp ?_
-    rw [← RCLike.ofReal_inj (K := ℂ), RCLike.ofReal_pow, ← inner_self_eq_norm_sq_to_K]
-    calc ⟪e₁, e₁⟫_ℂ = ⟪ψ ⟨0, 0, 1, 0⟩ e₀, ψ ⟨0, 0, 1, 0⟩ e₀⟫_ℂ := by simp [e₁]
-      _ = ⟪e₀, e₀⟫_ℂ := by
-        rw [← LinearMap.adjoint_inner_right, hadj_j, LinearMap.neg_apply,
-          show ψ ⟨0, 0, 1, 0⟩ (ψ ⟨0, 0, 1, 0⟩ e₀) = -e₀ by
-            rw [← neg_neg (ψ ⟨0, 0, 1, 0⟩ e₀), map_neg, he₁_j], neg_neg]
-      _ = (((1 : ℝ) ^ 2 : ℝ) : ℂ) := by simp [inner_self_eq_norm_sq_to_K, he₀_norm]
-  refine ⟨orthonormal_iff_ite.mpr fun a b ↦ ?_, he₁_i, he₁_j⟩
-  fin_cases a <;> fin_cases b
-  · simp [inner_self_eq_norm_sq_to_K, he₀_norm]
-  · simpa using horth
-  · simpa [inner_conj_symm] using congrArg (starRingEnd ℂ) horth
-  · simp [inner_self_eq_norm_sq_to_K, he₁_norm]
-
-private theorem exists_orthonormalBasis_toMatrix_eq_toComplexMatrix
-    {S : Type*} [NormedAddCommGroup S] [InnerProductSpace ℂ S] [FiniteDimensional ℂ S]
-    (hS : finrank ℂ S = 2) (ψ : ℍ[ℝ] →ₐ[ℝ] Module.End ℂ S)
-    (hstar : ∀ q, LinearMap.adjoint (ψ q) = ψ (star q)) :
-    ∃ c : OrthonormalBasis (Fin 2) ℂ S,
-      ∀ q : ℍ[ℝ], LinearMap.toMatrix c.toBasis c.toBasis (ψ q) = Quaternion.toComplexMatrix q := by
-  obtain ⟨e₀, he₀_norm, he₀_i⟩ := exists_unit_eigenvector_quaternionAlgHom_i hS ψ
-  obtain ⟨hon, he₁_i, he₁_j⟩ := orthonormal_pair_of_quaternionAlgHom ψ hstar he₀_norm he₀_i
-  let c : OrthonormalBasis (Fin 2) ℂ S :=
-    (basisOfOrthonormalOfCardEqFinrank hon (by simp [hS])).toOrthonormalBasis
-      (by rwa [coe_basisOfOrthonormalOfCardEqFinrank])
-  have hc (i : Fin 2) : c i = ![e₀, -(ψ ⟨0, 0, 1, 0⟩ e₀)] i := by
-    rw [← c.coe_toBasis, Module.Basis.toBasis_toOrthonormalBasis,
-      coe_basisOfOrthonormalOfCardEqFinrank]
-  have h_i₀ : ψ ⟨0, 1, 0, 0⟩ (c 0) = Complex.I • c 0 := by rw [hc 0]; exact he₀_i
-  have h_i₁ : ψ ⟨0, 1, 0, 0⟩ (c 1) = (-Complex.I) • c 1 := by simpa [hc 1, neg_smul] using he₁_i
-  have h_j₀ : ψ ⟨0, 0, 1, 0⟩ (c 0) = -(c 1) := by rw [hc 0, hc 1]; simp
-  have h_j₁ : ψ ⟨0, 0, 1, 0⟩ (c 1) = c 0 := by rw [hc 1, hc 0]; exact he₁_j
-  let Φ : ℍ[ℝ] →ₐ[ℝ] Matrix (Fin 2) (Fin 2) ℂ :=
-    ((LinearMap.toMatrixAlgEquiv c.toBasis).toAlgHom.restrictScalars ℝ).comp ψ
-  have hΦ_i : Φ ⟨0, 1, 0, 0⟩ = Quaternion.toComplexMatrix ⟨0, 1, 0, 0⟩ := by
-    ext a b; fin_cases a <;> fin_cases b <;>
-      simp [Φ, LinearMap.toMatrixAlgEquiv_apply, h_i₀, h_i₁, Quaternion.toComplexMatrix_apply]
-  have hΦ_j : Φ ⟨0, 0, 1, 0⟩ = Quaternion.toComplexMatrix ⟨0, 0, 1, 0⟩ := by
-    ext a b; fin_cases a <;> fin_cases b <;>
-      simp [Φ, LinearMap.toMatrixAlgEquiv_apply, h_j₀, h_j₁, Quaternion.toComplexMatrix_apply]
-  have hΦ_k : Φ ⟨0, 0, 0, 1⟩ = Quaternion.toComplexMatrix ⟨0, 0, 0, 1⟩ := by
-    rw [show (⟨0, 0, 0, 1⟩ : ℍ[ℝ]) = ⟨0, 1, 0, 0⟩ * ⟨0, 0, 1, 0⟩ by ext <;> simp,
-      map_mul, map_mul, hΦ_i, hΦ_j]
-  refine ⟨c, fun q ↦ ?_⟩
-  have hdecomp : q = algebraMap ℝ ℍ[ℝ] q.re + q.imI • (⟨0, 1, 0, 0⟩ : ℍ[ℝ]) +
-      q.imJ • (⟨0, 0, 1, 0⟩ : ℍ[ℝ]) + q.imK • (⟨0, 0, 0, 1⟩ : ℍ[ℝ]) := by ext <;> simp
-  change Φ q = Quaternion.toComplexMatrix.toAlgHom q
-  conv_lhs => rw [hdecomp]
-  conv_rhs => rw [hdecomp]
-  simp only [map_add, map_smul, AlgHom.commutes, hΦ_i, hΦ_j, hΦ_k]
-  rfl
-
-end QuaternionHelpers
 
 /-! ### Quaternion factor actions and characters on `W⁺` and `W⁻` -/
 
@@ -376,8 +201,6 @@ theorem halfSpinRep_neg_one_realSpinGroupEquiv_eq (hb : b.toBasis.orientation = 
         (realSpinFourEquivQuaternionUnitaryProd s).2)]
 
 section Characters
-
-variable [FiniteDimensional ℂ W]
 
 include hQ in
 /-- **Character of `W⁺` on compact `Spin(4)`** in quaternion coordinates: the trace of `s` acting
@@ -567,7 +390,7 @@ theorem coe_realSpinFourEquivQuaternionUnitaryProd_symm_spinTorus (w₁ w₂ : C
         ((b.realSpinGroupEquiv hQ).symm (b.spinTorus hQ (w₁, w₂)))).2 : ℍ[ℝ])) =
       (⟨((w₁ * w₂⁻¹ : Circle) : ℂ).re, 0, 0, ((w₁ * w₂⁻¹ : Circle) : ℂ).im⟩,
         ⟨((w₁ * w₂ : Circle) : ℂ).re, 0, 0, ((w₁ * w₂ : Circle) : ℂ).im⟩) := by
-  let s := (b.realSpinGroupEquiv hQ).symm (b.spinTorus hQ (w₁, w₂))
+  set s := (b.realSpinGroupEquiv hQ).symm (b.spinTorus hQ (w₁, w₂))
   let B₀₁ := (even.ι (realCliffordForm 4 0)).bilin (Pi.single 0 1) (Pi.single 1 1)
   let B₂₃ := (even.ι (realCliffordForm 4 0)).bilin (Pi.single 2 1) (Pi.single 3 1)
   have hs_even : b.realEvenCliffordEquiv hQ
@@ -588,73 +411,10 @@ theorem coe_realSpinFourEquivQuaternionUnitaryProd_symm_spinTorus (w₁ w₂ : C
       (algebraMap ℝ _ (w₁ : ℂ).re - (w₁ : ℂ).im • B₀₁) *
         (algebraMap ℝ _ (w₂ : ℂ).re - (w₂ : ℂ).im • B₂₃) :=
     (b.realEvenCliffordEquiv hQ).injective (hs_even.trans htorus)
-  change (((realSpinFourEquivQuaternionUnitaryProd s).1 : ℍ[ℝ]),
-      ((realSpinFourEquivQuaternionUnitaryProd s).2 : ℍ[ℝ])) = _
   rw [coe_realSpinFourEquivQuaternionUnitaryProd_apply, hcoord]
   simp only [B₀₁, B₂₃, map_mul, map_sub, map_smul, AlgEquiv.commutes,
     realCliffordFourZeroEvenEquivQuaternionProd_ι]
   apply Prod.ext <;> ext <;>
     simp [Circle.coe_mul, QuaternionAlgebra.mk_mul_mk, Algebra.algebraMap_eq_smul_one]
-
-section FrameChange
-
-variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
-  {Q : QuadraticForm ℝ V} {n : ℕ} (c c' : OrthonormalBasis (Fin n) ℝ V)
-  (hQ : ∀ v, Q v = -‖v‖ ^ 2)
-
-/-- For two equally oriented orthonormal frames `c` and `c'`, the negative-metric Spin frame
-comparisons `c.realSpinGroupEquiv hQ` and `c'.realSpinGroupEquiv hQ` differ by conjugation in
-compact `Spin(n)`. -/
-theorem exists_realSpinGroupEquiv_eq_conj (hc : c.toBasis.orientation = c'.toBasis.orientation) :
-    ∃ s₀ : spinGroup (realCliffordForm n 0), ∀ s : spinGroup (realCliffordForm n 0),
-      c'.realSpinGroupEquiv hQ s = c.realSpinGroupEquiv hQ (s₀ * s * s₀⁻¹) := by
-  have hQneg : ∀ v, (-Q) v = ‖v‖ ^ 2 := fun v ↦ by simp [hQ]
-  obtain ⟨s₀, hs₀⟩ := (c'.exists_spinVectorAction_eq_iff_orientation_eq c hQneg).mpr hc.symm
-  have hact (x : Fin (n + 0) → ℝ) :
-      spinVectorAction Q (c.realSpinGroupEquiv hQ s₀)
-        (c.negRealCliffordFormIsometryEquiv hQ x) =
-        c'.negRealCliffordFormIsometryEquiv hQ x := by
-    rw [c.spinVectorAction_realSpinGroupEquiv hQ s₀ x]
-    have hsymm : spinVectorAction (realCliffordForm n 0) s₀ x =
-        (c.negRealCliffordFormIsometryEquiv hQ).symm
-          (c'.negRealCliffordFormIsometryEquiv hQ x) := by
-      ext i
-      have hi : c'.isometryEquivRealCliffordFormZero hQneg
-          (c'.negRealCliffordFormIsometryEquiv hQ x) = x := by
-        ext j
-        rw [isometryEquivRealCliffordFormZero_apply,
-          ← c'.negRealCliffordFormIsometryEquiv_symm_apply hQ,
-          QuadraticMap.IsometryEquiv.symm_apply_apply]
-      rw [c.negRealCliffordFormIsometryEquiv_symm_apply hQ,
-        ← isometryEquivRealCliffordFormZero_apply c hQneg,
-        ← hs₀ (c'.negRealCliffordFormIsometryEquiv hQ x), hi]
-    rw [hsymm, QuadraticMap.IsometryEquiv.apply_symm_apply]
-  have heq (s : spinGroup (realCliffordForm n 0)) (f : OrthonormalBasis (Fin n) ℝ V) :
-      f.realSpinGroupEquiv hQ s =
-        (f.negRealCliffordFormIsometryEquiv hQ).spinGroupEquiv
-          (spinGroupEquivNeg (realCliffordForm n 0) s) :=
-    Subtype.ext <| by
-      rw [← coe_spinGroupToEven_apply, f.spinGroupToEven_realSpinGroupEquiv hQ,
-        f.coe_realEvenCliffordEquiv_apply hQ, QuadraticMap.IsometryEquiv.spinGroupEquiv_apply,
-        QuadraticMap.Isometry.coe_spinGroupMap_apply, ← coe_spinGroupEquivNeg_apply]
-  refine ⟨s₀, fun s ↦ ?_⟩
-  rw [heq s c', (c.negRealCliffordFormIsometryEquiv hQ).spinGroupEquiv_apply_eq_conj _
-      (c.realSpinGroupEquiv hQ s₀) hact, ← heq s c, ← map_inv, ← map_mul, ← map_mul]
-
-/-- For two equally oriented orthonormal frames `c` and `c'`, the descended `Spinᶜ(n)` frame
-comparisons `c.realSpinCGroupHom` and `c'.realSpinCGroupHom` differ by conjugation by a compact
-Spin element. -/
-theorem exists_realSpinCGroupHom_eq_conj (hc : c.toBasis.orientation = c'.toBasis.orientation)
-    (hpos : realCliffordForm n 0 ≠ 0) (hQ₀ : Q ≠ 0) :
-    ∃ s₀ : spinGroup (realCliffordForm n 0), ∀ x : spinCGroup (realCliffordForm n 0) hpos,
-      c'.realSpinCGroupHom hQ hpos hQ₀ x =
-        c.realSpinCGroupHom hQ hpos hQ₀
-          (spinCGroup.ofSpin _ hpos s₀ * x * (spinCGroup.ofSpin _ hpos s₀)⁻¹) := by
-  obtain ⟨s₀, hs₀⟩ := exists_realSpinGroupEquiv_eq_conj c c' hQ hc
-  refine ⟨s₀, fun x ↦ ?_⟩
-  obtain ⟨⟨s, z⟩, rfl⟩ := spinCGroup.mk_surjective _ hpos x
-  simp [spinCGroup.ofSpin_apply, ← map_inv, ← map_mul, hs₀ s]
-
-end FrameChange
 
 end OrthonormalBasis

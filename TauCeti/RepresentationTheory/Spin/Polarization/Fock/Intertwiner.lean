@@ -27,15 +27,18 @@ phase in `Circle`.
 In addition, because `ExteriorAlgebra ℂ W` is an `abbrev` for `CliffordAlgebra 0`, modules that
 import `TauCeti.Topology.Algebra.CliffordAlgebra.Basic` (such as smooth `Spinᶜ` representation and
 bundle files) already carry `CliffordAlgebra.instTopologicalSpaceCliffordAlgebra` on `⋀ W`. To
-provide a diamond-free Hilbert-space model with global `NormedAddCommGroup` and
-`InnerProductSpace ℂ` instances, this file also packages `⋀ W` into the dedicated carrier
-`TauCeti.AlmostComplexStructure.FockSpinors` with Clifford action `fockSpinorAction`.
+provide a diamond-free carrier with no preexisting `TopologicalSpace` instance, this file also
+packages `⋀ W` into `TauCeti.AlmostComplexStructure.FockSpinors` with global `AddCommGroup`,
+`Module ℂ`, `FiniteDimensional ℂ`, and `Nontrivial` instances, Clifford action `fockSpinorAction`,
+and named abbreviations `fockSpinorsNormedAddCommGroup` and `fockSpinorsInnerProductSpace` for
+local installation given `hQ`.
 
 ## Main definitions
 
-* `TauCeti.AlmostComplexStructure.FockSpinors`: dedicated Hilbert-space carrier of the normalized
-  Fock spinor module of `J`, carrying global `NormedAddCommGroup`, `InnerProductSpace ℂ`, and
-  `FiniteDimensional ℂ` instances.
+* `TauCeti.AlmostComplexStructure.FockSpinors`: dedicated carrier of the normalized Fock spinor
+  module of `J` with global `AddCommGroup`, `Module ℂ`, `FiniteDimensional ℂ`, and `Nontrivial`
+  instances, plus named abbreviations `fockSpinorsNormedAddCommGroup` and
+  `fockSpinorsInnerProductSpace` installed locally given `hQ`.
 * `TauCeti.AlmostComplexStructure.fockSpinorsLinearEquiv`: the `ℂ`-linear equivalence
   `J.FockSpinors hQJ hQnd ≃ₗ[ℂ] ⋀ W`.
 * `TauCeti.AlmostComplexStructure.fockSpinorAction`: the real Clifford algebra action on
@@ -52,7 +55,7 @@ provide a diamond-free Hilbert-space model with global `NormedAddCommGroup` and
   and `Circle`-uniqueness of unitary Fock intertwiners on `⋀ W`.
 * `TauCeti.AlmostComplexStructure.exists_unitary_intertwiner_fockSpinorAction`,
   `TauCeti.AlmostComplexStructure.existsUnique_circle_smul_intertwiner_fockSpinorAction`: the same
-  on the global Hilbert-space carrier `FockSpinors`.
+  on `FockSpinors` equipped with `fockSpinorsNormedAddCommGroup` and `fockSpinorsInnerProductSpace`.
 
 ## References
 
@@ -203,8 +206,7 @@ instance instModuleFockSpinors : Module ℂ (J.FockSpinors hQJ hQnd) where
 
 /-- The underlying `ℂ`-linear equivalence `J.FockSpinors hQJ hQnd ≃ₗ[ℂ] ⋀ W`. -/
 def fockSpinorsLinearEquiv :
-    J.FockSpinors hQJ hQnd ≃ₗ[ℂ]
-      ExteriorAlgebra ℂ (J.spinPolarizationData hQJ hQnd).W where
+    J.FockSpinors hQJ hQnd ≃ₗ[ℂ] ExteriorAlgebra ℂ (J.spinPolarizationData hQJ hQnd).W where
   toFun := FockSpinors.toExterior
   invFun := FockSpinors.mk
   left_inv _ := rfl
@@ -213,40 +215,31 @@ def fockSpinorsLinearEquiv :
   map_smul' _ _ := rfl
 
 /-- `fockSpinorsLinearEquiv` evaluates to the `toExterior` projection. -/
-@[simp]
-theorem fockSpinorsLinearEquiv_apply (ψ : J.FockSpinors hQJ hQnd) :
-    J.fockSpinorsLinearEquiv hQJ hQnd ψ = ψ.toExterior :=
-  (rfl)
+@[simp] theorem fockSpinorsLinearEquiv_apply (ψ : J.FockSpinors hQJ hQnd) :
+    J.fockSpinorsLinearEquiv hQJ hQnd ψ = ψ.toExterior := (rfl)
 
 /-- `(fockSpinorsLinearEquiv ...).symm` wraps an exterior-algebra element into `FockSpinors`. -/
-@[simp]
-theorem fockSpinorsLinearEquiv_symm_apply
+@[simp] theorem fockSpinorsLinearEquiv_symm_apply
     (s : ExteriorAlgebra ℂ (J.spinPolarizationData hQJ hQnd).W) :
-    (J.fockSpinorsLinearEquiv hQJ hQnd).symm s = ⟨s⟩ :=
-  (rfl)
+    (J.fockSpinorsLinearEquiv hQJ hQnd).symm s = ⟨s⟩ := (rfl)
 
 /-- Finite-dimensionality of `J.FockSpinors hQJ hQnd` over `ℂ`. -/
-instance instFiniteDimensionalFockSpinors :
-    FiniteDimensional ℂ (J.FockSpinors hQJ hQnd) :=
+instance instFiniteDimensionalFockSpinors : FiniteDimensional ℂ (J.FockSpinors hQJ hQnd) :=
   (J.fockSpinorsLinearEquiv hQJ hQnd).symm.finiteDimensional
 
 /-- Nontriviality of `J.FockSpinors hQJ hQnd` (since `1 ≠ 0` in `⋀ W`). -/
-instance instNontrivialFockSpinors :
-    Nontrivial (J.FockSpinors hQJ hQnd) :=
+instance instNontrivialFockSpinors : Nontrivial (J.FockSpinors hQJ hQnd) :=
   (J.fockSpinorsLinearEquiv hQJ hQnd).symm.injective.nontrivial
 
 /-- The real Clifford algebra action on `J.FockSpinors hQJ hQnd`. -/
-def fockSpinorAction :
-    CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ (J.FockSpinors hQJ hQnd) :=
+def fockSpinorAction : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ (J.FockSpinors hQJ hQnd) :=
   ((J.fockSpinorsLinearEquiv hQJ hQnd).symm.conjAlgEquiv ℝ).toAlgHom.comp
     (J.realFockAction hQJ hQnd)
 
 /-- `toExterior` intertwines `fockSpinorAction` and `realFockAction`. -/
-@[simp]
-theorem toExterior_fockSpinorAction_apply (a : CliffordAlgebra Q)
+@[simp] theorem toExterior_fockSpinorAction_apply (a : CliffordAlgebra Q)
     (ψ : J.FockSpinors hQJ hQnd) :
-    (J.fockSpinorAction hQJ hQnd a ψ).toExterior =
-      J.realFockAction hQJ hQnd a ψ.toExterior := by
+    (J.fockSpinorAction hQJ hQnd a ψ).toExterior = J.realFockAction hQJ hQnd a ψ.toExterior := by
   simp [fockSpinorAction, LinearEquiv.conjAlgEquiv_apply]
 
 /-- `fockSpinorsLinearEquiv` intertwines `fockSpinorAction` and `realFockAction`. -/
@@ -257,8 +250,7 @@ theorem fockSpinorsLinearEquiv_fockSpinorAction_apply (a : CliffordAlgebra Q)
   J.toExterior_fockSpinorAction_apply hQJ hQnd a ψ
 
 /-- `J.FockSpinors hQJ hQnd` has complex dimension `2 ^ (finrank ℝ V / 2)`. -/
-theorem finrank_fockSpinors :
-    finrank ℂ (J.FockSpinors hQJ hQnd) = 2 ^ (finrank ℝ V / 2) := by
+theorem finrank_fockSpinors : finrank ℂ (J.FockSpinors hQJ hQnd) = 2 ^ (finrank ℝ V / 2) := by
   rw [(J.fockSpinorsLinearEquiv hQJ hQnd).finrank_eq, J.finrank_fock hQJ hQnd]
 
 /-- `complexifyAction (J.fockSpinorAction hQJ hQnd)` is surjective onto
@@ -299,26 +291,21 @@ def fockSpinorsLinearIsometryEquiv (hQ : ∀ v, Q v = -‖v‖ ^ 2) :
     letI := J.fockSpinorsInnerProductSpace hQJ hQnd hQ
     letI := J.fockNormedAddCommGroup hQJ hQnd hQ
     letI := J.fockInnerProductSpace hQJ hQnd hQ
-    J.FockSpinors hQJ hQnd ≃ₗᵢ[ℂ]
-      ExteriorAlgebra ℂ (J.spinPolarizationData hQJ hQnd).W := by
+    J.FockSpinors hQJ hQnd ≃ₗᵢ[ℂ] ExteriorAlgebra ℂ (J.spinPolarizationData hQJ hQnd).W := by
   let := J.fockSpinorsNormedAddCommGroup hQJ hQnd hQ
   let := J.fockSpinorsInnerProductSpace hQJ hQnd hQ
-  let := J.fockNormedAddCommGroup hQJ hQnd hQ
-  let := J.fockInnerProductSpace hQJ hQnd hQ
+  let := J.fockNormedAddCommGroup hQJ hQnd hQ; let := J.fockInnerProductSpace hQJ hQnd hQ
   refine { J.fockSpinorsLinearEquiv hQJ hQnd with norm_map' := fun x ↦ ?_ }
-  rw [norm_eq_sqrt_re_inner (𝕜 := ℂ), norm_eq_sqrt_re_inner (𝕜 := ℂ)]
-  rfl
+  rw [norm_eq_sqrt_re_inner (𝕜 := ℂ), norm_eq_sqrt_re_inner (𝕜 := ℂ)]; rfl
 
 /-- `fockSpinorsLinearIsometryEquiv` evaluates to the `toExterior` projection. -/
-@[simp]
-theorem fockSpinorsLinearIsometryEquiv_apply (hQ : ∀ v, Q v = -‖v‖ ^ 2)
+@[simp] theorem fockSpinorsLinearIsometryEquiv_apply (hQ : ∀ v, Q v = -‖v‖ ^ 2)
     (ψ : J.FockSpinors hQJ hQnd) :
     letI := J.fockSpinorsNormedAddCommGroup hQJ hQnd hQ
     letI := J.fockSpinorsInnerProductSpace hQJ hQnd hQ
     letI := J.fockNormedAddCommGroup hQJ hQnd hQ
     letI := J.fockInnerProductSpace hQJ hQnd hQ
-    J.fockSpinorsLinearIsometryEquiv hQJ hQnd hQ ψ = ψ.toExterior :=
-  (rfl)
+    J.fockSpinorsLinearIsometryEquiv hQJ hQnd hQ ψ = ψ.toExterior := (rfl)
 
 /-- Real Clifford generators act skew-adjointly on `J.FockSpinors hQJ hQnd`. -/
 theorem adjoint_fockSpinorAction_ι (hQ : ∀ v, Q v = -‖v‖ ^ 2) (v : V) :
@@ -328,15 +315,12 @@ theorem adjoint_fockSpinorAction_ι (hQ : ∀ v, Q v = -‖v‖ ^ 2) (v : V) :
       -J.fockSpinorAction hQJ hQnd (ι Q v) := by
   let := J.fockSpinorsNormedAddCommGroup hQJ hQnd hQ
   let := J.fockSpinorsInnerProductSpace hQJ hQnd hQ
-  let := J.fockNormedAddCommGroup hQJ hQnd hQ
-  let := J.fockInnerProductSpace hQJ hQnd hQ
+  let := J.fockNormedAddCommGroup hQJ hQnd hQ; let := J.fockInnerProductSpace hQJ hQnd hQ
   let e := J.fockSpinorsLinearIsometryEquiv hQJ hQnd hQ
   have he (x : J.FockSpinors hQJ hQnd) :
-      e (J.fockSpinorAction hQJ hQnd (ι Q v) x) =
-        J.realFockAction hQJ hQnd (ι Q v) (e x) :=
+      e (J.fockSpinorAction hQJ hQnd (ι Q v) x) = J.realFockAction hQJ hQnd (ι Q v) (e x) :=
     J.fockSpinorsLinearEquiv_fockSpinorAction_apply hQJ hQnd (ι Q v) x
-  symm
-  refine (LinearMap.eq_adjoint_iff _ _).mpr fun x y ↦ ?_
+  symm; refine (LinearMap.eq_adjoint_iff _ _).mpr fun x y ↦ ?_
   rw [← e.inner_map_map, ← e.inner_map_map, LinearMap.neg_apply, map_neg, he, he,
     inner_neg_left, ← LinearMap.adjoint_inner_right,
     J.adjoint_realFockAction_ι hQJ hQnd hQ v, LinearMap.neg_apply, inner_neg_right, neg_neg]

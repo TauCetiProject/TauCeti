@@ -12,37 +12,27 @@ public import Mathlib.Geometry.Manifold.Algebra.SMul
 public import Mathlib.Topology.MetricSpace.IsometricSMul
 import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.Basic
 import TauCeti.Geometry.Symplectic.Complex.OrthonormalBasis
-import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.HalfSpin
-import TauCeti.RepresentationTheory.Spin.Polarization.Chirality
+import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Frame
 
 /-!
 # Smooth isometric Spinᶜ fiber actions and the four-dimensional Hermitian Fock model
 
 `TauCeti.Geometry.Manifold.VectorBundle.Associated.Basic` and `.Metric` construct smooth
-associated vector bundles and invariant Hermitian bundle metrics from a smooth principal `G`-bundle
-together with `[DistribMulAction G F]`, `[SMulCommClass G ℂ F]`, `[SMulCommClass G ℝ F]`,
-`[ContinuousSMul G F]`, `[ContMDiffSMul IG 𝓘(ℝ, F) ∞ G F]`, and `[IsIsometricSMul G F]`.
+associated vector bundles and invariant Hermitian bundle metrics from smooth isometric `G`-actions.
+This file supplies those fiber actions for compact `Spinᶜ` and realizes them on Fock half-spinors:
 
-This file supplies those fiber actions for compact `Spinᶜ` together with their frame-change
-equivariance and concrete four-dimensional Fock realization:
-
-* `CliffordAlgebra.spinCGroup.realDetDistribMulAction` equips `ℂ` with the smooth isometric
-  weight-two determinant action of `Spinᶜ(n)`, commuting with scalar multiplications that commute
-  with `ℂ` (in particular both `ℂ` and `ℝ`).
-* `Orientation.realSpinCHalfSpinDistribMulAction` equips any chirality eigenspace `W^ε` of a
-  four-dimensional normed Clifford module with the smooth linear `Spinᶜ(4)` action in an
-  orthonormal frame `b`, which is isometric when Clifford generators are skew-adjoint.
-* `Orientation.halfSpinLinearIsometryEquiv_realSpinCHalfSpinSmoothHom_apply` and
-  `Orientation.exists_realSpinCHalfSpinSmoothHom_eq_conj` establish equivariance under oriented
-  linear isometries and unitary Clifford intertwiners, and inner-automorphism conjugation under
-  change between equally oriented orthonormal frames.
-* `Orientation.exists_almostComplexStructure_orthonormalBasis` constructs an orientation-compatible
-  orthogonal complex structure and adapted orthonormal frame on every oriented four-dimensional
-  Euclidean space `(V, o)`, yielding a concrete Hermitian Fock `Spinᶜ(4)` model on
-  `AlmostComplexStructure.FockSpinors` of half-spin rank two whose smooth chirality representations
-  are intertwined across polarizations by unitary equivalences
-  (`Orientation.exists_unitary_intertwiner_fock_realSpinCHalfSpinSmoothHom`) and have determinant
-  equal to `spinCGroup.det` (`Orientation.det_fock_realSpinCHalfSpinSmoothHom`).
+* `CliffordAlgebra.spinCGroup.realDetDistribMulAction`: smooth isometric weight-two determinant
+  action of `Spinᶜ(n)` on `ℂ`, commuting with `ℂ` and `ℝ` scalars.
+* `Orientation.realSpinCHalfSpinDistribMulAction`: smooth linear `Spinᶜ(4)` action on any chirality
+  eigenspace `W^ε` in a frame `b`, isometric when Clifford generators are skew-adjoint, with
+  equivariance along oriented isometries
+  (`halfSpinLinearIsometryEquiv_realSpinCHalfSpinSmoothHom_apply`) and inner-automorphism
+  conjugation across equally oriented frames (`exists_realSpinCHalfSpinSmoothHom_eq_conj`).
+* `Orientation.exists_almostComplexStructure_orthonormalBasis`,
+  `Orientation.exists_unitary_intertwiner_fock_realSpinCHalfSpinSmoothHom`, and
+  `Orientation.det_fock_realSpinCHalfSpinSmoothHom`: concrete rank-two Hermitian Fock `Spinᶜ(4)`
+  half-spin model on `AlmostComplexStructure.FockSpinors`, intertwined across polarizations and
+  having determinant `spinCGroup.det` for every `Q`-orthogonal complex structure `J`.
 
 ## References
 
@@ -246,7 +236,7 @@ theorem halfSpinLinearIsometryEquiv_realSpinCHalfSpinSmoothHom_apply
   obtain ⟨⟨s, z⟩, rfl⟩ := spinCGroup.mk_surjective (realCliffordForm 4 0) hpos x
   let e : Q →qᵢ Q' :=
     { toLinearMap := f.toLinearMap
-      map_app' v := by change Q' (f v) = Q v; rw [hQ', f.norm_map, hQ] }
+      map_app' v := by simp [hQ', hQ] }
   have he_comp : ((b.map f).negRealCliffordFormIsometryEquiv hQ').toIsometry =
       e.comp (b.negRealCliffordFormIsometryEquiv hQ).toIsometry := by
     ext c
@@ -342,13 +332,11 @@ theorem exists_unitary_intertwiner_fock_realSpinCHalfSpinSmoothHom
     realSpinCHalfSpinSmoothHom_intertwine_apply o hQ b
       (J₁.fockSpinorAction hQJ₁ hQnd) ε hU.choose_spec x ψ⟩
 
-/-- On an orientation-compatible `Q`-orthogonal complex structure `J` on `(V, o)`, both chirality
-representations (`ε = 1` and `ε = -1`) of `realSpinCHalfSpinSmoothHom` on `J.FockSpinors` have
-determinant equal to the weight-two character `spinCGroup.det`. -/
+/-- For any `Q`-orthogonal complex structure `J` on `(V, o)`, both chirality representations
+(`ε = 1` and `ε = -1`) of `realSpinCHalfSpinSmoothHom` on `J.FockSpinors` have determinant equal to
+the weight-two character `spinCGroup.det`. -/
 theorem det_fock_realSpinCHalfSpinSmoothHom
     (J : AlmostComplexStructure V) (hQJ : ∀ v, Q (J v) = Q v) (hQnd : Q.Nondegenerate)
-    {b₀ : OrthonormalBasis (Fin 4) ℝ V} (hb₀ : b₀.toBasis.orientation = o)
-    (hb₁ : b₀ 1 = J (b₀ 0)) (hb₃ : b₀ 3 = J (b₀ 2))
     {ε : ℂ} (hε : ε = 1 ∨ ε = -1) (x : SpinC) :
     letI := J.fockSpinorsNormedAddCommGroup hQJ hQnd hQ
     letI := J.fockSpinorsInnerProductSpace hQJ hQnd hQ
@@ -357,24 +345,18 @@ theorem det_fock_realSpinCHalfSpinSmoothHom
       (spinCGroup.det (realCliffordForm 4 0) hpos x : ℂ) := by
   let := J.fockSpinorsNormedAddCommGroup hQJ hQnd hQ
   let := J.fockSpinorsInnerProductSpace hQJ hQnd hQ
-  let e := J.fockSpinorsLinearEquiv hQJ hQnd
-  have he : eigenspace (J.fockSpinorAction hQJ hQnd (chirality Q o)) ε =
-      (eigenspace (J.realFockAction hQJ hQnd (chirality Q o)) ε).comap e.toLinearMap := by
-    ext y
-    rw [Submodule.mem_comap, mem_eigenspace_iff, mem_eigenspace_iff, ← e.injective.eq_iff,
-      map_smul]
-    dsimp only [e, LinearEquiv.coe_coe]
-    rw [J.fockSpinorsLinearEquiv_fockSpinorAction_apply]
-  have h₂' : finrank ℂ (eigenspace (J.realFockAction hQJ hQnd (chirality Q o)) ε) = 2 := by
-    rcases hε with rfl | rfl
-    · rw [← positiveHalfSpinors_eq_eigenspace]
-      exact J.finrank_positiveHalfSpinors_realFockAction hQJ hQnd hQ b₀ hb₀ hb₁ hb₃
-    · exact J.finrank_eigenspace_realFockAction_chirality_neg_one hQJ hQnd hQ b₀ hb₀ hb₁ hb₃
+  have hpos_two : finrank ℂ (positiveHalfSpinors o (J.fockSpinorAction hQJ hQnd)) = 2 := by
+    have h4 : finrank ℂ (J.FockSpinors hQJ hQnd) = 4 := by
+      rw [J.finrank_fockSpinors hQJ hQnd, (Fact.out : finrank ℝ V = 4)]
+      rfl
+    rw [finrank_eq_two_mul_finrank_positiveHalfSpinors o (J.fockSpinorAction hQJ hQnd) hQ] at h4
+    omega
   have h₂ : finrank ℂ (eigenspace (J.fockSpinorAction hQJ hQnd (chirality Q o)) ε) = 2 := by
-    have hmap : (eigenspace (J.fockSpinorAction hQJ hQnd (chirality Q o)) ε).map
-        e.toLinearMap = eigenspace (J.realFockAction hQJ hQnd (chirality Q o)) ε := by
-      rw [he, Submodule.map_comap_eq_of_surjective e.surjective]
-    exact (e.ofSubmodules _ _ hmap).finrank_eq.trans h₂'
+    rcases hε with rfl | rfl
+    · rwa [← positiveHalfSpinors_eq_eigenspace]
+    · rw [finrank_eigenspace_chirality_neg o (J.fockSpinorAction hQJ hQnd) 1,
+        ← positiveHalfSpinors_eq_eigenspace]
+      exact hpos_two
   exact det_realSpinCHalfSpinSmoothHom o hQ b (J.fockSpinorAction hQJ hQnd) ε h₂ x
 
 end Fock
