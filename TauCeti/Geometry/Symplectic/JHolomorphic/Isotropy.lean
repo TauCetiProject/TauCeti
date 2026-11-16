@@ -11,10 +11,10 @@ import TauCeti.LinearAlgebra.Complex.Module
 public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 public import Mathlib.LinearAlgebra.AffineSpace.AffineEquiv
 import TauCeti.Analysis.Complex.AffineIsotropy
+import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import Mathlib.Analysis.Complex.RealDeriv
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
-import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 
 /-!
 # Finite isotropy of nonconstant pseudoholomorphic spheres with a special point
@@ -113,16 +113,10 @@ private theorem mfderiv_I_mul_sub_eq_zero (hu : MDifferentiable 𝓘(ℝ, ℂ) I
       (((HasDerivAt.cexp ((hasDerivAt_id ((0 : ℝ) : ℂ)).mul_const Complex.I)).mul_const
         (x - z₀)).const_add z₀)
     convert h using 1 <;> simp [γ]
-  have hγ : HasMFDerivAt 𝓘(ℝ, ℝ) 𝓘(ℝ, ℂ) γ 0
-      ((ContinuousLinearMap.id ℝ ℝ).smulRight (Complex.I * (x - z₀))) :=
-    hasMFDerivAt_iff_hasFDerivAt.2 hγ'.hasFDerivAt
   have hγ0 : γ 0 = x := by simp [γ]
-  have h1 : mfderiv 𝓘(ℝ, ℝ) 𝓘(ℝ, ℂ) γ 0 (1 : ℝ) = Complex.I * (x - z₀) := by
-    rw [hγ.mfderiv]
-    exact one_smul ℝ _
   have huγ : u ∘ γ = fun _ ↦ u x := funext fun θ ↦ hrot θ x
-  have h := mfderiv_comp_apply_of_eq 0 (hu x) hγ.mdifferentiableAt hγ0 (1 : ℝ)
-  rw [huγ, mfderiv_const, h1] at h
+  have h := (hγ0 ▸ hu x : MDifferentiableAt _ _ u (γ 0)).curveVelocity_comp_mfderiv hγ'
+  rw [huγ, TauCeti.Manifold.curveVelocity_const, hγ0] at h
   exact h.symm
 
 end TauCeti
