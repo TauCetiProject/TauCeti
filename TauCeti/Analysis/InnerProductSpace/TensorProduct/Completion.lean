@@ -53,7 +53,9 @@ space, whether or not `E` and `F` are complete. This file develops the operators
   (`TensorProduct.assocIsometryCompletion`). Bounded operators out of `(E ⊗̂ F) ⊗̂ G` are
   determined by their values on `(x ⊗ₜ y) ⊗ₜ z` (`TensorProduct.completion_ext₃`), so the
   associator is the only one sending it to `x ⊗ₜ (y ⊗ₜ z)`
-  (`TensorProduct.eq_assocIsometryCompletion_iff`).
+  (`TensorProduct.eq_assocIsometryCompletion_iff`). It is natural in each factor:
+  `assoc ∘ ((f ⊗ g) ⊗ h) = (f ⊗ (g ⊗ h)) ∘ assoc`
+  (`TensorProduct.mapLCompletion_assocIsometryCompletion`).
 
 These are the bounded operators `A ⊗ 1` and `1 ⊗ B` on tensor products of Hilbert spaces from which
 spatial tensor products of operator algebras are built, and they act on tensor products of `L²`
@@ -74,11 +76,12 @@ noncomputable section
 open UniformSpace TensorProduct
 open scoped InnerProductSpace
 
-variable {𝕜 E E' E'' F F' F'' G : Type*} [RCLike 𝕜]
+variable {𝕜 E E' E'' F F' F'' G G' : Type*} [RCLike 𝕜]
   [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [NormedAddCommGroup E'] [InnerProductSpace 𝕜 E']
   [NormedAddCommGroup E''] [InnerProductSpace 𝕜 E''] [NormedAddCommGroup F]
   [InnerProductSpace 𝕜 F] [NormedAddCommGroup F'] [InnerProductSpace 𝕜 F']
   [NormedAddCommGroup F''] [InnerProductSpace 𝕜 F''] [NormedAddCommGroup G] [InnerProductSpace 𝕜 G]
+  [NormedAddCommGroup G'] [InnerProductSpace 𝕜 G']
 
 namespace TensorProduct
 
@@ -396,6 +399,18 @@ theorem mapLCompletion_commIsometry_completion (f : E →L[𝕜] E')
   | ih u =>
     simp only [LinearIsometryEquiv.completion_apply_coe, mapLCompletion_coe]
     exact congr(($(mapL_comp_commIsometry g f) u : Completion (F' ⊗[𝕜] E')))
+
+/-- The associator of completed tensor products is natural in each factor:
+`assoc ∘ ((f ⊗ g) ⊗ h) = (f ⊗ (g ⊗ h)) ∘ assoc`. -/
+theorem mapLCompletion_assocIsometryCompletion (f : E →L[𝕜] E') (g : F →L[𝕜] F')
+    (h : G →L[𝕜] G') (u : Completion (Completion (E ⊗[𝕜] F) ⊗[𝕜] G)) :
+    assocIsometryCompletion 𝕜 E' F' G' (mapLCompletion (mapLCompletion f g) h u) =
+      mapLCompletion f (mapLCompletion g h) (assocIsometryCompletion 𝕜 E F G u) := by
+  have key : (assocIsometryCompletion 𝕜 E' F' G' : _ →L[𝕜] _) ∘L
+      mapLCompletion (mapLCompletion f g) h =
+        mapLCompletion f (mapLCompletion g h) ∘L (assocIsometryCompletion 𝕜 E F G : _ →L[𝕜] _) :=
+    completion_ext₃ fun x y z ↦ by simp
+  exact congr($key u)
 
 end mapL
 
