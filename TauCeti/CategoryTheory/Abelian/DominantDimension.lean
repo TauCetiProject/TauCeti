@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Preadditive.Injective.Preserves
+public import Mathlib.CategoryTheory.Preadditive.Projective.Preserves
 public import TauCeti.Data.ENat.Lattice
 public import TauCeti.CategoryTheory.Abelian.Injective.MinimalCoresolution
 public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
@@ -270,52 +272,41 @@ its summands. -/
 @[simp]
 theorem dominantDimension_biproduct {J : Type w} [Finite J] (f : J → C) [HasBiproduct f] :
     dominantDimension (⨁ f) = ⨅ j, dominantDimension (f j) := by
-  refine le_antisymm (le_iInf fun j ↦
-    Retract.dominantDimension_le ⟨biproduct.ι f j, biproduct.π f j, biproduct.ι_π_self f j⟩) ?_
   have : HasFiniteBiproducts C := Abelian.hasFiniteBiproducts
   -- Induction on the finite index type, through `Option`.
   refine Finite.induction_empty_option (P := fun J ↦ ∀ [Finite J] (f : J → C),
-    (⨅ j, dominantDimension (f j)) ≤ dominantDimension (⨁ f)) ?_ ?_ ?_ J f
+    dominantDimension (⨁ f) = ⨅ j, dominantDimension (f j)) ?_ ?_ ?_ J f
   · intro J K e h hK f
     have : Finite J := Finite.of_equiv K e.symm
     rw [← e.iInf_comp, dominantDimension_eq_of_iso
       (biproduct.whiskerEquiv e (fun j ↦ Iso.refl (f (e j)))).symm]
     exact h (f ∘ e)
   · intro _ f
-    rw [(isZero_biproduct_of_isEmpty f).dominantDimension_eq_top]
-    exact le_top
+    rw [(isZero_biproduct_of_isEmpty f).dominantDimension_eq_top, iInf_of_empty]
   · intro J _ h _ f
-    rw [iInf_option, dominantDimension_eq_of_iso (biproductOptionIso f), dominantDimension_biprod]
-    exact min_le_min_left _ (h _)
+    rw [iInf_option, dominantDimension_eq_of_iso (biproductOptionIso f), dominantDimension_biprod,
+      h]
 
 section Equivalence
 
 variable {D : Type u'} [Category.{v'} D] [Abelian D]
 
-/-- An exact functor sending projective-injective objects to projective-injective objects carries
-projective-injective coresolutions to projective-injective coresolutions. -/
+/-- An exact functor preserving projective and injective objects carries projective-injective
+coresolutions to projective-injective coresolutions. -/
 theorem HasProjectiveInjectiveCoresolution.map (F : C ⥤ D) [F.PreservesZeroMorphisms]
-    [F.PreservesHomology]
-    (hF : ∀ Y : C, Projective Y → Injective Y → Projective (F.obj Y) ∧ Injective (F.obj Y))
-    {X : C} {n : ℕ} (h : HasProjectiveInjectiveCoresolution X n) :
+    [F.PreservesHomology] [F.PreservesProjectiveObjects] [F.PreservesInjectiveObjects] {X : C}
+    {n : ℕ} (h : HasProjectiveInjectiveCoresolution X n) :
     HasProjectiveInjectiveCoresolution (F.obj X) n :=
-  HasCoresolution.map F (fun Y hY ↦ hF Y hY.1 hY.2) h
-
-/-- An equivalence sends projective-injective objects to projective-injective objects. -/
-private theorem Equivalence.projective_and_injective_functor_obj {C D : Type*} [Category* C]
-    [Category* D] (F : C ≌ D) (Y : C) (hP : Projective Y)
-    (hI : Injective Y) : Projective (F.functor.obj Y) ∧ Injective (F.functor.obj Y) :=
-  ⟨(F.map_projective_iff _).2 hP, (F.map_injective_iff _).2 hI⟩
+  HasCoresolution.map F
+    (fun _ hY ↦ ⟨F.projective_obj_of_projective hY.1, F.injective_obj_of_injective hY.2⟩) h
 
 /-- **Equivalences preserve the dominant dimension.** -/
 @[simp]
 theorem Equivalence.dominantDimension_functor_obj (F : C ≌ D) (X : C) :
     dominantDimension (F.functor.obj X) = dominantDimension X := by
   refine le_antisymm (iSup₂_le fun n hn ↦ natCast_le_dominantDimension_iff.2 ?_)
-    (iSup₂_le fun n hn ↦ natCast_le_dominantDimension_iff.2
-      (hn.map F.functor (Equivalence.projective_and_injective_functor_obj F)))
-  exact (hn.map F.inverse (Equivalence.projective_and_injective_functor_obj F.symm)).of_iso
-    (F.unitIso.app X).symm
+    (iSup₂_le fun n hn ↦ natCast_le_dominantDimension_iff.2 (hn.map F.functor))
+  exact (hn.map F.inverse).of_iso (F.unitIso.app X).symm
 
 end Equivalence
 
