@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.RegularValue
-public import TauCeti.AlgebraicTopology.UniversalCover.Circle.FreeLoop
+public import TauCeti.AlgebraicTopology.UniversalCover.Circle.FreeLoop.Basic
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.RingTheory.RootsOfUnity.Complex
 import Mathlib.Topology.Homotopy.Affine
