@@ -18,7 +18,8 @@ import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
 At a local extremum of the norm of a map, its derivative is orthogonal to its value. In
 particular, the derivative of a map into a sphere is tangent to the sphere. Away from the origin,
 a vanishing derivative of a norm-composition forces the one-dimensional profile derivative to
-vanish.
+vanish. In any real normed space, a curve whose derivative is a multiple `c • f a` of its value
+has norm with derivative `c * ‖f a‖` (`HasDerivAt.norm_of_smul_self`).
 
 The squared norm of the derivative of a map from `ℂ` to a Euclidean space is at most twice the
 sum of the squared partial derivatives of its components along `1` and `I`
@@ -31,7 +32,7 @@ origin.
 
 public section
 
-open scoped RealInnerProductSpace
+open scoped RealInnerProductSpace Topology
 
 namespace TauCeti
 
@@ -63,6 +64,22 @@ theorem _root_.IsLocalExtr.inner_fderiv_eq_zero {ψ : E → F} {w : E}
     -- Fermat's theorem: the derivative `2 ⟪ψ w, fderiv ℝ ψ w ·⟫` of `‖ψ‖ ^ 2` vanishes at `w`.
     simpa using congr($(IsLocalExtr.hasFDerivAt_eq_zero hsq hd.hasFDerivAt.norm_sq) u)
   · simp [fderiv_zero_of_not_differentiableAt hd]
+
+/-- If a curve `f` has derivative `c • f a` at `a`, so that it moves radially to first order, then
+its norm has derivative `c * ‖f a‖` at `a`. The norm need not come from an inner product. -/
+theorem _root_.HasDerivAt.norm_of_smul_self {f : ℝ → E} {a c : ℝ} (hf : HasDerivAt f (c • f a) a) :
+    HasDerivAt (fun t ↦ ‖f t‖) (c * ‖f a‖) a := by
+  rw [hasDerivAt_iff_isLittleO_nhds_zero] at hf ⊢
+  refine (Asymptotics.IsBigO.of_bound' ?_).trans_isLittleO hf
+  -- Near `0`, `1 + t * c > 0`, so `‖(1 + t * c) • f a‖ = (1 + t * c) * ‖f a‖`.
+  have hpos : ∀ᶠ t in 𝓝 (0 : ℝ), 0 < 1 + t * c :=
+    continuousAt_const.eventually_lt (by fun_prop) (by simp)
+  filter_upwards [hpos] with t ht
+  calc ‖‖f (a + t)‖ - ‖f a‖ - t • (c * ‖f a‖)‖ = |‖f (a + t)‖ - ‖(1 + t * c) • f a‖| := by
+        rw [norm_smul, Real.norm_of_nonneg ht.le, Real.norm_eq_abs]
+        ring_nf
+    _ ≤ ‖f (a + t) - (1 + t * c) • f a‖ := abs_norm_sub_norm_le _ _
+    _ = ‖f (a + t) - f a - t • c • f a‖ := by congr 1; module
 
 /-- The squared operator norm of the derivative of a map from `ℂ` to a Euclidean space is at most
 twice the sum, over the components, of the squared partial derivatives along `1` and `I`. -/

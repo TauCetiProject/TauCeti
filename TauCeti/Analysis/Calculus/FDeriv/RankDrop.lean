@@ -7,8 +7,8 @@ module
 
 public import Mathlib.Analysis.Calculus.LocalExtr.Basic
 public import TauCeti.LinearAlgebra.Matrix.Rank.Pencil
-import Mathlib.Analysis.Calculus.Deriv.Comp
-import Mathlib.Analysis.Calculus.Deriv.Mul
+import Mathlib.Analysis.Calculus.LocalExtr.LineDeriv
+import TauCeti.Analysis.Calculus.FDeriv.Norm
 
 /-!
 # The Lefschetz–Whitehead rank estimate
@@ -44,7 +44,7 @@ because the derivative of a map of constant nonzero norm is orthogonal to its va
 
 public section
 
-open Asymptotics Module
+open Module
 
 namespace HasFDerivAt
 
@@ -102,30 +102,12 @@ theorem finrank_range_lt_of_infinite_of_isLocalExtr_norm (hh : HasFDerivAt h h' 
   refine hh.finrank_range_lt_of_infinite hg ?_ hp
   rintro ⟨e, he⟩
   rw [ContinuousLinearMap.coe_coe] at he
-  -- If `h' e = h x`, then along the line `t ↦ x + t • e` the map `h` moves as
-  -- `(1 + t) • h x + o(t)`.
-  have hψ : HasDerivAt (fun t : ℝ ↦ h (x + t • e)) (h x) 0 := by
-    have hl : HasDerivAt (fun t : ℝ ↦ x + t • e) e 0 := by
-      simpa using ((hasDerivAt_id (0 : ℝ)).smul_const e).const_add x
-    simpa [he, Function.comp_def] using hh.comp_hasDerivAt_of_eq (0 : ℝ) hl (by simp)
-  -- So `‖h (x + t • e)‖ = (1 + t) * ‖h x‖ + o(t)`: the norm of `h` has derivative `‖h x‖ ≠ 0`
-  -- along the line, which is impossible at a local extremum.
-  have hφ : HasDerivAt (fun t : ℝ ↦ ‖h (x + t • e)‖) ‖h x‖ 0 := by
-    rw [hasDerivAt_iff_isLittleO] at hψ ⊢
-    refine (IsBigO.of_bound' ?_).trans_isLittleO hψ
-    filter_upwards [Ioi_mem_nhds (show (-1 : ℝ) < 0 by norm_num)] with t (ht : -1 < t)
-    calc ‖‖h (x + t • e)‖ - ‖h (x + (0 : ℝ) • e)‖ - (t - 0) • ‖h x‖‖
-        = |‖h (x + t • e)‖ - ‖(1 + t) • h x‖| := by
-          rw [Real.norm_eq_abs, norm_smul, Real.norm_of_nonneg (by linarith : (0 : ℝ) ≤ 1 + t)]
-          simp only [zero_smul, add_zero, sub_zero, smul_eq_mul]
-          congr 1
-          ring
-      _ ≤ ‖h (x + t • e) - (1 + t) • h x‖ := abs_norm_sub_norm_le _ _
-      _ = ‖h (x + t • e) - h (x + (0 : ℝ) • e) - (t - 0) • h x‖ := by
-          rw [zero_smul, add_zero, sub_zero, add_smul, one_smul, sub_add_eq_sub_sub]
-  have hext : IsLocalExtr (fun t : ℝ ↦ ‖h (x + t • e)‖) 0 :=
-    IsLocalExtr.comp_continuous (f := fun y ↦ ‖h y‖) (g := fun t : ℝ ↦ x + t • e) (b := 0)
-      (by simpa using hn) (by fun_prop)
-  exact h0 (norm_eq_zero.mp (hext.hasDerivAt_eq_zero hφ))
+  -- If `h' e = h x`, then `h` has derivative `1 • h x` along `e`, so `‖h‖` has derivative
+  -- `‖h x‖ ≠ 0` along `e`, which is impossible at a local extremum.
+  have hψ : HasDerivAt (fun t : ℝ ↦ h (x + t • e)) ((1 : ℝ) • h (x + (0 : ℝ) • e)) 0 := by
+    simpa [HasLineDerivAt, he] using hh.hasLineDerivAt e
+  have hφ : HasLineDerivAt ℝ (fun y ↦ ‖h y‖) ‖h x‖ x e := by
+    simpa [HasLineDerivAt] using hψ.norm_of_smul_self
+  exact h0 (norm_eq_zero.mp (hn.hasLineDerivAt_eq_zero hφ))
 
 end HasFDerivAt
