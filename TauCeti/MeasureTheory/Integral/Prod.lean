@@ -45,6 +45,8 @@ Small pieces of product-measure theory with no `L²` or inner-product content.
 * `TauCeti.integrable_and_integral_prod_le` deduces product-measure integrability and an integral
   bound for an a.e.-nonnegative kernel from a.e. slice integrability and an integrable slice
   majorant.
+* `TauCeti.measurePreserving_prodProdProdComm`: exchanging the two middle coordinates preserves the
+  product of two product measures whenever the three factors moved across a product are s-finite.
 -/
 
 public section
@@ -275,5 +277,30 @@ theorem integrable_and_integral_prod_le [SFinite μ] [SFinite ν] {G : α × β 
     exact h.2
   exact ⟨hG_int, (integral_prod G hG_int).trans_le
     (integral_mono_ae hG_int.integral_prod_left hH_int (hslice.mono fun _ h ↦ h.2))⟩
+
+/-- Exchanging the two middle coordinates preserves the product of two product measures; only the
+three factors moved across a product must be s-finite. -/
+theorem measurePreserving_prodProdProdComm {α' β' : Type*}
+    [MeasurableSpace α'] [MeasurableSpace β'] {μ' : Measure α'} {ν' : Measure β'}
+    [SFinite ν] [SFinite μ'] [SFinite ν'] :
+    MeasurePreserving (Equiv.prodProdProdComm α β α' β')
+      ((μ.prod ν).prod (μ'.prod ν')) ((μ.prod μ').prod (ν.prod ν')) := by
+  let f : β × α' × β' → α' × β × β' :=
+    MeasurableEquiv.prodAssoc ∘ Prod.map Prod.swap id ∘ MeasurableEquiv.prodAssoc.symm
+  have hf : MeasurePreserving f (ν.prod (μ'.prod ν')) (μ'.prod (ν.prod ν')) :=
+    (measurePreserving_prodAssoc μ' ν ν').comp <|
+      (Measure.measurePreserving_swap.prod (MeasurePreserving.id ν')).comp
+        (measurePreserving_prodAssoc ν μ' ν').symm
+  have hidf : MeasurePreserving (Prod.map (id : α → α) f)
+      (μ.prod (ν.prod (μ'.prod ν'))) (μ.prod (μ'.prod (ν.prod ν'))) := by
+    have hm : Measurable (Prod.map (id : α → α) f) := measurable_id.prodMap hf.measurable
+    refine ⟨hm, Measure.ext fun s hs ↦ ?_⟩
+    rw [Measure.map_apply hm hs, Measure.prod_apply (hm hs), Measure.prod_apply hs]
+    refine lintegral_congr fun x ↦ ?_
+    exact (Measure.map_apply hf.measurable (measurable_prodMk_left hs)).symm.trans
+      (congrArg (· (Prod.mk x ⁻¹' s)) hf.map_eq)
+  exact ((measurePreserving_prodAssoc μ μ' (ν.prod ν')).symm.comp <|
+    hidf.comp (measurePreserving_prodAssoc μ ν (μ'.prod ν'))).congr
+      (by dsimp [Equiv.prodProdProdComm]; fun_prop) (ae_of_all _ fun ⟨⟨_, _⟩, ⟨_, _⟩⟩ ↦ rfl)
 
 end TauCeti
