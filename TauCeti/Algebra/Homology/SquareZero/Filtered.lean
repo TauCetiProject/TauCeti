@@ -36,8 +36,9 @@ each quotient `M ⧸ F j` (`LinearMap.FilteredHomotopyEquiv.quotient`), as soon 
 filtrations. When `d` and `e` square to zero, a filtered chain homotopy equivalence induces an
 isomorphism of homologies (`LinearMap.FilteredHomotopyEquiv.homologyEquiv`), since homotopic chain
 maps induce the same map on homology (`LinearMap.homologyMap_eq_of_sub_eq`). Restricting to `F j`
-and then dividing by `F i` gives isomorphisms between the homologies of all the subquotients
-`F j ⧸ F i` and `G j ⧸ G i` (`LinearMap.FilteredHomotopyEquiv.subquotientHomologyEquiv`). For a
+and then dividing by the trace `F i ∩ F j` gives isomorphisms between the homologies of all the
+subquotients `F j ⧸ (F i ∩ F j)` and `G j ⧸ (G i ∩ G j)`, that is, `F j ⧸ F i` and `G j ⧸ G i`
+when `F i ≤ F j` and `G i ≤ G j` (`LinearMap.FilteredHomotopyEquiv.subquotientHomologyEquiv`). For a
 filtration indexed by `ℤ` the subquotients `F a ⧸ F (a - 1)` form the associated graded complex,
 so the homology of the associated graded complex (the first page of the spectral sequence of the
 filtration) is an invariant of the filtered chain homotopy type.
@@ -60,7 +61,7 @@ the levels and the induced maps on the quotients can be formed.
 * `LinearMap.FilteredHomotopyEquiv.quotient`: the quotient by a level of the filtrations.
 * `LinearMap.FilteredHomotopyEquiv.homologyEquiv`: the induced isomorphism of homologies.
 * `LinearMap.FilteredHomotopyEquiv.subquotientHomologyEquiv`: the induced isomorphisms of the
-  homologies of the subquotients `F j ⧸ F i` and `G j ⧸ G i`.
+  homologies of the subquotients `F j ⧸ (F i ∩ F j)` and `G j ⧸ (G i ∩ G j)`.
 
 ## Main results
 
@@ -209,26 +210,6 @@ end Symm
 
 section Trans
 
-/-- The homotopy of a composite of two chain homotopy equivalences: if `g ∘ f - 1 = d h + h d` and
-`g' ∘ f' - 1 = e k + k e`, then `(g ∘ g') ∘ (f' ∘ f) - 1 = d l + l d` for
-`l = h + g ∘ k ∘ f`. -/
-private theorem comp_sub_id_eq {f : M →ₗ[S] N} {g : N →ₗ[S] M} {f' : N →ₗ[S] P}
-    {g' : P →ₗ[S] N} {h : M →ₗ[S] M} {k : N →ₗ[S] N} (hf : f ∘ₗ d = e ∘ₗ f)
-    (hg : g ∘ₗ e = d ∘ₗ g) (hgf : g ∘ₗ f - LinearMap.id = d ∘ₗ h + h ∘ₗ d)
-    (hgf' : g' ∘ₗ f' - LinearMap.id = e ∘ₗ k + k ∘ₗ e) :
-    (g ∘ₗ g') ∘ₗ (f' ∘ₗ f) - LinearMap.id =
-      d ∘ₗ (h + g ∘ₗ k ∘ₗ f) + (h + g ∘ₗ k ∘ₗ f) ∘ₗ d := by
-  ext x
-  have h₃ (y : N) : g (e y) = d (g y) := congr($hg y)
-  have h₄ : e (f x) = f (d x) := congr($hf x).symm
-  have h₁ : g (g' (f' (f x))) - g (f x) = d (g (k (f x))) + g (k (f (d x))) := by
-    simpa [h₃, h₄] using congr(g ($hgf' (f x)))
-  have h₂ : g (f x) - x = d (h x) + h (d x) := by simpa using congr($hgf x)
-  simp only [LinearMap.sub_apply, LinearMap.add_apply, LinearMap.comp_apply, LinearMap.id_apply,
-    map_add]
-  rw [← sub_add_sub_cancel _ (g (f x)), h₁, h₂]
-  abel
-
 variable (E : FilteredHomotopyEquiv d e F G) (E' : FilteredHomotopyEquiv e q G H)
 
 /-- The composite of two filtered chain homotopy equivalences. -/
@@ -239,10 +220,10 @@ def trans : FilteredHomotopyEquiv d q F H where
   homotopyInvHomId := E'.homotopyInvHomId + E'.hom ∘ₗ E.homotopyInvHomId ∘ₗ E'.inv
   hom_comm := by rw [comp_assoc, E.hom_comm, ← comp_assoc, E'.hom_comm, comp_assoc]
   inv_comm := by rw [comp_assoc, E'.inv_comm, ← comp_assoc, E.inv_comm, comp_assoc]
-  homotopyHomInvId_comm :=
-    comp_sub_id_eq E.hom_comm E.inv_comm E.homotopyHomInvId_comm E'.homotopyHomInvId_comm
-  homotopyInvHomId_comm :=
-    comp_sub_id_eq E'.inv_comm E'.hom_comm E'.homotopyInvHomId_comm E.homotopyInvHomId_comm
+  homotopyHomInvId_comm := comp_comp_sub_id_eq_of_sub_id_eq E.hom_comm E.inv_comm
+    E.homotopyHomInvId_comm E'.homotopyHomInvId_comm
+  homotopyInvHomId_comm := comp_comp_sub_id_eq_of_sub_id_eq E'.inv_comm E'.hom_comm
+    E'.homotopyInvHomId_comm E.homotopyInvHomId_comm
   le_comap_hom i _ hx := E'.le_comap_hom i (E.le_comap_hom i hx)
   le_comap_inv i _ hx := E.le_comap_inv i (E'.le_comap_inv i hx)
   le_comap_homotopyHomInvId i _ hx := add_mem (E.le_comap_homotopyHomInvId i hx)
@@ -493,10 +474,21 @@ theorem homologyEquiv_trans (E' : FilteredHomotopyEquiv e q G H) (hq : q ∘ₗ 
   ext c
   simp
 
+/-- The filtered chain homotopy equivalence of a filtered isomorphism of complexes `f` induces the
+isomorphism of homologies `LinearEquiv.homologyEquiv` of `f`. -/
+@[simp]
+theorem homologyEquiv_ofLinearEquiv (f : M ≃ₗ[S] N) (hf : f.toLinearMap ∘ₗ d = e ∘ₗ f.toLinearMap)
+    (hFG : ∀ i, (F i).map f.toLinearMap = G i) :
+    (ofLinearEquiv f hf hFG).homologyEquiv hd he = f.homologyEquiv hd he hf := by
+  ext c
+  obtain ⟨z, rfl⟩ := Submodule.Quotient.mk_surjective _ c
+  simp
+
 variable {i j : ι} (hFi : F i ≤ (F i).comap d) (hFj : F j ≤ (F j).comap d)
   (hGi : G i ≤ (G i).comap e) (hGj : G j ≤ (G j).comap e)
 
-/-- The isomorphism between the homologies of the subquotients `F j ⧸ F i` and `G j ⧸ G i`
+/-- The isomorphism between the homologies of the subquotients `F j ⧸ (F i ∩ F j)` and
+`G j ⧸ (G i ∩ G j)`, that is, `F j ⧸ F i` and `G j ⧸ G i` when `F i ≤ F j` and `G i ≤ G j`,
 induced by a filtered chain homotopy equivalence between square-zero endomorphisms preserving
 the levels `F i`, `F j`, `G i` and `G j`. For a filtration indexed by `ℤ`, the subquotients
 `F a ⧸ F (a - 1)` are the pieces of the associated graded complex. -/
@@ -520,7 +512,21 @@ theorem subquotientHomologyEquiv_quotientHomologyClass (m : F j)
         simpa [h'] using h) := by
   rw [subquotientHomologyEquiv, homologyEquiv_apply, quotientHomologyClass_def,
     quotientHomologyClass_def, homologyMap_mk]
-  rfl
+  simp only [quotient_hom, restrict_hom, Submodule.mapQ_apply]
+
+/-- The inverse isomorphism of the homologies of the subquotients sends the class of `n ∈ G j`
+with `e n ∈ G i` to the class of `inv n`. This is stated with `quotientHomologyClass`, for
+rewriting; `simp` unfolds `quotientHomologyClass` instead. -/
+theorem subquotientHomologyEquiv_symm_quotientHomologyClass (n : G j)
+    (hn : e.restrict hGj n ∈ (G i).comap (G j).subtype) :
+    (E.subquotientHomologyEquiv hd he hFi hFj hGi hGj).symm (quotientHomologyClass _ _ n hn) =
+      quotientHomologyClass _ _ (E.inv.restrict (E.le_comap_inv j) n) (by
+        have h : E.inv (e n) ∈ F i := E.le_comap_inv i hn
+        have h' : E.inv (e n) = d (E.inv n) := congr($E.inv_comm (n : N))
+        simpa [h'] using h) := by
+  rw [subquotientHomologyEquiv, homologyEquiv_symm_apply, quotientHomologyClass_def,
+    quotientHomologyClass_def, homologyMap_mk]
+  simp only [quotient_inv, restrict_inv, Submodule.mapQ_apply]
 
 end Homology
 
