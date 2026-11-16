@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Distribution.CutoffPushforward
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Basic
 import TauCeti.Algebra.Module.ZLattice.Summable
 import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
+import TauCeti.Analysis.Distribution.TestFunction.Basic
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.PositiveDefinite.FourierAtom
 import TauCeti.Analysis.Distribution.WaveFrontSet.Localization
@@ -105,19 +106,12 @@ private theorem pullbackFourier_add (T : 𝓓'(Ω, ℂ)) {Φ : E → E'} (hΦ : 
     pullbackFourier T hΦ (ψ + ψ') η = pullbackFourier T hΦ ψ η + pullbackFourier T hΦ ψ' η := by
   simp only [pullbackFourier, map_add]
 
-omit [FiniteDimensional ℝ E'] [FiniteDimensional ℝ E] in
-private theorem tsupport_bilinLeftCLM_fourierAtom_comp_subset {Φ : E → E'}
-    (hΦ : ContDiff ℝ ∞ Φ) (ψ : 𝓓(Ω, ℂ)) (η : E') :
-    tsupport (bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ)
-      ((TauCeti.contDiff_fourierAtom η).comp hΦ) ψ) ⊆ tsupport ψ := by
-  simpa [bilinLeftCLM_apply] using tsupport_mul_subset_left (f := ψ)
-
 omit [FiniteDimensional ℝ E'] in
 private theorem pullbackFourier_eq_zero_of_disjoint {T : 𝓓'(Ω, ℂ)} {Φ : E → E'}
     (hΦ : ContDiff ℝ ∞ Φ) {ψ : 𝓓(Ω, ℂ)} (h : Disjoint (tsupport ψ) (dsupport T)) (η : E') :
     pullbackFourier T hΦ ψ η = 0 :=
   complexPairing_eq_zero_of_disjoint_dsupport T
-    (h.mono_left (tsupport_bilinLeftCLM_fourierAtom_comp_subset hΦ ψ η))
+    (h.mono_left (tsupport_bilinLeftCLM_subset _ _ ψ))
 
 omit [FiniteDimensional ℝ E'] [FiniteDimensional ℝ E] in
 /-- The localized Fourier transform of the pushforward `Φ_* (χ T)` along a smooth map pairs `T`
@@ -449,7 +443,8 @@ private theorem exists_nhds_cone_pullbackFourier {Φ : E → E'} (hΦ : ContDiff
   refine ⟨‖c₀‖ * max ((∫ x, ‖ψ x‖) * CA * (1 + 2 * a) ^ N) (C₁ * CB) *
     ∑' m : L, ((1 + ‖(m : E)‖) ^ r)⁻¹, fun v hv => ?_⟩
   have hsum := (hexp _ fun x hx => hφ1.self_of_nhdsSet x
-    (hψK (tsupport_bilinLeftCLM_fourierAtom_comp_subset hΦ ψ v hx))).const_smul ((1 + ‖v‖) ^ N)
+    (hψK (tsupport_bilinLeftCLM_subset (ContinuousLinearMap.mul ℝ ℂ)
+      ((TauCeti.contDiff_fourierAtom v).comp hΦ) ψ hx))).const_smul ((1 + ‖v‖) ^ N)
   have h := hsum.norm_le_of_bounded (hw.hasSum.mul_left (‖c₀‖ *
     max ((∫ x, ‖ψ x‖) * CA * (1 + 2 * a) ^ N) (C₁ * CB))) fun m =>
       norm_one_add_pow_smul_mul_le hΦ T φ ψ c₀ ha hCA hpoly v m (hCB v hv m)

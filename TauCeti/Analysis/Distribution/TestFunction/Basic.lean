@@ -17,7 +17,9 @@ Conversely, for a real test function `ψ` and a vector `v : F`, any continuous l
 `f` on `F` sends the test function `ψ • v` to the multiple `f v • ψ`; in particular the components
 of `ψ • v` are the multiples `b.repr v i • ψ`. These identities reduce statements about
 `F`-valued test functions to statements about real-valued ones. Pointwise complex conjugation,
-postcomposition with `Complex.conjCLE`, is an involution on complex test functions.
+postcomposition with `Complex.conjCLE`, is an involution on complex test functions. Multiplying
+a test function by a smooth function through a bilinear map (`TestFunction.bilinLeftCLM`) does
+not enlarge its support.
 
 ## Main declarations
 
@@ -29,6 +31,8 @@ postcomposition with `Complex.conjCLE`, is an involution on complex test functio
   of its components in a basis, times the basis vectors.
 * `TestFunction.postcompCLM_postcompCLM_toSpanSingleton`: a continuous linear functional applied
   to `ψ • v`.
+* `TestFunction.tsupport_bilinLeftCLM_subset`: multiplying by a smooth function through a bilinear
+  map does not enlarge the support.
 -/
 
 public section
@@ -78,6 +82,16 @@ theorem sum_postcompCLM_toSpanSingleton_coord [FiniteDimensional ℝ F] {ι : Ty
   simp only [sum_apply, postcompCLM_apply, Function.comp_apply, toSpanSingleton_apply,
     LinearMap.coe_toContinuousLinearMap', Module.Basis.coord_apply]
   exact b.sum_repr (φ x)
+
+/-- Multiplying a test function by a smooth function through a continuous bilinear map `B` does
+not enlarge its support. -/
+theorem tsupport_bilinLeftCLM_subset {𝕜 : Type*} [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜]
+    {F₁ F₂ F₃ : Type*} [NormedAddCommGroup F₁] [NormedSpace 𝕜 F₁] [NormedSpace ℝ F₁]
+    [NormedAddCommGroup F₂] [NormedSpace 𝕜 F₂] [NormedSpace ℝ F₂]
+    [NormedAddCommGroup F₃] [NormedSpace 𝕜 F₃] [NormedSpace ℝ F₃]
+    (B : F₁ →L[𝕜] F₂ →L[𝕜] F₃) {g : E → F₂} (hg : ContDiff ℝ n g) (φ : 𝓓^{n}(Ω, F₁)) :
+    tsupport (bilinLeftCLM B hg φ : E → F₃) ⊆ tsupport φ :=
+  closure_mono fun x hx => Function.mem_support.2 fun h => hx (by simp [h])
 
 /-- A continuous linear functional `f` on `F` sends the test function `ψ • v` to `f v • ψ`. -/
 @[simp]
