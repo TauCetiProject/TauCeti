@@ -82,6 +82,14 @@ noncomputable def indexClassicalEntry (q : ℤ) (x : {x : P // ind x = q + 1})
     (m.d_m_eq_zero_of_eq_add_one (x := x.1) (y := y.1) (by rw [x.2, y.2])) q (k - (q + 1)) (k - q)
     (by ring)
 
+theorem indexClassicalEntry_def (q : ℤ) (x : {x : P // ind x = q + 1})
+    (y : {y : P // ind y = q}) :
+    m.indexClassicalEntry hM k q x y = shiftedModuleComplexActHomology hM
+      (m.m_mem_zero_of_eq_add_one (x := x.1) (y := y.1) (by rw [x.2, y.2]))
+      (m.d_m_eq_zero_of_eq_add_one (x := x.1) (y := y.1) (by rw [x.2, y.2])) q (k - (q + 1))
+      (k - q) (by ring) :=
+  (rfl)
+
 /-- The differential of the classical complex in coefficient degree `k`, from the generators of
 index `q + 1` to those of index `q`: the matrix of the entries `indexClassicalEntry`. -/
 noncomputable def indexClassicalD (q : ℤ) :
