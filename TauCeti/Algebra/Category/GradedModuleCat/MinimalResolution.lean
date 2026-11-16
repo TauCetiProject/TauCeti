@@ -7,9 +7,10 @@ module
 
 public import TauCeti.Algebra.Category.GradedModuleCat.Resolution
 public import TauCeti.Algebra.Homology.Ext.ProjectiveResolution
+public import TauCeti.Algebra.Module.GradedModule.Nakayama
 
 /-!
-# Ext from minimal graded resolutions
+# Ext from minimal graded resolutions and uniqueness
 
 For a minimal graded projective resolution, every differential has image in the positive-degree
 algebra action. Against a target annihilated by that action, the Hom complex has zero
@@ -25,12 +26,23 @@ resolutions.
 `GradedProjectiveResolution.exists_isMinimal_of_forall_cover` assembles a minimal resolution from
 any supply of minimal projective surjections that is stable under passing to kernels.
 
+Minimality also forces termwise uniqueness: any degree-zero endomorphism of a bounded-below graded
+module taking values in `A₊ P` is locally nilpotent, so `𝟙 P - h` is an isomorphism
+(`GradedModuleCat.isIso_id_sub_of_mem_positive_smul_top`). Applying this to the homotopy
+equivalence between two bounded-below minimal graded projective resolutions shows that the
+comparison map is an isomorphism of chain complexes
+(`GradedProjectiveResolution.IsMinimal.isIso_homotopyEquiv_hom`), so the terms of a minimal
+resolution are unique up to graded isomorphism (`IsMinimal.nonempty_iso_termObj`). In particular,
+linearity is independent of the choice of minimal resolution (`IsMinimal.isLinear_iff`).
+
 ## References
 
 * A. Beilinson, V. Ginzburg and W. Soergel, "Koszul duality patterns in representation theory",
   Section 1.2, for the minimal-resolution computation underlying the diagonal Ext criterion.
 * Charles A. Weibel, *An Introduction to Homological Algebra*, Section 2.4, for computing Ext
   from projective resolutions.
+* C. Năstăsescu and F. Van Oystaeyen, *Methods of Graded Rings*, Section 2.3, for graded
+  projective modules and minimal resolutions.
 -/
 
 public section
@@ -43,6 +55,78 @@ universe w v uk uA
 
 variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
   {𝒜 : ℤ → Submodule k A} {M N N' : GradedModuleCat.{v} 𝒜}
+
+/-! ### Local-nilpotence isomorphism criterion -/
+
+private theorem GradedModuleCat.pow_apply_eq_zero_of_mem_positive_smul_top
+    {P : GradedModuleCat.{v} 𝒜} (h : P ⟶ P) (b : ℤ)
+    (hbelow : ∀ p < b, P.grading.piece p = ⊥)
+    (hh : ∀ x : P, h.hom x ∈ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k P)) :
+    ∀ (m : ℕ) {p : ℤ}, p < b + m → ∀ x ∈ P.grading.piece p, (h.hom ^ m) x = 0 := by
+  classical
+  intro m
+  induction m with
+  | zero =>
+    intro p hp x hx
+    rw [hbelow p (by omega), Submodule.mem_bot] at hx
+    simp [hx]
+  | succ m ih =>
+    intro p hp x hx
+    have hker : h.hom x ∈ LinearMap.ker (h.hom ^ m) := by
+      have hmem := InternalGrading.decompose_mem_of_mem_positive_smul_top 𝒜
+        (LinearMap.ker (h.hom ^ m)) (p := p)
+        (fun q hq y hy => ih (by omega) y hy) (hh x)
+      have hhom : h.hom x ∈ P.grading.piece p := by
+        simpa only [add_zero] using h.isHomogeneous.map_mem hx
+      rwa [DirectSum.decompose_of_mem_same P.grading.piece hhom] at hmem
+    simpa only [pow_succ, mul_apply_eq_comp] using LinearMap.mem_ker.mp hker
+
+/-- **Local-nilpotence isomorphism criterion for graded endomorphisms.** If a bounded-below graded
+module `P` carries a degree-zero endomorphism `h` taking values in `A₊ P`, then `h` is locally
+nilpotent and `𝟙 P - h` is an isomorphism in `GradedModuleCat 𝒜`. Neither a nonnegative grading
+on `𝒜` nor finite generation is required. -/
+theorem GradedModuleCat.isIso_id_sub_of_mem_positive_smul_top {P : GradedModuleCat.{v} 𝒜}
+    (h : P ⟶ P) (b : ℤ) (hbelow : ∀ p < b, P.grading.piece p = ⊥)
+    (hh : ∀ x : P, h.hom x ∈ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k P)) :
+    IsIso (𝟙 P - h) := by
+  classical
+  have hpow := GradedModuleCat.pow_apply_eq_zero_of_mem_positive_smul_top h b hbelow hh
+  rw [GradedModuleCat.isIso_iff_bijective]
+  constructor
+  · refine (injective_iff_map_eq_zero _).2 fun x hx => ?_
+    have hfix : h.hom x = x := (sub_eq_zero.mp (by simpa using hx)).symm
+    have hfix_pow : ∀ m : ℕ, (h.hom ^ m) x = x := by
+      intro m
+      induction m with
+      | zero => simp
+      | succ m ih => rw [pow_succ', mul_apply_eq_comp, ih, hfix]
+    obtain ⟨u, hu⟩ := (DirectSum.decompose P.grading.piece x).support.finite_toSet.bddAbove
+    let m : ℕ := (u - b + 1).toNat
+    rw [← hfix_pow m, ← DirectSum.sum_support_decompose P.grading.piece x, map_sum]
+    refine Finset.sum_eq_zero fun p hp => ?_
+    have hpu : p ≤ u := hu hp
+    exact hpow m (by omega) _ (DirectSum.decompose P.grading.piece x p).property
+  · have hpiece : ∀ (p : ℤ) (y : P), y ∈ P.grading.piece p →
+        ∃ z : P, (𝟙 P - h).hom z = y := by
+      intro p y hy
+      let m : ℕ := (p - b + 1).toNat
+      refine ⟨∑ j ∈ Finset.range m, (h.hom ^ j) y, ?_⟩
+      have hsub : (𝟙 P - h).hom (∑ j ∈ Finset.range m, (h.hom ^ j) y) =
+          ∑ j ∈ Finset.range m, ((h.hom ^ j) y - (h.hom ^ (j + 1)) y) := by
+        simp only [GradedModuleCat.hom_sub, GradedModuleCat.hom_id, LinearMap.sub_apply,
+          LinearMap.id_apply, map_sum]
+        refine Finset.sum_congr rfl fun j _ => ?_
+        rw [pow_succ', mul_apply_eq_comp]
+      rw [hsub, Finset.sum_range_sub' (fun j => (h.hom ^ j) y) m, pow_zero, one_apply_eq_self,
+        hpow m (by omega) y hy, sub_zero]
+    intro y
+    choose pre hpre using fun p =>
+      hpiece p (DirectSum.decompose P.grading.piece y p : P)
+        (DirectSum.decompose P.grading.piece y p).property
+    refine ⟨∑ p ∈ (DirectSum.decompose P.grading.piece y).support, pre p, ?_⟩
+    rw [map_sum]
+    conv_rhs => rw [← DirectSum.sum_support_decompose P.grading.piece y]
+    exact Finset.sum_congr rfl fun p _ => hpre p
 
 namespace GradedProjectiveResolution
 
@@ -123,6 +207,154 @@ theorem exists_isMinimal_of_forall_cover (S T : GradedModuleCat.{v} 𝒜 → Pro
     isMinimal_iff.mpr fun n x => hmin (K n) _ (π (K (n + 1)) |>.hom x).2, fun n => hT (K n)⟩
 
 variable [DirectSum.Decomposition 𝒜]
+
+/-! ### Uniqueness of minimal resolutions -/
+
+private theorem IsMinimal.dNext_add_prevD_mem_positive_smul_top (hr : r.IsMinimal)
+    {φ : r.toProjectiveResolution.complex ⟶ r.toProjectiveResolution.complex}
+    (H : Homotopy φ (𝟙 r.toProjectiveResolution.complex)) (n : ℕ) (x : r.termObj n) :
+    ((r.toProjectiveResolutionXIso n).inv ≫ (dNext n H.hom + prevD n H.hom) ≫
+        (r.toProjectiveResolutionXIso n).hom).hom x ∈
+      (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k (r.termObj n)) := by
+  let e := r.toProjectiveResolutionXIso n
+  have hdNext : (e.inv ≫ dNext n H.hom ≫ e.hom).hom x ∈
+      (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k (r.termObj n)) := by
+    cases n with
+    | zero =>
+      rw [dNext_eq_zero _ 0 (by simp)]
+      simp
+    | succ m =>
+      rw [dNext_eq H.hom (by simp : (ComplexShape.down ℕ).Rel (m + 1) m),
+        r.toProjectiveResolution_complex_d m]
+      have hd :
+          (r.differential m).hom ((e.inv ≫ (r.toProjectiveResolutionXIso (m + 1)).hom).hom x) ∈
+            (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k (r.X m)) :=
+        isMinimal_iff.mp hr m _
+      simpa only [Category.assoc, GradedModuleCat.hom_comp, LinearMap.comp_apply] using
+        InternalGrading.map_mem_positive_smul_top
+          (((r.toProjectiveResolutionXIso m).inv ≫ H.hom m (m + 1) ≫ e.hom).hom) hd
+  have hprevD : (e.inv ≫ prevD n H.hom ≫ e.hom).hom x ∈
+      (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k (r.termObj n)) := by
+    rw [prevD_eq H.hom (by simp : (ComplexShape.down ℕ).Rel (n + 1) n),
+      r.toProjectiveResolution_complex_d n]
+    have hd : (r.differential n).hom
+        ((e.inv ≫ H.hom n (n + 1) ≫ (r.toProjectiveResolutionXIso (n + 1)).hom).hom x) ∈
+        (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k (r.X n)) :=
+      isMinimal_iff.mp hr n _
+    dsimp only [e]
+    simpa only [Category.assoc, Iso.inv_hom_id, Category.comp_id,
+      GradedModuleCat.hom_comp, LinearMap.comp_apply] using hd
+  simpa only [Preadditive.add_comp, Preadditive.comp_add, GradedModuleCat.hom_add,
+    LinearMap.add_apply] using Submodule.add_mem _ hdNext hprevD
+
+/-- Any chain endomorphism homotopic to the identity on a bounded-below minimal graded projective
+resolution is an isomorphism in every degree. -/
+private theorem IsMinimal.isIso_f_of_homotopy_id (hr : r.IsMinimal)
+    (hb : ∀ n, ∃ b : ℤ, ∀ p < b, (r.grading n).piece p = ⊥)
+    {φ : r.toProjectiveResolution.complex ⟶ r.toProjectiveResolution.complex}
+    (H : Homotopy φ (𝟙 r.toProjectiveResolution.complex)) (n : ℕ) :
+    IsIso (φ.f n) := by
+  obtain ⟨b, hbelow⟩ := hb n
+  let e := r.toProjectiveResolutionXIso n
+  -- Conjugate `φ.f n` across `e : complex.X n ≅ termObj n`, then apply local nilpotence.
+  have hcomm := H.comm n
+  rw [HomologicalComplex.id_f] at hcomm
+  let ψ : r.termObj n ⟶ r.termObj n := e.inv ≫ φ.f n ≫ e.hom
+  let h : r.termObj n ⟶ r.termObj n := -(e.inv ≫ (dNext n H.hom + prevD n H.hom) ≫ e.hom)
+  have hψ : ψ = 𝟙 (r.termObj n) - h := by
+    rw [sub_neg_eq_add]
+    simp only [ψ, hcomm, Preadditive.add_comp, Preadditive.comp_add, Category.id_comp,
+      Iso.inv_hom_id, add_comm]
+  have hh : ∀ x : r.termObj n,
+      h.hom x ∈ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k (r.termObj n)) := fun x => by
+    simpa only [h, GradedModuleCat.hom_neg, LinearMap.neg_apply] using
+      Submodule.neg_mem _ (hr.dNext_add_prevD_mem_positive_smul_top H n x)
+  have hψiso : IsIso ψ := hψ ▸ GradedModuleCat.isIso_id_sub_of_mem_positive_smul_top h b hbelow hh
+  have hφ : φ.f n = e.hom ≫ ψ ≫ e.inv := by simp [ψ]
+  rw [hφ]
+  infer_instance
+
+/-- **Uniqueness of minimal graded projective resolutions.** The canonical homotopy equivalence
+between two bounded-below minimal graded projective resolutions of `M` is an isomorphism of chain
+complexes in `GradedModuleCat 𝒜`. -/
+theorem IsMinimal.isIso_homotopyEquiv_hom
+    {r₁ r₂ : GradedProjectiveResolution.{uk, uA, v, v} 𝒜 M.grading}
+    (hr₁ : r₁.IsMinimal) (hr₂ : r₂.IsMinimal)
+    (hb₁ : ∀ n, ∃ b : ℤ, ∀ p < b, (r₁.grading n).piece p = ⊥)
+    (hb₂ : ∀ n, ∃ b : ℤ, ∀ p < b, (r₂.grading n).piece p = ⊥) :
+    IsIso (ProjectiveResolution.homotopyEquiv
+      r₁.toProjectiveResolution r₂.toProjectiveResolution).hom := by
+  let e := ProjectiveResolution.homotopyEquiv r₁.toProjectiveResolution r₂.toProjectiveResolution
+  have hcomp (n : ℕ) : IsIso (e.hom.f n) := by
+    have h₁ : IsIso ((e.hom ≫ e.inv).f n) :=
+      hr₁.isIso_f_of_homotopy_id hb₁ e.homotopyHomInvId n
+    have h₂ : IsIso ((e.inv ≫ e.hom).f n) :=
+      hr₂.isIso_f_of_homotopy_id hb₂ e.homotopyInvHomId n
+    rw [HomologicalComplex.comp_f, GradedModuleCat.isIso_iff_bijective,
+      GradedModuleCat.hom_comp] at h₁ h₂
+    rw [GradedModuleCat.isIso_iff_bijective]
+    exact ⟨Function.Injective.of_comp h₁.1, Function.Surjective.of_comp h₂.2⟩
+  exact HomologicalComplex.Hom.isIso_of_components e.hom
+
+/-- **Termwise uniqueness of minimal resolutions.** Any two bounded-below minimal graded projective
+resolutions of `M` have isomorphic terms in every homological degree. -/
+theorem IsMinimal.nonempty_iso_termObj
+    {r₁ r₂ : GradedProjectiveResolution.{uk, uA, v, v} 𝒜 M.grading}
+    (hr₁ : r₁.IsMinimal) (hr₂ : r₂.IsMinimal)
+    (hb₁ : ∀ n, ∃ b : ℤ, ∀ p < b, (r₁.grading n).piece p = ⊥)
+    (hb₂ : ∀ n, ∃ b : ℤ, ∀ p < b, (r₂.grading n).piece p = ⊥) (n : ℕ) :
+    Nonempty (r₁.termObj n ≅ r₂.termObj n) := by
+  have := hr₁.isIso_homotopyEquiv_hom hr₂ hb₁ hb₂
+  exact ⟨(r₁.toProjectiveResolutionXIso n).symm ≪≫
+    (HomologicalComplex.eval (GradedModuleCat.{v} 𝒜) (ComplexShape.down ℕ) n).mapIso
+      (asIso (ProjectiveResolution.homotopyEquiv
+        r₁.toProjectiveResolution r₂.toProjectiveResolution).hom) ≪≫
+    r₂.toProjectiveResolutionXIso n⟩
+
+/-- Over a nonnegatively graded algebra, any two minimal graded projective resolutions of `M` with
+finitely generated terms have isomorphic terms in every homological degree. -/
+theorem IsMinimal.nonempty_iso_termObj_of_finite
+    {r₁ r₂ : GradedProjectiveResolution.{uk, uA, v, v} 𝒜 M.grading}
+    [∀ n, Module.Finite A (r₁.X n)] [∀ n, Module.Finite A (r₂.X n)]
+    (hr₁ : r₁.IsMinimal) (hr₂ : r₂.IsMinimal)
+    (hneg : ∀ i < 0, 𝒜 i = ⊥) (n : ℕ) :
+    Nonempty (r₁.termObj n ≅ r₂.termObj n) :=
+  hr₁.nonempty_iso_termObj hr₂
+    (fun m => (r₁.grading m).exists_piece_eq_bot_of_lt 𝒜 hneg)
+    (fun m => (r₂.grading m).exists_piece_eq_bot_of_lt 𝒜 hneg) n
+
+/-- **Linearity is independent of the minimal resolution.** If two bounded-below minimal graded
+projective resolutions resolve the same graded module, one is linear if and only if the other is. -/
+theorem IsMinimal.isLinear_iff
+    {r₁ r₂ : GradedProjectiveResolution.{uk, uA, v, v} 𝒜 M.grading}
+    (hr₁ : r₁.IsMinimal) (hr₂ : r₂.IsMinimal)
+    (hb₁ : ∀ n, ∃ b : ℤ, ∀ p < b, (r₁.grading n).piece p = ⊥)
+    (hb₂ : ∀ n, ∃ b : ℤ, ∀ p < b, (r₂.grading n).piece p = ⊥) :
+    r₁.IsLinear ↔ r₂.IsLinear := by
+  have hgen (n : ℕ) :
+      (r₁.grading n).IsGeneratedInDegree A n ↔ (r₂.grading n).IsGeneratedInDegree A n := by
+    obtain ⟨e⟩ := hr₁.nonempty_iso_termObj hr₂ hb₁ hb₂ n
+    have he₁ : e.hom.hom ∘ₗ e.inv.hom = LinearMap.id := by
+      rw [← GradedModuleCat.hom_comp, e.inv_hom_id, GradedModuleCat.hom_id]
+    have he₂ : e.inv.hom ∘ₗ e.hom.hom = LinearMap.id := by
+      rw [← GradedModuleCat.hom_comp, e.hom_inv_id, GradedModuleCat.hom_id]
+    let le : r₁.X n ≃ₗ[A] r₂.X n := LinearEquiv.ofLinearMap e.hom.hom e.inv.hom he₁ he₂
+    have hpiece : ((r₁.grading n).map (le.restrictScalars k)).piece n = (r₂.grading n).piece n := by
+      ext y
+      rw [InternalGrading.mem_map_piece_iff]
+      constructor
+      · intro hy
+        have hmap := e.hom.isHomogeneous.map_mem hy
+        simpa only [le, LinearEquiv.restrictScalars_symm_apply, LinearEquiv.symm_ofLinearMap,
+          LinearEquiv.coe_ofLinearMap, add_zero, ← LinearMap.comp_apply, he₁,
+          LinearMap.id_apply] using hmap
+      · intro hy
+        simpa only [le, LinearEquiv.restrictScalars_symm_apply, LinearEquiv.symm_ofLinearMap,
+          LinearEquiv.coe_ofLinearMap, add_zero] using e.inv.isHomogeneous.map_mem hy
+    rw [← InternalGrading.isGeneratedInDegree_map_iff (r₁.grading n) le n,
+      InternalGrading.isGeneratedInDegree_iff, InternalGrading.isGeneratedInDegree_iff, hpiece]
+  rw [GradedProjectiveResolution.isLinear_iff, GradedProjectiveResolution.isLinear_iff]
+  exact forall_congr' hgen
 
 private theorem IsMinimal.complex_d_comp_eq_zero (hr : r.IsMinimal)
     (hN : (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k N) = ⊥)

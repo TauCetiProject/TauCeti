@@ -6,21 +6,25 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Quiver.Kronecker.A2.Basic
+public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Betti
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.GradedExtEuler.Pairing
 
 /-!
-# Graded Cartan and Euler conventions for the one-arrow quiver
+# Graded Cartan, Betti, and Euler conventions for the one-arrow quiver
 
 Give the path algebra of `1 ⟶ 2` its path-length grading and order the vertices source first.
 Its graded Cartan matrix is `[1, 0; q, 1]`: the source projective has a degree-zero source
-simple and a degree-one target simple. The categorical q-Euler matrix of the vertex simples
-is `[1, -q⁻¹; 0, 1]`, not `[1, -q; 0, 1]`, because the pairing is q-antilinear in its first
+simple and a degree-one target simple. The minimal linear resolutions of the vertex simples have
+Betti Poincaré matrix `[1, 0; q t, 1]`, whose evaluation at `t = -1` is `[1, 0; -q, 1]`, the
+inverse of the graded Cartan matrix. The categorical q-Euler matrix of the vertex simples is
+`[1, -q⁻¹; 0, 1]`, not `[1, -q; 0, 1]`, because the pairing is q-antilinear in its first
 variable. These matrices are inverse conjugate transposes.
 
-The results below identify both displayed matrices with the actual Laurent Grothendieck-group
-constructions, compute the two columns of the graded Cartan map, and recover the ordinary
-Cartan and Euler matrices by evaluation at `q = 1`. The Euler-form identification uses the
-finite-support Ext computation from the first-arrow resolutions, not a totalized infinite sum.
+The results below identify all three displayed matrices with the actual Laurent Grothendieck-group
+constructions, compute the two columns of the graded Cartan map, verify `C(q) · B(q, -1) = I`,
+and recover the ordinary Cartan and Euler matrices by evaluation at `q = 1`. The Euler-form
+identification uses the finite-support Ext computation from the first-arrow resolutions, not a
+totalized infinite sum.
 
 ## References
 
@@ -78,6 +82,36 @@ matrix. -/
 theorem gradedEulerMatrixA2_mul_gradedCartanMatrixA2_map_invert_transpose :
     gradedEulerMatrixA2 * (gradedCartanMatrixA2.map (invert (R := ℤ)))ᵀ = 1 :=
   mul_eq_one_comm.mp gradedCartanMatrixA2_map_invert_transpose_mul_gradedEulerMatrixA2
+
+/-- The Betti Poincaré matrix of the minimal linear resolutions of the graded vertex simples of
+`1 ⟶ 2`, with projectives in the rows and simples in the columns, in source-first order. -/
+def gradedBettiMatrixA2 : Matrix (Fin 2) (Fin 2) (PowerSeries (LaurentPolynomial ℤ)) :=
+  !![1, 0; PowerSeries.C (T 1) * PowerSeries.X, 1]
+
+/-- The entries of the Betti Poincaré matrix of `1 ⟶ 2`. -/
+@[simp]
+theorem gradedBettiMatrixA2_apply (i j : Fin 2) :
+    gradedBettiMatrixA2 i j = !![1, 0; PowerSeries.C (T 1) * PowerSeries.X, 1] i j := by
+  rw [gradedBettiMatrixA2]
+
+/-- The graded Cartan matrix and the `t = -1` evaluation of the Betti Poincaré matrix of `1 ⟶ 2`
+satisfy `C(q) · B(q, -1) = I`. -/
+@[simp]
+theorem gradedCartanMatrixA2_mul_eval_neg_one_trunc_gradedBettiMatrixA2 :
+    gradedCartanMatrixA2 *
+      gradedBettiMatrixA2.map (fun P => (PowerSeries.trunc 2 P).eval (-1)) = 1 := by
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [Matrix.mul_apply, Fin.sum_univ_two, Polynomial.eval,
+      PowerSeries.eval₂_trunc_eq_sum_range, Finset.sum_range_succ, PowerSeries.coeff_one]
+
+/-- The `t = -1` evaluation of the Betti Poincaré matrix of `1 ⟶ 2` is also a left inverse of the
+graded Cartan matrix. -/
+@[simp]
+theorem eval_neg_one_trunc_gradedBettiMatrixA2_mul_gradedCartanMatrixA2 :
+    gradedBettiMatrixA2.map (fun P => (PowerSeries.trunc 2 P).eval (-1)) *
+      gradedCartanMatrixA2 = 1 :=
+  mul_eq_one_comm.mp gradedCartanMatrixA2_mul_eval_neg_one_trunc_gradedBettiMatrixA2
 
 /-- Setting `q = 1` in the graded Cartan matrix gives the ordinary Cartan matrix. -/
 @[simp]
@@ -153,6 +187,18 @@ theorem gradedCartanMap_gradedVertexProjectiveClass_tgt :
         (PathAlgebra.gradedVertexProjectiveClass k (Kronecker A) tgt) =
       PathAlgebra.gradedVertexSimpleClassBasis k (Kronecker A) tgt := by
   simpa using gradedCartanMap_gradedVertexProjectiveClass (A := A) k 1
+
+/-- The categorical Betti Poincaré matrix of the minimal resolutions of the graded vertex simples
+of the one-arrow path algebra is `[1, 0; q t, 1]`. -/
+theorem submatrix_bettiPoincareMatrix_eq_gradedBettiMatrixA2 :
+    (bettiPoincareMatrix (PathAlgebra.gradedVertexProjectiveClassBasis k (Kronecker A))
+      (fun j => PathAlgebra.gradedVertexSimpleProjectiveResolution k (Kronecker A) j)).submatrix
+        ![src, tgt] ![src, tgt] = gradedBettiMatrixA2 := by
+  let _ : Fintype A := Unique.fintype
+  refine Matrix.ext fun i j => ?_
+  rw [Matrix.submatrix_apply,
+    PathAlgebra.bettiPoincareMatrix_gradedVertexSimpleProjectiveResolution]
+  fin_cases i <;> fin_cases j <;> simp [Nat.card_eq_fintype_card]
 
 variable [HasExt.{max u v}
   (GradedModuleCat.{max u v} (PathAlgebra.integerGrade k (Kronecker A)))]
