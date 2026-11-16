@@ -56,12 +56,10 @@ is the global dimension `TauCeti.globalDim C` of every pivotal structure on `C`.
 * `TauCeti.rightTrace_eq_doubleDualTrace`, `TauCeti.leftTrace_eq_doubleDualTrace` and
   `TauCeti.squaredNorm_pivotalIsoApp`: comparison with the traces and dimensions of a pivotal
   structure;
-* `TauCeti.isIso_comp_evaluation_of_simple_right` and
-  `TauCeti.isIso_comp_evaluation_of_simple_left`: Schur's lemma for an exact pairing with a simple
-  member, which also gives the nonvanishing of pivotal dimensions in
-  `TauCeti.rightDim_ne_zero_of_simple` and `TauCeti.leftDim_ne_zero_of_simple`;
 * `TauCeti.isIso_doubleDualTrace`, `TauCeti.isIso_doubleDualTrace_rightAdjointMate` and
-  `TauCeti.squaredNorm_ne_zero`: nonvanishing for simple objects;
+  `TauCeti.squaredNorm_ne_zero`: nonvanishing for simple objects, from Schur's lemma for an
+  exact pairing with a simple member (`TauCeti.isIso_comp_evaluation_of_simple_right` and
+  `TauCeti.isIso_comp_evaluation_of_simple_left`);
 * `TauCeti.normGlobalDim`: the global dimension as a sum of squared norms, independent of the
   isomorphisms by `TauCeti.normGlobalDim_congr` and equal to the pivotal global dimension by
   `TauCeti.normGlobalDim_eq_globalDim`.
@@ -222,42 +220,12 @@ theorem squaredNorm_pivotalIsoApp (X : C) :
 
 end Pivotal
 
-omit [MonoidalCategory C] in
-/-- An endomorphism with a scalar multiple equal to the identity is invertible. -/
-private theorem isIso_of_smul_eq_id {R : Type*} [Semiring R] [Preadditive C] [Linear R C] {Z : C}
-    {t : Z ⟶ Z} {c : R} (h : c • t = 𝟙 Z) : IsIso t :=
-  ⟨c • 𝟙 Z, by rw [Linear.comp_smul, Category.comp_id, h],
-    by rw [Linear.smul_comp, Category.id_comp, h]⟩
-
 section Simple
 
 variable (k : Type*) [Field k] [IsAlgClosed k]
 variable [Abelian C] [MonoidalPreadditive C] [Linear k C] [MonoidalLinear k C]
   [IsFiniteSemisimpleCategory C] [Simple (𝟙_ C)]
 variable {X : C} [Simple X] [FiniteDimensional k (X ⟶ X)]
-
-include k in
-/-- **Schur's lemma for an exact pairing with simple right member**: if `Z` is simple with
-finite-dimensional endomorphisms, every nonzero `η : 𝟙_ C ⟶ Z ⊗ Y` closes up with the evaluation
-of an exact pairing of `Y` and `Z` to an invertible scalar. Indeed `η` splits, and its retraction
-is a scalar multiple of the evaluation. -/
-theorem isIso_comp_evaluation_of_simple_right {Y Z : C} [ExactPairing Y Z] [Simple Z]
-    [FiniteDimensional k (Z ⟶ Z)] {η : 𝟙_ C ⟶ Z ⊗ Y} (hη : η ≠ 0) : IsIso (η ≫ ε_ Y Z) := by
-  have : IsSplitMono η := isSplitMono_of_nonzero_from_simple hη
-  obtain ⟨c, hc⟩ := hom_tensorUnit_eq_smul_evaluation_of_simple_right k (retraction η)
-  refine isIso_of_smul_eq_id (c := c) ?_
-  rw [← Linear.comp_smul, ← hc, IsSplitMono.id]
-
-include k in
-/-- **Schur's lemma for an exact pairing with simple left member**: if `Y` is simple with
-finite-dimensional endomorphisms, every nonzero `η : 𝟙_ C ⟶ Z ⊗ Y` closes up with the evaluation
-of an exact pairing of `Y` and `Z` to an invertible scalar. -/
-theorem isIso_comp_evaluation_of_simple_left {Y Z : C} [ExactPairing Y Z] [Simple Y]
-    [FiniteDimensional k (Y ⟶ Y)] {η : 𝟙_ C ⟶ Z ⊗ Y} (hη : η ≠ 0) : IsIso (η ≫ ε_ Y Z) := by
-  have : IsSplitMono η := isSplitMono_of_nonzero_from_simple hη
-  obtain ⟨c, hc⟩ := hom_tensorUnit_eq_smul_evaluation_of_simple_left k (retraction η)
-  refine isIso_of_smul_eq_id (c := c) ?_
-  rw [← Linear.comp_smul, ← hc, IsSplitMono.id]
 
 include k in
 /-- In a finite semisimple category with simple unit over an algebraically closed field, the
@@ -267,7 +235,7 @@ theorem isIso_doubleDualTrace [RightRigidCategory C] (b : X ⟶ (Xᘁ : C)ᘁ) [
     IsIso (doubleDualTrace b) := by
   -- `X` is a right dual of `Xᘁ` through `b`, with evaluation `b ▷ Xᘁ ≫ ε_ Xᘁ Xᘁᘁ`.
   let := exactPairingCongrRight (X := (Xᘁ : C)) (asIso b)
-  have := isIso_comp_evaluation_of_simple_right k (Y := (Xᘁ : C))
+  have := isIso_comp_evaluation_of_simple_right k (X := (Xᘁ : C))
     (coevaluation_ne_zero (Y := (Xᘁ : C)) (Simple.not_isZero X))
   rwa [exactPairingCongrRight_evaluation, asIso_hom, ← doubleDualTrace_def] at this
 
@@ -279,7 +247,7 @@ theorem isIso_doubleDualTrace_rightAdjointMate [RigidCategory C] (b : (Xᘁ : C)
     IsIso (doubleDualTrace (bᘁ)) := by
   -- `X` is a right dual of `Xᘁ` through `b⁻¹`, with coevaluation `η_ Xᘁ Xᘁᘁ ≫ Xᘁ ◁ b`.
   let := exactPairingCongrRight (X := (Xᘁ : C)) (asIso b).symm
-  have := isIso_comp_evaluation_of_simple_left k (Y := X) (Z := (Xᘁ : C))
+  have := isIso_comp_evaluation_of_simple_left k (X := X) (Y := (Xᘁ : C))
     (coevaluation_ne_zero (Y := X) (Simple.not_isZero (Xᘁ : C)))
   rwa [exactPairingCongrRight_coevaluation, Iso.symm_inv, asIso_hom, Category.assoc,
     ← doubleDualTrace_rightAdjointMate] at this

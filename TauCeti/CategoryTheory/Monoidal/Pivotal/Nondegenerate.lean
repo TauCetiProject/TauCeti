@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Monoidal.Pivotal.SquaredNorm
+public import TauCeti.CategoryTheory.Monoidal.Pivotal.Trace
+public import TauCeti.CategoryTheory.Monoidal.Rigid.Simple
+public import TauCeti.CategoryTheory.Semisimple.Basic
 
 /-!
 # Nondegeneracy of categorical traces
@@ -44,16 +46,22 @@ include k in
 simple tensor unit is nonzero. -/
 theorem rightDim_ne_zero_of_simple (X : C) [Simple X] [FiniteDimensional k (X ⟶ X)] :
     rightDim X ≠ 0 := by
-  rw [← doubleDualTrace_pivotalIsoApp_hom]
-  exact (isIso_iff_ne_zero _).mp (isIso_doubleDualTrace k (pivotalIsoApp X).hom)
+  let := pivotalExactPairing X
+  have := isIso_comp_evaluation_of_simple_right k (X := Xᘁ)
+    (coevaluation_ne_zero (Y := Xᘁ) (Simple.not_isZero X))
+  rw [← rightTrace_id, rightTrace_def, id_whiskerRight, Category.id_comp]
+  exact (isIso_iff_ne_zero _).mp this
 
 include k in
 /-- The left dimension of a split simple object in a finite semisimple pivotal category with
 simple tensor unit is nonzero. -/
 theorem leftDim_ne_zero_of_simple (X : C) [Simple X] [FiniteDimensional k (X ⟶ X)] :
     leftDim X ≠ 0 := by
-  rw [← doubleDualTrace_rightAdjointMate_pivotalIsoApp_inv]
-  exact (isIso_iff_ne_zero _).mp (isIso_doubleDualTrace_rightAdjointMate k (pivotalIsoApp X).inv)
+  let := pivotalExactPairing X
+  have := isIso_comp_evaluation_of_simple_left k (X := X)
+    (coevaluation_ne_zero (Y := X) (Simple.not_isZero Xᘁ))
+  rw [← leftTrace_id, leftTrace_def, whiskerLeft_id, Category.id_comp]
+  exact (isIso_iff_ne_zero _).mp this
 
 section Pairing
 
