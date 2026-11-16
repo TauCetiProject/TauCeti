@@ -421,6 +421,7 @@ theorem prod_cubeBodyDiagonal (k : Fin 4) : ∏ i, cubeBodyDiagonal k i = 1 := b
 /-- **A rotation preserves the two inscribed tetrahedra exactly when it induces an even
 permutation of the body diagonals**: it multiplies the product of the coordinates of every vertex
 by the sign of that permutation. -/
+@[simp]
 theorem prod_cubeRotationGroup_smul (A : cubeRotationGroup) (v : Fin 3 → ℤˣ) :
     ∏ i, (A • v) i = Perm.sign (cubeBodyDiagonalHom A) * ∏ i, v i := by
   -- In monomial form a rotation multiplies the coordinate product by the product of its signs,

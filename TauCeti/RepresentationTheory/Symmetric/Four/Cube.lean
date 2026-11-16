@@ -358,12 +358,32 @@ theorem cubeVertexRepresentationDiagonalEquiv_single (h : IsUnit (2 : k)) (v : F
 
 /-- The inverse splitting sends `(c e_j, c' e_j)` to `½ ((c + c') v + (c - c') (-v))`, for `v`
 the endpoint `TauCeti.cubeBodyDiagonal j` of the body diagonal `j`. -/
+@[simp]
 theorem cubeVertexRepresentationDiagonalEquiv_symm_single_single (h : IsUnit (2 : k))
     (j : Fin 4) (c c' : k) :
     (cubeVertexRepresentationDiagonalEquiv h).symm (single j c, single j c') =
       Ring.inverse (2 : k) •
         (single (cubeBodyDiagonal j) (c + c') + single (-cubeBodyDiagonal j) (c - c')) :=
   cubeVertexJoin_single_single _ j c c'
+
+/-- The inverse splitting sends the even basis vector `(c e_j, 0)` to `½ (c v + c (-v))`, for `v`
+the endpoint `TauCeti.cubeBodyDiagonal j` of the body diagonal `j`. -/
+@[simp]
+theorem cubeVertexRepresentationDiagonalEquiv_symm_single_zero (h : IsUnit (2 : k))
+    (j : Fin 4) (c : k) :
+    (cubeVertexRepresentationDiagonalEquiv h).symm (single j c, 0) =
+      Ring.inverse (2 : k) • (single (cubeBodyDiagonal j) c + single (-cubeBodyDiagonal j) c) := by
+  simpa using cubeVertexRepresentationDiagonalEquiv_symm_single_single h j c 0
+
+/-- The inverse splitting sends the odd basis vector `(0, c e_j)` to `½ (c v - c (-v))`, for `v`
+the endpoint `TauCeti.cubeBodyDiagonal j` of the body diagonal `j`. -/
+@[simp]
+theorem cubeVertexRepresentationDiagonalEquiv_symm_zero_single (h : IsUnit (2 : k))
+    (j : Fin 4) (c : k) :
+    (cubeVertexRepresentationDiagonalEquiv h).symm (0, single j c) =
+      Ring.inverse (2 : k) •
+        (single (cubeBodyDiagonal j) c + single (-cubeBodyDiagonal j) (-c)) := by
+  simpa using cubeVertexRepresentationDiagonalEquiv_symm_single_single h j 0 c
 
 private theorem isUnit_card_fin_four (h : IsUnit (2 : k)) : IsUnit (Fintype.card (Fin 4) : k) := by
   rw [Fintype.card_fin, show ((4 : ℕ) : k) = 2 * 2 by norm_num]
