@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Dagger.WeakCompletion.Basic
+import TauCeti.RingTheory.Ideal.Maps
 
 /-!
 # Parameter-power quotients of weak completions
@@ -14,7 +15,9 @@ The map from a finitely generated algebra to its Monsky–Washnitzer weak comple
 induces an isomorphism modulo every power of the parameter. The key point is that
 removing a finite head of a degree-growth expansion leaves another degree-growth
 expansion. Thus the remainder is divisible by the parameter power in the weak
-completion itself, not only in the ambient adic completion.
+completion itself, not only in the ambient adic completion. Consequently, algebra
+homomorphisms from `S†` into any `π`-adically separated `O`-algebra are determined by
+their restriction along `S → S†` (`algHom_ext`).
 
 No noetherianity, completeness or regularity of the parameter is needed.
 
@@ -146,12 +149,8 @@ theorem ker_eval (n : ℕ) :
   have he : eval π n z = 0 := RingHom.mem_ker.mp hz
   have hs0 := RingHom.mem_ker.mp (hle hs)
   rw [map_sub, he, zero_sub, neg_eq_zero, eval_of] at hs0
-  have hof : of π S s ∈ Ideal.span {algebraMap O (weakCompletion π S) π} ^ n := by
-    have hm : (Ideal.span {algebraMap O S π} ^ n).map (of π S).toRingHom =
-        Ideal.span {algebraMap O (weakCompletion π S) π} ^ n := by
-      simp [Ideal.map_pow, Ideal.map_span]
-    rw [← hm]
-    exact Ideal.mem_map_of_mem _ (Ideal.Quotient.eq_zero_iff_mem.mp hs0)
+  have hof := Ideal.apply_mem_span_algebraMap_pow (of π S)
+    (Ideal.Quotient.eq_zero_iff_mem.mp hs0)
   simpa only [sub_add_cancel] using Ideal.add_mem _ hs hof
 
 /-- Reduction modulo a parameter power identifies the weak completion with the
@@ -187,6 +186,23 @@ instance isHausdorff :
     apply RingHom.mem_ker.mp
     rw [ker_eval]
     simpa only [SModEq.zero, smul_eq_mul, Ideal.mul_top] using hz n
+
+/-- Two `O`-algebra homomorphisms from `S†` into a `π`-adically separated `O`-algebra agree as soon
+as they agree on the image of `S`. -/
+theorem algHom_ext {B : Type*} [CommRing B] [Algebra O B]
+    [IsHausdorff (Ideal.span {algebraMap O B π}) B]
+    {φ ψ : weakCompletion π S →ₐ[O] B} (h : ∀ s, φ (of π S s) = ψ (of π S s)) :
+    φ = ψ := by
+  ext z
+  apply (IsHausdorff.eq_iff_smodEq (I := Ideal.span {algebraMap O B π})).mpr
+  intro n
+  obtain ⟨s, t, rfl⟩ := exists_eq_of_add_pow_mul π z n
+  rw [SModEq.sub_mem, smul_eq_mul, Ideal.mul_top, Ideal.span_singleton_pow,
+    Ideal.mem_span_singleton]
+  refine ⟨φ t - ψ t, ?_⟩
+  rw [map_add, map_add, h s, map_mul, map_mul, map_pow, map_pow, AlgHom.commutes,
+    AlgHom.commutes]
+  ring
 
 end weakCompletion
 
