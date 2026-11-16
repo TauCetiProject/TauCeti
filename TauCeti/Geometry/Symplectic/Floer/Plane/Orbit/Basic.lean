@@ -170,22 +170,10 @@ theorem setLIntegral_floerEnergyDensity_comp_realChart_positive_le (ω : Symplec
         ENNReal.ofReal (ω.floerEnergyDensity
           (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-          u z) := by
-  have hS : MeasurableSet (Ioi a ×ˢ Ico (0 : ℝ) 1) :=
-    measurableSet_Ioi.prod measurableSet_Ico
-  have hae : (Ioi a ×ˢ Icc (0 : ℝ) 1 : Set (ℝ × ℝ)) =ᵐ[volume] Ioi a ×ˢ Ico 0 1 := by
-    rw [Measure.volume_eq_prod]
-    exact Measure.set_prod_ae_eq Filter.EventuallyEqSet.rfl Ico_ae_eq_Icc.symm
-  rw [setLIntegral_congr hae, ← lintegral_ofReal_image_eq_lintegral_ofReal_of_eq_abs_det_mul hS
-    (injOn_realChart_positive a)
-    (fun z _ ↦ (contDiff_realChart positive.contDiff_cylindricalEndLift).differentiable
-      one_ne_zero z) fun z hz ↦ by
-      rw [floerEnergyDensity_comp_realChart_positive ω hH hHs (ha.trans hz.1.le)
-        (differentiableAt_realChart_positive hu hz.1),
-        abs_of_pos (positive.det_fderiv_realChart_cylindricalEndLift_pos z)]]
-  refine lintegral_mono_set ?_
-  rintro _ ⟨z, hz, rfl⟩
-  exact exp_lt_norm_realChart_positive hz.1
+          u z) :=
+  setLIntegral_ofReal_comp_realChart_positive_le fun _ hz ↦
+    floerEnergyDensity_comp_realChart_positive ω hH hHs (ha.trans hz.1.le)
+      (differentiableAt_realChart_positive hu hz.1)
 
 /-- **The half-cylinder at the end of the positive plane.** If `u` is `Cⁿ`, `n ≠ 0`, on a part
 `‖w‖ > r` of the positive plane, with image in `K`, solving the Floer equation there for structures

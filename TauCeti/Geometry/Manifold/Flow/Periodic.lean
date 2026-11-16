@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.Flow.TimeDependent
 public import TauCeti.Geometry.Manifold.MFDeriv.FixedPoint
 public import TauCeti.Geometry.Manifold.Topology
 public import TauCeti.Topology.Homotopy.AddCircle
-public import Mathlib.Algebra.Ring.Periodic
+public import TauCeti.Algebra.Ring.Periodic
 
 /-!
 # Periodic solutions of time-periodic vector fields on manifolds
@@ -127,17 +127,15 @@ theorem continuous_of_mem_periodicSolutions {γ : ℝ → M} (hγ : γ ∈ perio
 `T`-periodic solution of the reversed field `(t, x) ↦ -X (-t) x`. -/
 theorem comp_neg_mem_periodicSolutions {γ : ℝ → M} (hγ : γ ∈ periodicSolutions X T) :
     (fun t ↦ γ (-t)) ∈ periodicSolutions (fun t x ↦ -X (-t) x) T := by
-  refine ⟨fun t ↦ ?_, fun t ↦ ?_⟩
-  · have hneg : HasMFDerivAt 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ) (fun t : ℝ ↦ -t) t
-        ((1 : ℝ →L[ℝ] ℝ).smulRight (-1 : ℝ)) :=
-      (hasDerivAt_neg t).hasFDerivAt.hasMFDerivAt
-    have h : (1 : ℝ →L[ℝ] ℝ).smulRight (-X (-t) (γ (-t))) =
-        (1 : ℝ →L[ℝ] ℝ).smulRight (X (-t) (γ (-t))) ∘SL (1 : ℝ →L[ℝ] ℝ).smulRight (-1 : ℝ) := by
-      simp [ContinuousLinearMap.smulRight_comp_smulRight]
-    rw [h]
-    exact (hγ.1 (-t)).comp t hneg
-  · simp only [neg_add']
-    rw [← hγ.2 (-t - T), sub_add_cancel]
+  refine ⟨fun t ↦ ?_, Periodic.comp_neg hγ.2⟩
+  have hneg : HasMFDerivAt 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ) (fun t : ℝ ↦ -t) t
+      ((1 : ℝ →L[ℝ] ℝ).smulRight (-1 : ℝ)) :=
+    (hasDerivAt_neg t).hasFDerivAt.hasMFDerivAt
+  have h : (1 : ℝ →L[ℝ] ℝ).smulRight (-X (-t) (γ (-t))) =
+      (1 : ℝ →L[ℝ] ℝ).smulRight (X (-t) (γ (-t))) ∘SL (1 : ℝ →L[ℝ] ℝ).smulRight (-1 : ℝ) := by
+    simp [ContinuousLinearMap.smulRight_comp_smulRight]
+  rw [h]
+  exact (hγ.1 (-t)).comp t hneg
 
 /-- **Reversing time**, as a characterization: `t ↦ γ (-t)` is a `T`-periodic solution of `X`
 exactly when `γ` is a `T`-periodic solution of the reversed field `(t, x) ↦ -X (-t) x`. -/
