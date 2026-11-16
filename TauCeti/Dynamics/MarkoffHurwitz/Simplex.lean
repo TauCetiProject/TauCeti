@@ -27,19 +27,13 @@ rather than `d + 1` gives a subset of `Fin d → ℝ` with nonempty interior, so
 the simplex are unique (`TauCeti.MarkoffHurwitz.uniqueDiffOn_orderedSimplex`).
 
 This file develops the geometry of `orderedSimplex d` and `orderedCone d`:
-
 * sharp coordinate enclosures `0 ≤ x j ≤ 1 / 2` and `1 / (d + 1) ≤ 1 - ∑ k, x k ≤ 1` on
   `orderedSimplex d`;
 * compactness, convexity, the explicit strictly increasing interior point
   `x_i = 2 (i + 1) / ((d + 2)(d + 1))`, and uniqueness of within-derivatives;
-* the chart-to-simplex map `chartToSimplex`, the homogeneous section `orderedSimplexLift`, the ray
-  projection `orderedConeProject`, and the characterization of equal projections as positive
-  collinearity on `orderedCone d`;
-* identification of the linear span of `orderedCone d` with the sum hyperplane
-  `y₀ + ⋯ + y_d = y_{d+1}` together with its basis `e_j + e_{d+1}` (`orderedConeSpanBasis`).
-
-These carriers underlie the projective Markoff–Hurwitz branch dynamics, their transfer operators,
-and uniform word-counting asymptotics.
+* `chartToSimplex`, `orderedSimplexLift`, `orderedConeProject`, and positive-ray equivalence;
+* identification of `Submodule.span ℝ (orderedCone d)` with the sum hyperplane and its basis
+  `e_j + e_{d+1}` (`orderedConeSpanBasis`).
 
 ## References
 
@@ -64,29 +58,24 @@ def orderedSimplex (d : ℕ) : Set (Fin d → ℝ) :=
 
 /-- Membership in `orderedSimplex d` unfolded in coordinates. -/
 theorem mem_orderedSimplex_iff {d : ℕ} {x : Fin d → ℝ} :
-    x ∈ orderedSimplex d ↔ (∀ i, 0 ≤ x i) ∧ Monotone x ∧ ∀ i, x i ≤ 1 - ∑ k, x k :=
-  Iff.rfl
+    x ∈ orderedSimplex d ↔ (∀ i, 0 ≤ x i) ∧ Monotone x ∧ ∀ i, x i ≤ 1 - ∑ k, x k := Iff.rfl
 
 /-- Every chart coordinate of a point in `orderedSimplex d` is nonnegative. -/
 theorem apply_nonneg_of_mem_orderedSimplex {d : ℕ} {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d)
-    (i : Fin d) : 0 ≤ x i :=
-  hx.1 i
+    (i : Fin d) : 0 ≤ x i := hx.1 i
 
 /-- The chart coordinates of a point in `orderedSimplex d` are nondecreasing. -/
 theorem monotone_of_mem_orderedSimplex {d : ℕ} {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d) :
-    Monotone x :=
-  hx.2.1
+    Monotone x := hx.2.1
 
 /-- Every chart coordinate of a point in `orderedSimplex d` is at most `1 - ∑ k, x k`. -/
 theorem apply_le_one_sub_sum_of_mem_orderedSimplex {d : ℕ} {x : Fin d → ℝ}
-    (hx : x ∈ orderedSimplex d) (i : Fin d) : x i ≤ 1 - ∑ k, x k :=
-  hx.2.2 i
+    (hx : x ∈ orderedSimplex d) (i : Fin d) : x i ≤ 1 - ∑ k, x k := hx.2.2 i
 
 /-- In chart dimension `0` (`n = 2`), `orderedSimplex 0` is the whole one-point space. -/
 @[simp]
 theorem orderedSimplex_zero : orderedSimplex 0 = univ := by
-  ext x
-  simp [mem_orderedSimplex_iff, Subsingleton.monotone]
+  ext x; simp [mem_orderedSimplex_iff, Subsingleton.monotone]
 
 /-- For `d = 1` (`n = 3`), `orderedSimplex 1` is the segment `0 ≤ x 0 ≤ 1 / 2`. -/
 theorem orderedSimplex_one : orderedSimplex 1 = {x | x 0 ∈ Icc 0 (1 / 2)} := by
@@ -107,9 +96,7 @@ theorem orderedSimplex_nonempty (d : ℕ) : (orderedSimplex d).Nonempty :=
 /-- Every chart coordinate on `orderedSimplex d` is at most `1 / 2`. -/
 theorem apply_le_half_of_mem_orderedSimplex {d : ℕ} {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d)
     (i : Fin d) : x i ≤ 1 / 2 := by
-  have hsum : x i ≤ ∑ k, x k := Finset.single_le_sum (fun k _ => hx.1 k) (Finset.mem_univ i)
-  have htop : x i ≤ 1 - ∑ k, x k := hx.2.2 i
-  linarith
+  linarith [Finset.single_le_sum (fun k _ => hx.1 k) (Finset.mem_univ i), hx.2.2 i]
 
 /-- Every chart coordinate on `orderedSimplex d` lies in `[0, 1 / 2]`. -/
 theorem apply_mem_Icc_of_mem_orderedSimplex {d : ℕ} {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d)
@@ -129,10 +116,9 @@ theorem sum_nonneg_of_mem_orderedSimplex {d : ℕ} {x : Fin d → ℝ} (hx : x �
 /-- The last simplex coordinate `1 - ∑ k, x k` is at least `1 / (d + 1)` on `orderedSimplex d`. -/
 theorem one_div_add_one_le_one_sub_sum_of_mem_orderedSimplex {d : ℕ} {x : Fin d → ℝ}
     (hx : x ∈ orderedSimplex d) : 1 / ((d : ℝ) + 1) ≤ 1 - ∑ k, x k := by
-  have hsum : ∑ i : Fin d, x i ≤ (d : ℝ) * (1 - ∑ k, x k) := by
-    simpa using Finset.sum_le_card_nsmul Finset.univ x (1 - ∑ k, x k) fun i _ => hx.2.2 i
   rw [div_le_iff₀ (by positivity)]
-  linarith
+  linarith [show ∑ i : Fin d, x i ≤ (d : ℝ) * (1 - ∑ k, x k) by
+    simpa using Finset.sum_le_card_nsmul Finset.univ x (1 - ∑ k, x k) fun i _ => hx.2.2 i]
 
 /-- The last simplex coordinate `1 - ∑ k, x k` is at most `1` on `orderedSimplex d`. -/
 theorem one_sub_sum_le_one_of_mem_orderedSimplex {d : ℕ} {x : Fin d → ℝ}
@@ -146,17 +132,12 @@ theorem one_sub_sum_pos_of_mem_orderedSimplex {d : ℕ} {x : Fin d → ℝ}
 
 /-- `orderedSimplex d` is closed in `Fin d → ℝ`. -/
 theorem isClosed_orderedSimplex (d : ℕ) : IsClosed (orderedSimplex d) := by
-  have h1 : IsClosed {x : Fin d → ℝ | ∀ i, 0 ≤ x i} := by
-    simp only [ofPred_forall]
-    exact isClosed_iInter fun i => isClosed_le continuous_const (continuous_apply i)
-  have h2 : IsClosed {x : Fin d → ℝ | Monotone x} := by
-    simp only [Monotone, ofPred_forall]
-    exact isClosed_iInter fun i => isClosed_iInter fun j => isClosed_iInter fun _ =>
+  simp only [orderedSimplex, ofPred_and]
+  refine IsClosed.inter ?_ (IsClosed.inter ?_ ?_) <;> simp only [ofPred_forall, Monotone]
+  · exact isClosed_iInter fun i => isClosed_le continuous_const (continuous_apply i)
+  · exact isClosed_iInter fun i => isClosed_iInter fun j => isClosed_iInter fun _ =>
       isClosed_le (continuous_apply i) (continuous_apply j)
-  have h3 : IsClosed {x : Fin d → ℝ | ∀ i, x i ≤ 1 - ∑ k, x k} := by
-    simp only [ofPred_forall]
-    exact isClosed_iInter fun i => isClosed_le (continuous_apply i) (by fun_prop)
-  exact h1.inter (h2.inter h3)
+  · exact isClosed_iInter fun i => isClosed_le (continuous_apply i) (by fun_prop)
 
 /-- `orderedSimplex d` is compact in `Fin d → ℝ`. -/
 theorem isCompact_orderedSimplex (d : ℕ) : IsCompact (orderedSimplex d) :=
@@ -169,9 +150,7 @@ theorem convex_orderedSimplex (d : ℕ) : Convex ℝ (orderedSimplex d) := by
     fun i j hij => add_le_add (mul_le_mul_of_nonneg_left (hx.2.1 hij) ha)
       (mul_le_mul_of_nonneg_left (hy.2.1 hij) hb), fun i => ?_⟩
   simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul, Finset.sum_add_distrib, ← Finset.mul_sum]
-  have hxi := hx.2.2 i
-  have hyi := hy.2.2 i
-  nlinarith
+  nlinarith [hx.2.2 i, hy.2.2 i]
 
 /-! ### Explicit interior point and uniqueness of within-derivatives -/
 
@@ -188,17 +167,14 @@ theorem orderedSimplexInteriorPoint_apply (d : ℕ) (i : Fin d) :
 /-- Every coordinate of `orderedSimplexInteriorPoint d` is strictly positive. -/
 theorem orderedSimplexInteriorPoint_pos {d : ℕ} (i : Fin d) :
     0 < orderedSimplexInteriorPoint d i := by
-  rw [orderedSimplexInteriorPoint_apply]
-  positivity
+  rw [orderedSimplexInteriorPoint_apply]; positivity
 
 /-- The coordinates of `orderedSimplexInteriorPoint d` are strictly increasing. -/
 theorem strictMono_orderedSimplexInteriorPoint (d : ℕ) :
-    StrictMono (orderedSimplexInteriorPoint d) := by
-  intro i j hij
-  rw [orderedSimplexInteriorPoint_apply, orderedSimplexInteriorPoint_apply]
-  refine div_lt_div_of_pos_right ?_ (by positivity)
-  have hij' : (i : ℝ) < (j : ℝ) := Nat.cast_lt.mpr hij
-  linarith
+    StrictMono (orderedSimplexInteriorPoint d) := fun i j hij => by
+  simp only [orderedSimplexInteriorPoint_apply]
+  exact div_lt_div_of_pos_right (by linarith [show (i : ℝ) < j from Nat.cast_lt.mpr hij])
+    (by positivity)
 
 /-- The sum of the chart coordinates of `orderedSimplexInteriorPoint d` is `d / (d + 2)`. -/
 theorem sum_orderedSimplexInteriorPoint (d : ℕ) :
@@ -207,65 +183,39 @@ theorem sum_orderedSimplexInteriorPoint (d : ℕ) :
     rw [Fin.sum_univ_eq_sum_range (fun m : ℕ => 2 * ((m : ℝ) + 1)) d]
     induction d with
     | zero => simp
-    | succ m ih =>
-      rw [Finset.sum_range_succ, ih]
-      push_cast
-      ring
-  calc
-    ∑ k : Fin d, orderedSimplexInteriorPoint d k
-        = (∑ k : Fin d, 2 * ((k : ℝ) + 1)) / (((d : ℝ) + 2) * ((d : ℝ) + 1)) := by
-          simp [orderedSimplexInteriorPoint_apply, ← Finset.sum_div]
-    _ = (d : ℝ) * ((d : ℝ) + 1) / (((d : ℝ) + 2) * ((d : ℝ) + 1)) := by rw [hgauss]
-    _ = (d : ℝ) / ((d : ℝ) + 2) := by
-          have hd1 : ((d : ℝ) + 1) ≠ 0 := by positivity
-          field_simp
+    | succ m ih => rw [Finset.sum_range_succ, ih]; push_cast; ring
+  have hd1 : ((d : ℝ) + 1) ≠ 0 := by positivity
+  simp only [orderedSimplexInteriorPoint_apply, ← Finset.sum_div, hgauss]
+  field_simp
 
 /-- At `orderedSimplexInteriorPoint d`, the remaining simplex coordinate `1 - ∑ k, x k` equals
 `2 / (d + 2)`. -/
 theorem one_sub_sum_orderedSimplexInteriorPoint (d : ℕ) :
     1 - ∑ k : Fin d, orderedSimplexInteriorPoint d k = 2 / ((d : ℝ) + 2) := by
-  rw [sum_orderedSimplexInteriorPoint]
   have hd2 : ((d : ℝ) + 2) ≠ 0 := by positivity
-  field_simp
-  ring
+  rw [sum_orderedSimplexInteriorPoint]; field_simp; ring
 
 /-- Every coordinate of `orderedSimplexInteriorPoint d` is strictly below `1 - ∑ k, x k`. -/
 theorem orderedSimplexInteriorPoint_lt_one_sub_sum {d : ℕ} (i : Fin d) :
     orderedSimplexInteriorPoint d i < 1 - ∑ k : Fin d, orderedSimplexInteriorPoint d k := by
-  rw [orderedSimplexInteriorPoint_apply, one_sub_sum_orderedSimplexInteriorPoint]
-  have hi : (i : ℝ) + 1 < (d : ℝ) + 1 := by
-    exact_mod_cast Nat.succ_lt_succ i.isLt
-  have hd1 : (0 : ℝ) < (d : ℝ) + 1 := by positivity
-  have hd2 : (0 : ℝ) < (d : ℝ) + 2 := by positivity
-  rw [div_lt_div_iff₀ (mul_pos hd2 hd1) hd2]
+  rw [orderedSimplexInteriorPoint_apply, one_sub_sum_orderedSimplexInteriorPoint,
+    div_lt_div_iff₀ (by positivity) (by positivity)]
+  have hi : (i : ℝ) + 1 < (d : ℝ) + 1 := by exact_mod_cast Nat.succ_lt_succ i.isLt
   nlinarith
 
 /-- `orderedSimplexInteriorPoint d` lies in the interior of `orderedSimplex d`. -/
 theorem orderedSimplexInteriorPoint_mem_interior (d : ℕ) :
     orderedSimplexInteriorPoint d ∈ interior (orderedSimplex d) := by
-  let U : Set (Fin d → ℝ) :=
-    {y | (∀ i, 0 < y i) ∧ (∀ i j, i < j → y i < y j) ∧ ∀ i, y i < 1 - ∑ k, y k}
-  have hU_open : IsOpen U := by
-    have h1 : IsOpen {y : Fin d → ℝ | ∀ i, 0 < y i} := by
-      simp only [ofPred_forall]
-      exact isOpen_iInter_of_finite fun i => isOpen_lt continuous_const (continuous_apply i)
-    have h2 : IsOpen {y : Fin d → ℝ | ∀ i j, i < j → y i < y j} := by
-      simp only [ofPred_forall]
-      exact isOpen_iInter_of_finite fun i => isOpen_iInter_of_finite fun j =>
-        isOpen_iInter_of_finite fun _ => isOpen_lt (continuous_apply i) (continuous_apply j)
-    have h3 : IsOpen {y : Fin d → ℝ | ∀ i, y i < 1 - ∑ k, y k} := by
-      simp only [ofPred_forall]
-      exact isOpen_iInter_of_finite fun i => isOpen_lt (continuous_apply i) (by fun_prop)
-    exact h1.inter (h2.inter h3)
-  have hU_sub : U ⊆ orderedSimplex d := by
-    rintro y ⟨hy1, hy2, hy3⟩
-    refine ⟨fun i => (hy1 i).le, fun i j hij => ?_, fun i => (hy3 i).le⟩
-    rcases hij.eq_or_lt with rfl | hlt
-    · exact le_rfl
-    · exact (hy2 i j hlt).le
-  refine mem_interior.mpr ⟨U, hU_sub, hU_open, orderedSimplexInteriorPoint_pos,
-    fun _ _ hlt => strictMono_orderedSimplexInteriorPoint d hlt,
+  refine mem_interior.mpr ⟨{y | (∀ i, 0 < y i) ∧ StrictMono y ∧ ∀ i, y i < 1 - ∑ k, y k},
+    fun y ⟨h1, h2, h3⟩ => ⟨fun i => (h1 i).le, h2.monotone, fun i => (h3 i).le⟩, ?_,
+    orderedSimplexInteriorPoint_pos, strictMono_orderedSimplexInteriorPoint d,
     orderedSimplexInteriorPoint_lt_one_sub_sum⟩
+  simp only [ofPred_and]
+  refine IsOpen.inter ?_ (IsOpen.inter ?_ ?_) <;> simp only [ofPred_forall, StrictMono]
+  · exact isOpen_iInter_of_finite fun i => isOpen_lt continuous_const (continuous_apply i)
+  · exact isOpen_iInter_of_finite fun i => isOpen_iInter_of_finite fun j =>
+      isOpen_iInter_of_finite fun _ => isOpen_lt (continuous_apply i) (continuous_apply j)
+  · exact isOpen_iInter_of_finite fun i => isOpen_lt (continuous_apply i) (by fun_prop)
 
 /-- `orderedSimplexInteriorPoint d` belongs to `orderedSimplex d`. -/
 theorem orderedSimplexInteriorPoint_mem (d : ℕ) :
@@ -289,8 +239,7 @@ def chartToSimplex {d : ℕ} (x : Fin d → ℝ) : Fin (d + 1) → ℝ :=
 
 /-- Unfolded formula for `chartToSimplex x`. -/
 theorem chartToSimplex_def {d : ℕ} (x : Fin d → ℝ) :
-    chartToSimplex x = Fin.snoc x (1 - ∑ k, x k) :=
-  (rfl)
+    chartToSimplex x = Fin.snoc x (1 - ∑ k, x k) := (rfl)
 
 /-- `chartToSimplex x` agrees with `x` on the first `d` coordinates. -/
 @[simp]
@@ -308,32 +257,21 @@ theorem chartToSimplex_last {d : ℕ} (x : Fin d → ℝ) :
 @[simp]
 theorem sum_chartToSimplex {d : ℕ} (x : Fin d → ℝ) :
     ∑ j : Fin (d + 1), chartToSimplex x j = 1 := by
-  rw [Fin.sum_univ_castSucc]
-  simp
+  rw [Fin.sum_univ_castSucc]; simp
 
 /-- A chart point `x` lies in `orderedSimplex d` if and only if `chartToSimplex x` has nonnegative
 nondecreasing coordinates. -/
 theorem mem_orderedSimplex_iff_chartToSimplex {d : ℕ} {x : Fin d → ℝ} :
     x ∈ orderedSimplex d ↔
       (∀ i, 0 ≤ chartToSimplex x i) ∧ Monotone (chartToSimplex x) := by
-  constructor
-  · intro hx
-    refine ⟨?_, ?_⟩
-    · refine Fin.lastCases ?_ fun i => by simpa using hx.1 i
-      simpa using (one_sub_sum_pos_of_mem_orderedSimplex hx).le
-    · intro i j hij
-      induction i using Fin.lastCases with
-      | last =>
-        obtain rfl : j = Fin.last d := le_antisymm (Fin.le_last j) hij
-        exact le_rfl
-      | cast i' =>
-        induction j using Fin.lastCases with
-        | last => simpa using hx.2.2 i'
-        | cast j' => simpa using hx.2.1 (Fin.castSucc_le_castSucc_iff.mp hij)
-  · rintro ⟨hnn, hmono⟩
-    refine ⟨fun i => by simpa using hnn (Fin.castSucc i), fun i j hij => ?_, fun i => ?_⟩
-    · simpa using hmono (Fin.castSucc_le_castSucc_iff.mpr hij)
-    · simpa using hmono (Fin.le_last (Fin.castSucc i))
+  refine ⟨fun hx => ⟨Fin.lastCases (by simpa using (one_sub_sum_pos_of_mem_orderedSimplex hx).le)
+      fun i => by simpa using hx.1 i, ?_⟩, fun ⟨hnn, hmono⟩ =>
+    ⟨fun i => by simpa using hnn (Fin.castSucc i),
+      fun _ _ hij => by simpa using hmono (Fin.castSucc_le_castSucc_iff.mpr hij),
+      fun i => by simpa using hmono (Fin.le_last (Fin.castSucc i))⟩⟩
+  exact Fin.lastCases (fun j hj => by obtain rfl := le_antisymm (Fin.le_last j) hj; exact le_rfl)
+    (fun i => Fin.lastCases (fun _ => by simpa using hx.2.2 i)
+      fun j hij => by simpa using hx.2.1 (Fin.castSucc_le_castSucc_iff.mp hij))
 
 /-- The homogeneous ordered Markoff–Hurwitz cone `H_{d+2}`: nonzero nonnegative nondecreasing
 tuples `y : Fin (d + 2) → ℝ` satisfying `∑_{i < d + 1} y_i = y_{d+1}`
@@ -346,16 +284,14 @@ def orderedCone (d : ℕ) : Set (Fin (d + 2) → ℝ) :=
 theorem mem_orderedCone_iff {d : ℕ} {y : Fin (d + 2) → ℝ} :
     y ∈ orderedCone d ↔
       y ≠ 0 ∧ (∀ i, 0 ≤ y i) ∧ Monotone y ∧
-        ∑ i : Fin (d + 1), y (Fin.castSucc i) = y (Fin.last (d + 1)) :=
-  Iff.rfl
+        ∑ i : Fin (d + 1), y (Fin.castSucc i) = y (Fin.last (d + 1)) := Iff.rfl
 
 /-- Every point of `orderedCone d` has strictly positive last coordinate `y_{d+1} > 0`. -/
 theorem last_pos_of_mem_orderedCone {d : ℕ} {y : Fin (d + 2) → ℝ} (hy : y ∈ orderedCone d) :
     0 < y (Fin.last (d + 1)) := by
   by_contra hle
-  apply hy.1
-  ext i
-  exact le_antisymm ((hy.2.2.1 (Fin.le_last i)).trans (not_lt.mp hle)) (hy.2.1 i)
+  exact hy.1 (funext fun i => le_antisymm ((hy.2.2.1 (Fin.le_last i)).trans (not_lt.mp hle))
+    (hy.2.1 i))
 
 /-- `orderedCone d` is invariant under positive scalar multiplication. -/
 theorem smul_mem_orderedCone {d : ℕ} {c : ℝ} (hc : 0 < c) {y : Fin (d + 2) → ℝ}
@@ -371,8 +307,7 @@ def orderedSimplexLift {d : ℕ} (x : Fin d → ℝ) : Fin (d + 2) → ℝ :=
 
 /-- Unfolded formula for `orderedSimplexLift x`. -/
 theorem orderedSimplexLift_def {d : ℕ} (x : Fin d → ℝ) :
-    orderedSimplexLift x = Fin.snoc (chartToSimplex x) 1 :=
-  (rfl)
+    orderedSimplexLift x = Fin.snoc (chartToSimplex x) 1 := (rfl)
 
 /-- `orderedSimplexLift x` agrees with `chartToSimplex x` on the first `d + 1` coordinates. -/
 @[simp]
@@ -389,8 +324,7 @@ theorem orderedSimplexLift_last {d : ℕ} (x : Fin d → ℝ) :
 /-- `orderedSimplexLift x` satisfies the homogeneous sum relation for every `x : Fin d → ℝ`. -/
 theorem sum_castSucc_orderedSimplexLift {d : ℕ} (x : Fin d → ℝ) :
     ∑ i : Fin (d + 1), orderedSimplexLift x (Fin.castSucc i) =
-      orderedSimplexLift x (Fin.last (d + 1)) := by
-  simp
+      orderedSimplexLift x (Fin.last (d + 1)) := by simp
 
 /-- `orderedSimplexLift x` lies in `orderedCone d` if and only if `x` lies in
 `orderedSimplex d`. -/
@@ -398,30 +332,16 @@ theorem sum_castSucc_orderedSimplexLift {d : ℕ} (x : Fin d → ℝ) :
 theorem orderedSimplexLift_mem_orderedCone_iff {d : ℕ} {x : Fin d → ℝ} :
     orderedSimplexLift x ∈ orderedCone d ↔ x ∈ orderedSimplex d := by
   rw [mem_orderedSimplex_iff_chartToSimplex]
-  constructor
-  · rintro ⟨_, hnn, hmono, _⟩
-    refine ⟨fun i => by simpa using hnn (Fin.castSucc i),
-      fun i j hij => by simpa using hmono (Fin.castSucc_le_castSucc_iff.mpr hij)⟩
-  · rintro ⟨hnn, hmono⟩
-    refine ⟨fun h0 => ?_, ?_, ?_, sum_castSucc_orderedSimplexLift x⟩
-    · have : (1 : ℝ) = 0 := by simpa using congrFun h0 (Fin.last (d + 1))
-      norm_num at this
-    · refine Fin.lastCases (by simp) fun i => ?_
-      simpa using hnn i
-    · intro i j hij
-      induction j using Fin.lastCases with
-      | last =>
-        induction i using Fin.lastCases with
-        | last => exact le_rfl
-        | cast i' =>
-          have hle1 : chartToSimplex x i' ≤ 1 := by
-            rw [← sum_chartToSimplex x]
-            exact Finset.single_le_sum (fun k _ => hnn k) (Finset.mem_univ i')
-          simpa using hle1
-      | cast j' =>
-        induction i using Fin.lastCases with
-        | last => exact absurd hij (not_le_of_gt (Fin.castSucc_lt_last j'))
-        | cast i' => simpa using hmono (Fin.castSucc_le_castSucc_iff.mp hij)
+  refine ⟨fun ⟨_, hnn, hmono, _⟩ => ⟨fun i => by simpa using hnn (Fin.castSucc i),
+    fun _ _ hij => by simpa using hmono (Fin.castSucc_le_castSucc_iff.mpr hij)⟩,
+    fun ⟨hnn, hmono⟩ => ⟨fun h0 => by simpa using congrFun h0 (Fin.last (d + 1)),
+      Fin.lastCases (by simp) fun i => by simpa using hnn i, ?_,
+      sum_castSucc_orderedSimplexLift x⟩⟩
+  refine Fin.lastCases (fun j hj => by obtain rfl := le_antisymm (Fin.le_last j) hj; exact le_rfl)
+    fun i => Fin.lastCases (fun _ => ?_)
+      fun j hij => by simpa using hmono (Fin.castSucc_le_castSucc_iff.mp hij)
+  rw [orderedSimplexLift_castSucc, orderedSimplexLift_last, ← sum_chartToSimplex x]
+  exact Finset.single_le_sum (fun k _ => hnn k) (Finset.mem_univ i)
 
 /-- Project a homogeneous tuple `y : Fin (d + 2) → ℝ` to chart coordinates by dividing its first
 `d` coordinates by `y_{d+1}`. -/
@@ -436,8 +356,7 @@ theorem orderedConeProject_apply {d : ℕ} (y : Fin (d + 2) → ℝ) (i : Fin d)
 @[simp]
 theorem orderedConeProject_orderedSimplexLift {d : ℕ} (x : Fin d → ℝ) :
     orderedConeProject (orderedSimplexLift x) = x := by
-  ext i
-  simp [orderedConeProject_apply]
+  ext i; simp [orderedConeProject_apply]
 
 /-- On the sum hyperplane `∑_{i < d + 1} y_i = y_{d+1}` with `y_{d+1} ≠ 0`, `chartToSimplex` of
 `orderedConeProject y` recovers all `d + 1` normalized coordinates `y_i / y_{d+1}`. -/
@@ -450,14 +369,8 @@ theorem chartToSimplex_orderedConeProject {d : ℕ} {y : Fin (d + 2) → ℝ}
   | cast j => simp [orderedConeProject_apply]
   | last =>
     rw [chartToSimplex_last]
-    have hsplit : (∑ k : Fin d, y (Fin.castSucc (Fin.castSucc k))) + y (Fin.castSucc (Fin.last d)) =
-        y (Fin.last (d + 1)) := by
-      rwa [← Fin.sum_univ_castSucc (f := fun i : Fin (d + 1) => y (Fin.castSucc i))]
-    have hsum_div :
-        ∑ k : Fin d, orderedConeProject y k =
-          (∑ k : Fin d, y (Fin.castSucc (Fin.castSucc k))) / y (Fin.last (d + 1)) := by
-      simp [orderedConeProject_apply, ← Finset.sum_div]
-    rw [hsum_div]
+    simp only [orderedConeProject_apply, ← Finset.sum_div]
+    rw [Fin.sum_univ_castSucc] at hsum
     field_simp
     linarith
 
@@ -468,52 +381,38 @@ theorem last_smul_orderedSimplexLift_orderedConeProject {d : ℕ} {y : Fin (d + 
     y (Fin.last (d + 1)) • orderedSimplexLift (orderedConeProject y) = y := by
   have hpos := last_pos_of_mem_orderedCone hy
   ext i
-  induction i using Fin.lastCases with
-  | last => simp
-  | cast j =>
-    simp only [Pi.smul_apply, smul_eq_mul, orderedSimplexLift_castSucc,
-      chartToSimplex_orderedConeProject hy.2.2.2 hpos.ne']
-    exact mul_div_cancel₀ _ hpos.ne'
+  refine Fin.lastCases (by simp) (fun j => ?_) i
+  simp [chartToSimplex_orderedConeProject hy.2.2.2 hpos.ne', mul_div_cancel₀ _ hpos.ne']
 
 /-- `orderedConeProject` maps `orderedCone d` into `orderedSimplex d`. -/
 theorem orderedConeProject_mem_orderedSimplex {d : ℕ} {y : Fin (d + 2) → ℝ}
     (hy : y ∈ orderedCone d) : orderedConeProject y ∈ orderedSimplex d := by
   rw [← orderedSimplexLift_mem_orderedCone_iff]
   have hpos := last_pos_of_mem_orderedCone hy
-  have hscale : (y (Fin.last (d + 1)))⁻¹ • y ∈ orderedCone d :=
-    smul_mem_orderedCone (inv_pos.mpr hpos) hy
-  have heq : (y (Fin.last (d + 1)))⁻¹ • y = orderedSimplexLift (orderedConeProject y) := by
-    nth_rw 2 [← last_smul_orderedSimplexLift_orderedConeProject hy]
-    rw [smul_smul, inv_mul_cancel₀ hpos.ne', one_smul]
-  rwa [heq] at hscale
+  have hscale := smul_mem_orderedCone (inv_pos.mpr hpos) hy
+  nth_rw 2 [← last_smul_orderedSimplexLift_orderedConeProject hy] at hscale
+  rwa [smul_smul, inv_mul_cancel₀ hpos.ne', one_smul] at hscale
 
 /-- `orderedConeProject` is invariant under nonzero scalar multiplication. -/
 @[simp]
 theorem orderedConeProject_smul {d : ℕ} {c : ℝ} (hc : c ≠ 0) (y : Fin (d + 2) → ℝ) :
     orderedConeProject (c • y) = orderedConeProject y := by
-  ext i
-  simp [orderedConeProject_apply, mul_div_mul_left _ _ hc]
+  ext i; simp [orderedConeProject_apply, mul_div_mul_left _ _ hc]
 
 /-- Two points of `orderedCone d` have the same chart projection if and only if they lie on the
 same open positive ray. -/
 theorem orderedConeProject_eq_iff {d : ℕ} {y z : Fin (d + 2) → ℝ} (hy : y ∈ orderedCone d)
     (hz : z ∈ orderedCone d) :
     orderedConeProject y = orderedConeProject z ↔ ∃ c : ℝ, 0 < c ∧ z = c • y := by
-  constructor
-  · intro hproj
-    have hypos := last_pos_of_mem_orderedCone hy
-    have hzpos := last_pos_of_mem_orderedCone hz
-    refine ⟨z (Fin.last (d + 1)) / y (Fin.last (d + 1)), div_pos hzpos hypos, ?_⟩
-    calc
-      z = z (Fin.last (d + 1)) • orderedSimplexLift (orderedConeProject z) :=
-        (last_smul_orderedSimplexLift_orderedConeProject hz).symm
-      _ = (z (Fin.last (d + 1)) / y (Fin.last (d + 1))) •
-            (y (Fin.last (d + 1)) • orderedSimplexLift (orderedConeProject y)) := by
-        rw [← hproj, smul_smul, div_mul_cancel₀ _ hypos.ne']
-      _ = (z (Fin.last (d + 1)) / y (Fin.last (d + 1))) • y := by
-        rw [last_smul_orderedSimplexLift_orderedConeProject hy]
-  · rintro ⟨c, hc, rfl⟩
-    exact (orderedConeProject_smul hc.ne' y).symm
+  refine ⟨fun hproj => ?_, fun ⟨c, hc, hzy⟩ => hzy ▸ (orderedConeProject_smul hc.ne' y).symm⟩
+  have hypos := last_pos_of_mem_orderedCone hy
+  refine ⟨z (Fin.last (d + 1)) / y (Fin.last (d + 1)),
+    div_pos (last_pos_of_mem_orderedCone hz) hypos, ?_⟩
+  calc z = z (Fin.last (d + 1)) • orderedSimplexLift (orderedConeProject y) := by
+          rw [hproj, last_smul_orderedSimplexLift_orderedConeProject hz]
+    _ = (z (Fin.last (d + 1)) / y (Fin.last (d + 1))) • y := by
+          nth_rw 3 [← last_smul_orderedSimplexLift_orderedConeProject hy]
+          rw [smul_smul, div_mul_cancel₀ _ hypos.ne']
 
 /-! ### The linear span of `orderedCone d` and its basis `e_j + e_{d+1}` -/
 
@@ -521,20 +420,15 @@ theorem orderedConeProject_eq_iff {d : ℕ} {y z : Fin (d + 2) → ℝ} (hy : y 
 `orderedCone d`. -/
 def orderedConeHyperplane (d : ℕ) : Submodule ℝ (Fin (d + 2) → ℝ) where
   carrier := {y | ∑ i : Fin (d + 1), y (Fin.castSucc i) = y (Fin.last (d + 1))}
-  add_mem' {a b} ha hb := by
-    rw [mem_ofPred_eq] at ha hb ⊢
-    simp [Finset.sum_add_distrib, ha, hb]
+  add_mem' {a b} ha hb := by rw [mem_ofPred_eq] at ha hb ⊢; simp [Finset.sum_add_distrib, ha, hb]
   zero_mem' := by simp
-  smul_mem' c {a} ha := by
-    rw [mem_ofPred_eq] at ha ⊢
-    simp [← Finset.mul_sum, ha]
+  smul_mem' c {a} ha := by rw [mem_ofPred_eq] at ha ⊢; simp [← Finset.mul_sum, ha]
 
 /-- Membership in `orderedConeHyperplane d` unfolded. -/
 @[simp]
 theorem mem_orderedConeHyperplane_iff {d : ℕ} {y : Fin (d + 2) → ℝ} :
     y ∈ orderedConeHyperplane d ↔
-      ∑ i : Fin (d + 1), y (Fin.castSucc i) = y (Fin.last (d + 1)) :=
-  Iff.rfl
+      ∑ i : Fin (d + 1), y (Fin.castSucc i) = y (Fin.last (d + 1)) := Iff.rfl
 
 /-- The `j`-th standard basis vector `e_j + e_{d+1}` of `orderedConeHyperplane d`
 (Gamburd–Magee–Ronan 2019, p. 756). -/
@@ -555,15 +449,13 @@ theorem orderedConeBasisVec_last {d : ℕ} (j : Fin (d + 1)) :
 
 /-- Every `orderedConeBasisVec d j` belongs to `orderedConeHyperplane d`. -/
 theorem orderedConeBasisVec_mem_hyperplane (d : ℕ) (j : Fin (d + 1)) :
-    orderedConeBasisVec d j ∈ orderedConeHyperplane d := by
-  simp
+    orderedConeBasisVec d j ∈ orderedConeHyperplane d := by simp
 
 /-- The vectors `orderedConeBasisVec d` are linearly independent over `ℝ`. -/
 theorem linearIndependent_orderedConeBasisVec (d : ℕ) :
     LinearIndependent ℝ (orderedConeBasisVec d) := by
   rw [Fintype.linearIndependent_iff]
-  intro c hc j
-  simpa using congrFun hc (Fin.castSucc j)
+  exact fun c hc j => by simpa using congrFun hc (Fin.castSucc j)
 
 /-- Every vector in `orderedConeHyperplane d` expands in `orderedConeBasisVec d` with its first
 `d + 1` coordinates as coefficients. -/
@@ -571,11 +463,7 @@ theorem sum_orderedConeBasisVec_eq {d : ℕ} {y : Fin (d + 2) → ℝ}
     (hy : y ∈ orderedConeHyperplane d) :
     ∑ j : Fin (d + 1), y (Fin.castSucc j) • orderedConeBasisVec d j = y := by
   ext i
-  induction i using Fin.lastCases with
-  | cast k =>
-    simp
-  | last =>
-    simpa using mem_orderedConeHyperplane_iff.mp hy
+  exact Fin.lastCases (by simpa using mem_orderedConeHyperplane_iff.mp hy) (fun k => by simp) i
 
 /-- The `j`-th extreme-ray suffix vector `∑_{i ≥ j} (e_i + e_{d+1})` of `orderedCone d`, with `0`
 on slots `< j`, `1` on slots `j ≤ i ≤ d`, and `d + 1 - j` in the last slot. -/
@@ -599,36 +487,19 @@ theorem orderedConeSuffixVec_mem_orderedCone (d : ℕ) (j : Fin (d + 1)) :
     orderedConeSuffixVec d j ∈ orderedCone d := by
   have hhyp : orderedConeSuffixVec d j ∈ orderedConeHyperplane d :=
     Submodule.sum_mem _ fun i _ => orderedConeBasisVec_mem_hyperplane d i
-  have hcard : 1 ≤ (Finset.Ici j).card :=
-    Finset.one_le_card.mpr ⟨j, Finset.mem_Ici.mpr le_rfl⟩
-  refine ⟨fun h0 => ?_, ?_, ?_, mem_orderedConeHyperplane_iff.mp hhyp⟩
-  · have : (1 : ℝ) = 0 := by simpa using congrFun h0 (Fin.castSucc j)
-    norm_num at this
-  · refine Fin.lastCases ?_ fun m => ?_
-    · rw [orderedConeSuffixVec_last]
-      exact Nat.cast_nonneg _
-    · simp only [orderedConeSuffixVec_castSucc]
-      split_ifs <;> norm_num
-  · intro a b hab
-    induction b using Fin.lastCases with
-    | last =>
-      induction a using Fin.lastCases with
-      | last => exact le_rfl
-      | cast m =>
-        simp only [orderedConeSuffixVec_castSucc, orderedConeSuffixVec_last]
-        have h1 : (1 : ℝ) ≤ ((Finset.Ici j).card : ℝ) := Nat.one_le_cast.mpr hcard
-        split_ifs <;> linarith
-    | cast b' =>
-      induction a using Fin.lastCases with
-      | last => exact absurd hab (not_le_of_gt (Fin.castSucc_lt_last b'))
-      | cast a' =>
-        have hab' : a' ≤ b' := Fin.castSucc_le_castSucc_iff.mp hab
-        simp only [orderedConeSuffixVec_castSucc]
-        split_ifs with ha hb
-        · exact le_rfl
-        · exact absurd (ha.trans hab') hb
-        · norm_num
-        · exact le_rfl
+  have h1 : (1 : ℝ) ≤ ((Finset.Ici j).card : ℝ) :=
+    Nat.one_le_cast.mpr (Finset.one_le_card.mpr ⟨j, Finset.mem_Ici.mpr le_rfl⟩)
+  refine ⟨fun h0 => by simpa using congrFun h0 (Fin.castSucc j),
+    Fin.lastCases (by rw [orderedConeSuffixVec_last]; exact Nat.cast_nonneg _) fun m => by
+      simp only [orderedConeSuffixVec_castSucc]; split_ifs <;> norm_num,
+    ?_, mem_orderedConeHyperplane_iff.mp hhyp⟩
+  refine Fin.lastCases (fun b hb => by obtain rfl := le_antisymm (Fin.le_last b) hb; exact le_rfl)
+    fun a => Fin.lastCases (fun _ => by
+      simp only [orderedConeSuffixVec_castSucc, orderedConeSuffixVec_last]; split_ifs <;> linarith)
+      fun b hab => ?_
+  have hab' := Fin.castSucc_le_castSucc_iff.mp hab
+  simp only [orderedConeSuffixVec_castSucc]
+  split_ifs with ha hb' <;> [exact le_rfl; exact absurd (ha.trans hab') hb'; norm_num; exact le_rfl]
 
 /-- Each `orderedConeBasisVec d j` lies in the `ℝ`-linear span of `orderedCone d`. -/
 theorem orderedConeBasisVec_mem_span_orderedCone (d : ℕ) (j : Fin (d + 1)) :
@@ -637,26 +508,18 @@ theorem orderedConeBasisVec_mem_span_orderedCone (d : ℕ) (j : Fin (d + 1)) :
   · subst hj
     have hIci : Finset.Ici (Fin.last d) = {Fin.last d} := by
       ext i
-      simp only [Finset.mem_Ici, Finset.mem_singleton]
-      exact ⟨fun h => le_antisymm (Fin.le_last i) h, fun h => h ▸ le_rfl⟩
+      simp only [Finset.mem_Ici, Finset.mem_singleton, le_antisymm_iff, Fin.le_last, true_and]
     have heq : orderedConeBasisVec d (Fin.last d) = orderedConeSuffixVec d (Fin.last d) := by
       simp [orderedConeSuffixVec, hIci]
-    rw [heq]
-    exact Submodule.subset_span (orderedConeSuffixVec_mem_orderedCone d (Fin.last d))
-  · let j0 : Fin d := j.castPred hj
-    let j' : Fin (d + 1) := j0.succ
-    have hj_eq : Fin.castSucc j0 = j := Fin.castSucc_castPred j hj
+    exact heq ▸ Submodule.subset_span (orderedConeSuffixVec_mem_orderedCone d (Fin.last d))
+  · let j' : Fin (d + 1) := (j.castPred hj).succ
     have hiff : ∀ m : Fin (d + 1), j' ≤ m ↔ j < m := fun m => by
-      rw [← hj_eq]
-      simp only [j', Fin.le_def, Fin.lt_def, Fin.val_succ, Fin.val_castSucc]
-      omega
+      rw [← Fin.castSucc_castPred j hj]
+      simp only [j', Fin.le_def, Fin.lt_def, Fin.val_succ, Fin.val_castSucc]; omega
     have hIci : Finset.Ici j = insert j (Finset.Ici j') := by
-      ext m
-      simp [Finset.mem_Ici, hiff, le_iff_eq_or_lt, eq_comm]
-    have hnotMem : j ∉ Finset.Ici j' := by simp [Finset.mem_Ici, hiff]
+      ext m; simp [Finset.mem_Ici, hiff, le_iff_eq_or_lt, eq_comm]
     have hadd : orderedConeBasisVec d j + orderedConeSuffixVec d j' = orderedConeSuffixVec d j := by
-      simp only [orderedConeSuffixVec]
-      rw [hIci, Finset.sum_insert hnotMem]
+      simp only [orderedConeSuffixVec]; rw [hIci, Finset.sum_insert (by simp [hiff])]
     rw [eq_sub_of_add_eq hadd]
     exact Submodule.sub_mem _
       (Submodule.subset_span (orderedConeSuffixVec_mem_orderedCone d j))
@@ -674,12 +537,11 @@ theorem span_orderedCone_eq_hyperplane (d : ℕ) :
 theorem span_range_orderedConeBasisVec (d : ℕ) :
     Submodule.span ℝ (range (orderedConeBasisVec d)) = Submodule.span ℝ (orderedCone d) := by
   rw [span_orderedCone_eq_hyperplane]
-  refine le_antisymm (Submodule.span_le.mpr ?_) fun y hy => ?_
-  · rintro _ ⟨j, rfl⟩
-    exact orderedConeBasisVec_mem_hyperplane d j
-  · rw [← sum_orderedConeBasisVec_eq hy]
-    exact Submodule.sum_mem _ fun j _ =>
-      Submodule.smul_mem _ _ (Submodule.subset_span (mem_range_self j))
+  refine le_antisymm (Submodule.span_le.mpr fun _ ⟨j, hj⟩ => hj ▸
+    orderedConeBasisVec_mem_hyperplane d j) fun y hy => ?_
+  rw [← sum_orderedConeBasisVec_eq hy]
+  exact Submodule.sum_mem _ fun j _ =>
+    Submodule.smul_mem _ _ (Submodule.subset_span (mem_range_self j))
 
 /-- The canonical basis `e_j + e_{d+1}` (`j : Fin (d + 1)`) of the linear span of
 `orderedCone d` (Gamburd–Magee–Ronan 2019, p. 756). -/
@@ -692,7 +554,6 @@ def orderedConeSpanBasis (d : ℕ) :
 @[simp]
 theorem coe_orderedConeSpanBasis_apply (d : ℕ) (j : Fin (d + 1)) :
     ((orderedConeSpanBasis d j : Submodule.span ℝ (orderedCone d)) : Fin (d + 2) → ℝ) =
-      orderedConeBasisVec d j := by
-  simp [orderedConeSpanBasis]
+      orderedConeBasisVec d j := by simp [orderedConeSpanBasis]
 
 end TauCeti.MarkoffHurwitz
