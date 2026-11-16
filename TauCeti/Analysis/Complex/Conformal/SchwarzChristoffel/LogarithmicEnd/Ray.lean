@@ -63,7 +63,6 @@ theorem tendsto_schwarzChristoffelBoundary_cobounded_of_prevertex_sum_eq_neg_one
     simp [Finset.filter_eq_empty_iff.mpr (fun i _ => hx i)]
   have hB := (tendsto_schwarzChristoffelPrimitive_boundary a e z₀ x
     (by rw [hsum]; norm_num)).norm
-  have := Real.nhdsWithin_upperHalfPlaneSet_neBot x
   have hbound : R + 1 ≤ ‖schwarzChristoffelBoundary a e z₀ x‖ := by
     apply ge_of_tendsto hB
     filter_upwards [self_mem_nhdsWithin,
