@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Support
+public import TauCeti.Topology.OpenPartialHomeomorph.Basic
 public import Mathlib.Analysis.Distribution.TestFunction
 
 /-!
@@ -316,28 +317,22 @@ omit [T2Space M] in
 /-- Read a smooth bundle section supported in a compact subset `K ⊆ c.source` through the chart `c`
 and bundle frame `t`, obtaining a native test function supported in `c '' K`. -/
 def chartTestSupportedIn {K : Compacts M} (hK : (K : Set M) ⊆ c.source) :
-    supportedIn I F n V K →ₗ[ℝ]
-      𝓓^{n}_{⟨c '' K, K.isCompact.image_of_continuousOn (c.continuousOn.mono hK)⟩}(E, F) where
+    supportedIn I F n V K →ₗ[ℝ] 𝓓^{n}_{c.compactsImage K hK}(E, F) where
   toFun s :=
     ⟨coordTestFun t c s.1,
       contDiff_coordTestFun t c hc_symm hct
         (K.isCompact.of_isClosed_subset s.1.isClosed_tsupport (mem_supportedIn.1 s.2))
         ((mem_supportedIn.1 s.2).trans hK),
-      fun _ hy ↦ coordTestFun_eq_zero_of_notMem_image t c (mem_supportedIn.1 s.2) hy⟩
+      fun _ hy ↦ coordTestFun_eq_zero_of_notMem_image t c (mem_supportedIn.1 s.2)
+        (by simpa only [OpenPartialHomeomorph.coe_compactsImage, Set.mem_compl_iff] using hy)⟩
   map_add' s₁ s₂ := by
     ext y
-    rw [FunLike.coe_add, Pi.add_apply, ← ContDiffMapSupportedIn.toFun_eq_coe,
-      ← ContDiffMapSupportedIn.toFun_eq_coe, ← ContDiffMapSupportedIn.toFun_eq_coe]
-    by_cases hy : y ∈ c.target
-    · simp [coordTestFun_of_mem t c _ hy]
-    · simp [coordTestFun_of_notMem t c _ hy]
+    simp_rw [_root_.add_apply, ← ContDiffMapSupportedIn.toFun_eq_coe]
+    by_cases hy : y ∈ c.target <;> simp [coordTestFun, hy]
   map_smul' a s := by
     ext y
-    rw [RingHom.id_apply, FunLike.coe_smul, Pi.smul_apply, ← ContDiffMapSupportedIn.toFun_eq_coe,
-      ← ContDiffMapSupportedIn.toFun_eq_coe]
-    by_cases hy : y ∈ c.target
-    · simp [coordTestFun_of_mem t c _ hy]
-    · simp [coordTestFun_of_notMem t c _ hy]
+    simp_rw [RingHom.id_apply, _root_.smul_apply, ← ContDiffMapSupportedIn.toFun_eq_coe]
+    by_cases hy : y ∈ c.target <;> simp [coordTestFun, hy]
 
 omit [T2Space M] in
 /-- On the chart target, chart extraction reads the section value in the defining frame. -/
@@ -375,14 +370,14 @@ theorem tsupport_chartTestSupportedIn {K : Compacts M} (hK : (K : Set M) ⊆ c.s
     ((mem_supportedIn.1 s.2).trans hK)
 
 /-- Re-extending a chart-extracted section recovers the original section. -/
+@[simp]
 theorem chartTestSection_ofSupportedIn_chartTestSupportedIn
     (hc : ContMDiffOn I 𝓘(ℝ, E) n c c.source) {K : Compacts M} (hK : (K : Set M) ⊆ c.source)
     (s : supportedIn I F n V K) :
     t.chartTestSection c hc hct
         (TestFunction.ofSupportedIn
           (Ω := ⟨c.target, c.open_target⟩)
-          (K := ⟨c '' K, K.isCompact.image_of_continuousOn (c.continuousOn.mono hK)⟩)
-          (image_subset_iff.2 fun _ hx ↦ c.map_source (hK hx))
+          (c.compactsImage_subset_target K hK)
           (t.chartTestSupportedIn c hc_symm hct hK s)) =
       ofSupportedIn K s := by
   apply Subtype.ext
@@ -394,28 +389,34 @@ theorem chartTestSection_ofSupportedIn_chartTestSupportedIn
   · rw [chartTestSection_apply_of_notMem t c hc hct _ hx, ofSupportedIn_apply]
     exact (s.1.eq_zero_of_notMem_tsupport fun h ↦ hx (hK (mem_supportedIn.1 s.2 h))).symm
 
-/-- Extracting a chart-extended test function recovers the original test function. -/
-theorem chartTestSupportedIn_chartTestSection_ofSupportedIn
-    (hc : ContMDiffOn I 𝓘(ℝ, E) n c c.source) {K : Compacts E} (hK : (K : Set E) ⊆ c.target)
-    (φ : 𝓓^{n}_{K}(E, F)) :
-    let K_M : Compacts M := ⟨c.symm '' K, K.isCompact.image_of_continuousOn
-      (c.continuousOn_symm.mono hK)⟩
-    let hKM : (K_M : Set M) ⊆ c.source := image_subset_iff.2 fun _ hy ↦ c.map_target (hK hy)
-    let s : supportedIn I F n V K_M :=
-      ⟨(t.chartTestSection c hc hct (TestFunction.ofSupportedIn (Ω := ⟨c.target, c.open_target⟩)
-          hK φ)).1,
-        t.chartTestSection_mem_supportedIn c hc hct _ (by
-          rw [TestFunction.coe_ofSupportedIn]
-          exact φ.tsupport_subset)⟩
-    ⇑(t.chartTestSupportedIn c hc_symm hct hKM s) = ⇑φ := by
-  intro K_M hKM s
-  funext y
+/-- Extracting a chart-extended test function into any compact stage `L ⊆ c.source` containing its
+support recovers the original test function pointwise. -/
+@[simp]
+theorem chartTestSupportedIn_chartTestSection_apply
+    (hc : ContMDiffOn I 𝓘(ℝ, E) n c c.source) {L : Compacts M} (hL : (L : Set M) ⊆ c.source)
+    (φ : 𝓓^{n}(⟨c.target, c.open_target⟩, F))
+    (hmem : (t.chartTestSection c hc hct φ).1 ∈ supportedIn I F n V L) (y : E) :
+    t.chartTestSupportedIn c hc_symm hct hL ⟨(t.chartTestSection c hc hct φ).1, hmem⟩ y =
+      φ y := by
   by_cases hy : y ∈ c.target
-  · rw [chartTestSupportedIn_apply_of_mem t c hc_symm hct hKM s hy,
-      t.continuousLinearMapAt_chartTestSection c hc hct _ (c.map_target hy),
-      c.right_inv hy, TestFunction.coe_ofSupportedIn]
-  · rw [chartTestSupportedIn_apply_of_notMem t c hc_symm hct hKM s hy]
-    exact (φ.zero_on_compl fun h ↦ hy (hK h)).symm
+  · rw [chartTestSupportedIn_apply_of_mem t c hc_symm hct hL _ hy,
+      t.continuousLinearMapAt_chartTestSection c hc hct φ (c.map_target hy), c.right_inv hy]
+  · rw [chartTestSupportedIn_apply_of_notMem t c hc_symm hct hL _ hy, φ.zero_on_compl hy,
+      Pi.zero_apply]
+
+/-- Extracting a chart-extended test function into any compact stage `L ⊆ c.source` containing its
+support, and re-embedding into `𝓓^{n}(c.target, F)`, recovers the original test function. -/
+@[simp]
+theorem ofSupportedIn_chartTestSupportedIn_chartTestSection
+    (hc : ContMDiffOn I 𝓘(ℝ, E) n c c.source) {L : Compacts M} (hL : (L : Set M) ⊆ c.source)
+    (φ : 𝓓^{n}(⟨c.target, c.open_target⟩, F))
+    (hmem : (t.chartTestSection c hc hct φ).1 ∈ supportedIn I F n V L) :
+    TestFunction.ofSupportedIn (Ω := ⟨c.target, c.open_target⟩)
+      (c.compactsImage_subset_target L hL)
+      (t.chartTestSupportedIn c hc_symm hct hL ⟨(t.chartTestSection c hc hct φ).1, hmem⟩) =
+      φ := by
+  ext y
+  simp
 
 omit [T2Space M] in
 /-- In a single global chart, reading a compactly supported section in the defining frame and chart
@@ -426,31 +427,24 @@ def chartTestCoords (hsource : c.source = univ) :
     let K : Compacts M := ⟨s.1.tsupport, mem_compactlySupported.1 s.2⟩
     have hK : (K : Set M) ⊆ c.source := hsource.symm ▸ subset_univ _
     TestFunction.ofSupportedIn (Ω := ⟨c.target, c.open_target⟩)
-      (K := ⟨c '' K, K.isCompact.image_of_continuousOn (c.continuousOn.mono hK)⟩)
-      (image_subset_iff.2 fun _ hx ↦ c.map_source (hK hx))
+      (c.compactsImage_subset_target K hK)
       (t.chartTestSupportedIn c hc_symm hct hK ⟨s.1, mem_supportedIn.2 Subset.rfl⟩)
   map_add' s₁ s₂ := by
     ext y
-    rw [FunLike.coe_add, Pi.add_apply, TestFunction.coe_ofSupportedIn,
-      TestFunction.coe_ofSupportedIn, TestFunction.coe_ofSupportedIn]
     by_cases hy : y ∈ c.target
-    · rw [chartTestSupportedIn_apply_of_mem _ _ _ _ _ _ hy,
-        chartTestSupportedIn_apply_of_mem _ _ _ _ _ _ hy,
-        chartTestSupportedIn_apply_of_mem _ _ _ _ _ _ hy]
-      simp [map_add]
-    · rw [chartTestSupportedIn_apply_of_notMem _ _ _ _ _ _ hy,
-        chartTestSupportedIn_apply_of_notMem _ _ _ _ _ _ hy,
-        chartTestSupportedIn_apply_of_notMem _ _ _ _ _ _ hy, add_zero]
+    · simp only [FunLike.coe_add, Pi.add_apply, TestFunction.coe_ofSupportedIn,
+        chartTestSupportedIn_apply_of_mem, hy, Submodule.coe_add, ContMDiffSection.coe_add, map_add]
+    · simp only [FunLike.coe_add, Pi.add_apply, TestFunction.coe_ofSupportedIn,
+        chartTestSupportedIn_apply_of_notMem, hy, not_false_eq_true, add_zero]
   map_smul' a s := by
     ext y
-    rw [RingHom.id_apply, FunLike.coe_smul, Pi.smul_apply, TestFunction.coe_ofSupportedIn,
-      TestFunction.coe_ofSupportedIn]
     by_cases hy : y ∈ c.target
-    · rw [chartTestSupportedIn_apply_of_mem _ _ _ _ _ _ hy,
-        chartTestSupportedIn_apply_of_mem _ _ _ _ _ _ hy]
-      simp [map_smul]
-    · rw [chartTestSupportedIn_apply_of_notMem _ _ _ _ _ _ hy,
-        chartTestSupportedIn_apply_of_notMem _ _ _ _ _ _ hy, smul_zero]
+    · simp only [FunLike.coe_smul, Pi.smul_apply, RingHom.id_apply,
+        TestFunction.coe_ofSupportedIn, chartTestSupportedIn_apply_of_mem, hy,
+        Submodule.coe_smul, ContMDiffSection.coe_smul, map_smul]
+    · simp only [FunLike.coe_smul, Pi.smul_apply, RingHom.id_apply,
+        TestFunction.coe_ofSupportedIn, chartTestSupportedIn_apply_of_notMem, hy, not_false_eq_true,
+        smul_zero]
 
 omit [T2Space M] in
 /-- On the chart target, `chartTestCoords` reads the section value in the defining frame. -/
@@ -460,7 +454,7 @@ theorem chartTestCoords_apply_of_mem (hsource : c.source = univ)
     t.chartTestCoords c hc_symm hct hsource s y =
       t.continuousLinearMapAt ℝ (c.symm y) (s.1 (c.symm y)) := by
   rw [chartTestCoords, LinearMap.coe_mk, AddHom.coe_mk, TestFunction.coe_ofSupportedIn,
-    chartTestSupportedIn_apply_of_mem _ _ _ _ _ _ hy]
+    t.chartTestSupportedIn_apply_of_mem (hy := hy)]
 
 omit [T2Space M] in
 /-- Outside the chart target, `chartTestCoords` vanishes. -/
@@ -469,7 +463,16 @@ theorem chartTestCoords_apply_of_notMem (hsource : c.source = univ)
     (s : compactlySupported I F n V) {y : E} (hy : y ∉ c.target) :
     t.chartTestCoords c hc_symm hct hsource s y = 0 := by
   rw [chartTestCoords, LinearMap.coe_mk, AddHom.coe_mk, TestFunction.coe_ofSupportedIn,
-    chartTestSupportedIn_apply_of_notMem _ _ _ _ _ _ hy]
+    t.chartTestSupportedIn_apply_of_notMem (hy := hy)]
+
+omit [T2Space M] in
+/-- Evaluated at a chart coordinate `c x`, global chart extraction recovers the frame coefficient
+at `x`. -/
+theorem chartTestCoords_apply_chart (hsource : c.source = univ)
+    (s : compactlySupported I F n V) (x : M) :
+    t.chartTestCoords c hc_symm hct hsource s (c x) = t.continuousLinearMapAt ℝ x (s.1 x) := by
+  have hx : x ∈ c.source := hsource.symm ▸ mem_univ x
+  rw [chartTestCoords_apply_of_mem t c hc_symm hct hsource s (c.map_source hx), c.left_inv hx]
 
 omit [T2Space M] in
 /-- Global chart extraction preserves closed support, transported by the chart. -/
@@ -478,5 +481,42 @@ theorem tsupport_chartTestCoords (hsource : c.source = univ) (s : compactlySuppo
     _root_.tsupport (t.chartTestCoords c hc_symm hct hsource s) = c '' s.1.tsupport := by
   rw [chartTestCoords, LinearMap.coe_mk, AddHom.coe_mk, TestFunction.coe_ofSupportedIn,
     tsupport_chartTestSupportedIn]
+
+omit [T2Space M] in
+/-- Global chart extraction agrees on each fixed-compact stage with `chartTestSupportedIn`
+composed with `TestFunction.ofSupportedIn`. -/
+theorem chartTestCoords_ofSupportedIn (hsource : c.source = univ) {K : Compacts M}
+    (s : supportedIn I F n V K) :
+    t.chartTestCoords c hc_symm hct hsource (ofSupportedIn K s) =
+      TestFunction.ofSupportedIn (Ω := ⟨c.target, c.open_target⟩)
+        (c.compactsImage_subset_target K (hsource.symm ▸ subset_univ _))
+        (t.chartTestSupportedIn c hc_symm hct (hsource.symm ▸ subset_univ _) s) := by
+  ext y
+  by_cases hy : y ∈ c.target <;> simp [hy]
+
+/-- Extracting a chart-extended test function in a single global chart recovers the original
+test function. -/
+@[simp]
+theorem chartTestCoords_chartTestSection (hc : ContMDiffOn I 𝓘(ℝ, E) n c c.source)
+    (hsource : c.source = univ) (φ : 𝓓^{n}(⟨c.target, c.open_target⟩, F)) :
+    t.chartTestCoords c hc_symm hct hsource (t.chartTestSection c hc hct φ) = φ := by
+  ext y
+  by_cases hy : y ∈ c.target
+  · rw [chartTestCoords_apply_of_mem t c hc_symm hct hsource _ hy,
+      t.continuousLinearMapAt_chartTestSection c hc hct φ (c.map_target hy), c.right_inv hy]
+  · rw [chartTestCoords_apply_of_notMem t c hc_symm hct hsource _ hy, φ.zero_on_compl hy,
+      Pi.zero_apply]
+
+/-- Re-extending a globally chart-extracted section recovers the original section. -/
+@[simp]
+theorem chartTestSection_chartTestCoords (hc : ContMDiffOn I 𝓘(ℝ, E) n c c.source)
+    (hsource : c.source = univ) (s : compactlySupported I F n V) :
+    t.chartTestSection c hc hct (t.chartTestCoords c hc_symm hct hsource s) = s := by
+  apply Subtype.ext
+  ext x
+  have hx : x ∈ c.source := hsource.symm ▸ mem_univ x
+  rw [chartTestSection_apply_of_mem t c hc hct _ hx,
+    chartTestCoords_apply_chart t c hc_symm hct hsource s x,
+    t.symmL_continuousLinearMapAt (hct hx)]
 
 end Bundle.Trivialization

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Topology
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.Support
 public import Mathlib.Geometry.Manifold.VectorBundle.Pullback
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Restriction
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.CLMApply
@@ -18,6 +19,9 @@ import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 The compact derivative topology on native sections is independent of the covering smooth
 frame system. Changes of frame act by the actual smooth transition matrix, including its
 higher derivatives. Open-cover locality is taken in the existing weak Whitney topology.
+Pointwise multiplication by a `C^n` scalar function is also continuous in any frame topology
+and on every fixed-support stage (`ContMDiffSection.continuous_smulLinearMap_frameTopology`,
+`ContMDiffSection.continuous_smulSupportedIn_frameTopology`).
 -/
 
 public noncomputable section
@@ -196,5 +200,53 @@ theorem continuous_restrict_frameTopology (W : Opens M) :
   erw [Bundle.Trivialization.frameCoordinates_apply,
     Bundle.Trivialization.pullback_apply, ContMDiffSection.restrict_apply]
   rfl
+
+end ContMDiffSection
+
+namespace ContMDiffSection
+
+section SmulFrameTopology
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E H M : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  [TopologicalSpace M] [ChartedSpace H M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {V : M → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)]
+  [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
+  [FiberBundle F V] [VectorBundle 𝕜 F V]
+  {n : ℕ∞ω} [ContMDiffVectorBundle n F V I] [IsManifold I n M]
+  {ι : Type*} (e : ι → Trivialization F (π F V))
+  [∀ i, MemTrivializationAtlas (e i)]
+  (U : ι → Opens M) (hU : ∀ i, (U i : Set M) ⊆ (e i).baseSet)
+
+/-- Multiplication by a fixed `C^n` scalar function is continuous in the compact derivative
+frame topology. No local compactness or covering hypothesis is required. -/
+theorem continuous_smulLinearMap_frameTopology (f : C^n⟮I, M; 𝕜⟯) :
+    letI := frameTopology (I := I) (n := n) e U hU
+    Continuous (smulLinearMap (I := I) (F := F) (V := V) (n := n) f) := by
+  let := frameTopology (I := I) (n := n) e U hU
+  refine (continuous_frameTopology_iff_frameCoordinates e U hU).2 fun i ↦ ?_
+  let A : C^n⟮I, U i; 𝓘(𝕜, F →L[𝕜] F), F →L[𝕜] F⟯ :=
+    ⟨fun x ↦ f x • ContinuousLinearMap.id 𝕜 F,
+      (f.contMDiff.comp contMDiff_subtype_val).smul contMDiff_const⟩
+  refine ((ContMDiffMap.continuous_clmApplyLinearMap A).comp
+    (continuous_frameCoordinates e U hU i)).congr fun s ↦ ?_
+  ext x
+  rw [Function.comp_apply, ContMDiffMap.clmApplyLinearMap_apply]
+  simp only [Trivialization.frameCoordinates_apply, smulLinearMap_eq_smul, smul_apply, A,
+    ContMDiffMap.coeFn_mk, _root_.smul_apply, ContinuousLinearMap.id_apply]
+  exact ((e i).linear 𝕜 (hU i x.2)).map_smul (f x) (s x) |>.symm
+
+/-- Multiplication by a `C^n` scalar function is continuous on every fixed-support stage. -/
+theorem continuous_smulSupportedIn_frameTopology (f : C^n⟮I, M; 𝕜⟯) (K : Set M) :
+    letI := frameTopology (I := I) (n := n) e U hU
+    Continuous (smulSupportedIn (I := I) (F := F) (V := V) (n := n) f K) := by
+  let := frameTopology (I := I) (n := n) e U hU
+  refine continuous_induced_rng.2 <|
+    ((continuous_smulLinearMap_frameTopology e U hU f).comp continuous_subtype_val).congr fun s ↦ ?_
+  exact (smulLinearMap_eq_smul f s.1).trans (coe_smulSupportedIn f K s).symm
+
+end SmulFrameTopology
 
 end ContMDiffSection

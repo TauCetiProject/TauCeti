@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import Mathlib.Geometry.Manifold.ContMDiffMap
 public import Mathlib.Geometry.Manifold.VectorBundle.Basic
+public import TauCeti.Geometry.Manifold.ExtChartAt
 import TauCeti.Geometry.Manifold.ContMDiff.Atlas
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Submersion
@@ -56,6 +57,9 @@ section.
 * `Bundle.Trivialization.isOpen_interior_extChartAt_target_inter_symm_preimage_baseSet`: the
   interior of an extended chart target intersected with the inverse-chart preimage of a
   trivialization's base set is open.
+* `Bundle.Trivialization.restrExtChartAt`, `Bundle.Trivialization.contMDiffOn_restrExtChartAt`,
+  `Bundle.Trivialization.contMDiffOn_restrExtChartAt_symm`: on a boundaryless manifold, the
+  extended chart at `x` restricted to `e.baseSet` is a `C^n` coordinate chart subordinate to `e`.
 * `TauCeti.contDiffOn_trivialization_comp_chart_symm_of_contMDiff`: the expression of a `C^n`
   section in a chart of the maximal atlas and an atlas trivialization is `C^n`.
 -/
@@ -337,6 +341,7 @@ end Bundle.Trivialization
 namespace Bundle.Trivialization
 
 open Set
+open scoped ContDiff
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {EB : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB]
@@ -351,6 +356,76 @@ theorem isOpen_interior_extChartAt_target_inter_symm_preimage_baseSet
     IsOpen (interior (extChartAt IB x).target ∩ (extChartAt IB x).symm ⁻¹' e.baseSet) :=
   ((continuousOn_extChartAt_symm x).mono interior_subset).isOpen_inter_preimage
     isOpen_interior e.open_baseSet
+
+/-- On a boundaryless manifold, the extended chart at `x` restricted to the open base set of a
+trivialization `e`. -/
+def restrExtChartAt (e : Trivialization F p) (IB : ModelWithCorners 𝕜 EB HB) [IB.Boundaryless]
+    (x : B) : OpenPartialHomeomorph B EB :=
+  ((chartAt HB x).extendTrans IB (Homeomorph.refl EB)).restrOpen e.baseSet e.open_baseSet
+
+/-- The source of `e.restrExtChartAt IB x` is `(chartAt HB x).source ∩ e.baseSet`. -/
+@[simp]
+theorem restrExtChartAt_source (e : Trivialization F p) (IB : ModelWithCorners 𝕜 EB HB)
+    [IB.Boundaryless] (x : B) :
+    (e.restrExtChartAt IB x).source = (chartAt HB x).source ∩ e.baseSet := by
+  simp [restrExtChartAt]
+
+/-- The target of `e.restrExtChartAt IB x` is
+`(extChartAt IB x).target ∩ (extChartAt IB x).symm ⁻¹' e.baseSet`. -/
+@[simp]
+theorem restrExtChartAt_target (e : Trivialization F p) (IB : ModelWithCorners 𝕜 EB HB)
+    [IB.Boundaryless] (x : B) :
+    (e.restrExtChartAt IB x).target =
+      (extChartAt IB x).target ∩ (extChartAt IB x).symm ⁻¹' e.baseSet := by
+  ext v
+  simp [restrExtChartAt, extChartAt, OpenPartialHomeomorph.restrOpen_toPartialEquiv,
+    IB.range_eq_univ]
+
+/-- Applying `e.restrExtChartAt IB x` agrees with the extended chart `extChartAt IB x`. -/
+@[simp]
+theorem restrExtChartAt_apply (e : Trivialization F p) (IB : ModelWithCorners 𝕜 EB HB)
+    [IB.Boundaryless] (x y : B) :
+    e.restrExtChartAt IB x y = extChartAt IB x y := by
+  simp [restrExtChartAt, extChartAt]
+
+/-- Applying the partial inverse of `e.restrExtChartAt IB x` agrees with
+`(extChartAt IB x).symm`. -/
+@[simp]
+theorem restrExtChartAt_symm_apply (e : Trivialization F p) (IB : ModelWithCorners 𝕜 EB HB)
+    [IB.Boundaryless] (x : B) (v : EB) :
+    (e.restrExtChartAt IB x).symm v = (extChartAt IB x).symm v := by
+  simp [restrExtChartAt, extChartAt]
+
+/-- The source of `e.restrExtChartAt IB x` is contained in `e.baseSet`. -/
+theorem restrExtChartAt_source_subset_baseSet (e : Trivialization F p)
+    (IB : ModelWithCorners 𝕜 EB HB) [IB.Boundaryless] (x : B) :
+    (e.restrExtChartAt IB x).source ⊆ e.baseSet := by
+  rw [restrExtChartAt_source]
+  exact inter_subset_right
+
+/-- If `x ∈ e.baseSet`, then `x` lies in the source of `e.restrExtChartAt IB x`. -/
+theorem mem_restrExtChartAt_source (e : Trivialization F p) (IB : ModelWithCorners 𝕜 EB HB)
+    [IB.Boundaryless] {x : B} (hx : x ∈ e.baseSet) :
+    x ∈ (e.restrExtChartAt IB x).source := by
+  rw [restrExtChartAt_source]
+  exact ⟨mem_chart_source HB x, hx⟩
+
+/-- On a boundaryless `C^n` manifold, `e.restrExtChartAt IB x` is `C^n` on its source. -/
+theorem contMDiffOn_restrExtChartAt {n : ℕ∞ω} [IB.Boundaryless] [IsManifold IB n B]
+    (e : Trivialization F p) (x : B) :
+    ContMDiffOn IB 𝓘(𝕜, EB) n (e.restrExtChartAt IB x) (e.restrExtChartAt IB x).source := by
+  rw [restrExtChartAt, OpenPartialHomeomorph.coe_restrOpen, OpenPartialHomeomorph.restrOpen_source]
+  exact ((chartAt HB x).contMDiffOn_extendTrans (I := IB)
+    (IsManifold.chart_mem_maximalAtlas x) contDiff_id).mono inter_subset_left
+
+/-- On a boundaryless `C^n` manifold, the partial inverse of `e.restrExtChartAt IB x` is `C^n` on
+its target. -/
+theorem contMDiffOn_restrExtChartAt_symm {n : ℕ∞ω} [IB.Boundaryless] [IsManifold IB n B]
+    (e : Trivialization F p) (x : B) :
+    ContMDiffOn 𝓘(𝕜, EB) IB n (e.restrExtChartAt IB x).symm (e.restrExtChartAt IB x).target := by
+  rw [restrExtChartAt_target]
+  exact ((contMDiffOn_extChartAt_symm (I := IB) x).mono inter_subset_left).congr fun y _ ↦
+    e.restrExtChartAt_symm_apply IB x y
 
 end Bundle.Trivialization
 

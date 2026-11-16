@@ -53,30 +53,6 @@ variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [LocallyCo
   (U : ι → Opens M) (hU : ∀ i, (U i : Set M) ⊆ (e i).baseSet)
   (hcover : ∀ x : M, ∃ i, x ∈ U i)
 
-private def chartTestSupportedInToTarget {K : Compacts E} (hK : (K : Set E) ⊆ c.target) :
-    supportedIn I F n V (c.symm '' K) →ₗ[ℝ] 𝓓^{n}_{K}(E, F) :=
-  let K_M : Compacts M :=
-    ⟨c.symm '' K, K.isCompact.image_of_continuousOn (c.continuousOn_symm.mono hK)⟩
-  have hKM : (K_M : Set M) ⊆ c.source := image_subset_iff.2 fun _ hy ↦ c.map_target (hK hy)
-  have hKe : c '' (K_M : Set M) = K := by
-    ext y
-    simp only [K_M, Compacts.coe_mk, mem_image]
-    exact ⟨fun ⟨_, ⟨z, hz, rfl⟩, hzy⟩ ↦ hzy ▸ (c.right_inv (hK hz)).symm ▸ hz,
-      fun hy ↦ ⟨c.symm y, ⟨y, hy, rfl⟩, c.right_inv (hK hy)⟩⟩
-  { toFun s :=
-      ⟨t.chartTestSupportedIn c hc_symm hct hKM s,
-        (t.chartTestSupportedIn c hc_symm hct hKM s).contDiff,
-        fun y hy ↦ (t.chartTestSupportedIn c hc_symm hct hKM s).zero_on_compl
-          (by simpa only [Compacts.coe_mk, hKe] using hy)⟩
-    map_add' s₁ s₂ := by
-      ext y
-      exact congrFun (congrArg DFunLike.coe
-        ((t.chartTestSupportedIn c hc_symm hct hKM).map_add s₁ s₂)) y
-    map_smul' a s := by
-      ext y
-      exact congrFun (congrArg DFunLike.coe
-        ((t.chartTestSupportedIn c hc_symm hct hKM).map_smul a s)) y }
-
 include hcover in
 /-- On any fixed compact subset `K` of a smooth chart target, chart extension is a continuous
 linear equivalence between `𝓓^{n}_{K}(E, F)` and the fixed-support stage `c.symm '' K` in the
@@ -86,57 +62,53 @@ def chartTestSectionSupportedInCLE {K : Compacts E} (hK : (K : Set E) ⊆ c.targ
     𝓓^{n}_{K}(E, F) ≃L[ℝ] supportedIn I F n V (c.symm '' K) :=
   letI := frameTopology (I := I) (n := n) e U hU
   let Ω : Opens E := ⟨c.target, c.open_target⟩
-  let K_M : Compacts M :=
-    ⟨c.symm '' K, K.isCompact.image_of_continuousOn (c.continuousOn_symm.mono hK)⟩
-  have hKM : (K_M : Set M) ⊆ c.source := image_subset_iff.2 fun _ hy ↦ c.map_target (hK hy)
+  have hKs : (K : Set E) ⊆ c.symm.source := c.symm_source.symm ▸ hK
+  let K_M : Compacts M := c.symm.compactsImage K hKs
+  have hK_eq : (K_M : Set M) = c.symm '' K := c.symm.coe_compactsImage K hKs
+  have hKM : (K_M : Set M) ⊆ c.source := c.symm_target ▸ c.symm.compactsImage_subset_target K hKs
+  have hK_le : c.compactsImage K_M hKM ≤ K := (c.compactsImage_compactsImage_symm K hKs hKM).le
+  let toKM : supportedIn I F n V (c.symm '' K) → supportedIn I F n V K_M :=
+    fun s ↦ ⟨s.1, hK_eq.symm ▸ s.2⟩
   let toFunLM : 𝓓^{n}_{K}(E, F) →ₗ[ℝ] supportedIn I F n V (c.symm '' K) :=
-    { toFun φ := ⟨(t.chartTestSection c hc hct (TestFunction.ofSupportedIn (Ω := Ω) hK φ)).1,
-        t.chartTestSection_mem_supportedIn c hc hct _ (by
-          rw [TestFunction.coe_ofSupportedIn]
-          exact φ.tsupport_subset)⟩
-      map_add' φ ψ := Subtype.ext <| by
-        have hadd : TestFunction.ofSupportedIn (Ω := Ω) hK (φ + ψ) =
-            TestFunction.ofSupportedIn (Ω := Ω) hK φ +
-              TestFunction.ofSupportedIn (Ω := Ω) hK ψ := by
-          ext y
-          simp
-        simp only [Submodule.coe_add, hadd]
-        exact congrArg Subtype.val ((t.chartTestSection c hc hct).map_add _ _)
-      map_smul' a φ := Subtype.ext <| by
-        have hsmul : TestFunction.ofSupportedIn (Ω := Ω) hK (a • φ) =
-            a • TestFunction.ofSupportedIn (Ω := Ω) hK φ := by
-          ext y
-          simp
-        simp only [RingHom.id_apply, SetLike.val_smul, hsmul]
-        exact congrArg Subtype.val ((t.chartTestSection c hc hct).map_smul a _) }
+    ((compactlySupported I F n V).subtype ∘ₗ t.chartTestSection c hc hct ∘ₗ
+        (TestFunction.ofSupportedInCLM ℝ (Ω := Ω) hK).toLinearMap).codRestrict
+      (supportedIn I F n V (c.symm '' K)) fun φ ↦ by
+        simpa only [LinearMap.comp_apply, Submodule.coe_subtype, ContinuousLinearMap.coe_coe,
+          TestFunction.coe_ofSupportedInCLM] using
+          t.chartTestSection_mem_supportedIn c hc hct _
+            (by simpa only [TestFunction.coe_ofSupportedIn] using φ.tsupport_subset)
   { toLinearMap := toFunLM
-    invFun := t.chartTestSupportedInToTarget c hc_symm hct hK
+    invFun s := ContDiffMapSupportedIn.monoCLM ℝ (t.chartTestSupportedIn c hc_symm hct hKM (toKM s))
     left_inv φ := by
       ext y
-      exact congrFun (t.chartTestSupportedIn_chartTestSection_ofSupportedIn c hc_symm hct hc hK φ) y
+      simp only [LinearMap.toFun_eq_coe, toFunLM, toKM,
+        ContDiffMapSupportedIn.monoCLM_apply, le_rfl, hK_le, and_self, ↓reduceIte,
+        LinearMap.codRestrict_apply, LinearMap.comp_apply, Submodule.coe_subtype,
+        ContinuousLinearMap.coe_coe, TestFunction.coe_ofSupportedInCLM,
+        chartTestSupportedIn_chartTestSection_apply, TestFunction.coe_ofSupportedIn]
     right_inv s := by
       apply Subtype.ext
-      have hre := t.chartTestSection_ofSupportedIn_chartTestSupportedIn c hc_symm hct hc hKM s
-      have heq : TestFunction.ofSupportedIn (Ω := Ω) hK
-          (t.chartTestSupportedInToTarget c hc_symm hct hK s) =
-          TestFunction.ofSupportedIn (Ω := Ω) (K := ⟨c '' (K_M : Set M), _⟩)
-            (image_subset_iff.2 fun _ hx ↦ c.map_source (hKM hx))
-            (t.chartTestSupportedIn c hc_symm hct hKM s) := by
+      have hre :=
+        t.chartTestSection_ofSupportedIn_chartTestSupportedIn c hc_symm hct hc hKM (toKM s)
+      have hmono :
+          TestFunction.ofSupportedIn (Ω := Ω) hK
+            (ContDiffMapSupportedIn.monoCLM ℝ
+              (t.chartTestSupportedIn c hc_symm hct hKM (toKM s))) =
+            TestFunction.ofSupportedIn (Ω := Ω) (c.compactsImage_subset_target K_M hKM)
+              (t.chartTestSupportedIn c hc_symm hct hKM (toKM s)) := by
         ext y
-        rfl
-      rw [LinearMap.toFun_eq_coe]
-      simpa only [toFunLM, LinearMap.coe_mk, AddHom.coe_mk, heq, ofSupportedIn_apply] using
+        simp [ContDiffMapSupportedIn.monoCLM_apply, hK_le]
+      simpa only [LinearMap.toFun_eq_coe, toFunLM, LinearMap.codRestrict_apply,
+        LinearMap.comp_apply, Submodule.coe_subtype, ContinuousLinearMap.coe_coe,
+        TestFunction.coe_ofSupportedInCLM, hmono, ofSupportedIn_apply] using
         congrArg Subtype.val hre
     continuous_toFun := Continuous.subtype_mk
       ((continuous_frameTopology_iff_frameCoordinates e U hU).2 fun i ↦
         t.continuous_frameCoordinates_chartTestSection_ofSupportedIn c hc hct hK (e i) (hU i)) _
-    continuous_invFun := by
-      have hcont := t.continuous_chartTestSupportedIn c hc_symm hct hKM e U hU hcover
-      refine (ContDiffMapSupportedIn.continuous_iff_comp_order_le _).2 fun m hm ↦ ?_
-      refine ((ContDiffMapSupportedIn.continuous_iff_comp_order_le _).1 hcont m hm).congr fun s ↦ ?_
-      ext y
-      simp only [Function.comp_apply, ContDiffMapSupportedIn.structureMapCLM_apply, hm]
-      rfl }
+    continuous_invFun :=
+      (ContDiffMapSupportedIn.monoCLM ℝ).continuous.comp
+        ((t.continuous_chartTestSupportedIn c hc_symm hct hKM e U hU hcover).comp
+          (Continuous.subtype_mk continuous_subtype_val _)) }
 
 /-- The forward map of `chartTestSectionSupportedInCLE` agrees with `chartTestSection`. -/
 @[simp]
@@ -145,7 +117,10 @@ theorem coe_chartTestSectionSupportedInCLE {K : Compacts E} (hK : (K : Set E) �
     letI := frameTopology (I := I) (n := n) e U hU
     ((t.chartTestSectionSupportedInCLE c hc hc_symm hct e U hU hcover hK φ).1 : Cₛ^n⟮I; F, V⟯) =
       (t.chartTestSection c hc hct
-        (TestFunction.ofSupportedIn (Ω := ⟨c.target, c.open_target⟩) hK φ)).1 := (rfl)
+        (TestFunction.ofSupportedIn (Ω := ⟨c.target, c.open_target⟩) hK φ)).1 := by
+  change (t.chartTestSection c hc hct
+    (TestFunction.ofSupportedInCLM ℝ (Ω := ⟨c.target, c.open_target⟩) hK φ)).1 = _
+  rw [TestFunction.coe_ofSupportedInCLM]
 
 /-- On the chart target, the inverse of `chartTestSectionSupportedInCLE` reads the section value in
 the defining frame. -/
@@ -155,10 +130,14 @@ theorem chartTestSectionSupportedInCLE_symm_apply_of_mem {K : Compacts E}
     (s : supportedIn I F n V (c.symm '' K)) {y : E} (hy : y ∈ c.target) :
     letI := frameTopology (I := I) (n := n) e U hU
     (t.chartTestSectionSupportedInCLE c hc hc_symm hct e U hU hcover hK).symm s y =
-      t.continuousLinearMapAt ℝ (c.symm y) (s.1 (c.symm y)) :=
-  t.chartTestSupportedIn_apply_of_mem c hc_symm hct
-    (K := ⟨c.symm '' K, K.isCompact.image_of_continuousOn (c.continuousOn_symm.mono hK)⟩)
-    (image_subset_iff.2 fun _ hz ↦ c.map_target (hK hz)) s hy
+      t.continuousLinearMapAt ℝ (c.symm y) (s.1 (c.symm y)) := by
+  have hKs : (K : Set E) ⊆ c.symm.source := c.symm_source.symm ▸ hK
+  have hKM : (c.symm.compactsImage K hKs : Set M) ⊆ c.source :=
+    c.symm_target ▸ c.symm.compactsImage_subset_target K hKs
+  change ContDiffMapSupportedIn.monoCLM ℝ
+    (t.chartTestSupportedIn c hc_symm hct hKM ⟨s.1, (c.symm.coe_compactsImage K hKs).symm ▸ s.2⟩)
+    y = _
+  simp [ContDiffMapSupportedIn.monoCLM_apply, hy]
 
 /-- Outside the chart target, the inverse of `chartTestSectionSupportedInCLE` vanishes. -/
 @[simp]
@@ -166,10 +145,37 @@ theorem chartTestSectionSupportedInCLE_symm_apply_of_notMem {K : Compacts E}
     (hK : (K : Set E) ⊆ c.target)
     (s : supportedIn I F n V (c.symm '' K)) {y : E} (hy : y ∉ c.target) :
     letI := frameTopology (I := I) (n := n) e U hU
-    (t.chartTestSectionSupportedInCLE c hc hc_symm hct e U hU hcover hK).symm s y = 0 :=
-  t.chartTestSupportedIn_apply_of_notMem c hc_symm hct
-    (K := ⟨c.symm '' K, K.isCompact.image_of_continuousOn (c.continuousOn_symm.mono hK)⟩)
-    (image_subset_iff.2 fun _ hz ↦ c.map_target (hK hz)) s hy
+    (t.chartTestSectionSupportedInCLE c hc hc_symm hct e U hU hcover hK).symm s y = 0 := by
+  have hKs : (K : Set E) ⊆ c.symm.source := c.symm_source.symm ▸ hK
+  have hKM : (c.symm.compactsImage K hKs : Set M) ⊆ c.source :=
+    c.symm_target ▸ c.symm.compactsImage_subset_target K hKs
+  change ContDiffMapSupportedIn.monoCLM ℝ
+    (t.chartTestSupportedIn c hc_symm hct hKM ⟨s.1, (c.symm.coe_compactsImage K hKs).symm ▸ s.2⟩)
+    y = 0
+  simp [ContDiffMapSupportedIn.monoCLM_apply, hy]
+
+/-- The inverse of `chartTestSectionSupportedInCLE` preserves closed support, transported by the
+chart. -/
+@[simp]
+theorem tsupport_chartTestSectionSupportedInCLE_symm {K : Compacts E}
+    (hK : (K : Set E) ⊆ c.target) (s : supportedIn I F n V (c.symm '' K)) :
+    letI := frameTopology (I := I) (n := n) e U hU
+    _root_.tsupport
+        ((t.chartTestSectionSupportedInCLE c hc hc_symm hct e U hU hcover hK).symm s) =
+      c '' s.1.tsupport := by
+  let := frameTopology (I := I) (n := n) e U hU
+  have hKs : (K : Set E) ⊆ c.symm.source := c.symm_source.symm ▸ hK
+  have hKM : (c.symm.compactsImage K hKs : Set M) ⊆ c.source :=
+    c.symm_target ▸ c.symm.compactsImage_subset_target K hKs
+  let s' : supportedIn I F n V (c.symm.compactsImage K hKs) :=
+    ⟨s.1, (c.symm.coe_compactsImage K hKs).symm ▸ s.2⟩
+  have hcoe :
+      ⇑((t.chartTestSectionSupportedInCLE c hc hc_symm hct e U hU hcover hK).symm s) =
+        ⇑(t.chartTestSupportedIn c hc_symm hct hKM s') := by
+    funext y
+    change ContDiffMapSupportedIn.monoCLM ℝ (t.chartTestSupportedIn c hc_symm hct hKM s') y = _
+    simp [ContDiffMapSupportedIn.monoCLM_apply]
+  rw [hcoe, tsupport_chartTestSupportedIn]
 
 section GlobalChart
 
@@ -187,19 +193,13 @@ theorem continuous_chartTestCoords :
   refine (continuous_compactlySupportedTopology_iff e U hU
     (t.chartTestCoords c hc_symm hct hsource)).2 fun K ↦ ?_
   have hK : (K : Set M) ⊆ c.source := hsource.symm ▸ subset_univ _
-  let K' : Compacts E := ⟨c '' K, K.isCompact.image_of_continuousOn (c.continuousOn.mono hK)⟩
-  have hK' : (K' : Set E) ⊆ c.target := image_subset_iff.2 fun _ hx ↦ c.map_source (hK hx)
-  refine ((TestFunction.ofSupportedInCLM ℝ (Ω := ⟨c.target, c.open_target⟩) hK').continuous.comp
-    (t.continuous_chartTestSupportedIn c hc_symm hct hK e U hU hcover)).congr fun s ↦ ?_
-  ext y
-  rw [Function.comp_apply, Function.comp_apply, TestFunction.coe_ofSupportedInCLM,
-    TestFunction.coe_ofSupportedIn]
-  by_cases hy : y ∈ c.target
-  · rw [chartTestSupportedIn_apply_of_mem _ _ _ _ _ _ hy,
-      chartTestCoords_apply_of_mem _ _ _ _ _ _ hy, ofSupportedIn_apply]
-  · rw [chartTestSupportedIn_apply_of_notMem _ _ _ _ _ _ hy,
-      chartTestCoords_apply_of_notMem _ _ _ _ _ _ hy]
+  refine ((TestFunction.ofSupportedInCLM ℝ (Ω := ⟨c.target, c.open_target⟩)
+      (c.compactsImage_subset_target K hK)).continuous.comp
+    (t.continuous_chartTestSupportedIn c hc_symm hct hK e U hU hcover)).congr fun s ↦ by
+      simpa only [Function.comp_apply, TestFunction.coe_ofSupportedInCLM] using
+        (t.chartTestCoords_ofSupportedIn c hc_symm hct hsource s).symm
 
+omit [T2Space M] in
 include hcover in
 /-- **Single-chart LF equivalence.** On a manifold covered by a single smooth chart subordinate to
 a smooth bundle frame, chart extension is a continuous linear equivalence between the native
@@ -208,25 +208,13 @@ sections with `compactlySupportedTopology`. -/
 def chartTestSectionCLE :
     letI := compactlySupportedTopology (I := I) (n := n) e U hU
     𝓓^{n}(⟨c.target, c.open_target⟩, F) ≃L[ℝ] compactlySupported I F n V :=
+  letI : T2Space M := T2Space.of_injective_continuous
+    (Set.injOn_univ.1 (hsource ▸ c.injOn)) (continuousOn_univ.1 (hsource ▸ c.continuousOn))
   letI := compactlySupportedTopology (I := I) (n := n) e U hU
   { toLinearMap := t.chartTestSection c hc hct
     invFun := t.chartTestCoords c hc_symm hct hsource
-    left_inv φ := by
-      ext y
-      rw [LinearMap.toFun_eq_coe]
-      by_cases hy : y ∈ c.target
-      · rw [chartTestCoords_apply_of_mem t c hc_symm hct hsource _ hy,
-          t.continuousLinearMapAt_chartTestSection c hc hct φ (c.map_target hy), c.right_inv hy]
-      · rw [chartTestCoords_apply_of_notMem t c hc_symm hct hsource _ hy]
-        exact (φ.zero_on_compl hy).symm
-    right_inv s := by
-      apply Subtype.ext
-      ext x
-      rw [LinearMap.toFun_eq_coe]
-      have hx : x ∈ c.source := hsource.symm ▸ mem_univ x
-      rw [chartTestSection_apply_of_mem t c hc hct _ hx,
-        chartTestCoords_apply_of_mem t c hc_symm hct hsource s (c.map_source hx),
-        c.left_inv hx, t.symmL_continuousLinearMapAt (hct hx)]
+    left_inv := t.chartTestCoords_chartTestSection c hc_symm hct hc hsource
+    right_inv := t.chartTestSection_chartTestCoords c hc_symm hct hc hsource
     continuous_toFun := t.continuous_chartTestSection c hc hct e U hU
     continuous_invFun := t.continuous_chartTestCoords c hc_symm hct e U hU hcover hsource }
 
@@ -237,14 +225,39 @@ theorem toLinearMap_chartTestSectionCLE :
     (t.chartTestSectionCLE c hc hc_symm hct e U hU hcover hsource).toLinearMap =
       t.chartTestSection c hc hct := (rfl)
 
+/-- Applying `chartTestSectionCLE` agrees with `chartTestSection`. -/
+theorem chartTestSectionCLE_eq_chartTestSection (φ : 𝓓^{n}(⟨c.target, c.open_target⟩, F)) :
+    letI := compactlySupportedTopology (I := I) (n := n) e U hU
+    t.chartTestSectionCLE c hc hc_symm hct e U hU hcover hsource φ =
+      t.chartTestSection c hc hct φ := (rfl)
+
+omit [T2Space M] in
+/-- The underlying linear map of the inverse of `chartTestSectionCLE` is `chartTestCoords`. -/
+@[simp]
+theorem toLinearMap_symm_chartTestSectionCLE :
+    letI := compactlySupportedTopology (I := I) (n := n) e U hU
+    (t.chartTestSectionCLE c hc hc_symm hct e U hU hcover hsource).toLinearEquiv.symm.toLinearMap =
+      t.chartTestCoords c hc_symm hct hsource := (rfl)
+
+omit [T2Space M] in
+/-- Applying the inverse of `chartTestSectionCLE` agrees with `chartTestCoords`. -/
+theorem chartTestSectionCLE_symm_eq_chartTestCoords (s : compactlySupported I F n V) :
+    letI := compactlySupportedTopology (I := I) (n := n) e U hU
+    (t.chartTestSectionCLE c hc hc_symm hct e U hU hcover hsource).symm s =
+      t.chartTestCoords c hc_symm hct hsource s := (rfl)
+
+omit [T2Space M] in
 /-- Evaluating `chartTestSectionCLE φ` at `x` applies the inverse frame to `φ (c x)`. -/
 @[simp]
 theorem chartTestSectionCLE_apply (φ : 𝓓^{n}(⟨c.target, c.open_target⟩, F)) (x : M) :
     letI := compactlySupportedTopology (I := I) (n := n) e U hU
     (t.chartTestSectionCLE c hc hc_symm hct e U hU hcover hsource φ).1 x =
-      t.symmL ℝ x (φ (c x)) :=
-  t.chartTestSection_apply_of_mem c hc hct φ (hsource.symm ▸ mem_univ x)
+      t.symmL ℝ x (φ (c x)) := by
+  have : T2Space M := T2Space.of_injective_continuous
+    (Set.injOn_univ.1 (hsource ▸ c.injOn)) (continuousOn_univ.1 (hsource ▸ c.continuousOn))
+  exact t.chartTestSection_apply_of_mem c hc hct φ (hsource.symm ▸ mem_univ x)
 
+omit [T2Space M] in
 /-- On the chart target, the inverse of `chartTestSectionCLE` reads the section value in the
 defining frame. -/
 @[simp]
@@ -255,6 +268,7 @@ theorem chartTestSectionCLE_symm_apply_of_mem (s : compactlySupported I F n V) {
       t.continuousLinearMapAt ℝ (c.symm y) (s.1 (c.symm y)) :=
   t.chartTestCoords_apply_of_mem c hc_symm hct hsource s hy
 
+omit [T2Space M] in
 /-- Outside the chart target, the inverse of `chartTestSectionCLE` vanishes. -/
 @[simp]
 theorem chartTestSectionCLE_symm_apply_of_notMem (s : compactlySupported I F n V) {y : E}
@@ -262,6 +276,26 @@ theorem chartTestSectionCLE_symm_apply_of_notMem (s : compactlySupported I F n V
     letI := compactlySupportedTopology (I := I) (n := n) e U hU
     (t.chartTestSectionCLE c hc hc_symm hct e U hU hcover hsource).symm s y = 0 :=
   t.chartTestCoords_apply_of_notMem c hc_symm hct hsource s hy
+
+omit [T2Space M] in
+/-- `chartTestSectionCLE` preserves closed support, transported by the inverse chart. -/
+@[simp]
+theorem tsupport_chartTestSectionCLE (φ : 𝓓^{n}(⟨c.target, c.open_target⟩, F)) :
+    letI := compactlySupportedTopology (I := I) (n := n) e U hU
+    (t.chartTestSectionCLE c hc hc_symm hct e U hU hcover hsource φ).1.tsupport =
+      c.symm '' _root_.tsupport φ := by
+  have : T2Space M := T2Space.of_injective_continuous
+    (Set.injOn_univ.1 (hsource ▸ c.injOn)) (continuousOn_univ.1 (hsource ▸ c.continuousOn))
+  exact t.tsupport_chartTestSection c hc hct φ
+
+omit [T2Space M] in
+/-- The inverse of `chartTestSectionCLE` preserves closed support, transported by the chart. -/
+@[simp]
+theorem tsupport_chartTestSectionCLE_symm (s : compactlySupported I F n V) :
+    letI := compactlySupportedTopology (I := I) (n := n) e U hU
+    _root_.tsupport ((t.chartTestSectionCLE c hc hc_symm hct e U hU hcover hsource).symm s) =
+      c '' s.1.tsupport :=
+  t.tsupport_chartTestCoords c hc_symm hct hsource s
 
 end GlobalChart
 
@@ -277,40 +311,6 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [LocallyCompac
   [FiberBundle F V] [VectorBundle ℝ F V]
   {n : ℕ∞} [ContMDiffVectorBundle n F V 𝓘(ℝ, E)]
 
-/-- `Opens.openPartialHomeomorphSubtypeCoe` with `target` definitionally equal to `(Ω : Set E)`. -/
-private def opensSubtypeChart (hΩ : Nonempty Ω) : OpenPartialHomeomorph Ω E where
-  toPartialEquiv := (Ω.openPartialHomeomorphSubtypeCoe hΩ).toPartialEquiv.copy Subtype.val
-    (Ω.openPartialHomeomorphSubtypeCoe_coe hΩ)
-    (Ω.openPartialHomeomorphSubtypeCoe hΩ).symm rfl univ
-    (Ω.openPartialHomeomorphSubtypeCoe_source hΩ) Ω
-    (Ω.openPartialHomeomorphSubtypeCoe_target hΩ)
-  open_source := isOpen_univ
-  open_target := Ω.isOpen
-  continuousOn_toFun := continuous_subtype_val.continuousOn
-  continuousOn_invFun := by
-    have h : ContinuousOn (Ω.openPartialHomeomorphSubtypeCoe hΩ).symm (Ω : Set E) := by
-      rw [← Ω.openPartialHomeomorphSubtypeCoe_target hΩ]
-      exact (Ω.openPartialHomeomorphSubtypeCoe hΩ).continuousOn_symm
-    exact h
-
-omit [NormedSpace ℝ E] [LocallyCompactSpace E] in
-private theorem opensSubtypeChart_source (hΩ : Nonempty Ω) :
-    (opensSubtypeChart hΩ).source = univ := rfl
-
-omit [LocallyCompactSpace E] in
-private theorem contMDiffOn_opensSubtypeChart (hΩ : Nonempty Ω) :
-    ContMDiffOn 𝓘(ℝ, E) 𝓘(ℝ, E) n (opensSubtypeChart hΩ) (opensSubtypeChart hΩ).source :=
-  contMDiff_subtype_val.contMDiffOn
-
-omit [LocallyCompactSpace E] in
-private theorem contMDiffOn_opensSubtypeChart_symm (hΩ : Nonempty Ω) :
-    ContMDiffOn 𝓘(ℝ, E) 𝓘(ℝ, E) n (opensSubtypeChart hΩ).symm (opensSubtypeChart hΩ).target := by
-  intro y hy
-  refine ((TauCeti.ContMDiffAt.subtypeVal_comp_iff Ω _ y).mp ?_).contMDiffWithinAt
-  refine contMDiffAt_id.congr_of_eventuallyEq ?_
-  filter_upwards [Ω.isOpen.mem_nhds hy] with z hz
-  exact (opensSubtypeChart hΩ).right_inv hz
-
 /-- On any open subset `Ω` of a locally compact normed space, a globally trivialized smooth vector
 bundle has compactly supported sections continuously linearly equivalent to `𝓓^{n}(Ω, F)`. -/
 def opensChartTestSectionCLE
@@ -323,9 +323,19 @@ def opensChartTestSectionCLE
   classical
   letI := compactlySupportedTopology (I := 𝓘(ℝ, E)) (n := n) e U hU
   by_cases hΩ : Nonempty Ω
-  · exact t.chartTestSectionCLE (opensSubtypeChart hΩ)
-      (contMDiffOn_opensSubtypeChart hΩ) (contMDiffOn_opensSubtypeChart_symm hΩ)
-      (ht.symm ▸ subset_univ _) e U hU hcover (opensSubtypeChart_source hΩ)
+  · let c := Ω.openPartialHomeomorphSubtypeCoe hΩ
+    have hΩ_eq : Ω = ⟨c.target, c.open_target⟩ :=
+      Opens.ext (Ω.openPartialHomeomorphSubtypeCoe_target hΩ).symm
+    let eΩ : 𝓓^{n}(Ω, F) ≃L[ℝ] 𝓓^{n}(⟨c.target, c.open_target⟩, F) :=
+      ContinuousLinearEquiv.equivOfInverse
+        (TestFunction.monoCLM ℝ) (TestFunction.monoCLM ℝ)
+        (fun φ ↦ by ext y; simp [TestFunction.monoCLM_apply, hΩ_eq])
+        (fun φ ↦ by ext y; simp [TestFunction.monoCLM_apply, hΩ_eq])
+    exact eΩ.trans <| t.chartTestSectionCLE c
+      (Ω.contMDiff_openPartialHomeomorphSubtypeCoe hΩ).contMDiffOn
+      (Ω.contMDiffOn_openPartialHomeomorphSubtypeCoe_symm hΩ)
+      (ht.symm ▸ subset_univ _) e U hU hcover
+      (Ω.openPartialHomeomorphSubtypeCoe_source hΩ)
   · -- When `Ω` is empty, both `𝓓^{n}(Ω, F)` and compactly supported sections are subsingletons.
     haveI : IsEmpty Ω := not_nonempty_iff.1 hΩ
     have hzero : ∀ φ : 𝓓^{n}(Ω, F), φ = 0 := fun φ ↦ by
@@ -335,12 +345,7 @@ def opensChartTestSectionCLE
     haveI : Subsingleton (compactlySupported 𝓘(ℝ, E) F n V) :=
       ⟨fun s₁ s₂ ↦ Subtype.ext <| ContMDiffSection.ext fun x ↦ IsEmpty.elim inferInstance x⟩
     exact
-      { toFun := 0
-        invFun := 0
-        map_add' _ _ := Subsingleton.elim _ _
-        map_smul' _ _ := Subsingleton.elim _ _
-        left_inv _ := Subsingleton.elim _ _
-        right_inv _ := Subsingleton.elim _ _
+      { LinearEquiv.ofSubsingleton _ _ with
         continuous_toFun := continuous_const
         continuous_invFun := continuous_const }
 
@@ -355,10 +360,13 @@ theorem opensChartTestSectionCLE_apply
     letI := compactlySupportedTopology (I := 𝓘(ℝ, E)) (n := n) e U hU
     (t.opensChartTestSectionCLE ht e U hU hcover φ).1 x = t.symmL ℝ x (φ x) := by
   have hΩ : Nonempty Ω := ⟨x⟩
-  simp only [opensChartTestSectionCLE, hΩ, ↓reduceDIte]
-  exact t.chartTestSectionCLE_apply (opensSubtypeChart hΩ)
-    (contMDiffOn_opensSubtypeChart hΩ) (contMDiffOn_opensSubtypeChart_symm hΩ)
-    (ht.symm ▸ subset_univ _) e U hU hcover (opensSubtypeChart_source hΩ) φ x
+  have hΩ_eq : Ω = ⟨(Ω.openPartialHomeomorphSubtypeCoe hΩ).target,
+      (Ω.openPartialHomeomorphSubtypeCoe hΩ).open_target⟩ :=
+    Opens.ext (Ω.openPartialHomeomorphSubtypeCoe_target hΩ).symm
+  simp only [opensChartTestSectionCLE, dite_eq_left hΩ, ContinuousLinearEquiv.trans_apply,
+    chartTestSectionCLE_apply, ContinuousLinearEquiv.equivOfInverse_apply,
+    Opens.openPartialHomeomorphSubtypeCoe_coe, TestFunction.monoCLM_apply, le_rfl, hΩ_eq.le,
+    and_self, ↓reduceIte]
 
 /-- On `Ω`, the inverse of `opensChartTestSectionCLE` reads the section value in the frame `t`. -/
 @[simp]
@@ -372,13 +380,19 @@ theorem opensChartTestSectionCLE_symm_apply_of_mem
     (t.opensChartTestSectionCLE ht e U hU hcover).symm s y =
       t.continuousLinearMapAt ℝ ⟨y, hy⟩ (s.1 ⟨y, hy⟩) := by
   have hΩ : Nonempty Ω := ⟨⟨y, hy⟩⟩
-  simp only [opensChartTestSectionCLE, hΩ, ↓reduceDIte]
-  have hyt : y ∈ (opensSubtypeChart hΩ).target := hy
-  have hsymm : (opensSubtypeChart hΩ).symm y = ⟨y, hy⟩ :=
-    Subtype.ext ((opensSubtypeChart hΩ).right_inv hyt)
-  refine (t.chartTestSectionCLE_symm_apply_of_mem (opensSubtypeChart hΩ)
-    (contMDiffOn_opensSubtypeChart hΩ) (contMDiffOn_opensSubtypeChart_symm hΩ)
-    (ht.symm ▸ subset_univ _) e U hU hcover (opensSubtypeChart_source hΩ) s hyt).trans ?_
+  have hΩ_eq : Ω = ⟨(Ω.openPartialHomeomorphSubtypeCoe hΩ).target,
+      (Ω.openPartialHomeomorphSubtypeCoe hΩ).open_target⟩ :=
+    Opens.ext (Ω.openPartialHomeomorphSubtypeCoe_target hΩ).symm
+  have hyt : y ∈ (Ω.openPartialHomeomorphSubtypeCoe hΩ).target := by
+    rwa [Ω.openPartialHomeomorphSubtypeCoe_target hΩ]
+  have hsymm : (Ω.openPartialHomeomorphSubtypeCoe hΩ).symm y = ⟨y, hy⟩ := by
+    apply Subtype.ext
+    simpa only [Opens.openPartialHomeomorphSubtypeCoe_coe] using
+      (Ω.openPartialHomeomorphSubtypeCoe hΩ).right_inv hyt
+  simp only [opensChartTestSectionCLE, dite_eq_left hΩ, ContinuousLinearEquiv.symm_trans_apply,
+    ContinuousLinearEquiv.symm_equivOfInverse, ContinuousLinearEquiv.equivOfInverse_apply,
+    TestFunction.monoCLM_apply, le_rfl, hΩ_eq.ge, and_self, ↓reduceIte,
+    chartTestSectionCLE_symm_apply_of_mem, hyt]
   rw [hsymm]
 
 /-- Outside `Ω`, the inverse of `opensChartTestSectionCLE` vanishes. -/
@@ -391,13 +405,72 @@ theorem opensChartTestSectionCLE_symm_apply_of_notMem
     (s : compactlySupported 𝓘(ℝ, E) F n V) {y : E} (hy : y ∉ Ω) :
     letI := compactlySupportedTopology (I := 𝓘(ℝ, E)) (n := n) e U hU
     (t.opensChartTestSectionCLE ht e U hU hcover).symm s y = 0 := by
+  let := compactlySupportedTopology (I := 𝓘(ℝ, E)) (n := n) e U hU
+  exact ((t.opensChartTestSectionCLE ht e U hU hcover).symm s).zero_on_compl hy
+
+/-- `opensChartTestSectionCLE` preserves closed support, pulled back along the open-subtype
+inclusion `Subtype.val : Ω → E`. -/
+@[simp]
+theorem tsupport_opensChartTestSectionCLE
+    (t : Trivialization F (π F V)) [MemTrivializationAtlas t] (ht : t.baseSet = univ)
+    {ι : Type*} (e : ι → Trivialization F (π F V)) [∀ i, MemTrivializationAtlas (e i)]
+    (U : ι → Opens Ω) (hU : ∀ i, (U i : Set Ω) ⊆ (e i).baseSet)
+    (hcover : ∀ x : Ω, ∃ i, x ∈ U i) (φ : 𝓓^{n}(Ω, F)) :
+    letI := compactlySupportedTopology (I := 𝓘(ℝ, E)) (n := n) e U hU
+    (t.opensChartTestSectionCLE ht e U hU hcover φ).1.tsupport =
+      Subtype.val ⁻¹' _root_.tsupport φ := by
   by_cases hΩ : Nonempty Ω
-  · simp only [opensChartTestSectionCLE, hΩ, ↓reduceDIte]
-    exact t.chartTestSectionCLE_symm_apply_of_notMem (opensSubtypeChart hΩ)
-      (contMDiffOn_opensSubtypeChart hΩ) (contMDiffOn_opensSubtypeChart_symm hΩ)
-      (ht.symm ▸ subset_univ _) e U hU hcover (opensSubtypeChart_source hΩ) s hy
-  · simp only [opensChartTestSectionCLE, hΩ, ↓reduceDIte]
-    rfl
+  · have hmono_coe :
+        ⇑(TestFunction.monoCLM ℝ (n₂ := n) (Ω₁ := Ω)
+          (Ω₂ := ⟨(Ω.openPartialHomeomorphSubtypeCoe hΩ).target,
+            (Ω.openPartialHomeomorphSubtypeCoe hΩ).open_target⟩) φ) = ⇑φ := by
+      simp [TestFunction.monoCLM_apply]
+    simp only [opensChartTestSectionCLE, dite_eq_left hΩ, ContinuousLinearEquiv.trans_apply,
+      ContinuousLinearEquiv.equivOfInverse_apply, tsupport_chartTestSectionCLE, hmono_coe]
+    ext x
+    constructor
+    · rintro ⟨y, hy, hyx⟩
+      have hyt : y ∈ (Ω.openPartialHomeomorphSubtypeCoe hΩ).target := by
+        rw [Ω.openPartialHomeomorphSubtypeCoe_target hΩ]
+        exact φ.tsupport_subset hy
+      have hxy : (x : E) = y := by
+        rw [← hyx, ← Ω.openPartialHomeomorphSubtypeCoe_coe hΩ,
+          (Ω.openPartialHomeomorphSubtypeCoe hΩ).right_inv hyt]
+      simpa only [mem_preimage, hxy] using hy
+    · intro hx
+      refine ⟨x, hx, ?_⟩
+      simpa only [Opens.openPartialHomeomorphSubtypeCoe_coe] using
+        (Ω.openPartialHomeomorphSubtypeCoe hΩ).left_inv
+          (by rw [Ω.openPartialHomeomorphSubtypeCoe_source hΩ]; exact mem_univ x)
+  · have : IsEmpty Ω := not_nonempty_iff.1 hΩ
+    exact Subsingleton.elim _ _
+
+/-- The inverse of `opensChartTestSectionCLE` preserves closed support, pushed forward along the
+open-subtype inclusion `Subtype.val : Ω → E`. -/
+@[simp]
+theorem tsupport_opensChartTestSectionCLE_symm
+    (t : Trivialization F (π F V)) [MemTrivializationAtlas t] (ht : t.baseSet = univ)
+    {ι : Type*} (e : ι → Trivialization F (π F V)) [∀ i, MemTrivializationAtlas (e i)]
+    (U : ι → Opens Ω) (hU : ∀ i, (U i : Set Ω) ⊆ (e i).baseSet)
+    (hcover : ∀ x : Ω, ∃ i, x ∈ U i) (s : compactlySupported 𝓘(ℝ, E) F n V) :
+    letI := compactlySupportedTopology (I := 𝓘(ℝ, E)) (n := n) e U hU
+    _root_.tsupport ((t.opensChartTestSectionCLE ht e U hU hcover).symm s) =
+      Subtype.val '' s.1.tsupport := by
+  let := compactlySupportedTopology (I := 𝓘(ℝ, E)) (n := n) e U hU
+  by_cases hΩ : Nonempty Ω
+  · have hΩ_eq : Ω = ⟨(Ω.openPartialHomeomorphSubtypeCoe hΩ).target,
+        (Ω.openPartialHomeomorphSubtypeCoe hΩ).open_target⟩ :=
+      Opens.ext (Ω.openPartialHomeomorphSubtypeCoe_target hΩ).symm
+    simp only [opensChartTestSectionCLE, dite_eq_left hΩ, ContinuousLinearEquiv.symm_trans_apply,
+      ContinuousLinearEquiv.symm_equivOfInverse, ContinuousLinearEquiv.equivOfInverse_apply,
+      TestFunction.monoCLM_apply, le_rfl, hΩ_eq.ge, and_self, ↓reduceIte,
+      tsupport_chartTestSectionCLE_symm, Opens.openPartialHomeomorphSubtypeCoe_coe]
+  · have : IsEmpty Ω := not_nonempty_iff.1 hΩ
+    have h0 : ⇑((t.opensChartTestSectionCLE ht e U hU hcover).symm s) = 0 := by
+      funext y
+      exact opensChartTestSectionCLE_symm_apply_of_notMem t ht e U hU hcover s
+        (fun hy ↦ hΩ ⟨⟨y, hy⟩⟩)
+    rw [h0, _root_.tsupport_zero, eq_empty_of_isEmpty s.1.tsupport, image_empty]
 
 end OpensEuclidean
 
@@ -436,7 +509,7 @@ theorem opensTestSectionCLE_apply (Ω : Opens E)
     (opensTestSectionCLE (n := n) Ω e U hU hcover φ).1 x = φ x := by
   have : MemTrivializationAtlas (Bundle.Trivial.trivialization Ω F) := ⟨mem_singleton _⟩
   rw [opensTestSectionCLE, Trivialization.opensChartTestSectionCLE_apply,
-    Trivialization.symmL_apply _ (mem_univ x), trivialization_symm_apply]
+    symmL_trivialization, ContinuousLinearMap.id_apply]
 
 /-- On `Ω`, the inverse of `opensTestSectionCLE Ω` evaluates the trivial-bundle section at
 `⟨y, hy⟩`. -/
@@ -450,10 +523,8 @@ theorem opensTestSectionCLE_symm_apply_of_mem (Ω : Opens E)
     letI := compactlySupportedTopology (I := 𝓘(ℝ, E)) (n := n) e U hU
     (opensTestSectionCLE (n := n) Ω e U hU hcover).symm s y = s.1 ⟨y, hy⟩ := by
   have : MemTrivializationAtlas (Bundle.Trivial.trivialization Ω F) := ⟨mem_singleton _⟩
-  rw [opensTestSectionCLE,
-    Trivialization.opensChartTestSectionCLE_symm_apply_of_mem _ _ _ _ _ _ s hy,
-    Trivialization.continuousLinearMapAt_apply_of_mem (R := ℝ) _ (mem_univ _)]
-  rfl
+  simp only [opensTestSectionCLE, Trivialization.opensChartTestSectionCLE_symm_apply_of_mem, hy,
+    continuousLinearMapAt_trivialization, ContinuousLinearMap.id_apply]
 
 /-- Outside `Ω`, the inverse of `opensTestSectionCLE Ω` vanishes. -/
 @[simp]
@@ -466,6 +537,36 @@ theorem opensTestSectionCLE_symm_apply_of_notMem (Ω : Opens E)
     letI := compactlySupportedTopology (I := 𝓘(ℝ, E)) (n := n) e U hU
     (opensTestSectionCLE (n := n) Ω e U hU hcover).symm s y = 0 := by
   have : MemTrivializationAtlas (Bundle.Trivial.trivialization Ω F) := ⟨mem_singleton _⟩
-  exact Trivialization.opensChartTestSectionCLE_symm_apply_of_notMem _ _ _ _ _ _ s hy
+  simp only [opensTestSectionCLE, Trivialization.opensChartTestSectionCLE_symm_apply_of_notMem, hy,
+    not_false_eq_true]
+
+/-- `opensTestSectionCLE Ω` preserves closed support, pulled back along the open-subtype inclusion
+`Subtype.val : Ω → E`. -/
+@[simp]
+theorem tsupport_opensTestSectionCLE (Ω : Opens E)
+    {ι : Type*} (e : ι → Trivialization F (π F (Bundle.Trivial Ω F)))
+    [∀ i, MemTrivializationAtlas (e i)]
+    (U : ι → Opens Ω) (hU : ∀ i, (U i : Set Ω) ⊆ (e i).baseSet)
+    (hcover : ∀ x : Ω, ∃ i, x ∈ U i) (φ : 𝓓^{n}(Ω, F)) :
+    letI := compactlySupportedTopology (I := 𝓘(ℝ, E)) (n := n) e U hU
+    (opensTestSectionCLE (n := n) Ω e U hU hcover φ).1.tsupport =
+      Subtype.val ⁻¹' _root_.tsupport φ := by
+  have : MemTrivializationAtlas (Bundle.Trivial.trivialization Ω F) := ⟨mem_singleton _⟩
+  rw [opensTestSectionCLE, Trivialization.tsupport_opensChartTestSectionCLE]
+
+/-- The inverse of `opensTestSectionCLE Ω` preserves closed support, pushed forward along the
+open-subtype inclusion `Subtype.val : Ω → E`. -/
+@[simp]
+theorem tsupport_opensTestSectionCLE_symm (Ω : Opens E)
+    {ι : Type*} (e : ι → Trivialization F (π F (Bundle.Trivial Ω F)))
+    [∀ i, MemTrivializationAtlas (e i)]
+    (U : ι → Opens Ω) (hU : ∀ i, (U i : Set Ω) ⊆ (e i).baseSet)
+    (hcover : ∀ x : Ω, ∃ i, x ∈ U i)
+    (s : compactlySupported 𝓘(ℝ, E) F n (Bundle.Trivial Ω F)) :
+    letI := compactlySupportedTopology (I := 𝓘(ℝ, E)) (n := n) e U hU
+    _root_.tsupport ((opensTestSectionCLE (n := n) Ω e U hU hcover).symm s) =
+      Subtype.val '' s.1.tsupport := by
+  have : MemTrivializationAtlas (Bundle.Trivial.trivialization Ω F) := ⟨mem_singleton _⟩
+  rw [opensTestSectionCLE, Trivialization.tsupport_opensChartTestSectionCLE_symm]
 
 end Bundle.Trivial

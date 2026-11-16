@@ -942,6 +942,16 @@ theorem extChartAt_opens_target (U : Opens E) (x : U) :
     (extChartAt 𝓘(𝕜, E) x).target = (U : Set E) := by
   simp [extChartAt, Opens.chartAt_eq, OpenPartialHomeomorph.subtypeRestr_def]
 
+/-- On an open subset of a normed space, the inverse of an inherited extended chart sends each
+point of the open subset to itself as a subtype element. -/
+theorem extChartAt_opens_symm_apply (U : Opens E) (x : U) {y : E} (hy : y ∈ U) :
+    (extChartAt 𝓘(𝕜, E) x).symm y = ⟨y, hy⟩ := by
+  apply Subtype.ext
+  simpa only [extChartAt_model_space_eq_id, PartialEquiv.refl_symm,
+    PartialEquiv.refl_coe, id_eq] using
+    U.coe_extChartAt_symm_apply (I := 𝓘(𝕜, E)) x
+      (by simpa only [extChartAt_opens_target, SetLike.mem_coe] using hy)
+
 /-- The target of an inherited chart is canonically homeomorphic to the open source. -/
 noncomputable def openChartTargetHomeomorph (U : Opens E) (x : U) :
     (extChartAt 𝓘(𝕜, E) x).target ≃ₜ U :=

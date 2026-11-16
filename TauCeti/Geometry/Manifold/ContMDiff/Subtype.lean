@@ -33,6 +33,9 @@ there after extension to the whole manifold, as for Mathlib's `ContMDiff.extend_
 * `ContMDiffAt.extend_subtypeVal`, `TauCeti.contMDiffAt_extend_subtypeVal_iff`: an extension
   to `M` of a map on an open submanifold is `C^n` at a point of the submanifold exactly when the
   map is.
+* `TopologicalSpace.Opens.contMDiff_openPartialHomeomorphSubtypeCoe` and
+  `TopologicalSpace.Opens.contMDiffOn_openPartialHomeomorphSubtypeCoe_symm`: the open-subtype
+  inclusion chart and its partial inverse are `C^n` at every regularity.
 * `TopologicalSpace.Opens.contMDiffOn_convexSegment`: the affine segment in a convex open subset
   of a normed real space is smooth on `[0, 1]` at every regularity.
 
@@ -124,6 +127,31 @@ theorem TauCeti.contMDiffAt_extend_subtypeVal_iff {U : Opens M} {g : U → M'} {
 end Extend
 
 namespace TopologicalSpace.Opens
+
+section OpenPartialHomeomorph
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  {n : ℕ∞ω}
+
+/-- The open-subtype inclusion chart `U.openPartialHomeomorphSubtypeCoe hU : U → M` is `C^n`. -/
+theorem contMDiff_openPartialHomeomorphSubtypeCoe (U : Opens M) (hU : Nonempty U) :
+    ContMDiff I I n (U.openPartialHomeomorphSubtypeCoe hU) :=
+  contMDiff_subtype_val
+
+/-- The partial inverse of `U.openPartialHomeomorphSubtypeCoe hU` is `C^n` on its target `U`. -/
+theorem contMDiffOn_openPartialHomeomorphSubtypeCoe_symm (U : Opens M) (hU : Nonempty U) :
+    ContMDiffOn I I n (U.openPartialHomeomorphSubtypeCoe hU).symm
+      (U.openPartialHomeomorphSubtypeCoe hU).target := by
+  intro y hy
+  refine ((TauCeti.ContMDiffAt.subtypeVal_comp_iff U _ y).mp ?_).contMDiffWithinAt
+  refine contMDiffAt_id.congr_of_eventuallyEq ?_
+  filter_upwards [(U.openPartialHomeomorphSubtypeCoe hU).open_target.mem_nhds hy] with z hz
+  exact (U.openPartialHomeomorphSubtypeCoe hU).right_inv hz
+
+end OpenPartialHomeomorph
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 variable (U : Opens F) {n : ℕ∞ω}

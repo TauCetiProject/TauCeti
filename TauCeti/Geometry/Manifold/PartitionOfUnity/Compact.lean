@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.PartitionOfUnity
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
-import Mathlib.Geometry.Manifold.Algebra.Monoid
+import Mathlib.Geometry.Manifold.Algebra.Structures
 
 /-!
 # Smooth cutoff functions around compact sets
@@ -24,8 +24,9 @@ form extend a vector field given near a compact set to a compactly supported one
 complete one. For the same reason a compact set has a smooth bump covering indexed by a finite type
 and subordinate to any given neighbourhoods of its points
 (`IsCompact.exists_smoothBumpCovering_isSubordinate`), the input of Mathlib's Whitney embedding
-`SmoothBumpCovering.embeddingPiTangent`, as well as a finite smooth partition of unity on `K`
-subordinate to any open cover (`IsCompact.exists_finset_contMDiff_sum_eq_one_on`).
+`SmoothBumpCovering.embeddingPiTangent`, as well as a finite `C^n` partition of unity on `K`
+(`n : ℕ∞`) subordinate to any open cover on a `C^n` manifold
+(`IsCompact.exists_finset_contMDiff_sum_eq_one_on`).
 
 The construction, smoothing a finite sum of bump functions by `Real.smoothTransition`, follows the
 bump cover in the proof of `TauCeti.exists_vectorField_mvfderiv_eq_neg_one`.
@@ -100,38 +101,58 @@ theorem IsCompact.exists_smoothBumpCovering_isSubordinate {K : Set M} (hK : IsCo
   obtain ⟨i, hi, hxi⟩ := mem_iUnion₂.1 (ht hx)
   exact ⟨⟨i, hi⟩, mem_interior_iff_mem_nhds.1 hxi⟩
 
+omit [IsManifold I ∞ M] in
 variable (I) in
-/-- **A finite smooth partition of unity on a compact set subordinate to an open cover.**
-Given a compact set `K` covered by open sets `U j`, there exist a finite set of indices `s` and
-compactly supported smooth functions `η j : M → [0, 1]` with `tsupport (η j) ⊆ U j` whose sum over
-`s` equals `1` on `K` and is at most `1` everywhere. -/
-theorem IsCompact.exists_finset_contMDiff_sum_eq_one_on {K : Set M} (hK : IsCompact K)
-    {κ : Type*} {U : κ → Set M} (hUo : ∀ j, IsOpen (U j)) (hKcov : K ⊆ ⋃ j, U j) :
-    ∃ (s : Finset κ) (η : κ → C^∞⟮I, M; ℝ⟯),
+/-- **A finite `C^n` partition of unity on a compact set subordinate to an open cover.**
+Given a compact set `K` covered by open sets `U j` in a `C^n` manifold (`n : ℕ∞`), there exist a
+finite set of indices `s` and compactly supported `C^n` functions `η j : M → [0, 1]` with
+`tsupport (η j) ⊆ U j` whose sum over `s` equals `1` on `K` and is at most `1` everywhere. -/
+theorem IsCompact.exists_finset_contMDiff_sum_eq_one_on {n : ℕ∞} [IsManifold I n M] {K : Set M}
+    (hK : IsCompact K) {κ : Type*} {U : κ → Set M} (hUo : ∀ j, IsOpen (U j))
+    (hKcov : K ⊆ ⋃ j, U j) :
+    ∃ (s : Finset κ) (η : κ → C^n⟮I, M; ℝ⟯),
       (∀ j, tsupport (η j) ⊆ U j) ∧
       (∀ j, HasCompactSupport (η j)) ∧
       (∀ j x, η j x ∈ Icc 0 1) ∧
       (∀ x ∈ K, ∑ j ∈ s, η j x = 1) ∧
       ∀ x, ∑ j ∈ s, η j x ≤ 1 := by
   classical
-  -- Step 1: Assign each point of `K` an open set `U (idx x)` and build a finite smooth bump cover.
+  -- Step 1: Assign each point of `K` an open set `U (idx x)` and build a finite `C^n` bump cover.
   choose idx hidx using fun x : K ↦ mem_iUnion.1 (hKcov x.2)
   let W : M → Set M := fun x ↦ if hx : x ∈ K then U (idx ⟨x, hx⟩) else univ
   have hW : ∀ x ∈ K, W x ∈ 𝓝 x := fun x hx ↦ by
     simpa only [W, hx, ↓reduceDIte] using (hUo _).mem_nhds (hidx ⟨x, hx⟩)
   obtain ⟨α, _, fs, hsub⟩ := hK.exists_smoothBumpCovering_isSubordinate I hW
-  let ρ : SmoothPartitionOfUnity α I M K := fs.toSmoothPartitionOfUnity
+  have hfs_mdiff : ∀ b : α, ContMDiff I 𝓘(ℝ) n (fs b) := fun b ↦ by
+    refine contMDiff_of_tsupport fun x hx ↦ ?_
+    have hsrc : x ∈ (chartAt H (fs.c b)).source := (fs b).tsupport_subset_chartAt_source hx
+    refine ContMDiffAt.congr_of_eventuallyEq ?_ <| (fs b).eqOn_source.eventuallyEq_of_mem <|
+      (chartAt H (fs.c b)).open_source.mem_nhds hsrc
+    exact ((fs b).contDiffAt.of_le (WithTop.coe_le_coe.mpr le_top)).contMDiffAt.comp _
+      (contMDiffAt_extChartAt' hsrc)
+  let bc : BumpCovering α M K :=
+    { toFun b := ⟨fs b, (hfs_mdiff b).continuous⟩
+      locallyFinite' := fs.locallyFinite
+      nonneg' b _ := (fs b).nonneg
+      le_one' b _ := (fs b).le_one
+      eventuallyEq_one' := fs.eventuallyEq_one' }
+  let ρ : PartitionOfUnity α M K := bc.toPartitionOfUnity
+  have hρ_mdiff : ∀ b : α, ContMDiff I 𝓘(ℝ) n (ρ b) := fun b ↦
+    (hfs_mdiff b).mul <| (contMDiff_finprod_cond fun j _ ↦ contMDiff_const.sub (hfs_mdiff j)) <| by
+      simp only [mulSupport_one_sub]
+      exact bc.locallyFinite
   have hρsub : ∀ b : α, tsupport (ρ b) ⊆ U (idx ⟨fs.c b, fs.c_mem' b⟩) := fun b ↦ by
-    simpa only [W, fs.c_mem' b, ↓reduceDIte] using hsub.toSmoothPartitionOfUnity b
+    simpa only [W, fs.c_mem' b, ↓reduceDIte] using
+      (BumpCovering.IsSubordinate.toPartitionOfUnity (f := bc) hsub) b
   have hρcomp : ∀ b : α, HasCompactSupport (ρ b) := fun b ↦
     (fs b).hasCompactSupport.of_isClosed_subset (isClosed_tsupport _)
-      (closure_mono (fs.support_toSmoothPartitionOfUnity_subset b))
+      (closure_mono (bc.support_toPartitionOfUnity_subset b))
   -- Step 2: Regroup the finite partition of unity by the chosen cover index `idx (fs.c b)`.
   let s : Finset κ := Finset.univ.image (fun b : α ↦ idx ⟨fs.c b, fs.c_mem' b⟩)
   let fib : κ → Finset α :=
     fun j ↦ Finset.univ.filter (fun b : α ↦ idx ⟨fs.c b, fs.c_mem' b⟩ = j)
-  let η : κ → C^∞⟮I, M; ℝ⟯ :=
-    fun j ↦ ⟨fun x ↦ ∑ b ∈ fib j, ρ b x, ContMDiff.sum fun b _ ↦ (ρ b).contMDiff⟩
+  let η : κ → C^n⟮I, M; ℝ⟯ :=
+    fun j ↦ ⟨fun x ↦ ∑ b ∈ fib j, ρ b x, ContMDiff.sum fun b _ ↦ hρ_mdiff b⟩
   have hη_supp : ∀ j, tsupport (η j) ⊆ ⋃ b ∈ fib j, tsupport (ρ b) := fun j ↦
     closure_minimal (fun y hy ↦ by
       by_contra hnot
