@@ -334,6 +334,11 @@ def symm (S : KnotCobordism K₀ K₁) : KnotCobordism K₁ K₀ where
 theorem carrier_symm (S : KnotCobordism K₀ K₁) : S.symm.carrier = S.carrier :=
   (rfl)
 
+/-- The reverse of a knot cobordism embeds the surface at the reflected heights. -/
+theorem toFun_symm (S : KnotCobordism K₀ K₁) :
+    S.symm.toFun = fun x ↦ ((S.toFun x).1, 1 - (S.toFun x).2) :=
+  (rfl)
+
 /-- The reverse of a knot cobordism embeds each point of the surface at the reflected height. -/
 @[simp]
 theorem toFun_symm_apply (S : KnotCobordism K₀ K₁) (x : S.carrier) :
@@ -352,6 +357,12 @@ theorem range_toFun_symm (S : KnotCobordism K₀ K₁) :
 @[simp]
 theorem genus_symm (S : KnotCobordism K₀ K₁) : S.symm.genus = S.genus :=
   (rfl)
+
+/-- Reversing a knot cobordism twice gives it back. -/
+@[simp]
+theorem symm_symm (S : KnotCobordism K₀ K₁) : S.symm.symm = S := by
+  cases S
+  simp only [symm, sub_sub_cancel]
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [Fact (finrank ℝ F = n + 1)]
 
@@ -387,6 +398,13 @@ def transDiffeomorph (S : KnotCobordism K₀ K₁)
 theorem carrier_transDiffeomorph (S : KnotCobordism K₀ K₁)
     (Ψ : sphere (0 : E) 1 ≃ₘ^∞⟮𝓡 n, 𝓡 n⟯ sphere (0 : F) 1) :
     (S.transDiffeomorph Ψ).carrier = S.carrier :=
+  (rfl)
+
+/-- Transporting a knot cobordism along an ambient diffeomorphism `Ψ` embeds the surface by
+`Ψ × id`. -/
+theorem toFun_transDiffeomorph (S : KnotCobordism K₀ K₁)
+    (Ψ : sphere (0 : E) 1 ≃ₘ^∞⟮𝓡 n, 𝓡 n⟯ sphere (0 : F) 1) :
+    (S.transDiffeomorph Ψ).toFun = fun x ↦ (Ψ (S.toFun x).1, (S.toFun x).2) :=
   (rfl)
 
 /-- Transporting a knot cobordism along an ambient diffeomorphism `Ψ` embeds each point of the
