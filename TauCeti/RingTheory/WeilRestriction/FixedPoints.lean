@@ -15,12 +15,13 @@ import TauCeti.RingTheory.Invariant.ModuleDescent
 /-!
 # Fixed-point subschemes of Weil restrictions and Edixhoven's smoothness theorem
 
-Let `B` be a finite projective `A`-algebra and `C` a finitely presented `B`-algebra, with a monoid
-`Γ` acting on `B` via `ρB : Γ →* (B ≃ₐ[A] B)` and on `C` via `ρC : Γ →* RingAut C` semilinearly
-over `ρB`. Through `inducedAction ρB ρC h`, `Γ` acts on `WeilRestriction A B C` by `A`-algebra
-automorphisms. This file constructs the coordinate algebra `fixedCoordinateRing ρB ρC h` of
-`(Res_{B/A} Spec C)^Γ`, cut out by `fixedIdeal ρB ρC h`, and proves its universal property, finite
-presentation for finite `Γ`, and Edixhoven's smoothness theorem when `|Γ|` is invertible in `A`.
+Let `B` be a finite projective `A`-algebra and `C` a `B`-algebra, with a monoid `Γ` acting on `B`
+via `ρB : Γ →* (B ≃ₐ[A] B)` and on `C` via `ρC : Γ →* RingAut C` semilinearly over `ρB`. Through
+`inducedAction ρB ρC h`, `Γ` acts on `WeilRestriction A B C` by `A`-algebra automorphisms. This file
+constructs the coordinate algebra `fixedCoordinateRing ρB ρC h` of `(Res_{B/A} Spec C)^Γ`, cut out
+by `fixedIdeal ρB ρC h`, and proves its universal property, finite presentation when `Γ` is finite
+and `C` is finitely presented over `B`, and Edixhoven's smoothness theorem when `|Γ|` is invertible
+in `A`.
 
 ## Main declarations
 
@@ -48,7 +49,7 @@ namespace TauCeti.Algebra.WeilRestriction
 section General
 
 variable {A B C : Type*} [CommRing A] [CommRing B] [CommRing C] [Algebra A B] [Algebra B C]
-  [Module.Finite A B] [Module.Projective A B] [FinitePresentation B C]
+  [Module.Finite A B] [Module.Projective A B]
   {Γ : Type*} [Monoid Γ] (ρB : Γ →* (B ≃ₐ[A] B)) (ρC : Γ →* RingAut C)
   (h : ∀ γ b, ρC γ (algebraMap B C b) = algebraMap B C (ρB γ b))
 
@@ -230,15 +231,17 @@ theorem fixedCoordinateRingEquivOfEqOne_symm_apply (hB : ρB = 1) (hC : ρC = 1)
   apply (fixedCoordinateRingEquivOfEqOne ρB ρC h hB hC).injective
   rw [AlgEquiv.apply_symm_apply, fixedCoordinateRingEquivOfEqOne_mkFixed]
 
-/-- When `Γ` is finite, `fixedIdeal ρB ρC h` is finitely generated. -/
-theorem fixedIdeal_fg [_root_.Finite Γ] : (fixedIdeal ρB ρC h).FG := by
+/-- When `Γ` is finite and `C` is of finite type over `B`, `fixedIdeal ρB ρC h` is finitely
+generated. -/
+theorem fixedIdeal_fg [_root_.Finite Γ] [FiniteType B C] : (fixedIdeal ρB ρC h).FG := by
   let _ := MulSemiringAction.compHom (WeilRestriction A B C) (inducedAction ρB ρC h)
   let _ : SMulCommClass Γ A (WeilRestriction A B C) :=
     SMul.comp.smulCommClass (inducedAction ρB ρC h)
   exact TauCeti.coinvariantIdeal_fg (R := A)
 
-/-- When `Γ` is finite, `fixedCoordinateRing ρB ρC h` is of finite presentation over `A`. -/
-instance instFinitePresentationFixedCoordinateRing [_root_.Finite Γ] :
+/-- When `Γ` is finite and `C` is of finite presentation over `B`, `fixedCoordinateRing ρB ρC h`
+is of finite presentation over `A`. -/
+instance instFinitePresentationFixedCoordinateRing [_root_.Finite Γ] [FinitePresentation B C] :
     FinitePresentation A (fixedCoordinateRing ρB ρC h) :=
   Algebra.FinitePresentation.quotient (fixedIdeal_fg ρB ρC h)
 
@@ -247,7 +250,7 @@ end General
 section Smoothness
 
 variable {A B C : Type*} [CommRing A] [CommRing B] [CommRing C] [Algebra A B] [Algebra B C]
-  [Module.Finite A B] [Module.Projective A B] [FinitePresentation B C]
+  [Module.Finite A B] [Module.Projective A B]
   {Γ : Type*} [Group Γ] [_root_.Finite Γ] (ρB : Γ →* (B ≃ₐ[A] B)) (ρC : Γ →* RingAut C)
   (h : ∀ γ b, ρC γ (algebraMap B C b) = algebraMap B C (ρB γ b))
 
