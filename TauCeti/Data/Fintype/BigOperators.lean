@@ -68,9 +68,12 @@ theorem card_filter_piFinset_forall_eq_of_forall_mem {ι : Type*} {κ : ι → T
     [DecidableEq ι] [∀ m, DecidableEq (κ m)] (s : ∀ m, Finset (κ m)) (I : Finset ι)
     {a : ∀ m ∈ I, κ m} (ha : ∀ m (hm : m ∈ I), a m hm ∈ s m) :
     #{h ∈ piFinset s | ∀ m (hm : m ∈ I), h m = a m hm} = ∏ m ∈ univ \ I, #(s m) := by
-  rw [show {h ∈ piFinset s | ∀ m (hm : m ∈ I), h m = a m hm} =
-      piFinset fun m ↦ if hm : m ∈ I then {a m hm} else s m by grind, card_piFinset,
-    ← prod_sdiff (subset_univ I), Finset.prod_eq_one (s := I) fun m hm ↦ by simp [hm], mul_one]
+  -- The maps with the prescribed values on `I` form the box with cells `{a m}` on `I`.
+  have hbox : {h ∈ piFinset s | ∀ m (hm : m ∈ I), h m = a m hm} =
+      piFinset fun m ↦ if hm : m ∈ I then {a m hm} else s m := by
+    grind
+  rw [hbox, card_piFinset, ← prod_sdiff (subset_univ I),
+    Finset.prod_eq_one (s := I) fun m hm ↦ by simp [hm], mul_one]
   exact Finset.prod_congr rfl fun m hm ↦ by simp [(mem_sdiff.1 hm).2]
 
 /-- A sum of a function of two distinct coordinates over a finite box counts each pair
