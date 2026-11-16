@@ -54,6 +54,9 @@ transitively, so `SL₂ℝ~` is a homogeneous Riemannian manifold.
   group `Aff⁺(ℝ) × ℝ`, and `TauCeti.SL2Tilde.translate_inj` says distinct parameters give
   distinct isometries.
 * `TauCeti.SL2Tilde.isPretransitive_isom`: the isometry group of `SL₂ℝ~` acts transitively on it.
+* `TauCeti.SL2Tilde.contMDiff_iff_contDiff_toProd_conj` and
+  `TauCeti.SL2Tilde.fderiv_toProd_conj_apply`: the smoothness and the derivative of a self-map `f`
+  of `SL₂ℝ~` read off its expression `toProd.conj f` in the global coordinates.
 
 ## References
 
@@ -415,31 +418,61 @@ instance isPretransitive_isom :
     MulAction.IsPretransitive (Isom 𝓘(ℝ, ℝ × ℝ × ℝ) SL2Tilde) SL2Tilde :=
   ⟨fun p q ↦ ⟨_, translate_apply_eq p q⟩⟩
 
-/-! ### Isometries in global coordinates -/
+/-! ### Self-maps in global coordinates
 
-/-- An isometry of `SL₂ℝ~` read in the global coordinates `ℝ × ℝ × ℝ`. -/
-def coordinateMap (Φ : Isom 𝓘(ℝ, ℝ × ℝ × ℝ) SL2Tilde) : ℝ × ℝ × ℝ → ℝ × ℝ × ℝ :=
-  toProd ∘ Φ ∘ toProd.symm
+A self-map `f` of `SL₂ℝ~` reads in the global coordinates `ℝ × ℝ × ℝ` as its conjugate
+`toProd.conj f = toProd ∘ f ∘ toProd.symm` (Mathlib's `Equiv.conj`). -/
 
-/-- An isometry of `SL₂ℝ~` is smooth in global coordinates. -/
-theorem contDiff_coordinateMap (Φ : Isom 𝓘(ℝ, ℝ × ℝ × ℝ) SL2Tilde) :
-    ContDiff ℝ ∞ (coordinateMap Φ) :=
-  -- `SL2Tilde` has exactly the charts of `ℝ × ℝ × ℝ`, so both coordinate maps are identities.
-  Φ.contMDiff.contDiff
+/-- The extended chart of `SL₂ℝ~` at every point is the global coordinate equivalence. -/
+private theorem extChartAt_eq (q : SL2Tilde) :
+    extChartAt 𝓘(ℝ, ℝ × ℝ × ℝ) q = toProd.toPartialEquiv :=
+  -- `SL2Tilde` carries the charts of `ℝ × ℝ × ℝ`, and `toProd` is the identity.
+  extChartAt_model_space_eq_id (𝕜 := ℝ) (toProd q)
 
-/-- The ordinary derivative of an isometry of `SL₂ℝ~` in global coordinates is its manifold
-derivative, read through the canonical tangent-space identifications. -/
-theorem fderiv_coordinateMap_apply (Φ : Isom 𝓘(ℝ, ℝ × ℝ × ℝ) SL2Tilde) (p : SL2Tilde)
+/-- A self-map of `SL₂ℝ~` is its global-coordinate expression read back through `toProd`. -/
+private theorem toProd_symm_comp_conj_comp (f : SL2Tilde → SL2Tilde) :
+    toProd.symm ∘ toProd.conj f ∘ toProd = f := by
+  funext p
+  simp
+
+/-- A self-map `f` of `SL₂ℝ~` is `C^n` exactly when its expression `toProd.conj f` in the
+global coordinates `ℝ × ℝ × ℝ` is `C^n`. -/
+theorem contMDiff_iff_contDiff_toProd_conj {n : ℕ∞ω} {f : SL2Tilde → SL2Tilde} :
+    ContMDiff 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) n f ↔ ContDiff ℝ n (toProd.conj f) := by
+  have hc : ⇑toProd ∘ f ∘ ⇑toProd.symm = toProd.conj f :=
+    funext fun r ↦ (toProd.conj_apply f r).symm
+  rw [contMDiff_iff]
+  simp only [extChartAt_eq, Equiv.toPartialEquiv_apply, Equiv.toPartialEquiv_symm_apply,
+    Equiv.toPartialEquiv_target, Equiv.toPartialEquiv_source, Set.preimage_univ, Set.inter_univ,
+    contDiffOn_univ, hc]
+  refine ⟨fun h ↦ h.2 (mk 0 0 0) (mk 0 0 0), fun h ↦ ⟨?_, fun _ _ ↦ h⟩⟩
+  -- `f` is `toProd.conj f` read back through the coordinate homeomorphisms.
+  simpa only [coe_toProdDiffeomorph, coe_toProdDiffeomorph_symm, toProd_symm_comp_conj_comp] using
+    toProdDiffeomorph.symm.continuous.comp (h.continuous.comp toProdDiffeomorph.continuous)
+
+/-- The derivative of the global-coordinate expression `toProd.conj f` of a self-map `f` of
+`SL₂ℝ~` is the manifold derivative of `f`, read through the canonical tangent-space
+identifications. No differentiability is assumed: both sides vanish when `f` is not
+differentiable at `p`. -/
+@[simp]
+theorem fderiv_toProd_conj_apply (f : SL2Tilde → SL2Tilde) (p : SL2Tilde)
     (u : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) p) :
-    fderiv ℝ (coordinateMap Φ) (toProd p) (tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) p u) =
-      tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) (Φ p)
-        (mfderiv 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) Φ p u) := by
-  -- The inherited model-space atlas identifies the coordinate derivative and the tangent casts
-  -- with Mathlib's normed-space derivative.
-  change fderiv ℝ (coordinateMap Φ) (toProd p) u =
-    mfderiv 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) (coordinateMap Φ) (toProd p) u
-  rw [mfderiv_eq_fderiv]
-  rfl
+    fderiv ℝ (toProd.conj f) (toProd p) (tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) p u) =
+      tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) (f p)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) f p u) := by
+  have hw : writtenInExtChartAt 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) p f = toProd.conj f := by
+    rw [writtenInExtChartAt, extChartAt_eq, extChartAt_eq]
+    funext r
+    simp
+  by_cases hf : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) f p
+  · rw [hf.mfderiv, hw, extChartAt_eq]
+    simp
+  · have hd : ¬ DifferentiableAt ℝ (toProd.conj f) (toProd p) := fun hd ↦ hf <| by
+      have h := (toProdDiffeomorph.symm.mdifferentiable (by simp) _).comp p
+        (hd.mdifferentiableAt.comp p (toProdDiffeomorph.mdifferentiable (by simp) p))
+      rwa [coe_toProdDiffeomorph_symm, toProd_symm_comp_conj_comp] at h
+    rw [fderiv_zero_of_not_differentiableAt hd, mfderiv_zero_of_not_mdifferentiableAt hf]
+    simp
 
 end SL2Tilde
 
