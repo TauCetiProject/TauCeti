@@ -250,9 +250,7 @@ theorem exists_continuousLinearMap_setIntegral_mul_conj_wirtingerDeriv_eq
     ∃ Q : Lp ℂ 2 ((volume : Measure (ℝ × ℝ)).restrict (Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1)) →L[ℂ]
         Lp ℂ 2 ((volume : Measure (ℝ × ℝ)).restrict (Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1)),
       ‖Q‖ ≤ (√(π ^ 2 / 2 * (|θ₁ - round θ₁| ^ 2 / ‖ω₁‖ ^ 2 + |θ₂ - round θ₂| ^ 2 / ‖ω₂‖ ^ 2)))⁻¹ ∧
-      ∀ f (φ : ℂ → ℂ), ContDiff ℝ 2 φ →
-        (∀ z, φ (z + ω₁) = exp (2 * π * θ₁ * I) * φ z) →
-        (∀ z, φ (z + ω₂) = exp (2 * π * θ₂ * I) * φ z) →
+      ∀ f, ∀ φ ∈ flatLineTestSections ω₁ ω₂ θ₁ θ₂,
         ∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1,
             Q f p * conj (wirtingerDeriv φ (p.1 * ω₁ + p.2 * ω₂) 1) =
           -∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1, f p * conj (φ (p.1 * ω₁ + p.2 * ω₂)) := by
@@ -262,8 +260,8 @@ theorem exists_continuousLinearMap_setIntegral_mul_conj_wirtingerDeriv_eq
   obtain ⟨Q, hQn, -, hQ⟩ := LinearMap.exists_continuousLinearMap_inner_apply_eq_of_mul_norm_le
     (negWirtingerToLp ω₁ ω₂ θ₁ θ₂) (sectionToLp ω₁ ω₂ θ₁ θ₂) (Real.sqrt_pos.2 hC)
     (sqrt_mul_norm_sectionToLp_le hω)
-  refine ⟨Q, hQn, fun f φ hφ hφ₁ hφ₂ ↦ ?_⟩
-  have h := hQ f ⟨φ, hφ, hφ₁, hφ₂⟩
+  refine ⟨Q, hQn, fun f φ hφ ↦ ?_⟩
+  have h := hQ f ⟨φ, hφ⟩
   rw [negWirtingerToLp_apply, sectionToLp_apply, L2.inner_toLp, L2.inner_toLp] at h
   have h' := congrArg conj h
   rw [← integral_conj, ← integral_conj] at h'
@@ -327,8 +325,7 @@ square-integrable section in lattice coordinates which is a weak solution of `�
 theorem eq_zero_of_forall_setIntegral_mul_conj_wirtingerDeriv_eq_zero
     (hω : (conj ω₁ * ω₂).im ≠ 0) (hθ : θ₁ ∉ range ((↑) : ℤ → ℝ) ∨ θ₂ ∉ range ((↑) : ℤ → ℝ))
     {y : Lp ℂ 2 ((volume : Measure (ℝ × ℝ)).restrict (Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1))}
-    (hy : ∀ φ : ℂ → ℂ, ContDiff ℝ 2 φ → (∀ z, φ (z + ω₁) = exp (2 * π * θ₁ * I) * φ z) →
-      (∀ z, φ (z + ω₂) = exp (2 * π * θ₂ * I) * φ z) →
+    (hy : ∀ φ ∈ flatLineTestSections ω₁ ω₂ θ₁ θ₂,
       ∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1,
         y p * conj (wirtingerDeriv φ (p.1 * ω₁ + p.2 * ω₂) 1) = 0) :
     y = 0 := by
@@ -350,9 +347,9 @@ theorem eq_zero_of_forall_setIntegral_mul_conj_wirtingerDeriv_eq_zero
       rcases hθ with h | h
       · exact h ⟨-k₁, by push_cast; linarith⟩
       · exact h ⟨-k₂, by push_cast; linarith⟩
-    have h := hy _ (contDiff_cexp_mul_sub_conj_mul_conj _)
-      (cexp_mul_add_sub_conj_mul_conj_add_of_im_mul_eq ha₁)
-      (cexp_mul_add_sub_conj_mul_conj_add_of_im_mul_eq ha₂)
+    have h := hy _ ⟨contDiff_cexp_mul_sub_conj_mul_conj _,
+      cexp_mul_add_sub_conj_mul_conj_add_of_im_mul_eq ha₁,
+      cexp_mul_add_sub_conj_mul_conj_add_of_im_mul_eq ha₂⟩
     simp only [wirtingerDeriv_cexp_mul_sub_conj_mul_conj, map_mul, mul_left_comm (y _) (conj _),
       integral_const_mul, mul_eq_zero, map_eq_zero, ha, false_or] at h
     rw [← h]
@@ -396,6 +393,17 @@ noncomputable def flatLineCRInverse (ω₁ ω₂ : ℂ) (θ₁ θ₂ : ℝ) :
     (exists_continuousLinearMap_setIntegral_mul_conj_wirtingerDeriv_eq h.1 h.2).choose
   else 0
 
+/-- For a degenerate lattice or trivial holonomy, `flatLineCRInverse ω₁ ω₂ θ₁ θ₂` is `0`. -/
+theorem flatLineCRInverse_of_not
+    (h : ¬((conj ω₁ * ω₂).im ≠ 0 ∧ (θ₁ ∉ range ((↑) : ℤ → ℝ) ∨ θ₂ ∉ range ((↑) : ℤ → ℝ)))) :
+    flatLineCRInverse ω₁ ω₂ θ₁ θ₂ = 0 := by
+  rw [flatLineCRInverse, dite_eq_right_of_eq_false (eq_false h)]
+
+/-- On the trivial flat line, with integer `θ₁, θ₂`, `flatLineCRInverse ω₁ ω₂ θ₁ θ₂` is `0`. -/
+@[simp]
+theorem flatLineCRInverse_intCast (k₁ k₂ : ℤ) : flatLineCRInverse ω₁ ω₂ k₁ k₂ = 0 :=
+  flatLineCRInverse_of_not fun h ↦ h.2.elim (· ⟨k₁, rfl⟩) (· ⟨k₂, rfl⟩)
+
 /-- The inverse of `∂bar` on a flat line with nontrivial holonomy has norm at most `C^(-1/2)`, for
 `C = π² / 2 · (‖θ₁‖ℤ² / |ω₁|² + ‖θ₂‖ℤ² / |ω₂|²)`. -/
 theorem norm_flatLineCRInverse_le (hω : (conj ω₁ * ω₂).im ≠ 0)
@@ -410,14 +418,13 @@ theorem norm_flatLineCRInverse_le (hω : (conj ω₁ * ω₂).im ≠ 0)
 theorem setIntegral_flatLineCRInverse_mul_conj_wirtingerDeriv (hω : (conj ω₁ * ω₂).im ≠ 0)
     (hθ : θ₁ ∉ range ((↑) : ℤ → ℝ) ∨ θ₂ ∉ range ((↑) : ℤ → ℝ))
     (f : Lp ℂ 2 ((volume : Measure (ℝ × ℝ)).restrict (Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1)))
-    (hφ : ContDiff ℝ 2 φ) (hφ₁ : ∀ z, φ (z + ω₁) = exp (2 * π * θ₁ * I) * φ z)
-    (hφ₂ : ∀ z, φ (z + ω₂) = exp (2 * π * θ₂ * I) * φ z) :
+    (hφ : φ ∈ flatLineTestSections ω₁ ω₂ θ₁ θ₂) :
     ∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1,
         flatLineCRInverse ω₁ ω₂ θ₁ θ₂ f p * conj (wirtingerDeriv φ (p.1 * ω₁ + p.2 * ω₂) 1) =
       -∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1, f p * conj (φ (p.1 * ω₁ + p.2 * ω₂)) := by
   rw [flatLineCRInverse, dite_eq_left_of_eq_true (eq_true ⟨hω, hθ⟩)]
   exact (exists_continuousLinearMap_setIntegral_mul_conj_wirtingerDeriv_eq hω hθ).choose_spec.2
-    f φ hφ hφ₁ hφ₂
+    f φ hφ
 
 /-- **Characterization of the inverse of `∂bar`.** On a flat line with nontrivial holonomy,
 `flatLineCRInverse ω₁ ω₂ θ₁ θ₂ f = y` exactly when `y` is a weak solution of `∂bar y = f`, that is,
@@ -425,23 +432,21 @@ theorem setIntegral_flatLineCRInverse_mul_conj_wirtingerDeriv (hω : (conj ω₁
 theorem flatLineCRInverse_apply_eq_iff (hω : (conj ω₁ * ω₂).im ≠ 0)
     (hθ : θ₁ ∉ range ((↑) : ℤ → ℝ) ∨ θ₂ ∉ range ((↑) : ℤ → ℝ))
     {f y : Lp ℂ 2 ((volume : Measure (ℝ × ℝ)).restrict (Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1))} :
-    flatLineCRInverse ω₁ ω₂ θ₁ θ₂ f = y ↔ ∀ φ : ℂ → ℂ, ContDiff ℝ 2 φ →
-      (∀ z, φ (z + ω₁) = exp (2 * π * θ₁ * I) * φ z) →
-      (∀ z, φ (z + ω₂) = exp (2 * π * θ₂ * I) * φ z) →
+    flatLineCRInverse ω₁ ω₂ θ₁ θ₂ f = y ↔ ∀ φ ∈ flatLineTestSections ω₁ ω₂ θ₁ θ₂,
       ∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1,
           y p * conj (wirtingerDeriv φ (p.1 * ω₁ + p.2 * ω₂) 1) =
         -∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1, f p * conj (φ (p.1 * ω₁ + p.2 * ω₂)) := by
   refine ⟨?_, fun h ↦ ?_⟩
-  · rintro rfl φ hφ hφ₁ hφ₂
-    exact setIntegral_flatLineCRInverse_mul_conj_wirtingerDeriv hω hθ f hφ hφ₁ hφ₂
+  · rintro rfl φ hφ
+    exact setIntegral_flatLineCRInverse_mul_conj_wirtingerDeriv hω hθ f hφ
   rw [← sub_eq_zero]
   refine eq_zero_of_forall_setIntegral_mul_conj_wirtingerDeriv_eq_zero hω hθ
-    fun φ hφ hφ₁ hφ₂ ↦ ?_
-  have hg := (hφ.of_le one_le_two).continuous_wirtingerDeriv_apply 1
+    fun φ hφ ↦ ?_
+  have hg := (hφ.1.of_le one_le_two).continuous_wirtingerDeriv_apply 1
   rw [setIntegral_mul_conj_comp_latticeCoord_eq_inner hg, inner_sub_right,
     ← setIntegral_mul_conj_comp_latticeCoord_eq_inner hg,
     ← setIntegral_mul_conj_comp_latticeCoord_eq_inner hg,
-    setIntegral_flatLineCRInverse_mul_conj_wirtingerDeriv hω hθ f hφ hφ₁ hφ₂, h φ hφ hφ₁ hφ₂,
+    setIntegral_flatLineCRInverse_mul_conj_wirtingerDeriv hω hθ f hφ, h φ hφ,
     sub_self]
 
 /-- **The inverse of `∂bar` inverts `∂bar` on `C¹` sections.** On a flat line with nontrivial
@@ -459,7 +464,7 @@ theorem flatLineCRInverse_ae_eq_of_ae_eq_conjWirtingerDeriv (hω : (conj ω₁ *
   have hmem := memLp_comp_latticeCoord (ω₁ := ω₁) (ω₂ := ω₂) hu.continuous
   have hχ (θ : ℝ) : ‖exp (2 * π * θ * I)‖ = 1 := by
     simpa using norm_exp_ofReal_mul_I (2 * π * θ)
-  rw [(flatLineCRInverse_apply_eq_iff hω hθ).2 fun φ hφ hφ₁ hφ₂ ↦ ?_]
+  rw [(flatLineCRInverse_apply_eq_iff hω hθ).2 fun φ hφ ↦ ?_]
   · exact hmem.coeFn_toLp
   have h₁ : ∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1,
       hmem.toLp _ p * conj (wirtingerDeriv φ (p.1 * ω₁ + p.2 * ω₂) 1) =
@@ -471,7 +476,7 @@ theorem flatLineCRInverse_ae_eq_of_ae_eq_conjWirtingerDeriv (hω : (conj ω₁ *
         conjWirtingerDeriv u (p.1 * ω₁ + p.2 * ω₂) 1 * conj (φ (p.1 * ω₁ + p.2 * ω₂)) :=
     integral_congr_ae (by filter_upwards [hf] with p hp; rw [hp])
   rw [h₁, h₂, setIntegral_conjWirtingerDeriv_mul_conj_eq_neg_setIntegral_mul_conj_wirtingerDeriv hu
-    (hφ.of_le one_le_two) hω (hχ θ₁) (hχ θ₂) hu₁ hu₂ hφ₁ hφ₂, neg_neg]
+    (hφ.1.of_le one_le_two) hω (hχ θ₁) (hχ θ₂) hu₁ hu₂ hφ.2.1 hφ.2.2, neg_neg]
 
 end Inverse
 
