@@ -239,6 +239,13 @@ theorem specialLinearDiagonalCartan_toSubmodule :
     (specialLinearDiagonalCartan r A).toSubmodule = specialLinearDiagonal r A :=
   (rfl)
 
+variable {r A} in
+/-- The difference `Eᵢᵢ - Eⱼⱼ` of diagonal matrix units lies in the diagonal Cartan subalgebra. -/
+theorem singleSubSingle_mem_specialLinearDiagonalCartan (i j : Fin (r + 1)) (a : A) :
+    singleSubSingle i j a ∈ specialLinearDiagonalCartan r A := by
+  rw [← LieSubalgebra.mem_toSubmodule, specialLinearDiagonalCartan_toSubmodule]
+  exact singleSubSingle_mem_specialLinearDiagonal r A i j a
+
 /-- The **simple coroots** `hᵢ = Eᵢᵢ - Eᵢ₊₁,ᵢ₊₁`, as a basis of the diagonal Cartan subalgebra of
 `sl (Fin (r + 1)) A`: `TauCeti.specialLinearCorootBasis` read on the Lie subalgebra. -/
 noncomputable def specialLinearDiagonalCartanBasis :
