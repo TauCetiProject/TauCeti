@@ -33,8 +33,8 @@ along the composite equivalence gives the complement in the original representat
 
 * `Representation.isSemisimpleRepresentation_of_continuous`: a finite-dimensional representation
   of a compact group with continuous matrix coefficients is semisimple.
-* `ContRepresentation.isSemisimpleRepresentation`: so is a representation on a finite-dimensional
-  normed space that is continuous in operator norm.
+* `ContRepresentation.isSemisimpleRepresentation_of_continuous`: so is a representation on a
+  finite-dimensional normed space that is continuous in operator norm.
 
 ## References
 
@@ -98,10 +98,11 @@ theorem isSemisimpleRepresentation_of_continuous (ρ : Representation 𝕜 G V)
 /-- **Complete reducibility for continuous representations of compact groups.** A representation
 of a compact group on a finite-dimensional normed space over `ℝ` or `ℂ`, continuous in operator
 norm, is semisimple. -/
-theorem _root_.ContRepresentation.isSemisimpleRepresentation {V : Type*} [NormedAddCommGroup V]
-    [NormedSpace 𝕜 V] [FiniteDimensional 𝕜 V] {π : ContRepresentation 𝕜 G V}
-    (hπ : Continuous π) : π.toRepresentation.IsSemisimpleRepresentation :=
-  isSemisimpleRepresentation_of_continuous _ fun f v ↦
+theorem _root_.ContRepresentation.isSemisimpleRepresentation_of_continuous {V : Type*}
+    [NormedAddCommGroup V] [NormedSpace 𝕜 V] [FiniteDimensional 𝕜 V]
+    (π : ContRepresentation 𝕜 G V) (hπ : Continuous π) :
+    π.toRepresentation.IsSemisimpleRepresentation :=
+  Representation.isSemisimpleRepresentation_of_continuous _ fun f v ↦
     (LinearMap.continuous_of_finiteDimensional f).comp (continuous_clm_apply.mp hπ v)
 
 end Representation

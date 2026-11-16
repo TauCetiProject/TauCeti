@@ -372,7 +372,7 @@ theorem range_isotypicProjector
     (Representation.irreducible_iff_isSimpleModule_asModule _).mp hirr
   have hsemisimple : IsSemisimpleModule k[G] rho.toRepresentation.asModule :=
     (Representation.isSemisimpleRepresentation_iff_isSemisimpleModule_asModule _).mp
-      (ContRepresentation.isSemisimpleRepresentation hrho)
+      (rho.isSemisimpleRepresentation_of_continuous hrho)
   let _ := hsemisimple
   have hmaps : ∀ m : Submodule k[G] rho.toRepresentation.asModule,
       IsSimpleModule k[G] m → m ≤ C.comap p := fun m hm x hx ↦

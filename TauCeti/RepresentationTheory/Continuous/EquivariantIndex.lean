@@ -386,11 +386,13 @@ theorem _root_.ContinuousOn.equivariantIndex_eq [TopologicalSpace G] [IsTopologi
   have := (hF y hy).isClosed_range
   -- The kernel and cokernel representations are continuous, hence so are the two direct sums
   -- `ker (A x) ⊕ coker (A y)` and `ker (A y) ⊕ coker (A x)`, which are therefore semisimple.
-  have := isSemisimpleRepresentation ((A x).continuous_kerRepresentation_of_isFredholm (hF x hx) hπ)
-  have := isSemisimpleRepresentation ((A y).continuous_kerRepresentation_of_isFredholm (hF y hy) hπ)
-  have := isSemisimpleRepresentation
+  have := isSemisimpleRepresentation_of_continuous _
+    ((A x).continuous_kerRepresentation_of_isFredholm (hF x hx) hπ)
+  have := isSemisimpleRepresentation_of_continuous _
+    ((A y).continuous_kerRepresentation_of_isFredholm (hF y hy) hπ)
+  have := isSemisimpleRepresentation_of_continuous _
     ((A x).continuous_cokerRepresentation_of_isFredholm (hF x hx) hρ)
-  have := isSemisimpleRepresentation
+  have := isSemisimpleRepresentation_of_continuous _
     ((A y).continuous_cokerRepresentation_of_isFredholm (hF y hy) hρ)
   -- Their irreducible pieces see the same intertwiner dimensions, so they are equivalent.
   obtain ⟨e⟩ := Representation.nonempty_equiv_of_finrank_intertwiningMap_eq
