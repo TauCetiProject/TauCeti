@@ -6,7 +6,6 @@ Authors: Codex
 module
 
 public import TauCeti.Probability.Distributions.CompoundPoisson.Basic
-import TauCeti.Probability.Distributions.Affine
 
 /-!
 # Affine transport of compound Poisson laws
@@ -41,16 +40,9 @@ theorem compoundPoissonMeasure_map_affine (r : ℝ≥0) (μ : Measure ℝ) [SFin
     (a b : ℝ) :
     (compoundPoissonMeasure r μ).map (fun x ↦ a + b * x) =
       (compoundPoissonMeasure r (μ.map (fun x ↦ b * x))).map (fun x ↦ a + x) := by
-  let scale : ℝ →+ ℝ :=
-    { toFun := fun x ↦ b * x
-      map_zero' := by simp
-      map_add' := by intros; ring }
-  have hmeas : Measurable scale := by
-    change Measurable fun x : ℝ ↦ b * x
-    exact measurable_const_mul b
-  have hscale := map_compoundPoissonMeasure r μ scale hmeas
-  change (compoundPoissonMeasure r μ).map (fun x ↦ b * x) =
-    compoundPoissonMeasure r (μ.map (fun x ↦ b * x)) at hscale
+  have hscale := map_compoundPoissonMeasure r μ (AddMonoidHom.mulLeft b)
+    (by simpa only [AddMonoidHom.coe_mulLeft] using measurable_const_mul b)
+  simp only [AddMonoidHom.coe_mulLeft] at hscale
   rw [← hscale, Measure.map_map (by fun_prop) (by fun_prop)]
   rfl
 
