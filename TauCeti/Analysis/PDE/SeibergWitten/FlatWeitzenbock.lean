@@ -105,10 +105,10 @@ open CliffordAlgebra Module Complex
 open InnerProductSpace Laplacian Filter
 open scoped RealInnerProductSpace InnerProductSpace Topology
 
-variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
-  {Q : QuadraticForm ℝ V}
-  {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℂ W]
-  (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W)
+section CovariantDeriv
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+  {W : Type*} [NormedAddCommGroup W] [NormedSpace ℂ W]
   {b : V → V [⋀^Fin 1]→L[ℝ] ℝ} {ψ : V → W} {x : V}
 
 /-! ### The covariant derivative -/
@@ -180,6 +180,20 @@ theorem covariantDeriv_sum_apply [FiniteDimensional ℂ W] {κ : Type*} [Fintype
       ((f k).restrictScalars ℝ).toContinuousLinearMap.hasFDerivAt.comp x (hg k).hasFDerivAt
   rw [covariantDeriv_apply, H.fderiv]
   simp [Finset.smul_sum, ← Finset.sum_add_distrib, map_smul, LinearMap.map_smul_of_tower]
+
+/-- The covariant derivative of a field vanishing near `x` vanishes at `x`. -/
+theorem covariantDeriv_eq_zero_of_eventuallyEq {φ : V → W} (h : φ =ᶠ[𝓝 x] 0) :
+    covariantDeriv b φ x = 0 := by
+  ext v
+  simp [covariantDeriv_apply, h.fderiv_eq, h.eq_of_nhds]
+
+end CovariantDeriv
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+  {Q : QuadraticForm ℝ V}
+  {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℂ W]
+  (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W)
+  {b : V → V [⋀^Fin 1]→L[ℝ] ℝ} {ψ : V → W} {x : V}
 
 /-! ### The Laplacian of `|ψ|²` -/
 
@@ -296,12 +310,6 @@ theorem flatDirac_flatDirac (hQ : ∀ v, Q v = -‖v‖ ^ 2) (hψ : ContDiffAt �
 
 end Dirac
 
-/-- The covariant derivative of a field vanishing near `x` vanishes at `x`. -/
-theorem covariantDeriv_eq_zero_of_eventuallyEq {φ : V → W} (h : φ =ᶠ[𝓝 x] 0) :
-    covariantDeriv b φ x = 0 := by
-  ext v
-  simp [covariantDeriv_apply, h.fderiv_eq, h.eq_of_nhds]
-
 /-! ### Solutions of the Dirac equation in dimension four -/
 
 section SeibergWitten
@@ -345,6 +353,12 @@ theorem laplacian_norm_sq_eq_of_flatDirac_eq_zero (hψ : ContDiffAt ℝ 2 ψ x)
     inner_quadraticTwoForm_eq_re_inner o ρ hQ hkl, hφ, ← coe_cliffordRestriction_apply,
     Submodule.coe_inner]
   ring
+
+/-- The curvature `db`, read as a two-vector, is minus the real curvature `F = -db`. -/
+private theorem alternatingFormEquiv_symm_extDeriv :
+    (alternatingFormEquiv V 2).symm (extDeriv b x) =
+      -(alternatingFormEquiv V 2).symm (-extDeriv b x) := by
+  rw [map_neg, neg_neg]
 
 /-- The pairing of `q(φ)` with the curvature under the large-parameter curvature equation
 `F + ⋆F = (r / 4) ω - r q(φ) - η`:
@@ -390,9 +404,9 @@ theorem sum_covariantDeriv_eq_of_add_hodgeStar_eq (hψ : ContDiffAt ℝ 2 ψ x)
     ∑ k, covariantDeriv b (fun y ↦ covariantDeriv b ψ y (e k)) x (e k) =
       (((r / 4 * (‖χ‖ ^ 2 - 1)) • χ + (r / 2) • cliffordProjection o ρ (-ω) χ +
         (2⁻¹ : ℝ) • cliffordRestriction o ρ η χ : positiveHalfSpinors o ρ) : W) := by
+  rw [sum_covariantDeriv_eq_of_flatDirac_eq_zero hQ hψ hb hD e,
+    alternatingFormEquiv_symm_extDeriv]
   set F := (alternatingFormEquiv V 2).symm (-extDeriv b x)
-  have hneg : (alternatingFormEquiv V 2).symm (extDeriv b x) = -F := by
-    simp only [F, map_neg, neg_neg]
   -- `C` kills the anti-self-dual part `F - ⋆F`, so `C(F + ⋆F) = 2 C(F)`.
   have hasd : cliffordRestriction o ρ (F - o.hodgeStar hkl F) = 0 :=
     cliffordRestriction_eq_zero_of_hodgeStar_eq_neg o ρ hQ hkl (by
@@ -409,8 +423,7 @@ theorem sum_covariantDeriv_eq_of_add_hodgeStar_eq (hψ : ContDiffAt ℝ 2 ψ x)
   have hP : cliffordProjection o ρ ω χ = χ - cliffordProjection o ρ (-ω) χ := by
     rw [cliffordProjection_neg_apply]
     abel
-  rw [sum_covariantDeriv_eq_of_flatDirac_eq_zero hQ hψ hb hD e, hneg, hχ,
-    ← coe_cliffordRestriction_apply, map_neg, _root_.neg_apply]
+  rw [hχ, ← coe_cliffordRestriction_apply, map_neg, _root_.neg_apply]
   congr 1
   refine smul_right_injective _ (two_ne_zero (α := ℝ)) ?_
   simp only [smul_neg, hCχ, hP, one_apply_eq_self, ← Complex.coe_smul]
@@ -441,10 +454,8 @@ theorem laplacian_norm_sq_eq_of_add_hodgeStar_eq (hψ : ContDiffAt ℝ 2 ψ x)
         r / 4 * (‖χ‖ ^ 4 - ‖cliffordProjection o ρ ω χ‖ ^ 2 +
           ‖cliffordProjection o ρ (-ω) χ‖ ^ 2) +
         2 * ⟪(quadraticTwoForm o ρ hkl χ : ⋀[ℝ]^2 V), η⟫ := by
-  have hneg : (alternatingFormEquiv V 2).symm (extDeriv b x) =
-      -(alternatingFormEquiv V 2).symm (-extDeriv b x) := by
-    rw [map_neg, neg_neg]
-  rw [laplacian_norm_sq_eq_of_flatDirac_eq_zero o hQ hkl hψ hb hD hχ e, hneg,
+  rw [laplacian_norm_sq_eq_of_flatDirac_eq_zero o hQ hkl hψ hb hD hχ e,
+    alternatingFormEquiv_symm_extDeriv,
     four_mul_inner_quadraticTwoForm_neg o hkl χ hF, Submodule.norm_coe,
     norm_quadraticTwoForm_sq o hQ hkl hρ h₂,
     inner_quadraticTwoForm o hQ hkl]
@@ -471,22 +482,16 @@ theorem norm_sq_le_one_add_of_isLocalMax (hψ : ContDiffAt ℝ 2 ψ x)
     ‖χ‖ ^ 2 ≤ 1 + 2 * √2 * ‖η‖ / r := by
   set q := (quadraticTwoForm o ρ hkl χ : ⋀[ℝ]^2 V)
   have hΔ := laplacian_nonpos_of_isLocalMax (ContDiffAt.norm_sq ℂ hψ) hmax
-  have hneg : (alternatingFormEquiv V 2).symm (extDeriv b x) =
-      -(alternatingFormEquiv V 2).symm (-extDeriv b x) := by
-    rw [map_neg, neg_neg]
-  rw [laplacian_norm_sq_eq_of_flatDirac_eq_zero o hQ hkl hψ hb hD hχ (stdOrthonormalBasis ℝ V),
-    hneg, four_mul_inner_quadraticTwoForm_neg o hkl χ hF] at hΔ
+  have hid := laplacian_norm_sq_eq_of_add_hodgeStar_eq o hQ hkl hρ h₂ hψ hb hD hχ hF
+    (stdOrthonormalBasis ℝ V)
+  have hP := inner_quadraticTwoForm o hQ hkl (ω := ω) χ
   have hsum : 0 ≤ ∑ k, ‖covariantDeriv b ψ x (stdOrthonormalBasis ℝ V k)‖ ^ 2 :=
     Finset.sum_nonneg fun _ _ ↦ by positivity
   -- `|q(χ)| = |χ|² / (2 √2)` and `|ω| = √2` bound the two pairings of `q(χ)`.
   have hq : ‖q‖ = ‖χ‖ ^ 2 / (2 * √2) :=
     (Submodule.norm_coe _).trans (norm_quadraticTwoForm o hQ hkl hρ h₂ χ)
-  have hq₂ : ‖q‖ ^ 2 = ‖χ‖ ^ 4 / 8 := by
-    rw [hq, div_pow, mul_pow, Real.sq_sqrt zero_le_two]
-    ring
   have hω : ‖ω‖ = √2 := by rw [← Real.sqrt_sq (norm_nonneg ω), hω₂]
   have hs : √2 ^ 2 = 2 := Real.sq_sqrt zero_le_two
-  have hs₀ : 0 < √2 := by positivity
   have h₁ : ⟪q, ω⟫ ≤ ‖χ‖ ^ 2 / 2 := by
     refine (real_inner_le_norm q ω).trans_eq ?_
     rw [hq, hω]
@@ -505,8 +510,8 @@ theorem norm_sq_le_one_add_of_isLocalMax (hψ : ContDiffAt ℝ 2 ψ x)
       field_simp
       rw [hs]
       ring
-    rw [hq₂, h4] at hΔ
-    nlinarith [norm_nonneg η]
+    rw [h4] at hid
+    nlinarith [mul_le_mul_of_nonneg_left h₁ hr.le, congrArg (r * ·) hP]
   rcases ht₀.eq_or_lt with h0 | hpos
   · rw [← h0]
     positivity
