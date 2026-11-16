@@ -16,18 +16,22 @@ import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 /-!
 # Bounded-domain diameter estimates for Riesz potentials and weakly singular integral operators
 
-On the whole space `E` of dimension `n = finrank ℝ E`, the Riesz potential
-`rieszPotential μ α f x = ∫⁻ y, ‖x - y‖ₑ ^ (α - n) * ‖f y‖ₑ ∂μ`
-only maps `Lᵖ(E)` to `L^q(E)` when `0 < α < n` and `1/q = 1/p - α/n`
-(`TauCeti.exists_eLpNorm_rieszPotential_le`), and never maps `Lᵖ(E)` to `Lᵖ(E)` or to `L^∞(E)`.
+On a nontrivial space `E` of finite dimension `n = finrank ℝ E`, for orders `0 < α < n` the
+whole-space Hardy–Littlewood–Sobolev inequality (`TauCeti.exists_eLpNorm_rieszPotential_le`) bounds
+the Riesz potential `rieszPotential μ α f x = ∫⁻ y, ‖x - y‖ₑ ^ (α - n) * ‖f y‖ₑ ∂μ` from `Lᵖ(E)`
+to `L^q(E)` for `1 < p < n / α` at the scaling exponent `1/q = 1/p - α/n` (`p < q < ∞`), while on
+measurable sets of finite measure the rearrangement estimate
+`TauCeti.eLpNorm_setLIntegral_enorm_sub_rpow_mul_le` covers `0 < α ≤ n` and finite exponents
+`1 ≤ p ≤ q < ∞` with `n * (1/p - 1/q) < α`.
 
 When integration is restricted to a bounded set `Ω` (`μ.restrict Ω`), there is no far-field tail:
 for every `x ∈ closure Ω` the domain `Ω` lies inside `closedBall x (diam Ω)`, where the radial
 integral of `‖x - y‖ ^ s` converges for every `s > -n`
 (`TauCeti.setLIntegral_enorm_sub_rpow_le_of_mem_closure`). Consequently,
 `rieszPotential (μ.restrict Ω) α` satisfies explicit diameter-weighted estimates across all orders
-`α > 0` (including `α ≥ n`, where symmetric decreasing rearrangement on `E` fails) and all exponent
-pairs `1 ≤ p ≤ q ≤ ∞` above the scaling threshold:
+`α > 0` (including `α > n`, where the kernel `‖x - y‖ ^ (α - n)` grows with distance) and all
+exponent pairs `1 ≤ p ≤ q ≤ ∞` above the scaling threshold (including `α = n` at
+`(p, q) = (1, ∞)`):
 
 * **Pointwise `Lᵖ → L^∞` estimate on `closure Ω`**
   (`TauCeti.rieszPotential_restrict_le_of_mem_closure`, Brenner–Scott, Lemma 4.3.1): if `n / p < α`,
