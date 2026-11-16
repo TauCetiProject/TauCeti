@@ -7,8 +7,11 @@ module
 
 public import TauCeti.Analysis.Calculus.Equicontinuity
 public import TauCeti.Analysis.Complex.Wirtinger.SecondDerivative
+import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Analysis.Calculus.FDeriv.WithLp
 import TauCeti.Geometry.Symplectic.Complex.Module.Conjugacy
+import TauCeti.Geometry.Symplectic.Floer.Parameter
 import TauCeti.Topology.UniformSpace.Equicontinuity
 
 /-!
@@ -48,6 +51,14 @@ sequence of derivatives is equicontinuous on `Ω`
 The Arzelà–Ascoli theorem in `C¹` (`TauCeti.exists_strictMono_tendstoLocallyUniformlyOn_fderiv`)
 gives a subsequence of every subsequence along which `Duₙ → Dv`; as the limit `Dv` is the same each
 time, the whole sequence converges. The equation passes to the limit pointwise.
+
+The same holds when the data `J_p` and `X_p` depend jointly `C¹` on a parameter `p` in a
+finite-dimensional real normed space and the solutions `uₙ` are taken for parameters `pₙ → p₀`
+(`TauCeti.Floer.tendstoLocallyUniformlyOn_fderiv_of_floer_of_tendsto`): the limit solves the
+equation for `p₀`. This covers the rescaled solutions of bubbling analysis, whose data
+`J(c + ε w, x)` and `ε X(c + ε w, x)` depend on the centre `c` and the scale `ε → 0`. It reduces to
+the statement for a single datum by adjoining the parameter to the target as a constant
+coordinate.
 
 ## References
 
@@ -299,5 +310,74 @@ theorem tendstoLocallyUniformlyOn_fderiv_of_floer {J : ℂ × V → V →L[ℝ] 
   -- Pass to the limit in the equation.
   exact ⟨hv, hconv, fun y hy ↦ fderiv_I_sub_eq_of_tendsto hW hJ.continuousOn hX.continuousOn
     (hvW y hy) (hconv.tendsto_at hy) (hlim y hy) fun n ↦ hCR n y hy⟩
+
+/-! ### Converging parameters
+
+Let the data `J_p` and `X_p` depend on a parameter `p`. Adjoin the parameter to the target as a
+constant coordinate: a solution `u` for the parameter `p` is the second component of the solution
+`z ↦ ((p, 0), u z)` of the equation on `(P × P) × V` for the data `TauCeti.Floer.parameterJ` and
+`TauCeti.Floer.parameterX`. The parameter block has zero derivative and solves its equation
+trivially. The theorem for a single datum then applies on `(P × P) × V`. -/
+
+section Parameter
+
+open Function
+
+variable {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P] [FiniteDimensional ℝ P]
+
+/-- **The derivatives of Floer solutions with converging parameters converge.** Let `J_p` and
+`X_p` depend on a parameter `p` in a finite-dimensional real normed space `P`, jointly `C¹` on an
+open set `W ⊆ P × (ℂ × V)`, and let `Ω ⊆ ℂ` be open. Let `uₙ` be smooth solutions of
+`∂ₜu - X_{pₙ}(z, u) i = J_{pₙ}(z, u)(∂ₛu - X_{pₙ}(z, u) 1)` on `Ω`, along which `J_{pₙ}² = -1`,
+for parameters `pₙ → p₀`, whose derivatives are bounded on each compact subset of `Ω` uniformly in
+`n`, and which converge pointwise on `Ω` to a `v` with `(p₀, y, v y) ∈ W` for `y ∈ Ω`. Then `v`
+is `C¹` on `Ω`, `Duₙ → Dv` locally uniformly on `Ω`, and `v` solves the equation for `p₀` on
+`Ω`. -/
+theorem tendstoLocallyUniformlyOn_fderiv_of_floer_of_tendsto {J : P → ℂ × V → V →L[ℝ] V}
+    {X : P → ℂ × V → ℂ →L[ℝ] V} {W : Set (P × (ℂ × V))} {Ω : Set ℂ} (hW : IsOpen W)
+    (hJ : ContDiffOn ℝ 1 (uncurry J) W) (hX : ContDiffOn ℝ 1 (uncurry X) W) (hΩ : IsOpen Ω)
+    {p : ℕ → P} {p₀ : P} (hp : Tendsto p atTop (𝓝 p₀)) {u : ℕ → ℂ → V} {v : ℂ → V}
+    (hvW : ∀ y ∈ Ω, (p₀, (y, v y)) ∈ W) (hu : ∀ n, ContDiffOn ℝ ∞ (u n) Ω)
+    (hJsq : ∀ n, ∀ y ∈ Ω, ∀ w, J (p n) (y, u n y) (J (p n) (y, u n y) w) = -w)
+    (hCR : ∀ n, ∀ y ∈ Ω, fderiv ℝ (u n) y I - X (p n) (y, u n y) I =
+      J (p n) (y, u n y) (fderiv ℝ (u n) y 1 - X (p n) (y, u n y) 1))
+    (hbd : ∀ C, IsCompact C → C ⊆ Ω → ∃ M, ∀ n, ∀ y ∈ C, ‖fderiv ℝ (u n) y‖ ≤ M)
+    (hlim : ∀ y ∈ Ω, Tendsto (fun n ↦ u n y) atTop (𝓝 (v y))) :
+    ContDiffOn ℝ 1 v Ω ∧ TendstoLocallyUniformlyOn (fun n ↦ fderiv ℝ (u n)) (fderiv ℝ v) atTop Ω ∧
+      ∀ y ∈ Ω, fderiv ℝ v y I - X p₀ (y, v y) I =
+        J p₀ (y, v y) (fderiv ℝ v y 1 - X p₀ (y, v y) 1) := by
+  -- Adjoin the parameter to the target as the constant coordinate `(p n, 0)`.
+  set u' : ℕ → ℂ → WithLp 2 (WithLp 2 (P × P) × V) := fun n y ↦ parameterLift (p n, u n y)
+  set v' : ℂ → WithLp 2 (WithLp 2 (P × P) × V) := fun y ↦ parameterLift (p₀, v y)
+  obtain ⟨hv', hconv', heq'⟩ := tendstoLocallyUniformlyOn_fderiv_of_floer
+    (J := parameterJ J) (X := parameterX X) (W := parameterPoint ⁻¹' W)
+    (hW.preimage (parameterPoint (P := P) (V := V)).continuous) (contDiffOn_parameterJ hJ)
+    (contDiffOn_parameterX hX) hΩ (u := u') (v := v') (fun y hy ↦ by simpa [v'] using hvW y hy)
+    (fun n ↦ contDiff_parameterLift.comp_contDiffOn (contDiffOn_const.prodMk (hu n)))
+    (fun n y hy ↦ parameterJ_parameterJ (by simpa [u'] using hJsq n y hy))
+    (fun n y hy ↦ by simp [u', WithLp.ext_iff, hCR n y hy])
+    (fun C hC hCΩ ↦ by
+      obtain ⟨M, hM⟩ := hbd C hC hCΩ
+      refine ⟨M, fun n y hy ↦
+        (ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun w ↦ ?_).trans (hM n y hy)⟩
+      simpa [u', WithLp.norm_toLp_snd] using (fderiv ℝ (u n) y).le_opNorm w)
+    (fun y hy ↦ (continuous_parameterLift.tendsto _).comp (hp.prodMk_nhds (hlim y hy)))
+  -- Read the conclusions off the second component.
+  set S := WithLp.sndL 2 ℝ (WithLp 2 (P × P)) V
+  have hSv : S ∘ v' = v := funext fun y ↦ by simp [S, v']
+  have hdv (y : ℂ) (hy : y ∈ Ω) : fderiv ℝ v y = S ∘L fderiv ℝ v' y :=
+    hSv ▸ (S.hasFDerivAt.comp y ((hv'.differentiableOn one_ne_zero y hy).differentiableAt
+      (hΩ.mem_nhds hy)).hasFDerivAt).fderiv
+  have hdu (n : ℕ) (y : ℂ) : fderiv ℝ (u n) y = S ∘L fderiv ℝ (u' n) y := by
+    ext w
+    simp [S, u']
+  refine ⟨hSv ▸ S.contDiff.comp_contDiffOn hv', ?_, fun y hy ↦ ?_⟩
+  · exact (((ContinuousLinearMap.compL ℝ ℂ _ V S).uniformContinuous
+      |>.comp_tendstoLocallyUniformlyOn hconv').congr fun n y _ ↦
+        (hdu n y).symm).congr_right fun y hy ↦ (hdv y hy).symm
+  · have h := congrArg S (heq' y hy)
+    simpa [v', S] using h
+
+end Parameter
 
 end TauCeti.Floer
