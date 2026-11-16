@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
+public import Mathlib.Analysis.InnerProductSpace.ProdL2
+public import Mathlib.Analysis.Normed.Affine.Isometry
 
 /-!
 # Inner-product half-spaces
@@ -14,7 +16,9 @@ A translation orthogonal to the normal vector preserves a strict half-space. The
 `r` about a unit vector `x` lies in the half-space `{z | 1 - r ≤ ⟪x, z⟫}`. The projection
 `z - (⟪z, ν⟫ / ‖ν‖²) ν` lands in the boundary hyperplane `{z | ⟪z, ν⟫ = 0}`. Relative to an
 orthonormal basis `(eᵢ)`, a bilinear form splits into a part along `ν` and a part along the
-projected basis vectors `eᵢ - (⟪eᵢ, ν⟫ / ‖ν‖²) ν`.
+projected basis vectors `eᵢ - (⟪eᵢ, ν⟫ / ‖ν‖²) ν`. In rigid coordinates
+`e : F ≃ᵃⁱ ℝ × E`, the normal coordinate `(e x).fst` is `⟪x, ν⟫` plus a constant, so the region
+where it is positive is a half-space.
 -/
 
 public section
@@ -104,3 +108,21 @@ theorem sum_smul_inner_sub_sum_smul_inner_proj {ι E : Type*} [Fintype ι] [Norm
   exact Finset.sum_congr rfl fun j _ => by ring
 
 end OrthonormalBasis
+
+namespace AffineIsometryEquiv
+
+open scoped InnerProductSpace
+
+/-- **The normal coordinate of rigid coordinates is affine.** For an affine isometry equivalence
+`e : F ≃ᵃⁱ ℝ × E`, the first coordinate `(e x).fst` is `⟪x, ν⟫ + (e 0).fst`, where `ν` is the
+preimage of the unit normal `(1, 0)` under the linear part of `e`. -/
+theorem fst_apply_eq_inner_add {F E : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+    [NormedAddCommGroup E] [InnerProductSpace ℝ E] (e : F ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) (x : F) :
+    (e x).fst = ⟪x, e.linearIsometryEquiv.symm (WithLp.toLp 2 (1, 0))⟫_ℝ + (e 0).fst := by
+  have hx : e.linearIsometryEquiv x = e x - e 0 := by
+    simpa only [vsub_eq_sub, sub_zero] using e.map_vsub x 0
+  rw [← e.linearIsometryEquiv.inner_map_map, LinearIsometryEquiv.apply_symm_apply,
+    WithLp.prod_inner_apply, hx]
+  simp
+
+end AffineIsometryEquiv
