@@ -180,7 +180,13 @@ theorem HasMFDerivWithinAt.mapsTo_mtangentConeAt {𝕜 E H M E' H' M' : Type*}
   intro v hv
   rw [TauCeti.mtangentConeAt_def, tangentConeAt_congr hT] at hv
   rw [TauCeti.mtangentConeAt_def, ← hx]
-  exact tangentConeAt_mono himage ((h.2.mono inter_subset_left).mapsTo_tangent_cone hv)
+  have hmaps := (h.2.mono inter_subset_left).mapsTo_tangent_cone hv
+  -- The chart derivative in `h.2` is `f'` conjugated by the casts `tangentSpaceCastModel`,
+  -- which are the identity map, so it sends `v` to `f' v`.
+  have hcast : ((tangentSpaceCastModel I' (f x) : TangentSpace I' (f x) →L[𝕜] E') ∘L f' ∘L
+      ((tangentSpaceCastModel I x).symm : E →L[𝕜] TangentSpace I x)) v = f' v := rfl
+  rw [hcast] at hmaps
+  exact tangentConeAt_mono himage hmaps
 
 namespace TauCeti
 
