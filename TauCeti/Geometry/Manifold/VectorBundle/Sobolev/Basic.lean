@@ -91,6 +91,8 @@ construction in `TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Bordered.Basic`.
   a measure that is finite on compact sets.
 * `TauCeti.SectionChartData.chartValueL_ae_eq_smul`: multiplying the chart-`i` components of a
   tuple by a scalar function multiplies its chart data by that function.
+* `TauCeti.SectionChartData.chartValueL_ae_congr`: tuples whose chart-`i` components have the same
+  values have the same chart data in chart `i`.
 
 ## References
 
@@ -327,6 +329,18 @@ theorem chartValueL_ae_eq_smul {w w' : C.SobolevData μ p k} {i : Fin C.n} {ψ :
     ae_all_iff.2 h] with y hy' hy hj
   rw [hy', hy, Finset.smul_sum]
   exact Finset.sum_congr rfl fun j _ ↦ by rw [hj j, mul_smul]
+
+variable {C μ p k} in
+/-- Tuples, of any exponents and orders, whose chart-`i` components have the same values almost
+everywhere have the same chart data in chart `i` almost everywhere. -/
+theorem chartValueL_ae_congr {q : ℝ≥0∞} [Fact (1 ≤ q)] {k' : ℕ} {w : C.SobolevData μ p k}
+    {v : C.SobolevData μ q k'} {i : Fin C.n}
+    (h : ∀ j, (Wkp.value k (w i j) : E → ℝ) =ᵐ[μ.restrict (C.image i)] Wkp.value k' (v i j)) :
+    C.chartValueL μ p k i w =ᵐ[μ.restrict (C.image i)] C.chartValueL μ q k' i v := by
+  filter_upwards [C.chartValueL_apply_ae μ p k i w, C.chartValueL_apply_ae μ q k' i v,
+    ae_all_iff.2 h] with y hw hv hj
+  rw [hw, hv]
+  exact Finset.sum_congr rfl fun j _ ↦ by rw [hj j]
 
 variable {C μ p k} in
 /-- The components of the chart data of a tuple of Sobolev functions are the values of its
