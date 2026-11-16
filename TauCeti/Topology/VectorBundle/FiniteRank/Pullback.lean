@@ -17,16 +17,14 @@ construction does not retain the old base as a chart index type. This matters wh
 presenting bundles in the universe of their base.
 
 `FiniteRankBundleCore.pullbackFunctor` pulls back both bundles and continuous linear
-bundle maps, preserves addition, and carries constant-matrix intertwining morphisms and
-isomorphisms to constant-matrix morphisms and isomorphisms with the same coordinate operators
-(`pullbackMap_constHom`, `pullbackMap_constIso_hom`, `pullbackMap_constIso_inv`). Identity and
-composition of base maps give strict equalities of functors, not just equality of bundle classes.
-Pullback is also strictly compatible with trivial cores and Whitney sums (`pullback_trivial`,
-`pullback_whitneySum`) together with the Whitney projections, inclusions, pairings, copairings, and
-direct sums of maps. The reconstructed bundle is identified with Mathlib's actual pullback by
-`pullbackHomeomorph`, which carries each core chart to Mathlib's pulled-back trivialization
+bundle maps, and preserves addition. Identity and composition of base maps give
+strict equalities of functors, not just equality of bundle classes. Pullback is also strictly
+compatible with trivial cores and Whitney sums (`pullback_trivial`, `pullback_whitneySum`) together
+with the Whitney projections, inclusions, pairings, copairings, and direct sums of maps.
+The reconstructed bundle is identified with Mathlib's actual pullback by `pullbackHomeomorph`,
+which carries each core chart to Mathlib's pulled-back trivialization
 (`pullbackHomeomorph_localTriv`, `pullback_trivializationAt_eq`), and lifts to the original core
-total space via `pullbackLift` (surjectively when `f` is surjective, `pullbackLift_surjective`).
+total space via `pullbackLift`.
 
 The construction uses Mathlib's vector-bundle cores and native pullback topology,
 and `VectorBundleCore.CoordinateHom` for descent of continuous linear bundle maps.
@@ -163,50 +161,6 @@ in the original charts `f i` and `f j` at `f x`. -/
   intro x
   simp only [fiberMap_neg, fiberMap_pullbackMap]
 
-/-- Pulling back a constant-matrix intertwining morphism gives the constant-matrix morphism with
-the same coordinate operator over the pulled-back charts. -/
-theorem pullbackMap_constHom {A D : FiniteRankBundleCore 𝕜 Y}
-    (hbase : ∀ i, A.core.baseSet i ⊆ D.core.baseSet i)
-    (T : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜))
-    (hT : ∀ i j y, y ∈ A.core.baseSet i → y ∈ A.core.baseSet j →
-      T.comp (A.core.coordChange i j y) = (D.core.coordChange i j y).comp T)
-    (f : C(X, Y)) :
-    pullbackMap (constHom hbase T hT) f =
-      constHom (A := A.pullback f) (D := D.pullback f)
-        (fun i => Set.preimage_mono (hbase (f i))) T
-        (fun i j x hi hj => hT (f i) (f j) (f x) hi hj) :=
-  hom_ext fun x => by simp
-
-/-- Pulling back a constant-matrix core isomorphism gives the constant-matrix isomorphism with the
-same coordinate equivalence. -/
-theorem pullbackMap_constIso_hom {A D : FiniteRankBundleCore 𝕜 Y}
-    (hbase : ∀ i, A.core.baseSet i = D.core.baseSet i)
-    (e : (Fin A.rank → 𝕜) ≃L[𝕜] (Fin D.rank → 𝕜))
-    (he : ∀ i j y, y ∈ A.core.baseSet i → y ∈ A.core.baseSet j →
-      e.toContinuousLinearMap.comp (A.core.coordChange i j y) =
-        (D.core.coordChange i j y).comp e.toContinuousLinearMap)
-    (f : C(X, Y)) :
-    pullbackMap (constIso hbase e he).hom f =
-      (constIso (A := A.pullback f) (D := D.pullback f)
-        (fun i => congrArg (f ⁻¹' ·) (hbase (f i))) e
-        (fun i j x hi hj => he (f i) (f j) (f x) hi hj)).hom :=
-  hom_ext fun x => by simp
-
-/-- Pulling back the inverse of a constant-matrix core isomorphism gives the inverse of the
-pulled-back constant-matrix isomorphism. -/
-theorem pullbackMap_constIso_inv {A D : FiniteRankBundleCore 𝕜 Y}
-    (hbase : ∀ i, A.core.baseSet i = D.core.baseSet i)
-    (e : (Fin A.rank → 𝕜) ≃L[𝕜] (Fin D.rank → 𝕜))
-    (he : ∀ i j y, y ∈ A.core.baseSet i → y ∈ A.core.baseSet j →
-      e.toContinuousLinearMap.comp (A.core.coordChange i j y) =
-        (D.core.coordChange i j y).comp e.toContinuousLinearMap)
-    (f : C(X, Y)) :
-    pullbackMap (constIso hbase e he).inv f =
-      (constIso (A := A.pullback f) (D := D.pullback f)
-        (fun i => congrArg (f ⁻¹' ·) (hbase (f i))) e
-        (fun i j x hi hj => he (f i) (f j) (f x) hi hj)).inv :=
-  hom_ext fun x => by simp
-
 /-- Pullback on bundles and their continuous fibrewise linear maps. -/
 -- Its object projection must reduce when simp matches the dependent fibre-map types.
 @[expose, reducible]
@@ -328,13 +282,6 @@ theorem continuous_pullbackLift (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) 
   filter_upwards [] with q
   simp only [VectorBundleCore.trivializationAt, localTrivAt, indexAt_eq]
   exact pullback_chart A f p.proj q
-
-/-- If `f` is surjective, the canonical lift `A.pullbackLift f` is surjective on total spaces. -/
-theorem pullbackLift_surjective (A : FiniteRankBundleCore 𝕜 Y) {f : C(X, Y)}
-    (hf : Function.Surjective f) : Function.Surjective (A.pullbackLift f) := by
-  rintro ⟨y, v⟩
-  obtain ⟨x, rfl⟩ := hf y
-  exact ⟨⟨x, v⟩, rfl⟩
 
 /-- The reconstructed pullback core is the native Mathlib pullback bundle. The map
 covers the identity and is the identity linear equivalence in preferred fibre coordinates. -/
