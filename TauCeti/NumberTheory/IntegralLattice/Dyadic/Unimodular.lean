@@ -34,15 +34,12 @@ be dropped: the lattices `⟨1, 1⟩` and `⟨3, 3⟩` are odd, with the same ra
 but only the first represents `1` over `ℤ_[2]`. Nor can the type: the hyperbolic plane and
 `⟨1, -1⟩` have rank two, determinant `-1` and oddity `0`, but only the second is odd.
 
-An even lattice unimodular at `2` has even rank and splits off a rank-two perfect summand
-orthogonally after localization.
+An even lattice unimodular at `2` has even rank.
 
 ## Main results
 
 * `TauCeti.IntegralLattice.IsEven.even_finrank_of_isUnit_determinant`: an even lattice of odd
   determinant has even rank.
-* `TauCeti.IntegralLattice.exists_binary_isPerfPair_isCompl_orthogonal_localIntegralForm`: an even
-  lattice unimodular at `2` splits off a perfect binary summand after localization.
 * `TauCeti.IntegralLattice.localIntegralForm_two_equivalent_iff`: lattices with determinants that
   are units at `2` have isometric dyadic localizations exactly when their ranks, types,
   determinant square classes and oddities agree;
@@ -74,24 +71,6 @@ theorem IsEven.even_finrank_of_isUnit_determinant {L : IntegralLattice V} (heven
     fun x hx ↦ PadicInt.not_isUnit_two
       (isUnit_of_dvd_unit (heven.two_dvd_localIntegralForm_apply_self x) hx)
   rwa [Module.finrank_baseChange] at h
-
-/-- **An even lattice unimodular at `2` splits off a perfect binary summand.** If the rank is at
-least two, the dyadic localization has a rank-two submodule carrying a perfect restriction of the
-local integral form and complementary to its orthogonal complement. -/
-theorem exists_binary_isPerfPair_isCompl_orthogonal_localIntegralForm
-    (L : IntegralLattice V) (hrank : 2 ≤ finrank ℤ L) (heven : L.IsEven)
-    (hdet : IsUnit (L.determinant : ℤ_[2])) :
-    ∃ S : Submodule ℤ_[2] (L.LocalCarrier 2),
-      finrank ℤ_[2] S = 2 ∧ ((L.localIntegralForm 2).restrict S).IsPerfPair ∧
-        IsCompl S ((L.localIntegralForm 2).orthogonal S) := by
-  have hrank' : finrank ℤ L = (finrank ℤ L - 2) + 2 := (Nat.sub_add_cancel hrank).symm
-  let c := (Module.finBasis ℤ L).reindex (finCongr hrank')
-  let b := c.baseChange ℤ_[2]
-  have hdet' : IsUnit ((L.localIntegralForm 2).toMatrix b).det := by
-    exact L.det_toMatrix_localIntegralForm 2 c ▸ hdet
-  exact LinearMap.BilinForm.IsSymm.exists_binary_isPerfPair_isCompl_orthogonal
-    (L.localIntegralForm 2) (L.isSymm_localIntegralForm 2) b
-      heven.two_dvd_localIntegralForm_apply_self (mem_nonunits_iff.mp PadicInt.p_nonunit) hdet'
 
 /-- **Classification of localizations unimodular at `2`.** Let `L` and `M` be lattices whose
 determinants are units at `2`, and let `w` and `w'` be characteristic vectors of their dyadic
