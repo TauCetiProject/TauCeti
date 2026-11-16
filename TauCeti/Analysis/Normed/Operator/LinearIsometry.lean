@@ -8,14 +8,22 @@ module
 public import Mathlib.Analysis.Normed.Operator.NormedSpace
 
 /-!
-# Closed ranges of postcomposition by linear isometries
+# Closed ranges and operator norms of composition by linear isometries
 
-Postcomposition by a (semilinear) isometry `i` acts pointwise on continuous linear maps, and
-its image consists precisely of the operators whose values lie in the range of `i`
+Postcomposition by a (semilinear) isometry `i` acts pointwise on continuous linear maps, preserves
+the nonnegative operator norm (`LinearIsometry.nnNorm_toContinuousLinearMap_comp`), and has image
+consisting precisely of the operators whose values lie in the range of `i`
 (`LinearIsometry.range_postcomp`). Consequently, if the range of `i` is closed, the
 postcomposition operator also has closed range (`LinearIsometry.isClosed_range_postcomp`).
 This lets regularity of an operator-valued map be checked after a closed isometric embedding
 of the codomain, for instance of alternating maps into multilinear maps.
+
+We also record the `SeminormedAddCommGroup` nonnegative operator-norm identities for precomposition
+and postcomposition with a `LinearIsometryEquiv`
+(`LinearIsometryEquiv.nnNorm_comp_toContinuousLinearMap`,
+`LinearIsometryEquiv.nnNorm_toContinuousLinearMap_comp`), removing the `NormedAddCommGroup`
+assumption from `ContinuousLinearMap.opNNNorm_comp_linearIsometryEquiv` and
+`ContinuousLinearMap.opNNNorm_linearIsometryEquiv_comp`.
 -/
 
 public section
@@ -30,6 +38,13 @@ variable {𝕜 𝕜₂ 𝕜₃ D E F : Type*}
   [SeminormedAddCommGroup F] [NormedSpace 𝕜₃ F]
   {σ₁₂ : 𝕜 →+* 𝕜₂} {σ₂₃ : 𝕜₂ →+* 𝕜₃} {σ₁₃ : 𝕜 →+* 𝕜₃}
   [RingHomCompTriple σ₁₂ σ₂₃ σ₁₃] [RingHomIsometric σ₁₂] [RingHomIsometric σ₁₃]
+
+/-- Postcomposition of a continuous semilinear map with a linear isometry preserves the nonnegative
+operator norm. -/
+@[simp] theorem nnNorm_toContinuousLinearMap_comp [SeminormedAddCommGroup E] [NormedSpace 𝕜₂ E]
+    (i : E →ₛₗᵢ[σ₂₃] F) (f : D →SL[σ₁₂] E) :
+    ‖i.toContinuousLinearMap.comp f‖₊ = ‖f‖₊ :=
+  Subtype.ext i.norm_toContinuousLinearMap_comp
 
 /-- Postcomposition by a linear isometry evaluates by composing the two maps. -/
 @[simp] theorem postcomp_apply [SeminormedAddCommGroup E] [NormedSpace 𝕜₂ E]
@@ -64,3 +79,33 @@ theorem isClosed_range_postcomp (i : E →ₛₗᵢ[σ₂₃] F) (hi : IsClosed 
   simp only [range_postcomp, mem_ofPred_eq, mem_iInter, mem_preimage]
 
 end LinearIsometry
+
+namespace LinearIsometryEquiv
+
+variable {𝕜 𝕜₂ 𝕜₃ D E F : Type*}
+  [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜₂] [NontriviallyNormedField 𝕜₃]
+  [SeminormedAddCommGroup D] [NormedSpace 𝕜 D]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜₂ E]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜₃ F]
+  {σ₁₂ : 𝕜 →+* 𝕜₂} {σ₂₁ : 𝕜₂ →+* 𝕜} {σ₂₃ : 𝕜₂ →+* 𝕜₃} {σ₃₂ : 𝕜₃ →+* 𝕜₂} {σ₁₃ : 𝕜 →+* 𝕜₃}
+  [RingHomCompTriple σ₁₂ σ₂₃ σ₁₃]
+
+/-- Precomposition of a continuous semilinear map with a linear isometric equivalence preserves the
+nonnegative operator norm, even on seminormed spaces. -/
+@[simp] theorem nnNorm_comp_toContinuousLinearMap
+    [RingHomInvPair σ₁₂ σ₂₁] [RingHomInvPair σ₂₁ σ₁₂]
+    [RingHomIsometric σ₂₃] [RingHomIsometric σ₁₃]
+    (e : D ≃ₛₗᵢ[σ₁₂] E) (f : E →SL[σ₂₃] F) :
+    ‖f.comp (e : D →SL[σ₁₂] E)‖₊ = ‖f‖₊ :=
+  eq_of_forall_ge_iff fun r ↦ by simp [ContinuousLinearMap.opNNNorm_le_iff, ← e.forall_congr_right]
+
+/-- Postcomposition of a continuous semilinear map with a linear isometric equivalence preserves
+the nonnegative operator norm, even on seminormed spaces. -/
+@[simp] theorem nnNorm_toContinuousLinearMap_comp
+    [RingHomInvPair σ₂₃ σ₃₂] [RingHomInvPair σ₃₂ σ₂₃]
+    [RingHomIsometric σ₁₂] [RingHomIsometric σ₁₃]
+    (e : E ≃ₛₗᵢ[σ₂₃] F) (f : D →SL[σ₁₂] E) :
+    ‖(e : E →SL[σ₂₃] F).comp f‖₊ = ‖f‖₊ :=
+  e.toLinearIsometry.nnNorm_toContinuousLinearMap_comp f
+
+end LinearIsometryEquiv

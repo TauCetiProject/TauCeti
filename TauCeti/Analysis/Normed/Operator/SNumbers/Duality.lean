@@ -14,6 +14,7 @@ import TauCeti.Analysis.Normed.Module.Dual.LocalReflexivity
 import TauCeti.Analysis.Normed.Module.Dual.Quotient
 import TauCeti.Analysis.Normed.Module.Dual.Submodule
 import TauCeti.Analysis.Normed.Operator.Compact.Finite.Rank
+import TauCeti.Analysis.Normed.Operator.LinearIsometry
 
 /-!
 # Duality between Gelfand and Kolmogorov numbers
@@ -34,23 +35,23 @@ duality links restrictions of `T` to quotients of `T'` and quotients of `T` to r
   particular if `T` is compact (`IsCompactOperator.gelfandNumber_precomp`) or has finite-dimensional
   range (`ContinuousLinearMap.gelfandNumber_precomp_of_finiteDimensional_range`) — then
   `cₙ(T') = dₙ(T)` and `dₙ(T'') = dₙ(T)`
-  (`ContinuousLinearMap.gelfandNumber_precomp_of_totallyBounded`,
-  `ContinuousLinearMap.kolmogorovNumber_precomp_precomp_of_totallyBounded`).
+  (`ContinuousLinearMap.gelfandNumber_precomp_of_totallyBounded_image_closedBall`,
+  `ContinuousLinearMap.kolmogorovNumber_precomp_precomp_of_totallyBounded_image_closedBall`).
 
 No completeness or Hausdorff assumption on `E` or `F` is required anywhere: the local-reflexivity
 step pulls a finite-dimensional bidual subspace and a finite net back to the Hausdorff normed
-quotient `F ⧸ closure {0}` without assuming completeness, and invariance of Kolmogorov numbers under
-surjective linear isometries lifts the equality back to seminormed codomains.
+quotient `SeparationQuotient F` without assuming completeness, and invariance of Kolmogorov numbers
+under surjective linear isometries lifts the equality back to seminormed codomains.
 
 ## Main declarations
 
 * `ContinuousLinearMap.gelfandNumber_precomp_le`: `cₙ(T') ≤ dₙ(T)`.
 * `ContinuousLinearMap.kolmogorovNumber_precomp`: `dₙ(T') = cₙ(T)`.
 * `ContinuousLinearMap.kolmogorovNumber_precomp_precomp_le`: `dₙ(T'') ≤ dₙ(T)`.
-* `ContinuousLinearMap.gelfandNumber_precomp_of_totallyBounded`: `cₙ(T') = dₙ(T)` when
-  `T '' closedBall 0 1` is totally bounded.
-* `ContinuousLinearMap.kolmogorovNumber_precomp_precomp_of_totallyBounded`: `dₙ(T'') = dₙ(T)` when
-  `T '' closedBall 0 1` is totally bounded.
+* `ContinuousLinearMap.gelfandNumber_precomp_of_totallyBounded_image_closedBall`: `cₙ(T') = dₙ(T)`
+  when `T '' closedBall 0 1` is totally bounded.
+* `ContinuousLinearMap.kolmogorovNumber_precomp_precomp_of_totallyBounded_image_closedBall`:
+  `dₙ(T'') = dₙ(T)` when `T '' closedBall 0 1` is totally bounded.
 * `IsCompactOperator.gelfandNumber_precomp`: `cₙ(T') = dₙ(T)` for compact `T`.
 * `IsCompactOperator.kolmogorovNumber_precomp_precomp`: `dₙ(T'') = dₙ(T)` for compact `T`.
 * `ContinuousLinearMap.gelfandNumber_precomp_of_finiteDimensional_range`: `cₙ(T') = dₙ(T)` when
@@ -71,25 +72,6 @@ public section
 open scoped NNReal
 
 namespace ContinuousLinearMap
-
-private theorem nnnorm_comp_linearIsometryEquiv {𝕜 E F G : Type*}
-    [NontriviallyNormedField 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
-    [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] [SeminormedAddCommGroup G] [NormedSpace 𝕜 G]
-    (f : F →L[𝕜] G) (e : E ≃ₗᵢ[𝕜] F) :
-    ‖f.comp (e : E →L[𝕜] F)‖₊ = ‖f‖₊ :=
-  eq_of_forall_ge_iff fun r ↦ by simp [opNNNorm_le_iff, ← e.forall_congr_right]
-
-private theorem nnnorm_linearIsometry_comp {𝕜 E F G : Type*}
-    [NontriviallyNormedField 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
-    [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] [SeminormedAddCommGroup G] [NormedSpace 𝕜 G]
-    (f : F →ₗᵢ[𝕜] G) (g : E →L[𝕜] F) :
-    ‖f.toContinuousLinearMap.comp g‖₊ = ‖g‖₊ :=
-  Subtype.ext f.norm_toContinuousLinearMap_comp
-
-private noncomputable def quotientCompNNNorm (𝕜 G H : Type*) [NontriviallyNormedField 𝕜]
-    [SeminormedAddCommGroup G] [NormedSpace 𝕜 G] [SeminormedAddCommGroup H] [NormedSpace 𝕜 H]
-    (A : G →L[𝕜] H) (W : Submodule 𝕜 H) : ℝ≥0 :=
-  ‖W.mkQL ∘L A‖₊
 
 section NontriviallyNormedField
 
@@ -113,7 +95,7 @@ theorem gelfandNumber_precomp_le (T : E →L[𝕜] F) (n : ℕ) :
       (Cardinal.lift_le.mpr hV)
     simpa only [Cardinal.lift_natCast, Cardinal.lift_le_nat_iff] using h
   refine ((ContinuousLinearMap.precomp 𝕜 T).gelfandNumber_le hcodim).trans ?_
-  rw [← nnnorm_comp_linearIsometryEquiv _ V.quotientDualEquivAnnihilator,
+  rw [← V.quotientDualEquivAnnihilator.nnNorm_comp_toContinuousLinearMap,
     V.precomp_comp_subtypeL_comp_quotientDualEquivAnnihilator]
   exact_mod_cast ContinuousLinearMap.norm_precomp_le (V.mkQL.comp T)
 
@@ -184,6 +166,15 @@ of the operator: `dₙ(T') = cₙ(T)`. -/
 theorem kolmogorovNumber_precomp (T : E →L[𝕜] F) (n : ℕ) :
     (ContinuousLinearMap.precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E).kolmogorovNumber n =
       T.gelfandNumber n := by
+  let _ : SeminormedAddCommGroup (StrongDual 𝕜 E) := inferInstance
+  let _ : NormedSpace 𝕜 (StrongDual 𝕜 E) := inferInstance
+  let _ : SeminormedAddCommGroup (StrongDual 𝕜 F) := inferInstance
+  let _ : NormedSpace 𝕜 (StrongDual 𝕜 F) := inferInstance
+  let T' : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E := ContinuousLinearMap.precomp 𝕜 T
+  have hnorm (M : Submodule 𝕜 E) :
+      ‖(M.orthogonalBilin (topDualPairing 𝕜 E).flip).mkQL ∘L T'‖₊ = ‖T ∘L M.subtypeL‖₊ := by
+    rw [← M.quotientAnnihilatorEquivDual.nnNorm_toContinuousLinearMap_comp,
+      M.quotientAnnihilatorEquivDual_comp_mkQL_comp_precomp, ContinuousLinearMap.nnnorm_precomp]
   apply le_antisymm
   · refine le_gelfandNumber_iff.mpr fun M _ hM ↦ ?_
     have : FiniteDimensional 𝕜 (E ⧸ M) :=
@@ -191,28 +182,18 @@ theorem kolmogorovNumber_precomp (T : E →L[𝕜] F) (n : ℕ) :
     have hrank : Module.rank 𝕜 (M.orthogonalBilin (topDualPairing 𝕜 E).flip) ≤ n := by
       have h := M.rank_orthogonalBilin_topDualPairing_flip_le.trans (Cardinal.lift_le.mpr hM)
       simpa only [Cardinal.lift_natCast, Cardinal.lift_le_nat_iff] using h
-    refine ((ContinuousLinearMap.precomp 𝕜 T).kolmogorovNumber_le hrank).trans ?_
-    rw [← nnnorm_linearIsometry_comp M.quotientAnnihilatorEquivDual.toLinearIsometry,
-      M.quotientAnnihilatorEquivDual_comp_mkQL_comp_precomp, ContinuousLinearMap.nnnorm_precomp]
+    exact (T'.kolmogorovNumber_le hrank).trans_eq (hnorm M)
   · refine le_kolmogorovNumber_iff.mpr fun G hG ↦ ?_
     have : FiniteDimensional 𝕜 G :=
       Module.rank_lt_aleph0_iff.mp (hG.trans_lt Cardinal.natCast_lt_aleph0)
     let M := G.orthogonalBilin (topDualPairing 𝕜 E)
     have hM : Module.rank 𝕜 (E ⧸ M) ≤ n := by
-      rw [G.rank_quotient_orthogonalBilin_topDualPairing]
+      rw [G.rank_quotient_orthogonalBilin_topDualPairing_eq_finrank]
       exact Nat.cast_le.mpr (Nat.cast_le.mp ((Module.finrank_eq_rank 𝕜 G).trans_le hG))
-    let T' : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E := ContinuousLinearMap.precomp 𝕜 T
-    have h1 : quotientCompNNNorm 𝕜 (StrongDual 𝕜 F) (StrongDual 𝕜 E) T'
-        (M.orthogonalBilin (topDualPairing 𝕜 E).flip) = ‖T ∘L M.subtypeL‖₊ := by
-      rw [quotientCompNNNorm,
-        ← nnnorm_linearIsometry_comp M.quotientAnnihilatorEquivDual.toLinearIsometry,
-        M.quotientAnnihilatorEquivDual_comp_mkQL_comp_precomp, ContinuousLinearMap.nnnorm_precomp]
-    have hMG : quotientCompNNNorm 𝕜 (StrongDual 𝕜 F) (StrongDual 𝕜 E) T'
-        (M.orthogonalBilin (topDualPairing 𝕜 E).flip) =
-          quotientCompNNNorm 𝕜 (StrongDual 𝕜 F) (StrongDual 𝕜 E) T' G :=
-      congrArg (quotientCompNNNorm 𝕜 (StrongDual 𝕜 F) (StrongDual 𝕜 E) T')
+    have hMG : ‖(M.orthogonalBilin (topDualPairing 𝕜 E).flip).mkQL ∘L T'‖₊ = ‖G.mkQL ∘L T'‖₊ :=
+      congrArg (fun W : Submodule 𝕜 (StrongDual 𝕜 E) ↦ ‖W.mkQL ∘L T'‖₊)
         G.orthogonalBilin_orthogonalBilin_topDualPairing_flip_eq_of_finiteDimensional
-    exact (T.gelfandNumber_le hM).trans (le_of_eq (h1.symm.trans hMG))
+    exact (T.gelfandNumber_le hM).trans_eq ((hnorm M).symm.trans hMG)
 
 /-- Over an `IsRCLikeNormedField`, the Kolmogorov numbers of the bidual operator `T''` are at most
 those of `T`: `dₙ(T'') ≤ dₙ(T)`. -/
@@ -229,8 +210,8 @@ theorem kolmogorovNumber_precomp_precomp_le (T : E →L[𝕜] F) (n : ℕ) :
 /-- Local-reflexivity upper bound `dₙ(T) ≤ cₙ(T')` on a Hausdorff normed codomain `F₀`: every
 subspace `W ≤ F₀''` of rank at most `n` and every `ε`-net of `T '' closedBall 0 1` pull back to a
 subspace `V ≤ F₀` of rank at most `n` with `‖V.mkQL ∘L T‖ ≤ (1 + ε) ‖W.mkQL ∘L T''‖ + (2 + ε) ε`. -/
-private theorem kolmogorovNumber_le_gelfandNumber_precomp_of_totallyBounded_normed {F₀ : Type w}
-    [NormedAddCommGroup F₀] [NormedSpace 𝕜 F₀] (T : E →L[𝕜] F₀)
+private theorem kolmogorovNumber_le_gelfandNumber_precomp_of_totallyBounded_image_closedBall_normed
+    {F₀ : Type w} [NormedAddCommGroup F₀] [NormedSpace 𝕜 F₀] (T : E →L[𝕜] F₀)
     (hT : TotallyBounded (T '' Metric.closedBall 0 1)) (n : ℕ) :
     T.kolmogorovNumber n ≤
       (ContinuousLinearMap.precomp 𝕜 T : StrongDual 𝕜 F₀ →L[𝕜] StrongDual 𝕜 E).gelfandNumber n := by
@@ -281,29 +262,34 @@ private theorem kolmogorovNumber_le_gelfandNumber_precomp_of_totallyBounded_norm
 /-- Over an `IsRCLikeNormedField`, if `T` maps the closed unit ball to a totally bounded set, then
 the Gelfand numbers of the adjoint equal the Kolmogorov numbers of `T`: `cₙ(T') = dₙ(T)`. Neither
 completeness nor separation of `E` or `F` is required. -/
-theorem gelfandNumber_precomp_of_totallyBounded (T : E →L[𝕜] F)
+theorem gelfandNumber_precomp_of_totallyBounded_image_closedBall (T : E →L[𝕜] F)
     (hT : TotallyBounded (T '' Metric.closedBall 0 1)) (n : ℕ) :
     (ContinuousLinearMap.precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E).gelfandNumber n =
       T.kolmogorovNumber n := by
   refine (T.gelfandNumber_precomp_le n).antisymm ?_
-  -- Pass to the Hausdorff normed quotient `F ⧸ closure ⊥`.
-  let N := (⊥ : Submodule 𝕜 F).topologicalClosure
-  have : IsClosed (N : Set F) := (⊥ : Submodule 𝕜 F).isClosed_topologicalClosure
-  let QT := N.mkQL ∘L T
+  -- Pass to the Hausdorff normed quotient `SeparationQuotient F`.
+  let J : F →ₗᵢ[𝕜] SeparationQuotient F :=
+    ⟨(SeparationQuotient.mkCLM 𝕜 F).toLinearMap, SeparationQuotient.norm_mk⟩
+  let QT : E →L[𝕜] SeparationQuotient F := J.toContinuousLinearMap ∘L T
   have hQT : TotallyBounded (QT '' Metric.closedBall 0 1) := by
     rw [coe_comp, Set.image_comp]
-    exact hT.image N.mkQL.uniformContinuous
-  rw [← T.kolmogorovNumber_mkQL_topologicalClosure_bot_comp n]
-  refine (kolmogorovNumber_le_gelfandNumber_precomp_of_totallyBounded_normed QT hQT n).trans ?_
-  -- Since `(N.mkQL ∘L T)' = T' ∘L N.mkQL'` and `‖N.mkQL'‖ ≤ 1`, its Gelfand numbers are `≤ cₙ(T')`.
+    exact hT.image J.toContinuousLinearMap.uniformContinuous
+  rw [← T.kolmogorovNumber_linearIsometry_comp_of_surjective (J := J)
+    SeparationQuotient.surjective_mk n]
+  refine (kolmogorovNumber_le_gelfandNumber_precomp_of_totallyBounded_image_closedBall_normed
+    QT hQT n).trans ?_
+  -- Since `(J ∘L T)' = T' ∘L J'` and `‖J'‖ ≤ 1`, its Gelfand numbers are `≤ cₙ(T')`.
   let T' : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E := ContinuousLinearMap.precomp 𝕜 T
-  let Q' : StrongDual 𝕜 (F ⧸ N) →L[𝕜] StrongDual 𝕜 F := ContinuousLinearMap.precomp 𝕜 N.mkQL
+  let Q' : StrongDual 𝕜 (SeparationQuotient F) →L[𝕜] StrongDual 𝕜 F :=
+    ContinuousLinearMap.precomp 𝕜 J.toContinuousLinearMap
   have hQT_adj :
-      (ContinuousLinearMap.precomp 𝕜 QT : StrongDual 𝕜 (F ⧸ N) →L[𝕜] StrongDual 𝕜 E) = T' ∘L Q' :=
-    ContinuousLinearMap.precomp_comp T N.mkQL
+      (ContinuousLinearMap.precomp 𝕜 QT :
+        StrongDual 𝕜 (SeparationQuotient F) →L[𝕜] StrongDual 𝕜 E) = T' ∘L Q' :=
+    ContinuousLinearMap.precomp_comp T J.toContinuousLinearMap
   rw [hQT_adj]
   have hQ_norm : ‖Q'‖₊ ≤ 1 := by
-    exact_mod_cast (ContinuousLinearMap.norm_precomp_le N.mkQL).trans N.norm_mkQL_le
+    exact_mod_cast (ContinuousLinearMap.norm_precomp_le J.toContinuousLinearMap).trans
+      J.norm_toContinuousLinearMap_le
   have hid_le : ‖ContinuousLinearMap.id 𝕜 (StrongDual 𝕜 E)‖₊ ≤ 1 := by
     exact_mod_cast norm_id_le
   have hideal := gelfandNumber_comp_comp_le (ContinuousLinearMap.id 𝕜 (StrongDual 𝕜 E)) T' Q' n
@@ -315,7 +301,7 @@ theorem gelfandNumber_precomp_of_totallyBounded (T : E →L[𝕜] F)
 
 /-- Over an `IsRCLikeNormedField`, if `T` maps the closed unit ball to a totally bounded set, then
 the Kolmogorov numbers of the bidual operator `T''` equal those of `T`: `dₙ(T'') = dₙ(T)`. -/
-theorem kolmogorovNumber_precomp_precomp_of_totallyBounded (T : E →L[𝕜] F)
+theorem kolmogorovNumber_precomp_precomp_of_totallyBounded_image_closedBall (T : E →L[𝕜] F)
     (hT : TotallyBounded (T '' Metric.closedBall 0 1)) (n : ℕ) :
     kolmogorovNumber (𝕜 := 𝕜) (E := StrongDual 𝕜 (StrongDual 𝕜 E))
       (F := StrongDual 𝕜 (StrongDual 𝕜 F))
@@ -323,7 +309,7 @@ theorem kolmogorovNumber_precomp_precomp_of_totallyBounded (T : E →L[𝕜] F)
         (ContinuousLinearMap.precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E) :
           StrongDual 𝕜 (StrongDual 𝕜 E) →L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 F)) n =
       T.kolmogorovNumber n := by
-  rw [kolmogorovNumber_precomp, T.gelfandNumber_precomp_of_totallyBounded hT]
+  rw [kolmogorovNumber_precomp, T.gelfandNumber_precomp_of_totallyBounded_image_closedBall hT]
 
 /-- Over an `IsRCLikeNormedField`, if `T` is a compact operator, then the Gelfand numbers of its
 adjoint equal the Kolmogorov numbers of `T`: `cₙ(T') = dₙ(T)`. -/
@@ -332,7 +318,7 @@ theorem _root_.IsCompactOperator.gelfandNumber_precomp {T : E →L[𝕜] F}
     (ContinuousLinearMap.precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E).gelfandNumber n =
       T.kolmogorovNumber n := by
   obtain ⟨K, hK, hKT⟩ := hT.image_closedBall_subset_compact (𝕜₁ := 𝕜) (𝕜₂ := 𝕜) 1
-  exact T.gelfandNumber_precomp_of_totallyBounded (hK.totallyBounded.subset hKT) n
+  exact T.gelfandNumber_precomp_of_totallyBounded_image_closedBall (hK.totallyBounded.subset hKT) n
 
 /-- Over an `IsRCLikeNormedField`, if `T` is a compact operator, then the Kolmogorov numbers of
 its bidual `T''` equal those of `T`: `dₙ(T'') = dₙ(T)`. -/
