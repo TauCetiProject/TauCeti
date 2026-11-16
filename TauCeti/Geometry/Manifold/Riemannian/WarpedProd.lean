@@ -5,12 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.GramMatrix
+public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import Mathlib.Geometry.Manifold.Algebra.SMul
 public import Mathlib.Geometry.Manifold.Algebra.Structures
-public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import TauCeti.Analysis.LocallyConvex.Bounded
 public import TauCeti.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
+import TauCeti.Analysis.InnerProductSpace.Gram.Pair
 
 /-!
 # Warped products of Riemannian manifolds
@@ -48,6 +50,8 @@ that they apply both to the construction below and to any metric shown to have t
 * `TauCeti.Manifold.IsWarpedProduct.tangentSpaceProdLinearIsometryEquiv`: multiplying the
   vertical tangent component by the warping function identifies the warped tangent space
   isometrically with the `L²` product of the factor tangent spaces.
+* `TauCeti.Manifold.IsWarpedProduct.det_gram_vertical_right`: the Gram determinant of an arbitrary
+  vector and a vertical vector splits into horizontal and fibre terms without cross terms.
 * `TauCeti.Manifold.isWarpedProduct_of_eq`: the warped product metric is a warped product.
 * `TauCeti.Manifold.IsWarpedProduct.isContMDiffRiemannianBundle`: a warped product of `C^n`
   metrics with a `C^n` warping function is `C^n`.
@@ -335,6 +339,19 @@ theorem IsWarpedProduct.eq_zero_of_warping_eq_zero {f : M → ℝ}
     simp only [e, ContinuousLinearEquiv.apply_symm_apply, inner_zero_left, hf₀,
       zero_pow two_ne_zero, zero_mul, add_zero]
   simpa using congrArg (fun x => (e x).2) h0
+
+/-- The Gram determinant for one arbitrary vector `(u, v)` and one vertical vector `(0, w)` in a
+warped product splits into `f² ‖u‖² ‖w‖² + f⁴ det(Gram(v, w))`, with fibre norms and Gram
+determinant measured in the unscaled fibre metric. -/
+theorem IsWarpedProduct.det_gram_vertical_right {f : M → ℝ}
+    (h : IsWarpedProduct I J N f) (p : M × N) (u : TangentSpace I p.1)
+    (v w : TangentSpace J p.2) :
+    (Matrix.gram ℝ ![(tangentSpaceProdEquiv p).symm (u, v),
+      (tangentSpaceProdEquiv p).symm (0, w)]).det =
+      f p.1 ^ 2 * ‖u‖ ^ 2 * ‖w‖ ^ 2 + f p.1 ^ 4 * (Matrix.gram ℝ ![v, w]).det := by
+  simp only [Matrix.real_det_gram_fin_two, h.inner_eq, ContinuousLinearEquiv.apply_symm_apply,
+    inner_zero_right, zero_add, real_inner_self_eq_norm_sq]
+  ring
 
 end TangentIsometry
 

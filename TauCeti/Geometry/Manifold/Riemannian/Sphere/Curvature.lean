@@ -34,7 +34,9 @@ every tangent space. The Gauss formula for the isometric inclusion `Sⁿ → E` 
 
 ## Main results
 
-* `TauCeti.curvatureTensor_sphere`: the curvature tensor of the round sphere.
+* `TauCeti.curvatureTensor_sphere` and `TauCeti.inner_curvatureTensor_sphere_eq_det_gram`: the
+  curvature tensor of the round sphere and its sectional numerator
+  `⟪R(v, w) w, v⟫ = det(Gram(v, w))`.
 * `TauCeti.hasConstantSectionalCurvature_sphere`: the round sphere has constant sectional
   curvature `1`.
 * `TauCeti.ricciTensor_sphere`: the Ricci tensor of the round `n`-sphere is `n - 1` times the
@@ -177,6 +179,15 @@ private theorem curvatureOperator_field (a b c : E) (p : sphere (0 : E) 1) :
   rw [← field_mvfderiv_coe p u, ← field_mvfderiv_coe p v, ← field_mvfderiv_coe p w,
     ∇.curvatureTensor_apply p (contMDiff_field _) (contMDiff_field _) (contMDiff_field _),
     curvatureOperator_field]
+
+/-- On the round sphere, the curvature numerator `⟪R(v, w) w, v⟫` equals the Gram determinant
+`det(Gram(v, w))`, including for linearly dependent pairs. -/
+theorem inner_curvatureTensor_sphere_eq_det_gram (p : sphere (0 : E) 1)
+    (v w : TangentSpace (𝓡 n) p) :
+    inner ℝ (∇.curvatureTensor p v w w) v = (Matrix.gram ℝ ![v, w]).det := by
+  rw [curvatureTensor_sphere, Matrix.real_det_gram_fin_two, inner_sub_left, real_inner_smul_left,
+    real_inner_smul_left, real_inner_comm w v]
+  ring
 
 /-- The round sphere has constant sectional curvature `1`. -/
 theorem hasConstantSectionalCurvature_sphere :

@@ -9,6 +9,8 @@ public import TauCeti.Geometry.Manifold.Riemannian.Restriction.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Curvature
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.WarpedProd.Nonnegative
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.WarpedProd.Scalar
+import TauCeti.Analysis.InnerProductSpace.Gram.Basic
+import TauCeti.Geometry.Manifold.ContMDiff.NormedSpace
 import TauCeti.Geometry.Manifold.Riemannian.Restriction.Real
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.VectorSpace
 
@@ -49,32 +51,8 @@ open scoped ContDiff InnerProductSpace Manifold
 
 namespace TauCeti
 
-private theorem contDiffAt_two_of_contMDiff {U : Opens ℝ} {f : ℝ → ℝ}
-    (hf : ContMDiff 𝓘(ℝ) 𝓘(ℝ) ∞ (fun r : U ↦ f r)) (r : U) : ContDiffAt ℝ 2 f (r : ℝ) :=
-  (contMDiffAt_iff_contDiffAt.1 (contMDiffAt_subtype_iff.1 hf.contMDiffAt)).of_le (by simp)
-
 private theorem mul_sq_eq_neg_mul_deriv_deriv {f : ℝ → ℝ} {x : ℝ} (hx : f x ≠ 0) :
     -deriv (deriv f) x / f x * f x ^ 2 = -f x * deriv (deriv f) x := by field_simp
-
-private theorem inner_curvatureTensor_sphere_eq_det_gram
-    {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] {n : ℕ}
-    [Fact (Module.finrank ℝ V = n + 1)] (x : Metric.sphere (0 : V) 1)
-    (v w : TangentSpace (𝓡 n) x) :
-    inner ℝ ((leviCivitaConnection (𝓡 n) (Metric.sphere (0 : V) 1)).curvatureTensor x v w w) v =
-      (Matrix.gram ℝ ![v, w]).det := by
-  rw [curvatureTensor_sphere, Matrix.real_det_gram_fin_two, inner_sub_left, real_inner_smul_left,
-    real_inner_smul_left, real_inner_self_eq_norm_sq, real_inner_self_eq_norm_sq,
-    real_inner_comm w v]
-  ring
-
-private theorem det_gram_sphere_eq_zero_of_lt_two
-    {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] {n : ℕ}
-    [Fact (Module.finrank ℝ V = n + 1)] (hn : ¬ 2 ≤ n) (x : Metric.sphere (0 : V) 1)
-    (v w : TangentSpace (𝓡 n) x) :
-    (Matrix.gram ℝ ![v, w]).det = 0 := by
-  refine not_not.mp (Matrix.det_gram_ne_zero_iff_linearIndependent.not.mpr fun hvw ↦ hn ?_)
-  have hcard := hvw.fintype_card_le_finrank
-  rwa [Fintype.card_fin, TauCeti.finrank_tangentSpace, finrank_euclideanSpace_fin] at hcard
 
 private abbrev realOpenMetric (U : Opens ℝ) :
     ContMDiffRiemannianMetric 𝓘(ℝ) ∞ ℝ (fun r : U ↦ TangentSpace 𝓘(ℝ) r) :=
@@ -132,7 +110,8 @@ theorem sectionalCurvature_warpedProdTangentSpace_real_sphere_horizontal_vertica
   let _ :=
     Bundle.instIsContMDiffRiemannianBundle (realSphereWarpedMetric U hf hf₀ (V := V) (n := n))
   have hw := isWarpedProduct_real_sphere U hf hf₀ (V := V) (n := n)
-  have hf₂ := contDiffAt_two_of_contMDiff hf p.1
+  have hf₂ : ContDiffAt ℝ 2 f p.1 :=
+    (contMDiffAt_subtype_iff_contDiffAt.1 hf.contMDiffAt).of_le (by simp)
   have hnorm : ‖u‖ ^ 2 = tangentSpaceCastModel 𝓘(ℝ) p.1 u ^ 2 := by
     rw [← real_inner_self_eq_norm_sq,
       ContMDiffRiemannianMetric.inner_riemannianBundle (realOpenMetric U),
@@ -165,7 +144,8 @@ theorem sectionalCurvature_warpedProdTangentSpace_real_sphere_vertical
   let _ :=
     Bundle.instIsContMDiffRiemannianBundle (realSphereWarpedMetric U hf hf₀ (V := V) (n := n))
   have hw := isWarpedProduct_real_sphere U hf hf₀ (V := V) (n := n)
-  have hf₁ := (contDiffAt_two_of_contMDiff hf p.1).differentiableAt (by norm_num)
+  have hf₁ : DifferentiableAt ℝ f p.1 :=
+    (contMDiffAt_subtype_iff_contDiffAt.1 hf.contMDiffAt).differentiableAt (by simp)
   rw [hw.sectionalCurvature_vertical hf p v w hvw,
     ((hasConstantSectionalCurvature_sphere (E := V) (n := n)).hasSectionalCurvatureAt
       p.2).sectionalCurvature_eq v w hvw,
@@ -191,7 +171,8 @@ theorem le_sectionalCurvature_warpedProdTangentSpace_real_sphere
   let _ :=
     Bundle.instIsContMDiffRiemannianBundle (realSphereWarpedMetric U hf hf₀ (V := V) (n := n))
   have hw := isWarpedProduct_real_sphere U hf hf₀ (V := V) (n := n)
-  have hf₂ := contDiffAt_two_of_contMDiff hf p.1
+  have hf₂ : ContDiffAt ℝ 2 f p.1 :=
+    (contMDiffAt_subtype_iff_contDiffAt.1 hf.contMDiffAt).of_le (by simp)
   refine hw.le_sectionalCurvature_of_finrank_le_one hf (by simp) p ?_ (fun v w ↦ ?_) hXY
   · rw [laplaceBeltrami_restrictOpenTangentSpace_real_eq_deriv_deriv U hf₂]
     exact (mul_le_mul_of_nonneg_right hmix (sq_nonneg (f p.1))).trans_eq
@@ -205,7 +186,10 @@ theorem le_sectionalCurvature_warpedProdTangentSpace_real_sphere
           (div_mul_cancel₀ _ (pow_ne_zero 2 (hf₀ p.1)))
         linarith
       nlinarith [(Matrix.posSemidef_gram ℝ ![v, w]).det_nonneg]
-    · simp [det_gram_sphere_eq_zero_of_lt_two hn p.2 v w]
+    · have hdim : Module.finrank ℝ (TangentSpace (𝓡 n) p.2) < Fintype.card (Fin 2) := by
+        rw [TauCeti.finrank_tangentSpace, finrank_euclideanSpace_fin, Fintype.card_fin]
+        omega
+      simp [Matrix.det_gram_eq_zero_of_finrank_lt hdim ![v, w]]
 
 /-- A common upper bound `κ` on `-f''/f` and (for `2 ≤ n`) `(1 - f'²)/f²` bounds the sectional
 curvature of every tangent two-plane at `p` from above. -/
@@ -227,7 +211,8 @@ theorem sectionalCurvature_warpedProdTangentSpace_real_sphere_le
   let _ :=
     Bundle.instIsContMDiffRiemannianBundle (realSphereWarpedMetric U hf hf₀ (V := V) (n := n))
   have hw := isWarpedProduct_real_sphere U hf hf₀ (V := V) (n := n)
-  have hf₂ := contDiffAt_two_of_contMDiff hf p.1
+  have hf₂ : ContDiffAt ℝ 2 f p.1 :=
+    (contMDiffAt_subtype_iff_contDiffAt.1 hf.contMDiffAt).of_le (by simp)
   refine hw.sectionalCurvature_le_of_finrank_le_one hf (by simp) p ?_ (fun v w ↦ ?_) hXY
   · rw [laplaceBeltrami_restrictOpenTangentSpace_real_eq_deriv_deriv U hf₂]
     exact (mul_sq_eq_neg_mul_deriv_deriv (hf₀ p.1)).symm.trans_le
@@ -241,7 +226,10 @@ theorem sectionalCurvature_warpedProdTangentSpace_real_sphere_le
           (mul_le_mul_of_nonneg_right (hvert hn) (sq_nonneg (f p.1)))
         linarith
       nlinarith [(Matrix.posSemidef_gram ℝ ![v, w]).det_nonneg]
-    · simp [det_gram_sphere_eq_zero_of_lt_two hn p.2 v w]
+    · have hdim : Module.finrank ℝ (TangentSpace (𝓡 n) p.2) < Fintype.card (Fin 2) := by
+        rw [TauCeti.finrank_tangentSpace, finrank_euclideanSpace_fin, Fintype.card_fin]
+        omega
+      simp [Matrix.det_gram_eq_zero_of_finrank_lt hdim ![v, w]]
 
 /-- When `-f''/f = κ` and (for `2 ≤ n`) `(1 - f'²)/f² = κ` at `p`, every tangent two-plane of
 `dr² + f(r)² g_(Sⁿ)` at `p` has sectional curvature `κ`. -/
@@ -313,7 +301,8 @@ theorem scalarCurvature_warpedProdTangentSpace_real_sphere
     rw [ContMDiffRiemannianMetric.scalarCurvature_eq_scalarCurvature_leviCivitaConnection g
       (ContMDiffRiemannianMetric.toRiemannianMetric_ofLE _ _).symm,
       scalarCurvature_leviCivitaConnection_model_space]
-  have hf₂ := contDiffAt_two_of_contMDiff hf p.1
+  have hf₂ : ContDiffAt ℝ 2 f p.1 :=
+    (contMDiffAt_subtype_iff_contDiffAt.1 hf.contMDiffAt).of_le (by simp)
   rw [ContMDiffRiemannianMetric.scalarCurvature_warpedProdTangentSpace,
     ContMDiffRiemannianMetric.scalarCurvature_restrictOpenTangentSpace,
     scalarCurvature_sphereRoundMetric_ofLE, hg,

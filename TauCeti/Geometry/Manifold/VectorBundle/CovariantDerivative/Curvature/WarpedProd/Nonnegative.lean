@@ -49,25 +49,6 @@ variable
     (fun p : M × N ↦ TangentSpace (I.prod J) p)]
   {f : M → ℝ}
 
-omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M]
-  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-  [FiniteDimensional ℝ F] [IsManifold J ∞ N] [T2Space N]
-  [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)]
-  [IsContMDiffRiemannianBundle (I.prod J) ∞ (E × F)
-    (fun p : M × N ↦ TangentSpace (I.prod J) p)] in
-/-- The Gram determinant for one arbitrary vector `(u, v)` and one vertical vector `(0, w)` in a
-warped product splits into `f² ‖u‖² ‖w‖² + f⁴ det(Gram(v, w))`, with fibre norms and Gram
-determinant measured in the unscaled fibre metric. -/
-theorem IsWarpedProduct.det_gram_vertical_right
-    (h : IsWarpedProduct I J N f) (p : M × N) (u : TangentSpace I p.1)
-    (v w : TangentSpace J p.2) :
-    (Matrix.gram ℝ ![(tangentSpaceProdEquiv p).symm (u, v),
-      (tangentSpaceProdEquiv p).symm (0, w)]).det =
-      f p.1 ^ 2 * ‖u‖ ^ 2 * ‖w‖ ^ 2 + f p.1 ^ 4 * (Matrix.gram ℝ ![v, w]).det := by
-  simp only [Matrix.real_det_gram_fin_two, h.inner_eq, ContinuousLinearEquiv.apply_symm_apply,
-    inner_zero_right, zero_add, real_inner_self_eq_norm_sq]
-  ring
-
 /-- The curvature numerator for one arbitrary vector and one vertical vector. The
 horizontal and vertical contributions have no cross term. Fibre inner products and
 curvature on the right are computed in the unscaled fibre metric. -/
