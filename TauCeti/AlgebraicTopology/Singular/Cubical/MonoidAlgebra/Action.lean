@@ -180,6 +180,20 @@ theorem act_one_eq_self {p : ℕ} (c : NormalizedCubicalChain Y R p) :
 
 end MulAction
 
+section Self
+
+variable {G : Type*} [Mul G] [TopologicalSpace G] [ContinuousMul G] {R : Type*} [CommRing R]
+
+/-- For a topological magma acting on itself by right multiplication, the action of chains is the
+Pontryagin product. -/
+theorem act_eq_mul {p q : ℕ} (a : NormalizedCubicalChain G R p)
+    (b : NormalizedCubicalChain G R q) : act G G R p q a b = mul G R p q a b := by
+  have h : actMap G G = mulMap G :=
+    ContinuousMap.ext fun x ↦ by rw [actMap_apply, mulMap_apply, op_smul_eq_mul]
+  rw [act_def, mul_def, h]
+
+end Self
+
 end NormalizedCubicalChain
 
 open NormalizedCubicalChain
