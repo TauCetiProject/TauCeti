@@ -28,8 +28,9 @@ vanishes for `k > n` (`TauCeti.isZero_singularHomology_of_compactSpace`).
 
 ## Main results
 
-* `TauCeti.isZero_localHomology_of_isCompact_of_forall_mem_nhds`: in a Hausdorff space,
-  vanishing of local homology along compact sets above a degree is a local property.
+* `TauCeti.isZero_localHomology_of_isCompact_of_forall_mem_nhds`: in a Hausdorff space, with
+  coefficients in any abelian category with coproducts, vanishing of local homology along compact
+  sets above a degree is a local property.
 * `TauCeti.isZero_localHomology_of_isCompact`: `Hₖ(M, M ∖ A) = 0` for compact `A` and `k > n`.
 * `TauCeti.eq_zero_of_forall_localHomologyRestriction_eq_zero`: a class of `Hₙ(M, M ∖ A)` whose
   restriction to every point of `A` vanishes is zero.
@@ -56,6 +57,34 @@ open CategoryTheory Limits Metric Module Set Topology
 universe w v u
 
 namespace TauCeti
+
+section Abelian
+
+variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C) {M : Type w}
+  [TopologicalSpace M] [T2Space M]
+
+/-- **Vanishing of local homology along compact sets is local.** In a Hausdorff space, suppose
+every point has a neighbourhood `U` such that local homology along every compact subset of `U`
+vanishes above degree `n`. Then local homology along every compact set vanishes above degree
+`n`: a compact set is a finite union of compact pieces, each in such a neighbourhood, and the
+intersection of two pieces again lies in one (`TauCeti.isZero_localHomology_biUnion`). -/
+theorem isZero_localHomology_of_isCompact_of_forall_mem_nhds {n : ℕ}
+    (h : ∀ x : M, ∃ U ∈ 𝓝 x, ∀ B ⊆ U, IsCompact B → ∀ k, n < k → IsZero (localHomology R B k))
+    {A : Set M} (hA : IsCompact A) {k : ℕ} (hk : n < k) : IsZero (localHomology R A k) := by
+  choose U hU hUz using h
+  obtain ⟨t, -, hAt⟩ := hA.elim_nhds_subcover (fun x ↦ interior (U x))
+    fun x _ ↦ interior_mem_nhds.2 (hU x)
+  obtain ⟨K, hKc, hKU, rfl⟩ :=
+    hA.finite_compact_cover t _ (fun _ _ ↦ isOpen_interior) hAt
+  refine isZero_localHomology_biUnion (𝒢 := {B | IsCompact B ∧ ∃ x, B ⊆ U x})
+    (fun B hB ↦ hB.1.isClosed) (fun B hB B' hB' ↦ ?_) (fun B hB ↦ ?_) t
+    (fun x _ ↦ ⟨hKc x, x, (hKU x).trans interior_subset⟩) hk
+  · obtain ⟨x, hx⟩ := hB.2
+    exact ⟨hB.1.inter_right hB'.1.isClosed, x, inter_subset_left.trans hx⟩
+  · obtain ⟨x, hx⟩ := hB.2
+    exact hUz x B hx hB.1
+
+end Abelian
 
 section Module
 
@@ -246,27 +275,6 @@ private lemma detects_of_isCompact [ChartedSpace E M] (hn : finrank ℝ E = n) {
   rw [hAeq]
   exact detects_biUnion N hn t _ (fun a _ ↦ hA.inter_right (hK a).isClosed)
     fun a _ ↦ inter_subset_right.trans (hKφ a)
-
-/-- **Vanishing of local homology along compact sets is local.** In a Hausdorff space, suppose
-every point has a neighbourhood `U` such that local homology along every compact subset of `U`
-vanishes above degree `n`. Then local homology along every compact set vanishes above degree
-`n`: a compact set is a finite union of compact pieces, each in such a neighbourhood, and the
-intersection of two pieces again lies in one (`TauCeti.isZero_localHomology_biUnion`). -/
-theorem isZero_localHomology_of_isCompact_of_forall_mem_nhds
-    (h : ∀ x : M, ∃ U ∈ 𝓝 x, ∀ B ⊆ U, IsCompact B → ∀ k, n < k → IsZero (localHomology N B k))
-    {A : Set M} (hA : IsCompact A) {k : ℕ} (hk : n < k) : IsZero (localHomology N A k) := by
-  choose U hU hUz using h
-  obtain ⟨t, -, hAt⟩ := hA.elim_nhds_subcover (fun x ↦ interior (U x))
-    fun x _ ↦ interior_mem_nhds.2 (hU x)
-  obtain ⟨K, hKc, hKU, rfl⟩ :=
-    hA.finite_compact_cover t _ (fun _ _ ↦ isOpen_interior) hAt
-  refine isZero_localHomology_biUnion (𝒢 := {B | IsCompact B ∧ ∃ x, B ⊆ U x})
-    (fun B hB ↦ hB.1.isClosed) (fun B hB B' hB' ↦ ?_) (fun B hB ↦ ?_) t
-    (fun x _ ↦ ⟨hKc x, x, (hKU x).trans interior_subset⟩) hk
-  · obtain ⟨x, hx⟩ := hB.2
-    exact ⟨hB.1.inter_right hB'.1.isClosed, x, inter_subset_left.trans hx⟩
-  · obtain ⟨x, hx⟩ := hB.2
-    exact hUz x B hx hB.1
 
 variable [ChartedSpace E M] {A : Set M}
 
