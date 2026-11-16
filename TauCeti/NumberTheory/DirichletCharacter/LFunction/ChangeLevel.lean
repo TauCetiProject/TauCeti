@@ -5,11 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Meromorphic.Basic
 public import Mathlib.NumberTheory.LSeries.DirichletContinuation
+public import TauCeti.NumberTheory.DirichletCharacter.Conductor
 public import TauCeti.NumberTheory.PrimeFactors.Bounds
+import TauCeti.NumberTheory.DirichletCharacter.Primitive
+import TauCeti.NumberTheory.LSeries.CompletedRiemannZeta
 
 /-!
-# Uniform bounds for deleted Euler factors
+# Level changes and primitive-character `L`-functions
 
 Raising the level of a Dirichlet character deletes finitely many Euler factors. On every
 half-plane `Re(s) ≥ δ > 0`, the correction and its reciprocal are bounded by `C N ^ ε`,
@@ -20,6 +24,11 @@ characters at their common level, including primes dividing both conductors.
 
 The factors are nonzero on `Re(s) > 0`, so this passage also preserves zeros there. At `s = 1`
 the L-function comparison requires nonprincipal characters, as in the native continuation API.
+
+Passing to `χ.primitiveCharacter` identifies the continued `L`-function of a lifted primitive
+character with that of the primitive character itself; in particular, the primitive character of
+the principal character has `L`-function `riemannZeta`, and every `χ.primitiveCharacter.LFunction`
+is meromorphic on `ℂ` and analytic away from `s = 1` (and entire when `χ ≠ 1`).
 
 The exact identity is Mathlib's `DirichletCharacter.LFunction_changeLevel`,
 by David Loeffler and Michael Stoll.
@@ -122,5 +131,54 @@ theorem exists_norm_LFunction_changeLevel_le_rpow {δ ε : ℝ} (hδ : 0 < δ) (
       rw [he, mul_assoc, mul_inv_cancel₀ hne, mul_one]
     rw [hi, norm_mul, mul_comm]
     exact mul_le_mul_of_nonneg_right hinv (norm_nonneg _)
+
+/-! ### Primitive-character `L`-functions -/
+
+/-- If a primitive complex character `ψ` lifts to `χ` at a nonzero multiple level, then `ψ` and
+`χ.primitiveCharacter` have the same continued `L`-function. -/
+theorem IsPrimitive.LFunction_eq_primitiveCharacter {M N : ℕ} [NeZero M] [NeZero N]
+    {ψ : DirichletCharacter ℂ M} {χ : DirichletCharacter ℂ N}
+    (hψ : ψ.IsPrimitive) (hMN : M ∣ N) (hχ : changeLevel hMN ψ = χ) :
+    ψ.LFunction = χ.primitiveCharacter.LFunction := by
+  obtain ⟨rfl, rfl⟩ := (hψ.changeLevel_eq_changeLevel_iff χ.primitiveCharacter_isPrimitive
+    hMN χ.conductor_dvd_level).mp (hχ.trans χ.changeLevel_primitiveCharacter.symm)
+  rfl
+
+/-- The continued `L`-function of the primitive character of the principal character modulo `N` is
+the Riemann zeta function. -/
+@[simp]
+theorem LFunction_primitiveCharacter_one {N : ℕ} [NeZero N] :
+    (1 : DirichletCharacter ℂ N).primitiveCharacter.LFunction = riemannZeta := by
+  have h := (isPrimitive_one_level_one (R := ℂ)).LFunction_eq_primitiveCharacter
+    (one_dvd N) (map_one (changeLevel (one_dvd N)))
+  rw [← h, LFunction_modOne_eq]
+
+/-- For a nonprincipal character `χ` of nonzero level, `χ.primitiveCharacter.LFunction` is
+entire. -/
+theorem differentiable_LFunction_primitiveCharacter {N : ℕ} [NeZero N]
+    {χ : DirichletCharacter ℂ N} (hχ : χ ≠ 1) :
+    Differentiable ℂ χ.primitiveCharacter.LFunction :=
+  differentiable_LFunction (primitiveCharacter_eq_one_iff.not.mpr hχ)
+
+/-- For every character `χ` of nonzero level, `χ.primitiveCharacter.LFunction` is meromorphic on
+the complex plane. -/
+theorem meromorphic_LFunction_primitiveCharacter {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N) :
+    Meromorphic χ.primitiveCharacter.LFunction := by
+  by_cases hχ : χ = 1
+  · subst hχ
+    rw [LFunction_primitiveCharacter_one]
+    exact TauCeti.meromorphic_riemannZeta
+  · exact fun z ↦ ((differentiable_LFunction_primitiveCharacter hχ).analyticAt z).meromorphicAt
+
+/-- For every character `χ` of nonzero level, `χ.primitiveCharacter.LFunction` is analytic at every
+point `s ≠ 1`, and at `s = 1` as well when `χ ≠ 1`. -/
+theorem analyticAt_LFunction_primitiveCharacter {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N)
+    {s : ℂ} (h : χ ≠ 1 ∨ s ≠ 1) :
+    AnalyticAt ℂ χ.primitiveCharacter.LFunction s := by
+  by_cases hχ : χ = 1
+  · subst hχ
+    rw [LFunction_primitiveCharacter_one]
+    exact analyticOn_riemannZeta s (h.resolve_left (not_not.mpr rfl))
+  · exact (differentiable_LFunction_primitiveCharacter hχ).analyticAt s
 
 end DirichletCharacter

@@ -11,20 +11,34 @@ public import Mathlib.Data.Nat.GCD.BigOperators
 /-!
 # Dirichlet character conductors
 
-Inversion preserves primitivity, and a primitive character is trivial exactly at level one. An
-injective change of coefficient ring preserves factorization through a lower level, hence the
-conductor and primitivity of a Dirichlet character. The conductor of a product of Dirichlet
-characters with pairwise coprime conductors is the product of their conductors.
+Inversion preserves primitivity, the conductor of a character of nonzero level is nonzero, and a
+character of nonzero level is trivial exactly when its primitive character is trivial (equivalently,
+when its conductor is one). An injective change of coefficient ring preserves factorization through
+a lower level, hence the conductor and primitivity of a Dirichlet character. The conductor of a
+product of Dirichlet characters with pairwise coprime conductors is the product of their
+conductors.
 -/
 
 public section
 
 namespace DirichletCharacter
 
+/-- The conductor of a Dirichlet character of nonzero level is nonzero. -/
+instance instNeZeroConductor {R : Type*} [CommMonoidWithZero R] {n : ℕ} [NeZero n]
+    (χ : DirichletCharacter R n) : NeZero χ.conductor :=
+  ⟨χ.conductor_ne_zero⟩
+
 /-- A primitive character is principal exactly when its level is one. -/
 theorem IsPrimitive.eq_one_iff {R : Type*} [CommMonoidWithZero R] {n : ℕ} [NeZero n]
     {χ : DirichletCharacter R n} (hχ : χ.IsPrimitive) : χ = 1 ↔ n = 1 := by
   rw [eq_one_iff_conductor_eq_one, (isPrimitive_def _).mp hχ]
+
+/-- The primitive character of a character of nonzero level is principal if and only if the
+character itself is principal. -/
+@[simp]
+theorem primitiveCharacter_eq_one_iff {R : Type*} [CommMonoidWithZero R] {n : ℕ} [NeZero n]
+    {χ : DirichletCharacter R n} : χ.primitiveCharacter = 1 ↔ χ = 1 := by
+  rw [χ.primitiveCharacter_isPrimitive.eq_one_iff, ← eq_one_iff_conductor_eq_one]
 
 /-! ### Injective changes of the coefficient ring -/
 
