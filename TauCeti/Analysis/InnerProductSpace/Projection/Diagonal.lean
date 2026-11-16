@@ -211,6 +211,7 @@ theorem finrank_span_image_single [Finite ι] (s : Finset ι) :
 
 omit [Fintype ι] in
 /-- Coordinate subspaces are ordered by inclusion of their sets of coordinates. -/
+@[simp]
 theorem span_image_single_le_span_image_single_iff [Finite ι] {s t : Set ι} :
     span 𝕜 ((fun i ↦ EuclideanSpace.single i (1 : 𝕜)) '' s) ≤
         span 𝕜 ((fun i ↦ EuclideanSpace.single i (1 : 𝕜)) '' t) ↔ s ⊆ t := by
@@ -280,6 +281,7 @@ theorem eq_span_image_single_of_forall_map_piLpCongrRight_le
       (subset_span ⟨i, single_mem_of_forall_map_piLpCongrRight_le U h hu hi, rfl⟩)
 
 /-- The diagonal unitary group fixes every coordinate subspace. -/
+@[simp]
 theorem map_piLpCongrRight_span_image_single (e : ι → 𝕜 ≃ₗᵢ[𝕜] 𝕜) (s : Set ι) :
     (span 𝕜 ((fun i ↦ EuclideanSpace.single i (1 : 𝕜)) '' s)).map
         ((LinearIsometryEquiv.piLpCongrRight 2 e :
@@ -322,7 +324,7 @@ theorem map_piLpCongrRight_of_forall_eq {e : ι → 𝕜 ≃ₗᵢ[𝕜] 𝕜} (
     exact zero_mem U
   · have hu' : LinearIsometryEquiv.piLpCongrRight 2 e u = e k 1 • u := by
       ext j
-      have hk (x : 𝕜) : e k x = x * e k 1 := by rw [← smul_eq_mul, ← map_smul, smul_eq_mul, mul_one]
+      have hk (x : 𝕜) : e k x = x * e k 1 := by simpa using map_smul (e k) x 1
       simp [he j k, hk (u j), mul_comm]
     simpa [hu'] using U.smul_mem (e k 1) hu
 
@@ -336,13 +338,9 @@ theorem eq_of_map_piLpCongrRight_span_singleton_le {e : ι → 𝕜 ≃ₗᵢ[�
       span 𝕜 {EuclideanSpace.single i (1 : 𝕜) + EuclideanSpace.single j 1}) :
     e i = e j := by
   obtain ⟨c, hc⟩ := mem_span_singleton.1 (h (mem_map_of_mem (mem_span_singleton_self _)))
-  have hi := congr($hc i)
-  have hj := congr($hc j)
-  simp only [smul_add, PiLp.add_apply, PiLp.smul_apply, PiLp.single_eq_same, smul_eq_mul, mul_one,
-    ne_eq, hij, not_false_eq_true, PiLp.single_eq_of_ne, mul_zero, add_zero, LinearEquiv.coe_coe,
-    LinearIsometryEquiv.coe_toLinearEquiv, LinearIsometryEquiv.piLpCongrRight_apply,
-    PiLp.single_apply, map_add, ↓reduceIte, map_zero, hij.symm, zero_add] at hi hj
-  refine LinearIsometryEquiv.ext fun x ↦ ?_
-  rw [← mul_one x, ← smul_eq_mul, map_smul, map_smul, ← hi, ← hj]
+  have hi : c = e i 1 := by simpa [hij] using congr($hc i)
+  have hj : c = e j 1 := by simpa [hij.symm] using congr($hc j)
+  exact LinearIsometryEquiv.toLinearEquiv_injective
+    (LinearEquiv.toLinearMap_injective (LinearMap.ext_ring (by simpa using hi.symm.trans hj)))
 
 end Submodule

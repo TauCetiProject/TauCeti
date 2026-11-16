@@ -30,7 +30,9 @@ eight of them (`TauCeti.BottSamelson.fixedFlag`):
 (`TauCeti.BottSamelson.forall_map_eq_iff_exists_fixedFlag`). They are pairwise distinct, and their
 moment values are, in this order, the eight rows of `TauCeti.BottSamelson.fixedMoment`
 (`TauCeti.BottSamelson.moment_fixedFlag`). So the fixed points keep their labels even for the
-weights `a = c`, where the moment values of rows `2` and `5` coincide.
+weights `a = c`, where the moment values of `fixedFlag 1` and `fixedFlag 4` coincide (rows `2`
+and `5` of the table in `TauCeti.Geometry.Symplectic.BottSamelson.FixedMoment`, which numbers its
+rows from `1`, so that row `k + 1` is `fixedMoment a b c k`).
 
 The kernel of the action is the diagonal circle: a diagonal unitary fixes every point of `X` exactly
 when its three entries agree (`TauCeti.BottSamelson.forall_map_eq_iff_forall_eq`). Scalars fix every
@@ -53,8 +55,8 @@ effective torus `T / U(1)` has dimension two, matching the affine trace plane
 * `TauCeti.BottSamelson.forall_map_eq_iff_exists_fixedFlag`: a point of `X` is fixed by the torus
   exactly when it is one of the eight fixed flags.
 * `TauCeti.BottSamelson.fixedFlag_injective`: the eight fixed flags are distinct.
-* `TauCeti.BottSamelson.moment_fixedFlag`: the moment value of the `k`-th fixed flag is the `k`-th
-  row of `fixedMoment`.
+* `TauCeti.BottSamelson.moment_fixedFlag`: the moment value of `fixedFlag k` is
+  `fixedMoment a b c k`.
 * `TauCeti.BottSamelson.forall_map_eq_iff_forall_eq`: the kernel of the torus action on `X` is the
   diagonal circle.
 
@@ -74,11 +76,18 @@ namespace TauCeti.BottSamelson
 open Module Set Submodule
 
 /-- The coordinate sets `(s₁, t, u)` of the eight torus-fixed flags of the Bott–Samelson variety of
-the word `121`: the `k`-th fixed flag is the triple of coordinate subspaces spanned by the `eᵢ` with
+the word `121`: `fixedFlag k` is the triple of coordinate subspaces spanned by the `eᵢ` with
 `i` in `s₁`, `t` and `u` respectively. They are ordered as the rows of `fixedMoment`. -/
 def fixedFlagCoords : Fin 8 → Finset (Fin 3) × Finset (Fin 3) × Finset (Fin 3) :=
   ![({0}, {0, 1}, {0}), ({0}, {0, 1}, {1}), ({0}, {0, 2}, {0}), ({0}, {0, 2}, {2}),
     ({1}, {0, 1}, {0}), ({1}, {0, 1}, {1}), ({1}, {1, 2}, {1}), ({1}, {1, 2}, {2})]
+
+/-- The coordinate sets of the eight fixed flags, listed in the order of `fixedMoment`. -/
+theorem fixedFlagCoords_def :
+    fixedFlagCoords =
+      ![({0}, {0, 1}, {0}), ({0}, {0, 1}, {1}), ({0}, {0, 2}, {0}), ({0}, {0, 2}, {2}),
+        ({1}, {0, 1}, {0}), ({1}, {0, 1}, {1}), ({1}, {1, 2}, {1}), ({1}, {1, 2}, {2})] :=
+  (rfl)
 
 /-- The eight torus-fixed flags `(L₁, P, L)` of the Bott–Samelson variety of the word `121`: the
 triples of coordinate subspaces with coordinate sets `fixedFlagCoords k`. -/
@@ -89,7 +98,7 @@ def fixedFlag (k : Fin 8) :
     span ℂ ((fun i ↦ EuclideanSpace.single i (1 : ℂ)) '' ((fixedFlagCoords k).2.1 : Set (Fin 3))),
     span ℂ ((fun i ↦ EuclideanSpace.single i (1 : ℂ)) '' ((fixedFlagCoords k).2.2 : Set (Fin 3))))
 
-/-- The `k`-th fixed flag is the triple of coordinate subspaces of `fixedFlagCoords k`. -/
+/-- The fixed flag `fixedFlag k` is the triple of coordinate subspaces of `fixedFlagCoords k`. -/
 theorem fixedFlag_def (k : Fin 8) :
     fixedFlag k =
       (span ℂ ((fun i ↦ EuclideanSpace.single i (1 : ℂ)) '' ((fixedFlagCoords k).1 : Set (Fin 3))),
@@ -202,13 +211,13 @@ theorem forall_map_eq_iff_exists_fixedFlag {L₁ P L : Submodule ℂ (EuclideanS
     have hmap := map_fixedFlag k e
     rwa [hk] at hmap
 
-/-- The moment value of the `k`-th fixed flag is the `k`-th row of `fixedMoment`. -/
+/-- The moment value of `fixedFlag k` is `fixedMoment a b c k`. -/
 @[simp]
 theorem moment_fixedFlag (a b c : ℝ) (k : Fin 8) :
     moment a b c (fixedFlag k).1 (fixedFlag k).2.1 (fixedFlag k).2.2 = fixedMoment a b c k := by
   ext i
   simp only [fixedFlag, moment_apply, projectorDiagonal_span_single]
-  fin_cases k <;> fin_cases i <;> simp [fixedFlagCoords, fixedMoment_def]
+  fin_cases k <;> fin_cases i <;> simp [fixedFlagCoords_def, fixedMoment_def]
 
 /-- **The kernel of the torus action on the word `121` Bott–Samelson variety is the diagonal
 circle.** A diagonal unitary fixes every point `(L₁, P, L)` of the variety exactly when its three
