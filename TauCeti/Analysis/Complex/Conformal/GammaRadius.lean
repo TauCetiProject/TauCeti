@@ -129,13 +129,15 @@ private theorem gammaRadius_eq_div_of_two_le {N : ℕ} (hN : 2 ≤ N) :
         (Real.Gamma (((N : ℝ) + 1) / (2 * (N : ℝ))) ^ 2 * Real.Gamma (1 - 1 / (N : ℝ))) := by
   have hN2 : (2 : ℝ) ≤ N := by exact_mod_cast hN
   have hN0 : (N : ℝ) ≠ 0 := by linarith
-  let x : ℝ := 1 / (N : ℝ)
+  set x : ℝ := 1 / (N : ℝ) with hx_def
   have hx : x ≤ 1 / 2 := inv_natCast_le_half hN
-  have hx0 : 0 < x := by dsimp [x]; positivity
-  have hm : ((N : ℝ) - 1) / (2 * (N : ℝ)) = (1 - x) / 2 := by dsimp [x]; field_simp [hN0]
-  have hp : ((N : ℝ) + 1) / (2 * (N : ℝ)) = (1 + x) / 2 := by dsimp [x]; field_simp [hN0]
-  have hp' : 1 + 1 / (2 * (N : ℝ)) = (1 + x) / 2 + 1 / 2 := by dsimp [x]; field_simp [hN0]; ring
-  have hm' : 1 - 1 / (2 * (N : ℝ)) = (1 - x) / 2 + 1 / 2 := by dsimp [x]; field_simp [hN0]; ring
+  have hx0 : 0 < x := by rw [hx_def]; positivity
+  have hm : ((N : ℝ) - 1) / (2 * (N : ℝ)) = (1 - x) / 2 := by rw [hx_def]; field_simp [hN0]
+  have hp : ((N : ℝ) + 1) / (2 * (N : ℝ)) = (1 + x) / 2 := by rw [hx_def]; field_simp [hN0]
+  have hp' : 1 + 1 / (2 * (N : ℝ)) = (1 + x) / 2 + 1 / 2 := by
+    rw [hx_def]; field_simp [hN0]; ring
+  have hm' : 1 - 1 / (2 * (N : ℝ)) = (1 - x) / 2 + 1 / 2 := by
+    rw [hx_def]; field_simp [hN0]; ring
   have hsq_pos := gamma_sq_mul_gamma_add_half_sq ((1 + x) / 2)
   have hp1 : 2 * ((1 + x) / 2) = 1 + x := by ring
   have hp2 : 1 - (1 + x) = -x := by ring
@@ -154,8 +156,7 @@ private theorem gammaRadius_eq_div_of_two_le {N : ℕ} (hN : 2 ≤ N) :
   have hg_d2 : Real.Gamma (1 + x) ≠ 0 := (Real.Gamma_pos_of_pos (by linarith)).ne'
   have hg_d4 : Real.Gamma (1 - x) ≠ 0 := (Real.Gamma_pos_of_pos (by linarith)).ne'
   have hpi : Real.sqrt Real.pi ≠ 0 := (Real.sqrt_pos.mpr Real.pi_pos).ne'
-  have hx_def : 1 / (N : ℝ) = x := rfl
-  rw [gammaRadius_def, hm, hp, hp', hm', hx_def, div_eq_div_iff (by positivity) (by positivity)]
+  rw [gammaRadius_def, hm, hp, hp', hm', ← hx_def, div_eq_div_iff (by positivity) (by positivity)]
   apply mul_right_cancel₀ (mul_ne_zero (pow_ne_zero 2 hg_d2) (pow_ne_zero 2 hpi))
   linear_combination
     (16 : ℝ) ^ x * Real.Gamma (1 - x) ^ 2 * Real.Gamma (1 + x) ^ 2 * Real.sqrt Real.pi ^ 2 *
@@ -275,12 +276,8 @@ private theorem oddZetaRadiusTerm_pos {N : ℕ} (hN : 2 ≤ N) (k : ℕ) :
   have hpow : (1 : ℝ) < 2 ^ (2 * k + 2) := by
     have : (2 : ℝ) ^ 2 ≤ 2 ^ (2 * k + 2) := pow_le_pow_right₀ one_le_two (by omega)
     linarith
-  have hcast : (2 * (k : ℂ) + 3) = ((2 * (k : ℝ) + 3 : ℝ) : ℂ) := by
-    push_cast
-    rfl
   have hzeta : 0 < (riemannZeta (2 * k + 3)).re := by
-    rw [hcast]
-    exact riemannZeta_re_pos_of_one_lt (by linarith)
+    simpa using riemannZeta_re_pos_of_one_lt (x := 2 * (k : ℝ) + 3) (by linarith)
   have hnum : 0 < (2 ^ (2 * k + 2) - 1 : ℝ) * (riemannZeta (2 * k + 3)).re :=
     mul_pos (sub_pos.mpr hpow) hzeta
   exact div_pos hnum (mul_pos (by positivity) (pow_pos hN0 _))
@@ -449,21 +446,17 @@ private theorem oddZetaRadiusTerm_le {N : ℕ} (hN : 2 ≤ N) (k : ℕ) :
     oddZetaRadiusTerm N k ≤ 4 / ((2 * (k : ℝ) + 3) * (N : ℝ) ^ (2 * k + 3)) := by
   dsimp [oddZetaRadiusTerm]
   have hN2 : (2 : ℝ) ≤ N := by exact_mod_cast hN
-  have hcast : (2 * (k : ℂ) + 3) = ((2 * (k : ℝ) + 3 : ℝ) : ℂ) := by
-    push_cast
-    rfl
-  have hzeta0 : 0 < (riemannZeta (2 * k + 3)).re := by
-    rw [hcast]
-    exact riemannZeta_re_pos_of_one_lt (by linarith)
   have hzeta2 : (riemannZeta (2 * k + 3)).re ≤ 2 :=
-    (riemannZeta_re_lt_two (by simp; linarith)).le
+    riemannZeta_re_le_two (by simp; linarith)
+  have h2pow_nonneg : (0 : ℝ) ≤ 2 ^ (2 * k + 2) - 1 := by
+    have : (1 : ℝ) ≤ 2 ^ (2 * k + 2) := one_le_pow₀ one_le_two
+    linarith
   have h2pow : (2 ^ (2 * k + 2) - 1 : ℝ) ≤ 2 * 2 ^ (2 * k + 1) := by
     have he : 2 * k + 2 = (2 * k + 1) + 1 := by omega
     rw [he, pow_succ']
     linarith
   have hnum : (2 ^ (2 * k + 2) - 1 : ℝ) * (riemannZeta (2 * k + 3)).re ≤
       4 * 2 ^ (2 * k + 1) := by
-    have hp : (0 : ℝ) < 2 ^ (2 * k + 1) := by positivity
     nlinarith
   have hden : 0 ≤ (2 : ℝ) ^ (2 * k + 1) * (2 * (k : ℝ) + 3) * (N : ℝ) ^ (2 * k + 3) :=
     mul_nonneg (by positivity) (pow_nonneg (by linarith) _)
@@ -557,11 +550,11 @@ private theorem log_gammaRadius_sub_div_le {N : ℕ} (hN : 2 ≤ N) :
   rw [log_gammaRadius_sub_div_eq_add_tail hN]
   have ht0 : oddZetaRadiusTerm N 0 ≤ 1 / (N : ℝ) ^ 3 := by
     rw [oddZetaRadiusTerm_zero, div_le_div_iff₀ (by positivity) (by positivity)]
-    have hz3 : (riemannZeta 3).re ≤ 2 := (riemannZeta_re_lt_two (by norm_num)).le
+    have hz3 : (riemannZeta 3).re ≤ 2 := riemannZeta_re_le_two (by norm_num)
     nlinarith [pow_pos hN0 3]
   have ht1 : oddZetaRadiusTerm N 1 ≤ (3 / 16 : ℝ) / (N : ℝ) ^ 3 := by
     rw [oddZetaRadiusTerm_one, div_le_div_iff₀ (by positivity) (by positivity)]
-    have hz5 : (riemannZeta 5).re ≤ 2 := (riemannZeta_re_lt_two (by norm_num)).le
+    have hz5 : (riemannZeta 5).re ≤ 2 := riemannZeta_re_le_two (by norm_num)
     have hN5 : 4 * (N : ℝ) ^ 3 ≤ (N : ℝ) ^ 5 := by
       calc 4 * (N : ℝ) ^ 3 ≤ (N : ℝ) ^ 2 * (N : ℝ) ^ 3 :=
             mul_le_mul_of_nonneg_right (by nlinarith) (by positivity)

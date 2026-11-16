@@ -27,12 +27,13 @@ Evaluating linear combinations of these expansions at small rational shifts canc
 selected parities of `ζ(k + 2)`, yielding zeta-value series for logarithms of Gamma quotients
 (such as the odd-zeta expansion of `TauCeti.gammaRadius`).
 
-Over `ℂ`, the naive composition `Complex.log (Complex.Gamma (1 + z))` can cross the branch cut of
-`Complex.log` even when `‖z‖ < 1`. Instead, every `z` with `‖z‖ < 1` satisfies
-`1 + z ∈ Complex.slitPlane`, so the normalized holomorphic branch `TauCeti.logGamma (1 + z)` is
-single-valued and analytic on the entire open unit disc `‖z‖ < 1`—the maximal disc around `0`
-avoiding the pole of `Γ(1 + z)` at `z = -1`. On `(-1, 1)`, `Real.Gamma (1 + x)` is positive and
-`TauCeti.logGamma` agrees with `Real.log ∘ Real.Gamma`, giving the companion real power series for
+Over `ℂ`, `Complex.log ∘ Complex.Gamma` crosses the branch cut of `Complex.log` elsewhere on
+`Complex.slitPlane`, whereas `TauCeti.logGamma` is already the canonical holomorphic branch on all
+of `Complex.slitPlane`. Since every `z` with `‖z‖ < 1` satisfies `1 + z ∈ Complex.slitPlane`,
+`TauCeti.logGamma (1 + z)` is single-valued and analytic on the entire open unit disc `‖z‖ < 1`,
+the maximal disc around `0` avoiding the pole of `Γ(1 + z)` at `z = -1`. For `x ∈ (-1, 1)`,
+`1 + x > 0`, so `Real.Gamma (1 + x)` is positive and `TauCeti.logGamma (1 + x)` agrees with
+`Real.log (Real.Gamma (1 + x))`, giving the companion real power series for
 `Real.digamma (1 + x)` and `Real.log (Real.Gamma (1 + x))`.
 
 ## Main results
@@ -64,21 +65,27 @@ open Complex Metric
 
 namespace Complex
 
+private theorem norm_natCast_add_one (n : ℕ) : ‖(n : ℂ) + 1‖ = (n : ℝ) + 1 := by
+  simpa using Complex.norm_natCast (n + 1)
+
+private theorem one_add_add_natCast_ne_zero_of_norm_lt_one {z : ℂ} (hz : ‖z‖ < 1) (n : ℕ) :
+    1 + z + (n : ℂ) ≠ 0 := by
+  intro h
+  have hre := congrArg Complex.re h
+  have hzre : -‖z‖ ≤ z.re := neg_le_of_abs_le (abs_re_le_norm z)
+  simp only [add_re, one_re, natCast_re, zero_re] at hre
+  linarith
+
 private theorem hasSum_gaussTerm_geometric {z : ℂ} (hz : ‖z‖ < 1) (n : ℕ) :
     HasSum (fun k : ℕ ↦ (-1) ^ k * z ^ (k + 1) / ((n : ℂ) + 1) ^ (k + 2))
       (1 / ((n : ℂ) + 1) - 1 / (1 + z + n)) := by
   let w : ℂ := -z / ((n : ℂ) + 1)
   have hn1 : (1 : ℝ) ≤ (n : ℝ) + 1 := by linarith
   have hw : ‖w‖ < 1 := by
-    rw [norm_div, norm_neg, ← Nat.cast_add_one, Complex.norm_natCast, Nat.cast_add_one]
+    rw [norm_div, norm_neg, norm_natCast_add_one]
     exact (div_le_self (norm_nonneg z) hn1).trans_lt hz
   have hn0 : (n : ℂ) + 1 ≠ 0 := n.cast_add_one_ne_zero
-  have hzn0 : 1 + z + (n : ℂ) ≠ 0 := by
-    intro h
-    have hre := congrArg Complex.re h
-    have hzre : -‖z‖ ≤ z.re := neg_le_of_abs_le (abs_re_le_norm z)
-    simp only [add_re, one_re, natCast_re, zero_re] at hre
-    linarith
+  have hzn0 : 1 + z + (n : ℂ) ≠ 0 := one_add_add_natCast_ne_zero_of_norm_lt_one hz n
   have h1w : 1 - w = (1 + z + n) / ((n : ℂ) + 1) := by
     dsimp [w]
     field_simp [hn0]
@@ -110,9 +117,8 @@ private theorem summable_uncurry_digamma_double {z : ℂ} (hz : ‖z‖ < 1) :
   have hmul : Summable fun p : ℕ × ℕ ↦ (1 / ((p.1 : ℝ) + 1) ^ 2) * ‖z‖ ^ (p.2 + 1) :=
     summable_mul_of_summable_norm hu hv
   refine hmul.of_norm_bounded fun ⟨n, k⟩ ↦ ?_
-  have hnorm : ‖(n : ℂ) + 1‖ = (n : ℝ) + 1 := by simpa using Complex.norm_natCast (n + 1)
   simp only [Function.uncurry_apply_pair, norm_div, norm_mul, norm_pow, norm_neg, norm_one,
-    one_pow, one_mul, hnorm]
+    one_pow, one_mul, norm_natCast_add_one]
   have hpow : ((n : ℝ) + 1) ^ 2 ≤ ((n : ℝ) + 1) ^ (k + 2) :=
     pow_le_pow_right₀ (by linarith) (by omega)
   rw [one_div_mul_eq_div]
@@ -125,14 +131,11 @@ private theorem hasSum_zeta_pow_term (z : ℂ) (k : ℕ) :
     simpa using (summable_nat_add_iff 1).mpr (Real.summable_one_div_nat_pow.mpr (by omega))
   have hsum : Summable fun n : ℕ ↦ 1 / ((n : ℂ) + 1) ^ (k + 2) := by
     refine .of_norm_bounded hsum_real fun n ↦ ?_
-    have hnorm : ‖(n : ℂ) + 1‖ = (n : ℝ) + 1 := by simpa using Complex.norm_natCast (n + 1)
-    simp [hnorm]
+    simp [norm_natCast_add_one]
   have hzeta : riemannZeta (k + 2) = ∑' n : ℕ, 1 / ((n : ℂ) + 1) ^ (k + 2) := by
     rw [zeta_eq_tsum_one_div_nat_add_one_cpow (by simp; linarith)]
     refine tsum_congr fun n ↦ ?_
-    have hcast : ((k : ℂ) + 2) = ((k + 2 : ℕ) : ℂ) := by
-      push_cast
-      rfl
+    have hcast : ((k : ℂ) + 2) = ((k + 2 : ℕ) : ℂ) := by norm_cast
     rw [hcast, cpow_natCast]
   have h1 : HasSum (fun n : ℕ ↦ 1 / ((n : ℂ) + 1) ^ (k + 2)) (riemannZeta (k + 2)) := by
     rw [hzeta]
@@ -149,12 +152,8 @@ theorem hasSum_digamma_one_add_add_eulerMascheroniConstant {z : ℂ} (hz : ‖z�
   have hrow := hdouble.prod_fiberwise (hasSum_gaussTerm_geometric hz)
   have hcol := ((Equiv.prodComm ℕ ℕ).hasSum_iff.mpr hdouble).prod_fiberwise
     (hasSum_zeta_pow_term z)
-  have hpoles : ∀ m : ℕ, 1 + z ≠ -(m : ℂ) := by
-    intro m hm
-    have hre := congrArg Complex.re hm
-    have hzre : -‖z‖ ≤ z.re := neg_le_of_abs_le (abs_re_le_norm z)
-    simp only [add_re, one_re, neg_re, natCast_re] at hre
-    linarith [Nat.cast_nonneg (α := ℝ) m]
+  have hpoles : ∀ m : ℕ, 1 + z ≠ -(m : ℂ) := fun m hm ↦
+    one_add_add_natCast_ne_zero_of_norm_lt_one hz m (by linear_combination hm)
   have hgauss : HasSum (fun n : ℕ ↦ 1 / ((n : ℂ) + 1) - 1 / (1 + z + n))
       (digamma (1 + z) + Real.eulerMascheroniConstant) := by
     have heq := digamma_eq_gaussSeries hpoles
@@ -187,7 +186,7 @@ theorem hasSum_digamma_one_add_add_eulerMascheroniConstant {x : ℝ} (hx : |x| <
     (Complex.hasSum_digamma_one_add_add_eulerMascheroniConstant hxc)
   have htarget : Complex.reCLM (Complex.digamma (1 + (x : ℂ)) + eulerMascheroniConstant) =
       digamma (1 + x) + eulerMascheroniConstant := by
-    have h1 : (1 : ℂ) + (x : ℂ) = ((1 + x : ℝ) : ℂ) := by push_cast; rfl
+    have h1 : (1 : ℂ) + (x : ℂ) = ((1 + x : ℝ) : ℂ) := by norm_cast
     rw [h1, Complex.digamma_ofReal]
     simp
   rw [htarget] at hc
@@ -228,7 +227,7 @@ private theorem summable_logGammaSeriesTerm {z : ℂ} (hz : ‖z‖ < 1) :
   calc ‖riemannZeta (k + 2)‖ * ‖z‖ ^ (k + 2) / ‖(k : ℂ) + 2‖
       ≤ ‖riemannZeta (k + 2)‖ * ‖z‖ ^ (k + 2) := div_le_self (by positivity) hk
     _ ≤ 2 * ‖z‖ ^ (k + 2) :=
-      mul_le_mul_of_nonneg_right (norm_riemannZeta_lt_two (by simp)).le (by positivity)
+      mul_le_mul_of_nonneg_right (norm_riemannZeta_le_two (by simp)) (by positivity)
 
 private theorem hasDerivAt_logGammaSeriesTerm (k : ℕ) (w : ℂ) :
     HasDerivAt (logGammaSeriesTerm k) ((-1) ^ k * riemannZeta (k + 2) * w ^ (k + 1)) w := by
@@ -262,7 +261,7 @@ private theorem hasDerivAt_tsum_logGammaSeriesTerm {r : ℝ} (hr0 : 0 < r) (hr1 
     (fun k y hy ↦ by
       have hyr : ‖y‖ ≤ r := le_of_lt (by simpa using hy)
       rw [norm_mul, norm_mul, norm_pow, norm_neg, norm_one, one_pow, one_mul, norm_pow]
-      exact mul_le_mul (norm_riemannZeta_lt_two (by simp)).le
+      exact mul_le_mul (norm_riemannZeta_le_two (by simp))
         (pow_le_pow_left₀ (norm_nonneg y) hyr (k + 1)) (by positivity) (by positivity))
     (mem_ball_self hr0) h0 hw
   have hw1 : ‖w‖ < 1 := (by simpa using hw : ‖w‖ < r).trans hr1
@@ -336,7 +335,7 @@ theorem hasSum_log_Gamma_one_add_add_eulerMascheroniConstant_mul {x : ℝ} (hx :
   have htarget :
       Complex.reCLM (TauCeti.logGamma (1 + (x : ℂ)) + eulerMascheroniConstant * (x : ℂ)) =
         log (Gamma (1 + x)) + eulerMascheroniConstant * x := by
-    have h1 : (1 : ℂ) + (x : ℂ) = ((1 + x : ℝ) : ℂ) := by push_cast; rfl
+    have h1 : (1 : ℂ) + (x : ℂ) = ((1 + x : ℝ) : ℂ) := by norm_cast
     rw [h1, TauCeti.logGamma_ofReal hxpos]
     simp
   rw [htarget] at hc
