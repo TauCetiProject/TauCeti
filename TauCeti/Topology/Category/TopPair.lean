@@ -50,7 +50,9 @@ For subsets `A ⊆ X` and `B ⊆ Y`, the preimages `A × Y` and `X × B` of `A` 
 projections of `X × Y` form the pair `(X × Y, A × Y ∪ X × B)` of a product of pairs. Each is open
 in the union when `A`, respectively `B`, is open
 (`TopCat.isOpen_subtypeVal_preimage_preimage_fst_union`), and a product of maps of pairs carries
-them into each other (`TopCat.mapsTo_tensorHom_preimage_fst`). The product `A × Y` of the subspace
+them, and so their union, into each other (`TopCat.mapsTo_tensorHom_preimage_fst`,
+`TopCat.mapsTo_tensorHom_preimage_union`). The pair `(X × Y, X × B)` of `TopPair.prodLeft`
+includes into this pair (`TopPair.prodLeftToPreimageUnion`). The product `A × Y` of the subspace
 `A` with `Y` is homeomorphic to the preimage of `A` under the first projection
 (`TopCat.prodPreimageFstIso`).
 
@@ -423,6 +425,12 @@ abbrev prodLeftMap {P P' : TopPair.{u}} {X X' : TopCat.{u}} (f : P ⟶ P') (g : 
     ext x
     exact Prod.ext rfl (Hom.w_apply f x.2))
 
+/-- The map of ambient spaces underlying `prodLeftMap f g` is the product `g × f` of the maps. -/
+@[simp]
+lemma prodLeftMap_fst {P P' : TopPair.{u}} {X X' : TopCat.{u}} (f : P ⟶ P') (g : X ⟶ X') :
+    Hom.fst (prodLeftMap f g) = g ⊗ₘ Hom.fst f :=
+  (rfl)
+
 @[simp]
 lemma prodLeftMap_id (P : TopPair.{u}) (X : TopCat.{u}) :
     prodLeftMap (𝟙 P) (𝟙 X) = 𝟙 (P.prodLeft X) :=
@@ -433,6 +441,23 @@ lemma prodLeftMap_comp {P P' P'' : TopPair.{u}} {X X' X'' : TopCat.{u}} (f : P �
     (f' : P' ⟶ P'') (g : X ⟶ X') (g' : X' ⟶ X'') :
     prodLeftMap (f ≫ f') (g ≫ g') = prodLeftMap f g ≫ prodLeftMap f' g' :=
   hom_ext_of_fst _ (by ext; rfl)
+
+variable {X Y : TopCat.{u}} (A : Set X) (B : Set Y)
+
+/-- The inclusion of pairs `(X × Y, X × B) ⟶ (X × Y, A × Y ∪ X × B)`, with `X × B` the product of
+`X` with the subspace `B` and `A × Y ∪ X × B` the union of the preimages of `A` and `B` under the
+projections. -/
+def prodLeftToPreimageUnion :
+    (ofSubset B).prodLeft (ofSubset A).fst ⟶ ofSubset
+      (CartesianMonoidalCategory.fst X Y ⁻¹' A ∪ CartesianMonoidalCategory.snd X Y ⁻¹' B) :=
+  TopPair.ofHom (𝟙 _) (TopCat.ofHom ⟨fun x ↦ ⟨(x.1, x.2.1), Or.inr x.2.2⟩, by fun_prop⟩)
+    (by ext; rfl)
+
+/-- The inclusion `(X × Y, X × B) ⟶ (X × Y, A × Y ∪ X × B)` is the identity of `X × Y`. -/
+@[simp]
+theorem prodLeftToPreimageUnion_fst :
+    Hom.fst (prodLeftToPreimageUnion A B) = 𝟙 (X ⊗ Y) :=
+  (rfl)
 
 end prodLeft
 
@@ -540,6 +565,14 @@ lemma mapsTo_tensorHom_preimage_snd {B' : Set Y'} (f : X ⟶ X') (g : Y ⟶ Y')
     rw [Set.mem_preimage, ← ConcreteCategory.comp_apply, tensorHom_snd,
       ConcreteCategory.comp_apply]
     exact hg hx
+
+/-- The product of two maps carrying `A` into `A'` and `B` into `B'` carries the union of the
+preimages of `A` and `B` under the projections into the union of the preimages of `A'` and
+`B'`. -/
+lemma mapsTo_tensorHom_preimage_union {A' : Set X'} {B' : Set Y'} (f : X ⟶ X') (g : Y ⟶ Y')
+    (hf : Set.MapsTo f A A') (hg : Set.MapsTo g B B') :
+    Set.MapsTo (f ⊗ₘ g) (fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B) (fst X' Y' ⁻¹' A' ∪ snd X' Y' ⁻¹' B') :=
+  (mapsTo_tensorHom_preimage_fst f g hf).union_union (mapsTo_tensorHom_preimage_snd f g hg)
 
 variable (X Y A) in
 /-- The homeomorphism `A × Y ≅ fst⁻¹(A)` between the product of the subspace `A ⊆ X` with `Y`
