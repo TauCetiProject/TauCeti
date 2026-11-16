@@ -25,8 +25,8 @@ where `j + n + 1 = m`
 (`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.toDual_comp_morseBoundaryAt_neg`). So the Morse
 complex of `-f` is the dual of the Morse complex of `f`, read with the complementary grading. The
 consequence for Morse homology is Poincaré duality for mod-two Morse homology: the mod-two Morse
-homology of `-f` in degree `k` has the dimension of the mod-two Morse homology of `f` in degree
-`m - k` (`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.finrank_homology_morseComplex_neg`).
+homology of `-f` in degree `k ≤ m` has the dimension of the mod-two Morse homology of `f` in
+degree `m - k` (`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.finrank_homology_morseComplex_neg`).
 
 The homology statement is linear algebra on the two chain complexes. A linear map and its dual map
 have the same rank, so the differentials of `-f` and `f` exchanged by the identification have the
@@ -49,8 +49,8 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale`:
   `f`.
 * `finrank_range_morseBoundaryAt_neg`: the graded boundary of `-f` from index `j + 1` to `j` has
   the rank of the graded boundary of `f` from index `n + 1` to `n`, when `j + n + 1 = m`.
-* `finrank_homology_morseComplex_neg`: the mod-two Morse homology of `-f` in degree `k` has the
-  dimension of the mod-two Morse homology of `f` in degree `m - k`.
+* `finrank_homology_morseComplex_neg`: the mod-two Morse homology of `-f` in degree `k ≤ m` has
+  the dimension of the mod-two Morse homology of `f` in degree `m - k`.
 
 ## References
 

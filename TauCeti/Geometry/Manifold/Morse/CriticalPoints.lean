@@ -1221,6 +1221,15 @@ theorem IsMorse.coe_criticalPointsIndexNegEquiv_apply (hf : IsMorse I f) {j k : 
     ((hf.criticalPointsIndexNegEquiv hjk p : criticalPoints I f) : M) = p := by
   simp [criticalPointsIndexNegEquiv]
 
+/-- The inverse of `TauCeti.IsMorse.criticalPointsIndexNegEquiv` does not move the underlying
+point. -/
+@[simp]
+theorem IsMorse.coe_criticalPointsIndexNegEquiv_symm_apply (hf : IsMorse I f) {j k : ℕ}
+    (hjk : j + k = Module.finrank ℝ E)
+    (q : {q : criticalPoints I f // manifoldMorseIndex I f q = k}) :
+    (((hf.criticalPointsIndexNegEquiv hjk).symm q : criticalPoints I (-f)) : M) = q := by
+  simp [criticalPointsIndexNegEquiv]
+
 /-- The critical points of index `i` of `-f` with values in `(-b, -a]` are the critical points of
 `f` with values in `[a, b)` and complementary index `dim M - i`. -/
 theorem IsMorse.setOf_neg_band_eq (hf : IsMorse I f) (a b : ℝ) (i : ℕ) :
