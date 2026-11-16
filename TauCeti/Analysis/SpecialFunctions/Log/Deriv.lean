@@ -6,13 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Log.Deriv
+public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 
 /-!
 # Differentiation involving the logarithm
 
 For `x ≠ 0`, a function `v ∘ log` is differentiable at `x` exactly when `v` is differentiable at
 `log x`, by evenness of `v ∘ log` for `x < 0`.
-The derivative of `x / log x ^ n` is also computed wherever `log x ≠ 0`.
+The derivative of `x / log x ^ n` is also computed wherever `log x ≠ 0`, together with its
+real-exponent analogue `x / log x ^ k` wherever `log x > 0`.
 
 ## Main results
 
@@ -21,6 +24,8 @@ The derivative of `x / log x ^ n` is also computed wherever `log x ≠ 0`.
 * `TauCeti.mul_deriv_comp_log`: under `x = e^y` the operator `x d/dx` is `d/dy`.
 * `TauCeti.Real.hasDerivAt_div_log_pow`: the derivative of `x / log x ^ n` for every natural
   exponent, assuming `log x ≠ 0`.
+* `TauCeti.Real.hasDerivAt_div_log_rpow`: the derivative of `x / log x ^ k` for every real
+  exponent, assuming `log x > 0`.
 
 The reciprocal-log-power derivative is adapted from the Ramanujan estimates in the
 [PrimeNumberTheoremAnd project][PNTLogPower].
@@ -94,5 +99,29 @@ theorem hasDerivAt_div_log_pow (n : ℕ) {t : ℝ} (ht : Real.log t ≠ 0) :
       simp only [Pi.pow_apply, Nat.add_one_sub_one, one_mul]
       field_simp [pow_succ, ht, ht₀]
       ring
+
+/-- The derivative of `t ↦ t / log t ^ k` wherever `log t > 0`, for every real exponent `k`. -/
+theorem hasDerivAt_div_log_rpow (k : ℝ) {t : ℝ} (ht : 0 < Real.log t) :
+    HasDerivAt (fun u : ℝ ↦ u / Real.log u ^ k)
+      ((Real.log t ^ k)⁻¹ - k * (Real.log t ^ (k + 1))⁻¹) t := by
+  have ht₀ : t ≠ 0 := by
+    intro h
+    simp [h] at ht
+  have hpow :
+      HasDerivAt (fun u : ℝ ↦ Real.log u ^ k) (k * Real.log t ^ (k - 1) * t⁻¹) t := by
+    simpa [Function.comp_def] using
+      (Real.hasDerivAt_rpow_const (x := Real.log t) (p := k) (Or.inl ht.ne')).comp t
+        (Real.hasDerivAt_log ht₀)
+  have hd := (hasDerivAt_id' t).div hpow (Real.rpow_pos_of_pos ht k).ne'
+  refine hd.congr_deriv ?_
+  have hrpow_pos : 0 < Real.log t ^ k := Real.rpow_pos_of_pos ht k
+  have hadd : Real.log t ^ (k + 1) = Real.log t ^ k * Real.log t := by
+    rw [Real.rpow_add ht, Real.rpow_one]
+  have hsub : Real.log t ^ (k - 1) * Real.log t = Real.log t ^ k := by
+    rw [← Real.rpow_add_one ht.ne', sub_add_cancel]
+  rw [hadd]
+  have hlne : Real.log t ≠ 0 := ht.ne'
+  field_simp [ht₀, hrpow_pos.ne', hlne]
+  linear_combination -k * hsub
 
 end TauCeti.Real

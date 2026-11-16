@@ -18,7 +18,7 @@ import TauCeti.Analysis.Asymptotics.Lemmas
 import TauCeti.Analysis.SpecialFunctions.ImproperIntegrals
 import TauCeti.Analysis.SpecialFunctions.Integrability.Log
 import TauCeti.Analysis.SpecialFunctions.Log.NegLogOneSub
-import TauCeti.Analysis.SpecialFunctions.LogIntegral
+import TauCeti.Analysis.SpecialFunctions.LogIntegral.Basic
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convergence
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Logarithm.DedekindZeta.Basic
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Logarithm.DedekindZeta.Tail
