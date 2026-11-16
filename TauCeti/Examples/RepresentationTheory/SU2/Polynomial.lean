@@ -10,7 +10,9 @@ public import TauCeti.RepresentationTheory.SU2.Polynomial
 /-!
 # Binary monomials, substitution and the symmetric-power dictionary in small degree
 
-Checks of `TauCeti.RepresentationTheory.ClassicalGroups.SymmetricPower.Polynomial` and
+Checks of `TauCeti.RingTheory.MvPolynomial.BinaryMonomial`,
+`TauCeti.RingTheory.MvPolynomial.LinearSubst`,
+`TauCeti.RepresentationTheory.ClassicalGroups.SymmetricPower.Polynomial` and
 `TauCeti.RepresentationTheory.SU2.Polynomial` in two complex variables `x = X 0` and
 `y = X 1`. Each value below excludes a plausible wrong convention.
 
