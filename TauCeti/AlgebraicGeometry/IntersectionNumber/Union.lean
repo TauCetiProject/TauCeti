@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.IdealSheaf.MayerVietoris
 public import TauCeti.AlgebraicGeometry.IntersectionNumber.Basic
 public import TauCeti.AlgebraicGeometry.LineBundle.BaseChange
 
@@ -77,112 +76,6 @@ open Scheme.IdealSheafData
 noncomputable section
 
 variable (k : Type u) [Field k] {X : Scheme.{u}} [X.Over (Spec (.of k))]
-
-/-! ### Euler characteristics along the Mayer–Vietoris sequence -/
-
-section MayerVietoris
-
-variable {r : ℕ} (E : FiniteLocallyFreeSheaf.FixedRank X r) (I J : X.IdealSheafData)
-  [IsFinite ((I ⊔ J).subschemeι ≫ X ↘ Spec (.of k))]
-  (hI : ∀ i < 2, FiniteDimensional k
-    (Cohomology ((FiniteLocallyFreeSheaf.pullback I.subschemeι).obj E.obj).obj i))
-  (hJ : ∀ i < 2, FiniteDimensional k
-    (Cohomology ((FiniteLocallyFreeSheaf.pullback J.subschemeι).obj E.obj).obj i))
-
-/-- The Mayer–Vietoris sequence of `V(I)` and `V(J)` tensored with `E`. -/
-private abbrev tensorMayerVietoris : ShortComplex X.Modules :=
-  (mayerVietoris I J).map (tensorLeft E.obj.obj)
-
-private lemma shortExact_tensorMayerVietoris : (tensorMayerVietoris E I J).ShortExact :=
-  shortExact_map_tensorLeft E.obj.obj (shortExact_mayerVietoris I J)
-
-/-- The middle term of the tensored sequence is `E ⊗ 𝒪_{V(I)} ⊞ E ⊗ 𝒪_{V(J)}`. -/
-private def tensorMayerVietorisX₂Iso :
-    (tensorMayerVietoris E I J).X₂ ≅
-      (E.obj.obj ⊗ I.pushforwardSubscheme) ⊞ (E.obj.obj ⊗ J.pushforwardSubscheme) :=
-  have := preservesBinaryBiproducts_of_preservesBinaryCoproducts (tensorLeft E.obj.obj)
-  (tensorLeft E.obj.obj).mapBiprod I.pushforwardSubscheme J.pushforwardSubscheme
-
-omit [IsFinite ((I ⊔ J).subschemeι ≫ X ↘ Spec (.of k))] in
-include hI hJ in
-private lemma finiteDimensional_cohomology_tensorMayerVietoris_X₂ {i : ℕ} (hi : i < 2) :
-    FiniteDimensional k (Cohomology (tensorMayerVietoris E I J).X₂ i) := by
-  have := (finiteDimensional_cohomology_tensor_pushforwardSubscheme_iff k I E.obj i).mpr
-    (hI i hi)
-  have := (finiteDimensional_cohomology_tensor_pushforwardSubscheme_iff k J E.obj i).mpr
-    (hJ i hi)
-  exact (finiteDimensional_cohomology_congr k (tensorMayerVietorisX₂Iso E I J) i).mpr
-    inferInstance
-
-include hI hJ in
-private lemma finiteDimensional_cohomology_tensorMayerVietoris_X₁ {i : ℕ} (hi : i < 2) :
-    FiniteDimensional k (Cohomology (tensorMayerVietoris E I J).X₁ i) := by
-  have hS := shortExact_tensorMayerVietoris E I J
-  have h₂ (i : ℕ) (hi : i < 2) :=
-    finiteDimensional_cohomology_tensorMayerVietoris_X₂ k E I J hI hJ hi
-  have : FiniteDimensional k (Cohomology (tensorMayerVietoris E I J).X₃ 0) :=
-    finiteDimensional_cohomology_zero_tensor_pushforwardSubscheme k (I ⊔ J) E
-  obtain rfl | rfl : i = 0 ∨ i = 1 := by omega
-  · have := hS.mono_f
-    have := h₂ 0 (by omega)
-    exact finiteDimensional_cohomology_zero_of_mono k X (tensorMayerVietoris E I J).f
-  · have := h₂ 1 (by omega)
-    exact finiteDimensional_cohomology_X₁ k X hS 0 1 rfl
-
-include hI hJ in
-/-- **Finiteness of cohomology on a union.** If the closed subschemes `V(I)` and `V(J)` meet in a
-scheme finite over `k`, and the restrictions of a vector bundle `E` to them have
-finite-dimensional cohomology, then so do `H⁰` and `H¹` of its restriction to `V(I ⊓ J)`. -/
-theorem FiniteLocallyFreeSheaf.FixedRank.finiteDimensional_cohomology_pullback_subschemeι_inf
-    {i : ℕ} (hi : i < 2) : FiniteDimensional k
-      (Cohomology ((FiniteLocallyFreeSheaf.pullback (I ⊓ J).subschemeι).obj E.obj).obj i) :=
-  (finiteDimensional_cohomology_tensor_pushforwardSubscheme_iff k (I ⊓ J) E.obj i).mp
-    (finiteDimensional_cohomology_tensorMayerVietoris_X₁ k E I J hI hJ hi)
-
-include hI hJ in
-/-- **Euler characteristics on a union of closed subschemes.** If the closed subschemes `V(I)`
-and `V(J)` of `X` meet in a scheme finite over `k`, and the restrictions of a vector bundle `E` of
-constant rank `r` to them have finite-dimensional cohomology, then
-`χ(E|_{V(I ⊓ J)}) + r · dim_k Γ(V(I ⊔ J), 𝒪) = χ(E|_{V(I)}) + χ(E|_{V(J)})`, with
-`χ = dim H⁰ - dim H¹` and the dimension written as the rank of `V(I ⊔ J) ⟶ Spec k` at `s`. -/
-theorem FiniteLocallyFreeSheaf.FixedRank.eulerCharBelow_pullback_subschemeι_inf_add
-    (s : Spec (.of k)) :
-    eulerCharBelow k (I ⊓ J).subscheme
-        ((FiniteLocallyFreeSheaf.pullback (I ⊓ J).subschemeι).obj E.obj).obj 2 +
-        r * ((I ⊔ J).subschemeι ≫ X ↘ Spec (.of k)).finrank s =
-      eulerCharBelow k I.subscheme
-          ((FiniteLocallyFreeSheaf.pullback I.subschemeι).obj E.obj).obj 2 +
-        eulerCharBelow k J.subscheme
-          ((FiniteLocallyFreeSheaf.pullback J.subschemeι).obj E.obj).obj 2 := by
-  have hS := shortExact_tensorMayerVietoris E I J
-  have h₃ : Subsingleton (Cohomology (tensorMayerVietoris E I J).X₃ 1) :=
-    subsingleton_cohomology_one_tensor_pushforwardSubscheme k (I ⊔ J) E
-  -- The connecting map out of `H¹` of the last term, which vanishes, is zero.
-  have hδ : cohomologyδBaseLinear k X hS 1 2 rfl = 0 :=
-    LinearMap.ext fun x ↦ by
-      rw [h₃.elim x 0, map_zero, LinearMap.zero_apply]
-  have h := eulerCharBelow_eq_add_of_cohomologyδ_eq_zero k hS 1
-    (fun i hi _ ↦ finiteDimensional_cohomology_tensorMayerVietoris_X₁ k E I J hI hJ hi)
-    (fun i hi ↦ finiteDimensional_cohomology_tensorMayerVietoris_X₂ k E I J hI hJ hi) hδ
-  rw [eulerCharBelow_congr k (tensorMayerVietorisX₂Iso E I J) 2,
-    eulerCharBelow_biprod k _ _ 2
-      (fun i hi ↦ (finiteDimensional_cohomology_tensor_pushforwardSubscheme_iff k I E.obj i).mpr
-        (hI i hi))
-      (fun i hi ↦ (finiteDimensional_cohomology_tensor_pushforwardSubscheme_iff k J E.obj i).mpr
-        (hJ i hi)),
-    eulerCharBelow_tensor_pushforwardSubscheme, eulerCharBelow_tensor_pushforwardSubscheme] at h
-  -- The first and last terms are `E ⊗ 𝒪_{V(I ⊓ J)}` and `E ⊗ 𝒪_{V(I ⊔ J)}`.
-  have h₁ : eulerCharBelow k X (tensorMayerVietoris E I J).X₁ 2 =
-      eulerCharBelow k (I ⊓ J).subscheme
-        ((FiniteLocallyFreeSheaf.pullback (I ⊓ J).subschemeι).obj E.obj).obj 2 :=
-    eulerCharBelow_tensor_pushforwardSubscheme k (I ⊓ J) E.obj 2
-  have h₃ : eulerCharBelow k X (tensorMayerVietoris E I J).X₃ 2 =
-      r * ((I ⊔ J).subschemeι ≫ X ↘ Spec (.of k)).finrank s :=
-    eulerCharBelow_tensor_pushforwardSubscheme_eq_mul_finrank k (I ⊔ J) E s
-  rw [h₁, h₃] at h
-  exact h.symm
-
-end MayerVietoris
 
 /-! ### Degrees on a union of closed subschemes -/
 
