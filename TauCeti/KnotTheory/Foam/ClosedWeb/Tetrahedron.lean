@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Group.Defs
+public import Mathlib.Data.Fin.Rev
 public import TauCeti.KnotTheory.Foam.ClosedWeb.Basic
 import Mathlib.Tactic.FinCases
 
@@ -27,19 +27,20 @@ and `ClosedWeb.tetrahedronNeg` (`false`) as the two specializations:
 
 Each chirality has trivial automorphism group (`ClosedWeb.instUniqueIsoTetWeb`), the two
 chiralities are not isomorphic (`ClosedWeb.isEmpty_iso_tetWeb_not`), and reversing edge
-orientations exchanges them (`ClosedWeb.tetWebReverseIso`). Finally, we establish the local-link
-properties used by Robert–Wagner's foam evaluation: additive flows on the two chiralities express
-the two sides of semigroup associativity, and every nonempty single-pigment subweb
-(`IsMonochromeSubweb`) on `tetWeb c` is one of three simple directed cycles of lengths `3`, `4`,
-and `3`, ensuring that coning a monochrome subweb at a singular foam vertex produces at most one
-disk rather than a pinched cone.
+orientations exchanges them (`ClosedWeb.tetWebReverseIso`). Finally, we verify the two local-link
+properties of `tetWeb`: ordered noncommutative semigroup flows (`ClosedWeb.IsAdditiveFlow`) on the
+two chiralities express semigroup associativity in the two opposite multiplication orders
+(Goertz–Marino–Wedrich), and every nonempty single-pigment subweb (`ClosedWeb.IsMonochromeSubweb`)
+on `tetWeb c` is one of three simple directed cycles of lengths `3`, `4`, and `3`
+(Robert–Wagner), ensuring that coning a monochrome subweb at a singular foam vertex produces at
+most one disk rather than a pinched cone.
 
 ## References
 
 * L.-H. Robert and E. Wagner, *A closed formula for the evaluation of $\mathfrak{sl}_N$-foams*,
   arXiv:1702.04140v3, Definition 2.1, Remark 2.2, and Lemma 2.5.
 * H. Goertz, L. Marino, and P. Wedrich, *Monoidal 2-categories from foam evaluation*,
-  arXiv:2602.11120v1, Definition 2.1.
+  arXiv:2602.11120v1, Definitions 2.1, 2.4–2.5, and 3.12.
 -/
 
 public section
@@ -278,13 +279,6 @@ theorem not_nonempty_iso_tetrahedronPos_tetrahedronNeg :
     ¬Nonempty (tetrahedronPos.Iso tetrahedronNeg) :=
   not_nonempty_iff.mpr (isEmpty_iso_tetWeb_not true)
 
-/-- Vertex involution `v ↦ 3 - v` carrying `(tetWeb c).reverse` to `tetWeb (!c)`. -/
-@[expose] def tetRevVertexEquiv : Fin 4 ≃ Fin 4 where
-  toFun | 0 => 3 | 1 => 2 | 2 => 1 | 3 => 0
-  invFun | 0 => 3 | 1 => 2 | 2 => 1 | 3 => 0
-  left_inv v := by fin_cases v <;> rfl
-  right_inv v := by fin_cases v <;> rfl
-
 /-- Edge involution carrying `(tetWeb c).reverse` to `tetWeb (!c)`. -/
 @[expose] def tetRevEdgeEquiv : Fin 6 ≃ Fin 6 where
   toFun | 0 => 0 | 1 => 2 | 2 => 1 | 3 => 5 | 4 => 4 | 5 => 3
@@ -294,27 +288,31 @@ theorem not_nonempty_iso_tetrahedronPos_tetrahedronNeg :
 
 /-- Reversing all edge orientations of `tetWeb c` produces a web isomorphic to `tetWeb (!c)`. -/
 def tetWebReverseIso (c : Bool) : (tetWeb c).reverse.Iso (tetWeb (!c)) where
-  vertex := tetRevVertexEquiv
+  vertex := Fin.revPerm
   edge := tetRevEdgeEquiv
   circle := Equiv.refl PEmpty
   map_ends := by
     rintro ⟨v, i⟩
     cases c <;> fin_cases v <;> fin_cases i <;> rfl
 
-/-! ### Semigroup flows and monochrome local cycles -/
+@[simp] theorem tetWebReverseIso_vertex (c : Bool) :
+    (tetWebReverseIso c).vertex = Fin.revPerm := (rfl)
 
-/-- An additive flow on a closed web assigns weights to interval edges so that at every vertex,
-the weight on the odd slot `0` equals the weight on slot `1` plus the weight on slot `2` in that
-order. No commutativity is assumed on `S`. -/
-def IsAdditiveFlow {S : Type*} [Add S] (W : ClosedWeb) (w : W.Edge → S) : Prop :=
-  ∀ v, w (W.ends (v, 0)).1 = w (W.ends (v, 1)).1 + w (W.ends (v, 2)).1
+@[simp] theorem tetWebReverseIso_edge (c : Bool) :
+    (tetWebReverseIso c).edge = tetRevEdgeEquiv := (rfl)
+
+@[simp] theorem tetWebReverseIso_circle (c : Bool) :
+    (tetWebReverseIso c).circle = Equiv.refl PEmpty := (rfl)
+
+/-! ### Semigroup flows and monochrome local cycles -/
 
 /-- Additive flows on `tetrahedronPos` express the four merge/split equations linking thin weights
 `(w 3, w 4, w 5)` through `(w 3 + w 4) + w 5` and `w 3 + (w 4 + w 5)`. -/
 theorem isAdditiveFlow_tetrahedronPos_iff {S : Type*} [Add S] (w : Fin 6 → S) :
     tetrahedronPos.IsAdditiveFlow w ↔
-      w 2 = w 3 + w 4 ∧ w 0 = w 2 + w 5 ∧ w 0 = w 3 + w 1 ∧ w 1 = w 4 + w 5 :=
-  ⟨fun h ↦ ⟨h 0, h 1, h 2, h 3⟩, fun ⟨h0, h1, h2, h3⟩ v ↦ by fin_cases v <;> assumption⟩
+      w 2 = w 3 + w 4 ∧ w 0 = w 2 + w 5 ∧ w 0 = w 3 + w 1 ∧ w 1 = w 4 + w 5 := by
+  rw [isAdditiveFlow_def]
+  exact ⟨fun h ↦ ⟨h 0, h 1, h 2, h 3⟩, fun ⟨h0, h1, h2, h3⟩ v ↦ by fin_cases v <;> assumption⟩
 
 /-- Any additive flow on `tetrahedronPos` witnesses `(w 3 + w 4) + w 5 = w 3 + (w 4 + w 5)`. -/
 theorem assoc_of_isAdditiveFlow_tetrahedronPos {S : Type*} [Add S] {w : Fin 6 → S}
@@ -327,8 +325,9 @@ theorem assoc_of_isAdditiveFlow_tetrahedronPos {S : Type*} [Add S] {w : Fin 6 �
 `(w 5 + w 4) + w 3 = w 5 + (w 4 + w 3)`. -/
 theorem isAdditiveFlow_tetrahedronNeg_iff {S : Type*} [Add S] (w : Fin 6 → S) :
     tetrahedronNeg.IsAdditiveFlow w ↔
-      w 2 = w 4 + w 3 ∧ w 0 = w 5 + w 2 ∧ w 0 = w 1 + w 3 ∧ w 1 = w 5 + w 4 :=
-  ⟨fun h ↦ ⟨h 0, h 1, h 2, h 3⟩, fun ⟨h0, h1, h2, h3⟩ v ↦ by fin_cases v <;> assumption⟩
+      w 2 = w 4 + w 3 ∧ w 0 = w 5 + w 2 ∧ w 0 = w 1 + w 3 ∧ w 1 = w 5 + w 4 := by
+  rw [isAdditiveFlow_def]
+  exact ⟨fun h ↦ ⟨h 0, h 1, h 2, h 3⟩, fun ⟨h0, h1, h2, h3⟩ v ↦ by fin_cases v <;> assumption⟩
 
 /-- Any additive flow on `tetrahedronNeg` witnesses `(w 5 + w 4) + w 3 = w 5 + (w 4 + w 3)`. -/
 theorem assoc_of_isAdditiveFlow_tetrahedronNeg {S : Type*} [Add S] {w : Fin 6 → S}
@@ -337,47 +336,6 @@ theorem assoc_of_isAdditiveFlow_tetrahedronNeg {S : Type*} [Add S] {w : Fin 6 �
   obtain ⟨h2, h0, h0', h1⟩ := (isAdditiveFlow_tetrahedronNeg_iff w).mp hw
   rw [← h2, ← h0, h0', h1]
 
-/-- A single-pigment indicator `p : W.Edge → Bool` satisfies the Robert–Wagner disjoint-union
-condition when at every vertex `v`, the pigment appears on the odd edge `(v, 0)` if and only if
-it appears on at least one of the thin edges `(v, 1)` and `(v, 2)`, and never on both thin edges
-simultaneously. -/
-def IsMonochromeSubweb (W : ClosedWeb.{u}) (p : W.Edge → Bool) : Prop :=
-  ∀ v, p (W.ends (v, 0)).1 = (p (W.ends (v, 1)).1 || p (W.ends (v, 2)).1) ∧
-    ¬(p (W.ends (v, 1)).1 && p (W.ends (v, 2)).1)
-
-/-- Mirroring a closed web preserves single-pigment subwebs, since disjoint union of a single
-pigment is symmetric in the two thin slots. -/
-@[simp] theorem isMonochromeSubweb_mirror (W : ClosedWeb.{u}) (p : W.Edge → Bool) :
-    W.mirror.IsMonochromeSubweb p ↔ W.IsMonochromeSubweb p := by
-  refine forall_congr' fun v ↦ ?_
-  rw [mirror_ends_apply, mirror_ends_apply, mirror_ends_apply]
-  dsimp only [Equiv.swap_apply_def]
-  simp only [↓reduceIte, Fin.isValue, Fin.reduceEq]
-  rw [Bool.or_comm, Bool.and_comm]
-
-private theorem card_fin_three_subtype (q : Fin 3 → Bool) :
-    Nat.card {i : Fin 3 // q i = true} =
-      (if q 0 then 1 else 0) + (if q 1 then 1 else 0) + (if q 2 then 1 else 0) := by
-  simp only [Nat.card_eq_fintype_card, Fintype.card_subtype]
-  cases h0 : q 0 <;> cases h1 : q 1 <;> cases h2 : q 2 <;>
-    decide +revert
-
-/-- At every vertex of any closed web, a single-pigment subweb has equal numbers of active
-incoming and outgoing ends, and at most one of each. -/
-theorem card_active_ends_of_isMonochromeSubweb {W : ClosedWeb.{u}} {p : W.Edge → Bool}
-    (hp : W.IsMonochromeSubweb p) (v : W.Vertex) :
-    Nat.card {i : Fin 3 // (p (W.ends (v, i)).1 && !(W.ends (v, i)).2) = true} =
-      Nat.card {i : Fin 3 // (p (W.ends (v, i)).1 && (W.ends (v, i)).2) = true} ∧
-    Nat.card {i : Fin 3 // (p (W.ends (v, i)).1 && !(W.ends (v, i)).2) = true} ≤ 1 := by
-  obtain ⟨h0, h12⟩ := hp v
-  rw [card_fin_three_subtype (fun i ↦ p (W.ends (v, i)).1 && !(W.ends (v, i)).2),
-    card_fin_three_subtype (fun i ↦ p (W.ends (v, i)).1 && (W.ends (v, i)).2)]
-  simp only [W.orientation_one v, W.orientation_two v, Bool.not_not]
-  cases hb0 : (W.ends (v, 0)).2 <;>
-    cases hp1 : p (W.ends (v, 1)).1 <;>
-    cases hp2 : p (W.ends (v, 2)).1 <;>
-    simp_all
-
 /-- The three elementary nonempty single-pigment simple cycles on `tetWeb c`, determined by which
 thin edge among `3, 4, 5` carries the pigment: `{0, 2, 3}`, `{0, 1, 2, 4}`, and `{0, 1, 5}`. -/
 def tetPigmentCycle : Fin 3 → Fin 6 → Bool
@@ -385,9 +343,19 @@ def tetPigmentCycle : Fin 3 → Fin 6 → Bool
   | 1 => ![true, true, true, false, true, false]
   | 2 => ![true, true, false, false, false, true]
 
+@[simp] theorem tetPigmentCycle_zero :
+    tetPigmentCycle 0 = ![true, false, true, true, false, false] := (rfl)
+
+@[simp] theorem tetPigmentCycle_one :
+    tetPigmentCycle 1 = ![true, true, true, false, true, false] := (rfl)
+
+@[simp] theorem tetPigmentCycle_two :
+    tetPigmentCycle 2 = ![true, true, false, false, false, true] := (rfl)
+
 /-- Every elementary pigment cycle is a valid monochrome subweb on both chiralities of `tetWeb`. -/
 theorem isMonochromeSubweb_tetPigmentCycle (c : Bool) (i : Fin 3) :
     (tetWeb c).IsMonochromeSubweb (tetPigmentCycle i) := by
+  rw [isMonochromeSubweb_def]
   intro v
   cases c <;> fin_cases i <;> fin_cases v <;> decide
 
@@ -395,7 +363,8 @@ private theorem isMonochromeSubweb_tetrahedronPos_iff (p : Fin 6 → Bool) :
     tetrahedronPos.IsMonochromeSubweb p ↔
       p = (fun _ ↦ false) ∨ ∃ i : Fin 3, p = tetPigmentCycle i := by
   constructor
-  · intro hp
+  · rw [isMonochromeSubweb_def]
+    intro hp
     have h0 := hp 0; have h1 := hp 1; have h2 := hp 2; have h3 := hp 3
     rw [tetWeb_ends_apply, tetWeb_ends_apply, tetWeb_ends_apply] at h0 h1 h2 h3
     dsimp [tetrahedronPosEndsFun] at h0 h1 h2 h3
@@ -419,7 +388,8 @@ private theorem isMonochromeSubweb_tetrahedronPos_iff (p : Fin 6 → Bool) :
     · exact absurd rfl h0.2
     · exact absurd rfl h0.2
   · rintro (rfl | ⟨i, rfl⟩)
-    · intro v; fin_cases v <;> decide
+    · rw [isMonochromeSubweb_def]
+      intro v; fin_cases v <;> decide
     · exact isMonochromeSubweb_tetPigmentCycle true i
 
 /-- Complete classification of monochrome subwebs on `tetWeb c` (Robert–Wagner Lemma 2.5 at a
@@ -429,11 +399,9 @@ theorem isMonochromeSubweb_tetWeb_iff (c : Bool) (p : Fin 6 → Bool) :
     (tetWeb c).IsMonochromeSubweb p ↔
       p = (fun _ ↦ false) ∨ ∃ i : Fin 3, p = tetPigmentCycle i := by
   cases c
-  · refine (forall_congr' fun v ↦ ?_).trans (isMonochromeSubweb_tetrahedronPos_iff p)
-    change (p ((tetWeb true).ends (v, 0)).1 =
-        (p ((tetWeb true).ends (v, 2)).1 || p ((tetWeb true).ends (v, 1)).1) ∧
-      ¬(p ((tetWeb true).ends (v, 2)).1 && p ((tetWeb true).ends (v, 1)).1)) ↔ _
-    rw [Bool.or_comm, Bool.and_comm]
+  · rw [← isMonochromeSubweb_tetrahedronPos_iff p, ← isMonochromeSubweb_mirror,
+      isMonochromeSubweb_def, isMonochromeSubweb_def]
+    rfl
   · exact isMonochromeSubweb_tetrahedronPos_iff p
 
 /-- The three elementary pigment cycles on `tetWeb c` have edge counts `3`, `4`, and `3`. -/

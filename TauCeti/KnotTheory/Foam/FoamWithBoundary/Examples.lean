@@ -5,22 +5,23 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Data.List.Cycle
 public import TauCeti.KnotTheory.Foam.FoamWithBoundary.Basic
 import Mathlib.GroupTheory.Perm.Cycle.Factors
 
 /-!
 # Concrete examples of unlabelled prefoams and signed cyclic boundary words
 
-This file constructs standard closed and bounded prefoams and verifies their facet counts, Euler
-characteristics, local seam-sheet multiplicities, and signed cyclic boundary word orientations:
+This file constructs standard closed and bounded prefoams and verifies their facet
+boundary-component counts, Euler characteristics, local seam-sheet multiplicities, and signed cyclic
+boundary word orientations:
 
-* `Cycle.reverseSigned`: orientation reversal on signed cyclic words `Cycle (α × Bool)`, reversing
-  cyclic order while negating every orientation bit, with `coe_signed_three_ne_reverseSigned`
+* `TauCeti.FoamWithBoundary.coe_signed_three_rotate`, `reverseSigned_coe_three`,
+  `coe_signed_three_ne_reverseSigned`: concrete three-element checks for `Cycle.reverseSigned`
   distinguishing `[+s, +t, -u]` from its orientation reversal `[+u, -t, -s]`.
-* `TauCeti.FoamWithBoundary.closedSurface`, `sphere`, `torus`: closed orientable surfaces of genus
-  `g` as nilvalent closed prefoams with `χ = 2 - 2g`.
-* `TauCeti.FoamWithBoundary.disk`, `annulus`: nilvalent prefoams bounding `ClosedWeb.circle` and
-  `ClosedWeb.circles Bool` with `χ = 1` and `χ = 0`.
+* `TauCeti.FoamWithBoundary.surface`, `closedSurface`, `sphere`, `torus`, `disk`, `annulus`:
+  connected orientable surfaces of genus `g` bounding `ClosedWeb.circles C` as nilvalent prefoams
+  with `χ = 2 - 2g - |C|`.
 * `TauCeti.FoamWithBoundary.annulusSeamDisk`: a closed prefoam with one circular seam and two
   facets (an annulus occupying sheet slots `0, 2` and a disk occupying sheet slot `1`),
   demonstrating that distinct local sheet occurrences around a seam can belong to the same global
@@ -35,56 +36,12 @@ characteristics, local seam-sheet multiplicities, and signed cyclic boundary wor
 ## References
 
 * H. Goertz, L. Marino, and P. Wedrich, *Monoidal 2-categories from foam evaluation*,
-  arXiv:2602.11120v1, Definition 2.4 and Remark 2.5.
+  arXiv:2602.11120v1, Definitions 2.1 and 3.1.
 * L.-H. Robert and E. Wagner, *A closed formula for the evaluation of $\mathfrak{sl}_N$-foams*,
   arXiv:1702.04140v3, Definition 2.1 and Remark 2.2.
 -/
 
 public section
-
-namespace Cycle
-
-/-- Reverse the orientation of a signed cyclic word by reversing cyclic order and negating every
-sign bit. -/
-def reverseSigned {α : Type*} (w : Cycle (α × Bool)) : Cycle (α × Bool) :=
-  w.reverse.map (Prod.map id Bool.not)
-
-@[simp] theorem reverseSigned_coe {α : Type*} (l : List (α × Bool)) :
-    (l : Cycle (α × Bool)).reverseSigned = l.reverse.map (Prod.map id Bool.not) := by
-  simp [reverseSigned]
-
-@[simp] theorem reverseSigned_reverseSigned {α : Type*} (w : Cycle (α × Bool)) :
-    w.reverseSigned.reverseSigned = w := by
-  induction w using Quotient.inductionOn' with | h l =>
-  have hmap : (Prod.map (id : α → α) Bool.not ∘ Prod.map id Bool.not) = id := by
-    funext ⟨_, b⟩
-    simp
-  simp [reverseSigned, List.map_reverse, hmap]
-
-/-- Cyclic rotation preserves a signed cyclic word. -/
-theorem coe_signed_three_rotate {α : Type*} (s t u : α) :
-    ([(s, true), (t, true), (u, false)] : Cycle (α × Bool)) =
-      ([(t, true), (u, false), (s, true)] : Cycle (α × Bool)) :=
-  Cycle.coe_eq_coe.mpr ⟨1, rfl⟩
-
-/-- Reversing `[+s, +t, -u]` yields `[+u, -t, -s]`. -/
-theorem reverseSigned_coe_three {α : Type*} (s t u : α) :
-    (([(s, true), (t, true), (u, false)] : Cycle (α × Bool))).reverseSigned =
-      ([(u, true), (t, false), (s, false)] : Cycle (α × Bool)) := by
-  simp [reverseSigned]
-
-/-- A signed cyclic word `[+s, +t, -u]` is distinct from its orientation reversal `[+u, -t, -s]`
-for all `s, t, u : α`. -/
-theorem coe_signed_three_ne_reverseSigned {α : Type*} (s t u : α) :
-    ([(s, true), (t, true), (u, false)] : Cycle (α × Bool)) ≠
-      ([(u, true), (t, false), (s, false)] : Cycle (α × Bool)) := by
-  intro h
-  have hm :=
-    congrArg (fun c : Cycle (α × Bool) ↦ Multiset.count true (c.toMultiset.map Prod.snd)) h
-  simp only [Cycle.coe_toMultiset, Multiset.map_coe, List.map_cons, List.map_nil] at hm
-  exact absurd hm (by decide)
-
-end Cycle
 
 namespace TauCeti
 
@@ -92,27 +49,71 @@ universe u
 
 namespace FoamWithBoundary
 
-/-! ### Closed orientable surfaces and nilvalent cobordisms -/
+/-! ### Signed cyclic boundary word checks -/
 
-/-- A closed connected orientable surface of genus `g`, viewed as a nilvalent closed prefoam. -/
-abbrev closedSurface (g : ℕ) : ClosedFoam.{u} where
+/-- Cyclic rotation preserves a three-element signed cyclic word. -/
+theorem coe_signed_three_rotate {α : Type*} (s t u : α) :
+    ([(s, true), (t, true), (u, false)] : Cycle (α × Bool)) =
+      ([(t, true), (u, false), (s, true)] : Cycle (α × Bool)) :=
+  Cycle.coe_cons_eq_coe_append [(t, true), (u, false)] (s, true)
+
+/-- Reversing `[+s, +t, -u]` yields `[+u, -t, -s]`. -/
+theorem reverseSigned_coe_three {α : Type*} (s t u : α) :
+    (([(s, true), (t, true), (u, false)] : Cycle (α × Bool))).reverseSigned =
+      ([(u, true), (t, false), (s, false)] : Cycle (α × Bool)) := by
+  simp
+
+/-- A signed cyclic word `[+s, +t, -u]` is distinct from its orientation reversal for all
+`s, t, u : α`. -/
+theorem coe_signed_three_ne_reverseSigned {α : Type*} (s t u : α) :
+    ([(s, true), (t, true), (u, false)] : Cycle (α × Bool)) ≠
+      ([(s, true), (t, true), (u, false)] : Cycle (α × Bool)).reverseSigned :=
+  Cycle.ne_reverseSigned_of_odd_length (by simpa using (by decide : Odd 3))
+
+/-! ### Nilvalent single-facet surfaces -/
+
+/-- A connected orientable surface of genus `g` with circle boundary components indexed by `C`,
+viewed as a nilvalent single-facet prefoam over `ClosedWeb.circles C`. -/
+abbrev surface (g : ℕ) (C : Type u) [Finite C] : FoamWithBoundary (ClosedWeb.circles C) where
   Vertex := PEmpty
   Seam := PEmpty
   SeamCircle := PEmpty
   Facet := PUnit
-  Boundary := PEmpty
+  Boundary := C
   chirality := PEmpty.elim
   seamEnds := Equiv.equivOfIsEmpty _ _
   seamEnds_inl_snd v := v.elim
   seamEnds_inr_snd w := w.elim
   genus _ := g
-  boundaryFacet := PEmpty.elim
+  boundaryFacet _ := PUnit.unit
   sideBoundary := isEmptyElim
-  circleBoundary := isEmptyElim
+  circleBoundary := Sum.elim (fun x ↦ x.1.elim) id
   sideBoundary_eq_iff x := isEmptyElim x
-  circleBoundary_injective z := isEmptyElim z
+  circleBoundary_injective := by
+    rintro (⟨x, _⟩ | c₁) (⟨y, _⟩ | c₂)
+    · exact x.elim
+    · exact x.elim
+    · exact y.elim
+    · exact congrArg Sum.inr
   sideBoundary_ne_circleBoundary x := isEmptyElim x
-  boundary_surjective b := b.elim
+  boundary_surjective c := Or.inr ⟨Sum.inr c, rfl⟩
+
+@[simp] theorem isNilvalent_surface (g : ℕ) (C : Type u) [Finite C] :
+    (surface g C).IsNilvalent := by
+  rw [isNilvalent_def]
+  exact ⟨inferInstance, inferInstance, inferInstance⟩
+
+@[simp] theorem numBoundaryComponents_surface (g : ℕ) (C : Type u) [Finite C] :
+    (surface g C).numBoundaryComponents PUnit.unit = Nat.card C := by
+  rw [numBoundaryComponents_def]
+  exact Nat.card_congr (Equiv.subtypeUnivEquiv fun _ ↦ rfl)
+
+@[simp] theorem facetEulerChar_surface (g : ℕ) (C : Type u) [Finite C] :
+    (surface g C).facetEulerChar PUnit.unit = 2 - 2 * (g : ℤ) - (Nat.card C : ℤ) := by
+  simp [facetEulerChar_def]
+
+/-- A closed connected orientable surface of genus `g`, viewed as a nilvalent closed prefoam. -/
+abbrev closedSurface (g : ℕ) : ClosedFoam.{u} := surface g PEmpty
 
 /-- The 2-sphere as a closed genus-`0` prefoam. -/
 abbrev sphere : ClosedFoam.{u} := closedSurface 0
@@ -120,102 +121,48 @@ abbrev sphere : ClosedFoam.{u} := closedSurface 0
 /-- The 2-torus as a closed genus-`1` prefoam. -/
 abbrev torus : ClosedFoam.{u} := closedSurface 1
 
-theorem isNilvalent_closedSurface (g : ℕ) : (closedSurface.{u} g).IsNilvalent := by
-  rw [isNilvalent_def]
-  exact ⟨inferInstance, inferInstance, inferInstance⟩
+theorem isNilvalent_closedSurface (g : ℕ) : (closedSurface.{u} g).IsNilvalent :=
+  isNilvalent_surface g PEmpty
 
-@[simp] theorem numBoundaryComponents_closedSurface (g : ℕ) :
+theorem numBoundaryComponents_closedSurface (g : ℕ) :
     (closedSurface.{u} g).numBoundaryComponents PUnit.unit = 0 := by
-  simp [numBoundaryComponents_def]
+  simp
 
-@[simp] theorem facetEulerChar_closedSurface (g : ℕ) :
+theorem facetEulerChar_closedSurface (g : ℕ) :
     (closedSurface.{u} g).facetEulerChar PUnit.unit = 2 - 2 * (g : ℤ) := by
-  simp [facetEulerChar_def]
+  simp
 
 theorem facetEulerChar_sphere : (sphere.{u}).facetEulerChar PUnit.unit = 2 := by
-  simp [sphere]
+  simp
 
 theorem facetEulerChar_torus : (torus.{u}).facetEulerChar PUnit.unit = 0 := by
-  simp [torus]
+  simp
 
 /-- A genus-`0` disk prefoam bounding `ClosedWeb.circle`. -/
-abbrev disk : FoamWithBoundary ClosedWeb.circle.{u} where
-  Vertex := PEmpty
-  Seam := PEmpty
-  SeamCircle := PEmpty
-  Facet := PUnit
-  Boundary := PUnit
-  chirality := PEmpty.elim
-  seamEnds := Equiv.equivOfIsEmpty _ _
-  seamEnds_inl_snd v := v.elim
-  seamEnds_inr_snd w := w.elim
-  genus _ := 0
-  boundaryFacet _ := PUnit.unit
-  sideBoundary := isEmptyElim
-  circleBoundary := Sum.elim (fun x ↦ x.1.elim) id
-  sideBoundary_eq_iff x := isEmptyElim x
-  circleBoundary_injective := by
-    rintro (⟨x, _⟩ | ⟨⟩) (⟨y, _⟩ | ⟨⟩)
-    · exact x.elim
-    · exact x.elim
-    · exact y.elim
-    · intro _
-      rfl
-  sideBoundary_ne_circleBoundary x := isEmptyElim x
-  boundary_surjective := by
-    rintro ⟨⟩
-    exact Or.inr ⟨Sum.inr PUnit.unit, rfl⟩
+abbrev disk : FoamWithBoundary ClosedWeb.circle.{u} := surface 0 PUnit
 
-theorem isNilvalent_disk : (disk.{u}).IsNilvalent := by
-  rw [isNilvalent_def]
-  exact ⟨inferInstance, inferInstance, inferInstance⟩
+theorem isNilvalent_disk : (disk.{u}).IsNilvalent :=
+  isNilvalent_surface 0 PUnit
 
-@[simp] theorem numBoundaryComponents_disk :
+theorem numBoundaryComponents_disk :
     (disk.{u}).numBoundaryComponents PUnit.unit = 1 := by
-  rw [numBoundaryComponents_def]
-  exact Nat.card_unique
+  simp
 
-@[simp] theorem facetEulerChar_disk : (disk.{u}).facetEulerChar PUnit.unit = 1 := by
-  simp [facetEulerChar_def]
+theorem facetEulerChar_disk : (disk.{u}).facetEulerChar PUnit.unit = 1 := by
+  simp
 
 /-- A genus-`0` annulus prefoam bounding two vertex-free circles `ClosedWeb.circles Bool`. -/
-abbrev annulus : FoamWithBoundary (ClosedWeb.circles Bool) where
-  Vertex := PEmpty
-  Seam := PEmpty
-  SeamCircle := PEmpty
-  Facet := PUnit
-  Boundary := Bool
-  chirality := PEmpty.elim
-  seamEnds := Equiv.equivOfIsEmpty _ _
-  seamEnds_inl_snd v := v.elim
-  seamEnds_inr_snd w := w.elim
-  genus _ := 0
-  boundaryFacet _ := PUnit.unit
-  sideBoundary := isEmptyElim
-  circleBoundary := Sum.elim (fun x ↦ x.1.elim) id
-  sideBoundary_eq_iff x := isEmptyElim x
-  circleBoundary_injective := by
-    rintro (⟨x, _⟩ | b₁) (⟨y, _⟩ | b₂)
-    · exact x.elim
-    · exact x.elim
-    · exact y.elim
-    · intro h
-      exact congrArg Sum.inr h
-  sideBoundary_ne_circleBoundary x := isEmptyElim x
-  boundary_surjective b := Or.inr ⟨Sum.inr b, rfl⟩
+abbrev annulus : FoamWithBoundary (ClosedWeb.circles Bool) := surface 0 Bool
 
-theorem isNilvalent_annulus : annulus.IsNilvalent := by
-  rw [isNilvalent_def]
-  exact ⟨inferInstance, inferInstance, inferInstance⟩
+theorem isNilvalent_annulus : annulus.IsNilvalent :=
+  isNilvalent_surface 0 Bool
 
-@[simp] theorem numBoundaryComponents_annulus :
+theorem numBoundaryComponents_annulus :
     annulus.numBoundaryComponents PUnit.unit = 2 := by
-  rw [numBoundaryComponents_def]
-  have e : annulus.FacetBoundary PUnit.unit ≃ Bool := Equiv.subtypeUnivEquiv fun _ ↦ rfl
-  rw [Nat.card_congr e, Nat.card_eq_fintype_card, Fintype.card_bool]
+  simp
 
-@[simp] theorem facetEulerChar_annulus : annulus.facetEulerChar PUnit.unit = 0 := by
-  simp [facetEulerChar_def]
+theorem facetEulerChar_annulus : annulus.facetEulerChar PUnit.unit = 0 := by
+  simp
 
 /-! ### Circular seam with repeated global facet in local sheet slots -/
 
@@ -238,8 +185,7 @@ abbrev annulusSeamDisk : ClosedFoam.{0} where
   sideBoundary_eq_iff x := isEmptyElim x
   circleBoundary_injective := by
     rintro (⟨⟨⟩, i⟩ | c) (⟨⟨⟩, j⟩ | d)
-    · intro h
-      exact congrArg (fun k ↦ Sum.inl (PUnit.unit, k)) h
+    · exact congrArg (fun k ↦ Sum.inl (PUnit.unit, k))
     · exact d.elim
     · exact c.elim
     · exact c.elim
@@ -298,10 +244,8 @@ abbrev thetaCup : FoamWithBoundary ClosedWeb.theta where
   boundary_surjective i := Or.inl ⟨Sum.inr i, rfl⟩
 
 @[simp] theorem numBoundaryComponents_thetaCup (i : Fin 3) :
-    thetaCup.numBoundaryComponents i = 1 := by
-  rw [numBoundaryComponents_def, Nat.card_eq_fintype_card (α := thetaCup.FacetBoundary i)]
-  revert i
-  decide
+    thetaCup.numBoundaryComponents i = 1 :=
+  thetaCup.numBoundaryComponents_eq_one_of_bijective_boundaryFacet Function.bijective_id i
 
 @[simp] theorem facetEulerChar_thetaCup (i : Fin 3) :
     thetaCup.facetEulerChar i = 1 := by
@@ -344,28 +288,26 @@ abbrev tetrahedralBall (c : Bool) : FoamWithBoundary (ClosedWeb.tetWeb c) where
   boundary_surjective e := Or.inl ⟨Sum.inr e, rfl⟩
 
 @[simp] theorem numBoundaryComponents_tetrahedralBall (c : Bool) (e : Fin 6) :
-    (tetrahedralBall c).numBoundaryComponents e = 1 := by
-  rw [numBoundaryComponents_def,
-    Nat.card_eq_fintype_card (α := (tetrahedralBall c).FacetBoundary e)]
-  revert c e
-  decide
+    (tetrahedralBall c).numBoundaryComponents e = 1 :=
+  (tetrahedralBall c).numBoundaryComponents_eq_one_of_bijective_boundaryFacet
+    Function.bijective_id e
 
 @[simp] theorem facetEulerChar_tetrahedralBall (c : Bool) (e : Fin 6) :
     (tetrahedralBall c).facetEulerChar e = 1 := by
   simp [facetEulerChar_def]
 
 /-- Seam-end pairing for `tetrahedralPillow`, gluing a positive tetrahedral vertex (`true`) and a
-negative tetrahedral vertex (`false`) along `ClosedWeb.tetRevVertexEquiv`. -/
+negative tetrahedral vertex (`false`) along `Fin.revPerm`. -/
 @[expose] def tetrahedralPillowSeamEnds :
     (Bool × Fin 4) ⊕ PEmpty.{1} ≃ Fin 4 × Bool where
   toFun x := match x with
     | Sum.inl (false, k) => (k, !(ClosedWeb.tetrahedronNeg.ends (k, 0)).2)
     | Sum.inl (true, k) =>
-      (ClosedWeb.tetRevVertexEquiv k, !(ClosedWeb.tetrahedronPos.ends (k, 0)).2)
+      (Fin.revPerm k, !(ClosedWeb.tetrahedronPos.ends (k, 0)).2)
     | Sum.inr w => w.elim
   invFun sb :=
     if sb.2 = !(ClosedWeb.tetrahedronNeg.ends (sb.1, 0)).2 then Sum.inl (false, sb.1)
-    else Sum.inl (true, ClosedWeb.tetRevVertexEquiv.symm sb.1)
+    else Sum.inl (true, Fin.revPerm.symm sb.1)
   left_inv x := by revert x; decide
   right_inv sb := by revert sb; decide
 
@@ -395,11 +337,8 @@ abbrev tetrahedralPillow : ClosedFoam.{0} where
     exact Or.inl ⟨Sum.inl (s, i), congrArg Prod.fst h⟩
 
 @[simp] theorem numBoundaryComponents_tetrahedralPillow (e : Fin 6) :
-    tetrahedralPillow.numBoundaryComponents e = 1 := by
-  rw [numBoundaryComponents_def,
-    Nat.card_eq_fintype_card (α := tetrahedralPillow.FacetBoundary e)]
-  revert e
-  decide
+    tetrahedralPillow.numBoundaryComponents e = 1 :=
+  tetrahedralPillow.numBoundaryComponents_eq_one_of_bijective_boundaryFacet Function.bijective_id e
 
 @[simp] theorem facetEulerChar_tetrahedralPillow (e : Fin 6) :
     tetrahedralPillow.facetEulerChar e = 1 := by
