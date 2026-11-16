@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.Singular.Contractible
 public import TauCeti.AlgebraicTopology.Singular.Fibration.Comparison
 public import TauCeti.Topology.Homotopy.MappingPath.PathFibration
 public import TauCeti.Topology.Homotopy.Path
+public import TauCeti.Topology.PathComponent
 public import TauCeti.Topology.PathSpace.Moore.Comparison.Basic
 
 /-!
@@ -71,18 +72,6 @@ namespace TauCeti
 
 variable {X : Type u} [TopologicalSpace X] (R : Type u) [Ring R]
 
-/-- If a map `f : Y ⟶ Z` induces an isomorphism on `Hq(-; R)` and `Z` has the `R`-homology of a
-point in degree `q`, then so does `Y`: its map to a point factors through `f`. -/
-private theorem isIso_singularHomologyMap_from_of_isIso {Y Z : TopCat.{u}} (f : Y ⟶ Z) (q : ℕ)
-    (hf : IsIso (((singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).map f))
-    (hZ : IsIso (((singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).map
-      (TopCat.isTerminalPUnit.from Z))) :
-    IsIso (((singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).map
-      (TopCat.isTerminalPUnit.from Y)) := by
-  rw [TopCat.isTerminalPUnit.hom_ext (TopCat.isTerminalPUnit.from Y)
-    (f ≫ TopCat.isTerminalPUnit.from Z), Functor.map_comp]
-  infer_instance
-
 /-- The fibre over `b` of the path fibration `P → X`, the paths from `b` to `x`, is homotopy
 equivalent to the loop space `Ω X x` once a path from `b` to `x` is chosen. So the fibre has the
 homology of a point in every degree in which `Ω X x` has. -/
@@ -96,8 +85,8 @@ private theorem isIso_singularHomologyMap_mappingPathFiber_fiber (x b : X) (α :
   -- The fibre of the projection over `b` is, by definition, the subtype of the paths from `b`.
   let f : (TopCat.ofHom (MappingPathFiber.proj (ContinuousMap.id X) x)).fiber b ⟶
       TopCat.of (Ω X x) := TopCat.ofHom e.toFun
-  exact isIso_singularHomologyMap_from_of_isIso R f q
-    (e.isWeakHomotopyEquivalence.isIso_singularHomologyMap (ModuleCat.of R R) q) h
+  exact (isIso_singularHomologyMap_isTerminalPUnit_from_iff (ModuleCat.of R R) f q h).2
+    (e.isWeakHomotopyEquivalence.isIso_singularHomologyMap (ModuleCat.of R R) q)
 
 /-- **A path-connected space whose loop space has the homology of a point has the homology of a
 point.** If `X` is path connected and, for every `q ≤ k`, the map from the loop space `Ω X x` to a
@@ -152,14 +141,12 @@ theorem isIso_singularHomologyMap_pathComponent_of_isIso_loopSpace (x : X) (k : 
       (ModuleCat.of R R)).map (TopCat.isTerminalPUnit.from (TopCat.of (Ω X x))))) :
     IsIso (((singularHomologyFunctor (ModuleCat.{u} R) k).obj (ModuleCat.of R R)).map
       (TopCat.isTerminalPUnit.from (TopCat.of (pathComponent x)))) := by
-  have : PathConnectedSpace (pathComponent x) :=
-    isPathConnected_iff_pathConnectedSpace.1 isPathConnected_pathComponent
-  refine isIso_singularHomologyMap_of_isIso_loopSpace R ⟨x, mem_pathComponent_self x⟩ k
-    fun q hq ↦ ?_
+  refine isIso_singularHomologyMap_of_isIso_loopSpace R (pathComponentSelf x) k fun q hq ↦ ?_
   -- The loops at `x` in its path component are the loops of `X` at `x`.
-  let e : TopCat.of (Ω (pathComponent x) ⟨x, mem_pathComponent_self x⟩) ≅ TopCat.of (Ω X x) :=
+  let e : TopCat.of (Ω (pathComponent x) (pathComponentSelf x)) ≅ TopCat.of (Ω X x) :=
     TopCat.isoOfHomeo (Path.subtypeValHomeomorph subset_rfl)
-  exact isIso_singularHomologyMap_from_of_isIso R e.hom q inferInstance (h q hq)
+  exact (isIso_singularHomologyMap_isTerminalPUnit_from_iff (ModuleCat.of R R) e.hom q
+    (h q hq)).2 inferInstance
 
 /-- **A path-connected space whose Moore loop space has the homology of a point has the homology
 of a point.** This is `TauCeti.isIso_singularHomologyMap_of_isIso_loopSpace` for the Moore loop
@@ -172,7 +159,8 @@ theorem isIso_singularHomologyMap_of_isIso_mooreLoopSpace [PathConnectedSpace X]
       (TopCat.isTerminalPUnit.from (TopCat.of X))) := by
   refine isIso_singularHomologyMap_of_isIso_loopSpace R x k fun q hq ↦ ?_
   let e := (MooreLoopSpace.homotopyEquivPath x).symm
-  exact isIso_singularHomologyMap_from_of_isIso R (TopCat.ofHom e.toFun) q
-    (e.isWeakHomotopyEquivalence.isIso_singularHomologyMap (ModuleCat.of R R) q) (h q hq)
+  exact (isIso_singularHomologyMap_isTerminalPUnit_from_iff (ModuleCat.of R R)
+    (TopCat.ofHom e.toFun) q (h q hq)).2
+      (e.isWeakHomotopyEquivalence.isIso_singularHomologyMap (ModuleCat.of R R) q)
 
 end TauCeti

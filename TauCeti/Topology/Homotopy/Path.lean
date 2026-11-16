@@ -216,10 +216,7 @@ to the paths in the ambient space from `a` to `b`: every such path stays in the 
 def subtypeValHomeomorph {S : Set X} {a b : S} (hS : pathComponent (a : X) ⊆ S) :
     Path a b ≃ₜ Path (a : X) b where
   toFun γ := γ.map continuous_subtype_val
-  invFun γ :=
-    { toFun t := ⟨γ t, hS (γ.mem_pathComponent t)⟩
-      source' := Subtype.ext γ.source
-      target' := Subtype.ext γ.target }
+  invFun γ := γ.codRestrict fun t ↦ hS (γ.mem_pathComponent t)
   left_inv _ := rfl
   right_inv _ := rfl
   continuous_toFun := continuous_induced_rng.2 <|
