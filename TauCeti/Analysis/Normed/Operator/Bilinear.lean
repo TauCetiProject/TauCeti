@@ -28,11 +28,12 @@ constant proportional to the radius: `‖B x x - B y y‖ ≤ ‖B‖ (‖x‖ +
 nonlinear terms of an equation that is quadratic in its unknown.
 
 Pulling back along continuous linear equivalences keeps a bilinear map `B₀ : V →L V' →L G`
-invertible as a map to the dual (`ContinuousLinearMap.IsInvertible.bilinearComp`), and it
-conjugates the comparison operator `B₀⁻¹ ∘ B` of two such maps by the equivalence in the first
-slot (`ContinuousLinearMap.inverse_bilinearComp_comp_bilinearComp`). This is how operators built
-from a pair of bilinear forms, such as the Morse congruence of a form with a reference form,
-transform under a linear change of coordinates.
+invertible as a map to the dual (`ContinuousLinearMap.IsInvertible.bilinearComp`), and
+conversely (`ContinuousLinearMap.isInvertible_bilinearComp_iff`). It conjugates the comparison
+operator `B₀⁻¹ ∘ B` of two such maps by the equivalence in the first slot
+(`ContinuousLinearMap.inverse_bilinearComp_comp_bilinearComp`). This is how operators built from a
+pair of bilinear forms, such as the Morse congruence of a form with a reference form, transform
+under a linear change of coordinates.
 
 An invertible bilinear map `B₀ : V →L V →L G` determines adjoints of operators on `V`: the
 adjoint `ContinuousLinearMap.pairingAdjoint B₀ X` is characterized by
@@ -117,13 +118,33 @@ theorem IsInvertible.bilinearComp {B₀ : V →L[𝕜] V' →L[𝕜] G} (hB₀ :
       simp
     simp [h, hB₀.inverse_apply_self]
 
+/-- A bilinear map is invertible, as a map to the space of linear maps on its second argument,
+exactly when its pullback along continuous linear equivalences in both arguments is. -/
+@[simp]
+theorem isInvertible_bilinearComp_iff {B₀ : V →L[𝕜] V' →L[𝕜] G} (e₁ : W ≃L[𝕜] V)
+    (e₂ : W' ≃L[𝕜] V') :
+    (B₀.bilinearComp (e₁ : W →L[𝕜] V) (e₂ : W' →L[𝕜] V')).IsInvertible ↔ B₀.IsInvertible := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.bilinearComp e₁ e₂⟩
+  have hB₀ : B₀ = (B₀.bilinearComp (e₁ : W →L[𝕜] V) (e₂ : W' →L[𝕜] V')).bilinearComp
+      (e₁.symm : V →L[𝕜] W) (e₂.symm : V' →L[𝕜] W') := by
+    ext x y
+    simp
+  rw [hB₀]
+  exact h.bilinearComp e₁.symm e₂.symm
+
 /-- Pulling two bilinear maps back along continuous linear equivalences conjugates their
-comparison operator `B₀⁻¹ ∘ B` by the equivalence `e₁` in the first argument. -/
-theorem inverse_bilinearComp_comp_bilinearComp {B₀ : V →L[𝕜] V' →L[𝕜] G}
-    (hB₀ : B₀.IsInvertible) (B : V →L[𝕜] V' →L[𝕜] G) (e₁ : W ≃L[𝕜] V) (e₂ : W' ≃L[𝕜] V') :
+comparison operator `B₀⁻¹ ∘ B` by the equivalence `e₁` in the first argument. If `B₀` is not
+invertible, both sides vanish. -/
+theorem inverse_bilinearComp_comp_bilinearComp (B₀ B : V →L[𝕜] V' →L[𝕜] G) (e₁ : W ≃L[𝕜] V)
+    (e₂ : W' ≃L[𝕜] V') :
     (B₀.bilinearComp (e₁ : W →L[𝕜] V) (e₂ : W' →L[𝕜] V')).inverse ∘L
         B.bilinearComp (e₁ : W →L[𝕜] V) (e₂ : W' →L[𝕜] V') =
       (e₁.symm : V →L[𝕜] W) ∘L (B₀.inverse ∘L B) ∘L (e₁ : W →L[𝕜] V) := by
+  by_cases hB₀ : B₀.IsInvertible
+  swap
+  · rw [inverse_of_not_isInvertible (by rwa [isInvertible_bilinearComp_iff]),
+      inverse_of_not_isInvertible hB₀]
+    simp
   ext w
   rw [comp_apply, (hB₀.bilinearComp e₁ e₂).inverse_apply_eq]
   ext w'
