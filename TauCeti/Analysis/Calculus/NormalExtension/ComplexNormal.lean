@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.RCLike
-public import TauCeti.Analysis.Calculus.AdaptedChart
 public import TauCeti.Analysis.Calculus.ContDiff.ContinuousLinearMap
+public import TauCeti.Analysis.Calculus.NormalExtension.Chart
 
 /-!
 # Charts adapted to a pseudoholomorphic curve
@@ -16,7 +16,8 @@ Let `u : V → W` be a curve in a normed space `W` carrying a field `J` of endom
 `J² = -1` along `u`, and let `u` be `J`-holomorphic for a fixed structure `j` on `V`:
 `Du (j v) = J (u a) (Du v)`. Unlike a totally real submanifold, the image of `u` is invariant
 under `J`, so the adapted extension of `TauCeti.adaptedNormalExtension` degenerates along it
-(`TauCeti.not_isInvertible_fderiv_adaptedNormalExtension_complexLine`). Instead, choose a
+(`TauCeti.not_isInvertible_fderiv_adaptedNormalExtension_complexLine`, in
+`TauCeti.Analysis.Calculus.AdaptedChart`). Instead, choose a
 *complex normal frame* `Z a : N →L W`, for a real model `N` of the normal directions, such that
 `Du a`, `Z a` and `J (u a) ∘ Z a` together span `W` freely. The **complex normal extension**
 
@@ -38,7 +39,7 @@ continuous. It is nevertheless Lipschitz in the normal directions: near the base
 `‖Φ^* J (a, w) - Φ^* J (a, 0)‖ ≤ C ‖w‖`
 
 (`OpenPartialHomeomorph.exists_norm_pullbackEnd_sub_pullbackEnd_le_of_coe_eq_normalExtension`,
-in `TauCeti.Analysis.Calculus.AdaptedChart`). This holds for any chart given by a normal
+in `TauCeti.Analysis.Calculus.NormalExtension.Chart`). This holds for any chart given by a normal
 extension `γ x + A x w` with `C¹` data and a field `J` that is Lipschitz near the base point,
 because such a chart is affine in the normal variable:
 `Φ (a, w) - Φ (a, 0) = A a w`, and `DΦ (a, w) - DΦ (a, 0)` is `(v, w') ↦ (DA v) w`, both linear
@@ -152,6 +153,7 @@ theorem fderiv_complexNormalExtension_intertwines {j : V →L[𝕜] V} {a : V}
 
 /-- **The flat complex slice.** For the slice `V × {0}` of `V × (N × N)` with the standard
 structure and the frame `x ↦ (0, (x, 0))`, the complex normal extension is the identity. -/
+@[simp]
 theorem complexNormalExtension_inl (j : V →L[𝕜] V) :
     complexNormalExtension (ContinuousLinearMap.inl 𝕜 V (N × N))
       (fun _ ↦ j.prodMap ((-ContinuousLinearMap.snd 𝕜 N N).prod (ContinuousLinearMap.fst 𝕜 N N)))
