@@ -80,12 +80,9 @@ Bourbaki numbering of the simple roots. For the root `e_a - e_b` they are `[a �
 (`TauCeti.DynkinType.coroot_typeAIndexEquiv`). -/
 @[simp]
 theorem rootCoefficients_typeASimplyConnectedBase (j : Fin (n * (n + 1))) (k : Fin n) :
-    (b).rootCoefficients j ⟨typeASimpleIndex n k, by simp⟩ = (P).coroot j k := by
-  have h : (b).rootCoefficients j = fun l ↦ (P).coroot j ((simpleEquiv n).symm l) := by
-    rw [RootPairing.Base.rootCoefficients_eq_iff, ← (simpleEquiv n).sum_comp]
-    simpa [simpleEquiv] using (root_eq_sum_coroot_smul_root_typeASimpleIndex j).symm
-  rw [h]
-  exact congrArg _ ((simpleEquiv n).symm_apply_eq.mpr rfl)
+    (b).rootCoefficients j ⟨typeASimpleIndex n k, by simp⟩ = (P).coroot j k :=
+  (b).rootCoefficients_apply_of_injective typeASimpleIndex_injective (fun _ ↦ by simp)
+    (root_eq_sum_coroot_smul_root_typeASimpleIndex j) k
 
 /-- In Bourbaki numbering, no root of type `Aₙ` has a simple-root coefficient greater than `1`. -/
 theorem rootCoefficients_typeA_le_one (j : Fin (n * (n + 1))) (k : (b).support) :
@@ -105,14 +102,13 @@ theorem isPos_typeAIndexEquiv_iff (p : TypeAIndex n) :
   · intro h
     by_contra! hle
     -- At the node `p.2 < p.1 ≤ n` the coefficient is `0 - 1`.
-    have hlt : p.val.2 < p.val.1 := lt_of_le_of_ne hle (Ne.symm p.2)
+    have hlt : (p.val.2 : ℕ) < p.val.1 := Fin.lt_def.mp (lt_of_le_of_ne hle (Ne.symm p.2))
     have hk : (p.val.2 : ℕ) < n := by
       have := p.val.1.isLt
-      have : (p.val.2 : ℕ) < p.val.1 := hlt
       omega
     have h₀ := h ⟨typeASimpleIndex n ⟨p.val.2, hk⟩, by simpa using hk⟩
     rw [Pi.zero_apply, rootCoefficients_typeASimplyConnectedBase, coroot_typeAIndexEquiv] at h₀
-    simp only [Fin.le_def, Fin.val_castSucc] at h₀ hlt
+    simp only [Fin.le_def, Fin.val_castSucc] at h₀
     split_ifs at h₀ <;> omega
   · intro hlt k
     obtain ⟨i, rfl⟩ := (simpleEquiv n).surjective k

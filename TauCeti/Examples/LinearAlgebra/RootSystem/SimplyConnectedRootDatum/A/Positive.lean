@@ -31,18 +31,18 @@ example : (posRoots (typeASimplyConnectedRootDatum 7) (typeASimplyConnectedBase 
 example (k : Fin 7) :
     (typeASimplyConnectedBase 7).rootCoefficients (typeASimplyConnectedBase 7).highestRoot
       ⟨typeASimpleIndex 7 k, by
-        rw [mem_typeASimplyConnectedBase_support, typeASimpleIndex_val]; exact k.isLt⟩ = 1 :=
-  congrFun rootCoefficients_highestRoot_typeA _
+        rw [mem_typeASimplyConnectedBase_support, typeASimpleIndex_val]; exact k.isLt⟩ = 1 := by
+  rw [rootCoefficients_highestRoot_typeA, Pi.one_apply]
 
 /-- The highest root of type `A₇` has height `7`. -/
 example : (typeASimplyConnectedBase 7).height (typeASimplyConnectedBase 7).highestRoot = 7 := by
-  rw [height_highestRoot_typeASimplyConnectedBase]
-  rfl
+  rw [height_highestRoot_typeASimplyConnectedBase, Nat.cast_ofNat]
 
 /-- The highest root of type `A₂` is `e₀ - e₂`. -/
 example : (typeASimplyConnectedBase 2).highestRoot =
-    typeAIndexEquiv 2 ⟨(0, 2), by decide⟩ :=
-  highestRoot_typeASimplyConnectedBase
+    typeAIndexEquiv 2 ⟨(0, 2), by decide⟩ := by
+  rw [highestRoot_typeASimplyConnectedBase]
+  congr 1
 
 /-- In type `A₂` the negative root `e₂ - e₀` has column `(-1, -1)`. -/
 example (k : Fin 2) :
@@ -61,7 +61,7 @@ example : (typeASimplyConnectedBase 2).IsPos (typeAIndexEquiv 2 ⟨(1, 2), by de
 /-- The greatest column of type `A₁` is `(1)`. -/
 example : (typeASimplyConnectedBase 1).rootCoefficients (typeASimplyConnectedBase 1).highestRoot
     ⟨typeASimpleIndex 1 0, by
-      rw [mem_typeASimplyConnectedBase_support, typeASimpleIndex_val]; exact Fin.isLt 0⟩ = 1 :=
-  congrFun rootCoefficients_highestRoot_typeA _
+      rw [mem_typeASimplyConnectedBase_support, typeASimpleIndex_val]; exact Fin.isLt 0⟩ = 1 := by
+  rw [rootCoefficients_highestRoot_typeA, Pi.one_apply]
 
 end TauCeti.Examples
