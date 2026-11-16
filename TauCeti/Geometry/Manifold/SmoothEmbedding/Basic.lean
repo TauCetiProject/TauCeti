@@ -48,10 +48,9 @@ the inputs of the tubular-neighbourhood and surgery constructions.
   `ContinuousLinearMap.isSmoothEmbedding_of_injective`: a continuous linear map with a continuous
   linear left inverse, for instance an injective one into a finite-dimensional space over a
   complete field, is a `C^n` embedding.
-* `Manifold.IsImmersion.tangentMap_injective_iff`,
-  `Manifold.IsSmoothEmbedding.tangentMap_injective`,
+* `Manifold.IsSmoothEmbedding.tangentMap_injective`,
   `TauCeti.SmoothEmbedding.tangentMap_injective`: injectivity of `tangentMap` for positive-order
-  immersions and smooth embeddings.
+  smooth embeddings.
 
 The construction is a thin wrapper around Mathlib's
 `Manifold.IsSmoothEmbedding` API, especially `IsSmoothEmbedding.id`, `of_opens`, `prodMap`,
@@ -77,19 +76,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {M' : Type*} [TopologicalSpace M'] [ChartedSpace G M']
   {N' : Type*} [TopologicalSpace N'] [ChartedSpace G' N']
   {n : ℕ∞ω}
-
-/-- For a `C^n` immersion (`n ≠ 0`), the induced map `tangentMap I J f` on tangent bundles is
-injective if and only if the base map `f` is injective. -/
-theorem Manifold.IsImmersion.tangentMap_injective_iff {f : M → N}
-    (hf : Manifold.IsImmersion I J n f) (hn : n ≠ 0) :
-    Function.Injective (tangentMap I J f) ↔ Function.Injective f := by
-  refine ⟨fun hinj x₁ x₂ hfx ↦ ?_, fun hinj ⟨x₁, v₁⟩ ⟨x₂, v₂⟩ hp ↦ ?_⟩
-  · have h0 : tangentMap I J f ⟨x₁, 0⟩ = tangentMap I J f ⟨x₂, 0⟩ := by
-      simp only [tangentMap, map_zero]; congr 1
-    exact congrArg Bundle.TotalSpace.proj (hinj h0)
-  · obtain rfl : x₁ = x₂ := hinj (congrArg Bundle.TotalSpace.proj hp)
-    simp only [tangentMap, Bundle.TotalSpace.mk_inj] at hp ⊢
-    exact hf.mfderiv_injective hn x₁ hp
 
 namespace Manifold.IsSmoothEmbedding
 

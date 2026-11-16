@@ -48,7 +48,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 
 section SubbundleFrames
 
-variable [IsManifold I 1 M] [IsManifold J 1 N] [IsManifold I (m + 1) M]
+variable [IsManifold J 1 N] [IsManifold I (m + 1) M]
 
 /-- **Local subbundle frames for the image of an injective differential.** If `f : M → N` is `C^n`
 with `m + 1 ≤ n` and `mfderiv I J f x` is injective at every `x : M`, then pushing forward local
@@ -60,6 +60,7 @@ theorem ContMDiff.hasLocalContMDiffSubbundleFrames_range_mfderiv_of_basis {ι : 
     (hinj : ∀ x, Injective (mfderiv I J (f : M → N) x)) :
     TauCeti.HasLocalContMDiffSubbundleFrames (E := (f : M → N) *ᵖ (TangentSpace J)) I m V ι
       (fun x ↦ (mfderiv I J (f : M → N) x).toLinearMap.range) := by
+  have : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
   let := TangentBundle.contMDiffVectorBundle (I := I) (M := M) (n := m)
   have hfm : ContMDiff I J m f := hf.of_le ((le_add_right le_rfl).trans hm)
   have hTf := ContMDiff.contMDiff_tangentMap hf hm
@@ -142,8 +143,7 @@ theorem tangentRangeVectorBundle (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) 
 
 variable [IsManifold J (m + 1) N]
 
-omit [IsRCLikeNormedField 𝕜] [FiniteDimensional 𝕜 E]
-  [IsManifold I 1 M] [IsManifold I (m + 1) M] in
+omit [IsRCLikeNormedField 𝕜] [FiniteDimensional 𝕜 E] [IsManifold I (m + 1) M] in
 private theorem pullbackTangentContMDiffVectorBundle (f : SmoothEmbedding I J n M N)
     (hm : m + 1 ≤ n) :
     ContMDiffVectorBundle m V ((f : M → N) *ᵖ (TangentSpace J)) I :=
@@ -164,7 +164,7 @@ theorem tangentRangeContMDiffVectorBundle (f : SmoothEmbedding I J n M N) (hn : 
 
 /-- The canonical inclusion of the subbundle `x ↦ f.tangentRange x hn` into
 `f *ᵖ TangentSpace J` is `C^m` on total spaces. -/
-theorem contMDiff_tangentRangeInclusion (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
+theorem contMDiff_totalSpace_inclusion_tangentRange (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
     (hm : m + 1 ≤ n) :
     letI := f.tangentRangeTopology (E := E) (V := V) hn
     letI := f.tangentRangeFiberBundle hn hm
@@ -175,6 +175,8 @@ theorem contMDiff_tangentRangeInclusion (f : SmoothEmbedding I J n M N) (hn : n 
   letI := f.tangentRangeFiberBundle hn hm
   letI := f.pullbackTangentContMDiffVectorBundle hm
   (f.hasLocalContMDiffSubbundleFrames_tangentRange hn hm).contMDiff_totalSpace_inclusion (𝕜 := 𝕜)
+
+variable [IsManifold I 1 M]
 
 private theorem contMDiff_tangentSpaceEquivTangentRange (f : SmoothEmbedding I J n M N)
     (hn : n ≠ 0) (hm : m + 1 ≤ n) :
@@ -258,8 +260,9 @@ theorem tangentBundleDiffeomorphTangentRange_symm_apply (f : SmoothEmbedding I J
 
 /-- Composing `f.tangentBundleDiffeomorphTangentRange` with subbundle inclusion and
 `Bundle.Pullback.lift f` recovers `tangentMap I J f`. -/
-theorem lift_inclusion_tangentBundleDiffeomorphTangentRange (f : SmoothEmbedding I J n M N)
-    (hn : n ≠ 0) (hm : m + 1 ≤ n) (p : TotalSpace E (TangentSpace I : M → Type _)) :
+theorem lift_mk'_tangentBundleDiffeomorphTangentRange_eq_tangentMap
+    (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) (hm : m + 1 ≤ n)
+    (p : TotalSpace E (TangentSpace I : M → Type _)) :
     letI := f.tangentRangeTopology (E := E) (V := V) hn
     letI := f.tangentRangeFiberBundle hn hm
     Pullback.lift f (TotalSpace.mk' V (E := (f : M → N) *ᵖ (TangentSpace J))

@@ -6,22 +6,25 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.FrameTrivialization
+import Mathlib.Topology.Algebra.Module.TransferInstance
+import Mathlib.Topology.VectorBundle.FiniteDimensional
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
 
 /-!
 # Compatible trivializations from fibrewise linear equivalences on open sets
 
-Let `V → B` be a `C^n` vector bundle with finite-dimensional model fibre `F` over a complete
-nontrivially normed field `𝕜`, and let `U ⊆ B` be open. Given continuous linear maps
-`L : ∀ x, V x →L[𝕜] F` that are bijective over `U` and whose total-space evaluation
-`(x, v) ↦ L x v` is `C^n` on `π⁻¹(U)`, viewing `L` as a `C^n` Hom-bundle section into
-`Bundle.Trivial B F` (`TauCeti.contMDiffAt_hom_bundle_iff`) and inverting it via
-`ContMDiffAt.clm_bundle_inverse` shows that pulling back `Module.finBasis 𝕜 F` along `(L x)⁻¹`
-defines a `C^n` local frame of `V` on `U`. Passing this frame to `IsLocalFrameOn.trivialization`
-produces a compatible linear trivialization `Bundle.Trivialization.ofContinuousLinearMapOn` over `U`
-in `(contMDiffFiberwiseLinear B F IB n).maximalAtlas` (`ofContinuousLinearMapOn_mem_maximalAtlas`)
-with coordinate map `(x, v) ↦ (x, L x v)` (`ofContinuousLinearMapOn_apply`,
+Let `V → B` be a topological `𝕜`-vector bundle with finite-dimensional model fibre `F` over a
+complete nontrivially normed field `𝕜` and a charted base `B`, and let `U ⊆ B` be open. Given
+continuous linear maps `L : ∀ x, V x →L[𝕜] F` that are bijective over `U` and whose total-space
+evaluation `(x, v) ↦ L x v` is `C^n` on `π⁻¹(U)`, `Bundle.Trivialization.ofContinuousLinearMapOn`
+packages `(x, v) ↦ (x, L x v)` into a linear trivialization over `U` without requiring a separate
+proof that the fibrewise inverses `(L x)⁻¹` vary smoothly (`ofContinuousLinearMapOn_apply`,
 `coordChangeL_ofContinuousLinearMapOn_apply`).
+
+Whereas `ofContinuousLinearMapOn` itself requires only `[VectorBundle 𝕜 F V]`, assuming
+`[ContMDiffVectorBundle n F V IB]` places it in `(contMDiffFiberwiseLinear B F IB n).maximalAtlas`
+(`ofContinuousLinearMapOn_mem_maximalAtlas`), providing the chart-construction step for level-set
+trivializations of quotient normal bundles.
 
 ## References
 
@@ -86,19 +89,12 @@ private theorem isLocalFrameOn_invFrame : IsLocalFrameOn IB F n (invFrame L hbij
   refine ⟨fun hx ↦ hbasis hx ▸ Basis.linearIndependent _,
     fun hx ↦ hbasis hx ▸ (Basis.span_eq _).ge, fun i x₀ hx₀ ↦ ?_⟩
   have : CompleteSpace F := FiniteDimensional.completeSpace 𝕜 F
-  have : ∀ x, IsTopologicalAddGroup (V x) := fun x ↦ by
-    let e := (trivializationAt F V x).continuousLinearEquivAt 𝕜 x
-      (mem_baseSet_trivializationAt F V x)
-    exact {
-      continuous_add := e.toHomeomorph.isInducing.continuous_iff.2 <| by
-        simp only [Function.comp_def, ContinuousLinearEquiv.coe_toHomeomorph, map_add]; fun_prop
-      continuous_neg := e.toHomeomorph.isInducing.continuous_iff.2 <| by
-        simp only [Function.comp_def, ContinuousLinearEquiv.coe_toHomeomorph, map_neg]; fun_prop }
-  have : ∀ x, ContinuousSMul 𝕜 (V x) := fun x ↦ by
-    let e := (trivializationAt F V x).continuousLinearEquivAt 𝕜 x
-      (mem_baseSet_trivializationAt F V x)
-    exact ⟨e.toHomeomorph.isInducing.continuous_iff.2 <| by
-      simp only [Function.comp_def, ContinuousLinearEquiv.coe_toHomeomorph, map_smul]; fun_prop⟩
+  have : ∀ x, IsTopologicalAddGroup (V x) := fun x ↦
+    (VectorBundle.continuousLinearEquivAt 𝕜 F V x).toContinuousAddEquiv.isTopologicalAddGroup
+  have : ∀ x, ContinuousSMul 𝕜 (V x) := fun x ↦
+    (VectorBundle.continuousLinearEquivAt 𝕜 F V x).continuousSMul
+  have : ∀ x, T2Space (V x) := FiberBundle.t2Space F V
+  have : ∀ x, FiniteDimensional 𝕜 (V x) := fun x ↦ VectorBundle.finiteDimensional 𝕜 F V x
   let L' : ∀ x, V x →L[𝕜] Trivial B F x := L
   have hLhom : ContMDiffAt IB (IB.prod 𝓘(𝕜, F →L[𝕜] F)) n
       (fun x ↦ TotalSpace.mk' (F →L[𝕜] F) (E := fun y ↦ V y →L[𝕜] Trivial B F y) x (L' x)) x₀ :=
@@ -106,12 +102,8 @@ private theorem isLocalFrameOn_invFrame : IsLocalFrameOn IB F n (invFrame L hbij
       Bundle.contMDiffAt_totalSpace_iff.2 ⟨contMDiffAt_proj V, by
         simpa using hL.contMDiffAt
           ((hU.preimage (FiberBundle.continuous_proj F V)).mem_nhds (hx₀ : ⟨x₀, v⟩ ∈ π F V ⁻¹' U))⟩
-  have hinv₀ : (L' x₀).IsInvertible := by
-    let e₀ := (trivializationAt F V x₀).continuousLinearEquivAt 𝕜 x₀
-      (mem_baseSet_trivializationAt F V x₀)
-    have : T2Space (V x₀) := e₀.toHomeomorph.isEmbedding.t2Space
-    have : FiniteDimensional 𝕜 (V x₀) := e₀.symm.toLinearEquiv.finiteDimensional
-    exact ⟨(equivAt L hbij hx₀).toContinuousLinearEquiv, rfl⟩
+  have hinv₀ : (L' x₀).IsInvertible :=
+    ⟨(equivAt L hbij hx₀).toContinuousLinearEquiv, rfl⟩
   have hsec : ContMDiffAt IB (IB.prod 𝓘(𝕜, F)) n
       (fun x ↦ TotalSpace.mk' F (E := V) x ((L' x).inverse (finBasis 𝕜 F i))) x₀ :=
     (hLhom.clm_bundle_inverse hinv₀).clm_bundle_apply
@@ -119,17 +111,15 @@ private theorem isLocalFrameOn_invFrame : IsLocalFrameOn IB F n (invFrame L hbij
   refine (hsec.congr_of_eventuallyEq ?_).contMDiffWithinAt
   filter_upwards [hU.mem_nhds hx₀] with x hx
   congr 1
-  let ex := (trivializationAt F V x).continuousLinearEquivAt 𝕜 x
-    (mem_baseSet_trivializationAt F V x)
-  have : T2Space (V x) := ex.toHomeomorph.isEmbedding.t2Space
-  have : FiniteDimensional 𝕜 (V x) := ex.symm.toLinearEquiv.finiteDimensional
   have heq : L' x = ((equivAt L hbij hx).toContinuousLinearEquiv : V x →L[𝕜] F) := rfl
   rw [invFrame_of_mem L hbij hx, heq, ContinuousLinearMap.inverse_equiv]
   simp
 
-/-- The linear trivialization of a `C^n` vector bundle `V` over an open set `U` determined by a
-family `L : ∀ x, V x →L[𝕜] F` of continuous linear maps that are bijective over `U` and whose
-total-space evaluation is `C^n` on `π⁻¹(U)`. Over `U` it sends `⟨x, v⟩` to `(x, L x v)`. -/
+/-- The linear trivialization of a topological `𝕜`-vector bundle `V` over an open set `U` determined
+by a family `L : ∀ x, V x →L[𝕜] F` of continuous linear maps that are bijective over `U` and whose
+total-space evaluation is `C^n` on `π⁻¹(U)`. Over `U` it sends `⟨x, v⟩` to `(x, L x v)`; when `V`
+carries `[ContMDiffVectorBundle n F V IB]`, it belongs to the `C^n` maximal atlas
+(`ofContinuousLinearMapOn_mem_maximalAtlas`). -/
 def ofContinuousLinearMapOn : Trivialization F (π F V) :=
   (isLocalFrameOn_invFrame hU L hL hbij).trivialization hU (finBasis 𝕜 F)
 

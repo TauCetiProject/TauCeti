@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
 public import TauCeti.Topology.Algebra.Module.Quotient
+import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 
 /-!
@@ -21,7 +22,7 @@ The differential is injective for an immersion of positive smoothness and restri
 linear equivalence onto `TauCeti.SmoothEmbedding.tangentRange`
 (`TauCeti.SmoothEmbedding.tangentSpaceEquivTangentRange`). Consequently the normal space has the
 expected codimension in finite dimensions (`TauCeti.SmoothEmbedding.finrank_normalSpace`,
-`TauCeti.SmoothEmbedding.finrank_normalSpace_of_codim_one`). The quotient map also characterizes
+`TauCeti.SmoothEmbedding.finrank_normalSpace_eq_one`). The quotient map also characterizes
 exactly which ambient tangent vectors represent zero normal vectors.
 
 The inclusion of an open subset is the extreme case: it is tangent to every ambient direction
@@ -392,24 +393,22 @@ theorem finrank_normalSpace (f : SmoothEmbedding I J n M N) (x : M)
 /-- For a positive-regularity smooth embedding `f`, injectivity of `mfderiv I J f x` turns the
 codimension hypothesis `finrank P = finrank F - finrank E` into `finrank E + finrank P = finrank F`
 whenever `M` is inhabited by a point `x`. -/
-theorem finrank_add_eq_of_sub_eq {P : Type*} [AddCommGroup P] [Module 𝕜 P] [FiniteDimensional 𝕜 F]
+theorem finrank_add_eq_of_eq_sub {P : Type*} [AddCommGroup P] [Module 𝕜 P] [FiniteDimensional 𝕜 F]
     (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
     (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 F - Module.finrank 𝕜 E) (x : M) :
     Module.finrank 𝕜 E + Module.finrank 𝕜 P = Module.finrank 𝕜 F := by
-  have hle : Module.finrank 𝕜 E ≤ Module.finrank 𝕜 F :=
-    LinearMap.finrank_le_finrank_of_injective
-      (f.isImmersion.mfderiv_injective hn x :
-        Function.Injective ((mfderiv I J (f : M → N) x).toLinearMap))
+  have h := f.finrank_normalSpace_add_finrank x hn
+  rw [TauCeti.finrank_tangentSpace, TauCeti.finrank_tangentSpace] at h
   omega
 
 /-- In codimension one (`finrank 𝕜 E + 1 = finrank 𝕜 F`), every normal fibre has `𝕜`-rank `1`. -/
-theorem finrank_normalSpace_of_codim_one [FiniteDimensional 𝕜 F]
+theorem finrank_normalSpace_eq_one
     (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
     (hcodim : Module.finrank 𝕜 E + 1 = Module.finrank 𝕜 F) (x : M) :
     Module.finrank 𝕜 (f.NormalSpace x hn) = 1 := by
+  have : FiniteDimensional 𝕜 F := Module.finite_of_finrank_eq_succ hcodim.symm
   have h := f.finrank_normalSpace x hn
-  have hF : Module.finrank 𝕜 (TangentSpace J (f x)) = Module.finrank 𝕜 F := rfl
-  have hE : Module.finrank 𝕜 (TangentSpace I x) = Module.finrank 𝕜 E := rfl
+  rw [TauCeti.finrank_tangentSpace, TauCeti.finrank_tangentSpace] at h
   omega
 
 /-- The inclusion of an open subset is tangent to every ambient direction: its tangent range is the

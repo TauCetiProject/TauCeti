@@ -12,15 +12,18 @@ import TauCeti.Geometry.Manifold.Immersion.Differential
 /-!
 # Holomorphic immersion normal forms and regularity promotion of complex embeddings
 
-Because a holomorphic map between finite-dimensional boundaryless complex manifolds is automatically
-complex analytic (`MDifferentiable.contMDiff`), a holomorphic (`MDifferentiable`) map between `C¹`
-complex manifolds whose complex differential `mfderiv I J f x` is everywhere injective is a `C^n`
-immersion (`MDifferentiable.isImmersion_of_injective_mfderiv`) for every `n : ℕ∞ω`, including
-`n = ∞` and `n = ω`. If it is also a topological embedding, it promotes to a `C^n` smooth embedding
+Because a holomorphic map on an open subset of a finite-dimensional boundaryless complex manifold is
+complex analytic (`MDifferentiableOn.contMDiffOn`, `MDifferentiable.contMDiff`), at any point of an
+open holomorphy domain between `C¹` complex manifolds a map has a `C^n` (`1 ≤ n`, including `n = ∞`
+and `n = ω`) immersion normal form if and only if its complex differential `mfderiv I J f x` is
+injective (`TauCeti.isImmersionAt_iff_injective_mfderiv_of_mdifferentiableOn`), and globally an
+`MDifferentiable` map with everywhere injective differential is a `C^n` immersion for every `n`
+(`MDifferentiable.isImmersion_of_injective_mfderiv`). If it is also a topological embedding, it
+promotes to a `C^n` smooth embedding
 (`MDifferentiable.isSmoothEmbedding_of_isEmbedding_of_injective_mfderiv`,
 `TauCeti.SmoothEmbedding.ofMDifferentiable`), and any complex `SmoothEmbedding` of nonzero
 regularity `m₀ ≠ 0` promotes to arbitrary regularity `n : ℕ∞ω` via
-`TauCeti.SmoothEmbedding.castOrder`.
+`TauCeti.SmoothEmbedding.ofNeZero`.
 
 This file is the immersion and embedding counterpart of
 `TauCeti.Geometry.Manifold.Complex.Submersion`.
@@ -47,17 +50,28 @@ variable {E F H G M N : Type*}
   [TopologicalSpace M] [ChartedSpace H M]
   [TopologicalSpace N] [ChartedSpace G N]
 
+/-- At a point of an open holomorphy domain between `C¹` complex manifolds, the existence of a
+`C^n` (`1 ≤ n`, including `n = ∞` and `n = ω`) immersion normal form is equivalent to injectivity of
+the complex differential. -/
+theorem isImmersionAt_iff_injective_mfderiv_of_mdifferentiableOn
+    [IsManifold I 1 M] [IsManifold J 1 N] {f : M → N} {U : Set M} {x : M} {n : ℕ∞ω}
+    (hf : MDifferentiableOn I J f U) (hU : IsOpen U) (hx : x ∈ U) (hn : 1 ≤ n) :
+    IsImmersionAt I J n f x ↔ Injective (mfderiv I J f x) := by
+  have : CompleteSpace F := FiniteDimensional.completeSpace ℂ F
+  have : IsManifold I n M := IsManifold.of_ne_zero n one_ne_zero inferInstance
+  have : IsManifold J n N := IsManifold.of_ne_zero n one_ne_zero inferInstance
+  exact (hf.contMDiffOn hU).isImmersionAt_iff_injective_mfderiv hU hx hn
+
 /-- A holomorphic (`MDifferentiable`) map between `C¹` complex manifolds with injective complex
 differential everywhere is a `C^n` immersion for every `n : ℕ∞ω`, including `n = ∞` and `n = ω`. -/
 theorem _root_.MDifferentiable.isImmersion_of_injective_mfderiv
     [IsManifold I 1 M] [IsManifold J 1 N] {f : M → N}
     (hf : MDifferentiable I J f) (hdf : ∀ x, Injective (mfderiv I J f x)) (n : ℕ∞ω) :
     IsImmersion I J n f := by
-  have : IsManifold I (max n 1) M := IsManifold.of_ne_zero (max n 1) one_ne_zero inferInstance
-  have : IsManifold J (max n 1) N := IsManifold.of_ne_zero (max n 1) one_ne_zero inferInstance
   have : CompleteSpace F := FiniteDimensional.completeSpace ℂ F
-  exact ((hf.contMDiff (n := max n 1)).isImmersion_of_injective_mfderiv (le_max_right n 1)
-    hdf).of_le (le_max_left n 1)
+  exact (isImmersion_iff_forall_isImmersionAt.mpr fun x ↦
+    (isImmersionAt_iff_injective_mfderiv_of_mdifferentiableOn hf.mdifferentiableOn isOpen_univ
+      (Set.mem_univ x) (le_max_right n 1)).mpr (hdf x)).of_le (le_max_left n 1)
 
 /-- A holomorphic topological embedding between `C¹` complex manifolds with injective complex
 differential everywhere is a `C^n` smooth embedding for every `n : ℕ∞ω` (`∞` and `ω` included). -/
@@ -96,9 +110,9 @@ theorem ofMDifferentiable_apply [IsManifold I 1 M] [IsManifold J 1 N] (f : M →
     ofMDifferentiable (I := I) (J := J) f hf hemb hdf n x = f x := by
   rw [ofMDifferentiable.eq_def, ofIsSmoothEmbedding_apply]
 
-/-- Change the smoothness order of a positive-regularity (`m₀ ≠ 0`) complex embedding to any
-`n : ℕ∞ω`, including `n = ∞` and complex-analytic order `n = ω`. -/
-def castOrder {m₀ : ℕ∞ω} [IsManifold I m₀ M] [IsManifold J m₀ N]
+/-- Promote a positive-regularity (`m₀ ≠ 0`) complex embedding to any smoothness order `n : ℕ∞ω`,
+including `n = ∞` and complex-analytic order `n = ω`, matching `IsManifold.of_ne_zero`. -/
+def ofNeZero {m₀ : ℕ∞ω} [IsManifold I m₀ M] [IsManifold J m₀ N]
     (f : SmoothEmbedding I J m₀ M N) (hm₀ : m₀ ≠ 0) (n : ℕ∞ω) :
     SmoothEmbedding I J n M N :=
   haveI : IsManifold I 1 M := IsManifold.of_ne_zero 1 hm₀ inferInstance
@@ -107,20 +121,20 @@ def castOrder {m₀ : ℕ∞ω} [IsManifold I m₀ M] [IsManifold J m₀ N]
     (f.isImmersion.mfderiv_injective hm₀) n
 
 @[simp]
-theorem coe_castOrder {m₀ : ℕ∞ω} [IsManifold I m₀ M] [IsManifold J m₀ N]
+theorem coe_ofNeZero {m₀ : ℕ∞ω} [IsManifold I m₀ M] [IsManifold J m₀ N]
     (f : SmoothEmbedding I J m₀ M N) (hm₀ : m₀ ≠ 0) (n : ℕ∞ω) :
-    ⇑(f.castOrder hm₀ n) = f := by
+    ⇑(f.ofNeZero hm₀ n) = f := by
   have : IsManifold I 1 M := IsManifold.of_ne_zero 1 hm₀ inferInstance
   have : IsManifold J 1 N := IsManifold.of_ne_zero 1 hm₀ inferInstance
-  rw [castOrder.eq_def, coe_ofMDifferentiable]
+  rw [ofNeZero.eq_def, coe_ofMDifferentiable]
 
 @[simp]
-theorem castOrder_apply {m₀ : ℕ∞ω} [IsManifold I m₀ M] [IsManifold J m₀ N]
+theorem ofNeZero_apply {m₀ : ℕ∞ω} [IsManifold I m₀ M] [IsManifold J m₀ N]
     (f : SmoothEmbedding I J m₀ M N) (hm₀ : m₀ ≠ 0) (n : ℕ∞ω) (x : M) :
-    f.castOrder hm₀ n x = f x := by
+    f.ofNeZero hm₀ n x = f x := by
   have : IsManifold I 1 M := IsManifold.of_ne_zero 1 hm₀ inferInstance
   have : IsManifold J 1 N := IsManifold.of_ne_zero 1 hm₀ inferInstance
-  rw [castOrder.eq_def, ofMDifferentiable_apply]
+  rw [ofNeZero.eq_def, ofMDifferentiable_apply]
 
 end SmoothEmbedding
 

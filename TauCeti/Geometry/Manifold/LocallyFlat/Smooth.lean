@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Immersion.Basic
 public import TauCeti.Geometry.Manifold.LocallyFlat.Basic
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
+import TauCeti.Geometry.Manifold.ContMDiff.Atlas
 
 /-!
 # Smooth embeddings are locally flat
@@ -100,11 +101,10 @@ vary from point to point. The `Manifold.IsSmoothEmbedding` corollaries pass
 
 public section
 
-namespace TauCeti
-
 open Manifold Set Topology
-
 open scoped ContDiff Manifold
+
+namespace TauCeti
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
@@ -115,12 +115,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   {N : Type*} [TopologicalSpace N] [ChartedSpace G N]
   {n : ℕ∞ω} {f : M → N}
-
-private theorem immersionSliceChart_apply [J.Boundaryless]
-    {x₀ : M} (h : IsImmersionAtOfComplement F I J n f x₀) (p : N) :
-    h.codChart.transHomeomorph (J.toHomeomorph.trans h.equiv.toHomeomorph.symm) p =
-      h.equiv.symm ((h.codChart.extend J) p) := by
-  simp [OpenPartialHomeomorph.transHomeomorph_apply]
 
 /-- **The `C^n` slice chart of a smooth embedding.** If `f` is a topological embedding and a `C^n`
 immersion at `x₀` with complement `F`, then around `f x₀` there is an ambient
@@ -139,13 +133,14 @@ theorem exists_contMDiffOn_isSliceChart_of_isEmbedding_of_isImmersionAtOfComplem
       IsSliceChart Φ (range I ×ˢ ({0} : Set F)) (range f) ∧
       ContMDiffOn J 𝓘(𝕜, E × F) n Φ Φ.source ∧
       ContMDiffOn 𝓘(𝕜, E × F) J n Φ.symm Φ.target := by
-  set Ψ : OpenPartialHomeomorph N (E × F) :=
-    h.codChart.transHomeomorph (J.toHomeomorph.trans h.equiv.toHomeomorph.symm)
+  set Ψ : OpenPartialHomeomorph N (E × F) := h.codChart.extendTrans J h.equiv.toHomeomorph.symm
+  have hΨsrc : Ψ.source = h.codChart.source := h.codChart.extendTrans_source J _
   have key {y} (hy : y ∈ h.domChart.source) : Ψ (f y) = ((h.domChart.extend I) y, 0) := by
     have hy' : y ∈ (h.domChart.extend I).source := by rwa [h.domChart.extend_source]
     have hw := h.writtenInCharts ((h.domChart.extend I).map_source hy')
-    simp only [Function.comp_apply, (h.domChart.extend I).left_inv hy'] at hw
-    rw [immersionSliceChart_apply h, hw, ContinuousLinearEquiv.symm_apply_apply]
+    rw [Function.comp_apply, Function.comp_apply, (h.domChart.extend I).left_inv hy',
+      OpenPartialHomeomorph.extend_coe, Function.comp_apply] at hw
+    simp [Ψ, hw]
   obtain ⟨W, hW, hWf⟩ := hf.isInducing.isOpen_iff.1 h.domChart.open_source
   have hmemW (y : M) : f y ∈ W ↔ y ∈ h.domChart.source := by rw [← hWf]; exact Iff.rfl
   set O : Set N := (Ψ.source ∩ Ψ ⁻¹' ((I.symm ⁻¹' h.domChart.target) ×ˢ (univ : Set F))) ∩ W
@@ -153,23 +148,17 @@ theorem exists_contMDiffOn_isSliceChart_of_isEmbedding_of_isImmersionAtOfComplem
     (Ψ.isOpen_inter_preimage ((h.domChart.open_target.preimage I.continuous_symm).prod
       isOpen_univ)).inter hW
   have hx₀ : x₀ ∈ h.domChart.source := h.mem_domChart_source
-  have hfx₀O : f x₀ ∈ O := ⟨⟨h.mem_codChart_source, by
+  have hfx₀Ψ : f x₀ ∈ Ψ.source := hΨsrc.symm ▸ h.mem_codChart_source
+  have hfx₀O : f x₀ ∈ O := ⟨⟨hfx₀Ψ, by
     rw [mem_preimage, key hx₀, mem_prod, mem_preimage, OpenPartialHomeomorph.extend_coe,
       Function.comp_apply, I.left_inv]
     exact ⟨h.domChart.map_source hx₀, mem_univ _⟩⟩, (hmemW x₀).2 hx₀⟩
   let Φ := Ψ.restrOpen O hOopen
   have hΨ : ContMDiffOn J 𝓘(𝕜, E × F) n Ψ Ψ.source :=
-    (h.equiv.symm.contDiff.contMDiff.comp_contMDiffOn
-      (h.codChart.contMDiffOn_extend h.codChart_mem_maximalAtlas)).congr fun p _ ↦
-        immersionSliceChart_apply h p
-  have hi := contMDiffOn_extend_symm h.codChart_mem_maximalAtlas
-  rw [← h.codChart.extend_target'] at hi
+    h.codChart.contMDiffOn_extendTrans h.codChart_mem_maximalAtlas h.equiv.symm.contDiff
   have hΨsymm : ContMDiffOn 𝓘(𝕜, E × F) J n Ψ.symm Ψ.target :=
-    (hi.comp h.equiv.contDiff.contMDiff.contMDiffOn fun q hq ↦ by
-      rw [h.codChart.extend_target]
-      exact ⟨hq, J.range_eq_univ ▸ mem_univ _⟩).congr fun q _ ↦ by
-        simp [Ψ, OpenPartialHomeomorph.transHomeomorph_symm_apply]
-  refine ⟨Φ, ⟨h.mem_codChart_source, hfx₀O⟩, isSliceChart_iff.2 fun p hp ↦ ?_,
+    h.codChart.contMDiffOn_extendTrans_symm h.codChart_mem_maximalAtlas h.equiv.contDiff
+  refine ⟨Φ, ⟨hfx₀Ψ, hfx₀O⟩, isSliceChart_iff.2 fun p hp ↦ ?_,
     hΨ.mono fun _ hp ↦ hp.1,
     (hΨsymm.mono fun q hq ↦ Φ.right_inv hq ▸ Ψ.map_source (Φ.map_target hq).1).congr
       fun _ _ ↦ by simp [Φ]⟩
@@ -183,7 +172,7 @@ theorem exists_contMDiffOn_isSliceChart_of_isEmbedding_of_isImmersionAtOfComplem
       rw [h.domChart.extend_target]; exact ⟨hp.2.1.2.1, hps.1⟩
     have hys : (h.domChart.extend I).symm (Ψ p).1 ∈ h.domChart.source := by
       rw [← h.domChart.extend_source (I := I)]; exact (h.domChart.extend I).map_target hmem
-    refine ⟨_, Ψ.injOn (h.source_subset_preimage_source hys) hp.1 ?_⟩
+    refine ⟨_, Ψ.injOn (hΨsrc.symm ▸ h.source_subset_preimage_source hys) hp.1 ?_⟩
     rw [key hys, (h.domChart.extend I).right_inv hmem, ← (hps.2 : (Ψ p).2 = 0)]
 
 /-- **The slice chart of a smooth embedding.** Topological-slice specialization of
