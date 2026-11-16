@@ -37,6 +37,7 @@ This is how an almost-everywhere Hölder estimate becomes a Hölder continuous r
 of full measure for a measure that is positive on open sets is dense.
 
 Sums, differences and finite sums of Hölder functions are Hölder, with the sum of the constants,
+a scalar multiple `a • f` is Hölder with the constant multiplied by `‖a‖₊`,
 and a pointwise limit of Hölder functions with a common constant is Hölder with that constant.
 For `0 < α < 1`, a series of pieces bounded by `a 2^{-jα}` and Lipschitz with constants
 `b 2^{j(1-α)}` is `α`-Hölder; this is the dyadic summation behind the Hölder regularity of
@@ -78,6 +79,7 @@ By subadditivity of `t ↦ t ^ α`, the cusp `x ↦ ‖x‖ ^ α` is `α`-Hölde
   in both directions.
 * `HolderWith.sum`: a finite sum of Hölder functions is Hölder.
 * `HolderOnWith.add`: sums of Hölder functions on a set.
+* `HolderOnWith.smul`: scalar multiples of Hölder functions on a set.
 * `HolderOnWith.of_tendsto`, `HolderWith.of_tendsto`: a pointwise limit of Hölder functions with
   a common constant is Hölder with that constant.
 * `holderWith_zero_of_nnnorm_le`: a function bounded by `M` is Hölder of exponent zero with
@@ -306,6 +308,13 @@ theorem HolderOnWith.add {X Y : Type*} [PseudoMetricSpace X] [SeminormedAddCommG
   HolderOnWith.of_dist_le fun x hx y hy => by
     simp only [Pi.add_apply, NNReal.coe_add]
     linarith [dist_add_add_le (f x) (g x) (f y) (g y), hf.dist_le hx hy, hg.dist_le hx hy]
+
+/-- A scalar multiple `a • f` of a function that is Hölder on `s` is Hölder on `s`, with the
+constant multiplied by `‖a‖₊`. Compare Mathlib's `HolderWith.smul`. -/
+theorem HolderOnWith.smul {X Y 𝕜 : Type*} [PseudoMetricSpace X] [SeminormedAddCommGroup Y]
+    [SeminormedAddCommGroup 𝕜] [SMulZeroClass 𝕜 Y] [IsBoundedSMul 𝕜 Y] {C r : ℝ≥0} {f : X → Y}
+    {s : Set X} (a : 𝕜) (hf : HolderOnWith C r f s) : HolderOnWith (C * ‖a‖₊) r (a • f) s :=
+  HolderWith.restrict_iff.1 (hf.holderWith.smul a)
 
 /-- A pointwise limit on `s` of maps that are `r`-Hölder on `s` with a common constant `C` is
 `r`-Hölder on `s` with constant `C`. -/

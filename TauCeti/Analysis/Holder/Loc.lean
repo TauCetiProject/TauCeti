@@ -13,6 +13,7 @@ public import Mathlib.Topology.Sets.Compacts
 public import Mathlib.Topology.Sets.Opens
 public import TauCeti.Analysis.Holder.Normed
 import TauCeti.Analysis.Calculus.ContDiff.FTaylorSeries
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Holder.JetBounds
 import TauCeti.Topology.MetricSpace.Holder
 
@@ -36,9 +37,9 @@ given by a family of seminorms rather than by one norm: for each compact `K ⊆ 
 
 `p_K(f) = ∑_{i ≤ k} sup_{x ∈ K} ‖D^i f x‖ + [D^k f]_{α, K}`
 
-(`TauCeti.CkHolderLocSpace.seminorm_eq`). The space is a Fréchet space: complete when `F` is, and,
-when `E` is finite-dimensional, its topology is already given by the countably many seminorms of
-a compact exhaustion of `Ω`.
+(`TauCeti.CkHolderLocSpace.seminorm_eq`). When `E` is finite-dimensional, the space is a Fréchet
+space: its topology is already given by the countably many seminorms of a compact exhaustion of
+`Ω`, and it is complete when `F` is.
 
 An element is a map `f : E → F` that vanishes off `Ω`, so that it is determined by its values on
 `Ω`. Its derivatives at points of `Ω` are Mathlib's `iteratedFDeriv ℝ i f`, which only depend on
@@ -143,10 +144,8 @@ theorem contDiffAt (f : CkHolderLocSpace k α Ω F) {x : E} (hx : x ∈ Ω) : Co
 
 /-- The derivatives of an element through order `k` are continuous on `Ω`. -/
 theorem continuousOn_iteratedFDeriv (f : CkHolderLocSpace k α Ω F) {i : ℕ} (hi : i ≤ k) :
-    ContinuousOn (iteratedFDeriv ℝ i f) Ω := by
-  refine ((f.contDiffOn.continuousOn_iteratedFDerivWithin (by exact_mod_cast hi)
-    Ω.isOpen.uniqueDiffOn)).congr fun x hx ↦ ?_
-  exact (iteratedFDerivWithin_of_isOpen i Ω.isOpen hx).symm
+    ContinuousOn (iteratedFDeriv ℝ i f) Ω :=
+  ContinuousOn.continuousOn_iteratedFDeriv f.contDiffOn Ω.isOpen (by exact_mod_cast hi)
 
 /-! ### The vector space structure -/
 
@@ -164,11 +163,10 @@ private theorem holderOnWith_iteratedFDeriv_smul (c : ℝ) (f : CkHolderLocSpace
     {K : Set E} (hKΩ : K ⊆ Ω) (hK : IsCompact K) :
     ∃ C, HolderOnWith C α (iteratedFDeriv ℝ k (c • ⇑f)) K := by
   obtain ⟨C, hC⟩ := f.exists_holderOnWith hKΩ hK
-  refine ⟨‖c‖₊ * C, HolderOnWith.of_dist_le fun x hx y hy ↦ ?_⟩
+  refine ⟨C * ‖c‖₊, fun x hx y hy ↦ ?_⟩
   rw [iteratedFDeriv_const_smul_apply (f.contDiffAt (hKΩ hx)),
-    iteratedFDeriv_const_smul_apply (f.contDiffAt (hKΩ hy)), dist_eq_norm, ← smul_sub,
-    norm_smul, ← dist_eq_norm, NNReal.coe_mul, coe_nnNorm, mul_assoc]
-  exact mul_le_mul_of_nonneg_left (hC.dist_le hx hy) (norm_nonneg c)
+    iteratedFDeriv_const_smul_apply (f.contDiffAt (hKΩ hy))]
+  exact hC.smul c x hx y hy
 
 instance instZero : Zero (CkHolderLocSpace k α Ω F) where
   zero :=
@@ -265,11 +263,6 @@ section OfContDiffOn
 
 variable {g : E → F}
 
-private theorem iteratedFDeriv_indicator (i : ℕ) {x : E} (hx : x ∈ Ω) :
-    iteratedFDeriv ℝ i ((Ω : Set E).indicator g) x = iteratedFDeriv ℝ i g x :=
-  (Filter.EventuallyEq.iteratedFDeriv ℝ (eventually_of_mem (Ω.isOpen.mem_nhds hx)
-    fun _ hy ↦ indicator_of_mem hy g) i).eq_of_nhds
-
 /-- The element of `C^{k,α}_loc(Ω)` agreeing on `Ω` with a map `g` that is `C^k` on `Ω` and whose
 `k`-th derivative is `α`-Hölder on each compact subset of `Ω`. -/
 def ofContDiffOn (g : E → F) (hg : ContDiffOn ℝ k g Ω)
@@ -280,23 +273,36 @@ def ofContDiffOn (g : E → F) (hg : ContDiffOn ℝ k g Ω)
   holderOnWith' K hKΩ hK := by
     obtain ⟨C, hC⟩ := hH K hKΩ hK
     refine ⟨C, fun x hx y hy ↦ ?_⟩
-    rw [iteratedFDeriv_indicator k (hKΩ hx), iteratedFDeriv_indicator k (hKΩ hy)]
+    rw [iteratedFDeriv_indicator_of_mem Ω.isOpen k (hKΩ hx),
+      iteratedFDeriv_indicator_of_mem Ω.isOpen k (hKΩ hy)]
     exact hC x hx y hy
   eq_zero_of_notMem' _ hx := indicator_of_notMem hx g
 
 variable {hg : ContDiffOn ℝ k g Ω}
   {hH : ∀ K ⊆ (Ω : Set E), IsCompact K → ∃ C, HolderOnWith C α (iteratedFDeriv ℝ k g) K}
 
+/-- `ofContDiffOn g` is the indicator of `Ω` applied to `g`. -/
+theorem coe_ofContDiffOn : ⇑(ofContDiffOn g hg hH) = (Ω : Set E).indicator g :=
+  (rfl)
+
 /-- `ofContDiffOn g` agrees with `g` on `Ω`. -/
+@[simp]
 theorem ofContDiffOn_apply_of_mem {x : E} (hx : x ∈ Ω) : ofContDiffOn g hg hH x = g x :=
   indicator_of_mem hx g
 
+/-- `ofContDiffOn g` vanishes off `Ω`. -/
+@[simp]
+theorem ofContDiffOn_apply_of_notMem {x : E} (hx : x ∉ Ω) : ofContDiffOn g hg hH x = 0 :=
+  indicator_of_notMem hx g
+
 /-- `ofContDiffOn g` has the derivatives of `g` at points of `Ω`. -/
+@[simp]
 theorem iteratedFDeriv_ofContDiffOn (i : ℕ) {x : E} (hx : x ∈ Ω) :
     iteratedFDeriv ℝ i (ofContDiffOn g hg hH) x = iteratedFDeriv ℝ i g x :=
-  iteratedFDeriv_indicator i hx
+  iteratedFDeriv_indicator_of_mem Ω.isOpen i hx
 
 /-- Every element is `ofContDiffOn` of its own underlying map. -/
+@[simp]
 theorem ofContDiffOn_coe (f : CkHolderLocSpace k α Ω F) :
     ofContDiffOn f f.contDiffOn (fun _ hKΩ hK ↦ f.exists_holderOnWith hKΩ hK) = f :=
   ext fun _ hx ↦ ofContDiffOn_apply_of_mem hx
@@ -330,7 +336,7 @@ theorem restrictBCF_apply {i : ℕ} (hi : i ≤ k) (f : CkHolderLocSpace k α Ω
   (rfl)
 
 /-- The `k`-th derivative field of an element on a compact set `K ⊆ Ω` is `α`-Hölder. -/
-theorem memHolder_restrict (f : CkHolderLocSpace k α Ω F) :
+theorem memHolder_restrictBCF (f : CkHolderLocSpace k α Ω F) :
     MemHolder α (restrictBCF K hK le_rfl f : K → E [×k]→L[ℝ] F) := by
   obtain ⟨C, hC⟩ := f.exists_holderOnWith hK K.isCompact
   exact ⟨C, hC.holderWith⟩
@@ -338,7 +344,8 @@ theorem memHolder_restrict (f : CkHolderLocSpace k α Ω F) :
 /-- The `k`-th derivative field of an element on a compact set `K ⊆ Ω`, as an element of the
 bounded Hölder space of `K`. -/
 def restrictHolder (f : CkHolderLocSpace k α Ω F) : HolderSpace α K (E [×k]→L[ℝ] F) :=
-  HolderSpace.ofBoundedContinuousFunction (restrictBCF K hK le_rfl f) (memHolder_restrict K hK f)
+  HolderSpace.ofBoundedContinuousFunction (restrictBCF K hK le_rfl f)
+    (memHolder_restrictBCF K hK f)
 
 @[simp]
 theorem restrictHolder_apply (f : CkHolderLocSpace k α Ω F) (x : K) :
@@ -452,7 +459,7 @@ theorem seminorm_mono {L : Compacts E} (hL : (L : Set E) ⊆ Ω) (hKL : K ≤ L)
   gcongr with i
   · exact hsup _
   · exact hsup _
-  · have hL' := (memHolder_restrict L hL f).holderWith
+  · have hL' := (memHolder_restrictBCF L hL f).holderWith
     rw [← toBoundedContinuousFunction_restrictHolder, HolderSpace.coe_toBoundedContinuousFunction,
       coe_restrictHolder, HolderWith.restrict_iff] at hL'
     exact HolderWith.nnholderNorm_le (HolderWith.restrict_iff.2 (hL'.mono hKL))
