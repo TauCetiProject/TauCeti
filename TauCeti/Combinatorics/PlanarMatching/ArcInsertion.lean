@@ -8,7 +8,7 @@ module
 public import TauCeti.Combinatorics.PlanarMatching.Compose
 public import TauCeti.Combinatorics.PlanarMatching.Through
 import all TauCeti.Combinatorics.PlanarMatching.Glue
-import all TauCeti.Combinatorics.PlanarMatching.Compose
+import all TauCeti.Combinatorics.PlanarMatching.Associativity
 
 /-!
 # Inserting adjacent arcs in planar matchings and Temperley–Lieb diagrams
@@ -25,8 +25,9 @@ Because a newly inserted top arc lies away from the middle boundary where compos
 pairs, post-composing with `cupAt c` simply inserts a top arc at `c` without changing the closed
 circles, the through-strand count, or the bottom half-diagram. Conversely, any diagram whose top
 half-diagram joins `c.castSucc` to `c.succ` factors through `cupAt c` on the right; dual results
-for `capAt c` follow by vertical reflection. Finally, `TauCeti.TLDiagram.cupAt_comp_capAt` shows
-that `cupAt c` followed by `capAt c` closes one circle and leaves `q` straight strands.
+for `insertBottomArc` and `capAt c` follow by vertical reflection. Finally,
+`TauCeti.TLDiagram.cupAt_comp_capAt` shows that `cupAt c` followed by `capAt c` closes one circle
+and leaves `q` straight strands.
 
 ## Main definitions
 
@@ -42,8 +43,9 @@ that `cupAt c` followed by `capAt c` closes one circle and leaves `q` straight s
 * `TauCeti.PlanarMatching.contract_insertArc`, `TauCeti.PlanarMatching.insertArc_contract`:
   `insertArc` is right inverse to `contract`, and left inverse when `{a.castSucc, a.succ}` is an
   arc.
-* `TauCeti.TLDiagram.comp_insertTopArc`, `TauCeti.TLDiagram.comp_cupAt`,
-  `TauCeti.TLDiagram.capAt_comp`: compatibility of composition with boundary arc insertion.
+* `TauCeti.TLDiagram.comp_insertTopArc`, `TauCeti.TLDiagram.insertBottomArc_comp`,
+  `TauCeti.TLDiagram.comp_cupAt`, `TauCeti.TLDiagram.capAt_comp`: compatibility of composition with
+  boundary arc insertion.
 * `TauCeti.TLDiagram.exists_comp_cupAt_of_topHalf_apply_eq`,
   `TauCeti.TLDiagram.exists_capAt_comp_of_bottomHalf_apply_eq`: peeling an adjacent top or bottom
   arc as a `cupAt` or `capAt` factor.
@@ -71,62 +73,41 @@ section InsertArc
 
 variable {k : ℕ}
 
-private def insertArcFun (x : PlanarMatching k) (a : Fin (k + 1)) (z : Fin (k + 2)) : Fin (k + 2) :=
-  if h₁ : z = a.castSucc then a.succ
-  else if h₂ : z = a.succ then a.castSucc
-  else skip a (x.1.val (unskip a z ⟨h₁, h₂⟩))
+private def skipEquiv (a : Fin (k + 1)) :
+    Fin k ≃ {y : Fin (k + 2) // y ≠ a.castSucc ∧ y ≠ a.succ} where
+  toFun i := ⟨skip a i, skip_ne_castSucc a i, skip_ne_succ a i⟩
+  invFun y := unskip a y.1 y.2
+  left_inv i := (skip_strictMono a).injective
+    (skip_unskip a (skip a i) ⟨skip_ne_castSucc a i, skip_ne_succ a i⟩)
+  right_inv y := Subtype.ext (skip_unskip a y.1 y.2)
 
-private theorem insertArcFun_castSucc (x : PlanarMatching k) (a : Fin (k + 1)) :
-    insertArcFun x a a.castSucc = a.succ := by simp [insertArcFun]
+private abbrev insertArcPM (x : PlanarMatching k) (a : Fin (k + 1)) :
+    PerfectMatching (Fin (k + 2)) :=
+  PerfectMatching.extend (succ_ne_castSucc a).symm (PerfectMatching.congr (skipEquiv a) x.1)
 
-private theorem insertArcFun_succ (x : PlanarMatching k) (a : Fin (k + 1)) :
-    insertArcFun x a a.succ = a.castSucc := by simp [insertArcFun, succ_ne_castSucc]
+private theorem insertArcPM_skip (x : PlanarMatching k) (a : Fin (k + 1)) (i : Fin k) :
+    (insertArcPM x a).val (skip a i) = skip a (x.1.val i) := by
+  rw [insertArcPM, PerfectMatching.extend_apply_of_mem _ _ ⟨skip_ne_castSucc a i, skip_ne_succ a i⟩]
+  exact congrArg Subtype.val (PerfectMatching.congr_val_apply_apply (skipEquiv a) x.1 i)
 
-private theorem unskip_skip (a : Fin (k + 1)) (i : Fin k) :
-    unskip a (skip a i) ⟨skip_ne_castSucc a i, skip_ne_succ a i⟩ = i :=
-  (skip_strictMono a).injective (skip_unskip a _ _)
-
-private theorem insertArcFun_skip (x : PlanarMatching k) (a : Fin (k + 1)) (i : Fin k) :
-    insertArcFun x a (skip a i) = skip a (x.1.val i) := by
-  simp only [insertArcFun, skip_ne_castSucc, skip_ne_succ, dite_false]; rw [unskip_skip]
-
-private theorem insertArcFun_involutive (x : PlanarMatching k) (a : Fin (k + 1)) :
-    Function.Involutive (insertArcFun x a) := fun z => by
-  by_cases h₁ : z = a.castSucc
-  · rw [h₁, insertArcFun_castSucc, insertArcFun_succ]
-  by_cases h₂ : z = a.succ
-  · rw [h₂, insertArcFun_succ, insertArcFun_castSucc]
-  rw [← skip_unskip a z ⟨h₁, h₂⟩, insertArcFun_skip, insertArcFun_skip, x.1.apply_apply]
-
-private theorem insertArcFun_ne (x : PlanarMatching k) (a : Fin (k + 1)) (z : Fin (k + 2)) :
-    insertArcFun x a z ≠ z := by
-  by_cases h₁ : z = a.castSucc
-  · rw [h₁, insertArcFun_castSucc]; exact succ_ne_castSucc a
-  by_cases h₂ : z = a.succ
-  · rw [h₂, insertArcFun_succ]; exact (succ_ne_castSucc a).symm
-  rw [← skip_unskip a z ⟨h₁, h₂⟩, insertArcFun_skip]
-  exact (skip_strictMono a).injective.ne (x.1.apply_ne _)
-
-private theorem insertArcFun_noncrossing (x : PlanarMatching k) (a : Fin (k + 1)) :
-    (PerfectMatching.ofInvolutive (insertArcFun_involutive x a)
-      (insertArcFun_ne x a)).val.IsNoncrossingMatching := by
+private theorem insertArcPM_noncrossing (x : PlanarMatching k) (a : Fin (k + 1)) :
+    (insertArcPM x a).val.IsNoncrossingMatching := by
   rw [Perm.isNoncrossingMatching_iff]
   intro u v huv hvu hlt
-  simp only [PerfectMatching.ofInvolutive_apply] at hvu hlt
   by_cases hu₁ : u = a.castSucc
-  · rw [hu₁] at huv hvu; rw [insertArcFun_castSucc] at hvu
+  · rw [hu₁] at huv hvu; rw [insertArcPM, PerfectMatching.extend_apply_left] at hvu
     simp only [Fin.lt_def, Fin.val_castSucc, Fin.val_succ] at huv hvu; omega
   by_cases hu₂ : u = a.succ
-  · rw [hu₂] at huv hvu; rw [insertArcFun_succ] at hvu
+  · rw [hu₂] at huv hvu; rw [insertArcPM, PerfectMatching.extend_apply_right] at hvu
     exact absurd (huv.trans hvu) (not_lt_of_gt Fin.castSucc_lt_succ)
-  rw [← skip_unskip a u ⟨hu₁, hu₂⟩] at huv hvu hlt; rw [insertArcFun_skip] at hvu hlt
+  rw [← skip_unskip a u ⟨hu₁, hu₂⟩] at huv hvu hlt; rw [insertArcPM_skip] at hvu hlt
   by_cases hv₁ : v = a.castSucc
-  · rw [hv₁] at hvu hlt; rw [insertArcFun_castSucc] at hlt
+  · rw [hv₁] at hvu hlt; rw [insertArcPM, PerfectMatching.extend_apply_left] at hlt
     simp only [Fin.lt_def, Fin.val_castSucc, Fin.val_succ] at hvu hlt; omega
   by_cases hv₂ : v = a.succ
-  · rw [hv₂] at hvu hlt; rw [insertArcFun_succ] at hlt
+  · rw [hv₂] at hvu hlt; rw [insertArcPM, PerfectMatching.extend_apply_right] at hlt
     exact absurd (hvu.trans hlt) (not_lt_of_gt Fin.castSucc_lt_succ)
-  rw [← skip_unskip a v ⟨hv₁, hv₂⟩] at huv hvu hlt; rw [insertArcFun_skip] at hlt
+  rw [← skip_unskip a v ⟨hv₁, hv₂⟩] at huv hvu hlt; rw [insertArcPM_skip] at hlt
   exact Perm.isNoncrossingMatching_iff.mp x.2 ((skip_strictMono a).lt_iff_lt.mp huv)
     ((skip_strictMono a).lt_iff_lt.mp hvu) ((skip_strictMono a).lt_iff_lt.mp hlt)
 
@@ -134,25 +115,29 @@ private theorem insertArcFun_noncrossing (x : PlanarMatching k) (a : Fin (k + 1)
 shifting all boundary points from `a` onwards up by two. It is a right inverse to
 `TauCeti.PlanarMatching.contract`. -/
 def insertArc (x : PlanarMatching k) (a : Fin (k + 1)) : PlanarMatching (k + 2) :=
-  ⟨PerfectMatching.ofInvolutive (insertArcFun_involutive x a) (insertArcFun_ne x a),
-    insertArcFun_noncrossing x a⟩
+  ⟨insertArcPM x a, insertArcPM_noncrossing x a⟩
 
 @[simp]
 theorem insertArc_val_castSucc (x : PlanarMatching k) (a : Fin (k + 1)) :
     (x.insertArc a).1.val a.castSucc = a.succ :=
-  (PerfectMatching.ofInvolutive_apply _ _ _).trans (insertArcFun_castSucc x a)
+  PerfectMatching.extend_apply_left (succ_ne_castSucc a).symm _
 
 @[simp]
 theorem insertArc_val_succ (x : PlanarMatching k) (a : Fin (k + 1)) :
     (x.insertArc a).1.val a.succ = a.castSucc :=
-  (PerfectMatching.ofInvolutive_apply _ _ _).trans (insertArcFun_succ x a)
+  PerfectMatching.extend_apply_right (succ_ne_castSucc a).symm _
+
+private theorem insertArc_val_skip (x : PlanarMatching k) (a : Fin (k + 1)) (i : Fin k) :
+    (x.insertArc a).1.val (skip a i) = skip a (x.1.val i) :=
+  insertArcPM_skip x a i
 
 /-- Outside the inserted arc, `insertArc` acts on boundary points as the original planar matching
 conjugated by skipping the two inserted positions. -/
+@[simp]
 theorem insertArc_val_succAbove_succAbove (x : PlanarMatching k) (a : Fin (k + 1)) (i : Fin k) :
     (x.insertArc a).1.val (a.castSucc.succAbove (a.succAbove i)) =
       a.castSucc.succAbove (a.succAbove (x.1.val i)) :=
-  (PerfectMatching.ofInvolutive_apply _ _ _).trans (insertArcFun_skip x a i)
+  insertArc_val_skip x a i
 
 private theorem pv_insertArc (x : PlanarMatching k) (a : Fin (k + 1)) {q : ℕ} (hq : q < k + 2) :
     pv (x.insertArc a) q =
@@ -165,24 +150,17 @@ private theorem pv_insertArc (x : PlanarMatching k) (a : Fin (k + 1)) {q : ℕ} 
   · subst h₂; rw [← Fin.val_succ a, pv_coe, insertArc_val_succ]; simp
   have hz : (⟨q, hq⟩ : Fin (k + 2)) ≠ a.castSucc ∧ (⟨q, hq⟩ : Fin (k + 2)) ≠ a.succ := by
     simp only [ne_eq, Fin.ext_iff, Fin.val_castSucc, Fin.val_succ]; exact ⟨h₁, h₂⟩
-  set i := unskip a ⟨q, hq⟩ hz
-  have hq_eq : (⟨q, hq⟩ : Fin (k + 2)) = a.castSucc.succAbove (a.succAbove i) :=
-    (skip_unskip a _ hz).symm
-  rw [pv_of_lt _ hq, hq_eq, insertArc_val_succAbove_succAbove,
-    show ((a.castSucc.succAbove (a.succAbove (x.1.val i))) : ℕ) = skipN a (x.1.val i) from
-      coe_skip a (x.1.val i),
-    ← pv_coe, show (i : ℕ) = unskipN a q by simp only [i, unskip, unskipN],
-    ite_eq_right h₁, ite_eq_right h₂]
+  rw [pv_of_lt _ hq, ← skip_unskip a ⟨q, hq⟩ hz, insertArc_val_skip, coe_skip_eq_skipN,
+    ← pv_coe, coe_unskip_eq_unskipN, ite_eq_right h₁, ite_eq_right h₂]
 
 /-- Contracting the arc just inserted by `insertArc` recovers the original planar matching. -/
 @[simp]
 theorem contract_insertArc (x : PlanarMatching k) (a : Fin (k + 1)) :
     (x.insertArc a).contract a = x :=
   ext_pv fun q hq => by
-    have hns : skipN a q ≠ a ∧ skipN a q ≠ (a : ℕ) + 1 := by simp only [skipN]; split_ifs <;> omega
-    rw [pv_contract _ _ hq, pv_insertArc _ _ (by simp only [skipN]; split_ifs <;> omega),
-      ite_eq_right hns.1, ite_eq_right hns.2,
-      show unskipN a (skipN a q) = q by simp only [unskipN, skipN]; split_ifs <;> omega]
+    have hns := skipN_lt_and_ne (a := a) hq
+    rw [pv_contract _ _ hq, pv_insertArc _ _ hns.1, ite_eq_right hns.2.1, ite_eq_right hns.2.2,
+      unskipN_skipN]
     simp only [joinN, unskipN, skipN]; split_ifs <;> omega
 
 /-- Re-inserting an adjacent arc `{a.castSucc, a.succ}` after contracting it recovers the original
@@ -191,8 +169,7 @@ theorem insertArc_contract {x : PlanarMatching (k + 2)} {a : Fin (k + 1)}
     (h : x.1.val a.castSucc = a.succ) : (x.contract a).insertArc a = x :=
   ext_pv fun q hq => by
     have _ := a.isLt
-    have hpva : pv x a = (a : ℕ) + 1 := by
-      rw [← Fin.val_castSucc a, pv_coe, h, Fin.val_succ, Fin.val_castSucc]
+    have hpva : pv x a = (a : ℕ) + 1 := (val_castSucc_eq_succ_iff x a).mp h
     have hpva' : pv x ((a : ℕ) + 1) = a := by simpa [hpva] using pv_pv x (q := a) (by omega)
     rw [pv_insertArc _ _ hq]
     by_cases h₁ : q = a
@@ -203,8 +180,7 @@ theorem insertArc_contract {x : PlanarMatching (k + 2)} {a : Fin (k + 1)}
       ⟨fun h' => h₂ (by rw [← pv_pv x hq, h', hpva]),
        fun h' => h₁ (by rw [← pv_pv x hq, h', hpva'])⟩
     rw [ite_eq_right h₁, ite_eq_right h₂,
-      pv_contract _ _ (by simp only [unskipN]; split_ifs <;> omega),
-      show skipN a (unskipN a q) = q by simp only [skipN, unskipN]; split_ifs <;> omega]
+      pv_contract _ _ (by simp only [unskipN]; split_ifs <;> omega), skipN_unskipN h₁ h₂]
     simp only [joinN, hnq.1, hnq.2, ite_false, skipN, unskipN]; split_ifs <;> omega
 
 /-- Reflecting a planar matching with an inserted arc inserts the reflected arc into the reflected
@@ -241,9 +217,7 @@ theorem append_insertArc {k l : ℕ} (x : PlanarMatching k) (y : PlanarMatching 
     · have _ := pv_lt x hqk
       rw [pv_append_left _ _ hqk, pv_insertArc _ _ hq,
         ite_eq_right (by dsimp; omega), ite_eq_right (by dsimp; omega),
-        show unskipN (⟨k + b, by omega⟩ : Fin (k + l + 1)) q = q by
-          simp only [unskipN]; split_ifs <;> omega, pv_append_left _ _ hqk]
-      simp only [skipN]; split_ifs <;> omega
+        unskipN_of_lt (by dsimp; omega), pv_append_left _ _ hqk, skipN_of_lt (by dsimp; omega)]
     · rw [pv_append_right _ _ (by omega) hq, pv_insertArc _ _ (by omega), pv_insertArc _ _ hq]
       by_cases h₁ : q = k + b
       · simp [h₁]; omega
@@ -254,134 +228,61 @@ theorem append_insertArc {k l : ℕ} (x : PlanarMatching k) (y : PlanarMatching 
         show unskipN (⟨k + b, by omega⟩ : Fin (k + l + 1)) q = k + unskipN b (q - k) by
           simp only [unskipN]; split_ifs <;> omega,
         pv_append_right _ _ (by omega) (by simp only [unskipN]; split_ifs <;> omega),
-        show k + unskipN b (q - k) - k = unskipN b (q - k) by omega]
+        Nat.add_sub_cancel_left]
       simp only [skipN]; split_ifs <;> omega
 
-private theorem joinN_pv_ne {k : ℕ} (x : PlanarMatching (k + 2)) (a : Fin (k + 1)) {s : ℕ}
-    (hsa : s ≠ a) (hsa' : s ≠ (a : ℕ) + 1) :
-    joinN x a (pv x s) ≠ a ∧ joinN x a (pv x s) ≠ (a : ℕ) + 1 := by
-  have _ := a.isLt
-  by_cases hs : s < k + 2
-  · have hne_a : pv x a ≠ a :=
-      fun h => x.1.apply_ne a.castSucc (Fin.ext ((pv_coe x a.castSucc).symm.trans h))
-    have hne_a' : pv x ((a : ℕ) + 1) ≠ (a : ℕ) + 1 :=
-      fun h => x.1.apply_ne a.succ (Fin.ext ((pv_coe x a.succ).symm.trans h))
-    simp only [joinN]
-    split_ifs with h₁ h₂
-    · exact ⟨fun h => hsa' <| (pv_pv x hs).symm.trans
-        ((congrArg (pv x) (h₁.trans h.symm)).trans (pv_pv x (by omega))), hne_a'⟩
-    · exact ⟨hne_a, fun h => hsa <| (pv_pv x hs).symm.trans
-        ((congrArg (pv x) (h₂.trans h.symm)).trans (pv_pv x (by omega)))⟩
-    · exact ⟨h₁, h₂⟩
-  · simp only [joinN, pv, hs, dite_false]; split_ifs <;> omega
+private theorem contractFn_of_adj_right {a b : ℕ} {φ : ℕ → ℕ} (hab : a + 2 ≤ b)
+    (hφ : φ b = b + 1) : contractFn a φ (b - 2) = b - 2 + 1 := by
+  rw [contractFn, erasePair_apply, skipN_of_le (by omega),
+    show b - 2 + 2 = b by omega, splice_of_ne _ (by omega) (by omega), hφ,
+    rejoin_of_ne _ (by omega) (by omega), unskipN_of_le (by omega)]
+  omega
 
-/-- Contracting a pair `{a, a + 1}` strictly to the left of an inserted arc `{b, b + 1}` commutes
-with `insertArc` (shifting `b` down by `2`). -/
-private theorem contract_insertArc_of_add_two_le {k : ℕ} (x : PlanarMatching (k + 2))
-    (a : Fin (k + 1)) (b : Fin (k + 3)) (hab : (a : ℕ) + 2 ≤ b) :
-    (x.insertArc b).contract ⟨a, by omega⟩ = (x.contract a).insertArc ⟨b - 2, by omega⟩ :=
-  ext_pv fun q hq => by
-    have _ := a.isLt; have _ := b.isLt
-    rw [pv_contract _ _ hq, pv_insertArc _ _ hq]; dsimp only
-    by_cases h₁ : q = (b : ℕ) - 2
-    · rw [ite_eq_left h₁, show skipN (a : ℕ) q = b by simp only [skipN]; split_ifs <;> omega,
-        pv_insertArc _ _ (by omega)]
-      simp only [ite_true, joinN, unskipN]; split_ifs <;> omega
-    by_cases h₂ : q = (b : ℕ) - 2 + 1
-    · rw [ite_eq_right h₁, ite_eq_left h₂,
-        show skipN (a : ℕ) q = (b : ℕ) + 1 by simp only [skipN]; split_ifs <;> omega,
-        pv_insertArc _ _ (by omega)]
-      simp only [show (b : ℕ) + 1 ≠ b by omega, ite_false, ite_true, joinN, unskipN]
-      split_ifs <;> omega
-    have hsq : skipN (a : ℕ) q < k + 4 ∧ skipN (a : ℕ) q ≠ b ∧ skipN (a : ℕ) q ≠ (b : ℕ) + 1 := by
-      simp only [skipN]
-      exact ⟨by split_ifs <;> omega, by split_ifs <;> omega, by split_ifs <;> omega⟩
-    have hlt_u : unskipN ((b : ℕ) - 2) q < k := by simp only [unskipN]; split_ifs <;> omega
-    let s := skipN a (unskipN ((b : ℕ) - 2) q)
-    have hs : s < k + 2 ∧ s ≠ a ∧ s ≠ (a : ℕ) + 1 := by
-      simp only [s, skipN]
-      exact ⟨by split_ifs <;> omega, by split_ifs <;> omega, by split_ifs <;> omega⟩
-    rw [ite_eq_right h₁, ite_eq_right h₂, pv_contract _ _ hlt_u, pv_insertArc _ _ hsq.1,
-      ite_eq_right hsq.2.1, ite_eq_right hsq.2.2,
-      show unskipN b (skipN (a : ℕ) q) = s by simp only [s, unskipN, skipN]; split_ifs <;> omega]
-    have hjoin : joinN (x.insertArc b) a (skipN b (pv x s)) = skipN b (joinN x a (pv x s)) := by
-      have _ := pv_lt x hs.1; have _ := pv_lt x (q := a) (by omega)
-      have _ := pv_lt x (q := (a : ℕ) + 1) (by omega)
-      simp only [joinN]; rw [pv_insertArc _ _ (by omega), pv_insertArc _ _ (by omega)]
-      simp only [show (a : ℕ) ≠ b by omega, show (a : ℕ) ≠ (b : ℕ) + 1 by omega,
-        show (a : ℕ) + 1 ≠ b by omega, show (a : ℕ) + 1 ≠ (b : ℕ) + 1 by omega, ite_false,
-        show unskipN (b : ℕ) a = a by simp only [unskipN]; split_ifs <;> omega,
-        show unskipN (b : ℕ) ((a : ℕ) + 1) = (a : ℕ) + 1 by
-          simp only [unskipN]; split_ifs <;> omega, skipN]
-      split_ifs <;> omega
-    obtain ⟨hw₁, hw₂⟩ := joinN_pv_ne x a hs.2.1 hs.2.2
-    rw [hjoin]
-    suffices ∀ w : ℕ, w ≠ a → w ≠ (a : ℕ) + 1 →
-        unskipN a (skipN b w) = skipN ((b : ℕ) - 2) (unskipN a w) from this _ hw₁ hw₂
-    intro w _ _; simp only [unskipN, skipN]; split_ifs <;> omega
-
-private theorem insertArc_val_eq_iff_of_add_two_le {k : ℕ} (x : PlanarMatching (k + 2))
-    (a : Fin (k + 1)) (b : Fin (k + 3)) (hab : (a : ℕ) + 2 ≤ b) :
-    ((x.insertArc b).1.val ⟨a, by omega⟩ = ⟨(a : ℕ) + 1, by omega⟩) ↔
-      x.1.val a.castSucc = a.succ := by
-  rw [Fin.ext_iff, ← pv_of_lt _ (by omega),
-    show (x.1.val a.castSucc = a.succ) ↔ pv x a = (a : ℕ) + 1 by
-      rw [← Fin.val_castSucc a, pv_coe, Fin.ext_iff, Fin.val_succ, Fin.val_castSucc],
-    pv_insertArc _ _ (by omega), ite_eq_right (by omega), ite_eq_right (by omega)]
-  simp only [unskipN, skipN]; split_ifs <;> omega
+private theorem glueFn_of_adj_right {n d : ℕ} :
+    ∀ (m : ℕ) {φ : ℕ → ℕ}, φ (n + 2 * m + d) = n + 2 * m + d + 1 →
+      glueFn n m φ (n + d) = n + d + 1
+  | 0, _, h => by simpa [glueFn] using h
+  | m + 1, φ, h =>
+    glueFn_of_adj_right m (φ := contractFn (n + m) φ) <| by
+      have h' := contractFn_of_adj_right (a := n + m) (b := n + 2 * (m + 1) + d) (by omega) h
+      rwa [show n + 2 * (m + 1) + d - 2 = n + 2 * m + d by omega] at h'
 
 /-- `glueMiddle` commutes with inserting an arc strictly to the right of the glued middle block,
 and closes the same number of circles. -/
-private theorem glueMiddle_insertArc_right {n p r : ℕ} (hr : r ≤ p) :
-    ∀ (m : ℕ) (x : PlanarMatching (n + m + (m + p))),
-      glueMiddle (n := n) (p := p + 2) m
-        (cast (by omega) (x.insertArc ⟨n + 2 * m + r, by omega⟩)) =
-        cast (by omega) ((glueMiddle m x).insertArc ⟨n + r, by omega⟩) ∧
-      glueMiddleCircles (n := n) (p := p + 2) m
-        (cast (by omega) (x.insertArc ⟨n + 2 * m + r, by omega⟩)) =
-        glueMiddleCircles (n := n) (p := p) m x
-  | 0, x =>
-    ⟨ext_pv fun q _ => by
-      simp only [glueMiddle_zero, pv_cast]
-      rw [pv_insertArc _ _ (by omega), pv_insertArc _ _ (by omega)]
-      simp only [pv_cast, unskipN, skipN]; split_ifs <;> omega, rfl⟩
-  | m + 1, x => by
-    let y : PlanarMatching (n + m + (m + p) + 2) := cast (by omega) x
-    let a : Fin (n + m + (m + p) + 1) := ⟨n + m, by omega⟩
-    let b : Fin (n + m + (m + p) + 3) := ⟨n + 2 * (m + 1) + r, by omega⟩
-    let z : PlanarMatching (n + m + (m + (p + 2)) + 2) :=
-      cast (by omega) (cast (k' := n + (m + 1) + (m + 1 + (p + 2))) (by omega)
-        (x.insertArc ⟨n + 2 * (m + 1) + r, by omega⟩))
-    have hy : z = cast (congrArg (· + 2)
-        (show n + m + (m + p) + 2 = n + m + (m + (p + 2)) by omega)) (y.insertArc b) :=
-      ext_pv fun q _ => by
-        dsimp only [z, y, b]
-        rw [pv_cast, pv_cast, pv_cast, pv_insertArc _ _ (by omega), pv_insertArc _ _ (by omega)]
-        simp only [pv_cast, unskipN, skipN]; split_ifs <;> omega
-    have hstep : z.contract ⟨n + m, by omega⟩ =
-        cast (by omega) ((y.contract a).insertArc ⟨n + 2 * m + r, by omega⟩) := by
-      rw [hy, show (⟨n + m, by omega⟩ : Fin (n + m + (m + (p + 2)) + 1)) =
-          Fin.cast (by omega) (⟨a, by omega⟩ : Fin (n + m + (m + p) + 3)) from rfl,
-        cast_contract (by omega), contract_insertArc_of_add_two_le y a b (by simp [a, b]; omega)]
-      refine ext_pv fun q _ => ?_
-      dsimp only [b]
-      rw [pv_cast, pv_cast, pv_insertArc _ _ (by omega), pv_insertArc _ _ (by omega)]
-      simp only [show n + 2 * (m + 1) + r - 2 = n + 2 * m + r by omega]
-    have hind' : (z.1.val ⟨n + m, by omega⟩ = ⟨n + m + 1, by omega⟩) ↔
-        y.1.val a.castSucc = a.succ := by
-      have h₁ : (z.1.val ⟨n + m, by omega⟩ = ⟨n + m + 1, by omega⟩) ↔
-          pv (y.insertArc b) a = (a : ℕ) + 1 := by
-        rw [Fin.ext_iff, ← pv_of_lt _ (by omega), hy, pv_cast]
-      have h₂ : ((y.insertArc b).1.val ⟨a, by omega⟩ = ⟨(a : ℕ) + 1, by omega⟩) ↔
-          pv (y.insertArc b) a = (a : ℕ) + 1 := by rw [Fin.ext_iff, ← pv_of_lt _ (by omega)]
-      exact h₁.trans <| h₂.symm.trans <|
-        insertArc_val_eq_iff_of_add_two_le y a b (by simp [a, b]; omega)
-    obtain ⟨ih₁, ih₂⟩ := glueMiddle_insertArc_right (p := p) hr m (y.contract a)
-    dsimp only [z] at hstep hind'; dsimp only [y, a] at hind'
-    refine ⟨by rw [glueMiddle_succ, glueMiddle_succ, hstep, ih₁], ?_⟩
-    rw [glueMiddleCircles_succ (n := n) (p := p + 2), glueMiddleCircles_succ (n := n) (p := p),
-      hstep, ih₂]
-    simp only [hind']; rfl
+private theorem glueMiddle_insertArc_right {n p r : ℕ} (hr : r ≤ p) (m : ℕ)
+    (x : PlanarMatching (n + m + (m + p))) :
+    glueMiddle (n := n) (p := p + 2) m
+      (cast (by omega) (x.insertArc ⟨n + 2 * m + r, by omega⟩)) =
+      cast (by omega) ((glueMiddle m x).insertArc ⟨n + r, by omega⟩) ∧
+    glueMiddleCircles (n := n) (p := p + 2) m
+      (cast (by omega) (x.insertArc ⟨n + 2 * m + r, by omega⟩)) =
+      glueMiddleCircles (n := n) (p := p) m x := by
+  let a : Fin (n + m + (m + p) + 1) := ⟨n + 2 * m + r, by omega⟩
+  let b : Fin (n + p + 1) := ⟨n + r, by omega⟩
+  let z : PlanarMatching (n + m + (m + p) + 2) := x.insertArc a
+  let w : PlanarMatching (n + (p + 2)) := glueMiddle (n := n) (p := p + 2) m (cast (by omega) z)
+  let w' : PlanarMatching (n + p + 2) := cast (by omega) w
+  have hz_arc : pv z (n + 2 * m + r) = n + 2 * m + r + 1 :=
+    (val_castSucc_eq_succ_iff z a).mp (insertArc_val_castSucc x a)
+  have hw_arc : glueFn n m (pv z) (n + r) = n + r + 1 := glueFn_of_adj_right m hz_arc
+  have hzc : contractFn (n + 2 * m + r) (pv z) = pv x := by
+    rw [← pv_contract_eq z a, contract_insertArc]
+  obtain ⟨hfn, hcirc⟩ := glueFn_glueFn (n := n) (j := 1) m r (n + m + (m + p) + 2) z (by omega)
+  simp only [glueFn, glueCircles, add_zero, zero_add] at hfn hcirc
+  rw [hzc] at hfn hcirc
+  have hw'_contract : w'.contract b = glueMiddle m x := eq_of_pv_eq <| by
+    rw [pv_contract_eq w' b, pv_cast_eq, pv_glueMiddle, pv_cast_eq, ← hfn, pv_glueMiddle]
+  have hw'_arc : w'.1.val b.castSucc = b.succ := (val_castSucc_eq_succ_iff w' b).mpr <| by
+    rw [pv_cast_eq, pv_glueMiddle, pv_cast_eq]; exact hw_arc
+  refine ⟨?_, ?_⟩
+  · have h : w' = (glueMiddle m x).insertArc b := by
+      rw [← hw'_contract, insertArc_contract hw'_arc]
+    rw [← h]; simp [w', w, z, a]
+  · rw [glueMiddleCircles_eq, pv_cast_eq, glueMiddleCircles_eq]
+    have hc₁ : circleInd (n + 2 * m + r) (pv z) = 1 := by simp [circleInd, hz_arc]
+    have hc₂ : circleInd (n + r) (glueFn n m (pv z)) = 1 := by simp [circleInd, hw_arc]
+    dsimp only [z, a] at hcirc hc₁ hc₂
+    omega
 
 end InsertArc
 
@@ -414,20 +315,82 @@ def cupAt (c : Fin (q + 1)) : TLDiagram q (q + 2) := (id q).insertTopArc c
 top. It is the vertical reflection of `TauCeti.TLDiagram.cupAt`. -/
 def capAt (c : Fin (q + 1)) : TLDiagram (q + 2) q := verticalReflect q (q + 2) (cupAt c)
 
+/-- The matching of `D.insertTopArc c` inserts an adjacent arc at cyclic label `n + (q - c)`. -/
+@[simp]
+theorem matching_insertTopArc (D : TLDiagram n q) (c : Fin (q + 1)) :
+    (D.insertTopArc c).matching =
+      PlanarMatching.cast (by omega) (D.matching.insertArc ⟨n + (q - c), by omega⟩) := (rfl)
+
+/-- The matching of `D.insertBottomArc c` inserts an adjacent arc at position `c` on the bottom
+boundary. -/
+@[simp]
+theorem matching_insertBottomArc (D : TLDiagram q m) (c : Fin (q + 1)) :
+    (D.insertBottomArc c).matching =
+      PlanarMatching.cast (by omega) (D.matching.insertArc ⟨c, by omega⟩) := by
+  have _ := c.isLt
+  have hrev : Fin.rev (⟨m + (q - c), by omega⟩ : Fin (m + q + 1)) =
+      Fin.cast (by omega) (⟨c, by omega⟩ : Fin (q + m + 1)) := by
+    ext; simp only [Fin.val_rev, Fin.val_cast]; omega
+  rw [insertBottomArc, matching_verticalReflect, matching_insertTopArc, matching_verticalReflect,
+    ← PlanarMatching.cast_reflect, PlanarMatching.cast_cast, PlanarMatching.reflect_insertArc,
+    ← PlanarMatching.cast_reflect, PlanarMatching.reflect_reflect, hrev,
+    ← PlanarMatching.cast_insertArc (by omega), PlanarMatching.cast_cast]
+
+/-- Inserting a top arc into `id q` gives `cupAt c`. -/
+@[simp]
+theorem insertTopArc_id (c : Fin (q + 1)) : (id q).insertTopArc c = cupAt c := (rfl)
+
+/-- Inserting a bottom arc into `id q` gives `capAt c`. -/
+@[simp]
+theorem insertBottomArc_id (c : Fin (q + 1)) : (id q).insertBottomArc c = capAt c := by
+  rw [insertBottomArc, verticalReflect_id, insertTopArc_id, capAt]
+
+/-- The matching of `cupAt c` inserts an adjacent arc into `PlanarMatching.nested q` at
+`q + (q - c)`. -/
+@[simp]
+theorem matching_cupAt (c : Fin (q + 1)) :
+    (cupAt c).matching =
+      PlanarMatching.cast (by omega)
+        ((PlanarMatching.nested q).insertArc ⟨q + (q - c), by omega⟩) := by
+  rw [cupAt, matching_insertTopArc, matching_id]
+
+/-- The matching of `capAt c` inserts an adjacent arc into `PlanarMatching.nested q` at `c`. -/
+@[simp]
+theorem matching_capAt (c : Fin (q + 1)) :
+    (capAt c).matching =
+      PlanarMatching.cast (by omega) ((PlanarMatching.nested q).insertArc ⟨c, by omega⟩) := by
+  rw [← insertBottomArc_id, matching_insertBottomArc, matching_id]
+
 @[simp]
 theorem circles_insertTopArc (D : TLDiagram n q) (c : Fin (q + 1)) :
     (D.insertTopArc c).circles = D.circles := (rfl)
 
 @[simp]
 theorem circles_insertBottomArc (D : TLDiagram q m) (c : Fin (q + 1)) :
-    (D.insertBottomArc c).circles = D.circles := by simp [insertBottomArc]
+    (D.insertBottomArc c).circles = D.circles := by
+  rw [insertBottomArc, circles_verticalReflect, circles_insertTopArc, circles_verticalReflect]
 
 @[simp]
-theorem circles_cupAt (c : Fin (q + 1)) : (cupAt c).circles = 0 := by simp [cupAt]
+theorem circles_cupAt (c : Fin (q + 1)) : (cupAt c).circles = 0 := by
+  rw [← insertTopArc_id, circles_insertTopArc, circles_id]
 
 @[simp]
 theorem circles_capAt (c : Fin (q + 1)) : (capAt c).circles = 0 := by
   rw [capAt, circles_verticalReflect, circles_cupAt]
+
+/-- Vertically reflecting `D.insertTopArc c` inserts a bottom arc at `c` into the reflected
+diagram. -/
+@[simp]
+theorem verticalReflect_insertTopArc (D : TLDiagram n q) (c : Fin (q + 1)) :
+    verticalReflect n (q + 2) (D.insertTopArc c) = (verticalReflect n q D).insertBottomArc c := by
+  rw [insertBottomArc, verticalReflect_verticalReflect]
+
+/-- Vertically reflecting `D.insertBottomArc c` inserts a top arc at `c` into the reflected
+diagram. -/
+@[simp]
+theorem verticalReflect_insertBottomArc (D : TLDiagram q m) (c : Fin (q + 1)) :
+    verticalReflect (q + 2) m (D.insertBottomArc c) = (verticalReflect q m D).insertTopArc c := by
+  rw [insertBottomArc, verticalReflect_verticalReflect]
 
 @[simp]
 theorem verticalReflect_cupAt (c : Fin (q + 1)) :
@@ -440,8 +403,8 @@ theorem verticalReflect_capAt (c : Fin (q + 1)) :
 @[simp]
 theorem cupAt_zero : cupAt (0 : Fin 1) = cup :=
   TLDiagram.ext (PlanarMatching.ext fun i => by
-    rw [show (cupAt (0 : Fin 1)).matching = (PlanarMatching.nested 0).insertArc 0 by
-      simp [cupAt, insertTopArc], cup_matching_val]
+    rw [matching_cupAt, cup_matching_val, PlanarMatching.cast_refl, Equiv.refl_apply,
+      Subsingleton.elim (⟨0 + (0 - (0 : Fin 1)), by omega⟩ : Fin 1) 0]
     fin_cases i
     · exact PlanarMatching.insertArc_val_castSucc _ 0
     · exact PlanarMatching.insertArc_val_succ _ 0) (by rw [circles_cupAt, circles_cup])
@@ -449,90 +412,194 @@ theorem cupAt_zero : cupAt (0 : Fin 1) = cup :=
 @[simp]
 theorem capAt_zero : capAt (0 : Fin 1) = cap := by rw [capAt, cupAt_zero, verticalReflect_cup]
 
-/-- Composing on the right commutes with inserting a top arc: the inserted top arc lies away from
-the middle junction, so gluing across the middle leaves it untouched and closes the same circles. -/
+/-- Pre-composing (composing on the left) commutes with inserting a top arc: the inserted top arc
+lies away from the middle junction, so gluing across the middle leaves it untouched and closes the
+same circles. -/
 theorem comp_insertTopArc (f : TLDiagram n m) (g : TLDiagram m q) (c : Fin (q + 1)) :
     f.comp (g.insertTopArc c) = (f.comp g).insertTopArc c := by
   have _ := c.isLt
   have happ : f.matching.append (g.insertTopArc c).matching =
       PlanarMatching.cast (by omega)
-        ((f.matching.append g.matching).insertArc ⟨n + 2 * m + (q - c), by omega⟩) :=
-    PlanarMatching.ext_pv fun w hw => by
-      have hidx : (⟨(n + m) + (⟨m + (q - c), by omega⟩ : Fin (m + q + 1)), by omega⟩ :
-          Fin ((n + m) + (m + q) + 1)) = ⟨n + 2 * m + (q - c), by omega⟩ := by ext; dsimp; omega
-      rw [PlanarMatching.pv_cast, ← hidx, ← PlanarMatching.append_insertArc]
-      by_cases hleft : w < n + m
-      · rw [PlanarMatching.pv_append_left _ _ hleft, PlanarMatching.pv_append_left _ _ hleft]
-      · rw [PlanarMatching.pv_append_right _ _ (by omega) hw,
-          PlanarMatching.pv_append_right _ _ (by omega) (by omega), insertTopArc,
-          PlanarMatching.pv_cast]
+        ((f.matching.append g.matching).insertArc ⟨n + 2 * m + (q - c), by omega⟩) := by
+    calc f.matching.append (g.insertTopArc c).matching
+        = (PlanarMatching.cast rfl f.matching).append
+            (PlanarMatching.cast (by omega)
+              (g.matching.insertArc ⟨m + (q - c), by omega⟩)) := by
+          simp only [matching_insertTopArc, PlanarMatching.cast_refl, Equiv.refl_apply]
+      _ = PlanarMatching.cast (by omega)
+            (f.matching.append (g.matching.insertArc ⟨m + (q - c), by omega⟩)) :=
+          PlanarMatching.append_cast rfl (by omega) _ _
+      _ = _ := by rw [PlanarMatching.append_insertArc]; congr 2; ext; dsimp; omega
   obtain ⟨hm, hcirc⟩ := PlanarMatching.glueMiddle_insertArc_right (n := n) (p := q)
     (r := q - c) (by omega) m (f.matching.append g.matching)
-  exact TLDiagram.ext (by rw [matching_comp, happ, hm]; rfl)
+  exact TLDiagram.ext (by rw [matching_comp, happ, hm, matching_insertTopArc, matching_comp])
     (by rw [circles_comp, circles_insertTopArc, circles_insertTopArc, circles_comp, happ, hcirc])
+
+/-- Post-composing (composing on the right) commutes with inserting a bottom arc. -/
+theorem insertBottomArc_comp (f : TLDiagram q m) (g : TLDiagram m p) (c : Fin (q + 1)) :
+    (f.insertBottomArc c).comp g = (f.comp g).insertBottomArc c :=
+  (verticalReflect (q + 2) p).injective <| by
+    rw [verticalReflect_comp, verticalReflect_insertBottomArc, comp_insertTopArc,
+      ← verticalReflect_comp, verticalReflect_insertBottomArc]
 
 /-- Post-composing a diagram with `cupAt c` inserts a top arc at position `c`. -/
 theorem comp_cupAt (f : TLDiagram n q) (c : Fin (q + 1)) :
-    f.comp (cupAt c) = f.insertTopArc c := by rw [cupAt, comp_insertTopArc, comp_id]
+    f.comp (cupAt c) = f.insertTopArc c := by rw [← insertTopArc_id, comp_insertTopArc, comp_id]
 
 /-- Pre-composing a diagram with `capAt c` inserts a bottom arc at position `c`. -/
 theorem capAt_comp (c : Fin (q + 1)) (g : TLDiagram q m) :
-    (capAt c).comp g = g.insertBottomArc c :=
-  (verticalReflect (q + 2) m).injective <| by
-    rw [insertBottomArc, verticalReflect_verticalReflect, verticalReflect_comp,
-      verticalReflect_capAt, comp_cupAt]
-
-/-- Inserting a top arc does not change the number of through strands. -/
-@[simp]
-theorem through_insertTopArc (D : TLDiagram n q) (c : Fin (q + 1)) :
-    (D.insertTopArc c).through = D.through := by
-  have _ := c.isLt
-  rw [through_def, through_def]; congr 1; ext i
-  have _ := i.isLt
-  simp only [mem_filter, mem_univ, true_and]
-  rw [show ((D.insertTopArc c).matching.1.val (i.castAdd (q + 2)) : ℕ) =
-      PlanarMatching.pv (D.insertTopArc c).matching i from
-        (PlanarMatching.pv_of_lt _ (by omega)).symm,
-    show (D.matching.1.val (i.castAdd q) : ℕ) = PlanarMatching.pv D.matching i from
-      (PlanarMatching.pv_of_lt _ (by omega)).symm,
-    insertTopArc, PlanarMatching.pv_cast, PlanarMatching.pv_insertArc _ _ (by omega)]
-  dsimp only; rw [ite_eq_right (by omega), ite_eq_right (by omega)]
-  simp only [PlanarMatching.unskipN, PlanarMatching.skipN]; split_ifs <;> omega
+    (capAt c).comp g = g.insertBottomArc c := by
+  rw [← insertBottomArc_id, insertBottomArc_comp, id_comp]
 
 /-- Inserting a top arc leaves the bottom half-diagram unchanged. -/
 @[simp]
 theorem bottomHalf_insertTopArc_val (D : TLDiagram n q) (c : Fin (q + 1)) :
     (D.insertTopArc c).bottomHalf.val = D.bottomHalf.val := by
   have _ := c.isLt; ext i; have _ := i.isLt
-  have _ : ((D.insertTopArc c).matching.1.val (i.castAdd (q + 2)) : ℕ) =
-      PlanarMatching.pv (D.insertTopArc c).matching i := (PlanarMatching.pv_of_lt _ (by omega)).symm
-  have _ : (D.matching.1.val (i.castAdd q) : ℕ) = PlanarMatching.pv D.matching i :=
-    (PlanarMatching.pv_of_lt _ (by omega)).symm
+  have hpv₁ : ((D.insertTopArc c).matching.1.val (i.castAdd (q + 2)) : ℕ) =
+      PlanarMatching.pv (D.insertTopArc c).matching i := by
+    rw [← PlanarMatching.pv_coe, Fin.val_castAdd]
+  have hpv₂ : (D.matching.1.val (i.castAdd q) : ℕ) = PlanarMatching.pv D.matching i := by
+    rw [← PlanarMatching.pv_coe, Fin.val_castAdd]
   have hpv_eq : PlanarMatching.pv (D.insertTopArc c).matching i =
-      if PlanarMatching.pv D.matching i < n + (q - c) then PlanarMatching.pv D.matching i
-      else PlanarMatching.pv D.matching i + 2 := by
-    rw [insertTopArc, PlanarMatching.pv_cast, PlanarMatching.pv_insertArc _ _ (by omega)]
-    dsimp only; rw [ite_eq_right (by omega), ite_eq_right (by omega)]
-    simp only [PlanarMatching.skipN, PlanarMatching.unskipN,
-      ite_eq_left (show (i : ℕ) < n + (q - c) by omega)]
+      PlanarMatching.skipN (n + (q - c)) (PlanarMatching.pv D.matching i) := by
+    rw [matching_insertTopArc, PlanarMatching.pv_cast, PlanarMatching.pv_insertArc _ _ (by omega)]
+    dsimp only
+    rw [ite_eq_right (by omega), ite_eq_right (by omega), PlanarMatching.unskipN_of_lt (by omega)]
   rw [bottomHalf_apply, bottomHalf_apply]
-  split_ifs at hpv_eq <;> split_ifs <;> dsimp only <;> omega
+  simp only [hpv₁, hpv₂, hpv_eq, PlanarMatching.skipN]
+  split_ifs <;> dsimp only <;> omega
 
+/-- Inserting a top arc does not change the number of through strands. -/
+@[simp]
+theorem through_insertTopArc (D : TLDiagram n q) (c : Fin (q + 1)) :
+    (D.insertTopArc c).through = D.through :=
+  through_eq_of_bottomHalf_val_eq (bottomHalf_insertTopArc_val D c)
+
+/-- Inserting a bottom arc does not change the number of through strands. -/
 @[simp]
 theorem through_insertBottomArc (D : TLDiagram q m) (c : Fin (q + 1)) :
-    (D.insertBottomArc c).through = D.through := by simp [insertBottomArc]
+    (D.insertBottomArc c).through = D.through := by
+  rw [insertBottomArc, through_verticalReflect, through_insertTopArc, through_verticalReflect]
 
+/-- Inserting a bottom arc leaves the top half-diagram unchanged. -/
 @[simp]
 theorem topHalf_insertBottomArc_val (D : TLDiagram q m) (c : Fin (q + 1)) :
     (D.insertBottomArc c).topHalf.val = D.topHalf.val := by
   rw [insertBottomArc, topHalf_verticalReflect_val, bottomHalf_insertTopArc_val, ← topHalf_val]
 
+/-- The bottom half-diagram of `D.insertBottomArc c` joins `c.castSucc` to `c.succ`. -/
 @[simp]
-theorem through_cupAt (c : Fin (q + 1)) : (cupAt c).through = q := by simp [cupAt]
+theorem bottomHalf_insertBottomArc_val_castSucc (D : TLDiagram q m) (c : Fin (q + 1)) :
+    (D.insertBottomArc c).bottomHalf.val c.castSucc = c.succ := by
+  have _ := c.isLt
+  have hpv : ((D.insertBottomArc c).matching.1.val (c.castSucc.castAdd m) : ℕ) = (c : ℕ) + 1 := by
+    rw [← PlanarMatching.pv_coe, Fin.val_castAdd, Fin.val_castSucc, matching_insertBottomArc,
+      PlanarMatching.pv_cast, PlanarMatching.pv_insertArc _ _ (by omega)]
+    simp
+  apply Fin.ext
+  rw [bottomHalf_apply]
+  simp only [hpv, show (c : ℕ) + 1 < q + 2 by omega, dite_true, Fin.val_succ]
+
+/-- The bottom half-diagram of `D.insertBottomArc c` joins `c.succ` to `c.castSucc`. -/
+@[simp]
+theorem bottomHalf_insertBottomArc_val_succ (D : TLDiagram q m) (c : Fin (q + 1)) :
+    (D.insertBottomArc c).bottomHalf.val c.succ = c.castSucc := by
+  rw [← bottomHalf_insertBottomArc_val_castSucc D c,
+    (Equiv.Perm.isHalfDiagram_iff.mp (D.insertBottomArc c).bottomHalf.2.1).1 c.castSucc]
+
+/-- Away from the inserted arc, the bottom half-diagram of `D.insertBottomArc c` acts as
+`D.bottomHalf` conjugated by skipping the two inserted positions. -/
+@[simp]
+theorem bottomHalf_insertBottomArc_val_succAbove_succAbove (D : TLDiagram q m) (c : Fin (q + 1))
+    (i : Fin q) :
+    (D.insertBottomArc c).bottomHalf.val (c.castSucc.succAbove (c.succAbove i)) =
+      c.castSucc.succAbove (c.succAbove (D.bottomHalf.val i)) := by
+  have _ := c.isLt; have _ := i.isLt
+  have hns := PlanarMatching.skipN_lt_and_ne (a := c) i.isLt
+  have hs : ((c.castSucc.succAbove (c.succAbove i) : Fin (q + 2)) : ℕ) =
+      PlanarMatching.skipN c i := PlanarMatching.coe_skip_eq_skipN c i
+  have hs' : ((c.castSucc.succAbove (c.succAbove (D.bottomHalf.val i)) : Fin (q + 2)) : ℕ) =
+      PlanarMatching.skipN c (D.bottomHalf.val i) := PlanarMatching.coe_skip_eq_skipN c _
+  have hpv₁ : ((D.insertBottomArc c).matching.1.val
+      ((c.castSucc.succAbove (c.succAbove i)).castAdd m) : ℕ) =
+      PlanarMatching.skipN c (PlanarMatching.pv D.matching i) := by
+    rw [← PlanarMatching.pv_coe, Fin.val_castAdd, hs, matching_insertBottomArc,
+      PlanarMatching.pv_cast, PlanarMatching.pv_insertArc _ _ (by omega)]
+    dsimp only
+    rw [ite_eq_right hns.2.1, ite_eq_right hns.2.2, PlanarMatching.unskipN_skipN]
+  have hpv₂ : (D.matching.1.val (i.castAdd m) : ℕ) = PlanarMatching.pv D.matching i := by
+    rw [← PlanarMatching.pv_coe, Fin.val_castAdd]
+  apply Fin.ext
+  rw [bottomHalf_apply, hs', bottomHalf_apply]
+  simp only [hpv₁, hpv₂]
+  by_cases hlt : PlanarMatching.pv D.matching i < q
+  · have hlt' : PlanarMatching.skipN c (PlanarMatching.pv D.matching i) < q + 2 :=
+      (PlanarMatching.skipN_lt_and_ne (a := c) hlt).1
+    simp only [hlt, hlt', dite_true]
+  · have hge : ¬ PlanarMatching.skipN c (PlanarMatching.pv D.matching i) < q + 2 := by
+      rw [PlanarMatching.skipN_of_le (by omega)]; omega
+    simp only [hlt, hge, dite_false, hs]
+
+/-- The top half-diagram of `D.insertTopArc c` joins `c.castSucc` to `c.succ`. -/
+@[simp]
+theorem topHalf_insertTopArc_val_castSucc (D : TLDiagram n q) (c : Fin (q + 1)) :
+    (D.insertTopArc c).topHalf.val c.castSucc = c.succ := by
+  rw [topHalf_val, verticalReflect_insertTopArc, bottomHalf_insertBottomArc_val_castSucc]
+
+/-- The top half-diagram of `D.insertTopArc c` joins `c.succ` to `c.castSucc`. -/
+@[simp]
+theorem topHalf_insertTopArc_val_succ (D : TLDiagram n q) (c : Fin (q + 1)) :
+    (D.insertTopArc c).topHalf.val c.succ = c.castSucc := by
+  rw [topHalf_val, verticalReflect_insertTopArc, bottomHalf_insertBottomArc_val_succ]
+
+/-- Away from the inserted arc, the top half-diagram of `D.insertTopArc c` acts as `D.topHalf`
+conjugated by skipping the two inserted positions. -/
+@[simp]
+theorem topHalf_insertTopArc_val_succAbove_succAbove (D : TLDiagram n q) (c : Fin (q + 1))
+    (j : Fin q) :
+    (D.insertTopArc c).topHalf.val (c.castSucc.succAbove (c.succAbove j)) =
+      c.castSucc.succAbove (c.succAbove (D.topHalf.val j)) := by
+  rw [topHalf_val, verticalReflect_insertTopArc,
+    bottomHalf_insertBottomArc_val_succAbove_succAbove, ← topHalf_val]
+
+@[simp]
+theorem through_cupAt (c : Fin (q + 1)) : (cupAt c).through = q := by
+  rw [← insertTopArc_id, through_insertTopArc, through_id]
 
 @[simp]
 theorem through_capAt (c : Fin (q + 1)) : (capAt c).through = q := by
   rw [capAt, through_verticalReflect, through_cupAt]
+
+/-- The bottom half-diagram of `cupAt c` has no arcs. -/
+@[simp]
+theorem bottomHalf_cupAt_val (c : Fin (q + 1)) : (cupAt c).bottomHalf.val = 1 := by
+  rw [← insertTopArc_id, bottomHalf_insertTopArc_val, bottomHalf_id_val]
+
+/-- The top half-diagram of `capAt c` has no arcs. -/
+@[simp]
+theorem topHalf_capAt_val (c : Fin (q + 1)) : (capAt c).topHalf.val = 1 := by
+  rw [← insertBottomArc_id, topHalf_insertBottomArc_val, topHalf_id_val]
+
+/-- The bottom half-diagram of `capAt c` has a single arc joining `c.castSucc` and `c.succ`. -/
+@[simp]
+theorem bottomHalf_capAt_val (c : Fin (q + 1)) :
+    (capAt c).bottomHalf.val = Equiv.swap c.castSucc c.succ := by
+  ext j
+  by_cases h₁ : j = c.castSucc
+  · subst h₁; rw [← insertBottomArc_id, bottomHalf_insertBottomArc_val_castSucc, swap_apply_left]
+  by_cases h₂ : j = c.succ
+  · subst h₂; rw [← insertBottomArc_id, bottomHalf_insertBottomArc_val_succ, swap_apply_right]
+  rw [← PlanarMatching.skip_unskip c j ⟨h₁, h₂⟩,
+    swap_apply_of_ne_of_ne (PlanarMatching.skip_ne_castSucc c _) (PlanarMatching.skip_ne_succ c _),
+    PlanarMatching.skip, ← insertBottomArc_id, bottomHalf_insertBottomArc_val_succAbove_succAbove,
+    bottomHalf_id_val, Perm.one_apply]
+
+/-- The top half-diagram of `cupAt c` has a single arc joining `c.castSucc` and `c.succ`. -/
+@[simp]
+theorem topHalf_cupAt_val (c : Fin (q + 1)) :
+    (cupAt c).topHalf.val = Equiv.swap c.castSucc c.succ := by
+  rw [topHalf_val, verticalReflect_cupAt, bottomHalf_capAt_val]
 
 /-- If a diagram `D : n → q + 2` has an arc joining the consecutive top points `c.castSucc` and
 `c.succ`, it is obtained by post-composing a diagram `D' : n → q` with `cupAt c`. -/
@@ -553,11 +620,11 @@ theorem exists_comp_cupAt_of_topHalf_apply_eq {D : TLDiagram n (q + 2)} {c : Fin
       split_ifs at htop <;> simp only [Fin.val_castSucc] at htop <;> omega
     have hpva : PlanarMatching.pv D.matching (n + (q - c)) = n + (q + 2) - 1 - c := by
       rw [PlanarMatching.pv_of_lt D.matching (by omega), ← hb_eq, D.matching.1.apply_apply]
-    apply Fin.ext; rw [← PlanarMatching.pv_coe, Fin.val_castSucc, Fin.val_succ]
-    dsimp only [y, a]; rw [PlanarMatching.pv_cast, hpva]; omega
+    exact (PlanarMatching.val_castSucc_eq_succ_iff y a).mpr <| by
+      dsimp only [y, a]; rw [PlanarMatching.pv_cast, hpva]; omega
   have hd : (⟨y.contract a, D.circles⟩ : TLDiagram n q).insertTopArc c = D :=
     TLDiagram.ext
-      (by simp only [insertTopArc]; rw [PlanarMatching.insertArc_contract hy]; simp [y]) rfl
+      (by rw [matching_insertTopArc, PlanarMatching.insertArc_contract hy]; simp [y]) rfl
   exact ⟨⟨y.contract a, D.circles⟩, by rw [← through_insertTopArc _ c, hd], rfl,
     by rw [comp_cupAt, hd]⟩
 
@@ -586,103 +653,92 @@ private theorem pv_cupAt_matching (q : ℕ) (c : Fin (q + 1)) {w : ℕ} (hw : w 
       else if w = q + (q - c) + 1 then q + (q - c)
       else 2 * q + 1 - w := by
   have _ := c.isLt
-  rw [cupAt, insertTopArc, PlanarMatching.pv_cast, PlanarMatching.pv_insertArc _ _ (by omega)]
+  rw [matching_cupAt, PlanarMatching.pv_cast, PlanarMatching.pv_insertArc _ _ (by omega)]
   dsimp only
   by_cases h₁ : w = q + (q - c)
   · simp only [h₁, ite_true]; split_ifs <;> omega
   by_cases h₂ : w = q + (q - c) + 1
   · simp only [h₂, show q + (q - (c : ℕ)) + 1 ≠ q + (q - c) by omega, ite_false, ite_true]
     split_ifs <;> omega
-  rw [ite_eq_right h₁, ite_eq_right h₂, matching_id,
+  rw [ite_eq_right h₁, ite_eq_right h₂,
     PlanarMatching.pv_nested q (by simp only [PlanarMatching.unskipN]; split_ifs <;> omega)]
   simp only [PlanarMatching.skipN, PlanarMatching.unskipN]; split_ifs <;> omega
 
-private theorem pv_cupAt_zero_append_capAt_zero (q : ℕ) {w : ℕ}
-    (hw : w < q + (q + 2) + (q + 2 + q)) :
-    PlanarMatching.pv ((cupAt (0 : Fin (q + 1))).matching.append
-        (capAt (0 : Fin (q + 1))).matching) w =
-      if w < 2 * q then 2 * q - 1 - w
-      else if w = 2 * q then 2 * q + 1
-      else if w = 2 * q + 1 then 2 * q
-      else if w = 2 * q + 2 then 2 * q + 3
-      else if w = 2 * q + 3 then 2 * q + 2
-      else 6 * q + 7 - w := by
-  have hz : ((0 : Fin (q + 1)) : ℕ) = 0 := rfl
-  by_cases hleft : w < q + (q + 2)
-  · rw [PlanarMatching.pv_append_left _ _ hleft, pv_cupAt_matching q 0 hleft, hz]
-    simp only [Nat.not_lt_zero, Nat.sub_zero, ite_false]; split_ifs <;> omega
-  · rw [PlanarMatching.pv_append_right _ _ (by omega) hw, capAt, matching_verticalReflect,
-      PlanarMatching.pv_cast, PlanarMatching.pv_reflect _ (by omega),
-      pv_cupAt_matching q 0 (by omega), hz]
-    simp only [Nat.not_lt_zero, Nat.sub_zero, ite_false]; split_ifs <;> omega
+private theorem matching_cupAt_zero (q : ℕ) :
+    (cupAt (0 : Fin (q + 1))).matching =
+      PlanarMatching.cast (by omega) ((PlanarMatching.nested q).append cup.matching) := by
+  have hcup : cup.matching = (PlanarMatching.nested 0).insertArc 0 := by
+    rw [← cupAt_zero, matching_cupAt, PlanarMatching.cast_refl, Equiv.refl_apply,
+      Subsingleton.elim (⟨0 + (0 - (0 : Fin 1)), by omega⟩ : Fin 1) 0]
+  have h0 : (PlanarMatching.nested q).append (PlanarMatching.nested 0) =
+      PlanarMatching.cast (by omega) (PlanarMatching.nested q) :=
+    PlanarMatching.ext_pv fun w hw => by
+      rw [PlanarMatching.pv_append_left _ _ (by omega), PlanarMatching.pv_cast]
+  have hidx : (⟨q + q + (0 : Fin 1), by omega⟩ : Fin (q + q + 0 + 1)) =
+      Fin.cast (by omega) (⟨q + (q - (0 : Fin (q + 1))), by omega⟩ : Fin (q + q + 1)) := by
+    ext; simp
+  rw [hcup, PlanarMatching.append_insertArc, h0, hidx, ← PlanarMatching.cast_insertArc (by omega),
+    PlanarMatching.cast_cast, matching_cupAt]
 
-private abbrev cupCapZeroApp (q : ℕ) : PlanarMatching (q + (q + 1) + (q + 1 + q) + 2) :=
-  PlanarMatching.cast (by omega)
-    ((cupAt (0 : Fin (q + 1))).matching.append (capAt (0 : Fin (q + 1))).matching)
-
-private abbrev cupCapZeroStep1 (q : ℕ) : PlanarMatching (q + q + (q + q) + 2) :=
-  PlanarMatching.cast (by omega) ((cupCapZeroApp q).contract ⟨q + (q + 1), by omega⟩)
-
-private theorem pv_cupAt_zero_step1 (q : ℕ) {w : ℕ} (hw : w < 4 * q + 2) :
-    PlanarMatching.pv ((cupCapZeroApp q).contract ⟨q + (q + 1), by omega⟩) w =
-      if w < 2 * q then 2 * q - 1 - w
-      else if w = 2 * q then 2 * q + 1
-      else if w = 2 * q + 1 then 2 * q
-      else 6 * q + 3 - w := by
-  have hpv₁ : PlanarMatching.pv (cupCapZeroApp q) (q + (q + 1)) = 2 * q := by
-    rw [PlanarMatching.pv_cast, pv_cupAt_zero_append_capAt_zero q (by omega)]; split_ifs <;> omega
-  have hpv₂ : PlanarMatching.pv (cupCapZeroApp q) (q + (q + 1) + 1) = 2 * q + 3 := by
-    rw [PlanarMatching.pv_cast, pv_cupAt_zero_append_capAt_zero q (by omega)]; split_ifs <;> omega
-  rw [PlanarMatching.pv_contract _ _ (by omega)]
-  simp only [PlanarMatching.joinN, hpv₁, hpv₂, PlanarMatching.pv_cast]
-  by_cases hw₁ : w < q + (q + 1)
-  · rw [show PlanarMatching.skipN (q + (q + 1)) w = w by simp [PlanarMatching.skipN, hw₁],
-      pv_cupAt_zero_append_capAt_zero q (by omega)]
-    simp only [PlanarMatching.unskipN]; split_ifs <;> omega
-  · rw [show PlanarMatching.skipN (q + (q + 1)) w = w + 2 by simp [PlanarMatching.skipN, hw₁],
-      pv_cupAt_zero_append_capAt_zero q (by omega)]
-    simp only [show ¬ w + 2 < 2 * q by omega, show w + 2 ≠ 2 * q by omega,
-      show w + 2 ≠ 2 * q + 1 by omega, show w + 2 ≠ 2 * q + 2 by omega, ite_false,
-      PlanarMatching.unskipN]
-    split_ifs <;> omega
-
-private theorem cupAt_zero_step2 (q : ℕ) :
-    (cupCapZeroStep1 q).contract ⟨q + q, by omega⟩ =
-      (PlanarMatching.nested q).append (PlanarMatching.nested q) := by
-  have h₁ : PlanarMatching.pv (cupCapZeroStep1 q) (q + q) = 2 * q + 1 := by
-    rw [PlanarMatching.pv_cast, pv_cupAt_zero_step1 q (by omega)]; split_ifs <;> omega
-  have h₂ : PlanarMatching.pv (cupCapZeroStep1 q) (q + q + 1) = 2 * q := by
-    rw [PlanarMatching.pv_cast, pv_cupAt_zero_step1 q (by omega)]; split_ifs <;> omega
-  refine PlanarMatching.ext_pv fun w hw => ?_
-  rw [PlanarMatching.pv_contract _ _ hw]
-  simp only [PlanarMatching.joinN, h₁, h₂, PlanarMatching.pv_cast]
-  by_cases hwq : w < q + q
-  · rw [show PlanarMatching.skipN (q + q) w = w by simp [PlanarMatching.skipN, hwq],
-      pv_cupAt_zero_step1 q (by omega), PlanarMatching.pv_append_left _ _ hwq,
-      PlanarMatching.pv_nested q hwq]
-    simp only [PlanarMatching.unskipN]; split_ifs <;> omega
-  · rw [show PlanarMatching.skipN (q + q) w = w + 2 by simp [PlanarMatching.skipN, hwq],
-      pv_cupAt_zero_step1 q (by omega), PlanarMatching.pv_append_right _ _ (by omega) hw,
-      PlanarMatching.pv_nested q (by omega)]
-    simp only [PlanarMatching.unskipN]; split_ifs <;> omega
+private theorem matching_capAt_zero (q : ℕ) :
+    (capAt (0 : Fin (q + 1))).matching =
+      PlanarMatching.cast (by omega) (cap.matching.append (PlanarMatching.nested q)) := by
+  have hcap : PlanarMatching.reflect (0 + 2) cup.matching = cap.matching := by
+    have h := congrArg TLDiagram.matching verticalReflect_cup
+    rwa [matching_verticalReflect, PlanarMatching.cast_refl, Equiv.refl_apply] at h
+  have hrefl : PlanarMatching.reflect (q + q) (PlanarMatching.nested q) =
+      PlanarMatching.nested q := by
+    have h := congrArg TLDiagram.matching (verticalReflect_id q)
+    rwa [matching_verticalReflect, matching_id, PlanarMatching.cast_refl, Equiv.refl_apply] at h
+  rw [capAt, matching_verticalReflect, matching_cupAt_zero, ← PlanarMatching.cast_reflect,
+    PlanarMatching.cast_cast, PlanarMatching.reflect_append, PlanarMatching.cast_cast, hcap, hrefl]
 
 private theorem cupAt_zero_comp_capAt_zero (q : ℕ) :
     (cupAt (0 : Fin (q + 1))).comp (capAt (0 : Fin (q + 1))) = ⟨PlanarMatching.nested q, 1⟩ := by
-  have hne₁ : (cupCapZeroApp q).1.val ⟨q + (q + 1), by omega⟩ ≠ ⟨q + (q + 1) + 1, by omega⟩ := by
-    have hpv := PlanarMatching.pv_of_lt (cupCapZeroApp q) (q := q + (q + 1)) (by omega)
-    rw [PlanarMatching.pv_cast, pv_cupAt_zero_append_capAt_zero q (by omega)] at hpv
-    intro heq; rw [heq] at hpv; simp only at hpv; split_ifs at hpv <;> omega
-  have heq₂ : (cupCapZeroStep1 q).1.val ⟨q + q, by omega⟩ = ⟨q + q + 1, by omega⟩ := by
-    ext; rw [← PlanarMatching.pv_of_lt (cupCapZeroStep1 q) (by omega), PlanarMatching.pv_cast,
-      pv_cupAt_zero_step1 q (by omega)]
-    dsimp only; split_ifs <;> omega
-  exact TLDiagram.ext
-    (by rw [matching_comp, PlanarMatching.glueMiddle_succ, PlanarMatching.glueMiddle_succ,
-          cupAt_zero_step2 q, PlanarMatching.glueMiddle_append_nested])
-    (by rw [circles_comp, circles_cupAt, circles_capAt, zero_add, zero_add,
-          PlanarMatching.glueMiddleCircles_succ (n := q) (p := q), ite_eq_right hne₁, add_zero,
-          PlanarMatching.glueMiddleCircles_succ (n := q) (p := q), ite_eq_left heq₂,
-          cupAt_zero_step2 q, PlanarMatching.glueMiddleCircles_append_nested])
+  open PlanarMatching in
+  have hmid_fn : glueFn 0 2 (pv (cup.matching.append cap.matching)) = pv (nested 0) := by
+    rw [← pv_glueMiddle 2, ← matching_comp, cup_comp_cap, matching_id]
+  have hmid_c : glueCircles 0 2 (pv (cup.matching.append cap.matching)) = 1 := by
+    have hc := congrArg TLDiagram.circles cup_comp_cap
+    rw [circles_comp, circles_cup, circles_cap, zero_add, zero_add, glueMiddleCircles_eq] at hc
+    exact hc
+  have hL := glueFn_appendFn_left (n := 0) (nested q) 2 4 (cup.matching.append cap.matching)
+    (by omega)
+  have hR := glueFn_appendFn_right (n := 0) (nested q) 2 (4 + (q + q))
+    ((cup.matching.append cap.matching).append (nested q)) (by omega)
+  simp only [add_zero] at hR
+  have h0_app : appendFn 0 (q + q) (pv (nested 0)) (pv (nested q)) = pv (nested q) := by
+    rw [← pv_append_eq]
+    exact funext fun w => by
+      by_cases hw : w < q + q
+      · rw [pv_append_right _ _ (by omega) (by omega), zero_add, Nat.sub_zero]
+      · rw [pv_of_le _ (by omega), pv_of_le _ (by omega)]
+  have happ : pv ((cupAt (0 : Fin (q + 1))).matching.append (capAt (0 : Fin (q + 1))).matching) =
+      appendFn (q + q) (4 + (q + q)) (pv (nested q))
+        (pv ((cup.matching.append cap.matching).append (nested q))) := by
+    rw [matching_cupAt_zero, matching_capAt_zero,
+      append_cast (by omega : q + q + 2 = q + (q + 2)) (by omega : 2 + (q + q) = q + 2 + q),
+      pv_cast_eq, pv_append_eq, pv_append_eq, pv_append_eq, pv_append_eq, pv_append_eq,
+      appendFn_assoc, ← appendFn_assoc 2 2 (q + q), ← Nat.add_assoc 2 2 (q + q)]
+  have hstep : glueFn (q + q) 2
+      (pv ((cupAt (0 : Fin (q + 1))).matching.append (capAt (0 : Fin (q + 1))).matching)) =
+      pv ((nested q).append (nested q)) := by
+    rw [happ, ← hR.1, pv_append_eq, ← hL.1, hmid_fn, h0_app,
+      show 4 + (q + q) - 2 * 2 = q + q by omega, ← pv_append_eq]
+  have hstep_c : glueCircles (q + q) 2
+      (pv ((cupAt (0 : Fin (q + 1))).matching.append (capAt (0 : Fin (q + 1))).matching)) = 1 := by
+    rw [happ, hR.2, pv_append_eq, hL.2, hmid_c]
+  have hglue_unfold : ∀ φ : ℕ → ℕ, glueFn q (q + 2) φ = glueFn q q (glueFn (q + q) 2 φ) :=
+    fun φ => by simp only [glueFn, Nat.add_assoc, add_zero]
+  have hcirc_unfold : ∀ φ : ℕ → ℕ,
+      glueCircles q (q + 2) φ = glueCircles q q (glueFn (q + q) 2 φ) + glueCircles (q + q) 2 φ :=
+    fun φ => by simp only [glueFn, glueCircles, Nat.add_assoc, add_zero, zero_add]
+  exact TLDiagram.ext (eq_of_pv_eq <| by
+      rw [matching_comp, pv_glueMiddle, hglue_unfold, hstep, ← pv_glueMiddle,
+        glueMiddle_append_nested])
+    (by rw [circles_comp, circles_cupAt, circles_capAt, zero_add, zero_add, glueMiddleCircles_eq,
+          hcirc_unfold, hstep, hstep_c, ← glueMiddleCircles_eq, glueMiddleCircles_append_nested,
+          zero_add])
 
 /-- `IsWrapped y x` means `y` has `k + 2` boundary points and is obtained from `x` by wrapping an
 outer arc `{0, k + 1}` around `x` and shifting the `k` points of `x` into `1, ..., k`. -/
@@ -730,15 +786,12 @@ private theorem IsWrapped.contract_succ {K k : ℕ} {y : PlanarMatching (K + 2)}
         x.1.val ⟨a, by omega⟩ = ⟨(a : ℕ) + 1, by omega⟩) := by
   have _ := a.isLt; have _ := h.card_eq
   refine ⟨⟨by omega, ?_, fun i hi => ?_⟩, ?_⟩
-  · rw [PlanarMatching.pv_contract _ _ (by omega), ha',
-      show PlanarMatching.skipN ((a : ℕ) + 1) 0 = 0 by simp [PlanarMatching.skipN]]
+  · rw [PlanarMatching.pv_contract _ _ (by omega), ha', PlanarMatching.skipN_of_lt (by omega)]
     simp only [PlanarMatching.joinN, h.pv_zero, show k + 2 + 1 ≠ (a : ℕ) + 1 by omega,
       show k + 2 + 1 ≠ (a : ℕ) + 1 + 1 by omega, ite_false, PlanarMatching.unskipN]
     split_ifs <;> omega
-  · let s := PlanarMatching.skipN a i
-    have hs : s < k + 2 ∧ s ≠ a ∧ s ≠ (a : ℕ) + 1 := by
-      simp only [s, PlanarMatching.skipN]
-      exact ⟨by split_ifs <;> omega, by split_ifs <;> omega, by split_ifs <;> omega⟩
+  · set s := PlanarMatching.skipN a i
+    have hs : s < k + 2 ∧ s ≠ a ∧ s ≠ (a : ℕ) + 1 := PlanarMatching.skipN_lt_and_ne hi
     rw [PlanarMatching.pv_contract _ _ (by omega), PlanarMatching.pv_contract _ _ hi, ha',
       show PlanarMatching.skipN ((a : ℕ) + 1) (i + 1) = s + 1 by
         simp only [s, PlanarMatching.skipN]; split_ifs <;> omega, h.pv_succ s hs.1]
@@ -752,13 +805,8 @@ private theorem IsWrapped.contract_succ {K k : ℕ} {y : PlanarMatching (K + 2)}
         PlanarMatching.unskipN ((a : ℕ) + 1) (w + 1) = PlanarMatching.unskipN a w + 1 from
       this _ hw₁ hw₂
     intro w _ _; simp only [PlanarMatching.unskipN]; split_ifs <;> omega
-  · rw [show (y.1.val ⟨a', by omega⟩ = ⟨(a' : ℕ) + 1, by omega⟩) ↔
-        PlanarMatching.pv y a' = (a' : ℕ) + 1 by
-          rw [Fin.ext_iff, ← PlanarMatching.pv_of_lt y (by omega)],
-      show (x.1.val ⟨a, by omega⟩ = ⟨(a : ℕ) + 1, by omega⟩) ↔
-          PlanarMatching.pv x a = (a : ℕ) + 1 by
-        rw [Fin.ext_iff, ← PlanarMatching.pv_of_lt x (by omega)],
-      ha', h.pv_succ a (by omega)]
+  · rw [PlanarMatching.val_mk_eq_mk_iff, PlanarMatching.val_mk_eq_mk_iff, ha',
+      h.pv_succ a (by omega)]
     omega
 
 private theorem IsWrapped.glueMiddle {n p : ℕ} :
@@ -802,29 +850,25 @@ private theorem IsWrapped.append_contract_mid {n m p : ℕ}
   have hy0 : PlanarMatching.pv y₀ 0 = (n + 1) + m := by
     dsimp only [y₀]
     rw [PlanarMatching.pv_cast, PlanarMatching.pv_append_left _ _ (by omega), hf.pv_zero]; omega
-  refine ⟨⟨by omega, ?_, fun i hi => ?_⟩, fun heq => ?_⟩
-  · rw [PlanarMatching.pv_contract y₀ _ (by omega),
-      show PlanarMatching.skipN ((n + 1) + m) 0 = 0 by simp [PlanarMatching.skipN]]
+  refine ⟨⟨by omega, ?_, fun i hi => ?_⟩, PlanarMatching.val_ne_of_pv_ne
+    (a := ⟨(n + 1) + m, by omega⟩) (by dsimp; rw [hpva]; omega) (by dsimp; omega) (by simp)⟩
+  · rw [PlanarMatching.pv_contract y₀ _ (by omega), PlanarMatching.skipN_of_lt (by dsimp; omega)]
     simp only [PlanarMatching.joinN, hy0, hpva1, ite_true, PlanarMatching.unskipN]
     split_ifs <;> omega
   · rw [PlanarMatching.pv_contract y₀ _ (by omega)]
     simp only [PlanarMatching.joinN, hpva, hpva1]
     by_cases hleft : i < n + m
     · have _ := PlanarMatching.pv_lt f hleft
-      rw [show PlanarMatching.skipN ((n + 1) + m) (i + 1) = i + 1 by
-        simp [PlanarMatching.skipN, show i + 1 < (n + 1) + m by omega]]
+      rw [PlanarMatching.skipN_of_lt (by omega)]
       dsimp only [y₀]; rw [PlanarMatching.pv_cast, PlanarMatching.pv_append_left _ _ (by omega),
         hf.pv_succ i hleft, PlanarMatching.pv_append_left _ _ hleft]
       simp only [PlanarMatching.unskipN]; split_ifs <;> omega
-    · rw [show PlanarMatching.skipN ((n + 1) + m) (i + 1) = i + 3 by
-        simp [PlanarMatching.skipN, show ¬ i + 1 < (n + 1) + m by omega]]
+    · rw [PlanarMatching.skipN_of_le (by omega)]
       dsimp only [y₀]; rw [PlanarMatching.pv_cast,
         PlanarMatching.pv_append_right _ _ (by omega) (by omega),
-        show i + 3 - ((n + 1) + (m + 1)) = i - (n + m) + 1 by omega,
+        show i + 1 + 2 - ((n + 1) + (m + 1)) = i - (n + m) + 1 by omega,
         hg.pv_succ (i - (n + m)) (by omega), PlanarMatching.pv_append_right _ _ (by omega) hi]
       simp only [PlanarMatching.unskipN]; split_ifs <;> omega
-  · have hpv_coe := PlanarMatching.pv_of_lt y₀ (q := (n + 1) + m) (by omega)
-    rw [heq, hpva] at hpv_coe; simp only at hpv_coe; omega
 
 private theorem isWrapped_cupAt_succ {q : ℕ} (c : Fin (q + 1)) :
     IsWrapped (cupAt c.succ).matching (cupAt c).matching := by

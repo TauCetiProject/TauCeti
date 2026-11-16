@@ -26,7 +26,7 @@ diagrams under composition (`TauCeti.TLDiagram.comp`):
    preserves both the through-strand count and the bottom half-diagram
    (`TauCeti.TLDiagram.circles_comp_of_stringInjective`,
    `TauCeti.TLDiagram.through_comp_of_stringInjective`,
-   `TauCeti.TLDiagram.bottomHalf_comp_of_stringInjective_val`); dual statements for pre-composing
+   `TauCeti.TLDiagram.bottomHalf_comp_val_of_stringInjective`); dual statements for pre-composing
    with a string-surjective diagram follow by vertical reflection.
 3. Every diagram `D : n → m` factors through `D.through` as `D.surjection.comp D.injection = D`
    (`TauCeti.TLDiagram.surjection_comp_injection`), where `D.surjection` is string-surjective and
@@ -36,11 +36,12 @@ diagrams under composition (`TauCeti.TLDiagram.comp`):
    of `(s₁ ≫ i₁) ≫ (s₂ ≫ i₂)` by re-factoring the middle composite `i₁ ≫ s₂`, yielding monotonic
    filtration bounds `(f ≫ g).through ≤ min f.through g.through` and the cellular multiplication
    formula (`TauCeti.TLDiagram.glue_comp_glue_of_through_eq`).
-5. **Cancellation and invertibility**: a diagram is left-cancellative (monic) if and only if it is
-   string-injective (`TauCeti.TLDiagram.stringInjective_iff_comp_injective`), right-cancellative
-   (epic) if and only if it is string-surjective
-   (`TauCeti.TLDiagram.stringSurjective_iff_comp_injective`), and two-sided invertible if and only
-   if it is an identity diagram (`TauCeti.TLDiagram.eq_id_of_comp_eq_id`).
+5. **Cancellation and invertibility**: a diagram is right-cancellative (monic) if and only if it is
+   string-injective (`TauCeti.TLDiagram.stringInjective_iff_comp_left_injective`),
+   left-cancellative (epic) if and only if it is string-surjective
+   (`TauCeti.TLDiagram.stringSurjective_iff_comp_right_injective`), two-sided inverse diagrams force
+   equal boundary counts (`TauCeti.TLDiagram.eq_of_comp_eq_id`), and the only right-invertible
+   endomorphism diagram is the identity (`TauCeti.TLDiagram.eq_id_of_comp_eq_id`).
 
 ## Main definitions
 
@@ -53,15 +54,19 @@ diagrams under composition (`TauCeti.TLDiagram.comp`):
 
 ## Main results
 
+* `TauCeti.TLDiagram.StringInjective.induction`, `TauCeti.TLDiagram.StringSurjective.induction`:
+  structural cup- and cap-peeling induction principles.
 * `TauCeti.TLDiagram.surjection_comp_injection`, `TauCeti.TLDiagram.existsUnique_factorization`:
   existence and uniqueness of through-strand factorization.
 * `TauCeti.TLDiagram.refactorization`, `TauCeti.TLDiagram.through_comp_eq`,
   `TauCeti.TLDiagram.circles_comp_eq`, `TauCeti.TLDiagram.glue_comp_glue_of_through_eq`:
   re-factorization, filtration of through strands, and cellular multiplication.
-* `TauCeti.TLDiagram.stringInjective_iff_comp_injective`,
-  `TauCeti.TLDiagram.stringSurjective_iff_comp_injective`: combinatorial characterization of
+* `TauCeti.TLDiagram.stringInjective_iff_comp_left_injective`,
+  `TauCeti.TLDiagram.stringSurjective_iff_comp_right_injective`: combinatorial characterization of
   cancellative diagrams.
-* `TauCeti.TLDiagram.eq_id_of_comp_eq_id`: the only two-sided invertible diagrams are identities.
+* `TauCeti.TLDiagram.eq_of_comp_eq_id`, `TauCeti.TLDiagram.eq_id_of_comp_eq_id`: two-sided
+  inverses force equal boundary counts, and the only right-invertible endomorphism diagram is the
+  identity.
 
 ## References
 
@@ -77,53 +82,11 @@ open Equiv
 
 namespace TauCeti
 
-/-! ### Circle-independence of cuts and gluing with circles -/
+/-! ### String-injective and string-surjective diagrams -/
 
 namespace TLDiagram
 
 variable {n m p q k k₁ k₂ : ℕ}
-
-/-- Equal diagrams have the same underlying bottom half-diagram permutation. -/
-theorem bottomHalf_val_congr {D E : TLDiagram n m} (h : D = E) :
-    D.bottomHalf.val = E.bottomHalf.val := h ▸ rfl
-
-/-- Equal diagrams have the same underlying top half-diagram permutation. -/
-theorem topHalf_val_congr {D E : TLDiagram n m} (h : D = E) :
-    D.topHalf.val = E.topHalf.val := h ▸ rfl
-
-/-- Stored circles do not affect the number of through strands. -/
-theorem through_mk_eq (x : PlanarMatching (n + m)) (c d : ℕ) :
-    (TLDiagram.mk x c).through = (TLDiagram.mk x d).through := by simp only [through_def]
-
-/-- Stored circles do not affect the underlying bottom half-diagram permutation. -/
-theorem bottomHalf_mk_val_eq (x : PlanarMatching (n + m)) (c d : ℕ) :
-    (TLDiagram.mk x c).bottomHalf.val = (TLDiagram.mk x d).bottomHalf.val := by
-  ext i; simp only [bottomHalf_apply]
-
-/-- Stored circles do not affect the underlying top half-diagram permutation. -/
-theorem topHalf_mk_val_eq (x : PlanarMatching (n + m)) (c d : ℕ) :
-    (TLDiagram.mk x c).topHalf.val = (TLDiagram.mk x d).topHalf.val := by
-  rw [topHalf_val, topHalf_val]; ext i; simp only [bottomHalf_apply, matching_verticalReflect]
-
-@[simp] theorem through_glue_mk (B : HalfDiagram n k) (T : HalfDiagram m k) (c : ℕ) :
-    (TLDiagram.mk (B.glue T) c).through = k :=
-  (through_mk_eq (B.glue T) c 0).trans (B.through_glue T)
-
-@[simp] theorem bottomHalf_glue_mk_val (B : HalfDiagram n k) (T : HalfDiagram m k) (c : ℕ) :
-    (TLDiagram.mk (B.glue T) c).bottomHalf.val = B.val :=
-  (bottomHalf_mk_val_eq (B.glue T) c 0).trans (B.bottomHalf_glue_val T)
-
-@[simp] theorem topHalf_glue_mk_val (B : HalfDiagram n k) (T : HalfDiagram m k) (c : ℕ) :
-    (TLDiagram.mk (B.glue T) c).topHalf.val = T.val :=
-  (topHalf_mk_val_eq (B.glue T) c 0).trans (B.topHalf_glue_val T)
-
-/-- Gluing the bottom and top half-diagrams of `D` recovers `D.matching`. -/
-@[simp] theorem glue_bottomHalf_topHalf (D : TLDiagram n m) :
-    D.bottomHalf.glue D.topHalf = D.matching :=
-  matching_eq_of_halves (D := ⟨D.bottomHalf.glue D.topHalf, 0⟩) (E := D)
-    (D.bottomHalf.bottomHalf_glue_val D.topHalf) (D.bottomHalf.topHalf_glue_val D.topHalf)
-
-/-! ### String-injective and string-surjective diagrams -/
 
 /-- A Temperley–Lieb diagram `D : n → m` is **string-injective** if all `n` bottom boundary points
 lie on through strands (`D.through = n`), equivalently its bottom half-diagram has no caps. -/
@@ -184,26 +147,85 @@ theorem StringSurjective.verticalReflect {D : TLDiagram n m} (h : D.StringSurjec
 
 @[simp] theorem stringInjective_id (n : ℕ) : (id n).StringInjective := through_id n
 @[simp] theorem stringSurjective_id (n : ℕ) : (id n).StringSurjective := through_id n
-@[simp] theorem stringInjective_cup : cup.StringInjective := through_zero_left cup
-@[simp] theorem stringSurjective_cap : cap.StringSurjective := through_zero_right cap
+
+/-- Every diagram with empty bottom boundary is string-injective. -/
+@[simp] theorem stringInjective_zero_left (D : TLDiagram 0 m) : D.StringInjective :=
+  through_zero_left D
+
+/-- Every diagram with empty top boundary is string-surjective. -/
+@[simp] theorem stringSurjective_zero_right (D : TLDiagram n 0) : D.StringSurjective :=
+  through_zero_right D
+
 @[simp] theorem stringInjective_cupAt (c : Fin (q + 1)) : (cupAt c).StringInjective :=
   through_cupAt c
 @[simp] theorem stringSurjective_capAt (c : Fin (q + 1)) : (capAt c).StringSurjective :=
   through_capAt c
 
-/-- An endomorphism diagram `n → n` whose strands all go through has the fully nested identity
-matching. -/
-theorem matching_eq_nested_of_through_eq {D : TLDiagram n n} (h : D.through = n) :
-    D.matching = PlanarMatching.nested n :=
-  (matching_eq_of_halves (D := D) (E := id n)
-    ((HalfDiagram.val_eq_one_iff.mpr h).trans (bottomHalf_id_val n).symm)
-    ((HalfDiagram.val_eq_one_iff.mpr h).trans (topHalf_id_val n).symm)).trans (matching_id n)
+private theorem verticalReflect_mk_nested (n c : ℕ) :
+    verticalReflect n n ⟨PlanarMatching.nested n, c⟩ = ⟨PlanarMatching.nested n, c⟩ := by
+  have hth : (verticalReflect n n ⟨PlanarMatching.nested n, c⟩).through = n := by
+    rw [through_verticalReflect, through_eq_of_matching_eq (E := id n) (matching_id n).symm,
+      through_id]
+  simpa only [circles_verticalReflect] using eq_mk_nested_of_through_eq hth
 
-/-- An endomorphism diagram `n → n` whose strands all go through is the identity matching together
-with its closed circles. -/
-theorem eq_mk_nested_of_through_eq {D : TLDiagram n n} (h : D.through = n) :
-    D = ⟨PlanarMatching.nested n, D.circles⟩ :=
-  TLDiagram.ext (matching_eq_nested_of_through_eq h) rfl
+/-- **Structural induction on string-injective diagrams**: every string-injective diagram `n → m`
+is obtained from `⟨PlanarMatching.nested n, c⟩` by post-composing finitely many elementary cups
+`cupAt`. -/
+@[elab_as_elim]
+theorem StringInjective.induction {n : ℕ}
+    {P : ∀ {m : ℕ} (D : TLDiagram n m), D.StringInjective → Prop}
+    (base : ∀ c : ℕ, P ⟨PlanarMatching.nested n, c⟩
+      (by rw [stringInjective_iff, through_eq_of_matching_eq (E := id n) (matching_id n).symm,
+            through_id]))
+    (step : ∀ {q : ℕ} (D : TLDiagram n q) (hD : D.StringInjective) (c : Fin (q + 1)),
+      P D hD → P (D.comp (cupAt c))
+        (by rw [comp_cupAt, stringInjective_iff, through_insertTopArc]; exact hD))
+    {m : ℕ} {D : TLDiagram n m} (hD : D.StringInjective) : P D hD := by
+  suffices ∀ (d : ℕ) {m : ℕ} (D : TLDiagram n m) (hD : D.StringInjective),
+      m - n = 2 * d → P D hD from
+    this ((m - n) / 2) D hD (by have := Nat.even_iff.mp hD.even_sub; omega)
+  intro d; induction d with
+  | zero =>
+    intro m D hD hd
+    obtain rfl : n = m := le_antisymm hD.le (by omega)
+    convert base D.circles using 1
+    exact eq_mk_nested_of_through_eq hD
+  | succ d ih =>
+    intro m D hD hd
+    obtain ⟨q, rfl⟩ : ∃ q, m = q + 2 := ⟨m - 2, by have := hD.le; omega⟩
+    obtain ⟨c, hc⟩ := D.topHalf.exists_apply_castSucc_eq_succ (by rw [hD.through_eq]; omega)
+    obtain ⟨D', hth', -, hD_eq⟩ := exists_comp_cupAt_of_topHalf_apply_eq hc
+    have hD' : D'.StringInjective := hth'.trans hD
+    convert step D' hD' c (ih D' hD' (by have := hD'.le; omega)) using 1
+    exact hD_eq.symm
+
+/-- **Structural induction on string-surjective diagrams**: every string-surjective diagram
+`n → m` is obtained from `⟨PlanarMatching.nested m, c⟩` by pre-composing finitely many elementary
+caps `capAt`. -/
+@[elab_as_elim]
+theorem StringSurjective.induction {m : ℕ}
+    {P : ∀ {n : ℕ} (D : TLDiagram n m), D.StringSurjective → Prop}
+    (base : ∀ c : ℕ, P ⟨PlanarMatching.nested m, c⟩
+      (by rw [stringSurjective_iff, through_eq_of_matching_eq (E := id m) (matching_id m).symm,
+            through_id]))
+    (step : ∀ {q : ℕ} (D : TLDiagram q m) (hD : D.StringSurjective) (c : Fin (q + 1)),
+      P D hD → P ((capAt c).comp D)
+        (by rw [capAt_comp, stringSurjective_iff, through_insertBottomArc]; exact hD))
+    {n : ℕ} {D : TLDiagram n m} (hD : D.StringSurjective) : P D hD := by
+  have h : ∀ {n : ℕ} (E : TLDiagram m n) (hE : E.StringInjective),
+      P (TLDiagram.verticalReflect m n E) hE.verticalReflect := by
+    intro n E hE
+    induction hE using StringInjective.induction with
+    | base c =>
+      have hv := verticalReflect_mk_nested m c
+      convert base c using 1
+    | step E' hE' c ih =>
+      have hv : TLDiagram.verticalReflect m _ (E'.comp (cupAt c)) =
+          (capAt c).comp (TLDiagram.verticalReflect m _ E') := by
+        rw [verticalReflect_comp, verticalReflect_cupAt]
+      convert step (TLDiagram.verticalReflect m _ E') hE'.verticalReflect c ih using 1
+  have hD' := h (TLDiagram.verticalReflect n m D) hD.verticalReflect
+  simpa only [verticalReflect_verticalReflect] using hD'
 
 end TLDiagram
 
@@ -258,10 +280,33 @@ def toInjection (T : HalfDiagram m k) : TLDiagram k m := ⟨(HalfDiagram.id k).g
   rw [← verticalReflect_toSurjection, TLDiagram.verticalReflect_verticalReflect]
 
 theorem toSurjection_injective : Function.Injective (@toSurjection n k) :=
-  fun _ _ h => Subtype.ext (by simpa using TLDiagram.bottomHalf_val_congr h)
+  fun _ _ h => Subtype.ext <| by
+    simpa using TLDiagram.bottomHalf_val_eq_of_matching_eq (congrArg TLDiagram.matching h)
 
 theorem toInjection_injective : Function.Injective (@toInjection m k) :=
-  fun _ _ h => Subtype.ext (by simpa using TLDiagram.topHalf_val_congr h)
+  fun _ _ h => Subtype.ext <| by
+    simpa using TLDiagram.topHalf_val_eq_of_matching_eq (congrArg TLDiagram.matching h)
+
+/-- A diagram lies in the image of `HalfDiagram.toSurjection` precisely when it is
+string-surjective and carries no closed circles. -/
+theorem exists_toSurjection_eq_iff {D : TLDiagram n k} :
+    (∃ B : HalfDiagram n k, B.toSurjection = D) ↔ D.StringSurjective ∧ D.circles = 0 := by
+  refine ⟨?_, fun ⟨hs, hc⟩ => ?_⟩
+  · rintro ⟨B, rfl⟩; exact ⟨B.stringSurjective_toSurjection, B.circles_toSurjection⟩
+  · refine ⟨⟨D.bottomHalf.val, D.bottomHalf.2.1, D.bottomHalf.2.2.trans hs⟩,
+      TLDiagram.ext_halves (by simp)
+        (by simp [TLDiagram.stringSurjective_iff_topHalf_val_eq_one.mp hs]) hc.symm⟩
+
+/-- A diagram lies in the image of `HalfDiagram.toInjection` precisely when it is
+string-injective and carries no closed circles. -/
+theorem exists_toInjection_eq_iff {D : TLDiagram k m} :
+    (∃ T : HalfDiagram m k, T.toInjection = D) ↔ D.StringInjective ∧ D.circles = 0 := by
+  refine ⟨?_, fun ⟨hi, hc⟩ => ?_⟩
+  · rintro ⟨T, rfl⟩; exact ⟨T.stringInjective_toInjection, T.circles_toInjection⟩
+  · refine ⟨⟨D.topHalf.val, D.topHalf.2.1, D.topHalf.2.2.trans hi⟩,
+      TLDiagram.ext_halves
+        (by simp [TLDiagram.stringInjective_iff_bottomHalf_val_eq_one.mp hi])
+        (by simp) hc.symm⟩
 
 end HalfDiagram
 
@@ -284,11 +329,12 @@ def injection (D : TLDiagram n m) : TLDiagram D.through m := D.topHalf.toInjecti
     D.surjection.matching = D.bottomHalf.glue (HalfDiagram.id D.through) := (rfl)
 @[simp] theorem circles_surjection (D : TLDiagram n m) : D.surjection.circles = D.circles := (rfl)
 @[simp] theorem through_surjection (D : TLDiagram n m) : D.surjection.through = D.through :=
-  through_glue_mk _ _ _
+  D.bottomHalf.through_glue (HalfDiagram.id D.through)
 @[simp] theorem bottomHalf_surjection_val (D : TLDiagram n m) :
-    D.surjection.bottomHalf.val = D.bottomHalf.val := bottomHalf_glue_mk_val _ _ _
+    D.surjection.bottomHalf.val = D.bottomHalf.val :=
+  D.bottomHalf.bottomHalf_glue_val (HalfDiagram.id D.through)
 @[simp] theorem topHalf_surjection_val (D : TLDiagram n m) : D.surjection.topHalf.val = 1 :=
-  (topHalf_glue_mk_val _ _ _).trans (HalfDiagram.id_val _)
+  (D.bottomHalf.topHalf_glue_val (HalfDiagram.id D.through)).trans (HalfDiagram.id_val _)
 @[simp] theorem stringSurjective_surjection (D : TLDiagram n m) : D.surjection.StringSurjective :=
   D.through_surjection
 
@@ -304,33 +350,34 @@ def injection (D : TLDiagram n m) : TLDiagram D.through m := D.topHalf.toInjecti
 @[simp] theorem stringInjective_injection (D : TLDiagram n m) : D.injection.StringInjective :=
   D.through_injection
 
+/-- The canonical injective factor of `D` is the injection associated with `D.topHalf`. -/
+theorem injection_eq_topHalf_toInjection (D : TLDiagram n m) :
+    D.injection = D.topHalf.toInjection := (rfl)
+
+/-- The canonical surjective factor of `D` is `D.bottomHalf.toSurjection` carrying `D.circles`
+closed circles. -/
+theorem surjection_eq_toSurjection_comp_mk_nested (D : TLDiagram n m) :
+    D.surjection = D.bottomHalf.toSurjection.comp ⟨PlanarMatching.nested D.through, D.circles⟩ := by
+  rw [comp_mk_nested]; exact TLDiagram.ext rfl (by simp)
+
 /-! ### Composition with string injections and surjections -/
 
 private theorem comp_of_stringInjective (f : TLDiagram n m) {g : TLDiagram m p}
     (hg : g.StringInjective) :
-    (f.comp g).circles = f.circles + g.circles ∧ (f.comp g).through = f.through ∧
+    (f.comp g).circles = f.circles + g.circles ∧
       (f.comp g).bottomHalf.val = f.bottomHalf.val := by
-  suffices ∀ (d : ℕ) {p : ℕ} (g : TLDiagram m p), g.StringInjective → p - m = 2 * d →
-      (f.comp g).circles = f.circles + g.circles ∧ (f.comp g).through = f.through ∧
-        (f.comp g).bottomHalf.val = f.bottomHalf.val from
-    this ((p - m) / 2) g hg (by have := Nat.even_iff.mp hg.even_sub; omega)
-  intro d; induction d with
-  | zero =>
-    intro p g hg hd; cases le_antisymm hg.le (by omega)
-    rw [eq_mk_nested_of_through_eq hg, comp_mk_nested]
-    exact ⟨rfl, through_mk_eq _ _ _, bottomHalf_mk_val_eq _ _ _⟩
-  | succ d ih =>
-    intro p g hg hd
-    obtain ⟨q, rfl⟩ : ∃ q, p = q + 2 := ⟨p - 2, by have := hg.le; omega⟩
-    obtain ⟨c, hc⟩ := g.topHalf.exists_apply_castSucc_eq_succ (by rw [hg.through_eq]; omega)
-    obtain ⟨g', hth', hcirc', rfl⟩ := exists_comp_cupAt_of_topHalf_apply_eq hc
-    have hg' : g'.StringInjective := hth'.trans hg
-    obtain ⟨ihc, iht, ihb⟩ := ih g' hg' (by have := hg'.le; omega)
+  induction hg using StringInjective.induction with
+  | base c =>
+    rw [comp_mk_nested]
+    exact ⟨rfl, bottomHalf_val_eq_of_matching_eq rfl⟩
+  | step g' _ c ih =>
     have hassoc : f.comp (g'.comp (cupAt c)) = (f.comp g').insertTopArc c := by
       rw [← comp_assoc, comp_cupAt]
-    exact ⟨by rw [hassoc, circles_insertTopArc, ihc, hcirc'],
-      by rw [hassoc, through_insertTopArc, iht],
-      by rw [bottomHalf_val_congr hassoc, bottomHalf_insertTopArc_val, ihb]⟩
+    have hcirc' : (g'.comp (cupAt c)).circles = g'.circles := by
+      rw [comp_cupAt, circles_insertTopArc]
+    exact ⟨by rw [hassoc, circles_insertTopArc, ih.1, hcirc'],
+      by rw [bottomHalf_val_eq_of_matching_eq (congrArg TLDiagram.matching hassoc),
+           bottomHalf_insertTopArc_val, ih.2]⟩
 
 /-- Post-composing with a string-injective diagram closes no new circles in the middle: the total
 circle count is simply `f.circles + g.circles`. -/
@@ -338,15 +385,15 @@ theorem circles_comp_of_stringInjective (f : TLDiagram n m) {g : TLDiagram m p}
     (hg : g.StringInjective) : (f.comp g).circles = f.circles + g.circles :=
   (comp_of_stringInjective f hg).1
 
+/-- Post-composing with a string-injective diagram preserves the bottom half-diagram. -/
+theorem bottomHalf_comp_val_of_stringInjective (f : TLDiagram n m) {g : TLDiagram m p}
+    (hg : g.StringInjective) : (f.comp g).bottomHalf.val = f.bottomHalf.val :=
+  (comp_of_stringInjective f hg).2
+
 /-- Post-composing with a string-injective diagram preserves the number of through strands. -/
 theorem through_comp_of_stringInjective (f : TLDiagram n m) {g : TLDiagram m p}
     (hg : g.StringInjective) : (f.comp g).through = f.through :=
-  (comp_of_stringInjective f hg).2.1
-
-/-- Post-composing with a string-injective diagram preserves the bottom half-diagram. -/
-theorem bottomHalf_comp_of_stringInjective_val (f : TLDiagram n m) {g : TLDiagram m p}
-    (hg : g.StringInjective) : (f.comp g).bottomHalf.val = f.bottomHalf.val :=
-  (comp_of_stringInjective f hg).2.2
+  through_eq_of_bottomHalf_val_eq (bottomHalf_comp_val_of_stringInjective f hg)
 
 /-- Pre-composing with a string-surjective diagram closes no new circles in the middle. -/
 theorem circles_comp_of_stringSurjective {f : TLDiagram n m} (g : TLDiagram m p)
@@ -355,17 +402,17 @@ theorem circles_comp_of_stringSurjective {f : TLDiagram n m} (g : TLDiagram m p)
     circles_comp_of_stringInjective _ hf.verticalReflect, circles_verticalReflect,
     circles_verticalReflect, add_comm]
 
+/-- Pre-composing with a string-surjective diagram preserves the top half-diagram. -/
+theorem topHalf_comp_val_of_stringSurjective {f : TLDiagram n m} (g : TLDiagram m p)
+    (hf : f.StringSurjective) : (f.comp g).topHalf.val = g.topHalf.val := by
+  rw [topHalf_val,
+    bottomHalf_val_eq_of_matching_eq (congrArg TLDiagram.matching (verticalReflect_comp f g)),
+    bottomHalf_comp_val_of_stringInjective _ hf.verticalReflect, ← topHalf_val]
+
 /-- Pre-composing with a string-surjective diagram preserves the number of through strands. -/
 theorem through_comp_of_stringSurjective {f : TLDiagram n m} (g : TLDiagram m p)
-    (hf : f.StringSurjective) : (f.comp g).through = g.through := by
-  rw [← through_verticalReflect (f.comp g), verticalReflect_comp,
-    through_comp_of_stringInjective _ hf.verticalReflect, through_verticalReflect]
-
-/-- Pre-composing with a string-surjective diagram preserves the top half-diagram. -/
-theorem topHalf_comp_of_stringSurjective_val {f : TLDiagram n m} (g : TLDiagram m p)
-    (hf : f.StringSurjective) : (f.comp g).topHalf.val = g.topHalf.val := by
-  rw [topHalf_val, bottomHalf_val_congr (verticalReflect_comp f g),
-    bottomHalf_comp_of_stringInjective_val _ hf.verticalReflect, ← topHalf_val]
+    (hf : f.StringSurjective) : (f.comp g).through = g.through :=
+  through_eq_of_topHalf_val_eq (topHalf_comp_val_of_stringSurjective g hf)
 
 /-- String-injective diagrams are closed under composition. -/
 theorem StringInjective.comp {f : TLDiagram n m} {g : TLDiagram m p}
@@ -385,8 +432,8 @@ with no closed circles. -/
 theorem _root_.TauCeti.HalfDiagram.toSurjection_comp_toInjection (B : HalfDiagram n k)
     (T : HalfDiagram m k) : B.toSurjection.comp T.toInjection = ⟨B.glue T, 0⟩ :=
   ext_halves
-    (by rw [bottomHalf_comp_of_stringInjective_val _ T.stringInjective_toInjection]; simp)
-    (by rw [topHalf_comp_of_stringSurjective_val _ B.stringSurjective_toSurjection]; simp)
+    (by rw [bottomHalf_comp_val_of_stringInjective _ T.stringInjective_toInjection]; simp)
+    (by rw [topHalf_comp_val_of_stringSurjective _ B.stringSurjective_toSurjection]; simp)
     (by rw [circles_comp_of_stringInjective _ T.stringInjective_toInjection]; simp)
 
 /-- **Through-strand factorization**: every Temperley–Lieb diagram `D : n → m` is the composite of
@@ -395,8 +442,8 @@ factor `D.injection : D.through → m`. -/
 @[simp]
 theorem surjection_comp_injection (D : TLDiagram n m) : D.surjection.comp D.injection = D :=
   ext_halves
-    (by rw [bottomHalf_comp_of_stringInjective_val _ D.stringInjective_injection]; simp)
-    (by rw [topHalf_comp_of_stringSurjective_val _ D.stringSurjective_surjection]; simp)
+    (by rw [bottomHalf_comp_val_of_stringInjective _ D.stringInjective_injection]; simp)
+    (by rw [topHalf_comp_val_of_stringSurjective _ D.stringSurjective_surjection]; simp)
     (by rw [circles_comp_of_stringInjective _ D.stringInjective_injection]; simp)
 
 /-- Composing a string-surjective diagram `n → k` with a string-injective diagram `k → m` produces
@@ -407,10 +454,10 @@ theorem through_comp_of_stringSurjective_of_stringInjective {s : TLDiagram n k}
   rw [through_comp_of_stringInjective s hi, hs.through_eq]
 
 /-- In any factorization `s.comp i = D` into a string-surjective `s : n → k` and a string-injective
-`i : k → m`, the intermediate strand count `k` must equal `D.through`. -/
+`i : k → m`, the through-strand count `D.through` must equal `k`. -/
 theorem through_eq_of_comp_eq {D : TLDiagram n m} {s : TLDiagram n k} {i : TLDiagram k m}
     (hs : s.StringSurjective) (hi : i.StringInjective) (h : s.comp i = D) :
-    k = D.through := by
+    D.through = k := by
   rw [← h, through_comp_of_stringSurjective_of_stringInjective hs hi]
 
 /-- Associativity and factorization rewrite `(s₁ ≫ i₁) ≫ (s₂ ≫ i₂)` by re-factoring the middle
@@ -466,12 +513,13 @@ theorem eq_surjection_and_eq_injection_of_comp_eq {D : TLDiagram n m}
     ((congrArg TLDiagram.through h).symm.trans_le (through_comp_le_right s i))
   have hcirc := congrArg TLDiagram.circles h
   rw [circles_comp_of_stringInjective s hi, hc, add_zero] at hcirc
-  exact ⟨ext_halves (by rw [← bottomHalf_comp_of_stringInjective_val s hi,
-      bottomHalf_val_congr h, bottomHalf_surjection_val])
+  exact ⟨ext_halves (by rw [← bottomHalf_comp_val_of_stringInjective s hi,
+      bottomHalf_val_eq_of_matching_eq (congrArg TLDiagram.matching h), bottomHalf_surjection_val])
     (by rw [stringSurjective_iff_topHalf_val_eq_one.mp hs, topHalf_surjection_val])
     (hcirc.trans D.circles_surjection.symm),
     ext_halves (by rw [stringInjective_iff_bottomHalf_val_eq_one.mp hi, bottomHalf_injection_val])
-    (by rw [← topHalf_comp_of_stringSurjective_val i hs, topHalf_val_congr h,
+    (by rw [← topHalf_comp_val_of_stringSurjective i hs,
+      topHalf_val_eq_of_matching_eq (congrArg TLDiagram.matching h),
       topHalf_injection_val]) (hc.trans D.circles_injection.symm)⟩
 
 /-- **Existence and uniqueness of through-strand factorization.** Every diagram `D : n → m`
@@ -485,7 +533,7 @@ theorem existsUnique_factorization (D : TLDiagram n m) :
   refine ⟨⟨D.through, D.surjection, D.injection⟩, ⟨D.stringSurjective_surjection,
     D.stringInjective_injection, D.circles_injection, D.surjection_comp_injection⟩, ?_⟩
   rintro ⟨k, s, i⟩ ⟨hs, hi, hc, hcomp⟩
-  obtain rfl : k = D.through := through_eq_of_comp_eq hs hi hcomp
+  obtain rfl : D.through = k := through_eq_of_comp_eq hs hi hcomp
   obtain ⟨rfl, rfl⟩ := eq_surjection_and_eq_injection_of_comp_eq hc hcomp; rfl
 
 /-! ### Re-factorization and cellular multiplication -/
@@ -528,22 +576,33 @@ theorem circles_comp_eq (f : TLDiagram n m) (g : TLDiagram m p) :
     glue_bottomHalf_topHalf, glue_bottomHalf_topHalf, circles_comp, circles_comp]; simp
 
 /-- **Cellular multiplication of glued half-diagrams at top through-strand count.** When two glued
-diagrams `B₁.glue T₁ : n → m` and `B₂.glue T₂ : m → p` each have `k` through strands and the middle
-pairing `T₁.toInjection ≫ B₂.toSurjection : k → k` preserves all `k` strands, their composite is
-`B₁.glue T₂` carrying `(T₁.toInjection ≫ B₂.toSurjection).circles` closed circles. -/
+diagrams `⟨B₁.glue T₁, c₁⟩ : n → m` and `⟨B₂.glue T₂, c₂⟩ : m → p` each have `k` through strands
+and the middle pairing `T₁.toInjection ≫ B₂.toSurjection : k → k` preserves all `k` strands, their
+composite is `B₁.glue T₂` carrying `c₁ + c₂ + (T₁.toInjection ≫ B₂.toSurjection).circles` closed
+circles. -/
 theorem glue_comp_glue_of_through_eq (B₁ : HalfDiagram n k) (T₁ : HalfDiagram m k)
-    (B₂ : HalfDiagram m k) (T₂ : HalfDiagram p k)
+    (B₂ : HalfDiagram m k) (T₂ : HalfDiagram p k) (c₁ c₂ : ℕ)
     (hk : (T₁.toInjection.comp B₂.toSurjection).through = k) :
-    (⟨B₁.glue T₁, 0⟩ : TLDiagram n m).comp ⟨B₂.glue T₂, 0⟩ =
-      ⟨B₁.glue T₂, (T₁.toInjection.comp B₂.toSurjection).circles⟩ := by
+    (⟨B₁.glue T₁, c₁⟩ : TLDiagram n m).comp ⟨B₂.glue T₂, c₂⟩ =
+      ⟨B₁.glue T₂, c₁ + c₂ + (T₁.toInjection.comp B₂.toSurjection).circles⟩ := by
+  have h₁ : (⟨B₁.glue T₁, c₁⟩ : TLDiagram n m) =
+      (⟨PlanarMatching.nested n, c₁⟩ : TLDiagram n n).comp (B₁.toSurjection.comp T₁.toInjection) :=
+    by simp
+  have h₂ : (⟨B₂.glue T₂, c₂⟩ : TLDiagram m p) =
+      (B₂.toSurjection.comp T₂.toInjection).comp ⟨PlanarMatching.nested p, c₂⟩ := by simp
   set c := (T₁.toInjection.comp B₂.toSurjection).circles
-  have hcomp : B₁.toSurjection.comp ⟨T₂.toInjection.matching, c⟩ =
-      (B₁.toSurjection.comp T₂.toInjection).comp ⟨PlanarMatching.nested p, c⟩ := by
-    rw [comp_assoc, comp_mk_nested, HalfDiagram.circles_toInjection, zero_add]
-  rw [← B₁.toSurjection_comp_toInjection T₁, ← B₂.toSurjection_comp_toInjection T₂, comp_assoc,
-    ← comp_assoc T₁.toInjection B₂.toSurjection T₂.toInjection, eq_mk_nested_of_through_eq hk,
-    mk_nested_comp, HalfDiagram.circles_toInjection, add_zero, hcomp,
-    B₁.toSurjection_comp_toInjection T₂, comp_mk_nested, zero_add]
+  have hmid : (B₁.toSurjection.comp T₁.toInjection).comp (B₂.toSurjection.comp T₂.toInjection) =
+      ⟨B₁.glue T₂, c⟩ := by
+    have hcomp : B₁.toSurjection.comp ⟨T₂.toInjection.matching, c⟩ =
+        (B₁.toSurjection.comp T₂.toInjection).comp ⟨PlanarMatching.nested p, c⟩ := by
+      rw [comp_assoc, comp_mk_nested, HalfDiagram.circles_toInjection, zero_add]
+    rw [comp_assoc, ← comp_assoc T₁.toInjection B₂.toSurjection T₂.toInjection,
+      eq_mk_nested_of_through_eq hk, mk_nested_comp, HalfDiagram.circles_toInjection, add_zero,
+      hcomp, B₁.toSurjection_comp_toInjection T₂, comp_mk_nested, zero_add]
+  rw [h₁, h₂, comp_assoc, ← comp_assoc (B₁.toSurjection.comp T₁.toInjection), hmid]
+  ext : 1
+  · simp
+  · simp only [mk_nested_comp, comp_mk_nested]; omega
 
 /-! ### Self-pairing, cancellation, and two-sided inverses -/
 
@@ -552,29 +611,18 @@ the identity matching on `n` strands with `2 * D.circles + (m - n) / 2` closed c
 theorem comp_verticalReflect_of_stringInjective {D : TLDiagram n m} (hD : D.StringInjective) :
     D.comp (verticalReflect n m D) =
       ⟨PlanarMatching.nested n, 2 * D.circles + (m - n) / 2⟩ := by
-  suffices ∀ (d : ℕ) {n m : ℕ} (D : TLDiagram n m), D.StringInjective → m - n = 2 * d →
-      D.comp (verticalReflect n m D) =
-        ⟨PlanarMatching.nested n, 2 * D.circles + (m - n) / 2⟩ from
-    this ((m - n) / 2) D hD (by have := Nat.even_iff.mp hD.even_sub; omega)
-  intro d; induction d with
-  | zero =>
-    intro n m D hD hd
-    obtain rfl : n = m := le_antisymm hD.le (by omega)
-    rw [eq_mk_nested_of_through_eq ((through_verticalReflect D).trans hD),
-      eq_mk_nested_of_through_eq hD, comp_mk_nested, circles_verticalReflect]
+  induction hD using StringInjective.induction with
+  | base c =>
+    rw [verticalReflect_mk_nested, comp_mk_nested]
     exact TLDiagram.ext rfl (by dsimp only; omega)
-  | succ d ih =>
-    intro n m D hD hd
-    obtain ⟨q, rfl⟩ : ∃ q, m = q + 2 := ⟨m - 2, by have := hD.le; omega⟩
-    obtain ⟨c, hc⟩ := D.topHalf.exists_apply_castSucc_eq_succ (by rw [hD.through_eq]; omega)
-    obtain ⟨D', hth', hcirc', rfl⟩ := exists_comp_cupAt_of_topHalf_apply_eq hc
-    have hD' : D'.StringInjective := hth'.trans hD
-    have hmid : (⟨PlanarMatching.nested q, 1⟩ : TLDiagram q q).comp (verticalReflect n q D') =
-        (verticalReflect n q D').comp ⟨PlanarMatching.nested n, 1⟩ := by
+  | step D' hD' c ih =>
+    have hmid : (⟨PlanarMatching.nested _, 1⟩ : TLDiagram _ _).comp (verticalReflect n _ D') =
+        (verticalReflect n _ D').comp ⟨PlanarMatching.nested n, 1⟩ := by
       rw [mk_nested_comp, comp_mk_nested, add_comm]
+    have hcirc' : (D'.comp (cupAt c)).circles = D'.circles := by
+      rw [comp_cupAt, circles_insertTopArc]
     rw [verticalReflect_comp, verticalReflect_cupAt, comp_assoc, ← comp_assoc (cupAt c) (capAt c),
-      cupAt_comp_capAt, hmid, ← comp_assoc, ih D' hD' (by have := hD'.le; omega), comp_mk_nested,
-      ← hcirc']
+      cupAt_comp_capAt, hmid, ← comp_assoc, ih, comp_mk_nested, hcirc']
     exact TLDiagram.ext rfl (by dsimp only; have := hD'.le; omega)
 
 /-- Pre-composing a string-surjective diagram `D : n → m` with its vertical reflection `m → n`
@@ -599,20 +647,6 @@ theorem StringSurjective.eq_of_comp_eq {f : TLDiagram n m} (hf : f.StringSurject
   (TLDiagram.verticalReflect m p).injective <| hf.verticalReflect.eq_of_comp_eq <| by
     rw [← verticalReflect_comp, ← verticalReflect_comp, h]
 
-/-- **The Temperley–Lieb loop-closing relation**: `capAt c ≫ cupAt c ≫ capAt c` equals `capAt c`
-with one additional closed circle. -/
-theorem capAt_comp_cupAt_comp_capAt (c : Fin (q + 1)) :
-    ((capAt c).comp (cupAt c)).comp (capAt c) =
-      (⟨PlanarMatching.nested (q + 2), 1⟩ : TLDiagram (q + 2) (q + 2)).comp (capAt c) := by
-  simp [comp_assoc]
-
-/-- Dual loop-closing relation: `cupAt c ≫ capAt c ≫ cupAt c` equals `cupAt c` with one additional
-closed circle. -/
-theorem cupAt_comp_capAt_comp_cupAt (c : Fin (q + 1)) :
-    (cupAt c).comp ((capAt c).comp (cupAt c)) =
-      (cupAt c).comp ⟨PlanarMatching.nested (q + 2), 1⟩ := by
-  simp [← comp_assoc]
-
 /-- Any diagram `g : m → p` that is not string-injective fails to cancel on the right, witnessed by
 two distinct endomorphisms of `m`. -/
 theorem exists_ne_comp_eq_of_not_stringInjective {g : TLDiagram m p}
@@ -621,10 +655,10 @@ theorem exists_ne_comp_eq_of_not_stringInjective {g : TLDiagram m p}
   have hlt : g.through < m := lt_of_le_of_ne g.through_le_bottom hg
   obtain ⟨q, rfl⟩ : ∃ q, m = q + 2 :=
     ⟨m - 2, by have := Nat.even_iff.mp g.even_bottom_sub_through; omega⟩
-  obtain ⟨c, hc⟩ := g.bottomHalf.exists_apply_castSucc_eq_succ hlt
+  obtain ⟨c, hc⟩ := g.bottomHalf.exists_apply_castSucc_eq_succ hlt.ne
   obtain ⟨g', -, -, rfl⟩ := exists_capAt_comp_of_bottomHalf_apply_eq hc
   refine ⟨(capAt c).comp (cupAt c), ⟨PlanarMatching.nested (q + 2), 1⟩, fun heq => ?_, by
-    rw [← comp_assoc, ← comp_assoc, capAt_comp_cupAt_comp_capAt]⟩
+    rw [← comp_assoc, ← comp_assoc]; congr 1; simp [comp_assoc]⟩
   have hcirc := congrArg TLDiagram.circles heq
   rw [circles_comp_of_stringInjective _ (stringInjective_cupAt c), circles_capAt,
     circles_cupAt] at hcirc
@@ -643,8 +677,9 @@ theorem exists_ne_comp_eq_of_not_stringSurjective {f : TLDiagram n m}
     verticalReflect_verticalReflect, heq]
 
 /-- **Characterization of right-cancellative diagrams**: `g : m → p` cancels on the right against
-all diagrams (or just against endomorphisms of `m`) if and only if `g` is string-injective. -/
-theorem stringInjective_iff_comp_injective {g : TLDiagram m p} :
+all diagrams if and only if `g` is string-injective (see also
+`TauCeti.TLDiagram.exists_ne_comp_eq_of_not_stringInjective` for the endomorphism witness). -/
+theorem stringInjective_iff_comp_left_injective {g : TLDiagram m p} :
     g.StringInjective ↔ ∀ ⦃n : ℕ⦄, Function.Injective (fun f : TLDiagram n m => f.comp g) :=
   ⟨fun hg _ _ _ h => hg.eq_of_comp_eq h, fun h => by
     by_contra hg
@@ -652,8 +687,9 @@ theorem stringInjective_iff_comp_injective {g : TLDiagram m p} :
     exact hne (h heq)⟩
 
 /-- **Characterization of left-cancellative diagrams**: `f : n → m` cancels on the left against
-all diagrams (or just against endomorphisms of `m`) if and only if `f` is string-surjective. -/
-theorem stringSurjective_iff_comp_injective {f : TLDiagram n m} :
+all diagrams if and only if `f` is string-surjective (see also
+`TauCeti.TLDiagram.exists_ne_comp_eq_of_not_stringSurjective` for the endomorphism witness). -/
+theorem stringSurjective_iff_comp_right_injective {f : TLDiagram n m} :
     f.StringSurjective ↔ ∀ ⦃p : ℕ⦄, Function.Injective (fun g : TLDiagram m p => f.comp g) :=
   ⟨fun hf _ _ _ h => hf.eq_of_comp_eq h, fun h => by
     by_contra hf
@@ -681,8 +717,13 @@ theorem eq_id_of_comp_eq_id {f g : TLDiagram n n} (h : f.comp g = id n) : f = id
 
 /-- The Temperley–Lieb generator `e₁ = cap ≫ cup : 2 → 2` has `0` through strands, canonical
 surjection `cap : 2 → 0`, and canonical injection `cup : 0 → 2`. -/
-example : (cap.comp cup).through = 0 := by
-  rw [through_comp_of_stringInjective cap stringInjective_cup, through_zero_right]
+example :
+    (⟨(cap.comp cup).through, (cap.comp cup).surjection, (cap.comp cup).injection⟩ :
+      Σ k : ℕ, TLDiagram 2 k × TLDiagram k 2) = ⟨0, cap, cup⟩ :=
+  (existsUnique_factorization (cap.comp cup)).unique
+    ⟨(cap.comp cup).stringSurjective_surjection, (cap.comp cup).stringInjective_injection,
+      (cap.comp cup).circles_injection, (cap.comp cup).surjection_comp_injection⟩
+    ⟨stringSurjective_zero_right cap, stringInjective_zero_left cup, circles_cup, rfl⟩
 
 /-- While `cap : 2 → 0` is string-surjective (hence left-cancellative), it is not string-injective
 and fails right-cancellation: `(cap ≫ cup) ≫ cap = ⟨nested 2, 1⟩ ≫ cap` even though `cap ≫ cup`
@@ -690,9 +731,10 @@ has `0` circles and `⟨nested 2, 1⟩` has `1`. -/
 example : ((cap.comp cup).comp cap) =
     (⟨PlanarMatching.nested 2, 1⟩ : TLDiagram 2 2).comp cap ∧
     cap.comp cup ≠ ⟨PlanarMatching.nested 2, 1⟩ :=
-  ⟨by simpa using capAt_comp_cupAt_comp_capAt (0 : Fin 1), fun h => by
+  ⟨by simp [comp_assoc, cup_comp_cap], fun h => by
     have hc := congrArg TLDiagram.circles h
-    rw [circles_comp_of_stringInjective _ stringInjective_cup, circles_cap, circles_cup] at hc
+    rw [circles_comp_of_stringInjective _ (stringInjective_zero_left cup), circles_cap,
+      circles_cup] at hc
     dsimp only at hc; omega⟩
 
 end TLDiagram

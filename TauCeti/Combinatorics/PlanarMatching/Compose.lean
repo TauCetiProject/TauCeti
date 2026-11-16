@@ -58,136 +58,6 @@ open Equiv
 
 namespace TauCeti
 
-namespace PlanarMatching
-
-/-- Transport commutes with juxtaposition of planar matchings. -/
-theorem cast_append {k k' l l' : ℕ} (hk : k = k') (hl : l = l')
-    (x : PlanarMatching k) (y : PlanarMatching l) :
-    (cast hk x).append (cast hl y) = cast (congrArg₂ (· + ·) hk hl) (x.append y) := by
-  subst hk hl; simp
-
-/-- Transport commutes with contracting consecutive boundary points. -/
-theorem cast_contract {k k' : ℕ} (h : k = k') (x : PlanarMatching (k + 2)) (a : Fin (k + 1)) :
-    (cast (congrArg (· + 2) h) x).contract (Fin.cast (congrArg (· + 1) h) a) =
-      cast h (x.contract a) := by
-  subst h; simp
-
-private theorem pv_reflect {K : ℕ} (x : PlanarMatching K) {q : ℕ} (hq : q < K) :
-    pv (reflect K x) q = K - 1 - pv x (K - 1 - q) := by
-  have hrev : (⟨q, hq⟩ : Fin K) = Fin.rev ⟨K - 1 - q, by omega⟩ := by
-    ext; simp only [Fin.val_rev]; omega
-  rw [pv_of_lt _ hq, pv_of_lt x (by omega), hrev, reflect_apply_val_apply, Fin.val_rev]; omega
-
-/-- Reflecting a juxtaposition reverses the order of the two factors and reflects each. -/
-theorem reflect_append {k l : ℕ} (x : PlanarMatching k) (y : PlanarMatching l) :
-    reflect (k + l) (x.append y) = cast (Nat.add_comm l k) ((reflect l y).append (reflect k x)) :=
-  ext_pv fun q hq => by
-    rw [pv_reflect _ hq, pv_cast]
-    by_cases hql : q < l
-    · have _ := pv_lt y (q := l - 1 - q) (by omega)
-      rw [pv_append_right _ _ (by omega) (by omega), pv_append_left _ _ hql,
-        pv_reflect _ hql, show k + l - 1 - q - k = l - 1 - q by omega]; omega
-    · have _ := pv_lt x (q := k + l - 1 - q) (by omega)
-      rw [pv_append_left _ _ (by omega), pv_append_right _ _ (by omega) (by omega),
-        pv_reflect _ (by omega), show k - 1 - (q - l) = k + l - 1 - q by omega]; omega
-
-/-- Contracting a reflected matching at `Fin.rev a` is reflecting the contraction at `a`. -/
-theorem reflect_contract {k : ℕ} (x : PlanarMatching (k + 2)) (a : Fin (k + 1)) :
-    (reflect (k + 2) x).contract (Fin.rev a) = reflect k (x.contract a) :=
-  ext_pv fun q hq => by
-    have _ := a.isLt
-    have hskip : k + 2 - 1 - skipN (Fin.rev a) q = skipN a (k - 1 - q) := by
-      simp only [skipN, Fin.val_rev]; split_ifs <;> omega
-    let s := skipN a (k - 1 - q)
-    have hs : s < k + 2 ∧ s ≠ a ∧ s ≠ (a : ℕ) + 1 := by
-      simp only [s, skipN]
-      exact ⟨by split_ifs <;> omega, by split_ifs <;> omega, by split_ifs <;> omega⟩
-    have _ := pv_lt x hs.1; have _ := pv_lt x (q := a) (by omega)
-    have _ := pv_lt x (q := (a : ℕ) + 1) (by omega)
-    have _ := pv_ne x (q := a) (by omega); have _ := pv_ne x (q := (a : ℕ) + 1) (by omega)
-    have _ : pv x s = a → pv x ((a : ℕ) + 1) ≠ a := fun h h' =>
-      hs.2.2 ((pv_pv x hs.1).symm.trans ((congrArg (pv x) (h.trans h'.symm)).trans
-        (pv_pv x (by omega))))
-    have _ : pv x s = (a : ℕ) + 1 → pv x a ≠ (a : ℕ) + 1 := fun h h' =>
-      hs.2.1 ((pv_pv x hs.1).symm.trans ((congrArg (pv x) (h.trans h'.symm)).trans
-        (pv_pv x (by omega))))
-    have hjoin : joinN (reflect (k + 2) x) (Fin.rev a) (k + 2 - 1 - pv x s) =
-        k + 2 - 1 - joinN x a (pv x s) := by
-      simp only [joinN, Fin.val_rev]
-      rw [pv_reflect _ (by omega), pv_reflect _ (by omega),
-        show k + 2 - 1 - (k + 1 - ((a : ℕ) + 1) + 1) = a by omega,
-        show k + 2 - 1 - (k + 1 - ((a : ℕ) + 1)) = (a : ℕ) + 1 by omega]
-      split_ifs <;> omega
-    have hne : joinN x a (pv x s) < k + 2 ∧ joinN x a (pv x s) ≠ a ∧
-        joinN x a (pv x s) ≠ (a : ℕ) + 1 := by
-      simp only [joinN]
-      exact ⟨by split_ifs <;> omega, by split_ifs <;> omega, by split_ifs <;> omega⟩
-    rw [pv_contract _ _ hq, pv_reflect _ hq, pv_contract _ _ (by omega),
-      pv_reflect _ (by simp only [skipN, Fin.val_rev]; split_ifs <;> omega), hskip, hjoin]
-    suffices ∀ w < k + 2, w ≠ a → w ≠ (a : ℕ) + 1 →
-        unskipN (Fin.rev a) (k + 2 - 1 - w) = k - 1 - unskipN a w from
-      this _ hne.1 hne.2.1 hne.2.2
-    intro w _ _ _; simp only [unskipN, Fin.val_rev]; split_ifs <;> omega
-
-private theorem reflect_glueMiddle_aux {n p : ℕ} :
-    ∀ (m : ℕ) (x : PlanarMatching (n + m + (m + p))),
-      glueMiddle m (cast (by omega) (reflect (n + m + (m + p)) x)) =
-        cast (Nat.add_comm n p) (reflect (n + p) (glueMiddle m x)) ∧
-      glueMiddleCircles (n := p) (p := n) m (cast (by omega) (reflect (n + m + (m + p)) x)) =
-        glueMiddleCircles (n := n) (p := p) m x
-  | 0, x => ⟨by simp [← cast_reflect], rfl⟩
-  | m + 1, x => by
-    let y : PlanarMatching (n + m + (m + p) + 2) := cast (by omega) x
-    let a : Fin (n + m + (m + p) + 1) := ⟨n + m, by omega⟩
-    have hy : cast (k' := p + m + (m + n) + 2) (by omega)
-        (cast (k' := p + (m + 1) + (m + 1 + n)) (by omega)
-          (reflect (n + (m + 1) + (m + 1 + p)) x)) =
-        cast (k' := p + m + (m + n) + 2) (by omega) (reflect (n + m + (m + p) + 2) y) := by
-      simp [y, ← cast_reflect]
-    have hrev : (⟨p + m, by omega⟩ : Fin (p + m + (m + n) + 1)) =
-        Fin.cast (by omega) (Fin.rev a) := by ext; simp only [a, Fin.val_cast, Fin.val_rev]; omega
-    have hc : (cast (k' := p + m + (m + n) + 2) (by omega)
-        (reflect (n + m + (m + p) + 2) y)).contract ⟨p + m, by omega⟩ =
-        cast (k' := p + m + (m + n)) (by omega) (reflect (n + m + (m + p)) (y.contract a)) := by
-      rw [hrev, cast_contract (by omega), reflect_contract]
-    have hind : ((cast (k' := p + m + (m + n) + 2) (by omega)
-        (reflect (n + m + (m + p) + 2) y)).1.val ⟨p + m, by omega⟩ = ⟨p + m + 1, by omega⟩) ↔
-        y.1.val a.castSucc = a.succ := by
-      have h₁ : ((cast (k' := p + m + (m + n) + 2) (by omega)
-          (reflect (n + m + (m + p) + 2) y)).1.val ⟨p + m, by omega⟩ = ⟨p + m + 1, by omega⟩) ↔
-          pv (reflect (n + m + (m + p) + 2) y) (p + m) = p + m + 1 := by
-        rw [Fin.ext_iff, ← pv_of_lt _ (by omega), pv_cast]
-      have h₂ : (y.1.val a.castSucc = a.succ) ↔ pv y a = (a : ℕ) + 1 := by
-        rw [← Fin.val_castSucc a, pv_coe, Fin.ext_iff, Fin.val_succ, Fin.val_castSucc]
-      rw [h₁, h₂, pv_reflect _ (by omega)]
-      dsimp only [a]
-      rw [show n + m + (m + p) + 2 - 1 - (p + m) = n + m + 1 by omega]
-      have _ := pv_lt y (q := n + m + 1) (by omega)
-      refine ⟨fun h => ?_, fun h => ?_⟩
-      · have hp := pv_pv y (q := n + m + 1) (by omega)
-        rwa [show pv y (n + m + 1) = n + m by omega] at hp
-      · have hp := pv_pv y (q := n + m) (by omega)
-        rw [h] at hp; omega
-    obtain ⟨ih₁, ih₂⟩ := reflect_glueMiddle_aux m (y.contract a)
-    exact ⟨by rw [glueMiddle_succ, glueMiddle_succ, hy, hc, ih₁],
-      by rw [glueMiddleCircles_succ (n := p) (p := n), glueMiddleCircles_succ (n := n) (p := p),
-           hy, hc, ih₂]; simp only [hind]; rfl⟩
-
-/-- Gluing across the middle commutes with reflection, swapping the two outer boundary sizes. -/
-theorem reflect_glueMiddle {n p : ℕ} (m : ℕ) (x : PlanarMatching (n + m + (m + p))) :
-    glueMiddle m (cast (by omega) (reflect (n + m + (m + p)) x)) =
-      cast (Nat.add_comm n p) (reflect (n + p) (glueMiddle m x)) :=
-  (reflect_glueMiddle_aux m x).1
-
-/-- Reflecting a planar matching before gluing across the middle closes the same number of
-circles. -/
-theorem glueMiddleCircles_reflect {n p : ℕ} (m : ℕ) (x : PlanarMatching (n + m + (m + p))) :
-    glueMiddleCircles (n := p) (p := n) m (cast (by omega) (reflect (n + m + (m + p)) x)) =
-      glueMiddleCircles (n := n) (p := p) m x :=
-  (reflect_glueMiddle_aux m x).2
-
-end PlanarMatching
-
 namespace TLDiagram
 
 variable {n m p : ℕ}
@@ -245,22 +115,19 @@ theorem mk_nested_comp (c : ℕ) (f : TLDiagram n m) :
 
 /-- **Vertical reflection is contravariant on composition**: turning a stacked composite `f ≫ g`
 upside down places `f` turned upside down on top of `g` turned upside down. -/
+@[simp]
 theorem verticalReflect_comp (f : TLDiagram n m) (g : TLDiagram m p) :
     verticalReflect n p (f.comp g) = (verticalReflect m p g).comp (verticalReflect n m f) := by
   have happ : (verticalReflect m p g).matching.append (verticalReflect n m f).matching =
       PlanarMatching.cast (by omega)
         (PlanarMatching.reflect (n + m + (m + p)) (f.matching.append g.matching)) := by
-    simp [PlanarMatching.cast_append, PlanarMatching.reflect_append]
+    simp [PlanarMatching.append_cast, PlanarMatching.reflect_append]
   ext : 1
-  · rw [matching_comp, happ, PlanarMatching.reflect_glueMiddle, matching_verticalReflect,
+  · rw [matching_comp, happ, PlanarMatching.glueMiddle_reflect, matching_verticalReflect,
       matching_comp]
   · rw [circles_verticalReflect, circles_comp, circles_comp, circles_verticalReflect,
       circles_verticalReflect, happ, PlanarMatching.glueMiddleCircles_reflect]
     omega
-
-private theorem val_mk_eq_mk_iff {K : ℕ} (x : PlanarMatching K) {q r : ℕ} (hq : q < K)
-    (hr : r < K) : x.1.val ⟨q, hq⟩ = ⟨r, hr⟩ ↔ PlanarMatching.pv x q = r := by
-  rw [PlanarMatching.pv_of_lt x hq, Fin.ext_iff]
 
 private theorem pv_cup_matching {q : ℕ} (hq : q < 2) :
     PlanarMatching.pv cup.matching q = 1 - q := by
@@ -285,7 +152,7 @@ theorem cup_comp_cap : cup.comp cap = ⟨(id 0).matching, 1⟩ := by
   · exact PlanarMatching.ext fun a => a.elim0
   rw [circles_comp, circles_cup, circles_cap, PlanarMatching.glueMiddleCircles_succ,
     PlanarMatching.glueMiddleCircles_succ, PlanarMatching.glueMiddleCircles_zero]
-  simp only [val_mk_eq_mk_iff, PlanarMatching.pv_cast]
+  simp only [PlanarMatching.val_mk_eq_mk_iff, PlanarMatching.pv_cast]
   simp [PlanarMatching.pv_contract, PlanarMatching.skipN, PlanarMatching.joinN,
     PlanarMatching.unskipN, PlanarMatching.pv_append_left, PlanarMatching.pv_append_right,
     pv_cup_matching, pv_cap_matching]
@@ -319,7 +186,7 @@ example : (TLDiagram.cap.comp TLDiagram.cup).comp (TLDiagram.cap.comp TLDiagram.
       TLDiagram.circles_cup, PlanarMatching.glueMiddleCircles_zero,
       PlanarMatching.glueMiddleCircles_succ, PlanarMatching.glueMiddleCircles_succ,
       PlanarMatching.glueMiddleCircles_zero]
-    simp only [TLDiagram.val_mk_eq_mk_iff, PlanarMatching.pv_cast]
+    simp only [PlanarMatching.val_mk_eq_mk_iff, PlanarMatching.pv_cast]
     simp [PlanarMatching.pv_contract, PlanarMatching.skipN, PlanarMatching.joinN,
       PlanarMatching.unskipN, PlanarMatching.pv_append_left, PlanarMatching.pv_append_right,
       TLDiagram.pv_cup_matching, TLDiagram.pv_cap_matching]
