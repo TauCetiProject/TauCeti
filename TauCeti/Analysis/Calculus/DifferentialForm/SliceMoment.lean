@@ -54,20 +54,20 @@ Suppose that `T` vanishes on `E × (ℂ \ K)` for a compact set `K`. Then:
   `(v, 0)`. For `g = wᵏ` this is `dM_k = π_*(k w^(k-1) dw ∧ T)`
   (`TauCeti.fderiv_sliceMoment_pow_apply`).
 
-Two consequences of closedness concern the flux `M₀(z) = ∫ dμ_z` and the pairing of `T` with
-forms pulled back from the base, when `E` is two-dimensional with basis `b`:
+Further results concern the flux `M₀(z) = ∫ dμ_z` and the pairing of `T` with forms pulled back
+from the base, when `E` is two-dimensional with basis `b`:
 
-* the slice moment of a constant weight, in particular the flux, does not depend on the base point
-  (`TauCeti.sliceMoment_const_eq_sliceMoment_const`);
-* for a compactly supported base two-form `β`, the integral of `T ∧ π^*β` over `E × ℂ` is
-  `∫ M₀ β` (`TauCeti.integral_wedge_compContinuousLinearMap_fst`), and for a compactly supported
-  one-form `η` on `E × ℂ`, `∫ T ∧ (c π^*β + dη) = c M₀ ∫ β`
-  (`TauCeti.integral_wedge_smul_compContinuousLinearMap_fst_add_extDeriv`). When `β` is the area
-  form of the curve and `c π^*β + dη` tames the almost complex structure, this is the product-chart
-  form of the pairing `T(Ω) = c m area(C)` of a closed current of transverse flux `m` with a
-  taming form; the global identity follows by summing over a partition of unity on `C`, which is
-  not done here. That pairing controls the mass of an approximately positive current
-  (`TauCeti.AlmostComplexStructure.integral_norm_le_div_of_integral_infDist_le`).
+* if `T` is `C¹` and closed, the slice moment of a constant weight, in particular the flux, does
+  not depend on the base point (`TauCeti.sliceMoment_const_eq_sliceMoment_const`);
+* for any continuous `T` and a compactly supported base two-form `β`, the integral of `T ∧ π^*β`
+  over `E × ℂ` is `∫ M₀ β` (`TauCeti.integral_wedge_compContinuousLinearMap_fst`);
+* if moreover `T` is `C¹` and closed, then for a compactly supported `C¹` one-form `η` on
+  `E × ℂ`, `∫ T ∧ (c π^*β + dη) = c M₀ ∫ β`
+  (`TauCeti.integral_wedge_smul_compContinuousLinearMap_fst_add_extDeriv`): closedness makes the
+  flux constant and kills the exact term. When `β` is the area form of the curve and
+  `c π^*β + dη` tames the almost complex structure, this is the product-chart form of the pairing
+  `T(Ω) = c m area(C)` of a closed current of transverse flux `m` with a taming form; the global
+  identity follows by summing over a partition of unity on `C`, which is not done here.
 
 Top-degree coefficients on `E × ℂ` are taken on the product frame `(b₀, 0), (b₁, 0), (0, 1),
 (0, i)`, `(b.prod Complex.basisOneI).reindex finSumFinEquiv`, and integrated against its Haar
