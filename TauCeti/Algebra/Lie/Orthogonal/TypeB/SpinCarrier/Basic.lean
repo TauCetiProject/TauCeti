@@ -126,7 +126,7 @@ noncomputable def basisReflection (i : Fin (n + 1)) : Equiv.Perm (Fin (dimension
   (signSet n).symm.permCongr (DynkinType.typeBSpinReflection i)
 
 /-- Enumerating a reflected basis index recovers the reflected sign set. -/
-@[simp]
+@[simp, grind =]
 theorem signSet_basisReflection (i : Fin (n + 1)) (a : Fin (dimension n)) :
     signSet n (basisReflection n i a) = DynkinType.typeBSpinReflection i (signSet n a) :=
   Equiv.apply_symm_apply _ _
@@ -159,7 +159,7 @@ theorem foldl_basisReflection (l : List (Fin (n + 1))) (t : Finset (Fin (n + 1))
   List.foldl_hom _ fun t j ↦ basisReflection_signSet_symm n j t
 
 /-- A reindexed lattice-basis vector is the exterior basis vector of its sign set. -/
-@[simp]
+@[simp, grind =]
 theorem coe_latticeBasis (i : Fin (dimension n)) :
     ((latticeBasis n i : (lattice n).toAddSubgroup) :
         ExteriorAlgebra ℚ (polarization n).W) =
