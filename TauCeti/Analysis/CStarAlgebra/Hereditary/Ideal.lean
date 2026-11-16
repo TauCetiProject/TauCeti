@@ -26,10 +26,10 @@ via `K ↦ closure (span ℂ (A · K · A))` (`NonUnitalStarSubalgebra.inducedCl
 `J ↦ J ∩ B` (`NonUnitalStarSubalgebra.restrictIdeal`), packaged as
 `NonUnitalStarSubalgebra.closedIdealOrderIso`.
 
-At the single-element level, an element `a : A` is *full* (`TauCeti.CStarAlgebra.IsFull`, defined in
-`TauCeti.Analysis.CStarAlgebra.Ideal`) when the closed two-sided ideal it generates is all of `A`,
-whereas `a` is *strictly positive* (`TauCeti.CStarAlgebra.IsStrictlyPositive`) when `0 ≤ a` and the
-hereditary C⋆-subalgebra `closure {a * x * a | x : A}` it generates is all of `A`. In unital
+At the single-element level, an element `a : A` is *full* (`TauCeti.IsFull`, defined in
+`TauCeti.Topology.Algebra.Ring.TwoSidedIdeal`) when the closed two-sided ideal it generates is all
+of `A`, whereas `a` is *strictly positive* (`TauCeti.CStarAlgebra.IsStrictlyPositive`) when `0 ≤ a`
+and the hereditary C⋆-subalgebra `closure {a * x * a | x : A}` it generates is all of `A`. In unital
 C⋆-algebras, strict positivity coincides with `0 ≤ a ∧ IsUnit a`
 (`TauCeti.CStarAlgebra.isStrictlyPositive_iff_of_unital`). Every strictly positive element is full
 (`TauCeti.CStarAlgebra.IsStrictlyPositive.isFull`), while `CStarMatrix (Fin 2) (Fin 2) ℂ` admits a
@@ -111,12 +111,7 @@ namespace Ideal
 theorem mem_of_star_mul_self_mem_of_isClosed {A : Type*} [CStarAlgebra A]
     (I : Ideal A) [hI : IsClosed (I : Set A)] {x : A} (hx : star x * x ∈ I) :
     x ∈ I := by
-  let L : ClosedSubmodule ℂ A :=
-    { carrier := I
-      add_mem' := I.add_mem
-      zero_mem' := I.zero_mem
-      smul_mem' := fun c y hy => algebraMap_smul A c y ▸ I.mul_mem_left (algebraMap ℂ A c) hy
-      isClosed' := hI }
+  let L : ClosedSubmodule ℂ A := ⟨I.restrictScalars ℂ, hI⟩
   exact L.mem_of_star_mul_self_mem (fun a _ hy => I.mul_mem_left a hy) hx
 
 @[simp, grind =]
@@ -138,12 +133,7 @@ hereditary in the spectral order. -/
 theorem isHereditary_of_isClosed {A : Type*} [CStarAlgebra A] [PartialOrder A]
     [StarOrderedRing A] (I : Ideal A) [hI : IsClosed (I : Set A)] :
     TauCeti.CStarAlgebra.IsHereditary I := by
-  let L : ClosedSubmodule ℂ A :=
-    { carrier := I
-      add_mem' := I.add_mem
-      zero_mem' := I.zero_mem
-      smul_mem' := fun c x hx => algebraMap_smul A c x ▸ I.mul_mem_left (algebraMap ℂ A c) hx
-      isClosed' := hI }
+  let L : ClosedSubmodule ℂ A := ⟨I.restrictScalars ℂ, hI⟩
   exact (TauCeti.CStarAlgebra.isHereditary_congr (s₁ := L) (s₂ := I) rfl).mp
     (L.isHereditary_of_mul_mem fun a _ hx => I.mul_mem_left a hx)
 
