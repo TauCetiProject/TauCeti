@@ -161,8 +161,9 @@ def smoothSingularChainHomotopyEquivOfContraction {F : ℝ × M → M}
           exact ((SSet.chainComplexFunctor C).obj R).map_id _)
   homotopyInvHomId :=
     (Homotopy.ofEq (by rw [← Functor.map_comp, smoothSingularSubcomplexConst_comp_ι])).trans <|
-      ((homotopyOfRealProd (f := ContinuousMap.id M) (g := ⟨fun _ ↦ c, continuous_const⟩)
-          hF.continuous h₀ h₁).toSSet.chainComplexMap R).symm.trans <|
+      ((TopCat.Homotopy.toSSet (f := TopCat.ofHom (ContinuousMap.id M))
+          (g := TopCat.ofHom ⟨fun _ ↦ c, continuous_const⟩)
+          (homotopyOfRealProd hF.continuous h₀ h₁)).chainComplexMap R).symm.trans <|
         Homotopy.ofEq (by
           rw [TopCat.ofHom_id, CategoryTheory.Functor.map_id]
           exact ((SSet.chainComplexFunctor C).obj R).map_id _)

@@ -10,6 +10,7 @@ public import Mathlib.Topology.Homotopy.TopCat.ToSSet
 public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
 public import TauCeti.AlgebraicTopology.TopologicalSimplex
 public import TauCeti.Geometry.Manifold.SmoothSingular.Basic
+public import TauCeti.Topology.Homotopy.RealProd
 
 /-!
 # Homotopy invariance of smooth singular homology
@@ -45,7 +46,6 @@ Mayer–Vietoris induction; its consequences for smoothly contractible manifolds
 
 ## Main definitions and results
 
-* `TauCeti.homotopyOfRealProd`: the homotopy given by a continuous map on `ℝ × X`.
 * `TauCeti.smoothSingularSubcomplexHomotopy`: a smooth homotopy induces a simplicial homotopy of
   the maps of smooth singular subcomplexes, restricting the homotopy of singular simplicial sets.
 * `TauCeti.smoothSingularChainHomotopy`: the induced chain homotopy of smooth singular chains.
@@ -112,25 +112,6 @@ theorem range_whiskerRight_ι_comp_toSSet_h_le_smoothSingularSubcomplex
   exact hF.comp_contMDiffOnSubset
     ((hA.contMDiffOnSubset (s := fullSimplex n)).prodMk
       (SmoothSimplex.contMDiffOnSubset_toContinuousMap (I := I) σ))
-
-/-- The homotopy from `f` to `g` obtained by restricting a continuous map `F : ℝ × X → Y`, with
-`F (0, ·) = f` and `F (1, ·) = g`, to `[0, 1] × X`. The smooth homotopies of this file are of this
-form, with `F` smooth on all of `ℝ × M`. -/
-def homotopyOfRealProd {X Y : Type u} [TopologicalSpace X] [TopologicalSpace Y] {f g : C(X, Y)}
-    {F : ℝ × X → Y} (hF : Continuous F) (h₀ : ∀ x, F (0, x) = f x) (h₁ : ∀ x, F (1, x) = g x) :
-    TopCat.Homotopy (TopCat.ofHom f) (TopCat.ofHom g) where
-  toFun p := F (p.1, p.2)
-  continuous_toFun := hF.comp (continuous_subtype_val.prodMap continuous_id)
-  map_zero_left := h₀
-  map_one_left := h₁
-
-/-- The homotopy obtained by restricting `F` to `[0, 1] × X` takes the values of `F`. -/
-@[simp]
-theorem homotopyOfRealProd_apply {X Y : Type u} [TopologicalSpace X] [TopologicalSpace Y]
-    {f g : C(X, Y)} {F : ℝ × X → Y} (hF : Continuous F) (h₀ : ∀ x, F (0, x) = f x)
-    (h₁ : ∀ x, F (1, x) = g x) (p : unitInterval × X) :
-    homotopyOfRealProd hF h₀ h₁ p = F (p.1, p.2) :=
-  (rfl)
 
 variable (hf : ContMDiff I J ∞ f) (hg : ContMDiff I J ∞ g)
   (H : TopCat.Homotopy (TopCat.ofHom ⟨f, hf.continuous⟩) (TopCat.ofHom ⟨g, hg.continuous⟩))
