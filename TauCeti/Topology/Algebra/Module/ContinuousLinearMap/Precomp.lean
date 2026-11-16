@@ -20,10 +20,8 @@ precomposition.
 
 * `ContinuousLinearMap.continuous_precomp`: for `L : E →L[𝕜] F`, the map `f ↦ f ∘ L` on
   `F →L[𝕜] G` is continuous.
-* `ContinuousLinearEquiv.toContinuousLinearMap_arrowCongr_refl` and
-  `ContinuousLinearEquiv.toContinuousLinearMap_arrowCongr_refl_symm`: `e.arrowCongr (.refl 𝕜 G)`
-  is `precomp G e.symm.toContinuousLinearMap`, and its inverse is
-  `precomp G e.toContinuousLinearMap`.
+* `ContinuousLinearEquiv.toContinuousLinearMap_arrowCongr_refl`: `e.arrowCongr (.refl 𝕜 G)` is
+  `precomp G e.symm.toContinuousLinearMap`.
 -/
 
 public section
@@ -62,13 +60,8 @@ variable {𝕜 E F G : Type*} [NormedField 𝕜]
 @[simp]
 theorem toContinuousLinearMap_arrowCongr_refl (e : E ≃L[𝕜] F) :
     (e.arrowCongr (ContinuousLinearEquiv.refl 𝕜 G)).toContinuousLinearMap =
-      ContinuousLinearMap.precomp G e.symm.toContinuousLinearMap :=
-  (rfl)
-
-/-- The inverse of `e.arrowCongr (.refl 𝕜 G)` is precomposition with `e`. -/
-theorem toContinuousLinearMap_arrowCongr_refl_symm (e : E ≃L[𝕜] F) :
-    (e.arrowCongr (ContinuousLinearEquiv.refl 𝕜 G)).symm.toContinuousLinearMap =
-      ContinuousLinearMap.precomp G e.toContinuousLinearMap :=
-  (rfl)
+      ContinuousLinearMap.precomp G e.symm.toContinuousLinearMap := by
+  ext f x
+  simp
 
 end ContinuousLinearEquiv

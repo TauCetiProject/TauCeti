@@ -87,16 +87,18 @@ theorem le_iff (t : TopologicalSpace F) [@IsTopologicalAddGroup F t _]
     exact sInf_le ⟨iSup_le fun i ↦ continuous_iff_coinduced_le.1 (h i),
       inferInstance, inferInstance, inferInstance⟩
 
-/-- When the source spaces are topological additive groups, a real seminorm on `F` is continuous
-for the final locally convex topology if and only if its composites with all generating maps are
-continuous. For a seminorm over another scalar ring, apply this to `q.restrictScalars ℝ`. -/
-theorem continuous_seminorm_iff [∀ i, IsTopologicalAddGroup (E i)] (q : Seminorm ℝ F) :
+/-- When the source spaces are topological additive groups, a `𝕜`-seminorm on `F` (for a
+seminormed ring `𝕜` compatible with `ℝ`) is continuous for the final locally convex topology if
+and only if its composites with all generating maps are continuous. -/
+theorem continuous_seminorm_iff {𝕜 : Type*} [SeminormedRing 𝕜] [SMul ℝ 𝕜] [NormSMulClass ℝ 𝕜]
+    [NormOneClass 𝕜] [Module 𝕜 F] [IsScalarTower ℝ 𝕜 F] [∀ i, IsTopologicalAddGroup (E i)]
+    (q : Seminorm 𝕜 F) :
     @Continuous F ℝ (finalLocallyConvexTopology f) inferInstance q ↔
       ∀ i, Continuous (q ∘ f i) := by
   refine ⟨fun hq i ↦ by
     let := finalLocallyConvexTopology f
     exact hq.comp (continuous f i), fun hq ↦ ?_⟩
-  let p : SeminormFamily ℝ F Unit := fun _ ↦ q
+  let p : SeminormFamily ℝ F Unit := fun _ ↦ q.restrictScalars ℝ
   let t : TopologicalSpace F := p.moduleFilterBasis.topology
   have hp : WithSeminorms p := ⟨rfl⟩
   have : IsTopologicalAddGroup F := hp.isTopologicalAddGroup
@@ -104,7 +106,7 @@ theorem continuous_seminorm_iff [∀ i, IsTopologicalAddGroup (E i)] (q : Semino
   have : LocallyConvexSpace ℝ F := hp.toLocallyConvexSpace
   have hle : finalLocallyConvexTopology f ≤ t :=
     (le_iff f t).2 fun i ↦ hp.continuous_of_continuous_comp (f i) fun _ ↦ hq i
-  exact @Continuous.comp F F ℝ (finalLocallyConvexTopology f) t inferInstance id q
+  exact @Continuous.comp F F ℝ (finalLocallyConvexTopology f) t inferInstance id (p ())
     (hp.continuous_seminorm ()) (@continuous_id_of_le F (finalLocallyConvexTopology f) t hle)
 
 section UniversalProperty

@@ -47,8 +47,8 @@ on the polar of a closed absolutely convex zero-neighbourhood via the bipolar th
 (`TauCeti.dualProjectiveLimit.forall_mem_image_precomp_polar_norm_evalEquiv_le_one_iff_mem`). Since
 `lim_j B j′` is metrizable, its strong dual is complete, whence `L` is complete
 (`TauCeti.completeSpace_of_isWeaklyCompact`), and transporting `evalEquiv` along `strongDualEquiv`
-identifies `L` with its strong bidual (`TauCeti.strongBidualEquiv`), naturally in continuous linear
-maps (`TauCeti.precomp_precomp_comp_strongBidualEquiv`).
+identifies `L` with its strong bidual (`TauCeti.strongBidualEquivOfIsWeaklyCompact`), naturally in
+continuous linear maps (`TauCeti.precomp_precomp_comp_strongBidualEquivOfIsWeaklyCompact`).
 
 A typical example is the space of holomorphic germs along a compact subset of `ℂⁿ`, the inductive
 limit of the Banach spaces of bounded holomorphic functions on a shrinking sequence of
@@ -62,8 +62,9 @@ neighbourhoods, whose restriction maps are compact by Montel's theorem.
 * `TauCeti.dualProjectiveLimit.evalEquiv`: canonical evaluation `L ≃L[𝕜] (lim_j B j′)′_b`.
 * `TauCeti.dualProjectiveLimit.forall_mem_image_precomp_polar_norm_evalEquiv_le_one_iff_mem`:
   polar and bipolar comparison for `evalEquiv`.
-* `TauCeti.strongBidualEquiv`: strong-bidual reflexivity `L ≃L[𝕜] (L′_b)′_b`.
-* `TauCeti.precomp_precomp_comp_strongBidualEquiv`: naturality of `strongBidualEquiv`.
+* `TauCeti.strongBidualEquivOfIsWeaklyCompact`: strong-bidual reflexivity `L ≃L[𝕜] (L′_b)′_b`.
+* `TauCeti.precomp_precomp_comp_strongBidualEquivOfIsWeaklyCompact`: naturality of
+  `strongBidualEquivOfIsWeaklyCompact`.
 * `TauCeti.completeSpace_of_isWeaklyCompact`: completeness of the inductive limit `L`.
 
 ## References
@@ -300,9 +301,11 @@ private theorem continuous_symm_evalLinearMap :
   simpa [topDualPairing_apply, hpair, mem_closedBall_zero_iff] using
     hΨ (Set.mem_image_of_mem (precomp ι hι) hφ)
 
-/-- **Canonical evaluation onto the strong dual of the dual projective limit.** When `L` is a
-separated locally convex space over `𝕜` whose continuous seminorms are tested on the stages `B j`,
-canonical evaluation is a topological linear isomorphism `L ≃L[𝕜] (lim_j B j′)′_b`. -/
+/-- **Canonical evaluation onto the strong dual of the dual projective limit.** Let `L` be a
+separated locally convex space over `𝕜` that is the inductive limit of normed spaces `B j` along
+compatible injective maps `ι j` with weakly compact bonding maps `T j`, whose continuous
+`𝕜`-seminorms are tested on the stages `B j`. Then canonical evaluation is a topological linear
+isomorphism `L ≃L[𝕜] (lim_j B j′)′_b`. -/
 def evalEquiv : L ≃L[𝕜] StrongDual 𝕜 (dualProjectiveLimit T) where
   __ := LinearEquiv.ofBijective (evalLinearMap hT hι hinj hcover hsem)
     (bijective_evalLinearMap hT hι hinj hcover hsem)
@@ -321,13 +324,13 @@ theorem evalEquiv_apply_precomp (x : L) (φ : StrongDual 𝕜 L) :
   simp
 
 @[simp]
-theorem evalEquiv_ι (j : ℕ) (z : B j) :
+theorem evalEquiv_apply (j : ℕ) (z : B j) :
     evalEquiv hT hι hinj hcover hsem (ι j z) = eval T j z := by
   ext f
   simp
 
 @[simp]
-theorem comp_ι_evalEquiv (j : ℕ) :
+theorem evalEquiv_comp (j : ℕ) :
     (evalEquiv hT hι hinj hcover hsem).toContinuousLinearMap.comp (ι j) = eval T j := by
   ext z f
   simp
@@ -335,7 +338,7 @@ theorem comp_ι_evalEquiv (j : ℕ) :
 @[simp]
 theorem evalEquiv_symm_eval (j : ℕ) (z : B j) :
     (evalEquiv hT hι hinj hcover hsem).symm (eval T j z) = ι j z := by
-  rw [← evalEquiv_ι hT hι hinj hcover hsem, ContinuousLinearEquiv.symm_apply_apply]
+  rw [← evalEquiv_apply hT hι hinj hcover hsem, ContinuousLinearEquiv.symm_apply_apply]
 
 /-- **Polar pairing comparison for `evalEquiv`.** Evaluating `evalEquiv x` on the image of a polar
 `StrongDual.polar 𝕜 s` in `dualProjectiveLimit T` tests membership of `x` in the bipolar
@@ -368,32 +371,36 @@ variable [IsTopologicalAddGroup L] [ContinuousSMul 𝕜 L] [Module ℝ L] [IsSca
   (hinj : ∀ n, Function.Injective (ι n)) (hcover : ∀ x : L, ∃ n, ∃ y, ι n y = x)
   (hsem : ∀ q : Seminorm 𝕜 L, (∀ n, Continuous (q ∘ ι n)) → Continuous q)
 
-/-- **Strong-bidual reflexivity of a compact inductive limit.** Canonical evaluation is a
-topological linear isomorphism `L ≃L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 L)`, obtained by composing
-`dualProjectiveLimit.evalEquiv` with congruence along `dualProjectiveLimit.strongDualEquiv`. -/
-def strongBidualEquiv : L ≃L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 L) :=
+/-- **Strong-bidual reflexivity of a compact inductive limit.** For a separated locally convex
+inductive limit `L` of normed spaces with weakly compact bonding maps whose continuous seminorms
+are tested stagewise, canonical evaluation is a topological linear isomorphism
+`L ≃L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 L)`, obtained by composing `dualProjectiveLimit.evalEquiv`
+with congruence along `dualProjectiveLimit.strongDualEquiv`. -/
+def strongBidualEquivOfIsWeaklyCompact : L ≃L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 L) :=
   (evalEquiv hT hι hinj hcover hsem).trans
     ((strongDualEquiv hT hι hinj hcover
       (continuous_of_continuous_comp_seminorm hsem)).symm.arrowCongr
         (ContinuousLinearEquiv.refl 𝕜 𝕜))
 
 @[simp]
-theorem strongBidualEquiv_apply_apply (x : L) (ℓ : StrongDual 𝕜 L) :
-    strongBidualEquiv hT hι hinj hcover hsem x ℓ = ℓ x := by
-  simp [strongBidualEquiv]
+theorem strongBidualEquivOfIsWeaklyCompact_apply_apply (x : L) (ℓ : StrongDual 𝕜 L) :
+    strongBidualEquivOfIsWeaklyCompact hT hι hinj hcover hsem x ℓ = ℓ x := by
+  simp [strongBidualEquivOfIsWeaklyCompact]
 
 @[simp]
-theorem toLinearMap_strongBidualEquiv :
-    (strongBidualEquiv hT hι hinj hcover hsem).toLinearMap = applyₗ 𝕜 (RingHom.id 𝕜) := by
+theorem toLinearMap_strongBidualEquivOfIsWeaklyCompact :
+    (strongBidualEquivOfIsWeaklyCompact hT hι hinj hcover hsem).toLinearMap =
+      applyₗ 𝕜 (RingHom.id 𝕜) := by
   ext x ℓ
   simp
 
 end StrongBidual
 
-/-- **Naturality of strong-bidual reflexivity** for continuous linear maps between compact
-inductive limits: double transposition `precomp 𝕜 (precomp 𝕜 S)` intertwines `strongBidualEquiv`
-with `S`. -/
-theorem precomp_precomp_comp_strongBidualEquiv
+/-- **Naturality of strong-bidual reflexivity** for continuous linear maps between separated
+locally convex inductive limits of normed spaces with weakly compact bonding maps and
+stagewise-tested continuous seminorms: double transposition `precomp 𝕜 (precomp 𝕜 S)` intertwines
+`strongBidualEquivOfIsWeaklyCompact` with `S`. -/
+theorem precomp_precomp_comp_strongBidualEquivOfIsWeaklyCompact
     {B₁ B₂ : ℕ → Type*}
     [∀ n, NormedAddCommGroup (B₁ n)] [∀ n, NormedSpace 𝕜 (B₁ n)]
     [∀ n, NormedAddCommGroup (B₂ n)] [∀ n, NormedSpace 𝕜 (B₂ n)]
@@ -414,11 +421,12 @@ theorem precomp_precomp_comp_strongBidualEquiv
     (hsem₂ : ∀ q : Seminorm 𝕜 L₂, (∀ n, Continuous (q ∘ ι₂ n)) → Continuous q)
     (S : L₁ →L[𝕜] L₂) :
     (ContinuousLinearMap.precomp 𝕜 (ContinuousLinearMap.precomp 𝕜 S)).comp
-        (strongBidualEquiv hT₁ hι₁ hinj₁ hcover₁ hsem₁).toContinuousLinearMap =
-      (strongBidualEquiv hT₂ hι₂ hinj₂ hcover₂ hsem₂).toContinuousLinearMap.comp S :=
-  ContinuousLinearEquiv.precomp_precomp_comp_eq_comp _
-    (strongBidualEquiv_apply_apply hT₁ hι₁ hinj₁ hcover₁ hsem₁) _
-    (strongBidualEquiv_apply_apply hT₂ hι₂ hinj₂ hcover₂ hsem₂) S
+        (strongBidualEquivOfIsWeaklyCompact hT₁ hι₁ hinj₁ hcover₁ hsem₁).toContinuousLinearMap =
+      (strongBidualEquivOfIsWeaklyCompact hT₂ hι₂ hinj₂ hcover₂ hsem₂).toContinuousLinearMap.comp
+        S :=
+  ContinuousLinearMap.precomp_precomp_comp_eq_comp _
+    (strongBidualEquivOfIsWeaklyCompact_apply_apply hT₁ hι₁ hinj₁ hcover₁ hsem₁) _
+    (strongBidualEquivOfIsWeaklyCompact_apply_apply hT₂ hι₂ hinj₂ hcover₂ hsem₂) S
 
 end TopologicalSpace
 

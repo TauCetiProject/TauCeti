@@ -16,7 +16,7 @@ This supplies composite bounds without requiring topologies on the modules or di
 the seminorm families.
 
 If every `𝕜`-seminorm on a topological additive group whose composites with a family of maps are
-continuous is itself continuous, then the same holds for every `𝕜`-linear map into a seminormed
+continuous is itself continuous, then the same holds for every `𝕜`-linear map into a polynormable
 `𝕜`-space (`TauCeti.continuous_of_continuous_comp_seminorm`).
 
 In a complete space whose topology is given by a family of seminorms, a series converges as soon
@@ -101,20 +101,15 @@ namespace TauCeti
 
 /-- If every `𝕜`-seminorm on a topological additive group `L` whose composites with a family of
 maps `f i : E i → L` are continuous is itself continuous, then the same holds for every `𝕜`-linear
-map `L →ₗ[𝕜] F` into a seminormed `𝕜`-space `F`. -/
+map `L →ₗ[𝕜] F` into a polynormable `𝕜`-space `F`. -/
 theorem continuous_of_continuous_comp_seminorm {𝕜 ι L F : Type*} [NormedField 𝕜]
     {E : ι → Type*} [∀ i, TopologicalSpace (E i)]
     [AddCommGroup L] [Module 𝕜 L] [TopologicalSpace L] [IsTopologicalAddGroup L]
-    [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+    [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F] [PolynormableSpace 𝕜 F]
     {f : ∀ i, E i → L}
     (hsem : ∀ q : Seminorm 𝕜 L, (∀ i, Continuous (q ∘ f i)) → Continuous q)
-    (ψ : L →ₗ[𝕜] F) (hψ : ∀ i, Continuous (ψ ∘ f i)) : Continuous ψ := by
-  have hq : Continuous ((normSeminorm 𝕜 F).comp ψ) :=
-    hsem _ fun i ↦ continuous_norm.comp (hψ i)
-  refine continuous_of_continuousAt_zero ψ.toAddMonoidHom ?_
-  rw [ContinuousAt, map_zero]
-  exact Metric.nhds_basis_ball.tendsto_right_iff.2 fun ε hε ↦ by
-    filter_upwards [((normSeminorm 𝕜 F).comp ψ).ball_mem_nhds hq hε] with x hx
-    simpa [Seminorm.mem_ball_zero, mem_ball_zero_iff] using hx
+    (ψ : L →ₗ[𝕜] F) (hψ : ∀ i, Continuous (ψ ∘ f i)) : Continuous ψ :=
+  (PolynormableSpace.withSeminorms 𝕜 F).continuous_of_continuous_comp ψ fun q ↦
+    hsem (q.1.comp ψ) fun i ↦ q.2.comp (hψ i)
 
 end TauCeti
