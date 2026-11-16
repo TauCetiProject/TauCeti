@@ -19,6 +19,9 @@ A closed immersion also preserves the height of every point for the specializati
 (`AlgebraicGeometry.Scheme.Hom.height_apply_eq_height`): the closure of a point of the source is
 carried homeomorphically onto the closure of its image. So the dimension of the closure of a point
 can be computed in a closed subscheme or in the ambient scheme alike.
+
+A morphism `Spec S ⟶ Spec R` of affine schemes induced by a ring map `f : R ⟶ S` is a closed
+immersion if and only if `f` is surjective (`AlgebraicGeometry.IsClosedImmersion.SpecMap_iff`).
 -/
 
 public section
@@ -78,3 +81,16 @@ theorem height_apply_eq_height {X Y : Scheme} (f : X ⟶ Y) [IsClosedImmersion f
   exact ⟨a', by simpa only [lt_iff_le_not_ge, hle] using hb, rfl⟩
 
 end AlgebraicGeometry.Scheme.Hom
+
+namespace AlgebraicGeometry
+
+universe u
+
+/-- A morphism `Spec S ⟶ Spec R` of affine schemes induced by a ring map `f : R ⟶ S` is a closed
+immersion if and only if `f` is surjective. -/
+@[simp]
+theorem IsClosedImmersion.SpecMap_iff {R S : CommRingCat.{u}} (f : R ⟶ S) :
+    IsClosedImmersion (Spec.map f) ↔ Function.Surjective f.hom :=
+  IsClosedImmersion.hasAffineProperty.SpecMap_iff_of_affineAnd RingHom.surjective_respectsIso f
+
+end AlgebraicGeometry

@@ -29,9 +29,9 @@ polynomial `F(Z, W)` (variable `0` is `Z`, variable `1` is `W`) to the univariat
 `F(X, X ^ B)`. It is the Kronecker substitution of `TauCeti.RingTheory.MvPolynomial.Kronecker`
 for the weight `![1, B]`, which sends the exponent `μ` to `μ 0 + B * μ 1`, and its underlying ring
 homomorphism is the two-variable case `TauCeti.polynomialGraph R 2 B`
-(`MvPolynomial.powerSubstitution_toRingHom`). On exponents with `μ 0 < B` this map is injective
-(uniqueness of quotient and remainder on division by `B`), so the substitution is injective on
-polynomials of `Z`-degree below `B`.
+(`MvPolynomial.coe_powerSubstitution_eq_polynomialGraph`). On exponents with `μ 0 < B` this map is
+injective (uniqueness of quotient and remainder on division by `B`), so the substitution is
+injective on polynomials of `Z`-degree below `B`.
 
 When `B = p ^ e` is a power of the characteristic `p`, differentiating `F(X, X ^ (p ^ e))`
 suppresses variation in `W`:
@@ -55,8 +55,8 @@ that `k !` is a unit, its ordinary-derivative counterpart
 
 ## Main results
 
-* `MvPolynomial.powerSubstitution_toRingHom`: the ring homomorphism underlying `powerSubstitution B`
-  is `TauCeti.polynomialGraph R 2 B`.
+* `MvPolynomial.coe_powerSubstitution_eq_polynomialGraph`: the ring homomorphism underlying
+  `powerSubstitution B` is `TauCeti.polynomialGraph R 2 B`.
 * `MvPolynomial.coeff_powerSubstitution`: for `F` of `Z`-degree below `B` and `μ 0 < B`, the
   coefficient of `X ^ (μ 0 + B * μ 1)` in `F(X, X ^ B)` is the coefficient of `Z ^ μ 0 W ^ μ 1`.
 * `MvPolynomial.powerSubstitution_injOn`, `MvPolynomial.powerSubstitution_eq_zero_iff`: the
@@ -128,8 +128,10 @@ theorem powerSubstitution_eq_aeval_X_pow (B : ℕ) :
 
 /-- The ring homomorphism underlying `powerSubstitution B` is the two-variable Kronecker
 substitution `TauCeti.polynomialGraph R 2 B`. -/
-theorem powerSubstitution_toRingHom (B : ℕ) :
-    (powerSubstitution (R := R) B).toRingHom = TauCeti.polynomialGraph R 2 B := by
+@[simp]
+theorem coe_powerSubstitution_eq_polynomialGraph (B : ℕ) :
+    (powerSubstitution (R := R) B : MvPolynomial (Fin 2) R →+* Polynomial R) =
+      TauCeti.polynomialGraph R 2 B := by
   refine ringHom_ext (fun a ↦ by simp [powerSubstitution]) fun s ↦ ?_
   fin_cases s <;> simp [powerSubstitution]
 
@@ -178,14 +180,8 @@ theorem linearIndependent_powerSubstitution {ι : Type*} {B : ℕ} {φ : ι → 
 of `F`. -/
 theorem support_powerSubstitution_subset (B : ℕ) (F : MvPolynomial (Fin 2) R) :
     (powerSubstitution B F).support ⊆ F.support.image fun μ ↦ μ 0 + B * μ 1 := by
-  classical
-  intro N hN
-  by_contra hNim
-  apply Polynomial.mem_support_iff.mp hN
-  conv_lhs => rw [F.as_sum]
-  simp only [map_sum, powerSubstitution_monomial, Polynomial.finsetSum_coeff,
-    Polynomial.coeff_monomial_apply]
-  exact Finset.sum_eq_zero fun μ hμ ↦ ite_eq_right fun h ↦ hNim (Finset.mem_image.mpr ⟨μ, hμ, h⟩)
+  rw [powerSubstitution_eq_aeval_X_pow, ← funext (weight_vecCons_one B)]
+  exact support_aeval_X_pow_subset ![1, B] F
 
 /-- The degree of `F(X, X ^ B)` is at most `degreeOf 0 F + B * degreeOf 1 F`. -/
 theorem natDegree_powerSubstitution_le (B : ℕ) (F : MvPolynomial (Fin 2) R) :

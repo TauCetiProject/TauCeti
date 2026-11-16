@@ -20,11 +20,11 @@ Geometrically, when `k` is a commutative ring, its spectrum is the polynomial gr
 `𝔸¹_k → 𝔸^m_k`, `t ↦ (t, t ^ B, t ^ (B ^ 2), …, t ^ (B ^ (m - 1)))`.
 
 Over a finite field `𝔽_q`, a hypersurface `V(h) ⊆ 𝔸^m` can contain every `𝔽_q`-rational line
-through the origin even when `h ≠ 0` and `0 ∉ V(h)` (for instance `X₀² X₁ - X₀ X₁²` over `𝔽_2`
-vanishes on all three `𝔽_2`-lines through `0`). Replacing lines by high-degree Kronecker graphs
-avoids any prescribed nonzero polynomial without extending the base field: when `B` exceeds every
-coordinate of every exponent vector in the support of `h`, base-`B` digit uniqueness makes the
-weight `d ↦ ∑ i, d i * B ^ i` injective on the support box `{d | ∀ i, d i < B}`
+through the origin even when `h ≠ 0` (for instance `X₀² X₁ - X₀ X₁²` over `𝔽_2` vanishes on all
+three `𝔽_2`-lines through `0`). Replacing lines by high-degree Kronecker graphs avoids any
+prescribed nonzero polynomial without extending the base field: when `B` exceeds every coordinate
+of every exponent vector in the support of `h`, base-`B` digit uniqueness makes the weight
+`d ↦ ∑ i, d i * B ^ i` injective on the support box `{d | ∀ i, d i < B}`
 (`Finsupp.injOn_weight_pow`), so every coefficient of `h` survives in `polynomialGraph k m B h`
 without cancellation. When `0 < m`, `X 0 ↦ T` also makes `polynomialGraph k m B` surjective, so the
 corresponding morphism `Spec k[T] → Spec k[X₀, …, X_{m - 1}]` is a closed immersion.
@@ -44,25 +44,30 @@ corresponding morphism `Spec k[T] → Spec k[X₀, …, X_{m - 1}]` is a closed 
   polynomials whose support lies in the box `{d | ∀ i, d i < B}`.
 * `TauCeti.natDegree_polynomialGraph_lt`: for `1 ≤ B`, if every exponent coordinate in `h.support`
   is `< B`, then `(polynomialGraph k m B h).natDegree < B ^ m`.
-* `TauCeti.constantCoeff_comp_polynomialGraph`: for `1 ≤ B`, `polynomialGraph k m B` commutes with
-  `constantCoeff` (algebraic preservation of the origin); this fails at `B = 0` for `2 ≤ m`
-  (`TauCeti.constantCoeff_comp_polynomialGraph_zero_ne`).
-* `TauCeti.polynomialGraph_surjective`: for `0 < m`, `polynomialGraph k m B` is surjective with
-  explicit section `p ↦ p.eval₂ MvPolynomial.C (MvPolynomial.X ⟨0, hm⟩)`; for `m = 0` over a
-  nontrivial semiring it is not surjective (`TauCeti.not_surjective_polynomialGraph_zero`).
+* `TauCeti.constantCoeff_comp_polynomialGraph`, `TauCeti.coeff_zero_polynomialGraph`: for `1 ≤ B`,
+  `polynomialGraph k m B` commutes with `constantCoeff` (algebraic preservation of the origin);
+  this fails at `B = 0` for `2 ≤ m` over a nontrivial semiring
+  (`TauCeti.constantCoeff_comp_polynomialGraph_zero_right_ne`).
+* `TauCeti.polynomialGraph_toMvPolynomial`, `TauCeti.polynomialGraph_surjective`,
+  `TauCeti.surjective_polynomialGraph_iff`: `polynomialGraph k m B` maps `p.toMvPolynomial i` to
+  `Polynomial.aeval (X ^ (B ^ i)) p`, so for `0 < m` it is surjective (and over a nontrivial
+  semiring it is surjective if and only if `0 < m`, failing at `m = 0` by
+  `TauCeti.not_surjective_polynomialGraph_zero`).
 * `TauCeti.exists_polynomialGraph_ne_zero`: for any nonzero `h : MvPolynomial (Fin m) k`, there
   exists `B ≥ 2` exceeding all exponent coordinates in `h.support` with
   `polynomialGraph k m B h ≠ 0`.
-* `TauCeti.not_injective_polynomialGraph`: for `2 ≤ m` over a nontrivial ring, every
-  `polynomialGraph k m B` kills the nonzero polynomial `X 1 - X 0 ^ B`.
+* `TauCeti.not_injective_polynomialGraph`: for `2 ≤ m` over a nontrivial semiring,
+  `polynomialGraph k m B` is not injective.
 
 ## References
 
+* L. Pottmeyer, *Diophantine Approximation*, lecture notes (version of 17 January 2022), §3.3,
+  proof of Theorem 3.3.7 and Exercise 3.5(a), for the base-`B` Kronecker substitution
+  `xᵢ ↦ t ^ (d ^ (i - 1))`.
 * M. Kisin and R. Zhou, *Independence of `ℓ` for Frobenius conjugacy classes attached to abelian
   varieties*, arXiv:2103.09945v2, proofs of Corollary 5.2.7 (pp. 52–53) and Proposition 5.3.5
-  (p. 54).
-* L. Pottmeyer, *Diophantine Approximation*, lecture notes (2022), §3.3, Theorem 3.3.7 and
-  Exercise 3.5.
+  (p. 54), for the motivating same-field curve-selection step (carried out there via Poonen's
+  Bertini theorem rather than Kronecker graphs).
 -/
 
 public section
@@ -100,36 +105,27 @@ theorem polynomialGraph_X (m B : ℕ) (i : Fin m) :
     polynomialGraph k m B (MvPolynomial.X i) = Polynomial.X ^ (B ^ (i : ℕ)) :=
   MvPolynomial.eval₂Hom_X' _ _ i
 
-/-- When `m` is nonzero, `polynomialGraph` sends the zeroth variable `X 0` to `T`. -/
-theorem polynomialGraph_X_zero {m : ℕ} [NeZero m] (B : ℕ) :
-    polynomialGraph k m B (MvPolynomial.X 0) = Polynomial.X := by
-  simp
-
 /-- Precomposing `polynomialGraph` with `MvPolynomial.C` recovers `Polynomial.C`. -/
 @[simp]
 theorem polynomialGraph_comp_C (m B : ℕ) :
     (polynomialGraph k m B).comp MvPolynomial.C = Polynomial.C :=
   RingHom.ext (polynomialGraph_C m B)
 
-/-- `polynomialGraph` is compatible with the canonical `k`-algebra structure maps. -/
-theorem polynomialGraph_comp_algebraMap (m B : ℕ) :
-    (polynomialGraph k m B).comp (algebraMap k (MvPolynomial (Fin m) k)) =
-      algebraMap k (Polynomial k) :=
-  polynomialGraph_comp_C m B
-
 /-- `polynomialGraph k m B` is the ring homomorphism underlying the `k`-algebra Kronecker
 substitution `MvPolynomial.aeval (fun i ↦ X ^ (B ^ i))`. -/
-theorem aeval_X_pow_toRingHom (m B : ℕ) :
-    (MvPolynomial.aeval (R := k) fun i : Fin m ↦
-      (Polynomial.X : Polynomial k) ^ (B ^ (i : ℕ))).toRingHom =
+@[simp]
+theorem coe_aeval_X_pow_eq_polynomialGraph (m B : ℕ) :
+    (MvPolynomial.aeval (R := k) (fun i : Fin m ↦
+      (Polynomial.X : Polynomial k) ^ (B ^ (i : ℕ))) :
+      MvPolynomial (Fin m) k →+* Polynomial k) =
       polynomialGraph k m B := by
   refine MvPolynomial.ringHom_ext (fun a ↦ ?_) (fun i ↦ ?_) <;> simp
 
 /-- Applying `polynomialGraph k m B` agrees with `MvPolynomial.aeval (fun i ↦ X ^ (B ^ i))`. -/
 theorem polynomialGraph_apply_eq_aeval (m B : ℕ) (f : MvPolynomial (Fin m) k) :
     polynomialGraph k m B f =
-      MvPolynomial.aeval (fun i : Fin m ↦ (Polynomial.X : Polynomial k) ^ (B ^ (i : ℕ))) f :=
-  (DFunLike.congr_fun (aeval_X_pow_toRingHom m B) f).symm
+      MvPolynomial.aeval (fun i : Fin m ↦ (Polynomial.X : Polynomial k) ^ (B ^ (i : ℕ))) f := by
+  rw [← coe_aeval_X_pow_eq_polynomialGraph, RingHom.coe_coe]
 
 /-- `polynomialGraph` sends the monomial `a X ^ d` to `a T ^ (∑ i, d i * B ^ i)`. -/
 @[simp]
@@ -144,10 +140,7 @@ tuple `i ↦ t ^ (B ^ i)`. -/
 theorem aeval_polynomialGraph [Algebra k S] (m B : ℕ) (t : S) (f : MvPolynomial (Fin m) k) :
     Polynomial.aeval t (polynomialGraph k m B f) =
       MvPolynomial.aeval (fun i : Fin m ↦ t ^ (B ^ (i : ℕ))) f := by
-  induction f using MvPolynomial.induction_on with
-  | C a => simp
-  | add p q hp hq => simp [hp, hq]
-  | mul_X p i hp => simp [hp]
+  simp [polynomialGraph_apply_eq_aeval, MvPolynomial.comp_aeval_apply]
 
 /-- Evaluating `polynomialGraph k m B f` at `t : k` evaluates `f` at `i ↦ t ^ (B ^ i)`. -/
 @[simp]
@@ -159,27 +152,47 @@ theorem eval_polynomialGraph (m B : ℕ) (t : k) (f : MvPolynomial (Fin m) k) :
 /-- For `1 ≤ B`, every exponent `B ^ i` is positive, so `polynomialGraph k m B` commutes with
 taking constant coefficients (the algebraic counterpart of sending the origin of `𝔸¹` to the
 origin of `𝔸^m`). -/
+@[simp]
 theorem constantCoeff_comp_polynomialGraph {m B : ℕ} (hB : 1 ≤ B) :
     (Polynomial.constantCoeff (R := k)).comp (polynomialGraph k m B) =
       MvPolynomial.constantCoeff := by
   refine MvPolynomial.ringHom_ext (fun a ↦ by simp) (fun i ↦ ?_)
   simp [(pow_ne_zero (i : ℕ) (Nat.one_le_iff_ne_zero.mp hB)).symm]
 
+/-- Typeclass form of `constantCoeff_comp_polynomialGraph` when `[NeZero B]` is in scope. -/
+@[simp]
+theorem constantCoeff_comp_polynomialGraph_of_neZero (m B : ℕ) [NeZero B] :
+    (Polynomial.constantCoeff (R := k)).comp (polynomialGraph k m B) =
+      MvPolynomial.constantCoeff :=
+  constantCoeff_comp_polynomialGraph (Nat.one_le_iff_ne_zero.mpr (NeZero.ne B))
+
+/-- For `1 ≤ B`, the zeroth coefficient of `polynomialGraph k m B f` is `f.constantCoeff`. -/
+@[simp]
+theorem coeff_zero_polynomialGraph {m B : ℕ} (hB : 1 ≤ B) (f : MvPolynomial (Fin m) k) :
+    (polynomialGraph k m B f).coeff 0 = f.constantCoeff := by
+  rw [← Polynomial.constantCoeff_apply]
+  simpa using DFunLike.congr_fun (constantCoeff_comp_polynomialGraph (k := k) hB) f
+
+/-- Typeclass form of `coeff_zero_polynomialGraph` when `[NeZero B]` is in scope. -/
+@[simp]
+theorem coeff_zero_polynomialGraph_of_neZero (m B : ℕ) [NeZero B] (f : MvPolynomial (Fin m) k) :
+    (polynomialGraph k m B f).coeff 0 = f.constantCoeff :=
+  coeff_zero_polynomialGraph (Nat.one_le_iff_ne_zero.mpr (NeZero.ne B)) f
+
 /-- For `1 ≤ B`, the constant coefficient of `polynomialGraph k m B f` is the constant coefficient
 of `f`. -/
 theorem constantCoeff_polynomialGraph {m B : ℕ} (hB : 1 ≤ B) (f : MvPolynomial (Fin m) k) :
-    (polynomialGraph k m B f).constantCoeff = f.constantCoeff :=
-  DFunLike.congr_fun (constantCoeff_comp_polynomialGraph hB) f
+    (polynomialGraph k m B f).constantCoeff = f.constantCoeff := by
+  rw [Polynomial.constantCoeff_apply, coeff_zero_polynomialGraph hB]
 
 /-- For `1 ≤ B`, evaluating `polynomialGraph k m B f` at `0` recovers `f.constantCoeff`. -/
 theorem eval_zero_polynomialGraph {m B : ℕ} (hB : 1 ≤ B) (f : MvPolynomial (Fin m) k) :
     (polynomialGraph k m B f).eval 0 = f.constantCoeff := by
-  rw [← Polynomial.coeff_zero_eq_eval_zero, ← Polynomial.constantCoeff_apply,
-    constantCoeff_polynomialGraph hB]
+  rw [← Polynomial.coeff_zero_eq_eval_zero, coeff_zero_polynomialGraph hB]
 
 /-- At `B = 0` and `2 ≤ m` over a nontrivial semiring, `polynomialGraph k m 0` sends `X 1` to
 `T ^ (0 ^ 1) = 1` and therefore does not commute with `constantCoeff`. -/
-theorem constantCoeff_comp_polynomialGraph_zero_ne {m : ℕ} (hm : 2 ≤ m) [Nontrivial k] :
+theorem constantCoeff_comp_polynomialGraph_zero_right_ne {m : ℕ} (hm : 2 ≤ m) [Nontrivial k] :
     (Polynomial.constantCoeff (R := k)).comp (polynomialGraph k m 0) ≠
       MvPolynomial.constantCoeff := by
   intro h
@@ -196,8 +209,8 @@ theorem mapRingHom_comp_polynomialGraph (φ : k →+* S) (m B : ℕ) :
 @[simp]
 theorem polynomialGraph_map (φ : k →+* S) (m B : ℕ) (f : MvPolynomial (Fin m) k) :
     polynomialGraph S m B (MvPolynomial.map φ f) =
-      Polynomial.map φ (polynomialGraph k m B f) :=
-  (DFunLike.congr_fun (mapRingHom_comp_polynomialGraph φ m B) f).symm
+      Polynomial.map φ (polynomialGraph k m B f) := by
+  simpa using (DFunLike.congr_fun (mapRingHom_comp_polynomialGraph φ m B) f).symm
 
 /-- In zero variables (`m = 0`), `polynomialGraph k 0 B` factors through `constantCoeff`. -/
 theorem polynomialGraph_zero (B : ℕ) :
@@ -208,8 +221,8 @@ theorem polynomialGraph_zero (B : ℕ) :
 `C (f.constantCoeff)`. -/
 @[simp]
 theorem polynomialGraph_zero_apply (B : ℕ) (f : MvPolynomial (Fin 0) k) :
-    polynomialGraph k 0 B f = Polynomial.C f.constantCoeff :=
-  DFunLike.congr_fun (polynomialGraph_zero B) f
+    polynomialGraph k 0 B f = Polynomial.C f.constantCoeff := by
+  simpa using DFunLike.congr_fun (polynomialGraph_zero (k := k) B) f
 
 /-- Over a nontrivial semiring, `polynomialGraph k 0 B` has image inside the constant polynomials
 and is therefore not surjective (`Polynomial.X` is not in its range). -/
@@ -223,7 +236,8 @@ theorem not_surjective_polynomialGraph_zero [Nontrivial k] (B : ℕ) :
 /-- In one variable (`m = 1`), `polynomialGraph k 1 B` agrees with Mathlib's canonical isomorphism
 `MvPolynomial.uniqueAlgEquiv k (Fin 1)` for every base `B`. -/
 theorem polynomialGraph_one_eq_uniqueAlgEquiv (B : ℕ) :
-    polynomialGraph k 1 B = (MvPolynomial.uniqueAlgEquiv k (Fin 1)).toRingHom := by
+    polynomialGraph k 1 B =
+      (MvPolynomial.uniqueAlgEquiv k (Fin 1) : MvPolynomial (Fin 1) k →+* Polynomial k) := by
   refine MvPolynomial.ringHom_ext (fun a ↦ ?_) (fun i ↦ ?_)
   · simp
   · rw [Fin.eq_zero i]
@@ -233,7 +247,7 @@ theorem polynomialGraph_one_eq_uniqueAlgEquiv (B : ℕ) :
 theorem polynomialGraph_one_bijective (B : ℕ) :
     Function.Bijective (polynomialGraph k 1 B) := by
   rw [polynomialGraph_one_eq_uniqueAlgEquiv]
-  exact (MvPolynomial.uniqueAlgEquiv k (Fin 1)).bijective
+  simpa using (MvPolynomial.uniqueAlgEquiv k (Fin 1)).bijective
 
 /-! ### Bounded-base injectivity and survival of coefficients -/
 
@@ -293,31 +307,40 @@ theorem natDegree_polynomialGraph_lt {m B : ℕ} (hB : 1 ≤ B) {h : MvPolynomia
       (support_polynomialGraph_subset m B h (Polynomial.natDegree_mem_support_of_ne_zero h0))
     exact hdeg ▸ Finsupp.weight_pow_lt (hh d hd)
 
-/-! ### Surjectivity for `0 < m` and existence of an avoiding base -/
+/-! ### Surjectivity, noninjectivity, and existence of an avoiding base -/
 
-/-- When `0 < m`, embedding `Polynomial k` as polynomials in the zeroth variable `X ⟨0, hm⟩` is a
-right inverse to `polynomialGraph k m B`. -/
-theorem polynomialGraph_comp_eval₂RingHom_X_zero {m : ℕ} (hm : 0 < m) (B : ℕ) :
-    (polynomialGraph k m B).comp (Polynomial.eval₂RingHom MvPolynomial.C (MvPolynomial.X ⟨0, hm⟩)) =
-      RingHom.id (Polynomial k) := by
+/-- Composing `polynomialGraph k m B` with the `i`-th coordinate embedding
+`Polynomial.toMvPolynomial i` evaluates univariate polynomials at `X ^ (B ^ i)`. -/
+theorem polynomialGraph_comp_toMvPolynomial (m B : ℕ) (i : Fin m) :
+    (polynomialGraph k m B).comp
+      (Polynomial.toMvPolynomial (R := k) i : Polynomial k →+* MvPolynomial (Fin m) k) =
+      (Polynomial.aeval (R := k) ((Polynomial.X : Polynomial k) ^ (B ^ (i : ℕ))) :
+        Polynomial k →+* Polynomial k) := by
   refine Polynomial.ringHom_ext (fun a ↦ ?_) ?_ <;> simp
 
-/-- Evaluating `p : Polynomial k` at `MvPolynomial.X ⟨0, hm⟩` and applying `polynomialGraph k m B`
-recovers `p`. -/
+/-- Applying `polynomialGraph k m B` to `p.toMvPolynomial i` evaluates `p` at `X ^ (B ^ i)`. -/
 @[simp]
-theorem polynomialGraph_eval₂_X_zero {m : ℕ} (hm : 0 < m) (B : ℕ) (p : Polynomial k) :
-    polynomialGraph k m B (p.eval₂ MvPolynomial.C (MvPolynomial.X ⟨0, hm⟩)) = p :=
-  DFunLike.congr_fun (polynomialGraph_comp_eval₂RingHom_X_zero hm B) p
+theorem polynomialGraph_toMvPolynomial (m B : ℕ) (i : Fin m) (p : Polynomial k) :
+    polynomialGraph k m B (p.toMvPolynomial i) =
+      Polynomial.aeval ((Polynomial.X : Polynomial k) ^ (B ^ (i : ℕ))) p := by
+  rw [polynomialGraph_apply_eq_aeval, MvPolynomial.aeval_toMvPolynomial]
 
 /-- For `0 < m`, `polynomialGraph k m B` is surjective for every base `B` (including `B = 0` and
 `B = 1`), since `X ⟨0, hm⟩` maps to `Polynomial.X`. -/
 theorem polynomialGraph_surjective {m : ℕ} (hm : 0 < m) (B : ℕ) :
     Function.Surjective (polynomialGraph k m B) :=
-  fun p ↦ ⟨p.eval₂ MvPolynomial.C (MvPolynomial.X ⟨0, hm⟩), polynomialGraph_eval₂_X_zero hm B p⟩
+  fun p ↦ ⟨p.toMvPolynomial ⟨0, hm⟩, by simp⟩
+
+/-- Over a nontrivial commutative semiring, `polynomialGraph k m B` is surjective if and only if
+`0 < m`. -/
+@[simp]
+theorem surjective_polynomialGraph_iff [Nontrivial k] (m B : ℕ) :
+    Function.Surjective (polynomialGraph k m B) ↔ 0 < m :=
+  ⟨fun h ↦ Nat.pos_of_ne_zero fun hm ↦ not_surjective_polynomialGraph_zero B (hm ▸ h),
+    fun hm ↦ polynomialGraph_surjective hm B⟩
 
 /-- For any nonzero polynomial `h : MvPolynomial (Fin m) k`, there exists a base `B ≥ 2` exceeding
-every coordinate of every exponent in `h.support` such that `polynomialGraph k m B h ≠ 0`
-(concretely `B = max 2 (h.totalDegree + 1)`). -/
+every coordinate of every exponent in `h.support` such that `polynomialGraph k m B h ≠ 0`. -/
 theorem exists_polynomialGraph_ne_zero {m : ℕ} {h : MvPolynomial (Fin m) k} (hh : h ≠ 0) :
     ∃ B : ℕ, 2 ≤ B ∧ (∀ d ∈ h.support, ∀ i, d i < B) ∧ polynomialGraph k m B h ≠ 0 := by
   have hsupp : ∀ d ∈ h.support, ∀ i, d i < max 2 (h.totalDegree + 1) := fun d hd i ↦
@@ -325,38 +348,14 @@ theorem exists_polynomialGraph_ne_zero {m : ℕ} {h : MvPolynomial (Fin m) k} (h
       (MvPolynomial.le_totalDegree hd))).trans_le (le_max_right _ _)
   exact ⟨max 2 (h.totalDegree + 1), le_max_left _ _, hsupp, polynomialGraph_ne_zero hh hsupp⟩
 
-end CommSemiring
-
-section CommRing
-
-variable {k : Type*} [CommRing k]
-
-/-- For `2 ≤ m` over a nontrivial commutative ring, the polynomial `X 1 - X 0 ^ B` is nonzero for
-every base `B`. -/
-theorem mvPolynomial_X_one_sub_X_zero_pow_ne_zero {m : ℕ} (hm : 2 ≤ m) [Nontrivial k] (B : ℕ) :
-    (MvPolynomial.X ⟨1, hm⟩ - MvPolynomial.X ⟨0, by omega⟩ ^ B : MvPolynomial (Fin m) k) ≠ 0 := by
-  intro h
-  have hc := congrArg (fun p ↦ p.coeff (Finsupp.single ⟨1, hm⟩ 1)) h
-  have hne : Finsupp.single (⟨0, by omega⟩ : Fin m) B ≠ Finsupp.single ⟨1, hm⟩ 1 := by
-    intro hs
-    have h1 := DFunLike.congr_fun hs ⟨1, hm⟩
-    simp [Fin.ext_iff] at h1
-  simp [MvPolynomial.X_pow_eq_monomial, MvPolynomial.coeff_monomial, hne] at hc
-
-/-- Every base-`B` Kronecker substitution in `m ≥ 2` variables annihilates `X 1 - X 0 ^ B`. -/
-@[simp]
-theorem polynomialGraph_X_one_sub_X_zero_pow {m : ℕ} (hm : 2 ≤ m) (B : ℕ) :
-    polynomialGraph k m B (MvPolynomial.X ⟨1, hm⟩ - MvPolynomial.X ⟨0, by omega⟩ ^ B) = 0 := by
-  simp
-
-/-- In `m ≥ 2` variables over a nontrivial commutative ring, `polynomialGraph k m B` is never
-injective (`X 1 - X 0 ^ B` lies in its kernel). -/
+/-- In `m ≥ 2` variables over a nontrivial commutative semiring, `polynomialGraph k m B` is never
+injective (`X 1` and `X 0 ^ B` are distinct yet both map to `T ^ B`). -/
 theorem not_injective_polynomialGraph {m : ℕ} (hm : 2 ≤ m) [Nontrivial k] (B : ℕ) :
     ¬ Function.Injective (polynomialGraph k m B) := fun hinj ↦
-  mvPolynomial_X_one_sub_X_zero_pow_ne_zero hm B
-    (hinj ((polynomialGraph_X_one_sub_X_zero_pow hm B).trans (map_zero _).symm))
+  MvPolynomial.X_ne_X_pow (i := (⟨1, hm⟩ : Fin m)) (j := ⟨0, by omega⟩)
+    (by simp [Fin.ext_iff]) B (hinj (by simp))
 
-end CommRing
+end CommSemiring
 
 /-! ### Examples -/
 

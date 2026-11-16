@@ -35,6 +35,8 @@ univariate polynomial in the variable `Xᵢ`, on monomials.
   `∑ l = d` have no coefficient outside bidegree `(d, d)` in the two groups of variables.
 * `MvPolynomial.eval₂_monomial_sumElim_of_eq_one`: evaluating `c X^a Y^e` with every `X`
   variable set to `1` gives the value of `c Y^e`.
+* `MvPolynomial.X_ne_X_pow`: a variable `X i` is never equal to a power `X j ^ n` of a distinct
+  variable `X j` over a nontrivial commutative semiring.
 * `Polynomial.toMvPolynomial_monomial`: a univariate monomial placed in `Xᵢ` is the multivariate
   monomial with exponent `n eᵢ`.
 -/
@@ -112,6 +114,17 @@ theorem eval₂_monomial_sumElim_of_eq_one {σ τ R T : Type*} [CommSemiring R] 
     (c : R) :
     eval₂ φ x (monomial (a.sumElim e) c) = eval₂ φ (x ∘ Sum.inr) (monomial e c) := by
   simp [eval₂_monomial, Finsupp.prod_sumElim, Function.comp_def, hx]
+
+/-- Over a nontrivial commutative semiring, a variable `X i` is never equal to a power `X j ^ n`
+of a distinct variable `X j`. -/
+theorem X_ne_X_pow [Nontrivial A] {i j : ι} (hij : i ≠ j) (n : ℕ) :
+    (X i : MvPolynomial ι A) ≠ X j ^ n := by
+  classical
+  intro h
+  have hc := congrArg (fun p ↦ p.coeff (Finsupp.single i 1)) h
+  have hne : Finsupp.single j n ≠ Finsupp.single i 1 := fun hs ↦ by
+    simpa [hij] using DFunLike.congr_fun hs i
+  simp [X_pow_eq_monomial, coeff_X, coeff_monomial, hne] at hc
 
 end MvPolynomial
 
