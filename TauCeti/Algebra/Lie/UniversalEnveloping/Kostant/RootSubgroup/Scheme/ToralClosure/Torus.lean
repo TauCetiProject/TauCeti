@@ -51,19 +51,11 @@ universe u w
 -- Match tensor products to the `ℤ`-algebra structure used by scalar extension.
 attribute [local instance high] Algebra.toModule
 
-variable {L : Type u} [LieRing L] [LieAlgebra ℚ L]
-variable {I : Type w} {κ : Type} [Finite κ]
-variable {V : Type} [AddCommGroup V] [Module ℚ V]
+section WeightTorusComparison
 
-variable (e : I → L) (h : κ → L)
-variable (ρ : _root_.UniversalEnvelopingAlgebra ℚ L →ₐ[ℚ] Module.End ℚ V)
-variable (M : AddSubgroup V)
-variable (hM : ∀ u ∈ kostantForm e h, ∀ m ∈ M, ρ u m ∈ M)
-variable (hnil : ∀ i, IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
-variable {n : ℕ} (b : Module.Basis (Fin n) ℤ M)
-variable (wt : Fin n → κ → ℤ)
+variable {κ : Type} {V : Type} [AddCommGroup V] (M : AddSubgroup V)
+variable {n : ℕ} (b : Module.Basis (Fin n) ℤ M) (wt : Fin n → κ → ℤ)
 
-omit [Module ℚ V] in
 private theorem weightTorusCoordinateMap_eq_diagonalCoordinateMap [Fintype κ] :
     GeneralLinear.weightTorusCoordinateMap (R := ℤ) wt =
       CommHopfAlgCat.ofHom (DiagonalizableGroup.diagonalCoordinateMap b
@@ -108,12 +100,25 @@ private theorem weightTorusCoordinateMap_eq_diagonalCoordinateMap [Fintype κ] :
       simpa [Matrix.diagonal_apply_ne _ hij] using hleft
   exact DFunLike.congr_fun hAlg x
 
-omit [Module ℚ V] in
 private theorem weightTorusRepresentation_eq_weightTorus [Fintype κ] :
     weightTorusRepresentation b wt = GeneralLinear.weightTorus (R := ℤ) wt := by
   rw [weightTorusRepresentation_def, DiagonalizableGroup.diagonalGroupSchemeHom_def,
     GeneralLinear.weightTorus_def,
     weightTorusCoordinateMap_eq_diagonalCoordinateMap (M := M) b wt]
+
+end WeightTorusComparison
+
+variable {L : Type u} [LieRing L] [LieAlgebra ℚ L]
+variable {I : Type w} {κ : Type} [Finite κ]
+variable {V : Type} [AddCommGroup V] [Module ℚ V]
+
+variable (e : I → L) (h : κ → L)
+variable (ρ : _root_.UniversalEnvelopingAlgebra ℚ L →ₐ[ℚ] Module.End ℚ V)
+variable (M : AddSubgroup V)
+variable (hM : ∀ u ∈ kostantForm e h, ∀ m ∈ M, ρ u m ∈ M)
+variable (hnil : ∀ i, IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
+variable {n : ℕ} (b : Module.Basis (Fin n) ℤ M)
+variable (wt : Fin n → κ → ℤ)
 
 /-- **Spanning weights embed the represented split torus as a closed subgroup of the Kostant
 toral closure.** -/
