@@ -39,71 +39,70 @@ variable {C : Type u} [Category.{v} C] [MonoidalCategory C]
 of the original pivotal components, for the descended dual choices. -/
 noncomputable instance instPivotalCategory : PivotalCategory (Quotient r) where
   pivotalIso := NatIso.ofComponents
-    (fun X => (functor r).mapIso (pivotalIsoApp X.as)) (by
+    (fun X => (functor r).mapIso (PivotalCategory.pivotalIso.app X.as)) (by
       intro X Y f
       obtain ⟨f, rfl⟩ := (functor r).map_surjective f
       simp only [Functor.id_map, doubleRightDualFunctor_map, rightAdjointMate_map]
-      exact congrArg (functor r).map (pivotalIsoApp_hom_naturality f))
+      exact congrArg (functor r).map (PivotalCategory.pivotalIso.hom.naturality f))
   pivotalIso_isMonoidal := {
     unit := by
-      -- Expose the components together with their dependent bidual endpoints.
-      change 𝟙 _ ≫ (functor r).map (pivotalIsoApp (𝟙_ C)).hom = _
-      rw [Category.id_comp, doubleRightDualFunctor_ε_eq_map]
-      exact congrArg (functor r).map (pivotalIsoApp_unit_hom (C := C))
+      -- The component is definitionally the image of the source pivotal component.
+      rw [Functor.LaxMonoidal.id_ε, Category.id_comp, doubleRightDualFunctor_ε_eq_map]
+      have h := pivotalIsoApp_unit_hom (C := C)
+      rw [← TauCeti.pivotalIso_hom_app] at h
+      exact congrArg (functor r).map h
     tensor := by
       rintro ⟨X⟩ ⟨Y⟩
       -- Unfolding components alone leaves the bidual functor's object wrappers in their types.
-      change 𝟙 _ ≫ (functor r).map (pivotalIsoApp (X ⊗ Y)).hom =
-        ((functor r).map (pivotalIsoApp X).hom ⊗ₘ (functor r).map (pivotalIsoApp Y).hom) ≫
+      change 𝟙 _ ≫ (functor r).map (PivotalCategory.pivotalIso.app (X ⊗ Y)).hom =
+        ((functor r).map (PivotalCategory.pivotalIso.app X).hom ⊗ₘ
+          (functor r).map (PivotalCategory.pivotalIso.app Y).hom) ≫
           μ (doubleRightDualFunctor (Quotient r)) ((functor r).obj X) ((functor r).obj Y)
       rw [Category.id_comp, doubleRightDualFunctor_μ_obj, map_tensorHom_map]
-      exact (congrArg (functor r).map (pivotalIsoApp_tensor_hom X Y)).trans
-        ((functor r).map_comp _ _) }
+      have h := pivotalIsoApp_tensor_hom X Y
+      simp only [← TauCeti.pivotalIso_hom_app] at h
+      exact (congrArg (functor r).map h).trans ((functor r).map_comp _ _) }
 
 /-- Each descended pivotal component is the class of the original component. -/
-@[simp]
 theorem pivotalIsoApp_hom (X : Quotient r) :
     (pivotalIsoApp X).hom = (functor r).map (pivotalIsoApp X.as).hom := by
-  rw [← TauCeti.pivotalIso_hom_app]
+  simp only [← TauCeti.pivotalIso_hom_app]
   rfl
 
 /-- The inverse pivotal component is the class of the original inverse component. -/
-@[simp]
 theorem pivotalIsoApp_inv (X : Quotient r) :
     (pivotalIsoApp X).inv = (functor r).map (pivotalIsoApp X.as).inv := by
-  rw [← TauCeti.pivotalIso_inv_app]
+  simp only [← TauCeti.pivotalIso_inv_app]
   rfl
 
 /-- The pivotal component at an image object is the image of its source component. -/
-@[simp↓]
+@[simp]
 theorem pivotalIsoApp_obj_hom (X : C) :
     (pivotalIsoApp ((functor r).obj X)).hom = (functor r).map (pivotalIsoApp X).hom :=
   pivotalIsoApp_hom (Quotient.mk X)
 
 /-- The inverse pivotal component at an image object is the image of its source inverse. -/
-@[simp↓]
+@[simp]
 theorem pivotalIsoApp_obj_inv (X : C) :
     (pivotalIsoApp ((functor r).obj X)).inv = (functor r).map (pivotalIsoApp X).inv :=
   pivotalIsoApp_inv (Quotient.mk X)
 
 /-- The quotient functor preserves the pivotal structure, with its descended duals. -/
-instance functor_isPivotal : (functor r).IsPivotal where
-  map_pivotalIsoApp_hom X := by
-    simp only [pivotalIsoApp_hom, mapRightDualIso_eq_refl, Iso.refl_hom, Iso.refl_inv,
-      rightAdjointMate_id]
-    -- Normalize the bidual endpoints together; separately simplifying them cannot
-    -- rewrite the identities whose domains are fixed by the mapped pivotal component.
-    change (functor r).map (pivotalIsoApp X).hom =
-      (functor r).map (pivotalIsoApp X).hom ≫ 𝟙 _ ≫ 𝟙 _
-    simp
+instance isPivotal_functor : (functor r).IsPivotal :=
+  Functor.isPivotal_iff_map_pivotalIsoApp_hom_comp_mapDoubleRightDualIso_hom.mpr fun X => by
+    rw [functor_mapDoubleRightDualIso, Iso.refl_hom]
+    -- Descended bidual endpoints are definitionally the images of source biduals.
+    exact (Category.comp_id _).trans (pivotalIsoApp_obj_hom X).symm
 
 /-- A pivotal functor identifying related morphisms factors as a pivotal functor. -/
-instance lift_isPivotal {D : Type*} [Category* D] [MonoidalCategory D] [RigidCategory D]
+instance isPivotal_lift {D : Type*} [Category* D] [MonoidalCategory D] [RigidCategory D]
     [PivotalCategory D] (F : C ⥤ D) [F.Monoidal] [F.IsPivotal]
     (H : ∀ (X Y : C) (f g : X ⟶ Y), r f g → F.map f = F.map g) :
     (lift r F H).IsPivotal where
   map_pivotalIsoApp_hom X := by
     simp only [pivotalIsoApp_hom, lift_mapRightDualIso]
+    -- The underlying object (Xᘁ).as is definitionally (X.as)ᘁ, and the lift sends
+    -- a class (functor r).map f definitionally to F.map f.
     exact Functor.IsPivotal.map_pivotalIsoApp_hom (F := F) X.as
 
 /-- Sphericality descends through any monoidal relation. -/

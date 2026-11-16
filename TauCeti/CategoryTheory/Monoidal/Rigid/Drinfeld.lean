@@ -61,6 +61,8 @@ variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [BraidedCategory C]
 
 /-- The Drinfeld isomorphism identifies `X` with its double right dual by comparing
 its braided pairing with `Xᘁ` to the chosen right pairing of `Xᘁ`. -/
+-- Exposed so strict quotient functors with descended pairings compute this comparison.
+@[expose]
 def drinfeldIso (X : C) [HasRightDual X] [HasRightDual Xᘁ] : X ≅ ((Xᘁ : C)ᘁ : C) :=
   rightDualIso (exactPairing_swap X Xᘁ) HasRightDual.exact
 
@@ -174,6 +176,8 @@ variable [BraidedCategory C] [RightRigidCategory C]
 
 /-- The Drinfeld isomorphisms `X ≅ Xᘁᘁ` of a braided right rigid category, as a natural
 isomorphism from the identity functor to the double right dual functor. -/
+-- Exposed so the canonical symmetric pivotal structure agrees with strict quotient descent.
+@[expose]
 noncomputable def drinfeldNatIso : 𝟭 C ≅ doubleRightDualFunctor C :=
   NatIso.ofComponents (fun X => drinfeldIso X) fun f => drinfeldIso_hom_naturality f
 
