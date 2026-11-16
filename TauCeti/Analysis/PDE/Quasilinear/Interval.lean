@@ -5,8 +5,19 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
+public import Mathlib.Topology.MetricSpace.Holder
 public import TauCeti.Analysis.Sobolev.W1p.Interval.Representative
+import Mathlib.Analysis.Calculus.ContDiff.Deriv
+import Mathlib.Analysis.Calculus.Deriv.Inv
+import Mathlib.Analysis.Calculus.Deriv.Mul
+import Mathlib.Analysis.Calculus.Deriv.Prod
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import TauCeti.Analysis.Calculus.Deriv.IccExtend
 import TauCeti.Analysis.Convex.SchauderFixedPoint
+import TauCeti.Analysis.Holder.MeanValue
+import TauCeti.Analysis.Normed.Operator.Holder
+import TauCeti.Analysis.PDE.Regularity.Interval
 import TauCeti.Analysis.PDE.DirichletProblem.Interval
 import TauCeti.MeasureTheory.Function.StronglyMeasurable.Caratheodory
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
@@ -32,6 +43,11 @@ coefficient `a = A(·, ū)`, with `λ ≤ a ≤ M`, the global Hölder estimate
 `TauCeti.PDE.exists_norm_intervalRepresentativeL_le_and_holderWith` applies to it, with a constant
 that does not depend on `A` beyond `λ` and `M`.
 
+Every solution is as regular as the data allow
+(`TauCeti.PDE.exists_contDiff_eq_intervalRepresentativeL_and_holderWith_deriv_deriv`): if `A` is
+`C^{1,α}` jointly on `[x₀, x₁] × [-R, R]` for every `R`, `f` is `C^α` and `F` is `C^{1,α}` on
+`[x₀, x₁]`, then `ū ∈ C^{2,α}([x₀, x₁])`, and `ū` solves the equation classically.
+
 ## The argument
 
 The proof is Schauder's compact-map argument. For a fixed measurable coefficient `a` with
@@ -53,6 +69,16 @@ Schauder's fixed-point theorem (`TauCeti.schauderFixedPoint_closedConvex_continu
 closed ball of `C([x₀, x₁])` then gives `u = T u`. By
 `TauCeti.PDE.exists_w1p_intervalRepresentativeL_eq`, the fixed point is the continuous
 representative of a Sobolev class solving the linear problem with coefficient `A(·, u)`.
+
+For the regularity, the flux `A(·, ū) ū' + F` equals `k - Φ` for a constant `k`, so
+`ū' = G / A(·, ū)` with `G = k - Φ - F`. With continuous data this makes `ū` a `C¹` function
+(`TauCeti.PDE.exists_contDiff_eq_intervalRepresentativeL_and_deriv_eq`). Then `A(·, ū)` is `C¹`
+by the chain rule, with derivative `∂ₜA + ∂ᵤA ū'`, so `ū'` is `C¹` with
+`ū'' = (G' A(·, ū) - G (∂ₜA + ∂ᵤA ū')) / A(·, ū)²` and `G' = -(f + F')`. Each factor is `α`-Hölder
+on `[x₀, x₁]`: `f`, `F'` and `DA` along the Lipschitz curve `t ↦ (t, ū t)` by hypothesis, and the
+`C¹` functions `A(·, ū)`, `G` and their quotient `ū'` because they are Lipschitz. Integrating
+`ū''`, extended by projection onto `[x₀, x₁]`, twice gives the `C²` extension of `ū`
+(`TauCeti.exists_contDiff_two_eqOn_and_deriv_deriv_eq`).
 
 ## References
 
@@ -149,5 +175,184 @@ theorem exists_intervalTraceL_eq_and_forall_setIntegral_eq (hx : x₀ < x₁) (h
     ext y
     rw [hrep, ← DFunLike.congr_fun hū y, intervalDirichletSolution_apply]
   exact ⟨u, htr, by rwa [hū']⟩
+
+/-! ### Regularity of solutions -/
+
+section Regularity
+
+open scoped NNReal
+
+variable {α : ℝ≥0}
+
+/-- **The second derivative is Hölder.** If `w` is `C¹` with `w' = G / A(·, w)` on `[x₀, x₁]`,
+where `A` and `G` are `C¹` and `A(·, w)` does not vanish there, then the derivative
+`(-(f + F') A(·, w) - G (∂ₜA + ∂ᵤA w')(·, w)) / A(·, w)²` of `G / A(·, w)` is `α`-Hölder on
+`[x₀, x₁]`, provided `f`, `F'` and the derivative of `A` near the graph of `w` are. -/
+private theorem exists_holderOnWith_div_sq (hx : x₀ ≤ x₁) (hα₀ : 0 < α) (hα₁ : α ≤ 1)
+    (hA : ContDiff ℝ 1 (Function.uncurry A))
+    (hDA : ∀ R, ∃ C, HolderOnWith C α (fderiv ℝ (Function.uncurry A)) (Icc x₀ x₁ ×ˢ Icc (-R) R))
+    {w G : ℝ → ℝ} (hw : ContDiff ℝ 1 w) (hG : ContDiff ℝ 1 G)
+    (hb0 : ∀ t ∈ Icc x₀ x₁, A t (w t) ≠ 0) (hwG : ∀ t ∈ Icc x₀ x₁, deriv w t = G t / A t (w t))
+    {Cf CF : ℝ≥0} (hf : HolderOnWith Cf α f (Icc x₀ x₁))
+    (hDF : HolderOnWith CF α (deriv F) (Icc x₀ x₁)) :
+    ∃ C, HolderOnWith C α (fun t => (-(f t + deriv F t) * A t (w t) -
+      G t * fderiv ℝ (Function.uncurry A) (t, w t) (1, deriv w t)) / A t (w t) ^ 2)
+        (Icc x₀ x₁) := by
+  set s := Icc x₀ x₁
+  have hs : IsCompact s := isCompact_Icc
+  have hcongr {C : ℝ≥0} {g₁ g₂ : ℝ → ℝ} (he : EqOn g₁ g₂ s) (H : HolderOnWith C α g₁ s) :
+      HolderOnWith C α g₂ s := fun x hx y hy => by
+    rw [← he hx, ← he hy]
+    exact H x hx y hy
+  have hγ : ContDiff ℝ 1 fun t => (t, w t) := contDiff_id.prodMk hw
+  have hb : ContDiff ℝ 1 fun t => A t (w t) := hA.comp hγ
+  obtain ⟨Cb, hHb⟩ := hb.contDiffOn.exists_holderOnWith (convex_Icc x₀ x₁) hs hα₁
+  obtain ⟨CG, hHG⟩ := hG.contDiffOn.exists_holderOnWith (convex_Icc x₀ x₁) hs hα₁
+  -- `1 / A(·, w)` is Hölder, since `|A(·, w)|` attains a positive minimum on `[x₀, x₁]`.
+  obtain ⟨t₀, ht₀, hmin⟩ := hs.exists_isMinOn (nonempty_Icc.2 hx) hb.continuous.norm.continuousOn
+  have hHinv := hHb.inv₀ (m := ‖A t₀ (w t₀)‖₊) (nnNorm_pos.2 (hb0 t₀ ht₀)) fun t ht => hmin ht
+  -- `w' = G / A(·, w)` is Hölder.
+  obtain ⟨Cw, hHw⟩ := (ContinuousLinearMap.mul ℝ ℝ).exists_holderOnWith_comp₂_of_isCompact hs hα₀
+    hHG hHinv
+  have hHw' : HolderOnWith Cw α (deriv w) s :=
+    hcongr (fun t ht => by simp [hwG t ht, div_eq_mul_inv]) hHw
+  -- The derivative `(∂ₜA + ∂ᵤA w')(·, w)` of `A(·, w)` is Hölder.
+  obtain ⟨R, hR⟩ := hs.exists_bound_of_continuousOn hw.continuous.continuousOn
+  obtain ⟨CA, hHA⟩ := hDA R
+  obtain ⟨K, hK⟩ := hγ.contDiffOn.exists_lipschitzOnWith one_ne_zero (convex_Icc x₀ x₁) hs
+  have hHDA := hHA.comp hK.holderOnWith fun t ht => ⟨ht, abs_le.1 (hR t ht)⟩
+  rw [mul_one] at hHDA
+  have hHv : HolderOnWith Cw α (fun t => ((1 : ℝ), deriv w t)) s :=
+    HolderOnWith.of_dist_le fun x hx y hy => by
+      rw [Prod.dist_eq, dist_self, max_eq_right dist_nonneg]
+      exact hHw'.dist_le hx hy
+  obtain ⟨Cd, hHd⟩ :=
+    (ContinuousLinearMap.id ℝ ((ℝ × ℝ) →L[ℝ] ℝ)).exists_holderOnWith_comp₂_of_isCompact hs hα₀
+      hHDA hHv
+  -- Assemble the numerator and divide by `A(·, w)²`.
+  obtain ⟨C₁, hH₁⟩ := (-ContinuousLinearMap.mul ℝ ℝ).exists_holderOnWith_comp₂_of_isCompact hs hα₀
+    (hf.add hDF) hHb
+  obtain ⟨C₂, hH₂⟩ := (ContinuousLinearMap.mul ℝ ℝ).exists_holderOnWith_comp₂_of_isCompact hs hα₀
+    hHG hHd
+  obtain ⟨C₃, hH₃⟩ := (ContinuousLinearMap.mul ℝ ℝ).exists_holderOnWith_comp₂_of_isCompact hs hα₀
+    hHinv hHinv
+  obtain ⟨C, hH⟩ := (ContinuousLinearMap.mul ℝ ℝ).exists_holderOnWith_comp₂_of_isCompact hs hα₀
+    (hH₁.sub hH₂) hH₃
+  refine ⟨C, hcongr (fun t _ => ?_) hH⟩
+  simp only [neg_apply, ContinuousLinearMap.mul_apply', Pi.add_apply,
+    Pi.sub_apply, ContinuousLinearMap.id_apply, Function.comp_apply]
+  rw [div_eq_mul_inv, sq, mul_inv]
+  ring
+
+/-- **The flux form of the derivative.** Under the hypotheses of
+`exists_contDiff_eq_intervalRepresentativeL_and_holderWith_deriv_deriv`, with `f` only continuous
+on `[x₀, x₁]`, the continuous representative `ū` agrees on `[x₀, x₁]` with a `C¹` function `w`
+satisfying `w' = G / A(·, w)` there, where the flux `G = k - ∫_{x₀}^t f - F` is `C¹` with
+`G' = -(f + F')` on `[x₀, x₁]`. -/
+private theorem exists_contDiff_deriv_eq_div (hx : x₀ < x₁)
+    (hA : ContDiff ℝ 1 (Function.uncurry A)) (hf : ContinuousOn f (Icc x₀ x₁))
+    (hF : ContDiff ℝ 1 F) {u : W1p volume ⟨Ioo x₀ x₁, isOpen_Ioo⟩ p}
+    (hA0 : ∀ t : Icc x₀ x₁, A t (W1p.intervalRepresentativeL hx u t) ≠ 0)
+    (hu : ∀ φ : 𝓓(⟨Ioo x₀ x₁, isOpen_Ioo⟩, ℝ),
+      ∫ t in Ioo x₀ x₁, A t (W1p.intervalRepresentativeL hx u (projIcc x₀ x₁ hx.le t)) *
+          W1p.gradient u t * deriv φ t =
+        (∫ t in Ioo x₀ x₁, f t * φ t) - ∫ t in Ioo x₀ x₁, F t * deriv φ t) :
+    ∃ w G : ℝ → ℝ, ContDiff ℝ 1 w ∧ ContDiff ℝ 1 G ∧
+      (∀ t : Icc x₀ x₁, W1p.intervalRepresentativeL hx u t = w t) ∧
+      (∀ t ∈ Icc x₀ x₁, HasDerivAt G (-(f t + deriv F t)) t) ∧
+      ∀ t ∈ Icc x₀ x₁, deriv w t = G t / A t (w t) := by
+  -- Continuous coefficients: `ū` is `C¹`, with `ū' = (k - ∫ f - F) / A(·, ū)`.
+  obtain ⟨k, w, hw, hū, hdw⟩ := exists_contDiff_eq_intervalRepresentativeL_and_deriv_eq hx
+    (hA.continuous.comp (continuous_id.prodMk
+      (W1p.continuous_intervalRepresentativeL_projIcc hx u))).continuousOn
+    (fun t ht => by simpa [projIcc_of_mem hx.le ht] using hA0 ⟨t, ht⟩)
+    (hf.integrableOn_Icc.mono_set Ioo_subset_Icc_self) hF.continuous.continuousOn hu
+  -- Extend `f` by projection, so that the flux is defined and `C¹` on `ℝ`.
+  set fₑ : ℝ → ℝ := fun t => f (projIcc x₀ x₁ hx.le t)
+  have hfₑ : Continuous fₑ :=
+    hf.comp_continuous continuous_projIcc.subtype_val fun t => (projIcc _ _ _ t).2
+  set G : ℝ → ℝ := fun t => k - (∫ s in x₀..t, fₑ s) - F t
+  have hG : ∀ t, HasDerivAt G (-(fₑ t + deriv F t)) t := fun t => by
+    convert ((hfₑ.integral_hasStrictDerivAt x₀ t).hasDerivAt.const_sub k).sub
+      (hF.differentiable one_ne_zero t).hasDerivAt using 1
+    ring
+  refine ⟨w, G, hw, contDiff_one_iff_deriv.2 ⟨fun t => (hG t).differentiableAt, ?_⟩, hū,
+    fun t ht => by simpa [fₑ, projIcc_of_mem hx.le ht] using hG t, fun t ht => ?_⟩
+  · rw [show deriv G = fun t => -(fₑ t + deriv F t) from funext fun t => (hG t).deriv]
+    exact (hfₑ.add (hF.continuous_deriv le_rfl)).neg
+  · have hΦ : ∫ s in x₀..t, f s = ∫ s in x₀..t, fₑ s := intervalIntegral.integral_congr
+      fun s hs => by
+        rw [uIcc_of_le ht.1] at hs
+        simp [fₑ, projIcc_of_mem hx.le ⟨hs.1, hs.2.trans ht.2⟩]
+    have hwt : w t = W1p.intervalRepresentativeL hx u (projIcc x₀ x₁ hx.le t) := by
+      rw [projIcc_of_mem hx.le ht, hū]
+    rw [hdw t ht, hΦ, hwt]
+    rfl
+
+/-- **Solutions of the quasilinear problem on an interval are `C^{2,α}` up to the boundary.** Let
+`x₀ < x₁` and `0 < α ≤ 1`. Let the coefficient `A(x, y)` be `C¹` jointly, with derivative
+`α`-Hölder on `[x₀, x₁] × [-R, R]` for every `R`, let `f` be `α`-Hölder on `[x₀, x₁]`, and let
+`F` be `C¹` with `F'` `α`-Hölder on `[x₀, x₁]`. Let `u ∈ W^{1,p}(x₀, x₁)` solve
+`-(A(x, u) u')' = f + F'` weakly,
+
+`∫ A(t, ū t) u' φ' = ∫ f φ - ∫ F φ'` for every `φ ∈ C_c^∞(x₀, x₁)`,
+
+where `ū` is its continuous representative, and let the equation be nondegenerate along the
+solution, `A(t, ū t) ≠ 0` on `[x₀, x₁]`. Then `ū` is `C^{2,α}` up to the boundary: it agrees on
+`[x₀, x₁]` with a `C²` function `w` on `ℝ` whose second derivative is globally `α`-Hölder, and
+`w` solves the equation classically, `(A(t, w t) w' t)' = -(f t + F' t)` on `(x₀, x₁)`.
+
+When `A` satisfies these hypotheses and `A ≥ λ > 0`, this applies to the solutions constructed by
+`TauCeti.PDE.exists_intervalTraceL_eq_and_forall_setIntegral_eq`. -/
+theorem exists_contDiff_eq_intervalRepresentativeL_and_holderWith_deriv_deriv (hx : x₀ < x₁)
+    (hα₀ : 0 < α) (hα₁ : α ≤ 1) (hA : ContDiff ℝ 1 (Function.uncurry A))
+    (hDA : ∀ R, ∃ C, HolderOnWith C α (fderiv ℝ (Function.uncurry A)) (Icc x₀ x₁ ×ˢ Icc (-R) R))
+    {Cf CF : ℝ≥0} (hf : HolderOnWith Cf α f (Icc x₀ x₁)) (hF : ContDiff ℝ 1 F)
+    (hDF : HolderOnWith CF α (deriv F) (Icc x₀ x₁)) {u : W1p volume ⟨Ioo x₀ x₁, isOpen_Ioo⟩ p}
+    (hA0 : ∀ t : Icc x₀ x₁, A t (W1p.intervalRepresentativeL hx u t) ≠ 0)
+    (hu : ∀ φ : 𝓓(⟨Ioo x₀ x₁, isOpen_Ioo⟩, ℝ),
+      ∫ t in Ioo x₀ x₁, A t (W1p.intervalRepresentativeL hx u (projIcc x₀ x₁ hx.le t)) *
+          W1p.gradient u t * deriv φ t =
+        (∫ t in Ioo x₀ x₁, f t * φ t) - ∫ t in Ioo x₀ x₁, F t * deriv φ t) :
+    ∃ w : ℝ → ℝ, ContDiff ℝ 2 w ∧
+      (∀ t : Icc x₀ x₁, W1p.intervalRepresentativeL hx u t = w t) ∧
+      (∃ C, HolderWith C α (deriv (deriv w))) ∧
+      ∀ t ∈ Ioo x₀ x₁, HasDerivAt (fun s => A s (w s) * deriv w s) (-(f t + deriv F t)) t := by
+  obtain ⟨w₁, G, hw₁, hGc, hū, hG, hw₁G⟩ :=
+    exists_contDiff_deriv_eq_div hx hA (hf.continuousOn hα₀) hF hA0 hu
+  have hb0 : ∀ t ∈ Icc x₀ x₁, A t (w₁ t) ≠ 0 := fun t ht => by
+    simpa [← hū ⟨t, ht⟩] using hA0 ⟨t, ht⟩
+  -- On `(x₀, x₁)`, `w₁' = G / A(·, w₁)` has the derivative `h`, which is Hölder on `[x₀, x₁]`.
+  set h : ℝ → ℝ := fun t => (-(f t + deriv F t) * A t (w₁ t) -
+    G t * fderiv ℝ (Function.uncurry A) (t, w₁ t) (1, deriv w₁ t)) / A t (w₁ t) ^ 2
+  obtain ⟨C, hH⟩ := exists_holderOnWith_div_sq hx.le hα₀ hα₁ hA hDA hw₁ hGc hb0 hw₁G hf hDF
+  have hderiv : ∀ t ∈ Ioo x₀ x₁, HasDerivAt (deriv w₁) (h t) t := fun t ht => by
+    have hb : HasDerivAt (fun s => A s (w₁ s))
+        (fderiv ℝ (Function.uncurry A) (t, w₁ t) (1, deriv w₁ t)) t :=
+      (hA.differentiable one_ne_zero _).hasFDerivAt.comp_hasDerivAt t
+        ((hasDerivAt_id t).prodMk (hw₁.differentiable one_ne_zero t).hasDerivAt)
+    exact (HasDerivAt.div (hG t (Ioo_subset_Icc_self ht)) hb
+      (hb0 t (Ioo_subset_Icc_self ht))).congr_of_eventuallyEq
+      (eventually_of_mem (Ioo_mem_nhds ht.1 ht.2) fun s hs => hw₁G s (Ioo_subset_Icc_self hs))
+  -- Integrating `h` twice gives the `C²` extension `w` of `w₁`, with `w'' = h ∘ projIcc`.
+  obtain ⟨w, hw, hw₁w, hdw₁w, hddw⟩ :=
+    exists_contDiff_two_eqOn_and_deriv_deriv_eq hx.le hw₁ hderiv (hH.continuousOn hα₀)
+  refine ⟨w, hw, fun t => (hū t).trans (hw₁w t.2), ?_, fun t ht => ?_⟩
+  · -- `w''` is Hölder on `ℝ`, since `projIcc` is `1`-Lipschitz.
+    have hπ : LipschitzWith 1 fun t => (projIcc x₀ x₁ hx.le t : ℝ) := by
+      simpa [Function.comp_def] using
+        (LipschitzWith.subtype_val _).comp (LipschitzWith.projIcc hx.le)
+    have hHₑ := hH.comp_holderWith hπ.holderWith fun t => (projIcc x₀ x₁ hx.le t).2
+    rw [mul_one] at hHₑ
+    rw [hddw]
+    exact ⟨_, hHₑ⟩
+  · -- On `(x₀, x₁)` the flux `A(·, w) w'` is `G`, whose derivative is `-(f + F')`.
+    refine (hG t (Ioo_subset_Icc_self ht)).congr_of_eventuallyEq
+      (eventually_of_mem (Ioo_mem_nhds ht.1 ht.2) fun s hs => ?_)
+    have hs' := Ioo_subset_Icc_self hs
+    beta_reduce
+    rw [← hw₁w hs', ← hdw₁w hs', hw₁G s hs', mul_div_cancel₀ _ (hb0 s hs')]
+
+end Regularity
 
 end TauCeti.PDE

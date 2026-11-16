@@ -37,7 +37,8 @@ This is how an almost-everywhere Hölder estimate becomes a Hölder continuous r
 of full measure for a measure that is positive on open sets is dense.
 
 Sums, differences and finite sums of Hölder functions are Hölder, with the sum of the constants,
-and a pointwise limit of Hölder functions with a common constant is Hölder with that constant.
+the reciprocal of a Hölder function bounded away from zero is Hölder, and a pointwise limit of
+Hölder functions with a common constant is Hölder with that constant.
 For `0 < α < 1`, a series of pieces bounded by `a 2^{-jα}` and Lipschitz with constants
 `b 2^{j(1-α)}` is `α`-Hölder; this is the dyadic summation behind the Hölder regularity of
 Littlewood–Paley series.
@@ -78,6 +79,7 @@ By subadditivity of `t ↦ t ^ α`, the cusp `x ↦ ‖x‖ ^ α` is `α`-Hölde
   in both directions.
 * `HolderWith.sum`: a finite sum of Hölder functions is Hölder.
 * `HolderOnWith.add`: sums of Hölder functions on a set.
+* `HolderOnWith.inv₀`: the reciprocal of a Hölder function bounded away from zero is Hölder.
 * `HolderOnWith.of_tendsto`, `HolderWith.of_tendsto`: a pointwise limit of Hölder functions with
   a common constant is Hölder with that constant.
 * `holderWith_zero_of_nnnorm_le`: a function bounded by `M` is Hölder of exponent zero with
@@ -306,6 +308,27 @@ theorem HolderOnWith.add {X Y : Type*} [PseudoMetricSpace X] [SeminormedAddCommG
   HolderOnWith.of_dist_le fun x hx y hy => by
     simp only [Pi.add_apply, NNReal.coe_add]
     linarith [dist_add_add_le (f x) (g x) (f y) (g y), hf.dist_le hx hy, hg.dist_le hx hy]
+
+/-- The reciprocal of a function that is Hölder on `s` and bounded away from `0` there, by
+`‖f x‖ ≥ m > 0`, is Hölder on `s` with the same exponent and constant `C / m ^ 2`, since
+`f x⁻¹ - f y⁻¹ = f x⁻¹ (f y - f x) f y⁻¹`. -/
+theorem HolderOnWith.inv₀ {X 𝕜 : Type*} [PseudoMetricSpace X] [NormedDivisionRing 𝕜]
+    {C r m : ℝ≥0} {f : X → 𝕜} {s : Set X} (hf : HolderOnWith C r f s) (hm : 0 < m)
+    (hfm : ∀ x ∈ s, m ≤ ‖f x‖₊) : HolderOnWith (C / m ^ 2) r (fun x ↦ (f x)⁻¹) s := by
+  refine HolderOnWith.of_dist_le fun x hx y hy => ?_
+  have hm' : (0 : ℝ) < m := hm
+  have hmx : (m : ℝ) ≤ ‖f x‖ := hfm x hx
+  have hmy : (m : ℝ) ≤ ‖f y‖ := hfm y hy
+  have hx0 : f x ≠ 0 := norm_pos_iff.1 (hm'.trans_le hmx)
+  have hy0 : f y ≠ 0 := norm_pos_iff.1 (hm'.trans_le hmy)
+  rw [dist_eq_norm, inv_sub_inv' hx0 hy0, norm_mul, norm_mul, norm_inv, norm_inv, ← dist_eq_norm',
+    NNReal.coe_div, NNReal.coe_pow]
+  calc ‖f x‖⁻¹ * dist (f x) (f y) * ‖f y‖⁻¹
+      ≤ (m : ℝ)⁻¹ * (C * dist x y ^ (r : ℝ)) * (m : ℝ)⁻¹ := by
+        gcongr
+        exact hf.dist_le hx hy
+    _ = C / m ^ 2 * dist x y ^ (r : ℝ) := by
+        field_simp
 
 /-- A pointwise limit on `s` of maps that are `r`-Hölder on `s` with a common constant `C` is
 `r`-Hölder on `s` with constant `C`. -/
