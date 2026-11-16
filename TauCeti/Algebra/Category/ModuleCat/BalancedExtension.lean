@@ -27,20 +27,19 @@ Mathlib's `ModuleCat.extendScalars f`, by `s ⊗ p ↦ s ⊗ₜ p`.
 * `TauCeti.BalancedExtension.functor f`: the functor `ModuleCat R ⥤ ModuleCat S`.
 * `TauCeti.BalancedExtension.adjunction f`: extension of scalars is left adjoint to
   restriction of scalars.
-* `TauCeti.BalancedExtension.functorCongr`, `TauCeti.BalancedExtension.functorId`,
-  `TauCeti.BalancedExtension.functorComp`, `TauCeti.BalancedExtension.functorCompCongr`, and
-  `TauCeti.BalancedExtension.functorRingEquivIso`: congruence, identity, composition,
-  commutative-square, and ring-equivalence natural isomorphisms for `BalancedExtension.functor`.
+* `TauCeti.BalancedExtension.functorCongr`, `functorId`, `functorComp`, `functorCompCongr`, and
+  `functorRingEquivIso`: coherence and ring-equivalence natural isomorphisms for `functor`.
 * `TauCeti.BalancedExtension.extendScalarsIso f`: for commutative rings, the identification with
   `ModuleCat.extendScalars f`.
-* `TauCeti.BalancedExtension.restrictScalarsSelfEquiv`,
-  `TauCeti.BalancedExtension.subsingleton_restrictScalars_of_map_eq_one_of_map_eq_zero`, and
-  `TauCeti.BalancedExtension.prodModuleLinearEquiv`: surjective-homomorphism recovery,
-  vanishing along separated projections, and coordinate decomposition of `(R × S)`-modules.
+* `TauCeti.BalancedExtension.restrictScalarsSelfEquiv`, `subsingleton_of_isUnit_of_smul_eq_zero`,
+  `subsingleton_restrictScalars_of_map_eq_one_of_map_eq_zero`, and `prodModuleLinearEquiv`:
+  surjective recovery, vanishing under annihilators, and `(R × S)`-module decomposition.
 
 ## References
 
 * C. A. Weibel, *The K-book*, Chapter I, §2, pp. 7–8, and Chapter II, §2.8, pp. 12–13.
+* Mathlib's `ModuleCat.extendScalars{Id,Comp}` and `ModuleCat.extendScalars_{assoc,id_comp,comp_id}`
+  in `Mathlib/Algebra/Category/ModuleCat/ChangeOfRings.lean` (commutative coherence counterpart).
 -/
 
 public section
@@ -150,6 +149,27 @@ end Ring
 
 section Coherence
 
+/-- **Extension of scalars along the identity ring homomorphism** is naturally isomorphic to the
+identity functor, sending `r ⊗ m` to `r • m` (`TauCeti.BalancedExtension.lid`). -/
+noncomputable def functorId (R : Type u₁) [Ring R] :
+    functor.{u₁, u₁, max v u₁} (RingHom.id R) ≅ 𝟭 (ModuleCat.{max v u₁} R) :=
+  NatIso.ofComponents (fun M ↦ ((lid R M).toModuleIso :
+      (functor (RingHom.id R)).obj M ≅ (𝟭 (ModuleCat R)).obj M)) fun {_ _} φ ↦ by
+    dsimp only [Functor.id_obj, functor]
+    exact ModuleCat.hom_ext <| hom_ext fun m ↦ by simp
+
+theorem functorId_hom_app_tmul (R : Type u₁) [Ring R] (M : ModuleCat.{max v u₁} R) (r : R) (m : M) :
+    (functorId R).hom.app M (tmul (RingHom.id R) r m) = r • m := lid_tmul r m
+
+theorem functorId_inv_app_apply (R : Type u₁) [Ring R] (M : ModuleCat.{max v u₁} R) (m : M) :
+    (functorId R).inv.app M m = tmul (RingHom.id R) 1 m := lid_symm_apply m
+
+@[simp] theorem functorId_hom_app_hom (R : Type u₁) [Ring R] (M : ModuleCat.{max v u₁} R) :
+    ((functorId R).hom.app M).hom = (lid R M).toLinearMap := (rfl)
+
+@[simp] theorem functorId_inv_app_hom (R : Type u₁) [Ring R] (M : ModuleCat.{max v u₁} R) :
+    ((functorId R).inv.app M).hom = (lid R M).symm.toLinearMap := (rfl)
+
 section Basic
 
 variable {R : Type u₁} {S : Type u₂} {T : Type u₃} [Ring R] [Ring S] [Ring T]
@@ -192,33 +212,6 @@ noncomputable def functorCongr {f₁ f₂ : R →+* S} (h : f₁ = f₂) :
     functorCongr.{u₁, u₂, v} h₁₂ ≪≫ functorCongr h₂₃ = functorCongr (h₁₂.trans h₂₃) := by
   subst h₁₂; subst h₂₃; exact Iso.refl_trans _
 
-end Basic
-
-/-- **Extension of scalars along the identity ring homomorphism** is naturally isomorphic to the
-identity functor, sending `r ⊗ m` to `r • m` (`TauCeti.BalancedExtension.lid`). -/
-noncomputable def functorId (R : Type u₁) [Ring R] :
-    functor.{u₁, u₁, max v u₁} (RingHom.id R) ≅ 𝟭 (ModuleCat.{max v u₁} R) :=
-  NatIso.ofComponents (fun M ↦ ((lid R M).toModuleIso :
-      (functor (RingHom.id R)).obj M ≅ (𝟭 (ModuleCat R)).obj M)) fun {_ _} φ ↦ by
-    dsimp only [Functor.id_obj, functor]
-    exact ModuleCat.hom_ext <| hom_ext fun m ↦ by simp
-
-theorem functorId_hom_app_tmul (R : Type u₁) [Ring R] (M : ModuleCat.{max v u₁} R) (r : R) (m : M) :
-    (functorId R).hom.app M (tmul (RingHom.id R) r m) = r • m := lid_tmul r m
-
-theorem functorId_inv_app_apply (R : Type u₁) [Ring R] (M : ModuleCat.{max v u₁} R) (m : M) :
-    (functorId R).inv.app M m = tmul (RingHom.id R) 1 m := lid_symm_apply m
-
-@[simp] theorem functorId_hom_app_hom (R : Type u₁) [Ring R] (M : ModuleCat.{max v u₁} R) :
-    ((functorId R).hom.app M).hom = (lid R M).toLinearMap := (rfl)
-
-@[simp] theorem functorId_inv_app_hom (R : Type u₁) [Ring R] (M : ModuleCat.{max v u₁} R) :
-    ((functorId R).inv.app M).hom = (lid R M).symm.toLinearMap := (rfl)
-
-section Comp
-
-variable {R : Type u₁} {S : Type u₂} {T : Type u₃} [Ring R] [Ring S] [Ring T]
-
 /-- **Extension of scalars along a composite ring homomorphism** `g ∘ f` is naturally isomorphic
 to extending along `f` and then along `g`, sending `t ⊗ m` to `t ⊗ (1 ⊗ m)` with inverse
 `t ⊗ (s ⊗ m) ↦ (t * g s) ⊗ m` (`TauCeti.BalancedExtension.cancelBaseChange`). -/
@@ -245,7 +238,7 @@ theorem functorComp_inv_app_tmul_tmul (f : R →+* S) (g : S →+* T) (M : Modul
 @[simp] theorem functorComp_inv_app_hom (f : R →+* S) (g : S →+* T) (M : ModuleCat.{max v u₂} R) :
     ((functorComp f g).inv.app M).hom = (cancelBaseChange f g).toLinearMap := (rfl)
 
-end Comp
+end Basic
 
 /-- **Pentagon coherence** for `TauCeti.BalancedExtension.functorComp` along three composable ring
 homomorphisms. -/
@@ -257,51 +250,48 @@ homomorphisms. -/
     (functorComp.{u₁, u₂, u₄, max v u₂ u₃} f₁₂ (f₃₄.comp f₂₃)).hom ≫
       Functor.whiskerLeft (functor.{u₁, u₂, max v u₂ u₃} f₁₂)
         (functorComp.{u₂, u₃, u₄, max v u₂ u₃} f₂₃ f₃₄).hom ≫
-      (Functor.associator _ _ _).inv := by
-  refine NatTrans.ext <| funext fun M ↦ ModuleCat.hom_ext <| hom_ext fun m ↦ ?_
-  simp only [NatTrans.comp_app, Functor.whiskerRight_app, Functor.whiskerLeft_app,
-    Functor.associator_inv_app, Category.comp_id, ModuleCat.hom_comp, functor_map_hom,
-    functorComp_hom_app_hom]
-  dsimp only [functor]
-  have hL : (map f₃₄ (cancelBaseChange f₁₂ f₂₃).symm.toLinearMap ∘ₗ
-      (cancelBaseChange (f₂₃.comp f₁₂) f₃₄).symm.toLinearMap)
-      (tmul (f₃₄.comp (f₂₃.comp f₁₂)) 1 m) = tmul f₃₄ 1 (tmul f₂₃ 1 (tmul f₁₂ 1 m)) := by simp
-  have hR : ((cancelBaseChange f₂₃ f₃₄).symm.toLinearMap ∘ₗ
-      (cancelBaseChange f₁₂ (f₃₄.comp f₂₃)).symm.toLinearMap)
-      (tmul ((f₃₄.comp f₂₃).comp f₁₂) 1 m) = tmul f₃₄ 1 (tmul f₂₃ 1 (tmul f₁₂ 1 m)) := by simp
-  exact hL.trans hR.symm
+      (Functor.associator _ _ _).inv :=
+  NatTrans.ext <| funext fun M ↦ functor_hom_ext _ fun m ↦ by
+    simp only [NatTrans.comp_app, Functor.whiskerRight_app, Functor.whiskerLeft_app,
+      Functor.associator_inv_app, Category.comp_id]
+    refine (ConcreteCategory.comp_apply _ _ _).trans <|
+      (congrArg _ (functorComp_hom_app_tmul.{u₁, u₃, u₄, max v u₂ u₃} _ _ M 1 m)).trans <|
+      (functor_map_tmul _ _ _ _).trans <|
+      (congrArg (tmul f₃₄ 1)
+        (functorComp_hom_app_tmul.{u₁, u₂, u₃, max v u₂ u₃} _ _ M 1 m)).trans ?_
+    exact ((ConcreteCategory.comp_apply _ _ _).trans <|
+      (congrArg _
+        (functorComp_hom_app_tmul.{u₁, u₂, u₄, max v u₂ u₃} f₁₂ (f₃₄.comp f₂₃) M 1 m)).trans
+        (functorComp_hom_app_tmul.{u₂, u₃, u₄, max v u₂ u₃} _ _ _ 1 _)).symm
 
 /-- **Left-unit coherence** for `TauCeti.BalancedExtension.functorId` and
 `TauCeti.BalancedExtension.functorComp`. -/
 @[reassoc] theorem functorComp_id_comp {R : Type u₁} {S : Type u₂} [Ring R] [Ring S] (f : R →+* S) :
     (functorComp.{u₁, u₁, u₂, max v u₁} (RingHom.id R) f).hom ≫
       Functor.whiskerRight (functorId.{u₁, max v u₁} R).hom (functor.{u₁, u₂, max v u₁} f) ≫
-      (Functor.leftUnitor (functor.{u₁, u₂, max v u₁} f)).hom = 𝟙 _ := by
-  refine NatTrans.ext <| funext fun M ↦ ModuleCat.hom_ext <| hom_ext fun m ↦ ?_
-  simp only [NatTrans.comp_app, Functor.whiskerRight_app, Functor.leftUnitor_hom_app,
-    NatTrans.id_app, ModuleCat.hom_comp, ModuleCat.hom_id, functor_map_hom,
-    functorId_hom_app_hom, functorComp_hom_app_hom]
-  dsimp only [Functor.id_obj, functor]
-  have hL : ((LinearMap.id ∘ₗ map f (lid R M).toLinearMap) ∘ₗ
-      (cancelBaseChange (RingHom.id R) f).symm.toLinearMap)
-      (tmul (f.comp (RingHom.id R)) 1 m) = tmul f 1 m := by simp
-  exact hL.trans (LinearMap.id_apply (tmul f 1 m)).symm
+      (Functor.leftUnitor (functor.{u₁, u₂, max v u₁} f)).hom = 𝟙 _ :=
+  NatTrans.ext <| funext fun M ↦ functor_hom_ext _ fun m ↦ by
+    simp only [NatTrans.comp_app, Functor.whiskerRight_app, Functor.leftUnitor_hom_app,
+      NatTrans.id_app]
+    exact (ConcreteCategory.comp_apply _ _ _).trans <| (ConcreteCategory.comp_apply _ _ _).trans <|
+      (ConcreteCategory.id_apply _).trans <| (congrArg _ (functorComp_hom_app_tmul _ _ M 1 m)).trans
+        <| (functor_map_tmul _ _ _ _).trans <|
+      (congrArg (tmul f 1) ((functorId_hom_app_tmul R M 1 m).trans (one_smul R m))).trans
+        (ConcreteCategory.id_apply (X := (functor f).obj M) (tmul f 1 m)).symm
 
 /-- **Right-unit coherence** for `TauCeti.BalancedExtension.functorId` and
 `TauCeti.BalancedExtension.functorComp`. -/
 @[reassoc] theorem functorComp_comp_id {R : Type u₁} {S : Type u₂} [Ring R] [Ring S] (f : R →+* S) :
     (functorComp.{u₁, u₂, u₂, max v u₂} f (RingHom.id S)).hom ≫
       Functor.whiskerLeft (functor.{u₁, u₂, max v u₂} f) (functorId.{u₂, max v u₂} S).hom ≫
-      (Functor.rightUnitor (functor.{u₁, u₂, max v u₂} f)).hom = 𝟙 _ := by
-  refine NatTrans.ext <| funext fun M ↦ ModuleCat.hom_ext <| hom_ext fun m ↦ ?_
-  simp only [NatTrans.comp_app, Functor.whiskerLeft_app, Functor.rightUnitor_hom_app,
-    NatTrans.id_app, ModuleCat.hom_comp, ModuleCat.hom_id,
-    functorId_hom_app_hom, functorComp_hom_app_hom]
-  dsimp only [Functor.id_obj, functor]
-  have hL : ((LinearMap.id ∘ₗ (lid S (BalancedExtension f M)).toLinearMap) ∘ₗ
-      (cancelBaseChange f (RingHom.id S)).symm.toLinearMap)
-      (tmul ((RingHom.id S).comp f) 1 m) = tmul f 1 m := by simp
-  exact hL.trans (LinearMap.id_apply (tmul f 1 m)).symm
+      (Functor.rightUnitor (functor.{u₁, u₂, max v u₂} f)).hom = 𝟙 _ :=
+  NatTrans.ext <| funext fun M ↦ functor_hom_ext _ fun m ↦ by
+    simp only [NatTrans.comp_app, Functor.whiskerLeft_app, Functor.rightUnitor_hom_app,
+      NatTrans.id_app]
+    exact (ConcreteCategory.comp_apply _ _ _).trans <| (ConcreteCategory.comp_apply _ _ _).trans <|
+      (ConcreteCategory.id_apply _).trans <| (congrArg _ (functorComp_hom_app_tmul _ _ M 1 m)).trans
+        <| (functorId_hom_app_tmul S _ 1 _).trans <| (one_smul S _).trans
+      (ConcreteCategory.id_apply (X := (functor f).obj M) (tmul f 1 m)).symm
 
 section Square
 
@@ -401,35 +391,26 @@ noncomputable def functorRingEquivIso (e : R ≃+* S) :
         ((ModuleCat.restrictScalars (e.symm : S →+* R)).obj M)).symm
       (ConcreteCategory.congr_hom
         (Adjunction.unit_leftAdjointUniq_hom_app (adjunction (e : R →+* S)) adj₂ M) m)
-    have hunit :
-        ((ModuleCat.restrictScalarsEquivalenceOfRingEquiv e).symm.toAdjunction.unit.app M) m =
-          ModuleCat.restrictScalarsAddEquiv (e : R →+* S)
-            ((ModuleCat.restrictScalars (e.symm : S →+* R)).obj M)
-            (ModuleCat.restrictScalarsAddEquiv (e.symm : S →+* R) M m) := by
-      rw [Equivalence.toAdjunction_unit, Equivalence.symm_unit]
-      exact (ModuleCat.restrictScalarsEquivalenceOfRingEquiv_counitIso_inv_app_apply e M m).trans <|
-        (ModuleCat.restrictScalarsAddEquiv_apply (e.symm : S →+* R) M m).symm.trans
-          (ModuleCat.restrictScalarsAddEquiv_apply (e : R →+* S)
-            ((ModuleCat.restrictScalars (e.symm : S →+* R)).obj M) _).symm
     rw [ConcreteCategory.comp_apply, ModuleCat.restrictScalarsAddEquiv_symm_map_apply,
       ModuleCat.restrictScalarsAddEquiv_symm_apply, adjunction_unit_app_apply] at h
-    exact h.trans <| (congrArg _ hunit).trans (AddEquiv.symm_apply_apply _ _)
+    refine h.trans <| (congrArg _ ?_).trans (AddEquiv.symm_apply_apply _ _)
+    dsimp only [adj₂]; rw [Equivalence.toAdjunction_unit, Equivalence.symm_unit]
+    exact (ModuleCat.restrictScalarsEquivalenceOfRingEquiv_counitIso_inv_app_apply e M m).trans <|
+      (ModuleCat.restrictScalarsAddEquiv_apply (e.symm : S →+* R) M m).symm.trans
+        (ModuleCat.restrictScalarsAddEquiv_apply (e : R →+* S)
+          ((ModuleCat.restrictScalars (e.symm : S →+* R)).obj M) _).symm
   rw [tmul_eq_smul_one_tmul]
-  calc (functorRingEquivIso e).hom.app M (s • tmul (e : R →+* S) 1 m)
-      = s • (functorRingEquivIso e).hom.app M (tmul (e : R →+* S) 1 m) :=
-          ((functorRingEquivIso e).hom.app M).hom.map_smul s _
-    _ = ModuleCat.restrictScalarsAddEquiv (e.symm : S →+* R) M (e.symm s • m) := by
-          rw [h1, ModuleCat.smul_restrictScalarsAddEquiv, RingEquiv.coe_toRingHom]
+  refine (((functorRingEquivIso e).hom.app M).hom.map_smul s _).trans ?_
+  rw [h1, ModuleCat.smul_restrictScalarsAddEquiv, RingEquiv.coe_toRingHom]
 
 @[simp] theorem functorRingEquivIso_inv_app_apply (e : R ≃+* S) (M : ModuleCat.{max v u₂} R)
     (m : (ModuleCat.restrictScalars (e.symm : S →+* R)).obj M) :
     (functorRingEquivIso e).inv.app M m =
       tmul (e : R →+* S) 1
         ((ModuleCat.restrictScalarsAddEquiv (e.symm : S →+* R) M).symm m) := by
-  let m₀ : M := (ModuleCat.restrictScalarsAddEquiv (e.symm : S →+* R) M).symm m
-  have h : (functorRingEquivIso e).hom.app M (tmul (e : R →+* S) 1 m₀) = m := by simp [m₀]
-  conv_lhs => rw [← h]
-  exact ModuleCat.inv_hom_apply ((functorRingEquivIso e).app M) (tmul (e : R →+* S) 1 m₀)
+  have h : (functorRingEquivIso e).hom.app M (tmul (e : R →+* S) 1
+      ((ModuleCat.restrictScalarsAddEquiv (e.symm : S →+* R) M).symm m)) = m := by simp
+  exact (congrArg _ h.symm).trans (ModuleCat.inv_hom_apply ((functorRingEquivIso e).app M) _)
 
 end RingEquiv
 
@@ -471,8 +452,6 @@ theorem extendScalarsIso_inv_app_tmul (M : ModuleCat.{max v u₂} R) (s : S) (m 
 
 end CommRing
 
-section SplitAndProd
-
 section Split
 
 variable {E : Type u₁} {A : Type u₂} {B : Type u₃} [Ring E] [Ring A] [Ring B]
@@ -482,16 +461,14 @@ restricting scalars along `p` recovers `M` via `a ⊗ x ↦ a • x` with invers
 noncomputable def restrictScalarsSelfEquiv (p : E →+* A) (hp : Function.Surjective p)
     (M : ModuleCat.{v} A) :
     BalancedExtension p ((ModuleCat.restrictScalars.{v} p).obj M) ≃ₗ[A] M :=
-  LinearEquiv.ofLinearMap
-    (lift (p.restrictScalarsSemilinearMap M))
+  LinearEquiv.ofLinearMap (lift (p.restrictScalarsSemilinearMap M))
     { toFun m := tmul p 1 (ModuleCat.restrictScalarsAddEquiv p M m)
       map_add' _ _ := by rw [_root_.map_add, tmul_add]
       map_smul' a m := by
         obtain ⟨e, rfl⟩ := hp a
         rw [← ModuleCat.smul_restrictScalarsAddEquiv, tmul_smul, one_mul, RingHom.id_apply,
           smul_tmul, mul_one] }
-    (by
-      ext m
+    (LinearMap.ext fun m ↦ by
       simp only [LinearMap.comp_apply, LinearMap.coe_mk, AddHom.coe_mk, lift_tmul, one_smul,
         LinearMap.id_apply]
       rw [RingHom.restrictScalarsSemilinearMap_apply]
@@ -513,19 +490,28 @@ noncomputable def restrictScalarsSelfEquiv (p : E →+* A) (hp : Function.Surjec
     (restrictScalarsSelfEquiv p hp M).symm m =
       tmul p 1 (ModuleCat.restrictScalarsAddEquiv p M m) := (rfl)
 
+/-- If an element `e : E` maps to a unit under `p : E →+* A` and annihilates an `E`-module `M`,
+then `BalancedExtension p M` is subsingleton. -/
+theorem subsingleton_of_isUnit_of_smul_eq_zero (p : E →+* A) {M : Type v} [AddCommGroup M]
+    [Module E M] (e : E) (hp : IsUnit (p e)) (hm : ∀ m : M, e • m = 0) :
+    Subsingleton (BalancedExtension p M) := by
+  obtain ⟨u, hu⟩ := hp
+  refine subsingleton_of_forall_eq 0 fun z ↦ ?_
+  induction z using induction_on with
+  | tmul a m =>
+    have h := tmul_smul (f := p) (a * (u⁻¹ : Aˣ)) e m
+    rwa [← hu, mul_assoc, ← Units.val_mul, inv_mul_cancel, Units.val_one, mul_one, hm, tmul_zero,
+      eq_comm] at h
+  | add x y hx hy => rw [hx, hy, add_zero]
+
 /-- If `p : E →+* A` and `p' : E →+* B` admit an element `e : E` with `p e = 1` and `p' e = 0`,
 then extending along `p` any `B`-module restricted along `p'` yields a subsingleton module. -/
 theorem subsingleton_restrictScalars_of_map_eq_one_of_map_eq_zero (p : E →+* A) (p' : E →+* B)
     (e : E) (hp : p e = 1) (hp' : p' e = 0) (N : ModuleCat.{v} B) :
-    Subsingleton (BalancedExtension p ((ModuleCat.restrictScalars.{v} p').obj N)) := by
-  refine subsingleton_of_forall_eq 0 fun z ↦ ?_
-  induction z using induction_on with
-  | tmul a n =>
-    have hsmul : e • n = 0 := (ModuleCat.restrictScalarsAddEquiv p' N).symm.injective
+    Subsingleton (BalancedExtension p ((ModuleCat.restrictScalars.{v} p').obj N)) :=
+  subsingleton_of_isUnit_of_smul_eq_zero p e (by rw [hp]; exact isUnit_one) fun n ↦
+    (ModuleCat.restrictScalarsAddEquiv p' N).symm.injective
       (by rw [ModuleCat.restrictScalarsAddEquiv_symm_smul, hp', zero_smul, map_zero])
-    have h := tmul_smul (f := p) a e n
-    rwa [hp, mul_one, hsmul, tmul_zero, eq_comm] at h
-  | add x y hx hy => rw [hx, hy, add_zero]
 
 private noncomputable def splitInclude (p : E →+* A) (P : ModuleCat.{v} E) :
     P →ₗ[E] (ModuleCat.restrictScalars p).obj (ModuleCat.of A (BalancedExtension p P)) where
@@ -536,74 +522,61 @@ private noncomputable def splitInclude (p : E →+* A) (P : ModuleCat.{v} E) :
     rw [tmul_smul, one_mul, RingHom.id_apply, ModuleCat.smul_restrictScalarsAddEquiv, smul_tmul,
       mul_one]
 
-private theorem splitInclude_apply (p : E →+* A) (P : ModuleCat.{v} E) (x : P) :
-    splitInclude p P x =
-      ModuleCat.restrictScalarsAddEquiv p (ModuleCat.of A (BalancedExtension p P)) (tmul p 1 x) :=
-  (rfl)
+section SplitLift
 
-private def splitLiftAux (p : E →+* A) (j : A →+ E) (hmul_right : ∀ a e, j a * e = j (a * p e))
-    (P : Type v) [AddCommGroup P] [Module E P] : BalancedExtension p P →+ P :=
-  (BalancedTensorProduct.lift
+variable (p : E →+* A) (j : A →+ E) (hL : ∀ e a, e * j a = j (p e * a))
+  (hR : ∀ a e, j a * e = j (a * p e)) (P : ModuleCat.{v} E)
+
+private noncomputable def splitLift :
+    (ModuleCat.restrictScalars p).obj (ModuleCat.of A (BalancedExtension p P)) →ₗ[E] P :=
+  let aux := BalancedTensorProduct.lift
     (LinearMap.mk₂ ℤ (fun a x ↦ j ((Scalars.of p).symm a) • x)
       (fun _ _ _ ↦ by rw [_root_.map_add, _root_.map_add, add_smul])
       (fun _ _ _ ↦ by rw [map_zsmul, map_zsmul, smul_assoc])
       (fun _ _ _ ↦ smul_add _ _ _) (fun _ _ _ ↦ smul_comm _ _ _))
     fun e a x ↦ by
       obtain ⟨a, rfl⟩ := (Scalars.of p).surjective a
-      simp only [LinearMap.mk₂_apply, Scalars.op_smul_of, AddEquiv.symm_apply_apply, ← mul_smul,
-        hmul_right]).toAddMonoidHom
+      simp only [LinearMap.mk₂_apply, Scalars.op_smul_of, AddEquiv.symm_apply_apply, ← mul_smul, hR]
+  { toFun q := aux ((ModuleCat.restrictScalarsAddEquiv p _).symm q)
+    map_add' _ _ := by rw [_root_.map_add, _root_.map_add]
+    map_smul' e q := by
+      rw [ModuleCat.restrictScalarsAddEquiv_symm_smul, RingHom.id_apply]
+      induction (ModuleCat.restrictScalarsAddEquiv p _).symm q using induction_on with
+      | tmul a x =>
+        dsimp only [aux]
+        rw [smul_tmul, tmul_def, tmul_def, BalancedTensorProduct.lift_tmul,
+          BalancedTensorProduct.lift_tmul]
+        simp [← hL, mul_smul]
+      | add _ _ hx hy => rw [smul_add, _root_.map_add, hx, hy, _root_.map_add, smul_add] }
 
-private theorem splitLiftAux_tmul (p : E →+* A) (j : A →+ E)
-    (hmul_right : ∀ a e, j a * e = j (a * p e)) (P : Type v) [AddCommGroup P] [Module E P]
-    (a : A) (x : P) : splitLiftAux p j hmul_right P (tmul p a x) = j a • x := by
-  rw [splitLiftAux, tmul_def, LinearMap.toAddMonoidHom_coe, BalancedTensorProduct.lift_tmul]; simp
+private theorem splitLift_tmul (a : A) (x : P) :
+    splitLift p j hL hR P (ModuleCat.restrictScalarsAddEquiv p
+      (ModuleCat.of A (BalancedExtension p P)) (tmul p a x)) = j a • x := by
+  dsimp only [splitLift, LinearMap.coe_mk, AddHom.coe_mk]
+  rw [AddEquiv.symm_apply_apply, tmul_def, BalancedTensorProduct.lift_tmul]; simp
 
-private noncomputable def splitLift (p : E →+* A) (j : A →+ E)
-    (hmul_left : ∀ e a, e * j a = j (p e * a)) (hmul_right : ∀ a e, j a * e = j (a * p e))
-    (P : ModuleCat.{v} E) :
-    (ModuleCat.restrictScalars p).obj (ModuleCat.of A (BalancedExtension p P)) →ₗ[E] P where
-  toFun q := splitLiftAux p j hmul_right P
-    ((ModuleCat.restrictScalarsAddEquiv p (ModuleCat.of A (BalancedExtension p P))).symm q)
-  map_add' _ _ := by rw [_root_.map_add, _root_.map_add]
-  map_smul' e q := by
-    rw [ModuleCat.restrictScalarsAddEquiv_symm_smul, RingHom.id_apply]
-    suffices ∀ z : BalancedExtension p P,
-        splitLiftAux p j hmul_right P (p e • z) = e • splitLiftAux p j hmul_right P z from this _
-    intro z; induction z using induction_on with
-    | tmul a x => simp only [smul_tmul, splitLiftAux_tmul, ← hmul_left, mul_smul]
-    | add x y hx hy => rw [smul_add, _root_.map_add, hx, hy, _root_.map_add, smul_add]
+end SplitLift
 
-private theorem splitLift_tmul (p : E →+* A) (j : A →+ E)
-    (hmul_left : ∀ e a, e * j a = j (p e * a)) (hmul_right : ∀ a e, j a * e = j (a * p e))
-    (P : ModuleCat.{v} E) (a : A) (x : P) :
-    splitLift p j hmul_left hmul_right P
-      (ModuleCat.restrictScalarsAddEquiv p (ModuleCat.of A (BalancedExtension p P))
-        (tmul p a x)) = j a • x := by
-  simp [splitLift, splitLiftAux_tmul]
-
-private theorem tmul_splitLift_self (p : E →+* A) (j : A →+ E) (hpj : ∀ a, p (j a) = a)
-    (hmul_left : ∀ e a, e * j a = j (p e * a)) (hmul_right : ∀ a e, j a * e = j (a * p e))
-    (P : ModuleCat.{v} E)
+private theorem tmul_splitLift_self {p : E →+* A} {j : A →+ E} (hpj : ∀ a, p (j a) = a)
+    {hL : ∀ e a, e * j a = j (p e * a)} {hR : ∀ a e, j a * e = j (a * p e)} {P : ModuleCat.{v} E}
     (q : (ModuleCat.restrictScalars p).obj (ModuleCat.of A (BalancedExtension p P))) :
-    tmul p 1 (splitLift p j hmul_left hmul_right P q) =
+    tmul p 1 (splitLift p j hL hR P q) =
       (ModuleCat.restrictScalarsAddEquiv p (ModuleCat.of A (BalancedExtension p P))).symm q := by
-  obtain ⟨q, rfl⟩ :=
-    (ModuleCat.restrictScalarsAddEquiv p (ModuleCat.of A (BalancedExtension p P))).surjective q
+  obtain ⟨q, rfl⟩ := (ModuleCat.restrictScalarsAddEquiv p _).surjective q
   simp only [AddEquiv.symm_apply_apply]
   induction q using induction_on with
   | tmul a x => rw [splitLift_tmul, tmul_smul, one_mul, hpj]
-  | add x y hx hy => rw [_root_.map_add, _root_.map_add, tmul_add, hx, hy]
+  | add _ _ hx hy => rw [_root_.map_add, _root_.map_add, tmul_add, hx, hy]
 
-private theorem tmul_splitLift_eq_zero (p : E →+* A) (p' : E →+* B) (j : A →+ E)
-    (horth : ∀ a, p' (j a) = 0) (hmul_left : ∀ e a, e * j a = j (p e * a))
-    (hmul_right : ∀ a e, j a * e = j (a * p e)) (P : ModuleCat.{v} E)
+private theorem tmul_splitLift_eq_zero {p : E →+* A} {j : A →+ E} (p' : E →+* B)
+    (horth : ∀ a, p' (j a) = 0) {hL : ∀ e a, e * j a = j (p e * a)}
+    {hR : ∀ a e, j a * e = j (a * p e)} {P : ModuleCat.{v} E}
     (q : (ModuleCat.restrictScalars p).obj (ModuleCat.of A (BalancedExtension p P))) :
-    tmul p' 1 (splitLift p j hmul_left hmul_right P q) = 0 := by
-  obtain ⟨q, rfl⟩ :=
-    (ModuleCat.restrictScalarsAddEquiv p (ModuleCat.of A (BalancedExtension p P))).surjective q
+    tmul p' 1 (splitLift p j hL hR P q) = 0 := by
+  obtain ⟨q, rfl⟩ := (ModuleCat.restrictScalarsAddEquiv p _).surjective q
   induction q using induction_on with
   | tmul a x => rw [splitLift_tmul, tmul_smul, one_mul, horth, zero_tmul]
-  | add x y hx hy => rw [_root_.map_add, _root_.map_add, tmul_add, hx, hy, add_zero]
+  | add _ _ hx hy => rw [_root_.map_add, _root_.map_add, tmul_add, hx, hy, add_zero]
 
 end Split
 
@@ -620,35 +593,29 @@ noncomputable def prodModuleLinearEquiv (P : ModuleCat.{v} (R × S)) :
         (ModuleCat.of R (BalancedExtension (RingHom.fst R S) P))) ×
       ((ModuleCat.restrictScalars (RingHom.snd R S)).obj
         (ModuleCat.of S (BalancedExtension (RingHom.snd R S) P))) :=
-  have h₁ : ∀ e a, e * AddMonoidHom.inl R S a = AddMonoidHom.inl R S (RingHom.fst R S e * a) :=
-    fun e a ↦ by rw [RingHom.coe_fst]; exact AddMonoidHom.mul_inl e a
-  have h₂ : ∀ a e, AddMonoidHom.inl R S a * e = AddMonoidHom.inl R S (a * RingHom.fst R S e) :=
-    fun a e ↦ by rw [RingHom.coe_fst]; exact AddMonoidHom.inl_mul a e
-  have h₃ : ∀ e b, e * AddMonoidHom.inr R S b = AddMonoidHom.inr R S (RingHom.snd R S e * b) :=
-    fun e b ↦ by rw [RingHom.coe_snd]; exact AddMonoidHom.mul_inr e b
-  have h₄ : ∀ b e, AddMonoidHom.inr R S b * e = AddMonoidHom.inr R S (b * RingHom.snd R S e) :=
-    fun b e ↦ by rw [RingHom.coe_snd]; exact AddMonoidHom.inr_mul b e
   LinearEquiv.ofLinearMap
     ((splitInclude (RingHom.fst R S) P).prod (splitInclude (RingHom.snd R S) P))
-    ((splitLift (RingHom.fst R S) (AddMonoidHom.inl R S) h₁ h₂ P).coprod
-      (splitLift (RingHom.snd R S) (AddMonoidHom.inr R S) h₃ h₄ P))
+    ((splitLift (RingHom.fst R S) (AddMonoidHom.inl R S)
+        (fun e a ↦ by rw [RingHom.coe_fst]; exact AddMonoidHom.mul_inl e a)
+        (fun a e ↦ by rw [RingHom.coe_fst]; exact AddMonoidHom.inl_mul a e) P).coprod
+      (splitLift (RingHom.snd R S) (AddMonoidHom.inr R S)
+        (fun e b ↦ by rw [RingHom.coe_snd]; exact AddMonoidHom.mul_inr e b)
+        (fun b e ↦ by rw [RingHom.coe_snd]; exact AddMonoidHom.inr_mul b e) P))
     (LinearMap.ext fun ⟨q₁, q₂⟩ ↦ Prod.ext
       ((ModuleCat.restrictScalarsAddEquiv (RingHom.fst R S) _).symm.injective <| by
-        simp [splitInclude_apply, tmul_add,
-          tmul_splitLift_self (RingHom.fst R S) (AddMonoidHom.inl R S) (by simp) h₁ h₂ P q₁,
-          tmul_splitLift_eq_zero (RingHom.snd R S) (RingHom.fst R S) (AddMonoidHom.inr R S)
-            (by simp) h₃ h₄ P q₂])
+        simp [splitInclude, tmul_add,
+          tmul_splitLift_self (p := RingHom.fst R S) (j := AddMonoidHom.inl R S) (by simp),
+          tmul_splitLift_eq_zero (j := AddMonoidHom.inr R S) (RingHom.fst R S) (by simp)])
       ((ModuleCat.restrictScalarsAddEquiv (RingHom.snd R S) _).symm.injective <| by
-        simp [splitInclude_apply, tmul_add,
-          tmul_splitLift_eq_zero (RingHom.fst R S) (RingHom.snd R S) (AddMonoidHom.inl R S)
-            (by simp) h₁ h₂ P q₁,
-          tmul_splitLift_self (RingHom.snd R S) (AddMonoidHom.inr R S) (by simp) h₃ h₄ P q₂]))
+        simp [splitInclude, tmul_add,
+          tmul_splitLift_self (p := RingHom.snd R S) (j := AddMonoidHom.inr R S) (by simp),
+          tmul_splitLift_eq_zero (j := AddMonoidHom.inl R S) (RingHom.snd R S) (by simp)]))
     (LinearMap.ext fun p ↦ by
       simp only [LinearMap.coprod_comp_prod, LinearMap.add_apply, LinearMap.comp_apply,
-        splitInclude_apply, LinearMap.id_apply]
-      rw [splitLift_tmul, splitLift_tmul]
-      have h1 : ((1, (0 : S)) : R × S) + (0, 1) = 1 := by ext <;> simp
-      rw [AddMonoidHom.inl_apply, AddMonoidHom.inr_apply, ← add_smul, h1, one_smul])
+        splitInclude, LinearMap.coe_mk, AddHom.coe_mk, LinearMap.id_apply]
+      rw [splitLift_tmul, splitLift_tmul, AddMonoidHom.inl_apply, AddMonoidHom.inr_apply,
+        ← add_smul, show ((1, 0) : R × S) + (0, 1) = 1 from Prod.ext (add_zero 1) (zero_add 1),
+        one_smul])
 
 @[simp] theorem prodModuleLinearEquiv_apply (P : ModuleCat.{v} (R × S)) (p : P) :
     prodModuleLinearEquiv R S P p =
@@ -671,7 +638,5 @@ noncomputable def prodModuleLinearEquiv (P : ModuleCat.{v} (R × S)) :
   rw [splitLift_tmul, splitLift_tmul, AddMonoidHom.inl_apply, AddMonoidHom.inr_apply]
 
 end Prod
-
-end SplitAndProd
 
 end TauCeti.BalancedExtension

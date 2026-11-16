@@ -10,11 +10,8 @@ public import Mathlib.RingTheory.PrincipalIdealDomain
 /-!
 # The opposite of a commutative principal ideal ring
 
-Right modules over a ring `R` are modules over `Rᵐᵒᵖ`, so right-module results such as
-`TauCeti.AlgebraicK0.finrankEquivPID` ask for `IsPrincipalIdealRing Rᵐᵒᵖ`. For a commutative
-semiring, `RingEquiv.toOpposite` identifies `R` with `Rᵐᵒᵖ`, and this file records the resulting
-instance so that `IsPrincipalIdealRing Rᵐᵒᵖ` is synthesized automatically for commutative
-principal ideal rings.
+Records `IsPrincipalIdealRing Rᵐᵒᵖ` for a commutative principal ideal semiring `R` via
+`RingEquiv.toOpposite`, used by right-module results such as `TauCeti.AlgebraicK0.finrankEquivPID`.
 -/
 
 public section

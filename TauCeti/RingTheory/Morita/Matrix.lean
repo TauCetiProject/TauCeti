@@ -23,9 +23,8 @@ on `M` used by the native inverse functor is restriction along `Matrix.scalar`; 
 with any given `R`-action satisfying the scalar tower law by
 `IsScalarTower.algebraMap_smul`. No finiteness assumption is imposed on `M`.
 
-For general rings `R`, the file also supplies the `Functor.Additive` instance for
-`ModuleCat.toMatrixModCat` and identifies its value on the finite free module `ι → R` with the
-regular left `Matrix ι ι R`-module (`TauCeti.toMatrixModCatPiLinearEquiv`).
+Also supplies `Functor.Additive` for `ModuleCat.toMatrixModCat` and identifies its value on `ι → R`
+with the regular `Matrix ι ι R`-module (`TauCeti.toMatrixModCatPiLinearEquiv`).
 
 ## References
 
@@ -184,8 +183,6 @@ theorem counitIso_hom_tensorEquivColumns (j : ι)
 
 end MatrixModCat
 
-section ToMatrixModCat
-
 universe u v w
 
 instance (R : Type u) (ι : Type v) [Ring R] [Fintype ι] [DecidableEq ι] :
@@ -194,32 +191,24 @@ instance (R : Type u) (ι : Type v) [Ring R] [Fintype ι] [DecidableEq ι] :
 
 @[simp] theorem ModuleCat.toMatrixModCat_obj_smul_apply {R : Type u} [Ring R] {ι : Type v}
     [Fintype ι] [DecidableEq ι] (M : ModuleCat.{w} R) (A : Matrix ι ι R)
-    (v : (ModuleCat.toMatrixModCat R ι).obj M) (i : ι) :
-    (A • v) i = ∑ j : ι, A i j • v j := (rfl)
+    (v : (ModuleCat.toMatrixModCat R ι).obj M) (i : ι) : (A • v) i = ∑ j : ι, A i j • v j := (rfl)
 
 namespace TauCeti
 
 variable (R : Type u) [Ring R] (ι : Type v) [Fintype ι] [DecidableEq ι]
 
-/-- Under `ModuleCat.toMatrixModCat`, the column module built from the finite free `R`-module
-`ι → R` is isomorphic as a left `Matrix ι ι R`-module to the regular module `Matrix ι ι R`. -/
+/-- Under `ModuleCat.toMatrixModCat`, `ι → R` is isomorphic to the regular `Matrix ι ι R`-module. -/
 def toMatrixModCatPiLinearEquiv :
     ((ModuleCat.toMatrixModCat R ι).obj (ModuleCat.of R (ι → R))) ≃ₗ[Matrix ι ι R]
       Matrix ι ι R where
-  toFun v := Matrix.of fun i k ↦ v i k
-  invFun M i k := M i k
-  left_inv _ := rfl
-  right_inv _ := rfl
-  map_add' _ _ := rfl
+  toFun v := Matrix.of fun i k ↦ v i k; invFun M i k := M i k
+  left_inv _ := rfl; right_inv _ := rfl; map_add' _ _ := rfl
   map_smul' _ _ := by ext; simp [Matrix.mul_apply]
 
-@[simp] theorem toMatrixModCatPiLinearEquiv_apply
-    (v : (ModuleCat.toMatrixModCat R ι).obj (ModuleCat.of R (ι → R))) (i k : ι) :
+@[simp] theorem toMatrixModCatPiLinearEquiv_apply (v) (i k : ι) :
     toMatrixModCatPiLinearEquiv R ι v i k = v i k := (rfl)
 
 @[simp] theorem toMatrixModCatPiLinearEquiv_symm_apply (M : Matrix ι ι R) (i k : ι) :
     (toMatrixModCatPiLinearEquiv R ι).symm M i k = M i k := (rfl)
 
 end TauCeti
-
-end ToMatrixModCat

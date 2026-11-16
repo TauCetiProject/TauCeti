@@ -13,9 +13,7 @@ public import Mathlib.Algebra.Ring.Prod
 /-!
 # Opposite ring homomorphisms, products, and double-opposite inverse pairs
 
-This file provides basic functoriality lemmas for `RingHom.op`, the canonical ring isomorphism
-`RingEquiv.prodMulOpposite : (R × S)ᵐᵒᵖ ≃+* Rᵐᵒᵖ × Sᵐᵒᵖ` identifying the opposite of a binary
-product with the product of the opposites (the binary counterpart of `RingEquiv.piMulOpposite`),
+Provides `RingHom.op_{id,comp}`, `RingEquiv.prodMulOpposite : (R × S)ᵐᵒᵖ ≃+* Rᵐᵒᵖ × Sᵐᵒᵖ`,
 and `RingHomInvPair` instances for `RingEquiv.opOp`.
 -/
 
@@ -34,24 +32,23 @@ end RingHom
 
 namespace RingEquiv
 
-/-- The opposite of a product of two rings is isomorphic to the product of their opposites.
-This is the binary counterpart of `RingEquiv.piMulOpposite`. -/
-def prodMulOpposite (R S : Type*) [Mul R] [Add R] [Mul S] [Add S] :
-    (R × S)ᵐᵒᵖ ≃+* Rᵐᵒᵖ × Sᵐᵒᵖ where
+section Prod
+
+variable (R S : Type*) [Mul R] [Add R] [Mul S] [Add S]
+
+/-- Opposite of a binary product of rings (binary counterpart of `RingEquiv.piMulOpposite`). -/
+def prodMulOpposite : (R × S)ᵐᵒᵖ ≃+* Rᵐᵒᵖ × Sᵐᵒᵖ where
   toFun x := (MulOpposite.op x.unop.1, MulOpposite.op x.unop.2)
   invFun x := MulOpposite.op (x.1.unop, x.2.unop)
-  left_inv _ := rfl
-  right_inv _ := rfl
-  map_mul' _ _ := rfl
-  map_add' _ _ := rfl
+  left_inv _ := rfl; right_inv _ := rfl; map_mul' _ _ := rfl; map_add' _ _ := rfl
 
-@[simp] theorem prodMulOpposite_apply (R S : Type*) [Mul R] [Add R] [Mul S] [Add S]
-    (x : (R × S)ᵐᵒᵖ) :
+@[simp] theorem prodMulOpposite_apply (x : (R × S)ᵐᵒᵖ) :
     prodMulOpposite R S x = (MulOpposite.op x.unop.1, MulOpposite.op x.unop.2) := (rfl)
 
-@[simp] theorem prodMulOpposite_symm_apply (R S : Type*) [Mul R] [Add R] [Mul S] [Add S]
-    (x : Rᵐᵒᵖ × Sᵐᵒᵖ) :
+@[simp] theorem prodMulOpposite_symm_apply (x : Rᵐᵒᵖ × Sᵐᵒᵖ) :
     (prodMulOpposite R S).symm x = MulOpposite.op (x.1.unop, x.2.unop) := (rfl)
+
+end Prod
 
 @[simp] theorem fst_comp_prodMulOpposite (R S : Type*) [NonAssocSemiring R] [NonAssocSemiring S] :
     (RingHom.fst Rᵐᵒᵖ Sᵐᵒᵖ).comp (prodMulOpposite R S : (R × S)ᵐᵒᵖ →+* Rᵐᵒᵖ × Sᵐᵒᵖ) =
