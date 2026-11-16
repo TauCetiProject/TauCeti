@@ -81,13 +81,6 @@ variable {𝕜 X E H : Type*} [RCLike 𝕜] {mX : MeasurableSpace X} {μ : Measu
   [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] [CompleteSpace H]
   {r r' : ℝ≥0∞} [r'.HolderConjugate r]
 
-/-- An exponent `r ≠ 0` with `1 / r < 1 / 2` satisfies `2 ≤ r`. Along an admissible pair this is
-the fact that the space exponent `r` lies on the `L^r` side of `L²`. -/
-theorem two_le_of_toReal_inv_lt (hr : r ≠ 0) (h : (r⁻¹).toReal < 2⁻¹) : 2 ≤ r := by
-  rw [← ENNReal.inv_le_inv, ← ENNReal.ofReal_toReal (ENNReal.inv_ne_top.2 hr),
-    ← ENNReal.ofReal_toReal (a := 2⁻¹) (by simp)]
-  exact ENNReal.ofReal_le_ofReal (h.le.trans_eq (by simp))
-
 /-- A single time pairing: Hölder's inequality in space and the decay of `U(s) U(t)*` bound
 `|⟪U(s)* f, U(t)* g⟫|` by `A |s - t| ^ (-γ) ‖f‖_{r'} ‖g‖_{r'}`. -/
 private theorem enorm_inner_adjoint_le {U : ℝ → H →L[𝕜] Lp E 2 μ} {A : ℝ≥0∞} {γ : ℝ}
