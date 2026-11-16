@@ -24,7 +24,9 @@ isomorphic to the limit object `E^{p+q}(⊥ ≤ q ≤ q + 1 ≤ ⊤)` as soon as
 
 * `CochainComplex.isZero_spectralObject_H_bot`, `CochainComplex.isZero_spectralObject_H_top`: the
   vanishing of `H^m(⊥ ≤ a)` and `H^m(b ≤ ⊤)` for the spectral object of a filtration, from the
-  vanishing of `H^m(F_a)` and `H^m(K / F_b)`.
+  vanishing of `H^m(F_a)` and `H^m(K / F_b)`;
+  `CochainComplex.isZero_spectralObject_H_bot_of_isZero_X` derives the first from the vanishing of
+  a stage in degree `m`.
 * `CochainComplex.filtrationSpectralSequencePageXIsoEInfty`: identification of the page objects
   with `EInfty` under the two vanishing conditions.
 * `CochainComplex.filtrationSpectralSequencePageXIsoEInftyOfFinite`: the case of a finite
@@ -55,6 +57,16 @@ lemma isZero_spectralObject_H_bot (a m : ℤ)
     exact h
   exact IsZero.of_iso h' ((HomologicalComplex.homologyFunctor C _ m).mapIso
     (cokernelIsoOfEq hz ≪≫ cokernelZeroIsoTarget))
+
+/-- `H^m(⊥ ≤ i)` vanishes for the spectral object of a filtration when the stage `F_s` of some
+`s ≥ i` vanishes in degree `m`: the filtration is then bounded below in degree `m`. -/
+lemma isZero_spectralObject_H_bot_of_isZero_X {s m : ℤ}
+    (hs : IsZero ((F s : CochainComplex C ℤ).X m)) {i : ℤ} (hi : i ≤ s) :
+    IsZero (((spectralObject (filtrationFunctor F hF)).H m).obj
+      (mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ i)))) :=
+  isZero_spectralObject_H_bot F hF i m
+    (((F i : CochainComplex C ℤ).sc m).isZero_homology_of_isZero_X₂
+      (hs.of_mono ((Subobject.ofLE _ _ (hF hi)).f m)))
 
 /-- `H^m(b ≤ ⊤)` vanishes for the spectral object of a filtration when `H^m(K / F_b)` does. -/
 lemma isZero_spectralObject_H_top (b m : ℤ)
