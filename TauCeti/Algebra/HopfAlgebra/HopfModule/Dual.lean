@@ -21,8 +21,8 @@ For a finite projective Hopf algebra `H` over a commutative semiring `R`, the li
 * its right `H`-comodule structure is `Comodule.dual R H H` for the regular right comodule `H`,
   characterized by `dualTensorHom R H H (dualCoact φ) y = S(matrixCoefficient φ y)`.
 
-Both the right Hopf-module compatibility (`dualIsRightHopfModule`) and the identification of the
-coinvariant subcomodule with `rightCointegrals R H` (`mem_dual_fixedSubcomodule_iff`) hold over any
+Both the right Hopf-module compatibility (`isRightHopfModule_dual`) and the identification of the
+coinvariant subcomodule with `rightCointegrals R H` (`mem_fixedSubcomodule_dual_iff`) hold over any
 commutative semiring `R`, without assuming bijectivity of the antipode or choosing a basis.
 Specializing the Fundamental Theorem of Hopf Modules (`RightHopfModule.coinvariantTensorEquiv`) to
 `Module.Dual R H` yields Larson and Sweedler's **cointegral decomposition**
@@ -35,9 +35,9 @@ commutative semiring `R`, `rightCointegrals R H` is a finitely generated project
 
 ## Main declarations
 
-* `TauCeti.RightHopfModule.dualRightModule`, `TauCeti.RightHopfModule.dualIsRightHopfModule`: the
+* `TauCeti.RightHopfModule.dualRightModule`, `TauCeti.RightHopfModule.isRightHopfModule_dual`: the
   right `H`-Hopf module structure on `Module.Dual R H`.
-* `TauCeti.RightHopfModule.mem_dual_fixedSubcomodule_iff` and
+* `TauCeti.RightHopfModule.mem_fixedSubcomodule_dual_iff` and
   `TauCeti.RightHopfModule.dualFixedEquivRightCointegrals`: coinvariants of `Module.Dual R H` are
   precisely the right cointegrals on `H`.
 * `TauCeti.rightCointegralsTensorEquivDual`: the canonical `R`-linear isomorphism
@@ -97,8 +97,7 @@ variable {R H} in
 theorem dualRightModule_op_smul_eq_domMulAct (h : H) (φ : Module.Dual R H) :
     MulOpposite.op h • φ = DomMulAct.mk h • φ :=
   LinearMap.ext fun y => by
-    rw [dualRightModule_op_smul_apply]
-    rfl
+    rw [dualRightModule_op_smul_apply, DomMulAct.mk_smul_linearMap_apply, smul_eq_mul]
 
 /-- Scalar compatibility of `dualRightModule` with `R`. -/
 instance dualRightIsScalarTower : IsScalarTower R Hᵐᵒᵖ (Module.Dual R H) :=
@@ -132,38 +131,64 @@ private theorem dualTensorHom_rTensor_opSMulTensor_tensorCombine
     | tmul h₁ h₂ =>
       simp [dualTensorHom_apply]
 
+/-- Universal cancellation for matrix coefficients of the regular right `H`-comodule:
+`∑ S(matrixCoefficient φ x₁) * x₂ = ∑ φ(x₁) • (S(x₂₁) * x₂₂) = φ(x) • 1`. -/
+private theorem mul_rTensor_antipode_comp_matrixCoefficientLinear_comul
+    (φ : Module.Dual R H) (x : H) :
+    LinearMap.mul' R H
+        ((HopfAlgebra.antipode R ∘ₗ
+          Comodule.matrixCoefficientLinear (R := R) (C := H) (M := H) φ).rTensor H
+          (Coalgebra.comul (R := R) x)) =
+      φ x • (1 : H) := by
+  let Ω : H ⊗[R] (H ⊗[R] H) →ₗ[R] H :=
+    (TensorProduct.lid R H).toLinearMap ∘ₗ
+      TensorProduct.map φ (LinearMap.mul' R H ∘ₗ (HopfAlgebra.antipode R).rTensor H)
+  have hΩ_left (w : H ⊗[R] H) :
+      LinearMap.mul' R H
+        ((HopfAlgebra.antipode R ∘ₗ
+          Comodule.matrixCoefficientLinear (R := R) (C := H) (M := H) φ).rTensor H w) =
+        Ω (TensorProduct.assoc R H H H ((Coalgebra.comul (R := R)).rTensor H w)) := by
+    induction w using TensorProduct.inductionOn with
+    | add u v hu hv => simp only [map_add, hu, hv]
+    | tmul a b =>
+      simp only [LinearMap.rTensor_tmul, LinearMap.comp_apply,
+        Comodule.matrixCoefficientLinear_apply, Comodule.matrixCoefficient_def,
+        Comodule.instSelf_coact]
+      induction Coalgebra.comul (R := R) a using TensorProduct.inductionOn with
+      | add u v hu hv => simp only [map_add, TensorProduct.add_tmul, hu, hv]
+      | tmul a₁ a₂ => simp [Ω]
+  have hΩ_right (w : H ⊗[R] H) :
+      Ω ((Coalgebra.comul (R := R)).lTensor H w) =
+        φ (TensorProduct.rid R H ((Coalgebra.counit (R := R)).lTensor H w)) • (1 : H) := by
+    induction w using TensorProduct.inductionOn with
+    | add u v hu hv => simp only [map_add, add_smul, hu, hv]
+    | tmul u v =>
+      simp [Ω, Algebra.algebraMap_eq_smul_one, mul_smul]
+  rw [hΩ_left, Coalgebra.coassoc_apply, hΩ_right, Coalgebra.lTensor_counit_comul,
+    TensorProduct.rid_tmul, one_smul]
+
 variable [Module.Finite R H] [Module.Projective R H]
 
 /-- The linear dual `Module.Dual R H` of a finite projective Hopf algebra `H` is a right
 `H`-Hopf module for `dualRightModule` and `Comodule.dual R H H`. -/
-theorem dualIsRightHopfModule : IsRightHopfModule R H (Module.Dual R H) where
+theorem isRightHopfModule_dual : IsRightHopfModule R H (Module.Dual R H) where
   coact_op_smul h φ := by
     apply (dualTensorHom_bijective (R := R) (M := H) (N := H)).1
     ext y
     rw [Comodule.dual_coact, Comodule.dualTensorHom_dualCoact_apply,
       dualTensorHom_rTensor_opSMulTensor_tensorCombine, Comodule.dualTensorHom_dualCoact]
-    -- Expand `matrixCoefficient` on both sides and induct on `Δ(y)` so `y` enters via pure
-    -- coproduct factors `y₁ ⊗ y₂`.
-    have hRHS_mc (x : H) :
-        ((HopfAlgebra.antipode R (A := H)).comp
-          (Comodule.matrixCoefficientBilinear (R := R) (C := H) (M := H) φ) ∘ₗ
-            LinearMap.mulRight R y) x =
-          HopfAlgebra.antipode R
-            (TensorProduct.lid R H
-              (φ.rTensor H (Coalgebra.comul (R := R) x * Coalgebra.comul (R := R) y))) := by
-      simp [Comodule.matrixCoefficient_def, Comodule.instSelf_coact, LinearMap.rTensor_def,
-        Bialgebra.comul_mul]
-    have hRHS_ext :
+    have hRHS :
         (HopfAlgebra.antipode R (A := H)).comp
           (Comodule.matrixCoefficientBilinear (R := R) (C := H) (M := H) φ) ∘ₗ
             LinearMap.mulRight R y =
           HopfAlgebra.antipode R ∘ₗ (TensorProduct.lid R H).toLinearMap ∘ₗ
             φ.rTensor H ∘ₗ LinearMap.mulRight R (Coalgebra.comul (R := R) y) ∘ₗ
               Coalgebra.comul (R := R) :=
-      LinearMap.ext hRHS_mc
-    rw [hRHS_ext, Comodule.matrixCoefficient_def, Comodule.instSelf_coact]
-    generalize Coalgebra.comul (R := R) y = cy
-    induction cy using TensorProduct.inductionOn with
+      LinearMap.ext fun x => by
+        simp [Comodule.matrixCoefficient_def, Comodule.instSelf_coact, LinearMap.rTensor_def,
+          Bialgebra.comul_mul]
+    rw [hRHS, Comodule.matrixCoefficient_def, Comodule.instSelf_coact]
+    induction Coalgebra.comul (R := R) y using TensorProduct.inductionOn with
     | add u v hu hv =>
       have hmul_add :
           LinearMap.mulRight R (u + v) = LinearMap.mulRight R u + LinearMap.mulRight R v :=
@@ -171,139 +196,82 @@ theorem dualIsRightHopfModule : IsRightHopfModule R H (Module.Dual R H) where
       simp only [map_add, hmul_add, LinearMap.comp_add, LinearMap.add_comp, LinearMap.rTensor_add,
         LinearMap.add_apply, hu, hv]
     | tmul y₁ y₂ =>
-      -- Build `Ξ : H ⊗[R] (H ⊗[R] H) →ₗ[R] H` sending `a ⊗ (b₁ ⊗ b₂)` to
-      -- `φ(a * y₁) • (S(y₂) * (S(b₁) * b₂))`; coassociativity cancels `S(h₂₁) * h₂₂` to `ε(h₂)`.
-      let Ξ : H ⊗[R] (H ⊗[R] H) →ₗ[R] H :=
-        (TensorProduct.lid R H).toLinearMap ∘ₗ
-          TensorProduct.map
-            (φ ∘ₗ LinearMap.mulRight R y₁)
-            (LinearMap.mulLeft R (HopfAlgebra.antipode R y₂) ∘ₗ
-              LinearMap.mul' R H ∘ₗ (HopfAlgebra.antipode R).rTensor H)
-      have hΞ_right (w : H ⊗[R] H) :
-          LinearMap.mul' R H
-            ((HopfAlgebra.antipode R ∘ₗ (TensorProduct.lid R H).toLinearMap ∘ₗ
-              φ.rTensor H ∘ₗ LinearMap.mulRight R (y₁ ⊗ₜ[R] y₂) ∘ₗ
-                Coalgebra.comul (R := R)).rTensor H w) =
-            Ξ (TensorProduct.assoc R H H H ((Coalgebra.comul (R := R)).rTensor H w)) := by
+      -- Pull left multiplication by `S(y₂)` out of the coproduct contraction and cancel via
+      -- `mul_rTensor_antipode_comp_matrixCoefficientLinear_comul` on `φ ∘ mulRight y₁`.
+      have hstep :
+          HopfAlgebra.antipode R ∘ₗ (TensorProduct.lid R H).toLinearMap ∘ₗ
+            φ.rTensor H ∘ₗ LinearMap.mulRight R (y₁ ⊗ₜ[R] y₂) ∘ₗ Coalgebra.comul (R := R) =
+          LinearMap.mulLeft R (HopfAlgebra.antipode R y₂) ∘ₗ
+            (HopfAlgebra.antipode R ∘ₗ
+              Comodule.matrixCoefficientLinear (R := R) (C := H) (M := H)
+                (φ ∘ₗ LinearMap.mulRight R y₁)) :=
+        LinearMap.ext fun a => by
+          simp only [LinearMap.comp_apply, Comodule.matrixCoefficientLinear_apply,
+            Comodule.matrixCoefficient_def, Comodule.instSelf_coact]
+          induction Coalgebra.comul (R := R) a using TensorProduct.inductionOn with
+          | add u v hu hv => simp only [map_add, hu, hv]
+          | tmul a₁ a₂ => simp [_root_.HopfAlgebra.antipode_mul_antidistrib]
+      have hmulLeft (w : H ⊗[R] H) :
+          LinearMap.mul' R H ((LinearMap.mulLeft R (HopfAlgebra.antipode R y₂)).rTensor H w) =
+            HopfAlgebra.antipode R y₂ * LinearMap.mul' R H w := by
         induction w using TensorProduct.inductionOn with
-        | add u v hu hv => simp only [map_add, hu, hv]
-        | tmul h₁ h₂ =>
-          simp only [LinearMap.rTensor_tmul, LinearMap.comp_apply]
-          generalize Coalgebra.comul (R := R) h₁ = ch₁
-          induction ch₁ using TensorProduct.inductionOn with
-          | add u v hu hv =>
-            simp only [LinearMap.mulRight_apply] at hu hv ⊢
-            simp only [add_mul, map_add, TensorProduct.add_tmul, hu, hv]
-          | tmul h₁₁ h₁₂ =>
-            simp only [Ξ, LinearMap.mulRight_apply, Algebra.TensorProduct.tmul_mul_tmul,
-              LinearMap.rTensor_tmul, LinearEquiv.coe_coe, TensorProduct.lid_tmul, map_smul,
-              _root_.HopfAlgebra.antipode_mul_antidistrib, LinearMap.mul'_apply, smul_mul_assoc,
-              mul_assoc, LinearMap.comp_apply, TensorProduct.assoc_tmul, TensorProduct.map_tmul,
-              LinearMap.mulLeft_apply]
-      rw [hΞ_right, Coalgebra.coassoc_apply]
-      have hΞ_left (w : H ⊗[R] H) :
-          Ξ ((Coalgebra.comul (R := R)).lTensor H w) =
-            φ (TensorProduct.rid R H ((Coalgebra.counit (R := R)).lTensor H w) * y₁) •
-              HopfAlgebra.antipode R y₂ := by
-        induction w using TensorProduct.inductionOn with
-        | add u v hu hv =>
-          simp only [map_add, add_mul, add_smul, hu, hv]
-        | tmul h₁ h₂ =>
-          simp only [Ξ, LinearMap.lTensor_tmul, LinearMap.comp_apply, TensorProduct.map_tmul,
-            LinearMap.mulRight_apply, _root_.HopfAlgebra.mul_antipode_rTensor_comul_apply,
-            LinearMap.mulLeft_apply, Algebra.algebraMap_eq_smul_one, mul_one,
-            LinearEquiv.coe_coe, TensorProduct.lid_tmul, smul_assoc, TensorProduct.rid_tmul,
-            smul_mul_assoc, map_smul]
-          rw [smul_comm]
-      have hrid :
-          TensorProduct.rid R H
-            ((Coalgebra.counit (R := R)).lTensor H (Coalgebra.comul (R := R) h)) = h :=
-        Comodule.rid_lTensor_counit_coact (R := R) (C := H) h
-      rw [hΞ_left, hrid]
+        | add u v hu hv => simp only [map_add, mul_add, hu, hv]
+        | tmul a b => simp [mul_assoc]
+      rw [hstep, LinearMap.rTensor_comp_apply, hmulLeft,
+        mul_rTensor_antipode_comp_matrixCoefficientLinear_comul]
       simp
 
 variable {R H} in
 /-- Coinvariants of the dual right `H`-comodule `Module.Dual R H` are precisely right cointegrals on
 `H`. Neither subtraction on `R` nor bijectivity of the antipode is needed. -/
-theorem mem_dual_fixedSubcomodule_iff (φ : Module.Dual R H) :
+theorem mem_fixedSubcomodule_dual_iff (φ : Module.Dual R H) :
     φ ∈ Comodule.fixedSubcomodule R H (Module.Dual R H) ↔ IsRightCointegral φ := by
   rw [Comodule.mem_fixedSubcomodule, Comodule.dual_coact, isRightCointegral_def,
     ← (dualTensorHom_bijective (R := R) (M := H) (N := H)).1.eq_iff, LinearMap.ext_iff]
   simp only [Comodule.dualTensorHom_dualCoact_apply, dualTensorHom_apply]
   constructor
   · intro hφ x
-    -- Let `Ψ` contract `a ⊗ b` to `S(matrixCoefficient φ a) * b`: by `hφ` this evaluates on `Δ(x)`
-    -- to `∑ φ(x₁) • x₂`, while by coassociativity `S(x₁₂) * x₂` cancels to `ε(x₂) • 1`.
-    let Ψ : H ⊗[R] H →ₗ[R] H :=
-      LinearMap.mul' R H ∘ₗ
-        (HopfAlgebra.antipode R ∘ₗ
-          Comodule.matrixCoefficientLinear (R := R) (C := H) (M := H) φ).rTensor H
-    have hΨ_lhs (w : H ⊗[R] H) :
-        Ψ w = TensorProduct.lid R H (φ.rTensor H w) := by
-      induction w using TensorProduct.inductionOn with
+    have hmap :
+        HopfAlgebra.antipode R ∘ₗ
+            Comodule.matrixCoefficientLinear (R := R) (C := H) (M := H) φ =
+          LinearMap.toSpanSingleton R H 1 ∘ₗ φ :=
+      LinearMap.ext hφ
+    have hcancel := mul_rTensor_antipode_comp_matrixCoefficientLinear_comul R H φ x
+    rw [hmap, LinearMap.rTensor_comp_apply] at hcancel
+    have hlid (z : R ⊗[R] H) :
+        LinearMap.mul' R H ((LinearMap.toSpanSingleton R H 1).rTensor H z) =
+          TensorProduct.lid R H z := by
+      induction z using TensorProduct.inductionOn with
       | add u v hu hv => simp only [map_add, hu, hv]
-      | tmul a b =>
-        simp only [Ψ, LinearMap.comp_apply, LinearMap.rTensor_tmul,
-          Comodule.matrixCoefficientLinear_apply, hφ a, LinearMap.mul'_apply, smul_mul_assoc,
-          one_mul, TensorProduct.lid_tmul]
-    let Ω : H ⊗[R] (H ⊗[R] H) →ₗ[R] H :=
-      (TensorProduct.lid R H).toLinearMap ∘ₗ
-        TensorProduct.map φ (LinearMap.mul' R H ∘ₗ (HopfAlgebra.antipode R).rTensor H)
-    have hΨ_omega (w : H ⊗[R] H) :
-        Ψ w = Ω (TensorProduct.assoc R H H H ((Coalgebra.comul (R := R)).rTensor H w)) := by
-      induction w using TensorProduct.inductionOn with
-      | add u v hu hv => simp only [map_add, hu, hv]
-      | tmul a b =>
-        simp only [Ψ, LinearMap.comp_apply, LinearMap.rTensor_tmul,
-          Comodule.matrixCoefficientLinear_apply, Comodule.matrixCoefficient_def,
-          Comodule.instSelf_coact]
-        generalize Coalgebra.comul (R := R) a = ca
-        induction ca using TensorProduct.inductionOn with
-        | add u v hu hv =>
-          simp only [map_add, TensorProduct.add_tmul, hu, hv]
-        | tmul a₁ a₂ =>
-          simp [Ω]
-    have hΩ_rhs (w : H ⊗[R] H) :
-        Ω ((Coalgebra.comul (R := R)).lTensor H w) =
-          φ (TensorProduct.rid R H ((Coalgebra.counit (R := R)).lTensor H w)) • (1 : H) := by
-      induction w using TensorProduct.inductionOn with
-      | add u v hu hv => simp only [map_add, add_smul, hu, hv]
-      | tmul u v =>
-        simp only [Ω, LinearMap.lTensor_tmul, LinearMap.comp_apply, TensorProduct.map_tmul,
-          _root_.HopfAlgebra.mul_antipode_rTensor_comul_apply, Algebra.algebraMap_eq_smul_one,
-          LinearEquiv.coe_coe, TensorProduct.lid_tmul, TensorProduct.rid_tmul, map_smul,
-          smul_eq_mul]
-        rw [← mul_smul, mul_comm]
-    have hrid :
-        TensorProduct.rid R H
-          ((Coalgebra.counit (R := R)).lTensor H (Coalgebra.comul (R := R) x)) = x :=
-      Comodule.rid_lTensor_counit_coact (R := R) (C := H) x
-    rw [← hΨ_lhs, hΨ_omega, Coalgebra.coassoc_apply, hΩ_rhs, hrid]
+      | tmul r b => simp
+    exact (hlid _).symm.trans hcancel
   · intro hφ y
-    have hy : Comodule.matrixCoefficient (R := R) (C := H) φ y = φ y • (1 : H) := hφ y
-    rw [hy, map_smul, _root_.HopfAlgebra.antipode_one]
+    rw [Comodule.matrixCoefficient_def, Comodule.instSelf_coact, ← LinearMap.rTensor_def, hφ y,
+      map_smul, _root_.HopfAlgebra.antipode_one]
 
 /-- The fixed subcomodule of `Module.Dual R H` is `R`-linearly equivalent to `rightCointegrals R H`
 via the identity on underlying functionals. -/
 def dualFixedEquivRightCointegrals :
-    Comodule.fixedSubcomodule R H (Module.Dual R H) ≃ₗ[R] rightCointegrals R H where
-  toFun φ := ⟨φ.1, (mem_rightCointegrals φ.1).mpr ((mem_dual_fixedSubcomodule_iff φ.1).mp φ.2)⟩
-  map_add' _ _ := Subtype.ext rfl
-  map_smul' _ _ := Subtype.ext rfl
-  invFun φ := ⟨φ.1, (mem_dual_fixedSubcomodule_iff φ.1).mpr ((mem_rightCointegrals φ.1).mp φ.2)⟩
-  left_inv _ := Subtype.ext rfl
-  right_inv _ := Subtype.ext rfl
+    Comodule.fixedSubcomodule R H (Module.Dual R H) ≃ₗ[R] rightCointegrals R H :=
+  LinearEquiv.ofEq (Comodule.fixedSubcomodule R H (Module.Dual R H)).toSubmodule
+    (rightCointegrals R H)
+    (Submodule.ext fun φ => (mem_fixedSubcomodule_dual_iff φ).trans (mem_rightCointegrals φ).symm)
 
 variable {R H} in
+/-- `dualFixedEquivRightCointegrals` preserves the underlying linear functional. -/
 @[simp]
 theorem coe_dualFixedEquivRightCointegrals
     (φ : Comodule.fixedSubcomodule R H (Module.Dual R H)) :
-    (dualFixedEquivRightCointegrals R H φ : Module.Dual R H) = φ := (rfl)
+    (dualFixedEquivRightCointegrals R H φ : Module.Dual R H) = φ :=
+  LinearEquiv.coe_ofEq_apply _ φ
 
 variable {R H} in
+/-- `(dualFixedEquivRightCointegrals R H).symm` preserves the underlying linear functional. -/
 @[simp]
 theorem coe_dualFixedEquivRightCointegrals_symm (φ : rightCointegrals R H) :
-    ((dualFixedEquivRightCointegrals R H).symm φ : Module.Dual R H) = φ := (rfl)
+    ((dualFixedEquivRightCointegrals R H).symm φ : Module.Dual R H) = φ :=
+  (coe_dualFixedEquivRightCointegrals _).symm.trans
+    (congrArg Subtype.val ((dualFixedEquivRightCointegrals R H).apply_symm_apply φ))
 
 end HopfAlgebra
 
@@ -323,7 +291,7 @@ def rightCointegralsTensorEquivDual :
     rightCointegrals R H ⊗[R] H ≃ₗ[R] Module.Dual R H :=
   letI := Comodule.dual R H H
   letI := RightHopfModule.dualRightModule R H
-  haveI := RightHopfModule.dualIsRightHopfModule R H
+  haveI := RightHopfModule.isRightHopfModule_dual R H
   (TensorProduct.congr (RightHopfModule.dualFixedEquivRightCointegrals R H).symm
     (LinearEquiv.refl R H)).trans
     (RightHopfModule.coinvariantTensorEquiv R H (Module.Dual R H))
@@ -337,50 +305,41 @@ theorem rightCointegralsTensorEquivDual_tmul (φ : rightCointegrals R H) (h : H)
     rightCointegralsTensorEquivDual R H (φ ⊗ₜ[R] h) = DomMulAct.mk h • (φ : Module.Dual R H) := by
   let := Comodule.dual R H H
   let := RightHopfModule.dualRightModule R H
-  have := RightHopfModule.dualIsRightHopfModule R H
+  have := RightHopfModule.isRightHopfModule_dual R H
   simp [rightCointegralsTensorEquivDual, RightHopfModule.dualRightModule_op_smul_eq_domMulAct]
 
 /-- Pointwise evaluation of `rightCointegralsTensorEquivDual` on a pure tensor:
 `rightCointegralsTensorEquivDual (φ ⊗ h) x = φ (h * x)`. -/
 theorem rightCointegralsTensorEquivDual_tmul_apply (φ : rightCointegrals R H) (h x : H) :
     rightCointegralsTensorEquivDual R H (φ ⊗ₜ[R] h) x = (φ : Module.Dual R H) (h * x) := by
-  rw [rightCointegralsTensorEquivDual_tmul]
-  rfl
+  rw [rightCointegralsTensorEquivDual_tmul, DomMulAct.mk_smul_linearMap_apply, smul_eq_mul]
 
 /-- `rightCointegralsTensorEquivDual` is equivariant for right multiplication on the `H` factor and
 `DomMulAct` on `Module.Dual R H`. -/
 theorem rightCointegralsTensorEquivDual_tmul_mul (φ : rightCointegrals R H) (x h : H) :
     rightCointegralsTensorEquivDual R H (φ ⊗ₜ[R] (x * h)) =
       DomMulAct.mk h • rightCointegralsTensorEquivDual R H (φ ⊗ₜ[R] x) := by
-  let := RightHopfModule.dualRightModule R H
   ext y
-  rw [rightCointegralsTensorEquivDual_tmul_apply,
-    ← RightHopfModule.dualRightModule_op_smul_eq_domMulAct,
-    RightHopfModule.dualRightModule_op_smul_apply, rightCointegralsTensorEquivDual_tmul_apply,
-    mul_assoc]
+  rw [rightCointegralsTensorEquivDual_tmul_apply, DomMulAct.mk_smul_linearMap_apply,
+    rightCointegralsTensorEquivDual_tmul_apply, smul_eq_mul, mul_assoc]
 
 /-- The right-cointegral submodule of a finite projective `R`-Hopf algebra is projective over
 `R`. -/
-instance instModuleProjectiveRightCointegrals : Module.Projective R (rightCointegrals R H) := by
-  -- `φ ↦ φ ⊗ 1` splits `rightCointegrals R H` off `rightCointegrals R H ⊗[R] H` via `ε`.
-  have : Module.Projective R (rightCointegrals R H ⊗[R] H) :=
-    Module.Projective.of_equiv (rightCointegralsTensorEquivDual R H).symm
-  refine Module.Projective.of_split
-    ((TensorProduct.mk R (rightCointegrals R H) H).flip (1 : H))
-    ((TensorProduct.rid R (rightCointegrals R H)).toLinearMap ∘ₗ
-      (Coalgebra.counit (R := R) (A := H)).lTensor (rightCointegrals R H)) ?_
-  ext φ
-  simp
+instance instModuleProjectiveRightCointegrals : Module.Projective R (rightCointegrals R H) :=
+  letI := Comodule.dual R H H
+  letI := RightHopfModule.dualRightModule R H
+  haveI := RightHopfModule.isRightHopfModule_dual R H
+  haveI := RightHopfModule.projective_fixedSubcomodule R H (Module.Dual R H)
+  Module.Projective.of_equiv (RightHopfModule.dualFixedEquivRightCointegrals R H)
 
 /-- The right-cointegral submodule of a finite projective `R`-Hopf algebra is finitely generated
 over `R`. -/
-instance instModuleFiniteRightCointegrals : Module.Finite R (rightCointegrals R H) := by
-  have : Module.Finite R (rightCointegrals R H ⊗[R] H) :=
-    Module.Finite.equiv (rightCointegralsTensorEquivDual R H).symm
-  refine Module.Finite.of_surjective
-    ((TensorProduct.rid R (rightCointegrals R H)).toLinearMap ∘ₗ
-      (Coalgebra.counit (R := R) (A := H)).lTensor (rightCointegrals R H))
-    (fun φ => ⟨φ ⊗ₜ[R] (1 : H), by simp⟩)
+instance instModuleFiniteRightCointegrals : Module.Finite R (rightCointegrals R H) :=
+  letI := Comodule.dual R H H
+  letI := RightHopfModule.dualRightModule R H
+  haveI := RightHopfModule.isRightHopfModule_dual R H
+  haveI := RightHopfModule.finite_fixedSubcomodule R H (Module.Dual R H)
+  Module.Finite.equiv (RightHopfModule.dualFixedEquivRightCointegrals R H)
 
 end CointegralDecomposition
 

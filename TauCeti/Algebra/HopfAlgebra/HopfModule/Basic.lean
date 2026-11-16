@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Coalgebra.Comodule.Cofree.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.Fixed
 public import TauCeti.Algebra.Coalgebra.Comodule.TensorProduct
 public import TauCeti.Algebra.HopfAlgebra.Antipode
+import TauCeti.Algebra.Coalgebra.Comodule.Inverse
 
 /-!
 # Right Hopf modules and the fundamental theorem
@@ -21,14 +22,16 @@ Let `H` be a bialgebra over a commutative semiring `R`. A **right `H`-Hopf modul
 `ρ(m ◃ h) = ∑ (m₀ ◃ h₁) ⊗ (m₁ h₂)`.
 
 For any `R`-module `N`, the cofree comodule `N ⊗[R] H`, with `H` acting by right multiplication on
-the second tensor factor, is the model example; its fixed subcomodule of coinvariant elements is
-isomorphic to `N` via `n ↦ n ⊗ 1`.
+the second tensor factor, is the model example (`Comodule.cofreeRightModule`,
+`Comodule.isRightHopfModule_cofree`); its fixed subcomodule of coinvariant elements is identified
+with `N` in `TauCeti.Algebra.Coalgebra.Comodule.Cofree.Fixed`.
 
 When `H` is a Hopf algebra, every right `H`-Hopf module is canonically of this form. The
 coinvariant projection `coinvariantProj` sends `m` to `∑ m₀ ◃ S(m₁)`, lands in
 `Comodule.fixedSubcomodule R H M`, transforms by the counit under the right `H`-action, and fixes
-coinvariants. Combining it with the coaction gives the **Fundamental Theorem of Hopf Modules**
-(`coinvariantTensorEquiv`):
+coinvariants; in particular `Comodule.fixedSubcomodule R H M` is an `R`-linear retract of `M`, so
+it inherits projectivity and finite generation over `R`. Combining `toFixedSubcomodule` with the
+coaction gives the **Fundamental Theorem of Hopf Modules** (`coinvariantTensorEquiv`):
 
 `Comodule.fixedSubcomodule R H M ⊗[R] H ≃ₗ[R] M`,
 
@@ -39,11 +42,12 @@ sending `n ⊗ h` to `n ◃ h`, and intertwining both the right `H`-actions and 
 
 * `TauCeti.RightHopfModule.opSMulTensor`: the right `H`-action bundled as `M ⊗[R] H →ₗ[R] M`.
 * `TauCeti.IsRightHopfModule`: Prop-valued compatibility class making `M` a right `H`-Hopf module.
-* `TauCeti.Comodule.cofreeRightModule`, `TauCeti.Comodule.cofreeIsRightHopfModule`: the model
-  right `H`-Hopf module structure on `N ⊗[R] H`, with `TauCeti.Comodule.cofreeFixedEquiv`
-  identifying `N` with its coinvariants.
+* `TauCeti.Comodule.cofreeRightModule`, `TauCeti.Comodule.isRightHopfModule_cofree`: the model
+  right `H`-Hopf module structure on `N ⊗[R] H`.
 * `TauCeti.RightHopfModule.coinvariantProj` and `TauCeti.RightHopfModule.toFixedSubcomodule`: the
-  projection `m ↦ ∑ m₀ ◃ S(m₁)` onto coinvariants.
+  projection `m ↦ ∑ m₀ ◃ S(m₁)` onto coinvariants, with
+  `TauCeti.RightHopfModule.projective_fixedSubcomodule` and
+  `TauCeti.RightHopfModule.finite_fixedSubcomodule`.
 * `TauCeti.RightHopfModule.coinvariantTensorEquiv`: the fundamental isomorphism
   `Comodule.fixedSubcomodule R H M ⊗[R] H ≃ₗ[R] M`, together with its right-module and
   right-comodule equivariance (`coinvariantTensorEquiv_tmul_mul`, `coinvariantTensorComoduleHom`,
@@ -90,6 +94,21 @@ variable {R H M}
 theorem opSMulTensor_tmul (m : M) (h : H) :
     opSMulTensor R H M (m ⊗ₜ[R] h) = MulOpposite.op h • m := (rfl)
 
+/-- Associativity of the right `H`-action in tensor-product form: acting sequentially by the two
+`H` factors agrees with multiplying them in `H` before acting. -/
+theorem opSMulTensor_assoc :
+    opSMulTensor R H M ∘ₗ (opSMulTensor R H M).rTensor H ∘ₗ
+        (TensorProduct.assoc R M H H).symm.toLinearMap =
+      opSMulTensor R H M ∘ₗ (LinearMap.mul' R H).lTensor M := by
+  refine TensorProduct.ext_threefold' fun m h₁ h₂ => ?_
+  simp [MulOpposite.op_mul, mul_smul]
+
+private theorem opSMulTensor_comp_lTensor_linearMap :
+    opSMulTensor R H M ∘ₗ (Algebra.linearMap R H).lTensor M =
+      (TensorProduct.rid R M).toLinearMap :=
+  TensorProduct.ext' fun m r => by
+    simp [Algebra.algebraMap_eq_smul_one]
+
 end Action
 
 end RightHopfModule
@@ -117,14 +136,6 @@ variable [CommSemiring R] [Semiring H] [Bialgebra R H]
 variable [AddCommMonoid M] [Module R M] [Module Hᵐᵒᵖ M] [IsScalarTower R Hᵐᵒᵖ M]
 variable [Comodule R H M] [IsRightHopfModule R H M]
 
-/-- Coacting after a right `H`-action applies `opSMulTensor ⊗ id` to the combined coactions. -/
-theorem coact_op_smul (h : H) (m : M) :
-    Comodule.coact (R := R) (C := H) (MulOpposite.op h • m) =
-      (opSMulTensor R H M).rTensor H
-        (Comodule.tensorCombine (R := R) (C := H) (M := M) (N := H)
-          (Comodule.coact (R := R) (C := H) m ⊗ₜ[R] Coalgebra.comul (R := R) h)) :=
-  IsRightHopfModule.coact_op_smul h m
-
 /-- Sweedler-sum form of the right Hopf-module law for a representation of `Δ(h)` and a sum
 expression for `coact m`. -/
 theorem coact_op_smul_eq_sum {h : H} {m : M} {ι κ : Type*}
@@ -134,7 +145,7 @@ theorem coact_op_smul_eq_sum {h : H} {m : M} {ι κ : Type*}
     Comodule.coact (R := R) (C := H) (MulOpposite.op h • m) =
       ∑ i ∈ s, ∑ j ∈ rh.index,
         (MulOpposite.op (rh.left j) • m₀ i) ⊗ₜ[R] (m₁ i * rh.right j) := by
-  rw [coact_op_smul, ← hm, ← rh.eq, TensorProduct.sum_tmul]
+  rw [IsRightHopfModule.coact_op_smul, ← hm, ← rh.eq, TensorProduct.sum_tmul]
   simp [TensorProduct.tmul_sum, map_sum]
 
 /-- Acting on a coinvariant vector `m` by `h` produces a vector whose coaction is
@@ -144,7 +155,7 @@ theorem coact_op_smul_of_mem_fixedSubcomodule {m : M}
     Comodule.coact (R := R) (C := H) (MulOpposite.op h • m) =
       (opSMulTensor R H M ∘ₗ TensorProduct.mk R M H m).rTensor H
         (Coalgebra.comul (R := R) h) := by
-  rw [coact_op_smul, Comodule.mem_fixedSubcomodule.mp hm]
+  rw [IsRightHopfModule.coact_op_smul, Comodule.mem_fixedSubcomodule.mp hm]
   induction Coalgebra.comul (R := R) h using TensorProduct.inductionOn with
   | add x y hx hy => simp only [TensorProduct.tmul_add, map_add, hx, hy]
   | tmul h₁ h₂ => simp
@@ -161,13 +172,19 @@ def opSMulHom :
       refine TensorProduct.ext' fun m h => ?_
       simpa only [LinearMap.comp_apply, opSMulTensor_tmul, Comodule.tensor_coact,
         Comodule.tensorCoact_tmul, Comodule.instSelf_coact, LinearMap.rTensor_def] using
-        (coact_op_smul h m).symm }
+        (IsRightHopfModule.coact_op_smul h m).symm }
 
 /-- The underlying linear map of `opSMulHom` is `opSMulTensor`. -/
 @[simp]
 theorem opSMulHom_toLinearMap :
     letI := Comodule.tensor R H M H
     (opSMulHom R H M).toLinearMap = opSMulTensor R H M := (rfl)
+
+/-- Pointwise evaluation of `opSMulHom` agrees with `opSMulTensor`. -/
+@[simp]
+theorem opSMulHom_apply (z : M ⊗[R] H) :
+    letI := Comodule.tensor R H M H
+    opSMulHom R H M z = opSMulTensor R H M z := (rfl)
 
 end Bialgebra
 
@@ -187,11 +204,7 @@ compete with other module actions on tensor products. -/
 @[implicit_reducible]
 def cofreeRightModule [Algebra R H] : Module Hᵐᵒᵖ (N ⊗[R] H) :=
   Module.compHom (N ⊗[R] H)
-    { toFun a := (LinearMap.mulRight R a.unop).lTensor N
-      map_one' := TensorProduct.ext' fun n x => by simp
-      map_mul' a b := TensorProduct.ext' fun n x => by simp [mul_assoc]
-      map_zero' := TensorProduct.ext' fun n x => by simp
-      map_add' a b := TensorProduct.ext' fun n x => by simp [mul_add, TensorProduct.tmul_add] }
+    ((Module.End.lTensorAlgHom R H N).comp (Algebra.lsmul (A := Hᵐᵒᵖ) R R H)).toRingHom
 
 section Algebra
 
@@ -207,12 +220,11 @@ theorem cofreeRightModule_op_smul_tmul (h : H) (n : N) (x : H) :
 
 /-- Scalar compatibility of the right `H`-action on `N ⊗[R] H` with `R`. -/
 instance cofreeRightIsScalarTower : IsScalarTower R Hᵐᵒᵖ (N ⊗[R] H) :=
-  IsScalarTower.of_algebraMap_smul fun r z => by
-    induction z using TensorProduct.inductionOn with
-    | add x y hx hy => simp only [smul_add, hx, hy]
-    | tmul n x =>
-      rw [MulOpposite.algebraMap_apply, cofreeRightModule_op_smul_tmul, ← Algebra.commutes,
-        ← Algebra.smul_def, TensorProduct.tmul_smul]
+  IsScalarTower.of_algebraMap_smul fun r z =>
+    (LinearMap.congr_fun
+      (((Module.End.lTensorAlgHom R H N).comp
+        (Algebra.lsmul (A := Hᵐᵒᵖ) R R H)).commutes r) z).trans
+      (Module.algebraMap_end_apply R R (N ⊗[R] H) r z)
 
 end Algebra
 
@@ -224,71 +236,23 @@ attribute [local instance] cofree cofreeRightModule
 
 /-- The cofree comodule `N ⊗[R] H` with right multiplication on the `H` factor is a right
 `H`-Hopf module. -/
-theorem cofreeIsRightHopfModule : IsRightHopfModule R H (N ⊗[R] H) where
+theorem isRightHopfModule_cofree : IsRightHopfModule R H (N ⊗[R] H) where
   coact_op_smul h z := by
     induction z using TensorProduct.inductionOn with
     | add x y hx hy => simp only [smul_add, map_add, TensorProduct.add_tmul, hx, hy]
     | tmul n x =>
       rw [cofreeRightModule_op_smul_tmul, cofree_coact_tmul, cofree_coact_tmul,
         Bialgebra.comul_mul]
-      generalize Coalgebra.comul (R := R) x = cx
-      generalize Coalgebra.comul (R := R) h = ch
-      induction cx using TensorProduct.inductionOn with
+      induction Coalgebra.comul (R := R) x using TensorProduct.inductionOn with
       | add u v hu hv =>
         simp only [add_mul, TensorProduct.tmul_add, map_add, TensorProduct.add_tmul]
         exact congrArg₂ (· + ·) hu hv
       | tmul x₁ x₂ =>
-        induction ch using TensorProduct.inductionOn with
+        induction Coalgebra.comul (R := R) h using TensorProduct.inductionOn with
         | add u v hu hv =>
           simp only [mul_add, TensorProduct.tmul_add, map_add]
           exact congrArg₂ (· + ·) hu hv
         | tmul h₁ h₂ => simp [Algebra.TensorProduct.tmul_mul_tmul]
-
-variable {R H N} in
-/-- Membership in the fixed subcomodule of the cofree comodule `N ⊗[R] H`: a tensor is coinvariant
-if and only if it is obtained from its counit contraction by tensoring with `1`. -/
-theorem mem_cofree_fixedSubcomodule_iff (z : N ⊗[R] H) :
-    z ∈ fixedSubcomodule R H (N ⊗[R] H) ↔
-      (TensorProduct.rid R N (LinearMap.lTensor N (Coalgebra.counit (R := R)) z)) ⊗ₜ[R] (1 : H) =
-        z := by
-  rw [mem_fixedSubcomodule]
-  constructor
-  · intro hz
-    have h := congrArg
-      (((TensorProduct.rid R N).toLinearMap ∘ₗ
-        (Coalgebra.counit (R := R) (A := H)).lTensor N).rTensor H) hz
-    have hid := LinearMap.congr_fun
-      (rTensor_rid_comp_lTensor_counit_comp_cofreeCoact (R := R) (C := H) (M := N)) z
-    simpa only [cofree_coact, ← cofreeCoact_def, LinearMap.comp_apply, LinearMap.rTensor_tmul,
-      LinearMap.id_apply, LinearEquiv.coe_coe] using (hid.symm.trans h).symm
-  · intro hz
-    rw [← hz, cofree_coact_tmul, Bialgebra.comul_one, Algebra.TensorProduct.one_def,
-      TensorProduct.assoc_symm_tmul]
-
-/-- The fixed subcomodule of the cofree right `H`-comodule `N ⊗[R] H` is canonically `N`, via
-`n ↦ n ⊗ 1`. -/
-def cofreeFixedEquiv : N ≃ₗ[R] fixedSubcomodule R H (N ⊗[R] H) where
-  toFun n := ⟨n ⊗ₜ[R] (1 : H), (mem_cofree_fixedSubcomodule_iff _).mpr (by simp)⟩
-  map_add' n₁ n₂ := Subtype.ext (TensorProduct.add_tmul n₁ n₂ 1)
-  map_smul' r n := Subtype.ext (TensorProduct.smul_tmul' r n 1)
-  invFun z :=
-    TensorProduct.rid R N (LinearMap.lTensor N (Coalgebra.counit (R := R)) (z : N ⊗[R] H))
-  left_inv n := by simp
-  right_inv z := Subtype.ext ((mem_cofree_fixedSubcomodule_iff z.1).mp z.2)
-
-variable {R H N}
-
-/-- `cofreeFixedEquiv` embeds `n : N` as `n ⊗ 1`. -/
-@[simp]
-theorem cofreeFixedEquiv_apply (n : N) :
-    (cofreeFixedEquiv R H N n : N ⊗[R] H) = n ⊗ₜ[R] (1 : H) := (rfl)
-
-/-- The inverse of `cofreeFixedEquiv` applies the counit to the `H` factor. -/
-@[simp]
-theorem cofreeFixedEquiv_symm_apply (z : fixedSubcomodule R H (N ⊗[R] H)) :
-    (cofreeFixedEquiv R H N).symm z =
-      TensorProduct.rid R N (LinearMap.lTensor N (Coalgebra.counit (R := R)) (z : N ⊗[R] H)) :=
-  (rfl)
 
 end Bialgebra
 
@@ -328,7 +292,31 @@ theorem coinvariantProj_eq_sum {m : M} {ι : Type*} (s : Finset ι) (m₀ : ι �
   simp [map_sum]
 
 omit [Comodule R H M] in
-/-- Universal tensor identity underlying `coinvariantProj_mem_fixedSubcomodule`: after applying
+private def antipodeCombineContract (n : M) : H ⊗[R] (H ⊗[R] H) →ₗ[R] M ⊗[R] H :=
+  TensorProduct.map
+    (opSMulTensor R H M ∘ₗ TensorProduct.mk R M H n ∘ₗ HopfAlgebra.antipode R)
+    (LinearMap.mul' R H ∘ₗ (HopfAlgebra.antipode R).lTensor H) ∘ₗ
+    (TensorProduct.comm R (H ⊗[R] H) H).toLinearMap ∘ₗ
+      (TensorProduct.assoc R H H H).symm.toLinearMap
+
+omit [Comodule R H M] in
+private theorem antipodeCombineContract_assoc_rTensor_comul (n : M) (w : H ⊗[R] H) :
+    antipodeCombineContract n
+        (TensorProduct.assoc R H H H ((Coalgebra.comul (R := R)).rTensor H w)) =
+      (opSMulTensor R H M ((HopfAlgebra.antipode R).lTensor M
+        (n ⊗ₜ[R] TensorProduct.lid R H ((Coalgebra.counit (R := R)).rTensor H w)))) ⊗ₜ[R]
+        (1 : H) := by
+  induction w using TensorProduct.inductionOn with
+  | add u v hu hv =>
+    simp only [map_add, TensorProduct.tmul_add, TensorProduct.add_tmul, hu, hv]
+  | tmul c₁ d =>
+    simpa [antipodeCombineContract, Algebra.algebraMap_eq_smul_one, TensorProduct.smul_tmul'] using
+      congrArg (· ⊗ₜ[R] (1 : H))
+        (smul_comm (Coalgebra.counit (R := R) c₁)
+          (MulOpposite.op (HopfAlgebra.antipode R d)) n)
+
+omit [Comodule R H M] in
+/-- Universal tensor identity underlying `coact_coinvariantProj`: after applying
 `(id ⊗ Δ) ∘ assoc⁻¹` to `z : M ⊗[R] H`, applying `Δ ∘ S` on the outer `H` leg and combining cancels
 the middle antipode pair to `1` on the right factor. -/
 private theorem opSMulTensor_tensorCombine_antipode_comul (z : M ⊗[R] H) :
@@ -340,51 +328,23 @@ private theorem opSMulTensor_tensorCombine_antipode_comul (z : M ⊗[R] H) :
   induction z using TensorProduct.inductionOn with
   | add x y hx hy => simp only [map_add, TensorProduct.add_tmul, hx, hy]
   | tmul n c =>
-    -- Build the contraction `Θ : H ⊗[R] (H ⊗[R] H) →ₗ[R] M ⊗[R] H` sending `a ⊗ (b₁ ⊗ b₂)` to
-    -- `(op (S b₂) • n) ⊗ (a * S b₁)`, then reassociate via `coassoc` so `c₁₁ * S(c₁₂)` cancels.
-    let Θ : H ⊗[R] (H ⊗[R] H) →ₗ[R] M ⊗[R] H :=
-      TensorProduct.map
-        (opSMulTensor R H M ∘ₗ TensorProduct.mk R M H n ∘ₗ HopfAlgebra.antipode R)
-        (LinearMap.mul' R H ∘ₗ (HopfAlgebra.antipode R).lTensor H) ∘ₗ
-        (TensorProduct.comm R (H ⊗[R] H) H).toLinearMap ∘ₗ
-          (TensorProduct.assoc R H H H).symm.toLinearMap
-    have hLHS :
+    have hLHS (w : H ⊗[R] H) :
         (opSMulTensor R H M).rTensor H
           (Comodule.tensorCombine (R := R) (C := H) (M := M) (N := H)
             (((Coalgebra.comul (R := R) ∘ₗ HopfAlgebra.antipode R).lTensor (M ⊗[R] H))
-              ((TensorProduct.assoc R M H H).symm
-                ((Coalgebra.comul (R := R)).lTensor M (n ⊗ₜ[R] c))))) =
-          Θ ((Coalgebra.comul (R := R)).lTensor H (Coalgebra.comul (R := R) c)) := by
-      rw [LinearMap.lTensor_tmul]
-      generalize Coalgebra.comul (R := R) c = w
+              ((TensorProduct.assoc R M H H).symm (n ⊗ₜ[R] w)))) =
+          antipodeCombineContract n ((Coalgebra.comul (R := R)).lTensor H w) := by
       induction w using TensorProduct.inductionOn with
       | add u v hu hv => simp only [TensorProduct.tmul_add, map_add, hu, hv]
       | tmul a b =>
         rw [TensorProduct.assoc_symm_tmul, LinearMap.lTensor_tmul, LinearMap.lTensor_tmul,
           LinearMap.comp_apply, HopfAlgebra.antipode_comul_antidistrib_apply]
-        generalize Coalgebra.comul (R := R) b = wb
-        induction wb using TensorProduct.inductionOn with
+        induction Coalgebra.comul (R := R) b using TensorProduct.inductionOn with
         | add u v hu hv => simp only [map_add, TensorProduct.tmul_add, hu, hv]
-        | tmul b₁ b₂ => simp [Θ]
-    rw [hLHS, ← Coalgebra.coassoc_apply]
-    have hcancel (w : H ⊗[R] H) :
-        Θ (TensorProduct.assoc R H H H ((Coalgebra.comul (R := R)).rTensor H w)) =
-          (opSMulTensor R H M ((HopfAlgebra.antipode R).lTensor M
-            (n ⊗ₜ[R] TensorProduct.lid R H ((Coalgebra.counit (R := R)).rTensor H w)))) ⊗ₜ[R]
-            (1 : H) := by
-      induction w using TensorProduct.inductionOn with
-      | add u v hu hv =>
-        simp only [map_add, TensorProduct.tmul_add, TensorProduct.add_tmul, hu, hv]
-      | tmul c₁ d =>
-        simp only [Θ, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply,
-          LinearMap.rTensor_tmul, TensorProduct.comm_tmul, TensorProduct.map_tmul,
-          TensorProduct.mk_apply, opSMulTensor_tmul,
-          _root_.HopfAlgebra.mul_antipode_lTensor_comul_apply, Algebra.algebraMap_eq_smul_one,
-          TensorProduct.tmul_smul, TensorProduct.smul_tmul', TensorProduct.lid_tmul,
-          LinearMap.lTensor_tmul]
-        rw [smul_comm]
-    simpa only [Coalgebra.rTensor_counit_comul, TensorProduct.lid_tmul, one_smul] using
-      hcancel (Coalgebra.comul (R := R) c)
+        | tmul b₁ b₂ => simp [antipodeCombineContract]
+    rw [LinearMap.lTensor_tmul, hLHS, ← Coalgebra.coassoc_apply,
+      antipodeCombineContract_assoc_rTensor_comul]
+    simp
 
 /-- The coinvariant projection fixes every coinvariant element. -/
 theorem coinvariantProj_eq_self {m : M} (hm : m ∈ Comodule.fixedSubcomodule R H M) :
@@ -394,11 +354,12 @@ theorem coinvariantProj_eq_self {m : M} (hm : m ∈ Comodule.fixedSubcomodule R 
 
 variable [IsRightHopfModule R H M]
 
-/-- The coinvariant projection lands in `Comodule.fixedSubcomodule R H M`: for every `m : M`,
+/-- Every value of `coinvariantProj` has trivial right `H`-coaction:
 `coact (coinvariantProj m) = coinvariantProj m ⊗ 1`. -/
-theorem coinvariantProj_mem_fixedSubcomodule (m : M) :
-    coinvariantProj R H M m ∈ Comodule.fixedSubcomodule R H M := by
-  rw [Comodule.mem_fixedSubcomodule]
+@[simp]
+theorem coact_coinvariantProj (m : M) :
+    Comodule.coact (R := R) (C := H) (coinvariantProj R H M m) =
+      coinvariantProj R H M m ⊗ₜ[R] (1 : H) := by
   let Q : M ⊗[R] H →ₗ[R] M ⊗[R] H :=
     (opSMulTensor R H M).rTensor H ∘ₗ
       Comodule.tensorCombine (R := R) (C := H) (M := M) (N := H) ∘ₗ
@@ -410,7 +371,7 @@ theorem coinvariantProj_mem_fixedSubcomodule (m : M) :
     induction z using TensorProduct.inductionOn with
     | add x y hx hy => simp only [map_add, hx, hy]
     | tmul n c =>
-      simp only [LinearMap.lTensor_tmul, opSMulTensor_tmul, coact_op_smul, Q,
+      simp only [LinearMap.lTensor_tmul, opSMulTensor_tmul, IsRightHopfModule.coact_op_smul, Q,
         LinearMap.comp_apply, TensorProduct.map_tmul]
   have hmap (z : M ⊗[R] H) :
       TensorProduct.map (Comodule.coact (R := R) (C := H) (M := M))
@@ -423,47 +384,37 @@ theorem coinvariantProj_mem_fixedSubcomodule (m : M) :
   rw [← Comodule.coassoc_symm_apply]
   exact opSMulTensor_tensorCombine_antipode_comul (Comodule.coact (R := R) (C := H) m)
 
+/-- The coinvariant projection lands in `Comodule.fixedSubcomodule R H M`. -/
+theorem coinvariantProj_mem_fixedSubcomodule (m : M) :
+    coinvariantProj R H M m ∈ Comodule.fixedSubcomodule R H M :=
+  Comodule.mem_fixedSubcomodule.mpr (coact_coinvariantProj m)
+
 /-- Right `H`-actions are sent to counit scalar multiplications by `coinvariantProj`:
 `P(m ◃ h) = ε(h) • P(m)`. -/
 @[simp]
 theorem coinvariantProj_op_smul (h : H) (m : M) :
     coinvariantProj R H M (MulOpposite.op h • m) =
       Coalgebra.counit (R := R) h • coinvariantProj R H M m := by
-  rw [coinvariantProj_apply, coact_op_smul, coinvariantProj_apply]
-  generalize Comodule.coact (R := R) (C := H) m = zm
-  induction zm using TensorProduct.inductionOn with
+  rw [coinvariantProj_apply, IsRightHopfModule.coact_op_smul, coinvariantProj_apply]
+  induction Comodule.coact (R := R) (C := H) m using TensorProduct.inductionOn with
   | add x y hx hy => simp only [TensorProduct.add_tmul, map_add, smul_add, hx, hy]
   | tmul m₀ m₁ =>
-    -- Factor `Δ(h)` through a linear map so `h₁ * S(h₂)` cancels to `ε(h) • 1`.
-    let F : H ⊗[R] H →ₗ[R] M :=
-      opSMulTensor R H M ∘ₗ (HopfAlgebra.antipode R).lTensor M ∘ₗ
-        (opSMulTensor R H M).rTensor H ∘ₗ
-          Comodule.tensorCombine (R := R) (C := H) (M := M) (N := H) ∘ₗ
-            TensorProduct.mk R (M ⊗[R] H) (H ⊗[R] H) (m₀ ⊗ₜ[R] m₁)
     have hF (w : H ⊗[R] H) :
-        F w =
+        opSMulTensor R H M
+          ((HopfAlgebra.antipode R).lTensor M
+            ((opSMulTensor R H M).rTensor H
+              (Comodule.tensorCombine (R := R) (C := H) (M := M) (N := H)
+                ((m₀ ⊗ₜ[R] m₁) ⊗ₜ[R] w)))) =
           MulOpposite.op
             (LinearMap.mul' R H ((HopfAlgebra.antipode R).lTensor H w) *
               HopfAlgebra.antipode R m₁) • m₀ := by
       induction w using TensorProduct.inductionOn with
       | add u v hu hv =>
-        simp only [map_add, add_mul, MulOpposite.op_add, add_smul, hu, hv]
+        simp only [TensorProduct.tmul_add, map_add, add_mul, MulOpposite.op_add, add_smul, hu, hv]
       | tmul h₁ h₂ =>
-        simp only [F, LinearMap.comp_apply, TensorProduct.mk_apply,
-          Comodule.tensorCombine_tmul_tmul, LinearMap.rTensor_tmul, opSMulTensor_tmul,
-          LinearMap.lTensor_tmul, LinearMap.mul'_apply]
-        rw [_root_.HopfAlgebra.antipode_mul_antidistrib, ← mul_smul, ← MulOpposite.op_mul,
-          ← mul_assoc]
-    have hFeq :
-        opSMulTensor R H M
-          ((HopfAlgebra.antipode R).lTensor M
-            ((opSMulTensor R H M).rTensor H
-              (Comodule.tensorCombine (R := R) (C := H) (M := M) (N := H)
-                ((m₀ ⊗ₜ[R] m₁) ⊗ₜ[R] Coalgebra.comul (R := R) h)))) =
-          F (Coalgebra.comul (R := R) h) := rfl
-    rw [hFeq, hF, _root_.HopfAlgebra.mul_antipode_lTensor_comul_apply,
-      Algebra.algebraMap_eq_smul_one, smul_mul_assoc, one_mul, MulOpposite.op_smul, smul_assoc]
-    simp
+        simp [_root_.HopfAlgebra.antipode_mul_antidistrib, mul_assoc, mul_smul]
+    rw [hF]
+    simp [Algebra.algebraMap_eq_smul_one]
 
 /-- The coinvariant projection is idempotent. -/
 @[simp]
@@ -473,28 +424,44 @@ theorem coinvariantProj_idem (m : M) :
 
 variable (R H M) in
 /-- The coinvariant projection with codomain restricted to `Comodule.fixedSubcomodule R H M`. -/
-def toFixedSubcomodule : M →ₗ[R] Comodule.fixedSubcomodule R H M where
-  toFun m := ⟨coinvariantProj R H M m, coinvariantProj_mem_fixedSubcomodule m⟩
-  map_add' x y := Subtype.ext (map_add (coinvariantProj R H M) x y)
-  map_smul' r x := Subtype.ext (map_smul (coinvariantProj R H M) r x)
+def toFixedSubcomodule : M →ₗ[R] Comodule.fixedSubcomodule R H M :=
+  (coinvariantProj R H M).codRestrict (Comodule.fixedSubcomodule R H M).toSubmodule
+    coinvariantProj_mem_fixedSubcomodule
 
 /-- Coercing `toFixedSubcomodule m` back to `M` gives `coinvariantProj R H M m`. -/
 @[simp]
 theorem coe_toFixedSubcomodule (m : M) :
-    (toFixedSubcomodule R H M m : M) = coinvariantProj R H M m := (rfl)
+    (toFixedSubcomodule R H M m : M) = coinvariantProj R H M m :=
+  LinearMap.codRestrict_apply _ _ m
 
 /-- On coinvariant vectors, `toFixedSubcomodule` is the identity. -/
 @[simp]
 theorem toFixedSubcomodule_coe (n : Comodule.fixedSubcomodule R H M) :
     toFixedSubcomodule R H M (n : M) = n :=
-  Subtype.ext (coinvariantProj_eq_self n.2)
+  Subtype.ext ((coe_toFixedSubcomodule (n : M)).trans (coinvariantProj_eq_self n.2))
 
 /-- Right `H`-actions are sent to counit scalar multiplications by `toFixedSubcomodule`. -/
 @[simp]
 theorem toFixedSubcomodule_op_smul (h : H) (m : M) :
     toFixedSubcomodule R H M (MulOpposite.op h • m) =
-      Coalgebra.counit (R := R) h • toFixedSubcomodule R H M m :=
-  Subtype.ext (coinvariantProj_op_smul h m)
+      Coalgebra.counit (R := R) h • toFixedSubcomodule R H M m := by
+  ext
+  simp
+
+variable (R H M) in
+/-- The coinvariant subcomodule of a projective right `H`-Hopf module is projective over `R`, being
+split off `M` by `toFixedSubcomodule`. -/
+theorem projective_fixedSubcomodule [Module.Projective R M] :
+    Module.Projective R (Comodule.fixedSubcomodule R H M) :=
+  Module.Projective.of_split (SMulMemClass.subtype (Comodule.fixedSubcomodule R H M))
+    (toFixedSubcomodule R H M) (LinearMap.ext toFixedSubcomodule_coe)
+
+variable (R H M) in
+/-- The coinvariant subcomodule of a finitely generated right `H`-Hopf module is finitely generated
+over `R`, being a surjective image of `M` under `toFixedSubcomodule`. -/
+theorem finite_fixedSubcomodule [Module.Finite R M] :
+    Module.Finite R (Comodule.fixedSubcomodule R H M) :=
+  Module.Finite.of_surjective (toFixedSubcomodule R H M) fun n => ⟨n, toFixedSubcomodule_coe n⟩
 
 private theorem opSMulTensor_toFixedSubcomodule_coact (m : M) :
     opSMulTensor R H M
@@ -503,44 +470,40 @@ private theorem opSMulTensor_toFixedSubcomodule_coact (m : M) :
         (Comodule.coact (R := R) (C := H) m)) = m := by
   have hsub :
       SMulMemClass.subtype (Comodule.fixedSubcomodule R H M) ∘ₗ toFixedSubcomodule R H M =
-        coinvariantProj R H M := LinearMap.ext fun _ => rfl
+        coinvariantProj R H M := by
+    ext
+    simp
+  have hcancel :
+      opSMulTensor R H M ∘ₗ
+        (opSMulTensor R H M ∘ₗ (HopfAlgebra.antipode R).lTensor M).rTensor H ∘ₗ
+          (TensorProduct.assoc R M H H).symm.toLinearMap ∘ₗ
+            (Coalgebra.comul (R := R)).lTensor M =
+        (TensorProduct.rid R M).toLinearMap ∘ₗ (Coalgebra.counit (R := R)).lTensor M := by
+    calc
+      _ = (opSMulTensor R H M ∘ₗ (opSMulTensor R H M).rTensor H) ∘ₗ
+            (((HopfAlgebra.antipode R).lTensor M).rTensor H ∘ₗ
+              (TensorProduct.assoc R M H H).symm.toLinearMap) ∘ₗ
+            (Coalgebra.comul (R := R)).lTensor M := by
+        simp only [LinearMap.rTensor_comp, LinearMap.comp_assoc]
+      _ = (opSMulTensor R H M ∘ₗ (opSMulTensor R H M).rTensor H ∘ₗ
+            (TensorProduct.assoc R M H H).symm.toLinearMap) ∘ₗ
+            ((HopfAlgebra.antipode R).rTensor H).lTensor M ∘ₗ
+            (Coalgebra.comul (R := R)).lTensor M := by
+        rw [LinearMap.rTensor_lTensor_comp_assoc_symm]
+        simp only [LinearMap.comp_assoc]
+      _ = opSMulTensor R H M ∘ₗ
+            (LinearMap.mul' R H ∘ₗ (HopfAlgebra.antipode R).rTensor H ∘ₗ
+              Coalgebra.comul (R := R)).lTensor M := by
+        rw [opSMulTensor_assoc]
+        simp only [LinearMap.comp_assoc, ← LinearMap.lTensor_comp]
+      _ = (TensorProduct.rid R M).toLinearMap ∘ₗ (Coalgebra.counit (R := R)).lTensor M := by
+        rw [_root_.HopfAlgebra.mul_antipode_rTensor_comul, LinearMap.lTensor_comp,
+          ← LinearMap.comp_assoc, opSMulTensor_comp_lTensor_linearMap]
   rw [hsub, coinvariantProj, ← LinearMap.comp_assoc, LinearMap.rTensor_comp_apply,
     ← Comodule.coassoc_symm_apply]
-  have hcancel (z : M ⊗[R] H) :
-      opSMulTensor R H M
-        ((opSMulTensor R H M ∘ₗ (HopfAlgebra.antipode R).lTensor M).rTensor H
-          ((TensorProduct.assoc R M H H).symm
-            ((Coalgebra.comul (R := R)).lTensor M z))) =
-        TensorProduct.rid R M ((Coalgebra.counit (R := R)).lTensor M z) := by
-    induction z using TensorProduct.inductionOn with
-    | add x y hx hy => simp only [map_add, hx, hy]
-    | tmul m₀ c =>
-      let G : H ⊗[R] H →ₗ[R] M :=
-        opSMulTensor R H M ∘ₗ
-          (opSMulTensor R H M ∘ₗ (HopfAlgebra.antipode R).lTensor M).rTensor H ∘ₗ
-            (TensorProduct.assoc R M H H).symm.toLinearMap ∘ₗ TensorProduct.mk R M (H ⊗[R] H) m₀
-      have hG (w : H ⊗[R] H) :
-          G w =
-            MulOpposite.op
-              (LinearMap.mul' R H ((HopfAlgebra.antipode R).rTensor H w)) • m₀ := by
-        induction w using TensorProduct.inductionOn with
-        | add u v hu hv => simp only [map_add, MulOpposite.op_add, add_smul, hu, hv]
-        | tmul c₁ c₂ =>
-          simp only [G, LinearMap.comp_apply, TensorProduct.mk_apply, LinearEquiv.coe_coe,
-            TensorProduct.assoc_symm_tmul, LinearMap.rTensor_tmul, LinearMap.lTensor_tmul,
-            opSMulTensor_tmul, LinearMap.mul'_apply]
-          rw [← mul_smul, ← MulOpposite.op_mul]
-      have hGeq :
-          opSMulTensor R H M
-            ((opSMulTensor R H M ∘ₗ (HopfAlgebra.antipode R).lTensor M).rTensor H
-              ((TensorProduct.assoc R M H H).symm
-                (m₀ ⊗ₜ[R] Coalgebra.comul (R := R) c))) =
-            G (Coalgebra.comul (R := R) c) := rfl
-      rw [LinearMap.lTensor_tmul, hGeq, hG, _root_.HopfAlgebra.mul_antipode_rTensor_comul_apply,
-        Algebra.algebraMap_eq_smul_one, MulOpposite.op_smul, MulOpposite.op_one, smul_assoc,
-        one_smul]
-      simp
-  rw [hcancel, Comodule.rid_lTensor_counit_coact]
+  simpa only [LinearMap.comp_apply, LinearEquiv.coe_coe] using
+    (LinearMap.congr_fun hcancel (Comodule.coact (R := R) (C := H) m)).trans
+      (Comodule.rid_lTensor_counit_coact m)
 
 private theorem toFixedSubcomodule_coact_opSMul (n : Comodule.fixedSubcomodule R H M) (h : H) :
     (toFixedSubcomodule R H M).rTensor H
@@ -619,7 +582,18 @@ def coinvariantTensorSymmComoduleHom :
 theorem coinvariantTensorSymmComoduleHom_toLinearMap :
     letI := Comodule.cofree R H (Comodule.fixedSubcomodule R H M)
     (coinvariantTensorSymmComoduleHom R H M).toLinearMap =
-      (coinvariantTensorEquiv R H M).symm.toLinearMap := (rfl)
+      (coinvariantTensorEquiv R H M).symm.toLinearMap := by
+  ext m
+  simp [coinvariantTensorSymmComoduleHom]
+
+/-- Pointwise evaluation of `coinvariantTensorSymmComoduleHom` agrees with
+`(coinvariantTensorEquiv R H M).symm`. -/
+@[simp]
+theorem coinvariantTensorSymmComoduleHom_apply (m : M) :
+    letI := Comodule.cofree R H (Comodule.fixedSubcomodule R H M)
+    coinvariantTensorSymmComoduleHom R H M m = (coinvariantTensorEquiv R H M).symm m := by
+  let := Comodule.cofree R H (Comodule.fixedSubcomodule R H M)
+  simp [coinvariantTensorSymmComoduleHom]
 
 variable (R H M) in
 /-- The forward direction of the Fundamental Theorem of Hopf Modules, bundled as a morphism of
@@ -629,27 +603,14 @@ def coinvariantTensorComoduleHom :
     Comodule.Hom R H (Comodule.fixedSubcomodule R H M ⊗[R] H) M :=
   letI := Comodule.cofree R H (Comodule.fixedSubcomodule R H M)
   { toLinearMap := (coinvariantTensorEquiv R H M).toLinearMap
-    map_coact := by
-      have hsymm := (coinvariantTensorSymmComoduleHom R H M).map_coact_eq
-      rw [coinvariantTensorSymmComoduleHom_toLinearMap, ← LinearMap.rTensor_def] at hsymm
-      rw [← LinearMap.rTensor_def]
-      calc
-        (coinvariantTensorEquiv R H M).toLinearMap.rTensor H ∘ₗ
-            Comodule.coact (R := R) (C := H) =
-            (coinvariantTensorEquiv R H M).toLinearMap.rTensor H ∘ₗ
-              (Comodule.coact (R := R) (C := H) ∘ₗ
-                (coinvariantTensorEquiv R H M).symm.toLinearMap) ∘ₗ
-              (coinvariantTensorEquiv R H M).toLinearMap := by
-          rw [LinearMap.comp_assoc, LinearEquiv.comp_coe, LinearEquiv.self_trans_symm,
-            LinearEquiv.refl_toLinearMap, LinearMap.comp_id]
-        _ = ((coinvariantTensorEquiv R H M).toLinearMap.rTensor H ∘ₗ
-              (coinvariantTensorEquiv R H M).symm.toLinearMap.rTensor H) ∘ₗ
-              Comodule.coact (R := R) (C := H) ∘ₗ
-              (coinvariantTensorEquiv R H M).toLinearMap := by
-          rw [← hsymm, LinearMap.comp_assoc, LinearMap.comp_assoc]
-        _ = Comodule.coact (R := R) (C := H) ∘ₗ (coinvariantTensorEquiv R H M).toLinearMap := by
-          rw [← LinearMap.rTensor_comp, LinearEquiv.comp_coe, LinearEquiv.symm_trans_self,
-            LinearEquiv.refl_toLinearMap, LinearMap.rTensor_id, LinearMap.id_comp] }
+    map_coact :=
+      Comodule.Hom.map_coact_of_comp_eq_id (coinvariantTensorSymmComoduleHom R H M)
+        (by
+          rw [coinvariantTensorSymmComoduleHom_toLinearMap]
+          exact (coinvariantTensorEquiv R H M).comp_symm)
+        (by
+          rw [coinvariantTensorSymmComoduleHom_toLinearMap]
+          exact (coinvariantTensorEquiv R H M).symm_comp) }
 
 /-- The underlying linear map of `coinvariantTensorComoduleHom` is `coinvariantTensorEquiv`. -/
 @[simp]
@@ -657,6 +618,38 @@ theorem coinvariantTensorComoduleHom_toLinearMap :
     letI := Comodule.cofree R H (Comodule.fixedSubcomodule R H M)
     (coinvariantTensorComoduleHom R H M).toLinearMap =
       (coinvariantTensorEquiv R H M).toLinearMap := (rfl)
+
+/-- Pointwise evaluation of `coinvariantTensorComoduleHom` agrees with `coinvariantTensorEquiv`. -/
+@[simp]
+theorem coinvariantTensorComoduleHom_apply (z : Comodule.fixedSubcomodule R H M ⊗[R] H) :
+    letI := Comodule.cofree R H (Comodule.fixedSubcomodule R H M)
+    coinvariantTensorComoduleHom R H M z = coinvariantTensorEquiv R H M z := (rfl)
+
+/-- `coinvariantTensorComoduleHom` is a left inverse to `coinvariantTensorSymmComoduleHom` as a
+morphism of right `H`-comodules. -/
+@[simp]
+theorem coinvariantTensorComoduleHom_comp_coinvariantTensorSymmComoduleHom :
+    letI := Comodule.cofree R H (Comodule.fixedSubcomodule R H M)
+    (coinvariantTensorComoduleHom R H M).comp (coinvariantTensorSymmComoduleHom R H M) =
+      Comodule.Hom.id R H M := by
+  let := Comodule.cofree R H (Comodule.fixedSubcomodule R H M)
+  exact Comodule.Hom.toLinearMap_injective <| by
+    rw [Comodule.Hom.comp_toLinearMap, coinvariantTensorComoduleHom_toLinearMap,
+      coinvariantTensorSymmComoduleHom_toLinearMap, Comodule.Hom.id_toLinearMap]
+    exact (coinvariantTensorEquiv R H M).comp_symm
+
+/-- `coinvariantTensorSymmComoduleHom` is a left inverse to `coinvariantTensorComoduleHom` as a
+morphism of right `H`-comodules. -/
+@[simp]
+theorem coinvariantTensorSymmComoduleHom_comp_coinvariantTensorComoduleHom :
+    letI := Comodule.cofree R H (Comodule.fixedSubcomodule R H M)
+    (coinvariantTensorSymmComoduleHom R H M).comp (coinvariantTensorComoduleHom R H M) =
+      Comodule.Hom.id R H (Comodule.fixedSubcomodule R H M ⊗[R] H) := by
+  let := Comodule.cofree R H (Comodule.fixedSubcomodule R H M)
+  exact Comodule.Hom.toLinearMap_injective <| by
+    rw [Comodule.Hom.comp_toLinearMap, coinvariantTensorSymmComoduleHom_toLinearMap,
+      coinvariantTensorComoduleHom_toLinearMap, Comodule.Hom.id_toLinearMap]
+    exact (coinvariantTensorEquiv R H M).symm_comp
 
 end HopfAlgebra
 

@@ -206,45 +206,41 @@ variable (R H) in
 /-- `WithConv.toConv` restricts to an `R`-linear equivalence between right cointegrals on `H` and
 right integrals in `ConvolutionDual R H`. -/
 noncomputable def rightCointegralsConvEquiv :
-    rightCointegrals R H ≃ₗ[R] rightIntegral R (ConvolutionDual R H) where
-  toFun φ := ⟨WithConv.toConv φ.1,
-    (toConv_mem_rightIntegral_iff φ.1).mpr ((mem_rightCointegrals φ.1).mp φ.2)⟩
-  map_add' φ ψ := Subtype.ext ((WithConv.linearEquiv R (Module.Dual R H)).symm.map_add φ.1 ψ.1)
-  map_smul' r φ := Subtype.ext ((WithConv.linearEquiv R (Module.Dual R H)).symm.map_smul r φ.1)
-  invFun ψ := ⟨ψ.1.ofConv,
-    (mem_rightCointegrals ψ.1.ofConv).mpr ((toConv_mem_rightIntegral_iff ψ.1.ofConv).mp ψ.2)⟩
-  left_inv _ := Subtype.ext rfl
-  right_inv _ := Subtype.ext rfl
+    rightCointegrals R H ≃ₗ[R] rightIntegral R (ConvolutionDual R H) :=
+  (WithConv.linearEquiv R (Module.Dual R H)).symm.ofSubmodules _ _ <| by
+    ext ψ
+    rw [Submodule.mem_map_equiv]
+    exact (toConv_mem_rightIntegral_iff ψ.ofConv).symm
 
 variable (R H) in
 /-- `WithConv.toConv` restricts to an `R`-linear equivalence between left cointegrals on `H` and
 left integrals in `ConvolutionDual R H`. -/
 noncomputable def leftCointegralsConvEquiv :
-    leftCointegrals R H ≃ₗ[R] leftIntegral R (ConvolutionDual R H) where
-  toFun φ := ⟨WithConv.toConv φ.1,
-    (toConv_mem_leftIntegral_iff φ.1).mpr ((mem_leftCointegrals φ.1).mp φ.2)⟩
-  map_add' φ ψ := Subtype.ext ((WithConv.linearEquiv R (Module.Dual R H)).symm.map_add φ.1 ψ.1)
-  map_smul' r φ := Subtype.ext ((WithConv.linearEquiv R (Module.Dual R H)).symm.map_smul r φ.1)
-  invFun ψ := ⟨ψ.1.ofConv,
-    (mem_leftCointegrals ψ.1.ofConv).mpr ((toConv_mem_leftIntegral_iff ψ.1.ofConv).mp ψ.2)⟩
-  left_inv _ := Subtype.ext rfl
-  right_inv _ := Subtype.ext rfl
+    leftCointegrals R H ≃ₗ[R] leftIntegral R (ConvolutionDual R H) :=
+  (WithConv.linearEquiv R (Module.Dual R H)).symm.ofSubmodules _ _ <| by
+    ext ψ
+    rw [Submodule.mem_map_equiv]
+    exact (toConv_mem_leftIntegral_iff ψ.ofConv).symm
 
 @[simp]
 theorem rightCointegralsConvEquiv_apply (φ : rightCointegrals R H) :
-    (rightCointegralsConvEquiv R H φ : ConvolutionDual R H) = WithConv.toConv φ.1 := (rfl)
+    (rightCointegralsConvEquiv R H φ : ConvolutionDual R H) = WithConv.toConv φ.1 := by
+  simp [rightCointegralsConvEquiv]
 
 @[simp]
 theorem rightCointegralsConvEquiv_symm_apply (ψ : rightIntegral R (ConvolutionDual R H)) :
-    ((rightCointegralsConvEquiv R H).symm ψ : Module.Dual R H) = ψ.1.ofConv := (rfl)
+    ((rightCointegralsConvEquiv R H).symm ψ : Module.Dual R H) = ψ.1.ofConv := by
+  simp [rightCointegralsConvEquiv]
 
 @[simp]
 theorem leftCointegralsConvEquiv_apply (φ : leftCointegrals R H) :
-    (leftCointegralsConvEquiv R H φ : ConvolutionDual R H) = WithConv.toConv φ.1 := (rfl)
+    (leftCointegralsConvEquiv R H φ : ConvolutionDual R H) = WithConv.toConv φ.1 := by
+  simp [leftCointegralsConvEquiv]
 
 @[simp]
 theorem leftCointegralsConvEquiv_symm_apply (ψ : leftIntegral R (ConvolutionDual R H)) :
-    ((leftCointegralsConvEquiv R H).symm ψ : Module.Dual R H) = ψ.1.ofConv := (rfl)
+    ((leftCointegralsConvEquiv R H).symm ψ : Module.Dual R H) = ψ.1.ofConv := by
+  simp [leftCointegralsConvEquiv]
 
 end ConvolutionDual
 

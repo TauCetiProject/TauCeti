@@ -6,7 +6,6 @@ Authors: pi, The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.HopfAlgebra.Integral
-public import TauCeti.Algebra.HopfAlgebra.Cointegral.Basic
 public import TauCeti.Algebra.Algebra.Frobenius.Basic
 import Mathlib.LinearAlgebra.Dimension.Constructions
 import TauCeti.Algebra.HopfAlgebra.HopfModule.Dual
@@ -52,22 +51,6 @@ open Coalgebra HopfAlgebra TauCeti
 open scoped Coalgebra
 
 namespace LinearMap
-
-section CommSemiring
-
-variable {R H : Type*} [CommSemiring R] [Semiring H] [Bialgebra R H] {h : H →ₗ[R] R}
-
-/-- `LinearMap.IsRightInvariantIntegral` agrees with `TauCeti.IsRightCointegral`. -/
-theorem isRightInvariantIntegral_iff_isRightCointegral :
-    h.IsRightInvariantIntegral ↔ IsRightCointegral h := by
-  rw [isRightInvariantIntegral_iff, isRightCointegral_def]
-
-/-- `LinearMap.IsLeftInvariantIntegral` agrees with `TauCeti.IsLeftCointegral`. -/
-theorem isLeftInvariantIntegral_iff_isLeftCointegral :
-    h.IsLeftInvariantIntegral ↔ IsLeftCointegral h := by
-  rw [isLeftInvariantIntegral_iff, isLeftCointegral_def]
-
-end CommSemiring
 
 variable {k H : Type*} [Field k] [Ring H]
 
@@ -230,10 +213,8 @@ theorem finrank_rightCointegrals : Module.finrank k (rightCointegrals k H) = 1 :
 
 /-- Every finite-dimensional Hopf algebra over a field has a nontrivial space of right
 cointegrals. -/
-theorem rightCointegrals_ne_bot : rightCointegrals k H ≠ ⊥ := by
-  intro h
-  have : Subsingleton (rightCointegrals k H) := h ▸ inferInstance
-  exact one_ne_zero ((finrank_rightCointegrals k H).symm.trans Module.finrank_zero_of_subsingleton)
+theorem rightCointegrals_ne_bot : rightCointegrals k H ≠ ⊥ :=
+  Submodule.one_le_finrank_iff.mp (finrank_rightCointegrals k H).ge
 
 /-- Every finite-dimensional Hopf algebra over a field admits a nonzero right cointegral. -/
 theorem exists_isRightCointegral_ne_zero :
@@ -263,17 +244,13 @@ theorem finrank_rightIntegral : Module.finrank k (rightIntegral k H) = 1 := by
 
 /-- Every finite-dimensional Hopf algebra over a field has a nontrivial space of left
 integrals. -/
-theorem leftIntegral_ne_bot : leftIntegral k H ≠ ⊥ := by
-  intro h
-  have : Subsingleton (leftIntegral k H) := h ▸ inferInstance
-  exact one_ne_zero ((finrank_leftIntegral k H).symm.trans Module.finrank_zero_of_subsingleton)
+theorem leftIntegral_ne_bot : leftIntegral k H ≠ ⊥ :=
+  Submodule.one_le_finrank_iff.mp (finrank_leftIntegral k H).ge
 
 /-- Every finite-dimensional Hopf algebra over a field has a nontrivial space of right
 integrals. -/
-theorem rightIntegral_ne_bot : rightIntegral k H ≠ ⊥ := by
-  intro h
-  have : Subsingleton (rightIntegral k H) := h ▸ inferInstance
-  exact one_ne_zero ((finrank_rightIntegral k H).symm.trans Module.finrank_zero_of_subsingleton)
+theorem rightIntegral_ne_bot : rightIntegral k H ≠ ⊥ :=
+  Submodule.one_le_finrank_iff.mp (finrank_rightIntegral k H).ge
 
 /-- Every finite-dimensional Hopf algebra over a field admits a nonzero left integral. -/
 theorem exists_leftIntegral_ne_zero : ∃ t : H, t ∈ leftIntegral k H ∧ t ≠ 0 := by
@@ -292,10 +269,8 @@ theorem finrank_leftCointegrals : Module.finrank k (leftCointegrals k H) = 1 :=
 
 /-- Every finite-dimensional Hopf algebra over a field has a nontrivial space of left
 cointegrals. -/
-theorem leftCointegrals_ne_bot : leftCointegrals k H ≠ ⊥ := by
-  intro h
-  have : Subsingleton (leftCointegrals k H) := h ▸ inferInstance
-  exact one_ne_zero ((finrank_leftCointegrals k H).symm.trans Module.finrank_zero_of_subsingleton)
+theorem leftCointegrals_ne_bot : leftCointegrals k H ≠ ⊥ :=
+  Submodule.one_le_finrank_iff.mp (finrank_leftCointegrals k H).ge
 
 /-- Every finite-dimensional Hopf algebra over a field admits a nonzero left cointegral. -/
 theorem exists_isLeftCointegral_ne_zero :
