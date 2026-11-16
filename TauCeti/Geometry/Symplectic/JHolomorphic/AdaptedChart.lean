@@ -44,11 +44,12 @@ as soon as `u` is `J`-holomorphic at `a`. Only `u` and `J ∘ u` enter `Φ`, not
   chart may be shrunk freely.
 * **Flattening.** Since `Φ` is a normal extension
   (`TauCeti.holomorphicNormalExtension_eq_normalExtension`), the chart sends a point of its
-  source into the disc exactly when the point lies on the zero section
-  (`OpenPartialHomeomorph.isImage_of_coe_eq_normalExtension`).
+  source into the piece `u {a | (a, 0) ∈ e.source}` of the disc exactly when the point lies on
+  the zero section (`OpenPartialHomeomorph.isImage_of_coe_eq_normalExtension`).
 * **The structure along the disc.** The structure read in the chart,
   `e.pullbackEnd J (a, w) = DΦ⁻¹ ∘ J(Φ (a, w)) ∘ DΦ`, is `i` on the zero section
-  (`OpenPartialHomeomorph.pullbackEnd_of_coe_eq_holomorphicNormalExtension`).
+  (`OpenPartialHomeomorph.pullbackEnd_of_coe_eq_holomorphicNormalExtension`, from the shared
+  `OpenPartialHomeomorph.pullbackEnd_of_coe_eq_normalExtension`).
 * **Normal control.** For `u` and `J` of class `C²` there is an adapted chart in which the
   structure read in the chart is `C¹`, so it differs from `i` by at most a constant times the
   normal coordinate: `‖e.pullbackEnd J (a, w) - i‖ ≤ C ‖w‖` near `(a₀, 0)`
@@ -265,15 +266,11 @@ theorem pullbackEnd_of_coe_eq_holomorphicNormalExtension
     (hu : DifferentiableAt ℝ u a) (hJ : ContinuousAt J (u a))
     (hsq : ∀ v, J (u a) (J (u a) v) = -v) (hCR : fderiv ℝ u a 1 + J (u a) (fderiv ℝ u a I) = 0)
     (hs : DifferentiableAt ℝ e.symm (u a)) :
-    e.pullbackEnd J (a, 0) = I • ContinuousLinearMap.id ℝ (ℂ × N) := by
-  have hD := hasFDerivAt_holomorphicNormalExtension_zero hu.hasFDerivAt hJ W
-  rw [← he] at hD
-  have hea : e (a, 0) = u a := by rw [he, holomorphicNormalExtension_zero]
-  have hs' : DifferentiableAt ℝ e.symm (e (a, 0)) := by rwa [hea]
-  refine ContinuousLinearMap.ext fun v ↦ ?_
-  rw [pullbackEnd_apply, hD.fderiv, hea, ← coprod_holomorphicNormalFrame_apply_I_smul hsq hCR,
-    ← hD.fderiv, ← hea, e.fderiv_symm_apply_fderiv_apply_of_mem_source ha hD.differentiableAt hs']
-  simp
+    e.pullbackEnd J (a, 0) = I • ContinuousLinearMap.id ℝ (ℂ × N) :=
+  e.pullbackEnd_of_coe_eq_normalExtension
+    (he.trans (holomorphicNormalExtension_eq_normalExtension J u W)) ha hu.hasFDerivAt
+    (continuousAt_holomorphicNormalFrame hJ hu.continuousAt W)
+    (coprod_holomorphicNormalFrame_apply_I_smul hsq hCR) hs
 
 end OpenPartialHomeomorph
 
@@ -337,10 +334,9 @@ theorem exists_holomorphicAdaptedChart_norm_pullbackEnd_sub_le [CompleteSpace V]
 /-- **The normal Cauchy–Riemann inequality.** Let `A` be an endomorphism of `ℂ × N` within `ε` of
 multiplication by `i`. If the derivative `D` of a disc `(a, b)` satisfies the Cauchy–Riemann
 equation `D 1 + A (D i) = 0` for `A`, its normal component satisfies
-`‖∂ₛb + i ∂ₜb‖ ≤ ε ‖∂ₜ(a, b)‖`. With the structure read in an adapted chart at the point
-`(a, b)` of the disc, `ε = C ‖b‖` by
-`TauCeti.exists_holomorphicAdaptedChart_norm_pullbackEnd_sub_le`, which gives
-`‖∂ₛb + i ∂ₜb‖ ≤ C ‖b‖ ‖∂ₜ(a, b)‖`. -/
+`‖∂ₛb + i ∂ₜb‖ ≤ ε ‖∂ₜ(a, b)‖`. With the structure read in the adapted chart of
+`TauCeti.exists_holomorphicAdaptedChart_norm_pullbackEnd_sub_le` at a point `(a, b)` of the disc
+near `(a₀, 0)`, that theorem gives `ε = C ‖b‖`, hence `‖∂ₛb + i ∂ₜb‖ ≤ C ‖b‖ ‖∂ₜ(a, b)‖` there. -/
 theorem norm_snd_add_I_smul_snd_le {A : ℂ × N →L[ℝ] ℂ × N} {ε : ℝ}
     (hA : ‖A - I • ContinuousLinearMap.id ℝ (ℂ × N)‖ ≤ ε) {D : ℂ →L[ℝ] ℂ × N}
     (hCR : D 1 + A (D I) = 0) : ‖(D 1).2 + I • (D I).2‖ ≤ ε * ‖D I‖ := by

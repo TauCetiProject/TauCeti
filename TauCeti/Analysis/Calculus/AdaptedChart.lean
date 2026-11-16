@@ -56,6 +56,9 @@ consumer may shrink the chart freely, and over an arbitrary nontrivially normed 
   `OpenPartialHomeomorph.isImage_image_of_coe_eq_normalExtension`: flattening, for any chart
   whose underlying map is a normal extension.
 * `OpenPartialHomeomorph.fderiv_symm_apply_of_coe_eq_adaptedNormalExtension`: intertwining.
+* `OpenPartialHomeomorph.pullbackEnd_of_coe_eq_normalExtension`: for any chart whose underlying
+  map is a normal extension, the pulled-back structure on the zero section is any endomorphism
+  intertwined with it by the derivative there.
 * `OpenPartialHomeomorph.pullbackEnd_of_coe_eq_adaptedNormalExtension`: the pushed-forward
   structure is standard on the zero section.
 
@@ -224,6 +227,22 @@ theorem isImage_image_of_coe_eq_normalExtension
     refine ⟨p.1, (hsU hp).1, ?_⟩
     rw [hp', he, TauCeti.normalExtension_zero]
 
+/-- **The pulled-back structure on the zero section.** If the derivative `Dγ x ⊕ A x` of a chart
+given by a normal extension at `(x, 0)` intertwines an endomorphism `S` of the model with
+`J (γ x)`, the structure `J` read in the chart at `(x, 0)` is `S`. -/
+theorem pullbackEnd_of_coe_eq_normalExtension [NormedSpace 𝕜 V] {J : W → W →L[𝕜] W}
+    {S : V × E →L[𝕜] V × E} (he : ⇑e = TauCeti.normalExtension γ A) {x : V}
+    (hx : (x, 0) ∈ e.source) {Dγ : V →L[𝕜] W} (hγ : HasFDerivAt γ Dγ x) (hA : ContinuousAt A x)
+    (hS : ∀ p, Dγ.coprod (A x) (S p) = J (γ x) (Dγ.coprod (A x) p))
+    (hs : DifferentiableAt 𝕜 e.symm (γ x)) : e.pullbackEnd J (x, 0) = S := by
+  have hD := TauCeti.hasFDerivAt_normalExtension_zero hγ hA
+  rw [← he] at hD
+  have hex : e (x, 0) = γ x := by rw [he, TauCeti.normalExtension_zero]
+  have hs' : DifferentiableAt 𝕜 e.symm (e (x, 0)) := by rwa [hex]
+  refine ContinuousLinearMap.ext fun p ↦ ?_
+  rw [pullbackEnd_apply, hD.fderiv, hex, ← hS, ← hD.fderiv, ← hex,
+    e.fderiv_symm_apply_fderiv_apply_of_mem_source hx hD.differentiableAt hs']
+
 end NormalChart
 
 variable {𝕜 V W : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup V] [NormedSpace 𝕜 V]
@@ -261,19 +280,13 @@ theorem pullbackEnd_of_coe_eq_adaptedNormalExtension
     (hsq : ∀ v, J (γ x) (J (γ x) v) = -v) (hs : DifferentiableAt 𝕜 e.symm (γ x)) :
     e.pullbackEnd J (x, 0) =
       (-ContinuousLinearMap.snd 𝕜 V V).prod (ContinuousLinearMap.fst 𝕜 V V) := by
-  have he' := he.trans (TauCeti.adaptedNormalExtension_eq_normalExtension γ J)
-  have hsymm := e.symm_apply_of_coe_eq_normalExtension he' hx
-  have hγt := e.mem_target_of_coe_eq_normalExtension he' hx
-  have hD := TauCeti.hasFDerivAt_adaptedNormalExtension_zero hγ hJ
-  rw [← he] at hD
-  have hd : DifferentiableAt 𝕜 e (e.symm (γ x)) := by rw [hsymm]; exact hD.differentiableAt
-  have hleft := e.fderiv_symm_apply_fderiv_apply hγt hd hs
-  rw [hsymm] at hleft
-  have hex : e (x, 0) = γ x := by rw [he, TauCeti.adaptedNormalExtension_zero]
-  refine ContinuousLinearMap.ext fun v ↦ ?_
-  rw [pullbackEnd_apply, hex,
-    e.fderiv_symm_apply_of_coe_eq_adaptedNormalExtension he hx hγ hJ hsq hs, hleft]
-  simp
+  refine e.pullbackEnd_of_coe_eq_normalExtension
+    (he.trans (TauCeti.adaptedNormalExtension_eq_normalExtension γ J)) hx
+    (hγ.differentiableAt one_ne_zero).hasFDerivAt
+    ((hJ.comp hγ.continuousAt).clm_comp (hγ.continuousAt_fderiv one_ne_zero))
+    (fun p ↦ ?_) hs
+  have h := TauCeti.fderiv_adaptedNormalExtension_intertwines hγ hJ hsq p.1 p.2
+  rwa [TauCeti.fderiv_adaptedNormalExtension_zero hγ hJ] at h
 
 end OpenPartialHomeomorph
 
