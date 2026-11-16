@@ -72,9 +72,9 @@ private theorem cuspOrbitOfSL2Z_Gamma1_eq_of_intCast_eq {δ γ' : SL(2, ℤ)} (j
     (hc : ((γ' 1 0 : ℤ) : ZMod N) = δ 1 0)
     (hd : ((γ' 1 1 : ℤ) : ZMod N) = δ 1 1 + j * δ 1 0) :
     (Gamma1 N).cuspOrbitOfSL2Z δ = (Gamma1 N).cuspOrbitOfSL2Z γ' := by
-  have h10 : (δ * T ^ j) 1 0 = δ 1 0 := ModularGroup.mul_T_zpow_apply_zero δ j 1
+  have h10 : (δ * T ^ j) 1 0 = δ 1 0 := ModularGroup.mul_T_zpow_apply_apply_zero δ j 1
   have h11 : (δ * T ^ j) 1 1 = δ 1 1 + j * δ 1 0 := by
-    rw [ModularGroup.mul_T_zpow_apply_one]
+    rw [ModularGroup.mul_T_zpow_apply_apply_one]
     ring
   refine (Subgroup.cuspOrbitOfSL2Z_eq_iff _ _ _).mpr
     ⟨δ * T ^ j * γ'⁻¹, mul_inv_mem_Gamma1_iff_dvd_sub.mpr ⟨?_, ?_⟩, ?_⟩

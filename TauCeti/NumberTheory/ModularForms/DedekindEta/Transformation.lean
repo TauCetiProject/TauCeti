@@ -231,7 +231,7 @@ theorem etaMultiplier_mul_T_zpow (γ : SL(2, ℤ)) (n : ℤ) :
     congr 1
     ext
     exact coe_T_zpow_smul_eq _
-  rw [hsmul, h, mul_T_zpow_apply_zero, mul_T_zpow_apply_one]
+  rw [hsmul, h, mul_T_zpow_apply_apply_zero, mul_T_zpow_apply_apply_one]
   simp only [eta_add_intCast, Int.cast_add, Int.cast_mul]
   rw [mul_add, add_assoc]
   ring
@@ -269,7 +269,7 @@ theorem etaMultiplier_mul_S (γ : SL(2, ℤ)) (hd : 0 < γ 1 1) :
     apply UpperHalfPlane.ext
     rw [UpperHalfPlane.modular_S_smul]
     simp
-  rw [mul_smul, hfixed, eta_smul, mul_S_apply_zero, mul_S_apply_one]
+  rw [mul_smul, hfixed, eta_smul, mul_S_apply_apply_zero, mul_S_apply_apply_one]
   simp only [UpperHalfPlane.coe_I, Int.cast_neg, ← sub_eq_add_neg]
   rw [hroot]
   ring
@@ -301,8 +301,8 @@ private theorem etaMultiplier_eq_of_mul_T_zpow (γ : SL(2, ℤ)) (n : ℤ) (hc :
       (12 * (γ * T ^ n) 1 0) - dedekindSum ((γ * T ^ n) 1 1) ((γ * T ^ n) 1 0) - 1 / 4))) :
     etaMultiplier γ = cexp (π * I * (((γ 0 0 : ℂ) + γ 1 1) / (12 * γ 1 0) -
       dedekindSum (γ 1 1) (γ 1 0) - 1 / 4)) := by
-  rw [etaMultiplier_mul_T_zpow, mul_T_zpow_apply_zero, mul_T_zpow_apply_zero,
-    mul_T_zpow_apply_one, dedekindSum_self_mul_add] at h
+  rw [etaMultiplier_mul_T_zpow, mul_T_zpow_apply_apply_zero, mul_T_zpow_apply_apply_zero,
+    mul_T_zpow_apply_apply_one, dedekindSum_self_mul_add] at h
   rw [← mul_right_inj' (Complex.exp_ne_zero (π * I * n / 12)), h, ← Complex.exp_add]
   congr 1
   have hc'' : (γ 1 0 : ℂ) ≠ 0 := by exact_mod_cast hc
@@ -332,8 +332,8 @@ private theorem etaMultiplier_eq_of_mul_S (γ : SL(2, ℤ)) (hc : 0 < γ 1 0) (h
     push_cast
     field_simp
     linear_combination (-4 : ℚ) * hdetq
-  rw [etaMultiplier_mul_S γ hd, mul_S_apply_zero, mul_S_apply_zero, mul_S_apply_one,
-    dedekindSum_neg] at h
+  rw [etaMultiplier_mul_S γ hd, mul_S_apply_apply_zero, mul_S_apply_apply_zero,
+    mul_S_apply_apply_one, dedekindSum_neg] at h
   rw [← mul_right_inj' (Complex.exp_ne_zero (-(π * I / 4))), h, ← Complex.exp_add]
   congr 1
   have hexpC := congrArg (fun x : ℚ ↦ (x : ℂ)) hexp
@@ -364,9 +364,9 @@ theorem etaMultiplier_of_c_pos (γ : SL(2, ℤ)) (hc : 0 < γ 1 0) :
   refine etaMultiplier_eq_of_mul_T_zpow γ n (by omega) ?_
   set γ' := γ * T ^ n
   have hc' : γ' 1 0 = c := by
-    rw [mul_T_zpow_apply_zero, hγc]
+    rw [mul_T_zpow_apply_apply_zero, hγc]
   have hd' : γ' 1 1 = γ 1 1 % c := by
-    rw [mul_T_zpow_apply_one, hγc, Int.emod_def]
+    rw [mul_T_zpow_apply_apply_one, hγc, Int.emod_def]
     ring
   -- The reduced `d` is positive: `c` and `d` are coprime, so `c ∣ d` forces `c = 1`.
   have hdpos : 0 < γ' 1 1 := by
@@ -375,7 +375,7 @@ theorem etaMultiplier_of_c_pos (γ : SL(2, ℤ)) (hc : 0 < γ 1 0) :
     rcases Int.isUnit_iff.mp hunit with h1 | h1 <;> omega
   have hdlt : γ' 1 1 < c := hd' ▸ Int.emod_lt_of_pos _ (by omega)
   -- Invert: `γ' S` has lower-left entry `d mod c`, which lies strictly between `0` and `c`.
-  have hS : (γ' * S) 1 0 = γ' 1 1 := mul_S_apply_zero γ' 1
+  have hS : (γ' * S) 1 0 = γ' 1 1 := mul_S_apply_apply_zero γ' 1
   exact etaMultiplier_eq_of_mul_S γ' (by omega) hdpos
     (ih (γ' 1 1).toNat (by omega) (γ' * S) (by omega) (by omega))
 
