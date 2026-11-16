@@ -35,8 +35,9 @@ a doubly (twisted) periodic map are used.
   equal values on the two opposite sides integrates to zero over the rectangle.
 * `TauCeti.eqOn_zero_of_setIntegral_rect_eq_zero`: a continuous nonnegative function with zero
   integral over a nondegenerate rectangle vanishes on it.
-* `TauCeti.setIntegral_Icc_prod_eq_of_forall_fst_notMem_eq_zero`: a function vanishing outside
-  the strip `[a₁, b₁] × I` has the same integral over every wider strip `[c, d] × I`.
+* `TauCeti.setIntegral_Icc_prod_eq_of_forall_fst_notMem_eq_zero`: a function vanishing on the
+  part of a wider strip `[c, d] × I` outside the strip `[a₁, b₁] × I` has the same integral over
+  both strips.
 * `TauCeti.setIntegral_Icc_prod_le_of_comp_add_le`: comparison of the integrals of `f` and `M` over
   a translated strip `[c + L, d + L] × I` and the original one, when `f (z + (L, 0)) ≤ M z`.
 * `TauCeti.setIntegral_rect_le_mul_of_forall_setIntegral_le`: an inequality between the integrals
@@ -142,15 +143,15 @@ theorem eqOn_zero_of_setIntegral_rect_eq_zero {f : ℝ × ℝ → ℝ} (h₁ : a
   rw [← hcl]
   exact hU.of_subset_closure hf.continuousOn continuousOn_const subset_closure subset_rfl
 
-/-- **Enlarging a strip.** If `f` vanishes at every point whose first coordinate lies outside
-`[a₁, b₁]`, then its integrals over a wider strip `[c, d] × I ⊇ [a₁, b₁] × I` and over
-`[a₁, b₁] × I` agree. -/
+/-- **Enlarging a strip.** If `f` vanishes at every point of a wider strip
+`[c, d] × I ⊇ [a₁, b₁] × I` whose first coordinate lies outside `[a₁, b₁]`, then its integrals
+over `[c, d] × I` and over `[a₁, b₁] × I` agree. -/
 theorem setIntegral_Icc_prod_eq_of_forall_fst_notMem_eq_zero {X : Type*} [MeasurableSpace X]
     {μ : Measure (ℝ × X)} {f : ℝ × X → E} {c d : ℝ} {I : Set X} (hI : MeasurableSet I)
-    (hc : c ≤ a₁) (hd : b₁ ≤ d) (hf : ∀ z : ℝ × X, z.1 ∉ Icc a₁ b₁ → f z = 0) :
+    (hc : c ≤ a₁) (hd : b₁ ≤ d) (hf : ∀ z ∈ Icc c d ×ˢ I, z.1 ∉ Icc a₁ b₁ → f z = 0) :
     ∫ z in Icc c d ×ˢ I, f z ∂μ = ∫ z in Icc a₁ b₁ ×ˢ I, f z ∂μ :=
   setIntegral_eq_of_subset_of_forall_sdiff_eq_zero (measurableSet_Icc.prod hI)
-    (prod_mono (Icc_subset_Icc hc hd) subset_rfl) fun z hz ↦ hf z fun h ↦ hz.2 ⟨h, hz.1.2⟩
+    (prod_mono (Icc_subset_Icc hc hd) subset_rfl) fun z hz ↦ hf z hz.1 fun h ↦ hz.2 ⟨h, hz.1.2⟩
 
 /-- **Comparison of integrals over a translated strip.** If `f` at the translate `z + (L, 0)` is
 pointwise bounded by `M z` on the strip `[c, d] × I`, with `M` integrable on that strip and `f`
