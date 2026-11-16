@@ -141,6 +141,45 @@ theorem localOrder_span_range {ι : Type*} (f : ι → R) :
     (span (Set.range f)).localOrder = ⨅ i, (span {f i}).localOrder := by
   rw [span_range_eq_iSup, localOrder_iSup]
 
+/-- The local order of a product is at least the sum of the local orders. -/
+theorem le_localOrder_mul (I J : Ideal R) :
+    I.localOrder + J.localOrder ≤ (I * J).localOrder := by
+  cases hI : I.localOrder with
+  | top =>
+    simp only [top_add, top_le_iff]
+    exact (localOrder_eq_top_iff _).mpr fun n ↦
+      mul_le_left.trans ((localOrder_eq_top_iff I).mp hI n)
+  | coe a =>
+    cases hJ : J.localOrder with
+    | top =>
+      simp only [add_top, top_le_iff]
+      exact (localOrder_eq_top_iff _).mpr fun n ↦
+        mul_le_right.trans ((localOrder_eq_top_iff J).mp hJ n)
+    | coe b =>
+      rw [← Nat.cast_add, natCast_le_localOrder_iff, pow_add]
+      exact Ideal.mul_mono ((natCast_le_localOrder_iff I a).mp hI.ge)
+        ((natCast_le_localOrder_iff J b).mp hJ.ge)
+
+/-- The local order of a power is at least the corresponding multiple of the local order. -/
+theorem le_localOrder_pow (I : Ideal R) (n : ℕ) :
+    n • I.localOrder ≤ (I ^ n).localOrder := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [pow_succ, succ_nsmul]
+    exact (add_le_add_left ih _).trans (le_localOrder_mul (I ^ n) I)
+
+/-- An ideal of finite local order `a` contains an element in `𝔪 ^ a \ 𝔪 ^ (a + 1)`. -/
+theorem exists_mem_notMem_maximalIdeal_pow_succ {I : Ideal R} {a : ℕ} (ha : I.localOrder = a) :
+    ∃ x ∈ I, x ∈ maximalIdeal R ^ a ∧ x ∉ maximalIdeal R ^ (a + 1) := by
+  have hle : I ≤ maximalIdeal R ^ a := (natCast_le_localOrder_iff I a).mp ha.ge
+  have hnot : ¬ I ≤ maximalIdeal R ^ (a + 1) := fun h ↦ by
+    have hlt := (natCast_le_localOrder_iff I (a + 1)).mpr h
+    rw [ha] at hlt
+    exact absurd (Nat.cast_le.mp hlt) (Nat.not_succ_le_self a)
+  obtain ⟨x, hxI, hxnot⟩ := IsConcreteLE.not_le_iff_exists.mp hnot
+  exact ⟨x, hxI, hle hxI, hxnot⟩
+
 /-- Over a Noetherian local ring, only the zero ideal has infinite order. -/
 @[simp]
 theorem localOrder_eq_top_iff_eq_bot [IsNoetherianRing R] (I : Ideal R) :
@@ -217,10 +256,33 @@ theorem orderAt_sup (I J : Ideal R) (p : PrimeSpectrum R) :
     (I ⊔ J).orderAt p = min (I.orderAt p) (J.orderAt p) := by
   simp [orderAt, map_sup]
 
+/-- The order of a product at a prime is at least the sum of the orders. -/
+theorem le_orderAt_mul (I J : Ideal R) (p : PrimeSpectrum R) :
+    I.orderAt p + J.orderAt p ≤ (I * J).orderAt p := by
+  simpa only [orderAt, Ideal.map_mul] using le_localOrder_mul
+    (I.map (algebraMap R (Localization.AtPrime p.asIdeal)))
+    (J.map (algebraMap R (Localization.AtPrime p.asIdeal)))
+
+/-- The order of a power at a prime is at least the corresponding multiple of the order. -/
+theorem le_orderAt_pow (I : Ideal R) (p : PrimeSpectrum R) (n : ℕ) :
+    n • I.orderAt p ≤ (I ^ n).orderAt p := by
+  simpa only [orderAt, Ideal.map_pow] using le_localOrder_pow
+    (I.map (algebraMap R (Localization.AtPrime p.asIdeal))) n
+
 /-- At a prime, generator orders compute the ideal order, including for an empty family. -/
 theorem orderAt_span_range {ι : Type*} (f : ι → R) (p : PrimeSpectrum R) :
     (span (Set.range f)).orderAt p = ⨅ i, (span {f i}).orderAt p := by
   simp only [orderAt, span_range_eq_iSup, map_iSup, localOrder_iSup]
+
+/-- In a local ring, the order at the maximal ideal agrees with the local order. -/
+@[simp]
+theorem orderAt_maximalIdeal [IsLocalRing R] (I : Ideal R) :
+    I.orderAt ⟨maximalIdeal R, (maximalIdeal.isMaximal R).isPrime⟩ = I.localOrder := by
+  let e : R ≃+* Localization.AtPrime (maximalIdeal R) :=
+    (IsLocalization.atUnits R (maximalIdeal R).primeCompl
+      (S := Localization.AtPrime (maximalIdeal R))
+      fun x hx ↦ notMem_maximalIdeal.mp hx).toRingEquiv
+  exact localOrder_map_equiv I e
 
 end AtPrime
 
