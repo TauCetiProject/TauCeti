@@ -45,10 +45,10 @@ Finally, mutating `d` at `k` swaps `posMonomial` with `negMonomial` while revers
 
 ## Main results
 
-* `TauCeti.ExchangeData.IsNormalized.valueAtOne_mutation_of_column_eq_zero` and
+* `TauCeti.ExchangeData.IsNormalized.valueAtOne_mutation_of_matrix_row_eq_zero` and
   `TauCeti.ExchangeData.IsNormalized.valueAtOne_mutationWord_of_column_eq_zero`: on normalized
-  exchange data, `H_j(1)` on a zero column `j` is invariant under arbitrary mutations and mutation
-  words.
+  exchange data, `H_j(1)` is unchanged by mutation at `k` when `B_{row k, j} = 0`, and on a zero
+  column `j` is invariant under arbitrary mutation words.
 * `TauCeti.ExchangeData.exchangeExponent_injective_of_exists_ne_zero`: on a nonzero column `k`, the
   summand exponents `l ↦ d.exchangeExponent k l` for `0 ≤ l ≤ deg(H_k)` are pairwise distinct.
 * `TauCeti.ExchangeData.exchangeNumerator_mutation`: `E_k(μ_k(d)) = E_k(d)`.
@@ -79,6 +79,11 @@ variable {𝕂 𝕂' R : Type*} [CommMonoidWithZero 𝕂] [CommMonoidWithZero �
 /-- The scalar value `H_k(1) = ∑ l, c.toScalar ((d.polynomial k).coeff l)` in `R`. -/
 def valueAtOne (c : CoefficientSystem 𝕂 R) (d : ExchangeData 𝕂 row) (k : K) : R :=
   c.valueAtOne (d.polynomial k)
+
+/-- Restatement of `ExchangeData.valueAtOne` in terms of `CoefficientSystem.valueAtOne`. -/
+theorem valueAtOne_eq (c : CoefficientSystem 𝕂 R) (d : ExchangeData 𝕂 row) (k : K) :
+    d.valueAtOne c k = c.valueAtOne (d.polynomial k) :=
+  (rfl)
 
 theorem valueAtOne_def (c : CoefficientSystem 𝕂 R) (d : ExchangeData 𝕂 row) (k : K) :
     d.valueAtOne c k = ∑ l, c.toScalar ((d.polynomial k).coeff l) :=
@@ -121,15 +126,15 @@ theorem valueAtOne_mutation_self [DecidableEq I] [DecidableEq K] (c : Coefficien
     (d.mutation c k).valueAtOne c k = d.valueAtOne c k := by
   simp [valueAtOne]
 
-/-- On normalized exchange data, `valueAtOne` on a zero column `j` is unchanged by mutation in any
-direction `k`. -/
-theorem IsNormalized.valueAtOne_mutation_of_column_eq_zero [DecidableEq I] [DecidableEq K]
-    {c : CoefficientSystem 𝕂 R} {d : ExchangeData 𝕂 row} (hd : d.IsNormalized c) (k : K) {j : K}
-    (hz : ∀ i, d.exchange.matrix i j = 0) :
+/-- On normalized exchange data, an entry `B_{row k, j} = 0` leaves `valueAtOne c d j` unchanged
+under mutation in direction `k`. -/
+theorem IsNormalized.valueAtOne_mutation_of_matrix_row_eq_zero [DecidableEq I] [DecidableEq K]
+    {c : CoefficientSystem 𝕂 R} {d : ExchangeData 𝕂 row} (hd : d.IsNormalized c) {k j : K}
+    (h0 : d.exchange.matrix (row k) j = 0) :
     (d.mutation c k).valueAtOne c j = d.valueAtOne c j := by
   obtain rfl | hj := eq_or_ne j k
   · exact d.valueAtOne_mutation_self c j
-  · rw [valueAtOne, hd.mutation_polynomial_of_matrix_row_eq_zero hj (hz (row k)), ← valueAtOne]
+  · rw [valueAtOne, hd.mutation_polynomial_of_matrix_row_eq_zero hj h0, ← valueAtOne]
 
 /-- On normalized exchange data, `valueAtOne` on a zero column `j` is invariant along every finite
 mutation word. -/
@@ -140,15 +145,16 @@ theorem IsNormalized.valueAtOne_mutationWord_of_column_eq_zero [DecidableEq I] [
   induction w generalizing d with
   | nil => simp
   | cons k _w ih =>
-    have hz' : ∀ i, (d.mutation c k).exchange.matrix i j = 0 :=
-      (d.mutation_column_eq_zero_iff c k j).mpr hz
-    rw [mutationWord_cons, ih (hd.mutation k) hz', hd.valueAtOne_mutation_of_column_eq_zero k hz]
+    have hz' : ∀ i, (d.mutation c k).exchange.matrix i j = 0 := by
+      simpa using hz
+    rw [mutationWord_cons, ih (hd.mutation k) hz',
+      hd.valueAtOne_mutation_of_matrix_row_eq_zero (hz (row k))]
 
 /-! ### Exchange exponents and exchange numerators -/
 
 section FiniteIndex
 
-variable [Fintype I]
+variable [Finite I]
 
 /-- The exponent `-e_{row k} + l (β_k)⁺ + (deg(H_k) - l) (β_k)⁻ : I →₀ ℤ` of the `l`-th exchange
 summand in direction `k`. -/
@@ -162,8 +168,8 @@ theorem exchangeExponent_apply (d : ExchangeData 𝕂 row) (k : K) (l : ℕ) (i 
     d.exchangeExponent k l i =
       (l : ℤ) * (d.dividedColumn k i)⁺ +
         (((d.polynomial k).degree - l : ℕ) : ℤ) * (d.dividedColumn k i)⁻ -
-        Finsupp.single (row k) 1 i :=
-  (rfl)
+        Finsupp.single (row k) 1 i := by
+  simp [exchangeExponent]
 
 @[simp]
 theorem exchangeExponent_apply_row (d : ExchangeData 𝕂 row) (k : K) (l : ℕ) :
@@ -183,6 +189,18 @@ theorem exchangeExponent_map {F : Type*} [FunLike F 𝕂 𝕂'] [MonoidWithZeroH
     (d.map ψ).exchangeExponent k l = d.exchangeExponent k l := by
   ext i
   simp [exchangeExponent_apply]
+
+@[simp]
+theorem exchangeExponent_reindex [Finite I'] (eI : I ≃ I') (eK : K ≃ K')
+    (h : ∀ k, eI (row k) = row' (eK k)) (d : ExchangeData 𝕂 row) (k : K') (l : ℕ) :
+    (reindex eI eK h d).exchangeExponent k l =
+      (d.exchangeExponent (eK.symm k) l).mapDomain eI := by
+  classical
+  have hrow : eI (row (eK.symm k)) = row' k := by simp [h]
+  ext i'
+  obtain ⟨i, rfl⟩ := eI.surjective i'
+  rw [Finsupp.mapDomain_apply_of_injective eI.injective]
+  simp [exchangeExponent_apply, ← hrow, Finsupp.single_apply, eI.injective.eq_iff]
 
 /-- On a zero column `k`, every exchange summand has exponent `-e_{row k}`. -/
 theorem exchangeExponent_of_forall_eq_zero (d : ExchangeData 𝕂 row) {k : K}
@@ -242,27 +260,71 @@ noncomputable def negExponent (d : ExchangeData 𝕂 row) (k : K) :
 
 @[simp]
 theorem posExponent_apply (d : ExchangeData 𝕂 row) (k : K) (i : {i : I // i ≠ row k}) :
-    d.posExponent k i = (d.dividedColumn k i.1)⁺ :=
-  (rfl)
+    d.posExponent k i = (d.dividedColumn k i.1)⁺ := by
+  simp [posExponent]
 
 @[simp]
 theorem negExponent_apply (d : ExchangeData 𝕂 row) (k : K) (i : {i : I // i ≠ row k}) :
-    d.negExponent k i = (d.dividedColumn k i.1)⁻ :=
-  (rfl)
+    d.negExponent k i = (d.dividedColumn k i.1)⁻ := by
+  simp [negExponent]
+
+@[simp]
+theorem posExponent_map {F : Type*} [FunLike F 𝕂 𝕂'] [MonoidWithZeroHomClass F 𝕂 𝕂']
+    (ψ : F) (d : ExchangeData 𝕂 row) (k : K) :
+    (d.map ψ).posExponent k = d.posExponent k := by
+  ext i
+  simp
+
+@[simp]
+theorem negExponent_map {F : Type*} [FunLike F 𝕂 𝕂'] [MonoidWithZeroHomClass F 𝕂 𝕂']
+    (ψ : F) (d : ExchangeData 𝕂 row) (k : K) :
+    (d.map ψ).negExponent k = d.negExponent k := by
+  ext i
+  simp
+
+@[simp]
+theorem posExponent_reindex [Finite I'] (eI : I ≃ I') (eK : K ≃ K')
+    (h : ∀ k, eI (row k) = row' (eK k)) (d : ExchangeData 𝕂 row) (k : K') :
+    (reindex eI eK h d).posExponent k =
+      (d.posExponent (eK.symm k)).mapDomain
+        (eI.subtypeEquiv fun i ↦ by
+          rw [← eI.injective.ne_iff, h, Equiv.apply_symm_apply]) := by
+  classical
+  let eSub : {i : I // i ≠ row (eK.symm k)} ≃ {i' : I' // i' ≠ row' k} :=
+    eI.subtypeEquiv fun i ↦ by rw [← eI.injective.ne_iff, h, Equiv.apply_symm_apply]
+  ext u'
+  obtain ⟨u, rfl⟩ := eSub.surjective u'
+  rw [Finsupp.mapDomain_apply_of_injective eSub.injective]
+  simp [eSub]
+
+@[simp]
+theorem negExponent_reindex [Finite I'] (eI : I ≃ I') (eK : K ≃ K')
+    (h : ∀ k, eI (row k) = row' (eK k)) (d : ExchangeData 𝕂 row) (k : K') :
+    (reindex eI eK h d).negExponent k =
+      (d.negExponent (eK.symm k)).mapDomain
+        (eI.subtypeEquiv fun i ↦ by
+          rw [← eI.injective.ne_iff, h, Equiv.apply_symm_apply]) := by
+  classical
+  let eSub : {i : I // i ≠ row (eK.symm k)} ≃ {i' : I' // i' ≠ row' k} :=
+    eI.subtypeEquiv fun i ↦ by rw [← eI.injective.ne_iff, h, Equiv.apply_symm_apply]
+  ext u'
+  obtain ⟨u, rfl⟩ := eSub.surjective u'
+  rw [Finsupp.mapDomain_apply_of_injective eSub.injective]
+  simp [eSub]
 
 @[simp]
 theorem posExponent_mutation_self [DecidableEq I] [DecidableEq K] (c : CoefficientSystem 𝕂 R)
     (d : ExchangeData 𝕂 row) (k : K) :
     (d.mutation c k).posExponent k = d.negExponent k := by
   ext i
-  simp [posExponent, negExponent]
+  simp
 
 @[simp]
 theorem negExponent_mutation_self [DecidableEq I] [DecidableEq K] (c : CoefficientSystem 𝕂 R)
     (d : ExchangeData 𝕂 row) (k : K) :
     (d.mutation c k).negExponent k = d.posExponent k := by
   ext i
-  simp [posExponent, negExponent]
+  simp
 
 /-- The positive column monomial `m_{k, +} = ∏_{i ≠ row k} X_i^{(β_k(i))⁺}` in
 `LaurentRing R {i : I // i ≠ row k}`. -/
@@ -270,29 +332,109 @@ noncomputable def posMonomial (R : Type*) [Semiring R] (d : ExchangeData 𝕂 ro
     LaurentRing R {i : I // i ≠ row k} :=
   AddMonoidAlgebra.single (d.posExponent k) 1
 
+/-- Restatement of `posMonomial` as `AddMonoidAlgebra.single (d.posExponent k) 1`. -/
+theorem posMonomial_def (S : Type*) [Semiring S] (d : ExchangeData 𝕂 row) (k : K) :
+    d.posMonomial S k = AddMonoidAlgebra.single (d.posExponent k) 1 :=
+  (rfl)
+
 /-- The negative column monomial `m_{k, -} = ∏_{i ≠ row k} X_i^{(β_k(i))⁻}` in
 `LaurentRing R {i : I // i ≠ row k}`. -/
 noncomputable def negMonomial (R : Type*) [Semiring R] (d : ExchangeData 𝕂 row) (k : K) :
     LaurentRing R {i : I // i ≠ row k} :=
   AddMonoidAlgebra.single (d.negExponent k) 1
 
-@[simp]
-theorem posMonomial_mutation_self [DecidableEq I] [DecidableEq K] (c : CoefficientSystem 𝕂 R)
-    (d : ExchangeData 𝕂 row) (k : K) :
-    (d.mutation c k).posMonomial R k = d.negMonomial R k := by
-  simp [posMonomial, negMonomial]
+/-- Restatement of `negMonomial` as `AddMonoidAlgebra.single (d.negExponent k) 1`. -/
+theorem negMonomial_def (S : Type*) [Semiring S] (d : ExchangeData 𝕂 row) (k : K) :
+    d.negMonomial S k = AddMonoidAlgebra.single (d.negExponent k) 1 :=
+  (rfl)
 
 @[simp]
-theorem negMonomial_mutation_self [DecidableEq I] [DecidableEq K] (c : CoefficientSystem 𝕂 R)
-    (d : ExchangeData 𝕂 row) (k : K) :
-    (d.mutation c k).negMonomial R k = d.posMonomial R k := by
-  simp [posMonomial, negMonomial]
+theorem posMonomial_map {F : Type*} [FunLike F 𝕂 𝕂'] [MonoidWithZeroHomClass F 𝕂 𝕂']
+    (S : Type*) [Semiring S] (ψ : F) (d : ExchangeData 𝕂 row) (k : K) :
+    (d.map ψ).posMonomial S k = d.posMonomial S k := by
+  simp [posMonomial_def]
+
+@[simp]
+theorem negMonomial_map {F : Type*} [FunLike F 𝕂 𝕂'] [MonoidWithZeroHomClass F 𝕂 𝕂']
+    (S : Type*) [Semiring S] (ψ : F) (d : ExchangeData 𝕂 row) (k : K) :
+    (d.map ψ).negMonomial S k = d.negMonomial S k := by
+  simp [negMonomial_def]
+
+@[simp]
+theorem posMonomial_reindex [Finite I'] (S : Type*) [CommSemiring S]
+    (eI : I ≃ I') (eK : K ≃ K') (h : ∀ k, eI (row k) = row' (eK k))
+    (d : ExchangeData 𝕂 row) (k : K') :
+    (reindex eI eK h d).posMonomial S k =
+      LaurentRing.rename
+        (eI.subtypeEquiv fun i ↦ by
+          rw [← eI.injective.ne_iff, h, Equiv.apply_symm_apply])
+        (d.posMonomial S (eK.symm k)) := by
+  simp [posMonomial_def]
+
+@[simp]
+theorem negMonomial_reindex [Finite I'] (S : Type*) [CommSemiring S]
+    (eI : I ≃ I') (eK : K ≃ K') (h : ∀ k, eI (row k) = row' (eK k))
+    (d : ExchangeData 𝕂 row) (k : K') :
+    (reindex eI eK h d).negMonomial S k =
+      LaurentRing.rename
+        (eI.subtypeEquiv fun i ↦ by
+          rw [← eI.injective.ne_iff, h, Equiv.apply_symm_apply])
+        (d.negMonomial S (eK.symm k)) := by
+  simp [negMonomial_def]
+
+@[simp]
+theorem posMonomial_mutation_self [DecidableEq I] [DecidableEq K] (S : Type*) [Semiring S]
+    (c : CoefficientSystem 𝕂 R) (d : ExchangeData 𝕂 row) (k : K) :
+    (d.mutation c k).posMonomial S k = d.negMonomial S k := by
+  simp [posMonomial_def, negMonomial_def]
+
+@[simp]
+theorem negMonomial_mutation_self [DecidableEq I] [DecidableEq K] (S : Type*) [Semiring S]
+    (c : CoefficientSystem 𝕂 R) (d : ExchangeData 𝕂 row) (k : K) :
+    (d.mutation c k).negMonomial S k = d.posMonomial S k := by
+  simp [posMonomial_def, negMonomial_def]
+
+private theorem single_one_mem_range_toLaurent {J S : Type*} [CommSemiring S] {e : J →₀ ℤ}
+    (he : ∀ j, 0 ≤ e j) :
+    (AddMonoidAlgebra.single e 1 : LaurentRing S J) ∈
+      (MvPolynomial.toLaurent : MvPolynomial J S →ₐ[S] LaurentRing S J).range := by
+  classical
+  rw [MvPolynomial.mem_range_toLaurent_iff]
+  intro m hm j
+  rw [AddMonoidAlgebra.coeff_single] at hm
+  obtain rfl : m = e := Finset.mem_singleton.mp (Finsupp.support_single_subset hm)
+  exact he j
+
+/-- The positive column monomial lies in the polynomial subalgebra
+`(MvPolynomial.toLaurent).range`. -/
+theorem posMonomial_mem_range_toLaurent (S : Type*) [CommSemiring S] (d : ExchangeData 𝕂 row)
+    (k : K) :
+    d.posMonomial S k ∈
+      (MvPolynomial.toLaurent :
+        MvPolynomial {i : I // i ≠ row k} S →ₐ[S] LaurentRing S {i : I // i ≠ row k}).range :=
+  single_one_mem_range_toLaurent fun _ ↦ by simp [posPart_nonneg]
+
+/-- The negative column monomial lies in the polynomial subalgebra
+`(MvPolynomial.toLaurent).range`. -/
+theorem negMonomial_mem_range_toLaurent (S : Type*) [CommSemiring S] (d : ExchangeData 𝕂 row)
+    (k : K) :
+    d.negMonomial S k ∈
+      (MvPolynomial.toLaurent :
+        MvPolynomial {i : I // i ≠ row k} S →ₐ[S] LaurentRing S {i : I // i ≠ row k}).range :=
+  single_one_mem_range_toLaurent fun _ ↦ by simp [negPart_nonneg]
 
 /-- The *exchange numerator* `E_k = ∑_{l = 0}^{deg(H_k)} φ(h_{k, l}) m_{k, +}^l m_{k, -}^{r_k - l}`
 in `LaurentRing R {i : I // i ≠ row k}`. -/
 noncomputable def exchangeNumerator (c : CoefficientSystem 𝕂 R) (d : ExchangeData 𝕂 row)
     (k : K) : LaurentRing R {i : I // i ≠ row k} :=
   (d.polynomial k).evalHomogeneous c.toScalar (d.posMonomial R k) (d.negMonomial R k)
+
+/-- Restatement of `exchangeNumerator` in terms of `ExchangePolynomial.evalHomogeneous`. -/
+theorem exchangeNumerator_eq_evalHomogeneous (c : CoefficientSystem 𝕂 R)
+    (d : ExchangeData 𝕂 row) (k : K) :
+    d.exchangeNumerator c k =
+      (d.polynomial k).evalHomogeneous c.toScalar (d.posMonomial R k) (d.negMonomial R k) :=
+  (rfl)
 
 theorem exchangeNumerator_def (c : CoefficientSystem 𝕂 R) (d : ExchangeData 𝕂 row) (k : K) :
     d.exchangeNumerator c k =
@@ -311,38 +453,43 @@ theorem exchangeNumerator_eq_sum_single (c : CoefficientSystem 𝕂 R) (d : Exch
           ((l : ℕ) • d.posExponent k +
             ((d.polynomial k).degree - (l : ℕ)) • d.negExponent k)
           (c.toScalar ((d.polynomial k).coeff l)) := by
-  simp [exchangeNumerator_def, posMonomial, negMonomial]
+  simp [exchangeNumerator_def, posMonomial_def, negMonomial_def]
 
 /-- **Invariance of the exchange numerator under mutation at `k`**: `E_k(μ_k(d)) = E_k(d)`. -/
 @[simp]
 theorem exchangeNumerator_mutation [DecidableEq I] [DecidableEq K] (c : CoefficientSystem 𝕂 R)
     (d : ExchangeData 𝕂 row) (k : K) :
     (d.mutation c k).exchangeNumerator c k = d.exchangeNumerator c k := by
-  simp [exchangeNumerator]
+  simp [exchangeNumerator_eq_evalHomogeneous]
 
 /-- Homomorphisms of coefficient systems preserve `exchangeNumerator`. -/
 @[simp]
 theorem exchangeNumerator_map {c : CoefficientSystem 𝕂 R} {c' : CoefficientSystem 𝕂' R}
     (f : CoefficientSystemHom c c') (d : ExchangeData 𝕂 row) (k : K) :
     (d.map f).exchangeNumerator c' k = d.exchangeNumerator c k := by
-  have hpos : (d.map f).posMonomial R k = d.posMonomial R k := by
-    simp only [posMonomial]
-    congr 1
-    ext i
-    simp
-  have hneg : (d.map f).negMonomial R k = d.negMonomial R k := by
-    simp only [negMonomial]
-    congr 1
-    ext i
-    simp
   have hcomp : (c'.toScalar ∘ f : 𝕂 → R) = c.toScalar := funext f.toScalar_apply
-  simp [exchangeNumerator, hpos, hneg, hcomp]
+  simp [exchangeNumerator_eq_evalHomogeneous, hcomp]
+
+/-- Reindexing exchange data renames the variables of `exchangeNumerator` along the induced
+equivalence on non-`row` indices. -/
+@[simp]
+theorem exchangeNumerator_reindex [Finite I'] (c : CoefficientSystem 𝕂 R)
+    (eI : I ≃ I') (eK : K ≃ K') (h : ∀ k, eI (row k) = row' (eK k))
+    (d : ExchangeData 𝕂 row) (k : K') :
+    (reindex eI eK h d).exchangeNumerator c k =
+      LaurentRing.rename
+        (eI.subtypeEquiv fun i ↦ by
+          rw [← eI.injective.ne_iff, h, Equiv.apply_symm_apply])
+        (d.exchangeNumerator c (eK.symm k)) := by
+  rw [exchangeNumerator_eq_evalHomogeneous, reindex_polynomial, posMonomial_reindex,
+    negMonomial_reindex, exchangeNumerator_def, ExchangePolynomial.evalHomogeneous_def]
+  simp
 
 /-- For binary exchange data, the exchange numerator is `m_{k, -} + m_{k, +}`. -/
 theorem exchangeNumerator_of_isBinary (c : CoefficientSystem 𝕂 R) {d : ExchangeData 𝕂 row}
     (hd : d.IsBinary) (k : K) :
     d.exchangeNumerator c k = d.negMonomial R k + d.posMonomial R k := by
-  simp [exchangeNumerator, hd.polynomial_eq k]
+  simp [exchangeNumerator_eq_evalHomogeneous, hd.polynomial_eq k]
 
 /-- On a zero column `k`, the exchange numerator reduces to the constant Laurent polynomial
 `algebraMap R _ (d.valueAtOne c k)`. -/
@@ -367,33 +514,11 @@ theorem exchangeNumerator_mem_range_toLaurent (c : CoefficientSystem 𝕂 R)
     d.exchangeNumerator c k ∈
       (MvPolynomial.toLaurent :
         MvPolynomial {i : I // i ≠ row k} R →ₐ[R] LaurentRing R {i : I // i ≠ row k}).range := by
-  have hp :
-      d.posMonomial R k ∈
-        (MvPolynomial.toLaurent :
-          MvPolynomial {i : I // i ≠ row k} R →ₐ[R] LaurentRing R {i : I // i ≠ row k}).range := by
-    rw [MvPolynomial.mem_range_toLaurent_iff]
-    intro m hm i
-    rw [posMonomial, AddMonoidAlgebra.coeff_single] at hm
-    have hmem : m = d.posExponent k := by
-      by_contra hne
-      simp [hne] at hm
-    subst hmem
-    exact posPart_nonneg _
-  have hn :
-      d.negMonomial R k ∈
-        (MvPolynomial.toLaurent :
-          MvPolynomial {i : I // i ≠ row k} R →ₐ[R] LaurentRing R {i : I // i ≠ row k}).range := by
-    rw [MvPolynomial.mem_range_toLaurent_iff]
-    intro m hm i
-    rw [negMonomial, AddMonoidAlgebra.coeff_single] at hm
-    have hmem : m = d.negExponent k := by
-      by_contra hne
-      simp [hne] at hm
-    subst hmem
-    exact negPart_nonneg _
   rw [exchangeNumerator_def]
   refine Subalgebra.sum_mem _ fun l _ ↦ Subalgebra.smul_mem _ ?_ _
-  exact Subalgebra.mul_mem _ (Subalgebra.pow_mem _ hp _) (Subalgebra.pow_mem _ hn _)
+  exact Subalgebra.mul_mem _
+    (Subalgebra.pow_mem _ (d.posMonomial_mem_range_toLaurent R k) _)
+    (Subalgebra.pow_mem _ (d.negMonomial_mem_range_toLaurent R k) _)
 
 /-- Embedding `exchangeNumerator c d k` into `LaurentRing R I` and multiplying by `X_{row k}⁻¹`
 yields the Laurent sum indexed by `d.exchangeExponent k l`. -/

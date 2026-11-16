@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Fin
+public import Mathlib.Algebra.GroupWithZero.Action.Defs
 public import Mathlib.Algebra.GroupWithZero.Units.Lemmas
 public import Mathlib.Algebra.Order.Group.PosPart
 public import Mathlib.Algebra.Order.Ring.Int
@@ -38,7 +39,7 @@ also keeps all operations well-behaved over trivial targets.
 * `TauCeti.ExchangePolynomial.dilate`: the dilated polynomial `H(κ T)` for `κ : 𝕂ˣ`.
 * `TauCeti.ExchangePolynomial.scale`: the unit multiple `e H` for `e : 𝕂ˣ`.
 * `TauCeti.ExchangePolynomial.dilationFactor`: the propagation factor `h_r^{b⁺} h_0^{-b⁻}` in `𝕂ˣ`.
-* `TauCeti.ExchangePolynomial.HasUnitOneEndpoints`: the predicate `h_0 = 1 ∧ h_r = 1`.
+* `TauCeti.ExchangePolynomial.HasEndpointsOne`: the predicate `h_0 = 1 ∧ h_r = 1`.
 * `TauCeti.ExchangePolynomial.binary`: the binomial exchange polynomial `1 + T`.
 * `TauCeti.ExchangePolynomial.map`: coefficientwise pushforward along a `MonoidWithZeroHomClass`
   map.
@@ -53,8 +54,12 @@ also keeps all operations well-behaved over trivial targets.
 * `TauCeti.ExchangePolynomial.dilationFactor_reverse`,
   `TauCeti.ExchangePolynomial.dilationFactor_reverse_neg`: the dilation factor of `H.reverse` at
   `-b` is the inverse of the dilation factor of `H` at `b`.
-* `TauCeti.ExchangePolynomial.dilationFactor_scale`: scaling `H` by `e` multiplies its dilation
-  factor at `b` by `e ^ b`.
+* `TauCeti.ExchangePolynomial.dilationFactor_scale`,
+  `TauCeti.ExchangePolynomial.dilationFactor_dilate`: interaction of `dilationFactor` with unit
+  scaling and dilation.
+* `TauCeti.ExchangePolynomial.evalHomogeneous_scale`,
+  `TauCeti.ExchangePolynomial.evalHomogeneous_dilate`: interaction of homogeneous evaluation with
+  unit scaling and dilation.
 
 ## References
 
@@ -208,12 +213,12 @@ theorem dilate_dilate (H : ExchangePolynomial 𝕂) (κ₁ κ₂ : 𝕂ˣ) :
   simp [mul_pow, mul_assoc]
 
 @[simp]
-theorem dilate_mul_inv_cancel (H : ExchangePolynomial 𝕂) (κ : 𝕂ˣ) :
+theorem dilate_dilate_inv (H : ExchangePolynomial 𝕂) (κ : 𝕂ˣ) :
     (H.dilate κ).dilate κ⁻¹ = H := by
   rw [dilate_dilate, mul_inv_cancel, dilate_one]
 
 @[simp]
-theorem dilate_inv_mul_cancel (H : ExchangePolynomial 𝕂) (κ : 𝕂ˣ) :
+theorem dilate_inv_dilate (H : ExchangePolynomial 𝕂) (κ : 𝕂ˣ) :
     (H.dilate κ⁻¹).dilate κ = H := by
   rw [dilate_dilate, inv_mul_cancel, dilate_one]
 
@@ -259,12 +264,12 @@ theorem scale_scale (H : ExchangePolynomial 𝕂) (e₁ e₂ : 𝕂ˣ) :
   simp [mul_assoc, mul_left_comm]
 
 @[simp]
-theorem scale_mul_inv_cancel (H : ExchangePolynomial 𝕂) (e : 𝕂ˣ) :
+theorem scale_scale_inv (H : ExchangePolynomial 𝕂) (e : 𝕂ˣ) :
     (H.scale e).scale e⁻¹ = H := by
   rw [scale_scale, mul_inv_cancel, scale_one]
 
 @[simp]
-theorem scale_inv_mul_cancel (H : ExchangePolynomial 𝕂) (e : 𝕂ˣ) :
+theorem scale_inv_scale (H : ExchangePolynomial 𝕂) (e : 𝕂ˣ) :
     (H.scale e⁻¹).scale e = H := by
   rw [scale_scale, inv_mul_cancel, scale_one]
 
@@ -314,17 +319,8 @@ theorem dilate_scale (H : ExchangePolynomial 𝕂) (e κ : 𝕂ˣ) :
 theorem reverse_dilate (H : ExchangePolynomial 𝕂) (κ : 𝕂ˣ) :
     (H.dilate κ).reverse = (H.reverse.dilate κ⁻¹).scale (κ ^ H.degree) := by
   refine ext (by simp) fun l ↦ ?_
-  have hl : (H.degree - (l : ℕ)) + (l : ℕ) = H.degree := by
-    have hlt : (l : ℕ) < H.degree + 1 := l.isLt.trans_eq (by simp)
-    omega
   have hpow : κ ^ H.degree * (κ⁻¹) ^ (l : ℕ) = κ ^ (H.degree - (l : ℕ)) := by
-    calc
-      κ ^ H.degree * (κ⁻¹) ^ (l : ℕ)
-          = κ ^ ((H.degree - (l : ℕ)) + (l : ℕ)) * (κ⁻¹) ^ (l : ℕ) :=
-            congrArg (fun n ↦ κ ^ n * (κ⁻¹) ^ (l : ℕ)) hl.symm
-      _ = κ ^ (H.degree - (l : ℕ)) * (κ ^ (l : ℕ) * (κ⁻¹) ^ (l : ℕ)) := by
-            rw [pow_add, mul_assoc]
-      _ = κ ^ (H.degree - (l : ℕ)) := by simp
+    rw [inv_pow, ← pow_sub κ (Nat.lt_succ_iff.mp l.isLt : (l : ℕ) ≤ H.degree)]
   have hval : ((κ ^ H.degree : 𝕂ˣ) : 𝕂) * ((κ⁻¹ : 𝕂ˣ) : 𝕂) ^ (l : ℕ) =
       (κ : 𝕂) ^ (H.degree - (l : ℕ)) := by
     simpa only [Units.val_mul, Units.val_pow_eq_pow_val] using congrArg Units.val hpow
@@ -352,7 +348,7 @@ theorem dilationFactor_def (H : ExchangePolynomial 𝕂) (b : ℤ) :
   (rfl)
 
 /-- Restatement of `dilationFactor` using `max b 0` and `-max (-b) 0`. -/
-theorem dilationFactor_eq_max (H : ExchangePolynomial 𝕂) (b : ℤ) :
+theorem dilationFactor_eq_zpow_max_mul_zpow_neg_max (H : ExchangePolynomial 𝕂) (b : ℤ) :
     H.dilationFactor b =
       H.isUnit_coeff_last.unit ^ max b 0 * H.isUnit_coeff_zero.unit ^ (-max (-b) 0) := by
   rw [dilationFactor_def, posPart_def, negPart_def]
@@ -383,7 +379,17 @@ theorem dilationFactor_reverse_neg (H : ExchangePolynomial 𝕂) (b : ℤ) :
     H.reverse.dilationFactor (-b) = (H.dilationFactor b)⁻¹ := by
   simp
 
+/-- Dilating `H` by a unit `κ` multiplies its dilation factor at `b` by
+`κ ^ ((H.degree : ℤ) * b⁺)`. -/
+@[simp]
+theorem dilationFactor_dilate (H : ExchangePolynomial 𝕂) (κ : 𝕂ˣ) (b : ℤ) :
+    (H.dilate κ).dilationFactor b = κ ^ ((H.degree : ℤ) * b⁺) * H.dilationFactor b := by
+  rw [dilationFactor_def, dilationFactor_def, unitLast_dilate, unitZero_dilate, mul_zpow,
+    zpow_mul, zpow_natCast]
+  simp only [mul_assoc, mul_left_comm]
+
 /-- Scaling `H` by a unit `e` multiplies its dilation factor at `b` by `e ^ b`. -/
+@[simp]
 theorem dilationFactor_scale (H : ExchangePolynomial 𝕂) (e : 𝕂ˣ) (b : ℤ) :
     (H.scale e).dilationFactor b = e ^ b * H.dilationFactor b := by
   rw [dilationFactor_def, dilationFactor_def, unitLast_scale, unitZero_scale, mul_zpow, mul_zpow]
@@ -399,39 +405,39 @@ theorem dilationFactor_scale (H : ExchangePolynomial 𝕂) (e : 𝕂ˣ) (b : ℤ
 
 /-- An exchange polynomial has *endpoint coefficients one* when `h_0 = 1` and `h_r = 1`. -/
 @[mk_iff]
-structure HasUnitOneEndpoints (H : ExchangePolynomial 𝕂) : Prop where
+structure HasEndpointsOne (H : ExchangePolynomial 𝕂) : Prop where
   /-- The constant coefficient equals `1`. -/
   coeff_zero : H.coeff 0 = 1
   /-- The leading coefficient equals `1`. -/
   coeff_last : H.coeff (Fin.last H.degree) = 1
 
-namespace HasUnitOneEndpoints
+namespace HasEndpointsOne
 
-theorem unitZero_eq_one {H : ExchangePolynomial 𝕂} (h : H.HasUnitOneEndpoints) :
+theorem unitZero_eq_one {H : ExchangePolynomial 𝕂} (h : H.HasEndpointsOne) :
     H.unitZero = 1 :=
   Units.ext (by simp [h.coeff_zero])
 
-theorem unitLast_eq_one {H : ExchangePolynomial 𝕂} (h : H.HasUnitOneEndpoints) :
+theorem unitLast_eq_one {H : ExchangePolynomial 𝕂} (h : H.HasEndpointsOne) :
     H.unitLast = 1 :=
   Units.ext (by simp [h.coeff_last])
 
 /-- An exchange polynomial with endpoint coefficients one produces trivial dilation factors. -/
-theorem dilationFactor_eq_one {H : ExchangePolynomial 𝕂} (h : H.HasUnitOneEndpoints) (b : ℤ) :
+theorem dilationFactor_eq_one {H : ExchangePolynomial 𝕂} (h : H.HasEndpointsOne) (b : ℤ) :
     H.dilationFactor b = 1 := by
   simp [dilationFactor_def, h.unitZero_eq_one, h.unitLast_eq_one]
 
 /-- Reversal preserves having endpoint coefficients equal to `1`. -/
-protected theorem reverse {H : ExchangePolynomial 𝕂} (h : H.HasUnitOneEndpoints) :
-    H.reverse.HasUnitOneEndpoints where
+protected theorem reverse {H : ExchangePolynomial 𝕂} (h : H.HasEndpointsOne) :
+    H.reverse.HasEndpointsOne where
   coeff_zero := by simpa using h.coeff_last
   coeff_last := by simpa using h.coeff_zero
 
-end HasUnitOneEndpoints
+end HasEndpointsOne
 
 @[simp]
-theorem hasUnitOneEndpoints_reverse {H : ExchangePolynomial 𝕂} :
-    H.reverse.HasUnitOneEndpoints ↔ H.HasUnitOneEndpoints :=
-  ⟨fun h ↦ H.reverse_reverse ▸ h.reverse, HasUnitOneEndpoints.reverse⟩
+theorem hasEndpointsOne_reverse {H : ExchangePolynomial 𝕂} :
+    H.reverse.HasEndpointsOne ↔ H.HasEndpointsOne :=
+  ⟨fun h ↦ H.reverse_reverse ▸ h.reverse, HasEndpointsOne.reverse⟩
 
 /-- The binary exchange polynomial `1 + T` of degree `1`. -/
 def binary : ExchangePolynomial 𝕂 where
@@ -468,7 +474,8 @@ theorem dilationFactor_binary (b : ℤ) : (binary : ExchangePolynomial 𝕂).dil
   simp [dilationFactor_def]
 
 /-- The binary polynomial `1 + T` has endpoint coefficients equal to `1`. -/
-theorem hasUnitOneEndpoints_binary : (binary : ExchangePolynomial 𝕂).HasUnitOneEndpoints :=
+@[simp]
+theorem hasEndpointsOne_binary : (binary : ExchangePolynomial 𝕂).HasEndpointsOne :=
   ⟨by simp, by simp⟩
 
 /-! ### Functoriality along multiplicative maps -/
@@ -527,13 +534,13 @@ theorem reverse_map : (H.map ψ).reverse = H.reverse.map ψ := by
   simp [Fin.cast_rev]
 
 @[simp]
-theorem dilate_map (κ : 𝕂ˣ) :
+theorem map_dilate (κ : 𝕂ˣ) :
     (H.dilate κ).map ψ = (H.map ψ).dilate (Units.map (MonoidHom.ofClass ψ) κ) := by
   refine ext (by simp) fun l ↦ ?_
   simp
 
 @[simp]
-theorem scale_map (e : 𝕂ˣ) :
+theorem map_scale (e : 𝕂ˣ) :
     (H.scale e).map ψ = (H.map ψ).scale (Units.map (MonoidHom.ofClass ψ) e) := by
   refine ext (by simp) fun l ↦ ?_
   simp
@@ -549,14 +556,22 @@ theorem map_binary : (binary : ExchangePolynomial 𝕂).map ψ = binary := by
   refine ext (by simp) fun l ↦ ?_
   simp
 
-protected theorem HasUnitOneEndpoints.map {H : ExchangePolynomial 𝕂}
-    (h : H.HasUnitOneEndpoints) : (H.map ψ).HasUnitOneEndpoints where
+protected theorem HasEndpointsOne.map {H : ExchangePolynomial 𝕂}
+    (h : H.HasEndpointsOne) : (H.map ψ).HasEndpointsOne where
   coeff_zero := by simp [h.coeff_zero]
   coeff_last := by simp [h.coeff_last]
 
 end Map
 
-/-! ### Sums over coefficients -/
+/-- Pointwise-equal coefficient homomorphisms induce equal pushforwards on exchange polynomials. -/
+theorem map_congr {F G : Type*} [FunLike F 𝕂 𝕂'] [MonoidWithZeroHomClass F 𝕂 𝕂']
+    [FunLike G 𝕂 𝕂'] [MonoidWithZeroHomClass G 𝕂 𝕂'] {ψ : F} {ψ' : G}
+    {H : ExchangePolynomial 𝕂} (h : ∀ x, ψ x = ψ' x) :
+    H.map ψ = H.map ψ' := by
+  refine ext (by simp) fun l ↦ ?_
+  simp [h]
+
+/-! ### Sums over coefficients and homogeneous evaluation -/
 
 section Sum
 
@@ -582,22 +597,23 @@ theorem sum_map {F : Type*} [FunLike F 𝕂 𝕂'] [MonoidWithZeroHomClass F �
 theorem sum_binary (f : 𝕂 → M) : ∑ l, f ((binary : ExchangePolynomial 𝕂).coeff l) = f 1 + f 1 :=
   Fin.sum_univ_two fun _ ↦ f 1
 
+end Sum
+
 /-- Homogeneous bivariate evaluation `∑_{l = 0}^r f(h_l) • (x^l * y^{r - l})` of `H` at elements
 `x, y : A` with scalar weights given by `f : 𝕂 → R`. -/
-def evalHomogeneous {R A : Type*} [CommSemiring A] [SMul R A] (f : 𝕂 → R)
+def evalHomogeneous {R A : Type*} [Semiring A] [SMul R A] (f : 𝕂 → R)
     (H : ExchangePolynomial 𝕂) (x y : A) : A :=
   ∑ l : Fin (H.degree + 1), f (H.coeff l) • (x ^ (l : ℕ) * y ^ (H.degree - (l : ℕ)))
 
-theorem evalHomogeneous_def {R A : Type*} [CommSemiring A] [SMul R A] (f : 𝕂 → R)
+theorem evalHomogeneous_def {R A : Type*} [Semiring A] [SMul R A] (f : 𝕂 → R)
     (H : ExchangePolynomial 𝕂) (x y : A) :
     H.evalHomogeneous f x y =
       ∑ l : Fin (H.degree + 1), f (H.coeff l) • (x ^ (l : ℕ) * y ^ (H.degree - (l : ℕ))) :=
   (rfl)
 
-/-- Reversing `H` swaps the two arguments of homogeneous bivariate evaluation. -/
-@[simp]
-theorem evalHomogeneous_reverse {R A : Type*} [CommSemiring A] [SMul R A] (f : 𝕂 → R)
-    (H : ExchangePolynomial 𝕂) (x y : A) :
+/-- Reversing `H` swaps two commuting arguments of homogeneous bivariate evaluation. -/
+theorem evalHomogeneous_reverse_of_commute {R A : Type*} [Semiring A] [SMul R A] (f : 𝕂 → R)
+    (H : ExchangePolynomial 𝕂) {x y : A} (hxy : Commute x y) :
     H.reverse.evalHomogeneous f x y = H.evalHomogeneous f y x := by
   simp only [evalHomogeneous, reverse]
   rw [← Equiv.sum_comp Fin.revPerm]
@@ -607,21 +623,48 @@ theorem evalHomogeneous_reverse {R A : Type*} [CommSemiring A] [SMul R A] (f : �
     simp [Fin.val_rev, Nat.succ_sub_succ_eq_sub]
   have hsub : H.degree - (H.degree - (l : ℕ)) = (l : ℕ) := by omega
   simp only [Fin.revPerm_apply]
-  rw [hrev, hsub, mul_comm]
+  rw [hrev, hsub, (hxy.pow_pow (l : ℕ) (H.degree - (l : ℕ))).eq]
+
+/-- Reversing `H` swaps the two arguments of homogeneous bivariate evaluation over a commutative
+semiring. -/
+@[simp]
+theorem evalHomogeneous_reverse {R A : Type*} [CommSemiring A] [SMul R A] (f : 𝕂 → R)
+    (H : ExchangePolynomial 𝕂) (x y : A) :
+    H.reverse.evalHomogeneous f x y = H.evalHomogeneous f y x :=
+  H.evalHomogeneous_reverse_of_commute f (Commute.all x y)
+
+/-- Scaling `H` by a unit `e` scales its homogeneous evaluation along any multiplicative scalar map
+by `f e`. -/
+@[simp]
+theorem evalHomogeneous_scale {R A F : Type*} [Monoid R] [Semiring A] [DistribMulAction R A]
+    [FunLike F 𝕂 R] [MulHomClass F 𝕂 R] (f : F) (H : ExchangePolynomial 𝕂) (e : 𝕂ˣ) (x y : A) :
+    (H.scale e).evalHomogeneous f x y = f e • H.evalHomogeneous f x y := by
+  rw [evalHomogeneous_def, evalHomogeneous_def]
+  refine (Finset.sum_congr rfl fun l _ ↦ ?_).trans
+    (map_sum (DistribSMul.toAddMonoidHom A (f e)) _ _).symm
+  simp [scale, mul_smul]
+
+/-- Dilating `H` by a unit `κ` scales the first argument of homogeneous evaluation by `f κ`. -/
+@[simp]
+theorem evalHomogeneous_dilate {R A F : Type*} [Monoid R] [Semiring A] [MulAction R A]
+    [IsScalarTower R A A] [SMulCommClass R A A] [FunLike F 𝕂 R] [MonoidHomClass F 𝕂 R]
+    (f : F) (H : ExchangePolynomial 𝕂) (κ : 𝕂ˣ) (x y : A) :
+    (H.dilate κ).evalHomogeneous f x y = H.evalHomogeneous f (f κ • x) y := by
+  rw [evalHomogeneous_def, evalHomogeneous_def]
+  refine Finset.sum_congr rfl fun l _ ↦ ?_
+  simp [dilate, mul_smul, smul_pow, smul_mul_assoc]
 
 @[simp]
-theorem evalHomogeneous_map {R A : Type*} [CommSemiring A] [SMul R A]
+theorem evalHomogeneous_map {R A : Type*} [Semiring A] [SMul R A]
     {F : Type*} [FunLike F 𝕂 𝕂'] [MonoidWithZeroHomClass F 𝕂 𝕂'] (ψ : F) (f : 𝕂' → R)
     (H : ExchangePolynomial 𝕂) (x y : A) :
     (H.map ψ).evalHomogeneous f x y = H.evalHomogeneous (f ∘ ψ) x y :=
   (rfl)
 
 @[simp]
-theorem evalHomogeneous_binary {R A : Type*} [CommSemiring A] [SMul R A] (f : 𝕂 → R) (x y : A) :
+theorem evalHomogeneous_binary {R A : Type*} [Semiring A] [SMul R A] (f : 𝕂 → R) (x y : A) :
     (binary : ExchangePolynomial 𝕂).evalHomogeneous f x y = f 1 • y + f 1 • x :=
   (Fin.sum_univ_two fun l : Fin 2 ↦ f 1 • (x ^ (l : ℕ) * y ^ (1 - (l : ℕ)))).trans (by simp)
-
-end Sum
 
 /-! ### Checks -/
 

@@ -54,8 +54,8 @@ The *scalar system* `CoefficientSystem.trivial R` takes `𝕂 = R`, `toScalar = 
 * `TauCeti.CoefficientSystem.isNormalized_reverse`: reversal preserves normalized polynomials.
 * `TauCeti.CoefficientSystem.normalizer_scale_of_mem`: `normalizer` is homogeneous of degree `-1`
   with respect to `normalizerSubgroup`.
-* `TauCeti.CoefficientSystem.existsUnique_mem_normalizerSubgroup_isNormalized`: every exchange
-  polynomial has a unique scaling in `normalizerSubgroup` that is normalized.
+* `TauCeti.CoefficientSystem.existsUnique_isNormalized_scale`: every exchange polynomial has a
+  unique scaling in `normalizerSubgroup` that is normalized.
 * `TauCeti.CoefficientSystem.eq_ofRepresentatives`: a coefficient system is uniquely determined by
   its scalar map, its normalizer subgroup, and its set of normalized polynomials.
 
@@ -185,6 +185,7 @@ theorem valueAtOne_reverse (c : CoefficientSystem 𝕂 R) (H : ExchangePolynomia
     c.valueAtOne H.reverse = c.valueAtOne H :=
   H.sum_reverse c.toScalar
 
+@[simp]
 theorem valueAtOne_scale (c : CoefficientSystem 𝕂 R) (H : ExchangePolynomial 𝕂) (e : 𝕂ˣ) :
     c.valueAtOne (H.scale e) = c.toScalar e * c.valueAtOne H := by
   rw [valueAtOne_def, H.sum_scale e c.toScalar]
@@ -202,6 +203,7 @@ def normalizerSubgroup (c : CoefficientSystem 𝕂 R) : Subgroup 𝕂ˣ :=
   Subgroup.closure (Set.range c.normalizer)
 
 /-- Every value of `c.normalizer` belongs to `c.normalizerSubgroup`. -/
+@[simp]
 theorem normalizer_mem_normalizerSubgroup (c : CoefficientSystem 𝕂 R) (H : ExchangePolynomial 𝕂) :
     c.normalizer H ∈ c.normalizerSubgroup :=
   Subgroup.subset_closure ⟨H, rfl⟩
@@ -220,7 +222,7 @@ theorem normalizer_scale_of_mem (c : CoefficientSystem 𝕂 R) (H : ExchangePoly
     rw [← ExchangePolynomial.scale_scale, ihy, ihx, mul_inv_rev, mul_assoc]
   | inv x _ ihx =>
     have h := ihx (H.scale x⁻¹)
-    rw [ExchangePolynomial.scale_inv_mul_cancel] at h
+    rw [ExchangePolynomial.scale_inv_scale] at h
     calc
       c.normalizer (H.scale x⁻¹) = x * (x⁻¹ * c.normalizer (H.scale x⁻¹)) := by simp
       _ = (x⁻¹)⁻¹ * c.normalizer H := by rw [← h, inv_inv]
@@ -249,7 +251,6 @@ theorem normalize_scale_of_mem (c : CoefficientSystem 𝕂 R) (H : ExchangePolyn
   rw [normalize_def, c.normalizer_scale_of_mem H hg, ExchangePolynomial.scale_scale,
     mul_inv_cancel_left, ← normalize_def]
 
-@[simp]
 theorem normalize_scale_normalizer (c : CoefficientSystem 𝕂 R) (H H' : ExchangePolynomial 𝕂) :
     c.normalize (H.scale (c.normalizer H')) = c.normalize H :=
   c.normalize_scale_of_mem H (c.normalizer_mem_normalizerSubgroup H')
@@ -257,7 +258,7 @@ theorem normalize_scale_normalizer (c : CoefficientSystem 𝕂 R) (H H' : Exchan
 /-- The normalized polynomials form a set of orbit representatives for the scaling action of
 `c.normalizerSubgroup`: every exchange polynomial `H` has a unique `g ∈ c.normalizerSubgroup` for
 which `H.scale g` is normalized, namely `c.normalizer H`. -/
-theorem existsUnique_mem_normalizerSubgroup_isNormalized (c : CoefficientSystem 𝕂 R)
+theorem existsUnique_isNormalized_scale (c : CoefficientSystem 𝕂 R)
     (H : ExchangePolynomial 𝕂) :
     ∃! g : c.normalizerSubgroup, c.IsNormalized (H.scale g) := by
   refine ⟨⟨c.normalizer H, c.normalizer_mem_normalizerSubgroup H⟩, c.isNormalized_normalize H, ?_⟩
@@ -305,6 +306,7 @@ theorem ofRepresentatives_toScalar :
     (ofRepresentatives toScalar G S hrev hex).toScalar = toScalar :=
   (rfl)
 
+@[simp]
 theorem normalizer_ofRepresentatives_mem (H : ExchangePolynomial 𝕂) :
     (ofRepresentatives toScalar G S hrev hex).normalizer H ∈ G :=
   ((hex H).choose).property
@@ -314,18 +316,23 @@ theorem normalize_ofRepresentatives_mem (H : ExchangePolynomial 𝕂) :
     (ofRepresentatives toScalar G S hrev hex).normalize H ∈ S :=
   (hex H).choose_spec.1
 
+/-- An element `g : 𝕂ˣ` is the normalizer of `H` for `ofRepresentatives` if and only if `g ∈ G` and
+`H.scale g ∈ S`. -/
+theorem normalizer_ofRepresentatives_eq_iff {H : ExchangePolynomial 𝕂} {g : 𝕂ˣ} :
+    (ofRepresentatives toScalar G S hrev hex).normalizer H = g ↔ g ∈ G ∧ H.scale g ∈ S := by
+  constructor
+  · rintro rfl
+    exact ⟨normalizer_ofRepresentatives_mem toScalar G S hrev hex H,
+      normalize_ofRepresentatives_mem toScalar G S hrev hex H⟩
+  · rintro ⟨hg, hS⟩
+    exact congrArg Subtype.val ((hex H).choose_spec.2 ⟨g, hg⟩ hS).symm
+
 /-- The normalized polynomials of `ofRepresentatives` are precisely the members of `S`. -/
 @[simp]
 theorem isNormalized_ofRepresentatives_iff {H : ExchangePolynomial 𝕂} :
     (ofRepresentatives toScalar G S hrev hex).IsNormalized H ↔ H ∈ S := by
-  constructor
-  · intro h
-    have hmem := normalize_ofRepresentatives_mem toScalar G S hrev hex H
-    rwa [h.normalize_eq] at hmem
-  · intro hS
-    have h1 : H.scale ((1 : G) : 𝕂ˣ) ∈ S := by simpa using hS
-    have heq : (hex H).choose = 1 := ((hex H).choose_spec.2 1 h1).symm
-    exact congrArg Subtype.val heq
+  rw [isNormalized_def, normalizer_ofRepresentatives_eq_iff]
+  simp [one_mem]
 
 /-- The normalizer subgroup of `ofRepresentatives` recovers `G`. -/
 @[simp]
@@ -340,10 +347,8 @@ theorem normalizerSubgroup_ofRepresentatives :
   · intro hg
     let H₀ := c.normalize ExchangePolynomial.binary
     have hH₀ : H₀ ∈ S := normalize_ofRepresentatives_mem toScalar G S hrev hex _
-    refine ⟨H₀.scale g⁻¹, ?_⟩
-    have hmem : (H₀.scale g⁻¹).scale (⟨g, hg⟩ : G) ∈ S := by
-      simpa using hH₀
-    exact congrArg Subtype.val ((hex (H₀.scale g⁻¹)).choose_spec.2 ⟨g, hg⟩ hmem).symm
+    refine ⟨H₀.scale g⁻¹,
+      (normalizer_ofRepresentatives_eq_iff toScalar G S hrev hex).mpr ⟨hg, by simpa using hH₀⟩⟩
 
 /-- A coefficient system is uniquely determined by its scalar map, its normalizer subgroup, and its
 set of normalized exchange polynomials. -/
@@ -354,9 +359,8 @@ theorem eq_ofRepresentatives (c : CoefficientSystem 𝕂 R) {G : Subgroup 𝕂ˣ
     c = ofRepresentatives c.toScalar G S hrev hex := by
   ext x : 2
   · rfl
-  · have hxG : c.normalizer x ∈ G := hG ▸ c.normalizer_mem_normalizerSubgroup x
-    have hxS : x.scale (c.normalizer x) ∈ S := hS ▸ c.isNormalized_normalize x
-    exact congrArg Subtype.val ((hex x).choose_spec.2 ⟨c.normalizer x, hxG⟩ hxS)
+  · exact ((normalizer_ofRepresentatives_eq_iff c.toScalar G S hrev hex).mpr
+      ⟨hG ▸ c.normalizer_mem_normalizerSubgroup x, hS ▸ c.isNormalized_normalize x⟩).symm
 
 end OfRepresentatives
 
@@ -386,6 +390,11 @@ theorem normalize_trivial (H : ExchangePolynomial R) : (trivial R).normalize H =
 @[simp]
 theorem isNormalized_trivial (H : ExchangePolynomial R) : (trivial R).IsNormalized H := by
   rw [isNormalized_def, trivial_normalizer]
+
+@[simp]
+theorem valueAtOne_trivial (H : ExchangePolynomial R) :
+    (trivial R).valueAtOne H = ∑ l, H.coeff l :=
+  (rfl)
 
 @[simp]
 theorem normalizerSubgroup_trivial : (trivial R).normalizerSubgroup = ⊥ := by

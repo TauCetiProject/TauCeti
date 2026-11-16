@@ -45,7 +45,7 @@ structure CoefficientSystemHom {𝕂 𝕂' R : Type*}
   /-- Composing `ψ` with the target scalar map gives the source scalar map. -/
   toScalar_comp : c'.toScalar.comp toMonoidWithZeroHom = c.toScalar
   /-- Pushing an exchange polynomial forward along `ψ` maps its normalizer by `ψ`. -/
-  normalizer_map : ∀ H : ExchangePolynomial 𝕂,
+  normalizer_map' : ∀ H : ExchangePolynomial 𝕂,
     c'.normalizer (H.map toMonoidWithZeroHom) =
       Units.map toMonoidWithZeroHom.toMonoidHom (c.normalizer H)
 
@@ -87,6 +87,13 @@ theorem coe_mk (f : 𝕂 →*₀ 𝕂') (h₁ : c'.toScalar.comp f = c.toScalar)
 theorem coe_toMonoidWithZeroHom (f : CoefficientSystemHom c c') : ⇑f.toMonoidWithZeroHom = f :=
   (rfl)
 
+/-- The underlying `MonoidHom` of `f.toMonoidWithZeroHom` agrees with `MonoidHom.ofClass f`. -/
+@[simp]
+theorem toMonoidHom_toMonoidWithZeroHom (f : CoefficientSystemHom c c') :
+    f.toMonoidWithZeroHom.toMonoidHom = MonoidHom.ofClass f := by
+  ext x
+  simp
+
 /-- Applying `f` followed by the target scalar map equals the source scalar map. -/
 @[simp]
 theorem toScalar_apply (f : CoefficientSystemHom c c') (x : 𝕂) :
@@ -95,29 +102,22 @@ theorem toScalar_apply (f : CoefficientSystemHom c c') (x : 𝕂) :
 
 /-- Pushing an exchange polynomial forward along `f` maps its normalizer by `f`. -/
 @[simp]
-theorem map_normalizer (f : CoefficientSystemHom c c') (H : ExchangePolynomial 𝕂) :
+theorem normalizer_map (f : CoefficientSystemHom c c') (H : ExchangePolynomial 𝕂) :
     c'.normalizer (H.map f) = Units.map (MonoidHom.ofClass f) (c.normalizer H) := by
-  have hmap : H.map f = H.map f.toMonoidWithZeroHom := by
-    refine ExchangePolynomial.ext (by simp) fun l ↦ ?_
-    simp
-  have hunits :
-      Units.map (MonoidHom.ofClass f) (c.normalizer H) =
-        Units.map f.toMonoidWithZeroHom.toMonoidHom (c.normalizer H) := by
-    ext
-    rfl
-  rw [hmap, hunits, f.normalizer_map]
+  rw [ExchangePolynomial.map_congr (ψ' := f.toMonoidWithZeroHom) (by simp),
+    f.normalizer_map', toMonoidHom_toMonoidWithZeroHom]
 
 /-- Homomorphisms of coefficient systems commute with polynomial normalization. -/
 @[simp]
 theorem map_normalize (f : CoefficientSystemHom c c') (H : ExchangePolynomial 𝕂) :
     (c.normalize H).map f = c'.normalize (H.map f) := by
   rw [CoefficientSystem.normalize_def, CoefficientSystem.normalize_def,
-    ExchangePolynomial.scale_map, map_normalizer]
+    ExchangePolynomial.map_scale, normalizer_map]
 
 /-- Homomorphisms of coefficient systems preserve normalized exchange polynomials. -/
 theorem _root_.TauCeti.CoefficientSystem.IsNormalized.map {H : ExchangePolynomial 𝕂}
     (h : c.IsNormalized H) (f : CoefficientSystemHom c c') : c'.IsNormalized (H.map f) := by
-  rw [CoefficientSystem.isNormalized_def, map_normalizer, h.normalizer_eq, map_one]
+  rw [CoefficientSystem.isNormalized_def, normalizer_map, h.normalizer_eq, map_one]
 
 /-- Homomorphisms of coefficient systems preserve `CoefficientSystem.valueAtOne`. -/
 @[simp]
@@ -132,10 +132,11 @@ variable (c) in
 protected def id : CoefficientSystemHom c c where
   toMonoidWithZeroHom := MonoidWithZeroHom.id 𝕂
   toScalar_comp := c.toScalar.comp_id
-  normalizer_map H := by
-    rw [ExchangePolynomial.map_id]
-    ext
-    rfl
+  normalizer_map' H := by
+    have hid : (MonoidWithZeroHom.id 𝕂).toMonoidHom = MonoidHom.id 𝕂 := by
+      ext x
+      simp
+    simp [ExchangePolynomial.map_id, hid]
 
 @[simp]
 theorem coe_id : ⇑(CoefficientSystemHom.id c) = _root_.id :=
@@ -144,21 +145,28 @@ theorem coe_id : ⇑(CoefficientSystemHom.id c) = _root_.id :=
 theorem id_apply (x : 𝕂) : CoefficientSystemHom.id c x = x :=
   (rfl)
 
+/-- Mapping an exchange polynomial along the identity coefficient-system homomorphism is the
+identity. -/
+@[simp]
+theorem map_id (H : ExchangePolynomial 𝕂) : H.map (CoefficientSystemHom.id c) = H :=
+  (ExchangePolynomial.map_congr (ψ := CoefficientSystemHom.id c)
+    (ψ' := MonoidWithZeroHom.id 𝕂) (by simp)).trans H.map_id
+
 /-- The composition of two homomorphisms of coefficient systems over `R`. -/
 def comp (g : CoefficientSystemHom c' c'') (f : CoefficientSystemHom c c') :
     CoefficientSystemHom c c'' where
   toMonoidWithZeroHom := g.toMonoidWithZeroHom.comp f.toMonoidWithZeroHom
   toScalar_comp := by
     rw [← MonoidWithZeroHom.comp_assoc, g.toScalar_comp, f.toScalar_comp]
-  normalizer_map H := by
-    have hmap :
-        H.map (g.toMonoidWithZeroHom.comp f.toMonoidWithZeroHom) =
-          (H.map f).map g := by
-      refine ExchangePolynomial.ext (by simp) fun l ↦ ?_
+  normalizer_map' H := by
+    have hmap : H.map (g.toMonoidWithZeroHom.comp f.toMonoidWithZeroHom) = (H.map f).map g :=
+      (ExchangePolynomial.map_congr (by simp)).trans (H.map_map f g).symm
+    have hhom :
+        (g.toMonoidWithZeroHom.comp f.toMonoidWithZeroHom).toMonoidHom =
+          (MonoidHom.ofClass g).comp (MonoidHom.ofClass f) := by
+      ext x
       simp
-    rw [hmap, g.map_normalizer, f.map_normalizer]
-    ext
-    rfl
+    rw [hmap, g.normalizer_map, f.normalizer_map, hhom, Units.map_comp, MonoidHom.comp_apply]
 
 @[simp]
 theorem coe_comp (g : CoefficientSystemHom c' c'') (f : CoefficientSystemHom c c') :
@@ -168,6 +176,21 @@ theorem coe_comp (g : CoefficientSystemHom c' c'') (f : CoefficientSystemHom c c
 theorem comp_apply (g : CoefficientSystemHom c' c'') (f : CoefficientSystemHom c c') (x : 𝕂) :
     g.comp f x = g (f x) :=
   (rfl)
+
+/-- Mapping an exchange polynomial along two homomorphisms of coefficient systems in succession
+equals mapping along their composition. -/
+@[simp]
+theorem map_map (g : CoefficientSystemHom c' c'') (f : CoefficientSystemHom c c')
+    (H : ExchangePolynomial 𝕂) :
+    (H.map f).map g = H.map (g.comp f) :=
+  (H.map_map f g).trans (ExchangePolynomial.map_congr (ψ' := g.comp f) (by simp))
+
+/-- Mapping an exchange polynomial along a composition of homomorphisms of coefficient systems
+factors into successive maps. -/
+theorem map_comp (g : CoefficientSystemHom c' c'') (f : CoefficientSystemHom c c')
+    (H : ExchangePolynomial 𝕂) :
+    H.map (g.comp f) = (H.map f).map g :=
+  (map_map g f H).symm
 
 @[simp]
 theorem comp_id (f : CoefficientSystemHom c c') : f.comp (CoefficientSystemHom.id c) = f :=
@@ -182,18 +205,24 @@ theorem comp_assoc (h : CoefficientSystemHom c'' c''') (g : CoefficientSystemHom
     (f : CoefficientSystemHom c c') : (h.comp g).comp f = h.comp (g.comp f) :=
   ext fun _ ↦ rfl
 
-/-- When `c.toScalar` sends every normalizer value to `1`, `c.toScalar` itself forms a homomorphism
-from `c` into the scalar system `CoefficientSystem.trivial R`. -/
+/-- The scalar system `CoefficientSystem.trivial R` is subterminal among coefficient systems over
+`R`: any homomorphism into `CoefficientSystem.trivial R` is uniquely determined by `c.toScalar`. -/
+instance : Subsingleton (CoefficientSystemHom c (CoefficientSystem.trivial R)) where
+  allEq f g := ext fun x ↦ by
+    simpa using (f.toScalar_apply x).trans (g.toScalar_apply x).symm
+
+/-- When `c.toScalar` sends every normalizer value to `1`, `c.toScalar` itself forms the unique
+homomorphism from `c` into the scalar system `CoefficientSystem.trivial R`. -/
 def toTrivial (c : CoefficientSystem 𝕂 R)
-    (h : ∀ H, Units.map c.toScalar.toMonoidHom (c.normalizer H) = 1) :
+    (h : ∀ H, c.toScalar (c.normalizer H) = 1) :
     CoefficientSystemHom c (CoefficientSystem.trivial R) where
   toMonoidWithZeroHom := c.toScalar
   toScalar_comp := by simp
-  normalizer_map H := by simp [h H]
+  normalizer_map' H := Units.ext (by simp [h H])
 
 @[simp]
 theorem coe_toTrivial (c : CoefficientSystem 𝕂 R)
-    (h : ∀ H, Units.map c.toScalar.toMonoidHom (c.normalizer H) = 1) :
+    (h : ∀ H, c.toScalar (c.normalizer H) = 1) :
     ⇑(toTrivial c h) = c.toScalar :=
   (rfl)
 

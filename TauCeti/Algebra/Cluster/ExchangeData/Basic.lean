@@ -34,8 +34,8 @@ words act on normalized exchange data by involutive steps, reversing a word inve
 homomorphisms of coefficient systems commute with single-step and word mutation.
 
 In the scalar system `CoefficientSystem.trivial R`, every state is normalized and `c.normalize` is
-the identity; this recovers unnormalized polynomial mutation, under which states with unit-one
-endpoints (`HasUnitOneEndpoints`) and binary states (`IsBinary`) are closed.
+the identity; this recovers unnormalized polynomial mutation, under which states with endpoint
+coefficients `1` (`HasEndpointsOne`) and binary states (`IsBinary`) are closed.
 
 ## Main definitions
 
@@ -47,7 +47,7 @@ endpoints (`HasUnitOneEndpoints`) and binary states (`IsBinary`) are closed.
 * `TauCeti.ExchangeData.mutationWord`: left-fold action of a finite mutation word `List K`.
 * `TauCeti.ExchangeData.IsNormalized`: predicate that every exchange polynomial is normalized for
   `c`.
-* `TauCeti.ExchangeData.HasUnitOneEndpoints` and `TauCeti.ExchangeData.IsBinary`: exchange data
+* `TauCeti.ExchangeData.HasEndpointsOne` and `TauCeti.ExchangeData.IsBinary`: exchange data
   whose polynomials have endpoint coefficients `1`, respectively equal `1 + T`.
 * `TauCeti.ExchangeData.submatrix`, `TauCeti.ExchangeData.principal`,
   `TauCeti.ExchangeData.reindex`, and `TauCeti.ExchangeData.map`: restriction, passage to the
@@ -70,7 +70,7 @@ endpoints (`HasUnitOneEndpoints`) and binary states (`IsBinary`) are closed.
 * L. Chekhov and M. Shapiro, *Teichmüller spaces of Riemann surfaces with orbifold points of
   arbitrary order and cluster variables*, Int. Math. Res. Not. 2014, §2.
 * T. Nakanishi and D. Rupel, *Companion cluster algebras to a generalized cluster algebra*,
-  Proc. Amer. Math. Soc. 140 (2012), §3.
+  arXiv:1504.06758, §3.
 -/
 
 public section
@@ -98,13 +98,13 @@ variable {𝕂 𝕂' 𝕂'' R : Type*} [CommMonoidWithZero 𝕂] [CommMonoidWith
 /-! ### Degrees and divided columns -/
 
 /-- The integer exchange degree `(d.polynomial k).degree` is positive. -/
-theorem degree_intCast_pos (d : ExchangeData 𝕂 row) (k : K) :
+theorem natCast_degree_pos (d : ExchangeData 𝕂 row) (k : K) :
     (0 : ℤ) < (d.polynomial k).degree :=
   Int.natCast_pos.mpr (d.polynomial k).degree_pos
 
-theorem degree_intCast_ne_zero (d : ExchangeData 𝕂 row) (k : K) :
+theorem natCast_degree_ne_zero (d : ExchangeData 𝕂 row) (k : K) :
     ((d.polynomial k).degree : ℤ) ≠ 0 :=
-  (d.degree_intCast_pos k).ne'
+  (d.natCast_degree_pos k).ne'
 
 /-- The divided column `β_k(i) = B_{i, k} / deg(H_k)`. Because `deg(H_k)` divides every entry of
 column `k`, this integer division is exact. -/
@@ -141,7 +141,7 @@ theorem dividedColumn_eq_zero_iff (d : ExchangeData 𝕂 row) (k : K) (i : I) :
 /-- A divided column is positive at `i` if and only if the matrix entry is positive. -/
 theorem dividedColumn_pos_iff (d : ExchangeData 𝕂 row) (k : K) (i : I) :
     0 < d.dividedColumn k i ↔ 0 < d.exchange.matrix i k := by
-  rw [← d.dividedColumn_mul_degree k i, mul_pos_iff_of_pos_right (d.degree_intCast_pos k)]
+  rw [← d.dividedColumn_mul_degree k i, mul_pos_iff_of_pos_right (d.natCast_degree_pos k)]
 
 /-! ### Restriction, principal block, reindexing, and coefficient maps -/
 
@@ -204,6 +204,21 @@ theorem dividedColumn_principal (d : ExchangeData 𝕂 row) (k j : K) :
     d.principal.dividedColumn k j = d.dividedColumn k (row j) := by
   simp [principal]
 
+/-- Taking the principal block commutes with any compatible row and column restriction. -/
+@[simp]
+theorem principal_submatrix (d : ExchangeData 𝕂 row) (f : I' → I) (g : K' → K)
+    (h : ∀ k, f (row' k) = row (g k)) :
+    (d.submatrix f g h).principal =
+      d.principal.submatrix (row' := Function.Embedding.refl K') g g
+        (fun _ ↦ by simp only [Function.Embedding.refl_apply]) :=
+  ExchangeData.ext (by simp) rfl
+
+/-- Square exchange data equal their own principal block. -/
+@[simp]
+theorem principal_eq_self (d : ExchangeData 𝕂 (Function.Embedding.refl K)) :
+    d.principal = d :=
+  ExchangeData.ext (by simp) rfl
+
 /-- Reindex exchange data along equivalences of `I` and `K` commuting with `row`. -/
 def reindex (eI : I ≃ I') (eK : K ≃ K') (h : ∀ k, eI (row k) = row' (eK k)) :
     ExchangeData 𝕂 row ≃ ExchangeData 𝕂 row' where
@@ -214,6 +229,13 @@ def reindex (eI : I ≃ I') (eK : K ≃ K') (h : ∀ k, eI (row k) = row' (eK k)
     refine ExchangeData.ext ?_ (funext fun k ↦ ?_) <;> simp
   right_inv d := by
     refine ExchangeData.ext ?_ (funext fun k ↦ ?_) <;> simp
+
+/-- Reindexing acts by compatible restriction along the inverse index equivalences. -/
+theorem reindex_apply (eI : I ≃ I') (eK : K ≃ K') (h : ∀ k, eI (row k) = row' (eK k))
+    (d : ExchangeData 𝕂 row) :
+    reindex eI eK h d = d.submatrix eI.symm eK.symm (fun k ↦ by
+      rw [Equiv.symm_apply_eq, h, Equiv.apply_symm_apply]) :=
+  (rfl)
 
 @[simp]
 theorem reindex_exchange (eI : I ≃ I') (eK : K ≃ K') (h : ∀ k, eI (row k) = row' (eK k))
@@ -233,6 +255,59 @@ theorem reindex_symm_apply (eI : I ≃ I') (eK : K ≃ K') (h : ∀ k, eI (row k
     (d : ExchangeData 𝕂 row') :
     (reindex eI eK h).symm d = d.submatrix eI eK h :=
   (rfl)
+
+/-- The inverse of `reindex` is reindexing along the inverse equivalences. -/
+theorem reindex_symm (eI : I ≃ I') (eK : K ≃ K') (h : ∀ k, eI (row k) = row' (eK k)) :
+    (reindex (𝕂 := 𝕂) eI eK h).symm =
+      reindex eI.symm eK.symm (fun k ↦ by
+        rw [Equiv.symm_apply_eq, h, Equiv.apply_symm_apply]) := by
+  ext d : 2
+  · simp [ExchangeMatrix.reindex_apply]
+  · funext k
+    simp
+
+/-- Reindexing along identity equivalences is the identity equivalence. -/
+@[simp]
+theorem reindex_refl (h : ∀ k, Equiv.refl I (row k) = row (Equiv.refl K k)) :
+    reindex (𝕂 := 𝕂) (Equiv.refl I) (Equiv.refl K) h = Equiv.refl (ExchangeData 𝕂 row) := by
+  ext d : 2
+  · simp
+  · funext k
+    simp
+
+/-- Reindexing twice is reindexing along the composite equivalences. -/
+@[simp]
+theorem reindex_trans (eI : I ≃ I') (eK : K ≃ K') (h : ∀ k, eI (row k) = row' (eK k))
+    (eI' : I' ≃ I'') (eK' : K' ≃ K'') (h' : ∀ k, eI' (row' k) = row'' (eK' k)) :
+    (reindex (𝕂 := 𝕂) eI eK h).trans (reindex eI' eK' h') =
+      reindex (eI.trans eI') (eK.trans eK') (fun k ↦ by
+        rw [Equiv.trans_apply, Equiv.trans_apply, h, h']) := by
+  ext d : 2
+  · simp only [Equiv.trans_apply, reindex_exchange, ExchangeMatrix.reindex_reindex]
+  · funext k
+    simp
+
+/-- Nested reindexing applications collapse to the composite relabelling. -/
+@[simp]
+theorem reindex_reindex (eI : I ≃ I') (eK : K ≃ K') (h : ∀ k, eI (row k) = row' (eK k))
+    (eI' : I' ≃ I'') (eK' : K' ≃ K'') (h' : ∀ k, eI' (row' k) = row'' (eK' k))
+    (d : ExchangeData 𝕂 row) :
+    reindex eI' eK' h' (reindex eI eK h d) =
+      reindex (eI.trans eI') (eK.trans eK') (fun k ↦ by
+        rw [Equiv.trans_apply, Equiv.trans_apply, h, h']) d := by
+  simpa only [Equiv.trans_apply] using
+    congrArg (fun e : ExchangeData 𝕂 row ≃ ExchangeData 𝕂 row'' ↦ e d)
+      (reindex_trans eI eK h eI' eK' h')
+
+/-- Taking the principal block commutes with compatible relabelling. -/
+@[simp]
+theorem principal_reindex (eI : I ≃ I') (eK : K ≃ K')
+    (h : ∀ k, eI (row k) = row' (eK k)) (d : ExchangeData 𝕂 row) :
+    (reindex eI eK h d).principal =
+      reindex (row := Function.Embedding.refl K) (row' := Function.Embedding.refl K')
+        eK eK (fun _ ↦ by simp only [Function.Embedding.refl_apply]) d.principal := by
+  rw [reindex_apply, reindex_apply]
+  exact d.principal_submatrix eI.symm eK.symm _
 
 @[simp]
 theorem dividedColumn_reindex (eI : I ≃ I') (eK : K ≃ K') (h : ∀ k, eI (row k) = row' (eK k))
@@ -274,6 +349,57 @@ theorem map_map {F : Type*} [FunLike F 𝕂 𝕂'] [MonoidWithZeroHomClass F �
       d.map ((MonoidWithZeroHom.ofClass χ).comp (MonoidWithZeroHom.ofClass ψ)) :=
   ExchangeData.ext rfl (funext fun _ ↦ ExchangePolynomial.map_map _ _ _)
 
+/-- Pointwise-equal coefficient homomorphisms induce equal pushforwards on exchange data. -/
+theorem map_congr {F G : Type*} [FunLike F 𝕂 𝕂'] [MonoidWithZeroHomClass F 𝕂 𝕂']
+    [FunLike G 𝕂 𝕂'] [MonoidWithZeroHomClass G 𝕂 𝕂'] {ψ : F} {ψ' : G}
+    {d : ExchangeData 𝕂 row} (h : ∀ x, ψ x = ψ' x) :
+    d.map ψ = d.map ψ' :=
+  ExchangeData.ext rfl (funext fun _ ↦ ExchangePolynomial.map_congr h)
+
+/-- Mapping exchange data along the identity homomorphism of coefficient systems is the identity. -/
+@[simp]
+theorem map_coefficientSystemHom_id (c : CoefficientSystem 𝕂 R) (d : ExchangeData 𝕂 row) :
+    d.map (CoefficientSystemHom.id c) = d :=
+  ExchangeData.ext rfl (funext fun _ ↦ CoefficientSystemHom.map_id _)
+
+/-- Mapping exchange data along two homomorphisms of coefficient systems in succession equals
+mapping along their composition. -/
+@[simp]
+theorem map_map_coefficientSystemHom {c : CoefficientSystem 𝕂 R} {c' : CoefficientSystem 𝕂' R}
+    {c'' : CoefficientSystem 𝕂'' R} (g : CoefficientSystemHom c' c'')
+    (f : CoefficientSystemHom c c') (d : ExchangeData 𝕂 row) :
+    (d.map f).map g = d.map (g.comp f) :=
+  ExchangeData.ext rfl (funext fun _ ↦ CoefficientSystemHom.map_map g f _)
+
+/-- Mapping exchange data along a composition of homomorphisms of coefficient systems factors into
+successive maps. -/
+theorem map_comp {c : CoefficientSystem 𝕂 R} {c' : CoefficientSystem 𝕂' R}
+    {c'' : CoefficientSystem 𝕂'' R} (g : CoefficientSystemHom c' c'')
+    (f : CoefficientSystemHom c c') (d : ExchangeData 𝕂 row) :
+    d.map (g.comp f) = (d.map f).map g :=
+  (map_map_coefficientSystemHom g f d).symm
+
+/-- Coefficient pushforward commutes with compatible row and column restriction. -/
+@[simp]
+theorem map_submatrix {F : Type*} [FunLike F 𝕂 𝕂'] [MonoidWithZeroHomClass F 𝕂 𝕂'] (ψ : F)
+    (d : ExchangeData 𝕂 row) (f : I' → I) (g : K' → K) (h : ∀ k, f (row' k) = row (g k)) :
+    (d.submatrix f g h).map ψ = (d.map ψ).submatrix f g h :=
+  ExchangeData.ext rfl rfl
+
+/-- Coefficient pushforward commutes with taking the principal block. -/
+@[simp]
+theorem map_principal {F : Type*} [FunLike F 𝕂 𝕂'] [MonoidWithZeroHomClass F 𝕂 𝕂'] (ψ : F)
+    (d : ExchangeData 𝕂 row) :
+    d.principal.map ψ = (d.map ψ).principal :=
+  ExchangeData.ext rfl rfl
+
+/-- Coefficient pushforward commutes with compatible relabelling. -/
+@[simp]
+theorem map_reindex {F : Type*} [FunLike F 𝕂 𝕂'] [MonoidWithZeroHomClass F 𝕂 𝕂'] (ψ : F)
+    (eI : I ≃ I') (eK : K ≃ K') (h : ∀ k, eI (row k) = row' (eK k)) (d : ExchangeData 𝕂 row) :
+    (reindex eI eK h d).map ψ = reindex eI eK h (d.map ψ) :=
+  ExchangeData.ext rfl rfl
+
 /-! ### Predicates on exchange data -/
 
 /-- Exchange data `d` are *normalized* for `c` when every exchange polynomial of `d` is normalized
@@ -294,24 +420,74 @@ theorem isNormalized_trivial (d : ExchangeData R row) :
     d.IsNormalized (CoefficientSystem.trivial R) :=
   fun k ↦ CoefficientSystem.isNormalized_trivial (d.polynomial k)
 
+/-- Compatible restriction preserves normalized exchange data. -/
+theorem IsNormalized.submatrix {c : CoefficientSystem 𝕂 R} {d : ExchangeData 𝕂 row}
+    (hd : d.IsNormalized c) (f : I' → I) (g : K' → K) (h : ∀ k, f (row' k) = row (g k)) :
+    (d.submatrix f g h).IsNormalized c :=
+  fun k ↦ hd (g k)
+
+/-- Taking the principal block preserves normalized exchange data. -/
+protected theorem IsNormalized.principal {c : CoefficientSystem 𝕂 R} {d : ExchangeData 𝕂 row}
+    (hd : d.IsNormalized c) : d.principal.IsNormalized c :=
+  hd
+
+@[simp]
+theorem isNormalized_principal {c : CoefficientSystem 𝕂 R} {d : ExchangeData 𝕂 row} :
+    d.principal.IsNormalized c ↔ d.IsNormalized c :=
+  Iff.rfl
+
+@[simp]
+theorem isNormalized_reindex {c : CoefficientSystem 𝕂 R} (eI : I ≃ I') (eK : K ≃ K')
+    (h : ∀ k, eI (row k) = row' (eK k)) {d : ExchangeData 𝕂 row} :
+    (reindex eI eK h d).IsNormalized c ↔ d.IsNormalized c :=
+  ⟨fun hd k ↦ by simpa using hd (eK k), fun hd k' ↦ hd (eK.symm k')⟩
+
 /-- Homomorphisms of coefficient systems preserve normalized exchange data. -/
 theorem IsNormalized.map {c : CoefficientSystem 𝕂 R} {c' : CoefficientSystem 𝕂' R}
     {d : ExchangeData 𝕂 row} (hd : d.IsNormalized c) (f : CoefficientSystemHom c c') :
     (d.map f).IsNormalized c' :=
   fun k ↦ (hd k).map f
 
-/-- Exchange data have *unit-one endpoints* when every exchange polynomial has constant and leading
-coefficients equal to `1`. -/
-def HasUnitOneEndpoints (d : ExchangeData 𝕂 row) : Prop :=
-  ∀ k, (d.polynomial k).HasUnitOneEndpoints
+/-- Exchange data have *endpoints equal to one* when every exchange polynomial has constant and
+leading coefficients equal to `1`. -/
+def HasEndpointsOne (d : ExchangeData 𝕂 row) : Prop :=
+  ∀ k, (d.polynomial k).HasEndpointsOne
 
-theorem hasUnitOneEndpoints_def {d : ExchangeData 𝕂 row} :
-    d.HasUnitOneEndpoints ↔ ∀ k, (d.polynomial k).HasUnitOneEndpoints :=
+theorem hasEndpointsOne_def {d : ExchangeData 𝕂 row} :
+    d.HasEndpointsOne ↔ ∀ k, (d.polynomial k).HasEndpointsOne :=
   Iff.rfl
 
-theorem HasUnitOneEndpoints.apply {d : ExchangeData 𝕂 row} (hd : d.HasUnitOneEndpoints) (k : K) :
-    (d.polynomial k).HasUnitOneEndpoints :=
+theorem HasEndpointsOne.apply {d : ExchangeData 𝕂 row} (hd : d.HasEndpointsOne) (k : K) :
+    (d.polynomial k).HasEndpointsOne :=
   hd k
+
+/-- Compatible restriction preserves `HasEndpointsOne`. -/
+theorem HasEndpointsOne.submatrix {d : ExchangeData 𝕂 row} (hd : d.HasEndpointsOne)
+    (f : I' → I) (g : K' → K) (h : ∀ k, f (row' k) = row (g k)) :
+    (d.submatrix f g h).HasEndpointsOne :=
+  fun k ↦ hd (g k)
+
+/-- Taking the principal block preserves `HasEndpointsOne`. -/
+protected theorem HasEndpointsOne.principal {d : ExchangeData 𝕂 row} (hd : d.HasEndpointsOne) :
+    d.principal.HasEndpointsOne :=
+  hd
+
+@[simp]
+theorem hasEndpointsOne_principal {d : ExchangeData 𝕂 row} :
+    d.principal.HasEndpointsOne ↔ d.HasEndpointsOne :=
+  Iff.rfl
+
+@[simp]
+theorem hasEndpointsOne_reindex (eI : I ≃ I') (eK : K ≃ K')
+    (h : ∀ k, eI (row k) = row' (eK k)) {d : ExchangeData 𝕂 row} :
+    (reindex eI eK h d).HasEndpointsOne ↔ d.HasEndpointsOne :=
+  ⟨fun hd k ↦ by simpa using hd (eK k), fun hd k' ↦ hd (eK.symm k')⟩
+
+/-- Coefficient pushforward preserves `HasEndpointsOne`. -/
+protected theorem HasEndpointsOne.map {F : Type*} [FunLike F 𝕂 𝕂'] [MonoidWithZeroHomClass F 𝕂 𝕂']
+    {d : ExchangeData 𝕂 row} (hd : d.HasEndpointsOne) (ψ : F) :
+    (d.map ψ).HasEndpointsOne :=
+  fun k ↦ (hd k).map ψ
 
 /-- Exchange data are *binary* when every exchange polynomial equals `1 + T`. -/
 def IsBinary (d : ExchangeData 𝕂 row) : Prop :=
@@ -325,9 +501,37 @@ theorem IsBinary.polynomial_eq {d : ExchangeData 𝕂 row} (hd : d.IsBinary) (k 
     d.polynomial k = ExchangePolynomial.binary :=
   hd k
 
-protected theorem IsBinary.hasUnitOneEndpoints {d : ExchangeData 𝕂 row} (hd : d.IsBinary) :
-    d.HasUnitOneEndpoints :=
-  fun k ↦ (hd k).symm ▸ ExchangePolynomial.hasUnitOneEndpoints_binary
+protected theorem IsBinary.hasEndpointsOne {d : ExchangeData 𝕂 row} (hd : d.IsBinary) :
+    d.HasEndpointsOne :=
+  fun k ↦ (hd k).symm ▸ ExchangePolynomial.hasEndpointsOne_binary
+
+/-- Compatible restriction preserves `IsBinary`. -/
+theorem IsBinary.submatrix {d : ExchangeData 𝕂 row} (hd : d.IsBinary)
+    (f : I' → I) (g : K' → K) (h : ∀ k, f (row' k) = row (g k)) :
+    (d.submatrix f g h).IsBinary :=
+  fun k ↦ hd (g k)
+
+/-- Taking the principal block preserves `IsBinary`. -/
+protected theorem IsBinary.principal {d : ExchangeData 𝕂 row} (hd : d.IsBinary) :
+    d.principal.IsBinary :=
+  hd
+
+@[simp]
+theorem isBinary_principal {d : ExchangeData 𝕂 row} :
+    d.principal.IsBinary ↔ d.IsBinary :=
+  Iff.rfl
+
+@[simp]
+theorem isBinary_reindex (eI : I ≃ I') (eK : K ≃ K')
+    (h : ∀ k, eI (row k) = row' (eK k)) {d : ExchangeData 𝕂 row} :
+    (reindex eI eK h d).IsBinary ↔ d.IsBinary :=
+  ⟨fun hd k ↦ by simpa using hd (eK k), fun hd k' ↦ hd (eK.symm k')⟩
+
+/-- Coefficient pushforward preserves `IsBinary`. -/
+protected theorem IsBinary.map {F : Type*} [FunLike F 𝕂 𝕂'] [MonoidWithZeroHomClass F 𝕂 𝕂']
+    {d : ExchangeData 𝕂 row} (hd : d.IsBinary) (ψ : F) :
+    (d.map ψ).IsBinary :=
+  fun k ↦ by simp [hd k]
 
 /-- Canonical binary exchange data attached to any `ExchangeMatrix row`, with `H_k = 1 + T` in
 every mutable direction. -/
@@ -346,10 +550,73 @@ theorem ofExchangeMatrix_polynomial (B : ExchangeMatrix row) (k : K) :
     (ofExchangeMatrix B : ExchangeData 𝕂 row).polynomial k = ExchangePolynomial.binary :=
   (rfl)
 
+/-- Constructing binary exchange data from an exchange matrix is injective. -/
+theorem ofExchangeMatrix_injective :
+    Function.Injective (ofExchangeMatrix : ExchangeMatrix row → ExchangeData 𝕂 row) :=
+  fun _ _ h ↦ congrArg ExchangeData.exchange h
+
+@[simp]
+theorem ofExchangeMatrix_inj {B₁ B₂ : ExchangeMatrix row} :
+    (ofExchangeMatrix B₁ : ExchangeData 𝕂 row) = ofExchangeMatrix B₂ ↔ B₁ = B₂ :=
+  ofExchangeMatrix_injective.eq_iff
+
 @[simp]
 theorem isBinary_ofExchangeMatrix (B : ExchangeMatrix row) :
     (ofExchangeMatrix B : ExchangeData 𝕂 row).IsBinary :=
   fun _ ↦ rfl
+
+/-- Binary exchange data equal `ofExchangeMatrix` of their underlying exchange matrix. -/
+theorem IsBinary.eq_ofExchangeMatrix {d : ExchangeData 𝕂 row} (hd : d.IsBinary) :
+    d = ofExchangeMatrix d.exchange :=
+  ExchangeData.ext rfl (funext hd)
+
+/-- Exchange data are binary if and only if they equal `ofExchangeMatrix` of their exchange
+matrix. -/
+theorem isBinary_iff_eq_ofExchangeMatrix {d : ExchangeData 𝕂 row} :
+    d.IsBinary ↔ d = ofExchangeMatrix d.exchange :=
+  ⟨IsBinary.eq_ofExchangeMatrix, fun h ↦ h ▸ isBinary_ofExchangeMatrix d.exchange⟩
+
+@[simp]
+theorem hasEndpointsOne_ofExchangeMatrix (B : ExchangeMatrix row) :
+    (ofExchangeMatrix B : ExchangeData 𝕂 row).HasEndpointsOne :=
+  (isBinary_ofExchangeMatrix B).hasEndpointsOne
+
+/-- Whenever `1 + T` is normalized for `c`, `ofExchangeMatrix B` is normalized for `c`. -/
+theorem isNormalized_ofExchangeMatrix_of_isNormalized {c : CoefficientSystem 𝕂 R}
+    (hc : c.IsNormalized ExchangePolynomial.binary) (B : ExchangeMatrix row) :
+    (ofExchangeMatrix B).IsNormalized c :=
+  fun _ ↦ hc
+
+@[simp]
+theorem isNormalized_ofExchangeMatrix [Nonempty K] {c : CoefficientSystem 𝕂 R}
+    (B : ExchangeMatrix row) :
+    (ofExchangeMatrix B).IsNormalized c ↔ c.IsNormalized ExchangePolynomial.binary :=
+  ⟨fun h ↦ h (Classical.arbitrary K), fun hc ↦ isNormalized_ofExchangeMatrix_of_isNormalized hc B⟩
+
+@[simp]
+theorem submatrix_ofExchangeMatrix (B : ExchangeMatrix row) (f : I' → I) (g : K' → K)
+    (h : ∀ k, f (row' k) = row (g k)) :
+    (ofExchangeMatrix B : ExchangeData 𝕂 row).submatrix f g h =
+      ofExchangeMatrix (B.submatrix f g h) :=
+  ExchangeData.ext rfl rfl
+
+@[simp]
+theorem principal_ofExchangeMatrix (B : ExchangeMatrix row) :
+    (ofExchangeMatrix B : ExchangeData 𝕂 row).principal = ofExchangeMatrix B.principal :=
+  ExchangeData.ext (principal_exchange _) rfl
+
+@[simp]
+theorem reindex_ofExchangeMatrix (eI : I ≃ I') (eK : K ≃ K')
+    (h : ∀ k, eI (row k) = row' (eK k)) (B : ExchangeMatrix row) :
+    reindex eI eK h (ofExchangeMatrix B : ExchangeData 𝕂 row) =
+      ofExchangeMatrix (ExchangeMatrix.reindex eI eK h B) :=
+  ExchangeData.ext (reindex_exchange eI eK h _) rfl
+
+@[simp]
+theorem map_ofExchangeMatrix {F : Type*} [FunLike F 𝕂 𝕂'] [MonoidWithZeroHomClass F 𝕂 𝕂']
+    (ψ : F) (B : ExchangeMatrix row) :
+    (ofExchangeMatrix B : ExchangeData 𝕂 row).map ψ = ofExchangeMatrix B :=
+  ExchangeData.ext rfl (funext fun _ ↦ ExchangePolynomial.map_binary ψ)
 
 @[simp]
 theorem dividedColumn_of_isBinary {d : ExchangeData 𝕂 row} (hd : d.IsBinary) (k : K) (i : I) :
@@ -370,6 +637,15 @@ noncomputable def mutatedPolynomial (c : CoefficientSystem 𝕂 R) (d : Exchange
   if j = k then (d.polynomial k).reverse
   else c.normalize ((d.polynomial j).dilate
     ((d.polynomial k).dilationFactor (d.dividedColumn j (row k))))
+
+/-- Restatement of `mutatedPolynomial` as reversal at `k` and normalized dilation away from `k`. -/
+theorem mutatedPolynomial_def (c : CoefficientSystem 𝕂 R) (d : ExchangeData 𝕂 row)
+    (k j : K) :
+    d.mutatedPolynomial c k j =
+      if j = k then (d.polynomial k).reverse
+      else c.normalize ((d.polynomial j).dilate
+        ((d.polynomial k).dilationFactor (d.dividedColumn j (row k)))) :=
+  (rfl)
 
 @[simp]
 theorem mutatedPolynomial_self (c : CoefficientSystem 𝕂 R) (d : ExchangeData 𝕂 row) (k : K) :
@@ -427,7 +703,7 @@ theorem dividedColumn_mutation (c : CoefficientSystem 𝕂 R) (d : ExchangeData 
   simpa only [dividedColumn_def, mutation_exchange, ExchangeMatrix.mutation_matrix,
     mutation_polynomial, mutatedPolynomial_degree] using
     matrixMutation_ediv_apply (row := row) (B := d.exchange.matrix)
-      (fun j ↦ ((d.polynomial j).degree : ℤ)) d.degree_intCast_pos d.degree_dvd k i j
+      (fun j ↦ ((d.polynomial j).degree : ℤ)) d.natCast_degree_pos d.degree_dvd k i j
 
 @[simp]
 theorem dividedColumn_mutation_row (c : CoefficientSystem 𝕂 R) (d : ExchangeData 𝕂 row)
@@ -440,12 +716,6 @@ theorem dividedColumn_mutation_self (c : CoefficientSystem 𝕂 R) (d : Exchange
     (k : K) (i : I) :
     (d.mutation c k).dividedColumn k i = -d.dividedColumn k i := by
   simp [dividedColumn_mutation]
-
-/-- A column of `d.mutation c k` vanishes if and only if it vanished in `d`. -/
-theorem mutation_column_eq_zero_iff (c : CoefficientSystem 𝕂 R) (d : ExchangeData 𝕂 row)
-    (k j : K) :
-    (∀ i, (d.mutation c k).exchange.matrix i j = 0) ↔ ∀ i, d.exchange.matrix i j = 0 := by
-  simp
 
 /-- Mutation preserves normalized exchange data. -/
 protected theorem IsNormalized.mutation {c : CoefficientSystem 𝕂 R} {d : ExchangeData 𝕂 row}
@@ -479,7 +749,7 @@ theorem IsNormalized.mutation_mutation {c : CoefficientSystem 𝕂 R} {d : Excha
     rw [mutation_polynomial, mutatedPolynomial_of_ne c (d.mutation c k) hj, hpolj,
       mutation_polynomial, mutatedPolynomial_self, dividedColumn_mutation_row,
       ExchangePolynomial.dilationFactor_reverse_neg, ExchangePolynomial.dilate_scale,
-      CoefficientSystem.normalize_scale_normalizer, ExchangePolynomial.dilate_mul_inv_cancel,
+      CoefficientSystem.normalize_scale_normalizer, ExchangePolynomial.dilate_dilate_inv,
       (hd j).normalize_eq]
 
 /-- Polynomial mutation in the scalar system `CoefficientSystem.trivial R` is unconditionally an
@@ -532,12 +802,6 @@ theorem mutationWord_polynomial_degree (c : CoefficientSystem 𝕂 R) (d : Excha
   | nil => rfl
   | cons k _w ih => simpa using ih (d.mutation c k)
 
-/-- A column of `d.mutationWord c w` vanishes if and only if it vanished in `d`. -/
-theorem mutationWord_column_eq_zero_iff (c : CoefficientSystem 𝕂 R) (d : ExchangeData 𝕂 row)
-    (w : List K) (j : K) :
-    (∀ i, (d.mutationWord c w).exchange.matrix i j = 0) ↔ ∀ i, d.exchange.matrix i j = 0 := by
-  simp
-
 /-- Mutation words preserve normalized exchange data. -/
 protected theorem IsNormalized.mutationWord {c : CoefficientSystem 𝕂 R} {d : ExchangeData 𝕂 row}
     (hd : d.IsNormalized c) (w : List K) : (d.mutationWord c w).IsNormalized c := by
@@ -555,11 +819,9 @@ theorem IsNormalized.mutationWord_mutationWord_reverse {c : CoefficientSystem �
   have hinv : ∀ k, Function.Involutive (fun x ↦ step x k) := fun k x ↦
     Subtype.ext (x.2.mutation_mutation k)
   have hfold : ∀ (u : List K) (x : {e : ExchangeData 𝕂 row // e.IsNormalized c}),
-      (u.foldl step x).1 = x.1.mutationWord c u := by
-    intro u
-    induction u with
-    | nil => intro x; rfl
-    | cons k _u ih => intro x; exact ih (step x k)
+      (u.foldl step x).1 = x.1.mutationWord c u :=
+    fun u x ↦ (List.foldl_hom Subtype.val (g₁ := step) (g₂ := fun e k ↦ e.mutation c k)
+      (fun _ _ ↦ rfl)).symm
   have key := foldl_reverse_foldl_of_involutive step hinv w ⟨d, hd⟩
   simpa only [hfold] using congrArg Subtype.val key
 
@@ -597,6 +859,23 @@ theorem principal_mutation (c : CoefficientSystem 𝕂 R) (d : ExchangeData 𝕂
     (d.mutation c k).principal = d.principal.mutation c k :=
   d.submatrix_mutation c row.injective (fun _ ↦ rfl) k
 
+/-- Injective row restriction commutes with every finite mutation word. -/
+theorem submatrix_mutationWord [DecidableEq I'] [DecidableEq K'] (c : CoefficientSystem 𝕂 R)
+    (d : ExchangeData 𝕂 row) {f : I' → I} {g : K' → K} (hf : Function.Injective f)
+    (h : ∀ k, f (row' k) = row (g k)) (w : List K') :
+    (d.mutationWord c (w.map g)).submatrix f g h =
+      (d.submatrix f g h).mutationWord c w := by
+  simp only [mutationWord, List.foldl_map]
+  exact (List.foldl_hom (fun e : ExchangeData 𝕂 row ↦ e.submatrix f g h)
+    (fun e k ↦ (e.submatrix_mutation c hf h k).symm)).symm
+
+/-- Taking the principal block commutes with every finite mutation word. -/
+@[simp]
+theorem principal_mutationWord (c : CoefficientSystem 𝕂 R) (d : ExchangeData 𝕂 row) (w : List K) :
+    (d.mutationWord c w).principal = d.principal.mutationWord c w :=
+  (List.foldl_hom (fun e : ExchangeData 𝕂 row ↦ e.principal)
+    (fun e k ↦ (e.principal_mutation c k).symm)).symm
+
 /-- Reindexing commutes with exchange-data mutation. -/
 theorem mutation_reindex [DecidableEq I'] [DecidableEq K'] (c : CoefficientSystem 𝕂 R)
     (eI : I ≃ I') (eK : K ≃ K') (h : ∀ k, eI (row k) = row' (eK k))
@@ -617,56 +896,155 @@ theorem reindex_mutationWord [DecidableEq I'] [DecidableEq K'] (c : CoefficientS
   exact (List.foldl_hom (reindex eI eK h)
     (fun e k ↦ mutation_reindex c eI eK h e k)).symm
 
+/-- Any monoid-with-zero homomorphism that intertwines `normalize` commutes with single-step
+exchange-data mutation. -/
+theorem map_mutation_of_map_normalize {R' : Type*} [CommSemiring R']
+    {c : CoefficientSystem 𝕂 R} {c' : CoefficientSystem 𝕂' R'}
+    {F : Type*} [FunLike F 𝕂 𝕂'] [MonoidWithZeroHomClass F 𝕂 𝕂'] (ψ : F)
+    (hψ : ∀ H, (c.normalize H).map ψ = c'.normalize (H.map ψ))
+    (d : ExchangeData 𝕂 row) (k : K) :
+    (d.mutation c k).map ψ = (d.map ψ).mutation c' k := by
+  refine ExchangeData.ext rfl (funext fun j ↦ ?_)
+  obtain rfl | hj := eq_or_ne j k
+  · simp
+  · simp [mutatedPolynomial_of_ne _ _ hj, hψ]
+
+/-- Any monoid-with-zero homomorphism that intertwines `normalize` commutes with finite mutation
+words. -/
+theorem map_mutationWord_of_map_normalize {R' : Type*} [CommSemiring R']
+    {c : CoefficientSystem 𝕂 R} {c' : CoefficientSystem 𝕂' R'}
+    {F : Type*} [FunLike F 𝕂 𝕂'] [MonoidWithZeroHomClass F 𝕂 𝕂'] (ψ : F)
+    (hψ : ∀ H, (c.normalize H).map ψ = c'.normalize (H.map ψ))
+    (d : ExchangeData 𝕂 row) (w : List K) :
+    (d.mutationWord c w).map ψ = (d.map ψ).mutationWord c' w :=
+  (List.foldl_hom (fun e : ExchangeData 𝕂 row ↦ e.map ψ)
+    (fun e k ↦ (e.map_mutation_of_map_normalize ψ hψ k).symm)).symm
+
 /-- Homomorphisms of coefficient systems commute with exchange-data mutation. -/
 @[simp]
 theorem map_mutation {c : CoefficientSystem 𝕂 R} {c' : CoefficientSystem 𝕂' R}
     (f : CoefficientSystemHom c c') (d : ExchangeData 𝕂 row) (k : K) :
-    (d.mutation c k).map f = (d.map f).mutation c' k := by
-  refine ExchangeData.ext rfl (funext fun j ↦ ?_)
-  obtain rfl | hj := eq_or_ne j k
-  · simp
-  · simp [mutatedPolynomial_of_ne _ _ hj]
+    (d.mutation c k).map f = (d.map f).mutation c' k :=
+  d.map_mutation_of_map_normalize f f.map_normalize k
 
 /-- Homomorphisms of coefficient systems commute with finite mutation words. -/
 @[simp]
 theorem map_mutationWord {c : CoefficientSystem 𝕂 R} {c' : CoefficientSystem 𝕂' R}
     (f : CoefficientSystemHom c c') (d : ExchangeData 𝕂 row) (w : List K) :
     (d.mutationWord c w).map f = (d.map f).mutationWord c' w :=
-  (List.foldl_hom (fun e : ExchangeData 𝕂 row ↦ e.map f)
-    (fun e k ↦ (map_mutation f e k).symm)).symm
+  d.map_mutationWord_of_map_normalize f f.map_normalize w
 
-/-- On exchange data with endpoint coefficients `1`, polynomial mutation in the scalar system fixes
-every polynomial away from the mutated direction `k`. -/
-theorem HasUnitOneEndpoints.mutation_trivial_polynomial_of_ne {d : ExchangeData R row}
-    (hd : d.HasUnitOneEndpoints) {k j : K} (hj : j ≠ k) :
-    (d.mutation (CoefficientSystem.trivial R) k).polynomial j = d.polynomial j := by
-  rw [mutation_polynomial, mutatedPolynomial_of_ne _ _ hj, (hd k).dilationFactor_eq_one,
-    ExchangePolynomial.dilate_one, CoefficientSystem.normalize_trivial]
+/-- Any monoid-with-zero homomorphism between commutative semirings commutes with unnormalized
+mutation in `CoefficientSystem.trivial`. -/
+@[simp]
+theorem map_mutation_trivial {R' : Type*} [CommSemiring R']
+    {F : Type*} [FunLike F R R'] [MonoidWithZeroHomClass F R R'] (ψ : F)
+    (d : ExchangeData R row) (k : K) :
+    (d.mutation (CoefficientSystem.trivial R) k).map ψ =
+      (d.map ψ).mutation (CoefficientSystem.trivial R') k :=
+  d.map_mutation_of_map_normalize ψ (by simp) k
 
-/-- Exchange data with endpoint coefficients `1` are closed under polynomial mutation in the scalar
-system. -/
-protected theorem HasUnitOneEndpoints.mutation_trivial {d : ExchangeData R row}
-    (hd : d.HasUnitOneEndpoints) (k : K) :
-    (d.mutation (CoefficientSystem.trivial R) k).HasUnitOneEndpoints := by
+/-- Any monoid-with-zero homomorphism between commutative semirings commutes with unnormalized
+mutation words in `CoefficientSystem.trivial`. -/
+@[simp]
+theorem map_mutationWord_trivial {R' : Type*} [CommSemiring R']
+    {F : Type*} [FunLike F R R'] [MonoidWithZeroHomClass F R R'] (ψ : F)
+    (d : ExchangeData R row) (w : List K) :
+    (d.mutationWord (CoefficientSystem.trivial R) w).map ψ =
+      (d.map ψ).mutationWord (CoefficientSystem.trivial R') w :=
+  d.map_mutationWord_of_map_normalize ψ (by simp) w
+
+/-- On normalized exchange data, mutating in a direction `k` whose polynomial has endpoint
+coefficients `1` fixes every polynomial away from `k`. -/
+theorem IsNormalized.mutation_polynomial_of_hasEndpointsOne {c : CoefficientSystem 𝕂 R}
+    {d : ExchangeData 𝕂 row} (hd : d.IsNormalized c) {k j : K} (hj : j ≠ k)
+    (hk : (d.polynomial k).HasEndpointsOne) :
+    (d.mutation c k).polynomial j = d.polynomial j := by
+  rw [mutation_polynomial, mutatedPolynomial_of_ne c d hj, hk.dilationFactor_eq_one,
+    ExchangePolynomial.dilate_one, (hd j).normalize_eq]
+
+/-- Normalized exchange data with endpoint coefficients `1` remain so after mutation. -/
+protected theorem HasEndpointsOne.mutation {c : CoefficientSystem 𝕂 R} {d : ExchangeData 𝕂 row}
+    (hd : d.HasEndpointsOne) (hnorm : d.IsNormalized c) (k : K) :
+    (d.mutation c k).HasEndpointsOne := by
   intro j
   obtain rfl | hj := eq_or_ne j k
   · simpa using (hd j).reverse
-  · rw [hd.mutation_trivial_polynomial_of_ne hj]
+  · rw [hnorm.mutation_polynomial_of_hasEndpointsOne hj (hd k)]
     exact hd j
 
-/-- Binary exchange data are closed under polynomial mutation in the scalar system. -/
-protected theorem IsBinary.mutation_trivial {d : ExchangeData R row} (hd : d.IsBinary) (k : K) :
-    (d.mutation (CoefficientSystem.trivial R) k).IsBinary := by
+/-- Normalized exchange data with endpoint coefficients `1` remain so along any mutation word. -/
+protected theorem HasEndpointsOne.mutationWord {c : CoefficientSystem 𝕂 R}
+    {d : ExchangeData 𝕂 row} (hd : d.HasEndpointsOne) (hnorm : d.IsNormalized c) (w : List K) :
+    (d.mutationWord c w).HasEndpointsOne := by
+  induction w generalizing d with
+  | nil => exact hd
+  | cons k _w ih => exact ih (hd.mutation hnorm k) (hnorm.mutation k)
+
+/-- Normalized binary exchange data remain binary after mutation. -/
+protected theorem IsBinary.mutation {c : CoefficientSystem 𝕂 R} {d : ExchangeData 𝕂 row}
+    (hd : d.IsBinary) (hnorm : d.IsNormalized c) (k : K) :
+    (d.mutation c k).IsBinary := by
   intro j
   obtain rfl | hj := eq_or_ne j k
   · simp [hd j]
-  · rw [hd.hasUnitOneEndpoints.mutation_trivial_polynomial_of_ne hj, hd j]
+  · rw [hnorm.mutation_polynomial_of_hasEndpointsOne hj (hd.hasEndpointsOne k), hd j]
+
+/-- Normalized binary exchange data remain binary along any mutation word. -/
+protected theorem IsBinary.mutationWord {c : CoefficientSystem 𝕂 R} {d : ExchangeData 𝕂 row}
+    (hd : d.IsBinary) (hnorm : d.IsNormalized c) (w : List K) :
+    (d.mutationWord c w).IsBinary := by
+  induction w generalizing d with
+  | nil => exact hd
+  | cons k _w ih => exact ih (hd.mutation hnorm k) (hnorm.mutation k)
+
+/-- Whenever `1 + T` is normalized for `c`, mutating `ofExchangeMatrix B` mutates `B` and keeps
+binary exchange polynomials. -/
+theorem mutation_ofExchangeMatrix {c : CoefficientSystem 𝕂 R}
+    (hc : c.IsNormalized ExchangePolynomial.binary) (B : ExchangeMatrix row) (k : K) :
+    (ofExchangeMatrix B).mutation c k = ofExchangeMatrix (B.mutation k) :=
+  ((isBinary_ofExchangeMatrix B).mutation
+    (isNormalized_ofExchangeMatrix_of_isNormalized hc B) k).eq_ofExchangeMatrix
+
+/-- Whenever `1 + T` is normalized for `c`, mutating `ofExchangeMatrix B` along a word mutates `B`
+along that word. -/
+theorem mutationWord_ofExchangeMatrix {c : CoefficientSystem 𝕂 R}
+    (hc : c.IsNormalized ExchangePolynomial.binary) (B : ExchangeMatrix row) (w : List K) :
+    (ofExchangeMatrix B).mutationWord c w = ofExchangeMatrix (B.mutationWord w) := by
+  have hbin := (isBinary_ofExchangeMatrix B).mutationWord
+    (isNormalized_ofExchangeMatrix_of_isNormalized hc B) w
+  simpa using hbin.eq_ofExchangeMatrix
+
+/-- In the scalar system `CoefficientSystem.trivial R`, mutating in a direction `k` whose
+polynomial has endpoint coefficients `1` fixes every polynomial away from `k`. -/
+theorem mutation_trivial_polynomial_of_hasEndpointsOne {d : ExchangeData R row} {k j : K}
+    (hj : j ≠ k) (hk : (d.polynomial k).HasEndpointsOne) :
+    (d.mutation (CoefficientSystem.trivial R) k).polynomial j = d.polynomial j :=
+  d.isNormalized_trivial.mutation_polynomial_of_hasEndpointsOne hj hk
+
+/-- Exchange data with endpoint coefficients `1` are closed under polynomial mutation in the scalar
+system. -/
+protected theorem HasEndpointsOne.mutation_trivial {d : ExchangeData R row}
+    (hd : d.HasEndpointsOne) (k : K) :
+    (d.mutation (CoefficientSystem.trivial R) k).HasEndpointsOne :=
+  hd.mutation d.isNormalized_trivial k
+
+/-- Binary exchange data are closed under polynomial mutation in the scalar system. -/
+protected theorem IsBinary.mutation_trivial {d : ExchangeData R row} (hd : d.IsBinary) (k : K) :
+    (d.mutation (CoefficientSystem.trivial R) k).IsBinary :=
+  hd.mutation d.isNormalized_trivial k
 
 @[simp]
 theorem mutation_trivial_ofExchangeMatrix (B : ExchangeMatrix row) (k : K) :
     (ofExchangeMatrix B : ExchangeData R row).mutation (CoefficientSystem.trivial R) k =
       ofExchangeMatrix (B.mutation k) :=
-  ExchangeData.ext rfl (funext fun j ↦ (isBinary_ofExchangeMatrix B).mutation_trivial k j)
+  mutation_ofExchangeMatrix (CoefficientSystem.isNormalized_trivial _) B k
+
+@[simp]
+theorem mutationWord_trivial_ofExchangeMatrix (B : ExchangeMatrix row) (w : List K) :
+    (ofExchangeMatrix B : ExchangeData R row).mutationWord (CoefficientSystem.trivial R) w =
+      ofExchangeMatrix (B.mutationWord w) :=
+  mutationWord_ofExchangeMatrix (CoefficientSystem.isNormalized_trivial _) B w
 
 end Mutation
 
