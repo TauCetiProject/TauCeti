@@ -23,6 +23,9 @@ order-compatible addition and invertible `2`. Its proof uses
 `CliffordAlgebra.finite_monomialGroup` and `Representation.sumOfConjugatesForm` to sum the
 associated symmetric bilinear form over the signed monomial group.
 
+`AlgHom.map_cliffordAlgebraι_apply_apply`, `AlgHom.map_cliffordAlgebraι_add_swap_apply`, and
+`AlgHom.map_cliffordAlgebraι_add_swap_apply_of_isOrtho` record the squaring and anticommutator
+identities for the Clifford vector action `ρ (ι Q ·)` on any module over a commutative ring.
 `AlgHom.bilinForm_map_cliffordAlgebraι_apply_map_cliffordAlgebraι_apply` says that applying
 the Clifford action of a vector `v` to both arguments scales any bilinear form by `-Q v`,
 provided that vector acts skew-adjointly. It works over any commutative ring. Over the reals,
@@ -48,6 +51,29 @@ section Scaling
 variable [CommRing K] [AddCommGroup M] [Module K M]
   [AddCommGroup W] [Module K W] {Q : QuadraticForm K M}
 
+/-- Applying the Clifford action of `v` twice scales by `Q v`. -/
+@[simp]
+theorem map_cliffordAlgebraι_apply_apply (ρ : CliffordAlgebra Q →ₐ[K] Module.End K W)
+    (v : M) (x : W) :
+    ρ (ι Q v) (ρ (ι Q v) x) = Q v • x := by
+  rw [← mul_apply_eq_comp, ← map_mul, ι_sq_scalar, AlgHom.commutes,
+    Module.algebraMap_end_apply]
+
+/-- Anticommutator identity for Clifford vector actions: `ρ(u)ρ(v) + ρ(v)ρ(u)` scales by
+`QuadraticMap.polar Q u v`. -/
+theorem map_cliffordAlgebraι_add_swap_apply (ρ : CliffordAlgebra Q →ₐ[K] Module.End K W)
+    (u v : M) (x : W) :
+    ρ (ι Q u) (ρ (ι Q v) x) + ρ (ι Q v) (ρ (ι Q u) x) = QuadraticMap.polar Q u v • x := by
+  have h := congrArg (fun a ↦ ρ a x) (ι_mul_ι_add_swap (Q := Q) u v)
+  simpa only [map_add, map_mul, LinearMap.add_apply, mul_apply_eq_comp, AlgHom.commutes,
+    Module.algebraMap_end_apply] using h
+
+/-- Orthogonal Clifford vectors act by anticommuting endomorphisms. -/
+theorem map_cliffordAlgebraι_add_swap_apply_of_isOrtho (ρ : CliffordAlgebra Q →ₐ[K] Module.End K W)
+    {u v : M} (h : Q.IsOrtho u v) (x : W) :
+    ρ (ι Q u) (ρ (ι Q v) x) + ρ (ι Q v) (ρ (ι Q u) x) = 0 := by
+  rw [ρ.map_cliffordAlgebraι_add_swap_apply, h.polar_eq_zero, zero_smul]
+
 /-- For a vector `v` whose Clifford action is skew-adjoint with respect to `B`, applying
 `ρ (ι Q v)` to both arguments scales `B` by `-Q v`.
 No symmetry or positivity assumption on the form is needed. -/
@@ -55,10 +81,8 @@ theorem bilinForm_map_cliffordAlgebraι_apply_map_cliffordAlgebraι_apply
     (ρ : CliffordAlgebra Q →ₐ[K] Module.End K W) (B : BilinForm K W)
     (v : M) (hρ : B.IsSkewAdjoint (ρ (ι Q v))) (x y : W) :
     B (ρ (ι Q v) x) (ρ (ι Q v) y) = -Q v * B x y := by
-  have hsq : ρ (ι Q v) (ρ (ι Q v) y) = Q v • y := by
-    rw [← mul_apply_eq_comp, comp_ι_sq_scalar, Module.algebraMap_end_apply]
-  simpa only [Pi.neg_apply, hsq, map_neg, map_smul, smul_eq_mul, neg_mul] using
-    hρ x (ρ (ι Q v) y)
+  simpa only [Pi.neg_apply, ρ.map_cliffordAlgebraι_apply_apply, map_neg, map_smul, smul_eq_mul,
+    neg_mul] using hρ x (ρ (ι Q v) y)
 
 end Scaling
 
@@ -105,8 +129,7 @@ theorem exists_posDef_isSymm_isSkewAdjoint_map_cliffordAlgebraι
       (by rw [hQ]; exact isUnit_neg_one)
     have hact : σ g = ρ (ι Q (b i)) := by simp [σ, hg]
     have hsq (y : W) : ρ (ι Q (b i)) (ρ (ι Q (b i)) y) = -y := by
-      rw [← mul_apply_eq_comp, comp_ι_sq_scalar, hQ, map_neg, map_one,
-        LinearMap.neg_apply, one_apply_eq_self]
+      rw [ρ.map_cliffordAlgebraι_apply_apply, hQ, neg_one_smul]
     intro x y
     have h := hinv.apply g x (-(ρ (ι Q (b i)) y))
     simpa only [B, LinearMap.comp_apply, AlgHom.toLinearMap_apply, hact, map_neg, hsq,
