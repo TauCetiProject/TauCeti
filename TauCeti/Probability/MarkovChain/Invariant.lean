@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Dynamics.PeriodicPts.Lemmas
 public import TauCeti.Probability.MarkovChain.Recurrence
 import TauCeti.MeasureTheory.Measure.GiryMonad
 import TauCeti.Probability.Kernel.Invariance
@@ -40,14 +39,11 @@ first positive return time to `x`, with extended expectation `κ.meanReturnTime 
   particular, every finite nonempty irreducible chain is positive recurrent and admits a unique
   invariant probability measure.
 
-As checks on the definitions, for a deterministic kernel `deterministic f hf` the first positive
-return time to `x` is almost surely `Function.minimalPeriod f x` on `Function.periodicPts f` and `⊤`
-off it, recurrence and positive recurrence both coincide with `x ∈ Function.periodicPts f`, the mean
-return time is `Function.minimalPeriod f x` on `Function.periodicPts f` and `∞` off it, and the
-cycle occupation measure sums the point masses along the periodic orbit on `Function.periodicPts f`
-and along the forward orbit off it; for a constant point-mass kernel `const α (dirac a)` the mean
-return time is `1` at `a` and `∞` away from `a`, distinguishing positive return times from
-time-zero entrance.
+As checks on the definitions, for a deterministic kernel `deterministic f hf` positive recurrence
+coincides with `x ∈ Function.periodicPts f`, and the cycle occupation measure sums the point
+masses `Measure.dirac (f^[k] x)` for `k < Function.minimalPeriod f x` on `Function.periodicPts f`
+and over all `k : ℕ` along the forward trajectory (counting multiplicity) off it; for a constant
+point-mass kernel `const α (dirac a)` positive recurrence holds precisely at `x = a`.
 
 ## Main definitions
 
@@ -76,11 +72,9 @@ time-zero entrance.
 * `ProbabilityTheory.Kernel.isPositiveRecurrent_of_finite` and
   `ProbabilityTheory.Kernel.existsUnique_invariant_probability`: every finite nonempty irreducible
   chain is positive recurrent and has a unique invariant probability measure.
-* `ProbabilityTheory.Kernel.ae_hittingAfter_one_deterministic`,
-  `ProbabilityTheory.Kernel.meanReturnTime_deterministic`,
-  `ProbabilityTheory.Kernel.isRecurrent_deterministic`,
+* `ProbabilityTheory.Kernel.isPositiveRecurrent_deterministic`,
   `ProbabilityTheory.Kernel.cycleOccupation_deterministic`, and
-  `ProbabilityTheory.Kernel.meanReturnTime_const_dirac`: deterministic and constant-kernel
+  `ProbabilityTheory.Kernel.isPositiveRecurrent_const_dirac`: deterministic and constant-kernel
   evaluations.
 
 ## References
@@ -717,57 +711,6 @@ section Deterministic
 variable [MeasurableSingletonClass α]
 
 open scoped Classical in
-private theorem hittingAfter_one_iterate {β : Type*} (f : β → β) (x : β) :
-    hittingAfter (fun n (w : ℕ → β) => w n) {x} 1 (fun n => f^[n] x) =
-      if x ∈ Function.periodicPts f then (Function.minimalPeriod f x : WithTop ℕ) else ⊤ := by
-  have hex : (∃ j : ℕ, 1 ≤ j ∧ f^[j] x ∈ ({x} : Set β)) ↔ x ∈ Function.periodicPts f := by
-    rw [Function.mem_periodicPts]
-    exact ⟨fun ⟨j, hj, hx⟩ => ⟨j, hj, hx⟩, fun ⟨j, hj, hx⟩ => ⟨j, hj, hx⟩⟩
-  have hset : {i : ℕ | 1 ≤ i ∧ f^[i] x ∈ ({x} : Set β)} =
-      {n : ℕ | 0 < n ∧ Function.IsPeriodicPt f n x} := by
-    ext i
-    simp [Nat.pos_iff_ne_zero, Nat.one_le_iff_ne_zero, Function.IsPeriodicPt, Function.IsFixedPt]
-  rw [hittingAfter_def]
-  dsimp only
-  by_cases hx : x ∈ Function.periodicPts f
-  · rw [ite_eq_left (hex.mpr hx), ite_eq_left hx, hset,
-      ← Function.minimalPeriod_eq_sInf_n_pos_IsPeriodicPt]
-    rfl
-  · rw [ite_eq_right (mt hex.mp hx), ite_eq_right hx]
-
-open scoped Classical in
-/-- Under `markovChainLaw (Measure.dirac x) (deterministic f hf)`, the first positive return time
-to `x` is almost surely `Function.minimalPeriod f x` when `x` is periodic under `f`, and `⊤`
-otherwise. -/
-theorem ae_hittingAfter_one_deterministic {f : α → α} (hf : Measurable f) (x : α) :
-    ∀ᵐ w ∂markovChainLaw (Measure.dirac x) (deterministic f hf),
-      hittingAfter (fun n w => w n) {x} 1 w =
-        if x ∈ Function.periodicPts f then (Function.minimalPeriod f x : WithTop ℕ) else ⊤ := by
-  have hmeas : MeasurableSet {w : ℕ → α | hittingAfter (fun n w => w n) {x} 1 w =
-      if x ∈ Function.periodicPts f then (Function.minimalPeriod f x : WithTop ℕ) else ⊤} :=
-    (measurableSet_singleton _).preimage
-      (Filtration.adapted_piLE.isStoppingTime_hittingAfter
-        (f := Filtration.piLE (X := fun _ : ℕ => α)) (measurableSet_singleton x)).measurable'
-  rw [markovChainLaw_dirac_deterministic, ae_dirac_iff hmeas]
-  exact hittingAfter_one_iterate f x
-
-open scoped Classical in
-/-- Under `deterministic f hf`, the mean return time of `x` is `Function.minimalPeriod f x` when
-`x` is periodic under `f`, and `∞` otherwise. -/
-@[simp]
-theorem meanReturnTime_deterministic {f : α → α} (hf : Measurable f) (x : α) :
-    (deterministic f hf).meanReturnTime x =
-      if x ∈ Function.periodicPts f then (Function.minimalPeriod f x : ℝ≥0∞) else ∞ := by
-  have hae : (fun w : ℕ → α => ENat.toENNReal (hittingAfter (fun n w => w n) {x} 1 w)) =ᵐ[
-      markovChainLaw (Measure.dirac x) (deterministic f hf)]
-      fun _ => if x ∈ Function.periodicPts f then (Function.minimalPeriod f x : ℝ≥0∞) else ∞ := by
-    filter_upwards [ae_hittingAfter_one_deterministic hf x] with w hw
-    rw [hw]
-    split_ifs <;> rfl
-  rw [meanReturnTime_def, lintegral_congr_ae hae, MeasureTheory.lintegral_const, measure_univ,
-    mul_one]
-
-open scoped Classical in
 /-- Under `deterministic f hf`, `x` is positive recurrent if and only if `x` is a periodic point of
 `f`. -/
 @[simp]
@@ -776,34 +719,11 @@ theorem isPositiveRecurrent_deterministic {f : α → α} (hf : Measurable f) (x
   rw [isPositiveRecurrent_iff, meanReturnTime_deterministic]
   split_ifs with hx <;> simp [hx]
 
-/-- Under `deterministic f hf`, `x` is recurrent if and only if `x` is a periodic point of `f`.
-In particular, recurrence and positive recurrence coincide for deterministic kernels. -/
-@[simp]
-theorem isRecurrent_deterministic {f : α → α} (hf : Measurable f) (x : α) :
-    (deterministic f hf).IsRecurrent x ↔ x ∈ Function.periodicPts f := by
-  classical
-  refine ⟨fun hx => ?_, fun hx => ((isPositiveRecurrent_deterministic hf x).mpr hx).isRecurrent⟩
-  by_contra hnp
-  have hae : ∀ᵐ w ∂markovChainLaw (Measure.dirac x) (deterministic f hf),
-      hittingAfter (fun n w => w n) {x} 1 w = ⊤ := by
-    filter_upwards [ae_hittingAfter_one_deterministic hf x] with w hw
-    simpa [hnp] using hw
-  have h0 : markovChainLaw (Measure.dirac x) (deterministic f hf)
-      {w | hittingAfter (fun n w => w n) {x} 1 w ≠ ⊤} = 0 := by
-    simpa [ae_iff] using hae
-  exact one_ne_zero ((isRecurrent_iff.mp hx).symm.trans h0)
-
-/-- Under `deterministic f hf`, `x` is transient if and only if `x` is not a periodic point of
-`f`. -/
-@[simp]
-theorem isTransient_deterministic {f : α → α} (hf : Measurable f) (x : α) :
-    (deterministic f hf).IsTransient x ↔ x ∉ Function.periodicPts f := by
-  rw [isTransient_iff, isRecurrent_deterministic]
-
 open scoped Classical in
-/-- Under `deterministic f hf`, the cycle occupation measure at `x` sums the point masses along the
-periodic orbit `{f^[k] x | k < Function.minimalPeriod f x}` when `x` is periodic under `f`, and
-along the entire forward orbit `{f^[k] x | k : ℕ}` otherwise. -/
+/-- Under `deterministic f hf`, the cycle occupation measure at `x` sums the point masses
+`Measure.dirac (f^[k] x)` for `k < Function.minimalPeriod f x` along the periodic orbit when `x` is
+periodic under `f`, and sums `Measure.dirac (f^[k] x)` over all times `k : ℕ` (counting
+multiplicity along the forward trajectory `k ↦ f^[k] x`) otherwise. -/
 @[simp]
 theorem cycleOccupation_deterministic {f : α → α} (hf : Measurable f) (x : α) :
     (deterministic f hf).cycleOccupation x =
@@ -811,80 +731,32 @@ theorem cycleOccupation_deterministic {f : α → α} (hf : Measurable f) (x : �
         ∑ k ∈ Finset.range (Function.minimalPeriod f x), Measure.dirac (f^[k] x)
       else
         Measure.sum fun k : ℕ => Measure.dirac (f^[k] x) := by
-  have hτ : IsStoppingTime (Filtration.piLE (X := fun _ : ℕ => α))
-      (hittingAfter (fun j (w : ℕ → α) => w j) {x} 1) :=
-    Filtration.adapted_piLE.isStoppingTime_hittingAfter (measurableSet_singleton x)
-  have hstep : ∀ k : ℕ, cycleStep (deterministic f hf) x k =
-      if (k : WithTop ℕ) <
-          (if x ∈ Function.periodicPts f then (Function.minimalPeriod f x : WithTop ℕ) else ⊤)
-        then Measure.dirac (f^[k] x) else 0 := fun k => by
-    have hEk : MeasurableSet {w : ℕ → α |
-        (k : WithTop ℕ) < hittingAfter (fun j w => w j) {x} 1 w} :=
-      Filtration.le _ k _ (hτ.measurableSet_gt k)
-    rw [cycleStep, markovChainLaw_dirac_deterministic]
-    by_cases hk : (k : WithTop ℕ) <
-        (if x ∈ Function.periodicPts f then (Function.minimalPeriod f x : WithTop ℕ) else ⊤)
-    · have hmem : (fun j => f^[j] x) ∈
-          {w : ℕ → α | (k : WithTop ℕ) < hittingAfter (fun j w => w j) {x} 1 w} := by
-        simpa [hittingAfter_one_iterate f x] using hk
-      have hself : (Measure.dirac (fun j => f^[j] x)).restrict
-          {w : ℕ → α | (k : WithTop ℕ) < hittingAfter (fun j w => w j) {x} 1 w} =
-          Measure.dirac (fun j => f^[j] x) :=
-        Measure.restrict_eq_self_of_ae_mem ((ae_dirac_iff hEk).mpr hmem)
-      rw [hself, ite_eq_left hk, Measure.map_dirac' (measurable_pi_apply k)]
-    · have hnmem : (fun j => f^[j] x) ∉
-          {w : ℕ → α | (k : WithTop ℕ) < hittingAfter (fun j w => w j) {x} 1 w} := by
-        simpa [hittingAfter_one_iterate f x] using hk
-      have hnull : Measure.dirac (fun j => f^[j] x)
-          {w : ℕ → α | (k : WithTop ℕ) < hittingAfter (fun j w => w j) {x} 1 w} = 0 := by
-        rw [Measure.dirac_apply' _ hEk, Set.indicator_of_notMem hnmem]
-      rw [Measure.restrict_eq_zero.mpr hnull, ite_eq_right hk, Measure.map_zero]
-  have hsum : (deterministic f hf).cycleOccupation x =
-      Measure.sum (cycleStep (deterministic f hf) x) := rfl
-  rw [hsum]
+  rw [cycleOccupation_def, markovChainLaw_dirac_deterministic]
+  have hterm (k : ℕ) :
+      ((Measure.dirac fun n => f^[n] x).restrict
+          {w | (k : WithTop ℕ) < hittingAfter (fun j w => w j) {x} 1 w}).map (fun w => w k) =
+        if (k : WithTop ℕ) <
+            (if x ∈ Function.periodicPts f then
+              (Function.minimalPeriod f x : WithTop ℕ)
+            else ⊤)
+          then Measure.dirac (f^[k] x) else 0 := by
+    rw [restrict_dirac, apply_ite (Measure.map fun w : ℕ → α => w k)]
+    simp only [Set.mem_ofPred_eq, hittingAfter_one_iterate, Measure.map_dirac, Measure.map_zero]
+  simp_rw [hterm]
   by_cases hx : x ∈ Function.periodicPts f
-  · rw [ite_eq_left hx]
+  · simp only [hx, ↓reduceIte]
     ext s hs
     rw [Measure.sum_apply _ hs, sum_apply,
       tsum_eq_sum (s := Finset.range (Function.minimalPeriod f x))]
     · refine Finset.sum_congr rfl fun k hk => ?_
       have hklt : (k : WithTop ℕ) < (Function.minimalPeriod f x : WithTop ℕ) :=
         WithTop.coe_lt_coe.mpr (Finset.mem_range.mp hk)
-      simp [hstep k, hx, hklt]
+      simp [hklt]
     · intro k hk
       have hklt : ¬ (k : WithTop ℕ) < (Function.minimalPeriod f x : WithTop ℕ) := by
         simpa [WithTop.coe_lt_coe] using hk
-      simp [hstep k, hx, hklt]
-  · rw [ite_eq_right hx]
-    congr 1
-    funext k
-    simp [hstep k, hx]
-
-/-- Under the constant kernel `const α (Measure.dirac a)` sending every state to `a`, the mean
-return time is `1` at `a` and `∞` at every `x ≠ a` (distinguishing positive return times `t ≥ 1`
-from time-zero entrance). -/
-@[simp]
-theorem meanReturnTime_const_dirac [DecidableEq α] (a x : α) :
-    (const α (Measure.dirac a)).meanReturnTime x = if x = a then 1 else ∞ := by
-  have hconst : const α (Measure.dirac a) = deterministic (fun _ : α => a) measurable_const := by
-    ext1 _
-    simp [deterministic_apply]
-  rw [meanReturnTime_congr hconst, meanReturnTime_deterministic]
-  by_cases hxa : x = a
-  · subst hxa
-    have hper : x ∈ Function.periodicPts (fun _ : α => x) :=
-      Function.mk_mem_periodicPts zero_lt_one rfl
-    have hmin : Function.minimalPeriod (fun _ : α => x) x = 1 :=
-      Function.minimalPeriod_eq_one_iff_isFixedPt.mpr rfl
-    simp [hper, hmin]
-  · have hnper : x ∉ Function.periodicPts (fun _ : α => a) := by
-      rw [Function.mem_periodicPts]
-      rintro ⟨n, hn, hfix⟩
-      obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn.ne'
-      have ha : (fun _ : α => a)^[k + 1] x = a := by
-        rw [Function.iterate_succ_apply']
-      exact hxa (hfix.symm.trans ha)
-    simp [hxa, hnper]
+      simp [hklt]
+  · simp [hx]
 
 /-- Under `const α (Measure.dirac a)`, `x` is positive recurrent if and only if `x = a`. -/
 @[simp]
