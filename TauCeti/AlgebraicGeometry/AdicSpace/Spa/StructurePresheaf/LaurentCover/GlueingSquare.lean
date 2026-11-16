@@ -20,47 +20,29 @@ import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Support
 
 Let `R` be a complete Hausdorff Tate ring and `S = (R, R⁺)` a Huber pair whose presentation-limit
 structure presheaf is a sheaf (`IsSheafyForEveryPresentation S.plus`). For any `f : R` and models
-`R₁`, `R₂`, `R₁₂` of the completed rational localisations `R⟨{f, 1}/1⟩ = R⟨f⟩`,
-`R⟨{1}/f⟩ = R⟨1/f⟩`, and `R⟨{f², 1}/f⟩ = R⟨f, 1/f⟩` equipped with continuous `R`-algebra
-transition maps `R₁ → R₁₂` and `R₂ → R₁₂`, the square `R → R₁, R₂ → R₁₂` is a
-`TauCeti.Huber.GlueingSquare`.
+`R₁`, `R₂`, `R₁₂` of `R⟨{f, 1}/1⟩ = R⟨f⟩`, `R⟨{1}/f⟩ = R⟨1/f⟩`, and `R⟨{f², 1}/f⟩ = R⟨f, 1/f⟩`
+with continuous `R`-algebra transition maps `R₁ → R₁₂` and `R₂ → R₁₂`, the square
+`R → R₁, R₂ → R₁₂` is a `TauCeti.Huber.GlueingSquare`.
 
-This formalises the bridge from sheafiness and Lemma 2.4.22 of Kedlaya–Liu to Definition 2.7.3
-(used in the proof of Theorem 2.4.23 of Kedlaya–Liu):
-
-* *Exactness in degree `0` (`0 → R → R₁ × R₂ → R₁₂`).* The basic opens `R({f, 1}/1)` and
-  `R({1}/f)` cover `Spa(R, R⁺)` with intersection `R({f², 1}/f)`
-  (`TauCeti.ValuationSpectrum.spaBasicOpen_laurentOverlap_eq_inf`). The sheaf condition on
-  `presentationLimitPresheaf P S.plus`, read through `presentationLimitTopIso` and
-  `presentationLimitRationalIso` together with uniqueness of continuous `R`-algebra homomorphisms
-  out of `R₁` and `R₂`, gives injectivity and middle exactness
-  (`TauCeti.Huber.laurent_injective_and_exact_of_isSheafyForEveryPresentation`).
-* *Surjectivity of `(r₁, r₂) ↦ r₁ - r₂`.* Supplied unconditionally (without sheafiness) by
-  Kedlaya–Liu Lemma 2.4.22 (`TauCeti.Huber.IsRationalCompletion.surjective_algebraMap_sub_laurent`).
-* *Topological strictness (`isInducing` and `isStrictMap_sub`).* Supplied automatically by Henkel's
-  open mapping theorem over `R` via `TauCeti.Huber.GlueingSquare.of_exact` on complete Hausdorff
-  models and transported along `TauCeti.Huber.GlueingSquare.congr`.
-* *Dense range of `R₂ → R₁₂`.* Both `R₂ = R⟨{1}/f⟩` and `R₁₂ = R⟨{f², 1}/f⟩` localise away from
-  the same denominator `f`, so the image of `R₂` contains the dense algebraic localisation `R[1/f]`
-  (`TauCeti.Huber.IsRationalCompletion.denseRange_of_comp_algebraMap_eq`). By contrast, `R₁ → R₁₂`
-  need not have dense range when `f` is not invertible in `R₁`.
-* *Maximal-ideal prime contraction.* By Wedhorn's Proposition 7.51
-  (`TauCeti.ValuationSpectrum.exists_mem_spa_supp_eq_of_isMaximal`), every maximal ideal `𝔪` of `R`
-  is the support of a point `v ∈ Spa(R, R⁺)`. That point lies in one of the two Laurent pieces,
-  where `𝔪` generates a proper ideal in the corresponding completed localisation
-  (`TauCeti.ValuationSpectrum.map_supp_toCompletionLoc_ne_top`) and therefore contracts from a
-  maximal (hence prime) ideal of `R₁` or `R₂`.
+This bridges sheafiness and Kedlaya–Liu Lemma 2.4.22 to Definition 2.7.3:
+* *Exactness (`0 → R → R₁ × R₂ → R₁₂`)* comes from the sheaf condition on the two-piece cover
+  `R({f, 1}/1)`, `R({1}/f)` with overlap `R({f², 1}/f)`.
+* *Surjectivity of `(r₁, r₂) ↦ r₁ - r₂`* comes from
+  `IsRationalCompletion.surjective_algebraMap_sub_laurent`.
+* *Topological strictness* follows automatically from `GlueingSquare.of_exact` via Henkel's open
+  mapping theorem and transport along `GlueingSquare.congr`.
+* *Dense range of `R₂ → R₁₂`* follows from the shared denominator `f`, and *maximal-ideal prime
+  contraction* follows from Wedhorn's Proposition 7.51 (`exists_mem_spa_supp_eq_of_isMaximal`).
 
 ## Main results
 
-* `TauCeti.ValuationSpectrum.spaBasicOpen_laurentOverlap_eq_inf`: the basic open `R({f², 1}/f)` is
-  the intersection `R({f, 1}/1) ⊓ R({1}/f)` of the two pieces of the simple Laurent cover.
-* `TauCeti.Huber.laurent_injective_and_exact_of_isSheafyForEveryPresentation`: over a complete
-  Hausdorff Huber pair satisfying `IsSheafyForEveryPresentation`, `0 → R → R₁ × R₂ → R₁₂` is exact.
-* `TauCeti.Huber.GlueingSquare.of_simpleLaurent`: a simple Laurent cover of a complete Hausdorff
-  Tate ring with a sheafy Huber pair forms a `GlueingSquare`.
-* `TauCeti.Huber.GlueingSquare.of_simpleLaurent_of_isSheafyRing`: convenience corollary assuming
-  `IsSheafyRing R` directly, using the canonical pair `(R, R°)`.
+* `TauCeti.ValuationSpectrum.spaBasicOpen_laurentOverlap_eq_inf`:
+  `R({f², 1}/f) = R({f, 1}/1) ⊓ R({1}/f)`.
+* `TauCeti.Huber.laurent_injective_and_exact_of_isSheafyForEveryPresentation`: algebraic left
+  exactness of `0 → R → R₁ × R₂ → R₁₂`.
+* `TauCeti.Huber.GlueingSquare.of_simpleLaurent` and
+  `TauCeti.Huber.GlueingSquare.of_simpleLaurent_of_isSheafyRing`: simple Laurent covers of sheafy
+  complete Hausdorff Tate rings form glueing squares.
 
 ## References
 
@@ -79,7 +61,7 @@ namespace TauCeti.ValuationSpectrum
 open scoped Classical Pointwise in
 /-- The basic open `R({f², 1}/f)` equals the intersection `R({f, 1}/1) ⊓ R({1}/f)` of the two
 pieces of the simple Laurent cover of `Spa(A, A⁺)`: intersecting `{f, 1}/1` and `{1}/f` gives
-`{f², f, 1}/(1 · f)`, and the denominator `f` may be dropped from the numerator set `{f², f, 1}` by
+`{f², f, 1}/(1 · f)`, and the denominator `f` may be dropped from `{f², f, 1}` by
 `rationalSubset_insert_self`. -/
 theorem spaBasicOpen_laurentOverlap_eq_inf {A : Type*} [CommRing A] [UniformSpace A]
     [DecidableEq A] (Aplus : Subring A) (f : A) :
@@ -88,10 +70,7 @@ theorem spaBasicOpen_laurentOverlap_eq_inf {A : Type*} [CommRing A] [UniformSpac
   have hrat : rationalSubset Aplus {f * f, 1} f =
       rationalSubset Aplus {f, 1} 1 ∩ rationalSubset Aplus {1} f := by
     rw [rationalSubset_inter, one_mul, ← rationalSubset_insert_self Aplus {f * f, 1} f]
-    congr 1
-    ext x
-    simp [Finset.mem_mul, eq_comm]
-    tauto
+    congr 1; ext x; simp [Finset.mem_mul, eq_comm]; tauto
   ext v
   simp only [Opens.coe_inf, Set.mem_inter_iff, SetLike.mem_coe, mem_spaBasicOpen]
   rw [← Set.mem_inter_iff, ← hrat]
@@ -110,64 +89,49 @@ private theorem eqToHom_symm_apply_eqToHom_apply {X Y : _root_.TopCommRingCat.{v
 
 private def isoToRingEquiv {U V : _root_.TopCommRingCat.{v}} (I : U ≅ V) : U ≃+* V :=
   RingEquiv.ofRingHom I.hom.1 I.inv.1
-    (RingHom.ext fun x ↦ I.inv_hom_id_apply x)
-    (RingHom.ext fun y ↦ I.hom_inv_id_apply y)
-
-private theorem continuous_isoToRingEquiv {U V : _root_.TopCommRingCat.{v}} (I : U ≅ V) :
-    Continuous (isoToRingEquiv I) :=
-  I.hom.2
-
-private theorem continuous_isoToRingEquiv_symm {U V : _root_.TopCommRingCat.{v}} (I : U ≅ V) :
-    Continuous (isoToRingEquiv I).symm :=
-  I.inv.2
+    (RingHom.ext fun x ↦ I.inv_hom_id_apply x) (RingHom.ext fun y ↦ I.hom_inv_id_apply y)
 
 variable {R : Type v} [CommRing R] [UniformSpace R] [IsTopologicalRing R]
 
-private noncomputable def rationalSectionTopIso (P : PairOfDefinition R) {Aplus : Subring R}
-    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) (T : Finset R) (s : R)
-    (hT : IsOpen (Ideal.span (T : Set R) : Set R)) :
+section RationalSection
+
+variable (P : PairOfDefinition R) {Aplus : Subring R}
+  (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) (T : Finset R) (s : R)
+  (hT : IsOpen (Ideal.span (T : Set R) : Set R))
+
+private noncomputable def rationalSectionTopIso :
     (TopCommRingCat.isCompleteSeparated.ι.obj
       (presentationLimit (P := P) Aplus (spaBasicOpen Aplus T s))) ≅
       _root_.TopCommRingCat.of
-        (letI := P.locUniformSpace T s (Localization.Away s)
-          (P.hasDenominatorPower_of_isOpen_span T s _ hT)
-        letI := P.isUniformAddGroup_locUniformSpace T s (Localization.Away s)
-          (P.hasDenominatorPower_of_isOpen_span T s _ hT)
-        letI := P.isTopologicalRing_locUniformSpace T s (Localization.Away s)
-          (P.hasDenominatorPower_of_isOpen_span T s _ hT)
-        UniformSpace.Completion (Localization.Away s)) :=
+        (ratLoc P T s (P.hasDenominatorPower_of_isOpen_span T s _ hT)) :=
   let p : Presentation P := ⟨T, s, P.hasDenominatorPower_of_isOpen_span T s _ hT⟩
   (TopCommRingCat.isCompleteSeparated.ι.mapIso (presentationLimitRationalIso Aplus hAplus p hT))
     ≪≫ eqToIso (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower)
 
 /-- Bicontinuous ring isomorphism `presentationLimit Aplus (spaBasicOpen Aplus T s) ≃+* B` for any
 model `B` of `R⟨T/s⟩`. -/
-private noncomputable def rationalSectionRingEquiv (P : PairOfDefinition R) {Aplus : Subring R}
-    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) (T : Finset R) (s : R)
-    (hT : IsOpen (Ideal.span (T : Set R) : Set R))
+private noncomputable def rationalSectionRingEquiv
     {B : Type*} [CommRing B] [TopologicalSpace B] [Algebra R B]
     (hB : IsRationalCompletion P T s hT B) :
     presentationLimit (P := P) Aplus (spaBasicOpen Aplus T s) ≃+* B :=
   (isoToRingEquiv (rationalSectionTopIso P hAplus T s hT)).trans
-    ((isRationalCompletion_def P T s hT B).mp hB).choose
+    ((isRationalCompletion_iff_ratLoc P T s hT B).mp hB).choose.toRingEquiv
 
-private theorem continuous_rationalSectionRingEquiv (P : PairOfDefinition R) {Aplus : Subring R}
-    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) (T : Finset R) (s : R)
-    (hT : IsOpen (Ideal.span (T : Set R) : Set R))
+private theorem continuous_rationalSectionRingEquiv
     {B : Type*} [CommRing B] [TopologicalSpace B] [Algebra R B]
     (hB : IsRationalCompletion P T s hT B) :
     Continuous (rationalSectionRingEquiv P hAplus T s hT hB) :=
-  ((isRationalCompletion_def P T s hT B).mp hB).choose_spec.1.comp
-    (continuous_isoToRingEquiv (rationalSectionTopIso P hAplus T s hT))
+  ((isRationalCompletion_iff_ratLoc P T s hT B).mp hB).choose_spec.1.comp
+    (rationalSectionTopIso P hAplus T s hT).hom.2
 
-private theorem continuous_rationalSectionRingEquiv_symm (P : PairOfDefinition R)
-    {Aplus : Subring R} (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) (T : Finset R) (s : R)
-    (hT : IsOpen (Ideal.span (T : Set R) : Set R))
+private theorem continuous_rationalSectionRingEquiv_symm
     {B : Type*} [CommRing B] [TopologicalSpace B] [Algebra R B]
     (hB : IsRationalCompletion P T s hT B) :
     Continuous (rationalSectionRingEquiv P hAplus T s hT hB).symm :=
-  (continuous_isoToRingEquiv_symm (rationalSectionTopIso P hAplus T s hT)).comp
-    ((isRationalCompletion_def P T s hT B).mp hB).choose_spec.2.1
+  (rationalSectionTopIso P hAplus T s hT).inv.2.comp
+    ((isRationalCompletion_iff_ratLoc P T s hT B).mp hB).choose_spec.2
+
+end RationalSection
 
 section Complete
 
@@ -209,41 +173,31 @@ private theorem rationalSectionRingEquiv_map_top (P : PairOfDefinition R) {Aplus
     (eqToHom (CompleteSeparatedTopCommRingCat.of_obj R).symm).1 r
   have hkey : toPresentationLimit (P := P) Aplus ⊤ ≫
       presentationLimitMap (P := P) (le_top : spaBasicOpen Aplus p.num p.den ≤ ⊤) ≫
-        (presentationLimitRationalIso Aplus hAplus p hT).hom = p.toCompletionLocObjHom := by
-    simp
+        (presentationLimitRationalIso Aplus hAplus p hT).hom = p.toCompletionLocObjHom := by simp
   have hc : (eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower)).1
       ((presentationLimitRationalIso Aplus hAplus p hT).hom.hom.1
         ((presentationLimitMap (P := P) (le_top : spaBasicOpen Aplus p.num p.den ≤ ⊤)).hom.1
           ((toPresentationLimit (P := P) Aplus ⊤).hom.1 c))) =
-      P.toCompletionLoc p.num p.den _ p.hasDenominatorPower r := by
-    refine (congrArg
-      (fun g ↦ (eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower)).1 (g.hom.1 c))
+      algebraMap R (ratLoc P T s p.hasDenominatorPower) r := by
+    rw [algebraMap_ratLoc]
+    refine (congrArg (fun g ↦
+      (eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower)).1 (g.hom.1 c))
       hkey).trans ?_
     rw [Presentation.toCompletionLocObjHom_hom]
     exact (eqToHom_symm_apply_eqToHom_apply _ _).trans (congrArg _
       (eqToHom_symm_apply_eqToHom_apply (CompleteSeparatedTopCommRingCat.of_obj R).symm r))
   rw [hx, topSectionRingEquiv_symm_eq]
-  have hdef : rationalSectionRingEquiv P hAplus T s hT hB
-      ((presentationLimitMap (P := P) (le_top : spaBasicOpen Aplus T s ≤ ⊤)).hom.1
-        ((toPresentationLimit (P := P) Aplus ⊤).hom.1 c)) =
-      ((isRationalCompletion_def P T s hT B).mp hB).choose
-        ((eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower)).1
-          ((presentationLimitRationalIso Aplus hAplus p hT).hom.hom.1
-            ((presentationLimitMap (P := P) (le_top : spaBasicOpen Aplus p.num p.den ≤ ⊤)).hom.1
-              ((toPresentationLimit (P := P) Aplus ⊤).hom.1 c)))) := by
-    simp only [rationalSectionRingEquiv, rationalSectionTopIso, isoToRingEquiv,
-      RingEquiv.trans_apply, RingEquiv.ofRingHom_apply, Iso.trans_hom, eqToIso.hom,
-      Functor.mapIso_hom]
-    rfl
-  rw [hdef, hc]
-  exact congrArg (fun k : R →+* B ↦ k r)
-    ((isRationalCompletion_def P T s hT B).mp hB).choose_spec.2.2
+  change ((isRationalCompletion_iff_ratLoc P T s hT B).mp hB).choose
+    ((eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower)).1
+      ((presentationLimitRationalIso Aplus hAplus p hT).hom.hom.1
+        ((presentationLimitMap (P := P) (le_top : spaBasicOpen Aplus p.num p.den ≤ ⊤)).hom.1
+          ((toPresentationLimit (P := P) Aplus ⊤).hom.1 c)))) = algebraMap R B r
+  rw [hc, ((isRationalCompletion_iff_ratLoc P T s hT B).mp hB).choose.commutes]
 
 /-- Under `rationalSectionRingEquiv`, restriction along an inclusion of rational opens agrees with
 any continuous `R`-algebra homomorphism `B → B'`. -/
 private theorem rationalSectionRingEquiv_map_le (P : PairOfDefinition R) {Aplus : Subring R}
-    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a)
-    {T T' : Finset R} {s s' : R}
+    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) {T T' : Finset R} {s s' : R}
     (hT : IsOpen (Ideal.span (T : Set R) : Set R))
     (hT' : IsOpen (Ideal.span (T' : Set R) : Set R))
     (hle : spaBasicOpen Aplus T' s' ≤ spaBasicOpen Aplus T s)
@@ -264,8 +218,8 @@ private theorem rationalSectionRingEquiv_map_le (P : PairOfDefinition R) {Aplus 
     (continuous_rationalSectionRingEquiv P hAplus T' s' hT' hB').comp <|
       (presentationLimitMap (P := P) hle).hom.2.comp
         (continuous_rationalSectionRingEquiv_symm P hAplus T s hT hB)
-  have hg_eq : g = algebraMap B B' := by
-    refine hB.ringHom_ext_of_continuous hg_cont hc (RingHom.ext fun r ↦ ?_)
+  have hg_eq : g = algebraMap B B' :=
+    hB.ringHom_ext_of_continuous hg_cont hc <| RingHom.ext fun r ↦ by
     let x₀ := (topSectionRingEquiv P hAplus).symm r
     have hrB : algebraMap R B r =
         φB ((presentationLimitMap (P := P) (le_top : spaBasicOpen Aplus T s ≤ ⊤)).hom.1 x₀) := by
@@ -276,7 +230,7 @@ private theorem rationalSectionRingEquiv_map_le (P : PairOfDefinition R) {Aplus 
       RingEquiv.symm_apply_apply, presentationLimitMap_apply_presentationLimitMap_apply]
     rw [show φB' _ = _ from rationalSectionRingEquiv_map_top P hAplus T' s' hT' hB' x₀,
       RingEquiv.apply_symm_apply]
-  rw [← congrArg (fun k : B →+* B' ↦ k (φB z)) hg_eq]
+  rw [← congrArg (· (φB z)) hg_eq]
   simp [g]
 
 end Complete
@@ -298,24 +252,18 @@ private theorem existsUnique_presentationLimit_laurent [IsHuberRing R] [Decidabl
   have hsheafG : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa Aplus))
       (presentationLimitPresheaf P Aplus ⋙ TopCommRingCat.isCompleteSeparated.ι ⋙
         forget _root_.TopCommRingCat) :=
-    Presheaf.isSheaf_comp_of_isSheaf (Opens.grothendieckTopology _)
-      (presentationLimitPresheaf P Aplus ⋙ TopCommRingCat.isCompleteSeparated.ι)
-      (forget _root_.TopCommRingCat)
-      (Presheaf.isSheaf_comp_of_isSheaf (Opens.grothendieckTopology _)
-        (presentationLimitPresheaf P Aplus) TopCommRingCat.isCompleteSeparated.ι hsheaf)
+    Presheaf.isSheaf_comp_of_isSheaf _ _ (forget _root_.TopCommRingCat)
+      (Presheaf.isSheaf_comp_of_isSheaf _ (presentationLimitPresheaf P Aplus)
+        TopCommRingCat.isCompleteSeparated.ι hsheaf)
   let U : Bool → Opens ↥(spa Aplus) :=
     fun b ↦ b.rec (spaBasicOpen Aplus {1} f) (spaBasicOpen Aplus {f, 1} 1)
   have hcov : Sieve.ofArrows U (fun _ ↦ homOfLE le_top) ∈
-      Opens.grothendieckTopology ↥(spa Aplus) ⊤ := by
-    intro v _
+      Opens.grothendieckTopology ↥(spa Aplus) ⊤ := fun v _ ↦ by
     obtain ⟨b, hb⟩ := Set.mem_iUnion.mp (spa_subset_iUnion_laurentCover Aplus f v.2)
     refine ⟨U b, homOfLE le_top, Sieve.ofArrows_mk _ _ b, ?_⟩
     cases b <;> simpa [U, mem_spaBasicOpen, mem_rationalSubset_iff] using hb
-  have hfor : (Presieve.ofArrows U (fun _ ↦ homOfLE le_top)).IsSheafFor
-      (presentationLimitPresheaf P Aplus ⋙ TopCommRingCat.isCompleteSeparated.ι ⋙
-        forget _root_.TopCommRingCat) :=
-    (Presieve.isSheafFor_iff_generate _).mpr (hsheafG.isSheafFor _ hcov)
-  have hglue := (isSheafFor_ofArrows_iff_existsUnique_presentationLimitMap P
+  have hfor := (Presieve.isSheafFor_iff_generate _).mpr (hsheafG.isSheafFor _ hcov)
+  obtain ⟨a, ha, hu⟩ := (isSheafFor_ofArrows_iff_existsUnique_presentationLimitMap P
     (fun (b : Bool) ↦ (le_top : U b ≤ ⊤))).mp hfor (fun b ↦ b.rec x₂ x₁) fun i j ↦ by
     cases i <;> cases j
     · rfl
@@ -325,11 +273,7 @@ private theorem existsUnique_presentationLimit_laurent [IsHuberRing R] [Decidabl
         presentationLimitMap_apply_presentationLimitMap_apply] at h
     · exact hx
     · rfl
-  obtain ⟨a, ha, hu⟩ := hglue
-  refine ⟨a, ⟨ha true, ha false⟩, fun a' ⟨ha'₁, ha'₂⟩ ↦ hu a' fun b ↦ ?_⟩
-  cases b
-  · exact ha'₂
-  · exact ha'₁
+  exact ⟨a, ⟨ha true, ha false⟩, fun a' ⟨ha'₁, ha'₂⟩ ↦ hu a' fun b ↦ by cases b <;> assumption⟩
 
 /-- If a point `v ∈ R(T/s)` has maximal support `m = v.supp`, then `m` contracts from a prime ideal
 of any model `B` of `R⟨T/s⟩`. -/
@@ -340,28 +284,24 @@ private theorem exists_prime_comap_eq_of_mem_rationalSubset [IsHuberRing R]
     (hB : IsRationalCompletion P T s hT B) {v : Spv R}
     (hvb : v ∈ rationalSubset S.plus T s) (hm : v.supp.IsMaximal) :
     ∃ q : Ideal B, q.IsPrime ∧ q.comap (algebraMap R B) = v.supp := by
-  obtain ⟨e, -, -, hcomp⟩ := (isRationalCompletion_def P₀ T s hT B).mp
+  obtain ⟨e, -, -⟩ := (isRationalCompletion_iff_ratLoc P₀ T s hT B).mp
     (hB.congr_pairOfDefinition P₀)
   let hden := P₀.hasDenominatorPower_of_isOpen_span T s (Localization.Away s) hT
-  let _ := P₀.locUniformSpace T s _ hden
-  have _ := P₀.isUniformAddGroup_locUniformSpace T s _ hden
-  have _ := P₀.isTopologicalRing_locUniformSpace T s _ hden
+  have hcomp : e.toRingHom.comp (P₀.toCompletionLoc T s _ hden) = algebraMap R B :=
+    RingHom.ext fun a ↦ by simpa [algebraMap_ratLoc] using e.commutes a
   set J := Ideal.map (P₀.toCompletionLoc T s _ hden) v.supp
   have hne : Ideal.map (algebraMap R B) v.supp ≠ ⊤ := by
     rw [← hcomp, ← Ideal.map_map]
     intro htop
-    have hJle : Ideal.map e.toRingHom J ≤ Ideal.comap e.symm.toRingHom J :=
-      Ideal.map_le_iff_le_comap.mpr fun x hx ↦ by
-        change e.symm (e x) ∈ J
-        simpa using hx
-    rw [htop] at hJle
-    have h1 : (1 : B) ∈ Ideal.comap e.symm.toRingHom J := hJle Submodule.mem_top
+    have h1 : (1 : B) ∈ Ideal.comap e.symm.toRingHom J :=
+      (htop ▸ Ideal.map_le_iff_le_comap.mpr fun x hx ↦ by
+        change e.symm (e x) ∈ J; simpa using hx) Submodule.mem_top
     rw [Ideal.mem_comap, map_one] at h1
     exact map_supp_toCompletionLoc_ne_top P₀ S.plus hP₀ T s _ hden hvb
       ((Ideal.eq_top_iff_one J).mpr h1)
   obtain ⟨M, hMmax, hle⟩ := Ideal.exists_le_maximal _ hne
-  have hMprime : M.IsPrime := hMmax.isPrime
-  exact ⟨M, hMprime, (hm.eq_of_le (hMprime.comap _).ne_top (Ideal.map_le_iff_le_comap.mp hle)).symm⟩
+  exact ⟨M, hMmax.isPrime,
+    (hm.eq_of_le (hMmax.isPrime.comap _).ne_top (Ideal.map_le_iff_le_comap.mp hle)).symm⟩
 
 /-- Maximal-ideal prime contraction for a simple Laurent cover: every maximal ideal of `R` is the
 contraction of a prime ideal of `R₁ × R₂` via a point of `Spa(R, R⁺)`. -/
@@ -383,40 +323,17 @@ private theorem exists_prime_comap_eq_of_simpleLaurent [IsUniformAddGroup R] [Co
   obtain ⟨b, hb⟩ := Set.mem_iUnion.mp (spa_subset_iUnion_laurentCover S.plus f hv)
   cases b with
   | true =>
-    have hvb : v ∈ rationalSubset S.plus {f, 1} 1 := by
-      simpa [mem_rationalSubset_iff] using hb
-    obtain ⟨q, hq, hqm⟩ := exists_prime_comap_eq_of_mem_rationalSubset hP₀ h₁ hvb hm
-    refine ⟨q.comap (RingHom.fst R₁ R₂), hq.comap _, ?_⟩
-    rw [Ideal.comap_comap]
-    exact hqm
+    obtain ⟨q, hq, hqm⟩ := exists_prime_comap_eq_of_mem_rationalSubset hP₀ h₁
+      (by simpa [mem_rationalSubset_iff] using hb) hm
+    exact ⟨q.comap (RingHom.fst R₁ R₂), hq.comap _, by rw [Ideal.comap_comap]; exact hqm⟩
   | false =>
-    have hvb : v ∈ rationalSubset S.plus {1} f := by
-      simpa [mem_rationalSubset_iff] using hb
-    obtain ⟨q, hq, hqm⟩ := exists_prime_comap_eq_of_mem_rationalSubset hP₀ h₂ hvb hm
-    refine ⟨q.comap (RingHom.snd R₁ R₂), hq.comap _, ?_⟩
-    rw [Ideal.comap_comap]
-    exact hqm
+    obtain ⟨q, hq, hqm⟩ := exists_prime_comap_eq_of_mem_rationalSubset hP₀ h₂
+      (by simpa [mem_rationalSubset_iff] using hb) hm
+    exact ⟨q.comap (RingHom.snd R₁ R₂), hq.comap _, by rw [Ideal.comap_comap]; exact hqm⟩
 
 end Helpers
 
 section Main
-
-universe u
-
-private theorem exists_uniform_model {A : Type u} [CommRing A] [TopologicalSpace A]
-    [IsTopologicalRing A] (P : PairOfDefinition A) (T : Finset A) (s : A)
-    (hT : IsOpen (Ideal.span (T : Set A) : Set A))
-    {B : Type*} [CommRing B] [TopologicalSpace B] [Algebra A B]
-    (hB : IsRationalCompletion P T s hT B) :
-    ∃ (L : Type u) (_ : CommRing L) (_ : UniformSpace L) (_ : IsUniformAddGroup L)
-      (_ : IsTopologicalRing L) (_ : CompleteSpace L) (_ : T2Space L) (_ : IsHuberRing L)
-      (_ : Algebra A L) (e : L ≃ₐ[A] B),
-      IsRationalCompletion P T s hT L ∧ Continuous e ∧ Continuous e.symm := by
-  have hden := P.hasDenominatorPower_of_isOpen_span T s (Localization.Away s) hT
-  obtain ⟨e, he, he'⟩ := (isRationalCompletion_iff_ratLoc P T s hT B).mp hB
-  exact ⟨ratLoc P T s hden, inferInstance, inferInstance, inferInstance, inferInstance,
-    inferInstance, inferInstance, inferInstance, inferInstance, e,
-    isRationalCompletion_ratLoc P T s hT, he, he'⟩
 
 variable {R R₁ R₂ R₁₂ : Type*} [CommRing R] [CommRing R₁] [CommRing R₂] [CommRing R₁₂]
   [UniformSpace R] [IsUniformAddGroup R] [IsTopologicalRing R] [CompleteSpace R] [T2Space R]
@@ -477,62 +394,29 @@ theorem laurent_injective_and_exact_of_isSheafyForEveryPresentation [IsHuberRing
   set e₁ := rationalSectionRingEquiv P hSplus {f, 1} 1 hT₁ h₁
   set e₂ := rationalSectionRingEquiv P hSplus {1} f hT₂ h₂
   refine ⟨fun r₁ r₂ hr ↦ ?_, fun ⟨x₁, x₂⟩ ↦ ⟨fun hsub ↦ ?_, ?_⟩⟩
-  · have hr₁ : algebraMap R R₁ r₂ = algebraMap R R₁ r₁ := (congrArg Prod.fst hr).symm
-    have hr₂ : algebraMap R R₂ r₂ = algebraMap R R₂ r₁ := (congrArg Prod.snd hr).symm
-    have hglue := existsUnique_presentationLimit_laurent P hs f
+  · have hglue := existsUnique_presentationLimit_laurent P hs f
       (e₁.symm (algebraMap R R₁ r₁)) (e₂.symm (algebraMap R R₂ r₁))
       (presentationLimitMap_laurentInf_eq P hSplus f h₁ h₂ h₁₂ hc₁ hc₂ (by
         rw [← IsScalarTower.algebraMap_apply R R₁ R₁₂,
           ← IsScalarTower.algebraMap_apply R R₂ R₁₂]))
-    refine e₀.symm.injective (hglue.unique ⟨?_, ?_⟩ ⟨?_, ?_⟩)
-    · exact e₁.injective (by
-        rw [e₁.apply_symm_apply, rationalSectionRingEquiv_map_top, e₀.apply_symm_apply])
-    · exact e₂.injective (by
-        rw [e₂.apply_symm_apply, rationalSectionRingEquiv_map_top, e₀.apply_symm_apply])
-    · exact e₁.injective (by
-        rw [e₁.apply_symm_apply, rationalSectionRingEquiv_map_top, e₀.apply_symm_apply, hr₁])
-    · exact e₂.injective (by
-        rw [e₂.apply_symm_apply, rationalSectionRingEquiv_map_top, e₀.apply_symm_apply, hr₂])
+    refine e₀.symm.injective (hglue.unique
+      ⟨e₁.injective (by rw [e₁.apply_symm_apply, rationalSectionRingEquiv_map_top,
+         e₀.apply_symm_apply]),
+       e₂.injective (by rw [e₂.apply_symm_apply, rationalSectionRingEquiv_map_top,
+         e₀.apply_symm_apply])⟩
+      ⟨e₁.injective (by rw [e₁.apply_symm_apply, rationalSectionRingEquiv_map_top,
+         e₀.apply_symm_apply]; exact (congrArg Prod.fst hr).symm),
+       e₂.injective (by rw [e₂.apply_symm_apply, rationalSectionRingEquiv_map_top,
+         e₀.apply_symm_apply]; exact (congrArg Prod.snd hr).symm)⟩)
   · obtain ⟨a, ⟨ha₁, ha₂⟩, -⟩ := existsUnique_presentationLimit_laurent P hs f
       (e₁.symm x₁) (e₂.symm x₂)
       (presentationLimitMap_laurentInf_eq P hSplus f h₁ h₂ h₁₂ hc₁ hc₂ (sub_eq_zero.mp hsub))
     refine ⟨e₀ a, Prod.ext ?_ ?_⟩
-    · have h := congrArg e₁ ha₁
-      rwa [e₁.apply_symm_apply, rationalSectionRingEquiv_map_top] at h
-    · have h := congrArg e₂ ha₂
-      rwa [e₂.apply_symm_apply, rationalSectionRingEquiv_map_top] at h
+    · have h := congrArg e₁ ha₁; rwa [e₁.apply_symm_apply, rationalSectionRingEquiv_map_top] at h
+    · have h := congrArg e₂ ha₂; rwa [e₂.apply_symm_apply, rationalSectionRingEquiv_map_top] at h
   · rintro ⟨r, hr⟩
     rcases Prod.mk.inj hr with ⟨rfl, rfl⟩
     simp [← IsScalarTower.algebraMap_apply R R₁ R₁₂, ← IsScalarTower.algebraMap_apply R R₂ R₁₂]
-
-private theorem GlueingSquare.of_simpleLaurent_of_uniform
-    {L₁ L₂ L₁₂ : Type*} [CommRing L₁] [CommRing L₂] [CommRing L₁₂]
-    [UniformSpace L₁] [IsUniformAddGroup L₁] [IsTopologicalRing L₁]
-    [CompleteSpace L₁] [T2Space L₁] [IsHuberRing L₁]
-    [UniformSpace L₂] [IsUniformAddGroup L₂] [IsTopologicalRing L₂]
-    [CompleteSpace L₂] [T2Space L₂] [IsHuberRing L₂]
-    [UniformSpace L₁₂] [IsUniformAddGroup L₁₂] [IsTopologicalRing L₁₂]
-    [CompleteSpace L₁₂] [T2Space L₁₂] [IsHuberRing L₁₂]
-    [Algebra R L₁] [Algebra R L₂] [Algebra L₁ L₁₂] [Algebra L₂ L₁₂] [Algebra R L₁₂]
-    [IsScalarTower R L₁ L₁₂] [IsScalarTower R L₂ L₁₂]
-    [IsTateRing R] [DecidableEq R] (P : PairOfDefinition R)
-    (S : Pair R) (hs : IsSheafyForEveryPresentation S.plus) (f : R)
-    {hT₁ : IsOpen (Ideal.span (({f, 1} : Finset R) : Set R) : Set R)}
-    {hT₂ : IsOpen (Ideal.span (({1} : Finset R) : Set R) : Set R)}
-    {hT₁₂ : IsOpen (Ideal.span (({f * f, 1} : Finset R) : Set R) : Set R)}
-    (hL₁ : IsRationalCompletion P {f, 1} 1 hT₁ L₁)
-    (hL₂ : IsRationalCompletion P {1} f hT₂ L₂)
-    (hL₁₂ : IsRationalCompletion P {f * f, 1} f hT₁₂ L₁₂)
-    (hcL₁ : Continuous (algebraMap L₁ L₁₂)) (hcL₂ : Continuous (algebraMap L₂ L₁₂)) :
-    GlueingSquare R L₁ L₂ L₁₂ := by
-  obtain ⟨hinj, hexact⟩ :=
-    laurent_injective_and_exact_of_isSheafyForEveryPresentation S hs hL₁ hL₂ hL₁₂ hcL₁ hcL₂
-  exact GlueingSquare.of_exact hL₁.continuous_algebraMap hL₂.continuous_algebraMap hcL₁ hcL₂
-    hinj hexact
-    (hL₁.surjective_algebraMap_sub_laurent hL₂ hL₁₂ hcL₁ hcL₂)
-    (hL₂.denseRange_of_comp_algebraMap_eq hL₁₂
-      (RingHom.ext fun x ↦ (IsScalarTower.algebraMap_apply R L₂ L₁₂ x).symm))
-    (exists_prime_comap_eq_of_simpleLaurent P S hs f hL₁ hL₂)
 
 /-- A simple Laurent cover `{|f| ≤ 1}`, `{|f| ≥ 1}` of a complete Hausdorff Tate ring `R` equipped
 with a Huber pair `S` satisfying `IsSheafyForEveryPresentation S.plus` forms a `GlueingSquare`
@@ -547,10 +431,12 @@ theorem GlueingSquare.of_simpleLaurent [IsTateRing R] [DecidableEq R] {P : PairO
     (h₁₂ : IsRationalCompletion P {f * f, 1} f hT₁₂ R₁₂)
     (hc₁ : Continuous (algebraMap R₁ R₁₂)) (hc₂ : Continuous (algebraMap R₂ R₁₂)) :
     GlueingSquare R R₁ R₂ R₁₂ := by
-  obtain ⟨L₁, _, _, _, _, _, _, _, _, e₁, hL₁, he₁, he₁'⟩ := exists_uniform_model P {f, 1} 1 hT₁ h₁
-  obtain ⟨L₂, _, _, _, _, _, _, _, _, e₂, hL₂, he₂, he₂'⟩ := exists_uniform_model P {1} f hT₂ h₂
-  obtain ⟨L₁₂, _, _, _, _, _, _, _, _, e₁₂, hL₁₂, he₁₂, he₁₂'⟩ :=
-    exists_uniform_model P {f * f, 1} f hT₁₂ h₁₂
+  obtain ⟨e₁, he₁, he₁'⟩ := (isRationalCompletion_iff_ratLoc P {f, 1} 1 hT₁ R₁).mp h₁
+  obtain ⟨e₂, he₂, he₂'⟩ := (isRationalCompletion_iff_ratLoc P {1} f hT₂ R₂).mp h₂
+  obtain ⟨e₁₂, he₁₂, he₁₂'⟩ := (isRationalCompletion_iff_ratLoc P {f * f, 1} f hT₁₂ R₁₂).mp h₁₂
+  let L₁ := ratLoc P {f, 1} 1 (P.hasDenominatorPower_of_isOpen_span _ _ _ hT₁)
+  let L₂ := ratLoc P {1} f (P.hasDenominatorPower_of_isOpen_span _ _ _ hT₂)
+  let L₁₂ := ratLoc P {f * f, 1} f (P.hasDenominatorPower_of_isOpen_span _ _ _ hT₁₂)
   let _ : Algebra L₁ L₁₂ :=
     RingHom.toAlgebra (e₁₂.symm.toRingHom.comp ((algebraMap R₁ R₁₂).comp e₁.toRingHom))
   let _ : Algebra L₂ L₁₂ :=
@@ -563,15 +449,21 @@ theorem GlueingSquare.of_simpleLaurent [IsTateRing R] [DecidableEq R] {P : PairO
     change algebraMap R L₁₂ r = e₁₂.symm (algebraMap R₂ R₁₂ (e₂ (algebraMap R L₂ r)))
     rw [e₂.commutes, ← IsScalarTower.algebraMap_apply R R₂ R₁₂, ← e₁₂.commutes,
       AlgEquiv.symm_apply_apply]
+  have hL₁ := isRationalCompletion_ratLoc P {f, 1} 1 hT₁
+  have hL₂ := isRationalCompletion_ratLoc P {1} f hT₂
+  have hL₁₂ := isRationalCompletion_ratLoc P {f * f, 1} f hT₁₂
   have hcL₁ : Continuous (algebraMap L₁ L₁₂) := he₁₂'.comp (hc₁.comp he₁)
   have hcL₂ : Continuous (algebraMap L₂ L₁₂) := he₁₂'.comp (hc₂.comp he₂)
+  obtain ⟨hinj, hexact⟩ :=
+    laurent_injective_and_exact_of_isSheafyForEveryPresentation S hs hL₁ hL₂ hL₁₂ hcL₁ hcL₂
   have hsqL : GlueingSquare R L₁ L₂ L₁₂ :=
-    GlueingSquare.of_simpleLaurent_of_uniform P S hs f hL₁ hL₂ hL₁₂ hcL₁ hcL₂
-  refine hsqL.congr e₁ he₁ he₁' e₂ he₂ he₂' e₁₂ he₁₂ he₁₂' (fun x ↦ ?_) (fun x ↦ ?_)
-  · change e₁₂ (e₁₂.symm (algebraMap R₁ R₁₂ (e₁ x))) = algebraMap R₁ R₁₂ (e₁ x)
-    exact e₁₂.apply_symm_apply _
-  · change e₁₂ (e₁₂.symm (algebraMap R₂ R₁₂ (e₂ x))) = algebraMap R₂ R₁₂ (e₂ x)
-    exact e₁₂.apply_symm_apply _
+    GlueingSquare.of_exact hL₁.continuous_algebraMap hL₂.continuous_algebraMap hcL₁ hcL₂
+      hinj hexact (hL₁.surjective_algebraMap_sub_laurent hL₂ hL₁₂ hcL₁ hcL₂)
+      (hL₂.denseRange_of_comp_algebraMap_eq hL₁₂
+        (RingHom.ext fun x ↦ (IsScalarTower.algebraMap_apply R L₂ L₁₂ x).symm))
+      (exists_prime_comap_eq_of_simpleLaurent P S hs f hL₁ hL₂)
+  exact hsqL.congr e₁ he₁ he₁' e₂ he₂ he₂' e₁₂ he₁₂ he₁₂'
+    (fun x ↦ e₁₂.apply_symm_apply _) (fun x ↦ e₁₂.apply_symm_apply _)
 
 /-- Convenience form of `GlueingSquare.of_simpleLaurent` for any sheafy complete Hausdorff Tate
 ring `R`, using the canonical Huber pair `(R, R°)`. -/

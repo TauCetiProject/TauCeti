@@ -29,27 +29,21 @@ namespace TauCeti.Huber.RationalCompletionChecks
 /-- Any finite set containing `1` generates the unit ideal, which is open. -/
 theorem isOpen_span_of_one_mem {A : Type*} [CommRing A] [TopologicalSpace A] {T : Finset A}
     (h1 : (1 : A) ∈ T) : IsOpen (Ideal.span (T : Set A) : Set A) := by
-  have htop : Ideal.span (T : Set A) = ⊤ :=
-    Ideal.eq_top_of_isUnit_mem _ (Ideal.subset_span (Finset.mem_coe.mpr h1)) isUnit_one
-  rw [htop]
+  rw [Ideal.eq_top_of_isUnit_mem _ (Ideal.subset_span (Finset.mem_coe.mpr h1)) isUnit_one]
   exact isOpen_univ
 
-section DenomZero
-
-variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
-
 /-- **Degenerate denominator `0`**: `PUnit` is a model of `A⟨{1}/0⟩`. -/
-example (P : PairOfDefinition A) :
+example {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
+    (P : PairOfDefinition A) :
     IsRationalCompletion P {1} 0 (isOpen_span_of_one_mem (Finset.mem_singleton_self 1)) PUnit :=
   isRationalCompletion_of_subsingleton_denom_zero P {1} _ PUnit
 
 /-- **Degenerate denominator `0`**: conversely, every model of `A⟨{1}/0⟩` is a subsingleton. -/
-example (P : PairOfDefinition A) {B : Type*} [CommRing B] [TopologicalSpace B] [Algebra A B]
+example {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] (P : PairOfDefinition A)
+    {B : Type*} [CommRing B] [TopologicalSpace B] [Algebra A B]
     (h : IsRationalCompletion P {1} 0 (isOpen_span_of_one_mem (Finset.mem_singleton_self 1)) B) :
     Subsingleton B :=
   h.subsingleton_of_denom_zero
-
-end DenomZero
 
 section Padic
 
@@ -67,45 +61,28 @@ example :
   refine isRationalCompletion_self_denom_one (padicPair p) {(p : ℚ_[p]), 1} _ fun t ht ↦ ?_
   rcases Finset.mem_insert.mp ht with rfl | ht
   · exact (padicPair p).isBounded_ringOfDefinition.isPowerBounded_of_mem (natCast_mem _ p)
-  · rw [Finset.mem_singleton.mp ht]
-    exact isPowerBounded_one
+  · exact Finset.mem_singleton.mp ht ▸ isPowerBounded_one
 
 /-- **Sign check on Laurent surjectivity**: at `f = 1`, `B₁ = B₂ = B₁₂ = ℚ_[p]` all model their
 respective rational completions, and `surjective_algebraMap_sub_laurent` recovers surjectivity of
 `(x, y) ↦ x - y` on `ℚ_[p]`. -/
 example : Function.Surjective fun x : ℚ_[p] × ℚ_[p] ↦ x.1 - x.2 := by
   classical
-  let P := padicPair p
-  have h1 : ∀ t ∈ ({(1 : ℚ_[p]), 1} : Finset ℚ_[p]), IsPowerBounded t := by
-    intro t ht
-    rcases Finset.mem_insert.mp ht with rfl | ht
-    · exact isPowerBounded_one
-    · rw [Finset.mem_singleton.mp ht]
-      exact isPowerBounded_one
-  have h₁ : IsRationalCompletion P {(1 : ℚ_[p]), 1} 1 (isOpen_span_of_one_mem (by simp)) ℚ_[p] :=
-    isRationalCompletion_self_denom_one P _ _ h1
-  have h₂ : IsRationalCompletion P {1} 1 (isOpen_span_of_one_mem (by simp)) ℚ_[p] :=
-    isRationalCompletion_self_denom_one P _ _ fun t ht ↦ by
-      rw [Finset.mem_singleton.mp ht]; exact isPowerBounded_one
-  have h₁₂ : IsRationalCompletion P {(1 : ℚ_[p]) * 1, 1} 1
-      (isOpen_span_of_one_mem (by simp)) ℚ_[p] :=
-    isRationalCompletion_self_denom_one P _ _ fun t ht ↦ by
-      rcases Finset.mem_insert.mp ht with rfl | ht
-      · rw [mul_one]; exact isPowerBounded_one
-      · rw [Finset.mem_singleton.mp ht]; exact isPowerBounded_one
-  exact h₁.surjective_algebraMap_sub_laurent h₂ h₁₂ continuous_id continuous_id
+  have mk : ∀ {T : Finset ℚ_[p]} (h1 : (1 : ℚ_[p]) ∈ T), (∀ t ∈ T, t = 1) →
+      IsRationalCompletion (padicPair p) T 1 (isOpen_span_of_one_mem h1) ℚ_[p] :=
+    fun _ hT ↦ isRationalCompletion_self_denom_one _ _ _ fun t ht ↦ hT t ht ▸ isPowerBounded_one
+  exact (mk (T := {(1 : ℚ_[p]), 1}) (by simp) (by simp)).surjective_algebraMap_sub_laurent
+    (mk (T := {1}) (by simp) (by simp)) (mk (T := {(1 : ℚ_[p]) * 1, 1}) (by simp) (by simp))
+    continuous_id continuous_id
 
 /-- **Non-example**: `ℚ_[p] × ℚ_[p]` is not a model of `ℚ_[p]⟨{1}/1⟩`, since its two coordinate
 projections are distinct continuous `ℚ_[p]`-algebra homomorphisms into `ℚ_[p]`. -/
 example :
     ¬ IsRationalCompletion (padicPair p) {1} 1
-      (isOpen_span_of_one_mem (Finset.mem_singleton_self 1)) (ℚ_[p] × ℚ_[p]) := by
-  intro h
-  have heq : AlgHom.fst ℚ_[p] ℚ_[p] ℚ_[p] = AlgHom.snd ℚ_[p] ℚ_[p] ℚ_[p] :=
-    h.algHom_ext_of_continuous continuous_fst continuous_snd
-  have h10 : (1 : ℚ_[p]) = 0 :=
-    congrArg (fun φ : ℚ_[p] × ℚ_[p] →ₐ[ℚ_[p]] ℚ_[p] ↦ φ (1, 0)) heq
-  exact one_ne_zero h10
+      (isOpen_span_of_one_mem (Finset.mem_singleton_self 1)) (ℚ_[p] × ℚ_[p]) := fun h ↦
+  one_ne_zero (congrArg (fun φ : ℚ_[p] × ℚ_[p] →ₐ[ℚ_[p]] ℚ_[p] ↦ φ (1, 0))
+    (h.algHom_ext_of_continuous (f := AlgHom.fst ℚ_[p] ℚ_[p] ℚ_[p])
+      (g := AlgHom.snd ℚ_[p] ℚ_[p] ℚ_[p]) continuous_fst continuous_snd))
 
 end Padic
 

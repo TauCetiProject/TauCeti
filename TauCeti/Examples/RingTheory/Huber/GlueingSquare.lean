@@ -50,9 +50,7 @@ is not a glueing square, since `surjective_sub` fails outside the diagonal. -/
 example : ¬ GlueingSquare ℚ_[p] ℚ_[p] ℚ_[p] (ℚ_[p] × ℚ_[p]) := by
   intro h
   obtain ⟨⟨a, b⟩, hab⟩ := h.surjective_sub (1, 0)
-  have h1 : a - b = 1 := congrArg Prod.fst hab
-  have h0 : a - b = 0 := congrArg Prod.snd hab
-  exact one_ne_zero (h1.symm.trans h0)
+  exact one_ne_zero ((congrArg Prod.fst hab).symm.trans (congrArg Prod.snd hab))
 
 /-- **Flat module recovery**: on `GlueingSquare.id ℚ_[p]`, the rank-`2` vector space `ℚ_[p] × ℚ_[p]`
 is canonically isomorphic to the sections of its induced glueing datum. -/
@@ -62,8 +60,6 @@ noncomputable example :
   (glueingSquare_id_padic p).equivSectionsOfModule (ℚ_[p] × ℚ_[p])
 
 end Padic
-
-section ExactnessIndependence
 
 /-- **Independence of `exact_sub`**: with `R = ℤ` and `R₁ = R₂ = R₁₂ = ℤ[X]` (equipped with the
 discrete topology), `denseRange`, `surjective_sub`, and `exists_prime_comap_eq` all hold, yet
@@ -80,22 +76,13 @@ example :
       ¬ GlueingSquare ℤ ℤ[X] ℤ[X] ℤ[X] := by
   let _ : TopologicalSpace ℤ := ⊥
   let _ : TopologicalSpace ℤ[X] := ⊥
-  refine ⟨Function.surjective_id.denseRange, fun p ↦ ⟨(p, 0), by simp⟩, ?_, ?_⟩
-  · intro m hm
-    have : m.IsPrime := hm.isPrime
+  refine ⟨Function.surjective_id.denseRange, fun p ↦ ⟨(p, 0), by simp⟩, fun m hm ↦ ?_, fun h ↦ ?_⟩
+  · have := hm.isPrime
     let ev : ℤ[X] × ℤ[X] →+* ℤ := (evalRingHom 0).comp (RingHom.fst ℤ[X] ℤ[X])
-    refine ⟨m.comap ev, Ideal.IsPrime.comap ev, ?_⟩
-    ext a
-    simp [ev]
-  · intro h
-    obtain ⟨a, ha⟩ := (h.exact_sub (X, X)).mp (sub_self _)
+    exact ⟨m.comap ev, Ideal.IsPrime.comap ev, by ext a; simp [ev]⟩
+  · obtain ⟨a, ha⟩ := (h.exact_sub (X, X)).mp (sub_self _)
     have hcoeff := congrArg (fun p : ℤ[X] ↦ p.coeff 1) (congrArg Prod.fst ha)
-    rw [Polynomial.algebraMap_eq, Polynomial.coeff_C] at hcoeff
-    simp at hcoeff
-
-end ExactnessIndependence
-
-section CocycleCheck
+    rw [Polynomial.algebraMap_eq, Polynomial.coeff_C] at hcoeff; simp at hcoeff
 
 /-- **Positive section check**: `((1, 2), (1, 2))` satisfies the cocycle condition for the trivial
 glueing datum of `ℚ × ℚ` over `ℚ`. -/
@@ -114,10 +101,7 @@ example :
   intro hmem
   simp only [GlueingDatum.mem_sections_iff, GlueingDatum.ofModule_ψ₁_tmul,
     GlueingDatum.ofModule_ψ₂_tmul, one_smul] at hmem
-  have hpair := congrArg (TensorProduct.lid ℚ (ℚ × ℚ)) hmem
-  simp at hpair
-
-end CocycleCheck
+  simpa using congrArg (TensorProduct.lid ℚ (ℚ × ℚ)) hmem
 
 end TauCeti.Huber.GlueingSquareChecks
 

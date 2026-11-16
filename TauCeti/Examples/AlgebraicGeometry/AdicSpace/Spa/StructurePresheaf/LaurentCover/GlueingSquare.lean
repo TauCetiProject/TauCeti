@@ -34,23 +34,17 @@ namespace TauCeti.Huber.LaurentGlueingSquareChecks
 /-- Any finite set containing `1` generates the unit ideal, which is open. -/
 theorem isOpen_span_of_one_mem {A : Type*} [CommRing A] [TopologicalSpace A] {T : Finset A}
     (h1 : (1 : A) ∈ T) : IsOpen (Ideal.span (T : Set A) : Set A) := by
-  have htop : Ideal.span (T : Set A) = ⊤ :=
-    Ideal.eq_top_of_isUnit_mem _ (Ideal.subset_span (Finset.mem_coe.mpr h1)) isUnit_one
-  rw [htop]
+  rw [Ideal.eq_top_of_isUnit_mem _ (Ideal.subset_span (Finset.mem_coe.mpr h1)) isUnit_one]
   exact isOpen_univ
-
-section CanonicalModels
-
-variable {R : Type u} [CommRing R] [UniformSpace R] [IsUniformAddGroup R] [IsTopologicalRing R]
-  [IsTateRing R] [CompleteSpace R] [T2Space R]
 
 open Classical in
 /-- For any complete Hausdorff sheafy Tate ring `R`, pair of definition `P`, and `f : R`, there
 exist models `R₁`, `R₂`, `R₁₂` of `R⟨f, 1/1⟩`, `R⟨1/f⟩`, and `R⟨f², 1/f⟩` (constructed from
 `ratLoc` and `existsUnique_laurentLeftAlgHom` / `existsUnique_laurentRightAlgHom`) that form a
 `GlueingSquare`. -/
-theorem exists_simpleLaurent_glueingSquare (hs : IsSheafyRing R) (P : PairOfDefinition R)
-    (f : R) :
+theorem exists_simpleLaurent_glueingSquare {R : Type u} [CommRing R] [UniformSpace R]
+    [IsUniformAddGroup R] [IsTopologicalRing R] [IsTateRing R] [CompleteSpace R] [T2Space R]
+    (hs : IsSheafyRing R) (P : PairOfDefinition R) (f : R) :
     ∃ (R₁ R₂ R₁₂ : Type u) (_ : CommRing R₁) (_ : CommRing R₂) (_ : CommRing R₁₂)
       (_ : TopologicalSpace R₁) (_ : TopologicalSpace R₂) (_ : TopologicalSpace R₁₂)
       (_ : Algebra R R₁) (_ : Algebra R R₂) (_ : Algebra R R₁₂)
@@ -60,29 +54,18 @@ theorem exists_simpleLaurent_glueingSquare (hs : IsSheafyRing R) (P : PairOfDefi
         IsRationalCompletion P {1} f (isOpen_span_of_one_mem (by simp)) R₂ ∧
         IsRationalCompletion P {f * f, 1} f (isOpen_span_of_one_mem (by simp)) R₁₂ ∧
         GlueingSquare R R₁ R₂ R₁₂ := by
-  let T₁ : Finset R := {f, 1}
-  let T₂ : Finset R := {1}
-  let T₁₂ : Finset R := {f * f, 1}
-  have hT₁ : IsOpen (Ideal.span (T₁ : Set R) : Set R) := isOpen_span_of_one_mem (by simp [T₁])
-  have hT₂ : IsOpen (Ideal.span (T₂ : Set R) : Set R) := isOpen_span_of_one_mem (by simp [T₂])
-  have hT₁₂ : IsOpen (Ideal.span (T₁₂ : Set R) : Set R) := isOpen_span_of_one_mem (by simp [T₁₂])
-  let h₁ := isRationalCompletion_ratLoc P T₁ 1 hT₁
-  let h₂ := isRationalCompletion_ratLoc P T₂ f hT₂
-  let h₁₂ := isRationalCompletion_ratLoc P T₁₂ f hT₁₂
-  let ρ₁ := (h₁.existsUnique_laurentLeftAlgHom h₁₂).choose
-  let ρ₂ := (h₂.existsUnique_laurentRightAlgHom h₁₂).choose
-  let _ := ρ₁.toRingHom.toAlgebra
-  let _ := ρ₂.toRingHom.toAlgebra
-  have hc₁ := (h₁.existsUnique_laurentLeftAlgHom h₁₂).choose_spec.1
-  have hc₂ := (h₂.existsUnique_laurentRightAlgHom h₁₂).choose_spec.1
+  let h₁ := isRationalCompletion_ratLoc P {f, 1} 1 (isOpen_span_of_one_mem (by simp))
+  let h₂ := isRationalCompletion_ratLoc P {1} f (isOpen_span_of_one_mem (by simp))
+  let h₁₂ := isRationalCompletion_ratLoc P {f * f, 1} f (isOpen_span_of_one_mem (by simp))
+  obtain ⟨ρ₁, hc₁, -⟩ := h₁.existsUnique_laurentLeftAlgHom h₁₂
+  obtain ⟨ρ₂, hc₂, -⟩ := h₂.existsUnique_laurentRightAlgHom h₁₂
+  let _ := ρ₁.toRingHom.toAlgebra; let _ := ρ₂.toRingHom.toAlgebra
   have _ := IsScalarTower.of_algebraMap_eq fun r ↦ (ρ₁.commutes r).symm
   have _ := IsScalarTower.of_algebraMap_eq fun r ↦ (ρ₂.commutes r).symm
   exact ⟨_, _, _, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance,
     inferInstance, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance,
     inferInstance, inferInstance, h₁, h₂, h₁₂,
     GlueingSquare.of_simpleLaurent_of_isSheafyRing hs h₁ h₂ h₁₂ hc₁ hc₂⟩
-
-end CanonicalModels
 
 section ConcreteTateRings
 
@@ -125,13 +108,11 @@ example :
         GlueingSquare A R₁ R₂ R₁₂ ∧
         Nonempty ((A × A) ≃ₗ[A] (GlueingDatum.ofModule R₁ R₂ R₁₂ A (A × A)).sections A) := by
   let A := restrictedMvPowerSeriesCompletion 1 ℚ_[p]
-  let X : A := Pair.polydiscVar 1 ℚ_[p] 0
-  let P := (IsHuberRing.nonempty_pairOfDefinition (A := A)).some
-  have hs : IsSheafyRing A :=
-    ((IsStronglySheafy.of_isStronglyNoetherian (A := ℚ_[p])).restrictedMvPowerSeriesCompletion
-      1).isSheafyRing
   obtain ⟨R₁, R₂, R₁₂, _, _, _, _, _, _, _, _, _, _, _, _, _, h₁, h₂, h₁₂, hsq⟩ :=
-    exists_simpleLaurent_glueingSquare hs P X
+    exists_simpleLaurent_glueingSquare
+      ((IsStronglySheafy.of_isStronglyNoetherian (A := ℚ_[p])).restrictedMvPowerSeriesCompletion
+        1).isSheafyRing
+      (IsHuberRing.nonempty_pairOfDefinition (A := A)).some (Pair.polydiscVar 1 ℚ_[p] 0)
   exact ⟨R₁, R₂, R₁₂, ‹_›, ‹_›, ‹_›, ‹_›, ‹_›, ‹_›, ‹_›, ‹_›, ‹_›, ‹_›, ‹_›, ‹_›, ‹_›,
     h₁, h₂, h₁₂, hsq, ⟨hsq.equivSectionsOfModule (A × A)⟩⟩
 
