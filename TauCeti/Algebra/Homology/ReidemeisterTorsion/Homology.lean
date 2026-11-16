@@ -48,7 +48,7 @@ denotes the determinant of the basis `x` with respect to the basis `y`.
 The bracket is defined for complexes of any shape, in a degree `j` between a previous degree `i`
 and a next degree `k`, so that it also gives the torsion with based homology of a two-periodic
 complex, `HomologicalComplex.parityTorsionWithHomology` in
-`TauCeti.Algebra.Homology.ReidemeisterTorsion.PeriodicHomology`.
+`TauCeti.Algebra.Homology.ReidemeisterTorsion.Periodic.Homology`.
 
 ## Main declarations
 

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.ReidemeisterTorsion.Homology
-public import TauCeti.Algebra.Homology.ReidemeisterTorsion.Periodic
+public import TauCeti.Algebra.Homology.ReidemeisterTorsion.Periodic.Basic
 
 /-!
 # The torsion of a based two-periodic complex with based homology
