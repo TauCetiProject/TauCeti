@@ -190,27 +190,6 @@ variable {ι : Type*} [Fintype ι] {c a : ι → ℂ} {J : ι → ℝ → M → 
   {hJ : ∀ i t x, ω.Tames (J i t x)} {Jout : ℝ → M → AlmostComplexStructure V}
   {hJout : ∀ t x, ω.Tames (Jout t x)}
 
-omit [Fintype ι] in
-/-- If the discs `‖w - c j‖ < ‖a j‖ / 2` are pairwise disjoint, a point of the disc of the input `i`
-lies off the support of the input end structure of every other input `j`. -/
-private theorem le_norm_sub_of_norm_sub_lt
-    (hsep : Pairwise fun i j => ‖a i‖ / 2 + ‖a j‖ / 2 ≤ ‖c i - c j‖) {i j : ι} (hji : j ≠ i)
-    {w : ℂ} (hw : ‖w - c i‖ < ‖a i‖ / 2) : ‖a j‖ * Real.exp (-(2 * π)) / 2 ≤ ‖w - c j‖ := by
-  have hnot : w ∉ Metric.ball (c j) (‖a j‖ / 2) :=
-    (Metric.ball_disjoint_ball (x := c i) (y := c j) (by rw [dist_eq_norm]; exact hsep hji.symm)
-      ).notMem_of_mem_left (by rwa [Metric.mem_ball, dist_eq_norm])
-  have he : Real.exp (-(2 * π)) < 1 := Real.exp_lt_one_iff.2 (by linarith [Real.pi_pos])
-  rw [Metric.mem_ball, dist_eq_norm, not_lt] at hnot
-  nlinarith [norm_nonneg (a j)]
-
-omit [Fintype ι] in
-/-- If the discs `‖w - c j‖ < ‖a j‖ / 2` lie in the disc `‖w‖ ≤ 2 exp (2π)`, so does a point of the
-disc of the input `i`. -/
-private theorem norm_le_of_norm_sub_lt (hout : ∀ i, ‖c i‖ + ‖a i‖ / 2 ≤ 2 * Real.exp (2 * π))
-    {i : ι} {w : ℂ} (hw : ‖w - c i‖ < ‖a i‖ / 2) : ‖w‖ ≤ 2 * Real.exp (2 * π) := by
-  calc ‖w‖ ≤ ‖c i‖ + ‖w - c i‖ := by simpa using norm_add_le (c i) (w - c i)
-    _ ≤ 2 * Real.exp (2 * π) := by linarith [hout i]
-
 /-- On the disc of the input `i`, the sum of the Cayley transforms of the input end structures and
 of the negative plane structure is the Cayley transform of the input end structure of `i`. -/
 private theorem sum_cayley_eq_of_norm_sub_lt (h₀ : ω.Compatible J₀)
@@ -221,7 +200,9 @@ private theorem sum_cayley_eq_of_norm_sub_lt (h₀ : ω.Compatible J₀)
         J₀.cayley (negativePlaneAlmostComplex h₀ Jout hJout w x) =
       J₀.cayley (inputEndAlmostComplex h₀ (c i) (a i) (J i) (hJ i) w x) := by
   rw [Finset.sum_eq_single i (fun j _ hj => by
-      rw [inputEndAlmostComplex_eq_of_le_norm_sub h₀ (le_norm_sub_of_norm_sub_lt hsep hj hw),
+      have h := le_norm_sub_of_norm_sub_lt hsep hj hw
+      rw [inputEndAlmostComplex_eq_of_le_norm_sub h₀
+          (by nlinarith [norm_nonneg (a j), exp_neg_two_pi_lt_one]),
         AlmostComplexStructure.cayley_self]) (by simp),
     negativePlaneAlmostComplex_eq_of_norm_le h₀ (norm_le_of_norm_sub_lt hout hw),
     AlmostComplexStructure.cayley_self, add_zero]
@@ -248,8 +229,8 @@ private theorem sum_cayley_mem (h₀ : ω.Compatible J₀)
       J₀.cayley (negativePlaneAlmostComplex h₀ Jout hJout w x) ∈ s := by
   by_cases h : ∃ i, ‖w - c i‖ < ‖a i‖ * Real.exp (-(2 * π)) / 2
   · obtain ⟨i, hi⟩ := h
-    have he : Real.exp (-(2 * π)) < 1 := Real.exp_lt_one_iff.2 (by linarith [Real.pi_pos])
-    have hi' : ‖w - c i‖ < ‖a i‖ / 2 := hi.trans_le (by nlinarith [norm_nonneg (a i)])
+    have hi' : ‖w - c i‖ < ‖a i‖ / 2 :=
+      hi.trans_le (by nlinarith [norm_nonneg (a i), exp_neg_two_pi_lt_one])
     rw [sum_cayley_eq_of_norm_sub_lt h₀ hsep hout hi' x]
     exact hin i w x
   · push Not at h
@@ -453,15 +434,7 @@ theorem contMDiffAt_inputEndAlmostComplex (h₀ : ω.Compatible J₀) {n : ℕ�
   refine h₀.contMDiffAt_of_contMDiffAt_cayley (fun _ => tames_inputEndAlmostComplex h₀ _ _) ?_
   simp only [cayley_inputEndAlmostComplex, map_smul]
   -- The point `w' = (w - c) / a` of the end at `0` depends smoothly on `(c, a, w)` for `a ≠ 0`.
-  have hcoord : ContDiffAt ℝ n (fun q : (ℂ × ℂ) × ℂ => (q.2 - q.1.1) / q.1.2) ((c, a), w) := by
-    have h : ContDiffAt ℂ n (fun q : (ℂ × ℂ) × ℂ => (q.2 - q.1.1) / q.1.2) ((c, a), w) := by
-      refine ContDiffAt.div (x := ((c, a), w)) (f := fun q : (ℂ × ℂ) × ℂ => q.2 - q.1.1)
-        (g := fun q : (ℂ × ℂ) × ℂ => q.1.2) ?_ ?_ ha <;> fun_prop
-    exact h.restrict_scalars ℝ
-  have hcoordM : ContMDiffAt (𝓘(ℝ, ℂ × ℂ).prod (𝓘(ℝ, ℂ).prod I)) 𝓘(ℝ, ℂ) n
-      (fun p : (ℂ × ℂ) × (ℂ × M) => (p.2.1 - p.1.1) / p.1.2) ((c, a), (w, x)) :=
-    hcoord.contMDiffAt.comp (f := fun p : (ℂ × ℂ) × (ℂ × M) => (p.1, p.2.1)) ((c, a), (w, x))
-      (contMDiffAt_fst.prodMk_space (contMDiffAt_fst.comp _ contMDiffAt_snd))
+  have hcoordM := contMDiffAt_sub_div (I := I) (n := n) (c := c) (w := w) ha x
   have hw' : (w - c) / a ≠ zero.endCenter := by
     rw [endCenter_zero]
     exact div_ne_zero (sub_ne_zero.2 hw) ha
