@@ -8,7 +8,7 @@ module
 public import TauCeti.Topology.VectorBundle.SphereBundle.Basic
 public import TauCeti.AlgebraicTopology.Cohomology.Excision
 import TauCeti.Analysis.Normed.Module.Ball.Radial.Push
-import TauCeti.Topology.ContinuousMap.GlueClosedEmbeddings
+import TauCeti.Topology.ContinuousMap.Glue.ClosedEmbeddings
 import TauCeti.Topology.VectorBundle.Smul
 
 /-!

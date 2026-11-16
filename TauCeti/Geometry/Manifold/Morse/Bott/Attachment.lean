@@ -14,7 +14,7 @@ import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Logic.Equiv.PartialEquiv
 import TauCeti.Topology.Compactness.LocallyCompact
 import TauCeti.Topology.ContinuousMap.ApplyProdMk
-import TauCeti.Topology.ContinuousMap.GlueDisjointOpen
+import TauCeti.Topology.ContinuousMap.Glue.DisjointOpen
 import TauCeti.Topology.Homotopy.DeformationRetract
 
 /-!
