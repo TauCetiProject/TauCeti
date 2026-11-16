@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.FocusFocus
 public import TauCeti.Geometry.Symplectic.Hamiltonian.SphericalPendulum
 public import TauCeti.Geometry.Symplectic.StandardCompatible
 import TauCeti.Analysis.Calculus.Bilinear
+import TauCeti.Analysis.Calculus.FDeriv.Norm
 import TauCeti.Analysis.Calculus.Morse.NormSq
 import TauCeti.Analysis.Calculus.Morse.Prod
 import TauCeti.Analysis.Calculus.Morse.ScalarComposition
@@ -289,15 +290,8 @@ private theorem hasFDerivAt_position {z : EuclideanSpace ℝ (Fin 2) × Euclidea
     (hz : ‖z.1‖ < 1) :
     HasFDerivAt (fun z ↦ (sphericalPendulumUpperParam z).1)
       ((positionFDeriv z.1).comp (ContinuousLinearMap.fst ℝ _ _)) z := by
-  have hs := (sqrt_one_sub_norm_sq_pos hz).ne'
-  have hsq : HasFDerivAt (fun y : EuclideanSpace ℝ (Fin 2) ↦ √(1 - ‖y‖ ^ 2))
-      ((-(√(1 - ‖z.1‖ ^ 2))⁻¹) • innerSL ℝ z.1) z.1 := by
-    convert ((hasStrictFDerivAt_norm_sq z.1).hasFDerivAt.const_sub 1).sqrt
-      (Real.sqrt_pos.1 (sqrt_one_sub_norm_sq_pos hz)).ne' using 1
-    ext v
-    simp only [neg_smul, neg_apply, smul_apply, coe_innerSL_apply, smul_eq_mul, one_div,
-      mul_inv_rev, smul_neg, nsmul_eq_mul, Nat.cast_ofNat, neg_inj]
-    field_simp
+  have hsq := hasFDerivAt_sqrt_sub_norm_sq (a := 1)
+    (Real.sqrt_pos.1 (sqrt_one_sub_norm_sq_pos hz)).ne'
   exact ((((EuclideanSpace.proj 0 : EuclideanSpace ℝ (Fin 2) →L[ℝ] ℝ).hasFDerivAt.smul_const _).add
     ((EuclideanSpace.proj 1 : EuclideanSpace ℝ (Fin 2) →L[ℝ] ℝ).hasFDerivAt.smul_const _)).add
     (hsq.smul_const _)).comp z hasFDerivAt_fst
