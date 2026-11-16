@@ -82,29 +82,24 @@ def chamberCurryEquiv (S : Type*) [CommRing S] (Λ : Type*) [AddCommMonoid Λ] :
     LaurentPolynomial (AddMonoidAlgebra S Λ) ≃ₐ[S] ChamberAlgebra S Λ :=
   (AddMonoidAlgebra.curryAlgEquiv S).symm
 
-@[simp]
-theorem chamberCurryEquiv_C_mul_T_single (n : ℤ) (l : Λ) (s : S) :
+@[simp] theorem chamberCurryEquiv_C_mul_T_single (n : ℤ) (l : Λ) (s : S) :
     chamberCurryEquiv S Λ
         (LaurentPolynomial.C (AddMonoidAlgebra.single l s) * LaurentPolynomial.T n) =
       AddMonoidAlgebra.single (n, l) s := by
-  rw [← LaurentPolynomial.single_eq_C_mul_T]
-  exact AddMonoidAlgebra.curryAlgEquiv_symm_single n l s
+  rw [← LaurentPolynomial.single_eq_C_mul_T]; exact AddMonoidAlgebra.curryAlgEquiv_symm_single n l s
 
-@[simp]
-theorem chamberCurryEquiv_C_single (l : Λ) (s : S) :
+@[simp] theorem chamberCurryEquiv_C_single (l : Λ) (s : S) :
     chamberCurryEquiv S Λ (LaurentPolynomial.C (AddMonoidAlgebra.single l s)) =
       AddMonoidAlgebra.single (0, l) s := by
   simpa using chamberCurryEquiv_C_mul_T_single 0 l s
 
-@[simp]
-theorem chamberCurryEquiv_T (n : ℤ) :
+@[simp] theorem chamberCurryEquiv_T (n : ℤ) :
     chamberCurryEquiv S Λ (LaurentPolynomial.T n) = AddMonoidAlgebra.single (n, 0) 1 := by
   have h1 : (1 : AddMonoidAlgebra S Λ) = AddMonoidAlgebra.single 0 1 := rfl
   rw [← one_mul (LaurentPolynomial.T n), ← map_one LaurentPolynomial.C, h1,
     chamberCurryEquiv_C_mul_T_single]
 
-@[simp]
-theorem coeff_chamberCurryEquiv (f : LaurentPolynomial (AddMonoidAlgebra S Λ)) (p : ℤ × Λ) :
+@[simp] theorem coeff_chamberCurryEquiv (f : LaurentPolynomial (AddMonoidAlgebra S Λ)) (p : ℤ × Λ) :
     (chamberCurryEquiv S Λ f).coeff p = (f.coeff p.1).coeff p.2 := by
   induction f using AddMonoidAlgebra.induction_linear with
   | zero => simp
@@ -137,50 +132,38 @@ def gradedChamberRight (q : AddMonoidAlgebra S Λ) :
 
 theorem gradedChamberLeft_apply (q : AddMonoidAlgebra S Λ)
     (z : SlabAlgebra (AddMonoidAlgebra S Λ) q) :
-    gradedChamberLeft q z = chamberCurryEquiv S Λ (chamberLeft q z) :=
-  (rfl)
+    gradedChamberLeft q z = chamberCurryEquiv S Λ (chamberLeft q z) := (rfl)
 
 theorem gradedChamberRight_apply (q : AddMonoidAlgebra S Λ)
     (z : SlabAlgebra (AddMonoidAlgebra S Λ) q) :
-    gradedChamberRight q z = chamberCurryEquiv S Λ (chamberRight q z) :=
-  (rfl)
+    gradedChamberRight q z = chamberCurryEquiv S Λ (chamberRight q z) := (rfl)
 
-@[simp]
-theorem gradedChamberLeft_algebraMap_single (q : AddMonoidAlgebra S Λ) (l : Λ) (s : S) :
-    gradedChamberLeft q
-        (algebraMap (AddMonoidAlgebra S Λ) (SlabAlgebra (AddMonoidAlgebra S Λ) q)
-          (AddMonoidAlgebra.single l s)) =
-      AddMonoidAlgebra.single (0, l) s := by
+@[simp] theorem gradedChamberLeft_algebraMap_single (q : AddMonoidAlgebra S Λ) (l : Λ) (s : S) :
+    gradedChamberLeft q (algebraMap (AddMonoidAlgebra S Λ) (SlabAlgebra (AddMonoidAlgebra S Λ) q)
+        (AddMonoidAlgebra.single l s)) = AddMonoidAlgebra.single (0, l) s := by
   rw [gradedChamberLeft_apply, AlgHom.commutes, ← LaurentPolynomial.C_eq_algebraMap,
     chamberCurryEquiv_C_single]
 
-@[simp]
-theorem gradedChamberRight_algebraMap_single (q : AddMonoidAlgebra S Λ) (l : Λ) (s : S) :
-    gradedChamberRight q
-        (algebraMap (AddMonoidAlgebra S Λ) (SlabAlgebra (AddMonoidAlgebra S Λ) q)
-          (AddMonoidAlgebra.single l s)) =
-      AddMonoidAlgebra.single (0, l) s := by
+@[simp] theorem gradedChamberRight_algebraMap_single (q : AddMonoidAlgebra S Λ) (l : Λ) (s : S) :
+    gradedChamberRight q (algebraMap (AddMonoidAlgebra S Λ) (SlabAlgebra (AddMonoidAlgebra S Λ) q)
+        (AddMonoidAlgebra.single l s)) = AddMonoidAlgebra.single (0, l) s := by
   rw [gradedChamberRight_apply, AlgHom.commutes, ← LaurentPolynomial.C_eq_algebraMap,
     chamberCurryEquiv_C_single]
 
-@[simp]
-theorem gradedChamberLeft_X_pow (q : AddMonoidAlgebra S Λ) (a : ℕ) :
+@[simp] theorem gradedChamberLeft_X_pow (q : AddMonoidAlgebra S Λ) (a : ℕ) :
     gradedChamberLeft q (X q ^ a) = AddMonoidAlgebra.single ((a : ℤ), 0) 1 := by
   rw [gradedChamberLeft_apply, chamberLeft_X_pow, chamberCurryEquiv_T]
 
-@[simp]
-theorem gradedChamberRight_Y_pow (q : AddMonoidAlgebra S Λ) (a : ℕ) :
+@[simp] theorem gradedChamberRight_Y_pow (q : AddMonoidAlgebra S Λ) (a : ℕ) :
     gradedChamberRight q (Y q ^ a) = AddMonoidAlgebra.single ((a : ℤ), 0) 1 := by
   rw [gradedChamberRight_apply, chamberRight_Y_pow, chamberCurryEquiv_T]
 
-@[simp]
-theorem gradedChamberRight_swap (q : AddMonoidAlgebra S Λ)
+@[simp] theorem gradedChamberRight_swap (q : AddMonoidAlgebra S Λ)
     (z : SlabAlgebra (AddMonoidAlgebra S Λ) q) :
     gradedChamberRight q (swap q z) = gradedChamberLeft q z := by
   rw [gradedChamberRight_apply, chamberRight_swap, gradedChamberLeft_apply]
 
-@[simp]
-theorem gradedChamberLeft_swap (q : AddMonoidAlgebra S Λ)
+@[simp] theorem gradedChamberLeft_swap (q : AddMonoidAlgebra S Λ)
     (z : SlabAlgebra (AddMonoidAlgebra S Λ) q) :
     gradedChamberLeft q (swap q z) = gradedChamberRight q z := by
   rw [gradedChamberLeft_apply, chamberLeft_swap, gradedChamberRight_apply]
@@ -196,83 +179,58 @@ theorem gradedChamberLeft_prod_gradedChamberRight_injective (q : AddMonoidAlgebr
 
 /-! ### Homogeneous lifts and `GradedCorrespondence` -/
 
+private theorem algebraMap_single_mul (q : AddMonoidAlgebra S Λ) (l : Λ) (r s : S) :
+    algebraMap (AddMonoidAlgebra S Λ) (SlabAlgebra (AddMonoidAlgebra S Λ) q)
+        (AddMonoidAlgebra.single l (r * s)) =
+      r • algebraMap (AddMonoidAlgebra S Λ) (SlabAlgebra (AddMonoidAlgebra S Λ) q)
+        (AddMonoidAlgebra.single l s) := by
+  rw [← smul_eq_mul, ← AddMonoidAlgebra.smul_single]
+  exact map_smul (IsScalarTower.toAlgHom S (AddMonoidAlgebra S Λ)
+    (SlabAlgebra (AddMonoidAlgebra S Λ) q)) r _
+
 /-- `S`-linear incoming left lift on the `p`-th homogeneous piece of `ChamberAlgebra S Λ`, sending
 `single p s` to `s z^{p.2} X^{p.1.toNat}`. -/
 def liftGradeLeft (q : AddMonoidAlgebra S Λ) (p : ℤ × Λ) :
     AddMonoidAlgebra.grade S p →ₗ[S] SlabAlgebra (AddMonoidAlgebra S Λ) q where
-  toFun u :=
-    algebraMap (AddMonoidAlgebra S Λ) (SlabAlgebra (AddMonoidAlgebra S Λ) q)
-      (AddMonoidAlgebra.single p.2 (u.1.coeff p)) * X q ^ p.1.toNat
-  map_add' u v := by
-    simp [add_mul]
-  map_smul' r u := by
-    have hsmul : AddMonoidAlgebra.single p.2 (r * u.1.coeff p) =
-        r • AddMonoidAlgebra.single p.2 (u.1.coeff p) := by
-      rw [AddMonoidAlgebra.smul_single, smul_eq_mul]
-    have htower : algebraMap (AddMonoidAlgebra S Λ) (SlabAlgebra (AddMonoidAlgebra S Λ) q)
-        (r • AddMonoidAlgebra.single p.2 (u.1.coeff p)) =
-        r • algebraMap (AddMonoidAlgebra S Λ) (SlabAlgebra (AddMonoidAlgebra S Λ) q)
-          (AddMonoidAlgebra.single p.2 (u.1.coeff p)) :=
-      map_smul (IsScalarTower.toAlgHom S (AddMonoidAlgebra S Λ)
-        (SlabAlgebra (AddMonoidAlgebra S Λ) q)) r _
-    simp only [Submodule.coe_smul_of_tower, AddMonoidAlgebra.coeff_smul_apply, smul_eq_mul, hsmul,
-      RingHom.id_apply, htower, smul_mul_assoc]
+  toFun u := algebraMap (AddMonoidAlgebra S Λ) (SlabAlgebra (AddMonoidAlgebra S Λ) q)
+    (AddMonoidAlgebra.single p.2 (u.1.coeff p)) * X q ^ p.1.toNat
+  map_add' _ _ := by simp [add_mul]
+  map_smul' _ _ := by simp [algebraMap_single_mul, smul_mul_assoc]
 
 /-- `S`-linear incoming right lift on the `p`-th homogeneous piece of `ChamberAlgebra S Λ`, sending
 `single p s` to `s z^{p.2} Y^{p.1.toNat}`. -/
 def liftGradeRight (q : AddMonoidAlgebra S Λ) (p : ℤ × Λ) :
     AddMonoidAlgebra.grade S p →ₗ[S] SlabAlgebra (AddMonoidAlgebra S Λ) q where
-  toFun u :=
-    algebraMap (AddMonoidAlgebra S Λ) (SlabAlgebra (AddMonoidAlgebra S Λ) q)
-      (AddMonoidAlgebra.single p.2 (u.1.coeff p)) * Y q ^ p.1.toNat
-  map_add' u v := by
-    simp [add_mul]
-  map_smul' r u := by
-    have hsmul : AddMonoidAlgebra.single p.2 (r * u.1.coeff p) =
-        r • AddMonoidAlgebra.single p.2 (u.1.coeff p) := by
-      rw [AddMonoidAlgebra.smul_single, smul_eq_mul]
-    have htower : algebraMap (AddMonoidAlgebra S Λ) (SlabAlgebra (AddMonoidAlgebra S Λ) q)
-        (r • AddMonoidAlgebra.single p.2 (u.1.coeff p)) =
-        r • algebraMap (AddMonoidAlgebra S Λ) (SlabAlgebra (AddMonoidAlgebra S Λ) q)
-          (AddMonoidAlgebra.single p.2 (u.1.coeff p)) :=
-      map_smul (IsScalarTower.toAlgHom S (AddMonoidAlgebra S Λ)
-        (SlabAlgebra (AddMonoidAlgebra S Λ) q)) r _
-    simp only [Submodule.coe_smul_of_tower, AddMonoidAlgebra.coeff_smul_apply, smul_eq_mul, hsmul,
-      RingHom.id_apply, htower, smul_mul_assoc]
+  toFun u := algebraMap (AddMonoidAlgebra S Λ) (SlabAlgebra (AddMonoidAlgebra S Λ) q)
+    (AddMonoidAlgebra.single p.2 (u.1.coeff p)) * Y q ^ p.1.toNat
+  map_add' _ _ := by simp [add_mul]
+  map_smul' _ _ := by simp [algebraMap_single_mul, smul_mul_assoc]
 
 theorem liftGradeLeft_apply (q : AddMonoidAlgebra S Λ) (p : ℤ × Λ)
     (u : AddMonoidAlgebra.grade S p) :
     liftGradeLeft q p u =
       algebraMap (AddMonoidAlgebra S Λ) (SlabAlgebra (AddMonoidAlgebra S Λ) q)
-        (AddMonoidAlgebra.single p.2 (u.1.coeff p)) * X q ^ p.1.toNat :=
-  (rfl)
+        (AddMonoidAlgebra.single p.2 (u.1.coeff p)) * X q ^ p.1.toNat := (rfl)
 
 theorem liftGradeRight_apply (q : AddMonoidAlgebra S Λ) (p : ℤ × Λ)
     (u : AddMonoidAlgebra.grade S p) :
     liftGradeRight q p u =
       algebraMap (AddMonoidAlgebra S Λ) (SlabAlgebra (AddMonoidAlgebra S Λ) q)
-        (AddMonoidAlgebra.single p.2 (u.1.coeff p)) * Y q ^ p.1.toNat :=
-  (rfl)
+        (AddMonoidAlgebra.single p.2 (u.1.coeff p)) * Y q ^ p.1.toNat := (rfl)
 
-@[simp]
-theorem liftGradeLeft_single (q : AddMonoidAlgebra S Λ) (p : ℤ × Λ) (s : S) :
+@[simp] theorem liftGradeLeft_single (q : AddMonoidAlgebra S Λ) (p : ℤ × Λ) (s : S) :
     liftGradeLeft q p ⟨AddMonoidAlgebra.single p s, AddMonoidAlgebra.single_mem_grade p s⟩ =
       algebraMap (AddMonoidAlgebra S Λ) (SlabAlgebra (AddMonoidAlgebra S Λ) q)
-        (AddMonoidAlgebra.single p.2 s) * X q ^ p.1.toNat := by
-  simp [liftGradeLeft]
+        (AddMonoidAlgebra.single p.2 s) * X q ^ p.1.toNat := by simp [liftGradeLeft]
 
-@[simp]
-theorem liftGradeRight_single (q : AddMonoidAlgebra S Λ) (p : ℤ × Λ) (s : S) :
+@[simp] theorem liftGradeRight_single (q : AddMonoidAlgebra S Λ) (p : ℤ × Λ) (s : S) :
     liftGradeRight q p ⟨AddMonoidAlgebra.single p s, AddMonoidAlgebra.single_mem_grade p s⟩ =
       algebraMap (AddMonoidAlgebra S Λ) (SlabAlgebra (AddMonoidAlgebra S Λ) q)
-        (AddMonoidAlgebra.single p.2 s) * Y q ^ p.1.toNat := by
-  simp [liftGradeRight]
+        (AddMonoidAlgebra.single p.2 s) * Y q ^ p.1.toNat := by simp [liftGradeRight]
 
-@[simp]
-theorem swap_liftGradeLeft (q : AddMonoidAlgebra S Λ) (p : ℤ × Λ)
+@[simp] theorem swap_liftGradeLeft (q : AddMonoidAlgebra S Λ) (p : ℤ × Λ)
     (u : AddMonoidAlgebra.grade S p) :
-    swap q (liftGradeLeft q p u) = liftGradeRight q p u := by
-  simp [liftGradeLeft, liftGradeRight]
+    swap q (liftGradeLeft q p u) = liftGradeRight q p u := by simp [liftGradeLeft, liftGradeRight]
 
 /-- On any homogeneous piece with nonnegative transverse degree `0 ≤ p.1`, `liftGradeLeft` is a
 section of `gradedChamberLeft`. -/
@@ -280,13 +238,11 @@ theorem gradedChamberLeft_comp_liftGradeLeft (q : AddMonoidAlgebra S Λ) {p : �
     (hp : 0 ≤ p.1) :
     (gradedChamberLeft q).toLinearMap.comp (liftGradeLeft q p) =
       (AddMonoidAlgebra.grade S p).subtype := by
-  apply LinearMap.ext
-  intro u
-  have hp' : (p.1.toNat : ℤ) = p.1 := Int.toNat_of_nonneg hp
+  refine LinearMap.ext fun u => ?_
   simp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, liftGradeLeft, LinearMap.coe_mk,
     AddHom.coe_mk, map_mul, gradedChamberLeft_algebraMap_single, gradedChamberLeft_X_pow,
-    AddMonoidAlgebra.single_mul_single, Prod.mk_add_mk, zero_add, add_zero, mul_one, hp',
-    Submodule.coe_subtype]
+    AddMonoidAlgebra.single_mul_single, Prod.mk_add_mk, zero_add, add_zero, mul_one,
+    Int.toNat_of_nonneg hp, Submodule.coe_subtype]
   exact (AddMonoidAlgebra.eq_single_coeff_of_mem_grade u.2).symm
 
 /-- On any homogeneous piece with nonnegative transverse degree `0 ≤ p.1`, `liftGradeRight` is a
@@ -295,10 +251,8 @@ theorem gradedChamberRight_comp_liftGradeRight (q : AddMonoidAlgebra S Λ) {p : 
     (hp : 0 ≤ p.1) :
     (gradedChamberRight q).toLinearMap.comp (liftGradeRight q p) =
       (AddMonoidAlgebra.grade S p).subtype := by
-  apply LinearMap.ext
-  intro u
-  rw [LinearMap.comp_apply, AlgHom.toLinearMap_apply, ← swap_liftGradeLeft,
-    gradedChamberRight_swap]
+  refine LinearMap.ext fun u => ?_
+  rw [LinearMap.comp_apply, AlgHom.toLinearMap_apply, ← swap_liftGradeLeft, gradedChamberRight_swap]
   exact LinearMap.congr_fun (gradedChamberLeft_comp_liftGradeLeft q hp) u
 
 /-- Incoming left lifts preserve products of homogeneous chamber elements with nonnegative
@@ -313,13 +267,9 @@ theorem liftGradeLeft_mul (q : AddMonoidAlgebra S Λ) {p₁ p₂ : ℤ × Λ}
       rw [AddMonoidAlgebra.eq_single_coeff_of_mem_grade u₁.2,
         AddMonoidAlgebra.eq_single_coeff_of_mem_grade u₂.2]
     rw [AddMonoidAlgebra.single_mul_single, AddMonoidAlgebra.coeff_single, Finsupp.single_eq_same]
-  have htoNat : (p₁ + p₂).1.toNat = p₁.1.toNat + p₂.1.toNat := by
-    rw [Prod.fst_add]
-    omega
-  rw [liftGradeLeft_apply, liftGradeLeft_apply, liftGradeLeft_apply]
-  dsimp only
-  rw [hcoeff, Prod.snd_add, ← AddMonoidAlgebra.single_mul_single, map_mul, htoNat, pow_add]
-  ring
+  have htoNat : (p₁ + p₂).1.toNat = p₁.1.toNat + p₂.1.toNat := by rw [Prod.fst_add]; omega
+  rw [liftGradeLeft_apply, liftGradeLeft_apply, liftGradeLeft_apply]; dsimp only
+  rw [hcoeff, Prod.snd_add, ← AddMonoidAlgebra.single_mul_single, map_mul, htoNat, pow_add]; ring
 
 /-- Incoming right lifts preserve products of homogeneous chamber elements with nonnegative
 transverse degrees. -/
@@ -345,29 +295,21 @@ def gradedCorrespondence (q : AddMonoidAlgebra S Λ) {I J : Set (ℤ × Λ)}
   left_liftLeft i := gradedChamberLeft_comp_liftGradeLeft q (hI i.1 i.2)
   right_liftRight j := gradedChamberRight_comp_liftGradeRight q (hJ j.1 j.2)
 
-@[simp]
-theorem gradedCorrespondence_left (q : AddMonoidAlgebra S Λ) {I J : Set (ℤ × Λ)}
+@[simp] theorem gradedCorrespondence_left (q : AddMonoidAlgebra S Λ) {I J : Set (ℤ × Λ)}
     (hI : ∀ p ∈ I, 0 ≤ p.1) (hJ : ∀ p ∈ J, 0 ≤ p.1) :
-    (gradedCorrespondence q hI hJ).left = (gradedChamberLeft q).toLinearMap :=
-  (rfl)
+    (gradedCorrespondence q hI hJ).left = (gradedChamberLeft q).toLinearMap := (rfl)
 
-@[simp]
-theorem gradedCorrespondence_right (q : AddMonoidAlgebra S Λ) {I J : Set (ℤ × Λ)}
+@[simp] theorem gradedCorrespondence_right (q : AddMonoidAlgebra S Λ) {I J : Set (ℤ × Λ)}
     (hI : ∀ p ∈ I, 0 ≤ p.1) (hJ : ∀ p ∈ J, 0 ≤ p.1) :
-    (gradedCorrespondence q hI hJ).right = (gradedChamberRight q).toLinearMap :=
-  (rfl)
+    (gradedCorrespondence q hI hJ).right = (gradedChamberRight q).toLinearMap := (rfl)
 
-@[simp]
-theorem gradedCorrespondence_liftLeft (q : AddMonoidAlgebra S Λ) {I J : Set (ℤ × Λ)}
+@[simp] theorem gradedCorrespondence_liftLeft (q : AddMonoidAlgebra S Λ) {I J : Set (ℤ × Λ)}
     (hI : ∀ p ∈ I, 0 ≤ p.1) (hJ : ∀ p ∈ J, 0 ≤ p.1) (i : I) :
-    (gradedCorrespondence q hI hJ).liftLeft i = liftGradeLeft q i.1 :=
-  (rfl)
+    (gradedCorrespondence q hI hJ).liftLeft i = liftGradeLeft q i.1 := (rfl)
 
-@[simp]
-theorem gradedCorrespondence_liftRight (q : AddMonoidAlgebra S Λ) {I J : Set (ℤ × Λ)}
+@[simp] theorem gradedCorrespondence_liftRight (q : AddMonoidAlgebra S Λ) {I J : Set (ℤ × Λ)}
     (hI : ∀ p ∈ I, 0 ≤ p.1) (hJ : ∀ p ∈ J, 0 ≤ p.1) (j : J) :
-    (gradedCorrespondence q hI hJ).liftRight j = liftGradeRight q j.1 :=
-  (rfl)
+    (gradedCorrespondence q hI hJ).liftRight j = liftGradeRight q j.1 := (rfl)
 
 /-- The two legs of `gradedCorrespondence` are jointly injective. -/
 theorem gradedCorrespondence_injective (q : AddMonoidAlgebra S Λ) {I J : Set (ℤ × Λ)}
@@ -419,12 +361,11 @@ theorem mapDomain_comp_gradedChamberLeft {Λ' : Type*} [AddCommMonoid Λ']
     (AddMonoidAlgebra.mapDomainAlgHom S S ((AddMonoidHom.id ℤ).prodMap φ)).comp
         (gradedChamberLeft q) =
       (gradedChamberLeft q').comp (mapAlgHom (AddMonoidAlgebra.mapDomainAlgHom S S φ) hφ) := by
-  apply algHom_ext_of_tower
-  · intro g
-    simp only [AlgHom.comp_apply, mapAlgHom_algebraMap, gradedChamberLeft_apply, AlgHom.commutes,
+  refine algHom_ext_of_tower (fun g => ?_)
+    (by simp [gradedChamberLeft, AddMonoidHom.coe_prodMap]) ?_
+  · simp only [AlgHom.comp_apply, mapAlgHom_algebraMap, gradedChamberLeft_apply, AlgHom.commutes,
       ← LaurentPolynomial.C_eq_algebraMap]
     exact mapDomain_chamberCurryEquiv_C φ g
-  · simp [gradedChamberLeft, AddMonoidHom.coe_prodMap]
   · rw [AlgHom.comp_apply, AlgHom.comp_apply, mapAlgHom_Y, gradedChamberLeft_apply,
       gradedChamberLeft_apply, chamberLeft_Y, chamberLeft_Y, map_mul, map_mul, map_mul,
       mapDomain_chamberCurryEquiv_C, hφ]
@@ -437,16 +378,15 @@ theorem mapDomain_comp_gradedChamberRight {Λ' : Type*} [AddCommMonoid Λ']
     (AddMonoidAlgebra.mapDomainAlgHom S S ((AddMonoidHom.id ℤ).prodMap φ)).comp
         (gradedChamberRight q) =
       (gradedChamberRight q').comp (mapAlgHom (AddMonoidAlgebra.mapDomainAlgHom S S φ) hφ) := by
-  apply algHom_ext_of_tower
-  · intro g
-    simp only [AlgHom.comp_apply, mapAlgHom_algebraMap, gradedChamberRight_apply, AlgHom.commutes,
+  refine algHom_ext_of_tower (fun g => ?_) ?_
+    (by simp [gradedChamberRight, AddMonoidHom.coe_prodMap])
+  · simp only [AlgHom.comp_apply, mapAlgHom_algebraMap, gradedChamberRight_apply, AlgHom.commutes,
       ← LaurentPolynomial.C_eq_algebraMap]
     exact mapDomain_chamberCurryEquiv_C φ g
   · rw [AlgHom.comp_apply, AlgHom.comp_apply, mapAlgHom_X, gradedChamberRight_apply,
       gradedChamberRight_apply, chamberRight_X, chamberRight_X, map_mul, map_mul, map_mul,
       mapDomain_chamberCurryEquiv_C, hφ]
     simp [AddMonoidHom.coe_prodMap]
-  · simp [gradedChamberRight, AddMonoidHom.coe_prodMap]
 
 /-- A tangential monoid homomorphism `φ : Λ →+ Λ'` sending `q` to `q'` induces a morphism of
 graded correspondences (`GradedCorrespondence.Hom`) over the degree map `Prod.map id φ`. -/
@@ -458,47 +398,43 @@ def gradedCorrespondenceHom {Λ' : Type*} [AddCommMonoid Λ']
     (hI' : ∀ p ∈ I', 0 ≤ p.1) (hJ' : ∀ p ∈ J', 0 ≤ p.1)
     (hmapI : Set.MapsTo (Prod.map id φ) I I') (hmapJ : Set.MapsTo (Prod.map id φ) J J') :
     GradedCorrespondence.Hom (gradedCorrespondence q hI hJ) (gradedCorrespondence q' hI' hJ')
-      (Prod.map id φ) (Prod.map id φ) where
-  middle := (mapAlgHom (AddMonoidAlgebra.mapDomainAlgHom S S φ) hφ).toLinearMap
-  left := (AddMonoidAlgebra.mapDomainAlgHom S S ((AddMonoidHom.id ℤ).prodMap φ)).toLinearMap
-  right := (AddMonoidAlgebra.mapDomainAlgHom S S ((AddMonoidHom.id ℤ).prodMap φ)).toLinearMap
-  left_comm := congrArg AlgHom.toLinearMap (mapDomain_comp_gradedChamberLeft φ hφ)
-  right_comm := congrArg AlgHom.toLinearMap (mapDomain_comp_gradedChamberRight φ hφ)
-  left_mem p u hu := by
-    rw [AddMonoidAlgebra.eq_single_coeff_of_mem_grade hu]
-    simp only [AlgHom.toLinearMap_apply, AddMonoidAlgebra.mapDomainAlgHom_apply,
+      (Prod.map id φ) (Prod.map id φ) :=
+  have hmem (p : ℤ × Λ) (u : ChamberAlgebra S Λ) (hu : u ∈ AddMonoidAlgebra.grade S p) :
+      AddMonoidAlgebra.mapDomainAlgHom S S ((AddMonoidHom.id ℤ).prodMap φ) u ∈
+        AddMonoidAlgebra.grade S (Prod.map id φ p) := by
+    rw [AddMonoidAlgebra.eq_single_coeff_of_mem_grade hu, AddMonoidAlgebra.mapDomainAlgHom_apply,
       AddMonoidAlgebra.mapDomain_single, AddMonoidHom.coe_prodMap]
     exact AddMonoidAlgebra.single_mem_grade (Prod.map id φ p) (u.coeff p)
-  right_mem p u hu := by
-    rw [AddMonoidAlgebra.eq_single_coeff_of_mem_grade hu]
-    simp only [AlgHom.toLinearMap_apply, AddMonoidAlgebra.mapDomainAlgHom_apply,
-      AddMonoidAlgebra.mapDomain_single, AddMonoidHom.coe_prodMap]
-    exact AddMonoidAlgebra.single_mem_grade (Prod.map id φ p) (u.coeff p)
-  admissible_left := hmapI
-  admissible_right := hmapJ
-  middle_liftLeft i u := by
-    obtain ⟨s, rfl⟩ : ∃ s : S, u = ⟨AddMonoidAlgebra.single i.1 s,
-        AddMonoidAlgebra.single_mem_grade i.1 s⟩ :=
-      ⟨u.1.coeff i.1, Subtype.ext (AddMonoidAlgebra.eq_single_coeff_of_mem_grade u.2)⟩
-    rw [gradedCorrespondence_liftLeft, gradedCorrespondence_liftLeft, liftGradeLeft_single,
-      liftGradeLeft_apply]
-    simp [AddMonoidHom.coe_prodMap]
-  middle_liftRight j u := by
-    obtain ⟨s, rfl⟩ : ∃ s : S, u = ⟨AddMonoidAlgebra.single j.1 s,
-        AddMonoidAlgebra.single_mem_grade j.1 s⟩ :=
-      ⟨u.1.coeff j.1, Subtype.ext (AddMonoidAlgebra.eq_single_coeff_of_mem_grade u.2)⟩
-    rw [gradedCorrespondence_liftRight, gradedCorrespondence_liftRight, liftGradeRight_single,
-      liftGradeRight_apply]
-    simp [AddMonoidHom.coe_prodMap]
+  { middle := (mapAlgHom (AddMonoidAlgebra.mapDomainAlgHom S S φ) hφ).toLinearMap
+    left := (AddMonoidAlgebra.mapDomainAlgHom S S ((AddMonoidHom.id ℤ).prodMap φ)).toLinearMap
+    right := (AddMonoidAlgebra.mapDomainAlgHom S S ((AddMonoidHom.id ℤ).prodMap φ)).toLinearMap
+    left_comm := congrArg AlgHom.toLinearMap (mapDomain_comp_gradedChamberLeft φ hφ)
+    right_comm := congrArg AlgHom.toLinearMap (mapDomain_comp_gradedChamberRight φ hφ)
+    left_mem := hmem
+    right_mem := hmem
+    admissible_left := hmapI
+    admissible_right := hmapJ
+    middle_liftLeft i u := by
+      obtain ⟨s, rfl⟩ : ∃ s : S, u = ⟨AddMonoidAlgebra.single i.1 s,
+          AddMonoidAlgebra.single_mem_grade i.1 s⟩ :=
+        ⟨u.1.coeff i.1, Subtype.ext (AddMonoidAlgebra.eq_single_coeff_of_mem_grade u.2)⟩
+      rw [gradedCorrespondence_liftLeft, gradedCorrespondence_liftLeft, liftGradeLeft_single,
+        liftGradeLeft_apply]
+      simp [AddMonoidHom.coe_prodMap]
+    middle_liftRight j u := by
+      obtain ⟨s, rfl⟩ : ∃ s : S, u = ⟨AddMonoidAlgebra.single j.1 s,
+          AddMonoidAlgebra.single_mem_grade j.1 s⟩ :=
+        ⟨u.1.coeff j.1, Subtype.ext (AddMonoidAlgebra.eq_single_coeff_of_mem_grade u.2)⟩
+      rw [gradedCorrespondence_liftRight, gradedCorrespondence_liftRight, liftGradeRight_single,
+        liftGradeRight_apply]
+      simp [AddMonoidHom.coe_prodMap] }
 
 /-! ### Explicit homogeneous transfer coefficients, base change, and binomial check -/
 
 /-- Right chamber image of an incoming left monomial `s z^{(a, l)}`. -/
 theorem gradedChamberRight_liftGradeLeft_single (q : AddMonoidAlgebra S Λ) (a : ℕ) (l : Λ) (s : S) :
-    gradedChamberRight q
-        (liftGradeLeft q ((a : ℤ), l)
-          ⟨AddMonoidAlgebra.single ((a : ℤ), l) s,
-            AddMonoidAlgebra.single_mem_grade ((a : ℤ), l) s⟩) =
+    gradedChamberRight q (liftGradeLeft q ((a : ℤ), l)
+        ⟨AddMonoidAlgebra.single ((a : ℤ), l) s, AddMonoidAlgebra.single_mem_grade _ s⟩) =
       chamberCurryEquiv S Λ
         (LaurentPolynomial.C (AddMonoidAlgebra.single l s * q ^ a) *
           LaurentPolynomial.T (-(a : ℤ))) := by
@@ -534,8 +470,7 @@ theorem mapRingHom_coe_transfer {S' : Type*} [CommRing S'] [DecidableEq Λ]
         ((gradedCorrespondence q hI hJ).transfer i p' u : ChamberAlgebra S Λ) =
       ((gradedCorrespondence q' hI hJ).transfer i p'
         ⟨AddMonoidAlgebra.mapRingHom (ℤ × Λ) f u.1,
-          AddMonoidAlgebra.mapRingHom_mem_grade f u.2⟩ :
-        ChamberAlgebra S' Λ) := by
+          AddMonoidAlgebra.mapRingHom_mem_grade f u.2⟩ : ChamberAlgebra S' Λ) := by
   rcases i with ⟨⟨n, l⟩, hi⟩
   obtain ⟨a, rfl⟩ := Int.eq_ofNat_of_zero_le (hI (n, l) hi)
   obtain ⟨s, rfl⟩ : ∃ s : S, u = ⟨AddMonoidAlgebra.single ((a : ℤ), l) s,
@@ -570,8 +505,7 @@ theorem coe_transfer_single_sub {G : Type*} [AddCommGroup G] [DecidableEq G]
         ⟨AddMonoidAlgebra.single ((a : ℤ), l) s,
           AddMonoidAlgebra.single_mem_grade ((a : ℤ), l) s⟩ : ChamberAlgebra S G) =
       AddMonoidAlgebra.single (-(a : ℤ), m) (s * (q ^ a).coeff (m - l)) := by
-  rw [coe_transfer_single]
-  simp [AddMonoidAlgebra.coeff_single_mul_apply, neg_add_eq_sub]
+  rw [coe_transfer_single]; simp [AddMonoidAlgebra.coeff_single_mul_apply, neg_add_eq_sub]
 
 /-- Binomial expansion of the right chamber image of an incoming left monomial `w^b X^a` in
 `S[w, w⁻¹][X, Y] ⧸ (X Y - t (1 + w))`:
@@ -586,38 +520,24 @@ theorem gradedChamberRight_binomial (t : S) (a : ℕ) (b : ℤ) :
         AddMonoidAlgebra.single (-(a : ℤ), b + (j : ℤ)) (t ^ a * (a.choose j : S)) := by
   intro q
   have hlift := gradedChamberRight_liftGradeLeft_single q a b 1
-  rw [liftGradeLeft_single, Int.toNat_natCast] at hlift
-  rw [hlift]
+  rw [liftGradeLeft_single, Int.toNat_natCast] at hlift; rw [hlift]
+  have h1w : (1 + AddMonoidAlgebra.single (1 : ℤ) (1 : S)) ^ a =
+      ∑ j ∈ Finset.range (a + 1), AddMonoidAlgebra.single (j : ℤ) (a.choose j : S) := by
+    rw [add_comm, add_pow]
+    refine Finset.sum_congr rfl fun j _ => ?_
+    have hcast : (a.choose j : AddMonoidAlgebra S ℤ) = AddMonoidAlgebra.single 0 (a.choose j : S) :=
+      (map_natCast (algebraMap S (AddMonoidAlgebra S ℤ)) _).symm
+    rw [one_pow, mul_one, AddMonoidAlgebra.single_pow, one_pow, nsmul_eq_mul, mul_one,
+      hcast, AddMonoidAlgebra.single_mul_single, add_zero, one_mul]
   have hqpow : AddMonoidAlgebra.single b (1 : S) * q ^ a =
       ∑ j ∈ Finset.range (a + 1),
         AddMonoidAlgebra.single (b + (j : ℤ)) (t ^ a * (a.choose j : S)) := by
-    have h1w : (1 + AddMonoidAlgebra.single (1 : ℤ) (1 : S)) ^ a =
-        ∑ j ∈ Finset.range (a + 1), AddMonoidAlgebra.single (j : ℤ) (a.choose j : S) := by
-      rw [add_comm, add_pow]
-      refine Finset.sum_congr rfl fun j _ => ?_
-      have hcast : (a.choose j : AddMonoidAlgebra S ℤ) =
-          AddMonoidAlgebra.single 0 (a.choose j : S) := by
-        rw [← map_natCast (algebraMap S (AddMonoidAlgebra S ℤ))]
-        rfl
-      rw [one_pow, mul_one, AddMonoidAlgebra.single_pow, one_pow, nsmul_eq_mul, mul_one,
-        hcast, AddMonoidAlgebra.single_mul_single, add_zero, one_mul]
-    calc
-      AddMonoidAlgebra.single b (1 : S) * q ^ a
-          = AddMonoidAlgebra.single b (1 : S) *
-              (AddMonoidAlgebra.single 0 (t ^ a) *
-                (1 + AddMonoidAlgebra.single (1 : ℤ) (1 : S)) ^ a) := by
-            rw [mul_pow, AddMonoidAlgebra.single_pow, nsmul_zero]
-      _ = AddMonoidAlgebra.single b (t ^ a) *
-            ∑ j ∈ Finset.range (a + 1), AddMonoidAlgebra.single (j : ℤ) (a.choose j : S) := by
-            rw [← mul_assoc, AddMonoidAlgebra.single_mul_single, add_zero, one_mul, h1w]
-      _ = ∑ j ∈ Finset.range (a + 1),
-            AddMonoidAlgebra.single (b + (j : ℤ)) (t ^ a * (a.choose j : S)) := by
-            rw [Finset.mul_sum]
-            refine Finset.sum_congr rfl fun j _ => ?_
-            rw [AddMonoidAlgebra.single_mul_single]
+    rw [mul_pow, AddMonoidAlgebra.single_pow, nsmul_zero, ← mul_assoc,
+      AddMonoidAlgebra.single_mul_single, add_zero, one_mul, h1w, Finset.mul_sum]
+    exact Finset.sum_congr rfl fun j _ => AddMonoidAlgebra.single_mul_single _ _ _ _
   rw [hqpow, map_sum, Finset.sum_mul, map_sum]
-  refine Finset.sum_congr rfl fun j _ => ?_
-  exact chamberCurryEquiv_C_mul_T_single (-(a : ℤ)) (b + (j : ℤ)) (t ^ a * (a.choose j : S))
+  exact Finset.sum_congr rfl fun j _ =>
+    chamberCurryEquiv_C_mul_T_single (-(a : ℤ)) (b + (j : ℤ)) (t ^ a * (a.choose j : S))
 
 end Lattice
 

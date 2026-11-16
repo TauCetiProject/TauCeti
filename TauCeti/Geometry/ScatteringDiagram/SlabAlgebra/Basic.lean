@@ -66,8 +66,7 @@ namespace TauCeti
 
 /-- Variable index for the two transverse generators `X` and `Y` of a slab algebra. -/
 inductive SlabGenerator : Type
-  | X
-  | Y
+  | X | Y
   deriving DecidableEq
 
 /-- The principal ideal `(X Y - q)` in `R[X, Y]` defining `SlabAlgebra R q`. -/
@@ -89,35 +88,28 @@ def mk (q : R) : MvPolynomial SlabGenerator R →ₐ[R] SlabAlgebra R q :=
   Ideal.Quotient.mkₐ R (slabIdeal R q)
 
 /-- The first transverse generator `X` of `SlabAlgebra R q`. -/
-def X (q : R) : SlabAlgebra R q :=
-  Ideal.Quotient.mk (slabIdeal R q) (MvPolynomial.X .X)
+def X (q : R) : SlabAlgebra R q := Ideal.Quotient.mk (slabIdeal R q) (MvPolynomial.X .X)
 
 /-- The second transverse generator `Y` of `SlabAlgebra R q`. -/
-def Y (q : R) : SlabAlgebra R q :=
-  Ideal.Quotient.mk (slabIdeal R q) (MvPolynomial.X .Y)
+def Y (q : R) : SlabAlgebra R q := Ideal.Quotient.mk (slabIdeal R q) (MvPolynomial.X .Y)
 
-@[simp]
-theorem mk_X (q : R) : mk q (MvPolynomial.X .X) = X q := by
+@[simp] theorem mk_X (q : R) : mk q (MvPolynomial.X .X) = X q := by
   rw [mk, Ideal.Quotient.mkₐ_eq_mk, X]
 
-@[simp]
-theorem mk_Y (q : R) : mk q (MvPolynomial.X .Y) = Y q := by
+@[simp] theorem mk_Y (q : R) : mk q (MvPolynomial.X .Y) = Y q := by
   rw [mk, Ideal.Quotient.mkₐ_eq_mk, Y]
 
 /-- The quotient map onto `SlabAlgebra R q` is surjective. -/
-theorem mk_surjective (q : R) : Function.Surjective (mk q) :=
-  Ideal.Quotient.mk_surjective
+theorem mk_surjective (q : R) : Function.Surjective (mk q) := Ideal.Quotient.mk_surjective
 
 /-- The defining slab relation `X * Y = q`. -/
-@[simp]
-theorem X_mul_Y (q : R) : X q * Y q = algebraMap R (SlabAlgebra R q) q := by
+@[simp] theorem X_mul_Y (q : R) : X q * Y q = algebraMap R (SlabAlgebra R q) q := by
   rw [X, Y, ← map_mul, ← MvPolynomial.algHom_C (mk q), mk, Ideal.Quotient.mkₐ_eq_mk,
     Ideal.Quotient.eq]
   exact Ideal.subset_span rfl
 
 /-- Commuted form `Y * X = q` of the defining slab relation. -/
-@[simp]
-theorem Y_mul_X (q : R) : Y q * X q = algebraMap R (SlabAlgebra R q) q := by
+@[simp] theorem Y_mul_X (q : R) : Y q * X q = algebraMap R (SlabAlgebra R q) q := by
   rw [mul_comm, X_mul_Y]
 
 /-- Ring homomorphisms out of `SlabAlgebra R q` are determined by their restriction to `R` and
@@ -125,61 +117,47 @@ their values on `X q` and `Y q`. -/
 theorem ringHom_ext {A : Type*} [NonAssocSemiring A] {q : R} {f g : SlabAlgebra R q →+* A}
     (hR : ∀ r : R, f (algebraMap R (SlabAlgebra R q) r) = g (algebraMap R (SlabAlgebra R q) r))
     (hX : f (X q) = g (X q)) (hY : f (Y q) = g (Y q)) : f = g := by
-  apply Ideal.Quotient.ringHom_ext
-  ext p
+  apply Ideal.Quotient.ringHom_ext; ext p
   induction p using MvPolynomial.induction_on with
   | C r => exact hR r
-  | add p₁ p₂ hp₁ hp₂ =>
-    simp only [RingHom.comp_apply, map_add] at hp₁ hp₂ ⊢
-    rw [hp₁, hp₂]
+  | add p₁ p₂ hp₁ hp₂ => simp only [RingHom.comp_apply, map_add] at hp₁ hp₂ ⊢; rw [hp₁, hp₂]
   | mul_X p₁ v hp₁ =>
     simp only [RingHom.comp_apply, map_mul] at hp₁ ⊢
-    cases v
-    · rw [hp₁, ← X, hX]
-    · rw [hp₁, ← Y, hY]
+    cases v <;> [rw [hp₁, ← X, hX]; rw [hp₁, ← Y, hY]]
 
 /-- Algebra homomorphisms out of `SlabAlgebra R q` over a base semiring `K` are determined by their
 restriction to `R` and their values on `X q` and `Y q`. -/
 theorem algHom_ext_of_tower {K A : Type*} [CommSemiring K] [Algebra K R] [Semiring A] [Algebra K A]
     {q : R} {f g : SlabAlgebra R q →ₐ[K] A}
     (hR : ∀ r : R, f (algebraMap R (SlabAlgebra R q) r) = g (algebraMap R (SlabAlgebra R q) r))
-    (hX : f (X q) = g (X q)) (hY : f (Y q) = g (Y q)) : f = g := by
-  apply AlgHom.toRingHom_injective
-  exact ringHom_ext hR hX hY
+    (hX : f (X q) = g (X q)) (hY : f (Y q) = g (Y q)) : f = g :=
+  AlgHom.toRingHom_injective (ringHom_ext hR hX hY)
 
 /-- `R`-algebra homomorphisms out of `SlabAlgebra R q` are determined by their values on `X q`
 and `Y q`. -/
-@[ext]
-theorem algHom_ext {A : Type*} [Semiring A] [Algebra R A] {q : R}
-    {f g : SlabAlgebra R q →ₐ[R] A} (hX : f (X q) = g (X q)) (hY : f (Y q) = g (Y q)) :
-    f = g :=
-  algHom_ext_of_tower (fun r => by simp) hX hY
+@[ext] theorem algHom_ext {A : Type*} [Semiring A] [Algebra R A] {q : R}
+    {f g : SlabAlgebra R q →ₐ[R] A} (hX : f (X q) = g (X q)) (hY : f (Y q) = g (Y q)) : f = g :=
+  algHom_ext_of_tower (fun _ => by simp) hX hY
 
 /-- Universal property of `SlabAlgebra R q` for ring homomorphisms: a ring map `φ : R →+* A`
 together with elements `x, y : A` satisfying `x * y = φ q` induces `SlabAlgebra R q →+* A`. -/
 def liftRingHom {A : Type*} [CommRing A] {q : R} (φ : R →+* A) (x y : A)
     (hxy : x * y = φ q) : SlabAlgebra R q →+* A :=
   Ideal.Quotient.lift (slabIdeal R q)
-    (MvPolynomial.eval₂Hom φ fun v => SlabGenerator.casesOn v x y) <| fun _ hp => by
-      have hker : slabIdeal R q ≤ RingHom.ker
-          (MvPolynomial.eval₂Hom φ fun v => SlabGenerator.casesOn v x y) := by
-        rw [slabIdeal, Ideal.span_singleton_le_iff_mem, RingHom.mem_ker]
-        simp [hxy]
-      exact RingHom.mem_ker.mp (hker hp)
+    (MvPolynomial.eval₂Hom φ fun v => SlabGenerator.casesOn v x y) fun _ hp =>
+      RingHom.mem_ker.mp <| (Ideal.span_singleton_le_iff_mem _).mpr
+        (by simp [RingHom.mem_ker, hxy]) hp
 
-@[simp]
-theorem liftRingHom_algebraMap {A : Type*} [CommRing A] {q : R} (φ : R →+* A) (x y : A)
+@[simp] theorem liftRingHom_algebraMap {A : Type*} [CommRing A] {q : R} (φ : R →+* A) (x y : A)
     (hxy : x * y = φ q) (r : R) :
     liftRingHom φ x y hxy (algebraMap R (SlabAlgebra R q) r) = φ r :=
   (Ideal.Quotient.lift_mk (slabIdeal R q) _ _).trans (MvPolynomial.eval₂Hom_C _ _ r)
 
-@[simp]
-theorem liftRingHom_X {A : Type*} [CommRing A] {q : R} (φ : R →+* A) (x y : A)
+@[simp] theorem liftRingHom_X {A : Type*} [CommRing A] {q : R} (φ : R →+* A) (x y : A)
     (hxy : x * y = φ q) : liftRingHom φ x y hxy (X q) = x := by
   rw [liftRingHom, X, Ideal.Quotient.lift_mk, MvPolynomial.eval₂Hom_X']
 
-@[simp]
-theorem liftRingHom_Y {A : Type*} [CommRing A] {q : R} (φ : R →+* A) (x y : A)
+@[simp] theorem liftRingHom_Y {A : Type*} [CommRing A] {q : R} (φ : R →+* A) (x y : A)
     (hxy : x * y = φ q) : liftRingHom φ x y hxy (Y q) = y := by
   rw [liftRingHom, Y, Ideal.Quotient.lift_mk, MvPolynomial.eval₂Hom_X']
 
@@ -191,26 +169,20 @@ def liftAlgHom {K A : Type*} [CommSemiring K] [Algebra K R] [CommRing A] [Algebr
   toRingHom := liftRingHom φ.toRingHom x y hxy
   commutes' k := by
     rw [IsScalarTower.algebraMap_apply K R (SlabAlgebra R q), RingHom.toMonoidHom_eq_coe,
-      OneHom.toFun_eq_coe, MonoidHom.toOneHom_coe, MonoidHom.coe_ofClass,
-      liftRingHom_algebraMap]
+      OneHom.toFun_eq_coe, MonoidHom.toOneHom_coe, MonoidHom.coe_ofClass, liftRingHom_algebraMap]
     exact φ.commutes k
 
-@[simp]
-theorem liftAlgHom_algebraMap {K A : Type*} [CommSemiring K] [Algebra K R] [CommRing A]
+@[simp] theorem liftAlgHom_algebraMap {K A : Type*} [CommSemiring K] [Algebra K R] [CommRing A]
     [Algebra K A] {q : R} (φ : R →ₐ[K] A) (x y : A) (hxy : x * y = φ q) (r : R) :
     liftAlgHom φ x y hxy (algebraMap R (SlabAlgebra R q) r) = φ r :=
   liftRingHom_algebraMap φ.toRingHom x y hxy r
 
-@[simp]
-theorem liftAlgHom_X {K A : Type*} [CommSemiring K] [Algebra K R] [CommRing A] [Algebra K A]
-    {q : R} (φ : R →ₐ[K] A) (x y : A) (hxy : x * y = φ q) :
-    liftAlgHom φ x y hxy (X q) = x :=
+@[simp] theorem liftAlgHom_X {K A : Type*} [CommSemiring K] [Algebra K R] [CommRing A] [Algebra K A]
+    {q : R} (φ : R →ₐ[K] A) (x y : A) (hxy : x * y = φ q) : liftAlgHom φ x y hxy (X q) = x :=
   liftRingHom_X φ.toRingHom x y hxy
 
-@[simp]
-theorem liftAlgHom_Y {K A : Type*} [CommSemiring K] [Algebra K R] [CommRing A] [Algebra K A]
-    {q : R} (φ : R →ₐ[K] A) (x y : A) (hxy : x * y = φ q) :
-    liftAlgHom φ x y hxy (Y q) = y :=
+@[simp] theorem liftAlgHom_Y {K A : Type*} [CommSemiring K] [Algebra K R] [CommRing A] [Algebra K A]
+    {q : R} (φ : R →ₐ[K] A) (x y : A) (hxy : x * y = φ q) : liftAlgHom φ x y hxy (Y q) = y :=
   liftRingHom_Y φ.toRingHom x y hxy
 
 /-- Universal property of `SlabAlgebra R q`: any pair `x, y` in an `R`-algebra `A` satisfying
@@ -220,13 +192,11 @@ def lift {A : Type*} [CommRing A] [Algebra R A] (q : R) (x y : A)
     (hxy : x * y = algebraMap R A q) : SlabAlgebra R q →ₐ[R] A :=
   liftAlgHom (Algebra.ofId R A) x y hxy
 
-@[simp]
-theorem lift_X {A : Type*} [CommRing A] [Algebra R A] (q : R) (x y : A)
+@[simp] theorem lift_X {A : Type*} [CommRing A] [Algebra R A] (q : R) (x y : A)
     (hxy : x * y = algebraMap R A q) : lift q x y hxy (X q) = x :=
   liftAlgHom_X (Algebra.ofId R A) x y hxy
 
-@[simp]
-theorem lift_Y {A : Type*} [CommRing A] [Algebra R A] (q : R) (x y : A)
+@[simp] theorem lift_Y {A : Type*} [CommRing A] [Algebra R A] (q : R) (x y : A)
     (hxy : x * y = algebraMap R A q) : lift q x y hxy (Y q) = y :=
   liftAlgHom_Y (Algebra.ofId R A) x y hxy
 
@@ -242,25 +212,21 @@ def mapRingHom {R' : Type*} [CommRing R'] {q : R} {q' : R'} (f : R →+* R')
   liftRingHom ((algebraMap R' (SlabAlgebra R' q')).comp f) (X q') (Y q') <| by
     rw [X_mul_Y, RingHom.comp_apply, hf]
 
-@[simp]
-theorem mapRingHom_algebraMap {R' : Type*} [CommRing R'] {q : R} {q' : R'} (f : R →+* R')
+@[simp] theorem mapRingHom_algebraMap {R' : Type*} [CommRing R'] {q : R} {q' : R'} (f : R →+* R')
     (hf : f q = q') (r : R) :
-    mapRingHom f hf (algebraMap R (SlabAlgebra R q) r) =
-      algebraMap R' (SlabAlgebra R' q') (f r) :=
+    mapRingHom f hf (algebraMap R (SlabAlgebra R q) r) = algebraMap R' (SlabAlgebra R' q') (f r) :=
   liftRingHom_algebraMap _ _ _ _ r
 
-@[simp]
-theorem mapRingHom_X {R' : Type*} [CommRing R'] {q : R} {q' : R'} (f : R →+* R') (hf : f q = q') :
-    mapRingHom f hf (X q) = X q' :=
+@[simp] theorem mapRingHom_X {R' : Type*} [CommRing R'] {q : R} {q' : R'} (f : R →+* R')
+    (hf : f q = q') : mapRingHom f hf (X q) = X q' :=
   liftRingHom_X _ _ _ _
 
-@[simp]
-theorem mapRingHom_Y {R' : Type*} [CommRing R'] {q : R} {q' : R'} (f : R →+* R') (hf : f q = q') :
-    mapRingHom f hf (Y q) = Y q' :=
+@[simp] theorem mapRingHom_Y {R' : Type*} [CommRing R'] {q : R} {q' : R'} (f : R →+* R')
+    (hf : f q = q') : mapRingHom f hf (Y q) = Y q' :=
   liftRingHom_Y _ _ _ _
 
-@[simp]
-theorem mapRingHom_id (q : R) : mapRingHom (RingHom.id R) rfl = RingHom.id (SlabAlgebra R q) :=
+@[simp] theorem mapRingHom_id (q : R) :
+    mapRingHom (RingHom.id R) rfl = RingHom.id (SlabAlgebra R q) :=
   ringHom_ext (fun _ => by simp) (by simp) (by simp)
 
 theorem mapRingHom_comp {R' R'' : Type*} [CommRing R'] [CommRing R''] {q : R} {q' : R'} {q'' : R''}
@@ -272,33 +238,26 @@ theorem mapRingHom_comp {R' R'' : Type*} [CommRing R'] [CommRing R''] {q : R} {q
 /-- Functoriality of `SlabAlgebra` along a `K`-algebra homomorphism `f : R →ₐ[K] R'` sending `q`
 to `q'`. -/
 def mapAlgHom {K R' : Type*} [CommSemiring K] [Algebra K R] [CommRing R'] [Algebra K R']
-    {q : R} {q' : R'} (f : R →ₐ[K] R') (hf : f q = q') :
-    SlabAlgebra R q →ₐ[K] SlabAlgebra R' q' :=
-  liftAlgHom ((IsScalarTower.toAlgHom K R' (SlabAlgebra R' q')).comp f) (X q') (Y q') <| by
-    simp [hf]
+    {q : R} {q' : R'} (f : R →ₐ[K] R') (hf : f q = q') : SlabAlgebra R q →ₐ[K] SlabAlgebra R' q' :=
+  liftAlgHom ((IsScalarTower.toAlgHom K R' (SlabAlgebra R' q')).comp f) (X q') (Y q') (by simp [hf])
 
-@[simp]
-theorem coe_mapAlgHom {K R' : Type*} [CommSemiring K] [Algebra K R] [CommRing R'] [Algebra K R']
-    {q : R} {q' : R'} (f : R →ₐ[K] R') (hf : f q = q') :
+@[simp] theorem coe_mapAlgHom {K R' : Type*} [CommSemiring K] [Algebra K R] [CommRing R']
+    [Algebra K R'] {q : R} {q' : R'} (f : R →ₐ[K] R') (hf : f q = q') :
     (mapAlgHom f hf : SlabAlgebra R q →+* SlabAlgebra R' q') = mapRingHom f.toRingHom hf :=
   ringHom_ext (fun _ => by simp [mapAlgHom]) (by simp [mapAlgHom]) (by simp [mapAlgHom])
 
-@[simp]
-theorem mapAlgHom_algebraMap {K R' : Type*} [CommSemiring K] [Algebra K R] [CommRing R']
+@[simp] theorem mapAlgHom_algebraMap {K R' : Type*} [CommSemiring K] [Algebra K R] [CommRing R']
     [Algebra K R'] {q : R} {q' : R'} (f : R →ₐ[K] R') (hf : f q = q') (r : R) :
-    mapAlgHom f hf (algebraMap R (SlabAlgebra R q) r) =
-      algebraMap R' (SlabAlgebra R' q') (f r) :=
+    mapAlgHom f hf (algebraMap R (SlabAlgebra R q) r) = algebraMap R' (SlabAlgebra R' q') (f r) :=
   liftAlgHom_algebraMap _ _ _ _ r
 
-@[simp]
-theorem mapAlgHom_X {K R' : Type*} [CommSemiring K] [Algebra K R] [CommRing R'] [Algebra K R']
-    {q : R} {q' : R'} (f : R →ₐ[K] R') (hf : f q = q') :
+@[simp] theorem mapAlgHom_X {K R' : Type*} [CommSemiring K] [Algebra K R] [CommRing R']
+    [Algebra K R'] {q : R} {q' : R'} (f : R →ₐ[K] R') (hf : f q = q') :
     mapAlgHom f hf (X q) = X q' :=
   liftAlgHom_X _ _ _ _
 
-@[simp]
-theorem mapAlgHom_Y {K R' : Type*} [CommSemiring K] [Algebra K R] [CommRing R'] [Algebra K R']
-    {q : R} {q' : R'} (f : R →ₐ[K] R') (hf : f q = q') :
+@[simp] theorem mapAlgHom_Y {K R' : Type*} [CommSemiring K] [Algebra K R] [CommRing R']
+    [Algebra K R'] {q : R} {q' : R'} (f : R →ₐ[K] R') (hf : f q = q') :
     mapAlgHom f hf (Y q) = Y q' :=
   liftAlgHom_Y _ _ _ _
 
@@ -307,73 +266,46 @@ def swap (q : R) : SlabAlgebra R q ≃ₐ[R] SlabAlgebra R q :=
   AlgEquiv.ofAlgHom (lift q (Y q) (X q) (Y_mul_X q)) (lift q (Y q) (X q) (Y_mul_X q))
     (by ext <;> simp) (by ext <;> simp)
 
-@[simp]
-theorem swap_X (q : R) : swap q (X q) = Y q :=
-  lift_X q (Y q) (X q) (Y_mul_X q)
+@[simp] theorem swap_X (q : R) : swap q (X q) = Y q := lift_X q (Y q) (X q) (Y_mul_X q)
 
-@[simp]
-theorem swap_Y (q : R) : swap q (Y q) = X q :=
-  lift_Y q (Y q) (X q) (Y_mul_X q)
+@[simp] theorem swap_Y (q : R) : swap q (Y q) = X q := lift_Y q (Y q) (X q) (Y_mul_X q)
 
-@[simp]
-theorem swap_symm (q : R) : (swap q).symm = swap q :=
-  (rfl)
+@[simp] theorem swap_symm (q : R) : (swap q).symm = swap q := (rfl)
 
-@[simp]
-theorem swap_swap (q : R) (z : SlabAlgebra R q) : swap q (swap q z) = z :=
+@[simp] theorem swap_swap (q : R) (z : SlabAlgebra R q) : swap q (swap q z) = z :=
   (swap q).symm_apply_apply z
 
 /-! ### Normal-form monomials and multiplication law -/
 
 /-- The normal-form monomial `Z q n` in `SlabAlgebra R q`: `X q ^ (-n)` for `n < 0`, `1` for
 `n = 0`, and `Y q ^ n` for `n > 0`. -/
-def Z (q : R) (n : ℤ) : SlabAlgebra R q :=
-  if n < 0 then X q ^ n.natAbs else Y q ^ n.natAbs
+def Z (q : R) (n : ℤ) : SlabAlgebra R q := if n < 0 then X q ^ n.natAbs else Y q ^ n.natAbs
 
-@[simp]
-theorem Z_zero (q : R) : Z q 0 = 1 := by
-  simp [Z]
+@[simp] theorem Z_zero (q : R) : Z q 0 = 1 := by simp [Z]
 
-theorem Z_of_neg (q : R) {n : ℤ} (hn : n < 0) : Z q n = X q ^ n.natAbs := by
-  simp [Z, hn]
+theorem Z_of_neg (q : R) {n : ℤ} (hn : n < 0) : Z q n = X q ^ n.natAbs := by simp [Z, hn]
 
 theorem Z_of_nonneg (q : R) {n : ℤ} (hn : 0 ≤ n) : Z q n = Y q ^ n.natAbs := by
   simp [Z, not_lt.mpr hn]
 
-@[simp]
-theorem Z_natCast (q : R) (a : ℕ) : Z q (a : ℤ) = Y q ^ a := by
-  simp [Z]
+@[simp] theorem Z_natCast (q : R) (a : ℕ) : Z q (a : ℤ) = Y q ^ a := by simp [Z]
 
-@[simp]
-theorem Z_neg_natCast (q : R) (a : ℕ) : Z q (-(a : ℤ)) = X q ^ a := by
-  rcases eq_or_ne a 0 with rfl | ha
-  · simp [Z]
-  · have hpos : 0 < a := Nat.pos_of_ne_zero ha
-    simp [Z, hpos]
+@[simp] theorem Z_neg_natCast (q : R) (a : ℕ) : Z q (-(a : ℤ)) = X q ^ a := by
+  rcases eq_or_ne a 0 with rfl | ha <;> simp [Z, Nat.pos_of_ne_zero, *]
 
-@[simp]
-theorem Z_one (q : R) : Z q 1 = Y q := by
-  simpa using Z_natCast q 1
+@[simp] theorem Z_one (q : R) : Z q 1 = Y q := by simpa using Z_natCast q 1
 
-@[simp]
-theorem Z_neg_one (q : R) : Z q (-1) = X q := by
-  simpa using Z_neg_natCast q 1
+@[simp] theorem Z_neg_one (q : R) : Z q (-1) = X q := by simpa using Z_neg_natCast q 1
 
-@[simp]
-theorem swap_Z (q : R) (n : ℤ) : swap q (Z q n) = Z q (-n) := by
-  rcases Int.eq_nat_or_neg n with ⟨a, rfl | rfl⟩
-  · simp
-  · simp
+@[simp] theorem swap_Z (q : R) (n : ℤ) : swap q (Z q n) = Z q (-n) := by
+  rcases Int.eq_nat_or_neg n with ⟨a, rfl | rfl⟩ <;> simp
 
-@[simp]
-theorem mapRingHom_Z {R' : Type*} [CommRing R'] {q : R} {q' : R'} (f : R →+* R') (hf : f q = q')
-    (n : ℤ) : mapRingHom f hf (Z q n) = Z q' n := by
-  unfold Z
-  split_ifs <;> simp
+@[simp] theorem mapRingHom_Z {R' : Type*} [CommRing R'] {q : R} {q' : R'} (f : R →+* R')
+    (hf : f q = q') (n : ℤ) : mapRingHom f hf (Z q n) = Z q' n := by
+  unfold Z; split_ifs <;> simp
 
-@[simp]
-theorem mapAlgHom_Z {K R' : Type*} [CommSemiring K] [Algebra K R] [CommRing R'] [Algebra K R']
-    {q : R} {q' : R'} (f : R →ₐ[K] R') (hf : f q = q') (n : ℤ) :
+@[simp] theorem mapAlgHom_Z {K R' : Type*} [CommSemiring K] [Algebra K R] [CommRing R']
+    [Algebra K R'] {q : R} {q' : R'} (f : R →ₐ[K] R') (hf : f q = q') (n : ℤ) :
     mapAlgHom f hf (Z q n) = Z q' n :=
   mapRingHom_Z f.toRingHom hf n
 
@@ -384,16 +316,13 @@ theorem X_pow_mul_Y_pow (q : R) (a b : ℕ) :
   | zero => simp
   | succ a ih =>
     cases b with
-    | zero =>
-      simpa using (Z_neg_natCast q (a + 1)).symm
+    | zero => simpa using (Z_neg_natCast q (a + 1)).symm
     | succ b =>
       have hsub : ((b + 1 : ℕ) : ℤ) - ((a + 1 : ℕ) : ℤ) = (b : ℤ) - (a : ℤ) := by omega
       calc
         X q ^ (a + 1) * Y q ^ (b + 1) = (X q * Y q) * (X q ^ a * Y q ^ b) := by ring
-        _ = algebraMap R (SlabAlgebra R q) q * (q ^ min a b • Z q ((b : ℤ) - (a : ℤ))) := by
-          rw [X_mul_Y, ih b]
         _ = (q * q ^ min a b) • Z q ((b : ℤ) - (a : ℤ)) := by
-          rw [← Algebra.smul_def, smul_smul]
+          rw [X_mul_Y, ih b, ← Algebra.smul_def, smul_smul]
         _ = q ^ min (a + 1) (b + 1) • Z q (((b + 1 : ℕ) : ℤ) - ((a + 1 : ℕ) : ℤ)) := by
           rw [Nat.succ_min_succ, pow_succ', hsub]
 
@@ -431,12 +360,9 @@ theorem X_mul_Z (q : R) (n : ℤ) :
 `n < 0`. -/
 theorem Y_mul_Z (q : R) (n : ℤ) :
     Y q * Z q n = if 0 ≤ n then Z q (n + 1) else q • Z q (n + 1) := by
-  rw [← Z_one, Z_mul_Z, add_comm 1 n]
-  split_ifs with hn
-  · have hr : ((1 : ℤ).natAbs + n.natAbs - (n + 1).natAbs) / 2 = 0 := by omega
-    rw [hr, pow_zero, one_smul]
-  · have hr : ((1 : ℤ).natAbs + n.natAbs - (n + 1).natAbs) / 2 = 1 := by omega
-    rw [hr, pow_one]
+  apply (swap q).injective
+  rw [map_mul, swap_Y, swap_Z, X_mul_Z]
+  split_ifs <;> first | omega | simp [sub_eq_add_neg, add_comm]
 
 /-! ### Chamber homomorphisms, normal-form basis, and joint injectivity -/
 
@@ -454,63 +380,49 @@ def chamberRight (q : R) : SlabAlgebra R q →ₐ[R] LaurentPolynomial R :=
     rw [LaurentPolynomial.mul_T_assoc, neg_add_cancel, LaurentPolynomial.T_zero, mul_one,
       LaurentPolynomial.C_eq_algebraMap]
 
-@[simp]
-theorem chamberLeft_X (q : R) : chamberLeft q (X q) = LaurentPolynomial.T 1 :=
+@[simp] theorem chamberLeft_X (q : R) : chamberLeft q (X q) = LaurentPolynomial.T 1 :=
   lift_X _ _ _ _
 
-@[simp]
-theorem chamberLeft_Y (q : R) :
+@[simp] theorem chamberLeft_Y (q : R) :
     chamberLeft q (Y q) = LaurentPolynomial.C q * LaurentPolynomial.T (-1) :=
   lift_Y _ _ _ _
 
-@[simp]
-theorem chamberRight_X (q : R) :
+@[simp] theorem chamberRight_X (q : R) :
     chamberRight q (X q) = LaurentPolynomial.C q * LaurentPolynomial.T (-1) :=
   lift_X _ _ _ _
 
-@[simp]
-theorem chamberRight_Y (q : R) : chamberRight q (Y q) = LaurentPolynomial.T 1 :=
+@[simp] theorem chamberRight_Y (q : R) : chamberRight q (Y q) = LaurentPolynomial.T 1 :=
   lift_Y _ _ _ _
 
-@[simp]
-theorem chamberRight_comp_swap (q : R) :
-    (chamberRight q).comp (swap q).toAlgHom = chamberLeft q := by
-  ext <;> simp
+@[simp] theorem chamberRight_comp_swap (q : R) :
+    (chamberRight q).comp (swap q).toAlgHom = chamberLeft q := by ext <;> simp
 
-@[simp]
-theorem chamberLeft_comp_swap (q : R) :
-    (chamberLeft q).comp (swap q).toAlgHom = chamberRight q := by
-  ext <;> simp
+@[simp] theorem chamberLeft_comp_swap (q : R) :
+    (chamberLeft q).comp (swap q).toAlgHom = chamberRight q := by ext <;> simp
 
-@[simp]
-theorem chamberRight_swap (q : R) (z : SlabAlgebra R q) :
+@[simp] theorem chamberRight_swap (q : R) (z : SlabAlgebra R q) :
     chamberRight q (swap q z) = chamberLeft q z :=
   AlgHom.congr_fun (chamberRight_comp_swap q) z
 
-@[simp]
-theorem chamberLeft_swap (q : R) (z : SlabAlgebra R q) :
+@[simp] theorem chamberLeft_swap (q : R) (z : SlabAlgebra R q) :
     chamberLeft q (swap q z) = chamberRight q z :=
   AlgHom.congr_fun (chamberLeft_comp_swap q) z
 
-@[simp]
-theorem chamberLeft_X_pow (q : R) (a : ℕ) :
+@[simp] theorem chamberLeft_X_pow (q : R) (a : ℕ) :
     chamberLeft q (X q ^ a) = LaurentPolynomial.T (a : ℤ) := by
   rw [map_pow, chamberLeft_X, LaurentPolynomial.T_pow, mul_one]
 
-@[simp]
-theorem chamberRight_Y_pow (q : R) (a : ℕ) :
+@[simp] theorem chamberRight_Y_pow (q : R) (a : ℕ) :
     chamberRight q (Y q ^ a) = LaurentPolynomial.T (a : ℤ) := by
   rw [map_pow, chamberRight_Y, LaurentPolynomial.T_pow, mul_one]
 
-@[simp]
-theorem chamberRight_X_pow (q : R) (a : ℕ) :
+@[simp] theorem chamberRight_X_pow (q : R) (a : ℕ) :
     chamberRight q (X q ^ a) = LaurentPolynomial.C (q ^ a) * LaurentPolynomial.T (-(a : ℤ)) := by
   rw [map_pow, chamberRight_X, ← LaurentPolynomial.single_eq_C_mul_T,
     AddMonoidAlgebra.single_pow, nsmul_eq_mul, mul_neg, mul_one,
     LaurentPolynomial.single_eq_C_mul_T]
 
-@[simp]
-theorem chamberLeft_Y_pow (q : R) (a : ℕ) :
+@[simp] theorem chamberLeft_Y_pow (q : R) (a : ℕ) :
     chamberLeft q (Y q ^ a) = LaurentPolynomial.C (q ^ a) * LaurentPolynomial.T (-(a : ℤ)) := by
   rw [← swap_X, ← map_pow, chamberLeft_swap, chamberRight_X_pow]
 
@@ -519,67 +431,51 @@ theorem chamberLeft_Z (q : R) (n : ℤ) :
     chamberLeft q (Z q n) =
       LaurentPolynomial.C (if 0 < n then q ^ n.natAbs else 1) * LaurentPolynomial.T (-n) := by
   rcases Int.eq_nat_or_neg n with ⟨a, rfl | rfl⟩
-  · rcases eq_or_ne a 0 with rfl | ha
-    · simp
-    · have hpos : 0 < a := Nat.pos_of_ne_zero ha
-      simp [hpos]
-  · have hn : ¬ (a : ℤ) < 0 := not_lt.mpr (Int.natCast_nonneg a)
-    simp [hn]
+  · rcases eq_or_ne a 0 with rfl | ha <;> simp [Nat.pos_of_ne_zero, *]
+  · simp [not_lt.mpr (Int.natCast_nonneg a)]
 
 /-- Image of a normal-form monomial `Z q n` in the right chamber algebra. -/
 theorem chamberRight_Z (q : R) (n : ℤ) :
     chamberRight q (Z q n) =
       LaurentPolynomial.C (if n < 0 then q ^ n.natAbs else 1) * LaurentPolynomial.T n := by
-  rw [← chamberLeft_swap, swap_Z, chamberLeft_Z, neg_neg, Int.natAbs_neg]
-  simp only [neg_pos]
+  rw [← chamberLeft_swap, swap_Z, chamberLeft_Z, neg_neg, Int.natAbs_neg]; simp only [neg_pos]
 
 private theorem coeff_chamberLeft_Z_of_nonpos (q : R) {n : ℤ} (hn : n ≤ 0) (m : ℤ) :
     (chamberLeft q (Z q m)).coeff (-n) = if m = n then 1 else 0 := by
   rw [chamberLeft_Z, ← LaurentPolynomial.single_eq_C_mul_T, AddMonoidAlgebra.coeff_single]
   by_cases hmn : m = n
-  · subst hmn
-    have hnot : ¬ 0 < m := not_lt.mpr hn
-    simp [hnot]
-  · have hneg : -m ≠ -n := neg_injective.ne hmn
-    simp [hmn, hneg]
+  · subst hmn; simp [not_lt.mpr hn]
+  · simp [hmn, neg_injective.ne hmn]
 
 private theorem coeff_chamberRight_Z_of_nonneg (q : R) {n : ℤ} (hn : 0 ≤ n) (m : ℤ) :
     (chamberRight q (Z q m)).coeff n = if m = n then 1 else 0 := by
-  rw [chamberRight_Z, ← LaurentPolynomial.single_eq_C_mul_T, AddMonoidAlgebra.coeff_single]
-  by_cases hmn : m = n
-  · subst hmn
-    have hnot : ¬ m < 0 := not_lt.mpr hn
-    simp [hnot]
-  · simp [hmn]
+  rw [← chamberLeft_swap, swap_Z]
+  simpa [neg_inj] using coeff_chamberLeft_Z_of_nonpos q (Int.neg_nonpos_of_nonneg hn) (-m)
 
 private theorem coeff_chamberLeft_linearCombination_of_nonpos (q : R) (l : ℤ →₀ R) {n : ℤ}
-    (hn : n ≤ 0) :
-    (chamberLeft q (Finsupp.linearCombination R (Z q) l)).coeff (-n) = l n := by
+    (hn : n ≤ 0) : (chamberLeft q (Finsupp.linearCombination R (Z q) l)).coeff (-n) = l n := by
   induction l using Finsupp.induction with
   | zero => simp
   | single_add m r l _ _ ih =>
-    rw [map_add, Finsupp.linearCombination_single, map_add, map_smul,
-      AddMonoidAlgebra.coeff_add, Finsupp.add_apply, AddMonoidAlgebra.coeff_smul_apply,
-      coeff_chamberLeft_Z_of_nonpos q hn m, ih, Finsupp.add_apply, Finsupp.single_apply]
+    rw [map_add, Finsupp.linearCombination_single, map_add, map_smul, AddMonoidAlgebra.coeff_add,
+      Finsupp.add_apply, AddMonoidAlgebra.coeff_smul_apply, coeff_chamberLeft_Z_of_nonpos q hn m,
+      ih, Finsupp.add_apply, Finsupp.single_apply]
     by_cases hmn : m = n <;> simp [hmn]
 
 private theorem coeff_chamberRight_linearCombination_of_nonneg (q : R) (l : ℤ →₀ R) {n : ℤ}
-    (hn : 0 ≤ n) :
-    (chamberRight q (Finsupp.linearCombination R (Z q) l)).coeff n = l n := by
+    (hn : 0 ≤ n) : (chamberRight q (Finsupp.linearCombination R (Z q) l)).coeff n = l n := by
   induction l using Finsupp.induction with
   | zero => simp
   | single_add m r l _ _ ih =>
-    rw [map_add, Finsupp.linearCombination_single, map_add, map_smul,
-      AddMonoidAlgebra.coeff_add, Finsupp.add_apply, AddMonoidAlgebra.coeff_smul_apply,
-      coeff_chamberRight_Z_of_nonneg q hn m, ih, Finsupp.add_apply, Finsupp.single_apply]
+    rw [map_add, Finsupp.linearCombination_single, map_add, map_smul, AddMonoidAlgebra.coeff_add,
+      Finsupp.add_apply, AddMonoidAlgebra.coeff_smul_apply, coeff_chamberRight_Z_of_nonneg q hn m,
+      ih, Finsupp.add_apply, Finsupp.single_apply]
     by_cases hmn : m = n <;> simp [hmn]
 
 /-- The normal-form monomials `Z q : ℤ → SlabAlgebra R q` are `R`-linearly independent for every
 commutative ring `R` and parameter `q : R`. -/
 theorem linearIndependent_Z (q : R) : LinearIndependent R (Z q) := by
-  rw [linearIndependent_iff]
-  intro l hl
-  ext n
+  rw [linearIndependent_iff]; intro l hl; ext n
   rcases le_total n 0 with hn | hn
   · rw [Finsupp.zero_apply, ← coeff_chamberLeft_linearCombination_of_nonpos q l hn, hl, map_zero,
       AddMonoidAlgebra.coeff_zero, Finsupp.zero_apply]
@@ -590,62 +486,46 @@ theorem linearIndependent_Z (q : R) : LinearIndependent R (Z q) := by
 theorem span_range_Z (q : R) : Submodule.span R (Set.range (Z q)) = ⊤ := by
   rw [eq_top_iff]
   have hX_mem : ∀ z ∈ Submodule.span R (Set.range (Z q)),
-      X q * z ∈ Submodule.span R (Set.range (Z q)) := by
-    intro z hz
+      X q * z ∈ Submodule.span R (Set.range (Z q)) := fun z hz => by
     refine Submodule.span_induction ?_ (by simp)
       (fun u v _ _ hu hv => by rw [mul_add]; exact add_mem hu hv)
       (fun r u _ hu => by rw [mul_smul_comm]; exact Submodule.smul_mem _ r hu) hz
     rintro _ ⟨n, rfl⟩
-    rw [X_mul_Z]
-    split_ifs
+    rw [X_mul_Z]; split_ifs
     · exact Submodule.subset_span ⟨n - 1, rfl⟩
     · exact Submodule.smul_mem _ q (Submodule.subset_span ⟨n - 1, rfl⟩)
-  have hY_mem : ∀ z ∈ Submodule.span R (Set.range (Z q)),
-      Y q * z ∈ Submodule.span R (Set.range (Z q)) := by
-    intro z hz
-    refine Submodule.span_induction ?_ (by simp)
-      (fun u v _ _ hu hv => by rw [mul_add]; exact add_mem hu hv)
-      (fun r u _ hu => by rw [mul_smul_comm]; exact Submodule.smul_mem _ r hu) hz
-    rintro _ ⟨n, rfl⟩
-    rw [Y_mul_Z]
-    split_ifs
-    · exact Submodule.subset_span ⟨n + 1, rfl⟩
-    · exact Submodule.smul_mem _ q (Submodule.subset_span ⟨n + 1, rfl⟩)
+  have hswap : ∀ z ∈ Submodule.span R (Set.range (Z q)),
+      swap q z ∈ Submodule.span R (Set.range (Z q)) := fun z hz =>
+    Submodule.span_induction (fun _ ⟨n, hn⟩ => hn ▸ swap_Z q n ▸ Submodule.subset_span ⟨-n, rfl⟩)
+      (by simp) (fun _ _ _ _ hu hv => by rw [map_add]; exact add_mem hu hv)
+      (fun r _ _ hu => by rw [map_smul]; exact Submodule.smul_mem _ r hu) hz
   rintro z -
   obtain ⟨p, rfl⟩ := mk_surjective q z
   induction p using MvPolynomial.induction_on with
   | C r =>
     rw [MvPolynomial.algHom_C, Algebra.algebraMap_eq_smul_one, ← Z_zero q]
     exact Submodule.smul_mem _ r (Submodule.subset_span ⟨0, rfl⟩)
-  | add f g hf hg =>
-    rw [map_add]
-    exact add_mem hf hg
+  | add f g hf hg => rw [map_add]; exact add_mem hf hg
   | mul_X f v hf =>
     cases v
-    · rw [map_mul, mk_X, mul_comm]
-      exact hX_mem _ hf
-    · rw [map_mul, mk_Y, mul_comm]
-      exact hY_mem _ hf
+    · rw [map_mul, mk_X, mul_comm]; exact hX_mem _ hf
+    · rw [map_mul, mk_Y, mul_comm, ← swap_swap q (Y q * mk q f), map_mul, swap_Y]
+      exact hswap _ (hX_mem _ (hswap _ hf))
 
 /-- The normal-form `R`-basis of `SlabAlgebra R q` indexed by `ℤ`, sending `n` to `Z q n`
 (`X q ^ (-n)` for `n < 0`, `1` for `n = 0`, and `Y q ^ n` for `0 < n`). -/
 def basis (q : R) : Module.Basis ℤ R (SlabAlgebra R q) :=
   Module.Basis.mk (linearIndependent_Z q) (span_range_Z q).ge
 
-@[simp]
-theorem basis_apply (q : R) (n : ℤ) : basis q n = Z q n :=
+@[simp] theorem basis_apply (q : R) (n : ℤ) : basis q n = Z q n :=
   Module.Basis.mk_apply (linearIndependent_Z q) (span_range_Z q).ge n
 
-@[simp]
-theorem coe_basis (q : R) : ⇑(basis q) = Z q :=
-  funext (basis_apply q)
+@[simp] theorem coe_basis (q : R) : ⇑(basis q) = Z q := funext (basis_apply q)
 
-@[simp]
-theorem basis_repr_Z (q : R) (n : ℤ) : (basis q).repr (Z q n) = Finsupp.single n 1 := by
+@[simp] theorem basis_repr_Z (q : R) (n : ℤ) : (basis q).repr (Z q n) = Finsupp.single n 1 := by
   rw [← basis_apply, Module.Basis.repr_self]
 
-instance (q : R) : Module.Free R (SlabAlgebra R q) :=
-  Module.Free.of_basis (basis q)
+instance (q : R) : Module.Free R (SlabAlgebra R q) := Module.Free.of_basis (basis q)
 
 /-- Over a nontrivial commutative ring, every normal-form monomial `Z q n` is nonzero. -/
 theorem Z_ne_zero [Nontrivial R] (q : R) (n : ℤ) : Z q n ≠ 0 :=
@@ -671,8 +551,7 @@ theorem chamberLeft_prod_chamberRight_injective (q : R) :
     Function.Injective (fun z => (chamberLeft q z, chamberRight q z)) := by
   intro z w h
   obtain ⟨hL, hR⟩ := Prod.mk.inj h
-  apply (basis q).repr.injective
-  ext n
+  apply (basis q).repr.injective; ext n
   rcases le_total n 0 with hn | hn
   · rw [basis_repr_of_nonpos q z hn, basis_repr_of_nonpos q w hn, hL]
   · rw [basis_repr_of_nonneg q z hn, basis_repr_of_nonneg q w hn, hR]
