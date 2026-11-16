@@ -62,6 +62,14 @@ private theorem restrictField_apply (f : ParabolicCkHolderSpace k α E F hab) (r
     restrictField ha hb f r m p = mixedDerivL r m f (inclusion (slab_subset_slab ha hb) p) :=
   (rfl)
 
+/-- A restricted time slice is bounded by the norm of the whole family of time slices. -/
+private theorem norm_compLipschitzL_timeSliceL_le (f : ParabolicCkHolderSpace k α E F hab)
+    (r m : ℕ) (x : E) :
+    ‖HolderSpace.compLipschitzL _ (LipschitzWith.inclusion (Icc_subset_Icc ha hb))
+      (timeSliceL r m f x)‖ ≤ ‖timeSliceL r m f‖ :=
+  (HolderSpace.norm_compLipschitzL_apply_le _ _).trans
+    (lp.norm_apply_le_norm ENNReal.top_ne_zero _ x)
+
 /-- The restricted time slices of order `k - 1` are uniformly `(1 + α) / 2`-Hölder, with the
 norm of the family of time slices of `u` as a common constant. -/
 private theorem holderWith_restrictField_slabMk (f : ParabolicCkHolderSpace k α E F hab)
@@ -76,10 +84,7 @@ private theorem holderWith_restrictField_slabMk (f : ParabolicCkHolderSpace k α
       timeSliceL_apply f h, restrictField_apply, inclusion_slabMk]
   have hnorm : (nnHolderNorm ((1 + α) / 2) (g.toBoundedContinuousFunction :
       Icc a' b' → E [×m]→L[ℝ] F) : ℝ) ≤ ‖timeSliceL r m f‖ :=
-    g.nnHolderNorm_le.trans <|
-      ((HolderSpace.compLipschitzL _ _).le_of_opNorm_le
-        (HolderSpace.norm_compLipschitzL_le_one _) _).trans <|
-      (one_mul _).trans_le (lp.norm_apply_le_norm ENNReal.top_ne_zero _ x)
+    g.nnHolderNorm_le.trans (norm_compLipschitzL_timeSliceL_le ha hb f r m x)
   rw [← hg]
   exact g.memHolder.holderWith.mono (by exact_mod_cast hnorm)
 
@@ -161,12 +166,9 @@ private theorem norm_restrict_le (hab' : a' < b') (f : ParabolicCkHolderSpace k 
     exact BoundedContinuousFunction.norm_coe_le_norm _ _
   · refine lp.norm_le_of_forall_le (norm_nonneg _) fun x ↦ ?_
     rw [timeSliceL_restrict]
-    exact ((HolderSpace.compLipschitzL _ _).le_of_opNorm_le
-      (HolderSpace.norm_compLipschitzL_le_one _) _).trans
-      ((one_mul _).trans_le (lp.norm_apply_le_norm ENNReal.top_ne_zero _ x))
+    exact norm_compLipschitzL_timeSliceL_le ha hb f p.1 p.2 x
   · rw [mixedDerivHolderL_restrict]
-    exact ((HolderSpace.compLipschitzL _ _).le_of_opNorm_le
-      (HolderSpace.norm_compLipschitzL_le_one _) _).trans_eq (one_mul _)
+    exact HolderSpace.norm_compLipschitzL_apply_le _ _
 
 /-- Restriction of a bounded parabolic Hölder map of order `k` on `E × [a, b]` to the smaller
 slab `E × [a', b']`, as a continuous linear map. -/
