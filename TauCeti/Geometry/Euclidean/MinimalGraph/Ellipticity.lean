@@ -35,6 +35,7 @@ def principalOperator (p : E) : E →ₗ[ℝ] E :=
   (1 + ‖p‖ ^ 2) • LinearMap.id - (InnerProductSpace.rankOne ℝ p p).toLinearMap
 
 /-- Evaluate the coefficient operator on a vector. -/
+@[simp low]
 theorem principalOperator_apply (p v : E) :
     principalOperator p v = (1 + ‖p‖ ^ 2) • v - (inner ℝ p v) • p := by
   simp [principalOperator, InnerProductSpace.rankOne_apply]
@@ -87,6 +88,7 @@ theorem principalForm_self (p : E) : principalForm p p = ‖p‖ ^ 2 := by
   ring
 
 /-- On vectors orthogonal to the gradient, the form is `1 + ‖p‖²` times the squared norm. -/
+@[simp]
 theorem principalForm_of_orthogonal (p v : E) (h : inner ℝ p v = 0) :
     principalForm p v = (1 + ‖p‖ ^ 2) * ‖v‖ ^ 2 := by
   simp [principalForm_def, h]
@@ -101,12 +103,17 @@ theorem principalForm_le_of_norm_le (p v : E) {M : ℝ}
     principalForm p v ≤ (1 + ‖p‖ ^ 2) * ‖v‖ ^ 2 := principalForm_le p v
     _ ≤ (1 + M ^ 2) * ‖v‖ ^ 2 := mul_le_mul_of_nonneg_right (by linarith) hv
 
+/-- The principal form is positive on every vector of positive seminorm. -/
+theorem principalForm_pos_of_norm_pos (p : E) {v : E} (hv : 0 < ‖v‖) :
+    0 < principalForm p v :=
+  lt_of_lt_of_le (sq_pos_of_pos hv) (norm_sq_le_principalForm p v)
+
 end Seminormed
 
 variable [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 /-- The principal symbol is positive on every nonzero tangent vector. -/
 theorem principalForm_pos (p : E) {v : E} (hv : v ≠ 0) : 0 < principalForm p v :=
-  lt_of_lt_of_le (sq_pos_of_pos (norm_pos_iff.mpr hv)) (norm_sq_le_principalForm p v)
+  principalForm_pos_of_norm_pos p (norm_pos_iff.mpr hv)
 
 end TauCeti.MinimalGraph
