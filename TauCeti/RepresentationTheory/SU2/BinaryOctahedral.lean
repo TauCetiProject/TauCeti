@@ -154,7 +154,7 @@ private theorem even_coords_of_mem {v w : Fin 4 → ℤ} (hv : v ∈ binaryTetra
     (hw : w ∈ binaryOctahedralCosetCoords) :
     ∀ x ∈ [intQuaternion v * intQuaternion w, intQuaternion w * intQuaternion v],
       Even x.re ∧ Even x.imI ∧ Even x.imJ ∧ Even x.imK :=
-  (by rw [binaryTetrahedralCoords_eq]; decide : ∀ v ∈ binaryTetrahedralCoords,
+  (by rw [binaryTetrahedralCoords_def]; decide : ∀ v ∈ binaryTetrahedralCoords,
     ∀ w ∈ binaryOctahedralCosetCoords,
     ∀ x ∈ [intQuaternion v * intQuaternion w, intQuaternion w * intQuaternion v],
       Even x.re ∧ Even x.imI ∧ Even x.imJ ∧ Even x.imK) v hv w hw
