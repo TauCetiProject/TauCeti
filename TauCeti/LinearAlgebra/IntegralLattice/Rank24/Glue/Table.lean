@@ -329,6 +329,12 @@ theorem glueSubgroup_def (r : RootfulNiemeierType) :
     r.glueSubgroup = AddSubgroup.closure r.glueGenerators :=
   (rfl)
 
+/-- Every decoded table generator belongs to the glue subgroup it generates. -/
+theorem glueGenerators_subset_glueSubgroup (r : RootfulNiemeierType) :
+    r.glueGenerators ⊆ r.glueSubgroup := by
+  rw [glueSubgroup_def]
+  exact AddSubgroup.subset_closure
+
 /-- An additive automorphism taking table generators into the glue subgroup preserves that
 subgroup, since it is finite. -/
 theorem map_glueSubgroup_of_forall_mem (r : RootfulNiemeierType)
@@ -507,7 +513,7 @@ theorem glueSubgroup_eq_bot_iff_eq_e8Cubed (r : RootfulNiemeierType) :
   · by_contra hr
     obtain ⟨l, hl, hne⟩ := exists_mem_glueWords_ne_replicate_zero_of_ne hr
     obtain ⟨w, hw, hdec⟩ := exists_decodeGlueWord_mem_glueGenerators hl
-    have hwmem : w ∈ r.glueSubgroup := r.glueSubgroup_def ▸ AddSubgroup.subset_closure hw
+    have hwmem : w ∈ r.glueSubgroup := r.glueGenerators_subset_glueSubgroup hw
     rw [hbot, AddSubgroup.mem_bot] at hwmem
     subst hwmem
     have h0 : encodeGlueWord r.componentType r.isSimplyLaced_componentType

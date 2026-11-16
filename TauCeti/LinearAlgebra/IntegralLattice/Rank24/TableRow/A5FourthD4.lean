@@ -136,61 +136,46 @@ private theorem rotation_apply (w : a5FourthD4.glueModule) (i : Fin 5) :
       (congrArg (componentIsometry i) (piGlueAlphabetCongr_apply _ _ _ _ w i)))
 
 -- On the A₅ coordinates only reindexing remains; keep the dependent transport explicit.
-private theorem rotation_of_ne_four (w : a5FourthD4.glueModule) (i : Fin 5) (hi : i ≠ 4) :
-    a5FourthD4GlueRotation w i = FiniteQuadraticModule.Isometry.ofEq
-      (glueAlphabet_congr (componentType_a5FourthD4ComponentRotation i)
-        (a5FourthD4.isSimplyLaced_componentType (a5FourthD4ComponentRotation i))
-        (a5FourthD4.isSimplyLaced_componentType i))
-      (w (a5FourthD4ComponentRotation i)) := by
+private theorem rotation_apply_of_ne_four (w : a5FourthD4.glueModule) {i j : Fin 5}
+    (hij : a5FourthD4ComponentRotation i = j) (hi : i ≠ 4) :
+    a5FourthD4GlueRotation w i = cast
+      (congrArg (fun C : FiniteQuadraticModule ↦ (C : Type)) (glueAlphabet_congr
+        ((congrArg a5FourthD4.componentType hij).symm.trans
+          (componentType_a5FourthD4ComponentRotation i))
+        (a5FourthD4.isSimplyLaced_componentType j)
+        (a5FourthD4.isSimplyLaced_componentType i))) (w j) := by
+  subst j
   rw [rotation_apply]
   have h : componentIsometry i = QuadraticMap.IsometryEquiv.refl _ := by
     fin_cases i <;> first | rfl | exact (hi rfl).elim
   rw [h, QuadraticMap.IsometryEquiv.refl_apply]
-
-private theorem rotation_eq (w : a5FourthD4.glueModule) {i j : Fin 5}
-    (hij : a5FourthD4ComponentRotation i = j) :
-    a5FourthD4GlueRotation w i = componentIsometry i
-      (FiniteQuadraticModule.Isometry.ofEq (glueAlphabet_congr
-        ((congrArg a5FourthD4.componentType hij).symm.trans
-          (componentType_a5FourthD4ComponentRotation i))
-        (a5FourthD4.isSimplyLaced_componentType j)
-        (a5FourthD4.isSimplyLaced_componentType i)) (w j)) := by
-  subst j
-  exact rotation_apply w i
+  exact FiniteQuadraticModule.Isometry.ofEq_apply _ _
 
 /-- The combined rotation fixes the unmarked `A₅` coordinate of the row. -/
 theorem a5FourthD4GlueRotation_apply_zero (w : a5FourthD4.glueModule) :
-    a5FourthD4GlueRotation w (0 : Fin 5) = w (0 : Fin 5) := by
-  rw [rotation_eq w a5FourthD4ComponentRotation_zero]
-  simp only [componentIsometry, QuadraticMap.IsometryEquiv.refl_apply]
-  exact (FiniteQuadraticModule.Isometry.ofEq_apply _ _).trans (cast_eq _ _)
+    a5FourthD4GlueRotation w (0 : Fin 5) = w (0 : Fin 5) :=
+  (rotation_apply_of_ne_four w a5FourthD4ComponentRotation_zero (by decide)).trans (cast_eq _ _)
 
 /-- The first marked coordinate of the row reads the third. -/
 theorem a5FourthD4GlueRotation_apply_one (w : a5FourthD4.glueModule) :
-    a5FourthD4GlueRotation w (1 : Fin 5) = w (3 : Fin 5) := by
-  rw [rotation_eq w a5FourthD4ComponentRotation_one]
-  simp only [componentIsometry, QuadraticMap.IsometryEquiv.refl_apply]
-  exact (FiniteQuadraticModule.Isometry.ofEq_apply _ _).trans (cast_eq _ _)
+    a5FourthD4GlueRotation w (1 : Fin 5) = w (3 : Fin 5) :=
+  (rotation_apply_of_ne_four w a5FourthD4ComponentRotation_one (by decide)).trans (cast_eq _ _)
 
 /-- The second marked coordinate of the row reads the first. -/
 theorem a5FourthD4GlueRotation_apply_two (w : a5FourthD4.glueModule) :
-    a5FourthD4GlueRotation w (2 : Fin 5) = w (1 : Fin 5) := by
-  rw [rotation_eq w a5FourthD4ComponentRotation_two]
-  simp only [componentIsometry, QuadraticMap.IsometryEquiv.refl_apply]
-  exact (FiniteQuadraticModule.Isometry.ofEq_apply _ _).trans (cast_eq _ _)
+    a5FourthD4GlueRotation w (2 : Fin 5) = w (1 : Fin 5) :=
+  (rotation_apply_of_ne_four w a5FourthD4ComponentRotation_two (by decide)).trans (cast_eq _ _)
 
 /-- The third marked coordinate of the row reads the second. -/
 theorem a5FourthD4GlueRotation_apply_three (w : a5FourthD4.glueModule) :
-    a5FourthD4GlueRotation w (3 : Fin 5) = w (2 : Fin 5) := by
-  rw [rotation_eq w a5FourthD4ComponentRotation_three]
-  simp only [componentIsometry, QuadraticMap.IsometryEquiv.refl_apply]
-  exact (FiniteQuadraticModule.Isometry.ofEq_apply _ _).trans (cast_eq _ _)
+    a5FourthD4GlueRotation w (3 : Fin 5) = w (2 : Fin 5) :=
+  (rotation_apply_of_ne_four w a5FourthD4ComponentRotation_three (by decide)).trans (cast_eq _ _)
 
 /-- The `D₄` coordinate of the row undergoes glue-alphabet triality. -/
 theorem a5FourthD4GlueRotation_apply_four (w : a5FourthD4.glueModule) :
     a5FourthD4GlueRotation w (4 : Fin 5) =
       typeD4TrialityGlueAlphabetIsometry (isSimplyLaced_D 4) (w (4 : Fin 5)) := by
-  rw [rotation_eq w a5FourthD4ComponentRotation_four]
+  rw [rotation_apply]
   dsimp [componentIsometry]
   exact congrArg (typeD4TrialityGlueAlphabetIsometry _)
     ((FiniteQuadraticModule.Isometry.ofEq_apply _ _).trans (cast_eq _ _))
@@ -222,7 +207,8 @@ theorem encodeGlueWord_a5FourthD4GlueRotation (w : a5FourthD4.glueModule) :
   · subst i
     rw [a5FourthD4GlueRotation_apply_four, ite_eq_left rfl]
     exact congrArg Fin.val (glueLabelEquiv_symm_typeD4TrialityGlueAlphabetIsometry _ _)
-  · rw [ite_eq_right hi, rotation_of_ne_four w i hi]
+  · rw [ite_eq_right hi, rotation_apply_of_ne_four w rfl hi,
+      ← FiniteQuadraticModule.Isometry.ofEq_apply]
     exact val_glueLabelEquiv_symm_ofEq (componentType_a5FourthD4ComponentRotation i) _ _ _
 
 /-- The combined symmetry has cube equal to the identity. -/
@@ -281,16 +267,14 @@ theorem map_glueSubgroup_a5FourthD4GlueRotation :
         (a5FourthD4GlueRotation : a5FourthD4.glueModule →+ a5FourthD4.glueModule) =
       a5FourthD4.glueSubgroup :=
   a5FourthD4.map_glueSubgroup_of_forall_mem a5FourthD4GlueRotation
-    (fun w hw ↦ by
-      rw [glueSubgroup_def]
-      exact AddSubgroup.subset_closure ((a5FourthD4GlueRotation_mem_glueGenerators_iff w).mpr hw))
+    (fun w hw ↦ a5FourthD4.glueGenerators_subset_glueSubgroup
+      ((a5FourthD4GlueRotation_mem_glueGenerators_iff w).mpr hw))
 
 /-- Membership in the glue subgroup is invariant under the corrected rotation. -/
 theorem a5FourthD4GlueRotation_mem_glueSubgroup_iff (w : a5FourthD4.glueModule) :
     a5FourthD4GlueRotation w ∈ a5FourthD4.glueSubgroup ↔ w ∈ a5FourthD4.glueSubgroup :=
   a5FourthD4.apply_mem_glueSubgroup_iff_of_forall_mem a5FourthD4GlueRotation
-    (fun v hv ↦ by
-      rw [glueSubgroup_def]
-      exact AddSubgroup.subset_closure ((a5FourthD4GlueRotation_mem_glueGenerators_iff v).mpr hv)) w
+    (fun v hv ↦ a5FourthD4.glueGenerators_subset_glueSubgroup
+      ((a5FourthD4GlueRotation_mem_glueGenerators_iff v).mpr hv)) w
 
 end TauCeti.RootfulNiemeierType
