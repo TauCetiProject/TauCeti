@@ -100,8 +100,8 @@ private def pullbackAtom {Φ : E → E'} (hΦ : ContDiff ℝ ∞ Φ) (ψ : 𝓓(
 
 omit [FiniteDimensional ℝ E'] [FiniteDimensional ℝ E] in
 private theorem pullbackAtom_apply {Φ : E → E'} (hΦ : ContDiff ℝ ∞ Φ) (ψ : 𝓓(Ω, ℂ)) (η : E')
-    (x : E) : pullbackAtom hΦ ψ η x = ψ x * TauCeti.fourierAtom η (Φ x) :=
-  rfl
+    (x : E) : pullbackAtom hΦ ψ η x = ψ x * TauCeti.fourierAtom η (Φ x) := by
+  simp only [pullbackAtom, bilinLeftCLM_apply, ContinuousLinearMap.mul_apply', Function.comp_apply]
 
 /-- The pairing `T (ψ (e_η ∘ Φ))` of `T` with a test function times the Fourier atom `e_η` of `E'`
 pulled back along a smooth map `Φ`. For `Φ` the identity it is the localized Fourier transform. -/
