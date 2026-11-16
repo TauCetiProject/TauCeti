@@ -167,6 +167,18 @@ theorem prodThomPairSnd_comp_prodThomPairFiberMap :
     (prodThomPairFiberMap_fst_apply F _ _).trans
       (congrArg (Prod.mk PUnit.unit) (prodThomPairSnd_fst_apply F p)))
 
+variable (B) in
+/-- A constant map `B → B'` of the bases induces the projection onto the fibre pair followed by
+the fibre inclusion over the target point. -/
+@[reassoc]
+theorem prodThomPairMap_const (b : B') :
+    prodThomPairMap F (ContinuousMap.const B b) =
+      prodThomPairSnd B F ≫ prodThomPairFiberMap F b :=
+  TopPair.hom_ext_of_fst _ (TopCat.ext fun p ↦
+    (prodThomPairMap_fst_apply F _ p).trans <|
+      (prodThomPairFiberMap_fst_apply F b p.2).symm.trans <|
+        congrArg (TopPair.Hom.fst (prodThomPairFiberMap F b)) (prodThomPairSnd_fst_apply F p).symm)
+
 /-- Over a point, the fibre inclusion is an isomorphism from the pair `(F, F ∖ {0})` onto the Thom
 pair of the product bundle, with inverse the projection to the fibre. -/
 @[expose, simps]

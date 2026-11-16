@@ -65,8 +65,11 @@ bundle provides (`TauCeti.VectorBundleOrientation.exists_isThomClass`).
   pair `(E, E₀)` and on fibres.
 * `TauCeti.exists_singularCohomology_thomPair_fiber`: local classes realizing prescribed fibre
   classes near every point glue to a class of the Thom pair `(E, E₀)`.
-* `TauCeti.existsUnique_isThomClass_of_subsingleton_units`: every real vector bundle has a unique
-  Thom class with coefficients in a ring whose only unit is `1`, such as `ZMod 2`.
+* `TauCeti.existsUnique_isThomClass_of_subsingleton_units`,
+  `TauCeti.thomClassOfSubsingletonUnits`, `TauCeti.eq_thomClassOfSubsingletonUnits_iff`,
+  `TauCeti.singularCohomologyMap_pullbackThomPairMap_thomClassOfSubsingletonUnits`: every real
+  vector bundle has a unique Thom class with coefficients in a ring whose only unit is `1`, such as
+  `ZMod 2`, natural under bundle pullback.
 
 ## References
 
@@ -550,6 +553,50 @@ theorem existsUnique_isThomClass_of_subsingleton_units :
   exact ⟨x, hxT, fun y hy ↦
     singularCohomology_thomPair_ext fun b ↦ eq_of_span_fiber_eq_top K
       ((isThomClass_iff.1 hy).2 b) ((isThomClass_iff.1 hxT).2 b)⟩
+
+variable (F E)
+
+/-- **The canonical Thom class** of a real vector bundle over a commutative ring `K` whose group of
+units is a subsingleton (for example `ZMod 2`), selected by
+`TauCeti.existsUnique_isThomClass_of_subsingleton_units`. No orientation of `E` is needed, and the
+base `B` is arbitrary. -/
+def thomClassOfSubsingletonUnits :
+    (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F) :=
+  (existsUnique_isThomClass_of_subsingleton_units (F := F) (E := E) K).exists.choose
+
+/-- `thomClassOfSubsingletonUnits` is a Thom class of `E`. -/
+@[simp]
+theorem isThomClass_thomClassOfSubsingletonUnits :
+    IsThomClass F E (thomClassOfSubsingletonUnits F E K) :=
+  (existsUnique_isThomClass_of_subsingleton_units (F := F) (E := E) K).exists.choose_spec
+
+/-- When `Kˣ` is a subsingleton, every Thom class of `E` equals `thomClassOfSubsingletonUnits`. -/
+theorem eq_thomClassOfSubsingletonUnits_of_isThomClass
+    {u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F)}
+    (hu : IsThomClass F E u) :
+    u = thomClassOfSubsingletonUnits F E K :=
+  (existsUnique_isThomClass_of_subsingleton_units (F := F) (E := E) K).unique hu
+    (isThomClass_thomClassOfSubsingletonUnits F E K)
+
+/-- **Uniqueness characterization of `thomClassOfSubsingletonUnits`**: when `Kˣ` is a subsingleton,
+a class in `Hʳ(E, E₀; K)` equals `thomClassOfSubsingletonUnits F E K` if and only if it is a Thom
+class of `E`. -/
+theorem eq_thomClassOfSubsingletonUnits_iff
+    (u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F)) :
+    u = thomClassOfSubsingletonUnits F E K ↔ IsThomClass F E u :=
+  ⟨fun h ↦ h ▸ isThomClass_thomClassOfSubsingletonUnits F E K,
+    eq_thomClassOfSubsingletonUnits_of_isThomClass F E K⟩
+
+/-- **Naturality of `thomClassOfSubsingletonUnits` under bundle pullback**: pulling back
+`thomClassOfSubsingletonUnits F E K` along `f : C(B', B)` gives the canonical Thom class of the
+pullback bundle `f^* E`. -/
+theorem singularCohomologyMap_pullbackThomPairMap_thomClassOfSubsingletonUnits
+    {B' : Type w} [TopologicalSpace B'] (f : C(B', B)) :
+    TopPair.singularCohomologyMap (pullbackThomPairMap F E f) (finrank ℝ F)
+        (thomClassOfSubsingletonUnits F E K) =
+      thomClassOfSubsingletonUnits F ((⇑f) *ᵖ E) K :=
+  eq_thomClassOfSubsingletonUnits_of_isThomClass F ((⇑f) *ᵖ E) K
+    ((isThomClass_thomClassOfSubsingletonUnits F E K).pullback f)
 
 end SubsingletonUnits
 

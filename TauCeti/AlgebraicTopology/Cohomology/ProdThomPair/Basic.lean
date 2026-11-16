@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Cohomology.UniversalCoefficient
 public import TauCeti.AlgebraicTopology.Singular.ProdThomPair
+import TauCeti.AlgebraicTopology.Cohomology.HomotopyInvariance
 
 /-!
 # Relative cohomology of the Thom pair of a product bundle
@@ -39,6 +40,8 @@ Thom classes agree on overlaps.
 
 ## Main definitions and results
 
+* `TauCeti.isIso_singularCohomologyMap_prodThomPairProj`: for contractible `F`, pulling back along
+  `B × F → B` is an isomorphism on singular cohomology in every degree.
 * `TauCeti.isZero_singularCohomology_prodThomPair`: `Hⁿ(B × F, B × (F ∖ {0})) = 0` for
   `n < dim F`.
 * `TauCeti.prodThomPairSingularCohomologyEquiv`: `Hʳ(B × F, B × (F ∖ {0}); R, M) ≃ₗ[k]
@@ -61,9 +64,22 @@ noncomputable section
 
 open CategoryTheory Limits Module AlgebraicTopology
 
-universe w
+universe w v u
 
 namespace TauCeti
+
+/-- Pulling back along the projection `B × F → B` of a product bundle with contractible fibre
+induces isomorphisms on singular cohomology in every degree. -/
+instance isIso_singularCohomologyMap_prodThomPairProj
+    {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
+    (k : Type*) [Ring k] [Linear k C] (M : C) (B : Type w) [TopologicalSpace B]
+    {F : Type w} [TopologicalSpace F] [Zero F] [ContractibleSpace F] (m : ℕ) :
+    IsIso (TopCat.singularCohomologyMap (R := R) (k := k) (M := M)
+      (prodThomPairProj B F) m) := by
+  have hproj : prodThomPairProj B F = TopCat.ofHom ContinuousMap.fst :=
+    TopCat.ext fun p ↦ prodThomPairProj_apply F p
+  rw [hproj, ← ContinuousMap.HomotopyEquiv.prodContractible_toFun (X := B) (Y := F)]
+  exact (ContinuousMap.HomotopyEquiv.prodContractible B F).isIso_singularCohomologyMap R k M m
 
 variable {k : Type*} [CommRing k] (R M : ModuleCat.{w} k) [Module.Projective k R]
   (B : Type w) [TopologicalSpace B] {B' : Type w} [TopologicalSpace B']

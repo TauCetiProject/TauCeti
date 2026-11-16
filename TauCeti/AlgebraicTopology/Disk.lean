@@ -36,7 +36,10 @@ Mathlib's `TopCat.diskBoundary n` is the universe lift of the unit sphere of
 (`TauCeti.diskBoundaryHomeomorph`), which lets results about unit spheres of inner product spaces
 in that universe be applied to it.  In particular the boundary of the `n`-disk is empty exactly
 when `n = 0` (`TauCeti.nonempty_diskBoundary_iff`), and a point of the boundary `S⁰` of the
-`1`-disk is determined by its coordinate (`TauCeti.diskBoundary_one_ext`).  The antipodal map of
+`1`-disk is determined by its coordinate (`TauCeti.diskBoundary_one_ext`), so `TopCat.sphere 0`
+consists of two discrete points `TauCeti.sphereMinus` and `TauCeti.spherePlus`
+(`TauCeti.eq_sphereMinus_or_eq_spherePlus`, `TauCeti.discreteTopology_sphere_zero`).  The antipodal
+map of
 the boundary sphere is `TauCeti.diskBoundaryNeg`.  More generally, a linear isometry `e` of
 `EuclideanSpace ℝ (Fin n)` induces homeomorphisms of the disk and of its boundary sphere,
 compatible with the boundary
@@ -325,6 +328,78 @@ lemma sq_diskBoundary_one_eq_one (s : TopCat.diskBoundary.{u} 1) :
       EuclideanSpace ℝ (Fin 1))
   rw [mem_sphere_zero_iff_norm.1 s.down.2, Fin.sum_univ_one, Real.norm_eq_abs, sq_abs] at h
   simpa using h.symm
+
+/-- The standard orthonormal basis of `EuclideanSpace ℝ (ULift (Fin 1))`, which determines the
+poles `-e₀` and `e₀` of `TopCat.sphere 0`. -/
+abbrev sphereZeroBasis : OrthonormalBasis (Fin 1) ℝ (EuclideanSpace ℝ (ULift.{u} (Fin 1))) :=
+  (EuclideanSpace.basisFun (ULift.{u} (Fin 1)) ℝ).reindex Equiv.ulift
+
+/-- The point `e₀` of `TopCat.sphere 0`. -/
+@[expose]
+def spherePlus : TopCat.diskBoundary.{u} 1 :=
+  (diskBoundaryHomeomorph 1).symm ⟨sphereZeroBasis 0, by simp⟩
+
+/-- The point `-e₀` of `TopCat.sphere 0`. -/
+@[expose]
+def sphereMinus : TopCat.diskBoundary.{u} 1 :=
+  (diskBoundaryHomeomorph 1).symm (-⟨sphereZeroBasis 0, by simp⟩)
+
+lemma spherePlus_coord :
+    (((TopCat.diskBoundaryInclusion.{u} 1 spherePlus) :
+      ULift.{u} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin 1)) 1)).down :
+        EuclideanSpace ℝ (Fin 1)) 0 = 1 := by
+  -- `spherePlus` is defined through `(diskBoundaryHomeomorph 1).symm`, and the boundary inclusion
+  -- keeps the underlying vector.
+  change ((((diskBoundaryHomeomorph 1).symm _ : TopCat.diskBoundary.{u} 1) :
+    ULift.{u} (Metric.sphere (0 : EuclideanSpace ℝ (Fin 1)) 1)).down :
+      EuclideanSpace ℝ (Fin 1)) 0 = 1
+  rw [diskBoundaryHomeomorph_symm_apply_down_apply]
+  simp
+
+lemma sphereMinus_coord :
+    (((TopCat.diskBoundaryInclusion.{u} 1 sphereMinus) :
+      ULift.{u} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin 1)) 1)).down :
+        EuclideanSpace ℝ (Fin 1)) 0 = -1 := by
+  -- `sphereMinus` is defined through `(diskBoundaryHomeomorph 1).symm`, and the boundary inclusion
+  -- keeps the underlying vector.
+  change ((((diskBoundaryHomeomorph 1).symm _ : TopCat.diskBoundary.{u} 1) :
+    ULift.{u} (Metric.sphere (0 : EuclideanSpace ℝ (Fin 1)) 1)).down :
+      EuclideanSpace ℝ (Fin 1)) 0 = -1
+  rw [diskBoundaryHomeomorph_symm_apply_down_apply]
+  simp
+
+/-- **`S⁰` consists of the two points `-e₀` and `e₀`.** -/
+lemma eq_sphereMinus_or_eq_spherePlus (p : TopCat.diskBoundary.{u} 1) :
+    p = sphereMinus ∨ p = spherePlus := by
+  rcases sq_eq_one_iff.1 (sq_diskBoundary_one_eq_one p) with h | h
+  · exact Or.inr (diskBoundary_one_ext (h.trans spherePlus_coord.{u}.symm))
+  · exact Or.inl (diskBoundary_one_ext (h.trans sphereMinus_coord.{u}.symm))
+
+/-- The two points `-e₀` and `e₀` of `S⁰` are distinct. -/
+lemma sphereMinus_ne_spherePlus : (sphereMinus : TopCat.diskBoundary.{u} 1) ≠ spherePlus := by
+  intro h
+  have h' := sphereMinus_coord.{u}
+  rw [h, spherePlus_coord] at h'
+  norm_num at h'
+
+/-- The boundary `S⁰` of the `1`-disk is finite. -/
+instance finite_diskBoundary_one : Finite (TopCat.diskBoundary.{u} 1) :=
+  Finite.of_surjective (fun b : Bool ↦ if b then spherePlus.{u} else sphereMinus.{u}) fun p ↦ by
+    rcases eq_sphereMinus_or_eq_spherePlus p with rfl | rfl
+    · exact ⟨false, rfl⟩
+    · exact ⟨true, rfl⟩
+
+/-- The zero-sphere `TopCat.sphere 0` is finite. -/
+instance finite_sphere_zero : Finite (TopCat.sphere.{u} 0) :=
+  inferInstanceAs (Finite (TopCat.diskBoundary.{u} 1))
+
+/-- The boundary `S⁰` of the `1`-disk has the discrete topology. -/
+instance discreteTopology_diskBoundary_one : DiscreteTopology (TopCat.diskBoundary.{u} 1) :=
+  inferInstance
+
+/-- The zero-sphere `TopCat.sphere 0` has the discrete topology. -/
+instance discreteTopology_sphere_zero : DiscreteTopology (TopCat.sphere.{u} 0) :=
+  inferInstanceAs (DiscreteTopology (TopCat.diskBoundary.{u} 1))
 
 /-- The boundary sphere of a disk of positive dimension is nonempty. -/
 instance nonempty_diskBoundary_succ (n : ℕ) : Nonempty (TopCat.diskBoundary.{u} (n + 1)) :=

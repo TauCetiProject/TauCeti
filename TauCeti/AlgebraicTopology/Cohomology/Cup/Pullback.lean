@@ -7,6 +7,8 @@ module
 
 public import TauCeti.AlgebraicTopology.Cohomology.Cup.Relative
 public import Mathlib.Tactic.CategoryTheory.Monoidal.Basic
+import TauCeti.AlgebraicTopology.Cohomology.Cup.Connecting
+import TauCeti.AlgebraicTopology.Cohomology.GradedCommutativity
 
 /-!
 # The cup product with a relative class after pulling back
@@ -20,9 +22,12 @@ with coefficients in a commutative ring `K`. This file defines the map
 relative cohomology (`TopPair.singularCup`), for any `K`-module of coefficients `M`, and proves that
 it is natural in maps of pairs (`TopPair.pullbackCup_naturality`). It sends the unit `1 ∈ H⁰(Z; K)`
 to `u` (`TopPair.pullbackCup_one`), and its bijectivity is invariant under isomorphisms
-(`TopPair.bijective_pullbackCup_iff_of_isIso`). For the Thom pair `(E, E₀)` of a vector bundle and
-its projection, it is the Thom map `TauCeti.thomMap`, which the Thom isomorphism asserts to be
-bijective when `u` is a Thom class.
+(`TopPair.bijective_pullbackCup_iff_of_isIso`). Combined with graded commutativity and compatibility
+of the connecting morphism with cup products, `δ (σ ⌣ (P.map ≫ g)^* c)` equals `(-1)^(p (q + 1))`
+times `pullbackCup` of `δ σ` at `c`
+(`TopPair.singularCohomologyδ_singularCup_eq_zsmul_pullbackCup`). For the Thom pair `(E, E₀)` of a
+vector bundle and its projection, `pullbackCup` is the Thom map `TauCeti.thomMap`, which the Thom
+isomorphism asserts to be bijective when `u` is a Thom class.
 
 For a map `π : X ⟶ Y`, a subset `Z ⊆ X` and a subset `S ⊆ Y`, restricting `u ∈ Hⁿ(X, Z)` to the pair
 `(π⁻¹ S, π⁻¹ S ∩ Z)` and `π` to `π⁻¹ S ⟶ S` gives the map over `S` (`TopCat.pullbackCupRestrict`).
@@ -37,6 +42,8 @@ restriction of the bundle to `S`.
 * `TopPair.pullbackCup_naturality`: its naturality in maps of pairs.
 * `TopPair.pullbackCup_one`: `1 ↦ u`.
 * `TopPair.bijective_pullbackCup_iff_of_isIso`: invariance of bijectivity under isomorphisms.
+* `TopPair.singularCohomologyδ_singularCup_eq_zsmul_pullbackCup`: `δ (σ ⌣ (P.map ≫ g)^* c) =
+  (-1)^(p (q + 1)) • ((g^* c) ⌣ δ σ)`.
 * `TopCat.pullbackCupRestrict`: the map over a subset of the base.
 * `TopCat.pullbackCupRestrict_naturality`: its naturality in the subset.
 * `TopCat.bijective_pullbackCupRestrict_univ_iff`: over the whole base it is `a ↦ π^*a ⌣ u`.
@@ -133,6 +140,34 @@ theorem bijective_pullbackCup_iff_of_isIso {P P' : TopPair.{w}} (φ : P ⟶ P') 
     have := hφ.comp h'
     rw [← hc] at this
     exact (Function.Bijective.of_comp_iff _ hf).1 this
+
+/-- **The connecting morphism on `σ ⌣ (P.map ≫ g)^* c`.** For a pair `P`, a map `g : P.fst ⟶ Z`,
+and `σ ∈ H^q(P.snd; K)`, the connecting morphism takes `σ ⌣ (P.map ≫ g)^* c` to `(-1)^(p (q + 1))`
+times `P.pullbackCup` of `δ σ` at `c`. -/
+theorem singularCohomologyδ_singularCup_eq_zsmul_pullbackCup (M : ModuleCat.{w} K)
+    (P : TopPair.{w}) {Z : TopCat.{w}} (g : P.fst ⟶ Z) {q q' p n m : ℕ}
+    (h : p + q = n) (hq : q + 1 = q') (hm : n + 1 = m) (h' : p + q' = m)
+    (σ : P.snd.singularCohomology (𝟙_ (ModuleCat.{w} K)) K (𝟙_ (ModuleCat.{w} K)) q)
+    (c : Z.singularCohomology (𝟙_ (ModuleCat.{w} K)) K M p) :
+    P.singularCohomologyδ (𝟙_ (ModuleCat.{w} K)) K M n m hm
+        (P.snd.singularCup K (λ_ (𝟙_ (ModuleCat.{w} K))).inv (λ_ M).hom q p n (by omega) σ
+          (TopCat.singularCohomologyMap (P.map ≫ g) p c)) =
+      ((-1 : ℤ) ^ (p * q')) • P.pullbackCup M g q' p m h'
+        (P.singularCohomologyδ (𝟙_ (ModuleCat.{w} K)) K (𝟙_ (ModuleCat.{w} K)) q q' hq σ) c := by
+  subst hq
+  have hu : (λ_ (𝟙_ (ModuleCat.{w} K))).inv ≫
+      (β_ (𝟙_ (ModuleCat.{w} K)) (𝟙_ (ModuleCat.{w} K))).hom =
+      (λ_ (𝟙_ (ModuleCat.{w} K))).inv := by
+    rw [braiding_tensorUnit_left, Iso.inv_hom_id_assoc, unitors_inv_equal]
+  have hμ : (β_ M (𝟙_ (ModuleCat.{w} K))).hom ≫ (λ_ M).hom = (ρ_ M).hom := by
+    rw [braiding_tensorUnit_right, Category.assoc, Iso.inv_hom_id, Category.comp_id]
+  rw [TopCat.singularCohomologyMap_comp, ConcreteCategory.comp_apply,
+    P.snd.singularCup_gradedComm K hu hμ h, map_zsmul,
+    P.singularCohomologyδ_singularCup K (λ_ (𝟙_ (ModuleCat.{w} K))).inv (ρ_ M).hom h rfl hm h',
+    smul_smul, TopPair.pullbackCup_apply]
+  have hexp : (-1 : ℤ) ^ (p * q) * (-1 : ℤ) ^ p = (-1 : ℤ) ^ (p * (q + 1)) := by
+    rw [mul_add, mul_one, pow_add]
+  rw [hexp]
 
 end TopPair
 
