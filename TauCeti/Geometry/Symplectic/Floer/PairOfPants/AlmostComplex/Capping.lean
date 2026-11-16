@@ -163,10 +163,9 @@ theorem compatible_negativePlaneAlmostComplex (h₀ : ω.Compatible J₀)
 most `1`. -/
 theorem negativePlaneAlmostComplex_eq_of_norm_le (h₀ : ω.Compatible J₀) {w : ℂ}
     (hw : ‖w‖ ≤ 2 * Real.exp (2 * π)) (x : M) : negativePlaneAlmostComplex h₀ J hJ w x = J₀ := by
-  have h := neg_re_endCoord_inf_le zero_le_one (w := w) (by simpa using hw)
   refine h₀.eq_of_cayley_eq (tames_negativePlaneAlmostComplex h₀ w x) h₀.tames ?_
   rw [cayley_negativePlaneAlmostComplex, AlmostComplexStructure.cayley_self,
-    smoothTransition.zero_of_nonpos (by linarith), zero_smul]
+    smoothTransition_neg_endCoord_inf_eq_zero_of_norm_le hw, zero_smul]
 
 /-- **The structure on the end.** If `J` has period one in `t`, then on the part `s < 0` of the
 end, the Cayley transform of the negative plane structure at the point with end coordinates
