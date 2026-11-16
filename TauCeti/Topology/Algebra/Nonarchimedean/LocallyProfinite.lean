@@ -26,7 +26,7 @@ profinite groups among Hausdorff topological groups by three equivalent conditio
 
 Mathlib's `IsTopologicalGroup.exist_openSubgroup_sub_clopen_nhds_of_one` constructs open subgroups
 inside clopen neighbourhoods of `1` only when the ambient group `G` is compact. For a general
-continuous action of a topological group `G` on a space `α`, the pointwise stabilizer
+continuous action of a topological group `G` on a space `α`, the setwise stabilizer
 `{g : G | g • C = C}` (`MulAction.stabilizer G C`) of any compact open subset `C ⊆ α` is an open
 subgroup (`IsCompact.stabilizerOpenSubgroup`), and for left translation on `G` itself with `1 ∈ C`
 it is contained in `C` and therefore compact, since open subgroups are closed. In any weakly locally
@@ -48,13 +48,13 @@ the corresponding compact open additive subgroup basis.
 
 ## Main definitions
 
-* `IsCompact.stabilizerOpenSubgroup`: the pointwise stabilizer in `G` of a compact open subset `C`
+* `IsCompact.stabilizerOpenSubgroup`: the setwise stabilizer in `G` of a compact open subset `C`
   of a `G`-space, bundled as an `OpenSubgroup G` (with additive counterpart
   `IsCompact.stabilizerOpenAddSubgroup`).
 
 ## Main results
 
-* `IsCompact.isOpen_mulAction_stabilizer`: the pointwise stabilizer of a compact open subset under a
+* `IsCompact.isOpen_mulAction_stabilizer`: the setwise stabilizer of a compact open subset under a
   continuous group action is open.
 * `IsCompact.stabilizerOpenSubgroup_subset` and `IsCompact.isCompact_stabilizerOpenSubgroup`: when
   `1 ∈ C`, the left translation stabilizer lies in `C` and is compact.
@@ -93,11 +93,11 @@ variable {G α : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [TopologicalSpace α] [MulAction G α] [ContinuousSMul G α]
 
 /-- **Kramer's stabilizer openness lemma.** For a continuous action of a topological group `G` on a
-topological space `α`, the pointwise stabilizer `{g : G | g • C = C}` of any compact open subset
+topological space `α`, the setwise stabilizer `{g : G | g • C = C}` of any compact open subset
 `C ⊆ α` is open in `G`. Neither Hausdorffness of `G` nor Hausdorffness of `α` is required. -/
 @[to_additive
 /-- For a continuous additive action of a topological additive group `G` on a topological space `α`,
-the pointwise stabilizer `{g : G | g +ᵥ C = C}` of any compact open subset `C ⊆ α` is open in `G`.
+the setwise stabilizer `{g : G | g +ᵥ C = C}` of any compact open subset `C ⊆ α` is open in `G`.
 Neither Hausdorffness of `G` nor Hausdorffness of `α` is required. -/]
 theorem IsCompact.isOpen_mulAction_stabilizer {C : Set α} (hC : IsCompact C) (hC_open : IsOpen C) :
     IsOpen (MulAction.stabilizer G C : Set G) := by
@@ -116,19 +116,19 @@ theorem IsCompact.isOpen_mulAction_stabilizer {C : Set α} (hC : IsCompact C) (h
   simpa using Set.mem_preimage.mp (hVW (mk_mem_prod (Set.mem_inv.mp hgVinv) (hCW hx)))
 
 variable (G) in
-/-- The pointwise stabilizer `{g : G | g • C = C}` of a compact open subset `C` under a continuous
+/-- The setwise stabilizer `{g : G | g • C = C}` of a compact open subset `C` under a continuous
 action of a topological group `G`, bundled as an `OpenSubgroup G`. -/
 @[to_additive
-/-- The pointwise stabilizer `{g : G | g +ᵥ C = C}` of a compact open subset `C` under a continuous
+/-- The setwise stabilizer `{g : G | g +ᵥ C = C}` of a compact open subset `C` under a continuous
 additive action of a topological additive group `G`, bundled as an `OpenAddSubgroup G`. -/]
 def IsCompact.stabilizerOpenSubgroup {C : Set α} (hC : IsCompact C) (hC_open : IsOpen C) :
     OpenSubgroup G :=
   ⟨MulAction.stabilizer G C, hC.isOpen_mulAction_stabilizer hC_open⟩
 
-/-- The underlying set of `hC.stabilizerOpenSubgroup G hC_open` is the pointwise stabilizer of
+/-- The underlying set of `hC.stabilizerOpenSubgroup G hC_open` is the setwise stabilizer of
 `C`. -/
 @[to_additive (attr := simp)
-/-- The underlying set of `hC.stabilizerOpenAddSubgroup G hC_open` is the pointwise additive
+/-- The underlying set of `hC.stabilizerOpenAddSubgroup G hC_open` is the setwise additive
 stabilizer of `C`. -/]
 theorem IsCompact.coe_stabilizerOpenSubgroup {C : Set α} (hC : IsCompact C) (hC_open : IsOpen C) :
     ((hC.stabilizerOpenSubgroup G hC_open : OpenSubgroup G) : Set G) =
