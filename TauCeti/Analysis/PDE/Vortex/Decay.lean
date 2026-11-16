@@ -49,7 +49,8 @@ curvature.
 * `TauCeti.Vortex.one_sub_normSq_le_neg_log_mul_exp`: if `|α|² ≥ σ ≥ 4 c²` outside the disc of
   radius `R`, then `1 - |α(z)|² ≤ -log σ · exp (-c (|z| - R))` there.
 * `TauCeti.Vortex.exists_one_sub_normSq_le_mul_exp`: `1 - |α|² ≤ K exp (-c |z|)` for every
-  `c < 1 / 2`.
+  `c < 1 / 2`; `TauCeti.Vortex.exists_nonneg_one_sub_normSq_le_mul_exp` adds `0 ≤ 1 - |α|²` and
+  `0 ≤ K`.
 * `TauCeti.Vortex.exists_abs_curvature_le_mul_exp`: the same bound for the curvature coefficient
   `∂₁ b₂ - ∂₂ b₁`.
 * `TauCeti.Vortex.integrable_one_sub_normSq`, `TauCeti.Vortex.integrable_curvature`: the modulus
@@ -170,6 +171,24 @@ private theorem exists_one_sub_normSq_le_mul_exp_of_nonneg
   exact ⟨max K 0, le_max_right _ _, fun z ↦ (hK z).trans
     (mul_le_mul_of_nonneg_right (le_max_left _ _) (Real.exp_pos _).le)⟩
 
+/-- **Exponential decay of the modulus defect of a plane vortex**, with a nonnegative constant.
+A vortex on the whole plane whose section satisfies `|α| → 1` at infinity has
+`0 ≤ 1 - |α(z)|² ≤ K exp (-c |z|)` for every rate `c < 1 / 2`, with a constant `K ≥ 0` depending
+on `c`. -/
+theorem exists_nonneg_one_sub_normSq_le_mul_exp
+    (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
+    (hsol : ∀ z, equation x z = 0)
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {c : ℝ}
+    (hc : c < 1 / 2) :
+    ∃ K, 0 ≤ K ∧ ∀ z, 0 ≤ 1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2) ∧
+      1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2) ≤ K * Real.exp (-(c * ‖z‖)) := by
+  obtain ⟨K, hK₀, hK⟩ := exists_one_sub_normSq_le_mul_exp_of_nonneg hp hq hsol hlim
+    (le_max_right c 0) (max_lt hc (by norm_num))
+  refine ⟨K, hK₀, fun z ↦ ⟨by linarith [normSq_le_one_of_tendsto hp hq hsol hlim z],
+    (hK z).trans (mul_le_mul_of_nonneg_left ?_ hK₀)⟩⟩
+  exact Real.exp_le_exp.mpr (neg_le_neg (mul_le_mul_of_nonneg_right (le_max_left _ _)
+    (norm_nonneg _)))
+
 /-- **Exponential decay of the modulus defect of a plane vortex.** A vortex on the whole plane
 whose section satisfies `|α| → 1` at infinity has `1 - |α(z)|² ≤ K exp (-c |z|)` for every rate
 `c < 1 / 2`, with a constant `K` depending on `c`. -/
@@ -178,12 +197,9 @@ theorem exists_one_sub_normSq_le_mul_exp
     (hsol : ∀ z, equation x z = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {c : ℝ}
     (hc : c < 1 / 2) :
-    ∃ K, ∀ z, 1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2) ≤ K * Real.exp (-(c * ‖z‖)) := by
-  obtain ⟨K, hK₀, hK⟩ := exists_one_sub_normSq_le_mul_exp_of_nonneg hp hq hsol hlim
-    (le_max_right c 0) (max_lt hc (by norm_num))
-  refine ⟨K, fun z ↦ (hK z).trans (mul_le_mul_of_nonneg_left ?_ hK₀)⟩
-  exact Real.exp_le_exp.mpr (neg_le_neg (mul_le_mul_of_nonneg_right (le_max_left _ _)
-    (norm_nonneg _)))
+    ∃ K, ∀ z, 1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2) ≤ K * Real.exp (-(c * ‖z‖)) :=
+  let ⟨K, _, hK⟩ := exists_nonneg_one_sub_normSq_le_mul_exp hp hq hsol hlim hc
+  ⟨K, fun z ↦ (hK z).2⟩
 
 /-- **Exponential decay of the curvature of a plane vortex.** A vortex on the whole plane whose
 section satisfies `|α| → 1` at infinity has curvature coefficient bounded by `K exp (-c |z|)` for
