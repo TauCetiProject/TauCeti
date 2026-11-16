@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Manifold.MFDeriv.Constancy
 public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 public import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Topology.Algebra.Module.Alternating.Basic
 
 /-!
 # The exterior derivative of differential forms on manifolds
@@ -293,8 +294,8 @@ theorem mextDerivWithin_sub (hs : UniqueMDiffWithinAt I s x)
 
 /-- Swapping two tangent vectors negates the exterior derivative of a one-form. -/
 theorem mextDeriv_apply_swap (φ : RoughForm I M F 1) (x : M) (v w : TangentSpace I x) :
-    mextDeriv φ x ![v, w] = -mextDeriv φ x ![w, v] := by
-  simpa using (mextDeriv φ x).map_swap ![w, v] (i := 0) (j := 1) Fin.zero_ne_one
+    mextDeriv φ x ![v, w] = -mextDeriv φ x ![w, v] :=
+  (mextDeriv φ x).apply_vecCons_swap w v
 
 /-- The exterior derivative of a one-form, evaluated on two tangent vectors, is linear in the
 first vector. -/
