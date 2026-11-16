@@ -19,7 +19,10 @@ equalities `f ≫ 𝟙 Y = f` and `f ≫ g ≫ h = (f ≫ g) ≫ h`:
 * `CategoryTheory.Over.pullbackComp_id_inv_app_comp_eqToHom`: `pullbackComp f (𝟙 Y)` is the base
   change along `f` of `pullbackId`;
 * `CategoryTheory.Over.pullbackComp_comp_inv_app_comp_eqToHom`: the two identifications of base
-  change along `f ≫ g ≫ h` with the composite of the three base changes agree.
+  change along `f ≫ g ≫ h` with the composite of the three base changes agree;
+* `CategoryTheory.Over.pullback_iso_triangle`: for an isomorphism `e : X ≅ Y`, the unit and
+  counit built from `pullbackId` and `pullbackComp` satisfy the triangle identity for
+  `pullback e.hom` and `pullback e.inv`.
 -/
 
 public section
@@ -63,6 +66,24 @@ theorem pullbackComp_comp_inv_app_comp_eqToHom {W X Y Z : C} (f : W ⟶ X) (g : 
   apply pullback.hom_ext
   · simp [pullbackComp, eqToHom_comp_pullback_fst A.hom (Category.assoc f g h).symm]
   · simp [pullbackComp, eqToHom_comp_pullback_snd A.hom (Category.assoc f g h).symm]
+
+/-- For an isomorphism `e : X ≅ Y`, the unit and counit built from `pullbackId` and `pullbackComp`
+for `pullback e.hom` and `pullback e.inv` satisfy the triangle identity on every object `A` of
+`Over Y`. -/
+@[reassoc]
+theorem pullback_iso_triangle {X Y : C} (e : X ≅ Y) (A : Over Y) :
+    (pullback e.hom).map
+        (pullbackId.inv.app A ≫ eqToHom (by simp) ≫ (pullbackComp e.inv e.hom).hom.app A) ≫
+      (pullbackComp e.hom e.inv).inv.app ((pullback e.hom).obj A) ≫
+        eqToHom (by simp) ≫ pullbackId.hom.app ((pullback e.hom).obj A) =
+      𝟙 ((pullback e.hom).obj A) := by
+  -- As above, the identity is checked on the two projections out of `A ×_Y X`.
+  ext1
+  apply pullback.hom_ext
+  · simp [pullbackComp, pullbackId,
+      eqToHom_comp_pullback_fst_assoc (pullback.snd A.hom e.hom) e.hom_inv_id,
+      eqToHom_comp_pullback_fst A.hom e.inv_hom_id.symm]
+  · exact (Over.w _).trans (Category.id_comp _).symm
 
 end Over
 

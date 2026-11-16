@@ -147,23 +147,6 @@ private lemma eqToIso_congrArg_pullback_hom_app_hom {f g : T ⟶ S} (h : f = g)
       eqToHom (congrArg (fun k ↦ (Over.pullback k).obj X.obj) h) := by
   subst h; rfl
 
-private lemma overPullback_unit_counit (e : T ≅ S) (A : Over S) :
-    (Over.pullback e.hom).map
-        (Over.pullbackId.inv.app A ≫
-          eqToHom (congrArg (fun k ↦ (Over.pullback k).obj A) e.inv_hom_id.symm) ≫
-          (Over.pullbackComp e.inv e.hom).hom.app A) ≫
-      (Over.pullbackComp e.hom e.inv).inv.app ((Over.pullback e.hom).obj A) ≫
-        eqToHom (congrArg (fun k ↦ (Over.pullback k).obj ((Over.pullback e.hom).obj A))
-          e.hom_inv_id) ≫
-        Over.pullbackId.hom.app ((Over.pullback e.hom).obj A) =
-      𝟙 ((Over.pullback e.hom).obj A) := by
-  ext1
-  apply Limits.pullback.hom_ext
-  · simp [Over.pullbackComp, Over.pullbackId,
-      eqToHom_comp_pullback_fst_assoc (Limits.pullback.snd A.hom e.hom) e.hom_inv_id,
-      eqToHom_comp_pullback_fst A.hom e.inv_hom_id.symm]
-  · exact (Over.w _).trans (Category.id_comp _).symm
-
 /-- Base change of finite étale schemes along a scheme isomorphism is an equivalence, with unit and
 counit given directly by `pullbackId` and `pullbackComp`. -/
 noncomputable def pullbackIsoEquiv (e : T ≅ S) :
@@ -182,7 +165,7 @@ noncomputable def pullbackIsoEquiv (e : T ≅ S) :
       ObjectProperty.FullSubcategory.id_hom]
     rw [eqToIso_congrArg_pullback_hom_app_hom e.inv_hom_id.symm,
       eqToIso_congrArg_pullback_hom_app_hom e.hom_inv_id]
-    exact overPullback_unit_counit e X.obj
+    exact Over.pullback_iso_triangle e X.obj
 
 /-- The forward functor of `pullbackIsoEquiv e` is base change along `e.hom`. -/
 @[simp]

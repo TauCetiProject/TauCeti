@@ -415,21 +415,6 @@ private lemma formalRelSpecZeroIso_inv_map_hom
   · simp [relSpecFiniteEtale]
   · simp [relSpecFiniteEtale]
 
-private lemma naturality_of_eqToHom_conj {C₁ C₂ : Type*} [Category C₁] [Category C₂]
-    (G : C₁ ⥤ C₂) {M₂ M₁ P₂ P₁ : C₁} {Q₂ Q₁ N₂ N₁ R₂ R₁ : C₂}
-    (eA₂ : P₂ = M₂) (eA₁ : P₁ = M₁)
-    (p₂ : Q₂ = G.obj P₂) (p₁ : Q₁ = G.obj P₁)
-    (q₂ : Q₂ = G.obj M₂) (q₁ : Q₁ = G.obj M₁)
-    (r₂ : R₂ = N₂) (r₁ : R₁ = N₁)
-    (u : P₂ ⟶ P₁) (v : R₂ ⟶ R₁)
-    (T₁ : G.obj M₁ ⟶ N₁) (T₂ : G.obj M₂ ⟶ N₂)
-    (h : (eqToHom p₂ ≫ G.map u ≫ eqToHom p₁.symm) ≫ (eqToHom q₁ ≫ T₁ ≫ eqToHom r₁.symm) =
-      (eqToHom q₂ ≫ T₂ ≫ eqToHom r₂.symm) ≫ v) :
-    G.map (eqToHom eA₂.symm ≫ u ≫ eqToHom eA₁) ≫ T₁ =
-      T₂ ≫ (eqToHom r₂.symm ≫ v ≫ eqToHom r₁) := by
-  subst eA₂ eA₁ p₂ p₁ r₂ r₁
-  simpa using h
-
 -- `FiniteLocallyFreeSheaf X` lives in `X.Modules` while `FinitelyPresentedSheaf X` lives in
 -- `SheafOfModules X.ringCatSheaf`, so we package `completionFunctor_map_app` on the composite.
 private lemma toFinitelyPresented_comp_completionFunctor_map_app
@@ -583,11 +568,22 @@ private def coherentFormalModuleHomOfTower
     dsimp only [ObjectProperty.FullSubcategory.comp_hom, CommMon.comp_hom, Mon.comp_hom] at hmod
     simp only [QuasicoherentAlgebra.pullback_map_hom_hom_hom,
       pullbackTransitionAlgIso_hom_module_eq] at hmod
-    exact naturality_of_eqToHom_conj (Scheme.Modules.pullback ((X.formalCompletion I).ι n))
-      (QuasicoherentAlgebra.pullback_obj_X (Scheme.formalCompletion.toScheme X I (n + 1)) A₂) _
-      _ (QuasicoherentAlgebra.pullback_obj_X ((X.formalCompletion I).ι n) _) _ _
-      (QuasicoherentAlgebra.pullback_obj_X (Scheme.formalCompletion.toScheme X I n) A₂) _
-      _ _ _ _ hmod
+    let hA₂' :=
+      QuasicoherentAlgebra.pullback_obj_X (Scheme.formalCompletion.toScheme X I (n + 1)) A₂
+    let hA₁' :=
+      QuasicoherentAlgebra.pullback_obj_X (Scheme.formalCompletion.toScheme X I (n + 1)) A₁
+    let q₂ := (QuasicoherentAlgebra.pullback_obj_X ((X.formalCompletion I).ι n) _).trans
+      (congrArg _ hA₂')
+    let q₁ := (QuasicoherentAlgebra.pullback_obj_X ((X.formalCompletion I).ι n) _).trans
+      (congrArg _ hA₁')
+    let r₂ := QuasicoherentAlgebra.pullback_obj_X (Scheme.formalCompletion.toScheme X I n) A₂
+    let r₁ := QuasicoherentAlgebra.pullback_obj_X (Scheme.formalCompletion.toScheme X I n) A₁
+    refine (TauCeti.eqToHom_conjugate_square q₂ q₁ r₁ r₂ _ _ _ _).mp ?_
+    exact (congrArg (· ≫ _)
+      ((Scheme.Modules.pullback ((X.formalCompletion I).ι n)).eqToHom_conjugate_map_conjugate
+        hA₂'.symm hA₁'.symm q₂ q₁ (ψ (n + 1)).hom.hom.hom)).trans
+      (hmod.trans (congrArg (_ ≫ ·)
+        (TauCeti.eqToHom_conjugate_cancel r₂.symm r₁.symm (ψ n).hom.hom.hom).symm))
 
 @[simp]
 private lemma coherentFormalModuleHomOfTower_app
@@ -709,6 +705,8 @@ private lemma full_pullback_toScheme_zero
   let A₁ := C₁.unop.obj
   let A₂ := C₂.unop.obj
   have : Etale A₂.obj.relativeSpecToBase := C₂.unop.property.2.2
+  -- Unfold the object wrappers (`pullback_obj_obj`, `Over.pullback_obj_left`, `relSpecFiniteEtale`)
+  -- so `φ₀.hom.left` has explicit `Limits.pullback` endpoints matching `formalRelSpecZeroIso`.
   let φ₀' :
       Limits.pullback A₁.obj.relativeSpecToBase (Scheme.formalCompletion.toScheme X I 0) ⟶
         Limits.pullback A₂.obj.relativeSpecToBase (Scheme.formalCompletion.toScheme X I 0) :=
@@ -736,9 +734,11 @@ private lemma full_pullback_toScheme_zero
     have hconj := formalRelSpecLevelIso_hom_map_inv I b 0
     rw [hb 0, hψ 0, AdicThickeningSystem.liftOfEtale_app_zero] at hconj
     rwa [cancel_epi, cancel_mono] at hconj
-  change _ = φ₀'
   rw [← formalRelSpecZeroIso_inv_map_hom I f]
-  simp [f, a₀, hmap₀]
+  simp only [f, Quiver.Hom.unop_op, ObjectProperty.homMk_hom, hmap₀, a₀, A₁, A₂,
+    Category.assoc, Iso.inv_hom_id_assoc, Iso.inv_hom_id, Category.comp_id]
+  -- `φ₀'` is `φ₀.hom.left` with endpoints unfolded as noted at its definition above.
+  simp only [φ₀']
 
 end FormalSystem
 
