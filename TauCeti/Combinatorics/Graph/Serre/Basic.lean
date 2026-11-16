@@ -123,6 +123,14 @@ theorem toGeomEdge_eq_toGeomEdge_iff {e f : Γ.E} :
     · rfl
     · exact (Γ.toGeomEdge_rev e).symm
 
+variable {Γ} in
+/-- Two darts with the same initial vertex and distinct terminal vertices lie on distinct geometric
+edges. -/
+theorem toGeomEdge_ne_toGeomEdge_of_src_eq_of_tgt_ne {e₁ e₂ : Γ.E} (hsrc : Γ.src e₁ = Γ.src e₂)
+    (h : Γ.tgt e₁ ≠ Γ.tgt e₂) : Γ.toGeomEdge e₁ ≠ Γ.toGeomEdge e₂ := by
+  rw [Ne, toGeomEdge_eq_toGeomEdge_iff]
+  rintro (rfl | rfl) <;> simp_all
+
 /-- A function on darts taking the same value on mutually reverse darts descends to geometric
 edges. -/
 def GeomEdge.lift {β : Sort*} (f : Γ.E → β) (hf : ∀ e, f (Γ.rev e) = f e) :
@@ -361,6 +369,21 @@ theorem Hom.toGeomEdge_mapE_congr {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, 
   · rfl
   · rw [f.map_rev, Δ.toGeomEdge_rev]
 
+/-- Two distinct darts with the same image under a morphism of Serre graphs lie on distinct
+geometric edges: the images of a dart and of its reverse are distinct. -/
+theorem Hom.toGeomEdge_ne_toGeomEdge_of_ne_of_mapE_eq {Γ : SerreGraph.{u, v}}
+    {Δ : SerreGraph.{w, x}} (f : Γ.Hom Δ) {e₁ e₂ : Γ.E} (hne : e₁ ≠ e₂)
+    (he : f.mapE e₁ = f.mapE e₂) : Γ.toGeomEdge e₁ ≠ Γ.toGeomEdge e₂ := by
+  rw [Ne, toGeomEdge_eq_toGeomEdge_iff]
+  rintro (rfl | rfl)
+  · exact hne rfl
+  · exact Δ.rev_ne (f.mapE e₁) (by rw [← f.map_rev, he])
+
+/-- A morphism of Serre graphs identifying two darts identifies their terminal vertices. -/
+theorem Hom.mapV_tgt_eq_of_mapE_eq {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, x}} (f : Γ.Hom Δ)
+    {e₁ e₂ : Γ.E} (he : f.mapE e₁ = f.mapE e₂) : f.mapV (Γ.tgt e₁) = f.mapV (Γ.tgt e₂) := by
+  rw [← f.map_tgt, ← f.map_tgt, he]
+
 /-- The preimage of an orientation under a morphism of Serre graphs is an orientation. -/
 theorem Hom.isOrientation_preimage {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, x}}
     (f : Γ.Hom Δ) {O' : Set Δ.E} (hO' : Δ.IsOrientation O') : Γ.IsOrientation (f.mapE ⁻¹' O') :=
@@ -448,6 +471,13 @@ theorem Hom.comp_assoc {Δ : SerreGraph.{w, x}} {Θ : SerreGraph.{y, z}}
     {Ξ : SerreGraph} (f : Γ.Hom Δ) (g : Δ.Hom Θ) (h : Θ.Hom Ξ) :
     Hom.comp h (Hom.comp g f) = Hom.comp (Hom.comp h g) f := by
   apply Hom.ext <;> rfl
+
+/-- A morphism of Serre graphs surjective on vertices and on darts is right-cancellable. -/
+theorem Hom.cancel_right {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, x}} {Θ : SerreGraph.{y, z}}
+    {f : Γ.Hom Δ} {g₁ g₂ : Δ.Hom Θ} (hfV : Function.Surjective f.mapV)
+    (hfE : Function.Surjective f.mapE) : g₁.comp f = g₂.comp f ↔ g₁ = g₂ :=
+  ⟨fun h => Hom.ext _ (hfV.injective_comp_right (congrArg Hom.mapV h))
+    (hfE.injective_comp_right (congrArg Hom.mapE h)), congrArg (Hom.comp · f)⟩
 
 @[simp] theorem Hom.toPrefunctor_id :
     (Hom.id Γ).toPrefunctor = Prefunctor.id Γ.V := by
