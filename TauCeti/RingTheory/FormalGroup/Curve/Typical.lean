@@ -311,10 +311,11 @@ theorem coeff_subst_pTypicalProjectorCurve_log [Algebra ℚ R] (k : ℕ) (γ : F
         PowerSeries.coeff k (PowerSeries.subst γ.toPowerSeries F.log)
       else 0 := by
   rcases eq_or_ne k 0 with rfl | hk
-  · rw [ite_eq_left (by simp), ← logHom_toPowerSeries,
-      ← TauCeti.FormalGroupHom.toPowerSeries_mapCurve,
-      ← TauCeti.FormalGroupHom.toPowerSeries_mapCurve, Curve.coeff_zero_toPowerSeries,
-      Curve.coeff_zero_toPowerSeries]
+  · have h0 (δ : F.Curve) : PowerSeries.coeff 0 (PowerSeries.subst δ.toPowerSeries F.log) = 0 :=
+      (PowerSeries.coeff_zero_eq_constantCoeff_apply _).trans
+        (PowerSeries.constantCoeff_subst_eq_zero δ.constantCoeff_toPowerSeries _
+          F.constantCoeff_log)
+    rw [ite_eq_left (by simp), h0, h0]
   have h := PowerSeries.X_pow_dvd_iff.mp (PowerSeries.X_pow_dvd_subst_sub_subst
     (F.pTypicalProjectorCurve hR γ).constantCoeff_toPowerSeries
     (X_pow_dvd_pTypicalProjectorCurve_sub F hR k γ) F.log) k (Nat.lt_succ_self k)
@@ -332,11 +333,10 @@ private theorem frobeniusCurve_pTypicalProjectorCurve_of_ratAlgebra [Algebra ℚ
   ext k
   rcases eq_or_ne k 0 with rfl | hk
   · rw [Curve.coeff_zero_toPowerSeries, Curve.coeff_zero_toPowerSeries]
-  simp only [TauCeti.FormalGroupIso.curveEquiv_apply, logIso_toHom,
-    F.logHom.mapCurve_frobeniusCurve, toPowerSeries_frobeniusCurve_𝔾ₐ, PowerSeries.coeff_smul,
-    PowerSeries.coeff_cartier, Nat.add_zero, smul_eq_mul, map_zero, Curve.toPowerSeries_zero,
-    TauCeti.FormalGroupHom.toPowerSeries_mapCurve, logHom_toPowerSeries,
-    coeff_subst_pTypicalProjectorCurve_log]
+  simp only [TauCeti.FormalGroupIso.curveEquiv_apply, logIso_toHom, map_zero,
+    Curve.toPowerSeries_zero, TauCeti.FormalGroupHom.toPowerSeries_mapCurve, logHom_toPowerSeries,
+    subst_frobeniusCurve_log, PowerSeries.coeff_smul, PowerSeries.coeff_cartier, Nat.add_zero,
+    smul_eq_mul, coeff_subst_pTypicalProjectorCurve_log]
   rw [ite_eq_right fun h ↦ hqp (Finset.subset_singleton_iff'.mp h q
     (Nat.mem_primeFactors.mpr ⟨hq, dvd_mul_right q k, mul_ne_zero hq.ne_zero hk⟩)), mul_zero]
 

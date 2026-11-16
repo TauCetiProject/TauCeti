@@ -123,10 +123,10 @@ private theorem frobeniusCurve_tautologicalCurve_eq_zero_iff {q : ℕ} (hq : q �
   have hunit : IsUnit (q : R) := by
     simpa using (Ne.isUnit (Nat.cast_ne_zero.mpr hq : (q : ℚ) ≠ 0)).map (algebraMap ℚ R)
   rw [← F.logIso.curveEquiv.map_eq_zero_iff, Curve.ext_iff, PowerSeries.ext_iff]
-  simp only [TauCeti.FormalGroupIso.curveEquiv_apply, logIso_toHom,
-    F.logHom.mapCurve_frobeniusCurve, toPowerSeries_frobeniusCurve_𝔾ₐ, PowerSeries.coeff_smul,
-    PowerSeries.coeff_cartier, Nat.add_zero, smul_eq_mul, Curve.toPowerSeries_zero, map_zero,
-    TauCeti.FormalGroupHom.mapCurve_tautologicalCurve, logHom_toPowerSeries,
+  simp only [TauCeti.FormalGroupIso.curveEquiv_apply, logIso_toHom, Curve.toPowerSeries_zero,
+    map_zero, TauCeti.FormalGroupHom.toPowerSeries_mapCurve, logHom_toPowerSeries,
+    subst_frobeniusCurve_log, toPowerSeries_tautologicalCurve, PowerSeries.X_subst,
+    PowerSeries.coeff_smul, PowerSeries.coeff_cartier, Nat.add_zero, smul_eq_mul,
     hunit.mul_right_eq_zero]
 
 /-- **`p`-typical laws over a `ℚ`-algebra**: for `p` prime, a commutative formal group law over a
@@ -216,8 +216,12 @@ theorem linearCoeff_pTypicalCoordinate :
 /-- **Cartier's `p`-typicalization** of a commutative formal group law `F` over a ring in which
 every prime `q ≠ p` is invertible: the law `ψ⁻¹ • F` obtained by writing `F` in the coordinate
 `ψ⁻¹`, where `ψ = ε γ₀` is the `p`-typical projection of the tautological curve. -/
-noncomputable def pTypicalization : FormalGroup R :=
+@[expose] noncomputable def pTypicalization : FormalGroup R :=
   (F.pTypicalCoordinate hR)⁻¹ • F
+
+/-- The `p`-typicalization of `F` is `F` written in the coordinate `ψ⁻¹`, where `ψ = ε γ₀`. -/
+theorem pTypicalization_def : F.pTypicalization hR = (F.pTypicalCoordinate hR)⁻¹ • F :=
+  (rfl)
 
 instance : (F.pTypicalization hR).IsComm :=
   instIsCommSMul _ _
@@ -225,6 +229,11 @@ instance : (F.pTypicalization hR).IsComm :=
 /-- The strict isomorphism `ψ⁻¹` from `F` to its `p`-typicalization. -/
 noncomputable def pTypicalizationIso : FormalGroupIso F (F.pTypicalization hR) :=
   smulIso _ F
+
+/-- The `p`-typicalization isomorphism is the coordinate-change isomorphism for `ψ⁻¹`. -/
+theorem pTypicalizationIso_def :
+    F.pTypicalizationIso hR = smulIso (F.pTypicalCoordinate hR)⁻¹ F :=
+  (rfl)
 
 @[simp]
 theorem pTypicalizationIso_toHom_toPowerSeries :
@@ -236,7 +245,8 @@ theorem pTypicalizationIso_toHom_toPowerSeries :
 theorem pTypicalizationIso_invHom_toPowerSeries :
     (F.pTypicalizationIso hR).invHom.toPowerSeries =
       (F.pTypicalProjectorCurve hR F.tautologicalCurve).toPowerSeries := by
-  rw [pTypicalizationIso, smulIso_invHom_toPowerSeries, inv_inv, toPowerSeries_pTypicalCoordinate]
+  rw [pTypicalizationIso_def, smulIso_invHom_toPowerSeries, inv_inv,
+    toPowerSeries_pTypicalCoordinate]
 
 /-- The isomorphism from `F` to its `p`-typicalization is strict. -/
 instance instIsStrictPTypicalizationIso : (F.pTypicalizationIso hR).IsStrict :=
@@ -258,13 +268,13 @@ theorem pTypicalization_eq_self_iff : F.pTypicalization hR = F ↔ F.IsPTypical 
   have hψ : F.pTypicalCoordinate hR = 1 := FormalCoordinate.ext <| by
     rw [toPowerSeries_pTypicalCoordinate, F.pTypicalProjectorCurve_eq_self hR h,
       toPowerSeries_tautologicalCurve, FormalCoordinate.toPowerSeries_one]
-  rw [pTypicalization, hψ, inv_one, one_smul]
+  rw [pTypicalization_def, hψ, inv_one, one_smul]
 
 /-- **`p`-typicalization commutes with base change.** -/
 theorem map_pTypicalization (φ : R →+* S) :
     (F.pTypicalization hR).map φ =
       (F.map φ).pTypicalization (fun q hq hqp ↦ by simpa using (hR q hq hqp).map φ) := by
-  rw [pTypicalization, pTypicalization, map_smul, map_inv]
+  rw [pTypicalization_def, pTypicalization_def, map_smul, map_inv]
   congr 2
   ext : 1
   rw [FormalCoordinate.toPowerSeries_map, toPowerSeries_pTypicalCoordinate,
