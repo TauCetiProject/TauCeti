@@ -181,7 +181,10 @@ private def halvesHomotopyEquiv (e : F ≃L[ℝ] ℝ) :
 private lemma sigmaι_comp_halvesMap (e : F ≃L[ℝ] ℝ) (i : ULift.{w} Bool) :
     TopCat.sigmaι.{w, w} (halves B) i ≫ TopCat.ofHom (halvesMap e) =
       prodThomPairPuncturedSection B F (symm_apply_ne_zero e (halfSign_ne_zero i)) :=
-  TopCat.ext fun b ↦ Subtype.ext (prodThomPairPuncturedSection_apply _ _ b).symm
+  -- `TopCat.sigmaι` is `Sigma.mk i` by definition, so the composite sends `b` to
+  -- `halvesMap e ⟨i, b⟩ = (b, e.symm (halfSign i))`.
+  TopCat.ext fun b ↦ Subtype.ext <| (halvesMap_apply e ⟨i, b⟩).trans
+    (prodThomPairPuncturedSection_apply _ _ b).symm
 
 end Halves
 
