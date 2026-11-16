@@ -212,27 +212,30 @@ theorem IsNice.hammingDist_eq_one_or_eq_two_of_hatCoefficient_ne_zero [Decidable
   obtain ⟨D, hD, hz, hD0, hμ⟩ := nonempty_hatDomains_of_hatCoefficient_ne_zero hc
   exact h.hammingDist_eq_one_or_eq_two_of_maslovIndex_eq_one hW hD hD0 hz hμ
 
-/-- In a singly pointed diagram of a closed surface of genus `n` whose periodic domains have
-Maslov index zero at `x`, the hat differential lowers the relative Maslov grading by one: a
-nonzero coefficient from `x` to `y` forces `gr(x, y) = 1`. -/
-theorem relativeGrading_eq_one_of_hatCoefficient_ne_zero [Subsingleton Basepoint]
-    (z : Basepoint) (hχ : ∑ r, χ r - Fintype.card Point = 2 - 2 * (n : ℤ))
+/-- When the relative Maslov grading is normalized, as in a singly pointed diagram of a closed
+surface of genus `n`
+(`maslovIndex_sub_two_mul_sum_mem_periodicMaslovIndices_of_subsingleton`),
+and the periodic domains have Maslov index zero at `x`, the hat differential lowers the relative
+Maslov grading by one: a nonzero coefficient from `x` to `y` forces `gr(x, y) = 1`. -/
+theorem relativeGrading_eq_one_of_hatCoefficient_ne_zero [Fintype Basepoint]
+    (hself : ∀ (x : H.Generator) (E : Region → ℤ), H.IsDomainBetween x x E →
+      H.maslovIndex χ x x E - 2 * ∑ z, (E (H.basepoint z) : ℚ) ∈ H.periodicMaslovIndices χ x)
     (hP : ∀ P ∈ H.periodicDomains, H.maslovIndex χ x x P = 0)
-    (hc : H.hatCoefficient χ x y ≠ 0) : H.relativeGrading χ z x y = 1 := by
+    (hc : H.hatCoefficient χ x y ≠ 0) : H.relativeGrading χ x y = 1 := by
   obtain ⟨D, hD, hz, -, hμ⟩ := nonempty_hatDomains_of_hatCoefficient_ne_zero hc
-  rw [hD.relativeGrading_eq z hχ hP, hμ, hz z]
-  simp
+  simp [hD.relativeGrading_eq hself hP, hμ, hz]
 
-/-- In a singly pointed diagram of a closed surface of genus `n`, the hat differential lowers
-the relative Maslov grading by one modulo the periodic Maslov indices at `x`: a nonzero
-coefficient from `x` to `y` forces `gr(x, y) = 1` there. -/
-theorem coe_relativeGrading_eq_one_of_hatCoefficient_ne_zero [Subsingleton Basepoint]
-    (z : Basepoint) (hχ : ∑ r, χ r - Fintype.card Point = 2 - 2 * (n : ℤ))
+/-- When the relative Maslov grading is normalized, as in a singly pointed diagram of a closed
+surface of genus `n`, the hat differential lowers the relative Maslov grading by one modulo the
+periodic Maslov indices at `x`: a nonzero coefficient from `x` to `y` forces `gr(x, y) = 1`
+there. -/
+theorem coe_relativeGrading_eq_one_of_hatCoefficient_ne_zero [Fintype Basepoint]
+    (hself : ∀ (x : H.Generator) (E : Region → ℤ), H.IsDomainBetween x x E →
+      H.maslovIndex χ x x E - 2 * ∑ z, (E (H.basepoint z) : ℚ) ∈ H.periodicMaslovIndices χ x)
     (hc : H.hatCoefficient χ x y ≠ 0) :
-    (H.relativeGrading χ z x y : ℚ ⧸ H.periodicMaslovIndices χ x) = (1 : ℚ) := by
+    (H.relativeGrading χ x y : ℚ ⧸ H.periodicMaslovIndices χ x) = (1 : ℚ) := by
   obtain ⟨D, hD, hz, -, hμ⟩ := nonempty_hatDomains_of_hatCoefficient_ne_zero hc
-  rw [hD.coe_relativeGrading_eq z hχ, hμ, hz z]
-  simp
+  simp [hD.coe_relativeGrading_eq hself, hμ, hz]
 
 end Coefficient
 
