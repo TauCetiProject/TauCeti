@@ -91,6 +91,8 @@ constants are parameters, not hidden existential data.
   matrix has determinant at least `λⁿ`.
 * `TauCeti.PDE.uniformlyEllipticOn_const`: a constant matrix with a lower quadratic bound is
   uniformly elliptic.
+* `TauCeti.PDE.UniformlyEllipticOn.const_of_mem`: a constant field uniformly elliptic on a
+  nonempty set is uniformly elliptic on every set.
 * `TauCeti.PDE.continuousOn_of_continuousOn_matrixBilinearForm` and
   `TauCeti.PDE.continuous_of_continuous_matrixBilinearForm`: a coefficient field whose
   bilinear forms vary continuously is continuous.
@@ -241,6 +243,18 @@ lemma matrixBilinearFormLinear_apply (A : Matrix n n ℝ) :
 lemma matrixBilinearForm_sub (A B : Matrix n n ℝ) :
     matrixBilinearForm (A - B) = matrixBilinearForm A - matrixBilinearForm B := by
   simp only [← matrixBilinearFormLinear_apply, map_sub]
+
+/-- Matrix bilinear forms are additive in the coefficient matrix. -/
+@[simp]
+lemma matrixBilinearForm_add (A B : Matrix n n ℝ) :
+    matrixBilinearForm (A + B) = matrixBilinearForm A + matrixBilinearForm B := by
+  simp only [← matrixBilinearFormLinear_apply, map_add]
+
+/-- Matrix bilinear forms are homogeneous in the coefficient matrix. -/
+@[simp]
+lemma matrixBilinearForm_smul (c : ℝ) (A : Matrix n n ℝ) :
+    matrixBilinearForm (c • A) = c • matrixBilinearForm A := by
+  simp only [← matrixBilinearFormLinear_apply, map_smul]
 
 /-- The principal coefficient-to-bilinear-form map is continuous. -/
 lemma continuous_matrixBilinearForm :
@@ -913,6 +927,13 @@ lemma uniformlyEllipticOn_const (Ω : Set X) {A : Matrix n n ℝ} {lam : ℝ} (h
     (fun _ _ η ξ => by
       simpa [Real.norm_eq_abs] using (matrixBilinearForm A).le_of_opNorm₂_le_of_le
         (le_max_right lam _) le_rfl le_rfl)
+
+/-- A constant coefficient field uniformly elliptic on a nonempty set is uniformly elliptic on
+every set. -/
+lemma UniformlyEllipticOn.const_of_mem {A : Matrix n n ℝ}
+    (h : UniformlyEllipticOn Ω (fun _ => A) lam Lam) {x : X} (hx : x ∈ Ω) (S : Set X) :
+    UniformlyEllipticOn S (fun _ => A) lam Lam :=
+  uniformlyEllipticOn_iff.2 ⟨h.pos, h.le, fun _ _ => (uniformlyEllipticOn_iff.1 h).2.2 hx⟩
 
 /-- An isotropic scalar coefficient field is uniformly elliptic when its scalar coefficient
 lies between the lower and upper constants.
