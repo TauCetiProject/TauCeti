@@ -278,6 +278,7 @@ theorem forall_sectionCommutatorSymbol_eq_zero_iff [BoundarylessManifold I M] {m
 
 /-- Multiplying the values of `P` by a smooth function `g` multiplies its commutator symbol at
 `x` by `g(x)`. -/
+@[simp]
 theorem sectionCommutatorSymbol_mk_smul (hx : I.IsInteriorPoint x) {m : ℕ}
     (P : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ m)
     (g : C^∞⟮I, M; ℝ⟯) :
@@ -300,6 +301,7 @@ theorem sectionPrincipalSymbol_mvfderiv (hx : I.IsInteriorPoint x) {m : ℕ}
 
 /-- Multiplying the values of `P` by a smooth function `g` multiplies its principal symbol at `x`
 by `g(x)`. -/
+@[simp]
 theorem sectionPrincipalSymbol_mk_smul (hx : I.IsInteriorPoint x) {m : ℕ}
     (P : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ m)
     (g : C^∞⟮I, M; ℝ⟯) (ξ : TangentSpace I x →L[ℝ] ℝ) :
@@ -335,6 +337,7 @@ theorem sectionPrincipalSymbol_eq_zero_of_mem_differentialOperators (hx : I.IsIn
 /-- **The principal symbol of an operator of order zero.** A `C^∞(M)`-linear map `L` of sections,
 viewed as a differential operator of order zero, has principal symbol its fibre map at `x` at
 every covector. -/
+@[simp]
 theorem sectionPrincipalSymbol_restrictScalars (hx : I.IsInteriorPoint x)
     (L : Cₛ^∞⟮I; F, V⟯ →ₗ[C^∞⟮I, M; ℝ⟯] Cₛ^∞⟮I; F', W⟯) (ξ : TangentSpace I x →L[ℝ] ℝ) :
     sectionPrincipalSymbol I hx
