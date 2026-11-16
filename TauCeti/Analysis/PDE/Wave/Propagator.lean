@@ -148,10 +148,10 @@ theorem hasDerivAt_waveCosSymbol (t : ℝ) (ξ : E) :
     HasDerivAt (fun s ↦ waveCosSymbol s ξ) (laplacianSymbol ξ * waveSinSymbol t ξ) t := by
   have h : (laplacianSymbol ξ : ℂ) * waveSinSymbol t ξ =
       ((-(Real.sin (t * sqrtNegLaplacianSymbol ξ) * sqrtNegLaplacianSymbol ξ) : ℝ) : ℂ) := by
-    rw [laplacianSymbol_eq_neg_sq, Complex.ofReal_neg, Complex.ofReal_pow, sq, neg_mul,
-      mul_assoc, sqrtNegLaplacianSymbol_mul_waveSinSymbol]
-    push_cast
-    ring
+    have hω := sqrtNegLaplacianSymbol_mul_waveSinSymbol t ξ
+    rw [laplacianSymbol_eq_neg_sq]
+    push_cast at hω ⊢
+    linear_combination (-(sqrtNegLaplacianSymbol ξ : ℂ)) * hω
   simp only [waveCosSymbol_apply, h]
   exact (((hasDerivAt_id t).mul_const _).cos.congr_deriv (by simp)).ofReal_comp
 

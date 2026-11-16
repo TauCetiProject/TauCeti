@@ -144,10 +144,10 @@ theorem _root_.MeasureTheory.Lp.laplacian_toTemperedDistribution_eq_iff
       push_cast
       ring
     -- Move the scalar `-(2π)²` into the symbol of the multiplier, then cancel `𝓕 ∘ 𝓕⁻`.
-    rw [TemperedDistribution.laplacian_eq_fourierMultiplierCLM, ← Complex.coe_smul,
-      ← _root_.smul_apply, ← TemperedDistribution.fourierMultiplierCLM_smul (by fun_prop), ← hsym,
-      TemperedDistribution.fourierMultiplierCLM_apply, FourierTransform.fourier_fourierInv_eq,
-      Lp.fourier_toTemperedDistribution_eq]
+    rw [TemperedDistribution.laplacian_eq_fourierMultiplierCLM,
+      TemperedDistribution.fourierMultiplierCLM_apply, hsym,
+      TemperedDistribution.smulLeftCLM_smul (by fun_prop)]
+    simp [← Complex.coe_smul, Lp.fourier_toTemperedDistribution_eq]
   have hpair : ∀ φ : 𝓢(E, ℂ), 𝓕 (Δ (f : 𝓢'(E, F))) φ =
       ∫ ξ, φ ξ • (laplacianSymbol ξ : ℂ) • (𝓕 f : Lp F 2 (volume : Measure E)) ξ := fun φ ↦ by
     rw [hF, Lp.smulLeftCLM_toTemperedDistribution_apply hg]
@@ -192,6 +192,7 @@ theorem _root_.MeasureTheory.Lp.re_inner_nonpos_of_laplacian_toTemperedDistribut
     rw [laplacianSymbol_apply, neg_nonpos]
     positivity
   rw [Pi.zero_apply, hξ, inner_smul_right, inner_self_eq_norm_sq_to_K]
-  simpa [← Complex.ofReal_pow] using mul_nonpos_of_nonpos_of_nonneg hΔ (sq_nonneg ‖_‖)
+  simpa [← Complex.ofReal_pow] using
+    mul_nonpos_of_nonpos_of_nonneg hΔ (sq_nonneg ‖(𝓕 f : Lp F 2 (volume : Measure E)) ξ‖)
 
 end TauCeti

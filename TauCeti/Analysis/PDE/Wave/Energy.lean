@@ -185,10 +185,7 @@ private theorem inner_truncate_eq {x y : Lp F 2 (volume : Measure E)}
   simp only [truncate, truncateSqrt]
   rw [h₂, h₃, h₄, h₅, h₁]
   by_cases h : ξ ∈ Metric.closedBall (0 : E) R
-  · rw [cutoff, cutoffSqrt, Set.indicator_of_mem h, Set.indicator_of_mem h, one_smul, one_smul,
-      inner_smul_left, inner_smul_right, inner_smul_right, laplacianSymbol_eq_neg_sq,
-      Complex.conj_ofReal]
-    push_cast
+  · simp [cutoff, cutoffSqrt, h, inner_smul_left, inner_smul_right, map_ofNat]
     ring
   · simp [cutoff, cutoffSqrt, Set.indicator_of_notMem h]
 
