@@ -23,6 +23,14 @@ In particular the complements of `K` and of `{p}` have the same homotopy type: t
 for comparing the relative homology groups `H(X, X ∖ K)` and `H(X, X ∖ {p})` in the local
 homology of manifolds.
 
+The same comparison holds inside a cone `S` with apex `p`, a set with `p + c • (z - p) ∈ S` for
+`z ∈ S` and `c > 0`, such as a closed half-space whose boundary hyperplane contains `p`. There the
+radial projection may leave `S`, so `S \ K` is compared with `S \ {p}` directly, by the outward
+push `z ↦ p + max 1 (r / ‖z - p‖) • (z - p)`, which moves points only away from `p`. For a closed
+half-space `{x | 0 ≤ f x}` with `f ≠ 0` and `p` on its boundary, the punctured half-space is
+star-convex about any interior point, so the complement of `K` in the half-space is contractible.
+This is the local model at boundary points of manifolds with boundary.
+
 ## Main declarations
 
 * `StarConvex.complSphereHomotopyEquiv`: the inclusion `sphere p r → Kᶜ` as a homotopy
@@ -33,6 +41,10 @@ homology of manifolds.
   the identity of `Kᶜ`.
 * `StarConvex.ofHom_complSphereHomotopyEquiv_comp_snd`: the sphere inclusion into `Kᶜ`, followed
   by the subspace map of the pair map `(E, Kᶜ) ⟶ (E, {p}ᶜ)`, is the sphere inclusion into `{p}ᶜ`.
+* `StarConvex.diffHomotopyEquivDiffSingleton`: inside a cone `S` with apex `p`, the inclusion
+  `S \ K → S \ {p}` as a homotopy equivalence.
+* `StarConvex.contractibleSpace_halfSpace_diff`: the complement of `K` in a closed half-space
+  whose boundary contains `p` is contractible.
 
 ## References
 
@@ -175,5 +187,144 @@ theorem ofHom_complSphereHomotopyEquiv_comp_snd (hK : StarConvex ℝ p K) (hp : 
     (hK.coe_complSphereHomotopyEquiv_apply hp hKr z).trans
       ((starConvex_singleton p).coe_complSphereHomotopyEquiv_apply rfl
         (Set.singleton_subset_iff.2 (hKr hp)) z).symm
+
+end StarConvex
+
+/-! ### Complements inside a cone -/
+
+namespace StarConvex
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {K S T : Set E} {p : E} {r : ℝ}
+
+open TauCeti
+
+/-- The outward radial push `z ↦ p + max 1 (r / ‖z - p‖) • (z - p)` of a set `T` not containing
+`p` and closed under moving its points away from `p` along rays from `p`. It moves every point of
+`T` to distance at least `r` from `p`. -/
+private def outwardPush (hpT : p ∉ T) (hT : ∀ z ∈ T, ∀ c : ℝ, 1 ≤ c → p + c • (z - p) ∈ T)
+    (r : ℝ) : C(T, T) where
+  toFun z := ⟨p + max 1 (r / ‖(z : E) - p‖) • ((z : E) - p), hT _ z.2 _ (le_max_left _ _)⟩
+  continuous_toFun := by
+    have hsub : Continuous fun z : T ↦ (z : E) - p := continuous_subtype_val.sub continuous_const
+    refine Continuous.subtype_mk (continuous_const.add (Continuous.smul ?_ hsub)) _
+    exact continuous_const.max (continuous_const.div hsub.norm fun z ↦
+      norm_ne_zero_iff.2 (sub_ne_zero.2 (ne_of_mem_of_not_mem z.2 hpT)))
+
+/-- The straight-line homotopy from the outward radial push to the identity of `T`. Every point
+of the segment from `z` to its push is `p + c • (z - p)` with `c ≥ 1`. -/
+private def outwardPushHomotopy (hpT : p ∉ T)
+    (hT : ∀ z ∈ T, ∀ c : ℝ, 1 ≤ c → p + c • (z - p) ∈ T) (r : ℝ) :
+    (outwardPush hpT hT r).Homotopy (ContinuousMap.id T) where
+  toFun x := ⟨p + ((1 - (x.1 : ℝ)) * max 1 (r / ‖(x.2 : E) - p‖) + x.1) • ((x.2 : E) - p),
+    hT _ x.2.2 _ (by nlinarith [le_max_left 1 (r / ‖(x.2 : E) - p‖), x.1.2.1, x.1.2.2])⟩
+  continuous_toFun := by
+    have hsub : Continuous fun x : I × T ↦ (x.2 : E) - p :=
+      (continuous_subtype_val.comp continuous_snd).sub continuous_const
+    have ht : Continuous fun x : I × T ↦ (x.1 : ℝ) := continuous_subtype_val.comp continuous_fst
+    have hmax : Continuous fun x : I × T ↦ max 1 (r / ‖(x.2 : E) - p‖) :=
+      continuous_const.max (continuous_const.div hsub.norm fun x ↦
+        norm_ne_zero_iff.2 (sub_ne_zero.2 (ne_of_mem_of_not_mem x.2.2 hpT)))
+    exact Continuous.subtype_mk
+      (continuous_const.add ((((continuous_const.sub ht).mul hmax).add ht).smul hsub)) _
+  map_zero_left z := by
+    ext
+    simp [outwardPush]
+  map_one_left z := by
+    ext
+    simp
+
+/-- **The complement of a bounded star-convex set inside a cone.** Let `S` be a cone with apex `p`,
+in the sense that `p + c • (z - p) ∈ S` for `z ∈ S` and `c > 0`, such as a closed half-space
+whose boundary contains `p`. If `K` contains `p`, is star-convex about `p` and lies in
+`ball p r`, then the inclusion `S \ K → S \ {p}` is a homotopy equivalence; its homotopy inverse
+is the outward radial push `z ↦ p + max 1 (r / ‖z - p‖) • (z - p)`. -/
+def diffHomotopyEquivDiffSingleton (hK : StarConvex ℝ p K) (hp : p ∈ K) (hKr : K ⊆ ball p r)
+    (hS : ∀ z ∈ S, ∀ c : ℝ, 0 < c → p + c • (z - p) ∈ S) :
+    ContinuousMap.HomotopyEquiv ↥(S \ K) ↥(S \ {p}) where
+  toFun := ContinuousMap.inclusion (sdiff_subset_sdiff_right (singleton_subset_iff.2 hp))
+  invFun :=
+    { toFun z := ⟨p + max 1 (r / ‖(z : E) - p‖) • ((z : E) - p), by
+        have hzp : (z : E) ≠ p := z.2.2
+        have hd : 0 < ‖(z : E) - p‖ := norm_pos_iff.2 (sub_ne_zero.2 hzp)
+        refine ⟨hS _ z.2.1 _ (one_pos.trans_le (le_max_left _ _)), fun h ↦ ?_⟩
+        -- The pushed point lies at distance at least `r` from `p`, outside `ball p r ⊇ K`.
+        have hlt := hKr h
+        rw [mem_ball, dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_eq_abs,
+          abs_of_pos (one_pos.trans_le (le_max_left _ _))] at hlt
+        have := (div_le_iff₀ hd).1 (le_max_right 1 (r / ‖(z : E) - p‖))
+        linarith⟩
+      continuous_toFun := by
+        have hsub : Continuous fun z : ↥(S \ {p}) ↦ (z : E) - p :=
+          continuous_subtype_val.sub continuous_const
+        refine Continuous.subtype_mk (continuous_const.add (Continuous.smul ?_ hsub)) _
+        exact continuous_const.max (continuous_const.div hsub.norm fun z ↦
+          norm_ne_zero_iff.2 (sub_ne_zero.2 z.2.2)) }
+  left_inv := by
+    have hT : ∀ z ∈ S \ K, ∀ c : ℝ, 1 ≤ c → p + c • (z - p) ∈ S \ K := fun z hz c hc ↦
+      ⟨hS _ hz.1 _ (one_pos.trans_le hc), hK.add_smul_sub_mem_compl hKr hz.2 (Or.inl hc)⟩
+    exact ⟨outwardPushHomotopy (T := S \ K) (fun h ↦ h.2 hp) hT r⟩
+  right_inv := by
+    have hT : ∀ z ∈ S \ {p}, ∀ c : ℝ, 1 ≤ c → p + c • (z - p) ∈ S \ {p} := fun z hz c hc ↦
+      ⟨hS _ hz.1 _ (one_pos.trans_le hc), fun h ↦ hz.2 <| by
+        rw [mem_singleton_iff, add_eq_left, smul_eq_zero, sub_eq_zero] at h
+        exact h.resolve_left (one_pos.trans_le hc).ne'⟩
+    exact ⟨outwardPushHomotopy (T := S \ {p}) (fun h ↦ h.2 rfl) hT r⟩
+
+/-- The homotopy equivalence `StarConvex.diffHomotopyEquivDiffSingleton` is the inclusion. -/
+@[simp]
+theorem coe_diffHomotopyEquivDiffSingleton_apply (hK : StarConvex ℝ p K) (hp : p ∈ K)
+    (hKr : K ⊆ ball p r) (hS : ∀ z ∈ S, ∀ c : ℝ, 0 < c → p + c • (z - p) ∈ S) (z : ↥(S \ K)) :
+    (hK.diffHomotopyEquivDiffSingleton hp hKr hS z : E) = z :=
+  (rfl)
+
+/-- The homotopy inverse of `StarConvex.diffHomotopyEquivDiffSingleton` is the outward radial
+push. -/
+@[simp]
+theorem coe_diffHomotopyEquivDiffSingleton_symm_apply (hK : StarConvex ℝ p K) (hp : p ∈ K)
+    (hKr : K ⊆ ball p r) (hS : ∀ z ∈ S, ∀ c : ℝ, 0 < c → p + c • (z - p) ∈ S)
+    (z : ↥(S \ {p})) :
+    ((hK.diffHomotopyEquivDiffSingleton hp hKr hS).symm z : E) =
+      p + max 1 (r / ‖(z : E) - p‖) • ((z : E) - p) :=
+  (rfl)
+
+/-- **The complement in a closed half-space of a bounded star-convex set about a boundary point is
+contractible.** Let `f` be a nonzero continuous linear functional and `K` a bounded set,
+star-convex about a point `p ∈ K` on the boundary hyperplane `f = 0`. Then the complement of `K`
+in the half-space `{x | 0 ≤ f x}` is contractible: the half-space is a cone with apex `p`, so
+`StarConvex.diffHomotopyEquivDiffSingleton` identifies the complement of `K` with the half-space
+punctured at `p`, which is star-convex about any point `p + v` with `0 < f v`. -/
+theorem contractibleSpace_halfSpace_diff (hK : StarConvex ℝ p K) (hp : p ∈ K)
+    (hKb : Bornology.IsBounded K) {f : StrongDual ℝ E} (hf : f ≠ 0) (hfp : f p = 0) :
+    ContractibleSpace ↥({x | 0 ≤ f x} \ K) := by
+  obtain ⟨r, hKr⟩ := (isBounded_iff_subset_ball p).1 hKb
+  have hS : ∀ z ∈ {x | 0 ≤ f x}, ∀ c : ℝ, 0 < c → p + c • (z - p) ∈ {x | 0 ≤ f x} := by
+    intro z hz c hc
+    simp only [mem_ofPred_eq, map_add, map_smul, map_sub, hfp, sub_zero, zero_add,
+      smul_eq_mul] at hz ⊢
+    positivity
+  -- A vector `v` pointing into the open half-space.
+  obtain ⟨v, hv⟩ : ∃ v, 0 < f v := by
+    obtain ⟨w, hw⟩ := DFunLike.ne_iff.1 hf
+    rcases (show f w ≠ 0 from hw).lt_or_gt with h | h
+    · exact ⟨-w, by simpa using h⟩
+    · exact ⟨w, h⟩
+  have hstar : StarConvex ℝ (p + v) ({x | 0 ≤ f x} \ {p}) := by
+    intro y hy a b ha hb hab
+    have hfy : 0 ≤ f y := hy.1
+    have hval : f (a • (p + v) + b • y) = a * f v + b * f y := by
+      simp [hfp, smul_eq_mul]
+    refine ⟨by simp only [mem_ofPred_eq, hval]; positivity, fun h ↦ hy.2 ?_⟩
+    rw [mem_singleton_iff] at h
+    -- Evaluating `f` on `a • (p + v) + b • y = p` forces `a = 0`, hence `b = 1` and `y = p`.
+    have ha0 : a = 0 := by
+      have h0 : a * f v + b * f y = 0 := by rw [← hval, h, hfp]
+      nlinarith [mul_nonneg hb hfy, mul_nonneg ha hv.le]
+    rw [ha0, zero_add] at hab
+    rw [ha0, hab, _root_.zero_smul, one_smul, zero_add] at h
+    exact h
+  have : ContractibleSpace ↥({x | 0 ≤ f x} \ {p}) :=
+    hstar.contractibleSpace ⟨p + v, by simpa [hfp] using hv.le,
+      fun h ↦ hv.ne' (by simp_all)⟩
+  exact (hK.diffHomotopyEquivDiffSingleton hp hKr hS).contractibleSpace
 
 end StarConvex
