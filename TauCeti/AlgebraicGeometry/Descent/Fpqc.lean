@@ -5,12 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.Morphisms.Etale
 public import TauCeti.AlgebraicGeometry.Descent.Affine
 public import TauCeti.AlgebraicGeometry.Descent.Gluing
 public import TauCeti.AlgebraicGeometry.Descent.MorphismProperty
 public import TauCeti.CategoryTheory.EffectiveEpi.Refinement
 import Mathlib.AlgebraicGeometry.Morphisms.Descent
-import Mathlib.AlgebraicGeometry.Morphisms.Etale
+import Mathlib.AlgebraicGeometry.Morphisms.LocalFlatDescent
 
 /-!
 # Descent of schemes affine over the cover along fpqc morphisms
@@ -25,8 +26,8 @@ to the base change of the datum along `U ×_S S' ⟶ U`, and glue the resulting 
 (`TauCeti.DescentDatum.exists_baseChange_hom_isIso_of_forall_affineOpens_pullbackAlong`). The
 glued model is affine over `S`, and it inherits every property of `X ⟶ S'` satisfying fpqc
 descent (`TauCeti.DescentDatum.Hom.mem_of_descendsAlong`): a descent datum on a closed subscheme
-of `S'`, or on a scheme finite over `S'`, descends to a closed subscheme of `S`, or to a scheme
-finite over `S`.
+of `S'`, on a scheme finite over `S'`, or on a scheme finite étale over `S'` descends to a closed
+subscheme of `S`, to a scheme finite over `S`, or to a scheme finite étale over `S`.
 
 The comparison is an isomorphism of descent data, so it includes the cocycle. When `p` is
 surjective, uniqueness of the model is supplied by `TauCeti.DescentDatum.Hom.descendIso`.
@@ -38,9 +39,10 @@ surjective, uniqueness of the model is supplied by `TauCeti.DescentDatum.Hom.des
 * `TauCeti.DescentDatum.exists_isAffineHom_baseChange_hom_isIso_of_quasiCompact`: **effective
   descent for schemes affine over the cover** along a surjective, flat and quasi-compact morphism,
   over an arbitrary base.
-* `TauCeti.DescentDatum.exists_isClosedImmersion_baseChange_hom_isIso_of_quasiCompact` and
-  `TauCeti.DescentDatum.exists_isFinite_baseChange_hom_isIso_of_quasiCompact`: effective descent
-  for closed subschemes and for finite schemes.
+* `TauCeti.DescentDatum.exists_isClosedImmersion_baseChange_hom_isIso_of_quasiCompact`,
+  `TauCeti.DescentDatum.exists_isFinite_baseChange_hom_isIso_of_quasiCompact`, and
+  `TauCeti.DescentDatum.exists_isFinite_etale_baseChange_hom_isIso_of_quasiCompact`: effective
+  descent for closed subschemes, finite schemes, and finite étale schemes.
 
 ## References
 
@@ -118,5 +120,14 @@ theorem exists_isFinite_baseChange_hom_isIso_of_quasiCompact [IsFinite X.hom] :
     ∃ X₀ : Over S, IsFinite X₀.hom ∧ ∃ f : Hom (baseChange p X₀) D, IsIso f.hom := by
   obtain ⟨X₀, -, f, hf⟩ := D.exists_isAffineHom_baseChange_hom_isIso_of_quasiCompact
   exact ⟨X₀, f.mem_of_descendsAlong (P := @IsFinite) inferInstance, f, hf⟩
+
+/-- **Effective descent for finite étale schemes.** For `p : S' ⟶ S` surjective, flat and
+quasi-compact, a descent datum relative to `p` on a scheme finite étale over `S'` is isomorphic to
+the canonical descent datum on the base change of a scheme finite étale over `S`. -/
+theorem exists_isFinite_etale_baseChange_hom_isIso_of_quasiCompact [IsFinite X.hom] [Etale X.hom] :
+    ∃ X₀ : Over S, IsFinite X₀.hom ∧ Etale X₀.hom ∧
+      ∃ f : Hom (baseChange p X₀) D, IsIso f.hom := by
+  obtain ⟨X₀, hfin, f, hf⟩ := D.exists_isFinite_baseChange_hom_isIso_of_quasiCompact
+  exact ⟨X₀, hfin, f.mem_of_descendsAlong (P := @Etale) inferInstance, f, hf⟩
 
 end TauCeti.DescentDatum
