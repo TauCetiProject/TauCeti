@@ -6,13 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.QuadraticForm.Defect.Basic
-public import TauCeti.NumberTheory.LocalField.QuadraticForm.Norm.Eisenstein.Count
-public import TauCeti.NumberTheory.LocalField.QuadraticForm.Norm.SquareClasses
+public import TauCeti.NumberTheory.LocalField.QuadraticForm.Norm.Eisenstein.Basic
 
 import TauCeti.NumberTheory.LocalField.QuadraticForm.Norm.Valuation
 
 /-!
-# Eisenstein norm families and unit-norm square-class counts for odd-defect unit radicands
+# Eisenstein norm families for odd-defect unit radicands
 
 For a unit `a` of a nonarchimedean local field `K` whose quadratic defect exponent `d = 2k + 1` is
 odd, an optimal square approximation `ξ²` of `a` with `v_K(a - ξ²) = 2k + 1` transforms
@@ -24,11 +23,7 @@ Consequently, valuation-one norms in `quadraticNormSubgroup (a : K)` have the no
 `u² (1 - t v + c v²)`, all nonzero norms are `c ^ n * u² * (1 - t v + c v²)`, and
 `TauCeti.unitQuadraticNormSquareClasses (a : K)` equals
 `TauCeti.eisensteinNormSquareSubgroup K ht hc.mem_maximalIdeal`
-(`TauCeti.exists_eisenstein_mem_quadraticNormSubgroup_iff_of_defectExponent_eq_odd`), giving
-cardinality `#𝓀[K] ^ natCastValuation K 2 h2`
-(`TauCeti.natCard_unitQuadraticNormSquareClasses_of_odd_defectExponent`) and index `2` inside
-`TauCeti.unitSquareClasses K`
-(`TauCeti.relIndex_unitQuadraticNormSquareClasses_of_odd_defectExponent`).
+(`TauCeti.exists_eisenstein_mem_quadraticNormSubgroup_iff_of_defectExponent_eq_odd`).
 
 ## References
 
@@ -169,28 +164,5 @@ theorem exists_eisenstein_mem_quadraticNormSubgroup_iff_of_defectExponent_eq_odd
   rw [mem_unitQuadraticNormSquareClasses_iff,
     mem_eisensteinNormSquareSubgroup_iff_of_forall ht hc.mem_maximalIdeal hunit_iff]
   exact ⟨fun ⟨b, hb, hv, hq⟩ ↦ ⟨b, hv, hb, hq⟩, fun ⟨b, hv, hb, hq⟩ ↦ ⟨b, hb, hv, hq⟩⟩
-
-/-- **Unit-norm square-class count for an odd-defect unit radicand.** Over a nonarchimedean local
-field with `2 ≠ 0`, a unit `a` of valuation `1` and odd quadratic defect has
-`#𝓀[K] ^ natCastValuation K 2 h2` unit-norm square classes. -/
-theorem natCard_unitQuadraticNormSquareClasses_of_odd_defectExponent (h2 : (2 : K) ≠ 0)
-    {a : Kˣ} (ha : valuation K (a : K) = 1) {d : ℤ}
-    (hd : defectExponent a = d) (hodd : Odd d) :
-    Nat.card (unitQuadraticNormSquareClasses (a : K)) =
-      Nat.card 𝓀[K] ^ natCastValuation K 2 h2 := by
-  obtain ⟨t, c, ht, hc, -, -, heq⟩ :=
-    exists_eisenstein_mem_quadraticNormSubgroup_iff_of_defectExponent_eq_odd ha hd hodd
-  rw [heq, natCard_eisensteinNormSquareSubgroup h2 ht hc]
-
-/-- **Index of unit-norm square classes inside `unitSquareClasses K`.** Over a nonarchimedean local
-field with `2 ≠ 0`, for a unit `a` of valuation `1` and odd quadratic defect,
-`unitQuadraticNormSquareClasses (a : K)` has index `2` inside `unitSquareClasses K`. -/
-theorem relIndex_unitQuadraticNormSquareClasses_of_odd_defectExponent (h2 : (2 : K) ≠ 0)
-    {a : Kˣ} (ha : valuation K (a : K) = 1) {d : ℤ}
-    (hd : defectExponent a = d) (hodd : Odd d) :
-    (unitQuadraticNormSquareClasses (a : K)).relIndex (unitSquareClasses K) = 2 := by
-  obtain ⟨t, c, ht, hc, -, -, heq⟩ :=
-    exists_eisenstein_mem_quadraticNormSubgroup_iff_of_defectExponent_eq_odd ha hd hodd
-  rw [heq, relIndex_eisensteinNormSquareSubgroup h2 ht hc]
 
 end TauCeti
