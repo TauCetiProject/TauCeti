@@ -81,12 +81,8 @@ theorem detScalarEquiv_const (A : FiniteRankBundleCore 𝕜 B) (c : 𝕜) :
 `detScalarEquiv A v`. -/
 theorem det_fiber_eq_const (A : FiniteRankBundleCore 𝕜 B) (v : Fin A.det.rank → 𝕜)
     (i : Fin A.det.rank) :
-    v i = detScalarEquiv A v := by
-  rw [detScalarEquiv_apply]
-  congr 1
-  ext
-  have hi : i.val < 1 := A.rank_det ▸ i.isLt
-  exact Nat.lt_one_iff.mp hi
+    v i = detScalarEquiv A v :=
+  congrArg v (Fin.ext (Nat.lt_one_iff.mp (A.rank_det ▸ i.isLt)))
 
 end DetScalar
 
@@ -101,8 +97,9 @@ theorem coordChange_dual_det (A : FiniteRankBundleCore 𝕜 B) (i j x : B) :
       (A.core.coordChange j i x).det •
         ContinuousLinearMap.id 𝕜 (Fin A.dual.det.rank → 𝕜) := by
   rw [coordChange_det]
-  congr 1
-  exact ContinuousLinearMap.det_piTranspose (A.core.coordChange j i x)
+  exact congrArg (· • ContinuousLinearMap.id 𝕜 _)
+    ((congrArg ContinuousLinearMap.det (coordChange_dual A i j x)).trans
+      (ContinuousLinearMap.det_piTranspose _))
 
 /-- The transitions of `A.det.dual` are multiplication by the determinants of the reverse
 transitions of `A`. -/
@@ -119,9 +116,9 @@ the dual of the determinant line, sending the unit scalar coordinate to the unit
 coordinate. -/
 noncomputable def dualDetIsoDetDual (A : FiniteRankBundleCore 𝕜 B) :
     A.dual.det ≅ A.det.dual :=
-  constIso (fun i ↦ (localTriv_baseSet_det A.dual i).trans (localTriv_baseSet_det A i).symm)
-    ((detScalarEquiv A.dual).trans (detScalarEquiv A).symm)
-    fun i j x _ _ ↦ by
+  constIso
+    (by intro i; exact (localTriv_baseSet_det A.dual i).trans (localTriv_baseSet_det A i).symm)
+    ((detScalarEquiv A.dual).trans (detScalarEquiv A).symm) fun i j x _ _ ↦ by
       rw [coordChange_dual_det, coordChange_det_dual]
       ext v : 1
       simp only [ContinuousLinearMap.comp_apply, smul_apply, ContinuousLinearMap.id_apply, map_smul]
@@ -141,14 +138,12 @@ theorem fiberMap_dualDetIsoDetDual_inv (A : FiniteRankBundleCore 𝕜 B) (x : B)
 theorem detScalarEquiv_dualDetIsoDetDual_hom (A : FiniteRankBundleCore 𝕜 B) (x : B)
     (v : Fin A.dual.det.rank → 𝕜) :
     detScalarEquiv A ((dualDetIsoDetDual A).hom.fiberMap x v) = detScalarEquiv A.dual v := by
-  rw [fiberMap_dualDetIsoDetDual_hom]
-  rfl
+  rw [fiberMap_dualDetIsoDetDual_hom]; rfl
 
 theorem detScalarEquiv_dualDetIsoDetDual_inv (A : FiniteRankBundleCore 𝕜 B) (x : B)
     (v : Fin A.det.dual.rank → 𝕜) :
     detScalarEquiv A.dual ((dualDetIsoDetDual A).inv.fiberMap x v) = detScalarEquiv A v := by
-  rw [fiberMap_dualDetIsoDetDual_inv]
-  rfl
+  rw [fiberMap_dualDetIsoDetDual_inv]; rfl
 
 end DualDet
 
@@ -211,14 +206,11 @@ theorem ofBundleEquivDualDetFiberEquiv_apply (x : B)
         b.continuousDet.compContinuousLinearMap
           ((trivializationAt F V x).continuousLinearMapAt 𝕜 x) := by
   ext u
-  have hx : x ∈ (trivializationAt F V x).baseSet := mem_baseSet_trivializationAt F V x
-  rw [ofBundleEquivDualDetFiberEquiv_apply_apply]
-  simp only [ContinuousAlternatingMap.smul_apply,
+  simp only [ofBundleEquivDualDetFiberEquiv_apply_apply, ContinuousAlternatingMap.smul_apply,
     ContinuousAlternatingMap.compContinuousLinearMap_apply, Module.Basis.continuousDet_apply,
-    smul_eq_mul]
-  congr 2
-  funext i
-  exact ((trivializationAt F V x).continuousLinearMapAt_apply_of_mem (R := 𝕜) hx (u i)).symm
+    smul_eq_mul, Function.comp_def,
+    (trivializationAt F V x).continuousLinearMapAt_apply_of_mem (R := 𝕜)
+      (mem_baseSet_trivializationAt F V x)]
 
 /-- Under `ofBundleEquivDualDetFiberEquiv`, the unit coordinate `fun _ ↦ 1` corresponds to the
 determinant form `b.continuousDet` pulled back along `trivializationAt F V x`. -/
@@ -226,8 +218,7 @@ theorem ofBundleEquivDualDetFiberEquiv_const_one (x : B) :
     ofBundleEquivDualDetFiberEquiv b V x (fun _ ↦ 1) =
       b.continuousDet.compContinuousLinearMap
         ((trivializationAt F V x).continuousLinearMapAt 𝕜 x) := by
-  refine (ofBundleEquivDualDetFiberEquiv_apply b V x (fun _ ↦ 1)).trans ?_
-  rw [detScalarEquiv_const, one_smul]
+  rw [ofBundleEquivDualDetFiberEquiv_apply, detScalarEquiv_const, one_smul]
 
 /-- Inversely, `ofBundleEquivDualDetFiberEquiv` sends a top-degree alternating form `ω` on `V x`
 to the constant coordinate given by evaluating `ω` on the preferred frame
@@ -237,16 +228,10 @@ theorem ofBundleEquivDualDetFiberEquiv_symm_apply (x : B) (ω : V x [⋀^Fin r]�
     (i : Fin (ofBundleEquiv b.equivFunL V).dual.det.rank) :
     (ofBundleEquivDualDetFiberEquiv b V x).symm ω i =
       ω (fun k ↦ (trivializationAt F V x).symm x (b k)) := by
-  let e₁ := (ofBundleEquiv b.equivFunL V).dual.detScalarEquiv
-  let e₂ := b.topFormEquiv.symm
-  let e₃ : (F [⋀^Fin r]→L[𝕜] 𝕜) ≃L[𝕜] (V x [⋀^Fin r]→L[𝕜] 𝕜) :=
-    (VectorBundle.continuousLinearEquivAt 𝕜 F V x).symm.continuousAlternatingMapCongrLeft
-  have hsymm :
-      ((ofBundleEquivDualDetFiberEquiv b V x).symm ω :
-        Fin (ofBundleEquiv b.equivFunL V).dual.det.rank → 𝕜) =
-      e₁.symm (e₂.symm (e₃.symm ω)) := rfl
-  exact (congrArg (fun f : Fin (ofBundleEquiv b.equivFunL V).dual.det.rank → 𝕜 ↦ f i) hsymm).trans
-    (by simp [e₁, e₂, e₃, Module.Basis.topFormEquiv_apply]; rfl)
+  change (detScalarEquiv (ofBundleEquiv b.equivFunL V).dual).symm
+    (b.topFormEquiv ((VectorBundle.continuousLinearEquivAt 𝕜 F V x).symm
+      |>.continuousAlternatingMapCongrLeft.symm ω)) i = _
+  simp [Module.Basis.topFormEquiv_apply]; rfl
 
 /-- On the base set of `trivializationAt F V a`, `ofBundleEquivDualDetFiberEquiv` intertwines the
 core chart at `a` with the preferred alternating-bundle chart at `a` via the constant equivalence
@@ -258,7 +243,6 @@ theorem trivializationAt_ofBundleEquivDualDetFiberEquiv_snd (a : B) {x : B}
         ⟨x, ofBundleEquivDualDetFiberEquiv b V x v⟩).2 =
       b.topFormEquiv.symm (detScalarEquiv (ofBundleEquiv b.equivFunL V).dual
         (((ofBundleEquiv b.equivFunL V).dual.det.core.localTriv a ⟨x, v⟩).2)) := by
-  have hx' : x ∈ (trivializationAt F V x).baseSet := mem_baseSet_trivializationAt F V x
   let T : F →L[𝕜] F := (trivializationAt F V a).coordChangeL 𝕜 (trivializationAt F V x) x
   have htriv :
       detScalarEquiv (ofBundleEquiv b.equivFunL V).dual
@@ -267,35 +251,22 @@ theorem trivializationAt_ofBundleEquivDualDetFiberEquiv_snd (a : B) {x : B}
     have h1 : (((ofBundleEquiv b.equivFunL V).dual.det.core.localTriv a ⟨x, v⟩).2 :
         Fin (ofBundleEquiv b.equivFunL V).dual.det.rank → 𝕜) =
         LinearMap.det (T : F →ₗ[𝕜] F) • v := by
-      rw [VectorBundleCore.localTriv_apply]
-      dsimp only
+      rw [VectorBundleCore.localTriv_apply]; dsimp only
       rw [(ofBundleEquiv b.equivFunL V).dual.det.indexAt_eq, coordChange_ofBundleEquiv_dual_det]
       rfl
     rw [h1, map_smul, smul_eq_mul]
   rw [FiberBundle.trivializationAt_continuousAlternatingMap_apply_snd, htriv]
-  have hcomp :
-      ((trivializationAt F V x).continuousLinearMapAt 𝕜 x).comp
-        ((trivializationAt F V a).symmL 𝕜 x) = T := by
-    ext u
-    rw [ContinuousLinearMap.comp_apply,
-      (trivializationAt F V x).continuousLinearMapAt_apply_of_mem (R := 𝕜) hx',
-      (trivializationAt F V a).symmL_apply hx,
-      ← (trivializationAt F V a).mk_coordChangeL (R := 𝕜) (trivializationAt F V x) ⟨hx, hx'⟩ u]
-    rfl
   ext u
-  rw [ContinuousAlternatingMap.compContinuousLinearMap_apply,
-    ofBundleEquivDualDetFiberEquiv_apply_apply, Module.Basis.topFormEquiv_symm_apply]
-  dsimp only [Function.comp_apply]
+  simp only [ContinuousAlternatingMap.compContinuousLinearMap_apply,
+    ofBundleEquivDualDetFiberEquiv_apply_apply, Module.Basis.topFormEquiv_symm_apply,
+    Function.comp_apply]
   have hfun : (fun i ↦ (trivializationAt F V x ⟨x, (trivializationAt F V a).symmL 𝕜 x (u i)⟩).2) =
-      fun i ↦ T (u i) := by
-    funext i
-    have hi := congrArg (fun f : F →L[𝕜] F ↦ f (u i)) hcomp
-    simpa only [ContinuousLinearMap.comp_apply,
-      (trivializationAt F V x).continuousLinearMapAt_apply_of_mem (R := 𝕜) hx'] using hi
-  have hdet : b.det (fun i ↦ T (u i)) = LinearMap.det (T : F →ₗ[𝕜] F) * b.det u :=
-    b.det_comp (T : F →ₗ[𝕜] F) u
-  rw [hfun, hdet]
-  ring
+      (T : F →ₗ[𝕜] F) ∘ u := funext fun i ↦ by
+    rw [(trivializationAt F V a).symmL_apply hx,
+      ← (trivializationAt F V a).mk_coordChangeL (R := 𝕜) (trivializationAt F V x)
+        ⟨hx, mem_baseSet_trivializationAt F V x⟩ (u i)]
+    rfl
+  rw [hfun, b.det_comp]; ring
 
 /-- Reading determinant-core coordinates as top-degree alternating forms on `V` is continuous on
 total spaces. -/
@@ -306,13 +277,12 @@ theorem continuous_ofBundleEquivDualDetFiberEquiv :
   refine continuous_iff_continuousAt.2 fun p ↦ ?_
   rw [FiberBundle.continuousAt_totalSpace]
   refine ⟨(ofBundleEquiv b.equivFunL V).dual.det.core.continuous_proj.continuousAt, ?_⟩
-  have hbase (i : B) :
-      (ofBundleEquiv b.equivFunL V).dual.det.core.baseSet i = (trivializationAt F V i).baseSet :=
+  have hbase (i : B) : (ofBundleEquiv b.equivFunL V).dual.det.core.baseSet i =
+      (trivializationAt F V i).baseSet :=
     localTriv_baseSet_det (ofBundleEquiv b.equivFunL V).dual i
-  have hp : p ∈ ((ofBundleEquiv b.equivFunL V).dual.det.core.localTriv p.proj).source :=
+  have hU := ((ofBundleEquiv b.equivFunL V).dual.det.core.localTriv p.proj).open_source.mem_nhds <|
     ((ofBundleEquiv b.equivFunL V).dual.det.core.mem_localTriv_source p.proj p).2
       ((hbase p.proj).symm ▸ mem_baseSet_trivializationAt F V p.proj)
-  have hU := ((ofBundleEquiv b.equivFunL V).dual.det.core.localTriv p.proj).open_source.mem_nhds hp
   have hc :=
     (((ofBundleEquiv b.equivFunL V).dual.det.core.localTriv p.proj).continuousOn.continuousAt
       hU).snd
@@ -337,16 +307,14 @@ theorem ofBundleEquivDualDetTotalSpaceHomeomorph_apply
     (p : (ofBundleEquiv b.equivFunL V).dual.det.core.TotalSpace) :
     ofBundleEquivDualDetTotalSpaceHomeomorph b V p =
       ⟨p.proj, ofBundleEquivDualDetFiberEquiv b V p.proj p.2⟩ :=
-  bundleHomeomorph_apply (𝕜 := 𝕜) (ofBundleEquivDualDetFiberEquiv b V)
-    (continuous_ofBundleEquivDualDetFiberEquiv b V) p
+  bundleHomeomorph_apply _ _ p
 
 @[simp]
 theorem ofBundleEquivDualDetTotalSpaceHomeomorph_symm_apply
     (p : TotalSpace (F [⋀^Fin r]→L[𝕜] 𝕜) (fun x ↦ V x [⋀^Fin r]→L[𝕜] 𝕜)) :
     (ofBundleEquivDualDetTotalSpaceHomeomorph b V).symm p =
       ⟨p.proj, (ofBundleEquivDualDetFiberEquiv b V p.proj).symm p.2⟩ :=
-  bundleHomeomorph_symm_apply (𝕜 := 𝕜) (ofBundleEquivDualDetFiberEquiv b V)
-    (continuous_ofBundleEquivDualDetFiberEquiv b V) p
+  bundleHomeomorph_symm_apply _ _ p
 
 end TopFormBundle
 
@@ -363,12 +331,10 @@ private noncomputable def detScaleEquiv :
   let u : 𝕜ˣ :=
     { val := b₁.det b₂
       inv := b₂.det b₁
-      val_inv := by
-        rw [b₁.det_apply, b₂.det_apply, ← Matrix.det_mul, b₁.toMatrix_mul_toMatrix_flip,
-          Matrix.det_one]
-      inv_val := by
-        rw [b₂.det_apply, b₁.det_apply, ← Matrix.det_mul, b₂.toMatrix_mul_toMatrix_flip,
-          Matrix.det_one] }
+      val_inv := by rw [b₁.det_apply, b₂.det_apply, ← Matrix.det_mul,
+        b₁.toMatrix_mul_toMatrix_flip, Matrix.det_one]
+      inv_val := by rw [b₂.det_apply, b₁.det_apply, ← Matrix.det_mul,
+        b₂.toMatrix_mul_toMatrix_flip, Matrix.det_one] }
   (detScalarEquiv (ofBundleEquiv b₁.equivFunL V).dual).trans
     ((ContinuousLinearEquiv.unitsEquivAut 𝕜 u).trans
       (detScalarEquiv (ofBundleEquiv b₂.equivFunL V).dual).symm)
@@ -379,8 +345,10 @@ determinant line bundles `(ofBundleEquiv b₁.equivFunL V).dual.det` and
 noncomputable def ofBundleEquivDualDetChangeIso :
     (ofBundleEquiv b₁.equivFunL V).dual.det ≅ (ofBundleEquiv b₂.equivFunL V).dual.det :=
   constIso
-    (fun i ↦ (localTriv_baseSet_det (ofBundleEquiv b₁.equivFunL V).dual i).trans
-      (localTriv_baseSet_det (ofBundleEquiv b₂.equivFunL V).dual i).symm)
+    (by
+      intro i
+      exact (localTriv_baseSet_det (ofBundleEquiv b₁.equivFunL V).dual i).trans
+        (localTriv_baseSet_det (ofBundleEquiv b₂.equivFunL V).dual i).symm)
     (detScaleEquiv b₁ b₂ V) fun i j x _ _ ↦ by
       rw [coordChange_ofBundleEquiv_dual_det, coordChange_ofBundleEquiv_dual_det]
       ext v : 1
@@ -435,15 +403,13 @@ theorem ofBundleEquivDualDetChangeIso_hom_eq_exteriorPower_dualMap :
       LinearMap.det ((b₂.equivFunL.symm.trans b₁.equivFunL).toContinuousLinearMap :
         (Fin r → 𝕜) →ₗ[𝕜] (Fin r → 𝕜)) = b₁.det b₂ := by
     rw [← LinearMap.det_toMatrix', b₁.det_apply]
-    congr 1
-    ext k j
-    have hsingle : b₂.equivFunL.symm (Pi.single j 1) = b₂ j := Basis.equivFun_symm_single b₂ j
+    congr 1; ext k j
     rw [LinearMap.toMatrix'_apply, ContinuousLinearMap.coe_coe, ContinuousLinearEquiv.coe_coe,
-      ContinuousLinearEquiv.trans_apply, Module.Basis.toMatrix_apply, hsingle]
+      ContinuousLinearEquiv.trans_apply, Module.Basis.toMatrix_apply,
+      show b₂.equivFunL.symm (Pi.single j 1) = b₂ j from Basis.equivFun_symm_single b₂ j]
     rfl
   refine eq_eqToIso_conj_of_fiberMap_smul_id
-    (det_def (ofBundleEquiv b₁.equivFunL V).dual)
-    (det_def (ofBundleEquiv b₂.equivFunL V).dual)
+    (det_def (ofBundleEquiv b₁.equivFunL V).dual) (det_def (ofBundleEquiv b₂.equivFunL V).dual)
     ((rank_det _).trans (rank_det _).symm) rfl (b₁.det b₂) _ _ ?_ ?_
   · intro x v i
     exact (det_fiber_eq_const (ofBundleEquiv b₂.equivFunL V).dual _ i).trans <|
@@ -486,15 +452,8 @@ theorem ofBundleEquivDualDetFiberEquiv_changeIso (x : B)
       ofBundleEquivDualDetFiberEquiv b₁ V x v := by
   ext u
   rw [ofBundleEquivDualDetFiberEquiv_apply_apply, ofBundleEquivDualDetFiberEquiv_apply_apply,
-    detScalarEquiv_ofBundleEquivDualDetChangeIso_hom]
-  have hdet : b₁.det (fun i ↦ (trivializationAt F V x ⟨x, u i⟩).2) =
-      b₁.det b₂ * b₂.det (fun i ↦ (trivializationAt F V x ⟨x, u i⟩).2) := by
-    have h := congrArg
-      (fun f : F [⋀^Fin r]→ₗ[𝕜] 𝕜 ↦ f (fun i ↦ (trivializationAt F V x ⟨x, u i⟩).2))
-      (b₁.det.eq_smul_basis_det b₂)
-    simpa only [smul_apply, smul_eq_mul] using h
-  rw [hdet]
-  ring
+    detScalarEquiv_ofBundleEquivDualDetChangeIso_hom, b₁.det.eq_smul_basis_det b₂]
+  simp only [smul_apply, smul_eq_mul, b₂.det_self, mul_one]; ring
 
 end BasisChangeTopForm
 

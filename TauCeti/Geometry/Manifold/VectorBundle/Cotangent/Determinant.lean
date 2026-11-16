@@ -101,21 +101,21 @@ omit [IsManifold I 1 M] in
 theorem isContMDiff_tangentFiniteRankCore {n : ℕ∞ω} [IsManifold I (n + 1) M]
     (b : Basis (Fin r) 𝕜 E) :
     have : IsManifold I 1 M := .of_le (n := n + 1) le_add_self
-    (tangentFiniteRankCore I M b).core.IsContMDiff I n := by
+    (tangentFiniteRankCore I M b).core.IsContMDiff I n :=
   have : IsManifold I 1 M := .of_le (n := n + 1) le_add_self
   have : ContMDiffVectorBundle n E (TangentSpace I : M → Type _) I :=
     TangentBundle.contMDiffVectorBundle
-  exact FiniteRankBundleCore.isContMDiff_ofBundleEquiv b.equivFunL (TangentSpace I : M → Type _)
+  FiniteRankBundleCore.isContMDiff_ofBundleEquiv b.equivFunL (TangentSpace I : M → Type _)
 
 omit [IsManifold I 1 M] in
 /-- On a `C^(n+1)` manifold, `cotangentFiniteRankCore I M b` is a `C^n` core. -/
 theorem isContMDiff_cotangentFiniteRankCore {n : ℕ∞ω} [IsManifold I (n + 1) M]
     (b : Basis (Fin r) 𝕜 E) :
     have : IsManifold I 1 M := .of_le (n := n + 1) le_add_self
-    (cotangentFiniteRankCore I M b).core.IsContMDiff I n := by
+    (cotangentFiniteRankCore I M b).core.IsContMDiff I n :=
   have : IsManifold I 1 M := .of_le (n := n + 1) le_add_self
   have : (tangentFiniteRankCore I M b).core.IsContMDiff I n := isContMDiff_tangentFiniteRankCore b
-  exact FiniteRankBundleCore.isContMDiff_dual (tangentFiniteRankCore I M b)
+  FiniteRankBundleCore.isContMDiff_dual (tangentFiniteRankCore I M b)
 
 omit [IsManifold I 1 M] in
 /-- On a `C^(n+1)` manifold, the determinant line `(cotangentFiniteRankCore I M b).det` is a
@@ -123,11 +123,11 @@ omit [IsManifold I 1 M] in
 theorem isContMDiff_det_cotangentFiniteRankCore {n : ℕ∞ω} [IsManifold I (n + 1) M]
     (b : Basis (Fin r) 𝕜 E) :
     have : IsManifold I 1 M := .of_le (n := n + 1) le_add_self
-    (cotangentFiniteRankCore I M b).det.core.IsContMDiff I n := by
+    (cotangentFiniteRankCore I M b).det.core.IsContMDiff I n :=
   have : IsManifold I 1 M := .of_le (n := n + 1) le_add_self
   have : (cotangentFiniteRankCore I M b).core.IsContMDiff I n :=
     isContMDiff_cotangentFiniteRankCore b
-  exact FiniteRankBundleCore.isContMDiff_det (cotangentFiniteRankCore I M b)
+  FiniteRankBundleCore.isContMDiff_det (cotangentFiniteRankCore I M b)
 
 /-! ### Transition functions and Jacobian determinants -/
 
@@ -138,15 +138,12 @@ theorem coordChange_tangentFiniteRankCore (b : Basis (Fin r) 𝕜 E) {x₀ x₁ 
     (tangentFiniteRankCore I M b).core.coordChange x₀ x₁ x =
       b.equivFunL.toContinuousLinearMap.comp
         ((tangentCoordChange I x₀ x₁ x).comp b.equivFunL.symm.toContinuousLinearMap) := by
-  have hx : x ∈ (trivializationAt E (TangentSpace I) x₀).baseSet ∩
-      (trivializationAt E (TangentSpace I) x₁).baseSet :=
-    ⟨by simpa using hx₀, by simpa using hx₁⟩
-  have hcoord :
-      ((trivializationAt E (TangentSpace I) x₀).coordChangeL 𝕜
-          (trivializationAt E (TangentSpace I) x₁) x : E →L[𝕜] E) =
-        tangentCoordChange I x₀ x₁ x :=
-    (tangentBundleCore I M).trivializationAt_coordChangeL hx
-  rw [FiniteRankBundleCore.coordChange_ofBundleEquiv, hcoord]
+  have h : ((trivializationAt E (TangentSpace I) x₀).coordChangeL 𝕜
+      (trivializationAt E (TangentSpace I) x₁) x : E →L[𝕜] E) = tangentCoordChange I x₀ x₁ x :=
+    (tangentBundleCore I M).trivializationAt_coordChangeL (α := x₀) (β := x₁) (x := x) ⟨hx₀, hx₁⟩
+  exact (FiniteRankBundleCore.coordChange_ofBundleEquiv b.equivFunL (TangentSpace I) x₀ x₁ x).trans
+    (congrArg (fun T : E →L[𝕜] E ↦ b.equivFunL.toContinuousLinearMap.comp
+      (T.comp b.equivFunL.symm.toContinuousLinearMap)) h)
 
 /-- On the overlap of the charts at `x₀` and `x₁`, the transition map of
 `cotangentFiniteRankCore I M b` is the transpose of the inverse tangent coordinate change
@@ -157,8 +154,7 @@ theorem coordChange_cotangentFiniteRankCore (b : Basis (Fin r) 𝕜 E) {x₀ x�
       (b.equivFunL.toContinuousLinearMap.comp
         ((tangentCoordChange I x₁ x₀ x).comp
           b.equivFunL.symm.toContinuousLinearMap)).piTranspose := by
-  rw [FiniteRankBundleCore.coordChange_dual, coordChange_tangentFiniteRankCore b hx₁ hx₀]
-  rfl
+  rw [FiniteRankBundleCore.coordChange_dual, coordChange_tangentFiniteRankCore b hx₁ hx₀]; rfl
 
 /-- On the overlap of the charts at `x₀` and `x₁`, the transition map of the determinant line
 `(cotangentFiniteRankCore I M b).det` is scalar multiplication by the Jacobian determinant
@@ -168,15 +164,13 @@ theorem coordChange_det_cotangentFiniteRankCore (b : Basis (Fin r) 𝕜 E) {x₀
     (cotangentFiniteRankCore I M b).det.core.coordChange x₀ x₁ x =
       LinearMap.det (tangentCoordChange I x₁ x₀ x : E →ₗ[𝕜] E) •
         ContinuousLinearMap.id 𝕜 (Fin (cotangentFiniteRankCore I M b).det.rank → 𝕜) := by
-  have hx : x ∈ (trivializationAt E (TangentSpace I) x₁).baseSet ∩
-      (trivializationAt E (TangentSpace I) x₀).baseSet :=
-    ⟨by simpa using hx₁, by simpa using hx₀⟩
-  have hcoord :
-      ((trivializationAt E (TangentSpace I) x₁).coordChangeL 𝕜
-          (trivializationAt E (TangentSpace I) x₀) x : E →L[𝕜] E) =
-        tangentCoordChange I x₁ x₀ x :=
-    (tangentBundleCore I M).trivializationAt_coordChangeL hx
-  rw [FiniteRankBundleCore.coordChange_ofBundleEquiv_dual_det, hcoord]
+  have h : ((trivializationAt E (TangentSpace I) x₁).coordChangeL 𝕜
+      (trivializationAt E (TangentSpace I) x₀) x : E →L[𝕜] E) = tangentCoordChange I x₁ x₀ x :=
+    (tangentBundleCore I M).trivializationAt_coordChangeL (α := x₁) (β := x₀) (x := x) ⟨hx₁, hx₀⟩
+  exact (FiniteRankBundleCore.coordChange_ofBundleEquiv_dual_det b.equivFunL (TangentSpace I)
+    x₀ x₁ x).trans
+    (congrArg (fun T : E →L[𝕜] E ↦ LinearMap.det (T : E →ₗ[𝕜] E) •
+      ContinuousLinearMap.id 𝕜 (Fin (cotangentFiniteRankCore I M b).det.rank → 𝕜)) h)
 
 /-! ### Total-space diffeomorphisms and explicit conventions -/
 
@@ -193,12 +187,12 @@ noncomputable def tangentFiniteRankCoreTotalSpaceDiffeomorph (b : Basis (Fin r) 
 @[simp]
 theorem tangentFiniteRankCoreTotalSpaceDiffeomorph_apply (b : Basis (Fin r) 𝕜 E) (n : ℕ∞ω)
     (p : (tangentFiniteRankCore I M b).core.TotalSpace) :
-    tangentFiniteRankCoreTotalSpaceDiffeomorph I M b n p = ⟨p.proj, b.equivFunL.symm p.2⟩ := by
-  rw [tangentFiniteRankCoreTotalSpaceDiffeomorph,
-    FiniteRankBundleCore.ofBundleEquivTotalSpaceDiffeomorph_apply]
-  exact congrArg (TotalSpace.mk' E p.proj) <|
-    (FiniteRankBundleCore.ofBundleEquivFiberEquiv_apply b.equivFunL (TangentSpace I) p.proj
-      p.2).trans (TangentBundle.trivializationAt_symm_apply_self p.proj _)
+    tangentFiniteRankCoreTotalSpaceDiffeomorph I M b n p = ⟨p.proj, b.equivFunL.symm p.2⟩ :=
+  (FiniteRankBundleCore.ofBundleEquivTotalSpaceDiffeomorph_apply b.equivFunL (TangentSpace I)
+    p).trans <|
+    congrArg (TotalSpace.mk' E p.proj) <|
+      (FiniteRankBundleCore.ofBundleEquivFiberEquiv_apply b.equivFunL (TangentSpace I) p.proj
+        p.2).trans (TangentBundle.trivializationAt_symm_apply_self p.proj _)
 
 /-- The `i`th standard basis vector over `x` in `tangentFiniteRankCore I M b` corresponds to the
 tangent vector `b i` in `TangentBundle I M`. -/
@@ -216,9 +210,9 @@ theorem tangentFiniteRankCoreTotalSpaceDiffeomorph_symm_apply (b : Basis (Fin r)
   rw [tangentFiniteRankCoreTotalSpaceDiffeomorph,
     FiniteRankBundleCore.ofBundleEquivTotalSpaceDiffeomorph_symm_apply,
     FiniteRankBundleCore.ofBundleEquivFiberEquiv_symm_apply]
-  congr 2
-  exact (TangentBundle.trivializationAt_apply_tangentCoordChange p.2).trans
-    (tangentCoordChange_self (I := I) (mem_extChartAt_source p.proj))
+  exact congrArg (TotalSpace.mk' (Fin r → 𝕜) p.proj) <| congrArg b.equivFunL <|
+    (TangentBundle.trivializationAt_apply_tangentCoordChange (I := I) p.2).trans
+      (tangentCoordChange_self (I := I) (mem_extChartAt_source p.proj))
 
 variable (I M) in
 /-- Canonical `C^n` diffeomorphism (biholomorphism for `I = 𝓘(ℂ, E)`, `n = ∞`) identifying the dual
@@ -254,13 +248,12 @@ theorem cotangentFiniteRankCoreTotalSpaceDiffeomorph_apply_snd_apply (b : Basis 
       ∑ k, b.repr v k * w k := by
   rw [cotangentFiniteRankCoreTotalSpaceDiffeomorph,
     FiniteRankBundleCore.ofBundleEquivDualTotalSpaceDiffeomorph_apply]
-  refine (FiniteRankBundleCore.ofBundleEquivDualFiberEquiv_apply_apply b.equivFunL
-    (TangentSpace I) x w v).trans ?_
-  have hv : (trivializationAt E (TangentSpace I) x ⟨x, v⟩).2 = v :=
-    (TangentBundle.trivializationAt_apply_tangentCoordChange v).trans
+  dsimp only
+  rw [FiniteRankBundleCore.ofBundleEquivDualFiberEquiv_apply_apply]
+  have hv : (trivializationAt E (TangentSpace I) x ⟨x, v⟩).2 = (v : E) :=
+    (TangentBundle.trivializationAt_apply_tangentCoordChange (I := I) v).trans
       (tangentCoordChange_self (I := I) (mem_extChartAt_source x))
-  rw [hv]
-  rfl
+  rw [hv]; rfl
 
 /-- Explicit dual-basis convention: the `i`th standard basis vector `Pi.single i 1` over `x` maps
 to the `i`th coordinate covector `v ↦ b.repr v i`. -/
@@ -279,10 +272,10 @@ theorem cotangentFiniteRankCoreTotalSpaceDiffeomorph_symm_apply (b : Basis (Fin 
     ((cotangentFiniteRankCoreTotalSpaceDiffeomorph I M b n).symm ⟨x, α⟩).2 i = α (b i) := by
   rw [cotangentFiniteRankCoreTotalSpaceDiffeomorph,
     FiniteRankBundleCore.ofBundleEquivDualTotalSpaceDiffeomorph_symm_apply]
-  refine (FiniteRankBundleCore.ofBundleEquivDualFiberEquiv_symm_apply b.equivFunL
-    (TangentSpace I) x α i).trans ?_
-  have hsingle : b.equivFunL.symm (Pi.single i 1) = b i := Basis.equivFun_symm_single b i
-  rw [hsingle, TangentBundle.trivializationAt_symm_apply_self]
+  dsimp only
+  rw [FiniteRankBundleCore.ofBundleEquivDualFiberEquiv_symm_apply,
+    show b.equivFunL.symm (Pi.single i 1) = b i from Basis.equivFun_symm_single b i,
+    TangentBundle.trivializationAt_symm_apply_self]
 
 variable (I M) in
 /-- Canonical core isomorphism `det(T*M) ≅ (det TM)*` identifying the determinant of the cotangent
@@ -412,12 +405,9 @@ theorem detCotangentTotalSpaceDiffeomorph_apply_snd_apply (b : Basis (Fin (finra
     (detCotangentTotalSpaceDiffeomorph I M b n ⟨x, v⟩).2 u =
       FiniteRankBundleCore.detScalarEquiv (cotangentFiniteRankCore I M b) v * b.det u := by
   rw [detCotangentTotalSpaceDiffeomorph,
-    FiniteRankBundleCore.ofBundleEquivDualDetTotalSpaceDiffeomorph_apply]
-  refine (FiniteRankBundleCore.ofBundleEquivDualDetFiberEquiv_apply_apply b (TangentSpace I) x v
-    u).trans ?_
-  congr 1
-  congr 1
-  funext i
+    FiniteRankBundleCore.ofBundleEquivDualDetTotalSpaceDiffeomorph_apply,
+    FiniteRankBundleCore.ofBundleEquivDualDetFiberEquiv_apply_apply]
+  congr 2; funext i
   exact (TangentBundle.trivializationAt_apply_tangentCoordChange (u i)).trans
     (tangentCoordChange_self (I := I) (mem_extChartAt_source x))
 
@@ -428,12 +418,17 @@ theorem detCotangentTotalSpaceDiffeomorph_apply_snd (b : Basis (Fin (finrank �
     (detCotangentTotalSpaceDiffeomorph I M b n p).2 =
       FiniteRankBundleCore.detScalarEquiv (cotangentFiniteRankCore I M b) p.2 •
         CanonicalBundle.coordForm I p.proj b p.proj := by
-  rcases p with ⟨x, v⟩
-  symm
+  rw [detCotangentTotalSpaceDiffeomorph,
+    FiniteRankBundleCore.ofBundleEquivDualDetTotalSpaceDiffeomorph_apply]
+  dsimp only
   ext u
+  refine (FiniteRankBundleCore.ofBundleEquivDualDetFiberEquiv_apply_apply b (TangentSpace I)
+    p.proj p.2 u).trans ?_
   rw [ContinuousAlternatingMap.smul_apply, smul_eq_mul, CanonicalBundle.coordForm_apply]
   simp only [TauCeti.Manifold.continuousLinearMapAt_trivializationAt_self]
-  exact (detCotangentTotalSpaceDiffeomorph_apply_snd_apply b n x v u).symm
+  congr 2; funext i
+  exact (TangentBundle.trivializationAt_apply_tangentCoordChange (u i)).trans
+    (tangentCoordChange_self (I := I) (mem_extChartAt_source p.proj))
 
 /-- Under `detCotangentTotalSpaceDiffeomorph`, the unit coordinate `fun _ ↦ 1` over `x` maps to the
 coordinate top-degree form `CanonicalBundle.coordForm I x b x`. -/
@@ -443,7 +438,7 @@ theorem detCotangentTotalSpaceDiffeomorph_apply_const_one (b : Basis (Fin (finra
       ⟨x, CanonicalBundle.coordForm I x b x⟩ := by
   have h := detCotangentTotalSpaceDiffeomorph_apply_snd (I := I) b n ⟨x, fun _ ↦ 1⟩
   rw [FiniteRankBundleCore.detScalarEquiv_const, one_smul] at h
-  exact TotalSpace.ext (detCotangentTotalSpaceDiffeomorph_proj b n _) (heq_of_eq h)
+  exact TotalSpace.ext (detCotangentTotalSpaceDiffeomorph_proj b n ⟨x, fun _ ↦ 1⟩) (heq_of_eq h)
 
 /-- Inversely, `detCotangentTotalSpaceDiffeomorph` sends a top-degree form `η` at `x` to the
 constant scalar coordinate `η b`. -/
@@ -453,10 +448,9 @@ theorem detCotangentTotalSpaceDiffeomorph_symm_apply (b : Basis (Fin (finrank �
     ((detCotangentTotalSpaceDiffeomorph I M b n).symm ⟨x, η⟩).2 i = η b := by
   rw [detCotangentTotalSpaceDiffeomorph,
     FiniteRankBundleCore.ofBundleEquivDualDetTotalSpaceDiffeomorph_symm_apply]
-  refine (FiniteRankBundleCore.ofBundleEquivDualDetFiberEquiv_symm_apply b (TangentSpace I) x η
-    i).trans ?_
-  congr 1
-  funext k
+  dsimp only
+  rw [FiniteRankBundleCore.ofBundleEquivDualDetFiberEquiv_symm_apply]
+  congr 1; funext k
   exact TangentBundle.trivializationAt_symm_apply_self x (b k)
 
 /-- Over the source of any chart at `x₀`, `detCotangentTotalSpaceDiffeomorph` expresses the image
@@ -471,11 +465,10 @@ theorem detCotangentTotalSpaceDiffeomorph_eq_smul_coordForm (b : Basis (Fin (fin
         CanonicalBundle.coordForm I x₀ b p.proj := by
   rw [detCotangentTotalSpaceDiffeomorph,
     FiniteRankBundleCore.ofBundleEquivDualDetTotalSpaceDiffeomorph_apply]
-  have hx' : p.proj ∈ (trivializationAt E (TangentSpace I) x₀).baseSet := by simpa using hx
   refine (CanonicalBundle.eq_smul_coordForm (b := b) hx _).trans ?_
   congr 1
   rw [FiniteRankBundleCore.trivializationAt_ofBundleEquivDualDetFiberEquiv_snd b (TangentSpace I)
-    x₀ hx' p.2, Module.Basis.topFormEquiv_symm_apply, b.det_self, mul_one]
+    x₀ (by simpa using hx) p.2, Module.Basis.topFormEquiv_symm_apply, b.det_self, mul_one]
 
 /-- Changing the model basis commutes strictly with the canonical-bundle identification
 `detCotangentTotalSpaceDiffeomorph`. -/

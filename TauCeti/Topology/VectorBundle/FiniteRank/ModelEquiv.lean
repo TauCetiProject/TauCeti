@@ -72,21 +72,19 @@ noncomputable def ofBundleEquiv : FiniteRankBundleCore 𝕜 B where
           (((trivializationAt F V i).coordChangeL 𝕜 (trivializationAt F V j) x : F →L[𝕜] F).comp
             e.symm.toContinuousLinearMap)
       coordChange_self := fun i x hx v ↦ by
-        simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe]
-        rw [Trivialization.coe_coordChangeL (R := 𝕜) _ _ ⟨hx, hx⟩]
-        simp only [LinearEquiv.trans_apply, LinearEquiv.apply_symm_apply,
-          ContinuousLinearEquiv.apply_symm_apply]
+        simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+          Trivialization.coe_coordChangeL (R := 𝕜) _ _ ⟨hx, hx⟩, LinearEquiv.trans_apply,
+          LinearEquiv.apply_symm_apply, ContinuousLinearEquiv.apply_symm_apply]
       continuousOn_coordChange := fun i j ↦
         (e.arrowCongr e).continuous.comp_continuousOn
-          (continuousOn_coordChange 𝕜 (trivializationAt F V i)
-            (trivializationAt F V j))
+          (continuousOn_coordChange 𝕜 (trivializationAt F V i) (trivializationAt F V j))
       coordChange_comp := fun i j k x hx v ↦ by
         simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-          ContinuousLinearEquiv.symm_apply_apply]
-        rw [Trivialization.coe_coordChangeL (R := 𝕜) _ _ ⟨hx.1.1, hx.1.2⟩,
+          ContinuousLinearEquiv.symm_apply_apply,
+          Trivialization.coe_coordChangeL (R := 𝕜) _ _ ⟨hx.1.1, hx.1.2⟩,
           Trivialization.coe_coordChangeL (R := 𝕜) _ _ ⟨hx.1.2, hx.2⟩,
-          Trivialization.coe_coordChangeL (R := 𝕜) _ _ ⟨hx.1.1, hx.2⟩]
-        simp only [LinearEquiv.trans_apply, LinearEquiv.symm_apply_apply] }
+          Trivialization.coe_coordChangeL (R := 𝕜) _ _ ⟨hx.1.1, hx.2⟩,
+          LinearEquiv.trans_apply, LinearEquiv.symm_apply_apply] }
   indexAt_eq := fun _ ↦ rfl
 
 @[simp]
@@ -125,66 +123,46 @@ theorem trivializationAt_ofBundleEquivFiberEquiv_snd (b : B) {x : B}
       e.symm (((ofBundleEquiv e V).core.localTriv b ⟨x, v⟩).2) := by
   have h1 : ((ofBundleEquiv e V).core.localTriv b ⟨x, v⟩).2 =
       e ((trivializationAt F V x).coordChangeL 𝕜 (trivializationAt F V b) x (e.symm v)) := by
-    rw [VectorBundleCore.localTriv_apply]
-    rfl
+    rw [VectorBundleCore.localTriv_apply]; rfl
   rw [h1, e.symm_apply_apply, ofBundleEquivFiberEquiv_apply]
   exact (congrArg Prod.snd ((trivializationAt F V x).mk_coordChangeL (R := 𝕜)
     (trivializationAt F V b) ⟨mem_baseSet_trivializationAt F V x, hx⟩ (e.symm v))).symm
-
-private noncomputable def ofBundleEquivTotalEquiv :
-    (ofBundleEquiv e V).core.TotalSpace ≃ TotalSpace F V where
-  toFun p := ⟨p.proj, ofBundleEquivFiberEquiv e V p.proj p.2⟩
-  invFun p := ⟨p.proj, (ofBundleEquivFiberEquiv e V p.proj).symm p.2⟩
-  left_inv p := by
-    dsimp only
-    rw [ContinuousLinearEquiv.symm_apply_apply]
-  right_inv p := by
-    dsimp only
-    rw [ContinuousLinearEquiv.apply_symm_apply]
-
-private theorem continuous_ofBundleEquivTotalEquiv :
-    Continuous (ofBundleEquivTotalEquiv e V) := by
-  refine continuous_iff_continuousAt.2 fun p ↦ ?_
-  rw [FiberBundle.continuousAt_totalSpace]
-  refine ⟨(ofBundleEquiv e V).core.continuous_proj.continuousAt, ?_⟩
-  have hp : p ∈ ((ofBundleEquiv e V).core.localTriv p.proj).source :=
-    ((ofBundleEquiv e V).core.mem_localTriv_source p.proj p).2
-      (mem_baseSet_trivializationAt F V p.proj)
-  have hU := ((ofBundleEquiv e V).core.localTriv p.proj).open_source.mem_nhds hp
-  have hc := (((ofBundleEquiv e V).core.localTriv p.proj).continuousOn.continuousAt hU).snd
-  refine (e.symm.continuous.continuousAt.comp hc).congr_of_eventuallyEq ?_
-  filter_upwards [hU] with q hq
-  exact trivializationAt_ofBundleEquivFiberEquiv_snd e V p.proj
-    (((ofBundleEquiv e V).core.mem_localTriv_source p.proj q).1 hq) q.2
-
-private theorem continuous_ofBundleEquivTotalEquiv_symm :
-    Continuous (ofBundleEquivTotalEquiv e V).symm := by
-  refine continuous_iff_continuousAt.2 fun p ↦ ?_
-  rw [FiberBundle.continuousAt_totalSpace]
-  refine ⟨(FiberBundle.continuous_proj F V).continuousAt, ?_⟩
-  have hp : p ∈ (trivializationAt F V p.proj).source :=
-    FiberBundle.mem_trivializationAt_proj_source (x := p)
-  have hU := (trivializationAt F V p.proj).open_source.mem_nhds hp
-  have hc := ((trivializationAt F V p.proj).continuousOn.continuousAt hU).snd
-  refine (e.continuous.continuousAt.comp hc).congr_of_eventuallyEq ?_
-  filter_upwards [hU] with q hq
-  rw [(ofBundleEquiv e V).trivializationAt_core]
-  have hq' := trivializationAt_ofBundleEquivFiberEquiv_snd e V p.proj
-    ((trivializationAt F V p.proj).mem_source.1 hq)
-    ((ofBundleEquivFiberEquiv e V q.proj).symm q.2)
-  have happly : (⟨q.proj, ofBundleEquivFiberEquiv e V q.proj
-      ((ofBundleEquivFiberEquiv e V q.proj).symm q.2)⟩ : TotalSpace F V) = q := by
-    rw [ContinuousLinearEquiv.apply_symm_apply]
-  rw [happly] at hq'
-  exact ((congrArg e hq').trans (e.apply_symm_apply _)).symm
 
 /-- Reconstruction of `ofBundleEquiv e V` is homeomorphic to the original vector bundle `V`, over
 the identity of the base and by `ofBundleEquivFiberEquiv e V x` on each fibre. -/
 noncomputable def ofBundleEquivTotalSpaceHomeomorph :
     (ofBundleEquiv e V).core.TotalSpace ≃ₜ TotalSpace F V where
-  toEquiv := ofBundleEquivTotalEquiv e V
-  continuous_toFun := continuous_ofBundleEquivTotalEquiv e V
-  continuous_invFun := continuous_ofBundleEquivTotalEquiv_symm e V
+  toFun p := ⟨p.proj, ofBundleEquivFiberEquiv e V p.proj p.2⟩
+  invFun p := ⟨p.proj, (ofBundleEquivFiberEquiv e V p.proj).symm p.2⟩
+  left_inv p := by dsimp only; rw [ContinuousLinearEquiv.symm_apply_apply]
+  right_inv p := by dsimp only; rw [ContinuousLinearEquiv.apply_symm_apply]
+  continuous_toFun := continuous_iff_continuousAt.2 fun p ↦ by
+    rw [FiberBundle.continuousAt_totalSpace]
+    refine ⟨(ofBundleEquiv e V).core.continuous_proj.continuousAt, ?_⟩
+    have hU := ((ofBundleEquiv e V).core.localTriv p.proj).open_source.mem_nhds <|
+      ((ofBundleEquiv e V).core.mem_localTriv_source p.proj p).2
+        (mem_baseSet_trivializationAt F V p.proj)
+    have hc := (((ofBundleEquiv e V).core.localTriv p.proj).continuousOn.continuousAt hU).snd
+    refine (e.symm.continuous.continuousAt.comp hc).congr_of_eventuallyEq ?_
+    filter_upwards [hU] with q hq
+    exact trivializationAt_ofBundleEquivFiberEquiv_snd e V p.proj
+      (((ofBundleEquiv e V).core.mem_localTriv_source p.proj q).1 hq) q.2
+  continuous_invFun := continuous_iff_continuousAt.2 fun p ↦ by
+    rw [FiberBundle.continuousAt_totalSpace]
+    refine ⟨(FiberBundle.continuous_proj F V).continuousAt, ?_⟩
+    have hU := (trivializationAt F V p.proj).open_source.mem_nhds
+      (FiberBundle.mem_trivializationAt_proj_source (x := p))
+    have hc := ((trivializationAt F V p.proj).continuousOn.continuousAt hU).snd
+    refine (e.continuous.continuousAt.comp hc).congr_of_eventuallyEq ?_
+    filter_upwards [hU] with q hq
+    rw [(ofBundleEquiv e V).trivializationAt_core]
+    have hq' := trivializationAt_ofBundleEquivFiberEquiv_snd e V p.proj
+      ((trivializationAt F V p.proj).mem_source.1 hq)
+      ((ofBundleEquivFiberEquiv e V q.proj).symm q.2)
+    rw [show (⟨q.proj, ofBundleEquivFiberEquiv e V q.proj
+        ((ofBundleEquivFiberEquiv e V q.proj).symm q.2)⟩ : TotalSpace F V) = q by
+      rw [ContinuousLinearEquiv.apply_symm_apply]] at hq'
+    exact ((congrArg e hq').trans (e.apply_symm_apply _)).symm
 
 @[simp]
 theorem ofBundleEquivTotalSpaceHomeomorph_apply (p : (ofBundleEquiv e V).core.TotalSpace) :
@@ -261,8 +239,7 @@ pairing the `e`-coordinates of `v` in `trivializationAt F V x` with `w`. -/
 theorem ofBundleEquivDualFiberEquiv_apply_apply (x : B) (w : Fin r → 𝕜) (v : V x) :
     ofBundleEquivDualFiberEquiv e V x w v =
       ∑ k, e ((trivializationAt F V x) ⟨x, v⟩).2 k * w k :=
-  dualFiberEquiv_apply_apply (ofBundleEquiv e V) x w
-    (e ((trivializationAt F V x) ⟨x, v⟩).2)
+  dualFiberEquiv_apply_apply (ofBundleEquiv e V) x w (e ((trivializationAt F V x) ⟨x, v⟩).2)
 
 /-- Evaluated on a vector `(trivializationAt F V x).symm x u` of the preferred trivialization at
 `x`, a dual coordinate vector `w` pairs `e u` with `w`. -/
@@ -297,7 +274,6 @@ theorem ofBundleEquivDualFiberEquiv_inCoordinates (a : B) {x : B}
         (ofBundleEquivDualFiberEquiv e V x w) =
       ((ContinuousLinearEquiv.piRing (𝕜 := 𝕜) (E := 𝕜) (Fin r)).symm
         (((ofBundleEquiv e V).dual.core.localTriv a ⟨x, w⟩).2)).comp e.toContinuousLinearMap := by
-  have hx' : x ∈ (trivializationAt F V x).baseSet := mem_baseSet_trivializationAt F V x
   have hpi : (ContinuousLinearEquiv.piRing (𝕜 := 𝕜) (E := 𝕜) (Fin r)).symm
         (((ofBundleEquiv e V).dual.core.localTriv a ⟨x, w⟩).2) =
       ((ContinuousLinearEquiv.piRing (𝕜 := 𝕜) (E := 𝕜) (Fin r)).symm w).comp
@@ -306,24 +282,20 @@ theorem ofBundleEquivDualFiberEquiv_inCoordinates (a : B) {x : B}
     exact ContinuousLinearMap.piRing_symm_piTranspose _ w
   rw [hpi]
   ext u
-  have hL : ContinuousLinearMap.inCoordinates F V 𝕜 (Trivial B 𝕜) a x a x
-      (ofBundleEquivDualFiberEquiv e V x w) u =
-      ∑ k, e ((trivializationAt F V x) ⟨x, (trivializationAt F V a).symmL 𝕜 x u⟩).2 k * w k :=
-    (congrArg (fun f : 𝕜 →L[𝕜] 𝕜 ↦ f _)
-        (Trivial.continuousLinearMapAt_trivialization 𝕜 B 𝕜 x)).trans
-      (ofBundleEquivDualFiberEquiv_apply_apply e V x w ((trivializationAt F V a).symmL 𝕜 x u))
-  have hc : (ofBundleEquiv e V).core.coordChange a x x (e u) =
-      e ((trivializationAt F V a).coordChangeL 𝕜 (trivializationAt F V x) x u) :=
-    congrArg e (congrArg _ (e.symm_apply_apply u))
   have hR : (((ContinuousLinearEquiv.piRing (𝕜 := 𝕜) (E := 𝕜) (Fin r)).symm w).comp
       ((ofBundleEquiv e V).core.coordChange a x x)).comp e.toContinuousLinearMap u =
       ∑ k, e ((trivializationAt F V a).coordChangeL 𝕜 (trivializationAt F V x) x u) k * w k :=
-    (congrArg ((ContinuousLinearEquiv.piRing (𝕜 := 𝕜) (E := 𝕜) (Fin r)).symm w) hc).trans <|
-      (ContinuousLinearEquiv.piRing_symm_apply (𝕜 := 𝕜) w _).trans (by simp only [smul_eq_mul])
-  refine hL.trans <| (Finset.sum_congr rfl fun k _ ↦ ?_).trans hR.symm
+    (congrArg ((ContinuousLinearEquiv.piRing (𝕜 := 𝕜) (E := 𝕜) (Fin r)).symm w)
+        (congrArg e (congrArg _ (e.symm_apply_apply u)))).trans <|
+      (ContinuousLinearEquiv.piRing_symm_apply (𝕜 := 𝕜) w _).trans (by simp only [smul_eq_mul]; rfl)
+  refine (congrArg (fun f : 𝕜 →L[𝕜] 𝕜 ↦ f _)
+      (Trivial.continuousLinearMapAt_trivialization 𝕜 B 𝕜 x)).trans <|
+    (ofBundleEquivDualFiberEquiv_apply_apply e V x w ((trivializationAt F V a).symmL 𝕜 x u)).trans
+      ((Finset.sum_congr rfl fun k _ ↦ ?_).trans hR.symm)
   congr 2
   rw [(trivializationAt F V a).symmL_apply hx,
-    ← (trivializationAt F V a).mk_coordChangeL (R := 𝕜) (trivializationAt F V x) ⟨hx, hx'⟩ u]
+    ← (trivializationAt F V a).mk_coordChangeL (R := 𝕜) (trivializationAt F V x)
+      ⟨hx, mem_baseSet_trivializationAt F V x⟩ u]
 
 /-- Reading dual-core coordinates as functionals on `V` is continuous on total spaces. -/
 theorem continuous_ofBundleEquivDualFiberEquiv :
@@ -333,20 +305,18 @@ theorem continuous_ofBundleEquivDualFiberEquiv :
   refine continuous_iff_continuousAt.2 fun p ↦ ?_
   rw [continuousAt_hom_bundle]
   refine ⟨(ofBundleEquiv e V).dual.core.continuous_proj.continuousAt, ?_⟩
-  have hp : p ∈ ((ofBundleEquiv e V).dual.core.localTriv p.proj).source :=
+  have hU := ((ofBundleEquiv e V).dual.core.localTriv p.proj).open_source.mem_nhds <|
     ((ofBundleEquiv e V).dual.core.mem_localTriv_source p.proj p).2
       (mem_baseSet_trivializationAt F V p.proj)
-  have hU := ((ofBundleEquiv e V).dual.core.localTriv p.proj).open_source.mem_nhds hp
   have hc := (((ofBundleEquiv e V).dual.core.localTriv p.proj).continuousOn.continuousAt hU).snd
   let L : (Fin r → 𝕜) →L[𝕜] (F →L[𝕜] 𝕜) :=
     ((ContinuousLinearEquiv.piRing (𝕜 := 𝕜) (E := 𝕜) (Fin r)).symm.trans
       (e.symm.arrowCongr (ContinuousLinearEquiv.refl 𝕜 𝕜))).toContinuousLinearMap
   refine (L.continuous.continuousAt.comp hc).congr_of_eventuallyEq ?_
   filter_upwards [hU] with q hq
-  refine (ofBundleEquivDualFiberEquiv_inCoordinates e V p.proj
-    (((ofBundleEquiv e V).dual.core.mem_localTriv_source p.proj q).1 hq) q.2).trans ?_
-  ext u
-  rfl
+  exact (ofBundleEquivDualFiberEquiv_inCoordinates e V p.proj
+    (((ofBundleEquiv e V).dual.core.mem_localTriv_source p.proj q).1 hq) q.2).trans
+    (ContinuousLinearMap.ext fun _ ↦ rfl)
 
 /-- The reconstructed total space of `(ofBundleEquiv e V).dual` is homeomorphic to Mathlib's dual
 bundle `fun x ↦ V x →L[𝕜] 𝕜`, over the identity of the base and by `ofBundleEquivDualFiberEquiv` on
@@ -362,16 +332,14 @@ theorem ofBundleEquivDualTotalSpaceHomeomorph_apply
     (p : (ofBundleEquiv e V).dual.core.TotalSpace) :
     ofBundleEquivDualTotalSpaceHomeomorph e V p =
       ⟨p.proj, ofBundleEquivDualFiberEquiv e V p.proj p.2⟩ :=
-  bundleHomeomorph_apply (𝕜 := 𝕜) (ofBundleEquivDualFiberEquiv e V)
-    (continuous_ofBundleEquivDualFiberEquiv e V) p
+  bundleHomeomorph_apply _ _ p
 
 @[simp]
 theorem ofBundleEquivDualTotalSpaceHomeomorph_symm_apply
     (p : TotalSpace (F →L[𝕜] 𝕜) (fun x ↦ V x →L[𝕜] 𝕜)) :
     (ofBundleEquivDualTotalSpaceHomeomorph e V).symm p =
       ⟨p.proj, (ofBundleEquivDualFiberEquiv e V p.proj).symm p.2⟩ :=
-  bundleHomeomorph_symm_apply (𝕜 := 𝕜) (ofBundleEquivDualFiberEquiv e V)
-    (continuous_ofBundleEquivDualFiberEquiv e V) p
+  bundleHomeomorph_symm_apply _ _ p
 
 end DualBundle
 
@@ -395,11 +363,10 @@ theorem ofBundleEquivDualFiberEquiv_dualMap_changeIso (x : B) (w : Fin r₁ → 
         (fiberMap_ofBundleEquivChangeIso_hom e₂ e₁ V x))
   ext v
   rw [hmap, ofBundleEquivDualFiberEquiv_apply_apply, ofBundleEquivDualFiberEquiv_apply_apply]
-  have h := ContinuousLinearMap.sum_mul_piTranspose
-    (e₂.symm.trans e₁).toContinuousLinearMap
-    (e₂ ((trivializationAt F V x) ⟨x, v⟩).2) w
   simpa only [ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.trans_apply,
-    ContinuousLinearEquiv.symm_apply_apply] using h
+    ContinuousLinearEquiv.symm_apply_apply] using
+    ContinuousLinearMap.sum_mul_piTranspose (e₂.symm.trans e₁).toContinuousLinearMap
+      (e₂ ((trivializationAt F V x) ⟨x, v⟩).2) w
 
 end DualChange
 
