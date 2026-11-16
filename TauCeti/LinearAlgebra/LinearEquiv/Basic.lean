@@ -19,7 +19,8 @@ Transport of submodule stability through an intertwining semilinear equivalence.
 Symmetry of a linear automorphism agrees with inversion in its group structure, and commutes with
 restriction of scalars.
 Through a linear equivalence `L : M ≃ₗ[R] M₁ × M₂`, the vectors `L⁻¹ (0, vᵢ)` for a spanning
-family `v` of `M₂` span the kernel of `u ↦ (L u).1`.
+family `v` of `M₂` span the kernel of `u ↦ (L u).1`. If the second component of `L` is a map `g`,
+then `g ∘ L⁻¹` is the second projection.
 A ring isomorphism over a common target carries the kernel of one map to the kernel of the other.
 Composites of rescaled linear equivalences rescale by the quotient of the factors.
 Linear maps conjugate under linear equivalences have linearly equivalent kernels and cokernels,
@@ -76,6 +77,14 @@ theorem span_range_symm_inr_eq_ker {R M M₁ M₂ ι : Type*} [Semiring R]
   -- The range of `L.symm ∘ inr` is the image under `L.symm` of `{0} × M₂ = ker (fst)`.
   rw [hspan, LinearMap.range_comp, LinearMap.range_inr, LinearMap.ker_comp,
     Submodule.map_equiv_eq_comap_symm, L.symm_symm]
+
+/-- If the second component of a linear equivalence `L : M ≃ₗ[R] M₁ × M₂` is `g`, then `g ∘ L⁻¹`
+is the second projection. -/
+theorem apply_symm_eq_snd {R M M₁ M₂ : Type*} [Semiring R]
+    [AddCommMonoid M] [Module R M] [AddCommMonoid M₁] [Module R M₁]
+    [AddCommMonoid M₂] [Module R M₂] (L : M ≃ₗ[R] M₁ × M₂) {g : M → M₂}
+    (hg : ∀ x, (L x).2 = g x) (z : M₁ × M₂) : g (L.symm z) = z.2 := by
+  rw [← hg, L.apply_symm_apply]
 
 /-- If two isomorphisms `M₁` and `M₂` out of a common space are the multiples `c₁` and `c₂` of
 isomorphisms `M₁'` and `M₂'`, with `c₂ ≠ 0`, then `M₁ ∘ M₂⁻¹` is the multiple `c₁ / c₂` of

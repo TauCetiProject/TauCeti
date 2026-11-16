@@ -52,11 +52,7 @@ comparison maps of the pair of exact sequences, for the linear form `df_y`, sinc
 
 ## Main results
 
-In the namespace `TauCeti.IsAdaptedPseudoGradient`:
-
-* `bijective_neg_trajectoryComparison`: the comparison map of `-X` along a trajectory between
-  critical points of consecutive index is an isomorphism.
-* `neg_trajectorySign`: the sign rule.
+* `TauCeti.IsAdaptedPseudoGradient.neg_trajectorySign`: the sign rule.
 
 ## References
 
@@ -91,40 +87,6 @@ variable {hX : IsAdaptedPseudoGradient f X} {p q : M} {φp : MorseChart E f p}
       fun i ↦ -(φq.weight i * φq.coord (φq.toChart y) i))
 
 include hφp hφq
-
-/-- **The comparison map of the reversed pseudo-gradient is an isomorphism.** Let `X` be a
-Morse–Smale pseudo-gradient adapted to a Morse function, and `p`, `q` critical points with
-`ind p = ind q + 1`. At every point of a trajectory from `p` to `q`, the comparison map of `-X`
-from `q` to `p`, in the negated Morse charts, is bijective. -/
-theorem bijective_neg_trajectoryComparison (hMS : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f)
-    (hp : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f p)
-    (hq : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f q)
-    (hpq : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1) {y : M}
-    (hy : y ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q) :
-    Bijective ((hX.neg hf).trajectoryComparison (φq.neg hq) (φp.neg hp) y) := by
-  have hC : ⇑((hX.neg hf).trajectoryComparison (φq.neg hq) (φp.neg hp) y) =
-      ⇑(((-(mvfderiv 𝓘(ℝ, E) f y).toLinearMap) ∘ₗ
-          ((hX.neg hf).unstableFrame (φq.neg hq) y).toLinearMap).prod
-        (((hX.neg hf).stableNormal (φp.neg hp) y).toLinearMap ∘ₗ
-          ((hX.neg hf).unstableFrame (φq.neg hq) y).toLinearMap)) := by
-    funext v
-    simp [trajectoryComparison_apply, mvfderiv_neg]
-  have hΦ : ⇑(hX.trajectoryComparison φp φq y) =
-      ⇑(((mvfderiv 𝓘(ℝ, E) f y).toLinearMap ∘ₗ (hX.unstableFrame φp y).toLinearMap).prod
-        ((hX.stableNormal φq y).toLinearMap ∘ₗ (hX.unstableFrame φp y).toLinearMap)) := by
-    funext v
-    simp [trajectoryComparison_apply]
-  have hinj := Function.Exact.injective_prod_neg_comp_of_injective_prod_comp
-    (exact_unstableFrame_neg_stableNormal hφp hf hp hy.1)
-    (injective_unstableFrame_of_mem (hX := hX.neg hf) (φq.coord_mfderiv_neg hφq hq) hf.neg
-      ((hX.stableSet_eq_unstableSet_neg hf q).subset hy.2))
-    (exact_neg_unstableFrame_stableNormal hφq hf hq hy.2)
-    (hΦ ▸ (bijective_trajectoryComparison hφp hφq hMS hf hpq hy).1)
-  rw [hC]
-  refine ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank ?_).1 hinj⟩
-  rw [Module.finrank_prod, Module.finrank_self, (φp.neg hp).finrank_negativeWeight_fun,
-    (φq.neg hq).finrank_negativeWeight_fun,
-    hp.manifoldMorseIndex_neg_eq_add_one_of_eq_add_one hq hpq, add_comm]
 
 open scoped Classical in
 /-- **The sign rule for the reversed pseudo-gradient.** Let `X` be a Morse–Smale pseudo-gradient
@@ -165,7 +127,11 @@ theorem neg_trajectorySign (hMS : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f)
           else -1) *
         hX.trajectorySign φp φq op oq hpq y := by
   have hb := bijective_trajectoryComparison hφp hφq hMS hf hpq hy
-  have hb' := bijective_neg_trajectoryComparison hφp hφq hMS hf hp hq hpq hy
+  have hb' := bijective_trajectoryComparison (φq.coord_mfderiv_neg hφq hq)
+    (φp.coord_mfderiv_neg hφp hp) (hMS.neg hf) hf.neg
+    (hp.manifoldMorseIndex_neg_eq_add_one_of_eq_add_one hq hpq)
+    ⟨(hX.stableSet_eq_unstableSet_neg hf q).subset hy.2,
+      (hX.unstableSet_eq_stableSet_neg hf p).subset hy.1⟩
   rw [trajectorySign_of_bijective hb, trajectorySign_of_bijective hb',
     MorseChart.trajectoryTargetOrientation_def, MorseChart.trajectoryTargetOrientation_def]
   exact Orientation.ite_map_eq_prod_of_exact (l := (mvfderiv 𝓘(ℝ, E) f y).toLinearMap) _ _ _ _ _ _

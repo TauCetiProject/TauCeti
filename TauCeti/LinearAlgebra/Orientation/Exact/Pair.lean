@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Orientation.Exact.Basic
-import TauCeti.LinearAlgebra.Ray
+import TauCeti.LinearAlgebra.LinearEquiv.Basic
 
 /-!
 # Two short exact sequences meeting along a line
@@ -21,10 +21,8 @@ and a linear form `l` on `T`. The **comparison maps**
 `Φ = (l ∘ Fa, Nb ∘ Fa) : A → K × B'` and `Ψ = (-l ∘ Fb, Na ∘ Fb) : B → K × A'`
 
 compare each subspace with the line `K` measured by `l` followed by the quotient of the other
-sequence. If `Φ` is injective, then so is `Ψ`
-(`Function.Exact.injective_prod_neg_comp_of_injective_prod_comp`, over any commutative ring).
-When `Φ` and `Ψ` are isomorphisms, the subspaces `Fa A` and `Fb B` meet in a line on which `l`
-does not vanish, and their sum is `T`.
+sequence. When `Φ` and `Ψ` are isomorphisms, the subspaces `Fa A` and `Fb B` meet in a line on
+which `l` does not vanish, and their sum is `T`.
 
 This is the linear algebra of the signs of Morse trajectories for a function `f` and for `-f`. At a
 point of a trajectory from `p` to `q`, `T` is the tangent space, `Fa A` and `Fb B` are the tangent
@@ -47,8 +45,6 @@ the block `b` past the block `a` costs `(-1) ^ (a' * b')`.
 
 ## Main results
 
-* `Function.Exact.injective_prod_neg_comp_of_injective_prod_comp`: if `Φ` is injective, so is
-  `Ψ`.
 * `Orientation.ite_map_eq_prod_of_exact`: the sign rule.
 
 ## References
@@ -63,45 +59,7 @@ noncomputable section
 
 open Module Function
 
-section CommRing
-
-variable {K T A A' B B' : Type*} [CommRing K]
-  [AddCommGroup T] [Module K T]
-  [AddCommGroup A] [Module K A] [AddCommGroup A'] [Module K A']
-  [AddCommGroup B] [Module K B] [AddCommGroup B'] [Module K B']
-  {Fa : A →ₗ[K] T} {Na : T →ₗ[K] A'} {Fb : B →ₗ[K] T} {Nb : T →ₗ[K] B'} {l : T →ₗ[K] K}
-
-/-- If the comparison map `(l ∘ Fa, Nb ∘ Fa)` of a pair of short exact sequences
-`0 → A → T → A'` and `0 → B → T → B'` is injective, so is the opposite comparison map
-`(-l ∘ Fb, Na ∘ Fb)`: a vector `Fb y` killed by `l` and by `Na` is `Fa x` for an `x` killed by
-the first comparison map. -/
-theorem Function.Exact.injective_prod_neg_comp_of_injective_prod_comp (hFaNa : Exact Fa Na)
-    (hFb : Injective Fb) (hFbNb : Exact Fb Nb) (hΦ : Injective ((l ∘ₗ Fa).prod (Nb ∘ₗ Fa))) :
-    Injective (((-l) ∘ₗ Fb).prod (Na ∘ₗ Fb)) := by
-  refine (injective_iff_map_eq_zero _).2 fun y hy ↦ ?_
-  have hl : l (Fb y) = 0 := by simpa using congrArg Prod.fst hy
-  have hN : Na (Fb y) = 0 := by simpa using congrArg Prod.snd hy
-  obtain ⟨x, hx⟩ := (hFaNa (Fb y)).1 hN
-  have hx0 : x = 0 := hΦ.eq_iff' (map_zero _) |>.1 (by
-    simp [hx, hl, hFbNb.apply_apply_eq_zero])
-  exact hFb (by rw [← hx, hx0, map_zero, map_zero])
-
-end CommRing
-
 namespace Orientation
-
-section CommRing
-
-variable {K : Type*} [CommRing K]
-
-/-- If the second component of an isomorphism `e : D ≃ K × C` is `g`, then `g ∘ e⁻¹` is the
-second projection. -/
-private theorem apply_symm_eq_snd {D C : Type*} [AddCommGroup D] [Module K D] [AddCommGroup C]
-    [Module K C] {e : D ≃ₗ[K] K × C} {g : D →ₗ[K] C} (he : ∀ x, (e x).2 = g x) (z : K × C) :
-    g (e.symm z) = z.2 := by
-  rw [← he, e.apply_symm_apply]
-
-end CommRing
 
 variable {K T A A' B B' : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
   [AddCommGroup T] [Module K T]
@@ -188,15 +146,12 @@ private theorem exists_linearEquiv_prod :
       ∀ x v, G (x, v) = Fa (eΦ.symm x) + Fb (eΨ.symm (0, v)) := by
   let s : A' →ₗ[K] T := Fb ∘ₗ eΨ.symm.toLinearMap ∘ₗ LinearMap.inr K K A'
   have hs : Na ∘ₗ s = .id :=
-    LinearMap.ext fun v ↦ apply_symm_eq_snd (g := Na ∘ₗ Fb) (fun y ↦ by simp [heΨ]) (0, v)
+    LinearMap.ext fun v ↦ eΨ.apply_symm_eq_snd (g := Na ∘ₗ Fb) (fun y ↦ by simp [heΨ]) (0, v)
   let e := hFaNa.splitSurjectiveEquiv hFa ⟨s, hs⟩
   have hinr : e.1.symm ∘ₗ LinearMap.inr K A A' = s :=
     congrArg Subtype.val ((hFaNa.splitSurjectiveEquiv hFa).symm_apply_apply ⟨s, hs⟩)
   have he (x v) : e.1.symm (x, v) = Fa x + s v := by
-    rw [LinearMap.congr_fun e.2.1 x, ← LinearMap.congr_fun hinr v, LinearMap.comp_apply,
-      LinearMap.comp_apply, ← map_add, LinearMap.inl_apply, LinearMap.inr_apply, Prod.mk_add_mk,
-      add_zero, zero_add]
-    rfl
+    simp [LinearMap.congr_fun e.2.1 x, ← LinearMap.congr_fun hinr v, ← map_add]
   refine ⟨(eΦ.symm.prodCongr (LinearEquiv.refl K A')).trans e.1.symm, fun x ↦ ?_,
     fun z ↦ ?_, fun x v ↦ ?_⟩
   · simp [he]
@@ -230,33 +185,7 @@ private theorem ofExact_eq_map_exchangeEquiv_prod {G : ((K × B') × A') ≃ₗ[
   · rw [← Prod.mk.eta (p := eΨ y), hRG, Prod.mk.eta, eΨ.symm_apply_apply, Prod.mk_zero_zero,
       map_zero, map_zero, add_zero]
   · rw [hRG, map_add, hFbNb.apply_apply_eq_zero, zero_add]
-    exact apply_symm_eq_snd (g := Nb ∘ₗ Fa) (fun x ↦ by simp [heΦ]) (0, u)
-
-/-- Every orientation of a finite-dimensional space is a signed copy `(-1) ^ i • y` of any other
-orientation `y`. -/
-private theorem exists_eq_neg_one_pow_smul {M ι : Type*} [AddCommGroup M] [Module K M]
-    [FiniteDimensional K M] [Fintype ι] (x y : Orientation K M ι)
-    (h : Fintype.card ι = finrank K M) : ∃ i : ℕ, x = (-1 : Kˣ) ^ i • y := by
-  rcases x.eq_or_eq_neg y h with rfl | rfl
-  · exact ⟨0, by rw [pow_zero, one_smul]⟩
-  · exact ⟨1, by rw [pow_one, Module.Ray.neg_units_smul, one_smul]⟩
-
-open scoped Classical in
-/-- The sign comparing two signed copies `(-1) ^ m • x` and `(-1) ^ n • x` of a ray is
-`(-1) ^ m * (-1) ^ n`. -/
-private theorem ite_neg_one_pow_smul_eq {M : Type*} [AddCommGroup M] [Module K M]
-    (x : Module.Ray K M) (m n : ℕ) :
-    (if (-1 : Kˣ) ^ m • x = (-1 : Kˣ) ^ n • x then (1 : ℤ) else -1) = (-1) ^ m * (-1) ^ n := by
-  rcases Nat.even_or_odd m with hm | hm <;> rcases Nat.even_or_odd n with hn | hn <;>
-    simp [hm.neg_one_pow, hn.neg_one_pow, Module.Ray.neg_units_smul, Module.Ray.ne_neg_self,
-      (Module.Ray.ne_neg_self x).symm]
-
-open scoped Classical in
-/-- The sign comparing a signed copy `(-1) ^ n • x` of a ray with `x` is `(-1) ^ n`. -/
-private theorem ite_neg_one_pow_smul_eq_self {M : Type*} [AddCommGroup M] [Module K M]
-    (x : Module.Ray K M) (n : ℕ) :
-    (if (-1 : Kˣ) ^ n • x = x then (1 : ℤ) else -1) = (-1) ^ n := by
-  simpa using ite_neg_one_pow_smul_eq x n 0
+    exact eΦ.apply_symm_eq_snd (g := Nb ∘ₗ Fa) (fun x ↦ by simp [heΦ]) (0, u)
 
 include heΦ heΨ in
 open scoped Classical in
@@ -298,7 +227,7 @@ theorem ite_map_eq_prod_of_exact {a a' b b' : ℕ} (hab : 1 + b' = a) (hba : 1 +
     ofExact_eq_map_exchangeEquiv_prod hFaNa hFb hFbNb hNb heΦ heΨ hG oB oB' hB hB', hi, hj]
   simp only [finCongr_refl, reindex_refl, Equiv.refl_apply, prod_units_smul_left, map_trans,
     map_units_smul, hX, map_reindex, reindex_units_smul, reindex_finCongr_reindex_finCongr,
-    smul_smul, ← pow_add, ite_neg_one_pow_smul_eq_self, ite_neg_one_pow_smul_eq]
+    smul_smul, ← pow_add, Ray.ite_neg_one_pow_smul_eq_self, Ray.ite_neg_one_pow_smul_eq]
   simp [pow_add, mul_comm b' a', mul_assoc, mul_left_comm, ← mul_pow]
 
 end Orientation

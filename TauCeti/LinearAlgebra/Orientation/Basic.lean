@@ -44,6 +44,10 @@ compatibility under linear equivalences.
 * `Orientation.eq_or_eq_neg_of_card_eq_finrank`: any two orientations are equal or opposite when
   the index type has the dimension of the space, without assuming finite dimension.
 * `Orientation.intCast_units_smul_ite_eq`: the relative sign reconstructs an orientation.
+* `Orientation.exists_eq_neg_one_pow_smul`: every orientation is a signed copy `(-1) ^ i • y` of
+  any other orientation `y`.
+* `Module.Ray.ite_neg_one_pow_smul_eq`, `Module.Ray.ite_neg_one_pow_smul_eq_self`: the sign
+  comparing two signed copies of a ray is the product of their signs.
 -/
 
 public section
@@ -259,5 +263,28 @@ theorem Orientation.intCast_units_smul_ite_eq
     (Units.map (Int.castRingHom R).toMonoidHom (if o = model then 1 else -1)) • model = o := by
   rcases eq_or_eq_neg_of_card_eq_finrank o model hι with h | h <;>
     simp [h, (Module.Ray.ne_neg_self model).symm]
+
+/-- Every orientation is a signed copy `(-1) ^ i • y` of any other orientation `y`, when the index
+type has the dimension of the space. -/
+theorem Orientation.exists_eq_neg_one_pow_smul (x y : Orientation R M ι)
+    (h : Fintype.card ι = finrank R M) : ∃ i : ℕ, x = (-1 : Rˣ) ^ i • y := by
+  rcases eq_or_eq_neg_of_card_eq_finrank x y h with rfl | rfl
+  · exact ⟨0, by rw [pow_zero, one_smul]⟩
+  · exact ⟨1, by rw [pow_one, Module.Ray.neg_units_smul, one_smul]⟩
+
+open Classical in
+/-- The sign comparing two signed copies `(-1) ^ m • x` and `(-1) ^ n • x` of a ray is
+`(-1) ^ m * (-1) ^ n`. -/
+theorem Module.Ray.ite_neg_one_pow_smul_eq (x : Module.Ray R M) (m n : ℕ) :
+    (if (-1 : Rˣ) ^ m • x = (-1 : Rˣ) ^ n • x then (1 : ℤ) else -1) = (-1) ^ m * (-1) ^ n := by
+  rcases Nat.even_or_odd m with hm | hm <;> rcases Nat.even_or_odd n with hn | hn <;>
+    simp [hm.neg_one_pow, hn.neg_one_pow, Module.Ray.neg_units_smul, Module.Ray.ne_neg_self,
+      (Module.Ray.ne_neg_self x).symm]
+
+open Classical in
+/-- The sign comparing a signed copy `(-1) ^ n • x` of a ray with `x` is `(-1) ^ n`. -/
+theorem Module.Ray.ite_neg_one_pow_smul_eq_self (x : Module.Ray R M) (n : ℕ) :
+    (if (-1 : Rˣ) ^ n • x = x then (1 : ℤ) else -1) = (-1) ^ n := by
+  simpa using ite_neg_one_pow_smul_eq x n 0
 
 end Field
