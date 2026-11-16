@@ -745,14 +745,6 @@ theorem exists_toDistr_eq_and_norm_le_of_holderWith (α : ℝ≥0) :
   have := le_max_right CΔ 0
   nlinarith [norm_nonneg f, H.coe_nonneg]
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [CompleteSpace F] in
-/-- A bound `M` on the order-zero derivative field of a bounded continuous function bounds its
-supremum norm. -/
-private theorem norm_le_of_norm_iteratedFDeriv_zero_le {f : E →ᵇ F} {M : ℝ}
-    (hM : ∀ x, ‖iteratedFDeriv ℝ 0 f x‖ ≤ M) : ‖f‖ ≤ M :=
-  (BoundedContinuousFunction.norm_le ((norm_nonneg _).trans (hM 0))).2 fun x ↦ by
-    simpa only [norm_iteratedFDeriv_zero] using hM x
-
 /-- **The inductive step from order `k` to order `k + 1`.** If bounded `C^{k,α}` functions lie in
 `𝒞^{k+α}` with norm bounds, then bounded `C^{k+1,α}` functions lie in `𝒞^{k+1+α}`: their first
 derivatives lie in `𝒞^{k+α}`, by `exists_toDistr_eq_and_norm_le_of_lineDerivOp_eq`. -/
@@ -798,8 +790,8 @@ private theorem exists_toDistr_eq_and_norm_le_of_contDiff_of_holderWith_succ {k 
   have hs : ((k + 1 : ℕ) : ℝ) + α = (k + α : ℝ) + 1 := by push_cast; ring
   rw [hs]
   refine ⟨w, hw, hwn.trans ?_⟩
-  have hfM := norm_le_of_norm_iteratedFDeriv_zero_le (hM 0 k.succ.zero_le)
-  have hM0 : 0 ≤ M := (norm_nonneg _).trans hfM
+  obtain ⟨hM0, hfM⟩ := nonneg_and_norm_le_of_norm_iteratedFDeriv_le hM
+  have hfM : ‖f‖ ≤ M := (BoundedContinuousFunction.norm_le hM0).2 hfM
   calc CA * (‖toLpTop volume ℂ f‖ + ∑ i, ‖v i‖)
       ≤ CA * (M + ∑ _i : Fin (finrank ℝ E), Ck * (M + H)) := by
         rw [norm_toLpTop]
@@ -828,7 +820,8 @@ theorem exists_toDistr_eq_and_norm_le_of_contDiff_of_holderWith (k : ℕ) (α : 
       holderOnWith_univ.1 (holderOnWith_iteratedFDeriv_zero_iff.1 (holderOnWith_univ.2 hH))
     rw [Nat.cast_zero, zero_add]
     obtain ⟨w, hw, hwn⟩ := h f hf
-    exact ⟨w, hw, hwn.trans (by gcongr; exact norm_le_of_norm_iteratedFDeriv_zero_le (hM 0 le_rfl))⟩
+    have hM' := nonneg_and_norm_le_of_norm_iteratedFDeriv_le hM
+    exact ⟨w, hw, hwn.trans (by gcongr; exact (BoundedContinuousFunction.norm_le hM'.1).2 hM'.2)⟩
   | succ k ih => exact exists_toDistr_eq_and_norm_le_of_contDiff_of_holderWith_succ φ ih
 
 /-- The norm of a bounded `C^{k,α}` map bounds its norm in `𝒞^{k+α} = B^{k+α}_{∞,∞}`. -/
