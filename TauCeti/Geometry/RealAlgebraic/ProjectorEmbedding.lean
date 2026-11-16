@@ -19,13 +19,14 @@ by `x` to the matrix `x xᵀ / (xᵀ x)`, and is a bijection onto the *projector
 `TauCeti.projectorLocus ι K` of symmetric idempotent matrices of trace one
 (`Projectivization.range_projector`). Here we add its topological and semialgebraic properties.
 
-The projector map is continuous for the quotient topology on projective space. Over `ℝ`,
-projective space is compact and matrices form a Hausdorff space, so the projector map is a closed
-embedding: it is a homeomorphism from real projective space onto the projector locus, which is
-compact. The locus is cut out by polynomial equations in the matrix entries, hence is
-semialgebraic. Together these exhibit real projective space as a compact real algebraic subset of
-an affine space, which is the reduction used to transport triangulations of compact semialgebraic
-sets to real projective spaces.
+The projector map is continuous for the quotient topology on projective space. Over any Hausdorff
+topological ordered field with continuous inversion, the projector locus is closed and recovering a
+line from a nonzero-diagonal row gives a continuous inverse on the locus, so the projector map is a
+closed embedding: a homeomorphism from projective space onto the projector locus. Over `ℝ`,
+projective space is compact, hence the real projector locus is compact as well. The locus is cut out
+by polynomial equations in the matrix entries, hence is semialgebraic. Together these exhibit real
+projective space as a compact real algebraic subset of an affine space, which is the reduction used
+to transport triangulations of compact semialgebraic sets to real projective spaces.
 
 Over an ordered field the standard affine charts of projective space are semialgebraic in this
 model. The inverse chart at `i` followed by the projector map is a semialgebraic map from `Kⁿ`,
@@ -41,8 +42,8 @@ at `i` followed by the projector map are the rational functions `w a * w b / (w�
 ## Main results
 
 * `Projectivization.continuous_projector`: the projector map is continuous.
-* `Projectivization.isClosedEmbedding_projector`: over `ℝ` the projector map is a closed
-  embedding.
+* `Projectivization.isClosedEmbedding_projector`: over a Hausdorff topological ordered field with
+  continuous inversion, the projector map is a closed embedding.
 * `TauCeti.isClosed_projectorLocus` and `TauCeti.isCompact_projectorLocus`: the projector locus
   is closed, and compact over `ℝ`.
 * `TauCeti.isSemialgebraic_projectorLocus`: the projector locus is semialgebraic in the matrix
@@ -70,6 +71,22 @@ public section
 open Matrix MvPolynomial Set Topology
 open scoped LinearAlgebra.Projectivization
 
+namespace TauCeti
+
+/-- The projector locus is closed. -/
+theorem isClosed_projectorLocus {ι K : Type*} [Fintype ι] [Field K] [TopologicalSpace K]
+    [IsTopologicalRing K] [T2Space K] :
+    IsClosed (projectorLocus ι K) := by
+  have h : projectorLocus ι K = {A | Aᵀ = A} ∩ {A | A * A = A} ∩ {A | A.trace = 1} := by
+    ext A
+    simp [IsSymm, IsIdempotentElem, and_assoc]
+  rw [h]
+  exact ((isClosed_eq continuous_id.matrix_transpose continuous_id).inter
+    (isClosed_eq (continuous_id.matrix_mul continuous_id) continuous_id)).inter
+    (isClosed_eq continuous_id.matrix_trace continuous_const)
+
+end TauCeti
+
 namespace Projectivization
 
 open TauCeti
@@ -87,28 +104,52 @@ theorem continuous_projector : Continuous (projector : ℙ K (ι → K) → Matr
     dotProduct_self_eq_zero.not.mpr x.2).smul
     (continuous_subtype_val.matrix_vecMulVec continuous_subtype_val)
 
-/-- Over `ℝ` the projector map is a closed embedding, hence a homeomorphism from real projective
-space onto the projector locus `TauCeti.projectorLocus ι ℝ`. -/
-theorem isClosedEmbedding_projector :
-    IsClosedEmbedding (projector : ℙ ℝ (ι → ℝ) → Matrix ι ι ℝ) :=
-  continuous_projector.isClosedEmbedding projector_injective
+/-- Over a Hausdorff topological ordered field with continuous inversion, the projector map is a
+closed embedding, hence a homeomorphism from projective space onto the projector locus
+`TauCeti.projectorLocus ι K`. -/
+theorem isClosedEmbedding_projector [T2Space K] :
+    IsClosedEmbedding (projector : ℙ K (ι → K) → Matrix ι ι K) := by
+  let g : range (projector : ℙ K (ι → K) → Matrix ι ι K) → ℙ K (ι → K) := fun A ↦ A.2.choose
+  have hpg (A : range (projector : ℙ K (ι → K) → Matrix ι ι K)) : projector (g A) = A.1 :=
+    A.2.choose_spec
+  have hg_left : g ∘ rangeFactorization projector = id :=
+    funext fun p ↦ projector_injective (hpg ⟨projector p, mem_range_self p⟩)
+  have hg_cont : Continuous g := by
+    rw [continuous_iff_continuousAt]
+    intro A
+    obtain ⟨r, hr⟩ := exists_mem_affineOpen (g A)
+    have hArr : A.1 r r ≠ 0 := by
+      rw [← hpg A]
+      exact (projector_apply_self_pos_iff.2 hr).ne'
+    let U : Set (range (projector : ℙ K (ι → K) → Matrix ι ι K)) := {B | B.1 r r ≠ 0}
+    have hU_open : IsOpen U :=
+      isOpen_ne.preimage (continuous_subtype_val.matrix_elem r r)
+    have hU_cont : ContinuousOn g U := by
+      rw [continuousOn_iff_continuous_domRestrict]
+      let row : U → {v : ι → K // v ≠ 0} := fun B ↦
+        ⟨B.1.1 r, fun h0 ↦ B.2 (congr_fun h0 r)⟩
+      have hrow_cont : Continuous row :=
+        (continuous_pi fun j ↦
+          (continuous_subtype_val.comp continuous_subtype_val).matrix_elem r j).subtype_mk _
+      refine (isQuotientMap_mk'.continuous.comp hrow_cont).congr fun B ↦ ?_
+      have hB : projector (g B.1) = B.1.1 := hpg B.1
+      have hBrr : projector (g B.1) r r ≠ 0 := hB.symm ▸ B.2
+      have hBrow : projector (g B.1) r ≠ 0 := fun h0 ↦ hBrr (congr_fun h0 r)
+      simpa only [Function.comp_apply, row, mk'_eq_mk, domRestrict_apply, ← hB] using
+        mk_projector_row (g B.1) hBrr hBrow
+    exact hU_cont.continuousAt (hU_open.mem_nhds hArr)
+  have hind : IsInducing (projector : ℙ K (ι → K) → Matrix ι ι K) :=
+    IsInducing.subtypeVal.comp <|
+      IsInducing.of_comp (f := rangeFactorization projector) (g := g)
+        continuous_projector.rangeFactorization hg_cont
+        (by simpa [hg_left] using (IsInducing.id (X := ℙ K (ι → K))))
+  exact ⟨⟨hind, projector_injective⟩, range_projector (ι := ι) (K := K) ▸ isClosed_projectorLocus⟩
 
 end Projectivization
 
 namespace TauCeti
 
 variable {ι K : Type*} [Fintype ι] [Field K]
-
-/-- The projector locus is closed. -/
-theorem isClosed_projectorLocus [TopologicalSpace K] [IsTopologicalRing K] [T2Space K] :
-    IsClosed (projectorLocus ι K) := by
-  have h : projectorLocus ι K = {A | Aᵀ = A} ∩ {A | A * A = A} ∩ {A | A.trace = 1} := by
-    ext A
-    simp [IsSymm, IsIdempotentElem, and_assoc]
-  rw [h]
-  exact ((isClosed_eq continuous_id.matrix_transpose continuous_id).inter
-    (isClosed_eq (continuous_id.matrix_mul continuous_id) continuous_id)).inter
-    (isClosed_eq continuous_id.matrix_trace continuous_const)
 
 /-- The real projector locus is compact, being the image of compact real projective space. -/
 theorem isCompact_projectorLocus : IsCompact (projectorLocus ι ℝ) :=

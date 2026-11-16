@@ -46,6 +46,10 @@ properties are in `TauCeti.Geometry.RealAlgebraic.ProjectorEmbedding`.
   `Matrix.IsSymm.mulVec_row_of_isIdempotentElem` (a symmetric idempotent fixes its rows) and
   `Matrix.IsIdempotentElem.eq_zero_of_trace_eq_zero` (in characteristic zero an idempotent of
   trace zero vanishes).
+* `Projectivization.projector_apply_eq_one`: on a subsingleton coordinate type, every entry of the
+  projector is `1`.
+* `Projectivization.mk_projector_row`: a line is recovered from any row of its projector with
+  nonzero diagonal entry.
 * `Projectivization.projector_injective` and `Projectivization.range_projector`: the projector
   map is a bijection from `ℙ K (ι → K)` onto the projector locus.
 * `Projectivization.image_projector_affineOpen` and `Projectivization.affineChart_eq_projector_div`:
@@ -211,6 +215,21 @@ def projector (p : ℙ K (ι → K)) : Matrix ι ι K :=
 theorem projector_mk (x : ι → K) (hx : x ≠ 0) : projector (mk K x hx) = rankOneProjector x :=
   Projectivization.lift_mk _ _ x hx
 
+/-- Over a subsingleton coordinate type, every entry of `projector p` equals `1`. -/
+@[simp]
+theorem projector_apply_eq_one [Subsingleton ι] (p : ℙ K (ι → K)) (i j : ι) :
+    projector p i j = 1 := by
+  rw [Subsingleton.elim j i]
+  induction p using ind with
+  | h w hw =>
+    have hwi : w i ≠ 0 := by
+      obtain ⟨k, hk⟩ := Function.ne_iff.1 hw
+      rwa [Subsingleton.elim k i] at hk
+    have hsum : (∑ r : ι, w r * w r) = w i * w i :=
+      Finset.sum_eq_single i (fun b _ hb ↦ (hb (Subsingleton.elim b i)).elim)
+        (fun h ↦ (h (Finset.mem_univ i)).elim)
+    rw [projector_mk, rankOneProjector_apply, dotProduct, hsum, div_self (mul_ne_zero hwi hwi)]
+
 variable [LinearOrder K] [IsStrictOrderedRing K]
 
 /-- Over an ordered field the projector of every line lies in the projector locus. -/
@@ -226,6 +245,15 @@ theorem projector_injective : Function.Injective (projector : ℙ K (ι → K) �
   induction q using ind with | h y hy =>
   rw [mk_eq_mk_iff']
   exact (rankOneProjector_eq_rankOneProjector_iff (dotProduct_self_eq_zero.not.mpr hx)).mp h
+
+/-- Over an ordered field, a line is recovered from any row of its projector whose diagonal entry
+is nonzero. -/
+theorem mk_projector_row (p : ℙ K (ι → K)) {r : ι} (hr : projector p r r ≠ 0)
+    (hv : projector p r ≠ 0) :
+    mk K (projector p r) hv = p :=
+  projector_injective <| by
+    rw [projector_mk]
+    exact rankOneProjector_row_eq_self (projector_mem_projectorLocus p) hr
 
 /-- The image of the projector map is exactly the projector locus. -/
 theorem range_projector :
