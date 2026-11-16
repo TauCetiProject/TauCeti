@@ -11,6 +11,7 @@ public import TauCeti.Combinatorics.CoboundaryExpansion.Cochain.Basic
 public import TauCeti.GroupTheory.Perm.MovedNorm
 import Mathlib.Algebra.BigOperators.Group.List.Basic
 import TauCeti.Combinatorics.Optimization.Replication
+import TauCeti.Algebra.BigOperators.Fin
 import TauCeti.Data.Fin.Basic
 import Mathlib.Tactic.GCongr
 
@@ -97,24 +98,19 @@ def cost (α : Fin k → Fin k → S3) (β : Fin k → S3) : ℕ :=
 
 /-! ### Cost and defect as sums over vertices -/
 
-/-- A sum over `(List.finRange k).flatMap l` is the sum over `u : Fin k` of the sums over `l u`. -/
-private theorem sum_map_flatMap_finRange {α : Type*} (l : Fin k → List α) (f : α → ℕ) :
-    (((List.finRange k).flatMap l).map f).sum = ∑ u : Fin k, ((l u).map f).sum := by
-  simp [List.flatMap_def, List.sum_flatten, Fin.sum_univ_def, Function.comp_def]
-
 private theorem sum_edges (g : Fin k → Fin k → ℕ) :
     ((edges k).map fun e => g e.1 e.2).sum =
       ∑ u : Fin k, ∑ v : Fin k, if u < v then g u v else 0 := by
-  rw [edges, sum_map_flatMap_finRange]
+  rw [edges, Fin.sum_map_flatMap_finRange]
   refine Finset.sum_congr rfl fun u _ => ?_
   simp [Fin.sum_univ_def, List.sum_map_ite, Function.comp_def]
 
 private theorem sum_triangles (g : Fin k → Fin k → Fin k → ℕ) :
     ((triangles k).map fun t => g t.1 t.2.1 t.2.2).sum =
       ∑ u : Fin k, ∑ v : Fin k, ∑ w : Fin k, if u < v ∧ v < w then g u v w else 0 := by
-  rw [triangles, sum_map_flatMap_finRange]
+  rw [triangles, Fin.sum_map_flatMap_finRange]
   refine Finset.sum_congr rfl fun u _ => ?_
-  rw [sum_map_flatMap_finRange]
+  rw [Fin.sum_map_flatMap_finRange]
   refine Finset.sum_congr rfl fun v _ => ?_
   simp [Fin.sum_univ_def, List.sum_map_ite, Function.comp_def]
 

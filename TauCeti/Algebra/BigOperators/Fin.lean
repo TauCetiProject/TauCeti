@@ -54,6 +54,9 @@ position of the cyclically next block, when that block is nonempty
 (`Fin.finRotate_finSigmaFinEquiv_of_eq`). The list of values of a function on `Fin (∑ i, m i)`
 is the concatenation of the lists of its values on the blocks (`List.ofFn_sum`), as `List.ofFn_mul`
 says for blocks of equal length.
+
+A sum over the list `(List.finRange n).flatMap l` is the sum over `i : Fin n` of the sums over the
+lists `l i` (`Fin.sum_map_flatMap_finRange`).
 -/
 
 public section
@@ -181,6 +184,13 @@ theorem sum_sum_ite_apply_last_eq_apply_zero {X N : Type*} [Fintype X] [Decidabl
         simpa [hi] using hp
       · simp only [show ¬ (i + t ≤ i) by omega, dite_false]
         exact congrArg p.2 (Fin.ext (by simp))
+
+/-- A sum over the list `(List.finRange n).flatMap l` is the sum over `i : Fin n` of the sums over
+the lists `l i`. -/
+theorem sum_map_flatMap_finRange {α M : Type*} [AddCommMonoid M] {n : ℕ} (l : Fin n → List α)
+    (f : α → M) :
+    (((List.finRange n).flatMap l).map f).sum = ∑ i : Fin n, ((l i).map f).sum := by
+  simp [List.flatMap_def, List.sum_flatten, Fin.sum_univ_def, Function.comp_def]
 
 end Fin
 
