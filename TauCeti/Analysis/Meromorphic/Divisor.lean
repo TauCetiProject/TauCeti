@@ -24,9 +24,8 @@ of support finite and bounds sums over their subsets by the corresponding closed
 
 ## Main results
 
-* `MeromorphicOn.divisor_eq_analyticOrderNatAt`, `AnalyticAt.natCast_toNat_divisor` — at a point
-  where `f` is analytic, the divisor reads `analyticOrderNatAt f z` and casting
-  `(divisor f U z).toNat` recovers `(divisor f U z : R)`.
+* `MeromorphicOn.divisor_eq_analyticOrderNatAt` — at a point where `f` is analytic, the divisor
+  reads `analyticOrderNatAt f z`.
 * `AnalyticAt.divisor_apply_eq_zero` — the divisor vanishes where `f` is analytic and nonzero.
 * `AnalyticAt.notMem_divisor_support_of_ne_zero`, `AnalyticAt.apply_eq_zero_of_divisor_ne_zero` —
   such a point is off the divisor support, so any support point where `f` is analytic is a zero.
@@ -110,19 +109,6 @@ theorem MeromorphicOn.divisor_eq_analyticOrderNatAt {𝕜 E : Type*} [Nontrivial
     divisor f U z = (analyticOrderNatAt f z : ℤ) := by
   rw [hm.divisor_apply hz, hf.meromorphicOrderAt_eq, analyticOrderNatAt]
   cases analyticOrderAt f z <;> simp
-
-/-- At any point where `f` is analytic, its divisor on `U` is nonnegative, so casting
-`(divisor f U z).toNat` into any `AddGroupWithOne` recovers `(divisor f U z : R)`. No meromorphy
-hypothesis on `U` is needed. -/
-theorem AnalyticAt.natCast_toNat_divisor {𝕜 E R : Type*} [NontriviallyNormedField 𝕜]
-    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [AddGroupWithOne R] {f : 𝕜 → E} {U : Set 𝕜}
-    {z : 𝕜} (hf : AnalyticAt 𝕜 f z) :
-    ((MeromorphicOn.divisor f U z).toNat : R) = (MeromorphicOn.divisor f U z : R) := by
-  by_cases hm : MeromorphicOn f U
-  · by_cases hz : z ∈ U
-    · rw [hm.divisor_eq_analyticOrderNatAt hf hz, Int.toNat_natCast, Int.cast_natCast]
-    · simp [hz]
-  · simp [MeromorphicOn.divisor_eq_zero_of_not_meromorphicOn hm]
 
 /-- The divisor of a function vanishes at a point where the function is analytic and nonzero.
 No meromorphy hypothesis is needed: if `f` is not meromorphic on `U`, or `z ∉ U`, the divisor is

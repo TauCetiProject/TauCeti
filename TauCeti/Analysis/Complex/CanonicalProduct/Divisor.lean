@@ -24,11 +24,13 @@ off the divisor support, it converges locally uniformly on the complement of the
 logarithmic derivative of the product (for an entire `f` with `f 0 ≠ 0`, `0` lies off the support
 by `AnalyticAt.notMem_divisor_support_of_ne_zero`). When all positive-multiplicity support points
 have bounded real part (`|Re ρ| ≤ B`), `Re (1 / ρ) = Re ρ / ‖ρ‖ ^ 2` gains an extra factor of
-`‖ρ‖⁻¹`, so `∑' ρ, mρ * Re (1 / ρ)` and `∑' ρ, mρ * Re (1 / (s - ρ))` converge separately; at any
-`s` to the right of all positive-multiplicity support points, the summands `mρ * Re (1 / (s - ρ))`
-are nonnegative and dominate every finite subsum. This constructs the product and
-logarithmic-derivative ingredients of Hadamard factorization without assuming an enumeration of the
-zeros or choosing a representative for the divisor.
+`‖ρ‖⁻¹`, so `∑' ρ, mρ * Re (1 / ρ)` and `∑' ρ, mρ * Re (1 / (s - ρ))` converge separately; when
+`ρ.re ≤ s.re` on positive-multiplicity support points (or outside a finite set `S`), the
+corresponding summands `mρ * Re (1 / (s - ρ))` are nonnegative, so the full `tsum`
+`∑' ρ, mρ * Re (1 / (s - ρ))` is nonnegative and, when summable, dominates the finite subsum
+over `S`. This constructs the product and logarithmic-derivative ingredients of Hadamard
+factorization without assuming an enumeration of the zeros or choosing a representative for the
+divisor.
 
 A function with zero divisor, such as `exp (c s)`, has product `1`, and the product of `1 - s` is
 the single factor `E₁(s)`.
@@ -209,6 +211,7 @@ include hf hf0 hsum in
 theorem divisor_divisorProductOne :
     MeromorphicOn.divisor (divisorProductOne f) Set.univ = MeromorphicOn.divisor f Set.univ := by
   have h0 := (hf.analyticAt 0).notMem_divisor_support_of_ne_zero (U := Set.univ) hf0
+  have hfa : AnalyticOnNhd ℂ f Set.univ := fun z _ ↦ hf.analyticAt z
   have hpa : AnalyticOnNhd ℂ (divisorProductOne f) Set.univ :=
     fun z _ ↦ (differentiable_divisorProductOne hsum).analyticAt z
   ext z
@@ -226,8 +229,8 @@ theorem divisor_divisorProductOne :
       hinj (inv_mul_cancel₀ (coe_ne_zero_of_mem_divisor_support h0 ρ))
     rw [← divisorProductOne_eq] at ho
     rw [ho]
-    simpa only [ENat.map_natCast, WithTop.untop₀_coe, Int.cast_id] using
-      (hf.analyticAt z).natCast_toNat_divisor (R := ℤ)
+    simpa only [ENat.map_natCast, WithTop.untop₀_coe] using
+      Int.toNat_of_nonneg (MeromorphicOn.AnalyticOnNhd.divisor_nonneg hfa z)
   · have hdz : MeromorphicOn.divisor f Set.univ z = 0 := by
       simpa only [Function.mem_support, not_not] using hz
     rw [(hpa z trivial).analyticOrderAt_eq_zero.mpr (divisorProductOne_ne_zero hsum h0 hz), hdz]

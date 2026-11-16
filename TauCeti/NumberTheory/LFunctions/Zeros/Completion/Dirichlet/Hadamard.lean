@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Complex.Hadamard.RealPart
 public import TauCeti.Analysis.SpecialFunctions.Gamma.LogDeriv.Bound
 public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.Basic
-public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Hadamard
 
 import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.Growth
 import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.LogDeriv
@@ -39,8 +39,10 @@ Specializing the order-one Hadamard and real-part cancellation theorems gives:
   `∑ ρ ∈ S, analyticOrderNatAt χ.LFunction ρ * Re (1 / (σ - ρ)) ≤ Re (L'/L)(σ, χ) + ½ log N + C_Γ`
   and `1 / (σ - β) ≤ Re (L'/L)(σ, χ) + ½ log N + C_Γ`.
 
-Dropping outside nonnegative zero terms on `σ ∈ [1, 2]` turns upper bounds on `-Re (L'/L)(σ, χ)`
-into quantitative bounds on zeros near `Re s = 1` (for zero-free regions and real-zero exclusion).
+Dropping outside nonnegative zero terms on `σ ∈ [1, 2]` turns lower bounds on `-Re (L'/L)(σ, χ)`
+(equivalently upper bounds on `Re (L'/L)(σ, χ)`) into quantitative bounds on zeros near `Re s = 1`
+(for zero-free regions and real-zero exclusion), and conversely yields upper bounds on
+`-Re (L'/L)(σ, χ)` from retained zeros.
 In `sum_analyticOrderNatAt_LFunction_mul_re_one_div_sub_le_re_logDeriv_LFunction_add`, the
 hypothesis `0 < ρ.re` on `S` restricts to the right half-plane where `Λ₀` and `χ.LFunction` share
 the same zero multiplicities, excluding the trivial Gamma-cancelled zero `L(0, χ) = 0` of even

@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Hadamard
+public import TauCeti.Analysis.Complex.Hadamard.RealPart
 public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.RiemannZeta.Basic
 
-import Mathlib.Analysis.Calculus.Deriv.Star
 import TauCeti.NumberTheory.LFunctions.Zeros.Completion.RiemannZeta.Growth
 
 /-!
@@ -45,8 +44,12 @@ open scoped BigOperators
 namespace TauCeti.LFunctions
 
 private theorem zetaEntireCompletion_one_sub_eq_conj_conj (z : ℂ) :
-    zetaEntireCompletion (1 - z) = 1 * conj (zetaEntireCompletion (conj z)) := by
-  rw [one_mul, zetaEntireCompletion_one_sub, zetaEntireCompletion_conj, conj_conj]
+    zetaEntireCompletion (1 - z) =
+      (-1) ^ riemannZetaData.polarPolynomial.natDegree * riemannZetaData.rootNumber *
+        conj (zetaEntireCompletion (conj z)) := by
+  simpa only [riemannZetaData_entireCompletion] using
+    riemannZetaData_hasFunctionalEquation.entireCompletion_one_sub_eq_mul_conj_conj
+      riemannZetaData_hasMeromorphicContinuation z
 
 /-- **Hadamard factorization of `zetaEntireCompletion`.** Since `zetaEntireCompletion 0 = 1`,
 `zetaEntireCompletion s = exp (logDeriv zetaEntireCompletion 0 * s) * divisorProductOne …`. -/
@@ -69,29 +72,6 @@ theorem zetaEntireCompletion_hadamard :
         weierstrassFactorOne (ρ⁻¹ * s) ^
           (MeromorphicOn.divisor zetaEntireCompletion Set.univ ρ).toNat :=
   hadamard_of_orderLE_one orderLE_zetaEntireCompletion differentiable_zetaEntireCompletion (by simp)
-
-/-- Conjugation commutes with `logDeriv zetaEntireCompletion`. -/
-@[simp]
-theorem logDeriv_zetaEntireCompletion_conj (s : ℂ) :
-    logDeriv zetaEntireCompletion (conj s) = conj (logDeriv zetaEntireCompletion s) := by
-  have hfn : zetaEntireCompletion = conj ∘ zetaEntireCompletion ∘ conj :=
-    funext fun z ↦ by simp [Function.comp_def]
-  conv_lhs => rw [hfn]
-  rw [logDeriv_apply, logDeriv_apply, deriv_conj_conj]
-  simp
-
-/-- `logDeriv zetaEntireCompletion` is odd across the critical line `s ↦ 1 - s`. -/
-theorem logDeriv_zetaEntireCompletion_one_sub (s : ℂ) :
-    logDeriv zetaEntireCompletion (1 - s) = -logDeriv zetaEntireCompletion s := by
-  have h := logDeriv_one_sub_conj zetaEntireCompletion_one_sub_eq_conj_conj (conj s)
-  rwa [conj_conj, logDeriv_zetaEntireCompletion_conj, conj_conj] at h
-
-/-- `logDeriv zetaEntireCompletion` is real on the real axis. -/
-@[simp]
-theorem im_logDeriv_zetaEntireCompletion_ofReal (σ : ℝ) :
-    (logDeriv zetaEntireCompletion σ).im = 0 := by
-  refine conj_eq_iff_im.mp ?_
-  simpa using (logDeriv_zetaEntireCompletion_conj σ).symm
 
 /-- The paired partial-fraction series of `zetaEntireCompletion` converges absolutely at every
 point `s : ℂ`. -/

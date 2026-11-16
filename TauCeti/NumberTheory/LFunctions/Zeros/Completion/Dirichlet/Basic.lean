@@ -66,30 +66,24 @@ character. -/
 theorem dirichletData_entireCompletion_one_sub (s : ℂ) :
     (dirichletData χ hχ).entireCompletion (1 - s) =
       χ.rootNumber * (dirichletData χ⁻¹ hχ.inv).entireCompletion s := by
-  by_cases hN : N = 1
-  · subst N
-    rw [dirichletData_modOne, dirichletData_modOne, riemannZetaData_entireCompletion,
-      DirichletCharacter.rootNumber_modOne, one_mul, zetaEntireCompletion_one_sub]
-  · have hne : χ ≠ 1 := mt hχ.eq_one_iff.mp hN
-    have hp := dirichletData_polarOrder_eq_zero χ hχ hne
-    rw [dirichletData_entireCompletion_of_ne_one χ hχ hne,
-      dirichletData_entireCompletion_of_ne_one χ⁻¹ hχ.inv (inv_ne_one.mpr hne),
-      (dirichletData_hasFunctionalEquation χ hχ).completed_eq (1 - s)
-        (by simp only [hp, Finsupp.zero_apply]) (by simp only [hp, Finsupp.zero_apply]),
-      dirichletData_rootNumber, dirichletData_dual, sub_sub_cancel]
+  have hdeg : (-1 : ℂ) ^ (dirichletData χ hχ).polarPolynomial.natDegree = 1 := by
+    by_cases hN : N = 1
+    · subst N
+      rw [dirichletData_modOne, riemannZetaData_polarPolynomial, ← C_1,
+        natDegree_mul X_ne_zero (X_sub_C_ne_zero (1 : ℂ)), natDegree_X, natDegree_X_sub_C]
+      norm_num
+    · rw [dirichletData_polarPolynomial_of_ne_one χ hχ (mt hχ.eq_one_iff.mp hN),
+        natDegree_one, pow_zero]
+  have h := (dirichletData_hasFunctionalEquation χ hχ).entireCompletion_one_sub
+    (dirichletData_hasMeromorphicContinuation χ hχ) s
+  simpa only [hdeg, one_mul, dirichletData_rootNumber, dirichletData_dual] using h
 
 /-- Conjugation exchanges the entire completions of a primitive character and its inverse. -/
 theorem dirichletData_entireCompletion_inv_conj (s : ℂ) :
     (dirichletData χ⁻¹ hχ.inv).entireCompletion s =
       conj ((dirichletData χ hχ).entireCompletion (conj s)) := by
-  by_cases hN : N = 1
-  · subst N
-    rw [dirichletData_modOne, dirichletData_modOne, riemannZetaData_entireCompletion,
-      zetaEntireCompletion_conj, conj_conj]
-  · have hne : χ ≠ 1 := mt hχ.eq_one_iff.mp hN
-    rw [dirichletData_entireCompletion_of_ne_one χ hχ hne,
-      dirichletData_entireCompletion_of_ne_one χ⁻¹ hχ.inv (inv_ne_one.mpr hne),
-      ← dirichletData_dual, AnalyticLFunctionData.dual_completed_apply]
+  simpa only [dirichletData_dual] using
+    (dirichletData_hasMeromorphicContinuation χ hχ).dual_entireCompletion s
 
 /-- Combined functional and conjugation symmetry of a primitive Dirichlet entire completion. -/
 theorem dirichletData_entireCompletion_one_sub_eq_rootNumber_mul_conj_conj (s : ℂ) :

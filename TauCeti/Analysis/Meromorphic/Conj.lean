@@ -28,6 +28,9 @@ its dual, whose completed function is the reflection of the original one.
   reflection preserves meromorphy.
 * `TauCeti.meromorphicOrderAt_conj_conj`: reflection preserves the order of a meromorphic
   function.
+* `TauCeti.meromorphicOrderAt_one_sub_conj_of_ne_zero`, `TauCeti.meromorphicOrderAt_one_sub_conj`:
+  under punctured-neighbourhood functional-conjugation symmetry
+  `f (1 - w) = c * conj (f (conj w))`, `z ↦ 1 - conj z` preserves `meromorphicOrderAt f`.
 -/
 
 public section
@@ -91,3 +94,43 @@ theorem TauCeti.meromorphicOrderAt_conj_conj :
       ⟨conj ∘ g ∘ conj, analyticAt_conj_conj_iff.2 hg, by simpa using hg0, ?_⟩
     filter_upwards [hconj.eventually hfg] with z hz
     simp [hz]
+
+/-- Under a punctured-neighbourhood functional-conjugation identity at `conj z` with a nonzero
+multiplier `c ≠ 0`, the reflection `z ↦ 1 - conj z` preserves `meromorphicOrderAt f`. -/
+theorem TauCeti.meromorphicOrderAt_one_sub_conj_of_ne_zero {f : ℂ → ℂ} {c z : ℂ}
+    (hfe : (fun w ↦ f (1 - w)) =ᶠ[𝓝[≠] (conj z)] fun w ↦ c * conj (f (conj w))) (hc : c ≠ 0) :
+    meromorphicOrderAt f (1 - conj z) = meromorphicOrderAt f z := by
+  have hlhs : meromorphicOrderAt (fun w : ℂ ↦ f (1 - w)) (conj z) =
+      meromorphicOrderAt f (1 - conj z) :=
+    meromorphicOrderAt_comp_of_deriv_ne_zero (f := f) (g := fun w : ℂ ↦ 1 - w)
+      (by fun_prop) (by simp)
+  have hrhs : meromorphicOrderAt (fun w : ℂ ↦ c * conj (f (conj w))) (conj z) =
+      meromorphicOrderAt f z := by
+    have hsmul : (fun w : ℂ ↦ c * conj (f (conj w))) = c • (conj ∘ f ∘ conj) := by
+      funext w
+      simp [Function.comp_def, smul_eq_mul]
+    rw [hsmul, meromorphicOrderAt_const_smul_eq_meromorphicOrderAt hc,
+      meromorphicOrderAt_conj_conj, Complex.conj_conj]
+  rw [← hlhs, meromorphicOrderAt_congr hfe, hrhs]
+
+/-- Under punctured-neighbourhood functional-conjugation identities at `conj z` and `1 - z`
+(including the degenerate case `c = 0`), the reflection `z ↦ 1 - conj z` preserves
+`meromorphicOrderAt f`. -/
+theorem TauCeti.meromorphicOrderAt_one_sub_conj {f : ℂ → ℂ} {c z : ℂ}
+    (hfe : (fun w ↦ f (1 - w)) =ᶠ[𝓝[≠] (conj z)] fun w ↦ c * conj (f (conj w)))
+    (hfe' : (fun w ↦ f (1 - w)) =ᶠ[𝓝[≠] (1 - z)] fun w ↦ c * conj (f (conj w))) :
+    meromorphicOrderAt f (1 - conj z) = meromorphicOrderAt f z := by
+  rcases eq_or_ne c 0 with rfl | hc
+  · have hsub (u : ℂ) : Tendsto (fun v : ℂ ↦ 1 - v) (𝓝[≠] u) (𝓝[≠] (1 - u)) :=
+      (continuous_const.sub continuous_id).continuousWithinAt.tendsto_nhdsWithin fun v hv ↦
+        sub_right_injective.ne hv
+    have h1 : ∀ᶠ v in 𝓝[≠] (1 - conj z), f v = 0 := by
+      have ht := hsub (1 - conj z)
+      rw [sub_sub_cancel] at ht
+      filter_upwards [ht.eventually hfe] with v hv
+      simpa using hv
+    have h2 : ∀ᶠ v in 𝓝[≠] z, f v = 0 := by
+      filter_upwards [(hsub z).eventually hfe'] with v hv
+      simpa using hv
+    rw [meromorphicOrderAt_eq_top_iff.mpr h1, meromorphicOrderAt_eq_top_iff.mpr h2]
+  · exact meromorphicOrderAt_one_sub_conj_of_ne_zero hfe hc

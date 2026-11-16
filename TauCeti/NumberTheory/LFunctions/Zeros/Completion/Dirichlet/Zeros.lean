@@ -59,20 +59,17 @@ theorem dirichletData_entireCompletion_ne_zero_of_one_le_re {s : ℂ}
 
 /-- Every primitive Dirichlet entire completion has no zeros on `Re s ≤ 0`. -/
 theorem dirichletData_entireCompletion_ne_zero_of_re_nonpos {s : ℂ}
-    (hs : s.re ≤ 0) : (dirichletData χ hχ).entireCompletion s ≠ 0 := by
-  rw [← sub_sub_cancel 1 s, dirichletData_entireCompletion_one_sub χ hχ]
-  refine mul_ne_zero (DirichletCharacter.rootNumber_ne_zero hχ) ?_
-  exact dirichletData_entireCompletion_ne_zero_of_one_le_re χ⁻¹ hχ.inv
-    (by simp only [sub_re, one_re]; linarith)
+    (hs : s.re ≤ 0) : (dirichletData χ hχ).entireCompletion s ≠ 0 :=
+  (dirichletData_hasFunctionalEquation χ hχ).entireCompletion_ne_zero_of_re_nonpos
+    (dirichletData_hasMeromorphicContinuation χ hχ)
+    (fun _ ↦ dirichletData_entireCompletion_ne_zero_of_one_le_re χ hχ) hs
 
 /-- Every zero of a primitive Dirichlet entire completion lies in the open critical strip. -/
 theorem re_mem_Ioo_of_dirichletData_entireCompletion_eq_zero {ρ : ℂ}
-    (hρ : (dirichletData χ hχ).entireCompletion ρ = 0) : ρ.re ∈ Set.Ioo 0 1 := by
-  by_contra h
-  rw [Set.mem_Ioo, not_and_or, not_lt, not_lt] at h
-  rcases h with h | h
-  · exact dirichletData_entireCompletion_ne_zero_of_re_nonpos χ hχ h hρ
-  · exact dirichletData_entireCompletion_ne_zero_of_one_le_re χ hχ h hρ
+    (hρ : (dirichletData χ hχ).entireCompletion ρ = 0) : ρ.re ∈ Set.Ioo 0 1 :=
+  (dirichletData_hasFunctionalEquation χ hχ).re_mem_Ioo_of_entireCompletion_eq_zero
+    (dirichletData_hasMeromorphicContinuation χ hχ)
+    (fun _ ↦ dirichletData_entireCompletion_ne_zero_of_one_le_re χ hχ) hρ
 
 /-- The divisor form of the zero location: a point of positive divisor of a primitive Dirichlet
 entire completion lies in the open critical strip. -/

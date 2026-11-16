@@ -91,23 +91,17 @@ completion to that of the inverse character. -/
 theorem logDeriv_dirichletData_entireCompletion_one_sub (s : ℂ) :
     logDeriv (dirichletData χ hχ).entireCompletion (1 - s) =
       -logDeriv (dirichletData χ⁻¹ hχ.inv).entireCompletion s := by
-  have h : logDeriv (fun z ↦ (dirichletData χ hχ).entireCompletion (1 - z)) s =
-      -logDeriv (dirichletData χ hχ).entireCompletion (1 - s) := by
-    rw [logDeriv_apply, logDeriv_apply, deriv_comp_const_sub, neg_div]
-  rw [← neg_neg (logDeriv _ (1 - s)), ← h,
-    funext (dirichletData_entireCompletion_one_sub χ hχ),
-    logDeriv_const_mul s _ (DirichletCharacter.rootNumber_ne_zero hχ)]
+  simpa only [dirichletData_dual] using
+    (dirichletData_hasFunctionalEquation χ hχ).logDeriv_entireCompletion_one_sub
+      (dirichletData_hasMeromorphicContinuation χ hχ) s
 
 /-- Conjugation exchanges the logarithmic derivatives of the entire completions of a primitive
 character and its inverse. -/
 theorem logDeriv_dirichletData_entireCompletion_inv_conj (s : ℂ) :
     logDeriv (dirichletData χ⁻¹ hχ.inv).entireCompletion (conj s) =
       conj (logDeriv (dirichletData χ hχ).entireCompletion s) := by
-  have h : (dirichletData χ⁻¹ hχ.inv).entireCompletion =
-      conj ∘ (dirichletData χ hχ).entireCompletion ∘ conj :=
-    funext (dirichletData_entireCompletion_inv_conj χ hχ)
-  rw [h, logDeriv_apply, logDeriv_apply, deriv_conj_conj]
-  simp
+  simpa only [dirichletData_dual] using
+    (dirichletData_hasMeromorphicContinuation χ hχ).logDeriv_dual_entireCompletion_conj s
 
 /-- For a primitive quadratic character, conjugation commutes with the logarithmic derivative of
 the entire completion. -/
