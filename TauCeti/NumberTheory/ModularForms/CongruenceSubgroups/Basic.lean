@@ -147,6 +147,11 @@ infrastructure independent of the diamond operators.
 * `CongruenceSubgroup.Gamma0_index_eq_prod_factorization` and
   `CongruenceSubgroup.Gamma0_index_mul_prod_primeFactors`: `[SL₂(ℤ) : Γ₀(N)]` is
   `∏_{pᵏ ∥ N} p^(k-1) (p + 1) = N ∏_{p ∣ N} (1 + 1/p)` for `N ≠ 0`.
+* `CongruenceSubgroup.isCongruenceSubgroup_top`, `CongruenceSubgroup.not_isCongruenceSubgroup_bot`,
+  `CongruenceSubgroup.isCongruenceSubgroup_inf_iff`,
+  `CongruenceSubgroup.isCongruenceSubgroup_conjAct_smul_iff`, and
+  `CongruenceSubgroup.isCongruenceSubgroup_normalCore_iff`: basic closure properties of
+  `IsCongruenceSubgroup` under top, bottom, binary intersection, conjugation, and normal core.
 
 ## References
 
@@ -1126,6 +1131,48 @@ theorem Gamma0_index_mul_prod_primeFactors {N : ℕ} :
   refine Finsupp.prod_congr (M := ℕ) (N := ℕ) fun p hp ↦ ?_
   rw [Finsupp.mem_support_iff, ← zero_lt_iff] at hp
   rw [mul_right_comm, ← pow_succ, Nat.sub_add_cancel hp]
+
+/-! ### Lattice and normality properties of congruence subgroups -/
+
+/-- The full modular group `SL(2, ℤ)` is a congruence subgroup. -/
+@[simp]
+theorem isCongruenceSubgroup_top : IsCongruenceSubgroup (⊤ : Subgroup SL(2, ℤ)) :=
+  Gamma_one_top ▸ Gamma_is_cong_sub 1
+
+/-- The trivial subgroup is not a congruence subgroup. -/
+@[simp]
+theorem not_isCongruenceSubgroup_bot : ¬ IsCongruenceSubgroup (⊥ : Subgroup SL(2, ℤ)) := by
+  rintro ⟨N, hN, hle⟩
+  have hT : ModularGroup.T ^ (N : ℤ) ∈ (⊥ : Subgroup SL(2, ℤ)) :=
+    hle (by simpa using ModularGroup_T_pow_mem_Gamma (N : ℤ) (N : ℤ) dvd_rfl)
+  have h01 := congrArg (fun g : SL(2, ℤ) ↦ g 0 1) (Subgroup.mem_bot.mp hT)
+  rw [ModularGroup.coe_T_zpow] at h01
+  exact hN (Int.natCast_eq_zero.mp (by simpa using h01))
+
+/-- The intersection of two subgroups of `SL(2, ℤ)` is a congruence subgroup if and only if both
+subgroups are congruence subgroups. -/
+@[simp]
+theorem isCongruenceSubgroup_inf_iff {Γ₁ Γ₂ : Subgroup SL(2, ℤ)} :
+    IsCongruenceSubgroup (Γ₁ ⊓ Γ₂) ↔ IsCongruenceSubgroup Γ₁ ∧ IsCongruenceSubgroup Γ₂ := by
+  refine ⟨fun h ↦ ⟨isCongruenceSubgroup_trans _ _ inf_le_left h,
+    isCongruenceSubgroup_trans _ _ inf_le_right h⟩, ?_⟩
+  rintro ⟨⟨N₁, hN₁, h₁⟩, ⟨N₂, hN₂, h₂⟩⟩
+  exact ⟨Nat.lcm N₁ N₂, Nat.lcm_ne_zero hN₁ hN₂, Gamma_lcm_eq_inf N₁ N₂ ▸ inf_le_inf h₁ h₂⟩
+
+/-- Conjugation in `SL(2, ℤ)` preserves and reflects the congruence-subgroup property. -/
+@[simp]
+theorem isCongruenceSubgroup_conjAct_smul_iff (g : ConjAct SL(2, ℤ)) {Γ : Subgroup SL(2, ℤ)} :
+    IsCongruenceSubgroup (g • Γ) ↔ IsCongruenceSubgroup Γ :=
+  ⟨fun h ↦ by simpa using conj_cong_is_cong g⁻¹ (g • Γ) h, conj_cong_is_cong g Γ⟩
+
+/-- Passing to the normal core preserves and reflects the congruence-subgroup property. -/
+@[simp]
+theorem isCongruenceSubgroup_normalCore_iff {Γ : Subgroup SL(2, ℤ)} :
+    IsCongruenceSubgroup Γ.normalCore ↔ IsCongruenceSubgroup Γ := by
+  refine ⟨isCongruenceSubgroup_trans _ _ Γ.normalCore_le, ?_⟩
+  rintro ⟨N, hN, hle⟩
+  have : (Gamma N).Normal := Gamma_normal N
+  exact ⟨N, hN, Subgroup.normal_le_normalCore.mpr hle⟩
 
 end CongruenceSubgroup
 
