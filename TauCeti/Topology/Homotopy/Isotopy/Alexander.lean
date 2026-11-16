@@ -133,19 +133,9 @@ def alexanderIsotopyClosedBall (f : closedBall (0 : E) 1 ≃ₜ closedBall (0 : 
     (hf : ∀ x : closedBall (0 : E) 1, ‖(x : E)‖ = 1 → f x = x) :
     TauCeti.AmbientIsotopy (closedBall (0 : E) 1) :=
   let Φ := (f.extendClosedBall hf).alexanderIsotopy 2 (f.norm_extendClosedBall_sub_le hf)
-  Φ.restrict _ (by
-    intro t x
-    have hfix {y : E} (hy : 1 ≤ ‖y‖) : Φ.toContinuousMap (t, y) = y :=
-      alexanderIsotopy_apply_of_le_norm _ _ _
-        (fun z hz => f.extendClosedBall_of_one_le hf hz) t (t.2.2.trans hy)
-    by_cases hx : x ∈ closedBall (0 : E) 1
-    · refine iff_of_true ?_ hx
-      by_contra hy
-      have hynorm : 1 ≤ ‖Φ.toContinuousMap (t, x)‖ := by
-        exact le_of_lt (not_le.mp (fun h => hy (mem_closedBall_zero_iff.mpr h)))
-      have heq := (Φ.isHomeomorph_apply t).injective (hfix hynorm)
-      exact hy (heq.symm ▸ hx)
-    · rw [hfix (le_of_lt (not_le.mp (fun h => hx (mem_closedBall_zero_iff.mpr h))))])
+  Φ.restrict _ fun t => Φ.apply_mem_iff_of_forall_notMem fun _ hy =>
+    alexanderIsotopy_apply_of_le_norm _ _ _ (fun _ hz => f.extendClosedBall_of_one_le hf hz) t
+      (t.2.2.trans (not_le.mp (mt mem_closedBall_zero_iff.mpr hy)).le)
 
 /-- The pointwise formula for the ball isotopy, read in the ambient space. -/
 @[simp]

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Homotopy.Isotopy.Basic
+import TauCeti.Data.Set.Function
 
 /-!
 # Restriction of ambient isotopies
@@ -24,20 +25,14 @@ namespace TauCeti.AmbientIsotopy
 
 variable {X : Type*} [TopologicalSpace X]
 
-/-- An ambient isotopy fixing every point outside `s` preserves `s` in both directions at every
-time, since each time slice is injective. This supplies the hypothesis of
+/-- An ambient isotopy whose time-`t` slice fixes every point outside `s` preserves `s` in both
+directions at time `t`, since the slice is injective. This supplies the hypothesis of
 `TauCeti.AmbientIsotopy.restrict` for isotopies supported in `s`. -/
-theorem apply_mem_iff_of_forall_notMem (Φ : AmbientIsotopy X) {s : Set X}
-    (hs : ∀ t, ∀ x ∉ s, Φ.toContinuousMap (t, x) = x) (t : I) (x : X) :
-    Φ.toContinuousMap (t, x) ∈ s ↔ x ∈ s := by
-  refine ⟨fun h => ?_, fun hx => ?_⟩
-  · by_contra hx
-    rw [hs t x hx] at h
-    exact hx h
-  · by_contra h
-    -- the image is fixed, so by injectivity of the slice it is `x` itself
-    rw [(Φ.isHomeomorph_apply t).injective (hs t _ h)] at h
-    exact h hx
+theorem apply_mem_iff_of_forall_notMem (Φ : AmbientIsotopy X) {s : Set X} {t : I}
+    (hs : ∀ x ∉ s, Φ.toContinuousMap (t, x) = x) (x : X) :
+    Φ.toContinuousMap (t, x) ∈ s ↔ x ∈ s :=
+  ⟨fun h => by_contra fun hx => hx (hs x hx ▸ h),
+    fun hx => (Φ.isHomeomorph_apply t).injective.mapsTo_of_eq_self hs hx⟩
 
 /-- Restrict an ambient isotopy to a subset preserved by each time slice in both directions. -/
 def restrict (Φ : AmbientIsotopy X) (s : Set X)
