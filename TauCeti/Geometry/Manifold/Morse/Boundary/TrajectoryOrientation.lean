@@ -71,9 +71,10 @@ coordinates transports the orientation along the induced isomorphism of the kern
 
 In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 
-* `mem_ker_trajectoryComparison_iff`: its kernel is the tangent space of the level slice.
-* `finrank_ker_trajectoryComparison_add`: where the comparison map is onto, its kernel has
-  dimension `ind p - ind r - 1`.
+* `mem_ker_trajectoryComparison_iff`: the kernel of the comparison map is the tangent space of the
+  level slice.
+* `finrank_ker_trajectoryComparison_add`, `finrank_ker_trajectoryComparison`: where the comparison
+  map is onto, its kernel has dimension `ind p - ind r - 1`.
 * `shortExact_trajectorySpaceOrientation`, `trajectorySpaceOrientation_eq_iff`: the orientation is
   the unique one inducing `op` with the subspace first.
 * `trajectorySpaceOrientation_eq_orientation_iff`: its positive bases.
@@ -161,7 +162,10 @@ section Orientation
 
 variable {y : M} {k : ℕ}
 
-private theorem finrank_ker_eq (hC : Surjective (hX.trajectoryComparison φp φr y))
+/-- **The dimension of the space of trajectories.** Where the comparison map is onto, its kernel
+has dimension `k` when `ind p = k + (1 + ind r)`. This is the dimension at which
+`TauCeti.IsAdaptedPseudoGradient.trajectorySpaceOrientation` orients the kernel. -/
+theorem finrank_ker_trajectoryComparison (hC : Surjective (hX.trajectoryComparison φp φr y))
     (hk : manifoldMorseIndex 𝓘(ℝ, E) f p = k + (1 + manifoldMorseIndex 𝓘(ℝ, E) f r)) :
     Module.finrank ℝ (LinearMap.ker (hX.trajectoryComparison φp φr y).toLinearMap) = k := by
   have := finrank_ker_trajectoryComparison_add hC
@@ -186,8 +190,23 @@ noncomputable def trajectorySpaceOrientation
     Orientation ℝ (LinearMap.ker (hX.trajectoryComparison φp φr y).toLinearMap) (Fin k) :=
   Orientation.shortExactLeft
     (LinearMap.ker (hX.trajectoryComparison φp φr y).toLinearMap).subtype_injective
-    (LinearMap.exact_subtype_ker_map _) hC (finrank_ker_eq hC hk) φr.finrank_prod_negativeWeight_fun
+    (LinearMap.exact_subtype_ker_map _) hC (finrank_ker_trajectoryComparison hC hk)
+    φr.finrank_prod_negativeWeight_fun
     (Orientation.reindex ℝ _ (finCongr hk) op) (φr.flowNormalOrientation or)
+
+/-- The defining formula of `TauCeti.IsAdaptedPseudoGradient.trajectorySpaceOrientation`. -/
+theorem trajectorySpaceOrientation_def
+    (op : Orientation ℝ ({i // φp.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f p)))
+    (or : Orientation ℝ ({i // φr.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f r)))
+    (hk : manifoldMorseIndex 𝓘(ℝ, E) f p = k + (1 + manifoldMorseIndex 𝓘(ℝ, E) f r)) (y : M)
+    (hC : Surjective (hX.trajectoryComparison φp φr y)) :
+    hX.trajectorySpaceOrientation φp φr op or hk y hC =
+      Orientation.shortExactLeft
+        (LinearMap.ker (hX.trajectoryComparison φp φr y).toLinearMap).subtype_injective
+        (LinearMap.exact_subtype_ker_map _) hC (finrank_ker_trajectoryComparison hC hk)
+        φr.finrank_prod_negativeWeight_fun
+        (Orientation.reindex ℝ _ (finCongr hk) op) (φr.flowNormalOrientation or) :=
+  (rfl)
 
 variable {hX φp φr}
 
@@ -241,7 +260,7 @@ theorem trajectorySpaceOrientation_eq_orientation_iff
       (((Module.Basis.singleton (Fin 1) ℝ).prod e).reindex finSumFinEquiv) j) :
     hX.trajectorySpaceOrientation φp φr op e.orientation hk y hC = b.orientation ↔
       B.orientation = Orientation.reindex ℝ _ (finCongr hk) op := by
-  rw [trajectorySpaceOrientation_eq_iff hC (finrank_ker_eq hC hk)
+  rw [trajectorySpaceOrientation_eq_iff hC (finrank_ker_trajectoryComparison hC hk)
       φr.finrank_prod_negativeWeight_fun,
     MorseChart.flowNormalOrientation_def,
     Orientation.prod_basis_orientation,
@@ -253,7 +272,7 @@ trajectories.** -/
 theorem trajectorySpaceOrientation_neg_left (hC : Surjective (hX.trajectoryComparison φp φr y)) :
     hX.trajectorySpaceOrientation φp φr (-op) or hk y hC =
       -hX.trajectorySpaceOrientation φp φr op or hk y hC := by
-  rw [trajectorySpaceOrientation, trajectorySpaceOrientation, Orientation.reindex_neg,
+  rw [trajectorySpaceOrientation_def, trajectorySpaceOrientation_def, Orientation.reindex_neg,
     Orientation.shortExactLeft_neg_left]
 
 /-- **Reversing the orientation at the target reverses the orientation of the space of
@@ -262,8 +281,8 @@ trajectories.** -/
 theorem trajectorySpaceOrientation_neg_right (hC : Surjective (hX.trajectoryComparison φp φr y)) :
     hX.trajectorySpaceOrientation φp φr op (-or) hk y hC =
       -hX.trajectorySpaceOrientation φp φr op or hk y hC := by
-  rw [trajectorySpaceOrientation, trajectorySpaceOrientation, MorseChart.flowNormalOrientation_neg,
-    Orientation.shortExactLeft_neg_right]
+  rw [trajectorySpaceOrientation_def, trajectorySpaceOrientation_def,
+    MorseChart.flowNormalOrientation_neg, Orientation.shortExactLeft_neg_right]
 
 end Orientation
 
@@ -319,12 +338,12 @@ theorem trajectorySpaceOrientation_map_negativeChange (hf : IsMorse 𝓘(ℝ, E)
         (hX.trajectorySpaceOrientation φp φr op or hk y hC) := by
   have hK := map_ker_trajectoryComparison_negativeChange hφp hφp' hφr hφr' hf hy
   set eK := (φp.negativeChange φp').ofSubmodules _ _ hK
-  rw [trajectorySpaceOrientation_eq_iff hC' (finrank_ker_eq hC' hk)
+  rw [trajectorySpaceOrientation_eq_iff hC' (finrank_ker_trajectoryComparison hC' hk)
       φr'.finrank_prod_negativeWeight_fun,
     MorseChart.flowNormalOrientation_map,
     ← Orientation.map_shortExact
       (LinearMap.ker (hX.trajectoryComparison φp φr y).toLinearMap).subtype_injective
-      (LinearMap.exact_subtype_ker_map _) hC (finrank_ker_eq hC hk)
+      (LinearMap.exact_subtype_ker_map _) hC (finrank_ker_trajectoryComparison hC hk)
       φr.finrank_prod_negativeWeight_fun _ _ _ eK
       (φp.negativeChange φp') ((LinearEquiv.refl ℝ ℝ).prodCongr (φr.negativeChange φr'))
       (LinearMap.ext fun v ↦ (LinearEquiv.ofSubmodules_apply _ hK v).symm)

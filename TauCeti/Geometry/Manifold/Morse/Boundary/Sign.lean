@@ -72,10 +72,13 @@ in the namespace `TauCeti.IsAdaptedPseudoGradient`).
 In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 
 * `trajectoryComparison`: the comparison map `Vp → ℝ × Vq` at a point of a trajectory.
-* `TauCeti.MorseChart.flowNormalOrientation`: the orientation of `ℝ × Vq` given by the standard
-  orientation of `ℝ` followed by `oq`, against which the comparison map is measured.
 * `trajectorySign`: the sign of the trajectory through a point.
 * `signedTrajectoryCount`: the number of trajectories from `p` to `q` counted with signs.
+
+In the namespace `TauCeti.MorseChart`:
+
+* `flowNormalOrientation`: the orientation of `ℝ × Vq` given by the standard orientation of `ℝ`
+  followed by `oq`, against which the comparison map is measured.
 
 ## Main results
 
