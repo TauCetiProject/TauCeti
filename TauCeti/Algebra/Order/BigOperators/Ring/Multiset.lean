@@ -19,13 +19,20 @@ For a multiset `s` of elements of `[0, 1]` in a linearly ordered commutative rin
 * `Multiset.sum_map_sq_le_card_mul_one_sub_prod_map_one_sub`:
   `∑ t² ≤ card s · (1 - ∏ (1 - t))`.
 
-Nonnegativity of `∏ (1 - t)` is `Multiset.prod_map_nonneg`, and `∏ (1 - t) ≤ 1` follows from
-`Multiset.prod_map_le_prod_map₀`.
+Nonnegativity of `∏ (1 - t)` is `Multiset.prod_map_nonneg`, and `∏ (1 - t) ≤ 1` is the case
+`f t = 1 - t` of `Multiset.prod_map_le_one₀`, the multiset analogue of `Finset.prod_le_one₀`.
 -/
 
 public section
 
 namespace Multiset
+
+/-- If `0 ≤ f i ≤ 1` for every `i ∈ s`, then `∏_{i ∈ s} f i ≤ 1`. This is the multiset analogue
+of `Finset.prod_le_one₀`. -/
+theorem prod_map_le_one₀ {R ι : Type*} [CommMonoidWithZero R] [PartialOrder R] [ZeroLEOneClass R]
+    [PosMulMono R] {s : Multiset ι} {f : ι → R} (h0 : ∀ i ∈ s, 0 ≤ f i)
+    (h1 : ∀ i ∈ s, f i ≤ 1) : (s.map f).prod ≤ 1 :=
+  (prod_map_le_prod_map₀ f (fun _ ↦ 1) h0 h1).trans_eq (by simp)
 
 variable {R : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R] {s : Multiset R}
 
@@ -38,8 +45,7 @@ theorem one_sub_prod_map_one_sub_le_sum (h₀ : ∀ t ∈ s, 0 ≤ t) (h₁ : �
     have h₀' : ∀ t ∈ s, 0 ≤ t := fun t ht ↦ h₀ t (mem_cons_of_mem ht)
     have h₁' : ∀ t ∈ s, t ≤ 1 := fun t ht ↦ h₁ t (mem_cons_of_mem ht)
     have hP₁ : (s.map fun t ↦ 1 - t).prod ≤ 1 :=
-      (prod_map_le_prod_map₀ _ (fun _ ↦ 1) (fun t ht ↦ sub_nonneg.2 (h₁' t ht))
-        fun t ht ↦ sub_le_self _ (h₀' t ht)).trans_eq (by simp)
+      prod_map_le_one₀ (fun t ht ↦ sub_nonneg.2 (h₁' t ht)) fun t ht ↦ sub_le_self _ (h₀' t ht)
     rw [map_cons, prod_cons, sum_cons]
     nlinarith [ih h₀' h₁', mul_le_of_le_one_right (h₀ t₀ (mem_cons_self _ _)) hP₁]
 
@@ -56,8 +62,7 @@ theorem sum_map_sq_le_card_mul_one_sub_prod_map_one_sub (h₀ : ∀ t ∈ s, 0 �
     have ht₁ := h₁ t₀ (mem_cons_self _ _)
     have hP₀ := prod_map_nonneg (f := fun t ↦ 1 - t) fun t ht ↦ sub_nonneg.2 (h₁' t ht)
     have hP₁ : (s.map fun t ↦ 1 - t).prod ≤ 1 :=
-      (prod_map_le_prod_map₀ _ (fun _ ↦ 1) (fun t ht ↦ sub_nonneg.2 (h₁' t ht))
-        fun t ht ↦ sub_le_self _ (h₀' t ht)).trans_eq (by simp)
+      prod_map_le_one₀ (fun t ht ↦ sub_nonneg.2 (h₁' t ht)) fun t ht ↦ sub_le_self _ (h₀' t ht)
     have hk : (0 : R) ≤ card s := Nat.cast_nonneg _
     simp only [map_cons, prod_cons, sum_cons, card_cons, Nat.cast_succ]
     nlinarith [ih h₀' h₁', mul_nonneg (sub_nonneg.2 hP₁) (sub_nonneg.2 ht₁),

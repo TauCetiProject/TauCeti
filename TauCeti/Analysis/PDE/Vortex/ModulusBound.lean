@@ -171,8 +171,8 @@ private theorem rhs_lt_neg_half_mul_sum {D : Multiset ℂ} {C : ℝ}
   have hP₀ := Multiset.prod_map_nonneg (f := fun t : ℝ ↦ 1 - t) fun t ht ↦
     sub_nonneg.2 (h01 t ht).2
   have hP₁ : ((D.map fun a ↦ C / (‖z - a‖ ^ 2 + C)).map fun t ↦ 1 - t).prod ≤ 1 :=
-    (Multiset.prod_map_le_prod_map₀ _ (fun _ ↦ 1) (fun t ht ↦ sub_nonneg.2 (h01 t ht).2)
-      fun t ht ↦ sub_le_self _ (h01 t ht).1).trans_eq (by simp)
+    Multiset.prod_map_le_one₀ (fun t ht ↦ sub_nonneg.2 (h01 t ht).2)
+      fun t ht ↦ sub_le_self _ (h01 t ht).1
   have hS := Multiset.sum_map_sq_le_card_mul_one_sub_prod_map_one_sub (fun t ht ↦ (h01 t ht).1)
     fun t ht ↦ (h01 t ht).2
   rw [Multiset.card_map] at hS
