@@ -111,7 +111,7 @@ theorem multivariateGaussian_eq_map_pi [Fintype ι] [DecidableEq ι]
           ((EuclideanSpace.equiv ι ℝ).symm y)) := by
   rw [multivariateGaussian, ← map_pi_eq_stdGaussian,
     Measure.map_map (by fun_prop) (by fun_prop)]
-  rfl
+  simp only [Function.comp_def, PiLp.continuousLinearEquiv_symm_apply]
 
 /-- A centred multivariate Gaussian law is the image of the standard Gaussian under the square
 root of its matrix parameter. No hypothesis on that parameter is needed. -/

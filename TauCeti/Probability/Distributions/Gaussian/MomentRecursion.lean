@@ -10,22 +10,21 @@ public import TauCeti.Probability.Distributions.Gaussian.Pi
 import Mathlib.Probability.Distributions.Gaussian.Fernique
 import TauCeti.Probability.Distributions.Gaussian.IntegrationByParts
 import TauCeti.MeasureTheory.Integral.Pi
-import TauCeti.Analysis.Matrix.Sqrt
 
 /-!
 # Recursion for Gaussian mixed moments
 
 Gaussian integration by parts reduces a product moment by two factors: choose one centered
-factor, pair it with each remaining factor, and multiply the lower moment by their covariance.
-Real and complex real-linear observables are allowed. The remaining factors may carry arbitrary
-affine shifts, and the positions indexing them need
-not be distinct. Empty products and singular positive-semidefinite covariances are allowed.
+factor, pair it with each remaining factor, and multiply by the moment of the remaining product.
+For real observables the pairing is covariance; for complex real-linear observables it is the
+unconjugated bilinear centered second moment. The remaining factors may carry arbitrary affine
+shifts and may repeat. Empty products and singular covariance matrices are allowed.
 
-Iterating the centered recurrence yields the Wick–Isserlis pairing expansion for higher
-Gaussian mixed moments. Keeping affine shifts on the remaining factors also supports
-noncentered and partially centered products, with matching recurrences for linear observables
-of `IsGaussian` measures, coordinates of `multivariateGaussian` laws, and random vectors with
-those laws via `HasLaw`.
+Real or complex real-linear recurrences are provided for `gaussianReal`, products of standard
+real Gaussians, `multivariateGaussian`, and arbitrary `IsGaussian` measures. The `HasLaw`
+coordinate recurrences are real-valued. Iterating the centered recurrence yields the
+Wick–Isserlis pairing expansion, while affine shifts support noncentered and partially centered
+products.
 
 ## Main results
 
@@ -33,11 +32,14 @@ those laws via `HasLaw`.
   affine functions of a real Gaussian.
 * `TauCeti.Probability.integral_clm_mul_prod_pi_gaussianReal`: the recurrence for affine forms
   of independent standard Gaussians.
-* `TauCeti.Probability.integral_sub_mul_prod_add_multivariateGaussian`: the coordinate
+* `TauCeti.Probability.integral_clm_mul_prod_add_multivariateGaussian`: the affine real-linear
+  observable recurrence, with centered specialization
+  `TauCeti.Probability.integral_clm_mul_prod_sub_multivariateGaussian`.
+* `TauCeti.Probability.integral_sub_mul_prod_add_multivariateGaussian`: the real coordinate
   recurrence for a multivariate Gaussian, with centered and zero-mean raw specializations.
-* `ProbabilityTheory.IsGaussian.integral_sub_dual_mul_prod_dual`: the recurrence for linear
+* `ProbabilityTheory.IsGaussian.integral_sub_clm_mul_prod_clm`: the recurrence for linear
   observables of a Gaussian measure, with the centered specialization
-  `ProbabilityTheory.IsGaussian.integral_sub_dual_mul_prod_sub_dual`.
+  `ProbabilityTheory.IsGaussian.integral_sub_clm_mul_prod_sub_clm`.
 * `ProbabilityTheory.HasLaw.integral_sub_mul_prod_add_multivariateGaussian`: the coordinate
   recurrence for a random vector with a multivariate Gaussian law, with centered and zero-mean
   raw specializations.
@@ -188,6 +190,42 @@ section Multivariate
 
 variable [Fintype κ] [DecidableEq κ]
 
+/-- The Gaussian moment recursion for real or complex real-linear observables, with
+arbitrary affine shifts on the remaining factors. The contraction coefficients are bilinear
+second moments, without complex conjugation. No covariance-validity hypothesis is required. -/
+theorem integral_clm_mul_prod_add_multivariateGaussian {𝕜 : Type*} [RCLike 𝕜]
+    (m : EuclideanSpace ℝ κ) (S : Matrix κ κ ℝ) (s : Finset ι)
+    (L₀ : EuclideanSpace ℝ κ →L[ℝ] 𝕜) (L : ι → EuclideanSpace ℝ κ →L[ℝ] 𝕜) (c : ι → 𝕜) :
+    (∫ x, L₀ (x - m) * ∏ i ∈ s, (L i x + c i) ∂multivariateGaussian m S) =
+      ∑ i ∈ s, (∫ x, L₀ (x - m) * L i (x - m) ∂multivariateGaussian m S) *
+        ∫ x, ∏ j ∈ s.erase i, (L j x + c j) ∂multivariateGaussian m S := by
+  let T : (κ → ℝ) →L[ℝ] EuclideanSpace ℝ κ :=
+    (Matrix.toEuclideanCLM (𝕜 := ℝ) (CFC.sqrt S)).comp
+      (EuclideanSpace.equiv κ ℝ).symm.toContinuousLinearMap
+  have hpush (f : EuclideanSpace ℝ κ → 𝕜) (hf : Continuous f) :
+      ∫ x, f x ∂multivariateGaussian m S =
+        ∫ y, f (m + T y) ∂Measure.pi (fun _ : κ ↦ gaussianReal 0 1) := by
+    rw [multivariateGaussian_eq_map_pi, integral_map (by fun_prop) (by fun_prop)]
+    simp only [T, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe]
+  have hprod (t : Finset ι) :
+      (∫ x, ∏ i ∈ t, (L i x + c i) ∂multivariateGaussian m S) =
+        ∫ y, ∏ i ∈ t, ((L i).comp T y + (L i m + c i))
+          ∂Measure.pi (fun _ : κ ↦ gaussianReal 0 1) := by
+    rw [hpush _ (by fun_prop)]
+    simp only [map_add, ContinuousLinearMap.comp_apply, add_left_comm, add_assoc]
+  have hpair (i : ι) :
+      (∫ x, L₀ (x - m) * L i (x - m) ∂multivariateGaussian m S) =
+        ∑ k, L₀ (T (Pi.single k 1)) * L i (T (Pi.single k 1)) := by
+    rw [hpush _ (by fun_prop)]
+    simpa [ContinuousLinearMap.comp_apply] using
+      integral_clm_mul_prod_pi_gaussianReal ({i} : Finset ι)
+        (L₀.comp T) (fun j ↦ (L j).comp T) 0
+  rw [hpush _ (by fun_prop)]
+  simp_rw [hpair, hprod]
+  simpa only [add_sub_cancel_left, map_add, ContinuousLinearMap.comp_apply,
+    add_left_comm, add_assoc] using integral_clm_mul_prod_pi_gaussianReal s
+      (L₀.comp T) (fun j ↦ (L j).comp T) (fun j ↦ L j m + c j)
+
 /-- The multivariate Gaussian moment recursion. Pair the centered distinguished coordinate
 with every remaining affinely shifted position and take the moment of the factors left over.
 Positions may refer to repeated coordinates, and the covariance may be singular. -/
@@ -196,38 +234,13 @@ theorem integral_sub_mul_prod_add_multivariateGaussian (m : EuclideanSpace ℝ �
     (∫ x, (x k - m k) * ∏ i ∈ s, (x (f i) + c i) ∂multivariateGaussian m S) =
       ∑ i ∈ s, S k (f i) *
         ∫ x, ∏ j ∈ s.erase i, (x (f j) + c j) ∂multivariateGaussian m S := by
-  let T : (κ → ℝ) →L[ℝ] EuclideanSpace ℝ κ :=
-    (Matrix.toEuclideanCLM (𝕜 := ℝ) (CFC.sqrt S)).comp
-      (EuclideanSpace.equiv κ ℝ).symm.toContinuousLinearMap
-  let L (i : κ) : StrongDual ℝ (κ → ℝ) := (EuclideanSpace.proj i).comp T
-  have hT (j i : κ) : T (Pi.single j 1) i = CFC.sqrt S i j := by
-    simp [T]
-  have hcoeff (i : ι) : (∑ j, L k (Pi.single j 1) * L (f i) (Pi.single j 1)) =
-      S k (f i) := by
-    simpa only [L, ContinuousLinearMap.comp_apply, EuclideanSpace.coe_proj, hT,
-      Matrix.mul_apply, Matrix.transpose_apply] using
-      congrArg (fun A : Matrix κ κ ℝ ↦ A k (f i)) hS.sqrt_mul_transpose_sqrt
-  -- The law is the image of the standard Gaussian product under `y ↦ m + T y`.
-  have hmap : (Measure.pi (fun _ : κ ↦ gaussianReal 0 1)).map (fun y ↦ m + T y) =
-      multivariateGaussian m S := by
-    simpa only [T, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe] using
-      (multivariateGaussian_eq_map_pi m S).symm
-  have hcoord (y : κ → ℝ) (i : κ) : (m + T y) i = L i y + m i := by
-    simp only [L, ContinuousLinearMap.comp_apply, EuclideanSpace.coe_proj, PiLp.add_apply,
-      add_comm]
-  have h := integral_clm_mul_prod_pi_gaussianReal s (L k) (fun i ↦ L (f i))
-    (fun i ↦ m (f i) + c i)
-  simp only [hcoeff] at h
-  calc
-    _ = ∫ y, L k y * ∏ i ∈ s, (L (f i) y + (m (f i) + c i))
-        ∂Measure.pi (fun _ : κ ↦ gaussianReal 0 1) := by
-      rw [← hmap, integral_map (by fun_prop) (by fun_prop)]
-      simp only [hcoord, add_sub_cancel_right, add_assoc]
-    _ = _ := by
-      rw [h]
-      refine sum_congr rfl fun i _ ↦ ?_
-      rw [← hmap, integral_map (by fun_prop) (by fun_prop)]
-      simp only [hcoord, add_assoc]
+  have hcoeff (i : ι) :
+      (∫ x, (x k - m k) * (x (f i) - m (f i)) ∂multivariateGaussian m S) =
+        S k (f i) := by
+    simpa [covariance] using covariance_eval_multivariateGaussian (μ := m) hS k (f i)
+  simpa only [EuclideanSpace.coe_proj, PiLp.sub_apply, hcoeff] using
+    integral_clm_mul_prod_add_multivariateGaussian m S s (EuclideanSpace.proj k)
+      (fun i ↦ EuclideanSpace.proj (f i)) c
 
 /-- The centered mixed-moment recursion at an arbitrary Gaussian mean. Each covariance
 contracts two factors, leaving a centered moment of degree two less. -/
@@ -256,26 +269,8 @@ theorem integral_clm_mul_prod_sub_multivariateGaussian {𝕜 : Type*} [RCLike �
     (∫ x, L₀ (x - m) * ∏ i ∈ s, L i (x - m) ∂multivariateGaussian m S) =
       ∑ i ∈ s, (∫ x, L₀ (x - m) * L i (x - m) ∂multivariateGaussian m S) *
         ∫ x, ∏ j ∈ s.erase i, L j (x - m) ∂multivariateGaussian m S := by
-  let T : (κ → ℝ) →L[ℝ] EuclideanSpace ℝ κ :=
-    (Matrix.toEuclideanCLM (𝕜 := ℝ) (CFC.sqrt S)).comp
-      (EuclideanSpace.equiv κ ℝ).symm.toContinuousLinearMap
-  have hpush (f : EuclideanSpace ℝ κ → 𝕜) (hf : Continuous f) :
-      ∫ x, f (x - m) ∂multivariateGaussian m S =
-        ∫ y, f (T y) ∂Measure.pi (fun _ : κ ↦ gaussianReal 0 1) := by
-    rw [multivariateGaussian_eq_map_pi, integral_map (by fun_prop) (by fun_prop)]
-    simp only [add_sub_cancel_left, T, ContinuousLinearMap.comp_apply,
-      ContinuousLinearEquiv.coe_coe]
-  have hprod (t : Finset ι) := hpush (fun x ↦ ∏ i ∈ t, L i x) (by fun_prop)
-  have hpair (i : ι) :
-      (∫ y, L₀ (T y) * L i (T y) ∂Measure.pi (fun _ : κ ↦ gaussianReal 0 1)) =
-        ∑ k, L₀ (T (Pi.single k 1)) * L i (T (Pi.single k 1)) := by
-    simpa using integral_clm_mul_prod_pi_gaussianReal ({i} : Finset ι)
-      (L₀.comp T) (fun j ↦ (L j).comp T) 0
-  rw [hpush (fun x ↦ L₀ x * ∏ i ∈ s, L i x) (by fun_prop)]
-  have hpair' (i : ι) := hpush (fun x ↦ L₀ x * L i x) (by fun_prop)
-  simp_rw [hpair', hpair, hprod]
-  simpa using integral_clm_mul_prod_pi_gaussianReal s (L₀.comp T)
-    (fun j ↦ (L j).comp T) 0
+  simpa only [← sub_eq_add_neg, map_sub] using
+    integral_clm_mul_prod_add_multivariateGaussian m S s L₀ L (fun i ↦ -L i m)
 
 end Multivariate
 
@@ -286,67 +281,58 @@ namespace ProbabilityTheory.IsGaussian
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [MeasurableSpace E] [BorelSpace E]
 
-/-- The Gaussian moment recursion for linear observables. A centered observable times a finite
-product of affine observables reduces by pairing it with each factor through their covariance.
-The observables may be repeated or correlated, and no nondegeneracy is assumed. -/
-theorem integral_sub_dual_mul_prod_dual (μ : Measure E) [IsGaussian μ]
-    {ι : Type*} [DecidableEq ι] (s : Finset ι) (L₀ : StrongDual ℝ E)
-    (L : ι → StrongDual ℝ E) (c : ι → ℝ) :
+/-- The Gaussian moment recursion for real or complex real-linear observables. A centered
+observable times a product of affine observables reduces by pairing it with each factor.
+The pairings are bilinear centered second moments, without complex conjugation. -/
+theorem integral_sub_clm_mul_prod_clm (μ : Measure E) [IsGaussian μ]
+    {ι 𝕜 : Type*} [RCLike 𝕜] [DecidableEq ι] (s : Finset ι) (L₀ : E →L[ℝ] 𝕜)
+    (L : ι → E →L[ℝ] 𝕜) (c : ι → 𝕜) :
     (∫ x, (L₀ x - μ[L₀]) * ∏ i ∈ s, (L i x + c i) ∂μ) =
-      ∑ i ∈ s, cov[L₀, L i; μ] * ∫ x, ∏ j ∈ s.erase i, (L j x + c j) ∂μ := by
+      ∑ i ∈ s, (∫ x, (L₀ x - μ[L₀]) * (L i x - μ[L i]) ∂μ) *
+        ∫ x, ∏ j ∈ s.erase i, (L j x + c j) ∂μ := by
   classical
-  -- Push `μ` forward to the joint law of `L₀` and of the observables indexed by `s`.
-  let F : Option s → StrongDual ℝ E := fun a ↦ a.elim L₀ fun i ↦ L i
-  let T : E →L[ℝ] EuclideanSpace ℝ (Option s) :=
-    (EuclideanSpace.equiv (Option s) ℝ).symm.toContinuousLinearMap.comp
-      (ContinuousLinearMap.pi F)
-  have hT (x : E) (a : Option s) : T x a = F a x := by
-    simp [T]
-  have hpush (g : EuclideanSpace ℝ (Option s) → ℝ) (hg : Continuous g) :
+  -- Realify the finite family, then reconstruct its real or complex values linearly.
+  let F : Option s → E →L[ℝ] 𝕜 := fun a ↦ a.elim L₀ fun i ↦ L i
+  let T : E →L[ℝ] EuclideanSpace ℝ (Option s × Bool) :=
+    (EuclideanSpace.equiv (Option s × Bool) ℝ).symm.toContinuousLinearMap.comp
+      (ContinuousLinearMap.pi fun a ↦
+        (if a.2 then RCLike.imCLM else RCLike.reCLM).comp (F a.1))
+  let G (a : Option s) : EuclideanSpace ℝ (Option s × Bool) →L[ℝ] 𝕜 :=
+    RCLike.ofRealCLM.comp (EuclideanSpace.proj (a, false)) +
+      (RCLike.I : 𝕜) • RCLike.ofRealCLM.comp (EuclideanSpace.proj (a, true))
+  have hG (x : E) (a : Option s) : G a (T x) = F a x := by
+    simpa [G, T, mul_comm] using RCLike.re_add_im (F a x)
+  have hpush (g : EuclideanSpace ℝ (Option s × Bool) → 𝕜) (hg : Continuous g) :
       ∫ y, g y ∂μ.map T = ∫ x, g (T x) ∂μ :=
     integral_map (by fun_prop) hg.aestronglyMeasurable
-  have hmean : (∫ y, y ∂μ.map T) none = μ[L₀] := by
-    have h := (EuclideanSpace.proj (𝕜 := ℝ) (none : Option s)).integral_comp_comm
-      (IsGaussian.integrable_id (μ := μ.map T))
-    simp only [EuclideanSpace.coe_proj, id_eq] at h
+  have hmean (a : Option s) : G a (∫ y, y ∂μ.map T) = μ[F a] := by
+    have h := (G a).integral_comp_comm (IsGaussian.integrable_id (μ := μ.map T))
+    simp only [id_eq] at h
     rw [← h, hpush _ (by fun_prop)]
-    simp [hT, F]
-  have hcomp (a : Option s) : (fun y : EuclideanSpace ℝ (Option s) ↦ y a) ∘ T = F a :=
-    funext fun x ↦ by simp only [Function.comp_apply, hT]
-  have hcov (i : s) : TauCeti.covMatrix (μ.map T) none (some i) = cov[L₀, L i; μ] := by
-    rw [TauCeti.covMatrix_apply, covariance_map (by fun_prop) (by fun_prop) (by fun_prop)]
-    simp only [hcomp, F, Option.elim_none, Option.elim_some]
-  -- The pushed-forward law is the multivariate Gaussian with its own mean and covariance.
-  have h := TauCeti.Probability.integral_sub_mul_prod_add_multivariateGaussian
-    (∫ y, y ∂μ.map T) (TauCeti.posSemidef_covMatrix (μ.map T) IsGaussian.memLp_two_id)
-    (univ : Finset s) some (fun i ↦ c i) none
+    simp only [hG]
+  have h := TauCeti.Probability.integral_clm_mul_prod_add_multivariateGaussian
+    (∫ y, y ∂μ.map T) (TauCeti.covMatrix (μ.map T))
+    (univ : Finset s) (G none) (fun i ↦ G (some i)) (fun i ↦ c i)
   rw [← TauCeti.Probability.eq_multivariateGaussian_covMatrix (μ.map T)] at h
-  calc
-    _ = ∫ y, (y none - (∫ z, z ∂μ.map T) none) * ∏ i : s, (y (some i) + c i) ∂μ.map T := by
-      rw [hpush _ (by fun_prop), hmean]
-      refine integral_congr_ae (ae_of_all _ fun x ↦ ?_)
-      simp only [hT, F, Option.elim_none, Option.elim_some, Finset.univ_eq_attach]
-      rw [Finset.prod_attach s fun i ↦ L i x + c i]
-    _ = _ := h
-    _ = _ := by
-      rw [← Finset.sum_coe_sort s]
-      refine sum_congr rfl fun i _ ↦ ?_
-      rw [hcov, hpush _ (by fun_prop)]
-      congr 1
-      refine integral_congr_ae (ae_of_all _ fun x ↦ ?_)
-      simpa [hT, F, Finset.univ_eq_attach] using
-        Finset.prod_erase_attach (fun j ↦ L j x + c j) i
+  simp_rw [map_sub, hmean] at h
+  simp (disch := fun_prop) only [hpush] at h
+  simp only [hG] at h
+  simp only [F, Option.elim_none, Option.elim_some] at h
+  have hprod (x : E) := Finset.prod_attach s (fun i ↦ L i x + c i)
+  have herase (x : E) (i : s) := Finset.prod_erase_attach (fun j ↦ L j x + c j) i
+  rw [← Finset.sum_coe_sort s]
+  simpa only [univ_eq_attach, hprod, herase] using h
 
-/-- The centered Gaussian moment recursion for linear observables. Each covariance contracts
-the distinguished observable with one remaining factor, leaving a centered moment of degree two
-less. -/
-theorem integral_sub_dual_mul_prod_sub_dual (μ : Measure E) [IsGaussian μ]
-    {ι : Type*} [DecidableEq ι] (s : Finset ι) (L₀ : StrongDual ℝ E)
-    (L : ι → StrongDual ℝ E) :
+/-- The centered Gaussian moment recursion for real or complex real-linear observables.
+Each bilinear second moment contracts two factors, leaving a centered moment of degree two less. -/
+theorem integral_sub_clm_mul_prod_sub_clm (μ : Measure E) [IsGaussian μ]
+    {ι 𝕜 : Type*} [RCLike 𝕜] [DecidableEq ι] (s : Finset ι) (L₀ : E →L[ℝ] 𝕜)
+    (L : ι → E →L[ℝ] 𝕜) :
     (∫ x, (L₀ x - μ[L₀]) * ∏ i ∈ s, (L i x - μ[L i]) ∂μ) =
-      ∑ i ∈ s, cov[L₀, L i; μ] * ∫ x, ∏ j ∈ s.erase i, (L j x - μ[L j]) ∂μ := by
+      ∑ i ∈ s, (∫ x, (L₀ x - μ[L₀]) * (L i x - μ[L i]) ∂μ) *
+        ∫ x, ∏ j ∈ s.erase i, (L j x - μ[L j]) ∂μ := by
   simpa only [sub_eq_add_neg] using
-    integral_sub_dual_mul_prod_dual μ s L₀ L fun i ↦ -μ[L i]
+    integral_sub_clm_mul_prod_clm μ s L₀ L fun i ↦ -μ[L i]
 
 end ProbabilityTheory.IsGaussian
 
