@@ -176,16 +176,17 @@ theorem eq_holomorphicCalculus_of_forall_continuous {a : A}
     Φ = holomorphicCalculus a := by
   apply holomorphicGerms.algHom_ext
   intro U haU f
-  obtain ⟨V, haV, hVU, E, Γ, hEU, hEV, hΓ, hn, hw, hint⟩ :=
-    (spectrum.isCompact a).exists_open_segments_cycle_windingNumber_eq_one.{u} U haU
-  have h1 : Tendsto (fun N ↦ Φ (toGerm haV (cauchyRiemannSum V (extend f) E hEV N))) atTop
-      (𝓝 (Φ (toGerm haU f))) := by
-    have hlim := ((hcont V haV).tendsto (restrict hVU f)).comp
-      (tendsto_cauchyRiemannSum hVU f E hEU hEV Γ hΓ hn hw
+  obtain ⟨V, E, Γ, hV, haV, hVU, hEU, hEV, hΓ, hn, hw, hint⟩ :=
+    (spectrum.isCompact a).exists_open_segments_cycle_windingNumber_eq_one.{u} U.isOpen haU
+  let V' : Opens ℂ := ⟨V, hV⟩
+  have h1 : Tendsto (fun N ↦ Φ (toGerm (U := V') haV (cauchyRiemannSum V' (extend f) E hEV N)))
+      atTop (𝓝 (Φ (toGerm haU f))) := by
+    have hlim := ((hcont V' haV).tendsto (restrict hVU f)).comp
+      (tendsto_cauchyRiemannSum (V := V') hVU f E hEU hEV Γ hΓ hn hw
         (integral_eq_sum_segments_complex hΓ hint))
     rw [Function.comp_apply, toGerm_restrict haV hVU f] at hlim
     exact hlim
-  have h2 := tendsto_algHom_toGerm_cauchyRiemannSum Φ hid haV hVU f E hEU hEV Γ hΓ hn
+  have h2 := tendsto_algHom_toGerm_cauchyRiemannSum (V := V') Φ hid haV hVU f E hEU hEV Γ hΓ hn
     (fun z hz ↦ hw z (haV hz)) hint
   simpa only [holomorphicCalculus_toGerm] using tendsto_nhds_unique h1 h2
 

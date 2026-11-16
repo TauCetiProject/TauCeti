@@ -57,6 +57,8 @@ an affine parametrization with a segment whose terminal endpoint is removed.
   ordered field.
 * `Set.image_comp_lineMap_uIcc_zero_one` — reparametrizing a function on `[a, b]` by `lineMap a b`
   from `[0, 1]` does not change its image, in a linear ordered field.
+* `AffineMap.lineMap_div_mem_segment` and `AffineMap.lineMap_div_mem_uIcc` — uniform partition
+  points `lineMap a b (k / (N + 1))` for `k ≤ N + 1` lie in `segment 𝕜 a b` and `uIcc a b`.
 * `TauCeti.mem_segment_zero_left_iff_sameRay_and_norm_le` —
   `m ∈ [0 -[ℝ] w] ↔ SameRay ℝ m w ∧ ‖m‖ ≤ ‖w‖`. Both conjuncts are needed.
 * `TauCeti.eq_of_mem_segment_zero_left_of_norm_eq` — the norm separates the points of `[0, w]`.
@@ -158,6 +160,24 @@ theorem image_comp_lineMap_uIcc_zero_one {α : Type*} (f : 𝕜 → α) (a b : �
 end UIcc
 
 end Set
+
+namespace AffineMap
+
+/-- Uniform partition points `lineMap a b (k / (N + 1))` for `k ≤ N + 1` lie in `segment 𝕜 a b`. -/
+theorem lineMap_div_mem_segment {𝕜 E : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
+    [AddCommGroup E] [Module 𝕜 E] {a b : E} {N k : ℕ} (hk : k ≤ N + 1) :
+    lineMap (k := 𝕜) a b ((k : 𝕜) / (N + 1 : 𝕜)) ∈ segment 𝕜 a b := by
+  have hN1 : (0 : 𝕜) < N + 1 := Nat.cast_add_one_pos N
+  exact lineMap_mem_segment 𝕜 a b
+    ⟨div_nonneg k.cast_nonneg hN1.le, (div_le_one hN1).mpr (by exact_mod_cast hk)⟩
+
+/-- Uniform partition points `lineMap a b (k / (N + 1))` for `k ≤ N + 1` lie in `uIcc a b`. -/
+theorem lineMap_div_mem_uIcc {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
+    {a b : 𝕜} {N k : ℕ} (hk : k ≤ N + 1) :
+    lineMap a b ((k : 𝕜) / (N + 1 : 𝕜)) ∈ Set.uIcc a b := by
+  simpa only [segment_eq_uIcc] using lineMap_div_mem_segment (𝕜 := 𝕜) (a := a) (b := b) hk
+
+end AffineMap
 
 namespace TauCeti
 

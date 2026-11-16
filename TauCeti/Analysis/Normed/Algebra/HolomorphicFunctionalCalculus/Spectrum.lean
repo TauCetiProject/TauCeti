@@ -12,6 +12,7 @@ public import Mathlib.Analysis.Normed.Algebra.GelfandFormula
 public import Mathlib.Analysis.Normed.Group.InfiniteSum
 public import TauCeti.Analysis.Normed.Algebra.HolomorphicFunctionalCalculus.Basic
 public import TauCeti.Analysis.Normed.Algebra.Unitization.Basic
+import TauCeti.Analysis.Normed.Algebra.GelfandRadius
 
 /-!
 # Spectral mapping, series, and naturality for the holomorphic functional calculus
@@ -277,37 +278,6 @@ theorem holomorphicCalculusOn_div_polynomial (a : A) (U : Opens ℂ) (ha : spect
   rw [← holomorphicCalculus_toGerm, toGerm_of]
   exact (holomorphicCalculus_div_polynomial a p q fun z hz ↦ hq z (ha hz)).2
 
-private theorem summable_norm_coeff_smul_pow (a : A) {p : FormalMultilinearSeries ℂ ℂ ℂ}
-    {z₀ : ℂ} {r : ℝ≥0∞} (hr : r ≤ p.radius) (ha : spectrum ℂ a ⊆ Metric.eball z₀ r) :
-    Summable fun k : ℕ ↦ ‖p.coeff k • (a - algebraMap ℂ A z₀) ^ k‖ := by
-  rcases subsingleton_or_nontrivial A with hsub | hnt
-  · convert summable_zero with k
-    rw [Subsingleton.elim (p.coeff k • (a - algebraMap ℂ A z₀) ^ k) 0, norm_zero]
-  set b := a - algebraMap ℂ A z₀
-  obtain ⟨w, hw, hsr⟩ := spectrum.exists_nnNorm_eq_spectralRadius b
-  have hw_mem : z₀ + w ∈ spectrum ℂ a := by
-    rw [spectrum.mem_iff] at hw ⊢
-    convert hw using 2
-    dsimp only [b]
-    rw [map_add]
-    abel
-  have hlt : spectralRadius ℂ b < r := by
-    have hed : edist (z₀ + w) z₀ < r := Metric.mem_eball.mp (ha hw_mem)
-    simpa only [← hsr, eDist_eq_eNorm_sub, add_sub_cancel_left, eNorm_eq_nnNorm] using hed
-  obtain ⟨ρ, hsr_lt, hρ_lt⟩ := ENNReal.lt_iff_exists_nnreal_btwn.mp hlt
-  have hev := (spectrum.pow_nnNorm_pow_one_div_tendsto_nhds_spectralRadius b).eventually
-    (gt_mem_nhds hsr_lt)
-  refine Summable.of_norm_bounded_eventually_nat (g := fun k ↦ ‖p k‖ * (ρ : ℝ) ^ k)
-    (p.summable_norm_mul_pow (hρ_lt.trans_le hr)) ?_
-  filter_upwards [hev, eventually_ge_atTop 1] with k hk hk1
-  have hkpos : (0 : ℝ) < k := Nat.cast_pos.mpr hk1
-  have hpow := ENNReal.rpow_lt_rpow hk hkpos
-  rw [← ENNReal.rpow_mul, one_div_mul_cancel hkpos.ne', ENNReal.rpow_one,
-    ENNReal.rpow_natCast, ← ENNReal.coe_pow, ENNReal.coe_lt_coe] at hpow
-  have hle : ‖b ^ k‖ ≤ (ρ : ℝ) ^ k := le_of_lt (by exact_mod_cast hpow)
-  rw [Real.norm_of_nonneg (norm_nonneg _), norm_smul, ← p.norm_apply_eq_norm_coef]
-  exact mul_le_mul_of_nonneg_left hle (norm_nonneg _)
-
 private theorem tendsto_holomorphicCalculusOn_partialSum (a : A) {f : ℂ → ℂ}
     {p : FormalMultilinearSeries ℂ ℂ ℂ} {z₀ : ℂ} {r : ℝ≥0∞}
     (hf : HasFPowerSeriesOnBall f p z₀ r) (ha : spectrum ℂ a ⊆ Metric.eball z₀ r) :
@@ -345,7 +315,9 @@ theorem hasSum_holomorphicCalculusOn_of_hasFPowerSeriesOnBall (a : A) {f : ℂ �
     HasSum (fun k : ℕ ↦ p.coeff k • (a - algebraMap ℂ A z₀) ^ k)
       (holomorphicCalculusOn a ⟨Metric.eball z₀ r, Metric.isOpen_eball⟩ ha
         (of ⟨Metric.eball z₀ r, Metric.isOpen_eball⟩ f hf.differentiableOn)) :=
-  (hasSum_iff_tendsto_nat_of_summable_norm (summable_norm_coeff_smul_pow a hf.r_le ha)).mpr
+  (hasSum_iff_tendsto_nat_of_summable_norm
+    (p.summable_norm_coeff_smul_pow_of_spectrum_subset_eball
+      (ha.trans (Metric.eball_subset_eball hf.r_le)))).mpr
     (tendsto_holomorphicCalculusOn_partialSum a hf ha)
 
 /-- **Power series expansion in the holomorphic germ calculus.** If `f` has power series `p` on

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
+import TauCeti.Analysis.Convex.Segment
 
 /-!
 # Additional lemmas for interval integrals
@@ -27,6 +28,10 @@ not belong to any particular application.
 * `TauCeti.intervalIntegral.norm_sub_sub_integral_le`: the defect `a₂ - a₁ - ∫ g` from an integral
   equation changes by at most the changes of the endpoint values plus `δ |t₂ - t₁|` when the
   integrand changes by at most `δ`.
+* `TauCeti.intervalIntegral.norm_sub_smul_sub_integral_le`: bounding
+  `‖(v - u) • c - ∫ t in u..v, g t‖` by `C * |v - u|` when `‖c - g t‖ ≤ C` on `uIoc u v`.
+* `TauCeti.intervalIntegral.sum_integral_lineMap_div`: splitting an interval integral over `a..b`
+  as the sum of integrals over the `N + 1` uniform affine subintervals.
 * `TauCeti.tendsto_intervalIntegral_atTop_atBot`: the accumulated integral of a locally
   integrable function bounded below almost everywhere by a positive constant tends to `+∞` at
   `+∞` and to `-∞` at `-∞`.
@@ -164,19 +169,9 @@ theorem norm_sub_sub_integral_le {E : Type*} [NormedAddCommGroup E] [NormedSpace
     norm_sub_le ((b₂ - b₁ - ∫ t in t₁..t₂, g' t) + (a₂ - b₂)) (a₁ - b₁),
     norm_add_le (b₂ - b₁ - ∫ t in t₁..t₂, g' t) (a₂ - b₂)]
 
-private theorem lineMap_div_mem_uIcc {a b : ℝ} {N k : ℕ} (hk : k ≤ N + 1) :
-    AffineMap.lineMap a b ((k : ℝ) / (N + 1 : ℝ)) ∈ uIcc a b := by
-  have hN1 : (0 : ℝ) < N + 1 := Nat.cast_add_one_pos N
-  have hk0 : (0 : ℝ) ≤ (k : ℝ) / (N + 1 : ℝ) := div_nonneg k.cast_nonneg hN1.le
-  have hk1 : (k : ℝ) / (N + 1 : ℝ) ≤ 1 := (div_le_one hN1).mpr (by exact_mod_cast hk)
-  simp only [AffineMap.lineMap_apply_module, smul_eq_mul]
-  rcases le_total a b with h | h
-  · rw [uIcc_of_le h]
-    exact ⟨by nlinarith, by nlinarith⟩
-  · rw [uIcc_of_ge h]
-    exact ⟨by nlinarith, by nlinarith⟩
-
-private theorem norm_sub_smul_sub_integral_le {E : Type*} [NormedAddCommGroup E]
+/-- Approximating an interval integral by a constant value `c` incurs error at most `C * |v - u|`
+whenever `‖c - g t‖ ≤ C` on `uIoc u v`. -/
+theorem norm_sub_smul_sub_integral_le {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] [CompleteSpace E] {g : ℝ → E} {c : E} {u v C : ℝ}
     (hg : IntervalIntegrable g volume u v) (hC : ∀ t ∈ uIoc u v, ‖c - g t‖ ≤ C) :
     ‖(v - u) • c - ∫ t in u..v, g t‖ ≤ C * |v - u| := by
@@ -184,26 +179,29 @@ private theorem norm_sub_smul_sub_integral_le {E : Type*} [NormedAddCommGroup E]
     ← _root_.intervalIntegral.integral_sub intervalIntegrable_const hg]
   exact _root_.intervalIntegral.norm_integral_le_of_norm_le_const hC
 
-private theorem sum_integral_lineMap_div {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    {g : ℝ → E} {a b : ℝ} (hg : ContinuousOn g (uIcc a b)) (N : ℕ) :
-    ∫ t in a..b, g t = ∑ k ∈ Finset.range (N + 1),
+/-- An interval integral over `a..b` splits as the sum of the integrals over the `N + 1` uniform
+subintervals determined by `AffineMap.lineMap a b (k / (N + 1))`. -/
+theorem sum_integral_lineMap_div {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {μ : Measure ℝ} {g : ℝ → E} {a b : ℝ} (hg : IntervalIntegrable g μ a b) (N : ℕ) :
+    ∑ k ∈ Finset.range (N + 1),
       ∫ t in AffineMap.lineMap a b ((k : ℝ) / (N + 1 : ℝ))..
-        AffineMap.lineMap a b (((k + 1 : ℕ) : ℝ) / (N + 1 : ℝ)), g t := by
-  have hint : ∀ k < N + 1, IntervalIntegrable g volume
+        AffineMap.lineMap a b (((k + 1 : ℕ) : ℝ) / (N + 1 : ℝ)), g t ∂μ =
+      ∫ t in a..b, g t ∂μ := by
+  have hint : ∀ k < N + 1, IntervalIntegrable g μ
       (AffineMap.lineMap a b ((k : ℝ) / (N + 1 : ℝ)))
       (AffineMap.lineMap a b (((k + 1 : ℕ) : ℝ) / (N + 1 : ℝ))) := fun k hk ↦
-    (hg.mono (uIcc_subset_uIcc (lineMap_div_mem_uIcc hk.le)
-      (lineMap_div_mem_uIcc hk))).intervalIntegrable
+    hg.mono_set (uIcc_subset_uIcc (AffineMap.lineMap_div_mem_uIcc hk.le)
+      (AffineMap.lineMap_div_mem_uIcc hk))
   have htop : AffineMap.lineMap a b (((N + 1 : ℕ) : ℝ) / (N + 1 : ℝ)) = b := by
     simp [div_self (Nat.cast_add_one_pos (α := ℝ) N).ne']
   simpa only [Nat.cast_zero, zero_div, AffineMap.lineMap_apply_zero, htop] using
-    (_root_.intervalIntegral.sum_integral_adjacent_intervals hint).symm
+    _root_.intervalIntegral.sum_integral_adjacent_intervals hint
 
 /-- **Parametric uniform convergence of uniform left-endpoint Riemann sums.** If `f : ℝ → α → E`
 is jointly continuous on `uIcc a b ×ˢ K` with `K` compact in `α` and `E` a Banach space, then the
 uniform `(N + 1)`-subinterval left-endpoint Riemann sums converge to `x ↦ ∫ t in a..b, f t x`
 uniformly on `K` as `N → ∞`, with no order assumption on `a` and `b`. -/
-theorem tendstoUniformlyOn_riemannSum {α E : Type*} [PseudoMetricSpace α] [NormedAddCommGroup E]
+theorem tendstoUniformlyOn_riemannSum {α E : Type*} [TopologicalSpace α] [NormedAddCommGroup E]
     [NormedSpace ℝ E] [CompleteSpace E] {f : ℝ → α → E} {a b : ℝ} {K : Set α} (hK : IsCompact K)
     (hf : ContinuousOn (Function.uncurry f) (uIcc a b ×ˢ K)) :
     TendstoUniformlyOn
@@ -215,50 +213,58 @@ theorem tendstoUniformlyOn_riemannSum {α E : Type*} [PseudoMetricSpace α] [Nor
   rcases eq_or_ne a b with rfl | hab
   · exact Filter.Eventually.of_forall fun _ _ _ ↦ by simp [hε]
   have hba : 0 < |b - a| := abs_pos.mpr (sub_ne_zero.mpr hab.symm)
-  obtain ⟨δ, hδ, hunif⟩ := Metric.uniformContinuousOn_iff.mp
-    ((isCompact_uIcc.prod hK).uniformContinuousOn_of_continuous hf)
-    (ε / (2 * |b - a|)) (by positivity)
+  have : CompactSpace (uIcc a b) := isCompact_iff_compactSpace.mp isCompact_uIcc
+  have : CompactSpace K := isCompact_iff_compactSpace.mp hK
+  have hf' : Continuous fun p : uIcc a b × K ↦ f p.1 p.2 :=
+    hf.comp_continuous ((continuous_subtype_val.comp continuous_fst).prodMk
+      (continuous_subtype_val.comp continuous_snd)) fun p ↦ ⟨p.1.2, p.2.2⟩
+  obtain ⟨U, V, hU, -, hΔU, hKV, hUW⟩ := generalized_tube_lemma isCompact_diagonal isCompact_univ
+    (isOpen_lt ((hf'.comp (continuous_fst.fst.prodMk continuous_snd)).dist
+      (hf'.comp (continuous_fst.snd.prodMk continuous_snd)))
+      (continuous_const : Continuous fun _ ↦ ε / (2 * |b - a|)))
+    (by
+      rintro ⟨⟨_, _⟩, _⟩ ⟨h, -⟩
+      simp only [Set.mem_diagonal_iff] at h
+      simpa [h] using show (0 : ℝ) < ε / (2 * |b - a|) by positivity)
+  obtain ⟨δ, hδ, hδU⟩ := Metric.mem_uniformity_dist.mp
+    (nhdsSet_diagonal_eq_uniformity (α := uIcc a b) ▸ hU.mem_nhdsSet.mpr hΔU)
   obtain ⟨N₀, hN₀⟩ := exists_nat_gt (|b - a| / δ)
   refine Filter.eventually_atTop.mpr ⟨N₀, fun N hN x hx ↦ ?_⟩
   have hN1 : (0 : ℝ) < N + 1 := Nat.cast_add_one_pos N
-  have hstep_lt : |b - a| / (N + 1 : ℝ) < δ := by
-    rw [div_lt_iff₀ hN1]
+  have hstep_lt : |b - a| / (N + 1 : ℝ) < δ := (div_lt_iff₀ hN1).mpr <| by
     have hlt : (N₀ : ℝ) < N + 1 := by exact_mod_cast Nat.lt_succ_of_le hN
     nlinarith [(div_lt_iff₀ hδ).mp hN₀, hlt]
   have hfx : ContinuousOn (fun t ↦ f t x) (uIcc a b) :=
     hf.comp (continuous_id.prodMk continuous_const).continuousOn fun t ht ↦ ⟨ht, hx⟩
   let τ : ℕ → ℝ := fun k ↦ AffineMap.lineMap a b ((k : ℝ) / (N + 1 : ℝ))
-  have hτ_diff : ∀ k : ℕ, τ (k + 1) - τ k = (b - a) / (N + 1 : ℝ) := fun k ↦ by
+  have hτ_diff (k : ℕ) : τ (k + 1) - τ k = (b - a) / (N + 1 : ℝ) := by
     simp only [τ, AffineMap.lineMap_apply_module, Nat.cast_add, Nat.cast_one, smul_eq_mul]; ring
-  rw [dist_comm, dist_eq_norm, sum_integral_lineMap_div hfx N, Finset.smul_sum,
-    ← Finset.sum_sub_distrib]
+  rw [dist_comm, dist_eq_norm, ← sum_integral_lineMap_div hfx.intervalIntegrable N,
+    Finset.smul_sum, ← Finset.sum_sub_distrib]
   have hterm : ∀ k ∈ Finset.range (N + 1),
       ‖((b - a) / (N + 1 : ℝ)) • f (τ k) x - ∫ t in τ k..τ (k + 1), f t x‖ ≤
         (ε / (2 * |b - a|)) * (|b - a| / (N + 1 : ℝ)) := fun k hk ↦ by
     have hk' : k < N + 1 := Finset.mem_range.mp hk
-    have hint_k : IntervalIntegrable (fun t ↦ f t x) volume (τ k) (τ (k + 1)) :=
-      (hfx.mono (uIcc_subset_uIcc (lineMap_div_mem_uIcc hk'.le)
-        (lineMap_div_mem_uIcc hk'))).intervalIntegrable
+    have hsub : uIcc (τ k) (τ (k + 1)) ⊆ uIcc a b :=
+      uIcc_subset_uIcc (AffineMap.lineMap_div_mem_uIcc hk'.le) (AffineMap.lineMap_div_mem_uIcc hk')
     rw [← hτ_diff k]
-    refine (norm_sub_smul_sub_integral_le hint_k fun t ht ↦ ?_).trans_eq
-      (by rw [hτ_diff, abs_div, abs_of_pos hN1])
-    have ht_mem : t ∈ uIcc a b := uIcc_subset_uIcc (lineMap_div_mem_uIcc hk'.le)
-      (lineMap_div_mem_uIcc hk') (uIoc_subset_uIcc ht)
-    have hpdist : dist (τ k, x) (t, x) < δ := by
-      rw [Prod.dist_eq, dist_self, max_eq_left dist_nonneg]
+    refine (norm_sub_smul_sub_integral_le (hfx.intervalIntegrable.mono_set hsub)
+      fun t ht ↦ ?_).trans_eq (by rw [hτ_diff, abs_div, abs_of_pos hN1])
+    have htdist : dist (⟨τ k, AffineMap.lineMap_div_mem_uIcc hk'.le⟩ : uIcc a b)
+        ⟨t, hsub (uIoc_subset_uIcc ht)⟩ < δ := by
       refine ((Real.dist_le_of_mem_uIcc left_mem_uIcc (uIoc_subset_uIcc ht)).trans_eq ?_).trans_lt
         hstep_lt
       rw [Real.dist_eq, abs_sub_comm, hτ_diff, abs_div, abs_of_pos hN1]
-    exact (dist_eq_norm (f (τ k) x) (f t x) ▸
-      hunif (τ k, x) ⟨lineMap_div_mem_uIcc hk'.le, hx⟩ (t, x) ⟨ht_mem, hx⟩ hpdist).le
+    have hmem : ((⟨τ k, AffineMap.lineMap_div_mem_uIcc hk'.le⟩,
+        ⟨t, hsub (uIoc_subset_uIcc ht)⟩), (⟨x, hx⟩ : K)) ∈ U ×ˢ V := ⟨hδU htdist, hKV (mem_univ _)⟩
+    rw [← dist_eq_norm]; exact (hUW hmem).le
   refine ((norm_sum_le _ _).trans (Finset.sum_le_sum hterm)).trans_lt ?_
   rw [Finset.sum_const, Finset.card_range, nsmul_eq_mul, Nat.cast_add_one]
-  have heq : (N + 1 : ℝ) * (ε / (2 * |b - a|) * (|b - a| / (N + 1 : ℝ))) = ε / 2 := by
-    field_simp [hba.ne', hN1.ne']
-  exact heq.trans_lt (half_lt_self hε)
+  exact (show (N + 1 : ℝ) * (ε / (2 * |b - a|) * (|b - a| / (N + 1 : ℝ))) = ε / 2 by
+    field_simp [hba.ne', hN1.ne']).trans_lt (half_lt_self hε)
 
 /-- Parametric uniform left-endpoint Riemann sums on `[0, 1]` converge uniformly on compact `K`. -/
-theorem tendstoUniformlyOn_riemannSum_zero_one {α E : Type*} [PseudoMetricSpace α]
+theorem tendstoUniformlyOn_riemannSum_zero_one {α E : Type*} [TopologicalSpace α]
     [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E] {f : ℝ → α → E} {K : Set α}
     (hK : IsCompact K) (hf : ContinuousOn (Function.uncurry f) (Icc 0 1 ×ˢ K)) :
     TendstoUniformlyOn

@@ -43,10 +43,11 @@ union. For small `δ` the union lies in `G`.
   cycle carried on a finite segment family in `gridCover δ K \ K`, null-homologous in
   `gridCover δ K`, winding once around every point of `K`, and integrating continuous functions as
   the sum of their segment integrals.
-* `IsCompact.exists_segments_cycle_windingNumber_eq_one` and
+* `IsCompact.exists_segments_cycle_windingNumber_eq_one`,
+  `IsCompact.exists_open_segments_cycle_windingNumber_eq_one`, and
   `IsCompact.exists_cycle_windingNumber_eq_one`: for a compact subset `K` of an open set `G`,
-  there is such a polygonal segment cycle in `G \ K`, null-homologous in `G`, winding once around
-  every point of `K`.
+  there is such a polygonal segment cycle in `G \ K` (and even disjoint from an open neighbourhood
+  `V` of `K` in `G`), null-homologous in `G`, winding once around every point of `K` (or `V`).
 * `IsCompact.exists_nested_cycles_windingNumber_eq_one`: disjoint nested cycles in `G \ K`,
   each null-homologous in `G` and winding once around every point of `K`.
 
@@ -496,6 +497,42 @@ theorem IsCompact.exists_segments_cycle_windingNumber_eq_one.{u} {K G : Set ℂ}
   obtain ⟨E, Γ, hsub, hin, hnull, hK1, hint⟩ :=
     exists_segments_cycle_trace_subset_gridCover.{u} hδ hK.isBounded
   exact ⟨E, Γ, hsub.trans (sdiff_subset_sdiff_left hcover), hin, hnull.mono hcover, hK1, hint⟩
+
+open TauCeti.Contour in
+/-- **An open neighbourhood and polygonal segment cycle around a compact set.** If `K` is a compact
+subset of an open set `G ⊆ ℂ`, there are an open neighbourhood `V` of `K` with `V ⊆ G`, a finite
+family `E` of segments in `G` disjoint from `V`, and a contour cycle `Γ` carried on those segments
+that is null-homologous in `G`, winds once around every point of `V`, and integrates every
+continuous Banach-space-valued function as the sum of its segment integrals over `E`. -/
+theorem IsCompact.exists_open_segments_cycle_windingNumber_eq_one.{u} {K G : Set ℂ}
+    (hK : IsCompact K) (hG : IsOpen G) (hKG : K ⊆ G) :
+    ∃ (V : Set ℂ) (E : Finset (ℂ × ℂ)) (Γ : Cycle),
+      IsOpen V ∧ K ⊆ V ∧ V ⊆ G ∧
+      (⋃ e ∈ E, segment ℝ e.1 e.2) ⊆ G ∧
+      Disjoint (⋃ e ∈ E, segment ℝ e.1 e.2) V ∧
+      Γ.IsIn (⋃ e ∈ E, segment ℝ e.1 e.2) ∧
+      Γ.IsNullHomologous G ∧
+      (∀ z ∈ V, Cycle.windingNumber z Γ = 1) ∧
+      ∀ {F : Type u} [NormedAddCommGroup F] [NormedSpace ℂ F] {f : ℂ → F},
+        ContinuousOn f (⋃ e ∈ E, segment ℝ e.1 e.2) → Cycle.integral f Γ =
+          ∑ e ∈ E, (e.2 - e.1) • ∫ t in (0 : ℝ)..1, f (AffineMap.lineMap e.1 e.2 t) := by
+  obtain ⟨E, Γ, hsub, hΓ, hn, hw, hint⟩ :=
+    hK.exists_segments_cycle_windingNumber_eq_one.{u} hG hKG
+  let S : Set ℂ := ⋃ e ∈ E, segment ℝ e.1 e.2
+  have hS_closed : IsClosed S := isClosed_biUnion_finset fun e _ ↦ by
+    rw [segment_eq_image_lineMap]
+    exact (isCompact_Icc.image AffineMap.lineMap_continuous).isClosed
+  let W₁ : Set ℂ := Subtype.val '' {z : {z : ℂ // z ∉ Cycle.trace Γ} | Cycle.windingNumber z Γ = 1}
+  have hW₁_open : IsOpen W₁ :=
+    (Cycle.isCompact_trace Γ).isClosed.isOpen_compl.isOpenMap_subtype_val _
+      ((Cycle.isLocallyConstant_windingNumber Γ).isOpen_fiber 1)
+  refine ⟨G ∩ Sᶜ ∩ W₁, E, Γ, (hG.inter hS_closed.isOpen_compl).inter hW₁_open,
+    fun z hz ↦ ⟨⟨hKG hz, fun hzS ↦ (hsub hzS).2 hz⟩,
+      ⟨⟨z, fun hzΓ ↦ (hsub (Cycle.isIn_iff.mp hΓ hzΓ)).2 hz⟩, hw z hz, rfl⟩⟩,
+    fun _ hz ↦ hz.1.1, hsub.trans sdiff_subset,
+    Set.disjoint_left.mpr fun _ hzS hzV ↦ hzV.1.2 hzS, hΓ, hn, ?_, hint⟩
+  rintro _ ⟨-, w, hw1, rfl⟩
+  exact hw1
 
 open TauCeti.Contour in
 /-- **A cycle around a compact set.** If `K` is a compact subset of an open set `G ⊆ ℂ`, there is
