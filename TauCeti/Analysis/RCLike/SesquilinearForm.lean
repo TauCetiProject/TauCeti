@@ -9,9 +9,10 @@ public import Mathlib.Analysis.Convex.Function
 public import Mathlib.Analysis.InnerProductSpace.Defs
 public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
 public import TauCeti.Analysis.Calculus.Bilinear
+public import TauCeti.Analysis.RCLike.Basic
 
 /-!
-# Real quadratic forms and Cauchy--Schwarz inequalities for `RCLike` sesquilinear forms
+# Real quadratic forms, Cauchy--Schwarz inequalities, and coercive stability for sesquilinear forms
 
 Let `a` be a sesquilinear form on a module `V` over `𝕜` (`ℝ` or `ℂ`, written `[RCLike 𝕜]`),
 conjugate-linear in its first argument and `𝕜`-linear in its second. When `a` is Hermitian,
@@ -19,28 +20,34 @@ conjugate-linear in its first argument and `𝕜`-linear in its second. When `a`
 `q(u) = RCLike.re (a u u)` determines `a u u` without loss of information, and its off-diagonal
 real part `RCLike.re (a u v)` is symmetric in `u` and `v`.
 
-This file develops the algebraic and analytic properties of `q(u) = RCLike.re (a u u)` and of the
-real-part bilinear form `(u, v) ↦ RCLike.re (a u v)`:
+This file develops the algebraic, analytic, and coercive stability properties of
+`q(u) = RCLike.re (a u u)` and of the real-part bilinear pairing `(u, v) ↦ RCLike.re (a u v)`:
 
-* **Polarization and convex-combination identities.** Expanding `q(u + c • v)` separates the linear
-  variation `2 Re(c * a u v)` from the quadratic remainder `‖c‖² q(v)`. Along a convex combination
-  `t₁ • u + t₂ • v` (`t₁ + t₂ = 1`), the Jensen deficit of `q` is `t₁ t₂ q(u - v)`, so `q` is
-  convex as soon as `q ≥ 0`.
+* **Polarization and convex-combination identities.** For a Hermitian form, expanding `q(u + c • v)`
+  separates the linear variation `2 Re(c * a u v)` from the quadratic remainder `‖c‖² q(v)`. For an
+  arbitrary (possibly non-Hermitian) form, the Jensen deficit of `q` along an affine combination
+  `t₁ • u + t₂ • v` (`t₁ + t₂ = 1`) is `t₁ t₂ q(u - v)`, so `q` is convex as soon as `q ≥ 0`.
 * **Positive-semidefinite forms.** Packaging a Hermitian form with `q ≥ 0` as a
   `PreInnerProductSpace.Core` transfers Mathlib's real-discriminant and complex-phase-test proof of
   Cauchy--Schwarz to `‖a u v‖² ≤ q(u) q(v)`, without assuming definiteness or a norm on `V`. As a
   consequence, the null space `{u | ∀ v, a u v = 0}` coincides with the isotropic cone
   `{u | q(u) = 0}`; indefiniteness breaks this equality (for `diag(1, -1)` at `(1, 1)`).
-* **Real-part continuous bilinear form and Fréchet derivative.** On a normed space over `𝕜`
-  equipped with its compatible real scalar action, a continuous sesquilinear form `a` induces a
-  continuous real-bilinear form `a.reBilin : V →L[ℝ] V →L[ℝ] ℝ` of operator norm at most `‖a‖`.
-  Applying `ContinuousLinearMap.hasStrictFDerivAt_apply_self` to `a.reBilin` shows that `q` is
-  smooth over `ℝ`, with strict Fréchet derivative `v ↦ 2 Re(a u v)` when `a` is Hermitian.
+* **Real-part continuous bilinear form and Fréchet derivative.** On topological modules over `𝕜`
+  equipped with compatible real scalar actions, a continuous sesquilinear form `a` induces an
+  injectively associated continuous real-bilinear map `a.reBilin : E →L[ℝ] F →L[ℝ] ℝ`, which
+  preserves operator norms (`‖a.reBilin‖ = ‖a‖`) on seminormed spaces. On a normed space `V`, `q` is
+  `C^n` over `ℝ` for every `n` (via `ContinuousLinearMap.contDiff_apply_self`), with strict Fréchet
+  derivative `v ↦ 2 Re(a u v)` when `a` is Hermitian (via
+  `ContinuousLinearMap.hasStrictFDerivAt_apply_self`).
+* **Coercive weak-solution stability and uniqueness.** For an arbitrary (possibly non-Hermitian)
+  continuous sesquilinear form satisfying `c * ‖w‖² ≤ q(w)` (`c > 0`), weak solutions depend
+  `c⁻¹`-Lipschitz-continuously on the forcing functional in seminormed spaces, and are unique in
+  normed spaces.
 
 ## Main declarations
 
-* `RCLike.ext_of_re_eq_of_re_I_mul_eq`: two scalars in `𝕜` with equal real parts before and after
-  multiplying by `RCLike.I` are equal (uniformly over `ℝ` and `ℂ`).
+* `LinearMap.convexOn_re_apply_self`: convexity of `u ↦ RCLike.re (a u u)` when `q ≥ 0`, without
+  assuming symmetry of `a`.
 * `LinearMap.sesqFormCore`: a Hermitian sesquilinear form with `q ≥ 0` as a
   `PreInnerProductSpace.Core 𝕜 V`.
 * `LinearMap.norm_apply_sq_le_re_apply_self_mul`: the Cauchy--Schwarz inequality
@@ -48,9 +55,12 @@ real-part bilinear form `(u, v) ↦ RCLike.re (a u v)`:
 * `LinearMap.forall_apply_eq_zero_iff_re_apply_self_eq_zero` and
   `LinearMap.setOf_forall_apply_eq_zero_eq`: the kernel identity
   `{u | ∀ v, a u v = 0} = {u | q(u) = 0}` for nonnegative Hermitian forms.
-* `LinearMap.convexOn_re_apply_self`: convexity of `u ↦ RCLike.re (a u u)` when `q ≥ 0`.
-* `ContinuousLinearMap.reBilin`: the real part `(x, y) ↦ RCLike.re (a x y)` of a continuous
-  sesquilinear form as a continuous real-bilinear map.
+* `ContinuousLinearMap.reBilin` and `ContinuousLinearMap.norm_reBilin`: the real part
+  `(x, y) ↦ RCLike.re (a x y)` of a continuous sesquilinear form as an isometric continuous
+  real-bilinear map.
+* `ContinuousLinearMap.norm_sub_le_inv_mul_norm_sub_of_forall_apply_eq` and
+  `ContinuousLinearMap.eq_of_forall_apply_eq_of_coercive`: `c⁻¹`-Lipschitz forcing stability and
+  uniqueness of coercive weak solutions.
 * `ContinuousLinearMap.hasStrictFDerivAt_re_apply_self_of_eq_star`: the real strict Fréchet
   derivative of `u ↦ RCLike.re (a u u)` for a continuous Hermitian form.
 -/
@@ -59,33 +69,25 @@ public section
 
 noncomputable section
 
-namespace RCLike
-
-variable {𝕜 : Type*} [RCLike 𝕜]
-
-/-- Two scalars in an `RCLike` field are equal if they have the same real part and their products
-with `RCLike.I` also have the same real part. Over `ℝ` the second hypothesis is `0 = 0`; over `ℂ`
-it equates the imaginary parts via `re (I * z) = -im z`. -/
-theorem ext_of_re_eq_of_re_I_mul_eq {z w : 𝕜} (hre : re z = re w)
-    (him : re (I * z) = re (I * w)) : z = w := by
-  refine ext hre (neg_inj.mp ?_)
-  simpa only [I_mul_re] using him
-
-end RCLike
-
 namespace LinearMap
 
-section Algebraic
+section Symm
 
-variable {𝕜 V : Type*} [RCLike 𝕜] [AddCommGroup V] [Module 𝕜 V]
+variable {R V : Type*} [CommSemiring R] [StarRing R] [AddCommMonoid V] [Module R V]
 
-/-- A sesquilinear form `a : V →ₗ⋆[𝕜] V →ₗ[𝕜] 𝕜` is symmetric in Mathlib's `LinearMap.IsSymm`
+/-- A sesquilinear form `a : V →ₗ⋆[R] V →ₗ[R] R` is symmetric in Mathlib's `LinearMap.IsSymm`
 sense precisely when `a u v = star (a v u)` for all `u` and `v`. -/
-theorem isSymm_iff_eq_star {a : V →ₗ⋆[𝕜] V →ₗ[𝕜] 𝕜} :
+theorem isSymm_iff_eq_star {a : V →ₗ⋆[R] V →ₗ[R] R} :
     a.IsSymm ↔ ∀ u v, a u v = star (a v u) := by
   rw [isSymm_def]
   refine forall₂_congr fun u v ↦ ?_
   rw [starRingEnd_apply, star_eq_iff_star_eq, eq_comm]
+
+end Symm
+
+section Algebraic
+
+variable {𝕜 V : Type*} [RCLike 𝕜] [AddCommGroup V] [Module 𝕜 V]
 
 /-- A Hermitian sesquilinear form takes real values on the diagonal: `im (a u u) = 0`. -/
 theorem im_apply_self_of_eq_star {a : V →ₗ⋆[𝕜] V →ₗ[𝕜] 𝕜}
@@ -157,61 +159,61 @@ theorem re_apply_add_real_smul_self_of_eq_star {a : V →ₗ⋆[𝕜] V →ₗ[�
   ring
 
 /-- Along a two-point affine combination `t₁ • u + t₂ • v` with `t₁ + t₂ = 1`, the value of the
-quadratic form `q(w) = re (a w w)` of a Hermitian form satisfies
-`q(t₁ • u + t₂ • v) + t₁ * t₂ * q(u - v) = t₁ * q(u) + t₂ * q(v)`. The weights `t₁` and `t₂` may be
-negative. -/
-theorem re_apply_combo_self_add_mul_sub {a : V →ₗ⋆[𝕜] V →ₗ[𝕜] 𝕜}
-    (ha : ∀ u v, a u v = star (a v u)) {t₁ t₂ : ℝ} (ht : t₁ + t₂ = 1) (u v : V) :
+quadratic form `q(w) = re (a w w)` of any sesquilinear form satisfies
+`q(t₁ • u + t₂ • v) + t₁ * t₂ * q(u - v) = t₁ * q(u) + t₂ * q(v)`. No symmetry of `a` is required,
+and the weights `t₁` and `t₂` may be negative. -/
+theorem re_apply_combo_self_add_mul_sub (a : V →ₗ⋆[𝕜] V →ₗ[𝕜] 𝕜) {t₁ t₂ : ℝ}
+    (ht : t₁ + t₂ = 1) (u v : V) :
     RCLike.re (a (t₁ • u + t₂ • v) (t₁ • u + t₂ • v)) +
         t₁ * t₂ * RCLike.re (a (u - v) (u - v)) =
       t₁ * RCLike.re (a u u) + t₂ * RCLike.re (a v v) := by
   have ht₂ : t₂ = 1 - t₁ := eq_sub_of_add_eq' ht
   subst ht₂
   have hcombo : t₁ • u + (1 - t₁) • v = v + t₁ • (u - v) := by module
-  rw [hcombo, a.re_apply_add_real_smul_self_of_eq_star ha v (u - v) t₁, map_sub,
-    a.re_apply_sub_self_of_eq_star ha u v]
-  simp only [map_sub, re_apply_comm_of_eq_star ha v u]
+  rw [hcombo, ← algebraMap_smul 𝕜 t₁ (u - v), RCLike.algebraMap_eq_ofReal,
+    a.re_apply_add_self v ((t₁ : 𝕜) • (u - v))]
+  simp only [map_smul, map_smulₛₗ, LinearMap.smul_apply, map_sub, LinearMap.sub_apply,
+    smul_eq_mul, RCLike.conj_ofReal, RCLike.re_ofReal_mul]
   ring
 
-/-- If `a` is Hermitian and `re (a w w) ≥ 0` for every difference `w = u - v` of points in a convex
-set `C`, then `u ↦ re (a u u)` is convex on `C`. -/
+/-- If `re (a w w) ≥ 0` for every difference `w = u - v` of points in a convex set `C`, then
+`u ↦ re (a u u)` is convex on `C`. No symmetry of `a` is required. -/
 theorem convexOn_re_apply_self_of_sub_nonneg {a : V →ₗ⋆[𝕜] V →ₗ[𝕜] 𝕜}
-    (ha : ∀ u v, a u v = star (a v u)) {C : Set V} (hC : Convex ℝ C)
+    {C : Set V} (hC : Convex ℝ C)
     (hpos : ∀ u ∈ C, ∀ v ∈ C, 0 ≤ RCLike.re (a (u - v) (u - v))) :
     ConvexOn ℝ C (fun u ↦ RCLike.re (a u u)) := by
   refine ⟨hC, fun u hu v hv t₁ t₂ ht₁ ht₂ ht ↦ ?_⟩
   simp only [smul_eq_mul]
   have hdiff : 0 ≤ t₁ * t₂ * RCLike.re (a (u - v) (u - v)) :=
     mul_nonneg (mul_nonneg ht₁ ht₂) (hpos u hu v hv)
-  linarith [a.re_apply_combo_self_add_mul_sub ha ht u v]
+  linarith [a.re_apply_combo_self_add_mul_sub ht u v]
 
-/-- If `a` is Hermitian and nonnegative on the diagonal (`∀ u, 0 ≤ re (a u u)`), then its quadratic
-form `u ↦ re (a u u)` is convex on the whole space. -/
+/-- If `a` is nonnegative on the diagonal (`∀ u, 0 ≤ re (a u u)`), then its quadratic form
+`u ↦ re (a u u)` is convex on the whole space. No symmetry of `a` is required. -/
 theorem convexOn_re_apply_self {a : V →ₗ⋆[𝕜] V →ₗ[𝕜] 𝕜}
-    (ha : ∀ u v, a u v = star (a v u)) (hpos : ∀ u, 0 ≤ RCLike.re (a u u)) :
+    (hpos : ∀ u, 0 ≤ RCLike.re (a u u)) :
     ConvexOn ℝ Set.univ (fun u ↦ RCLike.re (a u u)) :=
-  a.convexOn_re_apply_self_of_sub_nonneg ha convex_univ fun u _ v _ ↦ hpos (u - v)
+  a.convexOn_re_apply_self_of_sub_nonneg convex_univ fun u _ v _ ↦ hpos (u - v)
 
 end RealScalar
 
 /-! ### Positive-semidefinite sesquilinear forms, Cauchy--Schwarz, and the kernel identity -/
 
-/-- A Hermitian sesquilinear form with nonnegative real diagonal packaged as a
+/-- A Hermitian sesquilinear form (`a.IsSymm`) with nonnegative real diagonal packaged as a
 `PreInnerProductSpace.Core 𝕜 V`. Used internally and by callers needing the pre-inner-product
 seminorm without installing a competing `Norm` instance on `V`. -/
 @[instance_reducible]
-def sesqFormCore (a : V →ₗ⋆[𝕜] V →ₗ[𝕜] 𝕜) (ha : ∀ u v, a u v = star (a v u))
+def sesqFormCore (a : V →ₗ⋆[𝕜] V →ₗ[𝕜] 𝕜) (ha : a.IsSymm)
     (hpos : ∀ u, 0 ≤ RCLike.re (a u u)) : PreInnerProductSpace.Core 𝕜 V where
   inner u v := a u v
-  conj_inner_symm u v := by
-    rw [starRingEnd_apply]
-    exact (ha u v).symm
+  conj_inner_symm u v := ha.eq v u
   re_inner_nonneg := hpos
   add_left u v w := by simp only [map_add, LinearMap.add_apply]
   smul_left u v r := by simp only [map_smulₛₗ, LinearMap.smul_apply, smul_eq_mul]
 
 /-- The inner product of `a.sesqFormCore ha hpos` is `a`. -/
-theorem sesqFormCore_inner (a : V →ₗ⋆[𝕜] V →ₗ[𝕜] 𝕜) (ha : ∀ u v, a u v = star (a v u))
+@[simp]
+theorem sesqFormCore_inner (a : V →ₗ⋆[𝕜] V →ₗ[𝕜] 𝕜) (ha : a.IsSymm)
     (hpos : ∀ u, 0 ≤ RCLike.re (a u u)) (u v : V) :
     (a.sesqFormCore ha hpos).inner u v = a u v :=
   (rfl)
@@ -222,9 +224,8 @@ theorem norm_apply_sq_le_re_apply_self_mul {a : V →ₗ⋆[𝕜] V →ₗ[𝕜]
     (ha : ∀ u v, a u v = star (a v u)) (hpos : ∀ u, 0 ≤ RCLike.re (a u u)) (u v : V) :
     ‖a u v‖ ^ 2 ≤ RCLike.re (a u u) * RCLike.re (a v v) := by
   have h := @InnerProductSpace.Core.inner_mul_inner_self_le 𝕜 V _ _ _
-    (a.sesqFormCore ha hpos) u v
-  -- Unfold the `Inner` projection of `a.sesqFormCore ha hpos` to `a`.
-  change ‖a u v‖ * ‖a v u‖ ≤ RCLike.re (a u u) * RCLike.re (a v v) at h
+    (a.sesqFormCore (a.isSymm_iff_eq_star.mpr ha) hpos) u v
+  simp only [sesqFormCore_inner] at h
   rwa [ha v u, norm_star, ← sq] at h
 
 /-- Square-root form of the **Cauchy--Schwarz inequality** for a nonnegative Hermitian sesquilinear
@@ -255,7 +256,7 @@ theorem setOf_forall_apply_eq_zero_eq {a : V →ₗ⋆[𝕜] V →ₗ[𝕜] 𝕜
 
 /-- For a nonnegative Hermitian sesquilinear form, `a.ker = ⊥` if and only if `re (a u u) = 0`
 implies `u = 0`. -/
-theorem ker_eq_bot_iff_forall_re_apply_self_eq_zero {a : V →ₗ⋆[𝕜] V →ₗ[𝕜] 𝕜}
+theorem ker_eq_bot_iff_eq_zero_of_re_apply_self_eq_zero {a : V →ₗ⋆[𝕜] V →ₗ[𝕜] 𝕜}
     (ha : ∀ u v, a u v = star (a v u)) (hpos : ∀ u, 0 ≤ RCLike.re (a u u)) :
     a.ker = ⊥ ↔ ∀ u, RCLike.re (a u u) = 0 → u = 0 := by
   rw [Submodule.eq_bot_iff]
@@ -269,11 +270,12 @@ end LinearMap
 
 namespace ContinuousLinearMap
 
-section RealBilin
+section TopologicalRealBilin
 
 variable {𝕜 E F : Type*} [RCLike 𝕜]
-  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedSpace ℝ E] [IsScalarTower ℝ 𝕜 E]
-  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedSpace ℝ F] [IsScalarTower ℝ 𝕜 F]
+  [AddCommGroup E] [Module 𝕜 E] [Module ℝ E] [IsScalarTower ℝ 𝕜 E] [TopologicalSpace E]
+  [AddCommGroup F] [Module 𝕜 F] [Module ℝ F] [IsScalarTower ℝ 𝕜 F] [TopologicalSpace F]
+  [ContinuousSMul 𝕜 F]
 
 /-- The real part `(x, y) ↦ RCLike.re (a x y)` of a continuous `𝕜`-sesquilinear form
 `a : E →L⋆[𝕜] F →L[𝕜] 𝕜`, packaged as a continuous real-bilinear map `E →L[ℝ] F →L[ℝ] ℝ`. -/
@@ -287,17 +289,16 @@ def reBilin (a : E →L⋆[𝕜] F →L[𝕜] 𝕜) : E →L[ℝ] F →L[ℝ] �
     rw [← algebraMap_smul 𝕜 r x, a.map_smulₛₗ]
     simp [RCLike.algebraMap_eq_ofReal]
   cont :=
-    ((compL ℝ F 𝕜 ℝ RCLike.reCLM).continuous.comp
-      (restrictScalarsIsometry 𝕜 F 𝕜 ℝ ℝ).continuous).comp a.continuous
+    ((RCLike.reCLM.postcomp F).continuous.comp (continuous_restrictScalars ℝ)).comp a.continuous
 
 /-- Evaluating `a.reBilin` on `x` gives the real-linear functional `y ↦ RCLike.re (a x y)`. -/
-theorem reBilin_apply_clm (a : E →L⋆[𝕜] F →L[𝕜] 𝕜) (x : E) :
+theorem reBilin_apply (a : E →L⋆[𝕜] F →L[𝕜] 𝕜) (x : E) :
     a.reBilin x = RCLike.reCLM.comp ((a x).restrictScalars ℝ) :=
   (rfl)
 
 /-- Evaluating `a.reBilin` on `(x, y)` gives `RCLike.re (a x y)`. -/
 @[simp]
-theorem reBilin_apply (a : E →L⋆[𝕜] F →L[𝕜] 𝕜) (x : E) (y : F) :
+theorem reBilin_apply_apply (a : E →L⋆[𝕜] F →L[𝕜] 𝕜) (x : E) (y : F) :
     a.reBilin x y = RCLike.re (a x y) :=
   (rfl)
 
@@ -327,25 +328,49 @@ theorem reBilin_sub (a b : E →L⋆[𝕜] F →L[𝕜] 𝕜) :
   ext x y
   simp
 
-/-- The operator norm of `a.reBilin` is at most the operator norm of `a`. -/
-theorem norm_reBilin_le (a : E →L⋆[𝕜] F →L[𝕜] 𝕜) : ‖a.reBilin‖ ≤ ‖a‖ := by
-  refine opNorm_le_bound _ (norm_nonneg a) fun x ↦ ?_
-  refine opNorm_le_bound _ (mul_nonneg (norm_nonneg a) (norm_nonneg x)) fun y ↦ ?_
-  rw [Real.norm_eq_abs, reBilin_apply]
-  exact (RCLike.abs_re_le_norm (a x y)).trans (a.le_opNorm₂ x y)
+/-- `reBilin` commutes with real scalar multiplication. -/
+@[simp]
+theorem reBilin_smul (r : ℝ) (a : E →L⋆[𝕜] F →L[𝕜] 𝕜) :
+    (r • a).reBilin = r • a.reBilin := by
+  ext x y
+  simp [Algebra.smul_def, RCLike.algebraMap_eq_ofReal]
 
-end RealBilin
+/-- Over `ℝ`, `reBilin` is the identity on continuous real-bilinear forms. -/
+@[simp]
+theorem reBilin_real {E' F' : Type*}
+    [AddCommGroup E'] [Module ℝ E'] [TopologicalSpace E']
+    [AddCommGroup F'] [Module ℝ F'] [TopologicalSpace F'] [ContinuousSMul ℝ F']
+    (B : E' →L[ℝ] F' →L[ℝ] ℝ) : B.reBilin = B := by
+  ext x y
+  simp
 
-section SeminormedSelf
+/-- A continuous `𝕜`-sesquilinear form is uniquely determined by its real-part bilinear form
+`a.reBilin`. -/
+@[grind inj]
+theorem reBilin_injective :
+    Function.Injective (reBilin : (E →L⋆[𝕜] F →L[𝕜] 𝕜) → E →L[ℝ] F →L[ℝ] ℝ) := by
+  intro a b h
+  ext x y
+  refine RCLike.apply_eq_of_re_eq_of_re_I_smul_eq ?_ ?_
+  · simpa only [reBilin_apply_apply] using DFunLike.congr_fun (DFunLike.congr_fun h x) y
+  · simpa only [reBilin_apply_apply] using
+      DFunLike.congr_fun (DFunLike.congr_fun h x) ((RCLike.I : 𝕜) • y)
 
-variable {𝕜 V : Type*} [RCLike 𝕜] [SeminormedAddCommGroup V] [NormedSpace 𝕜 V]
+/-- Two continuous sesquilinear forms have equal `reBilin` if and only if they are equal. -/
+@[simp]
+theorem reBilin_inj {a b : E →L⋆[𝕜] F →L[𝕜] 𝕜} : a.reBilin = b.reBilin ↔ a = b :=
+  reBilin_injective.eq_iff
 
-/-- For a continuous sesquilinear form `a`, the real quadratic map `u ↦ RCLike.re (a u u)` is
-continuous. -/
-theorem continuous_re_apply_self (a : V →L⋆[𝕜] V →L[𝕜] 𝕜) :
-    Continuous (fun u ↦ RCLike.re (a u u)) :=
-  RCLike.reCLM.continuous.comp
-    (isBoundedBilinearMap_apply.continuous.comp (a.continuous.prodMk continuous_id))
+/-- `a.reBilin` vanishes if and only if `a = 0`. -/
+@[simp]
+theorem reBilin_eq_zero {a : E →L⋆[𝕜] F →L[𝕜] 𝕜} : a.reBilin = 0 ↔ a = 0 := by
+  rw [← reBilin_zero (𝕜 := 𝕜) (E := E) (F := F), reBilin_inj]
+
+end TopologicalRealBilin
+
+section TopologicalSelf
+
+variable {𝕜 V : Type*} [RCLike 𝕜] [AddCommGroup V] [Module 𝕜 V] [TopologicalSpace V]
 
 /-- **Cauchy--Schwarz inequality** for a continuous nonnegative Hermitian sesquilinear form:
 `‖a u v‖ ^ 2 ≤ re (a u u) * re (a v v)`. -/
@@ -375,26 +400,185 @@ theorem setOf_forall_apply_eq_zero_eq {a : V →L⋆[𝕜] V →L[𝕜] 𝕜}
     {u : V | ∀ v, a u v = 0} = {u : V | RCLike.re (a u u) = 0} :=
   a.toLinearMap₁₂.setOf_forall_apply_eq_zero_eq ha hpos
 
-section RealSymm
-
-variable [NormedSpace ℝ V] [IsScalarTower ℝ 𝕜 V]
-
 /-- For a continuous Hermitian form `a`, its real-part bilinear form `a.reBilin` is symmetric. -/
-theorem reBilin_comm_of_eq_star {a : V →L⋆[𝕜] V →L[𝕜] 𝕜}
-    (ha : ∀ u v, a u v = star (a v u)) (u v : V) :
+theorem reBilin_comm_of_eq_star [Module ℝ V] [IsScalarTower ℝ 𝕜 V] [ContinuousSMul 𝕜 V]
+    {a : V →L⋆[𝕜] V →L[𝕜] 𝕜} (ha : ∀ u v, a u v = star (a v u)) (u v : V) :
     a.reBilin u v = a.reBilin v u := by
-  simp only [reBilin_apply]
+  simp only [reBilin_apply_apply]
   exact a.toLinearMap₁₂.re_apply_comm_of_eq_star ha u v
 
+end TopologicalSelf
+
+section SeminormedRealBilin
+
+variable {𝕜 E F : Type*} [RCLike 𝕜]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedSpace ℝ E] [IsScalarTower ℝ 𝕜 E]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedSpace ℝ F] [IsScalarTower ℝ 𝕜 F]
+
+/-- Pulling a sesquilinear form back along continuous `𝕜`-linear maps commutes with `reBilin`. -/
+@[simp]
+theorem reBilin_bilinearComp {E' F' : Type*}
+    [SeminormedAddCommGroup E'] [NormedSpace 𝕜 E'] [NormedSpace ℝ E'] [IsScalarTower ℝ 𝕜 E']
+    [SeminormedAddCommGroup F'] [NormedSpace 𝕜 F'] [NormedSpace ℝ F'] [IsScalarTower ℝ 𝕜 F']
+    (a : E →L⋆[𝕜] F →L[𝕜] 𝕜) (L₁ : E' →L[𝕜] E) (L₂ : F' →L[𝕜] F) :
+    (a.bilinearComp L₁ L₂).reBilin =
+      a.reBilin.bilinearComp (L₁.restrictScalars ℝ) (L₂.restrictScalars ℝ) := by
+  ext x y
+  simp
+
+/-- Taking the real part of the functional `a x` preserves its operator norm. -/
+@[simp]
+theorem norm_reBilin_apply (a : E →L⋆[𝕜] F →L[𝕜] 𝕜) (x : E) : ‖a.reBilin x‖ = ‖a x‖ := by
+  refine le_antisymm ?_ ?_
+  · refine opNorm_le_bound _ (norm_nonneg (a x)) fun y ↦ ?_
+    rw [Real.norm_eq_abs, reBilin_apply_apply]
+    exact (RCLike.abs_re_le_norm (a x y)).trans ((a x).le_opNorm y)
+  · refine opNorm_le_bound _ (norm_nonneg (a.reBilin x)) fun y ↦ ?_
+    obtain h0 | hpos := (norm_nonneg (a x y)).eq_or_lt
+    · rw [← h0]
+      positivity
+    · have hre : ‖a x y‖ ^ 2 = a.reBilin x (star (a x y) • y) := by
+        rw [reBilin_apply_apply, map_smul, smul_eq_mul, mul_comm, ← starRingEnd_apply,
+          RCLike.mul_conj, ← RCLike.ofReal_pow, RCLike.ofReal_re]
+      have hle : a.reBilin x (star (a x y) • y) ≤ ‖a.reBilin x‖ * (‖a x y‖ * ‖y‖) := by
+        calc a.reBilin x (star (a x y) • y) ≤ ‖a.reBilin x (star (a x y) • y)‖ :=
+              le_abs_self _
+          _ ≤ ‖a.reBilin x‖ * ‖star (a x y) • y‖ := (a.reBilin x).le_opNorm _
+          _ = ‖a.reBilin x‖ * (‖a x y‖ * ‖y‖) := by rw [norm_smul, norm_star]
+      nlinarith
+
+/-- Taking the real-part bilinear form preserves the operator norm: `‖a.reBilin‖ = ‖a‖`. -/
+@[simp]
+theorem norm_reBilin (a : E →L⋆[𝕜] F →L[𝕜] 𝕜) : ‖a.reBilin‖ = ‖a‖ := by
+  refine le_antisymm ?_ ?_
+  · refine opNorm_le_bound _ (norm_nonneg a) fun x ↦ ?_
+    rw [norm_reBilin_apply]
+    exact a.le_opNorm x
+  · refine opNorm_le_bound _ (norm_nonneg a.reBilin) fun x ↦ ?_
+    rw [← norm_reBilin_apply]
+    exact a.reBilin.le_opNorm x
+
+end SeminormedRealBilin
+
+section SeminormedSelf
+
+variable {𝕜 V : Type*} [RCLike 𝕜] [SeminormedAddCommGroup V] [NormedSpace 𝕜 V]
+
+/-- For a continuous sesquilinear form `a`, the real quadratic map `u ↦ RCLike.re (a u u)` is
+continuous. -/
+@[fun_prop]
+theorem continuous_re_apply_self (a : V →L⋆[𝕜] V →L[𝕜] 𝕜) :
+    Continuous (fun u ↦ RCLike.re (a u u)) :=
+  RCLike.reCLM.continuous.comp
+    (isBoundedBilinearMap_apply.continuous.comp (a.continuous.prodMk continuous_id))
+
 /-- Flipping `a.reBilin` for a Hermitian form `a` returns `a.reBilin`. -/
-theorem reBilin_flip_of_eq_star {a : V →L⋆[𝕜] V →L[𝕜] 𝕜}
-    (ha : ∀ u v, a u v = star (a v u)) : a.reBilin.flip = a.reBilin := by
+theorem flip_reBilin_of_eq_star [NormedSpace ℝ V] [IsScalarTower ℝ 𝕜 V]
+    {a : V →L⋆[𝕜] V →L[𝕜] 𝕜} (ha : ∀ u v, a u v = star (a v u)) :
+    a.reBilin.flip = a.reBilin := by
   ext u v
   exact a.reBilin_comm_of_eq_star ha v u
 
-end RealSymm
+/-! ### Coercive weak-solution stability and uniqueness -/
+
+/-- **`c⁻¹`-Lipschitz dependence of weak solutions on the forcing** relative to a submodule `W`: if
+`u₁ - u₂ ∈ W`, `a u₁ w = ℓ₁ w` and `a u₂ w = ℓ₂ w` for all `w ∈ W`, and `c * ‖w‖² ≤ Re(a w w)` on
+`W` (`c > 0`), then `‖u₁ - u₂‖ ≤ c⁻¹ * ‖(ℓ₁ - ℓ₂).comp W.subtypeL‖`. No symmetry of `a` is
+required. -/
+theorem norm_sub_le_inv_mul_norm_comp_subtypeL_of_forall_apply_eq {a : V →L⋆[𝕜] V →L[𝕜] 𝕜}
+    {ℓ₁ ℓ₂ : StrongDual 𝕜 V} {W : Submodule 𝕜 V} {c : ℝ} (hc : 0 < c)
+    (hcoer : ∀ w ∈ W, c * ‖w‖ ^ 2 ≤ RCLike.re (a w w)) {u₁ u₂ : V}
+    (hmem : u₁ - u₂ ∈ W) (h₁ : ∀ w ∈ W, a u₁ w = ℓ₁ w) (h₂ : ∀ w ∈ W, a u₂ w = ℓ₂ w) :
+    ‖u₁ - u₂‖ ≤ c⁻¹ * ‖(ℓ₁ - ℓ₂).comp W.subtypeL‖ := by
+  obtain h0 | hpos := (norm_nonneg (u₁ - u₂)).eq_or_lt
+  · rw [← h0]
+    positivity
+  · have hpair : a (u₁ - u₂) (u₁ - u₂) = ((ℓ₁ - ℓ₂).comp W.subtypeL) ⟨u₁ - u₂, hmem⟩ := by
+      rw [a.map_sub, sub_apply, h₁ (u₁ - u₂) hmem, h₂ (u₁ - u₂) hmem]
+      simp
+    have hle : c * ‖u₁ - u₂‖ ^ 2 ≤ ‖(ℓ₁ - ℓ₂).comp W.subtypeL‖ * ‖u₁ - u₂‖ := by
+      calc c * ‖u₁ - u₂‖ ^ 2 ≤ RCLike.re (a (u₁ - u₂) (u₁ - u₂)) := hcoer (u₁ - u₂) hmem
+        _ ≤ ‖a (u₁ - u₂) (u₁ - u₂)‖ :=
+            (le_abs_self _).trans (RCLike.abs_re_le_norm _)
+        _ = ‖((ℓ₁ - ℓ₂).comp W.subtypeL) ⟨u₁ - u₂, hmem⟩‖ := by rw [hpair]
+        _ ≤ ‖(ℓ₁ - ℓ₂).comp W.subtypeL‖ * ‖(⟨u₁ - u₂, hmem⟩ : W)‖ :=
+            ((ℓ₁ - ℓ₂).comp W.subtypeL).le_opNorm ⟨u₁ - u₂, hmem⟩
+        _ = ‖(ℓ₁ - ℓ₂).comp W.subtypeL‖ * ‖u₁ - u₂‖ := by simp
+    have hcancel : c * ‖u₁ - u₂‖ ≤ ‖(ℓ₁ - ℓ₂).comp W.subtypeL‖ := by
+      nlinarith
+    rwa [← div_eq_inv_mul, le_div_iff₀ hc, mul_comm]
+
+/-- **`c⁻¹`-Lipschitz dependence of constrained weak solutions on the forcing** in the ambient dual
+norm: if `u₁ - u₂ ∈ W`, `a u₁ w = ℓ₁ w` and `a u₂ w = ℓ₂ w` on `W`, and `c * ‖w‖² ≤ Re(a w w)` on
+`W` (`c > 0`), then `‖u₁ - u₂‖ ≤ c⁻¹ * ‖ℓ₁ - ℓ₂‖`. -/
+theorem norm_sub_le_inv_mul_norm_sub_of_mem_of_forall_apply_eq {a : V →L⋆[𝕜] V →L[𝕜] 𝕜}
+    {ℓ₁ ℓ₂ : StrongDual 𝕜 V} {W : Submodule 𝕜 V} {c : ℝ} (hc : 0 < c)
+    (hcoer : ∀ w ∈ W, c * ‖w‖ ^ 2 ≤ RCLike.re (a w w)) {u₁ u₂ : V}
+    (hmem : u₁ - u₂ ∈ W) (h₁ : ∀ w ∈ W, a u₁ w = ℓ₁ w) (h₂ : ∀ w ∈ W, a u₂ w = ℓ₂ w) :
+    ‖u₁ - u₂‖ ≤ c⁻¹ * ‖ℓ₁ - ℓ₂‖ := by
+  refine (a.norm_sub_le_inv_mul_norm_comp_subtypeL_of_forall_apply_eq hc hcoer hmem h₁ h₂).trans ?_
+  gcongr
+  refine opNorm_le_bound _ (norm_nonneg (ℓ₁ - ℓ₂)) fun w ↦ ?_
+  simpa only [comp_apply, Submodule.coe_subtypeL, Submodule.subtype_apply,
+    ← Submodule.norm_coe] using (ℓ₁ - ℓ₂).le_opNorm (w : V)
+
+/-- **`c⁻¹`-Lipschitz dependence of global weak solutions on the forcing**: if
+`c * ‖w‖² ≤ Re(a w w)` (`c > 0`), `∀ v, a u₁ v = ℓ₁ v`, and `∀ v, a u₂ v = ℓ₂ v`, then
+`‖u₁ - u₂‖ ≤ c⁻¹ * ‖ℓ₁ - ℓ₂‖`. No symmetry of `a` is required. -/
+theorem norm_sub_le_inv_mul_norm_sub_of_forall_apply_eq {a : V →L⋆[𝕜] V →L[𝕜] 𝕜}
+    {ℓ₁ ℓ₂ : StrongDual 𝕜 V} {c : ℝ} (hc : 0 < c)
+    (hcoer : ∀ w, c * ‖w‖ ^ 2 ≤ RCLike.re (a w w)) {u₁ u₂ : V}
+    (h₁ : ∀ v, a u₁ v = ℓ₁ v) (h₂ : ∀ v, a u₂ v = ℓ₂ v) :
+    ‖u₁ - u₂‖ ≤ c⁻¹ * ‖ℓ₁ - ℓ₂‖ :=
+  a.norm_sub_le_inv_mul_norm_sub_of_mem_of_forall_apply_eq (W := ⊤) hc (fun w _ ↦ hcoer w)
+    Submodule.mem_top (fun w _ ↦ h₁ w) (fun w _ ↦ h₂ w)
+
+/-- **A priori norm bound** `‖u‖ ≤ c⁻¹ * ‖ℓ‖` for a homogeneous weak solution `u ∈ W` of
+`∀ w ∈ W, a u w = ℓ w` when `c * ‖w‖² ≤ Re(a w w)` on `W` (`c > 0`). -/
+theorem norm_le_inv_mul_norm_of_mem_of_forall_apply_eq {a : V →L⋆[𝕜] V →L[𝕜] 𝕜}
+    {ℓ : StrongDual 𝕜 V} {W : Submodule 𝕜 V} {c : ℝ} (hc : 0 < c)
+    (hcoer : ∀ w ∈ W, c * ‖w‖ ^ 2 ≤ RCLike.re (a w w)) {u : V} (hu : u ∈ W)
+    (hsol : ∀ w ∈ W, a u w = ℓ w) :
+    ‖u‖ ≤ c⁻¹ * ‖ℓ‖ := by
+  simpa using a.norm_sub_le_inv_mul_norm_sub_of_mem_of_forall_apply_eq (ℓ₁ := ℓ) (ℓ₂ := 0)
+    (u₁ := u) (u₂ := 0) hc hcoer (by simpa using hu) hsol (fun _ _ ↦ by simp)
+
+/-- **Global a priori norm bound** `‖u‖ ≤ c⁻¹ * ‖ℓ‖` for a weak solution of `∀ v, a u v = ℓ v` when
+`c * ‖w‖² ≤ Re(a w w)` (`c > 0`). -/
+theorem norm_le_inv_mul_norm_of_forall_apply_eq {a : V →L⋆[𝕜] V →L[𝕜] 𝕜}
+    {ℓ : StrongDual 𝕜 V} {c : ℝ} (hc : 0 < c)
+    (hcoer : ∀ w, c * ‖w‖ ^ 2 ≤ RCLike.re (a w w)) {u : V}
+    (hsol : ∀ v, a u v = ℓ v) :
+    ‖u‖ ≤ c⁻¹ * ‖ℓ‖ :=
+  a.norm_le_inv_mul_norm_of_mem_of_forall_apply_eq (W := ⊤) hc (fun w _ ↦ hcoer w)
+    Submodule.mem_top (fun w _ ↦ hsol w)
 
 end SeminormedSelf
+
+section NormedUniqueness
+
+variable {𝕜 V : Type*} [RCLike 𝕜] [NormedAddCommGroup V] [NormedSpace 𝕜 V]
+
+/-- **Uniqueness of constrained weak solutions** when `u₁ - u₂ ∈ W` and `a` is `c`-coercive on `W`
+(`c > 0`); no symmetry of `a` is required. -/
+theorem eq_of_mem_of_forall_apply_eq_of_coercive {a : V →L⋆[𝕜] V →L[𝕜] 𝕜} {ℓ : StrongDual 𝕜 V}
+    {W : Submodule 𝕜 V} {c : ℝ} (hc : 0 < c)
+    (hcoer : ∀ w ∈ W, c * ‖w‖ ^ 2 ≤ RCLike.re (a w w)) {u₁ u₂ : V}
+    (hmem : u₁ - u₂ ∈ W) (h₁ : ∀ w ∈ W, a u₁ w = ℓ w) (h₂ : ∀ w ∈ W, a u₂ w = ℓ w) :
+    u₁ = u₂ := by
+  have hbound := a.norm_sub_le_inv_mul_norm_sub_of_mem_of_forall_apply_eq hc hcoer hmem h₁ h₂
+  simp only [sub_self, norm_zero, mul_zero] at hbound
+  exact sub_eq_zero.mp (norm_le_zero_iff.mp hbound)
+
+/-- **Uniqueness of global weak solutions** when `c * ‖w‖² ≤ Re(a w w)` (`c > 0`); no symmetry of
+`a` is required. -/
+theorem eq_of_forall_apply_eq_of_coercive {a : V →L⋆[𝕜] V →L[𝕜] 𝕜} {ℓ : StrongDual 𝕜 V}
+    {c : ℝ} (hc : 0 < c) (hcoer : ∀ w, c * ‖w‖ ^ 2 ≤ RCLike.re (a w w)) {u₁ u₂ : V}
+    (h₁ : ∀ v, a u₁ v = ℓ v) (h₂ : ∀ v, a u₂ v = ℓ v) : u₁ = u₂ :=
+  a.eq_of_mem_of_forall_apply_eq_of_coercive (W := ⊤) hc (fun w _ ↦ hcoer w) Submodule.mem_top
+    (fun w _ ↦ h₁ w) (fun w _ ↦ h₂ w)
+
+end NormedUniqueness
 
 section Calculus
 
@@ -403,21 +587,23 @@ variable {𝕜 V : Type*} [RCLike 𝕜] [NormedAddCommGroup V] [NormedSpace 𝕜
 
 /-- The real quadratic map `u ↦ RCLike.re (a u u)` of a continuous sesquilinear form is `C^n` over
 `ℝ` for every `n`. -/
+@[fun_prop]
 theorem contDiff_re_apply_self (a : V →L⋆[𝕜] V →L[𝕜] 𝕜) :
     ContDiff ℝ n (fun u ↦ RCLike.re (a u u)) := by
-  simpa only [reBilin_apply] using a.reBilin.contDiff_apply_self (n := n)
+  simpa only [reBilin_apply_apply] using a.reBilin.contDiff_apply_self (n := n)
 
 /-- The real quadratic map `u ↦ RCLike.re (a u u)` of a continuous sesquilinear form is
 Fréchet differentiable over `ℝ`. -/
+@[fun_prop]
 theorem differentiable_re_apply_self (a : V →L⋆[𝕜] V →L[𝕜] 𝕜) :
     Differentiable ℝ (fun u ↦ RCLike.re (a u u)) := by
-  simpa only [reBilin_apply] using a.reBilin.differentiable_apply_self
+  simpa only [reBilin_apply_apply] using a.reBilin.differentiable_apply_self
 
 /-- Strict real Fréchet derivative of `u ↦ RCLike.re (a u u)` for an arbitrary continuous
 sesquilinear form `a`. -/
 theorem hasStrictFDerivAt_re_apply_self (a : V →L⋆[𝕜] V →L[𝕜] 𝕜) (u : V) :
     HasStrictFDerivAt (fun w ↦ RCLike.re (a w w)) (a.reBilin.flip u + a.reBilin u) u := by
-  simpa only [reBilin_apply] using a.reBilin.hasStrictFDerivAt_apply_self u
+  simpa only [reBilin_apply_apply] using a.reBilin.hasStrictFDerivAt_apply_self u
 
 /-- Real Fréchet derivative of `u ↦ RCLike.re (a u u)` for an arbitrary continuous sesquilinear
 form `a`. -/
@@ -427,6 +613,7 @@ theorem hasFDerivAt_re_apply_self (a : V →L⋆[𝕜] V →L[𝕜] 𝕜) (u : V
 
 /-- Differential of `u ↦ RCLike.re (a u u)` over `ℝ` for an arbitrary continuous sesquilinear
 form `a`. -/
+@[simp]
 theorem fderiv_re_apply_self (a : V →L⋆[𝕜] V →L[𝕜] 𝕜) (u : V) :
     fderiv ℝ (fun w ↦ RCLike.re (a w w)) u = a.reBilin.flip u + a.reBilin u :=
   (a.hasFDerivAt_re_apply_self u).fderiv
@@ -437,8 +624,8 @@ theorem hasStrictFDerivAt_re_apply_self_of_eq_star {a : V →L⋆[𝕜] V →L[�
     (ha : ∀ x y, a x y = star (a y x)) (u : V) :
     HasStrictFDerivAt (fun w ↦ RCLike.re (a w w))
       ((2 : ℝ) • RCLike.reCLM.comp ((a u).restrictScalars ℝ)) u := by
-  convert a.hasStrictFDerivAt_re_apply_self u using 1
-  rw [a.reBilin_flip_of_eq_star ha, two_smul, reBilin_apply_clm]
+  have h := a.hasStrictFDerivAt_re_apply_self u
+  rwa [a.flip_reBilin_of_eq_star ha, ← two_smul ℝ, reBilin_apply] at h
 
 /-- Real Fréchet derivative of `u ↦ RCLike.re (a u u)` for a continuous Hermitian sesquilinear
 form `a`. -/
