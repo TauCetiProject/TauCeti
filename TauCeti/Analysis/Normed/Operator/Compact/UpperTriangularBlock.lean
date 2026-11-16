@@ -46,14 +46,14 @@ variable {R E₁ E₂ F₁ F₂ : Type*} [Ring R]
   [TopologicalSpace E₂] [AddCommGroup E₂] [Module R E₂]
   [TopologicalSpace F₁] [AddCommGroup F₁] [Module R F₁]
   [TopologicalSpace F₂] [AddCommGroup F₂] [Module R F₂]
+  (A : E₁ →L[R] F₁) (B : E₂ →L[R] F₁) (D : E₂ →L[R] F₂)
+  {P_A : F₁ →L[R] E₁} {P_D : F₂ →L[R] E₂}
 
 /-- If `P_A` and `P_D` are left parametrices of `A` and `D` modulo compact operators, then
 `upperTriangularBlockParametrix P_A B P_D` is a left parametrix of `upperTriangularBlock A B D`
 modulo compact operators. -/
 theorem isCompactOperator_upperTriangularBlockParametrix_comp_sub_one
     [IsTopologicalAddGroup E₂] [ContinuousAdd F₁]
-    (A : E₁ →L[R] F₁) (B : E₂ →L[R] F₁) (D : E₂ →L[R] F₂)
-    {P_A : F₁ →L[R] E₁} {P_D : F₂ →L[R] E₂}
     (hPA : IsCompactOperator (P_A ∘L A - 1 : E₁ →L[R] E₁))
     (hPD : IsCompactOperator (P_D ∘L D - 1 : E₂ →L[R] E₂)) :
     IsCompactOperator
@@ -61,9 +61,7 @@ theorem isCompactOperator_upperTriangularBlockParametrix_comp_sub_one
         E₁ × E₂ →L[R] E₁ × E₂) := by
   rw [upperTriangularBlockParametrix_comp_sub_one]
   have hmid : (⇑(-(P_A ∘L B ∘L (P_D ∘L D - 1))) : E₂ → E₁) =
-      -(⇑(P_A ∘L B) ∘ ⇑(P_D ∘L D - 1 : E₂ →L[R] E₂)) := by
-    ext x
-    simp
+      -(⇑(P_A ∘L B) ∘ ⇑(P_D ∘L D - 1 : E₂ →L[R] E₂)) := by ext x; simp
   exact .upperTriangularBlock hPA (hmid ▸ (hPD.clm_comp (P_A ∘L B)).neg) hPD
 
 /-- If `P_A` and `P_D` are right parametrices of `A` and `D` modulo compact operators, then
@@ -71,8 +69,6 @@ theorem isCompactOperator_upperTriangularBlockParametrix_comp_sub_one
 modulo compact operators. -/
 theorem isCompactOperator_comp_upperTriangularBlockParametrix_sub_one
     [IsTopologicalAddGroup F₁] [IsTopologicalAddGroup F₂]
-    (A : E₁ →L[R] F₁) (B : E₂ →L[R] F₁) (D : E₂ →L[R] F₂)
-    {P_A : F₁ →L[R] E₁} {P_D : F₂ →L[R] E₂}
     (hPA : IsCompactOperator (A ∘L P_A - 1 : F₁ →L[R] F₁))
     (hPD : IsCompactOperator (D ∘L P_D - 1 : F₂ →L[R] F₂)) :
     IsCompactOperator
@@ -80,9 +76,7 @@ theorem isCompactOperator_comp_upperTriangularBlockParametrix_sub_one
         F₁ × F₂ →L[R] F₁ × F₂) := by
   rw [comp_upperTriangularBlockParametrix_sub_one]
   have hmid : (⇑(-((A ∘L P_A - 1) ∘L B ∘L P_D)) : F₂ → F₁) =
-      -(⇑(A ∘L P_A - 1 : F₁ →L[R] F₁) ∘ ⇑(B ∘L P_D)) := by
-    ext y
-    simp
+      -(⇑(A ∘L P_A - 1 : F₁ →L[R] F₁) ∘ ⇑(B ∘L P_D)) := by ext y; simp
   exact .upperTriangularBlock hPA (hmid ▸ (hPA.comp_clm (B ∘L P_D)).neg) hPD
 
 end ContinuousLinearMap
