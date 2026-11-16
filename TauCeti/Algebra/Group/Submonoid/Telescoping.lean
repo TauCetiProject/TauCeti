@@ -22,7 +22,7 @@ any `AddSubmonoidClass`, so they apply equally to additive subgroups, submodules
   submonoid containing the intervening consecutive differences.
 * `TauCeti.sub_mem_closure_of_le`: a difference `f a - f b` with `a ≤ b ≤ n` lies in the additive
   closure of the first `n` consecutive differences.
-* `TauCeti.sub_mem_closure_or_neg_mem_closure`: the same, up to sign, without ordering the indices.
+* `TauCeti.sub_mem_or_neg_mem_closure`: the same, up to sign, without ordering the indices.
 * `TauCeti.sub_mem_of_consecutive_sub_mem_fin`: the corresponding result for a `Fin`-indexed
   family.
 * `TauCeti.add_mem_of_consecutive_sub_mem_fin`: a companion criterion for sums in a
@@ -53,7 +53,7 @@ theorem sub_mem_closure_of_le {n : ℕ} (f : ℕ → M) {a b : ℕ} (hb : b ≤ 
 
 /-- For `a, b ≤ n`, one of `f a - f b` and `-(f a - f b)` lies in the additive submonoid generated
 by the `n` consecutive differences `f i - f (i + 1)`. -/
-theorem sub_mem_closure_or_neg_mem_closure {n : ℕ} (f : ℕ → M) {a b : ℕ} (ha : a ≤ n)
+theorem sub_mem_or_neg_mem_closure {n : ℕ} (f : ℕ → M) {a b : ℕ} (ha : a ≤ n)
     (hb : b ≤ n) :
     f a - f b ∈ AddSubmonoid.closure (Set.range fun i : Fin n => f (i : ℕ) - f ((i : ℕ) + 1)) ∨
       -(f a - f b) ∈

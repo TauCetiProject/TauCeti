@@ -266,13 +266,13 @@ noncomputable def diagonalRootBase (n : ℕ) : (diagonalRootDatum.{u} (n + 1)).B
     rw [image_root_diagonalSimpleSupport, range_diagonalSimpleRoot, diagonalRootDatum_root,
       diagonalRoot_eq_coordinateRoot p.1.1.down p.1.2.down,
       coordinateRoot_eq_coordinate_sub n p.1.1.down p.1.2.down]
-    exact sub_mem_closure_or_neg_mem_closure (diagonalCharacterCoordinate n)
+    exact sub_mem_or_neg_mem_closure (diagonalCharacterCoordinate n)
       (Nat.lt_succ_iff.mp p.1.1.down.isLt) (Nat.lt_succ_iff.mp p.1.2.down.isLt)
   coroot_mem_or_neg_mem p := by
     rw [image_coroot_diagonalSimpleSupport, range_diagonalSimpleCoroot, diagonalRootDatum_coroot,
       diagonalCoroot_eq_coordinateCoroot p.1.1.down p.1.2.down,
       coordinateCoroot_eq_coordinate_sub n p.1.1.down p.1.2.down]
-    exact sub_mem_closure_or_neg_mem_closure (diagonalCocharacterCoordinate n)
+    exact sub_mem_or_neg_mem_closure (diagonalCocharacterCoordinate n)
       (Nat.lt_succ_iff.mp p.1.1.down.isLt) (Nat.lt_succ_iff.mp p.1.2.down.isLt)
 
 /-- The support of the diagonal base is the image of the consecutive-root index map. -/
@@ -314,11 +314,7 @@ private theorem diagonalRootIndexOfNe_isPos_of_lt (n : ℕ) (i j : Fin (n + 1))
       diagonalRoot_eq_coordinateRoot i j, coordinateRoot_eq_coordinate_sub n i j]
     exact sub_mem_closure_of_le (diagonalCharacterCoordinate n)
       (Nat.lt_succ_iff.mp j.isLt) hij.le
-  exact (mem_posRoots _ _ _).1 ((mem_posRoots_iff_root_mem_posRootCone _ _).2 <|
-    AddSubmonoid.closure_le.2 (by
-      rintro _ ⟨q, hq, rfl⟩
-      exact root_mem_posRootCone_of_mem_posRoots _ _
-        ((mem_posRoots _ _ _).2 ((diagonalRootBase.{u} n).isPos_of_mem_support hq))) h)
+  exact (isPos_iff_root_mem_closure _ _).2 h
 
 /-- A diagonal root is positive for the consecutive-root base exactly when its row index is
 strictly smaller than its column index. -/

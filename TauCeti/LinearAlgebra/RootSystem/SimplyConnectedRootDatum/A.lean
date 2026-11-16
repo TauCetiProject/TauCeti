@@ -536,7 +536,7 @@ def typeASimplyConnectedBase (n : ℕ) : (typeASimplyConnectedRootDatum n).Base 
         typeAWeight n (((typeAIndexEquiv n).symm k).val.1 : ℕ) -
           typeAWeight n (((typeAIndexEquiv n).symm k).val.2 : ℕ) := rfl
     rw [image_root_typeASimpleSupport, hroot]
-    exact sub_mem_closure_or_neg_mem_closure (typeAWeight n)
+    exact sub_mem_or_neg_mem_closure (typeAWeight n)
       (Nat.lt_succ_iff.mp (((typeAIndexEquiv n).symm k).val.1).isLt)
       (Nat.lt_succ_iff.mp (((typeAIndexEquiv n).symm k).val.2).isLt)
   coroot_mem_or_neg_mem k := by
@@ -544,7 +544,7 @@ def typeASimplyConnectedBase (n : ℕ) : (typeASimplyConnectedRootDatum n).Base 
         typeACoweight n (((typeAIndexEquiv n).symm k).val.1 : ℕ) -
           typeACoweight n (((typeAIndexEquiv n).symm k).val.2 : ℕ) := rfl
     rw [image_coroot_typeASimpleSupport, hcoroot]
-    exact sub_mem_closure_or_neg_mem_closure (typeACoweight n)
+    exact sub_mem_or_neg_mem_closure (typeACoweight n)
       (Nat.lt_succ_iff.mp (((typeAIndexEquiv n).symm k).val.1).isLt)
       (Nat.lt_succ_iff.mp (((typeAIndexEquiv n).symm k).val.2).isLt)
 
