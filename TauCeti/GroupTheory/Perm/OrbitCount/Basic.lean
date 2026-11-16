@@ -47,6 +47,10 @@ permutations of the same type.
   within its cycle of `π` has at least as many orbits as `π`.
 * `Equiv.Perm.card_le_orderOf_mul_orbitCount`: conversely, the number of points is at most the
   order of the permutation times its number of orbits, each orbit length dividing the order.
+* `Equiv.Perm.prime_mul_orbitCount_of_pow_eq_one` and
+  `Equiv.Perm.card_subtype_apply_eq_modEq_of_pow_prime_eq_one`: for a permutation of prime-dividing
+  order `p`, every orbit has size `1` or `p`, so `p * orbitCount σ = |α| + (p - 1) * |Fix σ|` and
+  `|Fix σ| ≡ |α| (mod p)`.
 * `Equiv.Perm.sign_eq_neg_one_pow_card_sub_orbitCount`: the sign is determined by the parity of
   the number of points minus the number of orbits.
 * `TauCeti.orbitCount_add_one_eq_of_semiconj`: if `σ : Equiv.Perm α` is carried by an injection
@@ -268,6 +272,46 @@ theorem _root_.Equiv.Perm.card_le_orderOf_mul_orbitCount [Finite α] (σ : Equiv
   rw [Nat.card_eq_fintype_card, orbitCount_eq_card_parts_partition, mul_comm, ← smul_eq_mul]
   exact σ.partition.parts_sum.symm.le.trans <| Multiset.sum_le_card_nsmul _ _ fun k hk ↦
     Nat.le_of_dvd (orderOf_pos σ) (dvd_of_mem_parts_partition hk)
+
+/-- For a permutation `σ` of a finite type satisfying `σ ^ p = 1` with `p` prime, every orbit has
+size `1` (a fixed point) or `p`, so
+`p * orbitCount σ = Nat.card α + (p - 1) * Nat.card {x : α // σ x = x}`. -/
+theorem _root_.Equiv.Perm.prime_mul_orbitCount_of_pow_eq_one [Finite α]
+    {p : ℕ} (hp : p.Prime) {σ : Equiv.Perm α} (hσ : σ ^ p = 1) :
+    p * orbitCount σ = Nat.card α + (p - 1) * Nat.card {x : α // σ x = x} := by
+  classical
+  have := Fintype.ofFinite α
+  have hpart : ∀ k ∈ σ.cycleType, k = p := fun k hk ↦ by
+    have hk1 : 1 < k := one_lt_of_mem_cycleType hk
+    have hdvd : k ∣ p :=
+      (dvd_of_mem_parts_partition (by rw [parts_partition]; exact Multiset.mem_add.mpr (.inl hk)))
+        |>.trans (orderOf_dvd_of_pow_eq_one hσ)
+    exact (hp.eq_one_or_self_of_dvd k hdvd).resolve_left hk1.ne'
+  have hsum : σ.support.card = p * σ.cycleType.card := by
+    rw [← sum_cycleType, Multiset.eq_replicate_card.mpr hpart, Multiset.sum_replicate,
+      Multiset.card_replicate, smul_eq_mul, mul_comm]
+  have hfix : Nat.card {x : α // σ x = x} = Fintype.card α - σ.support.card := by
+    rw [← card_subtype_apply_eq]
+    exact Nat.card_eq_fintype_card
+  rw [Nat.card_eq_fintype_card, hfix, orbitCount_eq_card_parts_partition,
+    card_parts_partition, mul_add, ← hsum]
+  conv_lhs =>
+    rw [← Nat.add_sub_of_le hp.one_le, add_mul, one_mul, ← add_assoc,
+      Nat.add_sub_of_le (Finset.card_le_univ _)]
+
+/-- For a permutation `σ` of a finite type satisfying `σ ^ p = 1` with `p` prime, the number of
+fixed points is congruent to the cardinality of the carrier modulo `p`. -/
+theorem _root_.Equiv.Perm.card_subtype_apply_eq_modEq_of_pow_prime_eq_one [Finite α]
+    {p : ℕ} (hp : p.Prime) {σ : Equiv.Perm α} (hσ : σ ^ p = 1) :
+    Nat.card {x : α // σ x = x} ≡ Nat.card α [MOD p] := by
+  have h := prime_mul_orbitCount_of_pow_eq_one hp hσ
+  have h1 : p * orbitCount σ + Nat.card {x : α // σ x = x} =
+      Nat.card α + p * Nat.card {x : α // σ x = x} := by
+    rw [h, add_assoc]
+    congr 1
+    rw [← add_one_mul, Nat.sub_add_cancel hp.one_le]
+  simpa [Nat.ModEq, Nat.add_mul_mod_self_left, Nat.mul_add_mod_self_left] using
+    congrArg (· % p) h1
 
 /-- Propagate a one-step comparison over all integer powers: if every point `x` of `β` lies in the
 same `π`-cycle as its image `g x` does after one step of `σ`, then it lies in the same `π`-cycle
