@@ -1,0 +1,169 @@
+name: Harness runner groups
+
+# `.tauceti/ci-source.json` `harness_revision` is the only source of the TauCetiTools revision
+# that PR CI (pr-build.yml) and source staging (source-candidate.yml) run. GitHub needs literal
+# SHAs in `uses:`, so change the pin only with
+#   python3 -m tauceti_tools.harness_pins set <sha> --bound-workflow pr-build.yml
+# which derives every literal from that file; the check below rejects any literal that differs.
+#
+# The TauCetiFleet and TauCetiQueueControl runner groups admit a shared-harness job only at the
+# exact revision it is called with. This workflow derives those allow-list entries from the pin,
+# so never edit the TauCetiTools entries by hand:
+# - Every PR gets the `harness-runner-groups` status, for bors to require (bors.toml pr_status).
+#   Dispatch with `pr` to report it for a PR that has had no event since this workflow landed.
+#   A PR that does not change what the harness needs passes on repository reads alone. A PR
+#   that does has its entries admitted first, and passes only once the runner groups admit
+#   them, so a new revision is always allowed before it can reach main.
+# - Pushes to main and an hourly schedule admit main's entries (covering direct pushes) and
+#   prune revisions older than main that main, its previous revision and unfinished runs no
+#   longer need.
+# PR contents are read as data through the API; no PR code is checked out or run.
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+  # Approval asks for PR CI; this also covers PRs opened before the status was required.
+  repository_dispatch:
+    types: [tauceti-bors-pr-approved]
+  push:
+    branches: [main]
+    paths: ['.github/workflows/**', '.tauceti/ci-source.json']
+  schedule:
+    - cron: '23 * * * *'
+  workflow_dispatch:
+    inputs:
+      pr: {description: "Check this PR instead of reconciling main", type: string, default: ""}
+
+permissions:
+  contents: read
+  pull-requests: read
+  actions: read
+  statuses: write
+
+concurrency:
+  group: harness-runner-groups-${{ github.event.pull_request.number || github.event.client_payload.pr || inputs.pr || 'main' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request_target' || github.event_name == 'repository_dispatch' }}
+
+env:
+  # The reconciler's own TauCetiTools revision. It is not the harness pin, which it checks.
+  TOOLS_REF: efe71e1db8fe01af766a20f7b4d15ed5c9323d01
+  CONTEXT: harness-runner-groups
+
+jobs:
+  pull-request:
+    if: github.event_name == 'pull_request_target' || github.event_name == 'repository_dispatch' || inputs.pr != ''
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    outputs:
+      head: ${{ steps.check.outputs.head }}
+      changed: ${{ steps.check.outputs.changed }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: TauCetiProject/TauCetiTools
+          ref: ${{ env.TOOLS_REF }}
+          path: .tauceti-tools
+          sparse-checkout: tauceti_tools
+          persist-credentials: false
+      - name: Check the PR's harness pins with repository reads only
+        id: check
+        working-directory: .tauceti-tools
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number || github.event.client_payload.pr || inputs.pr }}
+        run: |
+          set -euo pipefail
+          [[ "$PR" =~ ^[0-9]+$ ]] || { echo "::error::no pull request number"; exit 1; }
+          python3 -m tauceti_tools.harness_pins pr-check --project "$GITHUB_REPOSITORY" --pr "$PR" \
+            --bound-workflow pr-build.yml --github-output "$GITHUB_OUTPUT"
+      - name: Report the check
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ steps.check.outputs.head || github.event.pull_request.head.sha || github.event.client_payload.head_sha }}
+          STATE: ${{ steps.check.outputs.state || 'error' }}
+          DESCRIPTION: ${{ steps.check.outputs.description || 'Harness pin check could not run' }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          [[ "$HEAD_SHA" =~ ^[0-9a-f]{40}$ ]] || exit 0
+          gh api -X POST "repos/$GITHUB_REPOSITORY/statuses/$HEAD_SHA" -f state="$STATE" -f context="$CONTEXT" \
+            -f description="$DESCRIPTION" -f target_url="$RUN_URL" >/dev/null
+
+  # Only PRs that change the harness needs reach the runner-group credential.
+  admit:
+    needs: pull-request
+    if: needs.pull-request.outputs.changed == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    environment: runner-policy
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: TauCetiProject/TauCetiTools
+          ref: ${{ env.TOOLS_REF }}
+          path: .tauceti-tools
+          sparse-checkout: tauceti_tools
+          persist-credentials: false
+      - id: app
+        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1; v1 ignores permission-* inputs
+        with:
+          app-id: ${{ secrets.RUNNER_POLICY_APP_ID }}
+          private-key: ${{ secrets.RUNNER_POLICY_APP_PRIVATE_KEY }}
+          owner: TauCetiProject
+          repositories: TauCeti
+          permission-organization-self-hosted-runners: write
+      - name: Admit the PR's harness entries in the runner groups
+        id: admit
+        working-directory: .tauceti-tools
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ORG_TOKEN: ${{ steps.app.outputs.token }}
+          PR: ${{ github.event.pull_request.number || github.event.client_payload.pr || inputs.pr }}
+        run: |
+          set -euo pipefail
+          python3 -m tauceti_tools.harness_pins reconcile --project "$GITHUB_REPOSITORY" --pr "$PR" \
+            --bound-workflow pr-build.yml --github-output "$GITHUB_OUTPUT"
+      - name: Report the check
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ steps.admit.outputs.head || needs.pull-request.outputs.head }}
+          STATE: ${{ steps.admit.outputs.state || 'error' }}
+          DESCRIPTION: ${{ steps.admit.outputs.description || 'Could not admit harness pins; see the run' }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          [[ "$HEAD_SHA" =~ ^[0-9a-f]{40}$ ]] || exit 0
+          gh api -X POST "repos/$GITHUB_REPOSITORY/statuses/$HEAD_SHA" -f state="$STATE" -f context="$CONTEXT" \
+            -f description="$DESCRIPTION" -f target_url="$RUN_URL" >/dev/null
+
+  main:
+    if: github.event_name == 'push' || github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.pr == '')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment: runner-policy
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: TauCetiProject/TauCetiTools
+          ref: ${{ env.TOOLS_REF }}
+          path: .tauceti-tools
+          sparse-checkout: tauceti_tools
+          persist-credentials: false
+      - id: app
+        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1; v1 ignores permission-* inputs
+        with:
+          app-id: ${{ secrets.RUNNER_POLICY_APP_ID }}
+          private-key: ${{ secrets.RUNNER_POLICY_APP_PRIVATE_KEY }}
+          owner: TauCetiProject
+          repositories: TauCeti
+          permission-organization-self-hosted-runners: write
+      - name: Admit main's harness entries and prune unneeded older ones
+        working-directory: .tauceti-tools
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ORG_TOKEN: ${{ steps.app.outputs.token }}
+        run: |
+          python3 -m tauceti_tools.harness_pins reconcile --project "$GITHUB_REPOSITORY" --prune \
+            --bound-workflow pr-build.yml
