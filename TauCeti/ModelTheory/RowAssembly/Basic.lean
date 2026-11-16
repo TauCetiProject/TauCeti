@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.ModelTheory.Equivalence
-public import Mathlib.Basic.Countable.Defs
+public import Mathlib.ModelTheory.Basic
+import Mathlib.Basic.Countable.Basic
 import Mathlib.Logic.Equiv.List
 
 /-!
@@ -28,10 +28,10 @@ The assembled relational language `lang U Lc` carries:
   read at `Carrier.row r` as the truth of `rel` in `C r τ`.
 
 Because rows, ownership, and labels are explicit in the signature, every isomorphism between two
-row assemblies restricts to a bijection of rows (`rowEquiv`) together with fiberwise bijections
-(`fiberBij`), which upgrade to `Lc`-isomorphisms (`fiberEquiv`) when `Lc` is relational;
-conversely, any row bijection and family of fiber `Lc`-isomorphisms assemble into an isomorphism
-of row assemblies (`equivOfFibers`).
+row assemblies restricts to a bijection of rows (`FirstOrder.Language.Equiv.rowEquiv`) together with
+fiberwise bijections (`FirstOrder.Language.Equiv.fiberBij`), which upgrade to `Lc`-isomorphisms
+(`FirstOrder.Language.Equiv.fiberEquiv`) when `Lc` is relational; conversely, any row bijection and
+family of fiber `Lc`-isomorphisms assemble into an isomorphism of row assemblies (`equivOfFibers`).
 
 ## Main definitions
 
@@ -42,9 +42,9 @@ of row assemblies (`equivOfFibers`).
   `x : C r τ`, equipped with its `(lang U Lc)`-structure.
 * `TauCeti.RowAssembly.equivOfFibers`: assemble an isomorphism from a row bijection and fiber
   isomorphisms.
-* `TauCeti.RowAssembly.rowEquiv`, `TauCeti.RowAssembly.fiberBij`, and
-  `TauCeti.RowAssembly.fiberEquiv`: restrict an isomorphism of row assemblies to its induced row
-  bijection and fiber bijections / `Lc`-isomorphisms.
+* `FirstOrder.Language.Equiv.rowEquiv`, `FirstOrder.Language.Equiv.fiberBij`, and
+  `FirstOrder.Language.Equiv.fiberEquiv`: restrict an isomorphism of row assemblies to its induced
+  row bijection and fiber bijections / `Lc`-isomorphisms.
 
 ## References
 
@@ -94,10 +94,11 @@ abbrev lang (U : Type u) (Lc : Language.{u₁, v₁}) : Language.{0, max u v₁}
 instance isRelational_lang (U : Type u) (Lc : Language.{u₁, v₁}) : (lang U Lc).IsRelational :=
   fun _ => inferInstanceAs (IsEmpty PEmpty)
 
-/-- When the alphabet `U` and the relation symbols of `Lc` at each arity are countable, every
-arity of `lang U Lc` has countably many relation symbols. -/
-instance countable_relations_lang (U : Type u) (Lc : Language.{u₁, v₁}) [Countable U]
-    [∀ n, Countable (Lc.Relations n)] (n : ℕ) : Countable ((lang U Lc).Relations n) := by
+/-- When the alphabet `U` and the relation symbols of `Lc` at arities `0` and `n` are countable,
+arity `n` of `lang U Lc` has countably many relation symbols. -/
+instance countable_relations_lang (U : Type u) (Lc : Language.{u₁, v₁}) (n : ℕ) [Countable U]
+    [Countable (Lc.Relations 0)] [Countable (Lc.Relations n)] :
+    Countable ((lang U Lc).Relations n) := by
   let enc : Option (Bool ⊕ Label U ⊕ (Lc.Relations 0 × Label U)) ⊕ Lc.Relations n →
       Option (Sym U Lc n)
     | .inl none => if h : n = 2 then some (h ▸ .own) else none
@@ -191,6 +192,21 @@ def equivSum : Carrier R C ≃ R ⊕ Σ r : R, Σ τ : Label U, C r τ where
     | .inr ⟨r, τ, x⟩ => pt r τ x
   left_inv u := by cases u <;> rfl
   right_inv s := by rcases s with r | ⟨r, τ, x⟩ <;> rfl
+
+@[simp]
+theorem equivSum_row (r : R) : equivSum (row r : Carrier R C) = .inl r := (rfl)
+
+@[simp]
+theorem equivSum_pt (r : R) (τ : Label U) (x : C r τ) :
+    equivSum (pt r τ x) = .inr ⟨r, τ, x⟩ := (rfl)
+
+@[simp]
+theorem equivSum_symm_inl (r : R) :
+    (equivSum (C := C)).symm (.inl r) = row r := (rfl)
+
+@[simp]
+theorem equivSum_symm_inr (r : R) (τ : Label U) (x : C r τ) :
+    (equivSum (C := C)).symm (.inr ⟨r, τ, x⟩) = pt r τ x := (rfl)
 
 instance countable [Countable U] [Countable R] [∀ r τ, Countable (C r τ)] :
     Countable (Carrier R C) :=
@@ -378,10 +394,24 @@ theorem equivOfFibers_pt (σ : R₁ ≃ R₂) (f : ∀ r τ, C₁ r τ ≃[Lc] C
     (τ : Label U) (x : C₁ r τ) :
     equivOfFibers σ f (.pt r τ x) = .pt (σ r) τ (f r τ x) := (rfl)
 
+end Isomorphism
+
+end TauCeti.RowAssembly
+
+namespace FirstOrder.Language.Equiv
+
+open TauCeti.RowAssembly FirstOrder FirstOrder.Language
+
+section RowAssembly
+
+variable {U : Type u} {Lc : Language.{u₁, v₁}}
+variable {R₁ : Type w₁} {C₁ : R₁ → Label U → Type w₂} [∀ r τ, Lc.Structure (C₁ r τ)]
+variable {R₂ : Type w₁'} {C₂ : R₂ → Label U → Type w₂'} [∀ r τ, Lc.Structure (C₂ r τ)]
+
 /-- Every `(lang U Lc)`-isomorphism preserves optional fiber labels (`none` on rows and `some τ`
 on points of label `τ`). -/
 @[simp]
-theorem label?_equiv (e : Carrier R₁ C₁ ≃[lang U Lc] Carrier R₂ C₂) (u : Carrier R₁ C₁) :
+theorem label?_apply (e : Carrier R₁ C₁ ≃[lang U Lc] Carrier R₂ C₂) (u : Carrier R₁ C₁) :
     (e u).label? = u.label? := by
   cases hl : u.label? with
   | none =>
@@ -413,50 +443,42 @@ def rowEquiv (e : Carrier R₁ C₁ ≃[lang U Lc] Carrier R₂ C₂) : R₁ ≃
     exact h
 
 /-- Action of a `(lang U Lc)`-isomorphism on a row element via `rowEquiv`. -/
-theorem equiv_row (e : Carrier R₁ C₁ ≃[lang U Lc] Carrier R₂ C₂) (r : R₁) :
-    e (.row r) = .row (rowEquiv e r) :=
+theorem apply_row (e : Carrier R₁ C₁ ≃[lang U Lc] Carrier R₂ C₂) (r : R₁) :
+    e (.row r) = .row (e.rowEquiv r) :=
   apply_row_eq e r
 
 @[simp]
 theorem rowEquiv_symm (e : Carrier R₁ C₁ ≃[lang U Lc] Carrier R₂ C₂) :
-    (rowEquiv e).symm = rowEquiv e.symm := (rfl)
-
-@[simp]
-theorem rowEquiv_equivOfFibers (σ : R₁ ≃ R₂) (f : ∀ r τ, C₁ r τ ≃[Lc] C₂ (σ r) τ) :
-    rowEquiv (equivOfFibers σ f) = σ := by
-  ext r
-  have h := equiv_row (equivOfFibers σ f) r
-  rw [equivOfFibers_row] at h
-  exact (Carrier.row.inj h).symm
+    e.rowEquiv.symm = e.symm.rowEquiv := (rfl)
 
 /-- Every `(lang U Lc)`-isomorphism commutes with `ownerRow` via `rowEquiv`. -/
 @[simp]
-theorem ownerRow_equiv (e : Carrier R₁ C₁ ≃[lang U Lc] Carrier R₂ C₂) (u : Carrier R₁ C₁) :
-    (e u).ownerRow = rowEquiv e u.ownerRow := by
+theorem ownerRow_apply (e : Carrier R₁ C₁ ≃[lang U Lc] Carrier R₂ C₂) (u : Carrier R₁ C₁) :
+    (e u).ownerRow = e.rowEquiv u.ownerRow := by
   cases u with
-  | row r => simp [equiv_row]
+  | row r => simp [apply_row]
   | pt r τ x =>
     let v : Fin 2 → Carrier R₁ C₁ := Fin.cons (.pt r τ x) (fun _ => .row r)
     have hown : Structure.RelMap (L := lang U Lc) Sym.own v := by simp [v]
     have hown' := (e.map_rel Sym.own v).mpr hown
     simp only [relMap_own_iff, Function.comp_apply, v, Fin.cons_zero, Fin.cons_one,
-      equiv_row, Carrier.ownerRow_row] at hown'
+      apply_row, Carrier.ownerRow_row] at hown'
     exact hown'.2.2
 
-private theorem exists_pt_equiv (e : Carrier R₁ C₁ ≃[lang U Lc] Carrier R₂ C₂) (r : R₁)
+private theorem exists_pt_apply (e : Carrier R₁ C₁ ≃[lang U Lc] Carrier R₂ C₂) (r : R₁)
     (τ : Label U) (x : C₁ r τ) :
-    ∃ y : C₂ (rowEquiv e r) τ, e (.pt r τ x) = .pt (rowEquiv e r) τ y :=
+    ∃ y : C₂ (e.rowEquiv r) τ, e (.pt r τ x) = .pt (e.rowEquiv r) τ y :=
   Carrier.ownerRow_eq_and_label?_eq_some_iff.mp ⟨by simp, by simp⟩
 
 /-- Forward fiber map extracted from an isomorphism of row assemblies. -/
 private noncomputable def fiberMap (e : Carrier R₁ C₁ ≃[lang U Lc] Carrier R₂ C₂) (r : R₁)
-    (τ : Label U) (x : C₁ r τ) : C₂ (rowEquiv e r) τ :=
-  (exists_pt_equiv e r τ x).choose
+    (τ : Label U) (x : C₁ r τ) : C₂ (e.rowEquiv r) τ :=
+  (exists_pt_apply e r τ x).choose
 
 private theorem apply_pt_eq (e : Carrier R₁ C₁ ≃[lang U Lc] Carrier R₂ C₂) (r : R₁)
     (τ : Label U) (x : C₁ r τ) :
-    e (.pt r τ x) = .pt (rowEquiv e r) τ (fiberMap e r τ x) :=
-  (exists_pt_equiv e r τ x).choose_spec
+    e (.pt r τ x) = .pt (e.rowEquiv r) τ (fiberMap e r τ x) :=
+  (exists_pt_apply e r τ x).choose_spec
 
 private theorem bijective_fiberMap (e : Carrier R₁ C₁ ≃[lang U Lc] Carrier R₂ C₂) (r : R₁)
     (τ : Label U) : Function.Bijective (fiberMap e r τ) := by
@@ -464,68 +486,101 @@ private theorem bijective_fiberMap (e : Carrier R₁ C₁ ≃[lang U Lc] Carrier
   · apply Carrier.pt_injective r τ
     apply e.injective
     rw [apply_pt_eq, apply_pt_eq, h]
-  · let u : Carrier R₁ C₁ := e.symm (.pt (rowEquiv e r) τ y)
+  · let u : Carrier R₁ C₁ := e.symm (.pt (e.rowEquiv r) τ y)
     have ho : u.ownerRow = r := by
-      simp only [u, ownerRow_equiv, Carrier.ownerRow_pt, ← rowEquiv_symm, Equiv.symm_apply_apply]
+      simp only [u, ownerRow_apply, Carrier.ownerRow_pt, ← rowEquiv_symm,
+        _root_.Equiv.symm_apply_apply]
     have hl : u.label? = some τ := by simp [u]
     obtain ⟨x, hx⟩ := Carrier.ownerRow_eq_and_label?_eq_some_iff.mp ⟨ho, hl⟩
-    refine ⟨x, Carrier.pt_injective (rowEquiv e r) τ ?_⟩
+    refine ⟨x, Carrier.pt_injective (e.rowEquiv r) τ ?_⟩
     rw [← apply_pt_eq, ← hx]
     exact e.apply_symm_apply _
 
 /-- The bijection on a single fiber `(r, τ)` induced by an isomorphism of row assemblies. The
 component language `Lc` need not be relational for the bare bijection. -/
 noncomputable def fiberBij (e : Carrier R₁ C₁ ≃[lang U Lc] Carrier R₂ C₂) (r : R₁) (τ : Label U) :
-    C₁ r τ ≃ C₂ (rowEquiv e r) τ :=
+    C₁ r τ ≃ C₂ (e.rowEquiv r) τ :=
   Equiv.ofBijective (fiberMap e r τ) (bijective_fiberMap e r τ)
 
 /-- Action of a `(lang U Lc)`-isomorphism on a fiber point via `rowEquiv` and `fiberBij`. -/
-theorem equiv_pt_fiberBij (e : Carrier R₁ C₁ ≃[lang U Lc] Carrier R₂ C₂) (r : R₁)
+theorem apply_pt_eq_pt_fiberBij (e : Carrier R₁ C₁ ≃[lang U Lc] Carrier R₂ C₂) (r : R₁)
     (τ : Label U) (x : C₁ r τ) :
-    e (.pt r τ x) = .pt (rowEquiv e r) τ (fiberBij e r τ x) :=
+    e (.pt r τ x) = .pt (e.rowEquiv r) τ (e.fiberBij r τ x) :=
   apply_pt_eq e r τ x
 
 private theorem map_rel_fiberBij (e : Carrier R₁ C₁ ≃[lang U Lc] Carrier R₂ C₂) (r : R₁)
     (τ : Label U) {n : ℕ} (rel : Lc.Relations n) (xs : Fin n → C₁ r τ) :
-    Structure.RelMap rel (fiberBij e r τ ∘ xs) ↔ Structure.RelMap rel xs := by
+    Structure.RelMap rel (e.fiberBij r τ ∘ xs) ↔ Structure.RelMap rel xs := by
   cases n with
   | zero =>
     have h := e.map_rel (Sym.lift0 rel τ) (fun _ => .row r)
-    simp only [relMap_lift0_iff, Function.comp_apply, equiv_row, Carrier.row.injEq,
+    simp only [relMap_lift0_iff, Function.comp_apply, apply_row, Carrier.row.injEq,
       exists_eq_left'] at h
-    rwa [Subsingleton.elim (fiberBij e r τ ∘ xs) Fin.elim0, Subsingleton.elim xs Fin.elim0]
+    rwa [Subsingleton.elim (e.fiberBij r τ ∘ xs) Fin.elim0, Subsingleton.elim xs Fin.elim0]
   | succ l =>
     let v : Fin (l + 1) → Carrier R₁ C₁ := fun i => .pt r τ (xs i)
     have h := e.map_rel (Sym.lift rel) v
-    have hv : e ∘ v = fun i => .pt (rowEquiv e r) τ (fiberBij e r τ (xs i)) :=
-      funext fun i => equiv_pt_fiberBij e r τ (xs i)
+    have hv : e ∘ v = fun i => .pt (e.rowEquiv r) τ (e.fiberBij r τ (xs i)) :=
+      funext fun i => e.apply_pt_eq_pt_fiberBij r τ (xs i)
     rwa [hv, relMap_lift_pt_iff, relMap_lift_pt_iff] at h
 
 /-- When the component language `Lc` is relational, the fiber bijection induced by an isomorphism
 of row assemblies is an `Lc`-isomorphism on every fiber. -/
 noncomputable def fiberEquiv [Lc.IsRelational] (e : Carrier R₁ C₁ ≃[lang U Lc] Carrier R₂ C₂)
-    (r : R₁) (τ : Label U) : C₁ r τ ≃[Lc] C₂ (rowEquiv e r) τ where
-  toEquiv := fiberBij e r τ
+    (r : R₁) (τ : Label U) : C₁ r τ ≃[Lc] C₂ (e.rowEquiv r) τ where
+  toEquiv := e.fiberBij r τ
   map_fun' {_} fn _ := isEmptyElim fn
   map_rel' {_} rel xs := map_rel_fiberBij e r τ rel xs
 
+@[simp]
+theorem toEquiv_fiberEquiv [Lc.IsRelational] (e : Carrier R₁ C₁ ≃[lang U Lc] Carrier R₂ C₂)
+    (r : R₁) (τ : Label U) :
+    (e.fiberEquiv r τ).toEquiv = e.fiberBij r τ := (rfl)
+
+@[simp]
+theorem coe_fiberEquiv [Lc.IsRelational] (e : Carrier R₁ C₁ ≃[lang U Lc] Carrier R₂ C₂)
+    (r : R₁) (τ : Label U) :
+    ⇑(e.fiberEquiv r τ) = e.fiberBij r τ := (rfl)
+
 /-- Action of a `(lang U Lc)`-isomorphism on a fiber point via `rowEquiv` and `fiberEquiv`. -/
-theorem equiv_pt [Lc.IsRelational] (e : Carrier R₁ C₁ ≃[lang U Lc] Carrier R₂ C₂) (r : R₁)
+theorem apply_pt [Lc.IsRelational] (e : Carrier R₁ C₁ ≃[lang U Lc] Carrier R₂ C₂) (r : R₁)
     (τ : Label U) (x : C₁ r τ) :
-    e (.pt r τ x) = .pt (rowEquiv e r) τ (fiberEquiv e r τ x) :=
-  equiv_pt_fiberBij e r τ x
+    e (.pt r τ x) = .pt (e.rowEquiv r) τ (e.fiberEquiv r τ x) :=
+  e.apply_pt_eq_pt_fiberBij r τ x
 
 /-- Reassembling the restricted row bijection and fiber isomorphisms recovers the original
 isomorphism of row assemblies. -/
 @[simp]
 theorem equivOfFibers_rowEquiv_fiberEquiv [Lc.IsRelational]
     (e : Carrier R₁ C₁ ≃[lang U Lc] Carrier R₂ C₂) :
-    equivOfFibers (rowEquiv e) (fiberEquiv e) = e := by
+    equivOfFibers e.rowEquiv e.fiberEquiv = e := by
   ext u
   cases u with
-  | row r => exact (equiv_row e r).symm
-  | pt r τ x => exact (equiv_pt e r τ x).symm
+  | row r => exact (e.apply_row r).symm
+  | pt r τ x => exact (e.apply_pt r τ x).symm
 
-end Isomorphism
+end RowAssembly
+
+end FirstOrder.Language.Equiv
+
+namespace TauCeti.RowAssembly
+
+open FirstOrder FirstOrder.Language
+
+section RowEquivOfFibers
+
+variable {U : Type u} {Lc : Language.{u₁, v₁}}
+variable {R₁ : Type w₁} {C₁ : R₁ → Label U → Type w₂} [∀ r τ, Lc.Structure (C₁ r τ)]
+variable {R₂ : Type w₁'} {C₂ : R₂ → Label U → Type w₂'} [∀ r τ, Lc.Structure (C₂ r τ)]
+
+@[simp]
+theorem rowEquiv_equivOfFibers (σ : R₁ ≃ R₂) (f : ∀ r τ, C₁ r τ ≃[Lc] C₂ (σ r) τ) :
+    (equivOfFibers σ f).rowEquiv = σ := by
+  ext r
+  have h := (equivOfFibers σ f).apply_row r
+  rw [equivOfFibers_row] at h
+  exact (Carrier.row.inj h).symm
+
+end RowEquivOfFibers
 
 end TauCeti.RowAssembly

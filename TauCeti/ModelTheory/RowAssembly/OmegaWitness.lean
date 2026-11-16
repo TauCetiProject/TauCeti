@@ -8,10 +8,7 @@ module
 public import TauCeti.ModelTheory.RowAssembly.BackAndForth
 public import TauCeti.ModelTheory.Counting.Stratification
 import TauCeti.ModelTheory.BackAndForth.PureSet
-import TauCeti.GroupTheory.Perm.Basic
-import Mathlib.Data.Finset.Max
-import Mathlib.Data.Fintype.EquivFin
-import Mathlib.Data.Fintype.Sets
+import TauCeti.ModelTheory.Scott.PureSet
 import Mathlib.SetTheory.Cardinal.Continuum
 
 /-!
@@ -31,6 +28,9 @@ This file constructs the prefix row assembly `PrefixModel` over `ℕ` with pure-
 * `omega0_lt_scottHeight_prefixModel` and `scottHeight_prefixModel_le`:
   `ω < scottHeight PrefixModel ≤ ω + ω`;
 * `exists_internalScottRank_omega_with_large_bfClass`: existential witness form;
+* `nonempty_equiv_prefixModelCode` and `nonempty_equiv_companionModelCode`: isomorphism bridges
+  between `PrefixModel` / `CompanionModel z` and their configurations `prefixModelCode` /
+  `companionModelCode z` on `ℕ`;
 * `not_isIsolatingRank_internalScottRank`: the internal Scott rank on configurations on `ℕ` is not
   an isolating rank (although it is isomorphism-invariant and countable, it fails one-sided
   isolation at `prefixModelCode`);
@@ -40,28 +40,32 @@ This file constructs the prefix row assembly `PrefixModel` over `ℕ` with pure-
 
 ## Construction
 
-An admissible row (`Row`) is a nondecreasing word `p : List ℕ` satisfying `p[i] ≤ i` at every
-index `i < p.length`. In `PrefixModel = Carrier Row BaseFiber`, the fiber at `(p, τ)` is the
-finite pure set `Fin (last τ + 1)` when `τ.1` is a prefix of `p.1`, and the infinite pure set `ℕ`
-otherwise. Because `last τ ≤ τ.length - 1`, any row `p` of length `L` is pinned among rows of
-`PrefixModel` at back-and-forth depth `L + 2`, bounding every finite tuple's orbit rank below `ω`;
-conversely, extending `List.range (k + 1)` by `[k]` shows no finite level stabilizes all rows.
+An admissible row is a nondecreasing word `p : List ℕ` satisfying `p[i] ≤ i` at every index
+`i < p.length`. In `PrefixModel`, built as a row assembly over admissible rows with pure-set
+fibers, the fiber at `(p, τ)` is the finite pure set `Fin (last τ + 1)` when `τ.1` is a prefix of
+`p.1`, and the infinite pure set `ℕ` otherwise. Because `last τ ≤ τ.length - 1`, any row `p` of
+length `L` is pinned among rows of `PrefixModel` at back-and-forth depth `L + 2`, bounding every
+finite tuple's orbit rank below `ω`; conversely, extending `List.range (k + 1)` by `[k]` shows no
+finite level stabilizes all rows.
 
-Each `z : ℕ → Bool` defines a nondecreasing path `pathOf z` (`pathOf z (2 * n) = n`,
-`pathOf z (2 * n + 1) = n + (z n).toNat`) and adds one infinite-path row `none : Option Row` whose
-finite fibers sit along the prefixes of `pathOf z`. At any finite depth `m`, a Hilbert-hotel
-bijection absorbing `none` into `pathPrefix z (2 * m)` matches every fiber up to depth `m` because
-diverging fibers have `last τ ≥ pathOf z (2 * m) = m`.
+Each `z : ℕ → Bool` defines a nondecreasing path `π_z` (`π_z (2 * n) = n`,
+`π_z (2 * n + 1) = n + (z n).toNat`) and adds one infinite-path row whose finite fibers sit along
+the prefixes of `π_z`. At any finite depth `m`, a Hilbert-hotel bijection absorbing the extra row
+into the length-`2 * m` prefix of `π_z` matches every fiber up to depth `m` because diverging
+fibers have `last τ ≥ π_z (2 * m) = m`.
 
 ## References
 
-* Adapted from `InfinitaryLogic/Examples/ScottRankOmega.lean` and
-  `InfinitaryLogic/ModelTheory/PrefixAssembly.lean` in Cameron Freer's
-  `cameronfreer/infinitary-logic` (checkpoint `518a366cba97b1ae8c4dc64a297a396939bc3e0b`,
-  Apache-2.0); see also David Marker, *Lectures on Infinitary Model Theory*, Cambridge University
-  Press, 2016, and Antonio Montalbán, *Computable Structure Theory: Beyond the Arithmetic*,
-  Cambridge University Press, 2021, for structures of limit Scott rank `ω` with non-isomorphic
-  `≡_ω`-companions (the high-Scott-rank / non-isolated phenomenon at limit ordinals).
+* Adapted from `InfinitaryLogic/ModelTheory/FiberPrefixDetection.lean`, `FiberProfileBound.lean`,
+  `FiberProfilePerm.lean`, `FiberIsoCarrying.lean`, `FiberOrbitBound.lean`, `FiberTwoRow.lean`,
+  `FiberExactRank.lean`, `FiberExactOmega.lean`, `FiberCompanion.lean`, `FiberCompanionShift.lean`,
+  `FiberCompanionEquiv.lean`, `FiberCompanionIso.lean`, and `FiberCantorFamily.lean` in Cameron
+  Freer's `cameronfreer/infinitary-logic` (checkpoint
+  `518a366cba97b1ae8c4dc64a297a396939bc3e0b`, Apache-2.0); see also David Marker, *Lectures on
+  Infinitary Model Theory*, Cambridge University Press, 2016, and Antonio Montalbán, *Computable
+  Structure Theory: Beyond the Arithmetic*, Part 2, for structures of limit Scott rank `ω` with
+  non-isomorphic `≡_ω`-companions (the high-Scott-rank / non-isolated phenomenon at limit
+  ordinals).
 -/
 
 public section
@@ -74,72 +78,63 @@ open FirstOrder FirstOrder.Language Fin Cardinal Ordinal
 
 /-- Pure-set fiber attached to label `τ : Label ℕ` according to a Boolean flag `b`: when `b = true`
 it is the finite set `Fin (τ.1.getLast τ.2 + 1)`, and when `b = false` it is `ℕ`. -/
-def FiberType : Bool → Label ℕ → Type
+private def FiberType : Bool → Label ℕ → Type
   | true, τ => Fin (τ.1.getLast τ.2 + 1)
   | false, _ => ℕ
 
-instance instStructureFiberType (b : Bool) (τ : Label ℕ) :
+private instance instStructureFiberType (b : Bool) (τ : Label ℕ) :
     Language.empty.Structure (FiberType b τ) :=
   Language.emptyStructure
 
-instance instCountableFiberType (b : Bool) (τ : Label ℕ) : Countable (FiberType b τ) := by
+private instance instCountableFiberType (b : Bool) (τ : Label ℕ) : Countable (FiberType b τ) := by
   cases b <;> dsimp [FiberType] <;> infer_instance
 
-private theorem bfEquiv_fiberType_of_le (b₁ b₂ : Bool) (τ : Label ℕ) {k : ℕ}
-    (hk : k ≤ τ.1.getLast τ.2 + 1) :
-    BFEquiv (L := Language.empty) (k : Ordinal.{0}) 0
-      (Fin.elim0 : Fin 0 → FiberType b₁ τ) (Fin.elim0 : Fin 0 → FiberType b₂ τ) := by
-  have hft : BFEquiv (L := Language.empty) (k : Ordinal.{0}) 0
-      (Fin.elim0 : Fin 0 → FiberType false τ) (Fin.elim0 : Fin 0 → FiberType true τ) := by
-    have : Infinite (FiberType false τ) := inferInstanceAs (Infinite ℕ)
-    rw [bfEquiv_empty_elim0_natCast_iff_le_card]
-    simp only [FiberType, ENat.card_eq_coe_fintype_card, Fintype.card_fin]
-    exact_mod_cast hk
-  cases b₁ <;> cases b₂
-  · exact BFEquiv.refl _ _
-  · exact hft
-  · exact hft.symm
-  · exact BFEquiv.refl _ _
+private instance instInfiniteFiberTypeFalse (τ : Label ℕ) : Infinite (FiberType false τ) :=
+  inferInstanceAs (Infinite ℕ)
 
-private theorem not_bfEquiv_fiberType_of_lt {b₁ b₂ : Bool} (hb : b₁ ≠ b₂) (τ : Label ℕ) {k : ℕ}
-    (hk : τ.1.getLast τ.2 + 1 < k) :
-    ¬ BFEquiv (L := Language.empty) (k : Ordinal.{0}) 0
-      (Fin.elim0 : Fin 0 → FiberType b₁ τ) (Fin.elim0 : Fin 0 → FiberType b₂ τ) := by
-  have hft : ¬ BFEquiv (L := Language.empty) (k : Ordinal.{0}) 0
-      (Fin.elim0 : Fin 0 → FiberType false τ) (Fin.elim0 : Fin 0 → FiberType true τ) := by
-    have : Infinite (FiberType false τ) := inferInstanceAs (Infinite ℕ)
-    rw [bfEquiv_empty_elim0_natCast_iff_le_card, not_le]
-    simp only [FiberType, ENat.card_eq_coe_fintype_card, Fintype.card_fin]
-    exact_mod_cast hk
+private instance instFintypeFiberTypeTrue (τ : Label ℕ) : Fintype (FiberType true τ) :=
+  inferInstanceAs (Fintype (Fin (τ.1.getLast τ.2 + 1)))
+
+private theorem card_fiberType_true (τ : Label ℕ) :
+    Fintype.card (FiberType true τ) = τ.1.getLast τ.2 + 1 :=
+  Fintype.card_fin _
+
+private theorem bfEquiv_fiberType_iff (b₁ b₂ : Bool) (τ : Label ℕ) (k : ℕ) :
+    BFEquiv (L := Language.empty) (k : Ordinal.{0}) 0
+      (Fin.elim0 : Fin 0 → FiberType b₁ τ) (Fin.elim0 : Fin 0 → FiberType b₂ τ) ↔
+      b₁ = b₂ ∨ k ≤ τ.1.getLast τ.2 + 1 := by
+  have hft : BFEquiv (L := Language.empty) (k : Ordinal.{0}) 0
+      (Fin.elim0 : Fin 0 → FiberType false τ) (Fin.elim0 : Fin 0 → FiberType true τ) ↔
+      k ≤ τ.1.getLast τ.2 + 1 := by
+    rw [bfEquiv_empty_elim0_natCast_iff_le_card, ENat.card_eq_coe_fintype_card, card_fiberType_true]
+    exact_mod_cast Iff.rfl
   cases b₁ <;> cases b₂
-  · exact absurd rfl hb
-  · exact hft
-  · exact fun h => hft h.symm
-  · exact absurd rfl hb
+  · simp [BFEquiv.refl]
+  · simpa using hft
+  · rw [BFEquiv.symm_iff]
+    simpa using hft
+  · simp [BFEquiv.refl]
 
 private theorem eq_of_fiberType_equiv {b₁ b₂ : Bool} {τ : Label ℕ}
     (e : FiberType b₁ τ ≃ FiberType b₂ τ) : b₁ = b₂ := by
-  have : Infinite (FiberType false τ) := inferInstanceAs (Infinite ℕ)
   cases b₁ <;> cases b₂
   · rfl
-  · exact False.elim ((not_infinite_iff_finite.mpr
-      (inferInstanceAs (Finite (Fin (τ.1.getLast τ.2 + 1)))))
-      (Infinite.of_injective e e.injective))
-  · exact False.elim ((not_infinite_iff_finite.mpr
-      (inferInstanceAs (Finite (Fin (τ.1.getLast τ.2 + 1)))))
-      (Infinite.of_injective e.symm e.symm.injective))
+  · have := Finite.of_equiv _ e.symm
+    exact (not_finite (FiberType false τ)).elim
+  · have := Finite.of_equiv _ e
+    exact (not_finite (FiberType false τ)).elim
   · rfl
 
 /-! ### Admissible rows and the prefix row assembly `PrefixModel` -/
 
 /-- A word `l : List ℕ` is admissible when it is nondecreasing and satisfies `l[i] ≤ i` at every
 position `i < l.length`. -/
-def IsAdmissible (l : List ℕ) : Prop :=
+private def IsAdmissible (l : List ℕ) : Prop :=
   (∀ ⦃i j : ℕ⦄ (hi : i < l.length) (hj : j < l.length), i ≤ j → l[i] ≤ l[j]) ∧
     ∀ ⦃i : ℕ⦄ (hi : i < l.length), l[i] ≤ i
 
 /-- Admissible finite words over `ℕ`, indexing the rows of `PrefixModel`. -/
-abbrev Row : Type := {l : List ℕ // IsAdmissible l}
+private abbrev Row : Type := {l : List ℕ // IsAdmissible l}
 
 private theorem isAdmissible_take {l : List ℕ} (hl : IsAdmissible l) (k : ℕ) :
     IsAdmissible (l.take k) := by
@@ -159,23 +154,33 @@ private theorem getLast_le_pred_length {l : List ℕ} (hl : IsAdmissible l) (hne
 private theorem isAdmissible_range (m : ℕ) : IsAdmissible (List.range m) :=
   ⟨fun _ _ _ _ hij => by simpa using hij, fun _ _ => by simp⟩
 
-instance instInfiniteRow : Infinite Row :=
+private instance instInfiniteRow : Infinite Row :=
   Infinite.of_injective (fun m : ℕ => (⟨List.range m, isAdmissible_range m⟩ : Row)) fun a b h => by
     simpa using congrArg (fun r : Row => r.1.length) h
 
 /-- Component pure-set fibers of `PrefixModel`: finite of size `last τ + 1` when `τ.1 <+: p.1`,
 and `ℕ` otherwise. -/
-abbrev BaseFiber (p : Row) (τ : Label ℕ) : Type :=
+private abbrev BaseFiber (p : Row) (τ : Label ℕ) : Type :=
   FiberType (decide (τ.1 <+: p.1)) τ
 
 /-- The prefix row assembly over `ℕ` with pure-set fibers, having internal Scott rank `ω`. -/
-abbrev PrefixModel : Type := Carrier Row BaseFiber
+def PrefixModel : Type := Carrier Row BaseFiber
+
+@[no_expose] noncomputable instance instStructurePrefixModel :
+    (lang ℕ Language.empty).Structure PrefixModel :=
+  inferInstanceAs ((lang ℕ Language.empty).Structure (Carrier Row BaseFiber))
+
+instance instCountablePrefixModel : Countable PrefixModel :=
+  inferInstanceAs (Countable (Carrier Row BaseFiber))
+
+instance instInfinitePrefixModel : Infinite PrefixModel :=
+  inferInstanceAs (Infinite (Carrier Row BaseFiber))
 
 /-! ### Row pinning and internal Scott rank `ω` of `PrefixModel` -/
 
 /-- Any row `p₁` of `PrefixModel` is uniquely determined among rows of `PrefixModel` by
 back-and-forth equivalence at finite depth `p₁.1.length + 2`. -/
-private theorem row_eq_of_bfEquiv {N : ℕ} {a b : Fin N → PrefixModel} {i₀ : Fin N}
+private theorem row_eq_of_bfEquiv {N : ℕ} {a b : Fin N → Carrier Row BaseFiber} {i₀ : Fin N}
     {p₁ p₂ : Row} (ha₀ : a i₀ = .row p₁) (hb₀ : b i₀ = .row p₂)
     (h : BFEquiv (L := lang ℕ Language.empty) ((p₁.1.length + 2 : ℕ) : Ordinal.{0}) N a b) :
     p₁ = p₂ := by
@@ -183,13 +188,14 @@ private theorem row_eq_of_bfEquiv {N : ℕ} {a b : Fin N → PrefixModel} {i₀ 
     by_contra hnp
     have hne : p₁.1 ≠ [] := fun he => hnp (he ▸ List.nil_prefix)
     let τ : Label ℕ := ⟨p₁.1, hne⟩
-    have hf := bfEquiv_fiber_elim0_of_row_eq h ha₀ hb₀ τ
-    have hlast : τ.1.getLast τ.2 + 1 < p₁.1.length + 2 := by
-      have hle := getLast_le_pred_length p₁.2 hne
-      have hpos : 0 < p₁.1.length := List.length_pos_iff.mpr hne
-      dsimp only [τ]
+    have hf := (bfEquiv_fiberType_iff _ _ τ (p₁.1.length + 2)).mp
+      (bfEquiv_fiber_elim0_of_row_eq h ha₀ hb₀ τ)
+    have hle := getLast_le_pred_length p₁.2 hne
+    have hpos : 0 < p₁.1.length := List.length_pos_iff.mpr hne
+    rcases hf with hdec | hge
+    · simp [τ, hnp] at hdec
+    · dsimp only [τ] at hge
       omega
-    exact not_bfEquiv_fiberType_of_lt (by simp [τ, hnp]) τ hlast hf
   have hlen : p₂.1.length ≤ p₁.1.length := by
     by_contra hlt
     have hlt' : p₁.1.length < p₂.1.length := Nat.lt_of_not_ge hlt
@@ -197,71 +203,21 @@ private theorem row_eq_of_bfEquiv {N : ℕ} {a b : Fin N → PrefixModel} {i₀ 
     have hllen : l.length = p₁.1.length + 1 := by simp [l]; omega
     have hne : l ≠ [] := List.ne_nil_of_length_pos (by omega)
     let τ : Label ℕ := ⟨l, hne⟩
-    have hf := bfEquiv_fiber_elim0_of_row_eq h ha₀ hb₀ τ
+    have hf := (bfEquiv_fiberType_iff _ _ τ (p₁.1.length + 2)).mp
+      (bfEquiv_fiber_elim0_of_row_eq h ha₀ hb₀ τ)
     have hnp₁ : ¬ (l <+: p₁.1) := fun hp => by
       have := hp.length_le
       omega
     have hp₂ : l <+: p₂.1 := List.take_prefix _ _
-    have hlast : τ.1.getLast τ.2 + 1 < p₁.1.length + 2 := by
-      have hle : τ.1.getLast τ.2 ≤ l.length - 1 :=
-        getLast_le_pred_length (isAdmissible_take p₂.2 (p₁.1.length + 1)) hne
-      omega
-    exact not_bfEquiv_fiberType_of_lt (by simp [τ, hnp₁, hp₂]) τ hlast hf
-  obtain ⟨t, ht⟩ := hpref
-  have htl : t = [] := List.eq_nil_of_length_eq_zero (by
-    have := congrArg List.length ht
-    simp only [List.length_append] at this
-    omega)
-  rw [htl, List.append_nil] at ht
-  exact Subtype.ext ht
-
-/-- Given tuples `a` and `b` in `PrefixModel` with matching owner rows, matching optional labels,
-and the same atomic type, an automorphism of `PrefixModel` fixing every row carries `a` to `b`. -/
-private theorem exists_aut_comp_eq_of_ownerRow_eq {n : ℕ} {a b : Fin n → PrefixModel}
-    (hsat : SameAtomicType (L := lang ℕ Language.empty) a b)
-    (hrow : ∀ i, (b i).ownerRow = (a i).ownerRow) :
-    ∃ g : PrefixModel ≃[lang ℕ Language.empty] PrefixModel, g ∘ a = b := by
-  classical
-  have hlab : ∀ i, (b i).label? = (a i).label? := fun i => (label?_eq_of_sameAtomicType hsat i).symm
-  have hfib : ∀ (p : Row) (τ : Label ℕ),
-      ∃ f : BaseFiber p τ ≃[Language.empty] BaseFiber p τ,
-        ∀ (i : Fin n) (x y : BaseFiber p τ),
-          a i = .pt p τ x → b i = .pt p τ y → f x = y := by
-    intro p τ
-    let P : Fin n → Prop := fun i => (a i).ownerRow = p ∧ (a i).label? = some τ
-    let e₀ : Fin (Fintype.card {i : Fin n // P i}) ≃ {i : Fin n // P i} :=
-      (Fintype.equivFin {i : Fin n // P i}).symm
-    choose xs hxs using fun q => Carrier.ownerRow_eq_and_label?_eq_some_iff.mp (e₀ q).2
-    choose ys hys using fun q => Carrier.ownerRow_eq_and_label?_eq_some_iff.mp
-      ⟨(hrow (e₀ q).1).trans (e₀ q).2.1, (hlab (e₀ q).1).trans (e₀ q).2.2⟩
-    have heq_iff : ∀ q₁ q₂, xs q₁ = xs q₂ ↔ ys q₁ = ys q₂ := fun q₁ q₂ => by
-      rw [← (Carrier.pt_injective p τ).eq_iff, ← hxs q₁, ← hxs q₂,
-        hsat.eq_iff (e₀ q₁).1 (e₀ q₂).1, hys q₁, hys q₂, (Carrier.pt_injective p τ).eq_iff]
-    obtain ⟨π, -, hπ⟩ := exists_perm_apply_eq_of_eq_iff (fun _ : BaseFiber p τ => ()) heq_iff
-      fun _ => rfl
-    refine ⟨{ toEquiv := π }, fun i x y hai hbi => ?_⟩
-    let q := e₀.symm ⟨i, by simp [P, hai]⟩
-    have hqi : (e₀ q).1 = i := congrArg Subtype.val (e₀.apply_symm_apply _)
-    have hx : xs q = x := Carrier.pt_injective p τ ((hqi ▸ hxs q).symm.trans hai)
-    have hy : ys q = y := Carrier.pt_injective p τ ((hqi ▸ hys q).symm.trans hbi)
-    exact hx ▸ hy ▸ hπ q
-  choose f hf using hfib
-  refine ⟨equivOfFibers (Equiv.refl Row) f, funext fun i => ?_⟩
-  cases hai : a i with
-  | row p =>
-    have hb := Carrier.label?_eq_none_iff.mp (by rw [hlab i, hai, Carrier.label?_row])
-    rw [hrow i, hai, Carrier.ownerRow_row] at hb
-    rw [Function.comp_apply, hai, hb]
-    exact equivOfFibers_row (Equiv.refl Row) f p
-  | pt p τ x =>
-    obtain ⟨y, hbi⟩ := Carrier.ownerRow_eq_and_label?_eq_some_iff.mp
-      ⟨by rw [hrow i, hai, Carrier.ownerRow_pt], by rw [hlab i, hai, Carrier.label?_pt]⟩
-    rw [Function.comp_apply, hai, hbi]
-    exact (equivOfFibers_pt (Equiv.refl Row) f p τ x).trans
-      (congrArg (Carrier.pt p τ) (hf p τ i x y hai hbi))
+    have hle : τ.1.getLast τ.2 ≤ l.length - 1 :=
+      getLast_le_pred_length (isAdmissible_take p₂.2 (p₁.1.length + 1)) hne
+    rcases hf with hdec | hge
+    · simp [τ, hnp₁, hp₂] at hdec
+    · omega
+  exact Subtype.ext (hpref.eq_of_length_le hlen)
 
 private theorem internalScottRank_prefixModel_le :
-    internalScottRank (L := lang ℕ Language.empty) PrefixModel ≤ Ordinal.omega0 := by
+    internalScottRank (L := lang ℕ Language.empty) (Carrier Row BaseFiber) ≤ Ordinal.omega0 := by
   rw [internalScottRank_le_iff]
   intro n a
   let r : ℕ := Finset.sup Finset.univ fun i : Fin n => (a i).ownerRow.1.length
@@ -279,8 +235,14 @@ private theorem internalScottRank_prefixModel_le :
         (Finset.mem_univ i)) 2
     exact (row_eq_of_bfEquiv (i₀ := natAdd n i) (by simp only [append_right])
       (by simp only [append_right]) (happ.mono (Nat.cast_le.mpr hle))).symm
-  obtain ⟨g, rfl⟩ := exists_aut_comp_eq_of_ownerRow_eq hab.sameAtomicType hrow
-  exact g.bfEquiv β a
+  have hsat := hab.sameAtomicType
+  refine (MatchedBF.mk (σ := Equiv.refl Row) hrow
+    (fun i => (label?_eq_of_sameAtomicType hsat i).symm) ?_).bfEquiv
+  intro p τ m idx xs ys hxs hys
+  refine (selfStabilizesCompletely_empty (BaseFiber p τ)).bfEquiv_of_bfEquiv
+    (BFEquiv.zero.mpr ((sameAtomicType_empty_iff xs ys).mpr fun j k => ?_))
+  rw [← (Carrier.pt_injective p τ).eq_iff, ← hxs j, ← hxs k,
+    hsat.eq_iff (idx j) (idx k), hys j, hys k, (Carrier.pt_injective _ τ).eq_iff]
 
 private theorem isAdmissible_range_snoc (k : ℕ) :
     IsAdmissible (List.range (k + 1) ++ [k]) := by
@@ -300,7 +262,8 @@ private theorem isAdmissible_range_snoc (k : ℕ) :
     split_ifs <;> omega
 
 private theorem omega0_le_selfStabilizationOrdinal_prefixModel :
-    Ordinal.omega0 ≤ selfStabilizationOrdinal (L := lang ℕ Language.empty) PrefixModel := by
+    Ordinal.omega0 ≤ selfStabilizationOrdinal (L := lang ℕ Language.empty)
+      (Carrier Row BaseFiber) := by
   refine Ordinal.omega0_le.mpr fun k => ?_
   let p₁ : Row := ⟨List.range (k + 1), isAdmissible_range (k + 1)⟩
   let p₂ : Row := ⟨List.range (k + 1) ++ [k], isAdmissible_range_snoc k⟩
@@ -313,7 +276,7 @@ private theorem omega0_le_selfStabilizationOrdinal_prefixModel :
     intro r τ
     by_cases hτ : τ.1 = p₂.1
     · have hlast : τ.1.getLast τ.2 = k := by simp [hτ, p₂]
-      exact bfEquiv_fiberType_of_le _ _ τ (by omega)
+      exact (bfEquiv_fiberType_iff _ _ τ (k + 1)).mpr (Or.inr (by omega))
     · have hd : decide (τ.1 <+: p₁.1) = decide (τ.1 <+: p₂.1) := by
         simp [p₁, p₂, List.prefix_concat_iff, hτ]
       by_cases hr₁ : r = p₁
@@ -327,11 +290,11 @@ private theorem omega0_le_selfStabilizationOrdinal_prefixModel :
           dsimp only [BaseFiber]
           rw [← hd]
         · rw [Equiv.swap_apply_of_ne_of_ne hr₁ hr₂]
-  let a : Fin 1 → PrefixModel := fun _ => .row p₁
-  let b : Fin 1 → PrefixModel := fun _ => .row p₂
+  let a : Fin 1 → Carrier Row BaseFiber := fun _ => .row p₁
+  let b : Fin 1 → Carrier Row BaseFiber := fun _ => .row p₂
   have hab : BFEquiv (L := lang ℕ Language.empty) ((k + 1 : ℕ) : Ordinal.{0}) 1 a b := by
     simpa [a, b, σ, Equiv.swap_apply_left] using
-      bfEquiv_row_of_rowEquiv σ ((k + 1 : ℕ) : Ordinal.{0}) (fun _ : Fin 1 => p₁) hfib
+      bfEquiv_row_of_bfEquiv_elim0 σ ((k + 1 : ℕ) : Ordinal.{0}) (fun _ : Fin 1 => p₁) hfib
   have hnot : ((k + 1 : ℕ) : Ordinal.{0}) ∉ orbitStable (L := lang ℕ Language.empty) a := by
     rw [mem_orbitStable_iff]
     intro hst
@@ -343,16 +306,20 @@ private theorem omega0_le_selfStabilizationOrdinal_prefixModel :
     (orbitRank_le_selfStabilizationOrdinal a)
 
 /-- The simultaneous internal stabilization ordinal of `PrefixModel` is `ω`. -/
+@[simp]
 theorem selfStabilizationOrdinal_prefixModel :
-    selfStabilizationOrdinal (L := lang ℕ Language.empty) PrefixModel = Ordinal.omega0 :=
-  le_antisymm
+    selfStabilizationOrdinal (L := lang ℕ Language.empty) PrefixModel = Ordinal.omega0 := by
+  change selfStabilizationOrdinal (L := lang ℕ Language.empty) (Carrier Row BaseFiber) = _
+  exact le_antisymm
     (selfStabilizationOrdinal_le_internalScottRank.trans internalScottRank_prefixModel_le)
     omega0_le_selfStabilizationOrdinal_prefixModel
 
 /-- `PrefixModel` has internal Scott rank `ω`. -/
+@[simp]
 theorem internalScottRank_prefixModel :
-    internalScottRank (L := lang ℕ Language.empty) PrefixModel = Ordinal.omega0 :=
-  le_antisymm internalScottRank_prefixModel_le
+    internalScottRank (L := lang ℕ Language.empty) PrefixModel = Ordinal.omega0 := by
+  change internalScottRank (L := lang ℕ Language.empty) (Carrier Row BaseFiber) = _
+  exact le_antisymm internalScottRank_prefixModel_le
     (omega0_le_selfStabilizationOrdinal_prefixModel.trans
       selfStabilizationOrdinal_le_internalScottRank)
 
@@ -360,7 +327,7 @@ theorem internalScottRank_prefixModel :
 
 /-- Nondecreasing path encoded by `z : ℕ → Bool`: `pathOf z (2 * n) = n` and
 `pathOf z (2 * n + 1) = n + (z n).toNat`. -/
-def pathOf (z : ℕ → Bool) (k : ℕ) : ℕ :=
+private def pathOf (z : ℕ → Bool) (k : ℕ) : ℕ :=
   k / 2 + if k % 2 = 1 then (z (k / 2)).toNat else 0
 
 private theorem pathOf_two_mul (z : ℕ → Bool) (n : ℕ) : pathOf z (2 * n) = n := by
@@ -389,7 +356,7 @@ private theorem pathOf_le (z : ℕ → Bool) (k : ℕ) : pathOf z k ≤ k := by
   · omega
 
 /-- The length-`m` admissible prefix of `pathOf z`. -/
-def pathPrefix (z : ℕ → Bool) (m : ℕ) : Row :=
+private def pathPrefix (z : ℕ → Bool) (m : ℕ) : Row :=
   ⟨(List.range m).map (pathOf z),
     ⟨fun _ _ _ _ hij => by simpa using pathOf_mono z hij,
       fun i _ => by simpa using pathOf_le z i⟩⟩
@@ -409,20 +376,30 @@ private theorem prefix_pathPrefix_iff (z : ℕ → Bool) (l : List ℕ) (k : ℕ
 
 /-- Component pure-set fibers of `CompanionModel z`: `BaseFiber p` on `some p`, and finite along
 the prefixes of `pathOf z` on the extra path row `none`. -/
-abbrev CompanionFiber (z : ℕ → Bool) : Option Row → Label ℕ → Type
+private abbrev CompanionFiber (z : ℕ → Bool) : Option Row → Label ℕ → Type
   | some p, τ => BaseFiber p τ
   | none, τ => FiberType (decide (τ.1 = (pathPrefix z τ.1.length).1)) τ
 
-instance instStructureCompanionFiber (z : ℕ → Bool) (r : Option Row) (τ : Label ℕ) :
+private instance instStructureCompanionFiber (z : ℕ → Bool) (r : Option Row) (τ : Label ℕ) :
     Language.empty.Structure (CompanionFiber z r τ) := by
   cases r <;> infer_instance
 
-instance instCountableCompanionFiber (z : ℕ → Bool) (r : Option Row) (τ : Label ℕ) :
+private instance instCountableCompanionFiber (z : ℕ → Bool) (r : Option Row) (τ : Label ℕ) :
     Countable (CompanionFiber z r τ) := by
   cases r <;> infer_instance
 
 /-- The companion row assembly attached to `z : ℕ → Bool`. -/
-abbrev CompanionModel (z : ℕ → Bool) : Type := Carrier (Option Row) (CompanionFiber z)
+def CompanionModel (z : ℕ → Bool) : Type := Carrier (Option Row) (CompanionFiber z)
+
+@[no_expose] noncomputable instance instStructureCompanionModel (z : ℕ → Bool) :
+    (lang ℕ Language.empty).Structure (CompanionModel z) :=
+  inferInstanceAs ((lang ℕ Language.empty).Structure (Carrier (Option Row) (CompanionFiber z)))
+
+instance instCountableCompanionModel (z : ℕ → Bool) : Countable (CompanionModel z) :=
+  inferInstanceAs (Countable (Carrier (Option Row) (CompanionFiber z)))
+
+instance instInfiniteCompanionModel (z : ℕ → Bool) : Infinite (CompanionModel z) :=
+  inferInstanceAs (Infinite (Carrier (Option Row) (CompanionFiber z)))
 
 /-! ### Level-`ω` equivalence via Hilbert-hotel row bijections -/
 
@@ -495,6 +472,17 @@ private def hilbertRow (z : ℕ → Bool) (m : ℕ) : Option Row ≃ Row where
   left_inv := leftInverse_hilbertRowInv z m
   right_inv := rightInverse_hilbertRowInv z m
 
+@[simp]
+private theorem hilbertRow_none (z : ℕ → Bool) (m : ℕ) :
+    hilbertRow z m none = pathPrefix z (2 * m) := (rfl)
+
+@[simp]
+private theorem hilbertRow_some (z : ℕ → Bool) (m : ℕ) (p : Row) :
+    hilbertRow z m (some p) =
+      if 2 * m ≤ p.1.length ∧ p = pathPrefix z p.1.length then
+        pathPrefix z (p.1.length + 1)
+      else p := (rfl)
+
 private theorem le_getLast_of_eq_pathPrefix (z : ℕ → Bool) {m : ℕ} (τ : Label ℕ)
     (hlen : 2 * m < τ.1.length) (hτ : τ.1 = (pathPrefix z τ.1.length).1) :
     m ≤ τ.1.getLast τ.2 + 1 := by
@@ -510,46 +498,37 @@ private theorem le_getLast_of_eq_pathPrefix (z : ℕ → Bool) {m : ℕ} (τ : L
     exact pathOf_mono z (by omega)
   omega
 
-/-- Helper matching two `FiberType` flags at depth `m` whenever either `b₁ = b₂` or
-`m ≤ τ.1.getLast τ.2 + 1`. -/
-private theorem bfEquiv_fiberType_of_eq_or_le {b₁ b₂ : Bool} (τ : Label ℕ) {m : ℕ}
-    (h : b₁ = b₂ ∨ m ≤ τ.1.getLast τ.2 + 1) :
-    BFEquiv (L := Language.empty) (m : Ordinal.{0}) 0
-      (Fin.elim0 : Fin 0 → FiberType b₁ τ) (Fin.elim0 : Fin 0 → FiberType b₂ τ) := by
-  rcases h with rfl | hle
-  · exact BFEquiv.refl _ _
-  · exact bfEquiv_fiberType_of_le b₁ b₂ τ hle
-
 /-- Every companion `CompanionModel z` is back-and-forth equivalent to `PrefixModel` at level
 `ω`. -/
 theorem bfEquiv_omega0_companionModel_prefixModel (z : ℕ → Bool) :
     BFEquiv (L := lang ℕ Language.empty) Ordinal.omega0.{0} 0
       (Fin.elim0 : Fin 0 → CompanionModel z) (Fin.elim0 : Fin 0 → PrefixModel) := by
+  change BFEquiv (L := lang ℕ Language.empty) Ordinal.omega0.{0} 0
+    (Fin.elim0 : Fin 0 → Carrier (Option Row) (CompanionFiber z))
+    (Fin.elim0 : Fin 0 → Carrier Row BaseFiber)
   rw [BFEquiv.limit Ordinal.isSuccLimit_omega0]
   intro β hβ
   obtain ⟨m, rfl⟩ := Ordinal.lt_omega0.mp hβ
-  refine bfEquiv_elim0_of_rowEquiv (hilbertRow z m) (m : Ordinal.{0}) fun r τ => ?_
+  refine bfEquiv_elim0_of_bfEquiv_elim0 (hilbertRow z m) (m : Ordinal.{0}) fun r τ => ?_
   cases r with
   | none =>
-    apply bfEquiv_fiberType_of_eq_or_le τ
+    rw [hilbertRow_none]
+    apply (bfEquiv_fiberType_iff _ _ τ m).mpr
     by_cases hτ : τ.1 = (pathPrefix z τ.1.length).1
     · by_cases hlen : τ.1.length ≤ 2 * m
       · left
         have hp : τ.1 <+: (pathPrefix z (2 * m)).1 :=
           (prefix_pathPrefix_iff z τ.1 (2 * m)).mpr ⟨hlen, hτ⟩
-        rw [decide_eq_true hτ]
-        simp [hilbertRow, hilbertRowFun, hp]
+        rw [decide_eq_true hτ, decide_eq_true hp]
       · exact Or.inr (le_getLast_of_eq_pathPrefix z τ (Nat.lt_of_not_ge hlen) hτ)
     · left
       have hnp : ¬ (τ.1 <+: (pathPrefix z (2 * m)).1) := fun hp =>
         hτ ((prefix_pathPrefix_iff z τ.1 (2 * m)).mp hp).2
-      rw [decide_eq_false hτ]
-      simp [hilbertRow, hilbertRowFun, hnp]
+      rw [decide_eq_false hτ, decide_eq_false hnp]
   | some p =>
     by_cases hp : 2 * m ≤ p.1.length ∧ p = pathPrefix z p.1.length
-    · have hhr : hilbertRow z m (some p) = pathPrefix z (p.1.length + 1) := ite_eq_left hp
-      rw [hhr]
-      apply bfEquiv_fiberType_of_eq_or_le τ
+    · rw [hilbertRow_some, ite_eq_left hp]
+      apply (bfEquiv_fiberType_iff _ _ τ m).mpr
       by_cases hτ : τ.1 = (pathPrefix z τ.1.length).1
       · by_cases hlen : τ.1.length ≤ p.1.length
         · left
@@ -557,16 +536,15 @@ theorem bfEquiv_omega0_companionModel_prefixModel (z : ℕ → Bool) :
             (prefix_pathPrefix_iff z τ.1 p.1.length).mpr ⟨hlen, hτ⟩
           have hp₂ : τ.1 <+: (pathPrefix z (p.1.length + 1)).1 :=
             (prefix_pathPrefix_iff z τ.1 (p.1.length + 1)).mpr ⟨by omega, hτ⟩
-          simp [hp₁, hp₂]
+          rw [decide_eq_true hp₁, decide_eq_true hp₂]
         · exact Or.inr (le_getLast_of_eq_pathPrefix z τ (by omega) hτ)
       · left
         have hnp₁ : ¬ (τ.1 <+: p.1) := fun h₁ =>
           hτ ((prefix_pathPrefix_iff z τ.1 p.1.length).mp (hp.2 ▸ h₁)).2
         have hnp₂ : ¬ (τ.1 <+: (pathPrefix z (p.1.length + 1)).1) := fun h₂ =>
           hτ ((prefix_pathPrefix_iff z τ.1 (p.1.length + 1)).mp h₂).2
-        simp [hnp₁, hnp₂]
-    · have hhr : hilbertRow z m (some p) = p := ite_eq_right hp
-      rw [hhr]
+        rw [decide_eq_false hnp₁, decide_eq_false hnp₂]
+    · rw [hilbertRow_some, ite_eq_right hp]
       exact BFEquiv.refl _ _
 
 /-! ### Non-isomorphism and Scott-height consequences -/
@@ -585,26 +563,30 @@ private theorem false_of_fiberBij_none (z : ℕ → Bool) (p : Row)
 
 /-- No companion `CompanionModel z` is isomorphic to `PrefixModel`. -/
 theorem isEmpty_equiv_companionModel_prefixModel (z : ℕ → Bool) :
-    IsEmpty (CompanionModel z ≃[lang ℕ Language.empty] PrefixModel) :=
-  ⟨fun e => false_of_fiberBij_none z (rowEquiv e none) (fiberBij e none)⟩
+    IsEmpty (CompanionModel z ≃[lang ℕ Language.empty] PrefixModel) := by
+  change IsEmpty (Carrier (Option Row) (CompanionFiber z) ≃[lang ℕ Language.empty]
+    Carrier Row BaseFiber)
+  exact ⟨fun e => false_of_fiberBij_none z (e.rowEquiv none) (e.fiberBij none)⟩
 
 /-- Distinct binary sequences yield non-isomorphic companions. -/
 theorem isEmpty_equiv_companionModel_of_ne {z z' : ℕ → Bool} (h : z ≠ z') :
     IsEmpty (CompanionModel z ≃[lang ℕ Language.empty] CompanionModel z') := by
+  change IsEmpty (Carrier (Option Row) (CompanionFiber z) ≃[lang ℕ Language.empty]
+    Carrier (Option Row) (CompanionFiber z'))
   refine ⟨fun e => ?_⟩
-  have hnone : rowEquiv e none = none := by
-    cases hr : rowEquiv e none with
+  have hnone : e.rowEquiv none = none := by
+    cases hr : e.rowEquiv none with
     | none => rfl
     | some p =>
       exact False.elim (false_of_fiberBij_none z p fun τ => by
-        have hf := fiberBij e none τ
+        have hf := e.fiberBij none τ
         rw [hr] at hf
         exact hf)
   obtain ⟨n, hn⟩ := Function.ne_iff.mp h
   let τ : Label ℕ := ⟨(pathPrefix z (2 * n + 2)).1, List.ne_nil_of_length_pos (by simp)⟩
   have heq : decide (τ.1 = (pathPrefix z τ.1.length).1) =
       decide (τ.1 = (pathPrefix z' τ.1.length).1) := by
-    have hf := fiberBij e none τ
+    have hf := e.fiberBij none τ
     rw [hnone] at hf
     exact eq_of_fiberType_equiv hf
   simp only [τ, length_pathPrefix, decide_true, true_eq_decide_iff] at heq
@@ -626,8 +608,7 @@ theorem omega0_lt_scottHeight_prefixModel :
 /-- The Scott height of `PrefixModel` is at most `ω + ω`. -/
 theorem scottHeight_prefixModel_le :
     scottHeight (L := lang ℕ Language.empty) PrefixModel ≤ Ordinal.omega0 + Ordinal.omega0 := by
-  simpa [internalScottRank_prefixModel] using
-    scottHeight_le_internalScottRank_add_omega0 (L := lang ℕ Language.empty) PrefixModel
+  simpa using scottHeight_le_internalScottRank_add_omega0 (L := lang ℕ Language.empty) PrefixModel
 
 /-- There is a countable `(lang ℕ Language.empty)`-structure of internal Scott rank `ω` (with
 Scott height strictly above `ω`) together with a Cantor-indexed family of pairwise non-isomorphic
@@ -659,63 +640,55 @@ noncomputable def companionModelCode (z : ℕ → Bool) :
     RelationalConfiguration (lang ℕ Language.empty) ℕ :=
   (nonempty_equiv_of_countable.some : CompanionModel z ≃ ℕ).encodeVia
 
+/-- `prefixModelCode` decodes to a structure on `ℕ` isomorphic to `PrefixModel`. -/
+theorem nonempty_equiv_prefixModelCode :
+    Nonempty (@Language.Equiv (lang ℕ Language.empty) PrefixModel ℕ _
+      prefixModelCode.toStructure) := by
+  unfold prefixModelCode
+  exact Equiv.nonempty_equiv_encodeVia _
+
+/-- `companionModelCode z` decodes to a structure on `ℕ` isomorphic to `CompanionModel z`. -/
+theorem nonempty_equiv_companionModelCode (z : ℕ → Bool) :
+    Nonempty (@Language.Equiv (lang ℕ Language.empty) (CompanionModel z) ℕ _
+      (companionModelCode z).toStructure) := by
+  unfold companionModelCode
+  exact Equiv.nonempty_equiv_encodeVia _
+
 /-- The decoded structure of `prefixModelCode` has internal Scott rank `ω`. -/
 theorem internalScottRank_prefixModelCode :
     (letI := prefixModelCode.toStructure;
       internalScottRank (L := lang ℕ Language.empty) ℕ) = Ordinal.omega0 := by
-  let e : PrefixModel ≃ ℕ := nonempty_equiv_of_countable.some
-  have hts : prefixModelCode.toStructure = e.inducedStructure :=
-    e.toStructure_encodeVia
-  let _ : (lang ℕ Language.empty).Structure ℕ := e.inducedStructure
-  have heq : (letI := prefixModelCode.toStructure;
-      internalScottRank (L := lang ℕ Language.empty) ℕ) =
-      internalScottRank (L := lang ℕ Language.empty) ℕ := by
-    congr!
-  rw [heq, ← e.inducedStructureEquiv.internalScottRank_eq]
-  exact internalScottRank_prefixModel
+  let := prefixModelCode.toStructure
+  obtain ⟨E⟩ := nonempty_equiv_prefixModelCode
+  exact E.symm.internalScottRank_eq.trans internalScottRank_prefixModel
 
 /-- Every `companionModelCode z` lies in the `ω`-level back-and-forth class of
 `prefixModelCode`. -/
 theorem bfEquivSetoid_prefixModelCode_companionModelCode (z : ℕ → Bool) :
     RelationalConfiguration.bfEquivSetoid (lang ℕ Language.empty) ℕ Ordinal.omega0.{0}
       prefixModelCode (companionModelCode z) := by
-  rw [RelationalConfiguration.bfEquivSetoid_apply]
-  let e₁ : PrefixModel ≃ ℕ := nonempty_equiv_of_countable.some
-  let e₂ : CompanionModel z ≃ ℕ := nonempty_equiv_of_countable.some
-  obtain ⟨E₁⟩ := e₁.nonempty_equiv_encodeVia (L := lang ℕ Language.empty)
-  obtain ⟨E₂⟩ := e₂.nonempty_equiv_encodeVia (L := lang ℕ Language.empty)
-  let E₁s := @Language.Equiv.symm (lang ℕ Language.empty) PrefixModel ℕ
-    _ prefixModelCode.toStructure E₁
-  have h₁ : @BFEquiv (lang ℕ Language.empty) _ ℕ PrefixModel
-      prefixModelCode.toStructure _ Ordinal.omega0.{0} 0 Fin.elim0 Fin.elim0 := by
-    convert @Language.Equiv.bfEquiv (lang ℕ Language.empty) _ ℕ PrefixModel
-      prefixModelCode.toStructure _ E₁s Ordinal.omega0.{0} 0 Fin.elim0 using 1
-  have h₂ : @BFEquiv (lang ℕ Language.empty) _ (CompanionModel z) ℕ
-      _ (companionModelCode z).toStructure Ordinal.omega0.{0} 0 Fin.elim0 Fin.elim0 := by
-    convert @Language.Equiv.bfEquiv (lang ℕ Language.empty) _ (CompanionModel z) ℕ
-      _ (companionModelCode z).toStructure E₂ Ordinal.omega0.{0} 0 Fin.elim0 using 1
-  have h₁' := @BFEquiv.trans (lang ℕ Language.empty) _ ℕ PrefixModel (CompanionModel z)
-    prefixModelCode.toStructure _ _ 0 Fin.elim0 Fin.elim0 Fin.elim0 Ordinal.omega0.{0}
-    h₁ (bfEquiv_omega0_companionModel_prefixModel z).symm
-  exact @BFEquiv.trans (lang ℕ Language.empty) _ ℕ (CompanionModel z) ℕ
-    prefixModelCode.toStructure _ (companionModelCode z).toStructure 0
-    Fin.elim0 Fin.elim0 Fin.elim0 Ordinal.omega0.{0} h₁' h₂
+  rw [prefixModelCode, companionModelCode, Equiv.bfEquivSetoid_encodeVia_iff]
+  exact (bfEquiv_omega0_companionModel_prefixModel z).symm
 
 /-- No `companionModelCode z` is isomorphic as a configuration on `ℕ` to `prefixModelCode`. -/
+@[simp]
 theorem not_isoSetoid_prefixModelCode_companionModelCode (z : ℕ → Bool) :
     ¬ RelationalConfiguration.isoSetoid (lang ℕ Language.empty) ℕ
       prefixModelCode (companionModelCode z) := by
-  intro h
-  obtain ⟨e⟩ := (Equiv.isoSetoid_encodeVia_iff _ _).mp h
+  rw [prefixModelCode, companionModelCode, Equiv.isoSetoid_encodeVia_iff]
+  rintro ⟨e⟩
   exact (isEmpty_equiv_companionModel_prefixModel z).false e.symm
 
-/-- Distinct binary sequences yield non-isomorphic configurations `companionModelCode z` on `ℕ`. -/
-theorem not_isoSetoid_companionModelCode_of_ne {z z' : ℕ → Bool} (h : z ≠ z') :
-    ¬ RelationalConfiguration.isoSetoid (lang ℕ Language.empty) ℕ
-      (companionModelCode z) (companionModelCode z') := by
-  intro hiso
-  obtain ⟨e⟩ := (Equiv.isoSetoid_encodeVia_iff _ _).mp hiso
-  exact (isEmpty_equiv_companionModel_of_ne h).false e
+/-- Two companion configurations on `ℕ` are isomorphic if and only if they come from the same
+binary sequence. -/
+@[simp]
+theorem isoSetoid_companionModelCode_iff (z z' : ℕ → Bool) :
+    RelationalConfiguration.isoSetoid (lang ℕ Language.empty) ℕ
+      (companionModelCode z) (companionModelCode z') ↔ z = z' := by
+  refine ⟨fun hiso => ?_, fun h => h ▸ (RelationalConfiguration.isoSetoid _ _).refl _⟩
+  by_contra hne
+  rw [companionModelCode, companionModelCode, Equiv.isoSetoid_encodeVia_iff] at hiso
+  exact hiso.elim (isEmpty_equiv_companionModel_of_ne hne).false
 
 /-- Every isolating rank on `RelationalConfiguration (lang ℕ Language.empty) ℕ` assigns to
 `prefixModelCode` a value strictly greater than `ω`. -/
@@ -756,9 +729,8 @@ theorem mk_quotient_comap_isoSetoid_bfClass_prefixModelCode :
           (Subtype.val : K → _)) :=
       fun z => Quotient.mk _ ⟨companionModelCode z,
         bfEquivSetoid_prefixModelCode_companionModelCode z⟩
-    have hinj : Function.Injective emb := fun z z' heq => by
-      by_contra hne
-      exact not_isoSetoid_companionModelCode_of_ne hne
+    have hinj : Function.Injective emb := fun z z' heq =>
+      (isoSetoid_companionModelCode_iff z z').mp
         (Quotient.exact (s := (RelationalConfiguration.isoSetoid (lang ℕ Language.empty) ℕ).comap
           (Subtype.val : K → _)) heq)
     calc Cardinal.continuum = Cardinal.mk (ℕ → Bool) := by simp

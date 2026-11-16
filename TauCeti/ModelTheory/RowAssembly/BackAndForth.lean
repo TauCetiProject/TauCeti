@@ -21,8 +21,8 @@ There are three tools:
 * **Assembly (`MatchedBF.bfEquiv`)**: if `a` and `b` correspond along a row bijection `σ : R₁ ≃ R₂`
   with matching optional labels and fiberwise `Lc`-back-and-forth equivalence at depth `α` on every
   fiber (including empty tuples on unoccupied fibers), then `a` and `b` are `(lang U Lc)`-equivalent
-  at depth `α`. Specializing to empty tuples gives `bfEquiv_elim0_of_rowEquiv`, and specializing to
-  tuples of rows gives `bfEquiv_row_of_rowEquiv`.
+  at depth `α`. Specializing to empty tuples gives `bfEquiv_elim0_of_bfEquiv_elim0`, and
+  specializing to tuples of rows gives `bfEquiv_row_of_bfEquiv_elim0`.
 * **Pointed fiber restriction (`bfEquiv_fiber_of_row_eq`)**: if `(lang U Lc)`-equivalent tuples at
   depth `β` explicitly name row elements `a i₀ = Carrier.row r₁` and `b i₀ = Carrier.row r₂`, then
   any fiber subtuples over `(r₁, τ)` and `(r₂, τ)` are `Lc`-equivalent at depth `β`.
@@ -32,9 +32,12 @@ There are three tools:
 
 ## References
 
-* Adapted from `InfinitaryLogic/ModelTheory/FiberAssembly.lean` in Cameron Freer's
+* Adapted from `InfinitaryLogic/ModelTheory/FiberBFAssembly.lean`,
+  `InfinitaryLogic/ModelTheory/FiberBFRestriction.lean`, and
+  `InfinitaryLogic/ModelTheory/FiberOwnerRows.lean` in Cameron Freer's
   `cameronfreer/infinitary-logic` (checkpoint `518a366cba97b1ae8c4dc64a297a396939bc3e0b`,
-  Apache-2.0), generalized here to arbitrary ordinal depths and universe-polymorphic row assemblies.
+  Apache-2.0), generalized here via universe polymorphism in the row-assembly parameters and the
+  ordinal universe `Ordinal.{o}`.
 -/
 
 public section
@@ -61,11 +64,11 @@ theorem label?_eq_of_sameAtomicType {n : ℕ}
     (a i).label? = (b i).label? := by
   cases ha : (a i).label? with
   | none =>
-    have hb := (h.rel_iff Sym.row (fun _ => i)).mp (by simp [ha])
-    simpa using hb.symm
+    have hb := (h.rel_iff Sym.row (fun _ => i)).mp ((relMap_row_iff _).mpr ha)
+    exact ((relMap_row_iff _).mp hb).symm
   | some τ =>
-    have hb := (h.rel_iff (Sym.lab τ) (fun _ => i)).mp (by simp [ha])
-    simpa using hb.symm
+    have hb := (h.rel_iff (Sym.lab τ) (fun _ => i)).mp ((relMap_lab_iff τ _).mpr ha)
+    exact ((relMap_lab_iff τ _).mp hb).symm
 
 /-- Appending the owner rows of an `n`-tuple consumes `n` back-and-forth levels and forces the
 matching entries on the right to be the owner rows of `b`. The component language `Lc` need not be
@@ -235,49 +238,30 @@ theorem sameAtomicType {σ : R₁ ≃ R₂} {α : Ordinal.{o}} {n : ℕ}
   (sameAtomicType_iff a b).mpr
     ⟨fun _ _ => ⟨h.eq_imp, h.symm.eq_imp⟩, fun s f => ⟨h.rel_imp s f, h.symm.rel_imp s f⟩⟩
 
+private theorem fiber_bfEquiv_snoc_of_ne {σ : R₁ ≃ R₂} {α : Ordinal.{o}} {n m : ℕ}
+    {a : Fin n → Carrier R₁ C₁} {b : Fin n → Carrier R₂ C₂}
+    (h : MatchedBF (Lc := Lc) σ α a b) {r : R₁} {τ : Label U}
+    {u : Carrier R₁ C₁} {v : Carrier R₂ C₂} (hu : ∀ x : C₁ r τ, u ≠ .pt r τ x)
+    (idx : Fin m → Fin (n + 1)) (xs : Fin m → C₁ r τ) (ys : Fin m → C₂ (σ r) τ)
+    (hxs : ∀ k, snoc (α := fun _ => Carrier R₁ C₁) a u (idx k) = .pt r τ (xs k))
+    (hys : ∀ k, snoc (α := fun _ => Carrier R₂ C₂) b v (idx k) = .pt (σ r) τ (ys k)) :
+    BFEquiv (L := Lc) α m xs ys := by
+  have hne : ∀ k : Fin m, idx k ≠ last n := fun k hk =>
+    hu (xs k) (by simpa [hk] using hxs k)
+  refine h.fiber_bfEquiv r τ (fun k => (idx k).castPred (hne k)) xs ys (fun k => ?_) (fun k => ?_)
+  · rw [← snoc_castSucc (α := fun _ => Carrier R₁ C₁) u a, Fin.castSucc_castPred]
+    exact hxs k
+  · rw [← snoc_castSucc (α := fun _ => Carrier R₂ C₂) v b, Fin.castSucc_castPred]
+    exact hys k
+
 private theorem forth_row {σ : R₁ ≃ R₂} {α : Ordinal.{o}} {n : ℕ}
     {a : Fin n → Carrier R₁ C₁} {b : Fin n → Carrier R₂ C₂}
-    (h : MatchedBF (Lc := Lc) σ (α + 1) a b) (r₀ : R₁) :
+    (h : MatchedBF (Lc := Lc) σ α a b) (r₀ : R₁) :
     MatchedBF (Lc := Lc) σ α (snoc a (.row r₀)) (snoc b (.row (σ r₀))) where
   ownerRow_eq := lastCases (by simp) fun i => by simp [h.ownerRow_eq]
   label?_eq := lastCases (by simp) fun i => by simp [h.label?_eq]
-  fiber_bfEquiv r τ {m} idx xs ys hxs hys := by
-    have hcast : ∀ k : Fin m, ∃ j : Fin n, idx k = castSucc j := by
-      intro k
-      generalize hk : idx k = ik
-      cases ik using Fin.lastCases with
-      | last =>
-        have hbad := hxs k
-        rw [hk, snoc_last] at hbad
-        cases hbad
-      | cast j => exact ⟨j, rfl⟩
-    choose idx' hidx' using hcast
-    exact (h.fiber_bfEquiv r τ idx' xs ys
-      (fun k => by simpa [hidx' k] using hxs k)
-      (fun k => by simpa [hidx' k] using hys k)).mono le_self_add
-
-private theorem fiber_bfEquiv_snoc_pt_of_ne {σ : R₁ ≃ R₂} {α : Ordinal.{o}} {n m : ℕ}
-    {a : Fin n → Carrier R₁ C₁} {b : Fin n → Carrier R₂ C₂}
-    (h : MatchedBF (Lc := Lc) σ (α + 1) a b)
-    {r₀ r : R₁} {τ₀ τ : Label U} (hrt : ¬ (r = r₀ ∧ τ = τ₀))
-    (x₀ : C₁ r₀ τ₀) (y₀ : C₂ (σ r₀) τ₀)
-    (idx : Fin m → Fin (n + 1)) (xs : Fin m → C₁ r τ) (ys : Fin m → C₂ (σ r) τ)
-    (hxs : ∀ k, snoc (α := fun _ => Carrier R₁ C₁) a (.pt r₀ τ₀ x₀) (idx k) = .pt r τ (xs k))
-    (hys : ∀ k, snoc (α := fun _ => Carrier R₂ C₂) b (.pt (σ r₀) τ₀ y₀) (idx k) =
-      .pt (σ r) τ (ys k)) :
-    BFEquiv (L := Lc) α m xs ys := by
-  have hcast : ∀ k : Fin m, ∃ j : Fin n, idx k = castSucc j := fun k => by
-    generalize hk : idx k = ik
-    cases ik using Fin.lastCases with
-    | last =>
-      have hbad : (.pt r₀ τ₀ x₀ : Carrier R₁ C₁) = .pt r τ (xs k) := by simpa [hk] using hxs k
-      injection hbad with hr hτ _
-      exact False.elim (hrt ⟨hr.symm, hτ.symm⟩)
-    | cast j => exact ⟨j, rfl⟩
-  choose idx' hidx' using hcast
-  exact (h.fiber_bfEquiv r τ idx' xs ys
-    (fun k => by simpa [hidx' k] using hxs k)
-    (fun k => by simpa [hidx' k] using hys k)).mono le_self_add
+  fiber_bfEquiv _ _ {_} idx xs ys hxs hys :=
+    h.fiber_bfEquiv_snoc_of_ne (fun _ h => by cases h) idx xs ys hxs hys
 
 private theorem forth_pt {σ : R₁ ≃ R₂} {α : Ordinal.{o}} {n : ℕ}
     {a : Fin n → Carrier R₁ C₁} {b : Fin n → Carrier R₂ C₂}
@@ -320,7 +304,8 @@ private theorem forth_pt {σ : R₁ ≃ R₂} {α : Ordinal.{o}} {n : ℕ}
     choose g hgx hgy using hg
     rw [funext hgx, funext hgy]
     exact hy₀.comp g
-  · exact fiber_bfEquiv_snoc_pt_of_ne h hrt x₀ y₀ idx xs ys hxs hys
+  · exact (h.mono le_self_add).fiber_bfEquiv_snoc_of_ne
+      (fun _ hpt => by injection hpt with hr hτ _; exact hrt ⟨hr.symm, hτ.symm⟩) idx xs ys hxs hys
 
 /-- Forth step for `MatchedBF` from depth `α + 1` to depth `α`. -/
 theorem forth {σ : R₁ ≃ R₂} {α : Ordinal.{o}} {n : ℕ}
@@ -328,7 +313,7 @@ theorem forth {σ : R₁ ≃ R₂} {α : Ordinal.{o}} {n : ℕ}
     (h : MatchedBF (Lc := Lc) σ (α + 1) a b) (u : Carrier R₁ C₁) :
     ∃ v : Carrier R₂ C₂, MatchedBF (Lc := Lc) σ α (snoc a u) (snoc b v) := by
   cases u with
-  | row r₀ => exact ⟨.row (σ r₀), h.forth_row r₀⟩
+  | row r₀ => exact ⟨.row (σ r₀), (h.mono le_self_add).forth_row r₀⟩
   | pt r₀ τ₀ x₀ =>
     obtain ⟨y₀, hy₀⟩ := h.forth_pt r₀ τ₀ x₀
     exact ⟨.pt (σ r₀) τ₀ y₀, hy₀⟩
@@ -357,7 +342,7 @@ end MatchedBF
 /-- If a row bijection `σ : R₁ ≃ R₂` matches every fiber `(r, τ)` with `(σ r, τ)` at empty-tuple
 `Lc`-depth `α`, then any tuple of rows `rs : Fin n → R₁` is `(lang U Lc)`-equivalent at depth `α`
 to `σ ∘ rs`. -/
-theorem bfEquiv_row_of_rowEquiv (σ : R₁ ≃ R₂) (α : Ordinal.{o}) {n : ℕ} (rs : Fin n → R₁)
+theorem bfEquiv_row_of_bfEquiv_elim0 (σ : R₁ ≃ R₂) (α : Ordinal.{o}) {n : ℕ} (rs : Fin n → R₁)
     (hf : ∀ r τ, BFEquiv (L := Lc) α 0
       (Fin.elim0 : Fin 0 → C₁ r τ) (Fin.elim0 : Fin 0 → C₂ (σ r) τ)) :
     BFEquiv (L := lang U Lc) α n
@@ -376,12 +361,12 @@ theorem bfEquiv_row_of_rowEquiv (σ : R₁ ≃ R₂) (α : Ordinal.{o}) {n : ℕ
 /-- If a row bijection `σ : R₁ ≃ R₂` matches every fiber `(r, τ)` with `(σ r, τ)` at empty-tuple
 `Lc`-depth `α`, then the assembled structures are `(lang U Lc)`-equivalent on empty tuples at
 depth `α`. -/
-theorem bfEquiv_elim0_of_rowEquiv (σ : R₁ ≃ R₂) (α : Ordinal.{o})
+theorem bfEquiv_elim0_of_bfEquiv_elim0 (σ : R₁ ≃ R₂) (α : Ordinal.{o})
     (hf : ∀ r τ, BFEquiv (L := Lc) α 0
       (Fin.elim0 : Fin 0 → C₁ r τ) (Fin.elim0 : Fin 0 → C₂ (σ r) τ)) :
     BFEquiv (L := lang U Lc) α 0
       (Fin.elim0 : Fin 0 → Carrier R₁ C₁) (Fin.elim0 : Fin 0 → Carrier R₂ C₂) := by
-  convert bfEquiv_row_of_rowEquiv σ α Fin.elim0 hf
+  convert bfEquiv_row_of_bfEquiv_elim0 σ α Fin.elim0 hf
 
 end Assembly
 
