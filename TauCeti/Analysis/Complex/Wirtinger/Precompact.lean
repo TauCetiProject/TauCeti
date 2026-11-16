@@ -9,8 +9,6 @@ public import TauCeti.Analysis.Complex.Wirtinger.InteriorEstimate
 public import Mathlib.Topology.MetricSpace.Holder
 public import Mathlib.Topology.UniformSpace.LocallyUniformConvergence
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
-import Mathlib.Topology.ContinuousMap.SecondCountableSpace
-import Mathlib.Topology.Sequences
 import TauCeti.Analysis.Sobolev.Morrey.Basic
 import TauCeti.Topology.ContinuousMap.Ascoli
 import TauCeti.Topology.MetricSpace.Holder
@@ -42,11 +40,11 @@ Cauchy–Riemann operator
 (`TauCeti.exists_eLpNorm_fderiv_le_eLpNorm_conjWirtingerDeriv_add_eLpNorm`) bounds the
 derivative `Du` in `Lᵖ(K)` uniformly over the family. Applied to a closed thickening `L` of `K`
 inside `U`, Morrey's inequality on the ball of radius `|x - y|` about the midpoint of `x` and `y`
-(`TauCeti.enorm_sub_le_of_contDiffOn_ball_midpoint_of_finrank_lt`) bounds `‖u x - u y‖` by a
+(`TauCeti.dist_le_of_contDiffOn_ball_midpoint_of_finrank_lt`) bounds `‖u x - u y‖` by a
 multiple of `|x - y|^(1 - 2 / p)` for nearby points `x, y ∈ K`, and the sup bound handles
 distant points (`HolderOnWith.of_dist_lt_of_dist_le`). The subsequence comes from the
-Arzelà–Ascoli theorem in `C(U, F)` (`ArzelaAscoli.isCompact_closure_range_of_equicontinuous`),
-whose convergence is locally uniform convergence on `U`.
+Arzelà–Ascoli theorem on the open set `U`
+(`EquicontinuousOn.exists_strictMono_tendstoLocallyUniformlyOn`).
 
 ## Main results
 
@@ -143,7 +141,7 @@ theorem exists_holderOnWith_of_norm_conjWirtingerDeriv_sub_le {p : ℝ≥0} (hp 
       hp.le), NNReal.coe_div]
     norm_num
   have hp2 : (Module.finrank ℝ ℂ : ℝ≥0) < p := by simpa using hp
-  -- Morrey's constant in the plane, with the factor `2 ^ α` of `(2 |x - y|) ^ α` absorbed.
+  -- Morrey's constant in the plane.
   set c : ℝ := 2 ^ (Module.finrank ℝ ℂ + 1) /
       (Module.finrank ℝ ℂ * (volume : Measure ℂ).real (ball 0 1)) *
       (Module.finrank ℝ ℂ * (volume : Measure ℂ).real (ball 0 1) * (p - 1) /
@@ -155,29 +153,20 @@ theorem exists_holderOnWith_of_norm_conjWirtingerDeriv_sub_le {p : ℝ≥0} (hp 
       (fun x hx y _ hxy ↦ ?_) fun x hx y hy ↦ ?_⟩
   · -- Morrey's inequality on the ball of radius `|x - y|` about the midpoint of `x` and `y`.
     rw [hδ'] at hxy
-    have hball : ball (midpoint ℝ x y) (dist x y) ⊆ cthickening δ K := fun z hz ↦
+    have hball : ball (midpoint ℝ x y) ‖x - y‖ ⊆ cthickening δ K := fun z hz ↦
       closedBall_subset_cthickening hx δ <| mem_closedBall.2 <| by
         have hmid : dist (midpoint ℝ x y) x = dist x y / 2 := by
           rw [dist_comm, dist_left_midpoint]
           norm_num
           ring
-        rw [mem_ball] at hz
+        rw [mem_ball, ← dist_eq_norm] at hz
         linarith [dist_triangle z (midpoint ℝ x y) x]
-    have hmor := enorm_sub_le_of_contDiffOn_ball_midpoint_of_finrank_lt (μ := volume)
-      ((hu.mono ((dist_eq_norm x y ▸ hball).trans hLU)).of_le (by simp)) hp2
-    rw [← hα, Real.mul_rpow zero_le_two (norm_nonneg _), ← mul_assoc, ← dist_eq_norm] at hmor
-    have he : edist (u x) (u y) ≤ ENNReal.ofReal (c * N * dist x y ^ (α : ℝ)) :=
-      calc edist (u x) (u y) = ‖u x - u y‖ₑ := eDist_eq_eNorm_sub _ _
-        _ ≤ ENNReal.ofReal (c * dist x y ^ (α : ℝ)) * N :=
-          hmor.trans (by gcongr; exact (eLpNorm_mono_measure _
-            (Measure.restrict_mono hball le_rfl)).trans (hN u g hu hA hM hB))
-        _ = ENNReal.ofReal (c * N * dist x y ^ (α : ℝ)) := by
-          rw [← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul' N.coe_nonneg]
-          ring_nf
-    rw [dist_edist, NNReal.coe_mul, ← ENNReal.toReal_ofReal
-      (r := c.toNNReal * N * dist x y ^ (α : ℝ)) (by positivity)]
-    exact ENNReal.toReal_mono ENNReal.ofReal_ne_top (he.trans (ENNReal.ofReal_le_ofReal
-      (by gcongr; exact Real.le_coe_toNNReal c)))
+    refine (dist_le_of_contDiffOn_ball_midpoint_of_finrank_lt (μ := volume)
+      ((hu.mono (hball.trans hLU)).of_le (by simp)) hp2 ((eLpNorm_mono_measure _
+        (Measure.restrict_mono hball le_rfl)).trans (hN u g hu hA hM hB))).trans ?_
+    rw [← hα, NNReal.coe_mul]
+    gcongr
+    exact Real.le_coe_toNNReal c
   · -- Points at distance at least `δ / 2` are handled by the sup bound.
     calc dist (u x) (u y) ≤ ‖u x‖ + ‖u y‖ := dist_le_norm_add_norm _ _
       _ ≤ A + A := add_le_add (hA x (hKU hx)) (hA y (hKU hy))
@@ -217,22 +206,8 @@ theorem exists_strictMono_tendstoLocallyUniformlyOn_of_norm_conjWirtingerDeriv_s
       simpa [Real.zero_rpow hα.ne'] using hcont.tendsto x
     · filter_upwards [closedBall_mem_nhds x (by positivity : 0 < r / 2)] with y hy n
       exact (hC n).dist_le (mem_closedBall_self (by positivity)) hy
-  -- The Arzelà–Ascoli theorem in `C(U, F)`, whose convergence is locally uniform convergence.
-  have : LocallyCompactSpace U := hU.locallyCompactSpace
-  set f : ℕ → C(U, F) := fun n ↦ ⟨U.domRestrict (u n), (hequi.continuousOn n).domRestrict⟩
-  have hcpt : IsCompact (closure (range f)) :=
-    ArzelaAscoli.isCompact_closure_range_of_equicontinuous
-      ((equicontinuous_restrict_iff _).2 hequi) fun z ↦
-        ⟨closedBall 0 A, isCompact_closedBall _ _,
-          fun n ↦ mem_closedBall_zero_iff.2 (hA n z z.2)⟩
-  obtain ⟨a, -, φ, hφ, hconv⟩ := hcpt.tendsto_subseq (x := f) fun n ↦ subset_closure ⟨n, rfl⟩
-  set v : ℂ → F := fun z ↦ if hz : z ∈ U then a ⟨z, hz⟩ else 0
-  have hv : v ∘ (Subtype.val : U → ℂ) = fun z : U ↦ a z := by
-    funext z
-    simp [v, z.2]
-  have hconvOn : TendstoLocallyUniformlyOn (fun n ↦ u (φ n)) v atTop U := by
-    rw [tendstoLocallyUniformlyOn_iff_tendstoLocallyUniformly_comp_coe, hv]
-    exact ContinuousMap.tendsto_iff_tendstoLocallyUniformly.1 hconv
+  obtain ⟨φ, hφ, v, hconvOn⟩ := hequi.exists_strictMono_tendstoLocallyUniformlyOn hU fun z hz ↦
+    ⟨closedBall 0 A, isCompact_closedBall _ _, fun n ↦ mem_closedBall_zero_iff.2 (hA n z hz)⟩
   refine ⟨φ, hφ, v, hconvOn, fun K hK hKU ↦ ?_⟩
   obtain ⟨C, hC⟩ := hH K hK hKU
   exact ⟨C, HolderOnWith.of_tendsto (fun z hz ↦ hconvOn.tendsto_at (hKU hz))

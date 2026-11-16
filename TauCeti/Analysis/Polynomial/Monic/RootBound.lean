@@ -94,7 +94,8 @@ end Polynomial
 /-- **Elementary symmetric functions are bounded by the elements.** If every element of a
 multiset `s` has norm at most `M`, then `‖s.esymm k‖ ≤ (card s).choose k * M ^ k`. Since the
 coefficients of `∏_{a ∈ s} (X - a)` are `± s.esymm k`, this bounds the coefficients of a monic
-polynomial by its roots, converse to `Polynomial.IsRoot.norm_le_two_mul`. -/
+polynomial by its roots, converse to `Polynomial.IsRoot.norm_le_two_mul`. The argument is the
+one inside the proof of Mathlib's `Polynomial.coeff_le_of_roots_le`. -/
 theorem Multiset.norm_esymm_le {K : Type*} [NormedField K] {s : Multiset K} {M : ℝ}
     (hM : ∀ a ∈ s, ‖a‖ ≤ M) (k : ℕ) :
     ‖s.esymm k‖ ≤ (Multiset.card s).choose k * M ^ k := by

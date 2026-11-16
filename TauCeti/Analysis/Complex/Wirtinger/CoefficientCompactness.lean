@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Wirtinger.Precompact
 public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
 import TauCeti.Analysis.Polynomial.Monic.RootBound
+import TauCeti.Order.Filter.AtTopBot
 
 /-!
 # Compactness of coefficients solving the equation of elementary symmetric functions
@@ -20,10 +21,12 @@ solutions of `D`, their elementary symmetric functions `b_j(z) = e_j(R(z))` sati
 
 In Taubes's analysis of Seiberg–Witten solutions concentrating along a pseudoholomorphic curve,
 the `b_j` are the Newton coefficients of the normal moments of the curvature current, and they
-satisfy this equation only up to remainders `r_j` that are small in `L^{p_m}`, `p_m = 2 + 2 / m`
-(`TauCeti.conjWirtingerDeriv_add_esymm_erase_eq_of_newton`). The roots `R(z)` of the polynomial
-`Wᵐ - b₁ Wᵐ⁻¹ + ⋯ + (-1)ᵐ bₘ` stay in a fixed disc, by the bounds of
-`TauCeti.norm_le_of_mem_roots_newtonPolynomial_integral_pow_sub`.
+satisfy this equation only up to remainders `r_j`
+(`TauCeti.conjWirtingerDeriv_add_esymm_erase_eq_of_newton` gives the equation with its explicit
+remainder). Bounds on the `r_j` in `L^{p_m}`, `p_m = 2 + 2 / m`, come from Taubes's estimates for
+the Seiberg–Witten equations, which are not proved in Tau Ceti; here they are a hypothesis. The
+roots `R(z)` of the polynomial `Wᵐ - b₁ Wᵐ⁻¹ + ⋯ + (-1)ᵐ bₘ` stay in a fixed disc, by the bounds
+of `TauCeti.norm_le_of_mem_roots_newtonPolynomial_integral_pow_sub`.
 
 This file proves that such coefficient families are precompact. For a sequence of families with
 roots in a fixed disc, bounded `ν` and `μ`, and remainders bounded in `Lᵖ(U)` for some `p > 2`,
@@ -37,7 +40,8 @@ The roots bound the coefficients and the zeroth-order terms of the equation
 (`Multiset.norm_esymm_le`), so `\bar∂ b_j` differs from the remainder by a uniformly bounded
 term, and each coefficient sequence is precompact by
 `TauCeti.exists_strictMono_tendstoLocallyUniformlyOn_of_norm_conjWirtingerDeriv_sub_le`. A
-common subsequence for the finitely many coefficients is extracted one coefficient at a time.
+common subsequence for the finitely many coefficients is extracted one coefficient at a time
+(`TauCeti.extraction_forall_mem_finset`).
 
 ## Main results
 
@@ -127,45 +131,31 @@ theorem exists_strictMono_tendstoLocallyUniformlyOn_of_esymm {m : ℕ} {p : ℝ�
     ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∃ c : ℕ → ℂ → ℂ, ∀ j ∈ Finset.Icc 1 m,
       TendstoLocallyUniformlyOn (fun n ↦ b (φ n) j) (c j) atTop U ∧
       ∀ K, IsCompact K → K ⊆ U → ∃ C : ℝ≥0, HolderOnWith C (1 - 2 / p) (c j) K := by
-  -- Extract a common subsequence for the coefficients `b₁, …, b_k`, one `k` at a time.
-  suffices ∀ k, ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∃ c : ℕ → ℂ → ℂ, ∀ j ∈ Finset.Icc 1 m, j ≤ k →
-      TendstoLocallyUniformlyOn (fun n ↦ b (φ n) j) (c j) atTop U ∧
-      ∀ K, IsCompact K → K ⊆ U → ∃ C : ℝ≥0, HolderOnWith C (1 - 2 / p) (c j) K by
-    obtain ⟨φ, hφ, c, hc⟩ := this m
-    exact ⟨φ, hφ, c, fun j hj ↦ hc j hj (Finset.mem_Icc.1 hj).2⟩
-  intro k
-  induction k with
-  | zero => exact ⟨id, strictMono_id, 0, fun j hj hj0 ↦ by grind⟩
-  | succ k ih =>
-    obtain ⟨φ, hφ, c, hc⟩ := ih
-    by_cases hk : k + 1 ∈ Finset.Icc 1 m
-    swap
-    · exact ⟨φ, hφ, c, fun j hj hjk ↦ hc j hj (by grind)⟩
-    -- The coefficient `b_{k+1}` along `φ` is precompact; pass to a further subsequence.
-    obtain ⟨ψ, hψ, v, hv, hvH⟩ :=
-      exists_strictMono_tendstoLocallyUniformlyOn_of_norm_conjWirtingerDeriv_sub_le (F := ℂ) hp hU
-        (A := m.choose (k + 1) * ρ ^ (k + 1))
-        (M := (k + 1 : ℕ) * (m.choose (k + 1) * ρ ^ (k + 1)) * Λ +
-          m * ρ * (m.choose (k + 1 - 1) * ρ ^ (k + 1 - 1)) * Λ)
-        (B := B) (u := fun n ↦ b (φ n) (k + 1))
-        (fun n ↦ hb (φ n) _ hk)
-        (fun n z hz ↦ by
-          rw [hbR _ _ hk z hz]
-          push_cast
-          exact (Multiset.norm_esymm_le (hρ _ z hz) _).trans (by gcongr; exact hcard _ z hz))
-        (fun n z hz ↦ by
-          exact_mod_cast norm_conjWirtingerDeriv_sub_le_of_esymm (hcard (φ n) z hz)
-            (hbR (φ n) _ hk z hz) (hρ (φ n) z hz) (hν (φ n) z hz) (hμ (φ n) z hz))
-        (fun n ↦ hr (φ n) _ hk)
-    refine ⟨φ ∘ ψ, hφ.comp hψ, Function.update c (k + 1) v, fun j hj hjk ↦ ?_⟩
-    rcases Nat.le_succ_iff.1 hjk with hjk | rfl
-    · rw [Function.update_of_ne (by omega)]
-      obtain ⟨hconv, hH⟩ := hc j hj hjk
-      exact ⟨tendstoLocallyUniformlyOn_iff_forall_tendsto.2 fun x hx ↦
-        (tendstoLocallyUniformlyOn_iff_forall_tendsto.1 hconv x hx).comp
-          (hψ.tendsto_atTop.prodMap tendsto_id), hH⟩
-    · rw [Function.update_self]
-      exact ⟨hv, hvH⟩
+  -- Each coefficient is precompact along any subsequence.
+  have h : ∀ j ∈ Finset.Icc 1 m, ∀ φ : ℕ → ℕ, StrictMono φ → ∃ ψ : ℕ → ℕ, StrictMono ψ ∧
+      ∃ v : ℂ → ℂ, TendstoLocallyUniformlyOn (fun n ↦ b ((φ ∘ ψ) n) j) v atTop U ∧
+        ∀ K, IsCompact K → K ⊆ U → ∃ C : ℝ≥0, HolderOnWith C (1 - 2 / p) v K := fun j hj φ _ ↦
+    exists_strictMono_tendstoLocallyUniformlyOn_of_norm_conjWirtingerDeriv_sub_le (F := ℂ) hp hU
+      (A := m.choose j * ρ ^ j)
+      (M := j * (m.choose j * ρ ^ j) * Λ + m * ρ * (m.choose (j - 1) * ρ ^ (j - 1)) * Λ)
+      (B := B) (u := fun n ↦ b (φ n) j)
+      (fun n ↦ hb (φ n) _ hj)
+      (fun n z hz ↦ by
+        rw [hbR _ _ hj z hz]
+        push_cast
+        exact (Multiset.norm_esymm_le (hρ _ z hz) _).trans (by gcongr; exact hcard _ z hz))
+      (fun n z hz ↦ by
+        exact_mod_cast norm_conjWirtingerDeriv_sub_le_of_esymm (hcard (φ n) z hz)
+          (hbR (φ n) _ hj z hz) (hρ (φ n) z hz) (hν (φ n) z hz) (hμ (φ n) z hz))
+      (fun n ↦ hr (φ n) _ hj)
+  -- Extract one common subsequence.
+  obtain ⟨φ, hφ, hc⟩ := extraction_forall_mem_finset (P := fun j φ ↦ ∃ v : ℂ → ℂ,
+      TendstoLocallyUniformlyOn (fun n ↦ b (φ n) j) v atTop U ∧
+        ∀ K, IsCompact K → K ⊆ U → ∃ C : ℝ≥0, HolderOnWith C (1 - 2 / p) v K) h
+    fun j _ φ ψ hψ ⟨v, hv, hvH⟩ ↦ ⟨v, fun s hs z hz ↦ (hv s hs z hz).imp fun _ ⟨ht, hev⟩ ↦
+      ⟨ht, hψ.tendsto_atTop.eventually hev⟩, hvH⟩
+  choose! c hc using hc
+  exact ⟨φ, hφ, c, hc⟩
 
 /-- **The Morrey exponent `1 / (m + 1)`.** For `p = 2 + 2 / m`, the exponent of
 `TauCeti.exists_strictMono_tendstoLocallyUniformlyOn_of_esymm`, the coefficients `b_j`,
@@ -193,9 +183,9 @@ theorem exists_strictMono_tendstoLocallyUniformlyOn_of_esymm_of_eq {m : ℕ} {p 
     rw [hpm]
     exact lt_add_of_pos_right 2 (by positivity)
   have hexp : (1 - 2 / p : ℝ≥0) = 1 / (m + 1) := by
-    rw [hpm, show (2 : ℝ≥0) + 2 / m = 2 * (m + 1) / m by field_simp,
-      div_div_eq_mul_div, mul_div_mul_left _ _ two_ne_zero]
-    rw [tsub_eq_iff_eq_add_of_le (div_le_one_of_le₀ (by simp) (by positivity))]
+    have : (0 : ℝ) < m := by exact_mod_cast hm
+    rw [← NNReal.coe_inj, NNReal.coe_sub ((div_le_one₀ (zero_lt_two.trans hp)).2 hp.le), hpm]
+    push_cast
     field_simp
     ring
   rw [← hexp]
