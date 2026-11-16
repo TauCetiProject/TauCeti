@@ -12,15 +12,20 @@ public import TauCeti.LinearAlgebra.TensorCoalgebra.Grading
 /-!
 # The bar differential and Taylor map on unit-containing words
 
-For a strict unit `e` of an uncurved `A∞` algebra `A`, the bar differential of a pure homogeneous
-word containing `e` agrees modulo `degenerateWords R A e` with the initial and final boundary
-collapses, with vanishing one-letter projection (`barDifferential_of_tprod_sub_mem_degenerateWords`,
+For a strict unit `e` of an uncurved `A∞` algebra `A`, the bar differential of any pure word
+containing `e` agrees modulo `degenerateWords R A e` with the initial and final boundary collapses,
+with vanishing one-letter projection (`barDifferential_of_tprod_sub_mem_degenerateWords`,
 `letter_barDifferential_of_tprod_sub_eq_zero`). Any linear map vanishing on higher degenerate words
 (or on `degenerateWords R A e`) therefore evaluates on `𝒜.barDifferential` by that boundary
 difference (`apply_barDifferential_of_tprod_of_higher_eq_zero`,
-`apply_barDifferential_of_tprod_of_ker`). Moreover, `taylor_prepend_prepend_eq_zero` shows that
-`𝒜.taylor` kills words of length at least three with `e` in either leading slot or a degenerate
-tail, feeding normalized Hochschild differential closure and strict-unit morphism extension.
+`apply_barDifferential_of_tprod_of_ker`).
+
+Moreover, `taylor_prepend_prepend_eq_zero` shows that `𝒜.taylor` kills words of length at least
+three with `e` in either leading slot or a degenerate tail. Combining the two yields
+`degenerateWords_le_ker_taylor_coalgHom_sub_barDifferential`: for any degree-zero Taylor map
+sending `e` to a target strict unit `e'` and killing higher `e`-degenerate pure words, the `A∞`
+morphism defect `ℬ.taylor ∘ₗ coalgHom R t - t ∘ₗ 𝒜.barDifferential` vanishes on all
+`e`-degenerate words.
 
 ## References
 
@@ -34,66 +39,89 @@ namespace TauCeti.AInfinityAlgebra.StrictUnit
 
 open ReducedTensorWords
 
-universe uR uA uM
+universe uR uA uB uM
 
-variable {R : Type uR} {A : Type uA} {M : Type uM}
-  [CommRing R] [AddCommGroup A] [Module R A] [AddCommGroup M] [Module R M]
-  {𝒜 : AInfinityAlgebra R A} {e : A}
+variable {R : Type uR} {A : Type uA} {B : Type uB} {M : Type uM}
+  [CommRing R] [AddCommGroup A] [Module R A] [AddCommGroup B] [Module R B]
+  [AddCommGroup M] [Module R M] {𝒜 : AInfinityAlgebra R A} {e : A}
 
-private noncomputable def unitCollapseTerm {n : ℕ} (x : Fin (n + 1) → A) (𝒟 : Fin (n + 1) → ℤ)
-    (j : Fin (n + 1)) (p d : ℕ) : ReducedTensorWords R A :=
+private noncomputable def unitCollapseTerm (𝒜 : AInfinityAlgebra R A) {n : ℕ}
+    (x : Fin (n + 1) → A) (j : Fin (n + 1)) (p d : ℕ) : ReducedTensorWords R A :=
+  let y := (𝒜.grading.shift 1).twistedTuple 1 x 0 j.1
   (if p = j.1 ∧ d = 2 ∧ j.1 + 1 ≤ n then
-    negOnePowCast R (∑ i ∈ Finset.range j.1, if h : i < n + 1 then 𝒟 ⟨i, h⟩ else 0) •
-      splice R x 0 (n + 1) j.1 2 (if h : j.1 + 1 < n + 1 then x ⟨j.1 + 1, h⟩ else 0) else 0) +
+    splice R y 0 (n + 1) j.1 2 (if h : j.1 + 1 < n + 1 then y ⟨j.1 + 1, h⟩ else 0) else 0) +
   (if p = j.1 - 1 ∧ d = 2 ∧ 1 ≤ j.1 then
-    negOnePowCast R (∑ i ∈ Finset.range (j.1 - 1), if h : i < n + 1 then 𝒟 ⟨i, h⟩ else 0) •
-      negOnePowCast R (𝒟 ⟨j.1 - 1, by omega⟩ + 1) •
-      splice R x 0 (n + 1) (j.1 - 1) 2 (x ⟨j.1 - 1, by omega⟩) else 0)
+    -splice R y 0 (n + 1) (j.1 - 1) 2 (y ⟨j.1 - 1, by omega⟩) else 0)
+
+private theorem splice_twistedTuple_pred_eq {n : ℕ} (x : Fin (n + 1) → A) (j : Fin (n + 1))
+    (hj1 : 1 ≤ j.1) (v : A) :
+    splice R ((𝒜.grading.shift 1).twistedTuple 1 x 0 (j.1 - 1)) 0 (n + 1) (j.1 - 1) 2 v =
+      splice R ((𝒜.grading.shift 1).twistedTuple 1 x 0 j.1) 0 (n + 1) (j.1 - 1) 2 v := by
+  have := j.isLt
+  rw [splice_eq_of_tprod R _ v two_pos (by omega) (by omega),
+    splice_eq_of_tprod R _ v two_pos (by omega) (by omega)]
+  refine of_tprod_congr R A _ rfl fun i ↦ ?_
+  have := i.isLt
+  simp only [Fin.val_cast]
+  split_ifs with h₁ h₂
+  · exact InternalGrading.twistedTuple_apply_eq_twistedTuple_apply _ _ _ _ (by simp; omega)
+  · rfl
+  · exact InternalGrading.twistedTuple_apply_eq_twistedTuple_apply _ _ _ _ (by simp; omega)
 
 private theorem barDifferential_summand_eq_unitCollapseTerm_of_two (h : 𝒜.StrictUnit e) {n : ℕ}
-    (x : Fin (n + 1) → A) (𝒟 : Fin (n + 1) → ℤ) (hx : ∀ i, x i ∈ (𝒜.grading.shift 1).piece (𝒟 i))
-    (j : Fin (n + 1)) (hj : x j = e) (p : ℕ) (hfit2 : p + 2 ≤ n + 1)
+    (x : Fin (n + 1) → A) (j : Fin (n + 1)) (hj : x j = e) (p : ℕ) (hfit2 : p + 2 ≤ n + 1)
     (hblock : p ≤ j.1 ∧ j.1 < p + 2) :
-    (((∑ i ∈ Finset.range p, if h : i < n + 1 then 𝒟 ⟨i, h⟩ else 0).negOnePow : ℤ) : R) •
-      splice R x 0 (n + 1) p 2 (𝒜.taylor (subword R x p 2)) = unitCollapseTerm x 𝒟 j p 2 := by
+    splice R ((𝒜.grading.shift 1).twistedTuple 1 x 0 p) 0 (n + 1) p 2
+        (𝒜.taylor (subword R x p 2)) = unitCollapseTerm 𝒜 x j p 2 := by
   have := j.isLt; dsimp only [unitCollapseTerm]
   rcases Nat.lt_or_ge p j.1 with hpj | hpj
   · obtain rfl : p = j.1 - 1 := by omega
     have hj' : (⟨j.1 - 1 + 1, by omega⟩ : Fin (n + 1)) = j := Fin.ext (by simp; omega)
     simp (disch := omega) only [true_and, ite_eq_right, ite_eq_left, zero_add]
     rw [subword_two_eq R x hfit2, hj', hj, h.taylor_of_two_unit_right,
-      𝒜.grading.koszulTwist_one_apply_of_mem
-        (by simpa [InternalGrading.shift_piece] using hx ⟨j.1 - 1, by omega⟩), splice_smul]
-    simp only [negOnePowCast_eq_intCast]
+      splice_twistedTuple_pred_eq x j (by omega)]
+    have hneg : 𝒜.grading.koszulTwist 1 (x ⟨j.1 - 1, by omega⟩) =
+        -((𝒜.grading.shift 1).twistedTuple 1 x 0 j.1 ⟨j.1 - 1, by omega⟩) := by
+      rw [InternalGrading.twistedTuple_apply_of_mem_Ico
+            (hi := by simp only [Nat.zero_le, true_and]; omega),
+        InternalGrading.koszulTwist_one_shift_one, LinearMap.neg_apply, neg_neg]
+    rw [hneg, splice_neg]
   · obtain rfl : p = j.1 := by omega
-    simp (disch := omega) only [true_and, ite_eq_right, ite_eq_left, add_zero]
+    simp (disch := omega) only [true_and, ite_eq_right, ite_eq_left, add_zero, dite_eq_left]
     rw [subword_two_eq R x hfit2, Fin.eta, hj, h.taylor_of_two_unit_left,
-      negOnePowCast_eq_intCast, dite_eq_left (by omega)]
+      InternalGrading.twistedTuple_apply_of_not_mem_Ico (hi := by simp)]
 
 private theorem barDifferential_summand_sub_unitCollapseTerm (h : 𝒜.StrictUnit e) {n : ℕ}
-    (x : Fin (n + 1) → A) (𝒟 : Fin (n + 1) → ℤ) (hx : ∀ i, x i ∈ (𝒜.grading.shift 1).piece (𝒟 i))
-    (j : Fin (n + 1)) (hj : x j = e) (p d : ℕ) :
+    (x : Fin (n + 1) → A) (j : Fin (n + 1)) (hj : x j = e) (p d : ℕ) :
     let diff :=
-      (((∑ i ∈ Finset.range p, if h : i < n + 1 then 𝒟 ⟨i, h⟩ else 0).negOnePow : ℤ) : R) •
-        splice R x 0 (n + 1) p d (𝒜.taylor (subword R x p d)) - unitCollapseTerm x 𝒟 j p d
+      splice R ((𝒜.grading.shift 1).twistedTuple 1 x 0 p) 0 (n + 1) p d
+        (𝒜.taylor (subword R x p d)) - unitCollapseTerm 𝒜 x j p d
     diff ∈ degenerateWords R A e ∧ letter R A diff = 0 := by
   have := j.isLt
   by_cases hfit : 0 < d ∧ p + d ≤ n + 1
   swap
   · dsimp only [unitCollapseTerm]
-    simp (disch := omega) only [splice_eq_zero_of_not_fits R _ _ hfit, smul_zero, ite_eq_right,
+    simp (disch := omega) only [splice_eq_zero_of_not_fits R _ _ hfit, ite_eq_right,
       add_zero, sub_zero, Submodule.zero_mem, map_zero, and_self]
   by_cases hblock : p ≤ j.1 ∧ j.1 < p + d
   swap
-  · obtain ⟨y, ⟨k, hk⟩, hy⟩ := exists_splice_eq_of_tprod R x hfit.2
-      (𝒜.taylor (subword R x p d)) hblock
+  · obtain ⟨y, ⟨k, hk⟩, hy⟩ := exists_splice_eq_of_tprod R
+      ((𝒜.grading.shift 1).twistedTuple 1 x 0 p) hfit.2 (𝒜.taylor (subword R x p d)) hblock
     have hne : (⟨n + 1 + 1 - d, by omega⟩ : {m : ℕ // 0 < m}) ≠ 1 := fun h1 ↦ by
       have : n + 1 + 1 - d = 1 := congrArg Subtype.val h1; omega
+    have hdeg : of R A ⟨n + 1 + 1 - d, by omega⟩ (PiTensorProduct.tprod R y) ∈
+        degenerateWords R A e := by
+      by_cases hjp : j.1 < p
+      · refine of_tprod_mem_degenerateWords_of_eq_smul ⟨n + 1 + 1 - d, by omega⟩ y
+            (i := k) (c := (-1 : R)) ?_
+        rw [hk, InternalGrading.twistedTuple_apply_of_mem_Ico (hi := by simp [hjp]), hj,
+          InternalGrading.koszulTwist_one_shift_one, LinearMap.neg_apply,
+          𝒜.grading.koszulTwist_apply_of_mem_zero h.degree_zero, neg_one_smul]
+      · refine of_tprod_mem_degenerateWords ⟨n + 1 + 1 - d, by omega⟩ y ⟨k, ?_⟩
+        rw [hk, InternalGrading.twistedTuple_apply_of_not_mem_Ico (hi := by simp [hjp]), hj]
     dsimp only [unitCollapseTerm]
     simp (disch := omega) only [hy, ite_eq_right, add_zero, sub_zero]
-    exact ⟨Submodule.smul_mem _ _
-        (of_tprod_mem_degenerateWords ⟨n + 1 + 1 - d, by omega⟩ y ⟨k, hk.trans hj⟩),
-      by rw [map_smul, letter_of_of_ne_one R A hne, smul_zero]⟩
+    exact ⟨hdeg, letter_of_of_ne_one R A hne _⟩
   by_cases hd2 : d = 2
   swap
   · have hzero : 𝒜.taylor (subword R x p d) = 0 := by
@@ -101,103 +129,78 @@ private theorem barDifferential_summand_sub_unitCollapseTerm (h : 𝒜.StrictUni
       exact h.taylor_of_tprod_eq_zero ⟨d, hfit.1⟩ hd2 _
         ⟨⟨j.1 - p, by dsimp only; omega⟩, by rw [← hj]; exact congrArg x (Fin.ext (by simp; omega))⟩
     dsimp only [unitCollapseTerm]
-    simp (disch := omega) only [hzero, splice_zero, smul_zero, ite_eq_right, add_zero, sub_zero,
+    simp (disch := omega) only [hzero, splice_zero, ite_eq_right, add_zero, sub_zero,
       Submodule.zero_mem, map_zero, and_self]
   subst hd2
-  rw [h.barDifferential_summand_eq_unitCollapseTerm_of_two x 𝒟 hx j hj p hfit.2 hblock, sub_self]
+  rw [h.barDifferential_summand_eq_unitCollapseTerm_of_two x j hj p hfit.2 hblock, sub_self]
   exact ⟨Submodule.zero_mem _, map_zero _⟩
 
-private theorem sum_unitCollapseTerm_eq {n : ℕ} (x : Fin (n + 1) → A) (𝒟 : Fin (n + 1) → ℤ)
-    (hx : ∀ i, x i ∈ (𝒜.grading.shift 1).piece (𝒟 i)) (j : Fin (n + 1)) :
-    (∑ p ∈ Finset.range (n + 1), ∑ d ∈ Finset.range (n + 1 + 1), unitCollapseTerm x 𝒟 j p d) =
+private theorem sum_unitCollapseTerm_eq {n : ℕ} (x : Fin (n + 1) → A) (j : Fin (n + 1)) :
+    (∑ p ∈ Finset.range (n + 1), ∑ d ∈ Finset.range (n + 1 + 1), unitCollapseTerm 𝒜 x j p d) =
       (if j.1 = 0 ∧ 0 < n then subword R x 1 n else 0) -
         (if j.1 = n ∧ 0 < n then
           (ReducedTensorWords.grading (𝒜.grading.shift 1)).koszulTwist 1 (subword R x 0 n)
         else 0) := by
   have hjn := j.isLt
+  set y := (𝒜.grading.shift 1).twistedTuple 1 x 0 j.1
   have hsum : (∑ p ∈ Finset.range (n + 1), ∑ d ∈ Finset.range (n + 1 + 1),
-      unitCollapseTerm x 𝒟 j p d) =
+      unitCollapseTerm 𝒜 x j p d) =
       (if j.1 + 1 ≤ n then
-        negOnePowCast R (∑ i ∈ Finset.range j.1, if h : i < n + 1 then 𝒟 ⟨i, h⟩ else 0) •
-          splice R x 0 (n + 1) j.1 2 (if h : j.1 + 1 < n + 1 then x ⟨j.1 + 1, h⟩ else 0) else 0) +
-      (if 1 ≤ j.1 then
-        negOnePowCast R (∑ i ∈ Finset.range (j.1 - 1), if h : i < n + 1 then 𝒟 ⟨i, h⟩ else 0) •
-          negOnePowCast R (𝒟 ⟨j.1 - 1, by omega⟩ + 1) •
-          splice R x 0 (n + 1) (j.1 - 1) 2 (x ⟨j.1 - 1, by omega⟩) else 0) := by
-    simp only [unitCollapseTerm, Finset.sum_add_distrib, ite_and, Finset.sum_ite_irrel,
+        splice R y 0 (n + 1) j.1 2 (if h : j.1 + 1 < n + 1 then y ⟨j.1 + 1, h⟩ else 0) else 0) +
+      (if 1 ≤ j.1 then -splice R y 0 (n + 1) (j.1 - 1) 2 (y ⟨j.1 - 1, by omega⟩) else 0) := by
+    simp only [unitCollapseTerm, y, Finset.sum_add_distrib, ite_and, Finset.sum_ite_irrel,
       Finset.sum_const_zero, Finset.sum_ite_eq', Finset.mem_range]
     congr 1 <;> split_ifs <;> first | rfl | omega
   rw [hsum]
-  set S : ℕ → ℤ := fun p ↦ ∑ i ∈ Finset.range p, if h : i < n + 1 then 𝒟 ⟨i, h⟩ else 0 with hS
-  have hSsucc (p : ℕ) (hp : p < n + 1) : S (p + 1) = S p + 𝒟 ⟨p, hp⟩ := by
-    simp only [hS, Finset.sum_range_succ, dite_eq_left hp]
   rcases Nat.eq_zero_or_pos n with rfl | hn; · simp (disch := omega)
   rcases Nat.eq_zero_or_pos j.1 with hj0 | hj0
-  · simp (disch := omega) only [ite_eq_right, ite_eq_left, add_zero, dite_eq_left]
-    rw [splice_two_succ_eq_subword R hn hj0 x, hj0, Finset.sum_range_zero, negOnePowCast_zero,
-      one_smul, sub_zero]
+  · have hy : y = x := by simp [y, hj0]
+    simp (disch := omega) only [ite_eq_right, ite_eq_left, add_zero, dite_eq_left, sub_zero, hy]
+    exact splice_two_succ_eq_subword R hn hj0 x
   rcases Nat.lt_or_ge j.1 n with hjlt | hjge
-  · simp (disch := omega) only [ite_eq_right, ite_eq_left, dite_eq_left]
-    rw [splice_two_succ_eq_splice_two_pred R hj0 hjlt x, smul_smul, ← negOnePowCast_add, ← add_smul]
-    have hSj := hSsucc (j.1 - 1) (by omega); rw [Nat.sub_add_cancel hj0] at hSj
-    have hsign : negOnePowCast R (S j.1) +
-        negOnePowCast R (S (j.1 - 1) + (𝒟 ⟨j.1 - 1, by omega⟩ + 1)) = 0 := by
-      rw [hSj, ← add_assoc, negOnePowCast_add (R := R) _ 1, negOnePowCast_one, mul_neg_one,
-        add_neg_cancel]
-    simp only [hS] at hsign; rw [hsign, zero_smul, sub_zero]
-  · have hmem : subword R x 0 n ∈ (ReducedTensorWords.grading (𝒜.grading.shift 1)).piece (S n) := by
-      rw [grading_piece]
-      simpa only [hS, Nat.zero_add] using
-        subword_mem_gradedPiece x (fun i ↦ if h : i < n + 1 then 𝒟 ⟨i, h⟩ else 0)
-          (fun i ↦ by simpa only [Fin.is_lt, dite_true, Fin.eta] using hx i) 0 n
-    simp (disch := omega) only [ite_eq_right, ite_eq_left, zero_add, zero_sub]
-    rw [splice_two_pred_eq_subword R (by omega) x,
-      (ReducedTensorWords.grading (𝒜.grading.shift 1)).koszulTwist_one_apply_of_mem hmem,
-      ← negOnePowCast_eq_intCast, smul_smul, ← negOnePowCast_add, ← neg_smul]
-    have hSn : S n = S (j.1 - 1) + 𝒟 ⟨j.1 - 1, by omega⟩ := by rw [← hSsucc]; congr 1; omega
-    congr 1; simp only [hS] at hSn ⊢
-    rw [hSn, ← add_assoc, negOnePowCast_add (R := R) _ 1, negOnePowCast_one, mul_neg_one]
+  · simp (disch := omega) only [ite_eq_right, ite_eq_left, dite_eq_left, sub_zero]
+    rw [splice_two_succ_eq_splice_two_pred R hj0 hjlt y, add_neg_cancel]
+  · simp (disch := omega) only [ite_eq_right, ite_eq_left, zero_add, zero_sub]
+    rw [splice_two_pred_eq_subword R (by omega) y, koszulTwist_grading, map_subword]
+    congr 1
+    exact subword_congr R y _ (by omega) (by omega) fun k hk ↦
+      InternalGrading.twistedTuple_apply_of_mem_Ico _ _ _ _ _ _ (by simp; omega)
 
-/-- On a pure homogeneous word whose `j`-th letter is the strict unit `e`, the bar differential
-agrees modulo `degenerateWords R A e` with the boundary difference at `j = 0` and `j = n`. -/
+/-- On a pure word whose `j`-th letter is the strict unit `e`, the bar differential agrees modulo
+`degenerateWords R A e` with the boundary difference at `j = 0` and `j = n`. -/
 theorem barDifferential_of_tprod_sub_mem_degenerateWords (h : 𝒜.StrictUnit e) {n : ℕ}
-    (x : Fin (n + 1) → A) (𝒟 : Fin (n + 1) → ℤ) (hx : ∀ i, x i ∈ (𝒜.grading.shift 1).piece (𝒟 i))
-    (j : Fin (n + 1)) (hj : x j = e) :
+    (x : Fin (n + 1) → A) (j : Fin (n + 1)) (hj : x j = e) :
     𝒜.barDifferential (of R A ⟨n + 1, n.succ_pos⟩ (PiTensorProduct.tprod R x)) -
       ((if j.1 = 0 ∧ 0 < n then subword R x 1 n else 0) -
         (if j.1 = n ∧ 0 < n then
           (ReducedTensorWords.grading (𝒜.grading.shift 1)).koszulTwist 1 (subword R x 0 n)
         else 0)) ∈ degenerateWords R A e := by
-  rw [barDifferential_def, gradedCoderiv_of_tprod_of_homogeneous _ _ 1 _ x 𝒟 hx,
-    ← sum_unitCollapseTerm_eq x 𝒟 hx j]
-  simp only [one_mul, ← Finset.sum_sub_distrib]
+  rw [barDifferential_def, gradedCoderiv_of_tprod, ← sum_unitCollapseTerm_eq x j]
+  simp only [← Finset.sum_sub_distrib]
   exact Submodule.sum_mem _ fun p _ ↦ Submodule.sum_mem _ fun d _ ↦
-    (barDifferential_summand_sub_unitCollapseTerm h x 𝒟 hx j hj p d).1
+    (barDifferential_summand_sub_unitCollapseTerm h x j hj p d).1
 
-/-- The difference between the bar differential of a homogeneous word with strict unit at `j` and
-its boundary formula has zero one-letter projection. -/
+/-- The difference between the bar differential of a pure word with strict unit at `j` and its
+boundary formula has zero one-letter projection. -/
 theorem letter_barDifferential_of_tprod_sub_eq_zero (h : 𝒜.StrictUnit e) {n : ℕ}
-    (x : Fin (n + 1) → A) (𝒟 : Fin (n + 1) → ℤ) (hx : ∀ i, x i ∈ (𝒜.grading.shift 1).piece (𝒟 i))
-    (j : Fin (n + 1)) (hj : x j = e) :
+    (x : Fin (n + 1) → A) (j : Fin (n + 1)) (hj : x j = e) :
     letter R A (𝒜.barDifferential (of R A ⟨n + 1, n.succ_pos⟩ (PiTensorProduct.tprod R x)) -
       ((if j.1 = 0 ∧ 0 < n then subword R x 1 n else 0) -
         (if j.1 = n ∧ 0 < n then
           (ReducedTensorWords.grading (𝒜.grading.shift 1)).koszulTwist 1 (subword R x 0 n)
         else 0))) = 0 := by
-  rw [barDifferential_def, gradedCoderiv_of_tprod_of_homogeneous _ _ 1 _ x 𝒟 hx,
-    ← sum_unitCollapseTerm_eq x 𝒟 hx j]
-  simp only [one_mul, ← Finset.sum_sub_distrib, map_sum]
+  rw [barDifferential_def, gradedCoderiv_of_tprod, ← sum_unitCollapseTerm_eq x j]
+  simp only [← Finset.sum_sub_distrib, map_sum]
   exact Finset.sum_eq_zero fun p _ ↦ Finset.sum_eq_zero fun d _ ↦
-    (barDifferential_summand_sub_unitCollapseTerm h x 𝒟 hx j hj p d).2
+    (barDifferential_summand_sub_unitCollapseTerm h x j hj p d).2
 
 /-- A linear map vanishing on pure degenerate words of length at least two evaluates on the bar
-differential of a homogeneous word with strict unit at `j` by the initial/final boundary formula. -/
+differential of a pure word with strict unit at `j` by the initial/final boundary formula. -/
 theorem apply_barDifferential_of_tprod_of_higher_eq_zero (h : 𝒜.StrictUnit e)
     {F : ReducedTensorWords R A →ₗ[R] M}
     (hFe : ∀ (m : {m : ℕ // 0 < m}), m.1 ≠ 1 → ∀ y : Fin m.1 → A,
       (∃ i, y i = e) → F (of R A m (PiTensorProduct.tprod R y)) = 0)
-    {n : ℕ} (x : Fin (n + 1) → A) (𝒟 : Fin (n + 1) → ℤ)
-    (hx : ∀ i, x i ∈ (𝒜.grading.shift 1).piece (𝒟 i)) (j : Fin (n + 1)) (hj : x j = e) :
+    {n : ℕ} (x : Fin (n + 1) → A) (j : Fin (n + 1)) (hj : x j = e) :
     F (𝒜.barDifferential (of R A ⟨n + 1, n.succ_pos⟩ (PiTensorProduct.tprod R x))) =
       (if j.1 = 0 ∧ 0 < n then F (subword R x 1 n) else 0) -
         (if j.1 = n ∧ 0 < n then
@@ -209,23 +212,22 @@ theorem apply_barDifferential_of_tprod_of_higher_eq_zero (h : 𝒜.StrictUnit e)
           (ReducedTensorWords.grading (𝒜.grading.shift 1)).koszulTwist 1 (subword R x 0 n)
         else 0))) = 0 := by
     rw [apply_eq_comp_letter_of_mem_degenerateWords F hFe
-        (h.barDifferential_of_tprod_sub_mem_degenerateWords x 𝒟 hx j hj),
-      h.letter_barDifferential_of_tprod_sub_eq_zero x 𝒟 hx j hj, map_zero, map_zero]
+        (h.barDifferential_of_tprod_sub_mem_degenerateWords x j hj),
+      h.letter_barDifferential_of_tprod_sub_eq_zero x j hj, map_zero, map_zero]
   rw [map_sub, sub_eq_zero] at hzero; rw [hzero, map_sub]; congr 1 <;> split_ifs <;> simp
 
-/-- A linear map vanishing on `degenerateWords R A e` evaluates on the bar differential of a
-homogeneous word with strict unit at `j` by the initial/final boundary formula. -/
+/-- A linear map vanishing on `degenerateWords R A e` evaluates on the bar differential of a pure
+word with strict unit at `j` by the initial/final boundary formula. -/
 theorem apply_barDifferential_of_tprod_of_ker (h : 𝒜.StrictUnit e)
     {F : ReducedTensorWords R A →ₗ[R] M} (hFe : degenerateWords R A e ≤ LinearMap.ker F) {n : ℕ}
-    (x : Fin (n + 1) → A) (𝒟 : Fin (n + 1) → ℤ) (hx : ∀ i, x i ∈ (𝒜.grading.shift 1).piece (𝒟 i))
-    (j : Fin (n + 1)) (hj : x j = e) :
+    (x : Fin (n + 1) → A) (j : Fin (n + 1)) (hj : x j = e) :
     F (𝒜.barDifferential (of R A ⟨n + 1, n.succ_pos⟩ (PiTensorProduct.tprod R x))) =
       (if j.1 = 0 ∧ 0 < n then F (subword R x 1 n) else 0) -
         (if j.1 = n ∧ 0 < n then
           F ((ReducedTensorWords.grading (𝒜.grading.shift 1)).koszulTwist 1 (subword R x 0 n))
         else 0) :=
   h.apply_barDifferential_of_tprod_of_higher_eq_zero
-    (fun m _ y hy ↦ LinearMap.mem_ker.mp (hFe (of_tprod_mem_degenerateWords m y hy))) x 𝒟 hx j hj
+    (fun m _ y hy ↦ LinearMap.mem_ker.mp (hFe (of_tprod_mem_degenerateWords m y hy))) x j hj
 
 /-- Prepending two letters to a nonempty tensor word produces a word of length at least three, so
 `𝒜.taylor` kills it whenever either prepended letter is the strict unit or the tail is
@@ -245,5 +247,129 @@ theorem taylor_prepend_prepend_eq_zero (h : 𝒜.StrictUnit e) (a b : A) (w : Re
   · have hT0 : T = 0 := linearMap_ext R A fun m y ↦ hT m y ⟨1, rfl⟩; rw [hT0, LinearMap.zero_apply]
   · exact LinearMap.mem_ker.mp (degenerateWords_le_iff.2
       (fun m y ⟨i, hi⟩ ↦ LinearMap.mem_ker.mpr (hT m y ⟨i.succ.succ, by simpa using hi⟩)) hw)
+
+/-! ### Strict-unit morphism compatibility on degenerate words -/
+
+section Morphism
+
+variable {ℬ : AInfinityAlgebra R B} {e' : B}
+
+private theorem apply_subword_of_mem_block (t : ReducedTensorWords R A →ₗ[R] B)
+    (ht_unit : t (ofLetter R A e) = e')
+    (ht_deg : ∀ (m : {m : ℕ // 0 < m}), m.1 ≠ 1 → ∀ y : Fin m.1 → A,
+      (∃ i, y i = e) → t (of R A m (PiTensorProduct.tprod R y)) = 0)
+    {k : ℕ} (x : Fin k → A) {j : Fin k} (hj : x j = e) {a b : ℕ} (ha : a ≤ j.1)
+    (hb : j.1 < a + b) :
+    t (subword R x a b) = if b = 1 then e' else 0 := by
+  have := j.isLt; by_cases hb1 : b = 1
+  · subst hb1
+    have hxa : x ⟨a, by omega⟩ = e := by rw [← hj]; exact congrArg x (Fin.ext (by simp; omega))
+    rw [ite_eq_left rfl, subword_one R A x (by omega), hxa, ht_unit]
+  · rw [ite_eq_right hb1, apply_eq_comp_letter_of_mem_degenerateWords t ht_deg
+      (subword_mem_degenerateWords x ⟨j, ha, hb, hj⟩),
+      letter_subword_of_ne_one R A x a hb1, map_zero, map_zero]
+
+private theorem sum_taylor_prepend_prepend_coalgHom_eq_zero (hB : ℬ.StrictUnit e')
+    (t : ReducedTensorWords R A →ₗ[R] B) (ht_unit : t (ofLetter R A e) = e')
+    (ht_deg : ∀ (m : {m : ℕ // 0 < m}), m.1 ≠ 1 → ∀ y : Fin m.1 → A,
+      (∃ i, y i = e) → t (of R A m (PiTensorProduct.tprod R y)) = 0)
+    {n : ℕ} (x : Fin (n + 1) → A) (j : Fin (n + 1)) (hj : x j = e) (d : ℕ) :
+    ∑ c ∈ Finset.range (n + 1 - d),
+      ℬ.taylor (prepend R B (t (subword R x 0 d))
+        (prepend R B (t (subword R x d c))
+          (coalgHom R t (subword R x (d + c) (n + 1 - d - c))))) = 0 := by
+  have := j.isLt; refine Finset.sum_eq_zero fun c hc ↦ ?_; rw [Finset.mem_range] at hc
+  rcases Nat.eq_zero_or_pos c with rfl | _; · simp [subword_length_zero]
+  by_cases hjd : j.1 < d
+  · rw [apply_subword_of_mem_block t ht_unit ht_deg x hj (a := 0) (by omega) (by omega)]
+    split_ifs; · exact hB.taylor_prepend_prepend_eq_zero _ _ _ (Or.inl rfl)
+    simp
+  · by_cases hjdc : j.1 < d + c
+    · rw [apply_subword_of_mem_block t ht_unit ht_deg x hj (a := d) (by omega) (by omega)]
+      split_ifs; · exact hB.taylor_prepend_prepend_eq_zero _ _ _ (Or.inr (Or.inl rfl))
+      simp
+    · exact hB.taylor_prepend_prepend_eq_zero _ _ _ (Or.inr (Or.inr
+        (coalgHom_subword_mem_degenerateWords t ht_unit ht_deg x (by omega)
+          ⟨j, by omega, by omega, hj⟩)))
+
+private theorem taylor_prepend_coalgHom_subword (hB : ℬ.StrictUnit e')
+    (t : ReducedTensorWords R A →ₗ[R] B) (ht_unit : t (ofLetter R A e) = e')
+    (ht_deg : ∀ (m : {m : ℕ // 0 < m}), m.1 ≠ 1 → ∀ y : Fin m.1 → A,
+      (∃ i, y i = e) → t (of R A m (PiTensorProduct.tprod R y)) = 0)
+    {n : ℕ} (x : Fin (n + 1) → A) (j : Fin (n + 1)) (hj : x j = e) (d : ℕ)
+    (hd : d ∈ Finset.range (n + 1)) :
+    ℬ.taylor (prepend R B (t (subword R x 0 d))
+        (coalgHom R t (subword R x d (n + 1 - d)))) =
+      (if d = 1 ∧ (j.1 = 0 ∧ 0 < n) then t (subword R x 1 n) else 0) +
+        (if d = n ∧ (j.1 = n ∧ 0 < n) then
+          ℬ.grading.koszulTwist 1 (t (subword R x 0 n)) else 0) := by
+  have := j.isLt; rw [Finset.mem_range] at hd
+  rcases Nat.eq_zero_or_pos d with rfl | _; · simp (disch := omega) [subword_length_zero]
+  rw [coalgHom_subword _ x d (n + 1 - d), map_add, map_add, map_sum, map_sum,
+    sum_taylor_prepend_prepend_coalgHom_eq_zero hB t ht_unit ht_deg x j hj d, add_zero]
+  by_cases hjd : j.1 < d
+  · rw [apply_subword_of_mem_block t ht_unit ht_deg x hj (a := 0) (by omega) (by omega)]
+    by_cases hd1 : d = 1
+    · subst hd1; rw [ite_eq_left rfl, Nat.add_sub_cancel, prepend_ofLetter,
+        hB.taylor_of_two_unit_left]
+      simp (disch := omega) only [true_and, ite_eq_left, ite_eq_right, add_zero]
+    · rw [ite_eq_right hd1, map_zero, LinearMap.zero_apply, map_zero]
+      simp (disch := omega) only [ite_eq_right, add_zero]
+  · rw [apply_subword_of_mem_block t ht_unit ht_deg x hj (a := d) (by omega) (by omega)]
+    by_cases hdn : d = n
+    · subst hdn; rw [Nat.add_sub_cancel_left, ite_eq_left rfl, prepend_ofLetter,
+        hB.taylor_of_two_unit_right]
+      simp (disch := omega) only [true_and, ite_eq_right, ite_eq_left, zero_add]
+    · rw [ite_eq_right (by omega : n + 1 - d ≠ 1), map_zero, map_zero, map_zero]
+      simp (disch := omega) only [ite_eq_right, add_zero]
+
+private theorem taylor_coalgHom_of_tprod (hB : ℬ.StrictUnit e')
+    (t : ReducedTensorWords R A →ₗ[R] B) (ht_unit : t (ofLetter R A e) = e')
+    (ht_deg : ∀ (m : {m : ℕ // 0 < m}), m.1 ≠ 1 → ∀ y : Fin m.1 → A,
+      (∃ i, y i = e) → t (of R A m (PiTensorProduct.tprod R y)) = 0)
+    {n : ℕ} (x : Fin (n + 1) → A) (j : Fin (n + 1)) (hj : x j = e) :
+    ℬ.taylor (coalgHom R t (of R A ⟨n + 1, n.succ_pos⟩ (PiTensorProduct.tprod R x))) =
+      (if j.1 = 0 ∧ 0 < n then t (subword R x 1 n) else 0) +
+        (if j.1 = n ∧ 0 < n then ℬ.grading.koszulTwist 1 (t (subword R x 0 n)) else 0) := by
+  have hjn := j.isLt
+  rw [of_tprod_eq_subword R (Nat.zero_lt_succ n), coalgHom_subword, map_add, map_sum,
+    apply_subword_of_mem_block t ht_unit ht_deg x hj (a := 0) (by omega) (by omega)]
+  have hsingle : ℬ.taylor (ofLetter R B (if n + 1 = 1 then e' else 0)) = 0 := by
+    split_ifs; · rw [ofLetter_eq_of_tprod]; exact
+      hB.taylor_of_tprod_eq_zero ⟨1, Nat.one_pos⟩ (by decide) _ ⟨0, rfl⟩
+    simp
+  simp only [hsingle, zero_add]
+  rw [Finset.sum_congr rfl (taylor_prepend_coalgHom_subword hB t ht_unit ht_deg x j hj)]
+  simp only [Finset.sum_add_distrib, ite_and, Finset.sum_ite_eq', Finset.mem_range]
+  congr 1 <;> split_ifs <;> first | rfl | omega
+
+/-- For any degree-zero Taylor map `t : Tᶜ(sA) →ₗ[R] B` sending the source strict unit `e` to the
+target strict unit `e'` and vanishing on higher `e`-degenerate pure words, the `A∞` morphism defect
+`ℬ.taylor ∘ₗ coalgHom R t - t ∘ₗ 𝒜.barDifferential` vanishes on all `e`-degenerate words. -/
+theorem degenerateWords_le_ker_taylor_coalgHom_sub_barDifferential
+    (hA : 𝒜.StrictUnit e) (hB : ℬ.StrictUnit e') (t : ReducedTensorWords R A →ₗ[R] B)
+    (ht_hom : LinearMap.IsHomogeneous t (gradedPiece (𝒜.grading.shift 1))
+      (ℬ.grading.shift 1).piece 0)
+    (ht_unit : t (ofLetter R A e) = e')
+    (ht_deg : ∀ (m : {m : ℕ // 0 < m}), m.1 ≠ 1 → ∀ y : Fin m.1 → A,
+      (∃ i, y i = e) → t (of R A m (PiTensorProduct.tprod R y)) = 0) :
+    degenerateWords R A e ≤
+      LinearMap.ker (ℬ.taylor ∘ₗ coalgHom R t - t ∘ₗ 𝒜.barDifferential) := by
+  rw [degenerateWords_le_iff]
+  rintro ⟨_ | n, hN⟩ x ⟨j, hj⟩; · omega
+  rw [LinearMap.mem_ker, LinearMap.sub_apply, sub_eq_zero]; simp only [LinearMap.comp_apply]
+  rw [taylor_coalgHom_of_tprod hB t ht_unit ht_deg x j hj,
+    hA.apply_barDifferential_of_tprod_of_higher_eq_zero ht_deg x j hj]
+  have hhom : LinearMap.IsHomogeneous t
+      (ReducedTensorWords.grading (𝒜.grading.shift 1)).piece (ℬ.grading.shift 1).piece 0 := by
+    simpa only [grading_piece] using ht_hom
+  have hkt : t ((ReducedTensorWords.grading (𝒜.grading.shift 1)).koszulTwist 1
+        (subword R x 0 n)) =
+      -ℬ.grading.koszulTwist 1 (t (subword R x 0 n)) := by
+    simpa [InternalGrading.koszulTwist_one_shift_one] using
+      (hhom.koszulTwist_apply 1 (subword R x 0 n)).symm
+  rw [hkt, sub_eq_add_neg]; congr 1; split_ifs <;> simp
+
+end Morphism
 
 end TauCeti.AInfinityAlgebra.StrictUnit

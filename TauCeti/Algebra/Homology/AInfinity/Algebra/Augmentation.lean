@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import Mathlib.LinearAlgebra.Projection
 import TauCeti.Algebra.Module.GradedModule.Quotient
-public import TauCeti.Algebra.Homology.AInfinity.Algebra.Unit
+public import TauCeti.Algebra.Homology.AInfinity.Algebra.DG
+public import TauCeti.Algebra.Homology.DG.Algebra.Augmentation
 
 /-!
 # Augmented `A∞` algebras
@@ -20,7 +20,8 @@ arity other than two.
 The kernel of the augmentation is the reduced augmentation ideal.  It inherits the grading and
 all the operations, and the strict unit splits the underlying module into its scalar and
 reduced parts.  This is the input used to form reduced bar constructions without unit-containing
-tensor words.
+tensor words.  Every augmentation of a differential graded algebra induces an augmentation of its
+underlying `A∞` algebra (`TauCeti.DGAlgAugmentation.toAInfinityAugmentation`).
 
 ## Main definitions
 
@@ -33,6 +34,8 @@ tensor words.
   augmentation ideal.
 * `TauCeti.AInfinityAlgebra.Augmentation.splitLinearEquiv`: the canonical splitting into scalar
   and reduced parts.
+* `TauCeti.DGAlgAugmentation.toAInfinityAugmentation`: the `A∞` augmentation induced by a DG
+  algebra augmentation.
 
 ## References
 
@@ -361,20 +364,8 @@ theorem isHomogeneous_reducedPart (ε : 𝒜.Augmentation) :
 /-- An augmentation is invariant under any Koszul twist, since it vanishes outside degree zero. -/
 @[simp]
 theorem map_koszulTwist (ε : 𝒜.Augmentation) (q : ℤ) (x : A) :
-    ε (𝒜.grading.koszulTwist q x) = ε x := by
-  induction x using DirectSum.Decomposition.inductionOn 𝒜.grading.piece with
-  | zero => simp
-  | @homogeneous p x =>
-    rw [𝒜.grading.koszulTwist_apply_of_mem x.2 q, map_smul]
-    by_cases hp : p = 0
-    · subst hp; simp
-    · rw [ε.map_of_mem_ne_zero p _ x.2 hp, smul_zero]
-  | add _ _ hx hy => simp [map_add, hx, hy]
-
-/-- Koszul twists preserve membership in the augmentation ideal. -/
-theorem koszulTwist_mem_augmentationIdeal_iff (ε : 𝒜.Augmentation) (q : ℤ) (x : A) :
-    𝒜.grading.koszulTwist q x ∈ ε.augmentationIdeal ↔ x ∈ ε.augmentationIdeal := by
-  rw [mem_augmentationIdeal, mem_augmentationIdeal, ε.map_koszulTwist]
+    ε (𝒜.grading.koszulTwist q x) = ε x :=
+  𝒜.grading.map_koszulTwist_of_map_eq_zero ε.toLinearMap.toAddMonoidHom ε.map_of_mem_ne_zero q x
 
 /-- The canonical linear splitting of an augmented `A∞` algebra into its scalar and reduced
 parts. -/
@@ -403,5 +394,43 @@ theorem splitLinearEquiv_symm_apply (ε : 𝒜.Augmentation)
 end Augmentation
 
 end AInfinityAlgebra
+
+namespace DGAlgAugmentation
+
+variable {R : Type uR} {D : Type uA} [CommRing R] [Ring D] [Algebra R D]
+  {𝒟 : ℤ → Submodule R D} [GradedAlgebra 𝒟] {dD : D →ₗ[R] D} {hD : IsDGAlgebra 𝒟 dD}
+
+/-- An augmentation of a DG algebra induces an augmentation of its underlying `A∞` algebra. -/
+noncomputable def toAInfinityAugmentation (e : DGAlgAugmentation hD) :
+    hD.toIsNonUnitalDGAlgebra.toAInfinityAlgebra.Augmentation where
+  unit := 1
+  isStrictUnit := hD.strictUnit_one
+  toLinearMap := e.toGradedAlgHom.toAlgHom.toLinearMap
+  map_unit := map_one e
+  map_of_mem_ne_zero p x hx hp := by
+    rw [IsNonUnitalDGAlgebra.toAInfinityAlgebra_grading, InternalGrading.ofDecomposition_piece]
+      at hx
+    exact (mem_trivialGrading_iff R R).mp (e.map_mem hx) |>.resolve_left hp
+  map_binary x y := by rw [IsNonUnitalDGAlgebra.toAInfinityAlgebra_m_two_apply]; exact map_mul e x y
+  map_m_of_ne_two
+    | 0, hn0, _, _ => by omega
+    | 1, _, _, x => by rw [IsNonUnitalDGAlgebra.toAInfinityAlgebra_m_one_apply]; exact e.map_d (x 0)
+    | 2, _, hn2, _ => absurd rfl hn2
+    | _ + 3, _, _, _ => by simp
+
+@[simp] theorem toAInfinityAugmentation_unit (e : DGAlgAugmentation hD) :
+    e.toAInfinityAugmentation.unit = 1 := (rfl)
+
+@[simp] theorem toAInfinityAugmentation_toLinearMap (e : DGAlgAugmentation hD) :
+    e.toAInfinityAugmentation.toLinearMap = e.toGradedAlgHom.toAlgHom.toLinearMap := (rfl)
+
+theorem toAInfinityAugmentation_apply (e : DGAlgAugmentation hD) (x : D) :
+    e.toAInfinityAugmentation x = e x := (rfl)
+
+@[simp] theorem toAInfinityAugmentation_augmentationIdeal (e : DGAlgAugmentation hD) :
+    e.toAInfinityAugmentation.augmentationIdeal = e.augmentationIdeal.toSubmodule := by
+  ext x; simp [AInfinityAlgebra.Augmentation.mem_augmentationIdeal]
+
+end DGAlgAugmentation
 
 end TauCeti

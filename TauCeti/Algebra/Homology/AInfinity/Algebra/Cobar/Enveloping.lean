@@ -18,22 +18,26 @@ classifies nonunital `A∞` morphisms out of `A`, forming the cobar construction
 unit-containing bar words and carries the canonical augmentation
 `ε.envelopingAugmentation : U(A, ε) ⟶ R`.
 
-Together with the universal strictly unital augmented `A∞` morphism `ε.toEnveloping : A ⟶ U(A, ε)`,
-`(U(A, ε), ε.envelopingAugmentation)` represents strictly unital augmented `A∞` morphisms `(A, ε) ⟶
-(B, ε_B)` into augmented DG algebras (`AInfinityAlgebra.Augmentation.envelopingDGAlgHomEquiv`,
-`AInfinityAlgebra.Augmentation.bijective_comp_toEnveloping`).  Applying `cobarBarMap` to the induced
-morphism on reduced augmentation ideals makes `U(A, ε)` functorial in augmented `A∞` morphisms
+Together with the universal strictly unital `A∞` morphism `ε.toEnveloping : A ⟶ U(A, ε)`, the
+enveloping DG algebra `U(A, ε)` represents strictly unital `A∞` morphisms `(A, ε) ⟶ B` into any
+unital DG algebra `B` (`AInfinityAlgebra.Augmentation.envelopingDGAlgHomEquiv`,
+`AInfinityAlgebra.Augmentation.bijective_comp_toEnveloping`).  Restricting to morphisms preserving
+augmentations yields `AInfinityAlgebra.Augmentation.augmentedEnvelopingDGAlgHomEquiv` and
+`AInfinityAlgebra.Augmentation.bijective_augmented_comp_toEnveloping`, showing that
+`(U(A, ε), ε.envelopingAugmentation)` represents strictly unital augmented `A∞` morphisms
+`(A, ε) ⟶ (B, ε_B)` into augmented DG algebras.  Applying `cobarBarMap` to the induced morphism on
+reduced augmentation ideals makes `U(A, ε)` functorial in augmented `A∞` morphisms
 (`AInfinityHom.IsAugmented.envelopingMap`).
 
 ## Main definitions
 
-* `TauCeti.AInfinityAlgebra.augmentedHomTwistingCochainEquiv`: `A∞` morphisms into an augmented DG
-  algebra landing in `ker ε_B` correspond to twisting cochains landing in `ker ε_B`.
 * `TauCeti.AInfinityAlgebra.Augmentation.envelopingAugmentation`: the canonical augmentation
   `U(A, ε) ⟶ R`.
 * `TauCeti.AInfinityAlgebra.Augmentation.envelopingDGAlgHomEquiv`: the universal-property bijection
-  between augmented DG algebra morphisms `U(A, ε) ⟶ B` and strictly unital augmented `A∞`
-  morphisms `(A, ε) ⟶ (B, ε_B)`.
+  between DG algebra morphisms `U(A, ε) ⟶ B` and strictly unital `A∞` morphisms `(A, ε) ⟶ B`.
+* `TauCeti.AInfinityAlgebra.Augmentation.augmentedEnvelopingDGAlgHomEquiv`: the augmented
+  universal-property bijection between augmentation-preserving DG algebra morphisms `U(A, ε) ⟶ B`
+  and strictly unital augmented `A∞` morphisms `(A, ε) ⟶ (B, ε_B)`.
 * `TauCeti.AInfinityAlgebra.Augmentation.toEnveloping`: the canonical strictly unital augmented
   `A∞` morphism `A ⟶ U(A, ε)`.
 * `TauCeti.AInfinityHom.IsAugmented.envelopingMap`: functoriality `U(A, ε) ⟶ U(A', ε')` along
@@ -45,7 +49,10 @@ morphism on reduced augmentation ideals makes `U(A, ε)` functorial in augmented
   `ε.toEnveloping`.
 * `TauCeti.AInfinityAlgebra.Augmentation.envelopingDGAlgHomEquiv_eq_comp_toEnveloping` and
   `TauCeti.AInfinityAlgebra.Augmentation.bijective_comp_toEnveloping`: **the universal property of
-  `U(A, ε)`**.
+  `U(A, ε)`** among strictly unital `A∞` morphisms into unital DG algebras.
+* `TauCeti.AInfinityAlgebra.Augmentation.augmentedEnvelopingDGAlgHomEquiv_eq_comp_toEnveloping`
+  and `TauCeti.AInfinityAlgebra.Augmentation.bijective_augmented_comp_toEnveloping`: the augmented
+  universal property of `(U(A, ε), ε.envelopingAugmentation)`.
 * `TauCeti.AInfinityHom.IsAugmented.envelopingMap_comp_toEnveloping`: naturality of `toEnveloping`.
 
 ## References
@@ -69,47 +76,11 @@ variable {R : Type uR} {A : Type uA} {A' : Type uA'} {A'' : Type uA''} {B : Type
   {ℬ : ℤ → Submodule R B} [GradedAlgebra ℬ] {dB : B →ₗ[R] B}
   {𝒞 : ℤ → Submodule R C} [GradedAlgebra 𝒞] {dC : C →ₗ[R] C}
 
-namespace AInfinityAlgebra
-
-/-- `A∞` morphisms `A ⟶ B` into an augmented DG algebra `(B, ε_B)` whose Taylor map lands in
-`ker ε_B` correspond bijectively to bar twisting cochains `Tᶜ(sA) →ₗ[R] B` landing in `ker ε_B`. -/
-noncomputable def augmentedHomTwistingCochainEquiv (𝒜 : AInfinityAlgebra R A)
-    {hB : IsDGAlgebra ℬ dB} (eB : DGAlgAugmentation hB) :
-    {g : AInfinityHom 𝒜 hB.toIsNonUnitalDGAlgebra.toAInfinityAlgebra //
-      ∀ w, g.taylor w ∈ eB.toAInfinityAugmentation.augmentationIdeal} ≃
-    {τ : ReducedTensorWords R A →ₗ[R] B //
-      IsTwistingCochain (ReducedTensorWords.grading (𝒜.grading.shift 1)) (deconcatenation R A)
-        𝒜.barDifferential ℬ dB τ ∧ ∀ w, τ w ∈ eB.augmentationIdeal} where
-  toFun g := ⟨_, (𝒜.homTwistingCochainEquiv hB.toIsNonUnitalDGAlgebra g.val).property,
-    fun w ↦ by simpa [homTwistingCochainEquiv_apply] using g.property w⟩
-  invFun τ := ⟨(𝒜.homTwistingCochainEquiv hB.toIsNonUnitalDGAlgebra).symm ⟨τ.val, τ.property.1⟩,
-    fun w ↦ by simpa using τ.property.2 w⟩
-  left_inv g := Subtype.ext ((𝒜.homTwistingCochainEquiv _).symm_apply_apply g.val)
-  right_inv _ := Subtype.ext (LinearMap.ext fun _ ↦ by simp)
-
-/-- The underlying twisting cochain of `augmentedHomTwistingCochainEquiv` postcomposes the Taylor
-map with the degree-one Koszul twist. -/
-@[simp] theorem augmentedHomTwistingCochainEquiv_apply_val (𝒜 : AInfinityAlgebra R A)
-    {hB : IsDGAlgebra ℬ dB} (eB : DGAlgAugmentation hB)
-    (g : {g : AInfinityHom 𝒜 hB.toIsNonUnitalDGAlgebra.toAInfinityAlgebra //
-      ∀ w, g.taylor w ∈ eB.toAInfinityAugmentation.augmentationIdeal}) :
-    (𝒜.augmentedHomTwistingCochainEquiv eB g).val =
-      (InternalGrading.ofDecomposition ℬ).koszulTwist 1 ∘ₗ g.val.taylor :=
-  LinearMap.ext (𝒜.homTwistingCochainEquiv_apply hB.toIsNonUnitalDGAlgebra g.val)
-
-/-- The underlying `A∞` morphism of `(augmentedHomTwistingCochainEquiv).symm` agrees with
-`(homTwistingCochainEquiv).symm`. -/
-@[simp] theorem augmentedHomTwistingCochainEquiv_symm_apply_val (𝒜 : AInfinityAlgebra R A)
-    {hB : IsDGAlgebra ℬ dB} (eB : DGAlgAugmentation hB)
-    (τ : {τ : ReducedTensorWords R A →ₗ[R] B //
-      IsTwistingCochain (ReducedTensorWords.grading (𝒜.grading.shift 1)) (deconcatenation R A)
-        𝒜.barDifferential ℬ dB τ ∧ ∀ w, τ w ∈ eB.augmentationIdeal}) :
-    ((𝒜.augmentedHomTwistingCochainEquiv eB).symm τ).val =
-      (𝒜.homTwistingCochainEquiv hB.toIsNonUnitalDGAlgebra).symm ⟨τ.val, τ.property.1⟩ := (rfl)
-
-namespace Augmentation
+namespace AInfinityAlgebra.Augmentation
 
 variable {𝒜 : AInfinityAlgebra R A}
+
+/-! ### The canonical augmentation of `U(A, ε)` -/
 
 /-- The canonical DG algebra augmentation `U(A, ε) = Ω Tᶜ(s(ker ε)) ⟶ R` of the enveloping DG
 algebra of an augmented `A∞` algebra. -/
@@ -127,87 +98,52 @@ theorem envelopingAugmentation_def (ε : 𝒜.Augmentation) :
     (w : ReducedTensorWords R ε.augmentationIdeal) : ε.envelopingAugmentation (ι R w) = 0 :=
   ε.reducedAlgebra.isNonCounitalDGCoalgebra_bar.cobarAugmentation_ι w
 
-/-- **Universal property of the enveloping DG algebra `U(A, ε) = Ω B_∞ A`**: augmentation-preserving
-DG algebra morphisms `U(A, ε) ⟶ B` correspond bijectively to strictly unital augmented `A∞`
-morphisms `(A, ε) ⟶ (B, ε_B)`. -/
-noncomputable def envelopingDGAlgHomEquiv (ε : 𝒜.Augmentation) {hB : IsDGAlgebra ℬ dB}
-    (eB : DGAlgAugmentation hB) :
-    {φ : DGAlgHom ε.reducedAlgebra.isNonCounitalDGCoalgebra_bar.isDGAlgebra_cobarDifferential hB //
-      eB.comp φ = ε.envelopingAugmentation} ≃
-    {f : AInfinityHom 𝒜 hB.toIsNonUnitalDGAlgebra.toAInfinityAlgebra //
-      f.IsAugmented ε eB.toAInfinityAugmentation} :=
-  ((Equiv.subtypeEquivRight fun _ ↦ by rw [envelopingAugmentation_def]).trans
-    ((ε.reducedAlgebra.isNonCounitalDGCoalgebra_bar.augmentedCobarTwistingCochainEquiv eB).trans
-      (ε.reducedAlgebra.augmentedHomTwistingCochainEquiv eB).symm)).trans
-    ((liftReducedHomEquiv ε.reducedAlgebra eB.toAInfinityAugmentation).symm.trans
-      (ε.augmentedHomEquiv eB.toAInfinityAugmentation).symm)
+/-! ### Universal property of `U(A, ε)` for strictly unital `A∞` morphisms -/
 
-/-- Restricting `ε.envelopingDGAlgHomEquiv eB φ` to `ker ε` gives the unreduced bar--cobar morphism
-of `φ.val`. -/
-@[simp] theorem envelopingDGAlgHomEquiv_comp_inclusion (ε : 𝒜.Augmentation) {hB : IsDGAlgebra ℬ dB}
-    (eB : DGAlgAugmentation hB) (φ) :
-    (ε.envelopingDGAlgHomEquiv eB φ).val.comp ε.inclusion.toAInfinityHom =
-      (ε.reducedAlgebra.cobarBarHomEquiv hB).symm φ.val := by
-  simp only [envelopingDGAlgHomEquiv, Equiv.trans_apply, augmentedHomEquiv_symm_apply_val,
-    extendReducedHom_comp_inclusion]
-  rw [← liftReducedHomEquiv_apply_val, Equiv.apply_symm_apply,
-    augmentedHomTwistingCochainEquiv_symm_apply_val]
-  exact AInfinityHom.ext (LinearMap.ext fun _ ↦ by simp)
+/-- **Universal property of the enveloping DG algebra `U(A, ε) = Ω B_∞ A`**: DG algebra morphisms
+`U(A, ε) ⟶ B` into any unital DG algebra `B` correspond bijectively to strictly unital `A∞`
+morphisms `(A, ε) ⟶ B`. -/
+noncomputable def envelopingDGAlgHomEquiv (ε : 𝒜.Augmentation) (hB : IsDGAlgebra ℬ dB) :
+    DGAlgHom ε.reducedAlgebra.isNonCounitalDGCoalgebra_bar.isDGAlgebra_cobarDifferential hB ≃
+      {f : AInfinityHom 𝒜 hB.toIsNonUnitalDGAlgebra.toAInfinityAlgebra //
+        f.IsStrictlyUnital ε.isStrictUnit hB.strictUnit_one} :=
+  (ε.reducedAlgebra.cobarBarHomEquiv hB).symm.trans
+    (ε.strictlyUnitalHomEquiv hB.strictUnit_one).symm
 
-/-- The underlying DG algebra morphism of `(ε.envelopingDGAlgHomEquiv eB).symm f` is the unreduced
-cobar lift of `f` restricted to `ker ε`. -/
-@[simp] theorem envelopingDGAlgHomEquiv_symm_apply_val (ε : 𝒜.Augmentation) {hB : IsDGAlgebra ℬ dB}
-    (eB : DGAlgAugmentation hB) (f) :
-    ((ε.envelopingDGAlgHomEquiv eB).symm f).val =
-      ε.reducedAlgebra.cobarBarHomEquiv hB (f.val.comp ε.inclusion.toAInfinityHom) :=
-  (Equiv.symm_apply_eq _).1 <| by
-    rw [← envelopingDGAlgHomEquiv_comp_inclusion, Equiv.apply_symm_apply]
+/-- Restricting `ε.envelopingDGAlgHomEquiv hB φ` to `ker ε` gives the unreduced bar--cobar morphism
+of `φ`. -/
+@[simp] theorem envelopingDGAlgHomEquiv_comp_inclusion (ε : 𝒜.Augmentation) (hB : IsDGAlgebra ℬ dB)
+    (φ : DGAlgHom ε.reducedAlgebra.isNonCounitalDGCoalgebra_bar.isDGAlgebra_cobarDifferential hB) :
+    (ε.envelopingDGAlgHomEquiv hB φ).val.comp ε.inclusion.toAInfinityHom =
+      (ε.reducedAlgebra.cobarBarHomEquiv hB).symm φ := by
+  simp [envelopingDGAlgHomEquiv]
 
-/-- Evaluating `(ε.envelopingDGAlgHomEquiv eB).symm f` on a generator `ι w` negates the
-Koszul-twisted Taylor map of `f` on `w`. -/
-theorem envelopingDGAlgHomEquiv_symm_apply_ι (ε : 𝒜.Augmentation) {hB : IsDGAlgebra ℬ dB}
-    (eB : DGAlgAugmentation hB) (f) (w : ReducedTensorWords R ε.augmentationIdeal) :
-    ((ε.envelopingDGAlgHomEquiv eB).symm f).val (ι R w) =
-      -(InternalGrading.ofDecomposition ℬ).koszulTwist 1
-        (f.val.taylor (ε.inclusion.barMap w)) := by
-  simp [AInfinityHom.taylor_comp]
+/-- The DG algebra morphism `(ε.envelopingDGAlgHomEquiv hB).symm f` is the unreduced cobar lift of
+`f` restricted to `ker ε`. -/
+@[simp] theorem envelopingDGAlgHomEquiv_symm_apply (ε : 𝒜.Augmentation) (hB : IsDGAlgebra ℬ dB)
+    (f : {f : AInfinityHom 𝒜 hB.toIsNonUnitalDGAlgebra.toAInfinityAlgebra //
+      f.IsStrictlyUnital ε.isStrictUnit hB.strictUnit_one}) :
+    (ε.envelopingDGAlgHomEquiv hB).symm f =
+      ε.reducedAlgebra.cobarBarHomEquiv hB (f.val.comp ε.inclusion.toAInfinityHom) := by
+  simp [envelopingDGAlgHomEquiv]
 
 /-- The **universal strictly unital augmented `A∞` morphism** `A ⟶ U(A, ε)` into the enveloping
 differential graded algebra `U(A, ε) = Ω Tᶜ(s(ker ε))`. -/
 noncomputable def toEnveloping (ε : 𝒜.Augmentation) :
     AInfinityHom 𝒜 (IsNonUnitalDGAlgebra.toAInfinityAlgebra (IsDGAlgebra.toIsNonUnitalDGAlgebra
       ε.reducedAlgebra.isNonCounitalDGCoalgebra_bar.isDGAlgebra_cobarDifferential)) :=
-  (ε.envelopingDGAlgHomEquiv ε.envelopingAugmentation ⟨DGAlgHom.id _, DGAlgHom.comp_id _⟩).val
-
-/-- The universal morphism `ε.toEnveloping : A ⟶ U(A, ε)` is augmented. -/
-@[simp] theorem isAugmented_toEnveloping (ε : 𝒜.Augmentation) :
-    ε.toEnveloping.IsAugmented ε ε.envelopingAugmentation.toAInfinityAugmentation :=
-  (ε.envelopingDGAlgHomEquiv ε.envelopingAugmentation ⟨DGAlgHom.id _, DGAlgHom.comp_id _⟩).property
-
-/-- Under `envelopingDGAlgHomEquiv`, the identity morphism of `U(A, ε)` maps to `ε.toEnveloping`. -/
-@[simp] theorem envelopingDGAlgHomEquiv_id (ε : 𝒜.Augmentation)
-    (h : ε.envelopingAugmentation.comp (DGAlgHom.id _) = ε.envelopingAugmentation :=
-      DGAlgHom.comp_id _) :
-    ε.envelopingDGAlgHomEquiv ε.envelopingAugmentation ⟨DGAlgHom.id _, h⟩ =
-      ⟨ε.toEnveloping, ε.isAugmented_toEnveloping⟩ := (rfl)
-
-/-- Applying `(ε.envelopingDGAlgHomEquiv _).symm` to `ε.toEnveloping` recovers `DGAlgHom.id`. -/
-@[simp] theorem envelopingDGAlgHomEquiv_symm_toEnveloping (ε : 𝒜.Augmentation)
-    (hf : ε.toEnveloping.IsAugmented ε ε.envelopingAugmentation.toAInfinityAugmentation :=
-      ε.isAugmented_toEnveloping) :
-    (ε.envelopingDGAlgHomEquiv ε.envelopingAugmentation).symm ⟨ε.toEnveloping, hf⟩ =
-      ⟨DGAlgHom.id _, DGAlgHom.comp_id _⟩ :=
-  (ε.envelopingDGAlgHomEquiv _).symm_apply_apply _
+  (ε.envelopingDGAlgHomEquiv _ (DGAlgHom.id _)).val
 
 /-- The universal morphism `ε.toEnveloping : A ⟶ U(A, ε)` is strictly unital. -/
 @[simp] theorem isStrictlyUnital_toEnveloping (ε : 𝒜.Augmentation) :
     ε.toEnveloping.IsStrictlyUnital ε.isStrictUnit (IsDGAlgebra.strictUnit_one
-      ε.reducedAlgebra.isNonCounitalDGCoalgebra_bar.isDGAlgebra_cobarDifferential) := by
-  simpa using ε.isAugmented_toEnveloping.isStrictlyUnital
+      ε.reducedAlgebra.isNonCounitalDGCoalgebra_bar.isDGAlgebra_cobarDifferential) :=
+  (ε.envelopingDGAlgHomEquiv _ (DGAlgHom.id _)).property
 
-/-- The linear part of `ε.toEnveloping` sends the strict unit of `A` to `1`. -/
-theorem linearPart_toEnveloping_unit (ε : 𝒜.Augmentation) : ε.toEnveloping.linearPart ε.unit = 1 :=
-  ε.isStrictlyUnital_toEnveloping.map_unit
+/-- Under `envelopingDGAlgHomEquiv`, the identity morphism of `U(A, ε)` maps to `ε.toEnveloping`. -/
+@[simp] theorem envelopingDGAlgHomEquiv_id (ε : 𝒜.Augmentation) :
+    ε.envelopingDGAlgHomEquiv _ (DGAlgHom.id _) =
+      ⟨ε.toEnveloping, ε.isStrictlyUnital_toEnveloping⟩ := (rfl)
 
 /-- Restricting `ε.toEnveloping` to `ker ε` recovers `ε.reducedAlgebra.toCobarBar`. -/
 @[simp] theorem toEnveloping_comp_inclusion (ε : 𝒜.Augmentation) :
@@ -224,8 +160,7 @@ letter plus the Koszul-twisted generator on its reduced bar word. -/
     ε.toEnveloping_comp_inclusion
   simp only [AInfinityHom.taylor_comp, AInfinityStrictHom.barMap_toAInfinityHom,
     LinearMap.comp_apply, taylor_toCobarBar] at hcomp
-  rw [ε.isAugmented_toEnveloping.taylor_apply z, hcomp,
-    DGAlgAugmentation.toAInfinityAugmentation_unit, ← Algebra.algebraMap_eq_smul_one]
+  rw [ε.isStrictlyUnital_toEnveloping.taylor_apply z, hcomp, ← Algebra.algebraMap_eq_smul_one]
 
 /-- The linear part of `ε.toEnveloping` subtracts the Koszul-twisted single-letter generator of
 `ε.reducedPart` from the scalar augmentation. -/
@@ -235,31 +170,166 @@ letter plus the Koszul-twisted generator on its reduced bar word. -/
   LinearMap.ext fun _ ↦ by
     simp [koszulTwist_grading, InternalGrading.koszulTwist_one_shift_one, sub_eq_add_neg]
 
-/-- Every augmented `A∞` morphism corresponding to `φ : U(A, ε) ⟶ B` factors as `φ` after the
-universal morphism `ε.toEnveloping`. -/
-theorem envelopingDGAlgHomEquiv_eq_comp_toEnveloping (ε : 𝒜.Augmentation) {hB : IsDGAlgebra ℬ dB}
-    (eB : DGAlgAugmentation hB) (φ) :
-    (ε.envelopingDGAlgHomEquiv eB φ).val =
-      φ.val.toNonUnitalDGAlgHom.toAInfinityStrictHom.toAInfinityHom.comp ε.toEnveloping := by
-  refine AInfinityHom.IsAugmented.ext_comp_inclusion (ε.envelopingDGAlgHomEquiv eB φ).property
-    (((DGAlgHom.isAugmented_toAInfinityHom_iff φ.val _ eB).2 φ.property).comp
-      ε.isAugmented_toEnveloping) ?_
+/-- Every strictly unital `A∞` morphism corresponding to `φ : U(A, ε) ⟶ B` factors as `φ` after
+the universal morphism `ε.toEnveloping`. -/
+theorem envelopingDGAlgHomEquiv_eq_comp_toEnveloping (ε : 𝒜.Augmentation) (hB : IsDGAlgebra ℬ dB)
+    (φ : DGAlgHom ε.reducedAlgebra.isNonCounitalDGCoalgebra_bar.isDGAlgebra_cobarDifferential hB) :
+    (ε.envelopingDGAlgHomEquiv hB φ).val =
+      φ.toNonUnitalDGAlgHom.toAInfinityStrictHom.toAInfinityHom.comp ε.toEnveloping := by
+  refine (ε.envelopingDGAlgHomEquiv hB φ).property.ext_comp_inclusion
+    (AInfinityHom.IsStrictlyUnital.comp
+      (by simpa using φ.toAInfinityStrictUnitalHom.isStrictlyUnital_toAInfinityHom)
+      ε.isStrictlyUnital_toEnveloping) ?_
   rw [envelopingDGAlgHomEquiv_comp_inclusion, AInfinityHom.comp_assoc, toEnveloping_comp_inclusion,
     cobarBarHomEquiv_symm_apply]
 
-/-- Universal factorization characterization of `U(A, ε)`: an augmentation-preserving DG algebra
-morphism `φ : U(A, ε) ⟶ B` is the lift of `f : A ⟶ B` if and only if `φ ∘ ε.toEnveloping = f`. -/
-theorem eq_envelopingDGAlgHomEquiv_symm_iff (ε : 𝒜.Augmentation) {hB : IsDGAlgebra ℬ dB}
-    (eB : DGAlgAugmentation hB) (φ) (f) :
-    φ = (ε.envelopingDGAlgHomEquiv eB).symm f ↔
-      φ.val.toNonUnitalDGAlgHom.toAInfinityStrictHom.toAInfinityHom.comp ε.toEnveloping =
-        f.val := by
+/-- Universal factorization characterization of `U(A, ε)`: a DG algebra morphism
+`φ : U(A, ε) ⟶ B` is the lift of a strictly unital `A∞` morphism `f : A ⟶ B` if and only if
+`φ ∘ ε.toEnveloping = f`. -/
+theorem eq_envelopingDGAlgHomEquiv_symm_iff (ε : 𝒜.Augmentation) (hB : IsDGAlgebra ℬ dB)
+    (φ : DGAlgHom ε.reducedAlgebra.isNonCounitalDGCoalgebra_bar.isDGAlgebra_cobarDifferential hB)
+    (f : {f : AInfinityHom 𝒜 hB.toIsNonUnitalDGAlgebra.toAInfinityAlgebra //
+      f.IsStrictlyUnital ε.isStrictUnit hB.strictUnit_one}) :
+    φ = (ε.envelopingDGAlgHomEquiv hB).symm f ↔
+      φ.toNonUnitalDGAlgHom.toAInfinityStrictHom.toAInfinityHom.comp ε.toEnveloping = f.val := by
   rw [Equiv.eq_symm_apply, Subtype.ext_iff, envelopingDGAlgHomEquiv_eq_comp_toEnveloping]
 
-/-- **Universal property of `U(A, ε)`**: every strictly unital augmented `A∞` morphism from `(A, ε)`
-to an augmented DG algebra `(B, ε_B)` factors through `ε.toEnveloping` by a unique
+/-- **Universal property of `U(A, ε)`**: every strictly unital `A∞` morphism from `(A, ε)` to a
+unital DG algebra `B` factors through `ε.toEnveloping` by a unique DG algebra morphism
+`U(A, ε) ⟶ B`. -/
+theorem bijective_comp_toEnveloping (ε : 𝒜.Augmentation) (hB : IsDGAlgebra ℬ dB) :
+    Function.Bijective fun φ :
+        DGAlgHom ε.reducedAlgebra.isNonCounitalDGCoalgebra_bar.isDGAlgebra_cobarDifferential hB ↦
+      (⟨φ.toNonUnitalDGAlgHom.toAInfinityStrictHom.toAInfinityHom.comp ε.toEnveloping,
+        AInfinityHom.IsStrictlyUnital.comp
+          (by simpa using φ.toAInfinityStrictUnitalHom.isStrictlyUnital_toAInfinityHom)
+          ε.isStrictlyUnital_toEnveloping⟩ :
+        {f : AInfinityHom 𝒜 hB.toIsNonUnitalDGAlgebra.toAInfinityAlgebra //
+          f.IsStrictlyUnital ε.isStrictUnit hB.strictUnit_one}) := by
+  convert (ε.envelopingDGAlgHomEquiv hB).bijective using 1
+  funext φ
+  exact Subtype.ext (ε.envelopingDGAlgHomEquiv_eq_comp_toEnveloping hB φ).symm
+
+/-- `envelopingDGAlgHomEquiv` is natural with respect to DG algebra morphisms in the target. -/
+@[simp] theorem envelopingDGAlgHomEquiv_comp_left (ε : 𝒜.Augmentation) {hB : IsDGAlgebra ℬ dB}
+    {hC : IsDGAlgebra 𝒞 dC} (ψ : DGAlgHom hB hC)
+    (φ : DGAlgHom ε.reducedAlgebra.isNonCounitalDGCoalgebra_bar.isDGAlgebra_cobarDifferential hB) :
+    (ε.envelopingDGAlgHomEquiv hC (ψ.comp φ)).val =
+      ψ.toNonUnitalDGAlgHom.toAInfinityStrictHom.toAInfinityHom.comp
+        (ε.envelopingDGAlgHomEquiv hB φ).val := by
+  rw [envelopingDGAlgHomEquiv_eq_comp_toEnveloping, envelopingDGAlgHomEquiv_eq_comp_toEnveloping,
+    DGAlgHom.toNonUnitalDGAlgHom_comp, NonUnitalDGAlgHom.toAInfinityStrictHom_comp,
+    AInfinityStrictHom.toAInfinityHom_comp, AInfinityHom.comp_assoc]
+
+/-- The inverse enveloping-algebra correspondence is natural with respect to DG algebra morphisms
+in the target. -/
+theorem envelopingDGAlgHomEquiv_symm_comp (ε : 𝒜.Augmentation) {hB : IsDGAlgebra ℬ dB}
+    {hC : IsDGAlgebra 𝒞 dC} (ψ : DGAlgHom hB hC)
+    (f : {f : AInfinityHom 𝒜 hB.toIsNonUnitalDGAlgebra.toAInfinityAlgebra //
+      f.IsStrictlyUnital ε.isStrictUnit hB.strictUnit_one}) :
+    (ε.envelopingDGAlgHomEquiv hC).symm
+        ⟨ψ.toNonUnitalDGAlgHom.toAInfinityStrictHom.toAInfinityHom.comp f.val,
+          AInfinityHom.IsStrictlyUnital.comp
+            (by simpa using ψ.toAInfinityStrictUnitalHom.isStrictlyUnital_toAInfinityHom)
+            f.property⟩ =
+      ψ.comp ((ε.envelopingDGAlgHomEquiv hB).symm f) := by
+  simp
+
+/-! ### Specialization to augmented DG algebras -/
+
+/-- A DG algebra morphism `φ : U(A, ε) ⟶ B` preserves augmentations if and only if its
+corresponding strictly unital `A∞` morphism `(A, ε) ⟶ B` is augmented. -/
+theorem comp_eq_envelopingAugmentation_iff (ε : 𝒜.Augmentation) {hB : IsDGAlgebra ℬ dB}
+    (eB : DGAlgAugmentation hB)
+    (φ : DGAlgHom ε.reducedAlgebra.isNonCounitalDGCoalgebra_bar.isDGAlgebra_cobarDifferential hB) :
+    eB.comp φ = ε.envelopingAugmentation ↔
+      (ε.envelopingDGAlgHomEquiv hB φ).val.IsAugmented ε eB.toAInfinityAugmentation := by
+  have hsu : (ε.envelopingDGAlgHomEquiv hB φ).val.IsStrictlyUnital ε.isStrictUnit
+      eB.toAInfinityAugmentation.isStrictUnit := by
+    simpa using (ε.envelopingDGAlgHomEquiv hB φ).property
+  rw [hsu.isAugmented_iff_taylor_comp_inclusion_mem, envelopingDGAlgHomEquiv_comp_inclusion]
+  constructor
+  · intro h w
+    have hw : eB (φ (ι R w)) = 0 := by simpa using congrArg (· (ι R w)) h
+    simp [hw]
+  · intro h
+    refine ε.reducedAlgebra.isNonCounitalDGCoalgebra_bar.cobarHom_ext _ fun w ↦ ?_
+    simpa using h w
+
+/-- **Augmented universal property of `U(A, ε) = Ω B_∞ A`**: augmentation-preserving DG algebra
+morphisms `U(A, ε) ⟶ B` correspond bijectively to strictly unital augmented `A∞` morphisms
+`(A, ε) ⟶ (B, ε_B)`. -/
+noncomputable def augmentedEnvelopingDGAlgHomEquiv (ε : 𝒜.Augmentation) {hB : IsDGAlgebra ℬ dB}
+    (eB : DGAlgAugmentation hB) :
+    {φ : DGAlgHom ε.reducedAlgebra.isNonCounitalDGCoalgebra_bar.isDGAlgebra_cobarDifferential hB //
+      eB.comp φ = ε.envelopingAugmentation} ≃
+    {f : AInfinityHom 𝒜 hB.toIsNonUnitalDGAlgebra.toAInfinityAlgebra //
+      f.IsAugmented ε eB.toAInfinityAugmentation} :=
+  ((ε.envelopingDGAlgHomEquiv hB).subtypeEquiv (ε.comp_eq_envelopingAugmentation_iff eB)).trans
+    ((Equiv.subtypeSubtypeEquivSubtypeInter _ _).trans
+      (Equiv.subtypeEquivRight fun _ ↦
+        ⟨fun h ↦ h.2, fun h ↦ ⟨by simpa using h.isStrictlyUnital, h⟩⟩))
+
+/-- The underlying `A∞` morphism of `ε.augmentedEnvelopingDGAlgHomEquiv eB φ` agrees with the
+unaugmented correspondence `ε.envelopingDGAlgHomEquiv hB φ.val`. -/
+@[simp] theorem augmentedEnvelopingDGAlgHomEquiv_apply_val (ε : 𝒜.Augmentation)
+    {hB : IsDGAlgebra ℬ dB} (eB : DGAlgAugmentation hB) (φ) :
+    (ε.augmentedEnvelopingDGAlgHomEquiv eB φ).val = (ε.envelopingDGAlgHomEquiv hB φ.val).val :=
+  (rfl)
+
+/-- The underlying DG algebra morphism of `(ε.augmentedEnvelopingDGAlgHomEquiv eB).symm f` is the
+unreduced cobar lift of `f` restricted to `ker ε`. -/
+@[simp] theorem augmentedEnvelopingDGAlgHomEquiv_symm_apply_val (ε : 𝒜.Augmentation)
+    {hB : IsDGAlgebra ℬ dB} (eB : DGAlgAugmentation hB) (f) :
+    ((ε.augmentedEnvelopingDGAlgHomEquiv eB).symm f).val =
+      ε.reducedAlgebra.cobarBarHomEquiv hB (f.val.comp ε.inclusion.toAInfinityHom) := by
+  simp [augmentedEnvelopingDGAlgHomEquiv]
+
+/-- The universal morphism `ε.toEnveloping : A ⟶ U(A, ε)` is augmented. -/
+@[simp] theorem isAugmented_toEnveloping (ε : 𝒜.Augmentation) :
+    ε.toEnveloping.IsAugmented ε ε.envelopingAugmentation.toAInfinityAugmentation :=
+  (ε.comp_eq_envelopingAugmentation_iff ε.envelopingAugmentation (DGAlgHom.id _)).1
+    (DGAlgHom.comp_id _)
+
+/-- Under `augmentedEnvelopingDGAlgHomEquiv`, the identity morphism of `U(A, ε)` maps to
+`ε.toEnveloping`. -/
+@[simp] theorem augmentedEnvelopingDGAlgHomEquiv_id (ε : 𝒜.Augmentation)
+    (h : ε.envelopingAugmentation.comp (DGAlgHom.id _) = ε.envelopingAugmentation :=
+      DGAlgHom.comp_id _) :
+    ε.augmentedEnvelopingDGAlgHomEquiv ε.envelopingAugmentation ⟨DGAlgHom.id _, h⟩ =
+      ⟨ε.toEnveloping, ε.isAugmented_toEnveloping⟩ := Subtype.ext rfl
+
+/-- Applying `(ε.augmentedEnvelopingDGAlgHomEquiv _).symm` to `ε.toEnveloping` recovers
+`DGAlgHom.id`. -/
+@[simp] theorem augmentedEnvelopingDGAlgHomEquiv_symm_toEnveloping (ε : 𝒜.Augmentation)
+    (hf : ε.toEnveloping.IsAugmented ε ε.envelopingAugmentation.toAInfinityAugmentation :=
+      ε.isAugmented_toEnveloping) :
+    (ε.augmentedEnvelopingDGAlgHomEquiv ε.envelopingAugmentation).symm ⟨ε.toEnveloping, hf⟩ =
+      ⟨DGAlgHom.id _, DGAlgHom.comp_id _⟩ := by
+  rw [← ε.augmentedEnvelopingDGAlgHomEquiv_id, Equiv.symm_apply_apply]
+
+/-- Every augmented `A∞` morphism corresponding to `φ : U(A, ε) ⟶ B` factors as `φ` after the
+universal morphism `ε.toEnveloping`. -/
+theorem augmentedEnvelopingDGAlgHomEquiv_eq_comp_toEnveloping (ε : 𝒜.Augmentation)
+    {hB : IsDGAlgebra ℬ dB} (eB : DGAlgAugmentation hB) (φ) :
+    (ε.augmentedEnvelopingDGAlgHomEquiv eB φ).val =
+      φ.val.toNonUnitalDGAlgHom.toAInfinityStrictHom.toAInfinityHom.comp ε.toEnveloping :=
+  ε.envelopingDGAlgHomEquiv_eq_comp_toEnveloping hB φ.val
+
+/-- Augmented universal factorization characterization of `U(A, ε)`: an augmentation-preserving DG
+algebra morphism `φ : U(A, ε) ⟶ B` is the lift of `f : A ⟶ B` if and only if
+`φ ∘ ε.toEnveloping = f`. -/
+theorem eq_augmentedEnvelopingDGAlgHomEquiv_symm_iff (ε : 𝒜.Augmentation)
+    {hB : IsDGAlgebra ℬ dB} (eB : DGAlgAugmentation hB) (φ) (f) :
+    φ = (ε.augmentedEnvelopingDGAlgHomEquiv eB).symm f ↔
+      φ.val.toNonUnitalDGAlgHom.toAInfinityStrictHom.toAInfinityHom.comp ε.toEnveloping =
+        f.val := by
+  rw [Equiv.eq_symm_apply, Subtype.ext_iff, augmentedEnvelopingDGAlgHomEquiv_eq_comp_toEnveloping]
+
+/-- **Augmented universal property of `U(A, ε)`**: every strictly unital augmented `A∞` morphism
+from `(A, ε)` to an augmented DG algebra `(B, ε_B)` factors through `ε.toEnveloping` by a unique
 augmentation-preserving DG algebra morphism `U(A, ε) ⟶ B`. -/
-theorem bijective_comp_toEnveloping (ε : 𝒜.Augmentation) {hB : IsDGAlgebra ℬ dB}
+theorem bijective_augmented_comp_toEnveloping (ε : 𝒜.Augmentation) {hB : IsDGAlgebra ℬ dB}
     (eB : DGAlgAugmentation hB) :
     Function.Bijective fun φ :
         {φ : DGAlgHom ε.reducedAlgebra.isNonCounitalDGCoalgebra_bar.isDGAlgebra_cobarDifferential
@@ -269,25 +339,37 @@ theorem bijective_comp_toEnveloping (ε : 𝒜.Augmentation) {hB : IsDGAlgebra �
           ε.isAugmented_toEnveloping⟩ :
         {f : AInfinityHom 𝒜 hB.toIsNonUnitalDGAlgebra.toAInfinityAlgebra //
           f.IsAugmented ε eB.toAInfinityAugmentation}) := by
-  convert (ε.envelopingDGAlgHomEquiv eB).bijective using 1
+  convert (ε.augmentedEnvelopingDGAlgHomEquiv eB).bijective using 1
   funext φ
-  exact Subtype.ext (ε.envelopingDGAlgHomEquiv_eq_comp_toEnveloping eB φ).symm
+  exact Subtype.ext (ε.augmentedEnvelopingDGAlgHomEquiv_eq_comp_toEnveloping eB φ).symm
 
-/-- `envelopingDGAlgHomEquiv` is natural with respect to augmentation-preserving DG algebra
-morphisms in the target. -/
-@[simp] theorem envelopingDGAlgHomEquiv_comp_left (ε : 𝒜.Augmentation) {hB : IsDGAlgebra ℬ dB}
+/-- `augmentedEnvelopingDGAlgHomEquiv` is natural with respect to augmentation-preserving DG
+algebra morphisms in the target. -/
+theorem augmentedEnvelopingDGAlgHomEquiv_comp_left (ε : 𝒜.Augmentation) {hB : IsDGAlgebra ℬ dB}
     {hC : IsDGAlgebra 𝒞 dC} (eB : DGAlgAugmentation hB) (eC : DGAlgAugmentation hC)
     (ψ : DGAlgHom hB hC) (hψ : eC.comp ψ = eB) (φ) :
-    (ε.envelopingDGAlgHomEquiv eC
+    (ε.augmentedEnvelopingDGAlgHomEquiv eC
       ⟨ψ.comp φ.val, by rw [← DGAlgHom.comp_assoc, hψ, φ.property]⟩).val =
       ψ.toNonUnitalDGAlgHom.toAInfinityStrictHom.toAInfinityHom.comp
-        (ε.envelopingDGAlgHomEquiv eB φ).val := by
-  rw [envelopingDGAlgHomEquiv_eq_comp_toEnveloping, envelopingDGAlgHomEquiv_eq_comp_toEnveloping,
-    DGAlgHom.toNonUnitalDGAlgHom_comp, NonUnitalDGAlgHom.toAInfinityStrictHom_comp,
-    AInfinityStrictHom.toAInfinityHom_comp, AInfinityHom.comp_assoc]
+        (ε.augmentedEnvelopingDGAlgHomEquiv eB φ).val :=
+  ε.envelopingDGAlgHomEquiv_comp_left ψ φ.val
 
-end Augmentation
-end AInfinityAlgebra
+/-- The inverse augmented enveloping-algebra correspondence is natural with respect to
+augmentation-preserving DG algebra morphisms in the target. -/
+theorem augmentedEnvelopingDGAlgHomEquiv_symm_comp (ε : 𝒜.Augmentation) {hB : IsDGAlgebra ℬ dB}
+    {hC : IsDGAlgebra 𝒞 dC} (eB : DGAlgAugmentation hB) (eC : DGAlgAugmentation hC)
+    (ψ : DGAlgHom hB hC) (hψ : eC.comp ψ = eB)
+    (f : {f : AInfinityHom 𝒜 hB.toIsNonUnitalDGAlgebra.toAInfinityAlgebra //
+      f.IsAugmented ε eB.toAInfinityAugmentation}) :
+    ((ε.augmentedEnvelopingDGAlgHomEquiv eC).symm
+        ⟨ψ.toNonUnitalDGAlgHom.toAInfinityStrictHom.toAInfinityHom.comp f.val,
+          ((DGAlgHom.isAugmented_toAInfinityHom_iff ψ eB eC).2 hψ).comp f.property⟩).val =
+      ψ.comp ((ε.augmentedEnvelopingDGAlgHomEquiv eB).symm f).val :=
+  ε.envelopingDGAlgHomEquiv_symm_comp ψ ⟨f.val, by simpa using f.property.isStrictlyUnital⟩
+
+end AInfinityAlgebra.Augmentation
+
+/-! ### Functoriality and source naturality -/
 
 namespace AInfinityHom.IsAugmented
 
@@ -336,18 +418,61 @@ theorem envelopingMap_comp_toEnveloping (hf : f.IsAugmented ε ε') :
     AInfinityHom.cobarBarMap_comp_toCobarBar, AInfinityHom.comp_assoc,
     ← hf.inclusion_comp_reducedHom, ← AInfinityHom.comp_assoc, ε'.toEnveloping_comp_inclusion]
 
+end AInfinityHom.IsAugmented
+
+namespace AInfinityAlgebra.Augmentation
+
+variable {𝒜 : AInfinityAlgebra R A} {𝒜' : AInfinityAlgebra R A'}
+
 /-- `envelopingDGAlgHomEquiv` is natural in its source augmented `A∞` algebra along
 `envelopingMap`. -/
-@[simp] theorem envelopingDGAlgHomEquiv_comp_envelopingMap (hf : f.IsAugmented ε ε')
-    {hB : IsDGAlgebra ℬ dB} (eB : DGAlgAugmentation hB) (φ) :
-    (ε.envelopingDGAlgHomEquiv eB ⟨φ.val.comp hf.envelopingMap, by
-      rw [← DGAlgHom.comp_assoc, φ.property, hf.envelopingAugmentation_comp_envelopingMap]⟩).val =
-      (ε'.envelopingDGAlgHomEquiv eB φ).val.comp f := by
-  rw [AInfinityAlgebra.Augmentation.envelopingDGAlgHomEquiv_eq_comp_toEnveloping,
-    AInfinityAlgebra.Augmentation.envelopingDGAlgHomEquiv_eq_comp_toEnveloping,
+theorem envelopingDGAlgHomEquiv_comp_envelopingMap (ε : 𝒜.Augmentation)
+    {ε' : 𝒜'.Augmentation} {f : AInfinityHom 𝒜 𝒜'} (hf : f.IsAugmented ε ε')
+    (hB : IsDGAlgebra ℬ dB)
+    (φ : DGAlgHom ε'.reducedAlgebra.isNonCounitalDGCoalgebra_bar.isDGAlgebra_cobarDifferential
+      hB) :
+    (ε.envelopingDGAlgHomEquiv hB (φ.comp hf.envelopingMap)).val =
+      (ε'.envelopingDGAlgHomEquiv hB φ).val.comp f := by
+  rw [envelopingDGAlgHomEquiv_eq_comp_toEnveloping, envelopingDGAlgHomEquiv_eq_comp_toEnveloping,
     DGAlgHom.toNonUnitalDGAlgHom_comp, NonUnitalDGAlgHom.toAInfinityStrictHom_comp,
     AInfinityStrictHom.toAInfinityHom_comp, AInfinityHom.comp_assoc,
     hf.envelopingMap_comp_toEnveloping, ← AInfinityHom.comp_assoc]
 
-end AInfinityHom.IsAugmented
+/-- The inverse enveloping-algebra correspondence is natural in its source augmented `A∞` algebra
+along `envelopingMap`. -/
+theorem envelopingDGAlgHomEquiv_symm_comp_right (ε : 𝒜.Augmentation)
+    {ε' : 𝒜'.Augmentation} {f : AInfinityHom 𝒜 𝒜'} (hf : f.IsAugmented ε ε')
+    (hB : IsDGAlgebra ℬ dB)
+    (g : {g : AInfinityHom 𝒜' hB.toIsNonUnitalDGAlgebra.toAInfinityAlgebra //
+      g.IsStrictlyUnital ε'.isStrictUnit hB.strictUnit_one}) :
+    (ε.envelopingDGAlgHomEquiv hB).symm ⟨g.val.comp f, g.property.comp hf.isStrictlyUnital⟩ =
+      ((ε'.envelopingDGAlgHomEquiv hB).symm g).comp hf.envelopingMap := by
+  rw [envelopingDGAlgHomEquiv_symm_apply, envelopingDGAlgHomEquiv_symm_apply,
+    AInfinityHom.IsAugmented.envelopingMap, AInfinityHom.comp_assoc,
+    ← hf.inclusion_comp_reducedHom, ← AInfinityHom.comp_assoc,
+    cobarBarHomEquiv_comp_right]
+
+/-- `augmentedEnvelopingDGAlgHomEquiv` is natural in its source augmented `A∞` algebra along
+`envelopingMap`. -/
+theorem augmentedEnvelopingDGAlgHomEquiv_comp_envelopingMap (ε : 𝒜.Augmentation)
+    {ε' : 𝒜'.Augmentation} {f : AInfinityHom 𝒜 𝒜'} (hf : f.IsAugmented ε ε')
+    {hB : IsDGAlgebra ℬ dB} (eB : DGAlgAugmentation hB) (φ) :
+    (ε.augmentedEnvelopingDGAlgHomEquiv eB ⟨φ.val.comp hf.envelopingMap, by
+      rw [← DGAlgHom.comp_assoc, φ.property, hf.envelopingAugmentation_comp_envelopingMap]⟩).val =
+      (ε'.augmentedEnvelopingDGAlgHomEquiv eB φ).val.comp f :=
+  ε.envelopingDGAlgHomEquiv_comp_envelopingMap hf hB φ.val
+
+/-- The inverse augmented enveloping-algebra correspondence is natural in its source augmented
+`A∞` algebra along `envelopingMap`. -/
+theorem augmentedEnvelopingDGAlgHomEquiv_symm_comp_right (ε : 𝒜.Augmentation)
+    {ε' : 𝒜'.Augmentation} {f : AInfinityHom 𝒜 𝒜'} (hf : f.IsAugmented ε ε')
+    {hB : IsDGAlgebra ℬ dB} (eB : DGAlgAugmentation hB)
+    (g : {g : AInfinityHom 𝒜' hB.toIsNonUnitalDGAlgebra.toAInfinityAlgebra //
+      g.IsAugmented ε' eB.toAInfinityAugmentation}) :
+    ((ε.augmentedEnvelopingDGAlgHomEquiv eB).symm ⟨g.val.comp f, g.property.comp hf⟩).val =
+      ((ε'.augmentedEnvelopingDGAlgHomEquiv eB).symm g).val.comp hf.envelopingMap :=
+  ε.envelopingDGAlgHomEquiv_symm_comp_right hf hB
+    ⟨g.val, by simpa using g.property.isStrictlyUnital⟩
+
+end AInfinityAlgebra.Augmentation
 end TauCeti

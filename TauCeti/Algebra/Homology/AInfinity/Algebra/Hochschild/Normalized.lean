@@ -150,7 +150,7 @@ private theorem hochschildDifferential_of_tprod_eq_zero (h : 𝒜.StrictUnit e)
   rw [hochschildDifferential_eq_brace_sub, LinearMap.sub_apply, LinearMap.smul_apply, brace_def,
     brace_def, LinearMap.comp_apply, LinearMap.comp_apply, ← barDifferential_def,
     taylor_gradedCoderiv_of_tprod h hFe x 𝒟 hx j hj h𝒟j,
-    h.apply_barDifferential_of_tprod_of_ker hFe x 𝒟 hx j hj]
+    h.apply_barDifferential_of_tprod_of_ker hFe x j hj]
   rcases Nat.eq_zero_or_pos n with rfl | hn
   · simp
   by_cases hj0 : j.1 = 0

@@ -79,31 +79,20 @@ theorem comp_eq_cobarAugmentation_iff (φ : DGAlgHom hC.isDGAlgebra_cobarDiffere
 `ΩC ⟶ A` correspond bijectively to twisting cochains `C →ₗ[R] A` landing in `ker ε_A`. -/
 noncomputable def augmentedCobarTwistingCochainEquiv :
     {φ : DGAlgHom hC.isDGAlgebra_cobarDifferential hA // eA.comp φ = hC.cobarAugmentation} ≃
-      {τ : C →ₗ[R] A // IsTwistingCochain G Δ dC 𝒜 dA τ ∧ ∀ c, τ c ∈ eA.augmentationIdeal} where
-  toFun φ := ⟨(hC.cobarTwistingCochainEquiv hA φ.val).val,
-    (hC.cobarTwistingCochainEquiv hA φ.val).property,
-    (hC.comp_eq_cobarAugmentation_iff eA φ.val).mp φ.property⟩
-  invFun τ := ⟨hC.cobarLift hA τ.val τ.property.1,
-    (hC.comp_eq_cobarAugmentation_iff eA _).mpr fun c ↦ by simp [τ.property.2 c]⟩
-  left_inv φ := Subtype.ext (hC.cobarHom_ext hA fun _ ↦ by simp)
-  right_inv τ := Subtype.ext (LinearMap.ext fun _ ↦ by simp)
+      {τ : C →ₗ[R] A // IsTwistingCochain G Δ dC 𝒜 dA τ ∧ ∀ c, τ c ∈ eA.augmentationIdeal} :=
+  ((hC.cobarTwistingCochainEquiv hA).subtypeEquiv (hC.comp_eq_cobarAugmentation_iff eA)).trans
+    (Equiv.subtypeSubtypeEquivSubtypeInter _ _)
 
 @[simp] theorem augmentedCobarTwistingCochainEquiv_apply
     (φ : {φ : DGAlgHom hC.isDGAlgebra_cobarDifferential hA // eA.comp φ = hC.cobarAugmentation})
-    (c : C) : (hC.augmentedCobarTwistingCochainEquiv eA φ).val c = -φ.val (ι R c) := by
-  simp [augmentedCobarTwistingCochainEquiv]
+    (c : C) : (hC.augmentedCobarTwistingCochainEquiv eA φ).val c = -φ.val (ι R c) :=
+  hC.cobarTwistingCochainEquiv_apply hA φ.val c
 
 @[simp] theorem augmentedCobarTwistingCochainEquiv_symm_apply_val
     (τ : {τ : C →ₗ[R] A // IsTwistingCochain G Δ dC 𝒜 dA τ ∧ ∀ c, τ c ∈ eA.augmentationIdeal}) :
     ((hC.augmentedCobarTwistingCochainEquiv eA).symm τ).val =
-      hC.cobarLift hA τ.val τ.property.1 := (rfl)
-
-/-- Evaluating the inverse augmented cobar correspondence on a desuspended generator negates the
-twisting cochain. -/
-theorem augmentedCobarTwistingCochainEquiv_symm_apply_ι
-    (τ : {τ : C →ₗ[R] A // IsTwistingCochain G Δ dC 𝒜 dA τ ∧ ∀ c, τ c ∈ eA.augmentationIdeal})
-    (c : C) : ((hC.augmentedCobarTwistingCochainEquiv eA).symm τ).val (ι R c) = -τ.val c :=
-  hC.cobarLift_ι hA τ.val τ.property.1 c
+      hC.cobarLift hA τ.val τ.property.1 :=
+  hC.cobarHom_ext _ fun _ ↦ by simp [augmentedCobarTwistingCochainEquiv]
 
 end Target
 end IsNonCounitalDGCoalgebra
