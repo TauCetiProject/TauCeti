@@ -49,18 +49,18 @@ section RCLike
 
 open scoped ComplexOrder
 
-variable {𝕜 E : Type*} [RCLike 𝕜] [AddCommGroup E] [Module 𝕜 E] [Module ℝ E]
-  [IsScalarTower ℝ 𝕜 E] [TopologicalSpace E]
-
 /-- Over `ℝ` or `ℂ`, local convexity with respect to the canonical order on `𝕜` is equivalent to
 local convexity over `ℝ`. -/
-theorem locallyConvexSpace_RCLike_iff : LocallyConvexSpace 𝕜 E ↔ LocallyConvexSpace ℝ E := by
+theorem locallyConvexSpace_RCLike_iff {𝕜 E : Type*} [RCLike 𝕜] [AddCommMonoid E] [Module 𝕜 E]
+    [Module ℝ E] [IsScalarTower ℝ 𝕜 E] [TopologicalSpace E] :
+    LocallyConvexSpace 𝕜 E ↔ LocallyConvexSpace ℝ E := by
   simp_rw [locallyConvexSpace_iff, convex_RCLike_iff_convex_real]
 
 /-- In a `T₁` locally convex topological vector space over `ℝ` or `ℂ`, continuous `𝕜`-linear
 functionals separate points. -/
-instance instSeparatingDualOfLocallyConvexSpace [IsTopologicalAddGroup E] [ContinuousSMul 𝕜 E]
-    [LocallyConvexSpace ℝ E] [T1Space E] : SeparatingDual 𝕜 E :=
+instance instSeparatingDualOfLocallyConvexSpace {𝕜 E : Type*} [RCLike 𝕜] [AddCommGroup E]
+    [Module 𝕜 E] [Module ℝ E] [IsScalarTower ℝ 𝕜 E] [TopologicalSpace E] [IsTopologicalAddGroup E]
+    [ContinuousSMul 𝕜 E] [LocallyConvexSpace ℝ E] [T1Space E] : SeparatingDual 𝕜 E :=
   ⟨fun x hx ↦
     RCLike.geometric_hahn_banach_point_point hx |>.imp fun _ hf hf' ↦ by simp [hf'] at hf⟩
 

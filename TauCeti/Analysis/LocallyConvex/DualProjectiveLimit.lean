@@ -313,8 +313,7 @@ theorem exists_eval_eq (hT : ∀ n, (T n).IsWeaklyCompact)
   exact ⟨j, x, hx⟩
 
 /-- When the bonding maps are weakly compact, canonical evaluation from `dualProjectiveLimit T`
-into its strong bidual is surjective: composing a strong-bidual element with the stage evaluation
-maps `eval T n` produces the representing compatible family. -/
+into its strong bidual is surjective. -/
 theorem applyₗ_id_surjective (hT : ∀ n, (T n).IsWeaklyCompact) :
     Function.Surjective (ContinuousLinearMap.applyₗ 𝕜 (RingHom.id 𝕜) :
       dualProjectiveLimit T → StrongDual 𝕜 (StrongDual 𝕜 (dualProjectiveLimit T))) := by
@@ -329,21 +328,21 @@ in particular when they are compact, canonical evaluation is a topological linea
 `dualProjectiveLimit T` onto its strong bidual. -/
 def bidualEquiv (hT : ∀ n, (T n).IsWeaklyCompact) :
     dualProjectiveLimit T ≃L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 (dualProjectiveLimit T)) :=
-  strongBidualEquivOfBarrelled (applyₗ_id_surjective hT)
+  strongBidualEquivOfSurjective (applyₗ_id_surjective hT)
 
 @[simp]
 theorem bidualEquiv_apply_apply (hT : ∀ n, (T n).IsWeaklyCompact)
     (f : dualProjectiveLimit T) (φ : StrongDual 𝕜 (dualProjectiveLimit T)) :
     bidualEquiv hT f φ = φ f :=
-  strongBidualEquivOfBarrelled_apply_apply (applyₗ_id_surjective hT) f φ
+  strongBidualEquivOfSurjective_apply_apply (applyₗ_id_surjective hT) f φ
 
 @[simp]
 theorem toLinearMap_bidualEquiv (hT : ∀ n, (T n).IsWeaklyCompact) :
     (bidualEquiv hT).toLinearMap = ContinuousLinearMap.applyₗ 𝕜 (RingHom.id 𝕜) :=
-  toLinearMap_strongBidualEquivOfBarrelled (applyₗ_id_surjective hT)
+  toLinearMap_strongBidualEquivOfSurjective (applyₗ_id_surjective hT)
 
 @[simp]
-theorem bidualEquiv_symm_coord_apply (hT : ∀ n, (T n).IsWeaklyCompact)
+theorem bidualEquiv_symm_apply_apply (hT : ∀ n, (T n).IsWeaklyCompact)
     (Ψ : StrongDual 𝕜 (StrongDual 𝕜 (dualProjectiveLimit T))) (j : ℕ) (x : B j) :
     ((bidualEquiv hT).symm Ψ : ∀ n, StrongDual 𝕜 (B n)) j x = Ψ (eval T j x) := by
   rw [← eval_apply, ← bidualEquiv_apply_apply hT, (bidualEquiv hT).apply_symm_apply]
@@ -410,56 +409,27 @@ private theorem apply_eq_of_eq (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n)
   · obtain ⟨z, hz, hfz⟩ := exists_stage_eq hι f hkj y'
     rw [← hfz, hinj j (h.trans hz.symm)]
 
-/-- Every compatible family of continuous functionals on the spaces `B j` comes from a continuous
-functional on their inductive limit `L`. -/
-theorem precomp_surjective (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n)
-    (hinj : ∀ n, Function.Injective (ι n)) (hcover : ∀ x : L, ∃ n, ∃ y, ι n y = x)
-    (hfinal : ∀ ψ : L →ₗ[𝕜] 𝕜, (∀ n, Continuous (ψ ∘ ι n)) → Continuous ψ) :
-    Function.Surjective (precomp ι hι) := by
-  intro f
-  choose m y hy using hcover
-  -- The functional `x ↦ f (m x) (y x)` is well defined, whatever stage represents `x`.
-  have hval (x : L) {n : ℕ} (z : B n) (hz : ι n z = x) :
-      (f : ∀ n, StrongDual 𝕜 (B n)) (m x) (y x) = (f : ∀ n, StrongDual 𝕜 (B n)) n z :=
-    apply_eq_of_eq hι hinj f ((hy x).trans hz.symm)
-  let ψ : L →ₗ[𝕜] 𝕜 :=
-    { toFun x := (f : ∀ n, StrongDual 𝕜 (B n)) (m x) (y x)
-      map_add' x x' := by
-        obtain ⟨z, hz, hfz⟩ := exists_stage_eq hι f (le_max_left (m x) (m x')) (y x)
-        obtain ⟨z', hz', hfz'⟩ := exists_stage_eq hι f (le_max_right (m x) (m x')) (y x')
-        rw [hval (x + x') (z + z') (by rw [map_add, hz, hz', hy, hy]), map_add, hfz, hfz']
-      map_smul' c x := by
-        rw [hval (c • x) (c • y x) (by rw [map_smul, hy]), map_smul, RingHom.id_apply] }
-  have hψ (n : ℕ) (z : B n) : ψ (ι n z) = (f : ∀ n, StrongDual 𝕜 (B n)) n z := hval _ z rfl
-  refine ⟨⟨ψ, hfinal ψ fun n ↦ ?_⟩, ?_⟩
-  · exact ((f : ∀ n, StrongDual 𝕜 (B n)) n).continuous.congr fun z ↦ (hψ n z).symm
-  · ext n z
-    exact hψ n z
-
 /-- Canonical linear evaluation from an inductive limit `L` of the spaces `B j` into the strong
 dual of `dualProjectiveLimit T`, obtained by gluing the stage evaluation maps `eval T n` along the
 injective compatible maps `ι n`. -/
 def evalInductive (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n)
     (hinj : ∀ n, Function.Injective (ι n)) (hcover : ∀ x : L, ∃ n, ∃ y, ι n y = x) :
-    L →ₗ[𝕜] StrongDual 𝕜 (dualProjectiveLimit T) where
-  toFun x := eval T (hcover x).choose (hcover x).choose_spec.choose
-  map_add' x x' := by
-    let m (u : L) := (hcover u).choose
-    let y (u : L) := (hcover u).choose_spec.choose
-    have hy (u : L) : ι (m u) (y u) = u := (hcover u).choose_spec.choose_spec
-    ext f
-    obtain ⟨z, hz, hfz⟩ := exists_stage_eq hι f (le_max_left (m x) (m x')) (y x)
-    obtain ⟨z', hz', hfz'⟩ := exists_stage_eq hι f (le_max_right (m x) (m x')) (y x')
-    have hsum : ι (max (m x) (m x')) (z + z') = x + x' := by
-      rw [map_add, hz, hz', hy x, hy x']
-    simpa [hfz, hfz'] using apply_eq_of_eq hι hinj f ((hy (x + x')).trans hsum.symm)
-  map_smul' c x := by
-    let m (u : L) := (hcover u).choose
-    let y (u : L) := (hcover u).choose_spec.choose
-    have hy (u : L) : ι (m u) (y u) = u := (hcover u).choose_spec.choose_spec
-    ext f
-    have hsmul : ι (m x) (c • y x) = c • x := by rw [map_smul, hy x]
-    simpa using apply_eq_of_eq hι hinj f ((hy (c • x)).trans hsmul.symm)
+    L →ₗ[𝕜] StrongDual 𝕜 (dualProjectiveLimit T) :=
+  let m (u : L) := (hcover u).choose
+  let y (u : L) := (hcover u).choose_spec.choose
+  have hy (u : L) : ι (m u) (y u) = u := (hcover u).choose_spec.choose_spec
+  { toFun x := eval T (m x) (y x)
+    map_add' x x' := by
+      ext f
+      obtain ⟨z, hz, hfz⟩ := exists_stage_eq hι f (le_max_left (m x) (m x')) (y x)
+      obtain ⟨z', hz', hfz'⟩ := exists_stage_eq hι f (le_max_right (m x) (m x')) (y x')
+      have hsum : ι (max (m x) (m x')) (z + z') = x + x' := by
+        rw [map_add, hz, hz', hy x, hy x']
+      simpa [hfz, hfz'] using apply_eq_of_eq hι hinj f ((hy (x + x')).trans hsum.symm)
+    map_smul' c x := by
+      ext f
+      have hsmul : ι (m x) (c • y x) = c • x := by rw [map_smul, hy x]
+      simpa using apply_eq_of_eq hι hinj f ((hy (c • x)).trans hsmul.symm) }
 
 @[simp]
 theorem evalInductive_ι (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n)
@@ -474,6 +444,21 @@ theorem evalInductive_comp_ι (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n)
     (hinj : ∀ n, Function.Injective (ι n)) (hcover : ∀ x : L, ∃ n, ∃ y, ι n y = x) (n : ℕ) :
     (evalInductive hι hinj hcover).comp (ι n).toLinearMap = (eval T n).toLinearMap :=
   LinearMap.ext fun z ↦ evalInductive_ι hι hinj hcover n z
+
+/-- Every compatible family of continuous functionals on the spaces `B j` comes from a continuous
+functional on their inductive limit `L`. -/
+theorem precomp_surjective (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n)
+    (hinj : ∀ n, Function.Injective (ι n)) (hcover : ∀ x : L, ∃ n, ∃ y, ι n y = x)
+    (hfinal : ∀ ψ : L →ₗ[𝕜] 𝕜, (∀ n, Continuous (ψ ∘ ι n)) → Continuous ψ) :
+    Function.Surjective (precomp ι hι) := by
+  intro f
+  let ψ : L →ₗ[𝕜] 𝕜 :=
+    (ContinuousLinearMap.applyₗ 𝕜 (RingHom.id 𝕜) f).toLinearMap.comp (evalInductive hι hinj hcover)
+  have hψ (n : ℕ) (z : B n) : ψ (ι n z) = (f : ∀ n, StrongDual 𝕜 (B n)) n z := by simp [ψ]
+  refine ⟨⟨ψ, hfinal ψ fun n ↦ ?_⟩, ?_⟩
+  · exact ((f : ∀ n, StrongDual 𝕜 (B n)) n).continuous.congr fun z ↦ (hψ n z).symm
+  · ext n z
+    exact hψ n z
 
 @[simp]
 theorem evalInductive_apply_precomp (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n)

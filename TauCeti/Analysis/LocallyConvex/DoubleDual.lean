@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.LocallyConvex.StrongTopology
 public import TauCeti.Analysis.LocallyConvex.Barrelled
 public import TauCeti.Analysis.LocallyConvex.Bipolar
 public import TauCeti.Analysis.LocallyConvex.Separation
@@ -29,22 +28,22 @@ canonical evaluation along a continuous linear map `p : StrongDual 𝕜 E →L[�
 `ev x (p φ) = φ x`, factors `applyₗ` through the continuous transpose `precomp 𝕜 p` and hence
 satisfies `comap ev (𝓝 0) ≤ 𝓝 0` (`TauCeti.comap_le_nhds_zero_of_forall_apply_eq`). By
 `IsTopologicalAddGroup.isInducing_iff_nhds_zero`, a continuous additive homomorphism with this
-property is inducing (`TauCeti.isInducing_of_continuous_of_forall_apply_eq`), a topological
-embedding when `E` is `T₁` (`TauCeti.isEmbedding_of_continuous_of_forall_apply_eq`), and — when
+property is inducing (`TauCeti.isInducing_of_forall_apply_eq_of_continuous`), a topological
+embedding when `E` is `T₁` (`TauCeti.isEmbedding_of_forall_apply_eq_of_continuous`), and — when
 `ev` is linear and surjective — a topological linear isomorphism `E ≃L[𝕜] StrongDual 𝕜 G`
 (`TauCeti.strongDualEquivOfForallApplyEq`). Taking `p = .id 𝕜 _` gives the strong-bidual cases
 `TauCeti.isInducing_applyₗ_of_continuous`, `TauCeti.isEmbedding_applyₗ_of_continuous`, and
-`TauCeti.strongBidualEquivOfSurjective`.
+`TauCeti.strongBidualEquivOfContinuousOfSurjective`.
 
 On a barrelled space `E`, every von Neumann bounded set of continuous semilinear operators into a
 polynormable space is equicontinuous (`Bornology.IsVonNBounded.equicontinuous`). Hence
 `ContinuousLinearMap.applyₗ` is continuous (`TauCeti.continuous_applyₗ`), bundling canonical
 evaluation into `TauCeti.strongEval 𝕜 E : E →L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 E)` and upgrading
 surjectivity on a barrelled `T₁` locally convex space directly to
-`TauCeti.strongBidualEquivOfBarrelled`.
+`TauCeti.strongBidualEquivOfSurjective`.
 
 Finally, canonical evaluation intertwines every continuous linear map `u : E →L[𝕜] F` with its
-double strong transpose `precomp 𝕜 (precomp 𝕜 u)`
+double strong transpose `precomp G (precomp G u)`
 (`ContinuousLinearMap.applyₗ_comp_precomp`, `ContinuousLinearMap.precomp_precomp_applyₗ_apply`),
 recovering `u` when both spaces carry canonical bidual isomorphisms
 (`ContinuousLinearMap.symm_comp_precomp_precomp_comp_of_forall_apply_eq`). When
@@ -59,13 +58,14 @@ dual of a reflexive space is canonically reflexive.
 * `TauCeti.comap_applyₗ_le_nhds_zero`, `TauCeti.comap_le_nhds_zero_of_forall_apply_eq`: inverse
   continuity at `0` of canonical strong-bidual evaluation and of general evaluation maps over `ℝ`
   or `ℂ`.
-* `TauCeti.isInducing_of_continuous_of_forall_apply_eq`,
+* `TauCeti.isInducing_of_forall_apply_eq_of_continuous`,
   `TauCeti.strongDualEquivOfForallApplyEq`: inducing property and `E ≃L[𝕜] StrongDual 𝕜 G`
   constructor for continuous evaluation maps.
-* `TauCeti.continuous_applyₗ`, `TauCeti.strongEval`: continuity of evaluation into the space of
-  operators on a barrelled space, and the bundled strong-bidual map.
-* `TauCeti.strongBidualEquivOfSurjective`, `TauCeti.strongBidualEquivOfBarrelled`: topological
-  linear isomorphisms `E ≃L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 E)` from surjectivity of evaluation.
+* `TauCeti.continuous_applyₗ`, `TauCeti.strongEval`: continuity of evaluation on a barrelled space
+  `E` into `(E →SL[σ₁₂] F) →L[𝕜₂] F` for polynormable `F`, and the bundled strong-bidual map.
+* `TauCeti.strongBidualEquivOfContinuousOfSurjective`, `TauCeti.strongBidualEquivOfSurjective`:
+  topological linear isomorphisms `E ≃L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 E)` from surjectivity of
+  evaluation.
 * `ContinuousLinearMap.applyₗ_comp_precomp`, `ContinuousLinearMap.precomp_precomp_applyₗ_apply`:
   naturality of canonical evaluation with respect to the double strong transpose.
 * `ContinuousLinearEquiv.toLinearMap_arrowCongr_refl_of_forall_apply_eq`: the inverse of the strong
@@ -88,23 +88,21 @@ namespace TauCeti
 
 section Injectivity
 
-variable {𝕜 E G F : Type*} [NormedField 𝕜] [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
-  [SeparatingDual 𝕜 E] [AddCommGroup G] [Module 𝕜 G] [TopologicalSpace G]
-  [FunLike F E (StrongDual 𝕜 G)] [AddMonoidHomClass F E (StrongDual 𝕜 G)]
-
-/-- Any additive homomorphism `ev` into `StrongDual 𝕜 G` that recovers every `φ : StrongDual 𝕜 E`
-along some map `p : StrongDual 𝕜 E → G` is injective when continuous functionals separate points of
-`E`. -/
-theorem injective_of_forall_apply_eq {ev : F} {p : StrongDual 𝕜 E → G}
+/-- Any map `ev : E → H` into a family of `𝕜`-valued functions on `G` that recovers every
+`φ : StrongDual 𝕜 E` along some map `p : StrongDual 𝕜 E → G` is injective when continuous
+functionals separate points of `E`. -/
+theorem injective_of_forall_apply_eq {𝕜 E G H : Type*} [Ring 𝕜] [TopologicalSpace 𝕜]
+    [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E] [SeparatingDual 𝕜 E] [FunLike H G 𝕜]
+    {ev : E → H} {p : StrongDual 𝕜 E → G}
     (hev : ∀ x (φ : StrongDual 𝕜 E), ev x (p φ) = φ x) :
-    Function.Injective ev :=
-  (injective_iff_map_eq_zero _).2 fun x hx ↦
-    SeparatingDual.eq_zero_of_forall_dual_eq_zero (R := 𝕜) fun φ ↦ by
-      rw [← hev x φ, hx, zero_apply]
+    Function.Injective ev := fun x y hxy ↦
+  (SeparatingDual.eq_iff_forall_dual_eq (R := 𝕜)).2 fun φ ↦ by
+    rw [← hev x φ, ← hev y φ, hxy]
 
 /-- When continuous functionals separate points of `E`, canonical evaluation into the strong bidual
 is injective. -/
-theorem applyₗ_id_injective [ContinuousSMul 𝕜 E] :
+theorem applyₗ_id_injective {𝕜 E : Type*} [NormedField 𝕜] [AddCommGroup E] [Module 𝕜 E]
+    [TopologicalSpace E] [ContinuousSMul 𝕜 E] [SeparatingDual 𝕜 E] :
     Function.Injective (ContinuousLinearMap.applyₗ 𝕜 (RingHom.id 𝕜) :
       E →ₗ[𝕜] StrongDual 𝕜 (StrongDual 𝕜 E)) :=
   injective_of_forall_apply_eq (p := id) fun _ _ ↦ rfl
@@ -120,9 +118,7 @@ variable {𝕜 E G F : Type*} [RCLike 𝕜] [AddCommGroup E] [Module 𝕜 E] [Mo
 
 variable (𝕜) in
 /-- In any locally convex space over `ℝ` or `ℂ`, the pullback of `𝓝 0` along canonical evaluation
-into the strong bidual is finer than or equal to `𝓝 (0 : E)`: the polar of a closed absolutely
-convex `0`-neighborhood `U` is bounded in `StrongDual 𝕜 E`, and the strong-bidual closed unit ball
-on `U°` pulls back to `U°° = U`. -/
+into the strong bidual is finer than or equal to `𝓝 (0 : E)`. -/
 theorem comap_applyₗ_le_nhds_zero :
     Filter.comap (ContinuousLinearMap.applyₗ 𝕜 (RingHom.id 𝕜) :
       E → StrongDual 𝕜 (StrongDual 𝕜 E)) (𝓝 0) ≤ 𝓝 (0 : E) := by
@@ -140,8 +136,7 @@ theorem comap_applyₗ_le_nhds_zero :
 
 /-- For any map `ev : E → StrongDual 𝕜 G` from a locally convex space over `ℝ` or `ℂ` that
 recovers canonical evaluation along a continuous linear map `p : StrongDual 𝕜 E →L[𝕜] G`, the
-pullback of `𝓝 0` along `ev` is finer than or equal to `𝓝 (0 : E)`: composing `ev` with the
-continuous transpose `ContinuousLinearMap.precomp 𝕜 p` gives `ContinuousLinearMap.applyₗ`. -/
+pullback of `𝓝 0` along `ev` is finer than or equal to `𝓝 (0 : E)`. -/
 theorem comap_le_nhds_zero_of_forall_apply_eq {ev : E → StrongDual 𝕜 G}
     {p : StrongDual 𝕜 E →L[𝕜] G} (hev : ∀ x (φ : StrongDual 𝕜 E), ev x (p φ) = φ x) :
     Filter.comap ev (𝓝 0) ≤ 𝓝 (0 : E) := by
@@ -160,7 +155,7 @@ theorem comap_le_nhds_zero_of_forall_apply_eq {ev : E → StrongDual 𝕜 G}
 /-- Any continuous additive homomorphism `ev` from a locally convex space over `ℝ` or `ℂ` into
 `StrongDual 𝕜 G` that recovers canonical evaluation along a continuous linear map
 `p : StrongDual 𝕜 E →L[𝕜] G` is inducing. -/
-theorem isInducing_of_continuous_of_forall_apply_eq {ev : F}
+theorem isInducing_of_forall_apply_eq_of_continuous {ev : F}
     {p : StrongDual 𝕜 E →L[𝕜] G} (hev : ∀ x (φ : StrongDual 𝕜 E), ev x (p φ) = φ x)
     (hcont : Continuous ev) :
     IsInducing ev :=
@@ -171,11 +166,11 @@ theorem isInducing_of_continuous_of_forall_apply_eq {ev : F}
 /-- Any continuous additive homomorphism `ev` from a `T₁` locally convex space over `ℝ` or `ℂ` into
 `StrongDual 𝕜 G` that recovers canonical evaluation along a continuous linear map
 `p : StrongDual 𝕜 E →L[𝕜] G` is a topological embedding. -/
-theorem isEmbedding_of_continuous_of_forall_apply_eq [T1Space E] {ev : F}
+theorem isEmbedding_of_forall_apply_eq_of_continuous [T1Space E] {ev : F}
     {p : StrongDual 𝕜 E →L[𝕜] G} (hev : ∀ x (φ : StrongDual 𝕜 E), ev x (p φ) = φ x)
     (hcont : Continuous ev) :
     IsEmbedding ev :=
-  ⟨isInducing_of_continuous_of_forall_apply_eq hev hcont, injective_of_forall_apply_eq hev⟩
+  ⟨isInducing_of_forall_apply_eq_of_continuous hev hcont, injective_of_forall_apply_eq hev⟩
 
 /-- On a `T₁` locally convex space over `ℝ` or `ℂ`, any continuous surjective linear map
 `ev : E →ₗ[𝕜] StrongDual 𝕜 G` that recovers canonical evaluation along a continuous linear map
@@ -188,7 +183,7 @@ def strongDualEquivOfForallApplyEq [T1Space E] {ev : E →ₗ[𝕜] StrongDual �
   ContinuousLinearEquiv.ofIsHomeomorph
     (LinearEquiv.ofBijective ev ⟨injective_of_forall_apply_eq hev, hsurj⟩)
     (isHomeomorph_iff_isEmbedding_surjective.2
-      ⟨isEmbedding_of_continuous_of_forall_apply_eq hev hcont, hsurj⟩)
+      ⟨isEmbedding_of_forall_apply_eq_of_continuous hev hcont, hsurj⟩)
 
 @[simp]
 theorem coe_strongDualEquivOfForallApplyEq [T1Space E] {ev : E →ₗ[𝕜] StrongDual 𝕜 G}
@@ -211,7 +206,7 @@ theorem isInducing_applyₗ_of_continuous
       E → StrongDual 𝕜 (StrongDual 𝕜 E))) :
     IsInducing (ContinuousLinearMap.applyₗ 𝕜 (RingHom.id 𝕜) :
       E → StrongDual 𝕜 (StrongDual 𝕜 E)) :=
-  isInducing_of_continuous_of_forall_apply_eq
+  isInducing_of_forall_apply_eq_of_continuous
     (ev := (ContinuousLinearMap.applyₗ 𝕜 (RingHom.id 𝕜) : E →ₗ[𝕜] StrongDual 𝕜 (StrongDual 𝕜 E)))
     (p := .id 𝕜 _) (fun _ _ ↦ rfl) hcont
 
@@ -222,13 +217,13 @@ theorem isEmbedding_applyₗ_of_continuous [T1Space E]
       E → StrongDual 𝕜 (StrongDual 𝕜 E))) :
     IsEmbedding (ContinuousLinearMap.applyₗ 𝕜 (RingHom.id 𝕜) :
       E → StrongDual 𝕜 (StrongDual 𝕜 E)) :=
-  isEmbedding_of_continuous_of_forall_apply_eq
+  isEmbedding_of_forall_apply_eq_of_continuous
     (ev := (ContinuousLinearMap.applyₗ 𝕜 (RingHom.id 𝕜) : E →ₗ[𝕜] StrongDual 𝕜 (StrongDual 𝕜 E)))
     (p := .id 𝕜 _) (fun _ _ ↦ rfl) hcont
 
 /-- On a `T₁` locally convex space over `ℝ` or `ℂ`, if canonical evaluation into the strong bidual
 is continuous and surjective, it is a topological linear isomorphism. -/
-def strongBidualEquivOfSurjective [T1Space E]
+def strongBidualEquivOfContinuousOfSurjective [T1Space E]
     (hcont : Continuous (ContinuousLinearMap.applyₗ 𝕜 (RingHom.id 𝕜) :
       E → StrongDual 𝕜 (StrongDual 𝕜 E)))
     (hsurj : Function.Surjective (ContinuousLinearMap.applyₗ 𝕜 (RingHom.id 𝕜) :
@@ -237,22 +232,22 @@ def strongBidualEquivOfSurjective [T1Space E]
   strongDualEquivOfForallApplyEq (p := .id 𝕜 _) (fun _ _ ↦ rfl) hcont hsurj
 
 @[simp]
-theorem strongBidualEquivOfSurjective_apply_apply [T1Space E]
+theorem strongBidualEquivOfContinuousOfSurjective_apply_apply [T1Space E]
     (hcont : Continuous (ContinuousLinearMap.applyₗ 𝕜 (RingHom.id 𝕜) :
       E → StrongDual 𝕜 (StrongDual 𝕜 E)))
     (hsurj : Function.Surjective (ContinuousLinearMap.applyₗ 𝕜 (RingHom.id 𝕜) :
       E → StrongDual 𝕜 (StrongDual 𝕜 E)))
     (x : E) (f : StrongDual 𝕜 E) :
-    strongBidualEquivOfSurjective hcont hsurj x f = f x :=
+    strongBidualEquivOfContinuousOfSurjective hcont hsurj x f = f x :=
   (rfl)
 
 @[simp]
-theorem toLinearMap_strongBidualEquivOfSurjective [T1Space E]
+theorem toLinearMap_strongBidualEquivOfContinuousOfSurjective [T1Space E]
     (hcont : Continuous (ContinuousLinearMap.applyₗ 𝕜 (RingHom.id 𝕜) :
       E → StrongDual 𝕜 (StrongDual 𝕜 E)))
     (hsurj : Function.Surjective (ContinuousLinearMap.applyₗ 𝕜 (RingHom.id 𝕜) :
       E → StrongDual 𝕜 (StrongDual 𝕜 E))) :
-    (strongBidualEquivOfSurjective hcont hsurj).toLinearMap =
+    (strongBidualEquivOfContinuousOfSurjective hcont hsurj).toLinearMap =
       ContinuousLinearMap.applyₗ 𝕜 (RingHom.id 𝕜) :=
   (rfl)
 
@@ -265,11 +260,10 @@ variable {𝕜₁ 𝕜₂ E F : Type*} [NontriviallyNormedField 𝕜₁] [Nontri
   [AddCommGroup E] [Module 𝕜₁ E] [TopologicalSpace E] [IsTopologicalAddGroup E]
   [ContinuousSMul 𝕜₁ E] [BarrelledSpace 𝕜₁ E]
   [AddCommGroup F] [Module 𝕜₂ F] [TopologicalSpace F] [IsTopologicalAddGroup F]
-  [ContinuousConstSMul 𝕜₂ F] [PolynormableSpace 𝕜₂ F]
+  [PolynormableSpace 𝕜₂ F]
 
 /-- On a barrelled space, the evaluation map `x ↦ (f ↦ f x)` into `(E →SL[σ₁₂] F) →L[𝕜₂] F` is
-continuous when `F` is polynormable: every von Neumann bounded subset of `E →SL[σ₁₂] F` is
-equicontinuous at `0`. -/
+continuous when `F` is polynormable. -/
 theorem continuous_applyₗ : Continuous (ContinuousLinearMap.applyₗ F σ₁₂ :
     E → (E →SL[σ₁₂] F) →L[𝕜₂] F) := by
   let _ : UniformSpace F := IsTopologicalAddGroup.rightUniformSpace F
@@ -322,32 +316,32 @@ theorem isEmbedding_strongEval [T1Space E] : IsEmbedding (strongEval 𝕜 E) :=
 /-- On a barrelled `T₁` locally convex space over `ℝ` or `ℂ`, surjectivity of canonical evaluation
 into the strong bidual yields a topological linear isomorphism
 `E ≃L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 E)`. -/
-def strongBidualEquivOfBarrelled [T1Space E]
+def strongBidualEquivOfSurjective [T1Space E]
     (hsurj : Function.Surjective (ContinuousLinearMap.applyₗ 𝕜 (RingHom.id 𝕜) :
       E → StrongDual 𝕜 (StrongDual 𝕜 E))) :
     E ≃L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 E) :=
-  strongBidualEquivOfSurjective (strongEval 𝕜 E).continuous hsurj
+  strongBidualEquivOfContinuousOfSurjective (strongEval 𝕜 E).continuous hsurj
 
 @[simp]
-theorem strongBidualEquivOfBarrelled_apply_apply [T1Space E]
+theorem strongBidualEquivOfSurjective_apply_apply [T1Space E]
     (hsurj : Function.Surjective (ContinuousLinearMap.applyₗ 𝕜 (RingHom.id 𝕜) :
       E → StrongDual 𝕜 (StrongDual 𝕜 E)))
     (x : E) (f : StrongDual 𝕜 E) :
-    strongBidualEquivOfBarrelled hsurj x f = f x :=
+    strongBidualEquivOfSurjective hsurj x f = f x :=
   (rfl)
 
 @[simp]
-theorem toContinuousLinearMap_strongBidualEquivOfBarrelled [T1Space E]
+theorem toContinuousLinearMap_strongBidualEquivOfSurjective [T1Space E]
     (hsurj : Function.Surjective (ContinuousLinearMap.applyₗ 𝕜 (RingHom.id 𝕜) :
       E → StrongDual 𝕜 (StrongDual 𝕜 E))) :
-    (strongBidualEquivOfBarrelled hsurj).toContinuousLinearMap = strongEval 𝕜 E :=
+    (strongBidualEquivOfSurjective hsurj).toContinuousLinearMap = strongEval 𝕜 E :=
   (rfl)
 
 @[simp]
-theorem toLinearMap_strongBidualEquivOfBarrelled [T1Space E]
+theorem toLinearMap_strongBidualEquivOfSurjective [T1Space E]
     (hsurj : Function.Surjective (ContinuousLinearMap.applyₗ 𝕜 (RingHom.id 𝕜) :
       E → StrongDual 𝕜 (StrongDual 𝕜 E))) :
-    (strongBidualEquivOfBarrelled hsurj).toLinearMap =
+    (strongBidualEquivOfSurjective hsurj).toLinearMap =
       ContinuousLinearMap.applyₗ 𝕜 (RingHom.id 𝕜) :=
   (rfl)
 
@@ -374,18 +368,16 @@ theorem applyₗ_comp_precomp (u : E →L[𝕜] F) (x : E) :
   ext ψ
   simp
 
-/-- **Naturality of canonical strong-bidual evaluation.** Applying the double strong transpose
-`precomp 𝕜 (precomp 𝕜 u)` of `u : E →L[𝕜] F` to the evaluation at `x` gives the evaluation at
-`u x`. -/
+/-- **Naturality of canonical evaluation.** Applying `precomp G (precomp G u)` for `u : E →L[𝕜] F`
+to the evaluation at `x` gives the evaluation at `u x`. -/
 theorem precomp_precomp_applyₗ_apply (u : E →L[𝕜] F) (x : E) :
-    precomp 𝕜 (precomp 𝕜 u) (applyₗ 𝕜 (RingHom.id 𝕜) x) = applyₗ 𝕜 (RingHom.id 𝕜) (u x) := by
+    precomp G (precomp G u) (applyₗ G (RingHom.id 𝕜) x) = applyₗ G (RingHom.id 𝕜) (u x) := by
   simp
 
-/-- Linear-map form of the naturality of canonical strong-bidual evaluation under the double
-strong transpose. -/
+/-- Linear-map form of the naturality of canonical evaluation under `precomp G (precomp G u)`. -/
 theorem precomp_precomp_comp_applyₗ (u : E →L[𝕜] F) :
-    (precomp 𝕜 (precomp 𝕜 u)).toLinearMap.comp (applyₗ 𝕜 (RingHom.id 𝕜)) =
-      (applyₗ 𝕜 (RingHom.id 𝕜)).comp u.toLinearMap := by
+    (precomp G (precomp G u)).toLinearMap.comp (applyₗ G (RingHom.id 𝕜)) =
+      (applyₗ G (RingHom.id 𝕜)).comp u.toLinearMap := by
   ext x ψ
   simp
 

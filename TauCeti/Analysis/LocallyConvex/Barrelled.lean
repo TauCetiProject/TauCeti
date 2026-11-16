@@ -60,8 +60,7 @@ variable {𝕜₁ 𝕜₂ E F : Type*} [NontriviallyNormedField 𝕜₁] [Nontri
   [AddCommGroup F] [Module 𝕜₂ F] [UniformSpace F] [IsUniformAddGroup F] [PolynormableSpace 𝕜₂ F]
 
 /-- Every von Neumann bounded set of continuous semilinear maps from a barrelled space into a
-polynormable space is uniformly equicontinuous: evaluation at each point sends a bounded set of
-operators to a bounded subset of the codomain, so the Banach–Steinhaus theorem applies. -/
+polynormable space is uniformly equicontinuous. -/
 protected theorem IsVonNBounded.uniformEquicontinuous {S : Set (E →SL[σ₁₂] F)}
     (hS : IsVonNBounded 𝕜₂ S) : UniformEquicontinuous fun f : S ↦ (f.1 : E → F) := by
   refine PolynormableSpace.banach_steinhaus (𝓕 := fun f : S ↦ f.1) fun x ↦ ?_

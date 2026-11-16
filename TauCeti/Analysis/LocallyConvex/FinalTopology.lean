@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.RCLike.Basic
+public import TauCeti.Analysis.RCLike.Basic
 public import Mathlib.Topology.Algebra.Module.LocallyConvex
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Basic
 
@@ -18,12 +18,12 @@ continuous. The source topologies need not themselves be vector topologies. No s
 injectivity assumption is imposed; in particular, this construction does not assert Hausdorffness.
 
 A linear map out of this topology into a locally convex space is continuous exactly when its
-composites with the generating maps are continuous. When the generating maps are linear over a
-commutative `ℝ`-algebra `𝕜` and constant `𝕜`-scalar multiplication is continuous on each source,
-constant `𝕜`-scalar multiplication is also continuous on the target
-(`TauCeti.FinalLocallyConvexTopology.continuousConstSMul`); for `ℝ` or `ℂ` (`RCLike 𝕜`),
-decomposing scalars into real and imaginary parts upgrades this to joint continuity of scalar
-multiplication (`TauCeti.FinalLocallyConvexTopology.continuousSMul`).
+composites with the generating maps are continuous. When a scalar action `R` on `F` is distributive
+and commutes with real scalars, each generator is `R`-equivariant, and constant `R`-scalar
+multiplication is continuous on each source, constant `R`-scalar multiplication is also continuous
+on the target (`TauCeti.FinalLocallyConvexTopology.continuousConstSMul`); for `ℝ` or `ℂ`
+(`RCLike R`), `RCLike.continuousSMul_of_continuousConstSMul` upgrades this to joint continuity of
+scalar multiplication (`TauCeti.FinalLocallyConvexTopology.continuousSMul`).
 
 The comparison criterion permits replacing the generating family by another family through finite
 sums of continuous factorizations. This allows partition-of-unity decompositions when comparing
@@ -166,43 +166,28 @@ theorem eq_of_rightInverse [t : TopologicalSpace F] [IsTopologicalAddGroup F]
 
 section SMul
 
-/-- Constant scalar multiplication by an element of a commutative `ℝ`-algebra `R` is continuous
-for the final locally convex topology of `R`-linear maps whose sources have continuous constant
-`R`-scalar multiplication. -/
-theorem continuousConstSMul {R : Type*} [CommSemiring R] [Algebra ℝ R]
-    [∀ i, Module R (E i)] [∀ i, IsScalarTower ℝ R (E i)] [∀ i, ContinuousConstSMul R (E i)]
-    [Module R F] [IsScalarTower ℝ R F] (h : ∀ i, E i →ₗ[R] F) :
-    @ContinuousConstSMul R F (finalLocallyConvexTopology fun i ↦ (h i).restrictScalars ℝ) _ := by
-  let f' : ∀ i, E i →ₗ[ℝ] F := fun i ↦ (h i).restrictScalars ℝ
-  let := finalLocallyConvexTopology f'
-  refine ⟨fun c ↦ ?_⟩
-  let smulMap : F →ₗ[ℝ] F :=
-    { toFun x := c • x
-      map_add' := smul_add c
-      map_smul' r x := by
-        rw [RingHom.id_apply, ← algebraMap_smul R r, ← algebraMap_smul R r,
-          smul_smul, mul_comm, ← smul_smul] }
-  refine (continuous_iff_continuous_comp f' smulMap).2 fun i ↦ ?_
-  exact ((continuous f' i).comp (continuous_const_smul c)).congr fun x ↦ (h i).map_smul c x
+/-- Constant scalar multiplication by `R` is continuous for the final locally convex topology when
+the `R`-action on `F` is distributive and commutes with real scalars, every generator is
+`R`-equivariant, and each source has continuous constant `R`-scalar multiplication. -/
+theorem continuousConstSMul {R : Type*} [DistribSMul R F] [SMulCommClass ℝ R F]
+    [∀ i, SMul R (E i)] [∀ i, ContinuousConstSMul R (E i)]
+    (hf : ∀ i (c : R) x, f i (c • x) = c • f i x) :
+    @ContinuousConstSMul R F (finalLocallyConvexTopology f) _ := by
+  let := finalLocallyConvexTopology f
+  have := SMulCommClass.symm ℝ R F
+  exact ⟨fun c ↦ (continuous_iff_continuous_comp f (DistribSMul.toLinearMap ℝ F c)).2 fun i ↦
+    ((continuous f i).comp (continuous_const_smul c)).congr fun x ↦ hf i c x⟩
 
 /-- Joint scalar multiplication over `ℝ` or `ℂ` is continuous for the final locally convex
-topology of `R`-linear maps whose sources have continuous constant `R`-scalar multiplication. -/
-theorem continuousSMul {R : Type*} [RCLike R]
-    [∀ i, Module R (E i)] [∀ i, IsScalarTower ℝ R (E i)] [∀ i, ContinuousConstSMul R (E i)]
-    [Module R F] [IsScalarTower ℝ R F] (h : ∀ i, E i →ₗ[R] F) :
-    @ContinuousSMul R F _ _ (finalLocallyConvexTopology fun i ↦ (h i).restrictScalars ℝ) := by
-  let f' : ∀ i, E i →ₗ[ℝ] F := fun i ↦ (h i).restrictScalars ℝ
-  let := finalLocallyConvexTopology f'
-  have : ContinuousConstSMul R F := continuousConstSMul h
-  refine ⟨?_⟩
-  have hdecomp (p : R × F) :
-      p.1 • p.2 = (RCLike.re p.1 : ℝ) • p.2 + (RCLike.im p.1 : ℝ) • ((RCLike.I : R) • p.2) := by
-    conv_lhs => rw [← RCLike.re_add_im p.1]
-    rw [add_smul, mul_smul, algebraMap_smul R (RCLike.re p.1), algebraMap_smul R (RCLike.im p.1)]
-  refine Continuous.congr ?_ fun p ↦ (hdecomp p).symm
-  exact ((RCLike.continuous_re.comp continuous_fst).smul continuous_snd).add
-    ((RCLike.continuous_im.comp continuous_fst).smul
-      ((continuous_const_smul (RCLike.I : R)).comp continuous_snd))
+topology when every generator is `R`-equivariant and each source has continuous constant `R`-scalar
+multiplication. -/
+theorem continuousSMul {R : Type*} [RCLike R] [Module R F] [IsScalarTower ℝ R F]
+    [∀ i, SMul R (E i)] [∀ i, ContinuousConstSMul R (E i)]
+    (hf : ∀ i (c : R) x, f i (c • x) = c • f i x) :
+    @ContinuousSMul R F _ _ (finalLocallyConvexTopology f) :=
+  let := finalLocallyConvexTopology f
+  have := continuousConstSMul f hf
+  RCLike.continuousSMul_of_continuousConstSMul
 
 end SMul
 

@@ -71,9 +71,7 @@ section Bounded
 variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [AddCommGroup E] [Module 𝕜 E]
   [TopologicalSpace E]
 
-/-- The polar of a neighborhood of zero is von Neumann bounded in the strong dual: every
-von Neumann bounded subset of `E` is absorbed by the neighborhood, so functionals in the polar are
-uniformly bounded on it. -/
+/-- The polar of a neighborhood of zero is von Neumann bounded in the strong dual. -/
 theorem isVonNBounded_polar {U : Set E} (hU : U ∈ 𝓝 (0 : E)) :
     Bornology.IsVonNBounded 𝕜 (polar 𝕜 U) := by
   refine ContinuousLinearMap.isVonNBounded_iff.2 fun s hs ↦ ?_
