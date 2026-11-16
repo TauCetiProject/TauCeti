@@ -7,7 +7,6 @@ module
 
 public import TauCeti.LowDimTopology.Bordered.TypeA.Basic
 import Mathlib.Algebra.BigOperators.Intervals
-import TauCeti.Algebra.BigOperators.Fin
 
 /-!
 # Composites of morphisms of type `A` modules on box tensor products
@@ -99,7 +98,7 @@ private theorem pathMap_comp [CharP R 2] (N : TypeDStructure d ι X)
     pathMap N (g.comp f) n φ z =
       ∑ k ∈ range (n + 1), pathMap N g (n - k) (pathMap N f k φ) z := by
   rw [← Fin.sum_univ_eq_sum_range (fun k => pathMap N g (n - k) (pathMap N f k φ) z)]
-  -- Expand the outer path sum, then concatenate the two paths.
+  -- Expand both path sums, then concatenate the two paths.
   have hk (k : Fin (n + 1)) : pathMap N g (n - k) (pathMap N f k φ) z =
       ∑ w : Fin (n + 1) → X, if w (Fin.last n) = z then
         g.map (n - k)
@@ -108,24 +107,9 @@ private theorem pathMap_comp [CharP R 2] (N : TypeDStructure d ι X)
           (f.map k (fun l => N.coeff (w ⟨l, l.isLt.trans k.isLt⟩)
             (w ⟨l + 1, (Nat.succ_lt_succ l.isLt).trans_le k.isLt⟩)) (φ (w 0)))
       else 0 := by
-    have hy (y : Fin (n - k + 1) → X) :
-        (if y (Fin.last (n - k)) = z then g.map (n - k)
-          (fun l => N.coeff (y l.castSucc) (y l.succ)) (pathMap N f k φ (y 0)) else 0) =
-        ∑ x : Fin (k + 1) → X, if x (Fin.last k) = y 0 then
-          (if y (Fin.last (n - k)) = z then g.map (n - k)
-            (fun l => N.coeff (y l.castSucc) (y l.succ))
-            (f.map k (fun l => N.coeff (x l.castSucc) (x l.succ)) (φ (x 0))) else 0) else 0 := by
-      split_ifs
-      · simp only [pathMap_apply, map_sum]
-        exact sum_congr rfl fun x _ => by split_ifs <;> simp
-      · simp
-    rw [pathMap_apply, sum_congr rfl fun y _ => hy y, sum_comm,
-      Fin.sum_sum_ite_apply_last_eq_apply_zero (by omega : (k : ℕ) + (n - k) = n)]
-    refine sum_congr rfl fun w _ => ?_
-    have hlast : w ⟨k + (Fin.last (n - k) : ℕ), by simp; omega⟩ = w (Fin.last n) :=
-      congrArg w (Fin.ext (by simp; omega))
-    have hzero : w ⟨((0 : Fin (k + 1)) : ℕ), by simp⟩ = w 0 := congrArg w (Fin.ext (by simp))
-    simp only [hlast, hzero, Fin.val_castSucc, Fin.val_succ, Nat.add_assoc]
+    simp only [pathMap_apply]
+    exact UngradedAInfinityRightModule.sum_ite_apply_sum_ite_eq_sum X (by omega)
+      (g.map (n - k)) (f.map k) (fun _ => N.coeff) (fun _ => N.coeff) φ z
   rw [sum_congr rfl fun k _ => hk k, sum_comm, pathMap_apply]
   refine sum_congr rfl fun w _ => ?_
   rw [UngradedAInfinityRightModuleHom.comp_map_apply]

@@ -388,8 +388,9 @@ private theorem sum_comp_seg
   refine sum_congr rfl fun k _ => ?_
   have h : (fun l : Fin (s - k) => seg b i s ⟨k + l, by have := l.isLt; omega⟩) =
       seg b (i + k) (s - k) := funext fun l => by simp [seg, add_assoc]
-  rw [h]
-  rfl
+  have h' : (fun l : Fin k => seg b i s ⟨l, by have := l.isLt; have := k.isLt; omega⟩) =
+      seg b i k := funext fun l => by simp [seg]
+  rw [h, h', segOp, segOp]
 
 /-- The term of a composite of arity `n` for the split of the inputs after the `i`-th:
 `(a₁, …, aₙ) ↦ G (aᵢ₊₁, …, aₙ) ∘ F (a₁, …, aᵢ)`, for `i + j = n`. -/

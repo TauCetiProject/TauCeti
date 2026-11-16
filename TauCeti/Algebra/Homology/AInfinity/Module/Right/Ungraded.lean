@@ -538,6 +538,43 @@ theorem matrixAct_eq_zero_of_lt (h : X → ℕ) {n : ℕ} (hn : univ.sup h < n)
     omega
   rw [(Mm.act n).map_coord_zero l hl, LinearMap.zero_apply, ite_self]
 
+/-- **Composing path sums.** For multilinear families `ψ` and `φ`, applying `ψ` along the paths
+`y₀ → ⋯ → yⱼ = z` to the sum of `φ` over the paths ending at `y₀` gives the sum over the paths
+`w₀ → ⋯ → wᵢ₊ⱼ = z` of `ψ(G₁ wᵢ wᵢ₊₁, …)(φ(F₁ w₀ w₁, …)(v w₀))`. -/
+theorem sum_ite_apply_sum_ite_eq_sum {N P : Type*} [AddCommMonoid N] [Module R N]
+    [AddCommMonoid P] [Module R P] {i j n : ℕ} (h : i + j = n)
+    (ψ : MultilinearMap (RingHom.id R) (fun _ : Fin j => A) (N →ₗ[R] P))
+    (φ : MultilinearMap (RingHom.id R) (fun _ : Fin i => A) (M →ₗ[R] N))
+    (G : Fin j → Matrix X X A) (F : Fin i → Matrix X X A) (v : X → M) (z : X) :
+    ∑ y : Fin (j + 1) → X, (if y (Fin.last j) = z then
+        ψ (fun l => G l (y l.castSucc) (y l.succ))
+          (∑ x : Fin (i + 1) → X, if x (Fin.last i) = y 0 then
+            φ (fun l => F l (x l.castSucc) (x l.succ)) (v (x 0)) else 0)
+      else 0) = ∑ w : Fin (n + 1) → X,
+      if w (Fin.last n) = z then
+        ψ (fun l => G l (w ⟨i + l, by have := l.isLt; omega⟩)
+          (w ⟨i + l + 1, by have := l.isLt; omega⟩))
+          (φ (fun l => F l (w ⟨l, by have := l.isLt; omega⟩)
+            (w ⟨l + 1, by have := l.isLt; omega⟩)) (v (w 0)))
+      else 0 := by
+  have hy (y : Fin (j + 1) → X) :
+      (if y (Fin.last j) = z then ψ (fun l => G l (y l.castSucc) (y l.succ))
+        (∑ x : Fin (i + 1) → X, if x (Fin.last i) = y 0 then
+          φ (fun l => F l (x l.castSucc) (x l.succ)) (v (x 0)) else 0) else 0) =
+      ∑ x : Fin (i + 1) → X, if x (Fin.last i) = y 0 then
+        (if y (Fin.last j) = z then ψ (fun l => G l (y l.castSucc) (y l.succ))
+          (φ (fun l => F l (x l.castSucc) (x l.succ)) (v (x 0))) else 0) else 0 := by
+    split_ifs with hyz
+    · simp only [map_sum]
+      exact sum_congr rfl fun x _ => by split_ifs <;> simp
+    · simp
+  rw [sum_congr rfl fun y _ => hy y, sum_comm, Fin.sum_sum_ite_apply_last_eq_apply_zero h]
+  refine sum_congr rfl fun w _ => ?_
+  have hlast : w ⟨i + (Fin.last j : ℕ), by simp; omega⟩ = w (Fin.last n) :=
+    congrArg w (Fin.ext (by simp [h]))
+  have hzero : w ⟨((0 : Fin (i + 1)) : ℕ), by simp⟩ = w 0 := congrArg w (Fin.ext (by simp))
+  simp only [hlast, hzero, Fin.val_castSucc, Fin.val_succ, Nat.add_assoc]
+
 /-- **Composing operations of the matrix module.** The `z`-component of
 `m_{j+1}(m_{i+1}(φ, F₁, …, Fᵢ), G₁, …, Gⱼ)` is the sum over the paths `w₀ → ⋯ → wᵢ₊ⱼ = z` of
 `m_{j+1}(m_{i+1}(φ w₀, F₁ w₀ w₁, …), G₁ wᵢ wᵢ₊₁, …)`. -/
@@ -550,23 +587,8 @@ theorem matrixAct_matrixAct_apply {i j n : ℕ} (h : i + j = n) (G : Fin j → M
           (Mm.act i (fun l => F l (w ⟨l, by have := l.isLt; omega⟩)
             (w ⟨l + 1, by have := l.isLt; omega⟩)) (φ (w 0)))
       else 0 := by
-  have hy (y : Fin (j + 1) → X) :
-      (if y (Fin.last j) = z then Mm.act j (fun l => G l (y l.castSucc) (y l.succ))
-        (Mm.matrixAct X i F φ (y 0)) else 0) =
-      ∑ x : Fin (i + 1) → X, if x (Fin.last i) = y 0 then
-        (if y (Fin.last j) = z then Mm.act j (fun l => G l (y l.castSucc) (y l.succ))
-          (Mm.act i (fun l => F l (x l.castSucc) (x l.succ)) (φ (x 0))) else 0) else 0 := by
-    split_ifs with hyz
-    · simp only [matrixAct_apply, map_sum]
-      exact sum_congr rfl fun x _ => by split_ifs <;> simp
-    · simp
-  rw [matrixAct_apply, sum_congr rfl fun y _ => hy y, sum_comm,
-    Fin.sum_sum_ite_apply_last_eq_apply_zero h]
-  refine sum_congr rfl fun w _ => ?_
-  have hlast : w ⟨i + (Fin.last j : ℕ), by simp; omega⟩ = w (Fin.last n) :=
-    congrArg w (Fin.ext (by simp [h]))
-  have hzero : w ⟨((0 : Fin (i + 1)) : ℕ), by simp⟩ = w 0 := congrArg w (Fin.ext (by simp))
-  simp only [hlast, hzero, Fin.val_castSucc, Fin.val_succ, Nat.add_assoc]
+  simp only [matrixAct_apply]
+  exact sum_ite_apply_sum_ite_eq_sum X h (Mm.act j) (Mm.act i) G F φ z
 
 /-- The composite terms of the matrix module are sums over paths. -/
 private theorem stasheffComp_matrixAct (n : ℕ) (F : Fin n → Matrix X X A) (φ : X → M) (z : X) :
