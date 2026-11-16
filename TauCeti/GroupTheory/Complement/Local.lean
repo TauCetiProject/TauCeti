@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.Complement.Basic
+public import Mathlib.GroupTheory.Complement
 public import TauCeti.Algebra.Group.Subgroup.ModularLaw
 public import TauCeti.GroupTheory.GroupAction.ConjAct
 

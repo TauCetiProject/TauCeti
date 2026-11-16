@@ -25,13 +25,12 @@ variable {G : Type*} [Group G] {N H K : Subgroup G}
 /-- Evaluating `IsComplement.leftQuotientEquiv` on a left coset extracts the first component of the
 complement decomposition. -/
 theorem IsComplement.leftQuotientEquiv_mk {S : Set G} (h : IsComplement S K) (g : G) :
-    h.leftQuotientEquiv (g : G ⧸ K) = (h.equiv g).1 := by
-  have hleft : (h.leftQuotientEquiv (g : G ⧸ K) : G)⁻¹ * g ∈ K :=
-    QuotientGroup.leftRel_apply.mp
-      (Quotient.exact' (h.quotientGroupMk_leftQuotientEquiv (g : G ⧸ K)))
-  have hequiv : ((h.equiv g).1 : G)⁻¹ * g ∈ K :=
-    h.equiv_snd_eq_inv_mul g ▸ (h.equiv g).2.property
-  exact (isComplement_iff_existsUnique_inv_mul_mem.mp h g).unique hleft hequiv
+    h.leftQuotientEquiv (g : G ⧸ K) = (h.equiv g).1 :=
+  (isComplement_iff_existsUnique_inv_mul_mem.mp h g).unique
+    (by
+      simpa only [SetLike.mem_coe, IsComplement.toLeftFun, Function.comp_apply] using
+        h.inv_toLeftFun_mul_mem g)
+    (h.equiv_snd_eq_inv_mul g ▸ (h.equiv g).2.property)
 
 /-- Evaluating `IsComplement'.QuotientMulEquiv` on a coset extracts the left component of the
 complement decomposition. -/
@@ -43,12 +42,10 @@ theorem IsComplement'.quotientMulEquiv_mk [K.Normal] (h : H.IsComplement' K) (g 
 right component of the complement decomposition. -/
 theorem IsComplement'.symm_quotientMulEquiv_mk [N.Normal] (h : N.IsComplement' K) (g : G) :
     h.symm.QuotientMulEquiv (g : G ⧸ N) = (h.equiv g).2 := by
-  apply h.symm.QuotientMulEquiv.symm.injective
-  have hsymm : h.symm.QuotientMulEquiv.symm (h.equiv g).2 = (((h.equiv g).2 : G) : G ⧸ N) :=
-    h.symm.QuotientMulEquiv_symm_apply (h.equiv g).2
-  rw [MulEquiv.symm_apply_apply, hsymm]
-  conv_lhs => rw [← h.equiv_fst_mul_equiv_snd g]
-  rw [← QuotientGroup.mk'_apply, map_mul, QuotientGroup.mk'_apply, QuotientGroup.mk'_apply,
-    (QuotientGroup.eq_one_iff _).mpr (h.equiv g).1.property, one_mul]
+  have hq : (g : G ⧸ N) = (((h.equiv g).2 : G) : G ⧸ N) := by
+    rw [QuotientGroup.eq_iff_div_mem, div_eq_mul_inv, ← h.equiv_fst_eq_mul_inv]
+    exact (h.equiv g).1.property
+  rw [hq, h.symm.quotientMulEquiv_mk]
+  exact h.symm.equiv_fst_eq_self_of_mem_of_one_mem N.one_mem (h.equiv g).2.property
 
 end Subgroup

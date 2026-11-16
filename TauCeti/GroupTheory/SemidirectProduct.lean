@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.SemidirectProduct
+import TauCeti.GroupTheory.Complement.Basic
 
 /-!
 # Semidirect products, normalizing subgroups, and complementary decompositions
@@ -113,14 +114,14 @@ theorem ker_monoidHomSubgroup_eq_bot_iff :
     (monoidHomSubgroup hLE).ker = ⊥ ↔ Disjoint H K := by
   rw [Subgroup.eq_bot_iff_forall]
   constructor
-  · rw [disjoint_iff_inf_le]
-    intro hker g hg
-    have hx : (⟨⟨g, hg.1⟩, ⟨g⁻¹, K.inv_mem hg.2⟩⟩ :
+  · rw [Subgroup.disjoint_def]
+    intro hker g hgH hgK
+    have hx : (⟨⟨g, hgH⟩, ⟨g⁻¹, K.inv_mem hgK⟩⟩ :
         H ⋊[(H.normalizerMonoidHom).comp (Subgroup.inclusion hLE)] K) ∈
           (monoidHomSubgroup hLE).ker := by
       rw [mem_ker_monoidHomSubgroup_iff]
       exact (inv_inv g).symm
-    exact congrArg (fun y : H => (y : G)) (congrArg SemidirectProduct.left (hker _ hx))
+    simpa using congrArg SemidirectProduct.left (hker _ hx)
   · intro hdisj x hx
     rw [MonoidHom.mem_ker, monoidHomSubgroup_apply] at hx
     obtain ⟨hl, hr⟩ :=
@@ -238,54 +239,40 @@ theorem mulEquivSubgroup_symm_coe_right (b : K) :
 @[simp]
 theorem mulEquivSubgroup_symm_comp_left_subtype :
     (MonoidHom.ofClass (mulEquivSubgroup h).symm).comp H.subtype = inl := by
-  apply MonoidHom.ext
-  intro a
-  exact mulEquivSubgroup_symm_coe_left h a
+  ext a : 1
+  simp [-mulEquivSubgroup_symm_apply, mulEquivSubgroup_symm_coe_left]
 
 /-- Restricting `(mulEquivSubgroup h).symm` to the complement gives `inr`. -/
 @[simp]
 theorem mulEquivSubgroup_symm_comp_right_subtype :
     (MonoidHom.ofClass (mulEquivSubgroup h).symm).comp K.subtype = inr := by
-  apply MonoidHom.ext
-  intro b
-  exact mulEquivSubgroup_symm_coe_right h b
+  ext b : 1
+  simp [-mulEquivSubgroup_symm_apply, mulEquivSubgroup_symm_coe_right]
 
-/-- Composing `mulEquivSubgroup` with the quotient map factors through `rightHom` and the
-quotient isomorphism of the complement. -/
-theorem quotientGroupMk'_comp_mulEquivSubgroup :
-    (QuotientGroup.mk' H).comp (MonoidHom.ofClass (mulEquivSubgroup h)) =
-      (MonoidHom.ofClass h.symm.QuotientMulEquiv.symm).comp rightHom := by
-  apply hom_ext
-  · apply MonoidHom.ext
-    intro a
-    simp only [MonoidHom.comp_apply, MonoidHom.coe_ofClass, mulEquivSubgroup_apply, left_inl,
-      right_inl, OneMemClass.coe_one, mul_one, rightHom_inl, map_one, QuotientGroup.mk'_apply]
-    exact (QuotientGroup.eq_one_iff (a : G)).mpr a.property
-  · apply MonoidHom.ext
-    intro b
-    have hb : h.symm.QuotientMulEquiv.symm b = ((b : G) : G ⧸ H) :=
-      h.symm.QuotientMulEquiv_symm_apply b
-    simp only [MonoidHom.comp_apply, MonoidHom.coe_ofClass, mulEquivSubgroup_apply, left_inr,
-      right_inr, OneMemClass.coe_one, one_mul, rightHom_inr, QuotientGroup.mk'_apply, hb]
+/-- The right component of `(mulEquivSubgroup h).symm` agrees with the quotient isomorphism
+evaluated on the coset. -/
+theorem right_mulEquivSubgroup_symm_eq_quotientMulEquiv (g : G) :
+    ((mulEquivSubgroup h).symm g).right = h.symm.QuotientMulEquiv (g : G ⧸ H) :=
+  (right_mulEquivSubgroup_symm h g).trans (h.symm_quotientMulEquiv_mk g).symm
 
 /-- Projecting `(mulEquivSubgroup h).symm` to the acting factor factors through the quotient by
 the normal subgroup. -/
 theorem rightHom_comp_mulEquivSubgroup_symm :
     rightHom.comp (MonoidHom.ofClass (mulEquivSubgroup h).symm) =
       (MonoidHom.ofClass h.symm.QuotientMulEquiv).comp (QuotientGroup.mk' H) := by
-  apply MonoidHom.ext
-  intro g
-  apply h.symm.QuotientMulEquiv.symm.injective
-  have hq := DFunLike.congr_fun (quotientGroupMk'_comp_mulEquivSubgroup h)
-    ((mulEquivSubgroup h).symm g)
-  simpa only [MonoidHom.comp_apply, MonoidHom.coe_ofClass, MulEquiv.apply_symm_apply,
-    MulEquiv.symm_apply_apply] using hq.symm
+  ext g : 1
+  simp [-mulEquivSubgroup_symm_apply, right_mulEquivSubgroup_symm_eq_quotientMulEquiv]
 
-/-- The right component of `(mulEquivSubgroup h).symm` agrees with the quotient isomorphism
-evaluated on the coset. -/
-theorem right_mulEquivSubgroup_symm_eq_quotientMulEquiv (g : G) :
-    ((mulEquivSubgroup h).symm g).right = h.symm.QuotientMulEquiv (g : G ⧸ H) :=
-  DFunLike.congr_fun (rightHom_comp_mulEquivSubgroup_symm h) g
+/-- Composing `mulEquivSubgroup` with the quotient map factors through `rightHom` and the
+quotient isomorphism of the complement. -/
+theorem quotientGroupMk'_comp_mulEquivSubgroup :
+    (QuotientGroup.mk' H).comp (MonoidHom.ofClass (mulEquivSubgroup h)) =
+      (MonoidHom.ofClass h.symm.QuotientMulEquiv.symm).comp rightHom := by
+  ext x : 1
+  apply h.symm.QuotientMulEquiv.injective
+  simpa only [MonoidHom.comp_apply, MonoidHom.coe_ofClass, QuotientGroup.mk'_apply,
+    rightHom_eq_right, MulEquiv.apply_symm_apply, MulEquiv.symm_apply_apply] using
+    (right_mulEquivSubgroup_symm_eq_quotientMulEquiv h (mulEquivSubgroup h x)).symm
 
 end MulEquivSubgroup
 

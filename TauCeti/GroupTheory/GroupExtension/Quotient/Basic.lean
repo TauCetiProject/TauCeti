@@ -156,7 +156,7 @@ theorem mulEquivSubgroup_comp_inr_comp_quotientMulEquiv :
       h.quotientSplitting.toMonoidHom := by
   rw [← MonoidHom.comp_assoc, SemidirectProduct.mulEquivSubgroup_comp_inr]
   ext q
-  exact (h.quotientSplitting_apply q).symm
+  simp [h.quotientSplitting_apply]
 
 /-- Conjugation on `N` induced by `h.quotientSplitting` agrees with ambient conjugation through
 the quotient isomorphism `G ⧸ N ≃* D`. -/
@@ -197,9 +197,7 @@ theorem right_quotientSemidirectProductCongr
 @[simp]
 theorem quotientSemidirectProductCongr_inl (n : N) :
     h.quotientSemidirectProductCongr (SemidirectProduct.inl n) = SemidirectProduct.inl n := by
-  apply SemidirectProduct.ext
-  · rfl
-  · simp only [right_quotientSemidirectProductCongr, SemidirectProduct.right_inl, map_one]
+  ext <;> simp [-IsComplement'.QuotientMulEquiv_apply]
 
 /-- `quotientSemidirectProductCongr` transports the included quotient along
 `h.symm.QuotientMulEquiv`. -/
@@ -220,7 +218,10 @@ theorem left_quotientSemidirectProductCongr_symm
 theorem right_quotientSemidirectProductCongr_symm
     (x : N ⋊[(N.normalizerMonoidHom).comp (inclusion (N.normalizer_eq_top ▸ le_top))] D) :
     (h.quotientSemidirectProductCongr.symm x).right = (x.right : G ⧸ N) := by
-  exact h.symm.QuotientMulEquiv_symm_apply x.right
+  apply h.symm.QuotientMulEquiv.injective
+  rw [← right_quotientSemidirectProductCongr, MulEquiv.apply_symm_apply]
+  apply Subtype.ext
+  rw [← h.quotientSplitting_apply, h.quotientSplitting_mk]
 
 /-- `quotientSemidirectProductCongr.symm` fixes the included normal subgroup. -/
 @[simp]
@@ -252,9 +253,8 @@ theorem mulEquivSubgroup_symm_trans_quotientSemidirectProductCongr_symm :
     (SemidirectProduct.mulEquivSubgroup h).symm.trans h.quotientSemidirectProductCongr.symm =
       h.quotientSplitting.semidirectProductMulEquiv.symm := by
   rw [← h.quotientSemidirectProductCongr_trans_mulEquivSubgroup]
-  apply MulEquiv.ext
-  intro g
-  rfl
+  ext g : 1
+  simp
 
 end IsComplement'
 

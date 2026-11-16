@@ -158,9 +158,8 @@ theorem semidirectProductMulEquiv_symm_inclusion_right (k : K) :
 theorem rightHom_comp_semidirectProductMulEquiv_symm :
     SemidirectProduct.rightHom.comp (MonoidHom.ofClass h.semidirectProductMulEquiv.symm) =
       h.rightProjection := by
-  apply MonoidHom.ext
-  intro x
-  exact h.right_semidirectProductMulEquiv_symm x
+  ext x : 1
+  simp
 
 end IsLocalComplement
 
