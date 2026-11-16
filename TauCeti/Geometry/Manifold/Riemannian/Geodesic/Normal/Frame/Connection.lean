@@ -8,9 +8,8 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Frame.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
 public import Mathlib.Analysis.InnerProductSpace.LinearMap
-public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.ConnectionForm
-import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame.Orthonormal
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric.LocalFrame
 
 /-!
 # Connection operators in normal orthonormal frames
@@ -191,7 +190,8 @@ one-form of the normal orthonormal frame, with input index `j` and output index 
 the normal-coordinate field. -/
 theorem normalFrameConnectionCoefficient_eq_connectionForm (h : IsNormalDomain I M p U)
     (b : OrthonormalBasis ι ℝ (TangentSpace I p))
-    (hs : IsLocalFrameOn I E 2 (normalOrthonormalFrame I M p U b) (riemannianExp I M p '' U))
+    {n : ℕ∞ω}
+    (hs : IsLocalFrameOn I E n (normalOrthonormalFrame I M p U b) (riemannianExp I M p '' U))
     (v : TangentSpace I p) (i j : ι) {q : M} (hq : q ∈ riemannianExp I M p '' U) :
     b.normalFrameConnectionCoefficient (U := U) v i j q =
       hs.connectionForm (leviCivitaConnection I M) j i q ![normalCoordinateField I M p U v q] := by
@@ -207,18 +207,13 @@ theorem normalFrameConnectionCoefficient_add_swap (h : IsNormalDomain I M p U)
     (hq : q ∈ riemannianExp I M p '' U) :
     b.normalFrameConnectionCoefficient (U := U) v i j q +
       b.normalFrameConnectionCoefficient (U := U) v j i q = 0 := by
-  have hd (k : ι) : MDiffAt (T% (normalOrthonormalFrame I M p U b k)) q :=
-    ((h.contMDiffOn_normalOrthonormalFrame b k).contMDiffAt
-      (h.isOpen_image.mem_nhds hq)).mdifferentiableAt (by simp)
-  have heq : (fun x ↦ ⟪normalOrthonormalFrame I M p U b j x,
-      normalOrthonormalFrame I M p U b i x⟫_ℝ) =ᶠ[𝓝 q] fun _ ↦ if j = i then 1 else 0 := by
-    filter_upwards [h.isOpen_image.mem_nhds hq] with x hx
-    exact orthonormal_iff_ite.mp (h.orthonormal_normalOrthonormalFrame b hx) j i
-  have hmetric := (isMetricCompatible_leviCivitaConnection I).mvfderiv_inner_eq
-    (normalCoordinateField I M p U v) (hd j) (hd i)
-  rw [heq.mvfderiv_eq, mvfderiv_const, zero_apply] at hmetric
-  simpa only [OrthonormalBasis.normalFrameConnectionCoefficient_apply, real_inner_comm] using
-    hmetric.symm
+  have hs := h.isLocalFrameOn_normalOrthonormalFrame b
+  rw [h.normalFrameConnectionCoefficient_eq_connectionForm b hs v i j hq,
+    h.normalFrameConnectionCoefficient_eq_connectionForm b hs v j i hq,
+    IsLocalFrameOn.connectionForm_apply, IsLocalFrameOn.connectionForm_apply]
+  exact hs.coeff_covariantDerivative_add_eq_zero (by simp) h.isOpen_image
+    (fun y hy ↦ h.orthonormal_normalOrthonormalFrame b hy)
+    (isMetricCompatible_leviCivitaConnection I (M := M)) q i j _
 
 end IsNormalDomain
 

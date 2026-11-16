@@ -98,7 +98,8 @@ theorem isCoupling_shiftCoupling (hfg : ∑ k, ν {k} = ∑ k, ν' {k})
     (hne : ∑ k, ν {k} ≠ ⊤) (hdom : ∀ k, k ≠ k₀ → ν' {k} ≤ ν {k}) :
     IsCoupling (shiftCoupling ν ν' k₀) ν ν' := by
   have hdom' : ∀ k ∈ Finset.univ, k ≠ k₀ → ν' {k} ≤ ν {k} := fun k _ hk => hdom k hk
-  have hk₀ := le_of_sum_eq_of_forall_ne_le (Finset.mem_univ k₀) hfg hne hdom'
+  have hne' : ∀ k ∈ Finset.univ, k ≠ k₀ → ν {k} ≠ ⊤ := fun k hk _ => ENNReal.sum_ne_top.1 hne k hk
+  have hk₀ := le_of_sum_eq_of_forall_ne_le (Finset.mem_univ k₀) hfg hne' hdom'
   refine ⟨?_, ?_⟩
   · refine Measure.ext_of_singleton fun i => ?_
     rw [Measure.fst_apply (MeasurableSet.singleton i), shiftCoupling_apply]
@@ -130,7 +131,7 @@ theorem isCoupling_shiftCoupling (hfg : ∑ k, ν {k} = ∑ k, ν' {k})
         Finset.sum_congr rfl fun k _ => by
           rw [Set.indicator_of_mem (by simp), Pi.one_apply, mul_one]
       rw [h1, h2, min_eq_left hk₀]
-      exact add_sum_tsub_eq_of_forall_ne_le (Finset.mem_univ k₀) hfg hne hdom'
+      exact add_sum_tsub_eq_of_forall_ne_le (Finset.mem_univ k₀) hfg hne' hdom'
     · have h2 : ∑ k, (ν {k} - ν' {k}) * (Prod.snd ⁻¹' ({i} : Set κ)).indicator 1 (k, k₀)
           = 0 :=
         Finset.sum_eq_zero fun k _ => by
