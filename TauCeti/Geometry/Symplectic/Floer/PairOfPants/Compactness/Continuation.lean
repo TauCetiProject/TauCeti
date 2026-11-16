@@ -30,20 +30,19 @@ if `|G_q|, |H_q| ≤ B_q` and `|H_q - G_q| ≤ Δ_q`, a Floer solution for `(K_L
 end loops have limiting actions `a_q` has energy at most `a_0 + a_1 - a_∞ + ∑ q, (B_q + Δ_q)`,
 whatever the neck positions, although the necks become arbitrarily long. The data `K_L` are smooth
 jointly in the neck positions, in the domain point of `S` and in the target point
-(`TauCeti.Floer.contDiffAt_pairOfPantsContinuationPerturbation_apply`). Hence compactness over a
+(`TauCeti.Floer.contMDiffAt_pairOfPantsContinuationPerturbation`). Hence compactness over a
 compact parameter window
 (`TauCeti.SymplecticForm.exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset`)
 applies on every compact window `D` of `S`.
 
-In the namespace `TauCeti.SymplecticForm`:
+Both results are named
+`exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_pairOfPantsContinuation`:
 
-* `exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_continuation` is the
-  statement for any family `J_p(z, x)` of `ω`-tame structures which is `C²` jointly in `(p, z, x)`
-  near the parameter window.
-* `exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_continuationAlmostComplex`
-  applies it to the almost complex structures
-  `TauCeti.Floer.pairOfPantsContinuationAlmostComplex` of the family, built from an `ω`-compatible
-  base structure and period-one `C²` inner and outer end structures
+* in the namespace `TauCeti.SymplecticForm`, it is the statement for any family `J_p(z, x)` of
+  `ω`-tame structures which is `C²` jointly in `(p, z, x)` near the parameter window;
+* in the namespace `TauCeti.SymplecticForm.Compatible`, it applies the former to the almost complex
+  structures `TauCeti.Floer.pairOfPantsContinuationAlmostComplex` of the family, built from an
+  `ω`-compatible base structure and period-one `C²` inner and outer end structures
   (`TauCeti.Floer.contMDiffAt_pairOfPantsContinuationAlmostComplex`).
 
 Both give a threshold `δ > 0` such that every sequence of solutions for parameters `pₖ` in a
@@ -73,6 +72,17 @@ open Floer
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   {G H : Puncture → ℝ → V → ℝ} {P : Type*} [NormedAddCommGroup P] [InnerProductSpace ℝ P]
+
+omit [FiniteDimensional ℝ V] in
+/-- Reading the neck positions through `L : P → (Puncture → ℝ)` and the domain point of `S` in
+real coordinates is as smooth as `L`. -/
+private theorem contMDiff_neckPositions_realCoordinates {n : WithTop ℕ∞} {L : P → Puncture → ℝ}
+    (hL : ContDiff ℝ n L) :
+    ContMDiff 𝓘(ℝ, P × ((ℝ × ℝ) × V)) (𝓘(ℝ, Puncture → ℝ).prod (𝓘(ℝ, ℂ).prod 𝓘(ℝ, V))) n
+      fun p : P × ((ℝ × ℝ) × V) ↦ (L p.1, equivRealProdCLM.symm p.2.1, p.2.2) :=
+  (hL.comp contDiff_fst).contMDiff.prodMk
+    ((equivRealProdCLM.symm.contDiff.comp (contDiff_fst.comp contDiff_snd)).contMDiff.prodMk
+      (contDiff_snd.comp contDiff_snd).contMDiff)
 
 /-- The energy of a Floer solution of the continuation family over a measurable window `Ω ⊆ S`
 is a Bochner integral bounded by `a_0 + a_1 - a_∞ + ∑ q, (B_q + Δ_q)`, whatever the neck
@@ -147,7 +157,8 @@ subsequence `φ`, a limit `p₀ ∈ C` of `p_{φ n}`, a finite set `Z ⊆ Ω` wi
 `#Z * δ ≤ A + ∑ q, (B_q + Δ_q)`, and a continuous `v : Ω \ Z → K` such that along `φ` every disc
 about a point of `Z` eventually carries energy at least `δ`, the differentials are uniformly
 bounded on every compact subset of `Ω \ Z`, and `u_{φ n} → v` locally uniformly on `Ω \ Z`. -/
-theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_continuation
+theorem
+    exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_pairOfPantsContinuation
     (ω : SymplecticForm V) (hG : ∀ q, Periodic (G q) 1) (hH : ∀ q, Periodic (H q) 1)
     (hGs : ∀ q, ContDiff ℝ 3 (uncurry (G q))) (hHs : ∀ q, ContDiff ℝ 3 (uncurry (H q)))
     {B Δ : Puncture → ℝ} (hGB : ∀ q t x, |G q t x| ≤ B q) (hHB : ∀ q t x, |H q t x| ≤ B q)
@@ -194,9 +205,12 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_co
       pairOfPantsContinuationPerturbation G H (L p.1) (equivRealProdCLM.symm p.2.1) p.2.2 v)
       (U ×ˢ (thricePuncturedSphereReal ×ˢ univ)) := by
     rintro ⟨p, z, x⟩ ⟨-, hz, -⟩
-    exact ((contDiffAt_pairOfPantsContinuationPerturbation_apply hG hH hGs hHs (L p) hz x v).comp
-      (f := fun p : P × ((ℝ × ℝ) × V) ↦ (L p.1, p.2)) (p, (z, x))
-      ((hL.comp contDiff_fst).prodMk contDiff_snd).contDiffAt).contDiffWithinAt
+    have h := contMDiffAt_pairOfPantsContinuationPerturbation (I := 𝓘(ℝ, V)) hG hH
+      (fun q ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hGs q).contMDiff)
+      (fun q ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHs q).contMDiff) (L p) ⟨_, hz⟩ x
+    exact ((contMDiffAt_iff_contDiffAt.1 (h.comp (p, (z, x))
+      (contMDiff_neckPositions_realCoordinates hL).contMDiffAt)).clm_apply
+        contDiffAt_const).contDiffWithinAt
   obtain ⟨δ, hδ, hconv⟩ := ω.exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset
     (Ks := fun p z x ↦ pairOfPantsContinuationPerturbation G H (L p) (equivRealProdCLM.symm z) x 1)
     (Kt := fun p z x ↦ pairOfPantsContinuationPerturbation G H (L p) (equivRealProdCLM.symm z) x I)
@@ -212,6 +226,8 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_co
   exact hconv hΩ hΩD hpC (fun k ↦ (hu k).mono hΩS) (fun k z hz ↦ hfl k z (hΩS hz)) huK
     (fun k ↦ (hE k).1) fun k ↦ (hE k).2.trans (by linarith [hA k])
 
+namespace Compatible
+
 /-- **Solutions of the pair-of-pants continuation family converge off finitely many bubbling
 points**, for the almost complex structures `TauCeti.Floer.pairOfPantsContinuationAlmostComplex`
 of the family. Let `G_q`, `H_q` be period-one `C³` Hamiltonians with `|G_q|, |H_q| ≤ B_q` and
@@ -223,12 +239,13 @@ such that every sequence of `C³` solutions `uₖ` on `S` of the Floer equation 
 `(K_{L(pₖ)}, J_{L(pₖ)})` of the family, with `pₖ ∈ C`, limiting end actions satisfying
 `aₖ(0) + aₖ(1) - aₖ(∞) ≤ A` and `uₖ(Ω) ⊆ K` for an open `Ω ⊆ D`, has a subsequence with
 parameters converging in `C`, converging locally uniformly on `Ω` off a finite set `Z` of
-bubbling points with `#Z * δ ≤ A + ∑ q, (B_q + Δ_q)`, as in
-`SymplecticForm.exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_continuation`.
+bubbling points with `#Z * δ ≤ A + ∑ q, (B_q + Δ_q)`, as in the statement
+`exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_pairOfPantsContinuation`
+for any family of tame structures in the namespace `TauCeti.SymplecticForm`.
 -/
 theorem
-    exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_continuationAlmostComplex
-    (ω : SymplecticForm V) {J₀ : AlmostComplexStructure V}
+    exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_pairOfPantsContinuation
+    {ω : SymplecticForm V} {J₀ : AlmostComplexStructure V}
     {J₁ J₂ : Puncture → ℝ → V → AlmostComplexStructure V} (h₀ : ω.Compatible J₀)
     (hJ₁ : ∀ q t x, ω.Tames (J₁ q t x)) (hJ₂ : ∀ q t x, ω.Tames (J₂ q t x))
     (hJ₁p : ∀ q, Periodic (J₁ q) 1) (hJ₂p : ∀ q, Periodic (J₂ q) 1)
@@ -280,18 +297,17 @@ theorem
       (hJ₂ := hJ₂) h₀ hJ₁p hJ₂p
       (fun q ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hJ₁s q).contMDiff)
       (fun q ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hJ₂s q).contMDiff) (L p) ⟨_, hz⟩ x
-    -- Read the neck positions through `L` and the domain point in real coordinates.
-    have hg : ContMDiff 𝓘(ℝ, P × ((ℝ × ℝ) × V)) (𝓘(ℝ, Puncture → ℝ).prod (𝓘(ℝ, ℂ).prod 𝓘(ℝ, V))) 2
-        fun p : P × ((ℝ × ℝ) × V) ↦ (L p.1, equivRealProdCLM.symm p.2.1, p.2.2) :=
-      ((hL.of_le (by norm_num)).comp contDiff_fst).contMDiff.prodMk
-        ((equivRealProdCLM.symm.contDiff.comp (contDiff_fst.comp contDiff_snd)).contMDiff.prodMk
-          (contDiff_snd.comp contDiff_snd).contMDiff)
-    exact (contMDiffAt_iff_contDiffAt.1 (h.comp (p, (z, x)) hg.contMDiffAt)).contDiffWithinAt
-  exact ω.exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_continuation hG hH
-    hGs hHs hGB hHB hΔ hL
-    (J := fun p z x ↦ pairOfPantsContinuationAlmostComplex h₀ J₁ J₂ hJ₁ hJ₂ (L p)
-      (equivRealProdCLM.symm z) x)
-    isOpen_univ hJ' hC (subset_univ C)
-    (fun _ _ _ _ x ↦ tames_pairOfPantsContinuationAlmostComplex h₀ _ x) hD hDS hK
+    exact (contMDiffAt_iff_contDiffAt.1 (h.comp (p, (z, x))
+      (contMDiff_neckPositions_realCoordinates (hL.of_le (by norm_num))).contMDiffAt))
+      |>.contDiffWithinAt
+  exact
+    ω.exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_pairOfPantsContinuation
+      hG hH hGs hHs hGB hHB hΔ hL
+      (J := fun p z x ↦ pairOfPantsContinuationAlmostComplex h₀ J₁ J₂ hJ₁ hJ₂ (L p)
+        (equivRealProdCLM.symm z) x)
+      isOpen_univ hJ' hC (subset_univ C)
+      (fun _ _ _ _ x ↦ tames_pairOfPantsContinuationAlmostComplex h₀ _ x) hD hDS hK
+
+end Compatible
 
 end TauCeti.SymplecticForm
