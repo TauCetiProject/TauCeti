@@ -64,6 +64,8 @@ bijective.
   `TauCeti.intervalBaseTimeCoordinate_intervalBaseOrbit`: the coordinate `U` with `U(q(s)) = C s`.
 * `TauCeti.bijOn_intervalBaseTimeCoordinate` and
   `TauCeti.intervalBaseOrbit_one_intervalBaseTimeCoordinate`: `U` identifies `(0, 1)` with `ℝ`.
+* `TauCeti.exists_intervalBaseOrbit_eq`: for `C ≠ 0`, the trajectory `q` passes through every
+  point of `(0, 1)`.
 * `TauCeti.intervalBaseFlow`, `TauCeti.isIntegralCurve_intervalBaseFlow` and
   `TauCeti.intervalBaseFlow_add`: the flow.
 * `TauCeti.intervalBaseTimeCoordinate_intervalBaseFlow`, `TauCeti.strictMonoOn_intervalBaseFlow`,
@@ -737,6 +739,14 @@ theorem intervalBaseOrbit_eq_intervalBaseOrbit_one (C s : ℝ) :
     intervalBaseOrbit C s = intervalBaseOrbit 1 (C * s) := by
   simp only [intervalBaseOrbit_apply]
   ring_nf
+
+/-- **The trajectory `q` passes through every point of `(0, 1)`**: for `C ≠ 0` and `t ∈ (0, 1)`,
+`q(τ) = t` at the time `τ = U(t) / C`. -/
+theorem exists_intervalBaseOrbit_eq (hC : C ≠ 0) {t : ℝ} (ht : t ∈ Ioo 0 1) :
+    ∃ τ, intervalBaseOrbit C τ = t :=
+  ⟨intervalBaseTimeCoordinate t / C, by
+    rw [intervalBaseOrbit_eq_intervalBaseOrbit_one, mul_div_cancel₀ _ hC,
+      intervalBaseOrbit_one_intervalBaseTimeCoordinate ht]⟩
 
 /-- **The trajectories from `0` to `1` are the translates of `q`.** For `C > 0`, every negative
 gradient trajectory of the base potential tending to `0` at `-∞` and to `1` at `+∞` is
