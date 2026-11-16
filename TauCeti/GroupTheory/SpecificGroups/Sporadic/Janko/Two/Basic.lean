@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.OrderOfElement
+public import Mathlib.GroupTheory.SpecificGroups.Alternating
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Presentation
 
 /-!
@@ -94,6 +95,11 @@ namespace J2
 theorem a_mem : a ∈ J2 := J2_def ▸ Subgroup.subset_closure (by simp)
 
 theorem b_mem : b ∈ J2 := J2_def ▸ Subgroup.subset_closure (by simp)
+
+/-- Every element of the ATLAS second Janko model is an even permutation. -/
+theorem le_alternatingGroup : J2 ≤ alternatingGroup (Fin 100) := by
+  simp only [J2_def, Subgroup.closure_le, Set.insert_subset_iff, Set.singleton_subset_iff]
+  constructor <;> apply Equiv.Perm.mem_alternatingGroup.mpr <;> decide +kernel
 
 /-! ### Transcription checks -/
 
