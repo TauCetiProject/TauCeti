@@ -22,8 +22,8 @@ quotient map.
 The principal congruence subgroup `Γ(N)` behaves differently: for `N ≥ 3` it does not contain
 `-I`, so its projective image `GammaProjective N` has half its index: the quotient
 `PSL₂(ℤ) ⧸ GammaProjective N` is canonically isomorphic to the signed finite quotient
-`Matrix.SignedQuotient (Fin 2) (ZMod N) = SL₂(ℤ/Nℤ) ⧸ {±I}`, of order `|SL₂(ℤ/Nℤ)| / 2` for
-`N ≥ 3` (and `1`, `6` at `N = 1, 2`). At `N = 3` the two indices are `24` and `12`.
+`TauCeti.Matrix.SignedQuotient (Fin 2) (ZMod N) = SL₂(ℤ/Nℤ) ⧸ {±I}`, of order `|SL₂(ℤ/Nℤ)| / 2`
+for `N ≥ 3` (and `1`, `6` at `N = 1, 2`). At `N = 3` the two indices are `24` and `12`.
 
 ## References
 
@@ -154,19 +154,19 @@ theorem GammaProjective_le_GammaProjective_of_dvd {M N : ℕ} (h : M ∣ N) :
   Subgroup.map_mono (CongruenceSubgroup.Gamma_le_Gamma_of_dvd h)
 
 /-- Reduction modulo `N` descended from `PSL₂(ℤ)` to the signed quotient
-`Matrix.SignedQuotient (Fin 2) (ZMod N) = SL₂(ℤ/Nℤ) ⧸ {±I}`. -/
+`TauCeti.Matrix.SignedQuotient (Fin 2) (ZMod N) = SL₂(ℤ/Nℤ) ⧸ {±I}`. -/
 noncomputable def psl2zToSignedQuotient (N : ℕ) :
-    PSL(2, ℤ) →* Matrix.SignedQuotient (Fin 2) (ZMod N) :=
-  (Matrix.SignedQuotient.map (Int.castRingHom (ZMod N))).comp
-    (Matrix.SignedQuotient.equivPSL ℤ).symm.toMonoidHom
+    PSL(2, ℤ) →* TauCeti.Matrix.SignedQuotient (Fin 2) (ZMod N) :=
+  (TauCeti.Matrix.SignedQuotient.map (Int.castRingHom (ZMod N))).comp
+    (TauCeti.Matrix.SignedQuotient.equivPSL ℤ).symm.toMonoidHom
 
 @[simp]
 theorem psl2zToSignedQuotient_mk (N : ℕ) (g : SL(2, ℤ)) :
     psl2zToSignedQuotient N (QuotientGroup.mk g) =
       QuotientGroup.mk (Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod N)) g) := by
   rw [psl2zToSignedQuotient, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    ← Matrix.SignedQuotient.equivPSL_mk ℤ g, MulEquiv.symm_apply_apply,
-    Matrix.SignedQuotient.map_mk]
+    ← TauCeti.Matrix.SignedQuotient.equivPSL_mk ℤ g, MulEquiv.symm_apply_apply,
+    TauCeti.Matrix.SignedQuotient.map_mk]
 
 /-- By strong approximation for `SL₂(ℤ)`, `psl2zToSignedQuotient N` is surjective at every level. -/
 theorem psl2zToSignedQuotient_surjective (N : ℕ) :
@@ -181,7 +181,7 @@ theorem ker_psl2zToSignedQuotient (N : ℕ) :
   ext x
   obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective x
   rw [MonoidHom.mem_ker, psl2zToSignedQuotient_mk, QuotientGroup.eq_one_iff,
-    Matrix.SpecialLinearGroup.mem_negOneSubgroup_iff, mem_GammaProjective_mk,
+    TauCeti.Matrix.SpecialLinearGroup.mem_negOneSubgroup_iff, mem_GammaProjective_mk,
     CongruenceSubgroup.Gamma_mem', CongruenceSubgroup.Gamma_mem']
   have hneg : Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod N)) (-g) =
       -Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod N)) g := by
@@ -190,7 +190,7 @@ theorem ker_psl2zToSignedQuotient (N : ℕ) :
 
 /-- **Canonical isomorphism `PSL₂(ℤ) ⧸ GammaProjective N ≃* SL₂(ℤ/Nℤ) ⧸ {±I}`.** -/
 noncomputable def quotientGammaProjectiveEquiv (N : ℕ) :
-    (PSL(2, ℤ) ⧸ GammaProjective N) ≃* Matrix.SignedQuotient (Fin 2) (ZMod N) :=
+    (PSL(2, ℤ) ⧸ GammaProjective N) ≃* TauCeti.Matrix.SignedQuotient (Fin 2) (ZMod N) :=
   (QuotientGroup.quotientMulEquivOfEq (ker_psl2zToSignedQuotient N).symm).trans
     (QuotientGroup.quotientKerEquivOfSurjective (psl2zToSignedQuotient N)
       (psl2zToSignedQuotient_surjective N))
@@ -202,16 +202,18 @@ theorem quotientGammaProjectiveEquiv_mk (N : ℕ) (x : PSL(2, ℤ)) :
 
 /-- At every level `N : ℕ`, `[PSL₂(ℤ) : GammaProjective N] = |SL₂(ℤ/Nℤ) ⧸ {±I}|`. -/
 theorem GammaProjective_index_eq_card (N : ℕ) :
-    (GammaProjective N).index = Nat.card (Matrix.SignedQuotient (Fin 2) (ZMod N)) := by
+    (GammaProjective N).index = Nat.card (TauCeti.Matrix.SignedQuotient (Fin 2) (ZMod N)) := by
   rw [Subgroup.index_eq_card, Nat.card_congr (quotientGammaProjectiveEquiv N).toEquiv]
 
+/-- At level `1`, `GammaProjective 1 = ⊤`, so `[PSL₂(ℤ) : GammaProjective 1] = 1`. -/
 @[simp]
 theorem GammaProjective_index_one : (GammaProjective 1).index = 1 := by
-  rw [GammaProjective_index_eq_card, Matrix.SignedQuotient.card_fin_two_zmod_one]
+  rw [GammaProjective_index_eq_card, TauCeti.Matrix.SignedQuotient.card_fin_two_zmod_one]
 
+/-- At level `2`, `[PSL₂(ℤ) : GammaProjective 2] = |SL₂(𝔽₂)| = 6` since `-I = I` modulo `2`. -/
 @[simp]
 theorem GammaProjective_index_two : (GammaProjective 2).index = 6 := by
-  rw [GammaProjective_index_eq_card, Matrix.SignedQuotient.card_fin_two_zmod_two]
+  rw [GammaProjective_index_eq_card, TauCeti.Matrix.SignedQuotient.card_fin_two_zmod_two]
 
 /-- **The projective index of `Γ(N)`** for `N ≥ 3`: since `-I ∉ Γ(N)`, the image of `Γ(N)` in
 `PSL₂(ℤ)` has index `|SL₂(ℤ/Nℤ)| / 2`. -/
@@ -219,7 +221,7 @@ theorem two_mul_index_map_Gamma {N : ℕ} (hN : 3 ≤ N) :
     2 * ((CongruenceSubgroup.Gamma N).map
         (QuotientGroup.mk' (Subgroup.center SL(2, ℤ)))).index = Nat.card SL(2, ZMod N) := by
   rw [← GammaProjective_def, GammaProjective_index_eq_card,
-    Matrix.SignedQuotient.two_mul_card_fin_two_zmod hN]
+    TauCeti.Matrix.SignedQuotient.two_mul_card_fin_two_zmod hN]
 
 /-- **Cleared Euler product for `[PSL₂(ℤ) : GammaProjective N]`** (`N ≥ 3`):
 `2 · [PSL₂(ℤ) : GammaProjective N] · ∏_{p ∣ N} p² = N³ · ∏_{p ∣ N} (p² - 1)`. -/
@@ -227,7 +229,7 @@ theorem two_mul_GammaProjective_index_mul_prod_primeFactors_sq {N : ℕ} (hN : 3
     2 * (GammaProjective N).index * ∏ p ∈ N.primeFactors, p ^ 2 =
       N ^ 3 * ∏ p ∈ N.primeFactors, (p ^ 2 - 1) := by
   rw [GammaProjective_index_eq_card,
-    Matrix.SignedQuotient.two_mul_card_fin_two_zmod_mul_prod_primeFactors_sq hN]
+    TauCeti.Matrix.SignedQuotient.two_mul_card_fin_two_zmod_mul_prod_primeFactors_sq hN]
 
 /-- The image of `Γ(3)` in `PSL₂(ℤ)` has index `12`, half the index of `Γ(3)`, since `-I ∉ Γ(3)`. -/
 theorem index_map_Gamma_three :
@@ -236,5 +238,39 @@ theorem index_map_Gamma_three :
   have h := two_mul_index_map_Gamma le_rfl
   rw [← CongruenceSubgroup.index_Gamma, CongruenceSubgroup.index_Gamma_three] at h
   omega
+
+/-- At level `6`, `[PSL₂(ℤ) : GammaProjective 6] = |Q_6| = 72`. -/
+theorem GammaProjective_index_six : (GammaProjective 6).index = 72 := by
+  have h := two_mul_index_map_Gamma (N := 6) (by omega)
+  rw [← GammaProjective_def, show (6 : ℕ) = 2 * 3 by norm_num,
+    Matrix.SpecialLinearGroup.card_zmod_mul_of_coprime (Fin 2) (by decide),
+    Matrix.SpecialLinearGroup.card_fin_two_zmod_prime Nat.prime_two,
+    Matrix.SpecialLinearGroup.card_fin_two_zmod_prime Nat.prime_three] at h
+  norm_num at h; omega
+
+/-- At level `8`, `[PSL₂(ℤ) : GammaProjective 8] = |Q_8| = 192` (twice `|PSL₂(ℤ/8ℤ)| = 96`). -/
+theorem GammaProjective_index_eight : (GammaProjective 8).index = 192 := by
+  rw [GammaProjective_index_eq_card, TauCeti.Matrix.SignedQuotient.card_fin_two_zmod_eight]
+
+/-- At level `10`, `[PSL₂(ℤ) : GammaProjective 10] = |Q_10| = 360`. -/
+theorem GammaProjective_index_ten : (GammaProjective 10).index = 360 := by
+  have h := two_mul_index_map_Gamma (N := 10) (by omega)
+  rw [← GammaProjective_def, show (10 : ℕ) = 2 * 5 by norm_num,
+    Matrix.SpecialLinearGroup.card_zmod_mul_of_coprime (Fin 2) (by decide),
+    Matrix.SpecialLinearGroup.card_fin_two_zmod_prime Nat.prime_two,
+    Matrix.SpecialLinearGroup.card_fin_two_zmod_prime Nat.prime_five] at h
+  norm_num at h; omega
+
+/-- At level `11`, `[PSL₂(ℤ) : GammaProjective 11] = |PSL₂(𝔽₁₁)| = 660`. -/
+theorem GammaProjective_index_eleven : (GammaProjective 11).index = 660 := by
+  have h := two_mul_index_map_Gamma (N := 11) (by omega)
+  rw [← GammaProjective_def,
+    Matrix.SpecialLinearGroup.card_fin_two_zmod_prime (by decide)] at h
+  omega
+
+/-- At level `12`, `[PSL₂(ℤ) : GammaProjective 12] = |Q_12| = 576` (twice `|PSL₂(ℤ/12ℤ)| = 288`).
+-/
+theorem GammaProjective_index_twelve : (GammaProjective 12).index = 576 := by
+  rw [GammaProjective_index_eq_card, TauCeti.Matrix.SignedQuotient.card_fin_two_zmod_twelve]
 
 end TauCeti.CongruenceSubgroup

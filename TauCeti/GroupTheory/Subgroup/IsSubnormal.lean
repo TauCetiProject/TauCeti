@@ -19,9 +19,10 @@ sections satisfy the Schreier–Jordan–Hölder dichotomy across any normal sub
 simple subnormal section of `G` is isomorphic either to a simple subnormal section of `N` or to a
 simple subnormal section of `G ⧸ N`.
 
-This file develops the subquotient isomorphisms and the predicate `Subgroup.HasSubnormalSection`
-needed to classify simple subnormal sections of quotients, extensions, and finite direct products
-without assuming the ambient group has finite composition length.
+This file develops the subquotient isomorphisms and the predicate
+`TauCeti.HasSubnormalSection` needed to classify simple subnormal sections of quotients,
+extensions, and finite direct products without assuming the ambient group has finite composition
+length.
 
 ## Main definitions
 
@@ -30,19 +31,20 @@ without assuming the ambient group has finite composition length.
 * `Subgroup.mapSubtypeSubquotientEquiv`: for subgroups `K, H ≤ M`, mapping through `M.subtype`
   identifies `(H.map M.subtype) ⧸ (K.map M.subtype).subgroupOf (H.map M.subtype)` with
   `H ⧸ K.subgroupOf H`.
-* `Subgroup.IsSubnormal.quotientMulEquivOfIsSimpleGroup`: in a simple group `G`, any simple
+* `Subgroup.IsSubnormal.quotientMulEquivOfIsSimpleGroup`: in a simple group `G`, any nontrivial
   subnormal section `H ⧸ K.subgroupOf H` (`K ≤ H`) is canonically isomorphic to `G`.
-* `Subgroup.HasSubnormalSection`: `S` is isomorphic to `H ⧸ K.subgroupOf H` for some subnormal
-  subgroup `H` of `G` and `K ≤ H` normal in `H`.
+* `TauCeti.HasSubnormalSection`: `S` is isomorphic to `H ⧸ K.subgroupOf H` for some
+  subnormal subgroup `H` of `G` and `K ≤ H` normal in `H`.
 
 ## Main results
 
 * `IsSimpleGroup.isMulCommutative_of_isSolvable`: a simple solvable group is commutative
   (`IsMulCommutative` form of `IsSimpleGroup.comm_iff_isSolvable`).
-* `Subgroup.HasSubnormalSection.or_of_normal`: across `N ⊴ G`, any simple subnormal section of `G`
-  occurs as a subnormal section of `N` or of `G ⧸ N`.
-* `Subgroup.HasSubnormalSection.or_of_prod` and `Subgroup.HasSubnormalSection.exists_of_pi`:
-  any simple subnormal section of a binary or finite direct product occurs in one of the factors.
+* `TauCeti.HasSubnormalSection.or_of_normal`: across `N ⊴ G`, any simple subnormal
+  section of `G` occurs as a subnormal section of `N` or of `G ⧸ N`.
+* `TauCeti.HasSubnormalSection.or_of_prod` and
+  `TauCeti.HasSubnormalSection.exists_of_pi`: any simple subnormal section of a binary or
+  finite direct product occurs in one of the factors.
 
 ## References
 
@@ -179,7 +181,7 @@ theorem subquotientEquivOfEqTopOfEqBot_mk {H K : Subgroup G} [(K.subgroupOf H).N
 
 end Subquotients
 
-/-! ### Simple subnormal sections of simple groups -/
+/-! ### Nontrivial subnormal sections of simple groups -/
 
 namespace IsSubnormal
 
@@ -208,32 +210,39 @@ theorem eq_bot_of_nontrivial_quotient [IsSimpleGroup G] (hH : H.IsSubnormal) (hK
         QuotientGroup.induction_on y fun _ ↦ QuotientGroup.eq.mpr trivial⟩
     exact absurd this (not_subsingleton _)
 
-/-- **A simple subnormal section of a simple group is the group itself.** -/
-@[to_additive /-- **A simple subnormal section of a simple additive group is the group itself.** -/]
+/-- **A nontrivial subnormal section of a simple group is the group itself.** -/
+@[to_additive /-- **A nontrivial subnormal section of a simple additive group is the group
+itself.** -/]
 noncomputable def quotientMulEquivOfIsSimpleGroup [IsSimpleGroup G] (hH : H.IsSubnormal)
-    (hKH : K ≤ H) [(K.subgroupOf H).Normal] [IsSimpleGroup (H ⧸ K.subgroupOf H)] :
+    (hKH : K ≤ H) [(K.subgroupOf H).Normal] [Nontrivial (H ⧸ K.subgroupOf H)] :
     (H ⧸ K.subgroupOf H) ≃* G :=
   subquotientEquivOfEqTopOfEqBot (hH.eq_top_of_nontrivial_quotient K)
     (hH.eq_bot_of_nontrivial_quotient hKH)
 
 @[to_additive (attr := simp)]
 theorem quotientMulEquivOfIsSimpleGroup_mk [IsSimpleGroup G] (hH : H.IsSubnormal)
-    (hKH : K ≤ H) [(K.subgroupOf H).Normal] [IsSimpleGroup (H ⧸ K.subgroupOf H)] (x : H) :
+    (hKH : K ≤ H) [(K.subgroupOf H).Normal] [Nontrivial (H ⧸ K.subgroupOf H)] (x : H) :
     hH.quotientMulEquivOfIsSimpleGroup hKH (QuotientGroup.mk x) = (x : G) :=
   subquotientEquivOfEqTopOfEqBot_mk _ _ x
 
 end IsSubnormal
 
+end Subgroup
+
 /-! ### The subnormal-section predicate and Schreier–Jordan–Hölder splitting -/
 
-/-- `Subgroup.HasSubnormalSection G S` means that `S` is multiplicatively isomorphic to a section
+namespace TauCeti
+
+open Subgroup
+
+/-- `TauCeti.HasSubnormalSection G S` means that `S` is multiplicatively isomorphic to a section
 `H ⧸ K.subgroupOf H` of `G` with `H` subnormal in `G` and `K ≤ H` normal in `H`. When `S` is
 simple, these sections are the composition factors appearing in subnormal chains of `G`. -/
 def HasSubnormalSection (G : Type*) (S : Type*) [Group G] [Group S] : Prop :=
   ∃ H K : Subgroup G, H.IsSubnormal ∧ K ≤ H ∧
     ∃ (_ : (K.subgroupOf H).Normal), Nonempty ((H ⧸ K.subgroupOf H) ≃* S)
 
-/-- Unfolding characterization of `Subgroup.HasSubnormalSection`. -/
+/-- Unfolding characterization of `TauCeti.HasSubnormalSection`. -/
 theorem hasSubnormalSection_def (G : Type*) (S : Type*) [Group G] [Group S] :
     HasSubnormalSection G S ↔
       ∃ H K : Subgroup G, H.IsSubnormal ∧ K ≤ H ∧
@@ -287,11 +296,11 @@ theorem isMulCommutative_of_isSolvable [Group.IsSolvable G] [IsSimpleGroup S]
   have := isMulCommutative_quotient_of_isSolvable H K
   exact e.surjective.isMulCommutative
 
-/-- Every simple subnormal section of a simple group is isomorphic to that group. -/
-theorem nonempty_mulEquiv_of_isSimpleGroup [IsSimpleGroup G] [IsSimpleGroup S]
+/-- Every nontrivial subnormal section of a simple group is isomorphic to that group. -/
+theorem nonempty_mulEquiv_of_isSimpleGroup [IsSimpleGroup G] [Nontrivial S]
     (h : HasSubnormalSection G S) : Nonempty (S ≃* G) := by
   rcases h with ⟨H, K, hH, hKH, _, ⟨e⟩⟩
-  have := e.isSimpleGroup
+  have := e.symm.injective.nontrivial
   exact ⟨e.symm.trans (hH.quotientMulEquivOfIsSimpleGroup hKH)⟩
 
 /-- When `N ⊴ G` meets `H` inside `K`, the subnormal section `H ⧸ K.subgroupOf H` descends
@@ -307,9 +316,9 @@ private theorem of_normal_map_eq_bot {H K N : Subgroup G} [N.Normal] (hH : H.IsS
     ext x
     refine ⟨fun hx ↦ ?_, fun hxK ↦ mem_map.mpr ⟨x.1, hxK, rfl⟩⟩
     rcases mem_map.mp hx with ⟨k, hkK, hkx⟩
-    have hm := mem_map_of_mem (QuotientGroup.mk' (K.subgroupOf H))
-      (show (⟨k⁻¹ * x.1, mul_mem (inv_mem (hKH hkK)) x.2⟩ : H) ∈ N.subgroupOf H from
-        QuotientGroup.eq.mp hkx)
+    have hmem : (⟨k⁻¹ * x.1, mul_mem (inv_mem (hKH hkK)) x.2⟩ : H) ∈ N.subgroupOf H :=
+      mem_subgroupOf.mpr (QuotientGroup.eq.mp hkx)
+    have hm := mem_map_of_mem (QuotientGroup.mk' (K.subgroupOf H)) hmem
     rw [hbot, mem_bot, QuotientGroup.mk'_apply, QuotientGroup.eq_one_iff] at hm
     exact mem_subgroupOf.mpr (by simpa using mul_mem hkK hm)
   have hK'N : ((K.map πN).subgroupOf (H.map πN)).Normal := by
@@ -344,8 +353,8 @@ private theorem of_normal_map_eq_top {H K N : Subgroup G} (hH : H.IsSubnormal)
 /-- **Schreier–Jordan–Hölder dichotomy across a normal subgroup.** Let `N` be a normal subgroup of
 `G` and `S` a simple group. Every subnormal section of `G` isomorphic to `S` arises either as a
 subnormal section of `N` or as a subnormal section of `G ⧸ N`. -/
-theorem or_of_normal [IsSimpleGroup S] (N : Subgroup G) [N.Normal]
-    (h : HasSubnormalSection G S) : HasSubnormalSection N S ∨ HasSubnormalSection (G ⧸ N) S := by
+theorem or_of_normal [IsSimpleGroup S] (h : HasSubnormalSection G S) (N : Subgroup G)
+    [N.Normal] : HasSubnormalSection N S ∨ HasSubnormalSection (G ⧸ N) S := by
   rcases h with ⟨H, K, hH, hKH, _, ⟨e⟩⟩
   have := e.isSimpleGroup
   have hMN := (normal_subgroupOf (H := H) (N := N)).map (QuotientGroup.mk' (K.subgroupOf H))
@@ -391,4 +400,4 @@ theorem exists_of_pi {ι : Type*} [Finite ι] {G : ι → Type*} [∀ i, Group (
 
 end HasSubnormalSection
 
-end Subgroup
+end TauCeti
