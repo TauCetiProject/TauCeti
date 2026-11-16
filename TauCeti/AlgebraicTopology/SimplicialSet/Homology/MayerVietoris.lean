@@ -11,6 +11,8 @@ public import Mathlib.CategoryTheory.Abelian.CommSq
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Coproduct
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Relative.Basic
 public import TauCeti.Algebra.Homology.HomologySequenceBiprod
+public import TauCeti.Algebra.Homology.HomologicalComplex.Biprod
+public import TauCeti.AlgebraicTopology.SimplicialSet.Subcomplex
 
 /-!
 # The Mayer–Vietoris sequence of a pushout of simplicial sets
@@ -52,6 +54,9 @@ of singular homology for an open cover by two sets is obtained from such a squar
 * `SSet.mayerVietorisShortComplexMap`: the map of Mayer–Vietoris short exact sequences induced by
   a map of pushout squares.
 * `SSet.mayerVietorisδ_naturality`: the connecting morphism is natural in maps of pushout squares.
+* `SSet.quasiIso_chainComplexMap_homOfLE_inf_of_bicartSq`: for a bicartesian square of subcomplexes
+  `A₁, A₂, A₃, A₄` and a further subcomplex `S`, if `S ⊓ Aᵢ ⊆ Aᵢ` is a quasi-isomorphism on chains
+  for `i = 1, 2, 3`, then so is `S ⊓ A₄ ⊆ A₄`.
 
 ## References
 
@@ -280,5 +285,41 @@ lemma mayerVietorisδ_naturality (sq' : IsPushout t' l' r' b') [Mono t']
       SSet.homologyMap φ₄ R n ≫ mayerVietorisδ R sq' n m h :=
   HomologicalComplex.HomologySequence.δ_naturality
     (mayerVietorisShortComplexMap R sq sq' ht hl hr hb) _ _ n m h
+
+section Subcomplex
+
+variable {X : SSet.{w}} {S A₁ A₂ A₃ A₄ : X.Subcomplex}
+
+/-- **Comparison of Mayer–Vietoris sequences of subcomplexes.** Let `A₁, A₂, A₃, A₄` be a
+bicartesian square of subcomplexes of `X`, so that `A₂ ⊔ A₃ = A₄` and `A₂ ⊓ A₃ = A₁`, and let `S`
+be a further subcomplex. If the inclusions `S ⊓ A₁ ⊆ A₁`, `S ⊓ A₂ ⊆ A₂` and `S ⊓ A₃ ⊆ A₃` induce
+quasi-isomorphisms on chains with coefficients in `R`, then so does `S ⊓ A₄ ⊆ A₄`. -/
+lemma quasiIso_chainComplexMap_homOfLE_inf_of_bicartSq (hsq : Subcomplex.BicartSq A₁ A₂ A₃ A₄)
+    (h₁ : QuasiIso (chainComplexMap (Subcomplex.homOfLE (inf_le_right : S ⊓ A₁ ≤ A₁)) R))
+    (h₂ : QuasiIso (chainComplexMap (Subcomplex.homOfLE (inf_le_right : S ⊓ A₂ ≤ A₂)) R))
+    (h₃ : QuasiIso (chainComplexMap (Subcomplex.homOfLE (inf_le_right : S ⊓ A₃ ≤ A₃)) R)) :
+    QuasiIso (chainComplexMap (Subcomplex.homOfLE (inf_le_right : S ⊓ A₄ ≤ A₄)) R) := by
+  have hsq' := hsq.inf_left (S := S)
+  -- The inclusions `S ⊓ Aᵢ ⊆ Aᵢ` form a map of pushout squares; each square commutes because
+  -- both of its composites are the inclusion of a subcomplex.
+  let ψ := mayerVietorisShortComplexMap R hsq'.isPushout hsq.isPushout
+    (φ₁ := Subcomplex.homOfLE (inf_le_right : S ⊓ A₁ ≤ A₁))
+    (φ₂ := Subcomplex.homOfLE (inf_le_right : S ⊓ A₂ ≤ A₂))
+    (φ₃ := Subcomplex.homOfLE (inf_le_right : S ⊓ A₃ ≤ A₃))
+    (φ₄ := Subcomplex.homOfLE (inf_le_right : S ⊓ A₄ ≤ A₄))
+    (by rw [Subcomplex.homOfLE_comp, Subcomplex.homOfLE_comp])
+    (by rw [Subcomplex.homOfLE_comp, Subcomplex.homOfLE_comp])
+    (by rw [Subcomplex.homOfLE_comp, Subcomplex.homOfLE_comp])
+    (by rw [Subcomplex.homOfLE_comp, Subcomplex.homOfLE_comp])
+  have hψ₂ : QuasiIso ψ.τ₂ := by
+    rw [mayerVietorisShortComplexMap_τ₂]
+    exact HomologicalComplex.quasiIso_biprod_map _ _
+  have hψ₃ : QuasiIso ψ.τ₃ := HomologicalComplex.HomologySequence.quasiIso_τ₃ ψ
+    (shortExact_mayerVietorisShortComplex R hsq'.isPushout)
+    (shortExact_mayerVietorisShortComplex R hsq.isPushout)
+    (by rwa [mayerVietorisShortComplexMap_τ₁]) hψ₂
+  rwa [mayerVietorisShortComplexMap_τ₃] at hψ₃
+
+end Subcomplex
 
 end SSet
