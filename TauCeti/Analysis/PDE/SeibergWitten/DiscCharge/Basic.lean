@@ -116,7 +116,9 @@ converge, and being integers they are eventually constant
   `TauCeti.SeibergWitten.integral_cutoffCurrent_comp_closedBall_eq_of_annulus`: the charge does
   not change on passing to a subdisc containing the zeros of `α ∘ σ`.
 * `TauCeti.SeibergWitten.integral_cutoffCurrent_comp_closedBall_eq_of_continuousOn`: the charge is
-  invariant under homotopies keeping the boundary circle in `{χ(|α|²) = 1}`.
+  invariant under homotopies keeping the boundary circle in `{χ(|α|²) = 1}`; in particular
+  translated discs carry the same charge
+  (`TauCeti.SeibergWitten.integral_cutoffCurrent_comp_add_closedBall_eq`).
 * `TauCeti.SeibergWitten.exists_int_integral_cutoffCurrent_comp_comp_closedBall_eq_mul`: the
   degree law, the charge of `σ ∘ θ` is the degree of `θ` on the boundary circles times the
   charge of `σ`.
@@ -536,6 +538,29 @@ theorem exists_int_integral_cutoffCurrent_comp_comp_closedBall_eq_mul {E : Type*
   rw [hkm]
   ring
 
+/-- **Translated discs carry the same charge.** If the boundary circles of all the translated
+discs `σ + p`, `‖p‖ ≤ δ`, lie in `{χ(|α|²) = 1}`, then each of these discs has the charge of `σ`,
+by homotopy invariance along the segment from `0` to `p`. -/
+theorem integral_cutoffCurrent_comp_add_closedBall_eq {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {α : E → ℂ} {b : E → E [⋀^Fin 1]→L[ℝ] ℝ} {σ : ℂ → E} {z₀ : ℂ} {r δ : ℝ}
+    (hα : ContDiff ℝ 2 α) (hb : ContDiff ℝ 1 b) (hχ : ContDiff ℝ 1 χ)
+    (hχ₀ : χ =ᶠ[𝓝 0] 0) (hσ : ContDiff ℝ 2 σ)
+    (hbd : ∀ p ∈ Metric.closedBall (0 : E) δ, ∀ θ,
+      χ (normSq (α (σ (circleMap z₀ r θ) + p))) = 1) {p : E}
+    (hp : p ∈ Metric.closedBall (0 : E) δ) :
+    ∫ z in Metric.closedBall z₀ r,
+        cutoffCurrent χ b α (σ z + p) ![fderiv ℝ σ z 1, fderiv ℝ σ z I] =
+      ∫ z in Metric.closedBall z₀ r,
+        (cutoffCurrent χ b α (σ z)).compContinuousLinearMap (fderiv ℝ σ z) ![1, I] := by
+  rcases lt_or_ge r 0 with hr | hr
+  · simp [Metric.closedBall_eq_empty.2 hr]
+  have h := integral_cutoffCurrent_comp_closedBall_eq_of_continuousOn
+    (convex_closedBall (0 : E) δ).isPreconnected (σ := fun p z ↦ σ z + p) hr hα hb hχ hχ₀
+    (fun _ _ ↦ hσ.add contDiff_const)
+    ((hσ.continuous.comp continuous_snd).add continuous_fst).continuousOn hbd hp
+    (Metric.mem_closedBall_self (Metric.nonempty_closedBall.1 ⟨p, hp⟩))
+  simpa only [fderiv_add_const, compContinuousLinearMap_apply_vecCons_two, add_zero] using h
+
 /-! ### Mollified charges and their limits -/
 
 /-- **The disc charge as a pairing with a test field.** Let `σ` be a `C²` disc such that the
@@ -552,7 +577,7 @@ theorem integral_cutoffCurrent_comp_closedBall_eq_sum_integral_discMollification
     {E κ : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
     [MeasurableSpace E] [BorelSpace E] [Fintype κ] {μ : Measure E} [μ.IsAddHaarMeasure]
     {α : E → ℂ} {b : E → E [⋀^Fin 1]→L[ℝ] ℝ} {σ : ℂ → E} {z₀ : ℂ} {r δ : ℝ} {ρ : E → ℝ}
-    (e : Module.Basis κ ℝ E) (hr : 0 ≤ r) (hα : ContDiff ℝ 2 α) (hb : ContDiff ℝ 1 b)
+    (e : Module.Basis κ ℝ E) (hα : ContDiff ℝ 2 α) (hb : ContDiff ℝ 1 b)
     (hχ : ContDiff ℝ 1 χ) (hχ₀ : χ =ᶠ[𝓝 0] 0) (hσ : ContDiff ℝ 2 σ) (hρ : Continuous ρ)
     (hρδ : tsupport ρ ⊆ Metric.closedBall 0 δ) (hρ₁ : ∫ p, ρ p ∂μ = 1)
     (hbd : ∀ p ∈ Metric.closedBall (0 : E) δ, ∀ θ,
@@ -565,35 +590,17 @@ theorem integral_cutoffCurrent_comp_closedBall_eq_sum_integral_discMollification
     (contDiff_cutoffCurrent (m := 0) (n := 1) hα hb hχ hχ₀ (by norm_num)).continuous
   have hρc : HasCompactSupport ρ :=
     (isCompact_closedBall 0 δ).of_isClosed_subset (isClosed_tsupport ρ) hρδ
-  -- A weight of integral one is nonzero, so `δ ≥ 0`.
-  have hδ : 0 ≤ δ := by
-    by_contra h
-    have h₀ : tsupport ρ = ∅ :=
-      subset_empty_iff.1 (hρδ.trans (Metric.closedBall_eq_empty.2 (not_le.1 h)).subset)
-    rw [tsupport_eq_empty_iff] at h₀
-    simp [h₀] at hρ₁
   -- All the translated discs `σ + p`, `‖p‖ ≤ δ`, carry the charge of `σ`.
-  have hconst (p : E) (hp : p ∈ Metric.closedBall 0 δ) :
-      ∫ z in Metric.closedBall z₀ r,
-          cutoffCurrent χ b α (σ z + p) ![fderiv ℝ σ z 1, fderiv ℝ σ z I] =
-        ∫ z in Metric.closedBall z₀ r,
-          cutoffCurrent χ b α (σ z) ![fderiv ℝ σ z 1, fderiv ℝ σ z I] := by
-    have h := integral_cutoffCurrent_comp_closedBall_eq_of_continuousOn
-      (convex_closedBall (0 : E) δ).isPreconnected (σ := fun p z ↦ σ z + p) hr hα hb hχ hχ₀
-      (fun _ _ ↦ hσ.add contDiff_const)
-      ((hσ.continuous.comp continuous_snd).add continuous_fst).continuousOn hbd hp
-      (Metric.mem_closedBall_self hδ)
-    simpa only [fderiv_add_const, compContinuousLinearMap_apply_vecCons_two, add_zero] using h
   have hρc' (p : E) : ρ p * ∫ z in Metric.closedBall z₀ r,
         cutoffCurrent χ b α (σ z + p) ![fderiv ℝ σ z 1, fderiv ℝ σ z I] =
       ρ p * ∫ z in Metric.closedBall z₀ r,
-        cutoffCurrent χ b α (σ z) ![fderiv ℝ σ z 1, fderiv ℝ σ z I] := by
+        (cutoffCurrent χ b α (σ z)).compContinuousLinearMap (fderiv ℝ σ z) ![1, I] := by
     by_cases hp : p ∈ tsupport ρ
-    · rw [hconst p (hρδ hp)]
+    · rw [integral_cutoffCurrent_comp_add_closedBall_eq hα hb hχ hχ₀ hσ hbd (hρδ hp)]
     · rw [image_eq_zero_of_notMem_tsupport hp, zero_mul, zero_mul]
   rw [← integral_mul_setIntegral_add_eq_sum_integral_discMollification_mul (b := e) hΘ hρ hρc
     (hσ.of_le one_le_two)]
-  simp_rw [hρc', integral_mul_const, hρ₁, one_mul, compContinuousLinearMap_apply_vecCons_two]
+  simp_rw [hρc', integral_mul_const, hρ₁, one_mul]
 
 /-- **Stabilization of the disc charges.** Let `(bₖ, αₖ)` be a family of abelian Higgs pairs along
 a filter `l`, with cutoff currents `Θₖ`, and let `σ` be a `C²` disc. Suppose that eventually
@@ -627,7 +634,7 @@ theorem exists_int_eventually_integral_cutoffCurrent_comp_closedBall_eq {ι E : 
       fun i ↦ e (s i)
   have hc : Tendsto c l (𝓝 (∑ s, L s)) :=
     (tendsto_finsetSum _ fun s _ ↦ hL s).congr' (hbd.mono fun k hk ↦
-      (integral_cutoffCurrent_comp_closedBall_eq_sum_integral_discMollification_mul e hr (hα k)
+      (integral_cutoffCurrent_comp_closedBall_eq_sum_integral_discMollification_mul e (hα k)
         (hb k) hχ hχ₀ hσ f.continuous_normed f.tsupport_normed_eq.subset f.integral_normed
         hk).symm)
   -- Eventually the charges lie in `2πℤ`.
