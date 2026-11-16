@@ -15,9 +15,11 @@ import TauCeti.Algebra.BigOperators.Intervals
 Let `f : ι → G` be a sequence in `ℓᵖ` and let `g : ι' → ι` be injective on a set `s ⊆ ι'`. The
 sequence `s.indicator (f ∘ g)`, which reads `f` along `g` on `s` and vanishes off `s`, takes each
 value of `f` at most once, so it again lies in `ℓᵖ`, with no larger norm
-(`Memℓp.indicator_comp`, `lp.norm_le_of_forall_eq_indicator_comp`). When `g` is an equivalence
-`e : ι ≃ ι'`, membership and norm are preserved (`Memℓp.comp_equiv`, `TauCeti.memℓp_comp_equiv_iff`,
-`lp.norm_eq_of_forall_eq_comp_equiv`), bundling for `1 ≤ p` into the linear isometric equivalence
+(`Memℓp.indicator_comp`, `lp.norm_le_of_forall_eq_indicator_comp`). When `g = e.symm` for an
+equivalence `e : ι ≃ ι'` (with `s = univ`), precomposition preserves both `ℓᵖ` membership and norm
+(`Memℓp.comp_equiv`, `TauCeti.memℓp_comp_equiv_iff`, `lp.norm_eq_of_forall_norm_eq_comp_equiv`,
+`lp.norm_eq_of_forall_eq_comp_equiv`, stated for precomposition along `e : ι ≃ ι'` of a family on
+`ι'`), bundling for `1 ≤ p` into the linear isometric equivalence
 `LinearIsometryEquiv.lpCongrLeft : ℓ^p(ι, G) ≃ₗᵢ[𝕜] ℓ^p(ι', G)`. Shifts of a sequence indexed
 by `ℕ` are the basic injective examples: `j ↦ f (j + d)` and, on `{j | d ≤ j}`, `j ↦ f (j - d)`. In
 particular a sequence indexed by `ℕ` lies in `ℓᵖ` exactly when its tail `j ↦ f (j + d)` does

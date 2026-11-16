@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Map
 public import TauCeti.Analysis.Normed.Lp.Reindex
+import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Basic
 
 /-!
 # Reindexing Hilbert bases and unitary equivalences between Hilbert spaces
@@ -144,13 +145,6 @@ theorem mapₗᵢ_equiv (b : HilbertBasis ι 𝕜 E) (c : HilbertBasis κ 𝕜 F
     b.mapₗᵢ (b.equiv c e) = c.reindex e.symm :=
   DFunLike.ext _ _ fun _ ↦ by simp
 
-/-- Expansion of `b.equiv c e x` in the target Hilbert basis:
-`b.equiv c e x = ∑ᵢ ⟪b i, x⟫ • c (e i)`. -/
-theorem hasSum_equiv_apply (b : HilbertBasis ι 𝕜 E) (c : HilbertBasis κ 𝕜 F) (e : ι ≃ κ)
-    (x : E) :
-    HasSum (fun i ↦ b.repr x i • c (e i)) (b.equiv c e x) := by
-  simpa using (b.equiv c e).toLinearIsometry.toContinuousLinearMap.hasSum (b.hasSum_repr x)
-
 /-- Any linear isometric equivalence sending every `b i` to `c (e i)` coincides with
 `b.equiv c e`. -/
 theorem eq_equiv_of_forall_apply_eq (b : HilbertBasis ι 𝕜 E) (c : HilbertBasis κ 𝕜 F) (e : ι ≃ κ)
@@ -159,10 +153,7 @@ theorem eq_equiv_of_forall_apply_eq (b : HilbertBasis ι 𝕜 E) (c : HilbertBas
   suffices U.toLinearIsometry.toContinuousLinearMap =
       (b.equiv c e).toLinearIsometry.toContinuousLinearMap from
     LinearIsometryEquiv.ext fun x ↦ DFunLike.congr_fun this x
-  refine ContinuousLinearMap.ext_on
-    (Submodule.dense_iff_topologicalClosure_eq_top.2 b.dense_span) ?_
-  rintro _ ⟨i, rfl⟩
-  simp [hU i]
+  exact b.ext_inner_apply c fun i j ↦ by simp [hU j]
 
 /-- A bijection `e : ι ≃ κ` between the index types of Hilbert bases `b` and `c` determines a
 unique linear isometric equivalence `U : E ≃ₗᵢ[𝕜] F` satisfying `U (b i) = c (e i)` for all `i`. -/

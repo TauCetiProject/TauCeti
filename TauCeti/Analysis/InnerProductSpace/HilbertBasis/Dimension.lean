@@ -10,6 +10,7 @@ public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Basic
 public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Reindex
 public import TauCeti.Analysis.InnerProductSpace.Orthonormal.Countable
 import Mathlib.Analysis.Real.Cardinality
+import TauCeti.Analysis.Normed.Lp.Basic
 import TauCeti.Analysis.Normed.Lp.Support
 
 /-!
@@ -24,7 +25,8 @@ inner-product space `H` over `𝕜` (`ℝ` or `ℂ`) have equinumerous index typ
 * If `κ` is infinite, so is `ι`. For each `j : κ`, the coordinate sequence `b.repr (c j)` lies in
   `ℓ²(ι, 𝕜)` and therefore has countable support `S j = {i | ⟪b i, c j⟫ ≠ 0}`
   (`lp.countable_dsupport`). Every `i : ι` lies in some `S j`, since a unit vector `b i` cannot be
-  orthogonal to all of `c`; hence `#ι ≤ ∑ j, #(S j) ≤ #κ * ℵ₀ = #κ`, and symmetry gives `#ι = #κ`.
+  orthogonal to all of `c` (`HilbertBasis.exists_inner_ne_zero`); hence
+  `#ι ≤ ∑ j, #(S j) ≤ #κ * ℵ₀ = #κ`, and symmetry gives `#ι = #κ`.
 
 Combining basis-cardinality invariance with `HilbertBasis.equiv` and `HilbertBasis.mapₗᵢ` yields
 the **unitary classification of Hilbert spaces**
@@ -99,15 +101,10 @@ theorem nontrivial_iff_nonempty {ι : Type*} (b : HilbertBasis ι 𝕜 H) :
 private theorem mk_le_of_infinite {ι κ : Type w} [Infinite κ] (b : HilbertBasis ι 𝕜 H)
     (c : HilbertBasis κ 𝕜 H) : #ι ≤ #κ := by
   let S : κ → Set ι := fun j ↦ {i : ι | b.repr (c j) i ≠ 0}
-  have hcover : (Set.univ : Set ι) ⊆ ⋃ j : κ, S j := by
-    intro i _
-    by_contra hi
-    simp only [Set.mem_iUnion, S, Set.mem_ofPred_eq, not_exists, not_not] at hi
-    have hzero : c.repr (b i) = 0 := by
-      ext j
-      rw [lp.coeFn_zero, Pi.zero_apply, c.repr_apply_apply, ← inner_conj_symm,
-        ← b.repr_apply_apply, hi j, map_zero]
-    exact b.orthonormal.ne_zero i (c.repr.map_eq_zero_iff.1 hzero)
+  have hcover : (Set.univ : Set ι) ⊆ ⋃ j : κ, S j := fun i _ ↦ by
+    obtain ⟨j, hj⟩ := c.exists_inner_ne_zero (b.orthonormal.ne_zero i)
+    exact Set.mem_iUnion.2 ⟨j, by rwa [Set.mem_ofPred_eq, b.repr_apply_apply, ne_eq,
+      inner_eq_zero_symm]⟩
   calc #ι = #(Set.univ : Set ι) := Cardinal.mk_univ.symm
     _ ≤ #(⋃ j : κ, S j) := Cardinal.mk_le_mk_of_subset hcover
     _ ≤ Cardinal.sum fun j : κ ↦ #(S j) := Cardinal.mk_iUnion_le_sum_mk
@@ -247,9 +244,9 @@ theorem nonempty_linearIsometryEquiv_iff_hilbertDimension_eq
 /-- The Hilbert dimension of `ℓ²(ι, 𝕜)` is the cardinality of `ι` (lifted to `max v w`). -/
 @[simp]
 theorem hilbertDimension_lp {𝕜 : Type w} [RCLike 𝕜] (ι : Type v) :
-    hilbertDimension 𝕜 ℓ²(ι, 𝕜) = Cardinal.lift.{w} #ι := by
-  have h := (lp.hilbertBasisFun ι 𝕜).lift_mk_eq_hilbertDimension
-  rwa [Cardinal.lift_umax.{v, w}, Cardinal.lift_id'.{v, w}, eq_comm] at h
+    hilbertDimension 𝕜 ℓ²(ι, 𝕜) = Cardinal.lift.{w} #ι :=
+  Cardinal.lift_injective <| by
+    simpa using (lp.hilbertBasisFun ι 𝕜).lift_mk_eq_hilbertDimension.symm
 
 /-- On a finite-dimensional Hilbert space, Hilbert dimension agrees with `Module.finrank`. -/
 theorem hilbertDimension_eq_finrank (H : Type u) [NormedAddCommGroup H]

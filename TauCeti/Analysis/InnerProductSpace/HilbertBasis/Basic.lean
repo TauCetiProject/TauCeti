@@ -15,7 +15,8 @@ This file transfers orthogonality to every vector of a subspace from orthogonali
 element of a Hilbert basis of that subspace.  In particular, this lets Hilbert bases of mutually
 orthogonal eigenspaces be assembled into a spectral basis of the ambient space.
 
-A space with a Hilbert basis is complete (`HilbertBasis.completeSpace`).
+A space with a Hilbert basis is complete (`HilbertBasis.completeSpace`), and every nonzero vector
+has a nonzero inner product with at least one basis element (`HilbertBasis.exists_inner_ne_zero`).
 
 It also expands the value of a continuous linear map in a Hilbert basis,
 `T x = ∑ᵢ ⟪bᵢ, x⟫ T bᵢ` (`HilbertBasis.hasSum_inner_smul_apply`). It records that a continuous
@@ -35,6 +36,14 @@ variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpac
 /-- A space with a Hilbert basis is complete, being isometric to `ℓ²`. -/
 theorem completeSpace {iota : Type*} (b : _root_.HilbertBasis iota 𝕜 E) : CompleteSpace E :=
   b.repr.toIsometryEquiv.completeSpace
+
+/-- A nonzero vector has a nonzero inner product with at least one member of any Hilbert basis. -/
+theorem exists_inner_ne_zero {iota : Type*} (b : _root_.HilbertBasis iota 𝕜 E) {x : E}
+    (hx : x ≠ 0) : ∃ i, ⟪b i, x⟫_𝕜 ≠ 0 := by
+  by_contra! h
+  refine hx (b.repr.map_eq_zero_iff.1 ?_)
+  ext i
+  simp [b.repr_apply_apply, h i]
 
 /-- A vector orthogonal to every member of a Hilbert basis of a subspace is orthogonal to every
 vector of the represented subspace. -/
