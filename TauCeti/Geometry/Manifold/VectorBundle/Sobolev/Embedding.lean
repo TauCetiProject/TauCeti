@@ -89,25 +89,6 @@ variable (μ : Measure E) [μ.IsAddHaarMeasure] {p pstar : ℝ≥0∞} [Fact (1 
 namespace SobolevSection
 
 variable {A μ k} in
-/-- The values of the transfer of a family of Sobolev functions on `Q` only depend on the values of
-the family almost everywhere on `Q`, whatever the order and the exponent. -/
-private theorem value_transferL_ae_eq_value_transferL {i j : Fin A.n} {P Q : Opens E}
-    (hPc : IsCompact (closure (P : Set E))) (hPD : closure (P : Set E) ⊆ A.transferDomain i j)
-    (hPQ : MapsTo ((A.chart j).symm ≫ₕ A.chart i) P Q) {q r : ℝ≥0∞} [Fact (1 ≤ q)] [Fact (1 ≤ r)]
-    (hq : q ≠ ⊤) (hr : r ≠ ⊤) {k' : ℕ} (u : Fin (finrank ℝ F) → Wkp μ Q q k)
-    (v : Fin (finrank ℝ F) → Wkp μ Q r k')
-    (huv : ∀ l, (Wkp.value k (u l) : E → ℝ) =ᵐ[μ.restrict Q] Wkp.value k' (v l))
-    (m : Fin (finrank ℝ F)) :
-    (Wkp.value k (A.transferL μ q k hq i j hPc hPD hPQ u m) : E → ℝ) =ᵐ[μ.restrict P]
-      Wkp.value k' (A.transferL μ r k' hr i j hPc hPD hPQ v m) := by
-  set h := (A.exists_isChangeOfVariables_chart_symm_trans k hPc hPD hPQ).choose_spec.choose_spec
-  filter_upwards [A.value_transferL_ae μ q k hq i j hPc hPD hPQ u m,
-    A.value_transferL_ae μ r k' hr i j hPc hPD hPQ v m,
-    h.ae_comp (ae_all_iff.2 huv)] with y hu hv hy
-  rw [hu, hv]
-  simp only [hy]
-
-variable {A μ k} in
 /-- **The local pieces of the embedding.** On a piece `P` of the image of chart `j` whose
 chart-`j` data are transferred from the chart-`i` data on `Q`, the transfer at the exponent `p⋆`
 of the interior embedding `T` on `Q` of the chart-`i` components of a Sobolev section has the
@@ -126,7 +107,7 @@ private theorem value_transferL_ae_value (hp : p ≠ ⊤) (hpstar : pstar ≠ �
         Wkp.value (k + 1) ((w : A.sectionChartData.SobolevData μ p (k + 1)) j m) := by
   have hPj : P ≤ A.image j := SetLike.coe_subset_coe.1 (hP.trans (A.overlap_subset_image i j))
   have hres := A.restrictL_eq_transferL μ p (k + 1) hp w.2 hP hPc hPD hQ hPQ m
-  refine (value_transferL_ae_eq_value_transferL hPc hPD hPQ hpstar hp _
+  refine (A.value_transferL_ae_congr hPc hPD hPQ hpstar hp _
     (fun l ↦ Wkp.restrictL hQ (k + 1) ((w : A.sectionChartData.SobolevData μ p (k + 1)) i l))
     (fun l ↦ (hT _).trans (Wkp.value_restrictL_ae hQ (k + 1) _).symm) m).trans ?_
   rw [← hres]
@@ -169,14 +150,22 @@ private theorem exists_sobolevEmbeddingL (hpstar : pstar ≠ ⊤)
   -- The glued components are the components of the same section.
   let D : SobolevSection A μ p (k + 1) →L[ℝ] A.sectionChartData.SobolevData μ pstar k :=
     ContinuousLinearMap.pi fun j ↦ ContinuousLinearMap.pi fun m ↦ G j m
-  refine ⟨D.codRestrict _ fun w ↦ ?_, fun w i m ↦ hG i m w⟩
+  -- The components of `D w` have the values of those of `w`: this is `hG`, as the chart indices
+  -- and images of `A.sectionChartData` are those of `A` by definition.
+  have hD (w : SobolevSection A μ p (k + 1)) (j : Fin A.n) (m : Fin (finrank ℝ F)) :
+      (Wkp.value k (D w j m) : E → ℝ) =ᵐ[μ.restrict (A.image j)]
+        Wkp.value (k + 1) ((w : A.sectionChartData.SobolevData μ p (k + 1)) j m) :=
+    hG j m w
+  refine ⟨D.codRestrict _ fun w ↦ ?_, fun w i m ↦ by
+    rw [ContinuousLinearMap.coe_codRestrict_apply]
+    exact hD w i m⟩
   obtain ⟨s, hs⟩ := A.sectionChartData.exists_section μ p (k + 1) w
   refine (A.sectionChartData.mem_sobolevSections_iff μ pstar k).2 ⟨s, fun i ↦ ?_⟩
   filter_upwards [A.sectionChartData.chartValueL_apply_ae μ pstar k i (D w),
     A.sectionChartData.chartValueL_apply_ae μ p (k + 1) i w,
-    ae_all_iff.2 fun m ↦ hG i m w, hs i] with y h₁ h₂ h₃ h₄
+    ae_all_iff.2 fun m ↦ hD w i m, hs i] with y h₁ h₂ h₃ h₄
   rw [h₁, ← h₄, h₂]
-  exact Finset.sum_congr rfl fun m _ ↦ by rw [← h₃ m]; rfl
+  exact Finset.sum_congr rfl fun m _ ↦ by rw [h₃ m]
 
 /-- **The Sobolev embedding for sections of a vector bundle.** On a compact manifold without
 boundary, given by a finite bundle atlas of a Hausdorff manifold of dimension `n`, if `1 ≤ p` and
