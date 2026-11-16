@@ -9,6 +9,7 @@ public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.GroupTheory.GroupAction.Transitive
 public import Mathlib.GroupTheory.Index
 public import Mathlib.GroupTheory.Perm.Cycle.Basic
+import Mathlib.Data.ZMod.QuotientGroup
 
 /-!
 # Transitive actions
@@ -43,6 +44,8 @@ assumed.
   transitive action of a group with as many elements as the finite set acted on is regular, so
   only the identity fixes a point.
 * `TauCeti.isPretransitive_prod_left`: a product with a subsingleton stays pretransitive.
+* `TauCeti.isPretransitive_of_prime_natCard_of_smul_ne`: an action on a set with a prime number
+  `p` of points is transitive as soon as some element with `p`-th power `1` moves a point.
 * `MonoidHom.isPretransitive_range_iff`: the image of a permutation representation is
   transitive exactly when every point is reached from a fixed base point.
 * `MonoidHom.isCycleOn_apply_of_zpowers_eq_top`: the image of a generator under a transitive
@@ -79,6 +82,31 @@ theorem isPretransitive_prod_left [IsPretransitive G X] [Subsingleton Y] :
   ⟨fun p q => (exists_smul_eq G p.1 q.1).imp fun _ hg => Prod.fst_injective hg⟩
 
 end SMul
+
+/-- **An element of prime order moving a point acts transitively in prime degree.** If a group
+acts on a set with a prime number `p` of points, and some element `g` with `g ^ p = 1` moves a
+point, then the action is transitive. -/
+theorem isPretransitive_of_prime_natCard_of_smul_ne {G X : Type*} [Group G] [MulAction G X]
+    (hp : (Nat.card X).Prime) {g : G} (hg : g ^ Nat.card X = 1) {x : X} (hx : g • x ≠ x) :
+    IsPretransitive G X := by
+  have : Finite X := Nat.finite_of_card_ne_zero hp.ne_zero
+  -- The orbit of `x` under the powers of `g` has more than one point, and their number divides
+  -- the order of `g`, hence the prime `p`: this orbit is the whole set.
+  have hdvd : (orbit (Subgroup.zpowers g) x).ncard ∣ Nat.card X := by
+    rw [← index_stabilizer]
+    exact (Subgroup.index_dvd_card _).trans
+      (by rw [Nat.card_zpowers]; exact orderOf_dvd_of_pow_eq_one hg)
+  have hne : (orbit (Subgroup.zpowers g) x).ncard ≠ 1 := fun h ↦ by
+    obtain ⟨z, hz⟩ := Set.ncard_eq_one.mp h
+    have h₁ : x ∈ orbit (Subgroup.zpowers g) x := mem_orbit_self x
+    have h₂ : g • x ∈ orbit (Subgroup.zpowers g) x := ⟨⟨g, Subgroup.mem_zpowers g⟩, rfl⟩
+    rw [hz] at h₁ h₂
+    exact hx (h₂.trans h₁.symm)
+  have huniv : orbit (Subgroup.zpowers g) x = Set.univ :=
+    (Set.eq_univ_iff_ncard _).mpr ((hp.eq_one_or_self_of_dvd _ hdvd).resolve_left hne)
+  refine IsPretransitive.of_orbit (x₀ := x) fun y ↦ ?_
+  obtain ⟨k, hk⟩ : y ∈ orbit (Subgroup.zpowers g) x := huniv ▸ Set.mem_univ y
+  exact ⟨k, hk⟩
 
 variable (G : Type*) {X : Type*} [Group G] [MulAction G X] [IsPretransitive G X]
 
