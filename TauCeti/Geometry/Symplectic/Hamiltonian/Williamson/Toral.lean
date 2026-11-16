@@ -124,12 +124,9 @@ theorem mem_span_of_forall_quadraticPoissonBracket_eq_zero
     (h : ω.IsNondegenerateQuadraticFamily Q) {R : QuadraticForm ℝ V}
     (hR : ∀ i, ω.quadraticPoissonBracket R (Q i) = 0) : R ∈ Submodule.span ℝ (Set.range Q) := by
   have := (isNondegenerateQuadraticFamily_iff Q).1 h
-  -- Two elements of `sp(V, ω)` have zero bracket exactly when they commute as endomorphisms.
   have hlie {S S' : QuadraticForm ℝ V} (hSS' : ω.quadraticPoissonBracket S S' = 0) :
       ⁅ω.hamiltonianEndEquiv S, ω.hamiltonianEndEquiv S'⁆ = 0 := by
-    rw [quadraticPoissonBracket_eq_zero_iff, commute_iff_lie_eq] at hSS'
-    exact Subtype.ext (by rw [coe_bracket, coe_hamiltonianEndEquiv_apply,
-      coe_hamiltonianEndEquiv_apply, hSS', ZeroMemClass.coe_zero])
+    rw [← hamiltonianEndEquiv_quadraticPoissonBracket, hSS', map_zero]
   -- The generators commute, so the Cartan subalgebra is their linear span.
   have hspan := coe_lieSpan_eq_span_of_forall_lie_eq_zero (R := ℝ)
     (s := Set.range fun i ↦ ω.hamiltonianEndEquiv (Q i)) <| by
