@@ -674,11 +674,7 @@ theorem plumbedTruncation_mono (q : Puncture) (L : ℝ) : Monotone (q.plumbedTru
   fun _ _ hRR' ↦ union_subset_union (inter_subset_inter_left _ (truncation_mono hRR'))
     (image_mono (inter_subset_inter_left _ (truncation_mono hRR')))
 
-/-- The truncations `Σ_R` exhaust the plumbed four-punctured sphere `ℂ ∖ {0, 1, ψ_{q,L}(1)}`. A
-point on which the longitudinal coordinate of the end `q` is at most `L / 2` lies in some
-truncation `S_R` of the receiving sphere; any other point is the image under the plumbing map of
-a point of the inserted sphere where the longitudinal coordinate of the end at `∞` is at least
-`-L / 2`. -/
+/-- The truncations `Σ_R` exhaust the plumbed four-punctured sphere `ℂ ∖ {0, 1, ψ_{q,L}(1)}`. -/
 theorem iUnion_plumbedTruncation {q : Puncture} (hq : q ≠ inf) {L : ℝ} (hL : 0 < L) :
     ⋃ R, q.plumbedTruncation L R = {w | (w ≠ 0 ∧ w ≠ 1) ∧ w ≠ q.plumbingMap L 1} := by
   refine (iUnion_subset (plumbedTruncation_subset hq hL)).antisymm fun w hw ↦ ?_

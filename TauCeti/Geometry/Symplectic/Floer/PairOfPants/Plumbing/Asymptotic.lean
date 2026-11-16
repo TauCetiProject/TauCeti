@@ -107,9 +107,7 @@ variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   {ω : SmoothTwoForm I M} {Ha Hb : Puncture → ℝ → M → ℝ} {q : Puncture} {L : ℝ}
 
 /-- Along a map continuous on the plumbed four-punctured sphere, the curvature of the plumbed
-perturbation of bounded Hamiltonians is integrable over the whole four-punctured sphere: it is
-integrable over each truncation `Σ_R`, which exhaust the sphere, and its integral over the plane is
-bounded. -/
+perturbation of bounded Hamiltonians is integrable over the whole four-punctured sphere. -/
 theorem integrableOn_hamiltonianCurvature_plumbedPerturbation (ω : SmoothTwoForm I M)
     (hq : q ≠ inf) (hHa : ∀ r, Periodic (Ha r) 1) (hHb : ∀ r, Periodic (Hb r) 1)
     (hHas : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Ha r)))
