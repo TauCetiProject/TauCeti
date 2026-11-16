@@ -16,7 +16,7 @@ Let `L` be a Lie algebra over a commutative ring `R`, and let `h, e, f : L` sati
 relations `⁅e, f⁆ = h`, `⁅h, e⁆ = (2 : R) • e`, and `⁅h, f⁆ = -((2 : R) • f)`. Inside
 `reesAlgebra R L`, the **deformed Casimir element**
 
-`reesSl2Casimir R L h e f = j(h)² + 2 * ħ * j(h) + 4 * j(f) * j(e)`
+`reesSl2Casimir R L h e f = j(h)² + 2 * t * j(h) + 4 * j(f) * j(e)`
 
 lifts the classical enveloping-algebra Casimir `ι(h)² + 2 ι(h) + 4 ι(f) ι(e)` into homogeneous
 Rees degree `2`. Using `reesDividedCommutator`, we show that `reesSl2Casimir R L h e f` commutes
@@ -26,7 +26,7 @@ ring `R` without characteristic or nontriviality assumptions.
 For `L = LieAlgebra.SpecialLinear.sl (Fin 2) R`, the standard triple
 `(slFinTwoBasis R 2, slFinTwoBasis R 0, slFinTwoBasis R 1)` spans `sl (Fin 2) R`, so
 `reesSl2Casimir` belongs to `Subalgebra.center R (reesAlgebra R (SpecialLinear.sl (Fin 2) R))`.
-Under `reesSpecializationZero`, the subleading `2 * ħ * j(h)` term vanishes while `j(f) * j(e)`
+Under `reesSpecializationZero`, the subleading `2 * t * j(h)` term vanishes while `j(f) * j(e)`
 specializes to `ι(e) * ι(f)`, yielding the Poisson-central quadratic polynomial
 
 `sl2CasimirSymbol R L h e f = ι(h)² + 4 * ι(e) * ι(f)`
@@ -36,7 +36,7 @@ in `lieInvariants R (SpecialLinear.sl (Fin 2) R) (SpecialLinear.sl (Fin 2) R)`. 
 
 ## Main definitions
 
-* `TauCeti.UniversalEnvelopingAlgebra.reesSl2Casimir`: `j(h)² + 2 * ħ * j(h) + 4 * j(f) * j(e)` in
+* `TauCeti.UniversalEnvelopingAlgebra.reesSl2Casimir`: `j(h)² + 2 * t * j(h) + 4 * j(f) * j(e)` in
   `reesAlgebra R L`.
 * `TauCeti.UniversalEnvelopingAlgebra.sl2CasimirSymbol`: `ι(h)² + 4 * ι(e) * ι(f)` in
   `SymmetricAlgebra R L`.
@@ -75,7 +75,7 @@ section AbstractTriple
 
 variable (R : Type u) (L : Type v) [CommRing R] [LieRing L] [LieAlgebra R L]
 
-/-- The **deformed `sl₂` Casimir element** `j(h)² + 2 * ħ * j(h) + 4 * j(f) * j(e)` in
+/-- The **deformed `sl₂` Casimir element** `j(h)² + 2 * t * j(h) + 4 * j(f) * j(e)` in
 `reesAlgebra R L`. -/
 noncomputable def reesSl2Casimir (h e f : L) : reesAlgebra R L :=
   reesGenerator R L h ^ 2 + 2 * reesParameter R L * reesGenerator R L h +

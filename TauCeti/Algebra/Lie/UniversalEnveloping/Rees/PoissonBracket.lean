@@ -45,7 +45,7 @@ formula `ξ ⁅b.symmetricGradient p ξ, b.symmetricGradient q ξ⁆`
 
 ## Main definitions
 
-* `TauCeti.UniversalEnvelopingAlgebra.reesDividedCommutator`: the divided commutator `(ab - ba)/ħ`
+* `TauCeti.UniversalEnvelopingAlgebra.reesDividedCommutator`: the divided commutator `(ab - ba)/t`
   on `reesAlgebra R L`, requiring no freeness hypothesis on `L`.
 * `TauCeti.UniversalEnvelopingAlgebra.reesZeroFiberBracket`: the induced Poisson bracket on
   `SymmetricAlgebra R L` when `[Module.Free R L]`.
@@ -59,7 +59,7 @@ formula `ξ ⁅b.symmetricGradient p ξ, b.symmetricGradient q ξ⁆`
   Jacobi identity of the divided commutator.
 * `TauCeti.UniversalEnvelopingAlgebra.exists_reesZeroFiberBracket`,
   `TauCeti.UniversalEnvelopingAlgebra.eq_reesZeroFiberBracket_of_commutator_eq`: existence and
-  uniqueness of the zero-fibre bracket characterized by `a * b - b * a = ħ * c`.
+  uniqueness of the zero-fibre bracket characterized by `a * b - b * a = t * c`.
 * `TauCeti.UniversalEnvelopingAlgebra.reesZeroFiberBracket_self`,
   `TauCeti.UniversalEnvelopingAlgebra.reesZeroFiberBracket_mul_left`,
   `TauCeti.UniversalEnvelopingAlgebra.reesZeroFiberBracket_mul_right`,
@@ -175,7 +175,7 @@ theorem reesDividedCommutator_mul_reesParameter (a b : reesAlgebra R L) :
     reesDividedCommutator R L a b * reesParameter R L = a * b - b * a := by
   rw [← (commute_reesParameter R L _).eq, reesParameter_mul_reesDividedCommutator]
 
-/-- `reesDividedCommutator R L a b` is the unique solution `c` to `a * b - b * a = ħ * c`. -/
+/-- `reesDividedCommutator R L a b` is the unique solution `c` to `a * b - b * a = t * c`. -/
 theorem reesDividedCommutator_eq_iff {a b c : reesAlgebra R L} :
     reesDividedCommutator R L a b = c ↔ a * b - b * a = reesParameter R L * c := by
   refine ⟨fun h ↦ by rw [← h, reesParameter_mul_reesDividedCommutator], fun h ↦ ?_⟩
@@ -425,7 +425,7 @@ theorem eq_reesZeroFiberBracket_of_commutator_eq {R L} [CommRing R]
 
 /-- On the zero fibre of the PBW Rees algebra of a Lie algebra that is free as a module over a
 commutative ring, the commutator divided by the central parameter defines an `R`-bilinear bracket on
-the symmetric algebra: whenever `a * b - b * a = ħ * c` in the Rees algebra, the bracket of the
+the symmetric algebra: whenever `a * b - b * a = t * c` in the Rees algebra, the bracket of the
 zero-fibre classes of `a` and `b` is the class of `c`. -/
 theorem exists_reesZeroFiberBracket (R : Type u) [CommRing R]
     (L : Type v) [LieRing L] [LieAlgebra R L] [Module.Free R L] :
