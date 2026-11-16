@@ -40,7 +40,7 @@ space `H²`, where `P` is the orthogonal projection onto `H²`. This file bundle
   `TauCeti.ker_toeplitz_fourierLp_neg_one`: the backward shift `S† = T_(e_{-1})` annihilates `e₀`,
   sends `eₙ₊₁` to `eₙ`, satisfies `S† ∘L S = id` and `S ∘L S† = id - P_{e₀}`, and is surjective with
   kernel `ℂ ∙ e₀`, while `S` has trivial kernel;
-* `TauCeti.toeplitz_fourierLp_neg_natCast_hardyBasis`,
+* `TauCeti.toeplitz_fourierLp_neg_natCast`, `TauCeti.toeplitz_fourierLp_neg_natCast_hardyBasis`,
   `TauCeti.toeplitz_fourierLp_neg_natCast_comp_natCast`: more generally, `(S†)ᵐ = T_(e_{-m})`
   sends `eₙ` to `eₙ₋ₘ` when `m ≤ n` and to `0` otherwise, and `(S†)ᵐ ∘L Sᵐ = id`;
 * `TauCeti.norm_toeplitz`: the operator norm of `T_a` is exactly `‖a‖∞`, so the symbol map is an
@@ -260,8 +260,16 @@ theorem toeplitz_fourierLp_neg (k : ℤ) :
       ContinuousLinearMap.adjoint (toeplitz (fourierLp (T := 1) ∞ k)) := by
   rw [adjoint_toeplitz, star_fourierLp]
 
+/-- The Toeplitz operator of the Fourier monomial `e_(-m)`, `m ≥ 0`, is the `m`th power of the
+backward shift `S† = T_{e_{-1}}`. -/
+theorem toeplitz_fourierLp_neg_natCast (m : ℕ) :
+    toeplitz (fourierLp (T := 1) ∞ (-(m : ℤ))) = toeplitz (fourierLp (T := 1) ∞ (-1)) ^ m := by
+  rw [toeplitz_fourierLp_neg, toeplitz_fourierLp_neg, toeplitz_fourierLp_natCast,
+    ← ContinuousLinearMap.star_eq_adjoint, ← ContinuousLinearMap.star_eq_adjoint, star_pow]
+
 /-- For `m ≥ 0`, the Toeplitz operator of `e_(-m)`, the `m`th power of the backward shift, lowers
 the Hardy basis vector `eₙ` to `eₙ₋ₘ` when `m ≤ n` and annihilates it otherwise. -/
+@[simp]
 theorem toeplitz_fourierLp_neg_natCast_hardyBasis (m n : ℕ) :
     toeplitz (fourierLp (T := 1) ∞ (-(m : ℤ))) (hardyBasis n) =
       if m ≤ n then hardyBasis (n - m) else 0 := by

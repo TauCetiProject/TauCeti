@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Fourier.Hardy.Compact
-public import TauCeti.Analysis.Fourier.Hardy.FiniteSection
-public import TauCeti.Analysis.Fourier.Hardy.Hankel.Classical
+public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.FiniteSection.Reflection
 
 /-!
 # Widom's identity for finite Toeplitz sections
@@ -56,37 +55,6 @@ open scoped ENNReal InnerProductSpace
 
 namespace TauCeti
 
-/-- **The upper corner of a Toeplitz operator.** The block of `T_a` from the coordinates beyond
-`n` to the first `n + 1` coordinates is `Pₙ T_a (1 - Pₙ) = Wₙ C_(a(-t)) (S†)ⁿ⁺¹`, where `S†`
-is the backward shift. Both sides have matrix entries `â(i - j)` for `i ≤ n < j` and vanish
-elsewhere. -/
-theorem finiteProjection_comp_toeplitz_comp_id_sub_finiteProjection
-    (a : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1))) (n : ℕ) :
-    hardyBasis.finiteProjection n ∘L toeplitz a ∘L
-        (ContinuousLinearMap.id ℂ HardySpace - hardyBasis.finiteProjection n) =
-      hardyBasis.finiteReflection n ∘L classicalHankel (Lp.compMeasurePreserving (fun t ↦ -t)
-        (Measure.measurePreserving_neg AddCircle.haarAddCircle) a) ∘L
-          toeplitz (fourierLp (T := 1) ∞ (-((n + 1 : ℕ) : ℤ))) := by
-  apply hardyBasis.ext_inner_apply hardyBasis
-  intro i j
-  simp only [ContinuousLinearMap.comp_apply]
-  rw [← ContinuousLinearMap.adjoint_inner_left (hardyBasis.finiteProjection n),
-    HilbertBasis.adjoint_finiteProjection,
-    ← ContinuousLinearMap.adjoint_inner_left (hardyBasis.finiteReflection n),
-    HilbertBasis.adjoint_finiteReflection, toeplitz_fourierLp_neg_natCast_hardyBasis]
-  by_cases hi : i ≤ n
-  · rw [HilbertBasis.finiteReflection_basis_of_le _ _ hi]
-    by_cases hj : j ≤ n
-    · simp [show i < n + 1 by omega, show j < n + 1 by omega, show ¬ n + 1 ≤ j by omega]
-    · simp only [HilbertBasis.finiteProjection_basis, show i < n + 1 by omega,
-        show ¬ j < n + 1 by omega, ite_true, ite_false, show n + 1 ≤ j by omega, sub_apply,
-        ContinuousLinearMap.id_apply, sub_zero, inner_hardyBasis_toeplitz_hardyBasis,
-        inner_hardyBasis_classicalHankel_hardyBasis, Lp.fourierCoeff_compMeasurePreserving_neg]
-      congr 1
-      omega
-  · rw [HilbertBasis.finiteReflection_basis_eq_zero _ _ (by omega)]
-    simp [show ¬ i < n + 1 by omega]
-
 /-- **The lower corner of a Toeplitz operator.** The block of `T_b` from the first `n + 1`
 coordinates to the coordinates beyond `n` is `(1 - Pₙ) T_b Pₙ = Sⁿ⁺¹ C_b Wₙ`, where `S` is the
 forward shift. Both sides have matrix entries `b̂(i - j)` for `j ≤ n < i` and vanish
@@ -117,6 +85,24 @@ theorem id_sub_finiteProjection_comp_toeplitz_comp_finiteProjection
       omega
   · rw [HilbertBasis.finiteReflection_basis_eq_zero _ _ (by omega)]
     simp [show ¬ j < n + 1 by omega]
+
+/-- **The upper corner of a Toeplitz operator.** The block of `T_a` from the coordinates beyond
+`n` to the first `n + 1` coordinates is `Pₙ T_a (1 - Pₙ) = Wₙ C_(a(-t)) (S†)ⁿ⁺¹`, where `S†`
+is the backward shift. Both sides have matrix entries `â(i - j)` for `i ≤ n < j` and vanish
+elsewhere. -/
+theorem finiteProjection_comp_toeplitz_comp_id_sub_finiteProjection
+    (a : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1))) (n : ℕ) :
+    hardyBasis.finiteProjection n ∘L toeplitz a ∘L
+        (ContinuousLinearMap.id ℂ HardySpace - hardyBasis.finiteProjection n) =
+      hardyBasis.finiteReflection n ∘L classicalHankel (Lp.compMeasurePreserving (fun t ↦ -t)
+        (Measure.measurePreserving_neg AddCircle.haarAddCircle) a) ∘L
+          toeplitz (fourierLp (T := 1) ∞ (-((n + 1 : ℕ) : ℤ))) := by
+  simpa only [ContinuousLinearMap.adjoint_comp, LinearIsometryEquiv.map_sub,
+    ContinuousLinearMap.adjoint_id,
+    HilbertBasis.adjoint_finiteProjection, HilbertBasis.adjoint_finiteReflection,
+    adjoint_toeplitz, adjoint_classicalHankel, star_fourierLp, star_star,
+    ContinuousLinearMap.comp_assoc] using congrArg ContinuousLinearMap.adjoint
+      (id_sub_finiteProjection_comp_toeplitz_comp_finiteProjection (star a) n)
 
 /-- The ring identity behind Widom's formula: splitting `A B` through `1 = P + (1 - P)`, the
 off-diagonal corners `P A (1 - P)` and `(1 - P) B P` factor through `U` and `S`, and `U S = 1`
