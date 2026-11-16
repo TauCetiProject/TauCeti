@@ -626,14 +626,12 @@ private theorem exists_retracted_transition_equiv [CompleteSpace F]
   obtain ⟨r, hr₁, hrW, hr0, hrs⟩ := exists_continuousMap_cylinder_retraction hs
     hβ.isOpen_setOf_clm_bundle_isInvertible
     (fun q hq ↦ by
-      change (β q).IsInvertible
-      rw [hβα q (Or.inl hq)]
+      rw [mem_ofPred_eq, hβα q (Or.inl hq)]
       simp only [α, hq.1, ↓reduceDIte]
       exact ⟨(Φ₀ (⟨q.1, hq.1⟩, q.2)).trans (Ψ₁ q).symm, rfl⟩)
     (fun ⟨x, t⟩ ⟨hx, ht⟩ ↦ by
       obtain rfl : t = 0 := ht
-      change (β (x, 0)).IsInvertible
-      rw [hβα (x, 0) (Or.inr ⟨hx, rfl⟩), hα0]
+      rw [mem_ofPred_eq, hβα (x, 0) (Or.inr ⟨hx, rfl⟩), hα0]
       exact ⟨ContinuousLinearEquiv.refl 𝕜 _, rfl⟩)
   choose γ hγ using fun q : X × I ↦ isInvertible_transport (hr₁ q) (hrW q)
   refine ⟨γ, (continuous_hom_bundle_comp_retraction hβ hr₁).congr fun q ↦
@@ -849,21 +847,6 @@ theorem _root_.ContinuousMap.Homotopic.exists_continuousLinearEquiv_pullback {f�
 
 end Free
 
-private theorem inCoordinates_transport_refl {𝕜 Y F : Type*} [NontriviallyNormedField 𝕜]
-    [TopologicalSpace Y] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-    {E : Y → Type*} [∀ y, AddCommGroup (E y)] [∀ y, Module 𝕜 (E y)]
-    [∀ y, TopologicalSpace (E y)] [TopologicalSpace (TotalSpace F E)]
-    [FiberBundle F E] [VectorBundle 𝕜 F E]
-    {y₀ y₀' y₁ y₁' : Y} (hy₀ : y₀ = y₀') (hy₁ : y₁ = y₁')
-    (hq : y₁ ∈ (trivializationAt F E y₀).baseSet) :
-    inCoordinates F E F E y₀ y₁ y₀' y₁'
-      ((hy₁ ▸ ContinuousLinearEquiv.refl 𝕜 (E y₁) : E y₁ ≃L[𝕜] E y₁')) =
-      ContinuousLinearMap.id 𝕜 F := by
-  cases hy₀
-  cases hy₁
-  ext v
-  simp [inCoordinates, Trivialization.continuousLinearMapAt_symmL _ hq]
-
 section Relative
 
 universe u v w z
@@ -923,7 +906,8 @@ private theorem continuous_hom_bundle_stationary_pullback (G : C(X × I, Y)) {s 
     simp only [trivializationAt, FiberBundle.pullback_trivializationAt',
       Trivialization.continuousLinearEquivAt_pullback]
     rfl
-  exact (hcoord.trans (inCoordinates_transport_refl (hs q₀.1 q₀.2) (hs q.1 q.2) hq)).symm
+  exact (hcoord.trans
+    (ContinuousLinearMap.inCoordinates_transport_refl (hs q₀.1 q₀.2) (hs q.1 q.2) hq)).symm
 
 /-- Endpoint form of the relative cylinder theorem along `G : C(X × I, Y)` stationary on `s`. -/
 private theorem exists_continuousLinearEquiv_pullback_rel_of_eq (G : C(X × I, Y)) {s : Set X}
@@ -946,7 +930,7 @@ private theorem exists_continuousLinearEquiv_pullback_rel_of_eq (G : C(X × I, Y
     (fun x ↦ rfl)
   obtain ⟨hfwd, hinv⟩ := continuous_pullback_slice_one G hΦ₁ hΦ₂
   refine ⟨fun x ↦ Φ (x, 1), hfwd, hinv, fun x hx v ↦ ?_⟩
-  change (⟨G (x, 1), Φ (x, 1) v⟩ : TotalSpace F E) = ⟨G (x, 0), v⟩
+  dsimp only
   rw [hΦs ⟨x, hx⟩ 1]
   exact totalSpace_mk_eq_of_eq (hGs' ⟨x, hx⟩ 1) v
 
