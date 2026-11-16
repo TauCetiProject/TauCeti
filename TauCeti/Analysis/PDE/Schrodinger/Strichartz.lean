@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Schrodinger.Dispersive
 public import TauCeti.Analysis.PDE.Strichartz.TTStar
 import TauCeti.Data.ENNReal.Inv
+import TauCeti.MeasureTheory.Integral.Prod
 
 /-!
 # Strichartz estimates for the Schrödinger equation

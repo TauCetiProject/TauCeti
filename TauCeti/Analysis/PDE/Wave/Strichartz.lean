@@ -10,6 +10,7 @@ public import TauCeti.Analysis.PDE.Wave.Dispersive
 import TauCeti.Analysis.Distribution.SchwartzSpace.LittlewoodPaley
 import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Function.Lp.Star
+import TauCeti.MeasureTheory.Integral.Prod
 import TauCeti.MeasureTheory.Integral.RieszThorin
 
 /-!
