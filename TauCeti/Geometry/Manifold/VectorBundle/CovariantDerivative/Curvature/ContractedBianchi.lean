@@ -5,12 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.BilinearTensor
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.DifferentiatedSymmetries
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Derivative.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar
-import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
-import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LocalFrame
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Trace
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
@@ -98,16 +95,12 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] {H : Type*} [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M]
   [ChartedSpace H M] [T2Space M] [IsManifold I ∞ M]
-  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
   {cov : CovariantDerivative I E (fun x : M ↦ TangentSpace I x)}
   [ContMDiffCovariantDerivative cov ∞]
 
 local notation "curvature" => cov.curvatureTensor (I := I) (M := M) (F := E)
   (V := TangentSpace I)
 
-omit [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
 /-- Near `x`, the Ricci tensor `Ric(B, C)` is the trace `∑ₖ cₖ(R(Fₖ, B) C)` in a frame `F` of
 globally smooth fields agreeing with the local frame of `e`, so its derivative at `x` is the
 sum of the derivatives of the coefficient functions. -/
@@ -148,8 +141,6 @@ private theorem mvfderiv_ricciTensor_eq_sum_localFrameCoeff
   -- The tangent spaces of `ℝ` in which `mfderiv` takes values are `ℝ` itself.
   exact _root_.sum_apply ..
 
-omit [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
 /-- The local frame formula for `∇_v (R(Fₖ, B) C)`, read in the `k`-th coordinate of a frame `F`
 of globally smooth fields agreeing with the local frame of `e` near `x`. -/
 private theorem localFrameCoeff_cov_curvatureOperator
@@ -193,8 +184,6 @@ private theorem localFrameCoeff_cov_curvatureOperator
     ite_true, hpi, hsx] at h
   exact h
 
-omit [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
 /-- Contracting `(∇_v R)(·, B) C` against the output, in a local frame at `x`, gives the
 covariant derivative `(∇_v Ric)(B, C) = v (Ric(B, C)) - Ric(∇_v B, C) - Ric(B, ∇_v C)` of the
 Ricci tensor. The frame is a family of global smooth vector fields `F` forming a basis at `x`,
@@ -209,7 +198,6 @@ theorem exists_frame_sum_derivCurvatureTensor (x : M) :
         ∑ i, c i (cov.derivCurvatureTensor cov x v (F i x) (B x) (C x)) =
           mvfderiv I (fun y ↦ cov.ricciTensor y (B y) (C y)) x v -
             cov.ricciTensor x (cov B x v) (C x) - cov.ricciTensor x (B x) (cov C x v) := by
-  classical
   -- Write `Ric(B, C) = ∑ₖ cₖ(R(Fₖ, B) C)` near `x` and differentiate each coefficient by the local
   -- frame formula. The terms coming from `∇_v Fₖ` cancel against those of `(∇_v R)(Fₖ, B) C`,
   -- which is the statement that the trace commutes with covariant differentiation.
@@ -296,7 +284,6 @@ theorem derivRicciTensor_eq_trace (x : M) (u w v : TangentSpace I x) :
     cov.derivRicciTensor x u w v =
       LinearMap.trace ℝ (TangentSpace I x)
         (((cov.derivCurvatureTensor cov x v).flip u).flip w) := by
-  classical
   obtain ⟨F, c, -, -, hsum, htr⟩ := exists_frame_sum_derivCurvatureTensor (cov := cov) x
   obtain ⟨B, hB, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ u
   obtain ⟨C, hC, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ w
