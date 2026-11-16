@@ -263,6 +263,140 @@ theorem isAffineOpen_basicOpen (A : Type u) [CommRing A] [TopologicalSpace A]
     inferInstance, Spf.basicOpenι f,
     Spf.isOpenImmersion_basicOpenι f, Spf.range_basicOpenι f⟩
 
+instance (X : FormalScheme) : Subsingleton (X.presheaf.obj (Opposite.op (⊥ : Opens X))) :=
+  CommRingCat.subsingleton_of_isTerminal X.sheaf.isTerminalOfEmpty
+
+/-- Every affine formal scheme `ofSpf A` has a quasi-compact underlying space. -/
+instance compactSpace_ofSpf (A : Type u) [CommRing A] [TopologicalSpace A]
+    [IsTopologicalRing A] [IsAdicRing A] : CompactSpace (ofSpf A) :=
+  Spf.compactSpace_carrier (IsAdicRing.ideal_spec A).2.1
+
+/-- Every affine formal open of a formal scheme is quasi-compact. -/
+theorem IsAffineOpen.isCompact {X : FormalScheme} {U : Opens X} (hU : X.IsAffineOpen U) :
+    IsCompact (U : Set X) := by
+  obtain ⟨A, _, _, _, _, ⟨e⟩⟩ := (isAffineOpen_iff X U).mp hU
+  have : CompactSpace (LocallyRingedSpace.forgetToTop.obj (Spf A)) :=
+    Spf.compactSpace_carrier (IsAdicRing.ideal_spec A).2.1
+  have : CompactSpace U :=
+    (TopCat.homeoOfIso (LocallyRingedSpace.forgetToTop.mapIso e)).symm.compactSpace
+  exact isCompact_iff_compactSpace.mpr inferInstance
+
+/-- The affine formal opens of `X` cover `X`. -/
+theorem iSup_affineOpens_eq_top (X : FormalScheme) :
+    (⨆ U : {U : Opens X // X.IsAffineOpen U}, U.1) = ⊤ :=
+  eq_top_iff.mpr fun x _ ↦ by
+    obtain ⟨U, hU, hx, -⟩ := Opens.isBasis_iff_nbhd.mp X.isBasis_affineOpens (Opens.mem_top x)
+    exact Opens.mem_iSup.mpr ⟨⟨U, hU⟩, hx⟩
+
+/-- Every quasi-compact formal scheme admits a finite cover by affine formal opens. -/
+theorem exists_finite_affine_cover (X : FormalScheme) [CompactSpace X] :
+    ∃ (n : ℕ) (U : Fin n → Opens X), (∀ i, X.IsAffineOpen (U i)) ∧ ⨆ i, U i = ⊤ := by
+  classical
+  obtain ⟨Us, hsub, hfin, htop⟩ :=
+    X.isBasis_affineOpens.exists_finite_of_isCompact (U := ⊤) isCompact_univ
+  let e := hfin.toFinset.equivFin
+  refine ⟨_, fun i ↦ (e.symm i).1, fun i ↦ hsub (hfin.mem_toFinset.mp (e.symm i).2),
+    eq_top_iff.mpr fun x _ ↦ ?_⟩
+  obtain ⟨V, hV, hxV⟩ := Opens.mem_sSup.mp (htop ▸ Opens.mem_top x)
+  exact Opens.mem_iSup.mpr ⟨e ⟨V, hfin.mem_toFinset.mpr hV⟩, by simpa using hxV⟩
+
+/-- An affine formal open `U` of `X` makes `⊤` an affine formal open of `X.restrict U`. -/
+theorem IsAffineOpen.top_restrict {X : FormalScheme} {U : Opens X} (hU : X.IsAffineOpen U) :
+    (X.restrict U).IsAffineOpen ⊤ := by
+  obtain ⟨A, _, _, _, _, ⟨e⟩⟩ := (isAffineOpen_iff X U).mp hU
+  rw [isAffineOpen_iff]
+  exact ⟨A, inferInstance, inferInstance, inferInstance, inferInstance,
+    ⟨(X.restrict U).toLocallyRingedSpace.restrictTopIso ≪≫ e⟩⟩
+
+/-- Sections over `⊤` on the open restriction `X.restrict U` agree with sections of `X` over `U`. -/
+noncomputable def restrictTopSectionsIso (X : FormalScheme) (U : Opens X) :
+    (X.restrict U).presheaf.obj (Opposite.op ⊤) ≅ X.presheaf.obj (Opposite.op U) :=
+  X.presheaf.mapIso (eqToIso (congrArg Opposite.op (Opens.isOpenEmbedding_obj_top U)))
+
+-- Keep `_hom` and `_inv` explicit so `@[simp]` lemmas on `restrictTopSectionsIso` are not
+-- preempted.
+theorem restrictTopSectionsIso_hom (X : FormalScheme) (U : Opens X) :
+    (restrictTopSectionsIso X U).hom =
+      X.presheaf.map (eqToHom (congrArg Opposite.op (Opens.isOpenEmbedding_obj_top U))) :=
+  (rfl)
+
+theorem restrictTopSectionsIso_inv (X : FormalScheme) (U : Opens X) :
+    (restrictTopSectionsIso X U).inv =
+      X.presheaf.map (eqToHom (congrArg Opposite.op (Opens.isOpenEmbedding_obj_top U)).symm) :=
+  (rfl)
+
+/-- On global sections, `X.ofRestrict U` followed by `restrictTopSectionsIso X U` is the
+presheaf restriction from `⊤` to `U`. -/
+@[reassoc (attr := simp)]
+theorem ofRestrict_c_app_top_comp_restrictTopSectionsIso_hom (X : FormalScheme) (U : Opens X) :
+    (forgetToLocallyRingedSpace.map (X.ofRestrict U)).c.app (Opposite.op ⊤) ≫
+        (restrictTopSectionsIso X U).hom =
+      X.presheaf.map (homOfLE le_top).op := by
+  have hjc : (forgetToLocallyRingedSpace.map (X.ofRestrict U)).c.app (Opposite.op ⊤) =
+      (X.toPresheafedSpace.ofRestrict U.isOpenEmbedding).c.app (Opposite.op ⊤) := rfl
+  rw [hjc, PresheafedSpace.ofRestrict_c_app, restrictTopSectionsIso_hom]
+  exact (X.presheaf.map_comp _ _).symm.trans (congrArg X.presheaf.map (Subsingleton.elim _ _))
+
+/-- Global sections of `ofSpf A` are isomorphic to `A`. This wraps `Spf.globalSectionsIso` with
+syntactic source `(ofSpf A).presheaf.obj (op ⊤)`. -/
+noncomputable def ofSpfGlobalSectionsIso (A : Type u) [CommRing A] [TopologicalSpace A]
+    [IsTopologicalRing A] [IsAdicRing A] :
+    (ofSpf A).presheaf.obj (Opposite.op ⊤) ≅ CommRingCat.of A :=
+  haveI := (IsAdicRing.ideal_spec A).2.2
+  Spf.globalSectionsIso (IsAdicRing.ideal_spec A).2.1
+
+-- Keep these bridge lemmas explicit so `@[simp]` lemmas on `ofSpfGlobalSectionsIso` (such as
+-- `IsAffineOpen.isoSpf_inv_globalSections`) remain in simp normal form.
+theorem ofSpfGlobalSectionsIso_eq (A : Type u) [CommRing A] [TopologicalSpace A]
+    [IsTopologicalRing A] [IsAdicRing A] :
+    have := (IsAdicRing.ideal_spec A).2.2
+    ofSpfGlobalSectionsIso A = Spf.globalSectionsIso (IsAdicRing.ideal_spec A).2.1 :=
+  (rfl)
+
+theorem ofSpfGlobalSectionsIso_hom (A : Type u) [CommRing A] [TopologicalSpace A]
+    [IsTopologicalRing A] [IsAdicRing A] :
+    have := (IsAdicRing.ideal_spec A).2.2
+    (ofSpfGlobalSectionsIso A).hom = (Spf.globalSectionsIso (IsAdicRing.ideal_spec A).2.1).hom :=
+  (rfl)
+
+theorem ofSpfGlobalSectionsIso_inv (A : Type u) [CommRing A] [TopologicalSpace A]
+    [IsTopologicalRing A] [IsAdicRing A] :
+    have := (IsAdicRing.ideal_spec A).2.2
+    (ofSpfGlobalSectionsIso A).inv = (Spf.globalSectionsIso (IsAdicRing.ideal_spec A).2.1).inv :=
+  (rfl)
+
+/-- Being an affine formal scheme (`IsAffineOpen ⊤`) is preserved under isomorphism. -/
+theorem isAffineOpen_top_of_iso {X Y : FormalScheme} (e : X ≅ Y) (hX : X.IsAffineOpen ⊤) :
+    Y.IsAffineOpen ⊤ := by
+  obtain ⟨A, _, _, _, _, ⟨eA⟩⟩ := (isAffineOpen_iff X ⊤).mp hX
+  let eRestr : Y.restrict ⊤ ≅ X.restrict ⊤ := Y.restrictTopIso ≪≫ e.symm ≪≫ X.restrictTopIso.symm
+  exact (isAffineOpen_iff Y ⊤).mpr
+    ⟨A, inferInstance, inferInstance, inferInstance, inferInstance,
+      ⟨forgetToLocallyRingedSpace.mapIso eRestr ≪≫ eA⟩⟩
+
+/-- Two isomorphic formal schemes have `⊤` affine simultaneously. -/
+theorem isAffineOpen_top_iff_of_iso {X Y : FormalScheme} (e : X ≅ Y) :
+    X.IsAffineOpen ⊤ ↔ Y.IsAffineOpen ⊤ :=
+  ⟨isAffineOpen_top_of_iso e, isAffineOpen_top_of_iso e.symm⟩
+
+/-- The isomorphism on global sections `Γ(Y, O_Y) ≅ Γ(X, O_X)` induced by an isomorphism
+`e : X ≅ Y` of formal schemes. -/
+noncomputable def globalSectionsIsoOfIso {X Y : FormalScheme} (e : X ≅ Y) :
+    Y.presheaf.obj (Opposite.op ⊤) ≅ X.presheaf.obj (Opposite.op ⊤) :=
+  LocallyRingedSpace.Γ.mapIso (forgetToLocallyRingedSpace.mapIso e).op
+
+@[simp]
+theorem globalSectionsIsoOfIso_hom {X Y : FormalScheme} (e : X ≅ Y) :
+    (globalSectionsIsoOfIso e).hom =
+      (forgetToLocallyRingedSpace.map e.hom).c.app (Opposite.op ⊤) :=
+  (rfl)
+
+@[simp]
+theorem globalSectionsIsoOfIso_inv {X Y : FormalScheme} (e : X ≅ Y) :
+    (globalSectionsIsoOfIso e).inv =
+      (forgetToLocallyRingedSpace.map e.inv).c.app (Opposite.op ⊤) :=
+  (rfl)
+
 end FormalScheme
 end TauCeti
 

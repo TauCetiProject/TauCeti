@@ -12,7 +12,8 @@ public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.SectionsTopology
 
 import Mathlib.Algebra.Ring.TransferInstance
 import Mathlib.AlgebraicGeometry.Morphisms.QuasiCompact
-import Mathlib.RingTheory.AdicCompletion.Topology
+import TauCeti.Geometry.RingedSpace.LocallyRingedSpace.ResidueField
+import TauCeti.Topology.Algebra.Ring.Basic
 import TauCeti.Topology.Discrete
 
 /-!
@@ -34,9 +35,6 @@ is an affine scheme open of `Y`.
 
 ## Main definitions
 
-* `TauCeti.FormalScheme.restrictTopSectionsIso`: identification of `Γ(⊤, O_{X|_U})` with
-  `Γ(U, O_X)`.
-* `TauCeti.FormalScheme.ofSpfGlobalSectionsIso`: identification of `Γ(⊤, O_{ofSpf A})` with `A`.
 * `TauCeti.FormalScheme.vanishingIdeal`: the radical ideal in `Γ(U, O_X)` of sections vanishing in
   the residue field at every point of `U`.
 * `TauCeti.FormalScheme.sectionsTopology`: the intrinsic adic topology on `Γ(U, O_X)` for an
@@ -54,6 +52,9 @@ is an affine scheme open of `Y`.
 * `TauCeti.FormalScheme.sectionsTopology_isTopologicalRing`,
   `TauCeti.FormalScheme.sectionsTopology_isAdicRing`: equipped with `X.sectionsTopology U hU`,
   `Γ(U, O_X)` is a topological ring and an `IsAdicRing`.
+* `TauCeti.FormalScheme.isHomeomorph_sectionsTopology_of_isAdic`,
+  `TauCeti.FormalScheme.isHomeomorph_sectionsTopology_of_comap_vanishingIdeal`: general criteria
+  identifying `sectionsTopology` along ring equivalences into adic rings or between affine opens.
 * `TauCeti.FormalScheme.sectionsTopology_ofSpf_top`,
   `TauCeti.FormalScheme.isHomeomorph_ofSpfGlobalSectionsIso`: on `ofSpf A`, the intrinsic global
   section topology agrees with `Spf.sectionsTopology` and makes `ofSpfGlobalSectionsIso A` a
@@ -63,9 +64,9 @@ is an affine scheme open of `Y`.
   open has discrete section topology, and the affine formal opens of `Y.toFormalScheme` are
   precisely the affine scheme opens of `Y`.
 * `TauCeti.FormalScheme.isHomeomorph_globalSections_of_iso`,
-  `TauCeti.FormalScheme.exists_iso_toFormalScheme_iff`: `sectionsTopology` on global sections is
-  invariant under isomorphisms of affine formal schemes, and `ofSpf A` lies in the essential image
-  of `Scheme.toFormalScheme` (`ofScheme`) if and only if `A` carries the discrete topology.
+  `TauCeti.FormalScheme.exists_ofSpf_iso_toFormalScheme_iff`: `sectionsTopology` on global sections
+  is invariant under isomorphisms of affine formal schemes, and `ofSpf A` lies in the essential
+  image of `Scheme.toFormalScheme` (`ofScheme`) if and only if `A` carries the discrete topology.
 
 ## References
 
@@ -82,122 +83,16 @@ universe u
 
 namespace TauCeti.FormalScheme
 
-instance (X : FormalScheme) : Subsingleton (X.presheaf.obj (op (⊥ : Opens X))) :=
-  CommRingCat.subsingleton_of_isTerminal X.sheaf.isTerminalOfEmpty
-
-namespace Spf
-
-/-- On `Spf A`, the global section corresponding to `a ∈ A` vanishes in the residue field at an
-open prime `p` if and only if `a ∈ p`. -/
-theorem Γevaluation_globalSectionsIso_inv_eq_zero_iff {A : Type u} [CommRing A]
-    [TopologicalSpace A] [IsTopologicalRing A] [IsAdicRing A] (p : carrier A) (a : A) :
-    have := (IsAdicRing.ideal_spec A).2.2
-    (Spf A).Γevaluation p ((globalSectionsIso (IsAdicRing.ideal_spec A).2.1).inv a) = 0 ↔
-      a ∈ (p : PrimeSpectrum A).asIdeal := by
-  intro
-  have hIfg := (IsAdicRing.ideal_spec A).1
-  have hI := (IsAdicRing.ideal_spec A).2.1
-  let pLRS : Spf A := p
-  let f₁ : BasicNeighbourhood p := ⟨1, p.1.isPrime.one_notMem⟩
-  let s := (globalSectionsIso hI).inv a
-  have hmor : (globalSectionsIso hI).inv ≫
-      (structureSheaf hI).obj.map (homOfLE (le_top : basicOpen (1 : A) ≤ ⊤)).op =
-      CommRingCat.ofHom (algebraMap A (AdicRing.CompletedAway A 1)) ≫
-        (basicOpenSectionsIso hI hIfg 1).inv := by
-    rw [Iso.eq_comp_inv, Category.assoc]
-    exact globalSectionsIso_inv_comp_basicOpenSectionsIso_hom hI hIfg 1
-  have hres : (basicOpenSectionsIso hI hIfg 1).inv (algebraMap A (AdicRing.CompletedAway A 1) a) =
-      (structureSheaf hI).obj.map (homOfLE (le_top : basicOpen (1 : A) ≤ ⊤)).op s := by
-    have h := (ConcreteCategory.congr_hom hmor a).symm
-    rwa [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply] at h
-  have hgerm : TopCat.Presheaf.germ (C := CommRingCat) (structureSheaf hI).obj (basicOpen 1) p
-      (mem_basicOpen.mpr f₁.notMem)
-      ((basicOpenSectionsIso hI hIfg 1).inv (algebraMap A (AdicRing.CompletedAway A 1) a)) =
-      TopCat.Presheaf.germ (C := CommRingCat) (structureSheaf hI).obj ⊤ p trivial s := by
-    rw [hres]
-    exact TopCat.Presheaf.germ_res_apply (structureSheaf hI).obj
-      (homOfLE (le_top : basicOpen (1 : A) ≤ ⊤)) p (mem_basicOpen.mpr f₁.notMem) s
-  have heval : stalkResidueFieldEquiv p ((Spf A).Γevaluation pLRS s) =
-      algebraMap (A ⧸ (p : PrimeSpectrum A).asIdeal)
-        (FractionRing (A ⧸ (p : PrimeSpectrum A).asIdeal)) (Ideal.Quotient.mk _ a) := by
-    -- Unfold `Γevaluation` on `Spf A` to `(Spf A).residue` of the germ on `structureSheaf`.
-    change stalkResidueFieldEquiv p ((Spf A).residue pLRS
-      (TopCat.Presheaf.germ (C := CommRingCat) (structureSheaf hI).obj ⊤ p trivial s)) = _
-    rw [← hgerm]
-    exact stalkResidueFieldEquiv_residue_germ f₁ a
-  rw [← map_eq_zero_iff (stalkResidueFieldEquiv p) (RingEquiv.injective _), heval,
-    IsFractionRing.to_map_eq_zero_iff, Ideal.Quotient.eq_zero_iff_mem]
-
-end Spf
-
 section VanishingIdeal
-
-/-- Sections over `⊤` on the open restriction `X.restrict U` agree with sections of `X` over `U`. -/
-noncomputable def restrictTopSectionsIso (X : FormalScheme) (U : Opens X) :
-    (X.restrict U).presheaf.obj (op ⊤) ≅ X.presheaf.obj (op U) :=
-  X.presheaf.mapIso (eqToIso (congrArg op (Opens.isOpenEmbedding_obj_top U)))
-
-/-- Global sections of `ofSpf A` are isomorphic to `A`. This wraps `Spf.globalSectionsIso` with
-syntactic source `(ofSpf A).presheaf.obj (op ⊤)`. -/
-noncomputable def ofSpfGlobalSectionsIso (A : Type u) [CommRing A] [TopologicalSpace A]
-    [IsTopologicalRing A] [IsAdicRing A] :
-    (ofSpf A).presheaf.obj (op ⊤) ≅ CommRingCat.of A :=
-  haveI := (IsAdicRing.ideal_spec A).2.2
-  Spf.globalSectionsIso (IsAdicRing.ideal_spec A).2.1
-
-/-- A residue-field map induced by a morphism of locally ringed spaces reflects zero. -/
-private theorem residueFieldMap_eq_zero_iff {X Y : LocallyRingedSpace.{u}} (f : X ⟶ Y) (x : X)
-    (a : Y.residueField (f.base x)) :
-    LocallyRingedSpace.residueFieldMap f x a = 0 ↔ a = 0 :=
-  map_eq_zero_iff (IsLocalRing.ResidueField.map (f.stalkMap x).hom) (RingHom.injective _)
-
-private theorem lrs_Γevaluation_restrictTop_eq_zero_iff (L : LocallyRingedSpace.{u})
-    (U : Opens L) (x : L.restrict U.isOpenEmbedding) (s : L.presheaf.obj (op U)) :
-    (L.restrict U.isOpenEmbedding).Γevaluation x
-        (L.presheaf.map (eqToHom (congrArg op (Opens.isOpenEmbedding_obj_top U)).symm) s) = 0 ↔
-      L.evaluation ⟨x.1, x.2⟩ s = 0 := by
-  let j : L.restrict U.isOpenEmbedding ⟶ L := L.ofRestrict U.isOpenEmbedding
-  have hU : (Opens.map j.base).obj U = (⊤ : Opens (L.restrict U.isOpenEmbedding)) :=
-    Opens.inclusion'_map_eq_top U
-  have hxU : x ∈ (Opens.map j.base).obj U := x.2
-  let sTop := L.presheaf.map (eqToHom (congrArg op (Opens.isOpenEmbedding_obj_top U)).symm) s
-  have hmap : L.presheaf.map (eqToHom (congrArg op (Opens.isOpenEmbedding_obj_top U)).symm) ≫
-      (L.restrict U.isOpenEmbedding).presheaf.map (homOfLE hU.le).op = j.c.app (op U) := by
-    have hjc : j.c.app (op U) = (L.toPresheafedSpace.ofRestrict U.isOpenEmbedding).c.app (op U) :=
-      rfl
-    rw [hjc, PresheafedSpace.ofRestrict_c_app]
-    -- Merge restriction maps of `L.restrict` and `L` on the thin category `(Opens L)ᵒᵖ`.
-    erw [← L.presheaf.map_comp]
-    exact congrArg L.presheaf.map (Subsingleton.elim _ _)
-  have hs : j.c.app (op U) s =
-      (L.restrict U.isOpenEmbedding).presheaf.map (homOfLE hU.le).op sTop :=
-    (ConcreteCategory.congr_hom hmap s).symm.trans (CommRingCat.comp_apply _ _ s)
-  have hgerm : (L.restrict U.isOpenEmbedding).presheaf.germ ((Opens.map j.base).obj U) x hxU
-      (j.c.app (op U) s) =
-      (L.restrict U.isOpenEmbedding).presheaf.germ ⊤ x trivial sTop := by
-    rw [hs]
-    exact TopCat.Presheaf.germ_res_apply (L.restrict U.isOpenEmbedding).presheaf
-      (homOfLE hU.le) x hxU sTop
-  have heval : (L.restrict U.isOpenEmbedding).evaluation ⟨x, hxU⟩ (j.c.app (op U) s) =
-      (L.restrict U.isOpenEmbedding).Γevaluation x sTop := by
-    -- Unfold `evaluation` and `Γevaluation` to `(L.restrict _).residue x` applied to the germ.
-    change (L.restrict U.isOpenEmbedding).residue x
-      ((L.restrict U.isOpenEmbedding).presheaf.germ ((Opens.map j.base).obj U) x hxU
-        (j.c.app (op U) s)) =
-      (L.restrict U.isOpenEmbedding).residue x
-        ((L.restrict U.isOpenEmbedding).presheaf.germ ⊤ x trivial sTop)
-    rw [hgerm]
-  rw [← heval, ← LocallyRingedSpace.evaluation_naturality_apply j ⟨x, hxU⟩ s,
-    residueFieldMap_eq_zero_iff]
-  rfl
 
 /-- Evaluating the restricted global section corresponding to `s ∈ Γ(U, O_X)` at `x ∈ X.restrict U`
 vanishes if and only if evaluating `s` at `x` on `X` vanishes. -/
 theorem Γevaluation_restrictTopSectionsIso_inv_eq_zero_iff (X : FormalScheme) (U : Opens X)
     (x : X.restrict U) (s : X.presheaf.obj (op U)) :
     (X.restrict U).toLocallyRingedSpace.Γevaluation x ((restrictTopSectionsIso X U).inv s) = 0 ↔
-      X.toLocallyRingedSpace.evaluation ⟨x.1, x.2⟩ s = 0 :=
-  lrs_Γevaluation_restrictTop_eq_zero_iff X.toLocallyRingedSpace U x s
+      X.toLocallyRingedSpace.evaluation ⟨x.1, x.2⟩ s = 0 := by
+  rw [restrictTopSectionsIso_inv]
+  exact LocallyRingedSpace.Γevaluation_restrict_eq_zero_iff X.toLocallyRingedSpace U x s
 
 /-- The ideal of sections over `U` vanishing in the residue field at every point of `U`. -/
 noncomputable def vanishingIdeal (X : FormalScheme) (U : Opens X) :
@@ -212,7 +107,7 @@ theorem mem_vanishingIdeal {X : FormalScheme} {U : Opens X} {s : X.presheaf.obj 
 theorem mem_vanishingIdeal_top {X : FormalScheme} {s : X.presheaf.obj (op ⊤)} :
     s ∈ X.vanishingIdeal ⊤ ↔ ∀ x : X, X.toLocallyRingedSpace.Γevaluation x s = 0 := by
   rw [mem_vanishingIdeal]
-  exact ⟨fun h x ↦ h ⟨x, trivial⟩, fun h ⟨x, _⟩ ↦ h x⟩
+  exact ⟨fun h x ↦ h ⟨x, Opens.mem_top x⟩, fun h ⟨x, _⟩ ↦ h x⟩
 
 /-- The vanishing ideal on any open is radical, being an intersection of prime ideals. -/
 theorem isRadical_vanishingIdeal (X : FormalScheme) (U : Opens X) :
@@ -228,9 +123,59 @@ theorem radical_vanishingIdeal (X : FormalScheme) (U : Opens X) :
     (X.vanishingIdeal U).radical = X.vanishingIdeal U :=
   (X.isRadical_vanishingIdeal U).radical
 
+/-- Any morphism `f : X ⟶ Y` of formal schemes sends `Y.vanishingIdeal V` into the vanishing ideal
+of `f ⁻¹' V` on `X`. -/
+theorem vanishingIdeal_le_comap {X Y : FormalScheme} (f : X ⟶ Y) (V : Opens Y) :
+    Y.vanishingIdeal V ≤
+      (X.vanishingIdeal ((Opens.map (forgetToLocallyRingedSpace.map f).base).obj V)).comap
+        ((forgetToLocallyRingedSpace.map f).c.app (op V)).hom := by
+  let fLRS : X.toLocallyRingedSpace ⟶ Y.toLocallyRingedSpace := f.hom
+  intro s hs
+  refine Ideal.mem_comap.mpr (mem_vanishingIdeal.mpr fun x ↦ ?_)
+  exact (LocallyRingedSpace.evaluation_naturality_apply fLRS x s).symm.trans
+    ((LocallyRingedSpace.residueFieldMap_eq_zero_iff fLRS x.1 _).mpr
+      (mem_vanishingIdeal.mp hs ⟨fLRS.base x.1, x.2⟩))
+
+/-- If `V ⊆ Set.range f.base`, the preimage of `X.vanishingIdeal (f ⁻¹' V)` along `f.c.app (op V)`
+equals `Y.vanishingIdeal V`. -/
+theorem comap_vanishingIdeal_of_subset_range {X Y : FormalScheme} (f : X ⟶ Y) {V : Opens Y}
+    (hV : (V : Set Y) ⊆ Set.range (forgetToLocallyRingedSpace.map f).base) :
+    (X.vanishingIdeal ((Opens.map (forgetToLocallyRingedSpace.map f).base).obj V)).comap
+        ((forgetToLocallyRingedSpace.map f).c.app (op V)).hom =
+      Y.vanishingIdeal V := by
+  refine le_antisymm ?_ (vanishingIdeal_le_comap f V)
+  let fLRS : X.toLocallyRingedSpace ⟶ Y.toLocallyRingedSpace := f.hom
+  intro s hs
+  have hs' := mem_vanishingIdeal.mp (Ideal.mem_comap.mp hs)
+  refine mem_vanishingIdeal.mpr fun y ↦ ?_
+  obtain ⟨x, hx⟩ := hV y.2
+  have hxV : x ∈ (Opens.map fLRS.base).obj V := Opens.mem_map.mpr (hx.symm ▸ y.2)
+  have hev : LocallyRingedSpace.residueFieldMap fLRS x
+      (Y.toLocallyRingedSpace.evaluation ⟨fLRS.base x, hxV⟩ s) = 0 :=
+    (LocallyRingedSpace.evaluation_naturality_apply fLRS ⟨x, hxV⟩ s).trans (hs' ⟨x, hxV⟩)
+  have hyx : (⟨fLRS.base x, hxV⟩ : V) = y := Subtype.ext hx
+  exact hyx ▸ (LocallyRingedSpace.residueFieldMap_eq_zero_iff fLRS x _).mp hev
+
+/-- A morphism `f : X ⟶ Y` with surjective base map pulls `X.vanishingIdeal ⊤` back to
+`Y.vanishingIdeal ⊤` on global sections. -/
+theorem comap_vanishingIdeal_top_of_surjective {X Y : FormalScheme} (f : X ⟶ Y)
+    (hf : Function.Surjective (forgetToLocallyRingedSpace.map f).base) :
+    (X.vanishingIdeal ⊤).comap ((forgetToLocallyRingedSpace.map f).c.app (op ⊤)).hom =
+      Y.vanishingIdeal ⊤ :=
+  comap_vanishingIdeal_of_subset_range f (hf.range_eq.symm ▸ Set.subset_univ _)
+
+/-- An isomorphism `e : X ≅ Y` of formal schemes pulls `X.vanishingIdeal ⊤` back to
+`Y.vanishingIdeal ⊤` along `globalSectionsIsoOfIso e`. -/
+theorem comap_vanishingIdeal_top_globalSectionsIsoOfIso_hom {X Y : FormalScheme} (e : X ≅ Y) :
+    (X.vanishingIdeal ⊤).comap (globalSectionsIsoOfIso e).hom.hom = Y.vanishingIdeal ⊤ := by
+  rw [globalSectionsIsoOfIso_hom]
+  exact comap_vanishingIdeal_top_of_surjective e.hom
+    (TopCat.homeoOfIso
+      (LocallyRingedSpace.forgetToTop.mapIso (forgetToLocallyRingedSpace.mapIso e))).surjective
+
 /-- Under `restrictTopSectionsIso`, the vanishing ideal on `U` corresponds to the global vanishing
 ideal on `X.restrict U`. -/
-theorem vanishingIdeal_comap_restrictTopSectionsIso_hom (X : FormalScheme) (U : Opens X) :
+theorem comap_vanishingIdeal_restrictTopSectionsIso_hom (X : FormalScheme) (U : Opens X) :
     (X.vanishingIdeal U).comap (restrictTopSectionsIso X U).hom.hom =
       (X.restrict U).vanishingIdeal ⊤ := by
   ext s
@@ -246,19 +191,24 @@ theorem vanishingIdeal_comap_restrictTopSectionsIso_hom (X : FormalScheme) (U : 
 
 /-- On `ofSpf A`, the preimage of `vanishingIdeal ⊤` along `(ofSpfGlobalSectionsIso A).inv` is the
 radical of every ideal of definition. -/
-theorem vanishingIdeal_ofSpf_comap_globalSectionsIso_inv {A : Type u} [CommRing A]
+theorem comap_vanishingIdeal_ofSpf_ofSpfGlobalSectionsIso_inv {A : Type u} [CommRing A]
     [TopologicalSpace A] [IsTopologicalRing A] [IsAdicRing A] {I : Ideal A} (hI : IsAdic I) :
     ((ofSpf A).vanishingIdeal ⊤).comap (ofSpfGlobalSectionsIso A).inv.hom = I.radical := by
   have := (IsAdicRing.ideal_spec A).2.2
   rw [← PrimeSpectrum.vanishingIdeal_zeroLocus_eq_radical I, ← Spf.carrier_eq_zeroLocus hI]
   ext a
-  rw [Ideal.mem_comap, mem_vanishingIdeal_top, PrimeSpectrum.mem_vanishingIdeal]
+  rw [Ideal.mem_comap, mem_vanishingIdeal_top, PrimeSpectrum.mem_vanishingIdeal,
+    ofSpfGlobalSectionsIso_inv]
   exact ⟨fun h p hp ↦ (Spf.Γevaluation_globalSectionsIso_inv_eq_zero_iff ⟨p, hp⟩ a).mp (h ⟨p, hp⟩),
     fun h p ↦ (Spf.Γevaluation_globalSectionsIso_inv_eq_zero_iff p a).mpr (h p.1 p.2)⟩
 
 end VanishingIdeal
 
 section SectionsTopology
+
+private theorem fg_comap_ringEquiv {R S : Type*} [CommRing R] [CommRing S] (φ : R ≃+* S)
+    {I : Ideal S} (hI : I.FG) : (I.comap φ).FG :=
+  Ideal.map_symm φ ▸ hI.map φ.symm.toRingHom
 
 /-- Bundled presentation of an affine formal open `U` of `X` as an isomorphism `X|_U ≅ Spf A`. -/
 private structure ChartData (X : FormalScheme) (U : Opens X) where
@@ -298,15 +248,12 @@ private theorem radical_comap_chartSectionsIso {X : FormalScheme} {U : Opens X} 
   have hrad : s ∈ (I.comap (chartSectionsIso e).hom.hom).radical ↔
       (chartSectionsIso e).hom s ∈ I.radical := by
     rw [← Ideal.comap_radical, Ideal.mem_comap]
-  rw [hrad, ← vanishingIdeal_ofSpf_comap_globalSectionsIso_inv hI, Ideal.mem_comap,
+  rw [hrad, ← comap_vanishingIdeal_ofSpf_ofSpfGlobalSectionsIso_inv hI, Ideal.mem_comap,
     mem_vanishingIdeal_top, mem_vanishingIdeal]
   have hiso : (ofSpfGlobalSectionsIso A).inv ((chartSectionsIso e).hom s) =
-      e.inv.c.app (op ⊤) ((restrictTopSectionsIso X U).inv s) := by
-    dsimp only [chartSectionsIso, Iso.trans_hom, Iso.symm_hom]
-    -- Unfold `LocallyRingedSpace.Γ.mapIso` to `e.inv.c.app (op ⊤)` on elements.
-    change (ofSpfGlobalSectionsIso A).inv ((ofSpfGlobalSectionsIso A).hom
-      (e.inv.c.app (op ⊤) ((restrictTopSectionsIso X U).inv s))) = _
-    exact Iso.hom_inv_id_apply (ofSpfGlobalSectionsIso A) _
+      e.inv.c.app (op ⊤) ((restrictTopSectionsIso X U).inv s) :=
+    (ofSpfGlobalSectionsIso A).hom_inv_id_apply
+      (e.inv.c.app (op ⊤) ((restrictTopSectionsIso X U).inv s))
   rw [hiso]
   have hsurj : Function.Surjective e.inv.base :=
     Function.LeftInverse.surjective (LocallyRingedSpace.iso_hom_base_inv_base_apply e)
@@ -314,7 +261,7 @@ private theorem radical_comap_chartSectionsIso {X : FormalScheme} {U : Opens X} 
       (Spf A).Γevaluation p (e.inv.c.app (op ⊤) ((restrictTopSectionsIso X U).inv s)) = 0 ↔
         X.toLocallyRingedSpace.evaluation ⟨(e.inv.base p).1, (e.inv.base p).2⟩ s = 0 := by
     rw [← LocallyRingedSpace.Γevaluation_naturality_apply e.inv p,
-      residueFieldMap_eq_zero_iff e.inv p]
+      LocallyRingedSpace.residueFieldMap_eq_zero_iff]
     let q : X.restrict U := e.inv.base p
     exact Γevaluation_restrictTopSectionsIso_inv_eq_zero_iff X U q s
   exact ⟨fun h x ↦ by
@@ -341,9 +288,7 @@ private theorem induced_chartSectionsIso_eq_adic {X : FormalScheme} {U : Opens X
     TopologicalSpace.induced φ ‹TopologicalSpace A›
   have hadic : @IsAdic (X.presheaf.obj (op U)) _ tR (I.comap φ) :=
     IsAdic.comap hI φ ⟨rfl⟩
-  have hKfg : (I.comap φ).FG := by
-    rw [← Ideal.map_symm]
-    exact hIfg.map φ.symm.toRingHom
+  have hKfg : (I.comap φ).FG := fg_comap_ringEquiv φ hIfg
   have hKrad : (I.comap φ).radical = J.radical :=
     (radical_comap_chartSectionsIso e hI).trans hJrad.symm
   exact hadic.trans (Ideal.adicTopology_eq_of_radical_eq hKfg hJfg hKrad)
@@ -365,21 +310,41 @@ theorem sectionsTopology_eq_adic (X : FormalScheme) (U : Opens X) (hU : X.IsAffi
     X.sectionsTopology U hU = J.adicTopology :=
   induced_chartSectionsIso_eq_adic hU.chartData.iso hJfg hJrad
 
+/-- If `φ : Γ(U, O_X) ≃+* R` pulls back a finitely generated ideal of definition `I` of `R` to an
+ideal with radical `X.vanishingIdeal U`, then `X.sectionsTopology U hU` is induced by `φ`. -/
+theorem sectionsTopology_eq_induced_of_isAdic {X : FormalScheme} {U : Opens X}
+    (hU : X.IsAffineOpen U) {R : Type*} [CommRing R] [TopologicalSpace R]
+    (φ : X.presheaf.obj (op U) ≃+* R) {I : Ideal R} (hIfg : I.FG) (hI : IsAdic I)
+    (hrad : (I.comap φ).radical = X.vanishingIdeal U) :
+    X.sectionsTopology U hU = TopologicalSpace.induced φ ‹TopologicalSpace R› := by
+  let tU : TopologicalSpace (X.presheaf.obj (op U)) :=
+    TopologicalSpace.induced φ ‹TopologicalSpace R›
+  have hadic : @IsAdic _ _ tU (I.comap φ) := IsAdic.comap hI φ ⟨rfl⟩
+  rw [X.sectionsTopology_eq_adic U hU (fg_comap_ringEquiv φ hIfg) hrad]
+  exact hadic.symm
+
+/-- If `φ : Γ(U, O_X) ≃+* R` pulls back a finitely generated ideal of definition `I` of `R` to an
+ideal with radical `X.vanishingIdeal U`, then `φ` is a homeomorphism from `(Γ(U, O_X),
+sectionsTopology)` onto `R`. -/
+theorem isHomeomorph_sectionsTopology_of_isAdic {X : FormalScheme} {U : Opens X}
+    (hU : X.IsAffineOpen U) {R : Type*} [CommRing R] [TopologicalSpace R]
+    (φ : X.presheaf.obj (op U) ≃+* R) {I : Ideal R} (hIfg : I.FG) (hI : IsAdic I)
+    (hrad : (I.comap φ).radical = X.vanishingIdeal U) :
+    @IsHomeomorph _ _ (X.sectionsTopology U hU) ‹TopologicalSpace R› φ := by
+  have htop := sectionsTopology_eq_induced_of_isAdic hU φ hIfg hI hrad
+  let := X.sectionsTopology U hU
+  exact (φ.toEquiv.toHomeomorphOfIsInducing ⟨htop⟩).isHomeomorph
+
 /-- Every affine chart `e : X|_U ≅ Spf A` induces `X.sectionsTopology U hU` on `Γ(U, O_X)`. -/
 private theorem sectionsTopology_eq_induced_chart {X : FormalScheme} {U : Opens X}
     (hU : X.IsAffineOpen U) {A : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
     [IsAdicRing A] (e : (X.restrict U).toLocallyRingedSpace ≅ Spf A) :
     X.sectionsTopology U hU =
       TopologicalSpace.induced ((chartSectionsIso e).commRingCatIsoToRingEquiv)
-        ‹TopologicalSpace A› := by
-  let φ := (chartSectionsIso e).commRingCatIsoToRingEquiv
-  have hKfg : ((IsAdicRing.ideal A).comap φ).FG := by
-    rw [← Ideal.map_symm]
-    exact (IsAdicRing.ideal_spec A).1.map φ.symm.toRingHom
-  have hKrad : ((IsAdicRing.ideal A).comap φ).radical = X.vanishingIdeal U :=
-    radical_comap_chartSectionsIso e (IsAdicRing.ideal_spec A).2.1
-  exact (X.sectionsTopology_eq_adic U hU hKfg hKrad).trans
-    (induced_chartSectionsIso_eq_adic e hKfg hKrad).symm
+        ‹TopologicalSpace A› :=
+  sectionsTopology_eq_induced_of_isAdic hU (chartSectionsIso e).commRingCatIsoToRingEquiv
+    (IsAdicRing.ideal_spec A).1 (IsAdicRing.ideal_spec A).2.1
+    (radical_comap_chartSectionsIso e (IsAdicRing.ideal_spec A).2.1)
 
 /-- Every affine formal open `U` admits a finitely generated ideal `J ⊆ Γ(U, O_X)` with
 `J.radical = X.vanishingIdeal U`. -/
@@ -388,33 +353,43 @@ theorem exists_fg_radical_eq_vanishingIdeal (X : FormalScheme) (U : Opens X)
     ∃ J : Ideal (X.presheaf.obj (op U)), J.FG ∧ J.radical = X.vanishingIdeal U := by
   let c := hU.chartData
   let φ := (chartSectionsIso c.iso).commRingCatIsoToRingEquiv
-  refine ⟨(IsAdicRing.ideal c.carrier).comap φ, ?_,
+  exact ⟨(IsAdicRing.ideal c.carrier).comap φ,
+    fg_comap_ringEquiv φ (IsAdicRing.ideal_spec c.carrier).1,
     radical_comap_chartSectionsIso c.iso (IsAdicRing.ideal_spec c.carrier).2.1⟩
-  rw [← Ideal.map_symm]
-  exact (IsAdicRing.ideal_spec c.carrier).1.map φ.symm.toRingHom
+
+/-- Any ring equivalence `φ : Γ(V, O_Y) ≃+* Γ(U, O_X)` between sections over affine formal opens
+that pulls `X.vanishingIdeal U` back to `Y.vanishingIdeal V` induces `Y.sectionsTopology V hV` from
+`X.sectionsTopology U hU`. -/
+theorem sectionsTopology_eq_induced_of_comap_vanishingIdeal {X Y : FormalScheme}
+    {U : Opens X} {V : Opens Y} (hU : X.IsAffineOpen U) (hV : Y.IsAffineOpen V)
+    (φ : Y.presheaf.obj (op V) ≃+* X.presheaf.obj (op U))
+    (hvan : (X.vanishingIdeal U).comap φ = Y.vanishingIdeal V) :
+    Y.sectionsTopology V hV = TopologicalSpace.induced φ (X.sectionsTopology U hU) := by
+  obtain ⟨J, hJfg, hJrad⟩ := X.exists_fg_radical_eq_vanishingIdeal U hU
+  let tU : TopologicalSpace (X.presheaf.obj (op U)) := X.sectionsTopology U hU
+  have hJadic : @IsAdic _ _ tU J := X.sectionsTopology_eq_adic U hU hJfg hJrad
+  have hKrad : (J.comap φ).radical = Y.vanishingIdeal V := by
+    rw [← Ideal.comap_radical, hJrad, hvan]
+  exact sectionsTopology_eq_induced_of_isAdic hV φ hJfg hJadic hKrad
+
+/-- Any ring equivalence `φ : Γ(V, O_Y) ≃+* Γ(U, O_X)` between sections over affine formal opens
+that pulls `X.vanishingIdeal U` back to `Y.vanishingIdeal V` is a homeomorphism for
+`sectionsTopology`. -/
+theorem isHomeomorph_sectionsTopology_of_comap_vanishingIdeal {X Y : FormalScheme}
+    {U : Opens X} {V : Opens Y} (hU : X.IsAffineOpen U) (hV : Y.IsAffineOpen V)
+    (φ : Y.presheaf.obj (op V) ≃+* X.presheaf.obj (op U))
+    (hvan : (X.vanishingIdeal U).comap φ = Y.vanishingIdeal V) :
+    @IsHomeomorph _ _ (Y.sectionsTopology V hV) (X.sectionsTopology U hU) φ := by
+  have htop := sectionsTopology_eq_induced_of_comap_vanishingIdeal hU hV φ hvan
+  let := Y.sectionsTopology V hV
+  let := X.sectionsTopology U hU
+  exact (φ.toEquiv.toHomeomorphOfIsInducing ⟨htop⟩).isHomeomorph
 
 /-- Equipped with `X.sectionsTopology U hU`, `Γ(U, O_X)` is a topological ring. -/
 theorem sectionsTopology_isTopologicalRing (X : FormalScheme) (U : Opens X)
     (hU : X.IsAffineOpen U) :
-    @IsTopologicalRing (X.presheaf.obj (op U)) (X.sectionsTopology U hU) _ := by
-  obtain ⟨J, hJfg, hJrad⟩ := X.exists_fg_radical_eq_vanishingIdeal U hU
-  rw [X.sectionsTopology_eq_adic U hU hJfg hJrad]
-  exact J.nonarchimedean.toIsTopologicalRing
-
-private theorem isAdicRing_of_isInducing_ringEquiv {R S : Type u} [CommRing R] [TopologicalSpace R]
-    [IsTopologicalRing R] [CommRing S] [TopologicalSpace S] [IsTopologicalRing S] [IsAdicRing S]
-    (φ : R ≃+* S) (hind : Topology.IsInducing φ) : IsAdicRing R := by
-  have hIfg := (IsAdicRing.ideal_spec S).1
-  have hI := (IsAdicRing.ideal_spec S).2.1
-  have hIc := (IsAdicRing.ideal_spec S).2.2
-  have hKfg : ((IsAdicRing.ideal S).comap φ).FG := by
-    rw [← Ideal.map_symm]
-    exact hIfg.map φ.symm.toRingHom
-  have hKadic : IsAdic ((IsAdicRing.ideal S).comap φ) := IsAdic.comap hI φ hind
-  have hKcomp : IsAdicComplete ((IsAdicRing.ideal S).comap φ) R := by
-    rw [← Ideal.map_symm]
-    exact (IsAdicComplete.congr_ringEquiv (IsAdicRing.ideal S) φ.symm).mpr hIc
-  exact ⟨⟨(IsAdicRing.ideal S).comap φ, hKfg, hKadic, hKcomp⟩⟩
+    @IsTopologicalRing (X.presheaf.obj (op U)) (X.sectionsTopology U hU) _ :=
+  TauCeti.isTopologicalRing_induced (chartSectionsIso hU.chartData.iso).commRingCatIsoToRingEquiv
 
 /-- Equipped with `X.sectionsTopology U hU`, `Γ(U, O_X)` is a complete separated adic ring of
 finite ideal type. -/
@@ -424,7 +399,7 @@ theorem sectionsTopology_isAdicRing (X : FormalScheme) (U : Opens X) (hU : X.IsA
     IsAdicRing (X.presheaf.obj (op U)) := by
   let := X.sectionsTopology U hU
   have := X.sectionsTopology_isTopologicalRing U hU
-  exact isAdicRing_of_isInducing_ringEquiv
+  exact IsAdicRing.of_isInducing_ringEquiv
     (chartSectionsIso hU.chartData.iso).commRingCatIsoToRingEquiv
     ⟨sectionsTopology_eq_induced_chart hU hU.chartData.iso⟩
 
@@ -443,6 +418,7 @@ section IsoSpf
 /-- The ring of sections `Γ(U, O_X)` over an affine formal open `U` of `X`, equipped as a
 1-field wrapper with `X.sectionsTopology U hU` and its `IsTopologicalRing` and `IsAdicRing`
 instances. -/
+@[ext]
 structure IsAffineOpen.Sections {X : FormalScheme} {U : Opens X} (_ : X.IsAffineOpen U) :
     Type u where
   /-- The underlying section in `Γ(U, O_X)`. -/
@@ -458,45 +434,125 @@ def sectionsEquiv {X : FormalScheme} {U : Opens X} (hU : X.IsAffineOpen U) :
   left_inv _ := rfl
   right_inv _ := rfl
 
+@[simp]
+theorem sectionsEquiv_apply {X : FormalScheme} {U : Opens X} (hU : X.IsAffineOpen U)
+    (s : hU.Sections) : hU.sectionsEquiv s = s.val :=
+  (rfl)
+
+@[simp]
+theorem sectionsEquiv_symm_apply {X : FormalScheme} {U : Opens X} (hU : X.IsAffineOpen U)
+    (s : X.presheaf.obj (op U)) : hU.sectionsEquiv.symm s = ⟨s⟩ :=
+  (rfl)
+
 instance {X : FormalScheme} {U : Opens X} (hU : X.IsAffineOpen U) :
     CommRing hU.Sections :=
   hU.sectionsEquiv.commRing
+
+namespace Sections
+
+variable {X : FormalScheme} {U : Opens X} {hU : X.IsAffineOpen U}
+
+@[simp] theorem val_zero : (0 : hU.Sections).val = 0 := (rfl)
+
+@[simp] theorem val_one : (1 : hU.Sections).val = 1 := (rfl)
+
+@[simp] theorem val_add (a b : hU.Sections) : (a + b).val = a.val + b.val := (rfl)
+
+@[simp] theorem val_mul (a b : hU.Sections) : (a * b).val = a.val * b.val := (rfl)
+
+@[simp] theorem val_neg (a : hU.Sections) : (-a).val = -a.val := (rfl)
+
+@[simp] theorem val_sub (a b : hU.Sections) : (a - b).val = a.val - b.val := (rfl)
+
+@[simp] theorem val_pow (a : hU.Sections) (n : ℕ) : (a ^ n).val = a.val ^ n := (rfl)
+
+@[simp] theorem val_natCast (n : ℕ) : (n : hU.Sections).val = n := (rfl)
+
+@[simp] theorem val_intCast (n : ℤ) : (n : hU.Sections).val = n := (rfl)
+
+end Sections
 
 /-- The underlying ring equivalence between `hU.Sections` and `Γ(U, O_X)`. -/
 def sectionsRingEquiv {X : FormalScheme} {U : Opens X} (hU : X.IsAffineOpen U) :
     hU.Sections ≃+* X.presheaf.obj (op U) :=
   hU.sectionsEquiv.ringEquiv
 
+@[simp]
+theorem sectionsRingEquiv_apply {X : FormalScheme} {U : Opens X} (hU : X.IsAffineOpen U)
+    (s : hU.Sections) : hU.sectionsRingEquiv s = s.val :=
+  (rfl)
+
+@[simp]
+theorem sectionsRingEquiv_symm_apply {X : FormalScheme} {U : Opens X} (hU : X.IsAffineOpen U)
+    (s : X.presheaf.obj (op U)) : hU.sectionsRingEquiv.symm s = ⟨s⟩ :=
+  (rfl)
+
 /-- The `CommRingCat` isomorphism between `hU.Sections` and `Γ(U, O_X)`. -/
 def sectionsIso {X : FormalScheme} {U : Opens X} (hU : X.IsAffineOpen U) :
     CommRingCat.of hU.Sections ≅ X.presheaf.obj (op U) :=
   hU.sectionsRingEquiv.toCommRingCatIso
 
-noncomputable instance {X : FormalScheme} {U : Opens X} (hU : X.IsAffineOpen U) :
-    TopologicalSpace hU.Sections :=
+-- Keep morphism-level `sectionsIso_hom` and `sectionsIso_inv` explicit so `@[simp]` lemmas such as
+-- `isoSpf_inv_globalSections` and `fromSpf_globalSections` remain in simp normal form.
+theorem sectionsIso_hom {X : FormalScheme} {U : Opens X} (hU : X.IsAffineOpen U) :
+    hU.sectionsIso.hom = CommRingCat.ofHom hU.sectionsRingEquiv.toRingHom :=
+  (rfl)
+
+theorem sectionsIso_inv {X : FormalScheme} {U : Opens X} (hU : X.IsAffineOpen U) :
+    hU.sectionsIso.inv = CommRingCat.ofHom hU.sectionsRingEquiv.symm.toRingHom :=
+  (rfl)
+
+@[simp]
+theorem sectionsIso_hom_apply {X : FormalScheme} {U : Opens X} (hU : X.IsAffineOpen U)
+    (s : hU.Sections) : hU.sectionsIso.hom s = s.val :=
+  (rfl)
+
+@[simp]
+theorem sectionsIso_inv_apply {X : FormalScheme} {U : Opens X} (hU : X.IsAffineOpen U)
+    (s : X.presheaf.obj (op U)) : hU.sectionsIso.inv s = ⟨s⟩ :=
+  (rfl)
+
+noncomputable instance instTopologicalSpaceSections {X : FormalScheme} {U : Opens X}
+    (hU : X.IsAffineOpen U) : TopologicalSpace hU.Sections :=
   TopologicalSpace.induced hU.sectionsEquiv (X.sectionsTopology U hU)
+
+/-- The topology on `hU.Sections` is induced along `hU.sectionsEquiv` from
+`X.sectionsTopology U hU`. -/
+theorem topologicalSpace_sections {X : FormalScheme} {U : Opens X} (hU : X.IsAffineOpen U) :
+    hU.instTopologicalSpaceSections =
+      TopologicalSpace.induced hU.sectionsEquiv (X.sectionsTopology U hU) :=
+  (rfl)
+
+/-- `hU.sectionsEquiv` is topologically inducing for `X.sectionsTopology U hU`. -/
+theorem isInducing_sectionsEquiv {X : FormalScheme} {U : Opens X} (hU : X.IsAffineOpen U) :
+    @Topology.IsInducing _ _ _ (X.sectionsTopology U hU) hU.sectionsEquiv := by
+  let := X.sectionsTopology U hU
+  exact ⟨hU.topologicalSpace_sections⟩
+
+/-- `hU.sectionsRingEquiv` is topologically inducing for `X.sectionsTopology U hU`. -/
+theorem isInducing_sectionsRingEquiv {X : FormalScheme} {U : Opens X} (hU : X.IsAffineOpen U) :
+    @Topology.IsInducing _ _ _ (X.sectionsTopology U hU) hU.sectionsRingEquiv :=
+  hU.isInducing_sectionsEquiv
+
+/-- `hU.sectionsRingEquiv` is a homeomorphism from `hU.Sections` onto `(Γ(U, O_X),
+sectionsTopology)`. -/
+theorem isHomeomorph_sectionsRingEquiv {X : FormalScheme} {U : Opens X} (hU : X.IsAffineOpen U) :
+    @IsHomeomorph _ _ _ (X.sectionsTopology U hU) hU.sectionsRingEquiv := by
+  let := X.sectionsTopology U hU
+  exact (hU.sectionsEquiv.toHomeomorphOfIsInducing hU.isInducing_sectionsEquiv).isHomeomorph
 
 instance {X : FormalScheme} {U : Opens X} (hU : X.IsAffineOpen U) :
     IsTopologicalRing hU.Sections := by
   let := X.sectionsTopology U hU
   have := X.sectionsTopology_isTopologicalRing U hU
-  have hind : Topology.IsInducing hU.sectionsRingEquiv := ⟨rfl⟩
-  exact
-    { continuous_add := hind.continuous_iff.mpr <| by
-        simpa [Function.comp_def] using
-          continuous_add.comp (hind.continuous.prodMap hind.continuous)
-      continuous_mul := hind.continuous_iff.mpr <| by
-        simpa [Function.comp_def] using
-          continuous_mul.comp (hind.continuous.prodMap hind.continuous)
-      continuous_neg := hind.continuous_iff.mpr <| by
-        simpa [Function.comp_def] using continuous_neg.comp hind.continuous }
+  exact hU.isInducing_sectionsRingEquiv.isTopologicalRing hU.sectionsRingEquiv
 
 instance {X : FormalScheme} {U : Opens X} (hU : X.IsAffineOpen U) :
     IsAdicRing hU.Sections := by
   let := X.sectionsTopology U hU
   have := X.sectionsTopology_isTopologicalRing U hU
   have := X.sectionsTopology_isAdicRing U hU
-  exact isAdicRing_of_isInducing_ringEquiv hU.sectionsRingEquiv ⟨rfl⟩
+  exact IsAdicRing.of_isInducing_ringEquiv hU.sectionsRingEquiv hU.isInducing_sectionsRingEquiv
 
 private noncomputable def chartRingEquiv {X : FormalScheme} {U : Opens X}
     (hU : X.IsAffineOpen U) : hU.Sections ≃+* hU.chartData.carrier :=
@@ -506,9 +562,8 @@ private theorem isInducing_chartRingEquiv {X : FormalScheme} {U : Opens X}
     (hU : X.IsAffineOpen U) :
     Topology.IsInducing (chartRingEquiv hU) := by
   refine ⟨?_⟩
-  -- Unfold `instTopologicalSpaceSections` to `TopologicalSpace.induced hU.sectionsEquiv _`.
-  change TopologicalSpace.induced hU.sectionsEquiv (X.sectionsTopology U hU) = _
-  rw [sectionsTopology_eq_induced_chart hU hU.chartData.iso, induced_compose]
+  rw [hU.topologicalSpace_sections, sectionsTopology_eq_induced_chart hU hU.chartData.iso,
+    induced_compose]
   rfl
 
 private theorem continuous_chartRingEquiv {X : FormalScheme} {U : Opens X}
@@ -551,41 +606,65 @@ theorem isoSpf_inv_globalSections {X : FormalScheme} {U : Opens X} (hU : X.IsAff
       (restrictTopSectionsIso X U).hom := by
   have := (IsAdicRing.ideal_spec hU.Sections).2.2
   have := (IsAdicRing.ideal_spec hU.chartData.carrier).2.2
-  refine CommRingCat.hom_ext (RingHom.ext fun t ↦ ?_)
-  let t' : (X.restrict U).presheaf.obj (op ⊤) := t
-  let u : (Spf hU.chartData.carrier).presheaf.obj (op ⊤) := hU.chartData.iso.inv.c.app (op ⊤) t'
-  have h1 : (ofSpfGlobalSectionsIso hU.Sections).hom
-      ((LocallyRingedSpace.Γ.map (forgetToLocallyRingedSpace.map hU.isoSpf.inv).op) t) =
-      (chartRingEquiv hU).symm ((ofSpfGlobalSectionsIso hU.chartData.carrier).hom u) :=
-    ConcreteCategory.congr_hom
+  ext t
+  let x : (Spf hU.chartData.carrier).presheaf.obj (op ⊤) := hU.chartData.iso.inv.c.app (op ⊤) t
+  have h0 : (ofSpfGlobalSectionsIso hU.Sections).hom
+      ((forgetToLocallyRingedSpace.map hU.isoSpf.inv).c.app (op ⊤) t) =
+      (chartRingEquiv hU).symm ((ofSpfGlobalSectionsIso hU.chartData.carrier).hom x) := by
+    rw [ofSpfGlobalSectionsIso_hom hU.Sections, ofSpfGlobalSectionsIso_hom hU.chartData.carrier]
+    exact ConcreteCategory.congr_hom
       (Spf.map_globalSections (chartRingEquiv hU).symm.toRingHom
-        (continuous_chartRingEquiv_symm hU)) u
-  have h2 (b : hU.chartData.carrier) :
-      hU.sectionsIso.hom ((chartRingEquiv hU).symm b) =
-        (chartSectionsIso hU.chartData.iso).inv b :=
+        (continuous_chartRingEquiv_symm hU)) x
+  have h1 := congrArg hU.sectionsIso.hom h0
+  have h2 : hU.sectionsIso.hom
+      ((chartRingEquiv hU).symm ((ofSpfGlobalSectionsIso hU.chartData.carrier).hom x)) =
+      (chartSectionsIso hU.chartData.iso).inv
+        ((ofSpfGlobalSectionsIso hU.chartData.carrier).hom x) :=
     hU.sectionsRingEquiv.apply_symm_apply _
-  have h3 : (chartSectionsIso hU.chartData.iso).hom ((restrictTopSectionsIso X U).hom t') =
-      (ofSpfGlobalSectionsIso hU.chartData.carrier).hom u :=
-    congrArg (ofSpfGlobalSectionsIso hU.chartData.carrier).hom
-      (congrArg (hU.chartData.iso.inv.c.app (op ⊤))
-        (Iso.hom_inv_id_apply (restrictTopSectionsIso X U) t'))
-  -- Evaluate the composed `CommRingCat` morphism on `t` and rewrite step by step.
-  change hU.sectionsIso.hom ((ofSpfGlobalSectionsIso hU.Sections).hom
-    ((LocallyRingedSpace.Γ.map (forgetToLocallyRingedSpace.map hU.isoSpf.inv).op) t)) =
-    (restrictTopSectionsIso X U).hom t'
-  rw [h1, h2, ← h3]
-  exact Iso.hom_inv_id_apply (chartSectionsIso hU.chartData.iso)
-    ((restrictTopSectionsIso X U).hom t')
+  have h3 : (chartSectionsIso hU.chartData.iso).inv
+      ((ofSpfGlobalSectionsIso hU.chartData.carrier).hom x) =
+      (restrictTopSectionsIso X U).hom t :=
+    (congrArg (fun z ↦ (restrictTopSectionsIso X U).hom
+        ((LocallyRingedSpace.Γ.mapIso hU.chartData.iso.symm.op).inv z))
+      ((ofSpfGlobalSectionsIso hU.chartData.carrier).hom_inv_id_apply x)).trans
+      (congrArg (restrictTopSectionsIso X U).hom
+        ((LocallyRingedSpace.Γ.mapIso hU.chartData.iso.symm.op).hom_inv_id_apply t))
+  exact (h1.trans h2).trans h3
 
 /-- The canonical open immersion `ofSpf hU.Sections ⟶ X` with image `U`. -/
 noncomputable def fromSpf {X : FormalScheme} {U : Opens X} (hU : X.IsAffineOpen U) :
     ofSpf hU.Sections ⟶ X :=
   hU.isoSpf.inv ≫ X.ofRestrict U
 
+-- Keep `isoSpf_inv_ofRestrict` explicit so `@[simp]` lemmas on `fromSpf` remain in simp normal
+-- form.
+theorem isoSpf_inv_ofRestrict {X : FormalScheme} {U : Opens X} (hU : X.IsAffineOpen U) :
+    hU.isoSpf.inv ≫ X.ofRestrict U = hU.fromSpf :=
+  (rfl)
+
+/-- Composing `hU.isoSpf.hom` with `hU.fromSpf` recovers the open inclusion `X.ofRestrict U`. -/
+@[reassoc (attr := simp)]
+theorem isoSpf_hom_fromSpf {X : FormalScheme} {U : Opens X} (hU : X.IsAffineOpen U) :
+    hU.isoSpf.hom ≫ hU.fromSpf = X.ofRestrict U :=
+  Iso.hom_inv_id_assoc hU.isoSpf (X.ofRestrict U)
+
+/-- On global sections, `hU.fromSpf` followed by `ofSpfGlobalSectionsIso` and `hU.sectionsIso` is
+the presheaf restriction from `⊤` to `U`. -/
+@[reassoc (attr := simp)]
+theorem fromSpf_globalSections {X : FormalScheme} {U : Opens X} (hU : X.IsAffineOpen U) :
+    (forgetToLocallyRingedSpace.map hU.fromSpf).c.app (op ⊤) ≫
+        (ofSpfGlobalSectionsIso hU.Sections).hom ≫ hU.sectionsIso.hom =
+      X.presheaf.map (homOfLE le_top).op := by
+  ext s
+  have h1 := ConcreteCategory.congr_hom hU.isoSpf_inv_globalSections
+    ((forgetToLocallyRingedSpace.map (X.ofRestrict U)).c.app (op ⊤) s)
+  have h2 := ConcreteCategory.congr_hom
+    (X.ofRestrict_c_app_top_comp_restrictTopSectionsIso_hom U) s
+  exact h1.trans h2
+
 instance isOpenImmersion_fromSpf {X : FormalScheme} {U : Opens X} (hU : X.IsAffineOpen U) :
     LocallyRingedSpace.IsOpenImmersion (forgetToLocallyRingedSpace.map hU.fromSpf) := by
-  dsimp only [fromSpf]
-  rw [Functor.map_comp]
+  rw [← isoSpf_inv_ofRestrict, Functor.map_comp]
   have : IsIso (forgetToLocallyRingedSpace.map hU.isoSpf.inv) :=
     Functor.map_isIso forgetToLocallyRingedSpace hU.isoSpf.inv
   infer_instance
@@ -593,8 +672,7 @@ instance isOpenImmersion_fromSpf {X : FormalScheme} {U : Opens X} (hU : X.IsAffi
 @[simp]
 theorem range_fromSpf {X : FormalScheme} {U : Opens X} (hU : X.IsAffineOpen U) :
     Set.range (forgetToLocallyRingedSpace.map hU.fromSpf).base = (U : Set X) := by
-  dsimp only [fromSpf]
-  rw [Functor.map_comp]
+  rw [← isoSpf_inv_ofRestrict, Functor.map_comp]
   exact (LocallyRingedSpace.range_iso_inv_comp
     (forgetToLocallyRingedSpace.mapIso hU.isoSpf)
     (forgetToLocallyRingedSpace.map (X.ofRestrict U))).trans (range_ofRestrict X U)
@@ -605,40 +683,15 @@ end IsoSpf
 
 section Comparisons
 
-/-- An affine formal open `U` of `X` makes `⊤` an affine formal open of `X.restrict U`. -/
-theorem IsAffineOpen.top_restrict {X : FormalScheme} {U : Opens X} (hU : X.IsAffineOpen U) :
-    (X.restrict U).IsAffineOpen ⊤ := by
-  obtain ⟨A, _, _, _, _, ⟨e⟩⟩ := (isAffineOpen_iff X U).mp hU
-  rw [isAffineOpen_iff]
-  exact ⟨A, inferInstance, inferInstance, inferInstance, inferInstance,
-    ⟨(X.restrict U).toLocallyRingedSpace.restrictTopIso ≪≫ e⟩⟩
-
 /-- `restrictTopSectionsIso X U` is a homeomorphism between `(Γ(⊤, O_{X|_U}), sectionsTopology)`
 and `(Γ(U, O_X), sectionsTopology)`. -/
 theorem isHomeomorph_restrictTopSectionsIso {X : FormalScheme} {U : Opens X}
     (hU : X.IsAffineOpen U) :
     @IsHomeomorph _ _ ((X.restrict U).sectionsTopology ⊤ hU.top_restrict)
-      (X.sectionsTopology U hU) ((restrictTopSectionsIso X U).hom) := by
-  obtain ⟨J, hJfg, hJrad⟩ := X.exists_fg_radical_eq_vanishingIdeal U hU
-  let φ := (restrictTopSectionsIso X U).commRingCatIsoToRingEquiv
-  have hKfg : (J.comap φ).FG := by
-    rw [← Ideal.map_symm]
-    exact hJfg.map φ.symm.toRingHom
-  have hKrad : (J.comap φ).radical = (X.restrict U).vanishingIdeal ⊤ := by
-    rw [← Ideal.comap_radical, hJrad]
-    exact vanishingIdeal_comap_restrictTopSectionsIso_hom X U
-  have htop : (X.restrict U).sectionsTopology ⊤ hU.top_restrict =
-      TopologicalSpace.induced φ (X.sectionsTopology U hU) := by
-    let tU : TopologicalSpace (X.presheaf.obj (op U)) := J.adicTopology
-    let tT : TopologicalSpace ((X.restrict U).presheaf.obj (op ⊤)) :=
-      TopologicalSpace.induced φ tU
-    have hadic : @IsAdic _ _ tT (J.comap φ) := IsAdic.comap (I := J) rfl φ ⟨rfl⟩
-    rw [(X.restrict U).sectionsTopology_eq_adic ⊤ hU.top_restrict hKfg hKrad,
-      X.sectionsTopology_eq_adic U hU hJfg hJrad]
-    exact hadic.symm
-  let := (X.restrict U).sectionsTopology ⊤ hU.top_restrict
-  let := X.sectionsTopology U hU
-  exact (φ.toEquiv.toHomeomorphOfIsInducing ⟨htop⟩).isHomeomorph
+      (X.sectionsTopology U hU) ((restrictTopSectionsIso X U).hom) :=
+  isHomeomorph_sectionsTopology_of_comap_vanishingIdeal hU hU.top_restrict
+    (restrictTopSectionsIso X U).commRingCatIsoToRingEquiv
+    (comap_vanishingIdeal_restrictTopSectionsIso_hom X U)
 
 /-- On `ofSpf A`, `ofSpfGlobalSectionsIso A` is a homeomorphism from `(Γ(⊤, O_{ofSpf A}),
 sectionsTopology)` onto `A`. -/
@@ -646,27 +699,17 @@ theorem isHomeomorph_ofSpfGlobalSectionsIso (A : Type u) [CommRing A] [Topologic
     [IsTopologicalRing A] [IsAdicRing A] :
     @IsHomeomorph _ _ ((ofSpf A).sectionsTopology ⊤ (isAffineOpen_top_ofSpf A))
       ‹TopologicalSpace A› ((ofSpfGlobalSectionsIso A).hom) := by
-  have hIfg := (IsAdicRing.ideal_spec A).1
-  have hI := (IsAdicRing.ideal_spec A).2.1
   let φ := (ofSpfGlobalSectionsIso A).commRingCatIsoToRingEquiv
-  have hKfg : ((IsAdicRing.ideal A).comap φ).FG := by
-    rw [← Ideal.map_symm]
-    exact hIfg.map φ.symm.toRingHom
-  have hKrad : ((IsAdicRing.ideal A).comap φ).radical = (ofSpf A).vanishingIdeal ⊤ := by
-    rw [← Ideal.comap_radical, ← vanishingIdeal_ofSpf_comap_globalSectionsIso_inv hI]
+  have hrad : ((IsAdicRing.ideal A).comap φ).radical = (ofSpf A).vanishingIdeal ⊤ := by
+    rw [← Ideal.comap_radical,
+      ← comap_vanishingIdeal_ofSpf_ofSpfGlobalSectionsIso_inv (IsAdicRing.ideal_spec A).2.1]
     ext s
-    have hs : (ofSpfGlobalSectionsIso A).inv.hom (φ s) = s :=
+    have hs : (ofSpfGlobalSectionsIso A).inv (φ s) = s :=
       Iso.hom_inv_id_apply (ofSpfGlobalSectionsIso A) s
-    simp only [Ideal.mem_comap, hs]
-  have htop : (ofSpf A).sectionsTopology ⊤ (isAffineOpen_top_ofSpf A) =
-      TopologicalSpace.induced φ ‹TopologicalSpace A› := by
-    let tG : TopologicalSpace ((ofSpf A).presheaf.obj (op ⊤)) :=
-      TopologicalSpace.induced φ ‹TopologicalSpace A›
-    have hadic : @IsAdic _ _ tG ((IsAdicRing.ideal A).comap φ) := IsAdic.comap hI φ ⟨rfl⟩
-    rw [(ofSpf A).sectionsTopology_eq_adic ⊤ (isAffineOpen_top_ofSpf A) hKfg hKrad]
-    exact hadic.symm
-  let := (ofSpf A).sectionsTopology ⊤ (isAffineOpen_top_ofSpf A)
-  exact (φ.toEquiv.toHomeomorphOfIsInducing ⟨htop⟩).isHomeomorph
+    simp only [Ideal.mem_comap]
+    exact Iff.of_eq (congrArg (· ∈ (ofSpf A).vanishingIdeal ⊤) hs)
+  exact isHomeomorph_sectionsTopology_of_isAdic (isAffineOpen_top_ofSpf A) φ
+    (IsAdicRing.ideal_spec A).1 (IsAdicRing.ideal_spec A).2.1 hrad
 
 /-- On `ofSpf A`, the intrinsic topology on global sections equals `Spf.sectionsTopology`. -/
 @[simp]
@@ -682,21 +725,12 @@ theorem sectionsTopology_ofSpf_top (A : Type u) [CommRing A] [TopologicalSpace A
   have eq₁ : t₁ = TopologicalSpace.induced ((ofSpfGlobalSectionsIso A).hom)
       ‹TopologicalSpace A› :=
     h₁.isInducing.eq_induced
+  rw [ofSpfGlobalSectionsIso_hom A] at eq₁
   let t₂ := Spf.sectionsTopology hI ⊤
   have eq₂ : t₂ = TopologicalSpace.induced ((Spf.globalSectionsIso hI).hom)
       ‹TopologicalSpace A› :=
     h₂.isInducing.eq_induced
   exact eq₁.trans eq₂.symm
-
-/-- Every affine formal open of a formal scheme is quasi-compact. -/
-theorem IsAffineOpen.isCompact {X : FormalScheme} {U : Opens X} (hU : X.IsAffineOpen U) :
-    IsCompact (U : Set X) := by
-  obtain ⟨A, _, _, _, _, ⟨e⟩⟩ := (isAffineOpen_iff X U).mp hU
-  have : CompactSpace (LocallyRingedSpace.forgetToTop.obj (Spf A)) :=
-    Spf.compactSpace_carrier (IsAdicRing.ideal_spec A).2.1
-  have : CompactSpace U :=
-    (TopCat.homeoOfIso (LocallyRingedSpace.forgetToTop.mapIso e)).symm.compactSpace
-  exact isCompact_iff_compactSpace.mpr inferInstance
 
 /-- On an ordinary scheme `Y`, every affine formal open of `Y.toFormalScheme` carries the discrete
 intrinsic section topology (`⊥`). -/
@@ -729,9 +763,7 @@ instance IsAffineOpen.discreteTopology_sections_toFormalScheme {Y : Scheme.{u}}
     {U : Opens Y.toFormalScheme} (hU : Y.toFormalScheme.IsAffineOpen U) :
     DiscreteTopology hU.Sections := by
   refine ⟨?_⟩
-  -- Unfold the induced `TopologicalSpace hU.Sections` instance to rewrite `sectionsTopology`.
-  change TopologicalSpace.induced hU.sectionsEquiv (Y.toFormalScheme.sectionsTopology U hU) = ⊥
-  rw [sectionsTopology_toFormalScheme_eq_bot Y U hU]
+  rw [hU.topologicalSpace_sections, sectionsTopology_toFormalScheme_eq_bot Y U hU]
   exact TauCeti.induced_bot_of_injective hU.sectionsEquiv.injective
 
 /-- An open subset of an ordinary scheme `Y` is an affine formal open of `Y.toFormalScheme` if and
@@ -757,78 +789,19 @@ theorem isAffineOpen_toFormalScheme_iff (Y : Scheme.{u}) (U : Y.Opens) :
       ⟨R, inferInstance, inferInstance, inferInstance, inferInstance,
         ⟨Scheme.forgetToLocallyRingedSpace.mapIso hU.isoSpec ≪≫ (Spf.discreteIsoSpec R).symm⟩⟩
 
-/-- Being an affine formal scheme (`IsAffineOpen ⊤`) is preserved under isomorphism. -/
-theorem isAffineOpen_top_of_iso {X Y : FormalScheme} (e : X ≅ Y) (hX : X.IsAffineOpen ⊤) :
-    Y.IsAffineOpen ⊤ := by
-  obtain ⟨A, _, _, _, _, ⟨eA⟩⟩ := (isAffineOpen_iff X ⊤).mp hX
-  let eRestr : Y.restrict ⊤ ≅ X.restrict ⊤ := Y.restrictTopIso ≪≫ e.symm ≪≫ X.restrictTopIso.symm
-  exact (isAffineOpen_iff Y ⊤).mpr
-    ⟨A, inferInstance, inferInstance, inferInstance, inferInstance,
-      ⟨forgetToLocallyRingedSpace.mapIso eRestr ≪≫ eA⟩⟩
-
-/-- Two isomorphic formal schemes have `⊤` affine simultaneously. -/
-theorem isAffineOpen_top_iff_of_iso {X Y : FormalScheme} (e : X ≅ Y) :
-    X.IsAffineOpen ⊤ ↔ Y.IsAffineOpen ⊤ :=
-  ⟨isAffineOpen_top_of_iso e, isAffineOpen_top_of_iso e.symm⟩
-
-/-- The isomorphism on global sections `Γ(Y, O_Y) ≅ Γ(X, O_X)` induced by an isomorphism
-`e : X ≅ Y` of formal schemes. -/
-noncomputable def globalSectionsIsoOfIso {X Y : FormalScheme} (e : X ≅ Y) :
-    Y.presheaf.obj (op ⊤) ≅ X.presheaf.obj (op ⊤) where
-  hom := (forgetToLocallyRingedSpace.map e.hom).c.app (op ⊤)
-  inv := (forgetToLocallyRingedSpace.map e.inv).c.app (op ⊤)
-  hom_inv_id := (LocallyRingedSpace.Γ.mapIso (forgetToLocallyRingedSpace.mapIso e).op).hom_inv_id
-  inv_hom_id := (LocallyRingedSpace.Γ.mapIso (forgetToLocallyRingedSpace.mapIso e).op).inv_hom_id
-
-/-- An isomorphism `e : X ≅ Y` of formal schemes pulls `X.vanishingIdeal ⊤` back to
-`Y.vanishingIdeal ⊤` along global sections. -/
-theorem vanishingIdeal_top_comap_of_iso {X Y : FormalScheme} (e : X ≅ Y) :
-    (X.vanishingIdeal ⊤).comap (globalSectionsIsoOfIso e).hom.hom = Y.vanishingIdeal ⊤ := by
-  let f := forgetToLocallyRingedSpace.map e.hom
-  have hsurj : Function.Surjective f.base :=
-    (TopCat.homeoOfIso
-      (LocallyRingedSpace.forgetToTop.mapIso (forgetToLocallyRingedSpace.mapIso e))).surjective
-  ext s
-  rw [Ideal.mem_comap, mem_vanishingIdeal_top, mem_vanishingIdeal_top]
-  have hpt (x : X) :
-      X.toLocallyRingedSpace.Γevaluation x ((globalSectionsIsoOfIso e).hom s) = 0 ↔
-        Y.toLocallyRingedSpace.Γevaluation (f.base x) s = 0 :=
-    (Iff.of_eq (congrArg (· = 0)
-      (LocallyRingedSpace.Γevaluation_naturality_apply f x s).symm)).trans
-      (residueFieldMap_eq_zero_iff f x _)
-  exact ⟨fun h y ↦ by obtain ⟨x, rfl⟩ := hsurj y; exact (hpt x).mp (h x),
-    fun h x ↦ (hpt x).mpr (h (f.base x))⟩
-
 /-- For an isomorphism `e : X ≅ Y` between affine formal schemes, the induced global-sections map
 `Γ(Y, O_Y) → Γ(X, O_X)` is a homeomorphism for `sectionsTopology`. -/
 theorem isHomeomorph_globalSections_of_iso {X Y : FormalScheme} (e : X ≅ Y)
     (hX : X.IsAffineOpen ⊤) (hY : Y.IsAffineOpen ⊤) :
     @IsHomeomorph _ _ (Y.sectionsTopology ⊤ hY) (X.sectionsTopology ⊤ hX)
-      (globalSectionsIsoOfIso e).hom := by
-  let φ : Y.presheaf.obj (op ⊤) ≃+* X.presheaf.obj (op ⊤) :=
+      (globalSectionsIsoOfIso e).hom :=
+  isHomeomorph_sectionsTopology_of_comap_vanishingIdeal hX hY
     (globalSectionsIsoOfIso e).commRingCatIsoToRingEquiv
-  obtain ⟨J, hJfg, hJrad⟩ := X.exists_fg_radical_eq_vanishingIdeal ⊤ hX
-  have hKfg : (J.comap φ).FG := by
-    rw [← Ideal.map_symm]
-    exact hJfg.map φ.symm.toRingHom
-  have hKrad : (J.comap φ).radical = Y.vanishingIdeal ⊤ := by
-    rw [← Ideal.comap_radical, hJrad]
-    exact vanishingIdeal_top_comap_of_iso e
-  have htop : Y.sectionsTopology ⊤ hY =
-      TopologicalSpace.induced φ (X.sectionsTopology ⊤ hX) := by
-    let tX : TopologicalSpace (X.presheaf.obj (op ⊤)) := J.adicTopology
-    let tY : TopologicalSpace (Y.presheaf.obj (op ⊤)) := TopologicalSpace.induced φ tX
-    have hadic : @IsAdic _ _ tY (J.comap φ) :=
-      IsAdic.comap (rfl : @IsAdic _ _ tX J) φ ⟨rfl⟩
-    rw [X.sectionsTopology_eq_adic ⊤ hX hJfg hJrad, Y.sectionsTopology_eq_adic ⊤ hY hKfg hKrad]
-    exact hadic.symm
-  let := Y.sectionsTopology ⊤ hY
-  let := X.sectionsTopology ⊤ hX
-  exact (φ.toEquiv.toHomeomorphOfIsInducing ⟨htop⟩).isHomeomorph
+    (comap_vanishingIdeal_top_globalSectionsIsoOfIso_hom e)
 
 /-- If an affine formal scheme `ofSpf A` is isomorphic in `FormalScheme` to `Y.toFormalScheme` for
 an ordinary scheme `Y`, then `A` carries the discrete topology. -/
-theorem discreteTopology_of_iso_toFormalScheme {A : Type u} [CommRing A] [TopologicalSpace A]
+theorem discreteTopology_of_ofSpf_iso_toFormalScheme {A : Type u} [CommRing A] [TopologicalSpace A]
     [IsTopologicalRing A] [IsAdicRing A] {Y : Scheme.{u}} (e : ofSpf A ≅ Y.toFormalScheme) :
     DiscreteTopology A := by
   have hA : (ofSpf A).IsAffineOpen ⊤ := isAffineOpen_top_ofSpf A
@@ -844,10 +817,10 @@ theorem discreteTopology_of_iso_toFormalScheme {A : Type u} [CommRing A] [Topolo
 /-- An affine formal scheme `ofSpf A` lies in the essential image of `Scheme.toFormalScheme`
 (`ofScheme`) if and only if `A` carries the discrete topology. -/
 @[simp]
-theorem exists_iso_toFormalScheme_iff (A : Type u) [CommRing A] [TopologicalSpace A]
+theorem exists_ofSpf_iso_toFormalScheme_iff (A : Type u) [CommRing A] [TopologicalSpace A]
     [IsTopologicalRing A] [IsAdicRing A] :
     (∃ Y : Scheme.{u}, Nonempty (ofSpf A ≅ Y.toFormalScheme)) ↔ DiscreteTopology A :=
-  ⟨fun ⟨_, ⟨e⟩⟩ ↦ discreteTopology_of_iso_toFormalScheme e,
+  ⟨fun ⟨_, ⟨e⟩⟩ ↦ discreteTopology_of_ofSpf_iso_toFormalScheme e,
     fun _ ↦ ⟨Spec (CommRingCat.of A), ⟨(ofSchemeSpecIso A).symm⟩⟩⟩
 
 end Comparisons

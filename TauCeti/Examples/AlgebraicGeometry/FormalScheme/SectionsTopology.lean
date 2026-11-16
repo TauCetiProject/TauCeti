@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Data.ZMod.Basic
 public import TauCeti.AlgebraicGeometry.FormalScheme.SectionsTopology
-public import TauCeti.RingTheory.Huber.Padic.Basic
+public import TauCeti.RingTheory.AdicRing.Padic
 
 /-!
 # Examples for the canonical adic topology on affine formal opens
@@ -16,7 +16,7 @@ We test `TauCeti.FormalScheme.sectionsTopology`, `TauCeti.FormalScheme.IsAffineO
 the affine reconstruction isomorphism `TauCeti.FormalScheme.IsAffineOpen.isoSpf` (EGA I, Ch. I,
 10.4.2) on concrete formal schemes:
 
-1. **`p`-adic formal disc (`ofSpf ℤ_[p]`):** the topologized section ring
+1. **Formal spectrum of `ℤ_[p]` (`ofSpf ℤ_[p]`):** the topologized section ring
    `(isAffineOpen_top_ofSpf ℤ_[p]).Sections` is an `IsAdicRing` whose topology is **not** discrete
    (even though the underlying topological space has a single point), `isoSpf` reconstructs
    `(ofSpf ℤ_[p]).restrict ⊤` from its topologized sections, and `ofSpf ℤ_[p]` is not isomorphic to
@@ -41,19 +41,6 @@ section Padic
 
 variable (p : ℕ) [Fact p.Prime]
 
-local instance padicIntIsAdicRing : IsAdicRing ℤ_[p] :=
-  ⟨IsLocalRing.maximalIdeal ℤ_[p],
-    by rw [PadicInt.maximalIdeal_eq_span_p]; exact Submodule.fg_span_singleton _,
-    Huber.PadicInt.isAdic_maximalIdeal, inferInstance⟩
-
-private theorem not_discreteTopology_padicInt : ¬ DiscreteTopology ℤ_[p] := by
-  intro hdisc
-  have hnil : Filter.Tendsto (fun n : ℕ ↦ (p : ℤ_[p]) ^ n) Filter.atTop (𝓝 0) :=
-    (Huber.PadicInt.isTopologicallyNilpotent_iff_dvd (c := (p : ℤ_[p]))).mpr dvd_rfl
-  rw [nhds_discrete, Filter.tendsto_pure] at hnil
-  obtain ⟨n, hn⟩ := hnil.exists
-  exact pow_ne_zero n (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero) hn
-
 -- Over `ofSpf ℤ_[p]`, the topologized section ring `hU.Sections` is a nondiscrete adic ring and
 -- canonically reconstructs `(ofSpf ℤ_[p]).restrict ⊤` via `hU.isoSpf` (EGA I, Ch. I, 10.4.2).
 example :
@@ -64,13 +51,13 @@ example :
   refine ⟨inferInstance, fun hdisc ↦ ?_, ⟨hU.isoSpf⟩⟩
   let e : ofSpf ℤ_[p] ≅ (Spec (CommRingCat.of hU.Sections)).toFormalScheme :=
     (ofSpf ℤ_[p]).restrictTopIso.symm ≪≫ hU.isoSpf ≪≫ (ofSchemeSpecIso hU.Sections).symm
-  exact not_discreteTopology_padicInt p (discreteTopology_of_iso_toFormalScheme e)
+  exact Huber.PadicInt.not_discreteTopology (discreteTopology_of_ofSpf_iso_toFormalScheme e)
 
 -- `ofSpf ℤ_[p]` is a genuine formal scheme: it is not isomorphic to `ofScheme.obj Y` for any
 -- ordinary scheme `Y`.
 example : ¬ ∃ Y : Scheme.{0}, Nonempty (ofSpf ℤ_[p] ≅ ofScheme.obj Y) := by
-  simp only [ofScheme_obj, exists_iso_toFormalScheme_iff]
-  exact not_discreteTopology_padicInt p
+  simp only [ofScheme_obj, exists_ofSpf_iso_toFormalScheme_iff]
+  exact Huber.PadicInt.not_discreteTopology
 
 end Padic
 
