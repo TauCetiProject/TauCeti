@@ -12,7 +12,7 @@ public import TauCeti.Algebra.Homology.DG.Module.Right.QuasiIso
 public import TauCeti.Algebra.Homology.DG.Module.TensorProduct.Differential
 
 /-!
-# Changing the basepoint of a DG local system preserves quasi-isomorphisms
+# Changing the basepoint of a DG local system preserves and reflects quasi-isomorphisms
 
 For points `a` and `b` of a space `B`, a DG local system at `a`, that is a right DG module `M`
 over the chain algebra `C_*(Ω_a B)`, becomes one at `b` by tensoring with the chain bimodule
@@ -35,6 +35,14 @@ left action (`TauCeti.pathChainAppendHomotopy`). Tensoring with a right module `
 over the loops at `b`, but they are natural in `M`, which is all that is needed to transfer
 quasi-isomorphisms (`TauCeti.DGRightModuleHom.isQuasiIso_of_homotopyRetract`).
 
+The other composite, `m ↦ m · ρ([δ])`, is the right action of the `0`-chain of the loop
+`δ ⋆ δ⁻¹`. That loop is joined to the unit in `Ω_a B`, so `ρ([δ])` differs from the unit by a
+boundary `d h` (`TauCeti.exists_pathChainToLoopChain_pathChainPoint_eq_one_add`), and the right
+action of `d h` is null-homotopic (`TauCeti.IsDGRightModule.op_map_smul_eq_add`). So `M` is also a
+homotopy retract of `M ⊗ C_*(P_{a→b} B)`, naturally in `M`, and basepoint change along a path
+reflects quasi-isomorphisms
+(`TauCeti.isQuasiIso_of_isQuasiIso_tensorBimoduleMap_pathChainBimodule`).
+
 ## Main definitions
 
 * `TauCeti.pathChainToLoopChain`: appending the reversal of `δ`, on chains.
@@ -52,6 +60,10 @@ quasi-isomorphisms (`TauCeti.DGRightModuleHom.isQuasiIso_of_homotopyRetract`).
   the map back is homotopic to the identity.
 * `TauCeti.isQuasiIso_tensorBimoduleMap_pathChainBimodule`: basepoint change preserves
   quasi-isomorphisms.
+* `TauCeti.exists_tensorPathChainAct_tensorPathChainPoint`: the composite of `m ↦ m ⊗ [δ]` and
+  `m ⊗ c ↦ m · ρ(c)` is homotopic to the identity.
+* `TauCeti.isQuasiIso_tensorBimoduleMap_pathChainBimodule_iff`: along a path, basepoint change
+  preserves and reflects quasi-isomorphisms.
 
 ## References
 
@@ -169,6 +181,30 @@ theorem pathChainToLoopChain_smul_pathChainPoint (δ : MoorePathBetween B a b)
       NormalizedCubicalChain.leftAct_def, ← NormalizedCubicalChain.map_cast,
       NormalizedCubicalChain.crossProduct_point_right, ← h, NormalizedCubicalChain.map_comp,
       NormalizedCubicalChain.map_comp, LinearMap.comp_apply, LinearMap.comp_apply]
+
+/-- **The `0`-chain of `δ ⋆ δ⁻¹` is homologous to the unit**: `ρ([δ])` differs from the unit
+`[1]` of `C_*(Ω_a B)` by a boundary, the prism of the unit along a homotopy from appending `δ` and
+then `δ⁻¹` to the identity of `Ω_a B`. -/
+theorem exists_pathChainToLoopChain_pathChainPoint_eq_one_add (δ : MoorePathBetween B a b) :
+    ∃ h : loopChainAlgebra B a R, pathChainToLoopChain R δ (pathChainPoint R δ) =
+      1 + cubicalChainDifferential (MooreLoopSpace B a) R h := by
+  obtain ⟨H⟩ := (MoorePathBetween.loopAppendHomotopyEquiv δ).left_inv
+  refine ⟨-cubicalChainLof (MooreLoopSpace B a) R 1 (NormalizedCubicalChain.prism R H 0
+    (NormalizedCubicalChain.ofCube _ R (SingularCube.point 1))), ?_⟩
+  have h1 : (1 : loopChainAlgebra B a R) =
+      cubicalChainLof (MooreLoopSpace B a) R 0 (NormalizedCubicalChain.ofCube _ R
+        (SingularCube.point 1)) := by
+    rw [DirectSum.lof_eq_of, ← NormalizedCubicalChain.one_def]
+    rfl
+  have hpt : ((MoorePathBetween.loopAppendHomotopyEquiv δ).invFun.comp
+      (MoorePathBetween.loopAppendHomotopyEquiv δ).toFun).comp (SingularCube.point 1) =
+      (MoorePathBetween.loopAppendHomotopyEquiv δ).symm.toFun.comp (SingularCube.point δ) :=
+    ContinuousMap.ext fun _ ↦ by
+      simp [SingularCube.point_apply]
+  rw [map_neg, cubicalChainDifferential_lof_succ, NormalizedCubicalChain.boundary_prism_zero,
+    NormalizedCubicalChain.map_id, LinearMap.id_apply, NormalizedCubicalChain.map_ofCube, hpt,
+    map_sub, ← h1, neg_sub, add_sub_cancel, pathChainPoint, pathChainToLoopChain_lof,
+    NormalizedCubicalChain.map_ofCube]
 
 section BasepointChange
 
@@ -358,6 +394,56 @@ theorem isQuasiIso_tensorBimoduleMap_pathChainBimodule
       (differential_tensorPathChainAct δ) (differential_tensorPathChainPoint δ)
       (tensorPathChainPoint_tensorPathChainAct δ) (tensorPathChainPoint_tensorPathChainAct δ)
       (tensorPathChainAct_tensorBimoduleMap δ f) (tensorBimoduleMap_tensorPathChainPoint δ f)
+
+variable (M) in
+/-- **`M` is a homotopy retract of `M ⊗ C_*(P_{a→b} B)`**: following `m ↦ m ⊗ [δ]` by
+`m ⊗ c ↦ m · ρ(c)` is the right action of `ρ([δ])`, the `0`-chain of `δ ⋆ δ⁻¹`, which is homotopic
+to the identity since `ρ([δ])` differs from the unit by a boundary. -/
+theorem exists_tensorPathChainAct_tensorPathChainPoint :
+    ∃ K : M →ₗ[R] M, ∀ m, tensorPathChainAct M δ (tensorPathChainPoint M δ m) =
+      m + M.differential (K m) + K (M.differential m) := by
+  obtain ⟨h, hh⟩ := exists_pathChainToLoopChain_pathChainPoint_eq_one_add (R := R) δ
+  refine ⟨DistribSMul.toLinearMap R M (op h) ∘ₗ
+    (InternalGrading.ofDecomposition M.grading).koszulTwist 1, fun m ↦ ?_⟩
+  rw [tensorPathChainPoint_apply, tensorPathChainAct_tmul, hh, MulOpposite.op_add, add_smul,
+    op_one, one_smul, M.isDGRightModule.op_map_smul_eq_add h m, add_assoc]
+  simp only [LinearMap.comp_apply, DistribSMul.toLinearMap_apply]
+
+/-- **Changing the basepoint reflects quasi-isomorphisms.** If a Moore path joins `a` to `b`, a
+morphism `f : M → N` of DG local systems at `a` is a quasi-isomorphism as soon as
+`f ⊗ 1 : M ⊗ C_*(P_{a→b} B) → N ⊗ C_*(P_{a→b} B)` is one. -/
+theorem isQuasiIso_of_isQuasiIso_tensorBimoduleMap_pathChainBimodule
+    (hab : Nonempty (MoorePathBetween B a b))
+    {M N : DGRightModuleCat.{w, max u w, v} (loopChain_isDGAlgebra B a R)} {f : M ⟶ N}
+    (hf : IsQuasiIso (tensorBimoduleMap f (𝟙 (pathChainBimodule B a b R)))) : IsQuasiIso f := by
+  -- Instance search does not see the structures of a tensor product through its carrier.
+  let := (tensorBimoduleObj M (pathChainBimodule B a b R)).moduleOp
+  let := (tensorBimoduleObj M (pathChainBimodule B a b R)).scalarTower
+  let := (tensorBimoduleObj M (pathChainBimodule B a b R)).gradedSMul
+  let := (tensorBimoduleObj N (pathChainBimodule B a b R)).moduleOp
+  let := (tensorBimoduleObj N (pathChainBimodule B a b R)).scalarTower
+  let := (tensorBimoduleObj N (pathChainBimodule B a b R)).gradedSMul
+  obtain ⟨δ⟩ := hab
+  obtain ⟨KM, hKM⟩ := exists_tensorPathChainAct_tensorPathChainPoint M δ
+  obtain ⟨KN, hKN⟩ := exists_tensorPathChainAct_tensorPathChainPoint N δ
+  exact DGRightModuleHom.isQuasiIso_of_homotopyRetract f
+    ((tensorBimoduleMap f (𝟙 (pathChainBimodule B a b R))).toLinearMap.restrictScalars R)
+    ((DGRightModuleHom.isQuasiIso_iff_forall_exists _).1 hf)
+    (tensorPathChainPoint M δ) (tensorPathChainAct M δ) KM
+    (tensorPathChainPoint N δ) (tensorPathChainAct N δ) KN
+    (differential_tensorPathChainPoint δ) (differential_tensorPathChainAct δ)
+    (differential_tensorPathChainPoint δ) (differential_tensorPathChainAct δ) hKM hKN
+    (fun m ↦ (tensorBimoduleMap_tensorPathChainPoint δ f m).symm)
+    (fun z ↦ (tensorPathChainAct_tensorBimoduleMap δ f z).symm)
+
+/-- **Along a Moore path, changing the basepoint preserves and reflects quasi-isomorphisms**:
+`f ⊗ 1` is a quasi-isomorphism exactly when `f` is. -/
+theorem isQuasiIso_tensorBimoduleMap_pathChainBimodule_iff
+    (hab : Nonempty (MoorePathBetween B a b))
+    {M N : DGRightModuleCat.{w, max u w, v} (loopChain_isDGAlgebra B a R)} {f : M ⟶ N} :
+    IsQuasiIso (tensorBimoduleMap f (𝟙 (pathChainBimodule B a b R))) ↔ IsQuasiIso f :=
+  ⟨isQuasiIso_of_isQuasiIso_tensorBimoduleMap_pathChainBimodule hab,
+    isQuasiIso_tensorBimoduleMap_pathChainBimodule⟩
 
 end BasepointChange
 
