@@ -172,10 +172,10 @@ private theorem orientationSignlessPreprojectiveIdeal_map_eq :
           rw [Ideal.mem_comap, orientationPathAlgebraEquiv_symm_signlessPreprojectiveRelator,
             TwoSidedIdeal.mem_asIdeal]
           exact signlessPreprojectiveRelator_mem_signlessPreprojectiveIdeal k _
-      _ = (signlessPreprojectiveIdeal k (DoubledQuiver G)).asIdeal.map
+      _ ≤ (signlessPreprojectiveIdeal k (DoubledQuiver G)).asIdeal.map
           (orientationPathAlgebraEquiv o k : _ →+* _) :=
-        (Ideal.map_comap_of_equiv
-          (orientationPathAlgebraEquiv o k).toRingEquiv).symm
+        Ideal.comap_le_map_of_inverse _ _ _ fun x => by
+          rw [RingHom.coe_coe, AlgEquiv.apply_symm_apply]
   · refine Ideal.map_le_iff_le_comap.mpr
       ((signlessPreprojectiveIdeal_asIdeal_le_iff k).2 fun i => ?_)
     rw [Ideal.mem_comap, RingHom.coe_coe, orientationPathAlgebraEquiv_signlessPreprojectiveRelator,
