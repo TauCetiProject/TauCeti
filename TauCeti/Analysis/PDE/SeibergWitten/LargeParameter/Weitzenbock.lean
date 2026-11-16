@@ -230,8 +230,8 @@ theorem neg_le_re_inner_smul_add_inv_two_smul_cliffordRestriction_apply
   have hcs := neg_le_of_abs_le (abs_real_inner_le_norm
     (quadraticTwoForm o ρ hkl (φ + β) : ⋀[ℝ]^2 V) μ)
   have hsqrt : √2 * √2 = 2 := Real.mul_self_sqrt zero_le_two
-  rw [inner_add_right, Complex.add_re, inner_smul_right_eq_smul, inner_smul_right_eq_smul,
-    Complex.smul_re, Complex.smul_re, smul_eq_mul, smul_eq_mul, hββ]
+  simp only [inner_add_right, inner_smul_right_eq_smul, Complex.add_re, Complex.smul_re,
+    smul_eq_mul, hββ]
   rw [Submodule.norm_coe, hn] at hcs
   have hβ0 : 0 ≤ r / 2 * ‖β‖ ^ 2 := by positivity
   have key : √2 / 2 * ‖μ‖ * ‖φ + β‖ ^ 2 = 2 * (‖φ + β‖ ^ 2 / (2 * √2) * ‖μ‖) := by
