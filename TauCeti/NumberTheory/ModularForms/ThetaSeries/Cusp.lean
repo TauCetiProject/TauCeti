@@ -272,25 +272,14 @@ end ImaginaryAxis
 
 section ImaginaryAxisMono
 
+private theorem quotient_mk_submoduleOf_eq_zero_iff {E : Type*} [AddCommGroup E]
+    {M L : Submodule ℤ E} (x : L) :
+    (Submodule.Quotient.mk x : L ⧸ M.submoduleOf L) = 0 ↔ (x : E) ∈ M := by
+  rw [Submodule.Quotient.mk_eq_zero, Submodule.submoduleOf, Submodule.mem_comap,
+    Submodule.subtype_apply]
+
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {M L : Submodule ℤ E} [DiscreteTopology L]
-
-/-- On the imaginary axis, `(thetaCoset M γ τ).re ≤ (thetaCoset L γ τ).re` whenever `M ≤ L`:
-splitting `γ + L` into cosets of `M` expresses `(thetaCoset L γ τ).re` as `(thetaCoset M γ τ).re`
-plus a sum of positive coset contributions. -/
-theorem re_thetaCoset_le_of_le (hML : M ≤ L) (γ : E) {τ : ℍ} (hτ : τ.re = 0) :
-    (thetaCoset M γ τ).re ≤ (thetaCoset L γ τ).re := by
-  have : DiscreteTopology M := ‹DiscreteTopology L›.of_subset hML
-  have hout0 : ((Quotient.out (0 : L ⧸ M.submoduleOf L) : L) : E) ∈ M :=
-    (Submodule.Quotient.mk_eq_zero (M.submoduleOf L)).mp (Submodule.Quotient.mk_out 0)
-  simpa only [Complex.reCLM_apply, thetaCoset_add_mem M γ hout0] using
-    le_hasSum (Complex.reCLM.hasSum (hasSum_thetaCoset_add_out L hML γ τ)) 0
-      fun _ _ => (re_thetaCoset_pos M _ hτ).le
-
-/-- On the imaginary axis, `(thetaSeries M τ).re ≤ (thetaSeries L τ).re` whenever `M ≤ L`. -/
-theorem re_thetaSeries_le_of_le (hML : M ≤ L) {τ : ℍ} (hτ : τ.re = 0) :
-    (thetaSeries M τ).re ≤ (thetaSeries L τ).re := by
-  simpa using re_thetaCoset_le_of_le hML 0 hτ
 
 /-- On the imaginary axis, `(thetaCoset M γ τ).re < (thetaCoset L γ τ).re` whenever `M < L`: any
 vector in `L \ M` contributes a nonzero coset of `M`, whose theta series on the imaginary axis has
@@ -300,9 +289,9 @@ theorem re_thetaCoset_lt_of_lt (hML : M < L) (γ : E) {τ : ℍ} (hτ : τ.re = 
   have : DiscreteTopology M := ‹DiscreteTopology L›.of_subset hML.le
   obtain ⟨v, hvL, hvM⟩ := IsConcreteLE.not_le_iff_exists.mp hML.not_ge
   have hout0 : ((Quotient.out (0 : L ⧸ M.submoduleOf L) : L) : E) ∈ M :=
-    (Submodule.Quotient.mk_eq_zero (M.submoduleOf L)).mp (Submodule.Quotient.mk_out 0)
+    (quotient_mk_submoduleOf_eq_zero_iff _).mp (Submodule.Quotient.mk_out 0)
   have hy : (Submodule.Quotient.mk (⟨v, hvL⟩ : L) : L ⧸ M.submoduleOf L) ≠ 0 :=
-    mt (Submodule.Quotient.mk_eq_zero (M.submoduleOf L)).mp hvM
+    mt (quotient_mk_submoduleOf_eq_zero_iff _).mp hvM
   simpa only [Complex.reCLM_apply, thetaCoset_add_mem M γ hout0] using
     lt_hasSum (Complex.reCLM.hasSum (hasSum_thetaCoset_add_out L hML.le γ τ)) 0
       (fun _ _ => (re_thetaCoset_pos M _ hτ).le) _ hy (re_thetaCoset_pos M _ hτ)
@@ -311,6 +300,16 @@ theorem re_thetaCoset_lt_of_lt (hML : M < L) (γ : E) {τ : ℍ} (hτ : τ.re = 
 theorem re_thetaSeries_lt_of_lt (hML : M < L) {τ : ℍ} (hτ : τ.re = 0) :
     (thetaSeries M τ).re < (thetaSeries L τ).re := by
   simpa using re_thetaCoset_lt_of_lt hML 0 hτ
+
+/-- On the imaginary axis, `(thetaCoset M γ τ).re ≤ (thetaCoset L γ τ).re` whenever `M ≤ L`. -/
+theorem re_thetaCoset_le_of_le (hML : M ≤ L) (γ : E) {τ : ℍ} (hτ : τ.re = 0) :
+    (thetaCoset M γ τ).re ≤ (thetaCoset L γ τ).re :=
+  hML.eq_or_lt.elim (fun h => h ▸ le_rfl) fun h => (re_thetaCoset_lt_of_lt h γ hτ).le
+
+/-- On the imaginary axis, `(thetaSeries M τ).re ≤ (thetaSeries L τ).re` whenever `M ≤ L`. -/
+theorem re_thetaSeries_le_of_le (hML : M ≤ L) {τ : ℍ} (hτ : τ.re = 0) :
+    (thetaSeries M τ).re ≤ (thetaSeries L τ).re := by
+  simpa using re_thetaCoset_le_of_le hML 0 hτ
 
 /-- For `M < L`, the coset theta series `θ_{γ+M}` and `θ_{γ+L}` take distinct values at every point
 of the imaginary axis. -/

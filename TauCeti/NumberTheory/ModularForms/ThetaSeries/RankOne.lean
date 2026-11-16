@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.ModularForms.ThetaSeries.DiscriminantGroup
 public import TauCeti.NumberTheory.ModularForms.ThetaSeries.Functoriality
 public import TauCeti.NumberTheory.ModularForms.ThetaSeries.QExpansion
 public import Mathlib.NumberTheory.ModularForms.JacobiTheta.OneVariable
+import TauCeti.LinearAlgebra.Span.Basic
 import TauCeti.NumberTheory.ModularForms.ThetaSeries.Cusp
 
 /-!
@@ -24,11 +25,11 @@ Mathlib's `hasSum_nat_jacobiTheta`.
 
 For the non-integral lattice `L = ½ ℤ ⊆ ℝ`, the dual lattice `L^∨ = 2 ℤ` is strictly contained in
 `L` (`ZLattice.dual_span_inv_two`, `ZLattice.span_two_lt_span_inv_two`), so the discriminant group
-`A_L = L^∨ ⧸ (L ∩ L^∨)` is trivial (`ZLattice.instUniqueDiscriminantGroupSpanInvTwo`), even though
-`level (½ ℤ) = 1` (`ZLattice.level_span_inv_two`). On the imaginary axis
-`Θ_{2 ℤ}(τ).re < Θ_{½ ℤ}(τ).re` (`ZLattice.re_thetaSeries_span_two_lt_span_inv_two`); in particular
-`Θ_{2 ℤ}(i) ≠ Θ_{½ ℤ}(i)` (`ZLattice.thetaSeries_span_two_ne_thetaSeries_span_inv_two_I`), so the
-dual coset decomposition `Θ_{L^∨} = ∑_{γ ∈ A_L} θ_γ` fails at `τ = i` for `L = ½ ℤ`
+`A_L = L^∨ ⧸ (L ∩ L^∨)` is trivial (`ZLattice.instUniqueDiscriminantGroupSpanInvTwo`). On the
+imaginary axis `Θ_{2 ℤ}(τ).re < Θ_{½ ℤ}(τ).re`
+(`ZLattice.re_thetaSeries_span_two_lt_span_inv_two`); in particular `Θ_{2 ℤ}(i) ≠ Θ_{½ ℤ}(i)`
+(`ZLattice.thetaSeries_span_two_ne_thetaSeries_span_inv_two_I`), so the dual coset decomposition
+`Θ_{L^∨} = ∑_{γ ∈ A_L} θ_γ` fails at `τ = i` for `L = ½ ℤ`
 (`ZLattice.thetaSeries_dual_span_inv_two_ne_sum_I`), showing that `ZLattice.IsIntegral` is
 essential in `ZLattice.IsIntegral.thetaSeries_dual_eq_sum`.
 
@@ -74,10 +75,9 @@ theorem thetaSeries_span_one (τ : ℍ) :
 `c² τ`. -/
 theorem thetaSeries_span_singleton {c : ℝ} (hc : c ≠ 0) (τ : ℍ) :
     thetaSeries (span ℤ {c} : Submodule ℤ ℝ) τ = jacobiTheta ((c ^ 2 : ℝ) * (τ : ℂ)) := by
-  have hsmul : c • (span ℤ {(1 : ℝ)} : Submodule ℤ ℝ) = span ℤ {c} := by
-    rw [Submodule.smul_span, Set.smul_set_singleton, smul_eq_mul, mul_one]
-  rw [← hsmul, thetaSeries_smul _ hc, thetaSeries_span_one]
-  congr 1
+  nth_rw 1 [← mul_one c]
+  rw [← smul_eq_mul, ← Submodule.smul_span_singleton, thetaSeries_smul _ hc,
+    thetaSeries_span_one, UpperHalfPlane.coe_pos_real_smul, Complex.real_smul]
 
 /-- Scaling the integer lattice by `√2` gives Jacobi's theta function at `2τ`. -/
 theorem thetaSeries_sqrt_two_smul_span_one (τ : ℍ) :
@@ -141,7 +141,6 @@ theorem thetaSeries_dual_span_inv_two_ne_sum_I :
     thetaSeries (dual (span ℤ {(2 : ℝ)⁻¹} : Submodule ℤ ℝ)) UpperHalfPlane.I ≠
       ∑ γ : DiscriminantGroup (span ℤ {(2 : ℝ)⁻¹} : Submodule ℤ ℝ),
         thetaCosetClass (span ℤ {(2 : ℝ)⁻¹} : Submodule ℤ ℝ) γ UpperHalfPlane.I :=
-  thetaSeries_dual_ne_sum_of_dual_lt (dual_span_inv_two.trans_lt span_two_lt_span_inv_two)
-    UpperHalfPlane.I_re
+  thetaSeries_dual_ne_sum_of_not_isIntegral not_isIntegral_span_inv_two UpperHalfPlane.I_re
 
 end ZLattice

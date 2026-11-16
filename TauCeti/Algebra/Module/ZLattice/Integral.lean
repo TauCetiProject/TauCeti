@@ -231,10 +231,6 @@ theorem IsEven.isIntegral {L : Submodule ℤ E} (h : IsEven L) : IsIntegral L :=
   push_cast
   linarith
 
-/-- The lattice `½ ℤ ⊆ ℝ` is not even. -/
-theorem not_isEven_span_inv_two : ¬ IsEven (span ℤ {(2 : ℝ)⁻¹} : Submodule ℤ ℝ) :=
-  mt IsEven.isIntegral not_isIntegral_span_inv_two
-
 /-- For an even lattice `L`, the half-norm `‖γ‖² / 2` of a dual vector `γ ∈ L^∨` is well defined
 modulo `ℤ` on the coset `γ + L`: `‖γ + v‖² - ‖γ‖² ∈ 2ℤ` for `v ∈ L`. -/
 theorem IsEven.exists_norm_add_sq_sub_norm_sq_eq {L : Submodule ℤ E} (hL : IsEven L)
@@ -329,10 +325,6 @@ theorem isUnimodular_span_orthonormalBasis {ι : Type*} [Fintype ι]
 /-- The lattice `ℤ ⊆ ℝ` is unimodular. -/
 theorem isUnimodular_span_one : IsUnimodular (span ℤ {1} : Submodule ℤ ℝ) := by
   simpa using isUnimodular_span_orthonormalBasis (OrthonormalBasis.singleton Unit ℝ)
-
-/-- The lattice `½ ℤ ⊆ ℝ` is not unimodular. -/
-theorem not_isUnimodular_span_inv_two : ¬ IsUnimodular (span ℤ {(2 : ℝ)⁻¹} : Submodule ℤ ℝ) :=
-  mt IsUnimodular.isIntegral not_isIntegral_span_inv_two
 
 /-- The dual of the lattice `½ ℤ ⊆ ℝ` is `2ℤ`. -/
 @[simp]

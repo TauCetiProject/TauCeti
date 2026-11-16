@@ -67,9 +67,9 @@ defined from it.
 * `ZLattice.mem_dual_of_mem_orthogonal_span`: a vector orthogonal to `L` lies in `L^∨`.
 * `ZLattice.dual_dual`: the dual of the dual of a discrete lattice in a finite-dimensional space is
   the lattice itself.
-* `ZLattice.span_eq_top_of_finite_quotient_smul_submoduleOf_dual`: a lattice in a
-  finite-dimensional space with finite quotient `L^∨ ⧸ (cL ∩ L^∨)`, for some real `c`, spans the
-  space.
+* `ZLattice.span_eq_top_of_finite_quotient_smul_submoduleOf_dual`,
+  `ZLattice.span_eq_top_of_dual_le`: a lattice in a finite-dimensional space with finite quotient
+  `L^∨ ⧸ (cL ∩ L^∨)` for some real `c` (in particular any lattice with `L^∨ ≤ L`) spans the space.
 * `ZLattice.dual_comap`: the dual commutes with pulling back along a linear isometry equivalence.
 * `ZLattice.dual_comap_continuousLinearEquiv`: the dual of the pullback along a continuous linear
   equivalence `e` is the pullback of the dual along the adjoint of `e⁻¹`.
@@ -349,6 +349,14 @@ theorem span_eq_top_of_finite_quotient_smul_submoduleOf_dual [FiniteDimensional 
     rw [inner_self_eq_zero, sub_eq_zero] at h0
     exact Subtype.ext h0
   exact not_finite (dual L ⧸ (c • L).submoduleOf (dual L))
+
+/-- If `L^∨ ≤ L` in a finite-dimensional space, then `L` spans the space over `ℝ`. -/
+theorem span_eq_top_of_dual_le [FiniteDimensional ℝ E] (h : dual L ≤ L) :
+    span ℝ (L : Set E) = ⊤ := by
+  have : Subsingleton (dual L ⧸ ((1 : ℝ) • L).submoduleOf (dual L)) := by
+    rw [one_smul, Submodule.Quotient.subsingleton_iff, submoduleOf_eq_top]
+    exact h
+  exact span_eq_top_of_finite_quotient_smul_submoduleOf_dual 1
 
 end Span
 
