@@ -185,6 +185,7 @@ theorem zero_lt_divisor_completedRiemannZeta_iff {s : ℂ} :
 
 /-- The divisor of the completed Riemann zeta function is invariant under complex conjugation,
 by the reflection symmetry `Λ (conj s) = conj (Λ s)`. -/
+@[simp]
 theorem divisor_completedRiemannZeta_conj (s : ℂ) :
     MeromorphicOn.divisor completedRiemannZeta univ (conj s) =
       MeromorphicOn.divisor completedRiemannZeta univ s := by
@@ -198,28 +199,18 @@ open scoped ComplexOrder in
 `Λ (1 - s) = Λ s` carries `(1, ∞)` to `(-∞, 0)`. -/
 theorem divisor_completedRiemannZeta_ofReal_nonpos (x : ℝ) :
     MeromorphicOn.divisor completedRiemannZeta univ x ≤ 0 := by
-  refine not_lt.1 fun hpos ↦ ?_
-  obtain ⟨hζ, htriv, hx1⟩ := zero_lt_divisor_completedRiemannZeta_iff.1 hpos
-  rcases lt_trichotomy x 0 with h₀ | rfl | h₀
-  · -- Off the trivial zeros `Γ_ℝ x ≠ 0`, so `Λ x = 0`, and then `ζ (1 - x) = 0` with `1 < 1 - x`.
-    have hx0 : (x : ℂ) ≠ 0 := ofReal_ne_zero.2 h₀.ne
-    have hΓ : Gammaℝ x ≠ 0 := by
-      rintro h
-      obtain ⟨n, hn⟩ := Gammaℝ_eq_zero_iff.1 h
-      cases n with
-      | zero => exact hx0 (by simpa using hn)
-      | succ m => exact htriv ⟨m, by rw [hn]; push_cast; ring⟩
-    have hΛ : completedRiemannZeta x = 0 := by
-      rw [riemannZeta_def_of_ne_zero hx0, div_eq_zero_iff] at hζ
-      exact hζ.resolve_right hΓ
-    have h1x : (1 : ℂ) - x ≠ 0 := by
-      rw [← ofReal_one, ← ofReal_sub, ofReal_ne_zero]
-      linarith
-    have hre : 1 < ((1 : ℂ) - x).re := by
+  rcases lt_or_ge x 0 with h₀ | h₀
+  · -- The functional equation `Λ x = Λ (1 - x)` with `1 < 1 - x` makes `Λ` regular and nonzero.
+    have hΛ : completedRiemannZeta x ≠ 0 := by
+      rw [← completedRiemannZeta_one_sub]
+      refine completedRiemannZeta_ne_zero_of_one_lt_re ?_
       simp only [sub_re, one_re, ofReal_re]
       linarith
-    refine riemannZeta_ne_zero_of_one_lt_re hre ?_
-    rw [riemannZeta_def_of_ne_zero h1x, completedRiemannZeta_one_sub, hΛ, zero_div]
+    exact ((analyticAt_completedRiemannZeta (ofReal_ne_zero.2 h₀.ne)
+      (by exact_mod_cast (by linarith : x ≠ 1))).divisor_apply_eq_zero hΛ).le
+  refine not_lt.1 fun hpos ↦ ?_
+  obtain ⟨hζ, -, hx1⟩ := zero_lt_divisor_completedRiemannZeta_iff.1 hpos
+  rcases h₀.eq_or_lt with rfl | h₀
   · simp [riemannZeta_zero] at hζ
   rcases lt_trichotomy x 1 with h₁ | rfl | h₁
   · exact (riemannZeta_lt_zero h₀ h₁).ne hζ

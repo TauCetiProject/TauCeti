@@ -17,7 +17,8 @@ The dual of the card of a primitive Dirichlet character `χ` is the card of `χ�
 real axis are therefore counted by the one-sided counting function of `χ⁻¹`: the count of `χ`
 below the axis is the count of `χ⁻¹` above it. At a nonnegative height `T` the symmetric count of
 `χ` is `N(T, χ) + N(T, χ⁻¹)` plus the zeros on the real segment `[0, 1]`. For a real character the
-two one-sided counts coincide, so the symmetric count is `2 N(T, χ)` plus the real zeros.
+two one-sided counts coincide, so the symmetric count is `2 N(T, χ)` plus the real zeros. The
+symmetric counts of `χ` and `χ⁻¹` always agree.
 
 For a non-real character the two one-sided counts differ in general, so the symmetric count is not
 twice either of them.
@@ -42,6 +43,17 @@ theorem dirichletData_inv_zeroCountingFunction (T : ℝ) :
     (dirichletData χ⁻¹ hχ.inv).zeroCountingFunction T =
       zeroCount (dirichletData χ hχ).completed univ (Icc 0 1 ×ℂ Ico (-T) 0) := by
   rw [← dirichletData_dual, AnalyticLFunctionData.zeroCountingFunction_dual]
+
+/-- The symmetric count of `χ⁻¹` is the symmetric count of `χ`, since the card of `χ⁻¹` is the
+dual of the card of `χ`. This is the simp form of
+`AnalyticLFunctionData.symmetricZeroCountingFunction_dual` for Dirichlet cards, on which `simp`
+first rewrites the dual by `dirichletData_dual`. -/
+@[simp]
+theorem dirichletData_inv_symmetricZeroCountingFunction (hχ' : χ⁻¹.IsPrimitive) (T : ℝ) :
+    (dirichletData χ⁻¹ hχ').symmetricZeroCountingFunction T =
+      (dirichletData χ (inv_inv χ ▸ hχ'.inv)).symmetricZeroCountingFunction T := by
+  rw [← AnalyticLFunctionData.symmetricZeroCountingFunction_dual (dirichletData χ _),
+    dirichletData_dual]
 
 /-- **The symmetric count of a primitive Dirichlet L-function.** At a nonnegative height `T`, the
 symmetric count of `χ` is the one-sided count of `χ`, plus the one-sided count of `χ⁻¹`, plus the

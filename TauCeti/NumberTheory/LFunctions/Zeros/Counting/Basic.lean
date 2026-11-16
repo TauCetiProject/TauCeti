@@ -160,26 +160,13 @@ theorem continuousWithinAt_symmetricZeroCountingFunction_Ici (T : ℝ) :
 
 /-! ### Reflection across the real axis and the symmetric count -/
 
-/-- The completed function of the dual card has at `s` the divisor that the completed function
-has at `conj s`. -/
-theorem divisor_dual_completed (s : ℂ) :
-    MeromorphicOn.divisor d.dual.completed univ s =
-      MeromorphicOn.divisor d.completed univ (conj s) := by
-  rw [dual_completed, divisor_conj_conj_univ]
-
-/-- The zero count of the dual card over a region is the zero count of the card over the
-reflected region. -/
-theorem zeroCount_dual_completed (R : Set ℂ) :
-    zeroCount d.dual.completed univ R = zeroCount d.completed univ (conj ⁻¹' R) := by
-  rw [dual_completed, zeroCount_conj_conj_univ]
-
 /-- **The dual card counts the zeros below the real axis.** The one-sided count of the dual card
 at height `T` is the number of zeros of the completed function in `0 ≤ Re s ≤ 1`,
 `-T ≤ Im s < 0`, counted with multiplicity. -/
 theorem zeroCountingFunction_dual (T : ℝ) :
     d.dual.zeroCountingFunction T = zeroCount d.completed univ (Icc 0 1 ×ℂ Ico (-T) 0) := by
-  rw [zeroCountingFunction_def, zeroCount_dual_completed, preimage_conj_reProdIm, neg_Ioc,
-    neg_zero]
+  rw [zeroCountingFunction_def, dual_completed, zeroCount_conj_conj, preimage_univ,
+    preimage_conj_reProdIm, neg_Ioc, neg_zero]
 
 /-- The symmetric count of the dual card is the symmetric count of the card, since its region is
 invariant under conjugation. -/
@@ -187,7 +174,7 @@ invariant under conjugation. -/
 theorem symmetricZeroCountingFunction_dual (T : ℝ) :
     d.dual.symmetricZeroCountingFunction T = d.symmetricZeroCountingFunction T := by
   rw [symmetricZeroCountingFunction_def, symmetricZeroCountingFunction_def,
-    zeroCount_dual_completed, preimage_conj_reProdIm, neg_Icc, neg_neg]
+    dual_completed, zeroCount_conj_conj, preimage_univ, preimage_conj_reProdIm, neg_Icc, neg_neg]
 
 /-- **The symmetric count splits at the real axis.** At a nonnegative height `T`, the symmetric
 count is the number of zeros with `0 < Im s ≤ T`, plus the number with `-T ≤ Im s < 0`, which is
@@ -199,17 +186,14 @@ theorem symmetricZeroCountingFunction_eq_add {T : ℝ} (hT : 0 ≤ T) :
   have hfin {t : Set ℝ} (ht : t ⊆ Icc (-T) T) :=
     zeroCount_support_finite_of_subset_reProdIm_Icc (f := d.completed) (subset_univ _)
       (reProdIm_subset_iff.2 (prod_mono (le_refl (Icc (0 : ℝ) 1)) ht))
-  have hunion (t₁ t₂ : Set ℝ) : Icc (0 : ℝ) 1 ×ℂ (t₁ ∪ t₂) = Icc 0 1 ×ℂ t₁ ∪ Icc 0 1 ×ℂ t₂ := by
-    ext z
-    simp only [mem_reProdIm, mem_union, and_or_left]
   have hlow : Ico (-T) 0 ⊆ Icc (-T) T := Ico_subset_Icc_self.trans (Icc_subset_Icc le_rfl hT)
   have hzero : Icc (0 : ℝ) 0 ⊆ Icc (-T) T := Icc_subset_Icc (neg_nonpos.2 hT) hT
   have hup : Ioc 0 T ⊆ Icc (-T) T := Ioc_subset_Icc_self.trans (Icc_subset_Icc (by linarith) le_rfl)
   rw [symmetricZeroCountingFunction_def, symmetricZeroCountingFunction_def, neg_zero,
     zeroCountingFunction_def, zeroCountingFunction_dual,
-    ← Ico_union_Icc_eq_Icc (neg_nonpos.2 hT) hT, ← Icc_union_Ioc_eq_Icc le_rfl hT, hunion,
-    zeroCount_union _ (hfin hlow) (hfin (union_subset hzero hup)), hunion,
-    zeroCount_union _ (hfin hzero) (hfin hup)]
+    ← Ico_union_Icc_eq_Icc (neg_nonpos.2 hT) hT, ← Icc_union_Ioc_eq_Icc le_rfl hT,
+    reProdIm_union_right, zeroCount_union _ (hfin hlow) (hfin (union_subset hzero hup)),
+    reProdIm_union_right, zeroCount_union _ (hfin hzero) (hfin hup)]
   · omega
   · rw [disjoint_left]
     rintro z ⟨-, -, h₁⟩ ⟨-, h₂, -⟩
@@ -223,7 +207,8 @@ theorem zeroCountingFunction_dual_eq_of_divisor_conj
     (hconj : ∀ s, MeromorphicOn.divisor d.completed univ (conj s) =
       MeromorphicOn.divisor d.completed univ s) (T : ℝ) :
     d.dual.zeroCountingFunction T = d.zeroCountingFunction T := by
-  simp only [zeroCountingFunction_def, zeroCount_def, divisor_dual_completed, hconj]
+  simp only [zeroCountingFunction_def, zeroCount_def, dual_completed, divisor_conj_conj_univ,
+    hconj]
 
 /-- **`N±(T) = 2 N(T) + N±(0)` for a divisor invariant under conjugation.** At a nonnegative
 height, the zeros below the real axis are the reflections of those above it, with the same
