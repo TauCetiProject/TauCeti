@@ -29,6 +29,14 @@ elements, over a field, are the virtual finite-dimensional representations of `L
 
 * `TauCeti.FGLieModuleCat.essentiallySmall`: finite Lie modules form an essentially small
   category.
+
+## References
+
+* Tau Ceti's `TauCeti.Algebra.Category.FiniteHopfModuleCat.EssentiallySmall`
+  (`TauCeti.FiniteHopfModuleCat.essentiallySmall`), for the proof plan of lifting a fully faithful
+  functor to `FGModuleCat`.
+* Mathlib's `Mathlib.Algebra.Category.FGModuleCat.EssentiallySmall`, for the essential smallness
+  of `FGModuleCat`.
 -/
 
 public section

@@ -22,29 +22,31 @@ generalized weights on finite-dimensional modules are linear (as in characterist
 character `TauCeti.formalCharacter K H M` of a finite-dimensional module is an isomorphism
 invariant and additive on direct sums. It therefore descends to a homomorphism
 
-`TauCeti.FGLieModuleCat.character K H : SplitK0 (FGLieModuleCat K L) →+ ℤ[Module.Dual K H]`
+`TauCeti.FGLieModuleCat.characterK0 K H : SplitK0 (FGLieModuleCat K L) →+ ℤ[Module.Dual K H]`
 
 sending `[M] - [N]` to `ch M - ch N`; likewise dimension descends to
-`TauCeti.FGLieModuleCat.finrank`. When `H` is triangularizable on every finite-dimensional module
-(for instance, when `K` is algebraically closed) the coefficients of the character of a virtual
-module add up to its dimension, and in characteristic zero, for a Cartan subalgebra of a
-Killing-semisimple Lie algebra, the character of a virtual module is supported on integral weights
-and invariant under the Weyl group.
+`TauCeti.FGLieModuleCat.finrankK0`, over any commutative ring satisfying the rank-nullity theorem.
+When `H` is triangularizable on every finite-dimensional module (for instance, when `K` is
+algebraically closed) the coefficients of the character of a virtual module add up to its
+dimension. Let `K` have characteristic zero, `L` be finite-dimensional and Killing, and `H` be a
+Cartan subalgebra. If `H` is splitting (`IsTriangularizable K H L`), the character of a virtual
+module is supported on integral weights; if `K` is algebraically closed, it is invariant under the
+Weyl group.
 
 ## Main definitions
 
-* `TauCeti.FGLieModuleCat.character`: the formal character of a virtual module.
-* `TauCeti.FGLieModuleCat.finrank`: the dimension of a virtual module.
+* `TauCeti.FGLieModuleCat.characterK0`: the formal character of a virtual module.
+* `TauCeti.FGLieModuleCat.finrankK0`: the dimension of a virtual module.
 
 ## Main results
 
-* `TauCeti.FGLieModuleCat.character_of`, `TauCeti.FGLieModuleCat.finrank_of`: the values on the
-  class of a module.
-* `TauCeti.FGLieModuleCat.sum_character_coeff_eq_finrank`: for a triangularizable `H`, the
+* `TauCeti.FGLieModuleCat.characterK0_splitK0_of`, `TauCeti.FGLieModuleCat.finrankK0_splitK0_of`:
+  the values on the class of a module.
+* `TauCeti.FGLieModuleCat.sum_characterK0_coeff_eq_finrankK0`: for a triangularizable `H`, the
   augmentation of the character is the dimension.
-* `TauCeti.FGLieModuleCat.isIntegralWeight_of_character_coeff_ne_zero`: the character of a virtual
-  module is supported on integral weights.
-* `TauCeti.FGLieModuleCat.character_coeff_weylGroup_smul`: the character of a virtual module is
+* `TauCeti.FGLieModuleCat.isIntegralWeight_of_characterK0_coeff_ne_zero`: the character of a
+  virtual module is supported on integral weights.
+* `TauCeti.FGLieModuleCat.characterK0_coeff_weylGroup_smul`: the character of a virtual module is
   Weyl invariant.
 
 ## References
@@ -62,32 +64,42 @@ universe w u v
 
 namespace TauCeti.FGLieModuleCat
 
-variable (K : Type u) {L : Type v} [Field K] [LieRing L] [LieAlgebra K L]
-
 /-! ### Dimension -/
 
-/-- Dimension as an invariant of finite-dimensional Lie modules, additive on biproducts. -/
-private noncomputable def finrankInvariant :
-    SplitK0.AdditiveInvariant (FGLieModuleCat.{w} K L) ℤ where
-  obj M := Module.finrank K M.obj
-  map_iso _ _ e := congrArg Nat.cast (isoToLieModuleEquiv e).toLinearEquiv.finrank_eq
-  map_biprod M N := by
-    rw [(biprodLieModuleEquiv M N).toLinearEquiv.finrank_eq, finrank_prod, Nat.cast_add]
+section Finrank
 
-/-- **The dimension of a virtual finite-dimensional Lie module**: the homomorphism on the split
-Grothendieck group sending `[M] - [N]` to `dim M - dim N`. -/
-noncomputable def finrank : SplitK0 (FGLieModuleCat.{w} K L) →+ ℤ :=
-  SplitK0.lift (finrankInvariant K)
+variable (R : Type u) {L : Type v} [CommRing R] [HasRankNullity.{w} R] [LieRing L]
+  [LieAlgebra R L]
+
+/-- Dimension as an invariant of finite Lie modules, additive on biproducts. -/
+private noncomputable def finrankInvariant :
+    SplitK0.AdditiveInvariant (FGLieModuleCat.{w} R L) ℤ where
+  obj M := Module.finrank R M.obj
+  map_iso _ _ e := congrArg Nat.cast e.toFGLieModuleEquiv.toLinearEquiv.finrank_eq
+  map_biprod M N := by
+    -- Rank-nullity for the first projection, whose kernel is the image of the second inclusion.
+    have h := (LinearMap.ker (LinearMap.fst R M.obj N.obj)).finrank_quotient_add_finrank
+    rw [((LinearMap.fst R M.obj N.obj).quotKerEquivOfSurjective
+        LinearMap.fst_surjective).finrank_eq, LinearMap.ker_fst,
+      (LinearEquiv.ofInjective _ (LinearMap.inr_injective (R := R))).finrank_eq.symm] at h
+    rw [(biprodLieModuleEquiv M N).toLinearEquiv.finrank_eq, ← h, Nat.cast_add]
+
+/-- **The dimension of a virtual finite Lie module**: the homomorphism on the split Grothendieck
+group sending `[M] - [N]` to `dim M - dim N`. -/
+noncomputable def finrankK0 : SplitK0 (FGLieModuleCat.{w} R L) →+ ℤ :=
+  SplitK0.lift (finrankInvariant R)
 
 /-- The dimension of the class of a module is its dimension. -/
 @[simp]
-theorem finrank_of (M : FGLieModuleCat.{w} K L) :
-    finrank K (SplitK0.of M) = Module.finrank K M.obj :=
+theorem finrankK0_splitK0_of (M : FGLieModuleCat.{w} R L) :
+    finrankK0 R (SplitK0.of M) = Module.finrank R M.obj :=
   SplitK0.lift_of _ M
+
+end Finrank
 
 /-! ### The character -/
 
-variable (H : LieSubalgebra K L)
+variable (K : Type u) {L : Type v} [Field K] [LieRing L] [LieAlgebra K L] (H : LieSubalgebra K L)
 
 section Nilpotent
 
@@ -98,33 +110,34 @@ biproducts. -/
 private noncomputable def characterInvariant :
     SplitK0.AdditiveInvariant (FGLieModuleCat.{w} K L) (AddMonoidAlgebra ℤ (Dual K H)) where
   obj M := formalCharacter K H M.obj
-  map_iso _ _ e := formalCharacter_congr ((isoToLieModuleEquiv e).restrictLie H)
+  map_iso _ _ e := formalCharacter_congr (e.toFGLieModuleEquiv.restrictLie H)
   map_biprod M N := by
     rw [formalCharacter_congr ((biprodLieModuleEquiv M N).restrictLie H), formalCharacter_prod]
 
 /-- **The formal character of a virtual finite-dimensional Lie module**: the homomorphism on the
 split Grothendieck group sending `[M] - [N]` to `ch M - ch N`, the characters being read on the
 nilpotent Lie subalgebra `H`. -/
-noncomputable def character :
+noncomputable def characterK0 :
     SplitK0 (FGLieModuleCat.{w} K L) →+ AddMonoidAlgebra ℤ (Dual K H) :=
   SplitK0.lift (characterInvariant K H)
 
 /-- The character of the class of a module is its formal character. -/
 @[simp]
-theorem character_of (M : FGLieModuleCat.{w} K L) :
-    character K H (SplitK0.of M) = formalCharacter K H M.obj :=
+theorem characterK0_splitK0_of (M : FGLieModuleCat.{w} K L) :
+    characterK0 K H (SplitK0.of M) = formalCharacter K H M.obj :=
   SplitK0.lift_of _ M
 
 /-- **The augmentation of the character is the dimension.** When `H` is triangularizable on every
 finite-dimensional module (for instance, over an algebraically closed field), the coefficients of
 the character of a virtual module add up to its dimension. -/
-theorem sum_character_coeff_eq_finrank
+theorem sum_characterK0_coeff_eq_finrankK0
     [∀ M : FGLieModuleCat.{w} K L, IsTriangularizable K H M.obj]
     (x : SplitK0 (FGLieModuleCat.{w} K L)) :
-    ((character K H x).coeff.sum fun _ n ↦ n) = finrank K x := by
+    ((characterK0 K H x).coeff.sum fun _ n ↦ n) = finrankK0 K x := by
   induction x using SplitK0.induction_on with
   | zero => simp
-  | of M => rw [character_of, finrank_of, sum_formalCharacter_coeff_eq_finrank]
+  | of M =>
+      rw [characterK0_splitK0_of, finrankK0_splitK0_of, sum_formalCharacter_coeff_eq_finrank]
   | add x y hx hy =>
       rw [map_add, map_add, AddMonoidAlgebra.coeff_add,
         Finsupp.sum_add_index' (fun _ ↦ rfl) fun _ _ _ ↦ rfl, hx, hy]
@@ -142,11 +155,12 @@ variable {K H} [CharZero K] [IsKilling K L] [FiniteDimensional K L] [H.IsCartanS
 subalgebra `H` of a finite-dimensional Killing Lie algebra over a field of characteristic zero,
 every linear form with a nonzero coefficient in the character of a virtual module is an integral
 weight. -/
-theorem isIntegralWeight_of_character_coeff_ne_zero [IsTriangularizable K H L]
-    {x : SplitK0 (FGLieModuleCat.{w} K L)} {χ : Dual K H} (hχ : (character K H x).coeff χ ≠ 0) :
+theorem isIntegralWeight_of_characterK0_coeff_ne_zero [IsTriangularizable K H L]
+    {x : SplitK0 (FGLieModuleCat.{w} K L)} {χ : Dual K H} (hχ : (characterK0 K H x).coeff χ ≠ 0) :
     IsIntegralWeight χ := by
   obtain ⟨M, N, rfl⟩ := SplitK0.exists_eq_sub x
-  rw [map_sub, character_of, character_of, AddMonoidAlgebra.coeff_sub, Finsupp.sub_apply] at hχ
+  rw [map_sub, characterK0_splitK0_of, characterK0_splitK0_of, AddMonoidAlgebra.coeff_sub,
+    Finsupp.sub_apply] at hχ
   by_cases hM : (formalCharacter K H M.obj).coeff χ = 0
   · exact isIntegralWeight_of_formalCharacter_coeff_ne_zero (M := N.obj) fun hN ↦
       hχ (by simp [hM, hN])
@@ -156,11 +170,11 @@ variable [IsAlgClosed K]
 
 /-- **Weyl invariance of the character of a virtual module.** -/
 @[simp]
-theorem character_coeff_weylGroup_smul (w : (IsKilling.rootSystem H).weylGroup) (χ : Dual K H)
+theorem characterK0_coeff_weylGroup_smul (w : (IsKilling.rootSystem H).weylGroup) (χ : Dual K H)
     (x : SplitK0 (FGLieModuleCat.{w} K L)) :
-    (character K H x).coeff (w • χ) = (character K H x).coeff χ := by
+    (characterK0 K H x).coeff (w • χ) = (characterK0 K H x).coeff χ := by
   obtain ⟨M, N, rfl⟩ := SplitK0.exists_eq_sub x
-  simp only [map_sub, character_of, AddMonoidAlgebra.coeff_sub, Finsupp.sub_apply,
+  simp only [map_sub, characterK0_splitK0_of, AddMonoidAlgebra.coeff_sub, Finsupp.sub_apply,
     formalCharacter_coeff_weylGroup_smul]
 
 end Killing
