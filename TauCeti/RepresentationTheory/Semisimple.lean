@@ -93,16 +93,6 @@ instance isSemisimpleRepresentation_prod (ρ : Representation k G V) (σ : Repre
   exact (isSemisimpleRepresentation_iff_isSemisimpleModule_asModule _).mpr
     (IsSemisimpleModule.congr (ρ.prodAsModuleEquiv σ))
 
-/-- The intertwining maps out of a subrepresentation `τ` are the module maps out of the submodule
-it carries. -/
-private theorem finrank_intertwiningMap_eq_finrank_linearMap_asSubmodule {U : Type*}
-    [AddCommGroup U] [Module k U] {υ : Representation k G U} (τ : Subrepresentation υ)
-    (ρ : Representation k G V) :
-    Module.finrank k (IntertwiningMap τ.toRepresentation ρ) =
-      Module.finrank k (τ.asSubmodule →ₗ[k[G]] ρ.asModule) :=
-  ((IntertwiningMap.equivLinearMapAsModule _ ρ).trans
-    (LinearEquiv.congrLeft _ k τ.asModuleEquivAsSubmodule)).finrank_eq
-
 /-- **Semisimple representations are determined by intertwiner dimensions.** Two
 finite-dimensional semisimple representations `ρ` and `σ` of a monoid over a field are equivalent
 when every irreducible subrepresentation `τ` of either has spaces of intertwining maps `τ → ρ` and
@@ -128,7 +118,7 @@ theorem nonempty_equiv_of_finrank_intertwiningMap_eq [FiniteDimensional k V]
   -- the matching hypothesis `hρ` or `hσ` is found by its type.
   · obtain ⟨τ, rfl⟩ : ∃ τ : Subrepresentation _, τ.asSubmodule = S :=
       Subrepresentation.subrepresentationSubmoduleOrderIso.surjective S
-    simpa only [finrank_intertwiningMap_eq_finrank_linearMap_asSubmodule] using
+    simpa only [(τ.intertwiningMapEquivLinearMapAsSubmodule _).finrank_eq] using
       ‹∀ τ' : Subrepresentation _, IsAtom τ' →
         Module.finrank k (IntertwiningMap τ'.toRepresentation ρ) =
           Module.finrank k (IntertwiningMap τ'.toRepresentation σ)› τ
