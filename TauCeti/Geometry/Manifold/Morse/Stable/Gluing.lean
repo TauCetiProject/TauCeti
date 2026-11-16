@@ -45,6 +45,10 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 
 * `IsMorseSmale.exists_unstableSet_level_param`: the entrance disc in `W^u(p)`.
 * `IsMorseSmale.exists_stableSet_level_param`: the exit disc in `W^s(r)`.
+* `IsMorseSmale.exists_unstableSet_param`, `IsMorseSmale.exists_stableSet_param`: for critical
+  points `p` and `r` of any index, transverse discs in `W^u(p)` and `W^s(r)` of the dimensions of
+  the expanding and contracting coordinates, which glue in the same way but do not reach every
+  nearby point of `W^u(p)` or `W^s(r)`.
 * `IsMorseSmale.exists_homeomorph_closure_splitGluingPairs`: the closed interval chart of
   model-flow glued trajectories near a broken trajectory, in the split coordinates of a Morse
   chart.
@@ -166,6 +170,79 @@ theorem IsMorseSmale.exists_stableSet_level_param {hX : IsAdaptedPseudoGradient 
         (hX.mfderiv_ne_zero_of_mem_unstableSet_inter_stableSet hxr hy)).ne
       φ.mem_maximalAtlas hyφ hPs (by simpa [P] using hloc)
   refine ⟨F, ι, (φ.splitCoordL : E →L[ℝ] _) ∘L ι', hι0, hι, hιs, ?_, ?_, hexh⟩
+  · simpa using φ.splitCoordL.hasStrictFDerivAt.comp 0 hd
+  · rwa [← ContinuousLinearMap.comp_assoc]
+
+/-- **An entrance disc in an unstable manifold, for any index.** Let `x` be a critical point with
+Morse chart `φ`, and `p` any critical point, for a Morse–Smale adapted pseudo-gradient. Let `y`
+be a point of a trajectory from `p` to `x` in the chart, near which the stable manifold of `x`
+lies in the contracting coordinates of `φ`. Then there is a disc in `W^u(p)` through `y`
+transverse to the stable set of the model flow: a parametrization `ι` with `ι 0 = y`, with values
+in `W^u(p)` near `0`, whose split coordinates are strictly differentiable at `0` with derivative
+`ψ'` such that the expanding component of `ψ'` is invertible.
+
+When `ind p = ind x + 1` the level cut of `W^u(p)` is such a disc and reaches every nearby point of
+the cut (`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.exists_unstableSet_level_param`); in
+general the disc is only part of `W^u(p)`. -/
+theorem IsMorseSmale.exists_unstableSet_param {hX : IsAdaptedPseudoGradient f X}
+    (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f) {p : M}
+    (φ : MorseChart E f x) (hy : y ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet x)
+    (hyφ : y ∈ φ.toChart.source)
+    (hloc : ∀ᶠ w in 𝓝 y, w ∈ hX.flow.stableSet x →
+      (φ.splitCoord (φ.coord (φ.toChart w))).snd = 0) :
+    ∃ (F : Submodule ℝ E) (ι : F → M)
+      (ψ' : F →L[ℝ] WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ))),
+      ι 0 = y ∧ ContinuousAt ι 0 ∧ (∀ᶠ z in 𝓝 0, ι z ∈ hX.flow.unstableSet p) ∧
+      HasStrictFDerivAt (fun z ↦ φ.splitCoord (φ.coord (φ.toChart (ι z)))) ψ' 0 ∧
+      (WithLp.sndL 2 ℝ _ _ ∘L ψ').IsInvertible := by
+  obtain ⟨L, q, -, hyq, hq, hs⟩ :=
+    hX.exists_isSliceChart_unstableSet hf (hX.mfderiv_eq_zero_of_mem_unstableSet hy.1) hy.1
+  set P := WithLp.sndL 2 ℝ ({i // φ.weight i = 1} → ℝ) ({i // ¬φ.weight i = 1} → ℝ) ∘L
+    (φ.splitCoordL : E →L[ℝ] _)
+  have hPs : Function.Surjective P := fun b ↦ by
+    obtain ⟨u, hu⟩ := φ.splitCoordL.surjective (WithLp.toLp 2 (0, b))
+    exact ⟨u, by simp [P, hu]⟩
+  obtain ⟨F, ι, ι', hι0, hι, hιs, hd, hinv⟩ :=
+    exists_param_of_span_mtangentConeAt_sup_eq_top (by simp) hq hs hyq hy.1 hy.2
+      (h.span_mtangentConeAt_sup_eq_top hy) φ.mem_maximalAtlas hyφ hPs
+      (by simpa [P] using hloc)
+  refine ⟨F, ι, (φ.splitCoordL : E →L[ℝ] _) ∘L ι', hι0, hι, hιs, ?_, ?_⟩
+  · simpa using φ.splitCoordL.hasStrictFDerivAt.comp 0 hd
+  · rwa [← ContinuousLinearMap.comp_assoc]
+
+/-- **An exit disc in a stable manifold, for any index.** Let `x` be a critical point with Morse
+chart `φ`, and `r` any critical point, for a Morse–Smale adapted pseudo-gradient. Let `y` be a point
+of a trajectory from `x` to `r` in the chart, near which the unstable manifold of `x` lies in the
+expanding coordinates of `φ`. Then there is a disc in `W^s(r)` through `y` transverse to the
+unstable set of the model flow: a parametrization `ι` with `ι 0 = y`, with values in `W^s(r)` near
+`0`, whose split coordinates are strictly differentiable at `0` with derivative `ψ'` such that the
+contracting component of `ψ'` is invertible.
+
+When `ind x = ind r + 1` the level cut of `W^s(r)` is such a disc
+(`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.exists_stableSet_level_param`). -/
+theorem IsMorseSmale.exists_stableSet_param {hX : IsAdaptedPseudoGradient f X}
+    (h : hX.IsMorseSmale) {r : M}
+    (φ : MorseChart E f x) (hy : y ∈ hX.flow.unstableSet x ∩ hX.flow.stableSet r)
+    (hyφ : y ∈ φ.toChart.source)
+    (hloc : ∀ᶠ w in 𝓝 y, w ∈ hX.flow.unstableSet x →
+      (φ.splitCoord (φ.coord (φ.toChart w))).fst = 0) :
+    ∃ (F : Submodule ℝ E) (ι : F → M)
+      (ψ' : F →L[ℝ] WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ))),
+      ι 0 = y ∧ ContinuousAt ι 0 ∧ (∀ᶠ z in 𝓝 0, ι z ∈ hX.flow.stableSet r) ∧
+      HasStrictFDerivAt (fun z ↦ φ.splitCoord (φ.coord (φ.toChart (ι z)))) ψ' 0 ∧
+      (WithLp.fstL 2 ℝ _ _ ∘L ψ').IsInvertible := by
+  obtain ⟨L, q, -, hyq, hq, hs⟩ :=
+    hX.exists_isSliceChart_stableSet (hX.mfderiv_eq_zero_of_mem_stableSet hy.2) hy.2
+  set P := WithLp.fstL 2 ℝ ({i // φ.weight i = 1} → ℝ) ({i // ¬φ.weight i = 1} → ℝ) ∘L
+    (φ.splitCoordL : E →L[ℝ] _)
+  have hPs : Function.Surjective P := fun b ↦ by
+    obtain ⟨u, hu⟩ := φ.splitCoordL.surjective (WithLp.toLp 2 (b, 0))
+    exact ⟨u, by simp [P, hu]⟩
+  obtain ⟨F, ι, ι', hι0, hι, hιs, hd, hinv⟩ :=
+    exists_param_of_span_mtangentConeAt_sup_eq_top (by simp) hq hs hyq hy.2 hy.1
+      (by rw [sup_comm]; exact h.span_mtangentConeAt_sup_eq_top hy) φ.mem_maximalAtlas hyφ hPs
+      (by simpa [P] using hloc)
+  refine ⟨F, ι, (φ.splitCoordL : E →L[ℝ] _) ∘L ι', hι0, hι, hιs, ?_, ?_⟩
   · simpa using φ.splitCoordL.hasStrictFDerivAt.comp 0 hd
   · rwa [← ContinuousLinearMap.comp_assoc]
 
