@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Set.Card
-public import TauCeti.Data.Set.Prod
-public import TauCeti.Logic.Function.Fiber
+import TauCeti.Data.Set.Prod
+import TauCeti.Logic.Function.Fiber
 import Mathlib.Data.Set.Card.Arithmetic
 import Mathlib.Data.Set.Finite.Lattice
 import Mathlib.Order.Interval.Finset.Nat
