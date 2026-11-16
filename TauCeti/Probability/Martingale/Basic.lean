@@ -50,10 +50,13 @@ inequality when both products are integrable (`MeasureTheory.Submartingale.integ
 In particular, positions need not be bounded. A predictable height times a later martingale
 increment has mean zero when the product is integrable
 (`MeasureTheory.Martingale.integral_mul_sub_eq_zero`), with a Banach-valued scalar-action form
-`MeasureTheory.Martingale.integral_smul_sub_eq_zero`. Martingale values and increments inherit
-deterministic norm bounds, and for `p ≥ 1` Lᵖ integrability, from later values and longer increments
-(`MeasureTheory.Martingale.ae_norm_le_of_le`, `MeasureTheory.Martingale.ae_norm_sub_le_of_le`,
-`MeasureTheory.Martingale.memLp_of_le`, `MeasureTheory.Martingale.memLp_sub_of_le`).
+`MeasureTheory.Martingale.integral_smul_sub_eq_zero`. Martingale values inherit deterministic
+norm bounds and, for `p ≥ 1`, Lᵖ integrability from later values
+(`MeasureTheory.Martingale.ae_norm_le_of_le`, `MeasureTheory.Martingale.memLp_of_le`).
+Shorter increments with the same starting date inherit deterministic norm bounds
+(`MeasureTheory.Martingale.ae_norm_sub_le_of_le`), whereas increments over any contained interval
+inherit Lᵖ integrability for `p ≥ 1` from the containing increment
+(`MeasureTheory.Martingale.memLp_sub_of_le`).
 Nonnegative submartingale values inherit Lᵖ
 integrability from later values for `p ≥ 1` (`MeasureTheory.Submartingale.memLp_of_le`).
 

@@ -20,9 +20,10 @@ quadratic sums with the second moment of the total increment. Bounded predictabl
 give the transform estimate `MeasureTheory.Martingale.integral_sq_sum_mul_sub_le`.
 
 `MeasureTheory.Martingale.integral_sq_sum_sq_sub_le` bounds the second moment of quadratic
-sums by the second moment of the total increment, independently of the grid, using only a
-deterministic bound on that increment, not on the initial value. On a finite measure space,
-`MeasureTheory.Martingale.integral_sq_sum_sq_sub_le_of_bound` bounds it by the total mass.
+sums by `10 * C²` times the second moment of the total increment, independently of the grid,
+using only a deterministic bound `C` on that increment, not on the initial value. On a finite
+measure space, `MeasureTheory.Martingale.integral_sq_sum_sq_sub_le_of_isFiniteMeasure`
+bounds it by `10 * C⁴` times the total mass.
 This estimate establishes uniform integrability of grid families, without constructing a stochastic
 integral. The algebraic second-moment expansion reuses
 `TauCeti.integral_sq_sum_of_pairwise_integral_mul_eq_zero`.
@@ -146,8 +147,8 @@ theorem integral_sq_sum_mul_sub_le (hM : Martingale M ℱ P)
         ((hΔ i (mem_range.mp hi)).integrable_sq.const_mul _)
       filter_upwards [hb i (mem_range.mp hi)] with ω hω
       rw [mul_pow]
-      have hs := (sq_le_sq₀ (abs_nonneg _) ((abs_nonneg _).trans hω)).2 hω
-      rw [sq_abs] at hs
+      have hs : a i ω ^ 2 ≤ C ^ 2 := by
+        simpa only [sq_abs] using pow_le_pow_left₀ (abs_nonneg _) hω 2
       exact mul_le_mul_of_nonneg_right hs (sq_nonneg _)
     _ = _ := by
       rw [← mul_sum, ← integral_finsetSum _ fun i hi ↦ (hΔ i (mem_range.mp hi)).integrable_sq]
@@ -166,12 +167,9 @@ theorem integral_sq_sum_mul_sub_le_of_bound [IsFiniteMeasure P] (hM : Martingale
     ((hM.integrable _).sub (hM.integrable _)).aestronglyMeasurable B hB
   apply (hM.integral_sq_sum_mul_sub_le hτ h₂ ha hC).trans
   apply mul_le_mul_of_nonneg_left _ (sq_nonneg C)
-  calc
-    _ ≤ ∫ _ : Ω, B ^ 2 ∂P := integral_mono_ae h₂.integrable_sq (integrable_const _)
-      (hB.mono fun ω hω ↦ by
-        simpa only [Pi.sub_apply, sq_abs] using
-          (sq_le_sq₀ (abs_nonneg _) ((abs_nonneg _).trans hω)).2 hω)
-    _ = _ := by simp [mul_comm]
+  simpa only [Real.norm_eq_abs, sq_abs] using TauCeti.integral_norm_sq_le_of_ae_bound
+    (f := fun ω ↦ M (τ n) ω - M (τ 0) ω)
+    (by simpa only [Real.norm_eq_abs] using hB)
 
 /-- If a martingale's total grid increment is bounded by `C`, the second moment of its
 quadratic sum is at most `10 * C²` times the second moment of that increment, independently
@@ -206,11 +204,10 @@ theorem integral_sq_sum_sq_sub_le (hM : Martingale M ℱ P)
     filter_upwards [hb' n le_rfl] with ω hω
     have hid : ∑ i ∈ range n, (M (τ (i + 1)) ω - M (τ i) ω) ^ 2 =
         a n ω ^ 2 - 2 * J ω := by
-      simpa only [a, J, sub_sub_sub_cancel_right, sub_self, ne_eq, OfNat.ofNat_ne_zero,
-        not_false_eq_true, zero_pow, sub_zero] using sum_range_sq_sub_eq (fun i ↦ a i ω) n
+      simpa [a, J] using sum_range_sq_sub_eq (fun i ↦ a i ω) n
     rw [hid]
     have hs : a n ω ^ 2 ≤ C ^ 2 := by
-      simpa only [sq_abs] using (sq_le_sq₀ (abs_nonneg _) ((abs_nonneg _).trans hω)).2 hω
+      simpa only [sq_abs] using pow_le_pow_left₀ (abs_nonneg _) hω 2
     nlinarith [mul_le_mul_of_nonneg_right hs (sq_nonneg (a n ω)),
       sq_nonneg (a n ω ^ 2 + 2 * J ω)]
   calc
@@ -226,21 +223,19 @@ theorem integral_sq_sum_sq_sub_le (hM : Martingale M ℱ P)
 is bounded by `C` has second moment at most `10 * C⁴` times the total mass, independently of
 the grid. Families sharing an increment bound can use this estimate to establish uniform
 integrability. -/
-theorem integral_sq_sum_sq_sub_le_of_bound [IsFiniteMeasure P] (hM : Martingale M ℱ P)
+theorem integral_sq_sum_sq_sub_le_of_isFiniteMeasure [IsFiniteMeasure P] (hM : Martingale M ℱ P)
     (hτ : MonotoneOn τ (Set.Iic n)) {C : ℝ}
     (hb : ∀ᵐ ω ∂P, |M (τ n) ω - M (τ 0) ω| ≤ C) :
     ∫ ω, (∑ i ∈ range n, (M (τ (i + 1)) ω - M (τ i) ω) ^ 2) ^ 2 ∂P ≤
       10 * C ^ 4 * P.real Set.univ := by
-  have h₂ : MemLp (M (τ n) - M (τ 0)) 2 P := MemLp.of_bound
-    ((hM.integrable _).sub (hM.integrable _)).aestronglyMeasurable C hb
-  apply (hM.integral_sq_sum_sq_sub_le hτ hb).trans
+  have hbound : ∫ ω, (M (τ n) ω - M (τ 0) ω) ^ 2 ∂P ≤ C ^ 2 * P.real Set.univ := by
+    simpa only [Real.norm_eq_abs, sq_abs] using TauCeti.integral_norm_sq_le_of_ae_bound
+      (f := fun ω ↦ M (τ n) ω - M (τ 0) ω)
+      (by simpa only [Real.norm_eq_abs] using hb)
   calc
-    _ ≤ 10 * C ^ 2 * ∫ _ : Ω, C ^ 2 ∂P := by
-      apply mul_le_mul_of_nonneg_left _ (by positivity)
-      apply integral_mono_ae h₂.integrable_sq (integrable_const _)
-      filter_upwards [hb] with ω hω
-      simpa only [Pi.sub_apply, sq_abs] using
-        (sq_le_sq₀ (abs_nonneg _) ((abs_nonneg _).trans hω)).2 hω
-    _ = _ := by simp [integral_const]; ring
+    _ ≤ 10 * C ^ 2 * (C ^ 2 * P.real Set.univ) :=
+      (hM.integral_sq_sum_sq_sub_le hτ hb).trans
+        (mul_le_mul_of_nonneg_left hbound (by positivity))
+    _ = _ := by ring
 
 end MeasureTheory.Martingale

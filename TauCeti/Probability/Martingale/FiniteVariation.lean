@@ -67,7 +67,7 @@ theorem ae_eq_of_boundedVariationOn_of_bound (hM : Martingale M ℱ P) {S T : �
       hv (fun k ↦ (hu k).monotoneOn _) humem (fun k i _ ↦ hmesh k i) hlim
     simpa only [Q, pow_two] using h
   have hbound (k : ℕ) : ∫ ω, Q k ω ^ 2 ∂P ≤ 10 * C ^ 4 * P.real univ :=
-    hM.integral_sq_sum_sq_sub_le_of_bound ((hu k).monotoneOn _)
+    hM.integral_sq_sum_sq_sub_le_of_isFiniteMeasure ((hu k).monotoneOn _)
       (by simpa only [huS, huT] using hb)
   have hp (p : ℝ≥0∞) : MemLp (M T - M S) p P :=
     MemLp.of_bound ((hM.integrable T).sub (hM.integrable S)).aestronglyMeasurable C
@@ -82,8 +82,8 @@ theorem ae_eq_of_boundedVariationOn_of_bound (hM : Martingale M ℱ P) {S T : �
       (by simpa only [huS, huT] using hp 4) (mem_range.mp hi)
     simpa only [pow_two, Pi.sub_def] using hd.fun_mul hd
   -- The moment bound replaces domination by the random variation.
-  have hmean := TauCeti.tendsto_integral_of_integral_norm_sq_le hQ₂
-    (by simpa only [Real.norm_eq_abs, sq_abs] using hbound) hQlim
+  have hmean := TauCeti.tendsto_integral_of_integral_norm_sq_le (Filter.Eventually.of_forall hQ₂)
+    (Filter.Eventually.of_forall (by simpa only [Real.norm_eq_abs, sq_abs] using hbound)) hQlim
   simp only [integral_zero] at hmean
   -- Isometry makes every quadratic-sum expectation the same terminal second moment.
   have heq (k : ℕ) : ∫ ω, Q k ω ∂P = ∫ ω, (M T ω - M S ω) ^ 2 ∂P := by

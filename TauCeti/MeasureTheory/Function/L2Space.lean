@@ -35,6 +35,8 @@ The second moment of a finite sum of pairwise orthogonal functions with values i
 product space is the sum of their second moments
 (`TauCeti.integral_norm_sum_sq_of_pairwise_integral_inner_eq_zero`), with a scalar specialization
 `TauCeti.integral_sq_sum_of_pairwise_integral_mul_eq_zero`.
+On a finite measure space, an a.e. norm bound `C` bounds the second moment by `C²` times
+the total mass (`TauCeti.integral_norm_sq_le_of_ae_bound`), without a measurability assumption.
 The integral of `⟪f x, c⟫` is `⟪∫ f, c⟫` (`integral_inner_left`), the counterpart of Mathlib's
 `integral_inner` with the integrand in the left slot, and the integral of the Hilbert space
 adjoints `(f x)†` of an operator-valued function is `(∫ f)†`
@@ -256,6 +258,17 @@ end MeasureTheory
 namespace TauCeti
 
 open MeasureTheory Finset
+
+/-- On a finite measure space, an a.e. norm bound bounds the second moment by the squared
+bound times the total mass. No measurability assumption is needed for this upper bound. -/
+theorem integral_norm_sq_le_of_ae_bound {Ω E : Type*} [MeasurableSpace Ω]
+    {μ : Measure Ω} [IsFiniteMeasure μ] [SeminormedAddGroup E] {f : Ω → E} {C : ℝ}
+    (hb : ∀ᵐ ω ∂μ, ‖f ω‖ ≤ C) : ∫ ω, ‖f ω‖ ^ 2 ∂μ ≤ C ^ 2 * μ.real Set.univ := by
+  calc
+    _ ≤ ∫ _ : Ω, C ^ 2 ∂μ := integral_mono_of_nonneg
+      (Filter.Eventually.of_forall fun _ ↦ sq_nonneg _) (integrable_const _)
+      (hb.mono fun ω hω ↦ pow_le_pow_left₀ (norm_nonneg _) hω 2)
+    _ = _ := by simp [mul_comm]
 
 /-- The second moment of a finite sum of pairwise orthogonal random vectors is the sum
 of their second moments. Only integrability of the pairwise inner products is required. -/
