@@ -31,7 +31,9 @@ The same holds for Mathlib's splitting `(Fin.appendIsometryOfEq h).symm` of `Fin
   balls, closed balls and spheres around the origin, and its preimage of a product of balls.
 * `Fin.image_ball_appendIsometryOfEq_symm`, `Fin.image_closedBall_appendIsometryOfEq_symm`,
   `Fin.image_sphere_appendIsometryOfEq_symm`: the same images for the splitting of `Fin n → α`
-  into `(Fin m → α) × (Fin l → α)`.
+  into `(Fin m → α) × (Fin l → α)`, with the membership forms
+  `Fin.mem_ball_iff_appendIsometryOfEq_symm`, `Fin.mem_closedBall_iff_appendIsometryOfEq_symm` and
+  `Fin.mem_sphere_iff_appendIsometryOfEq_symm`.
 -/
 
 public section
@@ -136,6 +138,37 @@ theorem image_sphere_appendIsometryOfEq_symm :
       sphere 0 r ×ˢ closedBall 0 r ∪ closedBall 0 r ×ˢ sphere 0 r := by
   rw [IsometryEquiv.image_sphere, appendIsometryOfEq_symm_zero, sphere_prod, Prod.fst_zero,
     Prod.snd_zero]
+
+variable {r}
+
+/-- A point lies in the ball of radius `r` around the origin if and only if both parts of its
+splitting into `(Fin m → α) × (Fin l → α)` do. -/
+theorem mem_ball_iff_appendIsometryOfEq_symm {x : Fin n → α} :
+    x ∈ ball 0 r ↔
+      ((appendIsometryOfEq h).symm x).1 ∈ ball 0 r ∧
+        ((appendIsometryOfEq h).symm x).2 ∈ ball 0 r := by
+  rw [← mem_prod, ← image_ball_appendIsometryOfEq_symm h,
+    (appendIsometryOfEq h).symm.injective.mem_set_image]
+
+/-- A point lies in the closed ball of radius `r` around the origin if and only if both parts of
+its splitting into `(Fin m → α) × (Fin l → α)` do. -/
+theorem mem_closedBall_iff_appendIsometryOfEq_symm {x : Fin n → α} :
+    x ∈ closedBall 0 r ↔
+      ((appendIsometryOfEq h).symm x).1 ∈ closedBall 0 r ∧
+        ((appendIsometryOfEq h).symm x).2 ∈ closedBall 0 r := by
+  rw [← mem_prod, ← image_closedBall_appendIsometryOfEq_symm h,
+    (appendIsometryOfEq h).symm.injective.mem_set_image]
+
+/-- A point lies on the sphere of radius `r` around the origin if and only if one part of its
+splitting into `(Fin m → α) × (Fin l → α)` lies on that sphere and the other in the closed ball. -/
+theorem mem_sphere_iff_appendIsometryOfEq_symm {x : Fin n → α} :
+    x ∈ sphere 0 r ↔
+      ((appendIsometryOfEq h).symm x).1 ∈ sphere 0 r ∧
+          ((appendIsometryOfEq h).symm x).2 ∈ closedBall 0 r ∨
+        ((appendIsometryOfEq h).symm x).1 ∈ closedBall 0 r ∧
+          ((appendIsometryOfEq h).symm x).2 ∈ sphere 0 r := by
+  rw [← mem_prod, ← mem_prod, ← mem_union, ← image_sphere_appendIsometryOfEq_symm h,
+    (appendIsometryOfEq h).symm.injective.mem_set_image]
 
 end PseudoMetricSpace
 

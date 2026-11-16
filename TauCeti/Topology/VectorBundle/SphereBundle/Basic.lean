@@ -97,6 +97,12 @@ theorem sphereBundle_subset_zeroSectionCompl : sphereBundle F E ⊆ zeroSectionC
   fun _ hv ↦
   mem_zeroSectionCompl.2 (norm_ne_zero_iff.1 ((mem_sphereBundle.1 hv).symm ▸ one_ne_zero))
 
+variable {F E} in
+/-- The vectors of norm less than one miss the sphere bundle. -/
+theorem disjoint_norm_lt_one_sphereBundle :
+    Disjoint {v : TotalSpace F E | ‖v.2‖ < 1} (sphereBundle F E) :=
+  Set.disjoint_left.2 fun _ hv hv' ↦ (mem_ofPred_eq ▸ hv).ne (mem_sphereBundle.1 hv')
+
 variable [TopologicalSpace (TotalSpace F E)]
 
 /-- The disc-sphere pair `(D(E), S(E))` of a bundle with normed fibres. -/
@@ -155,24 +161,27 @@ end Closed
 
 section Proper
 
-variable {B : Type w} [TopologicalSpace B] (F : Type*) [NormedAddCommGroup F] [NormedSpace ℝ F]
-  [FiniteDimensional ℝ F] (E : B → Type w) [∀ b, NormedAddCommGroup (E b)]
-  [∀ b, InnerProductSpace ℝ (E b)] [TopologicalSpace (TotalSpace F E)] [FiberBundle F E]
-  [VectorBundle ℝ F E] [ContinuousFiberNorm F E]
+variable (𝕜 : Type*) [RCLike 𝕜] {B : Type w} [TopologicalSpace B] (F : Type*)
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [FiniteDimensional 𝕜 F] (E : B → Type w)
+  [∀ b, NormedAddCommGroup (E b)] [∀ b, InnerProductSpace 𝕜 (E b)]
+  [TopologicalSpace (TotalSpace F E)] [FiberBundle F E] [VectorBundle 𝕜 F E]
+  [ContinuousFiberNorm F E]
 
-/-- **The disc bundle is proper over the base.** For a finite-rank real vector bundle whose fibres
-carry inner products with norm continuous on the total space, the projection of the unit disc
-bundle `D(E)` onto the base is a proper map. In particular it is a closed map, and the unit disc of
-each fibre is compact. -/
+include 𝕜
+
+/-- **The disc bundle is proper over the base.** For a finite-rank real or complex vector bundle
+whose fibres carry inner products with norm continuous on the total space, the projection of the
+unit disc bundle `D(E)` onto the base is a proper map. In particular it is a closed map, and the
+unit disc of each fibre is compact. -/
 theorem isProperMap_discBundle_proj :
     IsProperMap fun v : discBundle F E ↦ (v : TotalSpace F E).proj := by
-  let V := EuclideanSpace ℝ (Fin (Module.finrank ℝ F))
-  have hV : Module.finrank ℝ V = Module.finrank ℝ F := finrank_euclideanSpace_fin
+  let V := EuclideanSpace 𝕜 (Fin (Module.finrank 𝕜 F))
+  have hV : Module.finrank 𝕜 V = Module.finrank 𝕜 F := finrank_euclideanSpace_fin
   have : CompactSpace (Metric.closedBall (0 : V) 1) :=
     isCompact_iff_compactSpace.1 (isCompact_closedBall 0 1)
   -- The disc bundle is the image of the orthonormal frames paired with the unit ball of `V`, over
   -- which the projection is proper.
-  let ev : OrthonormalFrameBundle ℝ F E V × Metric.closedBall (0 : V) 1 → discBundle F E :=
+  let ev : OrthonormalFrameBundle 𝕜 F E V × Metric.closedBall (0 : V) 1 → discBundle F E :=
     fun q ↦ ⟨⟨q.1.proj, q.1.frame q.2⟩,
       mem_discBundle.2 ((q.1.frame.norm_map _).trans_le (mem_closedBall_zero_iff.1 q.2.2))⟩
   refine isProperMap_of_comp_of_surj (f := ev)
@@ -183,15 +192,15 @@ theorem isProperMap_discBundle_proj :
   -- Every vector of norm at most one is an orthonormal frame applied to a vector of norm at most
   -- one.
   rintro ⟨⟨b, v⟩, hv⟩
-  let φ := (trivializationAt F E b).orthonormalFrame (Module.finBasisOfFinrankEq ℝ F hV.symm)
-    (stdOrthonormalBasis ℝ V) ⟨b, mem_baseSet_trivializationAt F E b⟩
+  let φ := (trivializationAt F E b).orthonormalFrame (Module.finBasisOfFinrankEq 𝕜 F hV.symm)
+    (stdOrthonormalBasis 𝕜 V) ⟨b, mem_baseSet_trivializationAt F E b⟩
   exact ⟨(⟨b, φ⟩, ⟨φ.symm v, by simpa using hv⟩), by simp [ev]⟩
 
 variable {F E} in
 /-- The projection to the base of a closed subset of the disc bundle is closed. -/
 theorem isClosed_image_proj_of_subset_discBundle {S : Set (TotalSpace F E)}
     (hS : IsClosed S) (hSD : S ⊆ discBundle F E) : IsClosed (TotalSpace.proj '' S) := by
-  have h := (isProperMap_discBundle_proj F E).isClosedMap _ (hS.preimage continuous_subtype_val)
+  have h := (isProperMap_discBundle_proj 𝕜 F E).isClosedMap _ (hS.preimage continuous_subtype_val)
   convert h using 1
   ext b
   simp only [mem_image, mem_preimage, Subtype.exists, exists_and_left, exists_prop]
@@ -200,7 +209,7 @@ theorem isClosed_image_proj_of_subset_discBundle {S : Set (TotalSpace F E)}
 /-- The unit disc of each fibre is compact. -/
 theorem isCompact_discBundle_inter_proj_preimage_singleton (b : B) :
     IsCompact (discBundle F E ∩ TotalSpace.proj ⁻¹' {b}) := by
-  have h := ((isProperMap_discBundle_proj F E).isCompact_preimage
+  have h := ((isProperMap_discBundle_proj 𝕜 F E).isCompact_preimage
     (isCompact_singleton (x := b))).image continuous_subtype_val
   convert h using 1
   ext v

@@ -188,8 +188,10 @@ def cwComplexProd : CWComplex (C ×ˢ D) :=
     eventually_isEmpty_prodCell finite_prodCell
     (fun _ c ↦ by
       rw [prodCellMap, Equiv.transPartialEquiv_source, PartialEquiv.prod_source, source_eq,
-        source_eq, ← Fin.image_ball_appendIsometryOfEq_symm (Finset.mem_antidiagonal.1 c.1.2)]
-      exact (prodCellIsometry c).toEquiv.preimage_image _)
+        source_eq]
+      ext x
+      rw [mem_preimage, mem_prod]
+      exact (Fin.mem_ball_iff_appendIsometryOfEq_symm (Finset.mem_antidiagonal.1 c.1.2)).symm)
     (fun _ c ↦ ((continuousOn _ c.2.1).prodMap (continuousOn _ c.2.2)).comp
       (prodCellIsometry c).continuous.continuousOn fun _ hx ↦ by
         rw [← Fin.image_closedBall_appendIsometryOfEq_symm (Finset.mem_antidiagonal.1 c.1.2)]
