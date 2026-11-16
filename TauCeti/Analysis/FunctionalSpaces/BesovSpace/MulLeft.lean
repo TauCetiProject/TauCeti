@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Distribution.TemperedDistribution.MulLeft
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Multiplication
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Postcomp
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
+import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 
 /-!
 # Multiplication by matrix-valued functions on Besov spaces
@@ -74,25 +75,36 @@ variable [FiniteDimensional ℂ F] [FiniteDimensional ℂ G]
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [CompleteSpace F]
   [CompleteSpace G] in
+/-- The coordinates of a function of temperate growth have temperate growth. -/
+private theorem hasTemperateGrowth_coordCLM_comp {A : E → F →L[ℂ] G} (hA : A.HasTemperateGrowth)
+    (k : Fin (Module.finrank ℂ (F →L[ℂ] G))) :
+    ((Module.finBasis ℂ (F →L[ℂ] G)).coordCLM k ∘ A).HasTemperateGrowth :=
+  (((Module.finBasis ℂ (F →L[ℂ] G)).coordCLM k).restrictScalars ℝ).hasTemperateGrowth.comp hA
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [CompleteSpace F]
+  [CompleteSpace G] in
 /-- The derivatives of the coordinates of `A` are bounded by those of `A`. -/
-private theorem norm_iteratedFDeriv_mulLeftCoordCLM_comp_le {A : E → F →L[ℂ] G}
+private theorem norm_iteratedFDeriv_coordCLM_comp_le {A : E → F →L[ℂ] G}
     (hA : A.HasTemperateGrowth) (k : Fin (Module.finrank ℂ (F →L[ℂ] G))) (n : ℕ) (x : E) :
-    ‖iteratedFDeriv ℝ n (mulLeftCoordCLM F G k ∘ A) x‖ ≤
-      ‖mulLeftCoordCLM F G k‖ * ‖iteratedFDeriv ℝ n A x‖ :=
-  (mulLeftCoordCLM F G k).norm_iteratedFDeriv_comp_left (hA.1.contDiffAt) (mod_cast le_top)
+    ‖iteratedFDeriv ℝ n ((Module.finBasis ℂ (F →L[ℂ] G)).coordCLM k ∘ A) x‖ ≤
+      ‖(Module.finBasis ℂ (F →L[ℂ] G)).coordCLM k‖ * ‖iteratedFDeriv ℝ n A x‖ :=
+  (((Module.finBasis ℂ (F →L[ℂ] G)).coordCLM k).restrictScalars ℝ).norm_iteratedFDeriv_comp_left
+    (hA.1.contDiffAt) (mod_cast le_top)
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [CompleteSpace F]
   [CompleteSpace G] in
 /-- Bounded derivatives of `A` give bounded derivatives of its coordinates. -/
-private theorem exists_norm_iteratedFDeriv_mulLeftCoordCLM_comp_le {A : E → F →L[ℂ] G}
+private theorem exists_norm_iteratedFDeriv_coordCLM_comp_le {A : E → F →L[ℂ] G}
     (hA : A.HasTemperateGrowth) {N : ℕ}
     (hbd : ∀ n ≤ N, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n A x‖ ≤ C)
     (k : Fin (Module.finrank ℂ (F →L[ℂ] G))) :
-    ∀ n ≤ N, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n (mulLeftCoordCLM F G k ∘ A) x‖ ≤ C := fun n hn ↦ by
-  obtain ⟨C, hC⟩ := hbd n hn
-  exact ⟨‖mulLeftCoordCLM F G k‖ * C, fun x ↦
-    (norm_iteratedFDeriv_mulLeftCoordCLM_comp_le hA k n x).trans
-      (mul_le_mul_of_nonneg_left (hC x) (by positivity))⟩
+    ∀ n ≤ N, ∃ C, ∀ x,
+      ‖iteratedFDeriv ℝ n ((Module.finBasis ℂ (F →L[ℂ] G)).coordCLM k ∘ A) x‖ ≤ C :=
+  fun n hn ↦ by
+    obtain ⟨C, hC⟩ := hbd n hn
+    exact ⟨‖(Module.finBasis ℂ (F →L[ℂ] G)).coordCLM k‖ * C, fun x ↦
+      (norm_iteratedFDeriv_coordCLM_comp_le hA k n x).trans
+        (mul_le_mul_of_nonneg_left (hC x) (by positivity))⟩
 
 variable (φ s p q) in
 /-- **Multiplication by a matrix-valued function on Besov spaces.** For a function
@@ -105,9 +117,8 @@ def mulLeftCLM (A : E → F →L[ℂ] G) (hA : A.HasTemperateGrowth)
     (hbd : ∀ n ≤ ⌊|s|⌋₊ + 1, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n A x‖ ≤ C) :
     BesovSpace F φ s p q →L[ℂ] BesovSpace G φ s p q :=
   ∑ k, postcomp φ s p q (Module.finBasis ℂ (F →L[ℂ] G) k) ∘L
-    smulLeftCLM F φ s p q (mulLeftCoordCLM F G k ∘ A)
-      ((mulLeftCoordCLM F G k).hasTemperateGrowth.comp hA)
-      (exists_norm_iteratedFDeriv_mulLeftCoordCLM_comp_le hA hbd k)
+    smulLeftCLM F φ s p q ((Module.finBasis ℂ (F →L[ℂ] G)).coordCLM k ∘ A)
+      (hasTemperateGrowth_coordCLM_comp hA k) (exists_norm_iteratedFDeriv_coordCLM_comp_le hA hbd k)
 
 /-- The tempered distribution of the Besov multiplication `mulLeftCLM φ s p q A hA hbd u` is the
 product `TemperedDistribution.mulLeftCLM A u.toDistr` of the tempered distribution of `u`. -/
@@ -116,10 +127,11 @@ theorem toDistr_mulLeftCLM {A : E → F →L[ℂ] G} (hA : A.HasTemperateGrowth)
     (hbd : ∀ n ≤ ⌊|s|⌋₊ + 1, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n A x‖ ≤ C)
     (u : BesovSpace F φ s p q) :
     (mulLeftCLM φ s p q A hA hbd u).toDistr = TemperedDistribution.mulLeftCLM A u.toDistr := by
-  rw [mulLeftCLM_eq_sum Finset.univ (fun k _ ↦ (mulLeftCoordCLM F G k).hasTemperateGrowth.comp hA)
-      _ fun x ↦ (sum_mulLeftCoordCLM_smul (A x)).symm,
-    ← toDistrCLM_apply, mulLeftCLM, sum_apply, map_sum, sum_apply]
-  simp
+  ext ψ
+  rw [TemperedDistribution.mulLeftCLM_apply_apply, ← toDistrCLM_apply, mulLeftCLM, sum_apply,
+    map_sum, sum_apply]
+  simp only [ContinuousLinearMap.comp_apply, toDistrCLM_apply, toDistr_postcomp,
+    toDistr_smulLeftCLM, postcomp_apply_apply, TemperedDistribution.smulLeftCLM_apply_apply]
 
 end Matrix
 
@@ -164,25 +176,26 @@ theorem exists_norm_mulLeftCLM_le (φ : ContDiffBump (0 : E)) {N : ℕ} (hN : |s
       ‖mulLeftCLM φ s p q A hA hbd‖ ≤ C * M := by
   obtain ⟨C, hC, hmul⟩ := exists_norm_smulLeftCLM_le (F := F) (s := s) φ hN
   set b := Module.finBasis ℂ (F →L[ℂ] G)
-  refine ⟨C * ∑ k, ‖b k‖ * ‖mulLeftCoordCLM F G k‖, by positivity,
+  refine ⟨C * ∑ k, ‖b k‖ * ‖b.coordCLM k‖, by positivity,
     fun {p q} _ _ A hA hbd M hAM ↦ ?_⟩
   -- Each term `L k (c k u)` has norm at most `‖L k‖ C ‖c k‖_{C^N}`, and the derivatives of the
-  -- coordinate `c k` are bounded by `‖mulLeftCoordCLM F G k‖ M`.
+  -- coordinate `c k` are bounded by `‖b.coordCLM k‖ M`.
   calc ‖mulLeftCLM φ s p q A hA hbd‖
-      ≤ ∑ k, ‖postcomp φ s p q (b k) ∘L smulLeftCLM F φ s p q (mulLeftCoordCLM F G k ∘ A)
-          ((mulLeftCoordCLM F G k).hasTemperateGrowth.comp hA)
-          (exists_norm_iteratedFDeriv_mulLeftCoordCLM_comp_le hA hbd k)‖ := norm_sum_le _ _
-    _ ≤ ∑ k, ‖b k‖ * (C * (‖mulLeftCoordCLM F G k‖ * M)) := by
+      ≤ ∑ k, ‖postcomp φ s p q (b k) ∘L smulLeftCLM F φ s p q (b.coordCLM k ∘ A)
+          (hasTemperateGrowth_coordCLM_comp hA k)
+          (exists_norm_iteratedFDeriv_coordCLM_comp_le hA hbd k)‖ := norm_sum_le _ _
+    _ ≤ ∑ k, ‖b k‖ * (C * (‖b.coordCLM k‖ * M)) := by
         refine Finset.sum_le_sum fun k _ ↦ (ContinuousLinearMap.opNorm_comp_le _ _).trans ?_
         refine mul_le_mul (norm_postcomp_le _) (hmul _ _ fun n hn x ↦ ?_) (norm_nonneg _)
           (norm_nonneg _)
-        exact (norm_iteratedFDeriv_mulLeftCoordCLM_comp_le hA k n x).trans
+        exact (norm_iteratedFDeriv_coordCLM_comp_le hA k n x).trans
           (mul_le_mul_of_nonneg_left (hAM n hn x) (by positivity))
-    _ = C * (∑ k, ‖b k‖ * ‖mulLeftCoordCLM F G k‖) * M := by
+    _ = C * (∑ k, ‖b k‖ * ‖b.coordCLM k‖) * M := by
         rw [Finset.mul_sum, Finset.sum_mul]
         exact Finset.sum_congr rfl fun k _ ↦ by ring
 
 /-- **Constant functions.** Multiplication by a constant `L` is `TauCeti.BesovSpace.postcomp`. -/
+@[simp]
 theorem mulLeftCLM_const (L : F →L[ℂ] G)
     (hbd : ∀ n ≤ ⌊|s|⌋₊ + 1, ∃ C, ∀ x : E, ‖iteratedFDeriv ℝ n (fun _ : E ↦ L) x‖ ≤ C) :
     mulLeftCLM φ s p q (fun _ : E ↦ L) (.const L) hbd = postcomp φ s p q L := by
@@ -216,6 +229,17 @@ private theorem mulLeftCLM_eq_id {C : E → F →L[ℂ] F} (hC : ∀ x, C x = .i
   obtain rfl : C = fun _ ↦ .id ℂ F := funext hC
   rw [mulLeftCLM_const, postcomp_id]
 
+/-- Multiplying by `A` and then by a pointwise left inverse `B` of `A` is the identity. -/
+private theorem mulLeftCLM_comp_mulLeftCLM_eq_id {A : E → F →L[ℂ] G} {B : E → G →L[ℂ] F}
+    (hA : A.HasTemperateGrowth) (hbdA : ∀ n ≤ ⌊|s|⌋₊ + 1, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n A x‖ ≤ C)
+    (hB : B.HasTemperateGrowth) (hbdB : ∀ n ≤ ⌊|s|⌋₊ + 1, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n B x‖ ≤ C)
+    (h : ∀ x, (B x).comp (A x) = .id ℂ F) :
+    mulLeftCLM φ s p q B hB hbdB ∘L mulLeftCLM φ s p q A hA hbdA = .id ℂ _ := by
+  have hBA : (fun x ↦ (B x).comp (A x)) = fun _ ↦ .id ℂ F := funext h
+  rw [mulLeftCLM_comp_mulLeftCLM hA hbdA hB hbdB (by rw [hBA]; exact .const _)
+      (by rw [hBA]; exact fun n _ ↦ ⟨_, norm_iteratedFDeriv_const_le _ n⟩)]
+  exact mulLeftCLM_eq_id h _ _
+
 variable (φ s p q) in
 /-- **Invertible matrix-valued functions.** If `A : E → (F →L[ℂ] G)` and
 `A' : E → (G →L[ℂ] F)` are pointwise inverse to each other, both of temperate growth with bounded
@@ -227,16 +251,32 @@ def mulLeftEquiv {A : E → F →L[ℂ] G} {A' : E → G →L[ℂ] F} (hA : A.Ha
     (hbdA' : ∀ n ≤ ⌊|s|⌋₊ + 1, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n A' x‖ ≤ C)
     (hleft : ∀ x, (A' x).comp (A x) = .id ℂ F) (hright : ∀ x, (A x).comp (A' x) = .id ℂ G) :
     BesovSpace F φ s p q ≃L[ℂ] BesovSpace G φ s p q :=
-  have hL : (fun x ↦ (A' x).comp (A x)) = fun _ ↦ .id ℂ F := funext hleft
-  have hR : (fun x ↦ (A x).comp (A' x)) = fun _ ↦ .id ℂ G := funext hright
   ContinuousLinearEquiv.equivOfInverse' (mulLeftCLM φ s p q A hA hbdA)
     (mulLeftCLM φ s p q A' hA' hbdA')
-    ((mulLeftCLM_comp_mulLeftCLM hA' hbdA' hA hbdA (by rw [hR]; exact .const _)
-      (by rw [hR]; exact fun n _ ↦ ⟨_, norm_iteratedFDeriv_const_le _ n⟩)).trans
-      (mulLeftCLM_eq_id hright _ _))
-    ((mulLeftCLM_comp_mulLeftCLM hA hbdA hA' hbdA' (by rw [hL]; exact .const _)
-      (by rw [hL]; exact fun n _ ↦ ⟨_, norm_iteratedFDeriv_const_le _ n⟩)).trans
-      (mulLeftCLM_eq_id hleft _ _))
+    (mulLeftCLM_comp_mulLeftCLM_eq_id hA' hbdA' hA hbdA hright)
+    (mulLeftCLM_comp_mulLeftCLM_eq_id hA hbdA hA' hbdA' hleft)
+
+@[simp]
+theorem mulLeftEquiv_apply {A : E → F →L[ℂ] G} {A' : E → G →L[ℂ] F} (hA : A.HasTemperateGrowth)
+    (hbdA : ∀ n ≤ ⌊|s|⌋₊ + 1, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n A x‖ ≤ C)
+    (hA' : A'.HasTemperateGrowth)
+    (hbdA' : ∀ n ≤ ⌊|s|⌋₊ + 1, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n A' x‖ ≤ C)
+    (hleft : ∀ x, (A' x).comp (A x) = .id ℂ F) (hright : ∀ x, (A x).comp (A' x) = .id ℂ G)
+    (u : BesovSpace F φ s p q) :
+    mulLeftEquiv φ s p q hA hbdA hA' hbdA' hleft hright u = mulLeftCLM φ s p q A hA hbdA u :=
+  (rfl)
+
+@[simp]
+theorem mulLeftEquiv_symm_apply {A : E → F →L[ℂ] G} {A' : E → G →L[ℂ] F}
+    (hA : A.HasTemperateGrowth)
+    (hbdA : ∀ n ≤ ⌊|s|⌋₊ + 1, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n A x‖ ≤ C)
+    (hA' : A'.HasTemperateGrowth)
+    (hbdA' : ∀ n ≤ ⌊|s|⌋₊ + 1, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n A' x‖ ≤ C)
+    (hleft : ∀ x, (A' x).comp (A x) = .id ℂ F) (hright : ∀ x, (A x).comp (A' x) = .id ℂ G)
+    (u : BesovSpace G φ s p q) :
+    (mulLeftEquiv φ s p q hA hbdA hA' hbdA' hleft hright).symm u =
+      mulLeftCLM φ s p q A' hA' hbdA' u :=
+  (rfl)
 
 @[simp]
 theorem coe_mulLeftEquiv {A : E → F →L[ℂ] G} {A' : E → G →L[ℂ] F} (hA : A.HasTemperateGrowth)

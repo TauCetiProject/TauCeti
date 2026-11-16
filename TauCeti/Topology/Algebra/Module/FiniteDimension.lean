@@ -57,6 +57,9 @@ The inverse of the continuous coordinate equivalence `Module.Basis.equivFunL` of
 basis `v` sends a coordinate vector `x` to the linear combination `∑ i, x i • v i`:
 `Module.Basis.equivFunL_symm_apply`, the continuous counterpart of
 `Module.Basis.equivFun_symm_apply`.
+The coordinates of a finite basis `v` are continuous linear functionals `Module.Basis.coordCLM`,
+the continuous counterparts of `Module.Basis.coord`, and `x = ∑ i, v.coordCLM i x • v i`
+(`Module.Basis.sum_coordCLM_smul`).
 
 A closed subspace `S` of finite codimension has a topological complement inside every dense
 subspace `D`: `Submodule.exists_le_isTopCompl_of_dense`. Consequently `S ⊔ D` is the whole space
@@ -249,7 +252,24 @@ equivalence. -/
   ext x i
   simp [equivFun_apply]
 
+/-- The `i`-th coordinate of a finite basis `v`, as a continuous linear functional: the continuous
+counterpart of `Module.Basis.coord`. -/
+noncomputable def coordCLM [Finite ι] (v : Basis ι 𝕜 E) (i : ι) : E →L[𝕜] 𝕜 :=
+  (ContinuousLinearMap.proj i).comp v.equivFunL.toContinuousLinearMap
+
+@[simp] theorem coordCLM_apply [Finite ι] (v : Basis ι 𝕜 E) (i : ι) (x : E) :
+    v.coordCLM i x = v.repr x i :=
+  (rfl)
+
+@[simp] theorem coe_coordCLM [Finite ι] (v : Basis ι 𝕜 E) (i : ι) :
+    (v.coordCLM i : E →ₗ[𝕜] 𝕜) = v.coord i :=
+  (rfl)
+
 variable [Fintype ι]
+
+/-- A vector is the combination of a finite basis `v` with its continuous coordinates. -/
+theorem sum_coordCLM_smul (v : Basis ι 𝕜 E) (x : E) : ∑ i, v.coordCLM i x • v i = x := by
+  simp
 
 /-- The inverse of the continuous coordinate equivalence of a finite basis `v` sends a coordinate
 vector `x` to the linear combination `∑ i, x i • v i`. -/
