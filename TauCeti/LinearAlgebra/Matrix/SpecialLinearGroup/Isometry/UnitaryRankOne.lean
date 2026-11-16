@@ -7,7 +7,6 @@ module
 
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.GraphAutomorphism
-import TauCeti.Algebra.Group.Subgroup.Normalizer
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Diagonal.Basic
 
 /-!
@@ -21,7 +20,9 @@ is an involution, and conjugates the torus parameter to `1/σ(t)`.
 The parametrization exhausts all diagonal determinant-one isometries over any commutative ring.
 These formulas supply the torus and a fixed representative of the nontrivial relative Weyl element
 of `SU₃`.
-They work in characteristic two as well as odd characteristic.
+They work in characteristic two as well as odd characteristic. The diagonal subgroup and its
+normalization by the signed reversal are defined for any ring endomorphism `σ`; involutivity is
+needed only for the unit parametrization and its exhaustion theorem.
 
 ## References
 
@@ -41,49 +42,53 @@ variable (R : Type*) [CommRing R] (σ : R →+* R)
 abbrev Group :=
   ↥((typeAGraphConjugator 2 R : Matrix (Fin 3) (Fin 3) R).specialIsometryGroup σ)
 
-private def torusMatrix (t : Rˣ) : Matrix (Fin 3) (Fin 3) R :=
-  diagonal ![(t : R), σ (t : R) * ↑t⁻¹, σ (↑t⁻¹ : R)]
+private def torusDiag : Rˣ →* (Fin 3 → Rˣ) where
+  toFun t := ![t, Units.map σ.toMonoidHom t * t⁻¹, Units.map σ.toMonoidHom t⁻¹]
+  map_one' := by ext i; fin_cases i <;> simp
+  map_mul' s t := by
+    ext i
+    fin_cases i <;> simp [map_mul, mul_mul_mul_comm, mul_comm]
 
-private theorem det_torusMatrix (t : Rˣ) : (torusMatrix R σ t).det = 1 := by
-  simp [torusMatrix, det_diagonal, Fin.prod_univ_succ, ← map_mul,
-    mul_left_comm, mul_comm]
+private def torusSL : Rˣ →* SpecialLinearGroup (Fin 3) R :=
+  Matrix.SpecialLinearGroup.toGLKerEquiv.symm.toMonoidHom.comp
+    ((diagGL.comp (torusDiag R σ)).codRestrict _ fun t => by
+      simp [MonoidHom.mem_ker, det_diagGL, torusDiag, Fin.prod_univ_three, mul_comm])
 
-private def torusSL (t : Rˣ) : SpecialLinearGroup (Fin 3) R :=
-  ⟨torusMatrix R σ t, det_torusMatrix R σ t⟩
-
-private theorem coe_torusSL (t : Rˣ) :
-    (torusSL R σ t : Matrix (Fin 3) (Fin 3) R) = torusMatrix R σ t := rfl
+private theorem toGL_torusSL (t : Rˣ) :
+    Matrix.SpecialLinearGroup.toGL (torusSL R σ t) = diagGL (torusDiag R σ t) := by
+  -- The SL/kernel equivalence preserves the matrix, changing only proof and inverse fields.
+  apply Units.ext
+  rfl
 
 /-- The diagonal torus parametrization `t ↦ diag(t, σ(t)/t, 1/σ(t))`. -/
-def torusHom (hσ : Function.Involutive σ) : Rˣ →* Group R σ where
-  toFun t := ⟨torusSL R σ t, by
+def torusHom (hσ : Function.Involutive σ) : Rˣ →* Group R σ :=
+  (torusSL R σ).codRestrict _ fun t => by
     apply mem_specialIsometryGroup_iff.mpr
-    ext i j
-    fin_cases i <;> fin_cases j <;>
-      simp [coe_torusSL, torusMatrix, Matrix.mul_apply, Fin.sum_univ_succ,
-        typeAGraphConjugator_apply, hσ (t : R), hσ (↑t⁻¹ : R),
-        ← map_mul, mul_assoc, mul_comm]⟩
-  map_one' := by
-    apply Subtype.ext
-    apply Matrix.SpecialLinearGroup.ext
-    intro i j
-    fin_cases i <;> fin_cases j <;>
-      simp [coe_torusSL, torusMatrix, Matrix.SpecialLinearGroup.coe_one]
-  map_mul' s t := by
-    apply Subtype.ext
-    rw [Subgroup.coe_mul]
-    apply Matrix.SpecialLinearGroup.ext
-    intro i j
-    rw [Matrix.SpecialLinearGroup.coe_mul]
-    fin_cases i <;> fin_cases j <;>
-      simp [coe_torusSL, torusMatrix, Matrix.mul_apply, Fin.sum_univ_succ,
-        map_mul, mul_assoc, mul_left_comm, mul_comm]
+    apply (typeAGraphAutomorphism_eq_iff_transpose_mul_conjugator_mul_eq 2
+      (Matrix.GeneralLinearGroup.map σ (Matrix.SpecialLinearGroup.toGL (torusSL R σ t)))
+      (Matrix.SpecialLinearGroup.toGL (torusSL R σ t))).mp
+    rw [toGL_torusSL, map_diagGL, typeAGraphAutomorphism_diagGL]
+    congr 1
+    funext i
+    apply Units.ext
+    fin_cases i <;> simp [torusDiag, hσ (t : R), hσ (↑t⁻¹ : R), -map_inv]
 
 /-- The underlying matrix of a torus element. -/
 @[simp]
 theorem coe_torusHom (hσ : Function.Involutive σ) (t : Rˣ) :
     ((torusHom R σ hσ t : SpecialLinearGroup (Fin 3) R) : Matrix (Fin 3) (Fin 3) R) =
-      diagonal ![(t : R), σ (t : R) * ↑t⁻¹, σ (↑t⁻¹ : R)] := by rfl
+      diagonal ![(t : R), σ (t : R) * ↑t⁻¹, σ (↑t⁻¹ : R)] := by
+  simp only [torusHom, MonoidHom.codRestrict_apply, Subgroup.coe_mk]
+  rw [← Matrix.SpecialLinearGroup.coe_GL_coe_matrix, toGL_torusSL, diagGL_coe]
+  congr 1
+  funext i
+  fin_cases i <;> rfl
+
+private theorem toGL_torusHom (hσ : Function.Involutive σ) (t : Rˣ) :
+    Matrix.SpecialLinearGroup.toGL (torusHom R σ hσ t : SpecialLinearGroup (Fin 3) R) =
+      diagGL (torusDiag R σ t) := by
+  simpa only [torusHom, MonoidHom.codRestrict_apply, Subgroup.coe_mk] using
+    toGL_torusSL R σ t
 
 /-- The diagonal torus parametrization is injective. -/
 theorem torusHom_injective (hσ : Function.Involutive σ) :
@@ -94,39 +99,57 @@ theorem torusHom_injective (hσ : Function.Involutive σ) :
     ((g : SpecialLinearGroup (Fin 3) R) : Matrix (Fin 3) (Fin 3) R) 0 0) h
 
 /-- The diagonal torus, as a subgroup of the rank-one unitary group. -/
-def torus (hσ : Function.Involutive σ) : Subgroup (Group R σ) :=
-  (torusHom R σ hσ).range
+def torus : Subgroup (Group R σ) :=
+  (Matrix.SpecialLinearGroup.diagonalTorus R 3).comap
+    ((typeAGraphConjugator 2 R : Matrix (Fin 3) (Fin 3) R).specialIsometryGroup σ).subtype
 
-/-- The torus is the range of its unit parametrization. -/
-theorem torus_def (hσ : Function.Involutive σ) :
-    torus R σ hσ = (torusHom R σ hσ).range := by rfl
+/-- The torus consists of all diagonal determinant-one isometries. No involutivity or field
+hypothesis is needed. -/
+@[simp]
+theorem mem_torus_iff_isDiag (g : Group R σ) :
+    g ∈ torus R σ ↔
+      ((g : SpecialLinearGroup (Fin 3) R) : Matrix (Fin 3) (Fin 3) R).IsDiag := by
+  simp only [torus, Subgroup.mem_comap, Subgroup.subtype_apply,
+    Matrix.SpecialLinearGroup.mem_diagonalTorus_iff]
 
 /-- Every value of the parametrization belongs to the torus. -/
 theorem torusHom_mem_torus (hσ : Function.Involutive σ) (t : Rˣ) :
-    torusHom R σ hσ t ∈ torus R σ hσ := ⟨t, rfl⟩
+    torusHom R σ hσ t ∈ torus R σ := by
+  rw [mem_torus_iff_isDiag, coe_torusHom]
+  exact isDiag_diagonal _
 
-instance (hσ : Function.Involutive σ) : IsMulCommutative (torus R σ hσ) :=
-  Subgroup.range_isMulCommutative _
-
-/-- Membership in the torus is existence of a unit parameter. -/
-theorem mem_torus_iff (hσ : Function.Involutive σ) (g : Group R σ) :
-    g ∈ torus R σ hσ ↔ ∃ t, torusHom R σ hσ t = g := Iff.rfl
+instance : IsMulCommutative (torus R σ) := by
+  apply IsMulCommutative.of_setLike_mul_comm
+  intro g hg h hh
+  apply Subtype.ext
+  apply Matrix.SpecialLinearGroup.toGL_injective
+  rw [Subgroup.coe_mul, Subgroup.coe_mul, map_mul, map_mul]
+  exact setLike_mul_comm
+    (Matrix.SpecialLinearGroup.mem_diagonalTorus_iff_toGL_mem.mp hg)
+    (Matrix.SpecialLinearGroup.mem_diagonalTorus_iff_toGL_mem.mp hh)
 
 /-- The signed reversal matrix is a unitary Weyl representative of determinant one. -/
 def weyl : Group R σ :=
   ⟨⟨(typeAGraphConjugator 2 R : Matrix (Fin 3) (Fin 3) R), by
     simp [Matrix.det_fin_three, typeAGraphConjugator_apply]⟩, by
     apply mem_specialIsometryGroup_iff.mpr
-    ext i j
-    fin_cases i <;> fin_cases j <;>
-      simp [Matrix.mul_apply, Fin.sum_univ_succ, Matrix.map_apply,
-        typeAGraphConjugator_apply]⟩
+    rw [coe_map_typeAGraphConjugator, transpose_typeAGraphConjugator]
+    simpa only [neg_one_sq, one_smul, Units.val_mul, map_one, Units.val_one, one_mul] using
+      congrArg (fun g : GL (Fin 3) R =>
+        (g : Matrix (Fin 3) (Fin 3) R) * (typeAGraphConjugator 2 R : Matrix (Fin 3) (Fin 3) R))
+        (typeAGraphConjugator_mul_self (A := R) 2)⟩
 
 /-- The Weyl representative is the signed reversal matrix. -/
 @[simp]
 theorem coe_weyl :
     ((weyl R σ : SpecialLinearGroup (Fin 3) R) : Matrix (Fin 3) (Fin 3) R) =
       (typeAGraphConjugator 2 R : Matrix (Fin 3) (Fin 3) R) := by rfl
+
+private theorem toGL_weyl :
+    Matrix.SpecialLinearGroup.toGL (weyl R σ : SpecialLinearGroup (Fin 3) R) =
+      typeAGraphConjugator 2 R := by
+  apply Units.ext
+  exact coe_weyl R σ
 
 /-- The Weyl representative squares to one, including in characteristic two. -/
 @[simp]
@@ -142,75 +165,91 @@ theorem weyl_mul_self : weyl R σ * weyl R σ = 1 := by
 theorem weyl_inv : (weyl R σ)⁻¹ = weyl R σ :=
   inv_eq_of_mul_eq_one_right (weyl_mul_self R σ)
 
+private theorem weyl_mul_diagGL_mul_weyl (d : Fin 3 → Rˣ) :
+    typeAGraphConjugator 2 R * diagGL d * typeAGraphConjugator 2 R =
+      diagGL (fun i => d i.rev) := by
+  have hinv : (typeAGraphConjugator 2 R)⁻¹ = typeAGraphConjugator 2 R :=
+    inv_eq_of_mul_eq_one_right (by simpa using typeAGraphConjugator_mul_self (A := R) 2)
+  simpa only [typeAGraphAutomorphism_apply, inverseTranspose_diagGL,
+    inv_inv, hinv] using typeAGraphAutomorphism_diagGL (A := R) 2 (fun i => (d i)⁻¹)
+
 /-- Weyl conjugation maps the torus parameter `t` to `σ(t)⁻¹`. -/
 theorem weyl_mul_torusHom_mul_weyl (hσ : Function.Involutive σ) (t : Rˣ) :
     weyl R σ * torusHom R σ hσ t * weyl R σ =
       torusHom R σ hσ ((Units.map σ.toMonoidHom t)⁻¹) := by
   apply Subtype.ext
-  apply Subtype.ext
-  ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp [Matrix.SpecialLinearGroup.coe_mul, Matrix.mul_apply, Fin.sum_univ_succ,
-      typeAGraphConjugator_apply, hσ (t : R), hσ (↑t⁻¹ : R),
-      mul_assoc, mul_comm, -map_inv]
+  apply Matrix.SpecialLinearGroup.toGL_injective
+  simp only [Subgroup.coe_mul, map_mul]
+  rw [toGL_weyl, toGL_torusHom, toGL_torusHom, weyl_mul_diagGL_mul_weyl]
+  congr 1
+  funext i
+  apply Units.ext
+  fin_cases i <;> simp [torusDiag, hσ (t : R), hσ (↑t⁻¹ : R), mul_comm, -map_inv]
 
-/-- The torus consists of all diagonal determinant-one isometries. No field hypothesis is
-needed: invertibility already makes each diagonal entry a unit. -/
-@[simp]
-theorem mem_torus_iff_isDiag (hσ : Function.Involutive σ) (g : Group R σ) :
-    g ∈ torus R σ hσ ↔
-      ((g : SpecialLinearGroup (Fin 3) R) : Matrix (Fin 3) (Fin 3) R).IsDiag := by
-  refine ⟨?_, fun hg => ?_⟩
-  · rintro ⟨t, rfl⟩
-    rw [coe_torusHom]
-    exact isDiag_diagonal _
-  · obtain ⟨d, hd⟩ := mem_diagonalTorus_iff_exists_diagGL.mp
-      (Matrix.SpecialLinearGroup.mem_diagonalTorus_iff_toGL_mem.mp
-        (Matrix.SpecialLinearGroup.mem_diagonalTorus_iff.mpr hg))
-    have hmat : ((g : SpecialLinearGroup (Fin 3) R) : Matrix (Fin 3) (Fin 3) R) =
-        diagonal (fun i => (d i : R)) := by
-      simpa only [diagGL_coe, Matrix.SpecialLinearGroup.coe_GL_coe_matrix] using
-        (congrArg Units.val hd).symm
-    have hdet : d 0 * d 1 * d 2 = 1 := by
-      apply Units.ext
-      have := (g : SpecialLinearGroup (Fin 3) R).property
-      simpa [hmat, det_diagonal, Fin.prod_univ_succ, mul_assoc] using this
-    have hpair : Units.map σ.toMonoidHom (d 0) * d 2 = 1 := by
-      apply Units.ext
-      have := congrArg (fun M : Matrix (Fin 3) (Fin 3) R => M 0 2)
+/-- The torus is the range of its unit parametrization when the ring endomorphism is
+involutive. Invertibility makes each diagonal entry a unit, even without a field hypothesis. -/
+theorem torus_def (hσ : Function.Involutive σ) :
+    torus R σ = (torusHom R σ hσ).range := by
+  apply le_antisymm
+  · intro g hg
+    obtain ⟨d, hd⟩ := mem_diagonalTorus_iff_exists_diagGL.mp
+      (Matrix.SpecialLinearGroup.mem_diagonalTorus_iff_toGL_mem.mp hg)
+    simp only [Subgroup.subtype_apply] at hd
+    have hdet := Matrix.SpecialLinearGroup.coeToGL_det (g : SpecialLinearGroup (Fin 3) R)
+    rw [← hd, det_diagGL, Fin.prod_univ_three] at hdet
+    have hfixed := (typeAGraphAutomorphism_eq_iff_transpose_mul_conjugator_mul_eq 2
+      (Matrix.GeneralLinearGroup.map σ (Matrix.SpecialLinearGroup.toGL g.val))
+      (Matrix.SpecialLinearGroup.toGL g.val)).mpr
         (mem_specialIsometryGroup_iff.mp g.property)
-      simpa [hmat, Matrix.mul_apply, Fin.sum_univ_succ,
-        typeAGraphConjugator_apply] using this
+    rw [← hd, map_diagGL, typeAGraphAutomorphism_diagGL] at hfixed
     have h2 : d 2 = (Units.map σ.toMonoidHom (d 0))⁻¹ :=
-      eq_inv_of_mul_eq_one_right hpair
+      (congrFun (diagGL_injective hfixed) 2).symm
     have h1 : d 1 = Units.map σ.toMonoidHom (d 0) * (d 0)⁻¹ := by
       calc
         d 1 = (d 0)⁻¹ * (d 0 * d 1 * d 2) * (d 2)⁻¹ := by group
         _ = Units.map σ.toMonoidHom (d 0) * (d 0)⁻¹ := by rw [hdet, h2]; simp [mul_comm]
     refine ⟨d 0, ?_⟩
     apply Subtype.ext
-    apply Matrix.SpecialLinearGroup.ext
-    intro i j
-    rw [coe_torusHom, hmat]
-    fin_cases i <;> fin_cases j <;> simp [h1, h2, -map_inv]
+    apply Matrix.SpecialLinearGroup.toGL_injective
+    rw [← hd, toGL_torusHom]
+    congr 1
+    funext i
+    fin_cases i <;> simp [torusDiag, h1, h2]
+  · rintro _ ⟨t, rfl⟩
+    exact torusHom_mem_torus R σ hσ t
+
+/-- Membership in the torus is existence of a unit parameter when the endomorphism is
+involutive. -/
+theorem mem_torus_iff (hσ : Function.Involutive σ) (g : Group R σ) :
+    g ∈ torus R σ ↔ ∃ t, torusHom R σ hσ t = g := by
+  rw [torus_def, MonoidHom.mem_range]
 
 /-- The fixed Weyl representative normalizes the diagonal torus. -/
-theorem weyl_mem_normalizer_torus (hσ : Function.Involutive σ) :
-    weyl R σ ∈ Subgroup.normalizer (torus R σ hσ : Set (Group R σ)) := by
-  rw [torus_def]
-  exact (torusHom R σ hσ).mem_normalizer_range_of_surjective
-    (σ := fun t => (Units.map σ.toMonoidHom t)⁻¹)
-    (Function.Involutive.surjective fun t => by
-      rw [map_inv, inv_inv]
-      exact Units.ext (hσ t))
-    (fun t => by rw [weyl_inv, weyl_mul_torusHom_mul_weyl])
+theorem weyl_mem_normalizer_torus :
+    weyl R σ ∈ Subgroup.normalizer (torus R σ : Set (Group R σ)) := by
+  have hconj (g : Group R σ) (hg : g ∈ torus R σ) :
+      weyl R σ * g * weyl R σ ∈ torus R σ := by
+    obtain ⟨d, hd⟩ := mem_diagonalTorus_iff_exists_diagGL.mp
+      (Matrix.SpecialLinearGroup.mem_diagonalTorus_iff_toGL_mem.mp hg)
+    simp only [Subgroup.subtype_apply] at hd
+    apply Matrix.SpecialLinearGroup.mem_diagonalTorus_iff_toGL_mem.mpr
+    apply mem_diagonalTorus_iff_exists_diagGL.mpr
+    refine ⟨fun i => d i.rev, ?_⟩
+    simp only [map_mul, Subgroup.subtype_apply, toGL_weyl, ← hd]
+    exact (weyl_mul_diagGL_mul_weyl R _).symm
+  exact Subgroup.mem_normalizer_iff.mpr fun g =>
+    ⟨fun hg => by simpa only [weyl_inv] using hconj g hg,
+      fun hg => by
+        have h := hconj _ (by simpa only [weyl_inv] using hg)
+        simp only [← mul_assoc, weyl_mul_self, one_mul] at h
+        simpa only [mul_assoc, weyl_mul_self, mul_one] using h⟩
 
 /-- The Weyl representative is not diagonal over a nontrivial ring, so it lies outside the
 torus even in the smallest characteristic. -/
-theorem weyl_notMem_torus [Nontrivial R] (hσ : Function.Involutive σ) :
-    weyl R σ ∉ torus R σ hσ := by
+theorem weyl_notMem_torus [Nontrivial R] :
+    weyl R σ ∉ torus R σ := by
   intro h
-  have := (mem_torus_iff_isDiag R σ hσ _).mp h (show (0 : Fin 3) ≠ 2 by decide)
+  have := (mem_torus_iff_isDiag R σ _).mp h (show (0 : Fin 3) ≠ 2 by decide)
   simp at this
 
 end TauCeti.UnitaryRankOne

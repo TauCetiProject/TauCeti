@@ -195,6 +195,15 @@ theorem map_typeAGraphConjugator {B : Type*} [Ring B] (f : A →+* B) (r : ℕ) 
   ext i j
   simp [typeAGraphConjugator, typeAGraphSign, Fin.rev_eq_iff]
 
+/-- Entrywise base change carries the underlying signed reversal matrix to the same matrix
+in the target ring. -/
+@[simp]
+theorem coe_map_typeAGraphConjugator {B : Type*} [Ring B] (f : A →+* B) (r : ℕ) :
+    (typeAGraphConjugator r A : Matrix (Fin (r + 1)) (Fin (r + 1)) A).map f =
+      (typeAGraphConjugator r B : Matrix (Fin (r + 1)) (Fin (r + 1)) B) := by
+  have hmap := congrArg Units.val (map_typeAGraphConjugator f r)
+  rwa [Units.coe_map, MonoidHom.coe_ofClass, RingHom.mapMatrix_apply] at hmap
+
 end Ring
 
 variable [CommRing A]

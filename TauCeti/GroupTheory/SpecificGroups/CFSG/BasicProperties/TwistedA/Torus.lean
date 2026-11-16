@@ -65,10 +65,10 @@ theorem specialIsometryEquivFixedPoints_torusHom (t : Kˣ) :
 /-- The comparison identifies the unitary torus with the range on the exact carrier. -/
 @[simp]
 theorem map_specialIsometryEquivFixedPoints_torus :
-    (UnitaryRankOne.torus K σ hσ).map
+    (UnitaryRankOne.torus K σ).map
         (specialIsometryEquivFixedPoints 2 q hv : UnitaryRankOne.Group K σ →* (d).FixedPoints) =
       (unitaryTorusHom q hv).range := by
-  simp only [UnitaryRankOne.torus_def, unitaryTorusHom_def, MonoidHom.range_comp,
+  simp only [UnitaryRankOne.torus_def K σ hσ, unitaryTorusHom_def, MonoidHom.range_comp,
     MulEquiv.toMonoidHom_eq_coe]
 
 /-- The torus parameter gives the stated diagonal matrix over the algebraic closure. -/
@@ -107,9 +107,7 @@ theorem coe_unitaryFixedWeylRepresentative :
       (typeAGraphConjugator 2 (d).1.Closure : Matrix (Fin 3) (Fin 3) (d).1.Closure) := by
   rw [unitaryFixedWeylRepresentative, coe_specialIsometryEquivFixedPoints,
     UnitaryRankOne.coe_weyl]
-  have hmap := congrArg Units.val (map_typeAGraphConjugator
-    ((d).1.extensionGaloisFieldEmbedding 2 two_ne_zero) 2)
-  rwa [Units.coe_map, MonoidHom.coe_ofClass, RingHom.mapMatrix_apply] at hmap
+  exact coe_map_typeAGraphConjugator _ _
 
 /-- The fixed Weyl representative has square one. -/
 @[simp]
@@ -141,17 +139,17 @@ theorem unitaryFixedWeylRepresentative_mem_normalizer_range_unitaryTorusHom :
   rw [← map_specialIsometryEquivFixedPoints_torus,
     ← specialIsometryEquivFixedPoints_weyl]
   simpa only [MonoidHom.coe_ofClass] using
-    Subgroup.le_normalizer_map (H := UnitaryRankOne.torus K σ hσ)
+    Subgroup.le_normalizer_map (H := UnitaryRankOne.torus K σ)
       (specialIsometryEquivFixedPoints 2 q hv : UnitaryRankOne.Group K σ →* (d).FixedPoints)
       (Subgroup.mem_map.mpr ⟨UnitaryRankOne.weyl K σ,
-        UnitaryRankOne.weyl_mem_normalizer_torus K σ hσ, rfl⟩)
+        UnitaryRankOne.weyl_mem_normalizer_torus K σ, rfl⟩)
 
 /-- The fixed Weyl representative lies outside the parametrized torus. -/
 theorem unitaryFixedWeylRepresentative_notMem_range_unitaryTorusHom :
     unitaryFixedWeylRepresentative q hv ∉ (unitaryTorusHom q hv).range := by
   rintro ⟨t, ht⟩
-  apply UnitaryRankOne.weyl_notMem_torus K σ hσ
-  rw [UnitaryRankOne.mem_torus_iff]
+  apply UnitaryRankOne.weyl_notMem_torus K σ
+  rw [UnitaryRankOne.mem_torus_iff K σ hσ]
   rw [← specialIsometryEquivFixedPoints_torusHom,
     ← specialIsometryEquivFixedPoints_weyl] at ht
   exact ⟨t, (specialIsometryEquivFixedPoints 2 q hv).injective ht⟩
