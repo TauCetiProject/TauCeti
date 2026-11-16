@@ -190,8 +190,10 @@ theorem exists_fiberwiseCellReattachmentInv_homotopyRel_morseFamily
   obtain ⟨g, hg, hgc, K, hK⟩ := exists_homotopy_morseFamilyCharacteristicMap_polarFactor hfs ψ₀ ψ₁
     k hk hε hball₀ hball₁ hf₀ hf₁ hs₀ hs₁ hp hr htr hT hD hcompact hreg
   exact ⟨g, hg, hgc, K, hK,
-    exists_homotopyRel_fiberwiseCellReattachment_comp_fiberwiseCellReattachmentInv ..,
-    exists_homotopyRel_fiberwiseCellReattachmentInv_comp_fiberwiseCellReattachment ..⟩
+    ⟨fiberwiseCellReattachmentCompInvHomotopy ..,
+      fun _ _ ↦ fiberwiseCellAttachmentProj_fiberwiseCellReattachmentCompInvHomotopy ..⟩,
+    ⟨fiberwiseCellReattachmentInvCompHomotopy ..,
+      fun _ _ ↦ fiberwiseCellAttachmentProj_fiberwiseCellReattachmentInvCompHomotopy ..⟩⟩
 
 variable {ι P : Type u} [TopologicalSpace P]
   (ψ₀ ψ₁ : P → ι → OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n)))
@@ -302,10 +304,12 @@ private theorem fiberwiseCellReattachment_morseFamily_spec
   have hχ₁ := morseFamilyCharacteristicMap_diskBoundaryInclusion ψ₁ k hk hε.le hball₁ hf₁ hs₁
   refine ⟨?_, ?_, fiberwiseCellAttachmentProj_fiberwiseCellReattachment _ _ _ _ hχ₀ hχ₁ _ hh K hK,
     fiberwiseCellAttachmentProj_fiberwiseCellReattachmentInv _ _ _ _ hχ₀ hχ₁ _ K hK g he,
-    exists_homotopyRel_fiberwiseCellReattachment_comp_fiberwiseCellReattachmentInv _ _ _ _ hχ₀ hχ₁
-      _ hh K hK g he,
-    exists_homotopyRel_fiberwiseCellReattachmentInv_comp_fiberwiseCellReattachment _ _ _ _ hχ₀ hχ₁
-      _ hh K hK g he,
+    ⟨fiberwiseCellReattachmentCompInvHomotopy _ _ _ _ hχ₀ hχ₁ _ hh K hK g he,
+      fiberwiseCellAttachmentProj_fiberwiseCellReattachmentCompInvHomotopy _ _ _ _ hχ₀ hχ₁
+        _ hh K hK g he⟩,
+    ⟨fiberwiseCellReattachmentInvCompHomotopy _ _ _ _ hχ₀ hχ₁ _ hh K hK g he,
+      fiberwiseCellAttachmentProj_fiberwiseCellReattachmentInvCompHomotopy _ _ _ _ hχ₀ hχ₁
+        _ hh K hK g he⟩,
     ⟨fiberwiseCellReattachmentHomotopy _ _ _ _ hχ₀ hχ₁ _ hh K hK,
       fst_fiberwiseCellReattachmentHomotopy _ _ _ _ hχ₀ hχ₁ _ hh K hK⟩⟩
   · ext x
