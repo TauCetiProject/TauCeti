@@ -147,6 +147,12 @@ theorem _root_.IsPrimitiveRoot.neg_one_of_two_ne_zero (h2 : (2 : R) ≠ 0) :
   IsPrimitiveRoot.neg_one (ringChar R) fun h ↦
     h2 (by simpa [h] using ringChar.Nat.cast_ringChar (R := R))
 
+/-- A domain of characteristic different from two contains all square roots of unity. -/
+instance instHasEnoughRootsOfUnityTwo [IsDomain R] [NeZero (2 : R)] :
+    HasEnoughRootsOfUnity R 2 where
+  prim := ⟨-1, IsPrimitiveRoot.neg_one_of_two_ne_zero (NeZero.ne _)⟩
+  cyc := rootsOfUnity.isCyclic R 2
+
 /-- In a domain in which `2 ≠ 0`, the group `μ₂ = {±1}` of square roots of unity has two
 elements. -/
 theorem card_rootsOfUnity_two [IsDomain R] (h2 : (2 : R) ≠ 0) :
