@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.AInfinity.Module.Right.Ungraded
+public import TauCeti.Algebra.Homology.AInfinity.Module.Right.Ungraded.DG
 
 /-!
 # Morphisms of ungraded `A∞` right modules
@@ -27,6 +27,10 @@ morphisms of type `A` modules of bordered Heegaard Floer homology, which induce 
 tensor products (`TauCeti.LowDimTopology.Bordered.TypeA`). Tau Ceti's morphisms of graded `A∞`
 modules (`TauCeti.AInfinityRightModuleHom`) do not apply here, since the modules are ungraded.
 
+* **Homomorphisms.** The relations of a morphism say that its family of components is a cycle
+  for the differential of morphisms
+  (`TauCeti.UngradedAInfinityRightModuleHom.morphismDifferential_map`), so the constructions on
+  families of `TauCeti.Algebra.Homology.AInfinity.Module.Right.Ungraded` apply to it.
 * **Mapping cones.** The relations of a morphism make the operations
   `(m, m') ↦ (m_{n+1}(m, a…), m'_{n+1}(m', a…) + f_{n+1}(m, a…))` on `M × M'` satisfy the `A∞`
   relations (`TauCeti.UngradedAInfinityRightModuleHom.cone`). This turns statements about
@@ -90,6 +94,17 @@ namespace UngradedAInfinityRightModuleHom
 
 variable {Mm : UngradedAInfinityRightModule d M} {Mm' : UngradedAInfinityRightModule d M'}
   (f : UngradedAInfinityRightModuleHom Mm Mm')
+
+/-- **The components of a morphism form a homomorphism**: the relations of `f` say exactly that the
+differential of morphisms (`TauCeti.UngradedAInfinityRightModule.morphismDifferential`) vanishes
+on its family of components. -/
+@[simp]
+theorem morphismDifferential_map : Mm.morphismDifferential Mm' f.map = 0 := by
+  funext n
+  refine MultilinearMap.ext fun a => LinearMap.ext fun m => ?_
+  rw [UngradedAInfinityRightModule.morphismDifferential_apply, ungradedFamilyComp_apply,
+    ungradedFamilyComp_apply]
+  exact f.stasheff n a m
 
 /-! ### The mapping cone -/
 
