@@ -25,7 +25,8 @@ imposes an additional condition on the image, so no surjectivity onto all patter
 ## Main results
 
 * `toGTPattern`, `topRow_toGTPattern`, and `rowWeight_toGTPattern` give the directional
-  pattern and its boundary weights, including the signed product-boundary convention.
+  pattern and its boundary weights. The specializations `topRow_toGTPattern_of_productBoundary`
+  and `rowWeight_toGTPattern_of_productBoundary` give the signed product-boundary convention.
 * `gtCompletion` integrates row prefixes; its edge and `boundaryLinear` equations
   describe the three boundaries without imposing rhombus concavity.
 * `gtCompletion_toGTPattern` and `toGTPattern_eq_of_coe_eq_gtCompletion` are the two
@@ -75,12 +76,12 @@ def toGTPattern (h : IntegerHive n) : GTPattern n where
   rw [dite_eq_left ⟨hij, hj⟩]
 
 /-- The top row of the directional pattern is the hive's second clockwise boundary. -/
-@[simp] theorem topRow_toGTPattern (h : IntegerHive n) :
+@[simp high] theorem topRow_toGTPattern (h : IntegerHive n) :
     h.toGTPattern.topRow = h.boundary 1 := by
-  funext i
-  rw [GTPattern.topRow_apply, toGTPattern_apply h i.isLt le_rfl,
-    chart_top _ (by omega), chart_top _ (by omega), boundary_apply]
-  rfl
+  funext ⟨i, hi⟩
+  rw [GTPattern.topRow_apply, toGTPattern_apply h hi le_rfl,
+    chart_top _ (by omega), chart_top _ (by omega), boundary_apply,
+    Fin.succ_mk, Fin.castSucc_mk]
 
 /-- The top weight of the directional pattern is the second boundary weight. -/
 @[simp] theorem topWeight_toGTPattern (h : IntegerHive n) :
@@ -184,14 +185,14 @@ theorem toGTPattern_eq_of_coe_eq_gtCompletion {lam : Fin n → ℤ} {P : GTPatte
   simp [gtCompletion_apply]
 
 /-- On the first edge, completion has the prescribed boundary prefixes. -/
-@[simp] theorem gtCompletion_edgePoint_zero (lam : Fin n → ℤ) (P : GTPattern n)
+theorem gtCompletion_edgePoint_zero (lam : Fin n → ℤ) (P : GTPattern n)
     (r : Fin (n + 1)) :
     gtCompletion lam P (Vertex.edgePoint n 0 r) =
       ∑ k : Fin n with k.val < r.val, lam k := by
   simp [gtCompletion_apply]
 
 /-- On the second edge, completion integrates the top row after the first boundary. -/
-@[simp] theorem gtCompletion_edgePoint_one (lam : Fin n → ℤ) (P : GTPattern n)
+theorem gtCompletion_edgePoint_one (lam : Fin n → ℤ) (P : GTPattern n)
     (r : Fin (n + 1)) :
     gtCompletion lam P (Vertex.edgePoint n 1 r) =
       (∑ k : Fin n, lam k) + ∑ k ∈ Finset.range r.val, P k n := by
@@ -200,8 +201,9 @@ theorem toGTPattern_eq_of_coe_eq_gtCompletion {lam : Fin n → ℤ} {P : GTPatte
     Nat.sub_add_cancel (by omega : r.val ≤ n)]
   simp
 
-/-- On the third edge, completion adds the two row prefixes of complementary length. -/
-@[simp] theorem gtCompletion_edgePoint_two (lam : Fin n → ℤ) (P : GTPattern n)
+/-- At index `r` on the third edge, completion adds the first-boundary prefix of length
+`n - r` and the full sum of row `n - r` of the pattern. -/
+theorem gtCompletion_edgePoint_two (lam : Fin n → ℤ) (P : GTPattern n)
     (r : Fin (n + 1)) :
     gtCompletion lam P (Vertex.edgePoint n 2 r) =
       (∑ k : Fin n with k.val < n - r.val, lam k) +
@@ -209,7 +211,7 @@ theorem toGTPattern_eq_of_coe_eq_gtCompletion {lam : Fin n → ℤ} {P : GTPatte
   simp [gtCompletion_apply]
 
 /-- The first clockwise boundary of a completion is its prescribed sequence. -/
-@[simp] theorem boundaryLinear_gtCompletion_zero (lam : Fin n → ℤ) (P : GTPattern n) :
+@[simp high] theorem boundaryLinear_gtCompletion_zero (lam : Fin n → ℤ) (P : GTPattern n) :
     boundaryLinear ℤ n ℤ (gtCompletion lam P) 0 = lam := by
   funext r
   have hs := prefixSum_succ r.isLt lam
@@ -218,7 +220,7 @@ theorem toGTPattern_eq_of_coe_eq_gtCompletion {lam : Fin n → ℤ} {P : GTPatte
     Fin.val_castSucc, hs, add_sub_cancel_left]
 
 /-- The second clockwise boundary of a completion is the top row. -/
-@[simp] theorem boundaryLinear_gtCompletion_one (lam : Fin n → ℤ) (P : GTPattern n) :
+@[simp high] theorem boundaryLinear_gtCompletion_one (lam : Fin n → ℤ) (P : GTPattern n) :
     boundaryLinear ℤ n ℤ (gtCompletion lam P) 1 = P.topRow := by
   funext r
   simp only [boundaryLinear_apply, gtCompletion_edgePoint_one, Fin.val_succ,
@@ -226,7 +228,7 @@ theorem toGTPattern_eq_of_coe_eq_gtCompletion {lam : Fin n → ℤ} {P : GTPatte
   abel
 
 /-- The third clockwise boundary is determined by the reversed row weight and first boundary. -/
-@[simp] theorem boundaryLinear_gtCompletion_two (lam : Fin n → ℤ) (P : GTPattern n) :
+@[simp high] theorem boundaryLinear_gtCompletion_two (lam : Fin n → ℤ) (P : GTPattern n) :
     boundaryLinear ℤ n ℤ (gtCompletion lam P) 2 =
       fun r => -P.rowWeight r.rev - lam r.rev := by
   funext r
@@ -245,17 +247,10 @@ theorem boundaryLinear_gtCompletion_of_topRow_of_rowWeight
     (htop : P.topRow = μ.1) (hweight : P.rowWeight = γ.1 - lam.1) :
     boundaryLinear ℤ n ℤ (gtCompletion lam.1 P) = productBoundary lam μ γ := by
   funext s
-  fin_cases s
-  · rw [show (⟨0, by decide⟩ : Fin 3) = 0 by decide]
-    simpa only [productBoundary_zero] using boundaryLinear_gtCompletion_zero lam.1 P
-  · rw [show (⟨1, by decide⟩ : Fin 3) = 1 by decide]
-    simp [htop]
-  · rw [show (⟨2, by decide⟩ : Fin 3) = 2 by decide,
-      boundaryLinear_gtCompletion_two, productBoundary_two]
-    ext r
-    simp [hweight]
+  fin_cases s <;> simp [htop, hweight, funext_iff]
 
-/-- Completion already vanishes at the normalization corner. -/
+/-- Corner-normalizing a rhombus-concave completion leaves its underlying lattice
+function unchanged. -/
 @[simp] theorem coe_ofRhombusConcave_gtCompletion (lam : Fin n → ℤ) (P : GTPattern n)
     (hf : IsRhombusConcave (gtCompletion lam P)) :
     ⇑(ofRhombusConcave (gtCompletion lam P) hf) = gtCompletion lam P := by
@@ -274,8 +269,7 @@ theorem boundaryLinear_gtCompletion_of_topRow_of_rowWeight
       gtCompletion lam P b + gtCompletion lam P d ≤
         gtCompletion lam P a + gtCompletion lam P c) :
     (Hive.mk (gtCompletion lam P) (gtCompletion_cornerA lam P) hf).toGTPattern = P := by
-  apply toGTPattern_eq_of_coe_eq_gtCompletion (lam := lam)
-  rfl
+  exact toGTPattern_eq_of_coe_eq_gtCompletion (coe_mk _ _ _)
 
 /-- Completing zero data gives the zero lattice function. -/
 @[simp↓] theorem gtCompletion_zero : gtCompletion (0 : Fin n → ℤ) 0 = 0 := by
@@ -377,25 +371,20 @@ theorem sum_toGTPattern_sub_le (h : IntegerHive n) {i j : ℕ}
       (h.toGTPattern k (j + 2) - h.toGTPattern k (j + 1))) ≤
         h.boundary 0 ⟨j, by omega⟩ - h.boundary 0 ⟨j + 1, by omega⟩ +
           ∑ k ∈ Finset.range i, (h.toGTPattern k (j + 1) - h.toGTPattern k j) := by
-  have h0 : h.boundary 0 ⟨j, by omega⟩ =
-      h (chart n 0 (j + 1) (by omega) (by omega)) -
-        h (chart n 0 j (by omega) (by omega)) := by
-    rw [chart_zero, chart_zero, boundary_apply]
-    rfl
-  have h1 : h.boundary 0 ⟨j + 1, by omega⟩ =
-      h (chart n 0 (j + 2) (by omega) (by omega)) -
-        h (chart n 0 (j + 1) (by omega) (by omega)) := by
-    rw [chart_zero, chart_zero, boundary_apply]
-    rfl
+  have hb (k : ℕ) (hk : k < n) : h.boundary 0 ⟨k, hk⟩ =
+      h (chart n 0 (k + 1) (by omega) (by omega)) -
+        h (chart n 0 k (by omega) (by omega)) := by
+    rw [chart_zero, chart_zero, boundary_apply, Fin.succ_mk, Fin.castSucc_mk]
   rw [Finset.sum_sub_distrib, Finset.sum_sub_distrib]
-  linarith [h.le_of_isRhombus (isRhombus_chart_step hij hj),
+  linarith [hb j (by omega), hb (j + 1) (by omega),
+    h.le_of_isRhombus (isRhombus_chart_step hij hj),
     sum_toGTPattern_chart h hij (by omega),
     sum_toGTPattern_chart h (i := i) (j := j + 1) (by omega) (by omega),
     sum_toGTPattern_chart h (i := i + 1) (j := j + 1) (by omega) (by omega),
     sum_toGTPattern_chart h (i := i + 1) (j := j + 2) (by omega) hj]
 
-/-- For product boundary `(λ, μ, γ*)`, the third rhombus family gives the
-remaining inequalities in the native Gelfand–Tsetlin image condition. -/
+/-- For product boundary `(λ, μ, γ*)`, the third rhombus family imposes this necessary
+inequality on the directional pattern in terms of `λ`. -/
 theorem sum_toGTPattern_sub_le_of_productBoundary
     {lam μ γ : DominantWeight n} {h : IntegerHive n}
     (hb : h.boundary = productBoundary lam μ γ) {i j : ℕ}

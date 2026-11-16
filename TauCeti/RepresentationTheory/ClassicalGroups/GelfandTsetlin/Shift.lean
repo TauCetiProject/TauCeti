@@ -307,8 +307,7 @@ theorem shift_eq_add_const (P : GTPattern n) (m : ℤ) : P.shift m = P + const n
 @[simp]
 theorem rowWeight_shift (P : GTPattern n) (m : ℤ) :
     (P.shift m).rowWeight = fun r => P.rowWeight r + m := by
-  rw [shift_eq_add_const, rowWeight_add, rowWeight_const]
-  rfl
+  rw [shift_eq_add_const, rowWeight_add, rowWeight_const, Pi.add_def]
 
 /-- **Every pattern is a polynomial pattern up to a determinant shift**: some shift by a natural
 number makes all of its entries nonnegative. -/
