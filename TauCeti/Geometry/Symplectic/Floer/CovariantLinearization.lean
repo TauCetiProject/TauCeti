@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCu
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Surface
 import TauCeti.Geometry.Manifold.VectorBundle.Translate
 import TauCeti.Geometry.Manifold.MFDeriv.Parametric.Basic
+import TauCeti.Geometry.Manifold.ContMDiff.Prod
 
 /-!
 # Intrinsic map variation of the Floer equation

@@ -129,24 +129,6 @@ theorem contMDiffAt_deriv_of_contMDiffAt_uncurry
     (contDiffWithinAt_extChartAt_symm_of_contMDiffAt_uncurry hF) (hrange x) hmn
   exact contMDiffAt_iff_source.2 (contMDiffWithinAt_iff_contDiffWithinAt.2 hD')
 
-/-- Fixing the last coordinate of a three-parameter family preserves joint regularity in
-its first two coordinates. -/
-theorem _root_.ContMDiffAt.contMDiffAt_prod_fst_slice {f : 𝕜 → 𝕜 × 𝕜 → M}
-    {q : 𝕜} {z : 𝕜 × 𝕜}
-    (hf : ContMDiffAt 𝓘(𝕜, 𝕜 × (𝕜 × 𝕜)) I n (uncurry f) (q, z)) :
-    ContMDiffAt 𝓘(𝕜, 𝕜 × 𝕜) I n (fun p : 𝕜 × 𝕜 ↦ f p.1 (p.2, z.2)) (q, z.1) :=
-  hf.comp (q, z.1) (contMDiff_iff_contDiff.mpr (by fun_prop :
-    ContDiff 𝕜 n (fun p : 𝕜 × 𝕜 ↦ (p.1, (p.2, z.2))))).contMDiffAt
-
-/-- Fixing the middle coordinate of a three-parameter family preserves joint regularity in
-its first and last coordinates. -/
-theorem _root_.ContMDiffAt.contMDiffAt_prod_snd_slice {f : 𝕜 → 𝕜 × 𝕜 → M}
-    {q : 𝕜} {z : 𝕜 × 𝕜}
-    (hf : ContMDiffAt 𝓘(𝕜, 𝕜 × (𝕜 × 𝕜)) I n (uncurry f) (q, z)) :
-    ContMDiffAt 𝓘(𝕜, 𝕜 × 𝕜) I n (fun p : 𝕜 × 𝕜 ↦ f p.1 (z.1, p.2)) (q, z.2) :=
-  hf.comp (q, z.2) (contMDiff_iff_contDiff.mpr (by fun_prop :
-    ContDiff 𝕜 n (fun p : 𝕜 × 𝕜 ↦ (p.1, (z.1, p.2))))).contMDiffAt
-
 variable [IsManifold I 1 M]
 
 /-- **Regularity of the velocity field of a two-parameter family.** If `f : 𝕜 → 𝕜 → M` is jointly

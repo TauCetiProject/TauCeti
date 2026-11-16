@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Perturbation.Manifold
 import TauCeti.Geometry.Manifold.VectorBundle.Translate
 import TauCeti.Geometry.Manifold.MFDeriv.Parametric.Basic
+import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import TauCeti.Analysis.Calculus.Deriv.Mul
 
 /-!
