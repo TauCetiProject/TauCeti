@@ -21,8 +21,10 @@ loop of determinants.
 
 * `ContinuousLinearEquiv.normalizedDet`: the point `det A / ‖det A‖` of the circle.
 * `ContinuousLinearEquiv.det_eq_norm_mul_normalizedDet`: `det A = ‖det A‖ * normalizedDet A`.
-* `Continuous.normalizedDet`: a continuous family of automorphisms has continuous normalized
-  determinant.
+* `ContinuousLinearEquiv.normalizedDet_trans`, `ContinuousLinearEquiv.normalizedDet_refl`,
+  `ContinuousLinearEquiv.normalizedDet_symm`: the normalized determinant is multiplicative.
+* `Continuous.normalizedDet`, `ContinuousOn.normalizedDet`: a continuous family of automorphisms
+  has continuous normalized determinant.
 -/
 
 public section
@@ -52,6 +54,32 @@ theorem det_eq_norm_mul_normalizedDet (A : E ≃L[ℂ] E) :
   have hd : LinearMap.det (A.toLinearEquiv : E →ₗ[ℂ] E) ≠ 0 := A.toLinearEquiv.isUnit_det'.ne_zero
   rw [coe_normalizedDet, mul_div_cancel₀ _ (by simpa using hd)]
 
+/-- The normalized determinant of a composite is the product of the normalized determinants. -/
+@[simp]
+theorem normalizedDet_trans (A B : E ≃L[ℂ] E) :
+    (A.trans B).normalizedDet = A.normalizedDet * B.normalizedDet := by
+  have hdet : LinearMap.det ((A.trans B).toLinearEquiv : E →ₗ[ℂ] E) =
+      LinearMap.det (A.toLinearEquiv : E →ₗ[ℂ] E) *
+        LinearMap.det (B.toLinearEquiv : E →ₗ[ℂ] E) := by
+    rw [ContinuousLinearEquiv.trans_toLinearEquiv, LinearEquiv.coe_trans, LinearMap.det_comp,
+      mul_comm]
+  ext1
+  simp only [coe_normalizedDet, Circle.coe_mul, hdet, norm_mul, Complex.ofReal_mul]
+  ring
+
+/-- The identity has normalized determinant `1`. -/
+@[simp]
+theorem normalizedDet_refl : (ContinuousLinearEquiv.refl ℂ E).normalizedDet = 1 := by
+  have h : ((ContinuousLinearEquiv.refl ℂ E).toLinearEquiv : E →ₗ[ℂ] E) = LinearMap.id :=
+    LinearMap.ext fun v ↦ refl_apply ℂ E v
+  ext1
+  simp [coe_normalizedDet, h]
+
+/-- The normalized determinant of the inverse is the inverse of the normalized determinant. -/
+@[simp]
+theorem normalizedDet_symm (A : E ≃L[ℂ] E) : A.symm.normalizedDet = A.normalizedDet⁻¹ :=
+  eq_inv_of_mul_eq_one_right (by rw [← normalizedDet_trans, self_trans_symm, normalizedDet_refl])
+
 end ContinuousLinearEquiv
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
@@ -64,3 +92,11 @@ theorem Continuous.normalizedDet {X : Type*} [TopologicalSpace X] {A : X → E �
     ContinuousLinearMap.continuous_det.comp hA
   refine Continuous.subtype_mk (hd.div (Complex.continuous_ofReal.comp hd.norm) fun x => ?_) _
   simpa using (A x).toLinearEquiv.isUnit_det'.ne_zero
+
+/-- A family of complex-linear automorphisms that is continuous on a set has normalized
+determinants that are continuous on that set. -/
+theorem ContinuousOn.normalizedDet {X : Type*} [TopologicalSpace X] {A : X → E ≃L[ℂ] E}
+    {s : Set X} (hA : ContinuousOn (fun x => (A x : E →L[ℂ] E)) s) :
+    ContinuousOn (fun x => (A x).normalizedDet) s := by
+  rw [continuousOn_iff_continuous_domRestrict] at hA ⊢
+  exact Continuous.normalizedDet (A := fun x : s => A x) hA

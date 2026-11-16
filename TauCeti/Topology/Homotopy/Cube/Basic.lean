@@ -50,6 +50,8 @@ at `0` while releasing the first.
 * `TauCeti.pathTowardZero`: the straight-line path in `I` from `a` to `0`.
 * `TauCeti.cubeContraction`: the straight-line homotopy from the corner `0` to the identity; so
   the cube is contractible.
+* `TauCeti.cubeLeftHalf`, `TauCeti.cubeRightHalf`: the affine maps of the cube onto its halves
+  `tᵢ ≤ 1/2` and `tᵢ ≥ 1/2`, along which `GenLoop.transAt i` concatenates.
 * `TauCeti.isPathConnected_cube`: `I^N` is path connected.
 * `TauCeti.zero_mem_cubeBoundary`: the corner `0` lies on the boundary.
 * `TauCeti.cubeBoundarySetoid`: the equivalence relation identifying all boundary points, whose
@@ -328,6 +330,61 @@ theorem cubeContraction_apply_zero (N : Type*) (t : I) : cubeContraction N (t, 0
 /-- The cube `I^N` is contractible, by the straight-line contraction onto its corner `0`. -/
 instance (N : Type*) : ContractibleSpace (N → I) :=
   (contractible_iff_id_nullhomotopic _).2 ⟨fun _ ↦ 0, ⟨(cubeContraction N).symm⟩⟩
+
+section Halves
+
+variable [DecidableEq N]
+
+/-- The affine map of the cube onto its half `tᵢ ≤ 1/2`, rescaling the `i`-th coordinate by
+`tᵢ ↦ tᵢ / 2`. -/
+noncomputable def cubeLeftHalf (i : N) : C(I^N, I^N) where
+  toFun y := Function.update y i ⟨(y i : ℝ) / 2, by linarith [nonneg (y i)],
+    by linarith [le_one (y i)]⟩
+  continuous_toFun := by fun_prop
+
+/-- The affine map of the cube onto its half `tᵢ ≥ 1/2`, rescaling the `i`-th coordinate by
+`tᵢ ↦ (tᵢ + 1) / 2`. -/
+noncomputable def cubeRightHalf (i : N) : C(I^N, I^N) where
+  toFun y := Function.update y i ⟨((y i : ℝ) + 1) / 2, by linarith [nonneg (y i)],
+    by linarith [le_one (y i)]⟩
+  continuous_toFun := by fun_prop
+
+@[simp]
+theorem coe_cubeLeftHalf_apply_self (i : N) (y : I^N) : (cubeLeftHalf i y i : ℝ) = y i / 2 := by
+  simp [cubeLeftHalf]
+
+@[simp]
+theorem cubeLeftHalf_apply_of_ne {i j : N} (h : j ≠ i) (y : I^N) : cubeLeftHalf i y j = y j := by
+  simp [cubeLeftHalf, h]
+
+@[simp]
+theorem coe_cubeRightHalf_apply_self (i : N) (y : I^N) :
+    (cubeRightHalf i y i : ℝ) = (y i + 1) / 2 := by
+  simp [cubeRightHalf]
+
+@[simp]
+theorem cubeRightHalf_apply_of_ne {i j : N} (h : j ≠ i) (y : I^N) : cubeRightHalf i y j = y j := by
+  simp [cubeRightHalf, h]
+
+/-- Restoring the `i`-th coordinate undoes `cubeLeftHalf i`. -/
+@[simp]
+theorem update_cubeLeftHalf_self (i : N) (y : I^N) :
+    Function.update (cubeLeftHalf i y) i (y i) = y := by
+  ext j
+  rcases eq_or_ne j i with rfl | h
+  · simp
+  · simp [h]
+
+/-- Restoring the `i`-th coordinate undoes `cubeRightHalf i`. -/
+@[simp]
+theorem update_cubeRightHalf_self (i : N) (y : I^N) :
+    Function.update (cubeRightHalf i y) i (y i) = y := by
+  ext j
+  rcases eq_or_ne j i with rfl | h
+  · simp
+  · simp [h]
+
+end Halves
 
 /-- The cube `I^N` is path connected: every point is joined to the corner `0` by the pointwise
 product of the coordinate paths `pathTowardZero`. -/
