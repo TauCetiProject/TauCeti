@@ -60,7 +60,7 @@ namespace TauCeti.Huber
 universe u v w t
 
 /-- **Completed base change preserves stable sheafiness over a stably sheafy left factor**: if `B`
-is a stably sheafy uniform Huber ring, `A → B` is adic, and `A → C` is topologically of finite type,
+is a stably sheafy Huber ring, `A → B` is adic, and `A → C` is topologically of finite type,
 then `B ⊗̂_A C` is stably sheafy. Neither completeness nor Hausdorffness of `B` is required. -/
 theorem isStablySheafyRing_completedTensor_of_isStablySheafyRing_left
     {A : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
@@ -88,7 +88,7 @@ theorem isStablySheafyRing_completedTensor_of_isStablySheafyRing_right
   hC.of_isTopologicallyFiniteType (CompletedTensor.isTopologicallyFiniteType_inr hB)
 
 /-- **Sheafiness of a completed tensor product over a stably sheafy left factor** (local ring-level
-step of Wedhorn, Theorem 8.56): if `B` is a stably sheafy uniform Huber ring, `A → B` is adic, and
+step of Wedhorn, Theorem 8.56): if `B` is a stably sheafy Huber ring, `A → B` is adic, and
 `A → C` is topologically of finite type, then the completed tensor ring `B ⊗̂_A C` is sheafy.
 Neither completeness nor Hausdorffness of `B` is required. -/
 theorem isSheafyRing_completedTensor_of_isStablySheafyRing_left

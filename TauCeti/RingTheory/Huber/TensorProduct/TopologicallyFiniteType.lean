@@ -108,49 +108,6 @@ variable {A B C : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
   [CommRing C] [TopologicalSpace C] [IsTopologicalRing C] [IsHuberRing C]
   [Algebra A B] [Algebra A C] [hAB : IsAdicHom (algebraMap A B)] [IsAdicHom (algebraMap A C)]
 
--- Any pair morphism whose underlying ring map is an open quotient map and that admits a section as
--- a morphism of Huber pairs is a quotient mapping of Huber pairs.
-private theorem isQuotientMapping_of_comp_eq_id {D E : Type*} [CommRing D] [TopologicalSpace D]
-    [IsTopologicalRing D] [IsHuberRing D] [CommRing E] [TopologicalSpace E] [IsTopologicalRing E]
-    [IsHuberRing E] {V : Pair D} {W : Pair E} {f : Hom V W} {g : Hom W V}
-    (hopen : IsOpenQuotientMap f.toRingHom) (hfg : f.comp g = Hom.id W) :
-    f.IsQuotientMapping := by
-  refine (Hom.isQuotientMapping_iff_isOpenQuotientMap_and_isIntegral f).mpr ⟨hopen, fun e he ↦ ?_⟩
-  have hmem : e ∈ V.plus.map f.toRingHom := ⟨g.toRingHom e, g.map_mem_plus e he, by
-    simpa only [Hom.toRingHom_comp, RingHom.comp_apply, Hom.toRingHom_id, RingHom.id_apply] using
-      congrArg (fun k : Hom W W ↦ k.toRingHom e) hfg⟩
-  exact isIntegral_algebraMap (R := V.plus.map f.toRingHom) (x := ⟨e, hmem⟩)
-
--- Exchanging the two factors of `(B, B⁺) ⊗̂_A (C, C⁺)` as a morphism of Huber pairs.
-private noncomputable def commHom (A : Type*) [CommRing A] [TopologicalSpace A]
-    [IsTopologicalRing A] [Algebra A B] [Algebra A C] [IsAdicHom (algebraMap A B)]
-    [IsAdicHom (algebraMap A C)] (U : Pair B) (T : Pair C) :
-    Hom (U.completedTensor A T) (T.completedTensor A U) where
-  toRingHom := (CompletedTensor.comm A B C).toRingHom
-  continuous_toRingHom := CompletedTensor.continuous_comm A B C
-  map_mem_plus _ hx := (comm_mem_plus A U T _).mpr hx
-
-omit [IsHuberRing A] in
-@[simp]
-private theorem toRingHom_commHom (U : Pair B) (T : Pair C) :
-    (commHom A U T).toRingHom = (CompletedTensor.comm A B C).toRingHom :=
-  (rfl)
-
-omit [IsHuberRing A] in
-private theorem isQuotientMapping_commHom (A : Type*) [CommRing A] [TopologicalSpace A]
-    [IsTopologicalRing A] [Algebra A B] [Algebra A C] [IsAdicHom (algebraMap A B)]
-    [IsAdicHom (algebraMap A C)] (U : Pair B) (T : Pair C) :
-    (commHom A U T).IsQuotientMapping := by
-  refine isQuotientMapping_of_comp_eq_id (g := commHom A T U) ?_ ?_
-  · rw [toRingHom_commHom, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom]
-    exact (CompletedTensor.isHomeomorph_comm A B C).isOpenQuotientMap
-  · apply Hom.ext
-    ext x
-    simp only [Hom.toRingHom_comp, toRingHom_commHom, RingHom.comp_apply, Hom.toRingHom_id,
-      RingHom.id_apply, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom]
-    rw [← CompletedTensor.comm_symm]
-    exact (CompletedTensor.comm A C B).symm_apply_apply x
-
 /-- **Completed base change preserves topological finite type of Huber pairs** (Huber 1994,
 Proposition 3.7; Wedhorn, Definition 8.42 and Theorem 8.56). If `f : (A, A⁺) → (C, C⁺)` is
 topologically of finite type over `A` and `A → B` preserves the chosen rings of integral elements,
@@ -166,7 +123,7 @@ theorem isTopologicallyFiniteType_inr {S : Pair A} {T : Pair C} (U : Pair B)
     rw [← hfA, ← hcomm, Hom.toRingHom_comp, Hom.toRingHom_weightedCompletionHom]
   have hidA : (Hom.id U).toRingHom.comp (algebraMap A B) = algebraMap A B := by simp
   have hofW : (ofWeighted S U hW).IsQuotientMapping := by
-    refine isQuotientMapping_of_comp_eq_id (g := toWeighted S U hW hplus) ?_
+    refine Hom.isQuotientMapping_of_comp_eq_id (g := toWeighted S U hW hplus) ?_
       (ofWeighted_comp_toWeighted S U hW hplus)
     rw [toRingHom_ofWeighted, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom]
     exact (CompletedTensor.isHomeomorph_weightedRestrictedEquiv_symm B hW).isOpenQuotientMap
@@ -187,11 +144,7 @@ theorem isTopologicallyFiniteType_inl {S : Pair A} {T : Pair C} (U : Pair B)
     (hplus : S.plus ≤ U.plus.comap (algebraMap A B)) {f : Hom S T}
     (hf : f.IsTopologicallyFiniteType) (hfA : f.toRingHom = algebraMap A C) :
     (inl A U T).IsTopologicallyFiniteType := by
-  have heq : (commHom A T U).comp (inr A T U) = inl A U T := by
-    apply Hom.ext
-    ext b
-    simp
-  rw [← heq]
+  rw [← commHom_comp_inr A T U]
   exact (isTopologicallyFiniteType_inr U hplus hf hfA).comp_isQuotientMapping
     (isQuotientMapping_commHom A T U)
 
@@ -238,11 +191,7 @@ theorem isPlusWeaklyFiniteType_inl {S : Pair A} {T : Pair C} (U : Pair B)
     (hplus : S.plus ≤ U.plus.comap (algebraMap A B)) {f : Hom S T}
     (hf : f.IsPlusWeaklyFiniteType) (hfA : f.toRingHom = algebraMap A C) :
     (inl A U T).IsPlusWeaklyFiniteType := by
-  have heq : (commHom A T U).comp (inr A T U) = inl A U T := by
-    apply Hom.ext
-    ext b
-    simp
-  rw [← heq]
+  rw [← commHom_comp_inr A T U]
   have hcomm : (commHom A T U).IsPlusWeaklyFiniteType :=
     (isQuotientMapping_commHom A T U).isTopologicallyFiniteType.isPlusWeaklyFiniteType
   exact hcomm.comp (isPlusWeaklyFiniteType_inr U hplus hf hfA)

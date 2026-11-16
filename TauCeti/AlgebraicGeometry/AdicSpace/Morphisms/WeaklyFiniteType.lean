@@ -13,7 +13,6 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.LocallyStablyShea
 public import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Adic
 
 import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Affinoid.Comap
-import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.BaseChange
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.StablySheafy
 import TauCeti.RingTheory.Huber.LocalizationTopology.FiniteType
 import TauCeti.RingTheory.Huber.NoetherianType.TopologicallyFiniteType
@@ -85,9 +84,8 @@ finite type) to its source.
 * `TauCeti.AdicSpace.isWeaklyFiniteType_presentationLimitPreAdicSpaceComap`: the morphism of
   affinoid adic spaces induced by a morphism of Huber pairs whose ring homomorphism is
   topologically of finite type is of weakly finite type.
-* `TauCeti.AdicSpace.exists_complete_chart_of_chartLocally`,
-  `TauCeti.AdicSpace.LocallyOfWeaklyFiniteType.exists_complete_chart`: chart-local morphisms of
-  adic spaces admit charts whose target and source rings are both complete and Hausdorff.
+* `TauCeti.AdicSpace.LocallyOfWeaklyFiniteType.exists_complete_chart`: morphisms locally of weakly
+  finite type admit charts whose target and source rings are both complete and Hausdorff.
 * `TauCeti.AdicSpace.IsLocallyNoetherian.of_locallyOfWeaklyFiniteType` and
   `TauCeti.AdicSpace.IsLocallyNoetherian.of_locallyOfFiniteType`: locally noetherian structure
   ascends along morphisms locally of weakly finite type and locally of finite type.
@@ -285,132 +283,6 @@ section Ascent
 
 open PairOfDefinition
 
-/-- **Completing the target ring of a chart-local morphism of adic spaces**: via rational
-localisation at `{1} / 1`, any chart of a morphism `f : X ⟶ Y` of adic spaces satisfying
-`chartLocally Q f.hom` can be upgraded so that *both* the target ring `A` and the source ring `B`
-are complete and Hausdorff, whenever `Q` descends along `{1} / 1` completion squares of Huber pairs.
--/
-theorem exists_complete_chart_of_chartLocally
-    (Q : ∀ {A : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
-      {B : Type u} [CommRing B] [TopologicalSpace B] [IsTopologicalRing B] [IsHuberRing B]
-      {S : Pair A} {T : Pair B}, Pair.Hom S T → Prop)
-    (hQ : ∀ {A : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
-      {S : Pair A}
-      {A₁ : Type u} [CommRing A₁] [UniformSpace A₁] [IsUniformAddGroup A₁]
-      [IsTopologicalRing A₁] [CompleteSpace A₁] [T2Space A₁] [IsHuberRing A₁] {S₁ : Pair A₁}
-      {B : Type u} [CommRing B] [UniformSpace B] [IsUniformAddGroup B]
-      [IsTopologicalRing B] [CompleteSpace B] [T2Space B] [IsHuberRing B] {T : Pair B}
-      {B₁ : Type u} [CommRing B₁] [UniformSpace B₁] [IsUniformAddGroup B₁]
-      [IsTopologicalRing B₁] [CompleteSpace B₁] [T2Space B₁] [IsHuberRing B₁] {T₁ : Pair B₁}
-      {φ : Pair.Hom S T} {ιA : Pair.Hom S S₁} {ιB : Pair.Hom T T₁} {φ₁ : Pair.Hom S₁ T₁},
-      Q φ → ιB.IsTopologicallyFiniteType →
-      (φ.IsTopologicallyFiniteType → (ιB.comp φ).IsTopologicallyFiniteType) →
-      φ₁.comp ιA = ιB.comp φ → Q φ₁)
-    {f : X ⟶ Y} (hf : chartLocally Q f.hom) (x : X.obj) :
-    ∃ (U : Opens X.obj) (_ : x ∈ U) (V : Opens Y.obj) (_ : U ≤ (Opens.map f.hom.base).obj V)
-      (A : Type u) (_ : CommRing A) (_ : UniformSpace A) (_ : IsUniformAddGroup A)
-      (_ : IsTopologicalRing A) (_ : CompleteSpace A) (_ : T2Space A) (_ : IsHuberRing A)
-      (S : Pair A) (P : PairOfDefinition A) (hP : P.ringOfDefinition ≤ S.plus)
-      (B : Type u) (_ : CommRing B) (_ : UniformSpace B) (_ : IsUniformAddGroup B)
-      (_ : IsTopologicalRing B) (_ : CompleteSpace B) (_ : T2Space B) (_ : IsHuberRing B)
-      (T : Pair B) (P' : PairOfDefinition B) (hP' : P'.ringOfDefinition ≤ T.plus)
-      (φ : Pair.Hom S T) (_ : Q φ)
-      (hsheaf : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa T.plus))
-        (presentationLimitPresheaf P' T.plus))
-      (eU : X.obj.restrict U.isOpenEmbedding ≅
-        presentationLimitPreAdicSpace P' T.plus T.isRingOfIntegralElements.isPowerBounded_of_mem
-          hP')
-      (eV : Y.obj.restrict V.isOpenEmbedding ≅
-        presentationLimitPreAdicSpace P S.plus S.isRingOfIntegralElements.isPowerBounded_of_mem
-          hP),
-      X.obj.ofRestrict _ ≫ f.hom =
-        eU.hom ≫ presentationLimitPreAdicSpaceComap φ.toRingHom φ.continuous_toRingHom
-          φ.map_mem_plus S.isRingOfIntegralElements.isPowerBounded_of_mem
-          T.isRingOfIntegralElements.isPowerBounded_of_mem hP hP' hsheaf ≫
-          eV.inv ≫ Y.obj.ofRestrict _ := by
-  classical
-  obtain ⟨U, hxU, V, hUV, A, _, _, _, _, S, P, hP, B, _, _, _, _, _, _, _, T, P', hP', φ, hφ,
-    hsheafB, eU, eV, hfac⟩ := (chartLocally_iff f.hom).mp hf x
-  -- 1. Form the `{1} / 1` rational localisations of `(A, A⁺)` and `(B, B⁺)`.
-  have hT1 : IsOpen (Ideal.span (({1} : Finset A) : Set A) : Set A) := by simp
-  let T' : Finset B := ({1} : Finset A).image φ.toRingHom
-  let s' : B := φ.toRingHom 1
-  have hT1' : IsOpen (Ideal.span (T' : Set B) : Set B) := by simp [T']
-  let L := Localization.Away (1 : A)
-  let L' := Localization.Away s'
-  have hden := P.hasDenominatorPower_denom_one ({1} : Finset A) L
-  have hden' := P'.hasDenominatorPower_of_isOpen_span T' s' L' hT1'
-  let _ := P.locUniformSpace ({1} : Finset A) 1 L hden
-  have _ := P.isUniformAddGroup_locUniformSpace ({1} : Finset A) 1 L hden
-  have _ := isTopologicalRing_locUniformSpace P ({1} : Finset A) 1 L hden
-  have _ := P.isHuberRing_completion_locTopology ({1} : Finset A) 1 L hden
-  let _ := P'.locUniformSpace T' s' L' hden'
-  have _ := P'.isUniformAddGroup_locUniformSpace T' s' L' hden'
-  have _ := P'.isTopologicalRing_locUniformSpace T' s' L' hden'
-  have _ := P'.isHuberRing_completion_locTopology T' s' L' hden'
-  let S₁ := P.rationalLocalizationPair S hP ({1} : Finset A) 1 L hden
-  let P₁ := P.completionLocalization ({1} : Finset A) 1 L hden
-  let T₁ := P'.rationalLocalizationPair T hP' T' s' L' hden'
-  let P₁' := P'.completionLocalization T' s' L' hden'
-  have hP₁ : P₁.ringOfDefinition ≤ S₁.plus := by
-    rw [rationalLocalizationPair_plus]
-    exact P.completionLocalization_ringOfDefinition_le_completedPlusSubring S.plus hP _ _ L hden
-  have hP₁' : P₁'.ringOfDefinition ≤ T₁.plus := by
-    rw [rationalLocalizationPair_plus]
-    exact P'.completionLocalization_ringOfDefinition_le_completedPlusSubring T.plus hP' _ _ L' hden'
-  -- 2. Establish sheafiness and property `Q` on the base-change morphism `φ₁`.
-  have hsheafA := ObjectProperty.prop_of_iso isSheafy eV (isSheafy_restrict _ Y.property.isSheafy)
-  have hsheafA₁ : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa S₁.plus))
-      (presentationLimitPresheaf P₁ S₁.plus) := by
-    rw [rationalLocalizationPair_plus]
-    exact isSheaf_presentationLimitPresheaf_completionLocalization P S.plus
-      S.isRingOfIntegralElements.isPowerBounded_of_mem hP _ _ L hden hT1 hsheafA
-  have hsheafB₁ : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa T₁.plus))
-      (presentationLimitPresheaf P₁' T₁.plus) := by
-    rw [rationalLocalizationPair_plus]
-    exact isSheaf_presentationLimitPresheaf_completionLocalization P' T.plus
-      T.isRingOfIntegralElements.isPowerBounded_of_mem hP' _ _ L' hden' hT1' hsheafB
-  let φ₁ := P.completionLocPairMap S hP ({1} : Finset A) 1 L hden P' T hP' φ T' s' L' hden' rfl
-    (fun _ ht ↦ Finset.mem_image_of_mem _ ht)
-  have hspan' : IsOpen (Ideal.span (insert s' (T' : Set B)) : Set B) :=
-    Submodule.isOpen_mono (Ideal.span_mono (Set.subset_insert _ _)) hT1'
-  have hφ₁ : Q φ₁ :=
-    hQ hφ (P'.isTopologicallyFiniteType_toCompletionLocHom T hP' T' s' L' hden' hspan')
-      (fun hφtft ↦
-        P'.isTopologicallyFiniteType_toCompletionLocHom_comp T hP' T' s' L' hden' φ hφtft hspan')
-      (completionLocPairMap_comp_toCompletionLocHom P S hP ({1} : Finset A) 1 L hden P' T hP' φ T'
-        s' L' hden' rfl (fun _ ht ↦ Finset.mem_image_of_mem _ ht))
-  -- 3. Both `{1} / 1` localisations cover their whole adic spectra, hence induce isomorphisms.
-  obtain ⟨eA, heA⟩ :=
-    exists_iso_presentationLimitPreAdicSpaceComap_toCompletionLocHom_of_forall_mem P hP
-      ({1} : Finset A) 1 L hden hT1 (fun y ↦ by rw [rationalSubset_singleton_one]; exact y.2)
-      hsheafA₁
-  obtain ⟨eB, heB⟩ :=
-    exists_iso_presentationLimitPreAdicSpaceComap_toCompletionLocHom_of_forall_mem P' hP' T' s' L'
-      hden' hT1' (fun y ↦ by
-        simp only [T', s', Finset.image_singleton, map_one, rationalSubset_singleton_one]
-        exact y.2) hsheafB₁
-  -- 4. Conjugate the original chart square by `eA` and `eB`.
-  have hcomm := presentationLimitPreAdicSpaceComap_completionLocPairMap_comp P P' hP hP' φ
-    hsheafB ({1} : Finset A) 1 L hden L' hden' hsheafA₁ hsheafB₁
-  refine ⟨U, hxU, V, hUV, UniformSpace.Completion L, inferInstance, inferInstance, inferInstance,
-    inferInstance, inferInstance, inferInstance, inferInstance, S₁, P₁, hP₁,
-    UniformSpace.Completion L', inferInstance, inferInstance, inferInstance, inferInstance,
-    inferInstance, inferInstance, inferInstance, T₁, P₁', hP₁', φ₁, hφ₁, hsheafB₁,
-    eU ≪≫ eB.symm, eV ≪≫ eA.symm, ?_⟩
-  rw [Iso.trans_hom, Iso.symm_hom, Iso.trans_inv, Iso.symm_inv, hfac]
-  simp only [Category.assoc]
-  congr 1
-  have hcomm' : presentationLimitPreAdicSpaceComap φ₁.toRingHom φ₁.continuous_toRingHom
-      φ₁.map_mem_plus S₁.isRingOfIntegralElements.isPowerBounded_of_mem
-      T₁.isRingOfIntegralElements.isPowerBounded_of_mem hP₁ hP₁' hsheafB₁ ≫ eA.hom =
-      eB.hom ≫ presentationLimitPreAdicSpaceComap φ.toRingHom φ.continuous_toRingHom
-        φ.map_mem_plus S.isRingOfIntegralElements.isPowerBounded_of_mem
-        T.isRingOfIntegralElements.isPowerBounded_of_mem hP hP' hsheafB := by
-    rw [heA, heB]
-    exact hcomm
-  rw [← Category.assoc _ eA.hom, hcomm', Category.assoc, Iso.inv_hom_id_assoc]
-
 /-- Every point of the source of a morphism locally of weakly finite type admits an affinoid chart
 in which *both* the target ring `A` and the source ring `B` are complete and Hausdorff, and
 `φ : (A, A⁺) → (B, B⁺)` has `φ.toRingHom` topologically of finite type. -/
@@ -438,11 +310,7 @@ theorem LocallyOfWeaklyFiniteType.exists_complete_chart {f : X ⟶ Y}
           T.isRingOfIntegralElements.isPowerBounded_of_mem hP hP' hsheaf ≫
           eV.inv ≫ Y.obj.ofRestrict _ :=
   exists_complete_chart_of_chartLocally (fun φ ↦ IsTopologicallyFiniteType φ.toRingHom)
-    (fun {A _ _ _ _ S A₁ _ _ _ _ _ _ _ S₁ B _ _ _ _ _ _ _ T B₁ _ _ _ _ _ _ _ T₁ φ ιA ιB φ₁}
-        hφ hιB _ hcomm ↦ by
-      have h := hιB.isTopologicallyFiniteType_toRingHom.comp hφ
-      rw [← Pair.Hom.toRingHom_comp, ← hcomm, Pair.Hom.toRingHom_comp] at h
-      exact h.of_comp ιA.continuous_toRingHom φ₁.continuous_toRingHom)
+    (fun h ↦ Pair.Hom.isTopologicallyFiniteType_toRingHom_of_comp h)
     ((locallyOfWeaklyFiniteType_iff_chartLocally f).mp hf) x
 
 -- When a morphism `f : Spa(D, D⁺) ⟶ Spa(A, A⁺)` of complete Hausdorff affinoid pre-adic spaces

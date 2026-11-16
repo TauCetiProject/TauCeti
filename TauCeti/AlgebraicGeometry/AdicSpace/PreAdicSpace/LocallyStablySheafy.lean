@@ -29,12 +29,12 @@ sheafy adic space (`TauCeti.AdicSpace.IsLocallyStablySheafy.isBasis_stablySheafy
 Open subspaces of locally stably sheafy adic spaces remain locally stably sheafy
 (`TauCeti.AdicSpace.IsLocallyStablySheafy.of_isOpenImmersion`).
 
-Locally stably sheafy adic spaces serve as the base-change factors for unconditional fibre products
-of adic spaces along morphisms locally of weakly finite type (Wedhorn, Theorem 8.56 and
-Remark 8.57(1)). Every locally noetherian analytic adic space is locally stably sheafy
+Locally stably sheafy adic spaces serve as the base-change factors for fibre products of adic spaces
+along morphisms locally of weakly finite type and adic base-change morphisms (Wedhorn, Theorem 8.56
+and Remark 8.57(1)). Every locally noetherian analytic adic space is locally stably sheafy
 (`TauCeti.AdicSpace.IsLocallyNoetherianAnalytic.isLocallyStablySheafy`), and conversely any analytic
 locally stably sheafy adic space is locally strongly sheafy
-(`TauCeti.AdicSpace.IsLocallyStablySheafy.isLocallyStronglySheafy`).
+(`TauCeti.AdicSpace.IsLocallyStablySheafy.isLocallyStronglySheafy_of_isAnalytic`).
 
 ## Main definitions
 
@@ -45,11 +45,16 @@ locally stably sheafy adic space is locally strongly sheafy
 
 ## Main results
 
+* `TauCeti.ValuationSpectrum.spaBasicOpen_mem_stablySheafyAffinoidOpens` and
+  `TauCeti.ValuationSpectrum.isBasis_stablySheafyAffinoidOpens_presentationLimitPreAdicSpace`: for a
+  stably sheafy Huber ring `A`, rational subsets of `Spa(A, A⁺)` are open stably sheafy affinoids
+  and the open stably sheafy affinoids form a basis of `Spa(A, A⁺)`.
+* `spaBasicOpen_mem_stronglySheafyAffinoidOpens_of_isTopologicallyNilpotent` (in
+  `TauCeti.ValuationSpectrum`): rational subsets of `Spa(A, A⁺)` at a topologically nilpotent
+  denominator over a stably sheafy Huber ring `A` are open strongly sheafy Tate affinoids.
 * `TauCeti.PreAdicSpace.isStablySheafyAffinoid_presentationLimitPreAdicSpace`: for any stably sheafy
   Huber pair `(A, A⁺)`, `Spa(A, A⁺)` is a stably sheafy affinoid, without completeness or
   Hausdorffness hypotheses on `A`.
-* `TauCeti.ValuationSpectrum.isBasis_stablySheafyAffinoidOpens_presentationLimitPreAdicSpace`: for a
-  stably sheafy Huber ring `A`, the open stably sheafy affinoids form a basis of `Spa(A, A⁺)`.
 * `TauCeti.AdicSpace.IsLocallyStablySheafy.isBasis_stablySheafyAffinoidOpens` and
   `TauCeti.AdicSpace.isLocallyStablySheafy_iff_isBasis_stablySheafyAffinoidOpens`: on a locally
   stably sheafy adic space, the open stably sheafy affinoids form a basis of the topology, and
@@ -62,7 +67,7 @@ locally stably sheafy adic space is locally strongly sheafy
   `TauCeti.AdicSpace.IsLocallyNoetherian.isLocallyStablySheafy_analyticLocus`: locally noetherian
   analytic adic spaces, and the analytic locus of any locally noetherian adic space, are locally
   stably sheafy.
-* `TauCeti.AdicSpace.IsLocallyStablySheafy.isLocallyStronglySheafy` and
+* `TauCeti.AdicSpace.IsLocallyStablySheafy.isLocallyStronglySheafy_of_isAnalytic` and
   `TauCeti.AdicSpace.IsLocallyStablySheafy.isLocallyStronglySheafy_analyticLocus`: an analytic
   locally stably sheafy adic space (in particular, the analytic locus of any locally stably sheafy
   adic space) is locally strongly sheafy.
@@ -70,7 +75,7 @@ locally stably sheafy adic space is locally strongly sheafy
 ## References
 
 * [T. Wedhorn, *Adic Spaces*][wedhorn_adic] (arXiv:1910.05934v1), Definition 8.26, Remark 8.27,
-  Corollary 8.35, Theorem 8.56, and Remark 8.57(1).
+  Corollary 8.35, Definition 8.54, Theorem 8.56, and Remark 8.57(1).
 -/
 
 public section
@@ -148,35 +153,6 @@ private theorem isStablySheafyAffinoid_presentationLimitPreAdicSpace_of_complete
   ⟨A, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance,
     inferInstance, hA, S, P, hP, ⟨Iso.refl _⟩⟩
 
-/-- **Complete-model invariance for stably sheafy Huber pairs**: the presentation-limit pre-adic
-space of any stably sheafy uniform Huber pair `(A, A⁺)` is a stably sheafy affinoid, without
-completeness or Hausdorffness hypotheses on `A`. -/
-theorem isStablySheafyAffinoid_presentationLimitPreAdicSpace {A : Type u} [CommRing A]
-    [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A] [IsHuberRing A]
-    (hA : IsStablySheafyRing.{u, u} A) (S : Pair A) (P : PairOfDefinition A)
-    (hP : P.ringOfDefinition ≤ S.plus) :
-    isStablySheafyAffinoid (presentationLimitPreAdicSpace P S.plus
-      S.isRingOfIntegralElements.isPowerBounded_of_mem hP) := by
-  let L := Localization.Away (1 : A)
-  let hden := P.hasDenominatorPower_denom_one ({1} : Finset A) L
-  let _ := P.locUniformSpace ({1} : Finset A) 1 L hden
-  have _ := P.isUniformAddGroup_locUniformSpace ({1} : Finset A) 1 L hden
-  have _ := P.isTopologicalRing_locUniformSpace ({1} : Finset A) 1 L hden
-  have _ := P.isHuberRing_completion_locTopology ({1} : Finset A) 1 L hden
-  have hcomp_ss := P.isStablySheafyRing_completion_locTopology (by simp) L hden hA
-  have hmodel :=
-    isStablySheafyAffinoid_presentationLimitPreAdicSpace_of_completeSpace hcomp_ss
-      (P.rationalLocalizationPair S hP ({1} : Finset A) 1 L hden)
-      (P.completionLocalization ({1} : Finset A) 1 L hden)
-      (P.completionLocalization_ringOfDefinition_le_rationalLocalizationPair S hP
-        ({1} : Finset A) 1 L hden)
-  -- `rationalLocalizationPair` is sealed outside `Pair.lean`, and the `Prop` arguments of
-  -- `presentationLimitPreAdicSpace` depend on its `.plus` subring, so rewrite via `simp`.
-  simp only [PairOfDefinition.rationalLocalizationPair_plus] at hmodel
-  exact ObjectProperty.prop_of_iso isStablySheafyAffinoid
-    (presentationLimitPreAdicSpaceCompleteIso P S.plus
-      S.isRingOfIntegralElements.isPowerBounded_of_mem hP L hden).symm hmodel
-
 variable (X : PreAdicSpace.{u})
 
 /-- The *open stably sheafy affinoids* of an object `X` of `𝒱^pre`: the opens `U` such that `X`
@@ -234,6 +210,29 @@ theorem isBasis_stablySheafyAffinoidOpens_presentationLimitPreAdicSpace
     PreAdicSpace.isStablySheafyAffinoid
     fun hT ↦ spaBasicOpen_mem_stablySheafyAffinoidOpens P Aplus hAplus hP hA hT
 
+/-- **Rational subsets at a topologically nilpotent denominator over a stably sheafy Huber ring `A`
+are open strongly sheafy Tate affinoids.** If `T` spans an open ideal and `s` is topologically
+nilpotent, `A⟨T/s⟩` is both Tate (`isTateRing_completion_locTopology_of_isTopologicallyNilpotent`)
+and stably sheafy (`isStablySheafyRing_completion_locTopology`), hence strongly sheafy
+(`IsStronglySheafy.of_isStablySheafyRing`). -/
+theorem spaBasicOpen_mem_stronglySheafyAffinoidOpens_of_isTopologicallyNilpotent
+    (hA : IsStablySheafyRing.{u, u} A) {T : Finset A} {s : A}
+    (hT : IsOpen (Ideal.span (T : Set A) : Set A)) (hs : IsTopologicallyNilpotent s) :
+    spaBasicOpen Aplus T s ∈
+      (presentationLimitPreAdicSpace P Aplus hAplus hP).stronglySheafyAffinoidOpens := by
+  refine spaBasicOpen_mem_propOpens P Aplus hAplus hP PreAdicSpace.isStronglySheafyAffinoid hT ?_
+  intro _ _ _
+  let hden := P.hasDenominatorPower_of_isOpen_span T s (Localization.Away s) hT
+  let _ := locUniformSpace P T s (Localization.Away s) hden
+  have := isUniformAddGroup_locUniformSpace P T s (Localization.Away s) hden
+  have := isTopologicalRing_locUniformSpace P T s (Localization.Away s) hden
+  have := isTateRing_completion_locTopology_of_isTopologicallyNilpotent P T s _ hden hs
+  have hss := isStablySheafyRing_completion_locTopology P
+    (Ideal.isOpen_of_isOpen_subideal (Ideal.span_mono (Set.subset_insert _ _)) hT) _ hden hA
+  exact PreAdicSpace.isStronglySheafyAffinoid_presentationLimitPreAdicSpace
+    (.of_isStablySheafyRing hss) _ _
+    (completionLocalization_ringOfDefinition_le_completedPlusPair P Aplus hAplus hP T s _ hden)
+
 /-- **Every analytic point of `Spa(A, A⁺)` over a stably sheafy Huber ring `A` has an open strongly
 sheafy Tate affinoid neighbourhood.** An analytic point lies in a rational subset `R(T/g)` with `g`
 topologically nilpotent, so `A⟨T/g⟩` is both Tate and stably sheafy, hence strongly sheafy
@@ -243,27 +242,29 @@ theorem exists_mem_stronglySheafyAffinoidOpens_of_mem_analyticPoints_presentatio
     {x : presentationLimitPreAdicSpace P Aplus hAplus hP}
     (hx : x ∈ (presentationLimitPreAdicSpace P Aplus hAplus hP).analyticPoints) :
     ∃ U ∈ (presentationLimitPreAdicSpace P Aplus hAplus hP).stronglySheafyAffinoidOpens,
-      x ∈ U := by
-  rw [analyticPoints_presentationLimitPreAdicSpace] at hx
-  obtain ⟨T, g, hT, hxg, hnil⟩ :=
-    exists_mem_rationalSubset_isTopologicallyNilpotent_of_mem_spaAnalytic P Aplus hx
-  refine ⟨spaBasicOpen Aplus T g, ?_, mem_spaBasicOpen.mpr hxg⟩
-  refine spaBasicOpen_mem_propOpens P Aplus hAplus hP PreAdicSpace.isStronglySheafyAffinoid hT ?_
-  intro _ _ _
-  let hden := P.hasDenominatorPower_of_isOpen_span T g (Localization.Away g) hT
-  let _ := locUniformSpace P T g (Localization.Away g) hden
-  have := isUniformAddGroup_locUniformSpace P T g (Localization.Away g) hden
-  have := isTopologicalRing_locUniformSpace P T g (Localization.Away g) hden
-  have := isTateRing_completion_locTopology_of_isTopologicallyNilpotent P T g _ hden hnil
-  have hss := isStablySheafyRing_completion_locTopology P
-    (Ideal.isOpen_of_isOpen_subideal (Ideal.span_mono (Set.subset_insert _ _)) hT) _ hden hA
-  exact PreAdicSpace.isStronglySheafyAffinoid_presentationLimitPreAdicSpace
-    (.of_isStablySheafyRing hss) _ _
-    (completionLocalization_ringOfDefinition_le_completedPlusPair P Aplus hAplus hP T g _ hden)
+      x ∈ U :=
+  ValuationSpectrum.exists_mem_propOpens_of_mem_analyticPoints P Aplus hAplus hP
+    PreAdicSpace.isStronglySheafyAffinoid
+    (fun hT hs ↦ spaBasicOpen_mem_stronglySheafyAffinoidOpens_of_isTopologicallyNilpotent
+      P Aplus hAplus hP hA hT hs) hx
 
 end ValuationSpectrum
 
 namespace PreAdicSpace
+
+/-- **Complete-model invariance for stably sheafy Huber pairs**: the presentation-limit pre-adic
+space of any stably sheafy Huber pair `(A, A⁺)` is a stably sheafy affinoid, without completeness or
+Hausdorffness hypotheses on `A`. -/
+theorem isStablySheafyAffinoid_presentationLimitPreAdicSpace {A : Type u} [CommRing A]
+    [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A] [IsHuberRing A]
+    (hA : IsStablySheafyRing.{u, u} A) (S : Pair A) (P : PairOfDefinition A)
+    (hP : P.ringOfDefinition ≤ S.plus) :
+    isStablySheafyAffinoid (presentationLimitPreAdicSpace P S.plus
+      S.isRingOfIntegralElements.isPowerBounded_of_mem hP) :=
+  (top_mem_propOpens_iff _ isStablySheafyAffinoid).mp <|
+    top_mem_propOpens_presentationLimitPreAdicSpace P S.plus
+      S.isRingOfIntegralElements.isPowerBounded_of_mem hP isStablySheafyAffinoid
+      fun hT ↦ spaBasicOpen_mem_stablySheafyAffinoidOpens P S.plus _ hP hA hT
 
 /-- **On a stably sheafy affinoid the open stably sheafy affinoids form a basis.** -/
 theorem isStablySheafyAffinoid.isBasis_stablySheafyAffinoidOpens {X : PreAdicSpace.{u}}
@@ -281,9 +282,9 @@ namespace AdicSpace
 
 open PreAdicSpace
 
-/-- **Locally stably sheafy adic spaces** (Wedhorn, Definition 8.26, Theorem 8.56, and
-Remark 8.57(1)): an adic space `X` is *locally stably sheafy* when every point has an open stably
-sheafy affinoid neighbourhood, that is, an open `U` with `X|_U ≅ Spa(A, A⁺)` for a complete
+/-- **Locally stably sheafy adic spaces** (Wedhorn, Definition 8.26, Definition 8.54, Theorem 8.56,
+and Remark 8.57(1)): an adic space `X` is *locally stably sheafy* when every point has an open
+stably sheafy affinoid neighbourhood, that is, an open `U` with `X|_U ≅ Spa(A, A⁺)` for a complete
 Hausdorff Huber pair `(A, A⁺)` with `A` stably sheafy (`TauCeti.Huber.IsStablySheafyRing`). -/
 def IsLocallyStablySheafy (X : AdicSpace.{u}) : Prop :=
   ∀ x : X.obj, ∃ U ∈ X.obj.stablySheafyAffinoidOpens, x ∈ U
@@ -331,8 +332,8 @@ theorem isLocallyStablySheafy_of_isEmpty (X : AdicSpace.{u}) [IsEmpty X.obj] :
     X.IsLocallyStablySheafy :=
   fun x ↦ IsEmpty.elim ‹IsEmpty X.obj› x
 
-/-- **`Spa(A, A⁺)` is locally stably sheafy** for every stably sheafy uniform Huber pair `(A, A⁺)`.
-Neither completeness nor Hausdorffness of `A` is required. -/
+/-- **`Spa(A, A⁺)` is locally stably sheafy** for every stably sheafy Huber pair `(A, A⁺)`. Neither
+completeness nor Hausdorffness of `A` is required. -/
 theorem IsLocallyStablySheafy.spa {A : Type u} [CommRing A] [UniformSpace A] [IsUniformAddGroup A]
     [IsTopologicalRing A] [IsHuberRing A] (hA : IsStablySheafyRing.{u, u} A) (S : Pair A)
     (P : PairOfDefinition A) (hP : P.ringOfDefinition ≤ S.plus) :
@@ -366,32 +367,23 @@ theorem IsLocallyStablySheafy.exists_mem_stronglySheafyAffinoidOpens_of_mem_anal
   obtain ⟨U, hU, hxU⟩ := isLocallyStablySheafy_iff.mp hX x
   obtain ⟨_, _, _, _, _, _, _, _, hA, S, P, hP, ⟨e⟩⟩ :=
     (isStablySheafyAffinoid_iff _).mp ((mem_propOpens_iff _).mp hU)
-  have hx' : (⟨x, hxU⟩ : X.obj.restrict U.isOpenEmbedding) ∈
-      (X.obj.restrict U.isOpenEmbedding).analyticPoints := by
-    rwa [analyticPoints_restrict]
-  obtain ⟨W, hW, hxW⟩ :=
-    exists_mem_stronglySheafyAffinoidOpens_of_mem_analyticPoints_presentationLimitPreAdicSpace
-      P S.plus S.isRingOfIntegralElements.isPowerBounded_of_mem hP hA
-      (mapsTo_analyticPoints_of_isOpenImmersion e.hom hx')
-  have hW' : (Opens.map e.hom.base).obj W ∈
-      (X.obj.restrict U.isOpenEmbedding).stronglySheafyAffinoidOpens :=
-    (map_hom_base_mem_propOpens_iff isStronglySheafyAffinoid e).mpr hW
-  exact ⟨U.isOpenEmbedding.isOpenMap.functor.obj ((Opens.map e.hom.base).obj W),
-    (mem_propOpens_restrict_iff X.obj U.isOpenEmbedding isStronglySheafyAffinoid _).mp hW',
-    ⟨x, hxU⟩, hxW, rfl⟩
+  exact PreAdicSpace.exists_mem_propOpens_of_mem_analyticPoints isStronglySheafyAffinoid hx hxU
+    P S.plus S.isRingOfIntegralElements.isPowerBounded_of_mem hP e fun hT hs ↦
+      spaBasicOpen_mem_stronglySheafyAffinoidOpens_of_isTopologicallyNilpotent P S.plus _ hP hA hT
+        hs
 
 /-- **An analytic locally stably sheafy adic space is locally strongly sheafy**: every point is
 analytic and therefore admits a strongly sheafy Tate affinoid neighbourhood. -/
-theorem IsLocallyStablySheafy.isLocallyStronglySheafy
+theorem IsLocallyStablySheafy.isLocallyStronglySheafy_of_isAnalytic
     (ha : X.IsAnalytic) (hX : X.IsLocallyStablySheafy) : X.IsLocallyStronglySheafy :=
   isLocallyStronglySheafy_iff.mpr fun x ↦
-    hX.exists_mem_stronglySheafyAffinoidOpens_of_mem_analyticPoints
-      ((isAnalytic_iff_analyticPoints_eq_univ.mp ha) ▸ Set.mem_univ x)
+    hX.exists_mem_stronglySheafyAffinoidOpens_of_mem_analyticPoints (ha.mem_analyticPoints x)
 
 /-- **The analytic locus of a locally stably sheafy adic space is locally strongly sheafy.** -/
 theorem IsLocallyStablySheafy.isLocallyStronglySheafy_analyticLocus
     (hX : X.IsLocallyStablySheafy) : X.analyticLocus.IsLocallyStronglySheafy :=
-  (hX.of_isOpenImmersion (analyticLocus.ι X)).isLocallyStronglySheafy (isAnalytic_analyticLocus X)
+  (hX.of_isOpenImmersion (analyticLocus.ι X)).isLocallyStronglySheafy_of_isAnalytic
+    (isAnalytic_analyticLocus X)
 
 end AdicSpace
 
