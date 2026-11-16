@@ -110,7 +110,7 @@ theorem f4ShortRootQuotientToIdealEquiv_firstColumn_eq_firstColumn_of_specialMap
       f4ShortRootSubspace.mkQ (f4ModularRootVector γ) := by
     rw [f4ShortRootQuotientFirstColumn_eq, hlift]
     exact f4ShortRootSubspace_mkQ_lie_rootVector_of_specialMap_add
-      (f4SignedSimpleRootIndex k) β γ hk hβ hγ hadd
+      (f4SignedSimpleRootIndex k) β γ hk hβ hadd
   have hout : f4ShortRootQuotientToIdealEquiv
       (f4ShortRootSubspace.mkQ (f4ModularRootVector γ)) =
         f4ShortRootLieIdealBasis b :=

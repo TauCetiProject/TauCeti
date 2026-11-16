@@ -543,15 +543,16 @@ theorem f4_dividedPower_two_ad_rootVector_eq_zero_of_short (α β : Fin 48)
         α β δ 2 hα hβ (by omega) hpinned
     omega
 
-/-- Away from the opposite string, the second divided adjoint power annihilates a long root
-vector when both roots have long length. -/
+/-- Away from the opposite root, the second divided adjoint power of a long root vector
+annihilates every root vector, of either length. -/
 theorem f4_dividedPower_two_ad_rootVector_eq_zero_of_long
-    (α β : Fin 48) (hα : f4Length α = 2) (hβ : f4Length β = 2)
-    (hopp : β ≠ f4OppositeRootIndex α) :
+    (α β : Fin 48) (hα : f4Length α = 2) (hopp : β ≠ f4OppositeRootIndex α) :
     Associative.dividedPower 2
         (ad ℚ (F4.lieAlgebra valid_F4)
           (f4ChevalleyRootVector (f4KillingRoot α))) •
         f4ChevalleyRootVector (f4KillingRoot β) = 0 := by
+  rcases f4Length_eq_one_or_eq_two β with hβ | hβ
+  · exact f4_dividedPower_two_ad_rootVector_eq_zero_of_short α β hβ hopp
   apply f4_dividedPower_two_ad_rootVector_eq_zero_of_no_endpoint α β
   intro γ hγ
   have hneg : f4SimplyConnectedRootDatum.root β ≠
@@ -598,7 +599,7 @@ theorem f4_ad_pow_three_rootVector_eq_zero (α β : Fin 48) :
       simpa [smul_smul] using h
     rw [hthree, pow_succ', mul_apply_eq_comp, hpow, map_smul, ad_apply,
       lie_self, smul_zero]
-  · rcases f4Length_eq_one_or_eq_two β with hβ | hβ
+  · rcases f4Length_eq_one_or_eq_two β with hβ | _
     · have hdiv := f4_dividedPower_two_ad_rootVector_eq_zero_of_short α β hβ hopp
       simpa only [Nat.reduceAdd] using
         (Associative.pow_succ_apply_eq_zero_of_dividedPower_apply_eq_zero
@@ -608,7 +609,7 @@ theorem f4_ad_pow_three_rootVector_eq_zero (α β : Fin 48) :
       · apply f4_ad_pow_rootVector_eq_zero_of_no_endpoint α β 3 hopp
         intro δ hpinned
         exact (f4_not_root_eq_add_three_zsmul α β δ hpinned).elim
-      · have hdiv := f4_dividedPower_two_ad_rootVector_eq_zero_of_long α β hα hβ hopp
+      · have hdiv := f4_dividedPower_two_ad_rootVector_eq_zero_of_long α β hα hopp
         simpa only [Nat.reduceAdd] using
         (Associative.pow_succ_apply_eq_zero_of_dividedPower_apply_eq_zero
           (ad ℚ (F4.lieAlgebra valid_F4)
