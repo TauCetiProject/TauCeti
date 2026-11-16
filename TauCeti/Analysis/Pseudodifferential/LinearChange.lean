@@ -209,8 +209,8 @@ end Symbol
 
 namespace ClassicalSymbol
 
-variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
-  [NormedSpace ℂ W] {m : ℝ}
+variable {V W U : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
+  [NormedSpace ℂ W] [NormedAddCommGroup U] [NormedSpace ℂ U] {m m' : ℝ}
 
 /-- Cutting off a transformed homogeneous term differs from transforming the cut-off term by a
 smoothing symbol: the two agree once both `‖ξ‖` and `‖Q ξ‖` are at least `2`. -/
@@ -278,6 +278,23 @@ theorem compProdMap_id (a : ClassicalSymbol n V W m) :
 theorem compProdMap_compProdMap (P P' : CoordinateSpace n →L[ℝ] CoordinateSpace n)
     (Q Q' : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) (a : ClassicalSymbol n V W m) :
     compProdMap P' Q' (compProdMap P Q a) = compProdMap (P.comp P') (Q'.trans Q) a :=
+  ext (by simp)
+
+/-- The linear change of variables commutes with the inclusion of classical symbol orders. -/
+@[simp]
+theorem compProdMap_inclusion (k : ℕ) (hk : m' = m - k)
+    (P : CoordinateSpace n →L[ℝ] CoordinateSpace n)
+    (Q : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) (a : ClassicalSymbol n V W m') :
+    compProdMap P Q (inclusion k hk a) = inclusion k hk (compProdMap P Q a) :=
+  ext (by simp)
+
+/-- The linear change of variables commutes with the pointwise composition of classical
+symbols. -/
+@[simp]
+theorem compProdMap_comp (P : CoordinateSpace n →L[ℝ] CoordinateSpace n)
+    (Q : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) (b : ClassicalSymbol n W U m')
+    (a : ClassicalSymbol n V W m) :
+    compProdMap P Q (b.comp a) = (compProdMap P Q b).comp (compProdMap P Q a) :=
   ext (by simp)
 
 /-- **The principal symbol commutes with linear changes of variables.** Under the linear change of
