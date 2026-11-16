@@ -277,6 +277,12 @@ theorem coe_lowPassSchwartz {R : ℝ} (hR : R ≠ 0) :
     ⇑(φ.lowPassSchwartz hR) = fun ξ ↦ (φ (R⁻¹ • ξ) : ℂ) :=
   (rfl)
 
+/-- The low-pass Schwartz symbol at scale `R` is the dilation of the one at scale `1`. -/
+theorem coe_lowPassSchwartz_eq_comp {R : ℝ} (hR : R ≠ 0) :
+    ⇑(φ.lowPassSchwartz hR) = fun ξ ↦ φ.lowPassSchwartz one_ne_zero (R⁻¹ • ξ) := by
+  ext ξ
+  simp
+
 /-- The complex low-pass symbol `φ (R⁻¹ ·)` has temperate growth, so it is a Fourier multiplier on
 Schwartz functions and on tempered distributions. -/
 theorem hasTemperateGrowth_ofReal_apply_inv_smul (R : ℝ) :

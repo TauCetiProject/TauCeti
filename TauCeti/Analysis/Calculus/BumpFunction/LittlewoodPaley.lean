@@ -150,6 +150,13 @@ theorem apply_inv_smul_eq_zero_of_le_norm {R : ℝ} (hR : 0 < R) {ξ : E}
   φ.zero_of_le_dist (by
     rwa [dist_zero_right, norm_inv_smul_of_nonneg hR.le, le_div_iff₀ hR, mul_comm])
 
+/-- The complex rescaled bump function `φ (R⁻¹ ·)`, `R > 0`, vanishes outside the closed ball of
+radius `R φ.rOut`. -/
+theorem ofReal_apply_inv_smul_eq_zero {R : ℝ} (hR : 0 < R) :
+    ∀ ξ ∈ (Metric.closedBall (0 : E) (R * φ.rOut))ᶜ, (φ (R⁻¹ • ξ) : ℂ) = 0 := fun ξ hξ ↦ by
+  rw [Set.mem_compl_iff, Metric.mem_closedBall, dist_zero_right, not_le] at hξ
+  rw [φ.apply_inv_smul_eq_zero_of_le_norm hR hξ.le, Complex.ofReal_zero]
+
 /-- The cutoff `ψⱼ` vanishes on the closed ball of radius `2^{j-1} φ.rIn`, where both terms
 are `1`. -/
 theorem littlewoodPaley_eq_zero_of_norm_le {j : ℤ} {ξ : E}

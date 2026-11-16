@@ -220,14 +220,6 @@ theorem exists_homogeneousLittlewoodPaleyBlock_compL_eq_zero (φ' : ContDiffBump
 
 /-! ### Reconstruction -/
 
-omit [MeasurableSpace E] [BorelSpace E] in
-/-- The complex low-pass symbol `φ (R⁻¹ ·)`, `R > 0`, vanishes outside the closed ball of radius
-`R φ.rOut`. -/
-private theorem ofReal_inv_smul_eq_zero {R : ℝ} (hR : 0 < R) :
-    ∀ ξ ∈ (Metric.closedBall (0 : E) (R * φ.rOut))ᶜ, (φ (R⁻¹ • ξ) : ℂ) = 0 := fun ξ hξ ↦ by
-  rw [Set.mem_compl_iff, Metric.mem_closedBall, dist_zero_right, not_le] at hξ
-  rw [φ.apply_inv_smul_eq_zero_of_le_norm hR hξ.le, Complex.ofReal_zero]
-
 /-- **High-frequency reconstruction.** For every tempered distribution `u`, the low-pass
 truncations `𝓕⁻ (φ (2^{-b} ·) • 𝓕 u)` converge to `u` as `b → ∞`. -/
 theorem tendsto_fourierMultiplierCLM_two_zpow_atTop (u : 𝓢'(E, F)) :
@@ -303,7 +295,7 @@ theorem isVanishingOn_fourier_sub_of_tendsto_sum_homogeneousLittlewoodPaleyBlock
   filter_upwards [hsmall] with a ha
   simp only [Function.comp_apply, fourierCLM_apply]
   refine (isVanishingOn_fourier_fourierMultiplierCLM
-    (ofReal_inv_smul_eq_zero φ (zpow_pos two_pos a)) u ψ
+    (φ.ofReal_apply_inv_smul_eq_zero (zpow_pos two_pos a)) u ψ
     fun ξ hξ hball ↦ hrψ ?_ hξ).symm
   rw [Metric.mem_closedBall, dist_zero_right] at hball
   rw [Metric.mem_ball, dist_zero_right]
@@ -354,7 +346,7 @@ theorem exists_fourierMultiplierCLM_inv_smul_eq_and_norm_le_mul_rpow {p : ℝ≥
   have hspec : IsVanishingOn (𝓕 (g : 𝓢'(E, F)) : 𝓢'(E, F))
       (Metric.closedBall 0 (R * φ.rOut))ᶜ := by
     rw [← hg]
-    exact isVanishingOn_fourier_fourierMultiplierCLM (ofReal_inv_smul_eq_zero φ hR) _
+    exact isVanishingOn_fourier_fourierMultiplierCLM (φ.ofReal_apply_inv_smul_eq_zero hR) _
   obtain ⟨g', hg', hg'g⟩ := hBern (mul_pos hR φ.rOut_pos) g hspec
   refine ⟨g', hg.trans hg', ?_⟩
   simp only [ENNReal.toReal_top, inv_zero, sub_zero] at hg'g

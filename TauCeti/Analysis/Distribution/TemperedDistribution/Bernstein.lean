@@ -137,14 +137,6 @@ private theorem tsupport_cutoff_sub_one_subset {R : ℝ} (hR : 0 < R) :
   refine Set.compl_subset_compl.2 (closedBall_subset_ball ?_)
   linarith
 
-omit [MeasurableSpace E] [BorelSpace E] in
-/-- The cutoff at scale `R` is the dilation of the cutoff at scale `1`. -/
-private theorem cutoff_eq_comp {R : ℝ} (hR : 0 < R) :
-    ⇑((bump (E := E)).lowPassSchwartz hR.ne') =
-      fun ξ ↦ (bump (E := E)).lowPassSchwartz one_ne_zero (R⁻¹ • ξ) := by
-  ext ξ
-  simp
-
 variable [CompleteSpace F]
 
 /-- **Bernstein's inequality without derivatives.** For `1 ≤ p ≤ q ≤ ∞` there is a constant `C`,
@@ -181,8 +173,8 @@ theorem exists_eq_and_norm_le_of_isVanishingOn_fourier {p q : ℝ≥0∞} [hp : 
   · rw [← hg, fourierMultiplierCLM_eq_self_of_isVanishingOn hf
       (bump.lowPassSchwartz hR.ne').hasTemperateGrowth
       (tsupport_cutoff_sub_one_subset hR)]
-  · rw [cutoff_eq_comp hR, eLpNorm_fourierInv_comp_inv_smul _ hR, ENNReal.toReal_mul,
-      ENNReal.toReal_ofReal (by positivity), hrexp] at hgf
+  · rw [bump.coe_lowPassSchwartz_eq_comp hR.ne', eLpNorm_fourierInv_comp_inv_smul _ hR,
+      ENNReal.toReal_mul, ENNReal.toReal_ofReal (by positivity), hrexp] at hgf
     linarith
 
 /-- The symbol `ξ ↦ 2πi ⟪ξ, m⟫ χ (R⁻¹ • ξ)` of `∂_m` composed with the reproducing multiplier
