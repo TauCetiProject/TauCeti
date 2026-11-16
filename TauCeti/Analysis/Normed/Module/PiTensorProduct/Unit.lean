@@ -134,8 +134,8 @@ private noncomputable def scalarUnitInsert :
 
 private theorem scalarUnitInsert_apply (x : E) :
     scalarUnitInsert p hp x = tprod (scalarUnitSeminorms p) (Fin.cons 1 fun _ => x) := by
-  change tprod (scalarUnitSeminorms p)
-    (Function.update (Fin.cons 1 (fun _ => (0 : E))) 1 x) = _
+  simp only [scalarUnitInsert, ContinuousMultilinearMap.toContinuousLinearMap_apply,
+    ← ContinuousMultilinearMap.coe_coe]
   congr 1
   ext i
   fin_cases i <;> simp
@@ -158,9 +158,8 @@ private noncomputable def scalarUnitProj :
 
 private theorem scalarUnitProj_tprod (x : ∀ i, ScalarUnitFactors 𝕜 E i) :
     scalarUnitProj p hp (tprod (scalarUnitSeminorms p) x) = x 0 • x 1 := by
-  rw [tprod_apply]
-  change lift (scalarUnitSeminorms p) scalarUnitAction ⟨⨂ₜ[𝕜] i, x i⟩ = _
-  rw [lift_tprod, scalarUnitAction_apply]
+  simp only [scalarUnitProj, ContinuousLinearMap.coe_mk', tprod_apply, lift_tprod,
+    scalarUnitAction_apply]
 
 private theorem scalarUnitProj_comp_insert :
     (scalarUnitProj p hp).comp (scalarUnitInsert p hp) = ContinuousLinearMap.id 𝕜 E := by
@@ -216,17 +215,15 @@ theorem lid_map {F : Type u} [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace 
         (Fin.cons LinearMap.id (fun _ => f))) = f.comp (lid p hp).toLinearMap := by
     apply linearMap_ext (scalarUnitSeminorms p)
     intro x
-    change lid q hq (map (scalarUnitSeminorms p) (scalarUnitSeminorms q)
-      (Fin.cons LinearMap.id (fun _ => f)) (tprod (scalarUnitSeminorms p) x)) =
-        f (lid p hp (tprod (scalarUnitSeminorms p) x))
-    simp only [tprod_apply, map_tprod, lid_tprod, Fin.cons_zero, Fin.cons_one,
-      LinearMap.id_apply]
+    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe,
+      ContinuousLinearEquiv.coe_toLinearEquiv, tprod_apply, map_tprod, lid_tprod,
+      Fin.cons_zero, Fin.cons_one, LinearMap.id_apply]
     exact (f.map_smul (x 0) (x 1)).symm
   exact LinearMap.congr_fun h z
 
 /-- The scalar-unit identification preserves every factor seminorm with constant one,
 including seminorms outside the family defining the topology. -/
-theorem projectiveSeminormOf_eq_lid (q : Seminorm 𝕜 E)
+theorem projectiveSeminormOf_cons (q : Seminorm 𝕜 E)
     (z : ProjectiveTensorProduct (scalarUnitSeminorms p)) :
     PiTensorProduct.projectiveSeminormOf
       (Fin.cons (normSeminorm 𝕜 𝕜) (fun _ => q)) z.toPiTensorProduct = q (lid p hp z) := by
@@ -262,7 +259,7 @@ theorem seminormFamily_cons (t : Finset σ)
     funext i
     fin_cases i <;> simp [scalarUnitSeminorms]
   rw [h]
-  exact projectiveSeminormOf_eq_lid p hp (t.sup p) z
+  exact projectiveSeminormOf_cons p hp (t.sup p) z
 
 end ProjectiveTensorProduct
 
