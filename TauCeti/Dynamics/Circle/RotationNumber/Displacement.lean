@@ -42,16 +42,18 @@ map read through the chosen lift.
   (`CircleDeg1Lift.lt_units_inv_apply_iff`, `CircleDeg1Lift.units_inv_apply_lt_iff`).
 
 These are the forms in which the boundary twist condition of the Poincaré–Birkhoff theorem is
-stated: for a lift of an area-preserving map of the annulus, the two boundary lifts have strict
-displacements of opposite signs, equivalently translation numbers of opposite signs, and passing
-to the inverse map exchanges the two signs.
+stated. That condition is a hypothesis, not a property of every area-preserving map of the
+annulus: it asks that the two boundary lifts of such a map have strict displacements of opposite
+signs, equivalently translation numbers of opposite signs. Passing to the inverse map exchanges
+the two signs.
 
 ## References
 
 * É. Ghys, *Groups acting on the circle*, L'Enseignement Mathématique 47 (2001), 329–407,
   Section 5.
 * C. Conley and E. Zehnder, *The Birkhoff–Lewis fixed point theorem and a conjecture of
-  V. I. Arnold*, Invent. Math. 73 (1983), 33–49.
+  V. I. Arnold*, Invent. Math. 73 (1983), 33–49. This motivates the downstream fixed-point
+  application to twist maps of the annulus; it is not a source for the results proved here.
 -/
 
 public section
