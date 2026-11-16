@@ -47,9 +47,36 @@ noncomputable section
 
 open scoped Matrix.Norms.L2Operator ContDiff Nat
 
-/-- The real normed algebra structure induced by the matrix Euclidean operator norm. -/
-local instance matrixComplexNormedAlgebraReal (n : Type*) [Fintype n] [DecidableEq n] :
-    NormedAlgebra ℝ (Matrix n n ℂ) := Matrix.l2OpNormedAlgebraReal
+attribute [local instance] Matrix.l2OpNormedAlgebraReal
+
+namespace Matrix
+
+/-- The matrix resolvent is smooth near any matrix where its shifted value is invertible. -/
+theorem contDiffAt_inv_sub_smul_one {𝕜 n : Type*} [RCLike 𝕜] [Fintype n] [DecidableEq n]
+    {A : Matrix n n 𝕜} {z : 𝕜} (h : IsUnit (A - z • 1)) (k : ℕ∞ω) :
+    ContDiffAt 𝕜 k (fun M : Matrix n n 𝕜 ↦ (M - z • 1)⁻¹) A := by
+  have hd : ContDiffAt 𝕜 k (fun M : Matrix n n 𝕜 ↦ M - z • 1) A := by fun_prop
+  simpa only [Matrix.nonsing_inv_eq_ringInverse] using hd.inverse h
+
+/-- Every positive-order derivative of an invertible affine matrix pencil has rank at most
+that of the perturbation. Invertibility is needed only at the evaluation point. -/
+theorem rank_iteratedDeriv_succ_inv_add_smul_le {𝕜₀ 𝕜 n : Type*}
+    [NontriviallyNormedField 𝕜₀] [RCLike 𝕜] [Fintype n] [DecidableEq n]
+    [NormedAlgebra 𝕜₀ (Matrix n n 𝕜)] {A B : Matrix n n 𝕜} (k : ℕ) {t : 𝕜₀}
+    (ht : IsUnit (A + t • B)) :
+    (iteratedDeriv (k + 1) (fun s : 𝕜₀ ↦ (A + s • B)⁻¹) t).rank ≤ B.rank := by
+  simp_rw [Matrix.nonsing_inv_eq_ringInverse]
+  rw [TauCeti.iteratedDeriv_ringInverse_add_smul A B (k + 1) ht]
+  let R := Ring.inverse (A + t • B)
+  let c := (-1 : 𝕜₀) ^ (k + 1) * (Nat.factorial (k + 1) : 𝕜₀)
+  calc
+    _ = (((c • R) * B) * (R * (B * R) ^ k)).rank := by
+      congr 1
+      simp only [R, c, pow_succ', smul_mul_assoc, mul_assoc]
+    _ ≤ ((c • R) * B).rank := rank_mul_le_left _ _
+    _ ≤ B.rank := rank_mul_le_right _ _
+
+end Matrix
 
 namespace Matrix.IsHermitian
 
@@ -80,15 +107,6 @@ theorem hasDerivAt_inv_add_smul_sub_smul_one_apply (t : ℝ) {z : ℂ} (hz : z.i
     (hA.hasDerivAt_inv_add_smul_sub_smul_one hB t hz)
   simpa using! h
 
-omit hB in
-/-- The matrix resolvent is smooth near a Hermitian matrix when the spectral parameter is
-nonreal. The nearby matrices need not be Hermitian. -/
-theorem contDiffAt_inv_sub_smul_one {z : ℂ} (hz : z.im ≠ 0) (k : ℕ∞ω) :
-    ContDiffAt ℂ k (fun M : Matrix n n ℂ ↦ (M - z • 1)⁻¹) A := by
-  have hd : ContDiffAt ℂ k (fun M : Matrix n n ℂ ↦ M - z • 1) A := by fun_prop
-  simpa only [Matrix.nonsing_inv_eq_ringInverse] using
-    hd.inverse (hA.isUnit_sub_smul_one_of_im_ne_zero hz)
-
 /-- The resolvent along a Hermitian perturbation is smooth on the whole real line, of every
 finite or infinite order, whenever the spectral parameter is nonreal. -/
 theorem contDiff_inv_add_smul_sub_smul_one {z : ℂ} (hz : z.im ≠ 0) (k : ℕ∞ω) :
@@ -98,22 +116,8 @@ theorem contDiff_inv_add_smul_sub_smul_one {z : ℂ} (hz : z.im ≠ 0) (k : ℕ�
   have h : (A + t • B).IsHermitian := hA.add (hB.smul (by simp [IsSelfAdjoint]))
   have hd : ContDiffAt ℝ k (fun s : ℝ ↦ A + s • B) t := by fun_prop
   simpa only [Function.comp_def] using
-    ((h.contDiffAt_inv_sub_smul_one hz k).restrict_scalars ℝ).comp t hd
-
-private theorem hasDerivAt_resolventWord (k : ℕ) (t : ℝ) {z : ℂ} (hz : z.im ≠ 0) :
-    HasDerivAt
-      (fun s : ℝ ↦ (A + s • B - z • 1)⁻¹ * (B * (A + s • B - z • 1)⁻¹) ^ k)
-      (-((k + 1 : ℕ) : ℝ) •
-        ((A + t • B - z • 1)⁻¹ * (B * (A + t • B - z • 1)⁻¹) ^ (k + 1))) t := by
-  have hR := hA.hasDerivAt_inv_add_smul_sub_smul_one hB t hz
-  induction k with
-  | zero => simpa [pow_one, mul_assoc] using hR
-  | succ k ih =>
-    have hd := ih.fun_mul (hR.const_mul B)
-    simp only [pow_succ, ← mul_assoc] at hd ⊢
-    refine hd.congr_deriv ?_
-    simp only [Matrix.smul_mul, mul_neg, mul_assoc, Nat.cast_add, Nat.cast_one,
-      neg_add, add_smul, neg_one_smul, add_mul, neg_mul]
+    ((Matrix.contDiffAt_inv_sub_smul_one
+      (h.isUnit_sub_smul_one_of_im_ne_zero hz) k).restrict_scalars ℝ).comp t hd
 
 /-- All real derivatives of a Hermitian resolvent along a Hermitian perturbation, in their
 noncommutative order. No commutation of `A` and `B` is assumed. -/
@@ -122,18 +126,10 @@ theorem iteratedDeriv_inv_add_smul_sub_smul_one (k : ℕ) (t : ℝ) {z : ℂ}
     iteratedDeriv k (fun s : ℝ ↦ (A + s • B - z • 1)⁻¹) t =
       ((-1 : ℝ) ^ k * (Nat.factorial k : ℝ)) •
         ((A + t • B - z • 1)⁻¹ * (B * (A + t • B - z • 1)⁻¹) ^ k) := by
-  induction k generalizing t with
-  | zero => simp
-  | succ k ih =>
-    rw [iteratedDeriv_succ, funext ih]
-    have hd := (hA.hasDerivAt_resolventWord hB k t hz).fun_const_smul
-      ((-1 : ℝ) ^ k * (Nat.factorial k : ℝ))
-    have he := hd.deriv
-    simp only [smul_smul] at he
-    rw [he]
-    congr 1
-    simp only [pow_succ, Nat.factorial_succ, Nat.cast_mul, Nat.cast_add, Nat.cast_one]
-    ring
+  have h : (A + t • B).IsHermitian := hA.add (hB.smul (by simp [IsSelfAdjoint]))
+  simpa only [sub_add_eq_add_sub, ← Matrix.nonsing_inv_eq_ringInverse] using
+    TauCeti.iteratedDeriv_ringInverse_add_smul (A - z • 1) B k
+      (by simpa only [sub_add_eq_add_sub] using h.isUnit_sub_smul_one_of_im_ne_zero hz)
 
 /-- Uniform operator-norm bounds for the derivatives of a Hermitian resolvent, including order
 zero and empty matrix index types. -/
@@ -166,15 +162,12 @@ theorem norm_iteratedDeriv_inv_add_smul_sub_smul_one_le (k : ℕ) (t : ℝ) {z :
 theorem rank_iteratedDeriv_succ_inv_add_smul_sub_smul_one_le
     (k : ℕ) (t : ℝ) {z : ℂ} (hz : z.im ≠ 0) :
     (iteratedDeriv (k + 1) (fun s : ℝ ↦ (A + s • B - z • 1)⁻¹) t).rank ≤ B.rank := by
-  rw [hA.iteratedDeriv_inv_add_smul_sub_smul_one hB (k + 1) t hz]
-  let R := (A + t • B - z • 1)⁻¹
-  let c := (-1 : ℝ) ^ (k + 1) * (Nat.factorial (k + 1) : ℝ)
-  calc
-    _ = (((c • R) * B) * (R * (B * R) ^ k)).rank := by
-      congr 1
-      simp only [R, c, pow_succ', Matrix.smul_mul, mul_assoc]
-    _ ≤ ((c • R) * B).rank := rank_mul_le_left _ _
-    _ ≤ B.rank := rank_mul_le_right _ _
+  have h : (A + t • B).IsHermitian := hA.add (hB.smul (by simp [IsSelfAdjoint]))
+  have hu : IsUnit ((A - z • 1) + t • B) := by
+    rw [sub_add_eq_add_sub]
+    exact h.isUnit_sub_smul_one_of_im_ne_zero hz
+  simp_rw [← sub_add_eq_add_sub]
+  exact Matrix.rank_iteratedDeriv_succ_inv_add_smul_le (𝕜₀ := ℝ) k hu
 
 /-- Positive-order derivatives of complex resolvent traces are bounded by the perturbation
 rank times the operator-norm derivative bound. The matrix norm is the Euclidean operator norm. -/

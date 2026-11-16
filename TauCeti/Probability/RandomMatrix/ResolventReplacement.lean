@@ -45,7 +45,7 @@ noncomputable section
 open MeasureTheory Matrix Finset
 open scoped Matrix.Norms.L2Operator ContDiff
 
-attribute [local instance] matrixComplexNormedAlgebraReal
+attribute [local instance] Matrix.l2OpNormedAlgebraReal
 
 namespace Matrix.IsHermitian
 
@@ -62,7 +62,8 @@ private theorem resolvent_test_continuous (hA : A.IsHermitian)
   have hi : Continuous (fun x : ι → ℝ ↦ (A + ∑ i, x i • B i - z • 1)⁻¹) := by
     refine continuous_iff_continuousAt.2 fun x ↦ ?_
     simpa only [Function.comp_def] using
-      ((hH x).contDiffAt_inv_sub_smul_one hz 0).continuousAt.comp
+      (Matrix.contDiffAt_inv_sub_smul_one
+        ((hH x).isUnit_sub_smul_one_of_im_ne_zero hz) 0).continuousAt.comp
         (f := fun y : ι → ℝ ↦ A + ∑ i, y i • B i) (x := x) hc.continuousAt
   exact continuous_const.mul hi.matrix_trace
 
