@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Polynomial.Roots
 public import Mathlib.NumberTheory.Padics.Complex
 public import TauCeti.Analysis.Normed.Ring.LogGauge.Rational
 public import TauCeti.NumberTheory.Padics.LogGauge
@@ -51,9 +52,11 @@ Since `ℂ_[p]` is algebraically closed, every rational number is a value: a roo
 * `PadicComplex.realValuation_eq_map_addValuation`, `PadicComplex.realValuation_eq_ofNorm`,
   `PadicComplex.realValuation_algebraMap`, and `PadicComplex.realValuation_coe`: compatibility
   between rational, real, `ℚ_[p]`, and `PadicAlgCl p` valuations.
-* `PadicComplex.addValuation_eq_of_pow_eq_zpow`, `PadicComplex.realValuation_eq_of_pow_eq_zpow`,
-  `PadicComplex.addValuation_surjective`, and `PadicComplex.exists_rat_realValuation`: values at
-  roots of `x ^ n = p ^ m` and rationality of finite values.
+* `PadicComplex.addValuation_eq_of_pow_eq_zpow`,
+  `PadicComplex.addValuation_eq_of_mem_roots_X_pow_sub_C_zpow_p`,
+  `PadicComplex.realValuation_eq_of_pow_eq_zpow`, `PadicComplex.addValuation_surjective`, and
+  `PadicComplex.exists_rat_realValuation`: values at roots of `x ^ n = p ^ m` and rationality of
+  finite values.
 * `PadicComplex.ofNorm_exp_one_eq_map_realValuation`: base change from `p` to `Real.exp 1` scales
   values by `Real.log p`.
 
@@ -68,6 +71,7 @@ Since `ℂ_[p]` is algebraically closed, every rational number is a value: a roo
 public section
 
 open TauCeti.NormedRing
+open scoped Polynomial
 
 variable (p : ℕ) [Fact p.Prime]
 
@@ -159,6 +163,16 @@ theorem addValuation_eq_of_pow_eq_zpow {x : ℂ_[p]} {m : ℤ} {n : ℕ} (hn : 0
   rw [addValuation_def]
   exact PseudoUniformizer.ratAddValuation_eq_of_norm_pow_eq _ hn <| by
     rw [← norm_pow, h, norm_zpow, coe_unit_pseudoUniformizer]
+
+/-- Every root `α` in `ℂ_[p]` of `X ^ n - C (p ^ m)` (`n > 0`, `m : ℤ`) has rational valuation
+`m / n`. -/
+theorem addValuation_eq_of_mem_roots_X_pow_sub_C_zpow_p {α : ℂ_[p]} {m : ℤ} {n : ℕ} (hn : 0 < n)
+    (hα : α ∈ ((Polynomial.X : ℂ_[p][X]) ^ n - Polynomial.C ((p : ℂ_[p]) ^ m)).roots) :
+    addValuation p α = ((m / n : ℚ) : WithTop ℚ) := by
+  have hroot := Polynomial.isRoot_of_mem_roots hα
+  rw [Polynomial.IsRoot.def, Polynomial.eval_sub, Polynomial.eval_pow, Polynomial.eval_X,
+    Polynomial.eval_C, sub_eq_zero] at hroot
+  exact addValuation_eq_of_pow_eq_zpow hn hroot
 
 /-- **The value group is `ℚ`**: every element of `WithTop ℚ` is a value of the valuation. -/
 theorem addValuation_surjective : Function.Surjective (addValuation p) := by
@@ -264,7 +278,6 @@ theorem comap_realValuation :
 
 /-- On the algebraic closure `PadicAlgCl p`, `PadicComplex.realValuation p` agrees with the
 canonical spectral additive valuation `TauCeti.spectralAddValuation` at base `p`. -/
-@[simp]
 theorem realValuation_coe (x : PadicAlgCl p) :
     realValuation p (x : ℂ_[p]) =
       TauCeti.spectralAddValuation ℚ_[p] (PadicAlgCl p) (p : ℝ)

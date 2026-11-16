@@ -9,9 +9,10 @@ public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import TauCeti.NumberTheory.NewtonPolygon.Roots
 public import TauCeti.RingTheory.Valuation.Spectral
 import Mathlib.FieldTheory.IntermediateField.Adjoin.Defs
+import Mathlib.FieldTheory.SplittingField.IsSplittingField
 
 /-!
-# Newton polygons, spectral norms, and roots in algebraic extensions
+# Newton polygons, spectral norms, and roots in field extensions
 
 Let `K` be a complete normed field whose norm is recovered from a real additive valuation `v` at
 base `b > 1` by `‖x‖ = b ^ (-v x)` for `x ≠ 0`. Every algebraic extension `L` of `K` carries the
@@ -25,12 +26,12 @@ Consequently:
   of a nonzero polynomial `f : K[X]` in any field extension `L` of `K` satisfies
   `Real.logb b (spectralNorm K L α) ∈ f.newtonSlopes v`, and when `f` is pure of slope `m` every
   root satisfies `spectralNorm K L α ≤ b ^ m` (with equality for `α ≠ 0`).
-* In any algebraic extension `L` in which `f` splits — and unconditionally in any algebraically
-  closed algebraic extension `L` of `K` such as `AlgebraicClosure K` — `f.newtonSlopes v` equals
-  the multiset of `Real.logb b (spectralNorm K L α)` (equivalently
-  `-(TauCeti.spectralAddValuation K L b hb α).untop₀`) over nonzero roots `α` in `L`, and the
-  endpoints and width of the finite face of slope `σ` count the roots of `f` in `L` in the open
-  ball `spectralNorm K L α < b ^ σ`, closed ball `spectralNorm K L α ≤ b ^ σ`, and sphere
+* In any field extension `L` of `K` in which `f` splits — and unconditionally in any algebraically
+  closed extension `L` of `K` such as `AlgebraicClosure K`, `PadicAlgCl p`, or `ℂ_[p]` —
+  `f.newtonSlopes v` equals the multiset of `Real.logb b (spectralNorm K L α)` over nonzero roots
+  `α` in `L` (and `-(TauCeti.spectralAddValuation K L b hb α).untop₀` when `L` is algebraic over
+  `K`), and the endpoints and width of the finite face of slope `σ` count the roots of `f` in `L` in
+  the open ball `spectralNorm K L α < b ^ σ`, closed ball `spectralNorm K L α ≤ b ^ σ`, and sphere
   `spectralNorm K L α = b ^ σ`.
 
 ## Main results
@@ -48,14 +49,16 @@ Consequently:
   `Polynomial.card_filter_roots_map_spectralNorm_lt`,
   `Polynomial.card_filter_roots_map_spectralNorm_le`, and
   `Polynomial.card_filter_roots_map_spectralNorm_eq`: root spectral-norm dictionary and ball counts
-  when `f` splits in an algebraic extension `L`.
-* `Polynomial.newtonSlopes_eq_map_roots_spectralNorm`,
-  `Polynomial.newtonSlopes_eq_map_roots_spectralAddValuation`,
-  `Polynomial.card_filter_roots_spectralNorm_lt`,
-  `Polynomial.card_filter_roots_spectralNorm_le`, and
-  `Polynomial.card_filter_roots_spectralNorm_eq`: unconditional slope-root and ball-count
-  dictionary in any algebraically closed algebraic extension `L` of `K` (such as
-  `AlgebraicClosure K` or `PadicAlgCl p`), with no splitting assumption on `f`.
+  when `f` splits in any field extension `L` of `K`.
+* `Polynomial.newtonSlopes_eq_map_roots_map_spectralNorm_of_isAlgClosed`,
+  `Polynomial.newtonSlopes_eq_map_roots_map_spectralAddValuation_of_isAlgClosed`,
+  `Polynomial.forall_mem_newtonSlopes_eq_iff_spectralNorm_eq_of_isAlgClosed`,
+  `Polynomial.card_filter_roots_map_spectralNorm_lt_of_isAlgClosed`,
+  `Polynomial.card_filter_roots_map_spectralNorm_le_of_isAlgClosed`, and
+  `Polynomial.card_filter_roots_map_spectralNorm_eq_of_isAlgClosed`: unconditional slope-root and
+  ball-count dictionary in any algebraically closed extension `L` of `K` (such as
+  `AlgebraicClosure K`, `PadicAlgCl p`, or `ℂ_[p]`; with `[Algebra.IsAlgebraic K L]` for
+  `spectralAddValuation`), with no splitting assumption on `f`.
 
 ## References
 
@@ -90,43 +93,35 @@ section SpectralAddValuation
 
 variable {K L : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
   [Field L] [Algebra K L] [Algebra.IsAlgebraic K L]
-  (v : AddValuation K (WithTop ℝ)) {b : ℝ} (hb : 1 < b)
-  (hv : ∀ x ≠ 0, ‖x‖ = b ^ (-(v x).untop₀))
-
-include hv
 
 /-- Mapping a polynomial from `K` to an algebraic extension `L` equipped with
 `TauCeti.spectralAddValuation K L b hb` preserves its Newton polygon. -/
-theorem newtonPolygon_map_spectralAddValuation (f : K[X]) :
+theorem newtonPolygon_map_spectralAddValuation (f : K[X])
+    (v : AddValuation K (WithTop ℝ)) {b : ℝ} (hb : 1 < b)
+    (hv : ∀ x ≠ 0, ‖x‖ = b ^ (-(v x).untop₀)) :
     (f.map (algebraMap K L)).newtonPolygon (spectralAddValuation K L b hb) =
       f.newtonPolygon v :=
   f.newtonPolygon_map v (algebraMap K L) (spectralAddValuation_algebraMap_eq v hb hv)
 
 /-- Mapping a polynomial from `K` to an algebraic extension `L` equipped with
 `TauCeti.spectralAddValuation K L b hb` preserves its finite slope multiset. -/
-theorem newtonSlopes_map_spectralAddValuation (f : K[X]) :
+theorem newtonSlopes_map_spectralAddValuation (f : K[X])
+    (v : AddValuation K (WithTop ℝ)) {b : ℝ} (hb : 1 < b)
+    (hv : ∀ x ≠ 0, ‖x‖ = b ^ (-(v x).untop₀)) :
     (f.map (algebraMap K L)).newtonSlopes (spectralAddValuation K L b hb) =
       f.newtonSlopes v :=
   f.newtonSlopes_map v (algebraMap K L) (spectralAddValuation_algebraMap_eq v hb hv)
 
 /-- If `f : K[X]` splits in an algebraic extension `L` of `K`, its finite slope multiset equals the
 multiset of negated `TauCeti.spectralAddValuation` values of its nonzero roots in `L`. -/
-theorem newtonSlopes_eq_map_roots_map_spectralAddValuation [DecidableEq L] {f : K[X]}
+theorem newtonSlopes_eq_map_roots_map_spectralAddValuation [DecidableEq L]
+    (v : AddValuation K (WithTop ℝ)) {b : ℝ} (hb : 1 < b)
+    (hv : ∀ x ≠ 0, ‖x‖ = b ^ (-(v x).untop₀)) {f : K[X]}
     (hf : (f.map (algebraMap K L)).Splits) :
     f.newtonSlopes v = ((f.map (algebraMap K L)).roots.filter (· ≠ 0)).map fun α ↦
       -(spectralAddValuation K L b hb α).untop₀ :=
   newtonSlopes_eq_map_roots_map (fun _ ↦ (spectralAddValuation K L b hb).top_iff.mp)
     (algebraMap K L) (spectralAddValuation_algebraMap_eq v hb hv) hf
-
-/-- In any algebraically closed algebraic extension `L` of `K` (for example `AlgebraicClosure K`),
-the finite slope multiset of any polynomial `f : K[X]` equals the multiset of negated
-`TauCeti.spectralAddValuation` values of its nonzero roots in `L`, with no splitting hypothesis. -/
-theorem newtonSlopes_eq_map_roots_spectralAddValuation (L : Type*) [Field L] [Algebra K L]
-    [Algebra.IsAlgebraic K L] [IsAlgClosed L] [DecidableEq L] (f : K[X]) :
-    f.newtonSlopes v = ((f.map (algebraMap K L)).roots.filter (· ≠ 0)).map fun α ↦
-      -(spectralAddValuation K L b hb α).untop₀ :=
-  newtonSlopes_eq_map_roots_map_spectralAddValuation v hb hv
-    (IsAlgClosed.splits (f.map (algebraMap K L)))
 
 end SpectralAddValuation
 
@@ -157,7 +152,8 @@ private theorem spectralNorm_prop_of_aeval_eq_zero {P : ℝ → Prop} {f : K[X]}
   have : FiniteDimensional K K⟮x⟯ := IntermediateField.adjoin.finiteDimensional hx_int
   let := spectralNormedField K K⟮x⟯
   let := spectralNormedAlgebra K K⟮x⟯
-  rw [← IntermediateField.AdjoinSimple.algebraMap_gen K x, ← spectralNorm.eq_of_tower]
+  rw [← IntermediateField.AdjoinSimple.algebraMap_gen K x, ← spectralNorm.eq_of_tower,
+    ← norm_spectralNormedField]
   exact h K⟮x⟯ (IntermediateField.AdjoinSimple.gen K x) hgen0 hgen
 
 /-- Over a complete field `K` with `‖x‖ = b ^ (-v x)`, every root `x` of a nonzero polynomial
@@ -190,104 +186,152 @@ theorem logb_spectralNorm_mem_newtonSlopes_of_aeval_eq_zero {f : K[X]} (hf : f �
 
 end SingleRoot
 
-section AlgebraicExtension
+section Splits
 
-variable {K L : Type*} [NormedField K] [CompleteSpace K]
-  [Field L] [Algebra K L] [Algebra.IsAlgebraic K L]
+universe u
+
+variable {K : Type*} {L : Type u} [NormedField K] [CompleteSpace K]
+  [Field L] [Algebra K L]
   (v : AddValuation K (WithTop ℝ)) {b : ℝ} (hb : 1 < b)
   (hv : ∀ x ≠ 0, ‖x‖ = b ^ (-(v x).untop₀))
 
 include hb hv
 
-/-- If `f : K[X]` splits in an algebraic extension `L` of complete `K`, its finite slope multiset
+/-- Descend a polynomial `f : K[X]` splitting in an arbitrary field extension `L` to its
+finite-dimensional splitting intermediate field `E = K(rootSet f L)` equipped with
+`TauCeti.spectralNormedField` and `TauCeti.spectralNormedAlgebra`. -/
+private theorem of_splits_adjoin_rootSet {f : K[X]} (hf : (f.map (algebraMap K L)).Splits)
+    {P : Prop}
+    (h : ∀ (E : Type u) [NormedField E] [NormedAlgebra K E] (ι : E →+* L),
+      (f.map (algebraMap K E)).Splits →
+      (f.map (algebraMap K L)).roots = (f.map (algebraMap K E)).roots.map ι →
+      (∀ α : E, spectralNorm K L (ι α) = ‖α‖) → P) : P := by
+  have : IsUltrametricDist K := v.isUltrametricDist hb.le hv
+  set E := IntermediateField.adjoin K (f.rootSet L)
+  have : f.IsSplittingField K E := IntermediateField.adjoin_rootSet_isSplittingField hf
+  have : FiniteDimensional K E := IsSplittingField.finiteDimensional E f
+  have hfE : (f.map (algebraMap K E)).Splits := IsSplittingField.splits E f
+  let := spectralNormedField K E
+  let := spectralNormedAlgebra K E
+  refine h E (algebraMap E L) hfE ?_ fun α ↦ ?_
+  · rw [IsScalarTower.algebraMap_eq K E L, ← Polynomial.map_map, hfE.roots_map]
+  · rw [← spectralNorm.eq_of_tower (K := K) (E := E) (L := L) α, norm_spectralNormedField]
+
+/-- Transfer a spectral-norm root count for a polynomial `f : K[X]` splitting in `L` from its
+finite splitting field `E` equipped with the spectral norm. -/
+private theorem card_filter_roots_map_spectralNorm_of_norm {f : K[X]}
+    (hf : (f.map (algebraMap K L)).Splits) (P : ℝ → Prop) [DecidablePred P] {n : ℕ}
+    (h : ∀ (E : Type u) [NormedField E] [NormedAlgebra K E],
+      (f.map (algebraMap K E)).Splits →
+      ((f.map (algebraMap K E)).roots.filter fun α ↦ P ‖α‖).card = n) :
+    ((f.map (algebraMap K L)).roots.filter fun α ↦ P (spectralNorm K L α)).card = n :=
+  of_splits_adjoin_rootSet v hb hv hf fun E _ _ ι hfE hroots hnorm ↦ by
+    rw [hroots, Multiset.filter_map, Multiset.card_map]
+    simpa only [Function.comp_def, hnorm] using h E hfE
+
+/-- If `f : K[X]` splits in a field extension `L` of complete `K`, its finite slope multiset
 `f.newtonSlopes v` equals the multiset of `Real.logb b (spectralNorm K L α)` over its nonzero roots
 `α` in `L`, counted with multiplicity. -/
 theorem newtonSlopes_eq_map_roots_map_spectralNorm [DecidableEq L] {f : K[X]}
     (hf : (f.map (algebraMap K L)).Splits) :
     f.newtonSlopes v = ((f.map (algebraMap K L)).roots.filter (· ≠ 0)).map fun α ↦
-      Real.logb b (spectralNorm K L α) :=
-  have : IsUltrametricDist K := v.isUltrametricDist hb.le hv
-  let := spectralNormedField K L
-  let := spectralNormedAlgebra K L
-  newtonSlopes_eq_map_roots_map_norm (L := L) v hb hv hf
+      Real.logb b (spectralNorm K L α) := by
+  refine of_splits_adjoin_rootSet v hb hv hf fun E _ _ ι hfE hroots hnorm ↦ ?_
+  classical
+  rw [newtonSlopes_eq_map_roots_map_norm (L := E) v hb hv hfE, hroots, Multiset.filter_map,
+    Multiset.map_map]
+  refine Multiset.map_congr ?_ fun α _ ↦ by simp only [Function.comp_def, hnorm]
+  exact Multiset.filter_congr fun α _ ↦ by
+    simp only [Function.comp_def, map_ne_zero_iff ι ι.injective]
 
-/-- If `f : K[X]` splits in an algebraic extension `L` of complete `K` and every nonzero root of `f`
+/-- If `f : K[X]` splits in a field extension `L` of complete `K` and every nonzero root of `f`
 in `L` has spectral norm `b ^ m`, then every finite slope of `f` equals `m`. -/
 theorem newtonSlopes_eq_replicate_of_spectralNorm_eq {f : K[X]}
     (hf : (f.map (algebraMap K L)).Splits) {m : ℝ}
     (hm : ∀ α ∈ (f.map (algebraMap K L)).roots, α ≠ 0 → spectralNorm K L α = b ^ m) :
     f.newtonSlopes v = Multiset.replicate (f.natDegree - f.natTrailingDegree) m :=
-  have : IsUltrametricDist K := v.isUltrametricDist hb.le hv
-  let := spectralNormedField K L
-  let := spectralNormedAlgebra K L
-  newtonSlopes_eq_replicate_of_norm_eq (L := L) v hb hv hf hm
+  of_splits_adjoin_rootSet v hb hv hf fun E _ _ ι hfE hroots hnorm ↦
+    newtonSlopes_eq_replicate_of_norm_eq (L := E) v hb hv hfE fun α hα hα0 ↦ by
+      rw [← hnorm α]
+      exact hm (ι α) (hroots ▸ Multiset.mem_map_of_mem ι hα)
+        ((map_ne_zero_iff ι ι.injective).2 hα0)
 
-/-- When `f : K[X]` splits in an algebraic extension `L` of complete `K`, every finite slope of `f`
+/-- When `f : K[X]` splits in a field extension `L` of complete `K`, every finite slope of `f`
 equals `m` if and only if every nonzero root of `f` in `L` has spectral norm `b ^ m`. -/
 theorem forall_mem_newtonSlopes_eq_iff_spectralNorm_eq {f : K[X]}
     (hf : (f.map (algebraMap K L)).Splits) {m : ℝ} :
     (∀ s ∈ f.newtonSlopes v, s = m) ↔
-      ∀ α ∈ (f.map (algebraMap K L)).roots, α ≠ 0 → spectralNorm K L α = b ^ m :=
-  have : IsUltrametricDist K := v.isUltrametricDist hb.le hv
-  let := spectralNormedField K L
-  let := spectralNormedAlgebra K L
-  forall_mem_newtonSlopes_eq_iff_norm_eq (L := L) v hb hv hf
+      ∀ α ∈ (f.map (algebraMap K L)).roots, α ≠ 0 → spectralNorm K L α = b ^ m := by
+  refine of_splits_adjoin_rootSet v hb hv hf fun E _ _ ι hfE hroots hnorm ↦ ?_
+  rw [forall_mem_newtonSlopes_eq_iff_norm_eq (L := E) v hb hv hfE, hroots]
+  constructor
+  · intro h _ hα hα0
+    obtain ⟨α, hα', rfl⟩ := Multiset.mem_map.1 hα
+    rw [hnorm α]
+    exact h α hα' ((map_ne_zero_iff ι ι.injective).1 hα0)
+  · intro h α hα hα0
+    rw [← hnorm α]
+    exact h (ι α) (Multiset.mem_map_of_mem ι hα) ((map_ne_zero_iff ι ι.injective).2 hα0)
 
-/-- If `f : K[X]` splits in an algebraic extension `L` of complete `K`, the left endpoint `l` of
+/-- If `f : K[X]` splits in a field extension `L` of complete `K`, the left endpoint `l` of
 the finite face of slope `σ` counts the roots `α` of `f` in `L` in the open spectral ball
 `spectralNorm K L α < b ^ σ`, counted with multiplicity and including the root zero. -/
 theorem card_filter_roots_map_spectralNorm_lt {f : K[X]} (hf : (f.map (algebraMap K L)).Splits)
     {σ : ℝ} {l u : ℕ} (hface : IsFiniteFace (f.newtonPolygon v) σ l u) :
     ((f.map (algebraMap K L)).roots.filter fun α ↦ spectralNorm K L α < b ^ σ).card = l :=
-  have : IsUltrametricDist K := v.isUltrametricDist hb.le hv
-  let := spectralNormedField K L
-  let := spectralNormedAlgebra K L
-  card_filter_roots_map_norm_lt (L := L) v hb hv hf hface
+  card_filter_roots_map_spectralNorm_of_norm v hb hv hf (· < b ^ σ) fun E _ _ hfE ↦
+    card_filter_roots_map_norm_lt (L := E) v hb hv hfE hface
 
-/-- If `f : K[X]` splits in an algebraic extension `L` of complete `K`, the right endpoint `u` of
+/-- If `f : K[X]` splits in a field extension `L` of complete `K`, the right endpoint `u` of
 the finite face of slope `σ` counts the roots `α` of `f` in `L` in the closed spectral ball
 `spectralNorm K L α ≤ b ^ σ`, counted with multiplicity and including the root zero. -/
 theorem card_filter_roots_map_spectralNorm_le {f : K[X]} (hf : (f.map (algebraMap K L)).Splits)
     {σ : ℝ} {l u : ℕ} (hface : IsFiniteFace (f.newtonPolygon v) σ l u) :
     ((f.map (algebraMap K L)).roots.filter fun α ↦ spectralNorm K L α ≤ b ^ σ).card = u :=
-  have : IsUltrametricDist K := v.isUltrametricDist hb.le hv
-  let := spectralNormedField K L
-  let := spectralNormedAlgebra K L
-  card_filter_roots_map_norm_le (L := L) v hb hv hf hface
+  card_filter_roots_map_spectralNorm_of_norm v hb hv hf (· ≤ b ^ σ) fun E _ _ hfE ↦
+    card_filter_roots_map_norm_le (L := E) v hb hv hfE hface
 
-/-- If `f : K[X]` splits in an algebraic extension `L` of complete `K`, the horizontal width
+/-- If `f : K[X]` splits in a field extension `L` of complete `K`, the horizontal width
 `u - l` of the finite face of slope `σ` counts the roots `α` of `f` in `L` on the spectral sphere
 `spectralNorm K L α = b ^ σ`, counted with multiplicity. -/
 theorem card_filter_roots_map_spectralNorm_eq {f : K[X]} (hf : (f.map (algebraMap K L)).Splits)
     {σ : ℝ} {l u : ℕ} (hface : IsFiniteFace (f.newtonPolygon v) σ l u) :
     ((f.map (algebraMap K L)).roots.filter fun α ↦ spectralNorm K L α = b ^ σ).card = u - l :=
-  have : IsUltrametricDist K := v.isUltrametricDist hb.le hv
-  let := spectralNormedField K L
-  let := spectralNormedAlgebra K L
-  card_filter_roots_map_norm_eq (L := L) v hb hv hf hface
+  card_filter_roots_map_spectralNorm_of_norm v hb hv hf (· = b ^ σ) fun E _ _ hfE ↦
+    card_filter_roots_map_norm_eq (L := E) v hb hv hfE hface
 
-end AlgebraicExtension
+end Splits
 
 section IsAlgClosed
 
 variable {K : Type*} [NormedField K] [CompleteSpace K]
-  (L : Type*) [Field L] [Algebra K L] [Algebra.IsAlgebraic K L] [IsAlgClosed L]
+  (L : Type*) [Field L] [Algebra K L] [IsAlgClosed L]
   (v : AddValuation K (WithTop ℝ)) {b : ℝ} (hb : 1 < b)
   (hv : ∀ x ≠ 0, ‖x‖ = b ^ (-(v x).untop₀))
 
 include hb hv
 
-/-- **Slope-root dictionary in an algebraic closure**: in any algebraically closed algebraic
-extension `L` of complete `K` (such as `AlgebraicClosure K` or `PadicAlgCl p`), the finite slope
-multiset `f.newtonSlopes v` of any polynomial `f : K[X]` is the multiset of
+/-- **Slope-root dictionary in an algebraically closed extension**: in any algebraically closed
+extension `L` of complete `K` (such as `AlgebraicClosure K`, `PadicAlgCl p`, or `ℂ_[p]`), the
+finite slope multiset `f.newtonSlopes v` of any polynomial `f : K[X]` is the multiset of
 `Real.logb b (spectralNorm K L α)` over its nonzero roots `α` in `L`, with no splitting assumption
 on `f`. -/
-theorem newtonSlopes_eq_map_roots_spectralNorm [DecidableEq L] (f : K[X]) :
+theorem newtonSlopes_eq_map_roots_map_spectralNorm_of_isAlgClosed [DecidableEq L] (f : K[X]) :
     f.newtonSlopes v = ((f.map (algebraMap K L)).roots.filter (· ≠ 0)).map fun α ↦
       Real.logb b (spectralNorm K L α) :=
   newtonSlopes_eq_map_roots_map_spectralNorm v hb hv (IsAlgClosed.splits (f.map (algebraMap K L)))
 
-/-- In any algebraically closed algebraic extension `L` of complete `K`, every finite slope of
+/-- In any algebraically closed algebraic extension `L` of `K` (for example `AlgebraicClosure K`),
+the finite slope multiset of any polynomial `f : K[X]` equals the multiset of negated
+`TauCeti.spectralAddValuation` values of its nonzero roots in `L`, with no splitting hypothesis. -/
+theorem newtonSlopes_eq_map_roots_map_spectralAddValuation_of_isAlgClosed [IsUltrametricDist K]
+    [Algebra.IsAlgebraic K L] [DecidableEq L] (f : K[X]) :
+    f.newtonSlopes v = ((f.map (algebraMap K L)).roots.filter (· ≠ 0)).map fun α ↦
+      -(spectralAddValuation K L b hb α).untop₀ :=
+  newtonSlopes_eq_map_roots_map_spectralAddValuation v hb hv
+    (IsAlgClosed.splits (f.map (algebraMap K L)))
+
+/-- In any algebraically closed extension `L` of complete `K`, every finite slope of
 `f : K[X]` equals `m` if and only if every nonzero root of `f` in `L` has spectral norm `b ^ m`. -/
 theorem forall_mem_newtonSlopes_eq_iff_spectralNorm_eq_of_isAlgClosed (f : K[X]) {m : ℝ} :
     (∀ s ∈ f.newtonSlopes v, s = m) ↔
@@ -295,26 +339,26 @@ theorem forall_mem_newtonSlopes_eq_iff_spectralNorm_eq_of_isAlgClosed (f : K[X])
   forall_mem_newtonSlopes_eq_iff_spectralNorm_eq v hb hv
     (IsAlgClosed.splits (f.map (algebraMap K L)))
 
-/-- In any algebraically closed algebraic extension `L` of complete `K`, the left endpoint `l` of
+/-- In any algebraically closed extension `L` of complete `K`, the left endpoint `l` of
 the finite face of slope `σ` of `f.newtonPolygon v` equals the number of roots `α` of `f` in `L`
 with `spectralNorm K L α < b ^ σ`, counted with multiplicity and including zero. -/
-theorem card_filter_roots_spectralNorm_lt {f : K[X]} {σ : ℝ} {l u : ℕ}
+theorem card_filter_roots_map_spectralNorm_lt_of_isAlgClosed {f : K[X]} {σ : ℝ} {l u : ℕ}
     (hface : IsFiniteFace (f.newtonPolygon v) σ l u) :
     ((f.map (algebraMap K L)).roots.filter fun α ↦ spectralNorm K L α < b ^ σ).card = l :=
   card_filter_roots_map_spectralNorm_lt v hb hv (IsAlgClosed.splits (f.map (algebraMap K L))) hface
 
-/-- In any algebraically closed algebraic extension `L` of complete `K`, the right endpoint `u` of
+/-- In any algebraically closed extension `L` of complete `K`, the right endpoint `u` of
 the finite face of slope `σ` of `f.newtonPolygon v` equals the number of roots `α` of `f` in `L`
 with `spectralNorm K L α ≤ b ^ σ`, counted with multiplicity and including zero. -/
-theorem card_filter_roots_spectralNorm_le {f : K[X]} {σ : ℝ} {l u : ℕ}
+theorem card_filter_roots_map_spectralNorm_le_of_isAlgClosed {f : K[X]} {σ : ℝ} {l u : ℕ}
     (hface : IsFiniteFace (f.newtonPolygon v) σ l u) :
     ((f.map (algebraMap K L)).roots.filter fun α ↦ spectralNorm K L α ≤ b ^ σ).card = u :=
   card_filter_roots_map_spectralNorm_le v hb hv (IsAlgClosed.splits (f.map (algebraMap K L))) hface
 
-/-- In any algebraically closed algebraic extension `L` of complete `K`, the horizontal width
+/-- In any algebraically closed extension `L` of complete `K`, the horizontal width
 `u - l` of the finite face of slope `σ` of `f.newtonPolygon v` equals the number of roots `α` of `f`
 in `L` with `spectralNorm K L α = b ^ σ`, counted with multiplicity. -/
-theorem card_filter_roots_spectralNorm_eq {f : K[X]} {σ : ℝ} {l u : ℕ}
+theorem card_filter_roots_map_spectralNorm_eq_of_isAlgClosed {f : K[X]} {σ : ℝ} {l u : ℕ}
     (hface : IsFiniteFace (f.newtonPolygon v) σ l u) :
     ((f.map (algebraMap K L)).roots.filter fun α ↦ spectralNorm K L α = b ^ σ).card = u - l :=
   card_filter_roots_map_spectralNorm_eq v hb hv (IsAlgClosed.splits (f.map (algebraMap K L))) hface

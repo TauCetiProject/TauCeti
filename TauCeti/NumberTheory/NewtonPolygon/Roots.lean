@@ -31,8 +31,8 @@ and no slope when `α = 0`. No completeness of the valuation is used. Applied af
 of coefficients compatible with the valuations, this gives the slopes of a polynomial in terms
 of its roots in any valued extension in which it splits.
 
-When `v` comes from an absolute value with `‖x‖ = b ^ (-v x)` for a base `1 < b`, the root `α`
-has norm `b ^ m` exactly when `-v α = m`, that is, `Real.logb b ‖α‖ = m`. Hence in any normed
+When `v` comes from an absolute value with `‖x‖ = b ^ (-v x)` for a base `1 < b`, a nonzero root
+`α` has norm `b ^ m` exactly when `-v α = m`, that is, `Real.logb b ‖α‖ = m`. Hence in any normed
 field extension in which `f` splits, `f.newtonSlopes v` is the multiset of `Real.logb b ‖α‖` over
 nonzero roots `α`, the endpoints of the finite face of slope `σ` count the roots (with multiplicity
 and including the root zero) in the open and closed balls of radius `b ^ σ`, and the width of the

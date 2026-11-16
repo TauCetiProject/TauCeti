@@ -299,11 +299,12 @@ theorem _root_.AlgHom.spectralAddValuation_map {E : Type*} [Field E] [Algebra K 
   have := isUltrametricDist_spectralNormedField K E
   exact AddValuation.ofNorm_eq_of_norm_eq hb (ψ.spectralNorm_map x)
 
-/-- `K`-algebra automorphisms of `L` preserve `TauCeti.spectralAddValuation`. -/
+/-- `K`-algebra isomorphisms of algebraic extensions preserve `TauCeti.spectralAddValuation`. -/
 @[simp]
-theorem _root_.AlgEquiv.spectralAddValuation_map (σ : L ≃ₐ[K] L) {b : ℝ} (hb : 1 < b) (x : L) :
-    spectralAddValuation K L b hb (σ x) = spectralAddValuation K L b hb x :=
-  (σ : L →ₐ[K] L).spectralAddValuation_map hb x
+theorem _root_.AlgEquiv.spectralAddValuation_map {E : Type*} [Field E] [Algebra K E]
+    [Algebra.IsAlgebraic K E] (σ : E ≃ₐ[K] L) {b : ℝ} (hb : 1 < b) (x : E) :
+    spectralAddValuation K L b hb (σ x) = spectralAddValuation K E b hb x := by
+  simpa only [AlgEquiv.coe_toAlgHom] using (σ : E →ₐ[K] L).spectralAddValuation_map hb x
 
 /-- In a tower `K → E → L` of algebraic extensions, `TauCeti.spectralAddValuation` on `L`
 restricts to `TauCeti.spectralAddValuation` on `E`. -/
@@ -341,6 +342,7 @@ theorem spectralAddValuation_eq_ofNorm {K L : Type*} [NormedField K] [IsUltramet
     [Algebra.IsAlgebraic K L] {b : ℝ} (hb : 1 < b) :
     spectralAddValuation K L b hb = AddValuation.ofNorm b hb :=
   AddValuation.eq_ofNorm_of_norm_eq_rpow _ hb fun x hx ↦
-    (norm_eq_spectralNorm K x).trans (spectralNorm_eq_rpow_neg_spectralAddValuation hb hx)
+    (norm_eq_spectralNorm K (Algebra.IsAlgebraic.isAlgebraic x)).trans
+      (spectralNorm_eq_rpow_neg_spectralAddValuation hb hx)
 
 end TauCeti

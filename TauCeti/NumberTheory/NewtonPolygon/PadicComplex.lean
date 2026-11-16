@@ -35,9 +35,9 @@ in `ℚ_[p][X]`:
   count the roots in `ℂ_[p]` in the open ball `‖α‖ < p ^ σ`, closed ball `‖α‖ ≤ p ^ σ`, and sphere
   `‖α‖ = p ^ σ` (and at rational slopes `q : ℚ`, in the valuation regions `-q < v(α)`, `-q ≤ v(α)`,
   and `v(α) = -q`).
-* For `n > 0` and `m : ℤ`, `X ^ n - C (p ^ m)` over `ℂ_[p]` has finite slope multiset
-  `Multiset.replicate n (-m / n)` (specialising at `n = 3, m = 1` to `X ^ 3 - C p` with three
-  slopes equal to `-1 / 3`).
+* For `n : ℕ` and `m : ℤ`, `X ^ n - C (p ^ m)` over `ℂ_[p]` has finite slope multiset
+  `Multiset.replicate n (-(m : ℝ) / n)` (specialising at `n = 3, m = 1` to `X ^ 3 - C p` with
+  three slopes equal to `-1 / 3`).
 
 ## Main results
 
@@ -48,17 +48,21 @@ in `ℚ_[p][X]`:
   `Polynomial.newtonPolygon_ofNorm_exp_one_padicComplex`, and
   `Polynomial.newtonSlopes_ofNorm_exp_one_padicComplex`: base-change scaling by `Real.log p`
   between base `p` and base `Real.exp 1` on `ℂ_[p]`.
-* `Polynomial.newtonSlopes_realValuation_eq_map_roots_addValuation`,
+* `Polynomial.newtonSlopes_realValuation_eq_map_roots_padicComplexAddValuation`,
   `Polynomial.newtonSlopes_realValuation_eq_map_roots_norm`, and
   `Polynomial.exists_rat_of_mem_newtonSlopes_realValuation`: unconditional slope-root identities
   and rationality of finite slopes over `ℂ_[p]`.
-* `Polynomial.card_filter_roots_realValuation_norm_lt`,
-  `Polynomial.card_filter_roots_realValuation_norm_le`,
-  `Polynomial.card_filter_roots_realValuation_norm_eq`, and their `ℚ_[p] → ℂ_[p]` and rational
+* `Polynomial.card_filter_roots_padicComplex_norm_lt`,
+  `Polynomial.card_filter_roots_padicComplex_norm_le`,
+  `Polynomial.card_filter_roots_padicComplex_norm_eq`, and their `ℚ_[p] → ℂ_[p]` and rational
   `PadicComplex.addValuation` counterparts: unconditional open-ball, closed-ball, and sphere root
   counts in `ℂ_[p]`.
-* `Polynomial.newtonSlopes_X_pow_sub_C_zpow_p`: the finite slopes of `X ^ n - C (p ^ m)` over
-  `ℂ_[p]` are `Multiset.replicate n (-(m : ℝ) / n)`.
+* `Polynomial.newtonSlopes_padicRealValuation_eq_map_roots_map_padicComplexAddValuation`,
+  `Polynomial.newtonSlopes_padicRealValuation_eq_map_roots_map_padicComplex_norm`, and
+  `Polynomial.exists_rat_of_mem_newtonSlopes_padicRealValuation`: unconditional slope-root
+  dictionary and slope rationality for polynomials over `ℚ_[p]`.
+* `Polynomial.newtonSlopes_realValuation_X_pow_sub_C_zpow_p`: the finite slopes of
+  `X ^ n - C (p ^ m)` over `ℂ_[p]` are `Multiset.replicate n (-(m : ℝ) / n)`.
 
 ## References
 
@@ -159,7 +163,8 @@ theorem newtonSlopes_realValuation_eq_map_roots [DecidableEq ℂ_[p]] (f : ℂ_[
 
 /-- For every `f : ℂ_[p][X]`, its finite slope multiset equals the multiset of negated rational
 valuations `-((PadicComplex.addValuation p α).untop₀ : ℝ)` of its nonzero roots `α`. -/
-theorem newtonSlopes_realValuation_eq_map_roots_addValuation [DecidableEq ℂ_[p]] (f : ℂ_[p][X]) :
+theorem newtonSlopes_realValuation_eq_map_roots_padicComplexAddValuation [DecidableEq ℂ_[p]]
+    (f : ℂ_[p][X]) :
     f.newtonSlopes (PadicComplex.realValuation p) =
       (f.roots.filter (· ≠ 0)).map fun α ↦ -((PadicComplex.addValuation p α).untop₀ : ℝ) := by
   rw [newtonSlopes_realValuation_eq_map_roots]
@@ -177,11 +182,10 @@ theorem newtonSlopes_realValuation_eq_map_roots_norm [DecidableEq ℂ_[p]] (f : 
 /-- **Rationality of finite slopes over `ℂ_[p]`**: every finite slope of any polynomial in
 `ℂ_[p][X]` with respect to `PadicComplex.realValuation p` is a rational number. -/
 theorem exists_rat_of_mem_newtonSlopes_realValuation {f : ℂ_[p][X]} {s : ℝ}
-    (hs : s ∈ f.newtonSlopes (PadicComplex.realValuation p)) : ∃ q : ℚ, s = q := by
-  classical
-  rw [newtonSlopes_realValuation_eq_map_roots_addValuation] at hs
-  obtain ⟨α, -, rfl⟩ := Multiset.mem_map.mp hs
-  exact ⟨-(PadicComplex.addValuation p α).untop₀, (Rat.cast_neg _).symm⟩
+    (hs : s ∈ f.newtonSlopes (PadicComplex.realValuation p)) : ∃ q : ℚ, s = q :=
+  exists_rat_of_mem_newtonSlopes
+    (fun _ hx ↦ PadicComplex.exists_rat_realValuation
+      ((PadicComplex.realValuation p).ne_top_iff.1 hx)) hs
 
 /-- Over `ℂ_[p]`, every finite slope of `f` equals `m` if and only if every nonzero root of `f` has
 norm `p ^ m`. -/
@@ -196,16 +200,16 @@ theorem forall_mem_newtonSlopes_realValuation_eq_iff_norm_eq (f : ℂ_[p][X]) {m
 
 /-- Over `ℂ_[p]`, the left endpoint `l` of the finite face of slope `σ` counts the roots `α` of `f`
 in the open ball `‖α‖ < p ^ σ`, counted with multiplicity and including zero. -/
-theorem card_filter_roots_realValuation_norm_lt {f : ℂ_[p][X]} {σ : ℝ} {l u : ℕ}
+theorem card_filter_roots_padicComplex_norm_lt {f : ℂ_[p][X]} {σ : ℝ} {l u : ℕ}
     (hface : IsFiniteFace (f.newtonPolygon (PadicComplex.realValuation p)) σ l u) :
     (f.roots.filter fun α ↦ ‖α‖ < (p : ℝ) ^ σ).card = l :=
   card_filter_roots_norm_lt (PadicComplex.realValuation p)
     (Nat.one_lt_cast.2 (Fact.out : p.Prime).one_lt)
     (fun _ ↦ PadicComplex.norm_eq_rpow_neg_realValuation) (IsAlgClosed.splits f) hface
 
-/-- Over `ℂ_[p]`, the right endpoint `u` of the finite face of slope `σ` counts the roots `α` of
-`f` in the closed ball `‖α‖ ≤ p ^ σ`, counted with multiplicity and including zero. -/
-theorem card_filter_roots_realValuation_norm_le {f : ℂ_[p][X]} {σ : ℝ} {l u : ℕ}
+/-- Over `ℂ_[p]`, the right endpoint `u` of the finite face of slope `σ` counts the roots `α` of `f`
+in the closed ball `‖α‖ ≤ p ^ σ`, counted with multiplicity and including zero. -/
+theorem card_filter_roots_padicComplex_norm_le {f : ℂ_[p][X]} {σ : ℝ} {l u : ℕ}
     (hface : IsFiniteFace (f.newtonPolygon (PadicComplex.realValuation p)) σ l u) :
     (f.roots.filter fun α ↦ ‖α‖ ≤ (p : ℝ) ^ σ).card = u :=
   card_filter_roots_norm_le (PadicComplex.realValuation p)
@@ -214,7 +218,7 @@ theorem card_filter_roots_realValuation_norm_le {f : ℂ_[p][X]} {σ : ℝ} {l u
 
 /-- Over `ℂ_[p]`, the width `u - l` of the finite face of slope `σ` counts the roots `α` of `f` on
 the sphere `‖α‖ = p ^ σ`, counted with multiplicity. -/
-theorem card_filter_roots_realValuation_norm_eq {f : ℂ_[p][X]} {σ : ℝ} {l u : ℕ}
+theorem card_filter_roots_padicComplex_norm_eq {f : ℂ_[p][X]} {σ : ℝ} {l u : ℕ}
     (hface : IsFiniteFace (f.newtonPolygon (PadicComplex.realValuation p)) σ l u) :
     (f.roots.filter fun α ↦ ‖α‖ = (p : ℝ) ^ σ).card = u - l :=
   card_filter_roots_norm_eq (PadicComplex.realValuation p)
@@ -261,17 +265,19 @@ theorem card_filter_roots_padicComplexAddValuation_eq {f : ℂ_[p][X]} {q : ℚ}
 /-- For every `f : ℚ_[p][X]`, its finite slope multiset with respect to
 `TauCeti.padicRealValuation p` equals the multiset of negated rational valuations
 `-((PadicComplex.addValuation p α).untop₀ : ℝ)` of its nonzero roots `α` in `ℂ_[p]`. -/
-theorem newtonSlopes_padicRealValuation_eq_map_roots_addValuation [DecidableEq ℂ_[p]]
-    (f : ℚ_[p][X]) :
+theorem newtonSlopes_padicRealValuation_eq_map_roots_map_padicComplexAddValuation
+    [DecidableEq ℂ_[p]] (f : ℚ_[p][X]) :
     f.newtonSlopes (padicRealValuation p) =
       ((f.map (algebraMap ℚ_[p] ℂ_[p])).roots.filter (· ≠ 0)).map
         fun α ↦ -((PadicComplex.addValuation p α).untop₀ : ℝ) := by
-  rw [← newtonSlopes_map_padicComplex, newtonSlopes_realValuation_eq_map_roots_addValuation]
+  rw [← newtonSlopes_map_padicComplex,
+    newtonSlopes_realValuation_eq_map_roots_padicComplexAddValuation]
 
 /-- For every `f : ℚ_[p][X]`, its finite slope multiset with respect to
 `TauCeti.padicRealValuation p` equals the multiset of `Real.logb p ‖α‖` over its nonzero roots `α`
 in `ℂ_[p]`, with no splitting assumption on `f`. -/
-theorem newtonSlopes_padicRealValuation_eq_map_roots_norm [DecidableEq ℂ_[p]] (f : ℚ_[p][X]) :
+theorem newtonSlopes_padicRealValuation_eq_map_roots_map_padicComplex_norm [DecidableEq ℂ_[p]]
+    (f : ℚ_[p][X]) :
     f.newtonSlopes (padicRealValuation p) =
       ((f.map (algebraMap ℚ_[p] ℂ_[p])).roots.filter (· ≠ 0)).map fun α ↦ Real.logb p ‖α‖ := by
   rw [← newtonSlopes_map_padicComplex, newtonSlopes_realValuation_eq_map_roots_norm]
@@ -279,9 +285,11 @@ theorem newtonSlopes_padicRealValuation_eq_map_roots_norm [DecidableEq ℂ_[p]] 
 /-- Every finite slope of any polynomial `f : ℚ_[p][X]` with respect to
 `TauCeti.padicRealValuation p` is rational. -/
 theorem exists_rat_of_mem_newtonSlopes_padicRealValuation {f : ℚ_[p][X]} {s : ℝ}
-    (hs : s ∈ f.newtonSlopes (padicRealValuation p)) : ∃ q : ℚ, s = q := by
-  rw [← newtonSlopes_map_padicComplex] at hs
-  exact exists_rat_of_mem_newtonSlopes_realValuation hs
+    (hs : s ∈ f.newtonSlopes (padicRealValuation p)) : ∃ q : ℚ, s = q :=
+  exists_rat_of_mem_newtonSlopes
+    (fun _ hx ↦
+      let ⟨n, hn⟩ := exists_int_padicRealValuation ((padicRealValuation p).ne_top_iff.1 hx)
+      ⟨n, by rw [hn, Rat.cast_intCast]⟩) hs
 
 /-- For any `f : ℚ_[p][X]`, the left endpoint `l` of the finite face of slope `σ` of
 `f.newtonPolygon (padicRealValuation p)` counts the roots `α` of `f` in `ℂ_[p]` in the open ball
@@ -318,35 +326,16 @@ theorem card_filter_roots_map_padicComplex_norm_eq {f : ℚ_[p][X]} {σ : ℝ} {
 
 /-! ### Roots of powers of `p`: `X ^ n - C (p ^ m)` -/
 
-/-- Every root `α` in `ℂ_[p]` of `X ^ n - C (p ^ m)` (`n > 0`, `m : ℤ`) has rational valuation
-`m / n` and norm `p ^ (-m / n)`. -/
-theorem addValuation_eq_of_mem_roots_X_pow_sub_C_zpow_p {n : ℕ} (hn : 0 < n) (m : ℤ) {α : ℂ_[p]}
-    (hα : α ∈ ((X : ℂ_[p][X]) ^ n - C ((p : ℂ_[p]) ^ m)).roots) :
-    PadicComplex.addValuation p α = ((m / n : ℚ) : WithTop ℚ) := by
-  have hroot := isRoot_of_mem_roots hα
-  rw [IsRoot.def, eval_sub, eval_pow, eval_X, eval_C, sub_eq_zero] at hroot
-  exact PadicComplex.addValuation_eq_of_pow_eq_zpow hn hroot
-
-/-- For `n > 0` and `m : ℤ`, the polynomial `X ^ n - C (p ^ m)` over `ℂ_[p]` has `n` finite slopes
+/-- For `n : ℕ` and `m : ℤ`, the polynomial `X ^ n - C (p ^ m)` over `ℂ_[p]` has `n` finite slopes
 with respect to `PadicComplex.realValuation p`, all equal to `-(m : ℝ) / n`. For `n = 3` and
 `m = 1`, `X ^ 3 - C p` has three finite slopes equal to `-1 / 3`. -/
-theorem newtonSlopes_X_pow_sub_C_zpow_p {n : ℕ} (hn : 0 < n) (m : ℤ) :
+theorem newtonSlopes_realValuation_X_pow_sub_C_zpow_p (n : ℕ) (m : ℤ) :
     ((X : ℂ_[p][X]) ^ n - C ((p : ℂ_[p]) ^ m)).newtonSlopes (PadicComplex.realValuation p) =
       Multiset.replicate n (-(m : ℝ) / n) := by
-  have hp0 : (p : ℂ_[p]) ≠ 0 := Nat.cast_ne_zero.2 (Fact.out : p.Prime).ne_zero
-  have hpm0 : (p : ℂ_[p]) ^ m ≠ 0 := zpow_ne_zero m hp0
-  have hc0 : ((X : ℂ_[p][X]) ^ n - C ((p : ℂ_[p]) ^ m)).coeff 0 ≠ 0 := by
-    simp [hn.ne, hpm0]
-  have htr : ((X : ℂ_[p][X]) ^ n - C ((p : ℂ_[p]) ^ m)).natTrailingDegree = 0 :=
-    natTrailingDegree_eq_zero_of_constantCoeff_ne_zero hc0
-  have hdeg : ((X : ℂ_[p][X]) ^ n - C ((p : ℂ_[p]) ^ m)).natDegree = n :=
-    natDegree_X_pow_sub_C (a := (p : ℂ_[p]) ^ m) (n := n)
-  rw [newtonSlopes_eq_replicate (fun _ ↦ (PadicComplex.realValuation p).top_iff.mp)
-      (IsAlgClosed.splits _) (m := -(m : ℝ) / n),
-    hdeg, htr, Nat.sub_zero]
-  intro α hα _
-  have hroot := isRoot_of_mem_roots hα
-  rw [IsRoot.def, eval_sub, eval_pow, eval_X, eval_C, sub_eq_zero] at hroot
-  rw [PadicComplex.realValuation_eq_of_pow_eq_zpow hn hroot, neg_div, neg_neg]
+  have hval : PadicComplex.realValuation p ((p : ℂ_[p]) ^ m) = ((m : ℝ) : WithTop ℝ) := by
+    simpa using PadicComplex.realValuation_eq_of_pow_eq_zpow zero_lt_one
+      (pow_one ((p : ℂ_[p]) ^ m))
+  have hc : PadicComplex.realValuation p ((p : ℂ_[p]) ^ m) ≠ ⊤ := hval ▸ WithTop.coe_ne_top
+  rw [newtonSlopes_X_pow_sub_C (PadicComplex.realValuation p) n hc, hval, WithTop.untop₀_coe]
 
 end Polynomial
