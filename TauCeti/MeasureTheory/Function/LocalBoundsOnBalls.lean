@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.PiL2
-public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 import Mathlib.Analysis.MeanInequalities
 import Mathlib.MeasureTheory.Function.L2Space
@@ -16,8 +14,9 @@ import TauCeti.MeasureTheory.Integral.Bochner.Basic
 /-!
 # Local bounds in `Lᵖ` from local bounds in `L²`
 
-Let `w ≥ 0` be square integrable on a ball `B(x₀, R) ⊆ ℝⁿ`, and suppose that on every ball
-`B(y, s) ⊆ B(x₀, R)` the supremum of `w` on the half ball is controlled by its `L²` norm:
+Let `w ≥ 0` be square integrable on a ball `B(x₀, R)` in a proper metric space, and suppose
+that on every ball `B(y, s) ⊆ B(x₀, R)` the supremum of `w` on the half ball is controlled by its
+`L²` norm:
 
 `w ≤ D s^e ‖w‖_{L²(B(y, s))}` almost everywhere on `B(y, s/2)`.
 
@@ -56,14 +55,15 @@ open scoped Topology
 
 namespace TauCeti
 
-variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)}
+variable {X : Type*} [PseudoMetricSpace X] [ProperSpace X] [MeasurableSpace X]
+  [OpensMeasurableSpace X] {mu : Measure X}
 
 /-- **From half balls to concentric balls.** Suppose that on every ball `B(y, s) ⊆ B(x₀, R)`,
 `w ≤ D s^e ‖w‖_{L²(B(y, s))}` almost everywhere on `B(y, s/2)`. Then for `r < ρ ≤ R`,
 `w ≤ D (ρ - r)^e ‖w‖_{L²(B(x₀, ρ))}` almost everywhere on `B(x₀, r)`: the ball `B(x₀, r)` is
 covered by the half balls `B(y, (ρ - r)/2)` with `y ∈ B(x₀, r)`. -/
-private theorem ae_le_mul_sub_rpow_mul_sqrt_setIntegral {w : EuclideanSpace ℝ ι → ℝ}
-    {x₀ : EuclideanSpace ℝ ι} {R D e : ℝ} (hD : 0 ≤ D)
+private theorem ae_le_mul_sub_rpow_mul_sqrt_setIntegral {w : X → ℝ}
+    {x₀ : X} {R D e : ℝ} (hD : 0 ≤ D)
     (hint : IntegrableOn (fun x => w x ^ 2) (Metric.ball x₀ R) mu)
     (H : ∀ y s, 0 < s → Metric.ball y s ⊆ Metric.ball x₀ R →
       ∀ᵐ x ∂mu.restrict (Metric.ball y (s / 2)),
@@ -91,8 +91,8 @@ private theorem ae_le_mul_sub_rpow_mul_sqrt_setIntegral {w : EuclideanSpace ℝ 
 /-- In the setting of `ae_le_mul_sub_rpow_mul_sqrt_setIntegral`, for `w ≥ 0` and `r < ρ ≤ R`,
 the essential supremum of `w` on `B(x₀, r)` is a real number at most
 `D (ρ - r)^e ‖w‖_{L²(B(x₀, ρ))}`, and it bounds `w` almost everywhere on `B(x₀, r)`. -/
-private theorem toReal_eLpNormEssSup_le_and_ae_le {w : EuclideanSpace ℝ ι → ℝ}
-    {x₀ : EuclideanSpace ℝ ι} {R D e : ℝ} (hD : 0 ≤ D) (hw0 : ∀ x, 0 ≤ w x)
+private theorem toReal_eLpNormEssSup_le_and_ae_le {w : X → ℝ}
+    {x₀ : X} {R D e : ℝ} (hD : 0 ≤ D) (hw0 : ∀ x, 0 ≤ w x)
     (hint : IntegrableOn (fun x => w x ^ 2) (Metric.ball x₀ R) mu)
     (H : ∀ y s, 0 < s → Metric.ball y s ⊆ Metric.ball x₀ R →
       ∀ᵐ x ∂mu.restrict (Metric.ball y (s / 2)),
@@ -119,8 +119,8 @@ private theorem toReal_eLpNormEssSup_le_and_ae_le {w : EuclideanSpace ℝ ι →
 arithmetic-geometric mean inequality gives, for `r < ρ < R`,
 
 `F r ≤ F ρ / 2 + (2^{1-p/2} D √J)^{2/p} (ρ - r)^{2e/p}`. -/
-private theorem toReal_eLpNormEssSup_le_half_add {w : EuclideanSpace ℝ ι → ℝ}
-    {x₀ : EuclideanSpace ℝ ι} {R D e p : ℝ} (hD : 0 ≤ D) (hp : 0 < p) (hp2 : p ≤ 2)
+private theorem toReal_eLpNormEssSup_le_half_add {w : X → ℝ}
+    {x₀ : X} {R D e p : ℝ} (hD : 0 ≤ D) (hp : 0 < p) (hp2 : p ≤ 2)
     (hw0 : ∀ x, 0 ≤ w x) (hint : IntegrableOn (fun x => w x ^ 2) (Metric.ball x₀ R) mu)
     (hintp : IntegrableOn (fun x => w x ^ p) (Metric.ball x₀ R) mu)
     (H : ∀ y s, 0 < s → Metric.ball y s ⊆ Metric.ball x₀ R →
@@ -175,11 +175,12 @@ private theorem toReal_eLpNormEssSup_le_half_add {w : EuclideanSpace ℝ ι → 
   rw [← hZY]
   nlinarith
 
+omit [OpensMeasurableSpace X] in
 /-- **A positive power of the radius forces vanishing.** If `w ≥ 0` is `L²` on `B(x₀, R)` and
 `w ≤ D s^e ‖w‖_{L²(B(y, s))}` a.e. on `B(y, s/2)` for all `B(y, s) ⊆ B(x₀, R)`, `0 < e`, then
 `w = 0` a.e. on `B(x₀, R/2)`. -/
 private theorem ae_eq_zero_of_forall_ball_le_mul_rpow {e : ℝ} (he : 0 < e) (D : ℝ)
-    {w : EuclideanSpace ℝ ι → ℝ} {x₀ : EuclideanSpace ℝ ι} {R : ℝ}
+    {w : X → ℝ} {x₀ : X} {R : ℝ}
     (hw0 : ∀ x, 0 ≤ w x) (hint : IntegrableOn (fun x => w x ^ 2) (Metric.ball x₀ R) mu)
     (H : ∀ y s, 0 < s → Metric.ball y s ⊆ Metric.ball x₀ R →
       ∀ᵐ x ∂mu.restrict (Metric.ball y (s / 2)),
@@ -232,11 +233,11 @@ integrable on `B(x₀, R)` and suppose that on every ball `B(y, s) ⊆ B(x₀, R
 Then `w ≤ C R^{2e/p} ‖w‖_{Lᵖ(B(x₀, R))}` almost everywhere on `B(x₀, R/2)`.
 
 This is how local boundedness of subsolutions, proved by De Giorgi's or Moser's iteration with
-the `L²` norm on the right, is upgraded to every `Lᵖ` norm with `0 < p < 2`: the scaling
-exponent `e = -n/2` of the `L²` bound becomes `-n/p`. -/
+the `L²` norm on the right, is upgraded to every `Lᵖ` norm with `0 < p < 2`: for Lebesgue
+measure on `ℝⁿ`, the scaling exponent `e = -n/2` of the `L²` bound becomes `-n/p`. -/
 theorem exists_ae_le_mul_rpow_mul_setIntegral_rpow_of_forall_ball (e : ℝ) (D : ℝ)
     {p : ℝ} (hp : 0 < p) (hp2 : p ≤ 2) :
-    ∃ C : ℝ, 0 < C ∧ ∀ {w : EuclideanSpace ℝ ι → ℝ} {x₀ : EuclideanSpace ℝ ι} {R : ℝ},
+    ∃ C : ℝ, 0 < C ∧ ∀ {w : X → ℝ} {x₀ : X} {R : ℝ},
       (∀ x, 0 ≤ w x) → MemLp w 2 (mu.restrict (Metric.ball x₀ R)) →
       (∀ y s, 0 < s → Metric.ball y s ⊆ Metric.ball x₀ R →
         ∀ᵐ x ∂mu.restrict (Metric.ball y (s / 2)),
