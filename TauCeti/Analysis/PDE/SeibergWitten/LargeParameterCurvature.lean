@@ -401,7 +401,6 @@ theorem lieMap_lieMap_eq_of_add_hodgeStar_eq
       (2 * r) • (quadraticTwoFormPolar o ρ hkl φ β : ⋀[ℝ]^2 V) -
         (2⁻¹ : ℝ) •
           exteriorPower.lieMap 2 J.toLinearMap (exteriorPower.lieMap 2 J.toLinearMap η) := by
-  have hJ := AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂₃
   have hω := AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂₃ hkl he
   set D := exteriorPower.lieMap 2 J.toLinearMap
   set X : ⋀[ℝ]^2 V := (quadraticTwoFormPolar o ρ hkl φ β : ⋀[ℝ]^2 V)
@@ -424,7 +423,7 @@ theorem lieMap_lieMap_eq_of_add_hodgeStar_eq
       exact inner_quadraticTwoFormPolar_of_cliffordProjection o hQ hkl hω hρ hφ hβ
     rw [AlmostComplexStructure.lieMap_lieMap_of_hodgeStar_eq_self h₀ h₂₃ hkl he hXsd, hXω,
       mul_zero, zero_smul, zero_sub, neg_smul]
-  have hDω : D J.kahlerForm = 0 := AlmostComplexStructure.lieMap_kahlerForm hJ
+  have hDω : D J.kahlerForm = 0 := AlmostComplexStructure.lieMap_kahlerForm J
   have hsplit :
       F = (2⁻¹ : ℝ) • (F + o.hodgeStar hkl F) + (2⁻¹ : ℝ) • (F - o.hodgeStar hkl F) := by
     module
