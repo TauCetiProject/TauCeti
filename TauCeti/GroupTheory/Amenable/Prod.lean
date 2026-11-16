@@ -132,10 +132,7 @@ instance Amenable.pi {ι : Type u} [Finite ι] {G : ι → Type v} [∀ i, Group
     have := h (fun a => G (e a))
     let φ : (∀ a, G (e a)) →ₜ* ∀ b, G b :=
       { (MulEquiv.piCongrLeft G e).toMonoidHom with
-        continuous_toFun := by
-          simp only [MonoidHom.toOneHom_coe, OneHom.toFun_eq_coe, MulEquiv.coe_toMonoidHom,
-            MulEquiv.coe_piCongrLeft]
-          exact (Homeomorph.piCongrLeft e).continuous }
+        continuous_toFun := by simpa using (Homeomorph.piCongrLeft e).continuous_toFun }
     exact .of_denseRange φ (MulEquiv.piCongrLeft G e).surjective.denseRange
   · -- The empty product is the trivial group.
     intro G _ _ _ _

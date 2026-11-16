@@ -13,7 +13,8 @@ public import Mathlib.Data.Finset.Pi
 For disjoint finite sets `s` and `t`, Mathlib's `Equiv.piFinsetUnion` identifies pairs of
 dependent functions on `s` and on `t` with dependent functions on `s ∪ t`. This file describes it
 through the restrictions `Finset.restrict₂` to the two pieces: a function on `s ∪ t` is determined
-by its two restrictions (`Finset.restrict₂_union_ext`), the restrictions of
+by its two restrictions (`Finset.restrict₂_union_ext`), restricting twice is restricting once
+(`Finset.restrict₂_restrict₂`), the restrictions of
 `Equiv.piFinsetUnion π h (f, g)` are `f` and `g`, and the inverse equivalence takes the two
 restrictions (`Equiv.piFinsetUnion_symm_apply`).
 
@@ -35,11 +36,17 @@ public section
 
 namespace Finset
 
-variable {ι : Type*} {π : ι → Type*} {s t : Finset ι}
+variable {ι : Type*} {π : ι → Type*} {s t u : Finset ι}
 
 /-- Restricting to a finite set itself is the identity. -/
 @[simp]
 theorem restrict₂_refl : restrict₂ (π := π) (subset_refl s) = id :=
+  (rfl)
+
+/-- Restricting from `u` to `t` and then to `s` is restricting from `u` to `s`. -/
+@[simp]
+theorem restrict₂_restrict₂ (hst : s ⊆ t) (htu : t ⊆ u) (f : ∀ i : u, π i) :
+    restrict₂ hst (restrict₂ htu f) = restrict₂ (hst.trans htu) f :=
   (rfl)
 
 /-- A dependent function on `s ∪ t` is determined by its restrictions to `s` and to `t`. -/

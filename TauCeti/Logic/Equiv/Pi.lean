@@ -23,7 +23,7 @@ namespace Equiv
 
 /-- Transporting dependent functions along `e₁ : α ≃ β` and then along `e₂ : β ≃ γ` is
 transporting them along the composite `e₁.trans e₂`. -/
-theorem piCongrLeft_trans {α β γ : Type*} (P : γ → Sort*) (e₁ : α ≃ β) (e₂ : β ≃ γ) :
+theorem piCongrLeft_trans {α β γ : Sort*} (P : γ → Sort*) (e₁ : α ≃ β) (e₂ : β ≃ γ) :
     (piCongrLeft (fun b ↦ P (e₂ b)) e₁).trans (piCongrLeft P e₂) =
       piCongrLeft P (e₁.trans e₂) :=
   symm_bijective.injective <| Equiv.ext fun _ ↦ funext fun _ ↦ (rfl)
