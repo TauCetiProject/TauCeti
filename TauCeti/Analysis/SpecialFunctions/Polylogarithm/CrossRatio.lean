@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Topology.Compactification.OnePoint.CrossRatio
 import Mathlib.Analysis.Normed.Field.Lemmas
-import TauCeti.Algebra.Field.LinearFractional
 
 /-!
 # Scalar cross-ratios on a field and on its projective line
@@ -46,9 +45,7 @@ quadruples.
   and `PSL(2, K)` whenever `a ≠ b` and `c ≠ d`.
 * `TauCeti.Polylog.coe_crossRatioSphere_eq_onePoint_crossRatio`: comparison with
   `OnePoint.crossRatio`, deduced via `OnePoint.exists_pgl_smul_eq_zero_one_infty` and
-  `OnePoint.crossRatio_eq_smul`; in the affine section,
-  `TauCeti.Polylog.crossRatio_comp_eq_of_sub_eq_div` transfers
-  `TauCeti.crossRatio_comp_eq_of_sub_eq_div` to `crossRatio`.
+  `OnePoint.crossRatio_eq_smul`.
 * `TauCeti.Polylog.exists_gl_smul_eq_infty_zero_one_crossRatioSphere`,
   `TauCeti.Polylog.exists_pgl_smul_eq_infty_zero_one_crossRatioSphere`, and
   `TauCeti.Polylog.exists_gl_smul_eq_infty_zero_one_coe_coe`: normalization of five pairwise
@@ -209,14 +206,6 @@ theorem crossRatio_swap_second_fourth {a b c d : K} (hac : a ≠ c) (hbd : b ≠
     (hbc : b ≠ c) :
     crossRatio a d c b = crossRatio a b c d / (crossRatio a b c d - 1) := by
   rw [← crossRatio_swap_pairs, crossRatio_swap_first_third hbd hac hbc had, crossRatio_swap_pairs]
-
-/-- Maps with factorized difference quotients preserve `crossRatio`, including at coincidences
-under totalised division. -/
-theorem crossRatio_comp_eq_of_sub_eq_div {φ f : K → K} {κ : K} {S : Set K} (hκ : κ ≠ 0)
-    (hf : ∀ t ∈ S, f t ≠ 0) (hφ : ∀ s ∈ S, ∀ t ∈ S, φ s - φ t = κ * (s - t) / (f s * f t))
-    {a b c d : K} (ha : a ∈ S) (hb : b ∈ S) (hc : c ∈ S) (hd : d ∈ S) :
-    crossRatio (φ a) (φ b) (φ c) (φ d) = crossRatio a b c d :=
-  TauCeti.crossRatio_comp_eq_of_sub_eq_div hκ hf hφ ha hb hc hd
 
 end Finite
 
@@ -648,21 +637,11 @@ theorem crossRatioSphere_ne_one {s : Fin 4 → OnePoint K} (hs : Injective s) :
 theorem crossRatioSphere_swap_second_third {s : Fin 4 → OnePoint K} (hs : Injective s) :
     crossRatioSphere (s 0) (s 2) (s 1) (s 3) = 1 - crossRatioSphere (s 0) (s 1) (s 2) (s 3) := by
   classical
-  obtain ⟨g, h1, h2, h0⟩ := exists_pgl_smul_eq_zero_one_infty
-    (hs.ne (by decide : (1 : Fin 4) ≠ 2))
-    (hs.ne (by decide : (1 : Fin 4) ≠ 0))
-    (hs.ne (by decide : (2 : Fin 4) ≠ 0))
-  have h3ne : g • s 3 ≠ ∞ := by
-    rw [← h0]
-    exact (MulAction.injective g).ne (hs.ne (by decide : (3 : Fin 4) ≠ 0))
-  cases h3 : g • s 3 with
-  | infty => exact (h3ne h3).elim
-  | coe z =>
-    rw [← crossRatioSphere_pgl_smul g (hs.ne (by decide : (0 : Fin 4) ≠ 2))
-        (hs.ne (by decide : (1 : Fin 4) ≠ 3)),
-      ← crossRatioSphere_pgl_smul g (hs.ne (by decide : (0 : Fin 4) ≠ 1))
-        (hs.ne (by decide : (2 : Fin 4) ≠ 3)),
-      h0, h1, h2, h3, crossRatioSphere_infty_one_zero_coe, crossRatioSphere_infty_zero_one_coe]
+  have hswap := OnePoint.crossRatio_swap_first_second
+    (coe_crossRatioSphere_eq_onePoint_crossRatio_of_injective hs).symm
+  rw [← coe_crossRatioSphere_eq_onePoint_crossRatio (hs.ne (by decide)) (hs.ne (by decide))
+    (hs.ne (by decide)) (hs.ne (by decide)) (hs.ne (by decide))] at hswap
+  exact OnePoint.coe_eq_coe.mp hswap
 
 /-- **Homogeneous bracket comparison.** On an injective quadruple with nonzero homogeneous
 representatives `vᵢ`, the determinant quotient
@@ -692,13 +671,12 @@ theorem crossRatioSphere_swap_first_third {s : Fin 4 → OnePoint K} (hs : Injec
     crossRatioSphere (s 2) (s 1) (s 0) (s 3) =
       crossRatioSphere (s 0) (s 1) (s 2) (s 3) /
         (crossRatioSphere (s 0) (s 1) (s 2) (s 3) - 1) := by
-  have hr0 : crossRatioSphere (s 0) (s 1) (s 2) (s 3) ≠ 0 := crossRatioSphere_ne_zero hs
-  have hr1 : crossRatioSphere (s 0) (s 1) (s 2) (s 3) ≠ 1 := crossRatioSphere_ne_one hs
-  have hmid : crossRatioSphere (s 1) (s 2) (s 0) (s 3) =
-      1 - crossRatioSphere (s 1) (s 0) (s 2) (s 3) :=
-    crossRatioSphere_swap_second_third (s := s ∘ Equiv.swap 0 1) (hs.comp (Equiv.injective _))
-  rw [crossRatioSphere_swap_first_second, hmid, crossRatioSphere_swap_first_second]
-  field_simp [hr0, sub_ne_zero.mpr hr1]
+  classical
+  have hswap := OnePoint.crossRatio_swap_second_third
+    (coe_crossRatioSphere_eq_onePoint_crossRatio_of_injective hs).symm (crossRatioSphere_ne_one hs)
+  rw [← coe_crossRatioSphere_eq_onePoint_crossRatio (hs.ne (by decide)) (hs.ne (by decide))
+    (hs.ne (by decide)) (hs.ne (by decide)) (hs.ne (by decide))] at hswap
+  exact OnePoint.coe_eq_coe.mp hswap
 
 /-- Exchanging the second and fourth entries of an injective quadruple sends
 `r = crossRatioSphere (s 0) (s 1) (s 2) (s 3)` to `r / (r - 1)`. -/
@@ -706,12 +684,12 @@ theorem crossRatioSphere_swap_second_fourth {s : Fin 4 → OnePoint K} (hs : Inj
     crossRatioSphere (s 0) (s 3) (s 2) (s 1) =
       crossRatioSphere (s 0) (s 1) (s 2) (s 3) /
         (crossRatioSphere (s 0) (s 1) (s 2) (s 3) - 1) := by
-  let σ : Equiv.Perm (Fin 4) := (Equiv.swap 0 1).trans (Equiv.swap 2 3)
-  have h13 : crossRatioSphere (s 3) (s 0) (s 1) (s 2) =
-      crossRatioSphere (s 1) (s 0) (s 3) (s 2) /
-        (crossRatioSphere (s 1) (s 0) (s 3) (s 2) - 1) :=
-    crossRatioSphere_swap_first_third (s := s ∘ σ) (hs.comp σ.injective)
-  rw [← crossRatioSphere_swap_pairs, h13, crossRatioSphere_swap_pairs]
+  classical
+  have hswap := OnePoint.crossRatio_swap_first_fourth
+    (coe_crossRatioSphere_eq_onePoint_crossRatio_of_injective hs).symm (crossRatioSphere_ne_one hs)
+  rw [← coe_crossRatioSphere_eq_onePoint_crossRatio (hs.ne (by decide)) (hs.ne (by decide))
+    (hs.ne (by decide)) (hs.ne (by decide)) (hs.ne (by decide))] at hswap
+  exact OnePoint.coe_eq_coe.mp hswap
 
 /-- On the normalized five-tuple `![∞, 0, 1, x, y]`, omitting `∞` gives
 `crossRatioSphere 0 1 x y = ((1 - x⁻¹) / (1 - y⁻¹))⁻¹` for all nonzero `x` and `y`. -/
