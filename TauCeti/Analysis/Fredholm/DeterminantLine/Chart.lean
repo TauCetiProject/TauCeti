@@ -60,10 +60,10 @@ determinant of their `q'`-coordinates, up to a constant.
   kernel charts.
 * `ContinuousLinearMap.IsFredholm.exists_isOpen_kernelChart`: a Fredholm operator has a kernel
   chart valid on an open neighbourhood.
-* `ContinuousLinearMap.IsInvertible.prod_coprod_of_subsingleton`,
-  `ContinuousLinearMap.detLineChartEquiv_detLineEquivOfBijective_symm_one`: an invertible operator
-  has the kernel chart with zero stabilization and coordinate spaces, and this chart reads the
-  identification of its determinant line with the scalars as one fixed identification.
+* `ContinuousLinearMap.detLineChartEquiv_detLineEquivOfBijective_symm_one`: the kernel chart of an
+  invertible operator with zero stabilization and coordinate spaces
+  (`ContinuousLinearMap.IsInvertible.prod_coprod_of_subsingleton`) reads the identification of its
+  determinant line with the scalars as one fixed identification.
 * `ContinuousLinearMap.eventually_detLineChartEquiv_symm_eq_smul`: over `ℝ`, the transition between
   two kernel charts valid at an operator is, nearby, a positive multiple of its value there.
 
@@ -136,20 +136,6 @@ section Subsingleton
 
 variable [Subsingleton Λ] [Subsingleton G]
 
-omit [FiniteDimensional 𝕜 Λ] [FiniteDimensional 𝕜 G] in
-/-- **The zero kernel chart.** An invertible operator has a kernel chart with zero stabilization
-space and zero coordinate space: the pair `((T.coprod D₂).prod q)` is then `T` itself, up to the
-zero factors. -/
-theorem IsInvertible.prod_coprod_of_subsingleton (hT : T.IsInvertible) :
-    ((T.coprod D₂).prod q).IsInvertible := by
-  obtain ⟨e, rfl⟩ := hT
-  let z : Λ ≃L[𝕜] G :=
-    { LinearEquiv.ofSubsingleton Λ G with
-      continuous_toFun := continuous_of_const fun _ _ ↦ Subsingleton.elim _ _
-      continuous_invFun := continuous_of_const fun _ _ ↦ Subsingleton.elim _ _ }
-  refine ⟨e.prodCongr z, ContinuousLinearMap.ext fun ⟨x, l⟩ ↦ Prod.ext ?_ (Subsingleton.elim _ _)⟩
-  simp [Subsingleton.elim l 0]
-
 /-- **The invertibility trivialization in a zero kernel chart.** For a bijective `T` and a kernel
 chart whose stabilization and coordinate spaces `Λ` and `G` are zero, the chart sends the element
 `1` of the determinant line under `LinearMap.detLineEquivOfBijective` to the generator
@@ -184,10 +170,10 @@ theorem detLineChartEquiv_detLineEquivOfBijective_symm_one
     LinearEquiv.coe_coe, TauCeti.detLineEquivOfFinrankEqZero_ιMulti, one_smul,
     LinearMap.detLineEquivOfBijective_symm_one hT 0 _ 0
       (TauCeti.detLineEquivOfFinrankEqZero_ιMulti hcoker _)]
-  · rw [exteriorPower.ιMulti_apply_coe, ExteriorAlgebra.ιMulti_apply, ExteriorAlgebra.ιMulti_apply,
-      List.ofFn_eq_nil_iff.2 hB, List.ofFn_eq_nil_iff.2 (by rw [hker, hrange])]
-  · rw [exteriorPower.ιMulti_apply_coe, ExteriorAlgebra.ιMulti_apply, ExteriorAlgebra.ιMulti_apply,
-      List.ofFn_eq_nil_iff.2 hΛ, List.ofFn_eq_nil_iff.2 (by rw [hrange, hcoker])]
+  · rw [exteriorPower.ιMulti_apply_coe, TauCeti.ExteriorAlgebra.ιMulti_of_eq_zero hB,
+      TauCeti.ExteriorAlgebra.ιMulti_of_eq_zero (by rw [hker, hrange])]
+  · rw [exteriorPower.ιMulti_apply_coe, TauCeti.ExteriorAlgebra.ιMulti_of_eq_zero hΛ,
+      TauCeti.ExteriorAlgebra.ιMulti_of_eq_zero (by rw [hrange, hcoker])]
 
 end Subsingleton
 
