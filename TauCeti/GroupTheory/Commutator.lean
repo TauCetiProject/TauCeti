@@ -48,12 +48,18 @@ which quantifies over both subgroups. Neither reduces a comparison to generators
   commutators of arbitrary elements with the kernel of `p ∘ φ`.
 * `MonoidHom.eq_of_comp_eq_of_ker_le_center`: two homomorphisms from a perfect group which agree
   modulo a central subgroup are equal.
+* `MonoidHom.commutatorElement_eq_of_ker_le_center`: in a homomorphism with central kernel, the
+  commutator of two elements depends only on their images.
 * `TauCeti.commutatorElement_pow_right_mem_iff`: when `⁅a, y⁆` commutes with `y` modulo a normal
   `N`, the commutator `⁅a, y ^ n⁆` lies in `N` exactly when `⁅a, y⁆ ^ n` does.
 * `TauCeti.commutatorElement_mul_mul_eq_mul_of_commute`: the commutator of two paired products
   splits into the product of their same-position commutators when the cross terms commute and
   `c * a` commutes with `⁅b, d⁆`; `TauCeti.commutatorElement_mul_mul_of_mem_center` is the case of
   central right factors, which do not change the commutator.
+* `TauCeti.commute_commutatorElement_of_mem_center`: if `⁅v, u₁⁆` and `⁅v, u₂⁆` are central, then
+  `v` commutes with `⁅u₁, u₂⁆`.
+* `TauCeti.commutatorElement_assoc_of_commute`: `⁅⁅u, v⁆, w⁆ = ⁅u, ⁅v, w⁆⁆` when `u` commutes with
+  `w` and `⁅v, w⁆` commutes with `⁅u, v⁆` and `⁅u, ⁅v, w⁆⁆`.
 * `Commute.mul_pow_eq_pow_mul_pow_mul_commutatorElement_pow_choose_two`: the binomial formula
   `(a * b) ^ n = a ^ n * b ^ n * ⁅b, a⁆ ^ (n choose 2)` when `⁅b, a⁆` commutes with `a` and `b`.
 * `Commute.inv_pow_mul_pow_mul_pow_eq_commutatorElement_pow_mul_pow`: conjugating `b ^ n` by
@@ -113,6 +119,38 @@ theorem commutatorElement_mul_mul_of_mem_center {a b c d : G} (hb : b ∈ center
   have hbd : ⁅b, d⁆ = 1 := commutatorElement_eq_one_iff_mul_comm.mpr (mem_center_iff.mp hd b)
   rw [commutatorElement_mul_mul_eq_mul_of_commute (mem_center_iff.mp hb c).symm
     (mem_center_iff.mp hd a) (hbd ▸ Commute.one_right _), hbd, mul_one]
+
+/-- If `⁅v, u₁⁆` and `⁅v, u₂⁆` are central, then `v` commutes with `⁅u₁, u₂⁆`. -/
+theorem commute_commutatorElement_of_mem_center {v u₁ u₂ : G}
+    (h₁ : ⁅v, u₁⁆ ∈ center G) (h₂ : ⁅v, u₂⁆ ∈ center G) : Commute v ⁅u₁, u₂⁆ := by
+  have hc₁ : MulAut.conj v u₁ = u₁ * ⁅v, u₁⁆ := by
+    rw [conj_eq_commutatorElement_mul, (mem_center_iff.mp h₁ u₁).symm]
+  have hc₂ : MulAut.conj v u₂ = u₂ * ⁅v, u₂⁆ := by
+    rw [conj_eq_commutatorElement_mul, (mem_center_iff.mp h₂ u₂).symm]
+  have hconj : v * ⁅u₁, u₂⁆ * v⁻¹ = ⁅u₁, u₂⁆ := by
+    calc v * ⁅u₁, u₂⁆ * v⁻¹
+        = MulAut.conj v ⁅u₁, u₂⁆ := rfl
+      _ = ⁅MulAut.conj v u₁, MulAut.conj v u₂⁆ := map_commutatorElement (MulAut.conj v) u₁ u₂
+      _ = ⁅u₁ * ⁅v, u₁⁆, u₂ * ⁅v, u₂⁆⁆ := by rw [hc₁, hc₂]
+      _ = ⁅u₁, u₂⁆ := commutatorElement_mul_mul_of_mem_center h₁ h₂
+  exact mul_inv_eq_iff_eq_mul.mp hconj
+
+/-- Commutator associativity when `u` commutes with `w` and `⁅v, w⁆` commutes with `⁅u, v⁆` and
+`⁅u, ⁅v, w⁆⁆`. -/
+theorem commutatorElement_assoc_of_commute {u v w : G} (huw : Commute u w)
+    (h₁ : Commute ⁅u, v⁆ ⁅v, w⁆) (h₂ : Commute ⁅u, ⁅v, w⁆⁆ ⁅v, w⁆) :
+    ⁅⁅u, v⁆, w⁆ = ⁅u, ⁅v, w⁆⁆ := by
+  have hL : MulAut.conj u ⁅v, w⁆ = ⁅v, w⁆ * ⁅u, ⁅v, w⁆⁆ := by
+    rw [conj_eq_commutatorElement_mul, h₂.eq]
+  have hR : MulAut.conj u ⁅v, w⁆ = ⁅v, w⁆ * ⁅⁅u, v⁆, w⁆ := by
+    calc MulAut.conj u ⁅v, w⁆
+        = ⁅MulAut.conj u v, MulAut.conj u w⁆ := map_commutatorElement (MulAut.conj u) v w
+      _ = ⁅⁅u, v⁆ * v, w⁆ := by
+        rw [conj_eq_commutatorElement_mul, MulAut.conj_apply, huw.eq, mul_inv_cancel_right]
+      _ = ⁅u, v⁆ * ⁅v, w⁆ * ⁅u, v⁆⁻¹ * ⁅⁅u, v⁆, w⁆ :=
+        commutatorElement_mul_left_eq_conj_mul _ _ _
+      _ = ⁅v, w⁆ * ⁅⁅u, v⁆, w⁆ := by rw [h₁.eq, mul_inv_cancel_right]
+  exact mul_left_cancel (hR.symm.trans hL)
 
 /-- **The binomial formula of nilpotency class two**: when the commutator `⁅b, a⁆` commutes with
 `a` and with `b`, for instance when it is central,
@@ -395,6 +433,19 @@ theorem _root_.MonoidHom.eq_of_comp_eq_of_ker_le_center {E H : Type*} [Group E] 
     rw [map_commutatorElement, map_commutatorElement,
       ← commutatorElement_mul_mul_of_mem_center (a := f₂ a) (c := f₂ b) (hz a) (hz b),
       mul_inv_cancel_left, mul_inv_cancel_left]
+
+/-- In a homomorphism into a monoid with central kernel, the commutator of two elements depends
+only on their images. -/
+theorem _root_.MonoidHom.commutatorElement_eq_of_ker_le_center {M : Type*} [Monoid M]
+    {q : G →* M} (hker : q.ker ≤ center G) {u₁ u₂ v₁ v₂ : G}
+    (hu : q u₁ = q u₂) (hv : q v₁ = q v₂) : ⁅u₁, v₁⁆ = ⁅u₂, v₂⁆ := by
+  have hzu : u₁⁻¹ * u₂ ∈ center G := hker <| by
+    rw [MonoidHom.mem_ker, map_mul, ← hu, ← map_mul, inv_mul_cancel, map_one]
+  have hzv : v₁⁻¹ * v₂ ∈ center G := hker <| by
+    rw [MonoidHom.mem_ker, map_mul, ← hv, ← map_mul, inv_mul_cancel, map_one]
+  have h := commutatorElement_mul_mul_of_mem_center (a := u₁) (c := v₁) hzu hzv
+  rw [mul_inv_cancel_left, mul_inv_cancel_left] at h
+  exact h.symm
 
 /-- **Homomorphisms into a commutative monoid separate elements only in a commutative group.** If
 for every `g ≠ 1` some homomorphism `φ : G →* A` into a commutative monoid has `φ g ≠ 1`, then `G`
