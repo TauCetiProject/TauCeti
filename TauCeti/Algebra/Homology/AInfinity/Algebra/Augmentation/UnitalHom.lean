@@ -37,8 +37,8 @@ namespace TauCeti
 open ReducedTensorWords (of ofLetter letter subword splice deconcatenation coalgHom
   degenerateWords gradedPiece map_ofLetter map_of_tprod of_tprod_eq_subword
   letter_subword_of_ne_one subword_one subword_eq_of_tprod of_tprod_congr deconcatenation_subword
-  deconcatenation_ofLetter isCoalgHom_coalgHom isCoalgHom_map letter_comp_coalgHom
-  degenerateWords_le_iff coalgHom_mem_degenerateWords of_tprod_mem_degenerateWords)
+  isCoalgHom_coalgHom isCoalgHom_map letter_comp_coalgHom degenerateWords_le_iff
+  coalgHom_mem_degenerateWords of_tprod_mem_degenerateWords)
 open InternalGrading (shift_piece)
 open AInfinityHom (linearPart_apply taylor_ofTaylor taylor_comp)
 open AInfinityStrictHom (taylor_toAInfinityHom taylor_toAInfinityHom_comp barMap_toAInfinityHom
@@ -77,12 +77,12 @@ noncomputable def toAInfinityStrictHom : AInfinityStrictHom 𝒜
     (isDGAlgebra_trivialGrading R).toIsNonUnitalDGAlgebra.toAInfinityAlgebra where
   toLinearMap := ε.toLinearMap
   map_mem' {p a} ha := by
-    rcases eq_or_ne p 0 with rfl | hp
-    exacts [by simp, by simp [ε.map_of_mem_ne_zero p a ha hp]]
+    rcases eq_or_ne p 0 with rfl | hp; exacts [by simp, by simp [ε.map_of_mem_ne_zero p a ha hp]]
   map_m'
     | 0 | _ + 3 => by ext; simp
-    | 1 => by ext x; rw [show x = ![x 0] from funext fun i ↦ by fin_cases i; rfl]; simp
-    | 2 => by ext x; rw [show x = ![x 0, x 1] from funext fun i ↦ by fin_cases i <;> rfl]; simp
+    | 1 => by ext x; have hx : x = ![x 0] := funext <| Fin.forall_fin_one.2 rfl; rw [hx]; simp
+    | 2 => by
+      ext x; have hx : x = ![x 0, x 1] := funext <| Fin.forall_fin_two.2 ⟨rfl, rfl⟩; rw [hx]; simp
 
 @[simp] theorem toAInfinityStrictHom_toLinearMap :
     ε.toAInfinityStrictHom.toLinearMap = ε.toLinearMap := (rfl)
@@ -126,15 +126,15 @@ private theorem linearMap_eq_of_eq_on_subtype_degenerate {N : Type*} [AddCommGro
   | succ k ih =>
     intro y hy; by_cases hk : k < n.1
     · classical
-      rw [show y = Function.update y ⟨k, hk⟩ ((ε.reducedPart (y ⟨k, hk⟩) : A) +
-          ε (y ⟨k, hk⟩) • ε.unit) by rw [coe_reducedPart, sub_add_cancel, Function.update_eq_self],
-        (PiTensorProduct.tprod R).map_update_add, map_add, map_add, map_add]
+      have hy_upd : y = Function.update y ⟨k, hk⟩
+          ((ε.reducedPart (y ⟨k, hk⟩) : A) + ε (y ⟨k, hk⟩) • ε.unit) := by
+        rw [coe_reducedPart, sub_add_cancel, Function.update_eq_self]
+      rw [hy_upd, (PiTensorProduct.tprod R).map_update_add, map_add, map_add, map_add]
       refine congrArg₂ (· + ·) (ih _ fun j hj ↦ ?_)
         (sub_eq_zero.mp (hdeg (ReducedTensorWords.of_tprod_mem_degenerateWords_of_eq_smul
           n _ (i := ⟨k, hk⟩) (c := ε (y ⟨k, hk⟩)) (by simp))))
       rcases eq_or_ne j ⟨k, hk⟩ with rfl | hji
-      · simp
-      · rw [Function.update_of_ne hji]; exact hy j (by simp [Fin.ext_iff] at hji; omega)
+      exacts [by simp, by rw [Function.update_of_ne hji]; exact hy j (by grind)]
     · exact ih y fun j hj ↦ hy j (by omega)
 
 private noncomputable def suspendedMul (ℬ : AInfinityAlgebra R B) : B ⊗[R] B →ₗ[R] B :=
@@ -152,10 +152,10 @@ private theorem taylor_eq_suspendedMul_of_mem_degenerateWords {eB : B} (hB : ℬ
     fun ⟨m, hm⟩ y hy ↦ ?_) hw)
   simp only [LinearMap.mem_ker, LinearMap.sub_apply, sub_eq_zero, LinearMap.comp_apply]
   rcases eq_or_ne m 2 with rfl | hm2
-  · rw [show of R B ⟨2, hm⟩ (PiTensorProduct.tprod R y) =
-        of R B (2 : ℕ+) (PiTensorProduct.tprod R ![y 0, y 1]) from
-      congrArg _ (congrArg _ (funext fun j ↦ by fin_cases j <;> rfl)),
-      ℬ.taylor_of_two, ReducedTensorWords.deconcatenation_of_two]; simp [suspendedMul_tmul]
+  · have hw2 : of R B ⟨2, hm⟩ (PiTensorProduct.tprod R y) =
+        of R B (2 : ℕ+) (PiTensorProduct.tprod R ![y 0, y 1]) :=
+      of_tprod_congr R B hm rfl <| Fin.forall_fin_two.2 ⟨rfl, rfl⟩
+    rw [hw2, ℬ.taylor_of_two, ReducedTensorWords.deconcatenation_of_two]; simp [suspendedMul_tmul]
   · rw [hB.taylor_of_tprod_eq_zero ⟨m, hm⟩ hm2 y hy, of_tprod_eq_subword R hm y,
       deconcatenation_subword, map_sum, map_sum]
     refine (Finset.sum_eq_zero fun c hc ↦ ?_).symm
@@ -191,18 +191,15 @@ private theorem isHomogeneous_extendTaylor {eB : B} (hB : ℬ.StrictUnit eB)
   have hl : letter R A z ∈ 𝒜.grading.piece (p + 1) := by
     simpa [shift_piece] using (ReducedTensorWords.isHomogeneous_letter _).map_mem hz
   rcases eq_or_ne (p + 1) 0 with hp | hp
-  · simpa [show p = -1 by omega] using
-      ((ℬ.grading.shift 1).piece (-1)).smul_mem _ hB.mem_shift_one_piece
+  · obtain rfl : p = -1 := by omega
+    simpa using ((ℬ.grading.shift 1).piece (-1)).smul_mem _ hB.mem_shift_one_piece
   · simp [ε.map_of_mem_ne_zero (p + 1) _ hl hp]
 
 private theorem extendTaylor_comp_map_subtype (eB : B) (g : AInfinityHom ε.reducedAlgebra ℬ) :
     extendTaylor ε eB g ∘ₗ ReducedTensorWords.map (R := R) ε.augmentationIdeal.subtype =
       g.taylor := by
-  rw [extendTaylor, LinearMap.add_comp, LinearMap.comp_assoc, ← ReducedTensorWords.map_comp,
-    ε.reducedPart_comp_subtype, ReducedTensorWords.map_id, LinearMap.comp_id, LinearMap.comp_assoc,
-    LinearMap.comp_assoc, ReducedTensorWords.letter_comp_map,
-    ← LinearMap.comp_assoc (h := ε.toLinearMap), ε.toLinearMap_comp_subtype, LinearMap.zero_comp,
-    LinearMap.comp_zero, add_zero]
+  simp [extendTaylor, LinearMap.add_comp, LinearMap.comp_assoc, ← ReducedTensorWords.map_comp,
+    ReducedTensorWords.letter_comp_map, ← LinearMap.comp_assoc (h := ε.toLinearMap)]
 
 private theorem of_tprod_one_eq_ofLetter (hn : 0 < 1) (x : Fin 1 → A) {i : Fin 1}
     (hi : x i = ε.unit) : of R A ⟨1, hn⟩ (PiTensorProduct.tprod R x) = ofLetter R A ε.unit := by
@@ -275,41 +272,43 @@ private theorem extendTaylor_component_eq_on_degenerate_add_two (hB : ℬ.Strict
         (deconcatenation R A (of R A ⟨k + 2, by omega⟩ (PiTensorProduct.tprod R x)))) =
       extendTaylor ε eB g
         (𝒜.barDifferential (of R A ⟨k + 2, by omega⟩ (PiTensorProduct.tprod R x))) := by
-  let F := extendTaylor ε eB g
-  let term (p d : ℕ) := (((prefixDeg 𝒟 p).negOnePow : ℤ) : R) •
-    F (splice R x 0 (k + 2) p d (𝒜.taylor (subword R x p d)))
   have hxeq {j : Fin (k + 2)} (hj : i.1 = j.1) : x j = ε.unit := hi ▸ congrArg x (Fin.ext hj.symm)
   rw [of_tprod_eq_subword R (by omega : 0 < k + 2) x, deconcatenation_subword, map_sum, map_sum,
     ← of_tprod_eq_subword R (by omega : 0 < k + 2) x, 𝒜.barDifferential_def,
     ReducedTensorWords.gradedCoderiv_of_tprod_of_homogeneous _ _ 1 (by omega) x 𝒟 hx, map_sum]
-  simp only [Nat.zero_add, one_mul, TensorProduct.map_tmul, map_sum, map_smul]
-  have hinner (p : ℕ) : ∑ d ∈ Finset.range (k + 3), term p d = term p 2 :=
+  simp only [Nat.zero_add, one_mul, TensorProduct.map_tmul, map_sum, map_smul, ← prefixDeg.eq_def]
+  have hinner (p : ℕ) : ∑ d ∈ Finset.range (k + 2 + 1), (((prefixDeg 𝒟 p).negOnePow : ℤ) : R) •
+      extendTaylor ε eB g (splice R x 0 (k + 2) p d (𝒜.taylor (subword R x p d))) =
+      (((prefixDeg 𝒟 p).negOnePow : ℤ) : R) •
+        extendTaylor ε eB g (splice R x 0 (k + 2) p 2 (𝒜.taylor (subword R x p 2))) :=
     Finset.sum_eq_single_of_mem 2 (by simp) fun d _ hd2 ↦ by
-      dsimp only [term, F]; rw [extendTaylor_splice_taylor_eq_zero ε g x hi (by omega), smul_zero]
+      rw [extendTaylor_splice_taylor_eq_zero ε g x hi (by omega), smul_zero]
   have hzero (p : ℕ) (hp : ¬((p = i.1 ∧ i.1 < k + 1) ∨ (p + 1 = i.1 ∧ 0 < i.1))) :
-      ∑ d ∈ Finset.range (k + 3), term p d = 0 := Finset.sum_eq_zero fun d _ ↦ by
-    dsimp only [term, F]; rw [extendTaylor_splice_taylor_eq_zero ε g x hi (by tauto), smul_zero]
-  change _ = ∑ p ∈ Finset.range (k + 2), ∑ d ∈ Finset.range (k + 3), term p d
+      ∑ d ∈ Finset.range (k + 2 + 1), (((prefixDeg 𝒟 p).negOnePow : ℤ) : R) •
+        extendTaylor ε eB g (splice R x 0 (k + 2) p d (𝒜.taylor (subword R x p d))) = 0 :=
+    Finset.sum_eq_zero fun d _ ↦ by
+      rw [extendTaylor_splice_taylor_eq_zero ε g x hi (by tauto), smul_zero]
   rcases eq_or_ne i.1 0 with hi0 | hi0
   · -- Unit at `0`: only cut `c = 1` and splice `(0, 2)` survive, via `binary_left`.
     rw [Finset.sum_eq_single_of_mem 1 (by simp)
         (fun c hc hc1 ↦ suspendedMul_extendTaylor_deconcat_eq_zero ε g x hi hc (by omega)),
       Finset.sum_eq_single_of_mem 0 (by simp) (fun p _ hp0 ↦ hzero p (by omega)),
       hinner 0, subword_one R A x (by omega), hxeq hi0, extendTaylor_ofLetter_unit,
-      suspendedMul_tmul, ℬ.grading.koszulTwist_apply_of_mem_zero hB.degree_zero, hB.binary_left]
-    dsimp only [term, F]; rw [subword_two_eq_of_tprod x (by omega), hxeq hi0,
-      ε.isStrictUnit.taylor_of_two_unit_left,
+      suspendedMul_tmul, ℬ.grading.koszulTwist_apply_of_mem_zero hB.degree_zero, hB.binary_left,
+      subword_two_eq_of_tprod x (by omega), hxeq hi0, ε.isStrictUnit.taylor_of_two_unit_left,
       ReducedTensorWords.splice_two_succ_eq_subword R (by omega) rfl x]; simp [prefixDeg]
   · rcases eq_or_ne i.1 (k + 1) with hil | hil
     · -- Unit at `k + 1`: only cut `k + 1` and splice `(k, 2)` survive, via `binary_right`.
+      have hlen : k + 2 - (k + 1) = 1 := by omega
       rw [Finset.sum_eq_single_of_mem (k + 1) (by simp)
           (fun c hc hcl ↦ suspendedMul_extendTaylor_deconcat_eq_zero ε g x hi hc (by omega)),
         Finset.sum_eq_single_of_mem k (by simp) (fun p _ hpk ↦ hzero p (by omega)),
-        hinner k, show k + 2 - (k + 1) = 1 by omega, subword_one R A x (by omega), hxeq hil,
-        extendTaylor_ofLetter_unit, suspendedMul_tmul, hB.binary_right]
-      dsimp only [term, F]; rw [extendTaylor_splice_two_unit_right ε g x 𝒟 hx (by omega) (hxeq hil),
+        hinner k, hlen, subword_one R A x (by omega), hxeq hil, extendTaylor_ofLetter_unit,
+        suspendedMul_tmul, hB.binary_right,
+        extendTaylor_splice_two_unit_right ε g x 𝒟 hx (by omega) (hxeq hil),
         ReducedTensorWords.splice_two_pred_eq_subword R rfl x]
-      have htmem : F (subword R x 0 (k + 1)) ∈ ℬ.grading.piece (prefixDeg 𝒟 (k + 1) + 1) := by
+      have htmem : extendTaylor ε eB g (subword R x 0 (k + 1)) ∈
+          ℬ.grading.piece (prefixDeg 𝒟 (k + 1) + 1) := by
         simpa [shift_piece, Nat.zero_add, prefixDeg] using
           (isHomogeneous_extendTaylor ε hB g).map_mem (ReducedTensorWords.subword_mem_gradedPiece
             (G := 𝒜.grading.shift 1) x (fun j ↦ if h : j < k + 2 then 𝒟 ⟨j, h⟩ else 0)
@@ -321,8 +320,8 @@ private theorem extendTaylor_component_eq_on_degenerate_add_two (hB : ℬ.Strict
           suspendedMul_extendTaylor_deconcat_eq_zero ε g x hi hc (by omega),
         Finset.sum_eq_add m (m + 1) (by omega) (fun p _ hp ↦ hzero p (by omega))
           (fun h ↦ by simp at h; omega) (fun h ↦ by simp at h; omega),
-        hinner m, hinner (m + 1)]
-      dsimp only [term, F]; rw [extendTaylor_splice_two_unit_right ε g x 𝒟 hx (by omega) (hxeq hm),
+        hinner m, hinner (m + 1),
+        extendTaylor_splice_two_unit_right ε g x 𝒟 hx (by omega) (hxeq hm),
         subword_two_eq_of_tprod x (by omega), hxeq (j := ⟨m + 1, by omega⟩) hm,
         ε.isStrictUnit.taylor_of_two_unit_left,
         ReducedTensorWords.splice_two_succ_eq_splice_two_pred R (by omega) (by omega) x]
@@ -366,11 +365,9 @@ noncomputable def strictlyUnitalHomEquiv {eB : B} (hB : ℬ.StrictUnit eB) :
       (extendTaylor_component_eq ε hB g),
     ⟨by rw [linearPart_apply, taylor_ofTaylor, extendTaylor_ofLetter_unit],
       fun {n} hn x ⟨i, hi⟩ ↦ by
-        rcases Nat.eq_zero_or_pos n with rfl | hpos
-        exacts [by simp, by
-          rw [AInfinityHom.component_apply _ n hpos, taylor_ofTaylor]
-          exact extendTaylor_of_tprod_eq_zero ε eB g ⟨n, hpos⟩ hn _
-            ⟨i, by rw [hi, 𝒜.grading.koszulTwist_apply_of_mem_zero ε.isStrictUnit.degree_zero]⟩]⟩⟩
+        rw [AInfinityHom.component_apply _ n (Fin.pos i), taylor_ofTaylor]
+        exact extendTaylor_of_tprod_eq_zero ε eB g ⟨n, Fin.pos i⟩ hn _
+          ⟨i, by rw [hi, 𝒜.grading.koszulTwist_apply_of_mem_zero ε.isStrictUnit.degree_zero]⟩⟩⟩
   left_inv f := Subtype.ext <| AInfinityHom.ext <| by
     rw [taylor_ofTaylor]
     refine linearMap_eq_of_eq_on_subtype_degenerate ε (by
@@ -423,8 +420,7 @@ theorem comp_toAInfinityStrictHom_eq_iff (εB : ℬ.Augmentation)
       εB.toLinearMap ∘ₗ (ε.strictlyUnitalHomEquiv εB.isStrictUnit f).taylor = 0 := by
   have hcomp_red : (ε.toAInfinityStrictHom.toAInfinityHom.comp
       ε.reducedInclusion.toAInfinityHom).taylor = 0 := by
-    rw [taylor_toAInfinityHom_comp, taylor_toAInfinityHom]
-    simp [← LinearMap.comp_assoc, ε.toLinearMap_comp_subtype]
+    rw [taylor_toAInfinityHom_comp, taylor_toAInfinityHom]; simp [← LinearMap.comp_assoc]
   refine ⟨fun h ↦ by
       have h' := congrArg (fun k ↦ (k.comp ε.reducedInclusion.toAInfinityHom).taylor) h
       rwa [AInfinityHom.comp_assoc, taylor_toAInfinityHom_comp, toAInfinityStrictHom_toLinearMap,

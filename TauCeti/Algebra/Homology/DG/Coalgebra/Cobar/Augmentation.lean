@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Homology.DG.Algebra.Augmentation
 public import TauCeti.Algebra.Homology.DG.Coalgebra.Cobar.TwistingCochain
 public import TauCeti.Algebra.Module.GradedModule.Quotient
-import TauCeti.LinearAlgebra.TensorAlgebra.Projection
+import TauCeti.LinearAlgebra.TensorAlgebra.Basic
 
 /-!
 # Canonical augmentation of the cobar construction
@@ -77,10 +77,9 @@ theorem cobarAugmentation_augmentationIdeal_eq_span_tprod :
       hC.cobarAugmentation.reducedPart = 0 := linearMap_ext_tprod fun
     | 0, _ => by simp [tprod_apply]
     | k + 1, x => by
-      simp only [LinearMap.comp_apply, LinearMap.zero_apply, Submodule.mkQ_apply,
-        Submodule.Quotient.mk_eq_zero, Submodule.subtype_apply, DGAlgAugmentation.coe_reducedPart,
-        hC.cobarAugmentation_tprod (Nat.succ_pos k), map_zero, sub_zero]
-      exact Submodule.subset_span ⟨k, x, rfl⟩
+      have hx : tprod R C (k + 1) x ∈ S := Submodule.subset_span ⟨k, x, rfl⟩
+      simpa [-tprod_apply, DGAlgAugmentation.coe_reducedPart,
+        hC.cobarAugmentation_tprod (Nat.succ_pos k)] using hx
   simpa [hC.cobarAugmentation.mem_augmentationIdeal.1 hz] using
     (Submodule.Quotient.mk_eq_zero S).1 (LinearMap.congr_fun hq z)
 

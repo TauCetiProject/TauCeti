@@ -286,13 +286,16 @@ theorem linearMap_ext_ofLetter_prepend {N : Type*} [AddCommMonoid N] [Module R N
     (h2 : ∀ a w, f (prepend R M a w) = g (prepend R M a w)) : f = g :=
   linearMap_ext R M fun ⟨n, hn⟩ x ↦ by match n with
     | 0 => omega
-    | 1 => rw [show of R M ⟨1, hn⟩ (PiTensorProduct.tprod R x) = ofLetter R M (x 0) by
-        rw [ofLetter_eq_of_tprod]
-        exact of_tprod_congr R M hn rfl fun i ↦ by fin_cases i; rfl, h1]
-    | k + 2 => rw [show of R M ⟨k + 2, hn⟩ (PiTensorProduct.tprod R x) = prepend R M (x 0)
-        (of R M ⟨k + 1, Nat.succ_pos k⟩ (PiTensorProduct.tprod R fun i ↦ x i.succ)) by
+    | 1 =>
+      have hx : of R M ⟨1, hn⟩ (PiTensorProduct.tprod R x) = ofLetter R M (x 0) := by
+        rw [ofLetter_eq_of_tprod]; exact of_tprod_congr R M hn rfl <| Fin.forall_fin_one.2 rfl
+      rw [hx, h1]
+    | k + 2 =>
+      have hx : of R M ⟨k + 2, hn⟩ (PiTensorProduct.tprod R x) = prepend R M (x 0)
+          (of R M ⟨k + 1, Nat.succ_pos k⟩ (PiTensorProduct.tprod R fun i ↦ x i.succ)) := by
         rw [prepend_of_tprod]
-        exact of_tprod_congr R M hn rfl fun i ↦ by cases i using Fin.cases <;> simp, h2]
+        exact of_tprod_congr R M hn rfl fun i ↦ by cases i using Fin.cases <;> simp
+      rw [hx, h2]
 
 end Prepend
 

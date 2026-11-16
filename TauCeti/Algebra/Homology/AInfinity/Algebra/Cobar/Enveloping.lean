@@ -24,14 +24,12 @@ and yields the bar--cobar counit for any augmented DG algebra.
 
 public section
 
-open scoped TensorProduct
 open TensorAlgebra
 
 namespace TauCeti
 
 open AInfinityAlgebra (differential_apply coe_cobarAugmentationIdealContraction_incl mem_cycles
   mem_boundaries)
-open IsNonCounitalDGCoalgebra (coe_cobarReducedDifferential)
 open DGAlgHom (toNonUnitalDGAlgHom_comp)
 open NonUnitalDGAlgHom (toAInfinityStrictHom_comp)
 open AInfinityStrictHom (toAInfinityHom_comp)
@@ -213,21 +211,15 @@ private noncomputable abbrev redContr := ε.reducedAlgebra.cobarAugmentationIdea
 private theorem reducedPart_envelopingDifferential (z : ε.Enveloping) :
     ε.envelopingAugmentation.reducedPart (ε.envelopingDifferential z) =
       ε.barCoalg.cobarReducedDifferential (ε.envelopingAugmentation.reducedPart z) :=
-  Subtype.ext <| by rw [DGAlgAugmentation.coe_reducedPart, ε.envelopingAugmentation.map_d]
-                    simp [DGAlgAugmentation.coe_reducedPart, envelopingDifferential]
-
-private theorem envelopingAugmentation_linearPart_toEnveloping (a : A) :
-    ε.envelopingAugmentation (ε.toEnveloping.linearPart a) = ε a := by
-  rw [ε.linearPart_toEnveloping_apply, map_add, ε.envelopingAugmentation.map_algebraMap,
-    ← coe_cobarAugmentationIdealContraction_incl,
-    ε.envelopingAugmentation.mem_augmentationIdeal.mp (ε.redContr.incl _).2, add_zero]
+  Subtype.ext <| by
+    rw [DGAlgAugmentation.coe_reducedPart, ε.envelopingAugmentation.map_d]
+    simp [DGAlgAugmentation.coe_reducedPart, envelopingDifferential]
 
 private theorem reducedPart_linearPart_toEnveloping (a : A) :
     ε.envelopingAugmentation.reducedPart (ε.toEnveloping.linearPart a) =
       ε.redContr.incl (ε.reducedPart a) := Subtype.ext <| by
-  rw [DGAlgAugmentation.coe_reducedPart, ε.envelopingAugmentation_linearPart_toEnveloping,
-    ε.linearPart_toEnveloping_apply, coe_cobarAugmentationIdealContraction_incl,
-    add_sub_cancel_left]
+  simp [DGAlgAugmentation.coe_reducedPart, ε.linearPart_toEnveloping_apply,
+    coe_cobarAugmentationIdealContraction_incl]
 
 /-- **The explicit special contraction of `U(A) = Ω Tᶜ(sA⁺)` onto `(A, m₁)`.** -/
 noncomputable def envelopingContraction :
@@ -242,11 +234,12 @@ noncomputable def envelopingContraction :
   proj_comp_dM := LinearMap.ext fun z ↦ by
     simp [-differential_apply, unitHom_apply, ε.envelopingAugmentation.map_d,
       ε.reducedPart_envelopingDifferential, LinearContraction.proj_dM_apply]
-    simp only [differential_apply, ε.isStrictUnit.unary_eq_zero, smul_zero, zero_add]
-    simpa only [coe_reducedInclusion] using ε.reducedInclusion.map_m_one _
+    simpa only [differential_apply, ε.isStrictUnit.unary_eq_zero, smul_zero, zero_add,
+      coe_reducedInclusion] using ε.reducedInclusion.map_m_one _
   proj_comp_incl := LinearMap.ext fun a ↦ by
-    simp [-AInfinityHom.linearPart_apply, unitHom_apply, ε.coe_reducedPart,
-      ε.envelopingAugmentation_linearPart_toEnveloping, ε.reducedPart_linearPart_toEnveloping]
+    simp only [LinearMap.comp_apply, LinearMap.add_apply, LinearMap.id_apply,
+      Submodule.subtype_apply, ε.reducedPart_linearPart_toEnveloping]
+    simp [unitHom_apply, ε.coe_reducedPart, ε.linearPart_toEnveloping_apply]
   dM_comp_homotopy_add_homotopy_comp_dM := LinearMap.ext fun z ↦ by
     simpa [-AInfinityHom.linearPart_apply, -reducedAlgebra_grading,
       DGAlgAugmentation.coe_reducedPart, ε.reducedPart_envelopingDifferential,
@@ -318,8 +311,10 @@ theorem isQuasiIso_toEnveloping : ε.toEnveloping.IsQuasiIso := by
           ← envelopingContraction_incl, c.toLinearContraction.incl_proj_apply, hy', map_zero,
           sub_zero]; abel⟩⟩
   · obtain ⟨w, hw⟩ := (mem_boundaries _).1 hfx
-    exact (mem_boundaries _).2 ⟨c.proj w, by rw [← differential_apply, ← c.proj_dM_apply,
-      show ε.envelopingDifferential w = c.incl x by simpa [c] using hw, c.proj_incl_apply]⟩
+    have hw' : ε.envelopingDifferential w = c.incl x := by
+      simpa [c, IsNonUnitalDGAlgebra.toAInfinityAlgebra_m_one_apply] using hw
+    exact (mem_boundaries _).2 ⟨c.proj w, by
+      rw [← differential_apply, ← c.proj_dM_apply, hw', c.proj_incl_apply]⟩
 
 end SingleAugmentation
 
@@ -358,10 +353,10 @@ theorem envelopingMap_comp (εA : 𝒜.Augmentation) (εB : ℬ.Augmentation) (�
     εA.envelopingMap εC (g.comp f) (hg.comp hf) =
       (εB.envelopingMap εC g hg).comp (εA.envelopingMap εB f hf) :=
   (εA.bijective_comp_toEnveloping εC.isDGAlgebra_enveloping).1 <| Subtype.ext <| by
-    dsimp only; rw [envelopingMap_comp_toEnveloping, toNonUnitalDGAlgHom_comp,
-      toAInfinityStrictHom_comp, toAInfinityHom_comp, AInfinityHom.comp_assoc,
-      envelopingMap_comp_toEnveloping, ← AInfinityHom.comp_assoc _ εB.toEnveloping,
-      envelopingMap_comp_toEnveloping, AInfinityHom.comp_assoc]
+    simp only [toNonUnitalDGAlgHom_comp, toAInfinityStrictHom_comp, toAInfinityHom_comp,
+      AInfinityHom.comp_assoc, envelopingMap_comp_toEnveloping]
+    rw [← AInfinityHom.comp_assoc _ εB.toEnveloping, envelopingMap_comp_toEnveloping,
+      AInfinityHom.comp_assoc]
 
 theorem comp_envelopingMap (εA : 𝒜.Augmentation) (εB : ℬ.Augmentation)
     {f : AInfinityHom 𝒜 ℬ} (hf : f.IsStrictlyUnital εA.isStrictUnit εB.isStrictUnit)

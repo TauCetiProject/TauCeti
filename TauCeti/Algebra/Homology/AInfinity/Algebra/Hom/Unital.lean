@@ -189,9 +189,7 @@ theorem isStrictlyUnital_iff_of_strictUnit {eA₁ eA₂ : A} {eB₁ eB₂ : B}
     {hA₁ : AA.StrictUnit eA₁} {hA₂ : AA.StrictUnit eA₂}
     {hB₁ : BB.StrictUnit eB₁} {hB₂ : BB.StrictUnit eB₂} {f : AInfinityHom AA BB} :
     f.IsStrictlyUnital hA₁ hB₁ ↔ f.IsStrictlyUnital hA₂ hB₂ := by
-  obtain rfl : eA₁ = eA₂ := hA₁.eq hA₂
-  obtain rfl : eB₁ = eB₂ := hB₁.eq hB₂
-  rfl
+  obtain rfl := hA₁.eq hA₂; obtain rfl := hB₁.eq hB₂; rfl
 
 end AInfinityHom
 

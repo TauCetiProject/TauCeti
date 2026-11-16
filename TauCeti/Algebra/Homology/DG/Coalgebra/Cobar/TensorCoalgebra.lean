@@ -13,6 +13,7 @@ public import TauCeti.LinearAlgebra.TensorCoalgebra.GradedCoderivation
 public import TauCeti.LinearAlgebra.TensorCoalgebra.Grading
 public import TauCeti.LinearAlgebra.TensorCoalgebra.Primitives
 public import TauCeti.LinearAlgebra.TensorPower.Basic
+import TauCeti.LinearAlgebra.TensorAlgebra.Basic
 
 /-!
 # Contracting the cobar construction of the cofree tensor coalgebra
@@ -35,8 +36,8 @@ open LinearMap (comp_apply id_apply mulLeft_apply mul'_apply)
 
 namespace TauCeti
 
-open ReducedTensorWords (of ofLetter prepend letter deconcatenation grading gradedPiece
-  grading_piece isHomogeneous_letter letter_ofLetter letter_prepend deconcatenation_prepend
+open ReducedTensorWords (ofLetter prepend letter deconcatenation grading grading_piece
+  isHomogeneous_letter letter_ofLetter letter_prepend deconcatenation_prepend
   deconcatenation_ofLetter koszulTwist_grading map_ofLetter map_prepend)
 open InternalGrading (shift_piece koszulTwist_shift koszulTwist_koszulTwist koszulTwistAlgEquiv)
 
@@ -95,9 +96,8 @@ theorem cobarDeconcatDifferential_mul (x y : TensorAlgebra R (ReducedTensorWords
           cobarDeconcatDifferential G y := cobarDifferential_mul_koszulTwist _ _ _ x y
 
 @[simp] theorem cobarDeconcatDifferential_comp_self :
-    cobarDeconcatDifferential G ∘ₗ cobarDeconcatDifferential G = 0 :=
-  LinearMap.ext fun x ↦
-    (isNonCounitalDGCoalgebra_reducedTensorWords_zero G).cobarDifferential_cobarDifferential x
+    cobarDeconcatDifferential G ∘ₗ cobarDeconcatDifferential G = 0 := LinearMap.ext fun x ↦
+  (isNonCounitalDGCoalgebra_reducedTensorWords_zero G).cobarDifferential_cobarDifferential x
 
 /-- The canonical inclusion `A →ₗ Ω Tᶜ(sA)`, sending `a` to `(-1) ^ |sa| s⁻¹ [a]`. -/
 noncomputable def cobarTensorIncl : A →ₗ[R] TensorAlgebra R (ReducedTensorWords R A) :=
@@ -127,14 +127,14 @@ theorem cobarTensorProj_tprod (n : ℕ) (x : Fin n → ReducedTensorWords R A) :
 
 @[simp] theorem cobarTensorProj_ι (c : ReducedTensorWords R A) :
     cobarTensorProj G (ι R c) = (G.shift 1).koszulTwist 1 (letter R A c) := by
-  rw [show ι R c = tprod R _ 1 (fun _ ↦ c) by simp [tprod_apply], cobarTensorProj_tprod]; simp
+  simpa [tprod_apply] using cobarTensorProj_tprod G 1 (fun _ ↦ c)
 
 private theorem cobarTensorProj_mul_ι_mul (c₀ c₁ : RTW R A) (z : ΩT R A) :
     cobarTensorProj G (ι R c₀ * (ι R c₁ * z)) = 0 :=
   LinearMap.congr_fun (linearMap_ext_tprod (f := cobarTensorProj G ∘ₗ
-      LinearMap.mulLeft R (ι R c₀) ∘ₗ LinearMap.mulLeft R (ι R c₁)) (g := 0) fun n _ ↦ by
-    simp only [comp_apply, mulLeft_apply, LinearMap.zero_apply, ← tprod_cons, cobarTensorProj_tprod,
-      show n + 2 ≠ 1 by omega, ↓reduceDIte]) z
+      LinearMap.mulLeft R (ι R c₀) ∘ₗ LinearMap.mulLeft R (ι R c₁)) (g := 0) fun _ _ ↦ by
+    simp only [comp_apply, mulLeft_apply, LinearMap.zero_apply, ← tprod_cons,
+      cobarTensorProj_tprod]; simp) z
 
 private theorem cobarTensorProj_ι_prepend_mul (a : A) (w : RTW R A) (y : ΩT R A) :
     cobarTensorProj G (ι R (prepend R A a w) * y) = 0 :=
@@ -151,11 +151,10 @@ theorem isHomogeneous_cobarTensorProj :
       (fun n d x hx hd ↦ by
         rw [Submodule.mem_comap, cobarTensorProj_tprod]; split_ifs with hn
         · subst hn; have hl := isHomogeneous_letter (G.shift 1); rw [← grading_piece] at hl
-          have h0 : letter R A (x 0) ∈ (G.shift 1).piece (p - 1) := by
-            simpa only [add_zero] using hl.map_mem
-              (show x 0 ∈ (grading (G.shift 1)).piece (p - 1) by
-                simpa [show d 0 = p by simpa using hd, shift_piece, sub_eq_add_neg] using hx 0)
-          simpa [shift_piece] using (G.shift 1).koszulTwist_mem_piece h0 1
+          have hd0 : d 0 = p := by simpa using hd
+          have hx0 : x 0 ∈ (grading (G.shift 1)).piece (p - 1) := by
+            simpa [hd0, shift_piece, sub_eq_add_neg] using hx 0
+          simpa [shift_piece] using (G.shift 1).koszulTwist_mem_piece (hl.map_mem hx0) 1
         · exact zero_mem _) hz
 
 private noncomputable def cobarTensorHomotopyComp :
@@ -200,9 +199,8 @@ theorem cobarTensorHomotopy_tprod_add_two (k : ℕ) (x : Fin (k + 2) → Reduced
     cobarTensorHomotopy G (tprod R (ReducedTensorWords R A) (k + 2) x) =
       ι R (prepend R A ((G.shift 1).koszulTwist 1 (letter R A (x 0))) (x 1)) *
         tprod R (ReducedTensorWords R A) k (fun j ↦ x j.succ.succ) := by
-  rw [cobarTensorHomotopy_tprod]
-  simp only [cobarTensorHomotopyComp, comp_apply, _root_.TensorPower.splitAt_tprod,
-    TensorProduct.map_tmul, mul'_apply, TensorPower.toTensorAlgebra_tprod]
+  simp only [cobarTensorHomotopy_tprod, cobarTensorHomotopyComp, comp_apply, mul'_apply,
+    _root_.TensorPower.splitAt_tprod, TensorProduct.map_tmul, TensorPower.toTensorAlgebra_tprod]
   rw [_root_.TensorPower.splitAt_tprod, TensorProduct.map_tmul]
   exact congrArg₂ (· * ·) (by simp [TensorPower.oneEquiv_tprod]; congr 2)
     (congrArg _ (funext fun j ↦ congrArg x (Fin.ext (by simp; omega))))
@@ -244,16 +242,17 @@ theorem isHomogeneous_cobarTensorHomotopy :
         have h0 : letter R A (x 0) ∈ (G.shift 1).piece (d 0 + -1) := by
           simpa only [add_zero] using (isHomogeneous_letter (G.shift 1)).map_mem
             (by simpa [P, grading_piece] using hx 0)
+        have hdeg₁ : d 0 + d 1 + -1 + -1 = (d 0 + -1) + (d 1 + -1) := by ring
         have hpre : prepend R A ((G.shift 1).koszulTwist 1 (letter R A (x 0))) (x 1) ∈
             P.piece (d 0 + d 1 + -1) := by
-          simpa [P, shift_piece, grading_piece,
-              show d 0 + d 1 + -1 + -1 = (d 0 + -1) + (d 1 + -1) by ring] using
+          simpa [P, shift_piece, grading_piece, hdeg₁] using
             ReducedTensorWords.prepend_mem_gradedPiece ((G.shift 1).koszulTwist_mem_piece h0 1)
               (by simpa [P, grading_piece] using hx 1)
-        exact (show d 0 + d 1 + -1 + ∑ j : Fin k, d j.succ.succ = q + -1 by
-          rw [← hd, Fin.sum_univ_succ, Fin.sum_univ_succ, Fin.succ_zero_eq_one]; ring) ▸
-          SetLike.GradedMul.mul_mem (ι_mem_tensorAlgebraPiece _ hpre)
-            (tprod_mem_tensorAlgebraPiece _ _ _ fun j ↦ hx j.succ.succ)) hz
+        have hdeg₂ : d 0 + d 1 + -1 + ∑ j : Fin k, d j.succ.succ = q + -1 := by
+          rw [← hd, Fin.sum_univ_succ, Fin.sum_univ_succ, Fin.succ_zero_eq_one]; ring
+        rw [← hdeg₂]
+        exact SetLike.GradedMul.mul_mem (ι_mem_tensorAlgebraPiece _ hpre)
+          (tprod_mem_tensorAlgebraPiece _ _ _ fun j ↦ hx j.succ.succ)) hz
 
 theorem cobarTensorHomotopy_eq_zero_of_mem_tensorPower_one
     {z : TensorAlgebra R (ReducedTensorWords R A)}
@@ -311,7 +310,10 @@ private theorem cobarHomotopyDefect_ι_ofLetter_mul (a : A) (y : ΩT R A) :
       simp [cobarHomotopyDefect, tprod_apply, cobarTensorIncl_apply]
     | k + 1, u => by
       -- Length ≥ 2 (`ι [a] * ι c * z`): `p` vanishes; internal cuts of `c` and `D z` cancel.
-      let D := cobarDeconcatDifferential G; let H := cobarTensorHomotopy G
+      simp only [comp_apply, mulLeft_apply, LinearMap.zero_apply, tprod_succ, cobarHomotopyDefect,
+        LinearMap.sub_apply, LinearMap.add_apply, id_apply, cobarTensorProj_mul_ι_mul, map_zero,
+        sub_zero]
+      set D := cobarDeconcatDifferential G with hD; set H := cobarTensorHomotopy G with hH
       set c := u 0; set z := tprod R (RTW R A) k (fun i ↦ u i.succ)
       set twa := (G.shift 1).koszulTwist 1 a
       set cut := LinearMap.mul' R (ΩT R A) (TensorProduct.map
@@ -320,23 +322,19 @@ private theorem cobarHomotopyDefect_ι_ofLetter_mul (a : A) (y : ΩT R A) :
       set tail := ι R (prepend R A a (ReducedTensorWords.map R ((G.shift 1).koszulTwist 1) c)) * D z
       have hDH : D (H (ι R (ofLetter R A a) * (ι R c * z))) =
           ι R (ofLetter R A a) * (ι R c * z) + cut - tail := by
-        dsimp only [D, H]; rw [cobarTensorHomotopy_ι_mul_ι_mul, letter_ofLetter,
-          cobarDeconcatDifferential_mul, koszulTwistAlgEquiv_ι, cobarDeconcatDifferential_ι,
-          deconcatenation_prepend]
+        rw [hD, hH, cobarTensorHomotopy_ι_mul_ι_mul, letter_ofLetter, cobarDeconcatDifferential_mul,
+          koszulTwistAlgEquiv_ι, cobarDeconcatDifferential_ι, deconcatenation_prepend]
         simp only [map_add, add_mul, TensorProduct.map_tmul, comp_apply, mul'_apply,
           koszulTwist_grading, map_ofLetter, map_prepend, koszulTwist_koszulTwist, mul_assoc,
           neg_mul, ← sub_eq_add_neg]; rfl
       have hHD : H (D (ι R (ofLetter R A a) * (ι R c * z))) = -cut + tail := by
-        dsimp only [D, H]; rw [cobarDeconcatDifferential_mul, cobarDeconcatDifferential_ι,
+        rw [hD, hH, cobarDeconcatDifferential_mul, cobarDeconcatDifferential_ι,
           deconcatenation_ofLetter, map_zero, map_zero, zero_mul, zero_add, koszulTwistAlgEquiv_ι,
           cobarDeconcatDifferential_mul, koszulTwistAlgEquiv_ι, koszulTwist_grading, map_ofLetter]
         simp only [neg_mul, mul_neg, mul_add, map_neg, map_add, neg_neg,
           cobarTensorHomotopy_ι_ofLetter_mul_deconcatDifferential_mul,
           cobarTensorHomotopy_ι_mul_ι_mul, letter_ofLetter, koszulTwist_koszulTwist]; rfl
-      simp only [comp_apply, mulLeft_apply, LinearMap.zero_apply, tprod_succ, cobarHomotopyDefect,
-        LinearMap.sub_apply, LinearMap.add_apply, id_apply, cobarTensorProj_mul_ι_mul, map_zero,
-        sub_zero]
-      change D (H _) + H (D _) - _ = 0; rw [hDH, hHD]; abel) y
+      rw [hDH, hHD]; abel) y
 
 private theorem cobarHomotopyDefect_ι_prepend_mul (a : A) (w : RTW R A) (y : ΩT R A) :
     cobarHomotopyDefect G (ι R (prepend R A a w) * y) = 0 := by
@@ -453,16 +451,14 @@ noncomputable def cobarUnperturbedContraction :
       cobarTensorHomotopy G x := (rfl)
 
 theorem isHomogeneous_cobarUnperturbedContraction_incl :
-    LinearMap.IsHomogeneous hC.cobarUnperturbedContraction.incl
-      G.piece hC.cobarReducedGrading.piece 0 :=
-  LinearMap.isHomogeneous_def.2 fun _ _ ha ↦
-    hC.mem_cobarReducedGrading_piece.2 ((isHomogeneous_cobarTensorIncl G).map_mem ha)
+    LinearMap.IsHomogeneous hC.cobarUnperturbedContraction.incl G.piece
+      hC.cobarReducedGrading.piece 0 := LinearMap.isHomogeneous_def.2 fun _ _ ha ↦
+  hC.mem_cobarReducedGrading_piece.2 ((isHomogeneous_cobarTensorIncl G).map_mem ha)
 
 theorem isHomogeneous_cobarUnperturbedContraction_proj :
     LinearMap.IsHomogeneous hC.cobarUnperturbedContraction.proj
-      hC.cobarReducedGrading.piece G.piece 0 :=
-  LinearMap.isHomogeneous_def.2 fun _ _ hx ↦
-    (isHomogeneous_cobarTensorProj G).map_mem (hC.mem_cobarReducedGrading_piece.1 hx)
+      hC.cobarReducedGrading.piece G.piece 0 := LinearMap.isHomogeneous_def.2 fun _ _ hx ↦
+  (isHomogeneous_cobarTensorProj G).map_mem (hC.mem_cobarReducedGrading_piece.1 hx)
 
 theorem isHomogeneous_cobarUnperturbedContraction_homotopy :
     LinearMap.IsHomogeneous hC.cobarUnperturbedContraction.homotopy

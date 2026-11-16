@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.Cobar.TwistingCochain
 public import TauCeti.Algebra.Homology.Contraction.Perturbation
 public import TauCeti.Algebra.Homology.DG.Coalgebra.Cobar.TensorCoalgebra
+import TauCeti.LinearAlgebra.TensorAlgebra.Basic
 
 /-!
 # Contracting the cobar augmentation ideal of the bar construction
@@ -25,14 +26,11 @@ homogeneous special contraction (`cobarAugmentationIdealContraction`) of `Ω⁺ 
 
 public section
 
-open scoped TensorProduct
 open TensorAlgebra
 
 namespace TauCeti.AInfinityAlgebra
 
-open IsNonCounitalDGCoalgebra (coe_cobarDeconcatReducedDifferential coe_cobarReducedDifferential
-  coe_cobarUnperturbedContraction_incl cobarUnperturbedContraction_proj_apply
-  coe_cobarUnperturbedContraction_homotopy)
+open IsNonCounitalDGCoalgebra (coe_cobarDeconcatReducedDifferential coe_cobarReducedDifferential)
 open LinearSpecialContraction (copy_incl copy_proj copy_homotopy perturb_incl perturb_proj
   perturb_homotopy perturbedDifferential_def perturbationSeries_def)
 
@@ -100,12 +98,10 @@ private theorem pow_cobarBarPerturbation_mul_homotopy_eq_zero :
 private theorem exists_pow_cobarBarReducedPerturbation_mul_homotopy_eq_zero (z : 𝒜.augIdeal) :
     ∃ k : ℕ, ((𝒜.cobarBarReducedPerturbation * 𝒜.unpert.homotopy) ^ k) z = 0 := by
   let T := 𝒜.cobarBarPerturbation * cobarTensorHomotopy 𝒜.grading
-  have hcoe (k : ℕ) (w : 𝒜.augIdeal) :
-      ((((𝒜.cobarBarReducedPerturbation * 𝒜.unpert.homotopy) ^ k) w : 𝒜.augIdeal) : ΩT R A) =
-        (T ^ k) (w : ΩT R A) := by
-    induction k with
-    | zero => rfl
-    | succ _ ih => simpa [T, pow_succ', mul_apply_eq_comp] using congrArg T ih
+  have hcoe (k : ℕ) :
+      ((((𝒜.cobarBarReducedPerturbation * 𝒜.unpert.homotopy) ^ k) z : 𝒜.augIdeal) : ΩT R A) =
+        (T ^ k) (z : ΩT R A) :=
+    k.rec rfl fun _ ih ↦ by simpa [T, pow_succ', mul_apply_eq_comp] using congrArg T ih
   let N : Submodule R (ΩT R A) :=
     { carrier := {x | ∃ k, (T ^ k) x = 0}, zero_mem' := ⟨0, map_zero _⟩
       add_mem' := fun ⟨a, ha⟩ ⟨b, hb⟩ ↦ ⟨max a b, by
@@ -115,7 +111,7 @@ private theorem exists_pow_cobarBarReducedPerturbation_mul_homotopy_eq_zero (z :
   obtain ⟨k, hk⟩ := (𝒜.barCoalg.cobarAugmentation_augmentationIdeal_le_iff (S := N).2 fun n x ↦
     ⟨n + 1, 𝒜.pow_cobarBarPerturbation_mul_homotopy_eq_zero n
       ⟨_, TensorPower.toTensorAlgebra_tprod x⟩⟩) z.property
-  exact ⟨k, Subtype.ext (by rw [hcoe k z, hk]; rfl)⟩
+  exact ⟨k, Subtype.ext (by rw [hcoe k, hk, Submodule.coe_zero])⟩
 
 private theorem isUnit_one_add_cobarBarReducedPerturbation_mul_homotopy :
     IsUnit (1 + 𝒜.cobarBarReducedPerturbation * 𝒜.unpert.homotopy) :=
@@ -212,7 +208,7 @@ private theorem isHomogeneous_pertSeries_comp_h :
     LinearMap.isHomogeneous_def.2 fun _ _ hx ↦ 𝒜.barCoalg.mem_cobarReducedGrading_piece.2 <|
       tensorAlgebraDerivation_mem_tensorAlgebraPiece (fun {p _} hc ↦ neg_mem <|
         ι_mem_tensorAlgebraPiece _ <| by
-          rw [InternalGrading.shift_piece, show p + 1 + -1 = p + -1 + 1 by omega]
+          rw [InternalGrading.shift_piece, add_right_comm]
           exact 𝒜.barCoalg.map_mem (by rwa [InternalGrading.shift_piece] at hc))
         (𝒜.barCoalg.mem_cobarReducedGrading_piece.1 hx)
   have h0 : LinearMap.IsHomogeneous (𝒜.cobarBarReducedPerturbation * 𝒜.unpert.homotopy)
