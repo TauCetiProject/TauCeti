@@ -363,16 +363,11 @@ theorem nnnorm_withLpProdMap (f : α →L[𝕜] α') (g : β →L[𝕜] β') :
 /-- Scalar multiplication distributes over an `L^p` block sum. -/
 theorem withLpProdMap_smul (c : 𝕜) (f : α →L[𝕜] α') (g : β →L[𝕜] β') :
     (c • f).withLpProdMap p (c • g) = c • f.withLpProdMap p g := by
-  ext x
-  simp [← WithLp.toLp_smul]
+  ext x; simp [← WithLp.toLp_smul]
 
+variable (p 𝕜 α β α' β') in
 /-- Bundling `ContinuousLinearMap.withLpProdMap` as a continuous linear map on operator pairs. -/
-noncomputable def withLpProdMapL (p : ℝ≥0∞) [Fact (1 ≤ p)] (𝕜 α β α' β' : Type*)
-    [NontriviallyNormedField 𝕜]
-    [SeminormedAddCommGroup α] [NormedSpace 𝕜 α]
-    [SeminormedAddCommGroup β] [NormedSpace 𝕜 β]
-    [SeminormedAddCommGroup α'] [NormedSpace 𝕜 α']
-    [SeminormedAddCommGroup β'] [NormedSpace 𝕜 β'] :
+noncomputable def withLpProdMapL :
     ((α →L[𝕜] α') × (β →L[𝕜] β')) →L[𝕜] (WithLp p (α × β) →L[𝕜] WithLp p (α' × β')) :=
   LinearMap.mkContinuous
     { toFun := fun fg => fg.1.withLpProdMap p fg.2
@@ -383,34 +378,20 @@ noncomputable def withLpProdMapL (p : ℝ≥0∞) [Fact (1 ≤ p)] (𝕜 α β �
 /-- Evaluating `ContinuousLinearMap.withLpProdMapL` on a pair of operators produces their `L^p`
 block sum. -/
 @[simp]
-theorem withLpProdMapL_apply (p : ℝ≥0∞) [Fact (1 ≤ p)] (𝕜 α β α' β' : Type*)
-    [NontriviallyNormedField 𝕜]
-    [SeminormedAddCommGroup α] [NormedSpace 𝕜 α]
-    [SeminormedAddCommGroup β] [NormedSpace 𝕜 β]
-    [SeminormedAddCommGroup α'] [NormedSpace 𝕜 α']
-    [SeminormedAddCommGroup β'] [NormedSpace 𝕜 β']
-    (fg : (α →L[𝕜] α') × (β →L[𝕜] β')) :
-    withLpProdMapL p 𝕜 α β α' β' fg = fg.1.withLpProdMap p fg.2 :=
-  (rfl)
+theorem withLpProdMapL_apply (fg : (α →L[𝕜] α') × (β →L[𝕜] β')) :
+    withLpProdMapL p 𝕜 α β α' β' fg = fg.1.withLpProdMap p fg.2 := (rfl)
 
+variable (p 𝕜 α α') in
 /-- The diagonal block-sum continuous linear map `f ↦ f ⊕ f` on `WithLp p (α × α)`. -/
-noncomputable def withLpDiagL (p : ℝ≥0∞) [Fact (1 ≤ p)] (𝕜 α α' : Type*)
-    [NontriviallyNormedField 𝕜]
-    [SeminormedAddCommGroup α] [NormedSpace 𝕜 α]
-    [SeminormedAddCommGroup α'] [NormedSpace 𝕜 α'] :
+noncomputable def withLpDiagL :
     (α →L[𝕜] α') →L[𝕜] (WithLp p (α × α) →L[𝕜] WithLp p (α' × α')) :=
   (withLpProdMapL p 𝕜 α α α' α').comp
     ((ContinuousLinearMap.id 𝕜 (α →L[𝕜] α')).prod (ContinuousLinearMap.id 𝕜 (α →L[𝕜] α')))
 
 /-- Evaluating `ContinuousLinearMap.withLpDiagL` on `f` produces `f.withLpProdMap p f`. -/
 @[simp]
-theorem withLpDiagL_apply (p : ℝ≥0∞) [Fact (1 ≤ p)] (𝕜 α α' : Type*)
-    [NontriviallyNormedField 𝕜]
-    [SeminormedAddCommGroup α] [NormedSpace 𝕜 α]
-    [SeminormedAddCommGroup α'] [NormedSpace 𝕜 α']
-    (f : α →L[𝕜] α') :
-    withLpDiagL p 𝕜 α α' f = f.withLpProdMap p f :=
-  (rfl)
+theorem withLpDiagL_apply (f : α →L[𝕜] α') :
+    withLpDiagL p 𝕜 α α' f = f.withLpProdMap p f := (rfl)
 
 end Normed
 

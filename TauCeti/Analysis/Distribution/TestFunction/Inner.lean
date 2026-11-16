@@ -46,7 +46,7 @@ pairings with `𝓓(Ω, V)`.
   `A i → B` uniformly on `tsupport φ`, and `u` is locally integrable on `Ω`.
 * `TestFunction.tendsto_integral_inner_bilin_normed_convolution`:
   `∫ ⟪φ, B ((ρ i ⋆ 1_W U) ·) (u ·)⟫` converges to `∫ ⟪φ, B (U ·) (u ·)⟫` when `U ∈ Lᵖ(W)`,
-  `u ∈ L^q(W)` and `p⁻¹ + q⁻¹ ≤ 1` (`p < ∞`).
+  `u ∈ L^q(W)` and `p⁻¹ + q⁻¹ ≤ 1`.
 * `TauCeti.ae_eq_of_forall_integral_inner_eq`: two locally integrable fields with the same
   pairings against every `φ ∈ 𝓓(Ω, V)` agree almost everywhere on `Ω`. The target `V` need only
   be complete; the proof tests against `ψ • c` for scalar test functions `ψ` and a constant
@@ -94,22 +94,18 @@ theorem tendsto_integral_inner_of_tendsto_lintegral_enorm_sub {n : ℕ∞} {ι :
     Tendsto (fun i => ∫ x, ⟪(φ : E → V) x, g i x⟫_ℝ ∂μ) l
       (𝓝 (∫ x, ⟪(φ : E → V) x, g₀ x⟫_ℝ ∂μ)) := by
   obtain ⟨M, hM⟩ := φ.continuous.bounded_above_of_compact_support φ.hasCompactSupport
-  have hlimM : Tendsto (fun i => ENNReal.ofReal M * ∫⁻ x in s, ‖g i x - g₀ x‖ₑ ∂μ)
-      l (𝓝 0) := by
+  have hlimM : Tendsto (fun i => ENNReal.ofReal M * ∫⁻ x in s, ‖g i x - g₀ x‖ₑ ∂μ) l (𝓝 0) := by
     simpa using ENNReal.Tendsto.const_mul hlim (Or.inr ENNReal.ofReal_ne_top)
-  refine tendsto_integral_of_L1 _ hg₀ hg ?_
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hlimM
-    (fun _ => zero_le) fun i => ?_
+  refine tendsto_integral_of_L1 _ hg₀ hg (tendsto_of_tendsto_of_tendsto_of_le_of_le
+    tendsto_const_nhds hlimM (fun _ => zero_le) fun i => ?_)
   rw [← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
   refine (lintegral_mono fun x => ?_).trans (lintegral_indicator_le _ _)
   by_cases hxs : x ∈ s
-  · rw [Set.indicator_of_mem hxs, ← inner_sub_right, Real.eNorm_eq_ofReal_abs]
-    have h1 := (abs_real_inner_le_norm ((φ : E → V) x) (g i x - g₀ x)).trans
+  · rw [Set.indicator_of_mem hxs, ← inner_sub_right, Real.eNorm_eq_ofReal_abs,
+      ← ofReal_norm, ← ENNReal.ofReal_mul ((norm_nonneg _).trans (hM x))]
+    exact ENNReal.ofReal_le_ofReal <| (abs_real_inner_le_norm _ _).trans
       (mul_le_mul_of_nonneg_right (hM x) (norm_nonneg _))
-    exact (ENNReal.ofReal_le_ofReal h1).trans_eq
-      (by rw [ENNReal.ofReal_mul ((norm_nonneg _).trans (hM x)), ofReal_norm])
-  · simp [Set.indicator_of_notMem hxs,
-      image_eq_zero_of_notMem_tsupport fun h => hxs (hφs h)]
+  · simp [Set.indicator_of_notMem hxs, image_eq_zero_of_notMem_tsupport fun h => hxs (hφs h)]
 
 /-- Pairing a `C^n` test function `φ` against `x ↦ A i x (u x)` converges to
 `∫ x, ⟪φ x, B x (u x)⟫_ℝ ∂μ` when `A i → B` uniformly on `tsupport φ`, `A i` is eventually
@@ -122,31 +118,26 @@ theorem tendsto_integral_inner_clm_of_tendstoUniformlyOn {n : ℕ∞}
     (hunif : TendstoUniformlyOn A B l (tsupport (φ : E → V))) :
     Tendsto (fun i => ∫ x, ⟪(φ : E → V) x, A i x (u x)⟫_ℝ ∂μ) l
       (𝓝 (∫ x, ⟪(φ : E → V) x, B x (u x)⟫_ℝ ∂μ)) := by
-  rcases eq_or_neBot l with rfl | hl
+  rcases eq_or_neBot l with rfl | _
   · exact tendsto_bot
   set K := tsupport (φ : E → V)
-  have hK : IsCompact K := φ.hasCompactSupport
   have hKm : MeasurableSet K := (isClosed_tsupport _).measurableSet
-  have huK : IntegrableOn u K μ := hu.integrableOn_compact_subset φ.tsupport_subset hK
+  have huK : IntegrableOn u K μ :=
+    hu.integrableOn_compact_subset φ.tsupport_subset φ.hasCompactSupport
   have hint {C : E → F →L[ℝ] V} (hC : ContinuousOn C K) :
-      Integrable (fun x => ⟪(φ : E → V) x, C x (u x)⟫_ℝ) μ := by
-    have hCu : MemLp (fun x => C x (u x)) 1 (μ.restrict K) :=
-      (ContinuousLinearMap.id ℝ (F →L[ℝ] V)).memLp_of_bilin 1
-        (hC.memLp_top_restrict_of_subset_isCompact hK hKm subset_rfl)
-        (memLp_one_iff_integrable.2 huK)
-    have hφCu : IntegrableOn (fun x => ⟪(φ : E → V) x, C x (u x)⟫_ℝ) K μ :=
-      memLp_one_iff_integrable.1 ((innerSL ℝ).memLp_of_bilin 1 φ.memLp_top hCu)
-    exact (integrableOn_iff_integrable_of_support_subset
-      fun x hx => subset_tsupport _ fun h0 => hx (by simp [h0])).1 hφCu
-  have hintB : Integrable (fun x => ⟪(φ : E → V) x, B x (u x)⟫_ℝ) μ :=
-    hint (hunif.continuousOn hA.frequently)
-  have hsup :
-      Tendsto (fun i => (⨆ y ∈ K, ‖A i y - B y‖ₑ) * ∫⁻ x in K, ‖u x‖ₑ ∂μ) l (𝓝 0) := by
+      Integrable (fun x => ⟪(φ : E → V) x, C x (u x)⟫_ℝ) μ :=
+    (integrableOn_iff_integrable_of_support_subset
+      fun _ hx => subset_tsupport _ fun h0 => hx (by simp [h0])).1 <|
+      memLp_one_iff_integrable.1 <| (innerSL ℝ).memLp_of_bilin 1 φ.memLp_top <|
+        (ContinuousLinearMap.id ℝ (F →L[ℝ] V)).memLp_of_bilin 1
+          (hC.memLp_top_restrict_of_subset_isCompact φ.hasCompactSupport hKm subset_rfl)
+          (memLp_one_iff_integrable.2 huK)
+  have hsup : Tendsto (fun i => (⨆ y ∈ K, ‖A i y - B y‖ₑ) * ∫⁻ x in K, ‖u x‖ₑ ∂μ) l (𝓝 0) := by
     simpa using ENNReal.Tendsto.mul_const hunif.tendsto_iSup_enorm_sub (Or.inr huK.2.ne)
   refine φ.tendsto_integral_inner_of_tendsto_lintegral_enorm_sub subset_rfl
-    (hA.mono fun _ => hint) hintB.aestronglyMeasurable
-    (tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hsup (fun _ => zero_le)
-      fun i => ?_)
+    (hA.mono fun _ => hint) (hint (hunif.continuousOn hA.frequently)).aestronglyMeasurable
+    (tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hsup
+      (fun _ => zero_le) fun i => ?_)
   rw [← lintegral_const_mul'' _ huK.aestronglyMeasurable.eNorm]
   refine setLIntegral_mono' hKm fun x hx => ?_
   rw [← sub_apply]
@@ -157,12 +148,12 @@ theorem tendsto_integral_inner_clm_of_tendstoUniformlyOn {n : ℕ∞}
 
 /-- Pairing a `C^n` test function supported in a relatively compact open set `W` against
 `x ↦ B (((ρ i).normed μ ⋆ 1_W U) x) (u x)` converges to `∫ x, ⟪φ x, B (U x) (u x)⟫_ℝ ∂μ` when
-`U ∈ Lᵖ(W)`, `u ∈ L^q(W)` and `p⁻¹ + q⁻¹ ≤ 1` with `p < ∞` (allowing `q = ∞`). -/
+`U ∈ Lᵖ(W)`, `u ∈ L^q(W)` and `p⁻¹ + q⁻¹ ≤ 1` (allowing `p = ∞` or `q = ∞`). -/
 theorem tendsto_integral_inner_bilin_normed_convolution
     [FiniteDimensional ℝ E] [BorelSpace E] [μ.IsAddHaarMeasure]
     {F G : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
     [NormedAddCommGroup G] [NormedSpace ℝ G] {n : ℕ∞}
-    (B : F →L[ℝ] G →L[ℝ] V) {p q : ℝ≥0∞} (hp : p ≠ ⊤) (hpq : p⁻¹ + q⁻¹ ≤ 1)
+    (B : F →L[ℝ] G →L[ℝ] V) {p q : ℝ≥0∞} (hpq : p⁻¹ + q⁻¹ ≤ 1)
     {W : Opens E} (hWc : IsCompact (closure (W : Set E))) (φ : 𝓓^{n}(Ω, V))
     (hφW : tsupport (φ : E → V) ⊆ W) {U : E → F} (hU : MemLp U p (μ.restrict W))
     {u : E → G} (hu : MemLp u q (μ.restrict W))
@@ -172,38 +163,36 @@ theorem tendsto_integral_inner_bilin_normed_convolution
         B (((ρ i).normed μ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] (W : Set E).indicator U) x)
           (u x)⟫_ℝ ∂μ)
       l (𝓝 (∫ x, ⟪(φ : E → V) x, B (U x) (u x)⟫_ℝ ∂μ)) := by
-  have : Fact (1 ≤ p) := ⟨ENNReal.inv_le_one.1 (le_self_add.trans hpq)⟩
-  have : Fact (1 ≤ q) := ⟨ENNReal.inv_le_one.1 (le_add_self.trans hpq)⟩
-  set r := (p⁻¹ + q⁻¹)⁻¹
-  have : Fact (1 ≤ r) := ⟨ENNReal.one_le_inv.2 hpq⟩
-  have : ENNReal.HolderTriple p q r := ⟨(inv_inv _).symm⟩
+  set p' : ℝ≥0∞ := (1 - p⁻¹)⁻¹
+  have hp1 : p⁻¹ ≤ 1 := le_self_add.trans hpq
+  have : p.HolderConjugate p' := ⟨by rw [inv_inv, inv_one, add_tsub_cancel_of_le hp1]⟩
+  have hp'q : p' ≤ q := by
+    rw [← inv_inv q]
+    exact ENNReal.inv_le_inv.2 <|
+      (ENNReal.add_sub_cancel_left (ne_top_of_le_ne_top ENNReal.one_ne_top hp1)).symm.trans_le
+        (tsub_le_tsub_right hpq p⁻¹)
   have hWm := W.isOpen.measurableSet.nullMeasurableSet (μ := μ)
-  have hUext : MemLp ((W : Set E).indicator U) p μ := (memLp_indicator_iff_restrict hWm).2 hU
-  have huext : MemLp ((W : Set E).indicator u) q μ := (memLp_indicator_iff_restrict hWm).2 hu
-  have hWfin : μ (W : Set E) < ⊤ := (measure_mono subset_closure).trans_lt hWc.measure_lt_top
-  have hL1 := B.tendsto_setLIntegral_enorm_bilin_normedBump_left_sub (r := r) hp hUext huext hρ
-    hWfin (hUext.coeFn_toLp_indicator_restrict W.isOpen.measurableSet subset_rfl)
-    (huext.coeFn_toLp_indicator_restrict W.isOpen.measurableSet subset_rfl)
-  let φW : 𝓓^{n}(W, V) := ⟨φ, φ.contDiff, φ.hasCompactSupport, hφW⟩
-  have : IsFiniteMeasure (μ.restrict (W : Set E)) := isFiniteMeasure_restrict.2 hWfin.ne
-  have hint_lim : Integrable (fun x => ⟪(φ : E → V) x, B (U x) (u x)⟫_ℝ) μ :=
-    φW.integrable_inner
-      (IntegrableOn.locallyIntegrableOn ((B.memLp_of_bilin r hU hu).integrable Fact.out))
-  have hint_i (i : ι) : Integrable (fun x => ⟪(φ : E → V) x,
-      B (((ρ i).normed μ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] (W : Set E).indicator U) x)
-        (u x)⟫_ℝ) μ := by
-    have hc := ((ρ i).hasCompactSupport_normed (μ := μ)).continuous_convolution_left
-      (ContinuousLinearMap.lsmul ℝ ℝ (E := F))
-      ((ρ i).continuous_normed (μ := μ)) (hUext.locallyIntegrable Fact.out)
-    obtain ⟨C, hC⟩ := hWc.exists_bound_of_continuousOn hc.continuousOn
-    have hmem := B.memLp_of_bilin q (memLp_top_of_bound hc.aestronglyMeasurable C
-      ((ae_restrict_iff' W.isOpen.measurableSet).2
-        (.of_forall fun x hx => hC x (subset_closure hx)))) hu
-    exact φW.integrable_inner (IntegrableOn.locallyIntegrableOn (hmem.integrable Fact.out))
-  refine φ.tendsto_integral_inner_of_tendsto_lintegral_enorm_sub hφW (.of_forall hint_i)
-    hint_lim.aestronglyMeasurable
-    (hL1.congr fun i => setLIntegral_congr_fun W.isOpen.measurableSet fun x hx => ?_)
-  rw [Set.indicator_of_mem hx u]
+  have : IsFiniteMeasure (μ.restrict (W : Set E)) :=
+    isFiniteMeasure_restrict.2 ((measure_mono subset_closure).trans_lt hWc.measure_lt_top).ne
+  let C : V →L[ℝ] G →L[ℝ] F →L[ℝ] ℝ :=
+    ((ContinuousLinearMap.compL ℝ F V ℝ).comp (innerSL ℝ)).bilinearComp
+      (ContinuousLinearMap.id ℝ V) B.flip
+  have ha : MemLp (fun x => C ((φ : E → V) x) ((W : Set E).indicator u x)) p' μ :=
+    C.memLp_of_bilin p' φ.memLp_top ((memLp_indicator_iff_restrict hWm).2 (hu.mono_exponent hp'q))
+  have hlim := (ContinuousLinearMap.id ℝ (F →L[ℝ] ℝ)).tendsto_integral_bilin_normed_convolution
+    hρ ha ((memLp_indicator_iff_restrict hWm).2 hU)
+  have hpt (x : E) (y : F) :
+      C ((φ : E → V) x) ((W : Set E).indicator u x) y = ⟪(φ : E → V) x, B y (u x)⟫_ℝ := by
+    by_cases hx : x ∈ (W : Set E)
+    · simp [C, hx]
+    · simp [C, image_eq_zero_of_notMem_tsupport fun h => hx (hφW h)]
+  have hlim_rhs : ∫ x, ⟪(φ : E → V) x, B ((W : Set E).indicator U x) (u x)⟫_ℝ ∂μ =
+      ∫ x, ⟪(φ : E → V) x, B (U x) (u x)⟫_ℝ ∂μ :=
+    integral_congr_ae (.of_forall fun x => by
+      by_cases hx : x ∈ (W : Set E)
+      · simp [hx]
+      · simp [image_eq_zero_of_notMem_tsupport fun h => hx (hφW h)])
+  simpa only [ContinuousLinearMap.id_apply, hpt, hlim_rhs] using hlim
 
 end TestFunction
 
