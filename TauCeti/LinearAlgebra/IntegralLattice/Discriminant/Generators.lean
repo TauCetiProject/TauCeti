@@ -13,8 +13,7 @@ public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Group
 # The number of generators of a discriminant group
 
 For a nondegenerate integral lattice `L`, the discriminant group `Lᵛ / L` and each of its
-`n`-primary components need at most `rank L` generators. We provide the bounds both for Mathlib's
-`Submodule.spanFinrank` over `ℤ` and for `AddGroup.rank`.
+`n`-primary components need at most `rank L` generators.
 
 The quotient map carries a generating set of the free dual lattice to a generating set of the
 discriminant group. The dual lattice has the same rank as `L`, so no choice of Gram matrix or
@@ -22,11 +21,9 @@ Smith normal form is needed.
 
 ## Main declarations
 
-* `TauCeti.IntegralLattice.spanFinrank_discriminantGroup_le_finrank` and
-  `TauCeti.IntegralLattice.rank_discriminantGroup_le_finrank`: the bound `l(A_L) ≤ rank L`.
-* `TauCeti.IntegralLattice.spanFinrank_primaryComponent_discriminantGroup_le_finrank` and
-  `TauCeti.IntegralLattice.rank_primaryComponent_discriminantGroup_le_finrank`: the bound
-  `l((A_L)_n) ≤ rank L` for every `n : ℕ`.
+* `TauCeti.IntegralLattice.spanFinrank_discriminantGroup_le_finrank`: the bound `l(A_L) ≤ rank L`.
+* `TauCeti.IntegralLattice.rank_primaryComponent_discriminantGroup_le_finrank`: the bound
+  `AddGroup.rank (A_L)_n ≤ rank L` for every `n : ℕ`.
 -/
 
 public section
@@ -45,28 +42,13 @@ theorem spanFinrank_discriminantGroup_le_finrank (L : IntegralLattice V) [L.IsNo
     ← Module.finrank_eq_spanFinrank_of_free (R := ℤ) (M := L.dualCarrier),
     L.finrank_dualCarrier, ← L.finrank_carrier] at h
 
-/-- The discriminant group of a nondegenerate integral lattice has `AddGroup.rank` at most the
-lattice rank. -/
-theorem rank_discriminantGroup_le_finrank (L : IntegralLattice V) [L.IsNondegenerate] :
-    AddGroup.rank L.DiscriminantGroup ≤ Module.finrank ℤ L := by
-  rw [AddGroup.rank_eq_spanFinrank_top]
-  exact L.spanFinrank_discriminantGroup_le_finrank
-
-/-- Every `n`-primary component of the discriminant group of a nondegenerate integral lattice needs
-at most `rank L` generators (measured by `Submodule.spanFinrank` over `ℤ`). -/
-theorem spanFinrank_primaryComponent_discriminantGroup_le_finrank (L : IntegralLattice V)
-    [L.IsNondegenerate] (n : ℕ) :
-    (⊤ : Submodule ℤ (AddCommGroup.primaryComponent L.DiscriminantGroup n)).spanFinrank ≤
-      Module.finrank ℤ L :=
-  (AddCommGroup.spanFinrank_primaryComponent_le L.DiscriminantGroup n).trans
-    L.spanFinrank_discriminantGroup_le_finrank
-
 /-- Every `n`-primary component of the discriminant group of a nondegenerate integral lattice has
 `AddGroup.rank` at most `rank L`. -/
 theorem rank_primaryComponent_discriminantGroup_le_finrank (L : IntegralLattice V)
     [L.IsNondegenerate] (n : ℕ) :
     AddGroup.rank (AddCommGroup.primaryComponent L.DiscriminantGroup n) ≤ Module.finrank ℤ L := by
+  refine (AddCommGroup.rank_primaryComponent_le L.DiscriminantGroup n).trans ?_
   rw [AddGroup.rank_eq_spanFinrank_top]
-  exact L.spanFinrank_primaryComponent_discriminantGroup_le_finrank n
+  exact L.spanFinrank_discriminantGroup_le_finrank
 
 end TauCeti.IntegralLattice

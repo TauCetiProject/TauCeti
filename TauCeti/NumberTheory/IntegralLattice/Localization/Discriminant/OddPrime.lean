@@ -9,12 +9,9 @@ public import TauCeti.GroupTheory.Rank
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Primary.Component
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Quadratic
 public import TauCeti.NumberTheory.IntegralLattice.Localization.Basic
-import TauCeti.Algebra.Group.Primary.Card
-import TauCeti.Algebra.Module.SpanRank
 import TauCeti.Data.Fintype.Fiber
 import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
-import TauCeti.LinearAlgebra.FiniteBilinearModule.Comparison
 import TauCeti.LinearAlgebra.FiniteBilinearModule.OddCyclic.PiClassification
 import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Henselian
 import TauCeti.NumberTheory.IntegralLattice.Diagonalization
@@ -24,7 +21,8 @@ import TauCeti.NumberTheory.IntegralLattice.Localization.Unimodular
 import TauCeti.NumberTheory.LocalField.QuadraticForm.OddResidue.Padic
 import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.NumberTheory.Padics.RingHoms
-import TauCeti.RingTheory.Henselian.Basic
+import TauCeti.RingTheory.Henselian.SquareClasses
+import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
 
 /-!
 # Odd-prime classification of integral localizations by the discriminant form
@@ -43,8 +41,8 @@ square class `∏_{kᵢ = m} uᵢ` over `ℤ_p`. Only the unimodular constituent
 `(A_L)_p`: its rank is recovered from `rank L` by subtracting the positive-scale counts, and its
 unit determinant square class is recovered from the `p`-adic square class of `det L` once the
 positive-scale contributions are divided out. Applying the Henselian unit-diagonal classification on
-each scale fiber (`TauCeti.equivalent_weightedSumSquares_mul_of_forall_fiber`) constructs an
-integral `ℤ_p`-isometry `L_p ≃ M_p`.
+each scale fiber (`TauCeti.equivalent_weightedSumSquares_mul_of_forall_fiber_of_isUnit_two`)
+constructs an integral `ℤ_p`-isometry `L_p ≃ M_p`.
 
 When `rank L` and `rank M` attain the minimal generator count `AddGroup.rank (A_L)_p` and
 `AddGroup.rank (A_M)_p`
@@ -131,12 +129,9 @@ private theorem isSquare_mul_approxInt {p : ℕ} [Fact p.Prime] (hp : p ≠ 2) (
     sub_eq_zero.mp <| by
       rw [← map_sub]
       exact (IsLocalRing.residue_eq_zero_iff _).mpr hmem
-  have hres : IsLocalRing.residue ℤ_[p] (approxInt u k : ℤ_[p]) ^ 2 =
-      IsLocalRing.residue ℤ_[p] ((u : ℤ_[p]) * approxInt u k) := by
-    rw [map_mul, hres_eq, sq]
-  obtain ⟨x, hx, -⟩ := TauCeti.HenselianLocalRing.exists_pow_eq_of_residue_pow_eq (n := 2)
-    (by exact_mod_cast PadicInt.isUnit_two hp) hθu hres
-  exact ⟨x, by rw [← hx, sq]⟩
+  exact (TauCeti.HenselianLocalRing.isSquare_iff_residue_isSquare
+    (PadicInt.isUnit_two hp) (u.isUnit.mul hθu)).mpr
+    (by rw [map_mul, hres_eq]; exact IsSquare.mul_self _)
 
 /-- Positive-level Legendre-symbol agreement between integer lifts translates to `p`-adic squareness
 of the corresponding unit products. -/
@@ -160,7 +155,7 @@ private theorem isSquare_prod_filter_of_legendreSym_eq {p : ℕ} [Fact p.Prime] 
       rw [Int.cast_mul]
       exact (PadicInt.isUnit_intCast_iff.mpr (not_dvd_approxInt _ _)).mul
         (PadicInt.isUnit_intCast_iff.mpr (not_dvd_approxInt _ _))
-  have hZ := (PadicInt.isSquare_intCast_iff_legendreSym_eq_one hp hndvd).mpr hsq_leg
+  have hZ := (TauCeti.PadicInt.isSquare_intCast_iff_legendreSym_eq_one hp hndvd).mpr hsq_leg
   rw [Int.cast_prod] at hZ
   have hu_sq : IsSquare (∏ i ∈ S, (u i : ℤ_[p]) * approxInt (u i) (k i)) :=
     Finset.prod_induction _ IsSquare (fun _ _ ha hb ↦ ha.mul hb) IsSquare.one
@@ -177,7 +172,7 @@ private theorem isSquare_prod_filter_of_legendreSym_eq {p : ℕ} [Fact p.Prime] 
     have hu_int := PadicInt.isUnit_intCast_iff.mpr hndvd
     rw [Int.cast_prod] at hu_int
     simpa [Int.cast_mul] using hu_int.ne_zero
-  exact (PadicInt.isSquare_mul_sq_iff hne).mp hcomb
+  exact (TauCeti.IsIntegrallyClosed.isSquare_mul_sq_iff hne).mp hcomb
 
 /-! ### Assembling an integral `ℤ_p`-isometry from fiberwise unit-diagonal equivalences -/
 
@@ -262,7 +257,7 @@ private theorem localIntegralForm_equivalent_of_forall_fiber
     (hfiber : ∀ m : ℕ, IsSquare ((∏ i with k i = m, u i) * ∏ i with k i = m, v (σ i))) :
     (L.localIntegralForm p).Equivalent (M.localIntegralForm p) := by
   let := (PadicInt.isUnit_two hp).invertible
-  have hdiag := TauCeti.equivalent_weightedSumSquares_mul_of_forall_fiber
+  have hdiag := TauCeti.equivalent_weightedSumSquares_mul_of_forall_fiber_of_isUnit_two
     (PadicInt.isUnit_two hp) k (fun m ↦ (p : ℤ_[p]) ^ m) u (fun i ↦ v (σ i)) hfiber
   have hL_quad : (L.localIntegralForm p).toQuadraticMap.Equivalent
       (QuadraticMap.weightedSumSquares ℤ_[p] fun i ↦ (u i : ℤ_[p]) * (p : ℤ_[p]) ^ k i) := by
@@ -273,37 +268,6 @@ private theorem localIntegralForm_equivalent_of_forall_fiber
       (hc.reindex σ.symm).equivalent_weightedSumSquares
   exact ((L.isSymm_localIntegralForm p).equivalent_iff_toQuadraticMap_equivalent
     (M.isSymm_localIntegralForm p)).mpr (hL_quad.trans (hdiag.trans hM_quad.symm))
-
-/-- In any commutative group, if `∏ i, u i * ∏ i, v i` is a square and every positive-level fiber
-`{i | k i = m}` (`m > 0`) has square product, then the `k i = 0` fiber also has square product. -/
-private theorem isSquare_prod_filter_eq_zero_of_isSquare_prod {G ι : Type*} [CommGroup G]
-    [Fintype ι] (k : ι → ℕ) (u v : ι → G)
-    (hfull : IsSquare ((∏ i, u i) * ∏ i, v i))
-    (hpos : ∀ m, 0 < m → IsSquare ((∏ i with k i = m, u i) * ∏ i with k i = m, v i)) :
-    IsSquare ((∏ i with k i = 0, u i) * ∏ i with k i = 0, v i) := by
-  let P : Finset ℕ := (Finset.univ.image k).erase 0
-  have hsplit (w : ι → G) :
-      ∏ i, w i = (∏ i with k i = 0, w i) * ∏ m ∈ P, ∏ i with k i = m, w i := by
-    have hpart := (Finset.prod_fiberwise_of_maps_to (s := Finset.univ) (g := k) (t := insert 0 P)
-      (fun i _ ↦ by
-        by_cases hk0 : k i = 0
-        · simp [hk0]
-        · exact Finset.mem_insert_of_mem
-            (Finset.mem_erase.mpr ⟨hk0, Finset.mem_image_of_mem k (Finset.mem_univ i)⟩))
-      w).symm
-    rw [hpart, Finset.prod_insert (Finset.notMem_erase 0 _)]
-  have hP_sq : IsSquare (∏ m ∈ P, ((∏ i with k i = m, u i) * ∏ i with k i = m, v i)) :=
-    Finset.prod_induction _ IsSquare (fun _ _ ha hb ↦ ha.mul hb) IsSquare.one
-      fun m hm ↦ hpos m (Nat.pos_of_ne_zero (Finset.ne_of_mem_erase hm))
-  rw [hsplit u, hsplit v] at hfull
-  have hrearr : ((∏ i with k i = 0, u i) * ∏ m ∈ P, ∏ i with k i = m, u i) *
-      ((∏ i with k i = 0, v i) * ∏ m ∈ P, ∏ i with k i = m, v i) =
-      ((∏ i with k i = 0, u i) * ∏ i with k i = 0, v i) *
-        ∏ m ∈ P, ((∏ i with k i = m, u i) * ∏ i with k i = m, v i) := by
-    rw [Finset.prod_mul_distrib]
-    ac_rfl
-  rw [hrearr] at hfull
-  simpa [mul_inv_cancel_right] using hfull.mul hP_sq.inv
 
 /-- The local determinant of `L` in `ℤ_p` differs by a unit square from `(∏ᵢ uᵢ) p^{∑ᵢ kᵢ}` in any
 orthogonal diagonal Jordan basis `b` of `L_p`. -/
@@ -363,7 +327,7 @@ theorem localIntegralForm_equivalent_iff_isSquare_and_discriminantBilinearModule
       (Equiv.prod_comp (σ : Fin _ ≃ Fin _) fun j ↦ (v j : ℤ_[p])).symm
     have hfull : IsSquare ((∏ i, u i) * ∏ i, v (σ i)) := by
       rw [← Units.isSquare_coe_iff, Units.val_mul, Units.coe_prod, Units.coe_prod,
-        ← PadicInt.isSquare_mul_sq_iff
+        ← TauCeti.IsIntegrallyClosed.isSquare_mul_sq_iff
           (pow_ne_zero (∑ i, k i) (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero))]
       obtain ⟨z, hz⟩ := hsq
       refine ⟨z * dL * dM, ?_⟩
@@ -371,7 +335,12 @@ theorem localIntegralForm_equivalent_iff_isSquare_and_discriminantBilinearModule
       rw [hsum_eq, hprod_v] at hmul
       rw [sq]
       linear_combination -hmul + (dL : ℤ_[p]) ^ 2 * (dM : ℤ_[p]) ^ 2 * hz
-    have hzero := isSquare_prod_filter_eq_zero_of_isSquare_prod k u (fun i ↦ v (σ i)) hfull hpos
+    have hzero : IsSquare ((∏ i with k i = 0, u i) * ∏ i with k i = 0, v (σ i)) := by
+      rw [← Finset.prod_mul_distrib]
+      refine Finset.univ.isSquare_prod_filter_of_isSquare_prod k (fun i ↦ u i * v (σ i)) 0
+        (by rwa [Finset.prod_mul_distrib]) fun m hm ↦ ?_
+      rw [Finset.prod_mul_distrib]
+      exact hpos m (Nat.pos_of_ne_zero hm)
     exact localIntegralForm_equivalent_of_forall_fiber hp hb hc hbu hcv σ hσ fun m ↦ by
       rcases Nat.eq_zero_or_pos m with rfl | hm
       · exact hzero
@@ -415,8 +384,8 @@ theorem localIntegralForm_equivalent_iff_isSquare_and_discriminantQuadraticModul
             (primaryComponent (L.discriminantQuadraticModule hL) p))
           ((M.discriminantQuadraticModule hM).restrict
             (primaryComponent (M.discriminantQuadraticModule hM) p))) := by
-  have hodd_L :=
-    (L.discriminantQuadraticModule hL).odd_natCard_restrict_primaryComponent Fact.out hp
+  have hodd_L := (L.discriminantQuadraticModule hL).odd_natCard_restrict_primaryComponent
+    ((Fact.out : p.Prime).odd_of_ne_two hp)
   rw [L.localIntegralForm_equivalent_iff_isSquare_and_discriminantBilinearModule M hp,
     FiniteQuadraticModule.nonempty_isometry_iff_bilinear_isometry_of_odd hodd_L,
     FiniteQuadraticModule.restrict_toFiniteBilinearModule,
@@ -446,9 +415,8 @@ theorem localIntegralForm_equivalent_iff_of_finrank_eq_rank
   refine ⟨fun h ↦ h.map primaryDiscriminantBilinearIsometry, fun hdisc ↦ ?_⟩
   obtain ⟨fLM⟩ := hdisc
   have hrank_eq : AddGroup.rank (primaryComponent L.DiscriminantGroup p) =
-      AddGroup.rank (primaryComponent M.DiscriminantGroup p) := by
-    rw [AddGroup.rank_eq_spanFinrank_top, AddGroup.rank_eq_spanFinrank_top]
-    exact Submodule.spanFinrank_eq_of_equiv fLM.toAddEquiv.toIntLinearEquiv
+      AddGroup.rank (primaryComponent M.DiscriminantGroup p) :=
+    AddGroup.rank_congr fLM.toAddEquiv
   have hrank : finrank ℤ L = finrank ℤ M := hLrank.trans (hrank_eq.trans hMrank.symm)
   obtain ⟨b, u, k, hb, hbu⟩ :=
     L.exists_fin_basis_iIsOrtho_localIntegralForm_eq_unit_mul_pow hp (rfl : finrank ℤ L = _)
@@ -485,8 +453,8 @@ theorem localIntegralForm_equivalent_iff_of_isEven_of_finrank_eq_rank
           (primaryComponent (L.discriminantQuadraticModule hL) p))
         ((M.discriminantQuadraticModule hM).restrict
           (primaryComponent (M.discriminantQuadraticModule hM) p))) := by
-  have hodd_L :=
-    (L.discriminantQuadraticModule hL).odd_natCard_restrict_primaryComponent Fact.out hp
+  have hodd_L := (L.discriminantQuadraticModule hL).odd_natCard_restrict_primaryComponent
+    ((Fact.out : p.Prime).odd_of_ne_two hp)
   rw [L.localIntegralForm_equivalent_iff_of_finrank_eq_rank M hp hLrank hMrank,
     FiniteQuadraticModule.nonempty_isometry_iff_bilinear_isometry_of_odd hodd_L,
     FiniteQuadraticModule.restrict_toFiniteBilinearModule,

@@ -35,8 +35,8 @@ in pairwise distinct primary components.
   pairing of primary decompositions is the sum of the component pairings.
 * `TauCeti.FiniteQuadraticModule.quadratic_sum_of_mem_primaryComponent`: a quadratic value on a
   sum of primary components is the sum of the component values.
-* `TauCeti.FiniteQuadraticModule.odd_natCard_restrict_primaryComponent`: at an odd prime, the
-  restricted `p`-primary component has odd cardinality.
+* `TauCeti.FiniteQuadraticModule.odd_natCard_restrict_primaryComponent`: for any odd natural
+  number `n`, the restricted `n`-primary component has odd cardinality.
 * `TauCeti.FiniteBilinearModule.Isometry.restrictPrimaryComponent` and
   `TauCeti.FiniteQuadraticModule.Isometry.restrictPrimaryComponent`: an isometry restricts to the
   `n`-primary components, commuting with `.symm`, `refl`, and `trans`.
@@ -237,12 +237,12 @@ theorem isNondegenerate_restrict_primaryComponent (hA : A.IsNondegenerate) {p : 
     (A.restrict (AddCommGroup.primaryComponent A p)).IsNondegenerate :=
   A.toFiniteBilinearModule.isNondegenerate_restrict_primaryComponent hA hp
 
-/-- For an odd prime `p`, the restriction of a finite quadratic module to its `p`-primary component
-has odd cardinality. -/
-theorem odd_natCard_restrict_primaryComponent {p : ℕ} (hp : p.Prime) (hp2 : p ≠ 2) :
-    Odd (Nat.card (A.restrict (AddCommGroup.primaryComponent A p))) := by
-  rw [A.natCard_restrict, TauCeti.AddCommGroup.natCard_primaryComponent A hp]
-  exact (hp.odd_of_ne_two hp2).pow
+/-- For any odd natural number `n`, the restriction of a finite quadratic module to its
+`n`-primary component has odd cardinality. -/
+theorem odd_natCard_restrict_primaryComponent {n : ℕ} (hn : Odd n) :
+    Odd (Nat.card (A.restrict (AddCommGroup.primaryComponent A n))) := by
+  rw [A.natCard_restrict]
+  exact TauCeti.AddCommGroup.odd_natCard_primaryComponent hn
 
 /-- A quadratic map is additive on elements belonging to primary components for distinct primes. -/
 theorem quadratic_add_of_mem_primaryComponent {p q : ℕ} (hp : p.Prime) (hq : q.Prime)

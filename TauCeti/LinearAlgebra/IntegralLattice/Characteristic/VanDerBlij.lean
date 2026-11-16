@@ -8,11 +8,11 @@ module
 public import TauCeti.LinearAlgebra.IntegralLattice.Characteristic.Unimodular
 public import TauCeti.LinearAlgebra.IntegralLattice.Characteristic.EvenSublattice
 public import TauCeti.LinearAlgebra.IntegralLattice.Milgram
-public import TauCeti.LinearAlgebra.IntegralLattice.Overlattice.Isotropic
 import TauCeti.Algebra.Group.Primary.Card
 import TauCeti.LinearAlgebra.FiniteBilinearModule.GaussSum.AffineLagrangian
 import TauCeti.LinearAlgebra.FiniteBilinearModule.Primary.GaussSum
 import TauCeti.LinearAlgebra.IntegralLattice.Overlattice.Index
+import TauCeti.LinearAlgebra.IntegralLattice.Overlattice.Isotropic
 
 /-!
 # Van der Blij's characteristic-norm congruence
@@ -35,10 +35,6 @@ Milgram's theorem on `N` identifies the total Gauss sign of `A_N` with the signa
 
 ## Main declarations
 
-* `TauCeti.IntegralLattice.halfCharacteristicDual`,
-  `TauCeti.IntegralLattice.quadratic_halfCharacteristicDual`, and
-  `TauCeti.IntegralLattice.quadratic_halfCharacteristicDual_add`: the dual vector `w / 2 ∈ Nᵛ` and
-  constancy of `q_N` on its `L / N`-coset.
 * `TauCeti.IntegralLattice.gaussSign_primaryComponent_two_evenSublattice`: at odd discriminant, the
   `2`-primary Gauss sign of `L.evenSublattice` equals `(L.integralNorm w : ZMod 8)`.
 * `TauCeti.IntegralLattice.integralNorm_cast_zmod_eight_eq_of_odd_discriminant`: generalized
@@ -77,21 +73,16 @@ private theorem half_characteristic_mem_dual {w : L} (hw : L.IsCharacteristicVec
   push_cast
   ring
 
-/-- For a characteristic vector `w` of `L`, half of `w` lies in the dual lattice of
-`L.evenSublattice`. -/
-noncomputable def halfCharacteristicDual {w : L} (hw : L.IsCharacteristicVector w) :
+private noncomputable def halfCharacteristicDual {w : L} (hw : L.IsCharacteristicVector w) :
     L.evenSublattice.dualCarrier :=
   ⟨(1 / 2 : ℚ) • (w : V), half_characteristic_mem_dual L hw⟩
 
-/-- The underlying ambient vector of `halfCharacteristicDual` is `(1 / 2) • w`. -/
-@[simp]
-theorem coe_halfCharacteristicDual {w : L} (hw : L.IsCharacteristicVector w) :
+private theorem coe_halfCharacteristicDual {w : L} (hw : L.IsCharacteristicVector w) :
     (L.halfCharacteristicDual hw : V) = (1 / 2 : ℚ) • (w : V) := by
   rfl
 
-/-- On the class of `w / 2`, the discriminant quadratic map of `L.evenSublattice` takes the value
-`L.integralNorm w / 8 mod ℤ`. -/
-theorem quadratic_halfCharacteristicDual {w : L} (hw : L.IsCharacteristicVector w) :
+private theorem discriminantQuadraticMap_mk_halfCharacteristicDual {w : L}
+    (hw : L.IsCharacteristicVector w) :
     L.evenSublattice.discriminantQuadraticMap L.isEven_evenSublattice
         (Submodule.Quotient.mk (L.halfCharacteristicDual hw)) =
       ZMod.toRatAddCircle 8 (L.integralNorm w : ZMod 8) := by
@@ -115,9 +106,7 @@ private theorem halfNorm_add_lattice_vector {w : L} (hw : L.IsCharacteristicVect
   push_cast
   linarith
 
-/-- The discriminant quadratic map of `L.evenSublattice` is constant on the `L / L.evenSublattice`
-coset of `halfCharacteristicDual`. -/
-theorem quadratic_halfCharacteristicDual_add {w : L}
+private theorem discriminantQuadraticMap_mk_halfCharacteristicDual_add {w : L}
     (hw : L.IsCharacteristicVector w)
     (h : L.evenSublattice.discriminantSubgroup
       (L.toIntermediateCarrier L.evenSublattice_form.symm L.evenSublattice_carrier_le)) :
@@ -202,22 +191,19 @@ private theorem isLagrangian_evenSublattice_primaryComponent_two [L.IsNondegener
     · rwa [h2] at hkill
   have hcard_H2 : Nat.card H₂ = N.carrier.toAddSubgroup.relIndex L.carrier.toAddSubgroup :=
     (Nat.card_congr (AddSubgroup.addSubgroupOfEquivOfLe hH_le).toEquiv).trans hcard_H
-  have hH2_iso : H₂ ≤ A₂.toFiniteBilinearModule.orthogonalComplement H₂ := fun x hx ↦ by
-    rw [A₂.toFiniteBilinearModule.mem_orthogonalComplement_iff]
-    exact fun y hy ↦ (N.discriminantBilinearModule_pairing x.1 y.1).trans
-      ((IntermediateCarrier.isIntegral_iff_forall_discriminantPairing_eq_zero M₀).mp hI
-        x.1 hx y.1 hy)
-  refine (A₂.toFiniteBilinearModule.isLagrangian_def H₂).mpr
-    (AddSubgroup.eq_of_le_of_card_ge hH2_iso ?_)
-  have hmul := FiniteBilinearModule.IsNondegenerate.card_mul_card_orthogonalComplement
-    A₂.toFiniteBilinearModule
+  have hH2_iso : A₂.toFiniteBilinearModule.IsIsotropic H₂ :=
+    A₂.toFiniteBilinearModule.isIsotropic_def.mpr fun x hx y hy ↦
+      (A.restrict_pairing _ x y).trans <|
+        (N.discriminantBilinearModule_pairing x.1 y.1).trans <|
+          (IntermediateCarrier.isIntegral_iff_forall_discriminantPairing_eq_zero M₀).mp hI
+            x.1 hx y.1 hy
+  exact FiniteBilinearModule.IsIsotropic.isLagrangian_of_card_sq_eq A₂.toFiniteBilinearModule
+    hH2_iso
     (A.isNondegenerate_restrict_primaryComponent
-      (N.isNondegenerate_discriminantQuadraticModule L.isEven_evenSublattice) Nat.prime_two) H₂
-  have hcard_A2 : Nat.card A₂.toFiniteBilinearModule = Nat.card H₂ * Nat.card H₂ :=
-    (A.natCard_restrict _).trans
-      ((L.natCard_primaryComponent_two_evenSublattice hodd).trans (by rw [hcard_H2, sq]))
-  rw [hcard_A2] at hmul
-  exact (Nat.mul_left_cancel (hcard_H2 ▸ L.relIndex_evenSublattice_pos) hmul).le
+      (N.isNondegenerate_discriminantQuadraticModule L.isEven_evenSublattice) Nat.prime_two)
+    (by
+      rw [hcard_H2, ← L.natCard_primaryComponent_two_evenSublattice hodd]
+      exact (A.natCard_restrict _).symm)
 
 /-- For a nondegenerate lattice `L` of odd discriminant and a characteristic vector `w`, the
 `2`-primary component of the discriminant quadratic module of `L.evenSublattice` has Gauss-sum
@@ -241,9 +227,15 @@ theorem gaussSign_primaryComponent_two_evenSublattice [L.IsNondegenerate]
       L.halfCharacteristicDual_mk_mem_primaryComponent_two hw⟩
   have hqa : A₂.quadratic a₂ = ZMod.toRatAddCircle 8 (L.integralNorm w : ZMod 8) := by
     rw [FiniteQuadraticModule.restrict_quadratic, discriminantQuadraticModule_quadratic]
-    exact L.quadratic_halfCharacteristicDual hw
+    exact L.discriminantQuadraticMap_mk_halfCharacteristicDual hw
   have ha_const (h : H₂) : A₂.quadratic (a₂ + h) = A₂.quadratic a₂ :=
-    L.quadratic_halfCharacteristicDual_add hw ⟨h.1.1, h.2⟩
+    (A.restrict_quadratic _ (a₂ + (h : A₂))).trans <|
+      (N.discriminantQuadraticModule_quadratic L.isEven_evenSublattice _).trans <|
+        (congrArg (N.discriminantQuadraticMap L.isEven_evenSublattice)
+          (AddSubgroup.coe_add (AddCommGroup.primaryComponent A 2) a₂ (h : A₂))).trans <|
+          (L.discriminantQuadraticMap_mk_halfCharacteristicDual_add hw ⟨h.1.1, h.2⟩).trans <|
+            (N.discriminantQuadraticModule_quadratic L.isEven_evenSublattice _).symm.trans
+              (A.restrict_quadratic _ a₂).symm
   have hG := FiniteQuadraticModule.gaussSum_eq_natCard_mul_expCircle_of_bilinear_isLagrangian
     a₂ hH2_lag ha_const
   have hsq : Nat.card H₂ ^ 2 = Nat.card A₂ :=

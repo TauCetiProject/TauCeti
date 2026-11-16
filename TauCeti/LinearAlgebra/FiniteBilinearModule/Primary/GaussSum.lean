@@ -21,8 +21,6 @@ generally over any finite set of primes containing all prime factors of `Nat.car
 
 ## Main declarations
 
-* `TauCeti.FiniteQuadraticModule.piPrimaryComponentsIsometry`: canonical quadratic isometry between
-  `FiniteQuadraticModule.pi` of the prime-primary restrictions and `A.primaryComponents`.
 * `TauCeti.FiniteQuadraticModule.gaussSign_primaryComponents`: `A.primaryComponents.gaussSign` is
   the sum of the prime-primary Gauss-sum invariants.
 * `TauCeti.FiniteQuadraticModule.gaussSign_eq_sum_primaryComponents`: `A.gaussSign` is the sum of
@@ -48,7 +46,7 @@ variable (A : FiniteQuadraticModule)
 
 /-- Canonical quadratic isometry identifying the orthogonal family product
 `FiniteQuadraticModule.pi` of the prime-primary restrictions of `A` with `A.primaryComponents`. -/
-def piPrimaryComponentsIsometry :
+private def piPrimaryComponentsIsometry :
     Isometry
       (pi fun p : (Nat.card A).primeFactors ↦ A.restrict (primaryComponent A p.1))
       A.primaryComponents where
@@ -64,14 +62,6 @@ def piPrimaryComponentsIsometry :
       (Finset.sum_congr rfl fun p _ ↦
         (A.restrict_quadratic (primaryComponent A p.1) ⟨(x p).1, (x p).2⟩).symm).trans
         (pi_quadratic _ x).symm
-
-/-- `piPrimaryComponentsIsometry` evaluates coordinatewise on each prime factor. -/
-@[simp]
-theorem piPrimaryComponentsIsometry_apply
-    (x : pi fun p : (Nat.card A).primeFactors ↦ A.restrict (primaryComponent A p.1))
-    (p : (Nat.card A).primeFactors) :
-    (A.piPrimaryComponentsIsometry x p).1 = (x p).1 := by
-  rfl
 
 /-- The Gauss-sum invariant of `A.primaryComponents` is the sum of the Gauss-sum invariants of the
 prime-primary restrictions of `A`. -/

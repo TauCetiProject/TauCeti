@@ -221,47 +221,50 @@ private noncomputable def discriminantHom_one_thirtyNine_three_thirteen :
   haveI : NeZero (39 : ℤ) := ⟨by decide⟩
   let φ : ((rankOne 1).discriminantBilinearModule.prod (rankOne 39).discriminantBilinearModule) →+
       ((rankOne 3).discriminantBilinearModule.prod (rankOne 13).discriminantBilinearModule) :=
-    { toFun := fun x ↦
-        zmodThirtyNineHomProd (rankOneDiscriminantEquiv 39 (x.2 : (rankOne 39).DiscriminantGroup))
-      map_zero' :=
-        (congrArg zmodThirtyNineHomProd (rankOneDiscriminantEquiv 39).map_zero).trans
-          zmodThirtyNineHomProd.map_zero
-      map_add' := fun x y ↦
-        (congrArg zmodThirtyNineHomProd ((rankOneDiscriminantEquiv 39).map_add x.2 y.2)).trans
-          (zmodThirtyNineHomProd.map_add _ _) }
+    zmodThirtyNineHomProd.comp
+      ((rankOneDiscriminantEquiv 39).toAddMonoidHom.comp
+        (AddMonoidHom.snd (rankOne 1).discriminantBilinearModule
+          (rankOne 39).discriminantBilinearModule))
   refine { toAddMonoidHom := φ, map_pairing' := fun x y ↦ ?_ }
   have := subsingleton_discriminantBilinearModule_rankOne_one
-  let x₂ : (rankOne 39).DiscriminantGroup := x.2
-  let y₂ : (rankOne 39).DiscriminantGroup := y.2
-  let kx : ℤ := (rankOneDiscriminantEquiv 39 x₂).val
-  let ky : ℤ := (rankOneDiscriminantEquiv 39 y₂).val
-  have hx2 : x₂ = kx • rankOneClass 39 :=
-    (zsmul_val_rankOneDiscriminantEquiv_rankOneClass 39 x₂).symm
-  have hy2 : y₂ = ky • rankOneClass 39 :=
-    (zsmul_val_rankOneDiscriminantEquiv_rankOneClass 39 y₂).symm
-  have hgx : zmodThirtyNineHomProd (rankOneDiscriminantEquiv 39 x₂) =
-      (kx • rankOneClass 3, (3 * kx) • rankOneClass 13) := by
-    rw [hx2, rankOneDiscriminantEquiv_zsmul_rankOneClass, zmodThirtyNineHomProd_intCast]
-  have hgy : zmodThirtyNineHomProd (rankOneDiscriminantEquiv 39 y₂) =
-      (ky • rankOneClass 3, (3 * ky) • rankOneClass 13) := by
-    rw [hy2, rankOneDiscriminantEquiv_zsmul_rankOneClass, zmodThirtyNineHomProd_intCast]
-  have hφx1 : ((φ x).1 : (rankOne 3).DiscriminantGroup) = kx • rankOneClass 3 :=
-    congrArg Prod.fst hgx
-  have hφy1 : ((φ y).1 : (rankOne 3).DiscriminantGroup) = ky • rankOneClass 3 :=
-    congrArg Prod.fst hgy
-  have hφx2 : ((φ x).2 : (rankOne 13).DiscriminantGroup) = (3 * kx) • rankOneClass 13 :=
-    congrArg Prod.snd hgx
-  have hφy2 : ((φ y).2 : (rankOne 13).DiscriminantGroup) = (3 * ky) • rankOneClass 13 :=
-    congrArg Prod.snd hgy
-  rw [FiniteBilinearModule.prod_pairing, FiniteBilinearModule.prod_pairing,
-    Subsingleton.elim x.1 0, FiniteBilinearModule.pairing_zero_left, zero_add,
-    (rankOne 3).discriminantBilinearModule_pairing (φ x).1 (φ y).1,
-    (rankOne 13).discriminantBilinearModule_pairing (φ x).2 (φ y).2,
-    (rankOne 39).discriminantBilinearModule_pairing x₂ y₂,
-    hφx1, hφy1, hφx2, hφy2, hx2, hy2,
-    discriminantPairing_zsmul_rankOneClass, discriminantPairing_zsmul_rankOneClass,
-    discriminantPairing_zsmul_rankOneClass, ← AddCircle.coe_add, ← sub_eq_zero,
-    ← AddCircle.coe_sub, AddCircle.coe_eq_zero_iff]
+  -- Express any element's `39`-component and its image under `φ` in terms of an integer `k`.
+  have hcoord (z : (rankOne 1).discriminantBilinearModule.prod
+      (rankOne 39).discriminantBilinearModule) :
+      ∃ k : ℤ,
+        (z.2 : (rankOne 39).DiscriminantGroup) = k • rankOneClass 39 ∧
+          ((φ z).1 : (rankOne 3).DiscriminantGroup) = k • rankOneClass 3 ∧
+          ((φ z).2 : (rankOne 13).DiscriminantGroup) = (3 * k) • rankOneClass 13 := by
+    let k : ℤ := (rankOneDiscriminantEquiv 39 z.2).val
+    have hz2 : (z.2 : (rankOne 39).DiscriminantGroup) = k • rankOneClass 39 :=
+      (zsmul_val_rankOneDiscriminantEquiv_rankOneClass 39 z.2).symm
+    have hφz : φ z = zmodThirtyNineHomProd (rankOneDiscriminantEquiv 39 z.2) := rfl
+    have hgz : φ z = (k • rankOneClass 3, (3 * k) • rankOneClass 13) := by
+      rw [hφz, hz2, rankOneDiscriminantEquiv_zsmul_rankOneClass, zmodThirtyNineHomProd_intCast]
+    exact ⟨k, hz2, congrArg Prod.fst hgz, congrArg Prod.snd hgz⟩
+  obtain ⟨kx, hx2, hφx1, hφx2⟩ := hcoord x
+  obtain ⟨ky, hy2, hφy1, hφy2⟩ := hcoord y
+  -- Evaluate both pairings in `ℚ/ℤ`; the `⟨1⟩` summand is trivial, and
+  -- `kx * ky / 3 + (3 * kx) * (3 * ky) / 13 - kx * ky / 39 = kx * ky ∈ ℤ`.
+  have hLHS :
+      ((rankOne 3).discriminantBilinearModule.prod
+          (rankOne 13).discriminantBilinearModule).pairing (φ x) (φ y) =
+        (((kx : ℚ) * ky / (3 : ℤ) + ((3 * kx : ℤ) : ℚ) * ((3 * ky : ℤ) : ℚ) / (13 : ℤ) : ℚ) :
+          AddCircle (1 : ℚ)) := by
+    rw [FiniteBilinearModule.prod_pairing,
+      (rankOne 3).discriminantBilinearModule_pairing (φ x).1 (φ y).1,
+      (rankOne 13).discriminantBilinearModule_pairing (φ x).2 (φ y).2,
+      hφx1, hφy1, hφx2, hφy2,
+      discriminantPairing_zsmul_rankOneClass, discriminantPairing_zsmul_rankOneClass,
+      ← AddCircle.coe_add]
+  have hRHS :
+      ((rankOne 1).discriminantBilinearModule.prod
+          (rankOne 39).discriminantBilinearModule).pairing x y =
+        (((kx : ℚ) * ky / (39 : ℤ) : ℚ) : AddCircle (1 : ℚ)) := by
+    rw [FiniteBilinearModule.prod_pairing, Subsingleton.elim x.1 0,
+      FiniteBilinearModule.pairing_zero_left, zero_add,
+      (rankOne 39).discriminantBilinearModule_pairing x.2 y.2, hx2, hy2,
+      discriminantPairing_zsmul_rankOneClass]
+  rw [hLHS, hRHS, ← sub_eq_zero, ← AddCircle.coe_sub, AddCircle.coe_eq_zero_iff]
   refine ⟨kx * ky, ?_⟩
   rw [zsmul_one]
   push_cast
@@ -295,8 +298,7 @@ private noncomputable def discriminantIsometry_one_thirtyNine_three_thirteen :
     (mid.trans ((rankOne 3).discriminantBilinearIsometryOrthogonalSum (rankOne 13)).symm)
 
 /-- **`⟨1⟩ ⊕ ⟨39⟩` and `⟨3⟩ ⊕ ⟨13⟩` lie in the same genus.** Both are positive definite odd
-binary lattices of odd discriminant `39` with isometric discriminant bilinear modules, so
-`sameGenus_iff_of_odd_discriminant` applies directly. -/
+binary lattices of odd discriminant `39` with isometric discriminant bilinear modules. -/
 theorem sameGenus_rankOne_one_thirtyNine_three_thirteen :
     ((rankOne 1).orthogonalSum (rankOne 39)).SameGenus
       ((rankOne 3).orthogonalSum (rankOne 13)) := by

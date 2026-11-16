@@ -54,6 +54,15 @@ the polar pairing is therefore `B(x, y)` modulo `ℤ`.
   orthogonal quotients along equal subgroups.
 * `TauCeti.FiniteQuadraticModule.Isometry.orthogonalQuotientEquiv`: transport of an orthogonal
   quotient along an isometry carrying one isotropic subgroup onto another.
+* `TauCeti.FiniteQuadraticModule.map_quadratic_of_odd_nsmul` and
+  `TauCeti.FiniteQuadraticModule.map_quadratic_of_odd`: polar-bilinear morphisms preserve quadratic
+  values on odd-torsion elements, hence on odd-order modules (both `2` and the odd annihilator
+  kill `q_B(f x) - q_A(x)`).
+* `TauCeti.FiniteQuadraticModule.homOfBilinearHomOfOdd` and
+  `TauCeti.FiniteQuadraticModule.isometryOfBilinearIsometryOfOdd`: at odd order, polar-bilinear
+  morphisms and isometries automatically preserve the quadratic map.
+* `TauCeti.FiniteQuadraticModule.nonempty_isometry_iff_bilinear_isometry_of_odd`: at odd order,
+  quadratic isometry is equivalent to polar-bilinear isometry.
 
 ## References
 
@@ -1313,6 +1322,165 @@ theorem orthogonalQuotientEquiv_symm_orthogonalQuotientMk (f : Isometry A B)
   exact Subtype.ext (f.apply_symm_apply (y : B)).symm
 
 end Isometry
+
+/-! ### Odd-order modules -/
+
+section OddOrder
+
+variable {A : FiniteQuadraticModule.{u}} {B : FiniteQuadraticModule.{v}}
+
+/-- **A polar-bilinear morphism preserves the quadratic value of any element killed by an odd
+natural number `n`.** -/
+theorem map_quadratic_of_odd_nsmul {n : ℕ} (hn : Odd n)
+    (f : FiniteBilinearModule.Hom A.toFiniteBilinearModule B.toFiniteBilinearModule) {x : A}
+    (hx : n • x = 0) :
+    B.quadratic (f x) = A.quadratic x := by
+  have htwo : 2 • (B.quadratic (f x) - A.quadratic x) = 0 := by
+    rw [nsmul_sub, ← QuadraticMap.polar_self, ← QuadraticMap.polar_self,
+      A.polar_eq_pairing, B.polar_eq_pairing, f.map_pairing, sub_self]
+  have hn_q : n • (B.quadratic (f x) - A.quadratic x) = 0 := by
+    rw [nsmul_sub, B.nsmul_quadratic_of_odd hn (f x) (by rw [← map_nsmul, hx, map_zero]),
+      A.nsmul_quadratic_of_odd hn x hx, sub_self]
+  exact sub_eq_zero.mp ((nsmul_eq_zero_iff_of_coprime hn.coprime_two_left).mp ⟨htwo, hn_q⟩)
+
+/-- **At odd order, a bilinear morphism preserves the quadratic map.** Neither nondegeneracy nor
+an odd-order hypothesis on `B` is needed. -/
+theorem map_quadratic_of_odd (hA : Odd (Nat.card A))
+    (f : FiniteBilinearModule.Hom A.toFiniteBilinearModule B.toFiniteBilinearModule) (x : A) :
+    B.quadratic (f x) = A.quadratic x :=
+  map_quadratic_of_odd_nsmul hA f (card_nsmul_eq_zero' (x := x))
+
+/-- Upgrade a polar-bilinear morphism out of an odd-order finite quadratic module to a morphism of
+finite quadratic modules. -/
+def homOfBilinearHomOfOdd (hA : Odd (Nat.card A))
+    (f : FiniteBilinearModule.Hom A.toFiniteBilinearModule B.toFiniteBilinearModule) : Hom A B where
+  toLinearMap := f.toAddMonoidHom.toIntLinearMap
+  map_app' := map_quadratic_of_odd hA f
+
+/-- The upgraded quadratic morphism acts as the given bilinear morphism. -/
+@[simp]
+theorem homOfBilinearHomOfOdd_apply (hA : Odd (Nat.card A))
+    (f : FiniteBilinearModule.Hom A.toFiniteBilinearModule B.toFiniteBilinearModule) (x : A) :
+    homOfBilinearHomOfOdd hA f x = f x := by
+  rfl
+
+/-- Forgetting the upgraded quadratic morphism recovers the given bilinear morphism. -/
+@[simp]
+theorem homOfBilinearHomOfOdd_toFiniteBilinearModule (hA : Odd (Nat.card A))
+    (f : FiniteBilinearModule.Hom A.toFiniteBilinearModule B.toFiniteBilinearModule) :
+    (homOfBilinearHomOfOdd hA f).toFiniteBilinearModule = f := by
+  ext x
+  rw [Hom.toFiniteBilinearModule_apply, homOfBilinearHomOfOdd_apply]
+
+/-- Upgrading the polar-bilinear morphism of a quadratic morphism recovers the original morphism. -/
+@[simp]
+theorem homOfBilinearHomOfOdd_of_toFiniteBilinearModule (hA : Odd (Nat.card A)) (g : Hom A B) :
+    homOfBilinearHomOfOdd hA g.toFiniteBilinearModule = g := by
+  ext x
+  rw [homOfBilinearHomOfOdd_apply, Hom.toFiniteBilinearModule_apply]
+
+/-- Upgrading the identity bilinear morphism gives the identity quadratic morphism. -/
+@[simp]
+theorem homOfBilinearHomOfOdd_id (hA : Odd (Nat.card A)) :
+    homOfBilinearHomOfOdd hA (FiniteBilinearModule.Hom.id A.toFiniteBilinearModule) = Hom.id A := by
+  ext x
+  rw [homOfBilinearHomOfOdd_apply, FiniteBilinearModule.Hom.id_apply, Hom.id_apply]
+
+/-- Upgrading odd-order bilinear morphisms commutes with composition. -/
+@[simp]
+theorem homOfBilinearHomOfOdd_comp {C : FiniteQuadraticModule} (hA : Odd (Nat.card A))
+    (hB : Odd (Nat.card B))
+    (g : FiniteBilinearModule.Hom B.toFiniteBilinearModule C.toFiniteBilinearModule)
+    (f : FiniteBilinearModule.Hom A.toFiniteBilinearModule B.toFiniteBilinearModule) :
+    (homOfBilinearHomOfOdd hB g).comp (homOfBilinearHomOfOdd hA f) =
+      homOfBilinearHomOfOdd hA (g.comp f) := by
+  ext x
+  simp
+
+/-- **At odd order, a polar-bilinear isometry is already a quadratic isometry.** Neither
+nondegeneracy nor a Gauss-sum hypothesis is needed, and the underlying map is unchanged. -/
+def isometryOfBilinearIsometryOfOdd (hA : Odd (Nat.card A))
+    (f : FiniteBilinearModule.Isometry A.toFiniteBilinearModule B.toFiniteBilinearModule) :
+    Isometry A B where
+  toLinearEquiv := f.toAddEquiv.toIntLinearEquiv
+  map_app' x := by simpa using map_quadratic_of_odd hA f.toHom x
+
+/-- The upgraded odd-order quadratic isometry acts as the given bilinear isometry. -/
+@[simp]
+theorem isometryOfBilinearIsometryOfOdd_apply (hA : Odd (Nat.card A))
+    (f : FiniteBilinearModule.Isometry A.toFiniteBilinearModule B.toFiniteBilinearModule) (x : A) :
+    isometryOfBilinearIsometryOfOdd hA f x = f x := by
+  rfl
+
+/-- The inverse of the upgraded odd-order quadratic isometry acts as the inverse bilinear
+isometry. -/
+@[simp]
+theorem isometryOfBilinearIsometryOfOdd_symm_apply (hA : Odd (Nat.card A))
+    (f : FiniteBilinearModule.Isometry A.toFiniteBilinearModule B.toFiniteBilinearModule) (y : B) :
+    (isometryOfBilinearIsometryOfOdd hA f).symm y = f.symm y :=
+  (QuadraticMap.IsometryEquiv.symm_apply_eq _).mpr <| by
+    rw [isometryOfBilinearIsometryOfOdd_apply, f.apply_symm_apply]
+
+/-- Forgetting bijectivity of an upgraded odd-order quadratic isometry upgrades its underlying
+bilinear morphism. -/
+@[simp]
+theorem isometryOfBilinearIsometryOfOdd_toHom (hA : Odd (Nat.card A))
+    (f : FiniteBilinearModule.Isometry A.toFiniteBilinearModule B.toFiniteBilinearModule) :
+    (isometryOfBilinearIsometryOfOdd hA f).toHom = homOfBilinearHomOfOdd hA f.toHom := by
+  ext x
+  rw [Isometry.toHom_apply, isometryOfBilinearIsometryOfOdd_apply,
+    homOfBilinearHomOfOdd_apply, FiniteBilinearModule.Isometry.toHom_apply]
+
+/-- Forgetting the upgraded odd-order quadratic isometry recovers the given bilinear isometry. -/
+@[simp]
+theorem isometryOfBilinearIsometryOfOdd_toFiniteBilinearModule (hA : Odd (Nat.card A))
+    (f : FiniteBilinearModule.Isometry A.toFiniteBilinearModule B.toFiniteBilinearModule) :
+    (isometryOfBilinearIsometryOfOdd hA f).toFiniteBilinearModule = f := by
+  ext x
+  rw [Isometry.toFiniteBilinearModule_apply, isometryOfBilinearIsometryOfOdd_apply]
+
+/-- Upgrading the polar-bilinear isometry of a quadratic isometry recovers the original isometry. -/
+@[simp]
+theorem isometryOfBilinearIsometryOfOdd_of_toFiniteBilinearModule (hA : Odd (Nat.card A))
+    (g : Isometry A B) :
+    isometryOfBilinearIsometryOfOdd hA g.toFiniteBilinearModule = g := by
+  apply DFunLike.ext
+  intro x
+  rw [isometryOfBilinearIsometryOfOdd_apply, Isometry.toFiniteBilinearModule_apply]
+
+/-- Upgrading the identity bilinear isometry gives the identity quadratic isometry. -/
+@[simp]
+theorem isometryOfBilinearIsometryOfOdd_refl (hA : Odd (Nat.card A)) :
+    isometryOfBilinearIsometryOfOdd hA
+        (FiniteBilinearModule.Isometry.refl A.toFiniteBilinearModule) =
+      QuadraticMap.IsometryEquiv.refl A.quadratic := by
+  apply DFunLike.ext
+  intro x
+  rw [isometryOfBilinearIsometryOfOdd_apply, FiniteBilinearModule.Isometry.refl_apply]
+  rfl
+
+/-- Upgrading odd-order bilinear isometries commutes with composition. -/
+@[simp]
+theorem isometryOfBilinearIsometryOfOdd_trans {C : FiniteQuadraticModule} (hA : Odd (Nat.card A))
+    (hB : Odd (Nat.card B))
+    (f : FiniteBilinearModule.Isometry A.toFiniteBilinearModule B.toFiniteBilinearModule)
+    (g : FiniteBilinearModule.Isometry B.toFiniteBilinearModule C.toFiniteBilinearModule) :
+    (isometryOfBilinearIsometryOfOdd hA f).trans (isometryOfBilinearIsometryOfOdd hB g) =
+      isometryOfBilinearIsometryOfOdd hA (f.trans g) := by
+  apply DFunLike.ext
+  intro x
+  rw [Isometry.trans_apply, isometryOfBilinearIsometryOfOdd_apply,
+    isometryOfBilinearIsometryOfOdd_apply, isometryOfBilinearIsometryOfOdd_apply,
+    FiniteBilinearModule.Isometry.trans_apply]
+
+/-- **Two finite quadratic modules of odd order are isometric if and only if their polar bilinear
+modules are isometric.** -/
+theorem nonempty_isometry_iff_bilinear_isometry_of_odd (hA : Odd (Nat.card A)) :
+    Nonempty (Isometry A B) ↔
+      Nonempty (FiniteBilinearModule.Isometry A.toFiniteBilinearModule B.toFiniteBilinearModule) :=
+  ⟨fun ⟨f⟩ ↦ ⟨f.toFiniteBilinearModule⟩, fun ⟨f⟩ ↦ ⟨isometryOfBilinearIsometryOfOdd hA f⟩⟩
+
+end OddOrder
 
 end FiniteQuadraticModule
 

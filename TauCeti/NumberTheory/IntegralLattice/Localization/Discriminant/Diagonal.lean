@@ -12,7 +12,6 @@ public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Bilinear
 public import TauCeti.NumberTheory.IntegralLattice.Localization.Discriminant.Basic
 import Mathlib.NumberTheory.Padics.RingHoms
 import TauCeti.Algebra.Group.Primary.Generators
-import TauCeti.Algebra.Module.SpanRank
 import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
 import TauCeti.NumberTheory.IntegralLattice.Localization.Discriminant.Form
 import TauCeti.NumberTheory.Padics.PadicIntegers
@@ -24,8 +23,7 @@ import TauCeti.NumberTheory.Padics.RatCast
 Let `L` be a nondegenerate integral lattice and `p` a prime. Whenever the localization
 `L_p = ℤ_p ⊗[ℤ] L` has an orthogonal basis `b` with self-pairings `B(bᵢ, bᵢ) = uᵢ pᵏⁱ`, `uᵢ` a unit
 of `ℤ_p`, the dual classes of `p^{-kᵢ} bᵢ` give an additive isomorphism
-`∏ᵢ ℤ/pᵏⁱ ≃+ (A_L)_p` (`TauCeti.IntegralLattice.piZModPowEquivPrimaryComponent`), so the generator
-count of `(A_L)_p` is `#{i | kᵢ ≠ 0}` for every prime `p`.
+`∏ᵢ ℤ/pᵏⁱ ≃+ (A_L)_p`, so the generator count of `(A_L)_p` is `#{i | kᵢ ≠ 0}` for every prime `p`.
 
 At an odd prime `p`, every nondegenerate `L_p` admits such an orthogonal basis
 (`TauCeti.IntegralLattice.exists_basis_iIsOrtho_localIntegralForm_eq_unit_mul_pow`). For integers
@@ -45,12 +43,9 @@ classification of `L_p` at odd primes by its discriminant form (Nikulin, Corolla
 
 ## Main results
 
-* `TauCeti.IntegralLattice.piZModPowEquivPrimaryComponent`: for any prime `p` and any orthogonal
-  basis `b` of `L_p` with `B(bᵢ, bᵢ) = uᵢ pᵏⁱ`, an additive equivalence
-  `(∀ i, ZMod (p ^ k i)) ≃+ primaryComponent L.DiscriminantGroup p`.
-* `TauCeti.IntegralLattice.spanFinrank_primaryComponent_discriminantGroup_eq_card_filter` and
-  `TauCeti.IntegralLattice.rank_primaryComponent_discriminantGroup_eq_card_filter`: in such a
-  diagonal basis, the generator count of `(A_L)_p` equals `#{i | kᵢ ≠ 0}`.
+* `TauCeti.IntegralLattice.rank_primaryComponent_discriminantGroup_eq_card_filter`: in a diagonal
+  orthogonal basis of `L_p` with `B(bᵢ, bᵢ) = uᵢ pᵏⁱ`, the generator count `AddGroup.rank (A_L)_p`
+  equals `#{i | kᵢ ≠ 0}`.
 * `TauCeti.IntegralLattice.nonempty_isometry_pi_oddCyclic_primaryComponent`: at an odd prime, the
   `p`-primary component of the discriminant bilinear module of `L` is isometric to the orthogonal
   sum of the odd cyclic generators `q_{θᵢ}^{(p)}(pᵏⁱ)` read off a diagonal Jordan form of `L_p`.
@@ -121,12 +116,6 @@ private theorem localDualPairingEquiv_basis [DecidableEq ι]
     simp only [map_mul, map_pow, map_natCast]
     field_simp
   · simp [LinearMap.BilinForm.iIsOrtho_def.mp hb i j hij]
-
-private theorem localDualPairingEquiv_localCarrierToDual (x z : L.LocalCarrier p) :
-    L.localDualPairingEquiv p (L.localCarrierToDual p x) z = L.localIntegralForm p x z := by
-  apply FaithfulSMul.algebraMap_injective ℤ_[p] ℚ_[p]
-  rw [← completedRationalForm_localizationDualToCompletion,
-    localizationDualToCompletion_localCarrierToDual, completedRationalForm_localizationToCompletion]
 
 omit [L.IsNondegenerate] in
 /-- `pᵏⁱ` times the dual vector `p^{-kᵢ} bᵢ` is `bᵢ`. -/
@@ -271,7 +260,7 @@ private theorem bijective_piZModPowHom [Fintype ι]
 /-- **Additive structure of `(A_L)_p` from a diagonal Jordan form.** For any prime `p` (including
 `p = 2`) and any orthogonal basis `b` of `L_p` with `B(bᵢ, bᵢ) = uᵢ pᵏⁱ` (`uᵢ ∈ ℤ_pˣ`), the dual
 classes of `p^{-kᵢ} bᵢ` give an additive isomorphism `∏ᵢ ℤ/pᵏⁱ ≃+ (A_L)_p`. -/
-noncomputable def piZModPowEquivPrimaryComponent [Fintype ι]
+private noncomputable def piZModPowEquivPrimaryComponent [Fintype ι]
     (hb : (L.localIntegralForm p).iIsOrtho b)
     (hbu : ∀ i, L.localIntegralForm p (b i) (b i) = u i * (p : ℤ_[p]) ^ k i) :
     (∀ i, ZMod (p ^ k i)) ≃+ primaryComponent L.DiscriminantGroup p :=
@@ -280,26 +269,15 @@ noncomputable def piZModPowEquivPrimaryComponent [Fintype ι]
     (bijective_piZModPowHom hb hbu
       (fun i ↦ Classical.choose_spec (exists_localizationDualToCompletion_eq hb hbu i)))
 
-/-- **Generator count (`spanFinrank`) of `(A_L)_p` from a diagonal Jordan form.** For any prime `p`
-and any orthogonal basis `b` of `L_p` with `B(bᵢ, bᵢ) = uᵢ pᵏⁱ` (`uᵢ ∈ ℤ_pˣ`), the least number of
-generators of `(A_L)_p` over `ℤ` equals `#{i | kᵢ ≠ 0}`. -/
-theorem spanFinrank_primaryComponent_discriminantGroup_eq_card_filter [Fintype ι]
-    (hb : (L.localIntegralForm p).iIsOrtho b)
-    (hbu : ∀ i, L.localIntegralForm p (b i) (b i) = u i * (p : ℤ_[p]) ^ k i) :
-    (⊤ : Submodule ℤ (primaryComponent L.DiscriminantGroup p)).spanFinrank = #{i | k i ≠ 0} :=
-  (Submodule.spanFinrank_eq_of_equiv
-    (L.piZModPowEquivPrimaryComponent hb hbu).toIntLinearEquiv.symm).trans
-    (AddCommGroup.spanFinrank_pi_zmod_pow k)
-
 /-- **Generator count (`AddGroup.rank`) of `(A_L)_p` from a diagonal Jordan form.** For any prime
 `p` and any orthogonal basis `b` of `L_p` with `B(bᵢ, bᵢ) = uᵢ pᵏⁱ` (`uᵢ ∈ ℤ_pˣ`), the rank of
 `(A_L)_p` equals `#{i | kᵢ ≠ 0}`. -/
 theorem rank_primaryComponent_discriminantGroup_eq_card_filter [Fintype ι]
     (hb : (L.localIntegralForm p).iIsOrtho b)
     (hbu : ∀ i, L.localIntegralForm p (b i) (b i) = u i * (p : ℤ_[p]) ^ k i) :
-    AddGroup.rank (primaryComponent L.DiscriminantGroup p) = #{i | k i ≠ 0} := by
-  rw [AddGroup.rank_eq_spanFinrank_top]
-  exact L.spanFinrank_primaryComponent_discriminantGroup_eq_card_filter hb hbu
+    AddGroup.rank (primaryComponent L.DiscriminantGroup p) = #{i | k i ≠ 0} :=
+  (AddGroup.rank_congr (L.piZModPowEquivPrimaryComponent hb hbu).symm).trans
+    (AddCommGroup.rank_pi_zmod_pow k)
 
 /-- The `p`-primary classes of the dual vectors `p^{-kᵢ} bᵢ` pair to `δᵢⱼ θᵢ / pᵏⁱ` in `ℚ/ℤ`. -/
 private theorem discriminantPairing_symm_mk [DecidableEq ι]

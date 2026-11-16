@@ -41,6 +41,8 @@ covering the range is weighted by its occurrence count.
 * `Finset.prod_filter_subtype_ne`: a product over one fiber ignores the deletion of another.
 * `Finset.prod_filter_subtype_ne_equiv`: a product over one fiber is preserved by a value-preserving
   matching of the indices away from another fiber.
+* `Finset.isSquare_prod_filter_of_isSquare_prod`: if the full product and every fiber away from `z`
+  are squares in a commutative group, then the fiber at `z` is also a square.
 * `Function.occCount_eq_count_map_univ`: occurrence counts as multiset multiplicities.
 * `Function.exists_perm_of_map_univ_eq`: equal multisets give a permutation.
 * `Multiset.exists_map_univ_eq`: enumeration of a multiset by any type of matching size.
@@ -213,7 +215,7 @@ theorem exists_equiv_subtype_ne_of_occCount_eq {Y : Type*} [Finite X] [Finite Y]
   exact ⟨σ, congrFun hσ⟩
 
 /-- Two finite families on index types of equal cardinality whose occurrence counts agree away from
-`z` have the same occurrence count at every value, since the counts sum to the index cardinality. -/
+`z` have the same occurrence count at every value. -/
 theorem occCount_eq_of_natCard_eq_of_occCount_eq_of_ne {Y : Type*} [Finite X] [Finite Y]
     {u : X → S} {v : Y → S} {z : S} (hXY : Nat.card X = Nat.card Y)
     (h : ∀ a, a ≠ z → occCount u a = occCount v a) (a : S) :
@@ -295,6 +297,30 @@ theorem prod_filter_subtype_ne_equiv {Y : Type*} [Fintype X] [Fintype Y] [Decida
     ∏ x ∈ ({x | u x = a} : Finset {x // u x ≠ z}), g (σ x) = ∏ y with v y = a, g y := by
   rw [← prod_filter_subtype_ne v g ha, prod_filter, prod_filter]
   exact Fintype.prod_equiv σ _ _ fun x => by simp only [hσ x]
+
+/-- In a commutative group, if the product of `w` over `s` is a square and its product over every
+fiber `k i = m` with `m ≠ z` is a square, then its product over the fiber `k i = z` is a square. -/
+theorem isSquare_prod_filter_of_isSquare_prod {G ι α : Type*} [CommGroup G] [DecidableEq α]
+    (s : Finset ι) (k : ι → α) (w : ι → G) (z : α)
+    (hfull : IsSquare (∏ i ∈ s, w i))
+    (hne : ∀ m, m ≠ z → IsSquare (∏ i ∈ s with k i = m, w i)) :
+    IsSquare (∏ i ∈ s with k i = z, w i) := by
+  let P : Finset α := (s.image k).erase z
+  have hsplit :
+      ∏ i ∈ s, w i = (∏ i ∈ s with k i = z, w i) * ∏ m ∈ P, ∏ i ∈ s with k i = m, w i := by
+    have hpart := (Finset.prod_fiberwise_of_maps_to (s := s) (g := k) (t := insert z P)
+      (fun i hi ↦ by
+        by_cases hkz : k i = z
+        · simp [hkz]
+        · exact Finset.mem_insert_of_mem
+            (Finset.mem_erase.mpr ⟨hkz, Finset.mem_image_of_mem k hi⟩))
+      w).symm
+    rw [hpart, Finset.prod_insert (Finset.notMem_erase z _)]
+  have hP_sq : IsSquare (∏ m ∈ P, ∏ i ∈ s with k i = m, w i) :=
+    Finset.prod_induction _ IsSquare (fun _ _ ha hb ↦ ha.mul hb) IsSquare.one
+      fun m hm ↦ hne m (Finset.ne_of_mem_erase hm)
+  rw [hsplit] at hfull
+  simpa [mul_inv_cancel_right] using hfull.mul hP_sq.inv
 
 end Finset
 
