@@ -141,7 +141,11 @@ private lemma trace_fderiv_fluxField (hF : DifferentiableAt ℝ F x) (hdF : extD
   simp only [ContinuousLinearMap.toLinearMap_smul, ContinuousLinearMap.toLinearMap_add,
     ContinuousLinearMap.toLinearMap_sub, ContinuousLinearMap.coe_smulRight, map_smul, map_add,
     LinearMap.trace_smulRight]
-  simp [e.inner_eq_ite]
+  simp only [ContinuousLinearMap.toLinearMap_innerSL_apply, LinearMap.add_apply,
+    LinearMap.smul_apply, LinearMap.sub_apply, innerₛₗ_apply_apply, inner_self_eq_norm_sq_to_K,
+    OrthonormalBasis.norm_eq_one, RCLike.ofReal_real_eq_id, id_eq, one_pow, smul_eq_mul, mul_one,
+    ContinuousLinearMap.coe_coe, ContinuousLinearMap.flipAlternating_apply_apply, e.inner_eq_ite,
+    Fin.reduceEq, ↓reduceIte, mul_zero, zero_add]
   linear_combination (⟪e 0, x - c⟫ / 2) * hd 0 2 3 + (⟪e 1, x - c⟫ / 2) * hd 1 2 3 +
     (⟪e 2, x - c⟫ / 2) * hd 0 1 2 + (⟪e 3, x - c⟫ / 2) * hd 0 1 3
 
@@ -162,7 +166,8 @@ private lemma repr_tangentVector (y : E) (i : Fin 4) :
 private lemma norm_tangentVector (y : E) : ‖tangentVector e y‖ = ‖y‖ := by
   rw [← e.repr.norm_map, ← e.repr.norm_map y, EuclideanSpace.norm_eq, EuclideanSpace.norm_eq]
   congr 1
-  simp [Fin.sum_univ_four, repr_tangentVector]
+  simp only [repr_tangentVector, Real.norm_eq_abs, sq_abs, Fin.sum_univ_four, Matrix.cons_val_zero,
+    even_two, Even.neg_pow, Matrix.cons_val_one, Matrix.cons_val]
   ring
 
 /-- **The outward flux density of the flux field.** At `c + y`, the component of `V` along `y`
@@ -174,7 +179,7 @@ private lemma inner_fluxField_add {J : AlmostComplexStructure E} (h₀ : J (e 0)
       F (c + y) ![tangentVector e y, J (tangentVector e y)] / 2 := by
   rw [ContinuousAlternatingMap.apply_vecCons_eq_sum_repr_fin_four e.toBasis]
   simp only [OrthonormalBasis.coe_toBasis, OrthonormalBasis.coe_toBasis_repr_apply,
-    AlmostComplexStructure.repr_apply h₀ h₂, repr_tangentVector]
+    AlmostComplexStructure.repr_apply h₀ h₂, repr_tangentVector, smul_eq_mul]
   simp only [fluxField, fluxTerm, add_sub_cancel_left, inner_smul_left, inner_add_left,
     ← e.repr_apply_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
     Matrix.cons_val_two, Matrix.cons_val_three, Matrix.head_cons, Matrix.tail_cons,
@@ -230,7 +235,7 @@ private lemma integral_inner_fluxField_le {J : AlmostComplexStructure E}
     rw [norm_tangentVector, hnorm] at hb
     refine le_of_mul_le_mul_left ?_ hσ
     rw [key]
-    nlinarith
+    linear_combination hb / 2
   have hmemB : ∀ θ : sphere (0 : E) 1, c + σ • (θ : E) ∈ closedBall c σ := fun θ ↦ by
     rw [mem_closedBall, dist_eq_norm, add_sub_cancel_left, hnorm]
   have hcont : Continuous fun θ : sphere (0 : E) 1 ↦ c + σ • (θ : E) :=
@@ -301,7 +306,7 @@ theorem setIntegral_ball_le_mul_integral_toSphere_add {J : AlmostComplexStructur
     rw [measureReal_def, Measure.addHaar_ball μ c hσ.le, hn, ENNReal.toReal_mul,
       ENNReal.toReal_ofReal (by positivity), measureReal_def]
   rw [setIntegral_ball_eq_integral_inner_fluxField hσ.le hF hdF, hvol] at hball
-  nlinarith
+  linear_combination hball + hsphere
 
 /-- **Taubes's monotonicity inequality for the defect measure.** Let `J`, `e` and the closed
 two-form field `F` be as in `setIntegral_ball_le_mul_integral_toSphere_add`, on the closed ball

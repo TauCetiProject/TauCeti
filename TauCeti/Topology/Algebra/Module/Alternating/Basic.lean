@@ -30,6 +30,8 @@ form a complex vector space, and these operations are complex-linear or conjugat
   map as a semilinear map of alternating maps.
 * `ContinuousAlternatingMap.eq_zero_iff_forall_apply_fin_one`: an alternating map of one vector
   vanishes exactly when it vanishes on every vector.
+* `ContinuousAlternatingMap.apply_vecCons_swap`: an alternating map of two vectors changes sign
+  when they are exchanged.
 * `ContinuousAlternatingMap.compContinuousLinearMap_compContinuousLinearMap`: pulling back along
   `A` and then along `B` is pulling back along `A.comp B`.
 -/
@@ -79,6 +81,13 @@ theorem eq_zero_iff_forall_apply_fin_one {R M N : Type*} [Semiring R]
   ext w
   obtain ⟨v, rfl⟩ : ∃ v, w = ![v] := ⟨w 0, funext fun i ↦ by rw [Fin.fin_one_eq_zero i]; rfl⟩
   exact h v
+
+/-- A continuous alternating map of two vectors changes sign when they are exchanged. -/
+theorem apply_vecCons_swap {R M N : Type*} [Semiring R]
+    [AddCommMonoid M] [Module R M] [TopologicalSpace M]
+    [AddCommGroup N] [Module R N] [TopologicalSpace N]
+    (f : M [⋀^Fin 2]→L[R] N) (v w : M) : f ![w, v] = -f ![v, w] := by
+  simpa using f.map_swap ![v, w] (i := 0) (j := 1) Fin.zero_ne_one
 
 section CompComp
 

@@ -11,7 +11,7 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 public import TauCeti.MeasureTheory.Constructions.HaarToSphere
 import TauCeti.Analysis.InnerProductSpace.NormPow
 import Mathlib.MeasureTheory.Function.L2Space
-import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
+import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence
 import TauCeti.Analysis.Sobolev.WeakDeriv.Interval
 import TauCeti.MeasureTheory.Group.Integral
 import TauCeti.Topology.Algebra.Module.Trace
@@ -33,23 +33,20 @@ Write `Φ s = s ^ (n - 1) ∫ ⟪V (s θ), θ⟫` for the flux through the spher
 origin and `G s = ∫_{ball 0 s} tr (DV)`. In polar coordinates `G` is the primitive of
 `g s = s ^ (n - 1) ∫ tr (DV (s θ))` (`ContinuousOn.hasDerivAt_setIntegral_ball`). The proof shows
 that `Φ` has the same distributional derivative `g` on `(0, R)`, without any tangential calculus on
-the sphere. For a test function `ψ` on `(0, R)`, the radial function `χ x = ψ ‖x‖` has gradient
-`ψ' (‖x‖) x / ‖x‖`, and the compactly supported field `χ V` has divergence integral zero
-(`TauCeti.integral_fderiv_eq_zero_of_hasCompactSupport`). Expanding
-`tr (D (χ V)) = χ tr (DV) + ⟪∇χ, V⟫` gives `∫ χ tr (DV) = -∫ ⟪∇χ, V⟫`
-(`TauCeti.integral_mul_trace_fderiv_eq_neg`), which in polar coordinates reads
-`∫ ψ' Φ = -∫ ψ g`: `g` is the weak derivative of `Φ`. So `Φ R - Φ 0 = ∫₀^R g = G R` by the
-fundamental theorem of calculus for weak derivatives (`TauCeti.HasWeakLineDerivOn.integral_eq_sub`,
-which rests on the du Bois-Reymond lemma), and `Φ 0 = 0` because the surface measure has
-barycenter zero (`TauCeti.integral_toSphere_coe_eq_zero`). This is the radial test-function
-argument of the mean-value property for harmonic functions
+the sphere. For a test function `ψ` on `(0, R)`, the radial function `χ x = ψ ‖x‖` is a test
+function on the ball with gradient `ψ' (‖x‖) x / ‖x‖`. The classical derivative of `V` is a weak
+one, so `∫ ⟪∇χ, V⟫ = -∫ χ tr (DV)`
+(`TauCeti.HasWeakFDerivOn.integral_inner_gradient_eq_neg_integral_smul_trace`), which in polar
+coordinates reads `∫ ψ' Φ = -∫ ψ g`: `g` is the weak derivative of `Φ`. So
+`Φ R - Φ 0 = ∫₀^R g = G R` by the fundamental theorem of calculus for weak derivatives
+(`TauCeti.HasWeakLineDerivOn.integral_eq_sub`, which rests on the du Bois-Reymond lemma), and
+`Φ 0 = 0` because the surface measure has barycenter zero (`TauCeti.integral_toSphere_coe_eq_zero`).
+This is the radial test-function argument of the mean-value property for harmonic functions
 (`InnerProductSpace.HarmonicOnNhd.integral_toSphere_eq`), applied to the flux instead of the sphere
 average.
 
 ## Main results
 
-* `TauCeti.integral_mul_trace_fderiv_eq_neg`: integration by parts for the divergence against a
-  compactly supported `C¹` function.
 * `TauCeti.setIntegral_ball_trace_fderiv`: the divergence theorem on a ball.
 
 ## References
@@ -66,9 +63,9 @@ namespace TauCeti
 open MeasureTheory Metric Set Filter Topology Module
 open scoped RealInnerProductSpace ContDiff
 
-/-! ### Integration by parts for the divergence -/
+/-! ### Integrability of the divergence pairing -/
 
-section IntegrationByParts
+section Integrability
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
@@ -103,52 +100,7 @@ private lemma integrable_fderiv_apply {U : Set E} (hU : IsOpen U) {χ : E → �
     ).continuous_of_tsupport_subset hU (hsupp.trans hχU)).integrable_of_hasCompactSupport
       (hχc.mono' (subset_closure.trans hsupp))
 
-/-- **Integration by parts for the divergence.** If `χ` is `C¹` with compact support inside an
-open set `U` on which the field `V` is `C¹`, then `∫ χ tr (DV) = -∫ Dχ (V)`: the field `χ V` is
-compactly supported, so its divergence `χ tr (DV) + Dχ (V)` integrates to zero. -/
-theorem integral_mul_trace_fderiv_eq_neg {U : Set E} (hU : IsOpen U) {χ : E → ℝ}
-    {V : E → E} (hχ : ContDiff ℝ 1 χ) (hχc : HasCompactSupport χ) (hχU : tsupport χ ⊆ U)
-    (hV : ∀ x ∈ U, ContDiffAt ℝ 1 V x) :
-    ∫ x, χ x * LinearMap.trace ℝ E (fderiv ℝ V x : E →ₗ[ℝ] E) ∂μ =
-      -∫ x, fderiv ℝ χ x (V x) ∂μ := by
-  have hχ0 : ∀ x ∉ U, χ =ᶠ[𝓝 x] 0 := fun x hx ↦
-    notMem_tsupport_iff_eventuallyEq.mp fun h ↦ hx (hχU h)
-  set u : E → E := fun x ↦ χ x • V x
-  -- `D(χ V) = χ DV + Dχ ⊗ V`, also off `U`, where both sides vanish.
-  have hu_deriv : ∀ x, fderiv ℝ u x = χ x • fderiv ℝ V x + (fderiv ℝ χ x).smulRight (V x) :=
-    fun x ↦ by
-      by_cases hx : x ∈ U
-      · exact ((hχ.differentiable one_ne_zero x).hasFDerivAt.smul
-          ((hV x hx).differentiableAt one_ne_zero).hasFDerivAt).fderiv
-      · have h0 := hχ0 x hx
-        have hu0 : u =ᶠ[𝓝 x] 0 := h0.mono fun y hy ↦ by simp [u, hy]
-        rw [hu0.fderiv_eq, h0.self_of_nhds, h0.fderiv_eq]
-        simp
-  have hu : ContDiff ℝ 1 u := contDiff_iff_contDiffAt.mpr fun x ↦ by
-    by_cases hx : x ∈ U
-    · exact hχ.contDiffAt.smul (hV x hx)
-    · exact (contDiffAt_const (c := (0 : E))).congr_of_eventuallyEq
-        ((hχ0 x hx).mono fun y hy ↦ by simp [u, hy])
-  have huc : HasCompactSupport u := hχc.smul_right
-  have hzero : ∫ x, traceCLM ℝ E (fderiv ℝ u x) ∂μ = 0 := by
-    rw [(traceCLM ℝ E).integral_comp_comm
-      ((hu.continuous_fderiv one_ne_zero).integrable_of_hasCompactSupport (huc.fderiv (𝕜 := ℝ))),
-      integral_fderiv_eq_zero_of_hasCompactSupport hu huc, map_zero]
-  have hsplit : ∀ x, traceCLM ℝ E (fderiv ℝ u x) =
-      χ x * LinearMap.trace ℝ E (fderiv ℝ V x : E →ₗ[ℝ] E) + fderiv ℝ χ x (V x) := fun x ↦ by
-    rw [hu_deriv, map_add, map_smul, traceCLM_apply, traceCLM_apply,
-      ContinuousLinearMap.coe_smulRight, LinearMap.trace_smulRight, smul_eq_mul,
-      ContinuousLinearMap.coe_coe]
-  -- Both parts are integrable: the first is continuous with compact support.
-  have hint₁ := integrable_mul_trace_fderiv (μ := μ) hU hχ.continuous hχc hχU hV
-  have hint₂ := integrable_fderiv_apply (μ := μ) hU hχ hχc hχU
-    fun x hx ↦ (hV x hx).continuousAt.continuousWithinAt
-  have h := integral_add hint₁ hint₂
-  simp_rw [← hsplit] at h
-  rw [hzero] at h
-  linarith
-
-end IntegrationByParts
+end Integrability
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
@@ -157,8 +109,9 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 
 /-- **The flux has distributional derivative `g`.** For a field `V` that is `C¹` on `ball 0 R`
 and a test function `ψ` on `(0, R)`,
-`∫ ψ' (s) s ^ (n - 1) ∫ ⟪V (s θ), θ⟫ = -∫ ψ (s) s ^ (n - 1) ∫ tr (DV (s θ))`. This is
-`integral_mul_trace_fderiv_eq_neg` for the radial function `χ x = ψ ‖x‖`, in polar coordinates. -/
+`∫ ψ' (s) s ^ (n - 1) ∫ ⟪V (s θ), θ⟫ = -∫ ψ (s) s ^ (n - 1) ∫ tr (DV (s θ))`. This is the weak
+divergence identity `∫ ⟪∇χ, V⟫ = -∫ χ tr (DV)` for the radial test function `χ x = ψ ‖x‖`, in
+polar coordinates. -/
 private lemma integral_deriv_mul_flux_eq_neg [Nontrivial E] {R : ℝ} {V : E → E}
     (hV : ∀ x ∈ ball (0 : E) R, ContDiffAt ℝ 1 V x) {ψ : ℝ → ℝ} (hψ : ContDiff ℝ ∞ ψ)
     (hψs : tsupport ψ ⊆ Ioo 0 R) :
@@ -175,9 +128,12 @@ private lemma integral_deriv_mul_flux_eq_neg [Nontrivial E] {R : ℝ} {V : E →
   have hχc : HasCompactSupport χ :=
     isCompact_of_isClosed_isBounded (isClosed_tsupport χ) (isBounded_ball.subset hχs)
   have hχd : ∀ x, fderiv ℝ χ x = (deriv ψ ‖x‖ / ‖x‖) • innerSL ℝ x := fun x ↦
-    ((hψ.differentiable (by simp)).hasFDerivAt_comp_norm hψ0 x).fderiv
-  have hparts := integral_mul_trace_fderiv_eq_neg (μ := μ) isOpen_ball (hχ.of_le (by simp)) hχc
-    hχs hV
+    ((hψ.differentiable (by simp) ‖x‖).hasFDerivAt_comp_norm hψ0).fderiv
+  -- The weak divergence identity `∫ Dχ (V) = -∫ χ tr (DV)` for `V`, tested against `χ`.
+  have hparts := (ContDiffOn.hasWeakFDerivOn_fderiv (μ := μ) (Ω := ⟨ball (0 : E) R, isOpen_ball⟩)
+    fun x hx ↦ (hV x hx).contDiffWithinAt).integral_inner_gradient_eq_neg_integral_smul_trace
+      ⟨χ, hχ, hχc, hχs⟩
+  simp only [TestFunction.coe_mk, inner_gradient_left, smul_eq_mul] at hparts
   -- Polar coordinates for both sides.
   have hψ_out : ∀ s ∉ Ioi (0 : ℝ), ψ s = 0 ∧ deriv ψ s = 0 := fun s hs ↦
     ⟨image_eq_zero_of_notMem_tsupport fun h ↦ hs (hψs h).1,
@@ -203,7 +159,7 @@ private lemma integral_deriv_mul_flux_eq_neg [Nontrivial E] {R : ℝ} {V : E →
       (setIntegral_eq_integral_of_forall_compl_eq_zero (s := Ioi 0) fun s hs ↦ by
         simp [(hψ_out s hs).2])
     refine setIntegral_congr_fun measurableSet_Ioi fun s hs ↦ ?_
-    have hs' : (s : ℝ) ≠ 0 := (show (0 : ℝ) < s from hs).ne'
+    have hs' : (s : ℝ) ≠ 0 := (mem_Ioi.mp hs).ne'
     have hθ : ∀ θ : sphere (0 : E) 1,
         fderiv ℝ χ (s • (θ : E)) (V (s • (θ : E))) = deriv ψ s * ⟪V (s • (θ : E)), θ⟫ :=
       fun θ ↦ by
@@ -212,7 +168,7 @@ private lemma integral_deriv_mul_flux_eq_neg [Nontrivial E] {R : ℝ} {V : E →
         field_simp
     simp only [hθ, smul_eq_mul, integral_const_mul]
     ring
-  rw [← h₁, ← h₂, hparts, neg_neg]
+  rw [← h₁, ← h₂, hparts]
 
 /-! ### The divergence theorem -/
 
