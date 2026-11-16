@@ -94,33 +94,13 @@ theorem trace_toEuclideanCLM (x : CStarMatrix n n ℂ) :
   congr 1
   exact (LinearMap.toMatrixOrthonormal b).apply_symm_apply (ofMatrix.symm x)
 
-/-- Viewing `toEuclideanCLM` as a real non-unital `⋆`-algebra homomorphism, used to transport the
-real non-unital continuous functional calculus. -/
-def toEuclideanRealNonUnitalStarAlgHom :
-    CStarMatrix n n ℂ →⋆ₙₐ[ℝ] (EuclideanSpace ℂ n →L[ℂ] EuclideanSpace ℂ n) where
-  toFun := toEuclideanCLM
-  map_smul' r x := by
-    have hr : r • x = (r : ℂ) • x := by ext i j; simp
-    rw [hr, map_smul]
-    exact (Complex.coe_smul r (toEuclideanCLM x)).symm
-  map_zero' := map_zero toEuclideanCLM
-  map_add' := map_add toEuclideanCLM
-  map_mul' := map_mul toEuclideanCLM
-  map_star' := map_star toEuclideanCLM
-
-@[simp]
-theorem toEuclideanRealNonUnitalStarAlgHom_apply (x : CStarMatrix n n ℂ) :
-    toEuclideanRealNonUnitalStarAlgHom x = toEuclideanCLM x :=
-  (rfl)
-
 /-- `toEuclideanCLM` commutes with the real non-unital continuous functional calculus. -/
 theorem toEuclideanCLM_cfcₙ (f : ℝ → ℝ) (x : CStarMatrix n n ℂ)
     (hf : ContinuousOn f (quasispectrum ℝ x) := by cfc_cont_tac)
     (hf₀ : f 0 = 0 := by cfc_zero_tac) (hx : IsSelfAdjoint x := by cfc_tac) :
-    toEuclideanCLM (cfcₙ f x) = cfcₙ f (toEuclideanCLM x) := by
-  have hcont : Continuous (toEuclideanRealNonUnitalStarAlgHom (n := n)) :=
-    (NonUnitalStarAlgHom.isometry (toEuclideanCLM (n := n)) toEuclideanCLM.injective).continuous
-  exact toEuclideanRealNonUnitalStarAlgHom.map_cfcₙ f x hf hf₀ hcont hx
+    toEuclideanCLM (cfcₙ f x) = cfcₙ f (toEuclideanCLM x) :=
+  ((toEuclideanCLM (n := n)).toNonUnitalStarAlgHom.restrictScalars ℝ).map_cfcₙ f x hf hf₀
+    (NonUnitalStarAlgHom.isometry (toEuclideanCLM (n := n)) toEuclideanCLM.injective).continuous hx
 
 end CStarMatrix
 
@@ -158,44 +138,24 @@ theorem trace_nnrpow_sqrt_star_mul_self [DecidableEq n] {p : ℝ≥0} (hp : 0 < 
     Real.continuous_rpow_const hp2.le
   have hmap : CStarMatrix.toEuclideanCLM (CFC.nnrpow (CFC.sqrt (star x * x)) p) =
       cfc (fun t : ℝ => t ^ ((p / 2 : ℝ≥0) : ℝ)) (star T * T) := by
-    rw [CFC.nnrpow_eq_pow, CFC.nnrpow_sqrt,
-      CFC.nnrpow_eq_cfcₙ_real (star x * x) (p / 2),
-      CStarMatrix.toEuclideanCLM_cfcₙ (fun t : ℝ => t ^ ((p / 2 : ℝ≥0) : ℝ))
-        (star x * x) hfcont.continuousOn hf0,
-      map_mul CStarMatrix.toEuclideanCLM, map_star CStarMatrix.toEuclideanCLM, cfcₙ_eq_cfc]
+    rw [CFC.nnrpow_eq_pow, CFC.nnrpow_sqrt, CFC.nnrpow_eq_cfcₙ_real (star x * x) (p / 2),
+      CStarMatrix.toEuclideanCLM_cfcₙ _ (star x * x) hfcont.continuousOn hf0,
+      map_mul, map_star, cfcₙ_eq_cfc]
   rw [← CStarMatrix.trace_toEuclideanCLM, hmap,
-    LinearMap.trace_eq_sum_inner _ A.rightSingularBasis]
-  have hvec (i : Fin (Module.finrank ℂ (EuclideanSpace ℂ n))) :
-      cfc (fun t : ℝ => t ^ ((p / 2 : ℝ≥0) : ℝ)) (star T * T) (A.rightSingularBasis i) =
-        ((A.singularValues i ^ (p : ℝ) : ℝ) : ℂ) • A.rightSingularBasis i := by
-    have hadj : (ContinuousLinearMap.adjoint T) (T (A.rightSingularBasis i)) =
-        (LinearMap.adjoint A ∘ₗ A) (A.rightSingularBasis i) := by
-      rw [LinearMap.comp_apply, ContinuousLinearMap.adjoint_toLinearMap]
-      rfl
-    have heig : (star T * T) (A.rightSingularBasis i) =
-        ((A.singularValues i ^ 2 : ℝ) : ℂ) • A.rightSingularBasis i := by
-      rw [ContinuousLinearMap.mul_def, ContinuousLinearMap.comp_apply,
-        ContinuousLinearMap.star_eq_adjoint, hadj, A.adjoint_comp_self_rightSingularBasis i]
-      rfl
-    rw [ContinuousLinearMap.cfc_apply_of_apply_eq_smul (μ := A.singularValues i ^ 2) _ heig]
-    have hrpow : (A.singularValues i ^ 2) ^ ((p / 2 : ℝ≥0) : ℝ) =
-        A.singularValues i ^ (p : ℝ) := by
-      rw [← Real.rpow_two, ← Real.rpow_mul (A.singularValues_nonneg i),
-        NNReal.coe_div, NNReal.coe_ofNat, mul_div_cancel₀ _ two_ne_zero]
-    rw [hrpow]
-    rfl
-  have hsum :
-      ∑ i, ⟪A.rightSingularBasis i,
-        ((cfc (fun t : ℝ => t ^ ((p / 2 : ℝ≥0) : ℝ)) (star T * T)).toLinearMap)
-          (A.rightSingularBasis i)⟫_ℂ =
-        ∑ i : Fin (Module.finrank ℂ (EuclideanSpace ℂ n)),
-          ((A.singularValues i ^ (p : ℝ) : ℝ) : ℂ) := by
-    refine Finset.sum_congr rfl fun i _ => ?_
-    rw [ContinuousLinearMap.coe_coe, hvec i, inner_smul_right,
-      OrthonormalBasis.inner_eq_one, mul_one]
-  rw [hsum, ← Complex.ofReal_sum]
-  congr 1
-  exact A.sum_fin_singularValues (· ^ (p : ℝ)) (Real.zero_rpow (NNReal.coe_pos.mpr hp).ne')
+    LinearMap.trace_eq_sum_inner _ A.rightSingularBasis,
+    ← A.sum_fin_singularValues (· ^ (p : ℝ)) (Real.zero_rpow (NNReal.coe_pos.mpr hp).ne'),
+    Complex.ofReal_sum]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  have heig : (star T * T) (A.rightSingularBasis i) =
+      ((A.singularValues i ^ 2 : ℝ) : ℂ) • A.rightSingularBasis i := by
+    simpa [A, ContinuousLinearMap.mul_def, ContinuousLinearMap.star_eq_adjoint,
+      ContinuousLinearMap.adjoint_toLinearMap] using A.adjoint_comp_self_rightSingularBasis i
+  have hrpow : (A.singularValues i ^ 2) ^ ((p / 2 : ℝ≥0) : ℝ) = A.singularValues i ^ (p : ℝ) := by
+    rw [← Real.rpow_two, ← Real.rpow_mul (A.singularValues_nonneg i), NNReal.coe_div,
+      NNReal.coe_ofNat, mul_div_cancel₀ _ two_ne_zero]
+  rw [ContinuousLinearMap.coe_coe,
+    ContinuousLinearMap.cfc_apply_of_apply_eq_smul (μ := A.singularValues i ^ 2) _ heig, hrpow]
+  simp [Complex.real_smul]
 
 /-- Taking the real part of `tr(|x|^p)` gives `∑ᵢ σᵢ(x)^p` for `0 < p`. -/
 theorem re_trace_nnrpow_sqrt_star_mul_self [DecidableEq n] {p : ℝ≥0} (hp : 0 < p)
@@ -209,8 +169,7 @@ theorem re_trace_nnrpow_sqrt_star_mul_self_nonneg (p : ℝ≥0) (x : CStarMatrix
     0 ≤ (Matrix.trace (CStarMatrix.ofMatrix.symm (CFC.nnrpow (CFC.sqrt (star x * x)) p))).re := by
   classical
   obtain rfl | hp := eq_zero_or_pos p
-  · have h0 : CStarMatrix.ofMatrix.symm (0 : CStarMatrix n n ℂ) = 0 := rfl
-    simp [h0]
+  · simp [show CStarMatrix.ofMatrix.symm (0 : CStarMatrix n n ℂ) = 0 from rfl]
   · rw [re_trace_nnrpow_sqrt_star_mul_self hp x]
     exact Finsupp.sum_nonneg fun i _ =>
       Real.rpow_nonneg ((CStarMatrix.toEuclideanCLM x).toLinearMap.singularValues_nonneg i) _
@@ -224,8 +183,7 @@ theorem matrixLpGauge_nonneg (p : ℝ≥0) (x : CStarMatrix n n ℂ) :
 theorem matrixLpGauge_rpow {p : ℝ≥0} (hp : 0 < p) (x : CStarMatrix n n ℂ) :
     matrixLpGauge p x ^ (p : ℝ) =
       (Matrix.trace (CStarMatrix.ofMatrix.symm (CFC.nnrpow (CFC.sqrt (star x * x)) p))).re := by
-  rw [matrixLpGauge_def,
-    ← Real.rpow_mul (re_trace_nnrpow_sqrt_star_mul_self_nonneg p x),
+  rw [matrixLpGauge_def, ← Real.rpow_mul (re_trace_nnrpow_sqrt_star_mul_self_nonneg p x),
     one_div_mul_cancel (NNReal.coe_pos.mpr hp).ne', Real.rpow_one]
 
 /-- At `p = 1`, `matrixLpGauge 1 x` is the real part of `tr(|x|)`. -/
@@ -274,12 +232,8 @@ theorem matrixLpGauge_one_eq_nuclear [DecidableEq n] (x : CStarMatrix n n ℂ) :
 @[simp]
 theorem matrixLpGauge_zero {p : ℝ≥0} (hp : 0 < p) :
     matrixLpGauge p (0 : CStarMatrix n n ℂ) = 0 := by
-  have hp' : (1 : ℝ) / (p : ℝ) ≠ 0 := one_div_ne_zero (NNReal.coe_pos.mpr hp).ne'
-  have h0 : CStarMatrix.ofMatrix.symm (0 : CStarMatrix n n ℂ) = 0 := rfl
-  rw [matrixLpGauge_def]
-  simp only [star_zero, mul_zero, CFC.sqrt_zero, CFC.nnrpow_eq_pow, CFC.zero_nnrpow, h0,
-    Matrix.trace_zero, Complex.zero_re]
-  exact Real.zero_rpow hp'
+  simp [matrixLpGauge_def, show CStarMatrix.ofMatrix.symm (0 : CStarMatrix n n ℂ) = 0 from rfl,
+    Real.zero_rpow (inv_ne_zero (NNReal.coe_pos.mpr hp).ne')]
 
 /-- For `0 < p`, `matrixLpGauge p x = 0` if and only if `x = 0`. -/
 @[simp]
@@ -287,26 +241,21 @@ theorem matrixLpGauge_eq_zero_iff {p : ℝ≥0} (hp : 0 < p) {x : CStarMatrix n 
     matrixLpGauge p x = 0 ↔ x = 0 := by
   classical
   refine ⟨fun h => ?_, fun h => h ▸ matrixLpGauge_zero hp⟩
-  have hsum :
-      ((CStarMatrix.toEuclideanCLM x).toLinearMap.singularValues.sum
-        fun _ s => s ^ (p : ℝ)) = 0 := by
-    rw [← re_trace_nnrpow_sqrt_star_mul_self hp x, ← matrixLpGauge_rpow hp x, h,
-      Real.zero_rpow (NNReal.coe_pos.mpr hp).ne']
   set A := (CStarMatrix.toEuclideanCLM x).toLinearMap
   have hfin : ∑ i : Fin (Module.finrank ℂ (EuclideanSpace ℂ n)),
       A.singularValues i ^ (p : ℝ) = 0 := by
-    rw [A.sum_fin_singularValues (· ^ (p : ℝ)) (Real.zero_rpow (NNReal.coe_pos.mpr hp).ne')]
-    exact hsum
-  have hall := (Finset.sum_eq_zero_iff_of_nonneg (s := Finset.univ)
-    (f := fun i : Fin (Module.finrank ℂ (EuclideanSpace ℂ n)) => A.singularValues i ^ (p : ℝ))
-    fun i _ => Real.rpow_nonneg (A.singularValues_nonneg i) (p : ℝ)).mp hfin
+    rw [A.sum_fin_singularValues (· ^ (p : ℝ)) (Real.zero_rpow (NNReal.coe_pos.mpr hp).ne'),
+      ← re_trace_nnrpow_sqrt_star_mul_self hp x, ← matrixLpGauge_rpow hp x, h,
+      Real.zero_rpow (NNReal.coe_pos.mpr hp).ne']
+  have hall := (Finset.sum_eq_zero_iff_of_nonneg fun (i : Fin _) _ =>
+    Real.rpow_nonneg (A.singularValues_nonneg i) (p : ℝ)).mp hfin
   have hA : A = 0 := A.rightSingularBasis.toBasis.ext fun i => by
     have h0 := (Real.rpow_eq_zero (A.singularValues_nonneg i) (NNReal.coe_pos.mpr hp).ne').mp
       (hall i (Finset.mem_univ _))
     rw [OrthonormalBasis.coe_toBasis, LinearMap.zero_apply, ← norm_eq_zero,
       A.norm_apply_rightSingularBasis i, h0]
-  have hT : CStarMatrix.toEuclideanCLM x = 0 := ContinuousLinearMap.coe_inj.mp hA
-  exact CStarMatrix.toEuclideanCLM.injective (hT.trans (map_zero _).symm)
+  exact CStarMatrix.toEuclideanCLM.injective
+    ((ContinuousLinearMap.coe_inj.mp hA).trans (map_zero _).symm)
 
 /-- The Schatten `p`-gauge is invariant under the C⋆-algebra involution `star`. -/
 @[simp]
@@ -315,31 +264,24 @@ theorem matrixLpGauge_star (p : ℝ≥0) (x : CStarMatrix n n ℂ) :
   classical
   obtain rfl | hp := eq_zero_or_pos p
   · simp [matrixLpGauge_def]
-  · rw [matrixLpGauge_eq_singularValues_sum hp, matrixLpGauge_eq_singularValues_sum hp]
-    have hadj :
-        (CStarMatrix.toEuclideanCLM (star x)).toLinearMap =
-          LinearMap.adjoint (CStarMatrix.toEuclideanCLM x).toLinearMap := by
-      rw [map_star, ContinuousLinearMap.star_eq_adjoint,
-        ContinuousLinearMap.adjoint_toLinearMap]
-    rw [hadj, LinearMap.singularValues_adjoint]
+  · rw [matrixLpGauge_eq_singularValues_sum hp, matrixLpGauge_eq_singularValues_sum hp,
+      map_star, ContinuousLinearMap.star_eq_adjoint, ← ContinuousLinearMap.adjoint_toLinearMap,
+      LinearMap.singularValues_adjoint]
 
 /-- For `1 ≤ p`, `matrixLpGauge p` is subadditive. -/
 theorem matrixLpGauge_add_le {p : ℝ≥0} (hp : 1 ≤ p) (x y : CStarMatrix n n ℂ) :
     matrixLpGauge p (x + y) ≤ matrixLpGauge p x + matrixLpGauge p y := by
   classical
   let : Fact (1 ≤ (p : ℝ≥0∞)) := ⟨by exact_mod_cast hp⟩
-  rw [matrixLpGauge_eq_schatten p, matrixLpGauge_eq_schatten p, matrixLpGauge_eq_schatten p,
-    map_add, ContinuousLinearMap.toLinearMap_add]
-  exact map_add_le_add
-    (UnitarilyInvariantSeminorm.schatten ℂ (EuclideanSpace ℂ n) (EuclideanSpace ℂ n) p) _ _
+  simp only [matrixLpGauge_eq_schatten p, map_add, ContinuousLinearMap.toLinearMap_add]
+  exact map_add_le_add _ _ _
 
 /-- For `1 ≤ p`, `matrixLpGauge p` is absolutely homogeneous over `ℂ`. -/
 theorem matrixLpGauge_smul {p : ℝ≥0} (hp : 1 ≤ p) (c : ℂ) (x : CStarMatrix n n ℂ) :
     matrixLpGauge p (c • x) = ‖c‖ * matrixLpGauge p x := by
   classical
   let : Fact (1 ≤ (p : ℝ≥0∞)) := ⟨by exact_mod_cast hp⟩
-  rw [matrixLpGauge_eq_schatten p, matrixLpGauge_eq_schatten p, map_smul,
-    ContinuousLinearMap.toLinearMap_smul]
+  simp only [matrixLpGauge_eq_schatten p, map_smul, ContinuousLinearMap.toLinearMap_smul]
   exact (UnitarilyInvariantSeminorm.schatten ℂ (EuclideanSpace ℂ n) (EuclideanSpace ℂ n) p
     ).toSeminorm.smul' c _
 
@@ -373,8 +315,7 @@ theorem matrixLpGauge_mul_le_left {p : ℝ≥0} (hp : 1 ≤ p) (x y : CStarMatri
   rw [matrixLpGauge_eq_schatten p, matrixLpGauge_eq_schatten p, map_mul,
     ContinuousLinearMap.toLinearMap_mul, ← CStarMatrix.norm_toEuclideanCLM]
   exact UnitarilyInvariantSeminorm.schatten_comp_le_left (p : ℝ≥0∞)
-    (CStarMatrix.toEuclideanCLM x).toLinearMap (CStarMatrix.toEuclideanCLM y).toLinearMap
-    (CStarMatrix.toEuclideanCLM x).le_opNorm
+    _ _ (CStarMatrix.toEuclideanCLM x).le_opNorm
 
 /-- **Right ideal inequality.** For `1 ≤ p`, `matrixLpGauge p (x * y) ≤ matrixLpGauge p x * ‖y‖`. -/
 theorem matrixLpGauge_mul_le_right {p : ℝ≥0} (hp : 1 ≤ p) (x y : CStarMatrix n n ℂ) :
@@ -390,14 +331,9 @@ theorem norm_trace_mul_le_norm_mul_matrixLpGauge_one (b x : CStarMatrix n n ℂ)
   classical
   rw [← CStarMatrix.trace_toEuclideanCLM]
   set T := (CStarMatrix.toEuclideanCLM (b * x)).toLinearMap
-  have htr : ‖LinearMap.trace ℂ (EuclideanSpace ℂ n) T‖ ≤
-      T.kyFanSum (Module.finrank ℂ (EuclideanSpace ℂ n)) := by
-    have h := T.norm_trace_comp_linearIsometryEquiv_le_kyFanSum (.refl ℂ _)
-    have hcomp : T ∘ₗ (LinearIsometryEquiv.refl ℂ (EuclideanSpace ℂ n) : _ →ₗ[ℂ] _) = T := rfl
-    rwa [hcomp] at h
-  calc
-    ‖LinearMap.trace ℂ (EuclideanSpace ℂ n) T‖
-      ≤ T.kyFanSum (Module.finrank ℂ (EuclideanSpace ℂ n)) := htr
+  calc ‖LinearMap.trace ℂ (EuclideanSpace ℂ n) T‖
+      ≤ T.kyFanSum (Module.finrank ℂ (EuclideanSpace ℂ n)) :=
+        T.norm_trace_comp_linearIsometryEquiv_le_kyFanSum (.refl ℂ _)
     _ = matrixLpGauge 1 (b * x) := by
         rw [T.kyFanSum_eq_nuclear (Submodule.finrank_le _), matrixLpGauge_one_eq_nuclear]
     _ ≤ ‖b‖ * matrixLpGauge 1 x := matrixLpGauge_mul_le_left le_rfl b x
@@ -416,17 +352,14 @@ theorem exists_norm_le_one_and_trace_mul_eq_matrixLpGauge_one (x : CStarMatrix n
   classical
   set A := (CStarMatrix.toEuclideanCLM x).toLinearMap
   obtain ⟨Q, hQ⟩ := A.exists_linearIsometryEquiv_trace_comp_eq_kyFanSum
-  let Qclm : EuclideanSpace ℂ n →L[ℂ] EuclideanSpace ℂ n := Q.toLinearIsometry.toContinuousLinearMap
-  let u : CStarMatrix n n ℂ := CStarMatrix.toEuclideanCLM.symm Qclm
-  refine ⟨u, ?_, ?_⟩
+  let Qclm := Q.toLinearIsometry.toContinuousLinearMap
+  refine ⟨CStarMatrix.toEuclideanCLM.symm Qclm, ?_, ?_⟩
   · rw [← CStarMatrix.norm_toEuclideanCLM, StarAlgEquiv.apply_symm_apply]
     exact Qclm.opNorm_le_bound zero_le_one fun v => by simp [Qclm]
   · rw [← CStarMatrix.trace_toEuclideanCLM, map_mul, StarAlgEquiv.apply_symm_apply,
-      ContinuousLinearMap.toLinearMap_mul, Module.End.mul_eq_comp, LinearMap.trace_comp_comm']
-    have hEq : A ∘ₗ Qclm.toLinearMap = A ∘ₗ (Q : EuclideanSpace ℂ n →ₗ[ℂ] EuclideanSpace ℂ n) :=
-      rfl
-    rw [hEq, hQ, A.kyFanSum_eq_nuclear (Submodule.finrank_le _), matrixLpGauge_one_eq_nuclear]
-    rfl
+      ContinuousLinearMap.toLinearMap_mul, Module.End.mul_eq_comp, LinearMap.trace_comp_comm',
+      matrixLpGauge_one_eq_nuclear, ← A.kyFanSum_eq_nuclear (Submodule.finrank_le _)]
+    exact hQ
 
 end Gauge
 

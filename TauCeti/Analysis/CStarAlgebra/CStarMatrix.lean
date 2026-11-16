@@ -183,31 +183,25 @@ theorem norm_ofMatrix_diagonal_le [DecidableEq n] (d : n → A) :
   refine (toCLM (ofMatrix (diagonal d))).opNorm_le_bound (norm_nonneg d) fun v => ?_
   refine (sq_le_sq₀ (norm_nonneg _) (mul_nonneg (norm_nonneg d) (norm_nonneg v))).mp ?_
   rw [WithCStarModule.pi_norm_sq, mul_pow, WithCStarModule.pi_norm_sq]
-  have happly (j : n) : toCLM (ofMatrix (diagonal d)) v j = v j * d j := by
-    simp [toCLM_apply_eq_sum, diagonal_apply]
-  have hterm (j : n) :
-      (v j * d j) * star (v j * d j) ≤ ‖d‖ ^ 2 • (v j * star (v j)) := calc
-    (v j * d j) * star (v j * d j) = v j * (d j * star (d j)) * star (v j) := by
-      simp [mul_assoc]
-    _ ≤ ‖d j * star (d j)‖ • (v j * star (v j)) :=
-      CStarAlgebra.star_right_conjugate_le_norm_smul (v j) (d j * star (d j))
-    _ = ‖d j‖ ^ 2 • (v j * star (v j)) := by rw [CStarRing.norm_self_mul_star, sq]
-    _ ≤ ‖d‖ ^ 2 • (v j * star (v j)) :=
-      smul_le_smul_of_nonneg_right
-        (pow_le_pow_left₀ (norm_nonneg _) (norm_le_pi_norm d j) 2) (mul_star_self_nonneg (v j))
   have hsum :
       ∑ j, inner A (toCLM (ofMatrix (diagonal d)) v j) (toCLM (ofMatrix (diagonal d)) v j) ≤
         ‖d‖ ^ 2 • ∑ j, inner A (v j) (v j) := by
     rw [Finset.smul_sum]
     refine Finset.sum_le_sum fun j _ => ?_
-    simpa only [WithCStarModule.inner_def, happly] using hterm j
-  calc
-    ‖∑ j, inner A (toCLM (ofMatrix (diagonal d)) v j) (toCLM (ofMatrix (diagonal d)) v j)‖
-      ≤ ‖‖d‖ ^ 2 • ∑ j, inner A (v j) (v j)‖ :=
-        CStarAlgebra.norm_le_norm_of_le_of_nonneg hsum
-          (Finset.sum_nonneg fun _ _ => CStarModule.inner_self_nonneg)
-    _ = ‖d‖ ^ 2 * ‖∑ j, inner A (v j) (v j)‖ := by
-      rw [norm_smul, Real.norm_of_nonneg (sq_nonneg _)]
+    have happly : toCLM (ofMatrix (diagonal d)) v j = v j * d j := by
+      simp [toCLM_apply_eq_sum, diagonal_apply]
+    rw [WithCStarModule.inner_def, WithCStarModule.inner_def, happly]
+    calc (v j * d j) * star (v j * d j)
+        = v j * (d j * star (d j)) * star (v j) := by simp [mul_assoc]
+      _ ≤ ‖d j * star (d j)‖ • (v j * star (v j)) :=
+          CStarAlgebra.star_right_conjugate_le_norm_smul (v j) (d j * star (d j))
+      _ ≤ ‖d‖ ^ 2 • (v j * star (v j)) := by
+          rw [CStarRing.norm_self_mul_star, ← sq]
+          exact smul_le_smul_of_nonneg_right
+            (pow_le_pow_left₀ (norm_nonneg _) (norm_le_pi_norm d j) 2) (mul_star_self_nonneg _)
+  simpa only [norm_smul, Real.norm_of_nonneg (sq_nonneg _)] using
+    CStarAlgebra.norm_le_norm_of_le_of_nonneg hsum
+      (Finset.sum_nonneg fun _ _ => CStarModule.inner_self_nonneg)
 
 /-- The operator norm of a diagonal matrix in `CStarMatrix n n A` equals the supremum norm of its
 diagonal. -/
