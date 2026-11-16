@@ -9,6 +9,7 @@ public import TauCeti.GroupTheory.SpecificGroups.Sporadic.Conway.Three.Basic
 public import TauCeti.GroupTheory.GroupAction.Stabilizer.Chain
 import TauCeti.GroupTheory.GroupAction.Orbit.Closure
 import TauCeti.GroupTheory.Perm.Basic
+import TauCeti.Logic.Function.Rigidity
 import Mathlib.Algebra.Group.Action.Prod
 import Mathlib.Data.Nat.Bits
 
@@ -31,12 +32,13 @@ The upper bounds and base rigidity come from the regular two-graph on the 276 po
 it to the graph obtained from it by Seidel switching with respect to an explicit set of points.
 Switching does not change the parity of the number of edges among three points, so every element of
 the model preserves this parity on triples. Because `0` is isolated in that graph, every element of
-`Co3` fixing `0` preserves its adjacency relation directly. Adjacency to `{0, 1, 2}` and
-`{0, 1, 2, 3}` cuts out the exact 56-point and 45-point fourth and fifth orbits; adjacency to
-`{0, 1, 2, 3, 4}` together with the number of common neighbors with `{1, 2, 3, 4}` cuts out the
-exact 16-point sixth orbit; and iterative uniqueness of adjacency profiles to previously fixed
-anchors shows that fixing `0, …, 5` fixes all 276 points. The graph, switching sets, words and
-anchor tables are private computation data; only their kernel-checked evaluations enter the proofs.
+`Co3` fixing `0` preserves its adjacency relation directly. Adjacency to `{1, 2}` on points other
+than `1` and adjacency to `{1, 2, 3}` cut out the exact 56-point and 45-point fourth and fifth
+orbits; adjacency to `{1, 2, 3, 4}` together with the number of common neighbors with `{1, 2, 3, 4}`
+cuts out the exact 16-point sixth orbit; and `Function.apply_eq_self_of_rank` with short lists of
+earlier anchors (as in `HigmanSims.Orbits` and `McLaughlin.Orbits`) shows that fixing `0, …, 5`
+fixes all 276 points. The graph, switching sets, words and anchor tables are private computation
+data; only their kernel-checked evaluations enter the proofs.
 
 ## Main declarations
 
@@ -648,31 +650,11 @@ private theorem adj_apply_of_mem_stabilizerChain {k : ℕ} {g : Equiv.Perm (Fin 
   adj_apply_of_fix_zero (Co3.stabilizerChain_le basePoint k hg)
     (apply_eq_of_mem_stabilizerChain hg 0 hk) x y
 
-/- Equality as well as adjacency to each anchor is recorded, distinguishing fixed anchors from
-other points with the same adjacency pattern. -/
-private def profile (l : List (Fin 276)) (x : Fin 276) : List (Bool × Bool) :=
-  l.map fun z ↦ (decide (x = z), adj z x)
-
-private theorem profile_apply (g : Equiv.Perm (Fin 276))
-    (hg : ∀ x y, adj (g x) (g y) = adj x y) (l : List (Fin 276))
-    (hl : ∀ z ∈ l, g z = z) (x : Fin 276) :
-    profile l (g x) = profile l x := by
-  refine List.map_congr_left fun z hz ↦ ?_
-  have hgz : g z = z := hl z hz
-  have heq : (g x = z) ↔ x = z :=
-    ⟨fun h ↦ g.injective (h.trans hgz.symm), fun h ↦ h ▸ hgz⟩
-  exact Prod.ext (Bool.decide_congr heq) (by simpa only [hgz] using hg z x)
-
-private theorem profile_apply_of_mem_stabilizerChain {k : ℕ} {g : Equiv.Perm (Fin 276)}
-    (hg : g ∈ Co3.stabilizerChain basePoint k) (l : List (Fin 276))
-    (hl : ∀ z ∈ l, z.val < k) (x : Fin 276) :
-    profile l (g x) = profile l x := by
-  cases l with
-  | nil => rfl
-  | cons z zs =>
-    exact profile_apply g
-      (adj_apply_of_mem_stabilizerChain hg (Nat.zero_lt_of_lt (hl z List.mem_cons_self)))
-      (z :: zs) (fun w hw ↦ apply_eq_of_mem_stabilizerChain hg w (hl w hw)) x
+private theorem adj_of_mem_stabilizerChain {k : ℕ} {g : Equiv.Perm (Fin 276)}
+    (hg : g ∈ Co3.stabilizerChain basePoint k) (z : Fin 276) (hz : z.val < k) (x : Fin 276) :
+    adj z (g x) = adj z x := by
+  simpa only [apply_eq_of_mem_stabilizerChain hg z hz] using
+    adj_apply_of_mem_stabilizerChain hg (Nat.zero_lt_of_lt hz) z x
 
 /-! ### Words in the three-point stabilizer and remaining basic orbits -/
 
@@ -911,8 +893,14 @@ theorem orbit_stabilizerChain_three :
         108, 113, 115, 117, 122, 123, 130, 143, 152, 161, 167, 170, 173, 181, 182, 192, 195, 199,
         202, 203, 223, 225, 226, 229, 232, 234, 239, 240, 244, 254, 256, 260, 272} :
         Finset (Fin 276)) : Set (Fin 276)) :=
-  orbit_eq_of_invariant_and_words (profile [0, 1, 2]) fourthOrbitWords
-    (fun _ hg ↦ profile_apply_of_mem_stabilizerChain hg [0, 1, 2] (by decide +kernel) 3)
+  orbit_eq_of_invariant_and_words (fun x ↦ (decide (x = 1), adj 1 x, adj 2 x)) fourthOrbitWords
+    (fun g hg ↦ by
+      have h1 : decide (g 3 = 1) = decide ((3 : Fin 276) = 1) :=
+        Bool.decide_congr (by
+          simpa only [apply_eq_of_mem_stabilizerChain hg 1 (by decide)] using
+            g.injective.eq_iff (a := 3) (b := 1))
+      simp only [h1, adj_of_mem_stabilizerChain hg 1 (by decide),
+        adj_of_mem_stabilizerChain hg 2 (by decide)])
     (by decide +kernel)
     (fun w _ ↦ stabWord_mem_stabilizerChain_three w)
     (by decide +kernel)
@@ -947,8 +935,10 @@ theorem orbit_stabilizerChain_four :
       (({4, 9, 13, 15, 16, 18, 20, 30, 37, 39, 42, 45, 50, 70, 74, 96, 99, 106, 108, 113, 117,
         122, 123, 143, 152, 167, 170, 173, 192, 195, 199, 202, 203, 223, 225, 226, 229, 232, 234,
         239, 240, 244, 256, 260, 272} : Finset (Fin 276)) : Set (Fin 276)) :=
-  orbit_eq_of_invariant_and_words (profile [0, 1, 2, 3]) fifthOrbitWords
-    (fun _ hg ↦ profile_apply_of_mem_stabilizerChain hg [0, 1, 2, 3] (by decide +kernel) 4)
+  orbit_eq_of_invariant_and_words (fun x ↦ (adj 1 x, adj 2 x, adj 3 x)) fifthOrbitWords
+    (fun _ hg ↦ by
+      simp only [adj_of_mem_stabilizerChain hg 1 (by decide),
+        adj_of_mem_stabilizerChain hg 2 (by decide), adj_of_mem_stabilizerChain hg 3 (by decide)])
     (by decide +kernel)
     (fun w hw ↦ stabWord_mem_stabilizerChain_four (fifthOrbitWords_fix w hw))
     (by decide +kernel)
@@ -967,14 +957,12 @@ private def commonDegFour (x : Fin 276) : ℕ :=
 private theorem commonDegFour_apply_of_mem_stabilizerChain {g : Equiv.Perm (Fin 276)}
     (hg : g ∈ Co3.stabilizerChain basePoint 5) (x : Fin 276) :
     commonDegFour (g x) = commonDegFour x := by
-  have hadj := adj_apply_of_mem_stabilizerChain hg (by decide)
   let f : Fin 276 → Bool := fun y ↦ adj 1 y && adj 2 y && adj 3 y && adj 4 y && adj (g x) y
   have hf (y : Fin 276) :
       f (g y) = (adj 1 y && adj 2 y && adj 3 y && adj 4 y && adj x y) := by
-    have ha (z : Fin 276) (hz : z.val < 5) : adj z (g y) = adj z y := by
-      calc adj z (g y) = adj (g z) (g y) := by rw [apply_eq_of_mem_stabilizerChain hg z hz]
-        _ = adj z y := hadj z y
-    simp only [f, ha 1 (by decide), ha 2 (by decide), ha 3 (by decide), ha 4 (by decide), hadj]
+    simp only [f, adj_of_mem_stabilizerChain hg 1 (by decide),
+      adj_of_mem_stabilizerChain hg 2 (by decide), adj_of_mem_stabilizerChain hg 3 (by decide),
+      adj_of_mem_stabilizerChain hg 4 (by decide), adj_apply_of_mem_stabilizerChain hg (by decide)]
   simpa only [commonDegFour, hf] using (TauCeti.card_filter_comp_perm f g true).symm
 
 private def sixthOrbitWords : List (List ℕ) :=
@@ -996,10 +984,12 @@ theorem orbit_stabilizerChain_five :
       (({5, 21, 26, 48, 83, 105, 111, 112, 183, 197, 200, 215, 220, 259, 261, 262} :
         Finset (Fin 276)) : Set (Fin 276)) :=
   orbit_eq_of_invariant_and_words
-    (fun x ↦ (profile [0, 1, 2, 3, 4] x, commonDegFour x)) sixthOrbitWords
-    (fun _ hg ↦ Prod.ext
-      (profile_apply_of_mem_stabilizerChain hg [0, 1, 2, 3, 4] (by decide +kernel) 5)
-      (commonDegFour_apply_of_mem_stabilizerChain hg 5))
+    (fun x ↦ (adj 1 x, adj 2 x, adj 3 x, adj 4 x, commonDegFour x)) sixthOrbitWords
+    (fun _ hg ↦ by
+      simp only [adj_of_mem_stabilizerChain hg 1 (by decide),
+        adj_of_mem_stabilizerChain hg 2 (by decide), adj_of_mem_stabilizerChain hg 3 (by decide),
+        adj_of_mem_stabilizerChain hg 4 (by decide),
+        commonDegFour_apply_of_mem_stabilizerChain hg])
     (by decide +kernel)
     (fun w hw ↦ stabWord_mem_stabilizerChain_five (sixthOrbitWords_fix w hw))
     (by decide +kernel)
@@ -1046,69 +1036,83 @@ private def rigidRank (i : Fin 276) : ℕ :=
 
 private def rigidAnchors (i : Fin 276) : List (Fin 276) :=
   (#[
-    #[[], [], [], [], [], [], [1, 3, 2, 4, 5], [1, 38, 131, 133, 248], [2, 24, 48, 40, 3],
-      [1, 18, 57, 2], [3, 11, 18, 131, 48], [1, 3, 6, 18], [2, 11, 248, 1], [1, 38, 2, 181, 3],
-      [1, 4, 6, 19], [1, 11, 138, 5], [1, 11, 272, 2], [3, 140, 2, 131], [1, 4, 2, 5, 3],
-      [2, 11, 18, 1, 3, 5], [1, 57, 48, 221], [4, 38, 218, 2], [1, 3, 40, 242, 2]],
-    #[[1, 38, 40, 48, 6], [1, 4, 38, 5], [1, 6, 19, 138, 38], [4, 38, 248, 2],
-      [6, 84, 40, 102, 1], [2, 57, 48, 40, 3], [2, 102, 7, 1], [1, 38, 213, 2],
-      [6, 11, 67, 172, 1], [2, 57, 48, 181], [3, 38, 119, 2], [1, 3, 67, 19],
-      [2, 57, 181, 204, 3], [2, 11, 38, 14, 5], [1, 24, 19, 138, 2], [1, 3, 2, 4, 5],
-      [1, 6, 2, 9, 24], [4, 5, 2, 3, 24], [6, 11, 57, 37], [1, 67, 172, 17], [3, 6, 2, 5, 57],
-      [1, 6, 40, 18, 2], [1, 24, 19, 102, 48]],
-    #[[5, 6, 2, 140, 1], [2, 11, 23, 6], [4, 18, 2, 38, 1], [1, 18, 19, 14, 11],
-      [1, 24, 131, 138, 2], [3, 11, 248, 18], [1, 3, 2, 80], [1, 6, 40, 47], [3, 11, 18, 13, 40],
-      [1, 6, 39, 5], [2, 11, 23, 3], [1, 3, 38, 48], [2, 84, 138, 1], [2, 24, 53, 5],
-      [3, 11, 10, 2], [6, 11, 102, 18], [3, 38, 2, 272, 1], [3, 38, 2, 138], [1, 38, 272, 6],
-      [3, 11, 226, 28], [2, 11, 138, 6], [1, 3, 5, 48, 2, 18], [3, 6, 84, 2]],
-    #[[3, 11, 47, 5], [1, 38, 7, 2], [1, 4, 80, 60], [3, 57, 24, 19, 40], [3, 11, 54, 2],
-      [1, 4, 22, 2], [6, 84, 18, 36], [6, 11, 57, 24, 40], [5, 11, 49, 3], [5, 11, 63, 1],
-      [5, 6, 11, 2], [2, 24, 3, 18, 1], [1, 6, 48, 247, 2], [1, 4, 133, 15, 5], [4, 6, 35, 2],
-      [2, 24, 18, 1, 67, 6], [3, 6, 29, 2], [1, 6, 81, 19], [2, 19, 230, 1], [5, 6, 242, 1],
-      [2, 11, 49, 6], [1, 3, 22, 2], [2, 19, 55, 1]],
-    #[[1, 4, 22, 11], [1, 18, 44, 3], [6, 11, 41, 2], [2, 102, 204, 1], [1, 4, 71, 2],
-      [2, 24, 5, 18], [3, 57, 69, 2], [1, 18, 2, 131], [1, 4, 80, 40, 3], [2, 24, 8, 1],
-      [2, 11, 24, 3], [2, 24, 3, 63], [5, 18, 148, 2], [4, 6, 97, 2], [1, 11, 49, 4],
-      [1, 18, 185, 19], [1, 24, 226, 2], [1, 3, 181, 18], [1, 3, 40, 138, 2], [4, 6, 2, 48, 11],
-      [4, 6, 87, 2], [1, 4, 82, 2], [4, 67, 97, 5]],
-    #[[1, 3, 67, 2], [3, 57, 140, 2], [1, 6, 44, 2], [6, 11, 12, 4], [2, 67, 12, 1],
-      [1, 6, 44, 19], [1, 3, 22, 18], [1, 18, 2, 19], [1, 6, 2, 89], [3, 11, 226, 92],
-      [6, 11, 18, 58], [3, 11, 18, 27], [2, 24, 84, 1], [2, 24, 53, 4], [2, 24, 97, 1],
-      [1, 3, 204, 2], [2, 57, 102, 1], [1, 6, 172, 17], [5, 6, 2, 40, 1], [2, 11, 24, 4],
-      [4, 138, 247, 2], [6, 11, 102, 19], [1, 6, 123, 5]],
-    #[[1, 4, 18, 3], [2, 11, 71, 6], [3, 6, 2, 18, 5, 4], [2, 19, 22, 1], [18, 57, 6, 230],
-      [1, 4, 100, 2], [2, 11, 4, 17], [3, 11, 126, 2], [3, 38, 2, 169], [3, 11, 36, 18],
-      [1, 3, 19, 76], [1, 3, 204, 19], [6, 11, 57, 50], [3, 57, 48, 40, 2], [1, 6, 81, 2],
-      [1, 3, 181, 4], [6, 11, 56, 24], [4, 18, 139, 2], [3, 38, 221, 2], [1, 38, 13, 6],
-      [2, 11, 49, 3], [1, 6, 123, 18], [1, 6, 25, 24]],
-    #[[1, 3, 110, 2], [3, 38, 8, 2], [6, 80, 185, 4], [2, 19, 204, 1], [2, 11, 144, 1],
-      [1, 3, 148, 5], [1, 18, 55, 2], [3, 11, 66, 4], [1, 6, 19, 5, 48, 18], [1, 38, 23, 2],
-      [4, 24, 84, 3], [2, 11, 19, 1], [1, 11, 213, 4], [2, 185, 64, 3], [6, 84, 18, 47],
-      [3, 181, 134, 2], [2, 24, 6, 48, 133], [1, 4, 149, 19], [18, 67, 8, 6], [3, 67, 85, 2],
-      [1, 3, 2, 140, 4], [1, 3, 148, 2], [4, 6, 28, 2]],
-    #[[5, 11, 248, 1], [1, 3, 6, 5], [2, 11, 213, 3], [4, 24, 116, 2], [1, 4, 6, 40],
-      [3, 6, 97, 2], [1, 3, 52, 5], [3, 38, 248, 2], [1, 4, 2, 12], [5, 6, 53, 2],
-      [2, 11, 71, 3], [1, 24, 153, 6], [1, 6, 39, 18], [4, 38, 95, 2], [4, 67, 181, 93],
-      [1, 4, 149, 2], [4, 6, 56, 2], [2, 19, 57, 1], [1, 6, 53, 2], [1, 24, 44, 3],
-      [1, 3, 5, 131, 4], [2, 19, 132, 1], [3, 11, 248, 4]],
-    #[[2, 19, 160, 1], [1, 3, 5, 19], [1, 3, 52, 4], [3, 67, 97, 38], [1, 6, 53, 19],
-      [2, 19, 44, 1], [1, 18, 204, 5], [3, 84, 34, 38], [4, 38, 66, 2], [2, 102, 34, 1],
-      [3, 57, 35, 4], [2, 67, 169, 3], [6, 84, 12, 1], [4, 5, 109, 2], [2, 67, 80, 1],
-      [3, 6, 221, 2], [1, 38, 230, 2], [6, 84, 230, 38], [1, 4, 2, 129], [1, 6, 169, 2],
-      [6, 11, 56, 18], [6, 84, 55, 18], [1, 38, 107, 2]],
-    #[[1, 6, 169, 5], [3, 6, 8, 2], [1, 11, 24, 18], [6, 102, 123, 2], [1, 6, 132, 2],
-      [6, 11, 31, 2], [2, 11, 213, 6], [1, 6, 132, 19], [6, 11, 125, 2], [1, 11, 93, 4],
-      [1, 38, 86, 2], [3, 57, 84, 18], [2, 24, 201, 1], [2, 24, 137, 6], [1, 6, 25, 2],
-      [2, 11, 36, 1], [2, 11, 138, 3], [3, 6, 201, 2], [2, 11, 226, 3, 1], [4, 18, 87, 2],
-      [3, 185, 58, 5], [18, 57, 102, 3], [6, 185, 218, 38]],
-    #[[5, 18, 205, 1], [1, 3, 208, 2], [1, 3, 110, 18], [1, 24, 115, 2], [1, 4, 192, 3],
-      [2, 19, 67, 1], [4, 6, 32, 2], [1, 18, 185, 2], [4, 38, 56, 2], [4, 5, 101, 1],
-      [3, 84, 63, 1], [1, 4, 38, 11], [3, 38, 66, 2], [3, 57, 201, 11], [1, 4, 225, 3],
-      [3, 6, 35, 2], [3, 11, 66, 24], [1, 3, 208, 40], [5, 6, 8, 1], [1, 18, 2, 38, 4],
-      [2, 57, 80, 1], [2, 80, 185, 1], [1, 3, 38, 18]]
+    #[[], [], [], [], [], [], [1, 3, 2, 4, 5], [1, 38, 48, 181, 6], [2, 24, 38, 172, 7],
+      [1, 7, 11, 4, 57, 5], [3, 11, 18, 5, 8], [1, 3, 6, 2, 18], [2, 11, 248, 1, 6],
+      [1, 11, 5, 19, 2], [1, 4, 6, 2, 8], [1, 11, 138, 2, 7], [1, 11, 272, 2, 5],
+      [3, 8, 204, 1, 13], [1, 4, 2, 5, 6], [2, 11, 5, 1, 3, 4], [1, 13, 2, 226, 3],
+      [4, 14, 3, 9, 12], [1, 3, 4, 5, 201]],
+    #[[1, 11, 2, 14, 18], [1, 4, 38, 2, 5], [1, 6, 5, 7, 12], [4, 38, 248, 1, 2],
+      [6, 14, 9, 48, 1], [2, 22, 213, 1, 4], [2, 7, 22, 1, 3], [1, 14, 17, 28, 4],
+      [6, 11, 13, 30, 2], [2, 7, 177, 1, 6], [3, 11, 36, 1, 4], [1, 3, 67, 2, 4],
+      [2, 22, 3, 18, 1], [2, 7, 14, 1, 4], [1, 13, 14, 2, 8], [1, 3, 2, 4, 6], [1, 6, 2, 9, 8],
+      [4, 5, 2, 3, 24, 1], [6, 8, 131, 1, 2], [1, 14, 275, 2, 5], [3, 6, 2, 5, 9],
+      [1, 6, 7, 31, 12], [1, 9, 230, 2, 5]],
+    #[[5, 6, 2, 13, 15], [2, 11, 23, 1, 3], [4, 18, 2, 38, 1], [1, 11, 2, 14, 8],
+      [1, 14, 23, 2, 3], [3, 8, 9, 11, 14], [1, 3, 2, 9, 8], [1, 6, 5, 37, 15],
+      [3, 8, 22, 1, 4], [1, 6, 39, 2, 5], [2, 7, 3, 23, 14], [1, 3, 38, 2, 48],
+      [2, 14, 13, 16, 6], [2, 12, 22, 1, 3], [3, 8, 4, 11, 5], [6, 8, 10, 14, 3],
+      [3, 22, 47, 1, 5], [3, 11, 47, 1, 4], [1, 15, 226, 2, 3], [3, 11, 12, 17, 8],
+      [2, 7, 44, 1, 5], [1, 3, 4, 18, 6], [3, 6, 84, 1, 2]],
+    #[[3, 8, 17, 1, 5], [1, 7, 38, 2, 3], [1, 4, 5, 11, 3], [3, 8, 52, 1, 2],
+      [3, 11, 54, 1, 14], [1, 4, 22, 2, 6], [6, 8, 44, 1, 10], [6, 11, 15, 19, 1],
+      [5, 8, 52, 1, 6], [5, 11, 63, 1, 7], [5, 6, 11, 1, 7], [2, 24, 3, 1, 18, 5],
+      [1, 6, 18, 31, 7], [1, 4, 5, 13, 3], [4, 6, 35, 1, 2], [2, 24, 4, 5, 6, 1],
+      [3, 6, 29, 1, 2], [1, 6, 81, 2, 10], [2, 7, 16, 19, 4], [5, 6, 242, 1, 12],
+      [2, 7, 55, 1, 12], [1, 3, 22, 2, 6], [2, 19, 55, 1, 3]],
+    #[[1, 4, 22, 2, 3], [1, 11, 2, 36, 3], [6, 11, 41, 1, 13], [2, 12, 1, 36, 4],
+      [1, 4, 71, 2, 6], [2, 7, 67, 1, 3], [3, 22, 165, 1, 5], [1, 7, 11, 23, 3],
+      [1, 4, 10, 30, 5], [2, 8, 24, 1, 4], [2, 11, 24, 1, 4], [2, 14, 3, 13, 5],
+      [5, 11, 66, 1, 4], [4, 6, 97, 1, 2], [1, 11, 49, 2, 4], [1, 14, 15, 2, 4],
+      [1, 14, 49, 2, 3], [1, 3, 181, 2, 10], [1, 3, 8, 51, 6], [4, 6, 2, 10, 20],
+      [4, 6, 87, 1, 2], [1, 4, 82, 2, 6], [4, 14, 65, 1, 3]],
+    #[[1, 3, 34, 2, 5], [3, 29, 7, 19, 9], [1, 6, 44, 2, 3], [6, 11, 12, 1, 14],
+      [2, 12, 67, 1, 3], [1, 6, 44, 2, 7], [1, 3, 22, 2, 4], [1, 7, 22, 2, 6], [1, 6, 2, 15, 8],
+      [3, 11, 9, 34, 1], [6, 11, 18, 21, 13], [3, 8, 67, 1, 4], [2, 22, 35, 1, 10],
+      [2, 7, 87, 1, 5], [2, 22, 169, 1, 5], [1, 3, 204, 2, 5], [2, 57, 102, 1, 11],
+      [1, 6, 8, 18, 7], [5, 6, 2, 40, 4], [2, 11, 24, 1, 3], [4, 22, 7, 42, 13],
+      [6, 11, 61, 1, 7], [1, 6, 123, 2, 5]],
+    #[[1, 4, 18, 2, 3], [2, 7, 25, 1, 12], [3, 6, 2, 18, 40, 4], [2, 14, 107, 1, 6],
+      [7, 10, 226, 1, 3], [1, 4, 100, 2, 6], [2, 7, 67, 1, 5], [3, 11, 126, 1, 4],
+      [3, 11, 65, 1, 4], [3, 11, 36, 1, 5], [1, 3, 7, 19, 4], [1, 3, 130, 2, 8],
+      [6, 11, 9, 19, 1], [3, 22, 242, 1, 4], [1, 6, 81, 2, 3], [1, 3, 109, 2, 4],
+      [6, 11, 56, 1, 7], [4, 10, 264, 1, 3], [3, 34, 54, 1, 4], [1, 9, 109, 2, 3],
+      [2, 11, 49, 1, 6], [1, 6, 123, 2, 9], [1, 6, 25, 2, 5]],
+    #[[1, 3, 110, 2, 6], [3, 8, 38, 1, 2], [6, 8, 15, 40, 2], [2, 7, 25, 1, 6],
+      [2, 11, 144, 1, 3], [1, 3, 148, 2, 5], [1, 11, 24, 2, 7], [3, 11, 66, 1, 4],
+      [1, 6, 19, 5, 48, 18], [1, 9, 53, 2, 5], [4, 17, 139, 1, 3], [2, 11, 19, 1, 18],
+      [1, 11, 213, 2, 4], [2, 22, 121, 1, 4], [6, 25, 91, 1, 15], [3, 10, 128, 1, 7],
+      [2, 24, 4, 5, 18, 1], [1, 4, 149, 2, 3], [8, 15, 22, 1, 6], [3, 22, 141, 1, 4],
+      [1, 3, 2, 140, 6], [1, 3, 148, 2, 5], [4, 6, 28, 1, 2]],
+    #[[5, 8, 22, 1, 6], [1, 3, 6, 2, 5], [2, 7, 149, 1, 4], [4, 10, 67, 1, 8], [1, 4, 6, 2, 7],
+      [3, 6, 97, 1, 2], [1, 3, 52, 2, 5], [3, 10, 67, 1, 15], [1, 4, 2, 10, 7],
+      [5, 6, 53, 1, 7], [2, 11, 71, 1, 6], [1, 9, 120, 2, 5], [1, 6, 39, 2, 7],
+      [4, 14, 101, 1, 3], [4, 21, 91, 1, 7], [1, 4, 149, 2, 6], [4, 6, 56, 1, 2],
+      [2, 19, 57, 1, 3], [1, 6, 53, 2, 3], [1, 14, 110, 2, 5], [1, 3, 5, 2, 4, 6],
+      [2, 7, 14, 1, 5], [3, 11, 51, 1, 4]],
+    #[[2, 7, 56, 1, 3], [1, 3, 4, 65, 5], [1, 3, 52, 2, 4], [3, 29, 69, 1, 5], [1, 6, 53, 2, 5],
+      [2, 14, 23, 1, 5], [1, 11, 2, 204, 4], [3, 8, 51, 1, 9], [4, 14, 36, 1, 3],
+      [2, 8, 132, 1, 4], [3, 8, 67, 1, 7], [2, 67, 169, 1, 4], [6, 12, 84, 1, 2],
+      [4, 5, 109, 1, 10], [2, 67, 80, 1, 3], [3, 6, 164, 1, 2], [1, 15, 44, 2, 5],
+      [6, 28, 185, 1, 7], [1, 4, 2, 15, 7], [1, 6, 169, 2, 3], [6, 8, 163, 1, 11],
+      [6, 8, 186, 1, 2], [1, 9, 11, 2, 7]],
+    #[[1, 6, 169, 2, 57], [3, 6, 8, 1, 2], [1, 7, 67, 2, 5], [6, 25, 154, 1, 13],
+      [1, 6, 132, 2, 3], [6, 8, 32, 1, 2], [2, 11, 186, 1, 3], [1, 6, 132, 2, 8],
+      [6, 11, 125, 1, 7], [1, 11, 93, 2, 4], [1, 14, 173, 2, 10], [3, 8, 60, 1, 4],
+      [2, 24, 201, 1, 5], [2, 24, 137, 1, 4], [1, 6, 25, 2, 3], [2, 11, 36, 1, 6],
+      [2, 8, 22, 1, 10], [3, 6, 201, 1, 2], [2, 11, 3, 177, 1], [4, 18, 87, 1, 2],
+      [3, 8, 36, 1, 2], [11, 16, 69, 1, 4], [6, 8, 183, 1, 10]],
+    #[[5, 11, 70, 1, 4], [1, 3, 208, 2, 5], [1, 3, 110, 2, 8], [1, 7, 96, 2, 4],
+      [1, 4, 192, 2, 3], [2, 14, 49, 1, 6], [4, 6, 32, 1, 2], [1, 13, 25, 2, 10],
+      [4, 10, 177, 1, 3], [4, 5, 101, 1, 8], [3, 8, 22, 1, 10], [1, 4, 24, 2, 11],
+      [3, 10, 207, 1, 4], [3, 29, 60, 1, 4], [1, 4, 225, 2, 3], [3, 6, 35, 1, 2],
+      [3, 8, 101, 1, 2], [1, 3, 208, 2, 4], [5, 6, 8, 1, 10], [1, 11, 18, 48, 2],
+      [2, 7, 44, 1, 6], [2, 23, 81, 1, 7], [1, 3, 38, 2, 18]]
     ] : Array (Array (List (Fin 276))))
     |>.getD (i.val / 23) #[]
     |>.getD (i.val % 23) []
+
+private theorem rigidRank_lt : ∀ x : Fin 276, rigidRank x < 276 := by
+  decide +kernel
 
 private theorem rigidAnchors_rank :
     ∀ x : Fin 276, ∀ z ∈ rigidAnchors x, rigidRank z < rigidRank x := by
@@ -1116,23 +1120,18 @@ private theorem rigidAnchors_rank :
 
 private theorem rigidAnchors_unique :
     ∀ x : Fin 276, 6 ≤ x.val → ∀ y : Fin 276,
-      profile (rigidAnchors x) y = profile (rigidAnchors x) x → y = x := by
+      (rigidAnchors x).map (adj · y) = (rigidAnchors x).map (adj · x) → y = x := by
   decide +kernel
 
 private theorem eq_one_of_mem_stabilizerChain_six {g : Equiv.Perm (Fin 276)}
     (hg : g ∈ Co3.stabilizerChain basePoint 6) : g = 1 := by
-  have hadj := adj_apply_of_mem_stabilizerChain hg (by decide)
-  have h : ∀ m, ∀ x : Fin 276, rigidRank x = m → g x = x := by
-    intro m
-    induction m using Nat.strong_induction_on with
-    | ind m ih =>
-      intro x hxm
-      by_cases hx : x.val < 6
-      · exact apply_eq_of_mem_stabilizerChain hg x hx
-      · refine rigidAnchors_unique x (Nat.not_lt.mp hx) (g x) ?_
-        refine profile_apply g hadj (rigidAnchors x) (fun z hz ↦ ?_) x
-        exact ih (rigidRank z) (hxm ▸ rigidAnchors_rank x z hz) z rfl
-  exact Equiv.ext fun x ↦ h (rigidRank x) x rfl
+  refine Equiv.ext fun x ↦ Function.apply_eq_self_of_rank (⇑g)
+    (rank := rigidRank) (seed := fun y ↦ y.val < 6)
+    (adj_apply_of_mem_stabilizerChain hg (by decide)) 276
+    (fun y _ hy ↦ apply_eq_of_mem_stabilizerChain hg y hy) (fun y _ hy w hw ↦ ?_)
+    x (rigidRank_lt x)
+  exact rigidAnchors_unique y (Nat.not_lt.mp hy) w
+    (List.map_congr_left fun z hz ↦ hw z (rigidAnchors_rank y z hz))
 
 /-- The points `0, 1, 2, 3, 4, 5` form a base of the ATLAS model of `Co₃`: only the identity
 fixes all six points. -/
