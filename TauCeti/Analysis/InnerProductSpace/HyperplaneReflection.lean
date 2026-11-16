@@ -16,6 +16,7 @@ import Mathlib.MeasureTheory.Function.LpSeminorm.Indicator
 import Mathlib.MeasureTheory.Function.LpSeminorm.TriangleInequality
 import Mathlib.MeasureTheory.Function.StronglyMeasurable.Lemmas
 import TauCeti.Data.Set.Function
+import TauCeti.MeasureTheory.Function.LpSeminorm.Indicator
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
@@ -264,13 +265,9 @@ theorem memLp_indicator_sub_indicator_comp_hyperplaneReflection (hHm : Measurabl
     (hf : MemLp f p (μ.restrict (U ∩ H))) (hg : MemLp g p (μ.restrict (U ∩ H))) :
     MemLp (fun x => H.indicator f x - H.indicator g (hyperplaneReflection ν c x)) p
       (μ.restrict U) := by
-  have hind {k : F → E} (hk : MemLp k p (μ.restrict (U ∩ H))) :
-      MemLp (H.indicator k) p (μ.restrict U) := by
-    rw [memLp_indicator_iff_restrict hHm.nullMeasurableSet, Measure.restrict_restrict hHm,
-      Set.inter_comm]
-    exact hk
-  exact (hind hf).sub
-    ((hind hg).comp_measurePreserving (measurePreserving_restrict_hyperplaneReflection hU hUm))
+  exact (memLp_indicator_of_memLp_restrict_inter hHm hf).sub
+    ((memLp_indicator_of_memLp_restrict_inter hHm hg).comp_measurePreserving
+      (measurePreserving_restrict_hyperplaneReflection hU hUm))
 
 /-- **The norm of the odd reflection.** Let `U` be a measurable set mapped into itself by the
 hyperplane reflection `ρ`, let `H` be measurable and let `1 ≤ p`. The function

@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Normed.Affine.Isometry.Basic
 public import TauCeti.Analysis.Sobolev.W1p.ChangeOfVariables
 import TauCeti.Analysis.Sobolev.W1p.Localization
 import TauCeti.Analysis.Sobolev.W1p.VanishingBoundary
+import TauCeti.MeasureTheory.Function.LpSeminorm.Indicator
 
 /-!
 # Sobolev functions under the reflection in a hyperplane
@@ -331,10 +332,7 @@ theorem W1p0.setIntegral_mul_value_restrictSubCompHyperplaneReflectionL (hp : p 
   have hρ : MeasurePreserving ρ (mu.restrict U) (mu.restrict U) :=
     measurePreserving_restrict_hyperplaneReflection hU U.isOpen.measurableSet
   have hHm : MeasurableSet (H : Set E) := H.isOpen.measurableSet
-  have hg : MemLp g q (mu.restrict U) := by
-    rw [memLp_indicator_iff_restrict hHm.nullMeasurableSet, Measure.restrict_restrict hHm,
-      inter_comm]
-    exact hf
+  have hg : MemLp g q (mu.restrict U) := memLp_indicator_of_memLp_restrict_inter hHm hf
   have hv : MemLp v p (mu.restrict U) := Lp.memLp _
   have hvρ : MemLp (v ∘ ρ) p (mu.restrict U) := hv.comp_measurePreserving hρ
   -- The value of the reflected difference is `v - v ∘ ρ` on `U ∩ H`.
@@ -395,10 +393,7 @@ theorem W1p0.setIntegral_inner_gradient_restrictSubCompHyperplaneReflectionL (hp
   have hρ : MeasurePreserving ρ (mu.restrict U) (mu.restrict U) :=
     measurePreserving_restrict_hyperplaneReflection hU U.isOpen.measurableSet
   have hHm : MeasurableSet (H : Set E) := H.isOpen.measurableSet
-  have hG : MemLp G q (mu.restrict U) := by
-    rw [memLp_indicator_iff_restrict hHm.nullMeasurableSet, Measure.restrict_restrict hHm,
-      inter_comm]
-    exact hF
+  have hG : MemLp G q (mu.restrict U) := memLp_indicator_of_memLp_restrict_inter hHm hF
   have hv : MemLp v p (mu.restrict U) := Lp.memLp _
   -- Hölder's inequality makes the pairings integrable.
   have hint {A B : E → E} (hA : MemLp A q (mu.restrict U)) (hB : MemLp B p (mu.restrict U)) :
@@ -431,10 +426,8 @@ theorem W1p0.setIntegral_inner_gradient_restrictSubCompHyperplaneReflectionL (hp
         rw [← integral_sub (hint hG hv) (hint hG hRvρ)]
         simp_rw [inner_sub_right]
     _ = ∫ x in U, ⟪G x - (H : Set E).indicator (fun y => R (F y)) (ρ x), v x⟫_ℝ ∂mu := by
-        have hRF : MemLp ((H : Set E).indicator fun y => R (F y)) q (mu.restrict U) := by
-          rw [memLp_indicator_iff_restrict hHm.nullMeasurableSet, Measure.restrict_restrict hHm,
-            inter_comm]
-          exact (R : E →L[ℝ] E).comp_memLp' hF
+        have hRF : MemLp ((H : Set E).indicator fun y => R (F y)) q (mu.restrict U) :=
+          memLp_indicator_of_memLp_restrict_inter hHm ((R : E →L[ℝ] E).comp_memLp' hF)
         have hRFv : Integrable (fun x => ⟪(H : Set E).indicator (fun y => R (F y)) (ρ x), v x⟫_ℝ)
             (mu.restrict U) := hint (hRF.comp_measurePreserving hρ) hv
         rw [hswap, ← integral_sub (hint hG hv) hRFv]
