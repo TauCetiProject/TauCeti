@@ -262,7 +262,7 @@ theorem hasLaw_ginibreReal_iff {X : Ω → Matrix (Fin m) (Fin n) ℝ} :
     HasLaw X (ginibreReal m n) P ↔
       iIndepFun (fun p : Fin m × Fin n ↦ fun ω ↦ X ω p.1 p.2) P ∧
         ∀ i j, HasLaw (fun ω ↦ X ω i j) (gaussianReal 0 1) P := by
-  rw [ginibreReal_eq_map_pi, hasLaw_matrix_iff]
+  rw [ginibreReal_eq_map_pi, hasLaw_map_pi_matrix_iff]
 
 /-- A matrix has the complex Ginibre law exactly when all its entries are independent
 standard proper complex Gaussians. No prior measurability of the whole matrix is required. -/
@@ -270,7 +270,7 @@ theorem hasLaw_ginibreComplex_iff {X : Ω → Matrix (Fin m) (Fin n) ℂ} :
     HasLaw X (ginibreComplex m n) P ↔
       iIndepFun (fun p : Fin m × Fin n ↦ fun ω ↦ X ω p.1 p.2) P ∧
         ∀ i j, HasLaw (fun ω ↦ X ω i j) properComplexGaussianScalar P := by
-  rw [ginibreComplex_def, hasLaw_matrix_iff]
+  rw [ginibreComplex_def, hasLaw_map_pi_matrix_iff]
 
 /-- The entries of a real Ginibre matrix are independent. -/
 theorem iIndepFun_apply_ginibreReal (m n : ℕ) :

@@ -50,17 +50,11 @@ theorem map_transpose_ginibreComplex (m n : ℕ) :
 @[simp]
 theorem map_conjTranspose_ginibreComplex (m n : ℕ) :
     (ginibreComplex m n).map Matrix.conjTranspose = ginibreComplex n m := by
-  have hstar : (Measure.pi fun _ : Fin n × Fin m ↦ properComplexGaussianScalar).map
-      (fun z p ↦ star (z p)) = Measure.pi (fun _ : Fin n × Fin m ↦
-        properComplexGaussianScalar) := by
-    rw [Measure.pi_map_pi (fun _ ↦ (by fun_prop : Measurable (star : ℂ → ℂ)).aemeasurable)]
-    simp only [RCLike.star_def, map_star_properComplexGaussianScalar]
-  have h := congrArg (fun μ : Measure (Fin n × Fin m → ℂ) ↦
-    μ.map (fun z ↦ Matrix.of fun i j ↦ z (i, j))) hstar
-  rw [Measure.map_map (by fun_prop) (by fun_prop), ← ginibreComplex_def] at h
-  rw [← properComplexGaussianMeasure_zero_one_eq_pi, ← map_vec_ginibreComplex m n,
-    Measure.map_map (by fun_prop) measurable_matrix_vec] at h
-  rw [← h]
+  have h := map_star_properComplexGaussianMeasure (0 : Fin n × Fin m → ℂ) 1
+  rw [star_zero, Matrix.transpose_one] at h
+  rw [ginibreComplex_eq_map_properComplexGaussianMeasure n m, ← h, ← map_vec_ginibreComplex m n,
+    Measure.map_map (by fun_prop) (by fun_prop),
+    Measure.map_map (by fun_prop) measurable_matrix_vec]
   exact congrArg (fun f ↦ (ginibreComplex m n).map f) (by
     funext X
     ext i j

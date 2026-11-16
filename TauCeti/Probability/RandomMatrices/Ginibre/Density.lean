@@ -157,7 +157,7 @@ theorem ginibreComplex_eq_withDensity (m n : ℕ) :
     MeasurableEquiv.coe_curry_symm, Fintype.sum_prod_type]
 
 /-- The complex Ginibre density has total integral one, including when one dimension is zero. -/
-theorem lintegral_ginibreComplexPDF (m n : ℕ) :
+theorem lintegral_ginibreComplexPDF_eq_one (m n : ℕ) :
     ∫⁻ X, ginibreComplexPDF m n X = 1 := by
   rw [← setLIntegral_univ, ← withDensity_apply _ MeasurableSet.univ,
     ← ginibreComplex_eq_withDensity]
@@ -169,7 +169,7 @@ theorem integral_ginibreComplexPDFReal_eq_one (m n : ℕ) :
   simp_rw [← toReal_ginibreComplexPDF]
   rw [integral_toReal (measurable_ginibreComplexPDF m n).aemeasurable
       (ae_of_all _ fun X ↦ (ginibreComplexPDF_ne_top m n X).lt_top),
-    lintegral_ginibreComplexPDF, ENNReal.toReal_one]
+    lintegral_ginibreComplexPDF_eq_one, ENNReal.toReal_one]
 
 /-- The real-valued Ginibre density is integrable. -/
 theorem integrable_ginibreComplexPDFReal (m n : ℕ) :

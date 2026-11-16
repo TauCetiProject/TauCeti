@@ -55,7 +55,7 @@ theorem ae_rank_eq_min_gaussianGramComplex (m n : ℕ) :
 
 /-- Positive definiteness of a standard complex Gaussian Gram matrix holds almost surely
 exactly when there are at least as many samples as rows. -/
-theorem ae_posDef_iff_gaussianGramComplex (m n : ℕ) :
+theorem ae_posDef_iff_le_gaussianGramComplex (m n : ℕ) :
     ∀ᵐ A ∂gaussianGramComplex m n, A.PosDef ↔ m ≤ n := by
   filter_upwards [ae_rank_eq_min_gaussianGramComplex m n, ae_posSemidef_gaussianGramComplex m n]
     with A hr hA
@@ -65,9 +65,9 @@ theorem ae_posDef_iff_gaussianGramComplex (m n : ℕ) :
 
 /-- A complex Gaussian Gram determinant almost surely vanishes exactly below the full-rank
 threshold, including zero dimensions and zero samples. -/
-theorem ae_det_eq_zero_iff_gaussianGramComplex (m n : ℕ) :
+theorem ae_det_eq_zero_iff_lt_gaussianGramComplex (m n : ℕ) :
     ∀ᵐ A ∂gaussianGramComplex m n, A.det = 0 ↔ n < m := by
-  filter_upwards [ae_posDef_iff_gaussianGramComplex m n,
+  filter_upwards [ae_posDef_iff_le_gaussianGramComplex m n,
     ae_posSemidef_gaussianGramComplex m n] with A h hA
   simpa only [hA.posDef_iff_det_ne_zero, ne_eq, not_not, not_le] using not_congr h
 
@@ -116,17 +116,17 @@ theorem HasLaw.ae_rank_eq_min_gaussianGramComplex {A : Ω → Matrix (Fin m) (Fi
 
 /-- A complex Gaussian Gram random matrix is positive definite almost surely exactly when
 there are at least as many samples as rows. -/
-theorem HasLaw.ae_posDef_iff_gaussianGramComplex {A : Ω → Matrix (Fin m) (Fin m) ℂ}
+theorem HasLaw.ae_posDef_iff_le_gaussianGramComplex {A : Ω → Matrix (Fin m) (Fin m) ℂ}
     (hA : HasLaw A (gaussianGramComplex m n) P) :
     ∀ᵐ ω ∂P, (A ω).PosDef ↔ m ≤ n :=
-  hA.ae (TauCeti.Probability.ae_posDef_iff_gaussianGramComplex m n)
+  hA.ae (TauCeti.Probability.ae_posDef_iff_le_gaussianGramComplex m n)
 
 /-- A complex Gaussian Gram random determinant almost surely vanishes exactly when the
 sample size is smaller than the row dimension. -/
-theorem HasLaw.ae_det_eq_zero_iff_gaussianGramComplex {A : Ω → Matrix (Fin m) (Fin m) ℂ}
+theorem HasLaw.ae_det_eq_zero_iff_lt_gaussianGramComplex {A : Ω → Matrix (Fin m) (Fin m) ℂ}
     (hA : HasLaw A (gaussianGramComplex m n) P) :
     ∀ᵐ ω ∂P, (A ω).det = 0 ↔ n < m :=
-  hA.ae (TauCeti.Probability.ae_det_eq_zero_iff_gaussianGramComplex m n)
+  hA.ae (TauCeti.Probability.ae_det_eq_zero_iff_lt_gaussianGramComplex m n)
 
 /-- A complex Gaussian Gram random matrix almost surely has the prescribed spectral atom at
 zero, for dimension `m > 0` and sample size `n`, on any probability space. -/

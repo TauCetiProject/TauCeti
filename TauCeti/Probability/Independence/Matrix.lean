@@ -17,7 +17,7 @@ For a matrix with independent entries, replacing a column by zero leaves a matri
 of the removed column. This formulation preserves the original matrix dimensions, making it
 convenient for leave-one-column-out covariance constructions. The index types need not be finite.
 
-For finite index types, `TauCeti.Probability.hasLaw_matrix_iff` characterizes reshaped
+For finite index types, `TauCeti.Probability.hasLaw_map_pi_matrix_iff` characterizes reshaped
 product laws by entry independence and marginal laws.
 -/
 
@@ -63,7 +63,7 @@ open ProbabilityTheory
 
 /-- A random matrix has a reshaped product law exactly when its entries are independent
 and have the prescribed probability laws. No prior matrix measurability is required. -/
-theorem hasLaw_matrix_iff {Ω m n α : Type*} [MeasurableSpace Ω] [Fintype m] [Fintype n]
+theorem hasLaw_map_pi_matrix_iff {Ω m n α : Type*} [MeasurableSpace Ω] [Fintype m] [Fintype n]
     [MeasurableSpace α] {μ : m × n → Measure α} [∀ p, IsProbabilityMeasure (μ p)]
     {P : Measure Ω} {X : Ω → Matrix m n α} :
     HasLaw X ((Measure.pi μ).map (fun z ↦ Matrix.of fun i j ↦ z (i, j))) P ↔
