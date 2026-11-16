@@ -18,8 +18,10 @@ structures. Composition and addition give the native linear category structure, 
 Mathlib's `ContinuousLinearMap.adjoint` supplies the conjugate-linear dagger.
 
 Unitary arrows are precisely the maps underlying linear isometric equivalences.
-The operator norm satisfies the C*-identity in categorical composition order; these
-facts provide the Hilbert-space example for analytic categories.
+The operator norm satisfies the C*-identity in categorical composition order; zero objects are
+precisely the subsingleton Hilbert spaces (witnessed by `PUnit`), and each endomorphism `⋆`-algebra
+`End X` is canonically `⋆`-isomorphic to `X →L[𝕜] X`. These facts provide the Hilbert-space example
+for analytic categories.
 -/
 
 public section
@@ -315,6 +317,47 @@ theorem unitaryEquivLinearIsometryEquiv_apply_apply
 theorem unitaryEquivLinearIsometryEquiv_symm_val_apply
     (e : X ≃ₗᵢ[𝕜] Y) (x : X) :
     (unitaryEquivLinearIsometryEquiv.symm e).1 x = e x := (rfl)
+
+/-- A Hilbert space is a zero object in `HilbertCat 𝕜` precisely when its underlying type is
+subsingleton. -/
+theorem isZero_iff_subsingleton (X : HilbertCat.{u, v} 𝕜) :
+    Limits.IsZero X ↔ Subsingleton X := by
+  rw [Limits.IsZero.iff_id_eq_zero, ContinuousLinearMap.ext_iff]
+  constructor
+  · intro h
+    refine ⟨fun x y => ?_⟩
+    have hx : x = 0 := h x
+    have hy : y = 0 := h y
+    rw [hx, hy]
+  · intro h x
+    exact Subsingleton.elim x 0
+
+/-- The trivial Hilbert space `PUnit` is a zero object in `HilbertCat 𝕜`. -/
+theorem isZero_punit : Limits.IsZero (of 𝕜 PUnit.{v + 1}) :=
+  (isZero_iff_subsingleton _).mpr inferInstance
+
+instance : Limits.HasZeroObject (HilbertCat.{u, v} 𝕜) :=
+  (isZero_punit (𝕜 := 𝕜)).hasZeroObject
+
+/-- The endomorphism `⋆`-algebra of an object `X : HilbertCat 𝕜` is canonically `⋆`-isomorphic to
+`X →L[𝕜] X`. -/
+def endStarAlgEquiv (X : HilbertCat.{u, v} 𝕜) : End X ≃⋆ₐ[𝕜] (X →L[𝕜] X) where
+  toEquiv := End.homEquiv
+  map_mul' _ _ := rfl
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  map_star' _ := (ContinuousLinearMap.star_eq_adjoint _).symm
+
+/-- Applying `HilbertCat.endStarAlgEquiv` recovers the underlying continuous linear map. -/
+@[simp]
+theorem endStarAlgEquiv_apply (X : HilbertCat.{u, v} 𝕜) (f : End X) :
+    endStarAlgEquiv X f = ConcreteCategory.hom f.asHom := (rfl)
+
+/-- The inverse of `HilbertCat.endStarAlgEquiv` wraps a continuous linear endomorphism with
+`End.of`. -/
+@[simp]
+theorem endStarAlgEquiv_symm_apply (X : HilbertCat.{u, v} 𝕜) (f : X →L[𝕜] X) :
+    (endStarAlgEquiv X).symm f = End.of (C := HilbertCat 𝕜) (X := X) f := (rfl)
 
 end HilbertCat
 
