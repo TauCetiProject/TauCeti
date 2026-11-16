@@ -8,7 +8,7 @@ module
 public import Mathlib.Topology.Homotopy.Basic
 
 /-!
-# The range of a concatenated homotopy
+# Concatenation of homotopies: range and retracing
 
 The concatenation `F.trans G` of homotopies runs `F` on the first half of the interval and `G` on
 the second half, so every value it takes is a value of `F` or of `G`
@@ -16,12 +16,57 @@ the second half, so every value it takes is a value of `F` or of `G`
 set `S`, so does their concatenation (`ContinuousMap.Homotopy.trans_apply_mem`); this is how
 homotopies avoiding a compact set are chained in conditions such as simple connectivity at
 infinity.
+
+When `G` retraces `F` backwards at a point `x` — that is, `G (t, x) = F (σ t, x)` for all `t` —
+the concatenation `F.trans G` at `x` is `F` reparametrised by the unit-interval tent map
+`TauCeti.tent : I → I`, `t ↦ min (2 t) (2 - 2 t)`
+(`ContinuousMap.Homotopy.trans_apply_of_retracing`).
+
+## Main declarations
+
+* `ContinuousMap.Homotopy.range_trans_subset` and `ContinuousMap.Homotopy.trans_apply_mem`: the
+  range of `F.trans G` lies in the union of the ranges of `F` and `G`.
+* `TauCeti.tent`, `TauCeti.coe_tent`, `TauCeti.continuous_tent`, `TauCeti.tent_zero`,
+  `TauCeti.tent_one`: the tent map `t ↦ min (2 t) (2 - 2 t)` on the unit interval.
+* `ContinuousMap.Homotopy.trans_apply_of_retracing`: at a point where `G` runs backwards along
+  `F`, `F.trans G (t, x) = F (TauCeti.tent t, x)`.
 -/
 
 public section
 
-open Set
-open scoped unitInterval
+open Set unitInterval
+
+namespace TauCeti
+
+/-- The tent map `t ↦ min (2 t) (2 - 2 t)` on the unit interval, which rises from `0` to `1` on
+`[0, 1/2]` and falls back to `0` on `[1/2, 1]`. -/
+noncomputable def tent (t : I) : I :=
+  ⟨min (2 * t) (2 - 2 * t), le_min (by linarith [t.2.1]) (by linarith [t.2.2]),
+    min_le_iff.2 <| (le_total (t : ℝ) (1 / 2)).imp (fun h ↦ by linarith) fun h ↦ by linarith⟩
+
+/-- The real value of `TauCeti.tent t` is `min (2 t) (2 - 2 t)`. -/
+@[simp]
+theorem coe_tent (t : I) : (tent t : ℝ) = min (2 * (t : ℝ)) (2 - 2 * t) := (rfl)
+
+/-- The tent map on the unit interval is continuous. -/
+@[fun_prop]
+theorem continuous_tent : Continuous tent := by
+  unfold tent
+  fun_prop
+
+/-- The tent map vanishes at `0`. -/
+@[simp]
+theorem tent_zero : tent 0 = 0 := by
+  ext
+  simp
+
+/-- The tent map vanishes at `1`. -/
+@[simp]
+theorem tent_one : tent 1 = 0 := by
+  ext
+  norm_num
+
+end TauCeti
 
 namespace ContinuousMap.Homotopy
 
@@ -40,5 +85,22 @@ theorem trans_apply_mem {S : Set Y} {F : Homotopy f₀ f₁} {G : Homotopy f₁ 
     (hF : ∀ x, F x ∈ S) (hG : ∀ x, G x ∈ S) (x : I × X) : F.trans G x ∈ S := by
   obtain ⟨y, hy⟩ | ⟨y, hy⟩ := range_trans_subset F G ⟨x, rfl⟩
   exacts [hy ▸ hF y, hy ▸ hG y]
+
+/-- At a point where the homotopy `G` runs backwards along `F`, the concatenation `F.trans G`
+is `F` reparametrised by `TauCeti.tent`. -/
+theorem trans_apply_of_retracing (F : Homotopy f₀ f₁) (G : Homotopy f₁ f₂) {x : X}
+    (hG : ∀ t, G (t, x) = F (σ t, x)) (t : I) :
+    F.trans G (t, x) = F (TauCeti.tent t, x) := by
+  rw [trans_apply]
+  split_ifs with ht
+  · congr 2
+    ext
+    simp [min_eq_left (by linarith : (2 : ℝ) * t ≤ 2 - 2 * t)]
+  · rw [hG]
+    congr 2
+    ext
+    simp only [TauCeti.coe_tent, coe_symm_eq]
+    rw [min_eq_right (by linarith)]
+    ring
 
 end ContinuousMap.Homotopy

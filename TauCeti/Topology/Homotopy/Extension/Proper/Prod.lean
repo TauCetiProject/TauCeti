@@ -9,6 +9,7 @@ public import TauCeti.Topology.Homotopy.Extension.Cube
 public import TauCeti.Topology.Homotopy.Extension.NDRPair
 public import TauCeti.Topology.Homotopy.Extension.Proper.Basic
 import TauCeti.Topology.Homotopy.Proper
+import TauCeti.Topology.Homotopy.Trans
 import TauCeti.Topology.Maps.Proper.Basic
 
 /-!
@@ -49,7 +50,6 @@ proper homotopy *relative* to `A`
   theorem** for closed proper cofibrations, together with
   `TauCeti.HasProperHomotopyExtensionProperty.univ_prod`.
 * `TauCeti.hasProperHomotopyExtensionProperty_cubeBoundary`,
-  `TauCeti.hasHomotopyExtensionProperty_singleton_unitInterval`,
   `TauCeti.hasProperHomotopyExtensionProperty_singleton_unitInterval`,
   `TauCeti.hasProperHomotopyExtensionProperty_zero_one`, and
   `TauCeti.HasProperHomotopyExtensionProperty.zero_one_prod_univ_union_univ_prod`: cube boundaries,
@@ -75,29 +75,6 @@ universe u v
 
 namespace TauCeti
 
-/-- Ultrafilter convergence step for deformations with variable time: if `h : T × Y → Y` is proper
-with `T` Hausdorff and fixes `A ⊆ Y` at all times, and `h (φ z, q z)` tends to `y₀` along an
-ultrafilter `𝒰`, then `q` tends along `𝒰` to some `y₁` such that `h (φ z₁, q z₁) = y₀` holds at
-every cluster limit `z₁` of `𝒰` over `y₁` whenever `φ` is continuous away from `q ⁻¹' A`. -/
-private lemma exists_tendsto_of_isProperMap_apply_prodMk_of_fixed
-    {T Y Z : Type*} [TopologicalSpace T] [TopologicalSpace Y] [TopologicalSpace Z]
-    [T2Space T] {h : T × Y → Y} (hh : IsProperMap h) {A : Set Y}
-    (hA : ∀ t, ∀ y ∈ A, h (t, y) = y) {q : Z → Y} {φ : Z → T}
-    (hφ : ∀ z, q z ∉ A → ContinuousAt φ z) {𝒰 : Ultrafilter Z} {y₀ : Y}
-    (hy₀ : Tendsto (fun z ↦ h (φ z, q z)) 𝒰 (𝓝 y₀)) :
-    ∃ y₁, Tendsto q 𝒰 (𝓝 y₁) ∧
-      ∀ z₁ : Z, q z₁ = y₁ → (𝒰 : Filter Z) ≤ 𝓝 z₁ → h (φ z₁, q z₁) = y₀ := by
-  have hmap : Tendsto h (Ultrafilter.map (fun z ↦ (φ z, q z)) 𝒰) (𝓝 y₀) :=
-    tendsto_map'_iff.2 hy₀
-  obtain ⟨⟨t₁, y₁⟩, hty₁, hle⟩ := hh.ultrafilter_le_nhds_of_tendsto hmap
-  rw [Ultrafilter.coe_map, nhds_prod_eq, ← Tendsto, tendsto_prod_iff'] at hle
-  refine ⟨y₁, hle.2, fun z₁ hqz₁ hz₁ ↦ ?_⟩
-  by_cases hy₁A : y₁ ∈ A
-  · rw [hqz₁, hA _ _ hy₁A, ← hty₁, hA _ _ hy₁A]
-  · have hqz₁A : q z₁ ∉ A := hqz₁ ▸ hy₁A
-    have hφ_eq : φ z₁ = t₁ := tendsto_nhds_unique ((hφ z₁ hqz₁A).mono_left hz₁) hle.1
-    rw [hφ_eq, hqz₁, hty₁]
-
 namespace NDRPair
 
 variable {X : Type u} [TopologicalSpace X] {A : Set X}
@@ -120,8 +97,8 @@ theorem isProperMap_cylinderDeformation (N : NDRPair A) (hN : IsProperMap N.defo
   refine ⟨N.cylinderDeformation.continuous, fun 𝒰 ⟨t₀, x₀⟩ hw ↦ ?_⟩
   rw [nhds_prod_eq, tendsto_prod_iff'] at hw
   have hw₂ := hw.2.congr fun w : I × (I × X) ↦ N.cylinderDeformation_snd w.1 w.2.1 w.2.2
-  obtain ⟨x₁, hx₁, hx₁_eq⟩ := exists_tendsto_of_isProperMap_apply_prodMk_of_fixed hN
-    (fun t _ hx ↦ N.deformation_of_mem t hx)
+  obtain ⟨x₁, hx₁, hx₁_eq⟩ := hN.exists_tendsto_of_tendsto_apply_prodMk
+    (fun t₁ t₂ _ hx ↦ (N.deformation_of_mem t₁ hx).trans (N.deformation_of_mem t₂ hx).symm)
     (q := fun w : I × (I × X) ↦ w.2.2)
     (φ := fun w ↦ w.1 * projIcc 0 1 zero_le_one ((w.2.1 : ℝ) / N.control w.2.2))
     (fun _ hw' ↦ continuous_fst.continuousAt.mul
@@ -175,16 +152,16 @@ theorem isProperMap_prod_deformation {Y : Type v} [TopologicalSpace Y] {B : Set 
     congrArg Prod.fst (N.prod_deformation_apply M w.1 w.2.1 w.2.2)
   have hw₂ := hw.2.congr fun w : I × (X × Y) ↦
     congrArg Prod.snd (N.prod_deformation_apply M w.1 w.2.1 w.2.2)
-  obtain ⟨x₁, hx₁, hx₁_eq⟩ := exists_tendsto_of_isProperMap_apply_prodMk_of_fixed hN
-    (fun t _ hx ↦ N.deformation_of_mem t hx)
+  obtain ⟨x₁, hx₁, hx₁_eq⟩ := hN.exists_tendsto_of_tendsto_apply_prodMk
+    (fun t₁ t₂ _ hx ↦ (N.deformation_of_mem t₁ hx).trans (N.deformation_of_mem t₂ hx).symm)
     (q := fun w : I × (X × Y) ↦ w.2.1)
     (φ := fun w ↦ w.1 * projIcc 0 1 zero_le_one ((M.control w.2.2 : ℝ) / N.control w.2.1))
     (fun _ hw' ↦ continuous_fst.continuousAt.mul
       (N.control.continuousAt_projIcc_div_of_notMem N.control_eq_zero_iff
         (by fun_prop) (by fun_prop) hw'))
     hw₁
-  obtain ⟨y₁, hy₁, hy₁_eq⟩ := exists_tendsto_of_isProperMap_apply_prodMk_of_fixed hM
-    (fun t _ hy ↦ M.deformation_of_mem t hy)
+  obtain ⟨y₁, hy₁, hy₁_eq⟩ := hM.exists_tendsto_of_tendsto_apply_prodMk
+    (fun t₁ t₂ _ hy ↦ (M.deformation_of_mem t₁ hy).trans (M.deformation_of_mem t₂ hy).symm)
     (q := fun w : I × (X × Y) ↦ w.2.2)
     (φ := fun w ↦ w.1 * projIcc 0 1 zero_le_one ((N.control w.2.1 : ℝ) / M.control w.2.2))
     (fun _ hw' ↦ continuous_fst.continuousAt.mul
@@ -241,29 +218,6 @@ theorem hasProperHomotopyExtensionProperty_cubeBoundary {N : Type*} [Finite N] :
   hasHomotopyExtensionProperty_cubeBoundary.hasProperHomotopyExtensionProperty
     Cube.isClosed_boundary
 
-/-- Explicit NDR data for a singleton `{t₀} ⊆ I`: control `x ↦ |x - t₀|` and straight-line
-deformation `(s, x) ↦ (1 - s) x + s t₀`. -/
-private noncomputable def ndrPairSingletonUnitInterval (t₀ : I) : NDRPair ({t₀} : Set I) where
-  control := ⟨fun x ↦ ⟨|(x : ℝ) - t₀|, abs_nonneg _,
-    abs_sub_le_iff.2 ⟨by linarith [x.2.2, t₀.2.1], by linarith [t₀.2.2, x.2.1]⟩⟩, by fun_prop⟩
-  control_eq_zero_iff x := by
-    simp [← Subtype.coe_inj, sub_eq_zero]
-  deformation := ⟨fun p ↦ ⟨(σ p.1 : ℝ) * p.2 + p.1 * t₀,
-    add_nonneg (mul_nonneg (σ p.1).2.1 p.2.2.1) (mul_nonneg p.1.2.1 t₀.2.1),
-    by nlinarith [(σ p.1).2.1, p.1.2.1, p.2.2.2, t₀.2.2, coe_symm_eq p.1]⟩, by fun_prop⟩
-  deformation_zero x := by ext; simp
-  deformation_of_mem s x hx := by
-    obtain rfl : x = t₀ := hx
-    ext
-    simp only [ContinuousMap.coe_mk, coe_symm_eq]
-    ring
-  deformation_one_mem := by simp
-
-/-- Every singleton `{t₀}` in the unit interval `I` has the homotopy extension property. -/
-theorem hasHomotopyExtensionProperty_singleton_unitInterval (t₀ : I) :
-    HasHomotopyExtensionProperty ({t₀} : Set I) :=
-  (ndrPairSingletonUnitInterval t₀).hasHomotopyExtensionProperty
-
 /-- Every singleton `{t₀}` in the unit interval `I` (in particular `{0}` and `{1}`) has the proper
 homotopy extension property. -/
 theorem hasProperHomotopyExtensionProperty_singleton_unitInterval (t₀ : I) :
@@ -288,52 +242,25 @@ end Products
 
 section Retracing
 
-/-- Cutoff of the tent parameter `min (2 t) (2 - 2 t)` by `s`, clamped to `[0, 1]`. -/
+/-- Cutoff of `TauCeti.tent t` by `s`, clamped to `[0, 1]`. -/
 private noncomputable def retraceTime (s t : I) : I :=
-  projIcc 0 1 zero_le_one (min (2 * (t : ℝ)) (2 - 2 * t) - s)
+  projIcc 0 1 zero_le_one ((tent t : ℝ) - s)
 
 private lemma continuous_retraceTime : Continuous (Function.uncurry retraceTime) := by
   unfold Function.uncurry retraceTime
   fun_prop
 
-private lemma retraceTime_zero_right (s : I) : retraceTime s 0 = 0 := by
-  refine projIcc_eq_zero.2 ?_
-  simp only [Icc.coe_zero, mul_zero, sub_zero]
-  linarith [s.2.1, min_le_left (0 : ℝ) 2]
+private lemma retraceTime_zero_left (t : I) : retraceTime 0 t = tent t := by
+  rw [retraceTime, Icc.coe_zero, sub_zero, projIcc_val]
 
-private lemma retraceTime_one_right (s : I) : retraceTime s 1 = 0 := by
-  refine projIcc_eq_zero.2 ?_
-  simp only [Icc.coe_one, mul_one, sub_self]
-  linarith [s.2.1, min_le_right (2 : ℝ) 0]
+private lemma retraceTime_zero_right (s : I) : retraceTime s 0 = 0 :=
+  projIcc_eq_zero.2 (by simp [s.2.1])
 
-private lemma retraceTime_one_left (t : I) : retraceTime 1 t = 0 := by
-  refine projIcc_eq_zero.2 ?_
-  simp only [Icc.coe_one]
-  rcases le_total (t : ℝ) (1 / 2) with ht | ht
-  · linarith [min_le_left (2 * (t : ℝ)) (2 - 2 * t)]
-  · linarith [min_le_right (2 * (t : ℝ)) (2 - 2 * t)]
+private lemma retraceTime_one_right (s : I) : retraceTime s 1 = 0 :=
+  projIcc_eq_zero.2 (by simp [s.2.1])
 
-private lemma trans_apply_eq_retraceTime_zero {X : Type u} {Y : Type v}
-    [TopologicalSpace X] [TopologicalSpace Y] {f₀ f₁ f₂ : C(X, Y)}
-    (F : f₀.Homotopy f₁) (G : f₁.Homotopy f₂) {x : X}
-    (hG : ∀ t, G (t, x) = F (σ t, x)) (t : I) :
-    (F.trans G) (t, x) = F (retraceTime 0 t, x) := by
-  rw [ContinuousMap.Homotopy.trans_apply]
-  split_ifs with ht
-  · congr 2
-    ext
-    have hmem : 2 * (t : ℝ) ∈ I := ⟨by linarith [t.2.1], by linarith⟩
-    simp only [retraceTime, Icc.coe_zero, sub_zero, coe_projIcc]
-    rw [min_eq_left (by linarith : (2 : ℝ) * t ≤ 2 - 2 * t),
-      min_eq_right hmem.2, max_eq_right hmem.1]
-  · rw [hG]
-    congr 2
-    ext
-    have hmem : 2 - 2 * (t : ℝ) ∈ I := ⟨by linarith [t.2.2], by linarith⟩
-    simp only [retraceTime, coe_symm_eq, Icc.coe_zero, sub_zero, coe_projIcc]
-    rw [min_eq_right (by linarith : 2 - 2 * (t : ℝ) ≤ 2 * t),
-      min_eq_right hmem.2, max_eq_right hmem.1]
-    ring
+private lemma retraceTime_one_left (t : I) : retraceTime 1 t = 0 :=
+  projIcc_eq_zero.2 (by rw [Icc.coe_one]; linarith [(tent t).2.2])
 
 /-- Boundary data on `I × ({0, 1} × X ∪ I × A)` contracting the tent-reparametrised loop on `A`
 to the stationary path `f₀` while keeping the endpoints `t = 0` and `t = 1` fixed at `f₀` and
@@ -442,8 +369,9 @@ theorem HasProperHomotopyExtensionProperty.exists_homotopyRel_isProperMap_of_ret
         · obtain rfl : t = 1 := h1
           simp [retraceBoundary]
         · rw [ContinuousMap.coe_mk,
-            retraceBoundary_of_mem F G hretrace (0, ⟨(t, x), Or.inr ⟨mem_univ t, hx⟩⟩) hx]
-          exact (trans_apply_eq_retraceTime_zero F G (hretrace · x hx) t).symm
+            retraceBoundary_of_mem F G hretrace (0, ⟨(t, x), Or.inr ⟨mem_univ t, hx⟩⟩) hx,
+            retraceTime_zero_left]
+          exact (F.trans_apply_of_retracing G (hretrace · x hx) t).symm
   refine ⟨{ toContinuousMap := E.comp ⟨Prod.mk (1 : I), .prodMk_right 1⟩
             map_zero_left := fun x ↦ by
               simpa [retraceBoundary] using hE₁ 1 ⟨(0, x), Or.inl ⟨Or.inl rfl, mem_univ x⟩⟩

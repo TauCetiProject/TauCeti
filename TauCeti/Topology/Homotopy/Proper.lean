@@ -36,7 +36,7 @@ assumption is required.
   homotopies, reversal, concatenation, and horizontal composition, with relative counterparts in
   `ContinuousMap.HomotopyRel`.
 * `ContinuousMap.HasProperHomotopyInverse`: proper homotopy equivalences, with `id`, `exists_symm`,
-  `comp`, `of_homotopy`, and `iff_of_homotopy`.
+  `comp`, `of_homotopy`, `iff_of_homotopy`, and `of_deformationRetraction`.
 
 ## References
 
@@ -293,11 +293,15 @@ theorem comp {f : C(X, Y)} {g : C(Y, Z)} (hg : g.HasProperHomotopyInverse)
   let R₁ : Homotopy ((g.comp f).comp (f'.comp g')) (g.comp g') :=
     ((Homotopy.refl g).comp (Hf'.compContinuousMap g')).cast
       (by ext; rfl) (by ext; rfl)
-  have hL₁ : IsProperMap L₁ :=
-    Homotopy.isProperMap_comp (Homotopy.isProperMap_refl_iff.2 hf')
+  have hL₁ : IsProperMap L₁ := by
+    dsimp only [L₁]
+    rw [Homotopy.isProperMap_cast_iff]
+    exact Homotopy.isProperMap_comp (Homotopy.isProperMap_refl_iff.2 hf')
       (Homotopy.isProperMap_compContinuousMap hHg hf.isProperMap)
-  have hR₁ : IsProperMap R₁ :=
-    Homotopy.isProperMap_comp (Homotopy.isProperMap_refl_iff.2 hg.isProperMap)
+  have hR₁ : IsProperMap R₁ := by
+    dsimp only [R₁]
+    rw [Homotopy.isProperMap_cast_iff]
+    exact Homotopy.isProperMap_comp (Homotopy.isProperMap_refl_iff.2 hg.isProperMap)
       (Homotopy.isProperMap_compContinuousMap hHf' hg')
   exact .intro (hg.isProperMap.comp hf.isProperMap) (f'.comp g') (hf'.comp hg')
     (L₁.trans Hf) (R₁.trans Hg') (Homotopy.isProperMap_trans hL₁ hHf)
@@ -321,6 +325,29 @@ theorem iff_of_homotopy {f f' : C(X, Y)} (F : Homotopy f f') (hF : IsProperMap F
     f.HasProperHomotopyInverse ↔ f'.HasProperHomotopyInverse :=
   ⟨fun hf ↦ hf.of_homotopy F hF,
     fun hf' ↦ hf'.of_homotopy F.symm (Homotopy.isProperMap_symm hF)⟩
+
+/-- **A proper deformation retraction gives a proper homotopy equivalence.** If `i : C(Y, X)`
+admits a left inverse `r : C(X, Y)` together with a proper homotopy `K` from `i.comp r` to `id_X`,
+then both `i` and `r` are automatically proper and `i` has a proper homotopy inverse. -/
+theorem of_deformationRetraction {i : C(Y, X)} {r : C(X, Y)} (hri : Function.LeftInverse r i)
+    {K : (i.comp r).Homotopy (ContinuousMap.id X)} (hK : IsProperMap K) :
+    i.HasProperHomotopyInverse := by
+  have hir : IsProperMap (i.comp r) := K.isProperMap_left hK
+  have hrp : IsProperMap r :=
+    isProperMap_of_comp_of_inj r.continuous i.continuous hir hri.injective
+  have hi : IsProperMap i := by
+    refine isProperMap_of_isClosedMap_of_inj i.continuous hri.injective fun C hC ↦ ?_
+    have himg : i '' C = (i.comp r) '' (r ⁻¹' C) := by
+      ext x
+      exact ⟨fun ⟨y, hy, hx⟩ ↦ ⟨i y, by simpa [hri y] using hy, by simpa [hri y] using hx⟩,
+        fun ⟨x', hx', hx⟩ ↦ ⟨r x', hx', hx⟩⟩
+    rw [himg]
+    exact hir.isClosedMap _ (hC.preimage r.continuous)
+  refine .intro hi r hrp
+    ((Homotopy.refl (ContinuousMap.id Y)).cast (ContinuousMap.ext fun y ↦ (hri y).symm) rfl) K
+    ?_ hK
+  rw [Homotopy.isProperMap_cast_iff, Homotopy.isProperMap_refl_iff]
+  exact isProperMap_id
 
 end HasProperHomotopyInverse
 

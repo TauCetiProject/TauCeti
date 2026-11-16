@@ -34,14 +34,11 @@ is equivalent to `IsClosed A` (`TauCeti.isProperMap_subtypeVal_iff`).
 
 ## Main declarations
 
-* `ContinuousMap.HasProperHomotopyInverse.of_deformationRetraction`: a proper map `i : C(Y, X)`
-  with a proper left inverse `r : C(X, Y)` such that `i ∘ r` is properly homotopic to `id_X` is a
-  proper homotopy equivalence.
 * `TauCeti.HasProperHomotopyExtensionProperty.exists_proper_retraction_homotopic`: a proper
   homotopy left inverse of `A ↪ X` is properly homotopic to a proper retraction `r : C(X, A)`.
 * `TauCeti.HasProperHomotopyExtensionProperty.exists_homotopyRel_isProperMap_of_retraction`: a
-  proper retraction onto a closed proper cofibration `A` whose composite with the inclusion is
-  properly homotopic to `id_X` admits a proper homotopy relative to `A` from `id_X`.
+  retraction onto a proper cofibration `A` whose composite with the inclusion is properly homotopic
+  to `id_X` admits a proper homotopy relative to `A` from `id_X`.
 * `TauCeti.properStrongDeformationRetract_of_inverse`: **rectification of a proper homotopy inverse
   of `A ↪ X` to a proper strong deformation retraction.**
 * `TauCeti.HasProperHomotopyExtensionProperty.hasProperHomotopyInverse_subtypeVal_iff`: for a
@@ -59,20 +56,7 @@ public section
 
 open ContinuousMap Set unitInterval
 
-universe u v
-
-/-- **A proper deformation retraction gives a proper homotopy equivalence.** If `i : C(Y, X)` is
-proper and admits a proper left inverse `r : C(X, Y)` together with a proper homotopy from
-`i.comp r` to `id_X`, then `i` has a proper homotopy inverse. -/
-theorem ContinuousMap.HasProperHomotopyInverse.of_deformationRetraction
-    {X : Type u} {Y : Type v} [TopologicalSpace X] [TopologicalSpace Y]
-    {i : C(Y, X)} (hi : IsProperMap i) {r : C(X, Y)} (hrp : IsProperMap r)
-    (hri : Function.LeftInverse r i) {K : (i.comp r).Homotopy (ContinuousMap.id X)}
-    (hK : IsProperMap K) :
-    i.HasProperHomotopyInverse :=
-  .intro hi r hrp
-    ((Homotopy.refl (ContinuousMap.id Y)).cast (ContinuousMap.ext fun y ↦ (hri y).symm) rfl) K
-    (by simp [isProperMap_id]) hK
+universe u
 
 namespace TauCeti
 
@@ -94,16 +78,22 @@ theorem HasProperHomotopyExtensionProperty.exists_proper_retraction_homotopic
     G'.symm, G'.isProperMap_symm hG₀p⟩
   simpa using hG₀_mem 1 a
 
-/-- A proper retraction `r : C(X, A)` onto a closed subset `A` with the proper homotopy extension
-property whose composite with the inclusion is properly homotopic to the identity of `X` admits a
-proper homotopy relative to `A` from the identity of `X` to `(subtypeVal A).comp r`. -/
+/-- A retraction `r : C(X, A)` onto a subset `A` with the proper homotopy extension property whose
+composite with the inclusion is properly homotopic to the identity of `X` admits a proper homotopy
+relative to `A` from the identity of `X` to `(subtypeVal A).comp r`. Both closedness of `A` and
+properness of `r` follow automatically from properness of `K`. -/
 theorem HasProperHomotopyExtensionProperty.exists_homotopyRel_isProperMap_of_retraction
-    (hA : HasProperHomotopyExtensionProperty A) (hA' : IsClosed A) {r : C(X, A)}
-    (hrp : IsProperMap r) (hr : ∀ a : A, r a = a)
+    (hA : HasProperHomotopyExtensionProperty A) {r : C(X, A)} (hr : ∀ a : A, r a = a)
     (K : ((subtypeVal A).comp r).Homotopy (ContinuousMap.id X)) (hK : IsProperMap K) :
     ∃ H : (ContinuousMap.id X).HomotopyRel ((subtypeVal A).comp r) A, IsProperMap H := by
   let ir : C(X, X) := (subtypeVal A).comp r
-  have hir : IsProperMap ir := hA'.isProperMap_subtypeVal.comp hrp
+  have hir : IsProperMap ir := K.isProperMap_left hK
+  have hA' : IsClosed A := by
+    have hrange : range ir = A := by
+      ext x
+      exact ⟨fun ⟨x', hx'⟩ ↦ hx' ▸ (r x').2,
+        fun hx ↦ ⟨x, congrArg Subtype.val (hr ⟨x, hx⟩)⟩⟩
+    exact hrange ▸ hir.isClosed_range
   let F : (ContinuousMap.id X).Homotopy ir := K.symm
   have hF : IsProperMap F := K.isProperMap_symm hK
   let G : ir.Homotopy ir :=
@@ -120,14 +110,14 @@ theorem HasProperHomotopyExtensionProperty.exists_homotopyRel_isProperMap_of_ret
 
 /-- **A proper cofibration whose inclusion has a proper homotopy inverse is a proper strong
 deformation retract.** Given `A ⊆ X` with the proper homotopy extension property such that the
-subspace inclusion `A → X` is proper and admits a proper homotopy inverse `g : C(X, A)` with
-jointly proper homotopies `H : g ∘ incl ≃ id_A` on `I × A` and `K : incl ∘ g ≃ id_X` on `I × X`,
-there is a proper retraction `r : C(X, A)` together with a proper homotopy relative to `A` from
-`id_X` to `incl ∘ r`. -/
+subspace inclusion `A → X` is proper and admits a homotopy inverse `g : C(X, A)` with jointly
+proper homotopies `H : g ∘ incl ≃ id_A` on `I × A` and `K : incl ∘ g ≃ id_X` on `I × X`, there is
+a proper retraction `r : C(X, A)` together with a proper homotopy relative to `A` from `id_X` to
+`incl ∘ r`. Properness of `g` follows automatically from properness of `K`. -/
 theorem properStrongDeformationRetract_of_inverse
     {X : Type u} [TopologicalSpace X]
     (A : Set X) (hA : HasProperHomotopyExtensionProperty A)
-    (hincl : IsProperMap (Subtype.val : A → X)) (g : C(X, A)) (hg : IsProperMap g)
+    (hincl : IsProperMap (Subtype.val : A → X)) (g : C(X, A))
     (H : ContinuousMap.Homotopy (g.comp (ContinuousMap.subtypeVal A))
       (ContinuousMap.id A))
     (K : ContinuousMap.Homotopy
@@ -137,13 +127,15 @@ theorem properStrongDeformationRetract_of_inverse
       ∃ H : (ContinuousMap.id X).HomotopyRel
         ((ContinuousMap.subtypeVal A).comp r) A,
         IsProperMap H := by
-  have hA' : IsClosed A := isProperMap_subtypeVal_iff.1 hincl
+  have hg : IsProperMap g :=
+    isProperMap_of_comp_of_inj g.continuous continuous_subtype_val (K.isProperMap_left hK)
+      Subtype.val_injective
   obtain ⟨r, hrp, hr, G, hGp⟩ := hA.exists_proper_retraction_homotopic g hg H hH
   let K₁ : ((subtypeVal A).comp r).Homotopy ((subtypeVal A).comp g) :=
     (Homotopy.refl (subtypeVal A)).comp G
   have hK₁ : IsProperMap K₁ :=
     Homotopy.isProperMap_comp (Homotopy.isProperMap_refl_iff.2 hincl) hGp
-  exact ⟨r, hrp, hr, hA.exists_homotopyRel_isProperMap_of_retraction hA' hrp hr
+  exact ⟨r, hrp, hr, hA.exists_homotopyRel_isProperMap_of_retraction hr
     (K₁.trans K) (K₁.isProperMap_trans hK₁ hK)⟩
 
 /-- **Characterization of proper strong deformation retracts among subsets with the proper homotopy
@@ -155,11 +147,11 @@ theorem HasProperHomotopyExtensionProperty.hasProperHomotopyInverse_subtypeVal_i
       IsClosed A ∧ ∃ r : C(X, A), IsProperMap r ∧ (∀ a : A, r a = a) ∧
         ∃ H : (ContinuousMap.id X).HomotopyRel ((subtypeVal A).comp r) A, IsProperMap H := by
   refine ⟨fun hf ↦ by
-    obtain ⟨g, hg, H, K, hH, hK⟩ := hf.exists_inverse
+    obtain ⟨g, -, H, K, hH, hK⟩ := hf.exists_inverse
     exact ⟨isProperMap_subtypeVal_iff.1 hf.isProperMap,
-      properStrongDeformationRetract_of_inverse A hA hf.isProperMap g hg H K hH hK⟩,
-    fun ⟨hA', r, hrp, hr, H, hH⟩ ↦
-      HasProperHomotopyInverse.of_deformationRetraction hA'.isProperMap_subtypeVal hrp hr
+      properStrongDeformationRetract_of_inverse A hA hf.isProperMap g H K hH hK⟩,
+    fun ⟨_, _, _, hr, H, hH⟩ ↦
+      HasProperHomotopyInverse.of_deformationRetraction hr
         (K := H.toHomotopy.symm) (H.toHomotopy.isProperMap_symm hH)⟩
 
 end TauCeti

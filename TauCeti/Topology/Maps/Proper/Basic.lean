@@ -35,6 +35,9 @@ The nonemptiness hypotheses cannot be dropped: a map out of an empty space is pr
 * `IsProperMap.of_isEmbedding_of_range_eq`: the pullback of a proper map along an embedding of its
   codomain is proper. This is Mathlib's `IsProperMap.restrictPreimage`, stated for a square of
   embeddings rather than for subtypes.
+* `IsProperMap.exists_tendsto_of_tendsto_apply_prodMk`: ultrafilter convergence for a proper map
+  `h : T × Y → W` evaluated at a variable first coordinate `φ z` that is continuous away from a
+  set `A` where `t ↦ h (t, y)` is independent of `t`.
 * `TauCeti.isProperMap_subtypeVal_iff`, `TauCeti.isProperMap_prodMk_left`,
   `TauCeti.isProperMap_prodMk_right`: properness of subspace inclusions and of sections into a
   product.
@@ -143,6 +146,29 @@ theorem IsProperMap.of_isEmbedding_of_range_eq {X' Y' : Type*} [TopologicalSpace
     exact (congrFun hcomm x').symm
   · rw [hi.nhds_eq_comap, ← map_le_iff_le_comap]
     exact hle
+
+/-- **Ultrafilter convergence for a proper map evaluated at a variable first coordinate.** If
+`h : T × Y → W` is proper with `T` Hausdorff, `t ↦ h (t, y)` is independent of `t` for `y ∈ A`,
+`φ : Z → T` is continuous away from `q ⁻¹' A`, and `h (φ z, q z)` tends to `w₀` along an
+ultrafilter `𝒰`, then `q` tends along `𝒰` to some `y₁` such that `h (φ z₁, q z₁) = w₀` at every
+cluster limit `z₁` of `𝒰` with `q z₁ = y₁`. -/
+theorem IsProperMap.exists_tendsto_of_tendsto_apply_prodMk {T : Type*} [TopologicalSpace T]
+    [T2Space T] {h : T × Y → W} (hh : IsProperMap h) {A : Set Y}
+    (hA : ∀ t₁ t₂, ∀ y ∈ A, h (t₁, y) = h (t₂, y)) {q : Z → Y} {φ : Z → T}
+    (hφ : ∀ z, q z ∉ A → ContinuousAt φ z) {𝒰 : Ultrafilter Z} {w₀ : W}
+    (hw₀ : Tendsto (fun z ↦ h (φ z, q z)) 𝒰 (𝓝 w₀)) :
+    ∃ y₁, Tendsto q 𝒰 (𝓝 y₁) ∧
+      ∀ z₁ : Z, q z₁ = y₁ → (𝒰 : Filter Z) ≤ 𝓝 z₁ → h (φ z₁, q z₁) = w₀ := by
+  have hmap : Tendsto h (Ultrafilter.map (fun z ↦ (φ z, q z)) 𝒰) (𝓝 w₀) :=
+    tendsto_map'_iff.2 hw₀
+  obtain ⟨⟨t₁, y₁⟩, hty₁, hle⟩ := hh.ultrafilter_le_nhds_of_tendsto hmap
+  rw [Ultrafilter.coe_map, nhds_prod_eq, ← Tendsto, tendsto_prod_iff'] at hle
+  refine ⟨y₁, hle.2, fun z₁ hqz₁ hz₁ ↦ ?_⟩
+  by_cases hy₁A : y₁ ∈ A
+  · rw [hqz₁, hA (φ z₁) t₁ _ hy₁A, hty₁]
+  · have hqz₁A : q z₁ ∉ A := hqz₁ ▸ hy₁A
+    have hφ_eq : φ z₁ = t₁ := tendsto_nhds_unique ((hφ z₁ hqz₁A).mono_left hz₁) hle.1
+    rw [hφ_eq, hqz₁, hty₁]
 
 /-- A parameter-preserving map `(p, x) ↦ (p, G (p, x))` whose slices are injective, from a
 product with a compact second factor to a Hausdorff space, is a closed embedding. Its image is the
