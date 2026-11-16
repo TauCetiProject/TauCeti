@@ -178,8 +178,10 @@ abbrev toGraphOfGroups : GraphOfGroups.{u', v', w, 0} B.graph where
 inclusions `B_u ≤ A_[u]` of the vertex groups and the twisting elements `δ_f = f_α`, so that
 `δ_{f⁻¹}⁻¹ = f_ω`. Its path map reads an element `b ∈ B_u` as the letter `b ∈ A_[u]` and a dart `f`
 as the letters `f_α, [f], f_ω`; merging consecutive vertex group letters gives the path `μ(p)` of
-Kapovich, Weidmann and Myasnikov. -/
-@[expose] def toHom : Hom B.toGraphOfGroups 𝔸 where
+Kapovich, Weidmann and Myasnikov. The body is exposed and unfolds at instance transparency, so
+that the image `[u]` of a vertex under `AGraph.toHom` is accepted as its type `B.typ.mapV u` by
+rewriting and simplification. -/
+@[expose, instance_reducible] def toHom : Hom B.toGraphOfGroups 𝔸 where
   graph := B.typ
   vertexHom z := (B.grp z).subtype
   edgeHom _ := 1
@@ -191,14 +193,15 @@ Kapovich, Weidmann and Myasnikov. -/
 
 section toHom
 
-theorem toHom_graph : B.toHom.graph = B.typ := (rfl)
+@[simp] theorem toHom_graph : B.toHom.graph = B.typ := (rfl)
 
-theorem toHom_vertexHom (z : B.graph.V) : B.toHom.vertexHom z = (B.grp z).subtype := (rfl)
+@[simp] theorem toHom_vertexHom (z : B.graph.V) : B.toHom.vertexHom z = (B.grp z).subtype :=
+  (rfl)
 
-theorem toHom_edgeHom (f : B.graph.E) : B.toHom.edgeHom f = 1 := (rfl)
+@[simp] theorem toHom_edgeHom (f : B.graph.E) : B.toHom.edgeHom f = 1 := (rfl)
 
 /-- The twisting element of a dart `f` is its label `f_α`, read through `o([f]) = [o(f)]`. -/
-theorem toHom_twist (f : B.graph.E) :
+@[simp] theorem toHom_twist (f : B.graph.E) :
     B.toHom.twist f = MulEquiv.cast (M := 𝔸.vertexGroup) (B.typ.map_src f) (B.labelα f) :=
   (rfl)
 
@@ -207,7 +210,7 @@ variable {u u' : B.graph.V}
 /-- The twisting element of an arrow `f : u ⟶ u'` is the label `f_α`, read in `A_[u]`. -/
 theorem toHom_twistArrow (f : u ⟶ u') : B.toHom.twistArrow f = MulEquiv.cast (M := 𝔸.vertexGroup)
     ((B.typ.map_src f.1).trans (congrArg B.typ.mapV f.2.1)) (B.labelα f.1) := by
-  simp only [Hom.twistArrow_def, toHom, MulEquiv.cast_apply, cast_cast]
+  simp only [Hom.twistArrow_def, toHom_twist, MulEquiv.cast_apply, cast_cast]
 
 /-- The inverse of the twisting element of the reverse of an arrow `f : u ⟶ u'` is the label
 `f_ω`, read in `A_[u']`: this is `δ_{f⁻¹}⁻¹ = f_ω`. -/
@@ -216,20 +219,20 @@ theorem inv_toHom_twistArrow_reverse (f : u ⟶ u') : (B.toHom.twistArrow (Quive
       (B.labelω f.1) := by
   rw [B.toHom.twistArrow_eq_cast _ (e' := B.graph.rev f.1) (by simp)
     (congrArg B.toHom.graph.mapV ((B.graph.src_rev f.1).trans f.2.2))]
-  unfold toHom
-  simp only [labelω_def, map_inv, MulEquiv.cast_apply, cast_cast]
+  simp only [toHom_twist, labelω_def, map_inv, MulEquiv.cast_apply, cast_cast]
 
 /-- The path map of the morphism defined by an `𝔸`-graph reads an arrow `f` as its label: the
 letters `f_α, [f], f_ω`. -/
 theorem toHom_mapPath_ofDart (f : u ⟶ u') : B.toHom.mapPath (Path.ofDart f) =
     ((Path.ofVertex (MulEquiv.cast (M := 𝔸.vertexGroup)
       ((B.typ.map_src f.1).trans (congrArg B.typ.mapV f.2.1)) (B.labelα f.1))).cons
-      (Letter.dart (a := B.typ.mapV _) (b := B.typ.mapV _) (B.typ.toPrefunctor.map f))).cons
+      (Letter.dart (Quiver.Hom.cast (B.typ.toPrefunctor_obj u) (B.typ.toPrefunctor_obj u')
+        (B.typ.toPrefunctor.map f)))).cons
       (Letter.vertex (MulEquiv.cast (M := 𝔸.vertexGroup)
         ((B.typ.map_tgt _ f.1).trans (congrArg B.typ.mapV f.2.2)) (B.labelω f.1))) := by
   rw [Hom.mapPath_ofDart, toHom_twistArrow, inv_toHom_twistArrow_reverse]
-  -- The image arrows `B.toHom.graph.toPrefunctor.map f` and `B.typ.toPrefunctor.map f` agree by
-  -- `toHom_graph`, which `rw` cannot apply under the dependent endpoints of the letters.
+  -- The transported image arrows under `B.toHom.graph` and under `B.typ` agree by `toHom_graph`,
+  -- which `rw` cannot apply under the dependent endpoints of the letters.
   rfl
 
 /-- The letters read along a dart `f`, from equalities for its start label, its type and its end
@@ -244,12 +247,13 @@ theorem toHom_mapLetter_dart_eq (f : B.graph.E)
     B.toHom.mapLetter (Letter.dart (𝔸 := B.toGraphOfGroups) (B.graph.dart f)) =
       ((Path.ofVertex g).comp (Path.ofDart d)).comp (Path.ofVertex h) := by
   subst hg hh
-  rw [SerreGraph.dart_def, Hom.mapLetter_dart, toHom_twistArrow, inv_toHom_twistArrow_reverse,
+  rw [SerreGraph.dart_def, ← Hom.mapPath_toPath, ← Path.ofDart_def, toHom_mapPath_ofDart,
     Path.comp_ofDart, Path.comp_ofVertex]
-  obtain rfl : B.typ.toPrefunctor.map ⟨f, rfl, rfl⟩ = d :=
-    Subtype.ext ((B.typ.toPrefunctor_map_val _).trans hd)
-  -- The two sides differ only in the endpoints of the image arrow: `toPrefunctor.obj` on the
-  -- right and `mapV` on the left, which agree by unfolding `SerreGraph.Hom.toPrefunctor`.
+  -- The transported image arrow of `f` has dart `[f]`, by unfolding `SerreGraph.Hom.toPrefunctor`.
+  obtain rfl : Quiver.Hom.cast (B.typ.toPrefunctor_obj _) (B.typ.toPrefunctor_obj _)
+      (B.typ.toPrefunctor.map ⟨f, rfl, rfl⟩) = d :=
+    Subtype.ext hd
+  -- The labels on the two sides are transported along proofs of the same equalities.
   rfl
 
 /-- The path read along a dart `f`, from equalities for its start label, its type and its end

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.GraphOfGroups.Presentation
+public import Mathlib.Combinatorics.Quiver.Cast
 public import Mathlib.Tactic.Group
 
 /-!
@@ -56,8 +57,6 @@ identify the underlying graph morphisms with the identity and the composite.
 * `TauCeti.GraphOfGroups.Hom.ext`: a morphism is determined by its graph morphism, its vertex
   group homomorphisms and its twisting elements.
 * `TauCeti.GraphOfGroups.Hom.vertexHom_ω`: the compatibility of a morphism with the maps `ω`.
-* `TauCeti.GraphOfGroups.Hom.vertexHom_αArrow`, `TauCeti.GraphOfGroups.Hom.vertexHom_ωArrow`: the
-  compatibility with `α` and `ω` at an arrow of the quiver of `Γ`, through `Hom.twistArrow`.
 * `TauCeti.GraphOfGroups.Hom.comp_assoc`, `TauCeti.GraphOfGroups.Hom.id_comp`,
   `TauCeti.GraphOfGroups.Hom.comp_id`: composition is associative and unital.
 * `TauCeti.GraphOfGroups.π₁Tree.map_id`, `TauCeti.GraphOfGroups.π₁Tree.map_comp_map`:
@@ -214,39 +213,6 @@ along `src (rev e) = tgt e`. -/
         (Φ.twist (Γ.rev e)) :=
   Φ.twistArrow_eq_cast _ (by simp) _
 
-/-- Compatibility of a morphism with the boundary monomorphisms `α` of arrows: for an arrow
-`e : a ⟶ b`, `φ_a (α_e c) = δ_e · α_[e] (φ_e c) · δ_e⁻¹`. -/
-theorem vertexHom_αArrow (e : a ⟶ b) (c : 𝔸.edgeGroup (Γ.toGeomEdge e.1)) :
-    Φ.vertexHom a (𝔸.αArrow e c) =
-      Φ.twistArrow e * 𝔹.αArrow (a := Φ.graph.mapV a) (b := Φ.graph.mapV b)
-        (Φ.graph.toPrefunctor.map e) (Φ.edgeHom e.1 c) * (Φ.twistArrow e)⁻¹ := by
-  obtain ⟨e, rfl, rfl⟩ := e
-  -- `αArrow_apply` at the image arrow, stated at the dart `[e]` itself.
-  have h : 𝔹.αArrow (a := Φ.graph.mapV _) (b := Φ.graph.mapV _)
-      (Φ.graph.toPrefunctor.map (⟨e, rfl, rfl⟩ : Γ.src e ⟶ Γ.tgt e)) (Φ.edgeHom e c) =
-      MulEquiv.cast (M := 𝔹.vertexGroup) (Φ.graph.map_src e)
-        (𝔹.α (Φ.graph.mapE e) (Φ.edgeHom e c)) :=
-    αArrow_apply ..
-  rw [αArrow_mk, twistArrow_mk, h]
-  exact Φ.vertexHom_α e c
-
-/-- Compatibility of a morphism with the boundary monomorphisms `ω` of arrows: for an arrow
-`e : a ⟶ b`, `φ_b (ω_e c) = δ_{rev e} · ω_[e] (φ_e c) · δ_{rev e}⁻¹`. -/
-theorem vertexHom_ωArrow (e : a ⟶ b) (c : 𝔸.edgeGroup (Γ.toGeomEdge e.1)) :
-    Φ.vertexHom b (𝔸.ωArrow e c) = Φ.twistArrow (Quiver.reverse e) *
-      𝔹.ωArrow (a := Φ.graph.mapV a) (b := Φ.graph.mapV b) (Φ.graph.toPrefunctor.map e)
-        (Φ.edgeHom e.1 c) * (Φ.twistArrow (Quiver.reverse e))⁻¹ := by
-  obtain ⟨e, rfl, rfl⟩ := e
-  -- `ωArrow_apply` at the image arrow, stated at the dart `[e]` itself.
-  have h : 𝔹.ωArrow (a := Φ.graph.mapV _) (b := Φ.graph.mapV _)
-      (Φ.graph.toPrefunctor.map (⟨e, rfl, rfl⟩ : Γ.src e ⟶ Γ.tgt e)) (Φ.edgeHom e c) =
-      MulEquiv.cast (M := 𝔹.vertexGroup) (Φ.graph.map_tgt _ e)
-        (𝔹.ω (Φ.graph.mapE e) (Φ.edgeHom e c)) :=
-    ωArrow_apply ..
-  rw [ωArrow_mk, Φ.twistArrow_eq_cast (e' := Γ.rev e) _ (by simp)
-    (congrArg Φ.graph.mapV (Γ.src_rev e)), h]
-  exact Φ.vertexHom_ω e c
-
 end twistArrow
 
 /-! ### Identities and composition -/
@@ -291,8 +257,9 @@ theorem id_graph_mapV (v : Γ.V) : (Hom.id 𝔸).graph.mapV v = v := rfl
 
 theorem id_graph_mapE (e : Γ.E) : (Hom.id 𝔸).graph.mapE e = e := rfl
 
-theorem id_graph_toPrefunctor_map {a b : Γ.V} (e : a ⟶ b) :
-    (Hom.id 𝔸).graph.toPrefunctor.map e = e := rfl
+theorem cast_id_graph_toPrefunctor_map {a b : Γ.V} (e : a ⟶ b) :
+    Quiver.Hom.cast ((Hom.id 𝔸).graph.toPrefunctor_obj a) ((Hom.id 𝔸).graph.toPrefunctor_obj b)
+      ((Hom.id 𝔸).graph.toPrefunctor.map e) = e := rfl
 
 /-- The graph morphism underlying the identity morphism is the identity. -/
 theorem id_graph : (Hom.id 𝔸).graph = SerreGraph.Hom.id Γ := by
@@ -319,8 +286,12 @@ theorem comp_graph_mapV (v : Γ.V) :
 theorem comp_graph_mapE (e : Γ.E) :
     (Ψ.comp Φ).graph.mapE e = Ψ.graph.mapE (Φ.graph.mapE e) := rfl
 
-theorem comp_graph_toPrefunctor_map {a b : Γ.V} (e : a ⟶ b) :
-    (Ψ.comp Φ).graph.toPrefunctor.map e = Ψ.graph.toPrefunctor.map (Φ.graph.toPrefunctor.map e) :=
+theorem cast_comp_graph_toPrefunctor_map {a b : Γ.V} (e : a ⟶ b) :
+    Quiver.Hom.cast ((Ψ.comp Φ).graph.toPrefunctor_obj a) ((Ψ.comp Φ).graph.toPrefunctor_obj b)
+        ((Ψ.comp Φ).graph.toPrefunctor.map e) =
+      Quiver.Hom.cast (Ψ.graph.toPrefunctor_obj _) (Ψ.graph.toPrefunctor_obj _)
+        (Ψ.graph.toPrefunctor.map (Quiver.Hom.cast (Φ.graph.toPrefunctor_obj a)
+          (Φ.graph.toPrefunctor_obj b) (Φ.graph.toPrefunctor.map e))) :=
   rfl
 
 /-- The graph morphism underlying a composite is the composite of the graph morphisms. -/
@@ -341,11 +312,12 @@ theorem comp_twist (e : Γ.E) :
 
 /-- The twisting element of a composite at an arrow `e : a ⟶ b`: `δ^{ΨΦ}_e = ψ(δ^Φ_e) · δ^Ψ_[e]`. -/
 @[simp] theorem comp_twistArrow {a b : Γ.V} (e : a ⟶ b) : (Ψ.comp Φ).twistArrow e =
-    Ψ.vertexHom _ (Φ.twistArrow e) *
-      Ψ.twistArrow (a := Φ.graph.mapV a) (b := Φ.graph.mapV b) (Φ.graph.toPrefunctor.map e) := by
-  -- For the arrow of a dart all transports are along `rfl`, and `Hom.comp` is reducible.
+    Ψ.vertexHom _ (Φ.twistArrow e) * Ψ.twistArrow (Quiver.Hom.cast (Φ.graph.toPrefunctor_obj a)
+      (Φ.graph.toPrefunctor_obj b) (Φ.graph.toPrefunctor.map e)) := by
   obtain ⟨e, rfl, rfl⟩ := e
-  rfl
+  rw [twistArrow_mk, comp_twist, twistArrow_mk]
+  -- The transported image arrow has dart `[e]`, by unfolding `SerreGraph.Hom.toPrefunctor`.
+  exact congrArg (_ * ·) (Ψ.twistArrow_eq_cast _ (e' := Φ.graph.mapE e) (by rfl) _).symm
 
 end comp
 

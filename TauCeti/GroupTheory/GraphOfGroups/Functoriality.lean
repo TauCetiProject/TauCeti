@@ -79,7 +79,8 @@ def mapLetter : ∀ {x y : 𝔸.LetterVertex}, 𝔸.Letter x y →
     𝔹.Path ⟨Φ.graph.mapV x.as⟩ ⟨Φ.graph.mapV y.as⟩
   | _, _, .vertex g => Path.ofVertex (Φ.vertexHom _ g)
   | _, _, .dart f => ((Path.ofVertex (Φ.twistArrow f)).cons
-      (.dart (a := Φ.graph.mapV _) (b := Φ.graph.mapV _) (Φ.graph.toPrefunctor.map f))).cons
+      (.dart (Quiver.Hom.cast (Φ.graph.toPrefunctor_obj _) (Φ.graph.toPrefunctor_obj _)
+        (Φ.graph.toPrefunctor.map f)))).cons
       (.vertex (Φ.twistArrow (Quiver.reverse f))⁻¹)
 
 @[simp] theorem mapLetter_vertex {a : Γ.V} (g : 𝔸.vertexGroup a) :
@@ -88,7 +89,8 @@ def mapLetter : ∀ {x y : 𝔸.LetterVertex}, 𝔸.Letter x y →
 @[simp] theorem mapLetter_dart {a b : Γ.V} (f : a ⟶ b) :
     Φ.mapLetter (Letter.dart (𝔸 := 𝔸) f) =
       ((Path.ofVertex (Φ.twistArrow f)).cons
-        (Letter.dart (a := Φ.graph.mapV _) (b := Φ.graph.mapV _) (Φ.graph.toPrefunctor.map f))).cons
+        (Letter.dart (Quiver.Hom.cast (Φ.graph.toPrefunctor_obj a) (Φ.graph.toPrefunctor_obj b)
+          (Φ.graph.toPrefunctor.map f)))).cons
         (Letter.vertex (Φ.twistArrow (Quiver.reverse f))⁻¹) := (rfl)
 
 /-- Reading the reverse of a letter gives the reverse path. -/
@@ -97,11 +99,13 @@ def mapLetter : ∀ {x y : 𝔸.LetterVertex}, 𝔸.Letter x y →
   cases l with
   | vertex g => simp
   | dart f =>
-    -- `Letter.reverse_dart` at the image arrow, whose endpoints `toPrefunctor.obj` agree with the
-    -- letter's `mapV` only after unfolding `SerreGraph.Hom.toPrefunctor`, so `simp` cannot use it.
-    have h := Letter.reverse_dart 𝔹 (a := Φ.graph.mapV _) (b := Φ.graph.mapV _)
-      (Φ.graph.toPrefunctor.map f)
-    simp [h, Path.ofVertex_eq_nil_cons, Quiver.Path.reverse, Quiver.Hom.toPath]
+    simp only [Letter.reverse_dart, mapLetter_dart, Quiver.reverse_reverse, Prefunctor.map_reverse,
+      Path.ofVertex_eq_nil_cons, Quiver.Path.reverse, Quiver.Hom.toPath, Letter.reverse_vertex,
+      Quiver.Path.comp_cons, Quiver.Path.comp_nil, inv_inv]
+    -- Both sides read the reverse of the image arrow of `f`, transported to the vertices `mapV`
+    -- before and after reversing: the transports are along `SerreGraph.Hom.toPrefunctor_obj`,
+    -- which holds by unfolding `SerreGraph.Hom.toPrefunctor`.
+    rfl
 
 /-- The path map of a morphism: the `𝔹`-path read along an `𝔸`-path, letter by letter. -/
 def mapPath {x : 𝔸.LetterVertex} : ∀ {y : 𝔸.LetterVertex}, 𝔸.Path x y →
@@ -135,7 +139,8 @@ variable {x y z : 𝔸.LetterVertex}
 @[simp] theorem mapPath_ofDart {a b : Γ.V} (f : a ⟶ b) :
     Φ.mapPath (Path.ofDart (𝔸 := 𝔸) f) =
       ((Path.ofVertex (Φ.twistArrow f)).cons
-        (Letter.dart (a := Φ.graph.mapV _) (b := Φ.graph.mapV _) (Φ.graph.toPrefunctor.map f))).cons
+        (Letter.dart (Quiver.Hom.cast (Φ.graph.toPrefunctor_obj a) (Φ.graph.toPrefunctor_obj b)
+          (Φ.graph.toPrefunctor.map f)))).cons
         (Letter.vertex (Φ.twistArrow (Quiver.reverse f))⁻¹) := by
   rw [Path.ofDart_def, mapPath_toPath, mapLetter_dart]
 
@@ -158,7 +163,8 @@ theorem mapPath_cons_vertex {a : Γ.V} (p : 𝔸.Path x ⟨a⟩) (g : 𝔸.verte
 theorem mapPath_cons_dart {a b : Γ.V} (p : 𝔸.Path x ⟨a⟩) (f : a ⟶ b) :
     Φ.mapPath (p.cons (Letter.dart f)) =
       (((Φ.mapPath p).cons (Letter.vertex (Φ.twistArrow f))).cons
-        (Letter.dart (a := Φ.graph.mapV _) (b := Φ.graph.mapV _) (Φ.graph.toPrefunctor.map f))).cons
+        (Letter.dart (Quiver.Hom.cast (Φ.graph.toPrefunctor_obj a) (Φ.graph.toPrefunctor_obj b)
+          (Φ.graph.toPrefunctor.map f)))).cons
         (Letter.vertex (Φ.twistArrow (Quiver.reverse f))⁻¹) := by
   rw [mapPath_cons, mapLetter_dart, Quiver.Path.comp_cons, Quiver.Path.comp_cons,
     Path.comp_ofVertex]
@@ -166,19 +172,19 @@ theorem mapPath_cons_dart {a b : Γ.V} (p : 𝔸.Path x ⟨a⟩) (f : a ⟶ b) :
 /-- The underlying edge path of the image of an `𝔸`-path is the image of its underlying edge
 path under the graph morphism. -/
 @[simp] theorem edgePath_mapPath (p : 𝔸.Path x y) :
-    (Φ.mapPath p).edgePath = Φ.graph.toPrefunctor.mapPath p.edgePath := by
+    (Φ.mapPath p).edgePath = (Φ.graph.toPrefunctor.mapPath p.edgePath).cast
+      (Φ.graph.toPrefunctor_obj x.as) (Φ.graph.toPrefunctor_obj y.as) := by
   induction p with
   | nil => simp
   | cons p l ih =>
     cases l with
     | vertex g => rwa [mapPath_cons_vertex, Path.edgePath_cons_vertex, Path.edgePath_cons_vertex]
     | dart f =>
-      rw [mapPath_cons_dart, Path.edgePath_cons_vertex, Path.edgePath_cons_dart (e := f),
-        Prefunctor.mapPath_cons, ← ih]
-      -- `Path.edgePath_cons_dart` at the image arrow, whose endpoints `toPrefunctor.obj` agree
-      -- with the letter's `mapV` only after unfolding `SerreGraph.Hom.toPrefunctor`.
-      exact (Path.edgePath_cons_dart _ _).trans
-        (congrArg (Quiver.Path.cons · _) (Path.edgePath_cons_vertex _ _))
+      rw [mapPath_cons_dart, Path.edgePath_cons_vertex, Path.edgePath_cons_dart,
+        Path.edgePath_cons_vertex, ih, Path.edgePath_cons_dart, Prefunctor.mapPath_cons]
+      -- The transports along `SerreGraph.Hom.toPrefunctor_obj` on both sides hold by unfolding
+      -- `SerreGraph.Hom.toPrefunctor`, so they commute with appending the image arrow of `f`.
+      rfl
 
 end mapPath
 
@@ -190,12 +196,14 @@ variable {x y : 𝔸.LetterVertex}
 
 /-- Moving an edge group element across a dart flanked by vertex group letters:
 `d, e, d'⁻¹, d' ω_e(c) d'⁻¹ ~ d α_e(c) d⁻¹, d, e, d'⁻¹`. -/
-private theorem cons_dart_ωArrow_conj {z : 𝔹.LetterVertex} {a b : Δ.V} (r : 𝔹.Path z ⟨a⟩)
+private theorem cons_dart_ω_conj {z : 𝔹.LetterVertex} {a b : Δ.V} (r : 𝔹.Path z ⟨a⟩)
     (d : 𝔹.vertexGroup a) (d' : 𝔹.vertexGroup b) (e : a ⟶ b) (c : 𝔹.edgeGroup (Δ.toGeomEdge e.1)) :
     Homotopic ((((r.cons (Letter.vertex d)).cons (Letter.dart e)).cons (Letter.vertex d'⁻¹)).cons
-        (Letter.vertex (d' * 𝔹.ωArrow e c * d'⁻¹)))
-      ((((r.cons (Letter.vertex (d * 𝔹.αArrow e c * d⁻¹))).cons (Letter.vertex d)).cons
-        (Letter.dart e)).cons (Letter.vertex d'⁻¹)) := by
+        (Letter.vertex (d' * MulEquiv.cast (M := 𝔹.vertexGroup) e.2.2 (𝔹.ω e.1 c) * d'⁻¹)))
+      ((((r.cons (Letter.vertex
+        (d * MulEquiv.cast (M := 𝔹.vertexGroup) e.2.1 (𝔹.α e.1 c) * d⁻¹))).cons
+          (Letter.vertex d)).cons (Letter.dart e)).cons (Letter.vertex d'⁻¹)) := by
+  rw [← αArrow_apply, ← ωArrow_apply]
   -- Both sides are homotopic to `d, α_e(c), e, d'⁻¹`.
   have h₁ : Homotopic ((((r.cons (Letter.vertex d)).cons (Letter.dart e)).cons
       (Letter.vertex d'⁻¹)).cons (Letter.vertex (d' * 𝔹.ωArrow e c * d'⁻¹)))
@@ -208,16 +216,20 @@ private theorem cons_dart_ωArrow_conj {z : 𝔹.LetterVertex} {a b : Δ.V} (r :
   rw [show d * 𝔹.αArrow e c * d⁻¹ * d = d * 𝔹.αArrow e c by group]
   exact (((Homotopic.mul _ _ _).symm.cons _).cons _)
 
-/-- The path map respects the elementary move `e, ω_e(c) ~ α_e(c), e` at an arrow `e`. -/
-private theorem mapPath_dart_ωArrow (Φ : Hom 𝔸 𝔹) {a b : Γ.V} (e : a ⟶ b)
-    (c : 𝔸.edgeGroup (Γ.toGeomEdge e.1)) (p : 𝔸.Path x ⟨a⟩) :
-    (Φ.mapPath ((p.cons (Letter.dart e)).cons (Letter.vertex (𝔸.ωArrow e c)))).Homotopic
-      (Φ.mapPath ((p.cons (Letter.vertex (𝔸.αArrow e c))).cons (Letter.dart e))) := by
+/-- The path map respects the elementary move `e, ω_e(c) ~ α_e(c), e` at a dart `e`. -/
+private theorem mapPath_dart_ω (Φ : Hom 𝔸 𝔹) (e : Γ.E) (c : 𝔸.edgeGroup (Γ.toGeomEdge e))
+    (p : 𝔸.Path x ⟨Γ.src e⟩) :
+    (Φ.mapPath ((p.cons (Letter.dart (Γ.dart e))).cons (Letter.vertex (𝔸.ω e c)))).Homotopic
+      (Φ.mapPath ((p.cons (Letter.vertex (𝔸.α e c))).cons (Letter.dart (Γ.dart e)))) := by
   -- By the compatibility of `Φ` with `α` and `ω`, both images are homotopic to
   -- `δ_e, α_[e](φ_e c), [e], δ_{rev e}⁻¹`.
   rw [Hom.mapPath_cons_vertex, Hom.mapPath_cons_dart, Hom.mapPath_cons_dart,
-    Hom.mapPath_cons_vertex, Φ.vertexHom_ωArrow, Φ.vertexHom_αArrow]
-  exact cons_dart_ωArrow_conj (Φ.mapPath p) _ _ _ _
+    Hom.mapPath_cons_vertex, Φ.vertexHom_ω, Φ.vertexHom_α, Hom.twistArrow_dart,
+    Hom.twistArrow_reverse_dart, Γ.dart_def]
+  -- The transported image arrow of `e` has dart `[e]` by unfolding `SerreGraph.Hom.toPrefunctor`,
+  -- so `α` and `ω` at it are `α_[e]` and `ω_[e]`, transported to `[src e]` and `[tgt e]`.
+  exact cons_dart_ω_conj (Φ.mapPath p) _ _ (Quiver.Hom.cast (Φ.graph.toPrefunctor_obj _)
+    (Φ.graph.toPrefunctor_obj _) (Φ.graph.toPrefunctor.map ⟨e, rfl, rfl⟩)) (Φ.edgeHom e c)
 
 /-- The path map of a morphism of graphs of groups sends homotopic `𝔸`-paths to homotopic
 `𝔹`-paths. -/
@@ -237,11 +249,9 @@ theorem mapPath (Φ : Hom 𝔸 𝔹) {p q : 𝔸.Path x y} (h : p.Homotopic q) :
     rw [Hom.mapPath_cons_vertex, map_one]
     exact .one _
   | dart_reverse p e =>
-    rw [Hom.mapPath_cons, Hom.mapPath_cons, ← Letter.reverse_dart, Hom.mapLetter_reverse,
-      Quiver.Path.comp_assoc]
-    simpa using (comp_reverse (Φ.mapLetter (Letter.dart e))).comp_left (Φ.mapPath p)
-  | dart_ω e c p =>
-    simpa only [αArrow_mk, ωArrow_mk, Γ.dart_def] using mapPath_dart_ωArrow Φ ⟨e, rfl, rfl⟩ c p
+    rw [Hom.mapPath_cons, Hom.mapPath_cons, ← Letter.reverse_dart, Hom.mapLetter_reverse]
+    exact comp_comp_reverse (Φ.mapPath p) _
+  | dart_ω e c p => exact mapPath_dart_ω Φ e c p
 
 /-- The path map of the identity morphism is homotopic to the identity. -/
 theorem id_mapPath (p : 𝔸.Path x y) : ((Hom.id 𝔸).mapPath p).Homotopic p := by
@@ -254,7 +264,7 @@ theorem id_mapPath (p : 𝔸.Path x y) : ((Hom.id 𝔸).mapPath p).Homotopic p :
       exact ih.cons _
     | dart f =>
       rw [Hom.mapPath_cons_dart, Hom.id_twistArrow, Hom.id_twistArrow, inv_one,
-        Hom.id_graph_toPrefunctor_map]
+        Hom.cast_id_graph_toPrefunctor_map]
       exact (Homotopic.one _).trans (((Homotopic.one _).trans ih).cons _)
 
 /-- Merging the twisting letters of a composite: `g₁ g₂, e, (h₁ h₂)⁻¹ ~ g₁, g₂, e, h₂⁻¹, h₁⁻¹`. -/
@@ -280,9 +290,13 @@ theorem comp_mapPath (Ψ : Hom 𝔹 ℂ) (Φ : Hom 𝔸 𝔹) (p : 𝔸.Path x y
       exact ih.cons _
     | dart f =>
       rw [Hom.mapPath_cons_dart, Hom.mapPath_cons_dart Φ p f, Hom.mapPath_cons_vertex,
-        Hom.mapPath_cons_dart Ψ _ (a := Φ.graph.mapV _) (b := Φ.graph.mapV _)
-          (Φ.graph.toPrefunctor.map f), Hom.mapPath_cons_vertex, Hom.comp_twistArrow,
-        Hom.comp_twistArrow, map_inv, Prefunctor.map_reverse, Hom.comp_graph_toPrefunctor_map]
+        Hom.mapPath_cons_dart Ψ _ (Quiver.Hom.cast (Φ.graph.toPrefunctor_obj _)
+          (Φ.graph.toPrefunctor_obj _) (Φ.graph.toPrefunctor.map f)), Hom.mapPath_cons_vertex,
+        Hom.comp_twistArrow, Hom.comp_twistArrow, map_inv, Prefunctor.map_reverse,
+        Hom.cast_comp_graph_toPrefunctor_map]
+      -- The twisting letters of `Ψ` at the reverse of the transported image arrow of `f` and at
+      -- the transport of its reverse agree: the transports are along
+      -- `SerreGraph.Hom.toPrefunctor_obj`, which holds by unfolding `SerreGraph.Hom.toPrefunctor`.
       exact cons_mul_dart_mul_inv ih _ _ _ _ _
 
 end Path.Homotopic
@@ -375,14 +389,15 @@ theorem Path.toπ₁Tree_mapLetter {x y : 𝔸.LetterVertex} (l : 𝔸.Letter x 
   cases l with
   | vertex g => simp
   | dart f =>
-    -- `Letter.toπ₁Tree_dart` at the image arrow, whose endpoints `toPrefunctor.obj` agree with the
-    -- letter's `mapV` only after unfolding `SerreGraph.Hom.toPrefunctor`, so `simp` cannot use it.
-    have h : (Letter.dart (𝔸 := 𝔹) (a := Φ.graph.mapV _) (b := Φ.graph.mapV _)
-        (Φ.graph.toPrefunctor.map f)).toπ₁Tree T' = π₁Tree.edge T' (Φ.graph.mapE f.1) :=
-      Letter.toπ₁Tree_dart ..
-    rw [Hom.mapLetter_dart, Φ.twistArrow_eq_cast (Quiver.reverse f) (Γ.reverse_val f)
+    -- The transported image arrow of `f` has dart `[f]`, by unfolding
+    -- `SerreGraph.Hom.toPrefunctor`.
+    have h : (Quiver.Hom.cast (Φ.graph.toPrefunctor_obj _) (Φ.graph.toPrefunctor_obj _)
+        (Φ.graph.toPrefunctor.map f)).1 = Φ.graph.mapE f.1 :=
+      rfl
+    rw [Hom.mapLetter_dart, toπ₁Tree_cons, toπ₁Tree_cons, Letter.toπ₁Tree_dart, h,
+      Φ.twistArrow_eq_cast (Quiver.reverse f) (Γ.reverse_val f)
       (congrArg Φ.graph.mapV ((Γ.src_rev _).trans f.2.2))]
-    simp [h, Hom.twistArrow_def, π₁Tree.of_cast, Hom.edgeImage_def, mul_assoc, -MulEquiv.cast_apply]
+    simp [Hom.twistArrow_def, π₁Tree.of_cast, Hom.edgeImage_def, mul_assoc, -MulEquiv.cast_apply]
 
 /-- Reading the image of an `𝔸`-path in `π₁(𝔹, T')` is applying `π₁Tree.map Φ` to the reading of
 the path in `π₁(𝔸, T)`. -/
