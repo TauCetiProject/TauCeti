@@ -5,13 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Huber.Normed
 public import TauCeti.RingTheory.Huber.Reduction
 public import TauCeti.RingTheory.Affinoid.PowerBounded
 public import TauCeti.RingTheory.Nagata
 public import Mathlib.RingTheory.Finiteness.Defs
 public import Mathlib.Topology.Maps.Strict.Basic
-import TauCeti.RingTheory.Affinoid.FiniteMap
 import TauCeti.RingTheory.Affinoid.Integral.Equation
 import TauCeti.RingTheory.Affinoid.MaximumModulus
 import TauCeti.RingTheory.Affinoid.MinimalPolynomial
@@ -29,6 +27,7 @@ import Mathlib.LinearAlgebra.Dimension.Finrank
 import Mathlib.RingTheory.Adjoin.Tower
 import Mathlib.RingTheory.EssentialFiniteness
 import Mathlib.RingTheory.LocalProperties.Reduced
+import Mathlib.RingTheory.Localization.Finiteness
 import Mathlib.RingTheory.Localization.Module
 import Mathlib.Topology.Maps.Strict.Group
 
@@ -65,9 +64,10 @@ and the reduction of that equation is an integral equation for the residue class
 
 For a nonzero affinoid algebra `A`, the canonical reduction `A° / A°°` is a domain exactly when
 the supremum seminorm of `A` is multiplicative; this restates
-`TauCeti.IsAffinoidAlgebra.supSeminorm_mul_iff_isPrime` for the reduction carrier. In particular
-the canonical reduction of a Tate algebra is a domain, because there the supremum seminorm is the
-multiplicative Gauss norm.
+`TauCeti.IsAffinoidAlgebra.supSeminorm_mul_iff_isPrime` for the reduction carrier. For an affinoid
+Tate algebra `K⟨X₁, …, Xₙ⟩` over a complete field this recovers that its canonical reduction is a
+domain from multiplicativity of the Gauss norm (`TauCeti.MvPowerSeries.isDomain_canonicalReduction`
+establishes this in general without completeness of `K` or finiteness of the variable set).
 
 Finally, we prove the **Grauert–Remmert finiteness theorem**: the canonical reduction of any
 affinoid `K`-algebra is a finite-type `𝓀[K]`-algebra (hence Noetherian and Nagata), and every
@@ -84,8 +84,8 @@ finite homomorphism of affinoid algebras induces a finite map on canonical reduc
   (`TauCeti.Ring.IsUniversallyJapanese.isNagata_of_finiteType`), the integral closure of `R₀` in
   `E₀` is module-finite over `R₀` (`TauCeti.Ring.IsNagata.finite_integralClosure`); no assumption
   on the residue characteristic or perfection of `𝓀[K]` is needed. Because `R₀` is Noetherian and
-  `B₀` embeds `R₀`-linearly into that integral closure, `B₀` is finite over `R₀`
-  (`AlgHom.finite_reductionMap_of_tate_of_isDomain`), hence of finite type over `𝓀[K]`.
+  `B₀` embeds `R₀`-linearly into that integral closure, `B₀` is finite over `R₀`, hence of finite
+  type over `𝓀[K]`.
 * For an arbitrary affinoid algebra `A` (possibly with nilpotents and multiple irreducible
   components), `A` is Noetherian so `minimalPrimes A` is finite, and each `A ⧸ 𝔭` is a completely
   normed affinoid domain. The product of the reduction maps
@@ -94,9 +94,10 @@ finite homomorphism of affinoid algebras induces a finite map on canonical reduc
   finite-type `𝓀[K]`-algebra, so the Artin–Tate lemma (`fg_of_fg_of_fg`) gives
   `Algebra.FiniteType 𝓀[K] (CanonicalReduction A)`
   (`TauCeti.IsAffinoidAlgebra.finiteType_canonicalReduction`).
-* Every finite affinoid homomorphism `f : A →ₐ[K] B` induces an integral `𝓀[K]`-algebra map into
-  the finite-type `𝓀[K]`-algebra `CanonicalReduction B`, hence a finite homomorphism
-  `(f.reductionMap hA hB).Finite` (`AlgHom.finite_reductionMap`).
+* Every affinoid homomorphism `f : A →ₐ[K] B` induces a finite-type ring homomorphism
+  `CanonicalReduction A →+* CanonicalReduction B` on canonical reductions
+  (`AlgHom.finiteType_reductionMap`), and when `f` is finite its reduction map is also integral
+  and hence finite (`AlgHom.finite_reductionMap`).
 
 ## Main results
 
@@ -118,20 +119,18 @@ finite homomorphism of affinoid algebras induces a finite map on canonical reduc
   injective on canonical reductions exactly when it is injective.
 * `AlgHom.isIntegral_powerBoundedMap`, `AlgHom.isIntegral_reductionMap`: an integral
   homomorphism is integral on power-bounded subrings and on canonical reductions.
-* `AlgHom.isTorsionFree_reductionMap`, `AlgHom.linearIndependent_of_reductionMap`,
-  `AlgHom.finite_reductionMap_of_tate_of_isDomain`: torsion-freeness, lifting of linear
-  independence, and module-finiteness on canonical reductions over a Tate algebra.
+* `AlgHom.reductionMap_mul_eq_zero_iff`, `AlgHom.isTorsionFree_reductionMap`,
+  `AlgHom.linearIndependent_of_reductionMap`: torsion-freeness and lifting of linear independence
+  on canonical reductions over a Tate algebra.
 * `TauCeti.IsAffinoidAlgebra.finiteType_canonicalReduction`,
   `TauCeti.IsAffinoidAlgebra.isNoetherianRing_canonicalReduction`,
-  `TauCeti.IsAffinoidAlgebra.isNagata_canonicalReduction`,
-  `TauCeti.IsAffinoidAlgebra.finiteType_reductionMap_ofId`: the canonical reduction of any
+  `TauCeti.IsAffinoidAlgebra.isNagata_canonicalReduction`: the canonical reduction of any
   affinoid `K`-algebra is a finite-type `𝓀[K]`-algebra, hence Noetherian and Nagata.
-* `AlgHom.finite_reductionMap`: **Grauert–Remmert finiteness theorem** — a finite homomorphism of
-  affinoid algebras induces a finite map on canonical reductions.
+* `AlgHom.finiteType_reductionMap`, `AlgHom.finite_reductionMap`: **Grauert–Remmert finiteness
+  theorem** — every homomorphism of affinoid algebras induces a finite-type map on canonical
+  reductions, and every finite homomorphism induces a finite map on canonical reductions.
 * `TauCeti.IsAffinoidAlgebra.isDomain_canonicalReduction_iff`: for nonzero `A`, the canonical
   reduction is a domain exactly when `|f g|sup = |f|sup |g|sup` for all `f` and `g`.
-* `TauCeti.MvPowerSeries.isDomain_canonicalReduction`: the canonical reduction of a Tate algebra
-  is a domain.
 
 ## References
 
@@ -447,14 +446,10 @@ theorem coe_reductionAlgHom (f : A →ₐ[K] B) (hA : IsAffinoidAlgebra K A)
     ⇑(f.reductionAlgHom hA hB) = ⇑(f.reductionMap hA hB) := (rfl)
 
 @[simp]
-theorem coe_ringHom_reductionAlgHom (f : A →ₐ[K] B) (hA : IsAffinoidAlgebra K A)
+theorem toRingHom_reductionAlgHom (f : A →ₐ[K] B) (hA : IsAffinoidAlgebra K A)
     (hB : IsAffinoidAlgebra K B) :
     (f.reductionAlgHom hA hB : CanonicalReduction A →+* CanonicalReduction B) =
       f.reductionMap hA hB := (rfl)
-
-theorem toRingHom_reductionAlgHom (f : A →ₐ[K] B) (hA : IsAffinoidAlgebra K A)
-    (hB : IsAffinoidAlgebra K B) :
-    (f.reductionAlgHom hA hB).toRingHom = f.reductionMap hA hB := (rfl)
 
 @[simp]
 theorem reductionAlgHom_mk (f : A →ₐ[K] B) (hA : IsAffinoidAlgebra K A)
@@ -476,9 +471,9 @@ theorem reductionAlgHom_comp (g : B →ₐ[K] C) (f : A →ₐ[K] B)
   AlgHom.toRingHom_injective (reductionMap_comp g f hA hB hC)
 
 /-- **Surjections with nilpotent kernel induce bijections on canonical reductions** [BGR, 6.3.1/2]:
-every surjective affinoid homomorphism whose kernel is contained in the nilradical preserves
-supremum seminorms, so it lifts power-bounded elements and induces a bijection on canonical
-reductions. In particular `A` and `A ⧸ nilradical A` have isomorphic canonical reductions. -/
+every surjective affinoid homomorphism whose kernel is contained in the nilradical induces a
+bijection on canonical reductions. In particular `A` and `A ⧸ nilradical A` have isomorphic
+canonical reductions. -/
 theorem bijective_reductionMap_of_surjective_of_ker_le_nilradical (f : A →ₐ[K] B)
     (hA : IsAffinoidAlgebra K A) (hB : IsAffinoidAlgebra K B) (hf : Function.Surjective f)
     (hker : RingHom.ker f ≤ nilradical A) :
@@ -504,6 +499,49 @@ noncomputable def reductionAlgEquivOfKerLeNilradical (f : A →ₐ[K] B)
   AlgEquiv.ofBijective (f.reductionAlgHom hA hB)
     (f.bijective_reductionMap_of_surjective_of_ker_le_nilradical hA hB hf hker)
 
+@[simp]
+theorem coe_reductionAlgEquivOfKerLeNilradical (f : A →ₐ[K] B)
+    (hA : IsAffinoidAlgebra K A) (hB : IsAffinoidAlgebra K B) (hf : Function.Surjective f)
+    (hker : RingHom.ker f ≤ nilradical A) :
+    ⇑(f.reductionAlgEquivOfKerLeNilradical hA hB hf hker) = ⇑(f.reductionMap hA hB) := (rfl)
+
+@[simp]
+theorem toAlgHom_reductionAlgEquivOfKerLeNilradical (f : A →ₐ[K] B)
+    (hA : IsAffinoidAlgebra K A) (hB : IsAffinoidAlgebra K B) (hf : Function.Surjective f)
+    (hker : RingHom.ker f ≤ nilradical A) :
+    (f.reductionAlgEquivOfKerLeNilradical hA hB hf hker :
+      CanonicalReduction A →ₐ[𝓀[K]] CanonicalReduction B) = f.reductionAlgHom hA hB := (rfl)
+
+@[simp]
+theorem reductionAlgEquivOfKerLeNilradical_mk (f : A →ₐ[K] B)
+    (hA : IsAffinoidAlgebra K A) (hB : IsAffinoidAlgebra K B) (hf : Function.Surjective f)
+    (hker : RingHom.ker f ≤ nilradical A) (a : powerBoundedSubring A) :
+    f.reductionAlgEquivOfKerLeNilradical hA hB hf hker (Ideal.Quotient.mk _ a) =
+      Ideal.Quotient.mk _ (f.powerBoundedMap hA hB a) :=
+  f.reductionMap_mk hA hB a
+
+@[simp]
+theorem reductionAlgEquivOfKerLeNilradical_symm_reductionMap (f : A →ₐ[K] B)
+    (hA : IsAffinoidAlgebra K A) (hB : IsAffinoidAlgebra K B) (hf : Function.Surjective f)
+    (hker : RingHom.ker f ≤ nilradical A) (x : CanonicalReduction A) :
+    (f.reductionAlgEquivOfKerLeNilradical hA hB hf hker).symm (f.reductionMap hA hB x) = x :=
+  (f.reductionAlgEquivOfKerLeNilradical hA hB hf hker).symm_apply_apply x
+
+@[simp]
+theorem reductionMap_reductionAlgEquivOfKerLeNilradical_symm (f : A →ₐ[K] B)
+    (hA : IsAffinoidAlgebra K A) (hB : IsAffinoidAlgebra K B) (hf : Function.Surjective f)
+    (hker : RingHom.ker f ≤ nilradical A) (y : CanonicalReduction B) :
+    f.reductionMap hA hB ((f.reductionAlgEquivOfKerLeNilradical hA hB hf hker).symm y) = y :=
+  (f.reductionAlgEquivOfKerLeNilradical hA hB hf hker).apply_symm_apply y
+
+@[simp]
+theorem reductionAlgEquivOfKerLeNilradical_symm_mk_powerBoundedMap (f : A →ₐ[K] B)
+    (hA : IsAffinoidAlgebra K A) (hB : IsAffinoidAlgebra K B) (hf : Function.Surjective f)
+    (hker : RingHom.ker f ≤ nilradical A) (a : powerBoundedSubring A) :
+    (f.reductionAlgEquivOfKerLeNilradical hA hB hf hker).symm
+      (Ideal.Quotient.mk _ (f.powerBoundedMap hA hB a)) = Ideal.Quotient.mk _ a := by
+  rw [← reductionMap_mk, reductionAlgEquivOfKerLeNilradical_symm_reductionMap]
+
 end AlgHom
 
 namespace TauCeti
@@ -526,18 +564,6 @@ end IsAffinoidAlgebra
 
 end TauCeti
 
-namespace TauCeti.MvPowerSeries
-
-/-- The canonical reduction of a Tate algebra `K⟨X⟩` is a domain, since it is isomorphic to the
-polynomial ring `𝓀[K][X]`. -/
-instance isDomain_canonicalReduction {K σ : Type*} [NontriviallyNormedField K]
-    [IsUltrametricDist K] :
-    IsDomain (CanonicalReduction
-      (_root_.MvPowerSeries.IsRestricted.subring (R := K) (fun _ : σ ↦ 1))) :=
-  (canonicalReductionAlgEquiv (σ := σ) (K := K)).toMulEquiv.isDomain _
-
-end TauCeti.MvPowerSeries
-
 section GrauertRemmert
 
 variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
@@ -554,7 +580,7 @@ variable {σ : Type*} [_root_.Finite σ] {B : Type*} [NormedCommRing B] [NormedA
 /-- **Torsion-freeness passes to canonical reductions over a Tate algebra** [BGR, 6.3.4/1].
 If `g : K⟨X⟩ →ₐ[K] B` is integral and every nonzero element of `K⟨X⟩` acts without torsion on `B`,
 then `CanonicalReduction (K⟨X⟩)` acts without zero-divisors on `CanonicalReduction B`. -/
-theorem mul_reductionMap_eq_zero_iff (g : Tate σ →ₐ[K] B) (hB : IsAffinoidAlgebra K B)
+theorem reductionMap_mul_eq_zero_iff (g : Tate σ →ₐ[K] B) (hB : IsAffinoidAlgebra K B)
     (hg_int : g.toRingHom.IsIntegral)
     (hg_reg : ∀ {t : Tate σ}, t ≠ 0 → ∀ {b : B}, g t * b = 0 → b = 0)
     (x : CanonicalReduction (Tate σ)) (y : CanonicalReduction B) :
@@ -592,7 +618,7 @@ theorem mul_reductionMap_eq_zero_iff (g : Tate σ →ₐ[K] B) (hB : IsAffinoidA
       (hB.isTopologicallyNilpotent_iff_supSeminorm_lt_one.mpr hlt)
   · rintro (rfl | rfl) <;> simp
 
-/-- Module-theoretic form of `AlgHom.mul_reductionMap_eq_zero_iff`: under the algebra structures
+/-- Module-theoretic form of `AlgHom.reductionMap_mul_eq_zero_iff`: under the algebra structures
 induced by `g : K⟨X⟩ →ₐ[K] B` and its reduction map, `CanonicalReduction B` is
 `CanonicalReduction (K⟨X⟩)`-torsion-free whenever `B` is integral and `K⟨X⟩`-torsion-free. -/
 theorem isTorsionFree_reductionMap (g : Tate σ →ₐ[K] B) (hB : IsAffinoidAlgebra K B)
@@ -602,12 +628,12 @@ theorem isTorsionFree_reductionMap (g : Tate σ →ₐ[K] B) (hB : IsAffinoidAlg
       (g.reductionMap isAffinoidAlgebra_tate hB).toAlgebra.toModule := by
   let := (g.reductionMap isAffinoidAlgebra_tate hB).toAlgebra
   exact .of_smul_eq_zero fun r m hrm ↦
-    (g.mul_reductionMap_eq_zero_iff hB hg_int hg_reg r m).mp hrm
+    (g.reductionMap_mul_eq_zero_iff hB hg_int hg_reg r m).mp hrm
 
 /-- **Linear independence over `CanonicalReduction (K⟨X⟩)` lifts to `K⟨X⟩`** [BGR, 6.3.4/2].
-Rescaling a nontrivial `K⟨X⟩`-linear relation among power-bounded elements of `B` by a coefficient
-in `K` attaining the maximum Gauss norm produces a nontrivial relation over
-`CanonicalReduction (K⟨X⟩)`. -/
+For any `g : K⟨X⟩ →ₐ[K] B` into an affinoid algebra `B` and family `v : ι → powerBoundedSubring B`,
+linear independence of the reductions of `v` in `CanonicalReduction B` over
+`CanonicalReduction (K⟨X⟩)` implies linear independence of `v` in `B` over `K⟨X⟩`. -/
 theorem linearIndependent_of_reductionMap {ι : Type*} (g : Tate σ →ₐ[K] B)
     (hB : IsAffinoidAlgebra K B) (v : ι → powerBoundedSubring B)
     (hli : @LinearIndependent ι (CanonicalReduction (Tate σ)) (CanonicalReduction B)
@@ -639,34 +665,17 @@ theorem linearIndependent_of_reductionMap {ι : Type*} (g : Tate σ →ₐ[K] B)
       rw [← map_zero (Ideal.Quotient.mk (topologicallyNilpotentIdeal B)), ← h0, map_sum]
       exact Finset.sum_congr rfl fun i _ ↦ by rw [RingHom.smul_toAlgebra, reductionMap_mk, map_mul]
     refine Subtype.ext ?_
-    change (powerBoundedSubring B).subtype
-      (∑ i ∈ s, g.powerBoundedMap isAffinoidAlgebra_tate hB (u i) * v i) = 0
-    rw [map_sum]
+    rw [AddSubmonoidClass.coe_finsetSum, ZeroMemClass.coe_zero]
     have heq : ∀ i ∈ s,
-        (powerBoundedSubring B).subtype (g.powerBoundedMap isAffinoidAlgebra_tate hB (u i) * v i) =
+        ((g.powerBoundedMap isAffinoidAlgebra_tate hB (u i) * v i : powerBoundedSubring B) : B) =
           c⁻¹ • (f i • (v i : B)) := fun i hi ↦ by
-      simp only [Subring.coe_subtype, MulMemClass.coe_mul, coe_powerBoundedMap, u, hi, ↓reduceIte,
-        map_smul]
+      simp only [MulMemClass.coe_mul, coe_powerBoundedMap, u, hi, ↓reduceIte, map_smul]
       exact smul_mul_assoc c⁻¹ (g (f i)) (v i : B)
     rw [Finset.sum_congr rfl heq, ← Finset.smul_sum, hf, smul_zero]
   have huj := hli s (fun i ↦ Ideal.Quotient.mk _ (u i)) hsum j hj
   rw [Ideal.Quotient.eq_zero_iff_mem, mem_topologicallyNilpotentIdeal,
     TauCeti.MvPowerSeries.isTopologicallyNilpotent_iff_norm_lt_one] at huj
   exact huj.ne (by simp [u, hj, norm_smul, hν, inv_mul_cancel₀ (norm_ne_zero_iff.mpr hfj)])
-
-/-- Over a field `F`, if no `(N + 1)`-tuple of vectors in `V` is linearly independent, then `V` is
-finite-dimensional. -/
-private theorem finiteDimensional_of_forall_not_linearIndependent {F V : Type*} [Field F]
-    [AddCommGroup V] [Module F V] {N : ℕ}
-    (h : ∀ w : Fin (N + 1) → V, ¬ LinearIndependent F w) : FiniteDimensional F V := by
-  let b := Module.Basis.ofVectorSpace F V
-  have : _root_.Finite (Module.Basis.ofVectorSpaceIndex F V) := by
-    by_contra hinf
-    let : Infinite (Module.Basis.ofVectorSpaceIndex F V) := not_finite_iff_infinite.mp hinf
-    let emb : Fin (N + 1) ↪ Module.Basis.ofVectorSpaceIndex F V :=
-      (Fin.valEmbedding).trans (Infinite.natEmbedding _)
-    exact h (b ∘ emb) (b.linearIndependent.comp emb emb.injective)
-  exact b.finiteDimensional_of_finite
 
 /-- Localising `CanonicalReduction B` at `(CanonicalReduction (Tate σ))⁰` yields a
 finite-dimensional algebra over `FractionRing (CanonicalReduction (Tate σ))`. -/
@@ -683,21 +692,18 @@ private theorem finiteDimensional_localization_canonicalReduction
   have : Module.Finite (Tate σ) B := hg_fin
   have : FaithfulSMul (Tate σ) B :=
     (faithfulSMul_iff_algebraMap_injective (Tate σ) B).mpr hg_inj
-  -- Localise the finite `(Tate σ)`-module `B` at `(Tate σ)⁰` to obtain a finite-dimensional
-  -- space `M` over `FractionRing (Tate σ)`.
   let M := Localization (Algebra.algebraMapSubmonoid B (Tate σ)⁰)
-  have : Module.Finite (FractionRing (Tate σ)) M := by
-    obtain ⟨s, hs⟩ := Module.Finite.fg_top (R := Tate σ) (M := B)
-    refine ⟨⟨s.image (algebraMap B M), eq_top_iff.mpr ?_⟩⟩
-    rw [Finset.coe_image, ← span_eq_top_localization_localization
-      (FractionRing (Tate σ)) (Tate σ)⁰ M hs]
   let R0 := CanonicalReduction (Tate σ)
   let B0 := CanonicalReduction B
   let : Algebra R0 B0 := (g.reductionMap isAffinoidAlgebra_tate hB).toAlgebra
-  refine finiteDimensional_of_forall_not_linearIndependent
-    (N := Module.finrank (FractionRing (Tate σ)) M) fun w hw ↦ ?_
-  have hwR : LinearIndependent R0 w := (LinearIndependent.iff_fractionRing R0 _).mpr hw
   let E0 := Localization (Algebra.algebraMapSubmonoid B0 R0⁰)
+  have : Module.Free (FractionRing R0) E0 := .of_divisionRing _ _
+  suffices hlt : Module.rank (FractionRing R0) E0 <
+      (Module.finrank (FractionRing (Tate σ)) M + 1 : ℕ) from
+    Module.rank_lt_aleph0_iff.mp (hlt.trans Cardinal.natCast_lt_aleph0)
+  by_contra! hge
+  obtain ⟨w, hw⟩ := natCast_le_rank_iff.mp hge
+  have hwR : LinearIndependent R0 w := (LinearIndependent.iff_fractionRing R0 _).mpr hw
   have : IsLocalizedModule R0⁰ (IsScalarTower.toAlgHom R0 B0 E0).toLinearMap :=
     isLocalizedModule_iff_isLocalization.mpr Localization.isLocalization
   obtain ⟨u, hu⟩ :=
@@ -713,10 +719,9 @@ private theorem finiteDimensional_localization_canonicalReduction
 
 /-- **Finiteness on canonical reductions of a Noether normalisation of an affinoid domain**
 [BGR, 6.3.4/2]. If `B` is an affinoid domain and `g : K⟨X⟩ →ₐ[K] B` is finite and injective, then
-`g.reductionMap` is finite. No perfection or characteristic assumption on `K` or `𝓀[K]` is made:
-finiteness of the integral closure comes from the Nagata property of `𝓀[K][X]`
-(`TauCeti.Ring.IsNagata.finite_integralClosure`). -/
-theorem finite_reductionMap_of_tate_of_isDomain [IsDomain B] (g : Tate σ →ₐ[K] B)
+`g.reductionMap` is finite. No perfection or characteristic assumption on `K` or `𝓀[K]` is
+made. -/
+private theorem finite_reductionMap_of_tate_of_isDomain [IsDomain B] (g : Tate σ →ₐ[K] B)
     (hB : IsAffinoidAlgebra K B) (hg_inj : Function.Injective g) (hg_fin : g.Finite) :
     (g.reductionMap isAffinoidAlgebra_tate hB).Finite := by
   let R0 := CanonicalReduction (Tate σ)
@@ -800,11 +805,9 @@ theorem finiteType_canonicalReduction (hA : IsAffinoidAlgebra K A) :
     intro x hx
     obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
     obtain ⟨𝔭, h𝔭, hsup⟩ := hA.exists_mem_minimalPrimes_supSeminorm_eq (a : A)
-    let p : minimalPrimes A := ⟨𝔭, h𝔭⟩
-    have h0 : ψ (Ideal.Quotient.mk _ a) p = 0 := congrFun hx p
-    change ((Ideal.Quotient.mkₐ K p.1).reductionMap hA (hA.quotient p.1))
-      (Ideal.Quotient.mk _ a) = 0 at h0
-    rw [AlgHom.reductionMap_mk_eq_zero_iff, Ideal.Quotient.mkₐ_eq_mk, hsup] at h0
+    have h0 := congrFun hx ⟨𝔭, h𝔭⟩
+    simp only [P, ψ, AlgHom.pi_apply, Pi.zero_apply, AlgHom.coe_reductionAlgHom,
+      AlgHom.reductionMap_mk_eq_zero_iff, Ideal.Quotient.mkₐ_eq_mk, hsup] at h0
     exact Ideal.Quotient.eq_zero_iff_mem.mpr <| mem_topologicallyNilpotentIdeal.mpr <|
       hA.isTopologicallyNilpotent_iff_supSeminorm_lt_one.mpr h0
   let : Algebra (CanonicalReduction A) P := ψ.toRingHom.toAlgebra
@@ -837,24 +840,6 @@ theorem isNagata_canonicalReduction (hA : IsAffinoidAlgebra K A) :
   have := hA.finiteType_canonicalReduction
   exact TauCeti.Ring.IsUniversallyJapanese.isNagata_of_finiteType 𝓀[K] (CanonicalReduction A)
 
-/-- In terms of `CanonicalReduction K`, the canonical reduction of the structural map `K →ₐ[K] A`
-is of finite type [BGR, 6.3.4/3]. -/
-theorem finiteType_reductionMap_ofId (hA : IsAffinoidAlgebra K A) :
-    ((Algebra.ofId K A).reductionMap isAffinoidAlgebra_self hA).FiniteType := by
-  have := hA.finiteType_canonicalReduction
-  let φ : 𝓀[K] →ₐ[𝓀[K]] CanonicalReduction A :=
-    ((Algebra.ofId K A).reductionAlgHom isAffinoidAlgebra_self hA).comp
-      (canonicalReductionAlgEquivResidueField (K := K)).symm.toAlgHom
-  have hcomp : ((Algebra.ofId K A).reductionMap isAffinoidAlgebra_self hA).comp
-      (canonicalReductionAlgEquivResidueField (K := K)).symm.toAlgHom.toRingHom =
-      algebraMap 𝓀[K] (CanonicalReduction A) :=
-    RingHom.ext fun x ↦ φ.commutes x
-  have hft : (((Algebra.ofId K A).reductionMap isAffinoidAlgebra_self hA).comp
-      (canonicalReductionAlgEquivResidueField (K := K)).symm.toAlgHom.toRingHom).FiniteType := by
-    rw [hcomp, RingHom.finiteType_algebraMap]
-    infer_instance
-  exact RingHom.FiniteType.of_comp_finiteType hft
-
 end TauCeti.IsAffinoidAlgebra
 
 namespace AlgHom
@@ -863,17 +848,23 @@ variable {A B : Type*}
     [NormedCommRing A] [NormedAlgebra K A] [IsUltrametricDist A] [CompleteSpace A]
     [NormedCommRing B] [NormedAlgebra K B] [IsUltrametricDist B] [CompleteSpace B]
 
-/-- **Grauert–Remmert finiteness theorem** [BGR, 6.3.5/1]: every finite homomorphism of affinoid
-algebras induces a finite homomorphism on their canonical reductions. -/
-theorem finite_reductionMap (f : A →ₐ[K] B) (hA : IsAffinoidAlgebra K A)
-    (hB : IsAffinoidAlgebra K B) (hf : f.Finite) :
-    (f.reductionMap hA hB).Finite := by
+/-- Every homomorphism of affinoid `K`-algebras induces a finite-type ring homomorphism on
+canonical reductions [BGR, 6.3.4/3]. -/
+theorem finiteType_reductionMap (f : A →ₐ[K] B) (hA : IsAffinoidAlgebra K A)
+    (hB : IsAffinoidAlgebra K B) :
+    (f.reductionMap hA hB).FiniteType := by
   let : Algebra (CanonicalReduction A) (CanonicalReduction B) := (f.reductionMap hA hB).toAlgebra
   have : IsScalarTower 𝓀[K] (CanonicalReduction A) (CanonicalReduction B) :=
     IsScalarTower.of_algebraMap_eq fun c ↦ ((f.reductionAlgHom hA hB).commutes c).symm
   have : Algebra.FiniteType 𝓀[K] (CanonicalReduction B) := hB.finiteType_canonicalReduction
-  exact (f.isIntegral_reductionMap hA hB hf.to_isIntegral).to_finite
-    (.of_restrictScalars_finiteType 𝓀[K] (CanonicalReduction A) (CanonicalReduction B))
+  exact .of_restrictScalars_finiteType 𝓀[K] (CanonicalReduction A) (CanonicalReduction B)
+
+/-- **Grauert–Remmert finiteness theorem** [BGR, 6.3.5/1]: every finite homomorphism of affinoid
+algebras induces a finite homomorphism on their canonical reductions. -/
+theorem finite_reductionMap (f : A →ₐ[K] B) (hA : IsAffinoidAlgebra K A)
+    (hB : IsAffinoidAlgebra K B) (hf : f.Finite) :
+    (f.reductionMap hA hB).Finite :=
+  (f.isIntegral_reductionMap hA hB hf.to_isIntegral).to_finite (f.finiteType_reductionMap hA hB)
 
 end AlgHom
 

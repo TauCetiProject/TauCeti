@@ -169,33 +169,35 @@ theorem norm_coeff_restrictedSquareSubst_single_zero_one_lt {ϖ : K} (hϖ : ‖�
   rw [coeff_restrictedSquareSubst_single_zero_one, norm_mul]
   exact (mul_le_of_le_one_right (norm_nonneg _) ((norm_coeff_le_norm _ _).trans hf)).trans_lt hϖ
 
-/-- `restrictedSquareSubst` is finite for every `‖ϖ‖ ≤ 1` (including `ϖ = 0`), since its
-precomposition with `U ↦ T` is the finite square-expansion `g(U) ↦ g(U²)`. -/
+/-- Precomposing `restrictedSquareSubst` with `U ↦ T` gives the square-expansion `g(U) ↦ g(U²)`. -/
+private theorem restrictedSquareSubst_comp_subst_X_zero
+    (ht : ∀ i : Fin 1, (fun _ ↦ (1 : ℝ)) i ^ 2 = (fun _ ↦ (1 : ℝ)) i) :
+    (restrictedSquareSubst ϖ hϖ).comp
+        (restrictedSubst (fun _ : Fin 1 ↦ MvPolynomial.X (R := K) (0 : Fin 2))
+          (fun _ ↦ MvPolynomial.constantCoeff_X K (0 : Fin 2))
+          (fun _ t ↦ by rw [MvPolynomial.coeff_X]; split_ifs <;> simp)) =
+      restrictedExpand 2 two_ne_zero ht := by
+  ext h : 1
+  apply Subtype.ext
+  simp only [AlgHom.comp_apply, restrictedSquareSubst, coe_restrictedSubst, coe_restrictedExpand,
+    expand, coe_substAlgHom]
+  rw [subst_comp_subst_apply
+    (hasSubst_coe fun _ : Fin 1 ↦ MvPolynomial.constantCoeff_X K (0 : Fin 2))
+    (hasSubst_coe (constantCoeff_squarePolys ϖ))]
+  congr 1
+  funext s
+  rw [Fin.fin_one_eq_zero s, MvPolynomial.coe_X,
+    subst_X (hasSubst_coe (constantCoeff_squarePolys ϖ))]
+  simp [squarePolys]
+
+/-- `restrictedSquareSubst` is finite for every `‖ϖ‖ ≤ 1` (including `ϖ = 0`). -/
 theorem restrictedSquareSubst_finite : (restrictedSquareSubst ϖ hϖ).Finite := by
   have ht : ∀ i : Fin 1, (fun _ ↦ (1 : ℝ)) i ^ 2 = (fun _ ↦ (1 : ℝ)) i := fun _ ↦ one_pow 2
-  let b : Fin 1 → MvPolynomial (Fin 2) K := fun _ ↦ MvPolynomial.X 0
-  have hb₀ (i : Fin 1) : (b i).constantCoeff = 0 := by simp [b]
-  have hb₁ (i : Fin 1) (t : Fin 2 →₀ ℕ) : ‖(b i).coeff t‖ ≤ 1 := by
-    simp only [b, MvPolynomial.coeff_X]
-    split_ifs <;> simp
-  have hcomp : ((restrictedSquareSubst ϖ hϖ).toRingHom.comp (restrictedSubst b hb₀ hb₁).toRingHom) =
-      (restrictedExpand (R := K) (r := fun _ : Fin 1 ↦ 1) 2 two_ne_zero ht).toRingHom := by
-    ext h : 1
-    apply Subtype.ext
-    simp only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
-      restrictedSquareSubst, coe_restrictedSubst, coe_restrictedExpand, expand, coe_substAlgHom]
-    rw [subst_comp_subst_apply (hasSubst_coe hb₀) (hasSubst_coe (constantCoeff_squarePolys ϖ))]
-    congr 1
-    funext s
-    rw [Fin.fin_one_eq_zero s, MvPolynomial.coe_X,
-      subst_X (hasSubst_coe (constantCoeff_squarePolys ϖ))]
-    simp [squarePolys]
-  have hfin : ((restrictedSquareSubst ϖ hϖ).toRingHom.comp
-      (restrictedSubst b hb₀ hb₁).toRingHom).Finite := by
-    rw [hcomp]
-    have : ∀ _ : Fin 1, Fact ((0 : ℝ) < 1) := fun _ ↦ ⟨one_pos⟩
-    exact restrictedExpand_finite (R := K) (r := fun _ : Fin 1 ↦ 1) two_ne_zero ht
-  exact RingHom.Finite.of_comp_finite hfin
+  have : ∀ _ : Fin 1, Fact ((0 : ℝ) < 1) := fun _ ↦ ⟨one_pos⟩
+  have hfin : (restrictedExpand (R := K) (r := fun _ : Fin 1 ↦ 1) 2 two_ne_zero ht).Finite :=
+    restrictedExpand_finite (R := K) (r := fun _ : Fin 1 ↦ 1) two_ne_zero ht
+  rw [← restrictedSquareSubst_comp_subst_X_zero ϖ hϖ ht] at hfin
+  exact AlgHom.Finite.of_comp_finite hfin
 
 /-- **`restrictedSquareSubst` is surjective** when `ϖ ≠ 0`: a restricted series in `U` is
 `g₀(U²) + U g₁(U²)`, where `g₀(U²)` and `g₁(U²)` are the images of `g₀(T)` and `g₁(T)`, and
@@ -211,21 +213,8 @@ theorem restrictedSquareSubst_surjective (hϖ0 : ϖ ≠ 0) :
     rw [map_smul, restrictedSquareSubst_X_one, smul_smul, inv_mul_cancel₀ hϖ0, one_smul]
   have ht : ∀ i : Fin 1, (fun _ ↦ (1 : ℝ)) i ^ 2 = (fun _ ↦ (1 : ℝ)) i := fun _ ↦ one_pow 2
   -- The expansion `g(U) ↦ g(U²)` factors through the substitution `U ↦ T`.
-  have hexp (h : Tate (Fin 1)) : restrictedExpand 2 two_ne_zero ht h ∈ R := by
-    let b : Fin 1 → MvPolynomial (Fin 2) K := fun _ ↦ MvPolynomial.X 0
-    have hb₀ (i : Fin 1) : (b i).constantCoeff = 0 := by simp [b]
-    have hb₁ (i : Fin 1) (t : Fin 2 →₀ ℕ) : ‖(b i).coeff t‖ ≤ 1 := by
-      simp only [b, MvPolynomial.coeff_X]
-      split_ifs <;> simp
-    refine (AlgHom.mem_range _).mpr ⟨restrictedSubst b hb₀ hb₁ h, Subtype.ext ?_⟩
-    simp only [restrictedSquareSubst, coe_restrictedSubst, coe_restrictedExpand, expand,
-      coe_substAlgHom]
-    rw [subst_comp_subst_apply (hasSubst_coe hb₀) (hasSubst_coe (constantCoeff_squarePolys ϖ))]
-    congr 1
-    funext s
-    rw [Fin.fin_one_eq_zero s, MvPolynomial.coe_X,
-      subst_X (hasSubst_coe (constantCoeff_squarePolys ϖ))]
-    simp [squarePolys]
+  have hexp (h : Tate (Fin 1)) : restrictedExpand 2 two_ne_zero ht h ∈ R :=
+    ⟨_, AlgHom.congr_fun (restrictedSquareSubst_comp_subst_X_zero ϖ hϖ ht) h⟩
   rw [← sum_monomial_mul_restrictedExpand_restrictedExpandComponent two_ne_zero ht g]
   refine R.sum_mem fun ν _ ↦ R.mul_mem ?_ (hexp _)
   -- Each monomial `U^ν` with `ν < 2` is a power of `U`.

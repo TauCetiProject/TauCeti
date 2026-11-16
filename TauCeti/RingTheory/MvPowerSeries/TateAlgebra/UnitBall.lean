@@ -75,6 +75,7 @@ many variables and for complete `L`, evaluation at a point `x` with coordinates 
   `T` form its Gauss unit ball.
 * `TauCeti.MvPowerSeries.isTopologicallyNilpotent_iff_norm_lt_one`: the topologically nilpotent
   elements of `T` are the series of Gauss norm less than one.
+* `TauCeti.MvPowerSeries.isDomain_canonicalReduction`: the canonical reduction of `T` is a domain.
 * `TauCeti.MvPowerSeries.finiteType_canonicalReduction` and
   `TauCeti.MvPowerSeries.isNoetherianRing_canonicalReduction`: in finitely many variables, the
   canonical reduction of `T` is of finite type over `𝓀[K]` and Noetherian.
@@ -506,27 +507,21 @@ noncomputable def canonicalReductionAlgEquiv :
     Huber.CanonicalReduction T ≃ₐ[𝓀[K]] MvPolynomial σ 𝓀[K] :=
   let e₀ : Huber.powerBoundedSubring T ≃+* T° :=
     RingEquiv.subringCongr (powerBoundedSubring_eq_unitClosedBall (σ := σ) (K := K))
-  have hmap : Ideal.map e₀.toRingHom (Huber.topologicallyNilpotentIdeal T) =
+  have hmap : Ideal.map (e₀ : _ →+* _) (Huber.topologicallyNilpotentIdeal T) =
       RingHom.ker (restrictedReduction (σ := σ) (K := K)) := by
-    refine le_antisymm (Ideal.map_le_iff_le_comap.mpr fun f hf ↦ ?_) fun g hg ↦ ?_
-    · rw [Ideal.mem_comap, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe, mem_ker_restrictedReduction]
-      exact isTopologicallyNilpotent_iff_norm_lt_one.mp
-        (Huber.mem_topologicallyNilpotentIdeal.mp hf)
-    · let g' : Huber.powerBoundedSubring T :=
-        ⟨g.1, (powerBoundedSubring_eq_unitClosedBall (σ := σ) (K := K)).ge g.2⟩
-      have hg' : e₀.toRingHom g' = g := Subtype.ext rfl
-      rw [← hg']
-      refine Ideal.mem_map_of_mem e₀.toRingHom ?_
-      exact Huber.mem_topologicallyNilpotentIdeal.mpr
-        (isTopologicallyNilpotent_iff_norm_lt_one.mpr (mem_ker_restrictedReduction.mp hg))
+    rw [Ideal.map_comap_of_equiv e₀]
+    ext g
+    rw [Ideal.mem_comap, Huber.mem_topologicallyNilpotentIdeal,
+      isTopologicallyNilpotent_iff_norm_lt_one, mem_ker_restrictedReduction]
+    exact Iff.of_eq (by rw [RingEquiv.subringCongr_symm, RingEquiv.coe_subringCongr_apply])
   AlgEquiv.ofRingEquiv
     (f := (Ideal.quotientEquiv _ _ e₀ hmap.symm).trans restrictedReductionQuotientEquiv)
     fun x ↦ by
       obtain ⟨c, rfl⟩ := residue_surjective (R := 𝒪[K]) x
       have hc : algebraMap K T c ∈ T° := Subring.mem_unitClosedBall.mpr
         ((norm_algebraMap_isRestrictedSubring (c : K)).trans_le (Valued.integer.norm_le_one c))
-      rw [Huber.algebraMap_canonicalReduction_residue]
-      change restrictedReduction (e₀ (Huber.integerToPowerBounded K T c)) = _
+      rw [Huber.algebraMap_canonicalReduction_residue, RingEquiv.trans_apply,
+        Ideal.quotientEquiv_mk, restrictedReductionQuotientEquiv_mk]
       have he₀ : e₀ (Huber.integerToPowerBounded K T c) = ⟨algebraMap K T c, hc⟩ :=
         Subtype.ext (Huber.coe_integerToPowerBounded c)
       rw [he₀, restrictedReduction_algebraMap c hc, MvPolynomial.algebraMap_eq]
@@ -535,7 +530,14 @@ noncomputable def canonicalReductionAlgEquiv :
 theorem canonicalReductionAlgEquiv_mk (f : Huber.powerBoundedSubring T) :
     canonicalReductionAlgEquiv (Ideal.Quotient.mk (Huber.topologicallyNilpotentIdeal T) f) =
       restrictedReduction
-        ⟨f.1, (powerBoundedSubring_eq_unitClosedBall (σ := σ) (K := K)).le f.2⟩ := (rfl)
+        ⟨f.1, (powerBoundedSubring_eq_unitClosedBall (σ := σ) (K := K)).le f.2⟩ := by
+  rw [canonicalReductionAlgEquiv, AlgEquiv.ofRingEquiv_apply, RingEquiv.trans_apply,
+    Ideal.quotientEquiv_mk, restrictedReductionQuotientEquiv_mk]
+  exact congrArg restrictedReduction (Subtype.ext (RingEquiv.coe_subringCongr_apply _ f))
+
+/-- The canonical reduction of a Tate algebra `K⟨X⟩` is a domain. -/
+instance isDomain_canonicalReduction : IsDomain (Huber.CanonicalReduction T) :=
+  (canonicalReductionAlgEquiv (σ := σ) (K := K)).toMulEquiv.isDomain _
 
 /-- For finitely many variables, the canonical reduction of a Tate algebra `K⟨X⟩` is a
 finite-type `𝓀[K]`-algebra. -/

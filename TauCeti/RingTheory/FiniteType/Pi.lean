@@ -30,35 +30,6 @@ every finitely generated `k`-algebra has countable dimension.
 
 public section
 
-/-- If an `R`-subalgebra `B` of `∀ i, A i` contains the `i`-th coordinate idempotent `Pi.single i 1`
-and `Pi.single i y` for every `y ∈ t`, then it contains `Pi.single i y` for every
-`y ∈ Algebra.adjoin R t`. -/
-private theorem single_mem_of_mem_adjoin {R ι : Type*} [CommSemiring R] [DecidableEq ι]
-    {A : ι → Type*} [∀ i, Semiring (A i)] [∀ i, Algebra R (A i)]
-    (B : Subalgebra R (∀ i, A i)) (i : ι) (h1 : Pi.single i 1 ∈ B)
-    {t : Set (A i)} (ht : ∀ y ∈ t, Pi.single i y ∈ B) {y : A i}
-    (hy : y ∈ Algebra.adjoin R t) : Pi.single i y ∈ B := by
-  let C : Subalgebra R (A i) :=
-    { carrier := {y | Pi.single i y ∈ B}
-      mul_mem' {a b} ha hb := by
-        change Pi.single i (a * b) ∈ B
-        have hmul : Pi.single i (a * b) = Pi.single i a * Pi.single i b := by
-          ext j; obtain rfl | hji := eq_or_ne j i <;> simp [*]
-        exact hmul ▸ B.mul_mem ha hb
-      one_mem' := h1
-      add_mem' {a b} ha hb := by
-        change Pi.single i (a + b) ∈ B
-        exact Pi.single_add i a b ▸ B.add_mem ha hb
-      zero_mem' := by
-        change Pi.single i 0 ∈ B
-        exact Pi.single_zero (M := A) i ▸ B.zero_mem
-      algebraMap_mem' r := by
-        change Pi.single i (algebraMap R (A i) r) ∈ B
-        have hsmul : Pi.single i (algebraMap R (A i) r) = r • Pi.single i (1 : A i) := by
-          ext j; obtain rfl | hji := eq_or_ne j i <;> simp [Algebra.algebraMap_eq_smul_one, *]
-        exact hsmul ▸ B.smul_mem h1 r }
-  exact Algebra.adjoin_le (S := C) ht hy
-
 /-- A finite product of finitely generated `R`-subalgebras is finitely generated. -/
 theorem Subalgebra.FG.pi {R ι : Type*} [CommSemiring R] [Finite ι] {A : ι → Type*}
     [∀ i, Semiring (A i)] [∀ i, Algebra R (A i)] {S : ∀ i, Subalgebra R (A i)}
@@ -81,17 +52,19 @@ theorem Subalgebra.FG.pi {R ι : Type*} [CommSemiring R] [Finite ι] {A : ι →
     · rw [Pi.single_eq_of_ne hji]
       exact (S j).zero_mem
   · set B := Algebra.adjoin R (gen : Set (∀ i, A i))
-    have hmem (i : ι) {y : A i} (hy : y ∈ insert 1 (t i)) : Pi.single i y ∈ B :=
-      Algebra.subset_adjoin <| Finset.mem_coe.mpr <|
-        Finset.mem_biUnion.mpr ⟨i, Finset.mem_univ i, Finset.mem_image_of_mem _ hy⟩
-    have hle (i : ι) {y : A i} (hy : y ∈ S i) : Pi.single i y ∈ B :=
-      single_mem_of_mem_adjoin B i (hmem i (Finset.mem_insert_self 1 (t i)))
-        (fun z hz ↦ hmem i (Finset.mem_insert_of_mem (Finset.mem_coe.mp hz))) (ht i ▸ hy)
+    have hle (i : ι) {y : A i} (hy : y ∈ S i) : Pi.single i y ∈ B := by
+      refine Algebra.adjoin_mono ?_
+        (Algebra.mem_adjoin_of_map_mul R (f := LinearMap.single R A i) (Pi.single_mul i)
+          (ht i ▸ hy))
+      rintro _ ⟨z, hz, rfl⟩
+      have hz' : z ∈ insert 1 (t i) := by
+        rcases hz with hzt | rfl
+        · exact Finset.mem_insert_of_mem hzt
+        · exact Finset.mem_insert_self 1 (t i)
+      exact Finset.mem_coe.mpr
+        (Finset.mem_biUnion.mpr ⟨i, Finset.mem_univ i, Finset.mem_image_of_mem _ hz'⟩)
     intro x hx
-    have hsum : (∑ i : ι, Pi.single i (x i)) = x := by
-      ext j
-      rw [Finset.sum_apply, Finset.sum_eq_single j] <;> simp +contextual
-    exact hsum ▸ B.sum_mem fun i _ ↦ hle i (hx i trivial)
+    exact Finset.univ_sum_single x ▸ B.sum_mem fun i _ ↦ hle i (hx i trivial)
 
 /-- A finite product of finite-type `R`-algebras is of finite type over `R`. -/
 instance Algebra.FiniteType.pi {R ι : Type*} [CommSemiring R] [Finite ι] {A : ι → Type*}
