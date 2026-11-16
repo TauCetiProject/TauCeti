@@ -493,12 +493,14 @@ theorem sum_residue_eq_zero_of_support_subset (hω : ∀ x, ω.MeromorphicAt x) 
   exact sum_residue_eq_zero_of_forall_notMem hω t fun x hx ↦ by simpa [t] using hx
 
 /-- **The residue theorem on a compact Riemann surface** (Forster, Theorem 10.21). The residues of
-a `1`-form meromorphic everywhere add up to zero. -/
-theorem sum_residue_eq_zero (hω : ∀ x, ω.MeromorphicAt x) :
-    ∑ x ∈ ω.divisor.support, ω.residue x = 0 :=
-  sum_residue_eq_zero_of_support_subset hω fun _ hx ↦ by
-    by_contra h
-    exact hx (residue_eq_zero_of_notMem_support hω h)
+a `1`-form meromorphic everywhere add up to zero. A `1`-form that is not meromorphic everywhere has
+divisor the junk value `0`, so the sum is empty. -/
+theorem sum_residue_eq_zero : ∑ x ∈ ω.divisor.support, ω.residue x = 0 := by
+  by_cases hω : ∀ x, ω.MeromorphicAt x
+  · exact sum_residue_eq_zero_of_support_subset hω fun _ hx ↦ by
+      by_contra h
+      exact hx (residue_eq_zero_of_notMem_support hω h)
+  · rw [divisor_of_not_forall_meromorphicAt hω, Finsupp.support_zero, Finset.sum_empty]
 
 /-- **The residue theorem on a compact Riemann surface**, as a `finsum`. -/
 theorem finsum_residue_eq_zero (hω : ∀ x, ω.MeromorphicAt x) : ∑ᶠ x, ω.residue x = 0 := by
@@ -507,9 +509,8 @@ theorem finsum_residue_eq_zero (hω : ∀ x, ω.MeromorphicAt x) : ∑ᶠ x, ω.
 
 /-- **Check.** The residue theorem on the Riemann sphere
 (`TauCeti.RiemannSurface.OneForm.sum_residue_sphere`) is a special case. -/
-example {ω : OneForm (OnePoint ℂ)} (hω : ∀ x, ω.MeromorphicAt x) :
-    ∑ x ∈ ω.divisor.support, ω.residue x = 0 :=
-  sum_residue_eq_zero hω
+example {ω : OneForm (OnePoint ℂ)} : ∑ x ∈ ω.divisor.support, ω.residue x = 0 :=
+  sum_residue_eq_zero
 
 end TauCeti.RiemannSurface.OneForm
 
