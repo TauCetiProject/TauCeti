@@ -38,10 +38,10 @@ any function on `E` which agrees with the element on `Ω`. The conditions are cl
 convergence on `Ω`, which gives completeness.
 
 The global seminorm sees across gaps of `Ω`: on `Ω = (-1, 0) ∪ (0, 1)` the sign function is smooth
-with vanishing derivatives, but it is in no `C^{0,α}(Ω)`. For the same reason the inclusion
-`C^{k+1,α}(Ω) ⊆ C^{k,α}(Ω)` needs some geometry of `Ω`; it is proved here for convex `Ω`, where
-the mean value inequality bounds the Hölder seminorm of `D^k f` by the supremum norms of `D^k f`
-and `D^{k+1} f`.
+with vanishing derivatives, but for `α > 0` it is in no `C^{0,α}(Ω)`. For the same reason, for
+`α > 0` the inclusion `C^{k+1,α}(Ω) ⊆ C^{k,α}(Ω)` needs some geometry of `Ω`; it is proved here
+for convex `Ω`, where the mean value inequality bounds the Hölder seminorm of `D^k f` by the
+supremum norms of `D^k f` and `D^{k+1} f`.
 
 ## Main declarations
 
@@ -474,6 +474,11 @@ theorem norm_toBoundedContinuousFunction_le (f : CkHolderSpaceOn k α Ω F) :
     ‖f.toBoundedContinuousFunction‖ ≤ ‖f‖ :=
   BoundedContinuousFunction.norm_ofNormedAddCommGroup_le _ (norm_nonneg f) _
 
+/-- An element of `C^{k,α}(Ω)` is determined by its underlying bounded continuous function. -/
+theorem toBoundedContinuousFunction_injective :
+    Function.Injective (toBoundedContinuousFunction : CkHolderSpaceOn k α Ω F → Ω →ᵇ F) :=
+  fun _ _ h ↦ ext fun x ↦ by simpa using DFunLike.congr_fun h x
+
 /-- The `i`-th derivative field, as a continuous linear map to bounded continuous fields on `Ω`.
 It is bounded by the `C^{k,α}(Ω)` norm pointwise, by `CkHolderSpaceOn.norm_iteratedFDeriv_le`. -/
 -- No operator-norm bound is stated: outside this file, without the local shortcut instances,
@@ -533,6 +538,25 @@ theorem iteratedFDeriv_smul (c : ℝ) (f : CkHolderSpaceOn k α Ω F) (i : Fin (
     (c • f).iteratedFDeriv i = c • f.iteratedFDeriv i := by
   simpa only [iteratedFDerivL_apply] using (iteratedFDerivL i).map_smul c f
 
+/-- The `k`-th derivative field of the zero element, in the bounded Hölder space, is zero. -/
+@[simp]
+theorem iteratedFDerivHolder_zero : (0 : CkHolderSpaceOn k α Ω F).iteratedFDerivHolder = 0 := by
+  simpa only [iteratedFDerivHolderL_apply] using
+    (iteratedFDerivHolderL (k := k) (α := α) (Ω := Ω) (F := F)).map_zero
+
+/-- The `k`-th derivative field, in the bounded Hölder space, is additive. -/
+@[simp]
+theorem iteratedFDerivHolder_add (f g : CkHolderSpaceOn k α Ω F) :
+    (f + g).iteratedFDerivHolder = f.iteratedFDerivHolder + g.iteratedFDerivHolder := by
+  simpa only [iteratedFDerivHolderL_apply] using iteratedFDerivHolderL.map_add f g
+
+/-- The `k`-th derivative field, in the bounded Hölder space, commutes with scalar
+multiplication. -/
+@[simp]
+theorem iteratedFDerivHolder_smul (c : ℝ) (f : CkHolderSpaceOn k α Ω F) :
+    (c • f).iteratedFDerivHolder = c • f.iteratedFDerivHolder := by
+  simpa only [iteratedFDerivHolderL_apply] using iteratedFDerivHolderL.map_smul c f
+
 /-- The underlying function of the zero element is zero. -/
 @[simp]
 theorem coe_zero : ⇑(0 : CkHolderSpaceOn k α Ω F) = 0 := by
@@ -558,13 +582,28 @@ theorem coe_smul (c : ℝ) (f : CkHolderSpaceOn k α Ω F) : ⇑(c • f) = c �
     Pi.smul_apply]
   simp
 
+/-- The underlying bounded continuous function of a sum. -/
+@[simp]
+theorem toBoundedContinuousFunction_add (f g : CkHolderSpaceOn k α Ω F) :
+    (f + g).toBoundedContinuousFunction =
+      f.toBoundedContinuousFunction + g.toBoundedContinuousFunction := by
+  ext x
+  simp
+
+/-- The underlying bounded continuous function of a scalar multiple. -/
+@[simp]
+theorem toBoundedContinuousFunction_smul (c : ℝ) (f : CkHolderSpaceOn k α Ω F) :
+    (c • f).toBoundedContinuousFunction = c • f.toBoundedContinuousFunction := by
+  ext x
+  simp
+
 /-- Forgetting the derivatives is a continuous linear map to bounded continuous functions on `Ω`.
 -/
 def toBoundedContinuousFunctionCLM : CkHolderSpaceOn k α Ω F →L[ℝ] (Ω →ᵇ F) :=
   LinearMap.mkContinuous
     { toFun := toBoundedContinuousFunction
-      map_add' f g := by ext x; simp
-      map_smul' c f := by ext x; simp } 1 fun f ↦ by
+      map_add' := toBoundedContinuousFunction_add
+      map_smul' := toBoundedContinuousFunction_smul } 1 fun f ↦ by
         rw [one_mul]
         exact norm_toBoundedContinuousFunction_le f
 
