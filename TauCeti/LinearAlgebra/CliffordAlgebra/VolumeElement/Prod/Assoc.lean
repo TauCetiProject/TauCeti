@@ -14,28 +14,11 @@ import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
 /-!
 # Associativity of graded tensor products of complex Clifford modules
 
-Let `(U, o₁)` and `(V, o₂)` be even-dimensional oriented real inner product spaces of dimensions
-`k` and `n` with `Q₁ u = -‖u‖²` and `Q₂ v = -‖v‖²`, and let `(W, Q₃)` be an arbitrary real inner
-product space. Orient `U ⊕ V` (`WithLp 2 (U × V)`) by the product orientation `o₁₂` transported
-from `Orientation.prod o₁ o₂`.
-
-On `(E ⊗ F) ⊗ G`, the chirality of `(U ⊕ V, o₁₂)` acts on `E ⊗ F` by `Γ_U ⊗ Γ_V`
-(`CliffordAlgebra.complexProdTensor_complexVolume_of_map_prod`), so a real vector `((u, v), w)` of
-`(U ⊕ V) ⊕ W` acts by
-
-  `(c_U(u) ⊗ 1 + Γ_U ⊗ c_V(v)) ⊗ 1 + (Γ_U ⊗ Γ_V) ⊗ c_W(w)`.
-
-Under Mathlib's `TensorProduct.assoc ℂ E F G`, this matches the right-associated action
-
-  `c_U(u) ⊗ (1 ⊗ 1) + Γ_U ⊗ (c_V(v) ⊗ 1 + Γ_V ⊗ c_W(w))`
-
-of `(u, (v, w))` on `E ⊗ (F ⊗ G)`, so `TensorProduct.assoc ℂ E F G` intertwines the two iterated
-`complexProdTensor` actions on all of `CliffordAlgebra (Q_L.baseChange ℂ)` along
-`QuadraticMap.IsometryEquiv.withLpProdAssoc`. No finiteness or negative-definiteness assumption on
-`(W, Q₃)` is needed for the Clifford intertwining; when `(W, o₃)` is also even-dimensional with
-`Q₃ w = -‖w‖²`, `Orientation.map_withLpProdAssoc_prod` identifies the two iterated product
-orientations and `TensorProduct.assoc ℂ E F G` carries the left-associated product chirality to the
-right-associated one.
+For even-dimensional oriented real inner product spaces `(U, o₁)` and `(V, o₂)` with
+`Q₁ u = -‖u‖²`, `Q₂ v = -‖v‖²`, and arbitrary `(W, Q₃)`, `TensorProduct.assoc ℂ E F G` intertwines
+the two iterated `CliffordAlgebra.complexProdTensor` actions along
+`QuadraticMap.IsometryEquiv.withLpProdAssoc`. When `(W, o₃)` is also even-dimensional with
+`Q₃ w = -‖w‖²`, it carries the left-associated product chirality to the right-associated one.
 
 ## Main results
 
@@ -100,12 +83,8 @@ theorem conjAlgEquiv_assoc_complexProdTensor
           hQ_R).toIsometry.baseChange ℂ)) := by
   have hvol := complexProdTensor_complexVolume_of_map_prod hQ₁₂ o₁ hQ₁ hk ρ₁ ρ₂ o₂ o₁₂ hn hQ₂ ho₁₂
   refine AlgHom.toRingHom_injective <| baseChange_ringHom_ext Q_L (fun _ ↦ by simp) fun x ↦ ?_
-  obtain ⟨⟨uv, w⟩, rfl⟩ : ∃ p : WithLp 2 (U × V) × W, WithLp.toLp 2 p = x :=
-    ⟨WithLp.ofLp x, by simp⟩
-  obtain ⟨⟨u, v⟩, rfl⟩ : ∃ q : U × V, WithLp.toLp 2 q = uv :=
-    ⟨WithLp.ofLp uv, by simp⟩
-  apply TensorProduct.ext_threefold'
-  intro e f g
+  rcases x with ⟨⟨⟨⟨u, v⟩⟩, w⟩⟩
+  refine TensorProduct.ext_threefold' fun e f g ↦ ?_
   simp [LinearEquiv.conjAlgEquiv_apply, complexProdTensor_ι_one_tmul_toLp, hvol,
     QuadraticMap.Isometry.baseChange_tmul, TensorProduct.tmul_add, add_assoc]
 
@@ -124,11 +103,11 @@ theorem assoc_complexProdTensor
         (map ((QuadraticMap.IsometryEquiv.withLpProdAssoc hQ₁₂ hQ₂₃ hQ_L
           hQ_R).toIsometry.baseChange ℂ) a)
         ((TensorProduct.assoc ℂ E F G) t) := by
-  have h := congrArg (fun φ : CliffordAlgebra (Q_L.baseChange ℂ) →ₐ[ℂ]
-        Module.End ℂ (E ⊗[ℂ] (F ⊗[ℂ] G)) ↦ φ a ((TensorProduct.assoc ℂ E F G) t))
+  simpa [LinearEquiv.conjAlgEquiv_apply] using congrArg
+    (fun φ : CliffordAlgebra (Q_L.baseChange ℂ) →ₐ[ℂ] Module.End ℂ (E ⊗[ℂ] (F ⊗[ℂ] G)) ↦
+      φ a ((TensorProduct.assoc ℂ E F G) t))
     (conjAlgEquiv_assoc_complexProdTensor hQ₁₂ hQ₂₃ hQ_L hQ_R o₁ o₂ o₁₂ hQ₁ hk hQ₂ hn
       hQ₁₂_norm hkn ρ₁ ρ₂ ρ₃ ho₁₂)
-  simpa [LinearEquiv.conjAlgEquiv_apply] using h
 
 /-- **Associativity on the product chirality.** When `(W, o₃)` is also even-dimensional with
 `Q₃ w = -‖w‖²` and `o_R` is obtained from the left-associated product orientation `o_L` along
@@ -161,11 +140,10 @@ theorem assoc_complexProdTensor_complexVolume
         ((TensorProduct.assoc ℂ E F G) t) := by
   have ho_R' : (o₁.prod o₂₃ Fact.out Fact.out).map (Fin (k + (n + m)))
       (WithLp.linearEquiv 2 ℝ (U × WithLp 2 (V × W))).symm = o_R := by
-    rw [← ho_R, ← ho_L]
     have hassoc := Orientation.map_withLpProdAssoc_prod (p := 2) o₁ o₂ o₃
       (Fact.out : finrank ℝ U = k) (Fact.out : finrank ℝ V = n) (Fact.out : finrank ℝ W = m)
     simp only [ho₁₂, ho₂₃] at hassoc
-    rw [hassoc, Orientation.reindex_finCongr_reindex_finCongr, finCongr_refl,
+    rw [← ho_R, ← ho_L, hassoc, Orientation.reindex_finCongr_reindex_finCongr, finCongr_refl,
       Orientation.reindex_refl, Equiv.refl_apply]
   rw [complexProdTensor_complexVolume_of_map_prod hQ_L o₁₂ hQ₁₂_norm hkn _ ρ₃ o₃ o_L hm hQ₃ ho_L,
     complexProdTensor_complexVolume_of_map_prod hQ₁₂ o₁ hQ₁ hk ρ₁ ρ₂ o₂ o₁₂ hn hQ₂ ho₁₂,

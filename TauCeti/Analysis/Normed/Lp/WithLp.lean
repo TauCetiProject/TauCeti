@@ -12,18 +12,8 @@ public import Mathlib.LinearAlgebra.FreeModule.Basic
 /-!
 # Linear-algebraic structure on the `WithLp` type synonym
 
-Mathlib transfers `Module.Finite` across `WithLp.linearEquiv` (`WithLp.instModuleFinite`) and lifts
-semilinear equivalences via `LinearEquiv.withLpCongr`. This file supplies the companion free-module
-instance, the `finrank` identity, and the purely algebraic associator
+Supplies `WithLp.instModuleFree`, `WithLp.finrank_eq`, and the purely algebraic associator
 `LinearEquiv.withLpProdAssoc` underlying `LinearIsometryEquiv.withLpProdAssoc`.
-
-## Main definitions and results
-
-* `WithLp.instModuleFree`: `WithLp p V` is free over `K` whenever `V` is.
-* `WithLp.finrank_eq`: `Module.finrank K (WithLp p V) = Module.finrank K V`.
-* `LinearEquiv.withLpProdAssoc`: reassociating `WithLp p (WithLp p (M₁ × M₂) × M₃)` to
-  `WithLp p (M₁ × WithLp p (M₂ × M₃))` as a `K`-linear equivalence, with no metric or seminorm
-  assumptions.
 -/
 
 public section
@@ -50,8 +40,7 @@ variable (p : ℝ≥0∞) (K M₁ M₂ M₃ : Type*) [Semiring K]
   [AddCommGroup M₁] [Module K M₁] [AddCommGroup M₂] [Module K M₂] [AddCommGroup M₃] [Module K M₃]
 
 /-- Associativity of iterated `WithLp` binary products as a linear equivalence, with no metric or
-seminorm assumptions. When the factors are seminormed modules and `1 ≤ p`, this is the underlying
-linear equivalence of `LinearIsometryEquiv.withLpProdAssoc`. -/
+seminorm assumptions. -/
 def withLpProdAssoc :
     WithLp p (WithLp p (M₁ × M₂) × M₃) ≃ₗ[K] WithLp p (M₁ × WithLp p (M₂ × M₃)) where
   toFun x := .toLp p ((WithLp.ofLp (WithLp.ofLp x).1).1,
@@ -70,15 +59,13 @@ variable {p K M₁ M₂ M₃}
 theorem withLpProdAssoc_apply (x : WithLp p (WithLp p (M₁ × M₂) × M₃)) :
     withLpProdAssoc p K M₁ M₂ M₃ x =
       WithLp.toLp p ((WithLp.ofLp (WithLp.ofLp x).1).1,
-        WithLp.toLp p ((WithLp.ofLp (WithLp.ofLp x).1).2, (WithLp.ofLp x).2)) :=
-  (rfl)
+        WithLp.toLp p ((WithLp.ofLp (WithLp.ofLp x).1).2, (WithLp.ofLp x).2)) := (rfl)
 
 /-- Inverse evaluation of `LinearEquiv.withLpProdAssoc`. -/
 @[simp]
 theorem withLpProdAssoc_symm_apply (x : WithLp p (M₁ × WithLp p (M₂ × M₃))) :
     (withLpProdAssoc p K M₁ M₂ M₃).symm x =
       WithLp.toLp p (WithLp.toLp p ((WithLp.ofLp x).1, (WithLp.ofLp (WithLp.ofLp x).2).1),
-        (WithLp.ofLp (WithLp.ofLp x).2).2) :=
-  (rfl)
+        (WithLp.ofLp (WithLp.ofLp x).2).2) := (rfl)
 
 end LinearEquiv
