@@ -54,7 +54,8 @@ ordinary differential equations around an ordinary point `z₀ ∈ ℂ`, in thre
     (`TauCeti.exists_differentiableOn_eball_deriv_deriv_add_mul_deriv_add_mul_eq`,
     `TauCeti.existsUnique_differentiable_deriv_deriv_add_mul_deriv_add_mul_eq`), and homogeneous
     solutions (`h = 0`) are represented across the full disc by the Cauchy-product recurrence
-    `TauCeti.ordinaryPointCoeff` (`TauCeti.hasFPowerSeriesOnBall_ofScalars_ordinaryPointCoeff`,
+    `TauCeti.ordinaryPointCoeff` (`TauCeti.le_radius_ofScalars_ordinaryPointCoeff`,
+    `TauCeti.hasFPowerSeriesOnBall_ofScalars_ordinaryPointCoeff`,
     `TauCeti.exists_hasFPowerSeriesOnBall_ofScalars_ordinaryPointCoeff_eball`,
     `TauCeti.exists_hasFPowerSeriesOnBall_ofScalars_ordinaryPointCoeff_ball`,
     `TauCeti.exists_differentiable_hasFPowerSeriesOnBall_ofScalars_ordinaryPointCoeff`).
@@ -180,83 +181,82 @@ theorem linearSystemCoeff_sub (A : ℕ → E →L[ℂ] E) (b₁ b₂ : ℕ → E
   rw [sub_eq_add_neg, sub_eq_add_neg v₁ v₂, linearSystemCoeff_add, linearSystemCoeff_neg,
     sub_eq_add_neg]
 
+private theorem one_add_mul_sum_range_add_choose_le (n m : ℕ) :
+    1 + m * ∑ k ∈ Finset.range (n + 1), (k + m).choose m ≤
+      (n + 1) * (n + 1 + m).choose m := by
+  rw [Nat.sum_range_add_choose n m]
+  have h1 : 1 ≤ (n + m + 1).choose (m + 1) := Nat.choose_pos (by omega)
+  have h2 : (n + m + 1).choose (m + 1) * (m + 1) = (n + 1) * (n + 1 + m).choose m := by
+    rw [Nat.choose_succ_right_eq (n + m + 1) m, Nat.add_right_comm n m 1,
+      Nat.add_sub_cancel, Nat.mul_comm]
+  calc
+    1 + m * (n + m + 1).choose (m + 1)
+        ≤ (n + m + 1).choose (m + 1) + m * (n + m + 1).choose (m + 1) :=
+          Nat.add_le_add_right h1 _
+    _ = (n + m + 1).choose (m + 1) * (m + 1) := by ring
+    _ = (n + 1) * (n + 1 + m).choose m := h2
+
 private theorem norm_linearSystemCoeff_mul_pow_le_mul_choose
     {A : ℕ → E →L[ℂ] E} {b : ℕ → E} {v₀ : E} {ρ CA Cb : ℝ} {m : ℕ}
-    (hρ : 0 ≤ ρ) (hCA_nonneg : 0 ≤ CA)
+    (hρ : 0 ≤ ρ)
     (hCA : ∀ n, ‖A n‖ * ρ ^ n ≤ CA) (hCb : ∀ n, ‖b n‖ * ρ ^ n ≤ Cb)
     (hm : ρ * CA ≤ m) (n : ℕ) :
     ‖linearSystemCoeff A b v₀ n‖ * ρ ^ n ≤
       max ‖v₀‖ (ρ * Cb) * (n + m).choose m := by
   let μ₀ : ℝ := max ‖v₀‖ (ρ * Cb)
-  have : 0 ≤ μ₀ := (norm_nonneg v₀).trans (le_max_left _ _)
+  have hμ₀ : 0 ≤ μ₀ := (norm_nonneg v₀).trans (le_max_left _ _)
+  have hCA_nonneg : 0 ≤ CA := le_trans (by positivity) (hCA 0)
   induction n using Nat.strong_induction_on with
   | ind n ih =>
     rcases n with _ | n
     · simp only [linearSystemCoeff_zero, pow_zero, mul_one, zero_add, Nat.choose_self,
         Nat.cast_one]
       exact le_max_left _ _
-    · have hn_norm : ‖((n + 1 : ℂ))‖ = (n + 1 : ℝ) := mod_cast Complex.norm_natCast (n + 1)
+    · -- Express `(n + 1) * ‖c_{n+1}‖ ρ^{n+1}` via the cleared-denominator recurrence.
+      have hn_norm : ‖((n + 1 : ℂ))‖ = (n + 1 : ℝ) := mod_cast Complex.norm_natCast (n + 1)
       have hlhs : ((n + 1 : ℝ)) * (‖linearSystemCoeff A b v₀ (n + 1)‖ * ρ ^ (n + 1)) =
           ‖((n + 1 : ℂ)) • linearSystemCoeff A b v₀ (n + 1)‖ * ρ ^ (n + 1) := by
         rw [norm_smul, hn_norm, mul_assoc]
-      have hsum_choose :
-          ∑ k ∈ Finset.range (n + 1), ((k + m).choose m : ℝ) =
-            ((n + m + 1).choose (m + 1) : ℝ) :=
-        mod_cast Nat.sum_range_add_choose n m
-      have hchoose_ge : (1 : ℝ) ≤ ((n + m + 1).choose (m + 1) : ℝ) :=
-        Nat.one_le_cast.mpr (Nat.choose_pos (by omega))
-      have hchoose_step :
-          (((n + m + 1).choose (m + 1) * (m + 1) : ℕ) : ℝ) =
+      have hbinom :
+          (1 : ℝ) + (m : ℝ) * ∑ k ∈ Finset.range (n + 1), ((k + m).choose m : ℝ) ≤
             (n + 1 : ℝ) * ((n + 1 + m).choose m : ℝ) := by
-        have hstep : (n + m + 1).choose (m + 1) * (m + 1) = (n + 1) * (n + 1 + m).choose m :=
-          (Nat.choose_succ_right_eq (n + m + 1) m).trans <| by
-            rw [show n + m + 1 - m = n + 1 by omega, show n + m + 1 = n + 1 + m by omega,
-              Nat.mul_comm]
-        exact_mod_cast hstep
+        exact_mod_cast one_add_mul_sum_range_add_choose_le n m
+      -- Bound the Cauchy-product recurrence termwise by the binomial majorant.
       have hbound : ((n + 1 : ℝ)) * (‖linearSystemCoeff A b v₀ (n + 1)‖ * ρ ^ (n + 1)) ≤
           (n + 1 : ℝ) * (μ₀ * ((n + 1 + m).choose m : ℝ)) := by
         rw [hlhs, natCast_add_one_smul_linearSystemCoeff_succ]
         calc
           ‖b n + ∑ k ∈ Finset.range (n + 1), A (n - k) (linearSystemCoeff A b v₀ k)‖ * ρ ^ (n + 1)
-              ≤ (‖b n‖ + ∑ k ∈ Finset.range (n + 1),
-                  ‖A (n - k) (linearSystemCoeff A b v₀ k)‖) * ρ ^ (n + 1) := by
+              ≤ (‖b n‖ + ‖∑ k ∈ Finset.range (n + 1),
+                  A (n - k) (linearSystemCoeff A b v₀ k)‖) * ρ ^ (n + 1) := by
                 gcongr
-                exact (norm_add_le _ _).trans (by gcongr; exact norm_sum_le _ _)
-          _ = ρ * (‖b n‖ * ρ ^ n) + ρ * ∑ k ∈ Finset.range (n + 1),
-                  ‖A (n - k) (linearSystemCoeff A b v₀ k)‖ * ρ ^ n := by
-                rw [pow_succ, add_mul, Finset.sum_mul, Finset.mul_sum]
-                exact congrArg₂ (· + ·) (by ring) (Finset.sum_congr rfl fun _ _ ↦ by ring)
-          _ ≤ ρ * Cb + ρ * ∑ k ∈ Finset.range (n + 1), CA * (μ₀ * (k + m).choose m) := by
-                refine add_le_add (mul_le_mul_of_nonneg_left (hCb n) hρ)
-                  (mul_le_mul_of_nonneg_left (Finset.sum_le_sum fun k hk ↦ ?_) hρ)
-                have hkn : n - k + k = n :=
-                  Nat.sub_add_cancel (Nat.lt_succ_iff.mp (Finset.mem_range.mp hk))
-                calc
-                  ‖A (n - k) (linearSystemCoeff A b v₀ k)‖ * ρ ^ n
-                      ≤ (‖A (n - k)‖ * ‖linearSystemCoeff A b v₀ k‖) * ρ ^ (n - k + k) := by
-                        rw [hkn]; gcongr; exact (A (n - k)).le_opNorm _
-                  _ = (‖A (n - k)‖ * ρ ^ (n - k)) *
-                        (‖linearSystemCoeff A b v₀ k‖ * ρ ^ k) := by rw [pow_add]; ring
-                  _ ≤ CA * (μ₀ * (k + m).choose m) :=
-                        mul_le_mul (hCA (n - k)) (ih k (Finset.mem_range.mp hk))
-                          (by positivity) hCA_nonneg
+                exact norm_add_le _ _
+          _ = ρ * (‖b n‖ * ρ ^ n) + ρ * (‖∑ k ∈ Finset.range (n + 1),
+                A (n - k) (linearSystemCoeff A b v₀ k)‖ * ρ ^ n) := by
+                rw [pow_succ]
+                ring
+          _ ≤ ρ * Cb + ρ * ∑ k ∈ Finset.range (n + 1),
+                (‖A (n - k)‖ * ρ ^ (n - k)) * (‖linearSystemCoeff A b v₀ k‖ * ρ ^ k) :=
+                add_le_add (mul_le_mul_of_nonneg_left (hCb n) hρ)
+                  (mul_le_mul_of_nonneg_left
+                    (norm_sum_range_clm_apply_mul_pow_le A (linearSystemCoeff A b v₀) hρ n) hρ)
+          _ ≤ ρ * Cb + ρ * ∑ k ∈ Finset.range (n + 1), CA * (μ₀ * ((k + m).choose m : ℝ)) :=
+                add_le_add le_rfl (mul_le_mul_of_nonneg_left (Finset.sum_le_sum fun k hk ↦
+                  mul_le_mul (hCA (n - k)) (ih k (Finset.mem_range.mp hk))
+                    (by positivity) hCA_nonneg) hρ)
           _ = ρ * Cb + (ρ * CA) * (μ₀ * ∑ k ∈ Finset.range (n + 1), ((k + m).choose m : ℝ)) := by
                 simp_rw [← mul_assoc]
                 rw [← Finset.mul_sum]
                 ring
-          _ ≤ μ₀ * 1 + (m : ℝ) * (μ₀ * ((n + m + 1).choose (m + 1) : ℝ)) := by
-                rw [mul_one, hsum_choose]
-                exact add_le_add (le_max_right _ _)
-                  (mul_le_mul_of_nonneg_right hm (by positivity))
-          _ ≤ μ₀ * ((n + m + 1).choose (m + 1) : ℝ) +
-                (m : ℝ) * (μ₀ * ((n + m + 1).choose (m + 1) : ℝ)) := by
-                gcongr
-          _ = μ₀ * (((n + m + 1).choose (m + 1) * (m + 1) : ℕ) : ℝ) := by
-                push_cast
-                ring
-          _ = (n + 1 : ℝ) * (μ₀ * ((n + 1 + m).choose m : ℝ)) := by
-                rw [hchoose_step]
-                ring
+          _ ≤ μ₀ * (1 + (m : ℝ) * ∑ k ∈ Finset.range (n + 1), ((k + m).choose m : ℝ)) := by
+                have h1 : ρ * Cb ≤ μ₀ := le_max_right _ _
+                have h2 : (ρ * CA) * (μ₀ * ∑ k ∈ Finset.range (n + 1), ((k + m).choose m : ℝ)) ≤
+                    (m : ℝ) * (μ₀ * ∑ k ∈ Finset.range (n + 1), ((k + m).choose m : ℝ)) :=
+                  mul_le_mul_of_nonneg_right hm (by positivity)
+                linarith
+          _ ≤ μ₀ * ((n + 1 : ℝ) * ((n + 1 + m).choose m : ℝ)) :=
+                mul_le_mul_of_nonneg_left hbinom hμ₀
+          _ = (n + 1 : ℝ) * (μ₀ * ((n + 1 + m).choose m : ℝ)) := by ring
       exact le_of_mul_le_mul_left hbound (by positivity)
 
 /-- **Cauchy majorant convergence bound for first-order linear systems.** If the formal power series
@@ -273,7 +273,7 @@ theorem le_radius_mkPiRingSeries_linearSystemCoeff
   have hRρ : (R : ℝ) < ρ := ENNReal.coe_lt_coe.mp hRρ_coe
   have hR_pos : (0 : ℝ) < R := NNReal.coe_pos.mpr (pos_iff_ne_zero.mpr hR0)
   have hρ_pos : (0 : ℝ) < ρ := hR_pos.trans hRρ
-  obtain ⟨CA, hCA_pos, hCA⟩ :=
+  obtain ⟨CA, _, hCA⟩ :=
     (mkPiRingSeries ℂ A).norm_mul_pow_le_of_lt_radius (hρr.trans_le hA)
   obtain ⟨Cb, _, hCb⟩ :=
     (mkPiRingSeries ℂ b).norm_mul_pow_le_of_lt_radius (hρr.trans_le hb)
@@ -281,6 +281,7 @@ theorem le_radius_mkPiRingSeries_linearSystemCoeff
   obtain ⟨m, hm⟩ := exists_nat_ge ((ρ : ℝ) * CA)
   let q : ℝ := R / ρ
   have hq_pos : 0 < q := div_pos hR_pos hρ_pos
+  have hR : (R : ℝ) = ρ * q := (mul_div_cancel₀ _ hρ_pos.ne').symm
   have hq_norm : ‖q‖ < 1 := by
     rw [Real.norm_of_nonneg hq_pos.le]
     exact (div_lt_one hρ_pos).mpr hRρ
@@ -289,10 +290,9 @@ theorem le_radius_mkPiRingSeries_linearSystemCoeff
       (max ‖v₀‖ ((ρ : ℝ) * Cb))
   apply FormalMultilinearSeries.le_radius_of_summable_norm
   refine Summable.of_nonneg_of_le (fun _ ↦ by positivity) (fun n ↦ ?_) hchoose_sum
-  rw [norm_mkPiRingSeries, show (R : ℝ) = ρ * q by dsimp [q]; field_simp [hρ_pos.ne'],
-    mul_pow, ← mul_assoc, ← mul_assoc]
+  rw [norm_mkPiRingSeries, hR, mul_pow, ← mul_assoc, ← mul_assoc]
   exact mul_le_mul_of_nonneg_right
-    (norm_linearSystemCoeff_mul_pow_le_mul_choose ρ.2 hCA_pos.le hCA hCb hm n)
+    (norm_linearSystemCoeff_mul_pow_le_mul_choose ρ.2 hCA hCb hm n)
     (pow_nonneg hq_pos.le n)
 
 variable [CompleteSpace E]
@@ -341,13 +341,14 @@ theorem inv_factorial_smul_iteratedDeriv_eq_linearSystemCoeff_of_hasDerivAt_clm_
         (fun m ↦ (m ! : ℂ)⁻¹ • iteratedDeriv m b z₀) (v z₀) n := by
   obtain ⟨r, hr_pos, hr⟩ := EMetric.mem_nhds_iff.mp
     (hA.eventually_analyticAt.and (hb.eventually_analyticAt.and hv))
-  have hA_ps := (show DifferentiableOn ℂ A (Metric.eball z₀ r) from
-    fun z hz ↦ (hr hz).1.differentiableAt.differentiableWithinAt).hasFPowerSeriesOnBall_eball hr_pos
-  have hb_ps := (show DifferentiableOn ℂ b (Metric.eball z₀ r) from
-    fun z hz ↦ (hr hz).2.1.differentiableAt.differentiableWithinAt).hasFPowerSeriesOnBall_eball
-    hr_pos
+  have hA_diff : DifferentiableOn ℂ A (Metric.eball z₀ r) :=
+    fun z hz ↦ (hr hz).1.differentiableAt.differentiableWithinAt
+  have hb_diff : DifferentiableOn ℂ b (Metric.eball z₀ r) :=
+    fun z hz ↦ (hr hz).2.1.differentiableAt.differentiableWithinAt
   have hv_diff : DifferentiableOn ℂ v (Metric.eball z₀ r) :=
     fun z hz ↦ (hr hz).2.2.differentiableAt.differentiableWithinAt
+  have hA_ps := hA_diff.hasFPowerSeriesOnBall_eball hr_pos
+  have hb_ps := hb_diff.hasFPowerSeriesOnBall_eball hr_pos
   have hv_ps := hv_diff.hasFPowerSeriesOnBall_eball hr_pos
   have hv_ps' := hasFPowerSeriesOnBall_of_hasDerivAt_clm_apply_add hr_pos
     hA_ps.hasFPowerSeriesAt hb_ps.hasFPowerSeriesAt hv_diff hv
@@ -378,7 +379,8 @@ theorem eqOn_of_hasDerivAt_clm_apply_add {A : ℂ → E →L[ℂ] E} {b v₁ v�
       hA analyticAt_const hu_deriv n]
     have hb0 : (fun m : ℕ ↦ (m ! : ℂ)⁻¹ • iteratedDeriv m (fun _ : ℂ ↦ (0 : E)) z₀) = 0 := by
       ext m; simp
-    rw [show u z₀ = 0 from sub_eq_zero.mpr h₀, hb0, linearSystemCoeff_zero_zero]
+    have hu₀ : u z₀ = 0 := by simp [u, h₀]
+    rw [hu₀, hb0, linearSystemCoeff_zero_zero]
   rw [hu_coeff, mkPiRingSeries_zero] at hu_ps
   have hu_zero : EqOn u 0 U :=
     (hu_diff.analyticOnNhd hU).eqOn_zero_of_preconnected_of_eventuallyEq_zero
@@ -507,25 +509,26 @@ theorem initialJet_injective (E : LinearEquation U n) (hU : IsPreconnected (U : 
   apply Subtype.ext; apply Subtype.ext; ext ⟨z, hz⟩
   simpa [HolomorphicFunctions.extend_apply _ ⟨z, hz⟩] using heq hz
 
+private theorem subsingleton_solutionSpace_of_eq_empty (E : LinearEquation U n)
+    (hU_empty : (U : Set ℂ) = ∅) : Subsingleton E.solutionSpace := by
+  have : IsEmpty U := Set.isEmpty_coe_sort.mpr hU_empty
+  have : Subsingleton C(U, ℂ) := DFunLike.coe_injective.subsingleton
+  infer_instance
+
 /-- On a preconnected open domain, the solution space of a monic order-`n` linear differential
 equation is finite-dimensional. -/
 theorem finiteDimensional_solutionSpace_of_isPreconnected (E : LinearEquation U n)
     (hU : IsPreconnected (U : Set ℂ)) : FiniteDimensional ℂ E.solutionSpace := by
   rcases Set.eq_empty_or_nonempty (U : Set ℂ) with hU_empty | ⟨a, ha⟩
-  · have : Subsingleton E.solutionSpace :=
-      ⟨fun f₁ f₂ ↦ Subtype.ext <| Subtype.ext <| ContinuousMap.ext fun ⟨z, hz⟩ ↦
-        False.elim (by rw [← SetLike.mem_coe, hU_empty] at hz; exact hz)⟩
-    exact FiniteDimensional.of_injective (0 : E.solutionSpace →ₗ[ℂ] Fin 0 → ℂ)
-      (fun _ _ _ ↦ Subsingleton.elim _ _)
+  · have : Subsingleton E.solutionSpace := E.subsingleton_solutionSpace_of_eq_empty hU_empty
+    exact Module.Finite.of_finite
   · exact FiniteDimensional.of_injective (E.initialJet ha) (E.initialJet_injective hU ha)
 
 /-- On a preconnected open domain, `E.solutionSpace` has dimension at most `n`. -/
 theorem finrank_solutionSpace_le_of_isPreconnected (E : LinearEquation U n)
     (hU : IsPreconnected (U : Set ℂ)) : Module.finrank ℂ E.solutionSpace ≤ n := by
   rcases Set.eq_empty_or_nonempty (U : Set ℂ) with hU_empty | ⟨a, ha⟩
-  · have : Subsingleton E.solutionSpace :=
-      ⟨fun f₁ f₂ ↦ Subtype.ext <| Subtype.ext <| ContinuousMap.ext fun ⟨z, hz⟩ ↦
-        False.elim (by rw [← SetLike.mem_coe, hU_empty] at hz; exact hz)⟩
+  · have : Subsingleton E.solutionSpace := E.subsingleton_solutionSpace_of_eq_empty hU_empty
     rw [Module.finrank_zero_of_subsingleton]
     exact Nat.zero_le n
   · simpa using LinearMap.finrank_le_finrank_of_injective (E.initialJet_injective hU ha)
@@ -567,29 +570,41 @@ def initialJetEquivOfEqEBall (E : LinearEquation U n) {c a : ℂ} {r : ℝ≥0�
 @[simp]
 theorem initialJetEquivOfEqEBall_apply (E : LinearEquation U n) {c a : ℂ} {r : ℝ≥0∞}
     (hU : (U : Set ℂ) = Metric.eball c r) (ha : a ∈ U) (f : E.solutionSpace) :
-    E.initialJetEquivOfEqEBall hU ha f = E.initialJet ha f :=
-  (rfl)
+    E.initialJetEquivOfEqEBall hU ha f = E.initialJet ha f := by
+  unfold initialJetEquivOfEqEBall
+  exact LinearEquiv.ofBijective_apply _ f
 
 /-- The underlying linear map of `initialJetEquivOfEqEBall` is `E.initialJet ha`. -/
 @[simp]
 theorem initialJetEquivOfEqEBall_toLinearMap (E : LinearEquation U n) {c a : ℂ} {r : ℝ≥0∞}
     (hU : (U : Set ℂ) = Metric.eball c r) (ha : a ∈ U) :
     (E.initialJetEquivOfEqEBall hU ha).toLinearMap = E.initialJet ha :=
-  (rfl)
+  LinearMap.ext fun f ↦ by
+    rw [LinearEquiv.coe_coe, E.initialJetEquivOfEqEBall_apply hU ha]
 
 /-- `E.initialJet ha` is a left inverse to `(E.initialJetEquivOfEqEBall hU ha).symm`. -/
 @[simp]
 theorem initialJet_initialJetEquivOfEqEBall_symm (E : LinearEquation U n) {c a : ℂ} {r : ℝ≥0∞}
     (hU : (U : Set ℂ) = Metric.eball c r) (ha : a ∈ U) (v : Fin n → ℂ) :
-    E.initialJet ha ((E.initialJetEquivOfEqEBall hU ha).symm v) = v :=
-  (E.initialJetEquivOfEqEBall hU ha).apply_symm_apply v
+    E.initialJet ha ((E.initialJetEquivOfEqEBall hU ha).symm v) = v := by
+  rw [← E.initialJetEquivOfEqEBall_apply hU ha, LinearEquiv.apply_symm_apply]
 
 /-- `(E.initialJetEquivOfEqEBall hU ha).symm` recovers a solution from its initial jet at `a`. -/
 @[simp]
 theorem initialJetEquivOfEqEBall_symm_initialJet (E : LinearEquation U n) {c a : ℂ} {r : ℝ≥0∞}
     (hU : (U : Set ℂ) = Metric.eball c r) (ha : a ∈ U) (f : E.solutionSpace) :
-    (E.initialJetEquivOfEqEBall hU ha).symm (E.initialJet ha f) = f :=
-  (E.initialJetEquivOfEqEBall hU ha).symm_apply_apply f
+    (E.initialJetEquivOfEqEBall hU ha).symm (E.initialJet ha f) = f := by
+  rw [← E.initialJetEquivOfEqEBall_apply hU ha, LinearEquiv.symm_apply_apply]
+
+/-- The `j`-th derivative at `a` of the extended solution
+`(E.initialJetEquivOfEqEBall hU ha).symm v` is `v j`. -/
+@[simp]
+theorem iteratedDeriv_extend_initialJetEquivOfEqEBall_symm (E : LinearEquation U n)
+    {c a : ℂ} {r : ℝ≥0∞} (hU : (U : Set ℂ) = Metric.eball c r) (ha : a ∈ U)
+    (v : Fin n → ℂ) (j : Fin n) :
+    iteratedDeriv j
+      (HolomorphicFunctions.extend ((E.initialJetEquivOfEqEBall hU ha).symm v).val) a = v j := by
+  rw [← E.initialJet_apply ha, E.initialJet_initialJetEquivOfEqEBall_symm]
 
 /-- On an open disc `(U : Set ℂ) = Metric.eball c r`, `E.solutionSpace` is finite-dimensional. -/
 theorem finiteDimensional_solutionSpace_of_eq_eball (E : LinearEquation U n) {c : ℂ} {r : ℝ≥0∞}
@@ -616,28 +631,37 @@ def initialJetEquivTop (E : LinearEquation (⊤ : Opens ℂ) n) (a : ℂ) :
 @[simp]
 theorem initialJetEquivTop_apply (E : LinearEquation (⊤ : Opens ℂ) n) (a : ℂ)
     (f : E.solutionSpace) :
-    E.initialJetEquivTop a f = E.initialJet (Set.mem_univ a) f :=
-  (rfl)
+    E.initialJetEquivTop a f = E.initialJet (Set.mem_univ a) f := by
+  rw [initialJetEquivTop, initialJetEquivOfEqEBall_apply]
 
 /-- The underlying linear map of `initialJetEquivTop` is `E.initialJet`. -/
 @[simp]
 theorem initialJetEquivTop_toLinearMap (E : LinearEquation (⊤ : Opens ℂ) n) (a : ℂ) :
-    (E.initialJetEquivTop a).toLinearMap = E.initialJet (Set.mem_univ a) :=
-  (rfl)
+    (E.initialJetEquivTop a).toLinearMap = E.initialJet (Set.mem_univ a) := by
+  rw [initialJetEquivTop, initialJetEquivOfEqEBall_toLinearMap]
 
 /-- `E.initialJet` is a left inverse to `(E.initialJetEquivTop a).symm`. -/
 @[simp]
 theorem initialJet_initialJetEquivTop_symm (E : LinearEquation (⊤ : Opens ℂ) n) (a : ℂ)
     {ha : a ∈ (⊤ : Opens ℂ)} (v : Fin n → ℂ) :
-    E.initialJet ha ((E.initialJetEquivTop a).symm v) = v :=
-  (E.initialJetEquivTop a).apply_symm_apply v
+    E.initialJet ha ((E.initialJetEquivTop a).symm v) = v := by
+  rw [initialJetEquivTop, initialJet_initialJetEquivOfEqEBall_symm]
 
 /-- `(E.initialJetEquivTop a).symm` recovers an entire solution from its initial jet at `a`. -/
 @[simp]
 theorem initialJetEquivTop_symm_initialJet (E : LinearEquation (⊤ : Opens ℂ) n) (a : ℂ)
     {ha : a ∈ (⊤ : Opens ℂ)} (f : E.solutionSpace) :
-    (E.initialJetEquivTop a).symm (E.initialJet ha f) = f :=
-  (E.initialJetEquivTop a).symm_apply_apply f
+    (E.initialJetEquivTop a).symm (E.initialJet ha f) = f := by
+  rw [initialJetEquivTop, initialJetEquivOfEqEBall_symm_initialJet]
+
+/-- The `j`-th derivative at `a` of the extended entire solution `(E.initialJetEquivTop a).symm v`
+is `v j`. -/
+@[simp]
+theorem iteratedDeriv_extend_initialJetEquivTop_symm (E : LinearEquation (⊤ : Opens ℂ) n) (a : ℂ)
+    (v : Fin n → ℂ) (j : Fin n) :
+    iteratedDeriv j (HolomorphicFunctions.extend ((E.initialJetEquivTop a).symm v).val) a =
+      v j := by
+  rw [initialJetEquivTop, iteratedDeriv_extend_initialJetEquivOfEqEBall_symm]
 
 /-- On the entire complex plane `⊤ : Opens ℂ`, `E.solutionSpace` is finite-dimensional. -/
 instance instFiniteDimensionalSolutionSpaceTop (E : LinearEquation (⊤ : Opens ℂ) n) :
@@ -791,7 +815,7 @@ theorem ordinaryPointCoeff_sub (f g : ℕ → ℂ) (w₀ w₁ u₀ u₁ : ℂ) :
 
 /-- Superposition of `TauCeti.ordinaryPointCoeff` into the two canonical fundamental Taylor
 sequences with initial data `(1, 0)` and `(0, 1)`. -/
-theorem ordinaryPointCoeff_eq_add_mul (f g : ℕ → ℂ) (w₀ w₁ : ℂ) (n : ℕ) :
+theorem ordinaryPointCoeff_eq_mul_add_mul (f g : ℕ → ℂ) (w₀ w₁ : ℂ) (n : ℕ) :
     ordinaryPointCoeff f g w₀ w₁ n =
       w₀ * ordinaryPointCoeff f g 1 0 n + w₁ * ordinaryPointCoeff f g 0 1 n := by
   have h : ordinaryPointCoeff f g w₀ w₁ =
@@ -1054,6 +1078,27 @@ theorem exists_hasFPowerSeriesOnBall_ofScalars_ordinaryPointCoeff_of_hasFPowerSe
   have hw_sum : ∀ z ∈ Metric.eball z₀ r, HasSum (fun n ↦ a n * (z - z₀) ^ n) (w z) := fun z hz ↦ by
     simpa only [FormalMultilinearSeries.ofScalars_apply_eq, smul_eq_mul] using hw_ps.hasSum_sub hz
   exact ⟨w, hw_ps, hw_sum, hw₀, hdw₀, hw_ode, hw_uniq⟩
+
+/-- **Cauchy majorant convergence bound for second-order linear ODEs at an ordinary point.** If
+the scalar formal power series for `fs` and `gs` have convergence radius at least `r`, then so
+does `FormalMultilinearSeries.ofScalars ℂ (ordinaryPointCoeff fs gs w₀ w₁)`. -/
+theorem le_radius_ofScalars_ordinaryPointCoeff {fs gs : ℕ → ℂ} (w₀ w₁ : ℂ) {r : ℝ≥0∞}
+    (hf : r ≤ (FormalMultilinearSeries.ofScalars ℂ fs).radius)
+    (hg : r ≤ (FormalMultilinearSeries.ofScalars ℂ gs).radius) :
+    r ≤ (FormalMultilinearSeries.ofScalars ℂ (ordinaryPointCoeff fs gs w₀ w₁)).radius := by
+  rcases eq_or_ne r 0 with rfl | hr0
+  · exact zero_le
+  · have hr : 0 < r := pos_iff_ne_zero.mpr hr0
+    have hf_ps : HasFPowerSeriesOnBall (FormalMultilinearSeries.ofScalars ℂ fs).sum
+        (FormalMultilinearSeries.ofScalars ℂ fs) 0 r :=
+      ((FormalMultilinearSeries.ofScalars ℂ fs).hasFPowerSeriesOnBall (hr.trans_le hf)).mono hr hf
+    have hg_ps : HasFPowerSeriesOnBall (FormalMultilinearSeries.ofScalars ℂ gs).sum
+        (FormalMultilinearSeries.ofScalars ℂ gs) 0 r :=
+      ((FormalMultilinearSeries.ofScalars ℂ gs).hasFPowerSeriesOnBall (hr.trans_le hg)).mono hr hg
+    obtain ⟨_, hw_ps, -⟩ :=
+      exists_hasFPowerSeriesOnBall_ofScalars_ordinaryPointCoeff_of_hasFPowerSeriesOnBall
+        hf_ps hg_ps w₀ w₁
+    exact hw_ps.r_le
 
 /-- If `f` and `g` are holomorphic on `Metric.eball z₀ r` (`0 < r ≤ ∞`), then for all `w₀, w₁ : ℂ`
 there exists a unique holomorphic solution `w` of `w'' + f(z) w' + g(z) w = 0` on

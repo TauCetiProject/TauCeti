@@ -520,15 +520,6 @@ variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
   [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
   [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
 
-private def clmApplyBilinear : (E →L[𝕜] F) →ₗ[ℤ] E →ₗ[ℤ] F :=
-  LinearMap.mk₂ ℤ (fun S x ↦ S x)
-    (fun _ _ _ ↦ rfl) (fun _ _ _ ↦ by simp)
-    (fun S x y ↦ map_add S x y) (fun c S x ↦ map_zsmul S c x)
-
-private theorem norm_clmApplyBilinear_le (S : E →L[𝕜] F) (x : E) :
-    ‖clmApplyBilinear S x‖ ≤ 1 * ‖S‖ * ‖x‖ := by
-  simpa only [clmApplyBilinear, LinearMap.mk₂_apply, one_mul] using S.le_opNorm x
-
 /-- The antidiagonal Cauchy product of a norm-summable family of continuous linear maps and a
 norm-summable family of vectors sums to the limit operator applied to the limit vector. Neither
 space needs to be complete. -/
@@ -539,9 +530,12 @@ theorem HasSum.sum_clm_apply_antidiagonal_of_summable_norm
     (hfn : Summable fun n ↦ ‖f n‖) (hgn : Summable fun n ↦ ‖g n‖) :
     HasSum (fun n ↦ ∑ kl ∈ Finset.antidiagonal n, f kl.1 (g kl.2)) (T v) := by
   have h := TauCeti.hasSum_sum_bilinear_antidiagonal_of_summable_norm
-    (R := ℤ) (E := E →L[𝕜] F) (F := E) (G := F) (B := clmApplyBilinear)
-    norm_clmApplyBilinear_le hf hg hfn hgn
-  simpa only [clmApplyBilinear, LinearMap.mk₂_apply] using h
+    (R := 𝕜) (B := ContinuousLinearMap.coeLM 𝕜) (C := 1)
+    (fun S x ↦ by
+      simpa only [ContinuousLinearMap.coeLM_apply, ContinuousLinearMap.coe_coe, one_mul] using
+        S.le_opNorm x)
+    hf hg hfn hgn
+  simpa only [ContinuousLinearMap.coeLM_apply, ContinuousLinearMap.coe_coe] using h
 
 /-- The `Finset.range (n + 1)` Cauchy product `∑_{k=0}^n f_k(g_{n-k})` of a norm-summable sequence
 of continuous linear maps and a norm-summable sequence of vectors sums to `T v`. Neither space
@@ -552,9 +546,12 @@ theorem HasSum.sum_clm_apply_range_of_summable_norm
     (hfn : Summable fun n ↦ ‖f n‖) (hgn : Summable fun n ↦ ‖g n‖) :
     HasSum (fun n ↦ ∑ k ∈ Finset.range (n + 1), f k (g (n - k))) (T v) := by
   have h := TauCeti.hasSum_sum_bilinear_range_of_summable_norm
-    (R := ℤ) (E := E →L[𝕜] F) (F := E) (G := F) (B := clmApplyBilinear)
-    norm_clmApplyBilinear_le hf hg hfn hgn
-  simpa only [clmApplyBilinear, LinearMap.mk₂_apply] using h
+    (R := 𝕜) (B := ContinuousLinearMap.coeLM 𝕜) (C := 1)
+    (fun S x ↦ by
+      simpa only [ContinuousLinearMap.coeLM_apply, ContinuousLinearMap.coe_coe, one_mul] using
+        S.le_opNorm x)
+    hf hg hfn hgn
+  simpa only [ContinuousLinearMap.coeLM_apply, ContinuousLinearMap.coe_coe] using h
 
 end OperatorCauchyProduct
 
