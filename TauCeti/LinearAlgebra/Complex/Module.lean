@@ -164,8 +164,8 @@ theorem eq_zero_of_apply_I_eq_of_apply_eq_zero {F : Type*} [AddCommGroup F] [Mod
         conv_lhs => rw [← re_add_im (v / w)]
         rw [real_smul, real_smul]
         ring
-  rw [hv, map_add, map_smul, map_smul, h, hwI, smul_zero, smul_zero, add_zero,
-    LinearMap.zero_apply]
+  rw [hv]
+  simp [-real_smul, h, hwI]
 
 /-- A real-linear map `L` out of the complex plane intertwines multiplication by `I` with an
 endomorphism `A` squaring to `-1` exactly when `L 1 + A (L I) = 0`: the value at `I` is then

@@ -95,12 +95,10 @@ private theorem mfderiv_eq_zero_of_forall_apply_rotation_eq (hu : MDifferentiabl
   have hv' : @Eq E (mfderiv 𝓘(ℝ, ℂ) I u z₀ v) (-mfderiv 𝓘(ℝ, ℂ) I u z₀ v) := by
     rw [← map_neg]
     exact hv
-  have h2 : (2 : ℝ) • (mfderiv 𝓘(ℝ, ℂ) I u z₀ v : E) = 0 := by
-    rw [two_smul]
-    nth_rewrite 1 [hv']
-    exact neg_add_cancel _
+  have h2 : ∀ w : E, w = -w → w = 0 := fun w hw ↦ by
+    simpa [eq_neg_iff_add_eq_zero, ← two_smul ℝ] using hw
   rw [zero_apply]
-  exact (smul_eq_zero.1 h2).resolve_left two_ne_zero
+  exact h2 _ hv'
 
 /-- Along a map invariant under the rotations about `z₀`, the angular derivative
 `du(i (x - z₀))` vanishes. -/
