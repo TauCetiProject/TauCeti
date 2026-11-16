@@ -14,7 +14,9 @@ public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
 The singular simplices of a subspace are characterized by the image of their underlying maps.
 This identifies the range subcomplex of a subspace inclusion in a singular simplicial set. A
 singular simplex whose image lies in an open set `V` corestricts to a singular simplex of `V`
-(`TopCat.toSSetObjCodRestrict`), inverse to the map induced by the inclusion of `V`.
+(`TopCat.toSSetObjCodRestrict`), inverse to the map induced by the inclusion of `V`. For open
+sets `U ≤ V`, the singular simplices of `V` coming from `U` are those with image in `U`
+(`TopCat.mem_range_toSSet_map_inclusion_iff`).
 -/
 
 public section
@@ -105,5 +107,23 @@ lemma toSSet_map_homOfLE_toSSetObjCodRestrict {W : Opens X} (hVW : V ≤ W)
   exact coe_toSSetObjEquiv_toSSetObjCodRestrict σ h z
 
 end Opens
+
+section Inclusion
+
+variable {Y : Type u} [TopologicalSpace Y] {U V : Opens Y}
+
+/-- A singular simplex of an open set `V` comes from an open set `U ≤ V` exactly when its image
+consists of points of `U`. -/
+lemma mem_range_toSSet_map_inclusion_iff (h : U ≤ V) (n : SimplexCategoryᵒᵖ)
+    (σ : (toSSet.obj (of V)).obj n) :
+    σ ∈ (SSet.Subcomplex.range
+      (toSSet.map (ofHom ⟨Opens.inclusion h, continuous_inclusion h⟩))).obj n ↔
+      Set.range ((of V).toSSetObjEquiv n σ) ⊆ {x | (x : Y) ∈ U} := by
+  rw [Subfunctor.range_obj,
+    (IsEmbedding.inclusion h).isInducing.mem_range_toSSet_map_app_iff n σ,
+    ConcreteCategory.hom_ofHom, ContinuousMap.coe_mk]
+  exact Iff.of_eq (congrArg _ (Set.range_inclusion h))
+
+end Inclusion
 
 end TopCat

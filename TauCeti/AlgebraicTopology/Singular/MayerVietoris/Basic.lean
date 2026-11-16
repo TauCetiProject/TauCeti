@@ -34,6 +34,10 @@ of `X`.
 
 ## Main definitions and results
 
+* `TopCat.bicartSq_smallSingularSubcomplex`: the singular simplices with image in `U ∩ V`, in `U`
+  and in `V` form a bicartesian square of subcomplexes.
+* `TopCat.bicartSq_range_toSSet_map_inclusion`: the same square for open sets `U` and `V`,
+  inside the singular simplicial set of `U ⊔ V`.
 * `TopCat.isPushout_toSSet_inter_smallSingularSubcomplex`: the pushout square of singular
   simplicial sets of an intersection.
 * `TopCat.mayerVietorisδ`: the Mayer–Vietoris connecting morphism `Hₙ(X) ⟶ Hₘ(U ∩ V)`,
@@ -66,6 +70,23 @@ variable {X : TopCat.{w}}
 
 variable (U V : Set X)
 
+/-- **The singular simplices of an intersection form a bicartesian square.** For subsets `U` and
+`V` of `X`, subcomplexes `S₁`, `S₂` and `S₃` of the singular simplicial set of `X` consisting of
+the singular simplices with image in `U ∩ V`, in `U` and in `V` form a bicartesian square with the
+subcomplex of singular simplices whose image lies in `U` or in `V`. -/
+lemma bicartSq_smallSingularSubcomplex {S₁ S₂ S₃ : (toSSet.obj X).Subcomplex}
+    (h₁ : ∀ n σ, σ ∈ S₁.obj n ↔ Set.range (X.toSSetObjEquiv n σ) ⊆ U ∩ V)
+    (h₂ : ∀ n σ, σ ∈ S₂.obj n ↔ Set.range (X.toSSetObjEquiv n σ) ⊆ U)
+    (h₃ : ∀ n σ, σ ∈ S₃.obj n ↔ Set.range (X.toSSetObjEquiv n σ) ⊆ V) :
+    SSet.Subcomplex.BicartSq S₁ S₂ S₃ (X.smallSingularSubcomplex ![U, V]) where
+  sup_eq := by
+    ext n σ
+    rw [Subfunctor.max_obj, Set.mem_union, h₂, h₃, mem_smallSingularSubcomplex_iff]
+    simp only [Fin.exists_fin_two, Matrix.cons_val_zero, Matrix.cons_val_one]
+  inf_eq := by
+    ext n σ
+    rw [Subfunctor.min_obj, Set.mem_inter_iff, h₁, h₂, h₃, Set.subset_inter_iff]
+
 /-- **The singular simplicial sets of an intersection form a pushout square.** For subsets `U` and
 `V` of `X`, the singular simplicial sets of `U ∩ V`, `U` and `V` form a pushout square with the
 subcomplex of singular simplices of `X` whose image lies in `U` or in `V`. -/
@@ -82,22 +103,9 @@ theorem isPushout_toSSet_inter_smallSingularSubcomplex :
   let B := SSet.Subcomplex.range fU
   let C := SSet.Subcomplex.range fV
   let D := X.smallSingularSubcomplex ![U, V]
-  have h_inf : B ⊓ C = A := by
-    ext n σ
-    -- The lattice structure on subcomplexes is computed pointwise on their `obj` sets.
-    change (σ ∈ B.obj n ∧ σ ∈ C.obj n) ↔ σ ∈ A.obj n
-    rw [mem_range_toSSet_subtypeVal_iff U,
-      mem_range_toSSet_subtypeVal_iff V,
-      mem_range_toSSet_subtypeVal_iff (U ∩ V)]
-    exact Set.subset_inter_iff.symm
-  have h_sup : B ⊔ C = D := by
-    ext n σ
-    -- Supremum of subcomplexes is also computed pointwise.
-    change (σ ∈ B.obj n ∨ σ ∈ C.obj n) ↔ σ ∈ D.obj n
-    rw [mem_range_toSSet_subtypeVal_iff U,
-      mem_range_toSSet_subtypeVal_iff V, mem_smallSingularSubcomplex_iff]
-    simp only [Fin.exists_fin_two, Matrix.cons_val_zero, Matrix.cons_val_one]
-  have sq : SSet.Subcomplex.BicartSq A B C D := ⟨h_sup, h_inf⟩
+  have sq : SSet.Subcomplex.BicartSq A B C D :=
+    bicartSq_smallSingularSubcomplex U V (mem_range_toSSet_subtypeVal_iff (U ∩ V))
+      (mem_range_toSSet_subtypeVal_iff U) (mem_range_toSSet_subtypeVal_iff V)
   have hi : Mono fI := Functor.map_mono _ _
   have hu : Mono fU := Functor.map_mono _ _
   have hv : Mono fV := Functor.map_mono _ _
@@ -125,6 +133,33 @@ theorem isPushout_toSSet_inter_smallSingularSubcomplex :
     change fV = toSmallSingularSubcomplex ![U, V]
       ((Matrix.cons_val_one U ![V]).trans (Matrix.cons_val_zero V ![])).superset ≫ D.ι
     exact (toSmallSingularSubcomplex_ι _ _).symm
+
+section Opens
+
+open TopologicalSpace
+
+variable {Y : Type w} [TopologicalSpace Y] (U V : Opens Y)
+
+/-- **The singular simplices of open sets form a bicartesian square.** For open sets `U` and `V`
+of a space, the singular simplices of `U ⊓ V`, of `U` and of `V`, viewed in the singular simplicial
+set of `U ⊔ V`, form a bicartesian square with the singular simplices of `U ⊔ V` subordinate to
+its cover by the points of `U` and the points of `V`. -/
+theorem bicartSq_range_toSSet_map_inclusion :
+    SSet.Subcomplex.BicartSq
+      (SSet.Subcomplex.range (toSSet.map (ofHom ⟨Opens.inclusion
+        (inf_le_left.trans le_sup_left : U ⊓ V ≤ U ⊔ V), continuous_inclusion _⟩)))
+      (SSet.Subcomplex.range (toSSet.map (ofHom ⟨Opens.inclusion
+        (le_sup_left : U ≤ U ⊔ V), continuous_inclusion _⟩)))
+      (SSet.Subcomplex.range (toSSet.map (ofHom ⟨Opens.inclusion
+        (le_sup_right : V ≤ U ⊔ V), continuous_inclusion _⟩)))
+      ((of ↥(U ⊔ V)).smallSingularSubcomplex ![{x | (x : Y) ∈ U}, {x | (x : Y) ∈ V}]) :=
+  bicartSq_smallSingularSubcomplex _ _
+    (fun n σ ↦ by
+      rw [mem_range_toSSet_map_inclusion_iff]
+      simp only [Opens.mem_inf, Set.ofPred_and])
+    (mem_range_toSSet_map_inclusion_iff _) (mem_range_toSSet_map_inclusion_iff _)
+
+end Opens
 
 /-- Restricting `f` to a set `A` lying in a member of the family `S` and then passing to the small
 singular subcomplex of `T` agrees with passing to the small singular subcomplex of `S` first and

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Category.TopCat.EpiMono
 public import Mathlib.CategoryTheory.CommSq
+public import Mathlib.Topology.Sets.Opens
 
 /-!
 # Subspace inclusions in `TopCat`
@@ -35,6 +36,11 @@ instance mono_ofHom_subtypeVal (S : Set α) : Mono (ofHom (ContinuousMap.subtype
 /-- The inclusion of one subspace in another is a monomorphism of topological spaces. -/
 instance mono_ofHom_inclusion {S T : Set α} (h : S ⊆ T) :
     Mono (ofHom (ContinuousMap.inclusion h)) :=
+  (TopCat.mono_iff_injective _).mpr (Set.inclusion_injective h)
+
+/-- The inclusion of one open set in another is a monomorphism of topological spaces. -/
+instance mono_ofHom_opensInclusion {U V : TopologicalSpace.Opens α} (h : U ≤ V) :
+    Mono (ofHom ⟨TopologicalSpace.Opens.inclusion h, continuous_inclusion h⟩ : of U ⟶ of V) :=
   (TopCat.mono_iff_injective _).mpr (Set.inclusion_injective h)
 
 /-- Composing the inclusions `r ⊆ s` and `s ⊆ t` gives the inclusion `r ⊆ t`. -/

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicTopology.SimplicialSet.SubcomplexColimits
+public import Mathlib.AlgebraicTopology.SimplicialSet.Subcomplex
 public import Mathlib.CategoryTheory.MorphismProperty.Basic
 
 /-!
@@ -22,18 +22,12 @@ isomorphic, as an arrow, to the inclusion of `B ⊓ range g` into `range g`. Thi
 about a subcomplex of `X` be read inside `Y`, for instance for the singular simplicial set of an
 open subspace inside that of the ambient space.
 
-Intersecting a bicartesian square of subcomplexes, such as the square of two subcomplexes, their
-intersection and their union, with a further subcomplex gives a bicartesian square again. This
-compares the Mayer–Vietoris sequences of the two squares.
-
 ## Main results
 
 * `SSet.Subcomplex.isoOfPreimageEq`: for `A.preimage e.inv = B`, the restriction of `e` to an
   isomorphism `(A : SSet) ≅ B`, compatible with the inclusions.
 * `SSet.Subcomplex.morphismProperty_ι_iff_of_preimage_eq`: for `A.preimage e.inv = B` and a class
   `W` of morphisms respecting isomorphisms, `W A.ι ↔ W B.ι`.
-* `SSet.Subcomplex.BicartSq.inf_left`: intersecting a bicartesian square of subcomplexes with a
-  further subcomplex gives a bicartesian square.
 * `SSet.Subcomplex.preimageToInfRange`: the map from the preimage of a subcomplex `B` of `Y` along
   `g : X ⟶ Y` to `B ⊓ range g`, an isomorphism when `g` is a monomorphism.
 * `SSet.Subcomplex.morphismProperty_ι_preimage_iff`: for a monomorphism `g` and a class `W` of
@@ -87,18 +81,6 @@ lemma morphismProperty_ι_iff_of_preimage_eq (W : MorphismProperty SSet.{u}) [W.
     (e : X ≅ Y) {A : X.Subcomplex} {B : Y.Subcomplex} (h : A.preimage e.inv = B) :
     W A.ι ↔ W B.ι :=
   W.arrow_mk_iso_iff (Arrow.isoMk (isoOfPreimageEq e h) e (isoOfPreimageEq_hom_ι e h))
-
-/-- Intersecting a bicartesian square of subcomplexes with a further subcomplex `S` gives a
-bicartesian square. -/
-lemma BicartSq.inf_left {S A₁ A₂ A₃ A₄ : X.Subcomplex} (hsq : BicartSq A₁ A₂ A₃ A₄) :
-    BicartSq (S ⊓ A₁) (S ⊓ A₂) (S ⊓ A₃) (S ⊓ A₄) where
-  sup_eq := by
-    rw [← hsq.sup_eq]
-    ext n σ
-    simp [and_or_left]
-  inf_eq := by
-    rw [← hsq.inf_eq]
-    exact (inf_inf_distrib_left S A₂ A₃).symm
 
 section Mono
 
