@@ -57,6 +57,8 @@ many variables and for complete `L`, evaluation at a point `x` with coordinates 
 * `TauCeti.MvPowerSeries.unitClosedBallCoeffHom` and
   `TauCeti.MvPowerSeries.unitClosedBallConstantCoeffHom`: the constant-series inclusion
   `R° →+* R{X/r}°` and its constant-coefficient retraction.
+* `TauCeti.MvPowerSeries.restrictedIntegerUnitClosedBallEquiv`: the coefficientwise isometric ring
+  isomorphism `𝒪[K]{X/r} ≃+* K°{X/r}` at any polyradius `r`.
 * `TauCeti.MvPowerSeries.restrictedIntegerEquiv`: the isometric ring isomorphism
   `𝒪[K]⟨X⟩ ≃ T°`.
 * `TauCeti.MvPowerSeries.restrictedReduction`: coefficientwise reduction `T° →+* 𝓀[K][X]`.
@@ -351,18 +353,52 @@ theorem coeff_mem_integer (f : T°) (t : σ →₀ ℕ) :
 
 section IntegerEquiv
 
-/-- **The Gauss unit ball as restricted series over the integers.** Including coefficients
-identifies unit-radius restricted series over `𝒪[K]` with the series in `K⟨X⟩` of Gauss norm at
-most one. -/
-noncomputable def restrictedIntegerEquiv : Tint ≃+* T° :=
-  (RingEquiv.ofRingHom
+/-- **Coefficientwise identification `𝒪[K]{X/r} ≃+* K°{X/r}`.** Transporting coefficients along
+`TauCeti.integerUnitClosedBallEquiv` identifies restricted series over `𝒪[K]` with restricted
+series over `K°` at any polyradius `r`. -/
+noncomputable def restrictedIntegerUnitClosedBallEquiv {r : σ → ℝ} :
+    IsRestricted.subring (R := 𝒪[K]) r ≃+*
+      IsRestricted.subring (R := Subring.unitClosedBall K) r :=
+  RingEquiv.ofRingHom
     (restrictedMap (integerUnitClosedBallEquiv (K := K)).toRingHom (C := 1) fun x ↦ by
       simp [AddSubgroupClass.coe_norm])
     (restrictedMap (integerUnitClosedBallEquiv (K := K)).symm.toRingHom (C := 1) fun x ↦ by
       simp [AddSubgroupClass.coe_norm])
     (RingHom.ext fun f ↦ Subtype.ext <| MvPowerSeries.ext fun t ↦ by simp)
-    (RingHom.ext fun f ↦ Subtype.ext <| MvPowerSeries.ext fun t ↦ by simp)).trans
-    restrictedUnitClosedBallEquiv
+    (RingHom.ext fun f ↦ Subtype.ext <| MvPowerSeries.ext fun t ↦ by simp)
+
+/-- `restrictedIntegerUnitClosedBallEquiv` maps each coefficient along
+`integerUnitClosedBallEquiv`. -/
+@[simp]
+theorem coeff_restrictedIntegerUnitClosedBallEquiv {r : σ → ℝ}
+    (f : IsRestricted.subring (R := 𝒪[K]) r) (t : σ →₀ ℕ) :
+    coeff t (restrictedIntegerUnitClosedBallEquiv f :
+        MvPowerSeries σ (Subring.unitClosedBall K)) =
+      integerUnitClosedBallEquiv (coeff t (f : MvPowerSeries σ 𝒪[K])) := by
+  simp [restrictedIntegerUnitClosedBallEquiv]
+
+/-- The inverse of `restrictedIntegerUnitClosedBallEquiv` maps each coefficient along
+`integerUnitClosedBallEquiv.symm`. -/
+@[simp]
+theorem coeff_restrictedIntegerUnitClosedBallEquiv_symm {r : σ → ℝ}
+    (f : IsRestricted.subring (R := Subring.unitClosedBall K) r) (t : σ →₀ ℕ) :
+    coeff t (restrictedIntegerUnitClosedBallEquiv.symm f : MvPowerSeries σ 𝒪[K]) =
+      integerUnitClosedBallEquiv.symm
+        (coeff t (f : MvPowerSeries σ (Subring.unitClosedBall K))) := by
+  simp [restrictedIntegerUnitClosedBallEquiv]
+
+/-- `restrictedIntegerUnitClosedBallEquiv` preserves the Gauss norm at any positive polyradius. -/
+@[simp]
+theorem norm_restrictedIntegerUnitClosedBallEquiv {r : σ → ℝ} [∀ i, Fact (0 < r i)]
+    (f : IsRestricted.subring (R := 𝒪[K]) r) :
+    ‖restrictedIntegerUnitClosedBallEquiv f‖ = ‖f‖ :=
+  norm_restrictedMap _ _ (fun x ↦ by simp [AddSubgroupClass.coe_norm]) f
+
+/-- **The Gauss unit ball as restricted series over the integers.** Including coefficients
+identifies unit-radius restricted series over `𝒪[K]` with the series in `K⟨X⟩` of Gauss norm at
+most one. -/
+noncomputable def restrictedIntegerEquiv : Tint ≃+* T° :=
+  restrictedIntegerUnitClosedBallEquiv.trans restrictedUnitClosedBallEquiv
 
 /-- `restrictedIntegerEquiv` includes each coefficient into `K`. -/
 @[simp]
@@ -382,8 +418,7 @@ theorem coeff_restrictedIntegerEquiv_symm (f : T°) (t : σ →₀ ℕ) :
 /-- `restrictedIntegerEquiv` preserves the Gauss norm. -/
 @[simp]
 theorem norm_restrictedIntegerEquiv (f : Tint) : ‖(restrictedIntegerEquiv f : T)‖ = ‖f‖ := by
-  rw [restrictedIntegerEquiv, RingEquiv.trans_apply, norm_restrictedUnitClosedBallEquiv]
-  exact norm_restrictedMap _ _ (fun x ↦ by simp [AddSubgroupClass.coe_norm]) f
+  simp [restrictedIntegerEquiv]
 
 /-- `restrictedIntegerEquiv` maps constants in `𝒪[K]` to constant series in `K⟨X⟩°`. -/
 @[simp]

@@ -6,11 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.UnitBall
+public import TauCeti.RingTheory.Noetherian.Almost
 
-import Mathlib.RingTheory.Finiteness.Basic
-import Mathlib.RingTheory.Finiteness.Cardinality
 import Mathlib.RingTheory.Finiteness.Ideal
 import Mathlib.RingTheory.Noetherian.Basic
+import TauCeti.Analysis.Normed.Field.Basic
 import TauCeti.Analysis.Normed.Group.Ultra
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Distinguished
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Groebner
@@ -34,14 +34,15 @@ the constant-coefficient retraction descends noetherianity from `R{X/r}°` to `R
 ultrametric normed commutative ring `R` with `‖1‖ = 1`.
 
 Over an arbitrary complete ultrametric normed field `K`, such as `ℂ_p`, `T°` need not be noetherian.
-Kiehl's Satz 5.1 proves that finite `T°`-modules are nevertheless *almost noetherian*: for every
-finitely generated `T°`-module `M`, every submodule `N ≤ M`, and every `0 < ε < 1`, there is a
-single finitely generated submodule `N' ≤ N` containing `c • N` for **all** scalars `c ∈ K°` with
-`‖c‖ ≤ ε`. When `K°` is noetherian one takes `N' = N`. Otherwise the norms below `1` are dense up to
-`1`, so any `0 < ε < 1` factors through elements of `K°` of norm strictly between `√ε` and `1`:
+Kiehl's Satz 5.1 proves that finite `T°`-modules are nevertheless *almost noetherian*
+(`TauCeti.IsAlmostNoetherianModule`): for every finitely generated `T°`-module `M`, every submodule
+`N ≤ M`, and every `0 < ε < 1`, there is a single finitely generated submodule `N' ≤ N` containing
+`c • N` for **all** scalars `c ∈ K°` with `‖c‖ ≤ ε`. When `K°` is noetherian one takes `N' = N`.
+Otherwise the norms below `1` are dense up to `1`, so any `0 < ε < 1` factors through elements of
+`K°` of norm strictly between `√ε` and `1`:
 
-* exactness on finite free modules reduces the statement from finite `T°`-modules to ideals `I` of
-  `T°`;
+* exactness on finite free modules (`TauCeti.IsAlmostNoetherianModule.of_finite`) reduces the
+  statement from finite `T°`-modules to ideals `I` of `T°`;
 * for `I ≠ ⊥`, an element `g ∈ I` whose Gauss norm exceeds `‖d‖ · sup_{f ∈ I} ‖f‖` normalizes to a
   series `g₀` of Gauss norm `1`, which an isometric triangular automorphism makes distinguished of
   some degree `s` in one separated variable `Y`;
@@ -59,6 +60,8 @@ single finitely generated submodule `N' ≤ N` containing `c • N` for **all** 
 * `TauCeti.MvPowerSeries.isNoetherianRing_unitClosedBall`: `T°` is noetherian when `K°` is.
 * `TauCeti.MvPowerSeries.isNoetherianRing_unitClosedBall_iff`: in finitely many variables, `T°` is
   noetherian if and only if `K°` is.
+* `TauCeti.MvPowerSeries.isAlmostNoetherianModule_unitClosedBall`: `T°` is almost noetherian over
+  `K°`.
 * `RingHom.exists_fg_le_forall_smul_mem_of_surjective_unitClosedBall`: Kiehl's Satz 5.1 for finite
   modules over any ring receiving a surjection from `T°`.
 * `Submodule.exists_fg_le_forall_smul_mem_unitClosedBall`: Kiehl's Satz 5.1 for finite modules over
@@ -159,16 +162,8 @@ instance isNoetherianRing_isRestricted_subring_integer {K : Type*} [Nontrivially
     IsNoetherianRing (IsRestricted.subring (R := 𝒪[K]) r) := by
   have : IsNoetherianRing (Subring.unitClosedBall K) :=
     isNoetherianRing_of_ringEquiv 𝒪[K] (integerUnitClosedBallEquiv (K := K))
-  let e : IsRestricted.subring (R := Subring.unitClosedBall K) r ≃+*
-      IsRestricted.subring (R := 𝒪[K]) r :=
-    RingEquiv.ofRingHom
-      (restrictedMap (integerUnitClosedBallEquiv (K := K)).symm.toRingHom (C := 1) fun x ↦ by
-        simp [AddSubgroupClass.coe_norm])
-      (restrictedMap (integerUnitClosedBallEquiv (K := K)).toRingHom (C := 1) fun x ↦ by
-        simp [AddSubgroupClass.coe_norm])
-      (RingHom.ext fun f ↦ Subtype.ext <| MvPowerSeries.ext fun t ↦ by simp)
-      (RingHom.ext fun f ↦ Subtype.ext <| MvPowerSeries.ext fun t ↦ by simp)
-  exact isNoetherianRing_of_ringEquiv _ e
+  exact isNoetherianRing_of_ringEquiv _
+    (restrictedIntegerUnitClosedBallEquiv (σ := σ) (K := K) (r := r)).symm
 
 /-- **The Gauss unit ball of a Tate algebra over a complete field with noetherian unit ball is
 noetherian.** This applies in particular when `K` is a complete discretely valued field. -/
@@ -193,99 +188,11 @@ variable {K : Type*} [NormedField K] [IsUltrametricDist K]
 
 local notation "Tate " τ:max => IsRestricted.subring (R := K) (fun _ : τ ↦ 1)
 
-/-- Uniform scalar approximation of submodules of an `R`-module `M` with respect to a scalar ring
-map `φ : K° →+* R`. -/
-private def IsAlmostNoetherianModule {R : Type*} [CommRing R]
-    (φ : Subring.unitClosedBall K →+* R) (M : Type*) [AddCommGroup M] [Module R M] : Prop :=
-  ∀ (N : Submodule R M) {ε : ℝ}, 0 < ε → ε < 1 →
-    ∃ N' : Submodule R M, N'.FG ∧ N' ≤ N ∧
-      ∀ c : Subring.unitClosedBall K, ‖(c : K)‖ ≤ ε → ∀ x ∈ N, φ c • x ∈ N'
-
-/-- Subsingleton modules are trivially almost noetherian. -/
-private theorem isAlmostNoetherianModule_of_subsingleton {R : Type*} [CommRing R]
-    (φ : Subring.unitClosedBall K →+* R) {M : Type*} [AddCommGroup M] [Module R M]
-    [Subsingleton M] : IsAlmostNoetherianModule φ M := fun _ _ _ _ ↦
-  ⟨⊥, Submodule.fg_bot, bot_le, fun _ _ _ _ ↦ by simp [Subsingleton.elim _ (0 : M)]⟩
-
-/-- Surjective `R`-linear maps preserve `IsAlmostNoetherianModule`, with no loss in `ε`. -/
-private theorem isAlmostNoetherianModule_of_surjective_linearMap {R : Type*} [CommRing R]
-    {φ : Subring.unitClosedBall K →+* R} {M₁ M₂ : Type*} [AddCommGroup M₁] [Module R M₁]
-    [AddCommGroup M₂] [Module R M₂] (f : M₁ →ₗ[R] M₂) (hf : Function.Surjective f)
-    (hM₁ : IsAlmostNoetherianModule φ M₁) : IsAlmostNoetherianModule φ M₂ := by
-  intro N ε hε0 hε1
-  obtain ⟨N₁', hfg, hle, hsmul⟩ := hM₁ (N.comap f) hε0 hε1
-  refine ⟨N₁'.map f, hfg.map f, Submodule.map_le_iff_le_comap.mpr hle, fun c hc x hx ↦ ?_⟩
-  obtain ⟨y, rfl⟩ := hf x
-  exact ⟨φ c • y, hsmul c hc y hx, map_smul f (φ c) y⟩
-
-/-- Binary products preserve `IsAlmostNoetherianModule` when `K°` has dense norms below `1`. -/
-private theorem isAlmostNoetherianModule_prod
-    (hdense : ¬ ∃ ρ : ℝ, ρ < 1 ∧ ∀ a : K, ‖a‖ < 1 → ‖a‖ ≤ ρ) {R : Type*} [CommRing R]
-    {φ : Subring.unitClosedBall K →+* R} {M₁ M₂ : Type*} [AddCommGroup M₁] [Module R M₁]
-    [AddCommGroup M₂] [Module R M₂] (hM₁ : IsAlmostNoetherianModule φ M₁)
-    (hM₂ : IsAlmostNoetherianModule φ M₂) : IsAlmostNoetherianModule φ (M₁ × M₂) := by
-  classical
-  intro N ε hε0 hε1
-  obtain ⟨δ, d, hδ0, hδ1, hd0, hd1, -, hfac⟩ :=
-    exists_factor_of_not_exists_forall_norm_le hdense hε0 hε1
-  -- Approximate the projection to `M₂` at threshold `‖d‖` and lift finite generators back to `N`.
-  obtain ⟨N₂', hN₂'fg, hN₂'le, hN₂'smul⟩ :=
-    hM₂ (N.map (LinearMap.snd R M₁ M₂)) hd0 hd1
-  obtain ⟨S₂, hS₂⟩ := hN₂'fg
-  have hlift : ∀ z : S₂, ∃ w ∈ N, w.2 = (z : M₂) := fun z ↦ by
-    obtain ⟨w, hw, hwz⟩ := hN₂'le (hS₂ ▸ Submodule.subset_span z.2)
-    exact ⟨w, hw, hwz⟩
-  choose liftF hliftN hlift_snd using hlift
-  let L : Finset (M₁ × M₂) := Finset.univ.image liftF
-  let Nlift : Submodule R (M₁ × M₂) := Submodule.span R (L : Set (M₁ × M₂))
-  have hNlift_le : Nlift ≤ N := Submodule.span_le.mpr fun w hw ↦ by
-    obtain ⟨z, -, rfl⟩ := Finset.mem_image.mp hw
-    exact hliftN z
-  have hN₂'_le_map : N₂' ≤ Nlift.map (LinearMap.snd R M₁ M₂) := by
-    rw [← hS₂, Submodule.span_le]
-    intro z hz
-    exact ⟨liftF ⟨z, hz⟩, Submodule.subset_span (Finset.mem_image_of_mem _ (Finset.mem_univ _)),
-      hlift_snd ⟨z, hz⟩⟩
-  -- Approximate the kernel slice `N ∩ (M₁ × 0)` at threshold `δ`.
-  obtain ⟨N₁', hN₁'fg, hN₁'le, hN₁'smul⟩ :=
-    hM₁ (N.comap (LinearMap.inl R M₁ M₂)) hδ0 hδ1
-  refine ⟨N₁'.map (LinearMap.inl R M₁ M₂) ⊔ Nlift,
-    (hN₁'fg.map _).sup (Submodule.fg_span L.finite_toSet),
-    sup_le (Submodule.map_le_iff_le_comap.mpr hN₁'le) hNlift_le, fun c hc x hx ↦ ?_⟩
-  obtain ⟨c', rfl, hc'δ⟩ := hfac c hc
-  have hdx2 : φ d • x.2 ∈ N₂' := hN₂'smul d le_rfl x.2 ⟨x, hx, rfl⟩
-  obtain ⟨w, hw_lift, hw_snd⟩ := hN₂'_le_map hdx2
-  rw [LinearMap.snd_apply] at hw_snd
-  have huN : φ d • x - w ∈ N := N.sub_mem (N.smul_mem (φ d) hx) (hNlift_le hw_lift)
-  have hu2 : (φ d • x - w).2 = 0 := sub_eq_zero.mpr hw_snd.symm
-  have hu1_mem : (φ d • x - w).1 ∈ N.comap (LinearMap.inl R M₁ M₂) := by
-    rw [Submodule.mem_comap, LinearMap.inl_apply, ← hu2, Prod.mk.eta]
-    exact huN
-  have hdecomp : φ (c' * d) • x =
-      LinearMap.inl R M₁ M₂ (φ c' • (φ d • x - w).1) + φ c' • w := by
-    ext
-    · simp [map_mul, mul_smul, smul_sub]
-    · simp [map_mul, mul_smul, hw_snd]
-  rw [hdecomp]
-  exact Submodule.add_mem_sup ⟨_, hN₁'smul c' hc'δ _ hu1_mem, rfl⟩ (Nlift.smul_mem _ hw_lift)
-
-/-- Finite free `R`-modules `Fin n → R` inherit `IsAlmostNoetherianModule` from `R` when `K°` has
-dense norms below `1`. -/
-private theorem isAlmostNoetherianModule_fin_pi
-    (hdense : ¬ ∃ ρ : ℝ, ρ < 1 ∧ ∀ a : K, ‖a‖ < 1 → ‖a‖ ≤ ρ) {R : Type*} [CommRing R]
-    {φ : Subring.unitClosedBall K →+* R} (hR : IsAlmostNoetherianModule φ R) :
-    ∀ n : ℕ, IsAlmostNoetherianModule φ (Fin n → R)
-  | 0 => isAlmostNoetherianModule_of_subsingleton φ
-  | n + 1 =>
-    isAlmostNoetherianModule_of_surjective_linearMap
-      (Fin.consLinearEquiv R (fun _ : Fin (n + 1) ↦ R)).toLinearMap
-      (Fin.consLinearEquiv R (fun _ : Fin (n + 1) ↦ R)).surjective
-      (isAlmostNoetherianModule_prod hdense hR (isAlmostNoetherianModule_fin_pi hdense hR n))
-
 /-- Base case `IsEmpty σ`: `K⟨X⟩°` is isomorphic to `K°`, whose ideals are almost principal. -/
 private theorem isAlmostNoetherianModule_of_isEmpty {σ : Type*} [IsEmpty σ] :
     IsAlmostNoetherianModule (unitClosedBallCoeffHom (σ := σ) (R := K) (r := fun _ ↦ 1))
       (Subring.unitClosedBall (Tate σ)) := by
+  rw [isAlmostNoetherianModule_iff]
   intro I ε _ hε1
   let e : Subring.unitClosedBall K ≃+* Subring.unitClosedBall (Tate σ) :=
     (IsRestricted.isEmptyEquiv (R := K) (fun _ : σ ↦ (1 : ℝ))).symm.toRingEquiv.restrict
@@ -315,19 +222,15 @@ private theorem isAlmostNoetherianModule_of_algEquiv {σ τ : Type*}
       (Subring.unitClosedBall (Tate τ)) := by
   let e₀ := e.toRingEquiv.restrict (Subring.unitClosedBall _) (Subring.unitClosedBall _)
     fun f ↦ by simp [Subring.mem_unitClosedBall, he]
-  have hec (c : Subring.unitClosedBall K) :
-      e₀ (unitClosedBallCoeffHom c) = unitClosedBallCoeffHom c :=
-    Subtype.ext <| by
-      rw [RingEquiv.restrict_apply_coe, AlgEquiv.coe_toRingEquiv, coe_unitClosedBallCoeffHom,
+  have hcomp : e₀.toRingHom.comp (unitClosedBallCoeffHom (σ := σ) (r := fun _ ↦ 1)) =
+      unitClosedBallCoeffHom (σ := τ) (r := fun _ ↦ 1) :=
+    RingHom.ext fun c ↦ Subtype.ext <| by
+      rw [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe,
+        RingEquiv.restrict_apply_coe, AlgEquiv.coe_toRingEquiv, coe_unitClosedBallCoeffHom,
         coe_unitClosedBallCoeffHom]
       exact e.commutes (c : K)
-  intro I ε hε0 hε1
-  obtain ⟨I₁', hfg, hle, hsmul⟩ := hσ (Ideal.comap e₀.toRingHom I) hε0 hε1
-  refine ⟨Ideal.map e₀.toRingHom I₁', Ideal.FG.map hfg e₀.toRingHom,
-    Ideal.map_le_iff_le_comap.mpr hle, fun c hc y hy ↦ ?_⟩
-  obtain ⟨z, rfl⟩ := e₀.surjective y
-  have hmap := Ideal.mem_map_of_mem e₀.toRingHom (hsmul c hc z hy)
-  simpa only [RingEquiv.toRingHom_eq_coe, RingHom.coe_coe, smul_eq_mul, map_mul, hec] using hmap
+  rw [← hcomp]
+  exact hσ.of_surjective_ringHom e₀.surjective
 
 /-- Embed `K⟨X⟩°` into `K⟨X, Y⟩°` as series constant in the separated variable `X none`. -/
 private noncomputable def optionEmbedHom (σ : Type*) :
@@ -477,7 +380,8 @@ private theorem isAlmostNoetherianIdeal_of_isMulDistinguished [CompleteSpace K] 
         unitClosedBallCoeffHom (σ := Option σ) (r := fun _ ↦ 1) c • h ∈ J' := by
   classical
   obtain ⟨Nrem', hNrem'fg, hNrem'le, hNrem'smul⟩ :=
-    isAlmostNoetherianModule_fin_pi hdense hσ s (Submodule.comap (optionTruncHom σ s) J) hδ0 hδ1
+    (hσ.fin_pi hdense s).exists_fg_le_forall_smul_mem (Submodule.comap (optionTruncHom σ s) J)
+      hδ0 hδ1
   obtain ⟨G, hG⟩ := hNrem'fg
   let F : Finset (Subring.unitClosedBall (Tate (Option σ))) :=
     insert g' (G.image (optionTruncHom σ s))
@@ -519,6 +423,7 @@ private theorem isAlmostNoetherianModule_option [CompleteSpace K] {σ : Type*} [
       (Subring.unitClosedBall (Tate σ))) :
     IsAlmostNoetherianModule (unitClosedBallCoeffHom (σ := Option σ) (R := K) (r := fun _ ↦ 1))
       (Subring.unitClosedBall (Tate (Option σ))) := by
+  rw [isAlmostNoetherianModule_iff]
   intro I ε hε0 hε1
   obtain ⟨δ, d, hδ0, hδ1, -, hd1, -, hfac⟩ :=
     exists_factor_of_not_exists_forall_norm_le hdense hε0 hε1
@@ -582,6 +487,18 @@ private theorem isAlmostNoetherianModule_unitClosedBall_of_dense [CompleteSpace 
     isAlmostNoetherianModule_of_isEmpty
     (fun h ↦ isAlmostNoetherianModule_option hdense h) σ
 
+/-- **The Gauss unit ball `K⟨X⟩°` is almost noetherian.** Over any complete ultrametric normed
+field `K` and finite variable set `σ`, `K⟨X⟩°` satisfies `TauCeti.IsAlmostNoetherianModule` with
+respect to `unitClosedBallCoeffHom`. -/
+theorem isAlmostNoetherianModule_unitClosedBall [CompleteSpace K] {σ : Type*} [Finite σ] :
+    IsAlmostNoetherianModule (unitClosedBallCoeffHom (σ := σ) (R := K) (r := fun _ ↦ 1))
+      (Subring.unitClosedBall (Tate σ)) := by
+  by_cases hdisc : ∃ r : ℝ, r < 1 ∧ ∀ a : K, ‖a‖ < 1 → ‖a‖ ≤ r
+  · have : IsNoetherianRing (Subring.unitClosedBall K) :=
+      isNoetherianRing_unitClosedBall_iff_exists_forall_norm_le.mpr hdisc
+    exact .of_isNoetherian
+  · exact isAlmostNoetherianModule_unitClosedBall_of_dense hdisc
+
 /-- **Kiehl's almost noetherianity theorem for any ring quotient of `K⟨X⟩°` (Satz 5.1).** Let `S`
 be a commutative ring admitting a surjective ring homomorphism `ρ : K⟨X⟩° →+* S` in finitely many
 variables over a complete ultrametric normed field `K`. For every finitely generated `S`-module `M`,
@@ -596,36 +513,17 @@ theorem _root_.RingHom.exists_fg_le_forall_smul_mem_of_surjective_unitClosedBall
     ∃ N' : Submodule S M, N'.FG ∧ N' ≤ N ∧
       ∀ c : Subring.unitClosedBall K, ‖(c : K)‖ ≤ ε → ∀ x ∈ N,
         ρ (unitClosedBallCoeffHom c) • x ∈ N' := by
-  classical
   by_cases hdisc : ∃ r : ℝ, r < 1 ∧ ∀ a : K, ‖a‖ < 1 → ‖a‖ ≤ r
   · -- Discrete or trivial norm: `K°`, hence `K⟨X⟩°`, hence `S` is noetherian, so `N` itself is FG.
     have : IsNoetherianRing (Subring.unitClosedBall K) :=
       isNoetherianRing_unitClosedBall_iff_exists_forall_norm_le.mpr hdisc
     have : IsNoetherianRing S := isNoetherianRing_of_surjective _ _ ρ hρ
-    exact ⟨N, IsNoetherian.noetherian N, le_rfl, fun _ _ _ hx ↦ N.smul_mem _ hx⟩
-  · -- Dense norms below `1`: pull `N` back to a finite free `K⟨X⟩°`-module and push forward.
-    have : RingHomSurjective ρ := ⟨hρ⟩
-    obtain ⟨r, f, hf⟩ := Module.Finite.exists_fin' S M
-    let p : (Fin r → Subring.unitClosedBall (Tate σ)) →ₛₗ[ρ] M :=
-      { toFun := fun u ↦ f (fun i ↦ ρ (u i))
-        map_add' := fun u₁ u₂ ↦ by
-          have hadd : (fun i ↦ ρ ((u₁ + u₂) i)) = (fun i ↦ ρ (u₁ i)) + fun i ↦ ρ (u₂ i) := by
-            funext i; simp
-          rw [hadd, map_add]
-        map_smul' := fun b u ↦ by
-          have hsmul : (fun i ↦ ρ ((b • u) i)) = ρ b • fun i ↦ ρ (u i) := by
-            funext i; simp [smul_eq_mul]
-          rw [hsmul, map_smul] }
-    have hp_surj : Function.Surjective p := fun x ↦ by
-      obtain ⟨v, rfl⟩ := hf x
-      choose u hu using fun i ↦ hρ (v i)
-      exact ⟨u, by simp [p, hu]⟩
-    obtain ⟨N₀', hN₀'fg, hN₀'le, hN₀'smul⟩ :=
-      isAlmostNoetherianModule_fin_pi hdisc
-        (isAlmostNoetherianModule_unitClosedBall_of_dense hdisc) r (N.comap p) hε0 hε1
-    refine ⟨N₀'.map p, hN₀'fg.map p, Submodule.map_le_iff_le_comap.mpr hN₀'le, fun c hc x hx ↦ ?_⟩
-    obtain ⟨u, rfl⟩ := hp_surj x
-    exact ⟨unitClosedBallCoeffHom c • u, hN₀'smul c hc u hx, map_smulₛₗ p _ u⟩
+    exact (IsAlmostNoetherianModule.of_isNoetherian
+      (φ := ρ.comp (unitClosedBallCoeffHom (σ := σ) (r := fun _ ↦ 1)))).exists_fg_le_forall_smul_mem
+      N hε0 hε1
+  · -- Dense norms below `1`: descend almost noetherianity along `ρ` and lift to finite modules.
+    exact ((isAlmostNoetherianModule_unitClosedBall.of_surjective_ringHom hρ).of_finite
+      hdisc M).exists_fg_le_forall_smul_mem N hε0 hε1
 
 /-- **Kiehl's almost noetherianity theorem for the Gauss unit ball `K⟨X⟩°` (Satz 5.1).** Over any
 complete ultrametric normed field `K`, for every finitely generated `K⟨X⟩°`-module `M`, every

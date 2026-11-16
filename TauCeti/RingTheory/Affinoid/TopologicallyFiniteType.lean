@@ -43,8 +43,9 @@ with their Banach topology. In particular they are strongly noetherian Tate ring
 (`TauCeti.IsAffinoidAlgebra.isStronglyNoetherian`), and their adic spectra are affinoid adic
 spaces (`TauCeti.ValuationSpectrum.isAdic_presentationLimitPreAdicSpace_of_isAffinoidAlgebra`).
 
-We also record the integral-presentation converse: any `K`-compatible ring homomorphism
-`φ : 𝒪[K]⟨X₁, …, Xₙ⟩ →+* A` extends uniquely to a `K`-algebra homomorphism
+We also record the integral-presentation converse: by
+`RingHom.existsUnique_algHom_of_restrictedMvPowerSeriesCompletion`, any `K`-compatible ring
+homomorphism `φ : 𝒪[K]⟨X₁, …, Xₙ⟩ →+* A` extends uniquely to a `K`-algebra homomorphism
 `π : K⟨X₁, …, Xₙ⟩ →ₐ[K] A` with `π(K⟨X₁, …, Xₙ⟩°) = φ.range`. When `φ` surjects onto an open
 subring `A₀ : Subring A` for a topology on `A` with separately continuous multiplication and
 `algebraMap K A` continuous at `0`, `π` is surjective onto `A`, so `A` is affinoid.
@@ -58,8 +59,6 @@ subring `A₀ : Subring A` for a topology on `A` with separately continuous mult
   being affinoid.
 * `TauCeti.IsAffinoidAlgebra.isStronglyNoetherian`: a complete ultrametric normed affinoid
   `K`-algebra is strongly noetherian.
-* `RingHom.existsUnique_algHom_of_restrictedMvPowerSeriesCompletion`: unique extension of a
-  `K`-compatible homomorphism `𝒪[K]⟨X₁, …, Xₙ⟩ →+* A` to `K⟨X₁, …, Xₙ⟩ →ₐ[K] A`.
 * `TauCeti.Huber.exists_surjective_algHom_map_unitClosedBall_eq` and
   `TauCeti.Huber.isAffinoidAlgebra_of_restrictedMvPowerSeriesCompletion`: an open subring presented
   as a `K`-compatible quotient of `𝒪[K]⟨X₁, …, Xₙ⟩` yields a surjective Tate presentation of `A`.
@@ -123,44 +122,6 @@ open _root_.MvPowerSeries Filter Topology TauCeti.MvPowerSeries
 open scoped NormedField Valued
 
 local notation "Tate " τ:max => IsRestricted.subring (R := K) (fun _ : τ ↦ 1)
-
-/-- **Unique extension of an integral presentation to a `K`-algebra Tate homomorphism.** Let `K` be
-a complete nontrivially normed ultrametric field, `A` a commutative `K`-algebra, and
-`φ : restrictedMvPowerSeriesCompletion n 𝒪[K] →+* A` a ring homomorphism compatible with
-`algebraMap K A` on `𝒪[K]`. Then there is a unique `K`-algebra homomorphism
-`π : K⟨X₁, …, Xₙ⟩ →ₐ[K] A` extending
-`φ ∘ (restrictedMvPowerSeriesCompletionIntegerEquiv n).symm` on `K⟨X₁, …, Xₙ⟩°`, and its Gauss
-unit-ball image `(Subring.unitClosedBall _).map π.toRingHom` equals `φ.range`. -/
-theorem _root_.RingHom.existsUnique_algHom_of_restrictedMvPowerSeriesCompletion {n : ℕ}
-    {A : Type*} [CommRing A] [Algebra K A]
-    (φ : restrictedMvPowerSeriesCompletion n 𝒪[K] →+* A)
-    (hφ_alg : ∀ c : 𝒪[K], φ (algebraMap 𝒪[K] _ c) = algebraMap K A c) :
-    ∃! π : Tate (Fin n) →ₐ[K] A,
-      (∀ f : Subring.unitClosedBall (Tate (Fin n)),
-        π f = φ ((restrictedMvPowerSeriesCompletionIntegerEquiv n).symm f)) ∧
-      (Subring.unitClosedBall (Tate (Fin n))).map π.toRingHom = φ.range := by
-  -- Transport `φ` to a `K°`-compatible ring homomorphism on `K⟨X₁, …, Xₙ⟩°`.
-  let e := restrictedMvPowerSeriesCompletionIntegerEquiv (K := K) n
-  let ψ : Subring.unitClosedBall (Tate (Fin n)) →+* A := φ.comp e.symm.toRingHom
-  have hψ (c : Subring.unitClosedBall K) :
-      ψ (unitClosedBallCoeffHom c) = algebraMap K A (c : K) := by
-    rw [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe,
-      restrictedMvPowerSeriesCompletionIntegerEquiv_symm_unitClosedBallCoeffHom,
-      hφ_alg, coe_integerUnitClosedBallEquiv_symm]
-  -- Extend uniquely from `K⟨X₁, …, Xₙ⟩°` to `K⟨X₁, …, Xₙ⟩` and compute the unit-ball image.
-  obtain ⟨π, hπ_ball, hπ_uniq⟩ := ψ.existsUnique_algHom_of_unitClosedBall hψ
-  have hπ_eq (f : Subring.unitClosedBall (Tate (Fin n))) : π f = φ (e.symm f) := by
-    simpa only [ψ, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe] using hπ_ball f
-  have hmap : (Subring.unitClosedBall (Tate (Fin n))).map π.toRingHom = φ.range := by
-    ext a
-    simp only [Subring.mem_map, RingHom.mem_range]
-    refine ⟨fun ⟨f, hf, hfa⟩ ↦ ⟨e.symm ⟨f, hf⟩, by
-        simpa only [← hfa, AlgHom.toRingHom_eq_coe, RingHom.coe_coe] using (hπ_eq ⟨f, hf⟩).symm⟩,
-      fun ⟨w, hw⟩ ↦ ⟨e w, (e w).2, by
-        simpa only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, e.symm_apply_apply, hw] using
-          hπ_eq (e w)⟩⟩
-  exact ⟨π, ⟨hπ_eq, hmap⟩, fun π' ⟨hπ', _⟩ ↦ hπ_uniq π' fun f ↦ by
-    simpa only [ψ, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe] using hπ' f⟩
 
 /-- **Topological integral presentations make `A` an affinoid algebra.** Let `K` be a complete
 nontrivially normed ultrametric field, `A` a topological `K`-algebra with separately continuous
