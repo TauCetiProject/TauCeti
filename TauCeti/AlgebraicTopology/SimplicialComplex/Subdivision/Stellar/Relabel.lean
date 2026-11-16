@@ -26,14 +26,13 @@ The proof has three steps.
 
 * A stellar move, hence a stellar equivalence, changes only finitely many vertices, and is
   carried along any vertex map that is injective on the vertices involved
-  (`map_stellarSubdivision_of_injOn` and
-  `StellarEquivalent.exists_finite_forall_map_of_injOn`). Global injectivity is not needed.
-* A stellar equivalence between copies of `K` and `L` along an embedding `a` and a map `b` pulls
-  back along a left inverse of `a` into `ι ⊕ ℕ`, which is injective on the image of `a` and on
-  the finitely many vertices that the equivalence changes
-  (`StellarEquivalent.exists_stellarEquivalent_map_inl`). A map that is only injective on the
-  vertices of `L` is then replaced by an embedding, using a splitting of `ι ⊕ ℕ` into two copies
-  of itself (`StellarEquivalent.exists_stellarEquivalent_map_of_injOn`).
+  (`IsStellarMove.map_of_injOn` and `StellarEquivalent.exists_finite_forall_map_of_injOn`).
+  Global injectivity is not needed.
+* A stellar equivalence between copies of `K` and `L` along maps `a` and `b`, injective on the
+  vertices of `K` and of `L` respectively, pulls back along a left inverse of `a` into `ι ⊕ ℕ`,
+  which is injective on the image of the vertices of `K` and on the finitely many vertices that
+  the equivalence changes. The resulting copy of `L` is then made into an embedding, using a
+  splitting of `ι ⊕ ℕ` into two copies of itself.
 * Matching consecutive relabelings in this way collapses a chain of common relabelings to a
   single one (`StellarEquivalentUpToRelabeling.exists_stellarEquivalent_map`), and pulling that
   one back along `f` gives the reflection.
@@ -61,27 +60,16 @@ open Finset Function
 
 namespace PreAbstractSimplicialComplex
 
+universe v
+
 variable {ι κ : Type*} [DecidableEq ι] [DecidableEq κ] {K L : PreAbstractSimplicialComplex ι}
 
-/-! ### Relabeling along maps injective on the vertices -/
+/-! ### Finite support of stellar equivalences -/
 
-/-- A vertex map injective on the vertices of both sides carries a stellar move to a stellar
-move. -/
-theorem IsStellarMove.map_of_injOn {f : ι → κ} (h : IsStellarMove K L)
-    (hf : {x | ({x} : Finset ι) ∈ K ∨ ({x} : Finset ι) ∈ L}.InjOn f) :
-    IsStellarMove (K.map f) (L.map f) := by
-  obtain ⟨σ, v, hσ, hv, rfl⟩ := isStellarMove_iff.mp h
-  have hvL : ({v} : Finset ι) ∈ stellarSubdivision K σ v :=
-    singleton_mem_stellarSubdivision_iff.mpr hσ
-  refine isStellarMove_iff.mpr ⟨σ.image f, f v, mem_map_iff.mpr ⟨σ, hσ, rfl⟩, fun hfv => ?_,
-    map_stellarSubdivision_of_injOn hf (fun x hx => Or.inl hx)
-      (fun x hx => Or.inl (singleton_mem_of_mem hσ hx)) (Or.inr hvL)⟩
-  obtain ⟨x, hx, hxv⟩ := singleton_mem_map_iff.mp hfv
-  rw [hf (Or.inl hx) (Or.inr hvL) hxv] at hx
-  exact hv hx
-
-/-- A stellar move changes only the vertices of the starred face and the new vertex. -/
-theorem IsStellarMove.setOf_singleton_mem_union_eq (h : IsStellarMove K L) :
+/-- A stellar move changes only finitely many vertices: there is a finite set off which `K` and
+`L` have the same vertices. -/
+private theorem IsStellarMove.exists_finite_setOf_singleton_mem_union_eq
+    (h : IsStellarMove K L) :
     ∃ U : Set ι, U.Finite ∧
       {x | ({x} : Finset ι) ∈ K} ∪ U = {x | ({x} : Finset ι) ∈ L} ∪ U := by
   obtain ⟨σ, v, hσ, -, rfl⟩ := isStellarMove_iff.mp h
@@ -104,14 +92,14 @@ equivalence of the image complexes. -/
 theorem StellarEquivalent.exists_finite_forall_map_of_injOn (h : StellarEquivalent K L) :
     ∃ U : Set ι, U.Finite ∧
       {x | ({x} : Finset ι) ∈ K} ∪ U = {x | ({x} : Finset ι) ∈ L} ∪ U ∧
-      ∀ f : ι → κ, ({x | ({x} : Finset ι) ∈ K} ∪ U).InjOn f →
+      ∀ {κ : Type v} [DecidableEq κ] (f : ι → κ), ({x | ({x} : Finset ι) ∈ K} ∪ U).InjOn f →
         StellarEquivalent (K.map f) (L.map f) := by
   refine h.induction_on (P := fun A B => ∃ U : Set ι, U.Finite ∧
       {x | ({x} : Finset ι) ∈ A} ∪ U = {x | ({x} : Finset ι) ∈ B} ∪ U ∧
-      ∀ f : ι → κ, ({x | ({x} : Finset ι) ∈ A} ∪ U).InjOn f →
+      ∀ {κ : Type v} [DecidableEq κ] (f : ι → κ), ({x | ({x} : Finset ι) ∈ A} ∪ U).InjOn f →
         StellarEquivalent (A.map f) (B.map f)) ?_ ?_ ?_ ?_
   · intro A B hAB
-    obtain ⟨U, hU, hAB'⟩ := hAB.setOf_singleton_mem_union_eq
+    obtain ⟨U, hU, hAB'⟩ := hAB.exists_finite_setOf_singleton_mem_union_eq
     refine ⟨U, hU, hAB', fun f hf => (hAB.map_of_injOn (hf.mono ?_)).stellarEquivalent⟩
     rintro x (hx | hx)
     · exact Or.inl hx
@@ -131,52 +119,61 @@ theorem StellarEquivalent.exists_finite_forall_map_of_injOn (h : StellarEquivale
 
 /-! ### Collapsing chains of relabelings -/
 
-/-- A stellar equivalence between the copy of `K` along an injective map `a` and the copy of `L`
-along a map `b` pulls back to a stellar equivalence between the copy of `K` along `Sum.inl` and
-a copy of `L` along a map that is injective on the vertices of `L`. -/
-theorem StellarEquivalent.exists_stellarEquivalent_map_inl {a b : ι → κ} (ha : Injective a)
-    (hb : {x | ({x} : Finset ι) ∈ L}.InjOn b) (h : StellarEquivalent (K.map a) (L.map b)) :
+/-- A stellar equivalence between the copy of `K` along a map `a` injective on the vertices of
+`K` and the copy of `L` along a map `b` injective on the vertices of `L` pulls back to a stellar
+equivalence between the copy of `K` along `Sum.inl` and a copy of `L` along a map that is
+injective on the vertices of `L`. -/
+private theorem StellarEquivalent.exists_stellarEquivalent_map_inl {a b : ι → κ}
+    (ha : {x | ({x} : Finset ι) ∈ K}.InjOn a) (hb : {x | ({x} : Finset ι) ∈ L}.InjOn b)
+    (h : StellarEquivalent (K.map a) (L.map b)) :
     ∃ c : ι → ι ⊕ ℕ, {x | ({x} : Finset ι) ∈ L}.InjOn c ∧
       StellarEquivalent (K.map Sum.inl) (L.map c) := by
-  obtain ⟨U, hU, hKL, hmap⟩ := h.exists_finite_forall_map_of_injOn (κ := ι ⊕ ℕ)
-  obtain ⟨p, hp, hpa⟩ := ha.exists_injOn_comp_eq_inl hU.countable
-  have hsub : {y | ({y} : Finset κ) ∈ K.map a} ∪ U ⊆ Set.range a ∪ U := by
+  obtain ⟨U, hU, hKL, hmap⟩ := h.exists_finite_forall_map_of_injOn
+  -- A left inverse of `a` on the vertices of `K`, through the vertex subtype.
+  obtain ⟨p, hp, hpa⟩ := (Set.injOn_iff_injective.mp ha).exists_injOn_comp_eq_inl hU.countable
+  let q : κ → ι ⊕ ℕ := Sum.map Subtype.val id ∘ p
+  have hq : (Set.range ({x | ({x} : Finset ι) ∈ K}.domRestrict a) ∪ U).InjOn q :=
+    (Sum.map_injective.mpr ⟨Subtype.val_injective, injective_id⟩).comp_injOn hp
+  have hqa (x : ι) (hx : ({x} : Finset ι) ∈ K) : q (a x) = Sum.inl x :=
+    congrArg (Sum.map Subtype.val id) (congrFun hpa ⟨x, hx⟩)
+  have hsub : {y | ({y} : Finset κ) ∈ K.map a} ∪ U ⊆
+      Set.range ({x | ({x} : Finset ι) ∈ K}.domRestrict a) ∪ U := by
     refine Set.union_subset_union_left _ fun y hy => ?_
-    obtain ⟨x, -, rfl⟩ := singleton_mem_map_iff.mp hy
-    exact ⟨x, rfl⟩
-  have hbL : ∀ x ∈ {x | ({x} : Finset ι) ∈ L}, b x ∈ Set.range a ∪ U := fun x hx =>
+    obtain ⟨x, hx, rfl⟩ := singleton_mem_map_iff.mp hy
+    exact ⟨⟨x, hx⟩, rfl⟩
+  have hbL : ∀ x ∈ {x | ({x} : Finset ι) ∈ L},
+      b x ∈ Set.range ({x | ({x} : Finset ι) ∈ K}.domRestrict a) ∪ U := fun x hx =>
     hsub (hKL ▸ Or.inl (singleton_mem_map_iff.mpr ⟨x, hx, rfl⟩))
-  refine ⟨p ∘ b, fun x hx y hy hxy => hb hx hy (hp (hbL x hx) (hbL y hy) hxy), ?_⟩
-  have hpe := hmap p (hp.mono hsub)
-  rwa [map_map, map_map, hpa] at hpe
+  refine ⟨q ∘ b, fun x hx y hy hxy => hb hx hy (hq (hbL x hx) (hbL y hy) hxy), ?_⟩
+  have hqe := hmap q (hq.mono hsub)
+  rwa [map_map, map_map, show K.map (q ∘ a) = K.map Sum.inl from map_congr hqa] at hqe
 
-/-- Maps into `ι ⊕ ℕ` that are injective on the vertices of `K` and of `L`, and carry them to
-stellar equivalent complexes, can be replaced by embeddings. -/
-theorem StellarEquivalent.exists_stellarEquivalent_map_of_injOn {a b : ι → ι ⊕ ℕ}
+/-- Maps that are injective on the vertices of `K` and of `L`, and carry them to stellar
+equivalent complexes, can be replaced by embeddings into `ι ⊕ ℕ`. -/
+private theorem StellarEquivalent.exists_stellarEquivalent_map_of_injOn {a b : ι → κ}
     (ha : {x | ({x} : Finset ι) ∈ K}.InjOn a) (hb : {x | ({x} : Finset ι) ∈ L}.InjOn b)
     (h : StellarEquivalent (K.map a) (L.map b)) :
     ∃ f g : ι ↪ ι ⊕ ℕ, StellarEquivalent (K.map f) (L.map g) := by
   classical
-  -- Split `ι ⊕ ℕ` into two copies of itself: the first receives the vertices along `a` and `b`,
-  -- the second the remaining points of `ι`.
+  obtain ⟨c, hc, he⟩ := h.exists_stellarEquivalent_map_inl ha hb
+  -- Split `ι ⊕ ℕ` into two copies of itself: the first receives the vertices along `Sum.inl` and
+  -- `c`, the second the remaining points of `ι`.
   obtain ⟨E⟩ : Nonempty ((ι ⊕ ℕ) ⊕ (ι ⊕ ℕ) ≃ ι ⊕ ℕ) := Cardinal.eq.mp <|
     (Cardinal.add_def _ _).symm.trans (Cardinal.add_eq_self (Cardinal.aleph0_le_mk _))
-  let ext (M : PreAbstractSimplicialComplex ι) (c : ι → ι ⊕ ℕ) (x : ι) : ι ⊕ ℕ :=
-    if ({x} : Finset ι) ∈ M then E (.inl (c x)) else E (.inr (.inl x))
-  have hext {M : PreAbstractSimplicialComplex ι} {c : ι → ι ⊕ ℕ}
-      (hc : {x | ({x} : Finset ι) ∈ M}.InjOn c) : Injective (ext M c) := by
+  let g (x : ι) : ι ⊕ ℕ := if ({x} : Finset ι) ∈ L then E (.inl (c x)) else E (.inr (.inl x))
+  have hg : Injective g := by
     intro x y hxy
-    simp only [ext] at hxy
+    simp only [g] at hxy
     split_ifs at hxy with hx hy hy <;>
       simp only [E.apply_eq_iff_eq, Sum.inl.injEq, Sum.inr.injEq, reduceCtorEq] at hxy
     exacts [hc hx hy hxy, hxy]
-  have hmap (M : PreAbstractSimplicialComplex ι) (c : ι → ι ⊕ ℕ) :
-      M.map (ext M c) = (M.map c).map (E ∘ Sum.inl) := by
+  have hLg : L.map g = (L.map c).map (E ∘ Sum.inl) := by
     rw [map_map]
     exact map_congr fun x hx => ite_eq_left hx
-  refine ⟨⟨ext K a, hext ha⟩, ⟨ext L b, hext hb⟩, ?_⟩
-  rw [Embedding.coeFn_mk, Embedding.coeFn_mk, hmap K a, hmap L b]
-  exact h.map _ (E.injective.comp Sum.inl_injective)
+  refine ⟨⟨E ∘ Sum.inl ∘ Sum.inl, E.injective.comp (Sum.inl_injective.comp Sum.inl_injective)⟩,
+    ⟨g, hg⟩, ?_⟩
+  rw [Embedding.coeFn_mk, Embedding.coeFn_mk, hLg, ← Function.comp_assoc, ← map_map]
+  exact he.map _ (E.injective.comp Sum.inl_injective)
 
 /-- Relabeling a complex inside its own vertex type is a stellar equivalence up to
 relabeling. -/
@@ -198,8 +195,10 @@ theorem StellarEquivalentUpToRelabeling.exists_stellarEquivalent_map
     (fun A => ⟨⟨Sum.inl, Sum.inl_injective⟩, ⟨Sum.inl, Sum.inl_injective⟩, .refl _⟩)
     (fun A B ⟨f, g, he⟩ => ⟨g, f, he.symm⟩) fun A B C ⟨f, g, he⟩ ⟨f', g', he'⟩ => ?_
   -- Both equivalences pull back to the copy of `B` along `Sum.inl`.
-  obtain ⟨c, hc, hAc⟩ := he.symm.exists_stellarEquivalent_map_inl g.injective f.injective.injOn
-  obtain ⟨c', hc', hCc'⟩ := he'.exists_stellarEquivalent_map_inl f'.injective g'.injective.injOn
+  obtain ⟨c, hc, hAc⟩ :=
+    he.symm.exists_stellarEquivalent_map_inl g.injective.injOn f.injective.injOn
+  obtain ⟨c', hc', hCc'⟩ :=
+    he'.exists_stellarEquivalent_map_inl f'.injective.injOn g'.injective.injOn
   exact (hAc.symm.trans hCc').exists_stellarEquivalent_map_of_injOn hc hc'
 
 /-! ### Reflection along injective relabelings -/
@@ -211,12 +210,12 @@ theorem StellarEquivalentUpToRelabeling.of_map {f : ι → κ} (hf : Injective f
     StellarEquivalentUpToRelabeling K L := by
   obtain ⟨F, G, he⟩ := h.exists_stellarEquivalent_map
   rw [map_map, map_map] at he
-  obtain ⟨c, hc, hKc⟩ := he.exists_stellarEquivalent_map_inl (F.injective.comp hf)
-    (G.injective.comp hf).injOn
-  obtain ⟨f', g', he'⟩ := hKc.exists_stellarEquivalent_map_of_injOn Sum.inl_injective.injOn hc
+  obtain ⟨f', g', he'⟩ := he.exists_stellarEquivalent_map_of_injOn
+    (F.injective.comp hf).injOn (G.injective.comp hf).injOn
   exact .of_common_relabeling f' g' he'
 
 /-- Injective relabelings preserve and reflect intrinsic stellar equivalence. -/
+@[simp]
 theorem stellarEquivalentUpToRelabeling_map_iff {f : ι → κ} (hf : Injective f) :
     StellarEquivalentUpToRelabeling (K.map f) (L.map f) ↔
       StellarEquivalentUpToRelabeling K L :=

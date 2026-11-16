@@ -10,14 +10,15 @@ public import TauCeti.AlgebraicTopology.SimplicialComplex.CombinatorialManifold.
 /-!
 # Relabeling combinatorial balls, spheres and manifolds
 
-An injective map of ambient vertex types sends a combinatorial ball to a combinatorial ball
-or sphere of the same dimension, and a combinatorial manifold to a combinatorial manifold of the
-same dimension. This allows local models described using disjoint tagged vertex
-types, such as joins, to be compared with the original complexes.
+An injective map of ambient vertex types sends a combinatorial ball, sphere or manifold to a
+combinatorial ball, sphere or manifold, respectively, of the same dimension. This allows local
+models described using disjoint tagged vertex types, such as joins, to be compared with the
+original complexes.
 
-The transport uses `StellarEquivalentUpToRelabeling.map`: injectively relabel the stellar
-equivalence to a standard simplex (resp. simplex boundary), whose image is again a standard
-simplex (resp. simplex boundary) with the same number of vertices.
+For balls and spheres the transport uses `StellarEquivalentUpToRelabeling.map`: injectively
+relabel the stellar equivalence to a standard simplex (resp. simplex boundary), whose image is
+again a standard simplex (resp. simplex boundary) with the same number of vertices. For manifolds
+it transports each vertex link along the relabeling (`map_link`).
 
 ## References
 

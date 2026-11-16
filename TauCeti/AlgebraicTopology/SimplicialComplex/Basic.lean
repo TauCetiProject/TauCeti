@@ -120,6 +120,7 @@ theorem singleton_mem_map_iff {κ : Type*} [DecidableEq κ] {f : ι → κ} {y :
 
 /-- Under an injective vertex map, the image of a finite set is a face of the image complex
 exactly when the set is a face. -/
+@[simp]
 theorem image_mem_map_iff {κ : Type*} [DecidableEq κ] {f : ι → κ}
     (hf : Function.Injective f) : σ.image f ∈ K.map f ↔ σ ∈ K := by
   refine ⟨fun h => ?_, fun h => mem_map_iff.mpr ⟨σ, h, rfl⟩⟩
@@ -141,11 +142,6 @@ theorem map_bot {κ : Type*} [DecidableEq κ] (f : ι → κ) :
   eq_bot_iff.mpr fun _ hτ => by
     obtain ⟨_, hρ, -⟩ := mem_map_iff.mp hτ
     exact hρ.elim
-
-/-- A complex with finitely many faces has finitely many vertices. -/
-theorem finite_setOf_singleton_mem (hK : K.faces.Finite) :
-    {x | ({x} : Finset ι) ∈ K}.Finite :=
-  hK.preimage Finset.singleton_injective.injOn
 
 end PreAbstractSimplicialComplex
 

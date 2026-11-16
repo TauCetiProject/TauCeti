@@ -33,11 +33,11 @@ The three statements are proved together, by induction on the dimension.
 * Stellar moves. Starring `σ` at a fresh vertex `v` replaces the link of each old vertex `w` by a
   starring of its old link, or leaves it alone, so inverse stellar moves preserve manifolds with
   no further input (`IsCombinatorialManifold.of_stellarSubdivision`). When `σ` has at most `n`
-  vertices and at least two, the new vertex has as link the join of the boundary of `σ`, a
-  combinatorial sphere, with the link of `σ` (`map_closedStar_inf_deletion_eq_join`); by the
-  face-link step this is a combinatorial sphere or ball of the right dimension. Two cases are
-  separate: a singleton `σ`, where the new vertex just renames `w`, and a top-dimensional face
-  (`σ.card = n + 1`), whose link is void (`IsCombinatorialManifold.stellarSubdivision_of_card`).
+  vertices, the new vertex has as link the join of the boundary of `σ`, a combinatorial sphere,
+  with the link of `σ` (`map_closedStar_inf_deletion_eq_join`), or, for a singleton `σ = {w}`,
+  just the link of `w`; by the face-link step this is a combinatorial sphere or ball of the right
+  dimension. A top-dimensional face (`σ.card = n + 1`) is separate, since its link is void
+  (`IsCombinatorialManifold.stellarSubdivision_of_card`).
 * Balls and spheres. The standard simplex and the boundary of a simplex are combinatorial
   manifolds, and the manifold property is invariant under stellar moves and, by
   `PreAbstractSimplicialComplex.isCombinatorialManifold_map_iff`, under injective relabelings.
@@ -73,33 +73,45 @@ variable {ι : Type u} [DecidableEq ι] {K L : PreAbstractSimplicialComplex ι} 
 
 /-! ### The link of the new vertex -/
 
-/-- **The link of a new stellar vertex, interior case.** Starring a set `σ` with `k + 2`
+/-- **The link of a new stellar vertex, interior case.** Starring a set `σ` with `k + 1`
 vertices whose link is a combinatorial `m`-sphere gives a new vertex whose link, the join of the
-boundary of `σ` with the link of `σ`, is a combinatorial `(k + m + 1)`-sphere. -/
+boundary of `σ` with the link of `σ`, is a combinatorial `(k + m)`-sphere. For a singleton
+`σ = {w}` the link of the new vertex is just the link of `w`. -/
 theorem isCombinatorialSphere_link_stellarSubdivision_singleton (hv : ({v} : Finset ι) ∉ K)
-    {k m : ℕ} (hk : σ.card = k + 2) (hlink : IsCombinatorialSphere (link K σ) m) :
-    IsCombinatorialSphere (link (stellarSubdivision K σ v) {v}) (k + m + 1) := by
-  have hσ : σ ∈ K := by
-    by_contra hσ
-    exact hlink.ne_bot (link_eq_bot_of_notMem (card_pos.mp (by omega)) hσ)
-  have hf := (partitionEmbedding (· ∈ σ)).injective
-  rw [link_stellarSubdivision_singleton hv, ← isCombinatorialSphere_map_iff hf,
-    map_closedStar_inf_deletion_eq_join hσ]
-  exact (isCombinatorialSphere_simplexBoundary hk).join hlink
+    {k m : ℕ} (hk : σ.card = k + 1) (hlink : IsCombinatorialSphere (link K σ) m) :
+    IsCombinatorialSphere (link (stellarSubdivision K σ v) {v}) (k + m) := by
+  cases k with
+  | zero =>
+    obtain ⟨w, rfl⟩ := card_eq_one.mp hk
+    rwa [link_stellarSubdivision_singleton hv, closedStar_inf_deletion_singleton, Nat.zero_add]
+  | succ k =>
+    have hσ : σ ∈ K := by
+      by_contra hσ
+      exact hlink.ne_bot (link_eq_bot_of_notMem (card_pos.mp (by omega)) hσ)
+    have hf := (partitionEmbedding (· ∈ σ)).injective
+    rw [link_stellarSubdivision_singleton hv, ← isCombinatorialSphere_map_iff hf,
+      map_closedStar_inf_deletion_eq_join hσ, Nat.add_right_comm]
+    exact (isCombinatorialSphere_simplexBoundary hk).join hlink
 
-/-- **The link of a new stellar vertex, boundary case.** Starring a set `σ` with `k + 2`
+/-- **The link of a new stellar vertex, boundary case.** Starring a set `σ` with `k + 1`
 vertices whose link is a combinatorial `m`-ball gives a new vertex whose link, the join of the
-boundary of `σ` with the link of `σ`, is a combinatorial `(k + m + 1)`-ball. -/
+boundary of `σ` with the link of `σ`, is a combinatorial `(k + m)`-ball. For a singleton
+`σ = {w}` the link of the new vertex is just the link of `w`. -/
 theorem isCombinatorialBall_link_stellarSubdivision_singleton (hv : ({v} : Finset ι) ∉ K)
-    {k m : ℕ} (hk : σ.card = k + 2) (hlink : IsCombinatorialBall (link K σ) m) :
-    IsCombinatorialBall (link (stellarSubdivision K σ v) {v}) (k + m + 1) := by
-  have hσ : σ ∈ K := by
-    by_contra hσ
-    exact hlink.ne_bot (link_eq_bot_of_notMem (card_pos.mp (by omega)) hσ)
-  have hf := (partitionEmbedding (· ∈ σ)).injective
-  rw [link_stellarSubdivision_singleton hv, ← isCombinatorialBall_map_iff hf,
-    map_closedStar_inf_deletion_eq_join hσ]
-  exact (isCombinatorialSphere_simplexBoundary hk).join_ball hlink
+    {k m : ℕ} (hk : σ.card = k + 1) (hlink : IsCombinatorialBall (link K σ) m) :
+    IsCombinatorialBall (link (stellarSubdivision K σ v) {v}) (k + m) := by
+  cases k with
+  | zero =>
+    obtain ⟨w, rfl⟩ := card_eq_one.mp hk
+    rwa [link_stellarSubdivision_singleton hv, closedStar_inf_deletion_singleton, Nat.zero_add]
+  | succ k =>
+    have hσ : σ ∈ K := by
+      by_contra hσ
+      exact hlink.ne_bot (link_eq_bot_of_notMem (card_pos.mp (by omega)) hσ)
+    have hf := (partitionEmbedding (· ∈ σ)).injective
+    rw [link_stellarSubdivision_singleton hv, ← isCombinatorialBall_map_iff hf,
+      map_closedStar_inf_deletion_eq_join hσ, Nat.add_right_comm]
+    exact (isCombinatorialSphere_simplexBoundary hk).join_ball hlink
 
 /-- A stellar move preserves a combinatorial `n`-manifold once the link of the starred face is
 known to be a combinatorial sphere or ball of the expected dimension. -/
@@ -115,16 +127,11 @@ private theorem IsCombinatorialManifold.stellarSubdivision_of_link
   rcases hle.lt_or_eq with hlt | heq
   · obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
     apply h.stellarSubdivision_succ hv
-    obtain ⟨w, rfl⟩ | ⟨k, hk⟩ : (∃ w, σ = {w}) ∨ ∃ k, σ.card = k + 2 := by
-      rcases Nat.lt_or_ge σ.card 2 with h₂ | h₂
-      · exact Or.inl (card_eq_one.mp (by omega))
-      · exact Or.inr ⟨σ.card - 2, by omega⟩
-    · rw [link_stellarSubdivision_singleton hv, closedStar_inf_deletion_singleton]
-      exact isCombinatorialManifold_succ_iff.mp h hσ
-    · have hm : k + (m + 1 - σ.card) + 1 = m := by omega
-      rw [← hm]
-      exact (hlink (by omega)).imp (isCombinatorialSphere_link_stellarSubdivision_singleton hv hk)
-        (isCombinatorialBall_link_stellarSubdivision_singleton hv hk)
+    have hk : σ.card = σ.card - 1 + 1 := by omega
+    have hm : σ.card - 1 + (m + 1 - σ.card) = m := by omega
+    rw [← hm]
+    exact (hlink (by omega)).imp (isCombinatorialSphere_link_stellarSubdivision_singleton hv hk)
+      (isCombinatorialBall_link_stellarSubdivision_singleton hv hk)
   · exact h.stellarSubdivision_of_card hσ heq hv
 
 /-! ### Links of faces -/

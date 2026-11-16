@@ -27,7 +27,7 @@ values of countably many sentences.
 * `Finset.countable_range_sup`: the pointwise finite supremum of countable-range functions
   has countable range.
 * `Function.Injective.exists_injOn_comp_eq_inl`: an injective map `g : α → β` has a left inverse
-  `β → α ⊕ ℕ`, through `Sum.inl`, that is injective on the range of `g` together with any
+  `β → α ⊕ ℕ`, through `Sum.inl`, that is injective on the range of `g` together with a given
   countable set.
 * `TauCeti.exists_countable_exceptions_of_splits`: outside one countable set, every `P i` is
   constant.
