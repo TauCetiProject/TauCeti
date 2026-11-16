@@ -50,8 +50,8 @@ agrees with it on `e '' K`.
 * `TestFunction.tsupport_pushforwardCLM_subset`: `supp e_* φ ⊆ e '' supp φ`.
 * `TestFunction.integral_pushforwardCLM_smul`: the change of variables `∫ (e_* φ) f = ∫ φ (f ∘ e)`.
 * `TestFunction.pushforwardCLM_refl`: pushing forward along the identity is extension by zero.
-* `TestFunction.pushforwardCLM_pushforwardCLM`: pushing forward along `e₁` and then along `e₂` is
-  pushing forward along `e₁.trans e₂`.
+* `TestFunction.pushforwardCLM_trans`: pushing forward along `e₁.trans e₂` is pushing forward along
+  `e₁` and then along `e₂`.
 * `TestFunction.pushforwardCLM_pushforwardCLM_symm`,
   `TestFunction.pushforwardCLM_symm_pushforwardCLM`: pushing forward along `e` and `e⁻¹` are
   inverse to each other.
@@ -304,9 +304,9 @@ theorem pushforwardCLM_refl
   rw [pushforwardCLM_apply_of_mem φ (mem_univ y)]
   simp [hUΩ']
 
-/-- **Functoriality**: pushing forward along `e₁` and then along `e₂` is pushing forward along the
-composite `e₁.trans e₂`, whose Jacobian is the product of the Jacobians by the chain rule. -/
-theorem pushforwardCLM_pushforwardCLM {e₁ e₂ : OpenPartialHomeomorph E E}
+/-- **Functoriality**: pushing forward along the composite `e₁.trans e₂`, whose Jacobian is the
+product of the Jacobians by the chain rule, is pushing forward along `e₁` and then along `e₂`. -/
+theorem pushforwardCLM_trans {e₁ e₂ : OpenPartialHomeomorph E E}
     {he₁ : ContDiffOn ℝ (⊤ : ℕ∞) e₁ e₁.source} {he₁' : ContDiffOn ℝ (⊤ : ℕ∞) e₁.symm e₁.target}
     {he₂ : ContDiffOn ℝ (⊤ : ℕ∞) e₂ e₂.source} {he₂' : ContDiffOn ℝ (⊤ : ℕ∞) e₂.symm e₂.target}
     {he : ContDiffOn ℝ (⊤ : ℕ∞) (e₁.trans e₂) (e₁.trans e₂).source}
@@ -314,8 +314,8 @@ theorem pushforwardCLM_pushforwardCLM {e₁ e₂ : OpenPartialHomeomorph E E}
     {hU : (U : Set E) ⊆ e₁.source} {hUV : MapsTo e₁ U V} {hV : (V : Set E) ⊆ e₂.source}
     {hVΩ : MapsTo e₂ V Ω} {hU' : (U : Set E) ⊆ (e₁.trans e₂).source}
     {hUΩ : MapsTo (e₁.trans e₂) U Ω} (φ : 𝓓(U, F)) :
-    pushforwardCLM e₂ he₂ he₂' hV hVΩ (pushforwardCLM e₁ he₁ he₁' hU hUV φ) =
-      pushforwardCLM (e₁.trans e₂) he he' hU' hUΩ φ := by
+    pushforwardCLM (e₁.trans e₂) he he' hU' hUΩ φ =
+      pushforwardCLM e₂ he₂ he₂' hV hVΩ (pushforwardCLM e₁ he₁ he₁' hU hUV φ) := by
   ext z
   by_cases hz₂ : z ∈ e₂.target
   · by_cases hz₁ : e₂.symm z ∈ e₁.target

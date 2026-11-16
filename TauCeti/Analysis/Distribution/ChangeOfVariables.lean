@@ -147,7 +147,7 @@ theorem compCLMOfOpenPartialHomeomorph_trans {e₁ e₂ : OpenPartialHomeomorph 
   ext φ
   rw [compCLMOfOpenPartialHomeomorph_apply, compCLMOfOpenPartialHomeomorph_apply,
     compCLMOfOpenPartialHomeomorph_apply,
-    pushforwardCLM_pushforwardCLM (he := he) (he' := he') (hU' := hU') (hUΩ := hUΩ)]
+    pushforwardCLM_trans (he := he) (he' := he') (hU' := hU') (hUΩ := hUΩ)]
 
 /-- Pulling back along `e` and then along `e⁻¹` gives back the original distribution. -/
 @[simp]
