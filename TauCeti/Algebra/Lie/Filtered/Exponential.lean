@@ -6,7 +6,6 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.Lie.Filtered.Algebra
-public import TauCeti.Algebra.Lie.Derivation.Action
 public import TauCeti.LinearAlgebra.End.Exp
 
 /-!
@@ -20,9 +19,10 @@ may be noncommutative, and the original derivations need not be nilpotent. The c
 algebra must be a `ℚ`-module, `[Module ℚ A]`, to divide by factorials; the base ring `R`
 can be any commutative ring independently of this rational structure.
 
-The construction uses the existing nilpotent quotient representation and
-`Module.End.expAlgEquiv`. Truncation compatibility is Mathlib's
-`Module.End.commute_exp_left_of_commute`, applied to the quotient transition.
+`AlgFiltration.quotientExpLieAction` and `AlgFiltration.truncatedExpLieAction` are obtained by
+applying `Module.End.expAlgEquiv` to `AlgFiltration.quotientLieAction` and
+`AlgFiltration.truncatedLieAction`. Compatibility with quotient transitions is naturality of the
+exponential, `Module.End.map_exp`, applied to the transition map.
 
 Adapted from `Mei/Algebra/Lie/Filtered/Exponential.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), commit

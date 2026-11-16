@@ -12,7 +12,6 @@ public import TauCeti.LinearAlgebra.End.Basic
 public import TauCeti.LinearAlgebra.End.LocallyNilpotent
 import Mathlib.Algebra.Module.BigOperators
 import TauCeti.RingTheory.Nilpotent.Exp.Basic
-public import Mathlib.Algebra.Algebra.Equiv
 public import Mathlib.Algebra.Algebra.Tower
 
 /-!
