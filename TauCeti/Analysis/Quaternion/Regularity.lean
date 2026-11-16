@@ -157,19 +157,6 @@ private theorem mem_pi_Ioo_of_norm_dq_sub_lt {a b p u₀ u : Fin 4 → ℝ}
     (mul_le_mul_of_nonneg_right ht.2 (norm_nonneg _)).trans_lt (by simpa using hu_lt)
   exact not_lt_of_ge hle hlt
 
-/-- A continuous quaternion-valued density on `Icc a b` in `ℝ³` is integrable against the subtype
-pullback of Lebesgue measure. -/
-private theorem integrable_subtype_comap_Icc {a b : Fin 3 → ℝ} {g : (Fin 3 → ℝ) → ℍ}
-    (hg : ContinuousOn g (Icc a b)) :
-    Integrable (fun z : Icc a b ↦ g z.1) (Measure.comap Subtype.val volume) := by
-  have : IsFiniteMeasure (Measure.comap (Subtype.val : Icc a b → Fin 3 → ℝ) volume) := by
-    refine ⟨?_⟩
-    rw [Measure.comap_apply _ Subtype.val_injective
-      (fun _ hs ↦ measurableSet_Icc.subtype_image hs) _ MeasurableSet.univ,
-      image_univ, Subtype.range_coe]
-    exact isCompact_Icc.measure_lt_top
-  exact hg.domRestrict.integrable_of_hasCompactSupport (.of_compactSpace _)
-
 /-- Power-series expansion on `eball q₀ ((√2 - 1) δ)` of a single compact `Icc` face left
 Cauchy–Fueter potential. -/
 private theorem exists_hasFPowerSeriesOnBall_setIntegral_Icc_left
@@ -185,7 +172,9 @@ private theorem exists_hasFPowerSeriesOnBall_setIntegral_Icc_left
     rw [heq, sub_self, norm_zero] at hle
     linarith
   refine ⟨_, (hasFPowerSeriesOnBall_integral_cauchyFueterKernel_mul φ' hne hδ₀
-    (fun z ↦ hδ z.1 z.2) (integrable_subtype_comap_Icc hg)).congr fun q _ ↦ ?_⟩
+    (fun z ↦ hδ z.1 z.2)
+    ((integrableOn_iff_comap_subtypeVal measurableSet_Icc).mp
+      (hg.integrableOn_compact (μ := volume) isCompact_Icc))).congr fun q _ ↦ ?_⟩
   exact integral_subtype_comap measurableSet_Icc fun u ↦ cauchyFueterKernel (φ u) q * g u
 
 /-- Power-series expansion on `eball q₀ ((√2 - 1) δ)` of a single compact `Icc` face right
@@ -203,7 +192,9 @@ private theorem exists_hasFPowerSeriesOnBall_setIntegral_Icc_right
     rw [heq, sub_self, norm_zero] at hle
     linarith
   refine ⟨_, (hasFPowerSeriesOnBall_integral_mul_cauchyFueterKernel φ' hne hδ₀
-    (fun z ↦ hδ z.1 z.2) (integrable_subtype_comap_Icc hg)).congr fun q _ ↦ ?_⟩
+    (fun z ↦ hδ z.1 z.2)
+    ((integrableOn_iff_comap_subtypeVal measurableSet_Icc).mp
+      (hg.integrableOn_compact (μ := volume) isCompact_Icc))).congr fun q _ ↦ ?_⟩
   exact integral_subtype_comap measurableSet_Icc fun u ↦ g u * cauchyFueterKernel (φ u) q
 
 /-- Any quaternion `q ∈ eball (dq x₀) ((√2 - 1) δ)` (`δ > 0`) is of the form `dq x` with
