@@ -58,6 +58,7 @@ namespace FusionRules
 variable (N : FusionRules ι)
 
 /-- If there is only one simple object, all fusion multiplicities are `1`. -/
+@[simp]
 theorem N_eq_one_of_subsingleton [Subsingleton ι] (a b c : ι) : N.N a b c = 1 := by
   obtain rfl := Subsingleton.elim a N.unit
   obtain rfl := Subsingleton.elim b N.unit
@@ -176,14 +177,14 @@ instance : Unique (FSymbols R N) where
       F_mul_Finv _ _ _ _ := by
         ext x y
         simp [Matrix.mul_apply, Matrix.one_apply, Subsingleton.elim x y,
-          Fintype.sum_subsingleton _ N.unit, N.N_eq_one_of_subsingleton]
+          Fintype.sum_subsingleton _ N.unit]
       Finv_mul_F _ _ _ _ := by
         ext x y
         simp [Matrix.mul_apply, Matrix.one_apply, Subsingleton.elim x y,
-          Fintype.sum_subsingleton _ N.unit, N.N_eq_one_of_subsingleton]
+          Fintype.sum_subsingleton _ N.unit]
       pentagon := by
         intros
-        simp [Fintype.sum_subsingleton _ N.unit, N.N_eq_one_of_subsingleton]
+        simp [Fintype.sum_subsingleton _ N.unit]
       triangle _ _ _ j l := by simp [Subsingleton.elim j l] }
   uniq P := by
     ext a b c d x y
@@ -298,18 +299,16 @@ instance : Unique (RSymbols P) where
       Rinv _ _ _ := Matrix.of fun _ _ ↦ 1
       R_mul_Rinv _ _ _ := by
         ext i j
-        simp [Matrix.mul_apply, Matrix.one_apply, Subsingleton.elim i j,
-          N.N_eq_one_of_subsingleton]
+        simp [Matrix.mul_apply, Matrix.one_apply, Subsingleton.elim i j]
       Rinv_mul_R _ _ _ := by
         ext i j
-        simp [Matrix.mul_apply, Matrix.one_apply, Subsingleton.elim i j,
-          N.N_eq_one_of_subsingleton]
+        simp [Matrix.mul_apply, Matrix.one_apply, Subsingleton.elim i j]
       hexagon_forward := by
         intros
-        simp [Fintype.sum_subsingleton _ N.unit, N.N_eq_one_of_subsingleton]
+        simp [Fintype.sum_subsingleton _ N.unit]
       hexagon_reverse := by
         intros
-        simp [Fintype.sum_subsingleton _ N.unit, N.N_eq_one_of_subsingleton] }
+        simp [Fintype.sum_subsingleton _ N.unit] }
   uniq Q := by
     ext a b c i j
     exact Q.R_apply_of_subsingleton i j
