@@ -325,7 +325,7 @@ private lemma not_isPos_of_root_eq_neg {p q : RootSubgroupIndex m}
 @[simp]
 theorem diagonalRootBase_isPos_positiveLong (i : Fin m) :
     (diagonalRootBase.{u} m).IsPos (.positiveLong i) :=
-  (isPos_iff_root_mem_closure _ _).2 (by
+  (diagonalRootBase.{u} m).isPos_iff_root_mem_closure.2 (by
     rw [diagonalRootDatum_root_positiveLong, ← one_add_one_eq_two, Finsupp.single_add]
     exact character_add_mem i i)
 
@@ -340,7 +340,7 @@ theorem not_diagonalRootBase_isPos_negativeLong (i : Fin m) :
 @[simp]
 theorem diagonalRootBase_isPos_positiveSum {i j : Fin m} (hij : i < j) :
     (diagonalRootBase.{u} m).IsPos (.positiveSum i j hij) :=
-  (isPos_iff_root_mem_closure _ _).2 (by
+  (diagonalRootBase.{u} m).isPos_iff_root_mem_closure.2 (by
     rw [diagonalRootDatum_root_positiveSum]
     exact character_add_mem i j)
 
@@ -356,11 +356,11 @@ theorem not_diagonalRootBase_isPos_negativeSum {i j : Fin m} (hij : i < j) :
 theorem diagonalRootBase_isPos_difference_iff {i j : Fin m} (hij : i ≠ j) :
     (diagonalRootBase.{u} m).IsPos (.difference i j hij) ↔ i < j := by
   rcases lt_or_gt_of_ne hij with h | h
-  · refine iff_of_true ((isPos_iff_root_mem_closure _ _).2 ?_) h
+  · refine iff_of_true ((diagonalRootBase.{u} m).isPos_iff_root_mem_closure.2 ?_) h
     rw [diagonalRootDatum_root_difference]
     exact character_sub_mem h.le
   · refine iff_of_false (not_isPos_of_root_eq_neg (q := .difference j i hij.symm)
-      ((isPos_iff_root_mem_closure _ _).2 ?_) ?_) (not_lt_of_gt h)
+      ((diagonalRootBase.{u} m).isPos_iff_root_mem_closure.2 ?_) ?_) (not_lt_of_gt h)
     · rw [diagonalRootDatum_root_difference]
       exact character_sub_mem h.le
     · rw [diagonalRootDatum_root_difference, diagonalRootDatum_root_difference, neg_sub]

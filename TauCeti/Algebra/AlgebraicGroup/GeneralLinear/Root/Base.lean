@@ -314,7 +314,7 @@ private theorem diagonalRootIndexOfNe_isPos_of_lt (n : ℕ) (i j : Fin (n + 1))
       diagonalRoot_eq_coordinateRoot i j, coordinateRoot_eq_coordinate_sub n i j]
     exact sub_mem_closure_of_le (diagonalCharacterCoordinate n)
       (Nat.lt_succ_iff.mp j.isLt) hij.le
-  exact (isPos_iff_root_mem_closure _ _).2 h
+  exact (diagonalRootBase.{u} n).isPos_iff_root_mem_closure.2 h
 
 /-- A diagonal root is positive for the consecutive-root base exactly when its row index is
 strictly smaller than its column index. -/
