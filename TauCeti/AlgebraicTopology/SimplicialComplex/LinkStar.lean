@@ -44,7 +44,11 @@ the link of a simplex need not contain every vertex even when `K` does.
 * `PreAbstractSimplicialComplex.mem_closedStar_nonempty` / `mem_link_nonempty`: the
   introduction-friendly membership forms using only nonemptiness and the defining local data.
 * `PreAbstractSimplicialComplex.closedStar_sup_deletion`: the closed star and the deletion
-  cover `K`, i.e. `closedStar K σ ⊔ deletion K σ = K`.
+  cover `K`, i.e. `closedStar K σ ⊔ deletion K σ = K`; at a vertex `w` they meet in the link,
+  `closedStar K {w} ⊓ deletion K {w} = link K {w}` (`closedStar_inf_deletion_singleton`).
+* `PreAbstractSimplicialComplex.map_link`: an injective relabeling carries links to links.
+* `PreAbstractSimplicialComplex.link_eq_bot_of_notMem`: a nonempty set that is not a face has
+  void link.
 * `PreAbstractSimplicialComplex.link_le_deletion_of_nonempty`: for a nonempty `σ`, the
   link sits inside the deletion.
 * `PreAbstractSimplicialComplex.closedStar_empty` / `link_empty` / `deletion_empty`: the
@@ -179,6 +183,38 @@ theorem link_link {σ τ : Finset ι} (hστ : Disjoint σ τ) :
       refine mem_link.mpr ⟨hρτσK, disjoint_union_left.mpr ⟨hρσdis, hστ.symm⟩, ?_⟩
       simpa [union_assoc, union_left_comm, union_comm] using hρστK
     exact mem_link.mpr ⟨hρσ, hρτdis, hρτσ⟩
+
+/-- An injective relabeling carries the link of `σ` to the link of the image of `σ`. -/
+@[simp]
+theorem map_link {κ : Type*} [DecidableEq κ] (f : ι → κ) (hf : Function.Injective f) :
+    (link K σ).map f = link (K.map f) (σ.image f) := by
+  refine SetLike.ext fun τ => ?_
+  rw [mem_map_iff, mem_link_nonempty]
+  constructor
+  · rintro ⟨ρ, hρ, rfl⟩
+    obtain ⟨hne, hdis, hface⟩ := mem_link_nonempty.mp hρ
+    exact ⟨hne.image f, (disjoint_image hf).mpr hdis,
+      mem_map_iff.mpr ⟨ρ ∪ σ, hface, image_union ρ σ⟩⟩
+  · rintro ⟨hne, hdis, hface⟩
+    obtain ⟨η, hη, hητ⟩ := mem_map_iff.mp hface
+    obtain ⟨ρ, -, rfl⟩ := subset_image_iff.mp (hητ ▸ subset_union_left : τ ⊆ η.image f)
+    have hρη : ρ ∪ σ = η := image_injective hf (by rw [image_union, hητ])
+    exact ⟨ρ, mem_link_nonempty.mpr ⟨image_nonempty.mp hne, (disjoint_image hf).mp hdis,
+      hρη ▸ hη⟩, rfl⟩
+
+/-- The link of a nonempty set that is not a face is void. -/
+theorem link_eq_bot_of_notMem (hσ : σ.Nonempty) (hσK : σ ∉ K) : link K σ = ⊥ :=
+  eq_bot_iff.mpr fun _ hρ =>
+    absurd ((K.isRelLowerSet_faces (mem_link.mp hρ).2.2).2 subset_union_right hσ) hσK
+
+/-- At a vertex, the part of the closed star not containing that vertex is its link. -/
+@[simp]
+theorem closedStar_inf_deletion_singleton {w : ι} :
+    closedStar K {w} ⊓ deletion K {w} = link K {w} := by
+  refine SetLike.ext fun ρ => ?_
+  rw [mem_inf, mem_closedStar, mem_deletion, mem_link, singleton_subset_iff,
+    disjoint_singleton_right]
+  tauto
 
 /-- The closed star of `σ` is a subcomplex of `K`. -/
 theorem closedStar_le : closedStar K σ ≤ K := by

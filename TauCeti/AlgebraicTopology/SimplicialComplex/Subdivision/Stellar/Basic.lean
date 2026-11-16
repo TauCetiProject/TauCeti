@@ -75,7 +75,8 @@ star, so the subdivision is glued from the same two pieces the geometric picture
   star.
 * `PreAbstractSimplicialComplex.stellarSubdivision_mono`: starring is monotone in the complex.
 * `PreAbstractSimplicialComplex.map_stellarSubdivision`: injective relabeling commutes with
-  stellar subdivision.
+  stellar subdivision; `map_stellarSubdivision_of_injOn` needs injectivity only on the vertices
+  involved.
 * `PreAbstractSimplicialComplex.dimension_stellarSubdivision`: starring preserves the dimension.
 * `PreAbstractSimplicialComplex.finite_faces_stellarSubdivision_iff`: starring a nonempty set
   preserves and reflects finiteness.
@@ -200,6 +201,14 @@ theorem singleton_mem_stellarSubdivision_iff :
     refine Or.inr ⟨Finset.mem_singleton_self v, ?_, by rwa [herase, Finset.empty_union]⟩
     rw [herase]
     exact fun hsub => ((K.isRelLowerSet_faces h).1).ne_empty (Finset.subset_empty.mp hsub)
+
+/-- Every vertex of a stellar subdivision is the new vertex or an old vertex. -/
+theorem eq_or_singleton_mem_of_singleton_mem_stellarSubdivision {x : ι}
+    (hx : ({x} : Finset ι) ∈ stellarSubdivision K σ v) : x = v ∨ ({x} : Finset ι) ∈ K := by
+  by_cases hxv : x = v
+  · exact Or.inl hxv
+  · exact Or.inr ((mem_stellarSubdivision_iff_of_notMem
+      (Finset.notMem_singleton.mpr (Ne.symm hxv))).mp hx).1
 
 /-- Starring destroys the starred face, as long as the new vertex does not already lie in `σ`:
 every face of the subdivision either avoids `σ` or contains the new vertex, and in the latter case
@@ -381,6 +390,39 @@ theorem map_stellarSubdivision {κ : Type*} [DecidableEq κ] (f : ι → κ)
         exact ⟨hρσ, by rwa [hρη_eq]⟩
       refine ⟨insert v ρ, hsource, ?_⟩
       rw [Finset.image_insert, hρω, Finset.insert_erase hvω]
+
+/-- A vertex map that is injective on a set containing the vertices of `K`, the starred set and
+the new vertex commutes with stellar subdivision. -/
+theorem map_stellarSubdivision_of_injOn {κ : Type*} [DecidableEq κ] {S : Set ι} {f : ι → κ}
+    (hf : S.InjOn f) (hK : ∀ x, ({x} : Finset ι) ∈ K → x ∈ S) (hσ : ↑σ ⊆ S) (hv : v ∈ S) :
+    (stellarSubdivision K σ v).map f = stellarSubdivision (K.map f) (σ.image f) (f v) := by
+  classical
+  -- Points outside `S` go to a second copy of `ι`, which makes the map injective.
+  let g : ι → κ ⊕ ι := fun x => if x ∈ S then Sum.inl (f x) else Sum.inr x
+  have hg : Function.Injective g := by
+    intro x y hxy
+    by_cases hx : x ∈ S <;> by_cases hy : y ∈ S <;> simp only [g, hx, hy, ↓reduceIte,
+      Sum.inl.injEq, Sum.inr.injEq, reduceCtorEq] at hxy
+    · exact hf hx hy hxy
+    · exact hxy
+  have hgS : ∀ x ∈ S, g x = Sum.inl (f x) := fun x hx => by simp [g, hx]
+  have hKg : K.map g = (K.map f).map Sum.inl := by
+    rw [map_map]
+    exact map_congr fun x hx => hgS x (hK x hx)
+  have hσg : σ.image g = (σ.image f).image Sum.inl := by
+    rw [Finset.image_image]
+    exact Finset.image_congr fun x hx => hgS x (hσ hx)
+  apply map_injective (Sum.inl_injective : Function.Injective (Sum.inl : κ → κ ⊕ ι))
+  calc ((stellarSubdivision K σ v).map f).map Sum.inl
+      = (stellarSubdivision K σ v).map g := by
+        rw [map_map]
+        refine map_congr fun x hx => (hgS x ?_).symm
+        rcases eq_or_singleton_mem_of_singleton_mem_stellarSubdivision hx with rfl | hx
+        · exact hv
+        · exact hK x hx
+    _ = stellarSubdivision (K.map g) (σ.image g) (g v) := map_stellarSubdivision g hg
+    _ = (stellarSubdivision (K.map f) (σ.image f) (f v)).map Sum.inl := by
+        rw [hKg, hσg, hgS v hv, map_stellarSubdivision Sum.inl Sum.inl_injective]
 
 /-! ### Dimension and finiteness -/
 
