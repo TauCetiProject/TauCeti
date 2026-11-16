@@ -69,17 +69,13 @@ def coordVolumeForm {m : ℕ} : (Fin m → ℝ) [⋀^Fin m]→L[ℝ] ℝ :=
 
 theorem coordVolumeForm_apply {m : ℕ} (v : Fin m → Fin m → ℝ) :
     coordVolumeForm v = (Matrix.of v).det := by
-  rw [coordVolumeForm, AlternatingMap.coe_toContinuousAlternatingMap]
-  rfl
+  rw [coordVolumeForm, AlternatingMap.coe_toContinuousAlternatingMap]; rfl
 
 @[simp]
 theorem coordVolumeForm_single {m : ℕ} :
     coordVolumeForm (fun i : Fin m ↦ Pi.single i (1 : ℝ)) = 1 := by
-  rw [coordVolumeForm_apply]
-  have h1 : Matrix.of (fun i : Fin m ↦ Pi.single i (1 : ℝ)) = 1 := by
-    ext i j
-    simp [Pi.single_apply, Matrix.one_apply, eq_comm]
-  rw [h1, Matrix.det_one]
+  rw [coordVolumeForm_apply, show Matrix.of (fun i : Fin m ↦ Pi.single i (1 : ℝ)) = 1 by
+    ext i j; simp [Pi.single_apply, Matrix.one_apply, eq_comm], Matrix.det_one]
 
 /-- Every continuous alternating `m`-form on `Fin m → ℝ` into a real normed space `E` equals
 `coordVolumeForm` tensored with its value on the standard basis. -/
@@ -106,8 +102,8 @@ theorem coordVolumeForm_compContinuousLinearMap {m : ℕ}
   ext v
   rw [ContinuousAlternatingMap.compContinuousLinearMap_apply, ContinuousAlternatingMap.smul_apply,
     coordVolumeForm_apply, coordVolumeForm_apply, smul_eq_mul]
-  have h := (Pi.basisFun ℝ (Fin m)).det_comp L.toLinearMap v
-  simpa only [Pi.basisFun_det_apply, ContinuousLinearMap.coe_coe] using h
+  simpa only [Pi.basisFun_det_apply, ContinuousLinearMap.coe_coe] using
+    (Pi.basisFun ℝ (Fin m)).det_comp L.toLinearMap v
 
 /-- The real `n`-form on `Fin (n + 1) → ℝ` omitting coordinate `i`: the determinant of the `n × n`
 matrix of remaining coordinates of `n` vectors, i.e., `dx₀ ∧ ⋯ ∧ dx̂ᵢ ∧ ⋯ ∧ dxₙ`. -/
@@ -118,8 +114,7 @@ def coordMinorForm {n : ℕ} (i : Fin (n + 1)) : (Fin (n + 1) → ℝ) [⋀^Fin 
 theorem coordMinorForm_apply {n : ℕ} (i : Fin (n + 1)) (v : Fin n → Fin (n + 1) → ℝ) :
     coordMinorForm i v = (Matrix.of fun r c ↦ v r (i.succAbove c)).det := by
   rw [coordMinorForm, AlternatingMap.coe_toContinuousAlternatingMap,
-    AlternatingMap.compLinearMap_apply]
-  rfl
+    AlternatingMap.compLinearMap_apply]; rfl
 
 /-- Laplace expansion along row zero expresses the `(n + 1) × (n + 1)` determinant with top row `w`
 and remaining rows `v` as the alternating pairing of `w` with `coordMinorForm`. -/
@@ -129,8 +124,7 @@ theorem sum_signed_mul_coordMinorForm {n : ℕ} (w : Fin (n + 1) → ℝ)
       (Matrix.of (Fin.cons w v)).det := by
   rw [Matrix.det_succ_row_zero]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [coordMinorForm_apply]
-  rfl
+  rw [coordMinorForm_apply]; rfl
 
 @[simp]
 theorem coordMinorForm_succAbove_single {n : ℕ} (i j : Fin (n + 1)) :
@@ -167,9 +161,7 @@ private def smulRightCLM (η : (Fin (n + 1) → ℝ) [⋀^Fin n]→L[ℝ] ℝ) :
     η).comp (ContinuousLinearMap.smulRightL ℝ ℝ E (ContinuousLinearMap.id ℝ ℝ))
 
 private theorem smulRightCLM_apply (η : (Fin (n + 1) → ℝ) [⋀^Fin n]→L[ℝ] ℝ) (y : E) :
-    smulRightCLM η y = η.smulRight y := by
-  ext v
-  simp [smulRightCLM]
+    smulRightCLM η y = η.smulRight y := by ext v; simp [smulRightCLM]
 
 /-- The `E`-valued flux `n`-form `∑ i, (-1)^i F i x dx₀ ∧ ⋯ ∧ dx̂ᵢ ∧ ⋯ ∧ dxₙ` associated to a
 coordinate field family `F : Fin (n + 1) → (Fin (n + 1) → ℝ) → E`. -/

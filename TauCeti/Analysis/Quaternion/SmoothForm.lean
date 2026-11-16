@@ -163,17 +163,11 @@ private theorem dq_single_zero_one : dq (Pi.single 0 1) = 1 := by
 private theorem differentiableAt_of_comp_dq {f : ℍ → ℍ} {x : Fin 4 → ℝ}
     (h : DifferentiableAt ℝ (fun y ↦ f (dq y)) x) : DifferentiableAt ℝ f (dq x) := by
   let L := QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1)
-  let e : ℍ ≃L[ℝ] (Fin 4 → ℝ) := L.toContinuousLinearEquiv
-  have hex : e (dq x) = x := by
-    change L (dq x) = x
-    rw [coe_dq, L.apply_symm_apply]
-  rw [← hex] at h
-  have hcomp : DifferentiableAt ℝ ((fun y ↦ f (dq y)) ∘ ⇑e) (dq x) :=
-    h.comp (dq x) e.differentiableAt
-  have hid : (fun y ↦ f (dq y)) ∘ ⇑e = f := funext fun q ↦ by
-    change f (dq (L q)) = f q
-    rw [coe_dq, L.symm_apply_apply]
-  rwa [hid] at hcomp
+  have hex : L.toContinuousLinearEquiv (dq x) = x := by
+    change L (dq x) = x; rw [coe_dq, L.apply_symm_apply]
+  have hid : (fun y ↦ f (dq y)) ∘ ⇑L.toContinuousLinearEquiv = f := funext fun q ↦ by
+    change f (dq (L q)) = f q; rw [coe_dq, L.symm_apply_apply]
+  exact hid ▸ (hex ▸ h).comp (dq x) L.toContinuousLinearEquiv.differentiableAt
 
 /-- **Left Fueter exterior-derivative identity:** `d(Dq · f) = (fueterLeft (df)) dV` for every
 `f : ℍ → ℍ` and `x : Fin 4 → ℝ` (for `f` non-differentiable at `dq x` both sides are `0`). -/
@@ -182,22 +176,16 @@ theorem extDeriv_op_smul_Dq (f : ℍ → ℍ) (x : Fin 4 → ℝ) :
       coordVolumeForm.smulRight (fueterLeft (fderiv ℝ f (dq x))) := by
   have heq : (fun y : Fin 4 → ℝ ↦ MulOpposite.op (f (dq y)) • Dq) =
       quatSurfaceForm fun y ↦ ContinuousLinearMap.mulLeftRight ℝ ℍ 1 (f (dq y)) := by
-    funext y
-    ext1 v
-    simp [quatSurfaceForm_apply]
+    funext y; ext1 v; simp [quatSurfaceForm_apply]
   by_cases hf : DifferentiableAt ℝ f (dq x)
   · rw [heq, extDeriv_quatSurfaceForm_mulLeftRight (differentiableAt_const 1) hf]
-    ext1 v
-    simp
+    ext1 v; simp
   · have hnd : ¬ DifferentiableAt ℝ (fun y ↦ MulOpposite.op (f (dq y)) • Dq) x := by
       rw [heq, quatSurfaceForm_eq_fluxForm, differentiableAt_fluxForm_iff]
-      intro hall
-      have h0 := hall 0
-      simp only [ContinuousLinearMap.mulLeftRight_apply, dq_single_zero_one, one_mul] at h0
-      exact hf (differentiableAt_of_comp_dq h0)
+      refine fun hall ↦ hf (differentiableAt_of_comp_dq ?_)
+      simpa only [ContinuousLinearMap.mulLeftRight_apply, dq_single_zero_one, one_mul] using hall 0
     rw [extDeriv_of_not_differentiableAt hnd, fderiv_zero_of_not_differentiableAt hf, map_zero]
-    ext1 v
-    simp
+    ext1 v; simp
 
 /-- **Right Fueter exterior-derivative identity:** `d(f · Dq) = (fueterRight (df)) dV` for every
 `f : ℍ → ℍ` and `x : Fin 4 → ℝ` (for `f` non-differentiable at `dq x` both sides are `0`). -/
@@ -206,22 +194,16 @@ theorem extDeriv_smul_Dq (f : ℍ → ℍ) (x : Fin 4 → ℝ) :
       coordVolumeForm.smulRight (fueterRight (fderiv ℝ f (dq x))) := by
   have heq : (fun y : Fin 4 → ℝ ↦ f (dq y) • Dq) =
       quatSurfaceForm fun y ↦ ContinuousLinearMap.mulLeftRight ℝ ℍ (f (dq y)) 1 := by
-    funext y
-    ext1 v
-    simp [quatSurfaceForm_apply]
+    funext y; ext1 v; simp [quatSurfaceForm_apply]
   by_cases hf : DifferentiableAt ℝ f (dq x)
   · rw [heq, extDeriv_quatSurfaceForm_mulLeftRight hf (differentiableAt_const 1)]
-    ext1 v
-    simp
+    ext1 v; simp
   · have hnd : ¬ DifferentiableAt ℝ (fun y ↦ f (dq y) • Dq) x := by
       rw [heq, quatSurfaceForm_eq_fluxForm, differentiableAt_fluxForm_iff]
-      intro hall
-      have h0 := hall 0
-      simp only [ContinuousLinearMap.mulLeftRight_apply, dq_single_zero_one, mul_one] at h0
-      exact hf (differentiableAt_of_comp_dq h0)
+      refine fun hall ↦ hf (differentiableAt_of_comp_dq ?_)
+      simpa only [ContinuousLinearMap.mulLeftRight_apply, dq_single_zero_one, mul_one] using hall 0
     rw [extDeriv_of_not_differentiableAt hnd, fderiv_zero_of_not_differentiableAt hf, map_zero]
-    ext1 v
-    simp
+    ext1 v; simp
 
 /-- When `g` is right Fueter regular and `f` is left Fueter regular at `dq x`, the two-sided
 weighted `3`-form `g * Dq * f` is closed at `x`. -/
@@ -231,24 +213,19 @@ theorem RightFueterAt.extDeriv_quatSurfaceForm_mulLeftRight_eq_zero {f g : ℍ �
       ContinuousLinearMap.mulLeftRight ℝ ℍ (g (dq y)) (f (dq y))) x = 0 := by
   rw [extDeriv_quatSurfaceForm_mulLeftRight hg.differentiableAt hf.differentiableAt,
     hg.fueterRight_fderiv, hf.fueterLeft_fderiv]
-  ext1 v
-  simp
+  ext1 v; simp
 
 /-- When `f` is left Fueter regular at `dq x`, `Dq · f` is closed at `x`. -/
 theorem LeftFueterAt.extDeriv_op_smul_Dq_eq_zero {f : ℍ → ℍ} {x : Fin 4 → ℝ}
     (hf : LeftFueterAt f (dq x)) :
     extDeriv (fun y ↦ MulOpposite.op (f (dq y)) • Dq) x = 0 := by
-  rw [extDeriv_op_smul_Dq f x, hf.fueterLeft_fderiv]
-  ext1 v
-  simp
+  rw [extDeriv_op_smul_Dq f x, hf.fueterLeft_fderiv]; ext1 v; simp
 
 /-- When `f` is right Fueter regular at `dq x`, `f · Dq` is closed at `x`. -/
 theorem RightFueterAt.extDeriv_smul_Dq_eq_zero {f : ℍ → ℍ} {x : Fin 4 → ℝ}
     (hf : RightFueterAt f (dq x)) :
     extDeriv (fun y ↦ f (dq y) • Dq) x = 0 := by
-  rw [extDeriv_smul_Dq f x, hf.fueterRight_fderiv]
-  ext1 v
-  simp
+  rw [extDeriv_smul_Dq f x, hf.fueterRight_fderiv]; ext1 v; simp
 
 /-- Exterior derivative of the affine-pulled-back two-sided surface form `g * Dq * f` via
 `extDeriv_pullback`: at any `u` where `g` and `f` are differentiable at `dq (p + L u)`, it equals
@@ -299,22 +276,14 @@ theorem ambientQuatSurfaceRoughForm_apply {E : Type*} [NormedAddCommGroup E] [No
     (ℓ : E →L[ℝ] ℝ) (B : (Fin 4 → ℝ) → ℍ →L[ℝ] E) (x : Fin 4 → ℝ)
     (v : Fin 3 → TangentSpace 𝓘(ℝ, Fin 4 → ℝ) x) :
     ambientQuatSurfaceRoughForm ℓ B x v =
-      ℓ (B x (Dq fun r ↦ NormedSpace.fromTangentSpace x (v r))) :=
-  (rfl)
+      ℓ (B x (Dq fun r ↦ NormedSpace.fromTangentSpace x (v r))) := (rfl)
 
 theorem fluxForm_eq_ambientQuatSurfaceRoughForm {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] (ℓ : E →L[ℝ] ℝ) (B : (Fin 4 → ℝ) → ℍ →L[ℝ] E) :
     (fluxForm fun i x ↦ ℓ (B x (dq (Pi.single i 1)))) = ambientQuatSurfaceRoughForm ℓ B := by
-  have hcomp : (fun i (x : Fin 4 → ℝ) ↦ ℓ (B x (dq (Pi.single i 1)))) =
-      fun i x ↦ (ℓ.comp (B x)) (dq (Pi.single i 1)) := by
-    ext i x
-    exact (ContinuousLinearMap.comp_apply ℓ (B x) _).symm
-  rw [hcomp, ← quatSurfaceForm_eq_fluxForm]
-  ext x v
-  change ((ℓ.comp (B x)).compContinuousAlternatingMap Dq) v =
-    ((ℓ.comp (B x)).compContinuousAlternatingMap Dq)
-      (fun r ↦ NormedSpace.fromTangentSpace (𝕜 := ℝ) x (v r))
-  congr 1
+  rw [show (fun i (x : Fin 4 → ℝ) ↦ ℓ (B x (dq (Pi.single i 1)))) =
+    fun i x ↦ (ℓ.comp (B x)) (dq (Pi.single i 1)) from rfl, ← quatSurfaceForm_eq_fluxForm]
+  ext x v; exact congrArg ((ℓ.comp (B x)).compContinuousAlternatingMap Dq) (funext fun _ ↦ rfl)
 
 theorem continuousOn_ambientQuatSurfaceRoughForm {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] (ℓ : E →L[ℝ] ℝ) {B : (Fin 4 → ℝ) → ℍ →L[ℝ] E} {s : Set (Fin 4 → ℝ)}
@@ -409,22 +378,16 @@ theorem det_cons_affineFacetOutward_affineFacetLinearMap (L : (Fin 4 → ℝ) �
   let u₀ : Fin 4 → ℝ := (if b then (1 : ℝ) else -1) • Pi.single j 1
   let u : Fin 3 → Fin 4 → ℝ := fun r ↦ j.insertNth 0 (w r)
   have hcons : Fin.cons (L.affineFacetOutward j b) (fun r ↦ L.affineFacetLinearMap j (w r)) =
-      L.toLinearMap ∘ Fin.cons u₀ u := by
-    funext k
-    refine Fin.cases ?_ (fun r ↦ ?_) k
-    · rw [Fin.cons_zero, Function.comp_apply, Fin.cons_zero, affineFacetOutward, map_smul]
-      rfl
-    · rw [Fin.cons_succ, Function.comp_apply, Fin.cons_succ, affineFacetLinearMap_apply]
-      rfl
+      L.toLinearMap ∘ Fin.cons u₀ u := funext <| Fin.cases
+    (by rw [Fin.cons_zero, Function.comp_apply, Fin.cons_zero, affineFacetOutward, map_smul]; rfl)
+    (fun r ↦ by simp [u, affineFacetLinearMap_apply])
   have hdet := (Pi.basisFun ℝ (Fin 4)).det_comp L.toLinearMap (Fin.cons u₀ u)
   simp only [Pi.basisFun_det_apply] at hdet
   rw [hcons, hdet, ← sum_signed_mul_coordMinorForm]
   simp only [u₀, Pi.smul_apply, Pi.single_apply, smul_eq_mul, mul_ite, mul_one, mul_zero, ite_mul,
     zero_mul, Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte]
-  have hminor : coordMinorForm j u = (Matrix.of w).det := by
-    rw [coordMinorForm_apply]
-    simp [u]
-  rw [hminor, coe_affineFacetSign]
+  rw [show coordMinorForm j u = (Matrix.of w).det by simp [coordMinorForm_apply, u],
+    coe_affineFacetSign]
   rcases b with _ | _ <;> simp <;> ring
 
 end ContinuousLinearMap
@@ -439,9 +402,7 @@ theorem injective_affineFacetLinearMap (j : Fin 4) :
     Injective (L.toContinuousLinearMap.affineFacetLinearMap j) := by
   intro u₁ u₂ h
   simp only [affineFacetLinearMap_apply, ContinuousLinearEquiv.coe_coe] at h
-  have hinj := L.injective h
-  funext r
-  simpa using congrFun hinj (j.succAbove r)
+  funext r; simpa using congrFun (L.injective h) (j.succAbove r)
 
 variable (p : Fin 4 → ℝ)
 
@@ -502,9 +463,7 @@ theorem orientation_eq_affineFacetOrientation_iff_det_pos
   let b₀ := Pi.basisFun ℝ (Fin 3)
   have hmf (r : Fin 3) : NormedSpace.fromTangentSpace x.1
       (mfderiv (modelWithCornersUnitCube (Fin 3)) 𝓘(ℝ, Fin 4 → ℝ) Subtype.val x (v r)) =
-      M (w r) := by
-    rw [M.mfderiv_subtypeVal_unitCubeImage hM q₀ x]
-    simp [w, e]
+      M (w r) := by rw [M.mfderiv_subtypeVal_unitCubeImage hM q₀ x]; simp [w, e]
   simp_rw [hmf]
   rw [L.toContinuousLinearMap.det_cons_affineFacetOutward_affineFacetLinearMap j b w,
     ← Pi.basisFun_det_apply]
@@ -574,16 +533,7 @@ theorem sum_integralTopForm_affineFacet {E : Type*} [NormedAddCommGroup E] [Norm
         (mpullback (modelWithCornersUnitCube (Fin 3)) 𝓘(ℝ, Fin 4 → ℝ) Subtype.val
           (ambientQuatSurfaceRoughForm ℓ B))) =
       ℓ (L.toContinuousLinearMap.rawAffineBoundary p B) := by
-  simp_rw [L.integralTopForm_affineFacet p ℓ B]
-  have hcomm (j : Fin 4) (b : Bool) :
-      (∫ u in Icc (0 : Fin 3 → ℝ) 1,
-        ℓ (B (p + L (j.insertNth (if b then 1 else 0) u))
-          (L.toContinuousLinearMap.affineFaceNormal j))) =
-        ℓ (∫ u in Icc (0 : Fin 3 → ℝ) 1,
-          B (p + L (j.insertNth (if b then 1 else 0) u))
-            (L.toContinuousLinearMap.affineFaceNormal j)) :=
-    ℓ.integral_comp_comm (hB j b)
-  simp_rw [hcomm]
+  simp_rw [L.integralTopForm_affineFacet p ℓ B, fun j b ↦ ℓ.integral_comp_comm (hB j b)]
   rw [rawAffineBoundary_eq, _root_.map_sum]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   rw [Fintype.sum_bool, ℓ.map_sub]
@@ -607,19 +557,10 @@ theorem sum_smul_integralTopForm_affineFacet_eq_rawAffineBoundary
             (ambientQuatSurfaceRoughForm (innerSLFlip ℝ (dq (Pi.single i 1))) B))) •
         dq (Pi.single i 1)) =
       L.toContinuousLinearMap.rawAffineBoundary p B := by
-  have h : (∑ i : Fin 4,
-      (∑ j : Fin 4, ∑ b : Bool,
-        letI := L.affineFacetChartedSpace p j b
-        integralTopForm (L.affineFacetOrientation p j b)
-          (mpullback (modelWithCornersUnitCube (Fin 3)) 𝓘(ℝ, Fin 4 → ℝ) Subtype.val
-            (ambientQuatSurfaceRoughForm (innerSLFlip ℝ (dq (Pi.single i 1))) B))) •
-        dq (Pi.single i 1)) =
-      ∑ i : Fin 4, ⟪L.toContinuousLinearMap.rawAffineBoundary p B, dq (Pi.single i 1)⟫ •
-        dq (Pi.single i 1) := by
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [L.sum_integralTopForm_affineFacet p (innerSLFlip ℝ (dq (Pi.single i 1))) hB,
-      innerSLFlip_apply_apply]
-  rw [h, _root_.Quaternion.sum_inner_dq_single_smul]
+  rw [← _root_.Quaternion.sum_inner_dq_single_smul (L.toContinuousLinearMap.rawAffineBoundary p B)]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [L.sum_integralTopForm_affineFacet p (innerSLFlip ℝ (dq (Pi.single i 1))) hB,
+    innerSLFlip_apply_apply]
 
 end ContinuousLinearEquiv
 
@@ -655,18 +596,14 @@ private theorem integrableOn_affineFacet_mul_cauchyFueterKernel
       (QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1)).symm.injective
         (by simpa only [coe_dq] using hy)
     have hj := mem_pi.mp hx₀ j (mem_univ j)
-    have hinv : L.symm (x₀ - p) = j.insertNth (if b then 1 else 0) u := by
-      apply L.injective
-      simp [← heq]
+    have hinv : L.symm (x₀ - p) = j.insertNth (if b then 1 else 0) u :=
+      L.injective (by simp [← heq])
     rw [hinv, Fin.insertNth_apply_same] at hj
     rcases b with _ | _ <;> simp at hj
   have hmap : MapsTo (fun u : Fin 3 → ℝ ↦ p + L (j.insertNth (if b then 1 else 0) u))
-      (Icc 0 1) S := fun u hu ↦ by
-    have hp := L.toContinuousLinearMap.affineFacetBase_add_affineFacetLinearMap p j b u
-    rw [ContinuousLinearEquiv.coe_coe] at hp
-    dsimp only
-    rw [← hp]
-    exact mem_image_of_mem _ hu
+      (Icc 0 1) S := fun u hu ↦
+    ⟨u, hu, by dsimp only; rw [ContinuousLinearMap.affineFacetBase_add_affineFacetLinearMap,
+      ContinuousLinearEquiv.coe_coe]⟩
   have hparam :
       Continuous (fun u : Fin 3 → ℝ ↦ dq (p + L (j.insertNth (if b then 1 else 0) u))) :=
     dq.continuous.comp (continuous_const.add
@@ -675,8 +612,7 @@ private theorem integrableOn_affineFacet_mul_cauchyFueterKernel
       (fun u : Fin 3 → ℝ ↦ cauchyFueterKernel
         (dq (p + L (j.insertNth (if b then 1 else 0) u))) (dq x₀))
       (Icc 0 1) :=
-    (continuousOn_cauchyFueterKernel hnotMem).comp hparam.continuousOn
-      (hmap.comp_left dq)
+    (continuousOn_cauchyFueterKernel hnotMem).comp hparam.continuousOn (hmap.comp_left dq)
   have hfI : ContinuousOn
       (fun u : Fin 3 → ℝ ↦ f (dq (p + L (j.insertNth (if b then 1 else 0) u))))
       (Icc 0 1) :=

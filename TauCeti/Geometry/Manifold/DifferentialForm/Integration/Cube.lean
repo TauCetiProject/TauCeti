@@ -96,11 +96,9 @@ theorem map_orientationAt_unitCubeOrientation [DecidableEq ι] (x : Icc (0 : ι 
   change _root_.Orientation.map ι (LinearEquiv.refl ℝ (ι → ℝ))
     ((unitCubeOrientationLift ι).orientationAt x) = _
   rw [_root_.Orientation.map_refl, Manifold.OrientationLift.orientationAt_eq,
-    Manifold.OrientationLift.chartOrientation_eq_ite, unitCubeOrientationLift_modelOrientation]
-  have hs : (unitCubeOrientationLift ι).sign x ⟨x, mem_chart_source _ x⟩ = 1 := by
-    rw [unitCubeOrientationLift,
-      Manifold.OrientationLift.ofHasGroupoid_sign (I := modelWithCornersUnitCube ι)]
-  rw [hs]
+    Manifold.OrientationLift.chartOrientation_eq_ite, unitCubeOrientationLift_modelOrientation,
+    show (unitCubeOrientationLift ι).sign x ⟨x, mem_chart_source _ x⟩ = 1 by
+      rw [unitCubeOrientationLift, Manifold.OrientationLift.ofHasGroupoid_sign]]
   rfl
 
 end UnitCubeOrientation
@@ -111,9 +109,7 @@ private theorem eqOn_signedInChartAt_unitCube {k : ℕ}
     EqOn (fun u ↦ φ.inChartAt α u (Pi.basisFun ℝ (Fin k)))
       (φ.signedInChartAt (Pi.basisFun ℝ (Fin k)) α (fun _ ↦ 1))
       (Icc (0 : Fin k → ℝ) 1) := fun u hu ↦ by
-  have hut : u ∈ (extChartAt (modelWithCornersUnitCube (Fin k)) α).target := by
-    rwa [extChartAt_unitCube_target α]
-  rw [RoughForm.signedInChartAt_apply, dite_eq_left hut]
+  rw [RoughForm.signedInChartAt_apply, dite_eq_left (by rwa [extChartAt_unitCube_target α])]
   simp
 
 /-- A rough top form on `Icc (0 : Fin k → ℝ) 1` is `IntegrableTopForm` if and only if its global
@@ -166,9 +162,7 @@ theorem integralTopForm_unitCube {k : ℕ}
       unitCubeOrientationLift_modelOrientation, _root_.Orientation.signBasis_orientation, hhaar]
     simp only [Units.val_one, Int.cast_one, one_mul]
     rw [← setIntegral_eq_integral_of_forall_compl_eq_zero (s := Icc (0 : Fin k → ℝ) 1) fun u hu ↦ by
-      have hut : u ∉ (extChartAt (modelWithCornersUnitCube (Fin k)) α).target := by
-        rwa [extChartAt_unitCube_target α]
-      rw [RoughForm.signedInChartAt_apply, dite_eq_right hut]]
+      rw [RoughForm.signedInChartAt_apply, dite_eq_right (by rwa [extChartAt_unitCube_target α])]]
     exact setIntegral_congr_fun isClosed_Icc.measurableSet fun u hu ↦ (heq hu).symm
   · have hni : ¬ IntegrableOn (fun u ↦ φ.inChartAt α u B) (Icc (0 : Fin k → ℝ) 1) :=
       mt (integrableTopForm_unitCube_iff φ α).mpr hi
@@ -206,28 +200,15 @@ theorem inChartAt_mpullback_unitCubeImage (hM : Injective M) (q₀ : E)
       ((extChartAt (modelWithCornersUnitCube ι) α).symm u) :=
     (M.contMDiff_subtypeVal_unitCubeImage hM q₀ (n := 1)).mdifferentiable one_ne_zero _
   rw [RoughForm.inChartAt_mpullback_modelSpace ω Subtype.val α htarget hf]
-  have hsymm : ((extChartAt (modelWithCornersUnitCube ι) α).symm u : E) = q₀ + M u := by
-    rw [M.extChartAt_unitCubeImage_symm_of_mem hM q₀ α hu]
-  have hd : HasFDerivWithinAt
-      (Subtype.val ∘ (extChartAt (modelWithCornersUnitCube ι) α).symm) M
-      (range (modelWithCornersUnitCube ι)) u := by
-    have haff : HasFDerivWithinAt (fun v : ι → ℝ ↦ q₀ + M v) M
-        (range (modelWithCornersUnitCube ι)) u := by
-      have hadd := ((hasFDerivAt_const q₀ u).add (M.hasFDerivAt (x := u))).hasFDerivWithinAt
-        (s := range (modelWithCornersUnitCube ι))
-      rwa [zero_add] at hadd
-    exact haff.congr
-      (fun v hv ↦ by
-        simp only [Function.comp_apply]
-        rw [M.extChartAt_unitCubeImage_symm_of_mem hM q₀ α
-          (range_modelWithCornersUnitCube (ι := ι) ▸ hv)])
-      (by simp only [Function.comp_apply, hsymm])
-  have hfderiv : fderivWithin ℝ
-      (Subtype.val ∘ (extChartAt (modelWithCornersUnitCube ι) α).symm)
-      (range (modelWithCornersUnitCube ι)) u = M :=
-    hd.fderivWithin ((modelWithCornersUnitCube ι).uniqueDiffOn u
-      (by rwa [range_modelWithCornersUnitCube]))
-  rw [hfderiv, hsymm]
+  have hsymm {v : ι → ℝ} (hv : v ∈ Icc (0 : ι → ℝ) 1) :
+      ((extChartAt (modelWithCornersUnitCube ι) α).symm v : E) = q₀ + M v :=
+    congrArg Subtype.val (M.extChartAt_unitCubeImage_symm_of_mem hM q₀ α hv)
+  have hd := (((M.hasFDerivAt (x := u)).const_add q₀).hasFDerivWithinAt
+    (s := range (modelWithCornersUnitCube ι))).congr
+    (f₁ := Subtype.val ∘ (extChartAt (modelWithCornersUnitCube ι) α).symm)
+    (fun v hv ↦ hsymm (range_modelWithCornersUnitCube (ι := ι) ▸ hv)) (hsymm hu)
+  rw [hd.fderivWithin ((modelWithCornersUnitCube ι).uniqueDiffOn u
+    (by rwa [range_modelWithCornersUnitCube])), hsymm hu]
 
 /-- An ambient `k`-form that is `C^r` on `(fun u ↦ q₀ + M u) '' Icc 0 1` pulls back along
 `Subtype.val` to a `C^r` form on that compact affine cube. -/
@@ -253,12 +234,8 @@ theorem isSmoothForm_mpullback_unitCubeImage_of_contDiffOn (hM : Injective M) (q
     rwa [M.extChartAt_unitCubeImage_target hM q₀ x] at hxt
   rw [range_modelWithCornersUnitCube]
   refine (hcomp _ hx).congr (fun u hu ↦ ?_) ?_
-  · rw [M.inChartAt_mpullback_unitCubeImage hM q₀ ω x hu]
-    ext v
-    rfl
-  · rw [M.inChartAt_mpullback_unitCubeImage hM q₀ ω x hx]
-    ext v
-    rfl
+  · rw [M.inChartAt_mpullback_unitCubeImage hM q₀ ω x hu]; ext v; rfl
+  · rw [M.inChartAt_mpullback_unitCubeImage hM q₀ ω x hx]; ext v; rfl
 
 /-- An ambient `k`-form that is continuous on `(fun u ↦ q₀ + M u) '' Icc 0 1` pulls back along
 `Subtype.val` to a `C^0` form on that compact affine cube. -/
@@ -351,10 +328,9 @@ theorem unitCubeImageOrientationLift_signAt (hM : Injective M) (q₀ : E) (s : �
     (M.unitCubeImageOrientationLift hM q₀ s).signAt α x = s := by
   let := M.unitCubeImageChartedSpace hM q₀
   have hx : x ∈ (chartAt (Icc (0 : ι → ℝ) 1) α).source := by
-    rw [M.chartAt_unitCubeImage_source hM q₀ α]
-    exact mem_univ x
-  rw [Manifold.OrientationLift.signAt_of_mem _ hx]
-  exact M.unitCubeImageOrientationLift_sign hM q₀ s α ⟨x, hx⟩
+    simp [M.chartAt_unitCubeImage_source hM q₀ α]
+  exact (Manifold.OrientationLift.signAt_of_mem _ hx).trans
+    (M.unitCubeImageOrientationLift_sign hM q₀ s α ⟨x, hx⟩)
 
 theorem unitCubeImageOrientation_neg (hM : Injective M) (q₀ : E) (s : ℤˣ) :
     letI := M.unitCubeImageChartedSpace hM q₀
@@ -410,15 +386,12 @@ private theorem eqOn_signedInChartAt_mpullback_unitCubeImage (hM : Injective M) 
       (Icc (0 : Fin k → ℝ) 1) := by
   let := M.unitCubeImageChartedSpace hM q₀
   intro u hu
-  have hut : u ∈ (extChartAt (modelWithCornersUnitCube (Fin k)) α).target := by
-    rwa [M.extChartAt_unitCubeImage_target hM q₀ α]
-  rw [RoughForm.signedInChartAt_apply, dite_eq_left hut]
-  simp only [Units.val_one, Int.cast_one, one_mul]
-  rw [M.inChartAt_mpullback_unitCubeImage hM q₀ ω α hu,
-    ContinuousAlternatingMap.compContinuousLinearMap_apply]
-  congr 1
-  funext r
-  simp [Pi.basisFun_apply]
+  rw [RoughForm.signedInChartAt_apply,
+    dite_eq_left (by rwa [M.extChartAt_unitCubeImage_target hM q₀ α]),
+    M.inChartAt_mpullback_unitCubeImage hM q₀ ω α hu]
+  simp only [Units.val_one, Int.cast_one, ContinuousAlternatingMap.compContinuousLinearMap_apply,
+    one_mul]
+  congr 1; ext r; simp [Pi.basisFun_apply]
 
 /-- The pullback of an ambient rough `k`-form `ω` to `(fun u ↦ q₀ + M u) '' Icc 0 1` is
 `IntegrableTopForm` if and only if the column evaluation `u ↦ ω (q₀ + M u) (r ↦ M (eᵣ))` is
@@ -498,9 +471,8 @@ theorem integralTopForm_mpullback_unitCubeImage (hM : Injective M) (q₀ : E) (s
     simp only [Units.val_one, Int.cast_one, one_mul]
     congr 1
     rw [← setIntegral_eq_integral_of_forall_compl_eq_zero (s := Icc (0 : Fin k → ℝ) 1) fun u hu ↦ by
-      have hut : u ∉ (extChartAt (modelWithCornersUnitCube (Fin k)) α).target := by
-        rwa [M.extChartAt_unitCubeImage_target hM q₀ α]
-      rw [RoughForm.signedInChartAt_apply, dite_eq_right hut]]
+      rw [RoughForm.signedInChartAt_apply,
+        dite_eq_right (by rwa [M.extChartAt_unitCubeImage_target hM q₀ α])]]
     exact setIntegral_congr_fun isClosed_Icc.measurableSet fun u hu ↦ (heq hu).symm
   · have hni : ¬ IntegrableOn g (Icc (0 : Fin k → ℝ) 1) :=
       mt (M.integrableTopForm_mpullback_unitCubeImage_iff hM q₀ ω).mpr hi
