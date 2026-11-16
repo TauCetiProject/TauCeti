@@ -122,13 +122,6 @@ noncomputable abbrev unstableOrientationLine :
       (Fin (manifoldMorseIndex 𝓘(ℝ, E) f x)) → R) :=
   orientationLine R ℝ ({i // φ.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f x))
 
-/-- The number of orientation coordinates is the dimension of the space of coordinates of negative
-weight, so that its orientations are opposite to each other. -/
-theorem card_fin_manifoldMorseIndex_eq_finrank :
-    Fintype.card (Fin (manifoldMorseIndex 𝓘(ℝ, E) f x)) =
-      finrank ℝ ({i // φ.weight i < 0} → ℝ) := by
-  rw [Fintype.card_fin, φ.finrank_negativeWeight_fun]
-
 end MorseChart
 
 section ChartChange
