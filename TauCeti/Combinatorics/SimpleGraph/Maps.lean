@@ -11,11 +11,11 @@ public import Mathlib.Combinatorics.SimpleGraph.Maps
 # Pulling simple graphs back and pushing them forward
 
 Pulling a simple graph back along a map `f : V → W` forgets everything outside the window
-`Set.range f`, and pushing the result forward again recovers exactly what the window sees: the
-intersection of the graph with the complete graph supported on that window. Since pushing forward
-along an embedding is injective, for an embedding prescribing a pullback is therefore the same as
-prescribing that intersection — a condition on an induced subgraph turned into a condition on
-edges.
+`Set.range f`, and pushing the result forward again recovers the intersection of the graph with
+the complete graph supported on that window (`SimpleGraph.map_comap_eq_inf`). Since pushing
+forward along an embedding is injective, for an embedding prescribing a pullback is therefore the
+same as prescribing that intersection — a condition on an induced subgraph turned into a condition
+on edges.
 
 The window of a graph on `ℕ` spanned by the first `n` labels is the pullback along `Fin.val`; it
 is how a graph on an infinite label set is read as a finite sample. A graph is also recorded by
@@ -28,10 +28,8 @@ its Boolean adjacency array.
 
 ## Main results
 
-* `SimpleGraph.map_comap_eq_inf_map_top` — pushing a pullback forward cuts the graph down to the
-  window;
-* `SimpleGraph.comap_eq_iff_inf_map_top` — prescribing a pullback is prescribing that
-  intersection;
+* `SimpleGraph.comap_eq_iff_inf_map_top` — prescribing a pullback along an embedding is
+  prescribing the intersection with the window;
 * `SimpleGraph.map_sup` — pushing forward along any map commutes with joins;
 * `SimpleGraph.restrictFin_adj` — two labels are joined in a window exactly when they are joined
   in the graph;
@@ -45,18 +43,11 @@ namespace SimpleGraph
 
 variable {V W : Type*}
 
-/-- Pushing a pullback forward again cuts the graph down to the window seen by the map. -/
-@[simp]
-theorem map_comap_eq_inf_map_top (f : V → W) (G : SimpleGraph W) :
-    (G.comap f).map f = G ⊓ (⊤ : SimpleGraph V).map f := by
-  ext
-  grind [comap_adj, inf_adj, top_adj]
-
 /-- A pullback along an embedding is prescribed exactly by prescribing the intersection of the
 graph with the window seen by the embedding. -/
 theorem comap_eq_iff_inf_map_top (f : V ↪ W) (G : SimpleGraph W) (H : SimpleGraph V) :
     G.comap ⇑f = H ↔ G ⊓ (⊤ : SimpleGraph V).map ⇑f = H.map ⇑f := by
-  rw [← (map_injective f).eq_iff, map_comap_eq_inf_map_top]
+  rw [← (map_injective f).eq_iff, G.map_comap_eq_inf f]
 
 /-- Pushing a graph forward along any map commutes with joins: an edge of the image of `G ⊔ H`
 is the image of an edge of `G` or of an edge of `H`. -/
