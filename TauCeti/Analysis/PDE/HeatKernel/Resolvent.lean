@@ -28,8 +28,8 @@ The main theorem identifies the resolvent of the heat semigroup `e^{tΔ}` on `L�
 
 `(λ - A)⁻¹ f = ∫₀^∞ e^{-λt} e^{tΔ} f dt = G_λ ⋆ f`,
 
-where `A` is the generator of the heat semigroup, not yet identified with the Laplacian on its
-full domain (`TauCeti.resolvent_heatSemigroup`, `TauCeti.resolvent_generator_heatSemigroup`).
+where `A` is the generator `(heatSemigroup hp).generator` of the heat semigroup
+(`TauCeti.resolvent_heatSemigroup`, `TauCeti.resolvent_generator_heatSemigroup`).
 In particular `u = G_λ ⋆ f` lies in the domain of `A` and solves `λ u - A u = f`. As a
 convolution with a nonnegative kernel of mass `1 / λ`, the resolvent preserves positivity, has
 norm at most `1 / λ` on every `Lᵖ` by Young's inequality, and on `L¹` it scales the integral by
