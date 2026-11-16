@@ -57,7 +57,6 @@ variable {ι X Y 𝕜 V : Type*} [AddCommGroup X] [AddCommGroup Y]
 theorem LSPath.isCrystalSet_range_toPLPath (hlam : lam ∈ dominantChamber P b)
     (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜)) :
     PLPath.IsCrystalSet b f F (range fun π : LSPath P b lam ↦ π.toPLPath 𝕜 f) :=
-  have := P.flip_isReduced
   { endpoint_mem_range := by
       rintro _ ⟨π, rfl⟩; obtain ⟨_, -, hm⟩ := π.exists_mem_rootSpan_endpoint_eq_add (𝕜 := 𝕜) hlam f
       exact ⟨_, hm.symm⟩
@@ -157,7 +156,6 @@ variable {f : X →+ V} {F : b.support → Dual 𝕜 V}
 theorem cast_normalCrystal_ε (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
     (i : b.support) (π : LSPath P b lam) :
     ((normalCrystal hlam).ε i π : 𝕜) = -(π.toPLPath 𝕜 f).minHeight (F i) := by
-  have := P.flip_isReduced
   have hε₀ : ((normalCrystal hlam).ε i π : ℚ) =
       -(π.toPLPath ℚ (qHom X)).minHeight (qForm P b i) := by
     simpa [normalCrystal, qEquiv] using PLPath.cast_normalCrystalOn_ε
@@ -187,7 +185,6 @@ theorem raise_toPLPath_eq_map_normalCrystal_e
     (i : b.support) (π : LSPath P b lam) :
     PLPath.raise (F i) (f (P.root i)) (π.toPLPath 𝕜 f) =
       ((normalCrystal hlam).e i π).map (fun π' ↦ π'.toPLPath 𝕜 f) := by
-  have := P.flip_isReduced
   have hq : π.toPLPath ℚ (qHom X) = (qEquiv hlam π).1 := by simp [qEquiv]
   have he₀ : PLPath.raise (qForm P b i) (qHom X (P.root i)) (π.toPLPath ℚ (qHom X)) =
       ((normalCrystal hlam).e i π).map (fun π' ↦ π'.toPLPath ℚ (qHom X)) := by
@@ -233,7 +230,6 @@ theorem lower_toPLPath_eq_map_normalCrystal_f
     (i : b.support) (π : LSPath P b lam) :
     PLPath.lower (F i) (f (P.root i)) (π.toPLPath 𝕜 f) =
       ((normalCrystal hlam).f i π).map (fun π' ↦ π'.toPLPath 𝕜 f) := by
-  have := P.flip_isReduced
   rcases hf_opt : (normalCrystal hlam).f i π with _ | π'
   · simp only [Option.map_none]
     refine Option.eq_none_iff_forall_not_mem.mpr fun q hq ↦ ?_
@@ -308,7 +304,7 @@ theorem forall_normalCrystal_e_eq_none_iff {π : LSPath P b lam} :
 /-- **Every LS path of dominant shape `λ` is obtained from `straight λ` by a lowering word.** -/
 theorem exists_fWord_straight_eq_some (π : LSPath P b lam) :
     ∃ w : List b.support, (normalCrystal hlam).fWord w (straight lam) = some π := by
-  have := P.flip_isReduced; have := LSPath.finite (P := P) (b := b) hlam
+  have := LSPath.finite (P := P) (b := b) hlam
   exact (normalCrystal hlam).exists_fWord_eq_some_of_unique_highest
     (fun _ hx ↦ (forall_normalCrystal_e_eq_none_iff hlam).mp hx) π
 

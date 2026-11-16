@@ -34,7 +34,7 @@ namespace TauCeti.LSPath
 open RootPairing
 
 variable {ι M N : Type*} [AddCommGroup M] [AddCommGroup N]
-  {P : RootPairing ι ℤ M N} {b : P.Base} [Finite ι] [P.IsReduced] [P.flip.IsReduced] {lam : M}
+  {P : RootPairing ι ℤ M N} {b : P.Base} [Finite ι] [P.IsReduced] {lam : M}
 
 private theorem Linked.mapIdx_simple_mul_neg (hlam : lam ∈ dominantChamber P b) {t : ℚ}
     {l : List (P.weylGroup × ℚ)} (hl : Linked P b lam t l)
@@ -93,7 +93,6 @@ private noncomputable def raiseList (i : b.support) (l : List (P.weylGroup × �
     ((τ, (1 - θ) * d) :: (l.take k₁).drop (j₀ + 1)).map
       (fun p ↦ ((weylCoxeterSystem P b).simple i * p.1, p.2)) ++ l.drop k₁
 
-omit [P.flip.IsReduced] in
 private theorem nonneg_of_mem_raiseList (i : b.support) {l : List (P.weylGroup × ℚ)}
     (hl : ∀ p ∈ l, 0 ≤ p.2) {j₀ k₁ : ℕ} {τ : P.weylGroup} {d θ : ℚ} (hd : 0 ≤ d) (hθ₀ : 0 ≤ θ)
     (hθ₁ : θ ≤ 1) {p : P.weylGroup × ℚ} (hp : p ∈ raiseList b i l j₀ k₁ τ d θ) : 0 ≤ p.2 := by
@@ -106,7 +105,6 @@ private theorem nonneg_of_mem_raiseList (i : b.support) {l : List (P.weylGroup �
   · exact hl q (List.mem_of_mem_take (List.mem_of_mem_drop hq))
   · exact hl p (List.mem_of_mem_drop hp)
 
-omit [P.flip.IsReduced] in
 private theorem sum_map_snd_raiseList (i : b.support) {l : List (P.weylGroup × ℚ)} {j₀ k₁ : ℕ}
     (hj₀k₁ : j₀ < k₁) (hk₁ : k₁ ≤ l.length) (θ : ℚ) :
     ((raiseList b i l j₀ k₁ (l[j₀]'(by omega)).1 (l[j₀]'(by omega)).2 θ).map Prod.snd).sum =
@@ -211,7 +209,6 @@ private theorem linked_raiseList (hlam : lam ∈ dominantChamber P b)
 
 section Realization
 
-omit [P.flip.IsReduced] in
 private theorem preReflection_smul_apply {𝕜 V : Type*} [Field 𝕜] [AddCommGroup V] [Module 𝕜 V]
     (f : M →+ V) (i : b.support) (F : Module.Dual 𝕜 V)
     (hF : ∀ m, F (f m) = (P.coroot' i m : 𝕜)) (d : 𝕜) (w : P.weylGroup) :
@@ -219,7 +216,6 @@ private theorem preReflection_smul_apply {𝕜 V : Type*} [Field 𝕜] [AddCommG
       d • f (((weylCoxeterSystem P b).simple i * w) • lam) := by
   rw [map_smul, ← P.map_reflection_eq_preReflection i hF, simple_mul_smul_eq_reflection]
 
-omit [P.flip.IsReduced] in
 private theorem apply_take_sum_dirDurations {𝕜 V : Type*} [Field 𝕜] [CharZero 𝕜]
     [AddCommGroup V] [Module 𝕜 V] (π : LSPath P b lam) (f : M →+ V) (i : b.support)
     (F : Module.Dual 𝕜 V) (hF : ∀ m, F (f m) = (P.coroot' i m : 𝕜)) (k : ℕ) :
@@ -229,7 +225,6 @@ private theorem apply_take_sum_dirDurations {𝕜 V : Type*} [Field 𝕜] [CharZ
   simp only [← List.map_take, map_list_sum, List.map_map, Rat.cast_list_sum]
   exact congrArg List.sum (List.map_congr_left fun p _ ↦ by simp [hF])
 
-omit [P.flip.IsReduced] in
 private theorem raise_toPLPath_eq_some_of_raiseList {𝕜 V : Type*} [Field 𝕜] [LinearOrder 𝕜]
     [IsStrictOrderedRing 𝕜] [AddCommGroup V] [Module 𝕜 V] (π : LSPath P b lam) (f : M →+ V)
     (i : b.support) (F : Module.Dual 𝕜 V) (hF : ∀ m, F (f m) = (P.coroot' i m : 𝕜))
