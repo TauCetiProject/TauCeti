@@ -24,7 +24,9 @@ Let `(V, ω)` be a finite-dimensional real symplectic vector space with a Darbou
 (`IsDarbouxBasis.quadraticPoissonBracket_elliptic`). The Hamiltonian endomorphism of a combination
 `∑ₖ cₖ Iₖ` rotates each plane `span(qₖ, pₖ)` with angular frequency `cₖ`
 (`IsDarbouxBasis.hamiltonianEnd_sum_smul_elliptic_apply_fst`,
-`IsDarbouxBasis.hamiltonianEnd_sum_smul_elliptic_apply_snd`).
+`IsDarbouxBasis.hamiltonianEnd_sum_smul_elliptic_apply_snd`), and these rotations determine it
+(`IsDarbouxBasis.eq_sum_smul_elliptic_of_hamiltonianEnd_apply_eq`). For any basis the total
+oscillator `∑ₖ Iₖ` is positive definite (`TauCeti.SymplecticForm.posDef_sum_elliptic`).
 
 These are the elliptic blocks of Williamson's normal forms of nondegenerate rank-zero singularities
 of integrable systems. That they form a nondegenerate family, in every dimension, is
@@ -70,6 +72,20 @@ theorem polar_elliptic (b : Basis (Fin n × Fin 2) ℝ V) (k : Fin n) (u v : V) 
       b.repr u (k, 0) * b.repr v (k, 0) + b.repr u (k, 1) * b.repr v (k, 1) := by
   simp only [QuadraticMap.polar, elliptic_apply, map_add, Finsupp.add_apply]
   ring
+
+/-- The total oscillator `∑ₖ Iₖ = ∑ₖ (xₖ² + yₖ²) / 2` is positive definite: it is half the sum of
+the squares of all the coordinates. -/
+theorem posDef_sum_elliptic (b : Basis (Fin n × Fin 2) ℝ V) : (∑ k, elliptic b k).PosDef := by
+  intro x hx
+  obtain ⟨⟨k, a⟩, hka⟩ : ∃ i, b.repr x i ≠ 0 := by
+    by_contra! h
+    exact hx (b.repr.injective (Finsupp.ext fun i ↦ by simpa using h i))
+  rw [sum_apply]
+  refine Finset.sum_pos' (fun j _ ↦ by rw [elliptic_apply]; positivity)
+    ⟨k, Finset.mem_univ _, ?_⟩
+  rw [elliptic_apply]
+  obtain rfl | rfl : a = 0 ∨ a = 1 := by omega
+  all_goals positivity
 
 variable [FiniteDimensional ℝ V] {ω : SymplecticForm V} {b : Basis (Fin n × Fin 2) ℝ V}
 
@@ -121,6 +137,18 @@ theorem IsDarbouxBasis.hamiltonianEnd_sum_smul_elliptic_apply_snd (hb : ω.IsDar
     (c : Fin n → ℝ) (j : Fin n) :
     ω.hamiltonianEnd (∑ k, c k • elliptic b k) (b (j, 1)) = c j • b (j, 0) := by
   simp [map_sum, LinearMap.sum_apply, hb.hamiltonianEnd_elliptic_apply_snd]
+
+/-- In a Darboux basis, a quadratic form whose Hamiltonian endomorphism rotates every plane
+`span(qₖ, pₖ)` with angular frequency `cₖ`, `qₖ ↦ -cₖ pₖ` and `pₖ ↦ cₖ qₖ`, is `∑ₖ cₖ Iₖ`. -/
+theorem IsDarbouxBasis.eq_sum_smul_elliptic_of_hamiltonianEnd_apply_eq (hb : ω.IsDarbouxBasis b)
+    {R : QuadraticForm ℝ V}
+    (hA : ∀ k, ω.hamiltonianEnd R (b (k, 0)) = -c k • b (k, 1) ∧
+      ω.hamiltonianEnd R (b (k, 1)) = c k • b (k, 0)) :
+    R = ∑ k, c k • elliptic b k := by
+  refine ω.hamiltonianEnd_injective (b.ext fun ⟨k, a⟩ ↦ ?_)
+  obtain rfl | rfl : a = 0 ∨ a = 1 := by omega
+  · rw [(hA k).1, hb.hamiltonianEnd_sum_smul_elliptic_apply_fst]
+  · rw [(hA k).2, hb.hamiltonianEnd_sum_smul_elliptic_apply_snd]
 
 end Regular
 
