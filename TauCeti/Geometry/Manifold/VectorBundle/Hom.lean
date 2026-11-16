@@ -13,6 +13,7 @@ public import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 import TauCeti.Topology.VectorBundle.Coordinates
 import TauCeti.Topology.VectorBundle.Trivialization
 import TauCeti.Data.Bundle
+import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.Section
 import TauCeti.Geometry.Manifold.ContMDiff.FiniteDimension
 import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
@@ -272,9 +273,7 @@ theorem _root_.Bundle.Trivialization.contMDiffOn_compl₁₂_symmₗ
     (contMDiffOn_const (c := u)) y hy
   refine TauCeti.contMDiffWithinAt_clm_apply.mpr fun v ↦
     TauCeti.contMDiffWithinAt_clm_apply.mpr fun w ↦ ?_
-  have h := ContMDiffWithinAt.clm_bundle_apply₂ (F₃ := G) (E₃ := Bundle.Trivial B G)
-    (b := id) (hβ y hy) (hs v) (hs w)
-  exact (contMDiffWithinAt_totalSpace_iff.mp h).2.congr
+  exact ((hβ y hy).clm_bundle_apply₂_trivial (hs v) (hs w)).congr
     (fun z hz ↦ by simp [e.symmₗ_apply hz]) (by simp [e.symmₗ_apply hy])
 
 end TrivializationForm
