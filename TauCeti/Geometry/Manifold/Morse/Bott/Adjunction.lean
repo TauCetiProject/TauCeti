@@ -146,7 +146,7 @@ variable {E M S : Type u} {H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 namespace IsCriticalSubmanifold
 
-/-- **Crossing a Morse–Bott level attaches the negative disc bundle along its sphere bundle.** Let
+/-- **The lower sublevel with the image of the negative disc bundle is an adjunction space.** Let
 `i : S → M` be a critical submanifold of a continuous function `f` on a Hausdorff manifold, with a
 fibre metric `g` on its normal bundle, and suppose that the negative disc bundle `D_ε` is compact,
 as it is for a compact Morse–Bott submanifold and a smooth fibre metric

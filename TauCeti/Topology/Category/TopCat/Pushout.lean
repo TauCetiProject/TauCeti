@@ -12,6 +12,7 @@ import Mathlib.CategoryTheory.Limits.ConcreteCategory.Basic
 import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Pullbacks
 import Mathlib.CategoryTheory.Limits.Types.Pushouts
 import Mathlib.Topology.LocallyFinite
+import TauCeti.Topology.ContinuousMap.GlueClosedEmbeddings
 
 /-!
 # Maps and homotopies out of pushouts in `TopCat`
@@ -292,20 +293,15 @@ theorem of_isClosedEmbedding_of_range_union_range {S A B X : TopCat.{u}} {g : S 
     (hj : IsClosedEmbedding j) (hcover : range i ∪ range j = univ)
     (hij : ∀ a b, i a = j b → ∃ s, g s = a ∧ m s = b) :
     IsPushout g m i j := by
-  let desc (s : PushoutCocone g m) :=
-    TopCat.exists_glue_of_isClosedEmbedding (ι := Unit) (B := fun _ ↦ B) (j := fun _ ↦ j) hi
-      (fun _ ↦ hj) (by rwa [iUnion_const]) Subsingleton.pairwise s.inl (fun _ ↦ s.inr)
-      fun _ x y h ↦ by
-        obtain ⟨t, rfl, rfl⟩ := hij x y h
-        exact ConcreteCategory.congr_hom s.condition t
-  refine IsPushout.of_isColimit' ⟨w⟩ (PushoutCocone.IsColimit.mk w (fun s ↦ (desc s).choose)
-    (fun s ↦ (desc s).choose_spec.1) (fun s ↦ (desc s).choose_spec.2 ()) fun s d h₁ h₂ ↦ ?_)
-  ext x
-  obtain ⟨a, rfl⟩ | ⟨b, rfl⟩ := hcover.symm ▸ mem_univ x
-  · rw [← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply, h₁,
-      (desc s).choose_spec.1]
-  · rw [← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply, h₂,
-      (desc s).choose_spec.2 ()]
+  let desc (s : PushoutCocone g m) : X ⟶ s.pt :=
+    TopCat.ofHom (ContinuousMap.glueClosedEmbeddings s.inl.hom s.inr.hom hi hj hcover
+      fun a b h ↦ by
+        obtain ⟨t, rfl, rfl⟩ := hij a b h
+        exact ConcreteCategory.congr_hom s.condition t)
+  refine IsPushout.of_isColimit' ⟨w⟩ (PushoutCocone.IsColimit.mk w desc
+    (fun s ↦ by ext; simp [desc]) (fun s ↦ by ext; simp [desc]) fun s d h₁ h₂ ↦
+      TopCat.hom_ext (ContinuousMap.eq_glueClosedEmbeddings (ConcreteCategory.congr_hom h₁)
+        (ConcreteCategory.congr_hom h₂)))
 
 end ClosedCover
 
