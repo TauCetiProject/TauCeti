@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Floer.Linearization
+public import TauCeti.Geometry.Symplectic.Floer.Linearization.Basic
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # The formal adjoint of the linearized Floer operator
@@ -238,17 +239,6 @@ theorem apply_floerLinearization_eq_floerLinearizationAdjoint_apply_add
   abel
 
 omit [FiniteDimensional ℝ V] in
-/-- The pairing `z ↦ F z (g z)` of a covector field `F`, continuous at each point of a compact set
-`K`, with a continuous map `g` vanishing off `K` is integrable. -/
-private theorem integrable_apply_of_continuousAt {K : Set (ℝ × ℝ)} (hK : IsCompact K)
-    {F : ℝ × ℝ → V →L[ℝ] ℝ} (hF : ∀ z ∈ K, ContinuousAt F z) {g : ℝ × ℝ → V}
-    (hg : Continuous g) (hg0 : ∀ z ∉ K, g z = 0) : Integrable fun z ↦ F z (g z) := by
-  have hFg : ContinuousOn (fun z ↦ F z (g z)) K := fun z hz ↦
-    ((hF z hz).clm_apply hg.continuousAt).continuousWithinAt
-  exact (hFg.integrableOn_compact hK).integrable_of_forall_notMem_eq_zero fun z hz ↦ by
-    simp [hg0 z hz]
-
-omit [FiniteDimensional ℝ V] in
 /-- `w ↦ J(w, u w)` is `C¹` at `z` when `J` is `C¹` at `(z, u z)` and `u` is `C¹` at `z`. -/
 private theorem contDiffAt_comp_graph (hJ : ContDiffAt ℝ 1 (Function.uncurry J) (z, u z))
     (hu : ContDiffAt ℝ 1 u z) : ContDiffAt ℝ 1 (fun w ↦ J w (u w)) z :=
@@ -290,25 +280,26 @@ theorem integral_apply_floerLinearization_eq_integral_floerLinearizationAdjoint_
   have hA (z : ℝ × ℝ) (hz : z ∈ K) : ContDiffAt ℝ 1 A z :=
     (hη z hz).clm_comp (contDiffAt_comp_graph (hJ z hz) (hu z hz))
   -- The pairings of `η`, `A` and their derivatives with `ξ` and its derivatives are integrable:
-  -- each is continuous on the support of `ξ` and vanishes off it.
-  have hξ0 (z : ℝ × ℝ) (hz : z ∉ K) : ξ z = 0 := image_eq_zero_of_notMem_tsupport hz
-  have hdξ0 (v z : ℝ × ℝ) (hz : z ∉ K) : fderiv ℝ ξ z v = 0 := by
-    simp [fderiv_of_notMem_tsupport ℝ hz]
-  have hdξ (v : ℝ × ℝ) : Continuous fun z ↦ fderiv ℝ ξ z v :=
-    (hξ.continuous_fderiv one_ne_zero).clm_apply continuous_const
+  -- each is continuous on the support of `ξ`, which is compact.
+  have hdξ (v : ℝ × ℝ) {F : ℝ × ℝ → V →L[ℝ] ℝ} (hF : ∀ z ∈ K, ContinuousAt F z) :
+      Integrable fun z ↦ F z (fderiv ℝ ξ z v) :=
+    Continuous.integrable_clm_apply_of_continuousOn
+      ((hξ.continuous_fderiv one_ne_zero).clm_apply continuous_const) (hξc.fderiv_apply (𝕜 := ℝ) v)
+      (tsupport_fderiv_apply_subset ℝ v) fun z hz ↦ (hF z hz).continuousWithinAt
+  have hξK {F : ℝ × ℝ → V →L[ℝ] ℝ} (hF : ∀ z ∈ K, ContinuousAt F z) :
+      Integrable fun z ↦ F z (ξ z) :=
+    hξ.continuous.integrable_clm_apply_of_continuousOn hξc subset_rfl fun z hz ↦
+      (hF z hz).continuousWithinAt
   have hd {F : ℝ × ℝ → V →L[ℝ] ℝ} (hF : ∀ z ∈ K, ContDiffAt ℝ 1 F z) (v : ℝ × ℝ) (z : ℝ × ℝ)
       (hz : z ∈ K) : ContinuousAt (fun w ↦ fderiv ℝ F w v) z :=
     ((hF z hz).continuousAt_fderiv one_ne_zero).clm_apply continuousAt_const
-  have ha := integrable_apply_of_continuousAt hξc (fun z hz ↦ (hη z hz).continuousAt) (hdξ _)
-    (hdξ0 stdComplexLineReal)
-  have hb := integrable_apply_of_continuousAt hξc (fun z hz ↦ (hA z hz).continuousAt) (hdξ _)
-    (hdξ0 stdComplexLineImag)
-  have ha' := (integrable_apply_of_continuousAt hξc (hd hη stdComplexLineReal) hξ.continuous
-    hξ0).neg
-  have hb' := integrable_apply_of_continuousAt hξc (hd hA stdComplexLineImag) hξ.continuous hξ0
-  have hc := integrable_apply_of_continuousAt hξc (F := fun z ↦ (η z).comp (C z))
-    (fun z hz ↦ (hη z hz).continuousAt.clm_comp (ω.continuousAt_floerLinearizationCoeff
-      (hJ z hz) (hKs z hz) (hKt z hz) (hu z hz))) hξ.continuous hξ0
+  have ha := hdξ stdComplexLineReal fun z hz ↦ (hη z hz).continuousAt
+  have hb := hdξ stdComplexLineImag fun z hz ↦ (hA z hz).continuousAt
+  have ha' := (hξK (hd hη stdComplexLineReal)).neg
+  have hb' := hξK (hd hA stdComplexLineImag)
+  have hc := hξK (F := fun z ↦ (η z).comp (C z)) fun z hz ↦
+    (hη z hz).continuousAt.clm_comp (ω.continuousAt_floerLinearizationCoeff
+      (hJ z hz) (hKs z hz) (hKt z hz) (hu z hz))
   -- Integration by parts in `s` for `η(∂s ξ)` and in `t` for `(η ∘ J)(∂t ξ)`.
   have hIs := integral_bilinear_fderiv_right_eq_neg_left_of_hasCompactSupport (μ := volume)
     (ContinuousLinearMap.id ℝ (V →L[ℝ] ℝ)) hη hξ hξc stdComplexLineReal
