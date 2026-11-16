@@ -234,13 +234,14 @@ end LinearIsometryEquiv
 
 namespace LinearIsometry
 
-variable {𝕜 E F : Type*} [NormedField 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+variable {𝕜 𝕜₂ E F : Type*} [NormedField 𝕜] [NormedField 𝕜₂] {σ₁₂ : 𝕜 →+* 𝕜₂}
+  {σ₂₁ : 𝕜₂ →+* 𝕜} [RingHomInvPair σ₁₂ σ₂₁] [RingHomInvPair σ₂₁ σ₁₂] [SeminormedAddCommGroup E]
+  [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜₂ F]
 
-/-- A linear isometry `f : E →ₗᵢ[𝕜] F` with dense range extends to a linear isometric equivalence
-between the completions of `E` and `F`. -/
-noncomputable def completionEquivOfDenseRange (f : E →ₗᵢ[𝕜] F) (hf : DenseRange f) :
-    Completion E ≃ₗᵢ[𝕜] Completion F :=
+/-- A semilinear isometry `f : E →ₛₗᵢ[σ₁₂] F` with dense range extends to a semilinear isometric
+equivalence between the completions of `E` and `F`. -/
+noncomputable def completionEquivOfDenseRange (f : E →ₛₗᵢ[σ₁₂] F) (hf : DenseRange f) :
+    Completion E ≃ₛₗᵢ[σ₁₂] Completion F :=
   LinearIsometryEquiv.ofSurjective f.completion <| by
     have hd : DenseRange f.completion := by
       refine (Completion.denseRange_coe.comp hf (Completion.continuous_coe _)).mono ?_
@@ -252,14 +253,14 @@ noncomputable def completionEquivOfDenseRange (f : E →ₗᵢ[𝕜] F) (hf : De
 
 /-- On `E`, the extension of a linear isometry with dense range is the isometry itself. -/
 @[simp]
-theorem completionEquivOfDenseRange_coe (f : E →ₗᵢ[𝕜] F) (hf : DenseRange f) (x : E) :
+theorem completionEquivOfDenseRange_coe (f : E →ₛₗᵢ[σ₁₂] F) (hf : DenseRange f) (x : E) :
     f.completionEquivOfDenseRange hf x = f x :=
   f.completion_apply_coe x
 
 /-- As a linear isometry, the extension of a linear isometry with dense range is
 `LinearIsometry.completion`. -/
 @[simp]
-theorem toLinearIsometry_completionEquivOfDenseRange (f : E →ₗᵢ[𝕜] F) (hf : DenseRange f) :
+theorem toLinearIsometry_completionEquivOfDenseRange (f : E →ₛₗᵢ[σ₁₂] F) (hf : DenseRange f) :
     (f.completionEquivOfDenseRange hf).toLinearIsometry = f.completion :=
   (rfl)
 

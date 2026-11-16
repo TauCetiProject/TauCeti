@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Basic
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import TauCeti.Analysis.InnerProductSpace.OperatorIdentities
-public import TauCeti.Analysis.InnerProductSpace.TensorProduct
+public import TauCeti.Analysis.InnerProductSpace.TensorProduct.Basic
 
 /-!
 # The external product block of two operators

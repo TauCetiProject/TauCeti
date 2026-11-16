@@ -27,7 +27,9 @@ space, whether or not `E` and `F` are complete. This file develops the operators
   (`ContinuousLinearMap.eq_rTensorCompletion_iff`). Symmetrically `g.lTensorCompletion E` is
   `1 ⊗ g`. Operators on both factors commute
   (`ContinuousLinearMap.rTensorCompletion_comp_lTensorCompletion`), and their product is the
-  extension of `TensorProduct.mapL f g`.
+  extension `TensorProduct.mapLCompletion f g` of `TensorProduct.mapL f g`, the tensor product
+  `f ⊗ g` of the operators, which is likewise unique on pure tensors and satisfies
+  `(f ⊗ g)† = f† ⊗ g†` (`TensorProduct.adjoint_mapLCompletion`).
 * Amplification preserves the operator norm when the other factor is nonzero
   (`ContinuousLinearMap.norm_rTensorCompletion`), composition and the identity, and it commutes
   with adjoints (`ContinuousLinearMap.adjoint_rTensorCompletion`): the extension of
@@ -180,6 +182,16 @@ theorem assocIsometryCompletion_coe_tmul (x : E) (y : F) (z : G) :
         E ⊗[𝕜] Completion (F ⊗[𝕜] G)) := by
   simp [assocIsometryCompletion]
 
+/-- The inverse associator sends `x ⊗ₜ (y ⊗ₜ z)` to `(x ⊗ₜ y) ⊗ₜ z`. -/
+@[simp]
+theorem assocIsometryCompletion_symm_coe_tmul (x : E) (y : F) (z : G) :
+    (assocIsometryCompletion 𝕜 E F G).symm
+        (x ⊗ₜ[𝕜] ((y ⊗ₜ[𝕜] z : F ⊗[𝕜] G) : Completion (F ⊗[𝕜] G)) :
+          E ⊗[𝕜] Completion (F ⊗[𝕜] G)) =
+      (((x ⊗ₜ[𝕜] y : E ⊗[𝕜] F) : Completion (E ⊗[𝕜] F)) ⊗ₜ[𝕜] z :
+        Completion (E ⊗[𝕜] F) ⊗[𝕜] G) :=
+  (LinearIsometryEquiv.symm_apply_eq _).2 (assocIsometryCompletion_coe_tmul x y z).symm
+
 end Associator
 
 end TensorProduct
@@ -226,9 +238,8 @@ theorem norm_rTensorCompletion [Nontrivial F] (f : E →L[𝕜] E') :
   refine le_antisymm (norm_rTensorCompletion_le f) (opNorm_le_bound _ (norm_nonneg _) fun x ↦ ?_)
   obtain ⟨y, hy⟩ := exists_ne (0 : F)
   have h := (f.rTensorCompletion F).le_opNorm (x ⊗ₜ[𝕜] y : E ⊗[𝕜] F)
-  rw [rTensorCompletion_tmul, Completion.norm_coe, Completion.norm_coe, norm_tmul, norm_tmul,
-    ← mul_assoc] at h
-  exact le_of_mul_le_mul_right h (norm_pos_iff.2 hy)
+  simp only [rTensorCompletion_tmul, Completion.norm_coe, norm_tmul] at h
+  exact le_of_mul_le_mul_right (by simpa only [mul_assoc] using h) (norm_pos_iff.2 hy)
 
 @[simp]
 theorem rTensorCompletion_id :
@@ -334,9 +345,8 @@ theorem norm_lTensorCompletion [Nontrivial E] (g : F →L[𝕜] F') :
   refine le_antisymm (norm_lTensorCompletion_le g) (opNorm_le_bound _ (norm_nonneg _) fun y ↦ ?_)
   obtain ⟨x, hx⟩ := exists_ne (0 : E)
   have h := (g.lTensorCompletion E).le_opNorm (x ⊗ₜ[𝕜] y : E ⊗[𝕜] F)
-  rw [lTensorCompletion_tmul, Completion.norm_coe, Completion.norm_coe, norm_tmul, norm_tmul,
-    mul_left_comm] at h
-  exact le_of_mul_le_mul_left h (norm_pos_iff.2 hx)
+  simp only [lTensorCompletion_tmul, Completion.norm_coe, norm_tmul] at h
+  exact le_of_mul_le_mul_left (by simpa only [mul_left_comm] using h) (norm_pos_iff.2 hx)
 
 @[simp]
 theorem lTensorCompletion_id :
@@ -402,16 +412,79 @@ theorem adjoint_lTensorCompletion [CompleteSpace F] [CompleteSpace F'] (g : F �
 
 end lTensor
 
-/-- Amplifications on the two factors commute, with product the extension of
-`TensorProduct.mapL f g`: `(f ⊗ 1) ∘ (1 ⊗ g) = f ⊗ g`. -/
-theorem rTensorCompletion_comp_lTensorCompletion (f : E →L[𝕜] E') (g : F →L[𝕜] F') :
-    f.rTensorCompletion F' ∘L g.lTensorCompletion E = (mapL f g).completion :=
+end ContinuousLinearMap
+
+namespace TensorProduct
+
+section mapL
+
+/-- The tensor product `f ⊗ g : E ⊗̂ F →L[𝕜] E' ⊗̂ F'` of bounded operators `f : E →L[𝕜] E'` and
+`g : F →L[𝕜] F'` on the completed tensor products: the extension of `TensorProduct.mapL` to the
+completions, sending `x ⊗ₜ y` to `f x ⊗ₜ g y`. -/
+def mapLCompletion (f : E →L[𝕜] E') (g : F →L[𝕜] F') :
+    Completion (E ⊗[𝕜] F) →L[𝕜] Completion (E' ⊗[𝕜] F') :=
+  (mapL f g).completion
+
+/-- On the algebraic tensor product, `f ⊗ g` is `TensorProduct.mapL f g`. -/
+@[simp]
+theorem mapLCompletion_coe (f : E →L[𝕜] E') (g : F →L[𝕜] F') (u : E ⊗[𝕜] F) :
+    mapLCompletion f g u = (mapL f g u : Completion (E' ⊗[𝕜] F')) :=
+  ContinuousLinearMap.completion_apply_coe _ u
+
+/-- The tensor product `f ⊗ g` sends `x ⊗ₜ y` to `f x ⊗ₜ g y`. -/
+theorem mapLCompletion_tmul (f : E →L[𝕜] E') (g : F →L[𝕜] F') (x : E) (y : F) :
+    mapLCompletion f g (x ⊗ₜ[𝕜] y : E ⊗[𝕜] F) = (f x ⊗ₜ[𝕜] g y : E' ⊗[𝕜] F') := by
+  simp
+
+/-- The tensor product `f ⊗ g` is the only bounded operator sending `x ⊗ₜ y` to `f x ⊗ₜ g y`. -/
+theorem eq_mapLCompletion_iff {f : E →L[𝕜] E'} {g : F →L[𝕜] F'}
+    {T : Completion (E ⊗[𝕜] F) →L[𝕜] Completion (E' ⊗[𝕜] F')} :
+    T = mapLCompletion f g ↔
+      ∀ x y, T (x ⊗ₜ[𝕜] y : E ⊗[𝕜] F) = (f x ⊗ₜ[𝕜] g y : E' ⊗[𝕜] F') :=
+  ⟨fun h x y ↦ h ▸ mapLCompletion_tmul f g x y,
+    fun h ↦ completion_ext fun x y ↦ by rw [h, mapLCompletion_tmul]⟩
+
+/-- The tensor product `f ⊗ g` has norm at most `‖f‖ * ‖g‖`. -/
+theorem norm_mapLCompletion_le (f : E →L[𝕜] E') (g : F →L[𝕜] F') :
+    ‖mapLCompletion f g‖ ≤ ‖f‖ * ‖g‖ :=
+  (ContinuousLinearMap.norm_completion _).trans_le (norm_mapL_le f g)
+
+/-- The tensor product of operators respects composition:
+`(f₂ ∘ f₁) ⊗ (g₂ ∘ g₁) = (f₂ ⊗ g₂) ∘ (f₁ ⊗ g₁)`. -/
+theorem mapLCompletion_comp (f₂ : E' →L[𝕜] E'') (f₁ : E →L[𝕜] E') (g₂ : F' →L[𝕜] F'')
+    (g₁ : F →L[𝕜] F') :
+    mapLCompletion (f₂ ∘L f₁) (g₂ ∘L g₁) = mapLCompletion f₂ g₂ ∘L mapLCompletion f₁ g₁ :=
   completion_ext fun _ _ ↦ by simp
 
-/-- Amplifications on the two factors commute, with product the extension of
-`TensorProduct.mapL f g`: `(1 ⊗ g) ∘ (f ⊗ 1) = f ⊗ g`. -/
+/-- The tensor product `f† ⊗ g†` is the adjoint of `f ⊗ g`. -/
+@[simp]
+theorem adjoint_mapLCompletion [CompleteSpace E] [CompleteSpace E'] [CompleteSpace F]
+    [CompleteSpace F'] (f : E →L[𝕜] E') (g : F →L[𝕜] F') :
+    (mapLCompletion f g).adjoint = mapLCompletion f.adjoint g.adjoint := by
+  refine ContinuousLinearMap.adjoint_completion fun u v ↦ ?_
+  induction u using TensorProduct.inductionOn with
+  | add u₁ u₂ h₁ h₂ => simp only [map_add, inner_add_left, h₁, h₂]
+  | tmul x y =>
+    induction v using TensorProduct.inductionOn with
+    | add v₁ v₂ h₁ h₂ => simp only [map_add, inner_add_right, h₁, h₂]
+    | tmul x' y' => simp [ContinuousLinearMap.adjoint_inner_right]
+
+end mapL
+
+end TensorProduct
+
+namespace ContinuousLinearMap
+
+/-- Amplifications on the two factors commute, with product the tensor product of the operators:
+`(f ⊗ 1) ∘ (1 ⊗ g) = f ⊗ g`. -/
+theorem rTensorCompletion_comp_lTensorCompletion (f : E →L[𝕜] E') (g : F →L[𝕜] F') :
+    f.rTensorCompletion F' ∘L g.lTensorCompletion E = mapLCompletion f g :=
+  completion_ext fun _ _ ↦ by simp
+
+/-- Amplifications on the two factors commute, with product the tensor product of the operators:
+`(1 ⊗ g) ∘ (f ⊗ 1) = f ⊗ g`. -/
 theorem lTensorCompletion_comp_rTensorCompletion (f : E →L[𝕜] E') (g : F →L[𝕜] F') :
-    g.lTensorCompletion E' ∘L f.rTensorCompletion F = (mapL f g).completion :=
+    g.lTensorCompletion E' ∘L f.rTensorCompletion F = mapLCompletion f g :=
   completion_ext fun _ _ ↦ by simp
 
 /-- The amplifications `f ⊗ 1` and `1 ⊗ g` of endomorphisms commute. -/
@@ -426,13 +499,10 @@ theorem lTensorCompletion_commIsometry_completion (f : E →L[𝕜] E') (u : Com
     f.lTensorCompletion F ((commIsometry 𝕜 E F).completion u) =
       (commIsometry 𝕜 E' F).completion (f.rTensorCompletion F u) := by
   induction u using Completion.induction_on with
-  | hp =>
-    exact isClosed_eq ((f.lTensorCompletion F).continuous.comp
-      (commIsometry 𝕜 E F).completion.continuous)
-      ((commIsometry 𝕜 E' F).completion.continuous.comp (f.rTensorCompletion F).continuous)
+  | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
   | ih u =>
-    rw [LinearIsometryEquiv.completion_apply_coe, rTensorCompletion_coe, lTensorCompletion_coe,
-      LinearIsometryEquiv.completion_apply_coe]
+    simp only [LinearIsometryEquiv.completion_apply_coe, rTensorCompletion_coe,
+      lTensorCompletion_coe]
     congr 1
     induction u using TensorProduct.inductionOn with
     | add u₁ u₂ h₁ h₂ => simp only [map_add, h₁, h₂]
