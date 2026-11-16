@@ -56,6 +56,8 @@ proof is independent of the source's.
 * `Matrix.SpecialLinearGroup.map_injective` and `Matrix.SpecialLinearGroup.mem_range_map_iff`:
   along an injective ring hom, base change is injective and its range is described entrywise.
 * `Matrix.SpecialLinearGroup.mapGL_neg_one`: `mapGL S (-1) = -1`.
+* `Matrix.SpecialLinearGroup.index_center_eq_zero`: over an infinite ring, the centre of `SL₂`
+  has infinite index.
 * `Matrix.SpecialLinearGroup.vecMul_eq_iff_eq_vecMul_inv`: right multiplication of row vectors
   by `g` is inverted by `g⁻¹`.
 * `Matrix.SpecialLinearGroup.sum_comp_vecMul`: over a finite ring, this right multiplication
@@ -359,6 +361,24 @@ theorem finite_center [NoZeroDivisors R] :
       ({1, -1} : Set (SpecialLinearGroup (Fin 2) R)) :=
     Equiv.subtypeEquivRight fun _ ↦ mem_center_iff_eq_one_or_eq_neg_one
   exact Finite.of_equiv _ e.symm
+
+/-- **The centre of `SL₂` has infinite index over an infinite ring.** The unipotent matrices
+`!![1, r; 0, 1]` lie in distinct cosets of the centre: a quotient of two of them is again
+unipotent, and a central matrix is scalar, so its upper-right entry vanishes. -/
+theorem index_center_eq_zero [Infinite R] :
+    (Subgroup.center (SpecialLinearGroup (Fin 2) R)).index = 0 := by
+  let u (r : R) : SpecialLinearGroup (Fin 2) R := ⟨!![1, r; 0, 1], by simp [det_fin_two_of]⟩
+  refine Subgroup.index_eq_zero_iff_infinite.mpr (Infinite.of_injective
+    (fun r ↦ (u r : SpecialLinearGroup (Fin 2) R ⧸ Subgroup.center _)) fun r s h ↦ ?_)
+  have hu (a b : R) : u a * u b = u (a + b) := by
+    apply Subtype.ext
+    change !![1, a; 0, 1] * !![1, b; 0, 1] = !![1, a + b; 0, 1]
+    simp [add_comm]
+  obtain ⟨c, -, hc⟩ := mem_center_iff.mp (QuotientGroup.eq.mp h)
+  rw [inv_mul_eq_of_eq_mul (b := u s) (c := u (s - r)) (by rw [hu]; congr 1; ring)] at hc
+  have h01 := congrArg (fun M : Matrix (Fin 2) (Fin 2) R ↦ M 0 1) hc
+  simp [u] at h01
+  linear_combination h01
 
 /-- **The centre of `SL₂` has at most two elements.** Stated as a bound rather than an equality
 because `1 = -1` when `R` has characteristic `2`, where the centre is trivial.

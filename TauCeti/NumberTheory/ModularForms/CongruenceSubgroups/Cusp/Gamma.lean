@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.Complex.Fuchsian.Compactification.Degree
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Fuchsian
+import Mathlib.Algebra.Field.ZMod
+import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Card
 import TauCeti.Analysis.Complex.Fuchsian.Compactification.Cusp.Fiber
 import TauCeti.Analysis.Complex.Fuchsian.Compactification.LevelOne
 import TauCeti.Analysis.Complex.Fuchsian.Cusp.Tower
@@ -21,13 +23,16 @@ Every cusp of `Γ(N)` has width `N`, and the number `ε∞` of cusps of `Γ(N)` 
 the dimension formulas for `Γ(N)`. Cusps are counted as the cusp orbits of the effective image of
 `Γ(N)` in `PSL(2, ℝ)`, the boundary orbits adjoined to its analytic quotient `X(N)`.
 
-The cusp `∞` has width `N`: the normalized cusp datum `TauCeti.cuspDatumInftyGamma` of the image
-of `Γ(N)` has width `N`, and the level-one datum has width `1`. Since `Γ(N)` is normal in
-`SL(2, ℤ)`, its image is normal in the level-one group, and conjugating by an element carrying `∞`
-to another cusp shows that every cusp has width `N`. That width is the local multiplicity of the map
-`X(N) → X(1)` at the cusp, and the multiplicities over the single cusp of `X(1)` sum to the degree
-`[SL(2, ℤ) : ±Γ(N)]`. So `N ε∞` is that index, which is half of `|SL(2, ℤ / N)|` exactly when
-`-I ∉ Γ(N)`, that is, for `N ≥ 3`.
+For `N > 0` the cusp `∞` has width `N`: the normalized cusp datum `TauCeti.cuspDatumInftyGamma`
+of the image of `Γ(N)` has width `N`, and the level-one datum has width `1`. Since `Γ(N)` is normal
+in `SL(2, ℤ)`, its image is normal in the level-one group (`TauCeti.normal_subgroupOf_map_Gamma`),
+and conjugating by an element carrying `∞` to another cusp shows that every cusp has width `N`.
+That width is the local multiplicity of the map `X(N) → X(1)` at the cusp, and the multiplicities
+over the single cusp of `X(1)` sum to the degree `[SL(2, ℤ) : ±Γ(N)]`. So `N ε∞` is that index,
+which is half of `|SL(2, ℤ / N)|` exactly when `-I ∉ Γ(N)`, that is, for `N ≥ 3`.
+
+At level `0` the group `Γ(0)` is trivial, so it has no cusps, and `±Γ(0)` has index `0` in
+`SL(2, ℤ)` (`Matrix.SpecialLinearGroup.index_center_eq_zero`): the statements hold there too.
 
 ## Main results
 
@@ -52,18 +57,6 @@ namespace TauCeti
 
 variable (N : ℕ)
 
-/-- The image of `Γ(N)` is normal in the level-one group, as `Γ(N)` is normal in `SL(2, ℤ)`. -/
-instance normal_subgroupOf_map_Gamma :
-    (((Gamma N).map sl2zToPSL2R).subgroupOf psl2zToPSL2R.range).Normal where
-  conj_mem x hx g := by
-    rw [Subgroup.mem_subgroupOf] at hx ⊢
-    obtain ⟨y, hy, hyx⟩ := Subgroup.mem_map.mp hx
-    obtain ⟨γ, hγ⟩ : (g : PSL(2, ℝ)) ∈ sl2zToPSL2R.range := by
-      rw [range_sl2zToPSL2R_eq_range_psl2zToPSL2R]
-      exact g.2
-    refine Subgroup.mem_map.mpr ⟨γ * y * γ⁻¹, (Gamma_normal N).conj_mem y hy γ, ?_⟩
-    simp [map_mul, map_inv, hγ, hyx]
-
 /-- `Γ(0)` is trivial, so its image has no cusps: a cusp needs a parabolic element. -/
 private theorem isEmpty_cuspOrbit_Gamma_zero : IsEmpty ((Gamma 0).map sl2zToPSL2R).CuspOrbit := by
   refine ⟨fun C ↦ ?_⟩
@@ -73,18 +66,6 @@ private theorem isEmpty_cuspOrbit_Gamma_zero : IsEmpty ((Gamma 0).map sl2zToPSL2
   rw [Gamma_zero_bot, Subgroup.mem_bot] at hγ
   rw [← hγg, hγ, map_one] at hg
   exact Matrix.ProjectiveSpecialLinearGroup.not_isParabolic_one hg
-
-/-- The centre `{±1}` of `SL(2, ℤ)` has infinite index, as the powers of `T` are distinct. -/
-private theorem index_center_SL2Z : (Subgroup.center SL(2, ℤ)).index = 0 := by
-  have : Infinite SL(2, ℤ) := Infinite.of_injective (fun n : ℤ ↦ ModularGroup.T ^ n) fun m n h ↦ by
-    simpa [ModularGroup.coe_T_zpow] using
-      congrArg (fun g : SL(2, ℤ) ↦ (g : Matrix (Fin 2) (Fin 2) ℤ) 0 1) h
-  have : Finite (Subgroup.center SL(2, ℤ)) :=
-    ((Set.toFinite ({1, -1} : Set SL(2, ℤ))).subset fun g hg ↦ by
-      simpa using Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one.mp hg).to_subtype
-  have h := (Subgroup.center SL(2, ℤ)).card_mul_index
-  rw [Nat.card_eq_zero_of_infinite (α := SL(2, ℤ))] at h
-  exact (mul_eq_zero.mp h).resolve_left Nat.card_pos.ne'
 
 /-- **Every cusp of `X(N)` has local multiplicity `N` over `X(1)`**, that is, every cusp of `Γ(N)`
 has width `N`. At `∞` this is the width of `TauCeti.cuspDatumInftyGamma`. Every other cusp is a
@@ -128,7 +109,8 @@ of a fibre sum to the degree `[SL(2, ℤ) : ±Γ(N)]`. At level `0` both sides a
 theorem mul_card_cuspOrbit_Gamma :
     N * Nat.card ((Gamma N).map sl2zToPSL2R).CuspOrbit = (Gamma N).withCenter.index := by
   rcases eq_or_ne N 0 with rfl | hN
-  · rw [zero_mul, Gamma_zero_bot, Subgroup.withCenter_def, bot_sup_eq, index_center_SL2Z]
+  · rw [zero_mul, Gamma_zero_bot, Subgroup.withCenter_def, bot_sup_eq,
+      Matrix.SpecialLinearGroup.index_center_eq_zero]
   have : NeZero N := ⟨hN⟩
   have h := (Gamma N).map_sl2zToPSL2R_le_range_psl2zToPSL2R
   have : Finite ((Gamma N).map sl2zToPSL2R).CuspOrbit := (isCofinite_Gamma N).finite_cuspOrbit
@@ -162,9 +144,10 @@ theorem card_cuspOrbit_Gamma_two : Nat.card ((Gamma 2).map sl2zToPSL2R).CuspOrbi
     rcases Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one.mp hc with rfl | rfl
     · exact one_mem _
     · exact Gamma_mem.mpr (by decide)
-  rw [Subgroup.withCenter_eq_self_iff.mpr hc, index_Gamma,
-    Nat.card_eq_fintype_card (α := SL(2, ZMod 2)),
-    show Fintype.card SL(2, ZMod 2) = 6 from rfl] at h
+  have h6 : Nat.card SL(2, ZMod 2) = 6 := by
+    rw [Matrix.card_SL_field]
+    simp [Fin.prod_univ_two, ZMod.card]
+  rw [Subgroup.withCenter_eq_self_iff.mpr hc, index_Gamma, h6] at h
   omega
 
 end TauCeti
