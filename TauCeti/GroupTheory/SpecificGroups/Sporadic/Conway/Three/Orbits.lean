@@ -555,6 +555,14 @@ private theorem tripleWord_spec : ∀ x : Fin 276, triangleParity (0, 1, x) = tr
       word a b (tripleWord x) 2 = x := by
   decide +kernel
 
+private theorem mem_stabilizerChain_two_of_apply {g : Equiv.Perm (Fin 276)}
+    (hg : g ∈ Co3) (h0 : g 0 = 0) (h1 : g 1 = 1) :
+    g ∈ Co3.stabilizerChain basePoint 2 := by
+  rw [Co3.stabilizerChain_succ, Co3.stabilizerChain_succ, Co3.stabilizerChain_zero]
+  simp only [Subgroup.mem_inf, mem_stabilizer_iff, basePoint_zero, basePoint_one,
+    Equiv.Perm.smul_def]
+  exact ⟨⟨hg, h0⟩, h1⟩
+
 private theorem mem_orbit_stabilizerChain_two_iff (x : Fin 276) :
     x ∈ orbit (Co3.stabilizerChain basePoint 2) (2 : Fin 276) ↔
       triangleParity (0, 1, x) = true := by
@@ -570,13 +578,8 @@ private theorem mem_orbit_stabilizerChain_two_iff (x : Fin 276) :
       Subgroup.smul_def] using h
   · intro hx
     obtain ⟨h0, h1, h2⟩ := tripleWord_spec x hx
-    have hmem : word a b (tripleWord x) ∈ Co3.stabilizerChain basePoint 2 := by
-      refine (Subgroup.mem_stabilizerChain_iff _ _).mpr
-        ⟨word_mem a_mem b_mem _, fun j hj ↦ ?_⟩
-      interval_cases j
-      · simpa only [basePoint_zero, Equiv.Perm.smul_def] using h0
-      · simpa only [basePoint_one, Equiv.Perm.smul_def] using h1
-    refine mem_orbit_iff.mpr ⟨⟨_, hmem⟩, ?_⟩
+    refine mem_orbit_iff.mpr
+      ⟨⟨_, mem_stabilizerChain_two_of_apply (word_mem a_mem b_mem _) h0 h1⟩, ?_⟩
     simpa only [Subgroup.mk_smul, Equiv.Perm.smul_def] using h2
 
 /-- The third basic orbit: the pointwise stabilizer of `0, 1` moves `2` to 162 of the 274 other
@@ -797,23 +800,22 @@ private theorem stabGen_fix :
       (stabGenB 0 = 0 ∧ stabGenB 1 = 1 ∧ stabGenB 2 = 2) := by
   decide +kernel
 
+private theorem mem_stabilizerChain_three_of_apply {g : Equiv.Perm (Fin 276)}
+    (hg : g ∈ Co3) (h0 : g 0 = 0) (h1 : g 1 = 1) (h2 : g 2 = 2) :
+    g ∈ Co3.stabilizerChain basePoint 3 := by
+  rw [Co3.stabilizerChain_succ, Subgroup.mem_inf, mem_stabilizer_iff, basePoint_two,
+    Equiv.Perm.smul_def]
+  exact ⟨mem_stabilizerChain_two_of_apply hg h0 h1, h2⟩
+
 private theorem stabGenA_mem : stabGenA ∈ Co3.stabilizerChain basePoint 3 := by
   obtain ⟨⟨h0, h1, h2⟩, _⟩ := stabGen_fix
-  have ha : stabGenA ∈ Co3 := Equiv.ext stabGenA_apply ▸ word_mem a_mem b_mem _
-  refine (Subgroup.mem_stabilizerChain_iff _ _).mpr ⟨ha, fun j hj ↦ ?_⟩
-  interval_cases j
-  · simpa only [basePoint_zero, Equiv.Perm.smul_def] using h0
-  · simpa only [basePoint_one, Equiv.Perm.smul_def] using h1
-  · simpa only [basePoint_two, Equiv.Perm.smul_def] using h2
+  exact mem_stabilizerChain_three_of_apply
+    (Equiv.ext stabGenA_apply ▸ word_mem a_mem b_mem _) h0 h1 h2
 
 private theorem stabGenB_mem : stabGenB ∈ Co3.stabilizerChain basePoint 3 := by
   obtain ⟨_, ⟨h0, h1, h2⟩⟩ := stabGen_fix
-  have hb : stabGenB ∈ Co3 := Equiv.ext stabGenB_apply ▸ word_mem a_mem b_mem _
-  refine (Subgroup.mem_stabilizerChain_iff _ _).mpr ⟨hb, fun j hj ↦ ?_⟩
-  interval_cases j
-  · simpa only [basePoint_zero, Equiv.Perm.smul_def] using h0
-  · simpa only [basePoint_one, Equiv.Perm.smul_def] using h1
-  · simpa only [basePoint_two, Equiv.Perm.smul_def] using h2
+  exact mem_stabilizerChain_three_of_apply
+    (Equiv.ext stabGenB_apply ▸ word_mem a_mem b_mem _) h0 h1 h2
 
 private theorem word_mem_stabilizerChain_four {w : ℕ}
     (h3 : word stabGenA stabGenB w 3 = 3) :
