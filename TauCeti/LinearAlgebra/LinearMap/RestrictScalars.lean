@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Module.Submodule.RestrictScalars
 public import Mathlib.LinearAlgebra.Quotient.Basic
+public import Mathlib.RingTheory.Finiteness.Basic
 import TauCeti.LinearAlgebra.LinearMap.Ker
 import TauCeti.LinearAlgebra.LinearMap.Range
 
@@ -22,6 +23,10 @@ isomorphisms of the `S`-kernels and `S`-cokernels (`LinearMap.kerCongrOfComp`,
 isomorphisms (`LinearMap.kerCongrOfComp_smul`, `LinearMap.cokerCongrOfComp_smul`). For the tower
 `ℝ → ℂ` with `a = I` and `s = ±I`, this says the induced isomorphisms are complex linear or
 conjugate-linear.
+
+When `S` is a finite `R`-module, the kernel and cokernel of the underlying `R`-linear map are
+finite over `R` as soon as those of `f` are finite over `S`
+(`LinearMap.finite_ker_restrictScalars`, `LinearMap.finite_quotient_range_restrictScalars`).
 -/
 
 public section
@@ -132,5 +137,29 @@ theorem cokerCongrOfComp_smul {a s : S} (he₂ : ∀ y, e₂ (a • y) = s • e
       Submodule.Quotient.mk_smul]
 
 end Coker
+
+section Finite
+
+variable {R S M N : Type*}
+
+/-- If `S` is a finite `R`-module, the kernel of an `S`-linear map with finite `S`-kernel is
+finite over `R`, as the kernel of the underlying `R`-linear map. -/
+instance finite_ker_restrictScalars [Semiring R] [Semiring S] [Module R S] [Module.Finite R S]
+    [AddCommMonoid M] [Module R M] [Module S M]
+    [IsScalarTower R S M] [AddCommMonoid N] [Module R N] [Module S N] [IsScalarTower R S N]
+    (f : M →ₗ[S] N) [Module.Finite S (ker f)] : Module.Finite R (ker (f.restrictScalars R)) :=
+  have : Module.Finite R (ker f) := Module.Finite.trans S (ker f)
+  Module.Finite.equiv (f.kerRestrictScalarsEquiv R)
+
+/-- If `S` is a finite `R`-module, the cokernel of an `S`-linear map with finite `S`-cokernel is
+finite over `R`, as the cokernel of the underlying `R`-linear map. -/
+instance finite_quotient_range_restrictScalars [Ring R] [Ring S] [Module R S]
+    [Module.Finite R S] [AddCommGroup M] [Module R M] [Module S M] [IsScalarTower R S M]
+    [AddCommGroup N] [Module R N] [Module S N] [IsScalarTower R S N] (f : M →ₗ[S] N)
+    [Module.Finite S (N ⧸ range f)] : Module.Finite R (N ⧸ range (f.restrictScalars R)) :=
+  have : Module.Finite R (N ⧸ range f) := Module.Finite.trans S (N ⧸ range f)
+  Module.Finite.equiv (f.cokerRestrictScalarsEquiv R).symm
+
+end Finite
 
 end LinearMap

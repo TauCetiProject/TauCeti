@@ -98,12 +98,7 @@ theorem exists_neg_one_pow_smul_detLineCongr_eq (j₁ : P ≃ₗ[ℝ] P') (j₂ 
     ∃ z', D'.IsComplexPositiveDetLine z' ∧
       (-1 : ℝ) ^ k • (T.prodMap (D.restrictScalars ℝ)).detLineCongr
           ((LinearEquiv.neg ℝ).prodCongr j₁) ((LinearEquiv.neg ℝ).prodCongr j₂)
-          (by
-            rw [LinearEquiv.coe_prodCongr, LinearEquiv.coe_prodCongr, prodMap_comp, prodMap_comp,
-              hj]
-            congr 1
-            ext
-            simp)
+          (prodMap_comp_prodCongr_eq_of_comp_eq (comp_neg_eq_neg_comp T) hj)
           ((detLineProdMapEquiv T (D.restrictScalars ℝ)).symm (x ⊗ₜ z)) =
         (((1 - b₁ + bp : ℤ) / 2).negOnePow : ℝ) •
           (detLineProdMapEquiv T (D'.restrictScalars ℝ)).symm (x ⊗ₜ z') := by

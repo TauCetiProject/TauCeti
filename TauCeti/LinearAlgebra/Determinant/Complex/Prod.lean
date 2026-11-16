@@ -39,10 +39,9 @@ conjugate-linear isomorphism intertwining the Dirac operators of a `Spinᶜ` str
 conjugate. With `dim ker T = b₁` and `dim coker T = 1 + b⁺`, the sign is
 `ε_det = (-1) ^ (1 + b₁ + b⁺ + ind_ℂ D)`.
 
-The complex kernel and cokernel of `D` are finite-dimensional over `ℝ` as soon as they are over
-`ℂ`, and so are the kernel and cokernel of the underlying real-linear map
-(`LinearMap.finiteDimensional_ker_restrictScalars`,
-`LinearMap.finiteDimensional_quotient_range_restrictScalars`).
+The kernel and cokernel of the underlying real-linear map of `D` are finite-dimensional over `ℝ`
+as soon as those of `D` are over `ℂ` (`LinearMap.finite_ker_restrictScalars`,
+`LinearMap.finite_quotient_range_restrictScalars`).
 
 ## Main results
 
@@ -68,27 +67,6 @@ namespace LinearMap
 
 open TauCeti
 
-section RestrictScalars
-
-variable {P Q : Type*} [AddCommGroup P] [Module ℂ P] [Module ℝ P] [IsScalarTower ℝ ℂ P]
-  [AddCommGroup Q] [Module ℂ Q] [Module ℝ Q] [IsScalarTower ℝ ℂ Q] (D : P →ₗ[ℂ] Q)
-
-/-- The kernel of a complex-linear map with finite-dimensional complex kernel is
-finite-dimensional over `ℝ` as the kernel of the underlying real-linear map. -/
-instance finiteDimensional_ker_restrictScalars [FiniteDimensional ℂ (ker D)] :
-    FiniteDimensional ℝ (ker (D.restrictScalars ℝ)) :=
-  have : Module.Finite ℝ (ker D) := Module.Finite.trans ℂ (ker D)
-  Module.Finite.equiv (D.kerRestrictScalarsEquiv ℝ)
-
-/-- The cokernel of a complex-linear map with finite-dimensional complex cokernel is
-finite-dimensional over `ℝ` as the cokernel of the underlying real-linear map. -/
-instance finiteDimensional_quotient_range_restrictScalars [FiniteDimensional ℂ (Q ⧸ range D)] :
-    FiniteDimensional ℝ (Q ⧸ range (D.restrictScalars ℝ)) :=
-  have : Module.Finite ℝ (Q ⧸ range D) := Module.Finite.trans ℂ (Q ⧸ range D)
-  Module.Finite.equiv (D.cokerRestrictScalarsEquiv ℝ).symm
-
-end RestrictScalars
-
 variable {M N P Q P' Q' : Type*} [AddCommGroup M] [Module ℝ M] [AddCommGroup N] [Module ℝ N]
   [AddCommGroup P] [Module ℂ P] [Module ℝ P] [IsScalarTower ℝ ℂ P]
   [AddCommGroup Q] [Module ℂ Q] [Module ℝ Q] [IsScalarTower ℝ ℂ Q]
@@ -99,13 +77,6 @@ variable {M N P Q P' Q' : Type*} [AddCommGroup M] [Module ℝ M] [AddCommGroup N
   {D' : P' →ₗ[ℂ] Q'} [FiniteDimensional ℂ (ker D')] [FiniteDimensional ℂ (Q' ⧸ range D')]
   (j₁ : P ≃ₗ[ℝ] P') (j₂ : Q ≃ₗ[ℝ] Q')
   (hj : D'.restrictScalars ℝ ∘ₗ j₁.toLinearMap = j₂.toLinearMap ∘ₗ D.restrictScalars ℝ)
-
-omit [FiniteDimensional ℝ (ker T)] [FiniteDimensional ℝ (N ⧸ range T)] in
-/-- Negation of source and target commutes with a real-linear map. -/
-private theorem comp_neg_eq_neg_comp :
-    T ∘ₗ (LinearEquiv.neg ℝ).toLinearMap = (LinearEquiv.neg ℝ).toLinearMap ∘ₗ T := by
-  ext
-  simp
 
 /-- **The determinant sign of a conjugation on a real plus complex operator.** Let `j₁` and `j₂`
 be real isomorphisms anticommuting with `I` and intertwining the complex-linear maps `D` and
@@ -120,9 +91,7 @@ theorem IsComplexPositiveDetLine.exists_detLineCongr_neg_prodCongr
     ∃ z', D'.IsComplexPositiveDetLine z' ∧
       (T.prodMap (D.restrictScalars ℝ)).detLineCongr ((LinearEquiv.neg ℝ).prodCongr j₁)
           ((LinearEquiv.neg ℝ).prodCongr j₂)
-          (by
-            rw [LinearEquiv.coe_prodCongr, LinearEquiv.coe_prodCongr, prodMap_comp, prodMap_comp,
-              hj, comp_neg_eq_neg_comp])
+          (prodMap_comp_prodCongr_eq_of_comp_eq (comp_neg_eq_neg_comp T) hj)
           ((detLineProdMapEquiv T (D.restrictScalars ℝ)).symm (x ⊗ₜ z)) =
         (-1 : ℝ) ^ (finrank ℝ (ker T) + finrank ℝ (N ⧸ range T) +
             (finrank ℂ (ker D) + finrank ℂ (Q ⧸ range D))) •
