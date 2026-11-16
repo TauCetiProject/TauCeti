@@ -11,8 +11,10 @@ public import Mathlib.Algebra.Lie.Semisimple.Defs
 public import Mathlib.LinearAlgebra.Pi
 public import Mathlib.LinearAlgebra.Prod
 
+import Mathlib.LinearAlgebra.Projection
+
 /-!
-# Products of Lie modules
+# Products of Lie modules and Lie algebras
 
 Mathlib gives the product of two Lie *algebras* its Lie ring structure
 (`Mathlib/Algebra/Lie/Prod.lean`) and the direct sum of a *family* of Lie modules its Lie module
@@ -27,6 +29,11 @@ not. The first consumer is the uniqueness of the irreducible highest weight modu
 weight, which compares two such modules by cutting out the graph of an isomorphism inside their
 product.
 
+The file also packages product and direct-sum equivalences for Lie algebras: products of Lie
+algebra equivalences (`LieEquiv.prodCongr`), the identification `I × J ≃ₗ⁅R⁆ L` for complementary
+ideals (`LieIdeal.prodEquivOfIsCompl`), and combining automorphisms on complementary ideals
+(`LieEquiv.ofIsCompl`).
+
 ## Main definitions
 
 * `TauCeti.LieModuleHom.fst` and `TauCeti.LieModuleHom.snd`: the two projections.
@@ -40,6 +47,9 @@ product.
 * `TauCeti.lie_prod_apply`: the componentwise bracket on a product.
 * `LieHom.prodRepresentation`: the product of two explicit Lie representations.
 * `LieHom.piRepresentation`: the product of a family of explicit Lie representations.
+* `LieIdeal.prodEquivOfIsCompl`: Lie algebra equivalence `I × J ≃ₗ⁅R⁆ L` for complementary ideals.
+* `LieEquiv.prodCongr`: product of two Lie algebra equivalences.
+* `LieEquiv.ofIsCompl`: combine automorphisms of complementary ideals into an automorphism of `L`.
 -/
 
 public section
@@ -394,3 +404,102 @@ theorem piRepresentation_injective_iff
 end Pi
 
 end LieHom
+
+section IdealComplement
+
+variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+
+/-- Two complementary ideals `I` and `J` of a Lie algebra commute, so addition identifies their
+direct product `I × J` with `L` as a Lie algebra. -/
+noncomputable def LieIdeal.prodEquivOfIsCompl (I J : LieIdeal R L) (h : IsCompl I J) :
+    (I × J) ≃ₗ⁅R⁆ L :=
+  { Submodule.prodEquivOfIsCompl I.toSubmodule J.toSubmodule
+      (LieSubmodule.isCompl_toSubmodule.mpr h) with
+    map_lie' {p q} := by
+      have hIJ (x : I) (y : J) : ⁅(x : L), (y : L)⁆ = 0 := by
+        have hmem : ⁅(x : L), (y : L)⁆ ∈ I ⊓ J :=
+          ⟨lie_mem_left R L I x y x.2, J.lie_mem y.2⟩
+        rw [h.inf_eq_bot] at hmem
+        exact hmem
+      have hJI (y : J) (x : I) : ⁅(y : L), (x : L)⁆ = 0 := by
+        rw [← lie_skew, hIJ x y, neg_zero]
+      simp [lie_add, add_lie, hIJ, hJI] }
+
+/-- `LieIdeal.prodEquivOfIsCompl` acts by addition in `L`. -/
+@[simp]
+theorem LieIdeal.prodEquivOfIsCompl_apply (I J : LieIdeal R L) (h : IsCompl I J) (p : I × J) :
+    LieIdeal.prodEquivOfIsCompl I J h p = (p.1 : L) + (p.2 : L) := by
+  rfl
+
+/-- On an element of `I`, the inverse of `LieIdeal.prodEquivOfIsCompl` yields `(x, 0)`. -/
+@[simp]
+theorem LieIdeal.prodEquivOfIsCompl_symm_apply_left (I J : LieIdeal R L) (h : IsCompl I J)
+    (x : I) : (LieIdeal.prodEquivOfIsCompl I J h).symm (x : L) = (x, 0) :=
+  (LieIdeal.prodEquivOfIsCompl I J h).injective (by simp)
+
+/-- On an element of `J`, the inverse of `LieIdeal.prodEquivOfIsCompl` yields `(0, y)`. -/
+@[simp]
+theorem LieIdeal.prodEquivOfIsCompl_symm_apply_right (I J : LieIdeal R L) (h : IsCompl I J)
+    (y : J) : (LieIdeal.prodEquivOfIsCompl I J h).symm (y : L) = (0, y) :=
+  (LieIdeal.prodEquivOfIsCompl I J h).injective (by simp)
+
+end IdealComplement
+
+namespace LieEquiv
+
+variable {R L L₁ L₂ L₃ L₄ : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+  [LieRing L₁] [LieAlgebra R L₁] [LieRing L₂] [LieAlgebra R L₂]
+  [LieRing L₃] [LieAlgebra R L₃] [LieRing L₄] [LieAlgebra R L₄]
+
+/-- The product of two Lie algebra equivalences. -/
+def prodCongr (e₁ : L₁ ≃ₗ⁅R⁆ L₂) (e₂ : L₃ ≃ₗ⁅R⁆ L₄) : (L₁ × L₃) ≃ₗ⁅R⁆ (L₂ × L₄) where
+  __ := e₁.toLinearEquiv.prodCongr e₂.toLinearEquiv
+  map_lie' {p q} := Prod.ext (e₁.map_lie p.1 q.1) (e₂.map_lie p.2 q.2)
+
+/-- `prodCongr` acts componentwise. -/
+@[simp]
+theorem prodCongr_apply (e₁ : L₁ ≃ₗ⁅R⁆ L₂) (e₂ : L₃ ≃ₗ⁅R⁆ L₄) (p : L₁ × L₃) :
+    e₁.prodCongr e₂ p = (e₁ p.1, e₂ p.2) := by
+  rfl
+
+/-- The inverse of `prodCongr` is the product of the inverses. -/
+@[simp]
+theorem prodCongr_symm (e₁ : L₁ ≃ₗ⁅R⁆ L₂) (e₂ : L₃ ≃ₗ⁅R⁆ L₄) :
+    (e₁.prodCongr e₂).symm = e₁.symm.prodCongr e₂.symm := by
+  rfl
+
+/-- Combine automorphisms of two complementary ideals `I` and `J` into an automorphism of `L`. -/
+noncomputable def ofIsCompl {I J : LieIdeal R L} (h : IsCompl I J)
+    (θI : I ≃ₗ⁅R⁆ I) (θJ : J ≃ₗ⁅R⁆ J) : L ≃ₗ⁅R⁆ L :=
+  ((LieIdeal.prodEquivOfIsCompl I J h).symm.trans (θI.prodCongr θJ)).trans
+    (LieIdeal.prodEquivOfIsCompl I J h)
+
+/-- `ofIsCompl` acts as `θI` on `I`. -/
+@[simp]
+theorem ofIsCompl_apply_left {I J : LieIdeal R L} (h : IsCompl I J)
+    (θI : I ≃ₗ⁅R⁆ I) (θJ : J ≃ₗ⁅R⁆ J) (x : I) :
+    ofIsCompl h θI θJ (x : L) = θI x := by
+  simp [ofIsCompl]
+
+/-- `ofIsCompl` acts as `θJ` on `J`. -/
+@[simp]
+theorem ofIsCompl_apply_right {I J : LieIdeal R L} (h : IsCompl I J)
+    (θI : I ≃ₗ⁅R⁆ I) (θJ : J ≃ₗ⁅R⁆ J) (y : J) :
+    ofIsCompl h θI θJ (y : L) = θJ y := by
+  simp [ofIsCompl]
+
+/-- `ofIsCompl` is involutive if and only if both factors are involutive. -/
+theorem involutive_ofIsCompl_iff {I J : LieIdeal R L} (h : IsCompl I J)
+    (θI : I ≃ₗ⁅R⁆ I) (θJ : J ≃ₗ⁅R⁆ J) :
+    Function.Involutive (ofIsCompl h θI θJ) ↔
+      Function.Involutive θI ∧ Function.Involutive θJ := by
+  constructor
+  · intro hinv
+    refine ⟨fun x ↦ Subtype.ext ?_, fun y ↦ Subtype.ext ?_⟩
+    · simpa using hinv (x : L)
+    · simpa using hinv (y : L)
+  · rintro ⟨hI, hJ⟩ x
+    obtain ⟨⟨a, b⟩, rfl⟩ := (LieIdeal.prodEquivOfIsCompl I J h).surjective x
+    simp [map_add, hI a, hJ b]
+
+end LieEquiv

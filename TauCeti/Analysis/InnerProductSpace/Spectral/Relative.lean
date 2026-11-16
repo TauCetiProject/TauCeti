@@ -48,6 +48,8 @@ nondegenerate the negative and positive spectral subspaces are complementary.
   and positive indices of inertia of `q`.
 * `LinearMap.BilinForm.isCompl_relativeSpectralSubspace_Iio_Ioi`: for nondegenerate `q`, the
   negative and positive spectral subspaces are complementary.
+* `LinearMap.BilinForm.iSup_eigenspace_eq_top_of_isSelfAdjoint`: on a finite-dimensional real space
+  with positive definite symmetric `g`, the eigenspaces of a `g`-self-adjoint endomorphism span.
 
 The Euclidean isometry is built from a `g`-orthogonal basis
 (`LinearMap.BilinForm.exists_orthogonal_basis`), and the spectral input is the point-spectral
@@ -261,5 +263,39 @@ theorem isCompl_relativeSpectralSubspace_Iio_Ioi (hker : LinearMap.ker q = ⊥) 
       relativeEigenspace_zero, hker, sup_bot_eq, relativeSpectralSubspace_union] at h
 
 end Real
+
+section SelfAdjoint
+
+variable {V : Type*} [AddCommGroup V] [Module ℝ V] [FiniteDimensional ℝ V]
+  {g : LinearMap.BilinForm ℝ V}
+
+/-- **Diagonalizability of a self-adjoint operator for an abstract inner product.** On a
+finite-dimensional real vector space equipped with a positive definite symmetric bilinear form `g`,
+the eigenspaces of any `g`-self-adjoint endomorphism span the whole space. -/
+theorem iSup_eigenspace_eq_top_of_isSelfAdjoint (hg : g.IsSymm)
+    (hpos : ∀ v, v ≠ 0 → 0 < g v v) {T : Module.End ℝ V} (hT : g.IsSelfAdjoint T) :
+    ⨆ μ : ℝ, Module.End.eigenspace T μ = ⊤ := by
+  let q : LinearMap.BilinForm ℝ V := g.compl₁₂ T LinearMap.id
+  have hq : q.IsSymm := ⟨fun x y ↦ by
+    simp only [q, compl₁₂_apply, LinearMap.id_apply]
+    rw [hT x y, hg.eq]⟩
+  have heig (μ : ℝ) : g.relativeEigenspace q μ = Module.End.eigenspace T μ := by
+    ext x
+    rw [mem_relativeEigenspace_iff, Module.End.mem_eigenspace_iff]
+    constructor
+    · intro hx
+      by_contra hne
+      have hsub : T x - μ • x ≠ 0 := sub_ne_zero.mpr hne
+      have h0 : g (T x - μ • x) (T x - μ • x) = 0 := by
+        rw [map_sub g, map_smul g, LinearMap.sub_apply, LinearMap.smul_apply, smul_eq_mul]
+        exact sub_eq_zero.mpr (hx (T x - μ • x))
+      exact (hpos _ hsub).ne' h0
+    · intro hx y
+      simp [q, hx]
+  have htop := relativeSpectralSubspace_univ hg hpos hq
+  rw [relativeSpectralSubspace_def] at htop
+  simpa only [mem_univ, iSup_pos, heig] using htop
+
+end SelfAdjoint
 
 end LinearMap.BilinForm
