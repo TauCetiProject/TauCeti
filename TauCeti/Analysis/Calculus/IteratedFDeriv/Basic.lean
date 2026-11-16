@@ -20,8 +20,11 @@ derivative fields. The first iterated derivative, uncurried, is the Fréchet der
 derivative on three directions gives the three-times curried Fréchet derivative
 (`TauCeti.iteratedFDeriv_three_apply`). The file also supplies the
 two-variable currying isometry used to identify continuous multilinear second derivatives with
-curried bilinear maps, and the corresponding exact comparison for differences of second
-derivatives, which transfers Hölder bounds between the two forms of the second derivative.
+curried bilinear maps, with the left currying of the one- and two-variable inverse curryings
+(`TauCeti.curryLeft_continuousMultilinearCurryFin1_symm`,
+`TauCeti.curryLeft_continuousMultilinearCurryFin2_symm`), and the corresponding exact comparison
+for differences of second derivatives, which transfers Hölder bounds between the two forms of the
+second derivative.
 Where a function `ζ` equals one on a neighbourhood of a point, every iterated derivative of
 `ζ * u` there is that of `u` (`Filter.EventuallyEq.iteratedFDeriv_mul_eq`). Bounded derivatives up
 to a finite order have a common bound
@@ -61,6 +64,22 @@ theorem continuousMultilinearCurryFin2_symm_apply
     (g : E →L[𝕜] E →L[𝕜] F) (m : Fin 2 → E) :
     (continuousMultilinearCurryFin2 𝕜 E F).symm g m = g (m 0) (m 1) := by
   simp [continuousMultilinearCurryFin2, Fin.init]
+
+variable {𝕜 E F} in
+/-- Left currying the `1`-multilinear map of a continuous linear map `L` gives back `L`, with its
+values read as `0`-multilinear maps. -/
+theorem curryLeft_continuousMultilinearCurryFin1_symm (L : E →L[𝕜] F) :
+    ((continuousMultilinearCurryFin1 𝕜 E F).symm L).curryLeft =
+      (continuousMultilinearCurryFin0 𝕜 E F).symm.toLinearIsometry.toContinuousLinearMap.comp L :=
+  ContinuousLinearMap.ext fun v ↦ ContinuousMultilinearMap.ext fun w ↦ by simp
+
+variable {𝕜 E F} in
+/-- Left currying the `2`-multilinear map of a curried bilinear map `B` gives back `B`, with its
+values read as `1`-multilinear maps. -/
+theorem curryLeft_continuousMultilinearCurryFin2_symm (B : E →L[𝕜] E →L[𝕜] F) :
+    ((continuousMultilinearCurryFin2 𝕜 E F).symm B).curryLeft =
+      (continuousMultilinearCurryFin1 𝕜 E F).symm.toLinearIsometry.toContinuousLinearMap.comp B :=
+  ContinuousLinearMap.ext fun v ↦ ContinuousMultilinearMap.ext fun w ↦ by simp
 
 end CurryFin2
 
