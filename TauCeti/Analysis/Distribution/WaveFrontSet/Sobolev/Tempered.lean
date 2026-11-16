@@ -12,6 +12,8 @@ import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
 import TauCeti.Analysis.Distribution.Regularization
 import TauCeti.Analysis.Distribution.TemperedDistribution.TestFunction
+import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
+import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication
 
 /-!
 # Local Sobolev regularity on Bessel-potential spaces
@@ -36,6 +38,22 @@ for a cutoff `φ` with `φ x ≠ 0`, and then for every cutoff supported in a ne
 and every `φ T` lies in some `H^s`. This transfers estimates on the Bessel-potential spaces `H^s`,
 such as the mapping properties of pseudodifferential operators, to distributions on open sets.
 
+Local regularity also gives global regularity of cut-off distributions: if `T` is `H^s` near every
+point of the support of `φ`, then `φ T ∈ H^s`
+(`Distribution.memSobolev_cutoffTempered_of_forall_isLocallySobolevAt`). Indeed a partition of
+unity splits `φ` into finitely many test functions, each supported in a neighbourhood on which every
+cutoff gives an `H^s` product. So the distributions with empty `H^s` singular support are exactly
+those of `H^s_loc(Ω)`, all of whose cut-offs lie in `H^s`.
+
+A tempered distribution `u` is a distribution on `Ω` by restriction
+(`TemperedDistribution.toDistribution`), and then `φ u` is its product with the test function `φ`.
+So for tempered distributions, being `H^s` near a point is a statement about the products `φ u`;
+an element of `H^s` is `H^s` near every point; and a tempered distribution with compact support
+lies in `H^s` exactly when it is `H^s` near every point of its support
+(`TemperedDistribution.memSobolev_iff_sobolevSingularSupport_toDistribution_eq_empty`). This is
+how regularity of a tempered distribution near each point, as a pseudodifferential operator or
+elliptic regularity argument provides it, assembles into membership of a Bessel-potential space.
+
 ## Main results
 
 * `Distribution.fourier_cutoffTempered_apply`: the Fourier transform of `φ T` is the localized
@@ -46,12 +64,25 @@ such as the mapping properties of pseudodifferential operators, to distributions
   `Distribution.IsLocallySobolevAt.exists_nhds_forall_memSobolev_cutoffTempered`: being `H^s` near
   a point in terms of Mathlib's Bessel-potential spaces.
 * `Distribution.exists_memSobolev_cutoffTempered`: every `φ T` has a finite Sobolev order.
+* `Distribution.memSobolev_cutoffTempered_of_forall_isLocallySobolevAt`: if `T` is `H^s` near every
+  point of the support of `φ`, then `φ T ∈ H^s`.
+* `Distribution.sobolevSingularSupport_eq_empty_iff_forall_memSobolev_cutoffTempered`: the
+  distributions with empty `H^s` singular support are those with `φ T ∈ H^s` for every `φ`.
+* `TemperedDistribution.isLocallySobolevAt_toDistribution_iff`,
+  `TemperedDistribution.MemSobolev.sobolevSingularSupport_toDistribution`,
+  `TemperedDistribution.MemSobolev.sobolevWaveFrontSet_toDistribution`: local Sobolev regularity
+  of tempered distributions, and of elements of `H^s`.
+* `TemperedDistribution.memSobolev_of_isCompact_dsupport`,
+  `TemperedDistribution.memSobolev_iff_sobolevSingularSupport_toDistribution_eq_empty`: a tempered
+  distribution with compact support lies in `H^s` exactly when it is `H^s` near every point.
 
 ## References
 
 * L. Hörmander, *The Analysis of Linear Partial Differential Operators I*, Theorem 7.1.14 (the
   Fourier transform of a compactly supported distribution is the function `η ↦ T (e_η)`).
 * L. Hörmander, *Lectures on Nonlinear Hyperbolic Differential Equations*, Springer, 1997, §11.1.
+* L. Hörmander, *The Analysis of Linear Partial Differential Operators I*, §2.2 (localization by
+  partitions of unity) and §7.1 (tempered distributions as distributions).
 -/
 
 public section
@@ -205,6 +236,114 @@ theorem exists_memSobolev_cutoffTempered (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ
   (T.exists_memLp_one_add_norm_sq_rpow_smul_localFourier φ).imp fun _ h ↦
     memSobolev_cutoffTempered_iff.2 h
 
+/-- **From local to global regularity.** If `T` is `H^s` near every point of the support of a test
+function `φ`, then `φ T ∈ H^s`. -/
+theorem memSobolev_cutoffTempered_of_forall_isLocallySobolevAt
+    (h : ∀ x ∈ tsupport φ, T.IsLocallySobolevAt s x) : MemSobolev s 2 (T.cutoffTempered φ) := by
+  -- Each point of `tsupport φ` has a neighbourhood on which every cutoff gives an `H^s` product.
+  choose U hU hUs using fun x : tsupport φ ↦
+    (h x x.2).exists_nhds_forall_memSobolev_cutoffTempered
+  -- Split `φ` into finitely many test functions supported in these neighbourhoods.
+  obtain ⟨t, ψ, hψU, hψφ, -⟩ := φ.exists_sum_subordinate (fun x ↦ interior (U x))
+    (fun _ ↦ isOpen_interior) fun x hx ↦
+      mem_iUnion.2 ⟨⟨x, hx⟩, mem_interior_iff_mem_nhds.2 (hU ⟨x, hx⟩)⟩
+  have hsum : T.cutoffTempered φ = ∑ i, T.cutoffTempered (ψ i) := by
+    conv_lhs => rw [← hψφ]
+    exact map_sum (AddMonoidHom.mk' T.cutoffTempered T.cutoffTempered_add_cutoff) ψ Finset.univ
+  rw [hsum]
+  exact Finset.sum_induction _ (MemSobolev s 2) (fun _ _ ↦ MemSobolev.add)
+    (memSobolev_fun_zero E ℂ s 2) fun i _ ↦ hUs i _ ((hψU i).trans interior_subset)
+
+/-- **Local `H^s` regularity on all of `Ω`.** A distribution has empty `H^s` singular support,
+that is, it is `H^s` near every point of `Ω`, exactly when `φ T ∈ H^s` for every test function
+`φ`: these are the distributions of `H^s_loc(Ω)`. -/
+theorem sobolevSingularSupport_eq_empty_iff_forall_memSobolev_cutoffTempered :
+    T.sobolevSingularSupport s = ∅ ↔ ∀ φ : 𝓓(Ω, ℂ), MemSobolev s 2 (T.cutoffTempered φ) := by
+  simp only [eq_empty_iff_forall_notMem, mem_sobolevSingularSupport_iff, not_and, not_not]
+  refine ⟨fun h φ ↦ memSobolev_cutoffTempered_of_forall_isLocallySobolevAt fun x hx ↦
+    h x (φ.tsupport_subset hx), fun h x hx ↦ ?_⟩
+  obtain ⟨φ, -, hφx⟩ :=
+    exists_tsupport_subset_apply_eq (n := ⊤) (Ω.isOpen.mem_nhds hx) subset_rfl (1 : ℂ)
+  exact isLocallySobolevAt_iff_exists_memSobolev_cutoffTempered.2 ⟨φ, by simp [hφx], h φ⟩
+
 end Sobolev
 
 end Distribution
+
+/-! ### Tempered distributions -/
+
+namespace TemperedDistribution
+
+open Distribution
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] {Ω : Opens E} {s : ℝ} {u : 𝓢'(E, ℂ)} {x : E}
+
+/-- A tempered distribution is `H^s` near `x`, as a distribution on `Ω`, exactly when `φ u ∈ H^s`
+for some test function `φ` on `Ω` with `φ x ≠ 0`. -/
+theorem isLocallySobolevAt_toDistribution_iff :
+    (toDistribution Ω u).IsLocallySobolevAt s x ↔
+      ∃ φ : 𝓓(Ω, ℂ), φ x ≠ 0 ∧ MemSobolev s 2 (smulLeftCLM ℂ (φ : E → ℂ) u) := by
+  simp only [isLocallySobolevAt_iff_exists_memSobolev_cutoffTempered,
+    cutoffTempered_toDistribution]
+
+/-- A tempered distribution in `H^s` is `H^s` near every point, as a distribution on `Ω`. -/
+theorem MemSobolev.isLocallySobolevAt_toDistribution (hu : MemSobolev s 2 u) (hx : x ∈ Ω) :
+    (toDistribution Ω u).IsLocallySobolevAt s x := by
+  obtain ⟨φ, -, hφx⟩ :=
+    exists_tsupport_subset_apply_eq (n := ⊤) (Ω.isOpen.mem_nhds hx) subset_rfl (1 : ℂ)
+  refine isLocallySobolevAt_toDistribution_iff.2 ⟨φ, by simp [hφx], ?_⟩
+  simpa using hu.smulLeftCLM (toSchwartzMapCLM ℝ φ)
+
+/-- A tempered distribution in `H^s` has empty `H^s` singular support as a distribution on `Ω`. -/
+theorem MemSobolev.sobolevSingularSupport_toDistribution (hu : MemSobolev s 2 u) :
+    (toDistribution Ω u).sobolevSingularSupport s = ∅ :=
+  eq_empty_iff_forall_notMem.2 fun _ hx ↦
+    (mem_sobolevSingularSupport_iff.1 hx).2 (hu.isLocallySobolevAt_toDistribution
+      (mem_sobolevSingularSupport_iff.1 hx).1)
+
+/-- A tempered distribution in `H^s` has empty `H^s` wave front set as a distribution on `Ω`. -/
+theorem MemSobolev.sobolevWaveFrontSet_toDistribution (hu : MemSobolev s 2 u) :
+    (toDistribution Ω u).sobolevWaveFrontSet s = ∅ :=
+  sobolevSingularSupport_eq_empty_iff_sobolevWaveFrontSet_eq_empty.1
+    hu.sobolevSingularSupport_toDistribution
+
+/-- **From local to global regularity for tempered distributions.** A tempered distribution with
+compact support which is `H^s` near every point of its support lies in `H^s`. -/
+theorem memSobolev_of_isCompact_dsupport (hu : IsCompact (dsupport u))
+    (h : ∀ x ∈ dsupport u, (toDistribution ⊤ u).IsLocallySobolevAt s x) : MemSobolev s 2 u := by
+  set T := toDistribution (⊤ : Opens E) u
+  -- `u` is the cut-off distribution `χ T` for a cutoff `χ` equal to `1` near its support.
+  obtain ⟨χ, hχ, -⟩ := exists_eventually_eq_one (n := ⊤) (Ω := ⊤) hu (subset_univ _)
+  set χ' : 𝓓((⊤ : Opens E), ℂ) := postcompCLM ofRealCLM χ
+  have hχ' : (χ' : E → ℂ) =ᶠ[𝓝ˢ (dsupport T)] 1 :=
+    (hχ.filter_mono (nhdsSet_mono (dsupport_toDistribution_subset u))).mono fun y hy ↦ by
+      simp [χ', postcompCLM_apply, hy]
+  have hu' : u = T.cutoffTempered χ' := eq_cutoffTempered_of_forall T χ' fun ψ ψ' hψ hψ' ↦ by
+    -- `ψ` is a test function, and `ψ' = χ' ψ` agrees with it near the support of `T`.
+    let ψt : 𝓓((⊤ : Opens E), ℂ) := ⟨ψ.postcompCLM ofRealCLM, (ψ.postcompCLM ofRealCLM).smooth ⊤,
+      by
+        rw [show ⇑(ψ.postcompCLM ofRealCLM) = ofRealCLM ∘ ψ from funext fun y ↦ by simp]
+        exact hψ.comp_left (map_zero _), subset_univ _⟩
+    have hψt : toSchwartzMapCLM ℝ ψt = ψ.postcompCLM ofRealCLM := by
+      ext y
+      simp [ψt]
+    rw [← hψt, ← complexPairing_toDistribution]
+    exact complexPairing_eq_of_eventuallyEq T (hχ'.mono fun y hy ↦ by simp [ψt, hψ' y, hy])
+  rw [hu']
+  refine memSobolev_cutoffTempered_of_forall_isLocallySobolevAt fun y _ ↦ ?_
+  by_cases hy : y ∈ dsupport u
+  · exact h y hy
+  · exact (notMem_sobolevSingularSupport_iff (mem_univ y)).1 fun hy' ↦
+      hy (dsupport_toDistribution_subset u (sobolevSingularSupport_subset_dsupport s T hy'))
+
+/-- A tempered distribution with compact support lies in `H^s` exactly when it is `H^s` near every
+point. -/
+theorem memSobolev_iff_sobolevSingularSupport_toDistribution_eq_empty
+    (hu : IsCompact (dsupport u)) :
+    MemSobolev s 2 u ↔ (toDistribution ⊤ u).sobolevSingularSupport s = ∅ :=
+  ⟨MemSobolev.sobolevSingularSupport_toDistribution, fun h ↦
+    memSobolev_of_isCompact_dsupport hu fun x _ ↦
+      (notMem_sobolevSingularSupport_iff (mem_univ x)).1 (h ▸ notMem_empty x)⟩
+
+end TemperedDistribution

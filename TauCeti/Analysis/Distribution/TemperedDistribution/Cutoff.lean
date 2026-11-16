@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Distribution.TemperedDistribution
 public import TauCeti.Analysis.Distribution.ComplexPairing
-import TauCeti.Analysis.Distribution.TemperedDistribution.TestFunction
+public import TauCeti.Analysis.Distribution.TemperedDistribution.TestFunction
 import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
 
 /-!
@@ -36,6 +36,9 @@ only depends on the cutoff near the support of `T`.
   a Schwartz function `ψ`.
 * `Distribution.eq_cutoffTempered_of_forall`: uniqueness of the extension.
 * `Distribution.cutoffTempered_congr`: independence of the cutoff near the support of `T`.
+* `Distribution.cutoffTempered_toDistribution`: for a tempered distribution `u`, restricted to `Ω`
+  by `TemperedDistribution.toDistribution`, the tempered distribution `φ u` is the product of `u`
+  with `φ`.
 
 ## References
 
@@ -174,5 +177,37 @@ theorem cutoffTempered_smul_cutoff (T : 𝓓'(Ω, ℂ)) (c : ℂ) (φ : 𝓓(Ω,
   simp only [smul_apply, cutoffTempered_def, map_smul, smul_eq_mul]
 
 end Cutoff
+
+/-! ### Restrictions of tempered distributions -/
+
+section ToDistribution
+
+/-- The complex-linear extension of the restriction of a tempered distribution `u` to `Ω` is `u`
+itself on complex test functions. -/
+@[simp]
+theorem complexPairing_toDistribution (u : 𝓢'(E, ℂ)) (φ : 𝓓(Ω, ℂ)) :
+    (TemperedDistribution.toDistribution Ω u).complexPairing φ = u (toSchwartzMapCLM ℝ φ) := by
+  rw [complexPairing_apply, TemperedDistribution.toDistribution_apply,
+    TemperedDistribution.toDistribution_apply, ← smul_eq_mul,
+    ← map_smul, ← map_add]
+  congr 1
+  ext x
+  simpa [postcompCLM_apply, mul_comm] using re_add_im (φ x)
+
+/-- **Cutting off a tempered distribution.** For a tempered distribution `u` restricted to `Ω`
+and a test function `φ` on `Ω`, the tempered distribution `φ u` of `Distribution.cutoffTempered`
+is the product of `u` with `φ`. -/
+@[simp]
+theorem cutoffTempered_toDistribution (u : 𝓢'(E, ℂ)) (φ : 𝓓(Ω, ℂ)) :
+    (TemperedDistribution.toDistribution Ω u).cutoffTempered φ =
+      TemperedDistribution.smulLeftCLM ℂ (φ : E → ℂ) u := by
+  ext ψ
+  rw [cutoffTempered_def, complexPairing_toDistribution,
+    TemperedDistribution.smulLeftCLM_apply_apply]
+  congr 1
+  ext x
+  simp [SchwartzMap.smulLeftCLM_apply_apply (φ.hasCompactSupport.hasTemperateGrowth φ.contDiff)]
+
+end ToDistribution
 
 end Distribution
