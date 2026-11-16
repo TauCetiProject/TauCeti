@@ -33,6 +33,7 @@ indexed by.
   family of open sets exactly when their underlying sets cover it.
 * `TopologicalSpace.Opens.sigmaCompactSpace_top` : the open subset `⊤` of a σ-compact space is
   σ-compact.
+* `TopologicalSpace.Opens.instIsEmptyBot` : the empty open set `⊥` is an empty subtype.
 * `TopologicalSpace.Opens.IsBasis.exists_finset_sup_le_of_isCompact` : a compact subset of an
   open set has a neighbourhood inside it which is a finite union of basis members.
 -/
@@ -97,6 +98,9 @@ theorem le_iSup_iff_subset_iUnion {ι : Sort*} {U : Opens X} {V : ι → Opens X
 /-- The open subset `⊤` of a σ-compact space is σ-compact, being a closed subspace. -/
 instance sigmaCompactSpace_top [SigmaCompactSpace X] : SigmaCompactSpace (⊤ : Opens X) :=
   IsClosed.sigmaCompactSpace (by simp)
+
+/-- The empty open set `⊥` is an empty type when coerced to a subtype. -/
+instance instIsEmptyBot : IsEmpty (⊥ : Opens X) := ⟨fun x ↦ x.2⟩
 
 end TopologicalSpace.Opens
 
