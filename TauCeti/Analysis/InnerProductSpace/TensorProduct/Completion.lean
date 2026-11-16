@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Completion
+public import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
+public import TauCeti.Analysis.InnerProductSpace.HilbertSum
 public import TauCeti.Analysis.InnerProductSpace.TensorProduct.Map
-public import TauCeti.Analysis.InnerProductSpace.UltraweakTopology
 public import TauCeti.Analysis.Normed.Operator.Completion
 public import TauCeti.Topology.UniformSpace.Completion
 
@@ -19,17 +20,16 @@ For inner product spaces `E` and `F` over `𝕜` (`ℝ` or `ℂ`), Mathlib equip
 `⟪x₁ ⊗ₜ y₁, x₂ ⊗ₜ y₂⟫ = ⟪x₁, x₂⟫ * ⟪y₁, y₂⟫`. Keeping passive tensor factors uncompleted—identified
 with their completed counterparts via `completionRTensorEquiv` and `completionLTensorEquiv`—lets
 iterated tensor completions (`assocCompletion`) and spatial von Neumann tensor products act
-uniformly on pre-Hilbert and Hilbert spaces alike, while ultraweakly continuous amplifications and
-Fubini slice maps provide the analytic input for `VonNeumannAlgebra.spatialTensor`.
+uniformly on pre-Hilbert and Hilbert spaces alike.
 
 Main constructions: amplifications `ContinuousLinearMap.rTensorCompletion` / `lTensorCompletion`
 and `rTensorCompletionStarAlgHom` / `lTensorCompletionStarAlgHom` with no passive completeness;
 structural isometries `lidCompletionEquiv`, `ridCompletionEquiv`, `completionRTensorEquiv`,
 `completionLTensorEquiv`, `assocCompletion`; coordinate equivalences
-`HilbertBasis.tensorCompletionEquiv` and `lpTensorCompletionEquiv` giving
-`continuous_rTensorCompletion` / `continuous_lTensorCompletion`; and bounded ultraweakly continuous
-slice maps `sliceRight` (`[CompleteSpace E₂]`) and `sliceLeft` (`[CompleteSpace F₂]`) separating
-bounded operators (`ext_of_sliceRight`, `ext_of_sliceLeft`).
+`HilbertBasis.tensorCompletionEquiv` and `lpTensorCompletionEquiv`; and bounded slice maps
+`sliceRight` (`[CompleteSpace E₂]`) and `sliceLeft` (`[CompleteSpace F₂]`) separating bounded
+operators (`ext_of_sliceRight`, `ext_of_sliceLeft`). Ultraweak continuity is proved in
+`TauCeti.Analysis.InnerProductSpace.TensorProduct.Ultraweak`.
 
 ## References
 
@@ -281,12 +281,12 @@ noncomputable def lTensorCompletionₗᵢ [Nontrivial E] :
   norm_map' := norm_lTensorCompletion
 @[simp] theorem lTensorCompletionₗᵢ_apply [Nontrivial E] (g : F →L[𝕜] G) :
     lTensorCompletionₗᵢ 𝕜 E F G g = g.lTensorCompletion E := (rfl)
-theorem rTensorCompletion_injective (G : Type*) [NormedAddCommGroup G] [InnerProductSpace 𝕜 G]
-    [Nontrivial G] : Function.Injective (rTensorCompletion G : (E →L[𝕜] F) → _) :=
-  (rTensorCompletionₗᵢ 𝕜 E F G).injective
-theorem lTensorCompletion_injective (E : Type*) [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
-    [Nontrivial E] : Function.Injective (lTensorCompletion E : (F →L[𝕜] G) → _) :=
-  (lTensorCompletionₗᵢ 𝕜 E F G).injective
+@[simp] theorem rTensorCompletion_inj [Nontrivial G] {f₁ f₂ : E →L[𝕜] F} :
+    f₁.rTensorCompletion G = f₂.rTensorCompletion G ↔ f₁ = f₂ :=
+  (rTensorCompletionₗᵢ 𝕜 E F G).injective.eq_iff
+@[simp] theorem lTensorCompletion_inj [Nontrivial E] {g₁ g₂ : F →L[𝕜] G} :
+    g₁.lTensorCompletion E = g₂.lTensorCompletion E ↔ g₁ = g₂ :=
+  (lTensorCompletionₗᵢ 𝕜 E F G).injective.eq_iff
 @[simp] theorem rTensorCompletion_eq_zero [Subsingleton G] (f : E →L[𝕜] F) :
     f.rTensorCompletion G = 0 := Subsingleton.elim _ _
 @[simp] theorem lTensorCompletion_eq_zero [Subsingleton E] (g : F →L[𝕜] G) :
@@ -342,10 +342,7 @@ theorem flip_tmulCLM_comp_adjoint [CompleteSpace E] (ξ η : F) :
 theorem tmulCLM_comp_adjoint [CompleteSpace F] (e₁ e₂ : E) :
     tmulCLM 𝕜 E F e₂ ∘L (tmulCLM 𝕜 E F e₁).adjoint =
       (InnerProductSpace.rankOne 𝕜 e₂ e₁).rTensorCompletion F :=
-  continuousLinearMap_ext_completion fun _ _ ↦ by
-    simp only [ContinuousLinearMap.comp_apply, adjoint_tmulCLM_tmul, map_smul, tmulCLM_apply,
-      ContinuousLinearMap.rTensorCompletion_coe, ContinuousLinearMap.rTensor_tmul,
-      InnerProductSpace.rankOne_apply, ← smul_tmul', Completion.coe_smul]
+  continuousLinearMap_ext_completion fun _ _ ↦ by simp [← smul_tmul', Completion.coe_smul]
 theorem commIsometry_completion_tmul (x : E) (y : F) :
     (commIsometry 𝕜 E F).completion (x ⊗ₜ[𝕜] y : E ⊗[𝕜] F) = (y ⊗ₜ[𝕜] x : F ⊗[𝕜] E) :=
   LinearIsometryEquiv.completion_apply_coe _ (x ⊗ₜ[𝕜] y)
@@ -430,9 +427,8 @@ noncomputable def completionRTensorEquiv :
     ((Completion.toComplₗᵢ : Completion E ⊗[𝕜] F →ₗᵢ[𝕜] _).comp
       ((Completion.toComplₗᵢ : E →ₗᵢ[𝕜] Completion E).rTensor F)).toLinearMap
     (Completion.toComplₗᵢ : E ⊗[𝕜] F →ₗᵢ[𝕜] _).toLinearMap
-    denseRange_toCompl_comp_rTensor Completion.denseRange_coe fun x ↦
-      (Completion.norm_coe x).trans (((Completion.toComplₗᵢ : Completion E ⊗[𝕜] F →ₗᵢ[𝕜] _).comp
-        ((Completion.toComplₗᵢ : E →ₗᵢ[𝕜] Completion E).rTensor F)).norm_map x).symm
+    denseRange_toCompl_comp_rTensor Completion.denseRange_coe fun _ ↦ by
+      simp only [LinearIsometry.coe_toLinearMap, LinearIsometry.norm_map, LinearEquiv.refl_apply]
 @[simp] theorem completionRTensorEquiv_tmul_coe (x : E) (y : F) :
     completionRTensorEquiv 𝕜 E F (((x : Completion E) ⊗ₜ[𝕜] y : Completion E ⊗[𝕜] F)) =
       (x ⊗ₜ[𝕜] y : E ⊗[𝕜] F) := LinearEquiv.extendOfIsometry_eq _ _ _ _ _ _ (x ⊗ₜ[𝕜] y)
@@ -459,9 +455,8 @@ noncomputable def completionLTensorEquiv :
     ((Completion.toComplₗᵢ : E ⊗[𝕜] Completion F →ₗᵢ[𝕜] _).comp
       ((Completion.toComplₗᵢ : F →ₗᵢ[𝕜] Completion F).lTensor E)).toLinearMap
     (Completion.toComplₗᵢ : E ⊗[𝕜] F →ₗᵢ[𝕜] _).toLinearMap
-    denseRange_toCompl_comp_lTensor Completion.denseRange_coe fun x ↦
-      (Completion.norm_coe x).trans (((Completion.toComplₗᵢ : E ⊗[𝕜] Completion F →ₗᵢ[𝕜] _).comp
-        ((Completion.toComplₗᵢ : F →ₗᵢ[𝕜] Completion F).lTensor E)).norm_map x).symm
+    denseRange_toCompl_comp_lTensor Completion.denseRange_coe fun _ ↦ by
+      simp only [LinearIsometry.coe_toLinearMap, LinearIsometry.norm_map, LinearEquiv.refl_apply]
 @[simp] theorem completionLTensorEquiv_tmul_coe (x : E) (y : F) :
     completionLTensorEquiv 𝕜 E F ((x ⊗ₜ[𝕜] (y : Completion F) : E ⊗[𝕜] Completion F)) =
       (x ⊗ₜ[𝕜] y : E ⊗[𝕜] F) := LinearEquiv.extendOfIsometry_eq _ _ _ _ _ _ (x ⊗ₜ[𝕜] y)
@@ -489,13 +484,9 @@ noncomputable def assocCompletion : Completion (Completion (E ⊗[𝕜] F) ⊗[�
       ((Completion.toComplₗᵢ : E ⊗[𝕜] F →ₗᵢ[𝕜] Completion (E ⊗[𝕜] F)).rTensor G)).toLinearMap
     ((Completion.toComplₗᵢ : E ⊗[𝕜] Completion (F ⊗[𝕜] G) →ₗᵢ[𝕜] _).comp
       ((Completion.toComplₗᵢ : F ⊗[𝕜] G →ₗᵢ[𝕜] Completion (F ⊗[𝕜] G)).lTensor E)).toLinearMap
-    denseRange_toCompl_comp_rTensor denseRange_toCompl_comp_lTensor fun x ↦ by
-      have h₁ := ((Completion.toComplₗᵢ : Completion (E ⊗[𝕜] F) ⊗[𝕜] G →ₗᵢ[𝕜] _).comp
-        ((Completion.toComplₗᵢ : E ⊗[𝕜] F →ₗᵢ[𝕜] Completion (E ⊗[𝕜] F)).rTensor G)).norm_map x
-      have h₂ := ((Completion.toComplₗᵢ : E ⊗[𝕜] Completion (F ⊗[𝕜] G) →ₗᵢ[𝕜] _).comp
-        ((Completion.toComplₗᵢ : F ⊗[𝕜] G →ₗᵢ[𝕜] Completion (F ⊗[𝕜] G)).lTensor E)).norm_map
-        (assocIsometry 𝕜 E F G x)
-      exact (h₂.trans ((assocIsometry 𝕜 E F G).norm_map x)).trans h₁.symm
+    denseRange_toCompl_comp_rTensor denseRange_toCompl_comp_lTensor fun _ ↦ by
+      simp only [LinearIsometry.coe_toLinearMap, LinearIsometry.norm_map,
+        LinearIsometryEquiv.coe_toLinearEquiv, LinearIsometryEquiv.norm_map]
 @[simp] theorem assocCompletion_tmul (x : E) (y : F) (z : G) :
     assocCompletion 𝕜 E F G (((x ⊗ₜ[𝕜] y : E ⊗[𝕜] F) : Completion (E ⊗[𝕜] F)) ⊗ₜ[𝕜] z :
       Completion (E ⊗[𝕜] F) ⊗[𝕜] G) = (x ⊗ₜ[𝕜] ((y ⊗ₜ[𝕜] z : F ⊗[𝕜] G) : Completion (F ⊗[𝕜] G)) :
@@ -553,7 +544,7 @@ theorem assocCompletion_comp_lTensorCompletion (h : G →L[𝕜] H) :
     congr($(assocCompletion_comp_lTensorCompletion h) ((assocCompletion 𝕜 E F G).symm w))
 end TensorProduct
 
-/-! ### Vector-valued `ℓ²` coordinates and ultraweak continuity -/
+/-! ### Vector-valued `ℓ²` coordinates -/
 
 namespace HilbertBasis
 open TensorProduct
@@ -639,28 +630,26 @@ variable {E₁ E₂ E₃ F₁ F₂ F₃ : Type*}
   [NormedAddCommGroup E₁] [InnerProductSpace 𝕜 E₁] [NormedAddCommGroup E₂] [InnerProductSpace 𝕜 E₂]
   [NormedAddCommGroup E₃] [InnerProductSpace 𝕜 E₃] [NormedAddCommGroup F₁] [InnerProductSpace 𝕜 F₁]
   [NormedAddCommGroup F₂] [InnerProductSpace 𝕜 F₂] [NormedAddCommGroup F₃] [InnerProductSpace 𝕜 F₃]
+private theorem norm_adjoint_comp_comp_le {A₁ A₂ B₁ B₂ : Type*}
+    [NormedAddCommGroup A₁] [InnerProductSpace 𝕜 A₁] [NormedAddCommGroup A₂]
+    [InnerProductSpace 𝕜 A₂] [NormedAddCommGroup B₁] [InnerProductSpace 𝕜 B₁]
+    [NormedAddCommGroup B₂] [InnerProductSpace 𝕜 B₂] [CompleteSpace A₂] [CompleteSpace B₂]
+    (P : A₂ →L[𝕜] B₂) (T : B₁ →L[𝕜] B₂) (Q : A₁ →L[𝕜] B₁) :
+    ‖P.adjoint ∘L T ∘L Q‖ ≤ ‖Q‖ * ‖P‖ * ‖T‖ := by
+  calc ‖P.adjoint ∘L T ∘L Q‖
+      ≤ ‖P.adjoint‖ * (‖T‖ * ‖Q‖) := (ContinuousLinearMap.opNorm_comp_le _ _).trans <|
+          mul_le_mul_of_nonneg_left (ContinuousLinearMap.opNorm_comp_le _ _) (norm_nonneg _)
+    _ = ‖Q‖ * ‖P‖ * ‖T‖ := by rw [ContinuousLinearMap.adjoint.norm_map]; ring
 private theorem norm_sliceRight_aux [CompleteSpace E₂] (ξ : F₁) (η : F₂)
     (T : Completion (E₁ ⊗[𝕜] F₁) →L[𝕜] Completion (E₂ ⊗[𝕜] F₂)) :
-    ‖((tmulCLM 𝕜 E₂ F₂).flip η).adjoint ∘L T ∘L (tmulCLM 𝕜 E₁ F₁).flip ξ‖ ≤ ‖ξ‖ * ‖η‖ * ‖T‖ := by
-  calc ‖((tmulCLM 𝕜 E₂ F₂).flip η).adjoint ∘L T ∘L (tmulCLM 𝕜 E₁ F₁).flip ξ‖
-      ≤ ‖((tmulCLM 𝕜 E₂ F₂).flip η).adjoint‖ * (‖T‖ * ‖(tmulCLM 𝕜 E₁ F₁).flip ξ‖) :=
-        (ContinuousLinearMap.opNorm_comp_le _ _).trans <|
-          mul_le_mul_of_nonneg_left (ContinuousLinearMap.opNorm_comp_le _ _) (norm_nonneg _)
-    _ ≤ ‖η‖ * (‖T‖ * ‖ξ‖) := by
-        rw [ContinuousLinearMap.adjoint.norm_map]
-        gcongr; exacts [norm_flip_tmulCLM_apply_le η, norm_flip_tmulCLM_apply_le ξ]
-    _ = ‖ξ‖ * ‖η‖ * ‖T‖ := by ring
+    ‖((tmulCLM 𝕜 E₂ F₂).flip η).adjoint ∘L T ∘L (tmulCLM 𝕜 E₁ F₁).flip ξ‖ ≤ ‖ξ‖ * ‖η‖ * ‖T‖ :=
+  (norm_adjoint_comp_comp_le _ T _).trans <| by
+    gcongr; exacts [norm_flip_tmulCLM_apply_le ξ, norm_flip_tmulCLM_apply_le η]
 private theorem norm_sliceLeft_aux [CompleteSpace F₂] (e₁ : E₁) (e₂ : E₂)
     (T : Completion (E₁ ⊗[𝕜] F₁) →L[𝕜] Completion (E₂ ⊗[𝕜] F₂)) :
-    ‖(tmulCLM 𝕜 E₂ F₂ e₂).adjoint ∘L T ∘L tmulCLM 𝕜 E₁ F₁ e₁‖ ≤ ‖e₁‖ * ‖e₂‖ * ‖T‖ := by
-  calc ‖(tmulCLM 𝕜 E₂ F₂ e₂).adjoint ∘L T ∘L tmulCLM 𝕜 E₁ F₁ e₁‖
-      ≤ ‖(tmulCLM 𝕜 E₂ F₂ e₂).adjoint‖ * (‖T‖ * ‖tmulCLM 𝕜 E₁ F₁ e₁‖) :=
-        (ContinuousLinearMap.opNorm_comp_le _ _).trans <|
-          mul_le_mul_of_nonneg_left (ContinuousLinearMap.opNorm_comp_le _ _) (norm_nonneg _)
-    _ ≤ ‖e₂‖ * (‖T‖ * ‖e₁‖) := by
-        rw [ContinuousLinearMap.adjoint.norm_map]
-        gcongr; exacts [norm_tmulCLM_apply_le e₂, norm_tmulCLM_apply_le e₁]
-    _ = ‖e₁‖ * ‖e₂‖ * ‖T‖ := by ring
+    ‖(tmulCLM 𝕜 E₂ F₂ e₂).adjoint ∘L T ∘L tmulCLM 𝕜 E₁ F₁ e₁‖ ≤ ‖e₁‖ * ‖e₂‖ * ‖T‖ :=
+  (norm_adjoint_comp_comp_le _ T _).trans <| by
+    gcongr; exacts [norm_tmulCLM_apply_le e₁, norm_tmulCLM_apply_le e₂]
 /-- **Right slice map** `R_{ξ, η}` (for complete `E₂`): contracts the right tensor factor against
 `ξ ∈ F₁` and `η ∈ F₂`, characterized by `⟪x₂, sliceRight ξ η T x₁⟫ = ⟪↑(x₂ ⊗ₜ η), T ↑(x₁ ⊗ₜ ξ)⟫`. -/
 noncomputable def sliceRight [CompleteSpace E₂] (ξ : F₁) (η : F₂) :
@@ -781,6 +770,10 @@ theorem sliceLeft_sub_right [CompleteSpace F₂] (e₁ : E₁) (e₂ e₂' : E�
 @[simp] theorem sliceLeft_rTensorCompletion [CompleteSpace F₁] (e₁ : E₁) (e₂ : E₂)
     (f : E₁ →L[𝕜] E₂) : sliceLeft e₁ e₂ (f.rTensorCompletion F₁) = ⟪e₂, f e₁⟫_𝕜 • .id 𝕜 F₁ := by
   simp [ContinuousLinearMap.rTensorCompletion_eq_mapL_completion]
+theorem sliceRight_rTensorCompletion_of_norm_eq_one [CompleteSpace E₂] {ξ : F₁} (hξ : ‖ξ‖ = 1)
+    (f : E₁ →L[𝕜] E₂) : sliceRight ξ ξ (f.rTensorCompletion F₁) = f := by simp [hξ]
+theorem sliceLeft_lTensorCompletion_of_norm_eq_one [CompleteSpace F₂] {e : E₁} (he : ‖e‖ = 1)
+    (g : F₁ →L[𝕜] F₂) : sliceLeft e e (g.lTensorCompletion E₁) = g := by simp [he]
 /-- Flip transport swaps right and left slice maps across heterogeneous completed tensor factors. -/
 theorem sliceRight_commIsometry_completion_comp_comp [CompleteSpace F₂] (e₁ : E₁) (e₂ : E₂)
     (T : Completion (E₁ ⊗[𝕜] F₁) →L[𝕜] Completion (E₂ ⊗[𝕜] F₂)) :
@@ -823,18 +816,12 @@ variable (T : Completion (E₁ ⊗[𝕜] F₁) →L[𝕜] Completion (E₁ ⊗[�
 @[simp] theorem sliceRight_conjStarAlgEquiv_commIsometry_completion [CompleteSpace F₁]
     (e₁ e₂ : E₁) : sliceRight e₁ e₂ ((commIsometry 𝕜 E₁ F₁).completion.conjStarAlgEquiv T) =
       sliceLeft e₁ e₂ T := by
-  ext y₁; refine ext_inner_left 𝕜 fun y₂ ↦ ?_
-  simp only [inner_sliceRight_apply, inner_sliceLeft_apply,
-    LinearIsometryEquiv.conjStarAlgEquiv_apply_apply, LinearIsometryEquiv.completion_symm,
-    commIsometry_symm, commIsometry_completion_tmul]
-  rw [← commIsometry_completion_tmul e₂ y₂, LinearIsometryEquiv.inner_map_map]
+  rw [← sliceRight_commIsometry_completion_comp_comp]; congr 1
+  ext; simp [LinearIsometryEquiv.conjStarAlgEquiv_apply_apply]
 @[simp] theorem sliceLeft_conjStarAlgEquiv_commIsometry_completion [CompleteSpace E₁] (ξ η : F₁) :
     sliceLeft ξ η ((commIsometry 𝕜 E₁ F₁).completion.conjStarAlgEquiv T) = sliceRight ξ η T := by
-  ext x₁; refine ext_inner_left 𝕜 fun x₂ ↦ ?_
-  simp only [inner_sliceLeft_apply, inner_sliceRight_apply,
-    LinearIsometryEquiv.conjStarAlgEquiv_apply_apply, LinearIsometryEquiv.completion_symm,
-    commIsometry_symm, commIsometry_completion_tmul]
-  rw [← commIsometry_completion_tmul x₂ η, LinearIsometryEquiv.inner_map_map]
+  rw [← sliceLeft_commIsometry_completion_comp_comp]; congr 1
+  ext; simp [LinearIsometryEquiv.conjStarAlgEquiv_apply_apply]
 theorem sliceRight_mul_rTensorCompletion [CompleteSpace E₁] (ξ η : F₁) (f : E₁ →L[𝕜] E₁) :
     sliceRight ξ η (T * f.rTensorCompletion F₁) = sliceRight ξ η T * f :=
   sliceRight_comp_rTensorCompletion ξ η T f
@@ -893,55 +880,3 @@ theorem eq_lTensorCompletion_sliceLeft_of_commute_rankOne [CompleteSpace F₁]
   rw [hx, ← mul_apply_eq_comp, ← hcomm x, mul_apply_eq_comp, ← tmulCLM_comp_adjoint]
   simp [sliceLeft_apply]
 end TensorProduct
-
-/-! ### Ultraweak continuity of amplifications and slice maps -/
-
-namespace TauCeti.ContinuousLinearMapUltraweak
-open TensorProduct
-variable {𝕜 E E₁ E₂ F F₁ F₂ G : Type*} [RCLike 𝕜]
-  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
-  [NormedAddCommGroup G] [InnerProductSpace 𝕜 G]
-  [NormedAddCommGroup E₁] [InnerProductSpace 𝕜 E₁] [NormedAddCommGroup E₂] [InnerProductSpace 𝕜 E₂]
-  [NormedAddCommGroup F₁] [InnerProductSpace 𝕜 F₁] [NormedAddCommGroup F₂] [InnerProductSpace 𝕜 F₂]
-/-- Left-factor amplification `A ↦ A ⊗ 1` (`ContinuousLinearMap.rTensorCompletion G`) between
-complete spaces `E` and `F` is ultraweakly continuous for any inner product space `G` (without
-separability, nontriviality, or completeness assumptions on `G`). -/
-@[fun_prop] theorem continuous_rTensorCompletion [CompleteSpace E] [CompleteSpace F] (G : Type*)
-    [NormedAddCommGroup G] [InnerProductSpace 𝕜 G] :
-    Continuous fun A : ContinuousLinearMapUltraweak 𝕜 E F ↦
-      ofCLM (A.toCLM.rTensorCompletion G) := by
-  obtain ⟨w, b, -⟩ := exists_hilbertBasis 𝕜 (Completion G)
-  let uE := (completionLTensorEquiv 𝕜 E G).symm.trans (b.tensorCompletionEquiv E)
-  let uF := (completionLTensorEquiv 𝕜 F G).symm.trans (b.tensorCompletionEquiv F)
-  refine ((continuous_linearIsometryEquiv_comp_left uF.symm).comp
-    ((continuous_comp_right uE.toLinearIsometry.toContinuousLinearMap).comp
-      (continuous_ampliation w))).congr fun A ↦ congrArg ofCLM ?_
-  refine continuousLinearMap_ext_completion fun x z ↦ uF.injective ?_
-  simpa [uE, uF] using (congr($(b.tensorCompletionEquiv_comp_rTensorCompletion A.toCLM)
-    ((x ⊗ₜ[𝕜] (z : Completion G) : E ⊗[𝕜] Completion G) : Completion (E ⊗[𝕜] Completion G)))).symm
-/-- Right-factor amplification `A ↦ 1 ⊗ A` (`ContinuousLinearMap.lTensorCompletion E`) between
-complete spaces `F` and `G` is ultraweakly continuous for any inner product space `E` (without
-separability, nontriviality, or completeness assumptions on `E`). -/
-@[fun_prop] theorem continuous_lTensorCompletion (E : Type*) [NormedAddCommGroup E]
-    [InnerProductSpace 𝕜 E] [CompleteSpace F] [CompleteSpace G] :
-    Continuous fun A : ContinuousLinearMapUltraweak 𝕜 F G ↦
-      ofCLM (A.toCLM.lTensorCompletion E) := by
-  let cEF := (commIsometry 𝕜 E F).completion
-  let cGE := (commIsometry 𝕜 G E).completion
-  refine ((continuous_linearIsometryEquiv_comp_left cGE).comp
-    ((continuous_comp_right cEF.toLinearIsometry.toContinuousLinearMap).comp
-      (continuous_rTensorCompletion E))).congr fun _ ↦
-    congrArg ofCLM <| continuousLinearMap_ext_completion fun _ _ ↦ by simp [cEF, cGE]
-/-- Every right slice map `T ↦ sliceRight ξ η T` (with `E₂` complete) is ultraweakly continuous. -/
-@[fun_prop] theorem continuous_sliceRight [CompleteSpace E₂] (ξ : F₁) (η : F₂) :
-    Continuous fun A : ContinuousLinearMapUltraweak 𝕜 (Completion (E₁ ⊗[𝕜] F₁))
-        (Completion (E₂ ⊗[𝕜] F₂)) ↦ ofCLM (sliceRight ξ η A.toCLM) :=
-  (continuous_comp_left ((tmulCLM 𝕜 E₂ F₂).flip η).adjoint).comp
-    (continuous_comp_right ((tmulCLM 𝕜 E₁ F₁).flip ξ))
-/-- Every left slice map `T ↦ sliceLeft e₁ e₂ T` (with `F₂` complete) is ultraweakly continuous. -/
-@[fun_prop] theorem continuous_sliceLeft [CompleteSpace F₂] (e₁ : E₁) (e₂ : E₂) :
-    Continuous fun A : ContinuousLinearMapUltraweak 𝕜 (Completion (E₁ ⊗[𝕜] F₁))
-        (Completion (E₂ ⊗[𝕜] F₂)) ↦ ofCLM (sliceLeft e₁ e₂ A.toCLM) :=
-  (continuous_comp_left (tmulCLM 𝕜 E₂ F₂ e₂).adjoint).comp
-    (continuous_comp_right (tmulCLM 𝕜 E₁ F₁ e₁))
-end TauCeti.ContinuousLinearMapUltraweak

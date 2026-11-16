@@ -15,16 +15,16 @@ Mathlib establishes only the upper bounds `TensorProduct.norm_mapL_le`,
 inner-product tensor product `E ⊗[𝕜] F`. Because the inner-product norm is a cross-norm
 (`‖x ⊗ₜ y‖ = ‖x‖ * ‖y‖`), tensoring bounded operators preserves exact operator norms, making
 amplification onto a nontrivial factor isometric and transferring directly to completed Hilbert
-tensor products via `ContinuousLinearMap.norm_completion`. Together with preservation of
-nontriviality and dense range, this underpins the completed amplifications, partial-completion
-equivalences, and associator in `TauCeti.Analysis.InnerProductSpace.TensorProduct.Completion`.
+tensor products via `ContinuousLinearMap.norm_completion`. Together with preservation of dense
+range, this underpins the completed amplifications, partial-completion equivalences, and associator
+in `TauCeti.Analysis.InnerProductSpace.TensorProduct.Completion`.
 
-* `TensorProduct.instNontrivial`: `E ⊗[𝕜] F` is nontrivial when `E` and `F` are nontrivial.
 * `TensorProduct.norm_mapL` and `TensorProduct.denseRange_mapL`: `‖mapL f g‖ = ‖f‖ * ‖g‖` and
   preservation of dense range.
-* `ContinuousLinearMap.norm_rTensor`, `norm_lTensor`, `rTensorₗᵢ`, `lTensorₗᵢ`,
-  `denseRange_rTensor`, `denseRange_lTensor`: exact norms, linear isometries on nontrivial passive
-  factors (`rTensor_eq_zero`, `lTensor_eq_zero` on subsingletons), and dense-range preservation.
+* `ContinuousLinearMap.norm_rTensor`, `norm_lTensor`, `rTensorₗᵢ`, `lTensorₗᵢ`, `rTensor_inj`,
+  `lTensor_inj`, `denseRange_rTensor`, `denseRange_lTensor`: exact norms, linear isometries and
+  injectivity on nontrivial passive factors (`rTensor_eq_zero`, `lTensor_eq_zero` on subsingletons),
+  and dense-range preservation.
 -/
 
 public section
@@ -36,12 +36,6 @@ variable {𝕜 E F G H : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProdu
   [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [NormedAddCommGroup G] [InnerProductSpace 𝕜 G]
   [NormedAddCommGroup H] [InnerProductSpace 𝕜 H]
 
-instance instNontrivial [Nontrivial E] [Nontrivial F] : Nontrivial (E ⊗[𝕜] F) := by
-  obtain ⟨x, hx⟩ := exists_ne (0 : E); obtain ⟨y, hy⟩ := exists_ne (0 : F)
-  refine ⟨x ⊗ₜ[𝕜] y, 0, fun h ↦ ?_⟩
-  have h0 : ‖x ⊗ₜ[𝕜] y‖ = 0 := by simp [h]
-  rw [norm_tmul, mul_eq_zero, norm_eq_zero, norm_eq_zero] at h0
-  exact h0.elim hx hy
 /-- The operator norm of `f ⊗ g` on the inner-product tensor product is the product of the
 operator norms of `f` and `g`. -/
 @[simp] theorem norm_mapL (f : E →L[𝕜] F) (g : G →L[𝕜] H) : ‖mapL f g‖ = ‖f‖ * ‖g‖ := by
@@ -99,13 +93,13 @@ noncomputable def lTensorₗᵢ [Nontrivial G] : (E →L[𝕜] F) →ₗᵢ[𝕜
 @[simp] theorem lTensorₗᵢ_apply [Nontrivial G] (f : E →L[𝕜] F) :
     lTensorₗᵢ 𝕜 E F G f = f.lTensor G := (rfl)
 /-- Tensoring on the right with the identity of a nontrivial inner product space is injective. -/
-theorem rTensor_injective (G : Type*) [NormedAddCommGroup G] [InnerProductSpace 𝕜 G]
-    [Nontrivial G] : Function.Injective (fun f : E →L[𝕜] F ↦ f.rTensor G) :=
-  (rTensorₗᵢ 𝕜 E F G).injective
+@[simp] theorem rTensor_inj [Nontrivial G] {f g : E →L[𝕜] F} :
+    f.rTensor G = g.rTensor G ↔ f = g :=
+  (rTensorₗᵢ 𝕜 E F G).injective.eq_iff
 /-- Tensoring on the left with the identity of a nontrivial inner product space is injective. -/
-theorem lTensor_injective (G : Type*) [NormedAddCommGroup G] [InnerProductSpace 𝕜 G]
-    [Nontrivial G] : Function.Injective (fun f : E →L[𝕜] F ↦ f.lTensor G) :=
-  (lTensorₗᵢ 𝕜 E F G).injective
+@[simp] theorem lTensor_inj [Nontrivial G] {f g : E →L[𝕜] F} :
+    f.lTensor G = g.lTensor G ↔ f = g :=
+  (lTensorₗᵢ 𝕜 E F G).injective.eq_iff
 /-- Tensoring on the right with a subsingleton space produces the zero operator. -/
 @[simp] theorem rTensor_eq_zero [Subsingleton G] (f : E →L[𝕜] F) : f.rTensor G = 0 :=
   Subsingleton.elim _ _
