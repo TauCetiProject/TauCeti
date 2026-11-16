@@ -13,6 +13,9 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Chebyshev.Basic
 
+import TauCeti.Analysis.Complex.SlitPlane
+import TauCeti.Analysis.SpecialFunctions.Pow.Complex
+
 /-!
 # The Schläfli–Laplace amplitude and Hankel's coefficients
 
@@ -46,7 +49,7 @@ of `hankelCoeff p k`.
 ## Main statements
 
 * `TauCeti.differentiableOn_coshMulArcosh`, `TauCeti.analyticOnNhd_coshMulArcosh`,
-  `TauCeti.coshMulArcosh_ode`, and `TauCeti.norm_coshMulArcosh_one_add_le`: holomorphy,
+  `TauCeti.coshMulArcosh_ode`, and `TauCeti.norm_coshMulArcosh_le`: holomorphy,
   Chebyshev's differential equation `(z² - 1) f''(z) + z f'(z) = p² f(z)` on
   `{z : ℂ | z + 1 ∈ Complex.slitPlane}`, and global growth bound for `coshMulArcosh p`.
 * `TauCeti.differentiableOn_schlafliAmplitude`, `TauCeti.analyticOnNhd_schlafliAmplitude`, and
@@ -91,6 +94,30 @@ theorem coshMulArcosh_def (p z : ℂ) :
       ((((z + 1) / 2) ^ (1 / 2 : ℂ) + ((z - 1) / 2) ^ (1 / 2 : ℂ)) ^ (2 * p) +
         (((z + 1) / 2) ^ (1 / 2 : ℂ) - ((z - 1) / 2) ^ (1 / 2 : ℂ)) ^ (2 * p)) / 2 := (rfl)
 
+private theorem add_ofReal_mem_slitPlane {z : ℂ} (hz : z ∈ Complex.slitPlane) {c : ℝ}
+    (hc : 0 ≤ c) : z + (c : ℂ) ∈ Complex.slitPlane := by
+  simpa only [add_comm] using ofReal_add_mem_slitPlane hz hc
+
+private theorem div_two_mem_slitPlane {z : ℂ} (hz : z ∈ Complex.slitPlane) :
+    z / 2 ∈ Complex.slitPlane := by
+  simpa using div_ofReal_mem_slitPlane hz zero_lt_two
+
+private theorem add_one_mem_slitPlane_of_sub_one {z : ℂ} (hz : z - 1 ∈ Complex.slitPlane) :
+    z + 1 ∈ Complex.slitPlane := by
+  convert add_ofReal_mem_slitPlane hz zero_le_two using 1; push_cast; ring
+
+private theorem cpow_one_div_two_sq (w : ℂ) : (w ^ (1 / 2 : ℂ)) ^ 2 = w := by
+  simp [one_div]
+
+private theorem hasDerivAt_cpow_half {f : ℂ → ℂ} {f' z : ℂ} (hf : HasDerivAt f f' z)
+    (hz : f z ∈ Complex.slitPlane) :
+    HasDerivAt (fun w : ℂ ↦ f w ^ (1 / 2 : ℂ)) (f' / (2 * f z ^ (1 / 2 : ℂ))) z := by
+  have h := hf.cpow_const hz (c := (1 / 2 : ℂ))
+  have hm : f z ^ ((1 / 2 : ℂ) - 1) * f z ^ (1 / 2 : ℂ) = 1 := by
+    rw [← cpow_add _ _ (slitPlane_ne_zero hz)]; norm_num
+  have h0 : f z ^ (1 / 2 : ℂ) ≠ 0 := by simp [cpow_eq_zero_iff, slitPlane_ne_zero hz]
+  exact h.congr_deriv (by rw [eq_inv_of_mul_eq_one_left hm]; field_simp [h0])
+
 private def arcoshRoot (z : ℂ) : ℂ :=
   ((z + 1) / 2) ^ (1 / 2 : ℂ) + ((z - 1) / 2) ^ (1 / 2 : ℂ)
 
@@ -102,25 +129,14 @@ private theorem coshMulArcosh_eq_roots (p z : ℂ) :
 
 private theorem arcoshRoot_mul_conjRoot (z : ℂ) :
     arcoshRoot z * arcoshConjRoot z = 1 := by
-  have hsq : ∀ w : ℂ, (w ^ (1 / 2 : ℂ)) ^ 2 = w := fun w ↦ by
-    rw [← cpow_mul_nat, show (1 / 2 : ℂ) * (2 : ℕ) = 1 by norm_num, cpow_one]
   dsimp [arcoshRoot, arcoshConjRoot]
-  linear_combination hsq ((z + 1) / 2) - hsq ((z - 1) / 2)
+  linear_combination cpow_one_div_two_sq ((z + 1) / 2) - cpow_one_div_two_sq ((z - 1) / 2)
 
 private theorem arcoshRoot_ne_zero (z : ℂ) : arcoshRoot z ≠ 0 :=
   left_ne_zero_of_mul_eq_one (arcoshRoot_mul_conjRoot z)
 
 private theorem arcoshRoot_re_nonneg (z : ℂ) : 0 ≤ (arcoshRoot z).re := by
-  have hre : ∀ w : ℂ, 0 ≤ (w ^ (1 / 2 : ℂ)).re := fun w ↦ by
-    by_cases hw : w = 0
-    · simp [hw]
-    · rw [cpow_def_of_ne_zero hw, exp_re]
-      have him : (log w * (1 / 2 : ℂ)).im = w.arg / 2 := by
-        simp [mul_im, log_im, div_eq_mul_inv]
-      rw [him]
-      exact mul_nonneg (Real.exp_pos _).le (Real.cos_nonneg_of_mem_Icc
-        ⟨by linarith [neg_pi_lt_arg w], by linarith [arg_le_pi w]⟩)
-  dsimp [arcoshRoot]
+  have hre (w : ℂ) : 0 ≤ (w ^ (1 / 2 : ℂ)).re := by rw [one_div, cpow_inv_two_re]; positivity
   exact add_nonneg (hre _) (hre _)
 
 private theorem arcoshRoot_mem_slitPlane (z : ℂ) : arcoshRoot z ∈ Complex.slitPlane := by
@@ -174,13 +190,17 @@ theorem coshMulArcosh_neg_left (p z : ℂ) : coshMulArcosh (-p) z = coshMulArcos
   rw [coshMulArcosh_eq_cosh_two_mul_log, coshMulArcosh_eq_cosh_two_mul_log]
   simp [neg_mul, mul_neg]
 
+/-- At order `2⁻¹`, `coshMulArcosh 2⁻¹ z = ((z + 1) / 2) ^ (1 / 2 : ℂ)` everywhere on `ℂ`. -/
+theorem coshMulArcosh_inv_two_left (z : ℂ) :
+    coshMulArcosh 2⁻¹ z = ((z + 1) / 2) ^ (1 / 2 : ℂ) := by
+  rw [coshMulArcosh_def, mul_inv_cancel₀ two_ne_zero, cpow_one, cpow_one]
+  ring
+
 /-- At order `1`, `coshMulArcosh 1 z = z` everywhere on `ℂ`. -/
 @[simp]
 theorem coshMulArcosh_one_left (z : ℂ) : coshMulArcosh 1 z = z := by
-  have hsq : ∀ w : ℂ, (w ^ (1 / 2 : ℂ)) ^ 2 = w := fun w ↦ by
-    rw [← cpow_mul_nat, show (1 / 2 : ℂ) * (2 : ℕ) = 1 by norm_num, cpow_one]
   rw [coshMulArcosh_def, mul_one, cpow_two, cpow_two]
-  linear_combination hsq ((z + 1) / 2) + hsq ((z - 1) / 2)
+  linear_combination cpow_one_div_two_sq ((z + 1) / 2) + cpow_one_div_two_sq ((z - 1) / 2)
 
 /-- The product-to-sum identity for `coshMulArcosh` in the order parameter. -/
 theorem two_mul_coshMulArcosh_mul_coshMulArcosh (p q z : ℂ) :
@@ -242,10 +262,11 @@ theorem coshMulArcosh_ofReal_eq_cosh_mul_arcosh (p : ℂ) {x : ℝ} (hx : 1 ≤ 
   rw [hexp, ← ofReal_log (Real.exp_pos _).le, Real.log_exp]
   congr 1; push_cast; ring
 
-/-- For every real `u`, `coshMulArcosh p (Real.cosh u) = Complex.cosh (p * u)`. -/
-theorem coshMulArcosh_ofReal_cosh (p : ℂ) (u : ℝ) :
-    coshMulArcosh p (Real.cosh u) = Complex.cosh (p * u) := by
-  rw [coshMulArcosh_ofReal_eq_cosh_mul_arcosh p (Real.one_le_cosh u)]
+/-- For every real `u`, `coshMulArcosh p (Complex.cosh u) = Complex.cosh (p * u)`. -/
+@[simp]
+theorem coshMulArcosh_cosh_ofReal (p : ℂ) (u : ℝ) :
+    coshMulArcosh p (Complex.cosh u) = Complex.cosh (p * u) := by
+  rw [← Complex.ofReal_cosh, coshMulArcosh_ofReal_eq_cosh_mul_arcosh p (Real.one_le_cosh u)]
   rcases le_total 0 u with hu | hu
   · rw [Real.arcosh_cosh hu]
   · rw [← Real.cosh_neg u, Real.arcosh_cosh (by linarith), ofReal_neg, mul_neg, Complex.cosh_neg]
@@ -257,26 +278,26 @@ theorem differentiable_coshMulArcosh_left (z : ℂ) :
   simp_rw [coshMulArcosh_eq_cosh_two_mul_log]
   fun_prop
 
-private theorem norm_arcoshRoot_one_add_le (w : ℂ) :
-    ‖arcoshRoot (1 + w)‖ ≤ 1 + Real.sqrt (2 * ‖w‖) ∧
-      ‖arcoshConjRoot (1 + w)‖ ≤ 1 + Real.sqrt (2 * ‖w‖) := by
-  have hhalf : ∀ u : ℂ, ‖u ^ (1 / 2 : ℂ)‖ = Real.sqrt ‖u‖ := fun u ↦ by
-    by_cases hu : u = 0
-    · simp [hu]
-    · rw [norm_cpow_of_ne_zero hu, Real.sqrt_eq_rpow]; simp
-  have hsum_le : ‖((1 + w + 1) / 2) ^ (1 / 2 : ℂ)‖ + ‖((1 + w - 1) / 2) ^ (1 / 2 : ℂ)‖ ≤
-      1 + Real.sqrt (2 * ‖w‖) := by
-    rw [hhalf, hhalf, show (1 + w + 1) / 2 = 1 + w / 2 by ring,
-      show (1 + w - 1) / 2 = w / 2 by ring]
-    have h1 : Real.sqrt ‖1 + w / 2‖ ≤ 1 + Real.sqrt (‖w‖ / 2) := by
+private theorem norm_arcoshRoot_le (z : ℂ) :
+    ‖arcoshRoot z‖ ≤ 1 + Real.sqrt (2 * ‖z - 1‖) ∧
+      ‖arcoshConjRoot z‖ ≤ 1 + Real.sqrt (2 * ‖z - 1‖) := by
+  have hhalf (u : ℂ) : ‖u ^ (1 / 2 : ℂ)‖ = Real.sqrt ‖u‖ := by
+    simpa [Real.sqrt_eq_rpow] using norm_cpow_real u (1 / 2)
+  have hsum_le : ‖((z + 1) / 2) ^ (1 / 2 : ℂ)‖ + ‖((z - 1) / 2) ^ (1 / 2 : ℂ)‖ ≤
+      1 + Real.sqrt (2 * ‖z - 1‖) := by
+    rw [hhalf, hhalf, show (z + 1) / 2 = 1 + (z - 1) / 2 by ring]
+    have h1 : Real.sqrt ‖1 + (z - 1) / 2‖ ≤ 1 + Real.sqrt (‖z - 1‖ / 2) := by
       refine Real.sqrt_le_iff.mpr ⟨by positivity, ?_⟩
-      have htri : ‖1 + w / 2‖ ≤ 1 + ‖w‖ / 2 := (norm_add_le 1 (w / 2)).trans (by simp)
-      have hsq : (1 + Real.sqrt (‖w‖ / 2)) ^ 2 = 1 + 2 * Real.sqrt (‖w‖ / 2) + ‖w‖ / 2 := by
-        calc (1 + Real.sqrt (‖w‖ / 2)) ^ 2
-            = 1 + 2 * Real.sqrt (‖w‖ / 2) + Real.sqrt (‖w‖ / 2) ^ 2 := by ring
-          _ = 1 + 2 * Real.sqrt (‖w‖ / 2) + ‖w‖ / 2 := by rw [Real.sq_sqrt (by positivity)]
-      linarith [Real.sqrt_nonneg (‖w‖ / 2)]
-    have h2 : 2 * Real.sqrt (‖w‖ / 2) = Real.sqrt (2 * ‖w‖) := by
+      have htri : ‖1 + (z - 1) / 2‖ ≤ 1 + ‖z - 1‖ / 2 :=
+        (norm_add_le 1 ((z - 1) / 2)).trans (by simp)
+      have hsq : (1 + Real.sqrt (‖z - 1‖ / 2)) ^ 2 =
+          1 + 2 * Real.sqrt (‖z - 1‖ / 2) + ‖z - 1‖ / 2 := by
+        calc (1 + Real.sqrt (‖z - 1‖ / 2)) ^ 2
+            = 1 + 2 * Real.sqrt (‖z - 1‖ / 2) + Real.sqrt (‖z - 1‖ / 2) ^ 2 := by ring
+          _ = 1 + 2 * Real.sqrt (‖z - 1‖ / 2) + ‖z - 1‖ / 2 := by
+              rw [Real.sq_sqrt (by positivity)]
+      linarith [Real.sqrt_nonneg (‖z - 1‖ / 2)]
+    have h2 : 2 * Real.sqrt (‖z - 1‖ / 2) = Real.sqrt (2 * ‖z - 1‖) := by
       symm
       rw [Real.sqrt_eq_iff_eq_sq (by positivity) (by positivity), mul_pow,
         Real.sq_sqrt (by positivity)]
@@ -285,19 +306,19 @@ private theorem norm_arcoshRoot_one_add_le (w : ℂ) :
     linarith
   exact ⟨(norm_add_le _ _).trans hsum_le, (norm_sub_le _ _).trans hsum_le⟩
 
-/-- Uniform growth bound for `coshMulArcosh p (1 + w)` across all `p w : ℂ`. -/
-theorem norm_coshMulArcosh_one_add_le (p w : ℂ) :
-    ‖coshMulArcosh p (1 + w)‖ ≤
-      (1 + Real.sqrt (2 * ‖w‖)) ^ (2 * |p.re|) * Real.exp (Real.pi * |p.im|) := by
-  suffices h_nonneg : ∀ q : ℂ, 0 ≤ q.re → ‖coshMulArcosh q (1 + w)‖ ≤
-      (1 + Real.sqrt (2 * ‖w‖)) ^ (2 * q.re) * Real.exp (Real.pi * |q.im|) by
+/-- Uniform growth bound for `coshMulArcosh p z` across all `p z : ℂ`. -/
+theorem norm_coshMulArcosh_le (p z : ℂ) :
+    ‖coshMulArcosh p z‖ ≤
+      (1 + Real.sqrt (2 * ‖z - 1‖)) ^ (2 * |p.re|) * Real.exp (Real.pi * |p.im|) := by
+  suffices h_nonneg : ∀ q : ℂ, 0 ≤ q.re → ‖coshMulArcosh q z‖ ≤
+      (1 + Real.sqrt (2 * ‖z - 1‖)) ^ (2 * q.re) * Real.exp (Real.pi * |q.im|) by
     rcases le_total 0 p.re with hp | hp
     · simpa [abs_of_nonneg hp] using h_nonneg p hp
     · simpa [coshMulArcosh_neg_left, abs_of_nonpos hp] using
         h_nonneg (-p) (by simp; linarith)
   intro q hq
-  have hroot : ∀ s : ℂ, s ≠ 0 → 0 ≤ s.re → ‖s‖ ≤ 1 + Real.sqrt (2 * ‖w‖) →
-      ‖s ^ (2 * q)‖ ≤ (1 + Real.sqrt (2 * ‖w‖)) ^ (2 * q.re) * Real.exp (Real.pi * |q.im|) := by
+  have hroot : ∀ s : ℂ, s ≠ 0 → 0 ≤ s.re → ‖s‖ ≤ 1 + Real.sqrt (2 * ‖z - 1‖) →
+      ‖s ^ (2 * q)‖ ≤ (1 + Real.sqrt (2 * ‖z - 1‖)) ^ (2 * q.re) * Real.exp (Real.pi * |q.im|) := by
     intro s hs0 hs_re hs_le
     rw [norm_cpow_of_ne_zero hs0, div_eq_mul_inv, ← Real.exp_neg,
       show (2 * q).re = 2 * q.re by simp, show (2 * q).im = 2 * q.im by simp]
@@ -309,37 +330,34 @@ theorem norm_coshMulArcosh_one_add_le (p w : ℂ) :
         _ = Real.pi * |q.im| := by ring
     exact mul_le_mul (Real.rpow_le_rpow (norm_nonneg _) hs_le (by positivity))
       (Real.exp_le_exp.mpr hexp) (Real.exp_pos _).le (by positivity)
-  obtain ⟨hr1, hr2⟩ := norm_arcoshRoot_one_add_le w
+  obtain ⟨hr1, hr2⟩ := norm_arcoshRoot_le z
   have hb1 := hroot _ (arcoshRoot_ne_zero _) (arcoshRoot_re_nonneg _) hr1
   have hb2 := hroot _ (arcoshConjRoot_ne_zero _) (arcoshConjRoot_re_nonneg _) hr2
   rw [coshMulArcosh_eq_roots, norm_div, norm_ofNat]
-  linarith [norm_add_le (arcoshRoot (1 + w) ^ (2 * q)) (arcoshConjRoot (1 + w) ^ (2 * q))]
+  linarith [norm_add_le (arcoshRoot z ^ (2 * q)) (arcoshConjRoot z ^ (2 * q))]
 
 /-! ### Holomorphy and Chebyshev differential equation of `coshMulArcosh` -/
+
+private theorem sub_one_div_two_cpow_half_eq_or_neg (z : ℂ) :
+    ((z - 1) / 2) ^ (1 / 2 : ℂ) = I * ((1 - z) / 2) ^ (1 / 2 : ℂ) ∨
+      ((z - 1) / 2) ^ (1 / 2 : ℂ) = -(I * ((1 - z) / 2) ^ (1 / 2 : ℂ)) :=
+  sq_eq_sq_iff_eq_or_eq_neg.mp <| by
+    rw [mul_pow, I_sq, cpow_one_div_two_sq, cpow_one_div_two_sq]; ring
 
 private theorem coshMulArcosh_eq_alt (p z : ℂ) :
     coshMulArcosh p z =
       ((((z + 1) / 2) ^ (1 / 2 : ℂ) + I * ((1 - z) / 2) ^ (1 / 2 : ℂ)) ^ (2 * p) +
         (((z + 1) / 2) ^ (1 / 2 : ℂ) - I * ((1 - z) / 2) ^ (1 / 2 : ℂ)) ^ (2 * p)) / 2 := by
-  have hhalf : ∀ w : ℂ, (w ^ (1 / 2 : ℂ)) ^ 2 = w := fun w ↦ by
-    rw [← cpow_mul_nat, show (1 / 2 : ℂ) * (2 : ℕ) = 1 by norm_num, cpow_one]
-  have hsq : (((z - 1) / 2) ^ (1 / 2 : ℂ)) ^ 2 = (I * ((1 - z) / 2) ^ (1 / 2 : ℂ)) ^ 2 := by
-    rw [mul_pow, I_sq, hhalf, hhalf]; ring
-  rcases sq_eq_sq_iff_eq_or_eq_neg.mp hsq with h | h
+  rcases sub_one_div_two_cpow_half_eq_or_neg z with h | h
   · rw [coshMulArcosh_def, h]
   · rw [coshMulArcosh_def, h, sub_neg_eq_add, ← sub_eq_add_neg, add_comm]
 
 private theorem differentiableAt_coshMulArcosh_of_sub_one (p : ℂ) {z : ℂ}
     (hz : z - 1 ∈ Complex.slitPlane) :
     DifferentiableAt ℂ (coshMulArcosh p) z := by
-  have hz1 : (z + 1) / 2 ∈ Complex.slitPlane := by
-    rw [mem_slitPlane_iff] at hz ⊢
-    exact hz.imp (fun h ↦ by simp [div_ofNat_re] at h ⊢; linarith)
-      (fun h ↦ by simpa [div_ofNat_im] using h)
-  have hz2 : (z - 1) / 2 ∈ Complex.slitPlane := by
-    rw [mem_slitPlane_iff] at hz ⊢
-    exact hz.imp (fun h ↦ by simp [div_ofNat_re] at h ⊢; linarith)
-      (fun h ↦ by simpa [div_ofNat_im] using h)
+  have hz1 : (z + 1) / 2 ∈ Complex.slitPlane :=
+    div_two_mem_slitPlane (add_one_mem_slitPlane_of_sub_one hz)
+  have hz2 : (z - 1) / 2 ∈ Complex.slitPlane := div_two_mem_slitPlane hz
   have hd1 : DifferentiableAt ℂ (fun w : ℂ ↦ ((w + 1) / 2) ^ (1 / 2 : ℂ)) z :=
     ((differentiableAt_id.add_const 1).div_const 2).cpow_const hz1
   have hd2 : DifferentiableAt ℂ (fun w : ℂ ↦ ((w - 1) / 2) ^ (1 / 2 : ℂ)) z :=
@@ -350,20 +368,13 @@ private theorem differentiableAt_coshMulArcosh_of_sub_one (p : ℂ) {z : ℂ}
 private theorem differentiableAt_coshMulArcosh_of_re_lt_one (p : ℂ) {z : ℂ}
     (hz : z + 1 ∈ Complex.slitPlane) (hre : z.re < 1) :
     DifferentiableAt ℂ (coshMulArcosh p) z := by
-  have hz1 : (z + 1) / 2 ∈ Complex.slitPlane := by
-    rw [mem_slitPlane_iff] at hz ⊢
-    exact hz.imp (fun h ↦ by simp [div_ofNat_re] at h ⊢; linarith)
-      (fun h ↦ by simpa [div_ofNat_im] using h)
-  have hz2 : (1 - z) / 2 ∈ Complex.slitPlane := by
-    rw [mem_slitPlane_iff]; left; simp [div_ofNat_re]; linarith
-  have hsq : (((z - 1) / 2) ^ (1 / 2 : ℂ)) ^ 2 = (I * ((1 - z) / 2) ^ (1 / 2 : ℂ)) ^ 2 := by
-    have hhalf : ∀ w : ℂ, (w ^ (1 / 2 : ℂ)) ^ 2 = w := fun w ↦ by
-      rw [← cpow_mul_nat, show (1 / 2 : ℂ) * (2 : ℕ) = 1 by norm_num, cpow_one]
-    rw [mul_pow, I_sq, hhalf, hhalf]; ring
+  have hz1 : (z + 1) / 2 ∈ Complex.slitPlane := div_two_mem_slitPlane hz
+  have hz2 : (1 - z) / 2 ∈ Complex.slitPlane :=
+    div_two_mem_slitPlane (Or.inl (by simp; linarith))
   have hmem :
       ((z + 1) / 2) ^ (1 / 2 : ℂ) + I * ((1 - z) / 2) ^ (1 / 2 : ℂ) ∈ Complex.slitPlane ∧
       ((z + 1) / 2) ^ (1 / 2 : ℂ) - I * ((1 - z) / 2) ^ (1 / 2 : ℂ) ∈ Complex.slitPlane := by
-    rcases sq_eq_sq_iff_eq_or_eq_neg.mp hsq with h | h
+    rcases sub_one_div_two_cpow_half_eq_or_neg z with h | h
     · rw [← h]; exact ⟨arcoshRoot_mem_slitPlane z, arcoshConjRoot_mem_slitPlane z⟩
     · have h' := neg_eq_iff_eq_neg.mp h.symm
       rw [h', ← sub_eq_add_neg, sub_neg_eq_add]
@@ -383,17 +394,11 @@ private theorem continuousAt_coshMulArcosh_one (p : ℂ) :
       ((differentiableAt_id.add_const 1).div_const 2).cpow_const (by simp [one_mem_slitPlane])
     simpa using hd.continuousAt.tendsto
   have hb : Tendsto (fun z : ℂ ↦ ((z - 1) / 2) ^ (1 / 2 : ℂ)) (𝓝 1) (𝓝 0) := by
-    rw [tendsto_zero_iff_norm_tendsto_zero]
-    have hnorm : (fun z : ℂ ↦ ‖((z - 1) / 2) ^ (1 / 2 : ℂ)‖) =
-        fun z : ℂ ↦ Real.sqrt ‖(z - 1) / 2‖ := by
-      ext z
-      by_cases hz : (z - 1) / 2 = 0
-      · simp [hz]
-      · rw [norm_cpow_of_ne_zero hz, Real.sqrt_eq_rpow]; simp
-    rw [hnorm]
-    have hcont : Continuous (fun z : ℂ ↦ Real.sqrt ‖(z - 1) / 2‖) :=
-      Real.continuous_sqrt.comp (((continuous_id.sub continuous_const).div_const 2).norm)
-    simpa using hcont.tendsto 1
+    have hc0 : ContinuousAt (fun w : ℂ ↦ w ^ (1 / 2 : ℂ)) 0 :=
+      continuousAt_cpow_const_of_re_pos (Or.inl le_rfl) (by norm_num)
+    have hlin : Tendsto (fun z : ℂ ↦ (z - 1) / 2) (𝓝 1) (𝓝 0) := by
+      simpa using (((continuous_sub_right (1 : ℂ)).div_const (2 : ℂ)).tendsto 1)
+    simpa [Function.comp_def] using hc0.tendsto.comp hlin
   have hcpow : ContinuousAt (fun w : ℂ ↦ w ^ (2 * p)) 1 :=
     (differentiableAt_id.cpow_const one_mem_slitPlane).continuousAt
   have hplus : Tendsto (fun z : ℂ ↦ arcoshRoot z ^ (2 * p)) (𝓝 1) (𝓝 1) := by
@@ -407,11 +412,11 @@ private theorem continuousAt_coshMulArcosh_one (p : ℂ) :
   unfold coshMulArcosh
   simpa [arcoshRoot, arcoshConjRoot] using (hplus.add hminus).div_const (2 : ℂ)
 
-/-- `coshMulArcosh p` is holomorphic on `{z : ℂ | z + 1 ∈ Complex.slitPlane}`: the branch cut of
-`((z - 1) / 2) ^ (1 / 2)` along `(-1, 1]` cancels between the two summands, and the isolated point
-`z = 1` is removable by continuity. -/
+/-- `coshMulArcosh p` is holomorphic on `{z : ℂ | z + 1 ∈ Complex.slitPlane}`. -/
 theorem differentiableOn_coshMulArcosh (p : ℂ) :
     DifferentiableOn ℂ (coshMulArcosh p) {z : ℂ | z + 1 ∈ Complex.slitPlane} := by
+  -- The branch cut of `((z - 1) / 2) ^ (1 / 2)` along `(-1, 1]` cancels between the two summands,
+  -- and the isolated point `z = 1` is removable by continuity.
   have hopen : IsOpen {z : ℂ | z + 1 ∈ Complex.slitPlane} :=
     isOpen_slitPlane.preimage (continuous_add_const 1)
   have h1 : (1 : ℂ) ∈ {z : ℂ | z + 1 ∈ Complex.slitPlane} := by simp [mem_slitPlane_iff]
@@ -439,13 +444,12 @@ private def arcoshDenom (z : ℂ) : ℂ :=
   2 * ((z + 1) / 2) ^ (1 / 2 : ℂ) * ((z - 1) / 2) ^ (1 / 2 : ℂ)
 
 private theorem arcoshDenom_sq (z : ℂ) : arcoshDenom z ^ 2 = z ^ 2 - 1 := by
-  have hsq : ∀ w : ℂ, (w ^ (1 / 2 : ℂ)) ^ 2 = w := fun w ↦ by
-    rw [← cpow_mul_nat, show (1 / 2 : ℂ) * (2 : ℕ) = 1 by norm_num, cpow_one]
   calc
     arcoshDenom z ^ 2 =
         4 * (((z + 1) / 2) ^ (1 / 2 : ℂ)) ^ 2 * (((z - 1) / 2) ^ (1 / 2 : ℂ)) ^ 2 := by
       dsimp [arcoshDenom]; ring
-    _ = 4 * ((z + 1) / 2) * ((z - 1) / 2) := by rw [hsq, hsq]
+    _ = 4 * ((z + 1) / 2) * ((z - 1) / 2) := by
+      rw [cpow_one_div_two_sq, cpow_one_div_two_sq]
     _ = z ^ 2 - 1 := by ring
 
 private theorem arcoshDenom_ne_zero {z : ℂ} (hz : z - 1 ∈ Complex.slitPlane) :
@@ -454,38 +458,26 @@ private theorem arcoshDenom_ne_zero {z : ℂ} (hz : z - 1 ∈ Complex.slitPlane)
   have hsq := arcoshDenom_sq z
   rw [h0, zero_pow two_ne_zero] at hsq
   rcases mul_eq_zero.mp (show (z + 1) * (z - 1) = 0 by linear_combination -hsq) with hp | hm
-  · have hz1 : z + 1 ∈ Complex.slitPlane := by
-      rw [mem_slitPlane_iff] at hz ⊢
-      exact hz.imp (fun h ↦ by simp at h ⊢; linarith) (fun h ↦ by simpa using h)
-    exact slitPlane_ne_zero hz1 hp
+  · exact slitPlane_ne_zero (add_one_mem_slitPlane_of_sub_one hz) hp
   · exact slitPlane_ne_zero hz hm
 
 private theorem hasDerivAt_arcoshRoot_log {z : ℂ} (hz : z - 1 ∈ Complex.slitPlane) :
     HasDerivAt (fun w : ℂ ↦ Complex.log (arcoshRoot w)) ((2 * arcoshDenom z)⁻¹) z := by
   set a := ((z + 1) / 2) ^ (1 / 2 : ℂ)
   set b := ((z - 1) / 2) ^ (1 / 2 : ℂ)
-  have hz1 : (z + 1) / 2 ∈ Complex.slitPlane := by
-    rw [mem_slitPlane_iff] at hz ⊢
-    exact hz.imp (fun h ↦ by simp [div_ofNat_re] at h ⊢; linarith)
-      (fun h ↦ by simpa [div_ofNat_im] using h)
-  have hz2 : (z - 1) / 2 ∈ Complex.slitPlane := by
-    rw [mem_slitPlane_iff] at hz ⊢
-    exact hz.imp (fun h ↦ by simp [div_ofNat_re] at h ⊢; linarith)
-      (fun h ↦ by simpa [div_ofNat_im] using h)
+  have hz1 : (z + 1) / 2 ∈ Complex.slitPlane :=
+    div_two_mem_slitPlane (add_one_mem_slitPlane_of_sub_one hz)
+  have hz2 : (z - 1) / 2 ∈ Complex.slitPlane := div_two_mem_slitPlane hz
   have hden := arcoshDenom_ne_zero hz
   have hdef : arcoshDenom z = 2 * a * b := rfl
   have ha0 : a ≠ 0 := fun h0 ↦ hden (by rw [hdef, h0]; ring)
   have hb0 : b ≠ 0 := fun h0 ↦ hden (by rw [hdef, h0]; ring)
   have hda : HasDerivAt (fun w : ℂ ↦ ((w + 1) / 2) ^ (1 / 2 : ℂ)) ((4 * a)⁻¹) z := by
-    have h := (((hasDerivAt_id' z).add_const 1).div_const 2).cpow_const hz1 (c := (1 / 2 : ℂ))
-    have hm : ((z + 1) / 2) ^ ((1 / 2 : ℂ) - 1) * a = 1 := by
-      dsimp [a]; rw [← cpow_add _ _ (slitPlane_ne_zero hz1)]; norm_num
-    exact h.congr_deriv (by rw [eq_inv_of_mul_eq_one_left hm]; field_simp [ha0]; norm_num)
+    refine (hasDerivAt_cpow_half (((hasDerivAt_id' z).add_const 1).div_const 2) hz1).congr_deriv ?_
+    dsimp [a]; field_simp [ha0]; norm_num
   have hdb : HasDerivAt (fun w : ℂ ↦ ((w - 1) / 2) ^ (1 / 2 : ℂ)) ((4 * b)⁻¹) z := by
-    have h := (((hasDerivAt_id' z).sub_const 1).div_const 2).cpow_const hz2 (c := (1 / 2 : ℂ))
-    have hm : ((z - 1) / 2) ^ ((1 / 2 : ℂ) - 1) * b = 1 := by
-      dsimp [b]; rw [← cpow_add _ _ (slitPlane_ne_zero hz2)]; norm_num
-    exact h.congr_deriv (by rw [eq_inv_of_mul_eq_one_left hm]; field_simp [hb0]; norm_num)
+    refine (hasDerivAt_cpow_half (((hasDerivAt_id' z).sub_const 1).div_const 2) hz2).congr_deriv ?_
+    dsimp [b]; field_simp [hb0]; norm_num
   have hsum : HasDerivAt arcoshRoot ((4 * a)⁻¹ + (4 * b)⁻¹) z := hda.add hdb
   refine (HasDerivAt.clog hsum (arcoshRoot_mem_slitPlane z)).congr_deriv ?_
   have hab : a + b ≠ 0 := arcoshRoot_ne_zero z
@@ -496,14 +488,9 @@ private theorem hasDerivAt_arcoshRoot_log {z : ℂ} (hz : z - 1 ∈ Complex.slit
 
 private theorem hasDerivAt_arcoshDenom {z : ℂ} (hz : z - 1 ∈ Complex.slitPlane) :
     HasDerivAt arcoshDenom (z / arcoshDenom z) z := by
-  have hz1 : (z + 1) / 2 ∈ Complex.slitPlane := by
-    rw [mem_slitPlane_iff] at hz ⊢
-    exact hz.imp (fun h ↦ by simp [div_ofNat_re] at h ⊢; linarith)
-      (fun h ↦ by simpa [div_ofNat_im] using h)
-  have hz2 : (z - 1) / 2 ∈ Complex.slitPlane := by
-    rw [mem_slitPlane_iff] at hz ⊢
-    exact hz.imp (fun h ↦ by simp [div_ofNat_re] at h ⊢; linarith)
-      (fun h ↦ by simpa [div_ofNat_im] using h)
+  have hz1 : (z + 1) / 2 ∈ Complex.slitPlane :=
+    div_two_mem_slitPlane (add_one_mem_slitPlane_of_sub_one hz)
+  have hz2 : (z - 1) / 2 ∈ Complex.slitPlane := div_two_mem_slitPlane hz
   have hdr : DifferentiableAt ℂ arcoshDenom z := by
     unfold arcoshDenom
     exact ((((differentiableAt_id (x := z)).add_const 1).div_const 2).cpow_const hz1
@@ -538,9 +525,7 @@ private theorem coshMulArcosh_ode_of_sub_one (p : ℂ) {z : ℂ} (hz : z - 1 ∈
       (Complex.hasDerivAt_cosh _).comp w ((hasDerivAt_arcoshRoot_log hw).const_mul (2 * p))
     rw [hcongr, hcosh.deriv]
     field_simp [arcoshDenom_ne_zero hw]
-  have hz_add : z + 1 ∈ Complex.slitPlane := by
-    rw [mem_slitPlane_iff] at hz ⊢
-    exact hz.imp (fun h ↦ by simp at h ⊢; linarith) (fun h ↦ by simpa using h)
+  have hz_add : z + 1 ∈ Complex.slitPlane := add_one_mem_slitPlane_of_sub_one hz
   have hdf' : DifferentiableAt ℂ (deriv (coshMulArcosh p)) z :=
     ((analyticOnNhd_coshMulArcosh p).deriv _ hz_add).differentiableAt
   have hL : HasDerivAt (fun w ↦ arcoshDenom w * deriv (coshMulArcosh p) w)
@@ -591,6 +576,7 @@ theorem coshMulArcosh_ode (p : ℂ) {z : ℂ} (hz : z + 1 ∈ Complex.slitPlane)
   exact hL.eqOn_of_preconnected_of_eventuallyEq hR hpre h2U hev hz
 
 /-- The derivative of `coshMulArcosh p` at `z = 1` is `p²`. -/
+@[simp]
 theorem deriv_coshMulArcosh_one (p : ℂ) : deriv (coshMulArcosh p) 1 = p ^ 2 := by
   have h := coshMulArcosh_ode p (z := 1) (by simp [mem_slitPlane_iff])
   simpa [coshMulArcosh_one_right] using h
@@ -618,11 +604,30 @@ theorem schlafliAmplitude_neg_left (p w : ℂ) :
     schlafliAmplitude (-p) w = schlafliAmplitude p w := by
   simp [schlafliAmplitude_def]
 
-/-- At order `0`, `schlafliAmplitude 0 w = ((w + 2) ^ (1 / 2 : ℂ))⁻¹`. -/
+/-- At order `0`, `schlafliAmplitude 0 w = (w + 2) ^ (-1 / 2 : ℂ)`. -/
 @[simp]
 theorem schlafliAmplitude_zero_left (w : ℂ) :
-    schlafliAmplitude 0 w = ((w + 2) ^ (1 / 2 : ℂ))⁻¹ := by
-  simp [schlafliAmplitude_def]
+    schlafliAmplitude 0 w = (w + 2) ^ (-(1 / 2 : ℂ)) := by
+  rw [schlafliAmplitude_def, coshMulArcosh_zero_left, one_div, cpow_neg]
+
+/-- At order `2⁻¹`, `schlafliAmplitude 2⁻¹ w` is the constant `2 ^ (-1 / 2 : ℂ)` away from
+`w = -2`. -/
+theorem schlafliAmplitude_inv_two_left {w : ℂ} (hw : w + 2 ≠ 0) :
+    schlafliAmplitude 2⁻¹ w = (2 : ℂ) ^ (-(1 / 2 : ℂ)) := by
+  have h1 : (1 + w + 1) / 2 = ((2⁻¹ : ℝ) : ℂ) * (w + 2) := by push_cast; ring
+  have h2 : ((2⁻¹ : ℝ) : ℂ) ^ (1 / 2 : ℂ) = (2 : ℂ) ^ (-(1 / 2 : ℂ)) := by
+    rw [show ((2⁻¹ : ℝ) : ℂ) = ((2 : ℝ) : ℂ)⁻¹ by push_cast; rfl,
+      inv_cpow_ofReal_nonneg zero_le_two, ofReal_ofNat, ← cpow_neg]
+  rw [schlafliAmplitude_def, coshMulArcosh_inv_two_left, h1,
+    ofReal_mul_cpow (by positivity) (w + 2) (1 / 2 : ℂ), h2,
+    mul_div_cancel_right₀ _ (by simp [hw])]
+
+/-- For fixed `w`, `p ↦ schlafliAmplitude p w` is an entire function. -/
+@[fun_prop]
+theorem differentiable_schlafliAmplitude_left (w : ℂ) :
+    Differentiable ℂ (fun p : ℂ ↦ schlafliAmplitude p w) := by
+  simp_rw [schlafliAmplitude_def]
+  fun_prop
 
 /-- On `[0, ∞)`, `schlafliAmplitude p τ` equals `cosh(p arcosh(1 + τ)) / √(τ + 2)`. -/
 theorem schlafliAmplitude_ofReal (p : ℂ) {τ : ℝ} (hτ : 0 ≤ τ) :
@@ -642,7 +647,8 @@ theorem schlafliAmplitude_ofReal_cosh_sub_one (p : ℂ) (u : ℝ) :
   have hτ : 0 ≤ Real.cosh u - 1 := sub_nonneg.mpr (Real.one_le_cosh u)
   have h2 : Real.cosh u - 1 + 2 = Real.cosh u + 1 := by ring
   rw [schlafliAmplitude_ofReal p hτ, add_sub_cancel, h2,
-    ← coshMulArcosh_ofReal_eq_cosh_mul_arcosh p (Real.one_le_cosh u), coshMulArcosh_ofReal_cosh]
+    ← coshMulArcosh_ofReal_eq_cosh_mul_arcosh p (Real.one_le_cosh u), ofReal_cosh,
+    coshMulArcosh_cosh_ofReal]
 
 /-- `schlafliAmplitude p` is holomorphic on `{w : ℂ | w + 2 ∈ Complex.slitPlane}`. -/
 theorem differentiableOn_schlafliAmplitude (p : ℂ) :
@@ -657,19 +663,13 @@ theorem differentiableOn_schlafliAmplitude (p : ℂ) :
       (differentiableAt_id.const_add 1)
   have hden : DifferentiableAt ℂ (fun z : ℂ ↦ (z + 2) ^ (1 / 2 : ℂ)) w :=
     (differentiableAt_id.add_const 2).cpow_const hw2
-  have hne : (w + 2) ^ (1 / 2 : ℂ) ≠ 0 := by
-    intro h0
-    have hsq : ((w + 2) ^ (1 / 2 : ℂ)) ^ 2 = w + 2 := by
-      rw [← cpow_mul_nat, show (1 / 2 : ℂ) * (2 : ℕ) = 1 by norm_num, cpow_one]
-    exact slitPlane_ne_zero hw2 (by rw [← hsq, h0, zero_pow two_ne_zero])
-  exact (hnum.div hden hne).differentiableWithinAt
+  exact (hnum.div hden (by simp [slitPlane_ne_zero hw2])).differentiableWithinAt
 
 /-- `schlafliAmplitude p` is holomorphic on `Complex.slitPlane`. -/
 theorem differentiableOn_schlafliAmplitude_slitPlane (p : ℂ) :
-    DifferentiableOn ℂ (schlafliAmplitude p) Complex.slitPlane := by
-  refine (differentiableOn_schlafliAmplitude p).mono fun w (hw : w ∈ Complex.slitPlane) ↦ ?_
-  have hw' : 0 < w.re ∨ w.im ≠ 0 := mem_slitPlane_iff.mp hw
-  exact mem_slitPlane_iff.mpr (hw'.imp (fun h ↦ by simp; linarith) (fun h ↦ by simpa using h))
+    DifferentiableOn ℂ (schlafliAmplitude p) Complex.slitPlane :=
+  (differentiableOn_schlafliAmplitude p).mono fun _ hw ↦ by
+    simpa using add_ofReal_mem_slitPlane hw zero_le_two
 
 /-- `schlafliAmplitude p` is complex analytic on `{w : ℂ | w + 2 ∈ Complex.slitPlane}`. -/
 theorem analyticOnNhd_schlafliAmplitude (p : ℂ) :
@@ -689,17 +689,9 @@ private theorem hasDerivAt_coshMulArcosh_one_add (p : ℂ) {w : ℂ}
         (2 * (w + 2) ^ (1 / 2 : ℂ))⁻¹ * schlafliAmplitude p w) w := by
   have hopen : IsOpen {z : ℂ | z + 2 ∈ Complex.slitPlane} :=
     isOpen_slitPlane.preimage (continuous_add_const 2)
-  have hr0 : ∀ z : ℂ, z + 2 ∈ Complex.slitPlane → (z + 2) ^ (1 / 2 : ℂ) ≠ 0 := fun z hz h0 ↦ by
-    have hsq : ((z + 2) ^ (1 / 2 : ℂ)) ^ 2 = z + 2 := by
-      rw [← cpow_mul_nat, show (1 / 2 : ℂ) * (2 : ℕ) = 1 by norm_num, cpow_one]
-    exact slitPlane_ne_zero hz (by rw [← hsq, h0, zero_pow two_ne_zero])
   have hdr : HasDerivAt (fun z : ℂ ↦ (z + 2) ^ (1 / 2 : ℂ))
       ((2 * (w + 2) ^ (1 / 2 : ℂ))⁻¹) w := by
-    have h := ((hasDerivAt_id' w).add_const 2).cpow_const hw (c := (1 / 2 : ℂ))
-    have hm : (w + 2) ^ ((1 / 2 : ℂ) - 1) * (w + 2) ^ (1 / 2 : ℂ) = 1 := by
-      rw [← cpow_add _ _ (slitPlane_ne_zero hw)]; norm_num
-    have hw0 := hr0 w hw
-    exact h.congr_deriv (by rw [eq_inv_of_mul_eq_one_left hm]; field_simp [hw0])
+    simpa [one_div] using hasDerivAt_cpow_half ((hasDerivAt_id' w).add_const 2) hw
   have hd : HasDerivAt (fun u ↦ (u + 2) ^ (1 / 2 : ℂ) * schlafliAmplitude p u)
       ((2 * (w + 2) ^ (1 / 2 : ℂ))⁻¹ * schlafliAmplitude p w +
         (w + 2) ^ (1 / 2 : ℂ) * deriv (schlafliAmplitude p) w) w :=
@@ -707,7 +699,7 @@ private theorem hasDerivAt_coshMulArcosh_one_add (p : ℂ) {w : ℂ}
   have hev : (fun u ↦ coshMulArcosh p (1 + u)) =ᶠ[𝓝 w]
       fun u ↦ (u + 2) ^ (1 / 2 : ℂ) * schlafliAmplitude p u := by
     filter_upwards [hopen.mem_nhds hw] with z hz
-    rw [schlafliAmplitude_def, mul_div_cancel₀ _ (hr0 z hz)]
+    rw [schlafliAmplitude_def, mul_div_cancel₀ _ (by simp [slitPlane_ne_zero hz])]
   exact (hd.congr_of_eventuallyEq hev).congr_deriv (by ring)
 
 private theorem deriv2_coshMulArcosh_one_add (p : ℂ) {w : ℂ}
@@ -719,16 +711,9 @@ private theorem deriv2_coshMulArcosh_one_add (p : ℂ) {w : ℂ}
   set r : ℂ → ℂ := fun z ↦ (z + 2) ^ (1 / 2 : ℂ)
   have hopen : IsOpen {z : ℂ | z + 2 ∈ Complex.slitPlane} :=
     isOpen_slitPlane.preimage (continuous_add_const 2)
-  have hw0 : r w ≠ 0 := by
-    intro h0
-    have hsq : r w ^ 2 = w + 2 := by
-      dsimp [r]; rw [← cpow_mul_nat, show (1 / 2 : ℂ) * (2 : ℕ) = 1 by norm_num, cpow_one]
-    exact slitPlane_ne_zero hw (by rw [← hsq, h0, zero_pow two_ne_zero])
+  have hw0 : r w ≠ 0 := by simp [r, slitPlane_ne_zero hw]
   have hdr : HasDerivAt r ((2 * r w)⁻¹) w := by
-    have h := ((hasDerivAt_id' w).add_const 2).cpow_const hw (c := (1 / 2 : ℂ))
-    have hm : (w + 2) ^ ((1 / 2 : ℂ) - 1) * r w = 1 := by
-      dsimp [r]; rw [← cpow_add _ _ (slitPlane_ne_zero hw)]; norm_num
-    exact h.congr_deriv (by rw [eq_inv_of_mul_eq_one_left hm]; field_simp [hw0])
+    simpa [r, one_div] using hasDerivAt_cpow_half ((hasDerivAt_id' w).add_const 2) hw
   have hd_inv : HasDerivAt (fun z ↦ (2 * r z)⁻¹) (-(4 * r w ^ 3)⁻¹) w := by
     refine ((hdr.const_mul (2 : ℂ)).inv (mul_ne_zero two_ne_zero hw0)).congr_deriv ?_
     field_simp [hw0]; ring
@@ -759,10 +744,9 @@ theorem schlafliAmplitude_ode (p : ℂ) {w : ℂ} (hw : w + 2 ∈ Complex.slitPl
         (1 / 4 - p ^ 2) * schlafliAmplitude p w = 0 := by
   set h := schlafliAmplitude p
   set r := (w + 2) ^ (1 / 2 : ℂ)
-  have hrsq : r ^ 2 = w + 2 := by
-    dsimp [r]; rw [← cpow_mul_nat, show (1 / 2 : ℂ) * (2 : ℕ) = 1 by norm_num, cpow_one]
+  have hrsq : r ^ 2 = w + 2 := cpow_one_div_two_sq (w + 2)
   have hw2 : w + 2 ≠ 0 := slitPlane_ne_zero hw
-  have hr0 : r ≠ 0 := fun h0 ↦ hw2 (by rw [← hrsq, h0, zero_pow two_ne_zero])
+  have hr0 : r ≠ 0 := by simp [r, hw2]
   have hd1 : deriv (coshMulArcosh p) (1 + w) = r * deriv h w + (2 * r)⁻¹ * h w := by
     rw [← deriv_comp_const_add (coshMulArcosh p) 1 w, (hasDerivAt_coshMulArcosh_one_add p hw).deriv]
   have hd2 : deriv (deriv (coshMulArcosh p)) (1 + w) =
@@ -822,17 +806,20 @@ theorem hankelCoeff_succ (p : ℂ) (k : ℕ) :
 theorem hankelCoeff_neg (p : ℂ) (k : ℕ) : hankelCoeff (-p) k = hankelCoeff p k := by
   simp [hankelCoeff_def]
 
+/-- At positive half-integer orders `m + 2⁻¹`, Hankel's coefficients `hankelCoeff (m + 2⁻¹) k`
+vanish for all `k > m`, reflecting the finite termination of Hankel's expansion for half-integer
+Bessel functions. -/
+theorem hankelCoeff_natCast_add_inv_two_of_lt {m k : ℕ} (hmk : m < k) :
+    hankelCoeff ((m : ℂ) + 2⁻¹) k = 0 := by
+  rw [hankelCoeff_def, Finset.prod_eq_zero (Finset.mem_range.mpr hmk), zero_div]
+  field_simp
+  ring
+
 /-- At order `p = 2⁻¹`, all positive-index Hankel coefficients vanish, reflecting the exact
 exponential form of `K_{1/2}`. -/
 @[simp]
 theorem hankelCoeff_inv_two_succ (k : ℕ) : hankelCoeff 2⁻¹ (k + 1) = 0 := by
-  rw [hankelCoeff_def, Finset.prod_eq_zero (Finset.mem_range.mpr (Nat.zero_lt_succ k))]
-  · simp
-  · norm_num
-
-/-- At order `p = 1 / 2`, all positive-index Hankel coefficients vanish. -/
-theorem hankelCoeff_one_div_two_succ (k : ℕ) : hankelCoeff (1 / 2) (k + 1) = 0 := by
-  simp
+  simpa using hankelCoeff_natCast_add_inv_two_of_lt (Nat.zero_lt_succ k)
 
 /-- The `k`-th Maclaurin coefficient `2 ^ (-1 / 2 : ℂ) * hankelCoeff p k / (1 / 2)_k` of
 `schlafliAmplitude p` at `w = 0`. -/
@@ -866,27 +853,24 @@ theorem schlafliAmplitudeCoeff_one (p : ℂ) :
   rw [schlafliAmplitudeCoeff_def, hankelCoeff_one, ascPochhammer_one, Polynomial.eval_X]
   ring
 
+private theorem ascPochhammer_eval_one_div_two_ne_zero (k : ℕ) :
+    (ascPochhammer ℂ k).eval (1 / 2 : ℂ) ≠ 0 := by
+  rw [Ne, ascPochhammer_eval_eq_zero_iff]
+  rintro ⟨m, _, hm⟩
+  have hre := congr_arg Complex.re hm
+  simp at hre
+  linarith [Nat.cast_nonneg (α := ℝ) m]
+
 /-- First-order recurrence for the Maclaurin coefficients `schlafliAmplitudeCoeff p k`. -/
 theorem schlafliAmplitudeCoeff_succ (p : ℂ) (k : ℕ) :
     schlafliAmplitudeCoeff p (k + 1) =
       schlafliAmplitudeCoeff p k * (4 * p ^ 2 - (2 * (k : ℂ) + 1) ^ 2) /
         (4 * ((k : ℂ) + 1) * (2 * (k : ℂ) + 1)) := by
-  have hp0 : (ascPochhammer ℂ k).eval (1 / 2 : ℂ) ≠ 0 := by
-    induction k with
-    | zero => simp
-    | succ m ih =>
-      rw [ascPochhammer_succ_right, Polynomial.eval_mul, Polynomial.eval_add, Polynomial.eval_X,
-        Polynomial.eval_natCast]
-      refine mul_ne_zero ih fun h ↦ ?_
-      have hre := congr_arg Complex.re h
-      simp at hre
-      linarith [Nat.cast_nonneg (α := ℝ) m]
+  have hp0 := ascPochhammer_eval_one_div_two_ne_zero k
   have hk1 : (k : ℂ) + 1 ≠ 0 := mod_cast Nat.succ_ne_zero k
-  have hk2 : 2 * (k : ℂ) + 1 ≠ 0 := by
-    intro h; have hre := congr_arg Complex.re h; simp at hre; linarith [Nat.cast_nonneg (α := ℝ) k]
+  have hk2 : 2 * (k : ℂ) + 1 ≠ 0 := mod_cast Nat.succ_ne_zero (2 * k)
   rw [schlafliAmplitudeCoeff_def, schlafliAmplitudeCoeff_def, hankelCoeff_succ,
-    ascPochhammer_succ_right, Polynomial.eval_mul, Polynomial.eval_add, Polynomial.eval_X,
-    Polynomial.eval_natCast]
+    ascPochhammer_succ_eval]
   have heq : (1 / 2 : ℂ) + k = (2 * (k : ℂ) + 1) / 2 := by ring
   rw [heq]
   field_simp [hk1, hk2, hp0]
@@ -898,6 +882,37 @@ theorem schlafliAmplitudeCoeff_neg (p : ℂ) (k : ℕ) :
     schlafliAmplitudeCoeff (-p) k = schlafliAmplitudeCoeff p k := by
   simp [schlafliAmplitudeCoeff_def]
 
+/-- At positive half-integer orders `m + 2⁻¹`, the Maclaurin coefficients
+`schlafliAmplitudeCoeff (m + 2⁻¹) k` vanish for all `k > m`. -/
+theorem schlafliAmplitudeCoeff_natCast_add_inv_two_of_lt {m k : ℕ} (hmk : m < k) :
+    schlafliAmplitudeCoeff ((m : ℂ) + 2⁻¹) k = 0 := by
+  simp [schlafliAmplitudeCoeff_def, hankelCoeff_natCast_add_inv_two_of_lt hmk]
+
+/-- At order `p = 2⁻¹`, all positive-index Maclaurin coefficients of `schlafliAmplitude` vanish. -/
+@[simp]
+theorem schlafliAmplitudeCoeff_inv_two_succ (k : ℕ) :
+    schlafliAmplitudeCoeff 2⁻¹ (k + 1) = 0 := by
+  simpa using schlafliAmplitudeCoeff_natCast_add_inv_two_of_lt (Nat.zero_lt_succ k)
+
+/-- The `k`-th scalar coefficient of `schlafliAmplitudeSeries p` is `schlafliAmplitudeCoeff p k`. -/
+@[simp]
+theorem coeff_schlafliAmplitudeSeries (p : ℂ) (k : ℕ) :
+    (schlafliAmplitudeSeries p).coeff k = schlafliAmplitudeCoeff p k := by
+  simp [schlafliAmplitudeSeries_def]
+
+/-- The `N`-th partial sum of `schlafliAmplitudeSeries p` at `w` is
+`∑ k ∈ Finset.range N, schlafliAmplitudeCoeff p k * w ^ k`. -/
+theorem partialSum_schlafliAmplitudeSeries (p : ℂ) (N : ℕ) (w : ℂ) :
+    (schlafliAmplitudeSeries p).partialSum N w =
+      ∑ k ∈ Finset.range N, schlafliAmplitudeCoeff p k * w ^ k := by
+  simp [FormalMultilinearSeries.partialSum, schlafliAmplitudeSeries_def, mul_comm]
+
+/-- `schlafliAmplitudeSeries p` is an even function of `p`. -/
+@[simp]
+theorem schlafliAmplitudeSeries_neg (p : ℂ) :
+    schlafliAmplitudeSeries (-p) = schlafliAmplitudeSeries p := by
+  ext k; simp [schlafliAmplitudeSeries_def]
+
 /-- Multiplying the `k`-th Maclaurin coefficient `schlafliAmplitudeCoeff p k` by `Γ(k + 1 / 2)`
 recovers `(√(π / 2) : ℂ) * hankelCoeff p k`. -/
 theorem Gamma_add_half_mul_schlafliAmplitudeCoeff (p : ℂ) (k : ℕ) :
@@ -907,11 +922,7 @@ theorem Gamma_add_half_mul_schlafliAmplitudeCoeff (p : ℂ) (k : ℕ) :
     have hre := congr_arg Complex.re h; simp at hre; linarith [Nat.cast_nonneg (α := ℝ) m]
   have hpoch := Complex.Gamma_add_nat_div_Gamma_eq (n := k) (1 / 2 : ℂ) hno_pole
   have hg0 : Complex.Gamma (1 / 2 : ℂ) ≠ 0 := Complex.Gamma_ne_zero hno_pole
-  have hpoch0 : (ascPochhammer ℂ k).eval (1 / 2 : ℂ) ≠ 0 := by
-    rw [← hpoch]
-    refine div_ne_zero (Complex.Gamma_ne_zero fun m hm ↦ ?_) hg0
-    have hre := congr_arg Complex.re hm; simp at hre
-    linarith [Nat.cast_nonneg (α := ℝ) k, Nat.cast_nonneg (α := ℝ) m]
+  have hpoch0 := ascPochhammer_eval_one_div_two_ne_zero k
   have hgam : Complex.Gamma ((k : ℂ) + 1 / 2) =
       Complex.Gamma (1 / 2 : ℂ) * (ascPochhammer ℂ k).eval (1 / 2 : ℂ) := by
     rw [add_comm, ← hpoch, mul_div_cancel₀ _ hg0]
@@ -991,11 +1002,7 @@ theorem iteratedDeriv_schlafliAmplitude_zero (p : ℂ) (k : ℕ) :
     have hrec := iteratedDeriv_schlafliAmplitude_recurrence p k
     rw [ih] at hrec
     have hk1 : (k : ℂ) + 1 ≠ 0 := mod_cast Nat.succ_ne_zero k
-    have hk2 : 2 * (k : ℂ) + 1 ≠ 0 := by
-      intro h
-      have hre := congr_arg Complex.re h
-      simp at hre
-      linarith [Nat.cast_nonneg (α := ℝ) k]
+    have hk2 : 2 * (k : ℂ) + 1 ≠ 0 := mod_cast Nat.succ_ne_zero (2 * k)
     have hrec' : (2 * (k : ℂ) + 1) * iteratedDeriv (k + 1) (schlafliAmplitude p) 0 =
         (k ! : ℂ) * schlafliAmplitudeCoeff p k * (4 * p ^ 2 - (2 * (k : ℂ) + 1) ^ 2) / 4 := by
       linear_combination hrec
@@ -1008,6 +1015,7 @@ theorem iteratedDeriv_schlafliAmplitude_zero (p : ℂ) (k : ℕ) :
     field_simp [hk1, hk2]
 
 /-- The derivative of `schlafliAmplitude p` at `0` is `2 ^ (-1 / 2 : ℂ) * (p² - 1 / 4)`. -/
+@[simp]
 theorem deriv_schlafliAmplitude_zero (p : ℂ) :
     deriv (schlafliAmplitude p) 0 = (2 : ℂ) ^ (-(1 / 2 : ℂ)) * (p ^ 2 - 1 / 4) := by
   simpa [schlafliAmplitudeCoeff_one] using iteratedDeriv_schlafliAmplitude_zero p 1
@@ -1039,32 +1047,28 @@ theorem hasFPowerSeriesOnBall_schlafliAmplitude (p : ℂ) :
   · rcases eq_or_ne r 0 with rfl | hr0
     · simp
     · exact (hr_ball r (pos_iff_ne_zero.mpr hr0) (by exact_mod_cast hr)).r_le
-  · rw [Metric.mem_eball, edist_zero_right] at hy
-    have hy2 : ‖y‖ < 2 := by
-      have hlt : (‖y‖₊ : ENNReal) < (2 : NNReal) := hy
-      exact_mod_cast hlt
-    set r : NNReal := ⟨(‖y‖ + 2) / 2, by positivity⟩
-    have hr_coe : (r : ℝ) = (‖y‖ + 2) / 2 := rfl
-    have hr0 : 0 < r := Subtype.mk_lt_mk.mpr (by positivity)
-    have hr2 : (r : ℝ) < 2 := by rw [hr_coe]; linarith
+  · rw [← ENNReal.coe_ofNat, Metric.eball_coe, Metric.mem_ball, dist_zero_right,
+      NNReal.coe_ofNat] at hy
+    let r : NNReal := (‖y‖₊ + 2) / 2
+    have hr0 : 0 < r := by positivity
+    have hr2 : (r : ℝ) < 2 := by dsimp [r]; linarith
     have hyr : y ∈ Metric.eball (0 : ℂ) r := by
-      rw [Metric.mem_eball, edist_zero_right]
-      exact ENNReal.coe_lt_coe.mpr
-        (show ‖y‖₊ < r by rw [← NNReal.coe_lt_coe, coe_nnNorm, hr_coe]; linarith)
+      rw [Metric.eball_coe, Metric.mem_ball, dist_zero_right]
+      dsimp [r]; linarith
     simpa using (hr_ball r hr0 hr2).hasSum hyr
+
+/-- The radius of convergence of `schlafliAmplitudeSeries p` is at least `2`. -/
+theorem two_le_radius_schlafliAmplitudeSeries (p : ℂ) :
+    2 ≤ (schlafliAmplitudeSeries p).radius :=
+  (hasFPowerSeriesOnBall_schlafliAmplitude p).r_le
 
 /-- For every `w` with `‖w‖ < 2`, the Maclaurin series of `schlafliAmplitude p` converges to
 `schlafliAmplitude p w`. -/
 theorem hasSum_schlafliAmplitude (p : ℂ) {w : ℂ} (hw : w ∈ Metric.ball (0 : ℂ) 2) :
     HasSum (fun k : ℕ ↦ schlafliAmplitudeCoeff p k * w ^ k) (schlafliAmplitude p w) := by
   have hmem : w ∈ Metric.eball (0 : ℂ) 2 := by
-    rw [Metric.mem_eball, edist_zero_right]
-    rw [Metric.mem_ball, dist_zero_right] at hw
-    exact ENNReal.coe_lt_coe.mpr (show ‖w‖₊ < (2 : NNReal) by exact_mod_cast hw)
-  have hs := (hasFPowerSeriesOnBall_schlafliAmplitude p).hasSum hmem
-  rw [zero_add, schlafliAmplitudeSeries_def] at hs
-  convert hs using 1
-  ext k
-  rw [FormalMultilinearSeries.ofScalars_apply_eq, smul_eq_mul, mul_comm]
+    rwa [← ENNReal.coe_ofNat, Metric.eball_coe, NNReal.coe_ofNat]
+  simpa [FormalMultilinearSeries.apply_eq_pow_smul_coeff, mul_comm] using
+    (hasFPowerSeriesOnBall_schlafliAmplitude p).hasSum hmem
 
 end TauCeti

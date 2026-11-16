@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.SpecialFunctions.SchlafliIntegral.Amplitude
-public import Mathlib.Analysis.Analytic.Order
 public import Mathlib.Analysis.Calculus.ParametricIntegral
 public import Mathlib.MeasureTheory.Function.JacobianOneDim
+import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
+import TauCeti.Analysis.SpecialFunctions.Pow.Sector
 
 /-!
 # Asymptotic bounds and Laplace transformation of Schläfli's integral
@@ -21,12 +22,11 @@ defined in `TauCeti.Analysis.SpecialFunctions.SchlafliIntegral.Amplitude`.
 This file supplies the analytic estimates and Bochner change-of-variables identities that connect
 Schläfli's integral to Watson's lemma and its sectorial rotation:
 
-1. **Subsector growth bounds:** on every closed subsector `{w : ℂ | |w.arg| ≤ π - δ}` (`0 < δ ≤ π`)
-   of `Complex.slitPlane`, `‖schlafliAmplitude p w‖` grows at most like
-   `(1 + ‖w‖) ^ (|p.re| - 1/2)`. Consequently `w ↦ w ^ (-1/2) * schlafliAmplitude p w` is bounded
-   at infinity on the subsector whenever `|p.re| ≤ 1` (covering all generalized Airy orders
-   `p = 1 / (n + 2)` and `p = 1 / 2`) and has subexponential growth `=O(exp (σ ‖w‖))` for every
-   `σ > 0` and arbitrary `p : ℂ`.
+1. **Subsector growth bounds:** on every closed subsector `{w : ℂ | |w.arg| ≤ π - δ}` (`0 < δ`) of
+   `Complex.slitPlane`, `‖schlafliAmplitude p w‖` grows at most like `(1 + ‖w‖) ^ (|p.re| - 1/2)`.
+   Consequently `w ↦ w ^ (-1/2) * schlafliAmplitude p w` is `=O(‖w‖ ^ (|p.re| - 1))` at infinity on
+   the subsector, hence bounded whenever `|p.re| ≤ 1` (covering all generalized Airy orders
+   `p = 1 / (n + 2)` and `p = 1 / 2`) and `=O(exp (σ ‖w‖))` for every `σ > 0` and `p : ℂ`.
 2. **All-order Taylor remainder bounds at `0`:** subtracting the `N`-term Maclaurin partial sum from
    `schlafliAmplitude p w` leaves a `=O[𝓝 0] (w ^ N)` remainder, so multiplying by `w ^ (-1/2)`
    yields a `=O[𝓝 0] (‖w‖ ^ (N - 1/2))` remainder on `ℂ` and `=O[𝓝[>] 0] (τ ^ (N - 1/2))` on
@@ -39,9 +39,11 @@ Schläfli's integral to Watson's lemma and its sectorial rotation:
 
 * `TauCeti.norm_schlafliAmplitude_le_of_abs_arg_le`: explicit polynomial growth bound on closed
   subsectors `|w.arg| ≤ π - δ`.
-* `TauCeti.isBigO_cpow_neg_half_mul_schlafliAmplitude_one_sector` and
-  `TauCeti.isBigO_cpow_neg_half_mul_schlafliAmplitude_exp_sector`: boundedness (for `|p.re| ≤ 1`)
-  and exponential growth bounds at infinity on closed subsectors of `Complex.slitPlane`.
+* `TauCeti.isBigO_cpow_neg_half_mul_schlafliAmplitude_rpow_sector`,
+  `TauCeti.isBigO_cpow_neg_half_mul_schlafliAmplitude_one_sector`, and
+  `TauCeti.isBigO_cpow_neg_half_mul_schlafliAmplitude_exp_sector`: polynomial, bounded (for
+  `|p.re| ≤ 1`), and exponential growth bounds at infinity on closed subsectors of
+  `Complex.slitPlane`.
 * `TauCeti.isBigO_schlafliAmplitude_sub_sum`,
   `TauCeti.isBigO_cpow_neg_half_mul_schlafliAmplitude_sub_sum`, and
   `TauCeti.isBigO_cpow_neg_half_mul_schlafliAmplitude_sub_sum_nhdsGT`: all-order Taylor remainder
@@ -75,37 +77,39 @@ namespace TauCeti
 
 /-! ### Subsector growth bounds for `schlafliAmplitude` -/
 
-/-- On every closed subsector `{w : ℂ | |w.arg| ≤ π - δ}` (`0 < δ ≤ π`), `‖schlafliAmplitude p w‖`
-is bounded by an explicit constant times `(1 + ‖w‖) ^ (|p.re| - 1 / 2)`. -/
-theorem norm_schlafliAmplitude_le_of_abs_arg_le (p : ℂ) {δ : ℝ} (hδ₀ : 0 < δ)
-    (hδπ : δ ≤ Real.pi) {w : ℂ} (hw : |w.arg| ≤ Real.pi - δ) :
-    ‖schlafliAmplitude p w‖ ≤
-      4 ^ |p.re| * Real.exp (Real.pi * |p.im|) / Real.sqrt (Real.sin (δ / 2)) *
-        (1 + ‖w‖) ^ (|p.re| - 1 / 2) := by
+private theorem sin_half_mul_one_add_norm_le_norm_add_two {δ : ℝ} (hδ₀ : 0 < δ)
+    {w : ℂ} (hw : |w.arg| ≤ Real.pi - δ) :
+    Real.sin (δ / 2) * (1 + ‖w‖) ≤ ‖w + 2‖ := by
+  have hδπ : δ ≤ Real.pi := by linarith [abs_nonneg w.arg]
   have hs_pos : 0 < Real.sin (δ / 2) := Real.sin_pos_of_pos_of_lt_pi (by linarith) (by linarith)
   have h1s : 0 ≤ 1 - Real.sin (δ / 2) ^ 2 := by nlinarith [Real.sin_le_one (δ / 2)]
   have hre : -‖w‖ * Real.cos δ ≤ w.re := by
-    rw [← norm_mul_cos_arg w, ← Real.cos_abs w.arg]
-    have hcos : -Real.cos δ ≤ Real.cos |w.arg| := by
-      rw [← Real.cos_pi_sub]
-      exact Real.strictAntiOn_cos.antitoneOn ⟨abs_nonneg _, hw.trans (by linarith)⟩
-        ⟨by linarith, by linarith⟩ hw
-    nlinarith [norm_nonneg w]
-  have hw2_ge : Real.sin (δ / 2) * (1 + ‖w‖) ≤ ‖w + 2‖ := by
-    rw [← sq_le_sq₀ (by positivity) (norm_nonneg _), Complex.sq_norm, Complex.normSq_apply]
-    have hw_sq : w.re * w.re + w.im * w.im = ‖w‖ ^ 2 := by
-      rw [Complex.sq_norm, Complex.normSq_apply]
-    have hcos2 : Real.cos δ = 1 - 2 * Real.sin (δ / 2) ^ 2 := by
-      have h2 := Real.cos_two_mul (δ / 2)
-      rw [show 2 * (δ / 2) = δ by ring] at h2; linarith [Real.sin_sq_add_cos_sq (δ / 2)]
-    rw [show (w + 2).re = w.re + 2 by simp, show (w + 2).im = w.im by simp]
-    nlinarith [mul_nonneg h1s (sq_nonneg (‖w‖ - 2)), norm_nonneg w, hs_pos]
-  have hw2_pos : 0 < ‖w + 2‖ := lt_of_lt_of_le (by positivity) hw2_ge
+    have h := (arg_mem_Icc_iff_norm_mul_cos_le_re ⟨by linarith, by linarith⟩).mp (abs_le.mp hw)
+    rwa [Real.cos_pi_sub, mul_neg, ← neg_mul] at h
+  rw [← sq_le_sq₀ (by positivity) (norm_nonneg _), Complex.sq_norm, Complex.normSq_apply]
+  have hw_sq : w.re * w.re + w.im * w.im = ‖w‖ ^ 2 := by
+    rw [Complex.sq_norm, Complex.normSq_apply]
+  have hcos2 : Real.cos δ = 1 - 2 * Real.sin (δ / 2) ^ 2 := by
+    have h2 := Real.cos_two_mul (δ / 2)
+    rw [show 2 * (δ / 2) = δ by ring] at h2; linarith [Real.sin_sq_add_cos_sq (δ / 2)]
+  rw [show (w + 2).re = w.re + 2 by simp, show (w + 2).im = w.im by simp]
+  nlinarith [mul_nonneg h1s (sq_nonneg (‖w‖ - 2)), norm_nonneg w, hs_pos]
+
+/-- On every closed subsector `{w : ℂ | |w.arg| ≤ π - δ}` (`0 < δ`), `‖schlafliAmplitude p w‖`
+is bounded by an explicit constant times `(1 + ‖w‖) ^ (|p.re| - 1 / 2)`. -/
+theorem norm_schlafliAmplitude_le_of_abs_arg_le (p : ℂ) {δ : ℝ} (hδ₀ : 0 < δ)
+    {w : ℂ} (hw : |w.arg| ≤ Real.pi - δ) :
+    ‖schlafliAmplitude p w‖ ≤
+      4 ^ |p.re| * Real.exp (Real.pi * |p.im|) / Real.sqrt (Real.sin (δ / 2)) *
+        (1 + ‖w‖) ^ (|p.re| - 1 / 2) := by
+  have hδπ : δ ≤ Real.pi := by linarith [abs_nonneg w.arg]
+  have hs_pos : 0 < Real.sin (δ / 2) := Real.sin_pos_of_pos_of_lt_pi (by linarith) (by linarith)
+  have hw2_ge := sin_half_mul_one_add_norm_le_norm_add_two hδ₀ hw
   have hden : Real.sqrt (Real.sin (δ / 2)) * (1 + ‖w‖) ^ (1 / 2 : ℝ) ≤
       ‖(w + 2) ^ (1 / 2 : ℂ)‖ := by
-    rw [norm_cpow_of_ne_zero (norm_pos_iff.mp hw2_pos), show (1 / 2 : ℂ).re = 1 / 2 by simp,
-      show (1 / 2 : ℂ).im = 0 by simp, mul_zero, Real.exp_zero, div_one, ← Real.sqrt_eq_rpow,
-      ← Real.sqrt_eq_rpow, ← Real.sqrt_mul hs_pos.le]
+    have hhalf : ‖(w + 2) ^ (1 / 2 : ℂ)‖ = Real.sqrt ‖w + 2‖ := by
+      simpa [Real.sqrt_eq_rpow] using Complex.norm_cpow_real (w + 2) (1 / 2)
+    rw [hhalf, ← Real.sqrt_eq_rpow, ← Real.sqrt_mul hs_pos.le]
     exact Real.sqrt_le_sqrt hw2_ge
   have hnum : (1 + Real.sqrt (2 * ‖w‖)) ^ (2 * |p.re|) ≤ 4 ^ |p.re| * (1 + ‖w‖) ^ |p.re| := by
     have hbase : 1 + Real.sqrt (2 * ‖w‖) ≤ 2 * Real.sqrt (1 + ‖w‖) := by
@@ -122,8 +126,10 @@ theorem norm_schlafliAmplitude_le_of_abs_arg_le (p : ℂ) {δ : ℝ} (hδ₀ : 0
             ← Real.rpow_mul (by positivity)]
           congr 2; ring
   rw [schlafliAmplitude_def, norm_div]
-  have htop := (norm_coshMulArcosh_one_add_le p w).trans
-    (mul_le_mul_of_nonneg_right hnum (Real.exp_pos _).le)
+  have hcosh : ‖coshMulArcosh p (1 + w)‖ ≤
+      (1 + Real.sqrt (2 * ‖w‖)) ^ (2 * |p.re|) * Real.exp (Real.pi * |p.im|) := by
+    simpa [add_sub_cancel_left] using norm_coshMulArcosh_le p (1 + w)
+  have htop := hcosh.trans (mul_le_mul_of_nonneg_right hnum (Real.exp_pos _).le)
   calc ‖coshMulArcosh p (1 + w)‖ / ‖(w + 2) ^ (1 / 2 : ℂ)‖
       ≤ (4 ^ |p.re| * (1 + ‖w‖) ^ |p.re| * Real.exp (Real.pi * |p.im|)) /
           (Real.sqrt (Real.sin (δ / 2)) * (1 + ‖w‖) ^ (1 / 2 : ℝ)) :=
@@ -133,81 +139,79 @@ theorem norm_schlafliAmplitude_le_of_abs_arg_le (p : ℂ) {δ : ℝ} (hδ₀ : 0
     _ = 4 ^ |p.re| * Real.exp (Real.pi * |p.im|) / Real.sqrt (Real.sin (δ / 2)) *
           (1 + ‖w‖) ^ (|p.re| - 1 / 2) := by rw [← Real.rpow_sub (by positivity)]
 
+/-- For every `p : ℂ`, `w ↦ w ^ (-1 / 2) * schlafliAmplitude p w` is `=O(‖w‖ ^ (|p.re| - 1))`
+at infinity on every closed subsector `{w : ℂ | |w.arg| ≤ π - δ}` (`0 < δ`). -/
+theorem isBigO_cpow_neg_half_mul_schlafliAmplitude_rpow_sector (p : ℂ) {δ : ℝ} (hδ₀ : 0 < δ) :
+    (fun w : ℂ ↦ w ^ (-(1 / 2 : ℂ)) * schlafliAmplitude p w)
+      =O[Bornology.cobounded ℂ ⊓ 𝓟 {w : ℂ | |w.arg| ≤ Real.pi - δ}]
+      (fun w : ℂ ↦ ‖w‖ ^ (|p.re| - 1)) := by
+  rcases lt_or_ge Real.pi δ with hπδ | hδπ
+  · have hemp : {w : ℂ | |w.arg| ≤ Real.pi - δ} = ∅ :=
+      eq_empty_iff_forall_notMem.mpr fun w hw ↦ by
+        rw [mem_ofPred_eq] at hw; linarith [abs_nonneg w.arg]
+    simp [hemp]
+  · set C := 4 ^ |p.re| * Real.exp (Real.pi * |p.im|) / Real.sqrt (Real.sin (δ / 2))
+    have hs_pos : 0 < Real.sin (δ / 2) :=
+      Real.sin_pos_of_pos_of_lt_pi (by linarith) (by linarith)
+    have hC : 0 ≤ C := by dsimp [C]; positivity
+    refine IsBigO.of_bound (max (2 ^ (|p.re| - 1 / 2)) 1 * C) ?_
+    filter_upwards [Filter.mem_inf_of_left (eventually_cobounded_le_norm 1),
+      Filter.mem_inf_of_right (mem_principal_self _)] with w hw1 hw_sec
+    have hw_pos : 0 < ‖w‖ := lt_of_lt_of_le zero_lt_one hw1
+    have hwn : ‖w ^ (-(1 / 2 : ℂ))‖ = ‖w‖ ^ (-(1 / 2 : ℝ)) := by
+      simpa using Complex.norm_cpow_real w (-(1 / 2))
+    have hrpow : (1 + ‖w‖) ^ (|p.re| - 1 / 2) ≤
+        max (2 ^ (|p.re| - 1 / 2)) 1 * ‖w‖ ^ (|p.re| - 1 / 2) := by
+      by_cases hexp : 0 ≤ |p.re| - 1 / 2
+      · calc (1 + ‖w‖) ^ (|p.re| - 1 / 2)
+            ≤ (2 * ‖w‖) ^ (|p.re| - 1 / 2) :=
+              Real.rpow_le_rpow (by positivity) (by linarith) hexp
+          _ = 2 ^ (|p.re| - 1 / 2) * ‖w‖ ^ (|p.re| - 1 / 2) :=
+              Real.mul_rpow zero_le_two hw_pos.le
+          _ ≤ max (2 ^ (|p.re| - 1 / 2)) 1 * ‖w‖ ^ (|p.re| - 1 / 2) :=
+              mul_le_mul_of_nonneg_right (le_max_left _ _) (by positivity)
+      · calc (1 + ‖w‖) ^ (|p.re| - 1 / 2)
+            ≤ ‖w‖ ^ (|p.re| - 1 / 2) :=
+              Real.rpow_le_rpow_of_nonpos hw_pos (by linarith) (not_le.mp hexp).le
+          _ = 1 * ‖w‖ ^ (|p.re| - 1 / 2) := (one_mul _).symm
+          _ ≤ max (2 ^ (|p.re| - 1 / 2)) 1 * ‖w‖ ^ (|p.re| - 1 / 2) :=
+              mul_le_mul_of_nonneg_right (le_max_right _ _) (by positivity)
+    have hcombine : ‖w‖ ^ (-(1 / 2 : ℝ)) * ‖w‖ ^ (|p.re| - 1 / 2) = ‖w‖ ^ (|p.re| - 1) := by
+      rw [← Real.rpow_add hw_pos]; congr 1; ring
+    rw [norm_mul, hwn, Real.norm_of_nonneg (by positivity)]
+    calc ‖w‖ ^ (-(1 / 2 : ℝ)) * ‖schlafliAmplitude p w‖
+        ≤ ‖w‖ ^ (-(1 / 2 : ℝ)) *
+            (C * (max (2 ^ (|p.re| - 1 / 2)) 1 * ‖w‖ ^ (|p.re| - 1 / 2))) :=
+          mul_le_mul_of_nonneg_left
+            ((norm_schlafliAmplitude_le_of_abs_arg_le p hδ₀ hw_sec).trans
+              (mul_le_mul_of_nonneg_left hrpow hC)) (by positivity)
+      _ = max (2 ^ (|p.re| - 1 / 2)) 1 * C *
+            (‖w‖ ^ (-(1 / 2 : ℝ)) * ‖w‖ ^ (|p.re| - 1 / 2)) := by ring
+      _ = max (2 ^ (|p.re| - 1 / 2)) 1 * C * ‖w‖ ^ (|p.re| - 1) := by rw [hcombine]
+
 /-- When `|p.re| ≤ 1`, `w ↦ w ^ (-1 / 2) * schlafliAmplitude p w` is bounded near infinity on
-every closed subsector `{w : ℂ | |w.arg| ≤ π - δ}` (`0 < δ ≤ π`). -/
+every closed subsector `{w : ℂ | |w.arg| ≤ π - δ}` (`0 < δ`). -/
 theorem isBigO_cpow_neg_half_mul_schlafliAmplitude_one_sector {p : ℂ} (hp : |p.re| ≤ 1)
-    {δ : ℝ} (hδ₀ : 0 < δ) (hδπ : δ ≤ Real.pi) :
+    {δ : ℝ} (hδ₀ : 0 < δ) :
     (fun w : ℂ ↦ w ^ (-(1 / 2 : ℂ)) * schlafliAmplitude p w)
       =O[Bornology.cobounded ℂ ⊓ 𝓟 {w : ℂ | |w.arg| ≤ Real.pi - δ}] (fun _ ↦ (1 : ℝ)) := by
-  set C := 4 ^ |p.re| * Real.exp (Real.pi * |p.im|) / Real.sqrt (Real.sin (δ / 2))
-  have hs_pos : 0 < Real.sin (δ / 2) :=
-    Real.sin_pos_of_pos_of_lt_pi (by linarith) (by linarith)
-  have hC : 0 ≤ C := by dsimp [C]; positivity
-  refine IsBigO.of_bound (Real.sqrt 2 * C) ?_
-  filter_upwards [Filter.mem_inf_of_left (eventually_cobounded_le_norm 1),
-    Filter.mem_inf_of_right (mem_principal_self _)] with w hw1 hw_sec
-  have hw0 : w ≠ 0 := norm_pos_iff.mp (lt_of_lt_of_le zero_lt_one hw1)
-  have hwn : ‖w ^ (-(1 / 2 : ℂ))‖ = ‖w‖ ^ (-(1 / 2 : ℝ)) := by
-    rw [norm_cpow_of_ne_zero hw0]; simp
-  have hrpow : (1 + ‖w‖) ^ (|p.re| - 1 / 2) ≤ Real.sqrt 2 * ‖w‖ ^ (1 / 2 : ℝ) :=
-    calc (1 + ‖w‖) ^ (|p.re| - 1 / 2)
-        ≤ (1 + ‖w‖) ^ (1 / 2 : ℝ) :=
-          Real.rpow_le_rpow_of_exponent_le (by linarith) (by linarith)
-      _ ≤ (2 * ‖w‖) ^ (1 / 2 : ℝ) :=
-          Real.rpow_le_rpow (by positivity) (by linarith) (by positivity)
-      _ = Real.sqrt 2 * ‖w‖ ^ (1 / 2 : ℝ) := by
-          rw [Real.mul_rpow zero_le_two (norm_nonneg _), Real.sqrt_eq_rpow]
-  have hcancel : ‖w‖ ^ (-(1 / 2 : ℝ)) * ‖w‖ ^ (1 / 2 : ℝ) = 1 := by
-    rw [← Real.rpow_add (lt_of_lt_of_le zero_lt_one hw1)]; norm_num
-  rw [norm_mul, hwn, Real.norm_eq_abs, abs_one, mul_one]
-  calc ‖w‖ ^ (-(1 / 2 : ℝ)) * ‖schlafliAmplitude p w‖
-      ≤ ‖w‖ ^ (-(1 / 2 : ℝ)) * (C * (Real.sqrt 2 * ‖w‖ ^ (1 / 2 : ℝ))) :=
-        mul_le_mul_of_nonneg_left
-          ((norm_schlafliAmplitude_le_of_abs_arg_le p hδ₀ hδπ hw_sec).trans
-            (mul_le_mul_of_nonneg_left hrpow hC)) (by positivity)
-    _ = Real.sqrt 2 * C * (‖w‖ ^ (-(1 / 2 : ℝ)) * ‖w‖ ^ (1 / 2 : ℝ)) := by ring
-    _ = Real.sqrt 2 * C := by rw [hcancel, mul_one]
+  refine (isBigO_cpow_neg_half_mul_schlafliAmplitude_rpow_sector p hδ₀).trans
+    (IsBigO.of_bound 1 ?_)
+  filter_upwards [Filter.mem_inf_of_left (eventually_cobounded_le_norm 1)] with w hw1
+  rw [Real.norm_of_nonneg (by positivity), Real.norm_eq_abs, abs_one, one_mul]
+  exact Real.rpow_le_one_of_one_le_of_nonpos hw1 (by linarith)
 
 /-- For every `p : ℂ` and `σ > 0`, `w ↦ w ^ (-1 / 2) * schlafliAmplitude p w` is
 `=O(exp (σ * ‖w‖))` at infinity on every closed subsector `{w : ℂ | |w.arg| ≤ π - δ}`
-(`0 < δ ≤ π`). -/
+(`0 < δ`). -/
 theorem isBigO_cpow_neg_half_mul_schlafliAmplitude_exp_sector (p : ℂ) {δ σ : ℝ}
-    (hδ₀ : 0 < δ) (hδπ : δ ≤ Real.pi) (hσ : 0 < σ) :
+    (hδ₀ : 0 < δ) (hσ : 0 < σ) :
     (fun w : ℂ ↦ w ^ (-(1 / 2 : ℂ)) * schlafliAmplitude p w)
       =O[Bornology.cobounded ℂ ⊓ 𝓟 {w : ℂ | |w.arg| ≤ Real.pi - δ}]
-      (fun w : ℂ ↦ Real.exp (σ * ‖w‖)) := by
-  set C := 4 ^ |p.re| * Real.exp (Real.pi * |p.im|) / Real.sqrt (Real.sin (δ / 2))
-  set n := ⌈|p.re|⌉₊
-  have hs_pos : 0 < Real.sin (δ / 2) :=
-    Real.sin_pos_of_pos_of_lt_pi (by linarith) (by linarith)
-  have hC : 0 ≤ C := by dsimp [C]; positivity
-  refine IsBigO.of_bound (C * ((2 : ℝ) ^ n * (n ! : ℝ) / σ ^ n)) ?_
-  filter_upwards [Filter.mem_inf_of_left (eventually_cobounded_le_norm 1),
-    Filter.mem_inf_of_right (mem_principal_self _)] with w hw1 hw_sec
-  have hw0 : w ≠ 0 := norm_pos_iff.mp (lt_of_lt_of_le zero_lt_one hw1)
-  have hwn : ‖w ^ (-(1 / 2 : ℂ))‖ ≤ 1 := by
-    rw [norm_cpow_of_ne_zero hw0]
-    simpa using Real.rpow_le_one_of_one_le_of_nonpos hw1 (by norm_num : (-(1 / 2 : ℝ)) ≤ 0)
-  have hpoly : (1 + ‖w‖) ^ (|p.re| - 1 / 2) ≤ (2 : ℝ) ^ n * ‖w‖ ^ n :=
-    calc (1 + ‖w‖) ^ (|p.re| - 1 / 2)
-        ≤ (1 + ‖w‖) ^ (n : ℝ) :=
-          Real.rpow_le_rpow_of_exponent_le (by linarith)
-            (by linarith [Nat.le_ceil |p.re|])
-      _ = (1 + ‖w‖) ^ n := Real.rpow_natCast _ n
-      _ ≤ (2 * ‖w‖) ^ n := pow_le_pow_left₀ (by positivity) (by linarith) n
-      _ = (2 : ℝ) ^ n * ‖w‖ ^ n := mul_pow 2 ‖w‖ n
-  have hexp : ‖w‖ ^ n ≤ (n ! : ℝ) / σ ^ n * Real.exp (σ * ‖w‖) := by
-    have hle := Real.pow_div_factorial_le_exp (σ * ‖w‖) (mul_nonneg hσ.le (norm_nonneg w)) n
-    have hpos : 0 < σ ^ n / (n ! : ℝ) := by positivity
-    rw [mul_pow, mul_div_right_comm] at hle
-    exact (le_div_iff₀' hpos).mpr hle |>.trans_eq (by field_simp)
-  rw [norm_mul, Real.norm_of_nonneg (Real.exp_pos _).le]
-  have hamp := (norm_schlafliAmplitude_le_of_abs_arg_le p hδ₀ hδπ hw_sec).trans
-    (mul_le_mul_of_nonneg_left (hpoly.trans (mul_le_mul_of_nonneg_left hexp (by positivity))) hC)
-  calc ‖w ^ (-(1 / 2 : ℂ))‖ * ‖schlafliAmplitude p w‖
-      ≤ 1 * (C * ((2 : ℝ) ^ n * ((n ! : ℝ) / σ ^ n * Real.exp (σ * ‖w‖)))) :=
-        mul_le_mul hwn hamp (norm_nonneg _) zero_le_one
-    _ = C * ((2 : ℝ) ^ n * (n ! : ℝ) / σ ^ n) * Real.exp (σ * ‖w‖) := by ring
+      (fun w : ℂ ↦ Real.exp (σ * ‖w‖)) :=
+  (isBigO_cpow_neg_half_mul_schlafliAmplitude_rpow_sector p hδ₀).trans
+    (((isLittleO_rpow_exp_pos_mul_atTop (|p.re| - 1) hσ).isBigO.comp_tendsto
+      tendsto_norm_cobounded_atTop).mono inf_le_left)
 
 /-! ### All-order Taylor remainder bounds at `0` -/
 
@@ -217,22 +221,8 @@ theorem isBigO_schlafliAmplitude_sub_sum (p : ℂ) (N : ℕ) :
     (fun w : ℂ ↦ schlafliAmplitude p w -
       ∑ k ∈ Finset.range N, schlafliAmplitudeCoeff p k * w ^ k) =O[𝓝 0]
       (fun w : ℂ ↦ w ^ N) := by
-  obtain ⟨F, hFa, hF⟩ := (analyticAt_schlafliAmplitude_zero p).exists_eventuallyEq_sum_add_pow_mul N
-  have hev : (fun w : ℂ ↦ schlafliAmplitude p w -
-      ∑ k ∈ Finset.range N, schlafliAmplitudeCoeff p k * w ^ k) =ᶠ[𝓝 0]
-      fun w : ℂ ↦ w ^ N * F w := by
-    filter_upwards [hF] with w hw
-    rw [hw]
-    have hsum : (∑ i ∈ Finset.range N,
-        (w ^ i / (i ! : ℂ)) • iteratedDeriv i (schlafliAmplitude p) 0) =
-        ∑ i ∈ Finset.range N, schlafliAmplitudeCoeff p i * w ^ i := by
-      refine Finset.sum_congr rfl fun i _ ↦ ?_
-      rw [iteratedDeriv_schlafliAmplitude_zero, smul_eq_mul]
-      field_simp [Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero i)]
-    rw [hsum, smul_eq_mul, add_sub_cancel_left]
-  exact ((isBigO_refl (fun w : ℂ ↦ w ^ N) (𝓝 0)).mul
-    (hFa.continuousAt.tendsto.isBigO_one ℂ)).congr' hev.symm
-    (Eventually.of_forall fun w ↦ mul_one (w ^ N))
+  simpa only [zero_add, partialSum_schlafliAmplitudeSeries, ← norm_pow, isBigO_norm_right] using
+    (hasFPowerSeriesOnBall_schlafliAmplitude p).hasFPowerSeriesAt.isBigO_sub_partialSum_pow N
 
 /-- Multiplying the `N`-term Taylor remainder of `schlafliAmplitude p` by `w ^ (-1 / 2)` gives a
 `=O[𝓝 0] (‖w‖ ^ (N - 1 / 2))` remainder across a full neighborhood of `0` in `ℂ`. -/
@@ -262,10 +252,10 @@ theorem isBigO_cpow_neg_half_mul_schlafliAmplitude_sub_sum (p : ℂ) (N : ℕ) :
       rw [show (k : ℂ) - 1 / 2 = -(1 / 2 : ℂ) + (k : ℂ) by ring, cpow_add _ _ hw0,
         cpow_natCast]
       ring
+    have hwn : ‖w ^ (-(1 / 2 : ℂ))‖ = ‖w‖ ^ (-(1 / 2 : ℝ)) := by
+      simpa using Complex.norm_cpow_real w (-(1 / 2))
     rw [norm_pow] at hw
-    rw [hsum_eq, ← mul_sub, norm_mul, norm_cpow_of_ne_zero hw0]
-    simp only [neg_re, div_ofNat_re, one_re, neg_im, div_ofNat_im, one_im, zero_div, neg_zero,
-      mul_zero, Real.exp_zero, div_one, Real.norm_eq_abs]
+    rw [hsum_eq, ← mul_sub, norm_mul, hwn, Real.norm_eq_abs]
     have hw_pos : 0 < ‖w‖ := norm_pos_iff.mpr hw0
     calc ‖w‖ ^ (-(1 / 2 : ℝ)) * ‖schlafliAmplitude p w -
           ∑ k ∈ Finset.range N, schlafliAmplitudeCoeff p k * w ^ k‖
@@ -324,53 +314,46 @@ private theorem sinh_smul_schlafliAmplitude_cosh_sub_one
   rw [← hprod_c, ofReal_inv]
   field_simp [hs1, hs2]
 
+private theorem image_cosh_sub_one_Ioi :
+    (fun u : ℝ ↦ Real.cosh u - 1) '' Ioi (0 : ℝ) = Ioi (0 : ℝ) := by
+  have h : Real.cosh '' Ioi (0 : ℝ) = Ioi (1 : ℝ) :=
+    Real.coshOpenPartialHomeomorph.image_source_eq_target
+  rw [show (fun u : ℝ ↦ Real.cosh u - 1) = (· - 1) ∘ Real.cosh from rfl, image_comp, h]
+  ext τ
+  simp
+
+private theorem injOn_cosh_sub_one_Ioi :
+    InjOn (fun u : ℝ ↦ Real.cosh u - 1) (Ioi (0 : ℝ)) :=
+  sub_left_injective.comp_injOn Real.coshOpenPartialHomeomorph.injOn
+
+private theorem hasDerivWithinAt_cosh_sub_one_Ioi :
+    ∀ u ∈ Ioi (0 : ℝ),
+      HasDerivWithinAt (fun v : ℝ ↦ Real.cosh v - 1) (Real.sinh u) (Ioi (0 : ℝ)) u :=
+  fun u _ ↦ ((Real.hasDerivAt_cosh u).sub_const 1).hasDerivWithinAt
+
 /-- Integrability equivalence under the substitution `τ = cosh u - 1` on `(0, ∞)` for a
-`ℂ`-Banach-space-valued integrand `g`. -/
+`ℂ`-normed-space-valued integrand `g`. -/
 theorem integrableOn_cpow_neg_half_mul_schlafliAmplitude_smul_Ioi_iff
     {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] (p : ℂ) (g : ℝ → E) :
     IntegrableOn (fun τ : ℝ ↦
       ((τ : ℂ) ^ (-(1 / 2 : ℂ)) * schlafliAmplitude p τ) • g τ) (Ioi 0) ↔
     IntegrableOn (fun u : ℝ ↦ Complex.cosh (p * u) • g (Real.cosh u - 1)) (Ioi 0) := by
-  let f : ℝ → ℝ := fun u ↦ Real.cosh u - 1
-  have himg : f '' Ioi (0 : ℝ) = Ioi (0 : ℝ) := by
-    ext τ
-    simp only [mem_image, mem_Ioi, f]
-    refine ⟨fun ⟨u, hu, hτ⟩ ↦ ?_, fun hτ ↦ ⟨Real.arcosh (1 + τ), Real.arcosh_pos (by linarith), ?_⟩⟩
-    · linarith [Real.one_lt_cosh.mpr hu.ne']
-    · rw [Real.cosh_arcosh (by linarith)]; ring
-  have hinj : InjOn f (Ioi 0) := fun u₁ hu₁ u₂ hu₂ heq ↦ by
-    have hch : Real.cosh u₁ = Real.cosh u₂ := by dsimp [f] at heq; linarith
-    simpa [Real.arcosh_cosh (le_of_lt hu₁), Real.arcosh_cosh (le_of_lt hu₂)] using
-      congr_arg Real.arcosh hch
-  have hderiv : ∀ u ∈ Ioi (0 : ℝ), HasDerivWithinAt f (Real.sinh u) (Ioi 0) u :=
-    fun u _ ↦ ((Real.hasDerivAt_cosh u).sub_const 1).hasDerivWithinAt
-  conv_lhs => rw [← himg]
-  rw [integrableOn_image_iff_integrableOn_abs_deriv_smul measurableSet_Ioi hderiv hinj]
-  refine integrableOn_congr_fun (fun u hu ↦ ?_) measurableSet_Ioi
-  exact sinh_smul_schlafliAmplitude_cosh_sub_one p g hu
+  conv_lhs => rw [← image_cosh_sub_one_Ioi]
+  rw [integrableOn_image_iff_integrableOn_abs_deriv_smul measurableSet_Ioi
+    hasDerivWithinAt_cosh_sub_one_Ioi injOn_cosh_sub_one_Ioi]
+  exact integrableOn_congr_fun (fun u hu ↦ sinh_smul_schlafliAmplitude_cosh_sub_one p g hu)
+    measurableSet_Ioi
 
 /-- Bochner change-of-variables identity `τ = cosh u - 1` on `(0, ∞)` for `schlafliAmplitude`. -/
 theorem integral_cpow_neg_half_mul_schlafliAmplitude_smul_Ioi
     {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] (p : ℂ) (g : ℝ → E) :
     (∫ τ in Ioi (0 : ℝ), ((τ : ℂ) ^ (-(1 / 2 : ℂ)) * schlafliAmplitude p τ) • g τ) =
       ∫ u in Ioi (0 : ℝ), Complex.cosh (p * u) • g (Real.cosh u - 1) := by
-  let f : ℝ → ℝ := fun u ↦ Real.cosh u - 1
-  have himg : f '' Ioi 0 = Ioi 0 := by
-    ext τ
-    simp only [mem_image, mem_Ioi, f]
-    refine ⟨fun ⟨u, hu, hτ⟩ ↦ ?_, fun hτ ↦ ⟨Real.arcosh (1 + τ), Real.arcosh_pos (by linarith), ?_⟩⟩
-    · linarith [Real.one_lt_cosh.mpr hu.ne']
-    · rw [Real.cosh_arcosh (by linarith)]; ring
-  have hinj : InjOn f (Ioi 0) := fun u₁ hu₁ u₂ hu₂ heq ↦ by
-    have hch : Real.cosh u₁ = Real.cosh u₂ := by dsimp [f] at heq; linarith
-    simpa [Real.arcosh_cosh (le_of_lt hu₁), Real.arcosh_cosh (le_of_lt hu₂)] using
-      congr_arg Real.arcosh hch
-  have hderiv : ∀ u ∈ Ioi (0 : ℝ), HasDerivWithinAt f (Real.sinh u) (Ioi 0) u :=
-    fun u _ ↦ ((Real.hasDerivAt_cosh u).sub_const 1).hasDerivWithinAt
-  conv_lhs => rw [← himg]
-  rw [integral_image_eq_integral_abs_deriv_smul measurableSet_Ioi hderiv hinj]
-  refine setIntegral_congr_fun measurableSet_Ioi fun u hu ↦ ?_
-  exact sinh_smul_schlafliAmplitude_cosh_sub_one p g hu
+  conv_lhs => rw [← image_cosh_sub_one_Ioi]
+  rw [integral_image_eq_integral_abs_deriv_smul measurableSet_Ioi
+    hasDerivWithinAt_cosh_sub_one_Ioi injOn_cosh_sub_one_Ioi]
+  exact setIntegral_congr_fun measurableSet_Ioi fun u hu ↦
+    sinh_smul_schlafliAmplitude_cosh_sub_one p g hu
 
 /-- Equivalence of integrability between Schläfli's `cosh`-integral and its Laplace form on
 `(0, ∞)`. -/
@@ -421,22 +404,24 @@ theorem integral_cexp_neg_mul_cosh_mul_cosh_eq_cexp_mul_integral_schlafliAmplitu
 private theorem norm_schlafliAmplitude_ofReal_le_exp (p : ℂ) {σ : ℝ} (hσ : 0 < σ) :
     ∃ B > 0, ∀ τ : ℝ, 0 ≤ τ → ‖schlafliAmplitude p τ‖ ≤ B * Real.exp (σ * τ) := by
   set C := 4 ^ |p.re| * Real.exp (Real.pi * |p.im|)
-  set n := ⌈|p.re|⌉₊
   have hC_pos : 0 < C := by dsimp [C]; positivity
-  refine ⟨C * ((n ! : ℝ) * Real.exp σ / σ ^ n), by positivity, fun τ hτ ↦ ?_⟩
+  obtain ⟨M, hM0, hM⟩ := exists_rpow_mul_exp_neg_mul_le (abs_nonneg p.re) hσ
+  refine ⟨C * ((M + 1) * Real.exp σ), by positivity, fun τ hτ ↦ ?_⟩
   have harg : |(τ : ℂ).arg| ≤ Real.pi - Real.pi := by
     rw [arg_ofReal_of_nonneg hτ, abs_zero, sub_self]
-  have hsec := norm_schlafliAmplitude_le_of_abs_arg_le p Real.pi_pos le_rfl harg
+  have hsec := norm_schlafliAmplitude_le_of_abs_arg_le p Real.pi_pos harg
   rw [Real.sin_pi_div_two, Real.sqrt_one, div_one, Complex.norm_of_nonneg hτ] at hsec
-  have hle := Real.pow_div_factorial_le_exp (σ * (1 + τ))
-    (mul_nonneg hσ.le (by linarith : 0 ≤ 1 + τ)) n
-  have hpos : 0 < σ ^ n / (n ! : ℝ) := by positivity
-  rw [mul_pow, mul_div_right_comm, show σ * (1 + τ) = σ + σ * τ by ring, Real.exp_add] at hle
-  have hexp : (1 + τ) ^ n ≤ (n ! : ℝ) * Real.exp σ / σ ^ n * Real.exp (σ * τ) :=
-    (le_div_iff₀' hpos).mpr hle |>.trans_eq (by field_simp)
-  have hrpow : (1 + τ) ^ (|p.re| - 1 / 2) ≤ (1 + τ) ^ n := by
-    rw [← Real.rpow_natCast]
-    exact Real.rpow_le_rpow_of_exponent_le (by linarith) (by linarith [Nat.le_ceil |p.re|])
+  have hrpow : (1 + τ) ^ (|p.re| - 1 / 2) ≤ (1 + τ) ^ |p.re| :=
+    Real.rpow_le_rpow_of_exponent_le (by linarith) (by linarith)
+  have hexp : (1 + τ) ^ |p.re| ≤ (M + 1) * Real.exp σ * Real.exp (σ * τ) := by
+    have h1 := hM (1 + τ) (by linarith)
+    have h2 : (1 + τ) ^ |p.re| ≤ M * Real.exp (σ * (1 + τ)) := by
+      have hmul := mul_le_mul_of_nonneg_right h1 (Real.exp_pos (σ * (1 + τ))).le
+      rwa [mul_assoc, ← Real.exp_add, neg_add_cancel, Real.exp_zero, mul_one] at hmul
+    rw [show σ * (1 + τ) = σ + σ * τ by ring, Real.exp_add] at h2
+    calc (1 + τ) ^ |p.re| ≤ M * (Real.exp σ * Real.exp (σ * τ)) := h2
+      _ ≤ (M + 1) * (Real.exp σ * Real.exp (σ * τ)) := by gcongr; linarith
+      _ = (M + 1) * Real.exp σ * Real.exp (σ * τ) := by ring
   exact hsec.trans ((mul_le_mul_of_nonneg_left (hrpow.trans hexp) hC_pos.le).trans_eq (by ring))
 
 private theorem continuousOn_schlafliLaplaceIntegrand (ζ p : ℂ) :
