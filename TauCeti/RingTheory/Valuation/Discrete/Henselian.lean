@@ -6,337 +6,163 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Algebraic.Basic
-public import Mathlib.RingTheory.IntegralClosure.Algebra.Defs
-public import Mathlib.RingTheory.Valuation.DiscreteValuativeRel
+public import Mathlib.RingTheory.Henselian
+public import Mathlib.RingTheory.Valuation.Discrete.Basic
 public import Mathlib.RingTheory.Valuation.ValuativeRel.Basic
-public import TauCeti.RingTheory.Henselian.Basic
-public import TauCeti.RingTheory.Valuation.Discrete.Order
 
-import Mathlib.RingTheory.DiscreteValuationRing.Basic
-import Mathlib.RingTheory.Multiplicity
-import TauCeti.RingTheory.LocalRing.Basic
+import Mathlib.Algebra.Order.Archimedean.Basic
+import Mathlib.Algebra.Order.Archimedean.Submonoid
+import Mathlib.RingTheory.Algebraic.Integral
+import Mathlib.RingTheory.Valuation.DiscreteValuativeRel
+import TauCeti.RingTheory.Henselian.Basic
 import TauCeti.RingTheory.Valuation.NontrivialComap
+import TauCeti.RingTheory.Valuation.ValuationSubring
 
 /-!
-# Rigidity of discrete valuations over Henselian local rings with finite residue field
+# Rigidity of rank-one discrete valuations over Henselian rank-one valued fields
 
-Let `R` be a Henselian local ring whose residue field `k` is finite. Every multiplicative
-homomorphism `f : Rˣ →* Multiplicative ℤ` is trivial: at least one of `2` or `3` is invertible in
-`R` (since `3 - 2 = 1 ≠ 0` in `k`), so Hensel's lemma makes every principal unit `w ∈ 1 + 𝔪`
-infinitely divisible by `2` or `3` in `Rˣ`, killing `f` on `1 + 𝔪`; raising an arbitrary unit to
-the `#kˣ`-th power lands in `1 + 𝔪` and kills `f` on all of `Rˣ` (the target `Multiplicative ℤ`
-cannot be relaxed to an arbitrary torsion-free abelian group such as `Multiplicative ℚ`, since for
-odd `p` the `p`-adic logarithm embeds `1 + pℤ_p` as an open subgroup of `ℚ_p` and hence admits
-nontrivial homomorphisms to `ℚ`). In particular, every `ℤᵐ⁰`-valued valuation on `R` takes the
-value `1` on `Rˣ`.
+Let `K` be a field carrying a nontrivial valuation `w` whose valuation ring `𝒪 = w.valuationSubring`
+is a Henselian local ring of Krull dimension at most one (in particular, any Henselian rank-one
+valued field, with arbitrary finite or infinite residue field). Every nontrivial rank-one discrete
+valuation `v` on `K` (valued in an arbitrary linearly ordered commutative group with zero, with no
+Henselianity assumption on `v`) is automatically equivalent to `w`:
 
-For any field `K` carrying a `ValuativeRel` whose valuation ring `𝒪` is a discrete valuation ring,
-a nontrivial valuation `v` on `K` (valued in an arbitrary linearly ordered commutative group with
-zero) that sends every unit of `𝒪` to `1` is automatically equivalent to `valuation K`: on an
-irreducible element `ϖ` of `𝒪`, the value `v ϖ = 1` would make `v` trivial on `𝒪` and hence on `K`,
-while `1 < v ϖ` would force `v (1 + ϖ) = v ϖ > 1` against `1 + ϖ ∈ 𝒪ˣ`, leaving `v ϖ < 1` and
-therefore `v x ≤ 1 ↔ x ∈ 𝒪`.
+1. The value group `v.valueGroup` is cyclic and torsion-free, so Hensel's lemma forces the unit
+   homomorphism `f : 𝒪ˣ →* v.valueGroup` induced by `v` to kill every principal unit `1 + z`
+   (`z ∈ 𝔪`), by `MonoidHom.apply_eq_one_of_residue_eq_one`.
+2. Consequently `v (z : K) ≤ 1` for every `z ∈ 𝔪` (otherwise `v (1 + z) = v z > 1`). Choosing a
+   nonzero element `ϖ ∈ 𝔪` (from nontriviality of `w`) and using that `v.valueGroup` is
+   archimedean shows `f u ≤ 1` for every `u : 𝒪ˣ`: if `1 < f u`, a power `u ^ (m + 1) * ϖ ∈ 𝔪`
+   would have valuation strictly exceeding `1`. Applying this to `u` and `u⁻¹` gives `v x = 1`
+   whenever `w x = 1`.
+3. Since `v` is nontrivial and `Ring.KrullDimLE 1 𝒪`, `Valuation.isEquiv_of_val_eq_one_imp`
+   concludes `v.IsEquiv w`.
 
-Combining the two steps gives F. K. Schmidt's discrete-valuation rigidity when `𝒪` is a Henselian
-discrete valuation ring with finite residue field: every nontrivial `ℤᵐ⁰`-valued valuation on `K`
-is equivalent to `valuation K`, and every algebraic field extension `L / K` carrying a nontrivial
-rank-one discrete `ValuativeRel` is automatically a `ValuativeExtension K L`. Each hypothesis on
-`K` and `L` is sharp:
-* without Henselianity, `ℚ` carries inequivalent `p`-adic valuations;
-* without finiteness of the residue field, the Henselization `ℚ(t)_{(t)}^h` embeds algebraically
-  into `ℚ_p` via a transcendental `p`-adic unit, pulling back a `p`-adic valuation inequivalent to
-  the `t`-adic one;
-* without discreteness on `L`, pulling back the `ℓ`-adic valuation of `AlgebraicClosure ℚ_[ℓ]`
-  along an abstract embedding of the algebraic part of `ℚ_[p]` into `AlgebraicClosure ℚ_[ℓ]`
-  (`ℓ ≠ p`) gives an incompatible valuation on that Henselian discrete base;
-* without rank at most one on `L`, a rank-two discrete valuation refining `valuation K` has strictly
-  smaller unit ball;
-* without algebraicity of `L / K`, the `t`-adic valuation of `K(t)` restricts trivially to `K`.
+Pulling back along an algebraic algebra `L / K` shows that when `K` is a nontrivial rank-one
+Henselian valued field and `L` carries a nontrivial rank-one discrete `ValuativeRel`, `L / K` is
+automatically a `ValuativeExtension K L`. Each hypothesis on `K` and `L` is sharp:
+
+* without `HenselianLocalRing`: `K = L = ℚ` with the `p`-adic valuation on `K` and the `q`-adic
+  valuation on `L` (`p ≠ q`);
+* without `IsNontrivial K`: `K = L = ℚ_p` with the trivial valuation on `K` and the `p`-adic
+  valuation on `L`;
+* without `IsRankLeOne K`: `K = L = ℚ_p((t))` with the rank-two Henselian valuation `(v_t, v_p)`
+  (valuation ring `ℤ_p + t ℚ_p[[t]]`) on `K` and the `t`-adic valuation `v_t` on `L`;
+* without `IsDiscrete L`: `K = ℚ_p ∩ AlgebraicClosure ℚ` (the Henselization of `ℚ` at `p`) inside
+  `L = AlgebraicClosure ℚ` carrying an `ℓ`-adic valuation (`ℓ ≠ p`);
+* without `IsRankLeOne L`: `K = L = ℚ_p((t))` with the `t`-adic valuation `v_t` on `K` and the
+  rank-two discrete valuation `(v_t, v_p)` on `L`;
+* without `IsNontrivial L`: `K = L = ℚ_p` with the `p`-adic valuation on `K` and the trivial
+  valuation on `L`;
+* without `Algebra.IsAlgebraic K L`: `L = K(t)` with the `t`-adic valuation, which restricts
+  trivially to `K`.
 
 ## Main results
 
-* `MonoidHom.eq_one_of_henselianLocalRing`: every homomorphism `Rˣ →* Multiplicative ℤ` from the
-  units of a Henselian local ring with finite residue field is trivial.
-* `Valuation.map_units_eq_one_of_henselianLocalRing`,
-  `Valuation.map_eq_one_of_henselianLocalRing`, and
-  `Valuation.ord_eq_zero_of_henselianLocalRing`: every `ℤᵐ⁰`-valuation on `R` sends units to `1`
-  (and has additive order `0` on units).
-* `Valuation.isEquiv_valuation_of_map_units_eq_one`: on a field `K` whose valuation ring is a
-  discrete valuation ring, any nontrivial valuation trivial on `(valuation K).integerˣ` is
-  equivalent to `valuation K`.
-* `Valuation.isEquiv_valuation_of_henselianLocalRing`: when `(valuation K).integer` is moreover
-  Henselian with finite residue field, every nontrivial `ℤᵐ⁰`-valuation on `K` is equivalent to
-  `valuation K`.
-* `ValuativeExtension.of_henselianLocalRing`: every algebraic extension `L / K` with a nontrivial
-  rank-one discrete `ValuativeRel` is automatically a `ValuativeExtension K L`.
-* `RingHom.map_vle_map_iff_of_henselianLocalRing`,
-  `RingEquiv.map_vle_map_iff_of_henselianLocalRing`, and
-  `ValuativeRel.eq_of_henselianLocalRing`: automatic valuation compatibility of algebraic
-  homomorphisms, abstract ring isomorphisms, and uniqueness of the nontrivial rank-one discrete
-  `ValuativeRel` on `K`.
+* `Valuation.isEquiv_of_henselianLocalRing`: on a field `K` carrying a nontrivial valuation `w`
+  whose valuation ring is Henselian of Krull dimension at most one, every rank-one discrete
+  valuation `v` on `K` is equivalent to `w`.
+* `ValuativeExtension.of_henselianLocalRing`: an algebraic algebra `L / K` from a nontrivial
+  rank-one Henselian valued field `K` into a ring `L` carrying a nontrivial rank-one discrete
+  `ValuativeRel` is automatically a `ValuativeExtension K L`.
 
 ## References
 
-* F. K. Schmidt, *Mehrfach perfekte Körper*, Math. Ann. **108** (1933), 1–25.
-* [A. J. Engler and A. Prestel, *Valued Fields*][engler2005], Theorem 4.4.1.
-* J. Neukirch, *Algebraic Number Theory*, Chapter II, §4.
+* J. Neukirch, *Algebraic Number Theory*, Chapter II, §4 (for Hensel's lemma; the prolongation
+  theorems there assume compatibility of the valuation extension).
+* [A. J. Engler and A. Prestel, *Valued Fields*][engler2005], Section 4.4 (for F. K. Schmidt's
+  counterpart theorem comparing two Henselian valuations on a non-separably-closed field, without
+  discreteness).
 -/
 
 public section
 
-open scoped WithZero
 open IsLocalRing ValuativeRel
 
-section HenselianLocalRing
-
-variable {R : Type*} [CommRing R] [HenselianLocalRing R]
-
-/-- In a Henselian local ring, every homomorphism `Rˣ →* Multiplicative ℤ` kills the principal
-units `{u : Rˣ | residue R u = 1}`. -/
-private theorem MonoidHom.apply_eq_one_of_residue_eq_one (f : Rˣ →* Multiplicative ℤ) {u : Rˣ}
-    (hu : residue R (u : R) = 1) : f u = 1 := by
-  have ⟨ℓ, hℓ2, hℓ⟩ : ∃ ℓ : ℕ, 2 ≤ ℓ ∧ IsUnit (ℓ : R) := by
-    by_cases h2 : IsUnit ((2 : ℕ) : R)
-    · exact ⟨2, le_rfl, h2⟩
-    · exact ⟨3, by decide, Nat.Coprime.isUnit_natCast (n := 2) (by decide) h2⟩
-  suffices h : (f u).toAdd = 0 from Multiplicative.toAdd.injective h
-  by_contra h0
-  refine FiniteMultiplicity.not_iff_forall.mpr (fun m ↦ ?_)
-    ((Int.finiteMultiplicity_iff (a := (ℓ : ℤ))).mpr ⟨by simp; omega, h0⟩)
-  obtain ⟨x, hx, hres⟩ := TauCeti.HenselianLocalRing.exists_pow_eq_of_residue_pow_eq (n := ℓ ^ m)
-    (by simpa using hℓ.pow m) isUnit_one (u := (u : R)) (by simp [hu])
-  have hx_unit : IsUnit x := by
-    rw [← residue_ne_zero_iff_isUnit, hres, map_one]
-    exact one_ne_zero
-  obtain ⟨y, rfl⟩ := hx_unit
-  have hy : y ^ ℓ ^ m = u := Units.ext (by simpa using hx)
-  refine ⟨(f y).toAdd, ?_⟩
-  rw [← hy, map_pow, toAdd_pow, nsmul_eq_mul, Nat.cast_pow]
-
-/-- **Every homomorphism from the units of a Henselian local ring with finite residue field to
-`Multiplicative ℤ` is trivial.** -/
-theorem MonoidHom.eq_one_of_henselianLocalRing [Finite (ResidueField R)]
-    (f : Rˣ →* Multiplicative ℤ) : f = 1 := by
-  ext u
-  set N := Nat.card (ResidueField R)ˣ
-  have hN : 0 < N := Nat.card_pos
-  have hres : residue R ((u ^ N : Rˣ) : R) = 1 := by
-    have h1 : Units.map (residue R).toMonoidHom u ^ N = 1 := pow_card_eq_one'
-    simpa [← map_pow] using congrArg Units.val h1
-  have hpow : (f u) ^ N = 1 := by
-    rw [← map_pow]
-    exact f.apply_eq_one_of_residue_eq_one hres
-  have hadd : (N : ℤ) * (f u).toAdd = 0 := by
-    simpa [toAdd_pow, nsmul_eq_mul] using congrArg Multiplicative.toAdd hpow
-  rcases mul_eq_zero.mp hadd with hN0 | hfu
-  · exact absurd (Int.ofNat_inj.mp hN0) hN.ne'
-  · exact Multiplicative.toAdd.injective hfu
-
 namespace Valuation
 
-/-- **Every `ℤᵐ⁰`-valued valuation on a Henselian local ring with finite residue field takes the
-value `1` on units.** -/
-@[simp]
-theorem map_units_eq_one_of_henselianLocalRing [Finite (ResidueField R)]
-    (v : _root_.Valuation R ℤᵐ⁰) (u : Rˣ) : v (u : R) = 1 := by
-  let f : Rˣ →* Multiplicative ℤ :=
-    (OrderMonoidIso.unitsWithZero (α := Multiplicative ℤ)).toMonoidHom.comp
-      (Units.map v.toMonoidHom)
-  have hf : f u = 1 := by simp [f.eq_one_of_henselianLocalRing]
-  have hv : Units.map v.toMonoidHom u = 1 :=
-    (OrderMonoidIso.unitsWithZero (α := Multiplicative ℤ)).injective (by simpa [f] using hf)
-  exact congrArg Units.val hv
-
-/-- Every `ℤᵐ⁰`-valued valuation on a Henselian local ring with finite residue field sends
-invertible elements to `1`. -/
-theorem map_eq_one_of_henselianLocalRing [Finite (ResidueField R)]
-    (v : _root_.Valuation R ℤᵐ⁰) {x : R} (hx : IsUnit x) : v x = 1 := by
-  obtain ⟨u, rfl⟩ := hx
-  exact v.map_units_eq_one_of_henselianLocalRing u
-
-/-- Every `ℤᵐ⁰`-valued valuation on a Henselian local ring with finite residue field has additive
-order `0` on invertible elements. -/
-theorem ord_eq_zero_of_henselianLocalRing [Finite (ResidueField R)]
-    (v : _root_.Valuation R ℤᵐ⁰) {x : R} (hx : IsUnit x) : v.ord x = 0 := by
-  simp [ord_def, v.map_eq_one_of_henselianLocalRing hx]
-
-end Valuation
-
-end HenselianLocalRing
-
-section DiscreteValuationRing
-
-namespace Valuation
-
-/-- In a discrete valuation ring `𝒪 = (valuation K).integer`, if a nontrivial valuation `v` on `K`
-is `1` on `𝒪ˣ`, then every irreducible element `ϖ` of `𝒪` satisfies `v ϖ < 1`. -/
-private theorem map_irreducible_lt_one_of_map_units_eq_one {K Γ₀ : Type*} [Field K]
-    [ValuativeRel K] [IsDiscreteValuationRing (valuation K).integer]
-    [LinearOrderedCommGroupWithZero Γ₀] (v : _root_.Valuation K Γ₀) [v.IsNontrivial]
-    (hu : ∀ u : (valuation K).integerˣ, v ((u : (valuation K).integer) : K) = 1)
-    {ϖ : (valuation K).integer} (hϖ : Irreducible ϖ) : v (ϖ : K) < 1 := by
-  rcases lt_trichotomy (v (ϖ : K)) 1 with hlt | heq | hgt
-  · exact hlt
-  · exfalso
-    obtain ⟨x, hx0, hx1⟩ := ‹v.IsNontrivial›.exists_val_nontrivial
-    have hone {a : (valuation K).integer} (ha : a ≠ 0) : v (a : K) = 1 := by
-      obtain ⟨n, u, rfl⟩ := IsDiscreteValuationRing.eq_unit_mul_pow_irreducible ha hϖ
-      simp [hu u, heq]
-    rcases le_total (valuation K x) 1 with hx | hx
-    · exact hx1 (hone (a := ⟨x, hx⟩) (by simpa [Subtype.ext_iff] using hx0))
-    · have hx_inv : x⁻¹ ∈ (valuation K).integer := by
-        rw [Valuation.mem_integer_iff, map_inv₀]
-        exact inv_le_one_of_one_le₀ hx
-      have h1 := hone (a := ⟨x⁻¹, hx_inv⟩) (by simpa [Subtype.ext_iff] using inv_ne_zero hx0)
-      exact hx1 (inv_eq_one.mp (by simpa using h1))
-  · exfalso
-    obtain ⟨u, hu'⟩ := TauCeti.isUnit_add_of_isUnit_of_not_isUnit isUnit_one hϖ.not_isUnit
-    have hv1 : v (1 + (ϖ : K)) = 1 := by
-      have := congrArg (fun z : (valuation K).integer ↦ v (z : K)) hu'
-      exact this.symm.trans (hu u)
-    have hvmax : v (1 + (ϖ : K)) = max (v 1) (v (ϖ : K)) :=
-      v.map_add_of_distinct_val (by simpa using hgt.ne)
+/-- **Rigidity of rank-one discrete valuations over a Henselian rank-one valuation.** If `w` is a
+nontrivial valuation on a field `K` whose valuation subring is a Henselian local ring of Krull
+dimension at most one, then every rank-one discrete valuation `v` on `K` is equivalent to `w`. -/
+theorem isEquiv_of_henselianLocalRing {K Γ₀ Γ₁ : Type*} [Field K]
+    [LinearOrderedCommGroupWithZero Γ₀] [LinearOrderedCommGroupWithZero Γ₁]
+    (v : _root_.Valuation K Γ₀) [v.IsRankOneDiscrete]
+    (w : _root_.Valuation K Γ₁) [w.IsNontrivial] [Ring.KrullDimLE 1 w.valuationSubring]
+    [HenselianLocalRing w.valuationSubring] :
+    v.IsEquiv w := by
+  let f : w.valuationSubringˣ →* v.valueGroup :=
+    (Units.map (v.comap w.valuationSubring.subtype).toMonoidHom).codRestrict v.valueGroup
+      fun u ↦ v.mem_valueGroup ⟨((u : w.valuationSubring) : K), by simp [Valuation.comap_apply]⟩
+  have hf_val (u : w.valuationSubringˣ) : (((f u : v.valueGroup) : Γ₀ˣ) : Γ₀) =
+      v ((u : w.valuationSubring) : K) := by
+    simp [f, Valuation.comap_apply]
+  have hv_max {z : w.valuationSubring} (hz : z ∈ maximalIdeal w.valuationSubring) :
+      v (z : K) ≤ 1 := by
+    have hres : residue w.valuationSubring (1 + z) = 1 := by
+      rw [map_add, map_one, (residue_eq_zero_iff z).mpr hz, add_zero]
+    obtain ⟨u, hu⟩ := (residue_ne_zero_iff_isUnit (1 + z)).mp (by rw [hres]; exact one_ne_zero)
+    have hfu : f u = 1 := f.apply_eq_one_of_residue_eq_one (by rw [hu, hres])
+    have hv1 : v (1 + (z : K)) = 1 := by
+      have hcoe : ((u : w.valuationSubring) : K) = 1 + (z : K) := by
+        simpa using congrArg (Subtype.val : w.valuationSubring → K) hu
+      rw [← hcoe, ← hf_val u, hfu, OneMemClass.coe_one, Units.val_one]
+    by_contra hgt
+    replace hgt : 1 < v (z : K) := not_le.mp hgt
+    have hvmax : v (1 + (z : K)) = max (v 1) (v (z : K)) :=
+      v.map_add_of_distinct_val (by rw [v.map_one]; exact hgt.ne)
     rw [v.map_one, max_eq_right hgt.le, hv1] at hvmax
     exact hgt.ne hvmax
-
-/-- **Unit-triviality criterion for equivalence with a DVR valuation.** Let `K` be a valued field
-whose integer ring `𝒪 = (valuation K).integer` is a discrete valuation ring. Any nontrivial
-valuation `v` on `K` (valued in an arbitrary linearly ordered commutative group with zero) that
-takes the value `1` on `𝒪ˣ` is equivalent to `valuation K`. -/
-theorem isEquiv_valuation_of_map_units_eq_one {K Γ₀ : Type*} [Field K] [ValuativeRel K]
-    [IsDiscreteValuationRing (valuation K).integer] [LinearOrderedCommGroupWithZero Γ₀]
-    (v : _root_.Valuation K Γ₀) [v.IsNontrivial]
-    (hu : ∀ u : (valuation K).integerˣ, v ((u : (valuation K).integer) : K) = 1) :
-    v.IsEquiv (valuation K) := by
-  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible (valuation K).integer
-  have hϖ_lt : v (ϖ : K) < 1 := v.map_irreducible_lt_one_of_map_units_eq_one hu hϖ
-  have hle (a : (valuation K).integer) : v (a : K) ≤ 1 := by
-    rcases eq_or_ne a 0 with rfl | ha
-    · simp
-    · obtain ⟨n, u, rfl⟩ := IsDiscreteValuationRing.eq_unit_mul_pow_irreducible ha hϖ
-      simpa [hu u] using pow_le_one₀ zero_le hϖ_lt.le
-  refine isEquiv_iff_val_le_one.mpr fun {x} ↦ ⟨fun hx ↦ ?_, fun hx ↦ hle ⟨x, hx⟩⟩
-  by_contra hx'
-  replace hx' : 1 < valuation K x := not_le.mp hx'
-  have hx0 : x ≠ 0 := by rintro rfl; simp at hx'
-  have hy_mem : x⁻¹ ∈ (valuation K).integer := by
-    rw [Valuation.mem_integer_iff, map_inv₀]
-    exact inv_le_one_of_one_le₀ hx'.le
-  set y : (valuation K).integer := ⟨x⁻¹, hy_mem⟩
-  have hy0 : y ≠ 0 := by simpa [y, Subtype.ext_iff] using inv_ne_zero hx0
-  obtain ⟨n, u, hy_eq⟩ := IsDiscreteValuationRing.eq_unit_mul_pow_irreducible hy0 hϖ
-  have hn0 : n ≠ 0 := by
-    rintro rfl
-    have hyu : x⁻¹ = ((u : (valuation K).integer) : K) := by
-      simpa [y] using congrArg (fun z : (valuation K).integer ↦ (z : K)) hy_eq
-    have hmul : (((u⁻¹ : (valuation K).integerˣ) : (valuation K).integer) : K) * x⁻¹ = 1 := by
-      calc (((u⁻¹ : (valuation K).integerˣ) : (valuation K).integer) : K) * x⁻¹
-        _ = (((u⁻¹ : (valuation K).integerˣ) : (valuation K).integer) : K) *
-              ((u : (valuation K).integer) : K) := by rw [hyu]
-        _ = ((((u⁻¹ * u : (valuation K).integerˣ) : (valuation K).integer)) : K) := rfl
-        _ = 1 := by rw [inv_mul_cancel]; rfl
-    have hux : (((u⁻¹ : (valuation K).integerˣ) : (valuation K).integer) : K) = x := by
-      simpa using (inv_eq_of_mul_eq_one_left hmul).symm
-    exact hx'.not_ge (hux ▸ ((u⁻¹ : (valuation K).integerˣ) : (valuation K).integer).2)
-  have hy_lt : v (x⁻¹) < 1 := by
-    have hv_eq : v (x⁻¹) = v (ϖ : K) ^ n := by
-      simpa [y, hu u] using congrArg (fun z : (valuation K).integer ↦ v (z : K)) hy_eq
-    exact hv_eq.trans_lt (pow_lt_one₀ zero_le hϖ_lt hn0)
-  have h1 : (1 : Γ₀) < 1 := calc
-    (1 : Γ₀) = v (x * x⁻¹) := by rw [mul_inv_cancel₀ hx0, map_one]
-    _ = v x * v (x⁻¹) := map_mul v _ _
-    _ ≤ 1 * v (x⁻¹) := mul_le_mul_of_nonneg_right hx zero_le
-    _ = v (x⁻¹) := one_mul _
-    _ < 1 := hy_lt
-  exact h1.false
-
-/-- **F. K. Schmidt discrete-valuation rigidity (single field).** If `(valuation K).integer` is a
-Henselian discrete valuation ring with finite residue field, every nontrivial `ℤᵐ⁰`-valued
-valuation on `K` is equivalent to `valuation K`. -/
-theorem isEquiv_valuation_of_henselianLocalRing {K : Type*} [Field K] [ValuativeRel K]
-    [IsDiscreteValuationRing (valuation K).integer]
-    [HenselianLocalRing (valuation K).integer]
-    [Finite (ResidueField (valuation K).integer)]
-    (v : _root_.Valuation K ℤᵐ⁰) [v.IsNontrivial] :
-    v.IsEquiv (valuation K) :=
-  v.isEquiv_valuation_of_map_units_eq_one fun u ↦
-    (v.comap (algebraMap (valuation K).integer K)).map_units_eq_one_of_henselianLocalRing u
+  obtain ⟨a, ha0, ha1⟩ := IsNontrivial.exists_lt_one (v := w)
+  let ϖ : w.valuationSubring := ⟨a, (w.mem_valuationSubring_iff a).mpr ha1.le⟩
+  have hϖ_mem : ϖ ∈ maximalIdeal w.valuationSubring := w.mem_maximalIdeal_iff.mpr ha1
+  obtain ⟨e⟩ := LinearOrderedCommGroup.isCyclic_iff_nonempty_equiv_int.mp
+    (inferInstance : IsCyclic v.valueGroup)
+  have : MulArchimedean v.valueGroup := MulArchimedean.comap e.toMonoidHom e.strictMono
+  let γϖ : v.valueGroup :=
+    ⟨Units.mk0 (v a) (v.ne_zero_iff.mpr ha0), v.mem_valueGroup ⟨a, rfl⟩⟩
+  have hf_le (u : w.valuationSubringˣ) : f u ≤ 1 := by
+    by_contra hgt
+    replace hgt : 1 < f u := not_le.mp hgt
+    obtain ⟨m, hm⟩ := MulArchimedean.arch γϖ⁻¹ hgt
+    have hmul : 1 < f u ^ (m + 1) * γϖ := by
+      have hlt : γϖ⁻¹ < f u ^ (m + 1) := hm.trans_lt (pow_lt_pow_right₀ hgt m.lt_succ_self)
+      simpa [mul_comm] using mul_lt_mul_right hlt γϖ
+    have hval : 1 < v ((((u : w.valuationSubring) ^ (m + 1) * ϖ : w.valuationSubring) : K)) := by
+      simpa [hf_val u, γϖ, ϖ] using Units.val_lt_val.mpr (Subtype.coe_lt_coe.mpr hmul)
+    exact hval.not_ge (hv_max (Ideal.mul_mem_left _ _ hϖ_mem))
+  refine v.isEquiv_of_val_eq_one_imp w fun x hx ↦ ?_
+  have hx0 : x ≠ 0 := w.ne_zero_iff.mp (by rw [hx]; exact one_ne_zero)
+  let u : w.valuationSubringˣ :=
+    ⟨⟨x, (w.mem_valuationSubring_iff x).mpr hx.le⟩,
+      ⟨x⁻¹, (w.mem_valuationSubring_iff x⁻¹).mpr (by rw [map_inv₀, hx, inv_one])⟩,
+      Subtype.ext (mul_inv_cancel₀ hx0), Subtype.ext (inv_mul_cancel₀ hx0)⟩
+  have hfu : f u = 1 :=
+    le_antisymm (hf_le u) (inv_le_one'.mp (by rw [← MonoidHom.map_inv]; exact hf_le u⁻¹))
+  simpa [u, hfu] using (hf_val u).symm
 
 end Valuation
 
-/-- **Automatic valuation compatibility along algebraic extensions of Henselian DVRs with finite
-residue field.** Let `K` be a valued field whose integer ring is a Henselian discrete valuation
-ring with finite residue field, and let `L / K` be an algebraic field extension carrying a
-nontrivial rank-one discrete `ValuativeRel`. Then `L / K` is automatically a
-`ValuativeExtension K L`. -/
+/-- **Automatic valuation compatibility along algebraic extensions of nontrivial rank-one Henselian
+valued fields.** Let `K` be a nontrivial rank-one valued field whose integer ring is Henselian, and
+let `L / K` be an algebraic algebra carrying a nontrivial rank-one discrete `ValuativeRel`. Then
+`L / K` is automatically a `ValuativeExtension K L`. -/
 theorem ValuativeExtension.of_henselianLocalRing (K L : Type*) [Field K] [ValuativeRel K]
-    [IsDiscreteValuationRing (valuation K).integer]
-    [HenselianLocalRing (valuation K).integer]
-    [Finite (ResidueField (valuation K).integer)]
-    [Field L] [ValuativeRel L] [IsDiscrete L] [IsRankLeOne L] [IsNontrivial L]
+    [IsNontrivial K] [IsRankLeOne K] [HenselianLocalRing (valuation K).integer]
+    [Ring L] [ValuativeRel L] [IsDiscrete L] [IsRankLeOne L] [IsNontrivial L]
     [Algebra K L] [Algebra.IsAlgebraic K L] :
     ValuativeExtension K L := by
-  have harch : MulArchimedean (ValueGroupWithZero L) :=
-    (isRankLeOne_iff_mulArchimedean (R := L)).mp inferInstance
+  let v : Valuation K (ValueGroupWithZero L) := (valuation L).comap (algebraMap K L)
   obtain ⟨e⟩ := (ValueGroupWithZero.nonempty_orderMonoidIso_withZeroMulInt_iff (R := L)).mpr
-    ⟨inferInstance, inferInstance, harch⟩
-  let f : ValueGroupWithZero L →*₀o ℤᵐ⁰ :=
-    { toMonoidWithZeroHom := e.toMonoidWithZeroHom
-      monotone' := e.toOrderIso.monotone }
-  let w : Valuation L ℤᵐ⁰ := (valuation L).map f
-  have hw_equiv : w.IsEquiv (valuation L) :=
-    Valuation.isEquiv_map_self_of_strictMono f e.injective
-  have : w.IsNontrivial := hw_equiv.isNontrivial_iff.mpr inferInstance
-  have : (w.comap (algebraMap K L)).IsNontrivial := w.isNontrivial_comap_algebraMap
-  have hK : (w.comap (algebraMap K L)).IsEquiv (valuation K) :=
-    (w.comap (algebraMap K L)).isEquiv_valuation_of_henselianLocalRing
+    ⟨inferInstance, inferInstance, inferInstance⟩
+  have : IsCyclic (ValueGroupWithZero L)ˣ :=
+    (Units.mapEquiv e.toMulEquiv).isCyclic.mpr inferInstance
+  have : v.IsNontrivial := (valuation L).isNontrivial_comap_algebraMap
+  have : v.IsRankOneDiscrete := .mk' v
+  have : Ring.KrullDimLE 1 (valuation K).valuationSubring :=
+    (valuation K).krullDimLE_one_valuationSubring
+  have : HenselianLocalRing (valuation K).valuationSubring :=
+    inferInstanceAs (HenselianLocalRing (valuation K).integer)
+  have hK : v.IsEquiv (valuation K) := v.isEquiv_of_henselianLocalRing (valuation K)
   refine ⟨fun {a b} ↦ ?_⟩
-  rw [(valuation L).vle_iff_le, ← hw_equiv (algebraMap K L a) (algebraMap K L b),
-    ← Valuation.comap_apply, ← Valuation.comap_apply, hK a b, ← (valuation K).vle_iff_le]
-
-/-- Any integral ring homomorphism `f : K →+* L` (over a field `K`, equivalently one over which
-`L` is algebraic) from a Henselian discrete-valued field `K` with finite residue field into a
-nontrivial rank-one discrete valued field `L` automatically preserves and reflects the valuative
-relation. -/
-theorem RingHom.map_vle_map_iff_of_henselianLocalRing {K L : Type*} [Field K] [ValuativeRel K]
-    [IsDiscreteValuationRing (valuation K).integer]
-    [HenselianLocalRing (valuation K).integer]
-    [_root_.Finite (ResidueField (valuation K).integer)]
-    [Field L] [ValuativeRel L] [IsDiscrete L] [IsRankLeOne L] [IsNontrivial L]
-    (f : K →+* L) (hf : f.IsIntegral) (x y : K) :
-    f x ≤ᵥ f y ↔ x ≤ᵥ y := by
-  let _ : Algebra K L := f.toAlgebra
-  have : Algebra.IsIntegral K L := ⟨hf⟩
-  have : ValuativeExtension K L := .of_henselianLocalRing K L
-  exact ValuativeExtension.vle_iff_vle
-
-/-- Every abstract ring isomorphism from a Henselian discrete-valued field `K` with finite residue
-field onto a nontrivial rank-one discrete valued field `L` automatically preserves and reflects the
-valuative relation. -/
-@[simp]
-theorem RingEquiv.map_vle_map_iff_of_henselianLocalRing {K L : Type*} [Field K] [ValuativeRel K]
-    [IsDiscreteValuationRing (valuation K).integer]
-    [HenselianLocalRing (valuation K).integer]
-    [_root_.Finite (ResidueField (valuation K).integer)]
-    [Field L] [ValuativeRel L] [IsDiscrete L] [IsRankLeOne L] [IsNontrivial L]
-    (e : K ≃+* L) (x y : K) :
-    e x ≤ᵥ e y ↔ x ≤ᵥ y :=
-  e.toRingHom.map_vle_map_iff_of_henselianLocalRing
-    (RingHom.isIntegral_of_surjective _ e.surjective) x y
-
-/-- **Uniqueness of the nontrivial rank-one discrete valuative relation on a field over a Henselian
-DVR with finite residue field.** If `r₁` makes `(valuation K).integer` a Henselian discrete
-valuation ring with finite residue field and `r₂` is any nontrivial rank-one discrete valuative
-relation on the same field `K`, then `r₁ = r₂`. -/
-theorem ValuativeRel.eq_of_henselianLocalRing {K : Type*} [Field K]
-    (r₁ r₂ : ValuativeRel K)
-    [@IsDiscreteValuationRing (@valuation K _ r₁).integer _ _]
-    [@HenselianLocalRing (@valuation K _ r₁).integer _]
-    [Finite (ResidueField (@valuation K _ r₁).integer)]
-    [@IsDiscrete K _ r₂] [@IsRankLeOne K _ r₂] [@IsNontrivial K _ r₂] :
-    r₁ = r₂ := by
-  ext x y
-  exact (@RingEquiv.map_vle_map_iff_of_henselianLocalRing K K _ r₁ ‹_› ‹_› ‹_› _ r₂ ‹_› ‹_› ‹_›
-    (RingEquiv.refl K) x y).symm
-
-end DiscreteValuationRing
+  rw [(valuation L).vle_iff_le, ← Valuation.comap_apply, ← Valuation.comap_apply, hK a b,
+    ← (valuation K).vle_iff_le]

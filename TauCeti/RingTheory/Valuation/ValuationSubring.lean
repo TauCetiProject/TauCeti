@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Order.Archimedean.Defs
 public import Mathlib.RingTheory.Valuation.ValuationSubring
+import Mathlib.Algebra.Order.Monoid.Submonoid
 import Mathlib.RingTheory.Valuation.LocalSubring
 
 /-!
@@ -18,6 +20,11 @@ valuation subring dominates its pullback, and conversely a valuation subring pul
 valuation subring that it dominates through `f`. Units of a valuation subring stay units in any
 valuation subring whose pullback contains it, and among finitely many elements of the field, not
 all zero, one of largest valuation divides all the others in the valuation subring.
+
+When a valuation `w` on a field has archimedean value group, every nonzero prime ideal of
+`w.valuationSubring` contains the maximal ideal, so `w.valuationSubring` has Krull dimension at
+most one. For any valuation `w` with `Ring.KrullDimLE 1 w.valuationSubring`, a nontrivial valuation
+`v` on the same field taking the value `1` whenever `w x = 1` is automatically equivalent to `w`.
 
 ## Main results
 
@@ -32,6 +39,10 @@ all zero, one of largest valuation divides all the others in the valuation subri
 * `ValuationSubring.comap_eq_of_map_maximalIdeal_le`: a valuation subring `W` of `L` pulls back to
   a valuation subring `V` of `K` when `V` maps through a ring `S` into `W`, with its maximal ideal
   landing in an ideal of `S` that is sent into the nonunits of `W`.
+* `Valuation.krullDimLE_one_valuationSubring`: a valuation on a field with archimedean value group
+  has valuation subring of Krull dimension at most one.
+* `Valuation.isEquiv_of_val_eq_one_imp`: a nontrivial valuation taking the value `1` wherever a
+  valuation of Krull dimension at most one takes the value `1` is equivalent to it.
 
 ## References
 
@@ -132,3 +143,58 @@ theorem exists_valuationSubring_mem_and_image_subset_nonunits {R L : Type*} [Com
     hnon ⟨ψ.rangeRestrict x, Ideal.mem_map_of_mem _ hx, rfl⟩⟩
 
 end RingHom
+
+namespace Valuation
+
+variable {K Γ₀ Γ₁ : Type*} [Field K] [LinearOrderedCommGroupWithZero Γ₀]
+  [LinearOrderedCommGroupWithZero Γ₁]
+
+/-- A valuation on a field whose value group is archimedean has valuation subring of Krull
+dimension at most one: every nonzero prime ideal contains the maximal ideal, since archimedeanity
+forces a power of any maximal-ideal element to divide any nonzero element of the prime ideal. -/
+theorem krullDimLE_one_valuationSubring (v : Valuation K Γ₀) [MulArchimedean v.valueGroup] :
+    Ring.KrullDimLE 1 v.valuationSubring := by
+  refine Ring.krullDimLE_one_iff_of_noZeroDivisors.mpr fun P hP0 hP ↦ ?_
+  suffices h : P = maximalIdeal v.valuationSubring from h ▸ maximalIdeal.isMaximal _
+  refine le_antisymm (le_maximalIdeal hP.ne_top) fun b hb ↦ ?_
+  rcases eq_or_ne b 0 with rfl | hb0
+  · exact P.zero_mem
+  obtain ⟨a, haP, ha0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hP0
+  have haK : (a : K) ≠ 0 := ZeroMemClass.coe_eq_zero.not.mpr ha0
+  have hbK : (b : K) ≠ 0 := ZeroMemClass.coe_eq_zero.not.mpr hb0
+  have hva : v (a : K) ≠ 0 := v.ne_zero_iff.mpr haK
+  have hvb : v (b : K) ≠ 0 := v.ne_zero_iff.mpr hbK
+  let γa : v.valueGroup := ⟨Units.mk0 (v (a : K)) hva, v.mem_valueGroup ⟨a, rfl⟩⟩
+  let γb : v.valueGroup := ⟨Units.mk0 (v (b : K)) hvb, v.mem_valueGroup ⟨b, rfl⟩⟩
+  have hγb : 1 < γb⁻¹ := by
+    rw [one_lt_inv', ← Subtype.coe_lt_coe, ← Units.val_lt_val]
+    simpa [γb] using v.mem_maximalIdeal_iff.mp hb
+  obtain ⟨n, hn⟩ := MulArchimedean.arch γa⁻¹ hγb
+  have hpow : v ((b : K) ^ n) ≤ v (a : K) := by
+    rw [inv_pow, inv_le_inv_iff] at hn
+    rw [map_pow]
+    simpa [γa, γb] using Units.val_le_val.mpr (Subtype.coe_le_coe.mpr hn)
+  let q : v.valuationSubring := ⟨(b : K) ^ n / (a : K),
+    (v.mem_valuationSubring_iff _).mpr (by rw [map_div₀]; exact div_le_one_of_le₀ hpow zero_le)⟩
+  have hbn : b ^ n = a * q := Subtype.ext (by simp [q, mul_div_cancel₀ _ haK])
+  exact hP.mem_of_pow_mem n (hbn ▸ P.mul_mem_right q haP)
+
+/-- **Unit-triviality criterion for equivalence with a rank-at-most-one valuation.** Let `v` and
+`w` be valuations on a field `K` such that `v` is nontrivial and `w.valuationSubring` has Krull
+dimension at most one (in particular, whenever `w.valuationSubring` is a discrete valuation ring
+or `w.valueGroup` is archimedean). If `v` takes the value `1` on every element of `K` with
+`w x = 1`, then `v` is equivalent to `w`. -/
+theorem isEquiv_of_val_eq_one_imp (v : Valuation K Γ₀) [v.IsNontrivial]
+    (w : Valuation K Γ₁) [Ring.KrullDimLE 1 w.valuationSubring]
+    (hu : ∀ x : K, w x = 1 → v x = 1) :
+    v.IsEquiv w := by
+  have hle : w.valuationSubring ≤ v.valuationSubring :=
+    ValuationSubring.unitGroup_le_unitGroup.mp fun x hx ↦ by
+      rw [ValuationSubring.mem_unitGroup_iff] at hx ⊢
+      exact v.isEquiv_valuation_valuationSubring.eq_one_iff_eq_one.mp
+        (hu x (w.isEquiv_valuation_valuationSubring.eq_one_iff_eq_one.mpr hx))
+  exact (Valuation.isEquiv_iff_valuationSubring v w).mpr
+    (w.valuationSubring.eq_of_le_of_ne_top hle (by simpa using ‹v.IsNontrivial›)).symm
+
+end Valuation
+

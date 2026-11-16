@@ -309,7 +309,8 @@ of `u`:
 ```
 
 No `ValuativeExtension ℚ_[p] F` hypothesis is needed: valuation compatibility is automatic for
-algebraic extensions of `ℚ_p` (`ValuativeExtension.of_isAlgebraic`). -/
+algebraic extensions of `ℚ_p` carrying a nontrivial rank-one discrete valuation, in particular
+finite local-field extensions (`ValuativeExtension.of_isAlgebraic`). -/
 theorem localCyclotomicCharacter_artinMap_unit (F : Type) [Field F] [ValuativeRel F]
     [TopologicalSpace F] [IsNonarchimedeanLocalField F] [Algebra ℚ_[p] F]
     [FiniteDimensional ℚ_[p] F] (u : Fˣ)

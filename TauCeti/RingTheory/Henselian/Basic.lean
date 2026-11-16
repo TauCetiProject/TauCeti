@@ -8,8 +8,9 @@ module
 public import Mathlib.RingTheory.Henselian
 import Mathlib.Algebra.QuadraticDiscriminant
 import Mathlib.Algebra.Ring.GeomSum
-import Mathlib.Tactic.LinearCombination
+import Mathlib.RingTheory.Multiplicity
 import Mathlib.Tactic.ComputeDegree
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # Henselian rings
@@ -38,7 +39,9 @@ modulo an ideal `I ≤ J` has an `n`-th root that is itself congruent to `1` mod
 
 This is the standard source of `n`-th roots of principal units away from the residue
 characteristic: over the integer ring of a local field it shows that each positive-depth step of
-the unit filtration is carried onto itself by the `n`-th power map.
+the unit filtration is carried onto itself by the `n`-th power map, and over any Henselian local
+ring it makes every principal unit infinitely divisible by `2` or `3`, forcing every homomorphism
+from `Rˣ` into a torsion-free cyclic group to vanish on principal units.
 
 Without assuming `2` invertible, every element of `1 + 4J` is a square. This supplies deep
 square roots in residue characteristic two, by solving `t² + t = c` for `c ∈ J`.
@@ -55,6 +58,8 @@ algebra already lie in the ring.
   of its maximal ideal is a Henselian local ring.
 * `TauCeti.HenselianLocalRing.exists_pow_eq_of_residue_pow_eq`: a simple power root in the
   residue field lifts to a root with the same residue.
+* `MonoidHom.apply_eq_one_of_residue_eq_one`: in a Henselian local ring, every homomorphism from
+  `Rˣ` to a torsion-free cyclic group kills principal units (`residue R u = 1`).
 * `Polynomial.exists_isRoot_sub_mem`: Hensel's lemma for a polynomial
   that need not be monic, over any Henselian pair.
 * `TauCeti.HenselianLocalRing.exists_conic_eq`: a smooth conic perturbed by a cubic in the
@@ -127,6 +132,42 @@ theorem exists_pow_eq_of_residue_pow_eq {R : Type*} [CommRing R] [HenselianLocal
 end HenselianLocalRing
 
 end TauCeti
+
+namespace MonoidHom
+
+/-- **Principal units of a Henselian local ring are killed by every homomorphism to a torsion-free
+cyclic group.** At least one of `2` or `3` is invertible in `R`, so Hensel's lemma
+(`TauCeti.HenselianLocalRing.exists_pow_eq_of_residue_pow_eq`) makes every principal unit
+`u ∈ 1 + 𝔪` infinitely divisible by `2` or `3` in `Rˣ`, forcing its image in `G` to be `1`. -/
+theorem apply_eq_one_of_residue_eq_one {R G : Type*} [CommRing R] [HenselianLocalRing R]
+    [Group G] [IsCyclic G] [IsMulTorsionFree G] (f : Rˣ →* G) {u : Rˣ}
+    (hu : IsLocalRing.residue R (u : R) = 1) : f u = 1 := by
+  obtain ⟨g, hg⟩ := exists_zpow_surjective G
+  obtain ⟨k, hk⟩ := hg (f u)
+  rcases eq_or_ne g 1 with rfl | hg1
+  · simp [← hk]
+  have ⟨ℓ, hℓ2, hℓ⟩ : ∃ ℓ : ℕ, 2 ≤ ℓ ∧ IsUnit (ℓ : R) := by
+    rcases IsLocalRing.isUnit_or_isUnit_of_add_one (a := (3 : R)) (b := -(2 : R)) (by ring) with
+      h3 | h2
+    · exact ⟨3, by decide, by simpa using h3⟩
+    · exact ⟨2, le_rfl, by simpa using h2⟩
+  suffices hk0 : k = 0 by simp [← hk, hk0]
+  by_contra hk0
+  refine FiniteMultiplicity.not_iff_forall.mpr (fun m ↦ ?_)
+    ((Int.finiteMultiplicity_iff (a := (ℓ : ℤ))).mpr ⟨by simp; omega, hk0⟩)
+  obtain ⟨x, hx, hres⟩ := TauCeti.HenselianLocalRing.exists_pow_eq_of_residue_pow_eq (n := ℓ ^ m)
+    (by simpa using hℓ.pow m) isUnit_one (u := (u : R)) (by simp [hu])
+  have hx_unit : IsUnit x := by
+    rw [← IsLocalRing.residue_ne_zero_iff_isUnit, hres, map_one]
+    exact one_ne_zero
+  obtain ⟨y, rfl⟩ := hx_unit
+  have hy : y ^ ℓ ^ m = u := Units.ext (by simpa using hx)
+  obtain ⟨a, ha⟩ := hg (f y)
+  dsimp only at hk ha
+  refine ⟨a, (IsMulTorsionFree.zpow_right_inj hg1).mp ?_⟩
+  rw [hk, ← hy, map_pow, ← ha, ← zpow_natCast, ← zpow_mul, mul_comm, Nat.cast_pow]
+
+end MonoidHom
 
 namespace Polynomial
 
