@@ -16,6 +16,8 @@ For a point `p` of a smooth principal bundle, the right orbit map `g ↦ p·g` i
 diffeomorphism onto the fibre of the bundle projection. The target carries the independently
 constructed regular-fibre atlas, with its subspace topology, rather than an atlas transported
 from the group. Its inverse is division by `p`, computed in any principal trivialization.
+The base and structure group have finite-dimensional boundaryless real models, and the
+bundle and manifolds are of class `C^n` with `1 ≤ n`.
 
 The comparison is equivariant for right multiplication and changing `p` to `p·a`
 precomposes it with left multiplication by `a`. Thus it identifies the smooth torsor
@@ -65,7 +67,6 @@ noncomputable def orbitDiffeomorph (p : P b) :
     letI := ManifoldTotalSpace.fiberChartedSpace G P IB IG hn b
     Diffeomorph IG K G {x : T // π₀ x = b} n := by
   letI := ManifoldTotalSpace.fiberChartedSpace G P IB IG hn b
-  haveI := ManifoldTotalSpace.isManifold_fiber G P IB IG hn b
   let e := trivializationAt G P b
   have hb : b ∈ e.baseSet := mem_baseSet_trivializationAt G P b
   have he := ManifoldTotalSpace.isSmoothEmbedding_coe_fiber G P IB IG hn b
@@ -131,7 +132,8 @@ theorem totalSpaceMk_op_orbitDiffeomorph_symm_smul (p : P b) (x : {x : T // π�
     letI := ManifoldTotalSpace.fiberChartedSpace G P IB IG hn b
     ι ⟨b, op ((orbitDiffeomorph G IB IG hn p).symm x) • p⟩ = x.1 := by
   let := ManifoldTotalSpace.fiberChartedSpace G P IB IG hn b
-  exact congrArg Subtype.val ((orbitDiffeomorph G IB IG hn p).apply_symm_apply x)
+  simpa only [orbitDiffeomorph_apply] using
+    congrArg Subtype.val ((orbitDiffeomorph G IB IG hn p).apply_symm_apply x)
 
 /-- The inverse orbit coordinate is the unique group element carrying the origin to the point. -/
 theorem orbitDiffeomorph_symm_apply_eq_iff (p : P b) (x : {x : T // π₀ x = b}) (g : G) :
@@ -146,8 +148,8 @@ theorem orbitDiffeomorph_symm_apply_eq_iff (p : P b) (x : {x : T // π₀ x = b}
     apply Subtype.ext
     simpa using h.symm
 
-/-- In any equivariant trivialization over the fibre, inverse orbit coordinates are the
-quotient of the origin and point coordinates. -/
+/-- In any equivariant trivialization over the fibre, inverse orbit coordinates are obtained
+by left-multiplying the point's fibre coordinate by the inverse of the origin's fibre coordinate. -/
 theorem orbitDiffeomorph_symm_apply_eq_of_mem_baseSet
     {e : Trivialization G (Bundle.TotalSpace.proj : TotalSpace G P → B)} [e.IsEquivariant]
     (hb : b ∈ e.baseSet) (p : P b) (x : {x : T // π₀ x = b}) :

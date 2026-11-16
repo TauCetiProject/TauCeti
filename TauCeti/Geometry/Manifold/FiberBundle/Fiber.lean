@@ -14,7 +14,9 @@ public import TauCeti.Geometry.Manifold.RegularValue.ManifoldLevel
 The fibre of a smooth bundle projection, as a subtype of its total space, carries the
 regular-fibre atlas. This is the embedded-submanifold structure constructed from the
 projection, not an atlas transported from a bundle trivialization. The total space is charted
-through the manifold fibre by `TauCeti.ManifoldTotalSpace`.
+through the manifold fibre by `TauCeti.ManifoldTotalSpace`. The base `B` and model fibre `F`
+have finite-dimensional boundaryless real models; the manifold and bundle structures are
+of class `C^n` with `1 ≤ n`.
 
 These named atlases allow comparisons with parametrizations of individual fibres, such as
 the orbit maps of principal bundles. No separation or countability hypothesis is needed.

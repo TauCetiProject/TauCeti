@@ -94,13 +94,15 @@ theorem isRegularPoint_proj (x : ManifoldTotalSpace F E) :
     simpa [s] using e.proj_symm_apply' hb
   have hs : ContMDiffAt IB (IB.prod IF) 1 s x.proj :=
     contMDiffAt_trivializationAt_symm x.proj (e x).2
-  have hid := (hasMFDerivAt_id (I := IB) x.proj).congr_of_eventuallyEq_abuse hps
+  rw [← hsx]
   have hd := mfderiv_comp x.proj
     ((contMDiff_proj 1 F E IB IF).mdifferentiableAt one_ne_zero)
     (hs.mdifferentiableAt one_ne_zero)
-  rw [Function.comp_def, hid.mfderiv, hsx] at hd
-  refine TauCeti.isRegularPoint_iff.2 fun v ↦ ⟨mfderiv IB (IB.prod IF) s x.proj v, ?_⟩
-  exact (DFunLike.congr_fun hd v).symm
+  rw [Function.comp_def, hps.mfderiv_eq, mfderiv_id, ContinuousLinearMap.comp_id] at hd
+  refine TauCeti.isRegularPoint_iff.2
+    (Function.Surjective.of_comp (g := mfderiv IB (IB.prod IF) s x.proj) ?_)
+  rw [← ContinuousLinearMap.coe_comp, ← hd, ContinuousLinearEquiv.coe_coe]
+  exact (tangentSpaceCast IB _ _).surjective
 
 variable (F E IB IF) in
 omit [IsManifold IB n B] [IsManifold IF n F] [ContMDiffFiberBundle n F E IB IF] in
