@@ -22,42 +22,31 @@ import TauCeti.RingTheory.KrullDimension.FiniteType
 Let `S` be an additive submonoid of an abelian group `G` and `F : SaturatedAddSubmonoid S` a face
 of `S`.
 
-1. **Orbit localizations.** Inverting all coefficient-one monomials of `R[F]` yields the group
-   algebra `R[F.faceSubgroup]`
-   (`SaturatedAddSubmonoid.isLocalization_addMonoidAlgebra_faceSubgroup`). When `S` is finitely
-   generated, both `R[AddSubgroup.closure S]` over `R[S]` and `R[F.faceSubgroup]` over `R[F]` are
-   principal localizations `IsLocalization.Away (single u 1)` at a single interior monomial
-   (`AddSubmonoid.FG.exists_isLocalization_away_addMonoidAlgebra_groupClosure` and
-   `SaturatedAddSubmonoid.exists_isLocalization_away_faceSubgroup`). Composing face restriction
-   with `F.toFaceSubgroup` defines the orbit coordinate homomorphism
-   `F.orbitMap R : R[S] →ₐ[R] R[F.faceSubgroup]`, whose kernel over any commutative semiring `R` is
-   `F.toAddSubmonoid.faceIdeal R` (`SaturatedAddSubmonoid.ker_orbitMap`).
-2. **Grading and torus coaction.** Any additive monoid homomorphism `w : M →+ L` induces a comodule
-   algebra homomorphism `AddMonoidAlgebra.gradedCoaction R w : R[M] →ₐ[R] R[L] ⊗[R] R[M]`
-   satisfying counit and coassociativity with Mathlib's `Bialgebra` structure on `R[L]`. For
-   `w = S.toGroupClosure`, `S.torusCoaction R` is the native coaction of the dense torus
-   `Spec R[AddSubgroup.closure S]` on `Spec R[S]`, for which closed face restriction, orbit
-   localization, `F.orbitMap R`, and normalization `R[S] →ₐ[R] R[S_sat]` are all equivariant.
-3. **Krull dimensions.** Over a field `k`, for a finitely generated submonoid `S` of a torsion-free
-   abelian group `G`, `ringKrullDim k[S] = Module.finrank ℤ (AddSubgroup.closure S)`
-   (`AddSubmonoid.FG.ringKrullDim_addMonoidAlgebra`), and for every face `F` of `S` both the closed
-   face algebra `k[F]` and the localized orbit algebra `k[F.faceSubgroup]` have Krull dimension
-   `Module.finrank ℤ F.faceSubgroup`, strictly monotone in `F`.
+1. **Orbit localizations.** Inverting all coefficient-one monomials of `R[F]` yields
+   `R[F.faceSubgroup]` (`SaturatedAddSubmonoid.isLocalization_addMonoidAlgebra_faceSubgroup`). When
+   `S.FG`, both `R[AddSubgroup.closure S]` over `R[S]` and `R[F.faceSubgroup]` over `R[F]` are
+   principal localizations `IsLocalization.Away (single u 1)` at an interior monomial. Composing
+   face restriction with `F.toFaceSubgroup` gives `F.orbitMap R : R[S] →ₐ[R] R[F.faceSubgroup]`
+   with kernel `F.toAddSubmonoid.faceIdeal R` (`SaturatedAddSubmonoid.ker_orbitMap`).
+2. **Grading and torus coaction.** Any `w : M →+ L` induces `AddMonoidAlgebra.gradedCoaction R w :
+   R[M] →ₐ[R] R[L] ⊗[R] R[M]`, satisfying counit and coassociativity with Mathlib's `Bialgebra` on
+   `R[L]`. For `w = S.toGroupClosure`, `S.torusCoaction R` is the native coaction of
+   `Spec R[AddSubgroup.closure S]` on `Spec R[S]`, for which face restriction, `F.orbitMap R`, and
+   normalization are equivariant.
+3. **Krull dimensions.** Over a field `k` and torsion-free `G`, for `S.FG` we prove
+   `ringKrullDim k[S] = Module.finrank ℤ (AddSubgroup.closure S)` and
+   `ringKrullDim k[F] = ringKrullDim k[F.faceSubgroup] = Module.finrank ℤ F.faceSubgroup`, strictly
+   monotone in `F`.
 
 ## Main declarations
 
 * `AddSubmonoid.FG.exists_isLocalization_away_addMonoidAlgebra_groupClosure` and
-  `SaturatedAddSubmonoid.exists_isLocalization_away_faceSubgroup`: localization at a single
-  interior monomial realizes `R[AddSubgroup.closure S]` and `R[F.faceSubgroup]`.
-* `SaturatedAddSubmonoid.orbitMap` and `SaturatedAddSubmonoid.ker_orbitMap`: the coordinate
-  algebra homomorphism `R[S] →ₐ[R] R[F.faceSubgroup]` and identification of its kernel with
-  `F.toAddSubmonoid.faceIdeal R`.
-* `AddMonoidAlgebra.gradedCoaction` and `AddSubmonoid.torusCoaction`: native `R[L]`-coaction and
-  equivariance of face restriction, orbit maps, and normalization.
+  `SaturatedAddSubmonoid.exists_isLocalization_away_faceSubgroup`: interior-monomial localizations.
+* `SaturatedAddSubmonoid.orbitMap` and `SaturatedAddSubmonoid.ker_orbitMap`: orbit coordinate hom.
+* `AddMonoidAlgebra.gradedCoaction` and `AddSubmonoid.torusCoaction`: native torus coaction.
 * `AddMonoidAlgebra.ringKrullDim_of_free`, `AddSubmonoid.FG.ringKrullDim_addMonoidAlgebra`,
   `SaturatedAddSubmonoid.ringKrullDim_closedFace`, `SaturatedAddSubmonoid.ringKrullDim_orbit`, and
-  `SaturatedAddSubmonoid.finrank_faceSubgroup_strictMono`: Krull dimensions of semigroup algebras,
-  closed faces, and torus orbits.
+  `SaturatedAddSubmonoid.finrank_faceSubgroup_strictMono`: Krull dimensions.
 
 ## References
 
@@ -70,6 +59,36 @@ public section
 
 open scoped TensorProduct
 open AddMonoidAlgebra
+
+private theorem isLocalization_mapDomain_of_single {M H R : Type*} [AddCommMonoid M]
+    [AddCommGroup H] [CommSemiring R] {f : M →+ H} (hf : Function.Injective f)
+    {T : Submonoid (AddMonoidAlgebra R M)}
+    (hunits : ∀ s : T, IsUnit (mapDomain f s.1))
+    (hsurj : ∀ g : H, ∃ (a : M) (s : T), single g (1 : R) * mapDomain f s.1 = single (f a) 1) :
+    letI := (mapDomainRingHom R f).toAlgebra
+    IsLocalization T (AddMonoidAlgebra R H) := by
+  let := (mapDomainRingHom R f).toAlgebra
+  have halg (p : AddMonoidAlgebra R M) :
+      algebraMap _ (AddMonoidAlgebra R H) p = mapDomain f p := by
+    rw [RingHom.algebraMap_toAlgebra, mapDomainRingHom_apply]
+  refine ⟨⟨fun s ↦ halg s.1 ▸ hunits s, fun p ↦ ?_, fun {_ _} hab ↦ ?_⟩⟩
+  · induction p using AddMonoidAlgebra.induction_on with
+    | of g =>
+      obtain ⟨a, s, hs⟩ := hsurj g
+      exact ⟨⟨single a 1, s⟩, by simpa [halg, mapDomain_single] using hs⟩
+    | add p q hp hq =>
+      obtain ⟨⟨a, s⟩, ha⟩ := hp
+      obtain ⟨⟨b, t⟩, hb⟩ := hq
+      refine ⟨⟨a * t + b * s, s * t⟩, ?_⟩
+      simp only [map_add, map_mul, Submonoid.coe_mul]
+      rw [← ha, ← hb]; ring
+    | smul r p hp =>
+      obtain ⟨⟨a, s⟩, ha⟩ := hp
+      exact ⟨⟨r • a, s⟩, by
+        rw [smul_mul_assoc, ha]
+        exact ((mapDomainAlgHom R R f).toLinearMap.map_smul r a).symm⟩
+  · rw [halg, halg] at hab
+    exact ⟨1, by simp [mapDomain_injective hf hab]⟩
 
 namespace AddSubmonoid
 
@@ -87,18 +106,15 @@ theorem FG.exists_forall_exists_add_eq_nsmul {M : Type*} [AddCommMonoid M] {S : 
   have hy : y ∈ closure (t : Set M) := ht.symm ▸ hyS
   induction hy using closure_induction with
   | mem z hz =>
-    refine ⟨1, ∑ a ∈ Finset.univ.erase ⟨z, hz⟩, gen a, ?_⟩
-    rw [one_nsmul]
-    exact Finset.add_sum_erase Finset.univ gen (Finset.mem_univ ⟨z, hz⟩)
+    exact ⟨1, ∑ a ∈ Finset.univ.erase ⟨z, hz⟩, gen a, by
+      rw [one_nsmul]; exact Finset.add_sum_erase Finset.univ gen (Finset.mem_univ ⟨z, hz⟩)⟩
   | zero => exact ⟨0, 0, by simp⟩
   | add x w hx hw ihx ihw =>
     obtain ⟨n₁, c₁, hc₁⟩ := ihx (ht ▸ hx)
     obtain ⟨n₂, c₂, hc₂⟩ := ihw (ht ▸ hw)
-    refine ⟨n₁ + n₂, c₁ + c₂, ?_⟩
-    have hcomm : (⟨x + w, hyS⟩ : S) + (c₁ + c₂) =
-        (⟨x, ht ▸ hx⟩ + c₁) + (⟨w, ht ▸ hw⟩ + c₂) :=
+    have hcomm : (⟨x + w, hyS⟩ : S) + (c₁ + c₂) = (⟨x, ht ▸ hx⟩ + c₁) + (⟨w, ht ▸ hw⟩ + c₂) :=
       Subtype.ext (by simp only [coe_add]; abel)
-    rw [hcomm, hc₁, hc₂, add_nsmul]
+    exact ⟨n₁ + n₂, c₁ + c₂, by rw [hcomm, hc₁, hc₂, add_nsmul]⟩
 
 /-- If `f : M →+ H` is an injective additive homomorphism from a finitely generated additive monoid
 `M` into an abelian group `H` such that every element of `H` can be shifted into `f '' M`, then
@@ -111,42 +127,18 @@ theorem _root_.AddMonoidAlgebra.exists_isLocalization_away_of_exists_add_eq {M H
       IsLocalization.Away (single u (1 : R)) (AddMonoidAlgebra R H) := by
   have htop : (⊤ : AddSubmonoid M).FG := (AddMonoid.fg_iff_addSubmonoid_fg ⊤).1 inferInstance
   obtain ⟨u, hu⟩ := htop.exists_forall_exists_add_eq_nsmul
-  refine ⟨u.1, ?_⟩
-  let := (mapDomainRingHom R f).toAlgebra
-  have halg (p : AddMonoidAlgebra R M) :
-      algebraMap _ (AddMonoidAlgebra R H) p = mapDomain f p := by
-    rw [RingHom.algebraMap_toAlgebra, mapDomainRingHom_apply]
-  refine ⟨⟨?_, ?_, ?_⟩⟩
-  · intro s
-    obtain ⟨n, hn⟩ := s.2
+  refine ⟨u.1, isLocalization_mapDomain_of_single hf (fun s ↦ ?_) (fun g ↦ ?_)⟩
+  · obtain ⟨n, hn⟩ := s.2
     dsimp only at hn
-    rw [halg, ← hn, single_pow, one_pow, mapDomain_single]
+    rw [← hn, single_pow, one_pow, mapDomain_single]
     exact (Group.isUnit (Multiplicative.ofAdd (f (n • u.1)))).map (of R H)
-  · intro p
-    induction p using AddMonoidAlgebra.induction_on with
-    | of g =>
-      obtain ⟨a, b, hab⟩ := hshift g
-      obtain ⟨n, c, hbc⟩ := hu ⟨b, trivial⟩
-      have hnu : g + n • f u.1 = f (a + c.1) := by
-        have hbc' : b + c.1 = n • u.1 := congrArg Subtype.val hbc
-        rw [← map_nsmul, ← hbc', map_add, ← add_assoc, hab, ← map_add]
-      refine ⟨⟨single (a + c.1) 1, ⟨single u.1 (1 : R) ^ n, n, rfl⟩⟩, ?_⟩
-      simp [halg, single_pow, single_mul_single, hnu]
-    | add p q hp hq =>
-      obtain ⟨⟨a, s⟩, ha⟩ := hp
-      obtain ⟨⟨b, t⟩, hb⟩ := hq
-      refine ⟨⟨a * t + b * s, s * t⟩, ?_⟩
-      simp only [map_add, map_mul, Submonoid.coe_mul]
-      rw [← ha, ← hb]
-      ring
-    | smul r p hp =>
-      obtain ⟨⟨a, s⟩, ha⟩ := hp
-      refine ⟨⟨r • a, s⟩, ?_⟩
-      rw [smul_mul_assoc, ha]
-      exact ((mapDomainAlgHom R R f).toLinearMap.map_smul r a).symm
-  · intro a b hab
-    rw [halg, halg] at hab
-    exact ⟨1, by simp [mapDomain_injective hf hab]⟩
+  · obtain ⟨a, b, hab⟩ := hshift g
+    obtain ⟨n, c, hbc⟩ := hu ⟨b, trivial⟩
+    have hnu : g + n • f u.1 = f (a + c.1) := by
+      have hbc' : b + c.1 = n • u.1 := congrArg Subtype.val hbc
+      rw [← map_nsmul, ← hbc', map_add, ← add_assoc, hab, ← map_add]
+    exact ⟨a + c.1, ⟨single u.1 (1 : R) ^ n, n, rfl⟩, by
+      simp [single_pow, single_mul_single, hnu]⟩
 
 /-- When `S` is finitely generated, `R[AddSubgroup.closure S]` is the localization of `R[S]` away
 from a single interior monomial `single u 1`. -/
@@ -174,37 +166,16 @@ variable {G : Type*} [AddCommGroup G] {S : AddSubmonoid G} (F : SaturatedAddSubm
 coefficient-one monomials along `F.toFaceSubgroup`. -/
 theorem isLocalization_addMonoidAlgebra_faceSubgroup (R : Type*) [CommSemiring R] :
     letI := (mapDomainRingHom R F.toFaceSubgroup).toAlgebra
-    IsLocalization (MonoidHom.mrange (of R F)) (AddMonoidAlgebra R F.faceSubgroup) := by
-  let := (mapDomainRingHom R F.toFaceSubgroup).toAlgebra
-  have halg (a : AddMonoidAlgebra R F) :
-      algebraMap _ (AddMonoidAlgebra R F.faceSubgroup) a = mapDomain F.toFaceSubgroup a := by
-    rw [RingHom.algebraMap_toAlgebra, mapDomainRingHom_apply]
-  refine ⟨⟨?_, ?_, ?_⟩⟩
-  · intro s
-    obtain ⟨m, hm⟩ := s.2
-    rw [halg, ← hm, of_apply, mapDomain_single]
-    exact (Group.isUnit (Multiplicative.ofAdd (F.toFaceSubgroup m.toAdd))).map (of R F.faceSubgroup)
-  · intro p
-    induction p using AddMonoidAlgebra.induction_on with
-    | of g =>
+    IsLocalization (MonoidHom.mrange (of R F)) (AddMonoidAlgebra R F.faceSubgroup) :=
+  isLocalization_mapDomain_of_single F.toFaceSubgroup_injective
+    (fun s ↦ by
+      obtain ⟨m, hm⟩ := s.2
+      rw [← hm, of_apply, mapDomain_single]
+      exact (Group.isUnit (Multiplicative.ofAdd (F.toFaceSubgroup m.toAdd))).map
+        (of R F.faceSubgroup))
+    (fun g ↦ by
       obtain ⟨a, b, hab⟩ := F.exists_add_toFaceSubgroup_eq g
-      refine ⟨⟨single a 1, ⟨of R F (Multiplicative.ofAdd b), ⟨_, rfl⟩⟩⟩, ?_⟩
-      simp [halg, of_apply, hab]
-    | add p q hp hq =>
-      obtain ⟨⟨a, s⟩, ha⟩ := hp
-      obtain ⟨⟨b, t⟩, hb⟩ := hq
-      refine ⟨⟨a * t + b * s, s * t⟩, ?_⟩
-      simp only [map_add, map_mul, Submonoid.coe_mul]
-      rw [← ha, ← hb]
-      ring
-    | smul r p hp =>
-      obtain ⟨⟨a, s⟩, ha⟩ := hp
-      refine ⟨⟨r • a, s⟩, ?_⟩
-      rw [smul_mul_assoc, ha]
-      exact ((mapDomainAlgHom R R F.toFaceSubgroup).toLinearMap.map_smul r a).symm
-  · intro a b hab
-    rw [halg, halg] at hab
-    exact ⟨1, by simp [mapDomain_injective F.toFaceSubgroup_injective hab]⟩
+      exact ⟨a, ⟨of R F (Multiplicative.ofAdd b), _, rfl⟩, by simp [of_apply, hab]⟩)
 
 /-- When `S` is finitely generated, `R[F.faceSubgroup]` is a localization of the closed face
 algebra `R[F]` away from a single monomial `single u 1`. -/
@@ -225,8 +196,7 @@ noncomputable def orbitMap (R : Type*) [CommSemiring R] :
 /-- Explicit definition of `SaturatedAddSubmonoid.orbitMap`. -/
 theorem orbitMap_def (R : Type*) [CommSemiring R] :
     F.orbitMap R = (mapDomainAlgHom R R F.toFaceSubgroup).comp
-      (F.toAddSubmonoid.faceRestriction F.addSaturated R) :=
-  (rfl)
+      (F.toAddSubmonoid.faceRestriction F.addSaturated R) := (rfl)
 
 /-- On a monomial in `F`, `F.orbitMap R` sends `single a r` to `single (F.toFaceSubgroup a) r`. -/
 @[simp]
@@ -244,8 +214,7 @@ theorem orbitMap_single_of_notMem (R : Type*) [CommSemiring R] {s : S} (hs : s �
     F.orbitMap R (single s r) = 0 := by
   simp [orbitMap, F.toAddSubmonoid.faceRestriction_single_of_notMem F.addSaturated hs]
 
-/-- Over any commutative semiring `R`, the kernel of `F.orbitMap R` is the monomial face ideal
-`F.toAddSubmonoid.faceIdeal R`. -/
+/-- Over any commutative semiring `R`, the kernel of `F.orbitMap R` is `F.faceIdeal R`. -/
 @[simp]
 theorem ker_orbitMap (R : Type*) [CommSemiring R] :
     RingHom.ker (F.orbitMap R) = F.toAddSubmonoid.faceIdeal R := by
@@ -276,15 +245,13 @@ noncomputable def gradedCoaction {M L : Type*} [AddCommMonoid M] [AddCommMonoid 
 @[simp]
 theorem gradedCoaction_single {M L : Type*} [AddCommMonoid M] [AddCommMonoid L] (w : M →+ L)
     (m : M) (r : R) :
-    gradedCoaction R w (single m r) = single (w m) 1 ⊗ₜ[R] single m r := by
-  simp [gradedCoaction]
+    gradedCoaction R w (single m r) = single (w m) 1 ⊗ₜ[R] single m r := by simp [gradedCoaction]
 
 /-- For the identity homomorphism, `gradedCoaction` recovers the bialgebra comultiplication. -/
 @[simp]
 theorem gradedCoaction_id (L : Type*) [AddCommMonoid L] :
     gradedCoaction R (AddMonoidHom.id L) = Bialgebra.comulAlgHom R (AddMonoidAlgebra R L) := by
-  ext
-  simp
+  ext; simp
 
 /-- Counit axiom for `gradedCoaction`: applying the counit of `R[L]` on the left recovers the
 identity on `R[M]`. -/
@@ -294,8 +261,7 @@ theorem lid_comp_map_counit_gradedCoaction {M L : Type*} [AddCommMonoid M] [AddC
     (Algebra.TensorProduct.lid R (AddMonoidAlgebra R M)).toAlgHom.comp
       ((Algebra.TensorProduct.map (Bialgebra.counitAlgHom R (AddMonoidAlgebra R L))
         (AlgHom.id R _)).comp (gradedCoaction R w)) = AlgHom.id R (AddMonoidAlgebra R M) := by
-  ext
-  simp
+  ext; simp
 
 /-- Coassociativity of `gradedCoaction` with respect to the comultiplication of `R[L]`. -/
 theorem assoc_comp_map_gradedCoaction {M L : Type*} [AddCommMonoid M] [AddCommMonoid L]
@@ -306,8 +272,7 @@ theorem assoc_comp_map_gradedCoaction {M L : Type*} [AddCommMonoid M] [AddCommMo
         (AlgHom.id R _)).comp (gradedCoaction R w)) =
       (Algebra.TensorProduct.map (AlgHom.id R _) (gradedCoaction R w)).comp
         (gradedCoaction R w) := by
-  ext
-  simp
+  ext; simp
 
 /-- Naturality of `gradedCoaction` under compatible additive monoid homomorphisms. -/
 theorem map_mapDomain_comp_gradedCoaction {M₁ M₂ L₁ L₂ : Type*} [AddCommMonoid M₁]
@@ -316,8 +281,7 @@ theorem map_mapDomain_comp_gradedCoaction {M₁ M₂ L₁ L₂ : Type*} [AddComm
     (Algebra.TensorProduct.map (mapDomainAlgHom R R g) (mapDomainAlgHom R R f)).comp
       (gradedCoaction R w₁) = (gradedCoaction R w₂).comp (mapDomainAlgHom R R f) := by
   ext m
-  have hm := DFunLike.congr_fun h m
-  simp only [AddMonoidHom.comp_apply] at hm
+  have hm : w₂ (f m) = g (w₁ m) := DFunLike.congr_fun h m
   simp [hm]
 
 /-- Restriction to a face `F` is equivariant with respect to `gradedCoaction`. -/
@@ -345,16 +309,14 @@ section TorusCoaction
 
 variable {G : Type*} [AddCommGroup G] (S : AddSubmonoid G) (R : Type*) [CommSemiring R]
 
-/-- The native coaction of the dense torus algebra `R[AddSubgroup.closure S]` on the semigroup
-algebra `R[S]`. -/
+/-- The native coaction of the dense torus algebra `R[AddSubgroup.closure S]` on `R[S]`. -/
 noncomputable def torusCoaction :
     AddMonoidAlgebra R S →ₐ[R]
       AddMonoidAlgebra R (AddSubgroup.closure (S : Set G)) ⊗[R] AddMonoidAlgebra R S :=
   gradedCoaction R S.toGroupClosure
 
 /-- Explicit definition of `AddSubmonoid.torusCoaction`. -/
-theorem torusCoaction_def : S.torusCoaction R = gradedCoaction R S.toGroupClosure :=
-  (rfl)
+theorem torusCoaction_def : S.torusCoaction R = gradedCoaction R S.toGroupClosure := (rfl)
 
 /-- `S.torusCoaction R` sends `single s r` to `single (S.toGroupClosure s) 1 ⊗ₜ single s r`. -/
 @[simp]
@@ -413,29 +375,17 @@ theorem ringKrullDim_of_free (k L : Type*) [Field k] [AddCommGroup L] [Module.Fi
     simp only [Finsupp.add_apply, castHom, Finsupp.mapRange.addMonoidHom_apply,
       Finsupp.mapRange_apply, Nat.coe_castAddMonoidHom]
     lia
-  have : AddMonoid.FG (ι →₀ ℕ) := by
-    rw [AddMonoid.fg_iff]
-    refine ⟨Set.range fun i : ι ↦ Finsupp.single i 1, ?_, Set.finite_range _⟩
-    suffices ∀ f : ι →₀ ℕ, f ∈ AddSubmonoid.closure (Set.range fun i : ι ↦ Finsupp.single i 1) from
-      eq_top_iff.2 fun f _ ↦ this f
-    intro f
-    induction f using Finsupp.induction_linear with
-    | zero => exact zero_mem _
-    | add _ _ hf hg => exact add_mem hf hg
-    | single i n =>
-      have h1 : Finsupp.single i (1 : ℕ) ∈
-          AddSubmonoid.closure (Set.range fun j : ι ↦ Finsupp.single j 1) :=
-        AddSubmonoid.subset_closure ⟨i, rfl⟩
-      have hn : Finsupp.single i n = n • Finsupp.single i 1 := by
-        ext j
-        simp [Finsupp.single_apply]
-      exact hn ▸ nsmul_mem h1 n
+  have : AddMonoid.FG (ι →₀ ℕ) := AddMonoid.fg_iff.2
+    ⟨Set.range fun i : ι ↦ Finsupp.single i 1, eq_top_iff.2 fun f _ ↦ by
+      refine f.induction_linear (zero_mem _) (fun _ _ ↦ add_mem) fun i n ↦ ?_
+      have hn : Finsupp.single i n = n • Finsupp.single i 1 := by ext j; simp [Finsupp.single_apply]
+      exact hn ▸ nsmul_mem (AddSubmonoid.subset_closure (Set.mem_range_self i)) n,
+      Set.finite_range _⟩
   obtain ⟨u, hu⟩ := exists_isLocalization_away_of_exists_add_eq hcast_inj hshift k
   let := (mapDomainRingHom k castHom).toAlgebra
   have hdim : ringKrullDim (AddMonoidAlgebra k (ι →₀ ℤ)) = Nat.card ι := by
     rw [TauCeti.ringKrullDim_localization_away (A := MvPolynomial ι k) k
-      (single_ne_zero.2 (one_ne_zero : (1 : k) ≠ 0) :
-        (single u (1 : k) : MvPolynomial ι k) ≠ 0)
+      (single_ne_zero.2 (one_ne_zero : (1 : k) ≠ 0) : (single u (1 : k) : MvPolynomial ι k) ≠ 0)
       (AddMonoidAlgebra k (ι →₀ ℤ)),
       MvPolynomial.ringKrullDim_of_isNoetherianRing_of_finite, ringKrullDim_eq_zero_of_field,
       zero_add]
@@ -458,9 +408,9 @@ theorem FG.ringKrullDim_addMonoidAlgebra {G : Type*} [AddCommGroup G] [HasUnique
   have : AddMonoid.FG S := (AddMonoid.fg_iff_addSubmonoid_fg S).2 hS
   have : Algebra.FiniteType k (AddMonoidAlgebra k S) := AddMonoidAlgebra.finiteType_of_fg k S
   have : UniqueSums S := .of_injective_addHom S.subtype.toAddHom S.subtype_injective inferInstance
-  have : AddGroup.FG L := (AddGroup.fg_iff_addSubgroup_fg L).2 hS.addSubgroupClosure
-  have : Module.Finite ℤ L := Module.Finite.iff_addGroup_fg.2 this
-  obtain ⟨u, hu⟩ := hS.exists_isLocalization_away_addMonoidAlgebra_groupClosure k
+  have : Module.Finite ℤ L := Module.Finite.iff_addGroup_fg.2
+    ((AddGroup.fg_iff_addSubgroup_fg L).2 hS.addSubgroupClosure)
+  obtain ⟨u, _⟩ := hS.exists_isLocalization_away_addMonoidAlgebra_groupClosure k
   let := (mapDomainRingHom k S.toGroupClosure).toAlgebra
   rw [← TauCeti.ringKrullDim_localization_away k
     (single_ne_zero.2 (one_ne_zero : (1 : k) ≠ 0) : single u (1 : k) ≠ 0)
@@ -477,9 +427,8 @@ finitely generated submonoid `S` has Krull dimension `Module.finrank ℤ F.faceS
 theorem ringKrullDim_orbit (hS : S.FG) (F : SaturatedAddSubmonoid S) (k : Type*) [Field k] :
     ringKrullDim (AddMonoidAlgebra k F.faceSubgroup) = Module.finrank ℤ F.faceSubgroup := by
   have : AddMonoid.FG S := (AddMonoid.fg_iff_addSubmonoid_fg S).2 hS
-  have : AddGroup.FG F.faceSubgroup :=
-    (AddGroup.fg_iff_addSubgroup_fg F.faceSubgroup).2 (F.fg_faceSubgroup F.fg_toAddSubmonoid)
-  have : Module.Finite ℤ F.faceSubgroup := Module.Finite.iff_addGroup_fg.2 this
+  have : Module.Finite ℤ F.faceSubgroup := Module.Finite.iff_addGroup_fg.2
+    ((AddGroup.fg_iff_addSubgroup_fg F.faceSubgroup).2 (F.fg_faceSubgroup F.fg_toAddSubmonoid))
   have : HasUniqueDiv F.faceSubgroup := Function.Injective.hasUniqueDiv
     ((AddSubgroup.closure (S : Set G)).subtype.comp F.faceSubgroup.subtype)
     ((AddSubgroup.closure (S : Set G)).subtype_injective.comp F.faceSubgroup.subtype_injective)
@@ -490,16 +439,14 @@ submonoid `S` has Krull dimension `Module.finrank ℤ F.faceSubgroup`. -/
 theorem ringKrullDim_closedFace (hS : S.FG) (F : SaturatedAddSubmonoid S) (k : Type*) [Field k] :
     ringKrullDim (AddMonoidAlgebra k F) = Module.finrank ℤ F.faceSubgroup := by
   have : AddMonoid.FG S := (AddMonoid.fg_iff_addSubmonoid_fg S).2 hS
-  have : AddMonoid.FG F := inferInstance
   have : Algebra.FiniteType k (AddMonoidAlgebra k F) := AddMonoidAlgebra.finiteType_of_fg k F
   have : UniqueSums F := .of_injective_addHom (S.subtype.comp F.toAddSubmonoid.subtype).toAddHom
     (S.subtype_injective.comp F.toAddSubmonoid.subtype_injective) inferInstance
-  obtain ⟨u, hu⟩ := F.exists_isLocalization_away_faceSubgroup hS k
+  obtain ⟨u, _⟩ := F.exists_isLocalization_away_faceSubgroup hS k
   let := (mapDomainRingHom k F.toFaceSubgroup).toAlgebra
   rw [← TauCeti.ringKrullDim_localization_away k
     (single_ne_zero.2 (one_ne_zero : (1 : k) ≠ 0) : single u (1 : k) ≠ 0)
-    (AddMonoidAlgebra k F.faceSubgroup),
-    F.ringKrullDim_orbit hS k]
+    (AddMonoidAlgebra k F.faceSubgroup), F.ringKrullDim_orbit hS k]
 
 /-- Strict inclusion of faces of a finitely generated submonoid `S` of a torsion-free abelian group
 strictly increases the rank of `F.faceSubgroup`. -/
@@ -508,19 +455,15 @@ theorem finrank_faceSubgroup_strictMono (hS : S.FG) :
   intro F₁ F₂ hlt
   obtain ⟨s, hs₂, hs₁⟩ := IsConcreteLE.exists_of_lt hlt
   let F₁' : SaturatedAddSubmonoid F₂ := F₁.comap F₂.toAddSubmonoid.subtype
-  have hres_surj : Function.Surjective
-      (F₁'.toAddSubmonoid.faceRestriction F₁'.addSaturated ℚ) :=
-    F₁'.toAddSubmonoid.faceRestriction_surjective F₁'.addSaturated
   let e : F₁' ≃+ F₁ :=
     { toFun x := ⟨x.1, SaturatedAddSubmonoid.mem_comap.1 x.2⟩
       invFun y := ⟨⟨y.1, hlt.le y.2⟩, SaturatedAddSubmonoid.mem_comap.2 y.2⟩
-      left_inv _ := rfl
-      right_inv _ := rfl
-      map_add' _ _ := rfl }
+      left_inv _ := rfl, right_inv _ := rfl, map_add' _ _ := rfl }
   let g : AddMonoidAlgebra ℚ F₂ →+* AddMonoidAlgebra ℚ F₁ :=
     (domCongr ℚ ℚ e).toRingEquiv.toRingHom.comp
       (F₁'.toAddSubmonoid.faceRestriction F₁'.addSaturated ℚ).toRingHom
-  have hsurj : Function.Surjective g := (domCongr ℚ ℚ e).surjective.comp hres_surj
+  have hsurj : Function.Surjective g := (domCongr ℚ ℚ e).surjective.comp
+    (F₁'.toAddSubmonoid.faceRestriction_surjective F₁'.addSaturated)
   have : UniqueSums F₂ := .of_injective_addHom (S.subtype.comp F₂.toAddSubmonoid.subtype).toAddHom
     (S.subtype_injective.comp F₂.toAddSubmonoid.subtype_injective) inferInstance
   have hs_nzd : single (⟨s, hs₂⟩ : F₂) (1 : ℚ) ∈ nonZeroDivisors (AddMonoidAlgebra ℚ F₂) :=

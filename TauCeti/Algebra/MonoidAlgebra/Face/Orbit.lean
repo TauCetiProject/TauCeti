@@ -19,51 +19,37 @@ import Mathlib.Algebra.Module.Injective
 
 Let `S` be an additive submonoid of an abelian group `G` and `R` a commutative semiring. For any
 commutative `R`-algebra `A`, the character group
-`Multiplicative (AddSubgroup.closure (S : Set G)) →* Aˣ` of the dense torus acts on the set of
-`A`-points `AddMonoidAlgebra R S →ₐ[R] A` via `S.torusCoaction R`.
+`Multiplicative (AddSubgroup.closure (S : Set G)) →* Aˣ` of the dense torus acts on `A`-points
+`AddMonoidAlgebra R S →ₐ[R] A` via `S.torusCoaction R`.
 
 1. **Distinguished points and stabilizer subgroup schemes.** Each face `F : SaturatedAddSubmonoid S`
-   defines a distinguished `A`-point `F.distinguishedPoint R A` sending `single s 1` to `1` on `F`
-   and `0` outside `F`. At the coordinate-ring level, the quotient map
-   `F.stabilizerBialgHom R : R[AddSubgroup.closure S] →ₐc[R]
-     R[AddSubgroup.closure S ⧸ F.faceSubgroup]`
-   presents the closed diagonalizable stabilizer subgroup scheme `D(L_S ⧸ gp(F))` — retaining both
-   lattice-index torsion when `F.faceSubgroup` is not saturated in `AddSubgroup.closure S` and
-   finite nonreduced `μ_n` factors when `n = 0` in `R`. On `A`-points, the stabilizer of
-   `F.distinguishedPoint R A` (and hence of every point in its torus orbit by
-   `MulAction.stabilizer_smul_eq_right`) is canonically isomorphic to
-   `Multiplicative (AddSubgroup.closure S ⧸ F.faceSubgroup) →* Aˣ`
-   (`SaturatedAddSubmonoid.stabilizerDistinguishedPointMulEquiv`).
-2. **Orbit–face bijection on geometric points.** Over a nontrivial domain `A`, the monomial support
-   `S.pointSupport x : SaturatedAddSubmonoid S` of `x : R[S] →ₐ[R] A` is torus-invariant and
-   recovers `F` on `F.distinguishedPoint R A`. Over any field `K` that is an `R`-algebra, the
-   points with support `F` correspond bijectively to characters
-   `Multiplicative F.faceSubgroup →* Kˣ` (`SaturatedAddSubmonoid.pointSupportSubtypeEquivChar`).
-   Whenever `Kˣ` is divisible (`[RootableBy Kˣ ℕ]`, automatic for algebraically closed fields via
-   `TauCeti.IsAlgClosed.unitsRootableByNat`), `Additive Kˣ` is Baer-injective over `ℤ`, so every
-   character of `F.faceSubgroup` extends to `AddSubgroup.closure S`, each support stratum is a
-   single torus orbit (`SaturatedAddSubmonoid.setOf_pointSupport_eq_orbit`), and
-   `S.faceOrbitEquiv R K` gives a canonical bijection between `SaturatedAddSubmonoid S` and torus
-   orbits on `R[S] →ₐ[R] K`.
-3. **Comparison with normalization on each orbit.** Precomposition with normalization
-   `R[S] →ₐ[R] R[S_sat]` pulls `pointSupport` back along `S.nsmulSaturationInfClosureFaceOrderIso`
-   and restricts on the `F`-stratum to subgroup restriction
-   `F.orbitNormalizationCharHom A : (Multiplicative F.faceSubgroup.nsmulSaturation →* Aˣ) →*
-     (Multiplicative F.faceSubgroup →* Aˣ)`. Whenever `[RootableBy Aˣ ℕ]`, this map is surjective
-   on every orbit, with kernel isomorphic to characters of the saturation quotient
-   `Q_F = F.faceSubgroup.nsmulSaturation ⧸ F.faceSubgroup`. Over an algebraically closed field `K`,
-   when `S` is finitely generated and `(Nat.card Q_F : K) ≠ 0`, every fiber has cardinality
-   `Nat.card Q_F` (so in characteristic zero normalization is injective on the `F`-orbit iff
-   `F.faceSubgroup` is saturated), whereas in characteristic `p > 0` it is bijective on `K`-points
-   whenever `Q_F` is `p`-primary torsion.
+   defines `F.distinguishedPoint R A` sending `single s 1` to `1` on `F` and `0` outside `F`. The
+   surjective bialgebra quotient `F.stabilizerBialgHom R : R[AddSubgroup.closure S] →ₐc[R]
+   R[AddSubgroup.closure S ⧸ F.faceSubgroup]` presents the closed diagonalizable stabilizer
+   `D(L_S ⧸ gp(F))` (retaining lattice-index torsion and nonreduced `μ_n` factors when `n = 0` in
+   `R`). On `A`-points, `SaturatedAddSubmonoid.stabilizerDistinguishedPointMulEquiv` identifies the
+   stabilizer of `F.distinguishedPoint R A` with
+   `Multiplicative (AddSubgroup.closure S ⧸ F.faceSubgroup) →* Aˣ`.
+2. **Orbit–face bijection on geometric points.** Over a nontrivial domain `A`, `S.pointSupport x :
+   SaturatedAddSubmonoid S` is torus-invariant and recovers `F` on `F.distinguishedPoint R A`. Over
+   any field `K`, `SaturatedAddSubmonoid.pointSupportSubtypeEquivChar` identifies the `F`-stratum
+   with `Multiplicative F.faceSubgroup →* Kˣ`. Whenever `[RootableBy Kˣ ℕ]` (in particular over any
+   algebraically closed field `K`), `Additive Kˣ` is Baer-injective over `ℤ`, so each support
+   stratum is a single torus orbit (`SaturatedAddSubmonoid.setOf_pointSupport_eq_orbit`) and
+   `S.faceOrbitEquiv R K` gives the geometric orbit–face bijection.
+3. **Comparison with normalization on each orbit.** Precomposition with normalization pulls
+   `pointSupport` back along `S.nsmulSaturationInfClosureFaceOrderIso` and restricts on the
+   `F`-stratum to `F.orbitNormalizationCharHom A`. Whenever `[RootableBy Aˣ ℕ]`, this map is
+   surjective with kernel isomorphic to characters of `Q_F = F.faceSubgroup.nsmulSaturation ⧸
+   F.faceSubgroup`. Over an algebraically closed field `K` with `S.FG`, fibers have cardinality
+   `Nat.card Q_F` when invertible in `K` (so in char `0`, injectivity holds iff `F.faceSubgroup` is
+   saturated), while in char `p > 0` it is bijective on `K`-points when `Q_F` is `p`-primary.
 
 ## Main declarations
 
-* `AddSubmonoid.instMulActionCharAlgHom` and `SaturatedAddSubmonoid.distinguishedPoint`: torus
-  action on `AddMonoidAlgebra R S →ₐ[R] A` and distinguished face points.
-* `SaturatedAddSubmonoid.stabilizerBialgHom` and
-  `SaturatedAddSubmonoid.stabilizerDistinguishedPointMulEquiv`: the closed stabilizer bialgebra
-  quotient `R[L_S ⧸ gp(F)]` and the `A`-valued stabilizer character group isomorphism.
+* `AddSubmonoid.instMulActionCharAlgHom`, `SaturatedAddSubmonoid.distinguishedPoint`,
+  `SaturatedAddSubmonoid.stabilizerBialgHom`, and
+  `SaturatedAddSubmonoid.stabilizerDistinguishedPointMulEquiv`: torus action and stabilizers.
 * `AddSubmonoid.pointSupport`, `SaturatedAddSubmonoid.pointSupportSubtypeEquivChar`,
   `SaturatedAddSubmonoid.setOf_pointSupport_eq_orbit`, and `AddSubmonoid.faceOrbitEquiv`:
   orbit–face decomposition and bijection on geometric points.
@@ -71,8 +57,7 @@ commutative `R`-algebra `A`, the character group
   `SaturatedAddSubmonoid.orbitNormalizationCharHom_surjective`,
   `SaturatedAddSubmonoid.card_orbitNormalizationCharHom_ker`,
   `SaturatedAddSubmonoid.orbitNormalizationCharHom_injective_iff_of_charZero`, and
-  `SaturatedAddSubmonoid.orbitNormalizationCharHom_bijective_of_charP`: comparison of normalization
-  on each torus orbit.
+  `SaturatedAddSubmonoid.orbitNormalizationCharHom_bijective_of_charP`: orbit normalization.
 
 ## References
 
@@ -102,9 +87,8 @@ theorem RootableBy.exists_monoidHom_comp_toMultiplicative_eq {H L U : Type*} [Ad
   let : DivisibleBy (Additive U) ℤ := AddGroup.divisibleByIntOfDivisibleByNat (Additive U)
   obtain ⟨g, hg⟩ := (Module.Baer.of_divisible (Additive U)).extension_property_addMonoidHom
     f hf ψ.toAdditiveRight
-  refine ⟨AddMonoidHom.toMultiplicativeLeft g, MonoidHom.ext fun x ↦ ?_⟩
-  have hx := DFunLike.congr_fun hg x.toAdd
-  simpa using congrArg Additive.toMul hx
+  exact ⟨AddMonoidHom.toMultiplicativeLeft g, MonoidHom.ext fun x ↦ by
+    simpa using congrArg Additive.toMul (DFunLike.congr_fun hg x.toAdd)⟩
 
 end CharacterExtension
 
@@ -141,12 +125,8 @@ acts on `A`-points `AddMonoidAlgebra R S →ₐ[R] A` via `S.torusCoaction R`. -
 noncomputable instance instMulActionCharAlgHom :
     MulAction (Multiplicative (AddSubgroup.closure (S : Set G)) →* Aˣ)
       (AddMonoidAlgebra R S →ₐ[R] A) where
-  one_smul x := by
-    ext s
-    simp
-  mul_smul χ₁ χ₂ x := by
-    ext s
-    simp [mul_assoc]
+  one_smul x := by ext; simp
+  mul_smul χ₁ χ₂ x := by ext; simp [mul_assoc]
 
 end TorusAction
 
@@ -167,17 +147,14 @@ noncomputable def distinguishedPoint (R A : Type*) [CommSemiring R] [CommSemirin
 
 /-- Explicit definition of `SaturatedAddSubmonoid.distinguishedPoint`. -/
 theorem distinguishedPoint_def (R A : Type*) [CommSemiring R] [CommSemiring A] [Algebra R A] :
-    F.distinguishedPoint R A =
-      (Algebra.ofId R A).comp ((Bialgebra.counitAlgHom R (AddMonoidAlgebra R F.faceSubgroup)).comp
-        (F.orbitMap R)) :=
-  (rfl)
+    F.distinguishedPoint R A = (Algebra.ofId R A).comp
+      ((Bialgebra.counitAlgHom R (AddMonoidAlgebra R F.faceSubgroup)).comp (F.orbitMap R)) := (rfl)
 
 /-- On a monomial in `F`, `F.distinguishedPoint R A` sends `single a r` to `algebraMap R A r`. -/
 @[simp]
 theorem distinguishedPoint_single_mem (R A : Type*) [CommSemiring R] [CommSemiring A] [Algebra R A]
     (a : F) (r : R) :
-    F.distinguishedPoint R A (single (a : S) r) = algebraMap R A r := by
-  simp [distinguishedPoint]
+    F.distinguishedPoint R A (single (a : S) r) = algebraMap R A r := by simp [distinguishedPoint]
 
 /-- On a monomial outside `F`, `F.distinguishedPoint R A` vanishes. -/
 @[simp]
@@ -197,15 +174,13 @@ noncomputable def stabilizerBialgHom (R : Type*) [CommSemiring R] :
 
 /-- Explicit definition of `SaturatedAddSubmonoid.stabilizerBialgHom`. -/
 theorem stabilizerBialgHom_def (R : Type*) [CommSemiring R] :
-    F.stabilizerBialgHom R = mapDomainBialgHom R (QuotientAddGroup.mk' F.faceSubgroup) :=
-  (rfl)
+    F.stabilizerBialgHom R = mapDomainBialgHom R (QuotientAddGroup.mk' F.faceSubgroup) := (rfl)
 
 /-- `F.stabilizerBialgHom R` sends `single g r` to `single (QuotientAddGroup.mk g) r`. -/
 @[simp]
 theorem stabilizerBialgHom_single (R : Type*) [CommSemiring R]
     (g : AddSubgroup.closure (S : Set G)) (r : R) :
-    F.stabilizerBialgHom R (single g r) = single (QuotientAddGroup.mk g) r :=
-  mapDomain_single
+    F.stabilizerBialgHom R (single g r) = single (QuotientAddGroup.mk g) r := mapDomain_single
 
 /-- `F.stabilizerBialgHom R` is surjective, so `Spec R[L_S ⧸ gp(F)]` is a closed subgroup scheme of
 `Spec R[L_S]`. -/
@@ -213,10 +188,7 @@ theorem stabilizerBialgHom_surjective (R : Type*) [CommSemiring R] :
     Function.Surjective (F.stabilizerBialgHom R) := fun y ↦ by
   induction y using AddMonoidAlgebra.induction_linear with
   | zero => exact ⟨0, map_zero _⟩
-  | add _ _ hx₁ hx₂ =>
-    obtain ⟨x₁, rfl⟩ := hx₁
-    obtain ⟨x₂, rfl⟩ := hx₂
-    exact ⟨x₁ + x₂, map_add _ _ _⟩
+  | add _ _ h₁ h₂ => rcases h₁, h₂ with ⟨⟨x₁, rfl⟩, ⟨x₂, rfl⟩⟩; exact ⟨x₁ + x₂, map_add _ _ _⟩
   | single q r =>
     obtain ⟨g, rfl⟩ := QuotientAddGroup.mk_surjective q
     exact ⟨single g r, F.stabilizerBialgHom_single R g r⟩
@@ -235,9 +207,8 @@ theorem map_stabilizerBialgHom_orbitMap_comp_torusCoaction (R : Type*) [CommSemi
         (0 : AddSubgroup.closure (S : Set G) ⧸ F.faceSubgroup) :=
       (QuotientAddGroup.eq_zero_iff _).2 (F.toGroupClosure_mem_faceSubgroup_iff.2 hs)
     rw [AlgHom.comp_apply, AlgHom.comp_apply, S.torusCoaction_single,
-      Algebra.TensorProduct.map_tmul, BialgHom.coe_toAlgHom,
-      F.stabilizerBialgHom_single, hq, ← one_def, hmem, F.orbitMap_single_mem,
-      Algebra.TensorProduct.includeRight_apply]
+      Algebra.TensorProduct.map_tmul, BialgHom.coe_toAlgHom, F.stabilizerBialgHom_single, hq,
+      ← one_def, hmem, F.orbitMap_single_mem, Algebra.TensorProduct.includeRight_apply]
   · simp [F.orbitMap_single_of_notMem R hs]
 
 /-- A torus character `χ` fixes `F.distinguishedPoint R A` if and only if `χ` is trivial on
@@ -256,8 +227,7 @@ theorem mem_stabilizer_distinguishedPoint_iff {R A : Type*} [CommSemiring R] [Co
       rw [S.smul_algHom_single_apply, hmem, F.distinguishedPoint_single_mem, map_one, mul_one]
         at eval
       exact Additive.toMul.injective (Units.ext eval)
-    intro g hg
-    exact Additive.toMul.injective (hker hg)
+    exact fun g hg ↦ Additive.toMul.injective (hker hg)
   · ext s
     by_cases hs : s ∈ F
     · rw [S.smul_algHom_single_apply, h (S.toGroupClosure s)
@@ -280,15 +250,11 @@ noncomputable def stabilizerDistinguishedPointMulEquiv (R A : Type*) [CommSemiri
       F.mem_stabilizer_distinguishedPoint_iff.2 fun g hg ↦ by
         change ψ (.ofAdd (QuotientAddGroup.mk g)) = 1
         rw [(QuotientAddGroup.eq_zero_iff g).2 hg, ofAdd_zero, map_one]⟩
-  left_inv χ := Subtype.ext (MonoidHom.ext fun _ ↦ rfl)
-  right_inv ψ := MonoidHom.ext fun q ↦ by
-    obtain ⟨g, hg⟩ := QuotientAddGroup.mk_surjective q.toAdd
-    rw [← ofAdd_toAdd q, ← hg]
-    rfl
+  left_inv _ := Subtype.ext (MonoidHom.ext fun _ ↦ rfl)
+  right_inv _ := MonoidHom.ext fun q ↦ by
+    obtain ⟨g, hg⟩ := QuotientAddGroup.mk_surjective q.toAdd; rw [← ofAdd_toAdd q, ← hg]; rfl
   map_mul' _ _ := MonoidHom.ext fun q ↦ by
-    obtain ⟨g, hg⟩ := QuotientAddGroup.mk_surjective q.toAdd
-    rw [← ofAdd_toAdd q, ← hg]
-    rfl
+    obtain ⟨g, hg⟩ := QuotientAddGroup.mk_surjective q.toAdd; rw [← ofAdd_toAdd q, ← hg]; rfl
 
 /-- Applying `stabilizerDistinguishedPointMulEquiv` on the class of `g` evaluates the character at
 `g`. -/
@@ -299,8 +265,7 @@ theorem stabilizerDistinguishedPointMulEquiv_apply (R A : Type*) [CommSemiring R
       (F.distinguishedPoint R A))
     (g : AddSubgroup.closure (S : Set G)) :
     F.stabilizerDistinguishedPointMulEquiv R A χ (.ofAdd (QuotientAddGroup.mk g)) =
-      χ.1 (.ofAdd g) :=
-  (rfl)
+      χ.1 (.ofAdd g) := (rfl)
 
 end Stabilizer
 
@@ -317,14 +282,10 @@ variable {G : Type*} [AddCommGroup G] (S : AddSubmonoid G)
 `x : R[S] →ₐ[R] A` does not vanish form a face `S.pointSupport x : SaturatedAddSubmonoid S`. -/
 def pointSupport (x : AddMonoidAlgebra R S →ₐ[R] A) : SaturatedAddSubmonoid S where
   carrier := {s : S | x (single s 1) ≠ 0}
-  zero_mem' := by
-    change x (single 0 1) ≠ 0
-    rw [← one_def, map_one]
-    exact one_ne_zero
+  zero_mem' := by change x (single 0 1) ≠ 0; rw [← one_def, map_one]; exact one_ne_zero
   add_mem' {a b} ha hb := by
     change x (single (a + b) 1) ≠ 0
-    rw [← one_mul (1 : R), ← single_mul_single, map_mul]
-    exact mul_ne_zero ha hb
+    rw [← one_mul (1 : R), ← single_mul_single, map_mul]; exact mul_ne_zero ha hb
   addSaturated {a b} hab := by
     change x (single (a + b) 1) ≠ 0 at hab
     rw [← one_mul (1 : R), ← single_mul_single, map_mul] at hab
@@ -333,23 +294,20 @@ def pointSupport (x : AddMonoidAlgebra R S →ₐ[R] A) : SaturatedAddSubmonoid 
 /-- An element `s : S` lies in `S.pointSupport x` iff `x (single s 1) ≠ 0`. -/
 @[simp]
 theorem mem_pointSupport_iff {S : AddSubmonoid G} {x : AddMonoidAlgebra R S →ₐ[R] A} {s : S} :
-    s ∈ S.pointSupport x ↔ x (single s 1) ≠ 0 :=
-  Iff.rfl
+    s ∈ S.pointSupport x ↔ x (single s 1) ≠ 0 := Iff.rfl
 
 /-- `pointSupport` is invariant under the action of the dense torus. -/
 @[simp]
 theorem pointSupport_smul {S : AddSubmonoid G}
     (χ : Multiplicative (AddSubgroup.closure (S : Set G)) →* Aˣ)
     (x : AddMonoidAlgebra R S →ₐ[R] A) :
-    S.pointSupport (χ • x) = S.pointSupport x := by
-  refine SetLike.ext fun s ↦ ?_
-  simp [(χ (.ofAdd (S.toGroupClosure s))).isUnit.mul_right_eq_zero]
+    S.pointSupport (χ • x) = S.pointSupport x :=
+  SetLike.ext fun s ↦ by simp [(χ (.ofAdd (S.toGroupClosure s))).isUnit.mul_right_eq_zero]
 
 /-- The support of `F.distinguishedPoint R A` is `F`. -/
 @[simp]
 theorem _root_.SaturatedAddSubmonoid.pointSupport_distinguishedPoint (F : SaturatedAddSubmonoid S) :
-    S.pointSupport (F.distinguishedPoint R A) = F := by
-  refine SetLike.ext fun s ↦ ?_
+    S.pointSupport (F.distinguishedPoint R A) = F := SetLike.ext fun s ↦ by
   by_cases hs : s ∈ F
   · have hmem : single s (1 : R) = single (↑(⟨s, hs⟩ : F)) (1 : R) := rfl
     simp [hs, hmem]
@@ -361,11 +319,10 @@ theorem faceIdeal_le_ker_iff_pointSupport_le (F : SaturatedAddSubmonoid S)
     (x : AddMonoidAlgebra R S →ₐ[R] A) :
     F.toAddSubmonoid.faceIdeal R ≤ RingHom.ker x ↔ S.pointSupport x ≤ F := by
   rw [F.toAddSubmonoid.faceIdeal_def, Ideal.span_le]
-  refine ⟨fun h s hs ↦ by_contra fun hnot ↦ hs ?_, fun h ↦ ?_⟩
-  · exact h ⟨s, hnot, of'_apply s⟩
-  · rintro _ ⟨s, hnot, rfl⟩
-    rw [SetLike.mem_coe, RingHom.mem_ker, of'_apply]
-    exact by_contra fun hne ↦ hnot (h hne)
+  refine ⟨fun h s hs ↦ by_contra fun hnot ↦ hs (h ⟨s, hnot, of'_apply s⟩), ?_⟩
+  rintro h _ ⟨s, hnot, rfl⟩
+  rw [SetLike.mem_coe, RingHom.mem_ker, of'_apply]
+  exact by_contra fun hne ↦ hnot (h hne)
 
 end PointSupport
 
@@ -403,8 +360,7 @@ theorem pointOfChar_single_mem (R : Type*) [CommSemiring R] {A : Type*} [CommSem
 @[simp]
 theorem pointOfChar_single_of_notMem (R : Type*) [CommSemiring R] {A : Type*} [CommSemiring A]
     [Algebra R A] (ψ : Multiplicative F.faceSubgroup →* Aˣ) {s : S} (hs : s ∉ F) (r : R) :
-    F.pointOfChar R ψ (single s r) = 0 := by
-  simp [pointOfChar, F.orbitMap_single_of_notMem R hs]
+    F.pointOfChar R ψ (single s r) = 0 := by simp [pointOfChar, F.orbitMap_single_of_notMem R hs]
 
 /-- At the trivial character `1`, `F.pointOfChar R 1` is `F.distinguishedPoint R A`. -/
 @[simp]
@@ -435,8 +391,7 @@ theorem smul_pointOfChar (R : Type*) [CommSemiring R] {A : Type*} [CommSemiring 
 @[simp]
 theorem pointSupport_pointOfChar (R : Type*) [CommSemiring R] {A : Type*} [CommSemiring A]
     [NoZeroDivisors A] [Nontrivial A] [Algebra R A] (ψ : Multiplicative F.faceSubgroup →* Aˣ) :
-    S.pointSupport (F.pointOfChar R ψ) = F := by
-  refine SetLike.ext fun s ↦ ?_
+    S.pointSupport (F.pointOfChar R ψ) = F := SetLike.ext fun s ↦ by
   by_cases hs : s ∈ F
   · have hmem : single s (1 : R) = single (↑(⟨s, hs⟩ : F)) (1 : R) := rfl
     simp [hs, hmem, (ψ _).ne_zero]
@@ -444,8 +399,7 @@ theorem pointSupport_pointOfChar (R : Type*) [CommSemiring R] {A : Type*} [CommS
 
 /-- `F.pointOfChar R` is injective over any commutative `R`-algebra `A`. -/
 theorem pointOfChar_injective (R A : Type*) [CommSemiring R] [CommSemiring A] [Algebra R A] :
-    Function.Injective (F.pointOfChar R (A := A)) := by
-  intro ψ₁ ψ₂ h
+    Function.Injective (F.pointOfChar R (A := A)) := fun ψ₁ ψ₂ h ↦ by
   have honF (a : F) : ψ₁ (.ofAdd (F.toFaceSubgroup a)) = ψ₂ (.ofAdd (F.toFaceSubgroup a)) := by
     have eval := AlgHom.congr_fun h (single (a : S) (1 : R))
     rw [F.pointOfChar_single_mem, F.pointOfChar_single_mem, one_smul, one_smul] at eval
@@ -466,9 +420,7 @@ noncomputable def pointSupportSubtypeEquivChar (R K : Type*) [CommSemiring R] [F
       let := (mapDomainRingHom R F.toFaceSubgroup).toAlgebra
       have := F.isLocalization_addMonoidAlgebra_faceSubgroup R
       have : IsScalarTower R (AddMonoidAlgebra R F) (AddMonoidAlgebra R F.faceSubgroup) :=
-        IsScalarTower.of_algebraMap_eq fun r ↦ by
-          rw [RingHom.algebraMap_toAlgebra]
-          simp
+        IsScalarTower.of_algebraMap_eq fun r ↦ by rw [RingHom.algebraMap_toAlgebra]; simp
       let xF : AddMonoidAlgebra R F →ₐ[R] K :=
         x.comp (mapDomainAlgHom R R F.toAddSubmonoid.subtype)
       have hxF_unit (y : MonoidHom.mrange (of R F)) : IsUnit (xF y) := by
@@ -491,20 +443,18 @@ noncomputable def pointSupportSubtypeEquivChar (R K : Type*) [CommSemiring R] [F
           rw [← halg]
           change IsLocalization.lift hxF_unit _ = _
           rw [IsLocalization.lift_eq, AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
-          simp only [xF, AlgHom.comp_apply, mapDomainAlgHom_apply, mapDomain_single]
-          rfl
+          simp only [xF, AlgHom.comp_apply, mapDomainAlgHom_apply, mapDomain_single]; rfl
         rw [hmem, F.pointOfChar_single_mem, one_smul]
         simpa [ψ, AddMonoidAlgebra.lift_symm_apply] using hxgp
-      · have hx0 : x (single s 1) = 0 := by_contra fun hne ↦ hs (hx ▸ hne)
-        rw [F.pointOfChar_single_of_notMem R ψ hs, hx0]⟩).symm
+      · rw [F.pointOfChar_single_of_notMem R ψ hs,
+          show x (single s 1) = 0 from by_contra fun hne ↦ hs (hx ▸ hne)]⟩).symm
 
 /-- Inverse of `pointSupportSubtypeEquivChar` evaluates to `F.pointOfChar R ψ`. -/
 @[simp]
 theorem coe_pointSupportSubtypeEquivChar_symm_apply (R K : Type*) [CommSemiring R] [Field K]
     [Algebra R K] (ψ : Multiplicative F.faceSubgroup →* Kˣ) :
     ((F.pointSupportSubtypeEquivChar R K).symm ψ : AddMonoidAlgebra R S →ₐ[R] K) =
-      F.pointOfChar R ψ :=
-  (rfl)
+      F.pointOfChar R ψ := (rfl)
 
 /-- Evaluating `pointSupportSubtypeEquivChar` at `F.toFaceSubgroup a` recovers the value of `x` on
 `single a 1`. -/
@@ -525,19 +475,16 @@ theorem setOf_pointSupport_eq_orbit (R K : Type*) [CommSemiring R] [Field K] [Ro
     [Algebra R K] :
     {x : AddMonoidAlgebra R S →ₐ[R] K | S.pointSupport x = F} =
       MulAction.orbit (Multiplicative (AddSubgroup.closure (S : Set G)) →* Kˣ)
-        (F.distinguishedPoint R K) := by
-  ext x
+        (F.distinguishedPoint R K) := Set.ext fun x ↦ by
   rw [MulAction.mem_orbit_iff]
-  refine ⟨fun hx ↦ ?_, ?_⟩
-  · let ψ := F.pointSupportSubtypeEquivChar R K ⟨x, hx⟩
-    have hx_eq : x = F.pointOfChar R ψ :=
-      congrArg Subtype.val ((F.pointSupportSubtypeEquivChar R K).symm_apply_apply ⟨x, hx⟩).symm
-    obtain ⟨χ, hχ⟩ :=
-      RootableBy.exists_monoidHom_comp_toMultiplicative_eq F.faceSubgroup.subtype_injective ψ
-    refine ⟨χ, ?_⟩
-    rw [← F.pointOfChar_one R K, F.smul_pointOfChar, hχ, mul_one ψ, hx_eq]
-  · rintro ⟨χ, rfl⟩
-    exact (S.pointSupport_smul χ _).trans F.pointSupport_distinguishedPoint
+  refine ⟨fun hx ↦ ?_,
+    fun ⟨χ, hχ⟩ ↦ hχ ▸ (S.pointSupport_smul χ _).trans F.pointSupport_distinguishedPoint⟩
+  let ψ := F.pointSupportSubtypeEquivChar R K ⟨x, hx⟩
+  have hx_eq : x = F.pointOfChar R ψ :=
+    congrArg Subtype.val ((F.pointSupportSubtypeEquivChar R K).symm_apply_apply ⟨x, hx⟩).symm
+  obtain ⟨χ, hχ⟩ :=
+    RootableBy.exists_monoidHom_comp_toMultiplicative_eq F.faceSubgroup.subtype_injective ψ
+  exact ⟨χ, by rw [← F.pointOfChar_one R K, F.smul_pointOfChar, hχ, mul_one ψ, hx_eq]⟩
 
 end OrbitParametrization
 
@@ -561,9 +508,8 @@ noncomputable def faceOrbitEquiv (R K : Type*) [CommSemiring R] [Field K] [Roota
         (Multiplicative (AddSubgroup.closure (S : Set G)) →* Kˣ)
         (AddMonoidAlgebra R S →ₐ[R] K) where
   toFun F := ⟦F.distinguishedPoint R K⟧
-  invFun := Quotient.lift (S.pointSupport (R := R) (A := K)) fun x y hxy ↦ by
-    obtain ⟨χ, rfl⟩ := hxy
-    exact S.pointSupport_smul χ y
+  invFun := Quotient.lift (S.pointSupport (R := R) (A := K)) fun _ y ⟨χ, hχ⟩ ↦
+    hχ ▸ S.pointSupport_smul χ y
   left_inv F := F.pointSupport_distinguishedPoint
   right_inv q := by
     obtain ⟨x, rfl⟩ := Quotient.exists_rep q
@@ -576,15 +522,13 @@ noncomputable def faceOrbitEquiv (R K : Type*) [CommSemiring R] [Field K] [Roota
 @[simp]
 theorem faceOrbitEquiv_apply (R K : Type*) [CommSemiring R] [Field K] [RootableBy Kˣ ℕ]
     [Algebra R K] (F : SaturatedAddSubmonoid S) :
-    S.faceOrbitEquiv R K F = ⟦F.distinguishedPoint R K⟧ :=
-  (rfl)
+    S.faceOrbitEquiv R K F = ⟦F.distinguishedPoint R K⟧ := (rfl)
 
 /-- The inverse of `S.faceOrbitEquiv R K` sends the torus orbit of `x` to `S.pointSupport x`. -/
 @[simp]
 theorem faceOrbitEquiv_symm_mk (R K : Type*) [CommSemiring R] [Field K] [RootableBy Kˣ ℕ]
     [Algebra R K] (x : AddMonoidAlgebra R S →ₐ[R] K) :
-    (S.faceOrbitEquiv R K).symm ⟦x⟧ = S.pointSupport x :=
-  (rfl)
+    (S.faceOrbitEquiv R K).symm ⟦x⟧ = S.pointSupport x := (rfl)
 
 end OrbitBijection
 
@@ -601,9 +545,8 @@ def kerCompHomInclusionMulEquiv {L : Type*} [AddCommGroup L] {H M : AddSubgroup 
   toFun ψ :=
     AddMonoidHom.toMultiplicativeLeft <|
       QuotientAddGroup.lift (H.addSubgroupOf M) ψ.1.toAdditiveRight fun x hx ↦ by
-        have eval := DFunLike.congr_fun ψ.2 (.ofAdd ⟨x.1, hx⟩)
         rw [AddMonoidHom.mem_ker]
-        exact Additive.toMul.injective eval
+        exact Additive.toMul.injective (DFunLike.congr_fun ψ.2 (.ofAdd ⟨x.1, hx⟩))
   invFun η :=
     ⟨η.comp (QuotientAddGroup.mk' (H.addSubgroupOf M)).toMultiplicative,
       MonoidHom.mem_ker.2 <| MonoidHom.ext fun g ↦ by
@@ -612,14 +555,10 @@ def kerCompHomInclusionMulEquiv {L : Type*} [AddCommGroup L] {H M : AddSubgroup 
         rw [(QuotientAddGroup.eq_zero_iff (inclusion hHM g.toAdd)).2 g.toAdd.2,
           ofAdd_zero, map_one]⟩
   left_inv _ := Subtype.ext (MonoidHom.ext fun _ ↦ rfl)
-  right_inv η := MonoidHom.ext fun q ↦ by
-    obtain ⟨x, hx⟩ := QuotientAddGroup.mk_surjective q.toAdd
-    rw [← ofAdd_toAdd q, ← hx]
-    rfl
+  right_inv _ := MonoidHom.ext fun q ↦ by
+    obtain ⟨x, hx⟩ := QuotientAddGroup.mk_surjective q.toAdd; rw [← ofAdd_toAdd q, ← hx]; rfl
   map_mul' _ _ := MonoidHom.ext fun q ↦ by
-    obtain ⟨x, hx⟩ := QuotientAddGroup.mk_surjective q.toAdd
-    rw [← ofAdd_toAdd q, ← hx]
-    rfl
+    obtain ⟨x, hx⟩ := QuotientAddGroup.mk_surjective q.toAdd; rw [← ofAdd_toAdd q, ← hx]; rfl
 
 /-- `kerCompHomInclusionMulEquiv` evaluates on the class of `x : M` as `ψ.1 (.ofAdd x)`. -/
 @[simp]
@@ -627,8 +566,7 @@ theorem kerCompHomInclusionMulEquiv_apply {L : Type*} [AddCommGroup L] {H M : Ad
     (hHM : H ≤ M) (U : Type*) [CommGroup U]
     (ψ : (MonoidHom.compHom' (P := U) (AddSubgroup.inclusion hHM).toMultiplicative).ker)
     (x : M) :
-    kerCompHomInclusionMulEquiv hHM U ψ (.ofAdd (QuotientAddGroup.mk x)) = ψ.1 (.ofAdd x) :=
-  (rfl)
+    kerCompHomInclusionMulEquiv hHM U ψ (.ofAdd (QuotientAddGroup.mk x)) = ψ.1 (.ofAdd x) := (rfl)
 
 end AddSubgroup
 
@@ -650,9 +588,8 @@ theorem _root_.AddSubmonoid.pointSupport_comp_normalization {R A : Type*} [CommS
       (AddSubmonoid.inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure)))) =
       S.nsmulSaturationInfClosureFaceOrderIso
         ((S.nsmulSaturation ⊓
-          (AddSubgroup.closure (S : Set G)).toAddSubmonoid).pointSupport y) := by
-  refine SetLike.ext fun s ↦ ?_
-  simp [SaturatedAddSubmonoid.mem_comap]
+          (AddSubgroup.closure (S : Set G)).toAddSubmonoid).pointSupport y) :=
+  SetLike.ext fun _ ↦ by simp [SaturatedAddSubmonoid.mem_comap]
 
 /-- Character restriction from `F.faceSubgroup.nsmulSaturation` to `F.faceSubgroup`, governing the
 normalization map `Spec K[S_sat] → Spec K[S]` on the `F`-orbit. -/
@@ -667,8 +604,7 @@ def orbitNormalizationCharHom (F : SaturatedAddSubmonoid S) (A : Type*) [CommSem
 theorem orbitNormalizationCharHom_apply (F : SaturatedAddSubmonoid S) {A : Type*} [CommSemiring A]
     (ψ : Multiplicative F.faceSubgroup.nsmulSaturation →* Aˣ) (g : F.faceSubgroup) :
     F.orbitNormalizationCharHom A ψ (.ofAdd g) =
-      ψ (.ofAdd (AddSubgroup.inclusion F.faceSubgroup.le_nsmulSaturation g)) :=
-  (rfl)
+      ψ (.ofAdd (AddSubgroup.inclusion F.faceSubgroup.le_nsmulSaturation g)) := (rfl)
 
 /-- Under `faceSubgroupNSMulSaturationEquiv`, precomposing a point on the normalized `F`-stratum
 with the normalization map `R[S] →ₐ[R] R[S_sat]` corresponds to `F.orbitNormalizationCharHom A`. -/
@@ -691,19 +627,18 @@ theorem pointOfChar_comp_normalization (F : SaturatedAddSubmonoid S) (R : Type*)
     have h1 : single (inc s) (1 : R) = single (↑(⟨inc s, hs_sat⟩ : Fsat)) (1 : R) := rfl
     have h2 : single s (1 : R) = single (↑(⟨s, hs⟩ : F)) (1 : R) := rfl
     have heq : F.faceSubgroupNSMulSaturationEquiv (Fsat.toFaceSubgroup ⟨inc s, hs_sat⟩) =
-        AddSubgroup.inclusion F.faceSubgroup.le_nsmulSaturation (F.toFaceSubgroup ⟨s, hs⟩) := by
-      apply Subtype.ext
-      apply Subtype.ext
-      rw [F.coe_faceSubgroupNSMulSaturationEquiv_apply, Fsat.coe_toFaceSubgroup,
-        AddSubmonoid.coe_toGroupClosure]
-      change (s : G) = ((F.toFaceSubgroup ⟨s, hs⟩ : AddSubgroup.closure (S : Set G)) : G)
-      rw [F.coe_toFaceSubgroup, AddSubmonoid.coe_toGroupClosure]
+        AddSubgroup.inclusion F.faceSubgroup.le_nsmulSaturation (F.toFaceSubgroup ⟨s, hs⟩) :=
+      Subtype.ext <| Subtype.ext <| by
+        rw [F.coe_faceSubgroupNSMulSaturationEquiv_apply, Fsat.coe_toFaceSubgroup,
+          AddSubmonoid.coe_toGroupClosure]
+        change (s : G) = ((F.toFaceSubgroup ⟨s, hs⟩ : AddSubgroup.closure (S : Set G)) : G)
+        rw [F.coe_toFaceSubgroup, AddSubmonoid.coe_toGroupClosure]
     rw [AlgHom.comp_apply, mapDomainAlgHom_apply, mapDomain_single, h1, Fsat.pointOfChar_single_mem,
       h2, F.pointOfChar_single_mem, one_smul, one_smul]
     exact congrArg (fun z ↦ (ψ (.ofAdd z) : A)) heq
-  · have hs_sat : inc s ∉ Fsat := fun h ↦ hs ((hmem_iff s).1 h)
-    rw [AlgHom.comp_apply, mapDomainAlgHom_apply, mapDomain_single,
-      Fsat.pointOfChar_single_of_notMem R _ hs_sat, F.pointOfChar_single_of_notMem R _ hs]
+  · rw [AlgHom.comp_apply, mapDomainAlgHom_apply, mapDomain_single,
+      Fsat.pointOfChar_single_of_notMem R _ fun h ↦ hs ((hmem_iff s).1 h),
+      F.pointOfChar_single_of_notMem R _ hs]
 
 /-- Whenever `[RootableBy Aˣ ℕ]` (in particular over any algebraically closed field), normalization
 maps the `F_sat`-orbit surjectively onto the `F`-orbit in every characteristic. -/
@@ -714,8 +649,7 @@ theorem orbitNormalizationCharHom_surjective (F : SaturatedAddSubmonoid S) (A : 
     (AddSubgroup.inclusion_injective F.faceSubgroup.le_nsmulSaturation) ψ
 
 /-- The kernel of `F.orbitNormalizationCharHom A` is canonically isomorphic to the character group
-of the finite saturation quotient
-`F.faceSubgroup.nsmulSaturation ⧸ F.faceSubgroup.addSubgroupOf F.faceSubgroup.nsmulSaturation`. -/
+of the saturation quotient of `F.faceSubgroup` in `F.faceSubgroup.nsmulSaturation`. -/
 def orbitNormalizationCharHomKerEquiv (F : SaturatedAddSubmonoid S) (A : Type*)
     [CommSemiring A] :
     (F.orbitNormalizationCharHom A).ker ≃*
@@ -728,8 +662,8 @@ def orbitNormalizationCharHomKerEquiv (F : SaturatedAddSubmonoid S) (A : Type*)
 theorem orbitNormalizationCharHomKerEquiv_apply (F : SaturatedAddSubmonoid S) (A : Type*)
     [CommSemiring A] (ψ : (F.orbitNormalizationCharHom A).ker)
     (x : F.faceSubgroup.nsmulSaturation) :
-    F.orbitNormalizationCharHomKerEquiv A ψ (.ofAdd (QuotientAddGroup.mk x)) = ψ.1 (.ofAdd x) :=
-  (rfl)
+    F.orbitNormalizationCharHomKerEquiv A ψ (.ofAdd (QuotientAddGroup.mk x)) =
+      ψ.1 (.ofAdd x) := (rfl)
 
 /-- When `S` is finitely generated and the order of the saturation quotient
 `Q_F = F.faceSubgroup.nsmulSaturation ⧸ F.faceSubgroup` is invertible in an algebraically closed
@@ -745,12 +679,10 @@ theorem card_orbitNormalizationCharHom_ker (hS : S.FG) (F : SaturatedAddSubmonoi
     F.faceSubgroup.addSubgroupOf F.faceSubgroup.nsmulSaturation
   have : Finite Q := F.finite_quotient_nsmulSaturation_faceSubgroup hS
   have : Finite (Multiplicative Q) := Finite.of_equiv Q Multiplicative.ofAdd
-  have hcard : Nat.card (Multiplicative Q) = Nat.card Q :=
-    Nat.card_congr Multiplicative.ofAdd
+  have hcard : Nat.card (Multiplicative Q) = Nat.card Q := Nat.card_congr Multiplicative.ofAdd
   have hdvd : Monoid.exponent (Multiplicative Q) ∣ Nat.card (Multiplicative Q) := by
     have := Fintype.ofFinite (Multiplicative Q)
     simpa [Nat.card_eq_fintype_card] using Group.exponent_dvd_card (G := Multiplicative Q)
-  have : HasEnoughRootsOfUnity K (Nat.card Q) := inferInstance
   have : HasEnoughRootsOfUnity K (Monoid.exponent (Multiplicative Q)) :=
     HasEnoughRootsOfUnity.of_dvd K (hcard ▸ hdvd)
   rw [Nat.card_congr (F.orbitNormalizationCharHomKerEquiv K).toEquiv,
@@ -763,25 +695,20 @@ theorem orbitNormalizationCharHom_injective_iff_of_charZero (hS : S.FG)
     (F : SaturatedAddSubmonoid S) (K : Type*) [Field K] [IsAlgClosed K] [CharZero K] :
     Function.Injective (F.orbitNormalizationCharHom K) ↔
       F.faceSubgroup = F.faceSubgroup.nsmulSaturation := by
-  let H := F.faceSubgroup.addSubgroupOf F.faceSubgroup.nsmulSaturation
-  let Q := F.faceSubgroup.nsmulSaturation ⧸ H
+  let Q := F.faceSubgroup.nsmulSaturation ⧸
+    F.faceSubgroup.addSubgroupOf F.faceSubgroup.nsmulSaturation
   have : Finite Q := F.finite_quotient_nsmulSaturation_faceSubgroup hS
-  have hpos : 0 < Nat.card Q := Nat.card_pos
-  have : NeZero ((Nat.card Q : ℕ) : K) := ⟨Nat.cast_ne_zero.2 hpos.ne'⟩
+  have : NeZero ((Nat.card Q : ℕ) : K) := ⟨Nat.cast_ne_zero.2 Nat.card_pos.ne'⟩
   rw [← MonoidHom.ker_eq_bot_iff]
   refine ⟨fun hbot ↦ le_antisymm F.faceSubgroup.le_nsmulSaturation fun z hz ↦ ?_,
-    fun heq ↦ eq_bot_iff.2 fun ψ hψ ↦ ?_⟩
-  · have h1 : Nat.card Q = 1 := by
-      have hc := F.card_orbitNormalizationCharHom_ker hS K
-      rw [hbot, Nat.card_unique] at hc
-      exact hc.symm
-    have : Subsingleton Q := Finite.card_le_one_iff_subsingleton.1 h1.le
-    have hq : (QuotientAddGroup.mk (⟨z, hz⟩ : F.faceSubgroup.nsmulSaturation) : Q) = 0 :=
-      Subsingleton.elim _ _
-    exact (QuotientAddGroup.eq_zero_iff (⟨z, hz⟩ : F.faceSubgroup.nsmulSaturation)).1 hq
-  · refine MonoidHom.ext fun g ↦ ?_
-    rw [← ofAdd_toAdd g]
-    exact DFunLike.congr_fun hψ (.ofAdd ⟨g.toAdd.1, heq.ge g.toAdd.2⟩)
+    fun heq ↦ eq_bot_iff.2 fun ψ hψ ↦ MonoidHom.ext fun g ↦ by
+      rw [← ofAdd_toAdd g]; exact DFunLike.congr_fun hψ (.ofAdd ⟨g.toAdd.1, heq.ge g.toAdd.2⟩)⟩
+  have h1 : Nat.card Q = 1 := by
+    have hc := F.card_orbitNormalizationCharHom_ker hS K
+    rw [hbot, Nat.card_unique] at hc; exact hc.symm
+  have : Subsingleton Q := Finite.card_le_one_iff_subsingleton.1 h1.le
+  exact (QuotientAddGroup.eq_zero_iff (⟨z, hz⟩ : F.faceSubgroup.nsmulSaturation)).1
+    (Subsingleton.elim (QuotientAddGroup.mk ⟨z, hz⟩ : Q) 0)
 
 /-- In prime characteristic `p`, if every element of the saturation quotient
 `F.faceSubgroup.nsmulSaturation ⧸ F.faceSubgroup` is annihilated by a power of `p`, then
@@ -802,12 +729,10 @@ theorem orbitNormalizationCharHom_bijective_of_charP (F : SaturatedAddSubmonoid 
     have hpow : (η q : K) ^ p ^ e = 1 := by
       rw [← Units.val_pow_eq_pow_val, ← map_pow, ← ofAdd_toAdd q, ← ofAdd_nsmul, he, ofAdd_zero,
         map_one, Units.val_one]
-    have hsub : ((η q : K) - 1) ^ p ^ e = 0 := by
-      rw [sub_pow_char_pow, hpow, one_pow, sub_self]
+    have hsub : ((η q : K) - 1) ^ p ^ e = 0 := by rw [sub_pow_char_pow, hpow, one_pow, sub_self]
     exact Units.ext (sub_eq_zero.1 (eq_zero_of_pow_eq_zero hsub))
-  have hker : (⟨ψ, hψ⟩ : (F.orbitNormalizationCharHom K).ker) = 1 :=
-    (F.orbitNormalizationCharHomKerEquiv K).injective (hη.trans (map_one _).symm)
-  exact congrArg Subtype.val hker
+  exact congrArg Subtype.val ((F.orbitNormalizationCharHomKerEquiv K).injective
+    (hη.trans (map_one _).symm))
 
 end OrbitNormalization
 
