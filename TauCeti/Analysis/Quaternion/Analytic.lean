@@ -673,17 +673,18 @@ private noncomputable def boxFaceChart (a b : Fin 4 → ℝ) (p : Fin 4 × Bool)
   ⟨fun z ↦ dq (p.1.insertNth (cond p.2 (b p.1) (a p.1)) z.1),
     dq.continuous.comp (continuous_const.finInsertNth p.1 continuous_subtype_val)⟩
 
-private theorem boxFaceChart_mem_image_Icc {a b : Fin 4 → ℝ} (hab : a ≤ b) (p : Fin 4 × Bool)
-    (z : BoxFaceDomain a b p) : boxFaceChart a b p z ∈ dq '' Icc a b :=
-  mem_image_of_mem dq (Fin.insertNth_mem_Icc.mpr ⟨by cases p.2 <;> simp [hab p.1], z.2⟩)
-
-private theorem integrable_comp_boxFaceChart {a b : Fin 4 → ℝ} (hab : a ≤ b) {g : ℍ → ℍ}
-    (hg : ContinuousOn g (dq '' Icc a b)) (p : Fin 4 × Bool) :
-    Integrable (fun z : BoxFaceDomain a b p ↦ g (boxFaceChart a b p z))
-      (Measure.comap Subtype.val volume) :=
-  (integrableOn_iff_comap_subtypeVal measurableSet_Icc).mp <|
-    (hg.comp (dq.continuous.comp (continuous_const.finInsertNth p.1 continuous_id)).continuousOn
-      fun x hx ↦ boxFaceChart_mem_image_Icc hab p ⟨x, hx⟩).integrableOn_Icc
+private theorem integrable_comp_boxFaceChart {a b : Fin 4 → ℝ} {f : ℍ → ℍ}
+    (hf : ∀ i : Fin 4,
+      IntegrableOn (fun z ↦ f (dq (i.insertNth (a i) z)))
+        (Icc (a ∘ i.succAbove) (b ∘ i.succAbove)) ∧
+      IntegrableOn (fun z ↦ f (dq (i.insertNth (b i) z)))
+        (Icc (a ∘ i.succAbove) (b ∘ i.succAbove)))
+    (p : Fin 4 × Bool) :
+    Integrable (fun z : BoxFaceDomain a b p ↦ f (boxFaceChart a b p z))
+      (Measure.comap Subtype.val volume) := by
+  rcases p with ⟨i, (_ | _)⟩
+  · exact (integrableOn_iff_comap_subtypeVal measurableSet_Icc).mp (hf i).1
+  · exact (integrableOn_iff_comap_subtypeVal measurableSet_Icc).mp (hf i).2
 
 private theorem boxBoundarySum_comp_dq_eq_sum (a b : Fin 4 → ℝ) (G : Fin 4 → ℍ → ℍ) :
     boxBoundarySum a b (fun i x ↦ G i (dq x)) =
@@ -755,17 +756,16 @@ private theorem notMem_iUnion_range_boxFaceChart {a b : Fin 4 → ℝ} {q₀ : �
   · simp only [boxFaceChart, ContinuousMap.coe_mk, Bool.cond_true] at hzq
     exact (hq₀ i z.1 z.2).2 hzq
 
-private theorem dq_insertNth_ne_of_mem_pi_Ioo {a b x₀ : Fin 4 → ℝ}
-    (hx₀ : x₀ ∈ pi univ (fun i ↦ Ioo (a i) (b i))) (i : Fin 4) (z : Fin 3 → ℝ) :
-    dq (i.insertNth (a i) z) ≠ dq x₀ ∧ dq (i.insertNth (b i) z) ≠ dq x₀ :=
-  ⟨fun h ↦ (hx₀ i (mem_univ i)).1.ne (by simpa using congrFun (dq_injective h) i),
-   fun h ↦ (hx₀ i (mem_univ i)).2.ne (by simpa using (congrFun (dq_injective h) i).symm)⟩
-
 /-- Quantitative `HasFPowerSeriesOnBall` expansion on `eball q₀ ((√2 - 1) * δ)` of the left
-Cauchy–Fueter box boundary potential when every face of `dq '' Icc a b` lies at Euclidean distance
-at least `δ > 0` from `q₀`. -/
+Cauchy–Fueter box boundary potential for a facewise-integrable density `f` when every face of
+`dq '' Icc a b` lies at Euclidean distance at least `δ > 0` from `q₀`. -/
 theorem exists_hasFPowerSeriesOnBall_boxBoundarySum_cauchyFueterKernel_mul
-    {a b : Fin 4 → ℝ} (hab : a ≤ b) {f : ℍ → ℍ} (hc : ContinuousOn f (dq '' Icc a b))
+    {a b : Fin 4 → ℝ} {f : ℍ → ℍ}
+    (hf : ∀ i : Fin 4,
+      IntegrableOn (fun z ↦ f (dq (i.insertNth (a i) z)))
+        (Icc (a ∘ i.succAbove) (b ∘ i.succAbove)) ∧
+      IntegrableOn (fun z ↦ f (dq (i.insertNth (b i) z)))
+        (Icc (a ∘ i.succAbove) (b ∘ i.succAbove)))
     {q₀ : ℍ} {δ : ℝ} (hδ₀ : 0 < δ)
     (hδ : ∀ i : Fin 4, ∀ z ∈ Icc (a ∘ i.succAbove) (b ∘ i.succAbove),
       δ ≤ ‖dq (i.insertNth (a i) z) - q₀‖ ∧ δ ≤ ‖dq (i.insertNth (b i) z) - q₀‖) :
@@ -779,15 +779,20 @@ theorem exists_hasFPowerSeriesOnBall_boxBoundarySum_cauchyFueterKernel_mul
     (fun _ ↦ Measure.comap Subtype.val volume)
     (fun p _ z ↦ boxFaceChart_ne_of_pos hδ₀ hδ p z) hδ₀
     (fun p _ z ↦ le_norm_boxFaceChart_sub hδ p z)
-    (fun p _ ↦ (integrable_comp_boxFaceChart hab
-      ((continuousOn_const (c := dq (Pi.single p.1 1))).mul hc) p).smul (cond p.2 (1 : ℝ) (-1)))
+    (fun p _ ↦ ((integrable_comp_boxFaceChart hf p).const_mul (dq (Pi.single p.1 1))).smul
+      (cond p.2 (1 : ℝ) (-1)))
   exact ⟨_, hseries.congr fun q _ ↦ (boxBoundarySum_cauchyFueterKernel_mul_eq_sum a b f q).symm⟩
 
 /-- Quantitative `HasFPowerSeriesOnBall` expansion on `eball q₀ ((√2 - 1) * δ)` of the right
-Cauchy–Fueter box boundary potential when every face of `dq '' Icc a b` lies at Euclidean distance
-at least `δ > 0` from `q₀`. -/
+Cauchy–Fueter box boundary potential for a facewise-integrable density `f` when every face of
+`dq '' Icc a b` lies at Euclidean distance at least `δ > 0` from `q₀`. -/
 theorem exists_hasFPowerSeriesOnBall_boxBoundarySum_mul_cauchyFueterKernel
-    {a b : Fin 4 → ℝ} (hab : a ≤ b) {f : ℍ → ℍ} (hc : ContinuousOn f (dq '' Icc a b))
+    {a b : Fin 4 → ℝ} {f : ℍ → ℍ}
+    (hf : ∀ i : Fin 4,
+      IntegrableOn (fun z ↦ f (dq (i.insertNth (a i) z)))
+        (Icc (a ∘ i.succAbove) (b ∘ i.succAbove)) ∧
+      IntegrableOn (fun z ↦ f (dq (i.insertNth (b i) z)))
+        (Icc (a ∘ i.succAbove) (b ∘ i.succAbove)))
     {q₀ : ℍ} {δ : ℝ} (hδ₀ : 0 < δ)
     (hδ : ∀ i : Fin 4, ∀ z ∈ Icc (a ∘ i.succAbove) (b ∘ i.succAbove),
       δ ≤ ‖dq (i.insertNth (a i) z) - q₀‖ ∧ δ ≤ ‖dq (i.insertNth (b i) z) - q₀‖) :
@@ -801,14 +806,20 @@ theorem exists_hasFPowerSeriesOnBall_boxBoundarySum_mul_cauchyFueterKernel
     (fun _ ↦ Measure.comap Subtype.val volume)
     (fun p _ z ↦ boxFaceChart_ne_of_pos hδ₀ hδ p z) hδ₀
     (fun p _ z ↦ le_norm_boxFaceChart_sub hδ p z)
-    (fun p _ ↦ (integrable_comp_boxFaceChart hab
-      (hc.mul (continuousOn_const (c := dq (Pi.single p.1 1)))) p).smul (cond p.2 (1 : ℝ) (-1)))
+    (fun p _ ↦ ((integrable_comp_boxFaceChart hf p).mul_const (dq (Pi.single p.1 1))).smul
+      (cond p.2 (1 : ℝ) (-1)))
   exact ⟨_, hseries.congr fun q _ ↦ (boxBoundarySum_mul_cauchyFueterKernel_eq_sum a b f q).symm⟩
 
-/-- The left Cauchy–Fueter box boundary potential is real analytic at every point not lying on any
-of the eight closed faces of `dq '' Icc a b`. -/
+/-- The left Cauchy–Fueter box boundary potential of a facewise-integrable density is real analytic
+at every point not lying on any of the eight closed faces of `dq '' Icc a b`. -/
 theorem analyticAt_boxBoundarySum_cauchyFueterKernel_mul
-    {a b : Fin 4 → ℝ} (hab : a ≤ b) {f : ℍ → ℍ} (hc : ContinuousOn f (dq '' Icc a b)) {q₀ : ℍ}
+    {a b : Fin 4 → ℝ} {f : ℍ → ℍ}
+    (hf : ∀ i : Fin 4,
+      IntegrableOn (fun z ↦ f (dq (i.insertNth (a i) z)))
+        (Icc (a ∘ i.succAbove) (b ∘ i.succAbove)) ∧
+      IntegrableOn (fun z ↦ f (dq (i.insertNth (b i) z)))
+        (Icc (a ∘ i.succAbove) (b ∘ i.succAbove)))
+    {q₀ : ℍ}
     (hq₀ : ∀ i : Fin 4, ∀ z ∈ Icc (a ∘ i.succAbove) (b ∘ i.succAbove),
       dq (i.insertNth (a i) z) ≠ q₀ ∧ dq (i.insertNth (b i) z) ≠ q₀) :
     AnalyticAt ℝ
@@ -817,15 +828,21 @@ theorem analyticAt_boxBoundarySum_cauchyFueterKernel_mul
   have han := analyticAt_sum_integral_cauchyFueterKernel_mul
     (Finset.univ : Finset (Fin 4 × Bool)) (boxFaceChart a b)
     (fun _ ↦ Measure.comap Subtype.val volume) (notMem_iUnion_range_boxFaceChart hq₀)
-    (fun p _ ↦ (integrable_comp_boxFaceChart hab
-      ((continuousOn_const (c := dq (Pi.single p.1 1))).mul hc) p).smul (cond p.2 (1 : ℝ) (-1)))
+    (fun p _ ↦ ((integrable_comp_boxFaceChart hf p).const_mul (dq (Pi.single p.1 1))).smul
+      (cond p.2 (1 : ℝ) (-1)))
   exact han.congr (Eventually.of_forall fun q ↦
     (boxBoundarySum_cauchyFueterKernel_mul_eq_sum a b f q).symm)
 
-/-- The right Cauchy–Fueter box boundary potential is real analytic at every point not lying on any
-of the eight closed faces of `dq '' Icc a b`. -/
+/-- The right Cauchy–Fueter box boundary potential of a facewise-integrable density is real analytic
+at every point not lying on any of the eight closed faces of `dq '' Icc a b`. -/
 theorem analyticAt_boxBoundarySum_mul_cauchyFueterKernel
-    {a b : Fin 4 → ℝ} (hab : a ≤ b) {f : ℍ → ℍ} (hc : ContinuousOn f (dq '' Icc a b)) {q₀ : ℍ}
+    {a b : Fin 4 → ℝ} {f : ℍ → ℍ}
+    (hf : ∀ i : Fin 4,
+      IntegrableOn (fun z ↦ f (dq (i.insertNth (a i) z)))
+        (Icc (a ∘ i.succAbove) (b ∘ i.succAbove)) ∧
+      IntegrableOn (fun z ↦ f (dq (i.insertNth (b i) z)))
+        (Icc (a ∘ i.succAbove) (b ∘ i.succAbove)))
+    {q₀ : ℍ}
     (hq₀ : ∀ i : Fin 4, ∀ z ∈ Icc (a ∘ i.succAbove) (b ∘ i.succAbove),
       dq (i.insertNth (a i) z) ≠ q₀ ∧ dq (i.insertNth (b i) z) ≠ q₀) :
     AnalyticAt ℝ
@@ -834,36 +851,42 @@ theorem analyticAt_boxBoundarySum_mul_cauchyFueterKernel
   have han := analyticAt_sum_integral_mul_cauchyFueterKernel
     (Finset.univ : Finset (Fin 4 × Bool)) (boxFaceChart a b)
     (fun _ ↦ Measure.comap Subtype.val volume) (notMem_iUnion_range_boxFaceChart hq₀)
-    (fun p _ ↦ (integrable_comp_boxFaceChart hab
-      (hc.mul (continuousOn_const (c := dq (Pi.single p.1 1)))) p).smul (cond p.2 (1 : ℝ) (-1)))
+    (fun p _ ↦ ((integrable_comp_boxFaceChart hf p).mul_const (dq (Pi.single p.1 1))).smul
+      (cond p.2 (1 : ℝ) (-1)))
   exact han.congr (Eventually.of_forall fun q ↦
     (boxBoundarySum_mul_cauchyFueterKernel_eq_sum a b f q).symm)
 
-/-- The left Cauchy–Fueter box boundary potential is real analytic on neighbourhoods throughout the
-open box `dq '' pi univ (fun i ↦ Ioo (a i) (b i))`. -/
+/-- The left Cauchy–Fueter box boundary potential of a facewise-integrable density is real analytic
+on neighbourhoods throughout the complement of the eight closed faces of `dq '' Icc a b`. -/
 theorem analyticOnNhd_boxBoundarySum_cauchyFueterKernel_mul
-    {a b : Fin 4 → ℝ} {f : ℍ → ℍ} (hc : ContinuousOn f (dq '' Icc a b)) :
+    {a b : Fin 4 → ℝ} {f : ℍ → ℍ}
+    (hf : ∀ i : Fin 4,
+      IntegrableOn (fun z ↦ f (dq (i.insertNth (a i) z)))
+        (Icc (a ∘ i.succAbove) (b ∘ i.succAbove)) ∧
+      IntegrableOn (fun z ↦ f (dq (i.insertNth (b i) z)))
+        (Icc (a ∘ i.succAbove) (b ∘ i.succAbove))) :
     AnalyticOnNhd ℝ
       (fun q ↦ boxBoundarySum a b
         (fun i x ↦ cauchyFueterKernel (dq x) q * dq (Pi.single i 1) * f (dq x)))
-      (dq '' pi univ (fun i ↦ Ioo (a i) (b i))) := by
-  rintro _ ⟨x₀, hx₀, rfl⟩
-  exact analyticAt_boxBoundarySum_cauchyFueterKernel_mul
-    (fun i ↦ ((hx₀ i (mem_univ i)).1.trans (hx₀ i (mem_univ i)).2).le) hc
-    fun i z _ ↦ dq_insertNth_ne_of_mem_pi_Ioo hx₀ i z
+      {q₀ : ℍ | ∀ i : Fin 4, ∀ z ∈ Icc (a ∘ i.succAbove) (b ∘ i.succAbove),
+        dq (i.insertNth (a i) z) ≠ q₀ ∧ dq (i.insertNth (b i) z) ≠ q₀} :=
+  fun _ hq₀ ↦ analyticAt_boxBoundarySum_cauchyFueterKernel_mul hf hq₀
 
-/-- The right Cauchy–Fueter box boundary potential is real analytic on neighbourhoods throughout the
-open box `dq '' pi univ (fun i ↦ Ioo (a i) (b i))`. -/
+/-- The right Cauchy–Fueter box boundary potential of a facewise-integrable density is real analytic
+on neighbourhoods throughout the complement of the eight closed faces of `dq '' Icc a b`. -/
 theorem analyticOnNhd_boxBoundarySum_mul_cauchyFueterKernel
-    {a b : Fin 4 → ℝ} {f : ℍ → ℍ} (hc : ContinuousOn f (dq '' Icc a b)) :
+    {a b : Fin 4 → ℝ} {f : ℍ → ℍ}
+    (hf : ∀ i : Fin 4,
+      IntegrableOn (fun z ↦ f (dq (i.insertNth (a i) z)))
+        (Icc (a ∘ i.succAbove) (b ∘ i.succAbove)) ∧
+      IntegrableOn (fun z ↦ f (dq (i.insertNth (b i) z)))
+        (Icc (a ∘ i.succAbove) (b ∘ i.succAbove))) :
     AnalyticOnNhd ℝ
       (fun q ↦ boxBoundarySum a b
         (fun i x ↦ f (dq x) * dq (Pi.single i 1) * cauchyFueterKernel (dq x) q))
-      (dq '' pi univ (fun i ↦ Ioo (a i) (b i))) := by
-  rintro _ ⟨x₀, hx₀, rfl⟩
-  exact analyticAt_boxBoundarySum_mul_cauchyFueterKernel
-    (fun i ↦ ((hx₀ i (mem_univ i)).1.trans (hx₀ i (mem_univ i)).2).le) hc
-    fun i z _ ↦ dq_insertNth_ne_of_mem_pi_Ioo hx₀ i z
+      {q₀ : ℍ | ∀ i : Fin 4, ∀ z ∈ Icc (a ∘ i.succAbove) (b ∘ i.succAbove),
+        dq (i.insertNth (a i) z) ≠ q₀ ∧ dq (i.insertNth (b i) z) ≠ q₀} :=
+  fun _ hq₀ ↦ analyticAt_boxBoundarySum_mul_cauchyFueterKernel hf hq₀
 
 end BoxBoundaryPotentials
 
