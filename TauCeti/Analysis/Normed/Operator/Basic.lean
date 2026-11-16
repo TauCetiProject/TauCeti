@@ -83,7 +83,9 @@ A continuous bilinear map satisfies a Young-type bound
 
 A **metric quotient map**, an operator `q` with `‖q‖ ≤ 1` lifting every vector of norm less than
 `r` to a vector of norm less than `r`, maps each open ball about `0` onto the open ball of the same
-radius (`ContinuousLinearMap.image_ball_eq_ball`).
+radius (`ContinuousLinearMap.image_ball_eq_ball`). On a function supported in `closedBall 0 t`,
+scalar multiplication by the values of a continuous semilinear map `L` costs at most `t * ‖L‖`
+(`ContinuousLinearMap.norm_apply_smul_le_of_support_subset_closedBall`).
 
 Finite real products also admit coordinate-basis estimates and continuous linear equivalences
 obtained by replacing one coordinate. The coordinate arguments are adapted from
@@ -476,6 +478,29 @@ theorem image_ball_eq_ball {q : E →SL[σ₁₂] F} (h₁ : ‖q‖ ≤ 1)
   simpa using ((q.lipschitzWith.weaken h').mapsTo_ball one_ne_zero 0 r).image_subset
 
 end MetricQuotient
+
+section Support
+
+variable {𝕜 𝕜₂ E F G : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜₂]
+  {σ : 𝕜 →+* 𝕜₂} [RingHomIsometric σ] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜₂ F] [SeminormedAddGroup G] [SMulZeroClass F G]
+  [IsBoundedSMul F G]
+
+/-- On a function supported in `Metric.closedBall 0 t`, scalar multiplication by the values of a
+continuous semilinear map `L` costs at most the factor `t * ‖L‖`. -/
+theorem norm_apply_smul_le_of_support_subset_closedBall (L : E →SL[σ] F) {g : E → G} {t : ℝ}
+    (hg : Function.support g ⊆ Metric.closedBall 0 t) (x : E) :
+    ‖L x • g x‖ ≤ t * ‖L‖ * ‖g x‖ := by
+  by_cases hx : x ∈ Function.support g
+  · refine (norm_smul_le _ _).trans ?_
+    gcongr
+    refine (L.le_opNorm x).trans ?_
+    rw [mul_comm]
+    gcongr
+    simpa using hg hx
+  · simp [Function.notMem_support.mp hx]
+
+end Support
 
 end ContinuousLinearMap
 
