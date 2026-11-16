@@ -35,8 +35,9 @@ distances. The topology is the ordinary product topology on `E × ℝ`.
   continuous inclusions of a fixed-time spatial slice and of a fixed-position time slice.
 * `TauCeti.ParabolicSpaceTime.slabTimeReverse`: the time reversal `t ↦ T - t`, as an isometry from
   the slab `E × [T - b, T - a]` onto `E × [a, b]`.
-* `TauCeti.ParabolicSpaceTime.slabSpaceMap`: a spatial map `f` acting on a slab by
-  `(x, t) ↦ (f x, t)`, Lipschitz for the parabolic distance when `f` is.
+* `TauCeti.ParabolicSpaceTime.slabSpaceMap`, `TauCeti.ParabolicSpaceTime.slabSpaceIsometryEquiv`:
+  a spatial map `f` acting on a slab by `(x, t) ↦ (f x, t)`, Lipschitz for the parabolic distance
+  when `f` is, and an isometry equivalence when `f` is.
 * `TauCeti.ParabolicSpaceTime.lipschitzWith_slabSpace`: the spatial position of a point of a slab
   is `1`-Lipschitz for the parabolic distance.
 
@@ -217,6 +218,32 @@ theorem lipschitzWith_slabSpaceMap {E' : Type*} [PseudoEMetricSpace E'] {a b : �
   gcongr
   · exact (hf _ _).trans (mul_le_mul_left (by exact_mod_cast le_max_left K 1) _)
   · exact le_mul_of_one_le_left (by positivity) (by exact_mod_cast le_max_right K 1)
+
+/-- A spatial isometry `e : E ≃ᵢ E'` acts on a slab as an isometry `(x, t) ↦ (e x, t)` for the
+parabolic distance. -/
+def slabSpaceIsometryEquiv {E' : Type*} [PseudoEMetricSpace E'] {a b : ℝ} (e : E ≃ᵢ E') :
+    slab (E := E) a b ≃ᵢ slab (E := E') a b where
+  toFun := slabSpaceMap e
+  invFun := slabSpaceMap e.symm
+  left_inv p := by rw [slabSpaceMap_slabSpaceMap, e.symm_comp_self, slabSpaceMap_id]; rfl
+  right_inv q := by rw [slabSpaceMap_slabSpaceMap, e.self_comp_symm, slabSpaceMap_id]; rfl
+  isometry_toFun p q := by
+    rw [← slabMk_space_slabTime p, ← slabMk_space_slabTime q, slabSpaceMap_slabMk,
+      slabSpaceMap_slabMk, edist_slabMk, edist_slabMk, e.edist_eq]
+
+/-- Applying `slabSpaceIsometryEquiv` acts by `slabSpaceMap`. -/
+@[simp]
+theorem slabSpaceIsometryEquiv_apply {E' : Type*} [PseudoEMetricSpace E'] {a b : ℝ}
+    (e : E ≃ᵢ E') (p : slab (E := E) a b) :
+    slabSpaceIsometryEquiv (a := a) (b := b) e p = slabSpaceMap e p :=
+  (rfl)
+
+/-- The inverse of `slabSpaceIsometryEquiv e` is `slabSpaceIsometryEquiv e.symm`. -/
+@[simp]
+theorem slabSpaceIsometryEquiv_symm {E' : Type*} [PseudoEMetricSpace E'] {a b : ℝ}
+    (e : E ≃ᵢ E') :
+    (slabSpaceIsometryEquiv (a := a) (b := b) e).symm = slabSpaceIsometryEquiv e.symm :=
+  (rfl)
 
 end PseudoEMetricSpace
 

@@ -345,6 +345,11 @@ theorem norm_compSlabSpaceL_le_one :
     ‖compSlabSpaceL (α := α) (E := E) (Y := Y) (a := a) (b := b)‖ ≤ 1 :=
   norm_compLipschitzL_le_one lipschitzWith_slabSpace
 
+/-- Viewing a spatial Hölder field as time-independent on a slab does not increase its norm. -/
+theorem norm_compSlabSpaceL_apply_le (f : HolderSpace α E Y) :
+    ‖compSlabSpaceL (a := a) (b := b) f‖ ≤ ‖f‖ :=
+  norm_compLipschitzL_apply_le lipschitzWith_slabSpace f
+
 private theorem holderWith_comp_slabTime (f : HolderSpace (α / 2) (Icc a b) Y) :
     HolderWith (nnHolderNorm (α / 2) (f : Icc a b → Y)) α
       (fun p : slab (E := E) a b ↦ f (slabTime p)) := by
@@ -415,5 +420,11 @@ theorem norm_compSlabTimeL_le_one :
   LinearMap.mkContinuous_norm_le _ zero_le_one fun f ↦ by
     rw [LinearMap.coe_mk, AddHom.coe_mk, one_mul]
     exact norm_compSlabTimeAux_le f
+
+/-- Viewing a temporal `(α / 2)`-Hölder field as space-independent on a slab does not increase its
+norm. -/
+theorem norm_compSlabTimeL_apply_le (f : HolderSpace (α / 2) (Icc a b) Y) :
+    ‖compSlabTimeL (E := E) f‖ ≤ ‖f‖ :=
+  norm_compSlabTimeAux_le f
 
 end TauCeti.HolderSpace

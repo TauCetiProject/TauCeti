@@ -36,8 +36,9 @@ parallel notion of Hölder continuity.
 * `TauCeti.HolderSpace.constL`, `TauCeti.HolderSpace.evalCLM`, and
   `TauCeti.HolderSpace.toBoundedContinuousFunctionCLM`: continuous linear maps for constants,
   evaluation, and inclusion, with operator-norm bounds.
-* `TauCeti.HolderSpace.compLipschitzL`: precomposition with a `K`-Lipschitz map, of operator norm
-  at most `max 1 (K ^ α)`.
+* `TauCeti.HolderSpace.compLipschitzL`, `TauCeti.HolderSpace.compIsometryLIE`: precomposition
+  with a `K`-Lipschitz map, of operator norm at most `max 1 (K ^ α)`, and with an isometry
+  equivalence as a linear isometric equivalence.
 * `TauCeti.HolderSpace.compLeftL`: postcomposition with a continuous linear map `g`, of operator
   norm at most `‖g‖`, and norm-preserving when `g` is a linear isometry.
 
@@ -581,6 +582,39 @@ subspace, does not increase the Hölder-space norm. -/
 theorem norm_compLipschitzL_le_one (hg : LipschitzWith 1 g) :
     ‖compLipschitzL (α := α) (Y := Y) g hg‖ ≤ 1 := by
   simpa using norm_compLipschitzL_le (α := α) (Y := Y) hg
+
+/-- Precomposition with a `1`-Lipschitz map does not increase the norm of a bounded Hölder
+function. -/
+theorem norm_compLipschitzL_apply_le (hg : LipschitzWith 1 g) (f : HolderSpace α X Y) :
+    ‖compLipschitzL g hg f‖ ≤ ‖f‖ := by
+  simpa only [one_mul] using
+    (compLipschitzL g hg).le_of_opNorm_le (norm_compLipschitzL_le_one hg) f
+
+/-- Precomposition with an isometry equivalence `e : X' ≃ᵢ X`, as a linear isometric equivalence
+between bounded Hölder spaces of the same exponent. -/
+def compIsometryLIE (e : X' ≃ᵢ X) : HolderSpace α X Y ≃ₗᵢ[ℝ] HolderSpace α X' Y :=
+  LinearIsometryEquiv.ofBounds
+    { toFun := compLipschitzL e e.isometry.lipschitzWith
+      invFun := compLipschitzL e.symm e.symm.isometry.lipschitzWith
+      map_add' := map_add _
+      map_smul' := map_smul _
+      left_inv f := ext fun x ↦ by simp
+      right_inv g := ext fun x ↦ by simp }
+    (norm_compLipschitzL_apply_le e.isometry.lipschitzWith)
+    (norm_compLipschitzL_apply_le e.symm.isometry.lipschitzWith)
+
+/-- Evaluation of `compIsometryLIE` precomposes with the isometry. -/
+@[simp]
+theorem compIsometryLIE_apply (e : X' ≃ᵢ X) (f : HolderSpace α X Y) (x : X') :
+    compIsometryLIE e f x = f (e x) :=
+  (rfl)
+
+/-- The inverse of `compIsometryLIE e` is `compIsometryLIE e.symm`. -/
+@[simp]
+theorem compIsometryLIE_symm (e : X' ≃ᵢ X) :
+    (compIsometryLIE (α := α) (Y := Y) e).symm = compIsometryLIE e.symm := by
+  ext f x
+  rfl
 
 end compLipschitz
 

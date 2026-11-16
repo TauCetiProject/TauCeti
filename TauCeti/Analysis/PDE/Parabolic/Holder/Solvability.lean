@@ -286,16 +286,8 @@ private theorem coe_slabDuration {t₀ t₁ : ℝ} (ht : t₀ < t₁) :
     (slabDuration ht : ℝ) = t₁ - t₀ :=
   (rfl)
 
-omit [DecidableEq ι] in
-private theorem norm_compLipschitzL_slabTimeReverse_le {t₀ t₁ : ℝ} (ht : t₀ < t₁)
-    (f : HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ) :
-    ‖HolderSpace.compLipschitzL _
-        (slabTimeReverse (E := EuclideanSpace ℝ ι) t₁ (sub_self t₁).symm
-          (coe_slabDuration ht)).isometry.lipschitzWith f‖ ≤ ‖f‖ := by
-  simpa only [one_mul] using (HolderSpace.compLipschitzL _ _).le_of_opNorm_le
-    (HolderSpace.norm_compLipschitzL_le_one
-      (slabTimeReverse (E := EuclideanSpace ℝ ι) t₁ (sub_self t₁).symm
-        (coe_slabDuration ht)).isometry.lipschitzWith) f
+private theorem zero_eq_sub_self (t : ℝ) : (0 : ℝ) = t - t :=
+  (sub_self t).symm
 
 private theorem bijective_backward_prod {t₀ t₁ : ℝ} (hα₀ : 0 < α) (hα₁ : α < 1) (ht : t₀ < t₁)
     (a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ)
@@ -308,7 +300,7 @@ private theorem bijective_backward_prod {t₀ t₁ : ℝ} (hα₀ : 0 < α) (hα
   have hT : (0 : ℝ) < slabDuration ht := sub_pos.2 ht
   rw [euclideanBackwardParabolicOperatorL_def,
     bijective_backwardParabolicOperatorL_prod_spatialTraceL_iff (T := t₁)
-      (ha := (sub_self t₁).symm) (hb := coe_slabDuration ht),
+      (ha := (zero_eq_sub_self t₁)) (hb := coe_slabDuration ht),
     initialDataL_def, parabolicOperatorL_compLipschitzL_euclidean hα₁.le ht a b c]
   exact bijective_euclideanParabolicOperatorL_prod_spatialTraceL hα₀ hα₁ hT _ _ hlam
     fun p ξ ↦ by simpa only [HolderSpace.compLipschitzL_apply] using ha _ ξ
@@ -385,6 +377,55 @@ theorem euclideanTerminalDataCLE_symm_apply_slabMk_right
 
 end TerminalDataCLE
 
+omit [DecidableEq ι] in
+private def dataTimeReverseLIE {t₀ t₁ : ℝ} (ht : t₀ < t₁) :
+    HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ ×
+        CkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ ≃ₗᵢ[ℝ]
+      HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 (slabDuration ht)) ℝ ×
+        CkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ :=
+  { ((HolderSpace.compIsometryLIE (α := α) (Y := ℝ)
+        (slabTimeReverse (E := EuclideanSpace ℝ ι) t₁ (zero_eq_sub_self t₁)
+          (coe_slabDuration ht))).trans (LinearIsometryEquiv.neg ℝ)).toLinearEquiv.prodCongr
+      (LinearIsometryEquiv.refl ℝ _).toLinearEquiv with
+    norm_map' d := by simp [Prod.norm_def] }
+
+private theorem euclideanTerminalDataCLE_symm_eq {t₀ t₁ : ℝ}
+    (hα₀ : 0 < α) (hα₁ : α < 1) (ht : t₀ < t₁)
+    (a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ)
+    (b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ)
+    (c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ)
+    (ha : ∃ lam : ℝ, 0 < lam ∧ ∀ p (ξ : EuclideanSpace ℝ ι),
+      lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ) :
+    (euclideanTerminalDataCLE hα₀ hα₁ ht a b c ha).symm.toContinuousLinearMap =
+      ((timeReverseLIE (α := α) (E := EuclideanSpace ℝ ι) (F := ℝ) (hab := ht)
+        t₁ (zero_eq_sub_self t₁) (coe_slabDuration ht)).symm : _ →L[ℝ] _) ∘L
+        (euclideanInitialDataCLE hα₀ hα₁
+          ((zero_eq_sub_self t₁) ▸ coe_slabDuration ht ▸ sub_lt_sub_left ht t₁)
+          (fun i j ↦ HolderSpace.compLipschitzL _
+            (slabTimeReverse (E := EuclideanSpace ℝ ι) t₁ (zero_eq_sub_self t₁)
+              (coe_slabDuration ht)).isometry.lipschitzWith (a i j))
+          (fun i ↦ HolderSpace.compLipschitzL _
+            (slabTimeReverse (E := EuclideanSpace ℝ ι) t₁ (zero_eq_sub_self t₁)
+              (coe_slabDuration ht)).isometry.lipschitzWith (b i))
+          (HolderSpace.compLipschitzL _
+            (slabTimeReverse (E := EuclideanSpace ℝ ι) t₁ (zero_eq_sub_self t₁)
+              (coe_slabDuration ht)).isometry.lipschitzWith c)
+          (ha.imp fun _ ⟨hlam, h⟩ ↦ ⟨hlam, fun p ξ ↦ by
+            simpa only [HolderSpace.compLipschitzL_apply] using h _ ξ⟩)).symm.toContinuousLinearMap
+        ∘L (dataTimeReverseLIE (α := α) (ι := ι) ht : _ →L[ℝ] _) := by
+  refine ContinuousLinearMap.ext fun d ↦ ?_
+  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+    LinearIsometryEquiv.coe_coe]
+  apply (timeReverseLIE (α := α) (E := EuclideanSpace ℝ ι) (F := ℝ) (hab := ht)
+    t₁ (zero_eq_sub_self t₁) (coe_slabDuration ht)).injective
+  rw [LinearIsometryEquiv.apply_symm_apply]
+  apply (euclideanInitialDataCLE hα₀ hα₁ _ _ _ _ _).injective
+  rw [ContinuousLinearEquiv.apply_symm_apply, euclideanInitialDataCLE_apply,
+    euclideanParabolicOperatorL_timeReverseLIE, spatialTrace_timeReverseLIE_left,
+    euclideanBackwardParabolicOperatorL_euclideanTerminalDataCLE_symm_apply,
+    spatialTrace_euclideanTerminalDataCLE_symm_apply]
+  exact Prod.ext (by ext p; simp [dataTimeReverseLIE]) rfl
+
 /-- **The Schauder estimate for the terminal-value problem.** For `0 < α < 1`, an ellipticity
 constant `λ > 0`, a bound `K` on the Hölder norms of the coefficients and a bound `T₀` on the
 slab duration, the solution operators of the terminal-value problems on `ℝⁿ × [t₀, t₁]`,
@@ -400,35 +441,16 @@ theorem exists_norm_euclideanTerminalDataCLE_symm_le (hα₀ : 0 < α) (hα₁ :
         (∀ i j, ‖a i j‖ ≤ K) → (∀ i, ‖b i‖ ≤ K) → ‖c‖ ≤ K →
         ‖(euclideanTerminalDataCLE hα₀ hα₁ ht a b c ⟨lam, hlam, ha⟩).symm.toContinuousLinearMap‖ ≤
           C := by
-  obtain ⟨C, hC, hest⟩ := exists_norm_le_mul_norm_prod (ι := ι) hα₀ hα₁ hlam K T₀
-  refine ⟨C, hC, fun {t₀ t₁} ht hTT₀ a b c ha hak hbk hck ↦
-    ContinuousLinearMap.opNorm_le_bound _ hC fun d ↦ ?_⟩
-  simp only [ContinuousLinearEquiv.coe_coe]
-  rw [← LinearIsometryEquiv.norm_map (timeReverseLIE (α := α) (E := EuclideanSpace ℝ ι) (F := ℝ)
-    (hab := ht) t₁ (sub_self t₁).symm (coe_slabDuration ht))]
-  have hTT₀' : slabDuration ht ≤ T₀ := by exact_mod_cast hTT₀
-  have hv := hest (slabDuration ht)
-    ((sub_self t₁).symm ▸ coe_slabDuration ht ▸ sub_lt_sub_left ht t₁) hTT₀'
-    (fun i j ↦ HolderSpace.compLipschitzL _ _ (a i j))
-    (fun i ↦ HolderSpace.compLipschitzL _ _ (b i))
-    (HolderSpace.compLipschitzL _ _ c)
+  obtain ⟨C, hC, hest⟩ := exists_norm_euclideanInitialDataCLE_symm_le (ι := ι) hα₀ hα₁ hlam K T₀
+  refine ⟨C, hC, fun {t₀ t₁} ht hTT₀ a b c ha hak hbk hck ↦ ?_⟩
+  rw [euclideanTerminalDataCLE_symm_eq,
+    ContinuousLinearMap.opNorm_linearIsometryEquiv_comp,
+    ContinuousLinearMap.opNorm_comp_linearIsometryEquiv]
+  exact hest (slabDuration ht) _ (by exact_mod_cast hTT₀) _ _ _
     (fun p ξ ↦ by simpa only [HolderSpace.compLipschitzL_apply] using ha _ ξ)
-    (fun i j ↦ (norm_compLipschitzL_slabTimeReverse_le ht (a i j)).trans (hak i j))
-    (fun i ↦ (norm_compLipschitzL_slabTimeReverse_le ht (b i)).trans (hbk i))
-    ((norm_compLipschitzL_slabTimeReverse_le ht c).trans hck)
-    (timeReverseLIE (α := α) (E := EuclideanSpace ℝ ι) (F := ℝ) (hab := ht)
-      t₁ (sub_self t₁).symm (coe_slabDuration ht)
-      ((euclideanTerminalDataCLE hα₀ hα₁ ht a b c ⟨lam, hlam, ha⟩).symm d))
-  rw [euclideanParabolicOperatorL_timeReverseLIE, spatialTrace_timeReverseLIE_left,
-    euclideanBackwardParabolicOperatorL_euclideanTerminalDataCLE_symm_apply,
-    spatialTrace_euclideanTerminalDataCLE_symm_apply] at hv
-  have hd : ‖(-HolderSpace.compLipschitzL _
-      (slabTimeReverse (E := EuclideanSpace ℝ ι) t₁ (sub_self t₁).symm
-        (coe_slabDuration ht)).isometry.lipschitzWith d.1, d.2)‖ ≤ ‖d‖ := by
-    rw [Prod.norm_def, norm_neg]
-    exact max_le ((norm_compLipschitzL_slabTimeReverse_le ht d.1).trans (norm_fst_le d))
-      (norm_snd_le d)
-  exact hv.trans (mul_le_mul_of_nonneg_left hd hC)
+    (fun i j ↦ (HolderSpace.norm_compLipschitzL_apply_le _ (a i j)).trans (hak i j))
+    (fun i ↦ (HolderSpace.norm_compLipschitzL_apply_le _ (b i)).trans (hbk i))
+    ((HolderSpace.norm_compLipschitzL_apply_le _ c).trans hck)
 
 /-- **Lipschitz dependence of the terminal-value solution operator on the coefficients.** Under
 the bounds of `exists_norm_euclideanTerminalDataCLE_symm_le`, the solution operators of two
@@ -450,50 +472,39 @@ theorem exists_norm_euclideanTerminalDataCLE_symm_sub_le (hα₀ : 0 < α) (hα�
           (euclideanTerminalDataCLE hα₀ hα₁ ht a' b' c'
             ⟨lam, hlam, ha'⟩).symm.toContinuousLinearMap‖ ≤
           C * (∑ i, ∑ j, ‖a i j - a' i j‖ + ∑ i, ‖b i - b' i‖ + ‖c - c'‖) := by
-  obtain ⟨C, hC, hest⟩ := exists_norm_euclideanTerminalDataCLE_symm_le (ι := ι) hα₀ hα₁ hlam K T₀
-  refine ⟨24 * C ^ 2, by positivity,
-    fun {t₀ t₁} ht hTT₀ a a' b b' c c' ha ha' hak hbk hck hak' hbk' hck' ↦ ?_⟩
-  set e := euclideanTerminalDataCLE hα₀ hα₁ ht a b c ⟨lam, hlam, ha⟩
-  set e' := euclideanTerminalDataCLE hα₀ hα₁ ht a' b' c' ⟨lam, hlam, ha'⟩
-  set δ := ∑ i, ∑ j, ‖a i j - a' i j‖ + ∑ i, ‖b i - b' i‖ + ‖c - c'‖
-  have hres : e.symm.toContinuousLinearMap - e'.symm.toContinuousLinearMap =
-      e.symm.toContinuousLinearMap ∘L (e'.toContinuousLinearMap - e.toContinuousLinearMap) ∘L
-        e'.symm.toContinuousLinearMap :=
-    ContinuousLinearMap.ext fun d ↦ by simp
-  have hsub : ‖euclideanBackwardParabolicOperatorL (ht := ht) hα₁.le a' b' c' -
-      euclideanBackwardParabolicOperatorL hα₁.le a b c‖ ≤
-      ∑ i, ∑ j, ‖a' i j - a i j‖ + 24 * (∑ i, ‖b' i - b i‖ + ‖c' - c‖) := by
-    rw [euclideanBackwardParabolicOperatorL_def, euclideanBackwardParabolicOperatorL_def]
-    refine (norm_backwardParabolicOperatorL_sub_le hα₁.le).trans ?_
-    rw [← euclideanSecondOrderCoeff_sub, ← euclideanFirstOrderCoeff_sub,
-      ← euclideanZerothOrderCoeff_sub]
-    gcongr
-    · exact norm_euclideanSecondOrderCoeff_le _
-    · exact norm_euclideanFirstOrderCoeff_le _
-    · exact norm_euclideanZerothOrderCoeff_le _
-  have hdiff : ‖e'.toContinuousLinearMap - e.toContinuousLinearMap‖ ≤ 24 * δ := by
-    refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun u ↦ ?_
-    have hP := (euclideanBackwardParabolicOperatorL hα₁.le a' b' c' -
-      euclideanBackwardParabolicOperatorL hα₁.le a b c).le_opNorm u
-    have hδ : ∑ i, ∑ j, ‖a' i j - a i j‖ + 24 * (∑ i, ‖b' i - b i‖ + ‖c' - c‖) ≤ 24 * δ := by
-      simp only [δ, norm_sub_rev (a' _ _), norm_sub_rev (b' _), norm_sub_rev c']
-      nlinarith [Finset.sum_nonneg fun i (_ : i ∈ Finset.univ) ↦
-        Finset.sum_nonneg fun j (_ : j ∈ Finset.univ) ↦ norm_nonneg (a i j - a' i j)]
-    calc ‖(e'.toContinuousLinearMap - e.toContinuousLinearMap) u‖
-        = ‖(euclideanBackwardParabolicOperatorL hα₁.le a' b' c' -
-            euclideanBackwardParabolicOperatorL hα₁.le a b c) u‖ := by
-          simp [e, e', Prod.norm_def]
-      _ ≤ 24 * δ * ‖u‖ := hP.trans (mul_le_mul_of_nonneg_right (hsub.trans hδ) (norm_nonneg u))
-  have h₁ := hest ht hTT₀ a b c ha hak hbk hck
-  have h₂ := hest ht hTT₀ a' b' c' ha' hak' hbk' hck'
-  rw [hres]
-  calc _ ≤ ‖e.symm.toContinuousLinearMap‖ *
-        (‖e'.toContinuousLinearMap - e.toContinuousLinearMap‖ *
-          ‖e'.symm.toContinuousLinearMap‖) :=
-        (ContinuousLinearMap.opNorm_comp_le _ _).trans
-          (mul_le_mul_of_nonneg_left (ContinuousLinearMap.opNorm_comp_le _ _) (norm_nonneg _))
-    _ ≤ C * (24 * δ * C) := by gcongr
-    _ = 24 * C ^ 2 * δ := by ring
+  obtain ⟨C, hC, hest⟩ :=
+    exists_norm_euclideanInitialDataCLE_symm_sub_le (ι := ι) hα₀ hα₁ hlam K T₀
+  refine ⟨C, hC, fun {t₀ t₁} ht hTT₀ a a' b b' c c' ha ha' hak hbk hck hak' hbk' hck' ↦ ?_⟩
+  let φ := slabTimeReverse (E := EuclideanSpace ℝ ι) t₁ (zero_eq_sub_self t₁) (coe_slabDuration ht)
+  let aR i j := HolderSpace.compLipschitzL (α := α) (Y := ℝ) φ φ.isometry.lipschitzWith (a i j)
+  let aR' i j := HolderSpace.compLipschitzL (α := α) (Y := ℝ) φ φ.isometry.lipschitzWith (a' i j)
+  let bR i := HolderSpace.compLipschitzL (α := α) (Y := ℝ) φ φ.isometry.lipschitzWith (b i)
+  let bR' i := HolderSpace.compLipschitzL (α := α) (Y := ℝ) φ φ.isometry.lipschitzWith (b' i)
+  let cR := HolderSpace.compLipschitzL (α := α) (Y := ℝ) φ φ.isometry.lipschitzWith c
+  let cR' := HolderSpace.compLipschitzL (α := α) (Y := ℝ) φ φ.isometry.lipschitzWith c'
+  rw [euclideanTerminalDataCLE_symm_eq, euclideanTerminalDataCLE_symm_eq,
+    ← ContinuousLinearMap.comp_sub, ← ContinuousLinearMap.sub_comp,
+    ContinuousLinearMap.opNorm_linearIsometryEquiv_comp,
+    ContinuousLinearMap.opNorm_comp_linearIsometryEquiv]
+  have hmid := hest (slabDuration ht)
+    ((zero_eq_sub_self t₁) ▸ coe_slabDuration ht ▸ sub_lt_sub_left ht t₁)
+    (by exact_mod_cast hTT₀) aR aR' bR bR' cR cR'
+    (fun p ξ ↦ by simpa only [aR, HolderSpace.compLipschitzL_apply] using ha _ ξ)
+    (fun p ξ ↦ by simpa only [aR', HolderSpace.compLipschitzL_apply] using ha' _ ξ)
+    (fun i j ↦ (HolderSpace.norm_compLipschitzL_apply_le _ (a i j)).trans (hak i j))
+    (fun i ↦ (HolderSpace.norm_compLipschitzL_apply_le _ (b i)).trans (hbk i))
+    ((HolderSpace.norm_compLipschitzL_apply_le _ c).trans hck)
+    (fun i j ↦ (HolderSpace.norm_compLipschitzL_apply_le _ (a' i j)).trans (hak' i j))
+    (fun i ↦ (HolderSpace.norm_compLipschitzL_apply_le _ (b' i)).trans (hbk' i))
+    ((HolderSpace.norm_compLipschitzL_apply_le _ c').trans hck')
+  refine (le_of_eq (congrArg norm (ContinuousLinearMap.ext fun d ↦ by
+    simp only [FunLike.coe_sub, Pi.sub_apply]; congr 1))).trans
+    (hmid.trans (mul_le_mul_of_nonneg_left ?_ hC))
+  simp only [aR, aR', bR, bR', cR, cR', ← map_sub]
+  gcongr
+  · exact HolderSpace.norm_compLipschitzL_apply_le _ _
+  · exact HolderSpace.norm_compLipschitzL_apply_le _ _
+  · exact HolderSpace.norm_compLipschitzL_apply_le _ _
 
 end Terminal
 
