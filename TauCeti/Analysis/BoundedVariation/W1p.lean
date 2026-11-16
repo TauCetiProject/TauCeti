@@ -110,7 +110,7 @@ class and has operator norm at most `2`. -/
 def toBVL : W1p μ Ω 1 →L[ℝ] BV μ Ω :=
   LinearMap.mkContinuous
     { toFun := toBVAux
-      map_add' u v := BV.toL1_injective <| by simpa [toL1_toBVAux] using map_add valueL u v
+      map_add' u v := BV.toL1_injective <| by simp [toL1_toBVAux]
       map_smul' c u := BV.toL1_injective <| by
         simpa only [RingHom.id_apply, toL1_toBVAux, BV.toL1_smul, valueL_apply] using
           map_smul valueL c u }
