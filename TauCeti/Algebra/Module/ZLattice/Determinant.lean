@@ -175,24 +175,17 @@ theorem card_discriminantGroup_comap (L : Submodule ℤ E) (e : F ≃ₗᵢ[ℝ]
       Nat.card (DiscriminantGroup L) :=
   Nat.card_congr (discriminantGroupComapEquiv L e).toEquiv
 
-/-- If a lattice does not span the space, the orthogonal complement of its span injects into the
-discriminant group, which is therefore infinite. -/
+open scoped Pointwise in
+/-- If a lattice in a finite-dimensional space does not span, its discriminant group is infinite:
+the orthogonal complement of its span injects into it. This is the case `c = 1` of
+`ZLattice.span_eq_top_of_finite_quotient_smul_submoduleOf_dual`. -/
 theorem infinite_discriminantGroup_of_span_ne_top [FiniteDimensional ℝ E]
     (h : span ℝ (L : Set E) ≠ ⊤) : Infinite (DiscriminantGroup L) := by
-  have : Nontrivial (span ℝ (L : Set E))ᗮ :=
-    Submodule.nontrivial_iff_ne_bot.2 (by rwa [Ne, Submodule.orthogonal_eq_bot_iff])
-  have : Infinite (span ℝ (L : Set E))ᗮ := Module.Free.infinite ℝ _
-  have hmem (w : (span ℝ (L : Set E))ᗮ) : (w : E) ∈ dual L := mem_dual.2 fun y hy ↦
-    ⟨0, by simpa [real_inner_comm] using
-      Submodule.inner_right_of_mem_orthogonal (subset_span hy) w.2⟩
-  refine Infinite.of_injective
-    (fun w : (span ℝ (L : Set E))ᗮ ↦ (Submodule.Quotient.mk ⟨w, hmem w⟩ : DiscriminantGroup L))
-    fun a b hab ↦ ?_
-  rw [discriminantGroup_mk_eq_mk_iff] at hab
-  have h0 := Submodule.inner_right_of_mem_orthogonal (subset_span hab)
-    (sub_mem a.2 b.2)
-  rw [inner_self_eq_zero, sub_eq_zero] at h0
-  exact Subtype.ext h0
+  by_contra hfin
+  have : Finite (dual L ⧸ ((1 : ℝ) • L).submoduleOf (dual L)) := by
+    rw [one_smul]
+    exact not_infinite_iff_finite.mp hfin
+  exact h (span_eq_top_of_finite_quotient_smul_submoduleOf_dual 1)
 
 section FiniteDimensional
 

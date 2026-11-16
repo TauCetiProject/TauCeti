@@ -123,6 +123,16 @@ lemma globalSectionsSmul_mul
       X.presheaf.map U.leTop.op s • x
   rw [map_mul, mul_smul]
 
+/-- If multiplication by a global function is injective, so is multiplication by each of its
+powers. -/
+instance mono_globalSectionsSmul_pow (M : X.Modules) (r : Γ(X, ⊤))
+    [Mono (M.globalSectionsSmul r)] (n : ℕ) : Mono (M.globalSectionsSmul (r ^ n)) := by
+  induction n with
+  | zero => simpa using (inferInstance : Mono (𝟙 M))
+  | succ n ih =>
+    rw [pow_succ, globalSectionsSmul_mul]
+    infer_instance
+
 /-- Multiplication by a global unit is an isomorphism, with inverse multiplication by the inverse
 unit. -/
 instance isIso_globalSectionsSmul_units

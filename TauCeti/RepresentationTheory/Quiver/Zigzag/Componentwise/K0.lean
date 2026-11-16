@@ -44,11 +44,15 @@ open CategoryTheory LaurentPolynomial
 open scoped Pointwise
 
 universe u w
-variable (k : Type w) [Field k] {V : Type u} [Finite V] (G : SimpleGraph V)
+variable (k : Type w) [Field k] {V : Type u} (G : SimpleGraph V)
 
 local notation "e" => fun i : V ↦ zigzagAlgebraBasis k G (Sum.inl i)
 local notation "A" => zigzagAlgebraIntegerGrade k G
 local notation "P" => zigzagAlgebraGradedProjective k G
+
+section Finite
+
+variable [Finite V]
 
 open scoped Classical in
 /-- Degree-preserving maps between vertex projectives are scalar endomorphisms at the same
@@ -272,6 +276,8 @@ theorem zigzagAlgebraGradedSimpleClassBasis_repr_gradedCartanMap (i j : V) :
       if i = j then 1 + T 2 else if G.Adj i j then T 1 else 0 := by
   rw [zigzagAlgebraGradedSimpleClassBasis_repr_apply,
     gradedIdempotentCoordinate_gradedCartanMap_zigzagAlgebraGradedProjectiveClass]
+
+end Finite
 
 /-- The categorical graded Cartan map of the public algebra has matrix `(1 + q²) I + q A_G`
 in the vertex-projective and vertex-head class bases, including isolated vertices. -/

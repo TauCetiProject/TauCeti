@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Diagonal.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.TorusGeneration
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.RootGeneration
 
 /-!
 # Perfectness of the standard symplectic group

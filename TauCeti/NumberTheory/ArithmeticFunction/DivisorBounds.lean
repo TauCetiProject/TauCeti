@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.ArithmeticFunction.TwistedDivisorSum
 public import Mathlib.Analysis.PSeries
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
+import TauCeti.NumberTheory.ArithmeticFunction.Zeta
 
 /-!
 # Bounds for twisted divisor sums
@@ -28,6 +29,8 @@ The divisor count also satisfies `d(n) ≤ Cε n^ε` for every `ε > 0`
 (`exists_pos_card_divisors_le_rpow`). This controls weight-one Eisenstein coefficients.
 The estimate follows from the prime-factor product for `d(n)`: sufficiently large primes
 need no constant, while the finitely many small primes contribute a bounded factor.
+Comparing every fixed Dirichlet-convolution power of zeta with a power of the divisor count
+gives the same subpolynomial bound for every fixed order, including order zero.
 
 ## References
 
@@ -155,3 +158,41 @@ theorem exists_pos_card_divisors_le_rpow {ε : ℝ} (hε : 0 < ε) :
     _ ≤ A ^ P * (n : ℝ) ^ ε := mul_le_mul_of_nonneg_right hprod (by positivity)
 
 end TauCeti
+
+namespace ArithmeticFunction
+
+open Finset Nat
+open scoped zeta
+
+/-- Every fixed Dirichlet-convolution power of zeta is subpolynomial. The bound includes
+order zero, which is the convolution identity, and index zero, where every coefficient is zero. -/
+theorem exists_pos_zeta_pow_le_rpow (k : ℕ) {ε : ℝ} (hε : 0 < ε) :
+    ∃ C : ℝ, 0 < C ∧ ∀ n : ℕ, ((ζ ^ k : ArithmeticFunction ℕ) n : ℝ) ≤ C * (n : ℝ) ^ ε := by
+  cases k with
+  | zero =>
+    refine ⟨1, by norm_num, fun n ↦ ?_⟩
+    by_cases hn : n = 1
+    · simp [hn]
+    · simp only [pow_zero, ArithmeticFunction.one_apply_ne hn, Nat.cast_zero]
+      positivity
+  | succ k =>
+    obtain ⟨C, hC, hbound⟩ := TauCeti.exists_pos_card_divisors_le_rpow
+      (show 0 < ε / (k + 1 : ℝ) by positivity)
+    refine ⟨C ^ (k + 1), by positivity, fun n ↦ ?_⟩
+    rcases eq_or_ne n 0 with rfl | hn
+    · simp [Real.zero_rpow hε.ne']
+    have hcard : 1 ≤ n.divisors.card :=
+      Nat.one_le_iff_ne_zero.mpr (Finset.card_ne_zero.mpr ⟨1, Nat.one_mem_divisors.mpr hn⟩)
+    calc
+      ((ζ ^ (k + 1)) n : ℝ) ≤ (n.divisors.card : ℝ) ^ k := by
+        exact_mod_cast zeta_pow_succ_apply_le_card_divisors_pow k n
+      _ ≤ (n.divisors.card : ℝ) ^ (k + 1) :=
+        pow_le_pow_right₀ (by exact_mod_cast hcard) (Nat.le_succ _)
+      _ ≤ (C * (n : ℝ) ^ (ε / (k + 1 : ℝ))) ^ (k + 1) :=
+        pow_le_pow_left₀ (by positivity) (hbound n) _
+      _ = C ^ (k + 1) * (n : ℝ) ^ ε := by
+        rw [mul_pow, ← Real.rpow_mul_natCast (Nat.cast_nonneg n),
+          Nat.cast_add, Nat.cast_one, div_mul_cancel₀ _ (by positivity)]
+
+
+end ArithmeticFunction
