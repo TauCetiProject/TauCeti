@@ -5,6 +5,7 @@ Authors: pi
 -/
 module
 
+public import Mathlib.Algebra.Order.Archimedean.Real.Basic
 public import Mathlib.Combinatorics.SimpleGraph.Finite
 public import TauCeti.Combinatorics.SimpleGraph.Bipartite
 public import TauCeti.Data.Finset.Basic
@@ -28,8 +29,12 @@ or coefficient group.
 * `SimpleGraph.Iso.isCutMinimal_iff`: cut-minimality is invariant under graph isomorphism.
 * `SimpleGraph.isCutMinimal_iff_two_mul_card_between_le`: finite cut-minimality in terms of
   vertex counts, `2 * (G.between S Sᶜ).edgeFinset.card ≤ S.toFinset.card * Sᶜ.toFinset.card`.
-* `SimpleGraph.isCutMinimal_iff_card_le_card_symmDiff`: switching any cut does not decrease the
-  edge count.
+* `SimpleGraph.isCutMinimal_iff_card_le_card_symmDiff`,
+  `SimpleGraph.isCutMinimal_iff_forall_finset`: switching any cut (or any finset cut) does not
+  decrease the edge count.
+* `SimpleGraph.ciInf_card_symmDiff_edgeFinset_le`,
+  `SimpleGraph.ciInf_card_symmDiff_edgeFinset_eq_iff`: real-infimum bound and characterization of
+  `SimpleGraph.IsCutMinimal` over `Finset V`.
 -/
 
 public section
@@ -161,6 +166,59 @@ theorem isCutMinimal_iff_two_mul_sum_card_le (G : SimpleGraph V) [DecidableRel G
   · intro h S _
     obtain ⟨s, rfl⟩ : ∃ s : Finset V, (s : Set V) = S := ⟨S.toFinset, by simp⟩
     exact (key s).mpr (h s)
+
+/-- On a finite vertex type, a graph is cut-minimal if and only if toggling any finset cut does not
+decrease its edge count. -/
+theorem isCutMinimal_iff_forall_finset (G : SimpleGraph V) [DecidableRel G.Adj] :
+    G.IsCutMinimal ↔
+      ∀ S : Finset V, #G.edgeFinset ≤
+        #(G.edgeFinset ∆ ((⊤ : SimpleGraph V).between (S : Set V) (S : Set V)ᶜ).edgeFinset) := by
+  rw [isCutMinimal_iff_card_le_card_symmDiff]
+  refine ⟨fun h S => h (S : Set V), fun h S _ => ?_⟩
+  have heq :
+      ((⊤ : SimpleGraph V).between (S.toFinset : Set V) (S.toFinset : Set V)ᶜ).edgeFinset =
+        ((⊤ : SimpleGraph V).between S Sᶜ).edgeFinset := by
+    ext e
+    simp
+  simpa only [heq] using h S.toFinset
+
+/-- The infimum of cut-toggled edge counts over all finsets `S : Finset V` never exceeds
+`#G.edgeFinset`, since `S = ∅` toggles the empty cut. -/
+theorem ciInf_card_symmDiff_edgeFinset_le (G : SimpleGraph V) [DecidableRel G.Adj] :
+    (⨅ S : Finset V,
+        (#(G.edgeFinset ∆
+          ((⊤ : SimpleGraph V).between (S : Set V) (S : Set V)ᶜ).edgeFinset) : ℝ)) ≤
+      #G.edgeFinset := by
+  have hbdd : BddBelow (Set.range fun S : Finset V =>
+      (#(G.edgeFinset ∆
+        ((⊤ : SimpleGraph V).between (S : Set V) (S : Set V)ᶜ).edgeFinset) : ℝ)) :=
+    ⟨0, by rintro _ ⟨S, rfl⟩; exact Nat.cast_nonneg _⟩
+  refine (ciInf_le hbdd ∅).trans_eq ?_
+  have hempty : ((⊤ : SimpleGraph V).between (↑(∅ : Finset V) : Set V)
+      (↑(∅ : Finset V) : Set V)ᶜ).edgeFinset = ∅ := by
+    ext e
+    induction e using Sym2.ind
+    simp [between_adj]
+  simp [hempty, symmDiff_def]
+
+/-- The infimum of cut-toggled edge counts equals `#G.edgeFinset` if and only if `G` is
+cut-minimal. -/
+theorem ciInf_card_symmDiff_edgeFinset_eq_iff (G : SimpleGraph V) [DecidableRel G.Adj] :
+    (⨅ S : Finset V,
+        (#(G.edgeFinset ∆
+          ((⊤ : SimpleGraph V).between (S : Set V) (S : Set V)ᶜ).edgeFinset) : ℝ)) =
+      #G.edgeFinset ↔ G.IsCutMinimal := by
+  rw [isCutMinimal_iff_forall_finset]
+  have hbdd : BddBelow (Set.range fun S : Finset V =>
+      (#(G.edgeFinset ∆
+        ((⊤ : SimpleGraph V).between (S : Set V) (S : Set V)ᶜ).edgeFinset) : ℝ)) :=
+    ⟨0, by rintro _ ⟨S, rfl⟩; exact Nat.cast_nonneg _⟩
+  constructor
+  · intro h S
+    exact_mod_cast h ▸ ciInf_le hbdd S
+  · intro h
+    refine le_antisymm G.ciInf_card_symmDiff_edgeFinset_le ?_
+    exact le_ciInf fun S => by exact_mod_cast h S
 
 end Finite
 

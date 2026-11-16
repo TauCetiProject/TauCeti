@@ -6,12 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
-public import Mathlib.Algebra.Order.Archimedean.Real.Basic
 public import Mathlib.Algebra.Ring.Parity
 public import Mathlib.Data.Finset.Powerset
 public import Mathlib.Order.Sym2
-public import TauCeti.Combinatorics.SimpleGraph.CutMinimal
-import Mathlib.Algebra.Order.Group.CompleteLattice
+public import TauCeti.Combinatorics.SimpleGraph.Bipartite
 import TauCeti.Order.Hom.PowersetCard
 
 /-!
@@ -31,9 +29,6 @@ over strictly increasing tuples.
 * `SimpleGraph.top_between_compl_adj` and `SimpleGraph.symmDiff_top_between_compl_adj`: adjacency in
   the complete-graph cut `(⊤ : SimpleGraph V).between S Sᶜ` and in `G ∆ (⊤ : SimpleGraph V).between
   S Sᶜ` is given unconditionally by `Xor`.
-* `SimpleGraph.isCutMinimal_iff_forall_finset`, `SimpleGraph.ciInf_card_symmDiff_edgeFinset_le`, and
-  `SimpleGraph.ciInf_card_symmDiff_edgeFinset_eq_iff`: finset-cut and real-infimum characterizations
-  of `SimpleGraph.IsCutMinimal`.
 * `SimpleGraph.prod_edgeFinset_eq_prod_filter_lt`, `SimpleGraph.sum_edgeFinset_eq_sum_filter_lt`,
   `SimpleGraph.prod_filter_lt_adj_eq_prod_edgeFinset`,
   `SimpleGraph.sum_filter_lt_adj_eq_sum_edgeFinset`,
@@ -100,62 +95,6 @@ theorem symmDiff_top_between_compl_adj (G : SimpleGraph V) (S : Set V) {u v : V}
     (G ∆ (⊤ : SimpleGraph V).between S Sᶜ).Adj u v ↔
       Xor (G.Adj u v) (Xor (u ∈ S) (v ∈ S)) := by
   rw [symmDiff_adj, top_between_compl_adj]
-
-/-- On a finite vertex type, a graph is cut-minimal if and only if toggling any finset cut does not
-decrease its edge count. -/
-theorem isCutMinimal_iff_forall_finset [Fintype V] [DecidableEq V] (G : SimpleGraph V)
-    [DecidableRel G.Adj] :
-    G.IsCutMinimal ↔
-      ∀ S : Finset V, #G.edgeFinset ≤
-        #(G.edgeFinset ∆ ((⊤ : SimpleGraph V).between (S : Set V) (S : Set V)ᶜ).edgeFinset) := by
-  rw [isCutMinimal_iff_card_le_card_symmDiff]
-  refine ⟨fun h S => h (S : Set V), fun h S _ => ?_⟩
-  have heq :
-      ((⊤ : SimpleGraph V).between (S.toFinset : Set V) (S.toFinset : Set V)ᶜ).edgeFinset =
-        ((⊤ : SimpleGraph V).between S Sᶜ).edgeFinset := by
-    ext e
-    simp
-  simpa only [heq] using h S.toFinset
-
-/-- The infimum of cut-toggled edge counts over all finsets `S : Finset V` never exceeds
-`#G.edgeFinset`, since `S = ∅` toggles the empty cut. -/
-theorem ciInf_card_symmDiff_edgeFinset_le [Fintype V] [DecidableEq V] (G : SimpleGraph V)
-    [DecidableRel G.Adj] :
-    (⨅ S : Finset V,
-        (#(G.edgeFinset ∆
-          ((⊤ : SimpleGraph V).between (S : Set V) (S : Set V)ᶜ).edgeFinset) : ℝ)) ≤
-      #G.edgeFinset := by
-  have hbdd : BddBelow (Set.range fun S : Finset V =>
-      (#(G.edgeFinset ∆
-        ((⊤ : SimpleGraph V).between (S : Set V) (S : Set V)ᶜ).edgeFinset) : ℝ)) :=
-    ⟨0, by rintro _ ⟨S, rfl⟩; exact Nat.cast_nonneg _⟩
-  refine (ciInf_le hbdd ∅).trans_eq ?_
-  have hempty : ((⊤ : SimpleGraph V).between (↑(∅ : Finset V) : Set V)
-      (↑(∅ : Finset V) : Set V)ᶜ).edgeFinset = ∅ := by
-    ext e
-    induction e using Sym2.ind
-    simp [between_adj]
-  simp [hempty, symmDiff_def]
-
-/-- The infimum of cut-toggled edge counts equals `#G.edgeFinset` if and only if `G` is
-cut-minimal. -/
-theorem ciInf_card_symmDiff_edgeFinset_eq_iff [Fintype V] [DecidableEq V] (G : SimpleGraph V)
-    [DecidableRel G.Adj] :
-    (⨅ S : Finset V,
-        (#(G.edgeFinset ∆
-          ((⊤ : SimpleGraph V).between (S : Set V) (S : Set V)ᶜ).edgeFinset) : ℝ)) =
-      #G.edgeFinset ↔ G.IsCutMinimal := by
-  rw [isCutMinimal_iff_forall_finset]
-  have hbdd : BddBelow (Set.range fun S : Finset V =>
-      (#(G.edgeFinset ∆
-        ((⊤ : SimpleGraph V).between (S : Set V) (S : Set V)ᶜ).edgeFinset) : ℝ)) :=
-    ⟨0, by rintro _ ⟨S, rfl⟩; exact Nat.cast_nonneg _⟩
-  constructor
-  · intro h S
-    exact_mod_cast h ▸ ciInf_le hbdd S
-  · intro h
-    refine le_antisymm G.ciInf_card_symmDiff_edgeFinset_le ?_
-    exact le_ciInf fun S => by exact_mod_cast h S
 
 /-! ### Ordered-pair enumerations of edges and induced triangles -/
 

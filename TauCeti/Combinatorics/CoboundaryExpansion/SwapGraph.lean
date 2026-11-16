@@ -6,17 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Nat.Choose.Basic
+public import TauCeti.Combinatorics.SimpleGraph.CutMinimal
 public import TauCeti.Combinatorics.SimpleGraph.OrderedEdges
 public import TauCeti.GroupTheory.Perm.DistErr.Basic
-import Mathlib.Algebra.Order.Group.CompleteLattice
-import Mathlib.Data.Finset.Prod
+import Mathlib.Algebra.Order.GroupWithZero.OrderIso
 import Mathlib.GroupTheory.Perm.Cycle.Basic
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.Ring
+import TauCeti.Algebra.BigOperators.Finset.Filter
+import TauCeti.Algebra.Group.Basic
 import TauCeti.Combinatorics.CoboundaryExpansion.CrossDegree
 import TauCeti.Data.Fin.Basic
 import TauCeti.GroupTheory.Perm.DistErr.Invariance
+import TauCeti.GroupTheory.Perm.Fin
 import TauCeti.GroupTheory.Perm.ParityRetract
 
 /-!
@@ -25,37 +28,35 @@ import TauCeti.GroupTheory.Perm.ParityRetract
 Given a simple graph `G` on a linearly ordered finite vertex type `V` and a transposition `τ` in a
 symmetric group `Equiv.Perm A`, assigning `τ` to edges of `G` and `1` to non-edges produces an
 inversion-symmetric permutation edge assignment whose holonomy and gauge costs reduce to graph
-combinatorics:
+combinatorics via the transposition-holonomy and parity-retracted edge bounds in
+`TauCeti.GroupTheory.Perm.MovedNorm` and `TauCeti.GroupTheory.Perm.ParityRetract`:
 
-* **Transposition holonomy and parity-retracted edge bounds**
-  (`Equiv.Perm.movedNorm_mul_triple_ite_isSwap`,
-  `Equiv.Perm.movedNorm_inv_mul_ite_mul_of_eq_one_or`, and
-  `Equiv.Perm.ite_xor_sign_le_movedNorm_inv_mul_ite_mul`): the `movedNorm` of a triple product of
-  `{1, τ}` factors detects `Xor` parity (`2` on odd parity, `0` on even parity), `{1, τ}`-valued
-  gauges toggle edges by `Xor`, and `Equiv.Perm.parityRetract` bounds the `movedNorm` under any
-  gauge in `Equiv.Perm A` from below by the cut of odd-sign vertices.
 * **Binary edge-set dictionary, degree-independent gauge distance, and cut-minimality**
-  (`TauCeti.perm_fin_two_eq_ite_fromRel`, `TauCeti.fromRel_ite_ne_one`,
-  `TauCeti.sum_filter_lt_movedNorm_triple_ite_isSwap`,
-  `TauCeti.sum_filter_lt_movedNorm_ite_isSwap_of_forall_eq_one_or`,
-  `TauCeti.ciInf_sum_filter_lt_movedNorm_ite_isSwap`, and
-  `TauCeti.ciInf_sum_filter_lt_movedNorm_ite_isSwap_eq_two_mul_card_iff`): loop-free
+  (`TauCeti.perm_fin_two_eq_ite_fromRel`, `SimpleGraph.fromRel_ite_ne_one`,
+  `SimpleGraph.sum_filter_lt_movedNorm_triple_ite_isSwap`,
+  `SimpleGraph.sum_filter_lt_movedNorm_ite_isSwap_of_forall_eq_one_or`,
+  `SimpleGraph.ciInf_sum_filter_lt_movedNorm_ite_isSwap`, and
+  `SimpleGraph.ciInf_sum_filter_lt_movedNorm_ite_isSwap_eq_two_mul_card_iff`): loop-free
   inversion-symmetric `Perm (Fin 2)` assignments correspond bijectively to simple graphs, the
   triangle holonomy defect equals twice the number of `3`-vertex subsets spanning an odd number of
   edges, the `movedNorm` gauge-cost infimum over `V → Perm A` equals twice the minimum cut-toggled
   edge count independently of `A` and `τ`, and this infimum equals `2 * #G.edgeFinset` if and only
   if `G.IsCutMinimal`.
 * **Cross-degree gauge optimization for cut-minimal graphs and Kozlov's parameters**
-  (`TauCeti.ciInf_sum_filter_lt_distErr_ite_isSwap_eq_iff`,
-  `TauCeti.ciInf₂_sum_filter_lt_distErr_three_ite_isSwap_of_isCutMinimal`,
+  (`SimpleGraph.ciInf_sum_filter_lt_distErr_ite_isSwap_eq_iff`,
+  `SimpleGraph.ciInf₂_sum_filter_lt_distErr_three_ite_isSwap_of_isCutMinimal`,
+  `SimpleGraph.ciInf₂_sum_filter_lt_distErr_three_ite_isSwap_pos`,
+  `SimpleGraph.normalized_defect_div_ciInf₂_distErr_three_ite_isSwap_eq_card_div_three`,
   `TauCeti.six_mul_add_three_lt_mul_four_mul_sq_add`, and
-  `TauCeti.ciInf₂_sum_filter_lt_distErr_three_ite_isSwap_of_kozlov`): when `G.IsCutMinimal` and
+  `SimpleGraph.ciInf₂_sum_filter_lt_distErr_three_ite_isSwap_of_kozlov`): when `G.IsCutMinimal` and
   `8 * #G.edgeFinset ≤ 3 * (Fintype.card V).choose 2`, no unequal-degree gauge in `Perm (Fin m)`
-  (`m ≠ 3`) beats the degree-`3` transposition gauge-cost infimum `2 * #G.edgeFinset / 3`. In
-  particular, for Kozlov's parameters `Fintype.card V = q * (2 * t + 1)` and
-  `#G.edgeFinset = q ^ 2 * t * (t + 1) / 2` (`q, t ≥ 1`), the global cross-degree infimum over all
-  gauge degrees `m + 2 ≥ 2` equals `q ^ 2 * t * (t + 1) / 3`, with ratio `Fintype.card V / 3`
-  whenever the odd-triangle count is `(Fintype.card V / 3) * #G.edgeFinset`.
+  (`m ≠ 3`) beats the degree-`3` transposition gauge-cost infimum `2 * #G.edgeFinset / 3`, giving a
+  strictly positive global cross-degree infimum whenever `G.edgeFinset.Nonempty` and normalized
+  ratio `Fintype.card V / 3` whenever the odd-triangle count is
+  `(Fintype.card V / 3) * #G.edgeFinset`. In particular, for Kozlov's parameters
+  `Fintype.card V = q * (2 * t + 1)` and `#G.edgeFinset = q ^ 2 * t * (t + 1) / 2` (`q, t ≥ 1`), the
+  global cross-degree infimum over all gauge degrees `m + 2 ≥ 2` equals
+  `q ^ 2 * t * (t + 1) / 3`.
 
 ## References
 
@@ -69,92 +70,12 @@ combinatorics:
 
 public section
 
-open Finset
+open Equiv Equiv.Perm Finset
 open scoped symmDiff
 
-private theorem ite_inv_of_mul_self {G : Type*} [Group G] {t : G} (ht : t * t = 1)
-    (p : Prop) [Decidable p] : (if p then t else 1)⁻¹ = if p then t else 1 := by
-  split_ifs
-  · exact inv_eq_of_mul_eq_one_right ht
-  · exact inv_one
-
-private theorem ite_mul_ite_mul_ite_of_mul_self {G : Type*} [Group G] {t : G} (ht : t * t = 1)
-    (p q r : Prop) [Decidable p] [Decidable q] [Decidable r] :
-    (if p then t else 1) * (if q then t else 1) * (if r then t else 1) =
-      if Xor p (Xor q r) then t else 1 := by
-  by_cases hp : p <;> by_cases hq : q <;> by_cases hr : r <;>
-    simp [hp, hq, hr, Xor, ht]
-
-namespace Equiv.Perm
-
-variable {A : Type*} [Fintype A] [DecidableEq A] {τ : Perm A}
-
-/-! ### Transposition holonomy and parity-retracted edge bounds -/
-
-/-- Multiplying three `{1, τ}` indicators of a transposition `τ` gives moved-point norm `2` when an
-odd number of the three conditions hold, and `0` otherwise. -/
-theorem movedNorm_mul_triple_ite_isSwap (hτ : τ.IsSwap) (p q r : Prop) [Decidable p]
-    [Decidable q] [Decidable r] :
-    movedNorm A ((if p then τ else 1) * (if q then τ else 1) * (if r then τ else 1)) =
-      if Xor p (Xor q r) then 2 else 0 := by
-  have hτ₂ : τ * τ = 1 := by
-    rcases hτ with ⟨x, y, -, rfl⟩
-    exact Equiv.swap_mul_self x y
-  rw [ite_mul_ite_mul_ite_of_mul_self hτ₂]
-  split_ifs <;> simp [hτ.movedNorm]
-
-/-- Variant of `Equiv.Perm.movedNorm_mul_triple_ite_isSwap` with the third indicator inverted,
-matching the `α u v * α v w * (α u w)⁻¹` triangle-holonomy convention. -/
-theorem movedNorm_mul_triple_ite_inv_isSwap (hτ : τ.IsSwap) (p q r : Prop) [Decidable p]
-    [Decidable q] [Decidable r] :
-    movedNorm A ((if p then τ else 1) * (if q then τ else 1) * (if r then τ else 1)⁻¹) =
-      if Xor p (Xor q r) then 2 else 0 := by
-  have hτ₂ : τ * τ = 1 := by
-    rcases hτ with ⟨x, y, -, rfl⟩
-    exact Equiv.swap_mul_self x y
-  rw [ite_inv_of_mul_self hτ₂, movedNorm_mul_triple_ite_isSwap hτ]
-
-/-- For `{1, τ}`-valued endpoints `b₁` and `b₂`, gauge-conjugating a `{1, τ}` indicator gives
-moved-point norm `2` when `p` differs from `Xor (b₁ ≠ 1) (b₂ ≠ 1)`, and `0` otherwise. -/
-theorem movedNorm_inv_mul_ite_mul_of_eq_one_or (hτ : τ.IsSwap) {b₁ b₂ : Perm A}
-    (hb₁ : b₁ = 1 ∨ b₁ = τ) (hb₂ : b₂ = 1 ∨ b₂ = τ) (p : Prop) [Decidable p] :
-    movedNorm A (b₁⁻¹ * (if p then τ else 1) * b₂) =
-      if Xor p (Xor (b₁ ≠ 1) (b₂ ≠ 1)) then 2 else 0 := by
-  have hτ₂ : τ * τ = 1 := by
-    rcases hτ with ⟨x, y, -, rfl⟩
-    exact Equiv.swap_mul_self x y
-  have hτ_inv : τ⁻¹ = τ := inv_eq_of_mul_eq_one_right hτ₂
-  have hτ_ne : τ ≠ 1 := hτ.isCycle.ne_one
-  rcases hb₁ with rfl | rfl <;> rcases hb₂ with rfl | rfl <;> by_cases hp : p <;>
-    simp [hp, hτ₂, hτ_inv, hτ_ne, hτ.movedNorm, Xor]
-
-/-- For arbitrary `g h : Perm A`, retracting along `Equiv.Perm.parityRetract` bounds the moved-point
-norm of `g⁻¹ * (if p then τ else 1) * h` from below by the `{0, 2}` parity indicator of the signs of
-`g` and `h`. -/
-theorem ite_xor_sign_le_movedNorm_inv_mul_ite_mul (hτ : τ.IsSwap) (g h : Perm A) (p : Prop)
-    [Decidable p] :
-    (if Xor p (Xor (sign g = -1) (sign h = -1)) then (2 : ℝ) else 0) ≤
-      movedNorm A (g⁻¹ * (if p then τ else 1) * h) := by
-  let r := parityRetract hτ
-  have hle := movedNorm_parityRetract_le hτ (g⁻¹ * (if p then τ else 1) * h)
-  have hmap : r (g⁻¹ * (if p then τ else 1) * h) = (r g)⁻¹ * (if p then τ else 1) * r h := by
-    rw [map_mul, map_mul, map_inv]
-    congr 2
-    split_ifs <;> simp [r]
-  have hr (σ : Perm A) : (r σ = 1 ∨ r σ = τ) ∧ (r σ ≠ 1 ↔ sign σ = -1) := by
-    rcases Int.units_eq_one_or (sign σ) with hσ | hσ
-    · simp [r, hσ, Units.ext_iff]
-    · simp [r, hσ, hτ.isCycle.ne_one]
-  rw [hmap, movedNorm_inv_mul_ite_mul_of_eq_one_or hτ (hr g).1 (hr h).1 p] at hle
-  simpa only [(hr g).2, (hr h).2] using hle
-
-end Equiv.Perm
+/-! ### Binary edge-set dictionary, degree-independent gauge distance, and cut-minimality -/
 
 namespace TauCeti
-
-open Equiv Equiv.Perm
-
-/-! ### Binary edge-set dictionary, degree-independent gauge distance, and cut-minimality -/
 
 /-- Every loop-free inversion-symmetric assignment `α : V → V → Perm (Fin 2)` agrees everywhere with
 the `Equiv.swap 0 1` edge indicator of `SimpleGraph.fromRel (fun a b => α a b ≠ 1)`. -/
@@ -170,6 +91,10 @@ theorem perm_fin_two_eq_ite_fromRel {V : Type*} [DecidableEq V] (α : V → V �
     · have hne : Equiv.swap (0 : Fin 2) 1 ≠ 1 := by decide
       simp [SimpleGraph.fromRel_adj, huv, hsymm, h, hne]
 
+end TauCeti
+
+namespace SimpleGraph
+
 /-- Recovering a simple graph from its `{1, t}` edge indicator (`t ≠ 1`) returns the original
 graph. -/
 theorem fromRel_ite_ne_one {V M : Type*} [One M] (G : SimpleGraph V) [DecidableRel G.Adj]
@@ -181,12 +106,6 @@ section GraphBridge
 
 variable {V A : Type*} [Fintype V] [LinearOrder V] [Fintype A] [DecidableEq A]
 
-private theorem sum_ite_two_zero {ι : Type*} (s : Finset ι) (P : ι → Prop) [DecidablePred P] :
-    (∑ x ∈ s, if P x then (2 : ℝ) else 0) = 2 * (#{x ∈ s | P x} : ℝ) := by
-  have hterm (x : ι) : (if P x then (2 : ℝ) else 0) = 2 * if P x then (1 : ℝ) else 0 := by
-    split_ifs <;> ring
-  simp_rw [hterm, ← mul_sum, sum_boole]
-
 /-- For any transposition `τ : Perm A`, the moved-point triangle defect of the `τ`-labelled graph
 `G` equals twice the number of `3`-element subsets of `V` spanning an odd number of edges in `G`. -/
 theorem sum_filter_lt_movedNorm_triple_ite_isSwap (G : SimpleGraph V) [DecidableRel G.Adj]
@@ -197,14 +116,14 @@ theorem sum_filter_lt_movedNorm_triple_ite_isSwap (G : SimpleGraph V) [Decidable
       2 * (#{s ∈ (univ : Finset V).powersetCard 3 |
         Odd #{e ∈ G.edgeFinset | e.toFinset ⊆ s}} : ℝ) := by
   simp_rw [movedNorm_mul_triple_ite_isSwap hτ]
-  rw [sum_ite_two_zero, filter_filter,
+  rw [sum_ite_zero_eq_nsmul, nsmul_eq_mul, mul_comm _ (2 : ℝ), filter_filter,
     ← G.card_filter_lt_xor_adj_triple_eq_card_powersetCard_three_odd]
   congr 3
   ext t
   simp [and_assoc]
 
-/-- Variant of `TauCeti.sum_filter_lt_movedNorm_triple_ite_isSwap` using `(α u w)⁻¹` on the third
-edge of each increasing triple `(u, v, w)`. -/
+/-- Variant of `SimpleGraph.sum_filter_lt_movedNorm_triple_ite_isSwap` using `(α u w)⁻¹` on the
+third edge of each increasing triple `(u, v, w)`. -/
 theorem sum_filter_lt_movedNorm_triple_ite_inv_isSwap (G : SimpleGraph V) [DecidableRel G.Adj]
     {τ : Perm A} (hτ : τ.IsSwap) :
     (∑ t ∈ ({t : V × V × V | t.1 < t.2.1 ∧ t.2.1 < t.2.2} : Finset (V × V × V)),
@@ -215,8 +134,8 @@ theorem sum_filter_lt_movedNorm_triple_ite_inv_isSwap (G : SimpleGraph V) [Decid
   have hτ₂ : τ * τ = 1 := by
     rcases hτ with ⟨x, y, -, rfl⟩
     exact Equiv.swap_mul_self x y
-  refine (sum_congr rfl fun t _ => ?_).trans (sum_filter_lt_movedNorm_triple_ite_isSwap G hτ)
-  rw [ite_inv_of_mul_self hτ₂]
+  refine (sum_congr rfl fun t _ => ?_).trans (G.sum_filter_lt_movedNorm_triple_ite_isSwap hτ)
+  rw [TauCeti.ite_inv_of_mul_self hτ₂]
   simp only [G.adj_comm t.1 t.2.2]
 
 /-- For a `{1, τ}`-valued vertex gauge `β`, the moved-point gauge cost of the `τ`-labelled graph `G`
@@ -233,7 +152,7 @@ theorem sum_filter_lt_movedNorm_ite_isSwap_of_forall_eq_one_or (G : SimpleGraph 
         if Xor (G.Adj e.1 e.2) (Xor (β e.1 ≠ 1) (β e.2 ≠ 1)) then 2 else 0 :=
     movedNorm_inv_mul_ite_mul_of_eq_one_or hτ (hβ e.1) (hβ e.2) _
   simp_rw [hcongr]
-  rw [sum_ite_two_zero, filter_filter,
+  rw [sum_ite_zero_eq_nsmul, nsmul_eq_mul, mul_comm _ (2 : ℝ), filter_filter,
     ← G.card_filter_lt_xor_adj_eq_card_symmDiff_edgeFinset {v | β v ≠ 1}]
   rfl
 
@@ -251,14 +170,13 @@ theorem sum_filter_lt_movedNorm_ite_isSwap_indicator (G : SimpleGraph V) [Decida
     split_ifs <;> simp
   have hset : {v : V | β v ≠ 1} = S := by
     ext v
-    change (if v ∈ S then τ else 1) ≠ 1 ↔ v ∈ S
-    split_ifs with hv <;> simp [hv, hτ.isCycle.ne_one]
+    simp [β, hτ.isCycle.ne_one]
   have heq :
       ((⊤ : SimpleGraph V).between {v | β v ≠ 1} {v | β v ≠ 1}ᶜ).edgeFinset =
         ((⊤ : SimpleGraph V).between S Sᶜ).edgeFinset := by
     ext e
     simp [hset]
-  simpa only [β, heq] using sum_filter_lt_movedNorm_ite_isSwap_of_forall_eq_one_or G hτ hβ
+  simpa only [β, heq] using G.sum_filter_lt_movedNorm_ite_isSwap_of_forall_eq_one_or hτ hβ
 
 /-- At the trivial gauge `fun _ => 1`, the moved-point cost of the `τ`-labelled graph `G` equals
 `2 * #G.edgeFinset`. -/
@@ -271,7 +189,8 @@ theorem sum_filter_lt_movedNorm_ite_isSwap_one (G : SimpleGraph V) [DecidableRel
       movedNorm A (if G.Adj e.1 e.2 then τ else 1) = if G.Adj e.1 e.2 then 2 else 0 := by
     split_ifs <;> simp [hτ.movedNorm]
   simp_rw [hcongr]
-  rw [sum_ite_two_zero, filter_filter, G.card_filter_lt_adj_eq_card_edgeFinset]
+  rw [sum_ite_zero_eq_nsmul, nsmul_eq_mul, mul_comm _ (2 : ℝ), filter_filter,
+    G.card_filter_lt_adj_eq_card_edgeFinset]
 
 /-- In `Perm (Fin 2)`, every gauge `β : V → Perm (Fin 2)` has moved-point cost equal to twice the
 edge count of `G` after toggling the cut `{v | β v ≠ 1}`. -/
@@ -282,7 +201,7 @@ theorem sum_filter_lt_movedNorm_fin_two_ite_swap (G : SimpleGraph V) [DecidableR
           (if G.Adj e.1 e.2 then Equiv.swap 0 1 else 1) * β e.2)) =
       2 * (#(G.edgeFinset ∆
         ((⊤ : SimpleGraph V).between {v | β v ≠ 1} {v | β v ≠ 1}ᶜ).edgeFinset) : ℝ) :=
-  sum_filter_lt_movedNorm_ite_isSwap_of_forall_eq_one_or G
+  G.sum_filter_lt_movedNorm_ite_isSwap_of_forall_eq_one_or
     (swap_isSwap_iff.mpr (by decide : (0 : Fin 2) ≠ 1)) fun v => eq_one_or_swap_fin_two (β v)
 
 /-- For an arbitrary gauge `β : V → Perm A`, the moved-point cost of the `τ`-labelled graph `G` is
@@ -297,7 +216,7 @@ theorem two_mul_card_symmDiff_le_sum_filter_lt_movedNorm_ite_isSwap (G : SimpleG
         movedNorm A ((β e.1)⁻¹ * (if G.Adj e.1 e.2 then τ else 1) * β e.2) := by
   have hsum := sum_le_sum fun e (_ : e ∈ ({p : V × V | p.1 < p.2} : Finset (V × V))) =>
     ite_xor_sign_le_movedNorm_inv_mul_ite_mul hτ (β e.1) (β e.2) (G.Adj e.1 e.2)
-  rw [sum_ite_two_zero, filter_filter] at hsum
+  rw [sum_ite_zero_eq_nsmul, nsmul_eq_mul, mul_comm _ (2 : ℝ), filter_filter] at hsum
   have hcard := G.card_filter_lt_xor_adj_eq_card_symmDiff_edgeFinset {v | sign (β v) = -1}
   exact (congrArg (fun n : ℕ => 2 * (n : ℝ)) hcard.symm).trans_le hsum
 
@@ -325,7 +244,7 @@ theorem ciInf_sum_filter_lt_movedNorm_ite_isSwap (G : SimpleGraph V) [DecidableR
   · have hdiv : (⨅ β, cost β) / 2 ≤ ⨅ S, cutCard S := by
       refine le_ciInf fun S => (div_le_iff₀' (by norm_num : (0 : ℝ) < 2)).mpr ?_
       refine (ciInf_le hbdd_cost (fun v => if v ∈ (S : Set V) then τ else 1)).trans_eq ?_
-      exact sum_filter_lt_movedNorm_ite_isSwap_indicator G hτ (S : Set V)
+      exact G.sum_filter_lt_movedNorm_ite_isSwap_indicator hτ (S : Set V)
     exact (div_le_iff₀' (by norm_num : (0 : ℝ) < 2)).mp hdiv
   · refine le_ciInf fun β => ?_
     let S : Finset V := {v : V | sign (β v) = -1}
@@ -338,7 +257,7 @@ theorem ciInf_sum_filter_lt_movedNorm_ite_isSwap (G : SimpleGraph V) [DecidableR
     refine (mul_le_mul_of_nonneg_left (ciInf_le hbdd_cut S) (by norm_num)).trans ?_
     dsimp only [cutCard, cost]
     rw [hS]
-    exact two_mul_card_symmDiff_le_sum_filter_lt_movedNorm_ite_isSwap G hτ β
+    exact G.two_mul_card_symmDiff_le_sum_filter_lt_movedNorm_ite_isSwap hτ β
 
 /-- Any two transpositions `τ₁ : Perm A` and `τ₂ : Perm B` induce the same moved-point gauge-cost
 infimum on `G`. -/
@@ -351,8 +270,8 @@ theorem ciInf_sum_filter_lt_movedNorm_ite_isSwap_eq {B : Type*} [Fintype B] [Dec
       ⨅ β : V → Perm B,
         ∑ e ∈ ({p : V × V | p.1 < p.2} : Finset (V × V)),
           movedNorm B ((β e.1)⁻¹ * (if G.Adj e.1 e.2 then τ₂ else 1) * β e.2) := by
-  rw [ciInf_sum_filter_lt_movedNorm_ite_isSwap G hτ₁,
-    ciInf_sum_filter_lt_movedNorm_ite_isSwap G hτ₂]
+  rw [G.ciInf_sum_filter_lt_movedNorm_ite_isSwap hτ₁,
+    G.ciInf_sum_filter_lt_movedNorm_ite_isSwap hτ₂]
 
 /-- The moved-point gauge-cost infimum of a `τ`-labelled graph `G` over `V → Perm A` equals
 `2 * #G.edgeFinset` if and only if `G` is cut-minimal. -/
@@ -362,7 +281,7 @@ theorem ciInf_sum_filter_lt_movedNorm_ite_isSwap_eq_two_mul_card_iff (G : Simple
         ∑ e ∈ ({p : V × V | p.1 < p.2} : Finset (V × V)),
           movedNorm A ((β e.1)⁻¹ * (if G.Adj e.1 e.2 then τ else 1) * β e.2)) =
       2 * (#G.edgeFinset : ℝ) ↔ G.IsCutMinimal := by
-  rw [ciInf_sum_filter_lt_movedNorm_ite_isSwap G hτ,
+  rw [G.ciInf_sum_filter_lt_movedNorm_ite_isSwap hτ,
     mul_right_inj' (by norm_num : (2 : ℝ) ≠ 0), G.ciInf_card_symmDiff_edgeFinset_eq_iff]
 
 /-- A cut-minimal graph `G` with at least one edge has strictly positive moved-point gauge-cost
@@ -373,7 +292,7 @@ theorem ciInf_sum_filter_lt_movedNorm_ite_isSwap_pos (G : SimpleGraph V) [Decida
       ∑ e ∈ ({p : V × V | p.1 < p.2} : Finset (V × V)),
         movedNorm A ((β e.1)⁻¹ * (if G.Adj e.1 e.2 then τ else 1) * β e.2) := by
   have hEpos : (0 : ℝ) < #G.edgeFinset := Nat.cast_pos.mpr hne.card_pos
-  rw [(ciInf_sum_filter_lt_movedNorm_ite_isSwap_eq_two_mul_card_iff G hτ).mpr hcut]
+  rw [(G.ciInf_sum_filter_lt_movedNorm_ite_isSwap_eq_two_mul_card_iff hτ).mpr hcut]
   positivity
 
 /-- When `G` is cut-minimal with at least one edge and its odd-edge `3`-subsets number
@@ -393,8 +312,8 @@ theorem defect_div_ciInf_movedNorm_ite_isSwap_eq_card_div_three (G : SimpleGraph
           movedNorm A ((β e.1)⁻¹ * (if G.Adj e.1 e.2 then τ else 1) * β e.2)) =
       (Fintype.card V : ℝ) / 3 := by
   have hEpos : (0 : ℝ) < #G.edgeFinset := Nat.cast_pos.mpr hne.card_pos
-  rw [(ciInf_sum_filter_lt_movedNorm_ite_isSwap_eq_two_mul_card_iff G hτ).mpr hcut,
-    sum_filter_lt_movedNorm_triple_ite_isSwap G hτ, hodd]
+  rw [(G.ciInf_sum_filter_lt_movedNorm_ite_isSwap_eq_two_mul_card_iff hτ).mpr hcut,
+    G.sum_filter_lt_movedNorm_triple_ite_isSwap hτ, hodd]
   have h2E : (2 * (#G.edgeFinset : ℝ)) ≠ 0 := by positivity
   field_simp [h2E]
 
@@ -406,11 +325,6 @@ section CrossDegree
 
 variable {V : Type*} [Fintype V] [LinearOrder V]
 
-private theorem two_le_of_isSwap_fin {n : ℕ} {τ : Perm (Fin n)} (hτ : τ.IsSwap) : 2 ≤ n := by
-  have h2 : #τ.support = 2 := card_support_eq_two.mpr hτ
-  have hle : #τ.support ≤ n := (card_le_univ _).trans_eq (Fintype.card_fin n)
-  omega
-
 /-- In equal degree `n`, the `distErr` gauge-cost infimum of a `τ`-labelled graph `G` (`τ.IsSwap`)
 equals `2 / n` times the minimum cut-toggled edge count. -/
 theorem ciInf_sum_filter_lt_distErr_ite_isSwap {n : ℕ} (G : SimpleGraph V) [DecidableRel G.Adj]
@@ -421,7 +335,7 @@ theorem ciInf_sum_filter_lt_distErr_ite_isSwap {n : ℕ} (G : SimpleGraph V) [De
       2 * (⨅ S : Finset V,
         (#(G.edgeFinset ∆
           ((⊤ : SimpleGraph V).between (S : Set V) (S : Set V)ᶜ).edgeFinset) : ℝ)) / n := by
-  have hn2 : 2 ≤ n := two_le_of_isSwap_fin hτ
+  have hn2 : 2 ≤ n := hτ.two_le
   have : NeZero n := ⟨by omega⟩
   have hn_pos : (0 : ℝ) < n := by exact_mod_cast (by omega : 0 < n)
   let mcost (β : V → Perm (Fin n)) : ℝ :=
@@ -434,14 +348,9 @@ theorem ciInf_sum_filter_lt_distErr_ite_isSwap {n : ℕ} (G : SimpleGraph V) [De
   simp_rw [hterm]
   have hbdd : BddBelow (Set.range mcost) :=
     ⟨0, by rintro _ ⟨β, rfl⟩; exact sum_nonneg fun _ _ => apply_nonneg (movedNorm (Fin n)) _⟩
-  rw [← ciInf_sum_filter_lt_movedNorm_ite_isSwap G hτ]
-  refine le_antisymm ?_ ?_
-  · refine (le_div_iff₀ hn_pos).mpr (le_ciInf fun β => ?_)
-    exact (mul_le_mul_of_nonneg_right (ciInf_le ⟨0, by
-      rintro _ ⟨β', rfl⟩
-      exact div_nonneg (sum_nonneg fun _ _ => apply_nonneg (movedNorm (Fin n)) _) hn_pos.le⟩ β)
-      hn_pos.le).trans_eq (div_mul_cancel₀ _ hn_pos.ne')
-  · exact le_ciInf fun β => div_le_div_of_nonneg_right (ciInf_le hbdd β) hn_pos.le
+  rw [← G.ciInf_sum_filter_lt_movedNorm_ite_isSwap hτ]
+  simpa only [OrderIso.divRight₀_apply] using
+    ((OrderIso.divRight₀ (n : ℝ) hn_pos).map_ciInf hbdd).symm
 
 /-- In equal degree `n`, the `distErr` gauge-cost infimum of a `τ`-labelled graph `G` (`τ.IsSwap`)
 equals `2 * #G.edgeFinset / n` if and only if `G` is cut-minimal. -/
@@ -451,9 +360,9 @@ theorem ciInf_sum_filter_lt_distErr_ite_isSwap_eq_iff {n : ℕ} (G : SimpleGraph
         ∑ e ∈ ({p : V × V | p.1 < p.2} : Finset (V × V)),
           distErr (if G.Adj e.1 e.2 then τ else 1) (β e.1 * (β e.2)⁻¹)) =
       2 * (#G.edgeFinset : ℝ) / n ↔ G.IsCutMinimal := by
-  have hn2 : 2 ≤ n := two_le_of_isSwap_fin hτ
+  have hn2 : 2 ≤ n := hτ.two_le
   have hn_ne : (n : ℝ) ≠ 0 := by exact_mod_cast (by omega : n ≠ 0)
-  rw [ciInf_sum_filter_lt_distErr_ite_isSwap G hτ, div_left_inj₀ hn_ne,
+  rw [G.ciInf_sum_filter_lt_distErr_ite_isSwap hτ, div_left_inj₀ hn_ne,
     mul_right_inj' (by norm_num : (2 : ℝ) ≠ 0), G.ciInf_card_symmDiff_edgeFinset_eq_iff]
 
 /-- In `Perm (Fin 2)` at `Equiv.swap 0 1`, the `distErr` gauge-cost infimum equals `#G.edgeFinset`
@@ -464,35 +373,10 @@ theorem ciInf_sum_filter_lt_distErr_fin_two_ite_swap_eq_card_iff (G : SimpleGrap
         ∑ e ∈ ({p : V × V | p.1 < p.2} : Finset (V × V)),
           distErr (if G.Adj e.1 e.2 then Equiv.swap (0 : Fin 2) 1 else 1) (β e.1 * (β e.2)⁻¹)) =
       (#G.edgeFinset : ℝ) ↔ G.IsCutMinimal := by
-  have h := ciInf_sum_filter_lt_distErr_ite_isSwap_eq_iff G
+  have h := G.ciInf_sum_filter_lt_distErr_ite_isSwap_eq_iff
     (swap_isSwap_iff.mpr (by decide : (0 : Fin 2) ≠ 1))
   norm_num at h
   exact h
-
-/-- Comparing any degree-`3` edge assignment on `V` against a degree-`2` gauge incurs total
-distance with errors at least `(Fintype.card V).choose 2 / 3`. -/
-theorem choose_two_div_three_le_sum_filter_lt_distErr_three_two (α : V → V → Perm (Fin 3))
-    (β : V → Perm (Fin 2)) :
-    ((Fintype.card V).choose 2 : ℝ) / 3 ≤
-      ∑ e ∈ ({p : V × V | p.1 < p.2} : Finset (V × V)),
-        distErr (α e.1 e.2) (β e.1 * (β e.2)⁻¹) := by
-  set E : Finset (V × V) := {p : V × V | p.1 < p.2}
-  have hcard : #E = (Fintype.card V).choose 2 := Fintype.card_product_filter_lt
-  have h := E.card_nsmul_le_sum _ _ fun e _ =>
-    one_div_three_le_distErr_three_two (α e.1 e.2) (β e.1 * (β e.2)⁻¹)
-  simpa [hcard, nsmul_eq_mul, div_eq_mul_inv] using h
-
-/-- Comparing any degree-`3` edge assignment on `V` against a gauge of any unequal degree `m ≠ 3`
-incurs total distance with errors at least `(Fintype.card V).choose 2 / 4`. -/
-theorem choose_two_div_four_le_sum_filter_lt_distErr_three_of_ne {m : ℕ}
-    (α : V → V → Perm (Fin 3)) (β : V → Perm (Fin m)) (hne : m ≠ 3) :
-    ((Fintype.card V).choose 2 : ℝ) / 4 ≤
-      ∑ e ∈ ({p : V × V | p.1 < p.2} : Finset (V × V)),
-        distErr (α e.1 e.2) (β e.1 * (β e.2)⁻¹) := by
-  set E : Finset (V × V) := {p : V × V | p.1 < p.2}
-  have hcard : #E = (Fintype.card V).choose 2 := Fintype.card_product_filter_lt
-  simpa [hcard] using E.card_div_four_le_sum_distErr_three_of_ne
-    (fun e => α e.1 e.2) (fun e => β e.1 * (β e.2)⁻¹) hne
 
 /-- If `G` is cut-minimal and `8 * #G.edgeFinset ≤ 3 * (Fintype.card V).choose 2`, then every gauge
 `β : V → Perm (Fin m)` of every degree `m : ℕ` has cross-degree cost at least
@@ -510,27 +394,14 @@ theorem two_mul_card_div_three_le_sum_filter_lt_distErr_three_ite_isSwap (G : Si
         ∑ e ∈ ({p : V × V | p.1 < p.2} : Finset (V × V)),
           distErr (if G.Adj e.1 e.2 then τ else 1) (β' e.1 * (β' e.2)⁻¹)) :=
       ⟨0, by rintro _ ⟨β', rfl⟩; exact sum_nonneg fun _ _ => distErr_nonneg _ _⟩
-    exact ((ciInf_sum_filter_lt_distErr_ite_isSwap_eq_iff G hτ).mpr hcut).symm.trans_le
+    exact ((G.ciInf_sum_filter_lt_distErr_ite_isSwap_eq_iff hτ).mpr hcut).symm.trans_le
       (ciInf_le hbdd β)
   · refine le_trans ?_
-      (choose_two_div_four_le_sum_filter_lt_distErr_three_of_ne
+      (TauCeti.choose_two_div_four_le_sum_filter_lt_distErr_three_of_ne
         (fun u v => if G.Adj u v then τ else 1) β hm)
     have hdens' : 8 * (#G.edgeFinset : ℝ) ≤ 3 * ((Fintype.card V).choose 2 : ℝ) := by
       exact_mod_cast hdens
     linarith
-
-/-- Whenever `8 * r < 3 * (Fintype.card V).choose 2`, every unequal-degree gauge
-`β : V → Perm (Fin m)` (`m ≠ 3`) has cross-degree cost strictly exceeding `2 * r / 3` against any
-degree-`3` edge assignment `α`. -/
-theorem two_mul_div_three_lt_sum_filter_lt_distErr_three_of_ne {r m : ℕ}
-    (α : V → V → Perm (Fin 3)) (hr : 8 * r < 3 * (Fintype.card V).choose 2)
-    (β : V → Perm (Fin m)) (hm : m ≠ 3) :
-    2 * (r : ℝ) / 3 <
-      ∑ e ∈ ({p : V × V | p.1 < p.2} : Finset (V × V)),
-        distErr (α e.1 e.2) (β e.1 * (β e.2)⁻¹) := by
-  refine lt_of_lt_of_le ?_ (choose_two_div_four_le_sum_filter_lt_distErr_three_of_ne α β hm)
-  have hr' : 8 * (r : ℝ) < 3 * ((Fintype.card V).choose 2 : ℝ) := by exact_mod_cast hr
-  linarith
 
 /-- If `G` is cut-minimal and `8 * #G.edgeFinset ≤ 3 * (Fintype.card V).choose 2`, then the global
 cross-degree gauge-cost infimum over all gauge degrees `m + 2 ≥ 2` for a `Perm (Fin 3)`
@@ -546,13 +417,65 @@ theorem ciInf₂_sum_filter_lt_distErr_three_ite_isSwap_of_isCutMinimal (G : Sim
     ∑ e ∈ ({p : V × V | p.1 < p.2} : Finset (V × V)),
       distErr (if G.Adj e.1 e.2 then τ else 1) (β e.1 * (β e.2)⁻¹)
   have hf_ge (m : ℕ) : 2 * (#G.edgeFinset : ℝ) / 3 ≤ f m :=
-    le_ciInf (two_mul_card_div_three_le_sum_filter_lt_distErr_three_ite_isSwap G hτ hcut hdens)
+    le_ciInf (G.two_mul_card_div_three_le_sum_filter_lt_distErr_three_ite_isSwap hτ hcut hdens)
   have hbdd : BddBelow (Set.range f) :=
     ⟨2 * (#G.edgeFinset : ℝ) / 3, by rintro _ ⟨m, rfl⟩; exact hf_ge m⟩
   refine le_antisymm ?_ (le_ciInf hf_ge)
-  exact (ciInf_le hbdd 1).trans_eq ((ciInf_sum_filter_lt_distErr_ite_isSwap_eq_iff G hτ).mpr hcut)
+  exact (ciInf_le hbdd 1).trans_eq ((G.ciInf_sum_filter_lt_distErr_ite_isSwap_eq_iff hτ).mpr hcut)
+
+/-- If `G` is cut-minimal with `8 * #G.edgeFinset ≤ 3 * (Fintype.card V).choose 2` and at least one
+edge, then its `Perm (Fin 3)` transposition labelling has strictly positive global cross-degree
+gauge-cost infimum over all gauge degrees `m + 2 ≥ 2`. -/
+theorem ciInf₂_sum_filter_lt_distErr_three_ite_isSwap_pos (G : SimpleGraph V)
+    [DecidableRel G.Adj] {τ : Perm (Fin 3)} (hτ : τ.IsSwap) (hcut : G.IsCutMinimal)
+    (hdens : 8 * #G.edgeFinset ≤ 3 * (Fintype.card V).choose 2) (hne : G.edgeFinset.Nonempty) :
+    0 < ⨅ (m : ℕ) (β : V → Perm (Fin (m + 2))),
+      ∑ e ∈ ({p : V × V | p.1 < p.2} : Finset (V × V)),
+        distErr (if G.Adj e.1 e.2 then τ else 1) (β e.1 * (β e.2)⁻¹) := by
+  have hEpos : (0 : ℝ) < #G.edgeFinset := Nat.cast_pos.mpr hne.card_pos
+  rw [G.ciInf₂_sum_filter_lt_distErr_three_ite_isSwap_of_isCutMinimal hτ hcut hdens]
+  positivity
+
+/-- If `G` is cut-minimal with `8 * #G.edgeFinset ≤ 3 * (Fintype.card V).choose 2`, at least one
+edge, and odd-edge `3`-subset count `(Fintype.card V / 3) * #G.edgeFinset`, then its `Perm (Fin 3)`
+transposition labelling has normalized cross-degree defect-to-gauge ratio `Fintype.card V / 3`. -/
+theorem normalized_defect_div_ciInf₂_distErr_three_ite_isSwap_eq_card_div_three
+    (G : SimpleGraph V) [DecidableRel G.Adj] {τ : Perm (Fin 3)} (hτ : τ.IsSwap)
+    (hcut : G.IsCutMinimal) (hdens : 8 * #G.edgeFinset ≤ 3 * (Fintype.card V).choose 2)
+    (hne : G.edgeFinset.Nonempty)
+    (hodd : (#{s ∈ (univ : Finset V).powersetCard 3 |
+        Odd #{e ∈ G.edgeFinset | e.toFinset ⊆ s}} : ℝ) =
+      (Fintype.card V : ℝ) / 3 * #G.edgeFinset) :
+    (((∑ tr ∈ ({tr : V × V × V | tr.1 < tr.2.1 ∧ tr.2.1 < tr.2.2} : Finset (V × V × V)),
+        movedNorm (Fin 3) ((if G.Adj tr.1 tr.2.1 then τ else 1) *
+          (if G.Adj tr.2.1 tr.2.2 then τ else 1) *
+            (if G.Adj tr.2.2 tr.1 then τ else 1))) / 3) /
+      ⨅ (m : ℕ) (β : V → Perm (Fin (m + 2))),
+        ∑ e ∈ ({p : V × V | p.1 < p.2} : Finset (V × V)),
+          distErr (if G.Adj e.1 e.2 then τ else 1) (β e.1 * (β e.2)⁻¹)) =
+      (Fintype.card V : ℝ) / 3 := by
+  have hEpos : (0 : ℝ) < #G.edgeFinset := Nat.cast_pos.mpr hne.card_pos
+  rw [G.ciInf₂_sum_filter_lt_distErr_three_ite_isSwap_of_isCutMinimal hτ hcut hdens,
+    G.sum_filter_lt_movedNorm_triple_ite_isSwap hτ, hodd]
+  have hEne : (#G.edgeFinset : ℝ) ≠ 0 := hEpos.ne'
+  field_simp [hEne]
+
+end CrossDegree
+
+end SimpleGraph
 
 /-! ### Kozlov parameter arithmetic and cross-degree staircase consequences -/
+
+private theorem two_mul_cast_half_kozlov (q t : ℕ) :
+    2 * ((q ^ 2 * t * (t + 1) / 2 : ℕ) : ℝ) = (q : ℝ) ^ 2 * t * (t + 1) := by
+  have heven : 2 ∣ q ^ 2 * t * (t + 1) := by
+    rw [mul_assoc]
+    exact dvd_mul_of_dvd_right (Nat.even_mul_succ_self t).two_dvd _
+  have hnat : 2 * (q ^ 2 * t * (t + 1) / 2) = q ^ 2 * t * (t + 1) := by
+    rw [mul_comm, Nat.div_mul_cancel heven]
+  exact_mod_cast hnat
+
+namespace TauCeti
 
 /-- Polynomial inequality comparing Kozlov's degree-`3` staircase cost with the `1 / 4` cross-degree
 mismatch baseline: for `1 ≤ q` and `1 ≤ t`, `6 * t + 3 < q * (4 * t ^ 2 + 4 * t + 3)`. -/
@@ -598,21 +521,12 @@ theorem eight_mul_half_lt_three_mul_choose_two_kozlov {q t : ℕ} (hq : 1 ≤ q)
     Nat.mul_pos (by omega) (Nat.sub_pos_of_lt (six_mul_add_three_lt_mul_four_mul_sq_add hq ht))
   omega
 
-private theorem two_mul_cast_half_kozlov (q t : ℕ) :
-    2 * ((q ^ 2 * t * (t + 1) / 2 : ℕ) : ℝ) = (q : ℝ) ^ 2 * t * (t + 1) := by
-  have heven : 2 ∣ q ^ 2 * t * (t + 1) := by
-    rw [mul_assoc]
-    exact dvd_mul_of_dvd_right (Nat.even_mul_succ_self t).two_dvd _
-  have hnat : 2 * (q ^ 2 * t * (t + 1) / 2) = q ^ 2 * t * (t + 1) := by
-    rw [mul_comm, Nat.div_mul_cancel heven]
-  exact_mod_cast hnat
-
 /-- On a vertex set of size `q * (2 * t + 1)` (`1 ≤ q`, `1 ≤ t`), every unequal-degree gauge
 `β : V → Perm (Fin m)` (`m ≠ 3`) has cross-degree cost strictly exceeding
 `q ^ 2 * t * (t + 1) / 3` against any degree-`3` edge assignment `α`. -/
-theorem lt_sum_filter_lt_distErr_three_of_kozlov_of_ne {q t m : ℕ} (α : V → V → Perm (Fin 3))
-    (hq : 1 ≤ q) (ht : 1 ≤ t) (hV : Fintype.card V = q * (2 * t + 1)) (β : V → Perm (Fin m))
-    (hm : m ≠ 3) :
+theorem lt_sum_filter_lt_distErr_three_of_kozlov_of_ne {V : Type*} [Fintype V] [LinearOrder V]
+    {q t m : ℕ} (α : V → V → Perm (Fin 3)) (hq : 1 ≤ q) (ht : 1 ≤ t)
+    (hV : Fintype.card V = q * (2 * t + 1)) (β : V → Perm (Fin m)) (hm : m ≠ 3) :
     (q : ℝ) ^ 2 * t * (t + 1) / 3 <
       ∑ e ∈ ({p : V × V | p.1 < p.2} : Finset (V × V)),
         distErr (α e.1 e.2) (β e.1 * (β e.2)⁻¹) := by
@@ -621,6 +535,14 @@ theorem lt_sum_filter_lt_distErr_three_of_kozlov_of_ne {q t m : ℕ} (α : V →
     exact eight_mul_half_lt_three_mul_choose_two_kozlov hq ht
   have hlt := two_mul_div_three_lt_sum_filter_lt_distErr_three_of_ne α hdens β hm
   rwa [two_mul_cast_half_kozlov] at hlt
+
+end TauCeti
+
+namespace SimpleGraph
+
+section Kozlov
+
+variable {V : Type*} [Fintype V] [LinearOrder V]
 
 /-- For any cut-minimal graph `G` with Kozlov's parameters `Fintype.card V = q * (2 * t + 1)` and
 `#G.edgeFinset = q ^ 2 * t * (t + 1) / 2` (`1 ≤ q`, `1 ≤ t`), the global cross-degree gauge-cost
@@ -635,8 +557,8 @@ theorem ciInf₂_sum_filter_lt_distErr_three_ite_isSwap_of_kozlov {q t : ℕ} (G
       (q : ℝ) ^ 2 * t * (t + 1) / 3 := by
   have hdens : 8 * #G.edgeFinset ≤ 3 * (Fintype.card V).choose 2 := by
     rw [hE, hV]
-    exact (eight_mul_half_lt_three_mul_choose_two_kozlov hq ht).le
-  rw [ciInf₂_sum_filter_lt_distErr_three_ite_isSwap_of_isCutMinimal G hτ hcut hdens, hE,
+    exact (TauCeti.eight_mul_half_lt_three_mul_choose_two_kozlov hq ht).le
+  rw [G.ciInf₂_sum_filter_lt_distErr_three_ite_isSwap_of_isCutMinimal hτ hcut hdens, hE,
     two_mul_cast_half_kozlov]
 
 /-- Under Kozlov's staircase hypotheses (`1 ≤ q`, `1 ≤ t`), the `Perm (Fin 3)`
@@ -648,10 +570,13 @@ theorem ciInf₂_sum_filter_lt_distErr_three_ite_isSwap_pos_of_kozlov {q t : ℕ
     0 < ⨅ (m : ℕ) (β : V → Perm (Fin (m + 2))),
       ∑ e ∈ ({p : V × V | p.1 < p.2} : Finset (V × V)),
         distErr (if G.Adj e.1 e.2 then τ else 1) (β e.1 * (β e.2)⁻¹) := by
-  have : (0 : ℝ) < q := by exact_mod_cast (by omega : 0 < q)
-  have : (0 : ℝ) < t := by exact_mod_cast (by omega : 0 < t)
-  rw [ciInf₂_sum_filter_lt_distErr_three_ite_isSwap_of_kozlov G hτ hcut hq ht hV hE]
-  positivity
+  have hdens : 8 * #G.edgeFinset ≤ 3 * (Fintype.card V).choose 2 := by
+    rw [hE, hV]
+    exact (TauCeti.eight_mul_half_lt_three_mul_choose_two_kozlov hq ht).le
+  have h2le : 1 * 1 * 2 ≤ q ^ 2 * t * (t + 1) :=
+    Nat.mul_le_mul (Nat.mul_le_mul (Nat.one_le_pow 2 q hq) ht) (by omega)
+  have hne : G.edgeFinset.Nonempty := card_pos.mp (by omega)
+  exact G.ciInf₂_sum_filter_lt_distErr_three_ite_isSwap_pos hτ hcut hdens hne
 
 /-- Under Kozlov's staircase hypotheses together with odd-triangle count
 `(Fintype.card V / 3) * #G.edgeFinset`, the `Perm (Fin 3)` transposition-labelled graph `G` has
@@ -671,19 +596,15 @@ theorem normalized_defect_div_ciInf₂_distErr_three_ite_isSwap_eq_of_kozlov {q 
         ∑ e ∈ ({p : V × V | p.1 < p.2} : Finset (V × V)),
           distErr (if G.Adj e.1 e.2 then τ else 1) (β e.1 * (β e.2)⁻¹)) =
       (Fintype.card V : ℝ) / 3 := by
-  have : (0 : ℝ) < q := by exact_mod_cast (by omega : 0 < q)
-  have : (0 : ℝ) < t := by exact_mod_cast (by omega : 0 < t)
-  rw [ciInf₂_sum_filter_lt_distErr_three_ite_isSwap_of_kozlov G hτ hcut hq ht hV hE,
-    sum_filter_lt_movedNorm_triple_ite_isSwap G hτ, hodd, hE]
-  have h2E := two_mul_cast_half_kozlov q t
-  have hD_pos : 0 < (q : ℝ) ^ 2 * t * (t + 1) / 3 := by positivity
-  have hnum : 2 * ((Fintype.card V : ℝ) / 3 * ((q ^ 2 * t * (t + 1) / 2 : ℕ) : ℝ)) / 3 =
-      (Fintype.card V : ℝ) / 3 * ((q : ℝ) ^ 2 * t * (t + 1) / 3) := by
-    calc 2 * ((Fintype.card V : ℝ) / 3 * ((q ^ 2 * t * (t + 1) / 2 : ℕ) : ℝ)) / 3
-        = (Fintype.card V : ℝ) / 9 * (2 * ((q ^ 2 * t * (t + 1) / 2 : ℕ) : ℝ)) := by ring
-      _ = (Fintype.card V : ℝ) / 3 * ((q : ℝ) ^ 2 * t * (t + 1) / 3) := by rw [h2E]; ring
-  rw [hnum, mul_div_cancel_right₀ _ hD_pos.ne']
+  have hdens : 8 * #G.edgeFinset ≤ 3 * (Fintype.card V).choose 2 := by
+    rw [hE, hV]
+    exact (TauCeti.eight_mul_half_lt_three_mul_choose_two_kozlov hq ht).le
+  have h2le : 1 * 1 * 2 ≤ q ^ 2 * t * (t + 1) :=
+    Nat.mul_le_mul (Nat.mul_le_mul (Nat.one_le_pow 2 q hq) ht) (by omega)
+  have hne : G.edgeFinset.Nonempty := card_pos.mp (by omega)
+  exact G.normalized_defect_div_ciInf₂_distErr_three_ite_isSwap_eq_card_div_three
+    hτ hcut hdens hne hodd
 
-end CrossDegree
+end Kozlov
 
-end TauCeti
+end SimpleGraph
