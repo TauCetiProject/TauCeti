@@ -66,6 +66,14 @@ of a bounded strictly convex planar table, positively oriented and parametrized 
 these polygons are closed orbits of the billiard map; for a general curve the chords of the
 polygon need not stay on one side of it.
 
+For a curve in the closed ball of radius `R`, an inscribed `N`-gon has perimeter at most `2 N R`
+(`TauCeti.inscribedPerimeter_le_of_forall_norm_le`); in a strictly convex space, one inscribed in
+the boundary sphere attains it exactly when each side is a diameter
+(`TauCeti.inscribedPerimeter_eq_iff_of_forall_norm_eq`). In an inner product space an inscribed
+triangle has perimeter at most `3 √3 R` (`TauCeti.inscribedPerimeter_le_three_mul_sqrt_three`),
+and one inscribed in the boundary sphere attains it exactly when its centroid is the centre
+(`TauCeti.inscribedPerimeter_eq_three_mul_sqrt_three_iff`).
+
 ## Main results
 
 * `TauCeti.exists_isMaxOn_inscribedPerimeter`: the inscribed perimeter has a global maximum.
@@ -80,6 +88,10 @@ polygon need not stay on one side of it.
   every `N ≥ 2`.
 * `TauCeti.exists_ne_and_inner_sub_deriv_eq_zero`: a chord orthogonal to the velocity vectors of
   the curve at both of its endpoints.
+* `TauCeti.inscribedPerimeter_eq_iff_of_forall_norm_eq`: in a strictly convex space, an `N`-gon
+  inscribed in a sphere has the maximal perimeter `2 N R` exactly when its sides are diameters.
+* `TauCeti.inscribedPerimeter_eq_three_mul_sqrt_three_iff`: in an inner product space, a triangle
+  inscribed in a sphere has the maximal perimeter `3 √3 R` exactly when its centroid is the centre.
 
 ## References
 
@@ -176,6 +188,111 @@ theorem mem_segment_of_isMaxOn_inscribedPerimeter_of_eq [NormedSpace ℝ F] [Str
     norm_sub_rev (χ (s k)) (χ (s (j + 1)))]
 
 end General
+
+/-! ### Polygons inscribed in a sphere -/
+
+section Sphere
+
+variable {χ : α → F} {R : ℝ}
+
+private theorem sum_two_mul : ∑ _k : ZMod N, 2 * R = 2 * N * R := by
+  rw [Finset.sum_const, Finset.card_univ, ZMod.card, nsmul_eq_mul]; ring
+
+/-- An `N`-gon inscribed in the closed ball of radius `R` has perimeter at most `2 N R`. -/
+theorem inscribedPerimeter_le_of_forall_norm_le (h : ∀ t, ‖χ t‖ ≤ R) (s : ZMod N → α) :
+    inscribedPerimeter χ s ≤ 2 * N * R := by
+  rw [inscribedPerimeter_def, ← sum_two_mul]
+  exact Finset.sum_le_sum fun k _ ↦ (norm_sub_le_of_le (h _) (h _)).trans_eq (two_mul R).symm
+
+/-- In a strictly convex space, an `N`-gon inscribed in the sphere of radius `R` has the largest
+possible perimeter `2 N R` exactly when each of its sides is a diameter. -/
+theorem inscribedPerimeter_eq_iff_of_forall_norm_eq [NormedSpace ℝ F] [StrictConvexSpace ℝ F]
+    (h : ∀ t, ‖χ t‖ = R) (s : ZMod N → α) :
+    inscribedPerimeter χ s = 2 * N * R ↔ ∀ k, χ (s (k + 1)) = -χ (s k) := by
+  have hle : ∀ k ∈ Finset.univ, ‖χ (s (k + 1)) - χ (s k)‖ ≤ 2 * R := fun k _ ↦
+    (norm_sub_le_of_le (h _).le (h _).le).trans_eq (two_mul R).symm
+  rw [inscribedPerimeter_def, ← sum_two_mul, Finset.sum_eq_sum_iff_of_le hle]
+  simp only [Finset.mem_univ, true_implies]
+  refine forall_congr' fun k ↦ ⟨fun hk ↦ ?_, fun hk ↦ ?_⟩
+  · -- A chord of length `2 R` passes through the centre, by strict convexity.
+    refine eq_of_norm_eq_of_norm_add_eq (by rw [norm_neg, h, h]) ?_
+    rw [← sub_eq_add_neg, hk, norm_neg, h, h, two_mul]
+  · rw [hk, ← neg_add', norm_neg, ← two_smul ℝ, norm_smul, h, Real.norm_two]
+
+/-- The perimeter of an inscribed triangle is the sum of its three sides. -/
+theorem inscribedPerimeter_three (χ : α → F) (s : ZMod 3 → α) :
+    inscribedPerimeter χ s =
+      ‖χ (s 1) - χ (s 0)‖ + ‖χ (s 2) - χ (s 1)‖ + ‖χ (s 0) - χ (s 2)‖ := by
+  rw [inscribedPerimeter_def, show (Finset.univ : Finset (ZMod 3)) = {0, 1, 2} by decide,
+    Finset.sum_insert (by decide), Finset.sum_pair (by decide),
+    show (0 : ZMod 3) + 1 = 1 by decide, show (1 : ZMod 3) + 1 = 2 by decide,
+    show (2 : ZMod 3) + 1 = 0 by decide, add_assoc]
+
+variable [InnerProductSpace ℝ F]
+
+/-- The sum of the squared sides of the triangle with vertices `a, b, c` is
+`3 (‖a‖ ^ 2 + ‖b‖ ^ 2 + ‖c‖ ^ 2) - ‖a + b + c‖ ^ 2`. -/
+theorem norm_sub_sq_add_norm_sub_sq_add_norm_sub_sq (a b c : F) :
+    ‖b - a‖ ^ 2 + ‖c - b‖ ^ 2 + ‖a - c‖ ^ 2 =
+      3 * (‖a‖ ^ 2 + ‖b‖ ^ 2 + ‖c‖ ^ 2) - ‖a + b + c‖ ^ 2 := by
+  rw [norm_sub_sq_real, norm_sub_sq_real, norm_sub_sq_real, norm_add_sq_real, norm_add_sq_real,
+    inner_add_left, real_inner_comm a b, real_inner_comm b c]
+  ring
+
+/-- The squared perimeter of a triangle is at most three times the sum of its squared sides. -/
+private theorem sq_inscribedPerimeter_three_le (χ : α → F) (s : ZMod 3 → α) :
+    inscribedPerimeter χ s ^ 2 ≤ 3 * (3 * (‖χ (s 0)‖ ^ 2 + ‖χ (s 1)‖ ^ 2 + ‖χ (s 2)‖ ^ 2) -
+      ‖χ (s 0) + χ (s 1) + χ (s 2)‖ ^ 2) := by
+  rw [inscribedPerimeter_three, ← norm_sub_sq_add_norm_sub_sq_add_norm_sub_sq]
+  nlinarith [sq_nonneg (‖χ (s 1) - χ (s 0)‖ - ‖χ (s 2) - χ (s 1)‖),
+    sq_nonneg (‖χ (s 2) - χ (s 1)‖ - ‖χ (s 0) - χ (s 2)‖),
+    sq_nonneg (‖χ (s 0) - χ (s 2)‖ - ‖χ (s 1) - χ (s 0)‖)]
+
+private theorem three_mul_sqrt_three_mul_sq : (3 * √3 * R) ^ 2 = 27 * R ^ 2 := by
+  rw [mul_pow, mul_pow, Real.sq_sqrt (by norm_num)]; ring
+
+/-- A triangle inscribed in the closed ball of radius `R` has perimeter at most `3 √3 R`, the
+perimeter of an equilateral triangle inscribed in its boundary sphere. -/
+theorem inscribedPerimeter_le_three_mul_sqrt_three (h : ∀ t, ‖χ t‖ ≤ R) (s : ZMod 3 → α) :
+    inscribedPerimeter χ s ≤ 3 * √3 * R := by
+  have hR : 0 ≤ R := (norm_nonneg _).trans (h (s 0))
+  have hle (k : ZMod 3) : ‖χ (s k)‖ ^ 2 ≤ R ^ 2 := pow_le_pow_left₀ (norm_nonneg _) (h _) 2
+  have hP : 0 ≤ inscribedPerimeter χ s := Finset.sum_nonneg fun _ _ ↦ norm_nonneg _
+  refine (pow_le_pow_iff_left₀ hP (by positivity) two_ne_zero).1 ?_
+  rw [three_mul_sqrt_three_mul_sq]
+  linarith [sq_inscribedPerimeter_three_le χ s, sq_nonneg ‖χ (s 0) + χ (s 1) + χ (s 2)‖, hle 0,
+    hle 1, hle 2]
+
+/-- Two vertices of a triangle inscribed in the sphere of radius `R`, with centroid at the
+centre, are at distance `√3 R`. -/
+theorem norm_sub_eq_sqrt_three_mul_of_add_add_eq_zero {a b c : F} (ha : ‖a‖ = R) (hb : ‖b‖ = R)
+    (hc : ‖c‖ = R) (habc : a + b + c = 0) : ‖b - a‖ = √3 * R := by
+  have hR : 0 ≤ R := ha ▸ norm_nonneg a
+  have hab : a + b = -c := eq_neg_of_add_eq_zero_left habc
+  have h1 := norm_add_sq_real a b
+  rw [hab, norm_neg, ha, hb, hc] at h1
+  refine (sq_eq_sq₀ (norm_nonneg _) (by positivity)).1 ?_
+  rw [norm_sub_sq_real, ha, hb, mul_pow, Real.sq_sqrt (by norm_num), real_inner_comm]
+  linarith
+
+/-- A triangle inscribed in the sphere of radius `R` has the largest possible perimeter `3 √3 R`
+exactly when the centre of the sphere is its centroid, that is, when it is equilateral. -/
+theorem inscribedPerimeter_eq_three_mul_sqrt_three_iff (h : ∀ t, ‖χ t‖ = R) (s : ZMod 3 → α) :
+    inscribedPerimeter χ s = 3 * √3 * R ↔ χ (s 0) + χ (s 1) + χ (s 2) = 0 := by
+  constructor
+  · intro hP
+    have hle := sq_inscribedPerimeter_three_le χ s
+    rw [hP, three_mul_sqrt_three_mul_sq, h, h, h] at hle
+    rw [← norm_eq_zero, ← sq_eq_zero_iff]
+    linarith [sq_nonneg ‖χ (s 0) + χ (s 1) + χ (s 2)‖]
+  · intro h0
+    rw [inscribedPerimeter_three,
+      norm_sub_eq_sqrt_three_mul_of_add_add_eq_zero (h _) (h _) (h _) h0,
+      norm_sub_eq_sqrt_three_mul_of_add_add_eq_zero (h _) (h _) (h (s 0)) (by rw [← h0]; abel),
+      norm_sub_eq_sqrt_three_mul_of_add_add_eq_zero (h _) (h _) (h (s 1)) (by rw [← h0]; abel)]
+    ring
+
+end Sphere
 
 variable {χ : ℝ → F} {L : ℝ}
 

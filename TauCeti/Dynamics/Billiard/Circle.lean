@@ -12,6 +12,7 @@ import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.InnerProductSpace.Convex
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.InverseDeriv
+import TauCeti.Topology.Circle.Metric
 
 /-!
 # The circular billiard table
@@ -43,20 +44,23 @@ as a test of the general billiard API of `TauCeti.Dynamics.Billiard.NextCollisio
   (`TauCeti.StrictConvexBilliardTable.inner_circle_equilateral`), while for the triangle with
   vertices at the angles `0`, `π / 2` and `π` they are `0` and `1 / √2` at the vertex at angle `0`
   (`TauCeti.StrictConvexBilliardTable.inner_circle_right_triangle`).
-* **Maximal inscribed polygons.** An `N`-gon inscribed in a closed ball of radius `R` has
-  perimeter at most `2 N R`; in a strictly convex space, one inscribed in the boundary sphere has
-  perimeter `2 N R` exactly when each side is a diameter
-  (`TauCeti.inscribedPerimeter_eq_iff_of_forall_norm_eq`). So for even `N` the perimeter maximizers
-  in the circle, which give periodic billiard trajectories by
-  `TauCeti.exists_billiard_periodic_reflection`, are the doubled diameters, of least period two
-  (`TauCeti.StrictConvexBilliardTable.isMaxOn_inscribedPerimeter_circle_iff_of_even`); for `N = 4`
+* **Maximal inscribed polygons.** By the bounds of `TauCeti.Dynamics.Billiard.PeriodicPolygon`,
+  an `N`-gon inscribed in a closed ball of radius `R` has perimeter at most `2 N R`; in a strictly
+  convex space, one inscribed in the boundary sphere has perimeter `2 N R` exactly when each side
+  is a diameter (`TauCeti.inscribedPerimeter_eq_iff_of_forall_norm_eq`). So for even `N` the
+  perimeter maximizers in the circle, which give periodic billiard trajectories by
+  `TauCeti.exists_billiard_periodic_reflection`, are the doubled diameters
+  (`TauCeti.StrictConvexBilliardTable.isMaxOn_inscribedPerimeter_circle_iff_of_even`), of least
+  period two
+  (`TauCeti.StrictConvexBilliardTable.circle_apply_add_one_add_one_of_isMaxOn_inscribedPerimeter`
+  with `TauCeti.apply_add_one_ne_of_isMaxOn_inscribedPerimeter`); for `N = 4`
   the inscribed square is not one of them
   (`TauCeti.StrictConvexBilliardTable.not_isMaxOn_inscribedPerimeter_circle_square`). A triangle
   inscribed in a closed ball of radius `R` of an inner product space has perimeter at most
   `3 √3 R`; one inscribed in its boundary sphere has perimeter `3 √3 R` exactly when its centroid
   is the centre (`TauCeti.inscribedPerimeter_eq_three_mul_sqrt_three_iff`), so the maximal
   triangles in the circle are the equilateral ones
-  (`TauCeti.StrictConvexBilliardTable.isMaxOn_inscribedPerimeter_circle_iff_sum_eq_zero`).
+  (`TauCeti.StrictConvexBilliardTable.isMaxOn_inscribedPerimeter_circle_iff_add_add_eq_zero`).
 
 ## References
 
@@ -76,122 +80,6 @@ open scoped RealInnerProductSpace
 namespace TauCeti
 
 attribute [local instance] Complex.finrank_real_complex_fact
-
-/-! ### Polygons inscribed in a sphere -/
-
-section Sphere
-
-variable {α F : Type*} [NormedAddCommGroup F] {χ : α → F} {R : ℝ} {N : ℕ}
-
-/-- An `N`-gon inscribed in the closed ball of radius `R` has perimeter at most `2 N R`. -/
-theorem inscribedPerimeter_le_of_forall_norm_le [NeZero N] (h : ∀ t, ‖χ t‖ ≤ R) (s : ZMod N → α) :
-    inscribedPerimeter χ s ≤ 2 * N * R := by
-  have hle : ∀ k, ‖χ (s (k + 1)) - χ (s k)‖ ≤ 2 * R := fun k ↦ by
-    linarith [norm_sub_le (χ (s (k + 1))) (χ (s k)), h (s (k + 1)), h (s k)]
-  calc inscribedPerimeter χ s ≤ ∑ _k : ZMod N, 2 * R := by
-        rw [inscribedPerimeter_def]; exact Finset.sum_le_sum fun k _ ↦ hle k
-    _ = 2 * N * R := by rw [Finset.sum_const, Finset.card_univ, ZMod.card, nsmul_eq_mul]; ring
-
-private theorem inscribedPerimeter_three (χ : α → F) (s : ZMod 3 → α) :
-    inscribedPerimeter χ s =
-      ‖χ (s 1) - χ (s 0)‖ + ‖χ (s 2) - χ (s 1)‖ + ‖χ (s 0) - χ (s 2)‖ := by
-  rw [inscribedPerimeter_def, show (Finset.univ : Finset (ZMod 3)) = {0, 1, 2} by decide,
-    Finset.sum_insert (by decide), Finset.sum_pair (by decide),
-    show (0 : ZMod 3) + 1 = 1 by decide, show (1 : ZMod 3) + 1 = 2 by decide,
-    show (2 : ZMod 3) + 1 = 0 by decide, add_assoc]
-
-section StrictConvexSpace
-
-variable [NormedSpace ℝ F] [StrictConvexSpace ℝ F]
-
-/-- In a strictly convex space, an `N`-gon inscribed in the sphere of radius `R` has the largest
-possible perimeter `2 N R` exactly when each of its sides is a diameter. -/
-theorem inscribedPerimeter_eq_iff_of_forall_norm_eq [NeZero N] (h : ∀ t, ‖χ t‖ = R)
-    (s : ZMod N → α) :
-    inscribedPerimeter χ s = 2 * N * R ↔ ∀ k, χ (s (k + 1)) = -χ (s k) := by
-  have hle : ∀ k ∈ Finset.univ, ‖χ (s (k + 1)) - χ (s k)‖ ≤ 2 * R := fun k _ ↦ by
-    linarith [norm_sub_le (χ (s (k + 1))) (χ (s k)), h (s (k + 1)), h (s k)]
-  have hsum : ∑ _k : ZMod N, 2 * R = 2 * N * R := by
-    rw [Finset.sum_const, Finset.card_univ, ZMod.card, nsmul_eq_mul]; ring
-  rw [inscribedPerimeter_def, ← hsum, Finset.sum_eq_sum_iff_of_le hle]
-  simp only [Finset.mem_univ, true_implies]
-  refine forall_congr' fun k ↦ ⟨fun hk ↦ ?_, fun hk ↦ ?_⟩
-  · -- A chord of length `2 R` passes through the centre, by strict convexity.
-    refine eq_of_norm_eq_of_norm_add_eq (by rw [norm_neg, h, h]) ?_
-    rw [← sub_eq_add_neg, hk, norm_neg, h, h, two_mul]
-  · rw [hk, ← neg_add', norm_neg, ← two_smul ℝ, norm_smul, h, Real.norm_two]
-
-end StrictConvexSpace
-
-private theorem sum_three (x : ZMod 3 → F) : ∑ k, x k = x 0 + x 1 + x 2 := by
-  rw [show (Finset.univ : Finset (ZMod 3)) = {0, 1, 2} by decide,
-    Finset.sum_insert (by decide), Finset.sum_pair (by decide), add_assoc]
-
-variable [InnerProductSpace ℝ F]
-
-/-- The sum of the squared sides of the triangle with vertices `a, b, c` is
-`3 (‖a‖ ^ 2 + ‖b‖ ^ 2 + ‖c‖ ^ 2) - ‖a + b + c‖ ^ 2`. -/
-private theorem sq_add_sq_add_sq_norm_sub (a b c : F) :
-    ‖b - a‖ ^ 2 + ‖c - b‖ ^ 2 + ‖a - c‖ ^ 2 =
-      3 * (‖a‖ ^ 2 + ‖b‖ ^ 2 + ‖c‖ ^ 2) - ‖a + b + c‖ ^ 2 := by
-  rw [norm_sub_sq_real, norm_sub_sq_real, norm_sub_sq_real, norm_add_sq_real, norm_add_sq_real,
-    inner_add_left, real_inner_comm a b, real_inner_comm b c]
-  ring
-
-/-- A triangle inscribed in the closed ball of radius `R` has perimeter at most `3 √3 R`, the
-perimeter of an equilateral triangle inscribed in its boundary sphere. -/
-theorem inscribedPerimeter_le_three_mul_sqrt_three (h : ∀ t, ‖χ t‖ ≤ R) (s : ZMod 3 → α) :
-    inscribedPerimeter χ s ≤ 3 * √3 * R := by
-  have hR : 0 ≤ R := (norm_nonneg _).trans (h (s 0))
-  have hsq := sq_add_sq_add_sq_norm_sub (χ (s 0)) (χ (s 1)) (χ (s 2))
-  have hle (k : ZMod 3) : ‖χ (s k)‖ ^ 2 ≤ R ^ 2 := pow_le_pow_left₀ (norm_nonneg _) (h _) 2
-  have h3 : √3 ^ 2 = 3 := Real.sq_sqrt (by norm_num)
-  rw [inscribedPerimeter_three]
-  refine (pow_le_pow_iff_left₀ (by positivity) (by positivity) two_ne_zero).1 ?_
-  rw [mul_pow, mul_pow, h3]
-  nlinarith [sq_nonneg (‖χ (s 1) - χ (s 0)‖ - ‖χ (s 2) - χ (s 1)‖),
-    sq_nonneg (‖χ (s 2) - χ (s 1)‖ - ‖χ (s 0) - χ (s 2)‖),
-    sq_nonneg (‖χ (s 0) - χ (s 2)‖ - ‖χ (s 1) - χ (s 0)‖),
-    sq_nonneg ‖χ (s 0) + χ (s 1) + χ (s 2)‖, hle 0, hle 1, hle 2]
-
-/-- Two vertices of a triangle inscribed in the sphere of radius `R`, with centroid at the
-centre, are at distance `√3 R`. -/
-private theorem norm_sub_of_add_add_eq_zero {a b c : F} (ha : ‖a‖ = R) (hb : ‖b‖ = R)
-    (hc : ‖c‖ = R) (habc : a + b + c = 0) : ‖b - a‖ = √3 * R := by
-  have hR : 0 ≤ R := ha ▸ norm_nonneg a
-  have hab : a + b = -c := eq_neg_of_add_eq_zero_left habc
-  have h1 := norm_add_sq_real a b
-  rw [hab, norm_neg, ha, hb, hc] at h1
-  refine (sq_eq_sq₀ (norm_nonneg _) (by positivity)).1 ?_
-  rw [norm_sub_sq_real, ha, hb, mul_pow, Real.sq_sqrt (by norm_num), real_inner_comm]
-  linarith
-
-/-- A triangle inscribed in the sphere of radius `R` has the largest possible perimeter `3 √3 R`
-exactly when the centre of the sphere is its centroid, that is, when it is equilateral. -/
-theorem inscribedPerimeter_eq_three_mul_sqrt_three_iff (h : ∀ t, ‖χ t‖ = R) (s : ZMod 3 → α) :
-    inscribedPerimeter χ s = 3 * √3 * R ↔ ∑ k, χ (s k) = 0 := by
-  rw [sum_three]
-  constructor
-  · intro hP
-    have hsq := sq_add_sq_add_sq_norm_sub (χ (s 0)) (χ (s 1)) (χ (s 2))
-    rw [h, h, h] at hsq
-    have h3 : √3 ^ 2 = 3 := Real.sq_sqrt (by norm_num)
-    rw [inscribedPerimeter_three] at hP
-    have hP2 : (‖χ (s 1) - χ (s 0)‖ + ‖χ (s 2) - χ (s 1)‖ + ‖χ (s 0) - χ (s 2)‖) ^ 2 =
-        27 * R ^ 2 := by rw [hP, mul_pow, mul_pow, h3]; ring
-    rw [← norm_eq_zero, ← sq_eq_zero_iff]
-    nlinarith [sq_nonneg (‖χ (s 1) - χ (s 0)‖ - ‖χ (s 2) - χ (s 1)‖),
-      sq_nonneg (‖χ (s 2) - χ (s 1)‖ - ‖χ (s 0) - χ (s 2)‖),
-      sq_nonneg (‖χ (s 0) - χ (s 2)‖ - ‖χ (s 1) - χ (s 0)‖),
-      sq_nonneg ‖χ (s 0) + χ (s 1) + χ (s 2)‖]
-  · intro h0
-    rw [inscribedPerimeter_three,
-      norm_sub_of_add_add_eq_zero (h _) (h _) (h _) h0,
-      norm_sub_of_add_add_eq_zero (h _) (h _) (h (s 0)) (by rw [← h0]; abel),
-      norm_sub_of_add_add_eq_zero (h _) (h _) (h (s 1)) (by rw [← h0]; abel)]
-    ring
-
-end Sphere
 
 namespace StrictConvexBilliardTable
 
@@ -221,13 +109,6 @@ private theorem areaForm_circleMap_sub (a b c : ℝ) :
   simp only [Complex.areaForm, mul_re, conj_re, conj_im, sub_re, sub_im, circleMap_zero_re,
     circleMap_zero_im, mul_im, I_re, I_im, map_mul, conj_I, neg_re, neg_im, sub_div, Real.cos_sub]
   ring
-
-private theorem norm_circleMap_sub_sq (a b : ℝ) :
-    ‖circleMap 0 R (b / R) - circleMap 0 R (a / R)‖ ^ 2 =
-      2 * R ^ 2 * (1 - Real.cos ((b - a) / R)) := by
-  rw [← Complex.normSq_eq_norm_sq, Complex.normSq_apply]
-  simp only [sub_re, sub_im, circleMap_zero_re, circleMap_zero_im, sub_div, Real.cos_sub]
-  nlinarith [Real.sin_sq_add_cos_sq (a / R), Real.sin_sq_add_cos_sq (b / R)]
 
 private theorem inner_circleMap_mul_I (a b : ℝ) :
     ⟪circleMap 0 1 (a / R) * I, circleMap 0 1 (b / R) * I⟫ = Real.cos ((b - a) / R) := by
@@ -263,11 +144,13 @@ def circle : StrictConvexBilliardTable Complex.orientation where
   areaForm_pos s t h := by
     simp only [(hasDerivAt_circleMap_div hR.ne' s).deriv, areaForm_circleMap_sub, sub_self,
       zero_div, Real.cos_zero]
-    have h2 := norm_circleMap_sub_sq (R := R) s t
-    have h3 : 0 < ‖circleMap 0 R (t / R) - circleMap 0 R (s / R)‖ :=
-      norm_pos_iff.2 (sub_ne_zero.2 h)
-    have : 0 < 1 - Real.cos ((t - s) / R) := by nlinarith
-    positivity
+    -- The chord `2 R |sin ((t - s) / 2 R)|` is nonzero, and `1 - cos x = 2 sin (x / 2) ^ 2`.
+    have h2 := dist_pos.2 h
+    rw [dist_circleMap_eq_two_mul_abs_sin] at h2
+    have h3 : 0 < Real.sin ((t / R - s / R) / 2) ^ 2 := by
+      rw [← sq_abs]; exact pow_pos (pos_of_mul_pos_right h2 (by positivity)) 2
+    rw [show (t - s) / R = 2 * ((t / R - s / R) / 2) by ring, Real.cos_two_mul, Real.cos_sq']
+    nlinarith
 
 variable {hR}
 
@@ -301,14 +184,8 @@ theorem areaForm_deriv_circle_sub (a b c : ℝ) :
 /-- The chord of the circle between `χ(a)` and `χ(b)` has length `2 R |sin((b - a) / 2 R)|`. -/
 theorem norm_circle_sub (a b : ℝ) :
     ‖circle hR b - circle hR a‖ = 2 * R * |Real.sin ((b - a) / (2 * R))| := by
-  have h := norm_circleMap_sub_sq (R := R) a b
-  have hc : Real.cos ((b - a) / R) = 1 - 2 * Real.sin ((b - a) / (2 * R)) ^ 2 := by
-    rw [show (b - a) / R = 2 * ((b - a) / (2 * R)) by field_simp, Real.cos_two_mul]
-    nlinarith [Real.sin_sq_add_cos_sq ((b - a) / (2 * R))]
-  rw [hc] at h
-  refine (sq_eq_sq₀ (norm_nonneg _) (by positivity)).1 ?_
-  rw [circle_apply, circle_apply, h, mul_pow, mul_pow, sq_abs]
-  ring
+  rw [← dist_eq_norm, circle_apply, circle_apply, dist_circleMap_eq_two_mul_abs_sin, abs_of_pos hR,
+    ← sub_div, div_div, mul_comm R 2]
 
 /-- The unit tangents at `χ(a)` and `χ(b)` make the angle `(b - a) / R`. -/
 theorem inner_deriv_circle (a b : ℝ) :
@@ -329,6 +206,11 @@ theorem norm_circle (s : ℝ) : ‖circle hR s‖ = R := by
 
 /-! ### The billiard map of the circle -/
 
+/-- The chord leaving `χ(s)` at the angle `α` with the tangent subtends the arc `2 α`. -/
+private theorem add_two_mul_mul_sub_div (hR : R ≠ 0) (s α : ℝ) :
+    (s + 2 * R * α - s) / R = 2 * α := by
+  field_simp; ring
+
 /-- **The next collision on the circle.** A ball leaving `χ(s)` with tangential component
 `v = cos α`, `0 < α < π`, travels along a chord subtending the arc `2 α`, so the next collision
 parameter is `s + 2 R arccos v`. -/
@@ -338,27 +220,28 @@ theorem nextParam_circle {v : ℝ} (hv : v ∈ Ioo (-1) 1) (s : ℝ) :
   have hα : α ∈ Ioo 0 π := ⟨Real.arccos_pos.2 hv.2, Real.arccos_lt_pi.2 hv.1⟩
   have hcos : Real.cos α = v := Real.cos_arccos hv.1.le hv.2.le
   have hsin : Real.sin α = √(1 - v ^ 2) := Real.sin_arccos v
-  have harc : (s + 2 * R * α - s) / R = 2 * α := by field_simp; ring
   refine (eq_nextParam_of_areaForm_eq_zero _ hv ⟨by nlinarith [hα.1], ?_⟩ ?_).symm
   · rw [period_circle]; nlinarith [hα.2]
-  rw [outgoingDir_def, map_add, map_smul, map_smul, LinearMap.add_apply, LinearMap.smul_apply,
-    LinearMap.smul_apply, Orientation.areaForm_rightAngleRotation_left, areaForm_deriv_circle_sub,
-    real_inner_comm, inner_circle_sub_deriv, sub_self, zero_div, Real.cos_zero, Real.sin_zero,
-    harc, ← hsin, ← hcos, Real.cos_two_mul, Real.sin_two_mul, smul_eq_mul, smul_eq_mul]
+  simp only [outgoingDir_def, map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply,
+    smul_eq_mul, Orientation.areaForm_rightAngleRotation_left, areaForm_deriv_circle_sub,
+    real_inner_comm (circle hR _ - circle hR _), inner_circle_sub_deriv,
+    add_two_mul_mul_sub_div hR.ne', sub_self, zero_div, Real.cos_zero, Real.sin_zero,
+    Real.cos_two_mul, Real.sin_two_mul]
+  rw [← hsin, ← hcos]
   linear_combination (-2 * R * Real.cos α) * Real.sin_sq_add_cos_sq α
 
 /-- **The circle billiard preserves the tangential component**: every chord makes the same angle
 with the circle at both of its ends. -/
 theorem nextTangential_circle {v : ℝ} (hv : v ∈ Ioo (-1) 1) (s : ℝ) :
     (circle hR).nextTangential s v = v := by
+  rw [nextTangential_def, nextParam_circle hv]
   set α := Real.arccos v
   have hcos : Real.cos α = v := Real.cos_arccos hv.1.le hv.2.le
   have hsin : Real.sin α = √(1 - v ^ 2) := Real.sin_arccos v
-  have harc : (s + 2 * R * α - s) / R = 2 * α := by field_simp; ring
-  rw [nextTangential_def, nextParam_circle hv, outgoingDir_def, inner_add_left,
-    real_inner_smul_left, real_inner_smul_left, Orientation.inner_rightAngleRotation_left,
-    inner_deriv_circle, areaForm_deriv_circle, harc, ← hsin, ← hcos, Real.cos_two_mul,
-    Real.sin_two_mul]
+  simp only [outgoingDir_def, inner_add_left, real_inner_smul_left,
+    Orientation.inner_rightAngleRotation_left, inner_deriv_circle, areaForm_deriv_circle,
+    add_two_mul_mul_sub_div hR.ne', Real.cos_two_mul, Real.sin_two_mul]
+  rw [← hsin, ← hcos]
   linear_combination (2 * Real.cos α) * Real.sin_sq_add_cos_sq α
 
 /-- **The billiard map of the circle** is the rotation `β(s, v) = (s + 2 R arccos v mod L, v)` of
@@ -377,8 +260,9 @@ theorem iterate_billiardMap_circle_coe (n : ℕ) (s : ℝ) (v : Ioo (-1 : ℝ) 1
   | zero => simp
   | succ n ih =>
     rw [iterate_succ_apply, billiardMap_circle_coe, ih]
+    congr 2
     push_cast
-    ring_nf
+    ring
 
 /-- **The periodicity criterion of the circle billiard.** A state `x = (θ, v)` returns after `n`
 bounces exactly when `n` times its angle `arccos v` with the boundary is a multiple of `π`, that is
@@ -492,11 +376,11 @@ theorem inner_circle_chord_deriv_right {a b : ℝ} (hab : 0 < Real.sin ((b - a) 
       field_simp; ring, Real.sin_neg, neg_neg, Real.sin_two_mul]
   field_simp
 
-private theorem circle_two_pi_mul_div_three :
-    circle hR (2 * (2 * π * R / 3)) = circle hR (-(2 * π * R / 3)) := by
-  rw [← (circle hR).periodic (-(2 * π * R / 3)), period_circle]
-  congr 1
-  ring
+private theorem apply_zero_one_two {s : ZMod 3 → ℝ} {c : ℝ} (hs : ∀ k, s k = k.val * c) :
+    s 0 = 0 ∧ s 1 = c ∧ s 2 = 2 * c := by
+  simp only [hs, ZMod.val_zero, Nat.cast_zero, zero_mul, true_and]
+  exact ⟨by rw [show (1 : ZMod 3).val = 1 by decide, Nat.cast_one, one_mul],
+    by rw [show (2 : ZMod 3).val = 2 by decide, Nat.cast_ofNat]⟩
 
 /-- **The equilateral triangle obeys the reflection law**: at each of its vertices, both sides make
 the angle `π / 3` with the tangent, so both sides of the equal-angle law are `1 / 2`. -/
@@ -515,20 +399,19 @@ theorem inner_circle_equilateral {s : ZMod 3 → ℝ} (hs : ∀ k, s k = k.val *
     (inner_circle_chord_deriv_left (hR := hR) (h ▸ hπ)).trans (h ▸ hcos)
   have hr {a b : ℝ} (h : b - a = 2 * π * R / 3) :=
     (inner_circle_chord_deriv_right (hR := hR) (h ▸ hπ)).trans (h ▸ hcos)
-  have s0 : s 0 = 0 := by rw [hs, ZMod.val_zero, Nat.cast_zero, zero_mul]
-  have s1 : s 1 = 2 * π * R / 3 := by
-    rw [hs, show (1 : ZMod 3).val = 1 from rfl, Nat.cast_one, one_mul]
-  have s2 : s 2 = 2 * (2 * π * R / 3) := by
-    rw [hs, show (2 : ZMod 3).val = 2 from rfl, Nat.cast_ofNat]
+  obtain ⟨s0, s1, s2⟩ := apply_zero_one_two hs
+  -- The vertex `χ(4 π R / 3)` is also `χ(-2 π R / 3)`, and `χ(0)` is also `χ(2 π R)`.
+  have hper := (circle hR).periodic
+  rw [period_circle] at hper
   obtain rfl | rfl | rfl : k = 0 ∨ k = 1 ∨ k = 2 := by revert k; decide
-  · rw [show (0 : ZMod 3) - 1 = 2 by decide, zero_add, s0, s1, s2, circle_two_pi_mul_div_three]
+  · rw [show (0 : ZMod 3) - 1 = 2 by decide, zero_add, s0, s1, s2,
+      show 2 * (2 * π * R / 3) = -(2 * π * R / 3) + 2 * π * R by ring, hper]
     exact ⟨hr (by ring), hl (by ring)⟩
   · rw [sub_self, show (1 : ZMod 3) + 1 = 2 by decide, s0, s1, s2]
     exact ⟨hr (by ring), hl (by ring)⟩
-  · rw [show (2 : ZMod 3) - 1 = 1 by decide, show (2 : ZMod 3) + 1 = 0 by decide, s0, s1, s2]
-    refine ⟨hr (by ring), ?_⟩
-    rw [← (circle hR).periodic 0, zero_add, period_circle]
-    exact hl (by ring)
+  · rw [show (2 : ZMod 3) - 1 = 1 by decide, show (2 : ZMod 3) + 1 = 0 by decide, s0, s1, s2,
+      ← hper.eq]
+    exact ⟨hr (by ring), hl (by ring)⟩
 
 /-- **A right-angled inscribed triangle violates the reflection law.** For the triangle with
 vertices at the angles `0`, `π / 2` and `π`, at the vertex at angle `0` the incoming side, a
@@ -539,15 +422,11 @@ theorem inner_circle_right_triangle {s : ZMod 3 → ℝ} (hs : ∀ k, s k = k.va
         deriv (circle hR) (s 0)⟫ = 0 ∧
       ⟪‖circle hR (s (0 + 1)) - circle hR (s 0)‖⁻¹ • (circle hR (s (0 + 1)) - circle hR (s 0)),
         deriv (circle hR) (s 0)⟫ = 1 / √2 := by
-  have s0 : s 0 = 0 := by rw [hs, ZMod.val_zero, Nat.cast_zero, zero_mul]
-  have s1 : s 1 = π * R / 2 := by
-    rw [hs, show (1 : ZMod 3).val = 1 from rfl, Nat.cast_one, one_mul]
-  have s2 : s 2 = π * R := by
-    rw [hs, show (2 : ZMod 3).val = 2 from rfl, Nat.cast_ofNat]
-    ring
+  obtain ⟨s0, s1, s2⟩ := apply_zero_one_two hs
+  have hper := (circle hR).periodic
+  rw [period_circle] at hper
   rw [show (0 : ZMod 3) - 1 = 2 by decide, zero_add, s0, s1, s2,
-    show circle hR (π * R) = circle hR (-(π * R)) by
-      rw [← (circle hR).periodic (-(π * R)), period_circle]; congr 1; ring]
+    show 2 * (π * R / 2) = -(π * R) + 2 * π * R by ring, hper]
   have hπ2 : (0 - -(π * R)) / (2 * R) = π / 2 := by rw [zero_sub, neg_neg]; field_simp
   constructor
   · rw [inner_circle_chord_deriv_right (by rw [hπ2, Real.sin_pi_div_two]; norm_num), hπ2,
@@ -561,6 +440,12 @@ theorem inner_circle_right_triangle {s : ZMod 3 → ℝ} (hs : ∀ k, s k = k.va
 
 /-! ### Inscribed polygons of maximal perimeter -/
 
+/-- A point attaining an upper bound `M` that some point attains is a maximizer exactly when it
+attains `M`. -/
+private theorem isMaxOn_univ_iff_eq {β : Type*} {f : β → ℝ} {M : ℝ} {s : β} (hle : ∀ t, f t ≤ M)
+    (hM : ∃ d, f d = M) : IsMaxOn f univ s ↔ f s = M :=
+  ⟨fun h ↦ hM.elim fun d hd ↦ le_antisymm (hle s) (hd ▸ h (mem_univ d)), fun h t _ ↦ h ▸ hle t⟩
+
 private theorem circle_mul_pi (x : ℝ) : circle hR (x * (π * R)) = circleMap 0 R (x * π) := by
   rw [circle_apply, ← mul_assoc, mul_div_cancel_right₀ _ hR.ne']
 
@@ -571,37 +456,27 @@ theorem isMaxOn_inscribedPerimeter_circle_iff_of_even {N : ℕ} [NeZero N] (hN :
     {s : ZMod N → ℝ} :
     IsMaxOn (inscribedPerimeter (circle hR)) univ s ↔
       ∀ k, circle hR (s (k + 1)) = -circle hR (s k) := by
-  rw [← inscribedPerimeter_eq_iff_of_forall_norm_eq (norm_circle (hR := hR))]
   -- The doubled diameter, alternating between the parameters `0` and `π R`, has perimeter `2 N R`.
-  obtain ⟨d, hd⟩ : ∃ d : ZMod N → ℝ, inscribedPerimeter (circle hR) d = 2 * N * R := by
+  have hd : ∃ d : ZMod N → ℝ, inscribedPerimeter (circle hR) d = 2 * N * R := by
     refine ⟨fun k ↦ ((ZMod.castHom (even_iff_two_dvd.1 hN) (ZMod 2) k).val : ℝ) * (π * R),
       (inscribedPerimeter_eq_iff_of_forall_norm_eq (norm_circle (hR := hR)) _).2 fun k ↦ ?_⟩
     simp only [map_add, map_one, circle_mul_pi]
     generalize ZMod.castHom _ (ZMod 2) k = j
     obtain rfl | rfl : j = 0 ∨ j = 1 := by revert j; decide
-    · rw [zero_add, ZMod.val_zero, ZMod.val_one, Nat.cast_zero, Nat.cast_one, zero_mul, one_mul,
-        circleMap_zero, circleMap_zero, ofReal_zero, zero_mul, Complex.exp_zero,
-        Complex.exp_pi_mul_I]
-      ring
-    · rw [show (1 + 1 : ZMod 2) = 0 by decide, ZMod.val_zero, ZMod.val_one, Nat.cast_zero,
-        Nat.cast_one, zero_mul, one_mul, circleMap_zero, circleMap_zero, ofReal_zero, zero_mul,
-        Complex.exp_zero, Complex.exp_pi_mul_I]
-      ring
-  constructor
-  · exact fun hmax ↦ le_antisymm
-      (inscribedPerimeter_le_of_forall_norm_le (fun t ↦ (norm_circle t).le) s)
-      (hd ▸ hmax (mem_univ d))
-  · exact fun hs t _ ↦ hs ▸ inscribedPerimeter_le_of_forall_norm_le (fun t ↦ (norm_circle t).le) t
+    · simp [ZMod.val_one, circleMap, Complex.exp_pi_mul_I]
+    · simp [show (1 + 1 : ZMod 2) = 0 by decide, ZMod.val_one, circleMap, Complex.exp_pi_mul_I]
+  rw [isMaxOn_univ_iff_eq (inscribedPerimeter_le_of_forall_norm_le fun t ↦ (norm_circle t).le) hd,
+    inscribedPerimeter_eq_iff_of_forall_norm_eq norm_circle]
 
-/-- **A maximal inscribed polygon with an even number of vertices has least period two**: its
-vertices alternate between the two ends of a diameter. -/
-theorem circle_apply_add_one_add_one_of_isMaxOn {N : ℕ} [NeZero N] (hN : Even N)
-    {s : ZMod N → ℝ} (hs : IsMaxOn (inscribedPerimeter (circle hR)) univ s) (k : ZMod N) :
-    circle hR (s (k + 1 + 1)) = circle hR (s k) ∧ circle hR (s (k + 1)) ≠ circle hR (s k) := by
+/-- **A maximal inscribed polygon with an even number of vertices has period two**: its vertices
+alternate between the two ends of a diameter. The period is least, since consecutive vertices are
+distinct by `TauCeti.apply_add_one_ne_of_isMaxOn_inscribedPerimeter`. -/
+theorem circle_apply_add_one_add_one_of_isMaxOn_inscribedPerimeter {N : ℕ} [NeZero N]
+    (hN : Even N) {s : ZMod N → ℝ} (hs : IsMaxOn (inscribedPerimeter (circle hR)) univ s)
+    (k : ZMod N) :
+    circle hR (s (k + 1 + 1)) = circle hR (s k) := by
   have h := (isMaxOn_inscribedPerimeter_circle_iff_of_even hN).1 hs
-  refine ⟨by rw [h, h, neg_neg], fun he ↦ ?_⟩
-  rw [h k, neg_eq_self, ← norm_eq_zero, norm_circle] at he
-  exact hR.ne' he
+  rw [h, h, neg_neg]
 
 /-- **The inscribed square is not a maximal quadrilateral**: the maximal inscribed quadrilaterals
 are the doubled diameters. -/
@@ -611,7 +486,8 @@ theorem not_isMaxOn_inscribedPerimeter_circle_square :
   rw [isMaxOn_inscribedPerimeter_circle_iff_of_even (by decide)]
   intro h
   have h0 := congrArg Complex.re (h 0)
-  rw [show (0 : ZMod 4) + 1 = 1 by decide, show (1 : ZMod 4).val = 1 from rfl, ZMod.val_zero] at h0
+  rw [show (0 : ZMod 4) + 1 = 1 by decide, show (1 : ZMod 4).val = 1 by decide,
+    ZMod.val_zero] at h0
   simp only [Nat.cast_one, one_mul, circle_apply, Nat.cast_zero, zero_mul, zero_div,
     circleMap_zero_re, neg_re] at h0
   rw [show π * R / 2 / R = π / 2 by field_simp, Real.cos_pi_div_two, Real.cos_zero] at h0
@@ -619,29 +495,26 @@ theorem not_isMaxOn_inscribedPerimeter_circle_square :
 
 /-- **Maximal inscribed triangles are equilateral.** An inscribed triangle in the circle has
 maximal perimeter exactly when its centroid is the centre of the circle. -/
-theorem isMaxOn_inscribedPerimeter_circle_iff_sum_eq_zero {s : ZMod 3 → ℝ} :
-    IsMaxOn (inscribedPerimeter (circle hR)) univ s ↔ ∑ k, circle hR (s k) = 0 := by
-  rw [← inscribedPerimeter_eq_three_mul_sqrt_three_iff (norm_circle (hR := hR))]
+theorem isMaxOn_inscribedPerimeter_circle_iff_add_add_eq_zero {s : ZMod 3 → ℝ} :
+    IsMaxOn (inscribedPerimeter (circle hR)) univ s ↔
+      circle hR (s 0) + circle hR (s 1) + circle hR (s 2) = 0 := by
   -- The equilateral triangle with vertices at the parameters `0`, `2 π R / 3` and `4 π R / 3`.
-  obtain ⟨d, hd⟩ : ∃ d : ZMod 3 → ℝ, inscribedPerimeter (circle hR) d = 3 * √3 * R := by
-    refine ⟨fun k ↦ (k.val : ℝ) * (2 * π * R / 3),
-      (inscribedPerimeter_eq_three_mul_sqrt_three_iff (norm_circle (hR := hR)) _).2 ?_⟩
-    rw [sum_three]
+  have hd : ∃ d : ZMod 3 → ℝ, inscribedPerimeter (circle hR) d = 3 * √3 * R := by
+    let d : ZMod 3 → ℝ := fun k ↦ k.val * (2 * π * R / 3)
+    obtain ⟨d0, d1, d2⟩ := apply_zero_one_two (s := d) fun _ ↦ rfl
+    refine ⟨d, (inscribedPerimeter_eq_three_mul_sqrt_three_iff (norm_circle (hR := hR)) _).2 ?_⟩
+    rw [d0, d1, d2]
     apply Complex.ext <;>
-    · simp only [circle_apply, show (1 : ZMod 3).val = 1 from rfl,
-        show (2 : ZMod 3).val = 2 from rfl, ZMod.val_zero, add_re, add_im, circleMap_zero_re,
-        circleMap_zero_im, zero_re, zero_im, Nat.cast_zero, Nat.cast_one, Nat.cast_ofNat]
-      rw [show 0 * (2 * π * R / 3) / R = 0 by ring, show 1 * (2 * π * R / 3) / R = π - π / 3 by
-          field_simp; ring, show 2 * (2 * π * R / 3) / R = π / 3 + π by field_simp; ring]
+    · simp only [circle_apply, add_re, add_im, circleMap_zero_re, circleMap_zero_im, zero_re,
+        zero_im]
+      rw [show 0 / R = 0 by ring, show 2 * π * R / 3 / R = π - π / 3 by field_simp; ring,
+        show 2 * (2 * π * R / 3) / R = π / 3 + π by field_simp; ring]
       simp only [Real.cos_zero, Real.sin_zero, Real.cos_pi_sub, Real.sin_pi_sub, Real.cos_add_pi,
         Real.sin_add_pi, Real.cos_pi_div_three]
       ring
-  constructor
-  · exact fun hmax ↦ le_antisymm
-      (inscribedPerimeter_le_three_mul_sqrt_three (fun t ↦ (norm_circle t).le) s)
-      (hd ▸ hmax (mem_univ d))
-  · exact fun hs t _ ↦ hs ▸
-      inscribedPerimeter_le_three_mul_sqrt_three (fun t ↦ (norm_circle t).le) t
+  rw [isMaxOn_univ_iff_eq
+      (inscribedPerimeter_le_three_mul_sqrt_three fun t ↦ (norm_circle t).le) hd,
+    inscribedPerimeter_eq_three_mul_sqrt_three_iff norm_circle]
 
 end StrictConvexBilliardTable
 
