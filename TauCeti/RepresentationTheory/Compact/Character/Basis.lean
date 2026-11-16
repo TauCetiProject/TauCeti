@@ -318,7 +318,7 @@ theorem orthonormal_characterFamily
       IsEmpty (_root_.ContRepresentation.Equiv (models i).rep (models j).rep)) :
     Orthonormal 𝕜 (characterFamily models) := by
   have hL2 := _root_.ContRepresentation.orthonormal_characterLp (fun i ↦ (models i).rep)
-    (fun i ↦ (models i).continuous_rep) (fun i ↦ (models i).isUnitary)
+    (fun i ↦ (models i).continuous_rep)
     (fun i ↦ (models i).isIrreducible) hne
   exact hL2.codRestrict _ fun i ↦ ContRepresentation.characterLp_mem_classFunctionLp _ _
 

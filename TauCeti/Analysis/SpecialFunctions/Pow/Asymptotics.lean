@@ -24,7 +24,9 @@ These facts transfer power-law tail constants between proportional or translated
 On a seminormed group, as `‖s‖ → ∞`:
 
 * `exp (c * ‖s‖ ^ a)` is `O(exp ‖s‖ ^ b)` whenever `a < b`, for every real `c`;
-* every power `‖s‖ ^ n` is `O(exp ‖s‖ ^ b)` whenever `0 < b`.
+* every power `‖s‖ ^ n` is `O(exp ‖s‖ ^ b)` whenever `0 < b`;
+* `‖s‖ ^ a` is `o(‖s‖ ^ b)` whenever `a < b`, as is `x ^ a` against `x ^ b` for real `x → ∞`;
+  in particular `√‖s‖ = o(s)`.
 
 These are the comparisons behind the order of growth of an entire function.
 
@@ -125,6 +127,26 @@ theorem isBigO_norm_pow_exp_norm_rpow (n : ℕ) {b : ℝ} (hb : 0 < b) :
     filter_upwards [eventually_ge_atTop 0] with x hx
     rw [Function.comp_apply, ← Real.rpow_mul hx, mul_div_cancel₀ _ hb.ne', Real.rpow_natCast]
   exact h.comp_tendsto tendsto_norm_cobounded_atTop
+
+/-- For `a < b`, the real power `x ^ a` is `o(x ^ b)` as `x → ∞`. -/
+theorem isLittleO_rpow_rpow_atTop {a b : ℝ} (hab : a < b) :
+    (fun x : ℝ ↦ x ^ a) =o[atTop] fun x ↦ x ^ b := by
+  refine (isLittleO_iff_tendsto' ?_).mpr ((tendsto_rpow_neg_atTop (sub_pos.2 hab)).congr' ?_)
+  · filter_upwards [eventually_gt_atTop 0] with x hx h
+    exact absurd h (Real.rpow_pos_of_pos hx b).ne'
+  · filter_upwards [eventually_gt_atTop 0] with x hx
+    rw [← Real.rpow_sub hx, neg_sub]
+
+/-- For `a < b`, `‖s‖ ^ a` is `o(‖s‖ ^ b)` as `‖s‖ → ∞`. -/
+theorem isLittleO_norm_rpow_norm_rpow_cobounded {a b : ℝ} (hab : a < b) :
+    (fun s : E ↦ ‖s‖ ^ a) =o[cobounded E] fun s ↦ ‖s‖ ^ b :=
+  (isLittleO_rpow_rpow_atTop hab).comp_tendsto tendsto_norm_cobounded_atTop
+
+/-- `√‖s‖` is `o(s)` as `‖s‖ → ∞`. -/
+theorem isLittleO_sqrt_norm_id_cobounded : (fun s : E ↦ √‖s‖) =o[cobounded E] fun s ↦ s := by
+  refine isLittleO_norm_right.mp ?_
+  refine (isLittleO_norm_rpow_norm_rpow_cobounded (E := E) (show (1 / 2 : ℝ) < 1 by norm_num)).congr
+    (fun s ↦ (Real.sqrt_eq_rpow _).symm) fun s ↦ Real.rpow_one _
 
 /-- A family whose norms are bounded by `r ^ g a`, with `1 < r` and integer exponents `g a`
 tending to `-∞`, tends to zero. -/

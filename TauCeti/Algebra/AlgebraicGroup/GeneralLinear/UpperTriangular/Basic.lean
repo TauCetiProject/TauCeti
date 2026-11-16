@@ -265,32 +265,10 @@ theorem pointsMulEquiv_mapValue (phi : A →ₐ[R] B)
         (pointsMulEquiv (R := R) (n := n) (A := A) f) := by
   rw [← AlgHom.mapValue_apply]
   apply Subtype.ext
-  calc
-    ((pointsMulEquiv (R := R) (n := n) (A := B) (AlgHom.mapValue phi f) :
-        upperTriangularGroup (Fin n) B) : GL (Fin n) B) =
-        GeneralLinear.pointToGeneralLinear n
-          (CommHopfAlgCat.quotientPointsHom
-            (GeneralLinear.coordinateHopfAlgebra R n) (definingHopfIdeal R n)
-            (CommAlgCat.of R B) (AlgHom.mapValue phi f)) :=
-      (pointsMulEquiv_coe (R := R) (n := n) (A := B) _).symm
-    _ = GeneralLinear.pointToGeneralLinear n
-          (AlgHom.mapValue phi
-            (CommHopfAlgCat.quotientPointsHom
-              (GeneralLinear.coordinateHopfAlgebra R n) (definingHopfIdeal R n)
-              (CommAlgCat.of R A) f)) := by
-      rw [CommHopfAlgCat.mapValue_quotientPointsHom]
-    _ = Matrix.GeneralLinearGroup.map phi.toRingHom
-          (GeneralLinear.pointToGeneralLinear n
-            (CommHopfAlgCat.quotientPointsHom
-              (GeneralLinear.coordinateHopfAlgebra R n) (definingHopfIdeal R n)
-              (CommAlgCat.of R A) f)) :=
-      GeneralLinear.pointToGeneralLinear_mapValue n phi _
-    _ = Matrix.GeneralLinearGroup.map phi.toRingHom
-          (pointsMulEquiv (R := R) (n := n) (A := A) f : GL (Fin n) A) := by
-      rw [pointsMulEquiv_coe]
-    _ = (UpperTriangularGroup.map phi.toRingHom
-          (pointsMulEquiv (R := R) (n := n) (A := A) f) : GL (Fin n) B) :=
-      (UpperTriangularGroup.coe_map phi.toRingHom _).symm
+  rw [UpperTriangularGroup.coe_map, ← pointsMulEquiv_coe,
+    ← CommHopfAlgCat.mapValue_quotientPointsHom,
+    GeneralLinear.pointToGeneralLinear_mapValue, pointsMulEquiv_coe]
+  rfl
 
 end Points
 
