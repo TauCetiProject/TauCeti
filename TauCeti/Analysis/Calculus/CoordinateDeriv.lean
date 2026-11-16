@@ -13,6 +13,7 @@ public import TauCeti.Analysis.Calculus.IteratedFDeriv.DirectionList
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.DirectionList
 import TauCeti.Analysis.Calculus.ParametricFDeriv
+import TauCeti.Analysis.Normed.Lp.PiLp
 
 /-!
 # Iterated coordinate derivatives on `ℝⁿ`
@@ -1073,15 +1074,6 @@ theorem _root_.ContinuousLinearMap.apply_eq_sum_single (L : CoordinateSpace n �
   conv_lhs => rw [← (EuclideanSpace.basisFun (Fin n) ℝ).sum_repr h]
   simp
 
-/-- A combination `∑ j, h j • X j` has norm at most `‖h‖ ∑ j, ‖X j‖`. -/
-theorem CoordinateSpace.norm_sum_smul_le (h : CoordinateSpace n) (X : Fin n → A) :
-    ‖∑ j, h j • X j‖ ≤ ‖h‖ * ∑ j, ‖X j‖ := by
-  rw [Finset.mul_sum]
-  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun j _ ↦ ?_)
-  rw [norm_smul]
-  gcongr
-  exact PiLp.norm_apply_le h j
-
 /-- A continuous linear map on `ℝⁿ × ℝⁿ` given by coordinates has norm at most the sum of the
 norms of its values on the standard basis. -/
 theorem _root_.ContinuousLinearMap.opNorm_le_of_apply_eq_sum
@@ -1091,8 +1083,8 @@ theorem _root_.ContinuousLinearMap.opNorm_le_of_apply_eq_sum
   refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun v ↦ ?_
   rw [hL]
   calc _ ≤ ‖v.1‖ * ∑ j, ‖X j‖ + ‖v.2‖ * ∑ j, ‖Ξ j‖ :=
-        (norm_add_le _ _).trans (add_le_add (CoordinateSpace.norm_sum_smul_le _ _)
-          (CoordinateSpace.norm_sum_smul_le _ _))
+        (norm_add_le _ _).trans (add_le_add (PiLp.norm_sum_smul_le _ _)
+          (PiLp.norm_sum_smul_le _ _))
     _ ≤ ‖v‖ * ∑ j, ‖X j‖ + ‖v‖ * ∑ j, ‖Ξ j‖ := by
         gcongr
         · exact norm_fst_le v

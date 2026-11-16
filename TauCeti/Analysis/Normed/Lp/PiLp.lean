@@ -15,7 +15,9 @@ The finite `Lᵖ` norm is nonnegative for every exponent and respects coordinate
 norms, including when the two families have different target spaces. This compares scalar
 evaluations of a vector family with the vector family's `Lᵖ` norm. For constant fibres we
 deduce the bound for the image of a family under a map of bounded growth, the norm of a family
-of multiples of one vector, and the invariance of the norm under reindexing.
+of multiples of one vector, and the invariance of the norm under reindexing. For `p ≥ 1`, a
+linear combination `∑ i, s i • v i` with the coordinates of `s` as coefficients has norm at most
+`‖s‖ * ∑ i, ‖v i‖`.
 
 For `p ≥ 1`, the `Lᵖ` distance dominates the sup distance. In the other direction, the `L²`
 distance is at most the square root of the number of coordinates times the sup distance.
@@ -150,6 +152,15 @@ theorem norm_toLp_smul_const {𝕜 : Type*} [NormedField 𝕜] [NormedSpace 𝕜
         (norm_mono fun i ↦ by simp [norm_smul, mul_comm])
     _ = ‖WithLp.toLp p a‖ * ‖y‖ := by
       rw [norm_smul, _root_.norm_norm, norm_norm (WithLp.toLp p a), mul_comm]
+
+/-- A linear combination `∑ i, s i • v i` whose coefficients are the coordinates of a vector `s`
+of `Lᵖ`, `p ≥ 1`, has norm at most `‖s‖ * ∑ i, ‖v i‖`. -/
+theorem norm_sum_smul_le {𝕜 : Type*} [SeminormedAddCommGroup 𝕜] [SMulZeroClass 𝕜 F]
+    [IsBoundedSMul 𝕜 F] (s : PiLp p fun _ : ι ↦ 𝕜) (v : ι → F) :
+    ‖∑ i, s i • v i‖ ≤ ‖s‖ * ∑ i, ‖v i‖ := by
+  rw [Finset.mul_sum]
+  exact (norm_sum_le _ _).trans <| Finset.sum_le_sum fun i _ ↦
+    (norm_smul_le _ _).trans <| mul_le_mul_of_nonneg_right (norm_apply_le s i) (norm_nonneg _)
 
 end Constant
 
