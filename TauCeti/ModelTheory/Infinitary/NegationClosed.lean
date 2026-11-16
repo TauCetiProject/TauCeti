@@ -20,9 +20,9 @@ The **negation closure** of a set `S` of formulas is the least negation-closed f
 it. It contains, for instance, the iterated negations `¬φ`, `¬¬φ`, … of each member `φ` of `S`
 and of its components. Unlike the formation closure, the negation closure adds no atomic formulas
 and introduces no new function or relation symbols, so the negation closure of a countable set is
-countable over every language, however many symbols it has. Both negation closure and the
-`NegationClosed` predicate commute with pulling back and pushing forward along any language
-homomorphism, with no injectivity hypothesis.
+countable over every language, however many symbols it has. Along any language homomorphism
+`g : L →ᴸ L'`, `NegationClosed` is preserved by both `map g` and `comap g`, and `negationClosure`
+commutes with `map g`; reflecting `NegationClosed` along `map g` requires `g` to be injective.
 
 ## Main definitions
 
@@ -45,9 +45,11 @@ homomorphism, with no injectivity hypothesis.
   `FirstOrder.Language.Fragment.relationsIn_negationClosure`: negation closure adds no occurring
   symbols.
 * `FirstOrder.Language.Fragment.NegationClosed.comap`,
-  `FirstOrder.Language.Fragment.NegationClosed.map` and
-  `FirstOrder.Language.Fragment.map_negationClosure`: transport of negation-closed fragments and
-  negation closures along language homomorphisms.
+  `FirstOrder.Language.Fragment.NegationClosed.map`,
+  `FirstOrder.Language.Fragment.map_negationClosure` and
+  `FirstOrder.Language.Fragment.negationClosed_map_iff`: preservation of `NegationClosed` under
+  `comap` and `map`, commutation of `negationClosure` with `map`, and reflection of
+  `NegationClosed` under injective `map`.
 
 ## References
 

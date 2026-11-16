@@ -714,49 +714,6 @@ theorem slice_comap (g : L →ᴸ L') (B : Fragment L') (n : ℕ) :
     (B.comap g).slice n = g.onBoundedFormulaInf ⁻¹' B.slice n :=
   (rfl)
 
-private theorem exists_of_onBoundedFormulaInf_eq_imp {g : L →ᴸ L'} {n : ℕ}
-    {χ : L.BoundedFormulaω Empty n} {φ ψ : L'.BoundedFormulaω Empty n}
-    (h : g.onBoundedFormulaInf χ = φ.imp ψ) :
-    ∃ χ₁ χ₂ : L.BoundedFormulaω Empty n, χ = χ₁.imp χ₂ ∧
-      g.onBoundedFormulaInf χ₁ = φ ∧ g.onBoundedFormulaInf χ₂ = ψ := by
-  cases χ <;> simp only [LHom.onBoundedFormulaInf_falsum, LHom.onBoundedFormulaInf_equal,
-    LHom.onBoundedFormulaInf_rel, LHom.onBoundedFormulaInf_imp, LHom.onBoundedFormulaInf_all,
-    LHom.onBoundedFormulaInf_iSup, LHom.onBoundedFormulaInf_iInf, reduceCtorEq,
-    BoundedFormulaInf.imp.injEq] at h
-  exact ⟨_, _, rfl, h⟩
-
-private theorem exists_of_onBoundedFormulaInf_eq_all {g : L →ᴸ L'} {n : ℕ}
-    {χ : L.BoundedFormulaω Empty n} {φ : L'.BoundedFormulaω Empty (n + 1)}
-    (h : g.onBoundedFormulaInf χ = φ.all) :
-    ∃ χ₁ : L.BoundedFormulaω Empty (n + 1), χ = χ₁.all ∧ g.onBoundedFormulaInf χ₁ = φ := by
-  cases χ <;> simp only [LHom.onBoundedFormulaInf_falsum, LHom.onBoundedFormulaInf_equal,
-    LHom.onBoundedFormulaInf_rel, LHom.onBoundedFormulaInf_imp, LHom.onBoundedFormulaInf_all,
-    LHom.onBoundedFormulaInf_iSup, LHom.onBoundedFormulaInf_iInf, reduceCtorEq,
-    BoundedFormulaInf.all.injEq] at h
-  exact ⟨_, rfl, h⟩
-
-private theorem exists_of_onBoundedFormulaInf_eq_iInf {g : L →ᴸ L'} {n : ℕ}
-    {χ : L.BoundedFormulaω Empty n} {φs : ℕ → L'.BoundedFormulaω Empty n}
-    (h : g.onBoundedFormulaInf χ = .iInf φs) :
-    ∃ χs : ℕ → L.BoundedFormulaω Empty n, χ = .iInf χs ∧
-      ∀ k, g.onBoundedFormulaInf (χs k) = φs k := by
-  cases χ <;> simp only [LHom.onBoundedFormulaInf_falsum, LHom.onBoundedFormulaInf_equal,
-    LHom.onBoundedFormulaInf_rel, LHom.onBoundedFormulaInf_imp, LHom.onBoundedFormulaInf_all,
-    LHom.onBoundedFormulaInf_iSup, LHom.onBoundedFormulaInf_iInf, reduceCtorEq,
-    BoundedFormulaInf.iInf.injEq] at h
-  exact ⟨_, rfl, congrFun h⟩
-
-private theorem exists_of_onBoundedFormulaInf_eq_iSup {g : L →ᴸ L'} {n : ℕ}
-    {χ : L.BoundedFormulaω Empty n} {φs : ℕ → L'.BoundedFormulaω Empty n}
-    (h : g.onBoundedFormulaInf χ = .iSup φs) :
-    ∃ χs : ℕ → L.BoundedFormulaω Empty n, χ = .iSup χs ∧
-      ∀ k, g.onBoundedFormulaInf (χs k) = φs k := by
-  cases χ <;> simp only [LHom.onBoundedFormulaInf_falsum, LHom.onBoundedFormulaInf_equal,
-    LHom.onBoundedFormulaInf_rel, LHom.onBoundedFormulaInf_imp, LHom.onBoundedFormulaInf_all,
-    LHom.onBoundedFormulaInf_iSup, LHom.onBoundedFormulaInf_iInf, reduceCtorEq,
-    BoundedFormulaInf.iSup.injEq] at h
-  exact ⟨_, rfl, congrFun h⟩
-
 /-- The **image** of a fragment along a language homomorphism `g : L →ᴸ L'`: the translations
 under `g` of the members of `A`. No injectivity of `g` is needed, since `g` preserves outer
 constructors. -/
@@ -764,19 +721,19 @@ def map (g : L →ᴸ L') (A : Fragment L) : Fragment L' where
   toSet := {p | ∃ φ : L.BoundedFormulaω Empty p.1,
     (⟨p.1, φ⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A ∧ g.onBoundedFormulaInf φ = p.2}
   imp_left_mem' := fun ⟨_, hA, h⟩ => by
-    obtain ⟨χ₁, _, rfl, h₁, -⟩ := exists_of_onBoundedFormulaInf_eq_imp h
+    obtain ⟨χ₁, _, rfl, h₁, -⟩ := g.exists_of_onBoundedFormulaInf_eq_imp h
     exact ⟨χ₁, A.imp_left_mem hA, h₁⟩
   imp_right_mem' := fun ⟨_, hA, h⟩ => by
-    obtain ⟨_, χ₂, rfl, -, h₂⟩ := exists_of_onBoundedFormulaInf_eq_imp h
+    obtain ⟨_, χ₂, rfl, -, h₂⟩ := g.exists_of_onBoundedFormulaInf_eq_imp h
     exact ⟨χ₂, A.imp_right_mem hA, h₂⟩
   all_mem' := fun ⟨_, hA, h⟩ => by
-    obtain ⟨χ₁, rfl, h₁⟩ := exists_of_onBoundedFormulaInf_eq_all h
+    obtain ⟨χ₁, rfl, h₁⟩ := g.exists_of_onBoundedFormulaInf_eq_all h
     exact ⟨χ₁, A.all_mem hA, h₁⟩
   iInf_mem' := fun ⟨_, hA, h⟩ k => by
-    obtain ⟨χs, rfl, hk⟩ := exists_of_onBoundedFormulaInf_eq_iInf h
+    obtain ⟨χs, rfl, hk⟩ := g.exists_of_onBoundedFormulaInf_eq_iInf h
     exact ⟨χs k, A.iInf_mem hA k, hk k⟩
   iSup_mem' := fun ⟨_, hA, h⟩ k => by
-    obtain ⟨χs, rfl, hk⟩ := exists_of_onBoundedFormulaInf_eq_iSup h
+    obtain ⟨χs, rfl, hk⟩ := g.exists_of_onBoundedFormulaInf_eq_iSup h
     exact ⟨χs k, A.iSup_mem hA k, hk k⟩
 
 /-- Membership in `A.map g`: being the translation under `g` of a member of `A` of the same
