@@ -141,6 +141,6 @@ theorem not_geometricallyConnected_fixedPoints_antipodeAction {k : Type u} [Fiel
     ¬ geometricallyConnectedCommHopfAlgProperty k
         (fixedPoints fun θ ↦ (antipodeAction (_root_.CommHopfAlgCat.of k k[T;T⁻¹]) θ).asIso.hom) :=
   fun hconn ↦
-    not_connectedSpace_primeSpectrum_fixedPoints_antipodeAction h2.isUnit (hconn.connectedSpace k _)
+    not_connectedSpace_primeSpectrum_fixedPoints_antipodeAction h2.isUnit hconn.connectedSpace
 
 end TauCeti.MultiplicativeGroup

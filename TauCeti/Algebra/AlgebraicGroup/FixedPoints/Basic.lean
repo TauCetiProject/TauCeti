@@ -288,20 +288,19 @@ theorem comp_mkFixedPoints (f : ι → (H ⟶ H)) (i : ι) : f i ≫ mkFixedPoin
 /-- **Coequalizer universal property** of `fixedPoints f` in `FiniteTypeCommHopfAlgCat R`. -/
 noncomputable def liftFixedPoints {f : ι → (H ⟶ H)} (p : H ⟶ K) (hp : ∀ i, f i ≫ p = p) :
     fixedPoints f ⟶ K :=
-  liftQuotient (fixedPointsHopfIdeal f) p
-    ((CommHopfAlgCat.fixedPointsHopfIdeal_toIdeal_le_ker_iff (fun i ↦ (f i).hom) p.hom).2
-      fun i ↦ congrArg (·.hom) (hp i))
+  ObjectProperty.homMk (CommHopfAlgCat.liftFixedPoints p.hom fun i ↦ congrArg (·.hom) (hp i))
 
 /-- `liftFixedPoints p hp` restricts along `mkFixedPoints f` to `p`. -/
 @[reassoc (attr := simp)]
 theorem mkFixedPoints_comp_liftFixedPoints {f : ι → (H ⟶ H)} (p : H ⟶ K) (hp : ∀ i, f i ≫ p = p) :
-    mkFixedPoints f ≫ liftFixedPoints p hp = p :=
-  mkQuotient_comp_liftQuotient _ _ _
+    mkFixedPoints f ≫ liftFixedPoints p hp = p := by
+  apply ObjectProperty.hom_ext
+  exact CommHopfAlgCat.mkFixedPoints_comp_liftFixedPoints p.hom fun i ↦ congrArg (·.hom) (hp i)
 
 /-- `liftFixedPoints p hp` is the unique morphism out of `fixedPoints f` restricting to `p`. -/
 theorem liftFixedPoints_unique {f : ι → (H ⟶ H)} (p : H ⟶ K) (hp : ∀ i, f i ≫ p = p)
     (q : fixedPoints f ⟶ K) (hq : mkFixedPoints f ≫ q = p) : q = liftFixedPoints p hp :=
-  liftQuotient_unique _ _ _ q hq
+  mkQuotient_hom_ext (hq.trans (mkFixedPoints_comp_liftFixedPoints p hp).symm)
 
 /-- When every `f i = 𝟙 H`, `fixedPoints f ≅ H` in `FiniteTypeCommHopfAlgCat R`. -/
 noncomputable def fixedPointsIsoOfEqId {f : ι → (H ⟶ H)} (hf : ∀ i, f i = 𝟙 H) :
