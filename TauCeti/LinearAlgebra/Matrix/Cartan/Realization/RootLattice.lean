@@ -43,6 +43,9 @@ integral coroot coordinates are nonnegative, so dominance is decidable on the we
   `ℕ`, so `Q₊` is the natural span of an independent family.
 * `TauCeti.CartanRealization.isPointed_posRootCone`: `Q₊ ∩ (-Q₊) = 0`.
 * `TauCeti.CartanRealization.height_eq_sum`: `ht(∑ᵢ nᵢ αᵢ) = ∑ᵢ nᵢ`.
+* `TauCeti.CartanRealization.sum_map_root_mem_posRootCone` and
+  `TauCeti.CartanRealization.height_sum_map_root`: the sum of simple roots along a list lies in
+  `Q₊` and has height equal to the list length.
 * `TauCeti.CartanRealization.RootLE.antisymm`: the order on weights is antisymmetric.
 * `TauCeti.CartanRealization.finite_setOf_rootLE_height_le`: **finite-height intervals**, the set
   of `μ ≤ λ` with `ht(λ - μ) ≤ n` is finite.
@@ -93,6 +96,15 @@ theorem posRootCone_def : R.posRootCone = Submodule.span ℕ (Set.range R.root) 
 
 theorem root_mem_posRootCone (i : I) : R.root i ∈ R.posRootCone :=
   Submodule.subset_span (Set.mem_range_self i)
+
+/-- The sum of simple roots along any list of indices lies in the positive root cone `Q₊`. -/
+theorem sum_map_root_mem_posRootCone (l : List I) :
+    (l.map R.root).sum ∈ R.posRootCone := by
+  induction l with
+  | nil => simp
+  | cons i l ih =>
+    rw [List.map_cons, List.sum_cons]
+    exact add_mem (R.root_mem_posRootCone i) ih
 
 /-- The elements of the positive root cone are the natural combinations of the simple roots. -/
 theorem mem_posRootCone_iff [Fintype I] {φ : Dual K H} :
@@ -157,6 +169,29 @@ theorem height_root (i : I) : R.height ⟨R.root i, R.root_mem_posRootCone i⟩ 
 @[simp]
 theorem height_eq_zero_iff (x : R.posRootCone) : R.height x = 0 ↔ x = 0 :=
   R.linearIndependent_nat_root.natSpanHeight_eq_zero_iff x
+
+/-- The height of a sum of simple roots along a list is the length of the list. -/
+@[simp]
+theorem height_sum_map_root (l : List I) :
+    R.height ⟨(l.map R.root).sum, R.sum_map_root_mem_posRootCone l⟩ = l.length := by
+  induction l with
+  | nil => simp [Subtype.ext_iff]
+  | cons i l ih =>
+    have hsplit : (⟨((i :: l).map R.root).sum, R.sum_map_root_mem_posRootCone (i :: l)⟩ :
+        R.posRootCone) = ⟨R.root i, R.root_mem_posRootCone i⟩ +
+          ⟨(l.map R.root).sum, R.sum_map_root_mem_posRootCone l⟩ :=
+      Subtype.ext (by simp)
+    rw [hsplit, map_add, R.height_root, ih, List.length_cons, Nat.add_comm]
+
+/-- Over a field of characteristic zero, a nonempty sum of simple roots is nonzero. -/
+theorem sum_map_root_cons_ne_zero (i : I) (w : List I) :
+    ((i :: w).map R.root).sum ≠ 0 := by
+  intro h0
+  have hh := R.height_sum_map_root (i :: w)
+  have hz : (⟨((i :: w).map R.root).sum, R.sum_map_root_mem_posRootCone (i :: w)⟩ :
+      R.posRootCone) = 0 := Subtype.ext h0
+  rw [hz, map_zero] at hh
+  exact Nat.succ_ne_zero w.length hh.symm
 
 end CharZero
 

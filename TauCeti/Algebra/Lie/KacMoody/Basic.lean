@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Lie.Solvable
 public import TauCeti.Algebra.Lie.Presentation.Serre
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Realization.Basic
+import TauCeti.Algebra.Lie.Basic
 
 /-!
 # The Kac–Moody algebra of a realization, by generators and relations
@@ -50,9 +51,11 @@ relators, so that `TauCeti.KacMoody.cartanElement` is a linear map.
 
 ## Main results
 
-* `TauCeti.KacMoody.lift_cartanElement` and its companions, with `TauCeti.KacMoody.hom_ext`: the
-  universal property of the presentation.
+* `TauCeti.KacMoody.lift_cartanElement` and its companions, with `TauCeti.KacMoody.hom_ext` and
+  `TauCeti.KacMoody.equiv_ext`: the universal property of the presentation.
 * `TauCeti.KacMoody.lieSpan_generators_eq_top`: the generators generate the presented algebra.
+* `TauCeti.KacMoody.cartanElement_mem_center_of_mem_cartanCenter`: vectors in `R.cartanCenter` map
+  into the center of `TauCeti.KacMoody.PresentedLieAlgebra R`.
 * `TauCeti.KacMoody.range_serreHom_sup_range_cartanElement`: `𝔤 = 𝔤' + H`, where `𝔤'` is the
   image of `Matrix.ToLieAlgebra K A`.
 * `TauCeti.KacMoody.range_serreHom_eq_derivedSeries`: that image is the derived algebra `⁅𝔤, 𝔤⁆`.
@@ -294,6 +297,20 @@ theorem SatisfiesRelations.map {φ : H →ₗ[K] L} {E F : I → L} (h : Satisfi
     simp only [Function.comp_apply, ← LieHom.map_lie, ← LieHom.map_ad_pow, h.serre_negative,
       map_zero]
 
+/-- Negating the Cartan map and exchanging the raising and lowering families with a sign preserves
+`TauCeti.KacMoody.SatisfiesRelations`. -/
+theorem SatisfiesRelations.neg_swap {φ : H →ₗ[K] L} {E F : I → L}
+    (h : SatisfiesRelations R φ E F) :
+    SatisfiesRelations R (-φ) (-F) (-E) where
+  lie_cartan_cartan x y := by simp [h.lie_cartan_cartan x y]
+  lie_cartan_positive x j := by simp [h.lie_cartan_negative x j]
+  lie_cartan_negative x j := by simp [h.lie_cartan_positive x j]
+  lie_positive_negative_self i := by simp [← lie_skew (F i) (E i), h.lie_positive_negative_self i]
+  lie_positive_negative_of_ne i j hij := by
+    simp [← lie_skew (F i) (E j), h.lie_positive_negative_of_ne j i hij.symm]
+  serre_positive i j := by simpa using ad_neg_pow_apply_eq_zero (h.serre_negative i j)
+  serre_negative i j := by simpa using ad_neg_pow_apply_eq_zero (h.serre_positive i j)
+
 /-- The zero map satisfies the relations. -/
 theorem satisfiesRelations_zero : SatisfiesRelations R (0 : H →ₗ[K] L) 0 0 where
   lie_cartan_cartan _ _ := by simp
@@ -377,6 +394,15 @@ theorem hom_ext {g₁ g₂ : PresentedLieAlgebra R →ₗ⁅K⁆ L}
     | negative i => exact hF i
   exact DFunLike.congr_fun hcomp x
 
+/-- Two Lie equivalences out of `TauCeti.KacMoody.PresentedLieAlgebra R` agreeing on the
+generators are equal. -/
+@[ext]
+theorem equiv_ext {e₁ e₂ : PresentedLieAlgebra R ≃ₗ⁅K⁆ L}
+    (hH : ∀ x, e₁ (cartanElement R x) = e₂ (cartanElement R x))
+    (hE : ∀ i, e₁ (positiveGenerator R i) = e₂ (positiveGenerator R i))
+    (hF : ∀ i, e₁ (negativeGenerator R i) = e₂ (negativeGenerator R i)) : e₁ = e₂ :=
+  LieEquiv.ext fun x => DFunLike.congr_fun (hom_ext hH hE hF) x
+
 /-- `TauCeti.KacMoody.lift` is the unique homomorphism with the prescribed values on the
 generators. -/
 theorem eq_lift {h : SatisfiesRelations R φ E F} {g : PresentedLieAlgebra R →ₗ⁅K⁆ L}
@@ -426,6 +452,18 @@ theorem lieSpan_generators_eq_top :
   refine eq_top_iff.2 fun y _ => ?_
   obtain ⟨x, rfl⟩ := presentationMk_surjective R y
   exact hle (by rw [FreeLieAlgebra.lieSpan_range_of_eq_top]; trivial)
+
+/-- Every vector in `R.cartanCenter` maps into the center of
+`TauCeti.KacMoody.PresentedLieAlgebra R`. -/
+theorem cartanElement_mem_center_of_mem_cartanCenter {x : H} (hx : x ∈ R.cartanCenter) :
+    cartanElement R x ∈ LieAlgebra.center K (PresentedLieAlgebra R) := by
+  rw [LieModule.mem_maxTrivSubmodule, ← lieAnnihilator_eq_top_iff K (PresentedLieAlgebra R),
+    eq_top_iff, ← lieSpan_generators_eq_top R]
+  refine lieSpan_le_lieAnnihilator K (PresentedLieAlgebra R) ?_
+  rintro _ ((⟨u, rfl⟩ | ⟨j, rfl⟩) | ⟨j, rfl⟩)
+  · exact lie_cartanElement_cartanElement R u x
+  · simp [← lie_skew _ (cartanElement R x), (R.mem_cartanCenter_iff x).1 hx j]
+  · simp [← lie_skew _ (cartanElement R x), (R.mem_cartanCenter_iff x).1 hx j]
 
 /-! ## The derived algebra and Serre's presentation
 
