@@ -23,6 +23,11 @@ differentiability criterion for maps whose tangent maps preserve inner products.
   `C^n` Riemannian bundle.
 * `Bundle.ContMDiffRiemannianMetric.InducesRiemannianDistance`: express that a smooth metric
   induces the ambient Riemannian distance.
+* `Bundle.ContMDiffRiemannianMetric.ext`: smooth Riemannian metrics with the same fibrewise inner
+  products are equal.
+* `Bundle.ContMDiffRiemannianMetric.InducesRiemannianDistance.toIsRiemannianManifold`: a metric
+  that induces the Riemannian distance makes the manifold a Riemannian manifold once its metric
+  bundle is installed.
 * `Bundle.ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle_inner`: the packaged metric is
   the bundle's inner product.
 * `Bundle.ContMDiffRiemannianMetric.inner_riemannianBundle`: conversely, installing a metric as the

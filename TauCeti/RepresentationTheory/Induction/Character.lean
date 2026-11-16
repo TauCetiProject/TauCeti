@@ -30,6 +30,9 @@ subgroup order.
 * `TauCeti.character_ind` rewrites the coset sum as an average over the whole group when the
   subgroup order is invertible in the coefficient field; it is the specialization of
   `Subgroup.indClassFun_eq_natCard_inv_mul_sum` to a character.
+* `TauCeti.character_indFDRep_mulEquiv`: induced characters are natural under a group isomorphism
+  carrying one finite-index subgroup onto another; it is the specialization of
+  `Subgroup.indClassFun_mulEquiv` to a character.
 
 ## References
 
@@ -245,6 +248,22 @@ theorem character_ind [Fintype G] (hS : IsUnit (Nat.card S : k)) (A : FDRep k S)
   rw [← Subgroup.indClassFun_ofFDRep_character S A]
   exact Subgroup.indClassFun_eq_natCard_inv_mul_sum S hS
     (ClassFunction.mem_iff.mpr fun s t => A.char_conj s t) g
+
+/-- **Induced characters are natural under group isomorphisms.** If `φ : G ≃* G'` carries the
+finite-index subgroup `S` onto `S'` and the characters of `A` and `A'` agree along `φ`, then so do
+the characters of the induced representations. The subgroup `S'` then has finite index too. -/
+theorem character_indFDRep_mulEquiv [S.FiniteIndex] {G' : Type*} [Group G'] {S' : Subgroup G'}
+    (φ : G ≃* G') (hφ : ∀ g, φ g ∈ S' ↔ g ∈ S) (A : FDRep k S) (A' : FDRep k S')
+    (hA : ∀ s : S, A'.character ⟨φ s, (hφ s).2 s.2⟩ = A.character s) (g : G) :
+    haveI : S'.FiniteIndex := @Subgroup.finiteIndex_of_finite_quotient _ _ S'
+      (Finite.of_surjective _ (Subgroup.mk_mulEquiv_out_bijective φ hφ).surjective)
+    (indFDRep (k := k) (G := G') A').character (φ g) =
+      (indFDRep (k := k) (G := G) A).character g := by
+  have : S'.FiniteIndex := @Subgroup.finiteIndex_of_finite_quotient _ _ S'
+    (Finite.of_surjective _ (Subgroup.mk_mulEquiv_out_bijective φ hφ).surjective)
+  rw [← Subgroup.indClassFun_ofFDRep_character, ← Subgroup.indClassFun_ofFDRep_character,
+    Subgroup.indClassFun_mulEquiv S φ hφ A'.char_conj]
+  simp only [hA]
 
 end ClassFun
 

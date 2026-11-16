@@ -16,6 +16,7 @@ public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import Mathlib.RingTheory.TensorProduct.Finite
 public import Mathlib.RingTheory.QuotSMulTop
 public import TauCeti.LinearAlgebra.TensorProduct.Submodule
+import TauCeti.LinearAlgebra.Dual.Divisibility
 
 /-!
 # Cokernels commute with tensor products, heterobasically
@@ -189,24 +190,15 @@ theorem exact_comp_baseChange_quotient_span_singleton {R M N : Type*} [CommRing 
       (φ.restrictScalars R ∘ₗ TensorProduct.mk R (R ⧸ Ideal.span {r}) N 1)
       (Submodule.mkQ_surjective _)
     have hϕ' (n : N) : Ideal.Quotient.mk _ (ϕ n) = φ (1 ⊗ₜ n) := congr($hϕ n)
-    -- Since `φ` kills the image of `a`, the map `ϕ ∘ a` takes values in `rR`, so it is `r` times
-    -- a map `χ : M → R`, which is linear because `r` is regular.
-    have hc (x : M) : ∃ c : R, ϕ (a x) = r * c := by
-      refine Ideal.mem_span_singleton.1 ?_
-      rw [← Ideal.Quotient.eq_zero_iff_mem, hϕ']
+    -- Since `φ` kills the image of `a`, `r` divides every value of `ϕ ∘ a`, so `ϕ ∘ a` is `r`
+    -- times a linear functional `χ : M → R`, because `r` is regular.
+    obtain ⟨χ, hc⟩ := exists_smul_eq_of_forall_dvd (f := ϕ ∘ₗ a) hr.isLeftRegular fun x ↦ by
+      rw [← Ideal.Quotient.eq_zero_iff_dvd, comp_apply, hϕ']
       simpa using congr($hφ (1 ⊗ₜ x))
-    choose c hc using hc
-    let χ : M →ₗ[R] R :=
-      { toFun := c
-        map_add' x y := hr (by simp only [smul_eq_mul, mul_add, ← hc, map_add])
-        map_smul' s x := hr (by
-          simp only [smul_eq_mul, RingHom.id_apply, ← hc, map_smul]
-          rw [hc]
-          ring) }
     -- From `a ∘ b = r • id`, `r • χ (b n) = ϕ (a (b n)) = r • ϕ n`, so `χ ∘ b = ϕ`.
     have hχ (n : N) : χ (b n) = ϕ n := hr (by
-      simp only [smul_eq_mul]
-      rw [show r * χ (b n) = ϕ (a (b n)) from (hc _).symm, ← comp_apply a b, hab]
+      dsimp only
+      rw [← LinearMap.smul_apply, hc, comp_apply, ← comp_apply a b, hab]
       simp)
     refine ⟨((Ideal.span {r}).mkQ ∘ₗ χ).liftBaseChange _, ?_⟩
     refine TensorProduct.AlgebraTensorModule.ext fun s n ↦ ?_
