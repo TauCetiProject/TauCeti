@@ -337,8 +337,6 @@ theorem bondGcd_snoc_singleton_simple_one {i : b.support} (hi : P.coroot' i lam 
   rw [bondGcd_singleton, Nat.gcd_zero_left, RelSeries.last_singleton,
     reflectionBond_simple_smul_one_smul i]
 
-variable [P.flip.IsReduced]
-
 /-- **The `a`-chain condition in Littelmann's form.** A saturated chain `x₀ ⋗ x₁ ⋗ ⋯ ⋗ x_l` of
 `W / W_λ` is an `a`-chain exactly when `a ⟨x_{h-1} λ, β^∨⟩` is an integer for every cover
 `x_h ⋖ x_{h-1}` and every positive root `β` with `x_h λ = s_β (x_{h-1} λ)`. Such a root exists and
@@ -365,7 +363,6 @@ theorem isAChain_iff_forall_coroot' (hlam : lam ∈ dominantChamber P b)
     push_cast at hz ⊢
     linarith
 
-omit [P.flip.IsReduced] in
 /-- A saturated chain of `W / W_λ` of length `0` has bond gcd `0`, the gcd of no bonds. -/
 theorem bondGcd_eq_zero_of_length_eq_zero
     {C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)} (h : C.length = 0) :
@@ -385,7 +382,6 @@ theorem bondGcd_eq_zero_iff (hlam : lam ∈ dominantChamber P b)
   have := h ⟨0, Nat.pos_of_ne_zero hC⟩ (Finset.mem_univ _)
   omega
 
-omit [P.flip.IsReduced] in
 /-- **The bond gcd divides the change of every integral linear form along the chain.** If
 `C : x₀ ⋗ x₁ ⋗ ⋯ ⋗ x_l` is a saturated chain of `W / W_λ`, then `d(C)` divides
 `f (x₀ λ) - f (x_l λ)` for every integral linear form `f` on the weight lattice: each cover changes
@@ -393,7 +389,6 @@ the weight by its bond times a root. -/
 theorem bondGcd_dvd_sub (hlam : lam ∈ dominantChamber P b)
     (C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam))
     (f : Module.Dual ℤ M) : (bondGcd lam C : ℤ) ∣ f (C.head.1 • lam) - f (C.last.1 • lam) := by
-  have := P.flip_isReduced
   induction C using RelSeries.inductionOn with
   | singleton y => simp
   | cons C x hx ih =>
@@ -407,7 +402,6 @@ theorem bondGcd_dvd_sub (hlam : lam ∈ dominantChamber P b)
 
 /-! ### Integrality along `a`-chains -/
 
-omit [P.flip.IsReduced] in
 /-- **Integral linear forms on the two ends of an `a`-chain differ by an `a`-integral amount.** If
 `C : x₀ ⋗ x₁ ⋗ ⋯ ⋗ x_l` is an `a`-chain of `W / W_λ`, then `a (f (x₀ λ) - f (x_l λ))` is an
 integer for every integral linear form `f` on the weight lattice, for instance for the pairing
@@ -420,7 +414,6 @@ theorem IsAChain.exists_mul_sub_eq_intCast (hlam : lam ∈ dominantChamber P b)
     ((Int.natCast_dvd_natCast.mpr (isAChain_iff_den_dvd_bondGcd.mp hC)).trans
       (bondGcd_dvd_sub hlam C f))
 
-omit [P.flip.IsReduced] in
 /-- Along an `a`-chain, the scaled difference of its endpoint weights is an actual root-lattice
 vector, in every characteristic-zero linear realization. This retains the lattice information,
 not only its values under integral linear forms. -/
@@ -430,7 +423,6 @@ theorem IsAChain.exists_mem_rootSpan_smul_sub_eq
     (hC : IsAChain a lam C) {𝕜 V : Type*} [Field 𝕜] [CharZero 𝕜]
     [AddCommGroup V] [Module 𝕜 V] (f : M →+ V) :
     ∃ m ∈ P.rootSpan ℤ, (a : 𝕜) • (f (C.head.1 • lam) - f (C.last.1 • lam)) = f m := by
-  have := P.flip_isReduced
   induction C using RelSeries.inductionOn' with
   | singleton y => exact ⟨0, Submodule.zero_mem _, by simp⟩
   | snoc C y hy ih =>
@@ -474,6 +466,7 @@ theorem IsAChain.exists_mul_coroot'_eq_intCast (hlam : lam ∈ dominantChamber P
     (hC : IsAChain a lam C) (i : b.support) (hhead : P.coroot' i (C.head.1 • lam) < 0)
     (hlast : 0 ≤ P.coroot' i (C.last.1 • lam)) :
     ∃ z : ℤ, a * P.coroot' i (C.head.1 • lam) = z := by
+  have := P.flip_isReduced
   -- The first index `h` at which the pairing is nonnegative.
   have hex : ∃ k, ∃ hk : k ≤ C.length,
       0 ≤ P.coroot' i ((C ⟨k, Nat.lt_succ_of_le hk⟩).1 • lam) := ⟨C.length, le_rfl, hlast⟩
@@ -509,7 +502,6 @@ the `j`-th break, paired with an integral linear form `f`, is the vertex height
 `∑_{k < j} (t_{k+1} - t_k) f (τ_k λ)`. The results below need only the chains, not the order of
 the cosets or of the times, except where stated. -/
 
-omit [P.flip.IsReduced] in
 /-- **Heights at breaks, up to integers.** If consecutive orbit weights `τ_k λ` and `τ_{k+1} λ` are
 joined by `t_{k+1}`-chains for `k + 1 < s` and `t_0 = 0`, then for `j < s` the height
 `∑_{k ≤ j} (t_{k+1} - t_k) f (τ_k λ)` at the break `t_{j+1}` differs from `t_{j+1} f (τ_j λ)` by
@@ -552,7 +544,6 @@ theorem exists_sum_coroot'_eq_intCast_of_isAChain (hlam : lam ∈ dominantChambe
   rw [hhead] at hz₂
   exact ⟨z₁ + z₂, by push_cast; linear_combination hz₁ + hz₂⟩
 
-omit [P.flip.IsReduced] in
 /-- **The endpoint of a Lakshmibai–Seshadri path is integral.** With the chains of
 `TauCeti.exists_sum_sub_mul_eq_intCast_of_isAChain`, if the final time `t_s` is an integer (for a
 Lakshmibai–Seshadri path, `t_s = 1`), then the final height `∑_{k < s} (t_{k+1} - t_k) f (τ_k λ)`

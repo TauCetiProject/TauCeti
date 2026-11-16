@@ -97,12 +97,10 @@ theorem classifyingSpaceSingularChainsCoinvariants_naturality (φ : G →* H)
       (IsQuotientCoveringMap.singularChainsRepCoinvariantsTensorIso
           (p := TopCat.ofHom ⟨classifyingSpaceProj G, continuous_classifyingSpaceProj G⟩)
           (isQuotientCoveringMap_classifyingSpaceProj G) k).hom ≫
-        (singularChains k).map (TopCat.ofHom φ.classifyingSpaceMap) := by
-  exact IsQuotientCoveringMap.singularChainsRepCoinvariantsTensorIso_naturality
-    (isQuotientCoveringMap_classifyingSpaceProj G) k
-      (isQuotientCoveringMap_classifyingSpaceProj H) _
-      (fun g x ↦ φ.universalGSpaceMap_smul g x) _
-      (ConcreteCategory.hom_ext _ _ fun x ↦ (φ.classifyingSpaceMap_proj x))
+        (singularChains k).map (TopCat.ofHom φ.classifyingSpaceMap) :=
+  IsQuotientCoveringMap.singularChainsRepCoinvariantsTensorIso_naturality
+    (isQuotientCoveringMap_classifyingSpaceProj G) k (isQuotientCoveringMap_classifyingSpaceProj H)
+    _ φ.universalGSpaceMap_smul _ (ConcreteCategory.hom_ext _ _ φ.classifyingSpaceMap_proj)
 
 /-- **The singular homology of the classifying space is naturally group homology.** For every
 group homomorphism `φ : G →* H`, the identifications `Hₙ(BG; k) ≅ Hₙ(G, k)` and

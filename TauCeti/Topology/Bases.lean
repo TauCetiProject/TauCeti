@@ -21,6 +21,9 @@ of a preconnected space from second-countable pieces with countably many neighbo
 
 * `TauCeti.secondCountableTopology_of_isOpen_cover`: a preconnected space covered by open
   second-countable subsets, each meeting only countably many cover members, is second countable.
+* `TauCeti.secondCountableTopology_of_preimage_isOpen_cover`: a preconnected space mapping into a
+  second-countable space whose image is covered by open sets with preimages covered by pairwise
+  disjoint open second-countable pieces is second countable.
 * `TauCeti.mk_le_continuum_of_secondCountableTopology`: a second-countable `T₀` space has at most
   `𝔠` points; in particular so does every Polish space.
 
@@ -92,5 +95,41 @@ theorem secondCountableTopology_of_isOpen_cover [PreconnectedSpace E] {ι : Type
   have := hRc.to_subtype
   exact secondCountableTopology_of_countable_cover (U := fun a : R ↦ V a) (fun a ↦ hVo a)
     (by rw [← hWu, hW, biUnion_eq_iUnion])
+
+/-- Let `f : E → X` map a preconnected space `E` into a second-countable space `X`. Suppose `U` is a
+family of open sets in `X` covering `range f`, and for each `i` the preimage `f ⁻¹' U i` is covered
+by a pairwise disjoint family `S i` of open second-countable subsets of `E`. Then `E` is second
+countable. -/
+theorem secondCountableTopology_of_preimage_isOpen_cover [PreconnectedSpace E]
+    {X : Type*} [TopologicalSpace X] [SecondCountableTopology X]
+    {ι : Type*} {κ : ι → Type*} (f : E → X)
+    (U : ι → Set X) (hUo : ∀ i, IsOpen (U i)) (hU : range f ⊆ ⋃ i, U i)
+    (S : ∀ i, κ i → Set E) (hSo : ∀ i j, IsOpen (S i j))
+    (hSsc : ∀ i j, SecondCountableTopology (S i j))
+    (hSd : ∀ i, Pairwise (Disjoint on S i))
+    (hSU : ∀ i, f ⁻¹' U i ⊆ ⋃ j, S i j) : SecondCountableTopology E := by
+  obtain ⟨T, hTc, hTcover⟩ := isOpen_iUnion_countable U hUo
+  have := hTc.to_subtype
+  let V : (Σ i : T, κ i.1) → Set E := fun a ↦ S a.1.1 a.2
+  have hVo (a) : IsOpen (V a) := hSo a.1.1 a.2
+  have hVsc (a) : SecondCountableTopology (V a) := hSsc a.1.1 a.2
+  refine secondCountableTopology_of_isOpen_cover V hVo ?_ hVsc fun a ↦ ?_
+  · refine eq_univ_of_forall fun e ↦ ?_
+    have hx : f e ∈ ⋃ i ∈ T, U i := hTcover ▸ hU (mem_range_self e)
+    obtain ⟨i, hiT, hei⟩ := mem_iUnion₂.mp hx
+    obtain ⟨j, hj⟩ := mem_iUnion.mp (hSU i hei)
+    exact mem_iUnion.mpr ⟨⟨⟨i, hiT⟩, j⟩, hj⟩
+  · have hsub : {b | (V a ∩ V b).Nonempty} ⊆
+        ⋃ i : T, Sigma.mk i '' {j | (V a ∩ S i.1 j).Nonempty} := by
+      rintro ⟨i, j⟩ hb
+      exact mem_iUnion.mpr ⟨i, j, hb, rfl⟩
+    refine Countable.mono hsub (countable_iUnion fun i ↦ Countable.image ?_ _)
+    have := (hVsc a).to_separableSpace
+    exact Set.PairwiseDisjoint.countable_of_isOpen
+      (s := fun j ↦ ((↑) : V a → E) ⁻¹' S i.1 j)
+      (a := {j | (V a ∩ S i.1 j).Nonempty})
+      (fun j₁ _ j₂ _ hne ↦ (hSd i.1 hne).preimage _)
+      (fun j _ ↦ (hSo i.1 j).preimage continuous_subtype_val)
+      (fun j ⟨e, he, he'⟩ ↦ ⟨⟨e, he⟩, he'⟩)
 
 end TauCeti

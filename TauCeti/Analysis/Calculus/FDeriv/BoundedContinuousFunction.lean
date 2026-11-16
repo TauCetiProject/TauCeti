@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Comp
 public import Mathlib.Analysis.Calculus.MeanValue
 public import TauCeti.Analysis.Calculus.ContDiff.UniformOn
+import TauCeti.Analysis.Calculus.MeanValue
 public import TauCeti.Topology.ContinuousMap.Bounded.Normed
 
 /-!
@@ -113,13 +114,11 @@ theorem hasFDerivAt_of_forall_apply_eq (hGs : ∀ x ∈ s, HasFDerivAt G (G' x) 
     (hG' : UniformContinuousOn G' s) (hδ : 0 < δ) (hf₀ : ∀ t, ball (f₀ t) δ ⊆ s)
     (hΘ : ∀ f ∈ ball f₀ δ, ∀ t, Θ f t = G (f t)) (hΦ : ∀ t, Φ t = G' (f₀ t)) :
     HasFDerivAt Θ (applyCLM Φ) f₀ := by
-  let _ : RCLike 𝕜 := IsRCLikeNormedField.rclike 𝕜
-  let _ : NormedSpace ℝ X := .restrictScalars ℝ 𝕜 X
   rw [hasFDerivAt_iff_isLittleO_nhds_zero, Asymptotics.isLittleO_iff]
   intro c hc
   -- A modulus of continuity `η` for `G'` at the tolerance `c` controls the remainder of `G` at
   -- every point `f₀ t` simultaneously, on the ball of radius `min δ η`.
-  obtain ⟨η, hη, hG'η⟩ := Metric.uniformContinuousOn_iff_le.1 hG' c hc
+  obtain ⟨η, hη, hG'η⟩ := hG'.exists_pos_norm_image_sub_sub_le_of_hasFDerivAt hGs hc
   have hρ : 0 < min δ η := lt_min hδ hη
   filter_upwards [ball_mem_nhds (0 : α →ᵇ X) hρ] with h hh
   rw [mem_ball_zero_iff] at hh
@@ -131,13 +130,7 @@ theorem hasFDerivAt_of_forall_apply_eq (hGs : ∀ x ∈ s, HasFDerivAt G (G' x) 
   have hmem : f₀ t + h t ∈ ball (f₀ t) (min δ η) := by
     rw [mem_ball, dist_eq_norm, add_sub_cancel_left]
     exact (norm_coe_le_norm h t).trans_lt hh
-  have key := (convex_ball (f₀ t) (min δ η)).norm_image_sub_le_of_norm_hasFDerivWithin_le'
-    (fun x hx ↦ (hGs x (hball hx)).hasFDerivWithinAt)
-    (fun x hx ↦ by
-      rw [← dist_eq_norm]
-      exact hG'η x (hball hx) (f₀ t) (hf₀ t (mem_ball_self hδ))
-        ((mem_ball.1 hx).le.trans (min_le_right _ _)))
-    (mem_ball_self hρ) hmem
+  have key := hG'η (f₀ t) (min δ η) (min_le_right _ _) hball _ hmem _ (mem_ball_self hρ)
   rw [add_sub_cancel_left] at key
   simp only [FunLike.coe_sub, Pi.sub_apply, hΘ _ hmemf, hΘ f₀ (mem_ball_self hδ), applyCLM_apply,
     hΦ, FunLike.coe_add, Pi.add_apply]
