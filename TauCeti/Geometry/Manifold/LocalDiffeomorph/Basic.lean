@@ -71,6 +71,9 @@ diffeomorphism of the model space read through it has explicit source and forwar
   `IsLocalDiffeomorphAt` at an interior point, for a map which is `C^n` on an open set.
 * `TauCeti.isLocalDiffeomorphAt_of_injective_mfderiv`: in equal finite dimensions, an injective
   differential suffices.
+* `TauCeti.isLocalDiffeomorphAt_of_eqOn_comp`: if `Φ ∘ Ψ = κ` on an open set containing `x`,
+  where `Ψ` is a local diffeomorphism at `x` and `κ` has injective differential there in equal
+  finite dimensions, then `Φ` is a local diffeomorphism at `Ψ x`.
 * `TauCeti.isLocalDiffeomorphAt_of_eqOn`: a map agreeing with a partial diffeomorphism on its
   source is a local diffeomorphism there.
 * `OpenPartialHomeomorph.isLocalDiffeomorphAt_of_mem_maximalAtlas`: a maximal-atlas chart is a
@@ -769,6 +772,22 @@ theorem isLocalDiffeomorphAt_of_injective_mfderiv [FiniteDimensional 𝕂 E]
     (e := (LinearMap.linearEquivOfInjective (mfderiv I J f x).toLinearMap hinj
       hdim).toContinuousLinearEquiv)
     (ContinuousLinearMap.ext fun w ↦ LinearMap.linearEquivOfInjective_apply hinj hdim w)
+
+/-- **Descending a local diffeomorphism.** If `Φ ∘ Ψ = κ` on an open set `s` containing an interior
+point `x`, where `Ψ` is a `C^n` local diffeomorphism at `x` and `κ` is `C^n` on `s` (`1 ≤ n`) with
+injective differential at `x` between spaces of the same finite dimension, then `Φ` is a `C^n` local
+diffeomorphism at `Ψ x`. -/
+theorem isLocalDiffeomorphAt_of_eqOn_comp [FiniteDimensional 𝕂 E] [FiniteDimensional 𝕂 F]
+    {E' H' N' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕂 E'] [TopologicalSpace H']
+    {J' : ModelWithCorners 𝕂 E' H'} [TopologicalSpace N'] [ChartedSpace H' N']
+    {Ψ : M → N'} {Φ : N' → N} {κ : M → N} (hs : IsOpen s) (hx : x ∈ s)
+    (hIx : I.IsInteriorPoint x) (hn : 1 ≤ n) (hΦΨ : EqOn (Φ ∘ Ψ) κ s)
+    (hκ : ContMDiffOn I J n κ s) (hinj : Function.Injective (mfderiv I J κ x))
+    (hdim : Module.finrank 𝕂 E = Module.finrank 𝕂 F) (hΨ : IsLocalDiffeomorphAt I J' n Ψ x) :
+    IsLocalDiffeomorphAt J' J n Φ (Ψ x) := by
+  refine IsLocalDiffeomorphAt.of_comp_right (isLocalDiffeomorphAt_of_injective_mfderiv
+    (hκ.congr hΦΨ) hs hx hIx hn ?_ hdim) hΨ
+  rwa [(Filter.eventuallyEq_of_mem (hs.mem_nhds hx) hΦΨ).mfderiv_eq]
 
 variable [BoundarylessManifold I M]
 
