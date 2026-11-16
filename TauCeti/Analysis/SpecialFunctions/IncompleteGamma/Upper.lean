@@ -11,15 +11,20 @@ import TauCeti.Analysis.SpecialFunctions.Pow.ParametricIntegral
 /-!
 # The complex upper incomplete Gamma function
 
-The principal upper incomplete Gamma function is the integral along the horizontal ray
-from `z` to infinity. Its integrand is absolutely integrable for every complex parameter
-when `z` belongs to the slit plane. On the positive real axis it agrees with the usual
-integral over `(x, ∞)`, including parameters with nonpositive real part.
+`Complex.upperIncompleteGamma` is the principal upper incomplete Gamma function, defined
+by the integral along the horizontal ray from `z` to infinity. When `z` belongs to
+`Complex.slitPlane`, this ray stays away from zero, so its integrand is absolutely integrable
+for every complex parameter `a`, including nonpositive integers. This avoids relying on
+`Γ(a) - γ(a, z)` or `Γ(a) Q(a, z)` at the poles of the classical Gamma function.
 
-This integral definition does not use division by Gamma, so it remains meaningful at
-nonpositive integral parameters. On the branch cut the same totalized Bochner integral
-is used: it need not converge and then takes the junk value zero. No agreement with
-analytic continuation on the branch cut is asserted.
+On the positive real axis it agrees with the usual integral over `(x, ∞)`, including
+parameters with nonpositive real part. `Complex.partialGamma_add_upperIncompleteGamma`
+splits Euler's Gamma integral into Mathlib's `Complex.partialGamma` and the upper tail
+when `0 < a.re` and the real endpoint is nonnegative.
+
+For `z` on the branch cut the same totalized Bochner integral is used: it need not converge
+and then takes the junk value zero. No agreement with analytic continuation on the branch
+cut is asserted.
 
 ## References
 
@@ -34,9 +39,11 @@ open scoped Topology
 
 namespace Complex
 
-/-- The principal upper incomplete Gamma function, defined by a horizontal ray integral.
-On the nonpositive real axis this still uses the principal complex power and the
-Bochner integral, which is zero when the integrand is not integrable; agreement with
+/-- The principal upper incomplete Gamma function with complex parameter `a` and ray
+endpoint `z`, defined by
+`Γ(a, z) = exp (-z) * ∫ t in Ioi (0 : ℝ), (z + t) ^ (a - 1) * exp (-t)`.
+When `z` lies on the nonpositive real axis this still uses the principal complex power and
+the Bochner integral, which is zero when the integrand is not integrable; agreement with
 analytic continuation there is not asserted. -/
 noncomputable def upperIncompleteGamma (a z : ℂ) : ℂ :=
   _root_.Complex.exp (-z) *
