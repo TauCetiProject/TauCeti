@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.TaylorIntegral
-public import TauCeti.Analysis.Calculus.ParametricIntegral
+public import TauCeti.Analysis.Calculus.ParametricIntegral.Basic
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.MeasureTheory.Constructions.UnitInterval
 
