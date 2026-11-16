@@ -177,20 +177,13 @@ theorem single_le_iff {a b : α} :
 strictly precedes `single a 1 + single b 1` in the graded reverse lexicographic order. -/
 theorem single_add_single_lt_of_max_lt {a b c d : α} (h : max a b < max c d) :
     toDegRevLex (single c 1 + single d 1) < toDegRevLex (single a 1 + single b 1) := by
-  rw [lt_iff_exists]
-  refine Or.inr ⟨by simp, max c d, fun j hj ↦ ?_, ?_⟩
-  · have hcj : j ≠ c := (lt_of_le_of_lt (le_max_left c d) hj).ne'
-    have hdj : j ≠ d := (lt_of_le_of_lt (le_max_right c d) hj).ne'
-    have haj : j ≠ a := ((le_max_left a b).trans_lt (h.trans hj)).ne'
-    have hbj : j ≠ b := ((le_max_right a b).trans_lt (h.trans hj)).ne'
-    simp [hcj, hdj, haj, hbj]
-  · have ham : max c d ≠ a := (lt_of_le_of_lt (le_max_left a b) h).ne'
-    have hbm : max c d ≠ b := (lt_of_le_of_lt (le_max_right a b) h).ne'
-    rw [ofDegRevLex_toDegRevLex, ofDegRevLex_toDegRevLex, Finsupp.add_apply, Finsupp.add_apply,
-      single_eq_of_ne ham, single_eq_of_ne hbm, add_zero]
-    rcases max_choice c d with hcd | hcd <;> rw [hcd]
-    · simp
-    · simp
+  refine lt_iff_exists.2 <| Or.inr ⟨by simp, max c d, fun j hj ↦ ?_, ?_⟩
+  · simp [(le_max_left c d |>.trans_lt hj).ne', (le_max_right c d |>.trans_lt hj).ne',
+      (le_max_left a b |>.trans_lt (h.trans hj)).ne',
+      (le_max_right a b |>.trans_lt (h.trans hj)).ne']
+  · rcases max_choice c d with hcd | hcd <;>
+      · rw [hcd] at h ⊢
+        simp [(le_max_left a b |>.trans_lt h).ne', (le_max_right a b |>.trans_lt h).ne']
 
 theorem monotone_degree :
     Monotone (fun x : DegRevLex (α →₀ ℕ) ↦ (ofDegRevLex x).degree) := fun _ _ h ↦ by
