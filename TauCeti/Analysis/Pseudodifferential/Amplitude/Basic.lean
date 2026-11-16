@@ -505,9 +505,11 @@ theorem HasCompactInputSupport.exists_norm_fourier_slice_le {a : Amplitude n V W
     (hsmooth.continuous_iteratedFDeriv (by simp)).integrable_of_hasCompactSupport
       ((ha.hasCompactSupport_slice x ξ).iteratedFDeriv k)
   have e₀ := pow_mul_norm_fourier_le_integral_norm_iteratedFDeriv (N := 0)
-    (hsmooth.of_le (by simp)) (fun k _ ↦ hint k) θ
+    (fun n hn ↦ (Nat.not_lt_zero n hn).elim) (fun k _ ↦ hint k) θ
   have e₁ := pow_mul_norm_fourier_le_integral_norm_iteratedFDeriv (N := N)
-    (hsmooth.of_le (by simp)) (fun k _ ↦ hint k) θ
+    (fun n _ ↦ hsmooth.differentiable_iteratedFDeriv
+      (ENat.natCast_lt_of_coe_top_le_withTop le_rfl n))
+    (fun k _ ↦ hint k) θ
   rw [pow_zero, one_mul] at e₀
   have hw : 0 < (1 + ‖θ‖ ^ 2) ^ (r / 2) := by positivity
   -- `⟨θ⟩ ^ r ≤ 2 ^ N (1 + ‖θ‖ ^ N)` and `‖θ‖ ^ N ≤ (2π‖θ‖) ^ N`.

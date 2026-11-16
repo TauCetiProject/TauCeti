@@ -9,6 +9,7 @@ public import Mathlib.Logic.Equiv.Fin.Rotate
 public import TauCeti.Data.ZMod.FinEquiv
 public import TauCeti.NumberTheory.ModularForms.Cusps.Basic
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.UpperTri.Sum
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
 /-!
 # The upper-triangular Hecke slash sum under `T`-invariance
@@ -141,7 +142,7 @@ lemma heckeSlashUpperTri_shift_one (f : ℍ → ℂ) (hf : ∀ τ : ℍ, f ((1 :
     heckeSlashUpperTri k p f ((1 : ℝ) +ᵥ τ) = heckeSlashUpperTri k p f τ := by
   have hfT : f ∣[k] (mapGL ℚ (ModularGroup.T : SL(2, ℤ)) : GL (Fin 2) ℚ) = f := by
     ext x
-    rw [ModularForm.rat_slash, map_mapGL, ← TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL,
+    rw [ModularForm.rat_slash, map_mapGL, ← Matrix.SpecialLinearGroup.coe_GL_eq_mapGL,
       ← _root_.ModularForm.SL_slash]
     have ht := TauCeti.ModularForm.slash_T_zpow_apply k 1 f x
     rw [zpow_one, Int.cast_one] at ht
@@ -150,7 +151,7 @@ lemma heckeSlashUpperTri_shift_one (f : ℍ → ℂ) (hf : ∀ τ : ℍ, f ((1 :
   have hT_eval : (heckeSlashUpperTri k p f ∣[k]
       (mapGL ℚ (ModularGroup.T : SL(2, ℤ)) : GL (Fin 2) ℚ)) τ =
         heckeSlashUpperTri k p f ((1 : ℝ) +ᵥ τ) := by
-    rw [ModularForm.rat_slash, map_mapGL, ← TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL,
+    rw [ModularForm.rat_slash, map_mapGL, ← Matrix.SpecialLinearGroup.coe_GL_eq_mapGL,
       ← _root_.ModularForm.SL_slash]
     have ht := TauCeti.ModularForm.slash_T_zpow_apply k 1 (heckeSlashUpperTri k p f) τ
     rw [zpow_one, Int.cast_one] at ht
