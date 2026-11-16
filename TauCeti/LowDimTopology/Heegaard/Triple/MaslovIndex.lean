@@ -36,12 +36,12 @@ corner `y` enters only through the corner conditions on `D`.
 
 The two `1`-chains in an intersection number `∂_β D · ∂_γ E` meet at points of `β ∩ γ`, where
 they may have endpoints, so Sarkar averages the intersection numbers of the four small diagonal
-translates of the first chain with the second. At a crossing this contributes the average
-coefficient of `∂_β D` on the two `β`-arcs there times the sum of the coefficients of `∂_γ E` on
-the two `γ`-arcs, with the sign of the crossing. In terms of the region multiplicities, the sum of
-the coefficients of `∂_γ E` times that sign is the change, across `γ`, of the sum of the
-multiplicities of `E` on the two sides of `β`. So the intersection numbers below are defined
-from the region labels alone, with no separate record of crossing signs
+translates of the first chain with the second. At a crossing this contributes the sum of the
+coefficients of `∂_β D` on the two `β`-arcs there times the sum of the coefficients of `∂_γ E` on
+the two `γ`-arcs, divided by four, with the sign of the crossing. In terms of the region
+multiplicities, the sum of the coefficients of `∂_γ E` times that sign is the change, across `γ`,
+of the sum of the multiplicities of `E` on the two sides of `β`. So the intersection numbers below
+are defined from the region labels alone, with no separate record of crossing signs
 (`TauCeti.HeegaardTripleRegionSystem.alphaBetaIntersection`,
 `TauCeti.HeegaardTripleRegionSystem.betaGammaIntersection`,
 `TauCeti.HeegaardTripleRegionSystem.gammaAlphaIntersection`). Each can be read along either of its
@@ -85,6 +85,9 @@ Theorem 4.1, and is not formalized here.
 * `TauCeti.HeegaardTripleRegionSystem.IsTriangleDomain.alphaGammaGeneratorPointMeasure_sub` and
   its two counterparts: Sarkar's point measure identity along the three edges of a triangle
   domain.
+* `TauCeti.HeegaardTripleRegionSystem.IsAlphaBetaDomainBetween.alphaBetaGeneratorPointMeasure_sub`
+  and its two counterparts: the same identity for the disk domains of the three Heegaard diagrams
+  of the triple.
 * `TauCeti.HeegaardTripleRegionSystem.IsTriangleDomain.maslovIndex_eq_alphaBetaIntersection` and
   `TauCeti.HeegaardTripleRegionSystem.IsTriangleDomain.maslovIndex_eq_gammaAlphaIntersection`: the
   two cyclically rotated forms of the formula.
@@ -122,49 +125,45 @@ universe u₁ u₂ u₃ v w
 
 section Crossing
 
-variable {A B R : Type*} {aNext : Equiv.Perm A} {aLeft aRight : A → R} {bNext : Equiv.Perm B}
-  {bLeft bRight : B → R} {a₀ : A} {b₀ : B}
+variable {P B R : Type*}
 
-/-- At a compatible crossing, the multiplicities of a region chain at the four corners, read along
-the arcs of either curve, have the same sum. -/
-theorem IsCrossingCompatible.corner_sum_eq
-    (h : IsCrossingCompatible aNext aLeft aRight bNext bLeft bRight a₀ b₀) (D : R → ℤ) :
-    D (aLeft (aNext.symm a₀)) + D (aRight (aNext.symm a₀)) + (D (aLeft a₀) + D (aRight a₀)) =
-      D (bLeft (bNext.symm b₀)) + D (bRight (bNext.symm b₀)) + (D (bLeft b₀) + D (bRight b₀)) := by
-  rcases isCrossingCompatible_iff.mp h with ⟨h₁, h₂, h₃, h₄⟩ | ⟨h₁, h₂, h₃, h₄⟩ <;>
-    rw [h₁, h₂, h₃, h₄] <;> ring
+/-- The pairing behind the three intersection numbers below, along a curve family with arcs
+labelled by `B`, successor `next`, side regions `left` and `right`, boundary map `bd`, and
+crossings `ι : P → B` with another family: at each crossing, the sum of the coefficients of `bd E`
+on the two arcs there times the change across the other curve of the sum of the multiplicities of
+`D` on the two sides of the first, summed and divided by four. -/
+private def crossingPairing [Fintype P] (next : Equiv.Perm B) (left right : B → R)
+    (bd : (R → ℤ) →+ B → ℤ) (ι : P → B) : (R → ℤ) →+ (R → ℤ) →+ ℚ :=
+  AddMonoidHom.mk' (fun D => AddMonoidHom.mk' (fun E =>
+    ((∑ p, (bd E (next.symm (ι p)) + bd E (ι p)) *
+      (D (left (ι p)) + D (right (ι p)) -
+        (D (left (next.symm (ι p))) + D (right (next.symm (ι p))))) : ℤ) : ℚ) / 4)
+    (fun E E' => by
+      rw [← add_div, ← Int.cast_add, ← sum_add_distrib]
+      congr 3
+      exact funext fun p => by simp only [map_add, Pi.add_apply]; ring))
+    (fun D D' => by
+      ext E
+      simp only [AddMonoidHom.mk'_apply, AddMonoidHom.add_apply]
+      rw [← add_div, ← Int.cast_add, ← sum_add_distrib]
+      congr 3
+      exact funext fun p => by simp only [Pi.add_apply]; ring)
 
-/-- At a compatible crossing, the local intersection number of the `a`-part of `∂D` with the
-`b`-part of `∂E` cancels that of the `b`-part of `∂E` with the `a`-part of `∂D`. Each is the sum of
-the coefficients of one boundary on the two arcs at the crossing, times the change across the other
-curve of the sum of the multiplicities on the two sides of the first. -/
-private theorem IsCrossingCompatible.cross_add_cross_eq_zero
-    (h : IsCrossingCompatible aNext aLeft aRight bNext bLeft bRight a₀ b₀) (D E : R → ℤ) :
-    (D (aLeft (aNext.symm a₀)) - D (aRight (aNext.symm a₀)) + (D (aLeft a₀) - D (aRight a₀))) *
-        (E (aLeft a₀) + E (aRight a₀) - (E (aLeft (aNext.symm a₀)) + E (aRight (aNext.symm a₀)))) +
-      (E (bLeft (bNext.symm b₀)) - E (bRight (bNext.symm b₀)) + (E (bLeft b₀) - E (bRight b₀))) *
-        (D (bLeft b₀) + D (bRight b₀) - (D (bLeft (bNext.symm b₀)) + D (bRight (bNext.symm b₀)))) =
-      0 := by
-  rcases isCrossingCompatible_iff.mp h with ⟨h₁, h₂, h₃, h₄⟩ | ⟨h₁, h₂, h₃, h₄⟩ <;>
-    rw [h₁, h₂, h₃, h₄] <;> ring
-
-/-- Summation by parts along an oriented curve: pairing the boundary of the `1`-chain `∂X` with
-the corner sums of `Y` equals pairing the sums of the coefficients of `∂X` on the two arcs at each
-point with the change there of the side sums of `Y`. -/
-private theorem sum_arcBoundary_mul_cornerSum {P : Type*} [Fintype P] (next : Equiv.Perm P)
-    (left right : P → R) (X Y : R → ℤ) :
-    ∑ q, (X (left (next.symm q)) - X (right (next.symm q)) - (X (left q) - X (right q))) *
-        (Y (left (next.symm q)) + Y (right (next.symm q)) + (Y (left q) + Y (right q))) =
-      ∑ q, (X (left (next.symm q)) - X (right (next.symm q)) + (X (left q) - X (right q))) *
-        (Y (left q) + Y (right q) - (Y (left (next.symm q)) + Y (right (next.symm q)))) := by
-  have h := Equiv.sum_comp next.symm fun q =>
-    (X (left q) - X (right q)) * (Y (left q) + Y (right q))
-  rw [← sub_eq_zero, ← sum_sub_distrib]
-  calc _ = ∑ q, 2 * ((X (left (next.symm q)) - X (right (next.symm q))) *
-          (Y (left (next.symm q)) + Y (right (next.symm q))) -
-            (X (left q) - X (right q)) * (Y (left q) + Y (right q))) :=
-        sum_congr rfl fun q _ => by ring
-    _ = 0 := by rw [← mul_sum, sum_sub_distrib, h, sub_self, mul_zero]
+/-- Summation by parts along an oriented curve, for point measures `m` given by the corner sums of
+`Y` divided by four: pairing the boundary `c` of the `1`-chain `∂X` with `m` equals pairing the
+sums of the coefficients of `∂X` on the two arcs at each point with the change there of the side
+sums of `Y`, divided by four. -/
+private theorem sum_mul_cornerSum_div_four [Fintype P] (next : Equiv.Perm P) (left right : P → R)
+    (X Y : R → ℤ) (c : P → ℤ) (m : P → ℚ)
+    (hc : ∀ q, c q = X (left (next.symm q)) - X (right (next.symm q)) - (X (left q) - X (right q)))
+    (hm : ∀ q, m q = ((Y (left (next.symm q)) + Y (right (next.symm q)) +
+      (Y (left q) + Y (right q)) : ℤ) : ℚ) / 4) :
+    ∑ q, (c q : ℚ) * m q =
+      ((∑ q, (X (left (next.symm q)) - X (right (next.symm q)) + (X (left q) - X (right q))) *
+        (Y (left q) + Y (right q) - (Y (left (next.symm q)) + Y (right (next.symm q)))) : ℤ) :
+          ℚ) / 4 := by
+  rw [← HeegaardRegionSystem.sum_arcBoundary_mul_cornerSum, Int.cast_sum, sum_div]
+  exact sum_congr rfl fun q _ => by rw [hc, hm]; push_cast; ring
 
 end Crossing
 
@@ -314,14 +313,6 @@ theorem alphaGammaGeneratorPointMeasure_one (w : T.alphaGamma.Generator) :
     T.alphaGammaGeneratorPointMeasure w 1 = n := by
   simp
 
-/-- Pairing the `0`-chain of a generator with a function on the points sums it over the points of
-the generator. -/
-private theorem sum_generatorChain_mul {P : Type*} [Fintype P] (S : HeegaardIntersectionSystem n P)
-    (g : S.Generator) (f : P → ℚ) :
-    ∑ q, (S.generatorChain g q : ℚ) * f q = ∑ i, f (S.point g i) := by
-  simp_rw [← zsmul_eq_mul]
-  exact S.sum_generatorChain_smul g f
-
 end PointMeasure
 
 section Intersection
@@ -334,21 +325,7 @@ multiplicities of `D` on the two sides of `β`, divided by four.
 `TauCeti.HeegaardTripleRegionSystem.alphaBetaIntersection_apply_alpha` computes it along the
 `α`-arcs. -/
 def alphaBetaIntersection [Fintype PointAB] : (Region → ℤ) →+ (Region → ℤ) →+ ℚ :=
-  AddMonoidHom.mk' (fun D => AddMonoidHom.mk' (fun E =>
-    ((∑ p : PointAB, (T.betaBoundary E (T.betaNext.symm (.inl p)) + T.betaBoundary E (.inl p)) *
-      (D (T.betaLeft (.inl p)) + D (T.betaRight (.inl p)) -
-        (D (T.betaLeft (T.betaNext.symm (.inl p))) +
-          D (T.betaRight (T.betaNext.symm (.inl p))))) : ℤ) : ℚ) / 4)
-    (fun E E' => by
-      rw [← add_div, ← Int.cast_add, ← sum_add_distrib]
-      congr 3
-      exact funext fun p => by simp only [map_add, Pi.add_apply]; ring))
-    (fun D D' => by
-      ext E
-      simp only [AddMonoidHom.mk'_apply, AddMonoidHom.add_apply]
-      rw [← add_div, ← Int.cast_add, ← sum_add_distrib]
-      congr 3
-      exact funext fun p => by simp only [Pi.add_apply]; ring)
+  crossingPairing T.betaNext T.betaLeft T.betaRight T.betaBoundary Sum.inl
 
 /-- The intersection number `∂_β D · ∂_γ E` of the `β`-part of the boundary of `D` with the
 `γ`-part of the boundary of `E`, computed along the `γ`-arcs: at each point of `β ∩ γ`, the sum of
@@ -357,22 +334,7 @@ the multiplicities of `D` on the two sides of `γ`, divided by four.
 `TauCeti.HeegaardTripleRegionSystem.betaGammaIntersection_apply_beta` computes it along the
 `β`-arcs. -/
 def betaGammaIntersection [Fintype PointBC] : (Region → ℤ) →+ (Region → ℤ) →+ ℚ :=
-  AddMonoidHom.mk' (fun D => AddMonoidHom.mk' (fun E =>
-    ((∑ p : PointBC,
-      (T.gammaBoundary E (T.gammaNext.symm (.inl p)) + T.gammaBoundary E (.inl p)) *
-        (D (T.gammaLeft (.inl p)) + D (T.gammaRight (.inl p)) -
-          (D (T.gammaLeft (T.gammaNext.symm (.inl p))) +
-            D (T.gammaRight (T.gammaNext.symm (.inl p))))) : ℤ) : ℚ) / 4)
-    (fun E E' => by
-      rw [← add_div, ← Int.cast_add, ← sum_add_distrib]
-      congr 3
-      exact funext fun p => by simp only [map_add, Pi.add_apply]; ring))
-    (fun D D' => by
-      ext E
-      simp only [AddMonoidHom.mk'_apply, AddMonoidHom.add_apply]
-      rw [← add_div, ← Int.cast_add, ← sum_add_distrib]
-      congr 3
-      exact funext fun p => by simp only [Pi.add_apply]; ring)
+  crossingPairing T.gammaNext T.gammaLeft T.gammaRight T.gammaBoundary Sum.inl
 
 /-- The intersection number `∂_γ D · ∂_α E` of the `γ`-part of the boundary of `D` with the
 `α`-part of the boundary of `E`, computed along the `α`-arcs: at each point of `α ∩ γ`, the sum of
@@ -381,22 +343,7 @@ the multiplicities of `D` on the two sides of `α`, divided by four.
 `TauCeti.HeegaardTripleRegionSystem.gammaAlphaIntersection_apply_gamma` computes it along the
 `γ`-arcs. -/
 def gammaAlphaIntersection [Fintype PointAC] : (Region → ℤ) →+ (Region → ℤ) →+ ℚ :=
-  AddMonoidHom.mk' (fun D => AddMonoidHom.mk' (fun E =>
-    ((∑ p : PointAC,
-      (T.alphaBoundary E (T.alphaNext.symm (.inr p)) + T.alphaBoundary E (.inr p)) *
-        (D (T.alphaLeft (.inr p)) + D (T.alphaRight (.inr p)) -
-          (D (T.alphaLeft (T.alphaNext.symm (.inr p))) +
-            D (T.alphaRight (T.alphaNext.symm (.inr p))))) : ℤ) : ℚ) / 4)
-    (fun E E' => by
-      rw [← add_div, ← Int.cast_add, ← sum_add_distrib]
-      congr 3
-      exact funext fun p => by simp only [map_add, Pi.add_apply]; ring))
-    (fun D D' => by
-      ext E
-      simp only [AddMonoidHom.mk'_apply, AddMonoidHom.add_apply]
-      rw [← add_div, ← Int.cast_add, ← sum_add_distrib]
-      congr 3
-      exact funext fun p => by simp only [Pi.add_apply]; ring)
+  crossingPairing T.alphaNext T.alphaLeft T.alphaRight T.alphaBoundary Sum.inr
 
 theorem alphaBetaIntersection_apply [Fintype PointAB] (D E : Region → ℤ) :
     T.alphaBetaIntersection D E =
@@ -471,6 +418,7 @@ theorem gammaAlphaIntersection_apply_gamma [Fintype PointAC] (D E : Region → �
   exact funext fun p => by
     simp only [alphaBoundary_apply, gammaBoundary_apply]
     linear_combination (T.crossing_alphaGamma p).cross_add_cross_eq_zero E D
+
 /-- Sarkar's point measure identity along `α`: pairing the boundary of `∂_α X` with the point
 measures of `Y` gives `∂Y · ∂_α X = -∂_α X · ∂_β Y + ∂_γ Y · ∂_α X`. -/
 private theorem sum_alphaArcBoundary_mul [Fintype PointAB] [Fintype PointAC]
@@ -478,20 +426,12 @@ private theorem sum_alphaArcBoundary_mul [Fintype PointAB] [Fintype PointAC]
     ∑ q, (T.alphaArcBoundary (T.alphaBoundary X) q : ℚ) *
         Sum.elim (T.alphaBetaPointMeasure Y) (T.alphaGammaPointMeasure Y) q =
       -T.alphaBetaIntersection X Y + T.gammaAlphaIntersection Y X := by
-  have hL : ∑ q, (T.alphaArcBoundary (T.alphaBoundary X) q : ℚ) *
-      Sum.elim (T.alphaBetaPointMeasure Y) (T.alphaGammaPointMeasure Y) q =
-      ((∑ q, (X (T.alphaLeft (T.alphaNext.symm q)) - X (T.alphaRight (T.alphaNext.symm q)) -
-        (X (T.alphaLeft q) - X (T.alphaRight q))) *
-          (Y (T.alphaLeft (T.alphaNext.symm q)) + Y (T.alphaRight (T.alphaNext.symm q)) +
-            (Y (T.alphaLeft q) + Y (T.alphaRight q))) : ℤ) : ℚ) / 4 := by
-    rw [Int.cast_sum, Finset.sum_div]
-    refine sum_congr rfl fun q _ => ?_
-    rcases q with p | p <;>
-      simp only [Sum.elim_inl, Sum.elim_inr, alphaBetaPointMeasure_apply,
-        alphaGammaPointMeasure_apply, alphaArcBoundary_apply, alphaBoundary_apply] <;>
-      push_cast <;> ring
-  rw [hL, sum_arcBoundary_mul_cornerSum, Fintype.sum_sum_type, alphaBetaIntersection_apply_alpha,
-    gammaAlphaIntersection_apply]
+  rw [sum_mul_cornerSum_div_four T.alphaNext T.alphaLeft T.alphaRight X Y _ _
+      (fun q => by simp only [alphaArcBoundary_apply, alphaBoundary_apply])
+      (by rintro (p | p) <;>
+        simp only [Sum.elim_inl, Sum.elim_inr, alphaBetaPointMeasure_apply,
+          alphaGammaPointMeasure_apply]),
+    Fintype.sum_sum_type, alphaBetaIntersection_apply_alpha, gammaAlphaIntersection_apply]
   simp only [alphaBoundary_apply]
   push_cast
   ring
@@ -503,20 +443,12 @@ private theorem sum_betaArcBoundary_mul [Fintype PointAB] [Fintype PointBC]
     ∑ q, (T.betaArcBoundary (T.betaBoundary X) q : ℚ) *
         Sum.elim (T.alphaBetaPointMeasure Y) (T.betaGammaPointMeasure Y) q =
       T.alphaBetaIntersection Y X - T.betaGammaIntersection X Y := by
-  have hL : ∑ q, (T.betaArcBoundary (T.betaBoundary X) q : ℚ) *
-      Sum.elim (T.alphaBetaPointMeasure Y) (T.betaGammaPointMeasure Y) q =
-      ((∑ q, (X (T.betaLeft (T.betaNext.symm q)) - X (T.betaRight (T.betaNext.symm q)) -
-        (X (T.betaLeft q) - X (T.betaRight q))) *
-          (Y (T.betaLeft (T.betaNext.symm q)) + Y (T.betaRight (T.betaNext.symm q)) +
-            (Y (T.betaLeft q) + Y (T.betaRight q))) : ℤ) : ℚ) / 4 := by
-    rw [Int.cast_sum, Finset.sum_div]
-    refine sum_congr rfl fun q _ => ?_
-    rcases q with p | p <;>
-      simp only [Sum.elim_inl, Sum.elim_inr, alphaBetaPointMeasure_apply_beta,
-        betaGammaPointMeasure_apply, betaArcBoundary_apply, betaBoundary_apply] <;>
-      push_cast <;> ring
-  rw [hL, sum_arcBoundary_mul_cornerSum, Fintype.sum_sum_type, alphaBetaIntersection_apply,
-    betaGammaIntersection_apply_beta]
+  rw [sum_mul_cornerSum_div_four T.betaNext T.betaLeft T.betaRight X Y _ _
+      (fun q => by simp only [betaArcBoundary_apply, betaBoundary_apply])
+      (by rintro (p | p) <;>
+        simp only [Sum.elim_inl, Sum.elim_inr, alphaBetaPointMeasure_apply_beta,
+          betaGammaPointMeasure_apply]),
+    Fintype.sum_sum_type, alphaBetaIntersection_apply, betaGammaIntersection_apply_beta]
   simp only [betaBoundary_apply]
   push_cast
   ring
@@ -528,20 +460,12 @@ private theorem sum_gammaArcBoundary_mul [Fintype PointBC] [Fintype PointAC]
     ∑ q, (T.gammaArcBoundary (T.gammaBoundary X) q : ℚ) *
         Sum.elim (T.betaGammaPointMeasure Y) (T.alphaGammaPointMeasure Y) q =
       T.betaGammaIntersection Y X - T.gammaAlphaIntersection X Y := by
-  have hL : ∑ q, (T.gammaArcBoundary (T.gammaBoundary X) q : ℚ) *
-      Sum.elim (T.betaGammaPointMeasure Y) (T.alphaGammaPointMeasure Y) q =
-      ((∑ q, (X (T.gammaLeft (T.gammaNext.symm q)) - X (T.gammaRight (T.gammaNext.symm q)) -
-        (X (T.gammaLeft q) - X (T.gammaRight q))) *
-          (Y (T.gammaLeft (T.gammaNext.symm q)) + Y (T.gammaRight (T.gammaNext.symm q)) +
-            (Y (T.gammaLeft q) + Y (T.gammaRight q))) : ℤ) : ℚ) / 4 := by
-    rw [Int.cast_sum, Finset.sum_div]
-    refine sum_congr rfl fun q _ => ?_
-    rcases q with p | p <;>
-      simp only [Sum.elim_inl, Sum.elim_inr, betaGammaPointMeasure_apply_gamma,
-        alphaGammaPointMeasure_apply_gamma, gammaArcBoundary_apply, gammaBoundary_apply] <;>
-      push_cast <;> ring
-  rw [hL, sum_arcBoundary_mul_cornerSum, Fintype.sum_sum_type, betaGammaIntersection_apply,
-    gammaAlphaIntersection_apply_gamma]
+  rw [sum_mul_cornerSum_div_four T.gammaNext T.gammaLeft T.gammaRight X Y _ _
+      (fun q => by simp only [gammaArcBoundary_apply, gammaBoundary_apply])
+      (by rintro (p | p) <;>
+        simp only [Sum.elim_inl, Sum.elim_inr, betaGammaPointMeasure_apply_gamma,
+          alphaGammaPointMeasure_apply_gamma]),
+    Fintype.sum_sum_type, betaGammaIntersection_apply, gammaAlphaIntersection_apply_gamma]
   simp only [gammaBoundary_apply]
   push_cast
   ring
@@ -557,7 +481,7 @@ theorem IsTriangleDomain.alphaGammaGeneratorPointMeasure_sub [Fintype PointAB] [
       -T.alphaBetaIntersection D Y + T.gammaAlphaIntersection Y D := by
   rw [← T.sum_alphaArcBoundary_mul D Y, (isTriangleDomain_iff.mp hD).1, Fintype.sum_sum_type]
   simp only [Sum.elim_inl, Sum.elim_inr, Pi.neg_apply, Int.cast_neg, neg_mul, sum_neg_distrib,
-    sum_generatorChain_mul, alphaBetaGeneratorPointMeasure_apply,
+    HeegaardIntersectionSystem.sum_generatorChain_mul, alphaBetaGeneratorPointMeasure_apply,
     alphaGammaGeneratorPointMeasure_apply]
   ring
 
@@ -572,7 +496,7 @@ theorem IsTriangleDomain.alphaBetaGeneratorPointMeasure_sub [Fintype PointAB] [F
       T.alphaBetaIntersection Y D - T.betaGammaIntersection D Y := by
   rw [← T.sum_betaArcBoundary_mul D Y, (isTriangleDomain_iff.mp hD).2.1, Fintype.sum_sum_type]
   simp only [Sum.elim_inl, Sum.elim_inr, Pi.neg_apply, Int.cast_neg, neg_mul, sum_neg_distrib,
-    sum_generatorChain_mul, alphaBetaGeneratorPointMeasure_apply,
+    HeegaardIntersectionSystem.sum_generatorChain_mul, alphaBetaGeneratorPointMeasure_apply,
     betaGammaGeneratorPointMeasure_apply]
   ring
 
@@ -587,9 +511,54 @@ theorem IsTriangleDomain.betaGammaGeneratorPointMeasure_sub [Fintype PointBC] [F
       T.betaGammaIntersection Y D - T.gammaAlphaIntersection D Y := by
   rw [← T.sum_gammaArcBoundary_mul D Y, (isTriangleDomain_iff.mp hD).2.2, Fintype.sum_sum_type]
   simp only [Sum.elim_inl, Sum.elim_inr, Pi.neg_apply, Int.cast_neg, neg_mul, sum_neg_distrib,
-    sum_generatorChain_mul, betaGammaGeneratorPointMeasure_apply,
+    HeegaardIntersectionSystem.sum_generatorChain_mul, betaGammaGeneratorPointMeasure_apply,
     alphaGammaGeneratorPointMeasure_apply]
   ring
+
+variable {T} in
+/-- Sarkar's point measure identity for a disk domain `D` from `x` to `x'` in `(Σ, α, β)`: the
+boundary of the `β`-part of `∂D` runs from `x'` to `x`, so for every domain `Y`,
+`n_x(Y) - n_{x'}(Y) = ∂Y · ∂_β D = ∂_α Y · ∂_β D - ∂_β D · ∂_γ Y`. -/
+theorem IsAlphaBetaDomainBetween.alphaBetaGeneratorPointMeasure_sub [Fintype PointAB]
+    [Fintype PointBC] {x x' : T.alphaBeta.Generator} {D : Region → ℤ}
+    (hD : T.IsAlphaBetaDomainBetween x x' D) (Y : Region → ℤ) :
+    T.alphaBetaGeneratorPointMeasure x Y - T.alphaBetaGeneratorPointMeasure x' Y =
+      T.alphaBetaIntersection Y D - T.betaGammaIntersection D Y := by
+  rw [← T.sum_betaArcBoundary_mul D Y, (isAlphaBetaDomainBetween_iff.mp hD).2.1,
+    Fintype.sum_sum_type]
+  simp only [Sum.elim_inl, Sum.elim_inr, Pi.sub_apply, Pi.zero_apply, Int.cast_sub,
+    Int.cast_zero, sub_mul, zero_mul, sum_sub_distrib, sum_const_zero, add_zero,
+    HeegaardIntersectionSystem.sum_generatorChain_mul, alphaBetaGeneratorPointMeasure_apply]
+
+variable {T} in
+/-- Sarkar's point measure identity for a disk domain `D` from `y` to `y'` in `(Σ, β, γ)`: the
+boundary of the `β`-part of `∂D` runs from `y` to `y'`, so for every domain `Y`,
+`n_{y'}(Y) - n_y(Y) = ∂Y · ∂_β D = ∂_α Y · ∂_β D - ∂_β D · ∂_γ Y`. -/
+theorem IsBetaGammaDomainBetween.betaGammaGeneratorPointMeasure_sub [Fintype PointAB]
+    [Fintype PointBC] {y y' : T.betaGamma.Generator} {D : Region → ℤ}
+    (hD : T.IsBetaGammaDomainBetween y y' D) (Y : Region → ℤ) :
+    T.betaGammaGeneratorPointMeasure y' Y - T.betaGammaGeneratorPointMeasure y Y =
+      T.alphaBetaIntersection Y D - T.betaGammaIntersection D Y := by
+  rw [← T.sum_betaArcBoundary_mul D Y, (isBetaGammaDomainBetween_iff.mp hD).2.1,
+    Fintype.sum_sum_type]
+  simp only [Sum.elim_inl, Sum.elim_inr, Pi.sub_apply, Pi.zero_apply, Int.cast_sub,
+    Int.cast_zero, sub_mul, zero_mul, sum_sub_distrib, sum_const_zero, zero_add,
+    HeegaardIntersectionSystem.sum_generatorChain_mul, betaGammaGeneratorPointMeasure_apply]
+
+variable {T} in
+/-- Sarkar's point measure identity for a disk domain `D` from `w` to `w'` in `(Σ, α, γ)`: the
+boundary of the `γ`-part of `∂D` runs from `w'` to `w`, so for every domain `Y`,
+`n_w(Y) - n_{w'}(Y) = ∂Y · ∂_γ D = ∂_β Y · ∂_γ D - ∂_γ D · ∂_α Y`. -/
+theorem IsAlphaGammaDomainBetween.alphaGammaGeneratorPointMeasure_sub [Fintype PointBC]
+    [Fintype PointAC] {w w' : T.alphaGamma.Generator} {D : Region → ℤ}
+    (hD : T.IsAlphaGammaDomainBetween w w' D) (Y : Region → ℤ) :
+    T.alphaGammaGeneratorPointMeasure w Y - T.alphaGammaGeneratorPointMeasure w' Y =
+      T.betaGammaIntersection Y D - T.gammaAlphaIntersection D Y := by
+  rw [← T.sum_gammaArcBoundary_mul D Y, (isAlphaGammaDomainBetween_iff.mp hD).2.2,
+    Fintype.sum_sum_type]
+  simp only [Sum.elim_inl, Sum.elim_inr, Pi.sub_apply, Pi.zero_apply, Int.cast_sub,
+    Int.cast_zero, sub_mul, zero_mul, sum_sub_distrib, sum_const_zero, zero_add,
+    HeegaardIntersectionSystem.sum_generatorChain_mul, alphaGammaGeneratorPointMeasure_apply]
 
 end Intersection
 
@@ -673,14 +642,8 @@ theorem IsAlphaBetaDomainBetween.maslovIndex_add (χ : Region → ℤ)
     T.maslovIndex χ x w (D + E) =
       T.eulerMeasure χ D + T.alphaBetaGeneratorPointMeasure x D +
         T.alphaBetaGeneratorPointMeasure x' D + T.maslovIndex χ x' w E := by
-  obtain ⟨-, hDβ, hDγ⟩ := isAlphaBetaDomainBetween_iff.mp hD
-  -- `∂_β D` runs from `x'` to `x`: `n_x(E) - n_{x'}(E) = ∂_α E · ∂_β D - ∂_β D · ∂_γ E`.
-  have hβ : T.alphaBetaGeneratorPointMeasure x E - T.alphaBetaGeneratorPointMeasure x' E =
-      T.alphaBetaIntersection E D - T.betaGammaIntersection D E := by
-    rw [← T.sum_betaArcBoundary_mul D E, hDβ, Fintype.sum_sum_type]
-    simp only [Sum.elim_inl, Sum.elim_inr, Pi.sub_apply, Pi.zero_apply, Int.cast_sub,
-      Int.cast_zero, sub_mul, zero_mul, sum_sub_distrib, sum_const_zero, add_zero,
-      sum_generatorChain_mul, alphaBetaGeneratorPointMeasure_apply]
+  obtain ⟨-, -, hDγ⟩ := isAlphaBetaDomainBetween_iff.mp hD
+  have hβ := hD.alphaBetaGeneratorPointMeasure_sub E
   have hα := hE.alphaGammaGeneratorPointMeasure_sub D
   -- `D` has no `γ`-boundary, so its intersection numbers with `γ`-parts vanish.
   have h₁ : T.gammaAlphaIntersection D E = 0 := by
@@ -698,14 +661,8 @@ theorem IsBetaGammaDomainBetween.maslovIndex_add (χ : Region → ℤ)
     T.maslovIndex χ x w (D + E) =
       T.eulerMeasure χ D + T.betaGammaGeneratorPointMeasure y D +
         T.betaGammaGeneratorPointMeasure y' D + T.maslovIndex χ x w E := by
-  obtain ⟨hDα, hDβ, -⟩ := isBetaGammaDomainBetween_iff.mp hD
-  -- `∂_β D` runs from `y` to `y'`: `n_{y'}(D) - n_y(D) = ∂_α D · ∂_β D - ∂_β D · ∂_γ D`.
-  have hβ : T.betaGammaGeneratorPointMeasure y' D - T.betaGammaGeneratorPointMeasure y D =
-      T.alphaBetaIntersection D D - T.betaGammaIntersection D D := by
-    rw [← T.sum_betaArcBoundary_mul D D, hDβ, Fintype.sum_sum_type]
-    simp only [Sum.elim_inl, Sum.elim_inr, Pi.sub_apply, Pi.zero_apply, Int.cast_sub,
-      Int.cast_zero, sub_mul, zero_mul, sum_sub_distrib, sum_const_zero, zero_add,
-      sum_generatorChain_mul, betaGammaGeneratorPointMeasure_apply]
+  obtain ⟨hDα, -, -⟩ := isBetaGammaDomainBetween_iff.mp hD
+  have hβ := hD.betaGammaGeneratorPointMeasure_sub D
   have hEβ := hE.alphaBetaGeneratorPointMeasure_sub D
   have hEγ := hE.betaGammaGeneratorPointMeasure_sub D
   -- `D` has no `α`-boundary, so its intersection numbers with `α`-parts vanish.
@@ -724,14 +681,8 @@ theorem IsTriangleDomain.maslovIndex_add (χ : Region → ℤ) (hE : T.IsTriangl
     T.maslovIndex χ x w' (E + D) =
       T.maslovIndex χ x w E + (T.eulerMeasure χ D + T.alphaGammaGeneratorPointMeasure w D +
         T.alphaGammaGeneratorPointMeasure w' D) := by
-  obtain ⟨-, hDβ, hDγ⟩ := isAlphaGammaDomainBetween_iff.mp hD
-  -- `∂_γ D` runs from `w'` to `w`: `n_w(E) - n_{w'}(E) = ∂_β E · ∂_γ D - ∂_γ D · ∂_α E`.
-  have hγ : T.alphaGammaGeneratorPointMeasure w E - T.alphaGammaGeneratorPointMeasure w' E =
-      T.betaGammaIntersection E D - T.gammaAlphaIntersection D E := by
-    rw [← T.sum_gammaArcBoundary_mul D E, hDγ, Fintype.sum_sum_type]
-    simp only [Sum.elim_inl, Sum.elim_inr, Pi.sub_apply, Pi.zero_apply, Int.cast_sub,
-      Int.cast_zero, sub_mul, zero_mul, sum_sub_distrib, sum_const_zero, zero_add,
-      sum_generatorChain_mul, alphaGammaGeneratorPointMeasure_apply]
+  obtain ⟨-, hDβ, -⟩ := isAlphaGammaDomainBetween_iff.mp hD
+  have hγ := hD.alphaGammaGeneratorPointMeasure_sub E
   have hEα := hE.alphaGammaGeneratorPointMeasure_sub D
   -- `D` has no `β`-boundary, so its intersection numbers with `β`-parts vanish.
   have h₁ : T.alphaBetaIntersection E D = 0 := by rw [alphaBetaIntersection_apply, hDβ]; simp

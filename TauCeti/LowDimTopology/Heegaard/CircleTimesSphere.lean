@@ -116,9 +116,9 @@ def circleTimesSphere (r : Fin 3) : HeegaardRegionSystem 1 (Fin 2) (Fin 3) Unit 
   alpha _ := 0
   beta _ := 0
   alphaNext := Equiv.swap 0 1
-  alphaNext_isCycleOn := isCycleOn_swap_fin_two_fiber _
+  alphaNext_isCycleOn := isCycleOn_swap_fiber (by decide) _
   betaNext := Equiv.swap 0 1
-  betaNext_isCycleOn := isCycleOn_swap_fin_two_fiber _
+  betaNext_isCycleOn := isCycleOn_swap_fiber (by decide) _
   alphaLeft := ![1, 0]
   alphaRight := ![0, 2]
   betaLeft := ![0, 2]

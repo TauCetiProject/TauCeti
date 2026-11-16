@@ -62,16 +62,6 @@ def torusIntersection : HeegaardIntersectionSystem 1 Unit where
   alpha _ := 0
   beta _ := 0
 
-/-- The swap of the two points on a curve carrying two intersection points is a single cycle on
-them. -/
-private theorem isCycleOn_swap_setOf (f : Unit → Fin 1) (g : Unit → Fin 1)
-    (i : Fin 1) :
-    (Equiv.swap (Sum.inl () : Unit ⊕ Unit) (Sum.inr ())).IsCycleOn
-      {p | Sum.elim f g p = i} := by
-  convert Equiv.Perm.isCycleOn_swap (a := (Sum.inl () : Unit ⊕ Unit)) (b := Sum.inr ()) using 1
-  ext p
-  rcases p with ⟨⟩ | ⟨⟩ <;> simp [Subsingleton.elim _ i]
-
 /-- The incidence data of the three lines `y = 0`, `x = 0` and `x + y = 1 / 2` on the torus, with
 the triangle with vertices `(0, 0)`, `(1 / 2, 0)`, `(0, 1 / 2)` labelled `0`, the triangle with
 vertices `(1 / 2, 1)`, `(1, 1)`, `(1, 1 / 2)` labelled `1`, the hexagon labelled `2` and the
@@ -83,20 +73,23 @@ def torusTriple : HeegaardTripleRegionSystem 1 Unit Unit Unit (Fin 3) Unit where
   betaGamma := torusIntersection
   alphaGamma := torusIntersection
   alphaNext := Equiv.swap (.inl ()) (.inr ())
-  alphaNext_isCycleOn := isCycleOn_swap_setOf _ _
+  alphaNext_isCycleOn := isCycleOn_swap_fiber (by rintro (⟨⟩ | ⟨⟩) <;> simp) _
   betaNext := Equiv.swap (.inl ()) (.inr ())
-  betaNext_isCycleOn := isCycleOn_swap_setOf _ _
+  betaNext_isCycleOn := isCycleOn_swap_fiber (by rintro (⟨⟩ | ⟨⟩) <;> simp) _
   gammaNext := Equiv.swap (.inl ()) (.inr ())
-  gammaNext_isCycleOn := isCycleOn_swap_setOf _ _
+  gammaNext_isCycleOn := isCycleOn_swap_fiber (by rintro (⟨⟩ | ⟨⟩) <;> simp) _
   alphaLeft := Sum.elim (fun _ => 0) (fun _ => 2)
   alphaRight := Sum.elim (fun _ => 2) (fun _ => 1)
   betaLeft := Sum.elim (fun _ => 2) (fun _ => 1)
   betaRight := Sum.elim (fun _ => 0) (fun _ => 2)
   gammaLeft := Sum.elim (fun _ => 2) (fun _ => 0)
   gammaRight := Sum.elim (fun _ => 1) (fun _ => 2)
-  crossing_alphaBeta _ := isCrossingCompatible_iff.mpr (Or.inl ⟨rfl, rfl, rfl, rfl⟩)
-  crossing_betaGamma _ := isCrossingCompatible_iff.mpr (Or.inl ⟨rfl, rfl, rfl, rfl⟩)
-  crossing_alphaGamma _ := isCrossingCompatible_iff.mpr (Or.inl ⟨rfl, rfl, rfl, rfl⟩)
+  crossing_alphaBeta _ :=
+    HeegaardRegionSystem.isCrossingCompatible_iff.mpr (Or.inl ⟨rfl, rfl, rfl, rfl⟩)
+  crossing_betaGamma _ :=
+    HeegaardRegionSystem.isCrossingCompatible_iff.mpr (Or.inl ⟨rfl, rfl, rfl, rfl⟩)
+  crossing_alphaGamma _ :=
+    HeegaardRegionSystem.isCrossingCompatible_iff.mpr (Or.inl ⟨rfl, rfl, rfl, rfl⟩)
   basepoint _ := 2
 
 /-- Every intersection point is the unique point of every generator of a curve meeting another
@@ -126,8 +119,7 @@ theorem maslovIndex_torusTriple_single_zero (x : torusTriple.alphaBeta.Generator
   simp only [Fintype.sum_unique, PUnit.default_eq_unit,
     alphaBetaPointMeasure_apply, betaGammaPointMeasure_apply, alphaGammaPointMeasure_apply,
     gammaBoundary_apply]
-  simp [torusTriple, Pi.single_apply]
-  norm_num
+  norm_num [torusTriple, Pi.single_apply]
 
 /-- The small triangle together with the whole torus has Maslov index two. -/
 theorem maslovIndex_torusTriple_one_add_single_zero (x : torusTriple.alphaBeta.Generator)
