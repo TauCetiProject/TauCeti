@@ -28,6 +28,8 @@ basis vector maps to the corresponding scalar multiple of the target basis vecto
 
 ## Main results
 
+* `Matrix.dvd_diagonal_apply`: a scalar divides the entries of a diagonal matrix
+  whose diagonal contains it.
 * `TauCeti.diagonal_mul_single_mul_diagonal`: multiplying `Eᵢⱼ(c)` on the left and right by
   diagonal matrices rescales its entry by the corresponding diagonal coefficients.
 * `TauCeti.diagonal_mul_single`, `TauCeti.single_mul_diagonal`: multiplying `Eᵢⱼ(c)` on one side
@@ -44,6 +46,16 @@ basis vector maps to the corresponding scalar multiple of the target basis vecto
 -/
 
 public section
+
+namespace Matrix
+
+/-- A scalar divides every entry of a diagonal matrix whose diagonal contains it. -/
+@[simp]
+theorem dvd_diagonal_apply {ι α : Type*} [DecidableEq ι] [MonoidWithZero α]
+    (d : ι → α) (i j : ι) : d j ∣ diagonal d i j := by
+  by_cases hij : i = j <;> simp [diagonal, hij]
+
+end Matrix
 
 open Matrix
 

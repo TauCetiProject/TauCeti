@@ -11,7 +11,7 @@ public import TauCeti.Algebra.Module.Projective.Trans
 /-!
 # Composition of Weil restrictions
 
-For a tower `A → B → C` of finite projective algebras, restricting a finitely presented
+For a tower `A → B → C` of finite projective algebras, restricting an arbitrary
 `C`-algebra first to `B` and then to `A` gives the same algebra as restricting directly
 to `A`. The comparison is fixed by its effect on points: apply the two point adjunctions
 and cancel `C ⊗[B] (B ⊗[A] T)` to `C ⊗[A] T`. It is natural in the algebra being restricted.
@@ -35,7 +35,6 @@ namespace TauCeti.Algebra.WeilRestriction
 variable (A B C D : Type*) [CommRing A] [CommRing B] [CommRing C] [CommRing D]
   [Algebra A B] [Algebra B C] [Algebra A C] [IsScalarTower A B C] [Algebra C D]
   [Module.Finite A B] [Module.Projective A B] [Module.Finite B C] [Module.Projective B C]
-  [FinitePresentation C D]
 
 private def compHomEquiv (T : Type*) [CommRing T] [Algebra A T] :
     (WeilRestriction A B (WeilRestriction B C D) →ₐ[A] T) ≃ (D →ₐ[C] C ⊗[A] T) :=
@@ -108,7 +107,7 @@ theorem homEquiv_compAlgEquiv_symm
   simpa only [AlgHom.comp_assoc, AlgEquiv.symm_comp, AlgHom.comp_id] using
     (homEquiv_compAlgEquiv (B := B) (g.comp (compAlgEquiv A B C D).symm.toAlgHom)).symm
 
-variable {E : Type*} [CommRing E] [Algebra C E] [FinitePresentation C E]
+variable {E : Type*} [CommRing E] [Algebra C E]
 
 omit [Module.Finite A C] [Module.Projective A C] in
 private theorem compHomEquiv_comp_map (φ : D →ₐ[C] E)
@@ -119,7 +118,7 @@ private theorem compHomEquiv_comp_map (φ : D →ₐ[C] E)
     AlgEquiv.arrowCongr_apply]
   rfl
 
-/-- The composition isomorphism is natural in the finitely presented algebra being restricted. -/
+/-- The composition isomorphism is natural in the algebra being restricted. -/
 theorem compAlgEquiv_naturality (φ : D →ₐ[C] E) :
     (compAlgEquiv A B C E).toAlgHom.comp (map A B (map B C φ)) =
       (map A C φ).comp (compAlgEquiv A B C D).toAlgHom := by

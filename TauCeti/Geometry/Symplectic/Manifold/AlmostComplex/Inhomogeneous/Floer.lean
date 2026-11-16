@@ -139,7 +139,7 @@ theorem complexAntilinearPart_eq_floer_iff
       hR.trans (congrArg ((2⁻¹ : ℝ) • ·) he)
     have hi : R (AlmostComplexStructure.product ℝ stdComplexLineReal) =
         -K (R stdComplexLineReal) :=
-      (complexAntilinearPart_isComplexAntilinear
+      (isComplexAntilinear_complexAntilinearPart
         (AlmostComplexStructure.product ℝ).square_neg K.square_neg L.toLinearMap).apply
           stdComplexLineReal
     rw [AlmostComplexStructure.product_apply_stdComplexLineReal, hreal] at hi

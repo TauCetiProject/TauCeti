@@ -19,7 +19,7 @@ them into a degreewise split short exact sequence of complete resolutions. The m
 is totally acyclic, so its degree-zero cycles identify with the middle module.
 
 Thus finitely generated Gorenstein-projective modules inherit the canonical exact structure from
-modules. This is the first ingredient in making their exact category Frobenius.
+modules.
 The ring and module universes are independent under the standard smallness hypothesis needed to
 iterate the positive horseshoe step.
 
