@@ -8,8 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Projective
 public import TauCeti.FieldTheory.RatFunc.Automorphism
 public import TauCeti.FieldTheory.RatFunc.Basic
--- Non-public: `Polynomial.coeff_det_ne_zero_of_isCoprime` gives the nonzero determinant of a
--- generator of `k(X)`, in the proofs only.
+-- Non-public: the nonzero determinant of a generator of `k(X)`, in the proofs only.
 import TauCeti.Algebra.Polynomial.RingDivision
 -- Non-public: `Matrix.GeneralLinearGroup.mem_center_iff_entries` identifies the kernel of the
 -- action below with the centre of `GL₂(k)`, in the proofs only.
@@ -386,7 +385,8 @@ theorem exists_mobiusOf_eq_of_adjoin_eq_top {f : RatFunc K}
   set c := f.denom.coeff 1
   set d := f.denom.coeff 0
   have hdet : a * d - b * c ≠ 0 :=
-    Polynomial.coeff_det_ne_zero_of_isCoprime (isCoprime_num_denom f) hmax
+    Polynomial.coeff_one_mul_coeff_zero_sub_ne_zero_of_isCoprime_of_max_natDegree_eq_one
+      (isCoprime_num_denom f) hmax
   refine ⟨a, b, c, d, hdet, ?_⟩
   rw [mobiusOf_def, ← num_div_denom f]
   conv_rhs => rw [hnum, hden]

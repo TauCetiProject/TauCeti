@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Polynomial.RingDivision
 -- Non-public: `IsCoprime.wronskian_eq_zero_iff` in the proof of
--- `Polynomial.coeff_det_ne_zero_of_isCoprime` only.
+-- `Polynomial.coeff_one_mul_coeff_zero_sub_ne_zero_of_isCoprime_of_max_natDegree_eq_one` only.
 import Mathlib.RingTheory.Polynomial.Wronskian
 
 /-!
@@ -18,10 +18,11 @@ coprime when `a - b` is a unit. Substituting any polynomial `p` for `X` shows th
 `p - C b` are coprime as well (`Polynomial.isCoprime_sub_C_of_isUnit_sub`), for example the
 binomials `X ^ n - C a` and `X ^ n - C b`.
 
-Over a ring without zero divisors, two coprime polynomials `a X + b` and `c X + d` that are not both
-constant have nonzero determinant `a d - b c` (`Polynomial.coeff_det_ne_zero_of_isCoprime`): this
-determinant is their Wronskian, and the Wronskian of two coprime polynomials vanishes only when
-both derivatives do.
+Over a ring without zero divisors, if `p = a X + b` and `q = c X + d` are coprime polynomials with
+`max p.natDegree q.natDegree = 1`, then the determinant `a d - b c` of their coefficient matrix is
+nonzero (`Polynomial.coeff_one_mul_coeff_zero_sub_ne_zero_of_isCoprime_of_max_natDegree_eq_one`).
+In other words, the coefficient matrix of a reduced non-constant rational function
+`(a X + b) / (c X + d)` is invertible.
 -/
 
 public section
@@ -35,9 +36,11 @@ theorem isCoprime_sub_C_of_isUnit_sub (p : R[X]) {a b : R} (h : IsUnit (a - b)) 
     IsCoprime (p - C a) (p - C b) := by
   simpa using (isCoprime_X_sub_C_of_isUnit_sub h).map (aeval p).toRingHom
 
-/-- Two coprime polynomials `p = a X + b` and `q = c X + d`, not both constant, have nonzero
-determinant of coefficients `a d - b c`. -/
-theorem coeff_det_ne_zero_of_isCoprime [NoZeroDivisors R] {p q : R[X]} (hpq : IsCoprime p q)
+/-- Over a ring without zero divisors, if `p` and `q` are coprime and
+`max p.natDegree q.natDegree = 1`, then `p.coeff 1 * q.coeff 0 - p.coeff 0 * q.coeff 1 ≠ 0`; for
+`p = a X + b` and `q = c X + d` this is `a d - b c ≠ 0`. -/
+theorem coeff_one_mul_coeff_zero_sub_ne_zero_of_isCoprime_of_max_natDegree_eq_one [NoZeroDivisors R]
+    {p q : R[X]} (hpq : IsCoprime p q)
     (hmax : max p.natDegree q.natDegree = 1) :
     p.coeff 1 * q.coeff 0 - p.coeff 0 * q.coeff 1 ≠ 0 := by
   obtain ⟨a, b, rfl⟩ := exists_eq_X_add_C_of_natDegree_le_one (le_of_max_le_left hmax.le)
