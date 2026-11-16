@@ -83,6 +83,7 @@ In the namespace `TauCeti.AlmostComplexStructure`:
   `D_J² η = 2 ⟪ω, η⟫ ω - 4 η` for self-dual `η`.
 * `lieMap_of_hodgeStar_eq_neg`: `D_J η = 0` for anti-self-dual `η`.
 * `ιMulti_sub_ιMulti_add_hodgeStar`: the self-dual part of `ξ ∧ J a - J ξ ∧ a` is `⟪ξ, a⟫ ω`.
+* `hodgeStar_ιMulti_apply`: `⋆(x ∧ J x) = ‖x‖² ω - x ∧ J x` for the complex orientation.
 * `eq_smul_kahlerForm_add_of_lieMap_eq_zero`: a `J`-invariant `η` is
   `(⟪ω, η⟫ / 2) ω + (η - ⋆η) / 2`.
 
@@ -492,6 +493,20 @@ theorem ιMulti_sub_ιMulti_add_hodgeStar (ξ a : V) :
     Matrix.cons_val_two, Matrix.cons_val_three, Matrix.head_cons, Matrix.tail_cons,
     repr_apply h₀ h₂]
   ring
+
+include he h₀ h₂ in
+/-- **The star of a complex line**: for the complex orientation, `⋆(x ∧ J x) = ‖x‖² ω - x ∧ J x`.
+For a unit vector `x` this is the complex line `u ∧ J u` orthogonal to `x` and `J x`, since
+`ω = x ∧ J x + u ∧ J u` in a unitary frame starting with `x`. -/
+theorem hodgeStar_ιMulti_apply (x : V) :
+    o.hodgeStar hkl (ιMulti ℝ 2 ![x, J x]) = ‖x‖ ^ 2 • J.kahlerForm - ιMulti ℝ 2 ![x, J x] := by
+  have h := ιMulti_sub_ιMulti_add_hodgeStar h₀ h₂ hkl he x x
+  have hz : ιMulti ℝ 2 ![x, J x] - ιMulti ℝ 2 ![J x, x] = (2 : ℝ) • ιMulti ℝ 2 ![x, J x] :=
+    ext_inner_ιMulti_two fun u w ↦ by
+      rw [inner_sub_left, real_inner_smul_left, inner_ιMulti_two, inner_ιMulti_two]
+      ring
+  rw [hz, map_smul, real_inner_self_eq_norm_sq, ← smul_add, mul_smul] at h
+  exact eq_sub_of_add_eq' (smul_right_injective (⋀[ℝ]^2 V) two_ne_zero h)
 
 include he h₀ h₂ in
 /-- **A `J`-invariant two-form is a multiple of `ω` plus an anti-self-dual form**: for
