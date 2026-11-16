@@ -213,22 +213,7 @@ theorem smoothSectionFiberEquiv_smul (x : M) (f : C^∞⟮I, M; ℝ⟯)
   | H s => rw [← Submodule.Quotient.mk_smul, smoothSectionFiberEquiv_mk,
       smoothSectionFiberEquiv_mk, ContMDiffSection.smul_apply]
 
-
 /-! ### Fibre maps of function-linear maps of sections -/
-
-variable (I F V) in
-/-- A real-linear right inverse of evaluation at `x`: a smooth section through each vector of the
-fibre `V_x`. -/
-private def sectionLift (x : M) : V x →ₗ[ℝ] Cₛ^∞⟮I; F, V⟯ :=
-  ((ContMDiffSection.evalLinearMap I F ∞ V x).exists_rightInverse_of_surjective
-    (LinearMap.range_eq_top.2 (ContMDiffSection.evalLinearMap_surjective ∞ x))).choose
-
-omit [FiniteDimensional ℝ F] in
-private theorem sectionLift_apply_self (x : M) (v : V x) : sectionLift I F V x v x = v := by
-  have h := congr($(((ContMDiffSection.evalLinearMap I F ∞ V x).exists_rightInverse_of_surjective
-    (LinearMap.range_eq_top.2 (ContMDiffSection.evalLinearMap_surjective ∞ x))).choose_spec) v)
-  rw [LinearMap.comp_apply, ContMDiffSection.evalLinearMap_apply, LinearMap.id_apply] at h
-  exact h
 
 variable {F' : Type*} [NormedAddCommGroup F'] [NormedSpace ℝ F']
   {W : M → Type*} [TopologicalSpace (TotalSpace F' W)]
@@ -241,31 +226,33 @@ variable {F' : Type*} [NormedAddCommGroup F'] [NormedSpace ℝ F']
 `(L s)(x)` (`TauCeti.smoothSectionFiberMap_apply`); it depends real-linearly on `L`. -/
 def smoothSectionFiberMap (x : M) :
     (Cₛ^∞⟮I; F, V⟯ →ₗ[C^∞⟮I, M; ℝ⟯] Cₛ^∞⟮I; F', W⟯) →ₗ[ℝ] (V x →ₗ[ℝ] W x) where
-  toFun L := ContMDiffSection.evalLinearMap I F' ∞ W x ∘ₗ L.restrictScalars ℝ ∘ₗ
-    sectionLift I F V x
-  map_add' _ _ := by ext; simp
-  map_smul' _ _ := by ext; simp
-
-omit [FiniteDimensional ℝ F] in
-private theorem smoothSectionFiberMap_apply_sectionLift (x : M)
-    (L : Cₛ^∞⟮I; F, V⟯ →ₗ[C^∞⟮I, M; ℝ⟯] Cₛ^∞⟮I; F', W⟯) (v : V x) :
-    smoothSectionFiberMap x L v = L (sectionLift I F V x v) x := by
-  simp [smoothSectionFiberMap]
+  -- A section vanishing at `x` lies in `I_x Γ(V)`, which `L` maps into `I_x Γ(W)`.
+  toFun L := (ContMDiffSection.evalLinearMap I F ∞ V x).liftOfSurjective
+    (ContMDiffSection.evalLinearMap_surjective ∞ x)
+    ⟨ContMDiffSection.evalLinearMap I F' ∞ W x ∘ₗ L.restrictScalars ℝ, fun s hs ↦ by
+      simpa using apply_eq_zero_of_mem_smoothVanishingIdeal_smul_top
+        (Submodule.smul_top_le_comap_smul_top _ L
+          (by simpa [ContMDiffSection.ker_evalLinearMap] using hs))⟩
+  map_add' _ _ := by
+    ext v
+    obtain ⟨s, rfl⟩ := ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x v
+    simp only [LinearMap.add_apply, LinearMap.equivOfSurjective_apply]
+    simp
+  map_smul' _ _ := by
+    ext v
+    obtain ⟨s, rfl⟩ := ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x v
+    simp only [LinearMap.smul_apply, LinearMap.equivOfSurjective_apply]
+    simp
 
 /-- The fibre map of a function-linear map `L` of sections sends `s(x)` to `(L s)(x)`. -/
 @[simp]
 theorem smoothSectionFiberMap_apply (x : M)
     (L : Cₛ^∞⟮I; F, V⟯ →ₗ[C^∞⟮I, M; ℝ⟯] Cₛ^∞⟮I; F', W⟯) (s : Cₛ^∞⟮I; F, V⟯) :
     smoothSectionFiberMap x L (s x) = L s x := by
-  -- The lift of `s x` differs from `s` by a section in `I_x Γ(V)`, which `L` maps into `I_x Γ(W)`.
-  have hs : sectionLift I F V x (s x) - s ∈
-      smoothVanishingIdeal I x • (⊤ : Submodule C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯) := by
-    rw [mem_smoothVanishingIdeal_smul_top_iff, ContMDiffSection.coe_sub, Pi.sub_apply,
-      sectionLift_apply_self, sub_self]
-  have h := apply_eq_zero_of_mem_smoothVanishingIdeal_smul_top
-    (Submodule.smul_top_le_comap_smul_top _ L hs)
-  rwa [map_sub, ContMDiffSection.coe_sub, Pi.sub_apply, sub_eq_zero,
-    ← smoothSectionFiberMap_apply_sectionLift] at h
+  rw [← ContMDiffSection.evalLinearMap_apply (𝕜 := ℝ) (I := I) (F := F) (n := ∞) (V := V) x s]
+  simp only [smoothSectionFiberMap, LinearMap.coe_mk, AddHom.coe_mk,
+    LinearMap.equivOfSurjective_apply]
+  simp
 
 /-- A real-linear map `V_x → W_x` agrees with the fibre map of `L` as soon as it sends the value
 of every smooth section `s` at `x` to `(L s)(x)`. -/

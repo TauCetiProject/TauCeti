@@ -148,7 +148,7 @@ theorem mvfderiv_covectorLift (hx : I.IsInteriorPoint x)
 /-- **Lifting differentials does not change commutators modulo `I_x`.** For a differential
 operator `D` of order at most `m` between modules over the smooth functions, replacing the
 functions `fᵢ` in the iterated commutator `[⋯[D, f₁], …, fₘ]` by the lifts of their
-differentials at `x` changes its values only by elements of `I_x N`. -/
+differentials at `x` changes its values only by elements of `I_x N'`. -/
 theorem commutatorSymbol_covectorLift_sub_mem_smul_top (hx : I.IsInteriorPoint x)
     {N N' : Type*} [AddCommGroup N] [Module C^∞⟮I, M; ℝ⟯ N] [Module ℝ N]
     [IsScalarTower ℝ C^∞⟮I, M; ℝ⟯ N] [AddCommGroup N'] [Module C^∞⟮I, M; ℝ⟯ N'] [Module ℝ N']
