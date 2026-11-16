@@ -919,6 +919,21 @@ theorem le_apply_last_of_forall_mem_range {β : Type*} [Preorder β] {n : ℕ} {
 
 end TauCeti
 
+/-- `finProdFinEquiv` is lexicographic: `(i, a)` comes before `(j, b)` exactly when `i < j`, or
+`i = j` and `a < b`. -/
+theorem finProdFinEquiv_lt_finProdFinEquiv_iff {m n : ℕ} (x y : Fin m × Fin n) :
+    finProdFinEquiv x < finProdFinEquiv y ↔ x.1 < y.1 ∨ (x.1 = y.1 ∧ x.2 < y.2) := by
+  obtain ⟨i, a⟩ := x
+  obtain ⟨j, b⟩ := y
+  rw [Fin.lt_def, finProdFinEquiv_apply_val, finProdFinEquiv_apply_val]
+  have ha := a.isLt; have hb := b.isLt
+  rcases lt_trichotomy i j with h | rfl | h
+  · have := Nat.mul_le_mul_left n (Fin.lt_def.mp h); rw [Nat.mul_succ] at this
+    simp only [h, true_or, iff_true]; omega
+  · simp only [lt_irrefl, true_and, false_or, Fin.lt_def]; omega
+  · have := Nat.mul_le_mul_left n (Fin.lt_def.mp h); rw [Nat.mul_succ] at this
+    simp only [not_lt_of_gt h, h.ne', false_and, or_self, iff_false]; omega
+
 namespace Fin
 
 /-- A function on `Fin (k + 1)` that avoids the value `c`, starts above it and ends below it, drops

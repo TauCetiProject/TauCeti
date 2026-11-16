@@ -13,6 +13,7 @@ public import TauCeti.Combinatorics.CoboundaryExpansion.Cochain.Basic
 public import TauCeti.GroupTheory.Perm.MovedNorm
 import Mathlib.Algebra.BigOperators.Group.List.Basic
 import TauCeti.Combinatorics.Optimization.Replication
+import TauCeti.Data.Fin.Basic
 import Mathlib.Tactic.GCongr
 
 /-!
@@ -234,16 +235,8 @@ private theorem sum_blocks (F : Fin (k * q) → ℕ) : ∑ x, F x = ∑ i, ∑ a
 
 /-- Vertices are ordered block first, then position. -/
 theorem vert_lt_iff (i j : Fin k) (a b : Fin q) :
-    vert q i a < vert q j b ↔ i < j ∨ (i = j ∧ a < b) := by
-  rw [Fin.lt_def]
-  simp only [vert, finProdFinEquiv_apply_val]
-  have ha := a.isLt; have hb := b.isLt
-  rcases lt_trichotomy i j with h | rfl | h
-  · have := Nat.mul_le_mul_left q (Fin.lt_def.mp h); rw [Nat.mul_succ] at this
-    simp only [h, true_or, iff_true]; omega
-  · simp only [lt_irrefl, true_and, false_or, Fin.lt_def]; omega
-  · have := Nat.mul_le_mul_left q (Fin.lt_def.mp h); rw [Nat.mul_succ] at this
-    simp only [not_lt_of_gt h, h.ne', false_and, or_self, iff_false]; omega
+    vert q i a < vert q j b ↔ i < j ∨ (i = j ∧ a < b) :=
+  finProdFinEquiv_lt_finProdFinEquiv_iff (i, a) (j, b)
 
 /-- The `q`-fold balanced replication of `α`. -/
 def rep (q : ℕ) (α : Fin k → Fin k → S3) : Fin (k * q) → Fin (k * q) → S3 :=
