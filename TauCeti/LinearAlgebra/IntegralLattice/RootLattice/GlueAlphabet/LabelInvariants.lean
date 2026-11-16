@@ -230,29 +230,24 @@ private theorem exists_intCast_eq_glueLabelPairing_sub_A (n : ℕ) {a b : ℕ} (
     (hb : b < n + 1) :
     ∃ k : ℤ, (k : ℚ) = (A n).glueLabelPairing a b - ((A n).glueLabelMinimum
       ((A n).glueLabelAdd a b) - (A n).glueLabelMinimum a - (A n).glueLabelMinimum b) / 2 := by
+  -- The statement is symmetric in the two labels, so we may assume `a ≤ b`.
+  wlog hab : a ≤ b generalizing a b
+  · obtain ⟨k, hk⟩ := this hb ha (by omega)
+    refine ⟨k, ?_⟩
+    rw [hk, glueLabelPairing_comm, glueLabelAdd_A, glueLabelAdd_A, Nat.add_comm b a,
+      sub_right_comm _ ((A n).glueLabelMinimum b)]
   have hN : (n : ℚ) + 1 ≠ 0 := by positivity
-  simp only [glueLabelPairing_A, glueLabelMinimum_A, glueLabelAdd_A]
-  -- Split on the order of the labels and on whether the sum `a + b` wraps around `n + 1`.
-  rcases le_total a b with hab | hab <;> rcases lt_or_ge (a + b) (n + 1) with hs | hs
+  simp only [glueLabelPairing_A, glueLabelMinimum_A, glueLabelAdd_A, min_eq_left hab,
+    max_eq_right hab]
+  -- Split on whether the sum `a + b` wraps around `n + 1`.
+  rcases lt_or_ge (a + b) (n + 1) with hs | hs
   · refine ⟨a, ?_⟩
-    rw [min_eq_left hab, max_eq_right hab, Nat.mod_eq_of_lt hs]
+    rw [Nat.mod_eq_of_lt hs]
     push_cast
     field_simp
     ring
   · refine ⟨n + 1 - b, ?_⟩
-    rw [min_eq_left hab, max_eq_right hab, Nat.mod_eq_sub_mod hs, Nat.mod_eq_of_lt (by omega),
-      Nat.cast_sub hs]
-    push_cast
-    field_simp
-    ring
-  · refine ⟨b, ?_⟩
-    rw [min_eq_right hab, max_eq_left hab, Nat.mod_eq_of_lt hs]
-    push_cast
-    field_simp
-    ring
-  · refine ⟨n + 1 - a, ?_⟩
-    rw [min_eq_right hab, max_eq_left hab, Nat.mod_eq_sub_mod hs, Nat.mod_eq_of_lt (by omega),
-      Nat.cast_sub hs]
+    rw [Nat.mod_eq_sub_mod hs, Nat.mod_eq_of_lt (by omega), Nat.cast_sub hs]
     push_cast
     field_simp
     ring
@@ -272,16 +267,19 @@ private theorem exists_intCast_eq_glueLabelPairing_sub_D (n : ℕ) {a b : ℕ} (
       simp only [glueLabelPairing_D, glueLabelMinimum_D, glueLabelAdd_D, hn] <;>
       norm_num
     -- The remaining labels are `1·1`, `1·3`, `2·2`, `3·1`, `3·3`.
-    exacts [⟨m, by push_cast; ring⟩, ⟨m - 1, by push_cast; ring⟩, ⟨2, by norm_num⟩,
-      ⟨m - 1, by push_cast; ring⟩, ⟨m, by push_cast; ring⟩]
+    all_goals first
+      | (refine ⟨2, ?_⟩; push_cast; ring1)
+      | (refine ⟨m, ?_⟩; push_cast; ring1)
+      | (refine ⟨m - 1, ?_⟩; push_cast; ring1)
   · obtain ⟨m, rfl⟩ := hn
     have hn : ¬Even (2 * m + 1) := Nat.not_even_iff_odd.mpr (odd_two_mul_add_one m)
     interval_cases a <;> interval_cases b <;>
       simp only [glueLabelPairing_D, glueLabelMinimum_D, glueLabelAdd_D, hn] <;>
       norm_num
     -- The remaining labels are `1·1`, `1·3`, `2·2`, `3·1`, `3·3`.
-    exacts [⟨m, by push_cast; ring⟩, ⟨m, by push_cast; ring⟩, ⟨2, by norm_num⟩,
-      ⟨m, by push_cast; ring⟩, ⟨m, by push_cast; ring⟩]
+    all_goals first
+      | (refine ⟨2, ?_⟩; push_cast; ring1)
+      | (refine ⟨m, ?_⟩; push_cast; ring1)
 
 /-- The pairing value of two labels differs by an integer from half the defect
 `μ(a + b) - μ(a) - μ(b)` of their shortest norms, where `a + b` is the label sum. -/
