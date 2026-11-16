@@ -744,22 +744,22 @@ namespace IsDaggerAlgebra
 variable {A B : Type*} [CommRing A] [Algebra K A] [IsDaggerAlgebra K A]
   [CommRing B] [Algebra K B] [IsDaggerAlgebra K B]
 
-/-- **Automatic continuity from a dagger algebra into an affinoid algebra.** If `A` carries the
-topology induced from `toCompletion K A`, then every `K`-algebra homomorphism `χ : A →ₐ[K] C` into
-a completely normed `K`-affinoid algebra is continuous. -/
+/-- **Automatic continuity from a dagger algebra into an affinoid algebra.** If
+`toCompletion K A : A → completion K A` is continuous, then every `K`-algebra homomorphism
+`χ : A →ₐ[K] C` into a completely normed `K`-affinoid algebra is continuous. -/
 theorem continuous_algHom_of_isAffinoidAlgebra [TopologicalSpace A]
-    (hA : Topology.IsInducing (toCompletion K A))
+    (hA : Continuous (toCompletion K A))
     {C : Type*} [NormedCommRing C] [NormedAlgebra K C] [IsUltrametricDist C] [CompleteSpace C]
     (hC : IsAffinoidAlgebra K C) (χ : A →ₐ[K] C) : Continuous χ := by
   rw [← completionLift_comp_toCompletion hC χ]
-  exact (continuous_completionLift hC χ).comp hA.continuous
+  exact (continuous_completionLift hC χ).comp hA
 
-/-- **Automatic continuity of homomorphisms of dagger algebras** (general topology form). If `A`
-and `B` carry the topologies induced from their affinoid completions along `toCompletion` — for
+/-- **Automatic continuity of homomorphisms of dagger algebras** (general topology form). If
+`toCompletion K A` is continuous and `B` carries the topology induced from `toCompletion K B` — for
 instance `W_σ`, `W_σ ⧸ I`, or `residueNormedCommRing` — then every `K`-algebra homomorphism
 `φ : A →ₐ[K] B` is continuous. -/
 theorem continuous_algHom_of_isInducing [TopologicalSpace A] [TopologicalSpace B]
-    (hA : Topology.IsInducing (toCompletion K A)) (hB : Topology.IsInducing (toCompletion K B))
+    (hA : Continuous (toCompletion K A)) (hB : Topology.IsInducing (toCompletion K B))
     (φ : A →ₐ[K] B) : Continuous φ :=
   hB.continuous_iff.mpr <|
     continuous_algHom_of_isAffinoidAlgebra (C := completion K B) hA
@@ -775,16 +775,16 @@ theorem continuous_algHom (φ : A →ₐ[K] B) :
   letI := residueNormedCommRing K A
   letI := residueNormedCommRing K B
   continuous_algHom_of_isInducing
-    (isometry_toCompletion K A).isEmbedding.isInducing
+    (isometry_toCompletion K A).continuous
     (isometry_toCompletion K B).isEmbedding.isInducing φ
 
 /-- **Automatic uniform continuity of homomorphisms of dagger algebras** (general uniformity form).
-If `A` and `B` carry uniform additive group structures whose topologies are induced from their
-affinoid completions along `toCompletion`, then every `K`-algebra homomorphism `φ : A →ₐ[K] B` is
-uniformly continuous. -/
+If `A` and `B` carry uniform additive group structures such that `toCompletion K A` is continuous
+and the topology of `B` is induced from `toCompletion K B`, then every `K`-algebra homomorphism
+`φ : A →ₐ[K] B` is uniformly continuous. -/
 theorem uniformContinuous_algHom_of_isInducing [UniformSpace A] [IsUniformAddGroup A]
     [UniformSpace B] [IsUniformAddGroup B]
-    (hA : Topology.IsInducing (toCompletion K A)) (hB : Topology.IsInducing (toCompletion K B))
+    (hA : Continuous (toCompletion K A)) (hB : Topology.IsInducing (toCompletion K B))
     (φ : A →ₐ[K] B) : UniformContinuous φ :=
   uniformContinuous_addMonoidHom_of_continuous (continuous_algHom_of_isInducing hA hB φ)
 
@@ -796,7 +796,7 @@ theorem uniformContinuous_algHom (φ : A →ₐ[K] B) :
   letI := residueNormedCommRing K A
   letI := residueNormedCommRing K B
   uniformContinuous_algHom_of_isInducing
-    (isometry_toCompletion K A).isEmbedding.isInducing
+    (isometry_toCompletion K A).continuous
     (isometry_toCompletion K B).isEmbedding.isInducing φ
 
 /-- **Lipschitz bound for homomorphisms of dagger algebras.** Every `K`-algebra homomorphism

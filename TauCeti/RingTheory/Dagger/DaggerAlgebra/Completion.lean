@@ -91,20 +91,6 @@ theorem algebraMap_completionAlgebra_apply (a : A) :
     algebraMap A (completion K A) a = toCompletion K A a :=
   (rfl)
 
-/-- Under `completionAlgebra K A`, scalar multiplication by `a : A` is multiplication by
-`toCompletion K A a`. -/
-theorem smul_completionAlgebra (a : A) (x : completion K A) :
-    letI := completionAlgebra K A
-    a • x = toCompletion K A a * x :=
-  (rfl)
-
-/-- `K`, `A`, and `completion K A` form a scalar tower under `completionAlgebra K A`. -/
-theorem isScalarTower_completionAlgebra :
-    letI := completionAlgebra K A
-    IsScalarTower K A (completion K A) :=
-  letI := completionAlgebra K A
-  IsScalarTower.of_algebraMap_eq fun c ↦ ((toCompletion K A).commutes c).symm
-
 variable {K A}
 
 /-- The completion map sends the image of a series `f ∈ W_n` under the chosen presentation to the
