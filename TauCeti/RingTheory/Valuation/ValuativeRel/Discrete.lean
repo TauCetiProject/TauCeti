@@ -9,27 +9,28 @@ public import Mathlib.RingTheory.Valuation.ValuativeRel.Basic
 import Mathlib.GroupTheory.ArchimedeanDensely
 
 /-!
-# Divisibility rigidity in discrete rank-at-most-one value groups
+# Divisibility rigidity in discrete archimedean value groups
 
 In a discrete valuative relation (`ValuativeRel.IsDiscrete`), every value strictly below `1` lies
-at or below `ValuativeRel.uniformizer R < 1`. When the valuative relation also has rank at most one
-(`ValuativeRel.IsRankLeOne`), its value group is archimedean, so high powers of `uniformizer R`
-eventually drop below any given nonzero value. Consequently no nonzero value other than `1` can be
-an `m ^ k`-th power for an integer `m ≥ 2` and every `k : ℕ`.
+at or below `ValuativeRel.uniformizer R < 1`. When the value group is also archimedean
+(`MulArchimedean (ValueGroupWithZero R)`, in particular when `ValuativeRel.IsRankLeOne R` holds),
+high powers of `uniformizer R` eventually drop below any given nonzero value. Consequently no
+nonzero value other than `1` can be a `k`-th power for arbitrarily large `k : ℕ`.
 
-In local field theory this rules out nontrivial discrete rank-one valuations on groups of units:
-raising a unit of `𝒪[K]` to the `(q - 1)`-st power lands in the principal units `U(K, 1)`, where
-Hensel's lemma extracts `ℓ ^ k`-th roots for any prime `ℓ` away from the residue characteristic.
+In valuation theory this rules out nontrivial discrete archimedean valuations on elements admitting
+roots of arbitrarily large degree: over a Henselian valued field `K`, every element `1 + m` with
+`m ∈ 𝓂[K]` admits `k`-th roots for all `k` invertible in `𝒪[K]`, in particular for arbitrarily
+large primes `k`.
 
 ## Main results
 
-* `ValuativeRel.ValueGroupWithZero.eq_one_of_forall_exists_pow_pow_eq`: in `ValueGroupWithZero R`
-  with `[IsDiscrete R] [IsRankLeOne R]`, a nonzero element that is an `m ^ k`-th power for some
-  `m ≥ 2` and all `k : ℕ` equals `1`.
-* `ValuativeRel.ValueGroupWithZero.eq_one_of_forall_exists_pow_pow_eq_pow`: the same conclusion
-  when a positive power `γ ^ n` is `m ^ k`-divisible.
-* `ValuativeRel.valuation_eq_one_of_forall_exists_pow_pow_eq` and
-  `ValuativeRel.valuation_eq_one_of_forall_exists_pow_pow_eq_pow`: the corresponding statements
+* `ValuativeRel.ValueGroupWithZero.eq_one_of_forall_exists_le_pow_eq`: in `ValueGroupWithZero R`
+  with `[IsDiscrete R] [MulArchimedean (ValueGroupWithZero R)]`, a nonzero element that is a
+  `k`-th power for arbitrarily large `k : ℕ` equals `1`.
+* `ValuativeRel.ValueGroupWithZero.eq_one_of_forall_exists_le_pow_eq_pow`: the same conclusion
+  when a positive power `γ ^ m` is a `k`-th power for arbitrarily large `k : ℕ`.
+* `ValuativeRel.valuation_eq_one_of_forall_exists_le_pow_eq` and
+  `ValuativeRel.valuation_eq_one_of_forall_exists_le_pow_eq_pow`: the corresponding statements
   for ring elements of nonzero valuation.
 -/
 
@@ -39,70 +40,73 @@ namespace ValuativeRel
 
 namespace ValueGroupWithZero
 
-variable {R : Type*} [Semiring R] [ValuativeRel R] [IsDiscrete R] [IsRankLeOne R]
+variable {R : Type*} [Semiring R] [ValuativeRel R] [IsDiscrete R]
+  [MulArchimedean (ValueGroupWithZero R)]
 
-/-- A nonzero element of a discrete archimedean value group that admits `m ^ k`-th roots for some
-`m ≥ 2` and all `k` is at least `1`. -/
-private theorem one_le_of_forall_exists_pow_pow_eq {γ : ValueGroupWithZero R} (hγ : γ ≠ 0)
-    {m : ℕ} (hm : 2 ≤ m) (h : ∀ k : ℕ, ∃ δ : ValueGroupWithZero R, δ ^ m ^ k = γ) :
+/-- A nonzero element of a discrete archimedean value group that admits `k`-th roots for
+arbitrarily large `k : ℕ` is at least `1`. -/
+private theorem one_le_of_forall_exists_le_pow_eq {γ : ValueGroupWithZero R} (hγ : γ ≠ 0)
+    (h : ∀ n : ℕ, ∃ k ≥ n, ∃ δ : ValueGroupWithZero R, δ ^ k = γ) :
     1 ≤ γ := by
   by_contra! hlt
   obtain ⟨n, hn⟩ := exists_pow_lt₀ (uniformizer_lt_one (R := R)) (Units.mk0 γ hγ)
-  obtain ⟨δ, hδ⟩ := h n
+  obtain ⟨k, hkn, δ, hδ⟩ := h n
   have hδ1 : δ < 1 := by
     by_contra! h1
     exact hlt.not_ge ((one_le_pow₀ h1).trans_eq hδ)
-  have hpow : δ ^ m ^ n ≤ uniformizer R ^ n :=
-    (pow_le_pow_left' (le_uniformizer_iff.mpr hδ1) (m ^ n)).trans
-      (pow_le_pow_of_le_one zero_le (uniformizer_lt_one (R := R)).le
-        (n.lt_two_pow_self.le.trans (Nat.pow_le_pow_left hm n)))
+  have hpow : δ ^ k ≤ uniformizer R ^ n :=
+    (pow_le_pow_left' (le_uniformizer_iff.mpr hδ1) k).trans
+      (pow_le_pow_of_le_one zero_le (uniformizer_lt_one (R := R)).le hkn)
   exact hn.not_ge (hδ ▸ hpow)
 
-/-- **No nontrivial `m ^ ∞`-divisible values in a discrete rank-at-most-one value group.** If a
-nonzero `γ : ValueGroupWithZero R` is an `m ^ k`-th power for some `m ≥ 2` and every `k : ℕ`, then
-`γ = 1`. -/
-theorem eq_one_of_forall_exists_pow_pow_eq {γ : ValueGroupWithZero R} (hγ : γ ≠ 0) {m : ℕ}
-    (hm : 2 ≤ m) (h : ∀ k : ℕ, ∃ δ : ValueGroupWithZero R, δ ^ m ^ k = γ) :
+/-- **No nontrivial arbitrarily divisible values in a discrete archimedean value group.** In a
+semiring `R` with `[IsDiscrete R] [MulArchimedean (ValueGroupWithZero R)]`, if a nonzero
+`γ : ValueGroupWithZero R` is a `k`-th power for arbitrarily large `k : ℕ`, then `γ = 1`. -/
+theorem eq_one_of_forall_exists_le_pow_eq {γ : ValueGroupWithZero R} (hγ : γ ≠ 0)
+    (h : ∀ n : ℕ, ∃ k ≥ n, ∃ δ : ValueGroupWithZero R, δ ^ k = γ) :
     γ = 1 := by
-  have hge := one_le_of_forall_exists_pow_pow_eq hγ hm h
+  have hge := one_le_of_forall_exists_le_pow_eq hγ h
   have hge_inv : 1 ≤ γ⁻¹ :=
-    one_le_of_forall_exists_pow_pow_eq (inv_ne_zero hγ) hm fun k ↦ by
-      obtain ⟨δ, hδ⟩ := h k
-      exact ⟨δ⁻¹, by rw [inv_pow, hδ]⟩
+    one_le_of_forall_exists_le_pow_eq (inv_ne_zero hγ) fun n ↦ by
+      obtain ⟨k, hkn, δ, hδ⟩ := h n
+      exact ⟨k, hkn, δ⁻¹, by rw [inv_pow, hδ]⟩
   exact le_antisymm ((one_le_inv₀ (zero_lt_iff.mpr hγ)).mp hge_inv) hge
 
-/-- If a positive power `γ ^ n` of a nonzero `γ : ValueGroupWithZero R` is an `m ^ k`-th power for
-some `m ≥ 2` and every `k : ℕ`, then `γ = 1`. -/
-theorem eq_one_of_forall_exists_pow_pow_eq_pow {γ : ValueGroupWithZero R} (hγ : γ ≠ 0) {n m : ℕ}
-    (hn : n ≠ 0) (hm : 2 ≤ m)
-    (h : ∀ k : ℕ, ∃ δ : ValueGroupWithZero R, δ ^ m ^ k = γ ^ n) :
+/-- In a semiring `R` with `[IsDiscrete R] [MulArchimedean (ValueGroupWithZero R)]`, if a positive
+power `γ ^ m` of a nonzero `γ : ValueGroupWithZero R` is a `k`-th power for arbitrarily large
+`k : ℕ`, then `γ = 1`. -/
+theorem eq_one_of_forall_exists_le_pow_eq_pow {γ : ValueGroupWithZero R} (hγ : γ ≠ 0) {m : ℕ}
+    (hm : m ≠ 0) (h : ∀ n : ℕ, ∃ k ≥ n, ∃ δ : ValueGroupWithZero R, δ ^ k = γ ^ m) :
     γ = 1 :=
-  (pow_eq_one_iff_of_nonneg zero_le hn).mp
-    (eq_one_of_forall_exists_pow_pow_eq (pow_ne_zero n hγ) hm h)
+  (pow_eq_one_iff_of_nonneg zero_le hm).mp
+    (eq_one_of_forall_exists_le_pow_eq (pow_ne_zero m hγ) h)
 
 end ValueGroupWithZero
 
 section Ring
 
-variable {R : Type*} [Ring R] [ValuativeRel R] [IsDiscrete R] [IsRankLeOne R]
+variable {R : Type*} [Ring R] [ValuativeRel R] [IsDiscrete R]
+  [MulArchimedean (ValueGroupWithZero R)]
 
-/-- If `x : R` has nonzero valuation and is an `m ^ k`-th power in `R` for some `m ≥ 2` and every
+/-- In a ring `R` with `[IsDiscrete R] [MulArchimedean (ValueGroupWithZero R)]`, if `x : R` has
+nonzero valuation and is a `k`-th power in `R` for arbitrarily large `k : ℕ`, then
+`valuation R x = 1`. -/
+theorem valuation_eq_one_of_forall_exists_le_pow_eq {x : R} (hx : valuation R x ≠ 0)
+    (h : ∀ n : ℕ, ∃ k ≥ n, ∃ y : R, y ^ k = x) :
+    valuation R x = 1 :=
+  ValueGroupWithZero.eq_one_of_forall_exists_le_pow_eq hx fun n ↦ by
+    obtain ⟨k, hkn, y, hy⟩ := h n
+    exact ⟨k, hkn, valuation R y, by rw [← map_pow, hy]⟩
+
+/-- In a ring `R` with `[IsDiscrete R] [MulArchimedean (ValueGroupWithZero R)]`, if `x : R` has
+nonzero valuation and a positive power `x ^ m` is a `k`-th power in `R` for arbitrarily large
 `k : ℕ`, then `valuation R x = 1`. -/
-theorem valuation_eq_one_of_forall_exists_pow_pow_eq {x : R} (hx : valuation R x ≠ 0) {m : ℕ}
-    (hm : 2 ≤ m) (h : ∀ k : ℕ, ∃ y : R, y ^ m ^ k = x) :
+theorem valuation_eq_one_of_forall_exists_le_pow_eq_pow {x : R} (hx : valuation R x ≠ 0)
+    {m : ℕ} (hm : m ≠ 0) (h : ∀ n : ℕ, ∃ k ≥ n, ∃ y : R, y ^ k = x ^ m) :
     valuation R x = 1 :=
-  ValueGroupWithZero.eq_one_of_forall_exists_pow_pow_eq hx hm fun k ↦ by
-    obtain ⟨y, hy⟩ := h k
-    exact ⟨valuation R y, by rw [← map_pow, hy]⟩
-
-/-- If `x : R` has nonzero valuation and a positive power `x ^ n` is an `m ^ k`-th power in `R` for
-some `m ≥ 2` and every `k : ℕ`, then `valuation R x = 1`. -/
-theorem valuation_eq_one_of_forall_exists_pow_pow_eq_pow {x : R} (hx : valuation R x ≠ 0)
-    {n m : ℕ} (hn : n ≠ 0) (hm : 2 ≤ m) (h : ∀ k : ℕ, ∃ y : R, y ^ m ^ k = x ^ n) :
-    valuation R x = 1 :=
-  ValueGroupWithZero.eq_one_of_forall_exists_pow_pow_eq_pow hx hn hm fun k ↦ by
-    obtain ⟨y, hy⟩ := h k
-    exact ⟨valuation R y, by rw [← map_pow, hy, map_pow]⟩
+  ValueGroupWithZero.eq_one_of_forall_exists_le_pow_eq_pow hx hm fun n ↦ by
+    obtain ⟨k, hkn, y, hy⟩ := h n
+    exact ⟨k, hkn, valuation R y, by rw [← map_pow, hy, map_pow]⟩
 
 end Ring
 
