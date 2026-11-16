@@ -120,12 +120,10 @@ theorem cliffordRestriction_quadraticTwoForm_sqrt_smul_sub_smul_apply
         ((quadraticTwoForm o ρ hkl (((√r : ℝ) : ℂ) • (φ + β)) : ⋀[ℝ]^2 V) - (r / 4) • ω)
         (φ + β) =
       (r / 2 * (‖φ + β‖ ^ 2 - 1)) • (φ + β) + r • β := by
-  rw [map_sub, sub_apply, quadraticTwoForm_sqrt_smul o ρ hkl hr,
-    Submodule.coe_smul, map_smul, map_smul, smul_apply,
-    smul_apply,
+  rw [map_sub, sub_apply, quadraticTwoForm_sqrt_smul o ρ hkl hr]
+  simp only [Submodule.coe_smul, map_smul, smul_apply,
     cliffordRestriction_quadraticTwoForm_apply_self o hQ hkl hρ h₂,
-    cliffordRestriction_apply_add_of_cliffordProjection o ρ hφ hβ]
-  simp only [← Complex.coe_smul, smul_smul]
+    cliffordRestriction_apply_add_of_cliffordProjection o ρ hφ hβ, ← Complex.coe_smul, smul_smul]
   push_cast
   module
 
@@ -139,9 +137,8 @@ theorem cliffordProjection_cliffordRestriction_quadraticTwoForm_sqrt_smul_sub_sm
         ((quadraticTwoForm o ρ hkl (((√r : ℝ) : ℂ) • (φ + β)) : ⋀[ℝ]^2 V) - (r / 4) • ω)
         (φ + β)) =
       (r / 2 * (‖φ + β‖ ^ 2 - 1)) • φ := by
-  rw [cliffordRestriction_quadraticTwoForm_sqrt_smul_sub_smul_apply o hQ hkl hρ h₂ hφ hβ hr,
-    map_add, LinearMapClass.map_smul_of_tower, LinearMapClass.map_smul_of_tower, map_add, hφ, hβ,
-    add_zero, smul_zero, add_zero]
+  rw [cliffordRestriction_quadraticTwoForm_sqrt_smul_sub_smul_apply o hQ hkl hρ h₂ hφ hβ hr]
+  simp [hφ, hβ]
 
 /-- **The curvature term on the complementary line `P_β W⁺`.** For `χ = φ + β` with `P_α φ = φ`
 and `P_α β = 0`, `P_β C(i (q(√r χ) - (r / 4) ω)) χ = (r / 2) (‖χ‖² + 1) β`: the potential of
@@ -171,11 +168,9 @@ theorem re_inner_cliffordRestriction_quadraticTwoForm_sqrt_smul_sub_smul_apply_c
         (φ + β)⟫_ℂ).re =
       r / 2 * (‖φ‖ ^ 2 + ‖β‖ ^ 2 - 1) * ‖φ‖ ^ 2 := by
   rw [cliffordRestriction_quadraticTwoForm_sqrt_smul_sub_smul_apply o hQ hkl hρ h₂ hφ hβ hr,
-    inner_add_right, inner_smul_right_eq_smul, inner_smul_right_eq_smul, inner_add_right,
-    inner_eq_zero_of_cliffordProjection o hρ hφ hβ, add_zero, smul_zero, add_zero,
-    inner_self_eq_norm_sq_to_K, norm_add_sq_of_cliffordProjection o hρ hφ hβ, Complex.smul_re,
-    smul_eq_mul]
-  simp only [RCLike.ofReal_eq_complex_ofReal, ← Complex.ofReal_pow, Complex.ofReal_re]
+    norm_add_sq_of_cliffordProjection o hρ hφ hβ]
+  simp [inner_add_right, inner_smul_right_eq_smul, inner_self_eq_norm_sq_to_K,
+    inner_eq_zero_of_cliffordProjection o hρ hφ hβ, ← Complex.ofReal_pow]
 
 /-- **The potential of `β`.** For `χ = φ + β` with `P_α φ = φ` and `P_α β = 0`,
 `Re ⟪β, C(i (q(√r χ) - (r / 4) ω)) χ⟫ = (r / 2) (‖φ‖² + ‖β‖² + 1) ‖β‖²`. Half of it is the term
@@ -187,13 +182,10 @@ theorem re_inner_cliffordRestriction_quadraticTwoForm_sqrt_smul_sub_smul_apply_c
         ((quadraticTwoForm o ρ hkl (((√r : ℝ) : ℂ) • (φ + β)) : ⋀[ℝ]^2 V) - (r / 4) • ω)
         (φ + β)⟫_ℂ).re =
       r / 2 * (‖φ‖ ^ 2 + ‖β‖ ^ 2 + 1) * ‖β‖ ^ 2 := by
-  have hβφ : ⟪β, φ⟫_ℂ = 0 := by
-    rw [← inner_conj_symm, inner_eq_zero_of_cliffordProjection o hρ hφ hβ, map_zero]
   rw [cliffordRestriction_quadraticTwoForm_sqrt_smul_sub_smul_apply o hQ hkl hρ h₂ hφ hβ hr,
-    inner_add_right, inner_smul_right_eq_smul, inner_smul_right_eq_smul, inner_add_right, hβφ,
-    zero_add, inner_self_eq_norm_sq_to_K, norm_add_sq_of_cliffordProjection o hρ hφ hβ,
-    Complex.add_re, Complex.smul_re, Complex.smul_re, smul_eq_mul, smul_eq_mul]
-  simp only [RCLike.ofReal_eq_complex_ofReal, ← Complex.ofReal_pow, Complex.ofReal_re]
+    norm_add_sq_of_cliffordProjection o hρ hφ hβ]
+  simp [inner_add_right, inner_smul_right_eq_smul, inner_self_eq_norm_sq_to_K,
+    inner_eq_zero_symm.1 (inner_eq_zero_of_cliffordProjection o hρ hφ hβ), ← Complex.ofReal_pow]
   ring
 
 /-- **The Ginzburg–Landau form of the curvature term.** For `χ = φ + β` with `P_α φ = φ` and
