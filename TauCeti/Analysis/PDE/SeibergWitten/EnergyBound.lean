@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.SeibergWitten.ChernIdentity
 public import TauCeti.Analysis.PDE.SeibergWitten.L2Bounds
-public import TauCeti.Geometry.Manifold.Riemannian.VolumeForm.Measure
+public import TauCeti.Geometry.Manifold.Riemannian.SelfDual.Measure
 import TauCeti.Geometry.Manifold.Riemannian.FormMetric
 
 /-!
@@ -58,15 +58,15 @@ in absolute value, so `r ∫ (1 - |α|² - |β|²)²` is at most the `L¹` defec
 curvature equation bounds `|2 F⁺ + η|²` by `(r² / 8) (1 - |α|² - |β|²)² + (r² / 2) |β|²`.
 Finally the curvature equation prescribes only `F⁺`, and the anti-self-dual part is recovered by
 Chern–Weil: `∫ |F|² = 2 ∫ |F⁺|² - ∫ F ∧ F`, where `∫ F ∧ F` is the topological
-number `⟨[F], [F]⟩ = 4π² c₁(E)²`
-(`TauCeti.SmoothForm.integralTopForm_inner_self_smul_riemannianVolumeForm_eq_add`,
-`TauCeti.SmoothForm.integralTopForm_wedge_self`).
+number `⟨[F], [F]⟩ = 4π² c₁(E)²` (`TauCeti.SmoothForm.integral_inner_self_eq_two_mul_sub`).
 
 All integrals are taken against the Riemannian volume measure; integrals of top forms produced by
 the Chern identity and by Chern–Weil are converted by
-`TauCeti.integralTopForm_smul_riemannianVolumeForm`. The constant in the conclusion is explicit:
+`TauCeti.integralTopForm_smul_riemannianVolumeForm`. The right side of the conclusion is explicit:
 it depends on `K`, `K₁`, the volume, the perturbation `η`, the pairing `⟨[F], [ω]⟩` and the
-characteristic number `∫ F ∧ F`, and not on `r` or on the solution.
+characteristic number `∫ F ∧ F`, and not on the solution. It depends on `r` only through the term
+`(∫ |η|² - ∫ F ∧ F) / r`, which is at most `|∫ |η|² - ∫ F ∧ F|` because `r ≥ 1`; so the right
+side is bounded by a constant `C` independent of `r`.
 
 ## References
 
@@ -115,68 +115,24 @@ local instance : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)
   IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle
     (IB := I) (n := 1) (F := E) (V := fun x : M ↦ TangentSpace I x)
 
-/-- **Taubes's `L¹` defect bound against the Riemannian measure.** On a compact boundaryless
-oriented Riemannian four-manifold, let `ω` be a closed self-dual two-form, `F` a closed two-form
-and `η` a two-form, and let `α`, `β` be sections of families of seminormed groups with `|α|²` and
-`|β|²` continuous and `|α|² + |β|² ≤ 1 + K / r`, where `r > 0` and `K ≥ 0`. If the `ω`-component
-of the large-parameter curvature equation
-`⟨ω, F⟩ / 2 = (r / 8) (1 - |α|² + |β|²) - ⟨ω, η⟩ / 4` holds at every point, then
-
-`r ∫ |1 - |α|² - |β|²| ≤ 4 ⟨[F], [ω]⟩ + 2 ∫ ⟨ω, η⟩ + 2 K Vol(M)`.
-
-This is `TauCeti.SeibergWitten.mul_integralTopForm_abs_one_sub_sub_le` with its integrals of top
-forms converted to integrals against the Riemannian volume. -/
-theorem mul_integral_abs_one_sub_sub_le (o : Manifold.Orientation I M (Fin (2 + 2)))
-    {ω F η : SmoothForm I M ℝ 2} {α : (x : M) → A x} {β : (x : M) → B x} {K : ℝ} (hr : 0 < r)
-    (hK : 0 ≤ K) (hs : Continuous fun x ↦ ‖α x‖ ^ 2) (ht : Continuous fun x ↦ ‖β x‖ ^ 2)
-    (hαβ : ∀ x, ‖α x‖ ^ 2 + ‖β x‖ ^ 2 ≤ 1 + K / r)
-    (hω : ω ∈ compactlySupportedClosedForms I M 2) (hω' : ω ∈ SmoothForm.selfDualForms o)
-    (hF : F ∈ closedForms I M 2)
-    (hFω : ∀ x, alternatingFormInner (TangentSpace I x) 2 (ω.1 x) (F.1 x) / 2 =
-      r / 8 * (1 - ‖α x‖ ^ 2 + ‖β x‖ ^ 2) -
-        alternatingFormInner (TangentSpace I x) 2 (ω.1 x) (η.1 x) / 4) :
-    r * ∫ x, |1 - ‖α x‖ ^ 2 - ‖β x‖ ^ 2| ∂riemannianVolume I M ≤
-      4 * poincarePairing I M o (deRhamCohomology.mk I 2 ⟨F, hF⟩)
-          (compactlySupportedDeRhamCohomology.mk I 2 ⟨ω, hω⟩) +
-        2 * ∫ x, alternatingFormInner (TangentSpace I x) 2 (ω.1 x) (η.1 x)
-          ∂riemannianVolume I M +
-        2 * K * riemannianTotalVolume I M := by
-  have : IsManifold I (((⊤ : ℕ∞) : WithTop ℕ∞) + 1) M := by
-    simpa using (inferInstance : IsManifold I (⊤ : ℕ∞) M)
-  have hωη := (ω.isSmoothForm.contMDiff_alternatingFormInner η.isSmoothForm).continuous
-  have hL := mul_integralTopForm_abs_one_sub_sub_le o hr hK hs ht (fun x ↦ by positivity) hαβ hω
-    hω' hF hFω
-  rwa [integralTopForm_smul_riemannianVolumeForm o
-      (f := fun x ↦ |1 - ‖α x‖ ^ 2 - ‖β x‖ ^ 2|) (by fun_prop)
-      (HasCompactSupport.of_compactSpace _),
-    integralTopForm_smul_riemannianVolumeForm o hωη (HasCompactSupport.of_compactSpace _),
-    integralTopForm_riemannianVolumeForm o] at hL
+/-- `C^(⊤ + 1)` charts, needed by `TauCeti.IsSmoothForm.contMDiff_alternatingFormInner` for the
+continuity of the pointwise inner product of two smooth forms. -/
+local instance : IsManifold I (((⊤ : ℕ∞) : WithTop ℕ∞) + 1) M := by
+  simpa using (inferInstance : IsManifold I (⊤ : ℕ∞) M)
 
 omit [I.Boundaryless] [T2Space M] in
-/-- **Chern–Weil against the Riemannian measure.** On a compact oriented Riemannian four-manifold,
-a smooth two-form `F` has `∫ |F|² = 2 ∫ |F⁺|² - ∫ F ∧ F`. This combines
-`TauCeti.SmoothForm.integralTopForm_inner_self_smul_riemannianVolumeForm_eq_add` and
-`TauCeti.SmoothForm.integralTopForm_wedge_self` with the conversion of integrals of top forms to
-integrals against the Riemannian volume. -/
-private theorem integral_inner_self_eq_two_mul_sub (o : Manifold.Orientation I M (Fin (2 + 2)))
-    (F : SmoothForm I M ℝ 2) :
-    ∫ x, alternatingFormInner (TangentSpace I x) 2 (F.1 x) (F.1 x) ∂riemannianVolume I M =
-      2 * ∫ x, alternatingFormInner (TangentSpace I x) 2 ((SmoothForm.selfDualPart o F).1 x)
-        ((SmoothForm.selfDualPart o F).1 x) ∂riemannianVolume I M -
-      integralTopForm o (RoughForm.wedge F.1 F.1) := by
-  have : IsManifold I (((⊤ : ℕ∞) : WithTop ℕ∞) + 1) M := by
-    simpa using (inferInstance : IsManifold I (⊤ : ℕ∞) M)
-  have hinner (φ : SmoothForm I M ℝ 2) :
-      Continuous fun x ↦ alternatingFormInner (TangentSpace I x) 2 (φ.1 x) (φ.1 x) :=
-    (φ.isSmoothForm.contMDiff_alternatingFormInner φ.isSmoothForm).continuous
-  have hFc : F ∈ compactlySupportedForms I M 2 := by
-    rw [compactlySupportedForms_eq_top]
-    exact Submodule.mem_top
-  have h₁ := SmoothForm.integralTopForm_inner_self_smul_riemannianVolumeForm_eq_add o hFc
-  have h₂ := SmoothForm.integralTopForm_wedge_self o even_two hFc
-  simp only [integralTopForm_smul_riemannianVolumeForm o (hinner _)
-    (HasCompactSupport.of_compactSpace _)] at h₁ h₂
-  linarith
+variable (I) in
+/-- A continuous function on the compact manifold `M` is integrable for the Riemannian volume. -/
+private theorem integrable_riemannianVolume {f : M → ℝ} (hf : Continuous f) :
+    Integrable f (riemannianVolume I M) :=
+  hf.integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace f)
+
+omit [I.Boundaryless] [T2Space M] in
+/-- The integral of a constant against the Riemannian volume is the constant times the total
+volume. -/
+private theorem integral_const_riemannianVolume (c : ℝ) :
+    ∫ _ : M, c ∂riemannianVolume I M = c * riemannianTotalVolume I M := by
+  rw [integral_const, smul_eq_mul, mul_comm, riemannianTotalVolume_def]
 
 omit [I.Boundaryless] [T2Space M] in
 /-- **The curvature energy from the self-dual part of the curvature equation.** If
@@ -195,14 +151,9 @@ private theorem inv_mul_integral_inner_self_le (o : Manifold.Orientation I M (Fi
         r / 2 * ∫ x, ‖β x‖ ^ 2 ∂riemannianVolume I M +
         (∫ x, alternatingFormInner (TangentSpace I x) 2 (η.1 x) (η.1 x) ∂riemannianVolume I M -
           integralTopForm o (RoughForm.wedge F.1 F.1)) / r := by
-  have : IsManifold I (((⊤ : ℕ∞) : WithTop ℕ∞) + 1) M := by
-    simpa using (inferInstance : IsManifold I (⊤ : ℕ∞) M)
-  have hinner (φ ψ : SmoothForm I M ℝ 2) :
-      Continuous fun x ↦ alternatingFormInner (TangentSpace I x) 2 (φ.1 x) (ψ.1 x) :=
-    (φ.isSmoothForm.contMDiff_alternatingFormInner ψ.isSmoothForm).continuous
-  have hint (f : M → ℝ) (hf : Continuous f) : Integrable f (riemannianVolume I M) :=
-    hf.integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace f)
   set Fp := SmoothForm.selfDualPart o F
+  -- The continuity of `|η|²`, for `fun_prop` below.
+  have hη := (η.isSmoothForm.contMDiff_alternatingFormInner η.isSmoothForm).continuous
   -- Pointwise, `|F⁺|² ≤ (|2 F⁺ + η|² + |η|²) / 2 ≤ (r² / 16) d² + (r² / 4) |β|² + |η|² / 2`,
   -- with `d = 1 - |α|² - |β|²`, since `(1 - |α|² + |β|²)² + 4 |α|² |β|² = d² + 4 |β|²`.
   have hpt (x : M) : alternatingFormInner (TangentSpace I x) 2 (Fp.1 x) (Fp.1 x) ≤
@@ -215,11 +166,16 @@ private theorem inv_mul_integral_inner_self_le (o : Manifold.Orientation I M (Fi
     simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul]
       at h₀ hb
     linarith
-  have hle := integral_mono (hint _ (hinner Fp Fp)) (hint _ (by fun_prop)) hpt
-  rw [integral_add (hint (fun x ↦ r ^ 2 / 16 * (1 - ‖α x‖ ^ 2 - ‖β x‖ ^ 2) ^ 2 +
-      r ^ 2 / 4 * ‖β x‖ ^ 2) (by fun_prop)) (hint _ (by fun_prop)),
-    integral_add (hint (fun x ↦ r ^ 2 / 16 * (1 - ‖α x‖ ^ 2 - ‖β x‖ ^ 2) ^ 2) (by fun_prop))
-      (hint _ (by fun_prop)),
+  have hle := integral_mono
+    (integrable_riemannianVolume I
+      (Fp.isSmoothForm.contMDiff_alternatingFormInner Fp.isSmoothForm).continuous)
+    (integrable_riemannianVolume I (by fun_prop)) hpt
+  rw [integral_add (integrable_riemannianVolume I (f := fun x ↦
+      r ^ 2 / 16 * (1 - ‖α x‖ ^ 2 - ‖β x‖ ^ 2) ^ 2 + r ^ 2 / 4 * ‖β x‖ ^ 2) (by fun_prop))
+      (integrable_riemannianVolume I (by fun_prop)),
+    integral_add (integrable_riemannianVolume I (f := fun x ↦
+      r ^ 2 / 16 * (1 - ‖α x‖ ^ 2 - ‖β x‖ ^ 2) ^ 2) (by fun_prop))
+      (integrable_riemannianVolume I (by fun_prop)),
     integral_const_mul, integral_const_mul, integral_const_mul] at hle
   -- Multiply `∫ |F|² = 2 ∫ |F⁺|² - ∫ F ∧ F` by `r⁻¹`.
   have hF2 : ∫ x, alternatingFormInner (TangentSpace I x) 2 (F.1 x) (F.1 x)
@@ -227,7 +183,10 @@ private theorem inv_mul_integral_inner_self_le (o : Manifold.Orientation I M (Fi
         ∂riemannianVolume I M + r ^ 2 / 2 * ∫ x, ‖β x‖ ^ 2 ∂riemannianVolume I M +
       ∫ x, alternatingFormInner (TangentSpace I x) 2 (η.1 x) (η.1 x) ∂riemannianVolume I M -
         integralTopForm o (RoughForm.wedge F.1 F.1) := by
-    linarith [integral_inner_self_eq_two_mul_sub o F]
+    have hFc : F ∈ compactlySupportedForms I M 2 := by
+      rw [compactlySupportedForms_eq_top]
+      exact Submodule.mem_top
+    linarith [SmoothForm.integral_inner_self_eq_two_mul_sub o even_two hFc]
   calc r⁻¹ * ∫ x, alternatingFormInner (TangentSpace I x) 2 (F.1 x) (F.1 x)
         ∂riemannianVolume I M
       ≤ r⁻¹ * (r ^ 2 / 8 * ∫ x, (1 - ‖α x‖ ^ 2 - ‖β x‖ ^ 2) ^ 2 ∂riemannianVolume I M +
@@ -255,24 +214,25 @@ theorem integral_norm_sq_le_mul_add_mul_integral_of_laplaceBeltrami {α : (x : M
     ∫ x, ‖Dα x‖ ^ 2 ∂riemannianVolume I M ≤
       K₁ * riemannianTotalVolume I M +
         r / 4 * ∫ x, (1 - ‖α x‖ ^ 2) * ‖α x‖ ^ 2 ∂riemannianVolume I M := by
-  have hint (f : M → ℝ) (hf : Continuous f) : Integrable f (riemannianVolume I M) :=
-    hf.integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace f)
   have hΔ := integral_laplaceBeltrami_eq_zero hα (HasCompactSupport.of_compactSpace _)
   have hΔc := continuous_laplaceBeltrami hα
   have hs : Continuous fun x ↦ ‖α x‖ ^ 2 := hα.continuous
   -- Integrate `|∇_a α|² ≤ (K₁ + Δ|α|² / 2) + (r / 4) (1 - |α|²) |α|²`.
   have h₁ : Integrable (fun x ↦ K₁ + laplaceBeltrami I (fun y ↦ ‖α y‖ ^ 2) x / 2)
-      (riemannianVolume I M) := hint _ (by fun_prop)
+      (riemannianVolume I M) := integrable_riemannianVolume I (by fun_prop)
   have h₂ : Integrable (fun x ↦ r / 4 * ((1 - ‖α x‖ ^ 2) * ‖α x‖ ^ 2)) (riemannianVolume I M) :=
-    hint _ (by fun_prop)
+    integrable_riemannianVolume I (by fun_prop)
   have h₃ : Integrable (fun x ↦ K₁ + laplaceBeltrami I (fun y ↦ ‖α y‖ ^ 2) x / 2 +
-      r / 4 * ((1 - ‖α x‖ ^ 2) * ‖α x‖ ^ 2)) (riemannianVolume I M) := hint _ (by fun_prop)
-  have hle := integral_mono (hint _ hDα) h₃ fun x ↦
-    show ‖Dα x‖ ^ 2 ≤ K₁ + laplaceBeltrami I (fun y ↦ ‖α y‖ ^ 2) x / 2 +
-      r / 4 * ((1 - ‖α x‖ ^ 2) * ‖α x‖ ^ 2) by linarith [hW x]
-  rwa [integral_add h₁ h₂, integral_add (integrable_const K₁) (hint _ (by fun_prop)),
-    integral_div, hΔ, integral_const, integral_const_mul, smul_eq_mul, mul_comm,
-    ← riemannianTotalVolume_def, zero_div, add_zero] at hle
+      r / 4 * ((1 - ‖α x‖ ^ 2) * ‖α x‖ ^ 2)) (riemannianVolume I M) :=
+    integrable_riemannianVolume I (by fun_prop)
+  have hpt (x : M) : ‖Dα x‖ ^ 2 ≤ K₁ + laplaceBeltrami I (fun y ↦ ‖α y‖ ^ 2) x / 2 +
+      r / 4 * ((1 - ‖α x‖ ^ 2) * ‖α x‖ ^ 2) := by
+    linarith [hW x]
+  have hle := integral_mono (integrable_riemannianVolume I hDα) h₃ hpt
+  rwa [integral_add h₁ h₂,
+    integral_add (integrable_const K₁) (integrable_riemannianVolume I (by fun_prop)),
+    integral_div, hΔ, integral_const_riemannianVolume, integral_const_mul, zero_div,
+    add_zero] at hle
 
 /-- **Taubes's scaled `L²` energy bound.** On a compact boundaryless Riemannian four-manifold `M`
 with orientation `o`, let `ω` be a closed self-dual two-form, `F` a closed two-form and `η` a
@@ -331,8 +291,6 @@ theorem inv_mul_integral_add_integral_add_integral_add_mul_integral_le
   have hKr' : K / r ≤ 1 := (div_le_one hr0).2 hKr
   have hs : Continuous fun x ↦ ‖α x‖ ^ 2 := hα.continuous
   have ht : Continuous fun x ↦ ‖β x‖ ^ 2 := hβ.continuous
-  have hint (f : M → ℝ) (hf : Continuous f) : Integrable f (riemannianVolume I M) :=
-    hf.integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace f)
   have hst (x : M) : ‖α x‖ ^ 2 + ‖β x‖ ^ 2 ≤ 2 := by linarith [hαβ x]
   have hc8 : 8 * c ≤ r :=
     (abs_le_of_sq_le_sq' (by nlinarith [mul_nonneg hr0.le (by linarith : (0 : ℝ) ≤ r - 1)])
@@ -343,21 +301,26 @@ theorem inv_mul_integral_add_integral_add_integral_add_mul_integral_le
   have hB := integral_norm_sq_add_mul_integral_norm_sq_le_of_laplaceBeltrami hr0 hc8 hs hβ hDα hWβ
   have hQ := inv_mul_integral_inner_self_le o hr0 hs ht hFη
   -- `∫ (1 - |α|²) |α|² ≤ 2 ∫ |1 - |α|² - |β|²| + 2 ∫ |β|²`.
-  have hss := integral_mono (hint (fun x ↦ (1 - ‖α x‖ ^ 2) * ‖α x‖ ^ 2) (by fun_prop))
-    (hint (fun x ↦ 2 * |1 - ‖α x‖ ^ 2 - ‖β x‖ ^ 2| + 2 * ‖β x‖ ^ 2) (by fun_prop))
+  have hss := integral_mono
+    (integrable_riemannianVolume I (f := fun x ↦ (1 - ‖α x‖ ^ 2) * ‖α x‖ ^ 2) (by fun_prop))
+    (integrable_riemannianVolume I
+      (f := fun x ↦ 2 * |1 - ‖α x‖ ^ 2 - ‖β x‖ ^ 2| + 2 * ‖β x‖ ^ 2) (by fun_prop))
     fun x ↦ one_sub_mul_le (by positivity) (by positivity) (by nlinarith [hst x, sq_nonneg ‖β x‖])
-  rw [integral_add (hint (fun x ↦ 2 * |1 - ‖α x‖ ^ 2 - ‖β x‖ ^ 2|) (by fun_prop))
-    (hint _ (by fun_prop)), integral_const_mul, integral_const_mul] at hss
+  rw [integral_add
+    (integrable_riemannianVolume I (f := fun x ↦ 2 * |1 - ‖α x‖ ^ 2 - ‖β x‖ ^ 2|) (by fun_prop))
+    (integrable_riemannianVolume I (by fun_prop)), integral_const_mul, integral_const_mul] at hss
   -- `∫ (1 - |α|² - |β|²)² ≤ ∫ |1 - |α|² - |β|²|`, since the defect is at most one.
-  have hD := integral_mono (hint (fun x ↦ (1 - ‖α x‖ ^ 2 - ‖β x‖ ^ 2) ^ 2) (by fun_prop))
-    (hint (fun x ↦ |1 - ‖α x‖ ^ 2 - ‖β x‖ ^ 2|) (by fun_prop)) fun x ↦ by
+  have hD := integral_mono
+    (integrable_riemannianVolume I (f := fun x ↦ (1 - ‖α x‖ ^ 2 - ‖β x‖ ^ 2) ^ 2) (by fun_prop))
+    (integrable_riemannianVolume I (f := fun x ↦ |1 - ‖α x‖ ^ 2 - ‖β x‖ ^ 2|) (by fun_prop))
+    fun x ↦ by
       have h := abs_one_sub_sub_le_one hr0 hKr (by positivity) (by positivity) (hαβ x)
       rw [← sq_abs]
       nlinarith [abs_nonneg (1 - ‖α x‖ ^ 2 - ‖β x‖ ^ 2)]
   -- `∫ |α|² ≤ 2 Vol(M)`.
-  have hS := integral_mono (hint _ hs) (integrable_const (2 : ℝ)) fun x ↦
-    show ‖α x‖ ^ 2 ≤ 2 by nlinarith [hst x, sq_nonneg ‖β x‖]
-  rw [integral_const, smul_eq_mul, mul_comm, ← riemannianTotalVolume_def] at hS
+  have hα₂ (x : M) : ‖α x‖ ^ 2 ≤ 2 := by nlinarith [hst x, sq_nonneg ‖β x‖]
+  have hS := integral_mono (integrable_riemannianVolume I hs) (integrable_const (2 : ℝ)) hα₂
+  rw [integral_const_riemannianVolume] at hS
   have hc32 : 8 * c ^ 2 / r ≤ 1 / 32 := by
     rw [div_le_iff₀ hr0]
     linarith
