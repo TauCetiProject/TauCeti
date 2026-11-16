@@ -382,6 +382,14 @@ variable {k G α}
 instance [IsCancelAdd k] : IsCancelAdd (twistedMonoidAlgebra k G α) :=
   (basis k G α).repr.injective.isCancelAdd _ (map_add _)
 
+@[simp]
+theorem repr_of (g : G) : (basis k G α).repr (of g) = Finsupp.single g 1 := by
+  rw [← basis_apply, Module.Basis.repr_self]
+
+@[simp]
+theorem repr_one : (basis k G α).repr 1 = Finsupp.single 1 1 := by
+  rw [← of_one, repr_of]
+
 /-- The coefficients of a product are the twisted convolution of the two coefficient families. -/
 theorem repr_mul (f g : twistedMonoidAlgebra k G α) :
     (basis k G α).repr (f * g) =
@@ -391,12 +399,8 @@ theorem repr_mul (f g : twistedMonoidAlgebra k G α) :
   classical
   conv_lhs =>
     rw [← (basis k G α).linearCombination_repr f, ← (basis k G α).linearCombination_repr g]
-  simp only [Finsupp.linearCombination_apply, Finsupp.sum, Finset.sum_mul, Finset.mul_sum,
-    smul_mul_assoc, mul_smul_comm, map_sum, map_smul, basis_apply, of_mul_of]
-  simp only [← basis_apply k G α, Module.Basis.repr_self, Finset.smul_sum, Finsupp.smul_single,
-    smul_eq_mul]
-  rw [Finset.sum_comm]
-  simp only [mul_one, mul_assoc, mul_left_comm]
+  simp only [Finsupp.linearCombination_apply, Finsupp.sum, Finset.sum_mul_sum, smul_mul_smul_comm,
+    map_sum, map_smul, basis_apply, of_mul_of, repr_of, Finsupp.smul_single, smul_eq_mul, mul_one]
 
 /-- An algebra map out of `k_α[G]` is determined by its values on the basis elements. -/
 @[ext]

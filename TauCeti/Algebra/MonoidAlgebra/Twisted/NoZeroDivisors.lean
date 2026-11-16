@@ -71,66 +71,62 @@ instance [NoZeroDivisors k] [UniqueProds G] :
     exact (mul_ne_zero (mul_ne_zero (Finsupp.mem_support_iff.mp ha)
       (Finsupp.mem_support_iff.mp hb)) (α a b).ne_zero) hc.symm
 
+/-- An additive self-map `φ` of a twisted monoid algebra over an additively cancellative
+semiring is injective if, whenever `φ g₁ = φ g₂` and `g₁` or `g₂` is nonzero, some monomial in
+the union of their supports has the same coefficient in `g₁` and `g₂`. Removing that monomial
+from both reduces the union of supports, which drives the induction. -/
+private theorem injective_of_exists_repr_eq [IsCancelAdd k] [DecidableEq G]
+    {φ : twistedMonoidAlgebra k G α → twistedMonoidAlgebra k G α}
+    (hφ : ∀ x y, φ (x + y) = φ x + φ y)
+    (h : ∀ g₁ g₂, φ g₁ = φ g₂ →
+      (((basis k G α).repr g₁).support ∪ ((basis k G α).repr g₂).support).Nonempty →
+      ∃ a ∈ ((basis k G α).repr g₁).support ∪ ((basis k G α).repr g₂).support,
+        (basis k G α).repr g₁ a = (basis k G α).repr g₂ a) :
+    Function.Injective φ := by
+  intro g₁ g₂ eq
+  induction hg : ((basis k G α).repr g₁).support ∪ ((basis k G α).repr g₂).support
+    using Finset.eraseInduction generalizing g₁ g₂ with
+  | _ s ih =>
+  obtain hs | hs := s.eq_empty_or_nonempty <;> subst s
+  · simp_all
+  obtain ⟨a, ha, hc⟩ := h g₁ g₂ eq hs
+  have decomp (g : twistedMonoidAlgebra k G α) :
+      g = (basis k G α).repr.symm (((basis k G α).repr g).erase a) +
+        (basis k G α).repr.symm (Finsupp.single a ((basis k G α).repr g a)) := by
+    rw [← map_add, Finsupp.erase_add_single, LinearEquiv.symm_apply_apply]
+  rw [decomp g₁, decomp g₂, hc] at eq ⊢
+  rw [hφ, hφ, add_left_inj] at eq
+  rw [ih a ha eq]
+  simp [Finset.erase_union_distrib]
+
 /-- Multiplication by a nonzero element of a twisted monoid algebra is cancellative over an
 additively and multiplicatively cancellative semiring on a unique-product monoid. -/
 instance [IsCancelAdd k] [IsCancelMulZero k] [UniqueProds G] :
     IsCancelMulZero (twistedMonoidAlgebra k G α) where
-  mul_left_cancel_of_ne_zero {f} hf {g₁ g₂} eq := by
+  mul_left_cancel_of_ne_zero {f} hf := by
     classical
-    induction hg : ((basis k G α).repr g₁).support ∪ ((basis k G α).repr g₂).support
-      using Finset.eraseInduction generalizing g₁ g₂ with
-    | _ s ih =>
-    obtain h | h := s.eq_empty_or_nonempty <;> subst s
-    · simp_all
+    refine injective_of_exists_repr_eq (mul_add f) fun g₁ g₂ eq h ↦ ?_
     have hf : ((basis k G α).repr f).support.Nonempty :=
       Finsupp.support_nonempty_iff.mpr ((map_ne_zero_iff _ (basis k G α).repr.injective).mpr hf)
     obtain ⟨af, haf, ag, hag, uniq⟩ := UniqueProds.uniqueMul_of_nonempty hf h
     have h := repr_mul_apply_of_uniqueMul (uniq.mono subset_rfl Finset.subset_union_left)
-    dsimp only at eq
     rw [eq, repr_mul_apply_of_uniqueMul (uniq.mono subset_rfl Finset.subset_union_right)] at h
-    have hcoeff := mul_left_cancel₀ (Finsupp.mem_support_iff.mp haf) ((Units.mul_left_inj _).mp h)
-    have decomp (g : twistedMonoidAlgebra k G α) :
-        g = (basis k G α).repr.symm (((basis k G α).repr g).erase ag) +
-          (basis k G α).repr g ag • of ag := by
-      apply (basis k G α).repr.injective
-      simp only [map_add, LinearEquiv.apply_symm_apply, map_smul, ← basis_apply,
-        Module.Basis.repr_self, Finsupp.smul_single, smul_eq_mul, mul_one]
-      exact (Finsupp.erase_add_single ag ((basis k G α).repr g)).symm
-    rw [decomp g₁, decomp g₂, hcoeff] at eq ⊢
-    simp_rw [mul_add, add_right_cancel_iff] at eq
-    rw [ih ag hag eq]
-    simp [Finset.erase_union_distrib]
-  mul_right_cancel_of_ne_zero {f} hf {g₁ g₂} eq := by
+    exact ⟨ag, hag, mul_left_cancel₀ (Finsupp.mem_support_iff.mp haf)
+      ((Units.mul_left_inj _).mp h).symm⟩
+  mul_right_cancel_of_ne_zero {f} hf := by
     classical
-    induction hg : ((basis k G α).repr g₁).support ∪ ((basis k G α).repr g₂).support
-      using Finset.eraseInduction generalizing g₁ g₂ with
-    | _ s ih =>
-    obtain h | h := s.eq_empty_or_nonempty <;> subst s
-    · simp_all
+    refine injective_of_exists_repr_eq (fun _ _ ↦ add_mul _ _ f) fun g₁ g₂ eq h ↦ ?_
     have hf : ((basis k G α).repr f).support.Nonempty :=
       Finsupp.support_nonempty_iff.mpr ((map_ne_zero_iff _ (basis k G α).repr.injective).mpr hf)
     obtain ⟨ag, hag, af, haf, uniq⟩ := UniqueProds.uniqueMul_of_nonempty h hf
     have h := repr_mul_apply_of_uniqueMul (uniq.mono Finset.subset_union_left subset_rfl)
-    dsimp only at eq
     rw [eq, repr_mul_apply_of_uniqueMul (uniq.mono Finset.subset_union_right subset_rfl)] at h
-    have hcoeff := mul_right_cancel₀ (Finsupp.mem_support_iff.mp haf)
-      ((Units.mul_left_inj _).mp h)
-    have decomp (g : twistedMonoidAlgebra k G α) :
-        g = (basis k G α).repr.symm (((basis k G α).repr g).erase ag) +
-          (basis k G α).repr g ag • of ag := by
-      apply (basis k G α).repr.injective
-      simp only [map_add, LinearEquiv.apply_symm_apply, map_smul, ← basis_apply,
-        Module.Basis.repr_self, Finsupp.smul_single, smul_eq_mul, mul_one]
-      exact (Finsupp.erase_add_single ag ((basis k G α).repr g)).symm
-    rw [decomp g₁, decomp g₂, hcoeff] at eq ⊢
-    rw [add_mul, add_mul, add_right_cancel_iff] at eq
-    rw [ih ag hag eq]
-    simp [Finset.erase_union_distrib]
+    exact ⟨ag, hag, mul_right_cancel₀ (Finsupp.mem_support_iff.mp haf)
+      ((Units.mul_left_inj _).mp h).symm⟩
 
 /-- A twisted monoid algebra over an additively cancellative domain semiring and a
 unique-product monoid is a domain. -/
 instance [IsCancelAdd k] [IsDomain k] [UniqueProds G] :
     IsDomain (twistedMonoidAlgebra k G α) where
-  __ := (basis k G α).repr.symm.injective.nontrivial
 
 end TauCeti.TwistedMonoidAlgebra
