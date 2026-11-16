@@ -8,8 +8,6 @@ module
 public import TauCeti.Analysis.PDE.Regularity.Inhomogeneous
 public import TauCeti.Analysis.PDE.Regularity.LocalBoundedness.LowerOrder
 import TauCeti.MeasureTheory.Function.EssSup
-import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
-import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
 # Hölder continuity of weak solutions with a mass term (De Giorgi)
@@ -41,7 +39,8 @@ The mass term is moved to the right-hand side: `u` is a weak solution of `-∂�
 `f = -c u` (`TauCeti.PDE.energyFormH1_principal_eq_setIntegral_sub`). On a ball `B(x, ρ)` on
 which `|u| ≤ M`, the datum satisfies `|f| ≤ γ M`, so its `Lʳ(B(x, ρ))` norm is at most
 `γ M |B(x, ρ)|^(1/r)` for every `r`. Splitting it off on the ball
-(`TauCeti.PDE.exists_forall_energyFormH1_eq_zero_ae_abs_sub_le`, with `r = n + 1`) leaves a
+(`TauCeti.PDE.exists_forall_energyFormH1_eq_zero_ae_abs_sub_le_of_ae_norm_le`, which is
+`TauCeti.PDE.exists_forall_energyFormH1_eq_zero_ae_abs_sub_le` with `r = n + 1`) leaves a
 solution of the homogeneous equation within `K ρ^(2 - n/r) γ M |B(x, ρ)|^(1/r) / λ`, which is a
 multiple of `ρ² γ M / λ`, of `u`. The Morrey gain is therefore `2` whatever `r` is, and the
 Hölder theorem near solutions of the homogeneous equation
@@ -108,37 +107,6 @@ private theorem energyFormH1_zero_zero_eq_setIntegral_neg_mul {Omega : Opens (Eu
   rw [hx]
   simp
 
-omit [DecidableEq ι] in
-/-- A function bounded by `B` on the ball `B(x₀, ρ)` has `Lʳ` norm there at most
-`|B(x₀, ρ)|^(1/r) B = ρ^(n/r) |B(0, 1)|^(1/r) B`, so the splitting error
-`ρ^(2 - n/r) ‖f‖_{Lʳ(B(x₀, ρ))}` is at most `|B(0, 1)|^(1/r) ρ² B`. -/
-private theorem rpow_mul_toReal_eLpNorm_ball_le_of_ae_norm_le {f : EuclideanSpace ℝ ι → ℝ}
-    {x₀ : EuclideanSpace ℝ ι} {ρ B : ℝ} {r : ℝ≥0} (hρ : 0 < ρ) (hB : 0 ≤ B)
-    (hf : AEStronglyMeasurable f (mu.restrict (ball x₀ ρ)))
-    (hfB : ∀ᵐ x ∂mu.restrict (ball x₀ ρ), ‖f x‖ ≤ B) :
-    ρ ^ (2 - (Fintype.card ι : ℝ) / r) * (eLpNorm f r (mu.restrict (ball x₀ ρ))).toReal ≤
-      mu.real (ball (0 : EuclideanSpace ℝ ι) 1) ^ (r : ℝ)⁻¹ * ρ ^ 2 * B := by
-  have hle := eLpNorm_le_of_ae_bound (p := (r : ℝ≥0∞)) hf hfB
-  rw [Measure.restrict_apply_univ, ENNReal.coe_toReal] at hle
-  have hnorm : (eLpNorm f r (mu.restrict (ball x₀ ρ))).toReal ≤
-      mu.real (ball x₀ ρ) ^ (r : ℝ)⁻¹ * B := by
-    refine (ENNReal.toReal_mono (by finiteness) hle).trans_eq ?_
-    rw [ENNReal.toReal_mul, ← ENNReal.toReal_rpow, ENNReal.toReal_ofReal hB]
-    rfl
-  -- `|B(x₀, ρ)|^(1/r) = ρ^(n/r) |B(0, 1)|^(1/r)` and `ρ^(2 - n/r) ρ^(n/r) = ρ²`.
-  have hpow : ρ ^ (2 - (Fintype.card ι : ℝ) / r) * ρ ^ ((Fintype.card ι : ℝ) * (r : ℝ)⁻¹) =
-      ρ ^ 2 := by
-    rw [← Real.rpow_add hρ, ← Real.rpow_natCast ρ 2]
-    congr 1
-    push_cast
-    ring
-  calc ρ ^ (2 - (Fintype.card ι : ℝ) / r) * (eLpNorm f r (mu.restrict (ball x₀ ρ))).toReal
-      ≤ ρ ^ (2 - (Fintype.card ι : ℝ) / r) * (mu.real (ball x₀ ρ) ^ (r : ℝ)⁻¹ * B) := by
-        gcongr
-    _ = _ := by
-        rw [Measure.addHaar_real_ball_rpow _ _ hρ, finrank_euclideanSpace, ← hpow]
-        ring
-
 /-- **Splitting off a mass term on a ball.** Let `n ≥ 1` be the dimension. There is `K > 0`,
 depending only on `n` and the normalization of `mu`, such that the following holds. Let `a` be
 measurable and uniformly elliptic on `Ω` with constants `λ, Λ`, let `c` be measurable with
@@ -148,8 +116,8 @@ the homogeneous equation `-∂ᵢ(aⁱʲ ∂ⱼh) = 0` with
 
 `|u - h| ≤ K ρ² γ M / λ` almost everywhere on `B`.
 
-The datum `-c u` is split off by `TauCeti.PDE.exists_forall_energyFormH1_eq_zero_ae_abs_sub_le`
-with the exponent `r = n + 1`; the Morrey gain is `2` because `-c u` is bounded. -/
+The datum `-c u`, bounded by `γ M` on `B`, is split off by
+`TauCeti.PDE.exists_forall_energyFormH1_eq_zero_ae_abs_sub_le_of_ae_norm_le`. -/
 theorem exists_forall_energyFormH1_eq_zero_ae_abs_sub_le_mass [Nonempty ι] :
     ∃ K : ℝ, 0 < K ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
       {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam : ℝ} {c : EuclideanSpace ℝ ι → ℝ}
@@ -166,49 +134,27 @@ theorem exists_forall_energyFormH1_eq_zero_ae_abs_sub_le_mass [Nonempty ι] :
           energyFormH1 a 0 0 h (v : W1p mu ⟨ball x₀ ρ, isOpen_ball⟩ 2) = 0) ∧
         ∀ᵐ x ∂mu.restrict (ball x₀ ρ), |W1p.value u x - W1p.value h x| ≤
           K * ρ ^ 2 * (gamma * M) / lam := by
-  set n : ℝ := (Fintype.card ι : ℝ)
-  have hn : (0 : ℝ) < n := Nat.cast_pos.2 Fintype.card_pos
-  set r : ℝ≥0 := (Fintype.card ι : ℝ≥0) + 1
-  have hr' : (r : ℝ) = n + 1 := by simp [r, n]
-  have hr : 1 < r := by
-    rw [← NNReal.coe_lt_coe, hr', NNReal.coe_one]
-    linarith only [hn]
-  have hrn : n < 2 * r := by rw [hr']; linarith only [hn]
-  obtain ⟨K₀, hK₀, hsplit⟩ := exists_forall_energyFormH1_eq_zero_ae_abs_sub_le (mu := mu) hr hrn
-  set ω := mu.real (ball (0 : EuclideanSpace ℝ ι) 1)
-  have hω : 0 < ω := measureReal_ball_pos _ _ one_pos
-  refine ⟨K₀ * ω ^ (r : ℝ)⁻¹, mul_pos hK₀ (Real.rpow_pos_of_pos hω _), ?_⟩
+  obtain ⟨K, hK, hsplit⟩ :=
+    exists_forall_energyFormH1_eq_zero_ae_abs_sub_le_of_ae_norm_le (mu := mu)
+  refine ⟨K, hK, ?_⟩
   intro Omega a lam Lam c gamma u x₀ ρ M h ha hc hc_bound hu hρ hball hM
-  have hlam : 0 < lam := h.pos
   have hgamma : 0 ≤ gamma := (norm_nonneg _).trans (hc_bound x₀ (hball (mem_ball_self hρ)))
-  have hM0 : 0 ≤ M := nonneg_of_ae_restrict_abs_le (measure_ball_pos mu x₀ hρ).ne' hM
   -- The mass term moves to the right-hand side `f = -c u`, with `|f| ≤ γ M` on the ball.
   have hcoeff := memLp_energyIntegrand_of_bounds (b := 0) (c := 0) (beta := 0) (gamma := 0)
     h.upper_nonneg ha aestronglyMeasurable_const aestronglyMeasurable_const
     (fun _x hx eta xi => h.upper_bound hx eta xi) (fun _ _ => by simp) (fun _ _ => by simp)
   have hcLp : MemLp c ⊤ (mu.restrict Omega) := memLp_top_of_bound hc gamma
     ((ae_restrict_mem Omega.isOpen.measurableSet).mono fun x hx => hc_bound x hx)
-  set f : EuclideanSpace ℝ ι → ℝ := fun x => -(c x * W1p.value u x)
-  have hfmeas : AEStronglyMeasurable f (mu.restrict (ball x₀ ρ)) :=
+  have hfmeas : AEStronglyMeasurable (fun x => -(c x * W1p.value u x))
+      (mu.restrict (ball x₀ ρ)) :=
     ((hc.mul (Lp.aestronglyMeasurable (W1p.value u))).neg).mono_measure
       (Measure.restrict_mono hball le_rfl)
-  have hfbound : ∀ᵐ x ∂mu.restrict (ball x₀ ρ), ‖f x‖ ≤ gamma * M := by
-    filter_upwards [hM, ae_restrict_mem measurableSet_ball] with x hx hxB
-    rw [Real.norm_eq_abs, abs_neg, abs_mul]
-    exact mul_le_mul ((Real.norm_eq_abs _).symm.trans_le (hc_bound x (hball hxB))) hx
-      (abs_nonneg _) hgamma
-  have : IsFiniteMeasure (mu.restrict (ball x₀ ρ)) :=
-    isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
-  obtain ⟨g, hg, hug⟩ := hsplit h ha (MemLp.of_bound hfmeas _ hfbound)
-    (energyFormH1_zero_zero_eq_setIntegral_neg_mul hcoeff hcLp hu) hρ hball
-  refine ⟨g, hg, hug.mono fun x hx => hx.trans ?_⟩
-  have hnorm := rpow_mul_toReal_eLpNorm_ball_le_of_ae_norm_le (r := r) hρ (by positivity)
-    hfmeas hfbound
-  calc K₀ * ρ ^ (2 - n / r) * (eLpNorm f r (mu.restrict (ball x₀ ρ))).toReal / lam
-      = K₀ * (ρ ^ (2 - n / r) * (eLpNorm f r (mu.restrict (ball x₀ ρ))).toReal) / lam := by
-        ring
-    _ ≤ K₀ * (ω ^ (r : ℝ)⁻¹ * ρ ^ 2 * (gamma * M)) / lam := by gcongr
-    _ = K₀ * ω ^ (r : ℝ)⁻¹ * ρ ^ 2 * (gamma * M) / lam := by ring
+  refine hsplit h ha hfmeas ?_ (energyFormH1_zero_zero_eq_setIntegral_neg_mul hcoeff hcLp hu) hρ
+    hball
+  filter_upwards [hM, ae_restrict_mem measurableSet_ball] with x hx hxB
+  rw [Real.norm_eq_abs, abs_neg, abs_mul]
+  exact mul_le_mul ((Real.norm_eq_abs _).symm.trans_le (hc_bound x (hball hxB))) hx
+    (abs_nonneg _) hgamma
 
 /-- **De Giorgi's theorem for bounded solutions with a mass term.** Let `n ≥ 1` be the dimension.
 There are `α ∈ (0, 1]` and `C > 0`, depending only on `λ`, `Λ`, the dimension and the
@@ -266,10 +212,7 @@ theorem exists_holderOnWith_preciseRepresentative_mass_of_ae_abs_le [Nonempty ι
     set P := gamma * R ^ 2 * M / lam
     have hQ : 0 ≤ Q := by positivity
     have hP : 0 ≤ P := by positivity
-    have hmax : Q + K₀ * P ≤ max 1 K₀ * (Q + P) := by
-      rw [mul_add]
-      exact add_le_add (le_mul_of_one_le_left hQ (le_max_left _ _))
-        (mul_le_mul_of_nonneg_right (le_max_right _ _) hP)
+    have hmax := add_mul_le_max_mul_add (K := K₀) hQ hP
     calc C * R ^ (-(α : ℝ)) * (Q + (R : ℝ) ^ (2 : ℝ) * (K₀ * (gamma * M) / lam)) =
           C * R ^ (-(α : ℝ)) * (Q + K₀ * P) := by
           rw [Real.rpow_two]

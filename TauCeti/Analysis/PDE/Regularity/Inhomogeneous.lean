@@ -85,6 +85,8 @@ All in the namespace `TauCeti.PDE`.
   `exists_forall_energyFormH1_eq_zero_ae_abs_sub_le_divergence`: on a ball, a weak solution with
   right-hand side `f` (or `∂ᵢFⁱ`) is a weak solution of the homogeneous equation up to an error
   bounded by `K ρ^(2 - n/r) ‖f‖_{Lʳ} / λ` (or `K ρ^(1 - n/q) ‖F‖_{L^q} / λ`).
+* `exists_forall_energyFormH1_eq_zero_ae_abs_sub_le_of_ae_norm_le`: the same for a right-hand
+  side bounded by `B` on the ball, with error `K ρ² B / λ`.
 * `exists_forall_energyFormH1_eq_zero_ae_abs_sub_le_add_divergence`: the same for the datum
   `f + ∂ᵢFⁱ`, with error `K (ρ^(2 - n/r) ‖f‖_{Lʳ} + ρ^(1 - n/q) ‖F‖_{L^q}) / λ`.
 * `exists_ae_abs_value_le_mul_add_of_memLp` and
@@ -133,7 +135,7 @@ namespace PDE
 /-! ### Comparison with a solution of the homogeneous equation -/
 
 /-- Absorbing the constant `K` of the datum: `Q + K P ≤ max 1 K (Q + P)` for `Q, P ≥ 0`. -/
-private theorem add_mul_le_max_mul_add {Q P K : ℝ} (hQ : 0 ≤ Q) (hP : 0 ≤ P) :
+theorem add_mul_le_max_mul_add {Q P K : ℝ} (hQ : 0 ≤ Q) (hP : 0 ≤ P) :
     Q + K * P ≤ max 1 K * (Q + P) := by
   nlinarith [le_max_left 1 K, le_max_right 1 K]
 
@@ -607,6 +609,90 @@ theorem exists_forall_energyFormH1_eq_zero_ae_abs_sub_le [Nonempty ι] {r : ℝ�
     (fun v => (energyFormH1_restrictL_eq_setIntegral hB hu v).trans (hw v).symm)
     (hstamp (Omega := B) (c := 0) (gamma := 0) hBfin hBell hBmeas aestronglyMeasurable_const
       (fun _ _ => by simp) (fun _ _ => le_rfl) hf hw)
+
+omit [DecidableEq ι] in
+/-- A function bounded by `B` on the ball `B(x₀, ρ)` has `Lʳ` norm there at most
+`|B(x₀, ρ)|^(1/r) B = ρ^(n/r) |B(0, 1)|^(1/r) B`, so the splitting error
+`ρ^(2 - n/r) ‖f‖_{Lʳ(B(x₀, ρ))}` is at most `|B(0, 1)|^(1/r) ρ² B`. -/
+private theorem rpow_mul_toReal_eLpNorm_ball_le_of_ae_norm_le {f : EuclideanSpace ℝ ι → ℝ}
+    {x₀ : EuclideanSpace ℝ ι} {ρ B : ℝ} {r : ℝ≥0} (hρ : 0 < ρ) (hB : 0 ≤ B)
+    (hf : AEStronglyMeasurable f (mu.restrict (ball x₀ ρ)))
+    (hfB : ∀ᵐ x ∂mu.restrict (ball x₀ ρ), ‖f x‖ ≤ B) :
+    ρ ^ (2 - (Fintype.card ι : ℝ) / r) * (eLpNorm f r (mu.restrict (ball x₀ ρ))).toReal ≤
+      mu.real (ball (0 : EuclideanSpace ℝ ι) 1) ^ (r : ℝ)⁻¹ * ρ ^ 2 * B := by
+  have hle := eLpNorm_le_of_ae_bound (p := (r : ℝ≥0∞)) hf hfB
+  rw [Measure.restrict_apply_univ, ENNReal.coe_toReal] at hle
+  have hnorm : (eLpNorm f r (mu.restrict (ball x₀ ρ))).toReal ≤
+      mu.real (ball x₀ ρ) ^ (r : ℝ)⁻¹ * B := by
+    refine (ENNReal.toReal_mono (by finiteness) hle).trans_eq ?_
+    rw [ENNReal.toReal_mul, ← ENNReal.toReal_rpow, ENNReal.toReal_ofReal hB, measureReal_def]
+  -- `|B(x₀, ρ)|^(1/r) = ρ^(n/r) |B(0, 1)|^(1/r)` and `ρ^(2 - n/r) ρ^(n/r) = ρ²`.
+  have hpow : ρ ^ (2 - (Fintype.card ι : ℝ) / r) * ρ ^ ((Fintype.card ι : ℝ) * (r : ℝ)⁻¹) =
+      ρ ^ 2 := by
+    rw [← Real.rpow_add hρ, ← Real.rpow_natCast ρ 2]
+    congr 1
+    push_cast
+    ring
+  calc ρ ^ (2 - (Fintype.card ι : ℝ) / r) * (eLpNorm f r (mu.restrict (ball x₀ ρ))).toReal
+      ≤ ρ ^ (2 - (Fintype.card ι : ℝ) / r) * (mu.real (ball x₀ ρ) ^ (r : ℝ)⁻¹ * B) := by
+        gcongr
+    _ = _ := by
+        rw [Measure.addHaar_real_ball_rpow _ _ hρ, finrank_euclideanSpace, ← hpow]
+        ring
+
+/-- **Splitting off a bounded right-hand side on a ball.** Let `n ≥ 1` be the dimension. There is
+`K > 0`, depending only on `n` and the normalization of `mu`, such that the following holds. Let
+`a` be measurable and uniformly elliptic on `Ω` with constants `λ, Λ`, and let `u ∈ H¹(Ω)` be a
+weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) = f`, that is `a(u, v) = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`, with
+`f` measurable and `|f| ≤ B` almost everywhere on `B(x₀, ρ) ⊆ Ω`. Then on `B(x₀, ρ)` there is a
+weak solution `h ∈ H¹(B(x₀, ρ))` of the homogeneous equation `-∂ᵢ(aⁱʲ ∂ⱼh) = 0` with
+
+`|u - h| ≤ K ρ² B / λ` almost everywhere on `B(x₀, ρ)`.
+
+This is `TauCeti.PDE.exists_forall_energyFormH1_eq_zero_ae_abs_sub_le` with the exponent
+`r = n + 1`: since `f` is bounded, the Morrey gain is `2` whatever `r` is. -/
+theorem exists_forall_energyFormH1_eq_zero_ae_abs_sub_le_of_ae_norm_le [Nonempty ι] :
+    ∃ K : ℝ, 0 < K ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
+      {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam : ℝ} {f : EuclideanSpace ℝ ι → ℝ}
+      {u : W1p mu Omega 2} {x₀ : EuclideanSpace ℝ ι} {ρ B : ℝ},
+      UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam →
+      AEStronglyMeasurable a (mu.restrict Omega) →
+      AEStronglyMeasurable f (mu.restrict (ball x₀ ρ)) →
+      (∀ᵐ x ∂mu.restrict (ball x₀ ρ), ‖f x‖ ≤ B) →
+      (∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 u (v : W1p mu Omega 2) =
+        ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu) →
+      0 < ρ → ball x₀ ρ ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
+      ∃ h : W1p mu ⟨ball x₀ ρ, isOpen_ball⟩ 2,
+        (∀ v : W1p0 mu ⟨ball x₀ ρ, isOpen_ball⟩ 2,
+          energyFormH1 a 0 0 h (v : W1p mu ⟨ball x₀ ρ, isOpen_ball⟩ 2) = 0) ∧
+        ∀ᵐ x ∂mu.restrict (ball x₀ ρ), |W1p.value u x - W1p.value h x| ≤
+          K * ρ ^ 2 * B / lam := by
+  set n : ℝ := (Fintype.card ι : ℝ)
+  have hn : (0 : ℝ) < n := Nat.cast_pos.2 Fintype.card_pos
+  set r : ℝ≥0 := (Fintype.card ι : ℝ≥0) + 1
+  have hr' : (r : ℝ) = n + 1 := by simp [r, n]
+  have hr : 1 < r := by
+    rw [← NNReal.coe_lt_coe, hr', NNReal.coe_one]
+    linarith only [hn]
+  have hrn : n < 2 * r := by rw [hr']; linarith only [hn]
+  obtain ⟨K₀, hK₀, hsplit⟩ := exists_forall_energyFormH1_eq_zero_ae_abs_sub_le (mu := mu) hr hrn
+  set ω := mu.real (ball (0 : EuclideanSpace ℝ ι) 1)
+  have hω : 0 < ω := measureReal_ball_pos _ _ one_pos
+  refine ⟨K₀ * ω ^ (r : ℝ)⁻¹, mul_pos hK₀ (Real.rpow_pos_of_pos hω _), ?_⟩
+  intro Omega a lam Lam f u x₀ ρ B h ha hf hfB hu hρ hball
+  have hlam : 0 < lam := h.pos
+  have hB : 0 ≤ B := nonneg_of_ae_restrict_abs_le (measure_ball_pos mu x₀ hρ).ne'
+    (hfB.mono fun x hx => (Real.norm_eq_abs _).symm.trans_le hx)
+  have : IsFiniteMeasure (mu.restrict (ball x₀ ρ)) :=
+    isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
+  obtain ⟨g, hg, hug⟩ := hsplit h ha (MemLp.of_bound hf _ hfB) hu hρ hball
+  refine ⟨g, hg, hug.mono fun x hx => hx.trans ?_⟩
+  have hnorm := rpow_mul_toReal_eLpNorm_ball_le_of_ae_norm_le (r := r) hρ hB hf hfB
+  calc K₀ * ρ ^ (2 - n / r) * (eLpNorm f r (mu.restrict (ball x₀ ρ))).toReal / lam
+      = K₀ * (ρ ^ (2 - n / r) * (eLpNorm f r (mu.restrict (ball x₀ ρ))).toReal) / lam := by
+        ring
+    _ ≤ K₀ * (ω ^ (r : ℝ)⁻¹ * ρ ^ 2 * B) / lam := by gcongr
+    _ = K₀ * ω ^ (r : ℝ)⁻¹ * ρ ^ 2 * B / lam := by ring
 
 /-- **Local boundedness of weak solutions with a right-hand side.** Let `n ≥ 1` be the dimension
 and let `r > 1` with `r > n/2`. There is `D > 0`, depending only on `λ`, `Λ`, `n`, `r` and the
