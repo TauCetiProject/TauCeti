@@ -190,36 +190,6 @@ private theorem exists_eq_comp_time {a b : ℝ} (hab : a < b) {g g' : ℝ → �
       (by rw [hut, time_slabMk])), fun p ↦ by simp [u], spatialFDerivL_mk ..,
     fun p ↦ by rw [timeDerivL_mk, hut]⟩
 
-open Real in
-/-- The rescaled smooth step `t ↦ ψ (t / s - 1)`, `ψ = Real.smoothTransition`, and its derivative
-`t ↦ s⁻¹ ψ' (t / s - 1)` have derivatives on the line, with `|s⁻¹ ψ'| ≤ L₁ / s` and second
-derivative at most `L₂ / s²`, for constants `L₁`, `L₂` independent of `s`. -/
-private theorem exists_smoothTransition_rescale_bounds : ∃ L₁ L₂ : ℝ, 0 ≤ L₁ ∧ 0 ≤ L₂ ∧
-    ∀ {s : ℝ}, 0 < s →
-      (∀ t, HasDerivAt (fun t ↦ smoothTransition (t / s - 1))
-        (s⁻¹ * deriv smoothTransition (t / s - 1)) t) ∧
-      (∀ t, HasDerivAt (fun t ↦ s⁻¹ * deriv smoothTransition (t / s - 1))
-        (s⁻¹ * (deriv (deriv smoothTransition) (t / s - 1) * s⁻¹)) t) ∧
-      (∀ t, |s⁻¹ * deriv smoothTransition (t / s - 1)| ≤ L₁ / s) ∧
-      ∀ t, |s⁻¹ * (deriv (deriv smoothTransition) (t / s - 1) * s⁻¹)| ≤ L₂ / s / s := by
-  obtain ⟨L₁, hL₁⟩ := smoothTransition.exists_forall_norm_deriv_le
-  obtain ⟨L₂, hL₂⟩ := smoothTransition.exists_forall_norm_deriv_deriv_le
-  have hd : Differentiable ℝ (deriv smoothTransition) :=
-    (contDiff_infty_iff_deriv.1 smoothTransition.contDiff).2.differentiable (by simp)
-  refine ⟨L₁, L₂, (norm_nonneg _).trans (hL₁ 0), (norm_nonneg _).trans (hL₂ 0),
-    fun {s} hs ↦ ?_⟩
-  have hlin (t : ℝ) : HasDerivAt (fun t ↦ t / s - 1) s⁻¹ t := by
-    simpa [div_eq_mul_inv, mul_comm] using ((hasDerivAt_id t).div_const s).sub_const 1
-  refine ⟨fun t ↦ by simpa [mul_comm] using (hlin t).smoothTransition,
-    fun t ↦ ((hd _).hasDerivAt.comp t (hlin t)).const_mul s⁻¹, fun t ↦ ?_, fun t ↦ ?_⟩
-  · rw [abs_mul, abs_inv, abs_of_pos hs, inv_mul_eq_div]
-    exact div_le_div_of_nonneg_right (hL₁ _) hs.le
-  · have h := hL₂ (t / s - 1)
-    rw [Real.norm_eq_abs] at h
-    rw [abs_mul, abs_mul, abs_inv, abs_of_pos hs,
-      show ∀ y : ℝ, s⁻¹ * (y * s⁻¹) = y / s / s from fun y ↦ by field_simp]
-    gcongr
-
 /-- **Time cutoffs.** For `α ≤ 2` there is a constant `C` such that on every slab `E × [a, b]` and
 for every `s > 0` there is a map `χ` of the time alone, in the order-two parabolic Hölder space,
 vanishing up to time `s`, equal to one from time `2 s` on, with values in `[0, 1]`, with
@@ -238,18 +208,23 @@ theorem exists_timeCutoff (hα : α ≤ 2) :
         (nnHolderNorm α (timeDerivL χ : slab (E := E) a b → ℝ) : ℝ) ≤
           C * s ^ (-(1 + (α : ℝ) / 2)) := by
   open Real in
-  obtain ⟨L₁, L₂, hL₁₀, hL₂₀, hL⟩ := exists_smoothTransition_rescale_bounds
-  refine ⟨2 * L₁ + L₂ + 2, by positivity, fun {a b} hab {s} hs ↦ ?_⟩
+  obtain ⟨L, hL₀, hL⟩ := smoothTransition.exists_forall_abs_inv_mul_deriv_le
+  refine ⟨3 * L + 2, by positivity, fun {a b} hab {s} hs ↦ ?_⟩
   -- The cutoff is `t ↦ ψ (t / s - 1)`, with derivative `t ↦ s⁻¹ ψ' (t / s - 1)`.
   set g₀ : ℝ → ℝ := fun t ↦ smoothTransition (t / s - 1)
   set g₁ : ℝ → ℝ := fun t ↦ s⁻¹ * deriv smoothTransition (t / s - 1)
-  obtain ⟨hg₀, hg₁, hb₁, hb₂⟩ := hL hs
+  have hlin (t : ℝ) : HasDerivAt (fun t ↦ t / s - 1) s⁻¹ t := by
+    simpa [div_eq_mul_inv, mul_comm] using ((hasDerivAt_id t).div_const s).sub_const 1
+  have hg₀ (t : ℝ) := (hlin t).smoothTransition.congr_deriv (mul_comm _ s⁻¹)
+  have hg₁ (t : ℝ) := (hlin t).deriv_smoothTransition.const_mul s⁻¹
+  have hb₁ (t : ℝ) := (hL hs (t / s - 1)).1
+  have hb₂ (t : ℝ) := (hL hs (t / s - 1)).2
   have hb₀ (t : ℝ) : |g₀ t| ≤ 1 := smoothTransition.abs_le_one _
   -- The Hölder bounds of the value and of the time derivative at the time scale `s`.
   obtain ⟨-, hH₀⟩ := memHolder_comp_time_of_le (E := E) (a := a) (b := b) hs zero_le_one
-    hL₁₀ hα hg₀ hb₀ hb₁
+    hL₀ hα hg₀ hb₀ hb₁
   obtain ⟨hm₁, hH₁⟩ := memHolder_comp_time_of_le (E := E) (a := a) (b := b) hs
-    (by positivity : 0 ≤ L₁ / s) (by positivity : 0 ≤ L₂ / s) hα hg₁ hb₁ hb₂
+    (by positivity : 0 ≤ L / s) (by positivity : 0 ≤ L / s) hα hg₁ hb₁ hb₂
   obtain ⟨χ, hχ, hD, hχt⟩ := exists_eq_comp_time (E := E) hab hg₀ hb₀
     (continuous_iff_continuousAt.2 fun t ↦ (hg₁ t).continuousAt) hb₁ hm₁
   refine ⟨χ, fun p hp ↦ ?_, fun p hp ↦ ?_, fun p ↦ ?_, hD, ?_, fun p hp ↦ ?_, fun p ↦ ?_, ?_⟩
@@ -271,7 +246,7 @@ theorem exists_timeCutoff (hα : α ≤ 2) :
     rw [h]
     refine hH₁.trans ?_
     rw [show -(1 + (α : ℝ) / 2) = -1 + -((α : ℝ) / 2) by ring, Real.rpow_add hs, Real.rpow_neg_one,
-      ← mul_assoc, show L₂ / s + 2 * (L₁ / s) = (2 * L₁ + L₂) * s⁻¹ by ring]
+      ← mul_assoc, show L / s + 2 * (L / s) = 3 * L * s⁻¹ by ring]
     exact mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right (by linarith) (by positivity))
       (by positivity)
 

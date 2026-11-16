@@ -25,10 +25,11 @@ coefficients and a bound on the horizon, such that for every `0 < δ < T`
 `δ^(1 + α/2) ‖u‖_{2+α,par;[δ,T]} ≤ C (‖P u‖_{α,par} + ‖u(·, 0)‖_∞)`,
 
 where `‖u‖_{2+α,par;[δ,T]}` is the order-two norm of the restriction of `u` to `ℝⁿ × [δ, T]`
-(`TauCeti.ParabolicC2HolderSpace.exists_rpow_mul_norm_restrictL_le`). The weight `δ^(1 + α/2)` is
-the parabolic scaling of the top-order Hölder seminorms. This is the a priori estimate for
-solutions whose initial values are only bounded and uniformly continuous: it holds uniformly for
-smooth approximations of such data and passes to the limit at positive times.
+(`TauCeti.ParabolicC2HolderSpace.exists_rpow_mul_norm_restrictL_le_euclideanParabolicOperatorL`).
+The weight `δ^(1 + α/2)` is the parabolic scaling of the top-order Hölder seminorms. The constant
+is uniform in `u` and only the supremum of the initial values enters, as needed to pass to limits
+of smooth approximations of bounded uniformly continuous initial data at positive times (not
+proved here).
 
 ## The argument
 
@@ -51,10 +52,10 @@ by `‖u(·, 0)‖_∞` and `‖P u‖_∞`.
 
 All declarations are in the `TauCeti.ParabolicC2HolderSpace` namespace.
 
-* `exists_rpow_mul_norm_restrictL_le_add_norm_valueL`: the weighted estimate with `‖u‖_∞` on the
-  right.
-* `exists_rpow_mul_norm_restrictL_le`: the weighted estimate with the supremum of the initial
-  values on the right.
+* `exists_rpow_mul_norm_restrictL_le_euclideanParabolicOperatorL_add_norm_valueL`: the weighted
+  estimate with `‖u‖_∞` on the right.
+* `exists_rpow_mul_norm_restrictL_le_euclideanParabolicOperatorL`: the weighted estimate with the
+  supremum of the initial values on the right.
 
 ## References
 
@@ -363,8 +364,8 @@ horizon, there is a constant `C` such that on `ℝⁿ × [0, T]`, `T ≤ T₀`, 
 where `‖u‖_{2+α,par;[δ,T]}` is the norm of the restriction of `u` to `ℝⁿ × [δ, T]` and
 `P u = ∂ₜu - aⁱʲ ∂ᵢ∂ⱼu - bⁱ ∂ᵢu - c u`. Unlike the global Schauder estimate, the right side
 does not involve the `C^{2,α}` norm of the initial values. -/
-theorem exists_rpow_mul_norm_restrictL_le_add_norm_valueL (hα₀ : 0 < α) (hα₁ : α < 1)
-    (hlam : 0 < lam) (K T₀ : ℝ≥0) :
+theorem exists_rpow_mul_norm_restrictL_le_euclideanParabolicOperatorL_add_norm_valueL (hα₀ : 0 < α)
+    (hα₁ : α < 1) (hlam : 0 < lam) (K T₀ : ℝ≥0) :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ (T : ℝ≥0) (hT : (0 : ℝ) < T), T ≤ T₀ →
       ∀ (a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
         (b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
@@ -413,8 +414,8 @@ bound `T₀` on the horizon, there is a constant `C` such that on `ℝⁿ × [0,
 
 where `P u = ∂ₜu - aⁱʲ ∂ᵢ∂ⱼu - bⁱ ∂ᵢu - c u`. Only the supremum of the initial values enters,
 not their `C^{2,α}` norm. -/
-theorem exists_rpow_mul_norm_restrictL_le (hα₀ : 0 < α) (hα₁ : α < 1) (hlam : 0 < lam)
-    (K T₀ : ℝ≥0) :
+theorem exists_rpow_mul_norm_restrictL_le_euclideanParabolicOperatorL (hα₀ : 0 < α) (hα₁ : α < 1)
+    (hlam : 0 < lam) (K T₀ : ℝ≥0) :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ (T : ℝ≥0) (hT : (0 : ℝ) < T), T ≤ T₀ →
       ∀ (a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
         (b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
@@ -428,7 +429,8 @@ theorem exists_rpow_mul_norm_restrictL_le (hα₀ : 0 < α) (hα₁ : α < 1) (h
           (∀ x, |u (slabMk x ⟨0, left_mem_Icc.2 hT.le⟩)| ≤ M) → ∀ {δ : ℝ} (hδ : 0 < δ)
           (hδT : δ < T), δ ^ (1 + (α : ℝ) / 2) * ‖restrictL hδ.le le_rfl hδT u‖ ≤
             C * (‖euclideanParabolicOperatorL hα₁.le a b c u‖ + M) := by
-  obtain ⟨C₁, hC₁, hest⟩ := exists_rpow_mul_norm_restrictL_le_add_norm_valueL (ι := ι)
+  obtain ⟨C₁, hC₁, hest⟩ :=
+    exists_rpow_mul_norm_restrictL_le_euclideanParabolicOperatorL_add_norm_valueL (ι := ι)
     hα₀ hα₁ (Lam := Lam) hlam K T₀
   obtain ⟨E₀, hE₀, hE⟩ : ∃ E₀ : ℝ, 0 ≤ E₀ ∧ E₀ = Real.exp (K * T₀) * (1 + T₀) :=
     ⟨_, by positivity, rfl⟩
@@ -436,28 +438,10 @@ theorem exists_rpow_mul_norm_restrictL_le (hα₀ : 0 < α) (hα₁ : α < 1) (h
     fun T hT hTT₀ a b c ha ha' hak hbk hck u M hM δ hδ hδT ↦ ?_⟩
   set P := ‖euclideanParabolicOperatorL hα₁.le a b c u‖
   have hM₀ : 0 ≤ M := (abs_nonneg _).trans (hM 0)
-  have hP₀ : 0 ≤ P := norm_nonneg _
   -- The comparison principle bounds the supremum of `u` by its initial values and `P u`.
-  have hV : ‖valueL u‖ ≤ E₀ * (P + M) := by
-    refine (BoundedContinuousFunction.norm_le (by positivity)).2 fun p ↦ ?_
-    have hmax := abs_le_exp_mul_mul_add_mul_of_abs_euclideanParabolicOperatorL_le hα₁.le
-      (b := b) (fun q ξ ↦ (mul_nonneg hlam.le (sq_nonneg ‖ξ‖)).trans (ha q ξ))
-      (fun q ↦ (le_abs_self _).trans ((HolderSpace.norm_apply_le c q).trans hck))
-      K.coe_nonneg u (fun q ↦ by
-        simpa only [Real.norm_eq_abs] using HolderSpace.norm_apply_le
-          (euclideanParabolicOperatorL hα₁.le a b c u) q) hM p
-    obtain ⟨ht₀, htT⟩ := (slabTime p).2
-    have htT₀ : (slabTime p : ℝ) ≤ T₀ := htT.trans (by exact_mod_cast hTT₀)
-    rw [valueL_apply, Real.norm_eq_abs, hE]
-    refine hmax.trans ?_
-    rw [sub_zero]
-    calc _ ≤ Real.exp (K * T₀) * (M + (slabTime p : ℝ) * P) :=
-          mul_le_mul_of_nonneg_right (Real.exp_le_exp.2
-            (mul_le_mul_of_nonneg_left htT₀ K.coe_nonneg)) (by positivity)
-      _ ≤ Real.exp (K * T₀) * ((1 + T₀) * (P + M)) := by
-          gcongr
-          nlinarith [mul_le_mul_of_nonneg_right htT₀ hP₀, T₀.coe_nonneg]
-      _ = _ := by ring
+  have hV : ‖valueL u‖ ≤ E₀ * (P + M) := hE ▸
+    norm_valueL_le_euclideanParabolicOperatorL_add_of_abs_le hα₁.le hTT₀ (b := b)
+      (fun q ξ ↦ (mul_nonneg hlam.le (sq_nonneg ‖ξ‖)).trans (ha q ξ)) hck u hM
   have h := hest T hT hTT₀ a b c ha ha' hak hbk hck u hδ hδT
   -- Name the restriction, so that unification does not unfold the order-two norm.
   obtain ⟨r, hr⟩ : ∃ r, restrictL hδ.le le_rfl hδT u = r := ⟨_, rfl⟩

@@ -472,9 +472,8 @@ the parabolic Hölder norm of the value of an order-two map satisfies
 
 `‖u‖_{α,par} ≤ 2 τ ‖u‖ + (1 + 40 τ^(-α/2)) ‖u‖_∞`.
 
-Both terms on the right scale like `τ^(-α/2)` under the parabolic dilation sending the time
-step `τ` to `1`, so this form keeps track of the scale, unlike
-`norm_valueHolderL_add_norm_spatialFDerivHolderL_le`. -/
+Both coefficients are explicit in the time step `τ`, so this form keeps track of the scale,
+unlike `norm_valueHolderL_add_norm_spatialFDerivHolderL_le`. -/
 theorem norm_valueHolderL_le (hα : α ≤ 1) (f : ParabolicC2HolderSpace α E F hab) {τ : ℝ}
     (hτ : 0 < τ) (hτab : 2 * τ ≤ b - a) :
     ‖valueHolderL hα f‖ ≤ 2 * τ * ‖f‖ + (1 + 40 * τ ^ (-((α : ℝ) / 2))) * ‖valueL f‖ := by
