@@ -85,6 +85,8 @@ multiplicity the sum omits is zero.
   labelled by a dominant integral `λ` are counted by the multiplicity of `L(λ)`.**
 * `TauCeti.nonempty_lieModuleEquiv_directSum_irreducibleQuotient`: **the packaged isotypic
   decomposition** `M ≃ ⨁_λ L(λ)^{m λ}`.
+* `TauCeti.nonempty_lieModuleEquiv_iff_isotypicMultiplicity`: **a finite-dimensional module is
+  determined by its multiplicities.**
 * `TauCeti.iSup_isotypicComponent_irreducibleQuotient_eq_top`: a finite-dimensional module is the
   sum of its `L(λ)`-isotypic components over the dominant integral weights `λ`.
 * `TauCeti.isotypicMultiplicity_irreducibleQuotient_eq_zero_of_not_isDominantIntegral`: `L(λ)` of
@@ -188,6 +190,30 @@ theorem nonempty_lieModuleEquiv_directSum_irreducibleQuotient [FiniteDimensional
       ↔ c i = (s : Dual K H) := fun _ ↦ Subtype.ext_iff
   rw [Nat.card_congr (Equiv.subtypeEquivRight hiff)]
   exact natCard_eq_isotypicMultiplicity_irreducibleQuotient b N hint hirr c hcequiv s.2
+
+/-- **A finite-dimensional module is determined by its multiplicities.** Two finite-dimensional
+modules over a Killing-semisimple Lie algebra in characteristic zero over an algebraically closed
+field are equivalent exactly when every `L(lam)`, `lam` dominant integral, occurs in them equally
+often. -/
+theorem nonempty_lieModuleEquiv_iff_isotypicMultiplicity {N : Type w₁} [AddCommGroup N]
+    [Module K N] [LieRingModule L N] [LieModule K L N] [FiniteDimensional K M]
+    [FiniteDimensional K N] :
+    Nonempty (M ≃ₗ⁅K,L⁆ N) ↔ ∀ lam : Dual K H, IsDominantIntegral b lam →
+      LieModule.isotypicMultiplicity K L M (irreducibleQuotient b lam) =
+        LieModule.isotypicMultiplicity K L N (irreducibleQuotient b lam) := by
+  refine ⟨fun ⟨e⟩ _ _ ↦ LieModule.isotypicMultiplicity_eq_of_lieModuleEquiv e, fun h ↦ ?_⟩
+  -- The two packaged decompositions are indexed by the same multiplicities.
+  have key : ∀ m m' : {l : Dual K H // IsDominantIntegral b l} → ℕ, m = m' →
+      Nonempty ((⨁ q : (Σ lam : {l : Dual K H // IsDominantIntegral b l}, Fin (m lam)),
+        irreducibleQuotient b q.1.1) ≃ₗ⁅K,L⁆
+        ⨁ q : (Σ lam : {l : Dual K H // IsDominantIntegral b l}, Fin (m' lam)),
+          irreducibleQuotient b q.1.1) := by
+    rintro m _ rfl
+    exact ⟨LieModuleEquiv.refl⟩
+  obtain ⟨e⟩ := nonempty_lieModuleEquiv_directSum_irreducibleQuotient (M := M) b
+  obtain ⟨e'⟩ := nonempty_lieModuleEquiv_directSum_irreducibleQuotient (M := N) b
+  obtain ⟨f⟩ := key _ _ (funext fun lam ↦ h lam.1 lam.2)
+  exact ⟨(e.trans f).trans e'.symm⟩
 
 variable (M) in
 /-- **A finite-dimensional module is the sum of its `L(lam)`-isotypic components**, `lam` running

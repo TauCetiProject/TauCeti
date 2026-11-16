@@ -65,9 +65,10 @@ writing `m_V(lam)` for the multiplicity of `L(lam)` in `V`,
 
 `m_{V*}(lam) = m_V(-(w₀ • lam))`.
 
-Over an algebraically closed field a finite-dimensional module is determined by its
-multiplicities, through the packaged decomposition `V ≃ ⨁ L(lam)^{m_V(lam)}`, so `V ≃ V*` exactly
-when `m_V(lam) = m_V(-(w₀ • lam))` for every dominant integral `lam`.
+Both sides vanish when `lam` is not dominant integral. Over an algebraically closed field a
+finite-dimensional module is determined by its multiplicities
+(`TauCeti.nonempty_lieModuleEquiv_iff_isotypicMultiplicity`), so `V ≃ V*` exactly when
+`m_V(lam) = m_V(-(w₀ • lam))` for every dominant integral `lam`.
 
 ## Main results
 
@@ -79,11 +80,13 @@ when `m_V(lam) = m_V(-(w₀ • lam))` for every dominant integral `lam`.
 * `TauCeti.exists_ne_zero_lieInvariant_irreducibleQuotient_iff`: the same criterion at the named
   carrier `L(lam)`.
 * `TauCeti.nonempty_lieModuleEquiv_dual_irreducibleQuotient`: **the dual of `L(lam)` is
-  `L(-(w₀ • lam))`.**
+  `L(-(w₀ • lam))`**, for dominant integral `lam`.
 * `TauCeti.isotypicMultiplicity_dual_irreducibleQuotient`: **the multiplicity of `L(lam)` in `V*`
-  is the multiplicity of `L(-(w₀ • lam))` in `V`.**
-* `TauCeti.nonempty_lieModuleEquiv_dual_iff_isotypicMultiplicity`: **a finite-dimensional module
-  is self-dual exactly when `L(lam)` and `L(-(w₀ • lam))` occur in it equally often.**
+  is the multiplicity of `L(-(w₀ • lam))` in `V`**, for every finite-dimensional `V` and every
+  `lam`.
+* `TauCeti.nonempty_lieModuleEquiv_dual_iff_isotypicMultiplicity`: **over an algebraically closed
+  field, a finite-dimensional module is self-dual exactly when, for every dominant integral `lam`,
+  `L(lam)` and `L(-(w₀ • lam))` occur in it equally often.**
 
 ## References
 
@@ -96,8 +99,6 @@ public section
 namespace TauCeti
 
 open LieAlgebra Module _root_.LieModule
-
-open scoped DirectSum
 
 universe u v w
 
@@ -207,9 +208,7 @@ theorem exists_ne_zero_lieInvariant_irreducibleQuotient_iff (hlam : IsDominantIn
 /-! ### The dual of `L(lam)` -/
 
 variable (b) in
-/-- **The dual of `L(lam)` is `L(-(w₀ • lam))`**, for dominant integral `lam`. The dual is
-irreducible and has a highest weight vector of weight `-(w₀ • lam)`, and irreducible highest
-weight modules are classified by their weight. -/
+/-- **The dual of `L(lam)` is `L(-(w₀ • lam))`**, for dominant integral `lam`. -/
 theorem nonempty_lieModuleEquiv_dual_irreducibleQuotient (hlam : IsDominantIntegral b lam) :
     Nonempty (Dual K (irreducibleQuotient b lam) ≃ₗ⁅K,L⁆
       irreducibleQuotient b (-(longestElement (IsKilling.rootSystem H) b • lam))) := by
@@ -230,21 +229,29 @@ variable {V : Type w} [AddCommGroup V] [Module K V] [LieRingModule L V] [LieModu
 
 section Multiplicity
 
-variable [IsTriangularizable K H L] {b : (IsKilling.rootSystem H).Base} {lam : Dual K H}
+variable [IsTriangularizable K H L] {b : (IsKilling.rootSystem H).Base}
 
 variable (b) in
 /-- **The multiplicity of `L(lam)` in the dual `V*` is the multiplicity of `L(-(w₀ • lam))` in
-`V`**, for every finite-dimensional module `V` and dominant integral `lam`. Writing
-`mu = -(w₀ • lam)`, the module `L(lam)` is the dual of `L(mu)`, and the dual of an irreducible
-occurs in `V*` as often as the irreducible occurs in `V`, by complete reducibility. -/
-theorem isotypicMultiplicity_dual_irreducibleQuotient (hlam : IsDominantIntegral b lam) :
+`V`**, for every finite-dimensional module `V` and every weight `lam`. -/
+theorem isotypicMultiplicity_dual_irreducibleQuotient (lam : Dual K H) :
     LieModule.isotypicMultiplicity K L (Dual K V) (irreducibleQuotient b lam) =
       LieModule.isotypicMultiplicity K L V
         (irreducibleQuotient b (-(longestElement (IsKilling.rootSystem H) b • lam))) := by
   set mu := -(longestElement (IsKilling.rootSystem H) b • lam)
-  have hmu : IsDominantIntegral b mu := hlam.neg_longestElement_smul
   have hmu' : -(longestElement (IsKilling.rootSystem H) b • mu) = lam := by
     rw [smul_neg, smul_smul_longestElement, neg_neg]
+  by_cases hlam : IsDominantIntegral b lam
+  swap
+  · -- Neither `L(lam)` nor `L(mu)` is finite-dimensional, so neither occurs.
+    have hmu : ¬ IsDominantIntegral b mu := fun hmu ↦ hlam (hmu' ▸ hmu.neg_longestElement_smul)
+    have hfin : ∀ nu : Dual K H, ¬ IsDominantIntegral b nu →
+        ¬ Module.Finite K (irreducibleQuotient b nu) := fun nu hnu hfin ↦
+      hnu ((finiteDimensional_iff_isDominantIntegral_of_isHighestWeightVector
+        (isHighestWeightVector_irreducibleQuotientGenerator b nu)).mp hfin)
+    rw [LieModule.isotypicMultiplicity_eq_zero_of_not_finite _ _ _ _ (hfin lam hlam),
+      LieModule.isotypicMultiplicity_eq_zero_of_not_finite _ _ _ _ (hfin mu hmu)]
+  have hmu : IsDominantIntegral b mu := hlam.neg_longestElement_smul
   have _i := finiteDimensional_irreducibleQuotient_of_isDominantIntegral hmu
   have _j := complementedLattice_lieSubmodule_of_isKilling K L V
   obtain ⟨e⟩ := nonempty_lieModuleEquiv_dual_irreducibleQuotient b hmu
@@ -259,35 +266,17 @@ section SelfDual
 variable [IsAlgClosed K] {b : (IsKilling.rootSystem H).Base}
 
 variable (b) in
-/-- **The self-duality criterion for an arbitrary finite-dimensional module.** A
-finite-dimensional module `V` is equivalent to its dual exactly when, for every dominant integral
-`lam`, the modules `L(lam)` and `L(-(w₀ • lam))` occur in `V` equally often.
-
-Both directions read the multiplicities of `V*` off those of `V`
-(`TauCeti.isotypicMultiplicity_dual_irreducibleQuotient`); the reverse direction then compares
-the packaged decompositions `V ≃ ⨁ L(lam)^{m lam}` of `V` and of `V*`
-(`TauCeti.nonempty_lieModuleEquiv_directSum_irreducibleQuotient`). -/
+/-- **The self-duality criterion for an arbitrary finite-dimensional module.** Over an
+algebraically closed field, a finite-dimensional module `V` is equivalent to its dual exactly when,
+for every dominant integral `lam`, the modules `L(lam)` and `L(-(w₀ • lam))` occur in `V` equally
+often. -/
 theorem nonempty_lieModuleEquiv_dual_iff_isotypicMultiplicity :
     Nonempty (V ≃ₗ⁅K,L⁆ Dual K V) ↔ ∀ lam : Dual K H, IsDominantIntegral b lam →
       LieModule.isotypicMultiplicity K L V (irreducibleQuotient b lam) =
         LieModule.isotypicMultiplicity K L V
           (irreducibleQuotient b (-(longestElement (IsKilling.rootSystem H) b • lam))) := by
-  refine ⟨fun ⟨e⟩ lam hlam ↦ ?_, fun h ↦ ?_⟩
-  · rw [← isotypicMultiplicity_dual_irreducibleQuotient b hlam,
-      LieModule.isotypicMultiplicity_eq_of_lieModuleEquiv e]
-  · -- The two packaged decompositions are indexed by the same multiplicities.
-    have key : ∀ m m' : {l : Dual K H // IsDominantIntegral b l} → ℕ, m = m' →
-        Nonempty ((⨁ q : (Σ lam : {l : Dual K H // IsDominantIntegral b l}, Fin (m lam)),
-          irreducibleQuotient b q.1.1) ≃ₗ⁅K,L⁆
-          ⨁ q : (Σ lam : {l : Dual K H // IsDominantIntegral b l}, Fin (m' lam)),
-            irreducibleQuotient b q.1.1) := by
-      rintro m _ rfl
-      exact ⟨LieModuleEquiv.refl⟩
-    obtain ⟨e⟩ := nonempty_lieModuleEquiv_directSum_irreducibleQuotient (M := V) b
-    obtain ⟨e'⟩ := nonempty_lieModuleEquiv_directSum_irreducibleQuotient (M := Dual K V) b
-    obtain ⟨f⟩ := key _ _ (funext fun lam ↦
-      ((h lam.1 lam.2).trans (isotypicMultiplicity_dual_irreducibleQuotient b lam.2).symm))
-    exact ⟨(e.trans f).trans e'.symm⟩
+  rw [nonempty_lieModuleEquiv_iff_isotypicMultiplicity b]
+  simp_rw [isotypicMultiplicity_dual_irreducibleQuotient b]
 
 end SelfDual
 

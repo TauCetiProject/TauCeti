@@ -12,9 +12,9 @@ public import Mathlib.LinearAlgebra.Dual.Defs
 # The transpose of a morphism of Lie modules and the double dual
 
 The dual `M* = Module.Dual R M` of a Lie module carries the contragredient action
-`⁅x, φ⁆ m = - φ ⁅x, m⁆` (Mathlib's `Module.Dual.instLieRingModule`). This file shows that the two
-linear-algebra constructions which make `Module.Dual` a contravariant functor are compatible with
-it:
+`⁅x, φ⁆ m = - φ ⁅x, m⁆` (Mathlib's `Module.Dual.instLieRingModule`). This file lifts two
+linear-algebra constructions to morphisms of Lie modules: transposition, which makes `Module.Dual`
+a contravariant functor, and evaluation into the double dual:
 
 * the transpose `f.dualMap : N* → M*` of a morphism of Lie modules `f : M → N` is again a morphism
   of Lie modules;
@@ -53,8 +53,9 @@ variable [AddCommGroup M] [Module R M] [LieRingModule L M] [LieModule R L M]
 variable [AddCommGroup N] [Module R N] [LieRingModule L N] [LieModule R L N]
 variable [AddCommGroup P] [Module R P] [LieRingModule L P] [LieModule R L P]
 
-/-- **The transpose of a morphism of Lie modules.** For `f : M → N` commuting with the action of
-`L`, the transpose `φ ↦ φ ∘ f` commutes with the contragredient actions on the duals. -/
+/-- **The transpose of a morphism of Lie modules.** For a morphism `f : M → N`, this is the
+morphism `φ ↦ φ ∘ f` between the duals with their contragredient actions, lifting
+`LinearMap.dualMap`. -/
 def dualMap (f : M →ₗ⁅R,L⁆ N) : Dual R N →ₗ⁅R,L⁆ Dual R M where
   __ := f.toLinearMap.dualMap
   map_lie' {x φ} := by
@@ -78,6 +79,31 @@ theorem dualMap_comp (g : N →ₗ⁅R,L⁆ P) (f : M →ₗ⁅R,L⁆ N) :
     (g.comp f).dualMap = f.dualMap.comp g.dualMap :=
   (rfl)
 
+@[simp]
+theorem dualMap_zero : (0 : M →ₗ⁅R,L⁆ N).dualMap = 0 := by
+  ext
+  simp
+
+@[simp]
+theorem dualMap_add (f g : M →ₗ⁅R,L⁆ N) : (f + g).dualMap = f.dualMap + g.dualMap := by
+  ext
+  simp
+
+@[simp]
+theorem dualMap_neg (f : M →ₗ⁅R,L⁆ N) : (-f).dualMap = -f.dualMap := by
+  ext
+  simp
+
+@[simp]
+theorem dualMap_sub (f g : M →ₗ⁅R,L⁆ N) : (f - g).dualMap = f.dualMap - g.dualMap := by
+  ext
+  simp
+
+@[simp]
+theorem dualMap_smul (r : R) (f : M →ₗ⁅R,L⁆ N) : (r • f).dualMap = r • f.dualMap := by
+  ext
+  simp
+
 end LieModuleHom
 
 namespace TauCeti.LieModule
@@ -87,8 +113,8 @@ variable [CommRing R] [LieRing L] [LieAlgebra R L]
 variable [AddCommGroup M] [Module R M] [LieRingModule L M] [_root_.LieModule R L M]
 variable [AddCommGroup N] [Module R N] [LieRingModule L N] [_root_.LieModule R L N]
 
-/-- **Evaluation into the double dual is a morphism of Lie modules.** The two signs of the
-contragredient action cancel: `⁅x, ev m⁆ φ = - ev m ⁅x, φ⁆ = φ ⁅x, m⁆`. -/
+/-- **Evaluation into the double dual as a morphism of Lie modules**: the morphism
+`m ↦ (φ ↦ φ m)` from `M` to `M**`, lifting `Module.Dual.eval R M`. -/
 def dualEval : M →ₗ⁅R,L⁆ Dual R (Dual R M) where
   __ := Module.Dual.eval R M
   map_lie' {x m} := by
@@ -123,8 +149,7 @@ theorem toLinearEquiv_evalEquiv [Module.IsReflexive R M] :
 @[simp]
 theorem apply_evalEquiv_symm_apply [Module.IsReflexive R M] (Φ : Dual R (Dual R M))
     (φ : Dual R M) : φ ((evalEquiv R L M).symm Φ) = Φ φ := by
-  conv_rhs => rw [← (evalEquiv R L M).apply_symm_apply Φ]
-  rfl
+  rw [← evalEquiv_apply R L M, (evalEquiv R L M).apply_symm_apply]
 
 variable (N) in
 /-- **Transposition identifies the morphisms `M → N` with the morphisms `N* → M*`** when `N` is
@@ -155,5 +180,15 @@ theorem dualMapEquiv_apply [Module.IsReflexive R N] (f : M →ₗ⁅R,L⁆ N) :
 theorem apply_dualMapEquiv_symm_apply [Module.IsReflexive R N] (g : Dual R N →ₗ⁅R,L⁆ Dual R M)
     (m : M) (φ : Dual R N) : φ ((dualMapEquiv R L M N).symm g m) = g φ m := by
   simp [dualMapEquiv]
+
+@[simp]
+theorem dualMapEquiv_symm_dualMap [Module.IsReflexive R N] (f : M →ₗ⁅R,L⁆ N) :
+    (dualMapEquiv R L M N).symm f.dualMap = f :=
+  (dualMapEquiv R L M N).symm_apply_apply f
+
+@[simp]
+theorem dualMap_dualMapEquiv_symm [Module.IsReflexive R N] (g : Dual R N →ₗ⁅R,L⁆ Dual R M) :
+    ((dualMapEquiv R L M N).symm g).dualMap = g :=
+  (dualMapEquiv R L M N).apply_symm_apply g
 
 end TauCeti.LieModule
