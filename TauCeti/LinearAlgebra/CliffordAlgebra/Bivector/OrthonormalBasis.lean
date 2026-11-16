@@ -38,7 +38,8 @@ open scoped RealInnerProductSpace
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   {Q : QuadraticForm ℝ V}
-  {W : Type*} [AddCommGroup W] [Module ℂ W] (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W)
+  {S W : Type*} [CommRing S] [Algebra ℝ S] [AddCommGroup W] [Module S W] [Module ℝ W]
+  [IsScalarTower ℝ S W] (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End S W)
 
 /-- **The Clifford action of a two-vector in an orthonormal basis**:
 `2 c₂(x) = ∑ⱼ ∑ₖ ⟪x, eⱼ ∧ eₖ⟫ c₂(eⱼ, eₖ)`, where `c₂(u, w) = (c(u) c(w) - c(w) c(u)) / 2` is the
