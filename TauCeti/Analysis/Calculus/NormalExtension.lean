@@ -177,6 +177,7 @@ theorem contDiffOn_adaptedNormalExtension {γ : V → W} {J : W → W →L[𝕜]
     (hγΩ : Set.MapsTo γ U Ω) :
     ContDiffOn 𝕜 n (adaptedNormalExtension γ J) (U ×ˢ Set.univ) := by
   have hγn := hγ.of_le (le_self_add : n ≤ n + 1)
+  rw [adaptedNormalExtension_eq_normalExtension]
   exact contDiffOn_normalExtension hγn
     ((hJ.comp hγn hγΩ).clm_comp (hγ.fderiv_of_isOpen hU le_rfl))
 

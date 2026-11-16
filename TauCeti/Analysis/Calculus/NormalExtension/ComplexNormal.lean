@@ -110,24 +110,28 @@ theorem complexNormalExtension_zero (a : V) : complexNormalExtension u J Z (a, 0
 /-- The complex normal extension has the common regularity of the curve, the frame and `J`. -/
 theorem contDiffAt_complexNormalExtension {n : ℕ∞ω} {a : V} {y : N × N}
     (hu : ContDiffAt 𝕜 n u a) (hZ : ContDiffAt 𝕜 n Z a) (hJ : ContDiffAt 𝕜 n J (u a)) :
-    ContDiffAt 𝕜 n (complexNormalExtension u J Z) (a, y) :=
-  contDiffAt_normalExtension hu (hZ.continuousLinearMapCoprod ((hJ.comp a hu).clm_comp hZ))
+    ContDiffAt 𝕜 n (complexNormalExtension u J Z) (a, y) := by
+  rw [complexNormalExtension_eq_normalExtension]
+  exact contDiffAt_normalExtension hu (hZ.continuousLinearMapCoprod ((hJ.comp a hu).clm_comp hZ))
 
 /-- If `u` and `Z` are `C^n` on a set `U` and `u` maps `U` into a set `Ω` on which `J` is
 `C^n`, the complex normal extension is `C^n` on `U ×ˢ univ`. -/
 theorem contDiffOn_complexNormalExtension {n : ℕ∞ω} {U : Set V} {Ω : Set W}
     (hu : ContDiffOn 𝕜 n u U) (hZ : ContDiffOn 𝕜 n Z U) (hJ : ContDiffOn 𝕜 n J Ω)
     (huΩ : MapsTo u U Ω) :
-    ContDiffOn 𝕜 n (complexNormalExtension u J Z) (U ×ˢ univ) :=
-  contDiffOn_normalExtension hu (hZ.continuousLinearMapCoprod ((hJ.comp hu huΩ).clm_comp hZ))
+    ContDiffOn 𝕜 n (complexNormalExtension u J Z) (U ×ˢ univ) := by
+  rw [complexNormalExtension_eq_normalExtension]
+  exact contDiffOn_normalExtension hu
+    (hZ.continuousLinearMapCoprod ((hJ.comp hu huΩ).clm_comp hZ))
 
 /-- On the zero section the derivative of the complex normal extension is the frame
 `(v, x, y) ↦ Du v + Z x + J (Z y)`. It needs only a continuous frame and a continuous `J`. -/
 theorem hasFDerivAt_complexNormalExtension_zero {a : V} {D : V →L[𝕜] W}
     (hu : HasFDerivAt u D a) (hZ : ContinuousAt Z a) (hJ : ContinuousAt J (u a)) :
     HasFDerivAt (complexNormalExtension u J Z)
-      (D.coprod ((Z a).coprod ((J (u a)).comp (Z a)))) (a, 0) :=
-  hasFDerivAt_normalExtension_zero hu
+      (D.coprod ((Z a).coprod ((J (u a)).comp (Z a)))) (a, 0) := by
+  rw [complexNormalExtension_eq_normalExtension]
+  exact hasFDerivAt_normalExtension_zero hu
     (hZ.continuousLinearMapCoprod ((hJ.comp hu.continuousAt).clm_comp hZ))
 
 /-- The derivative of the complex normal extension on the zero section. -/
@@ -182,8 +186,9 @@ theorem exists_complexNormalChart [CompleteSpace V] [CompleteSpace N] {U : Set V
     (hframe : ((fderiv 𝕜 u a₀).coprod ((Z a₀).coprod ((J (u a₀)).comp (Z a₀)))).IsInvertible) :
     ∃ e : OpenPartialHomeomorph (V × (N × N)) W, ⇑e = complexNormalExtension u J Z ∧
       (a₀, 0) ∈ e.source ∧ e.source ⊆ U ×ˢ univ ∧ e.target ⊆ Ω ∧
-      ContDiffOn 𝕜 ℓ e e.source ∧ ContDiffOn 𝕜 ℓ e.symm e.target :=
-  exists_normalExtensionChart hU hΩ ha₀ hℓ hu
+      ContDiffOn 𝕜 ℓ e e.source ∧ ContDiffOn 𝕜 ℓ e.symm e.target := by
+  rw [complexNormalExtension_eq_normalExtension]
+  exact exists_normalExtensionChart hU hΩ ha₀ hℓ hu
     (hZ.continuousLinearMapCoprod ((hJ.comp hu huΩ).clm_comp hZ)) huΩ hframe
 
 end Chart
@@ -249,7 +254,8 @@ theorem exists_norm_pullbackEnd_sub_le_of_coe_eq_complexNormalExtension {j : V �
     hZ.continuousLinearMapCoprod ((hJ.comp a₀ hu).clm_comp hZ)
   obtain ⟨K, t, ht, hK⟩ := hJ.exists_lipschitzOnWith
   obtain ⟨C, hC⟩ :=
-    exists_norm_pullbackEnd_sub_pullbackEnd_le_of_coe_eq_normalExtension he ha₀ hu hA ht hK hes
+    exists_norm_pullbackEnd_sub_pullbackEnd_le_of_coe_eq_normalExtension
+      (he.trans (TauCeti.complexNormalExtension_eq_normalExtension u J Z)) ha₀ hu hA ht hK hes
   refine ⟨C, ?_⟩
   -- Near `a₀`, the structure is standard at the foot `(a, 0)` of each point `(a, w)`.
   have hJu : ∀ᶠ a in 𝓝 a₀, ContinuousAt J (u a) :=
