@@ -227,7 +227,7 @@ theorem oneillT_apply_of_eventually_mem_ker {V : Π x : M, TangentSpace I x}
 
 /-- A horizontal vector extends to a field which is horizontal everywhere and differentiable at
 the base point: the horizontal part of `FiberBundle.extend`. -/
-private theorem exists_horizontal_extension {w : TangentSpace I x}
+theorem exists_horizontal_extension {w : TangentSpace I x}
     (hw : w ∈ (mfderiv I J f x).kerᗮ) :
     ∃ Y : Π y : M, TangentSpace I y, MDiffAt (T% Y) x ∧ Y x = w ∧
       ∀ y, Y y ∈ (mfderiv I J f y).kerᗮ :=
@@ -239,7 +239,7 @@ private theorem exists_horizontal_extension {w : TangentSpace I x}
 
 /-- A vertical vector extends to a field which is vertical everywhere and differentiable at the
 base point: the vertical part of `FiberBundle.extend`. -/
-private theorem exists_vertical_extension {w : TangentSpace I x}
+theorem exists_vertical_extension {w : TangentSpace I x}
     (hw : w ∈ (mfderiv I J f x).ker) :
     ∃ V : Π y : M, TangentSpace I y, MDiffAt (T% V) x ∧ V x = w ∧
       ∀ y, V y ∈ (mfderiv I J f y).ker :=
@@ -279,6 +279,58 @@ theorem oneillT_apply_mem_orthogonal_ker (u : TangentSpace I x) {v : TangentSpac
   obtain ⟨V, hVd, rfl, hVv⟩ := h.exists_vertical_extension hv
   rw [h.oneillT_apply_of_eventually_mem_ker hVd (.of_forall hVv)]
   exact Submodule.starProjection_apply_mem _ _
+
+/-- The vertical part of `A_u w` is `A_u` applied to the horizontal part of `w`. -/
+theorem starProjection_ker_oneillA (u w : TangentSpace I x) :
+    (mfderiv I J f x).ker.starProjection (h.oneillA x u w) =
+      h.oneillA x u ((mfderiv I J f x).kerᗮ.starProjection w) := by
+  conv_lhs =>
+    rw [← Submodule.starProjection_add_starProjection_orthogonal (K := (mfderiv I J f x).ker) w]
+  rw [map_add, map_add,
+    (Submodule.starProjection_apply_eq_zero_iff _).mpr
+      (h.oneillA_apply_mem_orthogonal_ker u (Submodule.starProjection_apply_mem _ _)),
+    zero_add,
+    Submodule.starProjection_eq_self_iff.mpr
+      (h.oneillA_apply_mem_ker u (Submodule.starProjection_apply_mem _ _))]
+
+/-- The horizontal part of `A_u w` is `A_u` applied to the vertical part of `w`. -/
+theorem starProjection_orthogonal_ker_oneillA (u w : TangentSpace I x) :
+    (mfderiv I J f x).kerᗮ.starProjection (h.oneillA x u w) =
+      h.oneillA x u ((mfderiv I J f x).ker.starProjection w) := by
+  conv_lhs =>
+    rw [← Submodule.starProjection_add_starProjection_orthogonal (K := (mfderiv I J f x).ker) w]
+  rw [map_add, map_add,
+    Submodule.starProjection_eq_self_iff.mpr
+      (h.oneillA_apply_mem_orthogonal_ker u (Submodule.starProjection_apply_mem _ _)),
+    Submodule.starProjection_orthogonal_apply_eq_zero
+      (h.oneillA_apply_mem_ker u (Submodule.starProjection_apply_mem _ _)),
+    add_zero]
+
+/-- The vertical part of `T_u w` is `T_u` applied to the horizontal part of `w`. -/
+theorem starProjection_ker_oneillT (u w : TangentSpace I x) :
+    (mfderiv I J f x).ker.starProjection (h.oneillT x u w) =
+      h.oneillT x u ((mfderiv I J f x).kerᗮ.starProjection w) := by
+  conv_lhs =>
+    rw [← Submodule.starProjection_add_starProjection_orthogonal (K := (mfderiv I J f x).ker) w]
+  rw [map_add, map_add,
+    (Submodule.starProjection_apply_eq_zero_iff _).mpr
+      (h.oneillT_apply_mem_orthogonal_ker u (Submodule.starProjection_apply_mem _ _)),
+    zero_add,
+    Submodule.starProjection_eq_self_iff.mpr
+      (h.oneillT_apply_mem_ker u (Submodule.starProjection_apply_mem _ _))]
+
+/-- The horizontal part of `T_u w` is `T_u` applied to the vertical part of `w`. -/
+theorem starProjection_orthogonal_ker_oneillT (u w : TangentSpace I x) :
+    (mfderiv I J f x).kerᗮ.starProjection (h.oneillT x u w) =
+      h.oneillT x u ((mfderiv I J f x).ker.starProjection w) := by
+  conv_lhs =>
+    rw [← Submodule.starProjection_add_starProjection_orthogonal (K := (mfderiv I J f x).ker) w]
+  rw [map_add, map_add,
+    Submodule.starProjection_eq_self_iff.mpr
+      (h.oneillT_apply_mem_orthogonal_ker u (Submodule.starProjection_apply_mem _ _)),
+    Submodule.starProjection_orthogonal_apply_eq_zero
+      (h.oneillT_apply_mem_ker u (Submodule.starProjection_apply_mem _ _)),
+    add_zero]
 
 end Fields
 
@@ -325,9 +377,7 @@ private theorem inner_leviCivitaConnection_horizontalLift_self {B : Π y : N, Ta
     (CovariantDerivative.torsion_leviCivitaConnection_eq_zero I)) hXd hVd
   have hbr : ⟪X x, mlieBracket I X V x⟫_ℝ = 0 :=
     (real_inner_comm _ _).trans <| Submodule.inner_right_of_mem_orthogonal
-      ((h.isSubmersion.contMDiff x).mlieBracket_mem_ker_mfderiv_of_eventually_related
-        (by simp [minSmoothness_of_isRCLikeNormedField]) hXd hVd (hB.mdifferentiableAt (by simp))
-        (.of_forall fun y ↦ h.mfderiv_horizontalLift y _) (.of_forall hVv)) (hXh x)
+      (h.mlieBracket_horizontalLift_mem_ker (hB.of_le (by simp)) hVd (.of_forall hVv)) (hXh x)
   have hXx : X x = h.horizontalLift x (B (f x)) := rfl
   rw [hd] at h₂
   rw [← h₃, inner_sub_right] at hbr

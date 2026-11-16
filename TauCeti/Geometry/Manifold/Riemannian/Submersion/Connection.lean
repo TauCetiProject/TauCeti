@@ -9,15 +9,17 @@ public import TauCeti.Geometry.Manifold.Riemannian.Submersion.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Adjoint
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Basic
 public import TauCeti.Geometry.Manifold.VectorField.Related
+import TauCeti.Geometry.Manifold.Distribution.Kernel
 
 /-!
 # Horizontal Levi-Civita differentiation under a Riemannian submersion
 
 Horizontal lifts of vector fields on the base preserve their regularity and inner products.
 Their brackets project to the brackets on the base, although those brackets need not themselves
-be horizontal. The Koszul formula then identifies the horizontal component of their covariant
-derivative with the lift of the base covariant derivative. This is the connection comparison
-used in the fundamental curvature equations for a Riemannian submersion.
+be horizontal. The bracket of a basic horizontal field with a vertical field is vertical. The
+Koszul formula then identifies the horizontal component of their covariant derivative with the
+lift of the base covariant derivative. This is the connection comparison used in the fundamental
+curvature equations for a Riemannian submersion.
 
 The connections may be any connections satisfying the native Levi-Civita predicate. No global
 surjectivity, completeness or connectedness is needed. All differentiation identities are local
@@ -70,6 +72,13 @@ theorem contMDiffAt_horizontalLift {X : Π y : N, TangentSpace J y} {x : M}
   simpa only [h.horizontalLift_apply, Function.comp_def] using
     hf.mfderiv_adjoint_apply (hX.comp x (hf.of_le le_self_add))
 
+/-- Horizontal lifting of a `C^n` vector field on the base gives a `C^n` vector field on the
+total space, for `C^n` metrics and `n + 1 ≤ ∞`. -/
+theorem contMDiff_horizontalLift {X : Π y : N, TangentSpace J y}
+    (hX : ContMDiff J (J.prod 𝓘(ℝ, F)) n (T% X)) (hn : n + 1 ≤ ∞) :
+    ContMDiff I (I.prod 𝓘(ℝ, E)) n (T% (fun y ↦ h.horizontalLift y (X (f y)))) :=
+  fun x ↦ h.contMDiffAt_horizontalLift (hX (f x)) hn
+
 end Regularity
 
 section Connection
@@ -107,6 +116,17 @@ theorem mfderiv_mlieBracket_horizontalLift
     (hX.mdifferentiableAt one_ne_zero) (hY.mdifferentiableAt one_ne_zero)
     (Filter.Eventually.of_forall fun y ↦ h.mfderiv_horizontalLift y _)
     (Filter.Eventually.of_forall fun y ↦ h.mfderiv_horizontalLift y _)
+
+/-- The Lie bracket of a basic horizontal field with a vertical field is vertical. -/
+theorem mlieBracket_horizontalLift_mem_ker
+    (hX : CMDiffAt 1 (T% X) (f x)) {V : Π y : M, TangentSpace I y}
+    (hV : MDiffAt (T% V) x) (hVv : ∀ᶠ y in 𝓝 x, V y ∈ (mfderiv I J f y).ker) :
+    mlieBracket I (fun y ↦ h.horizontalLift y (X (f y))) V x ∈ (mfderiv I J f x).ker :=
+  (h.isSubmersion.contMDiff x).mlieBracket_mem_ker_mfderiv_of_eventually_related
+    (by simp [minSmoothness_of_isRCLikeNormedField])
+    ((h.contMDiffAt_horizontalLift hX (by norm_num)).mdifferentiableAt one_ne_zero)
+    hV (hX.mdifferentiableAt one_ne_zero)
+    (.of_forall fun y ↦ h.mfderiv_horizontalLift y _) hVv
 
 omit [IsManifold I 2 M]
   [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)] in

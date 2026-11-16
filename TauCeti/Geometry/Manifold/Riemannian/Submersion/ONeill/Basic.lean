@@ -259,6 +259,113 @@ theorem contMDiff_oneillT :
   simpa only [oneillT, h.id_sub_horizontalLift_comp_mfderiv, ContinuousLinearMap.comp_apply] using
     h.contMDiff_exchangeTensor_apply hQX hY
 
+private local instance : NormedAddCommGroup (E →L[ℝ] E) := inferInstance
+private local instance : NormedSpace ℝ (E →L[ℝ] E) := inferInstance
+private local instance : NormedAddCommGroup (E →L[ℝ] E →L[ℝ] E) := inferInstance
+private local instance : NormedSpace ℝ (E →L[ℝ] E →L[ℝ] E) := inferInstance
+
+/-- Evaluation of the induced Hom-bundle covariant derivative of O'Neill's horizontal tensor `A`:
+`((∇_w A) U) V = ∇_w (A_U V) - A_(∇_w U) V - A_U (∇_w V)`. -/
+theorem hom_leviCivitaConnection_oneillA_apply {x : M} {U V : Π y : M, TangentSpace I y}
+    (hU : MDiffAt (T% U) x) (hV : MDiffAt (T% V) x) (w : TangentSpace I x) :
+    (((CovariantDerivative.leviCivitaConnection I M).hom
+        ((CovariantDerivative.leviCivitaConnection I M).hom
+          (CovariantDerivative.leviCivitaConnection I M)))
+      h.oneillA x w) (U x) (V x) =
+      CovariantDerivative.leviCivitaConnection I M (fun y ↦ h.oneillA y (U y) (V y)) x w -
+        h.oneillA x (CovariantDerivative.leviCivitaConnection I M U x w) (V x) -
+        h.oneillA x (U x) (CovariantDerivative.leviCivitaConnection I M V x w) :=
+  CovariantDerivative.hom_hom_apply _ _ _ ((h.contMDiff_oneillA x).mdifferentiableAt (by simp))
+    hU hV w
+
+/-- Evaluation of the induced Hom-bundle covariant derivative of O'Neill's vertical tensor `T`:
+`((∇_w T) U) V = ∇_w (T_U V) - T_(∇_w U) V - T_U (∇_w V)`. -/
+theorem hom_leviCivitaConnection_oneillT_apply {x : M} {U V : Π y : M, TangentSpace I y}
+    (hU : MDiffAt (T% U) x) (hV : MDiffAt (T% V) x) (w : TangentSpace I x) :
+    (((CovariantDerivative.leviCivitaConnection I M).hom
+        ((CovariantDerivative.leviCivitaConnection I M).hom
+          (CovariantDerivative.leviCivitaConnection I M)))
+      h.oneillT x w) (U x) (V x) =
+      CovariantDerivative.leviCivitaConnection I M (fun y ↦ h.oneillT y (U y) (V y)) x w -
+        h.oneillT x (CovariantDerivative.leviCivitaConnection I M U x w) (V x) -
+        h.oneillT x (U x) (CovariantDerivative.leviCivitaConnection I M V x w) :=
+  CovariantDerivative.hom_hom_apply _ _ _ ((h.contMDiff_oneillT x).mdifferentiableAt (by simp))
+    hU hV w
+
+/-- For fixed tangent directions `u` and `v`, the covariant derivative `(∇_u A) v` is
+skew-adjoint (O'Neill, Lemma 4). -/
+theorem inner_hom_leviCivitaConnection_oneillA (x : M) (u v w z : TangentSpace I x) :
+    ⟪(((CovariantDerivative.leviCivitaConnection I M).hom
+        ((CovariantDerivative.leviCivitaConnection I M).hom
+          (CovariantDerivative.leviCivitaConnection I M)))
+      h.oneillA x u) v w, z⟫_ℝ =
+      -⟪w, (((CovariantDerivative.leviCivitaConnection I M).hom
+          ((CovariantDerivative.leviCivitaConnection I M).hom
+            (CovariantDerivative.leviCivitaConnection I M)))
+        h.oneillA x u) v z⟫_ℝ := by
+  set U := FiberBundle.extend E u
+  set V := FiberBundle.extend E v
+  set W := FiberBundle.extend E w
+  set Z := FiberBundle.extend E z
+  have hVd : MDiffAt (T% V) x := FiberBundle.mdifferentiableAt_extend I E v
+  have hWd : MDiffAt (T% W) x := FiberBundle.mdifferentiableAt_extend I E w
+  have hZd : MDiffAt (T% Z) x := FiberBundle.mdifferentiableAt_extend I E z
+  have hA := (h.contMDiff_oneillA x).mdifferentiableAt (by simp)
+  have hmetric := CovariantDerivative.isMetricCompatible_leviCivitaConnection I (M := M)
+  have hfun : (fun y ↦ ⟪h.oneillA y (V y) (W y), Z y⟫_ℝ) =
+      fun y ↦ -⟪W y, h.oneillA y (V y) (Z y)⟫_ℝ :=
+    funext fun y ↦ h.inner_oneillA y (V y) (W y) (Z y)
+  have hd := congrArg (fun g ↦ mvfderiv I g x (U x)) hfun
+  rw [hmetric.mvfderiv_inner_eq U ((hA.clm_bundle_apply hVd).clm_bundle_apply hWd) hZd,
+    mvfderiv_fun_neg, neg_apply,
+    hmetric.mvfderiv_inner_eq U hWd ((hA.clm_bundle_apply hVd).clm_bundle_apply hZd)] at hd
+  dsimp only at hd
+  have hUx : U x = u := FiberBundle.extend_apply_self ..
+  have hVx : V x = v := FiberBundle.extend_apply_self ..
+  have hWx : W x = w := FiberBundle.extend_apply_self ..
+  have hZx : Z x = z := FiberBundle.extend_apply_self ..
+  rw [← hUx, ← hVx, ← hWx, ← hZx, h.hom_leviCivitaConnection_oneillA_apply hVd hWd,
+    h.hom_leviCivitaConnection_oneillA_apply hVd hZd]
+  simp only [inner_sub_left, inner_sub_right, h.inner_oneillA] at hd ⊢
+  linarith
+
+/-- For fixed tangent directions `u` and `v`, the covariant derivative `(∇_u T) v` is
+skew-adjoint (O'Neill, Lemma 4). -/
+theorem inner_hom_leviCivitaConnection_oneillT (x : M) (u v w z : TangentSpace I x) :
+    ⟪(((CovariantDerivative.leviCivitaConnection I M).hom
+        ((CovariantDerivative.leviCivitaConnection I M).hom
+          (CovariantDerivative.leviCivitaConnection I M)))
+      h.oneillT x u) v w, z⟫_ℝ =
+      -⟪w, (((CovariantDerivative.leviCivitaConnection I M).hom
+          ((CovariantDerivative.leviCivitaConnection I M).hom
+            (CovariantDerivative.leviCivitaConnection I M)))
+        h.oneillT x u) v z⟫_ℝ := by
+  set U := FiberBundle.extend E u
+  set V := FiberBundle.extend E v
+  set W := FiberBundle.extend E w
+  set Z := FiberBundle.extend E z
+  have hVd : MDiffAt (T% V) x := FiberBundle.mdifferentiableAt_extend I E v
+  have hWd : MDiffAt (T% W) x := FiberBundle.mdifferentiableAt_extend I E w
+  have hZd : MDiffAt (T% Z) x := FiberBundle.mdifferentiableAt_extend I E z
+  have hT := (h.contMDiff_oneillT x).mdifferentiableAt (by simp)
+  have hmetric := CovariantDerivative.isMetricCompatible_leviCivitaConnection I (M := M)
+  have hfun : (fun y ↦ ⟪h.oneillT y (V y) (W y), Z y⟫_ℝ) =
+      fun y ↦ -⟪W y, h.oneillT y (V y) (Z y)⟫_ℝ :=
+    funext fun y ↦ h.inner_oneillT y (V y) (W y) (Z y)
+  have hd := congrArg (fun g ↦ mvfderiv I g x (U x)) hfun
+  rw [hmetric.mvfderiv_inner_eq U ((hT.clm_bundle_apply hVd).clm_bundle_apply hWd) hZd,
+    mvfderiv_fun_neg, neg_apply,
+    hmetric.mvfderiv_inner_eq U hWd ((hT.clm_bundle_apply hVd).clm_bundle_apply hZd)] at hd
+  dsimp only at hd
+  have hUx : U x = u := FiberBundle.extend_apply_self ..
+  have hVx : V x = v := FiberBundle.extend_apply_self ..
+  have hWx : W x = w := FiberBundle.extend_apply_self ..
+  have hZx : Z x = z := FiberBundle.extend_apply_self ..
+  rw [← hUx, ← hVx, ← hWx, ← hZx, h.hom_leviCivitaConnection_oneillT_apply hVd hWd,
+    h.hom_leviCivitaConnection_oneillT_apply hVd hZd]
+  simp only [inner_sub_left, inner_sub_right, h.inner_oneillT] at hd ⊢
+  linarith
+
 end Smoothness
 
 omit [IsManifold J ∞ N]
@@ -291,5 +398,17 @@ omit [IsManifold J ∞ N]
     Submodule.starProjection_orthogonal, sub_apply, ContinuousLinearMap.id_apply, map_sub]
   rw [Submodule.starProjection_eq_self_iff.mpr (Submodule.starProjection_apply_mem _ _)]
   simp
+
+/-- `A` vanishes when its first argument is vertical. -/
+theorem oneillA_eq_zero_of_mem_ker {x : M} {v : TangentSpace I x}
+    (hv : v ∈ (mfderiv I J f x).ker) :
+    h.oneillA x v = 0 := by
+  rw [← Submodule.starProjection_eq_self_iff.mpr hv, h.oneillA_starProjection_ker]
+
+/-- `T` vanishes when its first argument is horizontal. -/
+theorem oneillT_eq_zero_of_mem_orthogonal_ker {x : M} {v : TangentSpace I x}
+    (hv : v ∈ (mfderiv I J f x).kerᗮ) :
+    h.oneillT x v = 0 := by
+  rw [← Submodule.starProjection_eq_self_iff.mpr hv, h.oneillT_starProjection_orthogonal_ker]
 
 end TauCeti.IsRiemannianSubmersion

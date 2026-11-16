@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Submersion.Integrability
-import TauCeti.Geometry.Manifold.Distribution.Kernel
 import TauCeti.Geometry.Manifold.Riemannian.Submersion.Connection
 
 /-!
@@ -26,10 +25,11 @@ four connection equations:
 When `Y'` is a basic horizontal field (writing `B'` for the horizontal lift of a vector field `B`
 on `N`), every component of `∇ Y'` reduces to base differentiation and O'Neill's tensors:
 
-* `[X', Y'] = [X, Y]' + 2 A_X' Y'` for basic horizontal fields `X'` and `Y'`;
 * `[X', V] = v (∇_X' V) - T_V X'` for a basic horizontal field `X'` and a vertical field `V`;
 * `h (∇_U Y') = A_Y' U`, and hence `∇_U Y' = A_Y' U + T_U Y'`, for vertical `U`;
-* `∇_X' Y' = (∇^N_X Y)' + A_X' Y'` for basic horizontal directions.
+* `∇_w Y' = (∇^N_(df w) Y)' + A_w Y' + A_Y' (v w) + T_w Y'` for an arbitrary tangent direction `w`
+  (combining `∇_X' Y' = (∇^N_X Y)' + A_X' Y'` from `Submersion.Integrability` with the vertical
+  direction formula).
 
 These formulas express iterated covariant derivatives of basic horizontal and vertical fields in
 terms of the base connection and the algebraic tensors `A` and `T`, supplying the connection step
@@ -37,20 +37,19 @@ in O'Neill's curvature equations and in the horizontal geodesic equations.
 
 ## Main results
 
-* `TauCeti.IsRiemannianSubmersion.contMDiff_horizontalLift`: horizontal lifting preserves global
-  `C^n` regularity of vector fields.
 * `TauCeti.IsRiemannianSubmersion.leviCivitaConnection_of_eventually_mem_orthogonal_ker`,
   `TauCeti.IsRiemannianSubmersion.leviCivitaConnection_of_eventually_mem_ker`: decomposition of
   `∇_u Y` and `∇_u V` for arbitrary tangent directions `u`, with directional specializations for
   horizontal and vertical `u`.
-* `TauCeti.IsRiemannianSubmersion.mlieBracket_horizontalLift`: horizontal-vertical decomposition
-  of the Lie bracket of two basic horizontal fields.
-* `TauCeti.IsRiemannianSubmersion.leviCivitaConnection_horizontalLift_of_mem_ker`: O'Neill's
-  formula `∇_u Y' = A_Y' u + T_u Y'` along a vertical vector `u`, proved from
-  `h (∇_u Y') = A_Y' u`.
-* `TauCeti.IsRiemannianSubmersion.leviCivitaConnection_horizontalLift`,
+* `starProjection_orthogonal_ker_leviCivitaConnection_horizontalLift_of_mem_ker`,
+  `TauCeti.IsRiemannianSubmersion.leviCivitaConnection_horizontalLift_of_mem_ker` (both in
+  `TauCeti.IsRiemannianSubmersion`): O'Neill's formulas `h (∇_u Y') = A_Y' u` and
+  `∇_u Y' = A_Y' u + T_u Y'` along a vertical vector `u`.
+* `TauCeti.IsRiemannianSubmersion.mlieBracket_horizontalLift_of_eventually_mem_ker`: decomposition
+  of `[X', V]` for a basic horizontal field `X'` and a vertical field `V`.
+* `TauCeti.IsRiemannianSubmersion.leviCivitaConnection_horizontalLift_of_mem_orthogonal_ker`,
   `TauCeti.IsRiemannianSubmersion.leviCivitaConnection_horizontalLift_apply`: full Levi-Civita
-  derivative of a basic horizontal field along horizontal lifts and arbitrary tangent vectors.
+  derivative of a basic horizontal field along horizontal vectors and arbitrary tangent vectors.
 
 ## References
 
@@ -67,34 +66,6 @@ open scoped ContDiff InnerProductSpace Manifold Topology
 noncomputable section
 
 namespace TauCeti.IsRiemannianSubmersion
-
-section Regularity
-
-variable
-  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
-  {G : Type*} [TopologicalSpace G] {J : ModelWithCorners ℝ F G}
-  {N : Type*} [TopologicalSpace N] [ChartedSpace G N]
-  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-  [RiemannianBundle (fun y : N ↦ TangentSpace J y)]
-  [IsManifold I 1 M] [IsManifold J 1 N]
-  {n : ℕ∞ω} [IsManifold I (n + 1) M]
-  [IsContMDiffRiemannianBundle I n E (fun x : M ↦ TangentSpace I x)]
-  [IsContMDiffRiemannianBundle J n F (fun y : N ↦ TangentSpace J y)]
-  {f : M → N} (h : IsRiemannianSubmersion I J f)
-
-include h
-
-/-- Horizontal lifting of a `C^n` vector field on the base gives a `C^n` vector field on the
-total space, for `C^n` metrics and `n + 1 ≤ ∞`. -/
-theorem contMDiff_horizontalLift {X : Π y : N, TangentSpace J y}
-    (hX : ContMDiff J (J.prod 𝓘(ℝ, F)) n (T% X)) (hn : n + 1 ≤ ∞) :
-    ContMDiff I (I.prod 𝓘(ℝ, E)) n (T% (fun y ↦ h.horizontalLift y (X (f y)))) :=
-  fun x ↦ h.contMDiffAt_horizontalLift (hX (f x)) hn
-
-end Regularity
 
 variable
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
@@ -197,10 +168,8 @@ theorem leviCivitaConnection_of_eventually_mem_ker_of_mem_ker
       h.oneillT x u (V x) +
         (mfderiv I J f x).ker.starProjection
           (CovariantDerivative.leviCivitaConnection I M V x u) := by
-  have ha : h.oneillA x u (V x) = 0 := by
-    rw [← Submodule.starProjection_eq_self_iff.mpr hu, h.oneillA_starProjection_ker, zero_apply]
   conv_lhs => rw [h.leviCivitaConnection_of_eventually_mem_ker hV hVv u]
-  rw [ha, zero_add]
+  rw [h.oneillA_eq_zero_of_mem_ker hu, zero_apply, zero_add]
 
 /-- **O'Neill's second connection equation.** For a horizontal field `Y` and a vertical vector `u`,
 `∇_u Y = h (∇_u Y) + T_u Y`. -/
@@ -212,10 +181,8 @@ theorem leviCivitaConnection_of_eventually_mem_orthogonal_ker_of_mem_ker
       (mfderiv I J f x).kerᗮ.starProjection
         (CovariantDerivative.leviCivitaConnection I M Y x u) +
       h.oneillT x u (Y x) := by
-  have ha : h.oneillA x u (Y x) = 0 := by
-    rw [← Submodule.starProjection_eq_self_iff.mpr hu, h.oneillA_starProjection_ker, zero_apply]
   conv_lhs => rw [h.leviCivitaConnection_of_eventually_mem_orthogonal_ker hY hYh u]
-  rw [ha, add_zero]
+  rw [h.oneillA_eq_zero_of_mem_ker hu, zero_apply, add_zero]
 
 /-- **O'Neill's third connection equation.** For a vertical field `V` and a horizontal vector `u`,
 `∇_u V = A_u V + v (∇_u V)`. -/
@@ -227,11 +194,8 @@ theorem leviCivitaConnection_of_eventually_mem_ker_of_mem_orthogonal_ker
       h.oneillA x u (V x) +
         (mfderiv I J f x).ker.starProjection
           (CovariantDerivative.leviCivitaConnection I M V x u) := by
-  have ht : h.oneillT x u (V x) = 0 := by
-    rw [← Submodule.starProjection_eq_self_iff.mpr hu, h.oneillT_starProjection_orthogonal_ker,
-      zero_apply]
   conv_lhs => rw [h.leviCivitaConnection_of_eventually_mem_ker hV hVv u]
-  rw [ht, add_zero]
+  rw [h.oneillT_eq_zero_of_mem_orthogonal_ker hu, zero_apply, add_zero]
 
 /-- **O'Neill's fourth connection equation.** For a horizontal field `Y` and a horizontal
 vector `u`, `∇_u Y = h (∇_u Y) + A_u Y`. -/
@@ -243,11 +207,8 @@ theorem leviCivitaConnection_of_eventually_mem_orthogonal_ker_of_mem_orthogonal_
       (mfderiv I J f x).kerᗮ.starProjection
         (CovariantDerivative.leviCivitaConnection I M Y x u) +
       h.oneillA x u (Y x) := by
-  have ht : h.oneillT x u (Y x) = 0 := by
-    rw [← Submodule.starProjection_eq_self_iff.mpr hu, h.oneillT_starProjection_orthogonal_ker,
-      zero_apply]
   conv_lhs => rw [h.leviCivitaConnection_of_eventually_mem_orthogonal_ker hY hYh u]
-  rw [ht, add_zero]
+  rw [h.oneillT_eq_zero_of_mem_orthogonal_ker hu, zero_apply, add_zero]
 
 end Decomposition
 
@@ -255,69 +216,26 @@ end Decomposition
 
 section BasicFields
 
-variable {X Y : Π y : N, TangentSpace J y} {x : M}
-
-/-- The Lie bracket of two basic horizontal fields `X'` and `Y'` decomposes into the horizontal lift
-of the base bracket and `2 A_X' Y'`. -/
-theorem mlieBracket_horizontalLift
-    (hX : CMDiffAt 1 (T% X) (f x)) (hY : CMDiffAt 1 (T% Y) (f x)) :
-    mlieBracket I (fun y ↦ h.horizontalLift y (X (f y)))
-        (fun y ↦ h.horizontalLift y (Y (f y))) x =
-      h.horizontalLift x (mlieBracket J X Y (f x)) +
-        (2 : ℝ) • h.oneillA x (h.horizontalLift x (X (f x)))
-          (h.horizontalLift x (Y (f x))) := by
-  set X' : Π y : M, TangentSpace I y := fun y ↦ h.horizontalLift y (X (f y))
-  set Y' : Π y : M, TangentSpace I y := fun y ↦ h.horizontalLift y (Y (f y))
-  have hXd : MDiffAt (T% X') x :=
-    (h.contMDiffAt_horizontalLift hX (by norm_num)).mdifferentiableAt one_ne_zero
-  have hYd : MDiffAt (T% Y') x :=
-    (h.contMDiffAt_horizontalLift hY (by norm_num)).mdifferentiableAt one_ne_zero
-  conv_lhs =>
-    rw [← Submodule.starProjection_add_starProjection_orthogonal
-      (K := (mfderiv I J f x).ker) (mlieBracket I X' Y' x)]
-  rw [add_comm, ← h.horizontalLift_mfderiv, h.mfderiv_mlieBracket_horizontalLift hX hY,
-    h.starProjection_ker_mlieBracket hXd hYd
-      (.of_forall fun y ↦ h.horizontalLift_mem_orthogonal_ker y _)
-      (.of_forall fun y ↦ h.horizontalLift_mem_orthogonal_ker y _)]
-
-/-- The Lie bracket of a basic horizontal field with a vertical field is vertical. -/
-theorem mlieBracket_horizontalLift_mem_ker
-    (hX : CMDiffAt 1 (T% X) (f x)) {V : Π y : M, TangentSpace I y}
-    (hV : MDiffAt (T% V) x) (hVv : ∀ᶠ y in 𝓝 x, V y ∈ (mfderiv I J f y).ker) :
-    mlieBracket I (fun y ↦ h.horizontalLift y (X (f y))) V x ∈ (mfderiv I J f x).ker :=
-  (h.isSubmersion.contMDiff x).mlieBracket_mem_ker_mfderiv_of_eventually_related
-    (by simp [minSmoothness_of_isRCLikeNormedField])
-    ((h.contMDiffAt_horizontalLift hX (by norm_num)).mdifferentiableAt one_ne_zero)
-    hV (hX.mdifferentiableAt one_ne_zero)
-    (.of_forall fun y ↦ h.mfderiv_horizontalLift y _) hVv
+variable {x : M}
 
 /-- For a basic horizontal field `Y'` and a vertical vector `u`, the horizontal part of `∇_u Y'`
 equals `A_Y' u` (O'Neill, Lemma 2(3)). -/
 theorem starProjection_orthogonal_ker_leviCivitaConnection_horizontalLift_of_mem_ker
-    (hY : CMDiffAt 1 (T% Y) (f x)) {u : TangentSpace I x}
+    {Y : Π y : N, TangentSpace J y} (hY : CMDiffAt 1 (T% Y) (f x)) {u : TangentSpace I x}
     (hu : u ∈ (mfderiv I J f x).ker) :
     (mfderiv I J f x).kerᗮ.starProjection
         (CovariantDerivative.leviCivitaConnection I M
           (fun y ↦ h.horizontalLift y (Y (f y))) x u) =
       h.oneillA x (h.horizontalLift x (Y (f x))) u := by
-  let : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
   set Y' : Π y : M, TangentSpace I y := fun y ↦ h.horizontalLift y (Y (f y))
   have hYd : MDiffAt (T% Y') x :=
     (h.contMDiffAt_horizontalLift hY (by norm_num)).mdifferentiableAt one_ne_zero
-  set V : Π y : M, TangentSpace I y :=
-    fun y ↦ (mfderiv I J f y).ker.starProjection (FiberBundle.extend E u y)
-  have hVd : MDiffAt (T% V) x :=
-    ((h.contMDiff_starProjection_ker (n := ∞) (by simp)).mdifferentiableAt
-      (by simp)).clm_bundle_apply (FiberBundle.mdifferentiableAt_extend I E u)
-  have hVx : V x = u := by
-    simp [V, FiberBundle.extend_apply_self, Submodule.starProjection_eq_self_iff.mpr hu]
-  have hVv : ∀ y, V y ∈ (mfderiv I J f y).ker := fun _ ↦ Submodule.starProjection_apply_mem _ _
+  obtain ⟨V, hVd, hVx, hVv⟩ := h.exists_vertical_extension hu
   have hT := ((CovariantDerivative.torsion_eq_zero_iff _).mp
     (CovariantDerivative.torsion_leviCivitaConnection_eq_zero I)) hYd hVd
   have hbr : (mfderiv I J f x).kerᗮ.starProjection (mlieBracket I Y' V x) = 0 :=
-    (Submodule.starProjection_apply_eq_zero_iff _).mpr <| by
-      rw [Submodule.orthogonal_orthogonal]
-      exact h.mlieBracket_horizontalLift_mem_ker hY hVd (.of_forall hVv)
+    Submodule.starProjection_orthogonal_apply_eq_zero
+      (h.mlieBracket_horizontalLift_mem_ker hY hVd (.of_forall hVv))
   have ha := h.oneillA_apply_of_eventually_mem_ker hVd (.of_forall hVv) (Y' x)
   rw [Submodule.starProjection_eq_self_iff.mpr (h.horizontalLift_mem_orthogonal_ker x _),
     hVx] at ha
@@ -327,7 +245,7 @@ theorem starProjection_orthogonal_ker_leviCivitaConnection_horizontalLift_of_mem
 /-- Along a vertical vector `u`, the Levi-Civita derivative of a basic horizontal field `Y'` is
 purely algebraic: `∇_u Y' = A_Y' u + T_u Y'`. -/
 theorem leviCivitaConnection_horizontalLift_of_mem_ker
-    (hY : CMDiffAt 1 (T% Y) (f x)) {u : TangentSpace I x}
+    {Y : Π y : N, TangentSpace J y} (hY : CMDiffAt 1 (T% Y) (f x)) {u : TangentSpace I x}
     (hu : u ∈ (mfderiv I J f x).ker) :
     CovariantDerivative.leviCivitaConnection I M
         (fun y ↦ h.horizontalLift y (Y (f y))) x u =
@@ -342,7 +260,7 @@ theorem leviCivitaConnection_horizontalLift_of_mem_ker
 /-- For a basic horizontal field `X'` and a vertical field `V`, the Lie bracket `[X', V]` equals
 `v (∇_X' V) - T_V X'`. -/
 theorem mlieBracket_horizontalLift_of_eventually_mem_ker
-    (hX : CMDiffAt 1 (T% X) (f x)) {V : Π y : M, TangentSpace I y}
+    {X : Π y : N, TangentSpace J y} (hX : CMDiffAt 1 (T% X) (f x)) {V : Π y : M, TangentSpace I y}
     (hV : MDiffAt (T% V) x) (hVv : ∀ᶠ y in 𝓝 x, V y ∈ (mfderiv I J f y).ker) :
     mlieBracket I (fun y ↦ h.horizontalLift y (X (f y))) V x =
       (mfderiv I J f x).ker.starProjection
@@ -366,32 +284,10 @@ theorem mlieBracket_horizontalLift_of_eventually_mem_ker
   rw [map_sub, h.leviCivitaConnection_horizontalLift_of_mem_ker hX hVv.self_of_nhds,
     map_add, ha0, zero_add, ht0]
 
-/-- Along a lifted base vector `v'`, the Levi-Civita derivative of a basic horizontal field `Y'`
-is the lift of `∇^N_v Y` plus `A_v' Y'` (O'Neill, Lemma 1(3)). -/
-theorem leviCivitaConnection_horizontalLift
-    (hY : CMDiffAt 1 (T% Y) (f x)) (v : TangentSpace J (f x)) :
-    CovariantDerivative.leviCivitaConnection I M
-        (fun y ↦ h.horizontalLift y (Y (f y))) x (h.horizontalLift x v) =
-      h.horizontalLift x (CovariantDerivative.leviCivitaConnection J N Y (f x) v) +
-        h.oneillA x (h.horizontalLift x v) (h.horizontalLift x (Y (f x))) := by
-  let : IsManifold J 2 N := .of_le (n := ∞) (by norm_cast)
-  let : IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x) :=
-    .of_le (n := ∞) (by simp)
-  let : IsContMDiffRiemannianBundle J 1 F (fun y : N ↦ TangentSpace J y) :=
-    .of_le (n := ∞) (by simp)
-  have hYd : MDiffAt (T% (fun y ↦ h.horizontalLift y (Y (f y)))) x :=
-    (h.contMDiffAt_horizontalLift hY (by norm_num)).mdifferentiableAt one_ne_zero
-  rw [h.leviCivitaConnection_of_eventually_mem_orthogonal_ker_of_mem_orthogonal_ker hYd
-      (.of_forall fun y ↦ h.horizontalLift_mem_orthogonal_ker y _)
-      (h.horizontalLift_mem_orthogonal_ker x v),
-    h.starProjection_covariantDerivative_horizontalLift
-      (CovariantDerivative.isLeviCivitaConnection_leviCivitaConnection I)
-      (CovariantDerivative.isLeviCivitaConnection_leviCivitaConnection J) hY v]
-
 /-- Along any horizontal vector `u`, the Levi-Civita derivative of a basic horizontal field `Y'`
 decomposes as `(∇^N_(df u) Y)' + A_u Y'`. -/
 theorem leviCivitaConnection_horizontalLift_of_mem_orthogonal_ker
-    (hY : CMDiffAt 1 (T% Y) (f x)) {u : TangentSpace I x}
+    {Y : Π y : N, TangentSpace J y} (hY : CMDiffAt 1 (T% Y) (f x)) {u : TangentSpace I x}
     (hu : u ∈ (mfderiv I J f x).kerᗮ) :
     CovariantDerivative.leviCivitaConnection I M
         (fun y ↦ h.horizontalLift y (Y (f y))) x u =
@@ -404,7 +300,7 @@ theorem leviCivitaConnection_horizontalLift_of_mem_orthogonal_ker
 /-- Along an arbitrary tangent vector `w`, the Levi-Civita derivative of a basic horizontal field
 `Y'` decomposes completely into the lifted base derivative and O'Neill's tensors `A` and `T`. -/
 theorem leviCivitaConnection_horizontalLift_apply
-    (hY : CMDiffAt 1 (T% Y) (f x)) (w : TangentSpace I x) :
+    {Y : Π y : N, TangentSpace J y} (hY : CMDiffAt 1 (T% Y) (f x)) (w : TangentSpace I x) :
     CovariantDerivative.leviCivitaConnection I M
         (fun y ↦ h.horizontalLift y (Y (f y))) x w =
       h.horizontalLift x
@@ -414,13 +310,13 @@ theorem leviCivitaConnection_horizontalLift_apply
         h.oneillT x w (h.horizontalLift x (Y (f x))) := by
   conv_lhs =>
     rw [← Submodule.starProjection_add_starProjection_orthogonal (K := (mfderiv I J f x).ker) w]
-  have hm : mfderiv I J f x ((mfderiv I J f x).kerᗮ.starProjection w) = mfderiv I J f x w := by
-    rw [← h.horizontalLift_mfderiv, h.mfderiv_horizontalLift]
   rw [map_add,
     h.leviCivitaConnection_horizontalLift_of_mem_ker hY (Submodule.starProjection_apply_mem _ _),
     h.leviCivitaConnection_horizontalLift_of_mem_orthogonal_ker hY
       (Submodule.starProjection_apply_mem _ _),
-    hm, h.oneillT_starProjection_ker, h.oneillA_starProjection_orthogonal_ker]
+    ← ContinuousLinearMap.comp_apply (mfderiv I J f x),
+    ContinuousLinearMap.comp_starProjection_orthogonal_ker,
+    h.oneillT_starProjection_ker, h.oneillA_starProjection_orthogonal_ker]
   abel
 
 end BasicFields

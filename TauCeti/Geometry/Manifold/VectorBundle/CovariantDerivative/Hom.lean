@@ -150,6 +150,25 @@ theorem hom_apply {A : Π x : M, V x →L[𝕜] W x} {s : Π x : M, V x} {x : M}
       covW (fun y ↦ A y (s y)) x v - A x (covV s x v) :=
   homValue_apply covV covW hA hs v
 
+/-- Evaluation of an iterated Hom-bundle connection on a differentiable bilinear homomorphism and
+two differentiable sections. -/
+theorem hom_hom_apply [FiniteDimensional 𝕜 G] [ContMDiffVectorBundle 1 G W I]
+    {K : Type*} [NormedAddCommGroup K] [NormedSpace 𝕜 K]
+    {U : M → Type*} [TopologicalSpace (TotalSpace K U)]
+    [∀ x, AddCommGroup (U x)] [∀ x, Module 𝕜 (U x)]
+    [∀ x, TopologicalSpace (U x)] [∀ x, IsTopologicalAddGroup (U x)]
+    [∀ x, ContinuousSMul 𝕜 (U x)] [FiberBundle K U] [VectorBundle 𝕜 K U]
+    (covU : CovariantDerivative I K U)
+    {A : Π x : M, V x →L[𝕜] W x →L[𝕜] U x} {s : Π x : M, V x} {t : Π x : M, W x} {x : M}
+    (hA : MDiffAt (fun y ↦ TotalSpace.mk' (F →L[𝕜] G →L[𝕜] K)
+      (E := fun z ↦ V z →L[𝕜] W z →L[𝕜] U z) y (A y)) x)
+    (hs : MDiffAt (T% s) x) (ht : MDiffAt (T% t) x) (v : TangentSpace I x) :
+    covV.hom (covW.hom covU) A x v (s x) (t x) =
+      covU (fun y ↦ A y (s y) (t y)) x v - A x (covV s x v) (t x) - A x (s x) (covW t x v) := by
+  rw [hom_apply covV (covW.hom covU) hA hs v, sub_apply,
+    hom_apply covW covU (hA.clm_bundle_apply hs) ht v]
+  abel
+
 /-- Evaluate the induced Hom connection on a fibre vector using its local extension. -/
 theorem hom_apply_eq_extend {A : Π x : M, V x →L[𝕜] W x} {x : M}
     (hA : MDiffAt
