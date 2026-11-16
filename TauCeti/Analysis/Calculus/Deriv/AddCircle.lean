@@ -60,19 +60,16 @@ namespace AddCircle
 
 variable {T : ℝ} {F F' : ℝ → ℝ}
 
-/-- The derivative of a lift `F` with `F (x + T) = F x + T` is `T`-periodic. -/
-theorem periodic_deriv_of_lift (hF : ∀ x, HasDerivAt F (F' x) x)
-    (hper : ∀ x, F (x + T) = F x + T) : Function.Periodic F' T := fun x ↦ by
-  have h₁ : HasDerivAt (fun y ↦ F (y + T)) (F' (x + T)) x := (hF (x + T)).comp_add_const x T
-  have h₂ : HasDerivAt (fun y ↦ F (y + T)) (F' x) x := by
-    simpa only [hper] using (hF x).add_const T
-  exact h₁.unique h₂
-
 /-- The derivative of a lift `F` with `F (x + T) = F x + T` is `T`-periodic. This holds without any
 differentiability hypothesis, since `deriv` takes its junk value `0` at the same points of each
 period. -/
 theorem periodic_deriv_lift (hper : ∀ x, F (x + T) = F x + T) : Function.Periodic (deriv F) T :=
   fun x ↦ by rw [← deriv_comp_add_const, funext hper, deriv_add_const]
+
+/-- The derivative of a lift `F` with `F (x + T) = F x + T` is `T`-periodic. -/
+theorem periodic_deriv_of_lift (hF : ∀ x, HasDerivAt F (F' x) x)
+    (hper : ∀ x, F (x + T) = F x + T) : Function.Periodic F' T :=
+  funext (fun x ↦ (hF x).deriv) ▸ periodic_deriv_lift hper
 
 /-- The derivative `F'` of a lift `F`, `F (x + T) = F x + T`, regarded as a continuous complex
 function on the circle; it is well defined since `F'` is `T`-periodic
