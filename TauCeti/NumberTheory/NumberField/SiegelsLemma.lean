@@ -66,7 +66,11 @@ open scoped Matrix
 
 namespace NumberField
 
-variable {K : Type*} [Field K] [NumberField K]
+variable {K : Type*} [Field K]
+
+section
+
+variable [NumberField K]
 
 namespace mixedEmbedding
 
@@ -87,13 +91,10 @@ theorem abs_stdBasis_repr_le_house (x : K) (r : index K) :
     · exact (Complex.abs_re_le_norm _).trans h
     · exact (Complex.abs_im_le_norm _).trans h
 
-variable {α β : Type*} [Fintype α] [Fintype β]
-
-omit [Fintype α] in
 /-- The `stdBasis` coordinates of the mixed embedding of `a *ᵥ x` are the corresponding `ℤ`-linear
 combinations of the coordinates of the entries of `a`. -/
-theorem stdBasis_repr_mulVec_intCast (a : Matrix α β (𝓞 K)) (x : β → ℤ) (i : α)
-    (r : index K) :
+theorem stdBasis_repr_mulVec_intCast {α β : Type*} [Fintype β] (a : Matrix α β (𝓞 K))
+    (x : β → ℤ) (i : α) (r : index K) :
     (stdBasis K).repr (mixedEmbedding K ((a *ᵥ fun j ↦ (x j : 𝓞 K)) i : K)) r =
       ∑ j, (x j : ℝ) * (stdBasis K).repr (mixedEmbedding K (a i j : K)) r := by
   have : ((a *ᵥ fun j ↦ (x j : 𝓞 K)) i : K) = ∑ j, x j • (a i j : K) := by
@@ -149,13 +150,12 @@ theorem eq_zero_of_abs_re_le_of_abs_im_le {x : 𝓞 K}
 
 end RingOfIntegers
 
-variable {α β : Type*} [Fintype α] [Fintype β]
-
 /-- **Siegel's lemma over a number field, with rational integer unknowns** (Evertse,
 Theorem 3.20). Let `K` be a number field of degree `d` and `a` a matrix over `𝓞 K` with `M` rows
 and `N` columns, whose entries have house at most `A ≥ 1`. If `d * M < N`, there is a nonzero
 `x ∈ ℤ^N` with `a x = 0` and `|xⱼ| ≤ (3 N A) ^ (d M / (N - d M))` for every `j`. -/
-theorem exists_ne_zero_int_vec_abs_le_of_house_le (a : Matrix α β (𝓞 K)) {A : ℝ} (hA : 1 ≤ A)
+theorem exists_ne_zero_int_vec_abs_le_of_house_le {α β : Type*} [Fintype α] [Fintype β]
+    (a : Matrix α β (𝓞 K)) {A : ℝ} (hA : 1 ≤ A)
     (hcard : finrank ℚ K * Fintype.card α < Fintype.card β)
     (ha : ∀ i j, house (a i j : K) ≤ A) :
     ∃ x : β → ℤ, x ≠ 0 ∧ a *ᵥ (fun j ↦ (x j : 𝓞 K)) = 0 ∧
@@ -222,13 +222,6 @@ theorem exists_ne_zero_int_vec_abs_le_of_house_le (a : Matrix α β (𝓞 K)) {A
           rw [Pi.sub_apply]
           exact_mod_cast (abs_le.mpr ⟨by linarith, by linarith⟩ : |x j - y j| ≤ (B : ℤ))
       _ ≤ _ := Nat.floor_le (by positivity)
-
-omit [NumberField K] [Fintype α] in
-/-- An integer solution `x` of `a x = 0` over `𝓞 K` solves every row equation in `K`:
-`∑ⱼ aᵢⱼ xⱼ = 0`. -/
-theorem sum_mul_intCast_eq_zero_of_mulVec_eq_zero {a : Matrix α β (𝓞 K)} {x : β → ℤ}
-    (hax : a *ᵥ (fun j ↦ (x j : 𝓞 K)) = 0) (i : α) : ∑ j, (a i j : K) * x j = 0 := by
-  simpa [Matrix.mulVec, dotProduct] using congrArg (algebraMap (𝓞 K) K) (congrFun hax i)
 
 variable (K) in
 /-- **Siegel's lemma over a number field, with algebraic integer unknowns**, wrapping Mathlib's
@@ -328,5 +321,13 @@ theorem exists_ne_zero_mulVec_eq_zero_house_le :
         mul_le_mul_of_nonneg_left (Real.rpow_le_rpow_of_exponent_le hbase hexp)
           (zero_le_one.trans hC₀)
     _ = C₀ ^ 2 * Fintype.card β * A := by rw [Real.rpow_one]; ring
+
+end
+
+/-- An integer solution `x` of `a x = 0` over `𝓞 K` solves every row equation in `K`:
+`∑ⱼ aᵢⱼ xⱼ = 0`. -/
+theorem sum_mul_intCast_eq_zero_of_mulVec_eq_zero {α β : Type*} [Fintype β] {a : Matrix α β (𝓞 K)}
+    {x : β → ℤ} (hax : a *ᵥ (fun j ↦ (x j : 𝓞 K)) = 0) (i : α) : ∑ j, (a i j : K) * x j = 0 := by
+  simpa [Matrix.mulVec, dotProduct] using congrArg (algebraMap (𝓞 K) K) (congrFun hax i)
 
 end NumberField
