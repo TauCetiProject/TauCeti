@@ -8,16 +8,17 @@ module
 public import Mathlib.Algebra.Star.StarProjection
 public import Mathlib.Analysis.CStarAlgebra.Exponential
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
-import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 import Mathlib.Analysis.SpecialFunctions.Exponential
 
 /-!
 # Exponential unitaries and exponentials of idempotents and projections
 
 In a complete normed algebra `A`, every positive power of an idempotent `e` equals `e`, so the power
-series of `NormedSpace.exp (z • e)` collapses to `1 + (NormedSpace.exp z - 1) • e`
-(`IsIdempotentElem.exp_smul`). In a complete normed complex star-algebra, for a star projection `p`
-this gives `selfAdjoint.expUnitary (t • ⟨p, hp.isSelfAdjoint⟩) = 1 + (exp (I * t) - 1) • p`
+series of `NormedSpace.exp (a * e)` for any `a` commuting with `e` collapses to
+`1 + (NormedSpace.exp a - 1) * e` (`IsIdempotentElem.exp_mul_of_commute`), and in particular
+`NormedSpace.exp (z • e) = 1 + (NormedSpace.exp z - 1) • e` (`IsIdempotentElem.exp_smul`). In a
+complete normed complex star-algebra, for a star projection `p` this gives
+`selfAdjoint.expUnitary (t • ⟨p, hp.isSelfAdjoint⟩) = 1 + (exp (I * t) - 1) • p`
 (`IsStarProjection.coe_expUnitary_smul`), which evaluates at `t = π` to the self-adjoint unitary
 `1 - 2 * p` (`IsStarProjection.expUnitary_pi_smul`) and joins `1` to `1 - 2 * p` in `unitary A`
 (`IsStarProjection.joined_one_one_sub_two_mul`).
@@ -25,7 +26,8 @@ this gives `selfAdjoint.expUnitary (t • ⟨p, hp.isSelfAdjoint⟩) = 1 + (exp 
 ## Main declarations
 
 * `selfAdjoint.star_expUnitary`: `star (expUnitary b) = expUnitary (-b)`.
-* `IsIdempotentElem.exp_smul`, `IsIdempotentElem.exp`: closed form for the exponential of `z • e`.
+* `IsIdempotentElem.exp_mul_of_commute`, `IsIdempotentElem.exp`, `IsIdempotentElem.exp_smul`:
+  closed forms for exponentials of `a * e`, `e`, and `z • e` for an idempotent `e`.
 * `IsStarProjection.one_sub_two_mul_mem_unitary`: `1 - 2 * p ∈ unitary A` for a star projection `p`.
 * `IsStarProjection.coe_expUnitary_smul`, `IsStarProjection.expUnitary_pi_smul`,
   `IsStarProjection.joined_one_one_sub_two_mul`: closed form and path to `1 - 2 * p` in `unitary A`.
@@ -57,9 +59,9 @@ end selfAdjoint
 
 namespace IsIdempotentElem
 
-section Ring
+section NonAssocRing
 
-variable {A : Type*} [Ring A] {e : A}
+variable {A : Type*} [NonAssocRing A] {e : A}
 
 /-- For an idempotent `e`, the element `1 - 2 * e` is an involution. -/
 theorem one_sub_two_mul_mul_self (he : IsIdempotentElem e) : (1 - 2 * e) * (1 - 2 * e) = 1 := by
@@ -67,7 +69,34 @@ theorem one_sub_two_mul_mul_self (he : IsIdempotentElem e) : (1 - 2 * e) * (1 - 
   rw [sub_mul, one_mul, mul_sub, mul_one, he2, sub_sub_eq_add_sub, ← add_assoc (1 - 2 * e),
     sub_add_cancel, add_sub_cancel_right]
 
-end Ring
+end NonAssocRing
+
+section RatBanachAlgebra
+
+variable {A : Type*} [NormedRing A] [NormedAlgebra ℚ A] [CompleteSpace A] {e : A}
+
+/-- In a complete normed `ℚ`-algebra, if `a` commutes with an idempotent `e`, then
+`exp (a * e) = 1 + (exp a - 1) * e`. -/
+theorem exp_mul_of_commute (he : IsIdempotentElem e) {a : A} (h : Commute a e) :
+    NormedSpace.exp (a * e) = 1 + (NormedSpace.exp a - 1) * e := by
+  have ha : HasSum (fun n : ℕ ↦ ((n + 1).factorial⁻¹ : ℚ) • a ^ (n + 1))
+      (NormedSpace.exp a - 1) := by
+    simpa using (hasSum_nat_add_iff' 1).mpr (NormedSpace.exp_series_hasSum_exp' (𝕂 := ℚ) a)
+  have hseries : HasSum (fun n : ℕ ↦ ((n + 1).factorial⁻¹ : ℚ) • (a * e) ^ (n + 1))
+      ((NormedSpace.exp a - 1) * e) :=
+    (ha.map (AddMonoidHom.mulRight e) (continuous_mul_const e)).congr_fun fun n ↦ by
+      simp [h.mul_pow, he.pow_succ_eq]
+  have hfull : HasSum (fun n : ℕ ↦ (n.factorial⁻¹ : ℚ) • (a * e) ^ n)
+      (1 + (NormedSpace.exp a - 1) * e) := by
+    rw [← hasSum_nat_add_iff' 1]; simpa [add_comm] using hseries
+  exact (NormedSpace.exp_series_hasSum_exp' (𝕂 := ℚ) (a * e)).unique hfull
+
+/-- In a complete normed `ℚ`-algebra, `exp e = 1 + (exp 1 - 1) * e` for an idempotent `e`. -/
+theorem exp (he : IsIdempotentElem e) :
+    NormedSpace.exp e = 1 + (NormedSpace.exp (1 : A) - 1) * e := by
+  simpa using he.exp_mul_of_commute (Commute.one_left e)
+
+end RatBanachAlgebra
 
 section BanachAlgebra
 
@@ -92,24 +121,25 @@ theorem exp_smul (he : IsIdempotentElem e) (z : 𝕂) :
     rw [← hasSum_nat_add_iff' 1]; simpa [add_comm] using hseries
   exact (NormedSpace.exp_series_hasSum_exp' (𝕂 := 𝕂) (z • e)).unique hfull
 
-/-- In a complete normed algebra over `𝕂`, `exp e = 1 + (exp 1 - 1) • e` for an idempotent `e`. -/
-theorem exp (he : IsIdempotentElem e) :
-    NormedSpace.exp e = 1 + (NormedSpace.exp (1 : 𝕂) - 1) • e := by
-  simpa using he.exp_smul (1 : 𝕂)
-
 end BanachAlgebra
 
 end IsIdempotentElem
 
 namespace IsStarProjection
 
-section StarRing
+section NonAssocStarRing
 
-variable {A : Type*} [Ring A] [StarRing A] {p : A}
+variable {A : Type*} [NonAssocRing A] [StarRing A] {p : A}
 
 /-- For a star projection `p`, the reflection `1 - 2 * p` is self-adjoint. -/
 theorem isSelfAdjoint_one_sub_two_mul (hp : IsStarProjection p) : IsSelfAdjoint (1 - 2 * p) := by
   rw [two_mul]; exact .sub (.one A) (hp.isSelfAdjoint.add hp.isSelfAdjoint)
+
+end NonAssocStarRing
+
+section StarRing
+
+variable {A : Type*} [Ring A] [StarRing A] {p : A}
 
 /-- For a star projection `p`, the reflection `1 - 2 * p` is a unitary element. -/
 theorem one_sub_two_mul_mem_unitary (hp : IsStarProjection p) : 1 - 2 * p ∈ unitary A := by
