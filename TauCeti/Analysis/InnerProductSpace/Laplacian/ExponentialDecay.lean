@@ -244,14 +244,24 @@ theorem le_mul_exp_add_div_mul_exp_of_mul_sub_le_laplacian {u V : E → ℝ} {R 
 
 /-! ### Decay into a ball -/
 
+/-- The inner function `t ↦ √(t + a²)` of the barrier profile has derivative `1 / (2 √(t + a²))`. -/
+private theorem hasDerivAt_sqrt_add {a t : ℝ} (ht : 0 < t + a ^ 2) :
+    HasDerivAt (fun s ↦ √(s + a ^ 2)) (1 / (2 * √(t + a ^ 2))) t :=
+  ((hasDerivAt_id' t).add_const (a ^ 2)).sqrt ht.ne'
+
+/-- The profile `t ↦ cosh (k √(t + a²))` of the interior barrier is `C²` where `t + a² > 0`. -/
+private theorem contDiffAt_cosh_mul_sqrt_add {a k t : ℝ} (ht : 0 < t + a ^ 2) :
+    ContDiffAt ℝ 2 (fun s ↦ Real.cosh (k * √(s + a ^ 2))) t := by
+  have : ContDiffAt ℝ 2 (fun s : ℝ ↦ √(s + a ^ 2)) t :=
+    (Real.contDiffAt_sqrt ht.ne').comp t (contDiffAt_id.add contDiffAt_const)
+  exact (this.const_smul k).cosh
+
 /-- The profile `t ↦ cosh (k √(t + a²))` of the interior barrier, as a function of the squared
 distance `t` to the centre, has derivative `k sinh (k S) / (2 S)`, `S = √(t + a²)`. -/
 private theorem hasDerivAt_cosh_mul_sqrt_add {a k t : ℝ} (ht : 0 < t + a ^ 2) :
     HasDerivAt (fun s ↦ Real.cosh (k * √(s + a ^ 2)))
       (k * Real.sinh (k * √(t + a ^ 2)) / (2 * √(t + a ^ 2))) t := by
-  have hS : HasDerivAt (fun s ↦ √(s + a ^ 2)) (1 / (2 * √(t + a ^ 2))) t :=
-    ((hasDerivAt_id' t).add_const (a ^ 2)).sqrt ht.ne'
-  convert ((hS.const_mul k).cosh) using 1
+  convert (((hasDerivAt_sqrt_add ht).const_mul k).cosh) using 1
   ring
 
 /-- The second derivative of the barrier profile `t ↦ cosh (k √(t + a²))`. -/
@@ -259,8 +269,7 @@ private theorem hasDerivAt_deriv_cosh_mul_sqrt_add {a k t : ℝ} (ht : 0 < t + a
     HasDerivAt (deriv fun s ↦ Real.cosh (k * √(s + a ^ 2)))
       (k ^ 2 * Real.cosh (k * √(t + a ^ 2)) / (4 * √(t + a ^ 2) ^ 2) -
         k * Real.sinh (k * √(t + a ^ 2)) / (4 * √(t + a ^ 2) ^ 3)) t := by
-  have hS : HasDerivAt (fun s ↦ √(s + a ^ 2)) (1 / (2 * √(t + a ^ 2))) t :=
-    ((hasDerivAt_id' t).add_const (a ^ 2)).sqrt ht.ne'
+  have hS := hasDerivAt_sqrt_add ht
   have hS₀ : √(t + a ^ 2) ≠ 0 := (Real.sqrt_pos.mpr ht).ne'
   -- Near `t` the derivative of the profile is given by `hasDerivAt_cosh_mul_sqrt_add`.
   have heq : (deriv fun s ↦ Real.cosh (k * √(s + a ^ 2))) =ᶠ[𝓝 t]
@@ -289,10 +298,7 @@ private theorem laplacian_cosh_barrier_le {a k : ℝ} (ha : 0 < a) (hk : 0 ≤ k
   have hSa : a ≤ S := Real.le_sqrt_of_sq_le (by linarith)
   have hSsq : S ^ 2 = t + a ^ 2 := Real.sq_sqrt ht.le
   -- The chain rule through the squared distance `q y = ‖y - z‖²`.
-  have hF : ContDiffAt ℝ 2 (fun s ↦ Real.cosh (k * √(s + a ^ 2))) t := by
-    have : ContDiffAt ℝ 2 (fun s : ℝ ↦ √(s + a ^ 2)) t :=
-      (Real.contDiffAt_sqrt ht.ne').comp t (contDiffAt_id.add contDiffAt_const)
-    exact (this.const_smul k).cosh
+  have hF := contDiffAt_cosh_mul_sqrt_add (k := k) ht
   have hq : ContDiffAt ℝ 2 (fun y : E ↦ ‖y - z‖ ^ 2) x :=
     ((contDiff_norm_sq ℝ).comp (contDiff_id.sub contDiff_const)).contDiffAt
   have hΔq : Δ (fun y : E ↦ ‖y - z‖ ^ 2) x = 2 * Module.finrank ℝ E := by
@@ -353,13 +359,9 @@ theorem le_mul_cosh_div_cosh_of_mul_le_laplacian {u V : E → ℝ} {z : E} {R a 
   have hA₀ : 0 ≤ A := div_nonneg hM (Real.cosh_pos _).le
   set g : E → ℝ := fun y ↦ A * Real.cosh (k * √(‖y - z‖ ^ 2 + a ^ 2)) with hg
   have hbcd : ∀ y : E,
-      ContDiffAt ℝ 2 (fun y : E ↦ Real.cosh (k * √(‖y - z‖ ^ 2 + a ^ 2))) y := fun y ↦ by
-    have hpos : ‖y - z‖ ^ 2 + a ^ 2 ≠ 0 := by positivity
-    have hq : ContDiff ℝ 2 (fun y : E ↦ ‖y - z‖ ^ 2 + a ^ 2) :=
-      ((contDiff_norm_sq ℝ).comp (contDiff_id.sub contDiff_const)).add contDiff_const
-    have : ContDiffAt ℝ 2 (fun y : E ↦ √(‖y - z‖ ^ 2 + a ^ 2)) y :=
-      (Real.contDiffAt_sqrt hpos).comp y hq.contDiffAt
-    exact (this.const_smul k).cosh
+      ContDiffAt ℝ 2 (fun y : E ↦ Real.cosh (k * √(‖y - z‖ ^ 2 + a ^ 2))) y := fun y ↦
+    (contDiffAt_cosh_mul_sqrt_add (k := k) (by positivity)).comp y
+      ((contDiff_norm_sq ℝ).comp (contDiff_id.sub contDiff_const)).contDiffAt
   have hgcd : ∀ y : E, ContDiffAt ℝ 2 g y := fun y ↦ (hbcd y).const_smul A
   have hint : interior (closedBall z R) = ball z R := interior_closedBall z hR.ne'
   have hfront : frontier (closedBall z R) = sphere z R := frontier_closedBall z hR.ne'
@@ -464,8 +466,10 @@ theorem le_div_sq_add_two_mul_mul_exp_of_mul_sub_le_laplacian {u V : E → ℝ} 
   have hwsub : ∀ x ∈ ball z R, V x * w x ≤ Δ w x := by
     intro x hx
     have hΔ : Δ w x = Δ u x := by
-      rw [show w = u - fun _ ↦ B / c ^ 2 from rfl,
-        (hcd x hx).laplacian_sub contDiffAt_const]
+      have hwu : w = u - fun _ ↦ B / c ^ 2 := by
+        funext y
+        simp [hw]
+      rw [hwu, (hcd x hx).laplacian_sub contDiffAt_const]
       simp
     have hVB : B ≤ V x * (B / c ^ 2) :=
       calc B = c ^ 2 * (B / c ^ 2) := by field_simp
