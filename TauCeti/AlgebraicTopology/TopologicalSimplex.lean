@@ -74,10 +74,9 @@ instance secondCountableTopology (n : SimplexCategory) :
 /-- Every injective operator of `SimplexCategory` induces a closed embedding of topological
 simplices. -/
 theorem isClosedEmbedding_toTop_map_of_injective {m n : SimplexCategory} {f : m ⟶ n}
-    (hf : Function.Injective f.toOrderHom) : IsClosedEmbedding (toTop.{u}.map f) := by
-  refine (ContinuousMap.continuous _).isClosedEmbedding ?_
-  intro x y hxy
-  exact ULift.ext (StdSimplex.map_injective hf (congrArg ULift.down hxy))
+    (hf : Function.Injective f.toOrderHom) : IsClosedEmbedding (toTop.{u}.map f) :=
+  (ContinuousMap.continuous _).isClosedEmbedding fun _ _ hxy ↦
+    ULift.ext (StdSimplex.map_injective hf (congrArg ULift.down hxy))
 
 /-- Every coface operator `SimplexCategory.δ j` induces a closed embedding of topological
 simplices. -/
@@ -90,11 +89,9 @@ theorem isClosedEmbedding_toTop_map_δ {n : ℕ} (j : Fin (n + 2)) :
 theorem range_toTop_map_δ {n : ℕ} (j : Fin (n + 2)) :
     Set.range (toTop.{u}.map (δ j)) = {t | t.down.weights j = 0} := by
   ext t
-  refine ⟨?_, fun ht ↦ ?_⟩
-  · rintro ⟨s, rfl⟩
-    exact StdSimplex.weights_map_succAbove_self j s.down
-  · obtain ⟨w, hw⟩ := (StdSimplex.mem_range_map_succAbove_iff j t.down).2 ht
-    exact ⟨ULift.up w, ULift.ext hw⟩
+  refine ⟨fun ⟨s, hs⟩ ↦ hs ▸ StdSimplex.weights_map_succAbove_self j s.down, fun ht ↦ ?_⟩
+  obtain ⟨w, hw⟩ := (StdSimplex.mem_range_map_succAbove_iff j t.down).2 ht
+  exact ⟨ULift.up w, ULift.ext hw⟩
 
 /-- Every topological simplex is contractible, being a universe lift of a standard simplex on a
 finite nonempty type. -/

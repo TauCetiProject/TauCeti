@@ -11,14 +11,9 @@ public import Mathlib.Topology.Compactness.Lindelof
 # Products of Lindelöf sets and compact sets
 
 The product of a Lindelöf set and a compact set is Lindelöf (`IsLindelof.prod_of_isCompact`,
-`IsCompact.prod_isLindelof`), with no separation assumptions. Consequently the product of a
-Lindelöf space with a compact space is Lindelöf (`TauCeti.instLindelofSpaceProdOfCompactSpace`,
-`TauCeti.instLindelofSpaceProdOfCompactSpaceLeft`).
-
-For each point `x` of the Lindelöf factor `s`, the slice `{x} ×ˢ t` is compact, so any open cover
-of `s ×ˢ t` admits a finite subcover of `{x} ×ˢ t`; by the tube lemma (`generalized_tube_lemma`),
-the union of that finite subcover contains a tube `V x ×ˢ t` around `x`. Taking a countable
-subcover of these tubes along `s` produces a countable union of finite subcovers.
+`IsCompact.prod_isLindelof`), with no separation assumptions, via the generalized tube lemma
+(`generalized_tube_lemma`), giving `TauCeti.instLindelofSpaceProdOfCompactSpace` and
+`TauCeti.instLindelofSpaceProdOfCompactSpaceLeft`.
 
 ## References
 
@@ -43,8 +38,7 @@ theorem IsLindelof.prod_of_isCompact {s : Set X} {t : Set Y} (hs : IsLindelof s)
       ((prod_mono (singleton_subset_iff.2 x.2) Subset.rfl).trans hcov)
     obtain ⟨V, _, hVo, -, hxV, hWt, hsub⟩ :=
       generalized_tube_lemma isCompact_singleton ht (isOpen_biUnion fun i _ ↦ hUo i) hF
-    exact ⟨F, V, hVo, singleton_subset_iff.1 hxV,
-      (prod_mono Subset.rfl hWt).trans hsub⟩
+    exact ⟨F, V, hVo, singleton_subset_iff.1 hxV, (prod_mono Subset.rfl hWt).trans hsub⟩
   choose F V hVo hxV hFV using hslice
   obtain ⟨C, hCc, hCs⟩ := hs.elim_countable_subcover V hVo
     fun x hx ↦ mem_iUnion.2 ⟨⟨x, hx⟩, hxV ⟨x, hx⟩⟩
@@ -56,9 +50,8 @@ theorem IsLindelof.prod_of_isCompact {s : Set X} {t : Set Y} (hs : IsLindelof s)
 
 /-- **The product of a compact set and a Lindelöf set is Lindelöf.** -/
 theorem IsCompact.prod_isLindelof {s : Set X} {t : Set Y} (hs : IsCompact s)
-    (ht : IsLindelof t) : IsLindelof (s ×ˢ t) := by
-  rw [← image_swap_prod]
-  exact (ht.prod_of_isCompact hs).image continuous_swap
+    (ht : IsLindelof t) : IsLindelof (s ×ˢ t) :=
+  image_swap_prod (s := t) (t := s) ▸ (ht.prod_of_isCompact hs).image continuous_swap
 
 namespace TauCeti
 

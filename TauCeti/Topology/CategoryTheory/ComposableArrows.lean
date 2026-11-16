@@ -254,20 +254,22 @@ theorem isClosed_eq_right_left [T2Space C] (n : ℕ) :
     IsClosed {p : Quiver.Total C × ComposableArrows C n | p.1.right = p.2.left} :=
   isClosed_eq (ht.comp continuous_fst) ((continuous_obj hs 0).comp continuous_snd)
 
+omit [TopologicalSpace C] [TopologicalSpace (Quiver.Total C)] in
+private theorem surjective_totalLeft :
+    Function.Surjective (Quiver.Total.left : Quiver.Total C → C) :=
+  fun x ↦ ⟨⟨x, x, 𝟙 x⟩, rfl⟩
+
 include hs ht hu hc in
 /-- When `C` is Hausdorff, `Quiver.Total C` is compact, and source, target, units, and composition
 are continuous, every nerve level `ComposableArrows C n` is compact. -/
 theorem compactSpace [T2Space C] [CompactSpace (Quiver.Total C)] :
     ∀ n : ℕ, CompactSpace (ComposableArrows C n)
   | 0 =>
-    have hsurj : Function.Surjective (Quiver.Total.left : Quiver.Total C → C) :=
-      fun x ↦ ⟨⟨x, x, 𝟙 x⟩, rfl⟩
-    have : CompactSpace C := hsurj.compactSpace hs
+    have : CompactSpace C := (surjective_totalLeft (C := C)).compactSpace hs
     (zeroHomeomorph hs hu).symm.compactSpace
   | n + 1 =>
     have := compactSpace n
-    have : CompactSpace {p : Quiver.Total C × ComposableArrows C n // p.1.right = p.2.left} :=
-      (isClosed_eq_right_left hs ht n).isClosedEmbedding_subtypeVal.compactSpace
+    have := (isClosed_eq_right_left hs ht n).isClosedEmbedding_subtypeVal.compactSpace
     (precompHomeomorph hs hu hc n).symm.compactSpace
 
 include hs ht hu hc in
@@ -276,15 +278,12 @@ composition are continuous, every nerve level `ComposableArrows C n` is `σ`-com
 theorem sigmaCompactSpace [T2Space C] [SigmaCompactSpace (Quiver.Total C)] :
     ∀ n : ℕ, SigmaCompactSpace (ComposableArrows C n)
   | 0 =>
-    have hsurj : Function.Surjective (Quiver.Total.left : Quiver.Total C → C) :=
-      fun x ↦ ⟨⟨x, x, 𝟙 x⟩, rfl⟩
     have : SigmaCompactSpace C :=
-      isSigmaCompact_univ_iff.1 (hsurj.range_eq ▸ isSigmaCompact_range hs)
+      isSigmaCompact_univ_iff.1 ((surjective_totalLeft (C := C)).range_eq ▸ isSigmaCompact_range hs)
     (zeroHomeomorph hs hu).isClosedEmbedding.sigmaCompactSpace
   | n + 1 =>
     have := sigmaCompactSpace n
-    have : SigmaCompactSpace {p : Quiver.Total C × ComposableArrows C n // p.1.right = p.2.left} :=
-      (isClosed_eq_right_left hs ht n).sigmaCompactSpace
+    have := (isClosed_eq_right_left hs ht n).sigmaCompactSpace
     (precompHomeomorph hs hu hc n).isClosedEmbedding.sigmaCompactSpace
 
 end CategoryTheory.ComposableArrows
@@ -296,44 +295,40 @@ section TopologicalNerveInstances
 variable {C : Type u} [Category.{v} C] [TopologicalSpace (Quiver.Total C)] (Δ : SimplexCategoryᵒᵖ)
 
 instance instT0SpaceTopologicalNerve [T0Space (Quiver.Total C)] :
-    T0Space ((topologicalNerve C).obj Δ) :=
-  inferInstanceAs (T0Space (ComposableArrows C Δ.unop.len))
+    T0Space ((topologicalNerve C).obj Δ) := inferInstanceAs (T0Space (ComposableArrows C _))
 
 instance instT1SpaceTopologicalNerve [T1Space (Quiver.Total C)] :
-    T1Space ((topologicalNerve C).obj Δ) :=
-  inferInstanceAs (T1Space (ComposableArrows C Δ.unop.len))
+    T1Space ((topologicalNerve C).obj Δ) := inferInstanceAs (T1Space (ComposableArrows C _))
 
 instance instT2SpaceTopologicalNerve [T2Space (Quiver.Total C)] :
-    T2Space ((topologicalNerve C).obj Δ) :=
-  inferInstanceAs (T2Space (ComposableArrows C Δ.unop.len))
+    T2Space ((topologicalNerve C).obj Δ) := inferInstanceAs (T2Space (ComposableArrows C _))
 
 instance instRegularSpaceTopologicalNerve [RegularSpace (Quiver.Total C)] :
     RegularSpace ((topologicalNerve C).obj Δ) :=
-  inferInstanceAs (RegularSpace (ComposableArrows C Δ.unop.len))
+  inferInstanceAs (RegularSpace (ComposableArrows C _))
 
 instance instT3SpaceTopologicalNerve [T3Space (Quiver.Total C)] :
-    T3Space ((topologicalNerve C).obj Δ) :=
-  inferInstanceAs (T3Space (ComposableArrows C Δ.unop.len))
+    T3Space ((topologicalNerve C).obj Δ) := inferInstanceAs (T3Space (ComposableArrows C _))
 
 instance instFirstCountableTopologyTopologicalNerve [FirstCountableTopology (Quiver.Total C)] :
     FirstCountableTopology ((topologicalNerve C).obj Δ) :=
-  inferInstanceAs (FirstCountableTopology (ComposableArrows C Δ.unop.len))
+  inferInstanceAs (FirstCountableTopology (ComposableArrows C _))
 
 instance instSecondCountableTopologyTopologicalNerve [SecondCountableTopology (Quiver.Total C)] :
     SecondCountableTopology ((topologicalNerve C).obj Δ) :=
-  inferInstanceAs (SecondCountableTopology (ComposableArrows C Δ.unop.len))
+  inferInstanceAs (SecondCountableTopology (ComposableArrows C _))
 
 instance instCompactSpaceTopologicalNerve [CompactSpace (ComposableArrows C Δ.unop.len)] :
     CompactSpace ((topologicalNerve C).obj Δ) :=
-  inferInstanceAs (CompactSpace (ComposableArrows C Δ.unop.len))
+  inferInstanceAs (CompactSpace (ComposableArrows C _))
 
 instance instSigmaCompactSpaceTopologicalNerve [SigmaCompactSpace (ComposableArrows C Δ.unop.len)] :
     SigmaCompactSpace ((topologicalNerve C).obj Δ) :=
-  inferInstanceAs (SigmaCompactSpace (ComposableArrows C Δ.unop.len))
+  inferInstanceAs (SigmaCompactSpace (ComposableArrows C _))
 
 instance instLindelofSpaceTopologicalNerve [LindelofSpace (ComposableArrows C Δ.unop.len)] :
     LindelofSpace ((topologicalNerve C).obj Δ) :=
-  inferInstanceAs (LindelofSpace (ComposableArrows C Δ.unop.len))
+  inferInstanceAs (LindelofSpace (ComposableArrows C _))
 
 end TopologicalNerveInstances
 
