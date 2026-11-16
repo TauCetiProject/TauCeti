@@ -143,24 +143,24 @@ theorem Divisor.card_mul_succ_le_dim_nsmul_poles_add (hF : IsFunctionField k F) 
 /-- The pole divisor of a nonzero transcendental function has degree at most the degree of the
 resulting rational subfield. It is the zero divisor of the inverse function. -/
 private theorem degree_poles_le_finrank_adjoin (hF : IsFunctionField k F) {x : F}
-    (hx : Transcendental k x) (hx0 : x ≠ 0) :
-    Divisor.degree (Divisor.poles hF (Units.mk0 x hx0)) ≤ (Module.finrank k⟮x⟯ F : ℤ) := by
+    (hx : Transcendental k x) :
+    Divisor.degree (Divisor.poles hF (Units.mk0 x hx.ne_zero)) ≤ (Module.finrank k⟮x⟯ F : ℤ) := by
   let _ : FiniteDimensional k⟮x⁻¹⟯ F := by
     rw [IntermediateField.adjoin_simple_inv]
     exact hF.finiteDimensional_adjoin hx
-  have hdegree_le := degree_zeros_le_finrank_adjoin hF (inv_ne_zero hx0)
-  have hunit : Units.mk0 x⁻¹ (inv_ne_zero hx0) = (Units.mk0 x hx0)⁻¹ := by
+  have hdegree_le := degree_zeros_le_finrank_adjoin hF (inv_ne_zero hx.ne_zero)
+  have hunit : Units.mk0 x⁻¹ (inv_ne_zero hx.ne_zero) = (Units.mk0 x hx.ne_zero)⁻¹ := by
     ext
     simp only [Units.val_mk0, Units.val_inv_eq_inv_val]
-  rw [hunit, ← Divisor.poles_eq_zeros_inv hF (Units.mk0 x hx0),
+  rw [hunit, ← Divisor.poles_eq_zeros_inv hF (Units.mk0 x hx.ne_zero),
     IntermediateField.adjoin_simple_inv] at hdegree_le
   exact hdegree_le
 
 /-- The pole divisor of a transcendental function has degree equal to the degree of the resulting
 rational subfield.  This is the growth argument in Stichtenoth's proof of Theorem 1.4.11. -/
 private theorem degree_poles_eq_finrank_adjoin (hF : IsFunctionField k F) {x : F}
-    (hx : Transcendental k x) (hx0 : x ≠ 0) :
-    Divisor.degree (Divisor.poles hF (Units.mk0 x hx0)) =
+    (hx : Transcendental k x) :
+    Divisor.degree (Divisor.poles hF (Units.mk0 x hx.ne_zero)) =
       (Module.finrank k⟮x⟯ F : ℤ) := by
   classical
   let _ : FiniteDimensional k⟮x⟯ F := hF.finiteDimensional_adjoin hx
@@ -168,7 +168,7 @@ private theorem degree_poles_eq_finrank_adjoin (hF : IsFunctionField k F) {x : F
   let c : Fin (Module.finrank k⟮x⟯ F) → Fˣ := fun i ↦ Units.mk0 (b i) (b.ne_zero i)
   have hcLI : LinearIndependent k⟮x⟯ fun i ↦ (c i : F) := by
     simpa only [c, Units.val_mk0] using b.linearIndependent
-  let B : Divisor k F := Divisor.poles hF (Units.mk0 x hx0)
+  let B : Divisor k F := Divisor.poles hF (Units.mk0 x hx.ne_zero)
   let C : Divisor k F := ∑ i, Divisor.poles hF (c i)
   have hC : 0 ≤ C := Finset.sum_nonneg fun i _ ↦ Divisor.poles_nonneg hF (c i)
   have hCi (i) : Divisor.poles hF (c i) ≤ C :=
@@ -177,7 +177,7 @@ private theorem degree_poles_eq_finrank_adjoin (hF : IsFunctionField k F) {x : F
       Module.finrank k⟮x⟯ F * (n + 1) ≤
         Divisor.dim (n • B + C) := by
     simpa only [B, Fintype.card_fin] using
-      Divisor.card_mul_succ_le_dim_nsmul_poles_add hF (Units.mk0 x hx0) hx c hcLI hCi n
+      Divisor.card_mul_succ_le_dim_nsmul_poles_add hF (Units.mk0 x hx.ne_zero) hx c hcLI hCi n
   have hB : 0 ≤ B := Divisor.poles_nonneg hF _
   have hBdeg : 0 ≤ Divisor.degree B := Divisor.degree_nonneg hB
   let d := (Divisor.degree B).toNat
@@ -209,7 +209,7 @@ private theorem degree_poles_eq_finrank_adjoin (hF : IsFunctionField k F) {x : F
   have hdegree_ge : (Module.finrank k⟮x⟯ F : ℤ) ≤ Divisor.degree B := by
     rw [← hd]
     exact_mod_cast hle
-  exact le_antisymm (degree_poles_le_finrank_adjoin hF hx hx0) hdegree_ge
+  exact le_antisymm (degree_poles_le_finrank_adjoin hF hx) hdegree_ge
 
 namespace Divisor
 
@@ -220,8 +220,7 @@ hypothesis is transcendence over `k`, not mere nonconstancy. -/
 theorem degree_poles (hF : IsFunctionField k F) (z : Fˣ)
     (hz : ¬ IsAlgebraic k (z : F)) :
     degree (poles hF z) = (Module.finrank k⟮(z : F)⟯ F : ℤ) := by
-  have hunit : Units.mk0 (z : F) (Units.ne_zero z) = z := by ext; rfl
-  simpa only [hunit] using degree_poles_eq_finrank_adjoin hF hz (Units.ne_zero z)
+  simpa only [Units.mk0_val] using degree_poles_eq_finrank_adjoin hF hz
 
 /-- **Stichtenoth, Theorem 1.4.11**: the zero divisor of a function `z` transcendental over `k`
 has degree `[F : k(z)]`.  No exact-constant-field hypothesis is needed; correspondingly the
