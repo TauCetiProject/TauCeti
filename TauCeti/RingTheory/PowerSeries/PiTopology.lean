@@ -51,12 +51,12 @@ noncomputable def continuousLinearEquivPi : S⟦X⟧ ≃L[R] (ℕ → S) where
     (tendsto_iff_coeff_tendsto S _ _ _).mpr fun n ↦ by
       simpa [PowerSeries.coeff_mk] using (continuous_apply n).continuousAt.tendsto
 
-@[simp]
+@[simp, grind =]
 theorem continuousLinearEquivPi_apply (f : S⟦X⟧) (n : ℕ) :
     continuousLinearEquivPi R S f n = PowerSeries.coeff n f :=
   (rfl)
 
-@[simp]
+@[simp, grind =]
 theorem continuousLinearEquivPi_symm_apply (c : ℕ → S) :
     (continuousLinearEquivPi R S).symm c = PowerSeries.mk c :=
   (rfl)

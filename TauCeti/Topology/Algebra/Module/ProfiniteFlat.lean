@@ -10,22 +10,16 @@ public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.LocalRing.MaximalIdeal.Defs
 public import Mathlib.RingTheory.Localization.FractionRing
-public import Mathlib.Topology.Algebra.Nonarchimedean.AdicTopology
 public import Mathlib.Topology.Order
 public import TauCeti.RingTheory.MvPowerSeries.PiTopology
 public import TauCeti.RingTheory.PowerSeries.PiTopology
-public import TauCeti.Topology.Algebra.Module.Compact
-import Mathlib.Algebra.Module.Torsion.Basic
-import Mathlib.RingTheory.AdicCompletion.Basic
+public import TauCeti.Topology.Algebra.Ring.Compact
 import Mathlib.RingTheory.Flat.TorsionFree
 import Mathlib.RingTheory.Ideal.Quotient.Basic
-import Mathlib.Topology.Homeomorph.Lemmas
 import TauCeti.Algebra.Module.Injective.PrincipalIdealRing
 import TauCeti.RingTheory.Flat.Pi
 import TauCeti.Topology.Algebra.Module.LinearTopology.CompactVectorSpace
 import TauCeti.Topology.Algebra.Module.Nakayama
-import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic
-import TauCeti.Topology.Algebra.Ring.Compact
 
 /-!
 # Profinite flat modules and pseudobases
@@ -101,55 +95,60 @@ theorem submodulePiPow_def (e : M ≃L[R] (I → R)) (J : Ideal R) (s : Finset I
     e.submodulePiPow J s n = (Submodule.pi (s : Set I) fun _ ↦ J ^ n).comap e.toLinearMap := by
   rfl
 
-@[simp]
+@[simp, grind =]
 theorem mem_submodulePiPow_iff (e : M ≃L[R] (I → R)) (J : Ideal R) (s : Finset I) (n : ℕ)
     (m : M) : m ∈ e.submodulePiPow J s n ↔ ∀ i ∈ s, e m i ∈ J ^ n := by
-  rfl
+  simp [submodulePiPow_def]
 
-@[simp]
+@[simp, grind =]
 theorem submodulePiPow_empty (e : M ≃L[R] (I → R)) (J : Ideal R) (n : ℕ) :
     e.submodulePiPow J ∅ n = ⊤ := by
   simp [submodulePiPow_def]
 
-@[simp]
+@[simp, grind =]
 theorem submodulePiPow_zero (e : M ≃L[R] (I → R)) (J : Ideal R) (s : Finset I) :
     e.submodulePiPow J s 0 = ⊤ := by
   simp [submodulePiPow_def]
 
-@[simp]
+@[simp, grind =]
 theorem submodulePiPow_union [DecidableEq I] (e : M ≃L[R] (I → R)) (J : Ideal R)
     (s₁ s₂ : Finset I) (n : ℕ) :
     e.submodulePiPow J (s₁ ∪ s₂) n = e.submodulePiPow J s₁ n ⊓ e.submodulePiPow J s₂ n := by
   ext m
   simp [or_imp, forall_and]
 
-@[simp]
+@[simp, grind =]
 theorem map_submodulePiPow (e : M ≃L[R] (I → R)) (J : Ideal R) (s : Finset I) (n : ℕ) :
-    (e.submodulePiPow J s n).map e.toLinearMap = Submodule.pi (s : Set I) fun _ ↦ J ^ n :=
-  Submodule.map_comap_eq_self (by rw [LinearMap.range_eq_top.mpr e.surjective]; exact le_top)
+    (e.submodulePiPow J s n).map e.toLinearMap = Submodule.pi (s : Set I) fun _ ↦ J ^ n := by
+  rw [submodulePiPow_def]
+  exact Submodule.map_comap_eq_of_surjective e.surjective _
 
 /-- `e.submodulePiPow J s n` is antitone in both the finite coordinate set `s` and the exponent
 `n`. -/
 theorem submodulePiPow_anti (e : M ≃L[R] (I → R)) (J : Ideal R) {s₁ s₂ : Finset I} {n₁ n₂ : ℕ}
     (hs : s₁ ⊆ s₂) (hn : n₁ ≤ n₂) :
-    e.submodulePiPow J s₂ n₂ ≤ e.submodulePiPow J s₁ n₁ :=
-  fun _ hm i hi ↦ Ideal.pow_le_pow_right hn (hm i (hs hi))
+    e.submodulePiPow J s₂ n₂ ≤ e.submodulePiPow J s₁ n₁ := by
+  intro m hm
+  rw [mem_submodulePiPow_iff] at hm ⊢
+  exact fun i hi ↦ Ideal.pow_le_pow_right hn (hm i (hs hi))
 
 /-- `e.submodulePiPow J s n` is antitone in the finite coordinate set `s`. -/
-theorem antitone_submodulePiPow_left (e : M ≃L[R] (I → R)) (J : Ideal R) (n : ℕ) :
+theorem submodulePiPow_left_antitone (e : M ≃L[R] (I → R)) (J : Ideal R) (n : ℕ) :
     Antitone (fun s : Finset I ↦ e.submodulePiPow J s n) :=
   fun _ _ hs ↦ e.submodulePiPow_anti J hs le_rfl
 
 /-- `e.submodulePiPow J s n` is antitone in the exponent `n`. -/
-theorem antitone_submodulePiPow_right (e : M ≃L[R] (I → R)) (J : Ideal R) (s : Finset I) :
+theorem submodulePiPow_right_antitone (e : M ≃L[R] (I → R)) (J : Ideal R) (s : Finset I) :
     Antitone (e.submodulePiPow J s) :=
   fun _ _ hn ↦ e.submodulePiPow_anti J Finset.Subset.rfl hn
 
 /-- When the topology of `R` is `J`-adic, each coordinate congruence submodule
 `e.submodulePiPow J s n` is open in `M`. -/
 theorem isOpen_submodulePiPow (e : M ≃L[R] (I → R)) {J : Ideal R} (hJ : IsAdic J)
-    (s : Finset I) (n : ℕ) : IsOpen (e.submodulePiPow J s n : Set M) :=
-  (isOpen_set_pi s.finite_toSet fun _ _ ↦ hJ.isOpen_pow n).preimage e.continuous
+    (s : Finset I) (n : ℕ) : IsOpen (e.submodulePiPow J s n : Set M) := by
+  rw [submodulePiPow_def, Submodule.comap_coe, Submodule.coe_pi,
+    LinearEquiv.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv]
+  exact (isOpen_set_pi s.finite_toSet fun _ _ ↦ hJ.isOpen_pow n).preimage e.continuous
 
 /-- **Neighbourhood basis from a pseudobasis.** If `e : M ≃L[R] (I → R)` and the topology of `R`
 is `J`-adic, then the open submodules `e.submodulePiPow J s n` (`s : Finset I`, `n : ℕ`) form a
@@ -171,8 +170,10 @@ theorem hasBasis_nhds_zero_submodulePiPow (e : M ≃L[R] (I → R)) {J : Ideal R
     exact ⟨k, hk⟩
   choose k hk using hk
   refine ⟨(s, s.sup k), trivial, fun m hm ↦ ?_⟩
+  rw [SetLike.mem_coe, mem_submodulePiPow_iff] at hm
   have hem : e m ∈ (s : Set I).pi t := fun i hi ↦
-    hk i (Ideal.pow_le_pow_right (Finset.le_sup hi) (hm i hi))
+    hk i (Ideal.pow_le_pow_right (Finset.le_sup (Finset.mem_coe.mp hi))
+      (hm i (Finset.mem_coe.mp hi)))
   simpa using hst hem
 
 end PseudobasisBasis
@@ -189,6 +190,7 @@ structure IsProfiniteFlat (R M : Type*) [CommRing R] [TopologicalSpace R]
   /-- The underlying `R`-module is flat. -/
   flat : Module.Flat R M
 
+@[grind =]
 theorem isProfiniteFlat_iff {R M : Type*} [CommRing R] [TopologicalSpace R]
     [AddCommGroup M] [Module R M] [TopologicalSpace M] :
     IsProfiniteFlat R M ↔ IsCompactModule R M ∧ Module.Flat R M :=
@@ -235,8 +237,7 @@ theorem self_of_isAdic [CompactSpace R] [T2Space R] {I : Ideal R} (hI : IsAdic I
 
 /-- Any subsingleton topological `R`-module is profinite flat. -/
 theorem of_subsingleton [Subsingleton M] : IsProfiniteFlat R M :=
-  ⟨.of_subsingleton,
-    Module.Flat.of_retract (M := R) 0 0 (LinearMap.ext fun _ ↦ Subsingleton.elim _ _)⟩
+  ⟨.of_subsingleton, inferInstance⟩
 
 /-- Binary products of profinite flat modules are profinite flat. -/
 theorem prod {N : Type*} [AddCommGroup N] [Module R N] [TopologicalSpace N]
@@ -582,58 +583,40 @@ theorem exists_continuousLinearMap_mk_maximalIdeal_eq {M : Type v} [AddCommGroup
   rw [← Ideal.Quotient.mk_eq_mk, Submodule.quotEquivOfEq_mk, Ideal.Quotient.mk_eq_mk, hF 0 m]
   simp [tower]
 
-/-- Topological Nakayama isomorphism criterion over a compact Hausdorff discrete valuation ring: a
-continuous `O`-linear map `Φ : M →L[O] N` from a compact `O`-module `M` to a torsion-free compact
-`O`-module `N` whose reduction modulo `maximalIdeal O` is bijective upgrades to `M ≃L[O] N`. -/
-private noncomputable def continuousLinearEquivOfBijectiveMapQ {M N : Type*}
-    [AddCommGroup M] [Module O M] [TopologicalSpace M]
-    [AddCommGroup N] [Module O N] [TopologicalSpace N] [Module.IsTorsionFree O N]
-    (hM : IsCompactModule O M) (hN : IsCompactModule O N) (Φ : M →L[O] N)
-    (hbij : Function.Bijective
-      (Submodule.mapQ ((maximalIdeal O) • ⊤) ((maximalIdeal O) • ⊤) Φ.toLinearMap
-        (Submodule.smul_top_le_comap_smul_top (maximalIdeal O) Φ.toLinearMap))) :
-    M ≃L[O] N := by
-  have := hM.isTopologicalAddGroup
-  have := hM.continuousSMul
-  have := hM.compactSpace
-  have := hM.t2Space
-  have := hN.isTopologicalAddGroup
-  have := hN.continuousSMul
-  have := hN.compactSpace
-  have := hN.t2Space
-  have hbij_Φ : Function.Bijective Φ.toLinearMap := by
-    obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible O
-    have hmax : maximalIdeal O = Ideal.span {ϖ} := hϖ.maximalIdeal_eq
-    have hnil : ∀ a ∈ maximalIdeal O, IsTopologicallyNilpotent a :=
-      fun a ha ↦ (IsLocalRing.isAdic_maximalIdeal O).isTopologicallyNilpotent_of_mem ha
-    refine ⟨?_, LinearMap.surjective_of_surjective_comp_mkQ_of_compactSpace
-      (IsNoetherian.noetherian (maximalIdeal O)) hnil Φ.toLinearMap Φ.continuous fun q ↦ ?_⟩
-    · rw [← LinearMap.ker_eq_bot]
-      have hker_closed : IsClosed (LinearMap.ker Φ.toLinearMap : Set M) := by
-        convert (isClosed_singleton (x := (0 : N))).preimage Φ.continuous
-        ext m; simp
-      refine Submodule.eq_bot_of_le_smul_of_isCompact (IsNoetherian.noetherian (maximalIdeal O))
-        hnil hker_closed.isCompact fun m hm ↦ ?_
-      have hmk_zero : ((maximalIdeal O) • (⊤ : Submodule O M)).mkQ m = 0 := by
-        apply hbij.1
-        rw [map_zero, Submodule.mkQ_apply, Submodule.mapQ_apply, LinearMap.mem_ker.mp hm,
-          Submodule.Quotient.mk_zero]
-      have hm_smul : m ∈ Ideal.span ({ϖ} : Set O) • (⊤ : Submodule O M) := by
-        rwa [← hmax, ← Submodule.Quotient.mk_eq_zero, ← Submodule.mkQ_apply]
-      obtain ⟨m', -, hm'⟩ := (Submodule.ideal_span_singleton_smul ϖ (⊤ : Submodule O M)).le hm_smul
-      rw [hmax, Submodule.ideal_span_singleton_smul]
-      refine ⟨m', ?_, hm'⟩
-      rw [SetLike.mem_coe, LinearMap.mem_ker]
-      rw [LinearMap.mem_ker, ← hm', DistribSMul.toLinearMap_apply, map_smul] at hm
-      exact smul_right_injective N hϖ.ne_zero (hm.trans (smul_zero ϖ).symm)
-    · obtain ⟨y, hy⟩ := hbij.2 q
-      obtain ⟨m, rfl⟩ := Submodule.mkQ_surjective _ y
-      exact ⟨m, by simpa using hy⟩
-  let e := LinearEquiv.ofBijective Φ.toLinearMap hbij_Φ
-  exact { toLinearEquiv := e
-          continuous_toFun := Φ.continuous
-          continuous_invFun :=
-            Φ.continuous.continuous_symm_of_equiv_compact_to_t2 (f := e.toEquiv) }
+omit [IsDomain O] [IsDiscreteValuationRing O] [TopologicalSpace O] [IsTopologicalRing O]
+  [CompactSpace O] [T2Space O] in
+/-- Coordinatewise reduction modulo an ideal `J` on a product `I → O`, factored through
+`(I → O) ⧸ (J • ⊤)`. -/
+private def quotPiSMulTopToPiQuot {I : Type*} (J : Ideal O) :
+    ((I → O) ⧸ (J • (⊤ : Submodule O (I → O)))) →ₗ[O] (I → O ⧸ J) :=
+  (J • (⊤ : Submodule O (I → O))).liftQ
+    (LinearMap.pi fun i ↦ (Ideal.Quotient.mkₐ O J).toLinearMap.comp (LinearMap.proj i)) <| by
+      rw [Submodule.smul_le]
+      intro r hr x _
+      rw [LinearMap.mem_ker]
+      ext i
+      simp [Algebra.smul_def, Ideal.Quotient.eq_zero_iff_mem.mpr hr]
+
+omit [IsDomain O] [IsDiscreteValuationRing O] [TopologicalSpace O] [IsTopologicalRing O]
+  [CompactSpace O] [T2Space O] in
+@[simp]
+private theorem quotPiSMulTopToPiQuot_mk {I : Type*} (J : Ideal O) (x : I → O) (i : I) :
+    quotPiSMulTopToPiQuot J (Submodule.Quotient.mk x) i = Ideal.Quotient.mk J (x i) := by
+  rw [quotPiSMulTopToPiQuot, Submodule.liftQ_apply, LinearMap.pi_apply, LinearMap.comp_apply,
+    LinearMap.proj_apply, AlgHom.toLinearMap_apply, Ideal.Quotient.mkₐ_eq_mk]
+
+omit [IsDomain O] [IsDiscreteValuationRing O] [TopologicalSpace O] [IsTopologicalRing O]
+  [CompactSpace O] [T2Space O] in
+private theorem quotPiSMulTopToPiQuot_injective_of_eq_span_singleton {I : Type*} {J : Ideal O}
+    {ϖ : O} (hJ : J = Ideal.span {ϖ}) :
+    Function.Injective (quotPiSMulTopToPiQuot (I := I) J) := by
+  refine LinearMap.ker_eq_bot.mp (Submodule.ker_liftQ_eq_bot _ _ _ fun x hx ↦ ?_)
+  have hcoord (i : I) : ∃ c : O, x i = ϖ * c :=
+    Ideal.mem_span_singleton.mp (hJ ▸
+      Ideal.Quotient.eq_zero_iff_mem.mp (by simpa using congr_fun (LinearMap.mem_ker.mp hx) i))
+  choose c hc using hcoord
+  rw [hJ, Submodule.ideal_span_singleton_smul, Submodule.mem_smul_pointwise_iff_exists]
+  exact ⟨c, Submodule.mem_top, funext fun i ↦ (hc i).symm⟩
 
 /-- **Existence of a pseudobasis.** Every profinite flat module `M : Type v` over a compact
 Hausdorff discrete valuation ring `O` is topologically `O`-linearly isomorphic to a product
@@ -654,41 +637,34 @@ theorem exists_pseudobasis {M : Type v} [AddCommGroup M] [Module O M] [Topologic
   let φ₀ (i : I) : M →L[O] (O ⧸ maximalIdeal O) :=
     ⟨(φ₀_k i).toLinearMap.restrictScalars O ∘ₗ ((maximalIdeal O) • (⊤ : Submodule O M)).mkQ,
       (φ₀_k i).continuous.comp continuous_quot_mk⟩
+  have hφ₀ (i : I) (m : M) : φ₀ i m = e₀ (Submodule.Quotient.mk m) i := by
+    simp [φ₀, φ₀_k, M₀]
   choose F hF using fun i : I ↦ hM.exists_continuousLinearMap_mk_maximalIdeal_eq (φ₀ i)
-  let Φ : M →L[O] (I → O) :=
-    ⟨LinearMap.pi fun i ↦ (F i).toLinearMap, continuous_pi fun i ↦ (F i).continuous⟩
+  let Φ : M →L[O] (I → O) := ContinuousLinearMap.pi F
   -- Identify the mod-`m` reduction of `Φ` with `e₀` via coordinatewise reduction on `I → O`.
   obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible O
-  let q : (I → O) →ₗ[O] (I → O ⧸ maximalIdeal O) :=
-    LinearMap.pi fun i ↦ (Ideal.Quotient.mkₐ O (maximalIdeal O)).toLinearMap.comp (LinearMap.proj i)
-  have hle_ker : (maximalIdeal O) • (⊤ : Submodule O (I → O)) ≤ LinearMap.ker q := by
-    rw [Submodule.smul_le]
-    intro r hr x _
-    ext i
-    simp [q, Algebra.smul_def, Ideal.Quotient.eq_zero_iff_mem.mpr hr]
-  have hker_le : LinearMap.ker q ≤ (maximalIdeal O) • (⊤ : Submodule O (I → O)) := by
-    intro x hx
-    have hcoord (i : I) : ∃ c : O, x i = ϖ * c :=
-      Ideal.mem_span_singleton.mp (hϖ.maximalIdeal_eq ▸
-        Ideal.Quotient.eq_zero_iff_mem.mp (congr_fun (LinearMap.mem_ker.mp hx) i))
-    choose c hc using hcoord
-    rw [hϖ.maximalIdeal_eq, Submodule.ideal_span_singleton_smul]
-    exact ⟨c, Submodule.mem_top, funext fun i ↦ (hc i).symm⟩
-  let π := ((maximalIdeal O) • (⊤ : Submodule O (I → O))).liftQ q hle_ker
-  have hπ_inj : Function.Injective π :=
-    LinearMap.ker_eq_bot.mp (Submodule.ker_liftQ_eq_bot _ q hle_ker hker_le)
+  have hπ_inj : Function.Injective (quotPiSMulTopToPiQuot (I := I) (maximalIdeal O)) :=
+    quotPiSMulTopToPiQuot_injective_of_eq_span_singleton hϖ.maximalIdeal_eq
   let Φbar := Submodule.mapQ ((maximalIdeal O) • ⊤) ((maximalIdeal O) • ⊤) Φ.toLinearMap
     (Submodule.smul_top_le_comap_smul_top (maximalIdeal O) Φ.toLinearMap)
-  have hπΦ (y₀ : M₀) : π (Φbar y₀) = e₀ y₀ := by
+  have hπΦ (y₀ : M₀) : quotPiSMulTopToPiQuot (maximalIdeal O) (Φbar y₀) = e₀ y₀ := by
     obtain ⟨m, rfl⟩ := Submodule.Quotient.mk_surjective _ y₀
     ext i
-    simpa [π, Φbar, q, Φ, φ₀, φ₀_k, M₀] using hF i m
-  refine ⟨I, ⟨continuousLinearEquivOfBijectiveMapQ hM.toIsCompactModule
-    (pi_self_of_isDiscreteValuationRing O I).toIsCompactModule Φ ⟨?_, ?_⟩⟩⟩
+    dsimp only [Φbar]
+    rw [Submodule.mapQ_apply, quotPiSMulTopToPiQuot_mk, ContinuousLinearMap.coe_coe,
+      ContinuousLinearMap.pi_apply, hF i m, hφ₀]
+  have hϖ_nil : IsTopologicallyNilpotent ϖ :=
+    (IsLocalRing.isAdic_maximalIdeal O).isTopologicallyNilpotent_of_mem
+      (hϖ.maximalIdeal_eq ▸ Ideal.mem_span_singleton_self ϖ)
+  have hϖ_reg : IsSMulRegular (I → O) ϖ := smul_right_injective (I → O) hϖ.ne_zero
+  refine ⟨I, ⟨hM.toIsCompactModule.continuousLinearEquivOfBijectiveMapQ
+    (pi_self_of_isDiscreteValuationRing O I).toIsCompactModule hϖ.maximalIdeal_eq hϖ_nil hϖ_reg
+    Φ ⟨?_, ?_⟩⟩⟩
   · intro y₁ y₂ hy
-    exact e₀.injective ((hπΦ y₁).symm.trans ((congr_arg π hy).trans (hπΦ y₂)))
+    exact e₀.injective ((hπΦ y₁).symm.trans
+      ((congr_arg (quotPiSMulTopToPiQuot (maximalIdeal O)) hy).trans (hπΦ y₂)))
   · intro z
-    obtain ⟨y₀, hy₀⟩ := e₀.surjective (π z)
+    obtain ⟨y₀, hy₀⟩ := e₀.surjective (quotPiSMulTopToPiQuot (maximalIdeal O) z)
     exact ⟨y₀, hπ_inj ((hπΦ y₀).trans hy₀)⟩
 
 /-- **Characterization of profinite flat modules by pseudobases.** Over a compact Hausdorff discrete
@@ -769,7 +745,7 @@ theorem not_isProfiniteFlat_of_isFractionRing (O K : Type*) [CommRing O] [IsDoma
 
 /-- A nontrivial module `M` equipped with the indiscrete topology is never profinite flat over any
 commutative ring `R` (even though it is compact, linearly topologized, and flat when `M = R`). -/
-theorem not_isProfiniteFlat_of_indiscreteTopology {R M : Type*} [CommRing R] [TopologicalSpace R]
+theorem not_isProfiniteFlat_of_indiscreteTopology (R M : Type*) [CommRing R] [TopologicalSpace R]
     [AddCommGroup M] [Module R M] [TopologicalSpace M] [IndiscreteTopology M] [Nontrivial M] :
     ¬ IsProfiniteFlat R M := by
   intro hM
@@ -780,7 +756,7 @@ theorem not_isProfiniteFlat_of_indiscreteTopology {R M : Type*} [CommRing R] [To
 /-- A nontrivial module `M` equipped with the indiscrete topology admits no continuous linear
 equivalence `M ≃L[R] (I → R)` over a `T₂` ring `R` (even when `M` is compact, linearly
 topologized, and flat). -/
-theorem isEmpty_continuousLinearEquiv_pi_of_indiscreteTopology {R M : Type*} (I : Type*)
+theorem isEmpty_continuousLinearEquiv_pi_of_indiscreteTopology (R M I : Type*)
     [Ring R] [TopologicalSpace R] [T2Space R] [AddCommGroup M] [Module R M]
     [TopologicalSpace M] [IndiscreteTopology M] [Nontrivial M] :
     IsEmpty (M ≃L[R] (I → R)) := by

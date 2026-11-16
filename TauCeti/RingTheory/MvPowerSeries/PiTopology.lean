@@ -48,17 +48,17 @@ def continuousLinearEquivPi : MvPowerSeries σ S ≃L[R] ((σ →₀ ℕ) → S)
   continuous_invFun := continuous_iff_continuousAt.mpr fun _ ↦
     (tendsto_iff_coeff_tendsto _ _ _).mpr fun d ↦ (continuous_apply d).continuousAt
 
-@[simp]
+@[simp, grind =]
 theorem continuousLinearEquivPi_apply (f : MvPowerSeries σ S) (d : σ →₀ ℕ) :
     continuousLinearEquivPi σ R S f d = MvPowerSeries.coeff d f :=
   (rfl)
 
-@[simp]
+@[simp, grind =]
 theorem coeff_continuousLinearEquivPi_symm (c : (σ →₀ ℕ) → S) (d : σ →₀ ℕ) :
-    MvPowerSeries.coeff d ((continuousLinearEquivPi σ R S).symm c) = c d :=
-  MvPowerSeries.coeff_apply c d
+    MvPowerSeries.coeff d ((continuousLinearEquivPi σ R S).symm c) = c d := by
+  rw [← continuousLinearEquivPi_apply σ R S, ContinuousLinearEquiv.apply_symm_apply]
 
-@[simp]
+@[simp, grind =]
 theorem constantCoeff_continuousLinearEquivPi_symm (c : (σ →₀ ℕ) → S) :
     MvPowerSeries.constantCoeff ((continuousLinearEquivPi σ R S).symm c) = c 0 := by
   rw [← MvPowerSeries.coeff_zero_eq_constantCoeff_apply, coeff_continuousLinearEquivPi_symm]

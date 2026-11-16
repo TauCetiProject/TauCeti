@@ -57,9 +57,10 @@ compactness and Hausdorffness of `R` (or compactness of an `R`-module `M`) yield
   `TauCeti.IsCompactModule.isAdicComplete_of_isAdic`,
   `TauCeti.IsCompactModule.quotient_smul_top_of_isAdic`: adic properties of compact modules over
   `I`-adic rings.
+* `TauCeti.IsCompactModule.isClosed_smul_top_of_isNoetherianRing`: over a noetherian ring, `I • ⊤`
+  is closed in any compact module for every ideal `I`.
 * `TauCeti.IsCompactModule.self_of_isLocalRing`,
   `TauCeti.IsCompactModule.quotient_maximalIdeal`,
-  `TauCeti.IsCompactModule.isClosed_maximalIdeal_pow_smul_top`,
   `TauCeti.IsCompactModule.exists_maximalIdeal_pow_smul_top_le`,
   `TauCeti.IsCompactModule.isAdicComplete_maximalIdeal`,
   `TauCeti.IsCompactModule.quotient_maximalIdeal_smul_top`: specializations to `maximalIdeal R`.
@@ -208,6 +209,18 @@ theorem quotient_smul_top_of_isAdic (hM : IsCompactModule R M) {I : Ideal R} (hI
 
 end IsAdic
 
+section IsNoetherianRing
+
+variable {R M : Type*} [CommRing R] [IsNoetherianRing R] [TopologicalSpace R]
+  [AddCommGroup M] [Module R M] [TopologicalSpace M]
+
+/-- In a compact module over a noetherian ring, `I • ⊤` is closed for every ideal `I`. -/
+theorem isClosed_smul_top_of_isNoetherianRing (hM : IsCompactModule R M) (I : Ideal R) :
+    IsClosed ((I • (⊤ : Submodule R M) : Submodule R M) : Set M) :=
+  hM.isClosed_smul_top (IsNoetherian.noetherian I)
+
+end IsNoetherianRing
+
 section IsLocalRing
 
 variable {R M : Type*} [CommRing R] [TopologicalSpace R] [IsTopologicalRing R] [CompactSpace R]
@@ -227,13 +240,6 @@ theorem quotient_maximalIdeal : IsCompactModule R (R ⧸ maximalIdeal R) :=
 
 variable (hM : IsCompactModule R M)
 include hM
-
-omit [IsTopologicalRing R] [CompactSpace R] [T2Space R] in
-/-- In a compact module over a noetherian local ring, every step `m ^ n • ⊤` of the maximal ideal
-filtration is closed. -/
-theorem isClosed_maximalIdeal_pow_smul_top (n : ℕ) :
-    IsClosed (((maximalIdeal R ^ n) • (⊤ : Submodule R M) : Submodule R M) : Set M) :=
-  hM.isClosed_smul_top (IsNoetherian.noetherian (maximalIdeal R ^ n))
 
 /-- **Every open submodule of a compact module over a compact Hausdorff noetherian local ring
 contains `m ^ n • ⊤` for some `n`.** -/
