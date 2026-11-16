@@ -53,6 +53,7 @@ constant, depending on `N`, times `‖S_N u - g‖_p`.
   closed and complete (`TauCeti.BesovSpace.isClosed_littleBesov`), as a set it is
   `TauCeti.BesovSpace.coe_littleBesov`, and it is the smallest closed subspace containing the
   Schwartz functions (`TauCeti.BesovSpace.littleBesov_le`).
+* `SchwartzMap.toLittleBesovCLM`: the inclusion of the Schwartz functions in `b^s_{p,∞}`.
 * `TauCeti.BesovSpace.denseRange_littleBesov`: the Schwartz functions are dense in `b^s_{p,∞}`, so
   continuous linear maps out of it are determined by their values on them
   (`TauCeti.BesovSpace.continuousLinearMap_ext_littleBesov`).
@@ -120,6 +121,18 @@ theorem toBesovSpaceCLM_mem_littleBesov (f : 𝓢(E, F)) :
     SchwartzMap.toBesovSpaceCLM F φ s p ∞ f ∈ littleBesov F φ s p :=
   Submodule.le_topologicalClosure _ ⟨f, rfl⟩
 
+variable (F φ s p) in
+/-- The inclusion of the Schwartz functions in the little Besov space `b^s_{p,∞}`, as a continuous
+linear map: `SchwartzMap.toBesovSpaceCLM` with its values in `b^s_{p,∞}`. -/
+def _root_.SchwartzMap.toLittleBesovCLM : 𝓢(E, F) →L[ℂ] littleBesov F φ s p :=
+  (SchwartzMap.toBesovSpaceCLM F φ s p ∞).codRestrict _ toBesovSpaceCLM_mem_littleBesov
+
+@[simp]
+theorem _root_.SchwartzMap.coe_toLittleBesovCLM (f : 𝓢(E, F)) :
+    (SchwartzMap.toLittleBesovCLM F φ s p f : BesovSpace F φ s p ∞) =
+      SchwartzMap.toBesovSpaceCLM F φ s p ∞ f :=
+  ContinuousLinearMap.coe_codRestrict_apply _ _ _ f
+
 /-- **Minimality.** The little Besov space is contained in every closed subspace of `B^s_{p,∞}`
 containing the Schwartz functions. -/
 theorem littleBesov_le {S : Submodule ℂ (BesovSpace F φ s p ∞)}
@@ -130,20 +143,17 @@ theorem littleBesov_le {S : Submodule ℂ (BesovSpace F φ s p ∞)}
 
 variable (F φ s p) in
 /-- **Schwartz functions are dense in the little Besov space** `b^s_{p,∞}`, by definition. -/
-theorem denseRange_littleBesov :
-    DenseRange fun f : 𝓢(E, F) ↦
-      (⟨SchwartzMap.toBesovSpaceCLM F φ s p ∞ f, toBesovSpaceCLM_mem_littleBesov f⟩ :
-        littleBesov F φ s p) := by
+theorem denseRange_littleBesov : DenseRange (SchwartzMap.toLittleBesovCLM F φ s p) := by
   refine Topology.IsInducing.subtypeVal.dense_iff.2 fun u ↦ ?_
   rw [← Set.range_comp]
-  simpa only [Function.comp_def, ← coe_littleBesov] using u.2
+  simpa only [Function.comp_def, SchwartzMap.coe_toLittleBesovCLM, ← coe_littleBesov] using u.2
 
 /-- Continuous linear maps out of the little Besov space `b^s_{p,∞}` into a Hausdorff space are
 determined by their values on Schwartz functions. -/
 theorem continuousLinearMap_ext_littleBesov {G : Type*} [AddCommMonoid G] [Module ℂ G]
     [TopologicalSpace G] [T2Space G] {T T' : littleBesov F φ s p →L[ℂ] G}
-    (h : ∀ f : 𝓢(E, F), T ⟨_, toBesovSpaceCLM_mem_littleBesov f⟩ =
-      T' ⟨_, toBesovSpaceCLM_mem_littleBesov f⟩) :
+    (h : ∀ f : 𝓢(E, F), T (SchwartzMap.toLittleBesovCLM F φ s p f) =
+      T' (SchwartzMap.toLittleBesovCLM F φ s p f)) :
     T = T' :=
   ContinuousLinearMap.ext fun u ↦ congrFun
     ((denseRange_littleBesov F φ s p).equalizer T.continuous T'.continuous (funext h)) u
