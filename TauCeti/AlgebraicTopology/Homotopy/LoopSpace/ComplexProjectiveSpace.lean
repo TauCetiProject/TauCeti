@@ -10,7 +10,7 @@ public import TauCeti.AlgebraicTopology.Singular.MappingTorus.Refl
 public import TauCeti.AlgebraicTopology.Homotopy.LoopSpace.Hurewicz
 public import TauCeti.AlgebraicTopology.Singular.Homotopy.WeakHomotopyEquivalence
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Based.Retraction
-public import TauCeti.AlgebraicTopology.Homotopy.LoopSpace.Sphere
+public import TauCeti.AlgebraicTopology.Homotopy.LoopSpace.Sphere.Basic
 import TauCeti.Analysis.InnerProductSpace.Euclidean.Space
 
 /-!

@@ -40,10 +40,12 @@ sphere with one `0`-cell and one `n`-cell, the contractible total space gives
 `H~_k(ΩSⁿ) = 0` for `k < n - 1`
 (`TauCeti.TopCat.isZero_reducedSingularHomology_sphereFibration_of_lt`). Since `n - 1 ≥ 1`, reduced
 and ordinary homology agree in the degrees `k + n - 1`, and the loop space is path-connected
-because the sphere is simply connected, so `H_0(ΩSⁿ; R) ≅ R`.
+because the sphere is simply connected (`TauCeti.pathConnectedSpace_loopSpace_sphere`), so
+`H_0(ΩSⁿ; R) ≅ R`.
 
-For `n = 1` the statements fail: the loop space of the circle has one contractible path component
-for every integer, so its homology is concentrated in degree `0`, where it is not `R`.
+The hypothesis `n ≥ 2` is needed for the identification `H_0(ΩSⁿ; R) ≅ R`: the loop space of the
+circle has one contractible path component for every integer, so `H_0(ΩS¹; R)` is a sum of copies
+of `R` indexed by `ℤ`.
 
 ## References
 
@@ -158,12 +160,6 @@ def singularHomologyLoopSpaceSphereShiftIso (k : ℕ) :
   eqToIso (by rw [show k + (n - 1) = k + (n - 2) + 1 by omega]) ≪≫
     ((reducedSingularHomologySuccIso (ModuleCat.of R R) (k + (n - 2))).app _).symm ≪≫
     reducedSingularHomologyLoopSpaceIso (m := n - 2 + 1) (hE.trans (by omega)) x R k
-
-include hE hn in
-/-- The loop space of `Sⁿ`, `n ≥ 2`, is path-connected, since `Sⁿ` is simply connected. -/
-theorem pathConnectedSpace_loopSpace_sphere : PathConnectedSpace (Ω (sphere (0 : E) 1) x) :=
-  (pathConnectedSpace_loopSpace_iff_subsingleton_pi1 x).2
-    (subsingleton_homotopyGroup_sphere_of_lt hE (by simp; omega) x)
 
 /-- **The homology of `ΩSⁿ` in the degrees divisible by `n - 1`**:
 `H_{j(n-1)}(ΩSⁿ; R) ≅ R` for the unit sphere `Sⁿ` of an `(n + 1)`-dimensional real normed space,
