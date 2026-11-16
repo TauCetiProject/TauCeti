@@ -13,6 +13,7 @@ public import TauCeti.LinearAlgebra.QuadraticForm.Witt.Decomposition
 import Mathlib.Data.ENat.Basic
 import TauCeti.LinearAlgebra.QuadraticForm.Basic
 import TauCeti.LinearAlgebra.QuadraticForm.Complex
+import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.SquareClass
 import TauCeti.LinearAlgebra.QuadraticForm.FiniteField
 import TauCeti.LinearAlgebra.QuadraticForm.PosDef
 
@@ -205,6 +206,7 @@ theorem _root_.QuadraticForm.represents_of_radical_eq_bot_of_uInvariant_le_finra
 
 /-- The represented-unit value set of any quadratic form with trivial radical in dimension at least
 `u(K)` is all of `Kˣ`. -/
+@[simp]
 theorem _root_.QuadraticForm.unitValueSet_eq_top_of_radical_eq_bot_of_uInvariant_le_finrank
     {V : Type v} [AddCommGroup V] [Module K V] (Q : QuadraticForm K V) (hQ : Q.radical = ⊥)
     (h : uInvariant K ≤ Module.finrank K V) :
@@ -222,6 +224,7 @@ theorem _root_.QuadraticForm.represents_of_uInvariant_le_finrank
 
 /-- The represented-unit value set of any nondegenerate quadratic form of finite dimension at least
 `u(K)` is all of `Kˣ`. -/
+@[simp]
 theorem _root_.QuadraticForm.unitValueSet_eq_top_of_uInvariant_le_finrank
     {V : Type v} [AddCommGroup V] [Module K V] (Q : QuadraticForm K V) (hQ : Q.Nondegenerate)
     (h : uInvariant K ≤ Module.finrank K V) :
@@ -301,24 +304,22 @@ square (Lam, Chapter XI, Example 6.2 (1)). The characteristic-two exclusion in t
 sharp: every element of `𝔽₂` is a square, yet `u(𝔽₂) = 2` via `x² + x y + y²`. -/
 theorem uInvariant_eq_one_iff : uInvariant K = 1 ↔ ∀ a : K, IsSquare a := by
   refine ⟨isSquare_of_uInvariant_eq_one, fun hsq ↦ ?_⟩
-  classical
   refine le_antisymm ((uInvariant_le_natCast_iff (n := 1)).mpr fun Q hQ ↦ ?_) one_le_uInvariant
   obtain ⟨w, he⟩ := Q.equivalent_weightedSumSquares_units_of_nondegenerate'
     (QuadraticMap.separatingLeft_of_anisotropic Q hQ)
-  have hw : (weightedSumSquares K w).Anisotropic := he.anisotropic_iff.mp hQ
-  let i₀ : Fin (Module.finrank K (Fin 2 → K)) := ⟨0, by simp⟩
-  let i₁ : Fin (Module.finrank K (Fin 2 → K)) := ⟨1, by simp⟩
-  have hne : i₀ ≠ i₁ := by simp [i₀, i₁]
-  obtain ⟨r, hr⟩ := hsq (w i₀ : K)
-  obtain ⟨s, hs⟩ := hsq (-(w i₁ : K))
-  have hs_ne : s ≠ 0 := fun hs0 ↦ by simp [hs0] at hs
-  have hv_zero :
-      (weightedSumSquares K w) (Pi.single i₀ s + Pi.single i₁ r) = 0 := by
-    simp [weightedSumSquares_apply, Pi.single_apply, mul_add, add_mul, hne, hne.symm,
-      Finset.sum_add_distrib, Units.smul_def]
-    linear_combination s * s * hr - r * r * hs
-  have hzero := hw _ hv_zero
-  exact hs_ne (by simpa [hne] using congrFun hzero i₀)
+  have h1 : (weightedSumSquares K w).Equivalent (weightedSumSquares K (1 : Fin _ → Kˣ)) :=
+    equivalent_weightedSumSquares_of_isSquare_div fun i ↦ by
+      simpa [Units.isSquare_coe_iff] using hsq (w i : K)
+  have hani : (weightedSumSquares K (1 : Fin (Module.finrank K (Fin 2 → K)) → Kˣ)).Anisotropic :=
+    (he.trans h1).anisotropic_iff.mp hQ
+  rw [Module.finrank_fin_fun] at hani
+  have h11 : weightedSumSquares K (1 : Fin 2 → Kˣ) = weightedSumSquares K ![(1 : K), 1] := by
+    rw [weightedSumSquares_units]
+    congr 1
+    ext i
+    fin_cases i <;> rfl
+  rw [h11, anisotropic_binary_one_one_iff] at hani
+  exact hani (hsq (-1))
 
 /-- Every separably closed field in which `2` is invertible has `u(K) = 1`. -/
 @[simp]
