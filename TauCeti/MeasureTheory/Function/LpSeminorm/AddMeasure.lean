@@ -25,7 +25,9 @@ estimate on a set covered by finitely many pieces
 `eLpNorm f p (μ.restrict (⋃ i ∈ t, s i)) ≤ ∑ i ∈ t, eLpNorm f p (μ.restrict (s i))`.
 No measurability of the sets is needed. The same bound holds on any set covered by finitely many
 pieces (`MeasureTheory.eLpNorm_restrict_le_sum_of_subset_iUnion`), so a function in `Lᵖ` on each
-piece is in `Lᵖ` on the covered set (`MeasureTheory.MemLp.restrict_of_subset_iUnion`).
+piece is in `Lᵖ` on the covered set (`MeasureTheory.MemLp.restrict_of_subset_iUnion`). On a
+compact set, a neighbourhood of each point gives such a cover by finitely many of them, chosen
+independently of the function (`IsCompact.exists_finset_eLpNorm_restrict_inter_le_sum`).
 
 For the real-valued norm `lpNorm`, monotonicity in the measure needs `f ∈ Lᵖ(μ)`, since
 `lpNorm` is `0` off `Lᵖ` (`MeasureTheory.lpNorm_mono_measure`).
@@ -39,6 +41,8 @@ For the real-valued norm `lpNorm`, monotonicity in the measure needs `f ∈ Lᵖ
   norm suffices).
 * `MeasureTheory.eLpNorm_restrict_biUnion_finset_le`: subadditivity over a finite union.
 * `MeasureTheory.eLpNorm_restrict_le_sum_of_subset_iUnion`: subadditivity over a finite cover.
+* `IsCompact.exists_finset_eLpNorm_restrict_inter_le_sum`: subadditivity over a finite subcover
+  of a compact set by neighbourhoods of its points.
 * `MeasureTheory.MemLp.restrict_of_subset_iUnion`: `Lᵖ` on each piece of a finite cover gives
   `Lᵖ` on the covered set.
 -/
@@ -122,6 +126,25 @@ theorem eLpNorm_restrict_biUnion_finset_le {ι : Type*} (f : α → ε) (hp : 1 
       _ ≤ eLpNorm f p (μ.restrict (s a)) + eLpNorm f p (μ.restrict (⋃ i ∈ t, s i)) :=
           eLpNorm_add_measure_le f hp
       _ ≤ _ := by gcongr
+
+/-- **Subadditivity over a finite subcover of a compact set.** Let `1 ≤ p`, let `K` be compact,
+and let `U x` be a neighbourhood of each `x ∈ K`. Then there are finitely many points `x ∈ K`
+such that, for every `f` and every set `S`, the `Lᵖ` seminorm of `f` on `S ∩ K` is at most the
+sum of its `Lᵖ` seminorms on the pieces `S ∩ U x`. The points do not depend on `f` or `S`, so
+local estimates on the pieces, with constants depending on the point, give one estimate on
+`S ∩ K`. -/
+theorem _root_.IsCompact.exists_finset_eLpNorm_restrict_inter_le_sum [TopologicalSpace α]
+    {K : Set α} (hK : IsCompact K) {U : α → Set α} (hU : ∀ x ∈ K, U x ∈ nhds x) (hp : 1 ≤ p) :
+    ∃ t : Finset α, (∀ x ∈ t, x ∈ K) ∧ ∀ (f : α → ε) (S : Set α),
+      eLpNorm f p (μ.restrict (S ∩ K)) ≤ ∑ x ∈ t, eLpNorm f p (μ.restrict (S ∩ U x)) := by
+  obtain ⟨t, htK, hcover⟩ := hK.elim_nhds_subcover U hU
+  refine ⟨t, htK, fun f S => ?_⟩
+  have hsub : S ∩ K ⊆ ⋃ x ∈ t, S ∩ U x := by
+    rintro y ⟨hyS, hyK⟩
+    obtain ⟨x, hxt, hyx⟩ := Set.mem_iUnion₂.1 (hcover hyK)
+    exact Set.mem_iUnion₂.2 ⟨x, hxt, hyS, hyx⟩
+  exact (eLpNorm_mono_measure f (Measure.restrict_mono_set μ hsub)).trans
+    (eLpNorm_restrict_biUnion_finset_le f hp t fun x => S ∩ U x)
 
 /-- **Subadditivity of `eLpNorm` over a finite cover.** For `1 ≤ p`, the `Lᵖ` seminorm of `f`
 on a set covered by finitely many sets is at most the sum of its `Lᵖ` seminorms on the pieces. -/
