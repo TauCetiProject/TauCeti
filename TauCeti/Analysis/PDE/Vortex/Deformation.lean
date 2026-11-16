@@ -92,6 +92,28 @@ theorem sectionValue_sub (x y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
   simp only [sectionValue_apply, Pi.sub_apply, PiLp.sub_apply, ofReal_sub]
   ring
 
+/-- The section is `c` exactly when the real section coordinates are `c.re / 2` and
+`c.im / 2`. -/
+theorem sectionValue_eq_iff {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z c : ℂ} :
+    sectionValue x z = c ↔ x z 2 = c.re / 2 ∧ x z 3 = c.im / 2 := by
+  simp only [Complex.ext_iff, sectionValue_apply, mul_re, mul_im, add_re, add_im, ofReal_re,
+    ofReal_im, I_re, I_im, re_ofNat, im_ofNat]
+  constructor <;> rintro ⟨h₁, h₂⟩ <;> constructor <;> linarith
+
+/-- The section of the zero field vanishes. -/
+@[simp]
+theorem sectionValue_zero (z : ℂ) : sectionValue 0 z = 0 := by
+  simp [sectionValue_apply]
+
+/-- The section of a finite sum of fields is the sum of their sections. -/
+@[simp]
+theorem sectionValue_sum {ι : Type*} (s : Finset ι) (x : ι → ℂ → EuclideanSpace ℝ (Fin 4))
+    (z : ℂ) : sectionValue (∑ i ∈ s, x i) z = ∑ i ∈ s, sectionValue (x i) z := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s hi ih => rw [Finset.sum_insert hi, sectionValue_add, ih, Finset.sum_insert hi]
+
 /-- Two fields agree at a point when their connection coordinates and their sections agree
 there. -/
 theorem apply_eq_of_sectionValue_eq {x y : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
