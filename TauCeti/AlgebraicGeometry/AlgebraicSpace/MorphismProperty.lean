@@ -21,32 +21,30 @@ Given a property `P` of morphisms of schemes, a morphism `f : F ⟶ G` of algebr
    F ----f----->  G
 ```
 where `a : h_U ⟶ F` is an étale atlas, `b : h_V ⟶ G` is representable by étale morphisms of
-schemes, and `h : U ⟶ V` satisfies `P` (Stacks, Definition 66.16.1 (04RD) and
-Definition 67.22.2 (04RD)).
+schemes, and `h : U ⟶ V` satisfies `P` (Stacks, Definition 67.22.2 (04RD)).
 
 Stability under base change in `AlgSpace` (`EtaleLocal.of_isPullback`, `EtaleLocal.baseChange`)
-requires only `[P.IsStableUnderBaseChange]`: given an étale atlas `c : h_W ⟶ G'` of the base-change
-target, pulling `b` back along `c ≫ g` and then pulling `h` back to `U ×_V (V ×_G G')` produces a
-base-changed scheme morphism satisfying `P`, while `EtaleAtlas.lift_isPullback` shows that the
-induced morphism into `F ×_G G'` is an étale atlas.
+requires only `[P.IsStableUnderBaseChange]`, and stability under composition (`EtaleLocal.comp`,
+`EtaleLocal.isStableUnderComposition`, `EtaleLocal.isMultiplicative`) requires only
+`[P.RespectsLeft @Etale]`, `[P.IsStableUnderBaseChangeAgainst @Etale]`, and
+`[P.IsStableUnderComposition]`.
 
 When `P` is étale-local on source and target in the sense of Stacks, Definition 35.32.3 (04QZ) —
 expressed via Mathlib's `[P.IsLocalAtSource Scheme.etalePrecoverage]`,
 `[P.IsLocalAtTarget Scheme.etalePrecoverage]`, and `[P.RespectsRight @IsOpenImmersion]` using
 `CategoryTheory.MorphismProperty.iff_of_etale_surjective_commSq` (Stacks, Lemma 35.32.6 (04R2)) —
 `EtaleLocal P f` holds on one étale chart square if and only if it holds on *every* commutative
-square with étale vertical maps (`EtaleLocal.iff_forall_square`, Stacks, Lemma 67.22.1 (03MJ)).
-From this chart-independence we deduce:
+square with étale vertical maps (`EtaleLocal.property_of_commSq`, `EtaleLocal.iff_forall_square`,
+Stacks, Lemma 67.22.1 (03MJ)). From this chart-independence we deduce:
 
 * `EtaleLocal.ofScheme_iff`: `AlgSpace.ofScheme.map f` satisfies `EtaleLocal P` iff `P f`;
-* `EtaleLocal.comp`, `EtaleLocal.isStableUnderComposition`, and `EtaleLocal.isMultiplicative`;
 * `EtaleLocal.iff_presheaf`: for a morphism `f` representable by schemes, `EtaleLocal P f` agrees
   with `MorphismProperty.presheaf P f.hom` whenever `P` is also stable under base change.
 
 ## References
 
 * [Stacks Project, Lemma 35.32.6](https://stacks.math.columbia.edu/tag/04R2)
-* [Stacks Project, Definition 66.16.1](https://stacks.math.columbia.edu/tag/04RD)
+* [Stacks Project, Definition 67.22.2](https://stacks.math.columbia.edu/tag/04RD)
 * [Stacks Project, Lemma 67.22.1](https://stacks.math.columbia.edu/tag/03MJ)
 -/
 
@@ -60,19 +58,6 @@ open _root_.AlgebraicGeometry
 
 universe u
 
-/-- Precomposing a presheaf-étale morphism `b : h_V ⟶ G` with `h_v` for an étale scheme morphism
-`v : V' ⟶ V` preserves `MorphismProperty.presheaf @Etale`. -/
-private lemma presheaf_etale_yoneda_map_comp {G : SchemePresheaf.{u}} {V' V : Scheme.{u}}
-    (v : V' ⟶ V) [Etale v] {b : yoneda.obj V ⟶ G}
-    (hb : MorphismProperty.presheaf @Etale b) :
-    MorphismProperty.presheaf @Etale (yoneda.map v ≫ b) := by
-  have : MorphismProperty.IsStableUnderComposition @Etale.{u} :=
-    MorphismProperty.IsMultiplicative.toIsStableUnderComposition
-  have : (MorphismProperty.presheaf @Etale.{u}).IsStableUnderComposition :=
-    MorphismProperty.relative_isStableUnderComposition (F := yoneda) (P := @Etale.{u})
-  exact MorphismProperty.comp_mem _ _ _
-    (MorphismProperty.relative_map (inferInstance : Etale v)) hb
-
 namespace AlgSpace
 
 /-- Given a morphism `f : F ⟶ G` of algebraic spaces and an étale atlas `b : h_V ⟶ G`, there exist
@@ -82,12 +67,6 @@ theorem exists_etaleAtlas_over {F G : AlgSpace.{u}} (f : F ⟶ G)
     {V : Scheme.{u}} {b : yoneda.obj V ⟶ G.obj} (hb : EtaleAtlas b) :
     ∃ (U : Scheme.{u}) (a : yoneda.obj U ⟶ F.obj) (h : U ⟶ V),
       EtaleAtlas a ∧ a ≫ f.hom = yoneda.map h ≫ b := by
-  have : MorphismProperty.RespectsIso @Etale.{u} :=
-    MorphismProperty.IsStableUnderBaseChange.respectsIso
-  have : (MorphismProperty.presheaf @Etale.{u}).IsStableUnderBaseChange :=
-    MorphismProperty.relative_isStableUnderBaseChange (F := yoneda) (P := @Etale.{u})
-  have : (MorphismProperty.presheaf @Surjective.{u}).IsStableUnderBaseChange :=
-    MorphismProperty.relative_isStableUnderBaseChange (F := yoneda) (P := @Surjective.{u})
   have hM : IsAlgebraicSpace (Limits.pullback f.hom b) :=
     isAlgebraicSpace_pullback f.hom b F.property (.yoneda_obj V) G.property
   obtain ⟨U, m, hm⟩ := hM.exists_etaleAtlas
@@ -113,7 +92,7 @@ end AlgSpace
 algebraic spaces: `f : F ⟶ G` satisfies `EtaleLocal P` if there exist an étale atlas
 `a : h_U ⟶ F`, a morphism `b : h_V ⟶ G` representable by étale morphisms of schemes, and a
 morphism of schemes `h : U ⟶ V` satisfying `P h` such that `a ≫ f.hom = h_h ≫ b`
-(Stacks, Definition 66.16.1 (04RD)).
+(Stacks, Definition 67.22.2 (04RD)).
 
 When `P` is local at the source and at the target for `Scheme.etalePrecoverage` and respects
 postcomposition with open immersions, `EtaleLocal P f` is independent of the choice of étale
@@ -164,7 +143,7 @@ theorem of_presheaf {P : MorphismProperty Scheme.{u}} {F G : AlgSpace.{u}} {f : 
 /-- `EtaleLocal P` respects isomorphisms in `AlgSpace` for any scheme morphism property `P`. -/
 instance respectsIso (P : MorphismProperty Scheme.{u}) :
     MorphismProperty.RespectsIso (EtaleLocal P) where
-  precomp {F' F G} e _ f := by
+  precomp {F' F _} e _ f := by
     rintro ⟨U, V, a, b, h, ha, hb, w, hh⟩
     let eIso : F.obj ≅ F'.obj := AlgSpace.toPresheaf.mapIso (asIso e).symm
     refine ⟨U, V, a ≫ eIso.hom, b, h, ha.comp_iso eIso, hb, ?_, hh⟩
@@ -173,14 +152,19 @@ instance respectsIso (P : MorphismProperty Scheme.{u}) :
       (a ≫ eIso.hom) ≫ (e ≫ f).hom = a ≫ (eIso.hom ≫ e.hom) ≫ f.hom := by simp [Category.assoc]
       _ = a ≫ f.hom := by simp [he]
       _ = yoneda.map h ≫ b := w
-  postcomp {F G G'} e _ f := by
+  postcomp {_ _ _} e _ _ := by
     rintro ⟨U, V, a, b, h, ha, hb, w, hh⟩
-    have : MorphismProperty.RespectsIso @Etale.{u} :=
-      MorphismProperty.IsStableUnderBaseChange.respectsIso
     have : IsIso e.hom := inferInstanceAs (IsIso (AlgSpace.toPresheaf.map e))
     refine ⟨U, V, a, b ≫ e.hom, h, ha,
-      (MorphismProperty.relative_respectsIso @Etale.{u}).postcomp _ e.hom _ hb, ?_, hh⟩
+      MorphismProperty.RespectsIso.postcomp (MorphismProperty.presheaf @Etale.{u}) e.hom b hb, ?_,
+      hh⟩
     simpa [Category.assoc] using w =≫ e.hom
+
+/-- Specializes `EtaleLocal.respectsIso` to raw scheme morphism predicates at `instances`
+transparency. -/
+instance respectsIso' (P : ∀ ⦃X Y : Scheme.{u}⦄, (X ⟶ Y) → Prop) :
+    MorphismProperty.RespectsIso (EtaleLocal P) :=
+  respectsIso (P : MorphismProperty Scheme.{u})
 
 /-- If `P` contains identities of schemes, then `EtaleLocal P` contains identities of algebraic
 spaces. -/
@@ -189,6 +173,15 @@ instance containsIdentities (P : MorphismProperty Scheme.{u}) [P.ContainsIdentit
   id_mem F := by
     obtain ⟨U, a, ha⟩ := F.property.exists_etaleAtlas
     exact ⟨U, U, a, a, 𝟙 U, ha, ha.etale, by simp, P.id_mem U⟩
+
+/-- Specializes `EtaleLocal.containsIdentities` to raw scheme morphism predicates at `instances`
+transparency. -/
+instance containsIdentities' (P : ∀ ⦃X Y : Scheme.{u}⦄, (X ⟶ Y) → Prop)
+    [MorphismProperty.ContainsIdentities P] :
+    MorphismProperty.ContainsIdentities (EtaleLocal P) :=
+  let P' : MorphismProperty Scheme.{u} := P
+  have : P'.ContainsIdentities := ‹_›
+  containsIdentities P'
 
 /-- If `P` contains identities, the identity morphism of any algebraic space satisfies
 `EtaleLocal P`. -/
@@ -223,12 +216,22 @@ theorem of_isPullback {W F G H : AlgSpace.{u}} {fst : W ⟶ F} {snd : W ⟶ G}
     sqP.lift (yoneda.map u₁ ≫ a) (yoneda.map (h' ≫ v₂) ≫ c)
       (by simpa only [Category.assoc] using sqU'.w),
     yoneda.map v₂ ≫ c, h', ha.lift_isPullback hc sqP sqU',
-    presheaf_etale_yoneda_map_comp v₂ hc.etale, ?_, P.pullback_snd h v₁ hh⟩
+    MorphismProperty.comp_mem _ _ _ (MorphismProperty.relative_map (P := @Etale) hv₂) hc.etale,
+    ?_, P.pullback_snd h v₁ hh⟩
   simp [sqP.lift_snd]
 
 instance isStableUnderBaseChange (P : MorphismProperty Scheme.{u}) [P.IsStableUnderBaseChange] :
     MorphismProperty.IsStableUnderBaseChange (EtaleLocal P) where
   of_isPullback sq hf := hf.of_isPullback sq
+
+/-- Specializes `EtaleLocal.isStableUnderBaseChange` to raw scheme morphism predicates at
+`instances` transparency. -/
+instance isStableUnderBaseChange' (P : ∀ ⦃X Y : Scheme.{u}⦄, (X ⟶ Y) → Prop)
+    [MorphismProperty.IsStableUnderBaseChange P] :
+    MorphismProperty.IsStableUnderBaseChange (EtaleLocal P) :=
+  let P' : MorphismProperty Scheme.{u} := P
+  have : P'.IsStableUnderBaseChange := ‹_›
+  isStableUnderBaseChange P'
 
 /-- If `P` is stable under base change of schemes and `f : F ⟶ H` satisfies `EtaleLocal P`, then
 the second projection `AlgSpace.pullbackSnd f g : AlgSpace.pullbackObj f g ⟶ G` satisfies
@@ -246,6 +249,79 @@ theorem baseChange_fst {F G H : AlgSpace.{u}} {g : G ⟶ H} (hg : EtaleLocal P g
 
 end BaseChange
 
+section Composition
+
+/-- If `P` respects precomposition with étale morphisms, is stable under base change along étale
+morphisms, and is stable under composition, then `EtaleLocal P` is closed under composition of
+morphisms of algebraic spaces. -/
+theorem comp {P : MorphismProperty Scheme.{u}}
+    [P.RespectsLeft @Etale] [P.IsStableUnderBaseChangeAgainst @Etale] [P.IsStableUnderComposition]
+    {F G H : AlgSpace.{u}} {f : F ⟶ G} {g : G ⟶ H}
+    (hf : EtaleLocal P f) (hg : EtaleLocal P g) : EtaleLocal P (f ≫ g) := by
+  obtain ⟨U, V, a, b, h₁, ha, hb, w₁, hh₁⟩ := hf
+  obtain ⟨V', W, b', c, h₂, hb', hc, w₂, hh₂⟩ := hg
+  let p₁ : hb'.relativelyRepresentable.pullback b ⟶ V' := hb'.relativelyRepresentable.fst' b
+  let p₂ : hb'.relativelyRepresentable.pullback b ⟶ V := hb'.relativelyRepresentable.snd b
+  have sqM : IsPullback (yoneda.map p₁) (yoneda.map p₂) b' b :=
+    hb'.relativelyRepresentable.isPullback' b
+  have hp₁ : Etale p₁ := hb.property b' _ _ sqM.flip
+  have hp₂_et : Etale p₂ := hb'.etale_snd b
+  have : Surjective p₂ := hb'.surjective_snd b
+  let q₁ : pullback h₁ p₂ ⟶ U := pullback.fst h₁ p₂
+  let h₁' : pullback h₁ p₂ ⟶ hb'.relativelyRepresentable.pullback b := pullback.snd h₁ p₂
+  have := MorphismProperty.IsStableUnderBaseChangeAgainst.isStableUnderBaseChangeAlong
+    (P := P) p₂ hp₂_et
+  refine ⟨pullback h₁ p₂, W, yoneda.map q₁ ≫ a, c, h₁' ≫ p₁ ≫ h₂, ha.yoneda_map_comp q₁, hc, ?_,
+    P.comp_mem h₁' (p₁ ≫ h₂) (P.pullback_snd h₁ p₂ hh₁)
+      (MorphismProperty.RespectsLeft.precomp (Q := @Etale) p₁ hp₁ h₂ hh₂)⟩
+  calc
+    (yoneda.map q₁ ≫ a) ≫ (f ≫ g).hom
+        = yoneda.map q₁ ≫ (a ≫ f.hom) ≫ g.hom := by simp [Category.assoc]
+    _ = (yoneda.map (q₁ ≫ h₁) ≫ b) ≫ g.hom := by simp [w₁]
+    _ = (yoneda.map (h₁' ≫ p₂) ≫ b) ≫ g.hom := by rw [pullback.condition]
+    _ = yoneda.map h₁' ≫ (yoneda.map p₂ ≫ b) ≫ g.hom := by simp [Category.assoc]
+    _ = yoneda.map h₁' ≫ (yoneda.map p₁ ≫ b') ≫ g.hom := by rw [← sqM.w]
+    _ = yoneda.map h₁' ≫ yoneda.map p₁ ≫ b' ≫ g.hom := by simp [Category.assoc]
+    _ = yoneda.map (h₁' ≫ p₁ ≫ h₂) ≫ c := by simp [w₂]
+
+instance isStableUnderComposition (P : MorphismProperty Scheme.{u})
+    [P.RespectsLeft @Etale] [P.IsStableUnderBaseChangeAgainst @Etale]
+    [P.IsStableUnderComposition] :
+    MorphismProperty.IsStableUnderComposition (EtaleLocal P) where
+  comp_mem _ _ hf hg := hf.comp hg
+
+/-- Specializes `EtaleLocal.isStableUnderComposition` to raw scheme morphism predicates at
+`instances` transparency. -/
+instance isStableUnderComposition' (P : ∀ ⦃X Y : Scheme.{u}⦄, (X ⟶ Y) → Prop)
+    [MorphismProperty.RespectsLeft P @Etale]
+    [MorphismProperty.IsStableUnderBaseChangeAgainst P @Etale]
+    [MorphismProperty.IsStableUnderComposition P] :
+    MorphismProperty.IsStableUnderComposition (EtaleLocal P) :=
+  let P' : MorphismProperty Scheme.{u} := P
+  have : P'.RespectsLeft @Etale := ‹_›
+  have : P'.IsStableUnderBaseChangeAgainst @Etale := ‹_›
+  have : P'.IsStableUnderComposition := ‹_›
+  isStableUnderComposition P'
+
+instance isMultiplicative (P : MorphismProperty Scheme.{u})
+    [P.RespectsLeft @Etale] [P.IsStableUnderBaseChangeAgainst @Etale] [P.IsMultiplicative] :
+    MorphismProperty.IsMultiplicative (EtaleLocal P) where
+
+/-- Specializes `EtaleLocal.isMultiplicative` to raw scheme morphism predicates at `instances`
+transparency. -/
+instance isMultiplicative' (P : ∀ ⦃X Y : Scheme.{u}⦄, (X ⟶ Y) → Prop)
+    [MorphismProperty.RespectsLeft P @Etale]
+    [MorphismProperty.IsStableUnderBaseChangeAgainst P @Etale]
+    [MorphismProperty.IsMultiplicative P] :
+    MorphismProperty.IsMultiplicative (EtaleLocal P) :=
+  let P' : MorphismProperty Scheme.{u} := P
+  have : P'.RespectsLeft @Etale := ‹_›
+  have : P'.IsStableUnderBaseChangeAgainst @Etale := ‹_›
+  have : P'.IsMultiplicative := ‹_›
+  isMultiplicative P'
+
+end Composition
+
 section Comparison
 
 variable {P : MorphismProperty Scheme.{u}}
@@ -256,7 +332,7 @@ variable {P : MorphismProperty Scheme.{u}}
 `EtaleLocal P`, then on *every* commutative square `a' ≫ f.hom = h_{h'} ≫ b'` with `a'` and `b'`
 representable by étale morphisms of schemes, the top scheme morphism `h'` satisfies `P`. -/
 @[stacks 03MJ]
-theorem of_commSq {F G : AlgSpace.{u}} {f : F ⟶ G} (hf : EtaleLocal P f)
+theorem property_of_commSq {F G : AlgSpace.{u}} {f : F ⟶ G} (hf : EtaleLocal P f)
     {U' V' : Scheme.{u}} {a' : yoneda.obj U' ⟶ F.obj} {b' : yoneda.obj V' ⟶ G.obj}
     {h' : U' ⟶ V'} (ha' : MorphismProperty.presheaf @Etale a')
     (hb' : MorphismProperty.presheaf @Etale b') (w' : a' ≫ f.hom = yoneda.map h' ≫ b') :
@@ -298,7 +374,7 @@ theorem iff_forall_square {F G : AlgSpace.{u}} (f : F ⟶ G) :
       ∀ ⦃U V : Scheme.{u}⦄ (a : yoneda.obj U ⟶ F.obj) (b : yoneda.obj V ⟶ G.obj) (h : U ⟶ V),
         MorphismProperty.presheaf @Etale a → MorphismProperty.presheaf @Etale b →
           a ≫ f.hom = yoneda.map h ≫ b → P h := by
-  refine ⟨fun hf _ _ a b h ha hb w ↦ hf.of_commSq ha hb w, fun H ↦ ?_⟩
+  refine ⟨fun hf _ _ a b h ha hb w ↦ hf.property_of_commSq ha hb w, fun H ↦ ?_⟩
   obtain ⟨U, V, a, b, h, ha, hb, w⟩ := AlgSpace.exists_etaleAtlas_commSq f
   exact ⟨U, V, a, b, h, ha, hb.etale, w, H a b h ha.etale hb.etale w⟩
 
@@ -306,34 +382,9 @@ theorem iff_forall_square {F G : AlgSpace.{u}} (f : F ⟶ G) :
 @[simp]
 theorem ofScheme_iff {X Y : Scheme.{u}} (f : X ⟶ Y) :
     EtaleLocal P (AlgSpace.ofScheme.map f) ↔ P f :=
-  ⟨fun hf ↦ hf.of_commSq (EtaleAtlas.of_isIso (𝟙 (yoneda.obj X))).etale
+  ⟨fun hf ↦ hf.property_of_commSq (EtaleAtlas.of_isIso (𝟙 (yoneda.obj X))).etale
     (EtaleAtlas.of_isIso (𝟙 (yoneda.obj Y))).etale
     ((Category.id_comp (yoneda.map f)).trans (Category.comp_id (yoneda.map f)).symm), ofScheme⟩
-
-/-- If `P` is also stable under composition, then `EtaleLocal P` is closed under composition of
-morphisms of algebraic spaces. -/
-theorem comp [P.IsStableUnderComposition] {F G H : AlgSpace.{u}} {f : F ⟶ G} {g : G ⟶ H}
-    (hf : EtaleLocal P f) (hg : EtaleLocal P g) : EtaleLocal P (f ≫ g) := by
-  obtain ⟨W, c, hc⟩ := H.property.exists_etaleAtlas
-  obtain ⟨V, b, h₂, hb, w₂⟩ := AlgSpace.exists_etaleAtlas_over g hc
-  obtain ⟨U, a, h₁, ha, w₁⟩ := AlgSpace.exists_etaleAtlas_over f hb
-  refine ⟨U, W, a, c, h₁ ≫ h₂, ha, hc.etale, ?_,
-    P.comp_mem h₁ h₂ (hf.of_commSq ha.etale hb.etale w₁) (hg.of_commSq hb.etale hc.etale w₂)⟩
-  calc
-    a ≫ (f ≫ g).hom = (a ≫ f.hom) ≫ g.hom := by simp [Category.assoc]
-    _ = yoneda.map h₁ ≫ b ≫ g.hom := by rw [w₁, Category.assoc]
-    _ = yoneda.map (h₁ ≫ h₂) ≫ c := by simp [w₂]
-
-instance isStableUnderComposition (P : MorphismProperty Scheme.{u})
-    [P.IsLocalAtSource Scheme.etalePrecoverage] [P.IsLocalAtTarget Scheme.etalePrecoverage]
-    [P.RespectsRight @IsOpenImmersion] [P.IsStableUnderComposition] :
-    MorphismProperty.IsStableUnderComposition (EtaleLocal P) where
-  comp_mem _ _ hf hg := hf.comp hg
-
-instance isMultiplicative (P : MorphismProperty Scheme.{u})
-    [P.IsLocalAtSource Scheme.etalePrecoverage] [P.IsLocalAtTarget Scheme.etalePrecoverage]
-    [P.RespectsRight @IsOpenImmersion] [P.IsMultiplicative] :
-    MorphismProperty.IsMultiplicative (EtaleLocal P) where
 
 /-- For a morphism `f : F ⟶ G` of algebraic spaces whose underlying presheaf morphism is
 representable by schemes, `EtaleLocal P f` agrees with `MorphismProperty.presheaf P f.hom`
@@ -358,11 +409,27 @@ theorem iff_presheaf_of_ofScheme [P.IsStableUnderBaseChange] {U : Scheme.{u}} {G
 
 end Comparison
 
+/-- Specializes `EtaleLocal.ofScheme_iff` to raw scheme morphism predicates such as `@Flat` at
+`reducible`/`instances` transparency so `simp` rewrites
+`EtaleLocal @Flat (AlgSpace.ofScheme.map f)`. -/
+@[simp]
+theorem ofScheme_iff' {P : ∀ ⦃X Y : Scheme.{u}⦄, (X ⟶ Y) → Prop}
+    [MorphismProperty.IsLocalAtSource P Scheme.etalePrecoverage]
+    [MorphismProperty.IsLocalAtTarget P Scheme.etalePrecoverage]
+    [MorphismProperty.RespectsRight P @IsOpenImmersion]
+    {X Y : Scheme.{u}} (f : X ⟶ Y) :
+    EtaleLocal P (AlgSpace.ofScheme.map f) ↔ P f :=
+  let P' : MorphismProperty Scheme.{u} := P
+  have : P'.IsLocalAtSource Scheme.etalePrecoverage := ‹_›
+  have : P'.IsLocalAtTarget Scheme.etalePrecoverage := ‹_›
+  have : P'.RespectsRight @IsOpenImmersion := ‹_›
+  ofScheme_iff (P := P') f
+
 end EtaleLocal
 
 /-- Any morphism `f : AlgSpace.ofScheme.obj U ⟶ F` whose underlying presheaf map is an étale atlas
 is étale as a morphism of algebraic spaces (`EtaleLocal @Etale f`). -/
-theorem EtaleAtlas.etaleLocal {U : Scheme.{u}} {F : AlgSpace.{u}}
+theorem EtaleAtlas.etaleLocal_etale {U : Scheme.{u}} {F : AlgSpace.{u}}
     {f : AlgSpace.ofScheme.obj U ⟶ F} (hf : EtaleAtlas f.hom) :
     EtaleLocal @Etale f :=
   EtaleLocal.of_presheaf hf.etale

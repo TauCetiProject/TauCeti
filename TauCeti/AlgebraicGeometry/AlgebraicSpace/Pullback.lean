@@ -8,9 +8,10 @@ module
 public import TauCeti.AlgebraicGeometry.AlgebraicSpace.Category
 public import Mathlib.CategoryTheory.Limits.FullSubcategory
 public import Mathlib.CategoryTheory.Limits.Constructions.LimitsOfProductsAndEqualizers
-public import Mathlib.CategoryTheory.ObjectProperty.FiniteProducts
-import Mathlib.CategoryTheory.Limits.Preserves.Limits
+public import Mathlib.CategoryTheory.Limits.Preserves.Creates.Finite
+public import Mathlib.CategoryTheory.ObjectProperty.FiniteLimits
 import Mathlib.CategoryTheory.Sites.Limits
+import TauCeti.CategoryTheory.MorphismProperty.Limits
 
 /-!
 # Fibre products of algebraic spaces
@@ -75,13 +76,13 @@ namespace RepresentableDiagonal
 theorem of_mono {F G : SchemePresheaf.{u}} (hG : RepresentableDiagonal G) (ι : F ⟶ G) [Mono ι] :
     RepresentableDiagonal F :=
   representableDiagonal_iff_diag.2
-    (Functor.relativelyRepresentable.diag_of_mono ι (representableDiagonal_iff_diag.1 hG))
+    (MorphismProperty.diag_of_mono ι (representableDiagonal_iff_diag.1 hG))
 
 /-- Representability of the diagonal is stable under binary products of presheaves. -/
 theorem prod {F G : SchemePresheaf.{u}} (hF : RepresentableDiagonal F)
     (hG : RepresentableDiagonal G) : RepresentableDiagonal (F ⨯ G) :=
   representableDiagonal_iff_diag.2
-    (Functor.relativelyRepresentable.diag_prod
+    (MorphismProperty.diag_prod
       (representableDiagonal_iff_diag.1 hF) (representableDiagonal_iff_diag.1 hG))
 
 /-- Representability of the diagonal is stable under pullbacks of presheaves. -/
@@ -89,7 +90,7 @@ theorem pullback {F G H : SchemePresheaf.{u}} (hF : RepresentableDiagonal F)
     (hG : RepresentableDiagonal G) (f : F ⟶ H) (g : G ⟶ H) :
     RepresentableDiagonal (Limits.pullback f g) :=
   representableDiagonal_iff_diag.2
-    (Functor.relativelyRepresentable.diag_pullback f g
+    (MorphismProperty.diag_pullback f g
       (representableDiagonal_iff_diag.1 hF) (representableDiagonal_iff_diag.1 hG))
 
 end RepresentableDiagonal
@@ -100,12 +101,8 @@ namespace EtaleAtlas
 theorem of_isPullback {F G : SchemePresheaf.{u}} {U V : Scheme.{u}}
     {a' : yoneda.obj V ⟶ G} {g : yoneda.obj V ⟶ yoneda.obj U}
     {a : yoneda.obj U ⟶ F} {f : G ⟶ F}
-    (ha : EtaleAtlas a) (sq : IsPullback g a' a f) : EtaleAtlas a' := by
-  have : (MorphismProperty.presheaf @Etale.{u}).IsStableUnderBaseChange :=
-    MorphismProperty.relative_isStableUnderBaseChange (F := yoneda) (P := @Etale.{u})
-  have : (MorphismProperty.presheaf @Surjective.{u}).IsStableUnderBaseChange :=
-    MorphismProperty.relative_isStableUnderBaseChange (F := yoneda) (P := @Surjective.{u})
-  exact ⟨MorphismProperty.of_isPullback sq ha.etale,
+    (ha : EtaleAtlas a) (sq : IsPullback g a' a f) : EtaleAtlas a' :=
+  ⟨MorphismProperty.of_isPullback sq ha.etale,
     MorphismProperty.of_isPullback sq ha.surjective⟩
 
 /-- Postcomposing an étale atlas `a : h_U ⟶ F` with a presheaf morphism `p : F ⟶ G` that is
@@ -114,16 +111,8 @@ theorem comp_of_presheaf {F G : SchemePresheaf.{u}} {U : Scheme.{u}}
     {a : yoneda.obj U ⟶ F} {p : F ⟶ G} (ha : EtaleAtlas a)
     (hp_et : MorphismProperty.presheaf @Etale p)
     (hp_surj : MorphismProperty.presheaf @Surjective p) :
-    EtaleAtlas (a ≫ p) := by
-  have : MorphismProperty.IsStableUnderComposition @Etale.{u} :=
-    MorphismProperty.IsMultiplicative.toIsStableUnderComposition
-  have : MorphismProperty.IsStableUnderComposition @Surjective.{u} :=
-    MorphismProperty.IsMultiplicative.toIsStableUnderComposition
-  have : (MorphismProperty.presheaf @Etale.{u}).IsStableUnderComposition :=
-    MorphismProperty.relative_isStableUnderComposition (F := yoneda) (P := @Etale.{u})
-  have : (MorphismProperty.presheaf @Surjective.{u}).IsStableUnderComposition :=
-    MorphismProperty.relative_isStableUnderComposition (F := yoneda) (P := @Surjective.{u})
-  exact ⟨MorphismProperty.comp_mem _ _ _ ha.etale hp_et,
+    EtaleAtlas (a ≫ p) :=
+  ⟨MorphismProperty.comp_mem _ _ _ ha.etale hp_et,
     MorphismProperty.comp_mem _ _ _ ha.surjective hp_surj⟩
 
 /-- **Chart product of étale atlases** (Stacks, Lemma 65.7.3 (02X2)). Given a pullback square
@@ -139,12 +128,6 @@ theorem lift_isPullback {P F G H : SchemePresheaf.{u}}
     (sqW : IsPullback (yoneda.map u) (yoneda.map v) (a ≫ f) (b ≫ g)) :
     EtaleAtlas (sq.lift (yoneda.map u ≫ a) (yoneda.map v ≫ b)
       (by simpa only [Category.assoc] using sqW.w)) := by
-  have : MorphismProperty.RespectsIso @Etale.{u} :=
-    MorphismProperty.IsStableUnderBaseChange.respectsIso
-  have : (MorphismProperty.presheaf @Etale.{u}).IsStableUnderBaseChange :=
-    MorphismProperty.relative_isStableUnderBaseChange (F := yoneda) (P := @Etale.{u})
-  have : (MorphismProperty.presheaf @Surjective.{u}).IsStableUnderBaseChange :=
-    MorphismProperty.relative_isStableUnderBaseChange (F := yoneda) (P := @Surjective.{u})
   have sqM : IsPullback (Limits.pullback.fst a fst) (Limits.pullback.snd a fst ≫ snd) (a ≫ f) g :=
     (IsPullback.of_hasPullback a fst).paste_vert sq
   let k : yoneda.obj W ⟶ Limits.pullback a fst :=
@@ -173,20 +156,20 @@ theorem prod {F G : SchemePresheaf.{u}} {U V : Scheme.{u}}
     specULiftZIsTerminal.isTerminalObj yoneda Z
   have sqFG : IsPullback (Limits.prod.fst : F ⨯ G ⟶ F) Limits.prod.snd
       (hTZ.from F) (hTZ.from G) :=
-    IsPullback.mk' (hTZ.hom_ext _ _)
-      (fun _ _ _ h₁ h₂ ↦ Limits.prod.hom_ext h₁ h₂)
-      fun _ u v _ ↦ ⟨Limits.prod.lift u v, by simp, by simp⟩
+    IsPullback.of_is_product' (prodIsProd F G) hTZ
   have sqUV : IsPullback (Limits.prod.fst : U ⨯ V ⟶ U) Limits.prod.snd
       (specULiftZIsTerminal.from U) (specULiftZIsTerminal.from V) :=
-    IsPullback.mk' (specULiftZIsTerminal.hom_ext _ _)
-      (fun _ _ _ h₁ h₂ ↦ Limits.prod.hom_ext h₁ h₂)
-      fun _ u v _ ↦ ⟨Limits.prod.lift u v, by simp, by simp⟩
+    IsPullback.of_is_product' (prodIsProd U V) specULiftZIsTerminal
   have sqUV' : IsPullback (yoneda.map (Limits.prod.fst : U ⨯ V ⟶ U))
       (yoneda.map Limits.prod.snd) (a ≫ hTZ.from F) (b ≫ hTZ.from G) := by
-    convert sqUV.map yoneda <;> exact hTZ.hom_ext _ _
+    rw [hTZ.hom_ext (a ≫ hTZ.from F) _, hTZ.hom_ext (b ≫ hTZ.from G) _]
+    exact sqUV.map yoneda
   have h := ha.lift_isPullback hb sqFG sqUV'
-  convert h using 1
-  apply Limits.prod.hom_ext <;> simp
+  have heq : Limits.prod.lift (yoneda.map Limits.prod.fst ≫ a) (yoneda.map Limits.prod.snd ≫ b) =
+      sqFG.lift (yoneda.map Limits.prod.fst ≫ a) (yoneda.map Limits.prod.snd ≫ b)
+        (by simpa only [Category.assoc] using sqUV'.w) := by
+    apply Limits.prod.hom_ext <;> simp
+  rwa [heq]
 
 end EtaleAtlas
 
@@ -210,21 +193,6 @@ theorem isAlgebraicSpace_pullback {F G H : SchemePresheaf.{u}} (f : F ⟶ H) (g 
     refine ⟨hr.pullback (b ≫ g), _, ha.lift_isPullback hb
       (IsPullback.of_hasPullback f g) (hr.isPullback' (b ≫ g))⟩
 
-/-- Binary products of algebraic spaces are algebraic spaces. -/
-theorem IsAlgebraicSpace.prod {F G : SchemePresheaf.{u}} (hF : IsAlgebraicSpace F)
-    (hG : IsAlgebraicSpace G) : IsAlgebraicSpace (F ⨯ G) where
-  isSheaf := ObjectProperty.prop_limit
-    (Presheaf.IsSheaf Scheme.fppfTopology : ObjectProperty SchemePresheaf.{u}) (pair F G) (by
-      rintro ⟨_ | _⟩
-      · exact hF.isSheaf
-      · exact hG.isSheaf)
-  representableDiagonal := RepresentableDiagonal.prod
-    hF.representableDiagonal hG.representableDiagonal
-  exists_etaleAtlas := by
-    obtain ⟨U, a, ha⟩ := hF.exists_etaleAtlas
-    obtain ⟨V, b, hb⟩ := hG.exists_etaleAtlas
-    exact ⟨U ⨯ V, _, ha.prod hb⟩
-
 /-- Being an algebraic space is closed under isomorphisms of presheaves. -/
 instance : ObjectProperty.IsClosedUnderIsomorphisms
     (IsAlgebraicSpace : ObjectProperty SchemePresheaf.{u}) where
@@ -232,43 +200,37 @@ instance : ObjectProperty.IsClosedUnderIsomorphisms
 
 /-- Being an algebraic space is closed under pullbacks of presheaves. -/
 instance : ObjectProperty.IsClosedUnderLimitsOfShape
-    (IsAlgebraicSpace : ObjectProperty SchemePresheaf.{u}) WalkingCospan where
-  limitsOfShape_le := by
-    rintro X ⟨p⟩
-    let e₁ : limit p.diag ≅ X := (limit.isLimit p.diag).conePointUniqueUpToIso p.isLimit
-    let e₂ : limit p.diag ≅
-        pullback (p.diag.map WalkingCospan.Hom.inl) (p.diag.map WalkingCospan.Hom.inr) :=
-      HasLimit.isoOfNatIso (diagramIsoCospan p.diag)
-    exact (isAlgebraicSpace_pullback _ _
-      (p.prop_diag_obj .left) (p.prop_diag_obj .right) (p.prop_diag_obj .one)).of_iso
-      (e₂.symm ≪≫ e₁)
+    (IsAlgebraicSpace : ObjectProperty SchemePresheaf.{u}) WalkingCospan :=
+  .mk' (by
+    rintro _ ⟨F, hF⟩
+    exact (isAlgebraicSpace_pullback _ _ (hF .left) (hF .right) (hF .one)).of_iso
+      (HasLimit.isoOfNatIso (diagramIsoCospan F)).symm)
 
-/-- Being an algebraic space is closed under binary products of presheaves. -/
-instance : ObjectProperty.IsClosedUnderBinaryProducts
+/-- Being an algebraic space is closed under finite limits of presheaves. -/
+instance : ObjectProperty.IsClosedUnderFiniteLimits
     (IsAlgebraicSpace : ObjectProperty SchemePresheaf.{u}) where
-  limitsOfShape_le := by
-    rintro X ⟨p⟩
-    let e₁ : limit p.diag ≅ X := (limit.isLimit p.diag).conePointUniqueUpToIso p.isLimit
-    let e₂ : limit p.diag ≅ p.diag.obj ⟨.left⟩ ⨯ p.diag.obj ⟨.right⟩ :=
-      HasLimit.isoOfNatIso (diagramIsoPair p.diag)
-    exact ((p.prop_diag_obj ⟨.left⟩).prod (p.prop_diag_obj ⟨.right⟩)).of_iso (e₂.symm ≪≫ e₁)
+  isClosedUnderLimitsOfShape J _ _ :=
+    have : HasFiniteLimits AlgSpace.{u} := hasFiniteLimits_of_hasTerminal_and_pullbacks
+    have : PreservesLimit (Functor.empty.{0} AlgSpace.{u}) AlgSpace.toPresheaf.{u} :=
+      preservesLimit_of_preserves_limit_cone AlgSpace.specZIsTerminal
+        ((isLimitMapConeEmptyConeEquiv AlgSpace.toPresheaf.{u} _).symm
+          (specULiftZIsTerminal.isTerminalObj yoneda _))
+    have : PreservesLimitsOfShape (Discrete PEmpty.{1}) AlgSpace.toPresheaf.{u} :=
+      preservesLimitsOfShape_pempty_of_preservesTerminal AlgSpace.toPresheaf.{u}
+    have : PreservesFiniteLimits AlgSpace.toPresheaf.{u} :=
+      preservesFiniteLimits_of_preservesTerminal_and_pullbacks AlgSpace.toPresheaf.{u}
+    ObjectProperty.isClosedUnderLimitsOfShape_of_preservesLimitsOfShape_ι _ J
+
+/-- Binary products of algebraic spaces are algebraic spaces. -/
+theorem IsAlgebraicSpace.prod {F G : SchemePresheaf.{u}} (hF : IsAlgebraicSpace F)
+    (hG : IsAlgebraicSpace G) : IsAlgebraicSpace (F ⨯ G) :=
+  ObjectProperty.prop_prod (IsAlgebraicSpace : ObjectProperty SchemePresheaf.{u}) F G hF hG
 
 namespace AlgSpace
 
-/-- The category of algebraic spaces has all finite limits. -/
-noncomputable instance : HasFiniteLimits AlgSpace.{u} :=
-  hasFiniteLimits_of_hasTerminal_and_pullbacks
-
-/-- The inclusion of algebraic spaces into presheaves preserves all finite limits. -/
-noncomputable instance : PreservesFiniteLimits toPresheaf.{u} :=
-  have : PreservesLimit (Functor.empty.{0} AlgSpace.{u}) toPresheaf.{u} :=
-    preservesLimit_of_preserves_limit_cone specZIsTerminal
-      ((isLimitMapConeEmptyConeEquiv toPresheaf.{u} _).symm
-        (specULiftZIsTerminal.isTerminalObj yoneda _))
-  have : PreservesLimitsOfShape (Discrete PEmpty.{1}) toPresheaf.{u} :=
-    preservesLimitsOfShape_pempty_of_preservesTerminal toPresheaf.{u}
-  have : HasPullbacks SchemePresheaf.{u} := inferInstance
-  preservesFiniteLimits_of_preservesTerminal_and_pullbacks toPresheaf.{u}
+/-- The inclusion of algebraic spaces into presheaves creates all finite limits. -/
+noncomputable instance : CreatesFiniteLimits toPresheaf.{u} where
+  createsFiniteLimits _ _ _ := inferInstance
 
 /-- The named fibre product of two morphisms `f : F ⟶ H` and `g : G ⟶ H` in `AlgSpace`, built on
 the presheaf pullback `pullback f.hom g.hom`. The object is exposed so that presheaf morphisms out
@@ -314,6 +276,12 @@ noncomputable def pullbackLift {W F G H : AlgSpace.{u}} {f : F ⟶ H} {g : G ⟶
     (u : W ⟶ F) (v : W ⟶ G) (w : u ≫ f = v ≫ g) : W ⟶ pullbackObj f g :=
   ObjectProperty.homMk (pullback.lift u.hom v.hom (congrArg (fun k ↦ k.hom) w))
 
+@[simp]
+lemma pullbackLift_hom {W F G H : AlgSpace.{u}} {f : F ⟶ H} {g : G ⟶ H}
+    (u : W ⟶ F) (v : W ⟶ G) (w : u ≫ f = v ≫ g) :
+    (pullbackLift u v w).hom = pullback.lift u.hom v.hom (congrArg (fun k ↦ k.hom) w) :=
+  (rfl)
+
 @[reassoc (attr := simp)]
 lemma pullbackLift_fst {W F G H : AlgSpace.{u}} {f : F ⟶ H} {g : G ⟶ H}
     (u : W ⟶ F) (v : W ⟶ G) (w : u ≫ f = v ≫ g) :
@@ -329,14 +297,21 @@ lemma pullbackLift_snd {W F G H : AlgSpace.{u}} {f : F ⟶ H} {g : G ⟶ H}
   exact pullback.lift_snd _ _ _
 
 /-- Morphisms into `AlgSpace.pullbackObj` are determined by their two projections. -/
+@[ext 1100]
 lemma pullback_hom_ext {W F G H : AlgSpace.{u}} {f : F ⟶ H} {g : G ⟶ H}
     {u v : W ⟶ pullbackObj f g}
     (h₁ : u ≫ pullbackFst f g = v ≫ pullbackFst f g)
     (h₂ : u ≫ pullbackSnd f g = v ≫ pullbackSnd f g) : u = v := by
-  ext1
+  apply ObjectProperty.hom_ext
   exact pullback.hom_ext
     (congrArg (fun k ↦ k.hom) h₁)
     (congrArg (fun k ↦ k.hom) h₂)
+
+@[simp]
+lemma pullbackLift_fst_snd {F G H : AlgSpace.{u}} (f : F ⟶ H) (g : G ⟶ H) :
+    pullbackLift (pullbackFst f g) (pullbackSnd f g) (pullback_condition f g) =
+      𝟙 (pullbackObj f g) := by
+  ext <;> simp
 
 /-- `AlgSpace.pullbackObj` with its projections `pullbackFst` and `pullbackSnd` is a pullback
 square in `AlgSpace`. -/

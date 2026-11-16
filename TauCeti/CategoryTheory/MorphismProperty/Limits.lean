@@ -6,15 +6,19 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.MorphismProperty.Limits
+import Mathlib.CategoryTheory.Limits.Shapes.Pullback.Mono
+import TauCeti.CategoryTheory.Limits.Shapes.Pullback.Diagonal
 
 /-!
-# Base changes of base changes
+# Base changes of base changes and stability of diagonals
 
 Let `P` be a property of morphisms stable under base change. If the base change
 `pullback.snd f k` of `f` along `k` has `P`, then so does every further base change of `f` along a
 morphism factoring through `k`: this file records the forms of this used when reducing a property
 of morphisms of schemes to an affine base. Mathlib's `MorphismProperty.pullback_snd` is the case
-where `f` itself has `P`.
+where `f` itself has `P`. It also shows that membership of the diagonal `diag X : X ⟶ X ⨯ X` in `P`
+passes along monomorphisms and, when `P` is also stable under composition, is preserved by binary
+products and pullbacks.
 
 ## Main results
 
@@ -27,6 +31,11 @@ where `f` itself has `P`.
   `P (pullback.snd (pullback.snd f v) a)` whenever `a ≫ v` factors through `k`.
 * `CategoryTheory.MorphismProperty.pullback_snd_comp_left`: if `P` is moreover stable under
   composition, `P e` and `P (pullback.snd f k)` imply `P (pullback.snd (e ≫ f) k)`.
+* `CategoryTheory.MorphismProperty.diag_of_mono`,
+  `CategoryTheory.MorphismProperty.diag_prod`,
+  `CategoryTheory.MorphismProperty.diag_pullback`, and
+  `CategoryTheory.MorphismProperty.diag_of_isPullback`: membership of `Limits.diag X` in `P` passes
+  along monomorphisms and is preserved by binary products and pullbacks.
 -/
 
 public section
@@ -80,5 +89,57 @@ theorem pullback_snd_comp_left [P.IsStableUnderComposition] {X' : C} (f : X ⟶ 
     P (pullback.snd (e ≫ f) k) := by
   simpa using P.comp_mem _ _ (P.of_isPullback
     ((IsPullback.of_hasPullback (e ≫ f) k).of_bot' (.of_hasPullback f k)) he) h
+
+/-- For a morphism property `P` stable under base change, membership of the diagonal passes along
+monomorphisms. -/
+theorem diag_of_mono [HasBinaryProduct X X] [HasBinaryProduct Y Y] (ι : X ⟶ Y) [Mono ι]
+    (hY : P (Limits.diag Y)) : P (Limits.diag X) :=
+  P.of_isPullback (Limits.isPullback_diag_of_mono ι) hY
+
+/-- For a morphism property `P` stable under base change and composition, membership of the diagonal
+is preserved by binary products. -/
+theorem diag_prod [P.IsStableUnderComposition] [HasBinaryProducts C]
+    (hX : P (Limits.diag X)) (hY : P (Limits.diag Y)) : P (Limits.diag (X ⨯ Y)) := by
+  have h₁ : P (prod.map (Limits.diag X) (𝟙 Y)) :=
+    P.of_isPullback (IsPullback.of_prod_fst_with_id (Limits.diag X) Y) hX
+  have h₂ : P (prod.map (Limits.diag Y) (𝟙 (X ⨯ X))) :=
+    P.of_isPullback (IsPullback.of_prod_fst_with_id (Limits.diag Y) (X ⨯ X)) hY
+  have h₂' : P (prod.map (𝟙 (X ⨯ X)) (Limits.diag Y)) := by
+    have hfac : prod.map (𝟙 (X ⨯ X)) (Limits.diag Y) =
+        (prod.braiding (X ⨯ X) Y).hom ≫ prod.map (Limits.diag Y) (𝟙 (X ⨯ X)) ≫
+          (prod.braiding (Y ⨯ Y) (X ⨯ X)).hom := by ext <;> simp
+    rw [hfac, P.cancel_left_of_respectsIso, P.cancel_right_of_respectsIso]
+    exact h₂
+  obtain ⟨e, hfac⟩ : ∃ e : (X ⨯ Y) ⨯ (X ⨯ Y) ≅ (X ⨯ X) ⨯ (Y ⨯ Y),
+      Limits.diag (X ⨯ Y) =
+        (prod.map (Limits.diag X) (𝟙 Y) ≫ prod.map (𝟙 (X ⨯ X)) (Limits.diag Y)) ≫ e.inv :=
+    ⟨{ hom := prod.lift (prod.map prod.fst prod.fst) (prod.map prod.snd prod.snd)
+       inv := prod.lift (prod.map prod.fst prod.fst) (prod.map prod.snd prod.snd)
+       hom_inv_id := by ext <;> simp
+       inv_hom_id := by ext <;> simp }, by ext <;> simp⟩
+  rw [hfac, P.cancel_right_of_respectsIso]
+  exact P.comp_mem _ _ h₁ h₂'
+
+/-- For a morphism property `P` stable under base change and composition, membership of the diagonal
+is preserved by pullbacks. -/
+theorem diag_pullback [P.IsStableUnderComposition] [HasBinaryProducts C] {Z : C}
+    (f : X ⟶ Z) (g : Y ⟶ Z) [HasPullback f g]
+    (hX : P (Limits.diag X)) (hY : P (Limits.diag Y)) :
+    P (Limits.diag (pullback f g)) :=
+  diag_of_mono (prod.lift (pullback.fst f g) (pullback.snd f g)) (diag_prod hX hY)
+
+/-- Pullback-square form of `diag_pullback`: if `W` is a pullback of `f : X ⟶ Z` and `g : Y ⟶ Z`,
+membership of the diagonal in `P` passes from `X` and `Y` to `W`. -/
+theorem diag_of_isPullback [P.IsStableUnderComposition] [HasBinaryProducts C] {Z : C}
+    {fst : W ⟶ X} {snd : W ⟶ Y} {f : X ⟶ Z} {g : Y ⟶ Z} (sq : IsPullback fst snd f g)
+    (hX : P (Limits.diag X)) (hY : P (Limits.diag Y)) :
+    P (Limits.diag W) := by
+  have : HasPullback f g := sq.hasPullback
+  have hfac : Limits.diag W =
+      sq.isoPullback.hom ≫ Limits.diag (pullback f g) ≫
+        (prod.mapIso sq.isoPullback sq.isoPullback).inv := by
+    ext <;> simp
+  rw [hfac, P.cancel_left_of_respectsIso, P.cancel_right_of_respectsIso]
+  exact diag_pullback f g hX hY
 
 end CategoryTheory.MorphismProperty
