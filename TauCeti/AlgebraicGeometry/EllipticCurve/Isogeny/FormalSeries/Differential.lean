@@ -22,13 +22,13 @@ Let `φ : W₁ → W₂` be an isogeny of elliptic curves over a field `K`. By
 the invariant differential `ω₂` of `W₂` to `c • ω₁` for a unique constant `c ∈ K`. Expanding both
 sides at the point at infinity via `WeierstrassCurve.functionFieldLaurentExpansion` and comparing
 with the formal-group invariant differential identifies `c` with the linear coefficient of
-`φ.formalSeries` (Silverman IV.4.2(a)):
+`φ.formalSeries` (Silverman III.5, IV.4):
 `φ^* ω₂ = (PowerSeries.coeff 1 φ.formalSeries) • ω₁`, and on formal-group invariant differentials
 `(P₂ ∘ φ.formalSeries) · (φ.formalSeries)' = (PowerSeries.coeff 1 φ.formalSeries) • P₁`.
 
 Combining this with the differential criterion for separability (`φ^* ω₂ ≠ 0`) and the
 factorisation `φ = χ ∘ F^r` into a separable isogeny after an iterated relative Frobenius
-(`formalSeries = X ^ (p ^ r)`) yields Silverman IV.4.3:
+(`formalSeries = X ^ (p ^ r)`) yields Silverman III.5, IV.7.2, and IV.7.4:
 * `φ` is separable if and only if `PowerSeries.coeff 1 φ.formalSeries ≠ 0`, if and only if
   `φ.formalSeries.order = 1`; a separable isogeny therefore induces a `FormalGroupIso` between the
   formal groups;
@@ -46,8 +46,9 @@ factorisation `φ = χ ∘ F^r` into a separable isogeny after an iterated relat
 * `TauCeti.Isogeny.coeff_one_formalSeries_eq_of_pullbackDifferential_eq_smul` and
   `TauCeti.Isogeny.pullbackDifferential_invariantDifferential_eq_smul`: `φ^* ω₂ = c • ω₁` with
   `c = PowerSeries.coeff 1 φ.formalSeries`.
-* `TauCeti.Isogeny.subst_formalSeries_invariantDifferential_mul_derivative`: pullback of the
-  formal-group invariant differential along `φ.formalSeries`.
+* `TauCeti.Isogeny.subst_formalSeries_invariantDifferential_mul_derivative` and
+  `TauCeti.Isogeny.Hom.subst_formalSeries_invariantDifferential_mul_derivative`: pullback of the
+  formal-group invariant differential along an isogeny or morphism.
 * `TauCeti.Isogeny.isSeparable_iff_coeff_one_formalSeries_ne_zero` and
   `TauCeti.Isogeny.isSeparable_iff_order_formalSeries_eq_one`: differential and order criteria on
   `φ.formalSeries` for separability of `φ`.
@@ -56,8 +57,8 @@ factorisation `φ = χ ∘ F^r` into a separable isogeny after an iterated relat
 
 ## References
 
-* [J. H. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], II.2.12, III.5, IV.4.2 and
-  IV.4.3.
+* [J. H. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], II.2.12, III.5, IV.4,
+  IV.7.2, and IV.7.4.
 -/
 
 public section
@@ -109,56 +110,29 @@ section Differential
 
 variable {W₁ W₂ : WeierstrassCurve K}
 
-private theorem ofPowerSeries_subst_formalInvariantDifferentialDenom (W : WeierstrassCurve K)
-    {q₀ : K⟦X⟧} (hs : PowerSeries.HasSubst q₀) :
-    ofPowerSeries ℤ K (PowerSeries.subst q₀ W.formalInvariantDifferentialDenom) =
-      1 - algebraMap K K⸨X⸩ W.a₁ * ofPowerSeries ℤ K q₀ -
-        algebraMap K K⸨X⸩ W.a₂ * (ofPowerSeries ℤ K q₀) ^ 2 -
-        2 * algebraMap K K⸨X⸩ W.a₃ * ofPowerSeries ℤ K (PowerSeries.subst q₀ W.formalW) -
-        2 * algebraMap K K⸨X⸩ W.a₄ *
-          (ofPowerSeries ℤ K q₀ * ofPowerSeries ℤ K (PowerSeries.subst q₀ W.formalW)) -
-        3 * algebraMap K K⸨X⸩ W.a₆ * (ofPowerSeries ℤ K (PowerSeries.subst q₀ W.formalW)) ^ 2 := by
-  rw [W.subst_formalInvariantDifferentialDenom hs]
-  simp only [Algebra.smul_def, map_sub, map_one, map_mul, map_pow, map_ofNat,
-    ← HahnSeries.algebraMap_apply' ℤ]
-
-private theorem functionFieldLaurentExpansion_fieldPullback_coords [W₂.IsElliptic]
+private theorem neg_two_add_formalSeries_ne_zero [W₂.IsElliptic]
     (φ : Isogeny W₁.toAffine W₂.toAffine) :
-    W₁.functionFieldLaurentExpansion (φ.fieldPullback W₂.toAffine.genericX) =
-        ofPowerSeries ℤ K φ.formalSeries /
-          ofPowerSeries ℤ K (PowerSeries.subst φ.formalSeries W₂.formalW) ∧
-      W₁.functionFieldLaurentExpansion (φ.fieldPullback W₂.toAffine.genericY) =
-        -1 / ofPowerSeries ℤ K (PowerSeries.subst φ.formalSeries W₂.formalW) ∧
-      -2 + algebraMap K K⸨X⸩ W₂.a₁ * ofPowerSeries ℤ K φ.formalSeries +
-          algebraMap K K⸨X⸩ W₂.a₃ *
-            ofPowerSeries ℤ K (PowerSeries.subst φ.formalSeries W₂.formalW) ≠ 0 := by
+    -2 + algebraMap K K⸨X⸩ W₂.a₁ * ofPowerSeries ℤ K φ.formalSeries +
+      algebraMap K K⸨X⸩ W₂.a₃ *
+        ofPowerSeries ℤ K (PowerSeries.subst φ.formalSeries W₂.formalW) ≠ 0 := by
   set q : K⸨X⸩ := ofPowerSeries ℤ K φ.formalSeries
   set w : K⸨X⸩ := ofPowerSeries ℤ K (PowerSeries.subst φ.formalSeries W₂.formalW)
-  have hw_eq : W₁.functionFieldLaurentExpansion (φ.fieldPullback (-W₂.toAffine.genericY⁻¹)) = w :=
-    φ.coe_subst_formalW_formalSeries.symm
-  have hy0 : W₁.functionFieldLaurentExpansion (φ.fieldPullback W₂.toAffine.genericY) ≠ 0 :=
+  have hx : W₁.functionFieldLaurentExpansion (φ.fieldPullback W₂.toAffine.genericX) = q / w := by
+    rw [φ.functionFieldLaurentExpansion_fieldPullback,
+      W₂.substAlgHom_functionFieldLaurentExpansion_genericX]
+  have hy : W₁.functionFieldLaurentExpansion (φ.fieldPullback W₂.toAffine.genericY) = -1 / w := by
+    rw [φ.functionFieldLaurentExpansion_fieldPullback,
+      W₂.substAlgHom_functionFieldLaurentExpansion_genericY]
+  have hw0 : w ≠ 0 := fun h0 ↦
     (map_ne_zero W₁.functionFieldLaurentExpansion).mpr
       ((map_ne_zero φ.fieldPullback).mpr W₂.toAffine.genericY_ne_zero)
-  have hw0 : w ≠ 0 := by
-    rw [← hw_eq, map_neg, map_inv₀, map_neg, map_inv₀]
-    exact neg_ne_zero.mpr (inv_ne_zero hy0)
-  have hy : W₁.functionFieldLaurentExpansion (φ.fieldPullback W₂.toAffine.genericY) = -1 / w := by
-    have h := hw_eq
-    rw [map_neg, map_inv₀, map_neg, map_inv₀] at h
-    rw [← h]
-    field_simp
-  have hx : W₁.functionFieldLaurentExpansion (φ.fieldPullback W₂.toAffine.genericX) = q / w := by
-    have h : W₁.functionFieldLaurentExpansion
-        (φ.fieldPullback (-W₂.toAffine.genericX / W₂.toAffine.genericY)) = q :=
-      φ.coe_formalSeries.symm
-    rw [map_div₀, map_neg, map_div₀, map_neg, hy] at h
-    rw [← h]
-    field_simp
+      (by rw [hy, h0, div_zero])
   have hd0 : W₁.functionFieldLaurentExpansion
       (φ.fieldPullback (Affine.invariantDifferentialDenom W₂.toAffine)) ≠ 0 :=
     (map_ne_zero W₁.functionFieldLaurentExpansion).mpr
       ((map_ne_zero φ.fieldPullback).mpr (Affine.invariantDifferentialDenom_ne_zero W₂.toAffine))
-  refine ⟨hx, hy, fun hu0 ↦ hd0 ?_⟩
+  intro hu0
+  apply hd0
   simp only [Affine.invariantDifferentialDenom_def, map_add, map_mul, map_ofNat, AlgHom.commutes,
     hx, hy]
   have hdiv : 2 * (-1 / w) + algebraMap K K⸨X⸩ W₂.a₁ * (q / w) + algebraMap K K⸨X⸩ W₂.a₃ =
@@ -179,19 +153,24 @@ private theorem functionFieldLaurentExpansion_fieldPullback_inv_mul_derivative [
         PowerSeries.derivative φ.formalSeries) := by
   have hs : PowerSeries.HasSubst φ.formalSeries :=
     .of_constantCoeff_zero' φ.constantCoeff_formalSeries
-  obtain ⟨hx, hy, hu⟩ := φ.functionFieldLaurentExpansion_fieldPullback_coords
-  set q : K⸨X⸩ := ofPowerSeries ℤ K φ.formalSeries
-  set w : K⸨X⸩ := ofPowerSeries ℤ K (PowerSeries.subst φ.formalSeries W₂.formalW)
+  have hx : W₁.functionFieldLaurentExpansion (φ.fieldPullback W₂.toAffine.genericX) =
+      ofPowerSeries ℤ K φ.formalSeries /
+        ofPowerSeries ℤ K (PowerSeries.subst φ.formalSeries W₂.formalW) := by
+    rw [φ.functionFieldLaurentExpansion_fieldPullback,
+      W₂.substAlgHom_functionFieldLaurentExpansion_genericX]
+  have hy : W₁.functionFieldLaurentExpansion (φ.fieldPullback W₂.toAffine.genericY) =
+      -1 / ofPowerSeries ℤ K (PowerSeries.subst φ.formalSeries W₂.formalW) := by
+    rw [φ.functionFieldLaurentExpansion_fieldPullback,
+      W₂.substAlgHom_functionFieldLaurentExpansion_genericY]
   have hd : W₁.functionFieldLaurentExpansion
       (φ.fieldPullback (Affine.invariantDifferentialDenom W₂.toAffine)) =
-      (W₂⁄K⸨X⸩).toAffine.polynomialY.evalEval (q / w) (-1 / w) := by
+      (W₂⁄K⸨X⸩).toAffine.polynomialY.evalEval
+        (ofPowerSeries ℤ K φ.formalSeries /
+          ofPowerSeries ℤ K (PowerSeries.subst φ.formalSeries W₂.formalW))
+        (-1 / ofPowerSeries ℤ K (PowerSeries.subst φ.formalSeries W₂.formalW)) := by
     simp only [Affine.invariantDifferentialDenom_def, Affine.evalEval_polynomialY,
       WeierstrassCurve.baseChange, map_a₁, map_a₃, map_add, map_mul, map_ofNat, AlgHom.commutes,
       hx, hy]
-  have heq : w = wEquationRHS W₂ q w := by
-    have h := congrArg (algebraMap K⟦X⟧ K⸨X⸩) (W₂.subst_formalW_wEquation hs)
-    rw [algebraMap_wEquationRHS] at h
-    simpa only [LaurentSeries.coe_algebraMap, q, w] using h
   have hPG : ofPowerSeries ℤ K
       (PowerSeries.subst φ.formalSeries (formalGroup W₂).invariantDifferential) *
       ofPowerSeries ℤ K (PowerSeries.subst φ.formalSeries W₂.formalInvariantDifferentialDenom) =
@@ -202,15 +181,13 @@ private theorem functionFieldLaurentExpansion_fieldPullback_inv_mul_derivative [
         W₂.invariantDifferential_formalGroup_mul_formalInvariantDifferentialDenom,
         PowerSeries.subst_one]
     simpa only [map_mul, map_one] using congrArg (ofPowerSeries ℤ K) hPG₀
-  have hG_expand := ofPowerSeries_subst_formalInvariantDifferentialDenom W₂ hs
-  have hG0 := hG_expand ▸ right_ne_zero_of_mul_eq_one hPG
-  have hmain := W₂.inv_evalEval_polynomialY_smul_derivation_div
-    (TauCeti.laurentSeriesDerivation K) heq hG0 hu
-  simp only [TauCeti.laurentSeriesDerivation_apply, smul_eq_mul, q, w, ← hG_expand,
+  have hmain := W₂.inv_smul_derivation_div_subst_formalW_of_neg_two_add_ne_zero
+    (σ := Unit) (KK := K⸨X⸩) (TauCeti.laurentSeriesDerivation K) (q := φ.formalSeries)
+    (by rw [← PowerSeries.constantCoeff_eq]; exact φ.constantCoeff_formalSeries)
+    (by simpa only [LaurentSeries.coe_algebraMap] using φ.neg_two_add_formalSeries_ne_zero)
+  simp only [smul_eq_mul, LaurentSeries.coe_algebraMap, TauCeti.laurentSeriesDerivation_apply,
     inv_eq_of_mul_eq_one_left hPG] at hmain
-  rw [hd, hx]
-  dsimp only [q, w]
-  rw [hmain, ← PowerSeries.coe_derivative, map_mul]
+  rw [hd, hx, hmain, ← PowerSeries.coe_derivative, map_mul]
 
 /-- If `φ^* ω₂ = c • ω₁`, then pulling back the formal-group invariant differential along
 `φ.formalSeries` multiplies the invariant differential of `formalGroup W₁` by `c`. -/
@@ -248,7 +225,7 @@ theorem subst_formalSeries_invariantDifferential_mul_derivative_of_pullbackDiffe
     ← HahnSeries.algebraMap_apply' ℤ]
 
 /-- **The pullback scalar of the invariant differential is the linear coefficient of
-`φ.formalSeries`** (Silverman IV.4.2(a)): if `φ^* ω₂ = c • ω₁`, then
+`φ.formalSeries`** (Silverman III.5, IV.4): if `φ^* ω₂ = c • ω₁`, then
 `PowerSeries.coeff 1 φ.formalSeries = c`. -/
 theorem coeff_one_formalSeries_eq_of_pullbackDifferential_eq_smul [W₂.IsElliptic]
     (φ : Isogeny W₁.toAffine W₂.toAffine) {c : K}
@@ -270,7 +247,7 @@ theorem coeff_one_formalSeries_eq_of_pullbackDifferential_eq_smul [W₂.IsEllipt
   simpa [map_mul, hsub, hder, (formalGroup W₁).constantCoeff_invariantDifferential] using h
 
 /-- **An isogeny pulls back the invariant differential by the linear coefficient of its formal
-series** (Silverman IV.4.2(a)): `φ^* ω₂ = (PowerSeries.coeff 1 φ.formalSeries) • ω₁`. -/
+series** (Silverman III.5, IV.4): `φ^* ω₂ = (PowerSeries.coeff 1 φ.formalSeries) • ω₁`. -/
 theorem pullbackDifferential_invariantDifferential_eq_smul [W₂.IsElliptic]
     (φ : Isogeny W₁.toAffine W₂.toAffine) :
     φ.pullbackDifferential (Affine.invariantDifferential W₂.toAffine) =
@@ -278,15 +255,25 @@ theorem pullbackDifferential_invariantDifferential_eq_smul [W₂.IsElliptic]
   obtain ⟨c, hc, -⟩ := existsUnique_pullbackDifferential_invariantDifferential_eq_smul φ
   rwa [φ.coeff_one_formalSeries_eq_of_pullbackDifferential_eq_smul hc]
 
-/-- **Pullback of the formal-group invariant differential along an isogeny**:
+/-- **Pullback of the formal-group invariant differential along an isogeny**
+(Silverman IV.4.2(b)):
 `(P₂ ∘ φ.formalSeries) · (φ.formalSeries)' = (PowerSeries.coeff 1 φ.formalSeries) • P₁`. -/
 theorem subst_formalSeries_invariantDifferential_mul_derivative [W₂.IsElliptic]
     (φ : Isogeny W₁.toAffine W₂.toAffine) :
     PowerSeries.subst φ.formalSeries (formalGroup W₂).invariantDifferential *
       PowerSeries.derivative φ.formalSeries =
-      PowerSeries.coeff 1 φ.formalSeries • (formalGroup W₁).invariantDifferential :=
-  φ.subst_formalSeries_invariantDifferential_mul_derivative_of_pullbackDifferential_eq_smul
-    φ.pullbackDifferential_invariantDifferential_eq_smul
+      PowerSeries.coeff 1 φ.formalSeries • (formalGroup W₁).invariantDifferential := by
+  simpa using φ.formalGroupHom.subst_invariantDifferential_mul_derivative
+
+/-- **Pullback of the formal-group invariant differential along a morphism**
+(Silverman IV.4.2(b)):
+`(P₂ ∘ f.formalSeries) · (f.formalSeries)' = (PowerSeries.coeff 1 f.formalSeries) • P₁`. -/
+theorem Hom.subst_formalSeries_invariantDifferential_mul_derivative [W₂.IsElliptic]
+    (f : Hom W₁.toAffine W₂.toAffine) :
+    PowerSeries.subst f.formalSeries (formalGroup W₂).invariantDifferential *
+      PowerSeries.derivative f.formalSeries =
+      PowerSeries.coeff 1 f.formalSeries • (formalGroup W₁).invariantDifferential := by
+  simpa using f.formalGroupHom.subst_invariantDifferential_mul_derivative
 
 /-- **A morphism pulls back the invariant differential by the linear coefficient of its formal
 series**: `f^* ω₂ = (PowerSeries.coeff 1 f.formalSeries) • ω₁`. -/
@@ -308,7 +295,7 @@ section Separability
 variable {W₁ W₂ : WeierstrassCurve K} [W₂.IsElliptic]
 
 /-- **An isogeny is separable if and only if the linear coefficient of its formal series is
-nonzero** (Silverman IV.4.3). -/
+nonzero** (Silverman III.5, IV.7.4). -/
 theorem isSeparable_iff_coeff_one_formalSeries_ne_zero (φ : Isogeny W₁.toAffine W₂.toAffine) :
     Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.toAffine.FunctionField ↔
       PowerSeries.coeff 1 φ.formalSeries ≠ 0 :=
@@ -316,7 +303,7 @@ theorem isSeparable_iff_coeff_one_formalSeries_ne_zero (φ : Isogeny W₁.toAffi
     φ.pullbackDifferential_invariantDifferential_eq_smul
 
 /-- **An isogeny is separable if and only if its formal series has order `1`**
-(Silverman IV.4.3). -/
+(Silverman III.5, IV.7.4). -/
 theorem isSeparable_iff_order_formalSeries_eq_one (φ : Isogeny W₁.toAffine W₂.toAffine) :
     Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.toAffine.FunctionField ↔
       φ.formalSeries.order = 1 := by
@@ -326,7 +313,7 @@ theorem isSeparable_iff_order_formalSeries_eq_one (φ : Isogeny W₁.toAffine W�
   obtain rfl : i = 0 := Nat.lt_one_iff.mp hi
   simp
 
-/-- **The formal-group isomorphism induced by a separable isogeny** (Silverman IV.4.3). -/
+/-- **The formal-group isomorphism induced by a separable isogeny** (Silverman IV.7.2, IV.7.4). -/
 noncomputable def formalGroupIso (φ : Isogeny W₁.toAffine W₂.toAffine)
     [hsep : Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.toAffine.FunctionField] :
     FormalGroupIso (formalGroup W₁) (formalGroup W₂) :=
@@ -341,7 +328,7 @@ theorem formalGroupIso_toHom (φ : Isogeny W₁.toAffine W₂.toAffine)
   simp only [formalGroupIso, FormalGroupHom.toIso_toHom]
 
 /-- **The order of the formal series of an isogeny equals its inseparable degree**
-(Silverman IV.4.3). -/
+(Silverman IV.7.4). -/
 theorem order_formalSeries_eq_inseparableDegree (φ : Isogeny W₁.toAffine W₂.toAffine) :
     φ.formalSeries.order = (φ.inseparableDegree : ℕ∞) := by
   -- Factor `φ = χ ∘ F^r` in exponential characteristic `p`, where `χ` has order `1` and `F^r`

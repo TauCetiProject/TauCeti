@@ -31,10 +31,11 @@ morphism defines `f.formalSeries` for every morphism `f : Hom W₁.toAffine W₂
 When `W₂` is elliptic, addition of morphisms becomes addition in the formal group law of `W₂`
 (`TauCeti.Isogeny.Hom.formalSeries_add`), and every isogeny (or morphism) induces a homomorphism
 of formal group laws `formalGroup W₁ → formalGroup W₂` (`TauCeti.Isogeny.formalGroupHom`,
-`TauCeti.Isogeny.Hom.formalGroupHom`; Silverman IV.4.2(b)). In particular, the formal series of
-multiplication by `n` on an elliptic curve `W` is the multiplication series `[n]_{Ê}` of its
+`TauCeti.Isogeny.Hom.formalGroupHom`; Silverman IV.1–IV.2, IV.7). In particular, the formal series
+of multiplication by `n` on an elliptic curve `W` is the multiplication series `[n]_{Ê}` of its
 formal group (`TauCeti.Isogeny.formalSeries_mulByIntIsogeny`,
-`TauCeti.Isogeny.formalSeries_mulByIntIsogenyOfNeZero`).
+`TauCeti.Isogeny.formalSeries_mulByIntIsogenyOfNeZero`), and `[n]` induces
+`(formalGroup W).zsmulHom n` (`TauCeti.Isogeny.formalGroupHom_mulByIntIsogeny`).
 
 ## Main definitions
 
@@ -44,20 +45,25 @@ formal group (`TauCeti.Isogeny.formalSeries_mulByIntIsogeny`,
 
 ## Main results
 
+* `TauCeti.Isogeny.Hom.formalSeries_injective`, `TauCeti.Isogeny.formalGroupHom_injective`, and
+  `TauCeti.Isogeny.Hom.formalGroupHom_injective`: morphisms and isogenies are determined by their
+  formal series and induced formal-group homomorphisms.
 * `TauCeti.Isogeny.formalSeries_map` and `TauCeti.Isogeny.Hom.formalSeries_map`: `formalSeries`
   commutes with base change of the coefficient field.
-* `TauCeti.Isogeny.formalSeries_negIsogeny`: negation induces the formal inverse series.
-* `TauCeti.Isogeny.Hom.formalSeries_add`, `TauCeti.Isogeny.Hom.formalSeries_zsmul` and
-  `TauCeti.Isogeny.Hom.formalSeries_nsmul`: the formal series of a sum or integer multiple of
-  morphisms is computed in `formalGroup W₂`.
-* `TauCeti.Isogeny.formalSeries_mulByIntIsogeny` and
-  `TauCeti.Isogeny.formalSeries_mulByIntIsogenyOfNeZero`: the formal series of `[n]` on an
-  elliptic curve is `(formalGroup W).zsmulSeries n` (and `(formalGroup W).nsmulSeries n` for
-  natural `n`).
+* `TauCeti.Isogeny.formalSeries_negIsogeny` and `TauCeti.Isogeny.formalGroupHom_negIsogeny`:
+  negation induces the formal inverse series and `[-1]` endomorphism.
+* `TauCeti.Isogeny.Hom.formalSeries_add`, `TauCeti.Isogeny.Hom.formalSeries_zsmul`,
+  `TauCeti.Isogeny.Hom.formalSeries_nsmul`, `TauCeti.Isogeny.Hom.formalGroupHom_zsmul`, and
+  `TauCeti.Isogeny.Hom.formalGroupHom_add_applyPoint`: sums, scalar multiples, and formal-point
+  actions of morphisms are computed in `formalGroup W₂`.
+* `TauCeti.Isogeny.formalSeries_mulByIntIsogeny`,
+  `TauCeti.Isogeny.formalSeries_mulByIntIsogenyOfNeZero`, and
+  `TauCeti.Isogeny.formalGroupHom_mulByIntIsogeny`: `[n]` on an elliptic curve induces
+  `(formalGroup W).zsmulSeries n` and `(formalGroup W).zsmulHom n`.
 
 ## References
 
-* [J. H. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], IV.4.2.
+* [J. H. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], IV.1–IV.2 and IV.7.
 -/
 
 public section
@@ -170,6 +176,23 @@ theorem formalSeries_eq_zero_iff {f : Hom W₁.toAffine W₂.toAffine} :
   rcases eq_zero_or_exists_ofIsogeny f with rfl | ⟨φ, rfl⟩
   · exact iff_of_true formalSeries_zero rfl
   · exact iff_of_false (formalSeries_ofIsogeny φ ▸ φ.formalSeries_ne_zero) (ofIsogeny_ne_zero φ)
+
+/-- **A morphism is determined by its formal power series** (Silverman IV.7). -/
+theorem formalSeries_injective :
+    Function.Injective (formalSeries (W₁ := W₁) (W₂ := W₂)) := by
+  intro f g h
+  rcases eq_zero_or_exists_ofIsogeny f with rfl | ⟨φ, rfl⟩
+  · exact (formalSeries_eq_zero_iff.mp (h.symm.trans formalSeries_zero)).symm
+  rcases eq_zero_or_exists_ofIsogeny g with rfl | ⟨ψ, rfl⟩
+  · exact formalSeries_eq_zero_iff.mp (h.trans formalSeries_zero)
+  rw [formalSeries_ofIsogeny, formalSeries_ofIsogeny] at h
+  exact congrArg ofIsogeny (Isogeny.formalSeries_injective h)
+
+/-- Two morphisms are equal if and only if their formal power series are equal. -/
+@[simp]
+theorem formalSeries_inj {f g : Hom W₁.toAffine W₂.toAffine} :
+    f.formalSeries = g.formalSeries ↔ f = g :=
+  formalSeries_injective.eq_iff
 
 /-- Every morphism's formal power series has zero constant coefficient. -/
 @[simp]
@@ -358,24 +381,10 @@ private theorem toAffine_formalPointRep_eq_map_genericPoint [DecidableEq K⸨X�
   have hN := nonsingular_formalPointRep W hq₀
   rw [Projective.Point.toAffine_of_Z_ne_zero hN hw0, Affine.genericPoint_eq_some,
     Affine.Point.map_some]
-  let σ := (LaurentSeries.substAlgHom hq₀ hq).comp W.functionFieldLaurentExpansion
-  have hY0 : σ W.toAffine.genericY ≠ 0 :=
-    (map_ne_zero_iff σ σ.injective).mpr W.toAffine.genericY_ne_zero
-  have hw : σ (-W.toAffine.genericY⁻¹) = ofPowerSeries ℤ K (PowerSeries.subst q (formalW W)) := by
-    simp [σ, LaurentSeries.substAlgHom_coe]
-  have hz : σ (-W.toAffine.genericX / W.toAffine.genericY) = ofPowerSeries ℤ K q := by
-    rw [AlgHom.comp_apply, W.functionFieldLaurentExpansion_neg_genericX_div_genericY,
-      LaurentSeries.substAlgHom_coe, PowerSeries.subst_X (.of_constantCoeff_zero' hq₀)]
-  have hY : -1 / ofPowerSeries ℤ K (PowerSeries.subst q (formalW W)) = σ W.toAffine.genericY := by
-    rw [← hw, map_neg, map_inv₀]
-    field_simp [hY0]
-  have hX : ofPowerSeries ℤ K q / ofPowerSeries ℤ K (PowerSeries.subst q (formalW W)) =
-      σ W.toAffine.genericX := by
-    rw [← hz, ← hw, map_div₀, map_neg, map_neg, map_inv₀]
-    field_simp [hY0]
   simp only [formalPointRep, Function.comp_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
-    Matrix.cons_val_two, map_neg, map_one, Affine.Point.some.injEq]
-  exact ⟨hX, hY⟩
+    Matrix.cons_val_two, map_neg, map_one, Affine.Point.some.injEq, AlgHom.comp_apply]
+  exact ⟨(W.substAlgHom_functionFieldLaurentExpansion_genericX hq₀ hq).symm,
+    (W.substAlgHom_functionFieldLaurentExpansion_genericY hq₀ hq).symm⟩
 
 /-- For every morphism `f : W₁ → W₂`, `[f.formalSeries : -1 : w₂(f.formalSeries)]` represents the
 tautological point of `f` expanded at infinity on `W₁`. -/
@@ -434,37 +443,41 @@ theorem formalSeries_sub (f g : Hom W₁.toAffine W₂.toAffine) :
         (formalGroup W₂).toPowerSeries := by
   rw [sub_eq_add_neg, formalSeries_add, formalSeries_neg]
 
+/-- A morphism's formal series bundled as a `Unit`-indexed formal point of `formalGroup W₂`. -/
+private noncomputable def formalSeriesPoint (f : Hom W₁.toAffine W₂.toAffine) :
+    (formalGroup W₂).Point Unit :=
+  ⟨f.formalSeries, .of_constantCoeff_zero' f.constantCoeff_formalSeries⟩
+
+/-- Sending `f : W₁ → W₂` to `f.formalSeries` as an additive homomorphism into
+`(formalGroup W₂).Point Unit`. -/
+private noncomputable def formalSeriesPointAddMonoidHom :
+    Hom W₁.toAffine W₂.toAffine →+ (formalGroup W₂).Point Unit where
+  toFun := formalSeriesPoint
+  map_zero' := Subtype.ext
+    (formalSeries_zero.trans (FormalGroup.zero_apply (F := formalGroup W₂) (σ := Unit)).symm)
+  map_add' f g := Subtype.ext ((formalSeries_add f g).trans
+    (FormalGroup.add_apply (F := formalGroup W₂)
+      (x := formalSeriesPoint f) (y := formalSeriesPoint g)).symm)
+
+private theorem formalSeriesPointAddMonoidHom_val (f : Hom W₁.toAffine W₂.toAffine) :
+    (formalSeriesPointAddMonoidHom (W₁ := W₁) (W₂ := W₂) f).val = f.formalSeries :=
+  (rfl)
+
 /-- Natural scalar multiplication of a morphism composes its formal series with the natural
 multiplication series of `formalGroup W₂`. -/
 @[simp]
 theorem formalSeries_nsmul (n : ℕ) (f : Hom W₁.toAffine W₂.toAffine) :
     (n • f).formalSeries = PowerSeries.subst f.formalSeries ((formalGroup W₂).nsmulSeries n) := by
-  induction n with
-  | zero =>
-    rw [zero_smul, formalSeries_zero, FormalGroup.nsmulSeries_zero, PowerSeries.subst_zero]
-  | succ n ih =>
-    let x : (formalGroup W₂).Point Unit :=
-      ⟨f.formalSeries, isNilpotent_iff_eq_zero.mpr f.constantCoeff_formalSeries⟩
-    have hx := (formalGroup W₂).subst_nsmulSeries x (n + 1)
-    have hxn := (formalGroup W₂).subst_nsmulSeries x n
-    rw [succ_nsmul, FormalGroup.add_apply] at hx
-    rw [succ_nsmul, formalSeries_add, ih]
-    exact (hx.trans
-      (congrArg (fun g ↦ subst ![g, f.formalSeries] (formalGroup W₂).toPowerSeries)
-        hxn.symm)).symm
+  rw [← formalSeriesPointAddMonoidHom_val, _root_.map_nsmul, ← (formalGroup W₂).subst_nsmulSeries,
+    formalSeriesPointAddMonoidHom_val]
 
 /-- Integer scalar multiplication of a morphism composes its formal series with the integer
 multiplication series of `formalGroup W₂`. -/
 @[simp]
 theorem formalSeries_zsmul (n : ℤ) (f : Hom W₁.toAffine W₂.toAffine) :
     (n • f).formalSeries = PowerSeries.subst f.formalSeries ((formalGroup W₂).zsmulSeries n) := by
-  rcases Int.eq_nat_or_neg n with ⟨k, rfl | rfl⟩
-  · rw [natCast_zsmul, formalSeries_nsmul, FormalGroup.zsmulSeries_natCast]
-  · rw [neg_zsmul, formalSeries_neg, natCast_zsmul, formalSeries_nsmul,
-      FormalGroup.zsmulSeries_neg, FormalGroup.zsmulSeries_natCast,
-      PowerSeries.subst_comp_subst_apply
-        (.of_constantCoeff_zero' ((formalGroup W₂).constantCoeff_nsmulSeries k))
-        (.of_constantCoeff_zero' f.constantCoeff_formalSeries)]
+  rw [← formalSeriesPointAddMonoidHom_val, _root_.map_zsmul, ← (formalGroup W₂).subst_zsmulSeries,
+    formalSeriesPointAddMonoidHom_val]
 
 end Hom
 
@@ -530,23 +543,7 @@ private theorem pointMap_toAffine_formalPointRep {W₁ W₂ : WeierstrassCurve K
         φ.formalSeries_ne_zero hq₀ hq _
   rw [hσ]
 
-variable {W₁ W₂ W₃ : WeierstrassCurve K}
-
-private theorem map_homDefect_formalSeries {L : Type*} [Field L]
-    (φ : Isogeny W₁.toAffine W₂.toAffine) (ι : K →+* L) :
-    ((formalGroup W₁).homDefect (formalGroup W₂) φ.formalSeries).map ι =
-      (formalGroup (W₁.map ι)).homDefect (formalGroup (W₂.map ι)) (φ.map ι).formalSeries := by
-  rw [FormalGroup.homDefect_def, FormalGroup.homDefect_def, map_sub, formalSeries_map,
-    map_formalGroup, map_formalGroup, FormalGroup.map_toPowerSeries,
-    FormalGroup.map_toPowerSeries,
-    PowerSeries.map_subst (.of_constantCoeff_zero (formalGroup W₁).zero_constantCoeff),
-    MvPowerSeries.map_subst
-      (MvPowerSeries.HasSubst.toMvPowerSeries φ.constantCoeff_formalSeries)]
-  congr 2
-  funext i
-  exact PowerSeries.map_toMvPowerSeries ι i φ.formalSeries
-
-variable [W₂.IsElliptic]
+variable {W₁ W₂ W₃ : WeierstrassCurve K} [W₂.IsElliptic]
 
 private theorem homDefect_formalSeries (φ : Isogeny W₁.toAffine W₂.toAffine) :
     (formalGroup W₁).homDefect (formalGroup W₂) φ.formalSeries = 0 := by
@@ -577,8 +574,9 @@ private theorem homDefect_formalSeries (φ : Isogeny W₁.toAffine W₂.toAffine
   have hφq₁c : PowerSeries.constantCoeff (PowerSeries.subst q₁ φ'.formalSeries) = 0 :=
     PowerSeries.constantCoeff_subst_eq_zero hq₁c _ φ'.constantCoeff_formalSeries
   apply LaurentSeries.eq_zero_of_subst_X_single_smul_X
-  rw [map_homDefect_formalSeries φ ι, FormalGroup.subst_homDefect _ _ φ'.constantCoeff_formalSeries
-    (.of_constantCoeff_zero' hq₀c) (.of_constantCoeff_zero' hq₁c), sub_eq_zero]
+  rw [FormalGroup.map_homDefect φ.constantCoeff_formalSeries, ← map_formalGroup, ← map_formalGroup,
+    ← formalSeries_map, FormalGroup.subst_homDefect _ _ φ'.constantCoeff_formalSeries
+      (.of_constantCoeff_zero' hq₀c) (.of_constantCoeff_zero' hq₁c), sub_eq_zero]
   apply formalPointRep_eq_of_toAffine_eq (W₂.map ι)
     (PowerSeries.constantCoeff_subst_eq_zero hF₁c _ φ'.constantCoeff_formalSeries)
     (MvPowerSeries.constantCoeff_subst_eq_zero (PowerSeries.hasSubst_pair hφq₀c hφq₁c)
@@ -591,7 +589,7 @@ private theorem homDefect_formalSeries (φ : Isogeny W₁.toAffine W₂.toAffine
     (toAffine_formalPointRep_add (W₁.map ι) hq₀c hq₁c).symm).trans ?_
   exact Hom.pointMap_add ((Hom.ofIsogeny φ').map (algebraMap K⸨X⸩ K⸨X⸩⸨X⸩)) _ _
 
-/-- **Every isogeny induces a homomorphism of formal group laws** (Silverman IV.4.2(b)). -/
+/-- **Every isogeny induces a homomorphism of formal group laws** (Silverman IV.1–IV.2, IV.7). -/
 noncomputable def formalGroupHom (φ : Isogeny W₁.toAffine W₂.toAffine) :
     FormalGroupHom (formalGroup W₁) (formalGroup W₂) :=
   FormalGroupHom.ofHomDefectEqZero φ.constantCoeff_formalSeries φ.homDefect_formalSeries
@@ -601,6 +599,17 @@ noncomputable def formalGroupHom (φ : Isogeny W₁.toAffine W₂.toAffine) :
 theorem formalGroupHom_toPowerSeries (φ : Isogeny W₁.toAffine W₂.toAffine) :
     φ.formalGroupHom.toPowerSeries = φ.formalSeries :=
   FormalGroupHom.ofHomDefectEqZero_toPowerSeries _ _
+
+/-- **An isogeny is determined by the formal-group homomorphism it induces** (Silverman IV.7). -/
+theorem formalGroupHom_injective :
+    Function.Injective (formalGroupHom (W₁ := W₁) (W₂ := W₂)) := fun _ _ h ↦
+  formalSeries_injective (by simpa using congrArg FormalGroupHom.toPowerSeries h)
+
+/-- Two isogenies are equal if and only if they induce the same formal-group homomorphism. -/
+@[simp]
+theorem formalGroupHom_inj {φ ψ : Isogeny W₁.toAffine W₂.toAffine} :
+    φ.formalGroupHom = ψ.formalGroupHom ↔ φ = ψ :=
+  formalGroupHom_injective.eq_iff
 
 omit [W₂.IsElliptic] in
 /-- The identity isogeny induces the identity formal-group homomorphism. -/
@@ -615,6 +624,40 @@ theorem formalGroupHom_id (W : WeierstrassCurve K) [W.IsElliptic] :
 theorem formalGroupHom_comp [W₃.IsElliptic] (ψ : Isogeny W₂.toAffine W₃.toAffine)
     (φ : Isogeny W₁.toAffine W₂.toAffine) :
     (ψ.comp φ).formalGroupHom = ψ.formalGroupHom.comp φ.formalGroupHom := by
+  ext : 1
+  simp
+
+omit [W₂.IsElliptic] in
+/-- The negation isogeny induces `[-1]` on the formal group law. -/
+@[simp]
+theorem formalGroupHom_negIsogeny (W : WeierstrassCurve K) [W.IsElliptic] :
+    (negIsogeny W.toAffine).formalGroupHom = (formalGroup W).zsmulHom (-1) := by
+  ext : 1
+  simp
+
+omit [W₂.IsElliptic] in
+/-- **Multiplication by `n : ℤ` induces `[n]` as an endomorphism of the formal group law.** -/
+@[simp]
+theorem formalGroupHom_mulByIntIsogeny (W : WeierstrassCurve K) [W.IsElliptic] {n : ℤ}
+    (hn : psiFunctionField W.toAffine n ≠ 0) :
+    (mulByIntIsogeny W.toAffine hn).formalGroupHom = (formalGroup W).zsmulHom n := by
+  ext : 1
+  simp
+
+-- Not `@[simp]`: `mulByIntIsogenyOfNeZero` is an `abbrev`, so `simp` sees through it to
+-- `formalGroupHom_mulByIntIsogeny`.
+omit [W₂.IsElliptic] in
+/-- **Multiplication by nonzero `n : ℤ` induces `[n]` on the formal group law.** -/
+theorem formalGroupHom_mulByIntIsogenyOfNeZero (W : WeierstrassCurve K) [W.IsElliptic] {n : ℤ}
+    (hn : n ≠ 0) :
+    (mulByIntIsogenyOfNeZero W.toAffine hn).formalGroupHom = (formalGroup W).zsmulHom n :=
+  formalGroupHom_mulByIntIsogeny W _
+
+omit [W₂.IsElliptic] in
+/-- For a natural number `n` with `(n : ℤ) ≠ 0`, `[n]` induces `(formalGroup W).nsmulHom n`. -/
+theorem formalGroupHom_mulByIntIsogenyOfNeZero_natCast (W : WeierstrassCurve K) [W.IsElliptic]
+    {n : ℕ} (hn : (n : ℤ) ≠ 0) :
+    (mulByIntIsogenyOfNeZero W.toAffine hn).formalGroupHom = (formalGroup W).nsmulHom n := by
   ext : 1
   simp
 
@@ -635,6 +678,17 @@ noncomputable def formalGroupHom (f : Hom W₁.toAffine W₂.toAffine) :
 theorem formalGroupHom_toPowerSeries (f : Hom W₁.toAffine W₂.toAffine) :
     f.formalGroupHom.toPowerSeries = f.formalSeries :=
   FormalGroupHom.ofHomDefectEqZero_toPowerSeries _ _
+
+/-- **A morphism is determined by the formal-group homomorphism it induces** (Silverman IV.7). -/
+theorem formalGroupHom_injective :
+    Function.Injective (formalGroupHom (W₁ := W₁) (W₂ := W₂)) := fun _ _ h ↦
+  formalSeries_injective (by simpa using congrArg FormalGroupHom.toPowerSeries h)
+
+/-- Two morphisms are equal if and only if they induce the same formal-group homomorphism. -/
+@[simp]
+theorem formalGroupHom_inj {f g : Hom W₁.toAffine W₂.toAffine} :
+    f.formalGroupHom = g.formalGroupHom ↔ f = g :=
+  formalGroupHom_injective.eq_iff
 
 /-- On an isogeny viewed as a morphism, `Hom.formalGroupHom` agrees with
 `Isogeny.formalGroupHom`. -/
@@ -659,6 +713,69 @@ theorem formalGroupHom_comp [W₃.IsElliptic] (g : Hom W₂.toAffine W₃.toAffi
     (g.comp f).formalGroupHom = g.formalGroupHom.comp f.formalGroupHom := by
   ext : 1
   simp
+
+/-- Negating a morphism composes its formal-group homomorphism with `[-1]` on the target. -/
+@[simp]
+theorem formalGroupHom_neg (f : Hom W₁.toAffine W₂.toAffine) :
+    (-f).formalGroupHom = ((formalGroup W₂).zsmulHom (-1)).comp f.formalGroupHom := by
+  ext : 1
+  simp
+
+/-- Natural scalar multiplication of a morphism composes its formal-group homomorphism with `[n]`
+on the target. -/
+@[simp]
+theorem formalGroupHom_nsmul (n : ℕ) (f : Hom W₁.toAffine W₂.toAffine) :
+    (n • f).formalGroupHom = ((formalGroup W₂).nsmulHom n).comp f.formalGroupHom := by
+  ext : 1
+  simp
+
+/-- Integer scalar multiplication of a morphism composes its formal-group homomorphism with `[n]`
+on the target. -/
+@[simp]
+theorem formalGroupHom_zsmul (n : ℤ) (f : Hom W₁.toAffine W₂.toAffine) :
+    (n • f).formalGroupHom = ((formalGroup W₂).zsmulHom n).comp f.formalGroupHom := by
+  ext : 1
+  simp
+
+/-- The zero morphism acts as zero on every formal power-series point. -/
+@[simp]
+theorem formalGroupHom_zero_applyPoint {σ : Type*} (x : (formalGroup W₁).Point σ) :
+    (0 : Hom W₁.toAffine W₂.toAffine).formalGroupHom.applyPoint x = 0 := by
+  apply Subtype.ext
+  simp [FormalGroup.zero_apply]
+
+/-- A sum of morphisms acts on formal power-series points by addition in `formalGroup W₂`. -/
+@[simp]
+theorem formalGroupHom_add_applyPoint (f g : Hom W₁.toAffine W₂.toAffine) {σ : Type*}
+    (x : (formalGroup W₁).Point σ) :
+    (f + g).formalGroupHom.applyPoint x =
+      f.formalGroupHom.applyPoint x + g.formalGroupHom.applyPoint x := by
+  apply Subtype.ext
+  rw [FormalGroupHom.applyPoint_val, formalGroupHom_toPowerSeries, formalSeries_add,
+    FormalGroup.add_apply, FormalGroupHom.applyPoint_val, FormalGroupHom.applyPoint_val,
+    formalGroupHom_toPowerSeries, formalGroupHom_toPowerSeries, PowerSeries.subst_def,
+    MvPowerSeries.subst_comp_subst_apply
+      (PowerSeries.hasSubst_pair f.constantCoeff_formalSeries g.constantCoeff_formalSeries)
+      x.prop.const]
+  congr 1
+  funext i
+  fin_cases i <;> simp [PowerSeries.subst_def]
+
+-- Not `@[simp]`: `simp` already reduces the left-hand side via `formalGroupHom_neg`.
+/-- Negation of a morphism acts by negation on formal power-series points. -/
+theorem formalGroupHom_neg_applyPoint (f : Hom W₁.toAffine W₂.toAffine) {σ : Type*}
+    (x : (formalGroup W₁).Point σ) :
+    (-f).formalGroupHom.applyPoint x = -f.formalGroupHom.applyPoint x := by
+  simp
+
+/-- Subtraction of morphisms acts by subtraction on formal power-series points. -/
+@[simp]
+theorem formalGroupHom_sub_applyPoint (f g : Hom W₁.toAffine W₂.toAffine) {σ : Type*}
+    (x : (formalGroup W₁).Point σ) :
+    (f - g).formalGroupHom.applyPoint x =
+      f.formalGroupHom.applyPoint x - g.formalGroupHom.applyPoint x := by
+  rw [sub_eq_add_neg, formalGroupHom_add_applyPoint, formalGroupHom_neg_applyPoint,
+    ← sub_eq_add_neg]
 
 end Hom
 

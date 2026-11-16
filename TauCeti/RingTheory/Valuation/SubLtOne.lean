@@ -13,15 +13,13 @@ public import Mathlib.RingTheory.Valuation.Basic
 
 Let `v` be a valuation on a ring `B` taking values in a nontrivial linearly ordered commutative
 monoid with zero `Γ₀`, and let `f, c : A →+* B` be ring homomorphisms with `v (c a) ≤ 1` for all
-`a : A`. The elements `a : A` satisfying `v (f a - c a) < 1` form a subring of `A`:
+`a : A`. Because `c` lands in the valuation subring `{b | v b ≤ 1}`, the condition
+`v (f a - c a) < 1` cuts out the locus where `f a` also has valuation `≤ 1` and agrees with `c a`
+modulo `{b | v b < 1}`.
 
-* closure under addition and negation comes from the ultrametric inequality on `f - c`;
-* closure under multiplication rewrites `f (a * b) - c (a * b)` as
-  `(f a - c a) * f b + c a * (f b - c b)` and bounds `v (f b) ≤ max (v (f b - c b)) (v (c b)) ≤ 1`.
-
-When `A` is a division ring `K`, this subring is a subfield: for `a ≠ 0`, `v (c a) * v (c a⁻¹) = 1`
-together with `v ∘ c ≤ 1` forces `v (c a) = 1`, ultrametricity gives `v (f a) = 1` and hence
-`v (f a⁻¹) = 1`, and `f a⁻¹ - c a⁻¹ = f a⁻¹ * (c a - f a) * c a⁻¹` keeps valuation `< 1`.
+This congruence locus forms a subring of `A`, and a subfield when `A` is a division ring `K`.
+Consequently, to show that `f` and `c` agree modulo `{b | v b < 1}` on a generated subring,
+subalgebra, or fraction field, it suffices to check `v (f x - c x) < 1` on generators.
 
 ## Main definitions
 

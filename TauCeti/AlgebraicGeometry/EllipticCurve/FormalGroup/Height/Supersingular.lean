@@ -10,7 +10,6 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.FormalSeries.Diffe
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.RelativeFrobenius.Supersingular
 import Mathlib.RingTheory.Ideal.Quotient.Operations
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Degree
-import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.IsSepClosed
 import TauCeti.RingTheory.FormalGroup.NSMul.BaseChange
 
 /-!
@@ -60,8 +59,8 @@ height-two criteria of `TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Char
 
 ## References
 
-* [J. H. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], IV.7.4, IV.7.5, V.3.1 and
-  V.4.1.
+* [J. H. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], IV.4, IV.7.4, IV.7.5, and
+  V.3.1.
 -/
 
 public section
@@ -143,12 +142,6 @@ private theorem separableDegree_mul_inseparableDegree_mulByIntIsogenyOfNeZero_na
   rw [(mulByIntIsogenyOfNeZero W.toAffine hn).separableDegree_mul_inseparableDegree,
     degree_mulByIntIsogenyOfNeZero, Int.natAbs_natCast]
 
-private theorem not_isSupersingular_zero : ¬W.IsSupersingular 0 := by
-  classical
-  obtain ⟨P, hP⟩ := exists_ne (0 : (W.baseChange (AlgebraicClosure K)).toAffine.Point)
-  rw [W.isSupersingular_iff_forall, not_forall]
-  exact ⟨P, fun h ↦ hP (h (zero_nsmul P))⟩
-
 /-- **An elliptic curve over a field of characteristic `p` is supersingular if and only if its
 formal group has height `2`** (Silverman V.3.1). -/
 theorem isSupersingular_iff_height_formalGroup_eq_two {p : ℕ} [CharP K p] :
@@ -209,7 +202,7 @@ theorem isSupersingular_iff_one_lt_height_formalGroup {p : ℕ} [Fact p.Prime] [
 
 /-- **An elliptic curve over a field of characteristic `p` is ordinary if and only if the
 `(p - 1)`-st coefficient of its formal-group invariant differential is nonzero**
-(Silverman V.4.1(a)). -/
+(Silverman IV.4, IV.7, V.3.1; in characteristic `0`, `0 - 1 = 0` is the constant term `1`). -/
 theorem isOrdinary_iff_coeff_invariantDifferential_formalGroup_ne_zero {p : ℕ} [CharP K p] :
     W.IsOrdinary p ↔ PowerSeries.coeff (p - 1) (formalGroup W).invariantDifferential ≠ 0 := by
   rcases CharP.char_is_prime_or_zero K p with hp | rfl
@@ -218,11 +211,11 @@ theorem isOrdinary_iff_coeff_invariantDifferential_formalGroup_ne_zero {p : ℕ}
   · have hc0 : PowerSeries.coeff (0 - 1) (formalGroup W).invariantDifferential ≠ 0 := by
       simp [PowerSeries.coeff_zero_eq_constantCoeff,
         (formalGroup W).constantCoeff_invariantDifferential]
-    exact iff_of_true (not_isSupersingular.mp W.not_isSupersingular_zero) hc0
+    exact iff_of_true W.isOrdinary_zero hc0
 
 /-- **An elliptic curve over a field of characteristic `p` is supersingular if and only if the
 `(p - 1)`-st coefficient of its formal-group invariant differential vanishes**
-(Silverman V.4.1(a)). -/
+(Silverman IV.4, IV.7, V.3.1; in characteristic `0`, `0 - 1 = 0` is the constant term `1`). -/
 theorem isSupersingular_iff_coeff_invariantDifferential_formalGroup_eq_zero {p : ℕ} [CharP K p] :
     W.IsSupersingular p ↔ PowerSeries.coeff (p - 1) (formalGroup W).invariantDifferential = 0 := by
   rw [← not_isOrdinary, W.isOrdinary_iff_coeff_invariantDifferential_formalGroup_ne_zero, not_not]

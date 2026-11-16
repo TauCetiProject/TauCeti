@@ -310,9 +310,12 @@ theorem pointMap_map_algebraMap_genericPoint (h : Hom W₁ W₂) :
   rcases eq_zero_or_exists_ofIsogeny h with rfl | ⟨φ, rfl⟩
   · rw [zero_map, tautologicalPoint_zero]
     exact zero_pointMap _
-  let hN : (W₁.map (algebraMap F W₁.FunctionField)).Nonsingular W₁.genericX W₁.genericY :=
+  -- `WeierstrassCurve.baseChange` (`W⁄L`) is a plain `def` for `W.map (algebraMap _ _)`, so `rw`
+  -- will not unfold it inside `Point.some`'s curve parameter; the type ascriptions below and
+  -- `congrArg` on `genericPoint_eq_some` align both spellings explicitly.
+  have hN : (W₁.map (algebraMap F W₁.FunctionField)).Nonsingular W₁.genericX W₁.genericY :=
     nonsingular_genericX_genericY W₁
-  let hN₂ : (W₂.map (algebraMap F W₁.FunctionField)).Nonsingular
+  have hN₂ : (W₂.map (algebraMap F W₁.FunctionField)).Nonsingular
       (φ.fieldPullback W₂.genericX) (φ.fieldPullback W₂.genericY) :=
     (W₂.baseChange_nonsingular φ.fieldPullback.injective ..).mpr
       (nonsingular_genericX_genericY W₂)
