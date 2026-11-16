@@ -90,7 +90,8 @@ theorem chartSectionsIso_hom_comp_isoToRingEquiv {B₁ B₂ : Type u} [CommRing 
         CommRingCat.ofHom (Spf.isoToRingEquiv (e₂.symm ≪≫ e₁)).toRingHom =
       (e₁.hom.c.app (op ⊤) : (Spf B₁).presheaf.obj (op ⊤) ⟶ _) ≫
         e₂.inv.c.app (op ⊤) ≫ (Spf.topSectionsIso B₂).hom := by
-    rw [Spf.isoToRingEquiv_toRingHom, ← Spf.c_app_top_comp_topSectionsIso_hom (e₂.symm ≪≫ e₁).hom]
+    rw [RingEquiv.toRingHom_eq_coe, Spf.isoToRingEquiv_toRingHom,
+      ← Spf.c_app_top_comp_topSectionsIso_hom (e₂.symm ≪≫ e₁).hom]
     exact Category.assoc _ _ _
   exact (Category.assoc _ _ _).trans <| congrArg (_ ≫ ·) <|
     (Category.assoc _ _ _).trans <| (congrArg (_ ≫ ·) hmid).trans <|

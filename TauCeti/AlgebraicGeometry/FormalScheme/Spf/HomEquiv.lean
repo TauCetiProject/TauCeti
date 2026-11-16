@@ -326,11 +326,8 @@ noncomputable def isoToRingEquiv (e : Spf B ≅ Spf A) : A ≃+* B :=
     left_inv a := by simpa [e.inv_hom_id] using (congr($(sectionsHom_comp e.inv e.hom) a)).symm
     right_inv b := by simpa [e.hom_inv_id] using (congr($(sectionsHom_comp e.hom e.inv) b)).symm }
 
-theorem isoToRingEquiv_toRingHom (e : Spf B ≅ Spf A) :
-    (isoToRingEquiv e).toRingHom = sectionsHom e.hom := (rfl)
-
 @[simp]
-theorem isoToRingEquiv_coe_ringHom (e : Spf B ≅ Spf A) :
+theorem isoToRingEquiv_toRingHom (e : Spf B ≅ Spf A) :
     (isoToRingEquiv e : A →+* B) = sectionsHom e.hom := (rfl)
 
 @[simp]
