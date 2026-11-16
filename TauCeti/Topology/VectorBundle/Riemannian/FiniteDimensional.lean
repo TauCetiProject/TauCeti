@@ -27,29 +27,14 @@ of positive definite symmetric bilinear forms is a Riemannian metric
 
 This applies for instance to fibres that carry a topology but no norm, such as the normal spaces
 of an embedding and their subspaces, where it gives fibre norms compatible with the existing
-topology (through `Bundle.RiemannianBundle`, or directly through
-`InnerProductSpace.Core.toNormedAddCommGroupOfTopology`).
+topology. For submodule fibres, which already carry their own topology instance, these norms must
+be installed directly through `InnerProductSpace.Core.toNormedAddCommGroupOfTopology`;
+`Bundle.RiemannianBundle` serves only fibres where its scoped norm instance applies.
 -/
 
 public section
 
 noncomputable section
-
-namespace LinearMap.BilinForm
-
-/-- A positive definite symmetric bilinear form on a finite-dimensional Hausdorff topological
-vector space is the squared norm of a continuous linear identification with Euclidean space. -/
-theorem exists_continuousLinearEquiv_euclideanSpace_apply_self {V : Type*} [AddCommGroup V]
-    [Module ℝ V] [TopologicalSpace V] [IsTopologicalAddGroup V] [ContinuousSMul ℝ V]
-    [FiniteDimensional ℝ V] [T2Space V] {φ : LinearMap.BilinForm ℝ V} (hsymm : φ.IsSymm)
-    (hpos : ∀ v, v ≠ 0 → 0 < φ v v) :
-    ∃ e : EuclideanSpace ℝ (Fin (Module.finrank ℝ V)) ≃L[ℝ] V, ∀ v, φ v v = ‖e.symm v‖ ^ 2 := by
-  obtain ⟨e, he⟩ := exists_linearEquiv_euclideanSpace_apply_apply hsymm hpos
-  refine ⟨e.toContinuousLinearEquiv, fun v ↦ ?_⟩
-  obtain ⟨x, rfl⟩ := e.surjective v
-  simp [he]
-
-end LinearMap.BilinForm
 
 namespace Bundle.RiemannianMetric
 
