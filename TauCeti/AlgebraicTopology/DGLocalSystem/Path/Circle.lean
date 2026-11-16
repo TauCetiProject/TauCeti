@@ -25,9 +25,10 @@ This file constructs that comparison for the circle and proves that it is a quas
 * The generator `e₀` of the `0`-cell goes to the point chain `[b]` of the constant path of length
   zero at `b` (`TauCeti.cubicalChainModulePoint`).
 * The generator `e₁` of the `1`-cell goes to the `1`-chain `c_γ` of the initial segments of `γ`
-  (`TauCeti.loopCellPathCube`): at time `s` the path `γ` truncated at `(1 - s)` times its length,
-  through the contraction `TauCeti.MoorePathFrom.truncateHomotopy` of the based path space. Its
-  boundary is `[γ] - [b]` (`TauCeti.cubicalChainModuleDifferential_loopCellPathChain`), and since
+  (`TauCeti.loopCellPathChain`): minus the cone on the point chain `[γ]` along the contraction
+  `TauCeti.MoorePathFrom.truncateHomotopy` of the based path space. Its boundary is `[γ] - [b]`
+  (`TauCeti.cubicalChainModuleDifferential_loopCellPathChain`, from
+  `TauCeti.cubicalChainModuleDifferential_cone_cubicalChainModulePoint`), and since
   loops act on point chains by concatenation in front (`TauCeti.point_smul_cubicalChainModulePoint`)
   this is `([γ] - [1]) · [b]`, the image of the row of `e₁`.
 
@@ -54,8 +55,8 @@ the based path space, whose general cell-by-cell construction runs along the ske
 
 ## Main definitions
 
-* `TauCeti.loopCellPathCube`: the `1`-cube of initial segments of a Moore loop, in `P_b B`.
-* `TauCeti.loopCellPathChain`: its chain `c_γ`.
+* `TauCeti.loopCellPathChain`: the `1`-chain `c_γ` of initial segments of a Moore loop, in
+  `C_*(P_b B; R)`.
 * `TauCeti.loopCellPathComparison`: the map `K → C_*(P_b B; R)`, linear over `C_*(Ω_b B; R)`.
 
 ## Main results
@@ -82,8 +83,6 @@ public noncomputable section
 
 open AlgebraicTopology
 
-open scoped Topology unitInterval
-
 namespace TauCeti
 
 open NormalizedCubicalChain
@@ -92,55 +91,35 @@ section Comparison
 
 variable {B : Type*} [TopologicalSpace B] {b : B}
 
-/-- The `1`-cube of **initial segments of a Moore loop** `γ` at `b`, in the based path space
-`P_b B`: at time `s` it is `γ`, read as a path from `b`, truncated at `(1 - s)` times its length.
-It runs from `γ` to the constant path of length zero at `b`. -/
-def loopCellPathCube (γ : MooreLoopSpace B b) : SingularCube (MoorePathFrom B b) 1 :=
-  ⟨fun x ↦ MoorePathFrom.truncateHomotopy (σ (x 0), γ • MoorePathFrom.refl B b), by fun_prop⟩
-
-theorem loopCellPathCube_apply (γ : MooreLoopSpace B b) (x : Fin 1 → I) :
-    loopCellPathCube γ x = MoorePathFrom.truncateHomotopy (σ (x 0), γ • MoorePathFrom.refl B b) :=
-  (rfl)
-
-/-- The face of `TauCeti.loopCellPathCube γ` at time `0` is the loop `γ`, read as a path from
-`b`. -/
-@[simp]
-theorem face_zero_zero_loopCellPathCube (γ : MooreLoopSpace B b) :
-    SingularCube.face 0 0 (loopCellPathCube γ) =
-      SingularCube.point (γ • MoorePathFrom.refl B b) :=
-  ContinuousMap.ext fun x ↦ by simp [SingularCube.face_apply, loopCellPathCube_apply]
-
-/-- The face of `TauCeti.loopCellPathCube γ` at time `1` is the constant path of length zero. -/
-@[simp]
-theorem face_zero_one_loopCellPathCube (γ : MooreLoopSpace B b) :
-    SingularCube.face 0 1 (loopCellPathCube γ) = SingularCube.point (MoorePathFrom.refl B b) :=
-  ContinuousMap.ext fun x ↦ by simp [SingularCube.face_apply, loopCellPathCube_apply]
-
 variable (H : Type*) (R : Type*) [CommRing R]
 
-/-- The `1`-chain `c_γ` of the initial segments of a Moore loop `γ`
-(`TauCeti.loopCellPathCube`), in `C_*(P_b B; R)`. -/
+/-- The `1`-chain `c_γ` of the **initial segments of a Moore loop** `γ`, in `C_*(P_b B; R)`: minus
+the cone, along the contraction `TauCeti.MoorePathFrom.truncateHomotopy` of the based path space, on
+the point chain of `γ` read as a path from `b`. -/
 def loopCellPathChain (γ : MooreLoopSpace B b) : cubicalChainModule (MoorePathFrom B b) H R :=
-  cubicalChainModuleLof _ H R 1 (ofCube _ R (loopCellPathCube γ))
+  -cubicalChainModuleCone R MoorePathFrom.truncateHomotopy
+    (cubicalChainModulePoint _ H R (γ • MoorePathFrom.refl B b))
 
 variable {H R}
 
 /-- Unfold `TauCeti.loopCellPathChain`. -/
 theorem loopCellPathChain_def (γ : MooreLoopSpace B b) :
-    loopCellPathChain H R γ = cubicalChainModuleLof _ H R 1 (ofCube _ R (loopCellPathCube γ)) :=
+    loopCellPathChain H R γ = -cubicalChainModuleCone R MoorePathFrom.truncateHomotopy
+      (cubicalChainModulePoint _ H R (γ • MoorePathFrom.refl B b)) :=
   (rfl)
 
 /-- The chain `c_γ` lies in degree `-1`. -/
 theorem loopCellPathChain_mem (γ : MooreLoopSpace B b) :
     loopCellPathChain H R γ ∈ cubicalChainModuleGrading (MoorePathFrom B b) H R (-1) := by
-  rw [loopCellPathChain_def]
-  simpa using cubicalChainModuleLof_mem (G := H) (ofCube _ R (loopCellPathCube γ))
+  rw [loopCellPathChain_def, cubicalChainModulePoint_def, cubicalChainModuleCone_lof]
+  exact neg_mem (by simpa using cubicalChainModuleLof_mem (G := H) (n := 0 + 1) _)
 
 /-- The augmentation of `c_γ` vanishes, since it is a `1`-chain. -/
 @[simp]
 theorem cubicalChainModuleAugmentation_loopCellPathChain (γ : MooreLoopSpace B b) :
-    cubicalChainModuleAugmentation (MoorePathFrom B b) H R (loopCellPathChain H R γ) = 0 :=
-  cubicalChainModuleAugmentation_lof_succ 0 _
+    cubicalChainModuleAugmentation (MoorePathFrom B b) H R (loopCellPathChain H R γ) = 0 := by
+  rw [loopCellPathChain_def, cubicalChainModulePoint_def, cubicalChainModuleCone_lof, map_neg,
+    cubicalChainModuleAugmentation_lof_succ, neg_zero]
 
 /-- **The boundary of the initial segments of a loop**: `d c_γ = [γ] - [b]`, the difference of the
 point chains of `γ`, read as a path from `b`, and of the constant path. -/
@@ -148,8 +127,8 @@ theorem cubicalChainModuleDifferential_loopCellPathChain (γ : MooreLoopSpace B 
     cubicalChainModuleDifferential (MoorePathFrom B b) H R (loopCellPathChain H R γ) =
       cubicalChainModulePoint (MoorePathFrom B b) H R (γ • MoorePathFrom.refl B b) -
         cubicalChainModulePoint (MoorePathFrom B b) H R (MoorePathFrom.refl B b) := by
-  rw [loopCellPathChain_def, cubicalChainModuleDifferential_lof_succ, boundary_ofCube]
-  simp [cubicalChainModulePoint_def]
+  rw [loopCellPathChain_def, map_neg, cubicalChainModuleDifferential_cone_cubicalChainModulePoint,
+    neg_sub]
 
 variable (H R) in
 /-- **The comparison of Brown's resolution of a circle with the chains on its based paths**: the

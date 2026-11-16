@@ -58,6 +58,7 @@ so it also applies to the chains of a space with a left action alone.
 * `TauCeti.point_smul_cubicalChainModulePoint`: for a left action, `[g] · [y] = [g • y]`.
 * `TauCeti.cubicalChainModuleDifferential_cone_add_cone_differential`:
   `d (K m) + K (d m) = ε(m) • [v] - m`.
+* `TauCeti.cubicalChainModuleDifferential_cone_cubicalChainModulePoint`: `d (K [y]) = [v] - [y]`.
 * `TauCeti.exists_cubicalChainModuleDifferential_eq_of_augmentation_eq_zero`: for a contractible
   space, a cycle of augmentation zero is a boundary.
 
@@ -251,6 +252,15 @@ theorem cubicalChainModuleDifferential_cone_add_cone_differential
         cubicalChainModuleDifferential_lof_succ, cubicalChainModuleCone_lof, ← map_add,
         boundary_cone_add_cone_boundary, map_neg, cubicalChainModuleAugmentation_lof_succ,
         zero_smul, zero_sub]
+
+/-- **The cone on a point chain bounds it to the cone point**: `d (K [y]) = [v] - [y]`. -/
+theorem cubicalChainModuleDifferential_cone_cubicalChainModulePoint
+    (H : (ContinuousMap.const Y v).Homotopy (ContinuousMap.id Y)) (y : Y) :
+    cubicalChainModuleDifferential Y G R
+        (cubicalChainModuleCone R H (cubicalChainModulePoint Y G R y)) =
+      cubicalChainModulePoint Y G R v - cubicalChainModulePoint Y G R y := by
+  simpa [cubicalChainModulePoint_def] using
+    cubicalChainModuleDifferential_cone_add_cone_differential H (cubicalChainModulePoint Y G R y)
 
 /-- **Acyclicity of the augmented chains of a contractible space**: a cycle of augmentation zero in
 the module of cubical chains of a contractible space is a boundary. -/
