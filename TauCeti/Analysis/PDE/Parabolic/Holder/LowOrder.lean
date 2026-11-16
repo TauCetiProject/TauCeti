@@ -23,15 +23,18 @@ functions using curried Fréchet derivatives.
 
 This file constructs the continuous linear equivalences between `ParabolicCkHolderSpace k` for
 `k ≤ 2` and these three low-order spaces, preserving the underlying function and all recorded
-derivative fields, and proves the exact norm identities and sharp norm-equivalence bounds:
+derivative fields, and proves the exact norm identities and norm-equivalence bounds:
 
 * At order `k = 0`, `ParabolicCkHolderSpace 0` counts `‖u‖_∞` in both the `(0, 0)` bounded field
   and the `(0, 0)` Hölder field: `‖f‖ = ‖valueL f‖ + ‖equivHolderSpace f‖`, giving sharp bounds
   `‖equivHolderSpace f‖ ≤ ‖f‖ ≤ 2 * ‖equivHolderSpace f‖` (attained at `2` on nonzero constants).
 * At order `k = 1`, `ParabolicCkHolderSpace 1` records `(0, 1)` both as a bounded field and as a
   Hölder field while matching the `(0, 0)` time-slice norm:
-  `‖f‖ = ‖equivParabolicC1HolderSpace f‖ + ‖spatialFDerivBCF f‖`, with sharp bounds `1` and `2`
-  against both the Banach norm and `ParabolicC1HolderSpace.fullNorm`.
+  `‖f‖ = ‖equivParabolicC1HolderSpace f‖ + ‖spatialFDerivBCF f‖`. Comparing the time-slice norm
+  with `‖u‖_∞ + [u]_{t,(1+α)/2}` gives sharp bounds `1` and `2` against
+  `ParabolicC1HolderSpace.fullNorm` (attained at `2` on nonzero constants), and hence bounds `1`
+  and `2` against the Banach norm `‖equivParabolicC1HolderSpace f‖` (where `1` is attained on
+  nonzero spatially constant maps, while the upper bound `2` is not sharp).
 * At order `k = 2`, `ParabolicCkHolderSpace 2` adds the `(0, 1)` gradient time slices and the
   `(0, 2)` and `(1, 0)` supremum norms: `‖f‖ = ‖equivParabolicC2HolderSpace f‖ +
   ‖timeSliceL 0 1 f‖ + ‖mixedDerivL 0 2 f‖ + ‖mixedDerivL 1 0 f‖`. Controlling the temporal
@@ -392,8 +395,9 @@ private theorem norm_ofParabolicC1HolderSpace_le (g : ParabolicC1HolderSpace α 
 
 /-- Bounded parabolic Hölder maps of order one in `ParabolicCkHolderSpace` are the elements of
 `ParabolicC1HolderSpace`. The equivalence preserves the underlying map and spatial gradient, with
-exact norm identity `norm_eq_norm_equivParabolicC1HolderSpace_add_norm_spatialFDerivBCF` and sharp
-constants `1` and `2`. -/
+exact norm identity `norm_eq_norm_equivParabolicC1HolderSpace_add_norm_spatialFDerivBCF`,
+norm-equivalence bounds `1` and `2` against the `ParabolicC1HolderSpace` Banach norm, and sharp
+bounds `1` and `2` against `ParabolicC1HolderSpace.fullNorm`. -/
 def equivParabolicC1HolderSpace :
     ParabolicCkHolderSpace 1 α E F hab ≃L[ℝ] ParabolicC1HolderSpace α E F a b :=
   LinearEquiv.toContinuousLinearEquivOfBounds
