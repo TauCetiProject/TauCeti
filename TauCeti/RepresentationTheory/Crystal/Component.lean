@@ -8,6 +8,7 @@ module
 public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Connected
 public import TauCeti.Data.Set.OptionRestrict
 public import TauCeti.RepresentationTheory.Crystal.Sigma
+public import TauCeti.RepresentationTheory.Crystal.Word
 
 /-!
 # Connected components of normal crystals
@@ -96,6 +97,24 @@ theorem graph_adj_iff_f : c.graph.Adj x y ↔ ∃ i, c.f i x = some y ∨ c.f i 
 theorem dual_graph : c.dual.graph = c.graph := by
   ext x y
   rw [graph_adj_iff, dual_e, ← graph_adj_iff_f]
+
+/-- Any element obtained from `x` by a raising word is reachable from `x` in the crystal graph. -/
+theorem graph_reachable_of_eWord_eq_some {w : List b.support} (h : c.eWord w x = some y) :
+    c.graph.Reachable x y := by
+  induction w generalizing x with
+  | nil =>
+    rw [c.eWord_nil] at h
+    obtain rfl := Option.some.inj h
+    exact .refl x
+  | cons i w ih =>
+    obtain ⟨z, hz, hy⟩ := Option.bind_eq_some_iff.mp (c.eWord_cons i w x ▸ h)
+    exact (c.graph_adj_of_e_eq_some hz).reachable.trans (ih hy)
+
+/-- Any element obtained from `x` by a lowering word is reachable from `x` in the crystal graph. -/
+theorem graph_reachable_of_fWord_eq_some {w : List b.support} (h : c.fWord w x = some y) :
+    c.graph.Reachable x y := by
+  rw [← c.dual_eWord] at h
+  simpa only [dual_graph] using c.dual.graph_reachable_of_eWord_eq_some h
 
 end Graph
 

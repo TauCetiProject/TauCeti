@@ -7,6 +7,8 @@ module
 
 public import TauCeti.RepresentationTheory.LSPath.Basic
 
+import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit.Ray
+
 /-!
 # Lakshmibai–Seshadri paths from linked lists of directions
 
@@ -299,6 +301,151 @@ theorem Linked.split {t : ℚ} {l₁ l₂ : List (P.weylGroup × ℚ)} {w : P.we
     refine ⟨?_, ih h.2⟩
     cases l₁ <;> simpa using h.1
 
+section Subdivide
+
+omit [Finite ι] [P.IsReduced] in
+/-- Subdivide the `j`-th entry of a direction-duration list into the two consecutive entries
+`(τ, θ * d)` and `(τ, (1 - θ) * d)`. -/
+def subdivide (l : List (P.weylGroup × ℚ)) (j : ℕ) (τ : P.weylGroup) (d θ : ℚ) :
+    List (P.weylGroup × ℚ) :=
+  l.take j ++ (τ, θ * d) :: (τ, (1 - θ) * d) :: l.drop (j + 1)
+
+omit [Finite ι] [P.IsReduced] in
+theorem subdivide_def (l : List (P.weylGroup × ℚ)) (j : ℕ) (τ : P.weylGroup) (d θ : ℚ) :
+    subdivide l j τ d θ = l.take j ++ (τ, θ * d) :: (τ, (1 - θ) * d) :: l.drop (j + 1) := by
+  rfl
+
+omit [Finite ι] [P.IsReduced] in
+theorem length_subdivide {l : List (P.weylGroup × ℚ)} {j : ℕ} (hj : j < l.length)
+    (τ : P.weylGroup) (d θ : ℚ) :
+    (subdivide l j τ d θ).length = l.length + 1 := by
+  simp only [subdivide, List.length_append, List.length_cons, List.length_take, List.length_drop]
+  omega
+
+omit [Finite ι] [P.IsReduced] in
+theorem getElem_subdivide_lt {l : List (P.weylGroup × ℚ)} {j k : ℕ} (hj : j < l.length)
+    (τ : P.weylGroup) (d θ : ℚ) (hk : k < (subdivide l j τ d θ).length) (hkj : k < j) :
+    (subdivide l j τ d θ)[k] = l[k]'(lt_trans hkj hj) := by
+  simp only [subdivide]
+  rw [List.getElem_append_left (by simp only [List.length_take]; omega), List.getElem_take]
+
+omit [Finite ι] [P.IsReduced] in
+theorem getElem_subdivide_self {l : List (P.weylGroup × ℚ)} {j : ℕ} (hj : j < l.length)
+    (τ : P.weylGroup) (d θ : ℚ) :
+    (subdivide l j τ d θ)[j]'(by rw [length_subdivide hj]; omega) = (τ, θ * d) := by
+  have htake : (l.take j).length = j := by simp [Nat.min_eq_left hj.le]
+  simp only [subdivide]
+  rw [List.getElem_append_right (by omega)]
+  simp [htake]
+
+omit [Finite ι] [P.IsReduced] in
+theorem getElem_subdivide_succ {l : List (P.weylGroup × ℚ)} {j : ℕ} (hj : j < l.length)
+    (τ : P.weylGroup) (d θ : ℚ) :
+    (subdivide l j τ d θ)[j + 1]'(by rw [length_subdivide hj]; omega) = (τ, (1 - θ) * d) := by
+  have htake : (l.take j).length = j := by simp [Nat.min_eq_left hj.le]
+  simp only [subdivide]
+  rw [List.getElem_append_right (by omega)]
+  simp [htake]
+
+omit [Finite ι] [P.IsReduced] in
+theorem getElem_subdivide_gt {l : List (P.weylGroup × ℚ)} {j k : ℕ} (hj : j < l.length)
+    (τ : P.weylGroup) (d θ : ℚ) (hk : k < (subdivide l j τ d θ).length) (hkj : j + 1 < k) :
+    (subdivide l j τ d θ)[k] = l[k - 1]'(by rw [length_subdivide hj] at hk; omega) := by
+  have htake : (l.take j).length = j := by simp [Nat.min_eq_left hj.le]
+  simp only [subdivide]
+  rw [List.getElem_append_right (by omega)]
+  have hidx : k - (l.take j).length = (k - j - 2) + 2 := by omega
+  simp only [hidx, List.getElem_cons_succ, List.getElem_drop]
+  congr 1
+  omega
+
+omit [Finite ι] [P.IsReduced] in
+theorem fst_getElem_subdivide_le {l : List (P.weylGroup × ℚ)} {j k : ℕ} (hj : j < l.length)
+    {d θ : ℚ} (hk : k < (subdivide l j l[j].1 d θ).length) (hkj : k ≤ j) :
+    (subdivide l j l[j].1 d θ)[k].1 = (l[k]'(lt_of_le_of_lt hkj hj)).1 := by
+  rcases hkj.lt_or_eq with hkj | rfl
+  · rw [getElem_subdivide_lt hj _ _ _ hk hkj]
+  · rw [getElem_subdivide_self hj]
+
+omit [Finite ι] [P.IsReduced] in
+theorem fst_getElem_subdivide_ge {l : List (P.weylGroup × ℚ)} {j k : ℕ} (hj : j < l.length)
+    {d θ : ℚ} (hk : k < (subdivide l j l[j].1 d θ).length) (hkj : j + 1 ≤ k) :
+    (subdivide l j l[j].1 d θ)[k].1 =
+      (l[k - 1]'(by rw [length_subdivide hj] at hk; omega)).1 := by
+  rcases hkj.eq_or_lt with rfl | hkj
+  · rw [getElem_subdivide_succ hj]
+    simp
+  · rw [getElem_subdivide_gt hj _ _ _ hk hkj]
+
+omit [Finite ι] [P.IsReduced] in
+theorem sum_map_snd_take_subdivide_le {l : List (P.weylGroup × ℚ)} {j k : ℕ}
+    (hj : j < l.length) (τ : P.weylGroup) (d θ : ℚ) (hk : k ≤ j) :
+    (((subdivide l j τ d θ).take k).map Prod.snd).sum = ((l.take k).map Prod.snd).sum := by
+  have htake : (l.take j).length = j := by simp [Nat.min_eq_left hj.le]
+  simp only [subdivide]
+  rw [List.take_append_of_le_length (by omega), List.take_take, min_eq_left hk]
+
+omit [Finite ι] [P.IsReduced] in
+theorem sum_map_snd_take_subdivide_succ {l : List (P.weylGroup × ℚ)} {j : ℕ}
+    (hj : j < l.length) (τ : P.weylGroup) (d θ : ℚ) :
+    (((subdivide l j τ d θ).take (j + 1)).map Prod.snd).sum =
+      ((l.take j).map Prod.snd).sum + θ * d := by
+  have htake : (l.take j).length = j := by simp [Nat.min_eq_left hj.le]
+  simp only [subdivide]
+  rw [List.take_append, List.take_of_length_le (by omega), htake,
+    show j + 1 - j = 1 by omega]
+  simp
+
+omit [Finite ι] [P.IsReduced] in
+theorem sum_map_snd_take_subdivide_gt {l : List (P.weylGroup × ℚ)} {j k : ℕ}
+    (hj : j < l.length) (θ : ℚ) (hkj : j + 1 < k) :
+    (((subdivide l j l[j].1 l[j].2 θ).take k).map Prod.snd).sum =
+      ((l.take (k - 1)).map Prod.snd).sum := by
+  have htake : (l.take j).length = j := by simp [Nat.min_eq_left hj.le]
+  have hl_split : l.take (k - 1) =
+      l.take j ++ (l[j].1, l[j].2) :: (l.drop (j + 1)).take (k - (j + 2)) := by
+    conv_lhs => rw [← List.take_append_drop j l, List.drop_eq_getElem_cons hj]
+    rw [List.take_append, List.take_of_length_le (by omega), htake]
+    have hsub : k - 1 - j = (k - (j + 2)) + 1 := by omega
+    rw [hsub, List.take_succ_cons]
+  have hDp_split : (subdivide l j l[j].1 l[j].2 θ).take k =
+      l.take j ++ (l[j].1, θ * l[j].2) :: (l[j].1, (1 - θ) * l[j].2) ::
+        (l.drop (j + 1)).take (k - (j + 2)) := by
+    simp only [subdivide]
+    rw [List.take_append, List.take_of_length_le (by omega), htake]
+    have hsub : k - j = (k - (j + 2)) + 2 := by omega
+    rw [hsub, List.take_succ_cons, List.take_succ_cons]
+  rw [hDp_split, hl_split]
+  simp only [List.map_append, List.map_cons, List.sum_append, List.sum_cons]
+  ring
+
+/-- Subdividing the `j`-th entry of a linked list at fraction `θ` keeps it linked. -/
+theorem Linked.subdivide {t : ℚ} {l : List (P.weylGroup × ℚ)} {j : ℕ} (hj : j < l.length)
+    (hmin : (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) l[j].1)
+    (hl : Linked P b lam t l) (θ : ℚ) :
+    Linked P b lam t (LSPath.subdivide l j l[j].1 l[j].2 θ) := by
+  have hsplit : l = l.take j ++ (l[j].1, θ * l[j].2 + (1 - θ) * l[j].2) :: l.drop (j + 1) := by
+    rw [show θ * l[j].2 + (1 - θ) * l[j].2 = l[j].2 by ring, ← List.drop_eq_getElem_cons hj,
+      List.take_append_drop]
+  rw [hsplit] at hl
+  exact Linked.split hmin hl
+
+/-- Subdividing a list of minimal coset representatives preserves minimal coset representatives. -/
+theorem isMinimalCosetRep_of_mem_subdivide {l : List (P.weylGroup × ℚ)} {j : ℕ}
+    (hlmin : ∀ p ∈ l, (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) p.1)
+    {τ : P.weylGroup}
+    (hτ : (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) τ)
+    {d θ : ℚ} {p : P.weylGroup × ℚ} (hp : p ∈ subdivide l j τ d θ) :
+    (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) p.1 := by
+  simp only [subdivide, List.mem_append, List.mem_cons] at hp
+  rcases hp with hp | rfl | rfl | hp
+  · exact hlmin p (List.mem_of_mem_take hp)
+  · exact hτ
+  · exact hτ
+  · exact hlmin p (List.mem_of_mem_drop hp)
+
+end Subdivide
+
 /-- **Heights at breaks, up to integers.** Along a linked list starting at time `0`, the height
 `∑_{m < j} d_m g(τ_m λ)` at the `j`-th break differs by an integer from `a_j g(τ_j λ)`, where
 `a_j = ∑_{m < j} d_m`, for every integral linear form `g`. This is
@@ -569,5 +716,27 @@ theorem toPLPath_ofLinked (f : M →+ V) (l : List (P.weylGroup × ℚ))
       PLPath.ofSegments 𝕜 (l.map fun p ↦ (p.2 : 𝕜) • f (p.1 • lam)) := by
   rw [toPLPath_def, map_snd_timed, dirDurations_ofLinked_eq_mergeDirs,
     ofSegments_map_mergeDirs f hnonneg]
+
+omit [Finite ι] [P.IsReduced] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] in
+/-- Applying a linear form `F` to the prefix sum of realized segments `(d : 𝕜) • f (w • λ)`
+computes the cast of the rational weighted sum `∑ d * H(w)` whenever `F (f (w • λ)) = H w`. -/
+theorem apply_sum_take_map_smul [CharZero 𝕜] (f : M →+ V) (F : Module.Dual 𝕜 V)
+    (H : P.weylGroup → ℚ) (hFH : ∀ w : P.weylGroup, F (f (w • lam)) = (H w : 𝕜))
+    (l : List (P.weylGroup × ℚ)) (k : ℕ) :
+    F (((l.map fun p ↦ (p.2 : 𝕜) • f (p.1 • lam)).take k).sum) =
+      (((l.take k).map fun p ↦ p.2 * H p.1).sum : 𝕜) := by
+  simp only [← List.map_take, map_list_sum, List.map_map, Rat.cast_list_sum]
+  congr 1
+  refine List.map_congr_left fun p _ ↦ ?_
+  simp [hFH]
+
+/-- For a form `F` agreeing with the simple coroot `αᵢ^∨` along `f`, the reflection
+`Module.preReflection (f αᵢ) F` sends `d • f (w • λ)` to `d • f ((sᵢ w) • λ)`. -/
+theorem preReflection_smul_apply {R W : Type*} [CommRing R] [AddCommGroup W] [Module R W]
+    (f : M →+ W) (i : b.support) (F : Module.Dual R W)
+    (hF : ∀ m, F (f m) = (P.coroot' i m : R)) (d : R) (w : P.weylGroup) :
+    Module.preReflection (f (P.root i)) F (d • f (w • lam)) =
+      d • f (((weylCoxeterSystem P b).simple i * w) • lam) := by
+  rw [map_smul, ← P.map_reflection_eq_preReflection i hF, simple_mul_smul_eq_reflection]
 
 end TauCeti.LSPath

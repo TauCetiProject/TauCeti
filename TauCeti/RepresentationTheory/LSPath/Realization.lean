@@ -22,9 +22,9 @@ uniqueness theorem also recovers the timed presentation from the unparametrized 
 `LSPath.toPLPath_injective` identifies encodings with their realized paths, rather than merely
 counting presentations. In particular, when linear forms on `V` agree with all simple coroots of
 `b` on `f (M)`, both the orbit-injectivity and non-collinearity hypotheses hold automatically
-(`LSPath.toPLPath_injective_of_apply_eq_coroot'`). This allows root operators on paths to be
-transferred to encodings once their stability is established. Zero and central shapes are
-included; no regularity of the dominant shape is required.
+(`LSPath.toPLPath_injective_of_apply_eq_coroot'`, packaged as `LSPath.toPLPathEquiv`). This allows
+root operators on paths to be transferred to encodings once their stability is established. Zero
+and central shapes are included; no regularity of the dominant shape is required.
 
 ## References
 
@@ -144,5 +144,33 @@ theorem toPLPath_inj_of_apply_eq_coroot' (hlam : lam ∈ dominantChamber P b)
     {π π' : LSPath P b lam} :
     π.toPLPath 𝕜 f = π'.toPLPath 𝕜 f ↔ π = π' :=
   (toPLPath_injective_of_apply_eq_coroot' hlam hF).eq_iff
+
+/-- Bijection between `LSPath P b λ` and its image in `PLPath 𝕜 V` under any
+simple-coroot-compatible realization `(f, F)`. -/
+noncomputable def toPLPathEquiv (hlam : lam ∈ dominantChamber P b)
+    {F : b.support → Module.Dual 𝕜 V} (hF : ∀ i m, F i (f m) = (P.coroot' i m : 𝕜)) :
+    LSPath P b lam ≃ Set.range (fun π : LSPath P b lam ↦ π.toPLPath 𝕜 f) :=
+  Equiv.ofInjective (fun π : LSPath P b lam ↦ π.toPLPath 𝕜 f)
+    (toPLPath_injective_of_apply_eq_coroot' hlam hF)
+
+@[simp]
+theorem toPLPathEquiv_apply (hlam : lam ∈ dominantChamber P b)
+    {F : b.support → Module.Dual 𝕜 V} (hF : ∀ i m, F i (f m) = (P.coroot' i m : 𝕜))
+    (π : LSPath P b lam) : (toPLPathEquiv hlam hF π).1 = π.toPLPath 𝕜 f :=
+  congrArg Subtype.val (Equiv.ofInjective_apply _ _ π)
+
+@[simp]
+theorem toPLPathEquiv_straight (hlam : lam ∈ dominantChamber P b)
+    {F : b.support → Module.Dual 𝕜 V} (hF : ∀ i m, F i (f m) = (P.coroot' i m : 𝕜)) :
+    toPLPathEquiv hlam hF (straight lam) =
+      ⟨PLPath.straight 𝕜 (f lam), ⟨straight lam, toPLPath_straight 𝕜 f⟩⟩ :=
+  Subtype.ext ((toPLPathEquiv_apply hlam hF (straight lam)).trans (toPLPath_straight 𝕜 f))
+
+@[simp]
+theorem toPLPath_toPLPathEquiv_symm_apply (hlam : lam ∈ dominantChamber P b)
+    {F : b.support → Module.Dual 𝕜 V} (hF : ∀ i m, F i (f m) = (P.coroot' i m : 𝕜))
+    (x : Set.range (fun π : LSPath P b lam ↦ π.toPLPath 𝕜 f)) :
+    ((toPLPathEquiv hlam hF).symm x).toPLPath 𝕜 f = x.1 :=
+  Equiv.apply_ofInjective_symm (toPLPath_injective_of_apply_eq_coroot' hlam hF) x
 
 end TauCeti.LSPath

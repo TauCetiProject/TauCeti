@@ -164,80 +164,40 @@ private theorem linked_lowerList (hlam : lam ∈ dominantChamber P b)
     Linked P b lam 0 (lowerList b i l k₀ j₁ l[j₁].1 l[j₁].2 θ) ∧
       ∀ p ∈ lowerList b i l k₀ j₁ l[j₁].1 l[j₁].2 θ,
         (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) p.1 := by
-  set τ := l[j₁].1 with hτ
-  set d := l[j₁].2 with hd
-  set s := (weylCoxeterSystem P b).simple i with hs
+  set τ := l[j₁].1
+  set d := l[j₁].2
+  set s := (weylCoxeterSystem P b).simple i
   have hτmin : (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) τ :=
     hlmin _ (List.getElem_mem hj₁)
   -- Subdivide the entry `j₁` at the fraction `θ`; the list stays linked.
-  set Dp : List (P.weylGroup × ℚ) :=
-    l.take j₁ ++ (τ, θ * d) :: (τ, (1 - θ) * d) :: l.drop (j₁ + 1) with hDp
-  have hDp_linked : Linked P b lam 0 Dp := by
-    have hsplit : l = l.take j₁ ++ (τ, θ * d + (1 - θ) * d) :: l.drop (j₁ + 1) := by
-      rw [show θ * d + (1 - θ) * d = d by ring, ← List.drop_eq_getElem_cons hj₁,
-        List.take_append_drop]
-    rw [hsplit] at hl
-    exact Linked.split hτmin hl
-  have hDpmin : ∀ p ∈ Dp, (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) p.1 := by
-    intro p hp
-    simp only [Dp, List.mem_append, List.mem_cons] at hp
-    rcases hp with hp | rfl | rfl | hp
-    · exact hlmin p (List.mem_of_mem_take hp)
-    · exact hτmin
-    · exact hτmin
-    · exact hlmin p (List.mem_of_mem_drop hp)
-  -- The entries and break times of the subdivided list up to the cut.
-  have hlen_take : (l.take j₁).length = j₁ := by simp; omega
-  have hDp_len : Dp.length = l.length + 1 := by simp [Dp]; omega
-  have hDp_lt : ∀ k (hk : k < Dp.length) (hkj : k < j₁), Dp[k] = l[k]'(by omega) := by
-    intro k hk hkj
-    simp only [Dp]
-    rw [List.getElem_append_left (by rw [hlen_take]; omega), List.getElem_take]
-  have hDp_j₁ : Dp[j₁]'(by omega) = (τ, θ * d) := by
-    simp only [Dp]
-    rw [List.getElem_append_right (by omega)]
-    simp [hlen_take]
-  have hDp_j₁1 : Dp[j₁ + 1]'(by omega) = (τ, (1 - θ) * d) := by
-    simp only [Dp]
-    rw [List.getElem_append_right (by omega)]
-    simp [hlen_take]
-  have hDp_fst : ∀ k (hk : k < Dp.length) (hkj : k ≤ j₁), Dp[k].1 = (l[k]'(by omega)).1 := by
-    intro k hk hkj
-    rcases hkj.lt_or_eq with hkj | rfl
-    · rw [hDp_lt k hk hkj]
-    · rw [hDp_j₁]
-  have hcum_le : ∀ k ≤ j₁, ((Dp.take k).map Prod.snd).sum = ((l.take k).map Prod.snd).sum := by
-    intro k hk
-    simp only [Dp]
-    rw [List.take_append_of_le_length (by omega), List.take_take, min_eq_left hk]
-  have hcum_j₁1 : ((Dp.take (j₁ + 1)).map Prod.snd).sum =
-      ((l.take j₁).map Prod.snd).sum + θ * d := by
-    simp only [Dp]
-    rw [List.take_append, List.take_of_length_le (by omega), hlen_take,
-      show j₁ + 1 - j₁ = 1 by omega]
-    simp
+  set Dp := subdivide l j₁ τ d θ with hDp
+  have hDp_linked : Linked P b lam 0 Dp := hl.subdivide hj₁ hτmin θ
+  have hDpmin : ∀ p ∈ Dp, (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) p.1 :=
+    fun _ ↦ isMinimalCosetRep_of_mem_subdivide hlmin hτmin
+  have hDp_len : Dp.length = l.length + 1 := length_subdivide hj₁ τ d θ
   -- Reflect the window `[k₀, j₁]` of the subdivided list in `sᵢ`.
   have hW := Linked.mapIdx_simple_mul hlam hDp_linked hDpmin i (k₀ := k₀) (j₁ := j₁)
     (by omega)
     (fun k hk hk₀ hkj ↦ by
-      rw [hDp_fst k hk hkj]
+      rw [fst_getElem_subdivide_le hj₁ hk hkj]
       exact hpos k (by omega) hk₀ hkj)
     (fun k hk hk₀ hkj ↦ by
-      rw [zero_add, hcum_le k hkj, hDp_fst k hk hkj]
+      rw [zero_add, sum_map_snd_take_subdivide_le hj₁ τ d θ hkj,
+        fst_getElem_subdivide_le hj₁ hk hkj]
       exact hint k (by omega) hk₀ hkj)
     (fun k hk hkk ↦ by
-      rw [hDp_lt k (by omega) (by omega)]
+      rw [getElem_subdivide_lt hj₁ τ d θ (by rw [length_subdivide hj₁]; omega) (by omega)]
       exact hleft k (by omega) hkk)
-    (by rw [hDp_j₁1, hDp_j₁])
+    (by rw [getElem_subdivide_succ hj₁, getElem_subdivide_self hj₁])
     (by
-      rw [zero_add, hcum_j₁1, hDp_j₁]
+      rw [zero_add, sum_map_snd_take_subdivide_succ hj₁, getElem_subdivide_self hj₁]
       exact hcut)
   -- The reflected subdivided list is the lowered list.
   have hlow : lowerList b i l k₀ j₁ τ d θ =
       Dp.mapIdx fun k p ↦ if k₀ ≤ k ∧ k ≤ j₁ then (s * p.1, p.2) else p := by
     have hDp' : Dp = l.take k₀ ++ ((l.take j₁).drop k₀ ++ [(τ, θ * d)]) ++
         (τ, (1 - θ) * d) :: l.drop (j₁ + 1) := by
-      rw [hDp]
+      rw [hDp, subdivide_def]
       conv_lhs => rw [← List.take_append_drop k₀ (l.take j₁), List.take_take,
         min_eq_left hk₀j₁]
       simp only [List.append_assoc, List.cons_append, List.nil_append]
@@ -255,21 +215,12 @@ private theorem linked_lowerList (hlam : lam ∈ dominantChamber P b)
   rw [List.getElem_mapIdx]
   split_ifs with hw
   · refine isMinimalCosetRep_simple_mul_of_coroot'_ne_zero (hDpmin _ (List.getElem_mem hk')) ?_
-    rw [hDp_fst k hk' hw.2]
+    rw [fst_getElem_subdivide_le hj₁ hk' hw.2]
     exact (hpos k (by omega) hw.1 hw.2).ne'
   · exact hDpmin _ (List.getElem_mem hk')
 
 variable {𝕜 V : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] [AddCommGroup V]
   [Module 𝕜 V]
-
-omit [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] in
-/-- The reflection `s = Module.preReflection (f αᵢ) F`, for a form `F` inducing `⟨-, αᵢ^∨⟩`,
-sends the segment `d • f (τ λ)` to `d • f ((sᵢ τ) λ)`. -/
-private theorem preReflection_smul_apply (f : M →+ V) (i : b.support) (F : Module.Dual 𝕜 V)
-    (hF : ∀ m, F (f m) = (P.coroot' i m : 𝕜)) (d : 𝕜) (w : P.weylGroup) :
-    Module.preReflection (f (P.root i)) F (d • f (w • lam)) =
-      d • f (((weylCoxeterSystem P b).simple i * w) • lam) := by
-  rw [map_smul, ← P.map_reflection_eq_preReflection i hF, simple_mul_smul_eq_reflection]
 
 /-- **The rational data of a lowering step.** If Littelmann's lowering operator `f_αᵢ` is defined on
 the path of an LS path `π` of dominant shape, it is presented by the lowered list
@@ -314,12 +265,8 @@ private theorem exists_lower_toPLPath_eq_ofSegments_lowerList (π : LSPath P b l
   have hdpos : ∀ k (hk : k < D.length), 0 < D[k].2 := fun k hk ↦ by
     rw [getElem_dirDurations]; exact π.duration_pos _
   -- Heights of the realization at the vertices are the rational heights of the encoding.
-  have hHF : ∀ k, F ((D.map seg).take k).sum = (hgt k : 𝕜) := by
-    intro k
-    simp only [hgt, ← List.map_take, map_list_sum, List.map_map, Rat.cast_list_sum]
-    congr 1
-    refine List.map_congr_left fun p _ ↦ ?_
-    simp [seg, H, hF]
+  have hHF : ∀ k, F ((D.map seg).take k).sum = (hgt k : 𝕜) :=
+    apply_sum_take_map_smul f F H (fun w ↦ by simp [H, hF]) D
   have hgt_succ : ∀ k (hk : k < D.length), hgt (k + 1) = hgt k + D[k].2 * H D[k].1 := by
     intro k hk
     simp only [hgt, List.map_take]

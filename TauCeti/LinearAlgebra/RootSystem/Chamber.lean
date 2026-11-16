@@ -190,6 +190,14 @@ lemma add_mem_dominantChamber [IsOrderedAddMonoid R] {x y : M} (hx : x ∈ domin
     (hy : y ∈ dominantChamber P b) : x + y ∈ dominantChamber P b :=
   fun i hi ↦ by simpa using add_nonneg (hx i hi) (hy i hi)
 
+/-- Adding a weight annihilated by every simple coroot preserves membership in the closed dominant
+chamber. -/
+lemma add_mem_dominantChamber_iff_of_forall_coroot'_eq_zero {x χ : M}
+    (hχ : ∀ i ∈ b.support, P.coroot' i χ = 0) :
+    x + χ ∈ dominantChamber P b ↔ x ∈ dominantChamber P b := by
+  simp only [mem_dominantChamber, map_add]
+  exact forall₂_congr fun i hi ↦ by rw [hχ i hi, add_zero]
+
 /-- The closed dominant chamber is closed under nonnegative scaling. -/
 lemma smul_mem_dominantChamber [PosMulMono R] {t : R} (ht : 0 ≤ t) {x : M}
     (hx : x ∈ dominantChamber P b) :

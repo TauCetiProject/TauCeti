@@ -69,11 +69,13 @@ construction and their gcd is defined.
   condition of a concatenation of two chains; `TauCeti.bondGcd_snoc` and
   `TauCeti.isAChain_snoc_iff` for the extension of a chain by one cover, and
   `TauCeti.bondGcd_cons` and `TauCeti.bondGcd_eq_gcd_bondGcd_tail` at its start.
-* `TauCeti.bondGcd_dvd_sub`: the bond gcd of a chain from `x` to `y` divides
-  `f (x λ) - f (y λ)` for every integral linear form `f`.
+* `TauCeti.exists_mem_rootSpan_sub_eq_bondGcd_smul` and `TauCeti.bondGcd_dvd_sub`: the endpoint
+  difference `x λ - y λ` along a chain is its bond gcd times a root-lattice vector, so the bond gcd
+  divides `f (x λ) - f (y λ)` for every integral linear form `f`.
 * `TauCeti.IsAChain.exists_mul_sub_eq_intCast`: along an `a`-chain from `x` to `y`,
   `a (f (x λ) - f (y λ))` is an integer for every integral linear form `f`;
-  `TauCeti.IsAChain.exists_mem_rootSpan_zsmul_sub_eq` lifts this to an identity in the root lattice.
+  `TauCeti.IsAChain.exists_mem_rootSpan_sub_eq_den_smul` lifts this to `x λ - y λ = a.den • m` in
+  the root lattice.
 * `TauCeti.IsAChain.exists_mul_coroot'_eq_intCast`: **an `a`-chain from `x` to `y` with
   `⟨x λ, αᵢ^∨⟩ < 0 ≤ ⟨y λ, αᵢ^∨⟩` has `a ⟨x λ, αᵢ^∨⟩ ∈ ℤ`**.
 * `TauCeti.exists_sum_coroot'_eq_intCast_of_isAChain`,
@@ -389,23 +391,44 @@ theorem bondGcd_eq_zero_iff (hlam : lam ∈ dominantChamber P b)
   have := h ⟨0, Nat.pos_of_ne_zero hC⟩ (Finset.mem_univ _)
   omega
 
+/-- **The endpoint difference of a saturated chain is `bondGcd` times a root-lattice vector.** If
+`C : x₀ ⋗ x₁ ⋗ ⋯ ⋗ x_l` is a saturated chain of `W / W_λ`, then `x₀ λ - x_l λ` is `d(C)` times
+an element of the root lattice `P.rootSpan ℤ`, independent of any linear realization. -/
+theorem exists_mem_rootSpan_sub_eq_bondGcd_smul (hlam : lam ∈ dominantChamber P b)
+    (C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)) :
+    ∃ m ∈ P.rootSpan ℤ, C.head.1 • lam - C.last.1 • lam = (bondGcd lam C : ℤ) • m := by
+  induction C using RelSeries.inductionOn with
+  | singleton y => exact ⟨0, Submodule.zero_mem _, by simp⟩
+  | cons C x hx ih =>
+    obtain ⟨m₂, hm₂, heq₂⟩ := ih
+    obtain ⟨β, ⟨hβ, hβx⟩, -⟩ :=
+      existsUnique_isPos_reflection_smul_eq_of_minimalCosetRepCovBy hlam hx
+    have hb := reflectionBond_eq_neg_coroot' hβ hβx
+      (smul_ne_smul_of_minimalCosetRepCovBy hlam hx)
+    set g := (P.reflectionBond b (x.1 • lam) (C.head.1 • lam)).natAbs.gcd (bondGcd lam C)
+    obtain ⟨k₁, hk₁⟩ : (g : ℤ) ∣ P.coroot' β (x.1 • lam) :=
+      (Int.natCast_dvd_natCast.mpr (Nat.gcd_dvd_left _ _)).trans
+        (Int.natAbs_dvd.mpr ⟨-1, by rw [hb]; ring⟩)
+    obtain ⟨k₂, hk₂⟩ : (g : ℤ) ∣ (bondGcd lam C : ℤ) :=
+      Int.natCast_dvd_natCast.mpr (Nat.gcd_dvd_right _ _)
+    have hedge : x.1 • lam - C.head.1 • lam = (g : ℤ) • (k₁ • P.root β) := by
+      change (x, C.head).1.1 • lam - (x, C.head).2.1 • lam = _
+      rw [← hβx, RootPairing.reflection_apply, sub_sub_cancel, hk₁, mul_smul]
+    refine ⟨k₁ • P.root β + k₂ • m₂, Submodule.add_mem _
+      (Submodule.smul_mem _ _ (Submodule.subset_span ⟨β, rfl⟩))
+      (Submodule.smul_mem _ _ hm₂), ?_⟩
+    rw [bondGcd_cons, show (P.reflectionBond b (x.1 • lam) (C.head.1 • lam)).natAbs.gcd
+      (bondGcd lam C) = g from rfl, RelSeries.head_cons, RelSeries.last_cons,
+      ← sub_add_sub_cancel _ (C.head.1 • lam), hedge, heq₂, hk₂, mul_smul, smul_add]
+
 /-- **The bond gcd divides the change of every integral linear form along the chain.** If
 `C : x₀ ⋗ x₁ ⋗ ⋯ ⋗ x_l` is a saturated chain of `W / W_λ`, then `d(C)` divides
-`f (x₀ λ) - f (x_l λ)` for every integral linear form `f` on the weight lattice: each cover changes
-the weight by its bond times a root. -/
+`f (x₀ λ) - f (x_l λ)` for every integral linear form `f` on the weight lattice. -/
 theorem bondGcd_dvd_sub (hlam : lam ∈ dominantChamber P b)
     (C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam))
     (f : Module.Dual ℤ M) : (bondGcd lam C : ℤ) ∣ f (C.head.1 • lam) - f (C.last.1 • lam) := by
-  induction C using RelSeries.inductionOn with
-  | singleton y => simp
-  | cons C x hx ih =>
-    rw [bondGcd_cons, RelSeries.head_cons, RelSeries.last_cons,
-      ← sub_add_sub_cancel _ (f (C.head.1 • lam))]
-    obtain ⟨β, ⟨hβ, hβx⟩, -⟩ :=
-      existsUnique_isPos_reflection_smul_eq_of_minimalCosetRepCovBy hlam hx
-    exact dvd_add ((Int.natCast_dvd_natCast.mpr (Nat.gcd_dvd_left _ _)).trans
-        (Int.natAbs_dvd.mpr (reflectionBond_dvd_sub hβ hβx f)))
-      ((Int.natCast_dvd_natCast.mpr (Nat.gcd_dvd_right _ _)).trans ih)
+  obtain ⟨m, -, hm⟩ := exists_mem_rootSpan_sub_eq_bondGcd_smul hlam C
+  exact ⟨f m, by rw [← map_sub, hm, map_zsmul, smul_eq_mul]⟩
 
 /-! ### Integrality along `a`-chains -/
 
@@ -421,65 +444,56 @@ theorem IsAChain.exists_mul_sub_eq_intCast (hlam : lam ∈ dominantChamber P b)
     ((Int.natCast_dvd_natCast.mpr (isAChain_iff_den_dvd_bondGcd.mp hC)).trans
       (bondGcd_dvd_sub hlam C f))
 
-/-- Along an `a`-chain, the numerator-scaled difference of its endpoint weights equals the
-denominator-scaled multiple of an actual root-lattice vector, independent of any linear
-realization. -/
-theorem IsAChain.exists_mem_rootSpan_zsmul_sub_eq
+/-- Along an `a`-chain, the difference of its endpoint weights equals `a.den` times an actual
+root-lattice vector, independent of any linear realization. -/
+theorem IsAChain.exists_mem_rootSpan_sub_eq_den_smul
     (hlam : lam ∈ dominantChamber P b)
     {C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)}
     (hC : IsAChain a lam C) :
-    ∃ m ∈ P.rootSpan ℤ, a.num • (C.head.1 • lam - C.last.1 • lam) = (a.den : ℤ) • m := by
-  induction C using RelSeries.inductionOn' with
-  | singleton y => exact ⟨0, Submodule.zero_mem _, by simp⟩
-  | snoc C y hy ih =>
-    obtain ⟨hC, z, hz⟩ := (isAChain_snoc_iff hy).mp hC
-    obtain ⟨m, hm, heq⟩ := ih hC
-    obtain ⟨β, ⟨hβ, hβx⟩, -⟩ :=
-      existsUnique_isPos_reflection_smul_eq_of_minimalCosetRepCovBy hlam hy
-    have hb := reflectionBond_eq_neg_coroot' hβ hβx
-      (smul_ne_smul_of_minimalCosetRepCovBy hlam hy)
-    have hz_rat : a * (P.coroot' β (C.last.1 • lam) : ℚ) = (-z : ℤ) := by
-      rw [hb] at hz
-      push_cast at hz ⊢
-      linarith
-    have hz_int : a.num * P.coroot' β (C.last.1 • lam) = (a.den : ℤ) * (-z) := by
-      have hden : (a.den : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr a.den_nz
-      have hq : (a.num : ℚ) * (P.coroot' β (C.last.1 • lam) : ℚ) = (a.den : ℚ) * (-z : ℤ) := by
-        rw [← Rat.num_div_den a, div_mul_eq_mul_div, div_eq_iff hden] at hz_rat
-        linarith
-      exact_mod_cast hq
-    have hdiff : C.last.1 • lam - y.1 • lam =
-        P.coroot' β (C.last.1 • lam) • P.root β := by
-      rw [← hβx, RootPairing.reflection_apply]
-      abel
-    have hedge : a.num • (C.last.1 • lam - y.1 • lam) = (a.den : ℤ) • ((-z) • P.root β) := by
-      rw [hdiff, smul_smul, hz_int, mul_smul]
-    refine ⟨m + (-z) • P.root β, Submodule.add_mem _ hm
-      (Submodule.smul_mem _ _ (Submodule.subset_span ⟨β, rfl⟩)), ?_⟩
-    simp only [RelSeries.head_snoc, RelSeries.last_snoc]
-    calc
-      a.num • (C.head.1 • lam - y.1 • lam) =
-          a.num • (C.head.1 • lam - C.last.1 • lam) +
-          a.num • (C.last.1 • lam - y.1 • lam) := by
-            rw [← smul_add, sub_add_sub_cancel]
-      _ = (a.den : ℤ) • m + (a.den : ℤ) • ((-z) • P.root β) := by rw [heq, hedge]
-      _ = (a.den : ℤ) • (m + (-z) • P.root β) := (smul_add _ _ _).symm
+    ∃ m ∈ P.rootSpan ℤ, C.head.1 • lam - C.last.1 • lam = (a.den : ℤ) • m := by
+  obtain ⟨m₀, hm₀, heq⟩ := exists_mem_rootSpan_sub_eq_bondGcd_smul hlam C
+  obtain ⟨k, hk⟩ := isAChain_iff_den_dvd_bondGcd.mp hC
+  exact ⟨(k : ℤ) • m₀, Submodule.smul_mem _ _ hm₀, by rw [heq, hk, Nat.cast_mul, mul_smul]⟩
+
+private theorem ratCast_smul_map_sub_eq_of_sub_eq_den_smul {x y m : M}
+    (heq : x - y = (a.den : ℤ) • m) {𝕜 V : Type*} [DivisionRing 𝕜] [CharZero 𝕜]
+    [AddCommGroup V] [Module 𝕜 V] (f : M →+ V) :
+    (a : 𝕜) • (f x - f y) = f (a.num • m) := by
+  have hden : (a.den : 𝕜) ≠ 0 := Nat.cast_ne_zero.mpr a.den_nz
+  have hmap : f x - f y = (a.den : 𝕜) • f m := by
+    simpa only [map_sub, map_zsmul, ← Int.cast_smul_eq_zsmul 𝕜, Int.cast_natCast] using
+      congrArg f heq
+  rw [hmap, Rat.cast_def, div_eq_mul_inv, mul_smul, inv_smul_smul₀ hden,
+    Int.cast_smul_eq_zsmul, map_zsmul]
+
+/-- Along an `a`-chain, the scaled difference of its endpoint weights in any two characteristic-zero
+linear realizations is the image of the same root-lattice vector. -/
+theorem IsAChain.exists_mem_rootSpan_smul_sub_eq_and_eq
+    (hlam : lam ∈ dominantChamber P b)
+    {C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)}
+    (hC : IsAChain a lam C) {𝕜₁ V₁ 𝕜₂ V₂ : Type*}
+    [DivisionRing 𝕜₁] [CharZero 𝕜₁] [AddCommGroup V₁] [Module 𝕜₁ V₁]
+    [DivisionRing 𝕜₂] [CharZero 𝕜₂] [AddCommGroup V₂] [Module 𝕜₂ V₂]
+    (f₁ : M →+ V₁) (f₂ : M →+ V₂) :
+    ∃ m ∈ P.rootSpan ℤ,
+      (a : 𝕜₁) • (f₁ (C.head.1 • lam) - f₁ (C.last.1 • lam)) = f₁ m ∧
+      (a : 𝕜₂) • (f₂ (C.head.1 • lam) - f₂ (C.last.1 • lam)) = f₂ m := by
+  obtain ⟨m₀, hm₀, heq⟩ := hC.exists_mem_rootSpan_sub_eq_den_smul hlam
+  exact ⟨a.num • m₀, Submodule.smul_mem _ _ hm₀,
+    ratCast_smul_map_sub_eq_of_sub_eq_den_smul heq f₁,
+    ratCast_smul_map_sub_eq_of_sub_eq_den_smul heq f₂⟩
 
 /-- Along an `a`-chain, the scaled difference of its endpoint weights is an actual root-lattice
-vector, in every characteristic-zero linear realization. This retains the lattice information,
-not only its values under integral linear forms. -/
+vector in every characteristic-zero linear realization. -/
 theorem IsAChain.exists_mem_rootSpan_smul_sub_eq
     (hlam : lam ∈ dominantChamber P b)
     {C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)}
-    (hC : IsAChain a lam C) {𝕜 V : Type*} [Field 𝕜] [CharZero 𝕜]
+    (hC : IsAChain a lam C) {𝕜 V : Type*} [DivisionRing 𝕜] [CharZero 𝕜]
     [AddCommGroup V] [Module 𝕜 V] (f : M →+ V) :
     ∃ m ∈ P.rootSpan ℤ, (a : 𝕜) • (f (C.head.1 • lam) - f (C.last.1 • lam)) = f m := by
-  obtain ⟨m, hm, heq⟩ := hC.exists_mem_rootSpan_zsmul_sub_eq hlam
-  refine ⟨m, hm, ?_⟩
-  have hden : (a.den : 𝕜) ≠ 0 := Nat.cast_ne_zero.mpr a.den_nz
-  have hmap := congrArg f heq
-  simp only [map_zsmul, map_sub, ← Int.cast_smul_eq_zsmul 𝕜, Int.cast_natCast] at hmap
-  rw [Rat.cast_def, div_eq_inv_mul, mul_smul, hmap, inv_smul_smul₀ hden]
+  obtain ⟨m, hm, heq, -⟩ :=
+    hC.exists_mem_rootSpan_smul_sub_eq_and_eq (𝕜₁ := 𝕜) (𝕜₂ := 𝕜) hlam f f
+  exact ⟨m, hm, heq⟩
 
 /-- **Littelmann's integrality at a simple wall.** Let `C : x₀ ⋗ ⋯ ⋗ x_l` be an `a`-chain of
 `W / W_λ` and `αᵢ` a simple root with `⟨x₀ λ, αᵢ^∨⟩ < 0 ≤ ⟨x_l λ, αᵢ^∨⟩`. Then `a ⟨x₀ λ, αᵢ^∨⟩`
@@ -589,8 +603,7 @@ theorem exists_sum_eq_intCast_of_isAChain (hlam : lam ∈ dominantChamber P b)
 /-- **Least heights of a Lakshmibai–Seshadri path on a subinterval.** With the chains of
 `TauCeti.exists_sum_sub_mul_eq_intCast_of_isAChain` and strictly increasing times, for each simple
 root `αᵢ` and `l ≤ r ≤ s`, the least vertex height `∑_{k < j} (t_{k+1} - t_k) ⟨τ_k λ, αᵢ^∨⟩`,
-`l ≤ j ≤ r`, is the height at `l`, the height at `r`, or an integer: away from the two ends, the
-first index where it is attained is a break where the height stops decreasing. -/
+`l ≤ j ≤ r`, is the height at `l`, the height at `r`, or an integer. -/
 theorem exists_isLeast_sum_coroot'_Icc_le_of_isAChain (hlam : lam ∈ dominantChamber P b)
     {s : ℕ} {τ : ℕ → P.weylGroup} {t : ℕ → ℚ} (ht : t 0 = 0)
     (hchain : ∀ k, k + 1 < s → ∃ C : (weylCoxeterSystem P b).MinimalCosetRepChain
@@ -867,8 +880,7 @@ one up to `t₀`, and falls strictly from `t₀` down to `t₁`. -/
 minimum.** With the chains of `TauCeti.exists_sum_sub_mul_eq_intCast_of_isAChain` and strictly
 increasing times, write `H j = ∑_{k < j} (t_{k+1} - t k) ⟨τ_k λ, αᵢ^∨⟩`. Suppose `H k₁ ≤ -1` is an
 integer and `H k > H k₁` for `k < k₁`. If `H k₀ ≥ H k₁ + 1` for some `k₀ < k₁`, then
-`H j ≥ H k₁ + 1` for every `j ≤ k₀`: the least height on `{0, …, k₀}` is `H 0 = 0`, `H k₀`, or an
-integer strictly above `H k₁`. -/
+`H j ≥ H k₁ + 1` for every `j ≤ k₀`. -/
 theorem add_one_le_sum_coroot'_of_lt_of_isAChain (hlam : lam ∈ dominantChamber P b)
     {s : ℕ} {τ : ℕ → P.weylGroup} {t : ℕ → ℚ} (ht : t 0 = 0)
     (hchain : ∀ k, k + 1 < s → ∃ C : (weylCoxeterSystem P b).MinimalCosetRepChain
@@ -887,6 +899,7 @@ theorem add_one_le_sum_coroot'_of_lt_of_isAChain (hlam : lam ∈ dominantChamber
       ∑ k ∈ Finset.range j, (t (k + 1) - t k) * (P.coroot' i (τ k • lam) : ℚ) := by
   set H : ℕ → ℚ := fun j ↦ ∑ k ∈ Finset.range j, (t (k + 1) - t k) * (P.coroot' i (τ k • lam) : ℚ)
   obtain ⟨z, hzneg, hz⟩ := hk₁
+  -- The least height on `{0, …, k₀}` is `H 0 = 0`, `H k₀`, or an integer strictly above `H k₁`.
   obtain ⟨q, hq, hq0 | hqk₀ | ⟨n, hn⟩⟩ := exists_isLeast_sum_coroot'_Icc_le_of_isAChain hlam ht
     hchain hmono i (Nat.zero_le k₀) (hk₀₁.le.trans hk₁s)
   · have hqj : q ≤ H j := hq.2 ⟨j, ⟨Nat.zero_le j, hjk₀⟩, rfl⟩
@@ -913,9 +926,7 @@ theorem add_one_le_sum_coroot'_of_lt_of_isAChain (hlam : lam ∈ dominantChamber
 `H k₁`.** With the chains of `TauCeti.exists_sum_sub_mul_eq_intCast_of_isAChain` and strictly
 increasing times, write `H j = ∑_{k < j} (t_{k+1} - t_k) ⟨τ_k λ, αᵢ^∨⟩`. Suppose `H k₁` is an
 integer, `H k > H k₁` for `k < k₁`, `H k₀ ≥ H k₁ + 1` for some `k₀ < k₁`, and `H m < H k₁ + 1` for
-`k₀ < m ≤ k₁`. Then `H (j + 1) < H j` for every `k₀ ≤ j < k₁`: a stationary segment would have
-integral height strictly between `H k₁` and `H k₁ + 1`, and a rising segment would force an interior
-minimum on `{k₀, …, j + 1}` strictly between those consecutive integers. -/
+`k₀ < m ≤ k₁`. Then `H (j + 1) < H j` for every `k₀ ≤ j < k₁`. -/
 theorem sum_coroot'_succ_lt_sum_coroot'_of_isAChain (hlam : lam ∈ dominantChamber P b)
     {s : ℕ} {τ : ℕ → P.weylGroup} {t : ℕ → ℚ} (ht : t 0 = 0)
     (hchain : ∀ k, k + 1 < s → ∃ C : (weylCoxeterSystem P b).MinimalCosetRepChain
@@ -984,10 +995,9 @@ theorem sum_coroot'_succ_lt_sum_coroot'_of_isAChain (hlam : lam ∈ dominantCham
 `TauCeti.exists_sum_sub_mul_eq_intCast_of_isAChain`, strictly increasing times and an integral final
 time, write `H j = ∑_{k < j} (t_{k+1} - t_k) ⟨τ_k λ, αᵢ^∨⟩` and suppose that some height `H j`,
 `j ≤ s`, is at most `-1`. Then there are vertices `k₀ < k₁ ≤ s` such that `H k₁` is the minimal
-height, an integer, every vertex before `k₁` has strictly greater height, the height is at least
-`H k₁ + 1` up to `k₀`, and it falls strictly from `k₀` to `k₁` while staying strictly below
-`H k₁ + 1` after `k₀`. One takes for `k₁` the first vertex of minimal height and for `k₀` the last
-earlier vertex of height at least `H k₁ + 1`. -/
+height, every vertex before `k₁` has strictly greater height, the height is at least `H k₁ + 1` up
+to `k₀`, and it falls strictly from `k₀` to `k₁` while staying strictly below `H k₁ + 1` after
+`k₀`. -/
 theorem exists_strictly_falling_of_isAChain (hlam : lam ∈ dominantChamber P b)
     {s : ℕ} {τ : ℕ → P.weylGroup} {t : ℕ → ℚ} (ht : t 0 = 0)
     (hchain : ∀ k, k + 1 < s → ∃ C : (weylCoxeterSystem P b).MinimalCosetRepChain

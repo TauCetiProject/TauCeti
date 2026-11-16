@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Basic
 public import TauCeti.RepresentationTheory.Crystal.Component
 public import TauCeti.RepresentationTheory.LSPath.StringLength
+public import TauCeti.RepresentationTheory.LSPath.Word
 
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
@@ -106,6 +107,32 @@ theorem RootStep.of_raise_eq_some {i : b.support} {π π' : PLPath 𝕜 V}
 theorem RootStep.of_lower_eq_some {i : b.support} {π π' : PLPath 𝕜 V}
     (h : lower (F i) (f (P.root i)) π = some π') : RootStep b f F π π' :=
   ⟨i, Or.inr h⟩
+
+/-- Successive raising along a word of simple roots gives a finite walk of root steps. -/
+theorem reflTransGen_rootStep_of_raiseWord_eq_some {w : List b.support} {π π' : PLPath 𝕜 V}
+    (h : raiseWord F (fun i : b.support ↦ f (P.root i)) w π = some π') :
+    ReflTransGen (RootStep b f F) π π' := by
+  induction w generalizing π with
+  | nil =>
+    rw [raiseWord_nil] at h
+    obtain rfl := Option.some.inj h
+    exact .refl
+  | cons i w ih =>
+    obtain ⟨σ, hσ, hπ'⟩ := Option.bind_eq_some_iff.mp (raiseWord_cons i w π ▸ h)
+    exact .head (.of_raise_eq_some hσ) (ih hπ')
+
+/-- Successive lowering along a word of simple roots gives a finite walk of root steps. -/
+theorem reflTransGen_rootStep_of_lowerWord_eq_some {w : List b.support} {π π' : PLPath 𝕜 V}
+    (h : lowerWord F (fun i : b.support ↦ f (P.root i)) w π = some π') :
+    ReflTransGen (RootStep b f F) π π' := by
+  induction w generalizing π with
+  | nil =>
+    rw [lowerWord_nil] at h
+    obtain rfl := Option.some.inj h
+    exact .refl
+  | cons i w ih =>
+    obtain ⟨σ, hσ, hπ'⟩ := Option.bind_eq_some_iff.mp (lowerWord_cons i w π ▸ h)
+    exact .head (.of_lower_eq_some hσ) (ih hπ')
 
 /-- Because raising and lowering are partial inverses, `RootStep` is symmetric whenever the height
 forms agree with the simple coroots on `f(X)`. -/

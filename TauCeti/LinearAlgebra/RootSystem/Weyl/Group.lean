@@ -277,6 +277,20 @@ theorem weylGroup.eq_one_of_smul_eq_self
     exact LinearEquiv.ext fun x ↦ h x
   exact Subtype.ext (by simpa using hw)
 
+/-- Acting by a Weyl-group element changes any weight by an element of the root span. -/
+theorem weylGroup_smul_sub_mem_rootSpan (w : P.weylGroup) (x : M) :
+    w • x - x ∈ P.rootSpan R := by
+  obtain ⟨g, hg⟩ := w
+  rw [Subgroup.mk_smul]
+  induction hg using weylGroup.induction generalizing x with
+  | mem i =>
+    rw [Equiv.reflection_smul, reflection_apply, sub_sub_cancel_left]
+    exact neg_mem (Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, rfl⟩))
+  | one => simp
+  | mul g₁ g₂ _ _ ih₁ ih₂ =>
+    rw [mul_smul, show g₁ • g₂ • x - x = (g₁ • (g₂ • x) - g₂ • x) + (g₂ • x - x) by abel]
+    exact add_mem (ih₁ (g₂ • x)) (ih₂ x)
+
 variable {P} in
 /-- A Weyl-group element fixing every root of a finite anisotropic root pairing over a domain is the
 identity. The roots need not span the weight space. -/
@@ -288,26 +302,17 @@ theorem weylGroup.eq_one_of_forall_smul_root_eq [Fintype ι] [IsDomain R] [P.IsA
     have := Equiv.coroot'_weightEquiv (w : P.Aut) i x
     rw [hidx] at this
     exact this
-  have hspan : ∀ g ∈ P.weylGroup, ∀ x : M, g • x - x ∈ P.rootSpan R := by
-    intro g hg
-    induction hg using weylGroup.induction with
-    | mem i =>
-      intro x
-      rw [Equiv.reflection_smul, reflection_apply, sub_sub_cancel_left]
-      exact neg_mem (Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, rfl⟩))
-    | one => intro x; simp
-    | mul g h _ _ hg hh =>
-      intro x
-      rw [mul_smul, show g • h • x - x = (g • (h • x) - h • x) + (h • x - x) by abel]
-      exact add_mem (hg _) (hh x)
   refine weylGroup.eq_one_of_smul_eq_self fun x => ?_
   have hker : (w : P.Aut) • x - x ∈ LinearMap.ker P.RootForm := by
     rw [LinearMap.mem_ker]
     ext z
     simp [rootForm_apply_apply, map_sub, hcor]
+  have hspan : (w : P.Aut) • x - x ∈ P.rootSpan R := by
+    rw [← Subgroup.smul_def]
+    exact P.weylGroup_smul_sub_mem_rootSpan w x
   rw [Subgroup.smul_def]
   exact sub_eq_zero.1
-    (Submodule.disjoint_def.1 P.disjoint_rootSpan_ker_rootForm _ (hspan _ w.2 x) hker)
+    (Submodule.disjoint_def.1 P.disjoint_rootSpan_ker_rootForm _ hspan hker)
 
 variable {P} in
 /-- Two Weyl-group elements agreeing on the weight space are equal. -/

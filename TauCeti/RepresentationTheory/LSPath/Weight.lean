@@ -57,23 +57,6 @@ theorem endpoint_toPLPath_eq_last_add_sum (π : LSPath P b lam) (f : M →+ V) :
     π.time_zero, Rat.cast_zero, zero_smul, zero_add, Fin.succ_castSucc]
   abel
 
-private theorem endpoint_toPLPath_eq_of_zsmul_eq
-    {𝕜' V' : Type*} [Field 𝕜'] [LinearOrder 𝕜'] [IsStrictOrderedRing 𝕜']
-    [AddCommGroup V'] [Module 𝕜' V'] (π : LSPath P b lam) (g : M →+ V')
-    {m : Fin π.length → M}
-    (heq : ∀ j : Fin π.length,
-      (π.time j.castSucc.succ).num • ((π.dir j.castSucc).1 • lam - (π.dir j.succ).1 • lam) =
-        ((π.time j.castSucc.succ).den : ℤ) • m j) :
-    (π.toPLPath 𝕜' g).endpoint = g ((π.dir (Fin.last _)).1 • lam + ∑ j, m j) := by
-  rw [π.endpoint_toPLPath_eq_last_add_sum g, map_add, map_sum]
-  congr 1
-  refine Finset.sum_congr rfl fun j _ ↦ ?_
-  have hden : ((π.time j.castSucc.succ).den : 𝕜') ≠ 0 :=
-    Nat.cast_ne_zero.mpr (π.time j.castSucc.succ).den_nz
-  have hmap := congrArg g (heq j)
-  simp only [map_zsmul, map_sub, ← Int.cast_smul_eq_zsmul 𝕜', Int.cast_natCast] at hmap
-  rw [Rat.cast_def, div_eq_inv_mul, mul_smul, hmap, inv_smul_smul₀ hden]
-
 /-- The endpoints of an LS path of dominant shape in any two ordered-field realizations `(𝕜₁, V₁)`
 and `(𝕜₂, V₂)` differ from its last orbit weight by the image of the same integral root-lattice
 vector. -/
@@ -87,14 +70,18 @@ theorem exists_mem_rootSpan_endpoint_eq_add_and_eq
       (π.toPLPath 𝕜₂ f₂).endpoint = f₂ ((π.dir (Fin.last _)).1 • lam + m) := by
   classical
   have hcorrection (j : Fin π.length) : ∃ m ∈ P.rootSpan ℤ,
-      (π.time j.castSucc.succ).num •
-        ((π.dir j.castSucc).1 • lam - (π.dir j.succ).1 • lam) =
-        ((π.time j.castSucc.succ).den : ℤ) • m := by
+      (π.time j.castSucc.succ : 𝕜₁) •
+        (f₁ ((π.dir j.castSucc).1 • lam) - f₁ ((π.dir j.succ).1 • lam)) = f₁ m ∧
+      (π.time j.castSucc.succ : 𝕜₂) •
+        (f₂ ((π.dir j.castSucc).1 • lam) - f₂ ((π.dir j.succ).1 • lam)) = f₂ m := by
     obtain ⟨C, hhead, hlast, hC⟩ := π.exists_isAChain j
-    simpa only [hhead, hlast] using hC.exists_mem_rootSpan_zsmul_sub_eq hlam
-  choose m hm heq using hcorrection
-  exact ⟨∑ j, m j, Submodule.sum_mem _ (fun j _ ↦ hm j),
-    π.endpoint_toPLPath_eq_of_zsmul_eq f₁ heq, π.endpoint_toPLPath_eq_of_zsmul_eq f₂ heq⟩
+    simpa only [hhead, hlast] using hC.exists_mem_rootSpan_smul_sub_eq_and_eq hlam f₁ f₂
+  choose m hm heq₁ heq₂ using hcorrection
+  refine ⟨∑ j, m j, Submodule.sum_mem _ (fun j _ ↦ hm j), ?_, ?_⟩
+  · rw [π.endpoint_toPLPath_eq_last_add_sum f₁, map_add, map_sum]
+    exact congrArg _ (Finset.sum_congr rfl fun j _ ↦ heq₁ j)
+  · rw [π.endpoint_toPLPath_eq_last_add_sum f₂, map_add, map_sum]
+    exact congrArg _ (Finset.sum_congr rfl fun j _ ↦ heq₂ j)
 
 /-- The endpoint of an LS path of dominant shape differs from its last orbit weight by the
 image of an integral root-lattice vector. This is a lattice statement, not only integrality

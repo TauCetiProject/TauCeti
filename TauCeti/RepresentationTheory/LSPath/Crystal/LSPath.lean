@@ -10,6 +10,7 @@ public import TauCeti.RepresentationTheory.Crystal.WeightTwist
 public import TauCeti.RepresentationTheory.LSPath.Central.Transport
 public import TauCeti.RepresentationTheory.LSPath.Crystal.Basic
 public import TauCeti.RepresentationTheory.LSPath.Linked
+public import TauCeti.RepresentationTheory.LSPath.Realization
 public import TauCeti.RepresentationTheory.LSPath.Word
 
 import TauCeti.LinearAlgebra.RootSystem.Reduced
@@ -17,7 +18,6 @@ import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit.Ray
 import TauCeti.RepresentationTheory.LSPath.Highest
 import TauCeti.RepresentationTheory.LSPath.Lower
 import TauCeti.RepresentationTheory.LSPath.Raise
-import TauCeti.RepresentationTheory.LSPath.Realization
 import TauCeti.RepresentationTheory.LSPath.Weight
 
 /-!
@@ -35,13 +35,15 @@ between twisted path crystals.
   `LSPath P b λ` for a dominant weight `λ ∈ dominantChamber P b`, defined without choosing an
   external vector-space realization.
 * `TauCeti.LSPath.toPLPathIso`, `TauCeti.LSPath.toPLPathHom`, `TauCeti.LSPath.componentIso`: for
-  any injective additive map `f : X →+ V` into a linearly ordered `𝕜`-vector space equipped with
-  linear forms `F` agreeing with the simple coroots along `f`, strict crystal isomorphisms from
-  `normalCrystal hlam` onto `PLPath.normalCrystalOn` on the realized LS paths and onto the
-  connected component `PLPath.normalCrystalComponent` of `PLPath.straight 𝕜 (f λ)`, together with
-  the strict embedding into `PLPath.normalCrystal`.
-* `TauCeti.LSPath.centralTransportIso`, `TauCeti.LSPath.centralTransportIsoOfEq`: for a dominant
-  weight `λ` and weights `χ`, `σ` annihilating the simple coroots, the strict crystal isomorphism
+  any injective additive map `f : X →+ V` into a vector space `V` over a linearly ordered field `𝕜`
+  equipped with linear forms `F` agreeing with the simple coroots along `f`, strict crystal
+  isomorphisms from `normalCrystal hlam` onto `PLPath.normalCrystalOn` on the realized LS paths and
+  onto the connected component `PLPath.normalCrystalComponent` of `PLPath.straight 𝕜 (f λ)`,
+  together with the strict embedding into `PLPath.normalCrystal`.
+* `TauCeti.LSPath.weightTwistCentralTransportIso`,
+  `TauCeti.LSPath.weightTwistCentralTransportIsoOfEq`, `TauCeti.LSPath.centralTransportIso`,
+  `TauCeti.LSPath.centralTransportIsoOfEq`: for a dominant weight `λ` and weights `χ`, `σ`
+  annihilating the simple coroots, the strict crystal isomorphisms `B(λ)^χ ≃ B(λ + χ)` and
   `T_{λ, χ}^σ : B(λ)^{σ + χ} ≃ B(λ + χ)^σ` induced by `LSPath.centralTransport`, whose underlying
   map is independent of `σ` and acts on realized paths by `PLPath.shiftDistinguished`.
 
@@ -57,18 +59,21 @@ between twisted path crystals.
   endpoints, path raising and lowering operators, and minimum simple-coroot heights across every
   ordered-field realization `(f, F)`.
 * `TauCeti.LSPath.forall_normalCrystal_e_eq_none_iff`,
-  `TauCeti.LSPath.exists_fWord_eq_some_straight`, `TauCeti.LSPath.connected_normalCrystal_graph`:
-  `straight λ` is the unique highest element of `B(λ)`, generates `B(λ)` under words of lowering
-  operators, and makes the crystal graph of `B(λ)` connected.
+  `TauCeti.LSPath.exists_normalCrystal_fWord_straight_eq_some`,
+  `TauCeti.LSPath.exists_normalCrystal_eWord_eq_some_straight`,
+  `TauCeti.LSPath.connected_normalCrystal_graph`: `straight λ` is the unique highest element of
+  `B(λ)`, generates `B(λ)` under words of lowering (or raising) operators, and makes the crystal
+  graph of `B(λ)` connected.
 * `TauCeti.LSPath.mem_range_toPLPath_iff_reflTransGen_rootStep`,
-  `TauCeti.LSPath.mem_range_toPLPath_iff_exists_lowerWord`: **equivalence of Littelmann's `a`-chain
+  `TauCeti.LSPath.mem_range_toPLPath_iff_exists_lowerWord`,
+  `TauCeti.LSPath.mem_range_toPLPath_iff_exists_raiseWord`: **equivalence of Littelmann's `a`-chain
   definition with root-operator generation from `straight λ`**, in any simple-coroot-compatible
   realization without assuming `f` is injective.
 * `TauCeti.LSPath.centralTransportIsoOfEq_zero`, `TauCeti.LSPath.centralTransportIsoOfEq_trans`,
   `TauCeti.LSPath.centralTransportIsoOfEq_symm`,
-  `TauCeti.LSPath.toPLPath_centralTransportIso_apply`: identity, composition, inverse, and
-  distinguished-shift laws for `T_{λ, χ}^σ`, valid uniformly including at `λ = 0`, on chamber walls,
-  on pure central weights, when `λ + χ = 0`, and for empty root systems.
+  `TauCeti.LSPath.toPLPath_centralTransport_of_apply_eq_coroot'`: identity, composition, inverse,
+  and distinguished-shift laws for `T_{λ, χ}^σ`, valid uniformly including at `λ = 0`, on chamber
+  walls, on pure central weights, when `λ + χ = 0`, and for empty root systems.
 
 ## References
 
@@ -83,32 +88,6 @@ public section
 namespace TauCeti.LSPath
 
 open Module Relation RootPairing Set
-
-section CanonicalRealization
-
-variable {ι X Y : Type*} [AddCommGroup X] [AddCommGroup Y] (P : RootDatum ι X Y) (b : P.Base)
-
-/-- Canonical embedding of the weight lattice `X` of a `RootDatum` into `Y → ℚ` via the perfect
-pairing `P.toLinearMap`. -/
-private def ratEval : X →+ (Y → ℚ) where
-  toFun x y := (P.toLinearMap x y : ℚ)
-  map_zero' := by ext y; simp
-  map_add' x₁ x₂ := by ext y; simp
-
-private theorem ratEval_injective : Function.Injective (ratEval P) := by
-  intro x₁ x₂ h
-  refine (LinearMap.IsPerfPair.bijective_left P.toLinearMap).injective
-    (LinearMap.ext fun y ↦ Int.cast_injective (α := ℚ) (congrFun h y))
-
-/-- Coordinate evaluation at `P.coroot i` on `Y → ℚ`, realizing the simple coroot `αᵢ^∨`. -/
-private def ratForm (i : b.support) : Dual ℚ (Y → ℚ) :=
-  LinearMap.proj (P.coroot i)
-
-private theorem ratForm_apply (i : b.support) (x : X) :
-    ratForm P b i (ratEval P x) = (P.coroot' i x : ℚ) :=
-  rfl
-
-end CanonicalRealization
 
 section Crystal
 
@@ -155,178 +134,148 @@ theorem isIntegralPath_straight (hlam : lam ∈ dominantChamber P b)
     PLPath.IsIntegralPath b f F (PLPath.straight 𝕜 (f lam)) := by
   simpa only [toPLPath_straight] using isIntegralPath_toPLPath hlam hF (straight lam)
 
-/-- Bijection between `LSPath P b λ` and its image in `PLPath 𝕜 V` under any
-simple-coroot-compatible realization `(f, F)`. -/
-noncomputable def toPLPathEquiv (hlam : lam ∈ dominantChamber P b)
-    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜)) :
-    LSPath P b lam ≃ range (fun π : LSPath P b lam ↦ π.toPLPath 𝕜 f) :=
-  Equiv.ofBijective (fun π ↦ ⟨π.toPLPath 𝕜 f, ⟨π, rfl⟩⟩)
-    ⟨fun _ _ h ↦ toPLPath_injective_of_apply_eq_coroot' hlam hF (congrArg Subtype.val h),
-      fun ⟨_, π, hπ⟩ ↦ ⟨π, Subtype.ext hπ⟩⟩
-
-@[simp]
-theorem toPLPathEquiv_apply (hlam : lam ∈ dominantChamber P b)
-    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
-    (π : LSPath P b lam) : (toPLPathEquiv hlam hF π).1 = π.toPLPath 𝕜 f :=
-  (rfl)
-
-@[simp]
-theorem toPLPathEquiv_straight (hlam : lam ∈ dominantChamber P b)
-    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜)) :
-    toPLPathEquiv hlam hF (straight lam) =
-      ⟨PLPath.straight 𝕜 (f lam), ⟨straight lam, toPLPath_straight 𝕜 f⟩⟩ :=
-  Subtype.ext (toPLPath_straight 𝕜 f)
-
-@[simp]
-theorem toPLPath_toPLPathEquiv_symm_apply (hlam : lam ∈ dominantChamber P b)
-    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
-    (x : range (fun π : LSPath P b lam ↦ π.toPLPath 𝕜 f)) :
-    ((toPLPathEquiv hlam hF).symm x).toPLPath 𝕜 f = x.1 := by
-  simpa using (toPLPathEquiv_apply hlam hF ((toPLPathEquiv hlam hF).symm x)).symm
-
 end Admissible
 
 /-- **Littelmann's Lakshmibai–Seshadri normal crystal `B(λ)`** on `LSPath P b λ` for a dominant
 weight `λ`, defined intrinsically without auxiliary realization parameters. -/
 noncomputable def normalCrystal {lam : X} (hlam : lam ∈ dominantChamber P b) :
     NormalCrystal P b (LSPath P b lam) :=
-  (PLPath.normalCrystalOn (ratEval_injective P) (ratForm_apply P b)
-    (isCrystalSet_range_toPLPath hlam (ratForm_apply P b))).transport
-    (toPLPathEquiv hlam (ratForm_apply P b)).symm
+  (PLPath.normalCrystalOn (P.coweightEval_injective ℚ)
+    (fun (i : b.support) (x : X) ↦ P.proj_coroot_coweightEval ℚ i x)
+    (isCrystalSet_range_toPLPath hlam
+      (fun (i : b.support) (x : X) ↦ P.proj_coroot_coweightEval ℚ i x))).transport
+    (toPLPathEquiv hlam (fun (i : b.support) (x : X) ↦ P.proj_coroot_coweightEval ℚ i x)).symm
 
 section RealizationCompatibility
 
 variable {lam : X} (hlam : lam ∈ dominantChamber P b)
   {𝕜 V : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
-  [AddCommGroup V] [Module 𝕜 V] {f : X →+ V} {F : b.support → Dual 𝕜 V}
+  [AddCommGroup V] [Module 𝕜 V] {f : X →+ V}
 
 /-- In any ordered-field realization `f : X →+ V` (without any form or injectivity assumption), the
 realized weight of `π` in `B(λ)` is its endpoint. -/
 theorem apply_normalCrystal_wt (𝕜 : Type*) {V : Type*} [Field 𝕜] [LinearOrder 𝕜]
     [IsStrictOrderedRing 𝕜] [AddCommGroup V] [Module 𝕜 V] (f : X →+ V) (π : LSPath P b lam) :
     f ((normalCrystal hlam).wt π) = (π.toPLPath 𝕜 f).endpoint := by
-  have hrat : ratEval P ((normalCrystal hlam).wt π) = (π.toPLPath ℚ (ratEval P)).endpoint := by
+  have hrat : P.coweightEval ℚ ((normalCrystal hlam).wt π) =
+      (π.toPLPath ℚ (P.coweightEval ℚ)).endpoint := by
     simp [normalCrystal, Equiv.symm_symm]
   obtain ⟨m, -, h₁, h₂⟩ :=
-    π.exists_mem_rootSpan_endpoint_eq_add_and_eq (𝕜₁ := ℚ) (𝕜₂ := 𝕜) hlam (ratEval P) f
+    π.exists_mem_rootSpan_endpoint_eq_add_and_eq (𝕜₁ := ℚ) (𝕜₂ := 𝕜) hlam (P.coweightEval ℚ) f
   have hwt : (normalCrystal hlam).wt π = (π.dir (Fin.last _)).1 • lam + m :=
-    ratEval_injective P (hrat.trans h₁)
+    P.coweightEval_injective ℚ (hrat.trans h₁)
   rw [hwt, h₂]
 
-/-- Raising in `B(λ)` commutes with path realization in every simple-coroot-compatible ordered-field
-realization `(f, F)`. -/
-theorem map_toPLPath_normalCrystal_e
-    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
-    (i : b.support) (π : LSPath P b lam) :
+/-- Raising in `B(λ)` commutes with path realization in every ordered-field realization `(f, F)`
+compatible with the single simple coroot `αᵢ^∨`. -/
+theorem map_toPLPath_normalCrystal_e (i : b.support) {F : Dual 𝕜 V}
+    (hF : ∀ x : X, F (f x) = (P.coroot' i x : 𝕜)) (π : LSPath P b lam) :
     ((normalCrystal hlam).e i π).map (fun ρ ↦ ρ.toPLPath 𝕜 f) =
-      PLPath.raise (F i) (f (P.root i)) (π.toPLPath 𝕜 f) := by
-  have hrat : ((normalCrystal hlam).e i π).map (fun ρ ↦ ρ.toPLPath ℚ (ratEval P)) =
-      PLPath.raise (ratForm P b i) (ratEval P (P.root i)) (π.toPLPath ℚ (ratEval P)) := by
-    have h := PLPath.unattach_normalCrystalOn_e (hf := ratEval_injective P)
-      (hF := ratForm_apply P b) (hS := isCrystalSet_range_toPLPath hlam (ratForm_apply P b))
-      i (toPLPathEquiv hlam (ratForm_apply P b) π)
+      PLPath.raise F (f (P.root i)) (π.toPLPath 𝕜 f) := by
+  let ratF : b.support → Dual ℚ (Y → ℚ) := fun j ↦ LinearMap.proj (R := ℚ) (P.coroot j)
+  have hratF : ∀ (j : b.support) (x : X), ratF j (P.coweightEval ℚ x) = (P.coroot' j x : ℚ) :=
+    fun j x ↦ P.proj_coroot_coweightEval ℚ j x
+  have hrat : ((normalCrystal hlam).e i π).map (fun ρ ↦ ρ.toPLPath ℚ (P.coweightEval ℚ)) =
+      PLPath.raise (ratF i) (P.coweightEval ℚ (P.root i))
+        (π.toPLPath ℚ (P.coweightEval ℚ)) := by
+    have h := PLPath.unattach_normalCrystalOn_e (hf := P.coweightEval_injective ℚ)
+      (hF := hratF) (hS := isCrystalSet_range_toPLPath hlam hratF)
+      i (toPLPathEquiv hlam hratF π)
     simpa only [normalCrystal, NormalCrystal.transport_e, Equiv.symm_symm, Option.unattach,
       Option.map_map, Function.comp_def, toPLPath_toPLPathEquiv_symm_apply,
       toPLPathEquiv_apply] using h
-  rcases π.exists_raise_toPLPath_eq_and_eq hlam i
-      (ratEval P) (ratForm P b i) (ratForm_apply P b i) f (F i) (hF i) with
+  rcases π.raise_toPLPath_eq_none_or_exists_eq_some_and_eq_some hlam i
+      (P.coweightEval ℚ) (ratF i) (hratF i) f F hF with
     ⟨hn₁, hn₂⟩ | ⟨π', hs₁, hs₂⟩
   · rw [hn₁] at hrat
     rw [Option.map_eq_none_iff.mp hrat, Option.map_none, hn₂]
   · rw [hs₁] at hrat
     obtain ⟨ρ, hρ, hpath⟩ := Option.map_eq_some_iff.mp hrat
     obtain rfl : ρ = π' :=
-      toPLPath_injective_of_apply_eq_coroot' hlam (ratForm_apply P b) hpath
+      toPLPath_injective_of_apply_eq_coroot' hlam hratF hpath
     rw [hρ, Option.map_some, hs₂]
+
+theorem normalCrystal_e_eq_none_iff {i : b.support} {F : Dual 𝕜 V}
+    (hF : ∀ x : X, F (f x) = (P.coroot' i x : 𝕜)) {π : LSPath P b lam} :
+    (normalCrystal hlam).e i π = none ↔
+      PLPath.raise F (f (P.root i)) (π.toPLPath 𝕜 f) = none := by
+  rw [← map_toPLPath_normalCrystal_e hlam i hF π, Option.map_eq_none_iff]
+
+/-- Raising string length in `B(λ)` equals the negated minimum simple-coroot height in every
+realization `(f, F)` compatible with `αᵢ^∨`. -/
+theorem cast_normalCrystal_ε (i : b.support) {F : Dual 𝕜 V}
+    (hF : ∀ x : X, F (f x) = (P.coroot' i x : 𝕜)) (π : LSPath P b lam) :
+    ((normalCrystal hlam).ε i π : 𝕜) = -(π.toPLPath 𝕜 f).minHeight F := by
+  have hrat : ((normalCrystal hlam).ε i π : ℚ) =
+      -(π.toPLPath ℚ (P.coweightEval ℚ)).minHeight (LinearMap.proj (R := ℚ) (P.coroot i)) := by
+    simp [normalCrystal, Equiv.symm_symm]
+  obtain ⟨z, hz₁, hz₂⟩ := π.exists_minHeight_eq_intCast_and_eq hlam i
+    (P.coweightEval ℚ) (LinearMap.proj (R := ℚ) (P.coroot i)) (P.proj_coroot_coweightEval ℚ i)
+    f F hF
+  rw [hz₁] at hrat
+  have hεz : ((normalCrystal hlam).ε i π : ℤ) = -z := by exact_mod_cast hrat
+  rw [hz₂, ← Int.cast_neg, ← hεz, Int.cast_natCast]
+
+/-- Lowering string length in `B(λ)` equals `F (endpoint) - minHeight F` in every realization
+`(f, F)` compatible with `αᵢ^∨`. -/
+theorem cast_normalCrystal_φ (i : b.support) {F : Dual 𝕜 V}
+    (hF : ∀ x : X, F (f x) = (P.coroot' i x : 𝕜)) (π : LSPath P b lam) :
+    ((normalCrystal hlam).φ i π : 𝕜) =
+      F (π.toPLPath 𝕜 f).endpoint - (π.toPLPath 𝕜 f).minHeight F := by
+  have hφ := congrArg (Int.cast (R := 𝕜)) ((normalCrystal hlam).φ_sub_ε i π)
+  simp only [Int.cast_sub, Int.cast_natCast, cast_normalCrystal_ε hlam i hF π] at hφ
+  have hend : F (π.toPLPath 𝕜 f).endpoint = (P.coroot' i ((normalCrystal hlam).wt π) : 𝕜) := by
+    rw [← apply_normalCrystal_wt hlam 𝕜 f π, hF]
+  rw [hend]
+  dsimp only [RootPairing.coroot', LinearMap.flip_apply]
+  linarith
+
+/-- Lowering in `B(λ)` commutes with path realization in every ordered-field realization `(f, F)`
+compatible with the single simple coroot `αᵢ^∨`. -/
+theorem map_toPLPath_normalCrystal_f (i : b.support) {F : Dual 𝕜 V}
+    (hF : ∀ x : X, F (f x) = (P.coroot' i x : 𝕜)) (π : LSPath P b lam) :
+    ((normalCrystal hlam).f i π).map (fun ρ ↦ ρ.toPLPath 𝕜 f) =
+      PLPath.lower F (f (P.root i)) (π.toPLPath 𝕜 f) := by
+  have h2 : F (f (P.root i)) = 2 := by rw [hF]; simp
+  cases hf' : (normalCrystal hlam).f i π with
+  | none =>
+    rw [Option.map_none, eq_comm, PLPath.lower_eq_none_iff, ← cast_normalCrystal_φ hlam i hF π]
+    exact_mod_cast Nat.lt_one_iff.mpr (((normalCrystal hlam).φ_eq_zero_iff).mpr hf')
+  | some π' =>
+    rw [Option.map_some, eq_comm, PLPath.lower_eq_some_iff h2]
+    have he : (normalCrystal hlam).e i π' = some π :=
+      ((normalCrystal hlam).f_eq_some_iff).mp hf'
+    simpa only [he, Option.map_some] using (map_toPLPath_normalCrystal_e hlam i hF π').symm
+
+theorem normalCrystal_f_eq_none_iff {i : b.support} {F : Dual 𝕜 V}
+    (hF : ∀ x : X, F (f x) = (P.coroot' i x : 𝕜)) {π : LSPath P b lam} :
+    (normalCrystal hlam).f i π = none ↔
+      PLPath.lower F (f (P.root i)) (π.toPLPath 𝕜 f) = none := by
+  rw [← map_toPLPath_normalCrystal_f hlam i hF π, Option.map_eq_none_iff]
+
+section Family
+
+variable {F : b.support → Dual 𝕜 V}
 
 theorem normalCrystal_e_eq_some_iff
     (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
     {i : b.support} {π π' : LSPath P b lam} :
     (normalCrystal hlam).e i π = some π' ↔
       PLPath.raise (F i) (f (P.root i)) (π.toPLPath 𝕜 f) = some (π'.toPLPath 𝕜 f) := by
-  rw [← map_toPLPath_normalCrystal_e hlam hF i π, Option.map_eq_some_iff]
+  rw [← map_toPLPath_normalCrystal_e hlam i (hF i) π, Option.map_eq_some_iff]
   refine ⟨fun h ↦ ⟨π', h, rfl⟩, ?_⟩
   rintro ⟨ρ, hρ, hpath⟩
   rwa [← toPLPath_injective_of_apply_eq_coroot' hlam hF hpath]
-
-theorem normalCrystal_e_eq_none_iff
-    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
-    {i : b.support} {π : LSPath P b lam} :
-    (normalCrystal hlam).e i π = none ↔
-      PLPath.raise (F i) (f (P.root i)) (π.toPLPath 𝕜 f) = none := by
-  rw [← map_toPLPath_normalCrystal_e hlam hF i π, Option.map_eq_none_iff]
-
-/-- Lowering in `B(λ)` commutes with path realization in every simple-coroot-compatible
-ordered-field realization `(f, F)`. -/
-theorem map_toPLPath_normalCrystal_f
-    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
-    (i : b.support) (π : LSPath P b lam) :
-    ((normalCrystal hlam).f i π).map (fun ρ ↦ ρ.toPLPath 𝕜 f) =
-      PLPath.lower (F i) (f (P.root i)) (π.toPLPath 𝕜 f) := by
-  have h2 : F i (f (P.root i)) = 2 := by rw [hF]; simp
-  cases h : PLPath.lower (F i) (f (P.root i)) (π.toPLPath 𝕜 f) with
-  | none =>
-    rw [Option.map_eq_none_iff]
-    by_contra hne
-    obtain ⟨π', hπ'⟩ := Option.ne_none_iff_exists'.mp hne
-    have hr := (normalCrystal_e_eq_some_iff hlam hF).mp
-      (((normalCrystal hlam).f_eq_some_iff).mp hπ')
-    have hl := (PLPath.lower_eq_some_iff h2).mpr hr
-    rw [h] at hl
-    cases hl
-  | some q =>
-    obtain ⟨π', rfl⟩ := π.exists_toPLPath_eq_of_lower_eq_some hlam f i (F i) (hF i) h
-    have hr := (PLPath.lower_eq_some_iff h2).mp h
-    have hf' : (normalCrystal hlam).f i π = some π' :=
-      ((normalCrystal hlam).f_eq_some_iff).mpr ((normalCrystal_e_eq_some_iff hlam hF).mpr hr)
-    rw [hf', Option.map_some]
 
 theorem normalCrystal_f_eq_some_iff
     (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
     {i : b.support} {π π' : LSPath P b lam} :
     (normalCrystal hlam).f i π = some π' ↔
       PLPath.lower (F i) (f (P.root i)) (π.toPLPath 𝕜 f) = some (π'.toPLPath 𝕜 f) := by
-  rw [← map_toPLPath_normalCrystal_f hlam hF i π, Option.map_eq_some_iff]
+  rw [← map_toPLPath_normalCrystal_f hlam i (hF i) π, Option.map_eq_some_iff]
   refine ⟨fun h ↦ ⟨π', h, rfl⟩, ?_⟩
   rintro ⟨ρ, hρ, hpath⟩
   rwa [← toPLPath_injective_of_apply_eq_coroot' hlam hF hpath]
-
-theorem normalCrystal_f_eq_none_iff
-    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
-    {i : b.support} {π : LSPath P b lam} :
-    (normalCrystal hlam).f i π = none ↔
-      PLPath.lower (F i) (f (P.root i)) (π.toPLPath 𝕜 f) = none := by
-  rw [← map_toPLPath_normalCrystal_f hlam hF i π, Option.map_eq_none_iff]
-
-/-- Raising string length in `B(λ)` equals the negated minimum simple-coroot height in every
-simple-coroot-compatible realization `(f, F)`. -/
-theorem cast_normalCrystal_ε
-    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
-    (i : b.support) (π : LSPath P b lam) :
-    ((normalCrystal hlam).ε i π : 𝕜) = -(π.toPLPath 𝕜 f).minHeight (F i) := by
-  have hrat : ((normalCrystal hlam).ε i π : ℚ) =
-      -(π.toPLPath ℚ (ratEval P)).minHeight (ratForm P b i) := by
-    simp [normalCrystal, Equiv.symm_symm]
-  obtain ⟨z, hz₁, hz₂⟩ := π.exists_minHeight_eq_intCast_and_eq hlam i
-    (ratEval P) (ratForm P b i) (ratForm_apply P b i) f (F i) (hF i)
-  rw [hz₁] at hrat
-  have hεz : ((normalCrystal hlam).ε i π : ℤ) = -z := by exact_mod_cast hrat
-  rw [hz₂, ← Int.cast_neg, ← hεz, Int.cast_natCast]
-
-/-- Lowering string length in `B(λ)` equals `F i (endpoint) - minHeight (F i)` in every
-simple-coroot-compatible realization `(f, F)`. -/
-theorem cast_normalCrystal_φ
-    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
-    (i : b.support) (π : LSPath P b lam) :
-    ((normalCrystal hlam).φ i π : 𝕜) =
-      F i (π.toPLPath 𝕜 f).endpoint - (π.toPLPath 𝕜 f).minHeight (F i) := by
-  have hφ := congrArg (Int.cast (R := 𝕜)) ((normalCrystal hlam).φ_sub_ε i π)
-  simp only [Int.cast_sub, Int.cast_natCast, cast_normalCrystal_ε hlam hF i π] at hφ
-  have hend : F i (π.toPLPath 𝕜 f).endpoint = (P.coroot' i ((normalCrystal hlam).wt π) : 𝕜) := by
-    rw [← apply_normalCrystal_wt hlam 𝕜 f π, hF]
-  rw [hend]
-  dsimp only [RootPairing.coroot', LinearMap.flip_apply]
-  linarith
 
 theorem map_toPLPath_normalCrystal_eWord
     (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
@@ -336,7 +285,8 @@ theorem map_toPLPath_normalCrystal_eWord
   induction w generalizing π with
   | nil => simp
   | cons i w ih =>
-    rw [NormalCrystal.eWord_cons, PLPath.raiseWord_cons, ← map_toPLPath_normalCrystal_e hlam hF]
+    rw [NormalCrystal.eWord_cons, PLPath.raiseWord_cons,
+      ← map_toPLPath_normalCrystal_e hlam i (hF i)]
     cases (normalCrystal hlam).e i π <;> simp [ih]
 
 theorem map_toPLPath_normalCrystal_fWord
@@ -347,7 +297,8 @@ theorem map_toPLPath_normalCrystal_fWord
   induction w generalizing π with
   | nil => simp
   | cons i w ih =>
-    rw [NormalCrystal.fWord_cons, PLPath.lowerWord_cons, ← map_toPLPath_normalCrystal_f hlam hF]
+    rw [NormalCrystal.fWord_cons, PLPath.lowerWord_cons,
+      ← map_toPLPath_normalCrystal_f hlam i (hF i)]
     cases (normalCrystal hlam).f i π <;> simp [ih]
 
 /-- Strict crystal isomorphism between the intrinsic LS crystal `B(λ)` and the path crystal on the
@@ -359,7 +310,7 @@ noncomputable def toPLPathIso (hf : Function.Injective f)
   toEquiv := toPLPathEquiv hlam hF
   wt_toFun π := hf (by simp [apply_normalCrystal_wt hlam 𝕜 f])
   e_toFun i π := PLPath.normalCrystalOn_e_eq_map_iff.mpr
-    (by simp [← map_toPLPath_normalCrystal_e hlam hF i π])
+    (by simp [← map_toPLPath_normalCrystal_e hlam i (hF i) π])
 
 @[simp]
 theorem toPLPathIso_apply (hf : Function.Injective f)
@@ -374,6 +325,14 @@ theorem toPLPathIso_straight (hf : Function.Injective f)
       ⟨PLPath.straight 𝕜 (f lam), ⟨straight lam, toPLPath_straight 𝕜 f⟩⟩ :=
   Subtype.ext (by simp)
 
+@[simp]
+theorem toPLPath_toPLPathIso_symm_apply (hf : Function.Injective f)
+    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
+    (x : range (fun π : LSPath P b lam ↦ π.toPLPath 𝕜 f)) :
+    ((toPLPathIso hlam hf hF).symm x).toPLPath 𝕜 f = x.1 := by
+  simpa only [toPLPathIso_apply] using
+    congrArg Subtype.val ((toPLPathIso hlam hf hF).apply_symm_apply x)
+
 /-- Strict crystal embedding of `B(λ)` into Littelmann's ambient crystal of integral paths. -/
 noncomputable def toPLPathHom (hf : Function.Injective f)
     (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜)) :
@@ -387,6 +346,15 @@ theorem toPLPathHom_apply (hf : Function.Injective f)
     (π : LSPath P b lam) : (toPLPathHom hlam hf hF π).1 = π.toPLPath 𝕜 f := by
   simp [toPLPathHom]
 
+@[simp]
+theorem toPLPathHom_straight (hf : Function.Injective f)
+    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜)) :
+    toPLPathHom hlam hf hF (straight lam) =
+      ⟨PLPath.straight 𝕜 (f lam), isIntegralPath_straight hlam hF⟩ :=
+  Subtype.ext (by simp)
+
+end Family
+
 end RealizationCompatibility
 
 /-! ### Highest element, generation from the straight path, and connectedness -/
@@ -397,15 +365,17 @@ variable {lam : X} (hlam : lam ∈ dominantChamber P b)
 
 @[simp]
 theorem normalCrystal_wt_straight : (normalCrystal hlam).wt (straight lam) = lam :=
-  ratEval_injective P (by simp [apply_normalCrystal_wt hlam ℚ (ratEval P), toPLPath_straight])
+  P.coweightEval_injective ℚ
+    (by simp [apply_normalCrystal_wt hlam ℚ (P.coweightEval ℚ), toPLPath_straight])
 
 @[simp]
 theorem normalCrystal_e_straight (i : b.support) :
     (normalCrystal hlam).e i (straight lam) = none := by
   have := P.flip_isReduced
-  rw [normalCrystal_e_eq_none_iff hlam (ratForm_apply P b)]
-  exact ((straight lam).forall_raise_eq_none_iff hlam (ratEval P) (ratForm P b)
-    (ratForm_apply P b)).mpr rfl i
+  rw [normalCrystal_e_eq_none_iff hlam (P.proj_coroot_coweightEval ℚ i)]
+  exact ((straight lam).forall_raise_eq_none_iff hlam (P.coweightEval ℚ)
+    (fun j : b.support ↦ LinearMap.proj (R := ℚ) (P.coroot j))
+    (fun j x ↦ P.proj_coroot_coweightEval ℚ j x)).mpr rfl i
 
 @[simp]
 theorem normalCrystal_ε_straight (i : b.support) :
@@ -425,56 +395,41 @@ annihilated by all simple-root raising operators if and only if it is `straight 
 theorem forall_normalCrystal_e_eq_none_iff {π : LSPath P b lam} :
     (∀ i, (normalCrystal hlam).e i π = none) ↔ π = straight lam := by
   have := P.flip_isReduced
-  simp only [normalCrystal_e_eq_none_iff hlam (ratForm_apply P b)]
-  exact π.forall_raise_eq_none_iff hlam (ratEval P) (ratForm P b) (ratForm_apply P b)
+  refine (forall_congr' fun i ↦
+    normalCrystal_e_eq_none_iff (f := P.coweightEval ℚ) (i := i) hlam
+      (P.proj_coroot_coweightEval ℚ i)).trans ?_
+  exact π.forall_raise_eq_none_iff hlam (P.coweightEval ℚ)
+    (fun j : b.support ↦ LinearMap.proj (R := ℚ) (P.coroot j))
+    (fun j x ↦ P.proj_coroot_coweightEval ℚ j x)
 
 /-- **Every Lakshmibai–Seshadri path of dominant shape `λ` is obtained from `straight λ` by a word
 of simple-root lowering operators.** -/
-theorem exists_fWord_eq_some_straight (π : LSPath P b lam) :
+theorem exists_normalCrystal_fWord_straight_eq_some (π : LSPath P b lam) :
     ∃ w : List b.support, (normalCrystal hlam).fWord w (straight lam) = some π := by
   have := LSPath.finite hlam
   exact (normalCrystal hlam).exists_fWord_eq_some_of_unique_highest
     (fun _ hx ↦ (forall_normalCrystal_e_eq_none_iff hlam).mp hx) π
 
-omit [Finite ι] [P.IsReduced] in
-private theorem reachable_of_fWord_eq_some {B : Type*} (c : NormalCrystal P b B)
-    {w : List b.support} {x y : B} (h : c.fWord w x = some y) : c.graph.Reachable x y := by
-  induction w generalizing x with
-  | nil =>
-    rw [c.fWord_nil] at h
-    obtain rfl := Option.some.inj h
-    exact .refl x
-  | cons i w ih =>
-    obtain ⟨z, hz, hy⟩ := Option.bind_eq_some_iff.mp (c.fWord_cons i w x ▸ h)
-    exact (c.graph_adj_of_f_eq_some hz).reachable.trans (ih hy)
+/-- **Every Lakshmibai–Seshadri path of dominant shape `λ` can be raised to `straight λ` by a word
+of simple-root raising operators.** -/
+theorem exists_normalCrystal_eWord_eq_some_straight (π : LSPath P b lam) :
+    ∃ w : List b.support, (normalCrystal hlam).eWord w π = some (straight lam) := by
+  obtain ⟨w, hw⟩ := exists_normalCrystal_fWord_straight_eq_some hlam π
+  exact ⟨w.reverse, (normalCrystal hlam).fWord_eq_some_iff.mp hw⟩
 
 /-- **The crystal graph of `B(λ)` is connected.** -/
 theorem connected_normalCrystal_graph : (normalCrystal hlam).graph.Connected where
   preconnected x y := by
-    obtain ⟨wx, hwx⟩ := exists_fWord_eq_some_straight hlam x
-    obtain ⟨wy, hwy⟩ := exists_fWord_eq_some_straight hlam y
-    exact (reachable_of_fWord_eq_some (normalCrystal hlam) hwx).symm.trans
-      (reachable_of_fWord_eq_some (normalCrystal hlam) hwy)
+    obtain ⟨wx, hwx⟩ := exists_normalCrystal_fWord_straight_eq_some hlam x
+    obtain ⟨wy, hwy⟩ := exists_normalCrystal_fWord_straight_eq_some hlam y
+    exact ((normalCrystal hlam).graph_reachable_of_fWord_eq_some hwx).symm.trans
+      ((normalCrystal hlam).graph_reachable_of_fWord_eq_some hwy)
   nonempty := ⟨straight lam⟩
 
 section ComponentComparison
 
 variable {𝕜 V : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
   [AddCommGroup V] [Module 𝕜 V] {f : X →+ V} {F : b.support → Dual 𝕜 V}
-
-omit [Finite ι] [P.IsReduced] in
-private theorem reflTransGen_rootStep_of_lowerWord_eq_some
-    {w : List b.support} {π ρ : PLPath 𝕜 V}
-    (h : PLPath.lowerWord F (fun i : b.support ↦ f (P.root i)) w π = some ρ) :
-    ReflTransGen (PLPath.RootStep b f F) π ρ := by
-  induction w generalizing π with
-  | nil =>
-    rw [PLPath.lowerWord_nil] at h
-    obtain rfl := Option.some.inj h
-    exact .refl
-  | cons i w ih =>
-    obtain ⟨σ, hσ, hρ⟩ := Option.bind_eq_some_iff.mp (PLPath.lowerWord_cons i w π ▸ h)
-    exact .head (.of_lower_eq_some hσ) (ih hρ)
 
 /-- **Equivalence of Littelmann's `a`-chain definition and lowering-word generation.** In any
 simple-coroot-compatible realization `(f, F)` (without assuming `f` is injective), a path in
@@ -488,13 +443,28 @@ theorem mem_range_toPLPath_iff_exists_lowerWord (hlam : lam ∈ dominantChamber 
           (PLPath.straight 𝕜 (f lam)) = some q := by
   constructor
   · rintro ⟨π, rfl⟩
-    obtain ⟨w, hw⟩ := exists_fWord_eq_some_straight hlam π
+    obtain ⟨w, hw⟩ := exists_normalCrystal_fWord_straight_eq_some hlam π
     refine ⟨w, ?_⟩
     have hmap := map_toPLPath_normalCrystal_fWord hlam hF w (straight lam)
     simpa only [hw, Option.map_some, toPLPath_straight] using hmap.symm
   · rintro ⟨w, hw⟩
     exact (isCrystalSet_range_toPLPath hlam hF).mem_of_reflTransGen_rootStep
-      (reflTransGen_rootStep_of_lowerWord_eq_some hw) ⟨straight lam, toPLPath_straight 𝕜 f⟩
+      (PLPath.reflTransGen_rootStep_of_lowerWord_eq_some hw) ⟨straight lam, toPLPath_straight 𝕜 f⟩
+
+/-- **Equivalence of Littelmann's `a`-chain definition and raising-word generation.** In any
+simple-coroot-compatible realization `(f, F)` (without assuming `f` is injective), a path in
+`PLPath 𝕜 V` is the realization of an LS path of dominant shape `λ` if and only if some word of
+simple-root raising operators sends it to `PLPath.straight 𝕜 (f λ)`. -/
+theorem mem_range_toPLPath_iff_exists_raiseWord (hlam : lam ∈ dominantChamber P b)
+    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜)) {q : PLPath 𝕜 V} :
+    q ∈ range (fun π : LSPath P b lam ↦ π.toPLPath 𝕜 f) ↔
+      ∃ w : List b.support,
+        PLPath.raiseWord F (fun i : b.support ↦ f (P.root i)) w q =
+          some (PLPath.straight 𝕜 (f lam)) := by
+  rw [mem_range_toPLPath_iff_exists_lowerWord hlam hF]
+  have h2 : ∀ i : b.support, F i (f (P.root i)) = 2 := fun i ↦ by rw [hF]; simp
+  exact ⟨fun ⟨w, hw⟩ ↦ ⟨w.reverse, (PLPath.lowerWord_eq_some_iff h2).mp hw⟩,
+    fun ⟨w, hw⟩ ↦ ⟨w.reverse, (PLPath.raiseWord_eq_some_iff h2).mp hw⟩⟩
 
 /-- **Equivalence of Littelmann's `a`-chain definition and the root-operator component of
 `straight λ`.** In any simple-coroot-compatible realization `(f, F)` (without assuming `f` is
@@ -507,10 +477,46 @@ theorem mem_range_toPLPath_iff_reflTransGen_rootStep (hlam : lam ∈ dominantCha
   constructor
   · intro hq
     obtain ⟨w, hw⟩ := (mem_range_toPLPath_iff_exists_lowerWord hlam hF).mp hq
-    exact reflTransGen_rootStep_of_lowerWord_eq_some hw
+    exact PLPath.reflTransGen_rootStep_of_lowerWord_eq_some hw
   · intro hwalk
     exact (isCrystalSet_range_toPLPath hlam hF).mem_of_reflTransGen_rootStep
       hwalk ⟨straight lam, toPLPath_straight 𝕜 f⟩
+
+private noncomputable def toComponentHom (hf : Function.Injective f)
+    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜)) :
+    NormalCrystal.StrictHom (normalCrystal hlam)
+      (PLPath.normalCrystalComponent hf hF
+        ⟨PLPath.straight 𝕜 (f lam), isIntegralPath_straight hlam hF⟩) where
+  toFun π :=
+    ⟨toPLPathHom hlam hf hF π,
+      (PLPath.mem_supp_connectedComponentMk_normalCrystalOn_iff _ _).mpr
+        ((mem_range_toPLPath_iff_reflTransGen_rootStep hlam hF).mp
+          ⟨π, (toPLPathHom_apply hlam hf hF π).symm⟩)⟩
+  wt_toFun π := by
+    rw [PLPath.normalCrystalComponent, NormalCrystal.component_eq_restrict,
+      NormalCrystal.restrict_wt]
+    exact (toPLPathHom hlam hf hF).wt_apply π
+  e_toFun i π := by
+    apply Option.map_injective Subtype.val_injective
+    rw [Option.map_map]
+    change ((PLPath.normalCrystalComponent hf hF _).e i _).unattach =
+      Option.map (toPLPathHom hlam hf hF) ((normalCrystal hlam).e i π)
+    rw [PLPath.normalCrystalComponent, NormalCrystal.component_eq_restrict,
+      NormalCrystal.unattach_restrict_e, (toPLPathHom hlam hf hF).e_apply]
+
+private theorem bijective_toComponentHom (hf : Function.Injective f)
+    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜)) :
+    Function.Bijective (toComponentHom hlam hf hF) :=
+  ⟨fun π₁ π₂ h ↦ toPLPath_injective_of_apply_eq_coroot' hlam hF
+    (by simpa only [toComponentHom, NormalCrystal.StrictHom.coe_mk, toPLPathHom_apply] using
+      congrArg (fun z ↦ z.1.1) h),
+  fun ⟨⟨q, hq⟩, hC⟩ ↦ by
+    have hwalk : ReflTransGen (PLPath.RootStep b f F) (PLPath.straight 𝕜 (f lam)) q :=
+      (PLPath.mem_supp_connectedComponentMk_normalCrystalOn_iff _ ⟨q, hq⟩).mp hC
+    obtain ⟨π, rfl⟩ := (mem_range_toPLPath_iff_reflTransGen_rootStep hlam hF).mpr hwalk
+    exact ⟨π, Subtype.ext (Subtype.ext
+      (by simpa only [toComponentHom, NormalCrystal.StrictHom.coe_mk] using
+        toPLPathHom_apply hlam hf hF π))⟩⟩
 
 /-- **Identification of `B(λ)` with the connected path crystal component of `straight λ`.** For any
 injective simple-coroot-compatible realization `(f, F)`, path realization gives a strict crystal
@@ -520,53 +526,42 @@ noncomputable def componentIso (hf : Function.Injective f)
     (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜)) :
     NormalCrystal.StrictIso (normalCrystal hlam)
       (PLPath.normalCrystalComponent hf hF
-        ⟨PLPath.straight 𝕜 (f lam), isIntegralPath_straight hlam hF⟩) := by
-  let s₀ : {π : PLPath 𝕜 V | PLPath.IsIntegralPath b f F π} :=
-    ⟨PLPath.straight 𝕜 (f lam), isIntegralPath_straight hlam hF⟩
-  let C := (PLPath.normalCrystal hf hF).graph.connectedComponentMk s₀
-  have hmem (π : LSPath P b lam) :
-      (⟨π.toPLPath 𝕜 f, isIntegralPath_toPLPath hlam hF π⟩ :
-        {π : PLPath 𝕜 V | PLPath.IsIntegralPath b f F π}) ∈ C.supp := by
-    rw [PLPath.mem_supp_connectedComponentMk_normalCrystalOn_iff]
-    exact (mem_range_toPLPath_iff_reflTransGen_rootStep hlam hF).mp ⟨π, rfl⟩
-  let g : LSPath P b lam → C :=
-    fun π ↦ ⟨⟨π.toPLPath 𝕜 f, isIntegralPath_toPLPath hlam hF π⟩, hmem π⟩
-  have hbij : Function.Bijective g := by
-    refine ⟨fun π₁ π₂ h ↦ toPLPath_injective_of_apply_eq_coroot' hlam hF
-      (congrArg (fun z : C ↦ z.1.1) h), fun ⟨⟨q, hq⟩, hC⟩ ↦ ?_⟩
-    have hwalk : ReflTransGen (PLPath.RootStep b f F) (PLPath.straight 𝕜 (f lam)) q :=
-      (PLPath.mem_supp_connectedComponentMk_normalCrystalOn_iff s₀ ⟨q, hq⟩).mp hC
-    obtain ⟨π, rfl⟩ := (mem_range_toPLPath_iff_reflTransGen_rootStep hlam hF).mpr hwalk
-    exact ⟨π, rfl⟩
-  refine
-    { toEquiv := Equiv.ofBijective g hbij
-      wt_toFun := fun π ↦ hf (by
-        simp [g, PLPath.normalCrystalComponent, NormalCrystal.component_eq_restrict,
-          apply_normalCrystal_wt hlam 𝕜 f])
-      e_toFun := fun i π ↦ ?_ }
-  simp only [Equiv.toFun_as_coe, Equiv.ofBijective_apply]
-  cases he : (normalCrystal hlam).e i π with
-  | some π' =>
-    rw [Option.map_some, PLPath.normalCrystalComponent, NormalCrystal.component_eq_restrict,
-      NormalCrystal.restrict_e_eq_some_iff, PLPath.normalCrystalOn_e_eq_some_iff]
-    exact (normalCrystal_e_eq_some_iff hlam hF).mp he
-  | none =>
-    rw [Option.map_none]
-    by_contra hne
-    obtain ⟨y, hy⟩ := Option.ne_none_iff_exists'.mp hne
-    obtain ⟨π', rfl⟩ := hbij.2 y
-    rw [PLPath.normalCrystalComponent, NormalCrystal.component_eq_restrict,
-      NormalCrystal.restrict_e_eq_some_iff, PLPath.normalCrystalOn_e_eq_some_iff] at hy
-    have he' := (normalCrystal_e_eq_some_iff hlam hF).mpr hy
-    rw [he] at he'
-    cases he'
+        ⟨PLPath.straight 𝕜 (f lam), isIntegralPath_straight hlam hF⟩) :=
+  NormalCrystal.StrictIso.ofBijective (toComponentHom hlam hf hF)
+    (bijective_toComponentHom hlam hf hF)
 
 @[simp]
 theorem componentIso_apply (hf : Function.Injective f)
     (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
     (π : LSPath P b lam) : (componentIso hlam hf hF π).1.1 = π.toPLPath 𝕜 f := by
-  simp only [componentIso, NormalCrystal.StrictIso.coe_mk]
-  rfl
+  rw [componentIso, NormalCrystal.StrictIso.coe_ofBijective]
+  exact toPLPathHom_apply hlam hf hF π
+
+@[simp]
+theorem componentIso_straight (hf : Function.Injective f)
+    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜)) :
+    componentIso hlam hf hF (straight lam) =
+      ⟨⟨PLPath.straight 𝕜 (f lam), isIntegralPath_straight hlam hF⟩, rfl⟩ :=
+  Subtype.ext (Subtype.ext (by simp))
+
+@[simp]
+theorem toPLPath_componentIso_symm_apply (hf : Function.Injective f)
+    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
+    (x : (PLPath.normalCrystal hf hF).graph.connectedComponentMk
+      ⟨PLPath.straight 𝕜 (f lam), isIntegralPath_straight hlam hF⟩) :
+    ((componentIso hlam hf hF).symm x).toPLPath 𝕜 f = x.1.1 := by
+  simpa only [componentIso_apply] using
+    congrArg (fun z ↦ z.1.1) ((componentIso hlam hf hF).apply_symm_apply x)
+
+@[simp]
+theorem componentHom_comp_componentIso (hf : Function.Injective f)
+    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜)) :
+    ((PLPath.normalCrystal hf hF).componentHom
+      ((PLPath.normalCrystal hf hF).graph.connectedComponentMk
+        ⟨PLPath.straight 𝕜 (f lam), isIntegralPath_straight hlam hF⟩)).comp
+      (componentIso hlam hf hF).toStrictHom =
+      toPLPathHom hlam hf hF :=
+  NormalCrystal.StrictHom.ext fun _ ↦ Subtype.ext (by simp)
 
 end ComponentComparison
 
@@ -576,105 +571,205 @@ end HighestAndComponent
 
 section CentralTransport
 
-omit [Finite ι] [P.IsReduced] in
-/-- Adding a weight annihilating all simple coroots preserves dominance. -/
-theorem dominantChamber_add_of_forall_coroot_eq_zero {lam χ : X}
-    (hlam : lam ∈ dominantChamber P b)
-    (hχ : ∀ i : b.support, P.toLinearMap χ (P.coroot i) = 0) :
-    lam + χ ∈ dominantChamber P b := by
-  rw [mem_dominantChamber] at hlam ⊢
-  intro i hi
-  have h0 : P.coroot' i χ = 0 := hχ ⟨i, hi⟩
-  rw [map_add, h0, add_zero]
-  exact hlam i hi
-
-/-- Central transport preserves `dirDurations`. -/
 @[simp]
-theorem dirDurations_centralTransport {lam : X} (χ : X)
+theorem normalCrystal_wt_centralTransport {lam χ : X}
+    (hlam : lam ∈ dominantChamber P b) (hlam' : lam + χ ∈ dominantChamber P b)
     (hχ : ∀ i ∈ b.support, P.coroot' i χ = 0) (π : LSPath P b lam) :
-    (centralTransport χ hχ π).dirDurations = π.dirDurations := by
-  refine List.ext_getElem (by simp [length_dirDurations]) fun k hk₁ hk₂ ↦ ?_
-  rw [getElem_dirDurations, getElem_dirDurations]
-  exact Prod.ext (dir_centralTransport χ hχ π _) (duration_centralTransport χ hχ π _)
+    (normalCrystal hlam').wt (centralTransport χ hχ π) = (normalCrystal hlam).wt π + χ := by
+  apply P.coweightEval_injective ℚ
+  rw [map_add, apply_normalCrystal_wt hlam' ℚ (P.coweightEval ℚ),
+    apply_normalCrystal_wt hlam ℚ (P.coweightEval ℚ)]
+  exact endpoint_toPLPath_centralTransport χ hχ π ℚ (P.coweightEval ℚ)
 
 @[simp]
-theorem dirDurations_centralTransport_symm {lam : X} (χ : X)
-    (hχ : ∀ i ∈ b.support, P.coroot' i χ = 0) (π : LSPath P b (lam + χ)) :
-    ((centralTransport χ hχ).symm π).dirDurations = π.dirDurations := by
-  refine List.ext_getElem (by simp [length_dirDurations]) fun k hk₁ hk₂ ↦ ?_
-  rw [getElem_dirDurations, getElem_dirDurations]
-  exact Prod.ext (dir_centralTransport_symm χ hχ π _) (duration_centralTransport_symm χ hχ π _)
-
-/-- Equality-parameterized central transport `LSPath P b λ ≃ LSPath P b μ` along `λ + χ = μ`,
-avoiding dependent casts in coherence laws. -/
-noncomputable def centralTransportOfEq {lam mu : X} (χ : X)
-    (hχ : ∀ i : b.support, P.toLinearMap χ (P.coroot i) = 0) (hmu : lam + χ = mu) :
-    LSPath P b lam ≃ LSPath P b mu :=
-  hmu ▸ centralTransport χ (fun i hi ↦ hχ ⟨i, hi⟩)
-
-@[simp]
-theorem dirDurations_centralTransportOfEq {lam mu : X} (χ : X)
-    (hχ : ∀ i : b.support, P.toLinearMap χ (P.coroot i) = 0) (hmu : lam + χ = mu)
-    (π : LSPath P b lam) :
-    (centralTransportOfEq χ hχ hmu π).dirDurations = π.dirDurations := by
-  subst hmu
-  exact dirDurations_centralTransport χ _ π
-
-@[simp]
-theorem centralTransportOfEq_rfl {lam : X} (χ : X)
-    (hχ : ∀ i : b.support, P.toLinearMap χ (P.coroot i) = 0) :
-    centralTransportOfEq χ hχ (rfl : lam + χ = lam + χ) =
-      centralTransport χ (fun i hi ↦ hχ ⟨i, hi⟩) :=
-  (rfl)
-
-@[simp]
-theorem centralTransportOfEq_straight {lam mu : X} (χ : X)
-    (hχ : ∀ i : b.support, P.toLinearMap χ (P.coroot i) = 0) (hmu : lam + χ = mu) :
-    centralTransportOfEq χ hχ hmu (straight lam) = straight mu := by
-  subst hmu
-  exact centralTransport_straight χ (fun i hi ↦ hχ ⟨i, hi⟩) lam
+theorem normalCrystal_e_centralTransport {lam χ : X}
+    (hlam : lam ∈ dominantChamber P b) (hlam' : lam + χ ∈ dominantChamber P b)
+    (hχ : ∀ i ∈ b.support, P.coroot' i χ = 0) (i : b.support) (π : LSPath P b lam) :
+    (normalCrystal hlam').e i (centralTransport χ hχ π) =
+      ((normalCrystal hlam).e i π).map (centralTransport χ hχ) := by
+  let ratF : b.support → Dual ℚ (Y → ℚ) := fun j ↦ LinearMap.proj (R := ℚ) (P.coroot j)
+  have hratF : ∀ (j : b.support) (x : X), ratF j (P.coweightEval ℚ x) = (P.coroot' j x : ℚ) :=
+    fun j x ↦ P.proj_coroot_coweightEval ℚ j x
+  have hcoroot : ∀ w : P.weylGroup, P.coroot' i (w • lam) = P.coroot' i (w • (lam + χ)) := by
+    intro w
+    rw [smul_add, TauCeti.smul_eq_self_of_forall_coroot'_eq_zero b hχ w, map_add, hχ i i.2,
+      add_zero]
+  rcases raise_toPLPath_eq_none_or_exists_dirDurations_eq_of_dirDurations_eq
+      π (centralTransport χ hχ π) hlam hlam' i (dirDurations_centralTransport χ hχ π).symm hcoroot
+      (P.coweightEval ℚ) (ratF i) (hratF i)
+      (P.coweightEval ℚ) (ratF i) (hratF i) with
+    ⟨hn₁, hn₂⟩ | ⟨π₁', π₂', hdir', hs₁, hs₂⟩
+  · rw [(normalCrystal_e_eq_none_iff hlam (hratF i)).mpr hn₁,
+      (normalCrystal_e_eq_none_iff hlam' (hratF i)).mpr hn₂, Option.map_none]
+  · rw [(normalCrystal_e_eq_some_iff hlam hratF).mpr hs₁,
+      (normalCrystal_e_eq_some_iff hlam' hratF).mpr hs₂, Option.map_some]
+    exact congrArg some (dirDurations_injective
+      (hdir'.symm.trans (dirDurations_centralTransport χ hχ π₁').symm))
 
 @[simp]
 theorem normalCrystal_wt_centralTransportOfEq {lam mu : X}
     (hlam : lam ∈ dominantChamber P b) (hmu : mu ∈ dominantChamber P b)
-    (χ : X) (hχ : ∀ i : b.support, P.toLinearMap χ (P.coroot i) = 0)
+    (χ : X) (hχ : ∀ i ∈ b.support, P.coroot' i χ = 0)
     (hmu_eq : lam + χ = mu) (π : LSPath P b lam) :
     (normalCrystal hmu).wt (centralTransportOfEq χ hχ hmu_eq π) =
       (normalCrystal hlam).wt π + χ := by
   subst hmu_eq
-  apply ratEval_injective P
-  rw [map_add, apply_normalCrystal_wt hmu ℚ (ratEval P),
-    apply_normalCrystal_wt hlam ℚ (ratEval P), centralTransportOfEq_rfl]
-  exact endpoint_toPLPath_centralTransport χ (fun i hi ↦ hχ ⟨i, hi⟩) π ℚ (ratEval P)
+  rw [centralTransportOfEq_rfl]
+  exact normalCrystal_wt_centralTransport hlam hmu hχ π
 
 @[simp]
 theorem normalCrystal_e_centralTransportOfEq {lam mu : X}
     (hlam : lam ∈ dominantChamber P b) (hmu : mu ∈ dominantChamber P b)
-    (χ : X) (hχ : ∀ i : b.support, P.toLinearMap χ (P.coroot i) = 0)
+    (χ : X) (hχ : ∀ i ∈ b.support, P.coroot' i χ = 0)
     (hmu_eq : lam + χ = mu) (i : b.support) (π : LSPath P b lam) :
     (normalCrystal hmu).e i (centralTransportOfEq χ hχ hmu_eq π) =
       ((normalCrystal hlam).e i π).map (centralTransportOfEq χ hχ hmu_eq) := by
   subst hmu_eq
   rw [centralTransportOfEq_rfl]
-  let hχ' : ∀ j ∈ b.support, P.coroot' j χ = 0 := fun j hj ↦ hχ ⟨j, hj⟩
-  have hcoroot : ∀ w : P.weylGroup, P.coroot' i (w • lam) = P.coroot' i (w • (lam + χ)) := by
-    intro w
-    rw [smul_add, TauCeti.smul_eq_self_of_forall_coroot'_eq_zero b hχ' w, map_add, hχ' i i.2,
-      add_zero]
-  rcases exists_dirDurations_eq_of_raise_of_dirDurations_eq π (centralTransport χ hχ' π)
-      hlam hmu i (dirDurations_centralTransport χ hχ' π).symm hcoroot
-      (ratEval P) (ratForm P b i) (ratForm_apply P b i)
-      (ratEval P) (ratForm P b i) (ratForm_apply P b i) with
-    ⟨hn₁, hn₂⟩ | ⟨π₁', π₂', hdir', hs₁, hs₂⟩
-  · rw [(normalCrystal_e_eq_none_iff hlam (ratForm_apply P b)).mpr hn₁,
-      (normalCrystal_e_eq_none_iff hmu (ratForm_apply P b)).mpr hn₂, Option.map_none]
-  · rw [(normalCrystal_e_eq_some_iff hlam (ratForm_apply P b)).mpr hs₁,
-      (normalCrystal_e_eq_some_iff hmu (ratForm_apply P b)).mpr hs₂, Option.map_some]
-    exact congrArg some (dirDurations_injective
-      (hdir'.symm.trans (dirDurations_centralTransport χ hχ' π₁').symm))
+  exact normalCrystal_e_centralTransport hlam hmu hχ i π
+
+/-- **Equality-parameterized untwisted central-character transport isomorphism**
+`B(λ)^χ ≃ B(μ)` along `λ + χ = μ`, for dominant `λ`, `μ` and a weight `χ` annihilating the simple
+coroots. -/
+noncomputable def weightTwistCentralTransportIsoOfEq {lam mu : X}
+    (hlam : lam ∈ dominantChamber P b) (hmu : mu ∈ dominantChamber P b)
+    (χ : X) (hχ : ∀ i : b.support, P.toLinearMap χ (P.coroot i) = 0)
+    (hmu_eq : lam + χ = mu) :
+    NormalCrystal.StrictIso ((normalCrystal hlam).weightTwist χ hχ) (normalCrystal hmu) where
+  toEquiv := centralTransportOfEq χ (by intro i hi; exact hχ ⟨i, hi⟩) hmu_eq
+  wt_toFun π := by
+    rw [NormalCrystal.weightTwist_wt, Equiv.toFun_as_coe,
+      normalCrystal_wt_centralTransportOfEq hlam hmu χ
+        (by intro i hi; exact hχ ⟨i, hi⟩) hmu_eq π]
+  e_toFun i π := by
+    rw [NormalCrystal.weightTwist_e, Equiv.toFun_as_coe,
+      normalCrystal_e_centralTransportOfEq hlam hmu χ
+        (by intro i hi; exact hχ ⟨i, hi⟩) hmu_eq i π]
+
+@[simp]
+theorem weightTwistCentralTransportIsoOfEq_apply {lam mu : X}
+    (hlam : lam ∈ dominantChamber P b) (hmu : mu ∈ dominantChamber P b)
+    (χ : X) (hχ : ∀ i : b.support, P.toLinearMap χ (P.coroot i) = 0)
+    (hmu_eq : lam + χ = mu) (π : LSPath P b lam) :
+    weightTwistCentralTransportIsoOfEq hlam hmu χ hχ hmu_eq π =
+      centralTransportOfEq χ (by intro i hi; exact hχ ⟨i, hi⟩) hmu_eq π :=
+  (rfl)
+
+@[simp]
+theorem weightTwistCentralTransportIsoOfEq_symm_apply {lam mu : X}
+    (hlam : lam ∈ dominantChamber P b) (hmu : mu ∈ dominantChamber P b)
+    (χ : X) (hχ : ∀ i : b.support, P.toLinearMap χ (P.coroot i) = 0)
+    (hmu_eq : lam + χ = mu) (π : LSPath P b mu) :
+    (weightTwistCentralTransportIsoOfEq hlam hmu χ hχ hmu_eq).symm π =
+      centralTransportOfEq (-χ)
+        (by intro i hi; rw [map_neg, neg_eq_zero]; exact hχ ⟨i, hi⟩)
+        (by rw [← hmu_eq, add_neg_cancel_right]) π := by
+  rw [← NormalCrystal.StrictIso.coe_toEquiv_symm]
+  exact DFunLike.congr_fun
+    (centralTransportOfEq_symm χ (by intro i hi; exact hχ ⟨i, hi⟩) hmu_eq) π
+
+/-- **Untwisted central-character transport isomorphism `B(λ)^χ ≃ B(λ + χ)`.** For a dominant
+weight `λ` and a weight `χ` annihilating the simple coroots, `LSPath.centralTransport` is a strict
+crystal isomorphism from `(normalCrystal hlam).weightTwist χ hχ` onto `B(λ + χ)` without any target
+twist. -/
+noncomputable def weightTwistCentralTransportIso {lam : X}
+    (hlam : lam ∈ dominantChamber P b)
+    (χ : X) (hχ : ∀ i : b.support, P.toLinearMap χ (P.coroot i) = 0) :
+    NormalCrystal.StrictIso ((normalCrystal hlam).weightTwist χ hχ)
+      (normalCrystal ((P.add_mem_dominantChamber_iff_of_forall_coroot'_eq_zero b (χ := χ)
+        (by intro i hi; exact hχ ⟨i, hi⟩)).mpr hlam)) :=
+  weightTwistCentralTransportIsoOfEq hlam
+    ((P.add_mem_dominantChamber_iff_of_forall_coroot'_eq_zero b (χ := χ)
+      (by intro i hi; exact hχ ⟨i, hi⟩)).mpr hlam)
+    χ hχ rfl
+
+@[simp]
+theorem weightTwistCentralTransportIso_apply {lam : X}
+    (hlam : lam ∈ dominantChamber P b)
+    (χ : X) (hχ : ∀ i : b.support, P.toLinearMap χ (P.coroot i) = 0)
+    (π : LSPath P b lam) :
+    weightTwistCentralTransportIso hlam χ hχ π =
+      centralTransport χ (by intro i hi; exact hχ ⟨i, hi⟩) π := by
+  rw [weightTwistCentralTransportIso, weightTwistCentralTransportIsoOfEq_apply,
+    centralTransportOfEq_rfl]
+
+@[simp]
+theorem weightTwistCentralTransportIso_symm_apply {lam : X}
+    (hlam : lam ∈ dominantChamber P b)
+    (χ : X) (hχ : ∀ i : b.support, P.toLinearMap χ (P.coroot i) = 0)
+    (π : LSPath P b (lam + χ)) :
+    (weightTwistCentralTransportIso hlam χ hχ).symm π =
+      centralTransportOfEq (-χ)
+        (by intro i hi; rw [map_neg, neg_eq_zero]; exact hχ ⟨i, hi⟩)
+        (add_neg_cancel_right lam χ) π :=
+  weightTwistCentralTransportIsoOfEq_symm_apply hlam _ χ hχ rfl π
+
+@[simp]
+theorem normalCrystal_f_centralTransportOfEq {lam mu : X}
+    (hlam : lam ∈ dominantChamber P b) (hmu : mu ∈ dominantChamber P b)
+    (χ : X) (hχ : ∀ i ∈ b.support, P.coroot' i χ = 0)
+    (hmu_eq : lam + χ = mu) (i : b.support) (π : LSPath P b lam) :
+    (normalCrystal hmu).f i (centralTransportOfEq χ hχ hmu_eq π) =
+      ((normalCrystal hlam).f i π).map (centralTransportOfEq χ hχ hmu_eq) := by
+  let hχ' : ∀ j : b.support, P.toLinearMap χ (P.coroot j) = 0 :=
+    by intro j; exact hχ j.1 j.2
+  simpa only [weightTwistCentralTransportIsoOfEq, NormalCrystal.StrictIso.coe_mk,
+    NormalCrystal.weightTwist_f] using
+    (weightTwistCentralTransportIsoOfEq hlam hmu χ hχ' hmu_eq).f_apply i π
+
+@[simp]
+theorem normalCrystal_ε_centralTransportOfEq {lam mu : X}
+    (hlam : lam ∈ dominantChamber P b) (hmu : mu ∈ dominantChamber P b)
+    (χ : X) (hχ : ∀ i ∈ b.support, P.coroot' i χ = 0)
+    (hmu_eq : lam + χ = mu) (i : b.support) (π : LSPath P b lam) :
+    (normalCrystal hmu).ε i (centralTransportOfEq χ hχ hmu_eq π) =
+      (normalCrystal hlam).ε i π := by
+  let hχ' : ∀ j : b.support, P.toLinearMap χ (P.coroot j) = 0 :=
+    by intro j; exact hχ j.1 j.2
+  simpa only [weightTwistCentralTransportIsoOfEq_apply, NormalCrystal.weightTwist_ε] using
+    (weightTwistCentralTransportIsoOfEq hlam hmu χ hχ' hmu_eq).ε_apply i π
+
+@[simp]
+theorem normalCrystal_φ_centralTransportOfEq {lam mu : X}
+    (hlam : lam ∈ dominantChamber P b) (hmu : mu ∈ dominantChamber P b)
+    (χ : X) (hχ : ∀ i ∈ b.support, P.coroot' i χ = 0)
+    (hmu_eq : lam + χ = mu) (i : b.support) (π : LSPath P b lam) :
+    (normalCrystal hmu).φ i (centralTransportOfEq χ hχ hmu_eq π) =
+      (normalCrystal hlam).φ i π := by
+  let hχ' : ∀ j : b.support, P.toLinearMap χ (P.coroot j) = 0 :=
+    by intro j; exact hχ j.1 j.2
+  simpa only [weightTwistCentralTransportIsoOfEq_apply, NormalCrystal.weightTwist_φ] using
+    (weightTwistCentralTransportIsoOfEq hlam hmu χ hχ' hmu_eq).φ_apply i π
+
+@[simp]
+theorem normalCrystal_f_centralTransport {lam χ : X}
+    (hlam : lam ∈ dominantChamber P b) (hlam' : lam + χ ∈ dominantChamber P b)
+    (hχ : ∀ i ∈ b.support, P.coroot' i χ = 0) (i : b.support) (π : LSPath P b lam) :
+    (normalCrystal hlam').f i (centralTransport χ hχ π) =
+      ((normalCrystal hlam).f i π).map (centralTransport χ hχ) := by
+  simpa only [centralTransportOfEq_rfl] using
+    normalCrystal_f_centralTransportOfEq hlam hlam' χ hχ rfl i π
+
+@[simp]
+theorem normalCrystal_ε_centralTransport {lam χ : X}
+    (hlam : lam ∈ dominantChamber P b) (hlam' : lam + χ ∈ dominantChamber P b)
+    (hχ : ∀ i ∈ b.support, P.coroot' i χ = 0) (i : b.support) (π : LSPath P b lam) :
+    (normalCrystal hlam').ε i (centralTransport χ hχ π) =
+      (normalCrystal hlam).ε i π := by
+  simpa only [centralTransportOfEq_rfl] using
+    normalCrystal_ε_centralTransportOfEq hlam hlam' χ hχ rfl i π
+
+@[simp]
+theorem normalCrystal_φ_centralTransport {lam χ : X}
+    (hlam : lam ∈ dominantChamber P b) (hlam' : lam + χ ∈ dominantChamber P b)
+    (hχ : ∀ i ∈ b.support, P.coroot' i χ = 0) (i : b.support) (π : LSPath P b lam) :
+    (normalCrystal hlam').φ i (centralTransport χ hχ π) =
+      (normalCrystal hlam).φ i π := by
+  simpa only [centralTransportOfEq_rfl] using
+    normalCrystal_φ_centralTransportOfEq hlam hlam' χ hχ rfl i π
 
 /-- **Equality-parameterized central-character transport isomorphism**
-`T_{λ, χ} : B(λ)^τ ≃ B(μ)^σ` whenever `λ + χ = μ` and `σ + χ = τ`, for dominant `λ`, `μ` and
+`T_{λ, χ}^σ : B(λ)^τ ≃ B(μ)^σ` whenever `λ + χ = μ` and `σ + χ = τ`, for dominant `λ`, `μ` and
 weights `χ`, `τ`, `σ` annihilating the simple coroots. -/
 noncomputable def centralTransportIsoOfEq {lam mu : X}
     (hlam : lam ∈ dominantChamber P b) (hmu : mu ∈ dominantChamber P b)
@@ -685,14 +780,17 @@ noncomputable def centralTransportIsoOfEq {lam mu : X}
     NormalCrystal.StrictIso
       ((normalCrystal hlam).weightTwist τ hτ)
       ((normalCrystal hmu).weightTwist σ hσ) where
-  toEquiv := centralTransportOfEq χ hχ hmu_eq
+  toEquiv := centralTransportOfEq χ (by intro i hi; exact hχ ⟨i, hi⟩) hmu_eq
   wt_toFun π := by
     rw [NormalCrystal.weightTwist_wt, NormalCrystal.weightTwist_wt, Equiv.toFun_as_coe,
-      normalCrystal_wt_centralTransportOfEq hlam hmu χ hχ hmu_eq π, ← hτ_eq]
+      normalCrystal_wt_centralTransportOfEq hlam hmu χ
+        (by intro i hi; exact hχ ⟨i, hi⟩) hmu_eq π,
+      ← hτ_eq]
     abel
   e_toFun i π := by
-    simp only [NormalCrystal.weightTwist_e, Equiv.toFun_as_coe,
-      normalCrystal_e_centralTransportOfEq hlam hmu χ hχ hmu_eq i π]
+    rw [NormalCrystal.weightTwist_e, NormalCrystal.weightTwist_e, Equiv.toFun_as_coe,
+      normalCrystal_e_centralTransportOfEq hlam hmu χ
+        (by intro i hi; exact hχ ⟨i, hi⟩) hmu_eq i π]
 
 @[simp]
 theorem centralTransportIsoOfEq_apply {lam mu : X}
@@ -702,27 +800,8 @@ theorem centralTransportIsoOfEq_apply {lam mu : X}
     (hσ : ∀ i : b.support, P.toLinearMap σ (P.coroot i) = 0)
     (hmu_eq : lam + χ = mu) (hτ_eq : σ + χ = τ) (π : LSPath P b lam) :
     centralTransportIsoOfEq hlam hmu χ hχ τ σ hτ hσ hmu_eq hτ_eq π =
-      centralTransportOfEq χ hχ hmu_eq π :=
+      centralTransportOfEq χ (by intro i hi; exact hχ ⟨i, hi⟩) hmu_eq π :=
   (rfl)
-
-theorem centralTransportIsoOfEq_straight {lam mu : X}
-    (hlam : lam ∈ dominantChamber P b) (hmu : mu ∈ dominantChamber P b)
-    (χ : X) (hχ : ∀ i : b.support, P.toLinearMap χ (P.coroot i) = 0)
-    (τ σ : X) (hτ : ∀ i : b.support, P.toLinearMap τ (P.coroot i) = 0)
-    (hσ : ∀ i : b.support, P.toLinearMap σ (P.coroot i) = 0)
-    (hmu_eq : lam + χ = mu) (hτ_eq : σ + χ = τ) :
-    centralTransportIsoOfEq hlam hmu χ hχ τ σ hτ hσ hmu_eq hτ_eq (straight lam) = straight mu :=
-  centralTransportOfEq_straight χ hχ hmu_eq
-
-theorem dirDurations_centralTransportIsoOfEq_apply {lam mu : X}
-    (hlam : lam ∈ dominantChamber P b) (hmu : mu ∈ dominantChamber P b)
-    (χ : X) (hχ : ∀ i : b.support, P.toLinearMap χ (P.coroot i) = 0)
-    (τ σ : X) (hτ : ∀ i : b.support, P.toLinearMap τ (P.coroot i) = 0)
-    (hσ : ∀ i : b.support, P.toLinearMap σ (P.coroot i) = 0)
-    (hmu_eq : lam + χ = mu) (hτ_eq : σ + χ = τ) (π : LSPath P b lam) :
-    (centralTransportIsoOfEq hlam hmu χ hχ τ σ hτ hσ hmu_eq hτ_eq π).dirDurations =
-      π.dirDurations := by
-  rw [centralTransportIsoOfEq_apply, dirDurations_centralTransportOfEq]
 
 /-- **Central-character transport isomorphism `T_{λ, χ}^σ : B(λ)^{σ + χ} ≃ B(λ + χ)^σ`.** For a
 dominant weight `λ` and weights `χ`, `σ` annihilating the simple coroots, `LSPath.centralTransport`
@@ -733,9 +812,11 @@ noncomputable def centralTransportIso {lam : X} (hlam : lam ∈ dominantChamber 
     (σ : X) (hσ : ∀ i : b.support, P.toLinearMap σ (P.coroot i) = 0) :
     NormalCrystal.StrictIso
       ((normalCrystal hlam).weightTwist (σ + χ) (by simp [map_add, hσ, hχ]))
-      ((normalCrystal (dominantChamber_add_of_forall_coroot_eq_zero hlam hχ)).weightTwist
-        σ hσ) :=
-  centralTransportIsoOfEq hlam (dominantChamber_add_of_forall_coroot_eq_zero hlam hχ)
+      ((normalCrystal ((P.add_mem_dominantChamber_iff_of_forall_coroot'_eq_zero b (χ := χ)
+        (by intro i hi; exact hχ ⟨i, hi⟩)).mpr hlam)).weightTwist σ hσ) :=
+  centralTransportIsoOfEq hlam
+    ((P.add_mem_dominantChamber_iff_of_forall_coroot'_eq_zero b (χ := χ)
+      (by intro i hi; exact hχ ⟨i, hi⟩)).mpr hlam)
     χ hχ (σ + χ) σ (by simp [map_add, hσ, hχ]) hσ rfl rfl
 
 /-- The underlying map of `T_{λ, χ}^σ` is `LSPath.centralTransport χ`, independent of `σ`. -/
@@ -745,52 +826,8 @@ theorem centralTransportIso_apply {lam : X} (hlam : lam ∈ dominantChamber P b)
     (σ : X) (hσ : ∀ i : b.support, P.toLinearMap σ (P.coroot i) = 0)
     (π : LSPath P b lam) :
     centralTransportIso hlam χ hχ σ hσ π =
-      centralTransport χ (fun i hi ↦ hχ ⟨i, hi⟩) π :=
-  (rfl)
-
-theorem centralTransportIso_straight {lam : X} (hlam : lam ∈ dominantChamber P b)
-    (χ : X) (hχ : ∀ i : b.support, P.toLinearMap χ (P.coroot i) = 0)
-    (σ : X) (hσ : ∀ i : b.support, P.toLinearMap σ (P.coroot i) = 0) :
-    centralTransportIso hlam χ hχ σ hσ (straight lam) = straight (lam + χ) :=
-  centralTransportOfEq_straight χ hχ rfl
-
-/-- **Action of `T_{λ, χ}^σ` on realized paths.** In any simple-coroot-compatible realization
-`(f, F)` (without assuming `f` is injective), `centralTransportIsoOfEq` acts on the realized path of
-`π` by `PLPath.shiftDistinguished` on the realized Weyl orbit `f (W λ)`. This holds uniformly even
-when `λ = 0`, `λ` lies on chamber walls or is purely central, `λ + χ = 0`, or the root system is
-empty. -/
-theorem toPLPath_centralTransportIsoOfEq_apply
-    {𝕜 V : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
-    [AddCommGroup V] [Module 𝕜 V] {f : X →+ V} {F : b.support → Dual 𝕜 V}
-    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
-    {lam mu : X} (hlam : lam ∈ dominantChamber P b) (hmu : mu ∈ dominantChamber P b)
-    (χ : X) (hχ : ∀ i : b.support, P.toLinearMap χ (P.coroot i) = 0)
-    (τ σ : X) (hτ : ∀ i : b.support, P.toLinearMap τ (P.coroot i) = 0)
-    (hσ : ∀ i : b.support, P.toLinearMap σ (P.coroot i) = 0)
-    (hmu_eq : lam + χ = mu) (hτ_eq : σ + χ = τ) (π : LSPath P b lam) :
-    (centralTransportIsoOfEq hlam hmu χ hχ τ σ hτ hσ hmu_eq hτ_eq π).toPLPath 𝕜 f =
-      PLPath.shiftDistinguished (range fun w : P.weylGroup ↦ f (w • lam)) (f χ)
-        (π.toPLPath 𝕜 f) := by
-  subst hmu_eq
-  rw [centralTransportIsoOfEq_apply, centralTransportOfEq_rfl]
-  refine toPLPath_centralTransport χ (fun i hi ↦ hχ ⟨i, hi⟩) π 𝕜 f hlam
-    (P.injOn_orbit_weylGroup_of_apply_eq_coroot' b hF lam) ?_
-  rintro _ ⟨w₁, rfl⟩ _ ⟨w₂, rfl⟩ huv
-  exact P.pairwise_not_sameRay_image_orbit_weylGroup b hF lam
-    ⟨_, ⟨w₁, rfl⟩, rfl⟩ ⟨_, ⟨w₂, rfl⟩, rfl⟩ huv
-
-theorem toPLPath_centralTransportIso_apply
-    {𝕜 V : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
-    [AddCommGroup V] [Module 𝕜 V] {f : X →+ V} {F : b.support → Dual 𝕜 V}
-    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
-    {lam : X} (hlam : lam ∈ dominantChamber P b)
-    (χ : X) (hχ : ∀ i : b.support, P.toLinearMap χ (P.coroot i) = 0)
-    (σ : X) (hσ : ∀ i : b.support, P.toLinearMap σ (P.coroot i) = 0)
-    (π : LSPath P b lam) :
-    (centralTransportIso hlam χ hχ σ hσ π).toPLPath 𝕜 f =
-      PLPath.shiftDistinguished (range fun w : P.weylGroup ↦ f (w • lam)) (f χ)
-        (π.toPLPath 𝕜 f) :=
-  toPLPath_centralTransportIsoOfEq_apply hF hlam _ χ hχ _ σ _ hσ rfl rfl π
+      centralTransport χ (by intro i hi; exact hχ ⟨i, hi⟩) π := by
+  rw [centralTransportIso, centralTransportIsoOfEq_apply, centralTransportOfEq_rfl]
 
 /-- **Identity law `T_{λ, 0}^σ = id`.** -/
 @[simp]
@@ -798,9 +835,12 @@ theorem centralTransportIsoOfEq_zero {lam : X} (hlam : lam ∈ dominantChamber P
     (σ : X) (hσ : ∀ i : b.support, P.toLinearMap σ (P.coroot i) = 0) :
     centralTransportIsoOfEq hlam hlam 0 (by simp) σ σ hσ hσ (add_zero lam) (add_zero σ) =
       NormalCrystal.StrictIso.refl ((normalCrystal hlam).weightTwist σ hσ) :=
-  NormalCrystal.StrictIso.ext fun _ ↦ dirDurations_injective (by simp)
+  NormalCrystal.StrictIso.ext fun x ↦ by
+    rw [centralTransportIsoOfEq_apply, NormalCrystal.StrictIso.refl_apply]
+    exact (DFunLike.congr_fun
+      (centralTransportOfEq_zero (by simp) (add_zero lam)) x).trans rfl
 
-/-- **Composition law `T_{μ, ψ}^σ ∘ T_{λ, χ}^ρ = T_{λ, χ + ψ}^σ`.** -/
+/-- **Composition law `T_{μ, ψ}^σ ∘ T_{λ, χ}^τ = T_{λ, χ + ψ}^σ`.** -/
 @[simp]
 theorem centralTransportIsoOfEq_trans {lam mu nu : X}
     (hlam : lam ∈ dominantChamber P b) (hmu : mu ∈ dominantChamber P b)
@@ -816,24 +856,35 @@ theorem centralTransportIsoOfEq_trans {lam mu nu : X}
       (centralTransportIsoOfEq hmu hnu ψ hψ τ σ hτ hσ hnu_eq hτ_eq) =
       centralTransportIsoOfEq hlam hnu (χ + ψ) (by simp [map_add, hχ, hψ]) ρ σ hρ hσ
         (by rw [← add_assoc, hmu_eq, hnu_eq]) (by rw [← hρ_eq, ← hτ_eq]; abel) :=
-  NormalCrystal.StrictIso.ext fun _ ↦ dirDurations_injective (by simp)
+  NormalCrystal.StrictIso.ext fun x ↦ by
+    rw [NormalCrystal.StrictIso.trans_apply, centralTransportIsoOfEq_apply,
+      centralTransportIsoOfEq_apply, centralTransportIsoOfEq_apply, ← Equiv.trans_apply]
+    exact DFunLike.congr_fun
+      (centralTransportOfEq_trans χ (by intro i hi; exact hχ ⟨i, hi⟩)
+        ψ (by intro i hi; exact hψ ⟨i, hi⟩) hmu_eq hnu_eq) x
 
 /-- **Composition law `T_{λ + χ, ψ}^σ ∘ T_{λ, χ}^{σ + ψ} = T_{λ, χ + ψ}^σ`.** -/
+@[simp]
 theorem centralTransportIso_trans {lam : X} (hlam : lam ∈ dominantChamber P b)
     (χ : X) (hχ : ∀ i : b.support, P.toLinearMap χ (P.coroot i) = 0)
     (ψ : X) (hψ : ∀ i : b.support, P.toLinearMap ψ (P.coroot i) = 0)
     (σ : X) (hσ : ∀ i : b.support, P.toLinearMap σ (P.coroot i) = 0) :
     (centralTransportIso hlam χ hχ (σ + ψ) (by simp [map_add, hσ, hψ])).trans
-      (centralTransportIso (dominantChamber_add_of_forall_coroot_eq_zero hlam hχ) ψ hψ σ hσ) =
+      (centralTransportIso
+        ((P.add_mem_dominantChamber_iff_of_forall_coroot'_eq_zero b (χ := χ)
+          (by intro i hi; exact hχ ⟨i, hi⟩)).mpr hlam)
+        ψ hψ σ hσ) =
       centralTransportIsoOfEq hlam
-        (dominantChamber_add_of_forall_coroot_eq_zero
-          (dominantChamber_add_of_forall_coroot_eq_zero hlam hχ) hψ)
+        ((P.add_mem_dominantChamber_iff_of_forall_coroot'_eq_zero b (χ := ψ)
+          (by intro i hi; exact hψ ⟨i, hi⟩)).mpr
+          ((P.add_mem_dominantChamber_iff_of_forall_coroot'_eq_zero b (χ := χ)
+            (by intro i hi; exact hχ ⟨i, hi⟩)).mpr hlam))
         (χ + ψ) (by simp [map_add, hχ, hψ])
         ((σ + ψ) + χ) σ (by simp [map_add, hσ, hψ, hχ]) hσ
         (add_assoc lam χ ψ).symm (by abel) :=
   centralTransportIsoOfEq_trans hlam _ _ χ hχ ψ hψ _ _ σ _ _ hσ rfl rfl rfl rfl
 
-/-- **Inverse law `(T_{λ, χ}^τ)⁻¹ = T_{μ, -χ}^σ`.** -/
+/-- **Inverse law `(T_{λ, χ}^σ)⁻¹ = T_{μ, -χ}^τ`.** -/
 @[simp]
 theorem centralTransportIsoOfEq_symm {lam mu : X}
     (hlam : lam ∈ dominantChamber P b) (hmu : mu ∈ dominantChamber P b)
@@ -843,23 +894,22 @@ theorem centralTransportIsoOfEq_symm {lam mu : X}
     (hmu_eq : lam + χ = mu) (hτ_eq : σ + χ = τ) :
     (centralTransportIsoOfEq hlam hmu χ hχ τ σ hτ hσ hmu_eq hτ_eq).symm =
       centralTransportIsoOfEq hmu hlam (-χ) (by simp [hχ]) σ τ hσ hτ
-        (by rw [← hmu_eq, add_neg_cancel_right]) (by rw [← hτ_eq, add_neg_cancel_right]) := by
-  apply NormalCrystal.StrictIso.ext
-  intro π
-  apply dirDurations_injective
-  have h := dirDurations_centralTransportIsoOfEq_apply hlam hmu χ hχ τ σ hτ hσ hmu_eq hτ_eq
-    ((centralTransportIsoOfEq hlam hmu χ hχ τ σ hτ hσ hmu_eq hτ_eq).symm π)
-  rw [NormalCrystal.StrictIso.apply_symm_apply] at h
-  exact h.symm.trans (by simp)
+        (by rw [← hmu_eq, add_neg_cancel_right]) (by rw [← hτ_eq, add_neg_cancel_right]) :=
+  NormalCrystal.StrictIso.ext fun x ↦ by
+    rw [← NormalCrystal.StrictIso.coe_toEquiv_symm, centralTransportIsoOfEq_apply]
+    exact DFunLike.congr_fun
+      (centralTransportOfEq_symm χ (by intro i hi; exact hχ ⟨i, hi⟩) hmu_eq) x
 
 /-- **Inverse law `(T_{λ, χ}^σ)⁻¹ = T_{λ + χ, -χ}^{σ + χ}`.** -/
+@[simp]
 theorem centralTransportIso_symm {lam : X} (hlam : lam ∈ dominantChamber P b)
     (χ : X) (hχ : ∀ i : b.support, P.toLinearMap χ (P.coroot i) = 0)
     (σ : X) (hσ : ∀ i : b.support, P.toLinearMap σ (P.coroot i) = 0) :
     (centralTransportIso hlam χ hχ σ hσ).symm =
       centralTransportIsoOfEq
-        (dominantChamber_add_of_forall_coroot_eq_zero hlam hχ) hlam
-        (-χ) (by simp [hχ]) σ (σ + χ) hσ (by simp [map_add, hσ, hχ])
+        ((P.add_mem_dominantChamber_iff_of_forall_coroot'_eq_zero b (χ := χ)
+          (by intro i hi; exact hχ ⟨i, hi⟩)).mpr hlam)
+        hlam (-χ) (by simp [hχ]) σ (σ + χ) hσ (by simp [map_add, hσ, hχ])
         (add_neg_cancel_right lam χ) (add_neg_cancel_right σ χ) :=
   centralTransportIsoOfEq_symm hlam _ χ hχ _ σ _ hσ rfl rfl
 
