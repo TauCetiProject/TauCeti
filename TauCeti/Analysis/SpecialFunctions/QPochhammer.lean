@@ -92,8 +92,10 @@ holomorphy argument is adapted from `Mathlib.NumberTheory.ModularForms.DedekindE
 * `TauCeti.differentiableOn_tprod_one_sub_pow_mul`: for `q` and `w` holomorphic on such a `U`,
   so is this product.
 * `TauCeti.qPochhammerFun`: the shifted `q`-Pochhammer product `∏_{n ≥ 0} (1 - w z^{N n + c})`,
-  together with its convergence (`TauCeti.multipliable_qPochhammerFun`), shift identities
-  (`TauCeti.qPochhammerFun_eq_one_sub_mul_tprod`, `TauCeti.qPochhammerFun_eq_mul`), asymptotics
+  together with its convergence (`TauCeti.multipliable_qPochhammerFun`), reindexing and shift
+  identities (`TauCeti.tprod_one_sub_pow_succ_mul_eq_qPochhammerFun`,
+  `TauCeti.tprod_one_sub_pow_succ_mul_inv_eq_qPochhammerFun`,
+  `TauCeti.qPochhammerFun_eq_one_sub_mul_tprod`, `TauCeti.qPochhammerFun_eq_mul`), asymptotics
   near `0` (`TauCeti.isBigO_qPochhammerFun_sub_one`), and holomorphy on the open unit disc
   (`TauCeti.differentiableOn_qPochhammerFun`, `TauCeti.analyticAt_qPochhammerFun`).
 -/
@@ -709,15 +711,35 @@ theorem qPochhammerFun_eq_mul {𝕜 : Type*} [NormedField 𝕜] [CompleteSpace �
     qPochhammerFun_def, mul_zero, zero_add]
   exact congrArg _ (tprod_congr fun k ↦ by congr 2; ring)
 
+/-- Reindexing `∏_{n ≥ 1} (1 - (z^N)^n (w z^c))` as the shifted `q`-Pochhammer product
+`qPochhammerFun N (N + c) w z`. -/
+theorem tprod_one_sub_pow_succ_mul_eq_qPochhammerFun {𝕜 : Type*} [CommRing 𝕜]
+    [TopologicalSpace 𝕜] (N c : ℕ) (w z : 𝕜) :
+    (∏' n : ℕ, (1 - (z ^ N) ^ (n + 1) * (w * z ^ c))) = qPochhammerFun N (N + c) w z := by
+  rw [qPochhammerFun_def]
+  refine tprod_congr fun n ↦ ?_
+  congr 1; rw [← pow_mul, mul_left_comm, ← pow_add]
+  exact congrArg (fun k ↦ w * z ^ k) (by ring)
+
+/-- For `c ≤ N` and `z ≠ 0`, reindexing `∏_{n ≥ 1} (1 - (z^N)^n (w z^c)⁻¹)` as the shifted
+`q`-Pochhammer product `qPochhammerFun N (N - c) w⁻¹ z`. -/
+theorem tprod_one_sub_pow_succ_mul_inv_eq_qPochhammerFun {𝕜 : Type*} [Field 𝕜]
+    [TopologicalSpace 𝕜] {N c : ℕ} (hc : c ≤ N) (w : 𝕜) {z : 𝕜} (hz : z ≠ 0) :
+    (∏' n : ℕ, (1 - (z ^ N) ^ (n + 1) * (w * z ^ c)⁻¹)) = qPochhammerFun N (N - c) w⁻¹ z := by
+  rw [qPochhammerFun_def]
+  refine tprod_congr fun n ↦ ?_
+  rw [mul_inv]; congr 1; rw [mul_left_comm]; congr 1
+  refine (mul_inv_eq_iff_eq_mul₀ (pow_ne_zero c hz)).mpr ?_
+  rw [← pow_mul, ← pow_add, add_assoc, Nat.sub_add_cancel hc]
+  exact congrArg (z ^ ·) (by ring)
+
 /-- For `0 < N` and `‖z‖ < 1`, splitting off the `n = 0` factor expresses `qPochhammerFun N c w z`
 in terms of the standard `q`-Pochhammer product `∏_{k ≥ 1} (1 - (z^N)^k (w z^c))`. -/
 theorem qPochhammerFun_eq_one_sub_mul_tprod {𝕜 : Type*} [NormedField 𝕜] [CompleteSpace 𝕜]
     {N : ℕ} (hN : 0 < N) (c : ℕ) (w : 𝕜) {z : 𝕜} (hz : ‖z‖ < 1) :
     qPochhammerFun N c w z =
       (1 - w * z ^ c) * ∏' k : ℕ, (1 - (z ^ N) ^ (k + 1) * (w * z ^ c)) := by
-  rw [qPochhammerFun_eq_mul hN c w hz, qPochhammerFun_def]
-  exact congrArg _ (tprod_congr fun k ↦ by
-    congr 1; rw [← pow_mul, mul_left_comm, ← pow_add]; congr 2; ring)
+  rw [qPochhammerFun_eq_mul hN c w hz, tprod_one_sub_pow_succ_mul_eq_qPochhammerFun]
 
 open Asymptotics Filter Topology in
 /-- For `0 < N` and `0 < c`, `qPochhammerFun N c w z - 1 = O(‖z‖ ^ c)` as `z → 0`. -/

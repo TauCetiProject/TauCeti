@@ -11,6 +11,7 @@ public import TauCeti.RingTheory.HahnSeries.Map
 import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 import Mathlib.RingTheory.RootsOfUnity.Complex
 import TauCeti.Algebra.BigOperators.Intervals
+import TauCeti.Algebra.BigOperators.ZPow
 import TauCeti.Data.ZMod.FinEquiv
 import TauCeti.LinearAlgebra.Matrix.RationalVector
 import TauCeti.NumberTheory.ModularForms.Cusps.Basic
@@ -23,12 +24,12 @@ import TauCeti.RingTheory.HahnSeries.Multiplication
 For `0 < N` and `a ∈ ℤ²`, whenever `N ∣ 6 * k` the power `g_{a/N}^{12 k}` depends only on `a mod N`
 and transforms via `a ↦ (a γ) mod N` under `γ ∈ SL₂(ℤ)`. For `k = N`, `g_{a/N}^{12 N}` expands in
 `q_N = e^{2π i τ / N}` as `q_N^{m(a)} ψ(q_N)` with `m(a) = 6 N² B₂({a₀ / N}) = 6 r₀² - 6 N r₀ + N²`
-(`r₀ = (a₀ : ZMod N).val`) and a holomorphic unit `ψ` (nonzero constant term when `a ∉ N ℤ²`). Its
-Laurent coefficients lie in `ℤ[ζ_N]` (`ζ_N = e^{2π i / N}`) and transform under `ζ_N ↦ ζ_N^d` via
-`(a₀, a₁) ↦ (a₀, d a₁)`. Consequently, every `Γ(N)`-invariant Kubert–Lang product `∏ᵢ g_{aᵢ/N}^{mᵢ}`
-is meromorphic at every cusp `γ • ∞`, and for `0 < N` and `aᵢ ∉ N ℤ²` (whenever `mᵢ ≠ 0`), any
-cusp-meromorphic product has `12 N` times its `q_N`-order at `γ • ∞` equal to
-`∑ᵢ mᵢ · 6 N² B₂({(aᵢ γ)₀ / N})`.
+(`r₀ = (a₀ : ZMod N).val`) and a holomorphic factor `ψ` (a unit at `q_N = 0` when `a ∉ N ℤ²`,
+vanishing identically when `a ∈ N ℤ²`). Its Laurent coefficients lie in `ℤ[ζ_N]`
+(`ζ_N = e^{2π i / N}`) and transform under `ζ_N ↦ ζ_N^d` via `(a₀, a₁) ↦ (a₀, d a₁)`. Consequently,
+every `Γ(N)`-invariant Kubert–Lang product `∏ᵢ g_{aᵢ/N}^{mᵢ}` is meromorphic at every cusp `γ • ∞`,
+and for `0 < N` and `aᵢ ∉ N ℤ²` (whenever `mᵢ ≠ 0`), any cusp-meromorphic product has `12 N` times
+its `q_N`-order at `γ • ∞` equal to `∑ᵢ mᵢ · 6 N² B₂({(aᵢ γ)₀ / N})`.
 
 ## Main definitions and results
 
@@ -192,30 +193,14 @@ theorem sum_siegelCuspOrder_erase_zero (N : ℕ) [NeZero N] :
     Finset.sum_const, Finset.card_range, nsmul_eq_mul]
   ring
 
-/-- The holomorphic unit factor `ψ_{N, v}(τ)` in `g_{v/N}(τ)^{12N} = q_N^{m(v)} ψ_{N, v}(τ)`. -/
+/-- The holomorphic factor `ψ_{N, v}(τ)` in `g_{v/N}(τ)^{12N} = q_N^{m(v)} ψ_{N, v}(τ)`; for
+`0 < N`, it is a unit at `q_N = 0` when `v ≠ 0` and vanishes identically when `v = 0`. -/
 private def siegelUnitFun (N : ℕ) (v : Fin 2 → ZMod N) : ℍ → ℂ :=
   let ω := cexp (2 * π * I / N) ^ (v 1).val
   (fun _ : ℍ ↦ ω ^ (6 * (v 0).val)) *
     (fun τ : ℍ ↦ 1 - ω * 𝕢 N τ ^ (v 0).val) ^ (12 * N) *
     (fun τ : ℍ ↦ qPochhammerFun N (N + (v 0).val) ω (𝕢 N τ)) ^ (12 * N) *
     (fun τ : ℍ ↦ qPochhammerFun N (N - (v 0).val) (ω ^ (N - 1)) (𝕢 N τ)) ^ (12 * N)
-
-private theorem tprod_siegel_eq_qPochhammer {N r₀ : ℕ} (hN : 0 < N) (hr₀ : r₀ ≤ N)
-    {ω : ℂ} (hωN : ω ^ N = 1) (τ : ℍ) :
-    (∏' n : ℕ, (1 - (𝕢 N τ ^ N) ^ (n + 1) * (ω * 𝕢 N τ ^ r₀))) =
-        qPochhammerFun N (N + r₀) ω (𝕢 N τ) ∧
-      (∏' n : ℕ, (1 - (𝕢 N τ ^ N) ^ (n + 1) * (ω * 𝕢 N τ ^ r₀)⁻¹)) =
-        qPochhammerFun N (N - r₀) (ω ^ (N - 1)) (𝕢 N τ) := by
-  have hω_inv : ω⁻¹ = ω ^ (N - 1) :=
-    inv_eq_of_mul_eq_one_right (by rw [← pow_succ', Nat.sub_add_cancel hN, hωN])
-  rw [qPochhammerFun_def, qPochhammerFun_def]
-  refine ⟨tprod_congr fun n ↦ ?_, tprod_congr fun n ↦ ?_⟩
-  · congr 1; rw [← pow_mul, mul_left_comm, ← pow_add]
-    exact congrArg (fun k ↦ ω * 𝕢 N (τ : ℂ) ^ k) (by ring)
-  · rw [mul_inv, hω_inv]; congr 1; rw [mul_left_comm]; congr 1
-    refine (mul_inv_eq_iff_eq_mul₀ (pow_ne_zero r₀ (Function.Periodic.qParam_ne_zero _))).mpr ?_
-    rw [← pow_mul, ← pow_add, add_assoc, Nat.sub_add_cancel hr₀]
-    exact congrArg (𝕢 N (τ : ℂ) ^ ·) (by ring)
 
 /-- Exact factorization `g_{v/N}(τ)^{12 N} = q_N^{siegelCuspOrder N v} * siegelUnitFun N v τ`. -/
 private theorem siegelFunction_zmod_pow_twelve_mul_eq {N : ℕ} [NeZero N] (v : Fin 2 → ZMod N)
@@ -228,6 +213,8 @@ private theorem siegelFunction_zmod_pow_twelve_mul_eq {N : ℕ} [NeZero N] (v : 
   have hωN : ω ^ N = 1 := by
     rw [← pow_mul, mul_comm (v 1).val N, pow_mul,
       (Complex.isPrimitiveRoot_exp N hN.ne').pow_eq_one, one_pow]
+  have hω_inv : ω⁻¹ = ω ^ (N - 1) :=
+    inv_eq_of_mul_eq_one_right (by rw [← pow_succ', Nat.sub_add_cancel hN, hωN])
   have hq1 : cexp (2 * π * I * (τ : ℂ)) = 𝕢 N τ ^ N := by
     simpa [Function.Periodic.qParam] using
       (TauCeti.Periodic.qParam_nat_mul_pow (h := 1) hN.ne' (τ : ℂ)).symm
@@ -248,8 +235,10 @@ private theorem siegelFunction_zmod_pow_twelve_mul_eq {N : ℕ} [NeZero N] (v : 
     rw [← Complex.exp_nat_mul, hexp, Complex.exp_add, Complex.exp_int_mul_two_pi_mul_I,
       mul_one, Complex.exp_nat_mul]
     simp only [ω, ← pow_mul, mul_comm (6 * (v 0).val) (v 1).val, mul_assoc]
-  obtain ⟨hp₁, hp₂⟩ := tprod_siegel_eq_qPochhammer hN (v 0).val_lt.le hωN τ
-  rw [siegelFunction_eq_mul_tprod_mul_tprod _ τ.im_pos, Complex.exp_neg, hq1, hw, hp₁, hp₂]
+  rw [siegelFunction_eq_mul_tprod_mul_tprod _ τ.im_pos, Complex.exp_neg, hq1, hw,
+    tprod_one_sub_pow_succ_mul_eq_qPochhammerFun,
+    tprod_one_sub_pow_succ_mul_inv_eq_qPochhammerFun (v 0).val_lt.le ω
+      (Function.Periodic.qParam_ne_zero _), hω_inv]
   simp only [neg_mul, neg_pow, Even.neg_one_pow (⟨6 * N, by ring⟩ : Even (12 * N)), one_mul,
     mul_pow, hB, hph, siegelUnitFun, Pi.mul_apply, Pi.pow_apply, ω]; ring
 
@@ -443,7 +432,7 @@ theorem meromorphicAt_cuspFunction_siegelFunction_div_pow_twelve_mul (N : ℕ) (
   · simp only [mul_zero, pow_zero]; exact meromorphicAt_cuspFunction_const 1
   have : NeZero N := ⟨hN⟩
   rw [siegelFunction_div_pow_twelve_mul_smul_eq_qParam_mul a γ]
-  exact meromorphicAt_cuspFunction_qParam_zpow_mul (Nat.cast_pos.mpr (NeZero.pos N)) _
+  exact meromorphicAt_cuspFunction_qParam_zpow_mul _
     (analyticAt_cuspFunction_siegelUnitFun _).meromorphicAt
 
 /-- **Cusp order of `g_{a/N}^{12 N}` at `γ • ∞`.** For `0 < N` and `a ∉ N ℤ²`, the `q_N`-order of
@@ -475,27 +464,6 @@ theorem meromorphicOrderAt_cuspFunction_siegelFunction_div_pow_twelve_mul {N : �
 
 /-! ### Cusp meromorphy and cusp orders of `Γ(N)`-invariant Siegel products -/
 
-private theorem prod_siegelFunction_filter_ne_zero {ι : Type*} (s : Finset ι) (f : ι → ℍ → ℂ)
-    (m : ι → ℤ) :
-    (fun τ : ℍ ↦ ∏ i ∈ s, f i τ ^ m i) =
-      fun τ : ℍ ↦ ∏ i ∈ s.filter (m · ≠ 0), f i τ ^ m i :=
-  funext fun _ ↦ (Finset.prod_subset (Finset.filter_subset _ s) fun i hi hni ↦ by
-    simp [show m i = 0 by simpa [hi] using hni]).symm
-
-private theorem sum_mul_filter_ne_zero {ι : Type*} (s : Finset ι) (m w : ι → ℤ) :
-    ∑ i ∈ s, m i * w i = ∑ i ∈ s.filter (m · ≠ 0), m i * w i :=
-  (Finset.sum_subset (Finset.filter_subset _ s) fun i hi hni ↦ by
-    simp [show m i = 0 by simpa [hi] using hni]).symm
-
-private theorem prod_siegelFunction_zpow_pow_twelve_mul {ι : Type*} (N : ℕ) (s : Finset ι)
-    (f : ι → ℍ → ℂ) (m : ι → ℤ) :
-    (fun τ : ℍ ↦ (∏ i ∈ s, f i τ ^ m i) ^ (12 * N)) =
-      ∏ i ∈ s, ((fun τ : ℍ ↦ f i τ ^ (12 * N)) ^ m i) :=
-  funext fun τ ↦ by
-    simp only [Finset.prod_apply, Pi.pow_apply, ← Finset.prod_pow]
-    refine Finset.prod_congr rfl fun i _ ↦ ?_
-    rw [← zpow_natCast, ← zpow_mul, mul_comm (m i), zpow_mul, zpow_natCast]
-
 private theorem meromorphicAt_cuspFunction_prod_siegelFunction_div_zpow_of_ne_zero
     {N : ℕ} [NeZero N] {ι : Type*} (s : Finset ι) (a : ι → Fin 2 → ℤ) (m : ι → ℤ)
     (ha : ∀ i ∈ s, (fun j ↦ (a i j : ZMod N)) ≠ 0)
@@ -524,7 +492,14 @@ private theorem meromorphicAt_cuspFunction_prod_siegelFunction_div_zpow_of_ne_ze
       (fun _ hδ τ ↦ prod_siegelFunction_div_zpow_smul_of_mem_Gamma s a m h₀ h₁ h₀₁ h₁₂ hδ τ) γ
   refine meromorphicAt_cuspFunction_of_pow (Nat.cast_pos.mpr (NeZero.pos N))
     (hF_mdiff.comp hγ) hper (by have := NeZero.pos N; positivity : 0 < 12 * N) ?_
-  rw [Pi.pow_def, prod_siegelFunction_zpow_pow_twelve_mul]
+  have hpow : (fun τ : ℍ ↦ F (γ • τ)) ^ (12 * N) =
+      ∏ i ∈ s, (fun τ : ℍ ↦ siegelFunction (fun j ↦ (a i j : ℝ) / N) ↑(γ • τ) ^ (12 * N)) ^
+        m i :=
+    funext fun τ ↦ by
+      simpa only [F, Pi.pow_apply, Finset.prod_apply] using
+        Finset.prod_zpow_pow s (fun i ↦ siegelFunction (fun j ↦ (a i j : ℝ) / N) ↑(γ • τ))
+          m (12 * N)
+  rw [hpow]
   exact meromorphicAt_cuspFunction_prod s fun i _ ↦
     meromorphicAt_cuspFunction_zpow
       (meromorphicAt_cuspFunction_siegelFunction_div_pow_twelve_mul N (a i) γ) (m i)
@@ -545,13 +520,17 @@ theorem meromorphicAt_cuspFunction_prod_siegelFunction_div_zpow {N : ℕ}
     ext _; simp [div_zero, ← Pi.zero_def]
   have : NeZero N := ⟨hN⟩
   set s' := s.filter (m · ≠ 0)
-  rw [prod_siegelFunction_filter_ne_zero]
+  have hprod : (fun τ : ℍ ↦ ∏ i ∈ s, siegelFunction (fun j ↦ (a i j : ℝ) / N) ↑(γ • τ) ^ m i) =
+      fun τ : ℍ ↦ ∏ i ∈ s', siegelFunction (fun j ↦ (a i j : ℝ) / N) ↑(γ • τ) ^ m i :=
+    funext fun _ ↦ by symm; exact Finset.prod_filter_of_ne fun _ _ h h0 ↦ h (by simp [h0])
+  rw [hprod]
   by_cases ha : ∀ i ∈ s', (fun j ↦ (a i j : ZMod N)) ≠ 0
-  · exact meromorphicAt_cuspFunction_prod_siegelFunction_div_zpow_of_ne_zero s' a m ha
-      (sum_mul_filter_ne_zero s m (fun i ↦ a i 0 ^ 2) ▸ h₀)
-      (sum_mul_filter_ne_zero s m (fun i ↦ a i 1 ^ 2) ▸ h₁)
-      (sum_mul_filter_ne_zero s m (fun i ↦ a i 0 * a i 1) ▸ h₀₁)
-      ((by simpa using sum_mul_filter_ne_zero s m fun _ ↦ 1) ▸ h₁₂) γ
+  · refine meromorphicAt_cuspFunction_prod_siegelFunction_div_zpow_of_ne_zero s' a m ha
+      ?_ ?_ ?_ ?_ γ
+    · rwa [Finset.sum_filter_of_ne]; exact fun _ _ h h0 ↦ h (by simp [h0])
+    · rwa [Finset.sum_filter_of_ne]; exact fun _ _ h h0 ↦ h (by simp [h0])
+    · rwa [Finset.sum_filter_of_ne]; exact fun _ _ h h0 ↦ h (by simp [h0])
+    · rwa [Finset.sum_filter_of_ne]; exact fun _ _ h ↦ h
   · obtain ⟨i₀, hi₀, hz⟩ := by push Not at ha; exact ha
     obtain ⟨t, ht⟩ := (TauCeti.exists_div_eq_intCast_iff_zmod_eq_zero (K := ℝ) hN (a i₀)).mpr hz
     convert meromorphicAt_cuspFunction_const (h := N) 0 using 2
@@ -572,11 +551,22 @@ theorem natCast_twelve_mul_mul_meromorphicOrderAt_cuspFunction_prod_siegelFuncti
       ((∑ i ∈ s, m i *
         siegelCuspOrder N (fun j ↦ ((a i ᵥ* (γ : Matrix (Fin 2) (Fin 2) ℤ)) j : ZMod N)) : ℤ) :
           WithTop ℤ) := by
-  rw [prod_siegelFunction_filter_ne_zero] at hmer ⊢
-  rw [sum_mul_filter_ne_zero]; set s' := s.filter (m · ≠ 0)
+  set s' := s.filter (m · ≠ 0)
+  have hprod : (fun τ : ℍ ↦ ∏ i ∈ s, siegelFunction (fun j ↦ (a i j : ℝ) / N) ↑(γ • τ) ^ m i) =
+      fun τ : ℍ ↦ ∏ i ∈ s', siegelFunction (fun j ↦ (a i j : ℝ) / N) ↑(γ • τ) ^ m i :=
+    funext fun _ ↦ by symm; exact Finset.prod_filter_of_ne fun _ _ h h0 ↦ h (by simp [h0])
+  rw [hprod] at hmer ⊢
+  rw [← Finset.sum_filter_of_ne (p := (m · ≠ 0)) fun _ _ h h0 ↦ h (by simp [h0])]
+  have hpow : (fun τ : ℍ ↦ (∏ i ∈ s', siegelFunction (fun j ↦ (a i j : ℝ) / N) ↑(γ • τ) ^ m i) ^
+        (12 * N)) =
+      ∏ i ∈ s', (fun τ : ℍ ↦ siegelFunction (fun j ↦ (a i j : ℝ) / N) ↑(γ • τ) ^ (12 * N)) ^
+        m i :=
+    funext fun τ ↦ by
+      simpa only [Pi.pow_apply, Finset.prod_apply] using
+        Finset.prod_zpow_pow s' (fun i ↦ siegelFunction (fun j ↦ (a i j : ℝ) / N) ↑(γ • τ))
+          m (12 * N)
   rw [← meromorphicOrderAt_pow (n := 12 * N) hmer, Pi.pow_def,
-    ← meromorphicOrderAt_congr (cuspFunction_map_eventuallyEq (· ^ (12 * N)) _),
-    prod_siegelFunction_zpow_pow_twelve_mul]
+    ← meromorphicOrderAt_congr (cuspFunction_map_eventuallyEq (· ^ (12 * N)) _), hpow]
   let g (i : ι) : meromorphicAtCuspSubring N :=
     ⟨(fun τ : ℍ ↦ siegelFunction (fun j ↦ (a i j : ℝ) / N) ↑(γ • τ) ^ (12 * N)) ^ m i,
       mem_meromorphicAtCuspSubring.mpr <| meromorphicAt_cuspFunction_zpow

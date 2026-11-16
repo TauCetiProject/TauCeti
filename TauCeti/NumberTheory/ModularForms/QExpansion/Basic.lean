@@ -71,13 +71,18 @@ expanded through: one multiplies by `q` and divides the expansion of the product
 * `TauCeti.UpperHalfPlane.analyticAt_cuspFunction_mul`,
   `TauCeti.UpperHalfPlane.meromorphicAt_cuspFunction_mul`,
   `TauCeti.UpperHalfPlane.meromorphicAt_cuspFunction_prod`,
-  `TauCeti.UpperHalfPlane.meromorphicAt_cuspFunction_of_qParam_pow_mul`, and their companions:
-  analyticity and meromorphy at `0` of cusp functions under algebraic operations and untwisting by
-  `𝕢 ^ k`.
+  `TauCeti.UpperHalfPlane.meromorphicAt_cuspFunction_of_qParam_pow_mul`,
+  `TauCeti.UpperHalfPlane.meromorphicAt_cuspFunction_of_qParam_pow_mul_isBigO`, and their
+  companions: analyticity and meromorphy at `0` of cusp functions under algebraic operations and
+  untwisting by `𝕢 ^ k`.
 * `TauCeti.UpperHalfPlane.cuspFunction_pow` and `TauCeti.UpperHalfPlane.qExpansion_pow`: powers of
   functions with analytic cusp functions.
-* `TauCeti.UpperHalfPlane.qExpansion_qParam` and `TauCeti.UpperHalfPlane.qExpansion_qParam_pow`:
-  the `q`-expansions of `q` and of its powers are `X` and its powers.
+* `TauCeti.UpperHalfPlane.periodic_qParam_comp_ofComplex`,
+  `TauCeti.UpperHalfPlane.periodic_qParam_pow_mul_comp_ofComplex`,
+  `TauCeti.UpperHalfPlane.meromorphicAt_cuspFunction_qParam_zpow`,
+  `TauCeti.UpperHalfPlane.meromorphicAt_cuspFunction_qParam_zpow_mul`,
+  `TauCeti.UpperHalfPlane.qExpansion_qParam`, and `TauCeti.UpperHalfPlane.qExpansion_qParam_pow`:
+  periodicity, cusp meromorphy of integer powers, and `q`-expansions of `q` and its powers.
 * `TauCeti.UpperHalfPlane.tendsto_div_qParam_atImInfty`: `f / q` tends to the `q`-coefficient of
   `f` when the constant coefficient vanishes.
 
@@ -155,6 +160,13 @@ theorem UpperHalfPlane.periodic_qParam_comp_ofComplex :
     simp only [coe_vadd, Function.Periodic.qParam, mul_add, add_div,
       mul_div_cancel_right₀ _ (Complex.ofReal_ne_zero.mpr hh), Complex.exp_add,
       Complex.exp_two_pi_mul_I, one_mul]
+
+/-- Twisting an `h`-periodic function by a power of the `q`-parameter preserves `h`-periodicity,
+read on `ℂ` through `ofComplex`. -/
+theorem UpperHalfPlane.periodic_qParam_pow_mul_comp_ofComplex {f : ℍ → ℂ} {k : ℕ}
+    (hper : Function.Periodic (f ∘ ofComplex) h) :
+    Function.Periodic ((fun τ : ℍ ↦ Function.Periodic.qParam h τ ^ k * f τ) ∘ ofComplex) h :=
+  ((periodic_qParam_comp_ofComplex (h := h)).comp (· ^ k)).mul hper
 
 section CuspFunction
 
@@ -373,6 +385,19 @@ theorem UpperHalfPlane.meromorphicAt_cuspFunction_of_qParam_pow_mul (hh : 0 < h)
     q h₁ hq
   simp [h₁, inv_mul_cancel_left₀ (pow_ne_zero k (Set.mem_compl_singleton_iff.mp hq))]
 
+/-- If `f` is holomorphic and `h`-periodic on `ℍ` (`h > 0`) and `𝕢 h ^ k * f` is bounded at `i∞`,
+then the cusp function of `f` is meromorphic at `0`. -/
+theorem UpperHalfPlane.meromorphicAt_cuspFunction_of_qParam_pow_mul_isBigO (hh : 0 < h)
+    (hf : MDiff f) (hper : Function.Periodic (f ∘ ofComplex) h) {k : ℕ}
+    (hbdd : (fun τ : ℍ ↦ Function.Periodic.qParam h τ ^ k * f τ) =O[atImInfty] (1 : ℍ → ℝ)) :
+    MeromorphicAt (cuspFunction h f) 0 :=
+  meromorphicAt_cuspFunction_of_qParam_pow_mul hh
+    (_root_.UpperHalfPlane.analyticAt_cuspFunction_zero hh
+      (periodic_qParam_pow_mul_comp_ofComplex hper)
+      (((Function.Periodic.differentiable_qParam.mdifferentiable.comp
+        mdifferentiable_coe).pow k).mul hf)
+      hbdd).meromorphicAt
+
 /-- The order at `0` of `q ^ k` times the cusp function of `f`. -/
 theorem UpperHalfPlane.meromorphicOrderAt_pow_mul_cuspFunction {k : ℕ}
     (hf : MeromorphicAt (cuspFunction h f) 0) :
@@ -418,6 +443,19 @@ theorem UpperHalfPlane.qExpansion_qParam_pow (hh : 0 < h) (m : ℕ) :
     qExpansion h (fun τ : ℍ ↦ Function.Periodic.qParam h τ ^ m) = PowerSeries.X ^ m := by
   rw [← Pi.pow_def (fun τ : ℍ ↦ Function.Periodic.qParam h τ) m,
     qExpansion_pow (analyticAt_cuspFunction_qParam h) m, qExpansion_qParam hh]
+
+/-- The cusp function of any integer power `𝕢 h ^ M` is meromorphic at `0`. -/
+theorem UpperHalfPlane.meromorphicAt_cuspFunction_qParam_zpow (h : ℝ) (M : ℤ) :
+    MeromorphicAt (cuspFunction h fun τ : ℍ ↦ Function.Periodic.qParam h τ ^ M) 0 :=
+  meromorphicAt_cuspFunction_zpow (analyticAt_cuspFunction_qParam h).meromorphicAt M
+
+/-- Twisting a cusp-meromorphic function by an integer power `𝕢 h ^ M` preserves cusp meromorphy
+at `0`. -/
+theorem UpperHalfPlane.meromorphicAt_cuspFunction_qParam_zpow_mul {f : ℍ → ℂ} (M : ℤ)
+    (hf : MeromorphicAt (cuspFunction h f) 0) :
+    MeromorphicAt (cuspFunction h fun τ : ℍ ↦ Function.Periodic.qParam h τ ^ M * f τ) 0 := by
+  rw [← Pi.mul_def]
+  exact meromorphicAt_cuspFunction_mul (meromorphicAt_cuspFunction_qParam_zpow h M) hf
 
 /-- A periodic function whose `q`-expansion has no constant term is asymptotic to its first
 coefficient times `q` at `i∞`: `f τ / q` tends to the coefficient of `q`. -/
