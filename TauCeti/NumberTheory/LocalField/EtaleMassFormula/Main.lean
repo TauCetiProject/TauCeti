@@ -236,12 +236,8 @@ private theorem exists_smul_of_block_eq {m : ℕ} {d : Fin m → ℕ} (ρ : Galo
       Quotient.mk'' j₂ := by
     rw [e.symm_apply_eq.1 ((hb_fib j₁).symm.trans h₁),
       e.symm_apply_eq.1 ((hb_fib j₂).symm.trans h₂)]
-  obtain ⟨g, hg⟩ := Quotient.exact' hq
-  dsimp only at hg
-  rw [GaloisSet.smul_def] at hg
-  exact ⟨g⁻¹, by
-    rw [← hg, ← Equiv.Perm.mul_apply, ← map_mul, inv_mul_cancel,
-      map_one, Equiv.Perm.one_apply]⟩
+  obtain ⟨g, hg⟩ := Quotient.exact' hq.symm
+  exact ⟨g, by simpa using hg⟩
 
 private theorem restrictBlock_eq_of_splittingBlockMap_eq {n : ℕ} {σ : Multiset (ℕ × ℕ)}
     {ρ₀ : {ρ : GaloisSet K n // ρ.splittingSymbol = σ}}

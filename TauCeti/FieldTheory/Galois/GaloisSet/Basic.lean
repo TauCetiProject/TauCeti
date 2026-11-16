@@ -345,13 +345,7 @@ theorem restrictBlock_val_apply {ι : Type*} {d : ι → ℕ} (ρ : GaloisSet K 
       Equiv.sigmaSubtype i
         ⟨b (ρ.val σ (b.symm ⟨i, x⟩)),
           (hb σ (b.symm ⟨i, x⟩)).trans (by rw [b.apply_symm_apply])⟩ := by
-  dsimp only [restrictBlock, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    Equiv.permCongrHom_coe, Equiv.permCongr_apply, Equiv.trans_apply, Equiv.symm_trans_apply]
-  congr 1
-  apply Subtype.ext
-  simp only [Equiv.subtypeEquiv_symm, Equiv.subtypeEquiv_apply, Pi.evalMonoidHom_apply,
-    fiberSubgroupMulEquivPiPerm_apply_coe]
-  rfl
+  simp [restrictBlock, Equiv.sigmaSubtype]
 
 /-- Reassembling the block restrictions of `ρ` along `b` recovers `ρ`. -/
 @[simp]

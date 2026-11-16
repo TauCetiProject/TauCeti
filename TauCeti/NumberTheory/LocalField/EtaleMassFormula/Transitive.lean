@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.LocalField.EtaleMassFormula.Relabelling
+public import TauCeti.FieldTheory.Galois.GaloisSet.Relabelling
+public import TauCeti.NumberTheory.LocalField.EtaleMassFormula.Mass
 public import TauCeti.NumberTheory.LocalField.EtaleMassFormula.SubfieldCount
 import Mathlib.Tactic.FieldSimp
 import TauCeti.Algebra.BigOperators.Group.Finset.Defs
@@ -88,6 +89,7 @@ theorem orbitSymbol_of_mk_eq (ρ : GaloisSet K n)
   rw [inertiaDegree_fixedField_stabilizer_out K hj, finrank_fixedField_stabilizer_out K hj]
 
 /-- On the orbit of `j`, `GaloisSet.orbitSymbol` reads the fixed field of the stabilizer of `j`. -/
+@[simp]
 theorem orbitSymbol_mk (ρ : GaloisSet K n) (j : Fin n) :
     let := ρ.mulAction
     ρ.orbitSymbol (Quotient.mk'' j) =
@@ -393,12 +395,15 @@ private theorem tsum_splittingSymbol_singleton_eq_tsum_finrank {f e : ℕ}
     · exact (congrArg (fun d ↦ 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ d)
         (ρ.1.discriminantExponent_of_isTransitive ρ.2 i₀)).symm
     · rfl
-  refine (E₁.tsum_eq fun ρ ↦
-      1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ρ.1.1.discriminantExponent).trans ?_
-  refine ((tsum_subtype S fun ρ : {ρ : GaloisSet K (f * e) // ρ.IsTransitive} ↦
-      1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ρ.1.discriminantExponent).trans ?_).trans
-    (GaloisSet.tsum_isTransitive i₀ g)
-  exact congrArg tsum hind.symm
+  have hE₁ : ∀ ρ, (E₁ ρ).1.1 = ρ.1 := fun ρ ↦ by
+    dsimp only [E₁]
+    rw [Equiv.trans_apply, Equiv.subtypeSubtypeEquivSubtypeInter_symm_apply_coe_coe,
+      Equiv.subtypeEquivRight_apply_coe]
+  rw [tsum_congr fun ρ ↦ by rw [← hE₁ ρ],
+    E₁.tsum_eq fun ρ ↦ 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ρ.1.1.discriminantExponent,
+    tsum_subtype S fun ρ : {ρ : GaloisSet K (f * e) // ρ.IsTransitive} ↦
+      1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ρ.1.discriminantExponent,
+    ← hind, GaloisSet.tsum_isTransitive i₀ g]
 
 /-- Summing the inertia-degree-`f` discriminant weight over degree-`f * e` subextensions evaluates
 via `tsum_inertiaDegree_eq`. -/
@@ -407,27 +412,27 @@ private theorem tsum_finrank_inertiaDegree_indicator {f e : ℕ} (hf : 0 < f) :
         (if L.1.inertiaDegree = f then
           1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.1.discriminantExponent else 0) =
       (e : ℝ≥0∞) / (Nat.card 𝓀[K] : ℝ≥0∞) ^ (f * (e - 1)) := by
+  let S₂ : Set {L : IntermediateField K (SeparableClosure K) // Module.finrank K L = f * e} :=
+    {L | L.1.inertiaDegree = f}
   let E₂ : {L : IntermediateField K (SeparableClosure K) // Module.finrank K L = f * e ∧
-      L.inertiaDegree = f} ≃
-      {L : {L : IntermediateField K (SeparableClosure K) // Module.finrank K L = f * e} //
-        L.1.inertiaDegree = f} :=
+      L.inertiaDegree = f} ≃ S₂ :=
     (Equiv.subtypeSubtypeEquivSubtypeInter _ _).symm
   have hind :
       (fun L : {L : IntermediateField K (SeparableClosure K) // Module.finrank K L = f * e} ↦
         if L.1.inertiaDegree = f then
           1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.1.discriminantExponent else 0) =
-      Set.indicator
-        {L : {L : IntermediateField K (SeparableClosure K) // Module.finrank K L = f * e} |
-          L.1.inertiaDegree = f}
-        (fun L ↦ 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.1.discriminantExponent) := by
+      S₂.indicator (fun L ↦ 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.1.discriminantExponent) := by
     ext L
-    dsimp [Set.indicator]
+    dsimp [S₂, Set.indicator]
     split_ifs <;> rfl
-  rw [hind, ← tsum_subtype _ fun L : {L : IntermediateField K (SeparableClosure K) //
+  have hE₂ : ∀ L, (E₂ L).1.1 = L.1 := fun L ↦
+    Equiv.subtypeSubtypeEquivSubtypeInter_symm_apply_coe_coe _ _ L
+  rw [hind, ← tsum_subtype S₂ fun L : {L : IntermediateField K (SeparableClosure K) //
       Module.finrank K L = f * e} ↦
-    1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.1.discriminantExponent]
-  exact (E₂.tsum_eq fun L ↦ 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.1.1.discriminantExponent).symm.trans
-    (tsum_inertiaDegree_eq (K := K) hf.ne' e)
+    1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.1.discriminantExponent,
+    ← E₂.tsum_eq fun L ↦ 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.1.1.discriminantExponent]
+  simp_rw [hE₂]
+  exact tsum_inertiaDegree_eq (K := K) hf.ne' e
 
 private theorem ennreal_factorial_mul_cancel {f e : ℕ} (hf : 0 < f) (he : 0 < e) :
     ((f * e)! : ℝ≥0∞)⁻¹ * (((f * e - 1)! : ℝ≥0∞) * (e : ℝ≥0∞)) = (f : ℝ≥0∞)⁻¹ := by

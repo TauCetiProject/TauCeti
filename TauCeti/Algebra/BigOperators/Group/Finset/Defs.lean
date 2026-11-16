@@ -19,11 +19,10 @@ public section
 namespace Finset
 
 /-- Summing singleton multisets `{g a}` over `a ∈ s` produces `s.val.map g`. -/
+@[simp]
 theorem sum_multiset_map_singleton {ι β : Type*} (s : Finset ι) (g : ι → β) :
     ∑ a ∈ s, ({g a} : Multiset β) = s.val.map g := by
-  rw [sum_eq_multiset_sum,
-    show (fun a ↦ ({g a} : Multiset β)) = (fun b ↦ ({b} : Multiset β)) ∘ g from
-      funext fun _ ↦ (Function.comp_apply).symm,
-    ← Multiset.map_map, Multiset.sum_map_singleton]
+  rw [sum_eq_multiset_sum, ← Multiset.sum_map_singleton (s.val.map g), Multiset.map_map,
+    Function.comp_def]
 
 end Finset
