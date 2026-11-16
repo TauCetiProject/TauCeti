@@ -13,6 +13,7 @@ import TauCeti.Analysis.InnerProductSpace.Orientation
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
 import TauCeti.Geometry.Symplectic.Complex.OrthonormalBasis
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
+import TauCeti.LinearAlgebra.ExteriorPower.Square
 import TauCeti.LinearAlgebra.Matrix.Determinant.FinFour
 
 /-!
@@ -265,11 +266,7 @@ theorem lieMap_ιMulti_apply {W : Type*} [AddCommGroup W] [Module ℝ W]
   have h : ∀ x : W, ιMulti ℝ 2 ![x, x] = 0 := fun x ↦
     (ιMulti ℝ 2).map_eq_zero_of_eq _ (i := 0) (j := 1) (by simp) (by decide)
   have h' : ∀ x : W, ιMulti ℝ 2 ![x, -x] = 0 := fun x ↦ by
-    have := (ιMulti ℝ 2).map_update_neg ![x, x] 1 x
-    have e : ∀ y : W, Function.update ![x, x] 1 y = ![x, y] := fun y ↦ by
-      ext i; fin_cases i <;> simp
-    rw [e, e] at this
-    simpa [h x] using this
+    rw [← neg_one_smul ℝ x, ιMulti_two_smul_right, h, smul_zero]
   rw [lieMap_two_apply_ιMulti]
   simp [AlmostComplexStructure.apply_apply, h, h']
 
