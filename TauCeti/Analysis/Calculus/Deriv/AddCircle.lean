@@ -34,8 +34,8 @@ the derivative of a lift is a Lipschitz constant of the circle map for the quoti
 
 ## Main declarations
 
-* `AddCircle.periodic_deriv_of_lift`, `AddCircle.periodic_deriv_lift`: the derivative of a lift,
-  or more generally of any `F` with `F (x + T) = F x + c`, is `T`-periodic.
+* `AddCircle.periodic_deriv_of_lift`, `AddCircle.periodic_of_hasDerivAt_of_lift`: the derivative
+  of a lift, or more generally of any `F` with `F (x + T) = F x + c`, is `T`-periodic.
 * `AddCircle.derivOfLift`: the derivative `F'` of a lift, as a continuous complex function on the
   circle; it is smooth when `F'` is (`AddCircle.contDiff_derivOfLift`).
 * `AddCircle.hasDerivAt_add_mul_sub`, `AddCircle.one_sub_add_mul_pos`: for a weight
@@ -63,22 +63,22 @@ variable {T : ℝ} {F F' : ℝ → ℝ}
 /-- The derivative of a function `F` with `F (x + T) = F x + c`, such as a lift (`c = T`), is
 `T`-periodic. This holds without any differentiability hypothesis, since `deriv` takes its junk
 value `0` at the same points of each period. -/
-theorem periodic_deriv_lift {c : ℝ} (hper : ∀ x, F (x + T) = F x + c) :
+theorem periodic_deriv_of_lift {c : ℝ} (hper : ∀ x, F (x + T) = F x + c) :
     Function.Periodic (deriv F) T :=
   fun x ↦ by rw [← deriv_comp_add_const, funext hper, deriv_add_const]
 
 /-- The derivative `F'` of a function `F` with `F (x + T) = F x + c`, such as a lift (`c = T`), is
 `T`-periodic. -/
-theorem periodic_deriv_of_lift {c : ℝ} (hF : ∀ x, HasDerivAt F (F' x) x)
+theorem periodic_of_hasDerivAt_of_lift {c : ℝ} (hF : ∀ x, HasDerivAt F (F' x) x)
     (hper : ∀ x, F (x + T) = F x + c) : Function.Periodic F' T :=
-  funext (fun x ↦ (hF x).deriv) ▸ periodic_deriv_lift hper
+  funext (fun x ↦ (hF x).deriv) ▸ periodic_deriv_of_lift hper
 
 /-- The derivative `F'` of a lift `F`, `F (x + T) = F x + T`, regarded as a continuous complex
 function on the circle; it is well defined since `F'` is `T`-periodic
-(`AddCircle.periodic_deriv_of_lift`). -/
+(`AddCircle.periodic_of_hasDerivAt_of_lift`). -/
 noncomputable def derivOfLift (hF : ∀ x, HasDerivAt F (F' x) x)
     (hper : ∀ x, F (x + T) = F x + T) (hF'c : Continuous F') : C(AddCircle T, ℂ) where
-  toFun z := ((periodic_deriv_of_lift hF hper).lift z : ℂ)
+  toFun z := ((periodic_of_hasDerivAt_of_lift hF hper).lift z : ℂ)
   continuous_toFun :=
     (QuotientAddGroup.isQuotientMap_mk _).continuous_iff.2 (Complex.continuous_ofReal.comp hF'c)
 
@@ -132,7 +132,7 @@ derivative in some `[c, M]` with `0 < c`. -/
 theorem exists_pos_le_deriv_le_of_lift (hF : ∀ x, HasDerivAt F (F' x) x)
     (hper : ∀ x, F (x + T) = F x + T) (hF' : Continuous F') (hpos : ∀ x, 0 < F' x) :
     ∃ c M : ℝ, 0 < c ∧ (∀ x, c ≤ F' x) ∧ ∀ x, F' x ≤ M := by
-  have hK := (periodic_deriv_of_lift hF hper).compact_of_continuous hT.out.ne' hF'
+  have hK := (periodic_of_hasDerivAt_of_lift hF hper).compact_of_continuous hT.out.ne' hF'
   obtain ⟨_, ⟨x₀, rfl⟩, hmin⟩ := hK.exists_isLeast (Set.range_nonempty F')
   obtain ⟨M, hM⟩ := hK.isBounded.bddAbove
   exact ⟨F' x₀, M, hpos x₀, fun x ↦ hmin ⟨x, rfl⟩, fun x ↦ hM ⟨x, rfl⟩⟩
