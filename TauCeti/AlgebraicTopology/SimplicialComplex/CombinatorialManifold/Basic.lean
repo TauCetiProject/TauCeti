@@ -222,49 +222,35 @@ theorem IsCombinatorialSphere.ne_bot (h : IsCombinatorialSphere K n) : K ≠ ⊥
   rw [dimension_simplexBoundary (by omega), hV] at hdim
   norm_num at hdim
 
-/-- If starring `σ` at a fresh vertex `v` yields a combinatorial ball, the original precomplex was
-already a combinatorial ball. -/
-theorem IsCombinatorialBall.of_stellarSubdivision {σ : Finset ι} (hv : ({v} : Finset ι) ∉ K)
-    (h : IsCombinatorialBall (PreAbstractSimplicialComplex.stellarSubdivision K σ v) n) :
-    IsCombinatorialBall K n := by
-  rcases σ.eq_empty_or_nonempty with rfl | hσne
-  · rw [stellarSubdivision_empty] at h
-    exact (h.ne_bot rfl).elim
-  · by_cases hσ : σ ∈ K
-    · exact (stellarEquivalent_stellarSubdivision hσ hv).isCombinatorialBall_iff.mpr h
-    · rwa [stellarSubdivision_eq_self_of_notMem hv hσne hσ] at h
-
-/-- If starring `σ` at a fresh vertex `v` yields a combinatorial sphere, the original precomplex
-was already a combinatorial sphere. -/
-theorem IsCombinatorialSphere.of_stellarSubdivision {σ : Finset ι} (hv : ({v} : Finset ι) ∉ K)
-    (h : IsCombinatorialSphere (PreAbstractSimplicialComplex.stellarSubdivision K σ v) n) :
-    IsCombinatorialSphere K n := by
-  rcases σ.eq_empty_or_nonempty with rfl | hσne
-  · rw [stellarSubdivision_empty] at h
-    exact (h.ne_bot rfl).elim
-  · by_cases hσ : σ ∈ K
-    · exact (stellarEquivalent_stellarSubdivision hσ hv).isCombinatorialSphere_iff.mpr h
-    · rwa [stellarSubdivision_eq_self_of_notMem hv hσne hσ] at h
-
 /-- Starring a nonempty finset at a fresh vertex preserves and reflects combinatorial balls. -/
 theorem IsCombinatorialBall.stellarSubdivision_iff {σ : Finset ι} (hσne : σ.Nonempty)
     (hv : ({v} : Finset ι) ∉ K) :
     IsCombinatorialBall (PreAbstractSimplicialComplex.stellarSubdivision K σ v) n ↔
-      IsCombinatorialBall K n := by
-  refine ⟨IsCombinatorialBall.of_stellarSubdivision hv, fun hK => ?_⟩
-  by_cases hσ : σ ∈ K
-  · exact hK.stellarSubdivision hσ hv
-  · rwa [stellarSubdivision_eq_self_of_notMem hv hσne hσ]
+      IsCombinatorialBall K n :=
+  (stellarEquivalent_stellarSubdivision_of_nonempty hσne hv).symm.isCombinatorialBall_iff
 
 /-- Starring a nonempty finset at a fresh vertex preserves and reflects combinatorial spheres. -/
 theorem IsCombinatorialSphere.stellarSubdivision_iff {σ : Finset ι} (hσne : σ.Nonempty)
     (hv : ({v} : Finset ι) ∉ K) :
     IsCombinatorialSphere (PreAbstractSimplicialComplex.stellarSubdivision K σ v) n ↔
-      IsCombinatorialSphere K n := by
-  refine ⟨IsCombinatorialSphere.of_stellarSubdivision hv, fun hK => ?_⟩
-  by_cases hσ : σ ∈ K
-  · exact hK.stellarSubdivision hσ hv
-  · rwa [stellarSubdivision_eq_self_of_notMem hv hσne hσ]
+      IsCombinatorialSphere K n :=
+  (stellarEquivalent_stellarSubdivision_of_nonempty hσne hv).symm.isCombinatorialSphere_iff
+
+/-- If starring `σ` at a fresh vertex `v` yields a combinatorial ball, the original precomplex was
+already a combinatorial ball. -/
+theorem IsCombinatorialBall.of_stellarSubdivision {σ : Finset ι} (hv : ({v} : Finset ι) ∉ K)
+    (h : IsCombinatorialBall (PreAbstractSimplicialComplex.stellarSubdivision K σ v) n) :
+    IsCombinatorialBall K n :=
+  σ.eq_empty_or_nonempty.elim (fun h0 => (h.ne_bot (h0 ▸ stellarSubdivision_empty K v)).elim)
+    fun hσne => (IsCombinatorialBall.stellarSubdivision_iff hσne hv).mp h
+
+/-- If starring `σ` at a fresh vertex `v` yields a combinatorial sphere, the original precomplex
+was already a combinatorial sphere. -/
+theorem IsCombinatorialSphere.of_stellarSubdivision {σ : Finset ι} (hv : ({v} : Finset ι) ∉ K)
+    (h : IsCombinatorialSphere (PreAbstractSimplicialComplex.stellarSubdivision K σ v) n) :
+    IsCombinatorialSphere K n :=
+  σ.eq_empty_or_nonempty.elim (fun h0 => (h.ne_bot (h0 ▸ stellarSubdivision_empty K v)).elim)
+    fun hσne => (IsCombinatorialSphere.stellarSubdivision_iff hσne hv).mp h
 
 /-! ### Combinatorial manifolds -/
 
