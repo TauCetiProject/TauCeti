@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.LFunctions.Theta.GammaIntegral
 public import TauCeti.NumberTheory.LFunctions.Theta.Mellin.Kernel
 public import TauCeti.NumberTheory.LFunctions.Theta.Surface.Cone
 
@@ -17,6 +18,10 @@ the cone. Absolute integrability of that cone integral is an explicit hypothesis
 variables does not perform the separate arithmetic unfolding of unit orbits. In particular it
 does not identify a radial lattice-point sum with a partial zeta function.
 
+The unfolding of one unit orbit is recorded separately: for a point `x` of nonzero norm, the
+cone integrals of the Gaussians of the unit multiples `u x` against `N(y)^(s/2)` sum to `w` times
+the full gamma integral of `x` (`hasSum_integral_unitCone_archGaussian_unit_smul`).
+
 ## References
 
 * J. Neukirch, *Algebraic Number Theory*, Chapter VII, §5, (5.5).
@@ -25,7 +30,8 @@ does not identify a radial lattice-point sum with a partial zeta function.
 public section
 noncomputable section
 
-open MeasureTheory Set NumberField NumberField.InfinitePlace NumberField.mixedEmbedding
+open Complex MeasureTheory Set NumberField NumberField.InfinitePlace NumberField.mixedEmbedding
+  NumberField.Units
 
 namespace TauCeti.LFunctions
 
@@ -66,5 +72,23 @@ theorem hasMellin_mellinKernel_sub {D : Set (realSpace K)} (hDm : MeasurableSet 
   rw [hscaled.2, Complex.ofReal_inv, Complex.inv_cpow_ofReal_nonneg (sq_nonneg _),
     Complex.cpow_neg, inv_inv] at hc
   simpa only [c, smul_eq_mul, Complex.ofReal_pow, mul_assoc] using hc
+
+/-! ### The unit orbit of one point -/
+
+variable {D : Set (realSpace K)} {s : ℂ}
+
+/-- **The unit orbit of a point.** For `x` of nonzero norm and `0 < Re s`, the integrals of the
+Gaussians of the unit multiples `u x` against `N(y)^(s/2) dy / y` over the cone above a unit
+fundamental domain sum to `w` times the full gamma integral `Γ_ℝ(s)^r₁ Γ_ℝ(2s)^r₂ |N(x)|^(-s)`. -/
+theorem hasSum_integral_unitCone_archGaussian_unit_smul (hD : IsUnitFundamentalDomain K D)
+    {x : mixedSpace K} (hx : mixedEmbedding.norm x ≠ 0) (hs : 0 < s.re) :
+    HasSum (fun u : (𝓞 K)ˣ ↦
+        ∫ y in unitCone D, archGaussian y (u • x) * (archNorm y : ℂ) ^ (s / 2) ∂archHaar K)
+      (torsionOrder K * (Gammaℝ s ^ nrRealPlaces K * Gammaℝ (2 * s) ^ nrComplexPlaces K *
+        (mixedEmbedding.norm x : ℂ) ^ (-s))) := by
+  have h := hD.hasSum_integral_unitCone_unitScale
+    (integrable_archGaussian_mul_archNorm_cpow hx hs)
+  rw [integral_archGaussian_mul_archNorm_cpow hx hs, nsmul_eq_mul] at h
+  exact h.congr_fun fun u ↦ by simp only [archGaussian_unit_smul, archNorm_unitScale]
 
 end TauCeti.LFunctions
