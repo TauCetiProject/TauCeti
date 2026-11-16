@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Vortex.GaugeFixed
+public import TauCeti.Analysis.PDE.Vortex.Gauge.Fixed
 public import TauCeti.Analysis.Complex.Wirtinger.Basic
 public import Mathlib.MeasureTheory.Function.L2Space
 public import TauCeti.Analysis.Distribution.Sobolev

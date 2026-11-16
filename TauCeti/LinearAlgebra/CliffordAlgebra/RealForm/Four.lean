@@ -191,7 +191,7 @@ noncomputable def realCliffordFourZeroEvenEquivQuaternionProd :
 its discriminant quadratic algebra, is the split algebra `ℝ × ℝ`. -/
 noncomputable def realCliffordFourZeroCenterEvenEquivProd :
     Subalgebra.center ℝ (CliffordAlgebra.even (realCliffordForm 4 0)) ≃ₐ[ℝ] ℝ × ℝ :=
-  (centerCongr realCliffordFourZeroEvenEquivQuaternionProd).trans
+  (Subalgebra.centerCongr realCliffordFourZeroEvenEquivQuaternionProd).trans
     (centerProdAlgEquivOfIsCentral ℝ ℍ[ℝ] ℍ[ℝ])
 
 /-- The inverse of the compact centre equivalence sends a pair of reals to the even Clifford

@@ -30,6 +30,10 @@ variables: if `g` decays rapidly on a cone around `a ζ₀ ≠ 0`, then `g (a ζ
 on the cone of those `ζ` with `a ζ` in that cone and `‖b ζ‖ < c ‖a ζ‖`. This is how the localized
 Fourier transform of a tensor product inherits the decay of one of its factors.
 
+In a proper space, if every unit vector lies in an open cone, finitely many of these cones cover
+the nonzero vectors, by compactness of the unit sphere. This is how conditions imposed direction by
+direction combine into one condition on the whole frequency space.
+
 ## Main results
 
 * `IsOpen.exists_cone_closedBall_subset`: an open cone `Γ` containing `ξ` contains a smaller open
@@ -40,6 +44,8 @@ Fourier transform of a tensor product inherits the decay of one of its factors.
 * `TauCeti.exists_cone_decay_mul`: if `g` decays rapidly on an open cone around `a ζ₀ ≠ 0` and `h`
   grows at most polynomially, then `ζ ↦ g (a ζ) * h (b ζ)` decays rapidly on an open cone around
   `ζ₀`, provided `‖ζ‖ ≤ ‖a ζ‖ + ‖b ζ‖`.
+* `TauCeti.exists_finset_compl_singleton_subset_biUnion`: if every unit vector lies in an open
+  cone, finitely many of these cones cover the nonzero vectors.
 
 ## References
 
@@ -215,5 +221,23 @@ theorem exists_cone_decay_mul {X A B 𝕜 : Type*} [NormedField 𝕜] [NormedAdd
           rw [mul_pow, mul_pow, pow_add, pow_add]
           ring
       _ ≤ (1 + c) ^ (N + k) * C₀ * C := by gcongr; exact hC _ h₁
+
+
+/-- **Finitely many open cones cover the nonzero vectors.** If every unit vector `ξ` of a proper
+real normed space lies in an open set `Γ ξ` closed under multiplication by positive reals, then
+finitely many of these cones cover every nonzero vector: the unit sphere is compact. -/
+theorem exists_finset_compl_singleton_subset_biUnion [NormedSpace ℝ E] [ProperSpace E]
+    {Γ : sphere (0 : E) 1 → Set E} (hΓ : ∀ ξ, IsOpen (Γ ξ)) (hξΓ : ∀ ξ, (ξ : E) ∈ Γ ξ)
+    (hcone : ∀ ξ, ∀ t : ℝ, 0 < t → ∀ η ∈ Γ ξ, t • η ∈ Γ ξ) :
+    ∃ t : Finset (sphere (0 : E) 1), {0}ᶜ ⊆ ⋃ ξ ∈ t, Γ ξ := by
+  obtain ⟨t, ht⟩ := (isCompact_sphere (0 : E) 1).elim_finite_subcover Γ hΓ
+    fun ζ hζ ↦ mem_iUnion.2 ⟨⟨ζ, hζ⟩, hξΓ _⟩
+  refine ⟨t, fun η hη ↦ ?_⟩
+  -- The direction of `η` lies in one of the finitely many cones, hence so does `η`.
+  have hη' : 0 < ‖η‖ := norm_pos_iff.2 hη
+  obtain ⟨ξ, hξt, hηξ⟩ := mem_iUnion₂.1 (ht (show ‖η‖⁻¹ • η ∈ sphere (0 : E) 1 by
+    simp [norm_smul, inv_mul_cancel₀ hη'.ne']))
+  exact mem_iUnion₂.2 ⟨ξ, hξt, by
+    simpa [smul_smul, mul_inv_cancel₀ hη'.ne'] using hcone ξ ‖η‖ hη' _ hηξ⟩
 
 end TauCeti

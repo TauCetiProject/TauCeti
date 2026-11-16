@@ -30,6 +30,8 @@ to define the Riemannian exponential map by evaluation at time one.
   defined maximal domains.
 * `TauCeti.Manifold.isGeodesicCurveOnFrom_maximalGeodesic` gives the geodesic equation and initial
   data on the maximal domain.
+* `TauCeti.Manifold.curveVelocity_maximalGeodesic_zero` gives the prescribed initial velocity
+  at zero.
 * `TauCeti.Manifold.IsGeodesicCurveOnFrom.eqOn_maximalGeodesic` is the corresponding uniqueness
   theorem for any open-interval geodesic witness.
 * `TauCeti.Manifold.IsGeodesicCurveOnFrom.eq_maximalGeodesic_of_univ` specializes uniqueness to
@@ -82,6 +84,14 @@ the geodesic spray. -/
 theorem maximalGeodesic_def (p : M) (v : TangentSpace I p) (t : ℝ) :
     maximalGeodesic I M p v t =
       (maximalIntegralCurve (geodesicSpray I M) (TotalSpace.mk' E p v) t).proj := by
+  rfl
+
+/-- Maximal geodesics from equal base points with equal initial vectors agree. Both tangent spaces
+are the model space, so the initial vectors are compared there. -/
+theorem maximalGeodesic_congr {q p : M} (h : q = p) {w : TangentSpace I q}
+    {v : TangentSpace I p} (hw : (w : E) = v) (t : ℝ) :
+    maximalGeodesic I M q w t = maximalGeodesic I M p v t := by
+  subst h hw
   rfl
 
 variable [I.Boundaryless]
@@ -173,6 +183,15 @@ omit [I.Boundaryless] [T2Space M] in
 @[simp] theorem maximalGeodesic_zero (p : M) (v : TangentSpace I p) :
     maximalGeodesic I M p v 0 = p := by
   rw [maximalGeodesic, maximalIntegralCurve_zero]
+
+/-- The velocity of a maximal geodesic at zero is its prescribed initial velocity. -/
+@[simp]
+theorem curveVelocity_maximalGeodesic_zero (p : M) (v : TangentSpace I p) :
+    curveVelocity I (maximalGeodesic I M p v) 0 = v := by
+  have hv := (isGeodesicCurveOnFrom_maximalGeodesic (I := I) (M := M) p v).velocity_heq
+  rw [curveVelocityWithin_of_mem_nhds (isOpen_geodesicInterval.mem_nhds
+    (zero_mem_geodesicInterval (I := I) (M := M) (p := p) (v := v)))] at hv
+  exact eq_of_heq hv
 
 /-- Every geodesic with initial data `(p, v)` on an open interval around zero agrees there with
 the maximal geodesic. -/

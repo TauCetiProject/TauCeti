@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.Ideal.Quotient.Defs
 public import Mathlib.RingTheory.Spectrum.Maximal.Defs
 import Mathlib.RingTheory.Ideal.MinimalPrime.Noetherian
 import Mathlib.RingTheory.Ideal.Quotient.Operations
+import TauCeti.RingTheory.Length
 
 /-!
 # Maximal ideals over an ideal with semilocal quotient
@@ -52,3 +53,27 @@ theorem finite_setOfPred_isMaximal_and_le_of_ne_bot {R : Type*} [CommRing R] [Is
     mem_minimalPrimes_of_ne_bot h𝔞 h𝔞P
 
 end Ideal
+
+namespace TauCeti
+
+/-- A maximal ideal of `B` containing `b` is the preimage of a maximal ideal of `B ⧸ bB`. -/
+theorem exists_maximalSpectrum_comap_mk_eq {B : Type*} [CommRing B] {b : B}
+    {m : MaximalSpectrum B} (hbm : b ∈ m.asIdeal) :
+    ∃ q : MaximalSpectrum (B ⧸ Ideal.span {b}),
+      q.asIdeal.comap (Ideal.Quotient.mk _) = m.asIdeal := by
+  have hle : Ideal.span {b} ≤ m.asIdeal := (Ideal.span_singleton_le_iff_mem _).2 hbm
+  exact ⟨⟨_, Ideal.IsMaximal.map_of_surjective_of_ker_le Ideal.Quotient.mk_surjective
+    (by rwa [Ideal.mk_ker])⟩, Ideal.comap_map_mk hle⟩
+
+/-- For a domain `B` finite over a Noetherian domain `A` of dimension at most one, a nonzero
+`b : B` lies in only finitely many maximal ideals of `B`. -/
+theorem finite_setOf_mem_maximalSpectrum (A : Type*) {B : Type*} [CommRing A] [IsDomain A]
+    [IsNoetherianRing A] [Ring.KrullDimLE 1 A] [CommRing B] [IsDomain B] [Algebra A B]
+    [Module.Finite A B] {b : B} (hb : b ≠ 0) :
+    {m : MaximalSpectrum B | b ∈ m.asIdeal}.Finite := by
+  have := isArtinianRing_quotient_span_singleton A hb
+  have h := ((Ideal.span {b}).finite_setOfPred_isMaximal_and_le).preimage
+      (f := MaximalSpectrum.asIdeal) (fun _ _ _ _ h ↦ MaximalSpectrum.ext h)
+  exact h.subset fun m hm ↦ ⟨m.isMaximal, (Ideal.span_singleton_le_iff_mem _).2 hm⟩
+
+end TauCeti

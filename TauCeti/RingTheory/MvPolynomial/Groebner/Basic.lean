@@ -17,11 +17,12 @@ multivariate polynomials, and Gröbner bases of an ideal, and proves that remain
 a Gröbner basis decide ideal membership.
 
 * `MonomialOrder.IsRemainder m f B r`: `r` is a remainder of `f` on division by `B`, i.e.
-  `f = ∑ g_b * b + r` where each product `g_b * b` has degree at most that of `f`, and no monomial
+  `f = ∑ g_b * b + r` where `deg b + deg g_b ≤ deg f` for each `b`, and no monomial
   of `r` is divisible by the leading monomial of a nonzero `b ∈ B`. The degree condition is
-  stated with `MonomialOrder.withBotDegree`, so that the zero polynomial has degree `⊥`, and as
-  the inequality `deg b + deg g_b ≤ deg f`; the remainder condition only concerns divisibility,
-  not a comparison of degrees.
+  stated with `MonomialOrder.withBotDegree`, so that the zero polynomial has degree `⊥`. It bounds
+  the sum of the degrees of the two factors, which over a ring with zero divisors is stronger than
+  bounding the degree of the product `g_b * b`; the remainder condition only concerns
+  divisibility, not a comparison of degrees.
 * `MonomialOrder.IsGroebnerBasis m G I`: `G` is a subset of the ideal `I` whose leading terms
   span the same ideal as the leading terms of all elements of `I`.
 
@@ -48,7 +49,16 @@ a Gröbner basis decide ideal membership.
 
 None of these results assume that the coefficients form a field: the statements needing division
 assume that the nonzero members of the divisor set have unit leading coefficients, which over a
-field is discharged by `MonomialOrder.isUnit_leadingCoeff`.
+field is discharged by `MonomialOrder.isUnit_leadingCoeff`. The definitions make sense over a
+commutative semiring, and so do `exists_degree_le_degree`,
+`isGroebnerBasis_iff_forall_exists_degree_le_degree` and `image_leadingTerm`. The existence of
+remainders and the results on membership, uniqueness and generation (`exists_isRemainder`,
+`sub_mem_iff`, `remainder_eq_zero_iff_mem`, `ideal_eq_span`, `isGroebnerBasis_iff_isRemainder_zero`
+and their relatives) are stated over a commutative ring, and need not hold over a semiring. For
+example, in `ℕ[x]` the set `{x + 1}` satisfies `IsGroebnerBasis` for the ideal `(x, x + 1)` (both
+leading-term ideals are `(x)`) but does not generate it, which refutes `ideal_eq_span` and
+`isGroebnerBasis_iff_isRemainder_zero`; and `x` has no remainder on division by `{x + 1}`, which
+refutes `exists_isRemainder`.
 
 ## References
 

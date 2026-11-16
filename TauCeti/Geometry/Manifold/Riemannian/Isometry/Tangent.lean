@@ -25,6 +25,11 @@ used for initial velocities and velocity lifts of curves.
   the differential of the inverse isometry.
 * `TauCeti.RiemannianIsometry.toDiffeomorph_tangent_apply`: the tangent-bundle lift has this
   fibrewise linear-isometry equivalence as its fibre map.
+* `TauCeti.RiemannianIsometry.mfderiv_image_ball`: the differential maps each ball of `T_x M` onto
+  the ball of the same radius about the image of its centre.
+* `TauCeti.mfderiv_smul_image_ball`, `TauCeti.mfderiv_smul_image_ball_of_smul_eq`: the same for the
+  action of a group element whose differential preserves the metric; at a fixed point `x` of the
+  element, every ball about the origin of `T_x M` is invariant.
 -/
 
 public section
@@ -89,6 +94,15 @@ theorem mfderiv_surjective (Φ : RiemannianIsometry I J M N) (x : M) :
   simpa only [coe_mfderivToLinearIsometryEquiv] using
     (Φ.mfderivToLinearIsometryEquiv x).surjective
 
+/-- The differential of a Riemannian isometry at `x` maps the ball of radius `r` about `v` in
+`T_x M` onto the ball of radius `r` about its image in `T_{Φ x} N`. -/
+@[simp]
+theorem mfderiv_image_ball (Φ : RiemannianIsometry I J M N) (x : M) (v : TangentSpace I x)
+    (r : ℝ) :
+    mfderiv I J Φ x '' Metric.ball v r = Metric.ball (mfderiv I J Φ x v) r := by
+  simpa only [coe_mfderivToLinearIsometryEquiv, mfderivToLinearIsometryEquiv_apply] using
+    (Φ.mfderivToLinearIsometryEquiv x).image_ball v r
+
 /-- The inverse of the differential equivalence is the differential of the inverse Riemannian
 isometry at `Φ x`. -/
 @[simp]
@@ -113,5 +127,40 @@ theorem toDiffeomorph_tangent_apply [IsManifold I 1 M] [IsManifold J 1 N]
   rfl
 
 end TauCeti.RiemannianIsometry
+
+namespace TauCeti
+
+open Metric
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  {G : Type*} [Group G] [MulAction G M] [ContMDiffConstSMul I ∞ G M] {a : G}
+
+/-- If the differential of the action of `a` preserves the metric, then its differential at `x`
+maps the ball of radius `r` about `v` in `T_x M` onto the ball of radius `r` about its image in
+`T_{a • x} M`. -/
+theorem mfderiv_smul_image_ball
+    (ha : ∀ (y : M) (v w : TangentSpace I y),
+      inner ℝ (mfderiv I I (a • ·) y v) (mfderiv I I (a • ·) y w) = inner ℝ v w)
+    (x : M) (v : TangentSpace I x) (r : ℝ) :
+    mfderiv I I (a • ·) x '' ball v r = ball (mfderiv I I (a • ·) x v) r := by
+  have h := (RiemannianIsometry.constSMul a ha).mfderiv_image_ball x v r
+  rw [RiemannianIsometry.coe_constSMul] at h
+  exact h
+
+/-- If the differential of the action of `a` preserves the metric and `a` fixes `x`, then its
+differential at `x` leaves invariant every ball about the origin of `T_x M`. -/
+theorem mfderiv_smul_image_ball_of_smul_eq
+    (ha : ∀ (y : M) (v w : TangentSpace I y),
+      inner ℝ (mfderiv I I (a • ·) y v) (mfderiv I I (a • ·) y w) = inner ℝ v w)
+    {x : M} (hx : a • x = x) (r : ℝ) :
+    mfderiv I I (a • ·) x '' ball (0 : TangentSpace I x) r = ball (0 : TangentSpace I x) r := by
+  have h := mfderiv_smul_image_ball ha x 0 r
+  rw [map_zero, hx] at h
+  exact h
+
+end TauCeti
 
 end

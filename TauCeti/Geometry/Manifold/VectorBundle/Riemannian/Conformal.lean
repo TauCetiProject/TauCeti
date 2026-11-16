@@ -208,7 +208,7 @@ theorem rescale_const_mul_rpow {p c : ℝ} (hc : 0 < c) {u : B → ℝ}
       (g.rescale (fun b ↦ u b ^ p) hu hu_pos).rescale (fun _ ↦ c ^ p) contMDiff_const
         (fun _ ↦ Real.rpow_pos_of_pos hc p) := by
   ext b v w
-  simp [Real.mul_rpow_of_pos_left hc, mul_assoc]
+  simp [Real.mul_rpow_of_nonneg_left hc.le, mul_assoc]
 
 /-! ### The conformal class -/
 

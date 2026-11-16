@@ -27,8 +27,9 @@ namespace TauCeti.BoxIntegral
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
 
+omit [CompleteSpace E] in
 /-- The oriented Henstock fundamental theorem for a continuous primitive differentiable
-outside a countable exceptional set in the interval interior. -/
+outside a countable exceptional set in the interval interior. The space need not be complete. -/
 theorem hasHenstockIntervalIntegral_of_hasDerivAt_off_countable {a b : ℝ} {f f' : ℝ → E} {s : Set ℝ}
     (hs : s.Countable) (hc : ContinuousOn f (uIcc a b))
     (hd : ∀ x ∈ uIoo a b \ s, HasDerivAt f (f' x) x) :

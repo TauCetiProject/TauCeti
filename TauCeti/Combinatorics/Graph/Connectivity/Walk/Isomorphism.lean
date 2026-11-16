@@ -55,7 +55,7 @@ theorem mapHom_fst (f : Iso G H) {x y : G.vertexSet} (a : G.BidirectedHom x y) :
 @[simp]
 theorem mapHom_refl (G : Graph α β) {x y : G.vertexSet} (a : G.BidirectedHom x y) :
     @Quiver.Hom.cast G.vertexSet (Quiver.mk G.BidirectedHom) _ _ x y
-      (refl_vertexEquiv_apply G x) (refl_vertexEquiv_apply G y) ((refl G).mapHom a) = a := by
+      (by simp) (by simp) ((refl G).mapHom a) = a := by
   apply Subtype.ext
   simp [mapHom]
 
@@ -64,7 +64,7 @@ theorem mapHom_refl (G : Graph α β) {x y : G.vertexSet} (a : G.BidirectedHom x
 theorem mapHom_trans (f : Iso G H) (g : Iso H K) {x y : G.vertexSet}
     (a : G.BidirectedHom x y) :
     @Quiver.Hom.cast K.vertexSet (Quiver.mk K.BidirectedHom) _ _ _ _
-      (trans_vertexEquiv_apply f g x) (trans_vertexEquiv_apply f g y) ((f.trans g).mapHom a) =
+      (by simp) (by simp) ((f.trans g).mapHom a) =
         g.mapHom (f.mapHom a) := by
   apply Subtype.ext
   simp [mapHom]
@@ -96,7 +96,7 @@ theorem toPrefunctor_map_fst (f : Iso G H) {x y : G.vertexSet} (a : G.Bidirected
 theorem toPrefunctor_refl (G : Graph α β) :
     (refl G).toPrefunctor = @Prefunctor.id G.vertexSet (Quiver.mk G.BidirectedHom) := by
   refine @Prefunctor.ext G.vertexSet (Quiver.mk G.BidirectedHom)
-    G.vertexSet (Quiver.mk G.BidirectedHom) _ _ (refl_vertexEquiv_apply G)
+    G.vertexSet (Quiver.mk G.BidirectedHom) _ _ (fun _ ↦ by simp)
       fun x y a ↦ eq_of_heq ?_
   rw [heq_eqRec_iff, heq_eqRec_iff]
   exact (@Quiver.Hom.cast_heq G.vertexSet (Quiver.mk G.BidirectedHom) _ _ _ _ _ _ _).symm.trans
@@ -110,7 +110,7 @@ theorem toPrefunctor_trans (f : Iso G H) (g : Iso H K) :
         H.vertexSet (Quiver.mk H.BidirectedHom) K.vertexSet (Quiver.mk K.BidirectedHom)
         f.toPrefunctor g.toPrefunctor := by
   refine @Prefunctor.ext G.vertexSet (Quiver.mk G.BidirectedHom)
-    K.vertexSet (Quiver.mk K.BidirectedHom) _ _ (trans_vertexEquiv_apply f g)
+    K.vertexSet (Quiver.mk K.BidirectedHom) _ _ (fun _ ↦ by simp)
       fun x y a ↦ eq_of_heq ?_
   rw [heq_eqRec_iff, heq_eqRec_iff]
   exact (@Quiver.Hom.cast_heq K.vertexSet (Quiver.mk K.BidirectedHom) _ _ _ _ _ _ _).symm.trans
@@ -142,7 +142,7 @@ theorem mapPath_cons (f : Iso G H) {x y z : G.vertexSet}
 theorem mapPath_refl (G : Graph α β) {x y : G.vertexSet}
     (p : ArrowWalk G.BidirectedHom x y) :
     @Quiver.Path.cast G.vertexSet (Quiver.mk G.BidirectedHom) _ _ x y
-      (refl_vertexEquiv_apply G x) (refl_vertexEquiv_apply G y) ((refl G).mapPath p) = p :=
+      (by simp) (by simp) ((refl G).mapPath p) = p :=
   -- The public prefunctor law identifies this transport with the identity prefunctor.
   by
     exact (@Prefunctor.cast_mapPath_eq_of_eq G.vertexSet G.vertexSet
@@ -155,7 +155,7 @@ theorem mapPath_refl (G : Graph α β) {x y : G.vertexSet}
 theorem mapPath_trans (f : Iso G H) (g : Iso H K) {x y : G.vertexSet}
     (p : ArrowWalk G.BidirectedHom x y) :
     @Quiver.Path.cast K.vertexSet (Quiver.mk K.BidirectedHom) _ _ _ _
-      (trans_vertexEquiv_apply f g x) (trans_vertexEquiv_apply f g y) ((f.trans g).mapPath p) =
+      (by simp) (by simp) ((f.trans g).mapPath p) =
         g.mapPath (f.mapPath p) :=
   -- The public prefunctor law identifies this transport with composite prefunctor transport.
   by
@@ -306,16 +306,14 @@ theorem mapWalk_reverse (f : Iso G H) {x y : G.vertexSet} (p : G.Walk x y) :
 @[simp]
 theorem mapWalk_refl (G : Graph α β) {x y : G.vertexSet} (p : G.Walk x y) :
     ((refl G).mapWalk p).copy
-      (congrArg Subtype.val (refl_vertexEquiv_apply G x))
-      (congrArg Subtype.val (refl_vertexEquiv_apply G y)) = p := by
+      (by simp) (by simp) = p := by
   simp [mapWalk, ← ArrowWalk.toGraphWalk_cast]
 
 /-- Transport along a composite isomorphism applies the two walk transports in order. -/
 @[simp]
 theorem mapWalk_trans (f : Iso G H) (g : Iso H K) {x y : G.vertexSet} (p : G.Walk x y) :
     ((f.trans g).mapWalk p).copy
-      (congrArg Subtype.val (trans_vertexEquiv_apply f g x))
-      (congrArg Subtype.val (trans_vertexEquiv_apply f g y)) =
+      (by simp) (by simp) =
         g.mapWalk (f.mapWalk p) := by
   simp [mapWalk, ← ArrowWalk.toGraphWalk_cast]
 

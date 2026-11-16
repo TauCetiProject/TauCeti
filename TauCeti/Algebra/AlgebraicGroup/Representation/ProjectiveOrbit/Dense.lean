@@ -121,15 +121,7 @@ theorem exists_span_basePointsRepresentation_eq (m : M) (hm : Module.IsUnimodula
     rw [hb] at hndim
     norm_cast at hlt hle hndim
     omega
-  -- As a closed point of the orbit of `[m]`, the line `[n]` is a rational translate of `[m]`.
-  obtain ⟨g, hg⟩ : y ∈ Set.range (fun g : WithConv (H →ₐ[k] k) ↦
-      projectiveOrbitMap (H := H) m hm (AlgHom.kernelPoint g.ofConv)) := by
-    rw [range_projectiveOrbitMap_kernelPoint_eq_range_inter_closedPoints]
-    exact ⟨hy, projectiveOrbitMap_kernelPoint_mem_closedPoints n hn _⟩
-  refine ⟨g, ?_⟩
-  have h := (projectiveOrbitMap_kernelPoint_eq_iff_span_eq m hm n hn g 1).mp
-    (by simpa [AlgHom.convOne_def] using hg)
-  simpa using h
+  exact exists_span_basePointsRepresentation_eq_of_mem_range m hm n hn hy
 
 /-- **Two orbits of maximal dimension coincide.** If the orbits of the lines through `m` and `n`
 both have dimension `dim M - 1`, their topological orbit images in `P(M)`, including nonclosed

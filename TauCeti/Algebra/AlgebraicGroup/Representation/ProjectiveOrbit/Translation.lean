@@ -314,6 +314,17 @@ theorem image_projectivePointTranslation_range_projectiveOrbitMap
   exact congrArg Set.range
     (funext fun x ↦ (projectiveOrbitMap_leftTranslation_apply g m hm x).symm)
 
+/-- Every projective translation preserves the closure of the topological image of the orbit
+morphism. -/
+theorem image_projectivePointTranslation_closure_range_projectiveOrbitMap
+    (g : WithConv (H →ₐ[R] R)) (m : M) (hm : Module.IsUnimodular R m) :
+    (projectivePointTranslation (M := M) g).hom ''
+        closure (Set.range (projectiveOrbitMap (H := H) m hm)) =
+      closure (Set.range (projectiveOrbitMap (H := H) m hm)) := by
+  simpa only [Scheme.coe_homeoOfIso, image_projectivePointTranslation_range_projectiveOrbitMap]
+    using (Scheme.homeoOfIso (projectivePointTranslation (M := M) g)).image_closure
+      (Set.range (projectiveOrbitMap (H := H) m hm))
+
 /-- Right translation on the source group scheme replaces the chosen unimodular vector in the
 projective orbit morphism by its image under the base-point representation. -/
 @[reassoc]

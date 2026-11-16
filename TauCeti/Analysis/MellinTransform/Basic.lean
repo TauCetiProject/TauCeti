@@ -23,8 +23,8 @@ transform of `t⁻¹ f(t⁻¹)` at `s` to that of `f` at `1 - s`.
 
 * `TauCeti.mellinConvergent_indicator_Ioi_iff`: convergence of the Mellin transform of an
   upper-tail indicator is integrability of the upper Mellin integrand.
-* `TauCeti.mellin_indicator_Ioi`: the Mellin transform of an upper-tail indicator is the upper
-  Mellin integral.
+* `TauCeti.mellin_indicator_Ioi`, `TauCeti.mellin_indicator_Ici`: the Mellin transform of an
+  open or closed upper-tail indicator is the upper Mellin integral.
 * `TauCeti.mellinConvergent_iff_integrable_exp_smul`, `TauCeti.mellin_eq_integral_exp_smul`:
   absolute convergence and value of the Mellin transform in logarithmic coordinates.
 * `TauCeti.mellinConvergent_inv_smul_comp_inv`, `TauCeti.mellin_inv_smul_comp_inv`: the Mellin
@@ -53,6 +53,17 @@ theorem mellin_indicator_Ioi (f : ℝ → E) {a : ℝ} (ha : 0 ≤ a) (s : ℂ) 
     mellin ((Ioi a).indicator f) s = ∫ (u : ℝ) in Ioi a, (u : ℂ) ^ (s - 1) • f u := by
   simp_rw [mellin, ← indicator_smul, setIntegral_indicator measurableSet_Ioi,
     inter_eq_right.mpr (Ioi_subset_Ioi ha)]
+
+/-- The Mellin transform of an upper closed-ray indicator equals the upper Mellin integral.
+The boundary point has measure zero; the cutoff may be zero. -/
+theorem mellin_indicator_Ici (f : ℝ → E) {a : ℝ} (ha : 0 ≤ a) (s : ℂ) :
+    mellin ((Ici a).indicator f) s = ∫ (u : ℝ) in Ioi a, (u : ℂ) ^ (s - 1) • f u := by
+  rw [← mellin_indicator_Ioi f ha s]
+  simp only [mellin]
+  refine integral_congr_ae ?_
+  filter_upwards [ae_restrict_of_ae (indicator_ae_eq_of_ae_eq_set (f := f)
+    (Ioi_ae_eq_Ici (a := a)))] with t ht
+  rw [ht]
 
 private lemma exp_smul_cpow_smul_comp_neg (f : ℝ → E) (s : ℂ) (u : ℝ) :
     Real.exp (-1 * u) • ((Real.exp (-1 * u) : ℂ) ^ (s - 1) • f (Real.exp (-1 * u))) =

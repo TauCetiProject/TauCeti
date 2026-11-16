@@ -88,7 +88,7 @@ theorem exists_analyticOnNhd_projection_delineation
   have hfamily : (fun i (x : S) ↦ (P i).map (φ x)) = fun i (x : S) ↦ F i x :=
     funext fun i ↦ funext fun x ↦ hP i (hSU x.2)
   rw [← hfamily]
-  exact ⟨D.reindex f hf⟩
+  exact ⟨D.reindex f fun i ↦ hf.exists.1 (D.exists_multiplicity_pos i)⟩
 
 /-- Analytic polynomial germs of locally bounded degree admit one finite analytic projection
 family on a common open neighborhood inside any prescribed neighborhood. Its constant zero

@@ -45,6 +45,7 @@ space over the fraction field.
 * `Submodule.finrank_eq_finrank`: a full lattice and its ambient space have the
   same finrank.
 * `Submodule.IsLattice.pi`: the product of a finite family of full lattices is a full lattice.
+* `Submodule.IsLattice.prod`: the product of two full lattices is a full lattice.
 * `LinearEquiv.extendOfIsLattice`: extension of an `R`-linear equivalence between
   full submodules to their ambient `K`-vector spaces.
 * `Submodule.isBaseChange_subtype`: the inclusion of a free full lattice
@@ -348,6 +349,23 @@ instance IsLattice.pi (M : ∀ i, Submodule R (V i)) [∀ i, (M i).IsLattice A] 
     exact hmap (Submodule.mem_map_of_mem hx)
 
 end Pi
+
+section Prod
+
+variable {R A V W : Type*} [CommRing R] [CommRing A] [Algebra R A]
+  [AddCommMonoid V] [Module R V] [Module A V] [IsScalarTower R A V]
+  [AddCommMonoid W] [Module R W] [Module A W] [IsScalarTower R A W]
+
+/-- The product of two full lattices is a full lattice of the product. -/
+instance IsLattice.prod (M : Submodule R V) (N : Submodule R W) [M.IsLattice A]
+    [N.IsLattice A] : (M.prod N).IsLattice A where
+  fg := _root_.Submodule.IsLattice.fg.prod _root_.Submodule.IsLattice.fg
+  span_eq_top := by
+    rw [Submodule.prod_coe, Submodule.span_prod_eq (R := A) M.zero_mem N.zero_mem,
+      _root_.Submodule.IsLattice.span_eq_top, _root_.Submodule.IsLattice.span_eq_top,
+      Submodule.prod_top]
+
+end Prod
 
 section Span
 
