@@ -9,7 +9,9 @@ public import TauCeti.Analysis.Normed.Module.Bases.Unconditional
 public import TauCeti.Analysis.SpecialFunctions.Pow.Burkholder
 public import TauCeti.MeasureTheory.Function.Lp.HaarBasis.Basic
 import Mathlib.MeasureTheory.Function.ConditionalExpectation.PullOut
+import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Function.LpSpace.Complete
+import TauCeti.Analysis.InnerProductSpace.OrthogonalFamily
 import TauCeti.MeasureTheory.Function.Lp.Duality
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
@@ -17,32 +19,17 @@ import TauCeti.MeasureTheory.Function.Lp.Norm
 # Unconditionality of the Haar basis of `Lᵖ([0, 1])`
 
 For `1 < p < ∞` and `𝕜` equal to `ℝ` or `ℂ` (`[RCLike 𝕜]`), the Haar basis `haarBasis 𝕜 p hp` of
-`Lᵖ(I; 𝕜)` is unconditional.
+`Lᵖ(I; 𝕜)` is an unconditional Schauder basis, bundled as
+`TauCeti.unitInterval.haarUnconditionalBasis 𝕜 p hp1 hp`. It shares the basis vectors, coordinate
+functionals, and finite coordinate projections of `haarBasis 𝕜 p hp`, with initial projections
+equal to `dyadicProj 𝕜 p N`.
 
-For `2 ≤ p < ∞` over `ℝ`, unconditionality with the sharp sign-transform constant `p - 1` follows
-from Burkholder's scalar Bellman estimates (`TauCeti.mul_burkholderPhi_le` and
-`TauCeti.two_mul_burkholderPhi_abs_le`). Writing `F_N = ∑_{k < N} c_k h_k` and
-`G_N = ∑_{k < N} ε_k c_k h_k` with `|ε_k| = 1`, the functions `F_N` and `G_N` are constant on the
-dyadic cell numbered `N`, while `h_N` equals `1` on its left half `2 * N` and `-1` on its right
-half `2 * N + 1`, each of half the measure. Integrating the midpoint inequality over `dyadicCell N`
-shows that `∫ x, Φ_p(|F_N x|, |G_N x|)` is nondecreasing for `N ≥ 1`, and at `N = 1` the integrand
-is a nonnegative constant. Integrating the majorization inequality then gives
-`‖G_N‖_p ≤ (p - 1) ‖F_N‖_p`.
-
-At `p = 2`, `L²`-orthogonality of distinct Haar functions yields Parseval's identity for finite
-Haar sums and shows that any unimodular Haar multiplier (`‖u_k‖ = 1`) preserves the `L²` norm.
-
-For `1 < p ≤ 2` over `ℝ`, pairing against `L^q(I)` (`1 / p + 1 / q = 1`, so `2 ≤ q < ∞`) via
-`MeasureTheory.Lp.toDual`, pulling finite Haar sums through `dyadicProj ℝ q N`, and using
-orthogonality to transpose the sign multiplier from `Lᵖ` to `L^q` transfers the `L^q` bound
-`q - 1 = p / (p - 1) - 1` to `Lᵖ`. Together the two regimes give the sharp real unconditional
-constant `max p (p / (p - 1)) - 1` for `1 < p < ∞`. Splitting `Lᵖ(I; 𝕜)` into real and imaginary
-parts extends the bound to `[RCLike 𝕜]` with factor `2`.
-
-Because the initial projections `dyadicProj 𝕜 p N` are contractions, the initial-segment sign bound
-extends with the same constant to all finite coordinate projections
-(`SchauderBasis.norm_proj_finset_le_of_range_signed`), giving unconditional convergence of the Haar
-expansion and the bundled `UnconditionalSchauderBasis` `haarUnconditionalBasis`.
+Over `ℝ`, Burkholder's martingale-transform bound gives the constant
+`max p.toReal (p.toReal / (p.toReal - 1)) - 1` for finite signed Haar sums, finite signed
+coordinate multipliers, finite coordinate projections, and the unconditional basis constant
+`nnNormProjBound`. Over `[RCLike 𝕜]`, the same bounds hold with an additional factor of `2`. At
+`p = 2`, finite Haar sums satisfy Parseval's identity, unimodular Haar multipliers are `L²`
+isometries, and `nnNormProjBound` equals `1`.
 
 ## Main definitions
 
@@ -56,14 +43,16 @@ expansion and the bundled `UnconditionalSchauderBasis` `haarUnconditionalBasis`.
 * `TauCeti.unitInterval.norm_sq_sum_haarBasis_two`,
   `TauCeti.unitInterval.norm_sum_unimodular_haarBasis_two`: Parseval's identity and `L²` isometry
   of unimodular Haar multipliers.
-* `TauCeti.unitInterval.norm_sum_signed_haarBasis_real_le`: sharp real `Lᵖ` bound
+* `TauCeti.unitInterval.norm_sum_signed_haarBasis_real_le`: real `Lᵖ` sign-transform bound
   `max p.toReal (p.toReal / (p.toReal - 1)) - 1` on signed Haar sums for `1 < p < ∞`.
-* `TauCeti.unitInterval.norm_sum_signed_haarBasis_le`: `Lᵖ(I; 𝕜)` bound on signed Haar sums.
+* `TauCeti.unitInterval.norm_sum_signed_haarBasis_le`: `Lᵖ(I; 𝕜)` sign-transform bound on signed
+  Haar sums for `1 < p < ∞`.
 * `TauCeti.unitInterval.hasSum_haarBasis`: unconditional convergence of the Haar expansion in
   `Lᵖ(I; 𝕜)` for `1 < p < ∞`.
 * `TauCeti.unitInterval.nnNormProjBound_haarUnconditionalBasis_real_le`,
-  `TauCeti.unitInterval.nnNormProjBound_haarUnconditionalBasis_le`: unconditional basis constant
-  estimates over `ℝ` and `𝕜`.
+  `TauCeti.unitInterval.nnNormProjBound_haarUnconditionalBasis_le`,
+  `TauCeti.unitInterval.nnNormProjBound_haarUnconditionalBasis_two`: unconditional basis constant
+  bounds over `ℝ` and `𝕜`, and the exact value `1` at `p = 2`.
 
 ## References
 
@@ -77,8 +66,8 @@ public section
 
 noncomputable section
 
-open MeasureTheory Filter ComplexConjugate TauCeti
-open scoped ENNReal Topology unitInterval
+open MeasureTheory Filter TauCeti
+open scoped ENNReal InnerProductSpace Topology unitInterval
 
 namespace TauCeti.unitInterval
 
@@ -307,7 +296,7 @@ private theorem coeFn_sum_haarBasis {𝕜 : Type*} [RCLike 𝕜] {p : ℝ≥0∞
   rw [hsum, Finset.sum_apply]
   exact Finset.sum_congr rfl fun k hk_mem => hk ⟨k, Finset.mem_range.1 hk_mem⟩
 
-/-- **Sharp `Lᵖ` sign-transform bound for the real Haar basis (`2 ≤ p < ∞`).** -/
+/-- **`Lᵖ` sign-transform bound for the real Haar basis (`2 ≤ p < ∞`).** -/
 theorem norm_sum_signed_haarBasis_real_le_of_two_le {p : ℝ≥0∞} [Fact (1 ≤ p)]
     (hp2 : 2 ≤ p) (hp : p ≠ ∞) (c : ℕ → ℝ) {ε : ℕ → ℝ} (hε : ∀ k, |ε k| = 1) (N : ℕ) :
     ‖∑ k ∈ Finset.range N, (ε k * c k) • haarBasis ℝ p hp k‖ ≤
@@ -338,40 +327,32 @@ theorem norm_sum_signed_haarBasis_real_le_of_two_le {p : ℝ≥0∞} [Fact (1 �
 theorem norm_sq_sum_haarBasis_two (𝕜 : Type*) [RCLike 𝕜] (c : ℕ → 𝕜) (N : ℕ) :
     ‖∑ k ∈ Finset.range N, c k • haarBasis 𝕜 2 ENNReal.ofNat_ne_top k‖ ^ 2 =
       ∑ k ∈ Finset.range N, ‖c k‖ ^ 2 * ∫ x, haarFun k x ^ 2 := by
-  have hint (j k : ℕ) : Integrable (fun x => haarFun j x * haarFun k x) volume := by
-    refine (MemLp.of_bound (by fun_prop) 1 (ae_of_all _ fun x => ?_)).integrable le_rfl
-    rw [norm_mul]
-    exact (mul_le_of_le_one_right (norm_nonneg _) (norm_haarFun_le k x)).trans (norm_haarFun_le j x)
-  rw [← Lp.integral_norm_sq_eq_norm_sq]
-  have hcongr : (∫ x, ‖(∑ k ∈ Finset.range N, c k • haarBasis 𝕜 2 ENNReal.ofNat_ne_top k) x‖ ^ 2) =
-      ∫ x, ∑ j ∈ Finset.range N, ∑ k ∈ Finset.range N,
-        RCLike.re (conj (c j) * c k) * (haarFun j x * haarFun k x) := by
-    refine integral_congr_ae ?_
-    filter_upwards [coeFn_sum_haarBasis (𝕜 := 𝕜) (p := 2) ENNReal.ofNat_ne_top c N] with x hx
-    rw [hx]
-    have hsq : ∀ z : 𝕜, ‖z‖ ^ 2 = RCLike.re (conj z * z) := fun z => by
-      have := congrArg RCLike.re (RCLike.conj_mul z)
-      simpa using this.symm
-    rw [hsq]
-    simp only [map_sum, map_mul, RCLike.conj_ofReal]
-    rw [Finset.sum_mul]
-    simp_rw [Finset.mul_sum, map_sum]
-    refine Finset.sum_congr rfl fun j _ => Finset.sum_congr rfl fun k _ => ?_
-    have : conj (c j) * (haarFun j x : 𝕜) * (c k * (haarFun k x : 𝕜)) =
-        ((haarFun j x * haarFun k x : ℝ) : 𝕜) * (conj (c j) * c k) := by
-      push_cast
-      ring
-    rw [this, ← Algebra.smul_def, RCLike.smul_re, mul_comm]
-  rw [hcongr, integral_finsetSum _ fun j _ =>
-    integrable_finsetSum _ fun k _ => (hint j k).const_mul _]
-  refine Finset.sum_congr rfl fun j hj => ?_
-  rw [integral_finsetSum _ fun k _ => (hint j k).const_mul _,
-    Finset.sum_eq_single_of_mem j hj fun k _ hkj => by
-      rw [integral_const_mul, integral_haarFun_mul_of_ne hkj.symm, mul_zero]]
-  rw [integral_const_mul]
-  have hcj : RCLike.re (conj (c j) * c j) = ‖c j‖ ^ 2 := by
-    simpa using congrArg RCLike.re (RCLike.conj_mul (c j))
-  simp [hcj, sq]
+  have horth : (Finset.range N : Set ℕ).Pairwise fun j k =>
+      ⟪c j • haarBasis 𝕜 2 ENNReal.ofNat_ne_top j,
+        c k • haarBasis 𝕜 2 ENNReal.ofNat_ne_top k⟫_𝕜 = 0 := by
+    intro j _ k _ hjk
+    have hjk0 :
+        ⟪haarBasis 𝕜 2 ENNReal.ofNat_ne_top j, haarBasis 𝕜 2 ENNReal.ofNat_ne_top k⟫_𝕜 = 0 := by
+      rw [L2.inner_def]
+      calc
+        ∫ x, ⟪haarBasis 𝕜 2 ENNReal.ofNat_ne_top j x, haarBasis 𝕜 2 ENNReal.ofNat_ne_top k x⟫_𝕜
+            = ∫ x, ((haarFun j x * haarFun k x : ℝ) : 𝕜) := by
+              refine integral_congr_ae ?_
+              filter_upwards [coeFn_haarBasis (𝕜 := 𝕜) (p := 2) ENNReal.ofNat_ne_top j,
+                coeFn_haarBasis (𝕜 := 𝕜) (p := 2) ENNReal.ofNat_ne_top k] with x hj hk
+              rw [hj, hk, RCLike.inner_apply, RCLike.conj_ofReal]
+              push_cast
+              ring
+        _ = ((∫ x, haarFun j x * haarFun k x : ℝ) : 𝕜) := integral_ofReal
+        _ = 0 := by rw [integral_haarFun_mul_of_ne hjk, RCLike.ofReal_zero]
+    rw [inner_smul_left, inner_smul_right, hjk0, mul_zero, mul_zero]
+  rw [TauCeti.norm_sum_sq_eq_sum_norm_sq_of_pairwise_inner_eq_zero horth]
+  refine Finset.sum_congr rfl fun k _ => ?_
+  rw [norm_smul, mul_pow, ← Lp.integral_norm_sq_eq_norm_sq]
+  congr 1
+  refine integral_congr_ae ?_
+  filter_upwards [coeFn_haarBasis (𝕜 := 𝕜) (p := 2) ENNReal.ofNat_ne_top k] with x hx
+  rw [hx, RCLike.norm_ofReal, sq_abs]
 
 /-- Unimodular Haar multipliers (`‖u k‖ = 1`, in particular real signs `±1`) are `L²` isometries. -/
 theorem norm_sum_unimodular_haarBasis_two (𝕜 : Type*) [RCLike 𝕜]
@@ -410,10 +391,8 @@ respect to the integral pairing on `I`. -/
 private theorem integral_haarSum_signed_mul (c d ε : ℕ → ℝ) (N : ℕ) :
     ∫ x, haarSum (fun k => ε k * c k) N x * haarSum d N x =
       ∫ x, haarSum c N x * haarSum (fun k => ε k * d k) N x := by
-  have hint (j k : ℕ) : Integrable (fun x => haarFun j x * haarFun k x) volume := by
-    refine (MemLp.of_bound (by fun_prop) 1 (ae_of_all _ fun x => ?_)).integrable le_rfl
-    rw [norm_mul]
-    exact (mul_le_of_le_one_right (norm_nonneg _) (norm_haarFun_le k x)).trans (norm_haarFun_le j x)
+  have hint (j k : ℕ) : Integrable (fun x => haarFun j x * haarFun k x) volume :=
+    (memLp_haarFun 2 j).integrable_mul (memLp_haarFun 2 k)
   have expand (a b : ℕ → ℝ) :
       (∫ x, haarSum a N x * haarSum b N x) =
         ∑ k ∈ Finset.range N, a k * b k * ∫ x, haarFun k x * haarFun k x := by
@@ -487,7 +466,7 @@ private theorem toDual_sum_signed_haarBasis {p q : ℝ≥0∞} [Fact (1 ≤ p)] 
             coeFn_sum_haarBasis hq (fun k => ε k * d k) N] with x hfx hgx
           simp only [haarSum, hfx, hgx, RCLike.ofReal_real_eq_id, id_eq]
 
-/-- **Sharp `Lᵖ` sign-transform bound for the real Haar basis (`1 < p ≤ 2`).** -/
+/-- **`Lᵖ` sign-transform bound for the real Haar basis (`1 < p ≤ 2`).** -/
 theorem norm_sum_signed_haarBasis_real_le_of_le_two {p : ℝ≥0∞} [Fact (1 ≤ p)]
     (hp1 : 1 < p) (hp2 : p ≤ 2) (hp : p ≠ ∞) (c : ℕ → ℝ) {ε : ℕ → ℝ} (hε : ∀ k, |ε k| = 1)
     (N : ℕ) :
@@ -542,7 +521,7 @@ theorem norm_sum_signed_haarBasis_real_le_of_le_two {p : ℝ≥0∞} [Fact (1 �
     _ ≤ ‖f‖ * ((s - 1) * ‖g‖) := mul_le_mul_of_nonneg_left hgNε_norm (norm_nonneg f)
     _ = (s - 1) * ‖f‖ * ‖g‖ := by ring
 
-/-- **Sharp `Lᵖ` sign-transform bound for the real Haar basis (`1 < p < ∞`).** For `1 < p < ∞` and
+/-- **`Lᵖ` sign-transform bound for the real Haar basis (`1 < p < ∞`).** For `1 < p < ∞` and
 signs `|ε k| = 1`, `‖∑_{k < N} ε_k c_k h_k‖_p ≤ (max p (p / (p - 1)) - 1) ‖∑_{k < N} c_k h_k‖_p`. -/
 theorem norm_sum_signed_haarBasis_real_le {p : ℝ≥0∞} [Fact (1 ≤ p)]
     (hp1 : 1 < p) (hp : p ≠ ∞) (c : ℕ → ℝ) {ε : ℕ → ℝ} (hε : ∀ k, |ε k| = 1) (N : ℕ) :

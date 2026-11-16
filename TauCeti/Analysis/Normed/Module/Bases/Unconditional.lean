@@ -25,7 +25,7 @@ coefficients and `4 * t * C` for scalar coefficients of norm at most `t`. In par
 bound on finite coordinate projections is equivalent to one on signed coordinate multipliers
 (`GeneralSchauderBasis.exists_forall_norm_proj_le_iff`), and in a Banach space either bound
 characterizes when a generalized Schauder basis with nontrivial summation filter has
-unconditionally convergent expansions. For a classical `ℕ`-indexed Schauder basis, a bound `C` on
+unconditionally convergent expansions. For an `ℕ`-indexed generalized Schauder basis, a bound `C` on
 signed coordinate multipliers over initial segments `Finset.range N` extends with the same
 constant `C` to all finite index sets and all finite coordinate projections. These finite
 estimates hold for any summation filter; for an unconditional basis of a Banach space the bound
@@ -108,6 +108,8 @@ end UnconditionalSchauderBasis
 
 namespace GeneralSchauderBasis
 
+section
+
 variable {β 𝕜 X : Type*} [RCLike 𝕜] [NormedAddCommGroup X] [NormedSpace 𝕜 X]
   {L : SummationFilter β} (b : GeneralSchauderBasis β 𝕜 X L)
 
@@ -158,15 +160,16 @@ theorem forall_hasSum_iff_exists_signed_multiplier_le [L.NeBot] [CompleteSpace X
         ∀ x, ‖∑ i ∈ A, (ε i : 𝕜) • b.coord i x • b i‖ ≤ C * ‖x‖ :=
   b.forall_hasSum_iff_exists_forall_norm_proj_le.trans b.exists_forall_norm_proj_le_iff
 
-end GeneralSchauderBasis
+end
 
-namespace SchauderBasis
+section
 
 variable {𝕜 X : Type*} [RCLike 𝕜] [NormedAddCommGroup X] [NormedSpace 𝕜 X]
-  (b : SchauderBasis 𝕜 X)
+  {L : SummationFilter ℕ} (b : GeneralSchauderBasis ℕ 𝕜 X L)
 
-/-- For a classical Schauder basis, a bound `C` on signed coordinate multipliers over initial
-segments `Finset.range N` extends with the same constant `C` to every finite index set `A`. -/
+/-- For an `ℕ`-indexed generalized Schauder basis, a bound `C` on signed coordinate multipliers
+over initial segments `Finset.range N` extends with the same constant `C` to every finite index
+set `A`. -/
 theorem norm_sum_signed_coord_smul_le_of_range {C : ℝ}
     (hC : ∀ (N : ℕ) (ε : ℕ → ℝ), (∀ i, |ε i| = 1) →
       ∀ x, ‖∑ i ∈ Finset.range N, (ε i : 𝕜) • b.coord i x • b i‖ ≤ C * ‖x‖)
@@ -200,19 +203,21 @@ theorem norm_sum_signed_coord_smul_le_of_range {C : ℝ}
       _ = 2 * (C * ‖x‖) := (two_mul _).symm
   linarith
 
-/-- If every signed coordinate multiplier of a classical Schauder basis over initial segments has
-norm at most `C ≥ 0`, then every finite coordinate projection `GeneralSchauderBasis.proj b A` also
-has operator norm at most `C`. -/
+/-- If every signed coordinate multiplier of an `ℕ`-indexed generalized Schauder basis over initial
+segments has norm at most `C ≥ 0`, then every finite coordinate projection `b.proj A` also has
+operator norm at most `C`. -/
 theorem norm_proj_finset_le_of_range_signed {C : ℝ} (hC0 : 0 ≤ C)
     (hC : ∀ (N : ℕ) (ε : ℕ → ℝ), (∀ i, |ε i| = 1) →
       ∀ x, ‖∑ i ∈ Finset.range N, (ε i : 𝕜) • b.coord i x • b i‖ ≤ C * ‖x‖)
     (A : Finset ℕ) :
-    ‖GeneralSchauderBasis.proj b A‖ ≤ C := by
-  refine (GeneralSchauderBasis.proj b A).opNorm_le_bound hC0 fun x ↦ ?_
-  simpa [GeneralSchauderBasis.proj_apply] using
+    ‖b.proj A‖ ≤ C := by
+  refine (b.proj A).opNorm_le_bound hC0 fun x ↦ ?_
+  simpa [proj_apply] using
     b.norm_sum_signed_coord_smul_le_of_range hC A (ε := 1) (fun _ ↦ by simp) x
 
-end SchauderBasis
+end
+
+end GeneralSchauderBasis
 
 namespace UnconditionalSchauderBasis
 
