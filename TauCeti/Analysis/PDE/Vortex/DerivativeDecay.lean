@@ -307,14 +307,9 @@ theorem exists_norm_covariantDerivative_le_mul_exp
     ∃ K, ∀ z v, ‖covariantDerivative x z v‖ ≤ K * ‖v‖ * Real.exp (-(c * ‖z‖)) := by
   have hp₁ : Differentiable ℝ (fun w ↦ x w 2) := hp.differentiable (by norm_num)
   have hq₁ : Differentiable ℝ (fun w ↦ x w 3) := hq.differentiable (by norm_num)
-  -- The covariant derivative along `1` is continuous.
-  have hαcd : ContDiff ℝ 2 (sectionValue x) := contDiff_sectionValue hp hq
-  have hcont : Continuous fun z ↦ ‖covariantDerivative x z 1‖ := by
-    have h₁ : Continuous fun z ↦ fderiv ℝ (sectionValue x) z 1 :=
-      (hαcd.continuous_fderiv (by norm_num)).clm_apply continuous_const
-    have h₂ := hαcd.continuous
-    simp only [covariantDerivative_apply, one_re, one_im, mul_one, mul_zero, add_zero]
-    exact (h₁.add ((continuous_const.mul (continuous_ofReal.comp hb₁)).mul h₂)).norm
+  have hcont : Continuous fun z ↦ ‖covariantDerivative x z 1‖ :=
+    (continuous_covariantDerivative_one hb₁ (hp.of_le (by norm_num))
+      (hq.of_le (by norm_num))).norm
   obtain ⟨K, hK⟩ := exists_norm_fderiv_normSq_le_mul_exp hp hq hsol hlim hc
   -- Where `|α|² ≥ 1 / 2`, the covariant derivative is bounded by the gradient of `|α|²`.
   obtain ⟨K', hK'⟩ := exists_forall_le_mul_exp_of_eventually_le hcont (c := c) (K := K) (by
