@@ -211,6 +211,14 @@ theorem map_smul_coeff (T : AdjointableMap A E F) (a : A) (x : E) :
     T (a • x) = a • T x :=
   T.isAdjointPair.map_smul_coeff_cstarModule a x
 
+/-- Vectors in the range of an adjointable operator `T` and the kernel of its adjoint `T.adjoint`
+are orthogonal for the `A`-valued inner product. -/
+theorem inner_eq_zero_of_mem_range_of_adjoint_apply_eq_zero {T : AdjointableMap A E F}
+    {x y : F} (hx : x ∈ Set.range T) (hy : T.adjoint y = 0) :
+    inner A x y = 0 := by
+  obtain ⟨z, rfl⟩ := hx
+  rw [← T.adjoint_inner_right, hy, inner_zero_right]
+
 /-! #### Linear structure and composition -/
 
 instance instZero : Zero (AdjointableMap A E F) := ⟨⟨0, 0, fun _ _ ↦ by simp⟩⟩
@@ -590,12 +598,6 @@ noncomputable instance instNormedAlgebraComplex : NormedAlgebra ℂ (Adjointable
 instance instIsBoundedSMulApply : IsBoundedSMul (AdjointableMap A E E) E :=
   IsBoundedSMul.of_norm_smul_le le_opNorm
 
-private theorem isAdjointPair_toContinuousLinearMap (T : AdjointableMap A E F) :
-    LinearMap.IsAdjointPair (innerₛₗ (A := A) (E := E)).flip
-      (innerₛₗ (A := A) (E := F)).flip
-      T.toContinuousLinearMap T.adjoint.toContinuousLinearMap := by
-  simpa only [coe_toContinuousLinearMap] using T.isAdjointPair
-
 section StarOrdered
 
 variable [StarOrderedRing A]
@@ -603,7 +605,9 @@ variable [StarOrderedRing A]
 /-- An adjointable operator and its adjoint have the same operator norm. -/
 @[simp] theorem norm_adjoint (T : AdjointableMap A E F) : ‖T.adjoint‖ = ‖T‖ := by
   rw [← norm_toContinuousLinearMap, ← norm_toContinuousLinearMap]
-  exact T.isAdjointPair_toContinuousLinearMap.norm_eq_cstarModule
+  exact LinearMap.IsAdjointPair.norm_eq_cstarModule
+    (T := T.toContinuousLinearMap) (S := T.adjoint.toContinuousLinearMap)
+    (by simpa only [coe_toContinuousLinearMap] using T.isAdjointPair)
 
 /-- The adjoint bundled as a conjugate-linear isometric equivalence
 `AdjointableMap A E F ≃ₗᵢ⋆[ℂ] AdjointableMap A F E`. -/
@@ -623,15 +627,15 @@ theorem continuous_adjoint :
 @[simp] theorem norm_adjoint_comp_self (T : AdjointableMap A E F) :
     ‖T.adjoint.comp T‖ = ‖T‖ ^ 2 := by
   rw [← norm_toContinuousLinearMap, toContinuousLinearMap_comp, ← norm_toContinuousLinearMap]
-  exact T.isAdjointPair_toContinuousLinearMap.norm_adjoint_comp_self_cstarModule
+  exact LinearMap.IsAdjointPair.norm_adjoint_comp_self_cstarModule
+    (T := T.toContinuousLinearMap) (S := T.adjoint.toContinuousLinearMap)
+    (by simpa only [coe_toContinuousLinearMap] using T.isAdjointPair)
 
 /-- Dual C⋆-identity `‖T ∘ T*‖ = ‖T‖ ^ 2` for rectangular adjointable operators. -/
 @[simp] theorem norm_self_comp_adjoint (T : AdjointableMap A E F) :
     ‖T.comp T.adjoint‖ = ‖T‖ ^ 2 := by
   simpa only [adjoint_adjoint, norm_adjoint] using norm_adjoint_comp_self T.adjoint
 
-instance instNormedStarGroup : NormedStarGroup (AdjointableMap A E E) where
-  norm_star_le T := (norm_adjoint T).le
 instance instCStarRing : CStarRing (AdjointableMap A E E) where
   norm_mul_self_le T := by rw [star_eq_adjoint, mul_def, norm_adjoint_comp_self, sq]
 
@@ -795,6 +799,14 @@ theorem isSelfAdjoint_iff_forall_isSelfAdjoint_inner (T : AdjointableMap A E E) 
     refine CStarModule.eq_of_forall_inner_map_self (A := A) fun x ↦ ?_
     rw [T.adjoint_inner_right, ← star_inner, (h x).star_eq]
 
+/-- Vectors in the range and kernel of a self-adjoint adjointable operator are orthogonal for the
+`A`-valued inner product. -/
+theorem inner_eq_zero_of_isSelfAdjoint_of_mem_range_of_apply_eq_zero {T : AdjointableMap A E E}
+    (hT : IsSelfAdjoint T) {x y : E} (hx : x ∈ Set.range T) (hy : T y = 0) :
+    inner A x y = 0 :=
+  inner_eq_zero_of_mem_range_of_adjoint_apply_eq_zero hx <| by
+    rw [← star_eq_adjoint, hT.star_eq, hy]
+
 section SpectralOrder
 
 variable [StarOrderedRing A] [CompleteSpace E]
@@ -920,23 +932,18 @@ theorem inner_eq_add_inner_one_sub_of_isStarProjection {P : AdjointableMap A E E
 theorem range_eq_of_isIdempotentElem {P : AdjointableMap A E E} (hP : IsIdempotentElem P) :
     Set.range P = {x : E | P x = x} :=
   Set.ext fun x ↦ by
-    simpa [Set.mem_range] using LinearMap.IsIdempotentElem.mem_range_iff
-      (ContinuousLinearMap.IsIdempotentElem.toLinearMap (hP.map toContinuousLinearMapAlgHom))
-      (x := x)
+    simpa only [toContinuousLinearMapAlgHom_apply, ContinuousLinearMap.coe_coe,
+      toContinuousLinearMap_apply, LinearMap.mem_range, Set.mem_range, Set.mem_ofPred_eq] using
+      LinearMap.IsIdempotentElem.mem_range_iff
+        (ContinuousLinearMap.IsIdempotentElem.toLinearMap (hP.map toContinuousLinearMapAlgHom))
+        (x := x)
 
 /-- The range of an adjointable idempotent is norm-closed (without completeness of `E`). -/
 theorem isClosed_range_of_isIdempotentElem {P : AdjointableMap A E E} (hP : IsIdempotentElem P) :
     IsClosed (Set.range P) := by
-  simpa [LinearMap.coe_range] using
+  simpa only [toContinuousLinearMapAlgHom_apply, ContinuousLinearMap.range_toLinearMap,
+    LinearMap.coe_range, ContinuousLinearMap.coe_coe, coe_toContinuousLinearMap] using
     ContinuousLinearMap.IsIdempotentElem.isClosed_range (hP.map toContinuousLinearMapAlgHom)
-
-/-- Vectors in the range and kernel of an adjointable star projection are orthogonal for the
-`A`-valued inner product. -/
-theorem inner_eq_zero_of_isStarProjection_of_mem_range_of_apply_eq_zero {P : AdjointableMap A E E}
-    (hP : IsStarProjection P) {x y : E} (hx : x ∈ Set.range P) (hy : P y = 0) :
-    inner A x y = 0 := by
-  rw [← (range_eq_of_isIdempotentElem hP.isIdempotentElem).subset hx, ← P.adjoint_inner_right,
-    ← star_eq_adjoint, hP.isSelfAdjoint.star_eq, hy, inner_zero_right]
 
 /-- An adjointable star projection decreases diagonal inner products: `⟪P x, P x⟫_A ≤ ⟪x, x⟫_A`. -/
 theorem inner_map_map_le_of_isStarProjection [StarOrderedRing A] {P : AdjointableMap A E E}
