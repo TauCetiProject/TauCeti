@@ -155,8 +155,9 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_pu
         ((continuous_apply i).comp (hc.continuous.comp continuous_fst)))
   have hKs (v : ℂ) : ContDiffOn ℝ 3 (fun q : P × ((ℝ × ℝ) × V) ↦ puncturedSpherePerturbation
       (c q.1) (a q.1) H Hout (equivRealProdCLM.symm q.2.1) q.2.2 v) (W ∩ W₀) := fun q hq ↦
-    (((contDiffAt_puncturedSpherePerturbation_comp (n := 3) hH hHs hHout hHouts hc ha hq.2.1
-      hq.2.2 q.2.2).comp q (contDiff_fst.prodMk ((equivRealProdCLM.symm.contDiff.comp
+    (((contDiffAt_puncturedSpherePerturbation_comp (n := 3) hH hHs hHout hHouts
+      hc.contDiffAt ha.contDiffAt hq.2.1 hq.2.2 q.2.2).comp q
+      (contDiff_fst.prodMk ((equivRealProdCLM.symm.contDiff.comp
         (contDiff_fst.comp contDiff_snd)).prodMk (contDiff_snd.comp contDiff_snd))).contDiffAt
       ).clm_apply contDiffAt_const).contDiffWithinAt
   have hCDKW₀ : C ×ˢ (D ×ˢ K) ⊆ W₀ := fun q hq ↦ ⟨ha₀ q.1 hq.1, fun i ↦

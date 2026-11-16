@@ -468,23 +468,25 @@ theorem contDiffAt_puncturedSpherePerturbation_prod {ι : Type*} [Fintype ι] {n
     (f := fun p : ℂ × V => ((c, a), p)) (contMDiffAt_const.prodMk contMDiffAt_id)
   exact (contMDiffAt_prod_modelWithCornersSelf_iff.1 h).contDiffAt
 
-/-- Along a `C^n` family of configurations `p ↦ (c p, a p)` over a normed space of parameters, the
+/-- For a family of configurations `p ↦ (c p, a p)` over a normed space of parameters, the
 perturbation datum is `C^n` jointly in the parameter, the domain point and the target point, at
-parameters whose scales do not vanish and domain points other than the centers. -/
+parameters where the family is `C^n` and the scales do not vanish, and at domain points other than
+the centers. -/
 theorem contDiffAt_puncturedSpherePerturbation_comp {ι : Type*} [Fintype ι] {n : ℕ∞}
     {H : ι → ℝ → V → ℝ} {Hout : ℝ → V → ℝ} (hH : ∀ i, Periodic (H i) 1)
     (hHs : ∀ i, ContDiff ℝ n (uncurry (H i))) (hHout : Periodic Hout 1)
     (hHouts : ContDiff ℝ n (uncurry Hout)) {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
-    {c a : P → ι → ℂ} (hc : ContDiff ℝ n c) (ha : ContDiff ℝ n a) {p : P} (ha₀ : ∀ i, a p i ≠ 0)
-    {w : ℂ} (hw : ∀ i, w ≠ c p i) (x : V) :
+    {c a : P → ι → ℂ} {p : P} (hc : ContDiffAt ℝ n c p) (ha : ContDiffAt ℝ n a p)
+    (ha₀ : ∀ i, a p i ≠ 0) {w : ℂ} (hw : ∀ i, w ≠ c p i) (x : V) :
     ContDiffAt ℝ n
       (fun q : P × (ℂ × V) => puncturedSpherePerturbation (c q.1) (a q.1) H Hout q.2.1 q.2.2)
       (p, (w, x)) := by
   have hg : ContMDiffAt 𝓘(ℝ, P × (ℂ × V)) (𝓘(ℝ, (ι → ℂ) × (ι → ℂ)).prod (𝓘(ℝ, ℂ).prod 𝓘(ℝ, V)))
       n (fun q : P × (ℂ × V) => ((c q.1, a q.1), (q.2.1, q.2.2))) (p, (w, x)) :=
-    (((hc.comp contDiff_fst).prodMk (ha.comp contDiff_fst)).contMDiff.prodMk
+    ((hc.comp (p, (w, x)) contDiffAt_fst).prodMk
+      (ha.comp (p, (w, x)) contDiffAt_fst)).contMDiffAt.prodMk
       ((contDiff_fst.comp contDiff_snd).contMDiff.prodMk
-        (contDiff_snd.comp contDiff_snd).contMDiff)).contMDiffAt
+        (contDiff_snd.comp contDiff_snd).contMDiff).contMDiffAt
   exact ((contMDiffAt_puncturedSpherePerturbation hH
     (fun i => contMDiff_prod_modelWithCornersSelf_iff.2 (hHs i).contMDiff) hHout
     (contMDiff_prod_modelWithCornersSelf_iff.2 hHouts.contMDiff) ha₀ hw x).comp (p, (w, x))
