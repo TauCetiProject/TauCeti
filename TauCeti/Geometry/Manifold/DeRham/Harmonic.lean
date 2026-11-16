@@ -384,6 +384,7 @@ theorem harmonicForms.toDeRhamCohomology_injective (o : Manifold.Orientation I M
 
 /-- On a compact oriented boundaryless Riemannian manifold, the harmonic functions are exactly the
 closed `0`-forms. -/
+@[simp]
 theorem harmonicForms_zero_eq_closedForms (o : Manifold.Orientation I M (Fin m))
     (hl : 0 + l = m) : harmonicForms o hl = closedForms I M 0 := by
   ext f
