@@ -128,6 +128,19 @@ abbrev homMk (f₀ : T.thd ⟶ T'.thd) (f₁ : T.snd ⟶ T'.snd) (f₂ : T.fst �
     (w₁ : T.outerMap ≫ f₂ = f₁ ≫ T'.outerMap := by cat_disch) : T ⟶ T' :=
   ObjectProperty.homMk (ComposableArrows.homMk₂ f₀ f₁ f₂ w₀ w₁)
 
+section
+
+variable (f₀ : T.thd ⟶ T'.thd) (f₁ : T.snd ⟶ T'.snd) (f₂ : T.fst ⟶ T'.fst)
+    (w₀ : T.innerMap ≫ f₁ = f₀ ≫ T'.innerMap) (w₁ : T.outerMap ≫ f₂ = f₁ ≫ T'.outerMap)
+
+@[simp] lemma homThd_homMk : homThd (homMk f₀ f₁ f₂ w₀ w₁) = f₀ := rfl
+
+@[simp] lemma homSnd_homMk : homSnd (homMk f₀ f₁ f₂ w₀ w₁) = f₁ := rfl
+
+@[simp] lemma homFst_homMk : homFst (homMk f₀ f₁ f₂ w₀ w₁) = f₂ := rfl
+
+end
+
 @[reassoc]
 lemma homThd_comp_innerMap (φ : T ⟶ T') :
     homThd φ ≫ T'.innerMap = T.innerMap ≫ homSnd φ :=
