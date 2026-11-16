@@ -214,7 +214,6 @@ private theorem norm_schwarzChristoffelCornerRemainder_sub_le (a e : ι → ℝ)
     rintro rfl
     simpa [q] using hz.2
   have hnorm : 0 < ‖z - q‖ := norm_pos_iff.mpr (sub_ne_zero.mpr hz_ne)
-  have hT1 : 0 < T + 1 := by dsimp [T]; linarith
   have hγderiv : ∀ t ∈ Icc δ 1, HasDerivAt (fun t : ℝ => R (γ t))
       ((z - q) * (schwarzChristoffelIntegrand a e (γ t) - C *
         (γ t - q) ^ (T : ℂ))) t :=

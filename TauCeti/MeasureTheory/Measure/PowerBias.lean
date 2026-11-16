@@ -93,7 +93,7 @@ theorem isProbabilityMeasure_powerBias {μ : Measure ℝ} {q : ℝ}
 theorem eq_zero_of_lintegral_powerBiasWeight_eq_zero {μ : Measure ℝ} {q : ℝ}
     (hμ : ∀ᵐ x ∂μ, 0 < x) (hZ : ∫⁻ x, (Real.toNNReal (x ^ q) : ℝ≥0∞) ∂μ = 0) : μ = 0 := by
   rw [lintegral_eq_zero_iff (measurable_powerBiasWeight q).coe_nnreal_ennreal] at hZ
-  have h : ∀ᵐ x ∂μ, False := by
+  have h : ∀ᵐ _ ∂μ, False := by
     filter_upwards [hμ, hZ] with x hx hz
     simp only [Pi.zero_apply, ENNReal.coe_eq_zero, Real.toNNReal_eq_zero] at hz
     exact (Real.rpow_pos_of_pos hx q).not_ge hz

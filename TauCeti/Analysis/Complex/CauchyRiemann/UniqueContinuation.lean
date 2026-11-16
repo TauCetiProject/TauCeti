@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Complex.CauchyIntegral
 public import Mathlib.Topology.DiscreteSubset
 public import TauCeti.Analysis.Analytic.Order
 public import TauCeti.Analysis.Normed.Operator.Basic
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # Unique continuation from a similarity factorization
@@ -36,6 +37,15 @@ open preconnected `Ω ⊆ ℂ` that admits a factorization at every zero in `Ω`
   characterized by `‖ξ z‖ ≍ ‖z - z₀‖ ^ m`
   (`TauCeti.exists_analyticOrderAt_eq_of_hasSimilarityFactorizationAt`). That the order does not
   depend on the factorization is `TauCeti.analyticOrderAt_eq_of_eventually_eq_clm_apply`.
+
+A scalar power factorization `f w = (w - z₀) ^ m * v w` at a zero `z₀`, with `v` continuous and
+nonzero at `z₀`, is itself a similarity factorization with `Φ = v • id` and `σ = (· - z₀) ^ m`
+(`TauCeti.hasSimilarityFactorizationAt_of_eventually_eq_pow_mul`). Then `m` is positive
+(`TauCeti.pos_of_eventually_eq_pow_mul`), `‖f w‖ ≍ ‖w - z₀‖ ^ m`
+(`TauCeti.isTheta_pow_of_eventually_eq_pow_mul`), and `m` is the analytic order of the holomorphic
+factor of every factorization of `f` at `z₀`
+(`TauCeti.analyticOrderAt_eq_of_eventually_eq_pow_mul`); the last two hold without assuming
+`f z₀ = 0`.
 
 For example, a continuous invertible family preserves quadratic vanishing:
 `TauCeti.isTheta_clm_apply_sq_smul` shows that `Φ z (z ^ 2 • v)` has an isolated zero of order
@@ -80,6 +90,17 @@ theorem HasSimilarityFactorizationAt.of_eqOn_ball {r : ℝ} (hr : 0 < r)
     (hξ : EqOn ξ (fun z ↦ Φ z (σ z)) (ball z₀ r)) : HasSimilarityFactorizationAt ξ z₀ :=
   ⟨Φ, σ, hΦ.continuousAt (ball_mem_nhds z₀ hr), hΦ₀,
     hσ.analyticAt (ball_mem_nhds z₀ hr), eventually_of_mem (ball_mem_nhds z₀ hr) hξ⟩
+
+omit [CompleteSpace V] in
+/-- A family of real-linear maps continuous at `z₀` and invertible there carries a factorization of
+`η` at `z₀` to one of `z ↦ Φ z (η z)`. This reduces factorizations for a variable complex
+structure to the standard one. -/
+theorem HasSimilarityFactorizationAt.clm_apply {η : ℂ → V} (h : HasSimilarityFactorizationAt η z₀)
+    (hΦ : ContinuousAt Φ z₀) (hΦ₀ : IsUnit (Φ z₀)) :
+    HasSimilarityFactorizationAt (fun z ↦ Φ z (η z)) z₀ := by
+  obtain ⟨Φ', σ, hΦ', hΦ'₀, hσ, hη⟩ := h
+  exact ⟨fun z ↦ Φ z ∘L Φ' z, σ, hΦ.clm_comp hΦ', hΦ₀.mul hΦ'₀, hσ,
+    hη.mono fun z hz ↦ by simp [hz]⟩
 
 omit [CompleteSpace V] in
 /-- A function analytic at `z₀` factors there with `Φ = 1`. -/
@@ -134,6 +155,44 @@ theorem analyticOrderAt_eq_of_eventually_eq_clm_apply
   refine hσ.analyticOrderAt_eq_of_isTheta hσ' ?_
   exact (isTheta_of_eventually_eq_clm_apply hΦ hΦ₀ hξ).symm.trans
     (isTheta_of_eventually_eq_clm_apply hΦ' hΦ'₀ hξ')
+
+/-- A scalar power factorization `f w = (w - z₀) ^ m * v w` near `z₀`, with `v` continuous and
+nonzero at `z₀`, is a similarity factorization of `f` at `z₀`. -/
+theorem hasSimilarityFactorizationAt_of_eventually_eq_pow_mul {f : ℂ → ℂ} {m : ℕ} {v : ℂ → ℂ}
+    (hv : ContinuousAt v z₀) (hv₀ : v z₀ ≠ 0) (hfv : ∀ᶠ w in 𝓝 z₀, f w = (w - z₀) ^ m * v w) :
+    HasSimilarityFactorizationAt f z₀ := by
+  refine hasSimilarityFactorizationAt_iff.2 ⟨fun w ↦ v w • ContinuousLinearMap.id ℝ ℂ,
+    fun w ↦ (w - z₀) ^ m, hv.smul continuousAt_const,
+    ContinuousLinearMap.isUnit_smul_id_of_ne_zero hv₀, by fun_prop, ?_⟩
+  filter_upwards [hfv] with w hw
+  simp [hw, mul_comm]
+
+/-- A power factorization `f w = (w - z₀) ^ m * v w` near `z₀`, with `v` continuous and nonzero at
+`z₀`, makes `‖f w‖` comparable to `‖w - z₀‖ ^ m` near `z₀`. -/
+theorem isTheta_pow_of_eventually_eq_pow_mul {f : ℂ → ℂ} {m : ℕ} {v : ℂ → ℂ}
+    (hv : ContinuousAt v z₀) (hv₀ : v z₀ ≠ 0) (hfv : ∀ᶠ w in 𝓝 z₀, f w = (w - z₀) ^ m * v w) :
+    f =Θ[𝓝 z₀] fun w ↦ (w - z₀) ^ m :=
+  EventuallyEq.trans_isTheta hfv <| by
+    simpa using (isTheta_refl (fun w ↦ (w - z₀) ^ m) (𝓝 z₀)).mul (hv.isTheta (F := ℂ) hv₀)
+
+/-- The exponent of a power factorization `f w = (w - z₀) ^ m * v w` at a zero `z₀` of `f`, with
+`v z₀ ≠ 0`, is positive. -/
+theorem pos_of_eventually_eq_pow_mul {f : ℂ → ℂ} (hf₀ : f z₀ = 0) {m : ℕ} {v : ℂ → ℂ}
+    (hv₀ : v z₀ ≠ 0) (hfv : ∀ᶠ w in 𝓝 z₀, f w = (w - z₀) ^ m * v w) : 0 < m :=
+  Nat.pos_of_ne_zero fun h0 ↦ hv₀ <| by simpa [h0, hf₀] using hfv.self_of_nhds.symm
+
+/-- **Orders of zeros** from a power factorization. If `f : ℂ → ℂ` has a power factorization
+`f w = (w - z₀) ^ m * v w` near `z₀`, with `v` continuous and nonzero at `z₀`, such as the one of
+`TauCeti.exists_contDiffAt_pow_mul_of_conjWirtingerDeriv_apply_one_eq_mul` for a solution of
+`bar∂ f = a f` not vanishing near `z₀`, then `m` is the analytic order at `z₀` of the holomorphic
+factor `σ` of every similarity factorization `f = Φ σ` near `z₀`. -/
+theorem analyticOrderAt_eq_of_eventually_eq_pow_mul {f : ℂ → ℂ} {m : ℕ} {v : ℂ → ℂ}
+    (hv : ContinuousAt v z₀) (hv₀ : v z₀ ≠ 0) (hfv : ∀ᶠ w in 𝓝 z₀, f w = (w - z₀) ^ m * v w)
+    {Φ : ℂ → ℂ →L[ℝ] ℂ} {σ : ℂ → ℂ} (hΦ : ContinuousAt Φ z₀) (hΦ₀ : IsUnit (Φ z₀))
+    (hσ : AnalyticAt ℂ σ z₀) (hfΦ : ∀ᶠ w in 𝓝 z₀, f w = Φ w (σ w)) :
+    analyticOrderAt σ z₀ = m :=
+  (analyticOrderAt_eq_natCast_iff_isTheta_of_eventually_eq_clm_apply hΦ hΦ₀ hσ hfΦ).2
+    (isTheta_pow_of_eventually_eq_pow_mul hv hv₀ hfv)
 
 /-- A function factoring at `z₀` either vanishes near `z₀` or has no zeros in a punctured
 neighbourhood of `z₀`. -/

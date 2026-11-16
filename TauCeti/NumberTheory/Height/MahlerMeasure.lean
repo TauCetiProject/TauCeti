@@ -131,11 +131,10 @@ numerator and its denominator, independently of the field containing `q`. -/
 @[simp]
 theorem mahlerMeasure_ratCast (q : ℚ) :
     mahlerMeasure (q : F) = max (q.num.natAbs : ℝ) q.den := by
-  have hden : (q.den : ℂ) ≠ 0 := by exact_mod_cast q.den_nz
   have hmap : (C (q.den : ℤ) * X - C q.num).map (Int.castRingHom ℂ) =
       C (q.den : ℂ) * X + C (-(q.num : ℂ)) := by simp [sub_eq_add_neg]
   rw [mahlerMeasure_def, primitiveMinpoly_ratCast, hmap,
-    Polynomial.mahlerMeasure_C_mul_X_add_C hden]
+    Polynomial.mahlerMeasure_C_mul_X_add_C]
   simp [max_comm]
 
 /-- On rational numbers the Mahler measure is the multiplicative Weil height. -/

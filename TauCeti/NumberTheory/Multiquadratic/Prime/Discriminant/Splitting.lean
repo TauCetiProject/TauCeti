@@ -11,7 +11,7 @@ public import TauCeti.NumberTheory.Multiquadratic.MultiquadraticSplitting
 /-!
 # Prime-discriminant splitting in multiquadratic fields
 
-The genus-field layer indexes the quadratic factors by prime discriminants `D`, while the
+Genus theory indexes the quadratic factors by prime discriminants `D`, while the
 multiquadratic splitting theorem is stated for the corresponding squarefree radicands
 `primeDiscriminantRadicand D`. This file records the small bridge between those conventions.
 

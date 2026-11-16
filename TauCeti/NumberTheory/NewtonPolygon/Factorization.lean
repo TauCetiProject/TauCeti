@@ -343,7 +343,7 @@ theorem unique (hg₁ : f.IsPureSlopeFactorization v g₁)
     obtain ⟨c, -, hcu⟩ := Polynomial.isUnit_iff.mp u.isUnit
     rw [← hcu] at hu
     have hc1 : c = 1 := by
-      have h0 := congrArg (coeff · 0) hu
+      have h0 := congrArg (AddMonoidAlgebra.coeff · 0) hu
       simpa [mul_coeff_zero, hg₁.coeff_zero m, hg₂.coeff_zero m] using h0
     simpa [hc1] using hu
   · have hm' : m ∉ f.newtonSlopes v := by simpa [Multiset.mem_toFinset] using hm

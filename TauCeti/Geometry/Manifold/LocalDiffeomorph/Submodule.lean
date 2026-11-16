@@ -74,7 +74,7 @@ theorem ContMDiffOn.exists_plaque_chart [FiniteDimensional 𝕜 W]
   let A₀ : F ≃ₗ[𝕜] W :=
     (LinearEquiv.ofInjective df.toLinearMap hinj).trans (LinearEquiv.ofEq _ _ hrange)
   let _ : FiniteDimensional 𝕜 F := FiniteDimensional.of_injective A₀.toLinearMap A₀.injective
-  let _ : CompleteSpace F := FiniteDimensional.complete 𝕜 F
+  let _ : CompleteSpace F := FiniteDimensional.completeSpace 𝕜 F
   obtain ⟨p, hp⟩ := Submodule.ClosedComplemented.of_finiteDimensional W
   let A := A₀.toContinuousLinearEquiv
   have hA : (A : F →L[𝕜] W) = p.comp df := by

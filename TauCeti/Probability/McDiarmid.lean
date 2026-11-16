@@ -122,7 +122,7 @@ private theorem integral_integral_exp_finCons_le {β : Type*} [MeasurableSpace �
         ∫ w, Real.exp (t * ((∫ a, f (Fin.cons a w) ∂ν) - I)) ∂Measure.pi (fun _ : Fin n => ν) := by
   have : Nonempty β := nonempty_of_isProbabilityMeasure ν
   set πn := Measure.pi (fun _ : Fin n => ν)
-  set g : (Fin n → β) → ℝ := fun w => ∫ a, f (Fin.cons a w) ∂ν with hg_def
+  set g : (Fin n → β) → ℝ := fun w => ∫ a, f (Fin.cons a w) ∂ν
   have hg_meas : Measurable g :=
     hf.comp_finCons.stronglyMeasurable.integral_prod_left.measurable
   have hsec_meas : ∀ w : Fin n → β, Measurable (fun a => f (Fin.cons a w)) := fun w =>
@@ -192,7 +192,7 @@ private theorem integral_exp_mul_centered_le_pi_fin_succ {β : Type*} [Measurabl
     (integrable_const M).mono'
       (hf.comp_finCons.comp (measurable_id.prodMk measurable_const)
         ).aestronglyMeasurable (ae_of_all _ fun a => by simpa using hMf (Fin.cons a w))
-  set g : (Fin n → β) → ℝ := fun w => ∫ a, f (Fin.cons a w) ∂ν with hg_def
+  set g : (Fin n → β) → ℝ := fun w => ∫ a, f (Fin.cons a w) ∂ν
   have hgf : I = ∫ w, g w ∂πn := by
     rw [hI_def, ν.integral_pi_fin_succ_eq_integral_integral_finCons f
       (ν.integrable_comp_finCons_of_abs_le hf hMf)]
@@ -371,8 +371,6 @@ theorem neg_sq_div_two_mul_variance_proxy {q n : ℕ} {ε : ℝ} :
   · simp
   rcases Nat.eq_zero_or_pos n with rfl | hn
   · simp
-  have hqR : (0 : ℝ) < q := by exact_mod_cast hq
-  have hnR : (0 : ℝ) < n := by exact_mod_cast hn
   simp only [NNReal.coe_mul, NNReal.coe_pow, NNReal.coe_div,
     Real.coe_toNNReal _ (by positivity : (0 : ℝ) ≤ (q : ℝ) / (n : ℝ)),
     NNReal.coe_natCast, NNReal.coe_ofNat]

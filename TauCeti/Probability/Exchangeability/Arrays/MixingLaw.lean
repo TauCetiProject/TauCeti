@@ -35,8 +35,8 @@ statement is the symmetric argument using row exchangeability.
 
 The existential corollaries retain genuine directing measures: de Finetti supplies
 `ConditionallyIIDWith`, while the invariance follows after forgetting only to its mixture
-identity. These results are the next law-level input to the separately exchangeable-array branch
-of the Aldous–Hoover milestone in `TauCetiRoadmap/Exchangeability/README.md`, Layer 8.
+identity. These results are a law-level input to the Aldous–Hoover representation of separately
+exchangeable arrays.
 
 ## Main results
 

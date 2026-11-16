@@ -50,12 +50,7 @@ theorem forall_projective_smul_eq_iff_mem_center (g : GLSymplecticFin m K) :
         congrFun hcol i
     exact mem_center_of_val_eq_scalar hscalar
   · intro hg
-    by_cases hm : m = 0
-    · subst m
-      intro p
-      induction p using Projectivization.ind with | _ v hv =>
-      exact (hv (funext fun i ↦ Fin.elim0 i)).elim
-    obtain ⟨c, hc, -⟩ := (mem_center_iff hm g).mp hg
+    obtain ⟨c, hc, -⟩ := (mem_center_iff g).mp hg
     apply (Projectivization.forall_smul_eq_iff_exists_smul g).mpr
     refine ⟨c, fun v ↦ ?_⟩
     simp only [Subgroup.smul_def, Units.smul_def, Matrix.smul_eq_mulVec, hc,

@@ -94,25 +94,27 @@ theorem nonempty_gammaSet_intCast_iff (x : Fin 2 → ℤ) :
     ext i
     fin_cases i <;> simp [ha₀, hc₀]
 
-/-- A residue pair lifts to a coprime integer pair exactly when the gcd of its least nonnegative
-representatives is prime to `N`. -/
-theorem nonempty_gammaSet_iff_coprime_val [NeZero N] (a : Fin 2 → ZMod N) :
+/-- A residue pair lifts to a coprime integer pair exactly when the gcd of its `ZMod.val`s (the
+least nonnegative representatives for `N ≠ 0`, the absolute values at level `0`) is prime to `N`. -/
+theorem nonempty_gammaSet_iff_coprime_val (a : Fin 2 → ZMod N) :
     Nonempty (gammaSet N 1 a) ↔ Nat.Coprime ((a 0).val.gcd (a 1).val) N := by
-  have h := nonempty_gammaSet_intCast_iff (N := N) fun i ↦ ((a i).val : ℤ)
-  have ha : ((↑) : ℤ → ZMod N) ∘ (fun i ↦ ((a i).val : ℤ)) = a := by
+  have h := nonempty_gammaSet_intCast_iff (N := N) fun i ↦ ZMod.cast (a i)
+  have ha : ((↑) : ℤ → ZMod N) ∘ (fun i ↦ (ZMod.cast (a i) : ℤ)) = a := by
     ext i
     simp
-  rwa [ha, Int.gcd_natCast_natCast] at h
+  rw [ha] at h
+  rw [h, Int.gcd_eq_natAbs, ZMod.natAbs_cast, ZMod.natAbs_cast]
 
 /-- The multiple `k a` of a residue pair lifts to a coprime integer pair exactly when `k` times
-the gcd of the least nonnegative representatives of `a` is prime to `N`. -/
-theorem nonempty_gammaSet_natCast_smul_iff [NeZero N] (k : ℕ) (a : Fin 2 → ZMod N) :
+the gcd of the `ZMod.val`s of `a` (the least nonnegative representatives for `N ≠ 0`, the absolute
+values at level `0`) is prime to `N`. -/
+theorem nonempty_gammaSet_natCast_smul_iff (k : ℕ) (a : Fin 2 → ZMod N) :
     Nonempty (gammaSet N 1 ((k : ZMod N) • a)) ↔ Nat.Coprime (k * (a 0).val.gcd (a 1).val) N := by
-  have h : ((↑) : ℤ → ZMod N) ∘ (fun i ↦ (k : ℤ) * (a i).val) = (k : ZMod N) • a := by
+  have h : ((↑) : ℤ → ZMod N) ∘ (fun i ↦ (k : ℤ) * ZMod.cast (a i)) = (k : ZMod N) • a := by
     ext i
     simp
   rw [← h, nonempty_gammaSet_intCast_iff, Int.gcd_mul_left, Int.natAbs_natCast,
-    Int.gcd_natCast_natCast]
+    Int.gcd_eq_natAbs, ZMod.natAbs_cast, ZMod.natAbs_cast]
 
 /-- The residues of coprime integer pairs are closed under negation. -/
 theorem nonempty_gammaSet_neg_iff (a : Fin 2 → ZMod N) :

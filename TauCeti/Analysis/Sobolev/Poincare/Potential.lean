@@ -129,7 +129,7 @@ theorem setLIntegral_closedBall_lintegral_segment_le {g : E → ℝ≥0∞}
         ∫⁻ w, g w * ‖x - w‖ₑ ^ (1 - (finrank ℝ E : ℝ)) ∂μ := by
   rcases subsingleton_or_nontrivial E with hE | hE
   · have hzero : ∀ y : E, ‖x - y‖ₑ = 0 := fun y => by
-      rw [Subsingleton.elim x y, sub_self, enorm_zero]
+      rw [Subsingleton.elim x y, sub_self, eNorm_zero]
     simp [hzero]
   set n := finrank ℝ E
   have hn : 0 < n := finrank_pos
@@ -157,7 +157,7 @@ theorem setLIntegral_closedBall_lintegral_segment_le {g : E → ℝ≥0∞}
         ∫⁻ t in Ioc (0 : ℝ) 1, K t y := by
     intro y
     by_cases hy : y ∈ closedBall x D
-    · rw [indicator_of_mem hy, ← lintegral_mul_const' _ _ enorm_ne_top]
+    · rw [indicator_of_mem hy, ← lintegral_mul_const' _ _ eNorm_ne_top]
       simp only [K, ite_eq_left (mem_closedBall_iff_norm'.1 hy), ofReal_norm]
     · rw [indicator_of_notMem hy]
       simp [K, ite_eq_right (mt mem_closedBall_iff_norm'.2 hy)]
@@ -194,7 +194,7 @@ theorem setLIntegral_enorm_sub_le_of_starConvex (hΩ : IsOpen Ω) (hu : ContDiff
   have hcont := hu.continuousOn_fderiv_of_isOpen hΩ le_rfl
   have hg : Measurable g := by
     rw [hg_def, ← piecewise_eq_indicator]
-    exact hcont.enorm.measurable_piecewise continuousOn_const hΩ.measurableSet
+    exact hcont.eNorm.measurable_piecewise continuousOn_const hΩ.measurableSet
   -- The segment estimate for `u` between `x` and a point `y` of `Ω`.
   have hseg : ∀ y ∈ Ω,
       ‖u x - u y‖ₑ ≤ (∫⁻ t in Ioc (0 : ℝ) 1, g (x + t • (y - x))) * ‖x - y‖ₑ := by
@@ -204,12 +204,10 @@ theorem setLIntegral_enorm_sub_le_of_starConvex (hΩ : IsOpen Ω) (hu : ContDiff
     have h := enorm_sub_le_lintegral_enorm_fderiv_apply (u := u) x (y - x)
       (fun t ht => (hu.differentiableOn one_ne_zero _ (hmem t ht)).differentiableAt
         (hΩ.mem_nhds (hmem t ht)))
-      ((hcont.comp (by fun_prop : Continuous fun t : ℝ => x + t • (y - x)).continuousOn
-        hmem).clm_apply continuousOn_const)
-    rw [add_sub_cancel, enorm_sub_rev] at h
-    rw [← lintegral_mul_const' _ _ enorm_ne_top, setLIntegral_congr Ioc_ae_eq_Icc]
+    rw [add_sub_cancel, eNorm_sub_rev] at h
+    rw [← lintegral_mul_const' _ _ eNorm_ne_top, setLIntegral_congr Ioc_ae_eq_Icc]
     refine h.trans (setLIntegral_mono' measurableSet_Icc fun t ht => ?_)
-    simp only [g, indicator_of_mem (hmem t ht), enorm_sub_rev x y]
+    simp only [g, indicator_of_mem (hmem t ht), eNorm_sub_rev x y]
     exact ContinuousLinearMap.le_opENorm _ _
   calc
     ∫⁻ y in Ω, ‖u x - u y‖ₑ ∂μ ≤
@@ -241,9 +239,9 @@ theorem enorm_sub_setAverage_le_of_starConvex [CompleteSpace F] (hΩ : IsOpen Ω
       (Measure.restrict_mono hS le_rfl)
   calc
     ‖u x - ⨍ y in S, u y ∂μ‖ₑ ≤ (μ S)⁻¹ * ∫⁻ y in S, ‖u x - u y‖ₑ ∂μ := by
-      rw [enorm_sub_rev, ← ENNReal.div_eq_inv_mul, ← setLAverage_eq]
+      rw [eNorm_sub_rev, ← ENNReal.div_eq_inv_mul, ← setLAverage_eq]
       refine (enorm_setAverage_sub_le_setLAverage hSm hS₀ hS_top (u x)).trans_eq ?_
-      exact congrArg (laverage _) (funext fun y => enorm_sub_rev _ _)
+      exact congrArg (laverage _) (funext fun y => eNorm_sub_rev _ _)
     _ ≤ (μ S)⁻¹ * ∫⁻ y in Ω, ‖u x - u y‖ₑ ∂μ := by gcongr
     _ ≤ _ := by gcongr
 

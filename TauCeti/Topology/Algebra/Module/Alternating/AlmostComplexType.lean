@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Polynomial.AlgebraMap
 public import TauCeti.LinearAlgebra.Alternating.Derivation
 public import TauCeti.LinearAlgebra.End.Aeval
 public import TauCeti.Topology.Algebra.Module.Alternating.Basic
@@ -13,7 +12,11 @@ public import TauCeti.Topology.Algebra.Module.Alternating.Curry
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.LinearAlgebra.Eigenspace.Minpoly
 public import Mathlib.LinearAlgebra.Lagrange
+public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
+public import Mathlib.Data.Finset.Sort
+import TauCeti.Data.Fin.Tuple.Sort
 import TauCeti.LinearAlgebra.Complex.Module
+import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # The `(p,q)` type of complex-valued alternating forms
@@ -37,6 +40,12 @@ Lagrange basis polynomials, evaluated at the derivation, are the type projection
 forms of each type. Types and type projections are compatible with pullback along maps
 intertwining the complex structures and with complex-linear coefficient maps, and conjugate-linear
 coefficient maps such as complex conjugation exchange the types `(p,q)` and `(q,p)`.
+
+A form of type `(0,k)` is conjugate-linear in each argument: applying `J` to one argument
+multiplies its value by `-I`. On the coordinate space `ι → ℂ` such a form is therefore determined by
+its values on increasing families of coordinate vectors, and the forms
+`d(conj z_(e 0)) ∧ ⋯ ∧ d(conj z_(e (k - 1)))` (`ContinuousAlternatingMap.conjCoordForm`) are
+dual to these families.
 
 These fibrewise statements are the linear algebra behind the type decomposition of complex-valued
 differential forms on an almost complex manifold.
@@ -69,6 +78,16 @@ differential forms on an almost complex manifold.
 * `ContinuousAlternatingMap.IsOfType.map_smul_complex` and
   `ContinuousAlternatingMap.IsOfType.map_smul_conj`: on a complex vector space, one-forms of type
   `(1,0)` are complex-linear and one-forms of type `(0,1)` are conjugate-linear.
+* `ContinuousAlternatingMap.eq_zero_of_alternatingDerivation_eq_smul`: for `J² = -1`, the
+  derivation has no eigenvalues other than the type eigenvalues.
+* `ContinuousAlternatingMap.IsOfType.apply_update_eq_neg_I_smul` and
+  `ContinuousAlternatingMap.IsOfType.map_update_smul_conj`: forms of type `(0,k)` are
+  conjugate-linear in each argument.
+* `ContinuousAlternatingMap.IsOfType.apply_eq_sum_prod_conj_smul` and
+  `ContinuousAlternatingMap.IsOfType.eq_zero_of_forall_apply_orderEmbOfFin`: forms of type `(0,k)`
+  on `ι → ℂ` are determined by their values on increasing families of coordinate vectors.
+* `ContinuousAlternatingMap.conjCoordForm`: the form `d(conj z_(e 0)) ∧ ⋯ ∧ d(conj z_(e (k - 1)))`
+  on `ι → ℂ`, of type `(0,k)`.
 * `ContinuousLinearMap.typeProjection_two_zero_apply`,
   `ContinuousLinearMap.typeProjection_one_one_apply` and
   `ContinuousLinearMap.typeProjection_zero_two_apply`: the type components of two-forms, in terms
@@ -79,7 +98,9 @@ differential forms on an almost complex manifold.
 The polynomial identity is proved by induction on the degree. Inserting a vector `v` as the first
 argument, the combinations `ι_v ∓ I • ι_{J v}` of interior products
 (`ContinuousAlternatingMap.curryLeftTopologicalLinear`) intertwine the derivation on `(k+1)`-forms
-with the derivation on `k`-forms shifted by `±I`.
+with the derivation on `k`-forms shifted by `±I`. For a form of type `(0,k+1)`, the combination
+`ι_v - I • ι_{J v}` is thus an eigenvector with eigenvalue `-(k + 2) * I`, which is not a type
+eigenvalue on `k`-forms, so it vanishes: this is the conjugate-linearity in the first argument.
 
 ## References
 
@@ -257,6 +278,11 @@ theorem IsOfType.sub (h : ω.IsOfType J p q) (h' : ω'.IsOfType J p q) :
     (ω - ω').IsOfType J p q :=
   ⟨h.1, by rw [map_sub, h.2, h'.2, smul_sub]⟩
 
+/-- A finite sum of forms of type `(p,q)` has type `(p,q)`. -/
+theorem IsOfType.sum {ι : Type*} {s : Finset ι} {ω : ι → V [⋀^Fin k]→L[ℝ] F} (hpq : p + q = k)
+    (h : ∀ i ∈ s, (ω i).IsOfType J p q) : (∑ i ∈ s, ω i).IsOfType J p q :=
+  ⟨hpq, by rw [_root_.map_sum, Finset.smul_sum]; exact Finset.sum_congr rfl fun i hi ↦ (h i hi).2⟩
+
 /-- Every complex-valued function, as a `0`-form, has type `(0,0)`. -/
 theorem isOfType_zero_zero (ω : V [⋀^Fin 0]→L[ℝ] F) (J : V →L[ℝ] V) : ω.IsOfType J 0 0 :=
   ⟨rfl, by ext v; simp [ContinuousLinearMap.alternatingDerivation_apply]⟩
@@ -304,23 +330,6 @@ theorem IsOfType.map_smul_conj {U : Type*} [AddCommGroup U] [Module ℂ U] [Modu
     ContinuousAlternatingMap.vecCons_smul, ContinuousAlternatingMap.vecCons_smul, hI]
   rw [← Complex.re_smul_add_im_smul (conj c) (α ![v])]
   simp only [conj_re, conj_im, neg_smul, smul_neg]
-
-/-- A one-form of type `(0,1)` on a finite complex coordinate space is the sum of its coordinate
-values, weighted by the conjugates of the vector coordinates. -/
-theorem IsOfType.apply_eq_sum_conj_smul {ι : Type*} [Fintype ι] [DecidableEq ι]
-    {α : (ι → ℂ) [⋀^Fin 1]→L[ℝ] F}
-    (h : α.IsOfType (I • ContinuousLinearMap.id ℝ (ι → ℂ)) 0 1) (v : ι → ℂ) :
-    α ![v] = ∑ i, conj (v i) • α ![Pi.single i 1] := by
-  have hv : v = ∑ i, v i • Pi.single i (1 : ℂ) := by
-    simp [← Pi.single_smul, Finset.univ_sum_single]
-  let L := (ContinuousAlternatingMap.ofSubsingleton ℝ (ι → ℂ) F (0 : Fin 1)).symm α
-  have hL (w : ι → ℂ) : L w = α ![w] := by
-    rw [ContinuousAlternatingMap.ofSubsingleton_symm_apply_apply]
-    exact congrArg α (Matrix.vec_single_eq_const w).symm
-  calc
-    α ![v] = L (∑ i, v i • Pi.single i (1 : ℂ)) := by rw [← hv, hL]
-    _ = ∑ i, L (v i • Pi.single i (1 : ℂ)) := _root_.map_sum L _ _
-    _ = _ := Finset.sum_congr rfl fun i _ ↦ by rw [hL, h.map_smul_conj]
 
 /-- On a one-dimensional complex vector space, a one-form of type `(1,0)` for multiplication by
 `i` which vanishes on a nonzero vector is zero. -/
@@ -619,8 +628,8 @@ theorem typeProjection_compContinuousLinearMap {K : W →L[ℝ] W} {f : W →L[�
     (hf : ∀ w, J (f w) = f (K w)) (ω : V [⋀^Fin k]→L[ℝ] F) :
     K.typeProjection p q (ω.compContinuousLinearMap f) =
       (J.typeProjection p q ω).compContinuousLinearMap f := by
-  have h := LinearMap.congr_fun (Polynomial.aeval_comp_eq_comp_aeval
-    (σ := ContinuousAlternatingMap.compContinuousLinearMapLinear ℂ (N := F) (ι := Fin k) f)
+  have h := LinearMap.congr_fun (Module.End.aeval_comp_of_comp_eq
+    (f := ContinuousAlternatingMap.compContinuousLinearMapLinear ℂ (N := F) (ι := Fin k) f)
     (LinearMap.ext fun ω ↦ by simpa using alternatingDerivation_compContinuousLinearMap hf ω)
     (Lagrange.basis (Finset.antidiagonal k) typeEigenvalue (p, q))) ω
   simp only [LinearMap.comp_apply, ContinuousAlternatingMap.compContinuousLinearMapLinear_apply]
@@ -648,11 +657,9 @@ end TypeProjection
 
 section Decomposition
 
-variable [ContinuousConstSMul ℝ F]
-
 section Interior
 
-variable {n : ℕ}
+variable [ContinuousConstSMul ℝ F] {n : ℕ}
 
 /-- Inserting `v` into the derivation of a form. -/
 private lemma interior_alternatingDerivation (J : V →L[ℝ] V) (v : V)
@@ -700,6 +707,8 @@ end Interior
 
 section Nodal
 
+variable [ContinuousConstSMul ℝ F]
+
 /-- The derivation of an almost complex structure on `k`-forms is annihilated by the nodal
 polynomial of the type eigenvalues. -/
 private lemma aeval_alternatingDerivation_nodal (hJ : ∀ v, J (J v) = -v) (k : ℕ) :
@@ -740,9 +749,9 @@ private lemma aeval_alternatingDerivation_nodal (hJ : ∀ v, J (J v) = -v) (k : 
     set Ω := aeval (J.alternatingDerivation : Module.End ℂ (V [⋀^Fin (n + 1)]→L[ℝ] F)) P ω
     have hint : ∀ v, curryLeftTopologicalLinear ℂ v Ω = 0 := by
       intro v
-      have h₁ := congrArg (fun T ↦ T ω) (Polynomial.aeval_comp_eq_comp_aeval
+      have h₁ := congrArg (fun T ↦ T ω) (Module.End.aeval_comp_of_comp_eq
         (interior_sub_comp_alternatingDerivation (F := F) hJ v).symm P)
-      have h₂ := congrArg (fun T ↦ T ω) (Polynomial.aeval_comp_eq_comp_aeval
+      have h₂ := congrArg (fun T ↦ T ω) (Module.End.aeval_comp_of_comp_eq
         (interior_add_comp_alternatingDerivation (F := F) hJ v).symm P)
       simp only [LinearMap.comp_apply] at h₁ h₂
       rw [hplus] at h₁
@@ -762,6 +771,7 @@ annihilates the derivation induced by `J` on complex-valued `k`-forms. -/
 theorem aeval_alternatingDerivation_eq_zero (hJ : ∀ v, J (J v) = -v) {g : ℂ[X]}
     (hg : ∀ p q, p + q = k → g.eval (((p : ℂ) - q) * I) = 0) :
     aeval (J.alternatingDerivation : Module.End ℂ (V [⋀^Fin k]→L[ℝ] F)) g = 0 := by
+  have := IsScalarTower.continuousConstSMul ℝ ℂ F
   obtain ⟨h, rfl⟩ := nodal_dvd fun pq hpq ↦ hg pq.1 pq.2 (Finset.mem_antidiagonal.1 hpq)
   rw [map_mul, aeval_alternatingDerivation_nodal hJ, zero_mul]
 
@@ -831,3 +841,212 @@ theorem typeProjection_typeProjection (hJ : ∀ v, J (J v) = -v) (ω : V [⋀^Fi
 end Decomposition
 
 end ContinuousLinearMap
+
+namespace ContinuousAlternatingMap
+
+section TypeZero
+
+variable {J : V →L[ℝ] V} {k : ℕ}
+
+/-- For `J² = -1`, a `k`-form on which the derivation of `J` acts by a scalar other than the type
+eigenvalues `(p - q) * I`, `p + q = k`, vanishes. -/
+theorem eq_zero_of_alternatingDerivation_eq_smul (hJ : ∀ v, J (J v) = -v)
+    {ω : V [⋀^Fin k]→L[ℝ] F} {c : ℂ} (hc : ∀ p q, p + q = k → c ≠ ((p : ℂ) - q) * I)
+    (h : J.alternatingDerivation ω = c • ω) : ω = 0 := by
+  rw [← J.sum_typeProjection ω]
+  refine Finset.sum_eq_zero fun pq hpq ↦ ?_
+  have h₁ := J.typeProjection_alternatingDerivation (p := pq.1) (q := pq.2) hJ ω
+  rw [h, map_smul] at h₁
+  have h₂ : (c - ((pq.1 : ℂ) - pq.2) * I) • J.typeProjection pq.1 pq.2 ω = 0 := by
+    rw [sub_smul, h₁, sub_self]
+  exact (smul_eq_zero.1 h₂).resolve_left
+    (sub_ne_zero.2 (hc _ _ (Finset.mem_antidiagonal.1 hpq)))
+
+/-- For `J² = -1`, a form of type `(0,k)` is conjugate-linear in each argument for `J`:
+applying `J` to one argument multiplies the value by `-I`. -/
+theorem IsOfType.apply_update_eq_neg_I_smul (hJ : ∀ v, J (J v) = -v)
+    {ω : V [⋀^Fin k]→L[ℝ] F} (h : ω.IsOfType J 0 k) (v : Fin k → V) (i : Fin k) :
+    ω (Function.update v i (J (v i))) = -I • ω v := by
+  have := IsScalarTower.continuousConstSMul ℝ ℂ F
+  obtain _ | n := k
+  · exact i.elim0
+  -- First the first argument: the interior product `ι_u ω - I • ι_{J u} ω` is an eigenvector
+  -- of the derivation with eigenvalue `-(n + 2) * I`, which is not a type eigenvalue on
+  -- `n`-forms, so it vanishes.
+  have hfirst (u : Fin (n + 1) → V) : ω (Function.update u 0 (J (u 0))) = -I • ω u := by
+    set γ := curryLeftTopological ω (u 0) - I • curryLeftTopological ω (J (u 0))
+    have hγ : J.alternatingDerivation γ = (-((n : ℂ) + 2) * I) • γ := by
+      have h₁ := LinearMap.congr_fun
+        (ContinuousLinearMap.interior_sub_comp_alternatingDerivation (n := n) (F := F) hJ
+          (u 0)) ω
+      simp only [LinearMap.comp_apply, h.alternatingDerivation_eq, map_smul, LinearMap.sub_apply,
+        LinearMap.smul_apply, LinearMap.add_apply, Module.algebraMap_end_apply,
+        curryLeftTopologicalLinear_apply] at h₁
+      rw [← sub_eq_iff_eq_add] at h₁
+      rw [← h₁]
+      push_cast
+      module
+    have hγ0 : γ = 0 := eq_zero_of_alternatingDerivation_eq_smul hJ (fun p q hpq heq ↦ by
+      have h₃ : ((p + n + 2 : ℕ) : ℂ) = (q : ℂ) := by
+        push_cast
+        linear_combination (mul_right_cancel₀ I_ne_zero heq.symm)
+      have := Nat.cast_injective h₃
+      omega) hγ
+    have h₄ : ω (Fin.cons (u 0) (Fin.tail u)) = I • ω (Fin.cons (J (u 0)) (Fin.tail u)) := by
+      simpa [γ, Matrix.vecCons, sub_eq_zero] using DFunLike.congr_fun hγ0 (Fin.tail u)
+    rw [Fin.cons_self_tail] at h₄
+    rw [h₄, smul_smul, ← Fin.update_cons_zero (u 0) (Fin.tail u) (J (u 0)), Fin.cons_self_tail]
+    simp
+  -- The other arguments are moved to the first place by a transposition.
+  set σ := Equiv.swap 0 i
+  have hσ : Function.update v i (J (v i)) ∘ σ = Function.update (v ∘ σ) 0 (J ((v ∘ σ) 0)) := by
+    rw [Function.update_comp_equiv]
+    simp [σ]
+  have h₆ : ω (Function.update v i (J (v i)) ∘ σ) =
+      Equiv.Perm.sign σ • ω (Function.update v i (J (v i))) :=
+    ω.toAlternatingMap.map_perm _ σ
+  have h₇ : ω (v ∘ σ) = Equiv.Perm.sign σ • ω v := ω.toAlternatingMap.map_perm _ σ
+  rw [hσ, hfirst, h₇] at h₆
+  rw [← smul_left_cancel_iff (Equiv.Perm.sign σ), ← h₆, smul_comm]
+
+section ComplexSpace
+
+variable {U : Type*} [AddCommGroup U] [Module ℂ U] [Module ℝ U] [IsScalarTower ℝ ℂ U]
+  [TopologicalSpace U] [ContinuousConstSMul ℂ U] {ω : U [⋀^Fin k]→L[ℝ] F}
+
+/-- On a complex vector space, a form of type `(0,k)` for multiplication by `i` is
+conjugate-linear in each argument. -/
+theorem IsOfType.map_update_smul_conj (h : ω.IsOfType (I • ContinuousLinearMap.id ℝ U) 0 k)
+    (v : Fin k → U) (i : Fin k) (c : ℂ) :
+    ω (Function.update v i (c • v i)) = conj c • ω v := by
+  have hI : ω (Function.update v i (I • v i)) = -I • ω v := by
+    simpa using h.apply_update_eq_neg_I_smul (fun w ↦ by simp [smul_smul]) v i
+  rw [← Complex.re_smul_add_im_smul c (v i), ω.map_update_add, ω.map_update_smul,
+    ω.map_update_smul, hI, Function.update_eq_self, ← Complex.re_smul_add_im_smul (conj c) (ω v)]
+  simp only [conj_re, conj_im, neg_smul, smul_neg]
+
+/-- On a complex vector space, a form of type `(0,k)` for multiplication by `i` is
+conjugate-linear in all arguments at once. -/
+theorem IsOfType.map_smul_univ_conj (h : ω.IsOfType (I • ContinuousLinearMap.id ℝ U) 0 k)
+    (c : Fin k → ℂ) (v : Fin k → U) :
+    ω (fun a ↦ c a • v a) = (∏ a, conj (c a)) • ω v := by
+  classical
+  have key (s : Finset (Fin k)) :
+      ω (s.piecewise (fun a ↦ c a • v a) v) = (∏ a ∈ s, conj (c a)) • ω v := by
+    induction s using Finset.induction_on with
+    | empty => simp
+    | insert a s ha ih =>
+      rw [Finset.piecewise_insert, Finset.prod_insert ha, mul_smul, ← ih,
+        ← Finset.piecewise_eq_of_notMem s (fun a ↦ c a • v a) v ha, h.map_update_smul_conj]
+  simpa using key Finset.univ
+
+/-- A form of type `(0,k)` on a finite complex coordinate space is determined by its values on
+families of coordinate vectors: its value on `v` is the sum, over all families `f` of
+coordinates, of its value on the coordinate vectors `e_(f a)`, weighted by the product of the
+conjugates of the coordinates `v a (f a)`. -/
+theorem IsOfType.apply_eq_sum_prod_conj_smul {ι : Type*} [Fintype ι] [DecidableEq ι]
+    {ω : (ι → ℂ) [⋀^Fin k]→L[ℝ] F} (h : ω.IsOfType (I • ContinuousLinearMap.id ℝ (ι → ℂ)) 0 k)
+    (v : Fin k → ι → ℂ) :
+    ω v = ∑ f : Fin k → ι, (∏ a, conj (v a (f a))) • ω fun a ↦ Pi.single (f a) 1 := by
+  have hv : v = fun a ↦ ∑ j, v a j • Pi.single j (1 : ℂ) := by
+    ext a : 1
+    simp [← Pi.single_smul, Finset.univ_sum_single]
+  calc ω v = ω fun a ↦ ∑ j, v a j • Pi.single j (1 : ℂ) := congrArg ω hv
+    _ = ∑ f : Fin k → ι, ω fun a ↦ v a (f a) • Pi.single (f a) (1 : ℂ) :=
+      ω.toMultilinearMap.map_sum _
+    _ = _ := Finset.sum_congr rfl fun f _ ↦ h.map_smul_univ_conj _ _
+
+/-- A form of type `(0,k)` on `ι → ℂ`, for a linearly ordered finite `ι`, vanishes as soon as it
+vanishes on every increasing family `(e_(j₁), …, e_(j_k))`, `j₁ < ⋯ < j_k`, of coordinate
+vectors. -/
+theorem IsOfType.eq_zero_of_forall_apply_orderEmbOfFin {ι : Type*} [LinearOrder ι] [Finite ι]
+    {ω : (ι → ℂ) [⋀^Fin k]→L[ℝ] F} (h : ω.IsOfType (I • ContinuousLinearMap.id ℝ (ι → ℂ)) 0 k)
+    (h₀ : ∀ (s : Finset ι) (hs : s.card = k), ω (fun a ↦ Pi.single (s.orderEmbOfFin hs a) 1) = 0) :
+    ω = 0 := by
+  cases nonempty_fintype ι
+  ext v
+  rw [h.apply_eq_sum_prod_conj_smul, coe_zero, Pi.zero_apply]
+  refine Finset.sum_eq_zero fun f _ ↦ ?_
+  by_cases hf : Function.Injective f
+  · -- Sorting the injective family `f` gives the increasing enumeration of its image.
+    set σ := Tuple.sort f
+    have hs : (Finset.univ.image f).card = k := by
+      rw [Finset.card_image_of_injective _ hf, Finset.card_univ, Fintype.card_fin]
+    have hperm : (fun a ↦ Pi.single (f a) (1 : ℂ)) =
+        (fun a ↦ Pi.single ((Finset.univ.image f).orderEmbOfFin hs a) (1 : ℂ)) ∘ ⇑σ⁻¹ := by
+      ext a : 1
+      simp [σ, ← Tuple.comp_sort_eq_orderEmbOfFin hf]
+    have hσ := ω.toAlternatingMap.map_perm
+      (fun a ↦ Pi.single ((Finset.univ.image f).orderEmbOfFin hs a) (1 : ℂ)) σ⁻¹
+    rw [coe_toAlternatingMap, ← hperm, h₀] at hσ
+    rw [hσ, smul_zero, smul_zero]
+  · rw [ω.map_eq_zero_of_not_injective (fun a ↦ Pi.single (f a) (1 : ℂ)) fun h' ↦
+      hf (Function.Injective.of_comp (f := fun j ↦ Pi.single j (1 : ℂ)) h'), smul_zero]
+
+end ComplexSpace
+
+section Coordinates
+
+variable {ι : Type*}
+
+/-- The `k`-form `d(conj z_(e 0)) ∧ ⋯ ∧ d(conj z_(e (k - 1)))` on `ι → ℂ`: its value on `v` is
+the determinant of the matrix `(conj (v a (e b)))_(a,b)` (`conjCoordForm_apply`). It has type
+`(0,k)`, and it takes the value `1` on the coordinate vectors `(e_(e 0), …, e_(e (k - 1)))` when
+`e` is injective. -/
+def conjCoordForm (e : Fin k → ι) : (ι → ℂ) [⋀^Fin k]→L[ℝ] ℂ :=
+  ((AlternatingMap.toContinuousAlternatingMap (Matrix.detRowAlternating (R := ℂ))).restrictScalars
+    ℝ).compContinuousLinearMap
+    (ContinuousLinearMap.pi fun b ↦ (Complex.conjCLE : ℂ →L[ℝ] ℂ).comp (.proj (e b)))
+
+/-- The value of `d(conj z_(e 0)) ∧ ⋯ ∧ d(conj z_(e (k - 1)))` on `v` is the determinant of the
+matrix `(conj (v a (e b)))_(a,b)`. -/
+theorem conjCoordForm_apply (e : Fin k → ι) (v : Fin k → ι → ℂ) :
+    conjCoordForm e v = (Matrix.of fun a b ↦ conj (v a (e b))).det := by
+  simp only [conjCoordForm, compContinuousLinearMap_apply, coe_restrictScalars,
+    AlternatingMap.coe_toContinuousAlternatingMap]
+  rfl
+
+/-- The form `d(conj z_(e 0)) ∧ ⋯ ∧ d(conj z_(e (k - 1)))` has type `(0,k)`. -/
+theorem isOfType_conjCoordForm (e : Fin k → ι) :
+    (conjCoordForm e).IsOfType (I • ContinuousLinearMap.id ℝ (ι → ℂ)) 0 k := by
+  classical
+  refine ⟨zero_add k, ?_⟩
+  ext v
+  set M : Matrix (Fin k) (Fin k) ℂ := Matrix.of fun a b ↦ conj (v a (e b))
+  have hrow (i : Fin k) : (Matrix.of fun a b ↦
+      conj (Function.update v i ((I • ContinuousLinearMap.id ℝ (ι → ℂ)) (v i)) a (e b))) =
+      M.updateRow i (-I • M i) := by
+    ext a b
+    rcases eq_or_ne a i with rfl | ha
+    · simp [M]
+    · simp [M, Function.update_of_ne ha, Matrix.updateRow_ne ha]
+  simp only [ContinuousLinearMap.alternatingDerivation_apply, conjCoordForm_apply, hrow,
+    Matrix.det_updateRow_smul, Matrix.updateRow_eq_self, Finset.sum_const, Finset.card_univ,
+    Fintype.card_fin, smul_apply]
+  simp [M, nsmul_eq_mul]
+  ring
+
+/-- For injective `e`, the form `d(conj z_(e 0)) ∧ ⋯ ∧ d(conj z_(e (k - 1)))` takes the value `1`
+on the coordinate vectors `(e_(e 0), …, e_(e (k - 1)))`. -/
+@[simp]
+theorem conjCoordForm_apply_single_self [DecidableEq ι] {e : Fin k → ι}
+    (he : Function.Injective e) : conjCoordForm e (fun a ↦ Pi.single (e a) 1) = 1 := by
+  rw [conjCoordForm_apply, ← Matrix.det_one (n := Fin k) (R := ℂ)]
+  congr 1
+  ext a b
+  simp [Matrix.one_apply, Pi.single_apply, he.eq_iff, eq_comm]
+
+/-- The form `d(conj z_(e 0)) ∧ ⋯ ∧ d(conj z_(e (k - 1)))` vanishes on the coordinate vectors
+`(e_(f 0), …, e_(f (k - 1)))` as soon as some `f a` is not among the `e b`. -/
+theorem conjCoordForm_apply_single_eq_zero [DecidableEq ι] (e : Fin k → ι) {f : Fin k → ι}
+    {a : Fin k} (ha : f a ∉ Set.range e) : conjCoordForm e (fun a ↦ Pi.single (f a) 1) = 0 := by
+  rw [conjCoordForm_apply]
+  refine Matrix.det_eq_zero_of_row_eq_zero a fun b ↦ ?_
+  have hb : e b ≠ f a := fun h ↦ ha ⟨b, h⟩
+  simp [Pi.single_apply, hb]
+
+end Coordinates
+
+end TypeZero
+
+end ContinuousAlternatingMap

@@ -73,7 +73,7 @@ private theorem totalVariationOn_comp_le_of_isCompact_closure
       (fun _ => zero_le) fun n => ?_
     rw [← lintegral_const_mul' _ _ ENNReal.coe_ne_top]
     exact lintegral_mono fun x => by
-      simpa only [Function.comp_apply, ← edist_eq_enorm_sub] using hg (w n x) (u x)
+      simpa only [Function.comp_apply, ← eDist_eq_eNorm_sub] using hg (w n x) (u x)
   -- Lower semicontinuity passes the smooth-inner-function estimate to `u`.
   have hli (n : ℕ) : LocallyIntegrableOn (g ∘ w n) Ω' μ :=
     (hg.continuous.comp (hw n).continuous).locallyIntegrable.locallyIntegrableOn _

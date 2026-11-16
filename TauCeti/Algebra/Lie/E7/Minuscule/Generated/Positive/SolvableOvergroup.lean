@@ -89,7 +89,7 @@ private theorem single_mem_of_raising_path
   intro N a b h
   induction h with
   | refl => exact id
-  | tail h hstep ih => exact fun ha ↦ single_mem_of_raising_step J hJ N hstep (ih ha)
+  | tail _ hstep ih => exact fun ha ↦ single_mem_of_raising_step J hJ N hstep (ih ha)
 
 variable [IsAlgClosed k]
 

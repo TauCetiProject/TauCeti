@@ -12,6 +12,7 @@ public import Mathlib.RingTheory.SimpleModule.WedderburnArtin
 -- over the ring, so downstream importers do not pay for either module.
 import Mathlib.LinearAlgebra.Dimension.Constructions
 import Mathlib.RingTheory.Finiteness.Basic
+import TauCeti.RingTheory.SimpleRing.FiniteDimensional
 
 /-!
 # Modules over a simple Artinian ring are classified by their dimension
@@ -40,7 +41,7 @@ is exactly the input the Skolem-Noether theorem needs, in
   compares simple submodules of a single module, to a comparison against a fixed simple module,
   which is what lets two different modules be compared with each other.
 * `IsSimpleRing.nonempty_linearEquiv_of_finrank_eq`: two finite-dimensional modules over a
-  finite-dimensional simple `K`-algebra with the same `K`-dimension are isomorphic.
+  simple `K`-algebra with the same `K`-dimension are isomorphic.
 * `IsSimpleRing.nonempty_linearEquiv_iff_finrank_eq`: the two-way form, the classification
   itself.
 
@@ -52,10 +53,13 @@ than assumed. Taking it inside `R` rather than inside `M` is what makes it avail
 at once, and it inherits the `K`-module structure from `R`, so its dimension is finite and nonzero
 and can be cancelled.
 
-The two classification statements ask `R` to be finite-dimensional over `K` and do not also ask it
-to be Artinian: `IsArtinianRing.of_finite` derives that from finite-dimensionality, so callers never
-have to supply it. Only `IsIsotypicOfType.of_isSimpleRing`, which has no field in sight,
-takes `IsArtinianRing R` as a hypothesis.
+The two classification statements ask `R` to be neither finite-dimensional over `K` nor Artinian:
+a nonzero module that is finite-dimensional over `K` makes `R` finite-dimensional
+(`IsSimpleRing.finiteDimensional_of_nontrivial`, in
+`TauCeti/RingTheory/SimpleRing/FiniteDimensional.lean`), since `R` acts faithfully, and
+`IsArtinianRing.of_finite` derives Artinianity from that, so callers never have to supply either.
+Only `IsIsotypicOfType.of_isSimpleRing`, which has no field in
+sight, takes `IsArtinianRing R` as a hypothesis.
 
 Simplicity of `R` is not weakened to semisimplicity: over a semisimple ring with more than one block
 the dimension is not a complete invariant, since a module can distribute the same total dimension
@@ -94,17 +98,24 @@ theorem IsIsotypicOfType.of_isSimpleRing [IsArtinianRing R] (S : Type*) [AddComm
 
 namespace IsSimpleRing
 
-variable (K : Type*) [Field K] [Algebra K R] [FiniteDimensional K R]
+variable (K : Type*) [Field K] [Algebra K R]
   {M : Type*} [AddCommGroup M] [Module K M] [Module R M] [IsScalarTower K R M]
   [FiniteDimensional K M]
   {N : Type*} [AddCommGroup N] [Module K N] [Module R N] [IsScalarTower K R N]
   [FiniteDimensional K N]
 
 /-- **Modules over a simple Artinian algebra are classified by their dimension.** If `R` is a
-finite-dimensional simple `K`-algebra and `M`, `N` are `R`-modules which are finite-dimensional over
-`K`, then equal `K`-dimension forces an `R`-linear isomorphism. -/
+simple `K`-algebra and `M`, `N` are `R`-modules which are finite-dimensional over `K`, then equal
+`K`-dimension forces an `R`-linear isomorphism. The algebra `R` need not be assumed
+finite-dimensional: it is, as soon as `M` is nonzero. -/
 theorem nonempty_linearEquiv_of_finrank_eq (h : finrank K M = finrank K N) :
     Nonempty (M ≃ₗ[R] N) := by
+  rcases subsingleton_or_nontrivial M with hM | hM
+  · have : Subsingleton N := by
+      rw [← Module.finrank_zero_iff (R := K), ← h]
+      exact Module.finrank_zero_of_subsingleton
+    exact ⟨LinearEquiv.ofSubsingleton M N⟩
+  have := finiteDimensional_of_nontrivial K (R := R) (M := M)
   have : IsArtinianRing R := IsArtinianRing.of_finite K R
   obtain ⟨S, _⟩ := IsSemisimpleModule.exists_simple_submodule R R
   have : Module.Finite R M := Module.Finite.of_restrictScalars_finite K R M

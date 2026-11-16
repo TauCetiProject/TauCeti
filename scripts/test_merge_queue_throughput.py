@@ -97,11 +97,10 @@ class Throughput(unittest.TestCase):
                 result = subprocess.run(['python3', '-c', guard], env=env, capture_output=True, text=True)
                 self.assertEqual(result.returncode == 0, accepted, result.stdout + result.stderr)
 
-    def test_old_secondary_cache_protocol_is_removed(self):
+    def test_old_secondary_publication_protocol_is_removed(self):
         producer = (ROOT / '.github/workflows/pr-build.yml').read_text()
-        self.assertNotIn('bulk-unpack-cache.py', producer)
-        for name in ('bulk-unpack-cache.py', 'lake_cache_reuse.py'):
-            self.assertFalse((ROOT / 'scripts' / name).exists())
+        self.assertNotIn('lake_cache_reuse.py', producer)
+        self.assertFalse((ROOT / 'scripts/lake_cache_reuse.py').exists())
         self.assertNotIn('LAKE_CACHE_FULL_PUBLICATION', producer)
 
 if __name__ == '__main__':

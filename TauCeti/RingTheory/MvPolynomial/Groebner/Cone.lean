@@ -68,11 +68,10 @@ theorem IsRemainder.exists_finset_comparisons {f : MvPolynomial σ R}
   obtain ⟨q, hq, hbound⟩ := h.exists_linearCombination
   -- Include supports to fix leading exponents, and sums to transfer representation bounds.
   let S : B → Finset (σ →₀ ℕ) := fun b ↦
-    (insert (m.degree (b : MvPolynomial σ R)) (b : MvPolynomial σ R).support ∪
-      insert (m.degree (q b)) (q b).support) ∪
+    ((b : MvPolynomial σ R).support ∪ (q b).support) ∪
       {m.degree (b : MvPolynomial σ R) + m.degree (q b)}
-  let F := insert (m.degree f) f.support ∪ Finset.univ.biUnion S
-  have hfF : insert (m.degree f) f.support ⊆ F := Finset.subset_union_left
+  let F := f.support ∪ Finset.univ.biUnion S
+  have hfF : f.support ⊆ F := Finset.subset_union_left
   have hbF (b : B) : S b ⊆ F :=
     (Finset.subset_biUnion_of_mem S (Finset.mem_univ b)).trans Finset.subset_union_right
   -- Strict comparisons between these exponents also preserve all their weak comparisons.
@@ -80,10 +79,8 @@ theorem IsRemainder.exists_finset_comparisons {f : MvPolynomial σ R}
   refine ⟨C, fun p hp ↦ (Finset.mem_filter.1 hp).2, fun n hn ↦ ?_⟩
   have hcomp (a) (ha : a ∈ F) (b) (hb : b ∈ F) (hab : a ≺[m] b) : a ≺[n] b :=
     hn (a, b) (Finset.mem_filter.2 ⟨Finset.mem_product.2 ⟨ha, hb⟩, hab⟩)
-  have hd (p : MvPolynomial σ R) (hp : insert (m.degree p) p.support ⊆ F) :
-      n.degree p = m.degree p :=
-    m.degree_eq_of_forall_mem_lt n p hcomp (fun _ ha ↦ hp (Finset.mem_insert_of_mem ha))
-      (hp (Finset.mem_insert_self _ _))
+  have hd (p : MvPolynomial σ R) (hp : p.support ⊆ F) : n.degree p = m.degree p :=
+    m.degree_eq_of_forall_mem_lt n p hcomp fun _ ha ↦ hp ha
   have hdb (b : B) : n.degree (b : MvPolynomial σ R) = m.degree (b : MvPolynomial σ R) :=
     hd _ ((Finset.subset_union_left.trans Finset.subset_union_left).trans (hbF b))
   have hdq (b : B) : n.degree (q b) = m.degree (q b) :=
@@ -107,7 +104,7 @@ theorem IsRemainder.exists_finset_comparisons {f : MvPolynomial σ R}
   rcases eq_or_lt_of_le hbound' with heq | hlt
   · exact le_of_eq (congrArg n.toSyn (m.toSyn.injective heq))
   · exact (hcomp _ (hbF b (Finset.mem_union_right _ (Finset.mem_singleton_self _))) _
-      (hfF (Finset.mem_insert_self _ _)) hlt).le
+      (hfF (m.degree_mem_support hf0)) hlt).le
 
 end CommSemiring
 

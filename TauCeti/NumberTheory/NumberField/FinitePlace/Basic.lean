@@ -12,6 +12,8 @@ public import Mathlib.Analysis.AbsoluteValue.Equivalence
 import Mathlib.Algebra.Order.Hom.Lattice
 import Mathlib.Analysis.SpecificLimits.Basic
 import TauCeti.Algebra.Order.Field.Basic
+import TauCeti.NumberTheory.Padics.HeightOneSpectrum
+import TauCeti.RingTheory.DedekindDomain.PrimesAbove
 
 /-!
 # Finite places of number fields
@@ -26,15 +28,17 @@ The valuation dictionary `FinitePlace.mk_apply_le_one_iff` and
 `FinitePlace.mk_apply_eq_one_iff` compares the finite-place absolute value with the adic valuation.
 These comparisons follow Ralf Stephan's `ArithmeticHeights/SUnit.lean` in
 `rwst/Subspace-Theorems` at `e443c2479e19f7665b31d8e94e2317c8ced1ca06` (Apache 2.0).
-`FinitePlace.mk_apply_le_one_iff_algebraMap_mem` reads integrality in the adic completion instead.
+`FinitePlace.mk_apply_le_one_iff_algebraMap_mem` reads integrality in the adic completion instead,
+and `FinitePlace.exists_apply_eq_one_forall_mul_mem_range` clears denominators of a finite
+`v`-integral tuple by a single algebraic integer of `v`-adic absolute value `1`.
 
-The file also records that a number field always *has* a finite place: the finite places are the
-height one primes of its ring of integers, and that ring is a Dedekind domain which is not a
-field, so it has a maximal ideal. Recording this as a `Nonempty` instance lets local-global
-arguments pick a finite place with `Classical.arbitrary` whenever a hypothesis quantified over
-all finite places has to be used at some place — for instance to read off an invariant, such as
-the dimension of the underlying space, that is the same at every place. Without the instance
-each such argument has to rebuild the existence proof inline.
+The file also records that a number field has infinitely many finite places: contraction
+`HeightOneSpectrum (𝓞 K) → HeightOneSpectrum ℤ` is surjective and `HeightOneSpectrum ℤ` corresponds
+to the rational primes. Recording `Infinite` instances for `HeightOneSpectrum (𝓞 K)` (for any
+characteristic-zero field `K`) and `FinitePlace K`—and hence `Nonempty`—lets local-global arguments
+pick a finite place with `Classical.arbitrary` (or `Finset.exists_notMem` outside a finite
+exceptional set) whenever an invariant that is the same at every place must be read off at one
+place.
 
 Two finite places are equal exactly when their absolute values are equivalent,
 `NumberField.FinitePlace.eq_iff_isEquiv`, as Mathlib has for infinite places. For a prime `w` of a
@@ -74,10 +78,15 @@ namespace TauCeti
 
 variable {K : Type*} [Field K]
 
-/-- A number field has a finite place: its ring of integers is not a field. -/
-instance [NumberField K] : Nonempty (HeightOneSpectrum (𝓞 K)) :=
-  ⟨(HeightOneSpectrum.equivMaximalSpectrum (RingOfIntegers.not_isField K)).symm
-    (Classical.choice (inferInstance : Nonempty (MaximalSpectrum (𝓞 K))))⟩
+/-- The ring of integers of a field of characteristic zero has infinitely many height-one primes:
+every rational prime lies under one. -/
+instance [CharZero K] : Infinite (HeightOneSpectrum (𝓞 K)) :=
+  Infinite.of_surjective (HeightOneSpectrum.under ℤ) (HeightOneSpectrum.under_surjective ℤ (𝓞 K))
+
+/-- A number field has infinitely many finite places. -/
+instance [NumberField K] : Infinite (FinitePlace K) :=
+  Infinite.of_surjective (FinitePlace.equivHeightOneSpectrum (K := K))
+    (FinitePlace.equivHeightOneSpectrum (K := K)).surjective
 
 end TauCeti
 
@@ -133,6 +142,37 @@ theorem mk_apply_eq_one_iff (v : HeightOneSpectrum (𝓞 K)) (x : K) :
   norm_cast
   exact WithZeroMulInt.toNNReal_eq_one_iff _ (HeightOneSpectrum.absNorm_ne_zero v)
     (HeightOneSpectrum.one_lt_absNorm_nnreal v).ne'
+
+/-- **Clearing denominators away from a finite place.** If every coordinate of a finite tuple
+`u : ι → K` lies in the unit ball of `v`, some `d ∈ 𝓞 K` outside `v.maximalIdeal` (so with
+`v d = 1`) clears all denominators simultaneously so that `(d : K) * u j` lies in `𝓞 K` for every
+`j`. -/
+theorem exists_apply_eq_one_forall_mul_mem_range {ι : Type*} [Finite ι] (v : FinitePlace K)
+    {u : ι → K} (hu : ∀ j, v (u j) ≤ 1) :
+    ∃ d : 𝓞 K, v (d : K) = 1 ∧ ∀ j, (d : K) * u j ∈ Set.range (algebraMap (𝓞 K) K) := by
+  classical
+  cases nonempty_fintype ι
+  set 𝔭 := v.maximalIdeal
+  have hval (j : ι) : 𝔭.valuation K (u j) ≤ 1 := by
+    rw [← mk_apply_le_one_iff, mk_maximalIdeal]
+    exact hu j
+  choose n d hnd using fun j ↦ 𝔭.exists_primeCompl_mul_eq_of_integer (u j) (hval j)
+  let D : 𝔭.asIdeal.primeCompl := ∏ j : ι, d j
+  refine ⟨D, ?_, fun j ↦ ?_⟩
+  · rw [← v.norm_embedding_eq, norm_eq_one_iff_notMem]
+    exact D.2
+  · let q : 𝓞 K := ∏ j' ∈ Finset.univ.erase j, (d j' : 𝓞 K)
+    have hD_split : ((D : 𝓞 K) : K) = (q : K) * ((d j : 𝓞 K) : K) := by
+      have hD_coe : (D : 𝓞 K) = ∏ j' : ι, (d j' : 𝓞 K) :=
+        map_prod (Submonoid.subtype _) d Finset.univ
+      rw [hD_coe, ← Finset.mul_prod_erase Finset.univ _ (Finset.mem_univ j)]
+      dsimp only [q]
+      push_cast
+      ring
+    refine ⟨q * n j, ?_⟩
+    calc algebraMap (𝓞 K) K (q * n j)
+        = (q : K) * (u j * ((d j : 𝓞 K) : K)) := by rw [map_mul, ← hnd j]
+      _ = ((D : 𝓞 K) : K) * u j := by rw [hD_split]; ring
 
 /-- Two finite places of a number field are equal if and only if their absolute values are
 equivalent. This is the finite counterpart of Mathlib's `InfinitePlace.eq_iff_isEquiv`. -/

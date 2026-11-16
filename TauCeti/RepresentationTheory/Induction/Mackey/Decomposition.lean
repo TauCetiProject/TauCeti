@@ -84,18 +84,18 @@ variable (H K) in
 (`Rep.mackeySummand_eq_ind_res_conjRep`); `TauCeti.mackeySummand` is its
 finite-dimensional counterpart. -/
 noncomputable abbrev mackeySummand (s : G) (A : Rep.{u} k H) : Rep.{u} k K :=
-  Rep.ind ((TauCeti.mackeySubgroup s H K).subgroupOf K).subtype
-    (Rep.res (TauCeti.mackeyToH s H K) A)
+  ind ((TauCeti.mackeySubgroup s H K).subgroupOf K).subtype
+    (res (TauCeti.mackeyToH s H K) A)
 
 /-- The Mackey summand is the conjugate representation `{}^s A`, restricted along the inclusion
 of the Mackey subgroup into `sHs⁻¹` and induced up to `K`.  The remaining restriction is along the
 identification of `K ⊓ sHs⁻¹` with its copy inside `K`. -/
 theorem mackeySummand_eq_ind_res_conjRep (s : G) (A : Rep.{u} k H) :
     mackeySummand H K s A =
-      Rep.ind ((TauCeti.mackeySubgroup s H K).subgroupOf K).subtype
-        (Rep.res (Subgroup.subgroupOfEquivOfLe
+      ind ((TauCeti.mackeySubgroup s H K).subgroupOf K).subtype
+        (res (Subgroup.subgroupOfEquivOfLe
             (TauCeti.mackeySubgroup_le_right (s := s) (H := H) (K := K))).toMonoidHom
-          (Rep.res (TauCeti.mackeyToConjH s H K) (TauCeti.conjRep s A))) := by
+          (res (TauCeti.mackeyToConjH s H K) (TauCeti.conjRep s A))) := by
   have e : TauCeti.mackeyToH s H K =
       ((TauCeti.conjSubgroupEquiv s H).toMonoidHom.comp (TauCeti.mackeyToConjH s H K)).comp
         (Subgroup.subgroupOfEquivOfLe TauCeti.mackeySubgroup_le_right).toMonoidHom :=
@@ -108,8 +108,8 @@ variable (K) in
 `⟦u ⊗ₜ a⟧ ↦ ⟦s⁻¹ u ⊗ₜ a⟧` (`Rep.mackeyInclusion_hom_apply_mk`).  It is the morphism
 corresponding under the induction--restriction adjunction to `a ↦ ⟦s⁻¹ ⊗ₜ a⟧`. -/
 noncomputable def mackeyInclusion (s : G) (A : Rep.{u} k H) :
-    mackeySummand H K s A ⟶ Rep.res K.subtype (Rep.ind H.subtype A) :=
-  (Rep.indResHomEquiv _ _ _).symm <| Rep.ofHom
+    mackeySummand H K s A ⟶ res K.subtype (ind H.subtype A) :=
+  (indResHomEquiv _ _ _).symm <| ofHom
     ⟨IndV.mk H.subtype A.ρ s⁻¹, fun m ↦ LinearMap.ext fun a ↦ by
       have h := TauCeti.indV_mk_apply_inv H.subtype A.ρ (TauCeti.mackeyToH s H K m)⁻¹ s⁻¹ a
       rw [inv_inv] at h
@@ -134,15 +134,15 @@ variable (H K) in
 /-- The direct sum of the Mackey summands over the double cosets `K \ G / H`, each built from the
 chosen representative `Quotient.out`. -/
 noncomputable abbrev mackeyDirectSum (A : Rep.{u} k H) : Rep.{u} k K :=
-  Rep.of (directSum fun D : DoubleCoset.Quotient (K : Set G) (H : Set G) ↦
+  of (directSum fun D : DoubleCoset.Quotient (K : Set G) (H : Set G) ↦
     (mackeySummand H K D.out A).ρ)
 
 variable (H K) in
 /-- The Mackey summand at `s` as a functor of the representation of `H`: restriction along
 `TauCeti.mackeyToH` followed by induction up to `K`. -/
 noncomputable abbrev mackeySummandFunctor (s : G) : Rep.{u} k H ⥤ Rep.{u} k K :=
-  Rep.resFunctor (TauCeti.mackeyToH s H K) ⋙
-    Rep.indFunctor k ((TauCeti.mackeySubgroup s H K).subgroupOf K).subtype
+  resFunctor (TauCeti.mackeyToH s H K) ⋙
+    indFunctor k ((TauCeti.mackeySubgroup s H K).subgroupOf K).subtype
 
 variable (H K) in
 /-- The direct sum of the Mackey summands, as a functor of the representation of `H`: it sends `A`
@@ -153,12 +153,12 @@ to `Rep.mackeyDirectSum H K A` (`Rep.mackeyDirectSumFunctor_obj`) and on morphis
 @[expose]
 noncomputable def mackeyDirectSumFunctor : Rep.{u} k H ⥤ Rep.{u} k K where
   obj A := mackeyDirectSum H K A
-  map f := Rep.ofHom ⟨DirectSum.lmap fun D ↦
+  map f := ofHom ⟨DirectSum.lmap fun D ↦
       ((mackeySummandFunctor H K D.out).map f).hom.toLinearMap,
     fun x ↦ by
       refine DirectSum.linearMap_ext k fun D ↦ LinearMap.ext fun y ↦ ?_
       simp only [LinearMap.coe_comp, Function.comp_apply, directSum_apply, DirectSum.lmap_lof]
-      exact congrArg (DirectSum.lof k _ _ D) (Rep.hom_comm_apply _ x y)⟩
+      exact congrArg (DirectSum.lof k _ _ D) (hom_comm_apply _ x y)⟩
   map_id A := by
     -- `h` is stated for an arbitrary `s : G` rather than directly for `D.out`, whose summand
     -- types are too costly to elaborate; `simp only` instantiates it at `D.out` below.
@@ -166,11 +166,11 @@ noncomputable def mackeyDirectSumFunctor : Rep.{u} k H ⥤ Rep.{u} k K where
         ((mackeySummandFunctor H K s).map (𝟙 A)).hom.toLinearMap = LinearMap.id := by
       rw [CategoryTheory.Functor.map_id]
       rfl
-    refine Rep.hom_ext (IntertwiningMap.ext ?_)
+    refine hom_ext (IntertwiningMap.ext ?_)
     -- The `map` field above is being defined, so no `_map` lemma exists yet; strip the `Rep.ofHom`
     -- wrapper around it to expose the `DirectSum.lmap`.  (A `change` to that form works too, but
     -- unifying its placeholder through the wrappers is several times slower.)
-    dsimp only [Rep.hom_ofHom]
+    dsimp only [hom_ofHom]
     simp only [h, DirectSum.lmap_id]
     rfl
   map_comp {A B C} f g := by
@@ -180,10 +180,10 @@ noncomputable def mackeyDirectSumFunctor : Rep.{u} k H ⥤ Rep.{u} k K where
             ((mackeySummandFunctor H K s).map f).hom.toLinearMap := by
       rw [CategoryTheory.Functor.map_comp]
       rfl
-    refine Rep.hom_ext (IntertwiningMap.ext ?_)
+    refine hom_ext (IntertwiningMap.ext ?_)
     -- As for `map_id`: the `map` field is under definition, so the `Rep.ofHom` and
     -- `IntertwiningMap` wrappers are stripped by their `dsimp` lemmas.
-    dsimp only [Rep.hom_comp, Rep.hom_ofHom, IntertwiningMap.comp_toLinearMap]
+    dsimp only [hom_comp, hom_ofHom, IntertwiningMap.comp_toLinearMap]
     simp only [h, DirectSum.lmap_comp]
 
 /-- The direct sum functor sends a representation of `H` to the direct sum of its Mackey
@@ -350,11 +350,11 @@ private theorem mackeySumToInd_lof (D : DoubleCoset.Quotient (K : Set G) (H : Se
 
 private theorem mackeySumToInd_comp_ρ (x : K) :
     mackeySumToInd A ∘ₗ (mackeyDirectSum H K A).ρ x =
-      (Rep.res K.subtype (Rep.ind H.subtype A)).ρ x ∘ₗ mackeySumToInd A := by
+      (res K.subtype (ind H.subtype A)).ρ x ∘ₗ mackeySumToInd A := by
   refine DirectSum.linearMap_ext k fun D ↦ LinearMap.ext fun y ↦ ?_
   simp only [LinearMap.coe_comp, Function.comp_apply, directSum_apply,
     DirectSum.lmap_lof, mackeySumToInd, DirectSum.toModule_lof]
-  exact Rep.hom_comm_apply (mackeyInclusion K D.out A) x y
+  exact hom_comm_apply (mackeyInclusion K D.out A) x y
 
 private theorem indToMackeySum_comp_mackeySumToInd :
     indToMackeySum (K := K) A ∘ₗ mackeySumToInd A = LinearMap.id := by
@@ -390,8 +390,8 @@ On generators, `⟦h s⁻¹ u ⊗ₜ a⟧ ↦ ⟦u ⊗ₜ h⁻¹ a⟧` in the su
 (`Rep.mackeyDecomposition_inv_hom_apply_lof`).  It is natural in `A`
 (`Rep.mackeyDecompositionNatIso`). -/
 noncomputable def mackeyDecomposition :
-    Rep.res K.subtype (Rep.ind H.subtype A) ≅ mackeyDirectSum H K A :=
-  (Rep.mkIso (Representation.Equiv.mk
+    res K.subtype (ind H.subtype A) ≅ mackeyDirectSum H K A :=
+  (mkIso (Representation.Equiv.mk
     (LinearEquiv.ofLinearMap (mackeySumToInd A) (indToMackeySum A)
       (mackeySumToInd_comp_indToMackeySum A) (indToMackeySum_comp_mackeySumToInd A))
     (mackeySumToInd_comp_ρ A))).symm
@@ -423,10 +423,10 @@ variable (H K) in
 /-- **The Mackey decomposition, naturally in the representation**: the functor
 `A ↦ Res_K (Ind_H^G A)` is naturally isomorphic to the direct sum of the Mackey summands. -/
 noncomputable def mackeyDecompositionNatIso :
-    Rep.indFunctor k H.subtype ⋙ Rep.resFunctor K.subtype ≅
+    indFunctor k H.subtype ⋙ resFunctor K.subtype ≅
       mackeyDirectSumFunctor H K :=
   (NatIso.ofComponents (fun A ↦ (mackeyDecomposition A).symm) fun {A B} f ↦ by
-    refine Rep.hom_ext (IntertwiningMap.ext (DirectSum.linearMap_ext k fun D ↦
+    refine hom_ext (IntertwiningMap.ext (DirectSum.linearMap_ext k fun D ↦
       IndV.hom_ext _ _ fun u ↦ LinearMap.ext fun a ↦ ?_))
     -- Both composites are `LinearMap.comp`s of the `IntertwiningMap` underlying a morphism of
     -- `Rep k K`; since `Rep.comp`, `Rep.res` and `Iso.symm` are sealed, no rewrite strips those
@@ -436,7 +436,7 @@ noncomputable def mackeyDecompositionNatIso :
         (DirectSum.lof k (DoubleCoset.Quotient (K : Set G) (H : Set G))
           (fun D ↦ (mackeySummand H K D.out A : Type u)) D
           (IndV.mk _ (A.ρ.comp (TauCeti.mackeyToH D.out H K)) u a))) =
-      ((Rep.indFunctor k H.subtype ⋙ Rep.resFunctor K.subtype).map f).hom
+      ((indFunctor k H.subtype ⋙ resFunctor K.subtype).map f).hom
         ((mackeyDecomposition A).inv.hom
           (DirectSum.lof k (DoubleCoset.Quotient (K : Set G) (H : Set G))
             (fun D ↦ (mackeySummand H K D.out A : Type u)) D

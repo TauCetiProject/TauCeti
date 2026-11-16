@@ -37,8 +37,7 @@ transports it across the subfield/subspace dictionary
 
 ## Provenance
 
-The subfield/subspace dictionary this refines is migrated, with the rest of the multiquadratic
-Layer 0, from
+The subfield/subspace dictionary this refines is migrated from
 [kim-em/erdos-unit-distance](https://github.com/kim-em/erdos-unit-distance), the formalization of
 L. Alpöge's disproof of the uniform-constant Erdős unit-distance conjecture. The hyperplane count
 assembles Mathlib's dual-annihilator order isomorphism (`Subspace.orderIsoFiniteDimensional`) with

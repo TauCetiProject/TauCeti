@@ -8,19 +8,18 @@ module
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Basic
 
 /-!
-# Čech complexes along a functor into a thin category
+# Čech complexes along a functor preserving products
 
-Let `G : C ⥤ D` be a functor between categories with finite products, where `D` is thin, for
-instance a monotone map between posets of open subsets. For a family `U : ι → C` and a presheaf
-`Q : Dᵒᵖ ⥤ A`, the Čech complex of the pulled-back presheaf `G.op ⋙ Q` for `U` has terms
-`Q(G(U (a 0) × ⋯ × U (a n)))`, while the Čech complex of `Q` for the family `G ∘ U` has terms
-`Q(G (U (a 0)) × ⋯ × G (U (a n)))`. There is always a map `G(U (a 0) × ⋯ × U (a n)) ⟶
-G (U (a 0)) × ⋯ × G (U (a n))`; when there is also a map in the reverse direction
-`G (U (a 0)) × ⋯ × G (U (a n)) ⟶ G(U (a 0) × ⋯ × U (a n))`, the two objects are isomorphic in the
-thin category `D`, and the two Čech complexes are isomorphic (`cechComplexCompIso`). If moreover
-`G` sends the terminal object `T` of `C` to a terminal object of `D`, this isomorphism is
-compatible with the augmentations, so one augmented Čech complex is exact if and only if the other
-is.
+Let `G : C ⥤ D` be a functor between categories with finite products. For a family
+`U : ι → C` and a presheaf `Q : Dᵒᵖ ⥤ A`, the Čech complex of `G.op ⋙ Q` for `U` has terms
+`Q(G(U (a 0) × ⋯ × U (a n)))`, whereas the Čech complex of `Q` for `G ∘ U` has terms
+`Q(G (U (a 0)) × ⋯ × G (U (a n)))`. If the canonical product comparison maps are invertible,
+these complexes are isomorphic (`cechComplexCompIso`). This applies to limit-preserving functors,
+such as `coyoneda.obj (op W)`, and compares Čech complexes of representables with those of sets.
+If `G` also sends a terminal object to a terminal object, the isomorphism commutes with the
+augmentations.
+
+The construction uses Mathlib's `Limits.piComparison` and its product projection identities.
 
 For open covers this compares the restriction of a cover to an open with a cover in a smaller
 poset: for an open `Y ⊆ W`, the presheaf `F(Y ∩ -)` on the opens contained in `W` is pulled back
@@ -37,11 +36,13 @@ from the opens contained in `Y` along `V ↦ Y ∩ V`, which preserves intersect
   natural in the presheaf.
 * `TauCeti.CategoryTheory.cechComplexMap_comp_cechComplexCompIso_hom`: this isomorphism commutes
   with refinement maps, retaining their actual index functions.
-* `TauCeti.CategoryTheory.cechComplexMapHomotopy_hom_comp_cechComplexCompIso_hom`: this
-  isomorphism carries the homotopy between the maps induced by two refinement maps to the
-  corresponding homotopy.
+* `TauCeti.CategoryTheory.cechComplexMapHomotopy_hom_comp_cechComplexCompIso_hom`: for a thin
+  target, this isomorphism carries the homotopy between two refinement maps to the corresponding
+  homotopy.
 * `TauCeti.CategoryTheory.cechAugmentation_comp_cechComplexCompIso_hom`: this isomorphism is
   compatible with the augmentations.
+* `CategoryTheory.Functor.exactAt_cechComplexFunctor_obj_comp_iff`: the unaugmented complexes
+  are exact in the same degrees.
 * `TauCeti.CategoryTheory.quasiIso_cechAugmentation_op_comp_iff`: the augmented Čech complex of
   `G.op ⋙ Q` for `U` is exact if and only if the one of `Q` for `G ∘ U` is.
 -/
@@ -66,7 +67,7 @@ The degree `n` term of a Čech complex is, up to unfolding, a product indexed by
 along the coface maps (`cechComplexFunctor_obj_d_comp_π`). The isomorphism of Čech complexes
 acts on the factor indexed by `a` through `Q` applied to the comparison isomorphism
 `G(U (a 0) × ⋯ × U (a n)) ≅ G (U (a 0)) × ⋯ × G (U (a n))` (`prodIso`); it commutes with the
-differentials because all the morphisms of `D` with the same ends agree. -/
+differentials by the naturality of the product comparison maps. -/
 
 /-- The degree `n` term of the Čech complex is, up to unfolding, the product of the values of `P`
 on the `(n + 1)`-fold products of members. -/
@@ -101,16 +102,16 @@ private lemma cechComplexFunctor_map_f_comp_cechXIso_hom_π (V : ι → C) {P P'
   (_ ≫= Category.id_comp _).trans <|
     (cechComplexFunctor_map_f_π V P α n a).trans (Category.id_comp _).symm
 
-variable {D : Type u''} [Category.{v''} D] [HasFiniteProducts D] [Quiver.IsThin D]
+variable {D : Type u''} [Category.{v''} D] [HasFiniteProducts D]
   (G : C ⥤ D) (U : ι → C) (Q : Dᵒᵖ ⥤ A)
   (hG : ∀ (n : ℕ) (a : Fin (n + 1) → ι),
-    Nonempty ((∏ᶜ fun j ↦ G.obj (U (a j))) ⟶ G.obj (∏ᶜ fun j ↦ U (a j))))
+    IsIso (piComparison G fun j ↦ U (a j)))
 
-/-- The comparison isomorphism `G(U (a 0) × ⋯ × U (a n)) ≅ G (U (a 0)) × ⋯ × G (U (a n))` in the
-thin category `D`. -/
+/-- The comparison isomorphism from the image of a product to the product of the images. -/
 private def prodIso (n : ℕ) (a : Fin (n + 1) → ι) :
     G.obj (∏ᶜ fun j ↦ U (a j)) ≅ ∏ᶜ fun j ↦ G.obj (U (a j)) :=
-  iso_of_both_ways (Pi.lift fun j ↦ G.map (Pi.π _ j)) (hG n a).some
+  letI := hG n a
+  asIso (piComparison G fun j ↦ U (a j))
 
 /-- The degree `n` component of the isomorphism of Čech complexes. -/
 private def compXIso (n : ℕ) :
@@ -141,11 +142,16 @@ private lemma compXIso_hom_comp_d (n : ℕ) :
     ← Category.assoc (cechXIso U (G.op ⋙ Q) n).hom, ← Category.assoc (compXIso G U Q hG n).hom,
     compXIso_hom_π]
   simp only [Category.assoc, Functor.comp_map, Functor.op_map, ← Functor.map_comp, ← op_comp]
-  exact congrArg (fun g ↦ (-1 : ℤ) ^ (m : ℕ) • (_ ≫ _ ≫ Q.map (Quiver.Hom.op g)))
-    (Subsingleton.elim _ _)
+  congr 2
+  apply congrArg (_ ≫ ·)
+  apply congrArg Q.map
+  apply congrArg Quiver.Hom.op
+  refine Pi.hom_ext _ _ fun x ↦ ?_
+  simp only [prodIso, asIso_hom, Quiver.Hom.unop_op, Function.comp_def, Category.assoc,
+    Pi.lift_comp_π, piComparison_comp_π, ← G.map_comp]
 
 /-- The Čech complex of `Q` for the family `G ∘ U` is isomorphic to the Čech complex of `G.op ⋙ Q`
-for `U`, provided each product `G (U (a 0)) × ⋯ × G (U (a n))` maps to `G(U (a 0) × ⋯ × U (a n))`.
+for `U`, provided the canonical product comparison maps are isomorphisms.
 In degree `n` it acts on the factor indexed by `a` through `Q` applied to the canonical map
 `G(U (a 0) × ⋯ × U (a n)) ⟶ G (U (a 0)) × ⋯ × G (U (a n))` (`cechComplexCompIso_hom_f_π`). -/
 def cechComplexCompIso :
@@ -186,7 +192,7 @@ repeat or identify indices. -/
 theorem cechComplexMap_comp_cechComplexCompIso_hom {κ : Type w} {V : κ → C}
     (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V)
     (hV : ∀ (n : ℕ) (a : Fin (n + 1) → κ),
-      Nonempty ((∏ᶜ fun j ↦ G.obj (V (a j))) ⟶ G.obj (∏ᶜ fun j ↦ V (a j)))) :
+      IsIso (piComparison G fun j ↦ V (a j))) :
     cechComplexMap Q (⟨φ.f, fun i ↦ G.map (φ.φ i)⟩ :
       FormalCoproduct.mk _ (fun i ↦ G.obj (U i)) ⟶
         FormalCoproduct.mk _ (fun i ↦ G.obj (V i))) ≫
@@ -215,8 +221,16 @@ theorem cechComplexMap_comp_cechComplexCompIso_hom {κ : Type w} {V : κ → C}
         Q.map (Pi.lift fun j ↦ G.map (Pi.π (fun j ↦ V (φ.f (a j))) j)).op ≫
           Q.map (G.map (Limits.Pi.map fun j ↦ φ.φ (a j))).op := by
     rw [← Q.map_comp, ← Q.map_comp]
-    exact congrArg Q.map (Subsingleton.elim _ _)
+    apply congrArg Q.map
+    apply congrArg Quiver.Hom.op
+    refine Pi.hom_ext _ _ fun x ↦ ?_
+    simp only [Quiver.Hom.unop_op, Category.assoc, Pi.map_π, Pi.lift_comp_π, Pi.lift_comp_π_assoc,
+      ← G.map_comp]
   exact (Category.assoc _ _ _).trans ((_ ≫= hm).trans (Category.assoc _ _ _).symm)
+
+section ThinHomotopy
+
+variable [Quiver.IsThin D]
 
 omit [Preadditive A] in
 /-- In the thin category `D`, the restrictions to the same object from two factors of a Čech term
@@ -239,14 +253,15 @@ private lemma neg_sum_zsmul_comp_eq_comp_neg_sum_zsmul {X Y Y' Z : A} {m : ℕ}
   simp only [Preadditive.neg_comp, Preadditive.comp_neg, Preadditive.sum_comp,
     Preadditive.comp_sum, Preadditive.zsmul_comp, Preadditive.comp_zsmul, h]
 
-/-- The comparison along `G` carries the homotopy between the maps induced by two refinement maps
-`φ` and `ψ` (`cechComplexMapHomotopy`) for `Q` and the family `G ∘ U` to the corresponding
+/-- For a thin target, the comparison along `G` carries the homotopy between the maps induced by
+two refinement maps `φ` and `ψ` (`cechComplexMapHomotopy`) for `Q` and the family `G ∘ U` to the
+corresponding
 homotopy for `G.op ⋙ Q` and the family `U`. -/
 @[reassoc]
 theorem cechComplexMapHomotopy_hom_comp_cechComplexCompIso_hom {κ : Type w} {V : κ → C}
     (φ ψ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V)
     (hV : ∀ (n : ℕ) (a : Fin (n + 1) → κ),
-      Nonempty ((∏ᶜ fun j ↦ G.obj (V (a j))) ⟶ G.obj (∏ᶜ fun j ↦ V (a j)))) (i j : ℕ) :
+      IsIso (piComparison G fun j ↦ V (a j))) (i j : ℕ) :
     (cechComplexMapHomotopy Q
       (⟨φ.f, fun i ↦ G.map (φ.φ i)⟩ : FormalCoproduct.mk _ (fun i ↦ G.obj (U i)) ⟶
         FormalCoproduct.mk _ (fun i ↦ G.obj (V i)))
@@ -275,6 +290,8 @@ theorem cechComplexMapHomotopy_hom_comp_cechComplexCompIso_hom {κ : Type w} {V 
   refine Eq.trans ?_ (_ ≫= (Q.map_comp _ _))
   exact π_comp_map_eq_of_eq Q (funext fun l ↦ by split_ifs <;> rfl) _ _
 
+end ThinHomotopy
+
 variable [HasZeroObject A] {T : C} (hT : IsTerminal T) (hGT : IsTerminal (G.obj T))
 
 /-- If `G` sends the terminal object `T` of `C` to a terminal object, the isomorphism of Čech
@@ -289,20 +306,29 @@ theorem cechAugmentation_comp_cechComplexCompIso_hom :
   simp only [HomologicalComplex.comp_f, cechComplexCompIso,
     HomologicalComplex.Hom.isoOfComponents_hom_f, Category.assoc, compXIso_hom_π]
   rw [← Category.assoc (cechXIso _ Q 0).hom, cechXIso_hom_π, cechXIso_hom_π]
-  -- both sides restrict along morphisms in the thin category `D` with the same ends
+  -- The restrictions have the same composite to the terminal object.
   exact (Category.assoc _ _ _).symm.trans <|
     (cechAugmentation_f_zero_comp_π _ hGT Q a =≫ _).trans <| (Q.map_comp _ _).symm.trans <|
-      (congrArg (fun g ↦ Q.map (Quiver.Hom.op g)) (Subsingleton.elim _ _)).trans
+      (congrArg (fun g ↦ Q.map (Quiver.Hom.op g)) (hGT.hom_ext _ _)).trans
         (cechAugmentation_f_zero_comp_π U hT (G.op ⋙ Q) a).symm
 
 variable [CategoryWithHomology A]
 
+omit [HasZeroObject A] in
 include hG in
-/-- **Čech complexes along a functor into a thin category.** Let `G : C ⥤ D` be a functor between
-categories with finite products, with `D` thin, let `U` be a family in `C` and let `Q` be a
+/-- If `G` preserves the products of members of `U`, exactness of the Čech complex of
+`G.op ⋙ Q` for `U` is equivalent to exactness of the Čech complex of `Q` for `G ∘ U`. -/
+theorem _root_.CategoryTheory.Functor.exactAt_cechComplexFunctor_obj_comp_iff (n : ℕ) :
+    ((cechComplexFunctor U).obj (G.op ⋙ Q)).ExactAt n ↔
+      ((cechComplexFunctor (fun i ↦ G.obj (U i))).obj Q).ExactAt n :=
+  (exactAt_iff_of_quasiIsoAt (cechComplexCompIso G U Q hG).hom n).symm
+
+include hG in
+/-- **Čech complexes along a functor preserving products.** Let `G : C ⥤ D` be a functor between
+categories with finite products, let `U` be a family in `C` and let `Q` be a
 presheaf on `D` with values in an abelian category. Suppose that `G` sends the terminal object `T`
-of `C` to a terminal object, and that each product `G (U (a 0)) × ⋯ × G (U (a n))` maps to
-`G(U (a 0) × ⋯ × U (a n))`. Then the augmented Čech complex of `G.op ⋙ Q` for `U` is exact if and
+of `C` to a terminal object, and that the canonical product comparison maps are invertible.
+Then the augmented Čech complex of `G.op ⋙ Q` for `U` is exact if and
 only if the augmented Čech complex of `Q` for the family `G ∘ U` is. -/
 theorem quasiIso_cechAugmentation_op_comp_iff :
     QuasiIso (cechAugmentation U hT (G.op ⋙ Q)) ↔

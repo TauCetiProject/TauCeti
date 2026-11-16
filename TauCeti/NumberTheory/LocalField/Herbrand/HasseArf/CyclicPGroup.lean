@@ -193,7 +193,7 @@ theorem UpperJump.exists_psiNat_eq_of_isPGroup [IsCyclic (F ≃ₐ[K] F)]
       rw [← hy]
       exact smul_div_mem_map_normUnits hℓ ht hk y
     have hwt : w ∈ (unitFiltration L (psiNat F L t)).map (Algebra.normUnits F) := by
-      rw [← map_normUnits_unitFiltration_zero_inf_of_le_break hℓ le_rfl ht]
+      rw [← map_normUnits_unitFiltration_zero_inf hℓ ht]
       exact ⟨hwN, hw⟩
     have hwz : w * z = x := inv_mul_cancel_right x z
     rw [← hwz]

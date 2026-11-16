@@ -86,7 +86,7 @@ theorem exists_space_eq_inter (hK : LocallyFinite fun s : K.faces => convexHull 
     TauCeti.intrinsicInterior_inter (convex_convexHull ℝ _) (convex_convexHull ℝ _) p.2
   -- Every point of `|K| ∩ |L|` lies in the intrinsic interior of a cell inside any given pair of
   -- simplices containing it.
-  have hcell : ∀ ⦃x : E⦄ ⦃σ τ : Finset E⦄ (hσ : σ ∈ K.faces) (hτ : τ ∈ L.faces),
+  have hcell : ∀ ⦃x : E⦄ ⦃σ τ : Finset E⦄, σ ∈ K.faces → τ ∈ L.faces →
       x ∈ convexHull ℝ (σ : Set E) → x ∈ convexHull ℝ (τ : Set E) →
       ∃ q : ι, x ∈ intrinsicInterior ℝ (P q) ∧
         P q ⊆ convexHull ℝ (σ : Set E) ∩ convexHull ℝ (τ : Set E) := by

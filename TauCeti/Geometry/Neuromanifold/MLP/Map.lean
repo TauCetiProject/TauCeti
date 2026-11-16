@@ -102,7 +102,7 @@ theorem mapParameters_zeroBias (φ : K →+* K') (w : A.Weights) :
   simp only [mapParameters_apply, zeroBias_apply]
   apply Prod.ext
   · rfl
-  · funext j
+  · funext _
     exact φ.map_zero
 
 /-- Scalar transport by an embedding is injective on affine parameters. -/

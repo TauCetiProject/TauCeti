@@ -37,12 +37,6 @@ Working at the mixing-law level avoids needing a general "measurable into `Proba
 implies almost everywhere constant" interface: the Giry-specific Dirac theorem is exactly the tool
 for this situation. Note that `mixedIID_mixingLaw_unique` alone does *not* give the converse —
 uniqueness of the mixing law is not the same as its being a point mass.
-
-## References
-
-* Roadmap: `TauCetiRoadmap/Exchangeability/README.md`, Layer 6, the
-  `exchangeableSigma_trivial_iff_iid` interface among the equivalent characterizations of product
-  laws.
 -/
 
 public section

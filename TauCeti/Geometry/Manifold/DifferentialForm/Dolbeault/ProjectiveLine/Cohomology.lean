@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Dolbeault.ProjectiveLin
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import TauCeti.Analysis.Complex.Pompeiu.Basic
 import TauCeti.Analysis.Complex.RemovableSingularity
-import TauCeti.Geometry.Manifold.DifferentialForm.Dolbeault.LocalExactness
+import TauCeti.Geometry.Manifold.DifferentialForm.Dolbeault.ModelSpace
 
 /-!
 # Dolbeault cohomology of the projective line
@@ -31,7 +31,7 @@ in the coordinate `t` and in the coordinate `s` respectively. For each
 piece, with coefficient `c(t) d(conj t)` say, the Cauchy transform `u = T c` solves
 `∂bar u = c d(conj t)` on `ℂ` (`HasCompactSupport.conjWirtingerDeriv_cauchyTransform`). Off the
 support of `c` it is holomorphic, and it tends to `0` at infinity
-(`HasCompactSupport.differentiableAt_cauchyTransform_of_notMem_tsupport` and
+(`TauCeti.hasDerivAt_cauchyTransform_of_notMem_tsupport` and
 `HasCompactSupport.tendsto_cauchyTransform_cobounded`), so `s ↦ u (1 / s)` has a removable
 singularity at `s = 0` (`TauCeti.contDiff_update_comp_inv`). Hence `u` extends by `0` to a smooth
 function on `ℂℙ¹` (`TauCeti.ProjectiveLine.contMDiff_indicator_affineOpen`). Its `∂bar` agrees
@@ -97,8 +97,8 @@ private theorem exists_delBar_eq_of_hasCompactSupport
   have hu : ContDiff ℝ ∞ u := hc.contDiff_cauchyTransform hcs
   obtain ⟨R, hR⟩ := hc.isCompact.isBounded.subset_closedBall 0
   have hhol (w : ℂ) (hw : R < ‖w‖) : DifferentiableAt ℂ u w := by
-    refine hc.differentiableAt_cauchyTransform_of_notMem_tsupport (hcs.of_le (by simp))
-      fun h ↦ ?_
+    refine (hasDerivAt_cauchyTransform_of_notMem_tsupport
+      (hcs.continuous.integrable_of_hasCompactSupport hc) fun h ↦ ?_).differentiableAt
     have := hR h
     rw [mem_closedBall, dist_zero_right] at this
     linarith

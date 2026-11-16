@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
 # The ratio of two `1`-forms on a Riemann surface
@@ -15,7 +16,9 @@ ratio does not depend on the chart: changing chart multiplies both coefficients 
 nonzero derivative of the transition map. This ratio is the function `η / ω`
 (`TauCeti.RiemannSurface.OneForm.ratio`). Where `ω` does not vanish it is the unique scalar `c`
 with `η = c ω` (`TauCeti.RiemannSurface.OneForm.ratio_eq_iff`). It is meromorphic where `η` and
-`ω` are, and at a point where `ω` has finite order its order is `ord_x η - ord_x ω`
+`ω` are, holomorphic where they are holomorphic and `ω` does not vanish
+(`TauCeti.RiemannSurface.OneForm.HolomorphicAt.mdifferentiableAt_ratio`), and at a point where
+`ω` has finite order its order is `ord_x η - ord_x ω`
 (`TauCeti.RiemannSurface.OneForm.meromorphicOrderAt_ratio_add_order`). The finite-order hypothesis
 is needed: if `ω` vanishes near `x`, the ratio is `0` near `x`.
 
@@ -74,6 +77,18 @@ theorem meromorphicAt_ratio (hη : η.MeromorphicAt x) (hω : ω.MeromorphicAt x
   exact (((meromorphicAt_def η x).1 hη).div ((meromorphicAt_def ω x).1 hω)).congr
     (ratio_comp_chartAt_symm_eventuallyEq.symm.filter_mono nhdsWithin_le_nhds)
 
+/-- The ratio `η / ω` of two `1`-forms holomorphic at `x`, with `ω x ≠ 0`, is holomorphic at
+`x`. -/
+theorem HolomorphicAt.mdifferentiableAt_ratio (hη : η.HolomorphicAt x)
+    (hω : ω.HolomorphicAt x) (hx : ω x ≠ 0) :
+    MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) (ratio η ω) x := by
+  have hA : AnalyticAt ℂ (η.coeff (chartAt ℂ x) / ω.coeff (chartAt ℂ x)) (chartAt ℂ x x) :=
+    ((holomorphicAt_def η x).1 hη).div ((holomorphicAt_def ω x).1 hω) (coeff_chartAt_ne_zero hx)
+  have h := TauCeti.mdifferentiableAt_of_differentiableAt_comp_symm (chart_mem_maximalAtlas x)
+    ((chartAt ℂ x).map_source (mem_chart_source ℂ x))
+    (hA.differentiableAt.congr_of_eventuallyEq ratio_comp_chartAt_symm_eventuallyEq)
+  rwa [(chartAt ℂ x).left_inv (mem_chart_source ℂ x)] at h
+
 /-- **`ord_x (η / ω) + ord_x ω = ord_x η`** for meromorphic `1`-forms, with `ω` of finite order at
 `x`. -/
 theorem meromorphicOrderAt_ratio_add_order (hη : η.MeromorphicAt x) (hω : ω.MeromorphicAt x)
@@ -88,13 +103,6 @@ theorem meromorphicOrderAt_ratio_add_order (hη : η.MeromorphicAt x) (hω : ω.
   cases a with
   | top => simp
   | coe a => norm_cast; simp
-
-/-- Where `ω` does not vanish, its coefficient in the chart at `x` does not vanish. -/
-private theorem coeff_chartAt_ne_zero (hω : ω x ≠ 0) :
-    ω.coeff (chartAt ℂ x) (chartAt ℂ x x) ≠ 0 := by
-  intro h0
-  apply hω
-  rw [← (coeff_eq_iff ω (chart_mem_maximalAtlas x) (mem_chart_source ℂ x)).1 rfl, h0, zero_smul]
 
 /-- **The ratio is the unique scalar with `η = c ω`.** Where `ω` does not vanish, `η / ω` is the
 unique `c` with `c ω = η` at `x`. -/

@@ -62,7 +62,7 @@ theorem mem_intrinsicInterior_iff_forall_lt [Finite ι] (g : ι → (V →ᴬ[�
     refine lt_of_le_of_ne (hle x (intrinsicInterior_subset hx)) fun hx0 => ?_
     have := eq_zero_of_nonneg_of_mem_intrinsicInterior (g := -(g j).toAffineMap)
       (fun y hy => by simpa using hle y hy) hx (by simp [hx0]) hp
-    simp only [AffineMap.coe_neg, Pi.neg_apply, neg_eq_zero] at this
+    simp only [FunLike.coe_neg, Pi.neg_apply, neg_eq_zero] at this
     exact hgp.ne this
   · rintro ⟨hxP, hxstrict⟩
     let A := affineSpan ℝ P

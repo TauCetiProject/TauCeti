@@ -35,7 +35,7 @@ universe u
 
 namespace AlgebraicGeometry.Scheme.Hom
 
-variable {k : Type u} [Field k] [Finite k] {X T : Scheme.{u}}
+variable {k : Type u} [Field k] {X T : Scheme.{u}}
   (f : X ⟶ Spec (CommRingCat.of k)) (p : ℕ) [Fact p.Prime] [CharP k p]
   (a : ℕ) (ha : Nat.card k = p ^ a)
 

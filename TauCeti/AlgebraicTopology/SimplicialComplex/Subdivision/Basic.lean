@@ -24,13 +24,11 @@ subcomplexes need not contain every ambient singleton. Its result is an
 subdivision. Simplicial maps act on face posets by taking vertexwise images, yielding the
 functorial map `barycentricSubdivisionMap`.
 
-This supplies the subdivision primitive required by Layer 11 of the GeometricTopology roadmap
-before combinatorial spheres and balls can be defined up to subdivision. The definition follows
-Rourke--Sanderson, *Introduction to Piecewise-Linear Topology*, Chapter 2, "Derived
-Subdivisions". Identifying the realizations of a complex and its subdivision is separate geometric
-realization work. The functoriality here is only at the level of abstract complexes: the canonical
-identification of a subdivision's realization with the original realization is not natural in
-arbitrary simplicial maps.
+The definition follows Rourke--Sanderson, *Introduction to Piecewise-Linear Topology*, Chapter 2,
+"Derived Subdivisions". The realizations of a complex and of its subdivision are identified in
+`Subdivision.Homeomorph`. The functoriality here is only at the level of abstract complexes: the
+canonical identification of a subdivision's realization with the original realization is not
+natural in arbitrary simplicial maps.
 
 ## Main definitions
 

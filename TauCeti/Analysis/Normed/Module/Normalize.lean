@@ -21,6 +21,8 @@ point `e` of the unit sphere.
 * `Filter.Tendsto.normalize`: normalization preserves limits with a nonzero limit.
 * `TauCeti.norm_div_norm_smul_eq_of_inv_norm_smul_eq_normalize`: rescaling a vector with the
   direction of `w` by the ratio of the norms recovers `w`.
+* `TauCeti.norm_div_norm_smul_le`, `Continuous.div_norm_smul`: rescaling `y` to length
+  `τ ≤ ‖y‖` by `(τ / ‖y‖) • y` is bounded by `τ` and continuous, also where `y` vanishes.
 * `TauCeti.continuousAt_sphereDirection`: the direction map is continuous away from the origin.
 
 ## Main definitions
@@ -71,6 +73,27 @@ theorem norm_div_norm_smul_eq_of_inv_norm_smul_eq_normalize {a w x : E}
     simp [hx]
   · rw [← smul_inv_smul₀ (norm_ne_zero_iff.2 ha) x, hx, smul_smul,
       div_mul_cancel₀ _ (norm_ne_zero_iff.2 ha), norm_smul_normalize]
+
+/-- The norm of `(τ / ‖y‖) • y` is at most `τ`, for `0 ≤ τ`. -/
+theorem norm_div_norm_smul_le (y : E) {τ : ℝ} (hτ : 0 ≤ τ) : ‖(τ / ‖y‖) • y‖ ≤ τ := by
+  rcases eq_or_ne y 0 with rfl | hy
+  · simpa using hτ
+  · rw [norm_smul, Real.norm_of_nonneg (div_nonneg hτ (norm_nonneg _)),
+      div_mul_cancel₀ _ (norm_ne_zero_iff.2 hy)]
+
+/-- The map `p ↦ (τ p / ‖y p‖) • y p` is continuous when `0 ≤ τ p ≤ ‖y p‖`, including where `y`
+vanishes, since there its norm is at most `‖y p‖`. -/
+theorem _root_.Continuous.div_norm_smul {X : Type*} [TopologicalSpace X] {τ : X → ℝ} {y : X → E}
+    (hτ : Continuous τ) (hy : Continuous y) (h0 : ∀ p, 0 ≤ τ p) (hle : ∀ p, τ p ≤ ‖y p‖) :
+    Continuous fun p ↦ (τ p / ‖y p‖) • y p := by
+  refine continuous_iff_continuousAt.2 fun p ↦ ?_
+  rcases eq_or_ne (y p) 0 with hp | hp
+  · have hlim : Tendsto (fun q ↦ (τ q / ‖y q‖) • y q) (𝓝 p) (𝓝 0) :=
+      squeeze_zero_norm (fun q ↦ (norm_div_norm_smul_le (y q) (h0 q)).trans (hle q))
+        (by simpa [hp] using hy.norm.tendsto p)
+    simpa [ContinuousAt, hp] using hlim
+  · exact (hτ.continuousAt.div (continuous_norm.comp hy).continuousAt
+      (norm_ne_zero_iff.2 hp)).smul hy.continuousAt
 
 section Direction
 

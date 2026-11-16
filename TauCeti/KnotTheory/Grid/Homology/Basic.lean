@@ -70,10 +70,7 @@ unknot.
 
 ## References
 
-This supplies a prerequisite for `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane G.3,
-"The complexes and `∂² = 0`", and the acceptance criterion that grid homology compute on the
-`2 × 2` unknot grid with its bigradings, exhibiting the `W^{⊗(n-1)}` stabilization factor. The
-homology and stabilization conventions follow Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots
+The homology and stabilization conventions follow Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots
 and Links*, Chapter 4.
 -/
 

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Derivative
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.LocalIndex
+public import Mathlib.Geometry.Manifold.HasGroupoid
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
 
 /-!
@@ -33,12 +34,28 @@ local index one for every orientation (`TauCeti.HomologicalOrientation.localInde
 This identifies the homological degree of a smooth proper map with the classical differential
 topological degree.
 
+The same holds for a map `f : U → V` between open subsets of `E`, oriented by restricting `o`
+(`TauCeti.HomologicalOrientation.comap`), which agrees on `U` with a map `φ : E → E`, such as a
+self-map of an open disc, and more generally for a map read near the point through open embeddings
+into `E`. The local index is local, so by its naturality under open embeddings
+(`TauCeti.HomologicalOrientation.localIndex_comap`) it can be computed for a map of `E` agreeing
+with `φ` near the point, obtained from Tietze's extension theorem
+(`TauCeti.HomologicalOrientation.exists_eventuallyEq_and_localIndex_comap_eq`). At a point where
+`φ` has invertible derivative it is again the sign of the Jacobian
+(`TauCeti.HomologicalOrientation.localIndex_comap_eq_sign_det`), and the degree of a proper map
+onto a preconnected open set is the signed count of the preimages of a regular value
+(`TauCeti.HomologicalOrientation.degree_comap_eq_sum_sign_det`,
+`TauCeti.HomologicalOrientation.degree_comap_eq_ncard_sub_ncard`).
+
 ## Main results
 
 * `TauCeti.HomologicalOrientation.localIndex_eq_sign_det`: the local index at a regular point is
   the sign of the Jacobian determinant.
 * `TauCeti.HomologicalOrientation.degree_eq_sum_sign_det`: the degree of a proper map is the signed
   count of the preimages of a regular value.
+* `TauCeti.HomologicalOrientation.localIndex_comap_eq_sign_det`,
+  `TauCeti.HomologicalOrientation.degree_comap_eq_sum_sign_det`: the same for maps between open
+  subsets of `E`.
 
 ## References
 
@@ -92,6 +109,94 @@ theorem localIndex_eq_sign_det {f : C(E, E)} {f' : E →L[ℝ] E} {x : E} (hf : 
   simp only [e1, h, ModuleCat.hom_zsmul]
   -- The integer multiple of a linear map is evaluated pointwise.
   exact congrArg ((SignType.sign f'.det : ℤ) • ·) (hτ.trans (one_smul _ _))
+
+include hE in
+/-- **The local index at a regular point, in open coordinates.** Let `j : M → E` and `k : N → E`
+be open embeddings, with the orientations pulled back from `o`, and let `f : M → N` be given near
+`x` in these coordinates by a map `φ : E → E`, so that `φ (j z) = k (f z)` near `x`. If `φ` is
+differentiable at `j x` with derivative `f'` of nonzero determinant, then the local index of `f` at
+`x` is `sign (det f')`. This applies to a map between open subsets of `E`, oriented by restricting
+`o`. -/
+theorem localIndex_comap_eq_sign_det {M N : Type} [TopologicalSpace M] [T2Space M]
+    [ChartedSpace E M] [TopologicalSpace N] [T2Space N] [ChartedSpace E N] {j : M → E}
+    (hj : IsOpenEmbedding j) {k : N → E} (hk : IsOpenEmbedding k) {f : C(M, N)} {φ : E → E}
+    {x : M} (hφ : ∀ᶠ z in 𝓝 x, φ (j z) = k (f z)) {f' : E →L[ℝ] E} (hd : HasFDerivAt φ f' (j x))
+    (hdet : f'.det ≠ 0) :
+    (o.comap hj).localIndex (o.comap hk) f x = SignType.sign f'.det := by
+  obtain ⟨G, hGφ, h⟩ := o.exists_eventuallyEq_and_localIndex_comap_eq o hE hj hk hφ
+  rw [h, o.localIndex_eq_sign_det hE (hd.congr_of_eventuallyEq hGφ) hdet]
+
+include hE in
+/-- **The degree of a map between open subsets is the sum of the Jacobian signs over a regular
+fibre.** Let `U` and `V` be open subsets of `E`, oriented by restricting `o`, with `V`
+preconnected, and let `f : U → V` be a proper map agreeing on `U` with `φ : E → E`. If the fibre of
+`f` over `y` is finite and consists of points where `φ` has a derivative `f' x` of nonzero
+determinant, then the degree of `f` is the sum of `sign (det f' x)` over the fibre. -/
+theorem degree_comap_eq_sum_sign_det {U V : TopologicalSpace.Opens E} [PreconnectedSpace V]
+    {f : C(U, V)} (hf : IsProperMap f) {φ : E → E} (hφ : ∀ z : U, φ z = f z)
+    {f' : E → E →L[ℝ] E} {y : V} (hfin : (f ⁻¹' {y}).Finite)
+    (hderiv : ∀ x ∈ f ⁻¹' {y}, HasFDerivAt φ (f' x) x) (hdet : ∀ x ∈ f ⁻¹' {y}, (f' x).det ≠ 0) :
+    (o.comap U.isOpenEmbedding').degree (o.comap V.isOpenEmbedding') hE f =
+      ∑ x ∈ hfin.toFinset, (SignType.sign (f' x).det : ℤ) := by
+  rw [(o.comap _).degree_eq_sum_localIndex (o.comap _) hE hE hf hfin]
+  refine Finset.sum_congr rfl fun x hx ↦ ?_
+  rw [Finite.mem_toFinset] at hx
+  exact o.localIndex_comap_eq_sign_det hE U.isOpenEmbedding' V.isOpenEmbedding' (.of_forall hφ)
+    (hderiv x hx) (hdet x hx)
+
+include hE in
+/-- **The degree of a map between open subsets counts the preimages of a regular value with
+orientation signs.** Let `U` and `V` be open subsets of `E`, oriented by restricting `o`, with `V`
+preconnected, and let `f : U → V` be a proper map agreeing on `U` with `φ : E → E`. If every point
+of the fibre of `f` over `y` has a derivative `f' x` of `φ` with nonzero determinant, then the
+degree of `f` is the number of points of `U ∩ φ⁻¹(y)` where `det f' x` is positive minus the number
+where it is negative. -/
+theorem degree_comap_eq_ncard_sub_ncard {U V : TopologicalSpace.Opens E} [PreconnectedSpace V]
+    {f : C(U, V)} (hf : IsProperMap f) {φ : E → E} (hφ : ∀ z : U, φ z = f z)
+    {f' : E → E →L[ℝ] E} {y : V} (hderiv : ∀ x ∈ f ⁻¹' {y}, HasFDerivAt φ (f' x) x)
+    (hdet : ∀ x ∈ f ⁻¹' {y}, (f' x).det ≠ 0) :
+    (o.comap U.isOpenEmbedding').degree (o.comap V.isOpenEmbedding') hE f =
+      ((U : Set E) ∩ {x | 0 < (f' x).det} ∩ φ ⁻¹' {(y : E)}).ncard -
+        ((U : Set E) ∩ {x | (f' x).det < 0} ∩ φ ⁻¹' {(y : E)}).ncard := by
+  -- The fibre of `f` is the fibre of `φ` in `U`, a compact set of points with invertible
+  -- derivative, hence finite.
+  have himage : Subtype.val '' (f ⁻¹' {y}) = (U : Set E) ∩ φ ⁻¹' {(y : E)} := by
+    ext w
+    constructor
+    · rintro ⟨z, hz, rfl⟩
+      exact ⟨z.2, (hφ z).trans (congrArg Subtype.val hz)⟩
+    · rintro ⟨hwU, hw⟩
+      exact ⟨⟨w, hwU⟩, Subtype.ext ((hφ ⟨w, hwU⟩).symm.trans hw), rfl⟩
+  have hmem : ∀ w (hw : w ∈ (U : Set E) ∩ φ ⁻¹' {(y : E)}), (⟨w, hw.1⟩ : U) ∈ f ⁻¹' {y} :=
+    fun w hw ↦ Subtype.ext ((hφ ⟨w, hw.1⟩).symm.trans hw.2)
+  have hK : IsCompact ((U : Set E) ∩ φ ⁻¹' {(y : E)}) :=
+    himage ▸ (hf.isCompact_preimage isCompact_singleton).image continuous_subtype_val
+  have hKfin : ((U : Set E) ∩ φ ⁻¹' {(y : E)}).Finite :=
+    hK.finite_inter_preimage_of_hasFDerivAt (fun w hw ↦ hderiv _ (hmem w hw)) fun w hw ↦
+      ⟨_, ((f' w).toContinuousLinearEquivOfDetNeZero (hdet _ (hmem w hw))).antilipschitzWith⟩
+  have hfin : (f ⁻¹' {y}).Finite :=
+    Finite.of_finite_image (himage ▸ hKfin) Subtype.val_injective.injOn
+  rw [o.degree_comap_eq_sum_sign_det hE hf hφ hfin hderiv hdet]
+  -- Split the signs, and read the two counts in `E` through the injective inclusion of `U`.
+  have e (t : ℝ) :
+      (SignType.sign t : ℤ) = (if 0 < t then 1 else 0) - (if t < 0 then 1 else 0) := by
+    rcases lt_trichotomy t 0 with h | h | h <;> simp [h, h.not_gt]
+  have hcount (p : ℝ → Prop) [DecidablePred p] :
+      ((U : Set E) ∩ {x | p (f' x).det} ∩ φ ⁻¹' {(y : E)}).ncard =
+        (hfin.toFinset.filter fun x : U ↦ p (f' x).det).card := by
+    rw [← ncard_coe_finset, ← ncard_image_of_injective _ Subtype.val_injective]
+    congr 1
+    ext w
+    simp only [mem_inter_iff, mem_ofPred_eq, mem_preimage, mem_singleton_iff, Finset.coe_filter,
+      Finite.mem_toFinset, mem_image]
+    constructor
+    · rintro ⟨⟨hwU, hp⟩, hw⟩
+      exact ⟨⟨w, hwU⟩, ⟨hmem w ⟨hwU, hw⟩, hp⟩, rfl⟩
+    · rintro ⟨z, ⟨hz, hp⟩, rfl⟩
+      exact ⟨⟨z.2, hp⟩, (hφ z).trans (congrArg Subtype.val hz)⟩
+  simp_rw [e]
+  rw [Finset.sum_sub_distrib, Finset.sum_boole, Finset.sum_boole,
+    hcount (fun t ↦ 0 < t), hcount (fun t ↦ t < 0)]
 
 include hE in
 /-- **The degree is the sum of the Jacobian signs over a regular fibre.** Let `f : E → E` be a

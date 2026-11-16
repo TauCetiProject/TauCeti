@@ -38,10 +38,9 @@ deletion condition enters the word property behind Tits' theorem.
 
 ## References
 
-This file continues the "inversion sets and the exchange step" item of Layer 1 of
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md` towards the Coxeter presentation
-`weylCoxeterSystem` of Layer 2, whose completeness half is proved through the exchange condition at
-root level. The deletion condition and the subword property are the standard packaging of that
+This file carries the theory of inversion sets and the exchange step towards the Coxeter
+presentation `weylCoxeterSystem`, whose completeness half is proved through the exchange condition
+at root level. The deletion condition and the subword property are the standard packaging of that
 step; see J. E. Humphreys, *Reflection Groups and Coxeter Groups*, CUP (1990), §1.7 and §5.8, and
 Bourbaki, *Lie Groups and Lie Algebras*, Chapters 4--6, Ch. IV, §1.5.
 -/

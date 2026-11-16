@@ -8,27 +8,27 @@ module
 public import Mathlib.Topology.Separation.Hausdorff
 
 /-!
-# Extending local identities from dense sets
+# Extending local identities from locally dense sets
 
-Two maps into a Hausdorff space that are continuous near a point and agree near that point
-within a dense set agree on a full neighborhood. In particular, this extends identities
-across a coordinate hyperplane when its complement is dense.
+Two maps into a Hausdorff space that agree near a point `x` within a set `s` whose closure is a
+neighbourhood of `x`, and that are continuous within `s` at every point near `x`, agree on a full
+neighbourhood of `x`. This is a germ-level analogue of `Set.EqOn.of_subset_closure`. For
+example, it extends identities across a coordinate hyperplane whose complement is dense.
 -/
 
 public section
 
-open Filter Set Topology
+open Topology
 
-/-- Maps that are continuous near a point and agree near it within a dense set agree
-on a full neighborhood of the point. -/
-theorem Dense.eventuallyEq_nhds {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
-    [T2Space Y] {s : Set X} {x : X} {f g : X → Y} (hs : Dense s)
-    (hf : ∀ᶠ z in 𝓝 x, ContinuousAt f z) (hg : ∀ᶠ z in 𝓝 x, ContinuousAt g z)
-    (hfg : f =ᶠ[𝓝[s] x] g) : f =ᶠ[𝓝 x] g := by
-  obtain ⟨U, hUsub, hU, hxU⟩ := mem_nhds_iff.mp
-    ((eventually_nhdsWithin_iff.mp hfg).and (hf.and hg))
-  have hEq : EqOn f g (U ∩ s) := fun z hz ↦ (hUsub hz.1).1 hz.2
-  exact Filter.mem_of_superset (hU.mem_nhds hxU) (hEq.of_subset_closure
-    (fun z hz ↦ (hUsub hz).2.1.continuousWithinAt)
-    (fun z hz ↦ (hUsub hz).2.2.continuousWithinAt)
-    inter_subset_left (hs.open_subset_closure_inter hU))
+/-- Maps into a Hausdorff space that agree near `x` within a set `s` whose closure is a
+neighbourhood of `x`, and that are continuous within `s` at every point near `x`, agree on a full
+neighbourhood of `x`. -/
+theorem Filter.EventuallyEq.eventuallyEq_nhds_of_closure_mem_nhds {X Y : Type*}
+    [TopologicalSpace X] [TopologicalSpace Y] [T2Space Y] {s : Set X} {x : X} {f g : X → Y}
+    (hfg : f =ᶠ[𝓝[s] x] g) (hs : closure s ∈ 𝓝 x)
+    (hf : ∀ᶠ z in 𝓝 x, ContinuousWithinAt f s z) (hg : ∀ᶠ z in 𝓝 x, ContinuousWithinAt g s z) :
+    f =ᶠ[𝓝 x] g := by
+  filter_upwards [hs, hf, hg, (eventually_nhdsWithin_iff.mp hfg).eventually_nhds]
+    with z hzs hfz hgz hz
+  have := mem_closure_iff_nhdsWithin_neBot.mp hzs
+  exact tendsto_nhds_unique_of_eventuallyEq hfz hgz (eventually_nhdsWithin_iff.mpr hz)

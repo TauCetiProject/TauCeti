@@ -91,8 +91,6 @@ algebras.
   algebra, the dimension count that makes the action an isomorphism, and the product decomposition
   of the even subalgebra on the two half-spin summands.
 * C. Chevalley, *The Algebraic Theory of Spinors* (1954), Chapter II.
-* [Spin-representations roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SpinRepresentations/README.md),
-  Layer 1, "The even-dimensional case".
 -/
 
 public section

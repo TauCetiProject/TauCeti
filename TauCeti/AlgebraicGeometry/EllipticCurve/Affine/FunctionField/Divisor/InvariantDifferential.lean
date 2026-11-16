@@ -163,9 +163,6 @@ private theorem differentExponent_le_of_ord_neg (P : Place F W.FunctionField)
       algebraMap F W.FunctionField c :=
     (IsScalarTower.algebraMap_apply F (RatFunc F) W.FunctionField c).symm
   have hc (c : F) : algebraMap F W.FunctionField c ∈ P.integers := P.algebraMap_mem_integers c
-  have hden : invariantDifferentialDenom W =
-      2 * y + algebraMap F W.FunctionField W.a₁ * x + algebraMap F W.FunctionField W.a₃ :=
-    invariantDifferentialDenom_def W
   -- `omega` treats `genericX W` and its abbreviation `x` as distinct atoms.
   have hxx : P.ord (genericX W) = P.ord x := rfl
   have hx0 : x ≠ 0 := hx.ne_zero

@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Matrix.Block
+public import Mathlib.Data.Matrix.ColumnRowPartitioned
 public import Mathlib.Data.Matrix.Mul
 public import Mathlib.GroupTheory.Subgroup.Center
 public import Mathlib.LinearAlgebra.Span.Basic
@@ -35,6 +37,12 @@ span `A` independently is never needed.
   degree.
 * `TauCeti.map_mem_homogeneousMatrices`: a linear map shifting degrees by `l` shifts the degree of
   a homogeneous matrix by `l` entrywise.
+* `TauCeti.mem_homogeneousMatrices_smul_smul_iff` and
+  `TauCeti.mem_homogeneousMatrices_smul_right_iff`: translating both gradings by a central
+  element `k` keeps the degree, and translating the column grading alone multiplies it by `k`.
+* `TauCeti.fromBlocks_mem_homogeneousMatrices_iff` and
+  `TauCeti.fromCols_mem_homogeneousMatrices_iff`: block matrices on sums of graded index types
+  are homogeneous exactly when their blocks are.
 
 ## References
 
@@ -100,6 +108,58 @@ theorem map_mem_homogeneousMatrices {d : A →ₗ[R] A} {l : G}
     (by rw [map_zero]; exact zero_mem _) fun a a' ha ha' ↦ by rw [map_add]; exact add_mem ha ha'
   rintro ⟨g, hg⟩ a ha
   exact Submodule.mem_iSup_of_mem ⟨l * g, by rw [mul_smul, hg, smul_smul]⟩ (hd ha)
+
+/-- **Translating both gradings by a central element** does not change the degree of a
+homogeneous matrix. -/
+theorem mem_homogeneousMatrices_smul_smul_iff {k : G} (hk : k ∈ Subgroup.center G)
+    {gr : X → T} {gr' : X' → T} {c : G} {F : Matrix X X' A} :
+    F ∈ homogeneousMatrices Ag (fun x ↦ k • gr x) (fun x' ↦ k • gr' x') c ↔
+      F ∈ homogeneousMatrices Ag gr gr' c := by
+  have h (x : X) (x' : X') (g : G) :
+      g • k • gr' x' = c • k • gr x ↔ g • gr' x' = c • gr x := by
+    rw [smul_smul, smul_smul, Subgroup.mem_center_iff.mp hk g, Subgroup.mem_center_iff.mp hk c,
+      mul_smul, mul_smul, smul_left_cancel_iff]
+  simp only [mem_homogeneousMatrices_iff]
+  refine forall₂_congr fun x x' ↦ ?_
+  rw [(Equiv.subtypeEquivRight (h x x')).iSup_congr (f := fun g ↦ Ag g.1) (g := fun g ↦ Ag g.1)
+    fun _ ↦ rfl]
+
+/-- **Translating the column grading by a central element `k`** multiplies the degree of a
+homogeneous matrix by `k`. -/
+theorem mem_homogeneousMatrices_smul_right_iff {k : G} (hk : k ∈ Subgroup.center G)
+    {gr : X → T} {gr' : X' → T} {c : G} {F : Matrix X X' A} :
+    F ∈ homogeneousMatrices Ag gr (fun x' ↦ k • gr' x') (k * c) ↔
+      F ∈ homogeneousMatrices Ag gr gr' c := by
+  have h (x : X) (x' : X') (g : G) :
+      g • k • gr' x' = (k * c) • gr x ↔ g • gr' x' = c • gr x := by
+    rw [smul_smul, Subgroup.mem_center_iff.mp hk g, mul_smul, mul_smul, smul_left_cancel_iff]
+  simp only [mem_homogeneousMatrices_iff]
+  refine forall₂_congr fun x x' ↦ ?_
+  rw [(Equiv.subtypeEquivRight (h x x')).iSup_congr (f := fun g ↦ Ag g.1) (g := fun g ↦ Ag g.1)
+    fun _ ↦ rfl]
+
+/-- A **block matrix** is homogeneous of degree `c` for the gradings of the sums of the index
+types exactly when its four blocks are. -/
+theorem fromBlocks_mem_homogeneousMatrices_iff {Y Y' : Type*} {gr : X → T} {grY : Y → T}
+    {gr' : X' → T} {grY' : Y' → T} {c : G} {P : Matrix X X' A} {Q : Matrix X Y' A}
+    {P' : Matrix Y X' A} {Q' : Matrix Y Y' A} :
+    Matrix.fromBlocks P Q P' Q' ∈
+        homogeneousMatrices Ag (Sum.elim gr grY) (Sum.elim gr' grY') c ↔
+      P ∈ homogeneousMatrices Ag gr gr' c ∧ Q ∈ homogeneousMatrices Ag gr grY' c ∧
+        P' ∈ homogeneousMatrices Ag grY gr' c ∧ Q' ∈ homogeneousMatrices Ag grY grY' c := by
+  simp only [mem_homogeneousMatrices_iff, Sum.forall, Matrix.fromBlocks_apply₁₁,
+    Matrix.fromBlocks_apply₁₂, Matrix.fromBlocks_apply₂₁, Matrix.fromBlocks_apply₂₂,
+    Sum.elim_inl, Sum.elim_inr, forall_and]
+  tauto
+
+/-- A matrix **partitioned into columns** is homogeneous of degree `c` for the grading of the sum
+of the column index types exactly when its two column blocks are. -/
+theorem fromCols_mem_homogeneousMatrices_iff {Y' : Type*} {gr : X → T} {gr' : X' → T}
+    {grY' : Y' → T} {c : G} {P : Matrix X X' A} {Q : Matrix X Y' A} :
+    Matrix.fromCols P Q ∈ homogeneousMatrices Ag gr (Sum.elim gr' grY') c ↔
+      P ∈ homogeneousMatrices Ag gr gr' c ∧ Q ∈ homogeneousMatrices Ag gr grY' c := by
+  simp only [mem_homogeneousMatrices_iff, Sum.forall, Matrix.fromCols_apply_inl,
+    Matrix.fromCols_apply_inr, Sum.elim_inl, Sum.elim_inr, forall_and]
 
 
 end TauCeti

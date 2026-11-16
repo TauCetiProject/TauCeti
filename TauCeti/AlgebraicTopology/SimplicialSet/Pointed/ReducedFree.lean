@@ -109,7 +109,7 @@ def reducedFree : PointedSSet.{u} ⥤ PointedSSet.{u} where
         ext v
         induction v using ReducedFreeModule.induction_on with
         | zero => simp
-        | add v w hv hw => simp_all
+        | add v w _ _ => simp_all
         | smul_mk r x => simp }
     (by ext; simp)
   map_id X := by

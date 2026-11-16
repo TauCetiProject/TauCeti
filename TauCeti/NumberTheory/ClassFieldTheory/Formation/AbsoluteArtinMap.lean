@@ -92,13 +92,14 @@ It sends the class of `g ∈ G` to the class of `g` (`abelianizationRestrict_mk`
 language, it restricts an automorphism of the maximal abelian extension to the maximal abelian
 subextension of the finite layer cut out by `V`. -/
 def abelianizationRestrict (V : OpenNormalSubgroup G) :
-    Additive (TopologicalAbelianization G) →+ Additive (Abelianization (ofOpenNormal V).Gal) :=
+    Additive (TopologicalAbelianization G) →+ Additive (Group.Abelianization (ofOpenNormal
+        V).Gal) :=
   MonoidHom.toAdditive <|
     QuotientGroup.lift _
-      (Abelianization.of.comp
+      (Group.Abelianization.of.comp
         ((galOfOpenNormalEquiv V).symm.toMonoidHom.comp (QuotientGroup.mk' V.toSubgroup))) <| by
       -- The kernel contains `V`, so it is open, hence closed; it contains every commutator.
-      refine Subgroup.topologicalClosure_minimal _ (Abelianization.commutator_le_ker _) ?_
+      refine Subgroup.topologicalClosure_minimal _ (Group.Abelianization.commutator_le_ker _) ?_
       refine Subgroup.isClosed_of_isOpen _ (Subgroup.isOpen_mono (fun g hg ↦ ?_) V.isOpen)
       rw [MonoidHom.mem_ker, MonoidHom.comp_apply, MonoidHom.comp_apply,
         QuotientGroup.mk'_apply, (QuotientGroup.eq_one_iff g).mpr hg, map_one, map_one]
@@ -107,7 +108,7 @@ def abelianizationRestrict (V : OpenNormalSubgroup G) :
 @[simp]
 theorem abelianizationRestrict_mk (V : OpenNormalSubgroup G) (g : (ofOpenNormal V).ground) :
     abelianizationRestrict V (Additive.ofMul ((g : G) : TopologicalAbelianization G)) =
-      Additive.ofMul (Abelianization.of (g : (ofOpenNormal V).Gal)) := by
+      Additive.ofMul (Group.Abelianization.of (g : (ofOpenNormal V).Gal)) := by
   rw [abelianizationRestrict, MonoidHom.toAdditive_apply_apply, toMul_ofMul,
     QuotientGroup.lift_mk, MonoidHom.comp_apply, MonoidHom.comp_apply, QuotientGroup.mk'_apply,
     MulEquiv.coe_toMonoidHom,
@@ -117,7 +118,7 @@ theorem abelianizationRestrict_mk (V : OpenNormalSubgroup G) (g : (ofOpenNormal 
 theorem abelianizationRestrict_surjective (V : OpenNormalSubgroup G) :
     Function.Surjective (abelianizationRestrict V) := by
   intro y
-  obtain ⟨γ, hγ⟩ : ∃ γ, Abelianization.of γ = y.toMul := QuotientGroup.mk_surjective y.toMul
+  obtain ⟨γ, hγ⟩ : ∃ γ, Group.Abelianization.of γ = y.toMul := QuotientGroup.mk_surjective y.toMul
   obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective γ
   exact ⟨_, (abelianizationRestrict_mk V g).trans (congrArg Additive.ofMul hγ)⟩
 
@@ -138,7 +139,7 @@ theorem LayerRefinement.quotientHom_abelianizationRestrict {V W : OpenNormalSubg
     have hg (U : OpenNormalSubgroup G) : g ∈ (NormalLayer.ofOpenNormal U).ground := by simp
     rw [NormalLayer.abelianizationRestrict_mk W ⟨g, hg W⟩,
       NormalLayer.abelianizationRestrict_mk V ⟨g, hg V⟩, quotientHom_of, galHom_mk]
-    exact congrArg (fun w ↦ Additive.ofMul (Abelianization.of
+    exact congrArg (fun w ↦ Additive.ofMul (Group.Abelianization.of
       (QuotientGroup.mk w : (NormalLayer.ofOpenNormal V).Gal)))
       (Subtype.ext (Subgroup.coe_inclusion _ _))
 
@@ -168,17 +169,18 @@ private theorem comapAb_le_comap (U : OpenNormalSubgroup (TopologicalAbelianizat
 class of `g`. It inverts the projection `abelianizationRestrict V` modulo `U`
 (`quotientOfAbelianizationGal_abelianizationRestrict`). -/
 private def quotientOfAbelianizationGal (U : OpenNormalSubgroup (TopologicalAbelianization G)) :
-    Abelianization (ofOpenNormal (comapAb U)).Gal →* TopologicalAbelianization G ⧸ U.toSubgroup :=
-  Abelianization.lift <|
+    Group.Abelianization (ofOpenNormal (comapAb
+        U)).Gal →* TopologicalAbelianization G ⧸ U.toSubgroup :=
+  Group.Abelianization.lift <|
     (QuotientGroup.map _ _ (QuotientGroup.mk' _) (comapAb_le_comap U)).comp
       (galOfOpenNormalEquiv (comapAb U)).toMonoidHom
 
 private theorem quotientOfAbelianizationGal_of_mk
     (U : OpenNormalSubgroup (TopologicalAbelianization G))
     (g : (ofOpenNormal (comapAb U)).ground) :
-    quotientOfAbelianizationGal U (Abelianization.of (g : (ofOpenNormal (comapAb U)).Gal)) =
+    quotientOfAbelianizationGal U (Group.Abelianization.of (g : (ofOpenNormal (comapAb U)).Gal)) =
       (((g : G) : TopologicalAbelianization G) : TopologicalAbelianization G ⧸ U.toSubgroup) := by
-  rw [quotientOfAbelianizationGal, Abelianization.lift_apply_of, MonoidHom.comp_apply,
+  rw [quotientOfAbelianizationGal, Group.Abelianization.lift_apply_of, MonoidHom.comp_apply,
     MulEquiv.coe_toMonoidHom, galOfOpenNormalEquiv_mk, QuotientGroup.map_mk,
     QuotientGroup.mk'_apply]
 
@@ -199,10 +201,10 @@ private theorem quotientOfAbelianizationGal_abelianizationRestrict
 private theorem mapOfLE_quotientOfAbelianizationGal
     {U U' : OpenNormalSubgroup (TopologicalAbelianization G)} (hle : U ≤ U')
     (T : LayerRefinement (ofOpenNormal (comapAb U')) (ofOpenNormal (comapAb U)))
-    (z : Abelianization (ofOpenNormal (comapAb U)).Gal) :
+    (z : Group.Abelianization (ofOpenNormal (comapAb U)).Gal) :
     QuotientGroup.mapOfLE hle (quotientOfAbelianizationGal U z) =
       quotientOfAbelianizationGal U' (T.quotientHom (Additive.ofMul z)).toMul := by
-  obtain ⟨γ, rfl⟩ : ∃ γ, Abelianization.of γ = z := QuotientGroup.mk_surjective z
+  obtain ⟨γ, rfl⟩ : ∃ γ, Group.Abelianization.of γ = z := QuotientGroup.mk_surjective z
   induction γ using QuotientGroup.induction_on with
     | H g =>
       rw [LayerRefinement.quotientHom_of, toMul_ofMul, LayerRefinement.galHom_mk,
@@ -296,7 +298,7 @@ theorem abelianizationRestrict_absoluteArtinMap (V : OpenNormalSubgroup G) (a : 
   set ρ := MonoidHom.toAdditive.symm (abelianizationRestrict V) with hρdef
   have hmem (g : G) : g ∈ (ofOpenNormal V).ground := by simp
   have hρ (g : G) : ρ (g : TopologicalAbelianization G) =
-      Abelianization.of ((⟨g, hmem g⟩ : (ofOpenNormal V).ground) : (ofOpenNormal V).Gal) := by
+      Group.Abelianization.of ((⟨g, hmem g⟩ : (ofOpenNormal V).ground) : (ofOpenNormal V).Gal) := by
     rw [hρdef, MonoidHom.toAdditive_symm_apply_apply]
     exact congrArg Additive.toMul (abelianizationRestrict_mk V ⟨g, hmem g⟩)
   -- The kernel `U` of the projection is open in `G^ab`: its preimage in `G` contains `V`.
@@ -312,11 +314,11 @@ theorem abelianizationRestrict_absoluteArtinMap (V : OpenNormalSubgroup G) (a : 
   have hVU' : V ≤ comapAb U :=
     OpenNormalSubgroup.toSubgroup_le.mp fun g hg ↦ mem_comapAb.mpr (hVU hg)
   have T := LayerRefinement.ofOpenNormal hVU'
-  have hcomp (y : Additive (Abelianization (ofOpenNormal V).Gal)) :
+  have hcomp (y : Additive (Group.Abelianization (ofOpenNormal V).Gal)) :
       QuotientGroup.lift U.toSubgroup ρ (fun _ h ↦ h)
         (quotientOfAbelianizationGal U (T.quotientHom y).toMul) = y.toMul := by
     obtain ⟨z, rfl⟩ : ∃ z, Additive.ofMul z = y := ⟨y.toMul, ofMul_toMul y⟩
-    obtain ⟨γ, rfl⟩ : ∃ γ, Abelianization.of γ = z := QuotientGroup.mk_surjective z
+    obtain ⟨γ, rfl⟩ : ∃ γ, Group.Abelianization.of γ = z := QuotientGroup.mk_surjective z
     induction γ using QuotientGroup.induction_on with
       | H g =>
         rw [LayerRefinement.quotientHom_of, toMul_ofMul, LayerRefinement.galHom_mk,

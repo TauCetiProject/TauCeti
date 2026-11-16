@@ -12,17 +12,14 @@ public import TauCeti.Geometry.Lie.Tangent.LieEquiv
 # The adjoint action on left-invariant derivations
 
 The tangent adjoint action is transported across the canonical Lie equivalence between the tangent
-space at the identity and left-invariant derivations. The result is the roadmap-facing group adjoint
-`Ad` on Mathlib's Lie algebra `LeftInvariantDerivation I G`.
+space at the identity and left-invariant derivations. The result is the group adjoint `Ad` on
+Mathlib's Lie algebra `LeftInvariantDerivation I G`.
 
 The canonical derivation–tangent equivalence uses Hausdorffness to identify point derivations with
 tangent vectors through global smooth functions. This imposes no extra public hypothesis on `Ad`
 or its group laws: a charted space over the normed model is `T1`, and a `T1` topological group is
 Hausdorff. No boundaryless manifold assumption is needed, because a Lie group's identity is
 automatically an interior point.
-
-This advances Deliverable A, Layer 1 of
-`TauCetiRoadmap/RepresentationTheory/LieGroups/README.md`.
 
 ## Main definitions
 
@@ -38,11 +35,6 @@ This advances Deliverable A, Layer 1 of
 
 * `TauCeti.Lie.leftInvariantDerivationLieEquivGroupLieAlgebra_symm_mfderiv_conjDiffeomorph`:
   the inverse tangent identification intertwines the adjoint actions.
-
-## References
-
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 1, "The group adjoint".
 -/
 
 public section

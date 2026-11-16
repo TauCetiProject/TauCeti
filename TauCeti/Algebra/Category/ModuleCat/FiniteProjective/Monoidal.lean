@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.TensorProduct.Projective
 public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Symmetric
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import Mathlib.RingTheory.TensorProduct.Finite

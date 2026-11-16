@@ -50,14 +50,8 @@ Also excluded: the martingale, `L²`, and Koopman route internals; the Hewitt–
 σ-field development; and the worked examples that are *not* included — the random-bias coin flips,
 the three-cycle, and the stationary example. Those are reachable by importing their own modules.
 
-One worked example **is** included: `Exchangeability.IID`, which the roadmap lists as its first
-worked example ("an i.i.d. sequence is mixed i.i.d., exchangeable, and contractable"). It is
-exported here because it doubles as constructor API — the results that build the representation
-predicates from independence together with a common law — not because examples are curated in
-general.
-
-## References
-
-* Roadmap: `TauCetiRoadmap/Exchangeability/README.md`, **Layer 7** (public API), which specifies
-  this facade and its companion `TauCeti.Probability.DeFinetti`.
+One worked example **is** included: `Exchangeability.IID`, showing that an i.i.d. sequence is
+mixed i.i.d., exchangeable, and contractable. It is exported here because it doubles as constructor
+API — the results that build the representation predicates from independence together with a common
+law — not because examples are curated in general.
 -/

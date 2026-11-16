@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.ContMDiff
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 public import TauCeti.Data.ENat.Monoid
+import TauCeti.Geometry.Manifold.ContMDiff.MFDeriv
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
 
 /-!
@@ -48,6 +49,9 @@ family of almost complex structures on a mapping torus has to reach after one tu
   `TauCeti.ContMDiffAlmostComplexStructure.pullback_trans`: contravariant functoriality.
 * `TauCeti.ContMDiffAlmostComplexStructure.contMDiff_pullback_family`: fixed-coordinate
   pullback preserves joint `Cⁿ` parameter and base-point regularity.
+* `TauCeti.ContMDiffAlmostComplexStructure.contMDiff_pullback_family_of_contMDiff`: so does
+  pullback along a family of `Cʳ` diffeomorphisms `h q` such that `h q x` and `(h q)⁻¹ y` are
+  jointly `Cʳ` in the parameter and the point.
 * `TauCeti.ContMDiffAlmostComplexStructure.ofLE_pullback`,
   `TauCeti.ContMDiffAlmostComplexStructure.pullback_neg`: regularity downgrade and negation.
 * The corresponding `TauCeti.SmoothAlmostComplexStructure` theorems are the infinite-order
@@ -179,6 +183,33 @@ theorem contMDiff_pullback_family {EQ HQ Q : Type*} [NormedAddCommGroup EQ]
         ((pullback h (J q.1) hnr).toEndomorphism q.2)) :=
   contMDiff_pullbackEndomorphism_family h hnr hJ
 
+/-- Pullback along a family of `Cʳ` diffeomorphisms `h q : M → N`, such that `h q x` and
+`(h q)⁻¹ y` are jointly `Cʳ`, of a jointly `Cⁿ` family of structures `J q` on `N`, is a jointly
+`Cⁿ` family of structures on `M` when `n + 1 ≤ r`. -/
+theorem contMDiff_pullback_family_of_contMDiff {EQ HQ Q : Type*} [NormedAddCommGroup EQ]
+    [NormedSpace ℝ EQ] [TopologicalSpace HQ] {IQ : ModelWithCorners ℝ EQ HQ}
+    [TopologicalSpace Q] [ChartedSpace HQ Q] [IsManifold IQ r Q]
+    {h : Q → M ≃ₘ^r⟮I, I'⟯ N} (hh : ContMDiff (IQ.prod I) I' r fun q : Q × M ↦ h q.1 q.2)
+    (hh' : ContMDiff (IQ.prod I') I r fun q : Q × N ↦ (h q.1).symm q.2) (hnr : n + 1 ≤ r)
+    {J : Q → ContMDiffAlmostComplexStructure I' n N}
+    (hJ : ContMDiff (IQ.prod I') (I'.prod 𝓘(ℝ, E' →L[ℝ] E')) n
+      (fun q : Q × N ↦ TotalSpace.mk' (E' →L[ℝ] E')
+        (E := fun y : N ↦ TangentSpace I' y →L[ℝ] TangentSpace I' y) q.2
+        ((J q.1).toEndomorphism q.2))) :
+    ContMDiff (IQ.prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E)) n
+      (fun q : Q × M ↦ TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) q.2
+        ((pullback (h q.1) (J q.1) hnr).toEndomorphism q.2)) := by
+  -- On total spaces, the pulled back structure is `T(h q)⁻¹ ∘ J q ∘ T(h q)`.
+  rw [TauCeti.contMDiff_hom_bundle_prod_iff]
+  have hJ' := (TauCeti.contMDiff_hom_bundle_prod_iff _).1 hJ
+  have hnr' : (n : ℕ∞ω) + 1 ≤ r := by exact_mod_cast hnr
+  have ht := ContMDiff.contMDiff_tangentMap_family (f := fun q x ↦ h q x) hh hnr'
+  have hti := ContMDiff.contMDiff_tangentMap_family (f := fun q y ↦ (h q).symm y) hh' hnr'
+  refine (hti.comp (contMDiff_fst.prodMk (hJ'.comp (contMDiff_fst.prodMk ht)))).congr
+    fun p ↦ ?_
+  exact ((h p.1).tangentMap_symm_mk (ENat.coe_ne_zero_of_add_one_le hnr) p.2.proj _).symm
+
 /-- Pullback preserves identity maps at every structure order, including zero. -/
 @[simp]
 theorem pullback_refl (K : ContMDiffAlmostComplexStructure I n M) (hnr : n + 1 ≤ r) :
@@ -271,6 +302,29 @@ theorem contMDiff_pullback_family {EQ HQ Q : Type*} [NormedAddCommGroup EQ] [Nor
   simpa only [pullback, ContMDiffAlmostComplexStructure.toSmooth_toEndomorphism] using
     ContMDiffAlmostComplexStructure.contMDiff_pullback_family h (by simp) (IQ := IQ)
       (J := fun q => (J q).toContMDiff ⊤) (by
+        simpa only [toContMDiff_toEndomorphism_apply] using hJ)
+
+/-- Pulling back a smooth family of smooth almost complex structures `J q` on `N` along a family
+of diffeomorphisms `h q : M → N` such that `h q x` and `(h q)⁻¹ y` are jointly smooth gives a
+smooth family of almost complex structures on `M`: `(q, x) ↦ ((h q)^* J_q)_x` is a smooth section
+of the tangent endomorphism bundle along the projection `Q × M → M`. -/
+theorem contMDiff_pullback_family_of_contMDiff {EQ HQ Q : Type*} [NormedAddCommGroup EQ]
+    [NormedSpace ℝ EQ] [TopologicalSpace HQ] {IQ : ModelWithCorners ℝ EQ HQ} [TopologicalSpace Q]
+    [ChartedSpace HQ Q] [IsManifold IQ ∞ Q] {h : Q → M ≃ₘ⟮I, I'⟯ N}
+    (hh : ContMDiff (IQ.prod I) I' ∞ fun q : Q × M ↦ h q.1 q.2)
+    (hh' : ContMDiff (IQ.prod I') I ∞ fun q : Q × N ↦ (h q.1).symm q.2)
+    {J : Q → SmoothAlmostComplexStructure I' N}
+    (hJ : ContMDiff (IQ.prod I') (I'.prod 𝓘(ℝ, E' →L[ℝ] E')) ∞
+      (fun q : Q × N ↦ TotalSpace.mk' (E' →L[ℝ] E')
+        (E := fun y : N ↦ TangentSpace I' y →L[ℝ] TangentSpace I' y) q.2
+        ((J q.1).toEndomorphism q.2))) :
+    ContMDiff (IQ.prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
+      (fun q : Q × M ↦ TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) q.2
+        ((pullback (h q.1) (J q.1)).toEndomorphism q.2)) := by
+  simpa only [pullback, ContMDiffAlmostComplexStructure.toSmooth_toEndomorphism] using
+    ContMDiffAlmostComplexStructure.contMDiff_pullback_family_of_contMDiff hh hh' (by simp)
+      (IQ := IQ) (J := fun q => (J q).toContMDiff ⊤) (by
         simpa only [toContMDiff_toEndomorphism_apply] using hJ)
 
 /-- Smooth-to-finite regularity conversion commutes with pullback. -/

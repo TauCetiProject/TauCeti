@@ -41,11 +41,11 @@ theorem sin_two_mul_arcsin {s : ℝ} :
   by_cases h₀ : -1 ≤ s
   · by_cases h₁ : s ≤ 1
     · rw [sin_arcsin h₀ h₁]
-    · have hs : 1 < s := lt_of_not_ge h₁
+    · have _ : 1 < s := lt_of_not_ge h₁
       have hzero : √(1 - s ^ 2) = 0 :=
         sqrt_eq_zero_of_nonpos (by nlinarith [sq_nonneg (s - 1)])
       simp only [hzero, mul_zero]
-  · have hs : s < -1 := lt_of_not_ge h₀
+  · have _ : s < -1 := lt_of_not_ge h₀
     have hzero : √(1 - s ^ 2) = 0 :=
       sqrt_eq_zero_of_nonpos (by nlinarith [sq_nonneg (s + 1)])
     simp only [hzero, mul_zero]

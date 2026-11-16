@@ -112,7 +112,7 @@ theorem exists_mem_Gamma0_atkinLehnerGL_mul_mapGL (hQ : 0 < Q) (hQN : Q ∣ N)
     (h : IsAtkinLehnerMatrix N Q M) {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 N) :
     ∃ δ : SL(2, ℤ), δ ∈ Gamma0 N ∧
       atkinLehnerGL hQ h * mapGL ℝ γ = mapGL ℝ δ * atkinLehnerGL hQ h := by
-  obtain ⟨δ, hδ, hmul⟩ := h.exists_mem_Gamma0_mul_eq_mul_left hQ.ne' hQN hγ
+  obtain ⟨δ, hδ, hmul⟩ := h.exists_mem_Gamma0_mul_eq_mul_left hQN hγ
   refine ⟨δ, hδ, Units.ext ?_⟩
   simp only [Matrix.GeneralLinearGroup.coe_mul, coe_atkinLehnerGL, mapGL_coe_matrix,
     Matrix.SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply, algebraMap_int_eq,
@@ -124,7 +124,7 @@ theorem exists_mem_Gamma0_mapGL_mul_atkinLehnerGL (hQ : 0 < Q) (hQN : Q ∣ N)
     (h : IsAtkinLehnerMatrix N Q M) {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 N) :
     ∃ δ : SL(2, ℤ), δ ∈ Gamma0 N ∧
       mapGL ℝ γ * atkinLehnerGL hQ h = atkinLehnerGL hQ h * mapGL ℝ δ := by
-  obtain ⟨δ, hδ, hmul⟩ := h.exists_mem_Gamma0_mul_eq_mul_right hQ.ne' hQN hγ
+  obtain ⟨δ, hδ, hmul⟩ := h.exists_mem_Gamma0_mul_eq_mul_right hQN hγ
   refine ⟨δ, hδ, Units.ext ?_⟩
   simp only [Matrix.GeneralLinearGroup.coe_mul, coe_atkinLehnerGL, mapGL_coe_matrix,
     Matrix.SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply, algebraMap_int_eq,
@@ -270,11 +270,11 @@ theorem slash_atkinLehnerGL_slash_atkinLehnerGL_of_mul_self_eq (hQ : 0 < Q)
 element of `Γ₀(N)`; the scalar matrix contributes `Q ^ (k - 2)` and the `Γ₀(N)` factor is
 absorbed. This is the identity the normalization `(√Q) ^ (2 - k)` turns into an involution in
 even weight. -/
-theorem slash_atkinLehnerGL_slash_atkinLehnerGL (hQ : 0 < Q) (hQN : Q ∣ N)
+theorem slash_atkinLehnerGL_slash_atkinLehnerGL (hQ : 0 < Q)
     (h : IsAtkinLehnerMatrix N Q M) (f : ℍ → ℂ)
     (hf : ∀ γ ∈ (Gamma0 N).map (mapGL ℝ), f ∣[k] γ = f) :
     (f ∣[k] atkinLehnerGL hQ h) ∣[k] atkinLehnerGL hQ h = (Q : ℂ) ^ (k - 2) • f := by
-  obtain ⟨γ, hγ, hsq⟩ := h.exists_mem_Gamma0_mul_self hQ.ne' hQN
+  obtain ⟨γ, hγ, hsq⟩ := h.exists_mem_Gamma0_mul_self
   rw [slash_atkinLehnerGL_slash_atkinLehnerGL_of_mul_self_eq hQ h hsq,
     hf _ (Subgroup.mem_map_of_mem _ hγ)]
 
@@ -284,7 +284,7 @@ theorem atkinLehnerOperator_atkinLehnerOperator (hQ : 0 < Q) (hQN : Q ∣ N)
     atkinLehnerOperator hQ hQN h k (atkinLehnerOperator hQ hQN h k f) = (Q : ℂ) ^ (k - 2) • f :=
   DFunLike.coe_injective <| by
     rw [coe_atkinLehnerOperator, coe_atkinLehnerOperator,
-      slash_atkinLehnerGL_slash_atkinLehnerGL hQ hQN h ⇑f fun γ hγ ↦
+      slash_atkinLehnerGL_slash_atkinLehnerGL hQ h ⇑f fun γ hγ ↦
         SlashInvariantForm.slash_action_eqn f γ hγ]
     rfl
 
@@ -295,7 +295,7 @@ theorem atkinLehnerOperatorCusp_atkinLehnerOperatorCusp (hQ : 0 < Q) (hQN : Q �
       (Q : ℂ) ^ (k - 2) • f :=
   DFunLike.coe_injective <| by
     rw [coe_atkinLehnerOperatorCusp, coe_atkinLehnerOperatorCusp,
-      slash_atkinLehnerGL_slash_atkinLehnerGL hQ hQN h ⇑f fun γ hγ ↦
+      slash_atkinLehnerGL_slash_atkinLehnerGL hQ h ⇑f fun γ hγ ↦
         SlashInvariantForm.slash_action_eqn f γ hγ]
     rfl
 

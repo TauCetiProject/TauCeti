@@ -335,7 +335,6 @@ theorem IsInvolutiveDistribution.distributionLeviForm_eq_zero
 theorem isInvolutiveDistribution_iff_distributionLeviForm_eq_zero
     (hD : IsContMDiffDistribution I n k D) (hn : 1 ≤ n) :
     IsInvolutiveDistribution I D ↔ ∀ x, distributionLeviForm D x = 0 := by
-  have hn0 : n ≠ 0 := (zero_lt_one.trans_le hn).ne'
   refine ⟨fun hinv x ↦ hinv.distributionLeviForm_eq_zero x, fun h ↦
     isInvolutiveDistribution_iff.mpr fun U hU V W hV hW hVD hWD x hx ↦ ?_⟩
   have hUx := hU.mem_nhds hx

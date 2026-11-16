@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Pseudodifferential.AsymptoticSum
 public import TauCeti.Analysis.InnerProductSpace.Adjoint
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Calculus.ParametricIntegral
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
 
 /-!
 # The asymptotic expansion of the adjoint symbol
@@ -276,7 +277,7 @@ private theorem hasDerivAt_scaledAdjoint
     HasDerivAt (fun t ↦ scaledAdjoint a t x ξ)
       ((-Complex.I) • ∑ j, scaledAdjoint (spatialDeriv j (frequencyDeriv j a)) t₀ x ξ) t₀ := by
   have hb (j : Fin n) := (ha.frequencyDeriv j).spatialDeriv j
-  choose C hC0 hC using fun j ↦ exists_norm_shiftIntegrand_le (hb j)
+  choose C _ hC using fun j ↦ exists_norm_shiftIntegrand_le (hb j)
   have hball : ∀ t ∈ Metric.ball t₀ 1, |t * (2 * π)| ≤ 4 * π := fun t ht ↦ by
     rw [Metric.mem_ball, Real.dist_eq] at ht
     have := abs_sub_abs_le_abs_sub t t₀
@@ -294,7 +295,8 @@ private theorem hasDerivAt_scaledAdjoint
     rw [norm_smul, Complex.norm_I, one_mul]
     exact hC j _ (hball t ht) x ξ θ
   have hbound_int : Integrable bound :=
-    integrable_finsetSum _ fun j _ ↦ (integrable_one_add_norm_rpow_neg.mul_const _).const_mul _
+    integrable_finsetSum _ fun j _ ↦
+      (integrable_one_add_norm_rpow_neg_add_one.mul_const _).const_mul _
   obtain ⟨-, h⟩ := hasDerivAt_integral_of_dominated_loc_of_deriv_le
     (F := fun t θ ↦ shiftIntegrand a (t * (2 * π)) x ξ θ) (F' := F')
     (Metric.ball_mem_nhds t₀ one_pos)

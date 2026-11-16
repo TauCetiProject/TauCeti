@@ -30,7 +30,7 @@ namespace NNReal
 /-- Writing `q = a / b` in lowest terms, `x ^ (1 / q) = (x ^ b) ^ (1 / a)`. -/
 theorem rpow_inv_nnratCast (x : ℝ≥0) (q : ℚ≥0) :
     x ^ ((q : ℝ)⁻¹) = (x ^ q.den) ^ ((q.num : ℝ)⁻¹) := by
-  rw [NNRat.cast_def, inv_div, div_eq_mul_inv, NNReal.rpow_mul, NNReal.rpow_natCast]
+  rw [NNRat.cast_def, inv_div, div_eq_mul_inv, rpow_mul, rpow_natCast]
 
 /-- Writing `q = a / b ≠ 0` in lowest terms, `ρ = x ^ (1 / q)` solves `ρ ^ a = x ^ b`. -/
 theorem rpow_inv_nnratCast_pow_num (x : ℝ≥0) {q : ℚ≥0} (hq : q ≠ 0) :

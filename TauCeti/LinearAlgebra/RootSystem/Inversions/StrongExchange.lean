@@ -49,9 +49,8 @@ reflection, so the leading letter is the one deleted.
 
 ## References
 
-This file supplies the root-level exchange condition of Layer 1 in
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`, the step through which the Coxeter
-presentation of Layer 2 proves that the braid relations are complete. The argument is the one in
+This file supplies the root-level exchange condition, the step through which the Coxeter
+presentation proves that the braid relations are complete. The argument is the one in
 J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, Ch. III, §10.3.
 -/
 

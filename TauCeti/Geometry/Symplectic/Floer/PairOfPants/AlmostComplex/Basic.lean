@@ -340,24 +340,9 @@ theorem contMDiffAt_endWeightedAlmostComplex (h₀ : ω.Compatible J₀)
     (hCs : ContMDiffAt IN 𝓘(ℝ, V →L[ℝ] V) n (fun y => ∑ q, c y q (w y) •
       LinearMap.toContinuousLinearMap (J₀.cayley (J q (q.endCoord (w y)).im (x y)))) y₀) :
     ContMDiffAt IN 𝓘(ℝ, V →L[ℝ] V) n (fun y => LinearMap.toContinuousLinearMap
-      (endWeightedAlmostComplex h₀ J hJ (c y) (hc y) (hc₀ y) (w y) (x y)).toLinearMap) y₀ := by
-  -- The weighted sum `C` of the Cayley transforms of the end structures is the Cayley transform
-  -- of the end-weighted structure, which therefore is the inverse Cayley chart applied to `C`.
-  set C : N → V →L[ℝ] V := fun y => ∑ q, c y q (w y) •
-    LinearMap.toContinuousLinearMap (J₀.cayley (J q (q.endCoord (w y)).im (x y))) with hC_def
-  have hC (y : N) : (C y).toLinearMap =
-      ∑ q, c y q (w y) • J₀.cayley (J q (q.endCoord (w y)).im (x y)) := by
-    simp [hC_def]
-  have hCb (y : N) : (C y).toLinearMap ∈ ω.cayleyBall J₀ := by
-    rw [hC, ← cayley_endWeightedAlmostComplex (hJ := hJ) (hc := hc y) (hc₀ := hc₀ y) h₀]
-    exact h₀.cayley_mem_cayleyBall (tames_endWeightedAlmostComplex h₀ _ _)
-  have hJC : (fun y => LinearMap.toContinuousLinearMap
-      (endWeightedAlmostComplex h₀ J hJ (c y) (hc y) (hc₀ y) (w y) (x y)).toLinearMap) =
-      fun y => LinearMap.toContinuousLinearMap
-        (h₀.cayleyEquiv.symm ⟨(C y).toLinearMap, hCb y⟩).val.toLinearMap := by
-    simp only [endWeightedAlmostComplex, hC]
-  rw [hJC]
-  exact h₀.contMDiffAt_cayleyEquiv_symm hCb hCs
+      (endWeightedAlmostComplex h₀ J hJ (c y) (hc y) (hc₀ y) (w y) (x y)).toLinearMap) y₀ :=
+  h₀.contMDiffAt_of_contMDiffAt_cayley (fun _ => tames_endWeightedAlmostComplex h₀ _ _)
+    (by simpa only [cayley_endWeightedAlmostComplex, map_sum, map_smul] using hCs)
 
 /-- **The structure is smooth.** For families `J q t x` of `ω`-tame structures which have period
 one in `t` and are `C^n` on `ℝ × M`, the pair-of-pants structure is `C^n` on `S × M`, where

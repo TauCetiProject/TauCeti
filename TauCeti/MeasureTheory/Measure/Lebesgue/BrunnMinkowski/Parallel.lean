@@ -65,12 +65,11 @@ theorem concaveOn_volume_real_add_smul_rpow (K L : ConvexBody E)
     ConcaveOn ℝ (Ici 0) (fun t : ℝ ↦
       volume.real ((K : Set E) + t • (L : Set E)) ^ (Module.finrank ℝ E : ℝ)⁻¹) := by
   refine ⟨convex_Ici _, fun s hs t ht p q hp hq hpq ↦ ?_⟩
-  have hS := K.isCompact.add (L.isCompact.smul s)
   have hT := K.isCompact.add (L.isCompact.smul t)
   have hU := K.isCompact.add (L.isCompact.smul (p * s + q * t))
   have h := TauCeti.mul_volume_real_rpow_add_mul_volume_real_rpow_le hn
-    (K.nonempty.add L.nonempty.smul_set) hS.measurableSet.nullMeasurableSet
-    (K.nonempty.add L.nonempty.smul_set) hT.measurableSet.nullMeasurableSet hp hq
+    (K.nonempty.add L.nonempty.smul_set) (K.nonempty.add L.nonempty.smul_set)
+    hT.measurableSet.nullMeasurableSet hp hq
     (by rw [K.convex.add_smul_interpolation L.convex hp hq hpq hs ht]
         exact hU.measure_lt_top.ne)
   simpa only [K.convex.add_smul_interpolation L.convex hp hq hpq hs ht,
@@ -85,8 +84,7 @@ theorem volume_real_rpow_add_mul_le_volume_real_add_smul_rpow (K L : ConvexBody 
         volume.real ((K : Set E) + t • (L : Set E)) ^ (Module.finrank ℝ E : ℝ)⁻¹ := by
   simpa only [one_mul, one_smul] using
     TauCeti.mul_volume_real_rpow_add_mul_volume_real_rpow_le hn
-      K.nonempty K.isCompact.measurableSet.nullMeasurableSet
-      L.nonempty L.isCompact.measurableSet.nullMeasurableSet zero_le_one ht
+      K.nonempty L.nonempty L.isCompact.measurableSet.nullMeasurableSet zero_le_one ht
       (by simpa only [one_smul] using (K.isCompact.add (L.isCompact.smul t)).measure_lt_top.ne)
 
 /-- The dimension root of parallel volume is bounded above on nonnegative parameters by

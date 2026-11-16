@@ -36,7 +36,7 @@ universe uR uM uN
 
 variable {R : Type uR} {M : Type uM} {N : Type uN} [Semiring R]
   [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
-  {G : InternalGrading R M} {H : InternalGrading R N} {f : M →ₗ[R] N} {r : ℤ}
+  {G : InternalGrading R M ℤ} {H : InternalGrading R N ℤ} {f : M →ₗ[R] N} {r : ℤ}
 
 /-- A surjective homogeneous linear map of degree `r` between internally graded modules has a
 homogeneous right inverse of degree `-r` if its target is projective. -/

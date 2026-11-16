@@ -102,8 +102,11 @@ universe v u
 
 namespace CochainComplex.mappingCone
 
-variable {C : Type u} [Category.{v} C] [Preadditive C] [HasBinaryBiproducts C]
-  {K L : CochainComplex C ℤ} (f : K ⟶ L)
+variable {C : Type u} [Category.{v} C] [Preadditive C] {K L : CochainComplex C ℤ} (f : K ⟶ L)
+
+section HasHomotopyCofiber
+
+variable [HasHomotopyCofiber f]
 
 /-- The components of `mappingCone.inl` are the left inclusions of the underlying homotopy
 cofiber. -/
@@ -121,6 +124,31 @@ lemma inrCompHomotopy_hom (i j : ℤ) (hij : j + 1 = i) :
     (inrCompHomotopy f).hom i j = (inl f).v i j (by omega) := by
   rw [inl_v_eq_inlX f i j hij]
   exact homotopyCofiber.inrCompHomotopy_hom f _ i j hij
+
+/-- A variant of `inl_v_fst_v` with an arbitrary target degree. -/
+@[reassoc]
+lemma inl_v_fst_v' (p q r : ℤ) (h₁ : p + -1 = q) (h₂ : q + 1 = r) :
+    (inl f).v p q h₁ ≫ (fst f).1.v q r h₂ = (K.XIsoOfEq (show p = r by lia)).hom := by
+  obtain rfl : r = p := by lia
+  simp
+
+/-- A variant of `inl_v_snd_v` with an arbitrary target degree. -/
+@[reassoc]
+lemma inl_v_snd_v' (p q r : ℤ) (h₁ : p + -1 = q) (h₂ : q + 0 = r) :
+    (inl f).v p q h₁ ≫ (snd f).v q r h₂ = 0 := by
+  obtain rfl : r = q := by lia
+  simp
+
+/-- A variant of `inr_f_snd_v` with an arbitrary target degree. -/
+@[reassoc]
+lemma inr_f_snd_v' (p q : ℤ) (h : p + 0 = q) :
+    (inr f).f p ≫ (snd f).v p q h = (L.XIsoOfEq (show p = q by lia)).hom := by
+  obtain rfl : q = p := by lia
+  simp
+
+end HasHomotopyCofiber
+
+variable [HasBinaryBiproducts C]
 
 section
 
@@ -263,31 +291,9 @@ noncomputable def mapIso {φ₁ : K₁ ⟶ L₁} {φ₂ : K₂ ⟶ L₂} (e₁ :
     (comm : φ₁ ≫ e₂.hom = e₁.hom ≫ φ₂) :
     mappingCone φ₁ ≅ mappingCone φ₂ where
   hom := map φ₁ φ₂ e₁.hom e₂.hom comm
-  inv := map φ₂ φ₁ e₁.inv e₂.inv (by rw [← cancel_epi e₁.hom, e₁.hom_inv_id_assoc,
-    ← reassoc_of% comm, e₂.hom_inv_id, Category.comp_id])
+  inv := map φ₂ φ₁ e₁.inv e₂.inv (by simp [Iso.comp_inv_eq, comm])
   hom_inv_id := by rw [← map_comp]; simp [map_id]
   inv_hom_id := by rw [← map_comp]; simp [map_id]
-
-/-- A variant of `inl_v_fst_v` with an arbitrary target degree. -/
-@[reassoc]
-lemma inl_v_fst_v' (p q r : ℤ) (h₁ : p + -1 = q) (h₂ : q + 1 = r) :
-    (inl f).v p q h₁ ≫ (fst f).1.v q r h₂ = (K.XIsoOfEq (show p = r by lia)).hom := by
-  obtain rfl : r = p := by lia
-  simp
-
-/-- A variant of `inl_v_snd_v` with an arbitrary target degree. -/
-@[reassoc]
-lemma inl_v_snd_v' (p q r : ℤ) (h₁ : p + -1 = q) (h₂ : q + 0 = r) :
-    (inl f).v p q h₁ ≫ (snd f).v q r h₂ = 0 := by
-  obtain rfl : r = q := by lia
-  simp
-
-/-- A variant of `inr_f_snd_v` with an arbitrary target degree. -/
-@[reassoc]
-lemma inr_f_snd_v' (p q : ℤ) (h : p + 0 = q) :
-    (inr f).f p ≫ (snd f).v p q h = (L.XIsoOfEq (show p = q by lia)).hom := by
-  obtain rfl : q = p := by lia
-  simp
 
 /-- The first component of `mappingCone.shiftIso` carries the sign `(-1)^n`. -/
 @[reassoc (attr := simp)]

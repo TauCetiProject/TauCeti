@@ -55,8 +55,8 @@ theorem toMeromorphicGerms_stalkPrecomp (g : ℂ → ℂ) (hg : ContMDiff 𝓘(�
     toMeromorphicGerms a (stalkPrecomp 𝓘(ℂ) ℂ g hg a s) =
       meromorphicGerms.pullback g (contMDiffAt_iff_contDiffAt.mp hg.contMDiffAt).analyticAt rfl ht
         (toMeromorphicGerms (g a) s) := by
-  obtain ⟨f, hf, hfs⟩ := exists_toFilterGerm_eq (g a) s
-  obtain ⟨k, hk, hkt⟩ := exists_toFilterGerm_eq a (stalkPrecomp 𝓘(ℂ) ℂ g hg a s)
+  obtain ⟨f, _, hfs⟩ := exists_toFilterGerm_eq (g a) s
+  obtain ⟨k, _, hkt⟩ := exists_toFilterGerm_eq a (stalkPrecomp 𝓘(ℂ) ℂ g hg a s)
   have h := toFilterGerm_stalkPrecomp g hg a s
   rw [hkt, hfs, Germ.coe_compTendsto, Germ.coe_eq] at h
   apply Subtype.ext

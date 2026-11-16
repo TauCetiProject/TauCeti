@@ -32,6 +32,8 @@ surjectivity of `P` (`PeriodPair.weierstrassPoint_surjective`), it gives the gro
 * `PeriodPair.weierstrassPoint_add`: `P(z + w) = P(z) + P(w)`.
 * `PeriodPair.weierstrassPointHom`: the point map as a group homomorphism `ℂ →+ E(ℂ)`, and
   `PeriodPair.ker_weierstrassPointHom`: its kernel is `Λ`.
+* `PeriodPair.weierstrassP_eq_weierstrassP_iff`: away from `Λ`, equal `℘`-values mean that
+  the difference or the sum of the arguments lies in `Λ`.
 * `PeriodPair.weierstrassPointEquiv`: the group isomorphism `ℂ / Λ ≃+ E(ℂ)` induced by the point
   map, which is surjective by `PeriodPair.weierstrassPoint_surjective`, with
   `PeriodPair.weierstrassPointEquiv_mk` and `PeriodPair.weierstrassPointEquiv_symm_weierstrassPoint`
@@ -421,10 +423,43 @@ def weierstrassPointHom : ℂ →+ L.weierstrassCurve.toAffine.Point where
 @[simp]
 lemma weierstrassPointHom_apply (z : ℂ) : L.weierstrassPointHom z = L.weierstrassPoint z := (rfl)
 
+/-- Multiplication of the argument multiplies the corresponding elliptic-curve point. -/
+theorem weierstrassPoint_nsmul (n : ℕ) (z : ℂ) :
+    L.weierstrassPoint (n • z) = n • L.weierstrassPoint z := by
+  simpa only [weierstrassPointHom_apply] using L.weierstrassPointHom.map_nsmul n z
+
 /-- The kernel of the point map is the period lattice. -/
 lemma ker_weierstrassPointHom : L.weierstrassPointHom.ker = L.lattice.toAddSubgroup := by
   ext z
   simp
+
+/-- Two points of `ℂ` have the same image under the point map exactly when they differ by a
+period. -/
+lemma weierstrassPoint_eq_weierstrassPoint_iff {z w : ℂ} :
+    L.weierstrassPoint z = L.weierstrassPoint w ↔ z - w ∈ L.lattice := by
+  rw [← sub_eq_zero, ← L.weierstrassPointHom_apply, ← L.weierstrassPointHom_apply, ← map_sub,
+    L.weierstrassPointHom_apply, L.weierstrassPoint_eq_zero_iff]
+
+/-- The point map commutes with multiplication by a natural number. -/
+lemma nsmul_weierstrassPoint (n : ℕ) (z : ℂ) :
+    n • L.weierstrassPoint z = L.weierstrassPoint (n * z) := by
+  rw [← L.weierstrassPointHom_apply, ← map_nsmul, nsmul_eq_mul, L.weierstrassPointHom_apply]
+
+/-- Away from the period lattice, the Weierstrass function identifies exactly the pairs of
+points that differ by a period or whose sum is a period. -/
+theorem weierstrassP_eq_weierstrassP_iff {z w : ℂ} (hz : z ∉ L.lattice)
+    (hw : w ∉ L.lattice) :
+    ℘[L] z = ℘[L] w ↔ z - w ∈ L.lattice ∨ z + w ∈ L.lattice := by
+  have hx : ℘[L] z = ℘[L] w ↔
+      (L.weierstrassPoint z).xRep = (L.weierstrassPoint w).xRep := by
+    rw [L.weierstrassPoint_of_notMem hz, L.weierstrassPoint_of_notMem hw]
+    simp
+  rw [hx, WeierstrassCurve.Affine.Point.xRep_eq_xRep_iff]
+  have hadd : L.weierstrassPoint z = -L.weierstrassPoint w ↔ z + w ∈ L.lattice := by
+    rw [← add_eq_zero_iff_eq_neg, ← L.weierstrassPointHom_apply,
+      ← L.weierstrassPointHom_apply, ← map_add, L.weierstrassPointHom_apply,
+      L.weierstrassPoint_eq_zero_iff]
+  rw [L.weierstrassPoint_eq_weierstrassPoint_iff, hadd]
 
 /-- **The complex uniformization** `ℂ / Λ ≃+ E_Λ(ℂ)`, induced by the point map
 `z ↦ (℘(z), ℘'(z) / 2)` (`PeriodPair.weierstrassPoint`), which is a surjective group homomorphism

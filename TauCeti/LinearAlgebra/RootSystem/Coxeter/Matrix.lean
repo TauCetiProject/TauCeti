@@ -63,11 +63,8 @@ roots, and there the two simple reflections commute
 
 ## References
 
-This file implements “The Coxeter matrix of a base” in Layer 2 of
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`, following the target signature
-`coxeterMatrixOfBase` in that roadmap's `Suggested.lean`. The classification of rank-two
-crystallographic configurations behind it is Bourbaki, *Lie Groups and Lie Algebras*, Chapters
-4--6, Ch. VI, §1.3.
+The classification of rank-two crystallographic configurations behind this file is Bourbaki,
+*Lie Groups and Lie Algebras*, Chapters 4--6, Ch. VI, §1.3.
 -/
 
 public section

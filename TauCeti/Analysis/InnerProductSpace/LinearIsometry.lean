@@ -8,21 +8,19 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 import Mathlib.Analysis.InnerProductSpace.PiL2
-import TauCeti.LinearAlgebra.Determinant.Basic
 public import Mathlib.Analysis.Normed.Module.Span
 public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 public import Mathlib.Analysis.Normed.Operator.LinearIsometry
-public import Mathlib.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # Linear isometries, orthogonal complements, and product decompositions
 
-A linear isometry `f : E →ₗᵢ[ℝ] F` into a finite-dimensional inner product space identifies `F`
-with the product of `E` and the orthogonal complement of the range of `f`, by
-`(u, w) ↦ f u + w`. Read through this identification, `f` itself is the inclusion `u ↦ (u, 0)` of
-the first factor. This is the normal form in which Mathlib's `Manifold.IsImmersionAt` asks for a
-map to be written in charts, so this decomposition is what exhibits a linear isometry, and the maps
-of spheres and balls it induces, as immersions.
+A linear isometry `f : E →ₗᵢ[𝕜] F` out of a complete inner product space identifies `F` with the
+product of `E` and the orthogonal complement of the range of `f`, by `(u, w) ↦ f u + w`. Read
+through this identification, `f` itself is the inclusion `u ↦ (u, 0)` of the first factor. This is
+the normal form in which Mathlib's `Manifold.IsImmersionAt` asks for a map to be written in charts,
+so this decomposition is what exhibits a linear isometry, and the maps of spheres and balls it
+induces, as immersions.
 
 A linear isometry also carries the orthogonal complement of a vector into the orthogonal
 complement of its image; this is how it transports the stereographic charts of unit spheres. For
@@ -38,7 +36,7 @@ the product of its orthogonal hyperplane and the scalar line. The `L²` product 
 isometric; the ordinary product version is a continuous linear equivalence used for line
 sections and product integration.
 
-Along a smooth family of linear isometries of a finite-dimensional real inner product space, the
+Along a smooth family of linear isometries of a finite-dimensional inner product space, the
 inverses again depend smoothly on the parameter: expanding in an orthonormal basis `bᵢ`,
 `(R p)⁻¹ x = ∑ i, ⟪R p bᵢ, x⟫ bᵢ`. So a smooth path of linear isometries moves the unit sphere by
 diffeomorphisms.
@@ -47,9 +45,9 @@ diffeomorphisms.
 
 * `TauCeti.orthogonalLineIsometry` and `TauCeti.orthogonalLineEquiv`: orthogonal line coordinates.
 * `LinearIsometry.prodOrthogonalRangeEquiv`: the continuous linear equivalence
-  `E × (range f)ᗮ ≃L[ℝ] F` given by `(u, w) ↦ f u + w`.
+  `E × (range f)ᗮ ≃L[𝕜] F` given by `(u, w) ↦ f u + w`.
 * `LinearIsometry.orthogonalComplementSingletonMap`: the restriction of a linear isometry to a map
-  `(ℝ ∙ v)ᗮ →ₗᵢ[ℝ] (ℝ ∙ w)ᗮ`, where `w` is the image of `v`.
+  `(𝕜 ∙ v)ᗮ →ₗᵢ[𝕜] (𝕜 ∙ w)ᗮ`, where `w` is the image of `v`.
 
 * `LinearIsometryEquiv.extendOrthogonalComplement`: extend an isometry of orthogonal
   complements by its prescribed action on the radial line.
@@ -61,12 +59,8 @@ diffeomorphisms.
   of the image.
 * `LinearMap.eq_of_apply_eq_of_eqOn_orthogonal`: linear maps agreeing on a vector and
   its orthogonal complement are equal, without a unit-norm assumption.
-* `LinearIsometryEquiv.eq_extendOrthogonalComplement`: a linear isometry equals the
-  extension if it agrees on the unit vector and its orthogonal complement.
-* `LinearIsometryEquiv.eq_refl_or_eq_neg`: the only real linear isometry equivalences of `ℝ`
-  are the identity and negation.
-* `LinearIsometryEquiv.eq_refl_of_det_eq_one`, `LinearIsometryEquiv.eq_neg_of_det_eq_neg_one`: on
-  a one-dimensional real space, these are the linear isometries of determinant `1` and `-1`.
+* `LinearIsometryEquiv.eq_extendOrthogonalComplement_iff`: a linear isometry equals the
+  extension if and only if it agrees with it on the unit vector and its orthogonal complement.
 * `ContDiff.linearIsometryEquiv_symm_apply`: the inverses along a smooth family of linear
   isometries of a finite-dimensional space form a smooth family.
 -/
@@ -77,59 +71,63 @@ noncomputable section
 
 namespace LinearIsometry
 
-open Module
-
 open scoped InnerProductSpace
 
-variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [NormedAddCommGroup F]
-  [InnerProductSpace ℝ F]
+variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
 
 /-- A linear isometry `f` maps the orthogonal complement of `v` into the orthogonal complement of
 `f v`. -/
-theorem map_mem_orthogonal_singleton (f : E →ₗᵢ[ℝ] F) {v : E} {w : F} (hw : f v = w) {y : E}
-    (hy : y ∈ (ℝ ∙ v)ᗮ) : f y ∈ (ℝ ∙ w)ᗮ := by
+theorem map_mem_orthogonal_singleton (f : E →ₗᵢ[𝕜] F) {v : E} {w : F} (hw : f v = w) {y : E}
+    (hy : y ∈ (𝕜 ∙ v)ᗮ) : f y ∈ (𝕜 ∙ w)ᗮ := by
   subst hw
   rw [Submodule.mem_orthogonal_singleton_iff_inner_right] at hy ⊢
   rwa [f.inner_map_map]
 
 /-- The restriction of a linear isometry `f` to a linear isometry from the orthogonal complement
 of `v` to the orthogonal complement of its image `w`. -/
-def orthogonalComplementSingletonMap (f : E →ₗᵢ[ℝ] F) {v : E} {w : F} (hw : f v = w) :
-    (ℝ ∙ v)ᗮ →ₗᵢ[ℝ] (ℝ ∙ w)ᗮ where
-  toLinearMap := (f.toLinearMap.domRestrict (ℝ ∙ v)ᗮ).codRestrict (ℝ ∙ w)ᗮ fun y ↦
+def orthogonalComplementSingletonMap (f : E →ₗᵢ[𝕜] F) {v : E} {w : F} (hw : f v = w) :
+    (𝕜 ∙ v)ᗮ →ₗᵢ[𝕜] (𝕜 ∙ w)ᗮ where
+  toLinearMap := (f.toLinearMap.domRestrict (𝕜 ∙ v)ᗮ).codRestrict (𝕜 ∙ w)ᗮ fun y ↦
     f.map_mem_orthogonal_singleton hw y.2
   norm_map' y := f.norm_map y
 
 @[simp]
-theorem coe_orthogonalComplementSingletonMap_apply (f : E →ₗᵢ[ℝ] F) {v : E} {w : F} (hw : f v = w)
-    (y : (ℝ ∙ v)ᗮ) : (f.orthogonalComplementSingletonMap hw y : F) = f y :=
+theorem coe_orthogonalComplementSingletonMap_apply (f : E →ₗᵢ[𝕜] F) {v : E} {w : F} (hw : f v = w)
+    (y : (𝕜 ∙ v)ᗮ) : (f.orthogonalComplementSingletonMap hw y : F) = f y :=
   (rfl)
 
-variable [FiniteDimensional ℝ F]
+section ProdOrthogonalRange
 
-/-- A linear isometry `f : E →ₗᵢ[ℝ] F` into a finite-dimensional space identifies the product of
-`E` with the orthogonal complement of the range of `f` with `F`, by `(u, w) ↦ f u + w`. -/
-def prodOrthogonalRangeEquiv (f : E →ₗᵢ[ℝ] F) :
-    (E × (LinearMap.range f.toLinearMap)ᗮ) ≃L[ℝ] F :=
-  haveI : FiniteDimensional ℝ E := FiniteDimensional.of_injective f.toLinearMap f.injective
-  ((f.equivRange.toLinearEquiv.prodCongr (LinearEquiv.refl ℝ _)).trans
-    (Submodule.prodEquivOfIsCompl _ _
-      (Submodule.isCompl_orthogonal _))).toContinuousLinearEquiv
+variable [CompleteSpace E]
+
+/-- A linear isometry `f : E →ₗᵢ[𝕜] F` out of a complete space identifies the product of `E` with
+the orthogonal complement of the range of `f` with `F`, by `(u, w) ↦ f u + w`. -/
+def prodOrthogonalRangeEquiv (f : E →ₗᵢ[𝕜] F) :
+    (E × (LinearMap.range f.toLinearMap)ᗮ) ≃L[𝕜] F :=
+  -- The range is complete, being isometric to `E`, so it has an orthogonal projection.
+  haveI : CompleteSpace (LinearMap.range f.toLinearMap) :=
+    f.equivRange.symm.toIsometryEquiv.completeSpace
+  ((f.equivRange.toContinuousLinearEquiv.prodCongr (.refl 𝕜 _)).trans
+    (WithLp.prodContinuousLinearEquiv 2 𝕜 _ _).symm).trans
+    (LinearMap.range f.toLinearMap).orthogonalDecomposition.symm.toContinuousLinearEquiv
 
 @[simp]
-theorem prodOrthogonalRangeEquiv_apply (f : E →ₗᵢ[ℝ] F) (u : E)
+theorem prodOrthogonalRangeEquiv_apply (f : E →ₗᵢ[𝕜] F) (u : E)
     (w : (LinearMap.range f.toLinearMap)ᗮ) : f.prodOrthogonalRangeEquiv (u, w) = f u + w := by
-  rfl
+  simp [prodOrthogonalRangeEquiv]
 
 /-- Through `LinearIsometry.prodOrthogonalRangeEquiv`, the linear isometry `f` is the inclusion of
 the first factor. -/
-theorem prodOrthogonalRangeEquiv_apply_zero (f : E →ₗᵢ[ℝ] F) (u : E) :
+theorem prodOrthogonalRangeEquiv_apply_zero (f : E →ₗᵢ[𝕜] F) (u : E) :
     f.prodOrthogonalRangeEquiv (u, 0) = f u := by
   simp
 
+end ProdOrthogonalRange
+
 section EuclideanSpace
 
-variable {𝕜 ι κ : Type*} [RCLike 𝕜] [Fintype ι] [Fintype κ] [DecidableEq ι] [DecidableEq κ]
+variable {ι κ : Type*} [Fintype ι] [Fintype κ] [DecidableEq ι] [DecidableEq κ]
 
 /-- A linear isometry of Euclidean spaces sending the `i`-th standard basis vector to the `j`-th
 one reads the `i`-th coordinate of its argument off as the `j`-th coordinate of the image. -/
@@ -186,15 +184,13 @@ theorem extendOrthogonalComplement_apply_smul_add
     (e : (𝕜 ∙ x)ᗮ ≃ₗᵢ[𝕜] (𝕜 ∙ y)ᗮ) (hx : ‖x‖ = 1) (hy : ‖y‖ = 1)
     (r : 𝕜) (v : (𝕜 ∙ x)ᗮ) :
     e.extendOrthogonalComplement hx hy (r • x + v) = r • y + e v := by
-  have h := (𝕜 ∙ x).orthogonalDecomposition.apply_symm_apply
-    (WithLp.toLp 2 (toSpanUnitSingleton x hx r, v))
-  conv_lhs at h =>
-    simp only [Submodule.orthogonalDecomposition_symm_apply, WithLp.toLp_fst,
-      WithLp.toLp_snd, toSpanUnitSingleton_apply]
-  simp only [extendOrthogonalComplement, trans_apply, h, withLpProdCongr_apply,
+  -- Write `r • x + v` as the image of its components under the orthogonal decomposition.
+  have h : r • x + (v : E) =
+      (𝕜 ∙ x).orthogonalDecomposition.symm (WithLp.toLp 2 (toSpanUnitSingleton x hx r, v)) := by
+    simp
+  simp only [h, extendOrthogonalComplement, trans_apply, apply_symm_apply, withLpProdCongr_apply,
     WithLp.toLp_fst, WithLp.toLp_snd, symm_apply_apply]
-  simp only [Submodule.orthogonalDecomposition_symm_apply, WithLp.toLp_fst,
-    WithLp.toLp_snd, toSpanUnitSingleton_apply]
+  simp
 
 /-- The extension sends the distinguished unit vector to the distinguished target vector. -/
 @[simp]
@@ -210,50 +206,18 @@ theorem extendOrthogonalComplement_apply_coe
     (v : (𝕜 ∙ x)ᗮ) : e.extendOrthogonalComplement hx hy v = e v := by
   simpa using e.extendOrthogonalComplement_apply_smul_add hx hy 0 v
 
-/-- An ambient linear isometry is uniquely determined by its value on a unit vector and
-its restriction to the orthogonal complement. -/
-theorem eq_extendOrthogonalComplement
-    (e : (𝕜 ∙ x)ᗮ ≃ₗᵢ[𝕜] (𝕜 ∙ y)ᗮ) (hx : ‖x‖ = 1) (hy : ‖y‖ = 1)
-    (f : E →ₗᵢ[𝕜] F) (hfx : f x = y)
-    (hf : ∀ v : (𝕜 ∙ x)ᗮ, f v = e v) :
-    f = (e.extendOrthogonalComplement hx hy).toLinearIsometry := by
-  apply LinearIsometry.toLinearMap_injective
+/-- An ambient linear isometry is the extension if and only if it agrees with it on the unit
+vector and on its orthogonal complement. -/
+theorem eq_extendOrthogonalComplement_iff
+    (e : (𝕜 ∙ x)ᗮ ≃ₗᵢ[𝕜] (𝕜 ∙ y)ᗮ) (hx : ‖x‖ = 1) (hy : ‖y‖ = 1) (f : E →ₗᵢ[𝕜] F) :
+    f = (e.extendOrthogonalComplement hx hy).toLinearIsometry ↔
+      f x = y ∧ ∀ v : (𝕜 ∙ x)ᗮ, f v = e v := by
+  refine ⟨?_, fun ⟨hfx, hf⟩ ↦ LinearIsometry.toLinearMap_injective ?_⟩
+  · rintro rfl
+    simp
   apply LinearMap.eq_of_apply_eq_of_eqOn_orthogonal (x := x)
-  · simpa only [LinearIsometry.coe_toLinearMap, coe_toLinearIsometry,
-      extendOrthogonalComplement_apply_self] using hfx
-  · intro v
-    simpa only [LinearIsometry.coe_toLinearMap, coe_toLinearIsometry,
-      extendOrthogonalComplement_apply_coe] using hf v
-
-/-- The only real linear isometry equivalences of the real line are the identity and negation. -/
-theorem eq_refl_or_eq_neg (A : ℝ ≃ₗᵢ[ℝ] ℝ) : A = .refl ℝ ℝ ∨ A = .neg ℝ := by
-  have hsq : (A 1) ^ 2 = 1 := by
-    simpa only [RCLike.inner_apply, conj_trivial, mul_one, one_mul, pow_two]
-      using A.inner_map_map (1 : ℝ) 1
-  -- By linearity, `A` is multiplication by `A 1`.
-  have hA (x : ℝ) : A x = x * A 1 := by simpa using _root_.map_smul A x (1 : ℝ)
-  rcases sq_eq_one_iff.mp hsq with h | h
-  · exact .inl (ext fun x ↦ by simp [hA x, h])
-  · exact .inr (ext fun x ↦ by simp [hA x, h])
-
-section FinrankOne
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] (hE : Module.finrank ℝ E = 1)
-  {e : E ≃ₗᵢ[ℝ] E}
-include hE
-
-/-- An orientation-preserving real linear isometry of a one-dimensional space is the
-identity. -/
-theorem eq_refl_of_det_eq_one (he : LinearMap.det e.toLinearMap = 1) : e = .refl ℝ E :=
-  ext fun x ↦ (LinearMap.apply_eq_det_smul_of_finrank_eq_one hE e.toLinearMap x).trans <| by
-    rw [he, one_smul, coe_refl, id_eq]
-
-/-- An orientation-reversing real linear isometry of a one-dimensional space is negation. -/
-theorem eq_neg_of_det_eq_neg_one (he : LinearMap.det e.toLinearMap = -1) : e = .neg ℝ :=
-  ext fun x ↦ (LinearMap.apply_eq_det_smul_of_finrank_eq_one hE e.toLinearMap x).trans <| by
-    rw [he, neg_one_smul, coe_neg]
-
-end FinrankOne
+  · simpa using hfx
+  · simpa using hf
 
 end LinearIsometryEquiv
 
@@ -335,19 +299,20 @@ end TauCeti
 /-! ### Smooth paths of linear isometries -/
 
 open scoped InnerProductSpace in
-/-- Along a smooth family of linear isometries of a finite-dimensional real inner product space,
-the inverses also depend smoothly on the parameter: expanding in an orthonormal basis `bᵢ`,
+/-- Along a smooth family of linear isometries of a finite-dimensional inner product space, the
+inverses also depend smoothly on the parameter: expanding in an orthonormal basis `bᵢ`,
 `(R p)⁻¹ x = ∑ i, ⟪R p bᵢ, x⟫ bᵢ`. -/
-theorem ContDiff.linearIsometryEquiv_symm_apply {F G : Type*} [NormedAddCommGroup F]
-    [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] [NormedAddCommGroup G] [NormedSpace ℝ G]
-    {m : WithTop ℕ∞} {R : G → F ≃ₗᵢ[ℝ] F} (hR : ContDiff ℝ m fun p : G × F => R p.1 p.2) :
+theorem ContDiff.linearIsometryEquiv_symm_apply {𝕜 F G : Type*} [RCLike 𝕜] [NormedAddCommGroup F]
+    [InnerProductSpace 𝕜 F] [FiniteDimensional 𝕜 F] [NormedSpace ℝ F] [IsScalarTower ℝ 𝕜 F]
+    [NormedAddCommGroup G] [NormedSpace ℝ G] {m : WithTop ℕ∞} {R : G → F ≃ₗᵢ[𝕜] F}
+    (hR : ContDiff ℝ m fun p : G × F => R p.1 p.2) :
     ContDiff ℝ m fun p : G × F => (R p.1).symm p.2 := by
-  let b := stdOrthonormalBasis ℝ F
+  let b := stdOrthonormalBasis 𝕜 F
   have hexp : (fun p : G × F => (R p.1).symm p.2) =
-      fun p => ∑ i, ⟪R p.1 (b i), p.2⟫_ℝ • b i := by
+      fun p => ∑ i, ⟪R p.1 (b i), p.2⟫_𝕜 • b i := by
     funext p
     conv_lhs => rw [← b.sum_repr' ((R p.1).symm p.2)]
     simp only [LinearIsometryEquiv.inner_map_eq_flip]
   rw [hexp]
   exact ContDiff.sum fun i _ =>
-    ((hR.comp (contDiff_fst.prodMk contDiff_const)).inner ℝ contDiff_snd).smul contDiff_const
+    ((hR.comp (contDiff_fst.prodMk contDiff_const)).inner 𝕜 contDiff_snd).smul contDiff_const

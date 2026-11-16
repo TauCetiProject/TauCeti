@@ -101,7 +101,7 @@ theorem opGauge_def (T : E →L[𝕜] F) :
 
 /-- The induced gauge dominates the operator norm. -/
 theorem enorm_le_opGauge (T : E →L[𝕜] F) : ‖T‖ₑ ≤ Φ.opGauge T :=
-  calc ‖T‖ₑ = (T.singularValue 0 : ℝ≥0∞) := by rw [singularValue_zero, enorm_eq_nnnorm]
+  calc ‖T‖ₑ = (T.singularValue 0 : ℝ≥0∞) := by rw [singularValue_zero, eNorm_eq_nnNorm]
     _ ≤ ⨆ n, (T.singularValue n : ℝ≥0∞) := le_iSup (fun n ↦ (T.singularValue n : ℝ≥0∞)) 0
     _ ≤ Φ.opGauge T := Φ.iSup_le_extend _
 
@@ -109,7 +109,7 @@ theorem enorm_le_opGauge (T : E →L[𝕜] F) : ‖T‖ₑ ≤ Φ.opGauge T :=
 @[simp]
 theorem opGauge_supGauge (T : E →L[𝕜] F) : supGauge.opGauge T = ‖T‖ₑ := by
   rw [opGauge_def, extend_supGauge, ← ENNReal.coe_iSup T.bddAbove_range_singularValue,
-    iSup_singularValue, enorm_eq_nnnorm]
+    iSup_singularValue, eNorm_eq_nnNorm]
 
 /-- Absolute homogeneity of the induced gauge, including its infinite values. -/
 @[simp]
@@ -117,7 +117,7 @@ theorem opGauge_smul (c : 𝕜) (T : E →L[𝕜] F) : Φ.opGauge (c • T) = �
   have h : (fun n ↦ ((c • T).singularValue n : ℝ≥0∞)) =
       ‖c‖ₑ • fun n ↦ (T.singularValue n : ℝ≥0∞) := by
     ext n
-    simp [singularValue_smul, enorm_eq_nnnorm]
+    simp [singularValue_smul, eNorm_eq_nnNorm]
   rw [opGauge_def, opGauge_def, h, extend_smul]
 
 @[simp]
@@ -135,7 +135,7 @@ theorem opGauge_comp_comp_le (A : G →L[𝕜] H) (T : F →L[𝕜] G) (B : E �
   calc Φ.opGauge (A ∘L T ∘L B)
       ≤ Φ.extend ((‖A‖ₑ * ‖B‖ₑ) • fun n ↦ (T.singularValue n : ℝ≥0∞)) :=
         Φ.extend_mono fun n ↦ by
-          simpa [enorm_eq_nnnorm, mul_right_comm] using
+          simpa [eNorm_eq_nnNorm, mul_right_comm] using
             ENNReal.coe_le_coe.2 (singularValue_comp_comp_le A T B n)
     _ = ‖A‖ₑ * Φ.opGauge T * ‖B‖ₑ := by rw [extend_smul, opGauge_def, mul_right_comm]
 
@@ -143,7 +143,7 @@ theorem opGauge_comp_comp_le (A : G →L[𝕜] H) (T : F →L[𝕜] G) (B : E �
 theorem opGauge_comp_comp_le_self {A : G →L[𝕜] H} (hA : ‖A‖ ≤ 1) (T : F →L[𝕜] G)
     {B : E →L[𝕜] F} (hB : ‖B‖ ≤ 1) : Φ.opGauge (A ∘L T ∘L B) ≤ Φ.opGauge T := by
   refine (Φ.opGauge_comp_comp_le A T B).trans ?_
-  rw [enorm_eq_nnnorm, enorm_eq_nnnorm]
+  rw [eNorm_eq_nnNorm, eNorm_eq_nnNorm]
   exact (mul_le_of_le_one_right' (by exact_mod_cast hB)).trans
     (mul_le_of_le_one_left' (by exact_mod_cast hA))
 

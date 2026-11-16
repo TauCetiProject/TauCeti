@@ -25,9 +25,8 @@ twisted representative `σ · diag(p, 1)`, and slashing by `σ ∈ Γ₀(N)` —
 entry `p` — is by definition the diamond operator `⟨p⟩`
 (`slash_mapGL_gamma0Twist_eq_diamondOpNat`). At `p ∣ N`
 the zero-extended `⟨p⟩` of `DiamondOperators.lean` *vanishes*, so the term disappears and the
-formula degenerates to the `p ∣ N` statement already proved. That is exactly the uniformity the
-ModularForms roadmap asks for: `Tₚ` is one operator, defined for every `p`, with the modern `Uₚ`
-recovered as the `p ∣ N` case and not introduced separately.
+formula degenerates to the `p ∣ N` statement already proved. So `Tₚ` is one operator, defined for
+every `p`, with the modern `Uₚ` recovered as the `p ∣ N` case and not introduced separately.
 
 ⚠ The twist is essential. Over `Γ₁(N)` the untwisted `f ∣[k] !![p, 0; 0, 1]` is *not* a term
 of the coset sum. The matrix `σ · diag(p, 1)` is the missing right-coset representative, and

@@ -13,7 +13,8 @@ public import TauCeti.Topology.Sheaves.SupportedCohomology.Sections
 Sheafifying the module-valued presheaf `W ↦ Extⁿ(Q_S(W), F)` defines the local
 cohomology sheaf `𝓗_Sⁿ(F)`. In degree zero this is canonically the supported-section
 sheaf `Γ_S(F)`, naturally in the coefficient sheaf. Local cohomology has zero stalks
-outside `S`. These constructions keep the scalar action on local cohomology, rather
+outside `S`, and `𝓗_Sⁿ(F)` vanishes exactly when every class in `H_Sⁿ(W, F)` vanishes
+locally. These constructions keep the scalar action on local cohomology, rather
 than replacing its coefficients by abelian groups.
 
 ## References
@@ -161,6 +162,28 @@ theorem isZero_stalk_supportedModuleHSheaf_of_notMem {x : X} (hx : x ∉ S) (n :
   rw [← TopCat.Presheaf.germ_res_apply _ (homOfLE inf_le_left) x hxV]
   rw [Subsingleton.elim ((F.supportedModuleHPresheaf S n).map
     (homOfLE (inf_le_left : W ⊓ S.compl ≤ W)).op c) 0, map_zero]
+
+/-- If the local cohomology sheaf `𝓗_Sⁿ(F)` vanishes, then every class in `H_Sⁿ(W, F)` vanishes
+locally: each point `x ∈ W` has an open neighbourhood `V ≤ W` on which the class restricts to
+zero. -/
+theorem exists_supportedModuleHPresheaf_map_eq_zero_of_isZero_supportedModuleHSheaf {n : ℕ}
+    (h : IsZero (F.supportedModuleHSheaf S n)) {W : Opens X} (c : F.supportedModuleH S W n)
+    {x : X} (hx : x ∈ W) :
+    ∃ (V : Opens X) (hVW : V ≤ W), x ∈ V ∧
+      (F.supportedModuleHPresheaf S n).map (homOfLE hVW).op c = 0 :=
+  (TopCat.Presheaf.isZero_presheafToSheaf_obj_iff_moduleCat _).1 h x W c hx
+
+/-- If the local cohomology sheaf `𝓗_S⁰(F)` vanishes, so does the presheaf of sections of `F`
+supported in `S`. -/
+theorem isZero_supportedSubmoduleSheaf_obj (h : IsZero (F.supportedModuleHSheaf S 0)) :
+    IsZero (F.supportedSubmoduleSheaf S).obj :=
+  (sheafToPresheaf _ _).map_isZero (h.of_iso (F.supportedModuleHSheafZeroIso S).symm)
+
+/-- If the local cohomology sheaf `𝓗_S⁰(F)` vanishes, then the presheaf of sections of `F`
+supported in `S` is flasque, being zero. -/
+theorem isFlasque_supportedSubmoduleSheaf_obj_of_isZero (h : IsZero (F.supportedModuleHSheaf S 0)) :
+    TopCat.Presheaf.IsFlasque (F.supportedSubmoduleSheaf S).obj :=
+  TopCat.Presheaf.IsFlasque.of_isZero (F.isZero_supportedSubmoduleSheaf_obj S h)
 
 end
 

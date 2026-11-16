@@ -333,14 +333,14 @@ theorem eLpNorm_setLIntegral_enorm_sub_rpow_mul_le {p q : ℝ≥0} {κ δ : ℝ}
   have hk : Measurable (Function.uncurry fun x y : E => ‖x - y‖ₑ ^ ((n : ℝ) * (κ - 1))) := by
     fun_prop
   have hyoung := lintegral_rpow_lintegral_mul_le_of_inv_add_inv_eq hk.aemeasurable hf hp' hpq' hr
-    (ae_of_all _ hA) (ae_of_all _ fun y => by simpa only [enorm_sub_rev y] using hA y)
+    (ae_of_all _ hA) (ae_of_all _ fun y => by simpa only [eNorm_sub_rev y] using hA y)
   have hV : AEMeasurable
       (fun x => ∫⁻ y in Ω, ‖x - y‖ₑ ^ ((n : ℝ) * (κ - 1)) * f y ∂μ) (μ.restrict Ω) :=
     (hk.aemeasurable.mul hf.comp_snd).lintegral_prod_right'
   rw [eLpNorm_nnreal_eq_lintegral (zero_lt_one.trans_le (hp.trans hpq)).ne'
       hV.aestronglyMeasurable,
     eLpNorm_nnreal_eq_lintegral (zero_lt_one.trans_le hp).ne' hf.aestronglyMeasurable]
-  simp only [enorm_eq_self]
+  simp only [eNorm_eq_self]
   calc
     _ ≤ (A ^ ((q : ℝ) * (1 - (p : ℝ)⁻¹)) * A *
           (∫⁻ y in Ω, f y ^ (p : ℝ) ∂μ) ^ ((q : ℝ) / p)) ^ (1 / (q : ℝ)) :=
@@ -369,7 +369,7 @@ theorem setLIntegral_enorm_sub_rpow_le_finrank {A : Set E} (hA : MeasurableSet A
         μ A ^ (finrank ℝ E : ℝ)⁻¹ := by
   rcases subsingleton_or_nontrivial E with hE | hE
   · have h0 : (fun x : E => ‖y - x‖ₑ ^ (1 - (finrank ℝ E : ℝ))) = 0 := funext fun x => by
-      rw [Subsingleton.elim (y - x) 0, enorm_zero, ENNReal.zero_rpow_of_pos
+      rw [Subsingleton.elim (y - x) 0, eNorm_zero, ENNReal.zero_rpow_of_pos
         (by simp [finrank_zero_of_subsingleton]), Pi.zero_apply]
     rw [h0, lintegral_zero_fun]
     exact bot_le
@@ -424,8 +424,8 @@ theorem rieszPotential_enorm (μ : Measure E) (α : ℝ) (f : E → F) :
 theorem rieszPotential_const_smul {𝕜 : Type*} [NNNorm 𝕜] [SMul 𝕜 F] [ENormSMulClass 𝕜 F]
     (μ : Measure E) (α : ℝ) (c : 𝕜) (f : E → F) (x : E) :
     rieszPotential μ α (c • f) x = ‖c‖ₑ * rieszPotential μ α f x := by
-  rw [rieszPotential_def, rieszPotential_def, ← lintegral_const_mul' _ _ enorm_ne_top]
-  exact lintegral_congr fun y => by rw [Pi.smul_apply, enorm_smul, mul_left_comm]
+  rw [rieszPotential_def, rieszPotential_def, ← lintegral_const_mul' _ _ eNorm_ne_top]
+  exact lintegral_congr fun y => by rw [Pi.smul_apply, eNorm_smul, mul_left_comm]
 
 end Definition
 
@@ -451,7 +451,7 @@ theorem rieszPotential_add_le [BorelSpace E] (hf : AEMeasurable (fun y => ‖f y
         refine lintegral_mono fun y => ?_
         rw [← mul_add]
         gcongr
-        exact enorm_add_le (f y) (g y)
+        exact eNorm_add_le (f y) (g y)
     _ = rieszPotential μ α f x + rieszPotential μ α g x :=
         lintegral_add_left' (hk.aemeasurable.mul hf) _
 
@@ -553,7 +553,7 @@ private theorem ofReal_rpow_mul_setLIntegral_ball_le_eLpNorm [Nontrivial E]
       eLpNorm f p μ * μ (ball x (2 * r)) ^ (1 - 1 / (p : ℝ)) := by
     have := eLpNorm_le_eLpNorm_mul_rpow_measure_univ (μ := μ.restrict (ball x (2 * r)))
       (p := 1) (q := p) (by exact_mod_cast hp) hf.restrict
-    rw [eLpNorm_one_eq_lintegral_enorm hf.restrict, Measure.restrict_apply_univ] at this
+    rw [eLpNorm_one_eq_lintegral_eNorm hf.restrict, Measure.restrict_apply_univ] at this
     simpa using this.trans (mul_le_mul_left (eLpNorm_restrict_le f _ _ _) _)
   calc ENNReal.ofReal (r ^ (α - finrank ℝ E)) * ∫⁻ y in ball x (2 * r), ‖f y‖ₑ ∂μ
       ≤ ENNReal.ofReal (r ^ (α - finrank ℝ E)) *
@@ -595,7 +595,7 @@ private theorem rieszPotential_le_add [Nontrivial E] [FiniteDimensional ℝ E]
       hedbergNearConst μ α * ENNReal.ofReal (R ^ α) * maximalFunction μ f x +
         hedbergFarConst μ α p * ENNReal.ofReal (R ^ (α - finrank ℝ E / p)) * eLpNorm f p μ := by
   set g : ℤ → ℝ≥0∞ := fun k => ENNReal.ofReal ((R * 2 ^ k) ^ (α - finrank ℝ E)) *
-    ∫⁻ y in ball x (2 * (R * 2 ^ k)), ‖f y‖ₑ ∂μ with hg
+    ∫⁻ y in ball x (2 * (R * 2 ^ k)), ‖f y‖ₑ ∂μ
   -- Both halves cross into `ℝ≥0∞` here: `c (R 2ᵏ) ^ s = c R ^ s (2 ^ s) ^ k`.
   have hpow (c s : ℝ) (hc : 0 ≤ c) (k : ℤ) : ENNReal.ofReal (c * (R * 2 ^ k) ^ s) =
       ENNReal.ofReal c * ENNReal.ofReal (R ^ s) * ENNReal.ofReal ((2 ^ s) ^ k) := by
@@ -691,7 +691,7 @@ private theorem rieszPotential_le_hedbergConst [FiniteDimensional ℝ E] [μ.IsA
   set θ := α * p / finrank ℝ E with hθ
   have hC : hedbergConst μ α p ≠ 0 := hedbergConst_ne_zero
   set M := maximalFunction μ f x with hM_def
-  set N := eLpNorm f p μ with hN_def
+  set N := eLpNorm f p μ
   -- If `M f (x) = 0`, every ball integral around `x` vanishes.
   rcases eq_or_ne M 0 with hM | hM
   · rw [rieszPotential_eq_zero_of_forall_setLIntegral_ball hαd fun r hr => le_antisymm
@@ -709,7 +709,7 @@ private theorem rieszPotential_le_hedbergConst [FiniteDimensional ℝ E] [μ.IsA
   rcases eq_or_ne N 0 with hN₀ | hN₀
   · have hf₀ : ∀ᵐ y ∂μ, ‖f y‖ₑ = ‖(0 : E → ℝ≥0∞) y‖ₑ := by
       filter_upwards [(eLpNorm_eq_zero_iff (f := fun y => ‖f y‖ₑ) (p := p) (by positivity)).1
-        (by rw [eLpNorm_enorm _ hf]; exact hN₀)] with y hy
+        (by rw [eLpNorm_eNorm _ hf]; exact hN₀)] with y hy
       simpa using hy
     rw [rieszPotential_congr_ae hf₀, rieszPotential_zero]
     exact zero_le
@@ -777,7 +777,7 @@ omit [BorelSpace E] in
 private theorem rieszPotential_eq_zero_of_subsingleton [Subsingleton E] (hα : 0 < α) :
     rieszPotential μ α f x = 0 := by
   have hk (y : E) : ‖x - y‖ₑ ^ (α - finrank ℝ E) = 0 := by
-    rw [Subsingleton.elim x y, sub_self, enorm_zero, finrank_zero_of_subsingleton, Nat.cast_zero,
+    rw [Subsingleton.elim x y, sub_self, eNorm_zero, finrank_zero_of_subsingleton, Nat.cast_zero,
       sub_zero, ENNReal.zero_rpow_of_pos hα]
   simp [rieszPotential_def, hk]
 
@@ -801,14 +801,14 @@ private theorem eLpNorm_rieszPotential_le_mul [FiniteDimensional ℝ E] [μ.IsAd
     (measurable_maximalFunction μ f).aestronglyMeasurable
   calc eLpNorm (rieszPotential μ α f) q μ
       ≤ eLpNorm (fun x => C₀ * N ^ θ * ‖maximalFunction μ f x‖ₑ ^ (1 - θ)) q μ := by
-        refine eLpNorm_mono_enorm (aemeasurable_rieszPotential hf.enorm).aestronglyMeasurable
+        refine eLpNorm_mono_eNorm (aemeasurable_rieszPotential hf.eNorm).aestronglyMeasurable
           fun x => ?_
-        simp only [enorm_eq_self]
+        simp only [eNorm_eq_self]
         refine (rieszPotential_le_hedbergConst hα hp hαp f x).trans_eq ?_
         rw [← hθ, ← hC₀, ← hN]
         ring
     _ = C₀ * N ^ θ * eLpNorm (maximalFunction μ f) p μ ^ (1 - θ) := by
-        rw [eLpNorm_const_mul_ennreal_of_pos (by positivity), eLpNorm_enorm_rpow _ hM hθ₁, hqp]
+        rw [eLpNorm_const_mul_ennreal_of_pos (by positivity), eLpNorm_eNorm_rpow _ hM hθ₁, hqp]
     _ ≤ C₀ * N ^ θ * (K * N) ^ (1 - θ) := by gcongr
     _ = C₀ * K ^ (1 - θ) * (N ^ θ * N ^ (1 - θ)) := by
         rw [ENNReal.mul_rpow_of_nonneg _ _ hθ₁.le]
@@ -837,7 +837,7 @@ theorem exists_eLpNorm_rieszPotential_le [FiniteDimensional ℝ E] (μ : Measure
     rcases eq_or_ne (eLpNorm f p μ) ∞ with hN | hN
     · simp [hN]
     rw [ENNReal.coe_zero, eLpNorm_exponent_zero (aemeasurable_rieszPotential
-      (aestronglyMeasurable_of_eLpNorm_ne_top hN).enorm).aestronglyMeasurable]
+      (aestronglyMeasurable_of_eLpNorm_ne_top hN).eNorm).aestronglyMeasurable]
     exact zero_le
   -- In dimension zero the potential vanishes.
   rcases subsingleton_or_nontrivial E with hE | hE
@@ -886,7 +886,7 @@ theorem exists_eLpNorm_rieszPotential_le [FiniteDimensional ℝ E] (μ : Measure
       (ENNReal.rpow_pos (pos_iff_ne_zero.2 hK₁₀) hK₁_top).ne')]
     exact le_top
   have hf := aestronglyMeasurable_of_eLpNorm_ne_top hN
-  exact eLpNorm_rieszPotential_le_mul hα hp.le hαp hqp hq hf (hK₁ f hf.enorm)
+  exact eLpNorm_rieszPotential_le_mul hα hp.le hαp hqp hq hf (hK₁ f hf.eNorm)
 
 section VectorValued
 
@@ -898,19 +898,19 @@ for `f` with values in a real normed space. -/
 theorem enorm_integral_norm_sub_rpow_smul_le_rieszPotential (μ : Measure E) (α : ℝ) (f : E → G)
     (x : E) : ‖∫ y, ‖x - y‖ ^ (α - finrank ℝ E) • f y ∂μ‖ₑ ≤ rieszPotential μ α f x := by
   rw [rieszPotential_def]
-  refine (enorm_integral_le_lintegral_enorm _).trans (lintegral_mono fun y => ?_)
-  rw [enorm_smul]
+  refine (eNorm_integral_le_lintegral_eNorm _).trans (lintegral_mono fun y => ?_)
+  rw [eNorm_smul]
   gcongr
   -- The real kernel is the extended one, except at `y = x` for a negative exponent, where it is
   -- `0` instead of `∞`.
-  rw [← enorm_norm (x - y)]
+  rw [← eNorm_norm (x - y)]
   rcases lt_or_ge (α - finrank ℝ E) 0 with hγ | hγ
   · rcases (norm_nonneg (x - y)).eq_or_lt with h | h
-    · rw [← h, enorm_zero, ENNReal.zero_rpow_of_neg hγ]
+    · rw [← h, eNorm_zero, ENNReal.zero_rpow_of_neg hγ]
       exact le_top
-    · rw [Real.enorm_of_nonneg (by positivity), Real.enorm_of_nonneg h.le,
+    · rw [Real.eNorm_of_nonneg (by positivity), Real.eNorm_of_nonneg h.le,
         ENNReal.ofReal_rpow_of_pos h]
-  · exact (Real.enorm_rpow_of_nonneg (norm_nonneg _) hγ).le
+  · exact (Real.eNorm_rpow_of_nonneg (norm_nonneg _) hγ).le
 
 /-- **The Hardy–Littlewood–Sobolev inequality** for the Bochner integral
 `∫ ‖x - y‖ ^ (α - n) • f y dμ(y)` of a function with values in a real normed space: for `0 < α`,
@@ -936,8 +936,8 @@ theorem exists_eLpNorm_integral_norm_sub_rpow_smul_le [FiniteDimensional ℝ E] 
       (hk.aestronglyMeasurable.smul hf.comp_snd)
   calc eLpNorm (fun x => ∫ y, ‖x - y‖ ^ (α - finrank ℝ E) • f y ∂μ) q μ
       ≤ eLpNorm (rieszPotential μ α f) q μ := by
-        refine eLpNorm_mono_enorm hmeas fun x => ?_
-        rw [enorm_eq_self]
+        refine eLpNorm_mono_eNorm hmeas fun x => ?_
+        rw [eNorm_eq_self]
         exact enorm_integral_norm_sub_rpow_smul_le_rieszPotential μ α f x
     _ ≤ C * eLpNorm f p μ := hC f
     _ ≤ (C + 1 : ℝ≥0) * eLpNorm f p μ := by

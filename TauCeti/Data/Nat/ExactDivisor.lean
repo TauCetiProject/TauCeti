@@ -65,6 +65,8 @@ vertical line `‖`; it is scoped, so it never competes with the `∥` of `Affin
   prime-power generation of the family, bundled as
   `TauCeti.Nat.ExactDivisor.primeFactorsEquiv`.
 * `TauCeti.Nat.isExactDivisor_primePow`: the maximal prime powers `p ^ v_p(N)` are exact divisors.
+* `TauCeti.Nat.ordProj_dvd_ordCompl_of_ne`: for a prime `q` and `p ≠ q`, `p ^ v_p(N)` divides
+  `N / q ^ v_q(N)`.
 * `TauCeti.Nat.coprime_primePow_prodPrimePow`: `p ^ v_p(N)` is prime to `∏ q ∈ s, q ^ v_q(N)` for
   `p ∉ s`.
 -/
@@ -310,6 +312,16 @@ them (`TauCeti.Nat.IsExactDivisor.prodPrimePow_primeFactors`). -/
 theorem isExactDivisor_primePow {p : ℕ} : IsExactDivisor (p ^ N.factorization p) N := by
   have := isExactDivisor_prodPrimePow (N := N) (s := {p})
   rwa [prodPrimePow, Finset.prod_singleton] at this
+
+/-- **A maximal prime power divides the complement of another**: for a prime `q` and `p ≠ q`,
+`p ^ v_p(N)` divides `N / q ^ v_q(N)`. -/
+theorem ordProj_dvd_ordCompl_of_ne {p q : ℕ} (hq : q.Prime) (hpq : p ≠ q) :
+    p ^ N.factorization p ∣ N / q ^ N.factorization q := by
+  refine Nat.dvd_ordCompl_of_dvd_not_dvd (Nat.ordProj_dvd N p) fun h ↦ ?_
+  by_cases hp : p.Prime
+  · exact hpq (Nat.prime_eq_prime_of_dvd_pow hq hp h).symm
+  · rw [Nat.factorization_eq_zero_of_not_prime N hp, pow_zero] at h
+    exact hq.ne_one (Nat.dvd_one.1 h)
 
 /-- **A maximal prime power is prime to the product over the other primes**: `p ^ v_p(N)` is
 coprime to `∏ q ∈ s, q ^ v_q(N)` for `p ∉ s`. -/

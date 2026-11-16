@@ -56,7 +56,7 @@ theorem exists_contDiff_hasCompactSupport_fourier_nonneg :
   have hgc : HasCompactSupport g := φ.hasCompactSupport.comp_left Complex.ofReal_zero
   have hgi : Integrable g := hg.continuous.integrable_of_hasCompactSupport hgc
   have hre : ∀ ξ : V, 𝓕 g ξ = ((𝓕 g ξ).re : ℂ) :=
-    fourier_eq_re_of_map_neg_eq_conj g (fun v ↦ by simp [g, φ.neg]) hgi
+    fourier_eq_re_of_map_neg_eq_conj g (fun v ↦ by simp [g, φ.neg])
   have hsq : ∀ ξ : V, 𝓕 (g ⋆[ContinuousLinearMap.mul ℂ ℂ] g) ξ =
       (((𝓕 g ξ).re * (𝓕 g ξ).re : ℝ) : ℂ) := fun ξ ↦ by
     rw [Real.fourier_mul_convolution_eq hgi hgi, hre, Complex.ofReal_mul, Complex.ofReal_re]

@@ -127,6 +127,18 @@ theorem norm_coe_realUnitsCharacter_apply (s : ℂ) (ε : ZMod 2) (x : ℝˣ) :
     norm_coe_normCpowCharacter_apply]
   rcases lt_or_gt_of_ne x.ne_zero with h | h <;> simp [h]
 
+/-- An integer exponent `k` with its own parity gives the algebraic character `x ↦ x ^ k`. -/
+theorem coe_realUnitsCharacter_intCast (k : ℤ) (x : ℝˣ) :
+    (realUnitsCharacter (k : ℂ) (k : ZMod 2) x : ℂ) = ((x : ℝ) : ℂ) ^ k := by
+  rw [coe_realUnitsCharacter_apply, cpow_intCast]
+  rcases lt_or_gt_of_ne x.ne_zero with hx | hx
+  · rw [abs_of_neg hx, sign_neg hx, ofReal_neg, SignType.coe_neg_one]
+    rcases Int.even_or_odd k with hk | hk
+    · rw [ZMod.intCast_eq_zero_iff_even.mpr hk, ZMod.val_zero, pow_zero, mul_one, hk.neg_zpow]
+    · rw [ZMod.intCast_eq_one_iff_odd.mpr hk, ZMod.val_one, pow_one, hk.neg_zpow, neg_mul_neg,
+        mul_one]
+  · simp [abs_of_pos hx, sign_pos hx]
+
 /-- With parity `0`, `realUnitsCharacter s 0` is the norm-power character `x ↦ |x| ^ s`. -/
 @[simp]
 theorem realUnitsCharacter_zero_right (s : ℂ) : realUnitsCharacter s 0 = normCpowCharacter ℝ s := by

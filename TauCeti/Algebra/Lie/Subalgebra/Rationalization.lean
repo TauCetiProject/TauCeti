@@ -34,9 +34,8 @@ rationalization construction.
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §25.2.
 * J. C. Jantzen, *Representations of Algebraic Groups*, II.1.
 
-This is the generic-fibre step for the Chevalley integral form used in Layer 9 of the
-`ReductiveGroups` roadmap. That pinned Chevalley--Demazure construction is consumed by milestone
-L0 of the `CFSGStatement` roadmap.
+This is the generic-fibre step for the Chevalley integral form used in the pinned
+Chevalley--Demazure construction.
 -/
 
 public section

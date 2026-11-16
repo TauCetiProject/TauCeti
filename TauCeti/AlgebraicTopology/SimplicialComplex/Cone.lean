@@ -19,10 +19,10 @@ The cone on a simplicial complex `K` is its join with a single vertex.  Its vert
 apex.  A face is therefore either an original face, tagged into the left summand, or an original
 face together with the apex; the apex by itself is also a face.
 
-Cones are elementary infrastructure for layer 11 of the geometric-topology roadmap.  Recursive
-combinatorial balls are obtained by coning combinatorial spheres, and suspensions are formed by
-iterated coning/gluing.  This file supplies the combinatorial operation and its face API, building
-entirely on the join construction already available in Tau Ceti.
+Cones are elementary infrastructure for combinatorial piecewise-linear topology: coning a
+combinatorial sphere gives a combinatorial ball, and suspensions are formed by iterated
+coning/gluing.  This file supplies the combinatorial operation and its face API, building entirely
+on the join construction already available in Tau Ceti.
 
 The file also records that the construction satisfies the internal cone condition
 `PreAbstractSimplicialComplex.IsCone` at its apex (`isCone_cone`), which is what

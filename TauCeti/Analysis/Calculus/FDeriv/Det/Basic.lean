@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.FDeriv.Analytic
 public import Mathlib.Analysis.Matrix.Normed
 public import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
+import TauCeti.Analysis.Matrix.Normed
 import Mathlib.Analysis.Calculus.ContDiff.CPolynomial
 import Mathlib.Analysis.Calculus.ContDiff.Comp
 import Mathlib.Analysis.Calculus.Deriv.Mul
@@ -71,10 +72,9 @@ private noncomputable def detMultilinear :
 /-- The determinant is smooth, including at singular matrices. -/
 @[fun_prop]
 theorem contDiff_det {r : ℕ∞ω} : ContDiff 𝕜 r (det : Matrix n n 𝕜 → 𝕜) := by
-  -- The underlying function of this row-family map is definitionally the identity.
-  let L : Matrix n n 𝕜 →L[𝕜] (n → n → 𝕜) :=
-    { (Matrix.ofLinearEquiv 𝕜).symm.toLinearMap with cont := by exact continuous_id }
-  exact (detMultilinear (n := n) (𝕜 := 𝕜)).contDiff.comp L.contDiff
+  have h := (detMultilinear (n := n) (𝕜 := 𝕜)).contDiff.comp
+    (ofContinuousLinearEquiv 𝕜 : (n → n → 𝕜) ≃L[𝕜] Matrix n n 𝕜).symm.contDiff (n := r)
+  rwa [coe_ofContinuousLinearEquiv_symm] at h
 
 /-- The determinant is differentiable at every matrix over a nontrivially normed field. -/
 theorem differentiable_det : Differentiable 𝕜 (det : Matrix n n 𝕜 → 𝕜) :=
@@ -125,14 +125,9 @@ theorem fderiv_det_updateRow
   rw [he]
   -- Transport the Pi-norm row derivative to the matrix operator norm before composing with det.
   let rowsToMatrix : (n → n → 𝕜) →L[𝕜] Matrix n n 𝕜 :=
-    { toLinearMap := (Matrix.ofLinearEquiv 𝕜).toLinearMap
-      cont := by
-        simpa only [LinearMap.toFun_eq_coe, LinearEquiv.coe_toLinearMap,
-          Matrix.coe_ofLinearEquiv, id_eq] using
-          (continuous_id : Continuous (fun M : n → n → 𝕜 ↦ M)).matrixOf }
-  have rowsToMatrix_apply (M : n → n → 𝕜) : rowsToMatrix M = Matrix.of M := by
-    simpa only [LinearEquiv.coe_toLinearMap, Matrix.coe_ofLinearEquiv] using
-      congrFun (ContinuousLinearMap.coe_mk' (Matrix.ofLinearEquiv 𝕜).toLinearMap _) M
+    (Matrix.ofContinuousLinearEquiv 𝕜).toContinuousLinearMap
+  have rowsToMatrix_apply (M : n → n → 𝕜) : rowsToMatrix M = Matrix.of M :=
+    congrFun (Matrix.coe_ofContinuousLinearEquiv 𝕜) M
   have hMatrix := rowsToMatrix.hasFDerivAt.comp x hD
   have hdetComp :=
     (Matrix.differentiable_det (rowsToMatrix (B x))).hasFDerivAt.comp x hMatrix

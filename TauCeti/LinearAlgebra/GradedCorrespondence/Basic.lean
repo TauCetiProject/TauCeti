@@ -282,6 +282,20 @@ theorem graph_injective (e : U ≃ₗ[R] V) :
   intro x y h
   exact congrArg Prod.fst h
 
+/-- Two linear maps have a unique common lift through a graph correspondence
+exactly when the equivalence takes the left map to the right map. -/
+theorem graph_existsUnique_lift_iff {E : Type*} [AddCommMonoid E] [Module R E]
+    (𝒰 : ι → Submodule R U) (𝒱 : κ → Submodule R V) (e : U ≃ₗ[R] V)
+    (f : E →ₗ[R] U) (g : E →ₗ[R] V) :
+    (∃! l : E →ₗ[R] U, (graph 𝒰 𝒱 e).left.comp l = f ∧
+      (graph 𝒰 𝒱 e).right.comp l = g) ↔ e.toLinearMap.comp f = g := by
+  simp only [graph_left, graph_right, LinearMap.id_comp]
+  constructor
+  · rintro ⟨l, ⟨rfl, h⟩, _⟩
+    exact h
+  · intro h
+    exact ⟨f, ⟨rfl, h⟩, fun _ hl => hl.1⟩
+
 /-- Forward graph transfer is the indicated component of the equivalence. -/
 theorem graph_transfer_apply [DecidableEq κ] [DirectSum.Decomposition 𝒱]
     (e : U ≃ₗ[R] V) (i : (Set.univ : Set ι)) (j : κ) (a : 𝒰 i) :

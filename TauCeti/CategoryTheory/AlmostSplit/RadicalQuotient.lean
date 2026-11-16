@@ -18,7 +18,7 @@ For an almost-split sequence `0 → A → B → C → 0`, composition with `B �
 `Hom(B, X) / rad(B, X)` with `Irr(A, X)`. These identifications compute the dimensions of
 irreducible morphism spaces from the middle term of an almost-split sequence.
 
-The results require local endomorphism rings at the two ends, as in a Krull–Schmidt category.
+The endomorphism rings at the two ends are local as a consequence of almost-splitness.
 The tested object `X` need not be indecomposable. No finiteness or field assumption is needed
 for the linear equivalences.
 
@@ -38,14 +38,14 @@ universe v u
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] [Balanced C]
   {S : ShortComplex C}
-  [IsLocalRing (End S.X₁)] [IsLocalRing (End S.X₃)]
 
 /-- In an almost-split sequence, composition with its final map lies in the square of the
 radical exactly when the original morphism into the middle term is radical. -/
 theorem comp_g_mem_jacobsonRadicalSq_iff (hS : S.IsAlmostSplit) {X : C} (a : X ⟶ S.X₂) :
     a ≫ S.g ∈ jacobsonRadicalSq X S.X₃ ↔ a ∈ jacobsonRadical X S.X₂ := by
-  have hf := mem_jacobsonRadical_iff_not_isSplitMono.mpr hS.isLeftAlmostSplit_f.not_isSplitMono
-  have hg := mem_jacobsonRadical_iff_not_isSplitEpi.mpr hS.isRightAlmostSplit_g.not_isSplitEpi
+  have := hS.isRightAlmostSplit_g.isLocalRing_end
+  have hf := hS.isLeftAlmostSplit_f.mem_jacobsonRadical
+  have hg := hS.isRightAlmostSplit_g.mem_jacobsonRadical
   refine ⟨fun ha ↦ ?_, fun ha ↦ comp_mem_jacobsonRadicalSq ha hg⟩
   let F := Preadditive.rightComp X S.g
   have hle : jacobsonRadicalSq X S.X₃ ≤ (jacobsonRadical X S.X₂).map F := by
@@ -68,8 +68,9 @@ theorem comp_g_mem_jacobsonRadicalSq_iff (hS : S.IsAlmostSplit) {X : C} (a : X �
 the radical exactly when the original morphism out of the middle term is radical. -/
 theorem f_comp_mem_jacobsonRadicalSq_iff (hS : S.IsAlmostSplit) {X : C} (a : S.X₂ ⟶ X) :
     S.f ≫ a ∈ jacobsonRadicalSq S.X₁ X ↔ a ∈ jacobsonRadical S.X₂ X := by
-  have hf := mem_jacobsonRadical_iff_not_isSplitMono.mpr hS.isLeftAlmostSplit_f.not_isSplitMono
-  have hg := mem_jacobsonRadical_iff_not_isSplitEpi.mpr hS.isRightAlmostSplit_g.not_isSplitEpi
+  have := hS.isLeftAlmostSplit_f.isLocalRing_end
+  have hf := hS.isLeftAlmostSplit_f.mem_jacobsonRadical
+  have hg := hS.isRightAlmostSplit_g.mem_jacobsonRadical
   refine ⟨fun ha ↦ ?_, fun ha ↦ comp_mem_jacobsonRadicalSq hf ha⟩
   let F := Preadditive.leftComp X S.f
   have hle : jacobsonRadicalSq S.X₁ X ≤ (jacobsonRadical S.X₂ X).map F := by
@@ -96,7 +97,7 @@ private def rightRadicalMap (hS : S.IsAlmostSplit) (X : C) :
   irreducibleMorphismMk k X S.X₃ ∘ₗ
     (Linear.rightComp k X S.g).codRestrict (jacobsonRadicalSubmodule k X S.X₃)
       (fun a ↦ mem_jacobsonRadicalSubmodule.mpr (comp_mem_jacobsonRadical_left a
-        (mem_jacobsonRadical_iff_not_isSplitEpi.mpr hS.isRightAlmostSplit_g.not_isSplitEpi)))
+        hS.isRightAlmostSplit_g.mem_jacobsonRadical))
 
 private theorem rightRadicalMap_ker (hS : S.IsAlmostSplit) (X : C) :
     LinearMap.ker (rightRadicalMap k hS X) = jacobsonRadicalSubmodule k X S.X₂ := by
@@ -105,9 +106,10 @@ private theorem rightRadicalMap_ker (hS : S.IsAlmostSplit) (X : C) :
     LinearMap.codRestrict_apply, Linear.rightComp_apply, irreducibleMorphismMk_eq_zero_iff,
     hS.comp_g_mem_jacobsonRadicalSq_iff, mem_jacobsonRadicalSubmodule]
 
-omit [Balanced C] [IsLocalRing (End S.X₁)] in
+omit [Balanced C] in
 private theorem rightRadicalMap_surjective (hS : S.IsAlmostSplit) (X : C) :
     Function.Surjective (rightRadicalMap k hS X) := by
+  have := hS.isRightAlmostSplit_g.isLocalRing_end
   intro x
   obtain ⟨a, rfl⟩ := irreducibleMorphismMk_surjective x
   obtain ⟨b, hb⟩ := hS.isRightAlmostSplit_g.factors X a
@@ -127,8 +129,7 @@ noncomputable def rightRadicalQuotientEquiv (hS : S.IsAlmostSplit) (X : C) :
 theorem rightRadicalQuotientEquiv_mk (hS : S.IsAlmostSplit) (X : C) (a : X ⟶ S.X₂) :
     hS.rightRadicalQuotientEquiv k X (Submodule.Quotient.mk a) =
       irreducibleMorphismMk k X S.X₃ ⟨a ≫ S.g, mem_jacobsonRadicalSubmodule.mpr
-        (comp_mem_jacobsonRadical_left a (mem_jacobsonRadical_iff_not_isSplitEpi.mpr
-          hS.isRightAlmostSplit_g.not_isSplitEpi))⟩ := by
+        (comp_mem_jacobsonRadical_left a hS.isRightAlmostSplit_g.mem_jacobsonRadical)⟩ := by
   rw [rightRadicalQuotientEquiv, LinearEquiv.trans_apply, Submodule.quotEquivOfEq_mk,
     LinearMap.quotKerEquivOfSurjective_apply_mk]
   rfl
@@ -148,7 +149,7 @@ private def leftRadicalMap (hS : S.IsAlmostSplit) (X : C) :
   irreducibleMorphismMk k S.X₁ X ∘ₗ
     (Linear.leftComp k X S.f).codRestrict (jacobsonRadicalSubmodule k S.X₁ X)
       (fun a ↦ mem_jacobsonRadicalSubmodule.mpr (comp_mem_jacobsonRadical_right
-        (mem_jacobsonRadical_iff_not_isSplitMono.mpr hS.isLeftAlmostSplit_f.not_isSplitMono) a))
+        hS.isLeftAlmostSplit_f.mem_jacobsonRadical a))
 
 private theorem leftRadicalMap_ker (hS : S.IsAlmostSplit) (X : C) :
     LinearMap.ker (leftRadicalMap k hS X) = jacobsonRadicalSubmodule k S.X₂ X := by
@@ -157,9 +158,10 @@ private theorem leftRadicalMap_ker (hS : S.IsAlmostSplit) (X : C) :
     LinearMap.codRestrict_apply, Linear.leftComp_apply, irreducibleMorphismMk_eq_zero_iff,
     hS.f_comp_mem_jacobsonRadicalSq_iff, mem_jacobsonRadicalSubmodule]
 
-omit [Balanced C] [IsLocalRing (End S.X₃)] in
+omit [Balanced C] in
 private theorem leftRadicalMap_surjective (hS : S.IsAlmostSplit) (X : C) :
     Function.Surjective (leftRadicalMap k hS X) := by
+  have := hS.isLeftAlmostSplit_f.isLocalRing_end
   intro x
   obtain ⟨a, rfl⟩ := irreducibleMorphismMk_surjective x
   obtain ⟨b, hb⟩ := hS.isLeftAlmostSplit_f.factors X a
@@ -179,8 +181,7 @@ noncomputable def leftRadicalQuotientEquiv (hS : S.IsAlmostSplit) (X : C) :
 theorem leftRadicalQuotientEquiv_mk (hS : S.IsAlmostSplit) (X : C) (a : S.X₂ ⟶ X) :
     hS.leftRadicalQuotientEquiv k X (Submodule.Quotient.mk a) =
       irreducibleMorphismMk k S.X₁ X ⟨S.f ≫ a, mem_jacobsonRadicalSubmodule.mpr
-        (comp_mem_jacobsonRadical_right (mem_jacobsonRadical_iff_not_isSplitMono.mpr
-          hS.isLeftAlmostSplit_f.not_isSplitMono) a)⟩ := by
+        (comp_mem_jacobsonRadical_right hS.isLeftAlmostSplit_f.mem_jacobsonRadical a)⟩ := by
   rw [leftRadicalQuotientEquiv, LinearEquiv.trans_apply, Submodule.quotEquivOfEq_mk,
     LinearMap.quotKerEquivOfSurjective_apply_mk]
   rfl

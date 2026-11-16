@@ -20,11 +20,6 @@ integers.  The integrality condition is expressed using Mathlib's
 The form restricts to a canonical `ℤ`-bilinear form on the carrier.  Conversely, a finite
 `ℚ`-basis and an integral symmetric Gram matrix construct an integral lattice.
 
-## References
-
-* `TauCetiRoadmap/IntegralLattices/README.md`
-* `TauCetiRoadmap/IntegralLattices/Suggested.lean`
-
 ## Main definitions
 
 * `TauCeti.IntegralLattice`: an integral symmetric lattice in a rational vector space.

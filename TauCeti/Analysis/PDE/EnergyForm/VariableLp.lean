@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.SymmetricEnergy
-public import TauCeti.MeasureTheory.Function.Lp.BilinearForm
+public import TauCeti.MeasureTheory.Function.Holder
+public import TauCeti.MeasureTheory.Function.Lp.BilinearMap
 
 /-!
 # Variable-coefficient energy forms on `L²` jets
@@ -65,7 +66,7 @@ noncomputable def energyFormLpVariable (μ : Measure X) (a : X → Matrix n n �
     (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ μ) :
     Lp (ℝ × EuclideanSpace ℝ n) 2 μ →L[ℝ]
       Lp (ℝ × EuclideanSpace ℝ n) 2 μ →L[ℝ] ℝ :=
-  lpBilinearForm μ (hcoeff.toLp (fun x ↦ energyIntegrand (a x) (b x) (c x)))
+  lpBilinearMap μ (hcoeff.toLp (fun x ↦ energyIntegrand (a x) (b x) (c x)))
 
 /-- The variable-coefficient `L²` energy form is the integral of the pointwise jet energy
 density. -/
@@ -76,7 +77,7 @@ theorem energyFormLpVariable_apply (μ : Measure X) (a : X → Matrix n n ℝ)
     (U V : Lp (ℝ × EuclideanSpace ℝ n) 2 μ) :
     energyFormLpVariable μ a b c hcoeff U V =
       ∫ x, energyIntegrand (a x) (b x) (c x) (U x) (V x) ∂μ := by
-  rw [energyFormLpVariable, lpBilinearForm_apply]
+  rw [energyFormLpVariable, lpBilinearMap_apply]
   apply integral_congr_ae
   have hcoe :
       (hcoeff.toLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) :
@@ -173,9 +174,9 @@ theorem energyFormLpVariable_coefficientSymmetricPart_zero_drift_apply (μ : Mea
   rw [energyFormLpVariable_apply, energyFormLpVariable_apply,
     energyFormLpVariable_apply]
   have hUV : Integrable (fun x ↦ energyIntegrand (a x) 0 (c x) (U x) (V x)) μ :=
-    integrable_bilinear_apply_of_memLp hcoeff U V
+    hcoeff.integrable_bilinear_apply (Lp.memLp U) (Lp.memLp V)
   have hVU : Integrable (fun x ↦ energyIntegrand (a x) 0 (c x) (V x) (U x)) μ :=
-    integrable_bilinear_apply_of_memLp hcoeff V U
+    hcoeff.integrable_bilinear_apply (Lp.memLp V) (Lp.memLp U)
   rw [← integral_add hUV hVU, ← integral_div]
   apply integral_congr_ae
   exact Filter.Eventually.of_forall fun x ↦

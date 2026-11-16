@@ -23,10 +23,6 @@ construction stays in the full subcategory of finitely generated comodules. The 
 object is registered as the categorical binary product, which is upgraded to a biproduct over a
 commutative ring. Downstream code then uses Mathlib's generic `M ⨯ N` / `M ⊞ N` API.
 
-This is a small Layer 1 prerequisite for the reductive-groups roadmap target on the
-finite-dimensional comodule representation category: products and biproducts are needed before
-tensor products, duals, and the rigid monoidal category can be built.
-
 ## Main declarations
 
 * `TauCeti.FGComoduleCat.hasBinaryProduct`: the categorical binary product instance using
@@ -40,11 +36,7 @@ tensor products, duals, and the rigid monoidal category can be built.
 
 ## References
 
-This supplies finite-category packaging for `ReductiveGroups/README.md` in TauCetiRoadmap,
-Layer 1 target "Comodules over a coalgebra/Hopf algebra": the finite-dimensional comodule
-category should have additive finite products before the rigid monoidal representation
-category is developed. The construction reuses the direct-sum comodule from
-`TauCeti.Algebra.Coalgebra.Comodule.Product`.
+The construction reuses the direct-sum comodule from `TauCeti.Algebra.Coalgebra.Comodule.Product`.
 -/
 
 public section

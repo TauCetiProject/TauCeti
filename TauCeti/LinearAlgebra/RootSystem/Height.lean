@@ -36,7 +36,9 @@ height: reflection in a simple root subtracts the corresponding Cartan integer.
   permuting the simple roots fixes the base.
 * `RootPairing.Base.height_map` and `RootPairing.Base.isPos_map_iff`: an equivalence of root
   pairings carries the height and the positivity of a root relative to a base to those of its
-  image relative to the transported base.
+  image relative to the transported base; `RootPairing.Base.height_indexEquiv` and
+  `RootPairing.Base.isPos_indexEquiv_iff` say an automorphism permuting the simple roots preserves
+  both.
 * `RootPairing.Base.height_eq_one_iff`: the roots of height one are exactly the simple roots.
 * `RootPairing.Base.height_reflectionPerm` computes the height after an arbitrary root reflection;
   `RootPairing.Base.height_reflectionPerm_lt_iff` characterizes strict height decrease under a
@@ -129,6 +131,13 @@ theorem height_indexEquiv [CharZero R] (b : P.Base) (u : P.Aut)
     (hu : ∀ j ∈ b.support, u.indexEquiv j ∈ b.support) (i : ι) :
     b.height (u.indexEquiv i) = b.height i := by
   rw [← b.height_map u i, map_eq_of_forall_mem_support hu]
+
+/-- An automorphism permuting the simple roots of the base `b` preserves positivity of roots
+relative to `b`. -/
+theorem isPos_indexEquiv_iff [CharZero R] (b : P.Base) {u : P.Aut}
+    (hu : ∀ j ∈ b.support, u.indexEquiv j ∈ b.support) (i : ι) :
+    b.IsPos (u.indexEquiv i) ↔ b.IsPos i := by
+  rw [isPos_iff, isPos_iff, height_indexEquiv b u hu]
 
 end Map
 

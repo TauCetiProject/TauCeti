@@ -33,14 +33,14 @@ namespace EuclideanSpace
 variable {ι : Type*} [DecidableEq ι]
 
 /-- The inclusion `EuclideanSpace.single i` of the `i`-th coordinate is measurable. -/
-theorem measurable_single [Countable ι] (i : ι) :
+theorem measurable_single (i : ι) :
     Measurable (EuclideanSpace.single i : ℝ → EuclideanSpace ℝ ι) := by
   -- `EuclideanSpace.single` is `toLp` applied to `Pi.single`.
   have h (a : ℝ) : EuclideanSpace.single i a =
       WithLp.toLp 2 (Pi.single (M := fun _ : ι => ℝ) i a) :=
     (PiLp.toLp_single 2 (β := fun _ : ι => ℝ) i a).symm
   rw [funext h]
-  exact (WithLp.measurable_toLp 2 _).comp (continuous_single i).measurable
+  exact (WithLp.measurable_toLp 2 _).comp (measurable_update (0 : ι → ℝ) (a := i))
 
 /-- **A measure on one-dimensional Euclidean space is determined by its coordinate law.** Over a
 one-element index type, pushing a measure forward to the unique coordinate and back along

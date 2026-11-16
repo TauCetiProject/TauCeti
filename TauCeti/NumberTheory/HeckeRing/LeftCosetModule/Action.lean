@@ -23,7 +23,7 @@ operations become a genuine `Module`.
 Ported from the AINTLIB `LeanModularForms` project
 (`LeanModularForms/HeckeRIngs/AbstractHeckeRing/Module.lean`, Chris Birkbeck,
 <https://github.com/CBirkbeck/AINTLIB/tree/main/projects/LeanModularForms>), on top of the
-coset vocabulary vendored from the in-review mathlib4 PR
+coset vocabulary vendored from mathlib4 PR
 [#41253](https://github.com/leanprover-community/mathlib4/pull/41253).
 
 ## Main results

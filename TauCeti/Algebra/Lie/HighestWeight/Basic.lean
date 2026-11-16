@@ -73,8 +73,8 @@ combination of the simple coroots.
 
 ## Implementation notes
 
-`TauCeti.IsHighestWeightVector` is stated as the conjunction pinned by the roadmap rather than as a
-structure, and `TauCeti.isHighestWeightVector_iff` together with the three projections
+`TauCeti.IsHighestWeightVector` is stated as a conjunction rather than as a structure, and
+`TauCeti.isHighestWeightVector_iff` together with the three projections
 `TauCeti.IsHighestWeightVector.ne_zero`, `TauCeti.IsHighestWeightVector.lie_eq_smul` and
 `TauCeti.IsHighestWeightVector.lie_eq_zero_of_mem_positiveNilradical` is its elimination API; no
 consumer needs to take the conjunction apart by hand.
@@ -85,15 +85,10 @@ is the additive closure of those root spaces; it needs no compatibility between 
 of `K` on `L` and on `M`.
 
 Finite-dimensionality of `M` is a hypothesis of the dominance theorem alone: the definitions and
-the elimination API are stated for an arbitrary `L`-module, since the Verma modules that Layer 3 of
-the roadmap builds next are infinite-dimensional and carry highest weight vectors all the same.
+the elimination API are stated for an arbitrary `L`-module, since Verma modules are
+infinite-dimensional and carry highest weight vectors all the same.
 
 ## References
-
-This file supplies the "highest weight vectors" item of Layer 3 and the `IsDominantIntegral`
-definition of Layer 4 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`, whose target signatures
-`IsHighestWeightVector` and `IsDominantIntegral` are pinned in the accompanying `Suggested.lean`.
 
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, §20.2.
 -/

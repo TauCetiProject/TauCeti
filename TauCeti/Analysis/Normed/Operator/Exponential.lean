@@ -16,6 +16,7 @@ import Mathlib.FieldTheory.IsAlgClosed.Spectrum
 import Mathlib.LinearAlgebra.Eigenspace.Minpoly
 import TauCeti.Analysis.Normed.Algebra.Exponential
 import TauCeti.Analysis.Normed.Algebra.Exponential.Polynomial
+import TauCeti.Analysis.Normed.Algebra.OneSubExpNegDivSelf.Basic
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Intertwining
 
 /-!
@@ -35,6 +36,9 @@ space. The norm bounds for exponentials in a general normed algebra live in
   `exp (-B)`.
 * `ContinuousLinearMap.exp_apply_of_apply_eq_smul`: the exponential of an operator acts on an
   eigenvector by the scalar exponential of the eigenvalue.
+* `ContinuousLinearMap.exp_apply_of_apply_eq_zero`: the exponential of an operator fixes its kernel.
+* `ContinuousLinearMap.exp_apply_eq_self_iff`: if `‖B‖ < log 2`, the fixed vectors of `exp B` are
+  the kernel of `B`.
 * `ContinuousLinearMap.spectrum_exp`: in finite dimension, the spectrum of `exp N` is the image of
   the spectrum of `N` under the exponential.
 * `ContinuousLinearMap.exp_smul_apply_sub_eq_intervalIntegral`: the Duhamel identity
@@ -113,6 +117,30 @@ theorem exp_apply_of_apply_eq_smul (B : X →L[𝕜] X) {x : X} {μ : 𝕜}
   simp only [smul_eq_mul] at hscalar
   exact hop.unique hscalar
 
+/-- The exponential of an operator fixes every vector in its kernel: if `B x = 0`, then
+`exp B x = x`. -/
+theorem _root_.ContinuousLinearMap.exp_apply_of_apply_eq_zero {B : X →L[𝕜] X} {x : X}
+    (hx : B x = 0) : exp B x = x := by
+  simpa using B.exp_apply_of_apply_eq_smul (μ := 0) (by rw [hx, zero_smul])
+
+/-- **The fixed vectors of a small exponential are the kernel.** If `‖B‖ < log 2`, then `exp B`
+fixes `x` exactly when `B x = 0`. The bound is needed: for `B = 2π J`, the generator of the
+rotations of the plane, `exp B = 1` fixes every vector while `B` has trivial kernel. -/
+theorem _root_.ContinuousLinearMap.exp_apply_eq_self_iff {B : X →L[𝕜] X} (hB : ‖B‖ < Real.log 2)
+    {x : X} : exp B x = x ↔ B x = 0 := by
+  refine ⟨fun h ↦ ?_, ContinuousLinearMap.exp_apply_of_apply_eq_zero⟩
+  -- Factor `exp B - 1` as `φ(-B) * B`, where `φ(a) = (1 - exp (-a)) / a` is the series
+  -- `oneSubExpNegDivSelf`, which is invertible in this range.
+  obtain ⟨u, hu⟩ := isUnit_oneSubExpNegDivSelf (𝕂 := 𝕜) (a := -B) (by rwa [norm_neg])
+  have hfac : (u : X →L[𝕜] X) * B = exp B - 1 := by
+    have h := oneSubExpNegDivSelf_mul (𝕂 := 𝕜) (-B)
+    rw [neg_neg, mul_neg] at h
+    rw [hu, ← neg_sub, ← h, neg_neg]
+  have hux : (u : X →L[𝕜] X) (B x) = 0 := by
+    rw [← mul_apply_eq_comp, hfac, sub_apply, h, one_apply_eq_self, sub_self]
+  have h' := congrArg (↑u⁻¹ : X →L[𝕜] X) hux
+  rwa [← mul_apply_eq_comp, Units.inv_mul, one_apply_eq_self, map_zero] at h'
+
 end Operator
 
 section FiniteDimensional
@@ -125,7 +153,7 @@ finite-dimensional complex normed space, the spectrum of `exp N` is the image of
 `N` under the exponential. -/
 theorem spectrum_exp (N : V →L[ℂ] V) :
     spectrum ℂ (exp N) = exp '' spectrum ℂ N := by
-  have := FiniteDimensional.complete ℂ V
+  have := FiniteDimensional.completeSpace ℂ V
   -- The inclusion `⊇` is `spectrum.exp_mem_exp`. For `⊆`, `exp N` is a polynomial `P (N)`, so its
   -- spectrum consists of the values `P (μ)` at the eigenvalues `μ` of `N`, and an eigenvector for
   -- `μ` shows `P (μ) = exp μ`.

@@ -79,6 +79,7 @@ theorem restrictFamily_injective : Function.Injective (restrictFamily hT) := by
   intro f g h
   exact Subtype.ext (congrArg (fun h ↦ (h (Classical.arbitrary ι) : R⟦X⟧)) h)
 
+omit [Nonempty ι] in
 /-- The restriction image consists exactly of families with radius-independent coefficients. -/
 theorem range_restrictFamily :
     Set.range (restrictFamily hT) =
@@ -88,7 +89,9 @@ theorem range_restrictFamily :
   · rintro ⟨f, rfl⟩
     intro i j n
     simp only [restrictFamily_apply, coe_restrict]
-  · let i₀ := Classical.arbitrary ι
+  · rcases isEmpty_or_nonempty ι with hι | hι
+    · exact ⟨0, funext fun i ↦ (hι.false i).elim⟩
+    let i₀ := Classical.arbitrary ι
     have heq (i) : (g i : R⟦X⟧) = (g i₀ : R⟦X⟧) := PowerSeries.ext (hg i i₀)
     refine ⟨⟨(g i₀ : R⟦X⟧), (hT _).mpr fun i ↦ ?_⟩, ?_⟩
     · rw [← heq i]
@@ -111,7 +114,6 @@ theorem isUniformInducing_restrictFamily_uniformSpace :
     @IsUniformInducing _ _ (uniformSpace hT) _ (restrictFamily hT) :=
   @IsUniformInducing.mk _ _ (uniformSpace hT) _ _ rfl
 
-variable [Nonempty ι] in
 /-- Coefficient-compatible families form a closed subset of the product of closed-disc algebras. -/
 theorem isClosed_range_restrictFamily : IsClosed (Set.range (restrictFamily hT)) := by
   rw [range_restrictFamily]
@@ -203,7 +205,8 @@ theorem uniformContinuous_coeff (n : ℕ) : UniformContinuous fun f : T ↦ coef
   have h := TauCeti.PowerSeries.uniformContinuous_coeff (R := R) (c := ρ (Classical.arbitrary ι)) n
   exact h.comp (uniformContinuous_restrict hu (Classical.arbitrary ι))
 
-/-- The Gauss topology of a nonempty family of radii is complete over complete coefficients. -/
+omit [Nonempty ι] in
+/-- The Gauss topology is complete over complete coefficients. -/
 theorem completeSpace [CompleteSpace R] : CompleteSpace T :=
   hu.completeSpace (isClosed_range_restrictFamily hT).isComplete
 

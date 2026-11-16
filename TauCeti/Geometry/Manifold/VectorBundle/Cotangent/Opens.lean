@@ -8,6 +8,8 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Basic
 public import Mathlib.Geometry.Manifold.Diffeomorph
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
+public import TauCeti.Geometry.Manifold.VectorBundle.Scalar
+public import TauCeti.Geometry.Diffeomorphism.Congr
 
 /-!
 # Cotangent bundles of open submanifolds
@@ -18,6 +20,14 @@ its tangent spaces with the ambient tangent spaces. Dualizing gives the canonica
 open inverse image of `U` under the cotangent projection (`CotangentBundle.restrictOpen`).
 The pairing formula uses the differential of the base inclusion, so it does not depend on
 unfolding the model-space implementation of tangent spaces.
+
+Conjugating by `CotangentBundle.restrictOpen` (through `Diffeomorph.diffCongr`) transports the
+fibre dilation of `T*U` by a nowhere-zero function `a` on `U` to the fibre dilation
+`CotangentBundle.overOpenScalarDiffeomorph` of `π⁻¹(U)`, sending a covector `p` over `x ∈ U` to
+`a(x) • p`. It is the identity for `a = 1`, multiplies the functions under composition, and
+inverts them under inversion. When `a` is the restriction of a function on `M`, it is the
+restriction of the fibre dilation of `T*M`, because the cotangent inclusion intertwines the two
+dilations (`CotangentBundle.openInclusion_vectorBundleScalarDiffeomorph`).
 
 ## References
 
@@ -42,6 +52,13 @@ inverse differential of the inclusion. -/
 def openInclusion (U : Opens M) (z : CotangentBundle I U) : CotangentBundle I M :=
   TotalSpace.mk' (E →L[𝕜] 𝕜) (z.proj : M)
     (z.2 ∘L (Manifold.tangentSpaceOpenEquiv (I := I) z.proj).symm.toContinuousLinearMap)
+
+/-- The cotangent inclusion extends a covector over `x ∈ U` to the covector over `x ∈ M`
+obtained by composing with the inverse tangent-space identification. -/
+theorem openInclusion_def (U : Opens M) (z : CotangentBundle I U) :
+    openInclusion U z = TotalSpace.mk' (E →L[𝕜] 𝕜) (z.proj : M)
+      (z.2 ∘L (Manifold.tangentSpaceOpenEquiv (I := I) z.proj).symm.toContinuousLinearMap) :=
+  (rfl)
 
 /-- The cotangent inclusion covers the inclusion of the open base. -/
 @[simp]
@@ -169,6 +186,15 @@ cotangent inclusion. -/
 theorem coe_restrictOpen (U : Opens M) (z : CotangentBundle I U) :
     (restrictOpen U z).val = openInclusion U z := (rfl)
 
+/-- The inverse restriction identification reads an ambient covector over `x ∈ U` through the
+tangent-space identification `T_x U = T_x M`. -/
+theorem restrictOpen_symm_apply (U : Opens M) (z : overOpen (I := I) U) :
+    (restrictOpen U).symm z = TotalSpace.mk' (E →L[𝕜] 𝕜)
+      (⟨z.val.proj, (mem_overOpen U _).1 z.property⟩ : U)
+      (z.val.2 ∘L (Manifold.tangentSpaceOpenEquiv (I := I)
+        ⟨z.val.proj, (mem_overOpen U _).1 z.property⟩).toContinuousLinearMap) :=
+  (rfl)
+
 /-- The inverse restriction identification covers the identity on the ambient base. -/
 @[simp]
 theorem proj_restrictOpen_symm (U : Opens M) (z : overOpen (I := I) U) :
@@ -198,5 +224,104 @@ theorem restrictOpen_symm_snd_apply (U : Opens M) (z : overOpen (I := I) U)
       z.val.2 (mfderiv I I (Subtype.val : U → M) ((restrictOpen U).symm z).proj v) := by
   rw [Manifold.mfderiv_subtype_val]
   rfl
+
+
+/-! ### Fibre dilation over an open subset -/
+
+/-- The cotangent inclusion `T*U → T*M` intertwines the fibre dilation of `T*U` by the
+restriction to `U` of a nowhere-zero function `a` on `M` with the fibre dilation of `T*M`
+by `a`. -/
+theorem openInclusion_vectorBundleScalarDiffeomorph (U : Opens M) {a : M → 𝕜}
+    (ha : ContMDiff I 𝓘(𝕜) ∞ a) (ha0 : ∀ x, a x ≠ 0) (z : CotangentBundle I U) :
+    openInclusion U (vectorBundleScalarDiffeomorph (F := E →L[𝕜] 𝕜)
+        (V := fun x : U ↦ TangentSpace I x →L[𝕜] 𝕜) (a ∘ Subtype.val)
+        (ha.comp contMDiff_subtype_val) (fun x ↦ ha0 x) z) =
+      vectorBundleScalarDiffeomorph a ha ha0 (openInclusion U z) := by
+  rw [vectorBundleScalarDiffeomorph_apply, vectorBundleScalarDiffeomorph_apply,
+    openInclusion_def, openInclusion_def]
+  refine CotangentBundle.ext rfl fun v ↦ ?_
+  simp
+
+/-- The **fibre dilation of `π⁻¹(U)` by a nowhere-zero function `a` on `U`**: a covector `p` of
+`M` over a point `x ∈ U` is sent to `a(x) • p`. It is the fibre dilation of `T*U` by `a`,
+transported along the open-restriction diffeomorphism `T*U ≃ π⁻¹(U)`. -/
+def overOpenScalarDiffeomorph (U : Opens M) (a : U → 𝕜) (ha : ContMDiff I 𝓘(𝕜) ∞ a)
+    (ha0 : ∀ x, a x ≠ 0) :
+    overOpen (I := I) U ≃ₘ⟮I.prod 𝓘(𝕜, E →L[𝕜] 𝕜), I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)⟯
+      overOpen (I := I) U :=
+  Diffeomorph.diffCongr (restrictOpen U) (vectorBundleScalarDiffeomorph (F := E →L[𝕜] 𝕜)
+    (V := fun x : U ↦ TangentSpace I x →L[𝕜] 𝕜) a ha ha0)
+
+/-- The fibre dilation of `π⁻¹(U)` is the conjugate of the fibre dilation of `T*U` by the
+open-restriction diffeomorphism. -/
+theorem overOpenScalarDiffeomorph_eq_diffCongr (U : Opens M) (a : U → 𝕜)
+    (ha : ContMDiff I 𝓘(𝕜) ∞ a) (ha0 : ∀ x, a x ≠ 0) :
+    overOpenScalarDiffeomorph U a ha ha0 =
+      Diffeomorph.diffCongr (restrictOpen U) (vectorBundleScalarDiffeomorph (F := E →L[𝕜] 𝕜)
+        (V := fun x : U ↦ TangentSpace I x →L[𝕜] 𝕜) a ha ha0) :=
+  (rfl)
+
+/-- The fibre dilation of `π⁻¹(U)` by `a` multiplies a covector over `x ∈ U` by `a(x)`. -/
+@[simp]
+theorem coe_overOpenScalarDiffeomorph (U : Opens M) (a : U → 𝕜) (ha : ContMDiff I 𝓘(𝕜) ∞ a)
+    (ha0 : ∀ x, a x ≠ 0) (z : overOpen (I := I) U) :
+    (overOpenScalarDiffeomorph U a ha ha0 z : CotangentBundle I M) =
+      TotalSpace.mk' (E →L[𝕜] 𝕜) z.val.proj
+        (a ⟨z.val.proj, (mem_overOpen U _).1 z.property⟩ • z.val.2) := by
+  obtain ⟨w, rfl⟩ : ∃ w, restrictOpen U w = z :=
+    ⟨(restrictOpen U).symm z, (restrictOpen U).apply_symm_apply z⟩
+  rw [overOpenScalarDiffeomorph, Diffeomorph.diffCongr_apply_apply,
+    Diffeomorph.symm_apply_apply, coe_restrictOpen, vectorBundleScalarDiffeomorph_apply]
+  exact CotangentBundle.ext rfl fun v ↦ rfl
+
+/-- The fibre dilation of `π⁻¹(U)` covers the identity of `U`. -/
+theorem proj_overOpenScalarDiffeomorph (U : Opens M) (a : U → 𝕜) (ha : ContMDiff I 𝓘(𝕜) ∞ a)
+    (ha0 : ∀ x, a x ≠ 0) (z : overOpen (I := I) U) :
+    (overOpenScalarDiffeomorph U a ha ha0 z).val.proj = z.val.proj := by
+  simp
+
+/-- Dilating the fibres of `π⁻¹(U)` by the constant one function is the identity. -/
+@[simp]
+theorem overOpenScalarDiffeomorph_one (U : Opens M) :
+    overOpenScalarDiffeomorph U (fun _ ↦ (1 : 𝕜)) contMDiff_const (fun _ ↦ one_ne_zero) =
+      Diffeomorph.refl (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) (overOpen (I := I) U) ∞ :=
+  (congrArg (Diffeomorph.diffCongr (restrictOpen U))
+    (vectorBundleScalarDiffeomorph_one (F := E →L[𝕜] 𝕜))).trans (map_one _)
+
+/-- Successive fibre dilations of `π⁻¹(U)` multiply the scalar functions on `U`. -/
+theorem overOpenScalarDiffeomorph_trans (U : Opens M) (a b : U → 𝕜)
+    (ha : ContMDiff I 𝓘(𝕜) ∞ a) (hb : ContMDiff I 𝓘(𝕜) ∞ b)
+    (ha0 : ∀ x, a x ≠ 0) (hb0 : ∀ x, b x ≠ 0) :
+    (overOpenScalarDiffeomorph U a ha ha0).trans (overOpenScalarDiffeomorph U b hb hb0) =
+      overOpenScalarDiffeomorph U (fun x ↦ b x * a x)
+        (contDiff_mul.contMDiff.comp (hb.prodMk_space ha))
+        (fun x ↦ mul_ne_zero (hb0 x) (ha0 x)) :=
+  (map_mul (Diffeomorph.diffCongr (restrictOpen (I := I) U))
+    (vectorBundleScalarDiffeomorph (F := E →L[𝕜] 𝕜) b hb hb0)
+    (vectorBundleScalarDiffeomorph (F := E →L[𝕜] 𝕜) a ha ha0)).symm.trans
+    (congrArg _ (vectorBundleScalarDiffeomorph_trans (F := E →L[𝕜] 𝕜) a b ha hb ha0 hb0))
+
+/-- The inverse of the fibre dilation of `π⁻¹(U)` by `a` is the dilation by `a⁻¹`. -/
+@[simp]
+theorem overOpenScalarDiffeomorph_symm (U : Opens M) (a : U → 𝕜) (ha : ContMDiff I 𝓘(𝕜) ∞ a)
+    (ha0 : ∀ x, a x ≠ 0) :
+    (overOpenScalarDiffeomorph U a ha ha0).symm =
+      overOpenScalarDiffeomorph U (fun x ↦ (a x)⁻¹)
+        (ContMDiff.congr (fun x ↦ (contDiffAt_inv 𝕜 (ha0 x)).comp_contMDiffAt (ha x))
+          fun _ ↦ rfl)
+        (fun x ↦ inv_ne_zero (ha0 x)) :=
+  (Diffeomorph.diffCongr_inv _ _).trans
+    (congrArg _ (vectorBundleScalarDiffeomorph_symm (F := E →L[𝕜] 𝕜) a ha ha0))
+
+/-- For the restriction to `U` of a nowhere-zero function `a` on `M`, the fibre dilation of
+`π⁻¹(U)` is the restriction of the fibre dilation of `T*M` by `a`. -/
+theorem coe_overOpenScalarDiffeomorph_comp_subtype_val (U : Opens M) {a : M → 𝕜}
+    (ha : ContMDiff I 𝓘(𝕜) ∞ a) (ha0 : ∀ x, a x ≠ 0) (z : overOpen (I := I) U) :
+    (overOpenScalarDiffeomorph U (a ∘ Subtype.val) (ha.comp contMDiff_subtype_val)
+        (fun x ↦ ha0 x) z : CotangentBundle I M) =
+      vectorBundleScalarDiffeomorph a ha ha0 z := by
+  rw [overOpenScalarDiffeomorph, Diffeomorph.diffCongr_apply_apply, coe_restrictOpen,
+    openInclusion_vectorBundleScalarDiffeomorph, ← coe_restrictOpen,
+    Diffeomorph.apply_symm_apply]
 
 end TauCeti.CotangentBundle

@@ -51,8 +51,7 @@ separate parts of the square-zero proof.
 
 ## References
 
-This supplies the disjoint-side orientation step for
-`TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane G.3, "The complexes and `∂² = 0`".
+This is the disjoint-side orientation step of the proof that the grid differential squares to zero.
 The decomposition pairing follows Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*,
 Chapter 4.6.
 -/

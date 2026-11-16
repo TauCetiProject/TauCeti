@@ -31,10 +31,10 @@ transitivity of the original action.
 * `TauCeti.isPreprimitive_of_isCycle_mem_of_card_support_add_one_eq_card`: such a group is
   primitive.
 
-These results are part of the generic recognition package in Layer 1 of
-`TauCetiRoadmap/PolynomialGaloisGroups/README.md`, which supports both the degree-at-most-five
-classification and Layer 9. The long-cycle criterion is used specifically in Layer 9's three-prime
-construction of polynomials with full symmetric Galois group.
+These are recognition criteria for permutation groups such as Galois groups of polynomials. In
+`TauCeti.FieldTheory.GaloisGroups.Reduction` the long-cycle criterion turns a reduction of type
+`(1, n - 1)` into primitivity of the Galois image, a step of van der Waerden's construction of
+integral polynomials with full symmetric Galois group.
 
 ## References
 

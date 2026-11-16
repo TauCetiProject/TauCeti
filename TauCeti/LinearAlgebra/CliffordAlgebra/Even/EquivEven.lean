@@ -121,7 +121,7 @@ theorem coe_toEven_of_mem_even {x : CliffordAlgebra Q} (hx : x ∈ evenOdd Q 0) 
       map (QuadraticMap.Isometry.inl Q (-QuadraticMap.sq)) x := by
   induction x, hx using even_induction with
   | algebraMap r => simp
-  | add x y hx hy ihx ihy => simp only [map_add, Subalgebra.coe_add, ihx, ihy]
+  | add x y _ _ ihx ihy => simp only [map_add, Subalgebra.coe_add, ihx, ihy]
   | ι_mul_ι_mul m₁ m₂ x hx ih =>
     simp only [map_mul, Subalgebra.coe_mul, toEven_ι, ih, map_inl_ι]
     rw [← mul_assoc (e0 Q * v Q m₁), e0_mul_v_mul_e0]
@@ -134,8 +134,8 @@ theorem coe_toEven_of_mem_odd {x : CliffordAlgebra Q} (hx : x ∈ evenOdd Q 1) :
       e0 Q * map (QuadraticMap.Isometry.inl Q (-QuadraticMap.sq)) x := by
   induction x, hx using odd_induction with
   | ι m => rw [toEven_ι, map_inl_ι]
-  | add x y hx hy ihx ihy => simp only [map_add, Subalgebra.coe_add, mul_add, ihx, ihy]
-  | ι_mul_ι_mul m₁ m₂ x hx ih =>
+  | add x y _ _ ihx ihy => simp only [map_add, Subalgebra.coe_add, mul_add, ihx, ihy]
+  | ι_mul_ι_mul m₁ m₂ x _ ih =>
     have h := e0_mul_map_inl (ι Q m₁ * ι Q m₂)
     simp only [map_mul, involute_ι, neg_mul_neg, map_inl_ι] at h
     simp only [map_mul, Subalgebra.coe_mul, toEven_ι, ih, map_inl_ι]

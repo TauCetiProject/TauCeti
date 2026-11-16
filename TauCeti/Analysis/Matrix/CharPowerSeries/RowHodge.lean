@@ -116,11 +116,11 @@ theorem rowHodgePolygon_ne_top_iff (hr : BddAbove (Set.range r)) :
   · exact ⟨fun _ ↦ ⟨∅, by simp⟩, fun _ k hk ↦ absurd hk (Nat.not_lt_zero k)⟩
   rw [← lt_decreasingRearrangement_iff hr le_rfl]
   exact ⟨fun h ↦ h m (Nat.lt_succ_self m), fun h k hk ↦
-    h.trans_le (antitone_decreasingRearrangement hr (Nat.le_of_lt_succ hk))⟩
+    h.trans_le (antitone_decreasingRearrangement (Nat.le_of_lt_succ hk))⟩
 
 /-- The row Hodge polygon is convex: its slopes `-logb b (r* k)` are nondecreasing because the
 rearrangement `r*` is antitone. -/
-theorem isConvexSeq_rowHodgePolygon (hb : 1 < b) (hr : BddAbove (Set.range r)) :
+theorem isConvexSeq_rowHodgePolygon (hb : 1 < b) :
     IsConvexSeq (rowHodgePolygon b r) := by
   classical
   set s : Set ℕ := {n | ∀ k < n, 0 < decreasingRearrangement r k}
@@ -134,18 +134,17 @@ theorem isConvexSeq_rowHodgePolygon (hb : 1 < b) (hr : BddAbove (Set.range r)) :
       simpa [s] using h
   rw [heq]
   refine isConvexSeq_ite hs ?_
-  intro i hi j hj hij
+  intro i _ j hj hij
   simp only [sum_range_succ, add_sub_cancel_left]
   have hpos : 0 < decreasingRearrangement r j := hj.2 j (Nat.lt_succ_self j)
-  exact neg_le_neg (Real.logb_le_logb_of_le hb hpos (antitone_decreasingRearrangement hr hij))
+  exact neg_le_neg (Real.logb_le_logb_of_le hb hpos (antitone_decreasingRearrangement hij))
 
 /-- The unit slope of the row Hodge polygon at a positive rearranged term `r* n` is
 `-logb b (r* n)`. -/
-theorem unitSlope_rowHodgePolygon (hr : BddAbove (Set.range r))
-    (hn : 0 < decreasingRearrangement r n) :
+theorem unitSlope_rowHodgePolygon (hn : 0 < decreasingRearrangement r n) :
     unitSlope (rowHodgePolygon b r) n = -Real.logb b (decreasingRearrangement r n) := by
   have h (m : ℕ) (hm : m ≤ n + 1) : ∀ k < m, 0 < decreasingRearrangement r k := fun k hk ↦
-    hn.trans_le (antitone_decreasingRearrangement hr (by omega))
+    hn.trans_le (antitone_decreasingRearrangement (by omega))
   rw [unitSlope_def, rowHodgePolygon_of_forall_lt (h _ le_rfl),
     rowHodgePolygon_of_forall_lt (h _ (Nat.le_succ n)), WithTop.untop₀_coe, WithTop.untop₀_coe,
     sum_range_succ, add_sub_cancel_left]
@@ -205,7 +204,7 @@ theorem rowHodgePolygon_le_addValuation_charCoeff (hb : 1 < b)
   · obtain ⟨k, hk, hk0⟩ : ∃ k < n, decreasingRearrangement r k = 0 := by
       push Not at h
       obtain ⟨k, hk, hk0⟩ := h
-      exact ⟨k, hk, le_antisymm hk0 (decreasingRearrangement_nonneg hr k)⟩
+      exact ⟨k, hk, le_antisymm hk0 (decreasingRearrangement_nonneg k)⟩
     have hzero : A.charCoeff n = 0 := norm_le_zero_iff.mp <| hcoeff.trans_eq <|
       prod_eq_zero (mem_range.mpr hk) hk0
     simp [hzero]
@@ -219,7 +218,7 @@ theorem rowHodgePolygon_le_newtonPolygon_charPowerSeries (hb : 1 < b)
     (hv : ∀ x ≠ 0, ‖x‖ = b ^ (-(v x).untop₀)) (hr : BddAbove (Set.range r))
     (hA : ∀ i j, ‖A i j‖ ≤ r i) :
     rowHodgePolygon b r ≤ A.charPowerSeries.newtonPolygon v :=
-  PowerSeries.le_newtonPolygon (isConvexSeq_rowHodgePolygon hb hr) fun n ↦ by
+  PowerSeries.le_newtonPolygon (isConvexSeq_rowHodgePolygon hb) fun n ↦ by
     simpa only [coeff_charPowerSeries] using
       rowHodgePolygon_le_addValuation_charCoeff hb hv hr hA n
 

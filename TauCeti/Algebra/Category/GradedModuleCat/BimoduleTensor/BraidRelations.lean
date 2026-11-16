@@ -106,7 +106,7 @@ setting, the nonadjacent factors commute up to chain homotopy, and the adjacent 
 satisfy the braid relation up to chain homotopy. -/
 structure KhovanovSeidelRelations
     {A : Type uA} [Ring A] [Algebra k A]
-    (Ξ : InternalGrading k A) [GradedAlgebra Ξ.piece]
+    (Ξ : InternalGrading k A ℤ) [GradedAlgebra Ξ.piece]
     (C C' : V → HomologicalComplex (GradedBimoduleCat k Ξ) c) where
   /-- The forward inverse product `C i ⊗ C' i` is homotopy equivalent to the unit. -/
   inverseForward (i : V) : HomotopyEquiv
@@ -133,8 +133,8 @@ section Transfer
 
 variable {A₁ : Type uA} [Ring A₁] [Algebra k A₁]
 variable {A₂ : Type uB} [Ring A₂] [Algebra k A₂]
-variable (Ξ₁ : InternalGrading k A₁) [GradedAlgebra Ξ₁.piece]
-variable (Ξ₂ : InternalGrading k A₂) [GradedAlgebra Ξ₂.piece]
+variable (Ξ₁ : InternalGrading k A₁ ℤ) [GradedAlgebra Ξ₁.piece]
+variable (Ξ₂ : InternalGrading k A₂ ℤ) [GradedAlgebra Ξ₂.piece]
 variable (Φ : HomologicalComplex (GradedBimoduleCat k Ξ₁) c ⥤
     HomologicalComplex (GradedBimoduleCat k Ξ₂) c)
 variable (hΦ : ∀ {X Y}, HomotopyEquiv X Y → HomotopyEquiv (Φ.obj X) (Φ.obj Y))
@@ -234,8 +234,8 @@ private def transferBraidRightConj {i j : V}
 target tensor product `C i ⊗ C' i` is homotopy equivalent to the target unit complex. -/
 def transferInverseForward {k : Type w} [CommRing k] {V : Type u} {G : SimpleGraph V}
     {A₁ : Type uA} [Ring A₁] [Algebra k A₁] {A₂ : Type uB} [Ring A₂] [Algebra k A₂]
-    {Ξ₁ : InternalGrading k A₁} [GradedAlgebra Ξ₁.piece]
-    {Ξ₂ : InternalGrading k A₂} [GradedAlgebra Ξ₂.piece]
+    {Ξ₁ : InternalGrading k A₁ ℤ} [GradedAlgebra Ξ₁.piece]
+    {Ξ₂ : InternalGrading k A₂ ℤ} [GradedAlgebra Ξ₂.piece]
     {Φ : HomologicalComplex (GradedBimoduleCat k Ξ₁) c ⥤
       HomologicalComplex (GradedBimoduleCat k Ξ₂) c}
     (i : V)
@@ -260,8 +260,8 @@ def transferInverseForward {k : Type w} [CommRing k] {V : Type u} {G : SimpleGra
 target tensor product `C' i ⊗ C i` is homotopy equivalent to the target unit complex. -/
 def transferInverseReverse {k : Type w} [CommRing k] {V : Type u} {G : SimpleGraph V}
     {A₁ : Type uA} [Ring A₁] [Algebra k A₁] {A₂ : Type uB} [Ring A₂] [Algebra k A₂]
-    {Ξ₁ : InternalGrading k A₁} [GradedAlgebra Ξ₁.piece]
-    {Ξ₂ : InternalGrading k A₂} [GradedAlgebra Ξ₂.piece]
+    {Ξ₁ : InternalGrading k A₁ ℤ} [GradedAlgebra Ξ₁.piece]
+    {Ξ₂ : InternalGrading k A₂ ℤ} [GradedAlgebra Ξ₂.piece]
     {Φ : HomologicalComplex (GradedBimoduleCat k Ξ₁) c ⥤
       HomologicalComplex (GradedBimoduleCat k Ξ₂) c}
     (i : V)
@@ -287,8 +287,8 @@ target tensor products `C i ⊗ C j` and `C j ⊗ C i` are homotopy equivalent f
 vertices. -/
 def transferCommute {k : Type w} [CommRing k] {V : Type u} {G : SimpleGraph V}
     {A₁ : Type uA} [Ring A₁] [Algebra k A₁] {A₂ : Type uB} [Ring A₂] [Algebra k A₂]
-    {Ξ₁ : InternalGrading k A₁} [GradedAlgebra Ξ₁.piece]
-    {Ξ₂ : InternalGrading k A₂} [GradedAlgebra Ξ₂.piece]
+    {Ξ₁ : InternalGrading k A₁ ℤ} [GradedAlgebra Ξ₁.piece]
+    {Ξ₂ : InternalGrading k A₂ ℤ} [GradedAlgebra Ξ₂.piece]
     {Φ : HomologicalComplex (GradedBimoduleCat k Ξ₁) c ⥤
       HomologicalComplex (GradedBimoduleCat k Ξ₂) c}
     (i j : V) (hij : i ≠ j) (hadj : ¬ G.Adj i j)
@@ -313,8 +313,8 @@ triple tensor products `C i ⊗ C j ⊗ C i` and `C j ⊗ C i ⊗ C j` are homot
 adjacent vertices. -/
 def transferBraid {k : Type w} [CommRing k] {V : Type u} {G : SimpleGraph V}
     {A₁ : Type uA} [Ring A₁] [Algebra k A₁] {A₂ : Type uB} [Ring A₂] [Algebra k A₂]
-    {Ξ₁ : InternalGrading k A₁} [GradedAlgebra Ξ₁.piece]
-    {Ξ₂ : InternalGrading k A₂} [GradedAlgebra Ξ₂.piece]
+    {Ξ₁ : InternalGrading k A₁ ℤ} [GradedAlgebra Ξ₁.piece]
+    {Ξ₂ : InternalGrading k A₂ ℤ} [GradedAlgebra Ξ₂.piece]
     {Φ : HomologicalComplex (GradedBimoduleCat k Ξ₁) c ⥤
       HomologicalComplex (GradedBimoduleCat k Ξ₂) c}
     {i j : V} (h : G.Adj j i)
@@ -352,8 +352,8 @@ the inverses of the identifications `a i` and `a' i`, the `hom` of the monoidal 
 inverse relation, and the `hom` of the unit datum `ε`. -/
 @[simp] theorem transferInverseForward_hom {k : Type w} [CommRing k] {V : Type u}
     {G : SimpleGraph V} {A₁ : Type uA} [Ring A₁] [Algebra k A₁] {A₂ : Type uB} [Ring A₂]
-    [Algebra k A₂] {Ξ₁ : InternalGrading k A₁} [GradedAlgebra Ξ₁.piece]
-    {Ξ₂ : InternalGrading k A₂} [GradedAlgebra Ξ₂.piece]
+    [Algebra k A₂] {Ξ₁ : InternalGrading k A₁ ℤ} [GradedAlgebra Ξ₁.piece]
+    {Ξ₂ : InternalGrading k A₂ ℤ} [GradedAlgebra Ξ₂.piece]
     {Φ : HomologicalComplex (GradedBimoduleCat k Ξ₁) c ⥤
       HomologicalComplex (GradedBimoduleCat k Ξ₂) c}
     {B B' : V → HomologicalComplex (GradedBimoduleCat k Ξ₁) c}
@@ -379,8 +379,8 @@ relation, the `inv` of the monoidal datum `η (B i) (B' i)`, and the tensor map 
 identifications `a i` and `a' i`. -/
 @[simp] theorem transferInverseForward_inv {k : Type w} [CommRing k] {V : Type u}
     {G : SimpleGraph V} {A₁ : Type uA} [Ring A₁] [Algebra k A₁] {A₂ : Type uB} [Ring A₂]
-    [Algebra k A₂] {Ξ₁ : InternalGrading k A₁} [GradedAlgebra Ξ₁.piece]
-    {Ξ₂ : InternalGrading k A₂} [GradedAlgebra Ξ₂.piece]
+    [Algebra k A₂] {Ξ₁ : InternalGrading k A₁ ℤ} [GradedAlgebra Ξ₁.piece]
+    {Ξ₂ : InternalGrading k A₂ ℤ} [GradedAlgebra Ξ₂.piece]
     {Φ : HomologicalComplex (GradedBimoduleCat k Ξ₁) c ⥤
       HomologicalComplex (GradedBimoduleCat k Ξ₂) c}
     {B B' : V → HomologicalComplex (GradedBimoduleCat k Ξ₁) c}
@@ -406,8 +406,8 @@ the inverses of the identifications `a' i` and `a i`, the `hom` of the monoidal 
 inverse relation, and the `hom` of the unit datum `ε`. -/
 @[simp] theorem transferInverseReverse_hom {k : Type w} [CommRing k] {V : Type u}
     {G : SimpleGraph V} {A₁ : Type uA} [Ring A₁] [Algebra k A₁] {A₂ : Type uB} [Ring A₂]
-    [Algebra k A₂] {Ξ₁ : InternalGrading k A₁} [GradedAlgebra Ξ₁.piece]
-    {Ξ₂ : InternalGrading k A₂} [GradedAlgebra Ξ₂.piece]
+    [Algebra k A₂] {Ξ₁ : InternalGrading k A₁ ℤ} [GradedAlgebra Ξ₁.piece]
+    {Ξ₂ : InternalGrading k A₂ ℤ} [GradedAlgebra Ξ₂.piece]
     {Φ : HomologicalComplex (GradedBimoduleCat k Ξ₁) c ⥤
       HomologicalComplex (GradedBimoduleCat k Ξ₂) c}
     {B B' : V → HomologicalComplex (GradedBimoduleCat k Ξ₁) c}
@@ -433,8 +433,8 @@ relation, the `inv` of the monoidal datum `η (B' i) (B i)`, and the tensor map 
 identifications `a' i` and `a i`. -/
 @[simp] theorem transferInverseReverse_inv {k : Type w} [CommRing k] {V : Type u}
     {G : SimpleGraph V} {A₁ : Type uA} [Ring A₁] [Algebra k A₁] {A₂ : Type uB} [Ring A₂]
-    [Algebra k A₂] {Ξ₁ : InternalGrading k A₁} [GradedAlgebra Ξ₁.piece]
-    {Ξ₂ : InternalGrading k A₂} [GradedAlgebra Ξ₂.piece]
+    [Algebra k A₂] {Ξ₁ : InternalGrading k A₁ ℤ} [GradedAlgebra Ξ₁.piece]
+    {Ξ₂ : InternalGrading k A₂ ℤ} [GradedAlgebra Ξ₂.piece]
     {Φ : HomologicalComplex (GradedBimoduleCat k Ξ₁) c ⥤
       HomologicalComplex (GradedBimoduleCat k Ξ₂) c}
     {B B' : V → HomologicalComplex (GradedBimoduleCat k Ξ₁) c}
@@ -461,8 +461,8 @@ commutation relation, the `inv` of the monoidal datum `η (B j) (B i)`, and the 
 induced by the identifications `a j` and `a i`. -/
 @[simp] theorem transferCommute_hom {k : Type w} [CommRing k] {V : Type u}
     {G : SimpleGraph V} {A₁ : Type uA} [Ring A₁] [Algebra k A₁] {A₂ : Type uB} [Ring A₂]
-    [Algebra k A₂] {Ξ₁ : InternalGrading k A₁} [GradedAlgebra Ξ₁.piece]
-    {Ξ₂ : InternalGrading k A₂} [GradedAlgebra Ξ₂.piece]
+    [Algebra k A₂] {Ξ₁ : InternalGrading k A₁ ℤ} [GradedAlgebra Ξ₁.piece]
+    {Ξ₂ : InternalGrading k A₂ ℤ} [GradedAlgebra Ξ₂.piece]
     {Φ : HomologicalComplex (GradedBimoduleCat k Ξ₁) c ⥤
       HomologicalComplex (GradedBimoduleCat k Ξ₂) c}
     (i j : V) (hij : i ≠ j) (hadj : ¬ G.Adj i j)
@@ -490,8 +490,8 @@ commutation relation, the `inv` of the monoidal datum `η (B i) (B j)`, and the 
 induced by the identifications `a i` and `a j`. -/
 @[simp] theorem transferCommute_inv {k : Type w} [CommRing k] {V : Type u}
     {G : SimpleGraph V} {A₁ : Type uA} [Ring A₁] [Algebra k A₁] {A₂ : Type uB} [Ring A₂]
-    [Algebra k A₂] {Ξ₁ : InternalGrading k A₁} [GradedAlgebra Ξ₁.piece]
-    {Ξ₂ : InternalGrading k A₂} [GradedAlgebra Ξ₂.piece]
+    [Algebra k A₂] {Ξ₁ : InternalGrading k A₁ ℤ} [GradedAlgebra Ξ₁.piece]
+    {Ξ₂ : InternalGrading k A₂ ℤ} [GradedAlgebra Ξ₂.piece]
     {Φ : HomologicalComplex (GradedBimoduleCat k Ξ₁) c ⥤
       HomologicalComplex (GradedBimoduleCat k Ξ₂) c}
     (i j : V) (hij : i ≠ j) (hadj : ¬ G.Adj i j)
@@ -521,8 +521,8 @@ monoidal datum `η (mapBifunctor (B i) (B j) …) (B i)`, the `hom` of the image
 `a j` and `a i` with `a j`. -/
 @[simp] theorem transferBraid_hom {k : Type w} [CommRing k] {V : Type u}
     {G : SimpleGraph V} {A₁ : Type uA} [Ring A₁] [Algebra k A₁] {A₂ : Type uB} [Ring A₂]
-    [Algebra k A₂] {Ξ₁ : InternalGrading k A₁} [GradedAlgebra Ξ₁.piece]
-    {Ξ₂ : InternalGrading k A₂} [GradedAlgebra Ξ₂.piece]
+    [Algebra k A₂] {Ξ₁ : InternalGrading k A₁ ℤ} [GradedAlgebra Ξ₁.piece]
+    {Ξ₂ : InternalGrading k A₂ ℤ} [GradedAlgebra Ξ₂.piece]
     {Φ : HomologicalComplex (GradedBimoduleCat k Ξ₁) c ⥤
       HomologicalComplex (GradedBimoduleCat k Ξ₂) c}
     {i j : V} (h : G.Adj j i)
@@ -566,8 +566,8 @@ monoidal datum `η (mapBifunctor (B j) (B i) …) (B j)`, the `inv` of the image
 `a i` and `a j` with `a i`. -/
 @[simp] theorem transferBraid_inv {k : Type w} [CommRing k] {V : Type u}
     {G : SimpleGraph V} {A₁ : Type uA} [Ring A₁] [Algebra k A₁] {A₂ : Type uB} [Ring A₂]
-    [Algebra k A₂] {Ξ₁ : InternalGrading k A₁} [GradedAlgebra Ξ₁.piece]
-    {Ξ₂ : InternalGrading k A₂} [GradedAlgebra Ξ₂.piece]
+    [Algebra k A₂] {Ξ₁ : InternalGrading k A₁ ℤ} [GradedAlgebra Ξ₁.piece]
+    {Ξ₂ : InternalGrading k A₂ ℤ} [GradedAlgebra Ξ₂.piece]
     {Φ : HomologicalComplex (GradedBimoduleCat k Ξ₁) c ⥤
       HomologicalComplex (GradedBimoduleCat k Ξ₂) c}
     {i j : V} (h : G.Adj j i)
@@ -618,8 +618,8 @@ the Khovanov-Seidel relations in the target setting. -/
 -- transferred relations.
 def transfer {k : Type w} [CommRing k] {V : Type u} {G : SimpleGraph V}
     {A₁ : Type uA} [Ring A₁] [Algebra k A₁] {A₂ : Type uB} [Ring A₂] [Algebra k A₂]
-    {Ξ₁ : InternalGrading k A₁} [GradedAlgebra Ξ₁.piece]
-    {Ξ₂ : InternalGrading k A₂} [GradedAlgebra Ξ₂.piece]
+    {Ξ₁ : InternalGrading k A₁ ℤ} [GradedAlgebra Ξ₁.piece]
+    {Ξ₂ : InternalGrading k A₂ ℤ} [GradedAlgebra Ξ₂.piece]
     {Φ : HomologicalComplex (GradedBimoduleCat k Ξ₁) c ⥤
       HomologicalComplex (GradedBimoduleCat k Ξ₂) c}
     {B B' : V → HomologicalComplex (GradedBimoduleCat k Ξ₁) c}
@@ -649,8 +649,8 @@ bimodules is the degreewise action of that equivalence. -/
 -- siblings read them off.
 def transferDegreewise {k : Type w} [CommRing k] {V : Type u} {G : SimpleGraph V}
     {A₁ : Type uA} [Ring A₁] [Algebra k A₁] {A₂ : Type uB} [Ring A₂] [Algebra k A₂]
-    {Ξ₁ : InternalGrading k A₁} [GradedAlgebra Ξ₁.piece]
-    {Ξ₂ : InternalGrading k A₂} [GradedAlgebra Ξ₂.piece]
+    {Ξ₁ : InternalGrading k A₁ ℤ} [GradedAlgebra Ξ₁.piece]
+    {Ξ₂ : InternalGrading k A₂ ℤ} [GradedAlgebra Ξ₂.piece]
     {H : GradedBimoduleCat k Ξ₁ ⥤ GradedBimoduleCat k Ξ₂} [H.Additive]
     {B B' : V → HomologicalComplex (GradedBimoduleCat k Ξ₁) c}
     {C C' : V → HomologicalComplex (GradedBimoduleCat k Ξ₂) c}
@@ -672,8 +672,8 @@ def transferDegreewise {k : Type w} [CommRing k] {V : Type u} {G : SimpleGraph V
 `transferInverseForward`. -/
 @[simp] theorem transfer_inverseForward {k : Type w} [CommRing k] {V : Type u}
     {G : SimpleGraph V} {A₁ : Type uA} [Ring A₁] [Algebra k A₁] {A₂ : Type uB} [Ring A₂]
-    [Algebra k A₂] {Ξ₁ : InternalGrading k A₁} [GradedAlgebra Ξ₁.piece]
-    {Ξ₂ : InternalGrading k A₂} [GradedAlgebra Ξ₂.piece]
+    [Algebra k A₂] {Ξ₁ : InternalGrading k A₁ ℤ} [GradedAlgebra Ξ₁.piece]
+    {Ξ₂ : InternalGrading k A₂ ℤ} [GradedAlgebra Ξ₂.piece]
     {Φ : HomologicalComplex (GradedBimoduleCat k Ξ₁) c ⥤
       HomologicalComplex (GradedBimoduleCat k Ξ₂) c}
     {B B' : V → HomologicalComplex (GradedBimoduleCat k Ξ₁) c}
@@ -693,8 +693,8 @@ def transferDegreewise {k : Type w} [CommRing k] {V : Type u} {G : SimpleGraph V
 `transferInverseReverse`. -/
 @[simp] theorem transfer_inverseReverse {k : Type w} [CommRing k] {V : Type u}
     {G : SimpleGraph V} {A₁ : Type uA} [Ring A₁] [Algebra k A₁] {A₂ : Type uB} [Ring A₂]
-    [Algebra k A₂] {Ξ₁ : InternalGrading k A₁} [GradedAlgebra Ξ₁.piece]
-    {Ξ₂ : InternalGrading k A₂} [GradedAlgebra Ξ₂.piece]
+    [Algebra k A₂] {Ξ₁ : InternalGrading k A₁ ℤ} [GradedAlgebra Ξ₁.piece]
+    {Ξ₂ : InternalGrading k A₂ ℤ} [GradedAlgebra Ξ₂.piece]
     {Φ : HomologicalComplex (GradedBimoduleCat k Ξ₁) c ⥤
       HomologicalComplex (GradedBimoduleCat k Ξ₂) c}
     {B B' : V → HomologicalComplex (GradedBimoduleCat k Ξ₁) c}
@@ -714,8 +714,8 @@ def transferDegreewise {k : Type w} [CommRing k] {V : Type u} {G : SimpleGraph V
 `transferCommute`. -/
 @[simp] theorem transfer_commute {k : Type w} [CommRing k] {V : Type u}
     {G : SimpleGraph V} {A₁ : Type uA} [Ring A₁] [Algebra k A₁] {A₂ : Type uB} [Ring A₂]
-    [Algebra k A₂] {Ξ₁ : InternalGrading k A₁} [GradedAlgebra Ξ₁.piece]
-    {Ξ₂ : InternalGrading k A₂} [GradedAlgebra Ξ₂.piece]
+    [Algebra k A₂] {Ξ₁ : InternalGrading k A₁ ℤ} [GradedAlgebra Ξ₁.piece]
+    {Ξ₂ : InternalGrading k A₂ ℤ} [GradedAlgebra Ξ₂.piece]
     {Φ : HomologicalComplex (GradedBimoduleCat k Ξ₁) c ⥤
       HomologicalComplex (GradedBimoduleCat k Ξ₂) c}
     {B B' : V → HomologicalComplex (GradedBimoduleCat k Ξ₁) c}
@@ -734,8 +734,8 @@ def transferDegreewise {k : Type w} [CommRing k] {V : Type u} {G : SimpleGraph V
 /-- The braid relation of the transferred relations is the braid transfer `transferBraid`. -/
 @[simp] theorem transfer_braid {k : Type w} [CommRing k] {V : Type u}
     {G : SimpleGraph V} {A₁ : Type uA} [Ring A₁] [Algebra k A₁] {A₂ : Type uB} [Ring A₂]
-    [Algebra k A₂] {Ξ₁ : InternalGrading k A₁} [GradedAlgebra Ξ₁.piece]
-    {Ξ₂ : InternalGrading k A₂} [GradedAlgebra Ξ₂.piece]
+    [Algebra k A₂] {Ξ₁ : InternalGrading k A₁ ℤ} [GradedAlgebra Ξ₁.piece]
+    {Ξ₂ : InternalGrading k A₂ ℤ} [GradedAlgebra Ξ₂.piece]
     {Φ : HomologicalComplex (GradedBimoduleCat k Ξ₁) c ⥤
       HomologicalComplex (GradedBimoduleCat k Ξ₂) c}
     {B B' : V → HomologicalComplex (GradedBimoduleCat k Ξ₁) c}
@@ -758,8 +758,8 @@ def transferDegreewise {k : Type w} [CommRing k] {V : Type u} {G : SimpleGraph V
 transfer `transferInverseForward`. -/
 @[simp] theorem transferDegreewise_inverseForward {k : Type w} [CommRing k] {V : Type u}
     {G : SimpleGraph V} {A₁ : Type uA} [Ring A₁] [Algebra k A₁] {A₂ : Type uB} [Ring A₂]
-    [Algebra k A₂] {Ξ₁ : InternalGrading k A₁} [GradedAlgebra Ξ₁.piece]
-    {Ξ₂ : InternalGrading k A₂} [GradedAlgebra Ξ₂.piece]
+    [Algebra k A₂] {Ξ₁ : InternalGrading k A₁ ℤ} [GradedAlgebra Ξ₁.piece]
+    {Ξ₂ : InternalGrading k A₂ ℤ} [GradedAlgebra Ξ₂.piece]
     {H : GradedBimoduleCat k Ξ₁ ⥤ GradedBimoduleCat k Ξ₂} [H.Additive]
     {B B' : V → HomologicalComplex (GradedBimoduleCat k Ξ₁) c}
     {C C' : V → HomologicalComplex (GradedBimoduleCat k Ξ₂) c}
@@ -778,8 +778,8 @@ transfer `transferInverseForward`. -/
 transfer `transferInverseReverse`. -/
 @[simp] theorem transferDegreewise_inverseReverse {k : Type w} [CommRing k] {V : Type u}
     {G : SimpleGraph V} {A₁ : Type uA} [Ring A₁] [Algebra k A₁] {A₂ : Type uB} [Ring A₂]
-    [Algebra k A₂] {Ξ₁ : InternalGrading k A₁} [GradedAlgebra Ξ₁.piece]
-    {Ξ₂ : InternalGrading k A₂} [GradedAlgebra Ξ₂.piece]
+    [Algebra k A₂] {Ξ₁ : InternalGrading k A₁ ℤ} [GradedAlgebra Ξ₁.piece]
+    {Ξ₂ : InternalGrading k A₂ ℤ} [GradedAlgebra Ξ₂.piece]
     {H : GradedBimoduleCat k Ξ₁ ⥤ GradedBimoduleCat k Ξ₂} [H.Additive]
     {B B' : V → HomologicalComplex (GradedBimoduleCat k Ξ₁) c}
     {C C' : V → HomologicalComplex (GradedBimoduleCat k Ξ₂) c}
@@ -798,8 +798,8 @@ transfer `transferInverseReverse`. -/
 transfer `transferCommute`. -/
 @[simp] theorem transferDegreewise_commute {k : Type w} [CommRing k] {V : Type u}
     {G : SimpleGraph V} {A₁ : Type uA} [Ring A₁] [Algebra k A₁] {A₂ : Type uB} [Ring A₂]
-    [Algebra k A₂] {Ξ₁ : InternalGrading k A₁} [GradedAlgebra Ξ₁.piece]
-    {Ξ₂ : InternalGrading k A₂} [GradedAlgebra Ξ₂.piece]
+    [Algebra k A₂] {Ξ₁ : InternalGrading k A₁ ℤ} [GradedAlgebra Ξ₁.piece]
+    {Ξ₂ : InternalGrading k A₂ ℤ} [GradedAlgebra Ξ₂.piece]
     {H : GradedBimoduleCat k Ξ₁ ⥤ GradedBimoduleCat k Ξ₂} [H.Additive]
     {B B' : V → HomologicalComplex (GradedBimoduleCat k Ξ₁) c}
     {C C' : V → HomologicalComplex (GradedBimoduleCat k Ξ₂) c}
@@ -818,8 +818,8 @@ transfer `transferCommute`. -/
 `transferBraid`. -/
 @[simp] theorem transferDegreewise_braid {k : Type w} [CommRing k] {V : Type u}
     {G : SimpleGraph V} {A₁ : Type uA} [Ring A₁] [Algebra k A₁] {A₂ : Type uB} [Ring A₂]
-    [Algebra k A₂] {Ξ₁ : InternalGrading k A₁} [GradedAlgebra Ξ₁.piece]
-    {Ξ₂ : InternalGrading k A₂} [GradedAlgebra Ξ₂.piece]
+    [Algebra k A₂] {Ξ₁ : InternalGrading k A₁ ℤ} [GradedAlgebra Ξ₁.piece]
+    {Ξ₂ : InternalGrading k A₂ ℤ} [GradedAlgebra Ξ₂.piece]
     {H : GradedBimoduleCat k Ξ₁ ⥤ GradedBimoduleCat k Ξ₂} [H.Additive]
     {B B' : V → HomologicalComplex (GradedBimoduleCat k Ξ₁) c}
     {C C' : V → HomologicalComplex (GradedBimoduleCat k Ξ₂) c}

@@ -134,7 +134,7 @@ theorem PoincareInequality.eq_zero_or_measure_univ_eq_one {μ : Measure E} {C : 
   have hae1 := ae_eq_integral_of_variance_eq_zero (memLp_const 1) hv0
   by_cases hμ0 : μ = 0
   · exact Or.inl hμ0
-  · obtain ⟨x, hx⟩ := (ae_neBot.2 hμ0).nonempty_of_mem hae1
+  · obtain ⟨_, hx⟩ := (ae_neBot.2 hμ0).nonempty_of_mem hae1
     refine Or.inr ?_
     have : μ.real Set.univ = 1 := by simpa [integral_const] using hx.symm
     simpa [Measure.real, ENNReal.toReal_eq_one_iff] using this
@@ -171,7 +171,6 @@ theorem PoincareInequality.map_smul {μ : Measure E} {C : ℝ} (h : PoincareIneq
     rw [variance_map hfL.aemeasurable he.measurable.aemeasurable,
       TauCeti.integral_sq_norm_fderiv_comp_smul ha]
     have := h _ hg hgL hdg
-    have hpos : 0 < a ^ 2 := by positivity
     calc _ ≤ C * ∫ x, ‖fderiv ℝ (fun y ↦ f (a • y)) x‖ ^ 2 ∂μ := this
       _ = a ^ 2 * C * ((a ^ 2)⁻¹ * ∫ x, ‖fderiv ℝ (fun y ↦ f (a • y)) x‖ ^ 2 ∂μ) := by
         field_simp
@@ -191,7 +190,6 @@ theorem LogSobolevInequality.toReal_measure_univ_eq_zero_or_one_le {μ : Measure
         -((μ Set.univ).toReal * Real.log (μ Set.univ).toReal) := by
       simp [entropy_def, Measure.real]
     have hz : 2 * C * ∫ x, ‖fderiv ℝ (fun _ : E ↦ (1 : ℝ)) x‖ ^ 2 ∂μ = 0 := by simp
-    have h1' : 0 ≤ (μ Set.univ).toReal * Real.log (μ Set.univ).toReal := by linarith
     rcases (ENNReal.toReal_nonneg).eq_or_lt' with h0 | hpos
     · exact Or.inl h0
     · refine Or.inr (Real.log_nonneg_iff hpos |>.1 ?_)
@@ -225,7 +223,6 @@ theorem LogSobolevInequality.map_smul {μ : Measure E} {C : ℝ} (h : LogSobolev
       exact ((he.memLp_map_measure_iff).1 hdf).const_mul |a|
     rw [entropy_map he, TauCeti.integral_sq_norm_fderiv_comp_smul ha]
     have := h _ hg hdg ((he.integrable_map_iff).1 hf2) ((he.integrable_map_iff).1 hf2log)
-    have hpos : 0 < a ^ 2 := by positivity
     calc _ ≤ 2 * C * ∫ x, ‖fderiv ℝ (fun y ↦ f (a • y)) x‖ ^ 2 ∂μ := this
       _ = 2 * (a ^ 2 * C) * ((a ^ 2)⁻¹ * ∫ x, ‖fderiv ℝ (fun y ↦ f (a • y)) x‖ ^ 2 ∂μ) := by
         field_simp

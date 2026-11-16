@@ -152,7 +152,7 @@ ray-class Artin symbol of the ray class of `c ∈ C_K` is the global Artin symbo
 embedding `ι` of `L` into the separable closure. -/
 theorem of_rayClassArtinMap_rayClassQuotient (ι : L →ₐ[K] SeparableClosure K)
     (c : IdeleClassGroup (𝓞 K) K) :
-    Abelianization.of (rayClassArtinMap 𝔪 h (rayClassQuotient 𝔪 c)) =
+    Group.Abelianization.of (rayClassArtinMap 𝔪 h (rayClassQuotient 𝔪 c)) =
       (globalArtinMap K L ι (.ofMul c)).toMul := by
   rw [rayClassArtinMap_rayClassQuotient, of_ideleClassArtinMap K L ι]
 
@@ -183,7 +183,7 @@ theorem rayClassArtinMap_comp_rayClassMk :
       NumberFieldArithmetic.artinHomAway algEquiv_commute_of_isAbelianGalois 𝔪.support
         h.isUnramifiedAway := by
   refine eq_artinHomAway_of_globalArtinMap L IsSepClosed.lift 𝔪.support h.isUnramifiedAway _
-    fun I v hv hI ↦ ?_
+    fun I v _ hI ↦ ?_
   rw [MonoidHom.comp_apply, ← rayClassQuotient_primeIdeleClass I hI,
     of_rayClassArtinMap_rayClassQuotient h IsSepClosed.lift, ofMul_toMul]
 
@@ -198,10 +198,11 @@ theorem rayClassArtinMap_rayClassMk (I : idealsPrimeTo 𝔪) :
 /-- **The splitting law**: the ray-class Artin symbol of the ray class of a prime ideal `𝔭` of `K`
 prime to `𝔪` is an arithmetic Frobenius at every prime of `L` above `𝔭`. -/
 theorem isArithFrobAt_rayClassArtinMap_idealClass (I : integralIdealsPrimeTo 𝔪)
-    [(I : Ideal (𝓞 K)).IsMaximal] (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver (I : Ideal (𝓞 K))] :
+    (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver (I : Ideal (𝓞 K))] :
     IsArithFrobAt (𝓞 K) (rayClassArtinMap 𝔪 h (idealClass 𝔪 I)) Q := by
   have hI : (I : Ideal (𝓞 K)) ≠ ⊥ := (Modulus.isCoprimeTo_iff.mp
     (Modulus.mem_integralIdealsPrimeTo.mp I.2)).1
+  have : (I : Ideal (𝓞 K)).IsPrime := Ideal.isPrime_of_liesOver Q _
   let v : HeightOneSpectrum (𝓞 K) := ⟨I, inferInstance, hI⟩
   have hv : v ∉ 𝔪.support := fun hv ↦
     (Modulus.isCoprimeTo_iff.mp (Modulus.mem_integralIdealsPrimeTo.mp I.2)).2 v hv dvd_rfl
@@ -228,7 +229,7 @@ theorem rayClassArtinMap_idealClass (I : integralIdealsPrimeTo 𝔪) [(I : Ideal
 prime to `𝔪` and a prime `Q` of `L` above it, the ray-class Artin symbol of the ray class of `𝔭`
 has order the inertia degree `f(Q / 𝔭)`. -/
 theorem orderOf_rayClassArtinMap_idealClass (I : integralIdealsPrimeTo 𝔪)
-    [(I : Ideal (𝓞 K)).IsMaximal] (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver (I : Ideal (𝓞 K))] :
+    (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver (I : Ideal (𝓞 K))] :
     orderOf (rayClassArtinMap 𝔪 h (idealClass 𝔪 I)) = Q.inertiaDeg (𝓞 K) := by
   have : Algebra.IsUnramifiedAt (𝓞 K) Q := h.isUnramifiedAt_of_integralIdealsPrimeTo I Q
   exact Ideal.orderOf_eq_inertiaDeg_of_isArithFrobAt Q

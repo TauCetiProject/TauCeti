@@ -256,7 +256,7 @@ theorem maximalIntegralCurve_bumpChartField_extChartAt_symm [T2Space M]
     maximalIntegralCurve (bumpChartField x ρ v) ((extChartAt I x).symm c) t =
       (extChartAt I x).symm (c + t • v) := by
   -- The segment `s ↦ c + s • v` stays in the inner ball of `ρ` for `|s| < |t| + δ`.
-  set δ := (ρ.rIn - ‖c - extChartAt I x x‖ - |t| * ‖v‖) / (‖v‖ + 1) with hδ
+  set δ := (ρ.rIn - ‖c - extChartAt I x x‖ - |t| * ‖v‖) / (‖v‖ + 1)
   have hv1 : 0 < ‖v‖ + 1 := by positivity
   have hδ0 : 0 < δ := div_pos (by linarith) hv1
   have hδv : δ * (‖v‖ + 1) = ρ.rIn - ‖c - extChartAt I x x‖ - |t| * ‖v‖ :=

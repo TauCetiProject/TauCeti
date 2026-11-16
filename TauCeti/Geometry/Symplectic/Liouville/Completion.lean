@@ -246,7 +246,7 @@ theorem existsUnique_flowOf_eq (h : IsLiouvilleCompletion ω α W)
     (hZ : RoughForm.interior Z ω.1 = α.1)
     {x : M} (hx : x ∉ W) : ∃! p : M × ℝ, p.1 ∈ frontier W ∧ 0 < p.2 ∧ flowOf Z p.2 p.1 = x := by
   obtain ⟨y, hy, t, ht, hyx⟩ := h.exists_flowOf_eq hZ hx
-  exact ⟨(y, t), ⟨hy, ht, hyx⟩, fun q ⟨hq, hqt, hqx⟩ ↦
+  exact ⟨(y, t), ⟨hy, ht, hyx⟩, fun q ⟨hq, _, hqx⟩ ↦
     h.injOn_flowOf hZ (h.isCompleteVectorField hZ) ⟨hq, mem_univ _⟩ ⟨hy, mem_univ _⟩
       (hqx.trans hyx.symm)⟩
 

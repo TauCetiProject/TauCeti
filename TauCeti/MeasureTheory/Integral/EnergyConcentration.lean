@@ -26,7 +26,10 @@ once they are small, so a finite set `Z` of such points satisfies `#Z * δ ≤ E
 (`TauCeti.card_mul_le_of_forall_eventually_le_setIntegral_ball`). If instead the densities
 `1 + e k` concentrate energy `δ` at a null point `z`, then the `e k` concentrate energy `δ'` there
 for every `δ' < δ`, since small balls about `z` have small measure
-(`TauCeti.eventually_le_setIntegral_ball_of_le_measureReal_add_setIntegral_ball`).
+(`TauCeti.eventually_le_setIntegral_ball_of_le_measureReal_add_setIntegral_ball`). A pointwise
+bound `g ≤ A e + B` with `A, B ≥ 0` bounds the energy of `g` on `S` by a multiple of
+`μ(S) + ∫_S e` (`TauCeti.setIntegral_le_mul_measureReal_add_setIntegral_of_le`), which brings
+concentration of `g` into this form.
 
 Now let `g k` be continuous functions on `Ω`, for instance the norms of the differentials of
 maps `u k` whose energy densities are `e k`. Suppose that energy concentrates wherever the `g k`
@@ -84,6 +87,41 @@ open Filter Function MeasureTheory Metric Set Topology
 
 namespace TauCeti
 
+section Comparison
+
+variable {α : Type*} [MeasurableSpace α] {μ : Measure α} {f g : α → ℝ} {S : Set α} {A B : ℝ}
+
+/-- A function `g ≥ 0` bounded by `A f + B` on a measurable set `S` of finite measure, for an
+integrable density `f`, is integrable on `S`. -/
+theorem integrableOn_of_le_mul_add (hS : MeasurableSet S) (hSfin : μ S ≠ ⊤)
+    (hg : AEStronglyMeasurable g (μ.restrict S)) (hf : IntegrableOn f S μ)
+    (hg0 : ∀ z ∈ S, 0 ≤ g z) (hle : ∀ z ∈ S, g z ≤ A * f z + B) : IntegrableOn g S μ :=
+  Integrable.mono' ((hf.const_mul A).fun_add (integrableOn_const (C := B) hSfin)) hg
+    (ae_restrict_of_forall_mem hS fun z hz ↦ by
+      rw [Real.norm_of_nonneg (hg0 z hz)]
+      exact hle z hz)
+
+/-- **Energy bounds from a pointwise bound.** If `g ≤ A f + B` on a measurable set `S` of finite
+measure, with `A, B ≥ 0` and `f ≥ 0`, then `∫_S g ≤ (A + B + 1)(μ(S) + ∫_S f)`. This is the shape
+of hypothesis in `TauCeti.eventually_le_setIntegral_ball_of_le_measureReal_add_setIntegral_ball`. -/
+theorem setIntegral_le_mul_measureReal_add_setIntegral_of_le (hS : MeasurableSet S)
+    (hSfin : μ S ≠ ⊤) (hA0 : 0 ≤ A) (hB0 : 0 ≤ B) (hg : IntegrableOn g S μ)
+    (hf : IntegrableOn f S μ) (hf0 : ∀ z ∈ S, 0 ≤ f z) (hle : ∀ z ∈ S, g z ≤ A * f z + B) :
+    ∫ z in S, g z ∂μ ≤ (A + B + 1) * (μ.real S + ∫ z in S, f z ∂μ) := by
+  have hint0 : 0 ≤ ∫ z in S, f z ∂μ := setIntegral_nonneg hS hf0
+  have hm0 : 0 ≤ μ.real S := measureReal_nonneg
+  calc ∫ z in S, g z ∂μ
+      ≤ ∫ z in S, (A * f z + B) ∂μ :=
+        setIntegral_mono_on hg ((hf.const_mul A).fun_add (integrableOn_const (C := B) hSfin))
+          hS hle
+    _ = A * (∫ z in S, f z ∂μ) + B * μ.real S := by
+        rw [integral_add (hf.const_mul A) (integrableOn_const hSfin), integral_const_mul,
+          setIntegral_const, smul_eq_mul, mul_comm (μ.real S)]
+    _ ≤ (A + B + 1) * (μ.real S + ∫ z in S, f z ∂μ) := by
+        nlinarith [mul_nonneg hA0 hm0, mul_nonneg hB0 hint0]
+
+end Comparison
+
 variable {X : Type*} [MetricSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
   {μ : Measure X} {Ω : Set X} {δ E : ℝ}
 
@@ -103,14 +141,14 @@ theorem card_mul_le_of_forall_eventually_le_setIntegral_ball {ι : Type*} {l : F
   have hdisj : (Z : Set X).Pairwise (Disjoint on fun z ↦ ball z ε ∩ Ω) :=
     fun z hz z' hz' hne ↦ (ball_disjoint_ball (by linarith [hsep z hz z' hz' hne])).mono
       inter_subset_left inter_subset_left
-  calc Z.card * δ = ∑ z ∈ Z, δ := by simp
+  calc Z.card * δ = ∑ _ ∈ Z, δ := by simp
     _ ≤ ∑ z ∈ Z, ∫ y in ball z ε ∩ Ω, e i y ∂μ := Finset.sum_le_sum hi
     _ = ∫ y in ⋃ z ∈ Z, ball z ε ∩ Ω, e i y ∂μ :=
       (integral_biUnion_finset Z (fun _ _ ↦ measurableSet_ball.inter hΩ) hdisj
         fun _ _ ↦ (hint i).mono_set inter_subset_right).symm
     _ ≤ ∫ y in Ω, e i y ∂μ :=
       setIntegral_mono_set (hint i) (ae_restrict_of_forall_mem hΩ (he i))
-        (iUnion₂_subset fun _ _ ↦ inter_subset_right).eventuallyLE
+        (iUnion₂_subset fun _ _ ↦ inter_subset_right).eventuallySubset
     _ ≤ E := hE i
 
 /-- **Concentration without the area term.** Let `e i ≥ 0` be integrable densities on a measurable
@@ -136,7 +174,7 @@ theorem eventually_le_setIntegral_ball_of_le_measureReal_add_setIntegral_ball {�
     _ ≤ ∫ y in ball z ε ∩ Ω, e i y ∂μ :=
       setIntegral_mono_set ((hint i).mono_set inter_subset_right)
         (ae_restrict_of_forall_mem (measurableSet_ball.inter hΩ) fun y hy ↦ he i y hy.2)
-        (inter_subset_inter_left _ (ball_subset_ball hρ.2.le)).eventuallyLE
+        (inter_subset_inter_left _ (ball_subset_ball hρ.2.le)).eventuallySubset
 
 /-- **Finitely many blow-up points.** Let `g k` be functions continuous on a measurable set `Ω`,
 and let `e k ≥ 0` be densities on `Ω` with `∫_Ω e k ≤ E`. Suppose that energy at least `δ > 0`

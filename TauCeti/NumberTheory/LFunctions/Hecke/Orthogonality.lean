@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.FiniteAbelian.CharacterOrthogonality
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.PartialZeta
+public import TauCeti.NumberTheory.LFunctions.Hecke.Primitive
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.Weight
 import Mathlib.NumberTheory.LSeries.Linearity
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
@@ -36,6 +37,17 @@ The second identity recovers each partial zeta function from the character L-ser
 expresses each character L-series through the partial zeta functions, whose individual
 continuation across `Re s = 1` is `exists_differentiableOn_eq_LSeries_rayClassCoeff_sub`.
 
+Across a change of modulus `𝔪 ∣ 𝔫`, the same two identities relate the characters of `𝔪` to the
+partial zeta functions of `𝔫`. Inducing `χ` to `𝔫` multiplies its L-series by the Euler factors
+`E_χ(s) = ∏_{𝔭 ∣ 𝔫₀, 𝔭 ∤ 𝔪₀} (1 - χ(𝔭) N𝔭 ^ (-s))` (`RayClassCharacter.eulerCorrection`), and
+the induced character is constant on the fibres of `classMap : Cl_𝔫 → Cl_𝔪`, so
+
+`L(s, χ) E_χ(s) = ∑_d χ(d) Z(s, d)`  and  `#Cl_𝔪 · Z(s, c) = ∑_χ χ(c)⁻¹ L(s, χ) E_χ(s)`,
+
+where `Z(s, c) = ∑_{c' ↦ c} ζ(s, c')` sums the partial zeta functions of the classes of `𝔫` over
+`c`. When `𝔫₀` has no prime outside `𝔪₀` every `E_χ` is `1` and `Z(s, c) = ζ(s, c)`
+(`sum_LSeries_rayClassCoeff_classMap`).
+
 ## Main results
 
 * `TauCeti.LFunctions.sum_smul_rayClassCoeff`: the weight of a ray class character is the
@@ -46,6 +58,9 @@ continuation across `Re s = 1` is `exists_differentiableOn_eq_LSeries_rayClassCo
   `L(s, χ) = ∑_c χ(c) ζ(s, c)`.
 * `TauCeti.LFunctions.sum_inv_mul_LSeries_toUnitaryIdealWeight`: on `Re s > 1`,
   `#Cl_𝔪 · ζ(s, c) = ∑_χ χ(c)⁻¹ L(s, χ)`.
+* `TauCeti.LFunctions.sum_mul_sum_LSeries_rayClassCoeff_classMap` and
+  `TauCeti.LFunctions.sum_inv_mul_LSeries_toUnitaryIdealWeight_mul_eulerCorrection`: the two
+  identities across a change of modulus `𝔪 ∣ 𝔫`, with the deleted Euler factors.
 
 ## References
 
@@ -58,7 +73,7 @@ namespace TauCeti.LFunctions
 
 open NumberField TauCeti.GlobalNumberFields
 
-variable {K : Type*} [Field K] [NumberField K] {𝔪 : Modulus K}
+variable {K : Type*} [Field K] [NumberField K] {𝔪 𝔫 : Modulus K}
 
 /-! ### Coefficients -/
 
@@ -125,6 +140,48 @@ theorem sum_inv_mul_LSeries_toUnitaryIdealWeight (c : RayClassGroup 𝔪) {s : �
   have : NeZero (Monoid.exponent (RayClassGroup 𝔪) : ℂ) :=
     ⟨Nat.cast_ne_zero.mpr Monoid.exponent_ne_zero_of_finite⟩
   simp_rw [← sum_mul_LSeries_rayClassCoeff _ hs, ← smul_eq_mul]
+  exact CommGroup.sum_inv_smul_sum_smul _ c
+
+/-! ### Change of modulus -/
+
+/-- **An imprimitive L-series in terms of the partial zeta functions of a larger modulus.** For
+`𝔪 ∣ 𝔫` and a ray class character `χ` of `𝔪`, on `Re s > 1` the L-series of `χ` times the Euler
+factors `RayClassCharacter.eulerCorrection χ 𝔫 s` at the primes dividing `𝔫₀` but not `𝔪₀` is
+`∑_d χ(d) Z(s, d)`, where `Z(s, d)` is the sum of the partial zeta functions of the ray classes of
+`𝔫` lying over the class `d` of `𝔪`. -/
+theorem sum_mul_sum_LSeries_rayClassCoeff_classMap (h : 𝔪 ∣ 𝔫) [Fintype (RayClassGroup 𝔪)]
+    [Fintype (RayClassGroup 𝔫)] [DecidableEq (RayClassGroup 𝔪)] (χ : RayClassCharacter 𝔪)
+    {s : ℂ} (hs : 1 < s.re) :
+    ∑ d : RayClassGroup 𝔪, ((χ d : ℂˣ) : ℂ) *
+        ∑ c' with classMap h c' = d, LSeries (normCoeff K (rayClassCoeff 𝔫 c')) s =
+      LSeries (normCoeff K χ.toUnitaryIdealWeight.toIdealArithmeticFunction) s *
+        χ.eulerCorrection 𝔫 s := by
+  -- the induced character is `χ ∘ classMap`, so its expansion over the classes of `𝔫` regroups
+  -- along the fibres of `classMap`
+  rw [← RayClassCharacter.LSeries_induced h χ hs, ← sum_mul_LSeries_rayClassCoeff _ hs,
+    ← Finset.sum_fiberwise _ (classMap h)]
+  refine Finset.sum_congr rfl fun d _ ↦ ?_
+  rw [Finset.mul_sum]
+  refine Finset.sum_congr rfl fun c' hc' ↦ ?_
+  rw [RayClassCharacter.induced_apply, (Finset.mem_filter.mp hc').2]
+
+/-- **Orthogonality across a change of modulus.** For `𝔪 ∣ 𝔫` and a ray class `c` of `𝔪`, on
+`Re s > 1` the partial zeta functions of the ray classes of `𝔫` lying over `c` sum, after
+multiplication by `#Cl_𝔪`, to `∑_χ χ(c)⁻¹ L(s, χ) E_χ(s)` over the ray class characters `χ` of
+`𝔪`, where `E_χ(s) = RayClassCharacter.eulerCorrection χ 𝔫 s` is the product of the Euler factors
+of `χ` at the primes dividing `𝔫₀` but not `𝔪₀`. -/
+theorem sum_inv_mul_LSeries_toUnitaryIdealWeight_mul_eulerCorrection (h : 𝔪 ∣ 𝔫)
+    [Fintype (RayClassGroup 𝔫)] [DecidableEq (RayClassGroup 𝔪)] (c : RayClassGroup 𝔪) {s : ℂ}
+    (hs : 1 < s.re) :
+    ∑ χ : RayClassCharacter 𝔪, (((χ c)⁻¹ : ℂˣ) : ℂ) *
+        (LSeries (normCoeff K χ.toUnitaryIdealWeight.toIdealArithmeticFunction) s *
+          χ.eulerCorrection 𝔫 s) =
+      Nat.card (RayClassGroup 𝔪) *
+        ∑ c' with classMap h c' = c, LSeries (normCoeff K (rayClassCoeff 𝔫 c')) s := by
+  have := Fintype.ofFinite (RayClassGroup 𝔪)
+  have : NeZero (Monoid.exponent (RayClassGroup 𝔪) : ℂ) :=
+    ⟨Nat.cast_ne_zero.mpr Monoid.exponent_ne_zero_of_finite⟩
+  simp_rw [← sum_mul_sum_LSeries_rayClassCoeff_classMap h _ hs, ← smul_eq_mul]
   exact CommGroup.sum_inv_smul_sum_smul _ c
 
 end TauCeti.LFunctions

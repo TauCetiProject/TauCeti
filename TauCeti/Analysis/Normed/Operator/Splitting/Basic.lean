@@ -56,6 +56,10 @@ underlying inverse is Mathlib's total `ContinuousLinearMap.inverse`.
   at most the codimension of the range is a topological complement of the range.
 * `ContinuousLinearMap.projectionOntoL_eq_snd_comp_kerSection_coprod`: the projection onto such a
   stabilizer along the range, as a component of the normalized right inverse.
+* `ContinuousLinearMap.injective_fst_comp_kerSection_coprod`,
+  `ContinuousLinearMap.range_fst_comp_kerSection_coprod`: for a stabilizer meeting the range
+  trivially, the first component of the kernel section of the stabilized operator parametrizes the
+  kernel of `T`.
 * `ContinuousLinearMap.prod_comp_injective`: projections fixing the range and the kernel of an
   operator `T` give an injective pair `(p ∘ T, q)`.
 -/
@@ -248,6 +252,35 @@ theorem projectionOntoL_eq_snd_comp_kerSection_coprod
     V.projectionOntoL T.range hV = snd R M V ∘L q.kerSection (T.coprod V.subtypeL) := by
   ext y
   simp [snd_kerSection_coprod_apply hinv hV.isCompl]
+
+/-- Where the stabilizer `V` meets the range of `T` trivially, every vector of the kernel section
+of `T + inclusion_V` has vanishing `V`-component, so its `M`-component lies in `ker T`. -/
+private theorem kerSection_coprod_mem_ker_prod_bot (hV : Disjoint V T.range) (g : G) :
+    (T.coprod V.subtypeL).kerSection q g ∈ T.ker.prod ⊥ := by
+  have hker : (T.coprod V.subtypeL).ker = T.ker.prod ⊥ := by
+    simpa using ker_coprod_of_disjoint_range (f₂ := V.subtypeL) (by simpa [disjoint_comm] using hV)
+  exact hker ▸ kerSection_mem_ker g
+
+/-- **The kernel section of a stabilized operator parametrizes the kernel.** If the stabilizer `V`
+meets the range of `T` trivially, the `M`-component of the kernel section of `T + inclusion_V`
+normalized by `q` is injective. -/
+theorem injective_fst_comp_kerSection_coprod
+    (hinv : ((T.coprod V.subtypeL).prod q).IsInvertible) (hV : Disjoint V T.range) :
+    Function.Injective (fst R M V ∘L (T.coprod V.subtypeL).kerSection q) := fun v w hvw ↦
+  kerSection_injective hinv <| Prod.ext hvw
+    ((kerSection_coprod_mem_ker_prod_bot hV v).2.trans
+      (kerSection_coprod_mem_ker_prod_bot hV w).2.symm)
+
+/-- If the stabilizer `V` meets the range of `T` trivially, the range of the `M`-component of the
+kernel section of `T + inclusion_V` normalized by `q` is `ker T`. -/
+theorem range_fst_comp_kerSection_coprod
+    (hinv : ((T.coprod V.subtypeL).prod q).IsInvertible) (hV : Disjoint V T.range) :
+    (fst R M V ∘L (T.coprod V.subtypeL).kerSection q).range = T.ker := by
+  refine le_antisymm ?_ fun e he ↦ ⟨q (e, 0), ?_⟩
+  · rintro _ ⟨g, rfl⟩
+    exact (kerSection_coprod_mem_ker_prod_bot hV g).1
+  · have he' : ((e, 0) : M × V) ∈ (T.coprod V.subtypeL).ker := by simpa using he
+    simp [kerSection_apply_of_mem_ker hinv he']
 
 end CokernelProjection
 

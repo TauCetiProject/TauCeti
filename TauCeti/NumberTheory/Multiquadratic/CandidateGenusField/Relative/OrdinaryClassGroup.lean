@@ -111,8 +111,7 @@ theorem candidateGenusFieldNegativeSign_mem (hd : Squarefree d) (hpos : 0 < d) :
   -- The case `d = 1` has no prime discriminants; otherwise use the genus-character realization.
   rcases eq_or_ne d 1 with rfl | hne
   · have hempty : genusPrimeDiscriminants hd = ∅ :=
-      genusPrimeDiscriminants_eq hd (by simp)
-        (by rw [Finset.prod_empty, fundamentalDiscriminant_of_mod_four_eq_one (by decide)])
+      genusPrimeDiscriminants_eq_empty_of_isSquare hd ⟨1, by norm_num⟩
     rw [mem_candidateGenusFieldRelativeSignSubmodule_iff]
     exact Finset.sum_eq_zero fun P _ => (Finset.notMem_empty P.1 (hempty ▸ P.2)).elim
   · have hnsq : ¬ IsSquare ((d : ℤ) : ℚ) :=
@@ -126,7 +125,7 @@ canonical surjection from the relative sign space onto `Cl(K) / Cl(K)²`. -/
 noncomputable def candidateGenusFieldOrdinaryClassGroupSignMap (hd : Squarefree d)
     (hnsq : ¬ IsSquare ((d : ℤ) : ℚ)) :
     candidateGenusFieldRelativeSignSubmodule hd →ₗ[ZMod 2]
-      TauCeti.ClassGroup.ElementaryTwoQuotient (𝓞 (candidateGenusFieldBase hd)) :=
+      ClassGroup.ElementaryTwoQuotient (𝓞 (candidateGenusFieldBase hd)) :=
   (NarrowClassGroup.toClassGroupElementaryTwoQuotient (candidateGenusFieldBase hd)).comp
     (narrowElementaryTwoQuotientEquivRelativeSign hd
       hnsq).symm.toLinearMap
@@ -225,7 +224,7 @@ squarefree `d`, `Cl(ℚ(√d)) / Cl(ℚ(√d))²` is the even-parity sign space 
 by the negative-coordinate vector. -/
 noncomputable def ordinaryElementaryTwoQuotientEquivRelativeSignQuotient
     (hd : Squarefree d) (hnsq : ¬ IsSquare ((d : ℤ) : ℚ)) (hpos : 0 < d) :
-    TauCeti.ClassGroup.ElementaryTwoQuotient (𝓞 (candidateGenusFieldBase hd)) ≃ₗ[ZMod 2]
+    ClassGroup.ElementaryTwoQuotient (𝓞 (candidateGenusFieldBase hd)) ≃ₗ[ZMod 2]
       (candidateGenusFieldRelativeSignSubmodule hd ⧸
         ZMod 2 ∙
           (⟨candidateGenusFieldNegativeSign hd,

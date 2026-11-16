@@ -19,8 +19,8 @@ import TauCeti.LinearAlgebra.TensorProduct.Separation
 The determinant lines `det (ker T) ⊗ (det (F ⧸ range T))^*` of a continuous family of Fredholm
 operators `T x : E →L[𝕜] F` form a line bundle over the parameter space, although kernel and
 cokernel jump. This file constructs its local trivializations and proves that they are
-compatible: their transition functions are continuous and nowhere zero. Assembling the bundle
-itself from these charts, and the orientation transport it supports, are not done here.
+compatible: their transition functions are continuous and nowhere zero. The bundle itself is
+assembled from these charts in `TauCeti.Analysis.Fredholm.DeterminantLine.Bundle`.
 
 A *kernel chart* is a finite stabilization `D₂ : Λ →L[𝕜] F`, with `Λ` finite-dimensional,
 together with a kernel coordinate `q : E × Λ →L[𝕜] G`, with `G` finite-dimensional, for which the
@@ -58,6 +58,10 @@ determinant of their `q'`-coordinates, up to a constant.
   between the kernel charts of nested stabilizers are continuous and nowhere zero.
 * `ContinuousLinearMap.exists_continuous_detLineChartEquiv_symm_eq_smul`: the same for any two
   kernel charts.
+* `ContinuousLinearMap.IsFredholm.exists_isOpen_kernelChart`: a Fredholm operator has a kernel
+  chart valid on an open neighbourhood.
+* `ContinuousLinearMap.eventually_detLineChartEquiv_symm_eq_smul`: over `ℝ`, the transition between
+  two kernel charts valid at an operator is, nearby, a positive multiple of its value there.
 
 ## References
 
@@ -259,7 +263,7 @@ private theorem continuous_det_append_kerSection (hT : Continuous T)
     (h : ∀ x, (((T x).coprod D₂).prod q).IsInvertible) {k m : ℕ}
     (bB : Module.Basis (Fin (k + m)) 𝕜 G') (b : Fin k → G) (lift : Fin m → Λ') :
     Continuous fun x ↦ bB.det (kerCoordAppend (T x) D₂ q D₂' q' ι b lift) := by
-  have : CompleteSpace Λ := FiniteDimensional.complete 𝕜 Λ
+  have : CompleteSpace Λ := FiniteDimensional.completeSpace 𝕜 Λ
   have hA : Continuous fun x ↦ (T x).coprod D₂ := hT.continuousLinearMapCoprod continuous_const
   have hιc : Continuous ι := ι.continuous_of_finiteDimensional
   have hks : Continuous fun x ↦ ((T x).coprod D₂).kerSection q := continuous_kerSection hA h
@@ -393,6 +397,79 @@ theorem exists_continuous_detLineChartEquiv_symm_eq_smul (hT : Continuous T)
   simpa only [M₁, M₂, LinearEquiv.trans_apply, LinearEquiv.symm_trans_apply, LinearEquiv.symm_symm,
     LinearEquiv.apply_symm_apply, LinearEquiv.symm_apply_apply] using this
 
+variable [CompleteSpace F] in
+/-- **Kernel charts near a Fredholm operator.** A Fredholm operator `A₀` has a kernel chart, with
+stabilizer a finite-dimensional subspace `S` of the target and kernel coordinate `q`, which is
+valid at every operator of an open neighbourhood of `A₀`. -/
+theorem IsFredholm.exists_isOpen_kernelChart {A₀ : E →L[𝕜] F} (hF : IsFredholm A₀) :
+    ∃ (S : Submodule 𝕜 F) (_ : FiniteDimensional 𝕜 S) (G : Submodule 𝕜 (E × S))
+      (_ : FiniteDimensional 𝕜 G) (q : E × S →L[𝕜] G) (U : Set (E →L[𝕜] F)), IsOpen U ∧ A₀ ∈ U ∧
+      ∀ A ∈ U, ((A.coprod S.subtypeL).prod q).IsInvertible := by
+  obtain ⟨S, -, -, hS, q, U, hU, hxU, hinv⟩ :=
+    IsFredholm.exists_stabilization_kernel_coordinates (T := fun A : E →L[𝕜] F ↦ A) hF
+      continuousAt_id (D := ⊤) (by simp)
+  have : FiniteDimensional 𝕜 (A₀.coprod S.subtypeL).ker :=
+    (hF.coprod_of_finiteDimensional S.subtypeL).finite_ker
+  exact ⟨S, hS, _, inferInstance, q, U, hU, hxU, hinv⟩
+
 end Continuity
+
+section Real
+
+open Filter Topology
+
+variable {E F Λ G Λ' G' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [NormedAddCommGroup Λ] [NormedSpace ℝ Λ] [FiniteDimensional ℝ Λ]
+  [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimensional ℝ G]
+  [NormedAddCommGroup Λ'] [NormedSpace ℝ Λ'] [FiniteDimensional ℝ Λ']
+  [NormedAddCommGroup G'] [NormedSpace ℝ G'] [FiniteDimensional ℝ G']
+  {D₂ : Λ →L[ℝ] F} {q : E × Λ →L[ℝ] G} {D₂' : Λ' →L[ℝ] F} {q' : E × Λ' →L[ℝ] G'}
+
+/-- **Real kernel-chart transitions keep their sign nearby.** The transition between two real
+kernel charts, both valid at the operator `A₀`, is at every operator `A` near `A₀` a positive
+multiple of the same transition at `A₀`: its coefficient relative to the transition at `A₀` is
+continuous in `A` and equal to `1` at `A₀`. -/
+theorem eventually_detLineChartEquiv_symm_eq_smul {A₀ : E →L[ℝ] F}
+    (h₀ : ((A₀.coprod D₂).prod q).IsInvertible) (h₀' : ((A₀.coprod D₂').prod q').IsInvertible) :
+    ∀ᶠ A in 𝓝 A₀, ∃ (h : ((A.coprod D₂).prod q).IsInvertible)
+      (h' : ((A.coprod D₂').prod q').IsInvertible) (c : ℝ), 0 < c ∧
+      ∀ u, detLineChartEquiv A D₂ q h ((detLineChartEquiv A D₂' q' h').symm u) =
+        c • detLineChartEquiv A₀ D₂ q h₀ ((detLineChartEquiv A₀ D₂' q' h₀').symm u) := by
+  obtain ⟨U, hU, hxU, hUinv⟩ := exists_isOpen_isInvertible_prod (q := q)
+    (continuous_id.continuousLinearMapCoprod (continuous_const (y := D₂))).continuousAt h₀
+  obtain ⟨U', hU', hxU', hUinv'⟩ := exists_isOpen_isInvertible_prod (q := q')
+    (continuous_id.continuousLinearMapCoprod (continuous_const (y := D₂'))).continuousAt h₀'
+  set V := U ∩ U'
+  have hV : IsOpen V := hU.inter hU'
+  have hxV : A₀ ∈ V := ⟨hxU, hxU'⟩
+  -- The transition on the open set `V` where both charts are valid, relative to its value at `A₀`.
+  obtain ⟨c, hc, -, hcu⟩ := exists_continuous_detLineChartEquiv_symm_eq_smul
+    (T := fun A : V ↦ (A : E →L[ℝ] F)) continuous_subtype_val (fun A ↦ hUinv A A.2.1)
+    (fun A ↦ hUinv' A A.2.2) ⟨A₀, hxV⟩
+  -- At `A₀` the transition agrees with itself, so its relative coefficient `c` is `1` there.
+  have hc1 : c ⟨A₀, hxV⟩ = 1 := by
+    have : Nontrivial (TauCeti.detLine ℝ G' ⊗[ℝ] Dual ℝ (TauCeti.detLine ℝ Λ')) :=
+      Module.nontrivial_of_finrank_eq_succ (n := 0) (by
+        rw [Module.finrank_tensorProduct (R := ℝ) (S := ℝ), Subspace.dual_finrank_eq,
+          TauCeti.finrank_detLine ℝ G', TauCeti.finrank_detLine ℝ Λ'])
+    obtain ⟨u, hu⟩ := exists_ne (0 : TauCeti.detLine ℝ G' ⊗[ℝ] Dual ℝ (TauCeti.detLine ℝ Λ'))
+    set B := detLineChartEquiv A₀ D₂ q h₀ ((detLineChartEquiv A₀ D₂' q' h₀').symm u)
+    have hB : B ≠ 0 :=
+      (LinearEquiv.map_ne_zero_iff _).2 ((LinearEquiv.map_ne_zero_iff _).2 hu)
+    have h : B = c ⟨A₀, hxV⟩ • B := hcu ⟨A₀, hxV⟩ u
+    exact ((smul_left_inj (R := ℝ)
+      (M := TauCeti.detLine ℝ G ⊗[ℝ] Dual ℝ (TauCeti.detLine ℝ Λ)) hB).1
+      ((one_smul ℝ B).trans h)).symm
+  have hpos : ∀ᶠ A : V in 𝓝 ⟨A₀, hxV⟩, 0 < c A :=
+    hc.continuousAt.eventually (lt_mem_nhds (by rw [hc1]; exact one_pos))
+  have hpos' : ∀ᶠ A in 𝓝 A₀, ∀ hA : A ∈ V, 0 < c ⟨A, hA⟩ := by
+    have := (eventually_nhds_subtype_iff V ⟨A₀, hxV⟩ (fun A ↦ ∀ hA : A ∈ V, 0 < c ⟨A, hA⟩)).1
+      (hpos.mono fun A hA _ ↦ hA)
+    rwa [hV.nhdsWithin_eq hxV] at this
+  filter_upwards [hpos', hV.mem_nhds hxV] with A hcA hAV
+  exact ⟨hUinv A hAV.1, hUinv' A hAV.2, c ⟨A, hAV⟩, hcA hAV, hcu ⟨A, hAV⟩⟩
+
+end Real
 
 end ContinuousLinearMap

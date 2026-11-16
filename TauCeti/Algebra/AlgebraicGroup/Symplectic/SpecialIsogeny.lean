@@ -172,7 +172,7 @@ theorem isIsogeny_specialIsogenyCoordinateMap :
     CommHopfAlgCat.IsIsogeny specialIsogenyCoordinateMap := by
   have hinv := RingHom.leftInverse_comap_of_comp_eq_pow
     specialIsogenyCoordinateMap.hom.toAlgHom.toRingHom
-      (g := specialIsogenyCoordinateMap.hom.toAlgHom.toRingHom) (by decide : 0 < 2)
+      (g := specialIsogenyCoordinateMap.hom.toAlgHom.toRingHom)
       specialIsogenyCoordinateMap_apply_apply
   exact (CommHopfAlgCat.isIsogeny_iff_finite_and_dominant specialIsogenyCoordinateMap).mpr
     ⟨finite_specialIsogenyCoordinateMap, hinv.surjective.denseRange⟩

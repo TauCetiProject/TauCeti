@@ -70,7 +70,7 @@ def rowSubset (I : Finset (Fin n)) : GTPattern n where
     rw [ite_eq_right_iff]
     omega
   interlacing' := by
-    intro c j hcj hj
+    intro c j _ hj
     have h := card_filter_castSucc_lt_succ I ⟨j, hj⟩
     simp only [Fin.lt_def, Fin.val_castSucc, Fin.val_succ] at h
     split_ifs at h <;> constructor <;> split_ifs <;> omega

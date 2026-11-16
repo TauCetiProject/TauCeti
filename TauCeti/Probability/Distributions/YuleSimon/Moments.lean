@@ -134,7 +134,6 @@ private theorem yuleSimonWeightReal_mul_ascPochhammer_eq {m : ℕ} (hm : (m : �
   have hasc : (ascPochhammer ℝ m).eval (k : ℝ) * Gamma k = Gamma (k + m) := by
     have hk_ne (j : ℕ) : (k : ℝ) ≠ -j := by linarith [(j.cast_nonneg : (0 : ℝ) ≤ j)]
     rw [← Gamma_add_nat_div_Gamma_eq _ hk_ne, div_mul_cancel₀ _ hΓk.ne']
-  have hΓρ := Gamma_pos_of_pos (show 0 < (k : ℝ) + ρ by positivity)
   have hsub : ρ - m ≠ 0 := (sub_pos.mpr hm).ne'
   have h1 : Gamma (k + (ρ + 1)) = (k + ρ) * Gamma (k + ρ) := by
     rw [← add_assoc, Gamma_add_one (by positivity)]

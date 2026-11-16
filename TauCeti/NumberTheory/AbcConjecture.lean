@@ -119,12 +119,8 @@ theorem AbcConjectureWithExponent.mono {κ κ' : ℝ} (h : AbcConjectureWithExpo
   refine ⟨max C 0, fun a b c hab habc ↦ (hC a b c hab habc).trans ?_⟩
   have hR : (1 : ℝ) ≤ ((radical (a * b * c).natAbs : ℕ) : ℝ) := by
     exact_mod_cast Nat.radical_pos _
-  calc C * ((radical (a * b * c).natAbs : ℕ) : ℝ) ^ (κ + ε)
-      ≤ max C 0 * ((radical (a * b * c).natAbs : ℕ) : ℝ) ^ (κ + ε) :=
-        mul_le_mul_of_nonneg_right (le_max_left C 0) (Real.rpow_nonneg (by linarith) _)
-    _ ≤ max C 0 * ((radical (a * b * c).natAbs : ℕ) : ℝ) ^ (κ' + ε) :=
-        mul_le_mul_of_nonneg_left (Real.rpow_le_rpow_of_exponent_le hR (by linarith))
-          (le_max_right C 0)
+  gcongr
+  exact le_max_left C 0
 
 /-- **The abc conjecture with exponent `κ` for positive integers**: it is equivalent to ask, for
 every `ε > 0`, for a constant `C` with `c ≤ C · rad(a b c) ^ (κ + ε)` for all coprime positive
@@ -132,7 +128,7 @@ integers `a` and `b` with `a + b = c`. -/
 theorem abcConjectureWithExponent_iff_nat (κ : ℝ) : AbcConjectureWithExponent κ ↔
     ∀ ε : ℝ, 0 < ε → ∃ C : ℝ, ∀ a b c : ℕ, 0 < a → 0 < b → a.Coprime b → a + b = c →
       (c : ℝ) ≤ C * ((radical (a * b * c) : ℕ) : ℝ) ^ (κ + ε) := by
-  refine forall₂_congr fun ε hε ↦ ⟨fun ⟨C, hC⟩ ↦ ⟨C, fun a b c _ _ hab habc ↦ ?_⟩,
+  refine forall₂_congr fun ε _ ↦ ⟨fun ⟨C, hC⟩ ↦ ⟨C, fun a b c _ _ hab habc ↦ ?_⟩,
     fun ⟨C, hC⟩ ↦ ⟨max C 1, fun a b c hab habc ↦ ?_⟩⟩
   · -- a triple of natural numbers is a triple of integers, whose largest entry is `c`
     have h := hC a b c (Nat.Coprime.isCoprime hab) (by exact_mod_cast habc)
@@ -193,10 +189,7 @@ theorem abcConjecture_iff_forall_finite : AbcConjecture ↔
     simp only [Set.pairwise_insert_of_symm, Set.pairwise_singleton,
       Set.mem_insert_iff, Set.mem_singleton_iff, forall_eq_or_imp, forall_eq, true_and,
       Nat.coprime_self_add_right, Nat.coprime_add_self_right]
-    refine ⟨fun ⟨_, hab, hac⟩ ↦ ?_, fun h ↦ ⟨fun _ ↦ h.symm, fun _ ↦ h, fun _ ↦ h⟩⟩
-    by_cases h : a = b
-    · exact hac (by omega)
-    · exact hab h
+    grind [Nat.coprime_comm]
   rw [abcConjecture_iff_nat]
   refine ⟨fun H ε hε ↦ ?_, fun H ε hε ↦ ?_⟩
   · -- a constant `C` at the exponent `1 + ε / 2` bounds `c` on the exceptions at `1 + ε`

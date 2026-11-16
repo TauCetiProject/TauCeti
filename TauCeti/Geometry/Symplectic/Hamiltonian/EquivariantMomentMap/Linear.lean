@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Lie.FundamentalVectorField.Linear
-public import TauCeti.Geometry.Symplectic.Hamiltonian.EquivariantMomentMap.Basic
+public import TauCeti.Geometry.Symplectic.Hamiltonian.EquivariantMomentMap.Torus
 
 /-!
 # The moment map of a linear symplectic representation
@@ -29,6 +29,11 @@ and `μ` vanishes at the fixed point `0`, so `μ` is a coadjoint-equivariant gro
 
 `μ (g • v) = Ad*_g (μ v)`.
 
+For a commutative Lie group, such as a torus, the coadjoint action is trivial, so the quadratic
+moment map is invariant, `μ (g • v) = μ v`, and the representation is a Hamiltonian torus action
+(`TauCeti.SymplecticForm.hamiltonianTorusData_linearActionMomentMap`). For instance, the circle
+acting on `ℂⁿ` with integer weights is the standard model of a torus action near a fixed point.
+
 This is the model moment map on the symplectic slice of a Hamiltonian action: at a point `p`, the
 stabilizer `G_p` acts linearly and symplectically on the symplectic normal space, and the local
 normal form of the action near the orbit of `p` is built from this quadratic moment map.
@@ -48,6 +53,9 @@ normal form of the action near the orbit of `p` is built from this quadratic mom
   `𝔤` by fundamental vector fields.
 * `TauCeti.SymplecticForm.isEquivariantMomentMap_linearActionMomentMap`: `μ` is a
   coadjoint-equivariant group-level moment map.
+* `TauCeti.SymplecticForm.hamiltonianTorusData_linearActionMomentMap`,
+  `TauCeti.SymplecticForm.linearActionMomentMap_smul`: for a commutative Lie group, `μ` is the
+  invariant moment map of a Hamiltonian torus action.
 
 ## References
 
@@ -185,6 +193,26 @@ theorem isEquivariantMomentMap_linearActionMomentMap
   refine ((ω.isMomentMap_linearActionMomentMap hω).isEquivariantMomentMap_iff
     (fun g ↦ ω.mpullback_smul_constSmooth I (hω g)) 0).2 fun g ↦ ?_
   rw [smul_zero, linearActionMomentMap_zero, map_zero]
+
+variable {T : Type*} [TopologicalSpace T] [ChartedSpace H T] [CommGroup T]
+  [LieGroup I (minSmoothness ℝ 3) T] [DistribMulAction T V] [SMulCommClass T ℝ V]
+  [ContMDiffSMul I 𝓘(ℝ, V) (⊤ : ℕ∞) T V]
+
+/-- **Linear symplectic representations of tori are Hamiltonian torus actions.** For a linear
+action of a commutative Lie group `T` on `(V, ω)` by linear symplectomorphisms, the quadratic
+moment map `μ(v)(ξ) = ½ ω(ξ_V v, v)` is the moment map of Hamiltonian torus data for the
+constant form `ω`. -/
+theorem hamiltonianTorusData_linearActionMomentMap
+    (hω : ∀ (g : T) (u w : V), ω (g • u) (g • w) = ω u w) :
+    ω.constSmooth.HamiltonianTorusData (linearActionMomentMap I T ω) where
+  toIsEquivariantMomentMap := ω.isEquivariantMomentMap_linearActionMomentMap hω
+  mpullback_smul g := ω.mpullback_smul_constSmooth I (hω g)
+
+/-- **The quadratic moment map of a torus representation is invariant.** For a linear action of
+a commutative Lie group by linear symplectomorphisms, `μ (g • v) = μ v`. -/
+theorem linearActionMomentMap_smul (hω : ∀ (g : T) (u w : V), ω (g • u) (g • w) = ω u w)
+    (g : T) (v : V) : linearActionMomentMap I T ω (g • v) = linearActionMomentMap I T ω v :=
+  (ω.hamiltonianTorusData_linearActionMomentMap hω).apply_smul_eq g v
 
 end Smooth
 

@@ -69,14 +69,14 @@ the underlying linear map. -/
 noncomputable def index (T : E →L[𝕜] F) : ℤ := (T : E →ₗ[𝕜] F).index
 
 /-- The index as the algebraic index of the underlying linear map. -/
-lemma index_def (T : E →L[𝕜] F) : ContinuousLinearMap.index T =
+lemma index_def (T : E →L[𝕜] F) : index T =
     (T : E →ₗ[𝕜] F).index := (rfl)
 
 /-- The index is `dim ker T − dim coker T`. -/
 lemma index_eq_finrank_sub (T : E →L[𝕜] F) :
-    ContinuousLinearMap.index T = (finrank 𝕜 (LinearMap.ker (T : E →ₗ[𝕜] F)) : ℤ) -
+    index T = (finrank 𝕜 (LinearMap.ker (T : E →ₗ[𝕜] F)) : ℤ) -
       finrank 𝕜 (F ⧸ LinearMap.range (T : E →ₗ[𝕜] F)) := by
-  rw [ContinuousLinearMap.index_def]
+  rw [index_def]
   exact LinearMap.index_eq_finrank_sub
 
 /-- The index of the zero continuous linear map is the dimension of its domain minus the
@@ -107,25 +107,25 @@ lemma index_of_injective [Nontrivial 𝕜] (T : E →L[𝕜] F) (hT : Function.I
 
 /-- A bijective continuous linear map has index zero. -/
 lemma index_eq_zero_of_bijective (T : E →L[𝕜] F)
-    (hT : Function.Bijective T) : ContinuousLinearMap.index T = 0 := by
-  rw [ContinuousLinearMap.index_def]
+    (hT : Function.Bijective T) : index T = 0 := by
+  rw [index_def]
   nontriviality 𝕜
   rw [LinearMap.index_of_injective hT.injective, LinearMap.range_eq_top.mpr hT.surjective]
   simp [Module.finrank_zero_of_subsingleton]
 
 /-- The identity operator has index `0`. -/
-@[simp] lemma index_id : ContinuousLinearMap.index
+@[simp] lemma index_id : index
     (ContinuousLinearMap.id 𝕜 E) = 0 :=
   index_eq_zero_of_bijective _ Function.bijective_id
 
 /-- A continuous linear equivalence has index `0`. -/
 @[simp] lemma _root_.ContinuousLinearEquiv.index_eq_zero (e : E ≃L[𝕜] F) :
-    ContinuousLinearMap.index (e : E →L[𝕜] F) = 0 :=
+    index (e : E →L[𝕜] F) = 0 :=
   index_eq_zero_of_bijective _ e.bijective
 
 /-- The index is unchanged by negation. -/
-@[simp] lemma index_neg [IsTopologicalAddGroup F] (T : E →L[𝕜] F) : ContinuousLinearMap.index (-T)
-    = ContinuousLinearMap.index T := by
+@[simp] lemma index_neg [IsTopologicalAddGroup F] (T : E →L[𝕜] F) : index (-T)
+    = index T := by
   have hneg : ((LinearEquiv.neg 𝕜 : F ≃ₗ[𝕜] F) : F →ₗ[𝕜] F).comp
       (T : E →ₗ[𝕜] F) = -(T : E →ₗ[𝕜] F) := by
     ext x
@@ -135,17 +135,17 @@ lemma index_eq_zero_of_bijective (T : E →L[𝕜] F)
 
 /-- Postcomposing with a continuous linear equivalence leaves the index unchanged. -/
 @[simp] lemma index_equiv_comp (T : E →L[𝕜] F) (e : F ≃L[𝕜] G) :
-    ContinuousLinearMap.index ((e : F →L[𝕜] G).comp T) = ContinuousLinearMap.index T := by
-  rw [ContinuousLinearMap.index_def, ContinuousLinearMap.index_def,
-    ContinuousLinearMap.toLinearMap_comp,
+    index ((e : F →L[𝕜] G).comp T) = index T := by
+  rw [index_def, index_def,
+    toLinearMap_comp,
     ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap]
   rw [LinearMap.index_equiv_comp]
 
 /-- Precomposing with a continuous linear equivalence leaves the index unchanged. -/
 @[simp] lemma index_comp_equiv (T : E →L[𝕜] F) (e : G ≃L[𝕜] E) :
-    ContinuousLinearMap.index (T.comp (e : G →L[𝕜] E)) = ContinuousLinearMap.index T := by
-  rw [ContinuousLinearMap.index_def, ContinuousLinearMap.index_def,
-    ContinuousLinearMap.toLinearMap_comp,
+    index (T.comp (e : G →L[𝕜] E)) = index T := by
+  rw [index_def, index_def,
+    toLinearMap_comp,
     ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap]
   rw [LinearMap.index_comp_equiv]
 
@@ -183,8 +183,8 @@ variable [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F]
 /-- Between finite-dimensional spaces the index is `dim E − dim F`, for any operator. -/
 lemma index_eq_of_finiteDimensional [FiniteDimensional 𝕜 E]
     [FiniteDimensional 𝕜 F]
-    (T : E →L[𝕜] F) : ContinuousLinearMap.index T = (finrank 𝕜 E : ℤ) - finrank 𝕜 F := by
-  rw [ContinuousLinearMap.index_def, LinearMap.index_eq_of_finiteDimensional]
+    (T : E →L[𝕜] F) : index T = (finrank 𝕜 E : ℤ) - finrank 𝕜 F := by
+  rw [index_def, LinearMap.index_eq_of_finiteDimensional]
 
 /-- A surjective operator of index zero with finite-dimensional kernel is bijective. Only
 finiteness of the kernel is used, not the full Fredholm property. This is the converse of
@@ -222,9 +222,9 @@ variable [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F] [ContinuousConstS
 
 /-- The index is unchanged by a nonzero scalar multiple. -/
 lemma index_smul (T : E →L[𝕜] F) {c : 𝕜} (hc : c ≠ 0) :
-    ContinuousLinearMap.index (c • T) = ContinuousLinearMap.index T := by
-  rw [ContinuousLinearMap.index_def, ContinuousLinearMap.index_def,
-    ContinuousLinearMap.toLinearMap_smul, LinearMap.index_smul _ hc]
+    index (c • T) = index T := by
+  rw [index_def, index_def,
+    toLinearMap_smul, LinearMap.index_smul _ hc]
 
 end Field
 

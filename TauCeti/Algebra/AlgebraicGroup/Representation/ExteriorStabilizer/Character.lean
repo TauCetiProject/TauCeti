@@ -48,22 +48,19 @@ variable {k : Type u} [Field k] {H : _root_.CommHopfAlgCat.{v} k}
 attribute [local instance] Comodule.exteriorPower
 
 /-- The top exterior line of the defining subspace of a closed subgroup transforms by a
-unique character of that subgroup. Only the defining subspace must be finite-dimensional. -/
+unique character of that subgroup. No finiteness is needed: for an infinite-dimensional defining
+subspace the junk value `Module.finrank = 0` makes the line the zeroth exterior power. -/
 theorem existsUnique_topExteriorLine_le_weightSpace (I : HopfIdeal k H)
-    (V : Subcomodule k H H) (hW : Module.Finite k (I.definingSubspace V)) :
+    (V : Subcomodule k H H) :
     letI : AddCommGroup V := Module.addCommMonoidToAddCommGroup k
     ∃! χ : GroupLike k (H ⧸ I.toIdeal),
       LinearMap.range (_root_.exteriorPower.map (Module.finrank k (I.definingSubspace V))
         (I.definingSubspace V).subtype) ≤
           I.weightSpace (⋀[k]^(Module.finrank k (I.definingSubspace V)) V) χ := by
   let : AddCommGroup V := Module.addCommMonoidToAddCommGroup k
-  let : Module.Finite k (I.definingSubspace V) := hW
   let f := (CommHopfAlgCat.mkQuotient H I).hom
   let : Comodule k (CommHopfAlgCat.quotient H I) V := Comodule.Corestrict f.toCoalgHom
-  have hline :=
-    Subcomodule.exists_line_corestrict_exteriorPower f (I.definingSubcomodule V) (by
-      rw [I.definingSubcomodule_toSubmodule V]
-      infer_instance)
+  have hline := Subcomodule.exists_line_corestrict_exteriorPower f (I.definingSubcomodule V)
   let : Comodule k (CommHopfAlgCat.quotient H I)
       (⋀[k]^(Module.finrank k (I.definingSubcomodule V).toSubmodule) V) :=
     Comodule.Corestrict f.toCoalgHom
@@ -112,7 +109,7 @@ theorem exists_finite_subcomodule_exteriorPower_line_stabilizer (I : HopfIdeal k
   let : AddCommGroup V := Module.addCommMonoidToAddCommGroup k
   let W := I.definingSubspace V
   refine ⟨V, Module.finrank k W, hV, LinearMap.range (_root_.exteriorPower.map _ W.subtype),
-    ?_, I.existsUnique_topExteriorLine_le_weightSpace V (by infer_instance), ?_⟩
+    ?_, I.existsUnique_topExteriorLine_le_weightSpace V, ?_⟩
   · rw [exteriorPower.finrank_range_map W.injective_subtype, Nat.choose_self]
   · exact fun A g ↦
       I.mem_quotientPointsSubgroup_iff_map_baseChange_range_exteriorPowerMap_eq V hgen A g

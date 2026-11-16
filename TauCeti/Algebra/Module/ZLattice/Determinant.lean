@@ -175,6 +175,18 @@ theorem card_discriminantGroup_comap (L : Submodule ℤ E) (e : F ≃ₗᵢ[ℝ]
       Nat.card (DiscriminantGroup L) :=
   Nat.card_congr (discriminantGroupComapEquiv L e).toEquiv
 
+open scoped Pointwise in
+/-- If a lattice in a finite-dimensional space does not span, its discriminant group is infinite:
+the orthogonal complement of its span injects into it. This is the case `c = 1` of
+`ZLattice.span_eq_top_of_finite_quotient_smul_submoduleOf_dual`. -/
+theorem infinite_discriminantGroup_of_span_ne_top [FiniteDimensional ℝ E]
+    (h : span ℝ (L : Set E) ≠ ⊤) : Infinite (DiscriminantGroup L) := by
+  by_contra hfin
+  have : Finite (dual L ⧸ ((1 : ℝ) • L).submoduleOf (dual L)) := by
+    rw [one_smul]
+    exact not_infinite_iff_finite.mp hfin
+  exact h (span_eq_top_of_finite_quotient_smul_submoduleOf_dual 1)
+
 section FiniteDimensional
 
 variable [FiniteDimensional ℝ E] [DiscreteTopology L] [IsZLattice ℝ L]
@@ -220,11 +232,12 @@ variable (L : Submodule ℤ E) [DiscreteTopology L] [IsZLattice ℝ L]
 theorem det_pos : 0 < det L :=
   pow_pos (covolume_pos L volume) 2
 
+omit [DiscreteTopology L] [IsZLattice ℝ L] in
 /-- The inverse covolume is the inverse square root of the determinant. This is the
 normalization in the finite Fourier sum of lattice theta series. -/
 theorem inv_covolume_eq_inv_sqrt_det :
     (covolume L volume)⁻¹ = (Real.sqrt (det L))⁻¹ := by
-  rw [det_def, Real.sqrt_sq (covolume_pos L volume).le]
+  rw [det_def, Real.sqrt_sq (by unfold ZLattice.covolume; exact ENNReal.toReal_nonneg)]
 
 /-- The determinant of a full lattice is the determinant of the Gram matrix of any of its
 `ℤ`-bases. -/
@@ -309,16 +322,25 @@ theorem IsIntegral.det_toMatrix_integralForm (h : IsIntegral L) {ι : Type*} [Fi
   ext i j
   simp [LinearMap.BilinForm.toMatrix_apply, Matrix.gram_apply]
 
-omit [MeasurableSpace E] [BorelSpace E] in
-/-- **The signed determinant of an even lattice is a discriminant.** For an even lattice `L` of
-even rank `2k`, the signed determinant `(-1)^k det L` is an integer congruent to `0` or `1`
-modulo `4`. Here `det L` appears as the order of the discriminant group, which it equals
-(`ZLattice.IsIntegral.det_eq_card_discriminantGroup`). -/
+omit [MeasurableSpace E] [BorelSpace E] [DiscreteTopology L] [IsZLattice ℝ L] in
+/-- **The signed determinant of an even lattice is a discriminant.** For an even lattice `L` in a
+real inner product space of even dimension `2k`, the signed determinant `(-1)^k det L` is an
+integer congruent to `0` or `1` modulo `4`. Here `det L` appears as the order of the discriminant
+group, which for a full lattice it equals (`ZLattice.IsIntegral.det_eq_card_discriminantGroup`). If
+`L` does not span `E`, its discriminant group is infinite
+(`ZLattice.infinite_discriminantGroup_of_span_ne_top`), so `Nat.card` is `0` and the statement is
+trivial. -/
 theorem IsEven.neg_one_pow_mul_card_discriminantGroup_modEq_zero_or_one (h : IsEven L) {k : ℕ}
     (hk : finrank ℝ E = 2 * k) :
     (-1) ^ k * (Nat.card (DiscriminantGroup L) : ℤ) ≡ 0 [ZMOD 4] ∨
       (-1) ^ k * (Nat.card (DiscriminantGroup L) : ℤ) ≡ 1 [ZMOD 4] := by
   classical
+  by_cases hfull : span ℝ (L : Set E) = ⊤
+  swap
+  · have := infinite_discriminantGroup_of_span_ne_top hfull
+    simp [Nat.card_eq_zero_of_infinite]
+  have := h.isIntegral.discreteTopology
+  have : IsZLattice ℝ L := ⟨hfull⟩
   -- The Gram matrix of a `ℤ`-basis of `L` is a symmetric integer matrix with even diagonal, whose
   -- determinant is the order of the discriminant group.
   let b := Free.chooseBasis ℤ L

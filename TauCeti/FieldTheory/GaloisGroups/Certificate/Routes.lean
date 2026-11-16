@@ -144,7 +144,7 @@ theorem hasGaloisLabel_five_two_of_not_isSquare_discr_of_hasSexticRoot (hf : f.M
     (hirr : Irreducible (f.map (Int.castRingHom ℚ))) (hdeg : f.natDegree = 5)
     (hdisc : ¬ IsSquare f.discr) {a : ℤ} (ha : HasSexticRoot f a) :
     HasGaloisLabel (f.map (Int.castRingHom ℚ)) (⟨2, by simp⟩ : TransitiveGroupIndex 5) :=
-  hasGaloisLabel_five_two_of_not_isSquare_discr_of_isRoot (hf.map _) (by simp) hirr
+  hasGaloisLabel_five_two_of_not_isSquare_discr_of_isRoot (hf.map _) hirr
     (natDegree_map_rat_eq_five hf hdeg) ((isSquare_discr_map_rat_iff _).not.mpr hdisc)
     ha.resolventSeparationEvidence_rat ha.isRoot_specialize_rat
 

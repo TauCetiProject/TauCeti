@@ -169,7 +169,7 @@ theorem ambientInclusion_ambientInclusion {M L : ℕ} (h : N ≤ M) (h' : M ≤ 
     ambientInclusion h' (ambientInclusion h V) = ambientInclusion (h.trans h') V := by
   apply Subtype.ext
   rw [coe_ambientInclusion, coe_ambientInclusion, coe_ambientInclusion, ← Submodule.map_comp,
-    ← Function.ExtendByZero.linearMap_comp _ (Fin.castLE_injective h) (Fin.castLE_injective h'),
+    ← Function.ExtendByZero.linearMap_comp _ (Fin.castLE_injective h'),
     Fin.castLE_comp_castLE]
 
 /-- Append a zero last coordinate, leaving the rank unchanged: the one-step ambient inclusion. -/

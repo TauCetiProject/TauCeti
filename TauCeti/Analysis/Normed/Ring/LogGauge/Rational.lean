@@ -22,7 +22,8 @@ It also holds for the algebraic closure of `ℚ_[p]`, whose nonzero norms are ra
 
 Commensurability does not depend on the pseudo-uniformiser: if `ϖ'` is another one, then
 `v_ϖ = v_ϖ(ϖ') · v_ϖ'` (`logGauge_eq_map_mul`), and `v_ϖ(ϖ')` is a positive rational number when
-the norm is commensurable with `ϖ`.
+the norm is commensurable with `ϖ`. For the same reason commensurability passes to any seminormed
+ring in which a positive power of every nonzero norm is already a norm of `R`.
 
 For a multiplicative ultrametric norm commensurable with `ϖ`, the logarithmic gauge is the image
 of the *rational-valued* additive valuation `ratAddValuation`, normalised by `v_ϖ(ϖ) = 1`. It is
@@ -47,6 +48,9 @@ through real numbers.
   that the logarithmic gauge is rational wherever it is finite.
 * `TauCeti.NormedRing.PseudoUniformizer.isCommensurable_iff_isCommensurable`: commensurability
   does not depend on the pseudo-uniformiser.
+* `TauCeti.NormedRing.PseudoUniformizer.isCommensurable_of_forall_exists_norm_eq_pow`:
+  commensurability passes to a seminormed ring in which a positive power of every nonzero norm is
+  a norm of the original ring.
 * `TauCeti.NormedRing.PseudoUniformizer.map_ratAddValuation`: the real image of the rational
   valuation is the logarithmic gauge, that is, the real additive valuation `ϖ.addValuation`.
 * `TauCeti.NormedRing.PseudoUniformizer.ratAddValuation_eq_coe_iff`: norm recovery,
@@ -95,6 +99,12 @@ theorem isCommensurable_iff_exists_rat :
       ← Real.rpow_intCast]
     exact congrArg _ (mod_cast Rat.mul_den_eq_num q)
 
+/-- The norm is commensurable with `ϖ` exactly when every nonzero norm is `‖ϖ‖ ^ q` for a
+rational exponent `q`. -/
+theorem isCommensurable_iff_exists_rpow :
+    ϖ.IsCommensurable ↔ ∀ x : R, ‖x‖ ≠ 0 → ∃ q : ℚ, ‖x‖ = ‖(ϖ.unit : R)‖ ^ (q : ℝ) := by
+  simp only [isCommensurable_iff_exists_rat, logGauge_eq_coe_iff]
+
 /-- If every nonzero norm is an integer power of `‖ϖ‖`, as for a discretely normed field with
 `‖ϖ‖` generating its value group, then the norm is commensurable with `ϖ`. -/
 theorem isCommensurable_of_forall_exists_zpow
@@ -103,30 +113,41 @@ theorem isCommensurable_of_forall_exists_zpow
   obtain ⟨m, hm⟩ := h x hx
   exact ⟨m, 1, one_pos, by rw [pow_one, hm]⟩
 
-/-- If the norm is commensurable with `ϖ`, it is commensurable with every multiplicative
-pseudo-uniformiser `ϖ'`: the logarithmic gauges differ by the positive rational factor
-`v_ϖ(ϖ')`. -/
-private theorem isCommensurable_of_isCommensurable (hϖ : ϖ.IsCommensurable)
-    (ϖ' : PseudoUniformizer R) : ϖ'.IsCommensurable := by
-  rw [isCommensurable_iff_exists_rat] at hϖ ⊢
-  intro x hx
-  obtain ⟨s, hs⟩ := hϖ _ ϖ'.norm_pos.ne'
-  obtain ⟨q, hq⟩ := hϖ x hx
+/-- **Transfer of commensurability.** Let the norm of `R` be commensurable with `ϖ`, and let `S`
+be a seminormed ring in which some positive power of every nonzero norm is a norm of `R`. Then the
+norm of `S` is commensurable with every multiplicative pseudo-uniformiser `ϖ'` of `S`. This
+applies to completions, which add no new nonzero norms, and to algebraic extensions of complete
+fields, where `‖x‖ ^ d` is the norm of the constant coefficient of the degree-`d` minimal
+polynomial. -/
+theorem isCommensurable_of_forall_exists_norm_eq_pow {S : Type*} [SeminormedRing S]
+    (hϖ : ϖ.IsCommensurable) (ϖ' : PseudoUniformizer S)
+    (h : ∀ y : S, ‖y‖ ≠ 0 → ∃ n : ℕ, 0 < n ∧ ∃ x : R, ‖x‖ = ‖y‖ ^ n) :
+    ϖ'.IsCommensurable := by
+  rw [isCommensurable_iff_exists_rpow] at hϖ
+  -- Every nonzero norm of `S` is a rational power of `‖ϖ‖`.
+  have key : ∀ y : S, ‖y‖ ≠ 0 → ∃ q : ℚ, ‖y‖ = ‖(ϖ.unit : R)‖ ^ (q : ℝ) := by
+    intro y hy
+    obtain ⟨n, hn, x, hx⟩ := h y hy
+    obtain ⟨q, hq⟩ := hϖ x (hx ▸ pow_ne_zero n hy)
+    refine ⟨q / n, ?_⟩
+    rw [← Real.pow_rpow_inv_natCast (norm_nonneg y) hn.ne', ← hx, hq,
+      ← Real.rpow_mul ϖ.norm_pos.le, Rat.cast_div, Rat.cast_natCast, div_eq_mul_inv]
+  -- In particular `‖ϖ'‖ = ‖ϖ‖ ^ s` with `s ≠ 0`, so these are also rational powers of `‖ϖ'‖`.
+  obtain ⟨s, hs⟩ := key _ ϖ'.norm_pos.ne'
   have hs0 : (s : ℝ) ≠ 0 := by
-    have := (logGauge_pos_iff (ϖ := ϖ)).2 ϖ'.norm_lt_one
-    rw [hs, WithTop.coe_pos] at this
-    exact this.ne'
+    rintro h0
+    rw [h0, Real.rpow_zero] at hs
+    exact ϖ'.norm_lt_one.ne hs
+  refine isCommensurable_iff_exists_rpow.2 fun y hy ↦ ?_
+  obtain ⟨q, hq⟩ := key y hy
   refine ⟨q / s, ?_⟩
-  rw [logGauge_eq_map_mul ϖ' hs, logGauge_of_norm_ne_zero hx, WithTop.map_coe,
-    WithTop.coe_inj] at hq
-  rw [logGauge_of_norm_ne_zero hx, WithTop.coe_inj, Rat.cast_div, ← hq,
-    mul_div_cancel_left₀ _ hs0]
+  rw [hq, hs, ← Real.rpow_mul ϖ.norm_pos.le, Rat.cast_div, mul_div_cancel₀ _ hs0]
 
 /-- Commensurability of the norm does not depend on the multiplicative pseudo-uniformiser. -/
 theorem isCommensurable_iff_isCommensurable (ϖ ϖ' : PseudoUniformizer R) :
     ϖ.IsCommensurable ↔ ϖ'.IsCommensurable :=
-  ⟨fun h ↦ isCommensurable_of_isCommensurable h ϖ',
-    fun h ↦ isCommensurable_of_isCommensurable h ϖ⟩
+  ⟨fun h ↦ isCommensurable_of_forall_exists_norm_eq_pow h ϖ' fun y _ ↦ ⟨1, one_pos, y, by simp⟩,
+    fun h ↦ isCommensurable_of_forall_exists_norm_eq_pow h ϖ fun y _ ↦ ⟨1, one_pos, y, by simp⟩⟩
 
 section RatAddValuation
 

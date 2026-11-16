@@ -134,7 +134,7 @@ theorem coeff_initialPolynomial (P : R⸨X⸩[X]) (σ : ℝ) (n : ℕ) :
   rw [initialPolynomial, Finset.sum_filter, finsetSum_coeff, Finset.sum_eq_single n]
   · split_ifs <;> simp
   · intro m _ hmn
-    split_ifs <;> simp [coeff_monomial, hmn]
+    split_ifs <;> simp [hmn]
   · intro hn
     rw [notMem_support_iff.mp hn]
     split_ifs <;> simp
@@ -187,7 +187,7 @@ private theorem supportingValue_ne_top_ne_bot (hP : P ≠ 0) :
       supportingValue (fun n => realAddVal R (P.coeff n)) σ ≠ ⊥ := by
   refine ⟨fun h => hP ?_, supportingValue_ne_bot_of_finite
     (finite_setOf_addValuation_coeff_ne_top P _) σ⟩
-  refine Polynomial.ext fun n => ?_
+  refine AddMonoidAlgebra.ext <| Finsupp.ext fun n => ?_
   simpa using congrFun (supportingValue_eq_top_iff.mp h) n
 
 /-- The real supporting value of the coefficient heights of `P` at slope `σ`. -/
@@ -252,7 +252,7 @@ private theorem initialPolynomial_eq_of_forall_le {F : R[X]} {μ : ℝ}
     Q.initialPolynomial σ = F := by
   obtain ⟨m, hm⟩ : ∃ m, F.coeff m ≠ 0 := by
     by_contra! h
-    exact hF (Polynomial.ext fun m => by simp [h m])
+    exact hF (AddMonoidAlgebra.ext <| Finsupp.ext fun m => by simp [h m])
   have hQ : Q ≠ 0 := by
     rintro rfl
     exact hm (by simpa using (hcoeff m).symm)
@@ -266,7 +266,7 @@ private theorem initialPolynomial_eq_of_forall_le {F : R[X]} {μ : ℝ}
     rwa [hcoeff]
   have hμ : intercept Q σ = μ := EReal.coe_eq_coe_iff.mp
     ((coe_intercept hQ).trans (supportingValue_eq_coe_of_mem_supportingFace hline hface))
-  refine Polynomial.ext fun n => ?_
+  refine AddMonoidAlgebra.ext <| Finsupp.ext fun n => ?_
   rw [coeff_initialPolynomial_eq_coeff_embReal hQ, hμ, hcoeff]
 
 variable (σ) in
@@ -274,7 +274,7 @@ variable (σ) in
 heights touch each supporting line. -/
 theorem initialPolynomial_ne_zero (hP : P ≠ 0) : P.initialPolynomial σ ≠ 0 := by
   have hne : {n | realAddVal R (P.coeff n) ≠ ⊤}.Nonempty := by
-    obtain ⟨n, hn⟩ := not_forall.mp (mt Polynomial.ext hP)
+    obtain ⟨n, hn⟩ := not_forall.mp (fun h ↦ hP (AddMonoidAlgebra.ext (Finsupp.ext h)))
     exact ⟨n, by simpa using hn⟩
   obtain ⟨c, i, hc, hi⟩ := exists_isSupportingLine_isLeast_supportingFace
     (finite_setOf_addValuation_coeff_ne_top P _) hne σ
@@ -300,20 +300,20 @@ theorem initialPolynomial_monomial (n : ℕ) (a : R⸨X⸩) (σ : ℝ) :
   · simp
   have hface : n ∈ supportingFace (fun m => realAddVal R ((monomial n a).coeff m)) σ
       (a.order - σ * n) := by
-    rw [mem_supportingFace, coeff_monomial, ite_eq_left rfl, realAddVal_of_ne_zero ha,
+    rw [mem_supportingFace, coeff_monomial_apply, ite_eq_left rfl, realAddVal_of_ne_zero ha,
       sub_add_cancel]
   have hline : IsSupportingLine (fun m => realAddVal R ((monomial n a).coeff m)) σ
       (a.order - σ * n) := isSupportingLine_iff_forall.mpr fun m => by
     rcases eq_or_ne n m with rfl | hnm
     · exact (mem_supportingFace.mp hface).ge
-    · simp [coeff_monomial, hnm]
+    · simp [hnm]
   have hsv := supportingValue_eq_coe_of_mem_supportingFace hline hface
-  refine Polynomial.ext fun m => ?_
+  refine AddMonoidAlgebra.ext <| Finsupp.ext fun m => ?_
   rw [coeff_initialPolynomial, hsv]
   rcases eq_or_ne n m with rfl | hnm
-  · simp only [coeff_monomial, realAddVal_of_ne_zero ha, WithTop.toEReal_coe, ← EReal.coe_sub,
+  · simp only [coeff_monomial_apply, realAddVal_of_ne_zero ha, WithTop.toEReal_coe, ← EReal.coe_sub,
       ite_true]
-  · simp [coeff_monomial, hnm]
+  · simp [hnm]
 
 /-- The initial polynomial vanishes exactly for the zero polynomial. -/
 @[simp]
@@ -353,7 +353,7 @@ theorem initialPolynomial_mul (P Q : R⸨X⸩[X]) (σ : ℝ) :
     have := supportingValue_addValuation_coeff_mul P Q (realAddVal R) σ
     rw [← coe_intercept hPQ, ← coe_intercept hP, ← coe_intercept hQ, ← EReal.coe_add] at this
     exact EReal.coe_eq_coe_iff.mp this
-  refine Polynomial.ext fun n => ?_
+  refine AddMonoidAlgebra.ext <| Finsupp.ext fun n => ?_
   rw [coeff_initialPolynomial_eq_coeff_embReal hPQ, Polynomial.coeff_mul,
     Polynomial.coeff_mul, map_sum, HahnSeries.coeff_sum, hc]
   refine Finset.sum_congr rfl fun ij hij => ?_

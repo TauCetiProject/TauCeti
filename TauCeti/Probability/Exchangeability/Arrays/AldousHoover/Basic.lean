@@ -5,6 +5,7 @@ Authors: Codex
 -/
 module
 
+public import TauCeti.MeasureTheory.Measure.AEMeasurable
 public import TauCeti.Probability.Exchangeability.Arrays.Basic
 public import TauCeti.Probability.Process.Array.AldousHoover.Basic
 
@@ -13,8 +14,7 @@ public import TauCeti.Probability.Process.Array.AldousHoover.Basic
 
 The Aldous--Hoover coding infrastructure provides canonical independent uniform noise and two
 array-valued functions of it.  This file proves the easy direction of the representation theorem:
-every measurable separate coding is separately exchangeable, and every measurable joint coding is
-jointly exchangeable.
+every separate coding is separately exchangeable, and every joint coding is jointly exchangeable.
 
 The proof reindexes the independent source family.  Row and column permutations act on their
 respective vertex variables and together on the cell variables, while leaving the global variable
@@ -48,37 +48,33 @@ namespace TauCeti.Probability.AldousHoover
 
 variable {α : Type*} [MeasurableSpace α]
 
-/-- **Every measurable separate Aldous--Hoover coding is separately exchangeable.** -/
+/-- **Every separate Aldous--Hoover coding is separately exchangeable.** -/
 theorem separatelyExchangeable_separateArray
-    (f : I × I × I × I → α) (hf : Measurable f) :
+    (f : I × I × I × I → α) :
     SeparatelyExchangeable (noiseMeasure Axis (ℕ × ℕ)) (separateArray f) := by
   rw [separatelyExchangeable_iff]
   intro rowPerm colPerm
-  have hcode : Measurable fun u : NoiseIndex Axis (ℕ × ℕ) → I =>
-      fun p => separateArray f p u := measurable_separateArray f hf
   have hfun : (fun u : NoiseIndex Axis (ℕ × ℕ) → I =>
       fun p => separateArray f (rowPerm p.1, colPerm p.2) u) =
         (fun u => fun p => separateArray f p u) ∘
           separateNoiseCongr rowPerm colPerm := by
     funext u p
     simpa only [Function.comp_apply] using separateArray_reindex f rowPerm colPerm u p
-  rw [hfun, ← Measure.map_map hcode (separateNoiseCongr rowPerm colPerm).measurable,
+  rw [hfun, ← (separateNoiseCongr rowPerm colPerm).measurableEmbedding.map_map_measure,
     map_separateNoiseCongr_noiseMeasure]
 
-/-- **Every measurable joint Aldous--Hoover coding is jointly exchangeable.** -/
+/-- **Every joint Aldous--Hoover coding is jointly exchangeable.** -/
 theorem jointlyExchangeable_jointArray
-    (f : I × I × I × I → α) (hf : Measurable f) :
+    (f : I × I × I × I → α) :
     JointlyExchangeable (noiseMeasure Unit (Sym2 ℕ)) (jointArray f) := by
   rw [jointlyExchangeable_iff]
   intro perm
-  have hcode : Measurable fun u : NoiseIndex Unit (Sym2 ℕ) → I =>
-      fun p => jointArray f p u := measurable_jointArray f hf
   have hfun : (fun u : NoiseIndex Unit (Sym2 ℕ) → I =>
       fun p => jointArray f (perm p.1, perm p.2) u) =
         (fun u => fun p => jointArray f p u) ∘ jointNoiseCongr perm := by
     funext u p
     simpa only [Function.comp_apply] using jointArray_reindex f perm u p
-  rw [hfun, ← Measure.map_map hcode (jointNoiseCongr perm).measurable,
+  rw [hfun, ← (jointNoiseCongr perm).measurableEmbedding.map_map_measure,
     map_jointNoiseCongr_noiseMeasure]
 
 end TauCeti.Probability.AldousHoover

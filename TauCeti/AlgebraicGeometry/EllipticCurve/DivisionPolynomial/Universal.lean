@@ -72,8 +72,7 @@ evaluation of `two_mul_ω` by two.
 ## Provenance
 
 Adapted from `LutzNagell/ZSMul.lean` in AINTLIB (`github.com/CBirkbeck/AINTLIB`, Apache-2.0),
-at `dev/modular-curves @ 9fec8eba7652` — the revision `TauCetiRoadmap/EllipticCurves/README.md`
-pins for the NagellLutz project. Declarations `Universal.evalEval_ψ₂`, `evalEval_Ψ₃`,
+at `dev/modular-curves @ 9fec8eba7652`. Declarations `Universal.evalEval_ψ₂`, `evalEval_Ψ₃`,
 `evalEval_preΨ₄`, `evalEval_ψ`, `evalEval_φ` and (added with the `ω` port, read at
 `main @ 1c1c74664e40071c2c2165bc55ca2616a67ccd6b`) `evalEval_ψc` and `evalEval_ω`.
 `isEllipticNet_polyToField_ψ` adapts that same file's `net_ψᵤ` (`:140`); the source's neighbouring
@@ -83,8 +82,8 @@ That file's header reads `Authors: David Kurniadi Angdinata, Junyan Xu`; followi
 repository's convention for adapted material the upstream authorship is credited here rather than
 in the copyright header.
 
-`polyEval_cusp_ψ` and `polyEval_cusp_φ` adapt that same file's declarations of those names, at the
-roadmap's NagellLutz pin `dev/modular-curves @ 9fec8eba7652`. Three changes. `ψ` and `φ` need
+`polyEval_cusp_ψ` and `polyEval_cusp_φ` adapt that same file's declarations of those names, at
+`dev/modular-curves @ 9fec8eba7652`. Three changes. `ψ` and `φ` need
 qualifying, because this file opens `Universal` rather than `WeierstrassCurve` alone. The source's
 `normEDS_two_three_two` hint is unnecessary here, since the general
 `normEDS_two_three_two_eq_intCast` is `@[simp]` and reaches the same normal form first. And

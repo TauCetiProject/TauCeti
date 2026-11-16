@@ -276,8 +276,8 @@ lemma lerayEdge_bijective_of_isZero_rightDerived [IsIso c]
   | succ n ih =>
     let S := (EnoughInjectives.presentation F).some.shortComplex
     have hS : S.ShortExact := InjectivePresentation.shortExact_shortComplex _
-    have hT := pf.shortExact_map_of_isZero_rightDerived_one hS (hF 0 n.succ_pos)
-    have hQ := ih fun q hq ↦ pf.isZero_rightDerived_obj_X₃_of_isZero hS q (hF (q + 1) (by lia))
+    have hT := (pf.shortExact_map_iff_isZero_rightDerived_one hS).2 (hF 0 n.succ_pos)
+    have hQ := ih fun q hq ↦ (pf.isZero_rightDerived_obj_X₃_iff hS q).2 (hF (q + 1) (by lia))
     have hI := ih fun q _ ↦ pf.isZero_rightDerived_obj_injective_succ q S.X₂
     exact ⟨lerayEdge_succ_injective adj c hS hT hI.2 hQ.1,
       lerayEdge_succ_surjective adj c hS hT hQ.2⟩
@@ -298,10 +298,10 @@ lemma lerayEdge_injective_of_isZero_rightDerived [IsIso c]
     let S := (EnoughInjectives.presentation F).some.shortComplex
     have hS : S.ShortExact := InjectivePresentation.shortExact_shortComplex _
     exact lerayEdge_succ_injective adj c hS
-      (pf.shortExact_map_of_isZero_rightDerived_one hS (hF 0 (by lia)))
+      ((pf.shortExact_map_iff_isZero_rightDerived_one hS).2 (hF 0 (by lia)))
       (lerayEdge_bijective_of_isZero_rightDerived adj c
         fun q _ ↦ pf.isZero_rightDerived_obj_injective_succ q S.X₂).2
-      (ih fun q hq ↦ pf.isZero_rightDerived_obj_X₃_of_isZero hS q (hF (q + 1) (by lia)))
+      (ih fun q hq ↦ (pf.isZero_rightDerived_obj_X₃_iff hS q).2 (hF (q + 1) (by lia)))
 
 /-- When the comparison `c` of constant sheaves is an isomorphism and the pushforward `pf` is
 exact, its edge map `Hⁿ(C, f_* F) ⟶ Hⁿ(D, F)` is bijective in every degree. -/

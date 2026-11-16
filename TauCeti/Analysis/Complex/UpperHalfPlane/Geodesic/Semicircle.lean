@@ -242,7 +242,7 @@ theorem exists_rotation_of_re_ne {P Q : ℍ} (hPQ : P.re ≠ Q.re) :
   obtain ⟨θ, hgb, hne, hθ⟩ :=
     exists_geodesicBetween_eq_toPoint_mul_rotation (fun h ↦ hPQ (h ▸ rfl) : P ≠ Q)
   set Q' : ℍ := (toPoint P)⁻¹ • Q
-  set α := Real.sin θ * Real.cos θ with hα
+  set α := Real.sin θ * Real.cos θ
   set β := Real.cos θ ^ 2 - Real.sin θ ^ 2
   have hQ're : Q'.re = (Q.re - P.re) / P.im := re_toPoint_inv_smul P Q
   have hQ'n : Complex.normSq (Q' : ℂ) = Complex.normSq ((Q : ℂ) - P.re) / P.im ^ 2 :=

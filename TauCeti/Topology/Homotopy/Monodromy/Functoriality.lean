@@ -26,10 +26,9 @@ More generally, a map of covering spaces lying over a continuous map of bases ca
 a path to the lift of its image, so it carries monodromy along a path to monodromy along the image
 path, and likewise for loop classes under the induced map of fundamental groups.
 
-These constructions are the morphism-level input for the alternative classification of covers
-as functors from the fundamental groupoid in `TauCetiRoadmap/UniversalCovers/README.md`, Stage 2,
-item 8. Mathlib supplies the object-level functor `IsCoveringMap.monodromyFunctor`; this file
-packages its functoriality in the covering map.
+Mathlib supplies the object-level functor `IsCoveringMap.monodromyFunctor` from the fundamental
+groupoid of the base to types, sending a point to its fibre; this file packages its
+functoriality in the covering map.
 
 ## Main declarations
 

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.Height.NumberField
 public import Mathlib.GroupTheory.OrderOfElement
+import TauCeti.NumberTheory.Height.NumberField
 
 /-!
 # Height one and finite multiplicative order
@@ -42,19 +43,13 @@ theorem mulHeight₁_eq_one_of_isOfFinOrder {x : K} (hx : IsOfFinOrder x) :
 multiplicative order. -/
 theorem mulHeight₁_eq_one_iff [Northcott (mulHeight₁ (K := K))] (x : K) :
     mulHeight₁ x = 1 ↔ x = 0 ∨ IsOfFinOrder x := by
-  refine ⟨fun h ↦ ?_, ?_⟩
-  · by_cases hx : x = 0
-    · exact Or.inl hx
-    · right
-      let u : Kˣ := Units.mk0 x hx
-      have hfin : {v : Kˣ | mulHeight₁ (v : K) ≤ 1}.Finite :=
-        Set.Finite.preimage Units.val_injective.injOn (Northcott.finite_le 1)
-      have hpowers : (Submonoid.powers u : Set Kˣ).Finite := by
-        apply hfin.subset
-        intro v hv
-        obtain ⟨n, rfl⟩ := (Submonoid.mem_powers_iff v u).mp hv
-        simp [u, mulHeight₁_pow, h]
-      exact Units.isOfFinOrder_val.mpr (finite_powers.mp hpowers)
+  refine ⟨fun h ↦ or_iff_not_imp_left.mpr fun hx ↦ ?_, ?_⟩
+  · -- The powers of the unit `x` all have height one, so they form a finite set.
+    have hfin : {v : Kˣ | mulHeight₁ (v : K) ≤ 1}.Finite :=
+      (Northcott.finite_le 1).preimage Units.val_injective.injOn
+    refine Units.isOfFinOrder_val (u := .mk0 x hx) |>.mpr <| finite_powers.mp <| hfin.subset ?_
+    rintro _ ⟨n, rfl⟩
+    simp [mulHeight₁_pow, h]
   · rintro (rfl | hx)
     · exact mulHeight₁_zero
     · exact mulHeight₁_eq_one_of_isOfFinOrder hx
@@ -63,12 +58,8 @@ theorem mulHeight₁_eq_one_iff [Northcott (mulHeight₁ (K := K))] (x : K) :
 finite multiplicative order. -/
 theorem logHeight₁_eq_zero_iff [Northcott (mulHeight₁ (K := K))] (x : K) :
     logHeight₁ x = 0 ↔ x = 0 ∨ IsOfFinOrder x := by
-  constructor
-  · intro hx
-    exact (mulHeight₁_eq_one_iff x).mp <|
-      Real.eq_one_of_pos_of_log_eq_zero (mulHeight₁_pos x) hx
-  · intro hx
-    rw [logHeight₁_eq_log_mulHeight₁, (mulHeight₁_eq_one_iff x).mpr hx, Real.log_one]
+  rw [← mulHeight₁_eq_one_iff, logHeight₁_eq_log_mulHeight₁, Real.log_eq_zero]
+  grind [mulHeight₁_pos]
 
 end Height
 
@@ -76,49 +67,28 @@ namespace NumberField
 
 variable {F : Type*} [Field F] [CharZero F]
 
-open IntermediateField NumberField
-
-/-- The absolute multiplicative height is at least one, including its totalized value on
-nonalgebraic elements. -/
-theorem one_le_absMulHeight₁ (x : F) : 1 ≤ absMulHeight₁ x := by
-  unfold absMulHeight₁
-  split
-  · rename_i hx
-    let : FiniteDimensional ℚ ℚ⟮x⟯ := adjoin.finiteDimensional hx
-    let : NumberField ℚ⟮x⟯ := {}
-    exact Real.one_le_rpow (one_le_mulHeight₁ _) (inv_nonneg.mpr (Nat.cast_nonneg _))
-  · exact le_rfl
-
-/-- The absolute logarithmic height is nonnegative. -/
-theorem zero_le_absLogHeight₁ (x : F) : 0 ≤ absLogHeight₁ x :=
-  Real.log_nonneg (one_le_absMulHeight₁ x)
+open IntermediateField Module
 
 /-- Kronecker's criterion: an algebraic element has absolute multiplicative height one
 exactly when it is zero or has finite multiplicative order. -/
 theorem absMulHeight₁_eq_one_iff {x : F} (hx : IsIntegral ℚ x) :
     absMulHeight₁ x = 1 ↔ x = 0 ∨ IsOfFinOrder x := by
-  let : FiniteDimensional ℚ ℚ⟮x⟯ := adjoin.finiteDimensional hx
-  let : NumberField ℚ⟮x⟯ := {}
-  have hn : (Module.finrank ℚ ℚ⟮x⟯ : ℝ)⁻¹ ≠ 0 := by
-    exact inv_ne_zero (Nat.cast_ne_zero.mpr (Module.finrank_pos.ne'))
-  have hfin : IsOfFinOrder (AdjoinSimple.gen ℚ x) ↔ IsOfFinOrder x := by
-    simpa only [RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass,
-      AdjoinSimple.algebraMap_gen] using
-      ((algebraMap ℚ⟮x⟯ F).injective.isOfFinOrder_iff
-        (f := (algebraMap ℚ⟮x⟯ F).toMonoidHom) (x := AdjoinSimple.gen ℚ x)).symm
-  rw [absMulHeight₁, dite_eq_left hx, ← Real.one_rpow (Module.finrank ℚ ℚ⟮x⟯ : ℝ)⁻¹,
-    Real.rpow_left_inj (mulHeight₁_nonneg _) zero_le_one hn, mulHeight₁_eq_one_iff, hfin]
-  simp only [← Subtype.coe_inj, AdjoinSimple.coe_gen, ZeroMemClass.coe_zero]
+  have : FiniteDimensional ℚ ℚ⟮x⟯ := adjoin.finiteDimensional hx
+  have : NumberField ℚ⟮x⟯ := {}
+  have hd : (finrank ℚ ℚ⟮x⟯ : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr finrank_pos.ne'
+  -- Compute the absolute height in the number field `ℚ⟮x⟯`, where `x` is the image of
+  -- `AdjoinSimple.gen ℚ x`.
+  rw [← AdjoinSimple.algebraMap_gen ℚ x, absMulHeight₁_map, absMulHeight₁_eq_rpow,
+    Real.rpow_inv_eq (mulHeight₁_nonneg _) zero_le_one hd, Real.one_rpow]
+  rw [mulHeight₁_eq_one_iff, map_eq_zero, ← MonoidHom.coe_ofClass,
+    Function.Injective.isOfFinOrder_iff (f := (algebraMap ℚ⟮x⟯ F : ℚ⟮x⟯ →* F))
+      (algebraMap ℚ⟮x⟯ F).injective]
 
 /-- Kronecker's criterion in logarithmic form for an algebraic element. -/
 theorem absLogHeight₁_eq_zero_iff {x : F} (hx : IsIntegral ℚ x) :
     absLogHeight₁ x = 0 ↔ x = 0 ∨ IsOfFinOrder x := by
-  have hpos : 0 < absMulHeight₁ x := zero_lt_one.trans_le (one_le_absMulHeight₁ x)
-  constructor
-  · intro h
-    exact (absMulHeight₁_eq_one_iff hx).mp (Real.eq_one_of_pos_of_log_eq_zero hpos h)
-  · intro h
-    rw [absLogHeight₁, (absMulHeight₁_eq_one_iff hx).mpr h, Real.log_one]
+  rw [← absMulHeight₁_eq_one_iff hx, absLogHeight₁, Real.log_eq_zero]
+  grind [one_le_absMulHeight₁]
 
 /-- An algebraic number that is neither zero nor of finite multiplicative order has absolute
 height strictly greater than one. -/

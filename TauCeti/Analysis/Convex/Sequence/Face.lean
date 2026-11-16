@@ -390,8 +390,6 @@ theorem lt_unitSlope (hf : IsFiniteFace h σ l u) (hh : IsConvexSeq h)
   rw [hu_real, Nat.cast_sub (hui.trans (Nat.le_succ i))] at hs
   push_cast at hs
   have hui_real : (u : ℝ) ≤ i := Nat.cast_le.mpr hui
-  have hui_succ_real : (u : ℝ) < i + 1 := by
-    exact_mod_cast (lt_of_le_of_lt hui (Nat.lt_succ_self i))
   nlinarith
 
 /-- A finite face's left endpoint is the first finite index plus the number of finite unit
@@ -670,12 +668,12 @@ theorem exists_le_mem_supportingFace (hh : IsLowerConvexEnvelope a h)
     rw [← WithTop.coe_untop₀_of_ne_top hak, WithTop.coe_lt_coe] at hlt
     simp only [gap, hak, ↓reduceIte]
     linarith
-  set ε := (Finset.range (n + 1)).inf' Finset.nonempty_range_add_one gap with hε
+  set ε := (Finset.range (n + 1)).inf' Finset.nonempty_range_add_one gap
   have hεpos : 0 < ε := (Finset.lt_inf'_iff _).mpr fun k hk =>
     hgap k (Nat.lt_succ_iff.mp (Finset.mem_range.mp hk))
   -- Tilting the line about the abscissa `n + 1 / 2` gives a convex minorant of the points
   -- lying strictly above the envelope at `n`.
-  set δ := ε / (2 * n + 2) with hδ
+  set δ := ε / (2 * n + 2)
   have hδpos : 0 < δ := div_pos hεpos (by positivity)
   have hδε : δ * (2 * n + 2) = ε := div_mul_cancel₀ ε (by positivity)
   have hminor : (fun k : ℕ => ((c + δ * (2 * n + 1) + (σ - 2 * δ) * k : ℝ) : WithTop ℝ)) ≤ a := by
@@ -686,7 +684,6 @@ theorem exists_le_mem_supportingFace (hh : IsLowerConvexEnvelope a h)
       have hεk : ε ≤ gap k := Finset.inf'_le _ (Finset.mem_range.mpr (Nat.lt_succ_of_le hk))
       simp only [gap, hak, ↓reduceIte] at hεk
       rw [← WithTop.coe_untop₀_of_ne_top hak, WithTop.coe_le_coe]
-      have hk' : (k : ℝ) ≤ n := Nat.cast_le.mpr hk
       nlinarith
     · refine le_trans ?_ (hc k)
       rw [WithTop.coe_le_coe]

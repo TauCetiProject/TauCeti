@@ -33,7 +33,7 @@ groups inside it.
 * `CliffordAlgebra.instNormedRingRealCliffordAlgebra` gives `Cliff(p, q)` a normed-ring structure.
 * `CliffordAlgebra.instNormOneClassRealCliffordAlgebra` proves that the unit has norm one.
 * `CliffordAlgebra.instNormedAlgebraRealCliffordAlgebra` makes it a real normed algebra.
-* `CliffordAlgebra.norm_def` and `CliffordAlgebra.nnnorm_def` characterize the norm by the
+* `CliffordAlgebra.norm_def` and `CliffordAlgebra.nnNorm_def` characterize the norm by the
   left-regular representation.
 * `CliffordAlgebra.instNormedRingComplexCliffordAlgebra`,
   `CliffordAlgebra.instNormOneClassComplexCliffordAlgebra` and
@@ -102,7 +102,7 @@ theorem norm_def {p q : ℕ} (x : CliffordAlgebra (realCliffordForm p q)) :
 
 /-- The nonnegative norm on a real Clifford algebra is the operator nonnegative norm of its
 left-regular matrix in the standard Clifford basis. -/
-theorem nnnorm_def {p q : ℕ} (x : CliffordAlgebra (realCliffordForm p q)) :
+theorem nnNorm_def {p q : ℕ} (x : CliffordAlgebra (realCliffordForm p q)) :
     ‖x‖₊ =
       ‖Algebra.leftMulMatrix (basis (realCliffordForm p q) (Pi.basisFun ℝ (Fin (p + q)))) x‖₊ :=
   rfl

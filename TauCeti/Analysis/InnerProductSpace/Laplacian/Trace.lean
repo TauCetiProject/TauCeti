@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import Mathlib.LinearAlgebra.Trace
-public import TauCeti.Analysis.Calculus.IteratedGradient
+public import TauCeti.Analysis.Calculus.IteratedGradient.Basic
 import Mathlib.Analysis.InnerProductSpace.Trace
 
 /-!

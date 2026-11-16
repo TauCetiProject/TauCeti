@@ -163,7 +163,6 @@ private theorem IsJordanCurve.notMem_model_connectedComponentIn_of_locally_eq_li
     (hline : ∀ z ∈ ball p r, z ∈ C ↔ (v * (z - p)).im = 0) (hs : 0 < s) (hsr : s < r * ‖v‖) :
     p - I * s / v ∉ connectedComponentIn Cᶜ (p + I * s / v) := by
   let d : ℂ := -(I / v)
-  have hd : d ≠ 0 := neg_ne_zero.mpr (div_ne_zero I_ne_zero hv)
   have hcoord (t : ℝ) : v * (d * (t : ℂ) + p - p) = -(I * t) := by
     dsimp [d]
     field_simp [hv]

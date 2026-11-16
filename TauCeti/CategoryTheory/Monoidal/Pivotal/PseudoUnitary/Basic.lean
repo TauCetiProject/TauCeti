@@ -78,6 +78,7 @@ section Pivotal
 
 variable [PivotalCategory C]
 
+omit [MonoidalLinear ℂ C] in
 /-- The defining property of a pseudo-unitary category. -/
 theorem isPseudoUnitary_iff_globalDim_eq :
     IsPseudoUnitary.{w} C ↔ globalDim C = (frobeniusPerronGlobalDim.{w} ℂ C : ℂ) • 𝟙 (𝟙_ C) :=
@@ -140,8 +141,8 @@ end Pivotal
 /-- Pseudo-unitarity of a complex fusion category does not depend on the pivotal structure used
 to define the global dimension. -/
 theorem isPseudoUnitary_pivotalCategory_iff (P Q : PivotalCategory C) :
-    @IsPseudoUnitary.{w} C _ _ _ _ _ _ _ _ _ _ _ _ P ↔
-      @IsPseudoUnitary.{w} C _ _ _ _ _ _ _ _ _ _ _ _ Q := by
+    @IsPseudoUnitary.{w} C _ _ _ _ _ _ _ _ _ _ _ P ↔
+      @IsPseudoUnitary.{w} C _ _ _ _ _ _ _ _ _ _ _ Q := by
   rw [isPseudoUnitary_iff_globalDim_eq, isPseudoUnitary_iff_globalDim_eq,
     globalDim_pivotalCategory_eq C ℂ P Q]
 

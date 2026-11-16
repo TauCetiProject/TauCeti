@@ -62,7 +62,7 @@ namespace IsIrreducibleComposite
 theorem comp' {X Y Z : C} {f : X ⟶ Y} {g : Y ⟶ Z} (hf : IsIrreducibleComposite f)
     (hg : IsIrreducibleComposite g) : IsIrreducibleComposite (f ≫ g) := by
   induction hg with
-  | of hY _ hg => exact .comp ‹_› hf hg
+  | of _ _ hg => exact .comp ‹_› hf hg
   | comp hW _ hg ih => simpa only [Category.assoc] using IsIrreducibleComposite.comp hW ih hg
 
 /-- A composite of irreducible morphisms is radical. -/

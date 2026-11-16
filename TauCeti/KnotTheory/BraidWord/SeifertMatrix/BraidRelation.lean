@@ -127,7 +127,6 @@ private theorem isSeifertLoop_braidSwap (hab : (a.1 : ℕ) ≠ b.1) {c : ℕ × 
   have hB₀ := levelAt_append_cons_cons_cons_length u v b a b
   have hA₀ := levelAt_append_cons_cons_cons_length_add_one u v b a b
   have hB₀' := levelAt_append_cons_cons_cons_length_add_two u v b a b
-  have hlt := (u ++ a :: b :: a :: v).levelAt_ne_none_iff (k := c₁)
   rw [isSeifertLoop_iff]
   simp only [braidSwap, Equiv.swap_apply_def] at hl hb h12 h2 ⊢
   -- case analysis on the positions of the loop and of a letter between its ends

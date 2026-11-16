@@ -20,11 +20,11 @@ namespace MeasureTheory.Measure
 
 /-- The **entropy** `Ent_μ(g) = ∫ g log g dμ - (∫ g dμ) log (∫ g dμ)` of a function `g`, with the
 convention `0 log 0 = 0` of `Real.log`. -/
-noncomputable def entropy {α : Type*} {mα : MeasurableSpace α} (μ : Measure α) (g : α → ℝ) : ℝ :=
+noncomputable def entropy {α : Type*} {_ : MeasurableSpace α} (μ : Measure α) (g : α → ℝ) : ℝ :=
   ∫ x, g x * Real.log (g x) ∂μ - (∫ x, g x ∂μ) * Real.log (∫ x, g x ∂μ)
 
 /-- The defining equation for measure entropy. -/
-theorem entropy_def {α : Type*} {mα : MeasurableSpace α} (μ : Measure α) (g : α → ℝ) :
+theorem entropy_def {α : Type*} {_ : MeasurableSpace α} (μ : Measure α) (g : α → ℝ) :
     entropy μ g =
       ∫ x, g x * Real.log (g x) ∂μ - (∫ x, g x ∂μ) * Real.log (∫ x, g x ∂μ) :=
   (rfl)

@@ -162,7 +162,7 @@ theorem ballPoissonIntegral_eq_zero_of_not_integrable
   have hK := continuous_ballPoissonKernel_on_sphere x
   have hne (y : sphere (0 : EuclideanSpace ℝ (Fin n)) 1) : ballPoissonKernel n x y ≠ 0 := by
     have hy : ‖(y : EuclideanSpace ℝ (Fin n))‖ = 1 := norm_eq_of_mem_sphere y
-    have hn : 0 < n := pos_of_ne_zero_euclideanSpace (norm_ne_zero_iff.mp (hy ▸ one_ne_zero))
+    have hn : 0 < n := pos_of_ne_euclideanSpace (norm_ne_zero_iff.mp (hy ▸ one_ne_zero))
     have hsub : x - y ≠ 0 := fun h ↦ hx (by rw [sub_eq_zero.mp h]; exact hy)
     have hx' : 1 - ‖x‖ ^ 2 ≠ 0 := fun h ↦ hx (by nlinarith [norm_nonneg x])
     have hω := volume_real_unitBall_pos n
@@ -356,8 +356,6 @@ theorem exists_harmonicOnNhd_ball_continuousOn_closedBall_eq
         (∀ z : sphere (0 : EuclideanSpace ℝ (Fin n)) 1, u z = g z) ∧
           EqOn u (ballPoissonIntegral g) (ball 0 1) := by
   classical
-  have hgi : Integrable g volume.toSphere :=
-    hg.integrable_of_hasCompactSupport (.of_compactSpace g)
   let u : EuclideanSpace ℝ (Fin n) → ℝ := fun x ↦
     if hx : x ∈ sphere (0 : EuclideanSpace ℝ (Fin n)) 1 then g ⟨x, hx⟩ else ballPoissonIntegral g x
   have hball : ∀ x ∈ ball (0 : EuclideanSpace ℝ (Fin n)) 1, x ∉ sphere 0 1 := fun x hx hs ↦

@@ -370,7 +370,7 @@ theorem pSectionCosetCard_modEq [Finite G] [Fact p.Prime] {x : G}
   rw [hx] at hu
   have hpg : IsPGroup p (zpowers (⟨pPart p x, hu⟩ : ↥(centralizer ({s} : Set G)))) := by
     refine IsPGroup.of_card_dvd_pow (n := (orderOf x).factorization p) ?_
-    rw [Nat.card_zpowers, orderOf_mk, orderOf_pPart Fact.out (orderOf_pos x).ne']
+    rw [Nat.card_zpowers, orderOf_mk, orderOf_pPart]
   have hmem : ∀ q : ↥(centralizer ({s} : Set G)) ⧸
       (pElementaryOfSylow s P).subgroupOf (centralizer ({s} : Set G)),
       ((⟨pPart p x, hu⟩ : ↥(centralizer ({s} : Set G))) • q = q) ↔

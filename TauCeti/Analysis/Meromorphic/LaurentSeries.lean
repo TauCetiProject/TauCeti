@@ -76,7 +76,6 @@ private theorem single_mul_taylorSeries_eq {N M : ℕ} {h k : 𝕜 → 𝕜} (hh
   -- by continuity.
   have hNM : c ^ M * h =ᶠ[𝓝[≠] a] c ^ N * k := by
     filter_upwards [hhk, self_mem_nhdsWithin] with z hz (hza : z ≠ a)
-    have hz' : z - a ≠ 0 := sub_ne_zero.2 hza
     simp only [Pi.mul_apply, Pi.pow_apply, c]
     field_simp at hz ⊢
     linear_combination hz
@@ -116,7 +115,6 @@ private theorem coe_eq_inv_pow_add_mul {φ : meromorphicGerms 𝕜 a} {N : ℕ} 
       (fun z ↦ ((z - a) ^ (N + M))⁻¹ * ((z - a) ^ M * h z) : 𝕜 → 𝕜) := by
   rw [hφ, Germ.coe_eq]
   filter_upwards [self_mem_nhdsWithin] with z (hz : z ≠ a)
-  have hz' : z - a ≠ 0 := sub_ne_zero.2 hz
   field_simp
   ring
 

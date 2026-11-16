@@ -279,7 +279,7 @@ private theorem cross_upper_entries (h2 : IsRegular (2 : R))
       g 1 6 = g 0 1 * g 1 2 * g 3 6 - g 0 2 * g 3 6 - g 1 2 * g 0 4 + g 0 5 ∧
       g 0 6 = g 0 1 * g 0 5 - g 0 2 * g 0 4 + (g 3 6) ^ 2 := by
   have hz (i j : Fin 7) (hji : j < i) : g i j = 0 := hu.isUpperTriangular hji
-  obtain ⟨h34, h35, h03, h45, h23, h56, h24, h25, h26⟩ := cross_lower_entries h2 hu h
+  obtain ⟨_, h35, h03, h45, h23, _, _, h25, h26⟩ := cross_lower_entries h2 hu h
   have h13 : g 1 3 = 2 * g 0 1 * g 1 2 - 2 * g 0 2 := by
     have he := cross_entry h 1 1 5
     normalize_cross_entry he using hu, hz

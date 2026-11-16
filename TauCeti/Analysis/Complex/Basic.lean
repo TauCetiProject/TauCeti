@@ -25,11 +25,17 @@ pseudo-hyperbolic expression.
 Inversion preserves the open right half-plane: `z⁻¹` has positive real part exactly when `z`
 does (`Complex.inv_re_pos`).
 
+The map `y ↦ r² / y` (inversion in the circle of radius `r` followed by conjugation) satisfies
+`‖conj x - r² / y‖ ≤ 3 ‖x - y‖` for `‖x‖ ≤ r ≤ ‖y‖` (`Complex.norm_conj_sub_sq_div_le`).
+
 The scalar Cayley expression `1 + (z - conj z) / (r - z)` has unit norm for real `r`.
 When `z ≠ r`, it is the quotient `(r - conj z) / (r - z)` of a complex number's conjugate
 by itself; at `z = r`, Lean's totalized inverse gives value one.
 
 Two integers whose images in `ℂ` are at distance less than `1` are equal.
+
+Dividing by a natural number does not increase the norm, so `‖(a z + b) / M‖ ≤ ‖a‖ C + ‖b‖`
+whenever `‖z‖ ≤ C` (`Complex.norm_mul_add_div_natCast_le`).
 -/
 
 public section
@@ -111,10 +117,55 @@ namespace Complex
 
 open ComplexConjugate
 
+/-- The imaginary part of a conjugate product is bounded by the product of the norms. -/
+theorem abs_im_conj_mul_le (u e : ℂ) : |(conj u * e).im| ≤ ‖u‖ * ‖e‖ := by
+  simpa [norm_mul] using abs_im_le_norm (conj u * e)
+
 /-- The norm of `1 - conj w * z` is symmetric in `z` and `w`: conjugation swaps the two
 expressions and preserves norms. -/
 theorem norm_one_sub_conj_mul_comm (z w : ℂ) : ‖1 - conj w * z‖ = ‖1 - conj z * w‖ := by
   rw [← norm_conj]
   simp [mul_comm]
+
+
+/-- For a point `x` of the closed disc of radius `r` and a point `y` outside the open disc, the
+conjugate `conj x` is within `3 ‖x - y‖` of the point `r² / y`, the inversion of `y` in the circle
+of radius `r` followed by conjugation. -/
+theorem norm_conj_sub_sq_div_le {r : ℝ} (x y : ℂ)
+    (hx : ‖x‖ ≤ r) (hy : r ≤ ‖y‖) :
+    ‖conj x - (r : ℂ)^2/y‖ ≤ 3*‖x - y‖ := by
+  have hr : 0 ≤ r := (norm_nonneg x).trans hx
+  rcases eq_or_ne y 0 with rfl | hyne
+  · have hr0 : r = 0 := le_antisymm (by simpa using hy) hr
+    have hx0 : x = 0 := norm_le_zero_iff.mp (hr0 ▸ hx)
+    simp [hr0, hx0]
+  have hy0 : 0 < ‖y‖ := norm_pos_iff.mpr hyne
+  have heq : conj y - (r : ℂ)^2/y = (((‖y‖^2 - r^2 : ℝ) : ℂ))/y := by
+    apply (eq_div_iff hyne).mpr
+    rw [sub_mul, div_mul_cancel₀ _ hyne, conj_mul', ofReal_sub, ofReal_pow, ofReal_pow]
+  have hgap : ‖y‖-r ≤ ‖x - y‖ := by
+    have h := norm_le_norm_add_norm_sub x y
+    linarith
+  have htail : ‖conj y - (r : ℂ)^2/y‖ ≤ 2 * (‖y‖-r) := by
+    rw [heq, norm_div, norm_real, Real.norm_eq_abs,
+      abs_of_nonneg (by nlinarith : 0 ≤ ‖y‖^2 - r^2)]
+    apply (div_le_iff₀ hy0).mpr
+    nlinarith
+  calc
+    _ ≤ ‖conj x - conj y‖ + ‖conj y - (r : ℂ)^2/y‖ := by
+      simpa only [dist_eq_norm] using dist_triangle (conj x) (conj y) ((r : ℂ)^2/y)
+    _ ≤ ‖x - y‖ + 2 * (‖y‖-r) := by
+      rw [← map_sub, norm_conj]
+      exact add_le_add le_rfl htail
+    _ ≤ _ := by linarith
+
+/-- Dividing by a natural number does not increase the norm, so the point `(a z + b) / M` has
+norm at most `‖a‖ C + ‖b‖` when `‖z‖ ≤ C`. For `M = 0` the quotient is `0` by Lean's convention
+`x / 0 = 0`. -/
+theorem norm_mul_add_div_natCast_le (M : ℕ) (a b : ℂ) {z : ℂ} {C : ℝ} (hz : ‖z‖ ≤ C) :
+    ‖(a * z + b) / M‖ ≤ ‖a‖ * C + ‖b‖ := by
+  rw [norm_div, Complex.norm_natCast]
+  exact (div_nat_le_self_of_nonneg (norm_nonneg _) M).trans
+    (norm_add_le_of_le (norm_mul_le_of_le le_rfl hz) le_rfl)
 
 end Complex

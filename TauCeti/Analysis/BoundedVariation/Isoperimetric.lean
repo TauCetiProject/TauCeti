@@ -127,7 +127,7 @@ private theorem div_mul_le_integral_add_setIntegral {w : E → ℝ} (hw : ContDi
     · linarith [(abs_lt.1 (hgrad y hy1 hy2)).2]
     · rw [mem_ball_zero_iff, lt_div_iff₀ (by linarith)] at hz
       linarith
-  have hshell := finrank_mul_rpow_pow_mul_le_volume_real_sub hn hGm.nullMeasurableSet hG hF
+  have hshell := finrank_mul_rpow_pow_mul_le_volume_real_sub hn hG hF
     (div_pos hη (by linarith)) hsub
   rw [← measureReal_sdiff hGF hGm hF, ← hSFG] at hshell
   -- On `S` the gradient has norm at least `1 - ε`, and the calibration bounds its integral.

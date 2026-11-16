@@ -76,9 +76,10 @@ namespace ContinuousLinearMap
 open MeasureTheory Metric Set TauCeti
 open scoped ENNReal NNReal
 
-variable {ι : Type*} [Fintype ι] [Nonempty ι] {E F : Type*} [NormedAddCommGroup E]
+variable {ι : Type*} [Fintype ι] {E F : Type*} [NormedAddCommGroup E]
   [NormedSpace ℝ E] [CompleteSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F] {p : ℝ≥0∞}
 
+omit [CompleteSpace E] in
 /-- **The Calderón–Zygmund theorem**, strong type `(p, p)` for `1 < p < 2`. Let `T` be a bounded
 linear operator on `L²(ℝⁿ)` satisfying the cancellation condition with dilation factor `c`: for
 every `b ∈ L²` vanishing off a closed ball `closedBall y r` with integral zero,
@@ -181,7 +182,7 @@ theorem eLpNorm_le_of_setLIntegral_compl_closedBall_adjoint_le
   have h₃ : 1 / P' = 1 - 1 / P := by
     simp only [P']
     field_simp
-  rwa [LinearIsometryEquiv.enorm_map, ENNReal.toReal_ofReal (by positivity), h₁, h₂, h₃] at h
+  rwa [LinearIsometryEquiv.eNorm_map, ENNReal.toReal_ofReal (by positivity), h₁, h₂, h₃] at h
 
 /-- **The Calderón–Zygmund theorem** for an operator whose adjoint is given by a kernel, strong
 type `(p, p)` for `2 < p < ∞`. Let `T` be a bounded linear operator on `L²(ℝⁿ)` of Hilbert space
@@ -218,7 +219,7 @@ open MeasureTheory Metric Set
 open ContinuousLinearMap (adjoint)
 open scoped ENNReal NNReal
 
-variable {ι : Type*} [Fintype ι] [Nonempty ι] {H K : Type*} [NormedAddCommGroup H]
+variable {ι : Type*} [Fintype ι] {H K : Type*} [NormedAddCommGroup H]
   [InnerProductSpace ℝ H] [CompleteSpace H] [NormedAddCommGroup K] [InnerProductSpace ℝ K]
   [CompleteSpace K] {p : ℝ≥0∞}
 
@@ -267,7 +268,7 @@ theorem exists_eLpNorm_le_of_setLIntegral_compl_closedBall_le (c : ℝ) {M B B' 
       fun T hTM hT _ f => (T.eLpNorm_le_of_setLIntegral_compl_closedBall_le hT hp hp2 f).trans ?_⟩
     gcongr
   · refine ⟨M, hM, fun T hTM _ _ f => ?_⟩
-    rw [← Lp.enorm_def, ← Lp.enorm_def]
+    rw [← Lp.eNorm_def, ← Lp.eNorm_def]
     exact (T.le_opENorm f).trans (by gcongr)
   · have : 0 ≤ 1 - 1 / p.toReal := ENNReal.one_sub_one_div_toReal_nonneg hp.le
     refine ⟨(ENNReal.ofReal p.toReal *

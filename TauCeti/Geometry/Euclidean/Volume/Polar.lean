@@ -254,7 +254,7 @@ theorem volume_inter_ball_eq_lintegral_Ioo_euclideanHausdorffMeasure_inter_spher
   have h := setLIntegral_ball_eq_lintegral_Ioo_setLIntegral_sphere c R
     (measurable_one.indicator ht)
   simp_rw [lintegral_indicator_one ht, Measure.restrict_apply ht] at h
-  rw [measure_congr (hst.inter (ae_eq_refl _)), h]
+  rw [measure_congr (hst.inter Filter.EventuallyEqSet.rfl), h]
   exact lintegral_congr_ae (ae_restrict_of_ae
     ((ae_euclideanHausdorffMeasure_inter_sphere_eq_of_ae_eq c hst).mono fun r hr ↦ hr.symm))
 
@@ -340,7 +340,7 @@ theorem ae_hasDerivAt_measureReal_inter_ball (c : E) {s : Set E}
   have hm : (fun ρ ↦ volume.real (s ∩ ball c ρ)) = fun ρ ↦ ∫ x in ball c ρ, t.indicator 1 x := by
     funext ρ
     rw [integral_indicator_one ht, measureReal_restrict_apply ht,
-      measureReal_congr (hst.inter (ae_eq_refl _))]
+      measureReal_congr (hst.inter Filter.EventuallyEqSet.rfl)]
   filter_upwards [ae_hasDerivAt_setIntegral_ball (f := t.indicator 1) c
       ((locallyIntegrable_const (1 : ℝ)).indicator ht),
     ae_euclideanHausdorffMeasure_inter_sphere_eq_of_ae_eq c hst] with r hr hr'

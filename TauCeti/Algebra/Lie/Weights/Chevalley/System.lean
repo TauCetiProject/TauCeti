@@ -70,9 +70,7 @@ the integral root--coroot span.
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §25.2.
 * R. W. Carter, *Simple Groups of Lie Type*, §4.1.
 
-This supplies the integral Chevalley-basis input to the explicit Chevalley--Demazure construction
-in Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md`, consumed by milestone L0 of the
-`CFSGStatement` roadmap. The existence of a compatible Chevalley system remains downstream.
+This supplies the integral Chevalley-basis input to the explicit Chevalley--Demazure construction.
 -/
 
 public section

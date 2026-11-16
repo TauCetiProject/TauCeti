@@ -81,7 +81,7 @@ theorem tendsto_laurentSeries_iff_coeff {ι : Type*} {l : Filter ι}
         rw [← lt_log_iff_exp_lt (by simp), neg_sub]
         omega
       rw [Filter.mem_map]
-      filter_upwards [hahnSeries_eventually_forall_lt_coeff_eq hlb hcoeff D] with i hi
+      filter_upwards [hahnSeries_eventually_forall_lt_coeff_eq hlb D fun z _ ↦ hcoeff z] with i hi
       apply hγ
       rw [Set.mem_ofPred_eq, Valued.v.restrict_lt_iff_lt_embedding]
       exact lt_of_le_of_lt ((LaurentSeries.valuation_le_iff_coeff_lt_eq_zero K).2
@@ -98,7 +98,7 @@ theorem tendsto_laurentSeries_iff_orderTop_sub {ι : Type*} {l : Filter ι}
   rw [tendsto_laurentSeries_iff_coeff]
   constructor
   · rintro ⟨⟨b, hlb⟩, hcoeff⟩ D
-    filter_upwards [hahnSeries_eventually_forall_lt_coeff_eq hlb hcoeff D] with i hi
+    filter_upwards [hahnSeries_eventually_forall_lt_coeff_eq hlb D fun z _ ↦ hcoeff z] with i hi
     rw [HahnSeries.le_orderTop_iff_forall]
     intro z hz
     rw [HahnSeries.coeff_sub, hi z (WithTop.coe_lt_coe.mp hz), sub_self]

@@ -219,7 +219,7 @@ theorem toContinuousMap_convolution_apply (hs : 1 / 2 < s) (L : E →L[ℂ] E' �
   have hgL : HasSum g (L (toContinuousMap T hs a x) (toContinuousMap T hs b x)) :=
     hL.unique (hgs.hasSum.prod_fiberwise hrow) ▸ hgs.hasSum
   -- Summing over the fibres of `(m, k) ↦ m + k` instead gives the Fourier series of the product.
-  let e : (Σ n : ℤ, ℤ) ≃ ℤ × ℤ :=
+  let e : (Σ _ : ℤ, ℤ) ≃ ℤ × ℤ :=
     { toFun σ := (σ.1 - σ.2, σ.2)
       invFun p := ⟨p.1 + p.2, p.2⟩
       left_inv σ := by simp

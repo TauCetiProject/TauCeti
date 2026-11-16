@@ -11,6 +11,7 @@ public import Mathlib.Analysis.InnerProductSpace.GramMatrix
 public import Mathlib.Algebra.Order.Ring.IsNonarchimedean
 import TauCeti.Analysis.InnerProductSpace.Gram.Hadamard
 import TauCeti.Analysis.InnerProductSpace.Gram.Fischer
+import TauCeti.LinearAlgebra.Matrix.AbsoluteValue
 
 /-!
 # Local bounds for Plücker coordinates
@@ -104,20 +105,7 @@ theorem plucker_le_prod_iSup {R ι : Type*} [CommRing R] [LinearOrder ι] [Finit
     {p : ℕ} (v : AbsoluteValue R ℝ) (hv : IsNonarchimedean v)
     (x : Fin p → ι → R) (s : powersetCard ι p) :
     v (plucker x s) ≤ ∏ i, ⨆ j, v (x i j) := by
-  classical
-  rcases subsingleton_or_nontrivial R with hR | hR
-  · rw [Subsingleton.elim (plucker x s) 0, map_zero]
-    exact Finset.prod_nonneg fun _ _ ↦ Real.iSup_nonneg_of_nonnegHomClass v _
-  rw [plucker_apply, Matrix.det_apply]
-  refine (hv.apply_sum_le_sup Finset.univ_nonempty).trans ?_
-  refine Finset.sup'_le _ _ fun σ _ ↦ ?_
-  have hsign (a : R) : v (σ.sign • a) = v a := by
-    rcases Int.units_eq_one_or σ.sign with h | h <;> simp [h]
-  rw [hsign, map_prod]
-  calc
-    _ ≤ ∏ i, ⨆ j, v (x (σ i) j) :=
-      Finset.prod_le_prod₀ (fun _ _ ↦ v.nonneg _) fun i _ ↦
-        Finite.le_ciSup_of_le _ le_rfl
-    _ = _ := Equiv.prod_comp σ (fun i ↦ ⨆ j, v (x i j))
+  rw [plucker_apply]
+  exact Matrix.abv_det_le_prod_of_le _ hv fun i j ↦ Finite.le_ciSup_of_le _ le_rfl
 
 end AbsoluteValue

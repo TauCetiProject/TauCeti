@@ -26,7 +26,10 @@ In the frame of a nonzero direction `v`, the point `v (s ± h i)` on either side
 
 A rank-one map `L.smulRight w` built from a real functional `L` on `ℂ` splits along the real
 basis `1, I` as `L 1 • re ⊗ w + L I • im ⊗ w`
-(`ContinuousLinearMap.smulRight_eq_re_add_im`).
+(`ContinuousLinearMap.smulRight_eq_re_add_im`). A real-linear map `D` on `ℂ`
+precomposed with multiplication by `c = a + b i`, tested in the Cauchy–Riemann combination with an
+operator `A`, is `D (c * 1) + A D (c * I) = a (D 1 + A D i) + b (D i - A D 1)`
+(`ContinuousLinearMap.apply_mul_one_add_apply_mul_I`).
 -/
 
 public section
@@ -47,6 +50,14 @@ theorem coordinateSwapCLE_apply (z : ℂ) : coordinateSwapCLE z = ⟨z.im, z.re�
 theorem coordinateSwapCLE_symm : coordinateSwapCLE.symm = coordinateSwapCLE := by
   ext z
   rfl
+
+/-- Coordinate interchange sends `1` to `I`. -/
+theorem coordinateSwapCLE_one : coordinateSwapCLE 1 = I :=
+  Complex.ext (by simp) (by simp)
+
+/-- Coordinate interchange sends `I` to `1`. -/
+theorem coordinateSwapCLE_I : coordinateSwapCLE I = 1 :=
+  Complex.ext (by simp) (by simp)
 
 /-- Interchanging the coordinates twice returns the original point. -/
 theorem coordinateSwapCLE_coordinateSwapCLE (z : ℂ) :
@@ -147,5 +158,17 @@ theorem smulRight_eq_re_add_im {F : Type*} [AddCommGroup F] [Module ℝ F] [Topo
   have hv := (L : ℂ →ₗ[ℝ] ℝ).apply_eq_re_smul_one_add_im_smul_I v
   simp only [ContinuousLinearMap.coe_coe, smul_eq_mul] at hv
   simp [hv, add_smul, smul_smul, mul_comm]
+
+/-- A real-linear map `D` on `ℂ`, precomposed with multiplication by `c = a + b i`, tested in the
+Cauchy–Riemann combination: `D (c·1) + A D (c·i) = a (D 1 + A D i) + b (D i - A D 1)`. -/
+theorem apply_mul_one_add_apply_mul_I {F : Type*} [AddCommGroup F] [Module ℝ F]
+    [TopologicalSpace F] (D : ℂ →L[ℝ] F) (A : F →L[ℝ] F) (c : ℂ) :
+    D (c * 1) + A (D (c * Complex.I)) =
+      c.re • (D 1 + A (D Complex.I)) + c.im • (D Complex.I - A (D 1)) := by
+  have h1 : c * 1 = c.re • (1 : ℂ) + c.im • Complex.I := by apply Complex.ext <;> simp
+  have h2 : c * Complex.I = c.re • Complex.I - c.im • (1 : ℂ) := by apply Complex.ext <;> simp
+  rw [h1, h2]
+  simp only [map_add, map_sub, map_smul, smul_add, smul_sub]
+  abel
 
 end ContinuousLinearMap

@@ -22,11 +22,11 @@ section gives.
 
 Two things are worth being precise about. First, this is the root-datum layer and not the group
 layer: nothing here mentions a group scheme, its points, or a finite group, and the equations below
-record on the root datum what milestone L1 states about root subgroups, rather than being those
+record on the root datum what the Steinberg map does to root subgroups, rather than being those
 equations themselves. Second, the composite is *defined* in the order `γ ∘ Frob_q` and then proved
 to agree with `Frob_q ∘ γ`. That agreement,
 `TauCeti.GraphTwistedIndex.datumSteinberg_eq_datumFrobenius_comp`, is the root-datum form of the
-relation "`γ` commutes with `Frob_q`" which L1 requires of the graph-twisted families, and it comes
+relation "`γ` commutes with `Frob_q`" of the graph-twisted families, and it comes
 from the general naturality of scaling among isogenies,
 `TauCeti.RootPairingIsogeny.comp_smulId`, at the endo-isogenies of a single datum.
 
@@ -50,7 +50,7 @@ index under `σ⁻¹`, which is what the pullback of `γ ∘ Frob_q` does.
 
 Taking the inverse costs nothing that `datumGraphAut` was carrying. Its order relation
 `TauCeti.GraphTwistedIndex.datumGraphAut_pow_twistOrder` is the `γ ^ 2 = 1` and `γ ^ 3 = 1` of
-milestone L1, and an inverse has the same order, so the graph factor used here satisfies it too.
+the graph factor, and an inverse has the same order, so the graph factor used here satisfies it too.
 The distinction is invisible on `²Aₙ`, `²Dₙ` and `²E₆`, whose diagram permutation is an involution,
 and is visible only on `³D₄`, where the two orientations name the two trialities.
 
@@ -80,22 +80,20 @@ degenerates to its Frobenius exactly on the nine untwisted families, so `²Aₙ(
   `TauCeti.GraphTwistedIndex.datumSteinberg_eq_datumFrobenius_iff_twistOrder`: it is the plain
   Frobenius exactly on the untwisted families, equivalently exactly when the twist order is one.
 * `TauCeti.GraphTwistedIndex.datumSteinberg_pow_twistOrder_eq_smulId`: its twist-order power is the
-  Frobenius `Frob_(q ^ e)`, which is the order relation of milestone L1 read on the Steinberg map.
+  Frobenius `Frob_(q ^ e)`, which is the order relation of the graph factor read on the Steinberg
+  map.
 
-## Roadmap
+## Related declarations and references
 
-This is the root-datum layer of milestone L1, "ordinary and graph Steinberg maps", of
-`TauCetiRoadmap/CFSGStatement/README.md`, whose table sets the Steinberg map of the untwisted
-families to `Frob_q` and that of `²A`, `²D`, `²E₆` and `³D₄` to `γ ∘ Frob_q`, with required
-relations `γ ^ 2 = 1`, `γ ^ 3 = 1` and "`γ` commutes with `Frob_q`". The order relations are
-already `TauCeti.GraphTwistedIndex.datumGraphAut_pow_twistOrder`; the commutation is proved here.
-What remains of L1 after this file is the group layer: `TauCeti.ValidLieTypeIndex.steinberg` and the
-equations `γ (x_α(t)) = x_{γ α}(t)` and `Frob_q (x_α(t)) = x_α(t ^ q)` on the root subgroups of the
-pinned ambient group, which wait on the carriers of milestone L0. Nothing in this file consumes an
-L0 carrier: it is convention material of the kind milestone I0 pins ahead of L0, of which the
-roadmap says that the pinned diagram permutations "carry the conventions of L1 and L2 and need
-nothing from Layer 9, so they land here rather than waiting on L0". This file stands to the
-graph-twisted families as `TauCeti/GroupTheory/SpecificGroups/CFSG/RootDatumAutomorphism.lean`
+The Steinberg map of the untwisted families is `Frob_q`, and that of `²A`, `²D`, `²E₆` and `³D₄` is
+`γ ∘ Frob_q`, with relations `γ ^ 2 = 1`, `γ ^ 3 = 1` and "`γ` commutes with `Frob_q`". The order
+relations are already `TauCeti.GraphTwistedIndex.datumGraphAut_pow_twistOrder`; the commutation is
+proved here. The group layer, `TauCeti.ValidLieTypeIndex.steinberg` and the equations
+`γ (x_α(t)) = x_{γ α}(t)` and `Frob_q (x_α(t)) = x_α(t ^ q)` on the root subgroups of the pinned
+ambient group, is not built here, and nothing in this file uses a group scheme or its points: the
+pinned diagram permutations and their root-datum shadows are convention material that needs no
+carrier. This file stands to the graph-twisted families as
+`TauCeti/GroupTheory/SpecificGroups/CFSG/RootDatumAutomorphism.lean`
 stands to the graph automorphism alone.
 
 The conventions follow R. Steinberg, *Endomorphisms of linear algebraic groups*, Memoirs AMS 80
@@ -133,8 +131,8 @@ theorem datumSteinberg_def : d.datumSteinberg =
     (RootPairingIsogeny.ofEquiv d.datumGraphAut⁻¹).comp d.1.datumFrobenius := by
   rw [datumSteinberg]
 
-/-- **The graph automorphism commutes with the Frobenius.** This is the second relation milestone
-L1 requires of a graph-twisted Steinberg map, read on the pinned root datum: the composite is the
+/-- **The graph automorphism commutes with the Frobenius.** This is the second relation of the graph
+factor of a graph-twisted Steinberg map, read on the pinned root datum: the composite is the
 same whichever order the two factors are taken in. -/
 theorem datumSteinberg_eq_datumFrobenius_comp :
     d.datumSteinberg =
@@ -191,9 +189,9 @@ theorem datumSteinberg_root_weightMap (k : Fin d.1.dynkinType.numRoots) :
     Int.cast_id]
 
 /-- **The Steinberg map on the Bourbaki-numbered simple roots**, where the induced permutation of
-the root enumeration is the inverse of the index's own pinned diagram permutation. Milestone L1
-states the graph-twisted convention as the motion `α_i ↦ α_{σ i}` of the pinned simple root
-subgroups; pulling back along `γ` turns that into `σ⁻¹` here. -/
+the root enumeration is the inverse of the index's own pinned diagram permutation. The
+graph-twisted convention is the motion `α_i ↦ α_{σ i}` of the pinned simple root subgroups;
+pulling back along `γ` turns that into `σ⁻¹` here. -/
 theorem datumSteinberg_root_weightMap_simpleIndex (i : Fin d.1.rank) :
     d.datumSteinberg.weightMap
         ((d.1.dynkinType.simplyConnectedRootDatum d.1.dynkinType_valid).root
@@ -225,7 +223,7 @@ theorem datumSteinberg_eq_datumFrobenius_iff_twistOrder :
   rw [datumSteinberg_eq_datumFrobenius_iff, ← orderOf_diagramPerm d, orderOf_eq_one_iff]
 
 /-- **The order relation of the graph-twisted Steinberg map**: raising `γ ∘ Frob_q` to the twist
-order returns the Frobenius of the field of that degree, `Frob_(q ^ e)`. It is milestone L1's
+order returns the Frobenius of the field of that degree, `Frob_(q ^ e)`. It is the analogue of
 `γ ^ 2 = 1` and `γ ^ 3 = 1` read on the Steinberg map itself rather than on its graph factor. On an
 untwisted family the twist order is `1` and this is the definition of the Frobenius. -/
 theorem datumSteinberg_pow_twistOrder_eq_smulId :

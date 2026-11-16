@@ -97,9 +97,6 @@ theorem ae_ne_zero (hx : x ≠ 0) :
     (fun n ↦ x.diskFunction (ρ n * AddCircle.toCircle t)) atTop
       (𝓝 ((x : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1))) t))})ᶜ
   set W := {t | (x : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1))) t = 0} ∩ C
-  have hWm : MeasurableSet W :=
-    ((Lp.stronglyMeasurable _).measurable (measurableSet_singleton 0)).inter
-      (measurableSet_toMeasurable _ _).compl
   rw [ae_iff]
   by_contra hZ
   have hW : AddCircle.haarAddCircle W ≠ 0 := by

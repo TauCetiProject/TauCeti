@@ -58,9 +58,6 @@ finite-dimensional triangularizable irreducible module is `V(n)` for exactly one
 
 ## References
 
-This is Layer 0 of `TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`, whose
-`exists_hasPrimitiveVectorWith` is `TauCeti.exists_hasPrimitiveVectorWith`.
-
 * [J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*][humphreys1972],
   §7.2.
 -/

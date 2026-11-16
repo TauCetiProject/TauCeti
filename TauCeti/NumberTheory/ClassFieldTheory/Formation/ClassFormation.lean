@@ -181,7 +181,6 @@ theorem addOrderOf_fundamentalClass (cf : ClassFormation F) (L : NormalLayer G) 
 
 /-! ### The fundamental class in Tate degree two -/
 
--- Specified by the class field theory roadmap, `TauCetiRoadmap/ClassFieldTheory/Suggested.lean`.
 /-- The **Tate fundamental class** of a finite normal layer: the fundamental class `u_{K/F}`
 transported from ordinary `H²(Γ, C)` to Tate cohomology in degree `2` along the canonical
 identification `NormalLayer.tateHIsoH` of positive-degree Tate cohomology with ordinary

@@ -272,11 +272,6 @@ private theorem summable_tateThetaCoefficients_residueClass [CompleteSpace K] (q
     (hq : ‖(q : K)‖ < 1) {d : ℕ} (hd : 0 < d) (a : tateThetaCoefficients q c d) (u : Kˣ) (r : ℤ) :
     Summable (fun k : ℤ ↦ a.val (r + d * k) * ↑(u ^ (r + d * k))) := by
   have hρ : ‖(q : K)‖ ^ d < 1 := pow_lt_one₀ (norm_nonneg _) hq hd.ne'
-  have hA : 0 < ‖(c : K)‖ * ‖(q : K)‖ ^ r * ‖(u : K)‖ ^ d := by
-    have := norm_pos_iff.mpr c.ne_zero
-    have := norm_pos_iff.mpr q.ne_zero
-    have := norm_pos_iff.mpr u.ne_zero
-    positivity
   have hρ' : 0 < ‖(q : K)‖ ^ d := pow_pos (norm_pos_iff.mpr q.ne_zero) d
   refine Summable.of_nat_of_neg_add_one ?_ ?_
   · refine summable_of_norm_succ_le_mul_pow

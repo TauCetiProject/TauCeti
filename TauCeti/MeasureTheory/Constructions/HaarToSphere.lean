@@ -167,7 +167,7 @@ theorem integrable_and_integral_eq_integral_prod_toSphere (f : E → F)
   set k := Module.finrank ℝ E - 1
   have hmp := μ.measurePreserving_homeomorphUnitSphereProd
   have hemb := (homeomorphUnitSphereProd E).measurableEmbedding
-  set g : sphere (0 : E) 1 × Ioi (0 : ℝ) → F := fun p ↦ f ((p.2 : ℝ) • (p.1 : E)) with hg_def
+  set g : sphere (0 : E) 1 × Ioi (0 : ℝ) → F := fun p ↦ f ((p.2 : ℝ) • (p.1 : E))
   have hg : g ∘ homeomorphUnitSphereProd E = f ∘ Subtype.val := by
     funext x
     exact congrArg f (homeomorphUnitSphereProd_snd_smul_fst x)

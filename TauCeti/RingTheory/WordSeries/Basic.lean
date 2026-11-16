@@ -201,7 +201,7 @@ instance : Semiring (WordSeries ι R) where
   · rw [coeff_mul, coeff_monomial, ite_eq_right hw]
     apply Finset.sum_eq_zero
     intro p hp
-    have hp := Finset.mem_mulAntidiagonal.mp hp
+    have := Finset.mem_mulAntidiagonal.mp hp
     by_cases h₁ : p.1 = u <;> by_cases h₂ : p.2 = v <;> simp_all
 
 /-- Multiplying on the left by a monomial prefixes its word and multiplies the coefficient

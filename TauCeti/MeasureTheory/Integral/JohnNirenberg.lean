@@ -140,7 +140,7 @@ private theorem exists_volume_lt_enorm_sub_setAverage_le_tsum [Nonempty ι] [Com
   set C := calderonZygmundCubes g t
   have ht0 : t ≠ 0 := mul_ne_zero two_ne_zero (ENNReal.coe_ne_zero.2 hM0)
   have hgm : AEMeasurable g :=
-    (aemeasurable_indicator_iff hQ).2 (hf.1.sub aestronglyMeasurable_const).enorm
+    (aemeasurable_indicator_iff hQ).2 (hf.1.sub aestronglyMeasurable_const).eNorm
   have hg : ∫⁻ x, g x ≤ M * volume Q := by
     rw [lintegral_indicator hQ, ← measure_mul_setLAverage _ (volume_dyadicCube_ne_top _ _),
       mul_comm]
@@ -173,7 +173,8 @@ private theorem exists_volume_lt_enorm_sub_setAverage_le_tsum [Nonempty ι] [Com
     · exact fun x hx => by simp only [g, indicator_of_mem (hsub q hq hx), Pi.sub_apply]
     · rw [pow_succ, mul_assoc]
   -- Off the cubes, `‖f - c‖ ≤ 2M` almost everywhere.
-  have hae := ae_le_of_forall_notMem_calderonZygmundCubes hgm hg' ht0
+  have hae := ae_le_of_forall_notMem_calderonZygmundCubes hgm le_rfl
+    (by simpa only [ENNReal.rpow_one] using hg') ht0
   -- Hence, up to a null set, the superlevel set at `2ⁿ⁺¹ (N + 1) M` lies in the union over the
   -- cubes `Q'` of the superlevel sets at `2ⁿ⁺¹ N M` of `‖f - f_{Q'}‖` on `Q'`.
   refine ⟨C, hsub, ?_, ?_⟩
@@ -192,7 +193,7 @@ private theorem exists_volume_lt_enorm_sub_setAverage_le_tsum [Nonempty ι] [Com
           calc ‖f x - c‖ₑ
               ≤ ‖f x - ⨍ y in dyadicCube q.1 q.2, f y ∂volume‖ₑ +
                   ‖⨍ y in dyadicCube q.1 q.2, f y ∂volume - c‖ₑ := by
-                simpa only [edist_eq_enorm_sub] using edist_triangle (f x) _ c
+                simpa only [eDist_eq_eNorm_sub] using edist_triangle (f x) _ c
             _ ≤ 2 ^ (n + 1) * N * M + 2 ^ (n + 1) * M := add_le_add hle (havg q hq)
             _ = 2 ^ (n + 1) * ↑(N + 1) * M := by push_cast; ring
         · push Not at hmem
@@ -227,13 +228,13 @@ private theorem volume_lt_enorm_sub_setAverage_le_inv_two_pow [CompleteSpace E]
     have hfconst : f = fun _ => f 0 := funext fun x => congrArg f (Subsingleton.elim x 0)
     rw [hfconst]
     simp only [setAverage_const (volume_dyadicCube_pos _ _).ne'
-      (volume_dyadicCube_ne_top _ _), sub_self, enorm_zero, not_lt_zero, and_false,
+      (volume_dyadicCube_ne_top _ _), sub_self, eNorm_zero, not_lt_zero, and_false,
       ofPred_false, measure_empty, zero_le]
   rcases eq_or_ne M 0 with rfl | hM0
   · -- For `M = 0`, `f` equals its average almost everywhere on `Q₀`.
     have hm : AEMeasurable (fun x => ‖f x - ⨍ y in dyadicCube q₀.1 q₀.2, f y ∂volume‖ₑ)
         (volume.restrict (dyadicCube q₀.1 q₀.2)) :=
-      (hf.1.sub aestronglyMeasurable_const).enorm
+      (hf.1.sub aestronglyMeasurable_const).eNorm
     have h := hM q₀ le_rfl
     rw [ENNReal.coe_zero, nonpos_iff_eq_zero, setLAverage_eq, ENNReal.div_eq_zero_iff,
       or_iff_left (volume_dyadicCube_ne_top _ _), lintegral_eq_zero_iff' hm, Filter.EventuallyEq,
@@ -332,7 +333,7 @@ private theorem ofReal_exp_mul_norm_le_one_add_tsum (σ : ℝ) (n : ℕ) (M : �
     fun h => (norm_nonneg _).not_gt h.2
   rcases eq_or_ne M 0 with rfl | hM0
   · -- For `M = 0`, every term of the sum is `1`.
-    have hv : 0 < ‖v‖ₑ := enorm_pos.2 (norm_pos_iff.1 hy)
+    have hv : 0 < ‖v‖ₑ := eNorm_pos.2 (norm_pos_iff.1 hy)
     simp only [ENNReal.coe_zero, mul_zero, hv, ↓reduceIte, NNReal.coe_zero, Real.exp_zero,
       ENNReal.ofReal_one, one_pow, ENNReal.tsum_const_eq_top_of_ne_zero one_ne_zero, add_top]
     exact le_top
@@ -380,7 +381,7 @@ private theorem setLIntegral_exp_mul_norm_sub_setAverage_volume_le [CompleteSpac
   -- The superlevel sets of `‖f - c‖` at the levels `N 2ⁿ⁺¹ M`.
   set T : ℕ → Set (ι → ℝ) := fun N => {x | 2 ^ (n + 1) * (N : ℝ≥0∞) * M < ‖f x - c‖ₑ}
   have hT (N : ℕ) : NullMeasurableSet (T N) (volume.restrict Q) :=
-    nullMeasurableSet_lt aemeasurable_const (hf.1.sub aestronglyMeasurable_const).enorm
+    nullMeasurableSet_lt aemeasurable_const (hf.1.sub aestronglyMeasurable_const).eNorm
   -- Pointwise, `exp (σ ‖f - c‖) ≤ 1 + ∑_N 1_{T N} ρ^(N + 1)`.
   have hpt (x : ι → ℝ) : ENNReal.ofReal (Real.exp (σ * ‖f x - c‖)) ≤
       1 + ∑' N : ℕ, (T N).indicator (fun _ => r ^ (N + 1)) x := by
@@ -611,7 +612,7 @@ private theorem volume_lt_norm_sub_setAverage_closedBall_le [CompleteSpace E]
     · simp [closedBall_eq_empty.2 hr]
     have hQ (q : ℤ × (ι → ℤ)) : dyadicCube q.1 q.2 = closedBall c r := by
       ext x
-      simp [dyadicCube_eq_pi, mem_closedBall, Subsingleton.elim x c, hr]
+      simp [mem_closedBall, Subsingleton.elim x c, hr]
     simpa only [hQ (0, 0)] using volume_lt_norm_sub_setAverage_le (q₀ := (0, 0)) (f := f)
       (by simpa only [hQ (0, 0)] using hf)
       (fun q _ => by simpa only [hQ q] using hM c r subset_rfl) s
@@ -662,7 +663,7 @@ private theorem setLIntegral_exp_mul_norm_sub_setAverage_closedBall_volume_le [C
     · simp [closedBall_eq_empty.2 hr]
     have hQ (q : ℤ × (ι → ℤ)) : dyadicCube q.1 q.2 = closedBall c r := by
       ext x
-      simp [dyadicCube_eq_pi, mem_closedBall, Subsingleton.elim x c, hr]
+      simp [mem_closedBall, Subsingleton.elim x c, hr]
     simpa only [hQ (0, 0)] using setLIntegral_exp_mul_norm_sub_setAverage_volume_le
       (q₀ := (0, 0)) (f := f) (by simpa only [hQ (0, 0)] using hf)
       (fun q _ => by simpa only [hQ q] using hM c r subset_rfl) hρ
@@ -840,7 +841,7 @@ private theorem setLIntegral_exp_preimage_closedBall_le [Nonempty ι] [CompleteS
   set e := (MeasurableEquiv.toLp 2 (ι → ℝ)).symm
   set r₀ := R / (2 * √(Fintype.card ι : ℝ))
   have hs : 0 < √(Fintype.card ι : ℝ) := sqrt_card_pos
-  have hr₀ : 0 < r₀ := by positivity
+  have _ : 0 < r₀ := by positivity
   -- `f` read in the coordinates `ι → ℝ`.
   set g : (ι → ℝ) → E := fun y => f (toLp 2 y) with hg_def
   have hge : ∀ x, g (e x) = f x := fun x => by
@@ -958,7 +959,6 @@ private theorem setLIntegral_exp_mul_norm_sub_setAverage_ball_le_of_nonneg [None
   set n := Fintype.card ι
   set s := √(n : ℝ)
   set r₀ := R / (2 * s)
-  have hr₀ : 0 < r₀ := by positivity
   set Q := ofLp ⁻¹' closedBall (ofLp x₀) r₀
   set B := ball x₀ r₀
   set ρ := Real.exp (σ * (2 ^ (n + 1) * M'))
@@ -969,9 +969,6 @@ private theorem setLIntegral_exp_mul_norm_sub_setAverage_ball_le_of_nonneg [None
   -- The averages of `f` over `B` and over `Q` differ by at most `sⁿ M'`.
   have hd : ‖(⨍ y in Q, f y ∂μ) - ⨍ y in B, f y ∂μ‖ ≤ s ^ n * M' :=
     norm_setAverage_preimage_closedBall_sub_setAverage_ball_le he hR hf hM hM'
-  have hC₁ : 0 ≤ 1 + 2 * ρ / (2 - ρ) := by
-    have : 0 < 2 - ρ := by linarith
-    positivity
   calc ∫⁻ x in B, ENNReal.ofReal (Real.exp (σ * ‖f x - ⨍ y in B, f y ∂μ‖)) ∂μ
       ≤ ∫⁻ x in B, ENNReal.ofReal (Real.exp (σ * (s ^ n * M'))) *
           ENNReal.ofReal (Real.exp (σ * ‖f x - ⨍ y in Q, f y ∂μ‖)) ∂μ := by
@@ -1100,7 +1097,7 @@ theorem exists_setLIntegral_exp_mul_norm_sub_setAverage_ball_le_of_bmoSeminorm_l
           C * μ (ball x₀ r) := by
   rcases isEmpty_or_nonempty ι with hι | hι
   · -- `ℝⁿ` is a point, so the oscillation vanishes and `C = 1` works.
-    refine ⟨1, one_pos, 1, fun {E} _ _ _ μ _ f M σ hf hM hσ x₀ r => ?_⟩
+    refine ⟨1, one_pos, 1, fun {E} _ _ _ μ _ f M σ _ _ _ x₀ r => ?_⟩
     have hsub : Subsingleton (EuclideanSpace ℝ ι) := inferInstance
     by_cases h0 : μ (ball x₀ r) = 0
     · simp [Measure.restrict_eq_zero.2 h0]
@@ -1111,9 +1108,6 @@ theorem exists_setLIntegral_exp_mul_norm_sub_setAverage_ball_le_of_bmoSeminorm_l
     simp
   obtain ⟨A, hA, C, h⟩ := exists_setLIntegral_exp_mul_norm_sub_setAverage_ball_le (ι := ι)
   refine ⟨A, hA, C, fun {E} _ _ _ μ _ f M σ hf hM hσ x₀ r => ?_⟩
-  have hn : 0 < 2 * √(Fintype.card ι : ℝ) := by
-    have : (0 : ℝ) < Fintype.card ι := by exact_mod_cast Fintype.card_pos
-    positivity
   have hR : 2 * √(Fintype.card ι : ℝ) * r / (2 * √(Fintype.card ι : ℝ)) = r := by
     field_simp
   have := h (x₀ := x₀) (R := 2 * √(Fintype.card ι : ℝ) * r)
@@ -1287,7 +1281,7 @@ theorem MemBMO.memLp_restrict_ball [CompleteSpace E]
   set c := ⨍ y in ball x₀ r, f y ∂μ
   -- `f - c` lies in `Lᵖ(B)` by the `Lᵖ` form of the John–Nirenberg inequality.
   have hsub : MemLp (fun x => f x - c) p (μ.restrict (ball x₀ r)) := by
-    refine (eLpNorm_lt_top_iff_lintegral_rpow_enorm_lt_top hp0 hp
+    refine (eLpNorm_lt_top_iff_lintegral_rpow_eNorm_lt_top hp0 hp
       (hfm.sub aestronglyMeasurable_const)).2 ?_
     obtain ⟨C, hC⟩ := exists_setLAverage_enorm_sub_setAverage_rpow_le_mul_bmoSeminorm_rpow
       (ι := ι) (ENNReal.toReal_pos hp0 hp)

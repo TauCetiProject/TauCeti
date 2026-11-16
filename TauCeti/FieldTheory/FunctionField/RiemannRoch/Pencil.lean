@@ -217,7 +217,6 @@ theorem riemannRochSpace_nsmul_poles_pow_le_pow (hF : IsFunctionField k F)
     exact_mod_cast Module.finrank_pos
   rw [Divisor.poles_pow]
   refine riemannRochSpace_nsmul_nsmul_poles_le_pow hF hex z ?_ n
-  have he' : (2 * genus k F : ℤ) ≤ e := by exact_mod_cast he
   have he₀' : (1 : ℤ) ≤ e := by exact_mod_cast he₀
   have := mul_nonneg (sub_nonneg.2 he₀') (sub_nonneg.2 hdeg)
   nlinarith

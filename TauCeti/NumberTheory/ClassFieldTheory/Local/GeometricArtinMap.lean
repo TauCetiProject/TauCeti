@@ -127,7 +127,7 @@ theorem geometricArtinMap_restrict (L : Type*) [Field L] [Algebra K L] [FiniteDi
     (hσ : (σ : Field.absoluteGaloisGroupAbelianization K) = geometricArtinMap K x) :
     localArtinMap K L ι (Additive.ofMul x) =
       -Additive.ofMul
-        (Abelianization.of (ι.restrictNormalHom (absoluteGaloisGroupRestrictEquiv K σ))) := by
+        (Group.Abelianization.of (ι.restrictNormalHom (absoluteGaloisGroupRestrictEquiv K σ))) := by
   rw [artinMap_restrict K L ι x σ⁻¹ (by rw [QuotientGroup.mk_inv, hσ, geometricArtinMap_apply,
     inv_inv]), map_inv, map_inv, map_inv, ofMul_inv]
 

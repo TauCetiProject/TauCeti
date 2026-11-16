@@ -292,8 +292,8 @@ theorem adjoint_comp_eq_zero_of_comp_adjoint_add_eq_id
 /-- A finite-dimensional linear map is a partial isometry iff the corresponding bounded operator
 is one. -/
 theorem isPartialIsometry_toContinuousLinearMap_iff :
-    have := FiniteDimensional.complete 𝕜 E
-    have := FiniteDimensional.complete 𝕜 F
+    have := FiniteDimensional.completeSpace 𝕜 E
+    have := FiniteDimensional.completeSpace 𝕜 F
     (toContinuousLinearMap u).IsPartialIsometry ↔ u.IsPartialIsometry := by
   intro _ _
   rw [ContinuousLinearMap.isPartialIsometry_iff, isPartialIsometry_iff,
@@ -321,8 +321,8 @@ theorem isPartialIsometry_adjoint_iff : u.adjoint.IsPartialIsometry ↔ u.IsPart
 /-- A finite-dimensional linear map is a partial isometry iff `u† u` is a star projection. -/
 theorem isPartialIsometry_iff_isStarProjection_adjoint_comp_self :
     u.IsPartialIsometry ↔ IsStarProjection (u.adjoint ∘ₗ u) := by
-  have := FiniteDimensional.complete 𝕜 E
-  have := FiniteDimensional.complete 𝕜 F
+  have := FiniteDimensional.completeSpace 𝕜 E
+  have := FiniteDimensional.completeSpace 𝕜 F
   have h : toContinuousLinearMap (u.adjoint ∘ₗ u) =
       (toContinuousLinearMap u)† ∘L toContinuousLinearMap u := by
     rw [← ContinuousLinearMap.coe_inj]
@@ -342,8 +342,8 @@ finite-dimensional inner product spaces is a partial isometry iff it preserves n
 orthogonal complement of its kernel. -/
 theorem isPartialIsometry_iff_norm_map :
     u.IsPartialIsometry ↔ ∀ x ∈ u.kerᗮ, ‖u x‖ = ‖x‖ := by
-  have := FiniteDimensional.complete 𝕜 E
-  have := FiniteDimensional.complete 𝕜 F
+  have := FiniteDimensional.completeSpace 𝕜 E
+  have := FiniteDimensional.completeSpace 𝕜 F
   simp [← isPartialIsometry_toContinuousLinearMap_iff,
     ContinuousLinearMap.isPartialIsometry_iff_norm_map]
 

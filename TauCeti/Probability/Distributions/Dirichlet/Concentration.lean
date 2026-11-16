@@ -60,7 +60,7 @@ theorem tendsto_dirichletMeasure_concentration_atBot [MeasurableSpace ι]
         (dirichletMeasure (fun i ↦ (c : ℝ) * (p.weights i : ℝ))) := by
     let _ := isProbabilityMeasure_dirichletMeasure (ha c)
     apply MemLp.of_bound (by fun_prop) 1
-    filter_upwards [ae_norm_le_one_dirichletMeasure] with x hx
+    filter_upwards [ae_norm_le_one_dirichletMeasure] with x _
     rw [Real.norm_eq_abs, abs_of_nonneg (Real.sqrt_nonneg _)]
     exact Real.sqrt_le_one.2 (by nlinarith [sq_nonneg ‖x‖])
   -- Compare a bounded Lipschitz `f` at `x` with the `x`-weighted average of its values at the

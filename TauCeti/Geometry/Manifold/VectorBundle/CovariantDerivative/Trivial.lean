@@ -70,7 +70,7 @@ instance : ContMDiffCovariantDerivative (trivial (I := I) (M := M) F) n where
   contMDiff.contMDiff {σ} hσ := by
     rw [contMDiffOn_univ] at hσ ⊢
     have hf : ContMDiff I 𝓘(ℝ, F) (n + 1) σ := fun x ↦ by
-      simpa only [contMDiffAt_section, Trivial.fiberBundle_trivializationAt',
+      simpa only [contMDiffAt_section_iff, Trivial.fiberBundle_trivializationAt',
         Trivial.trivialization_apply] using hσ x
     exact hf.contMDiff_totalSpaceMk_mvfderiv
 

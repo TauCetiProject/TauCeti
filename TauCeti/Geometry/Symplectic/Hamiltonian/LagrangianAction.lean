@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.MFDeriv.Variation
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.ParametricFDeriv
-import TauCeti.Analysis.Calculus.ParametricIntegral
+import TauCeti.Analysis.Calculus.ParametricIntegral.Basic
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace

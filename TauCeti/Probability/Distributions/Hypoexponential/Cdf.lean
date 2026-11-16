@@ -101,7 +101,7 @@ open scoped Finset Nat
 theorem cdf_hypoexponentialMeasure_eq_integral (hr : ∀ i, 0 < r i) (x : ℝ) :
     cdf (hypoexponentialMeasure r) x = ∫ t in Iic x, hypoexponentialPDFReal r t := by
   let _ := isProbabilityMeasure_hypoexponentialMeasure hr
-  rw [cdf_eq_real, hypoexponentialMeasure_eq_withDensity hr, measureReal_def,
+  rw [cdf_eq_real, hypoexponentialMeasure_eq_withDensity, measureReal_def,
     withDensity_apply _ measurableSet_Iic]
   simp only [hypoexponentialPDF_eq_ofReal]
   rw [← integral_eq_lintegral_of_nonneg_ae (ae_of_all _ (hypoexponentialPDFReal_nonneg r))

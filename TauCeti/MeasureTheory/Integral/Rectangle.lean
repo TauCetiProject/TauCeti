@@ -33,10 +33,14 @@ a doubly (twisted) periodic map are used.
   equal values on the two opposite sides integrates to zero over the rectangle.
 * `TauCeti.eqOn_zero_of_setIntegral_rect_eq_zero`: a continuous nonnegative function with zero
   integral over a nondegenerate rectangle vanishes on it.
+* `TauCeti.setIntegral_Icc_prod_eq_of_forall_fst_notMem_eq_zero`: a function vanishing outside
+  the strip `[a₁, b₁] × I` has the same integral over every wider strip `[c, d] × I`.
 * `TauCeti.setIntegral_Icc_prod_le_of_comp_add_le`: comparison of the integrals of `f` and `M` over
   a translated strip `[c + L, d + L] × I` and the original one, when `f (z + (L, 0)) ≤ M z`.
 * `TauCeti.setIntegral_rect_le_mul_of_forall_setIntegral_le`: an inequality between the integrals
   over the vertical segments `{s} × [a₂, b₂]` integrates to the same inequality over the rectangle.
+* `TauCeti.setIntegral_rect_le_mul_of_forall_setIntegral_le_symm`: the same for the horizontal
+  segments `[a₁, b₁] × {t}`.
 * `TauCeti.neg_mul_setIntegral_le_setIntegral_deriv_mul`: for a monotone `C¹` profile `β` and
   `-B(t) ≤ f`, the lower bound `-(β(b₁) - β(a₁)) ∫ B ≤ ∫∫ β'(s) f`.
 -/
@@ -127,6 +131,16 @@ theorem eqOn_zero_of_setIntegral_rect_eq_zero {f : ℝ × ℝ → ℝ} (h₁ : a
   rw [← hcl]
   exact hU.of_subset_closure hf.continuousOn continuousOn_const subset_closure subset_rfl
 
+/-- **Enlarging a strip.** If `f` vanishes at every point whose first coordinate lies outside
+`[a₁, b₁]`, then its integrals over a wider strip `[c, d] × I ⊇ [a₁, b₁] × I` and over
+`[a₁, b₁] × I` agree. -/
+theorem setIntegral_Icc_prod_eq_of_forall_fst_notMem_eq_zero {X : Type*} [MeasurableSpace X]
+    {μ : Measure (ℝ × X)} {f : ℝ × X → E} {c d : ℝ} {I : Set X} (hI : MeasurableSet I)
+    (hc : c ≤ a₁) (hd : b₁ ≤ d) (hf : ∀ z : ℝ × X, z.1 ∉ Icc a₁ b₁ → f z = 0) :
+    ∫ z in Icc c d ×ˢ I, f z ∂μ = ∫ z in Icc a₁ b₁ ×ˢ I, f z ∂μ :=
+  setIntegral_eq_of_subset_of_forall_sdiff_eq_zero (measurableSet_Icc.prod hI)
+    (prod_mono (Icc_subset_Icc hc hd) subset_rfl) fun z hz ↦ hf z fun h ↦ hz.2 ⟨h, hz.1.2⟩
+
 /-- **Comparison of integrals over a translated strip.** If `f` at the translate `z + (L, 0)` is
 pointwise bounded by `M z` on the strip `[c, d] × I`, with `M` integrable on that strip and `f`
 integrable on the translated strip `[c + L, d + L] × I`, then the integral of `f` over the
@@ -169,6 +183,24 @@ theorem setIntegral_rect_le_mul_of_forall_setIntegral_le {f g : ℝ × ℝ → �
     exact h.integral_prod_left
   rw [Measure.volume_eq_prod, setIntegral_prod _ hf, setIntegral_prod _ hg, ← integral_const_mul]
   exact setIntegral_mono_on (hslice hf) ((hslice hg).const_mul c) measurableSet_Icc h
+
+/-- **Integrating a slicewise inequality, horizontal slices.** If `f` and `g` are integrable over
+the rectangle `[a₁, b₁] × [a₂, b₂]` and, for every `t ∈ [a₂, b₂]`, the integral of `f (·, t)` over
+`[a₁, b₁]` is at most `c` times that of `g (·, t)`, then the integral of `f` over the rectangle is
+at most `c` times that of `g`. -/
+theorem setIntegral_rect_le_mul_of_forall_setIntegral_le_symm {f g : ℝ × ℝ → ℝ} {c : ℝ}
+    (hf : IntegrableOn f (Icc a₁ b₁ ×ˢ Icc a₂ b₂)) (hg : IntegrableOn g (Icc a₁ b₁ ×ˢ Icc a₂ b₂))
+    (h : ∀ t ∈ Icc a₂ b₂, ∫ s in Icc a₁ b₁, f (s, t) ≤ c * ∫ s in Icc a₁ b₁, g (s, t)) :
+    ∫ z in Icc a₁ b₁ ×ˢ Icc a₂ b₂, f z ≤ c * ∫ z in Icc a₁ b₁ ×ˢ Icc a₂ b₂, g z := by
+  -- Fubini, integrating first over the horizontal segments and then in `t`.
+  have hprod {k : ℝ × ℝ → ℝ} (hk : IntegrableOn k (Icc a₁ b₁ ×ˢ Icc a₂ b₂)) :
+      Integrable k ((volume.restrict (Icc a₁ b₁)).prod (volume.restrict (Icc a₂ b₂))) := by
+    rw [Measure.prod_restrict, ← Measure.volume_eq_prod]
+    exact hk
+  rw [Measure.volume_eq_prod, ← Measure.prod_restrict, integral_prod_symm _ (hprod hf),
+    integral_prod_symm _ (hprod hg), ← integral_const_mul]
+  exact setIntegral_mono_on (hprod hf).integral_prod_right
+    ((hprod hg).integral_prod_right.const_mul c) measurableSet_Icc h
 
 /-- **The integrated curvature bound of a monotone profile.** Let `β` be a monotone `C¹` profile
 and `f` a function continuous on `[a₁, b₁] × [a₂, b₂]` with `-B(t) ≤ f` there, for a function `B`

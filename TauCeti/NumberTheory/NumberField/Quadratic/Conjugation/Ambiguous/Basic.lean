@@ -28,7 +28,7 @@ classes of ramified primes, which in turn satisfy the relation `∏ 𝔭 = (θ)`
 `TauCeti.Multiquadratic.span_singleton_eq_prod_primeFactors` — is
 `NumberField.classGroupMk0_mem_closure_of_map_eq_self` in
 `Quadratic/Conjugation/Ambiguous/Ideal.lean`; the two together give the genus-theoretic bound
-`2-rank ≤ t - 1` of the Multiquadratic roadmap.
+`2-rank ≤ t - 1`.
 
 The proof is Hilbert's Theorem 90 for the quadratic extension `K/ℚ`, in the elementary form
 available for a degree-two extension. If `[σJ] = [J]` then `(x) σJ = (y) J` for nonzero

@@ -398,7 +398,6 @@ private theorem le_toReal_mul_of_tendsto (h : IsEVISolution lam φ u) (hs : 0 < 
     (hD : Tendsto (fun σ ↦ ((φ (u s)).toReal - (φ (u σ)).toReal) / (σ - s)) (𝓝[>] s) (𝓝 D)) :
     D ≤ (descendingSlope φ (u s)).toReal * m := by
   set G := (descendingSlope φ (u s)).toReal
-  have hG0 : 0 ≤ G := ENNReal.toReal_nonneg
   have hm0 : 0 ≤ m := ge_of_tendsto hQ <| by
     filter_upwards [self_mem_nhdsWithin] with σ (hσ : s < σ)
     exact div_nonneg dist_nonneg (sub_pos.2 hσ).le

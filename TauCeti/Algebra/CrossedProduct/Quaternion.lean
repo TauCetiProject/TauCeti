@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.CrossedProduct.BrauerClass
 public import TauCeti.Algebra.CrossedProduct.Quadratic
 public import TauCeti.Algebra.Quaternion.BrauerClass
+import TauCeti.FieldTheory.Galois.SquareRoot
 
 /-!
 # Quaternion algebras as crossed products
@@ -97,9 +98,11 @@ private noncomputable def quadraticQuaternionBasis (hα : α ^ 2 = algebraMap K 
 `K(√a)`.** If `L/K` is Galois with automorphism group of order two and `α ∈ L ∖ K` has
 `α² = a`, the crossed product of `TauCeti.TwoCocycle.quadratic h b` is isomorphic to
 `ℍ[K, a, b]`, by `i ↦ α` and `j ↦ u_σ` for the nontrivial automorphism `σ`. -/
-theorem nonempty_quaternionAlgebra_algEquiv_quadratic [Invertible (2 : K)]
+theorem nonempty_quaternionAlgebra_algEquiv_quadratic
     (hα : α ^ 2 = algebraMap K L a) (hαK : α ∉ Set.range (algebraMap K L)) (b : Kˣ) :
     Nonempty (ℍ[K,(a : K),(b : K)] ≃ₐ[K] CrossedProduct (TwoCocycle.quadratic h b)) := by
+  let : Invertible (2 : K) := invertibleOfNonzero
+    (two_ne_zero_of_sq_eq (Algebra.IsSeparable.isSeparable K α) hα hαK)
   obtain ⟨σ, hσ, -⟩ := (Nat.card_eq_two_iff' (1 : L ≃ₐ[K] L)).1 h
   let f := (quadraticQuaternionBasis h hα hαK b hσ).liftHom
   -- `ℍ[K, a, b]` is simple, so `f` is injective, and both sides have dimension four

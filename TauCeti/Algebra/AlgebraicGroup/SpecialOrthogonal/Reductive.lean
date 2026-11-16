@@ -35,8 +35,6 @@ torus, this makes every standard special orthogonal group reductive away from ch
 
 * `TauCeti.SpecialOrthogonal.eq_augmentation_of_isNormal_of_smoothUnipotent_of_three_le`:
   every normal smooth unipotent closed subgroup of `SOₙ` is trivial when `3 ≤ n`.
-* `TauCeti.SpecialOrthogonal.unipotentRadicalDefiningIdeal_eq_augmentation_of_three_le`:
-  the unipotent radical of `SOₙ` is trivial when `3 ≤ n`.
 * `TauCeti.SpecialOrthogonal.reductiveCommHopfAlgProperty_iff_geometricallyConnected_of_three_le`:
   in these dimensions and characteristics, `SOₙ` is reductive exactly when it is geometrically
   connected.
@@ -96,18 +94,6 @@ theorem eq_augmentation_of_isNormal_of_smoothUnipotent_of_three_le
     k H (Fin n → k) (finiteTypeCoordinateHopfAlgebra k n) e
       (isCompletelyReducible_standardComodule_of_three_le k n hn)
       (isFaithful_standardComodule k n) I hI hU
-
-/-- **The unipotent radical of `SOₙ` is trivial in dimension at least three** over an
-algebraically closed field of characteristic different from two. -/
-theorem unipotentRadicalDefiningIdeal_eq_augmentation_of_three_le
-    (k : Type u) [Field k] [IsAlgClosed k] [NeZero (2 : k)] (n : Nat) (hn : 3 ≤ n) :
-    FiniteTypeCommHopfAlgCat.unipotentRadicalDefiningIdeal
-        (finiteTypeCoordinateHopfAlgebra k n) =
-      HopfIdeal.augmentation k (finiteTypeCoordinateHopfAlgebra k n) := by
-  rw [FiniteTypeCommHopfAlgCat.unipotentRadicalDefiningIdeal_eq_augmentation_iff]
-  intro I hI
-  exact eq_augmentation_of_isNormal_of_smoothUnipotent_of_three_le
-    k n hn I hI.isNormal hI.smoothUnipotent
 
 /-- **In dimension at least three and characteristic different from two, `SOₙ` is reductive
 if and only if it is geometrically connected.**

@@ -180,7 +180,7 @@ private theorem _root_.ContinuousLinearMap.rank_adjoint_le_of_rank_le {T : E →
     (hT : (T : E →ₗ[𝕜] F).rank ≤ n) : (T† : F →ₗ[𝕜] E).rank ≤ n := by
   have : FiniteDimensional 𝕜 (LinearMap.range (T : E →ₗ[𝕜] F)) :=
     Module.rank_lt_aleph0_iff.mp (hT.trans_lt (Cardinal.natCast_lt_aleph0))
-  have hT' := Submodule.closed_of_finiteDimensional (LinearMap.range (T : E →ₗ[𝕜] F))
+  have hT' := Submodule.isClosed_of_finiteDimensional (LinearMap.range (T : E →ₗ[𝕜] F))
   rw [LinearMap.rank, T.range_adjoint_eq_orthogonal_ker_of_isClosed_range hT',
     ← Cardinal.lift_le_nat_iff, (T.orthogonalKerEquivRange hT').toLinearEquiv.lift_rank_eq,
     Cardinal.lift_le_nat_iff]

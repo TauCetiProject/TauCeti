@@ -93,9 +93,7 @@ matrices act as the identity Möbius transformation. -/
 @[simp]
 theorem smul_eq_self_of_mem_center (c : SL(2, R)) (hc : c ∈ Subgroup.center SL(2, R))
     (τ : ℍ) : c • τ = τ := by
-  obtain ⟨r, hr, hrc⟩ := Matrix.SpecialLinearGroup.mem_center_iff.mp hc
-  have hr' : r ^ 2 = 1 := by simpa using hr
-  have hr2 : algebraMap R ℝ r ^ 2 = 1 := by rw [← map_pow, hr', map_one]
+  obtain ⟨r, _, hrc⟩ := Matrix.SpecialLinearGroup.mem_center_iff.mp hc
   -- the representative acts as the nonzero scalar matrix `algebraMap R ℝ r • 1`, which is
   -- the identity Möbius transformation
   have h1 : mapGL ℝ c • τ = (1 : GL (Fin 2) ℝ) • τ := by
@@ -201,7 +199,6 @@ instance : FaithfulSMul PSL(2, ℤ) ℍ where
 -- form first (simp-NF lint)
 theorem glPosToPSL2R_smul (g : GL(2, ℝ)⁺) (τ : ℍ) :
     glPosToPSL2R g • τ = g • τ := by
-  have hg_pos : 0 < ((g : GL (Fin 2) ℝ).det.val : ℝ) := g.property
   rw [glPosToPSL2R_apply, pslMk_smul]
   -- the `SL(2, ℝ)`-action is definitionally the `GL(2, ℝ)`-action of the `mapGL ℝ` image
   change (mapGL ℝ (glPosToSL2R g) : GL (Fin 2) ℝ) • τ = (g : GL (Fin 2) ℝ) • τ

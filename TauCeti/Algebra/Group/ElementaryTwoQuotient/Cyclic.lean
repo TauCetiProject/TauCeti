@@ -25,10 +25,10 @@ case is `G ≃* Multiplicative ℤ`, whose elementary-2 quotient is `2 ^ finrank
 These are the cyclic building blocks promised by the product lemmas of
 `TauCeti.Algebra.Group.ElementaryTwoQuotient.Prod`: a finite abelian group is a product of cyclic
 groups, and combining that decomposition with this file reads off its 2-rank as the number of
-even-order cyclic factors. The multiquadratic roadmap consumes the even case through the torsion
-subgroup of a number field's unit group, which is finite cyclic of even order. The odd-order case
-also holds for any commutative group (no cyclicity), as
-`TauCeti.card_elementaryTwoQuotient_of_odd_card` in `Basic`.
+even-order cyclic factors. The even case applies, for instance, to the torsion subgroup of a
+number field's unit group, which is finite cyclic of even order. The odd-order case also holds for
+any commutative group (no cyclicity), as `TauCeti.card_elementaryTwoQuotient_of_odd_card` in
+`Basic`.
 
 ## Main results
 

@@ -24,9 +24,9 @@ determines the level of its normal form. This file draws the two consequences.
 First, the **image pins the normal form**: a Demushkin group of odd rank `n` whose canonical
 character has image `{±1} × U^(f)` is presented by the level-`f` word, and one whose canonical
 character has image `{±1}` is presented by the level-`∞` word; in relator form, an automorphism of
-the free pro-`2` group carries any relator in `Φ(F)` with that image to that word. The finite-level
-statements carry the hypothesis `3 ≤ n`, because at rank one the image is `{±1}` whatever the
-level, the word `x₁² x₂^{2^f}` reading `x₁²` when the second generator is out of range.
+the free pro-`2` group carries any relator presenting such a group to that word. At rank one the
+image is `{±1}` whatever the level, the word `x₁² x₂^{2^f}` reading `x₁²` when the second generator
+is out of range, so a finite-level image excludes rank one.
 
 Second, the **necessity half of the existence theorem for odd rank** (Labute, Theorem 1 with
 Remark 2; Serre, Theorem 3.2): the image of the canonical character of a Demushkin group of odd
@@ -51,7 +51,7 @@ classification are drawn from the pinned normal form in
 * `TauCeti.freeProP.exists_continuousMulEquiv_apply_eq_demushkinWordTwoOdd_of_range_eq`,
   `TauCeti.freeProP.exists_continuousMulEquiv_apply_eq_demushkinWordTwoOddTop_of_range_eq`: **the
   image pins the normal form, relator form**: an automorphism of the free pro-`2` group on an odd
-  number of generators carries a relator in `Φ(F)` presenting a Demushkin group with image
+  number of generators carries a relator presenting a Demushkin group with image
   `{±1} × U^(f)`, respectively `{±1}`, to the odd word at level `f`, respectively at level `∞`.
 * `TauCeti.IsDemushkin.nonempty_continuousMulEquiv_presentedProP_demushkinWordTwoOdd_of_range_eq`
   and `IsDemushkin.nonempty_continuousMulEquiv_presentedProP_demushkinWordTwoOddTop_of_range_eq`:
@@ -107,24 +107,6 @@ theorem nonempty_continuousMulEquiv_presentedProP_demushkinWordTwoOddTop_of_rang
       (range_demushkinCharacter_eq_unitsPlusMinus_of_equiv_demushkinWordTwoOdd hG hf hn hn₂ e)).symm
       (unitsPlusMinus_ne_zpowers_neg_one f)
 
-/-- **The image `{±1} × U^(f)` pins the odd normal form at level `f`.** A Demushkin group at
-`p = 2` of odd rank `n ≥ 3` whose canonical character has image `{±1} × U^(f)`, with `f ≥ 2`, is
-topologically isomorphic to `⟨x₁, …, x_n ∣ x₁² x₂^{2^f} (x₂, x₃) ⋯ (x_{n-1}, x_n)⟩`. -/
-theorem nonempty_continuousMulEquiv_presentedProP_demushkinWordTwoOdd_of_range_eq
-    (hn : Odd (demushkinRank hG)) (hn₃ : 3 ≤ demushkinRank hG) {f : ℕ} (hf : 2 ≤ f)
-    (hrange : (demushkinCharacter hG).toMonoidHom.range = unitsPlusMinus f) :
-    Nonempty (G ≃ₜ* presentedProP 2 (Fin (demushkinRank hG))
-      {demushkinWordTwoOdd f (demushkinRank hG) (freeProPGen 2 (demushkinRank hG))}) := by
-  rcases hG.exists_continuousMulEquiv_presentedProP_demushkinWordTwoOdd_of_odd_demushkinRank hn with
-    h | ⟨f', hf', ⟨e⟩⟩
-  · obtain ⟨e⟩ := h
-    exact absurd (hrange.symm.trans
-      (range_demushkinCharacter_eq_zpowers_neg_one_of_equiv_demushkinWordTwoOddTop hG hn e))
-      (unitsPlusMinus_ne_zpowers_neg_one f)
-  · obtain rfl := (unitsPlusMinus_inj hf hf').1 <| hrange.symm.trans <|
-      range_demushkinCharacter_eq_unitsPlusMinus_of_equiv_demushkinWordTwoOdd hG hf' hn (by omega) e
-    exact ⟨e⟩
-
 /-- **The necessity half of the existence theorem for odd rank** (Labute, Theorem 1 and Remark 2;
 Serre, Theorem 3.2). The image of the canonical character of a Demushkin group of odd rank is
 `{±1}`, or the rank is at least `3` and the image is `{±1} × U^(f)` for some `f ≥ 2`. -/
@@ -150,6 +132,26 @@ theorem range_demushkinCharacter_eq_zpowers_neg_one_or_unitsPlusMinus_of_odd_dem
     exact Or.inr ⟨hn₂, f, hf,
       range_demushkinCharacter_eq_unitsPlusMinus_of_equiv_demushkinWordTwoOdd hG hf hn hn₂ e⟩
 
+/-- **The image `{±1} × U^(f)` pins the odd normal form at level `f`.** A Demushkin group at
+`p = 2` of odd rank `n` whose canonical character has image `{±1} × U^(f)`, with `f ≥ 2`, is
+topologically isomorphic to `⟨x₁, …, x_n ∣ x₁² x₂^{2^f} (x₂, x₃) ⋯ (x_{n-1}, x_n)⟩`. -/
+theorem nonempty_continuousMulEquiv_presentedProP_demushkinWordTwoOdd_of_range_eq
+    (hn : Odd (demushkinRank hG)) {f : ℕ} (hf : 2 ≤ f)
+    (hrange : (demushkinCharacter hG).toMonoidHom.range = unitsPlusMinus f) :
+    Nonempty (G ≃ₜ* presentedProP 2 (Fin (demushkinRank hG))
+      {demushkinWordTwoOdd f (demushkinRank hG) (freeProPGen 2 (demushkinRank hG))}) := by
+  have hn₃ := (hG.range_demushkinCharacter_eq_zpowers_neg_one_or_unitsPlusMinus_of_odd_demushkinRank
+    hn).resolve_left (fun h => unitsPlusMinus_ne_zpowers_neg_one f (hrange.symm.trans h)) |>.1
+  rcases hG.exists_continuousMulEquiv_presentedProP_demushkinWordTwoOdd_of_odd_demushkinRank hn with
+    h | ⟨f', hf', ⟨e⟩⟩
+  · obtain ⟨e⟩ := h
+    exact absurd (hrange.symm.trans
+      (range_demushkinCharacter_eq_zpowers_neg_one_of_equiv_demushkinWordTwoOddTop hG hn e))
+      (unitsPlusMinus_ne_zpowers_neg_one f)
+  · obtain rfl := (unitsPlusMinus_inj hf hf').1 <| hrange.symm.trans <|
+      range_demushkinCharacter_eq_unitsPlusMinus_of_equiv_demushkinWordTwoOdd hG hf' hn (by omega) e
+    exact ⟨e⟩
+
 end IsDemushkin
 
 end Intrinsic
@@ -160,18 +162,37 @@ variable {n : ℕ}
 
 namespace freeProP
 
-/-- **The image `{±1} × U^(f)` pins the odd normal form at level `f`, relator form.** Let
-`r ∈ Φ(F)` be a relator of the free pro-`2` group on an odd number `n ≥ 3` of generators
-presenting a Demushkin group whose canonical character has image `{±1} × U^(f)`, with `f ≥ 2`.
-Then a continuous automorphism of `F` carries `r` to `x₁² x₂^{2^f} (x₂, x₃) ⋯ (x_{n-1}, x_n)`. -/
+/-- **The necessity half of the existence theorem for odd rank, relator form** (Labute, Theorem 1
+and Remark 2). Let `r` be a relator of the free pro-`2` group on an odd number `n` of generators
+presenting a Demushkin group, so that `r ∈ Φ(F)`. Then the image of the canonical character of
+`⟨X ∣ r⟩` is `{±1}`, or `n ≥ 3` and the image is `{±1} × U^(f)` for some `f ≥ 2`. At rank one the
+image is `{±1}`, the odd word at every level reading `x₁²` there. -/
+theorem range_demushkinCharacter_eq_zpowers_neg_one_or_unitsPlusMinus_of_odd (hn : Odd n)
+    {r : freeProP 2 (Fin n)} (hG : IsDemushkin 2 (presentedProP 2 (Fin n) {r})) :
+    (demushkinCharacter hG).toMonoidHom.range = zpowers (-1 : ℤ_[2]ˣ) ∨
+      3 ≤ n ∧ ∃ f, 2 ≤ f ∧ (demushkinCharacter hG).toMonoidHom.range = unitsPlusMinus f := by
+  have hrank : demushkinRank hG = n := by
+    rw [demushkinRank_presentedProP
+      (Set.singleton_subset_iff.2 hG.mem_proPFrattini_of_presentedProP_singleton) hG, Nat.card_fin]
+  rcases hG.range_demushkinCharacter_eq_zpowers_neg_one_or_unitsPlusMinus_of_odd_demushkinRank
+    (by rwa [hrank]) with h | ⟨hn₃, hf⟩
+  · exact Or.inl h
+  · exact Or.inr ⟨by omega, hf⟩
+
+/-- **The image `{±1} × U^(f)` pins the odd normal form at level `f`, relator form.** Let `r` be a
+relator of the free pro-`2` group on an odd number `n` of generators presenting a Demushkin group
+(so that `r ∈ Φ(F)`) whose canonical character has image `{±1} × U^(f)`, with `f ≥ 2`. Then a
+continuous automorphism of `F` carries `r` to `x₁² x₂^{2^f} (x₂, x₃) ⋯ (x_{n-1}, x_n)`. -/
 theorem exists_continuousMulEquiv_apply_eq_demushkinWordTwoOdd_of_range_eq (hn : Odd n)
-    (hn₃ : 3 ≤ n) {r : freeProP 2 (Fin n)} (hr : r ∈ proPFrattini 2 (freeProP 2 (Fin n)))
-    (hG : IsDemushkin 2 (presentedProP 2 (Fin n) {r})) {f : ℕ} (hf : 2 ≤ f)
+    {r : freeProP 2 (Fin n)} (hG : IsDemushkin 2 (presentedProP 2 (Fin n) {r})) {f : ℕ} (hf : 2 ≤ f)
     (hrange : (demushkinCharacter hG).toMonoidHom.range = unitsPlusMinus f) :
     ∃ e : freeProP 2 (Fin n) ≃ₜ* freeProP 2 (Fin n),
       e r = demushkinWordTwoOdd f n (freeProPGen 2 n) := by
+  have hn₃ := ((range_demushkinCharacter_eq_zpowers_neg_one_or_unitsPlusMinus_of_odd hn
+    hG).resolve_left fun h => unitsPlusMinus_ne_zpowers_neg_one f (hrange.symm.trans h)).1
   obtain ⟨e, he | ⟨f', hf', he⟩⟩ :=
-    exists_continuousMulEquiv_apply_eq_demushkinWordTwoOdd_of_odd hn hr hG
+    exists_continuousMulEquiv_apply_eq_demushkinWordTwoOdd_of_odd hn
+      hG.mem_proPFrattini_of_presentedProP_singleton hG
   · exact absurd (hrange.symm.trans
       (range_demushkinCharacter_eq_zpowers_neg_one_of_equiv_demushkinWordTwoOddTop hG hn
         (presentedProP.congrSingleton e he))) (unitsPlusMinus_ne_zpowers_neg_one f)
@@ -180,18 +201,19 @@ theorem exists_continuousMulEquiv_apply_eq_demushkinWordTwoOdd_of_range_eq (hn :
         (presentedProP.congrSingleton e he)
     exact ⟨e, he⟩
 
-/-- **The image `{±1}` pins the odd normal form at level `f = ∞`, relator form.** Let `r ∈ Φ(F)` be
-a relator of the free pro-`2` group on an odd number `n` of generators presenting a Demushkin group
-whose canonical character has image `{±1}`. Then a continuous automorphism of `F` carries `r` to
-`x₁² (x₂, x₃) ⋯ (x_{n-1}, x_n)`. At rank one this is the relator `x₁²` of `ℤ/2`. -/
+/-- **The image `{±1}` pins the odd normal form at level `f = ∞`, relator form.** Let `r` be a
+relator of the free pro-`2` group on an odd number `n` of generators presenting a Demushkin group
+(so that `r ∈ Φ(F)`) whose canonical character has image `{±1}`. Then a continuous automorphism of
+`F` carries `r` to `x₁² (x₂, x₃) ⋯ (x_{n-1}, x_n)`. At rank one this is the relator `x₁²` of
+`ℤ/2`. -/
 theorem exists_continuousMulEquiv_apply_eq_demushkinWordTwoOddTop_of_range_eq (hn : Odd n)
-    {r : freeProP 2 (Fin n)} (hr : r ∈ proPFrattini 2 (freeProP 2 (Fin n)))
-    (hG : IsDemushkin 2 (presentedProP 2 (Fin n) {r}))
+    {r : freeProP 2 (Fin n)} (hG : IsDemushkin 2 (presentedProP 2 (Fin n) {r}))
     (hrange : (demushkinCharacter hG).toMonoidHom.range = zpowers (-1 : ℤ_[2]ˣ)) :
     ∃ e : freeProP 2 (Fin n) ≃ₜ* freeProP 2 (Fin n),
       e r = demushkinWordTwoOddTop n (freeProPGen 2 n) := by
   obtain ⟨e, he | ⟨f, hf, he⟩⟩ :=
-    exists_continuousMulEquiv_apply_eq_demushkinWordTwoOdd_of_odd hn hr hG
+    exists_continuousMulEquiv_apply_eq_demushkinWordTwoOdd_of_odd hn
+      hG.mem_proPFrattini_of_presentedProP_singleton hG
   · exact ⟨e, he⟩
   rcases le_or_gt n 1 with hn₁ | hn₁
   · -- At rank one the level-`f` word is `x₁²`, the level-`∞` word.
@@ -203,23 +225,6 @@ theorem exists_continuousMulEquiv_apply_eq_demushkinWordTwoOddTop_of_range_eq (h
     exact absurd (hrange.symm.trans
       (range_demushkinCharacter_eq_unitsPlusMinus_of_equiv_demushkinWordTwoOdd hG hf hn hn₂
         (presentedProP.congrSingleton e he))).symm (unitsPlusMinus_ne_zpowers_neg_one f)
-
-/-- **The necessity half of the existence theorem for odd rank, relator form** (Labute, Theorem 1
-and Remark 2). Let `r ∈ Φ(F)` be a relator of the free pro-`2` group on an odd number `n` of
-generators presenting a Demushkin group. Then the image of the canonical character of `⟨X ∣ r⟩` is
-`{±1}`, or `n ≥ 3` and the image is `{±1} × U^(f)` for some `f ≥ 2`. At rank one the image is
-`{±1}`, the odd word at every level reading `x₁²` there. -/
-theorem range_demushkinCharacter_eq_zpowers_neg_one_or_unitsPlusMinus_of_odd (hn : Odd n)
-    {r : freeProP 2 (Fin n)} (hr : r ∈ proPFrattini 2 (freeProP 2 (Fin n)))
-    (hG : IsDemushkin 2 (presentedProP 2 (Fin n) {r})) :
-    (demushkinCharacter hG).toMonoidHom.range = zpowers (-1 : ℤ_[2]ˣ) ∨
-      3 ≤ n ∧ ∃ f, 2 ≤ f ∧ (demushkinCharacter hG).toMonoidHom.range = unitsPlusMinus f := by
-  have hrank : demushkinRank hG = n := by
-    rw [demushkinRank_presentedProP (Set.singleton_subset_iff.2 hr) hG, Nat.card_fin]
-  rcases hG.range_demushkinCharacter_eq_zpowers_neg_one_or_unitsPlusMinus_of_odd_demushkinRank
-    (by rwa [hrank]) with h | ⟨hn₃, hf⟩
-  · exact Or.inl h
-  · exact Or.inr ⟨by omega, hf⟩
 
 end freeProP
 
@@ -242,11 +247,11 @@ theorem exists_isDemushkin_range_demushkinCharacter_eq_iff_of_odd {n : ℕ} (hn 
       (by rwa [hrank]) with h | ⟨hn₃, hf⟩
     · exact Or.inl h
     · exact Or.inr ⟨by omega, hf⟩
-  · rintro (rfl | ⟨hn₃, f, hf, rfl⟩)
+  · rintro (rfl | ⟨hn₃, f, -, rfl⟩)
     · obtain ⟨r, hG, hrank, -, hrange⟩ := exists_isDemushkin_range_eq_zpowers_neg_one_of_odd hn
       exact ⟨r, hG, hrank, hrange _ (hasPrescriptionProperty_demushkinCharacter hG)⟩
     · obtain ⟨r, hG, hrank, -, hrange⟩ :=
-        exists_isDemushkin_range_eq_unitsPlusMinus_of_odd hn hn₃ hf
+        exists_isDemushkin_range_eq_unitsPlusMinus_of_odd hn hn₃
       exact ⟨r, hG, hrank, hrange _ (hasPrescriptionProperty_demushkinCharacter hG)⟩
 
 end TauCeti

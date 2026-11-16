@@ -155,7 +155,7 @@ private theorem exists_section_badParameter_neighborhood {n : ℕ∞ω} {x : M} 
     rintro rfl
     exact absurd hn1 (by simp)
   have hcn : ContMDiffAt (𝓘(ℝ, X).prod 𝓘(ℝ, Λ)) 𝓘(ℝ, F) n c (x, l) :=
-    (contMDiffAt_totalSpace.mp hcont).2
+    (contMDiffAt_totalSpace_iff.mp hcont).2
   have hcd : MDifferentiableAt (𝓘(ℝ, X).prod 𝓘(ℝ, Λ)) 𝓘(ℝ, F) c (x, l) :=
     hcn.mdifferentiableAt hn0
   have hfeq : c ∘ (extChartAt (𝓘(ℝ, X).prod 𝓘(ℝ, Λ)) (x, l)).symm = f := by
@@ -309,7 +309,7 @@ index of the slice linearization. -/
 theorem isMeagre_setOf_not_isRegularSectionParameter :
     IsMeagre {l | ¬ IsRegularSectionParameter (F := F) X b s l} := by
   have hb : ∀ z, s z = 0 → ContinuousAt b z := fun z hz ↦
-    (contMDiffAt_totalSpace.mp (hcont z hz)).1.continuousAt
+    (contMDiffAt_totalSpace_iff.mp (hcont z hz)).1.continuousAt
   have hlocal := fun z : ↥{z | s z = 0} ↦
     exists_section_badParameter_neighborhood (hcont z z.2) (hFred z z.2)
       (htotal z z.2) (hn z z.2) z.2 hb

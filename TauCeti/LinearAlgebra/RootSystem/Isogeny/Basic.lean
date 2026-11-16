@@ -83,9 +83,6 @@ isogeny, which is what makes `f.comp f = smulId P p` the root-datum form of the 
 
 * Schémas en groupes (SGA 3), Exposé XXI, 6.8.
 * R. Steinberg, *Endomorphisms of linear algebraic groups*, Memoirs AMS 80 (1968), §11.
-
-This is a prerequisite for the target "Special isogenies in characteristics two and three" in
-Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md`.
 -/
 
 public section
@@ -464,11 +461,11 @@ def id (P : RootPairing ι R M N) : RootPairingIsogeny P P :=
   ext <;> simp
 
 /-- Composing an isogeny on the left with the identity isogeny does not change it. -/
-@[simp] theorem comp_id (f : RootPairingIsogeny P Q) : comp (id Q) f = f := by
+@[simp] theorem id_comp (f : RootPairingIsogeny P Q) : comp (id Q) f = f := by
   ext <;> simp [comp, id, ofEquiv]
 
 /-- Composing an isogeny on the right with the identity isogeny does not change it. -/
-@[simp] theorem id_comp (f : RootPairingIsogeny P Q) : comp f (id P) = f := by
+@[simp] theorem comp_id (f : RootPairingIsogeny P Q) : comp f (id P) = f := by
   ext <;> simp [comp, id, ofEquiv]
 
 variable {ι₄ M₄ N₄ : Type*} [AddCommGroup M₄] [Module R M₄]
@@ -514,7 +511,7 @@ theorem comp_ofEquiv_smulId_eq_iff [Module.Free ℤ M] [Module.Finite ℤ M]
     apply LinearEquiv.toLinearMap_injective
     exact LinearMap.ext fun x => by simpa using hx x
   · rintro rfl
-    rw [ofEquiv_one, comp_id]
+    rw [ofEquiv_one, id_comp]
 
 end RootPairingIsogeny
 

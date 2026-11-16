@@ -263,8 +263,11 @@ def braidLength (i j : ι) : ℕ :=
 lemma braidLength_self (i : ι) : D.braidLength i i = 1 := by
   simp [braidLength]
 
-lemma braidLength_of_ne_of_le {i j : ι} (hij : i ≠ j) (h : D.cartan i j * D.cartan j i ≤ 3) :
+lemma braidLength_of_le {i j : ι} (h : D.cartan i j * D.cartan j i ≤ 3) :
     D.braidLength i j = coxeterOrder (D.cartan i j * D.cartan j i) := by
+  have hij : i ≠ j := by
+    rintro rfl
+    simp at h
   simp [braidLength, hij, h]
 
 lemma braidLength_of_ne_of_lt {i j : ι} (hij : i ≠ j) (h : 3 < D.cartan i j * D.cartan j i) :
@@ -284,7 +287,7 @@ lemma braidLength_eq_zero_iff {i j : ι} (hij : i ≠ j) :
     simp only [Set.mem_insert_iff, Set.mem_singleton_iff]
     omega
   have := two_le_coxeterOrder hmem
-  rw [D.braidLength_of_ne_of_le hij hle] at h
+  rw [D.braidLength_of_le hle] at h
   omega
 
 end CartanDatum

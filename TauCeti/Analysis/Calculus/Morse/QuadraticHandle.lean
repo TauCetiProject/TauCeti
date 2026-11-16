@@ -238,7 +238,6 @@ private theorem exists_div_eq (hε : 0 < ε) (hμ : Continuous μ) (hμ₀ : ∀
     nlinarith
   obtain ⟨t₀, ⟨ht₀0, ht₀T⟩, ht₀⟩ :=
     intermediate_value_Icc' hT0 hcont.continuousOn ⟨hT, h0.le⟩
-  have ht₀pos : 0 < t₀ := ht₀0.lt_of_ne (by rintro rfl; linarith)
   -- Along `[0, t₀]` the second coordinate runs continuously from `0` to `1`.
   have hden (t : ℝ) (ht : t ∈ Icc 0 t₀) : 0 < σ * (t + ε) + μ (σ * (t + ε) + 2 * t) - ε := by
     have hle : h t₀ ≤ h t := hanti ht.2

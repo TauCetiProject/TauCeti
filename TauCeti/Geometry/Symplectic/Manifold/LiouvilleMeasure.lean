@@ -31,6 +31,15 @@ Liouville measure. Since Hamiltonian flows preserve a symplectic form, this give
 measure
 (`TauCeti.SmoothTwoForm.IsSymplectic.measurePreserving_globalFlowDiffeomorph_liouvilleMeasure`).
 
+The Liouville measure is also natural for embeddings and rescalings. A differentiable measurable
+embedding `f : M → N` between manifolds of the same dimension with `f^* τ = σ`, such as a symplectic
+open embedding, carries the Liouville measure of `σ` to the restriction of that of `τ` to the
+range of `f` (`MeasurableEmbedding.map_liouvilleMeasure`). In particular the
+Liouville measure of the restriction of `σ` to an open subset `U` is the restriction of the
+Liouville measure of `σ` to `U`
+(`TauCeti.SmoothTwoForm.map_liouvilleMeasure_mpullback_subtypeVal`). Replacing `σ` by `r • σ`
+multiplies the Liouville measure by `|r|ⁿ` (`TauCeti.SmoothTwoForm.liouvilleMeasure_smul`).
+
 On a symplectic vector space `(V, σ)`, regarded as a manifold with the constant form `σ`, the
 Liouville measure is the Haar measure normalized by any Darboux basis
 (`TauCeti.SymplecticForm.liouvilleMeasure_constSmooth`). In particular the Liouville measure of
@@ -51,6 +60,14 @@ measure (`TauCeti.SymplecticForm.liouvilleMeasure_constSmooth_stdSymplecticForm`
   Liouville measure of `σ` to that of `τ`.
 * `TauCeti.SmoothTwoForm.IsSymplectic.measurePreserving_globalFlowDiffeomorph_liouvilleMeasure`:
   Liouville's theorem, Hamiltonian flows preserve the Liouville measure.
+* `MeasurableEmbedding.map_liouvilleMeasure`, `MeasurableEmbedding.liouvilleMeasure_eq_comap`:
+  embeddings pulling `τ` back to `σ` carry the Liouville measure of `σ` to the restriction of that
+  of `τ` to their range.
+* `TauCeti.SmoothTwoForm.liouvilleMeasure_mpullback_subtypeVal`,
+  `TauCeti.SmoothTwoForm.map_liouvilleMeasure_mpullback_subtypeVal`: the Liouville measure of the
+  restriction to an open subset is the restricted Liouville measure.
+* `TauCeti.SmoothTwoForm.liouvilleMeasure_smul`: the Liouville measure of `r • σ` is `|r|ⁿ` times
+  that of `σ`.
 * `TauCeti.SymplecticForm.liouvilleMeasure_constSmooth`: the Liouville measure of a constant
   symplectic form is the Haar measure of a Darboux basis.
 * `TauCeti.SymplecticForm.liouvilleMeasure_constSmooth_stdSymplecticForm`: the Liouville measure of
@@ -120,6 +137,13 @@ theorem IsNondegenerate.isOpenPosMeasure_liouvilleMeasure (h : σ.IsNondegenerat
   RoughForm.isOpenPosMeasure_measure ((σ.volumeForm n).isSmoothForm.of_le bot_le)
     (h.volumeForm_apply_ne_zero hn.out)
 
+/-- **Rescaling the form.** Replacing `σ` by `r • σ` multiplies the Liouville measure by `|r|ⁿ`. -/
+@[simp]
+theorem liouvilleMeasure_smul (r : ℝ) (σ : SmoothTwoForm I M) :
+    (r • σ).liouvilleMeasure n = ENNReal.ofReal (|r| ^ n) • σ.liouvilleMeasure n := by
+  rw [liouvilleMeasure_def, liouvilleMeasure_def, volumeForm_smul, Submodule.coe_smul,
+    RoughForm.measure_smul, abs_pow]
+
 end SmoothTwoForm
 
 end TauCeti
@@ -142,6 +166,65 @@ theorem measurePreserving_liouvilleMeasure {σ : SmoothTwoForm I M} {τ : Smooth
   exact Φ.measurePreserving_measure_mpullback hΦ _
 
 end Homeomorph
+
+namespace MeasurableEmbedding
+
+open TauCeti
+
+variable {H' N : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ E H'} [TopologicalSpace N]
+  [ChartedSpace H' N] [IsManifold J ∞ N] [MeasurableSpace N] [BorelSpace N] [LindelofSpace N]
+  {σ : SmoothTwoForm I M} {τ : SmoothTwoForm J N} {f : M → N}
+
+/-- **Embeddings pulling back the two-form carry Liouville measure to Liouville measure.** A
+differentiable measurable embedding `f : M → N` between manifolds of the same dimension with
+`f^* τ = σ`, such as a symplectic open embedding, carries the Liouville measure of `σ` to the
+restriction of the Liouville measure of `τ` to the range of `f`. -/
+theorem map_liouvilleMeasure (hf : MeasurableEmbedding f) (hfd : MDifferentiable I J f)
+    (h : mpullback I J f τ.1 = σ.1) :
+    (σ.liouvilleMeasure n).map f = (τ.liouvilleMeasure n).restrict (range f) := by
+  rw [SmoothTwoForm.liouvilleMeasure_def, SmoothTwoForm.liouvilleMeasure_def,
+    ← SmoothTwoForm.mpullback_volumeForm h]
+  exact hf.map_measure_mpullback hfd _
+
+/-- If a differentiable measurable embedding `f : M → N` between manifolds of the same dimension
+pulls `τ` back to `σ`, then the Liouville measure of `σ` gives a set `s` the Liouville measure of
+`τ` of its image `f '' s`. -/
+theorem liouvilleMeasure_eq_comap (hf : MeasurableEmbedding f) (hfd : MDifferentiable I J f)
+    (h : mpullback I J f τ.1 = σ.1) : σ.liouvilleMeasure n = (τ.liouvilleMeasure n).comap f := by
+  rw [SmoothTwoForm.liouvilleMeasure_def, SmoothTwoForm.liouvilleMeasure_def,
+    ← SmoothTwoForm.mpullback_volumeForm h]
+  exact hf.measure_mpullback hfd _
+
+end MeasurableEmbedding
+
+namespace TauCeti.SmoothTwoForm
+
+open TopologicalSpace
+
+variable {σ : SmoothTwoForm I M} (U : Opens M) [LindelofSpace U]
+
+/-- **The Liouville measure of an open subset.** The Liouville measure of the restriction of `σ` to
+an open subset `U` gives a subset of `U` its Liouville measure in `M`. -/
+theorem liouvilleMeasure_mpullback_subtypeVal :
+    liouvilleMeasure n (SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtype_val σ) =
+      (σ.liouvilleMeasure n).comap Subtype.val := by
+  have hU : MeasurableEmbedding (Subtype.val : U → M) :=
+    MeasurableEmbedding.subtype_coe U.isOpen.measurableSet
+  exact hU.liouvilleMeasure_eq_comap (contMDiff_subtype_val.mdifferentiable one_ne_zero)
+    (SmoothForm.coe_mpullback _ _ _).symm
+
+/-- **Restriction of the Liouville measure to an open subset.** Pushed forward to `M`, the Liouville
+measure of the restriction of `σ` to an open subset `U` is the restriction to `U` of the Liouville
+measure of `σ`. -/
+theorem map_liouvilleMeasure_mpullback_subtypeVal :
+    (liouvilleMeasure n (SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtype_val σ)).map
+      Subtype.val = (σ.liouvilleMeasure n).restrict U := by
+  have hU : MeasurableEmbedding (Subtype.val : U → M) :=
+    MeasurableEmbedding.subtype_coe U.isOpen.measurableSet
+  rw [hU.map_liouvilleMeasure (contMDiff_subtype_val.mdifferentiable one_ne_zero)
+    (SmoothForm.coe_mpullback _ _ _).symm, Subtype.range_coe]
+
+end TauCeti.SmoothTwoForm
 
 namespace TauCeti.SmoothTwoForm.IsSymplectic
 

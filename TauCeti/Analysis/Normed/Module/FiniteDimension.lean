@@ -42,6 +42,8 @@ vectors span those subspaces.
   dimension as the space.
 * `ContinuousLinearMap.surjective_compL_flip_of_injective`: precomposition with an injective map
   into a finite-dimensional space is surjective on continuous duals.
+* `TauCeti.finiteDimensional_of_finite_sphere`: a real normed space with a finite unit sphere is
+  finite-dimensional.
 * `TauCeti.nonempty_continuousLinearEquiv_of_prod_continuousLinearEquiv`: complements of
   the same space in a finite-dimensional space are isomorphic.
 * `TauCeti.exists_isOpen_linearIndependent_span_range_eq`: a continuous family of vectors in
@@ -141,6 +143,20 @@ theorem exists_isOpen_linearIndependent_span_range_eq {X : Type*} [TopologicalSp
     (Set.range_subset_iff.mpr (hYW y hy.1))) ?_
   rw [finrank_span_eq_card hy.2, Fintype.card_fin, hW y hy.1]
 
+/-- A real normed space whose unit sphere is finite is finite-dimensional: the sphere spans the
+space, since every nonzero vector is a multiple of a unit vector. -/
+theorem finiteDimensional_of_finite_sphere {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+    (h : Finite (Metric.sphere (0 : V) 1)) : FiniteDimensional ℝ V := by
+  have hspan : Submodule.span ℝ (Metric.sphere (0 : V) 1) = ⊤ := by
+    refine eq_top_iff.2 fun x _ ↦ ?_
+    by_cases hx : x = 0
+    · simp [hx]
+    have hx' : x = ‖x‖ • (‖x‖⁻¹ • x) := by
+      rw [smul_smul, mul_inv_cancel₀ (norm_ne_zero_iff.2 hx), one_smul]
+    rw [hx']
+    exact Submodule.smul_mem _ _ (Submodule.subset_span (by simp [norm_smul, hx]))
+  exact Module.finite_def.2 (hspan ▸ Submodule.fg_span (Set.toFinite _))
+
 section Star
 
 open scoped ComplexConjugate
@@ -215,7 +231,7 @@ theorem continuous_equivFunL_of_continuous (h : ∀ i, Continuous fun y ↦ B y 
   rw [h', continuous_iff_continuousAt]
   intro y
   have := (B y).finiteDimensional_of_finite
-  have := FiniteDimensional.complete 𝕜 F
+  have := FiniteDimensional.completeSpace 𝕜 F
   exact ContinuousAt.comp (g := ContinuousLinearMap.inverse)
     (contDiffAt_map_inverse (n := 0) (B y).equivFunL.symm).continuousAt
     (continuous_equivFunL_symm_of_continuous h).continuousAt

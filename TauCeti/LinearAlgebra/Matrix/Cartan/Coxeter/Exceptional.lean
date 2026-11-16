@@ -55,7 +55,7 @@ theorem orderOf_coxE6 : orderOf coxE6 = 12 :=
 
 /-- The characteristic polynomial of the `E₆` Coxeter element is `Φ₁₂ Φ₃`. -/
 theorem charpoly_coxE6 : coxE6.charpoly = cyclotomic 12 ℤ * cyclotomic 3 ℤ := by
-  refine charpoly_eq_cyclotomic_mul (by norm_num) (by norm_num) (by norm_num)
+  refine charpoly_eq_cyclotomic_mul (by norm_num)
     (by rw [Fintype.card_fin]; decide) ?_ ?_ ?_ <;>
   simp only [cyclotomic_twelve, cyclotomic_three, map_mul, map_add, map_sub, map_pow,
     aeval_X, map_one] <;>
@@ -72,7 +72,7 @@ theorem orderOf_coxE7 : orderOf coxE7 = 18 :=
 
 /-- The characteristic polynomial of the `E₇` Coxeter element is `Φ₁₈ Φ₂`. -/
 theorem charpoly_coxE7 : coxE7.charpoly = cyclotomic 18 ℤ * cyclotomic 2 ℤ := by
-  refine charpoly_eq_cyclotomic_mul (by norm_num) (by norm_num) (by norm_num)
+  refine charpoly_eq_cyclotomic_mul (by norm_num)
     (by rw [Fintype.card_fin]; decide) ?_ ?_ ?_ <;>
   simp only [cyclotomic_eighteen, cyclotomic_two, map_mul, map_add, map_sub, map_pow,
     aeval_X, map_one] <;>
@@ -89,7 +89,7 @@ theorem orderOf_coxE8 : orderOf coxE8 = 30 :=
 
 /-- The characteristic polynomial of the `E₈` Coxeter element is `Φ₃₀`. -/
 theorem charpoly_coxE8 : coxE8.charpoly = cyclotomic 30 ℤ := by
-  refine charpoly_eq_cyclotomic (by norm_num) (by rw [Fintype.card_fin]; decide) ?_
+  refine charpoly_eq_cyclotomic (by rw [Fintype.card_fin]; decide) ?_
   simp only [cyclotomic_thirty, map_add, map_sub, map_pow, aeval_X, map_one]
   decide +kernel
 
@@ -104,7 +104,7 @@ theorem orderOf_coxF4 : orderOf coxF4 = 12 :=
 
 /-- The characteristic polynomial of the `F₄` Coxeter element is `Φ₁₂`. -/
 theorem charpoly_coxF4 : coxF4.charpoly = cyclotomic 12 ℤ := by
-  refine charpoly_eq_cyclotomic (by norm_num) (by rw [Fintype.card_fin]; decide) ?_
+  refine charpoly_eq_cyclotomic (by rw [Fintype.card_fin]; decide) ?_
   simp only [cyclotomic_twelve, map_add, map_sub, map_pow, aeval_X, map_one]
   decide +kernel
 
@@ -119,7 +119,7 @@ theorem orderOf_coxG2 : orderOf coxG2 = 6 :=
 
 /-- The characteristic polynomial of the `G₂` Coxeter element is `Φ₆`. -/
 theorem charpoly_coxG2 : coxG2.charpoly = cyclotomic 6 ℤ := by
-  refine charpoly_eq_cyclotomic (by norm_num) (by rw [Fintype.card_fin]; decide) ?_
+  refine charpoly_eq_cyclotomic (by rw [Fintype.card_fin]; decide) ?_
   simp only [cyclotomic_six, map_add, map_sub, map_pow, aeval_X, map_one]
   decide +kernel
 

@@ -109,7 +109,7 @@ theorem integral_comp_comm (α : CStarAction G A) {X : Type*} [MeasurableSpace X
 @[simp]
 theorem _root_.IsInvariant.cstarAction_apply_mem_iff {α : CStarAction G A} {s : Set A}
     (hs : IsInvariant (fun g a ↦ α g a) s) (g : G) (a : A) : α g a ∈ s ↔ a ∈ s :=
-  hs.apply_mem_iff (fun g a ↦ α.inv_apply_apply g a) g a
+  hs.apply_mem_iff (α.inv_apply_apply g a)
 
 /-- Point-norm continuity implies joint continuity of the action. -/
 @[fun_prop]

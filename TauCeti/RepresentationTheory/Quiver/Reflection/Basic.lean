@@ -46,9 +46,9 @@ and sources in finite acyclic quivers are proved in
 
 ## References
 
-This file supplies the reflected quiver `Q.reflect i` that the reflection functors map into. See
-Derksen--Weyman, *An Introduction to Quiver Representations*, and Bernstein--Gelfand--Ponomarev,
-*Coxeter functors and Gabriel's theorem*.
+This file supplies the reflected quiver `TauCeti.Quiver.Reflect V i` that the reflection functors
+map into. See Derksen--Weyman, *An Introduction to Quiver Representations*, and
+Bernstein--Gelfand--Ponomarev, *Coxeter functors and Gabriel's theorem*.
 -/
 
 public section
@@ -74,20 +74,20 @@ def Quiver.IsSource (i : V) : Prop :=
 namespace Quiver
 
 /-- The defining condition for a sink. -/
-theorem IsSink_def (i : V) : IsSink i ↔ ∀ b : V, IsEmpty (i ⟶ b) :=
+theorem isSink_iff (i : V) : IsSink i ↔ ∀ b : V, IsEmpty (i ⟶ b) :=
   Iff.rfl
 
 /-- The defining condition for a source. -/
-theorem IsSource_def (i : V) : IsSource i ↔ ∀ a : V, IsEmpty (a ⟶ i) :=
+theorem isSource_iff (i : V) : IsSource i ↔ ∀ a : V, IsEmpty (a ⟶ i) :=
   Iff.rfl
 
 /-- No arrow leaves a sink. -/
 theorem IsSink.isEmpty_hom {i : V} (h : IsSink i) (b : V) : IsEmpty (i ⟶ b) :=
-  (IsSink_def i).mp h b
+  (isSink_iff i).mp h b
 
 /-- No arrow enters a source. -/
 theorem IsSource.isEmpty_hom {i : V} (h : IsSource i) (a : V) : IsEmpty (a ⟶ i) :=
-  (IsSource_def i).mp h a
+  (isSource_iff i).mp h a
 
 /-- A sink carries no loop. -/
 theorem IsSink.isEmpty_hom_self {i : V} (h : IsSink i) : IsEmpty (i ⟶ i) :=
@@ -148,16 +148,12 @@ noncomputable def reflectHom (i a b : V) : Type v :=
 /-- The arrows out of `i` in the reflected quiver are the arrows into `i` in the original one. -/
 @[simp]
 theorem reflectHom_left (i b : V) : reflectHom i i b = (b ⟶ i) := by
-  rcases eq_or_ne b i with rfl | hb
-  · simp [reflectHom]
-  · simp [reflectHom, hb]
+  by_cases hb : b = i <;> simp [reflectHom, hb]
 
 /-- The arrows into `i` in the reflected quiver are the arrows out of `i` in the original one. -/
 @[simp]
 theorem reflectHom_right (i a : V) : reflectHom i a i = (i ⟶ a) := by
-  rcases eq_or_ne a i with rfl | ha
-  · simp [reflectHom]
-  · simp [reflectHom, ha]
+  by_cases ha : a = i <;> simp [reflectHom, ha]
 
 /-- Away from `i` the reflected quiver has the arrows of the original one. -/
 @[simp]
@@ -284,13 +280,15 @@ theorem reflectArrowOfNeOfNe_cast {i a b : V} (ha : a ≠ i) (hb : b ≠ i)
 
 /-- Reflecting at a sink turns it into a source: no arrow of the reflected quiver enters `i`. -/
 theorem IsSink.isSource_reflect {i : V} (h : IsSink i) : @IsSource (Reflect V i) _ i :=
-  (@IsSource_def (Reflect V i) _ i).mpr fun a ↦
-    ⟨fun e ↦ (h.isEmpty_hom a).elim (cast ((hom_reflect i a i).trans (reflectHom_right i a)) e)⟩
+  (@isSource_iff (Reflect V i) _ i).mpr fun a ↦
+    -- an arrow `a ⟶ i` of the reflected quiver is an arrow `i ⟶ a` of `V`
+    (hom_reflect i a i).trans (reflectHom_right i a) ▸ h.isEmpty_hom a
 
 /-- Reflecting at a source turns it into a sink: no arrow of the reflected quiver leaves `i`. -/
 theorem IsSource.isSink_reflect {i : V} (h : IsSource i) : @IsSink (Reflect V i) _ i :=
-  (@IsSink_def (Reflect V i) _ i).mpr fun b ↦
-    ⟨fun e ↦ (h.isEmpty_hom b).elim (cast ((hom_reflect i i b).trans (reflectHom_left i b)) e)⟩
+  (@isSink_iff (Reflect V i) _ i).mpr fun b ↦
+    -- an arrow `i ⟶ b` of the reflected quiver is an arrow `b ⟶ i` of `V`
+    (hom_reflect i i b).trans (reflectHom_left i b) ▸ h.isEmpty_hom b
 
 /-- Reflecting twice at the same vertex restores the original arrow types: reflection at a vertex
 is an involution on quivers. -/
@@ -305,43 +303,47 @@ theorem hom_reflect_reflect (i a b : V) :
     · rw [@reflectHom_of_ne_of_ne (Reflect V i) _ i a b ha hb, @hom_reflect V _ i a b,
         reflectHom_of_ne_of_ne ha hb]
 
-/-! ### Arrow counts in the reflected quiver -/
+/-! ### Arrow counts in the reflected quiver
 
-variable [∀ a b : V, Fintype (a ⟶ b)]
+These are stated for arbitrary `Fintype` instances on the arrow types involved, so they apply
+both to `TauCeti.Quiver.instFintypeReflectHom` and to the instance on the arrows of
+`TauCeti.Quiver.Reflect`, and need no finiteness of the other arrow types. -/
 
 /-- The reflected quiver has as many arrows `i ⟶ b` as the original has arrows `b ⟶ i`. -/
-theorem card_reflectHom_left (i b : V) :
+theorem card_reflectHom_left (i b : V) [Fintype (reflectHom i i b)] [Fintype (b ⟶ i)] :
     Fintype.card (reflectHom i i b) = Fintype.card (b ⟶ i) :=
   Fintype.card_congr' (reflectHom_left i b)
 
 /-- The reflected quiver has as many arrows `a ⟶ i` as the original has arrows `i ⟶ a`. -/
-theorem card_reflectHom_right (i a : V) :
+theorem card_reflectHom_right (i a : V) [Fintype (reflectHom i a i)] [Fintype (i ⟶ a)] :
     Fintype.card (reflectHom i a i) = Fintype.card (i ⟶ a) :=
   Fintype.card_congr' (reflectHom_right i a)
 
 /-- Away from `i` the reflected quiver has the same arrow counts as the original. -/
-theorem card_reflectHom_of_ne_of_ne {i a b : V} (ha : a ≠ i) (hb : b ≠ i) :
+theorem card_reflectHom_of_ne_of_ne {i a b : V} (ha : a ≠ i) (hb : b ≠ i)
+    [Fintype (reflectHom i a b)] [Fintype (a ⟶ b)] :
     Fintype.card (reflectHom i a b) = Fintype.card (a ⟶ b) :=
   Fintype.card_congr' (reflectHom_of_ne_of_ne ha hb)
 
 /-- Reflection at a vertex preserves the number of arrows joining any two vertices in either
 direction: it changes the orientation of the quiver, not its underlying graph. -/
-theorem card_reflectHom_add_swap (i a b : V) :
+theorem card_reflectHom_add_swap (i a b : V) [Fintype (reflectHom i a b)]
+    [Fintype (reflectHom i b a)] [Fintype (a ⟶ b)] [Fintype (b ⟶ a)] :
     Fintype.card (reflectHom i a b) + Fintype.card (reflectHom i b a)
       = Fintype.card (a ⟶ b) + Fintype.card (b ⟶ a) := by
   by_cases ha : a = i
-  · rw [ha, card_reflectHom_left, card_reflectHom_right]
-    omega
+  · subst ha
+    rw [card_reflectHom_left, card_reflectHom_right, Nat.add_comm]
   · by_cases hb : b = i
-    · rw [hb, card_reflectHom_right, card_reflectHom_left]
-      omega
+    · subst hb
+      rw [card_reflectHom_right, card_reflectHom_left, Nat.add_comm]
     · rw [card_reflectHom_of_ne_of_ne ha hb, card_reflectHom_of_ne_of_ne hb ha]
 
 /-- Reflecting at a sink leaves no arrow into `i`. -/
-theorem card_reflectHom_right_of_isSink {i : V} (h : IsSink i) (a : V) :
-    Fintype.card (reflectHom i a i) = 0 := by
-  rw [card_reflectHom_right, Fintype.card_eq_zero_iff]
-  exact h.isEmpty_hom a
+theorem card_reflectHom_right_of_isSink {i : V} (h : IsSink i) (a : V)
+    [Fintype (reflectHom i a i)] : Fintype.card (reflectHom i a i) = 0 :=
+  have := h.isEmpty_hom a
+  Fintype.card_eq_zero_iff.mpr (reflectHom_right i a ▸ this)
 
 end Quiver
 

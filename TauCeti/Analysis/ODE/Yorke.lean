@@ -84,9 +84,9 @@ private theorem exists_lipschitzOnWith_comp (hx : ∀ t ∈ Icc a b, HasDerivAt 
   have hM' (t) (ht : t ∈ Icc a b) : ‖f (x t)‖ ≤ M.toNNReal :=
     (hM t ht).trans (Real.le_coe_toNNReal M)
   have hxlip : LipschitzOnWith M.toNNReal x (Icc a b) :=
-    (convex_Icc a b).lipschitzOnWith_of_nnnorm_hasDerivWithin_le
+    (convex_Icc a b).lipschitzOnWith_of_nnNorm_hasDerivWithin_le
       (fun t ht ↦ (hx t ht).hasDerivWithinAt) fun t ht ↦ by
-        rw [← NNReal.coe_le_coe, coe_nnnorm]
+        rw [← NNReal.coe_le_coe, coe_nnNorm]
         exact hM' t ht
   exact ⟨M.toNNReal, hM', hf.comp hxlip (mapsTo_image _ _)⟩
 

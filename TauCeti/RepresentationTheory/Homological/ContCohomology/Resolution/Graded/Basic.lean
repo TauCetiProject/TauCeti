@@ -114,7 +114,7 @@ noncomputable def gradedResolutionDifferential :
   (resolutionModuleComplex X).directSumDifferential
 
 /-- On degree `n`, the total differential is the original resolution differential `d (n + 1)`. -/
-theorem gradedResolutionDifferential_lof [DecidableEq ℕ] (n : ℕ) (x : (resolutionX X (n + 1)).V) :
+theorem gradedResolutionDifferential_lof (n : ℕ) (x : (resolutionX X (n + 1)).V) :
     X.gradedResolutionDifferential
         (DirectSum.lof R ℕ (fun n ↦ (resolutionX X (n + 1)).V) n x) =
       DirectSum.lof R ℕ (fun n ↦ (resolutionX X (n + 1)).V) (n + 1)
@@ -123,6 +123,26 @@ theorem gradedResolutionDifferential_lof [DecidableEq ℕ] (n : ℕ) (x : (resol
   erw [resolutionModuleComplex_lof, resolutionModuleComplex_lof,
     resolutionModuleComplex_d_apply] at h
   exact h
+
+/-- The total differential has degree one: the degree-`n + 1` component of `d x` is the original
+resolution differential `d (n + 1)` applied to the degree-`n` component of `x`. -/
+@[simp]
+theorem component_gradedResolutionDifferential_succ (n : ℕ) (x : X.gradedResolutionModule) :
+    DirectSum.component R ℕ (fun n ↦ (resolutionX X (n + 1)).V) (n + 1)
+        (X.gradedResolutionDifferential x) =
+      (d X (n + 1)).hom
+        (DirectSum.component R ℕ (fun n ↦ (resolutionX X (n + 1)).V) n x) := by
+  classical
+  induction x using DirectSum.induction_on with
+  | zero => simp
+  | of m y =>
+    rw [← DirectSum.lof_eq_of R, gradedResolutionDifferential_lof, DirectSum.component.of,
+      DirectSum.component.of]
+    by_cases h : m = n
+    · subst h
+      simp
+    · simp [h]
+  | add x y hx hy => simp only [map_add, hx, hy]
 
 /-- The differential of the total shifted resolution squares to zero. -/
 @[simp]
@@ -149,7 +169,7 @@ theorem isInternal_gradedResolutionPiece : DirectSum.IsInternal X.gradedResoluti
 
 /-- In a nonnegative degree, the homogeneous piece is the corresponding resolution term's copy. -/
 @[simp]
-theorem gradedResolutionPiece_natCast [DecidableEq ℕ] (n : ℕ) :
+theorem gradedResolutionPiece_natCast (n : ℕ) :
     X.gradedResolutionPiece n =
       LinearMap.range (DirectSum.lof R ℕ (fun n ↦ (resolutionX X (n + 1)).V) n) :=
   (resolutionModuleComplex X).directSumPiece_natCast n
@@ -160,7 +180,7 @@ theorem gradedResolutionPiece_of_neg {p : ℤ} (hp : p < 0) :
   (resolutionModuleComplex X).directSumPiece_of_neg hp
 
 /-- Inclusion of a resolution term gives an element in its homogeneous degree. -/
-theorem lof_mem_gradedResolutionPiece [DecidableEq ℕ] (n : ℕ) (x : (resolutionX X (n + 1)).V) :
+theorem lof_mem_gradedResolutionPiece (n : ℕ) (x : (resolutionX X (n + 1)).V) :
     DirectSum.lof R ℕ (fun n ↦ (resolutionX X (n + 1)).V) n x ∈ X.gradedResolutionPiece n :=
   (resolutionModuleComplex X).lof_mem_directSumPiece n x
 
@@ -175,7 +195,7 @@ noncomputable def gradedResolutionRepresentation : Representation R G X.gradedRe
   Representation.directSum fun n ↦ (resolutionX X (n + 1)).ρ.toRepresentation
 
 /-- The group action on an included term is its original resolution action. -/
-theorem gradedResolutionRepresentation_lof [DecidableEq ℕ] (n : ℕ) (g : G)
+theorem gradedResolutionRepresentation_lof (n : ℕ) (g : G)
     (x : (resolutionX X (n + 1)).V) :
     X.gradedResolutionRepresentation g
         (DirectSum.lof R ℕ (fun n ↦ (resolutionX X (n + 1)).V) n x) =
@@ -232,10 +252,9 @@ def gradedResolutionAugmentation : X.V →ₗ[R] X.gradedResolutionModule :=
 
 /-- The augmentation includes the constant resolution element in degree zero. -/
 @[simp]
-theorem gradedResolutionAugmentation_apply [h : DecidableEq ℕ] (x : X.V) :
+theorem gradedResolutionAugmentation_apply (x : X.V) :
     X.gradedResolutionAugmentation x =
       DirectSum.lof R ℕ (fun n ↦ (resolutionX X (n + 1)).V) 0 ((d X 0).hom x) := by
-  cases Subsingleton.elim h Nat.decEq
   rfl
 
 /-- The augmentation takes values in degree zero. -/
@@ -308,7 +327,7 @@ noncomputable def gradedResolutionMap (f : TopRep.res (φ : H →* G) X ⟶ Y) :
   CochainComplex.directSumMap (resolutionModuleMap φ f)
 
 /-- The map of a compatible pair acts on an included term by Mathlib's resolution map. -/
-theorem gradedResolutionMap_lof [DecidableEq ℕ] (f : TopRep.res (φ : H →* G) X ⟶ Y) (n : ℕ)
+theorem gradedResolutionMap_lof (f : TopRep.res (φ : H →* G) X ⟶ Y) (n : ℕ)
     (x : (resolutionX X (n + 1)).V) :
     gradedResolutionMap φ f
       (DirectSum.lof R ℕ (fun n ↦ (resolutionX X (n + 1)).V) n x) =
@@ -428,21 +447,28 @@ noncomputable def gradedResolutionProjection : X.gradedResolutionModule →ₗ[R
 
 /-- The projection evaluates a degree-zero term at `1`. -/
 @[simp]
-theorem gradedResolutionProjection_lof_zero [h : DecidableEq ℕ] (F : (resolutionX X 1).V) :
+theorem gradedResolutionProjection_lof_zero (F : (resolutionX X 1).V) :
     X.gradedResolutionProjection (DirectSum.lof R ℕ (fun n ↦ (resolutionX X (n + 1)).V) 0 F) =
       F 1 := by
-  cases Subsingleton.elim h Nat.decEq
   simp [gradedResolutionProjection]
 
 /-- The projection vanishes on the positive-degree terms. -/
 @[simp]
-theorem gradedResolutionProjection_lof_succ [h : DecidableEq ℕ] (n : ℕ)
+theorem gradedResolutionProjection_lof_succ (n : ℕ)
     (F : (resolutionX X (n + 1 + 1)).V) :
     X.gradedResolutionProjection
         (DirectSum.lof R ℕ (fun n ↦ (resolutionX X (n + 1)).V) (n + 1) F) = 0 := by
-  cases Subsingleton.elim h Nat.decEq
   rw [gradedResolutionProjection, LinearMap.comp_apply, DirectSum.component.of,
     dite_eq_right n.succ_ne_zero, map_zero]
+
+/-- The projection only sees the degree-zero component. -/
+theorem gradedResolutionProjection_lof_component_zero [DecidableEq ℕ]
+    (w : X.gradedResolutionModule) :
+    X.gradedResolutionProjection
+        (DirectSum.lof R ℕ (fun n ↦ (resolutionX X (n + 1)).V) 0
+          (DirectSum.component R ℕ (fun n ↦ (resolutionX X (n + 1)).V) 0 w)) =
+      X.gradedResolutionProjection w := by
+  simp [gradedResolutionProjection]
 
 /-- The projection retracts the augmentation. -/
 @[simp↓]
@@ -461,14 +487,14 @@ noncomputable def gradedResolutionHomotopy :
 
 /-- The contracting homotopy vanishes in degree zero. -/
 @[simp]
-theorem gradedResolutionHomotopy_lof_zero [DecidableEq ℕ] (F : (resolutionX X 1).V) :
+theorem gradedResolutionHomotopy_lof_zero (F : (resolutionX X 1).V) :
     X.gradedResolutionHomotopy (DirectSum.lof R ℕ (fun n ↦ (resolutionX X (n + 1)).V) 0 F) =
       0 :=
   Homotopy.directSumHomotopy_lof_zero (resolutionModuleHomotopy X) F
 
 /-- In positive degree, the contracting homotopy evaluates the outermost variable at `1`. -/
 @[simp]
-theorem gradedResolutionHomotopy_lof_succ [DecidableEq ℕ] (n : ℕ)
+theorem gradedResolutionHomotopy_lof_succ (n : ℕ)
     (F : (resolutionX X (n + 1 + 1)).V) :
     X.gradedResolutionHomotopy
         (DirectSum.lof R ℕ (fun n ↦ (resolutionX X (n + 1)).V) (n + 1) F) =
@@ -619,7 +645,7 @@ theorem gradedResolutionTopRep_ρ_apply (g : G) (x : X.gradedResolutionModule) :
   (rfl)
 
 /-- The bundled discrete action on an included term is the original resolution action. -/
-theorem gradedResolutionTopRep_ρ_lof [DecidableEq ℕ] (n : ℕ) (g : G)
+theorem gradedResolutionTopRep_ρ_lof (n : ℕ) (g : G)
     (x : (resolutionX X (n + 1)).V) :
     X.gradedResolutionTopRep.ρ g
       (DirectSum.lof R ℕ (fun n ↦ (resolutionX X (n + 1)).V) n x) =

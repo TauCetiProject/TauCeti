@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Normed.Lp.ProdLp
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.MinMax
-public import TauCeti.Analysis.OperatorIdeal.DecreasingMerge
+public import TauCeti.Order.DecreasingMerge
 
 /-!
 # Approximation numbers of orthogonal block sums

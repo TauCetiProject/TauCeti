@@ -29,10 +29,8 @@ Base change also respects the pointwise group law on homomorphisms of
 `AbelianVariety.Hom.baseChange_one`, `baseChange_mul`, `baseChange_inv`, `baseChange_div` and
 `baseChange_zpow` its unbundled forms.
 
-The construction advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer E's basic
-abelian-variety API and the base-change compatibility required in the end goal. It will allow
-the Jacobian base-change comparison to be stated and used as an isomorphism of abelian varieties,
-not merely as an isomorphism of their underlying schemes.
+This lets base-change comparisons of abelian varieties be stated as isomorphisms of abelian
+varieties, not merely as isomorphisms of their underlying schemes.
 
 No external mathematics is vendored. The implementation uses Mathlib's lax monoidal pullback
 functor on `Over` categories, whose action on group objects proves that the pulled-back morphism

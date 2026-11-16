@@ -34,8 +34,8 @@ the compatibility of the two scalar extensions of the integral form; the reverse
 subspaces complement the substructure, the rational one by Mathlib's
 `LinearMap.BilinForm.isCompl_orthogonal_iff_disjoint` applied over `ℚ`.
 
-This is Layer L1 of `TauCetiRoadmap/HodgeStructures/README.md`, following Voisin, *Hodge Theory and
-Complex Algebraic Geometry I*, §7.1.2, and Peters–Steenbrink, *Mixed Hodge Structures*, §2.
+The treatment follows Voisin, *Hodge Theory and Complex Algebraic Geometry I*, §7.1.2, and
+Peters–Steenbrink, *Mixed Hodge Structures*, §2.
 
 ## Main declarations
 

@@ -54,7 +54,7 @@ section Lift
 
 variable [CommSemiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
 
-variable (f : MultilinearMap R (fun _ : ι ↦ M) N)
+variable (f : MultilinearMap (RingHom.id R) (fun _ : ι ↦ M) N)
 
 /-- A permutation-invariant multilinear map takes the same value on a pure tensor and on each of
 its reorderings, so it is constant on the classes of the defining relation of the symmetric

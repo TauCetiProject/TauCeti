@@ -114,6 +114,20 @@ theorem simpleCorootPoints_eq_torusPoints (i : Fin t.rank) (A : Type v) [CommRin
   apply Subtype.ext
   rw [coe_torusPoints, coe_simpleCorootPoints_eq_kostantTorusMatrix]
 
+/-- A full-weight torus parameter is the product of the corresponding simple coroots in node
+order. This identity holds over every commutative ring, even when restriction does not reach the
+whole actual torus. -/
+theorem torusPoints_fullWeightTorusRestriction_eq_prod_simpleCorootPoints
+    (A : Type v) [CommRing A] (s : Fin t.rank → Aˣ) :
+    D.torusPoints A (D.fullWeightTorusRestriction A s) =
+      (List.ofFn fun i => D.simpleCorootPoints i A (s i)).prod := by
+  have hp : D.fullWeightTorusRestriction A s =
+      (List.ofFn fun i => D.simpleCorootParameter i A (s i)).prod := by
+    ext j
+    simp [List.prod_ofFn, fullWeightTorusRestriction_apply, torusCharacter_def]
+  rw [hp, map_list_prod]
+  simp only [List.map_ofFn, Function.comp_def, simpleCorootPoints_eq_torusPoints]
+
 /-- On a weight vector, the simple coroot acts by its weight's `i`-th coordinate. -/
 @[simp]
 theorem coe_simpleCorootPoints (i : Fin t.rank) (A : Type v) [CommRing A] (s : Aˣ) :

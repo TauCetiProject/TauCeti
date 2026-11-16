@@ -159,7 +159,7 @@ instance instIsMultiplyPretransitivePGL :
     obtain ⟨g, ha⟩ := key a
     obtain ⟨h, hb⟩ := key b
     refine ⟨h * g⁻¹, Function.Embedding.ext fun i ↦ ?_⟩
-    rw [Function.Embedding.smul_apply, mul_smul]
+    rw [smul_apply, mul_smul]
     fin_cases i
     · simp [← ha.1, hb.1]
     · simp [← ha.2.1, hb.2.1]

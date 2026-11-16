@@ -358,7 +358,7 @@ private def zerothHomotopyComplUnique :
   uniq := by
     rintro ⟨c, hc⟩
     obtain ⟨y, rfl⟩ := ZerothHomotopy.mk_surjective c
-    exact Subtype.ext ((zerothHomotopy_mk_eq_or_eq_neg_of_finrank_eq_two hE hx y).resolve_left hc)
+    exact Subtype.ext ((zerothHomotopy_mk_eq_or_eq_neg hx y).resolve_left hc)
 
 /-- **The first homology of a circle through its Mayer–Vietoris sequence.** For a point `p` of
 the unit circle `S` of a two-dimensional real inner product space, the Mayer–Vietoris connecting

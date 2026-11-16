@@ -9,7 +9,7 @@ public import Mathlib.Analysis.CStarAlgebra.GelfandDuality
 public import TauCeti.RingTheory.Jacobson.NonUnital
 
 import TauCeti.Analysis.Normed.Algebra.Jacobson
-import TauCeti.Analysis.Normed.Algebra.Unitization
+import TauCeti.Analysis.Normed.Algebra.Unitization.Basic
 import TauCeti.RingTheory.Jacobson.Spectrum
 
 /-!

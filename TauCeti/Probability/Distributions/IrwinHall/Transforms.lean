@@ -87,12 +87,14 @@ theorem mgf_id_irwinHallMeasure (n : ℕ) {t : ℝ} (ht : t ≠ 0) :
     (AddMonoidHom.id ℝ) measurable_id n t
   simpa [irwinHallMeasure_def, mgf_id_uniformMeasure zero_lt_one ht] using hpower
 
-/-- The Irwin–Hall cgf is `n * log ((exp t - 1) / t)` away from zero.
-At zero the probability-measure cgf identity gives zero. -/
+/-- The Irwin–Hall cgf is `n * log ((exp t - 1) / t)`.
+At zero both sides are zero. -/
 @[simp]
-theorem cgf_id_irwinHallMeasure (n : ℕ) {t : ℝ} (ht : t ≠ 0) :
+theorem cgf_id_irwinHallMeasure (n : ℕ) (t : ℝ) :
     cgf id (irwinHallMeasure n) t = n * log ((exp t - 1) / t) := by
-  rw [cgf, mgf_id_irwinHallMeasure n ht, log_pow]
+  obtain rfl | ht := eq_or_ne t 0
+  · simp
+  · rw [cgf, mgf_id_irwinHallMeasure n ht, log_pow]
 
 /-- Away from zero, the characteristic function is the `n`th power of the unit-uniform
 characteristic function. At zero it is one. -/

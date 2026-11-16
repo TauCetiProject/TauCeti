@@ -67,7 +67,7 @@ theorem coeff_reductum (p : R[X]) (k i : ℕ) :
 theorem reductum_eq_sum (p : R[X]) (k : ℕ) :
     p.reductum k = ∑ i ∈ Finset.range k, monomial i (p.coeff i) := by
   ext i
-  simp [coeff_monomial]
+  simp [Finsupp.single_apply]
 
 /-- The reductum at cutoff zero is zero. -/
 @[simp]

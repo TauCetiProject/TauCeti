@@ -183,7 +183,7 @@ theorem surjective_smul_of_le_nonvanishingLocus {U : X.Opens} {s : Γ(M, U)}
   intro m
   -- Near each point `x` of `U`, the germ of `m` is a multiple of the germ of `s`, so `m` is a
   -- multiple `r x • s` on a neighbourhood `N x ⊆ U` of `x`.
-  have hloc (x : U) : ∃ (N : X.Opens) (hxN : (x : X) ∈ N) (k : N ⟶ U) (r : Γ(X, N)),
+  have hloc (x : U) : ∃ (N : X.Opens) (_ : (x : X) ∈ N) (k : N ⟶ U) (r : Γ(X, N)),
       r • M.presheaf.map k.op s = M.presheaf.map k.op m := by
     have hs := (mem_nonvanishingLocus_iff_of_mem x.2).mp (h x.2)
     obtain ⟨a, ha⟩ := (Submodule.span_singleton_eq_top_iff _ _).mp hs (M.presheaf.germ U x x.2 m)

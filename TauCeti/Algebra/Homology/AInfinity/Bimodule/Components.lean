@@ -94,8 +94,8 @@ theorem ext_b {MM NN : AInfinityBimodule AA BB M} (hG : MM.grading = NN.grading)
 /-- The unsuspended bimodule operation. Evaluation is curried as `m i j x a b`, while the
 suspension uses the input order of the left tuple, the module input, and the right tuple. -/
 noncomputable def m (MM : AInfinityBimodule AA BB M) (i j : ℕ) :
-    M →ₗ[R] MultilinearMap R (fun _ : Fin i ↦ A)
-      (MultilinearMap R (fun _ : Fin j ↦ B) M) :=
+    M →ₗ[R] MultilinearMap (RingHom.id R) (fun _ : Fin i ↦ A)
+      (MultilinearMap (RingHom.id R) (fun _ : Fin j ↦ B) M) :=
   unsuspend AA.grading MM.grading BB.grading i j (MM.b i j)
 
 /-- Unsuspension evaluates the suspended component on the input Koszul twists. -/

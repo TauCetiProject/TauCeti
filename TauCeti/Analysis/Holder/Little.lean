@@ -246,7 +246,7 @@ theorem exists_contDiff_lipschitzWith_norm_sub_lt (f : HolderSpace α E Y)
   have hη : 0 < ε / 4 := by positivity
   obtain ⟨δ₀, hδ₀, hδ₀f⟩ := (mem_littleHolder_iff.1 hf) (ε / 4) hη
   -- Mollify at the scale `δ = min δ₀ 1`, below which the quotients of `f` are at most `ε / 4`.
-  set δ := min δ₀ 1 with hδ_def
+  set δ := min δ₀ 1
   have hδ : 0 < δ := lt_min hδ₀ one_pos
   let ρ : ContDiffBump (0 : E) := ⟨δ / 2, δ, half_pos hδ, half_lt_self hδ⟩
   have hloc : ∀ x y, dist x y < ρ.rOut → dist (f x) (f y) ≤ ε / 4 * dist x y ^ (α : ℝ) :=

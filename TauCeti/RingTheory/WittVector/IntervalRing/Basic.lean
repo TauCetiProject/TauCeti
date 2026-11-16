@@ -435,8 +435,9 @@ instance isUniform_intervalRing : IsUniform (IntervalRing p hv hϖ hϖ' hρ₁ h
 `(p, [ϖ])`-adic topology: the Gauss valuations `λ_{ρ₁}` and `λ_{ρ₂}` are continuous valuations, so
 `λ_I = max(λ_{ρ₁}, λ_{ρ₂})` is small on a neighbourhood of `0`. -/
 theorem continuous_algebraMap_intervalLocalization [TopologicalSpace (𝕎 O)]
-    [IsTopologicalRing (𝕎 O)] (hI : IsAdic (Ideal.span {(p : 𝕎 O), teichmuller p ϖ})) :
+    (hI : IsAdic (Ideal.span {(p : 𝕎 O), teichmuller p ϖ})) :
     Continuous (algebraMap (𝕎 O) (IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂)) := by
+  have : IsTopologicalRing (𝕎 O) := hI ▸ (Ideal.span _).nonarchimedean.toIsTopologicalRing
   refine continuous_of_continuousAt_zero _ ?_
   rw [ContinuousAt, map_zero, Metric.nhds_basis_ball.tendsto_right_iff]
   intro ε hε
@@ -463,7 +464,6 @@ by the completion map. -/
 theorem continuous_algebraMap_intervalRing [TopologicalSpace (𝕎 O)]
     (hI : IsAdic (Ideal.span {(p : 𝕎 O), teichmuller p ϖ})) :
     Continuous (algebraMap (𝕎 O) (IntervalRing p hv hϖ hϖ' hρ₁ hρ₂)) := by
-  have : IsTopologicalRing (𝕎 O) := hI ▸ (Ideal.span _).nonarchimedean.toIsTopologicalRing
   exact Completion.continuous_coe _ |>.comp
     (continuous_algebraMap_intervalLocalization p hv hϖ hϖ' hρ₁ hρ₂ hI)
 

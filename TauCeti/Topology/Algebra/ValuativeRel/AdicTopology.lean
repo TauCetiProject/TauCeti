@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.AdicCompletion.Topology
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 public import Mathlib.Topology.Algebra.Nonarchimedean.AdicTopology
 public import Mathlib.Topology.Algebra.Valued.ValuativeRel
+public import TauCeti.Topology.Algebra.ValuativeRel.Integer
+import TauCeti.Topology.Algebra.IsUniformGroup.Subring
 import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic
 
 /-!
@@ -29,6 +32,8 @@ unit filtration `U(K,n)` is a neighbourhood basis of `1` in `Kˣ`
 * `Irreducible.exists_valuation_pow_lt`: the valuations of the powers of a uniformizer eventually
   drop below any nonzero value.
 * `TauCeti.isAdic_maximalIdeal`: the topology of `𝒪[K]` is the `𝓂[K]`-adic topology.
+* `TauCeti.isAdicComplete_maximalIdeal`: when `K` is complete, `𝒪[K]` is `𝓂[K]`-adically
+  complete.
 * `TauCeti.hasBasis_nhds_zero_maximalIdeal_pow`: the images in `K` of the powers `𝓂[K] ^ n` form
   a neighbourhood basis of `0` in `K`.
 * `TauCeti.isOpen_image_maximalIdeal_pow` and `TauCeti.isCompact_image_maximalIdeal_pow`: each of
@@ -129,5 +134,15 @@ maximal ideal is compact in `K`. -/
 theorem isCompact_image_maximalIdeal_pow [CompactSpace 𝒪[K]] (n : ℕ) :
     IsCompact (((↑) : 𝒪[K] → K) '' ((𝓂[K] ^ n : Ideal 𝒪[K]) : Set 𝒪[K])) :=
   ((isAdic_maximalIdeal K).isClosed_pow n).isCompact.image continuous_subtype_val
+
+/-- In a complete discretely valued field `K`, the valuation ring `𝒪[K]` is `𝓂[K]`-adically
+complete. Together with `IsAdicComplete.henselianLocalRing`, this makes `𝒪[K]` a Henselian local
+ring without any local-compactness hypothesis on `K`. -/
+theorem isAdicComplete_maximalIdeal (K : Type*) [Field K] [ValuativeRel K] [UniformSpace K]
+    [IsUniformAddGroup K] [IsValuativeTopology K] [CompleteSpace K]
+    [IsDiscreteValuationRing 𝒪[K]] :
+    IsAdicComplete 𝓂[K] 𝒪[K] :=
+  (isAdicComplete_iff 𝓂[K] 𝒪[K]).2 ⟨inferInstance, (isAdic_maximalIdeal K).isPrecomplete_iff.2
+    (completeSpace_integer K)⟩
 
 end TauCeti

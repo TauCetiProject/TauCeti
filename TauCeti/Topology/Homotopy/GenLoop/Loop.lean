@@ -69,7 +69,7 @@ variable (x) in
 the constant cube loop. -/
 @[simp]
 theorem genLoopLoopSumHomeomorph_const (M : Type*) :
-    genLoopLoopSumHomeomorph x M (GenLoop.const : Ω^ M (Ω X x) (Path.refl x)) = GenLoop.const := by
+    genLoopLoopSumHomeomorph x M (const : Ω^ M (Ω X x) (Path.refl x)) = const := by
   refine _root_.GenLoop.ext _ _ fun t => ?_
   simp [genLoopLoopSumHomeomorph_apply]
 
@@ -78,8 +78,8 @@ variable (x) in
 cube loop. -/
 @[simp]
 theorem genLoopLoopSumHomeomorph_symm_const (M : Type*) :
-    (genLoopLoopSumHomeomorph x M).symm (GenLoop.const : Ω^ (M ⊕ Fin 1) X x) =
-      (GenLoop.const : Ω^ M (Ω X x) (Path.refl x)) :=
+    (genLoopLoopSumHomeomorph x M).symm (const : Ω^ (M ⊕ Fin 1) X x) =
+      (const : Ω^ M (Ω X x) (Path.refl x)) :=
   (genLoopLoopSumHomeomorph x M).symm_apply_eq.2 (genLoopLoopSumHomeomorph_const x M).symm
 
 variable (x) in
@@ -103,7 +103,7 @@ theorem _root_.ContinuousMap.genLoopLoopSumHomeomorph_map (f : C(X, Y)) (hf : f 
     genLoopLoopSumHomeomorph y M
         (map F (Path.ext (funext fun t => (hFf _ t).trans hf)) p) =
       map f hf (genLoopLoopSumHomeomorph x M p) := by
-  refine GenLoop.ext _ _ fun t => ?_
+  refine ext _ _ fun t => ?_
   rw [genLoopLoopSumHomeomorph_apply, map_apply, map_apply]
   exact (hFf _ _).trans (congrArg f (genLoopLoopSumHomeomorph_apply x M p t).symm)
 
@@ -113,14 +113,14 @@ based at the constant loop, are cube loops of `X` in `k + 1` directions. This is
 `genLoopLoopSumHomeomorph` with the directions `Fin k ⊕ Fin 1` identified with `Fin (k + 1)`. -/
 def genLoopLoopHomeomorph (k : ℕ) :
     Ω^ (Fin k) (Ω X x) (Path.refl x) ≃ₜ Ω^ (Fin (k + 1)) X x :=
-  (genLoopLoopSumHomeomorph x (Fin k)).trans (GenLoop.congr x finSumFinEquiv)
+  (genLoopLoopSumHomeomorph x (Fin k)).trans (congr x finSumFinEquiv)
 
 variable (x) in
 /-- `genLoopLoopHomeomorph` is `genLoopLoopSumHomeomorph` followed by the reindexing of the cube
 directions `Fin k ⊕ Fin 1 ≃ Fin (k + 1)`. -/
 theorem genLoopLoopHomeomorph_apply_eq (k : ℕ) (p : Ω^ (Fin k) (Ω X x) (Path.refl x)) :
     genLoopLoopHomeomorph x k p =
-      GenLoop.congr x finSumFinEquiv (genLoopLoopSumHomeomorph x _ p) := by
+      congr x finSumFinEquiv (genLoopLoopSumHomeomorph x _ p) := by
   rw [genLoopLoopHomeomorph, Homeomorph.trans_apply]
 
 variable (x) in
@@ -141,8 +141,8 @@ variable (x) in
 the constant cube loop. -/
 @[simp]
 theorem genLoopLoopHomeomorph_const (k : ℕ) :
-    genLoopLoopHomeomorph x k (GenLoop.const : Ω^ (Fin k) (Ω X x) (Path.refl x)) =
-      GenLoop.const := by
+    genLoopLoopHomeomorph x k (const : Ω^ (Fin k) (Ω X x) (Path.refl x)) =
+      const := by
   refine _root_.GenLoop.ext _ _ fun t => ?_
   simp [genLoopLoopHomeomorph_apply]
 
@@ -151,8 +151,8 @@ variable (x) in
 cube loop. -/
 @[simp]
 theorem genLoopLoopHomeomorph_symm_const (k : ℕ) :
-    (genLoopLoopHomeomorph x k).symm (GenLoop.const : Ω^ (Fin (k + 1)) X x) =
-      (GenLoop.const : Ω^ (Fin k) (Ω X x) (Path.refl x)) :=
+    (genLoopLoopHomeomorph x k).symm (const : Ω^ (Fin (k + 1)) X x) =
+      (const : Ω^ (Fin k) (Ω X x) (Path.refl x)) :=
   (genLoopLoopHomeomorph x k).symm_apply_eq.2 (genLoopLoopHomeomorph_const x k).symm
 
 variable (x) in
@@ -221,9 +221,9 @@ theorem _root_.ContinuousMap.genLoopLoopHomeomorph_map (f : C(X, Y)) (hf : f x =
     genLoopLoopHomeomorph y k (map F (Path.ext (funext fun t => (hFf _ t).trans hf)) p) =
       map f hf (genLoopLoopHomeomorph x k p) := by
   exact (genLoopLoopHomeomorph_apply_eq y k _).trans
-    ((congrArg (GenLoop.congr y finSumFinEquiv)
+    ((congrArg (congr y finSumFinEquiv)
       (ContinuousMap.genLoopLoopSumHomeomorph_map f hf F hFf _ p)).trans
-      ((GenLoop.ext _ _ fun _ => by simp only [congr_apply, map_apply]).trans
+      ((ext _ _ fun _ => by simp only [congr_apply, map_apply]).trans
         (congrArg (map f hf) (genLoopLoopHomeomorph_apply_eq x k p).symm)))
 
 end GenLoop

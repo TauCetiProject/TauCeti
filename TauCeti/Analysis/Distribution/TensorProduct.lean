@@ -58,6 +58,8 @@ is the point mass at `(a, b)`.
 * `Distribution.tensorProduct`: the tensor product `S ⊗ T` of complex-valued distributions.
 * `Distribution.tensorProduct_prodSMulCLM`: `(S ⊗ T) (φ ⊗ ψ) = S φ * T ψ`, and
   `Distribution.complexPairing_tensorProduct_prodSMulCLM` for complex test functions `φ`.
+* `Distribution.complexPairing_tensorProduct_eq_mul`: the same for complex test functions `φ` and
+  `ψ`.
 * `Distribution.tensorProduct_eq`: uniqueness of the tensor product.
 * `Distribution.lineDerivOp_tensorProduct`: `∂_{(v, w)} (S ⊗ T) = ∂_{v} S ⊗ T + S ⊗ ∂_{w} T`.
 * `Distribution.tensorProduct_delta`: `δ_a ⊗ δ_b = δ_(a, b)`.
@@ -403,6 +405,25 @@ theorem complexPairing_tensorProduct_prodSMulCLM (ψ : 𝓓(O, ℝ))
     simp only [postcompCLM_apply, prodSMulCLM_apply, Function.comp_apply, map_smul]
   rw [complexPairing_apply, complexPairing_apply, hpart, hpart, tensorProduct_prodSMulCLM,
     tensorProduct_prodSMulCLM]
+  ring
+
+/-- The tensor product on a tensor product of complex test functions: if `χ (x, y) = φ x * ψ y`,
+then `(S ⊗ T) χ = S φ * T ψ`, with all three distributions acting on complex test functions
+through their complex-linear extensions. -/
+theorem complexPairing_tensorProduct_eq_mul (hV' : (Ω : Set E) ×ˢ (O : Set D) ⊆ V)
+    {φ : 𝓓(Ω, ℂ)} {ψ : 𝓓(O, ℂ)} {χ : 𝓓(V, ℂ)} (hχ : ∀ p, χ p = φ p.1 * ψ p.2) :
+    (S.tensorProduct T hV).complexPairing χ = S.complexPairing φ * T.complexPairing ψ := by
+  -- Split `ψ` into its real and imaginary parts, which are real test functions.
+  have h : χ = prodSMulCLM (postcompCLM (𝕜 := ℝ) reCLM ψ) hV' φ +
+      I • prodSMulCLM (postcompCLM (𝕜 := ℝ) imCLM ψ) hV' φ := by
+    ext p
+    rw [hχ]
+    simp only [add_apply, prodSMulCLM_apply, postcompCLM_apply, Function.comp_apply, reCLM_apply,
+      real_smul, smul_apply, imCLM_apply, smul_eq_mul]
+    conv_lhs => rw [← re_add_im (ψ p.2)]
+    ring
+  rw [h, map_add, map_smul, complexPairing_tensorProduct_prodSMulCLM,
+    complexPairing_tensorProduct_prodSMulCLM, complexPairing_apply T ψ, smul_eq_mul]
   ring
 
 /-- **Uniqueness of the tensor product.** When `V = Ω ×ˢ O`, the tensor product `S ⊗ T` is the

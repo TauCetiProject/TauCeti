@@ -92,7 +92,7 @@ theorem isClosed_setOf_hasDerivWithinAt_Icc {F : Type*}
     · intro y _
       exact hv.tendsto_at y
   simpa only [Function.comp_def, Set.projIcc_val] using
-    hasDerivWithinAt_Icc_of_continuousOn hab
+    hasDerivWithinAt_Icc_of_continuousOn
       (j.1.continuous.comp continuous_projIcc).continuousOn
       (j.2.continuous.comp continuous_projIcc).continuousOn hinter t.property
 

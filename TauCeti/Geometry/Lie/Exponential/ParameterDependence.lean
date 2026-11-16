@@ -42,8 +42,6 @@ tangent vectors.
 
 ## References
 
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 0, "The exponential map".
 * Winston Yin's Mathlib proof of `exists_isMIntegralCurveAt_of_contMDiffAt_boundaryless`, whose
   chart calculation is exposed by `IsMIntegralCurveAt.of_extChartAt_symm` and invoked below.
 -/

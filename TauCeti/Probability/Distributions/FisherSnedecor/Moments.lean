@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.FisherSnedecor.Basic
 public import Mathlib.Probability.Moments.Variance
-import TauCeti.Analysis.SpecialFunctions.Beta
+import TauCeti.Analysis.SpecialFunctions.Beta.Basic
 import TauCeti.Probability.Distributions.Beta.Basic
 import TauCeti.Probability.Moments.IntegrableExpMul
 

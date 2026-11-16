@@ -358,19 +358,13 @@ theorem le_add_mul_of_le_add_of_le_add_mul_add_mul {k G F h z a K cA β γ R s t
       have := mul_le_mul_of_nonneg_left hzW hγ
       linarith
     have h2 : β * R * P + γ * R ^ 2 * W ≤ (β * R + γ * R ^ 2) * (P + W) := by
-      have hexp : (β * R + γ * R ^ 2) * (P + W) =
-          β * R * P + γ * R ^ 2 * W + (β * R * W + γ * R ^ 2 * P) := by ring
       linarith [mul_nonneg hβR hW0, mul_nonneg hγR hP0]
     rw [mul_assoc]
     exact mul_le_mul_of_nonneg_left (h1.trans h2) ha
   have haG := mul_le_mul_of_nonneg_left hG ha
   have hPW : 0 ≤ P + W := add_nonneg hP0 hW0
-  have hexp : (K + a * (β * R + γ * R ^ 2)) * ((cA + 1) * P + (cA + 1) * W) =
-      K * (cA * P + cA * W) + a * (β * R + γ * R ^ 2) * (P + W) +
-        (K * (P + W) + a * (β * R + γ * R ^ 2) * cA * (P + W)) := by ring
   have hrest : 0 ≤ K * (P + W) + a * (β * R + γ * R ^ 2) * cA * (P + W) :=
     add_nonneg (mul_nonneg hK hPW) (mul_nonneg (mul_nonneg hQ0 hcA) hPW)
-  have hdist : a * (F + β * h + γ * z) = a * F + a * (β * h + γ * z) := by ring
   linarith
 
 end TauCeti

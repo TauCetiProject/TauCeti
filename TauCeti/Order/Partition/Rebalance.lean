@@ -47,7 +47,7 @@ theorem exists_equipartition_sum_card_sdiff_le (P : Finpartition (univ : Finset 
   by_cases hV : IsEmpty V
   · have := hV
     refine ⟨P, Equiv.refl _, ?_, by simp⟩
-    intro A B hA hB
+    intro A B _ _
     simp only [Subsingleton.elim A ∅, Subsingleton.elim B ∅, card_empty]
     omega
   have : Nonempty V := not_isEmpty_iff.mp hV

@@ -22,9 +22,10 @@ multidegree of `e` to zero. It therefore descends to a homomorphism `Pic(T) → 
 injective and whose cokernel is killed by `2`, since each ratio `wⱼ / w'ⱼ` is `1` or `2`
 ([Stacks, Lemma 55.4.4](https://stacks.math.columbia.edu/tag/0C7J)).
 
-This reduces questions about the torsion of `Pic(T)` to minimal numerical types: the `ℓ`-torsion
-of `Pic(T)` has dimension at most that of `Pic(T')`. It also shows that the Picard group of a
-numerical type of nonpositive genus is infinite cyclic
+This reduces questions about the torsion of `Pic(T)` to minimal numerical types: for every `ℓ`, the
+`ZMod ℓ`-module rank (`Module.finrank`) of the `ℓ`-torsion of `Pic(T)` is at most that of
+`Pic(T')`, so for prime `ℓ` the `𝔽_ℓ`-dimension of `Pic(T)[ℓ]` is at most that of `Pic(T')[ℓ]`.
+It also shows that the Picard group of a numerical type of nonpositive genus is infinite cyclic
 ([Stacks, Lemma 55.4.5](https://stacks.math.columbia.edu/tag/0C7K)): such a type with more than
 one component is not minimal, and contracting a `(-1)`-index preserves the genus.
 
@@ -37,8 +38,9 @@ one component is not minimal, and contracting a `(-1)`-index preserves the genus
 
 * `TauCeti.NumericalType.picContract_injective`: `Pic(T) → Pic(T')` is injective.
 * `TauCeti.NumericalType.two_smul_mem_range_picContract`: its cokernel is killed by `2`.
-* `TauCeti.NumericalType.finrank_torsion_le_contract`: `dim Pic(T)[ℓ] ≤ dim Pic(T')[ℓ]` for
-  every prime `ℓ`.
+* `TauCeti.NumericalType.finrank_torsion_le_contract`: for every `ℓ`, the `ZMod ℓ`-module rank
+  `Module.finrank (ZMod ℓ)` of `Pic(T)[ℓ]` is at most that of `Pic(T')[ℓ]`; for prime `ℓ`, this
+  is `dim Pic(T)[ℓ] ≤ dim Pic(T')[ℓ]` over `𝔽_ℓ`.
 * `TauCeti.NumericalType.nonempty_pic_linearEquiv_int`: if the genus of `T` is at most zero,
   then `Pic(T) ≅ ℤ`.
 
@@ -242,19 +244,24 @@ theorem two_smul_mem_range_picContract (y : (T.contract he).Pic) :
 
 /-! ### Consequences -/
 
-/-- The `ℓ`-torsion of `Pic(T)` has dimension at most that of `Pic(T')`, for every prime `ℓ`.
+/-- For every `ℓ`, the `ZMod ℓ`-module rank (`Module.finrank`) of the `ℓ`-torsion of `Pic(T)` is
+at most that of `Pic(T')`. Since `ZMod ℓ` need not be a field, this is a vector-space dimension
+only for prime `ℓ`, where it bounds the `𝔽_ℓ`-dimension of `Pic(T)[ℓ]` by that of `Pic(T')[ℓ]`.
 This reduces bounds on the prime torsion of Picard groups of numerical types to minimal numerical
 types. -/
-theorem finrank_torsion_le_contract (ℓ : ℕ) [Fact ℓ.Prime] :
+theorem finrank_torsion_le_contract (ℓ : ℕ) :
     Module.finrank (ZMod ℓ) (T.torsion ℓ) ≤
       Module.finrank (ZMod ℓ) ((T.contract he).torsion ℓ) := by
-  have : NeZero ℓ := ⟨(Fact.out : ℓ.Prime).ne_zero⟩
   let f : T.torsion ℓ →+ (T.contract he).torsion ℓ :=
     ((T.picContract he).toAddMonoidHom.comp (T.torsion ℓ).subtype).codRestrict _ fun x ↦ by
       rw [AddSubgroup.torsionBy.nsmul_iff]
       have hx : ℓ • (x : T.Pic) = 0 := AddSubgroup.torsionBy.nsmul_iff.mp x.property
       simpa only [AddMonoidHom.comp_apply, AddSubgroup.coe_subtype, LinearMap.toAddMonoidHom_coe,
         map_nsmul, map_zero] using congrArg (T.picContract he) hx
+  rcases eq_or_ne ℓ 1 with rfl | hℓ
+  · -- Over the trivial ring `ZMod 1`, every module has `finrank = 1`.
+    rw [Module.finrank_subsingleton, Module.finrank_subsingleton]
+  have : Nontrivial (ZMod ℓ) := ZMod.nontrivial_iff.mpr hℓ
   refine LinearMap.finrank_le_finrank_of_injective (f := f.toZModLinearMap ℓ) fun x y hxy ↦ ?_
   exact Subtype.ext (T.picContract_injective he (congrArg Subtype.val hxy))
 

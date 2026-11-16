@@ -101,7 +101,7 @@ private lemma orderedCechRestrict_comp_orderedCechD (n : ℕ) {s t : Finset ι} 
   unfold orderedCechRestrict
   split_ifs with ht
   · rw [Category.assoc, ι_orderedCechD, Preadditive.comp_sum]
-    refine Finset.sum_congr rfl fun i hi ↦ ?_
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
     rw [Preadditive.comp_zsmul]
     congr 1
     unfold orderedCechRestrict

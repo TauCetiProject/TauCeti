@@ -21,9 +21,9 @@ import TauCeti.MeasureTheory.Function.LocallyIntegrable
 # The product rule for weak derivatives
 
 A weak derivative is additive and commutes with scalars
-(`TauCeti.HasWeakLineDerivOn.add`, `TauCeti.HasWeakLineDerivOn.const_smul`), but Lane A of the PDE
-roadmap needs one more algebraic rule before it can localize: multiplication by a *variable*
-smooth factor.  This file proves it.  For a smooth `ψ : E → ℝ` and a weakly differentiable `u`,
+(`TauCeti.HasWeakLineDerivOn.add`, `TauCeti.HasWeakLineDerivOn.const_smul`), but localization
+needs one more algebraic rule: multiplication by a *variable* smooth factor.  This file proves it.
+For a smooth `ψ : E → ℝ` and a weakly differentiable `u`,
 
 `∂_v (ψ u) = ψ ∂_v u + (∂_v ψ) u`
 
@@ -53,19 +53,19 @@ fields that are merely Lipschitz, such as those produced by flattening a `C²` b
 mollifies a Lipschitz extension of `ψ` by normalized bumps `ρₙ` of radius `1 / (n + 1)` and
 applies the smooth rule to `ψₙ = ρₙ ⋆ ψ`. The factors `ψₙ` converge to `ψ` uniformly, while
 `∂_v ψₙ = ρₙ ⋆ ∂_v ψ` stays bounded by the Lipschitz constant and converges to `∂_v ψ` almost
-everywhere by the Lebesgue differentiation theorem. Dominated convergence then passes the
-identity tested against a fixed `φ` to the limit
-(`LipschitzWith.tendsto_integral_normed_convolution_smul` and
-`LipschitzWith.tendsto_integral_fderiv_normed_convolution_apply_smul`). For a factor that is also
-bounded, an `Lᵖ` weak derivative of `u` gives one of `ψ u`
+everywhere by the Lebesgue differentiation theorem. The identity tested against a fixed `φ` then
+passes to the limit: uniform convergence handles the `ψₙ` terms
+(`ContDiffBump.tendsto_integral_normed_convolution_smul`) and dominated convergence the
+`∂_v ψₙ` term (`LipschitzWith.tendsto_integral_fderiv_normed_convolution_apply_smul`). For a
+factor that is also bounded, an `Lᵖ` weak derivative of `u` gives one of `ψ u`
 (`TauCeti.HasWeakLineDerivOn.exists_lp_lipschitzOnWith_smul`).
 
 ## Why this is the localization tool
 
-`ψ` will be a cutoff.  Multiplying by one is how a global statement about `W^{k,p}(Ω)` is reduced
-to a local one: it is the first step of the Meyers–Serrin `H = W` density theorem and of the
-extension operator (Lane A.2 and A.6 of `TauCetiRoadmap/PDE/README.md`), and it is what turns an
-interior estimate into an estimate on a compactly contained subdomain (Lane E.20).  The second
+Typically `ψ` is a cutoff.  Multiplying by one is how a global statement about `W^{k,p}(Ω)` is
+reduced to a local one: it is the first step of the Meyers–Serrin `H = W` density theorem and of
+the extension operator, and it is what turns an interior estimate into an estimate on a compactly
+contained subdomain.  The second
 summand `(∂_v ψ) u` is exactly the error such an argument has to absorb, so having it with an
 explicit, non-asymptotic formula is the point.
 
@@ -303,10 +303,13 @@ private theorem integral_lineDeriv_smul_lipschitzWith_smul_eq
   have hw₂c : ∀ f : E → ℝ, Continuous f → Integrable (fun x => f x • w₂ x) μ := fun f hf =>
     integrable_continuousOn_smul_of_forall_notMem_eq_zero φ.hasCompactSupport.isCompact hw₂
       (fun x hx => by simp [w₂, image_eq_zero_of_notMem_tsupport hx]) hf.continuousOn
-  -- Pass to the limit on both sides by dominated convergence.
+  -- Pass to the limit on both sides: uniform convergence for `ψₙ`, dominated convergence for
+  -- `∂_v ψₙ`.
   have hlimit := tendsto_nhds_unique
-    (hψ.tendsto_integral_normed_convolution_smul hρ hw₁ (hw₁c ψ hψ.continuous))
-    (((hψ.tendsto_integral_normed_convolution_smul hρ hw₂ (hw₂c ψ hψ.continuous)).add
+    (ContDiffBump.tendsto_integral_normed_convolution_smul hψ.uniformContinuous hρ hw₁
+      (hw₁c ψ hψ.continuous))
+    (((ContDiffBump.tendsto_integral_normed_convolution_smul hψ.uniformContinuous hρ hw₂
+      (hw₂c ψ hψ.continuous)).add
       (hψ.tendsto_integral_fderiv_normed_convolution_apply_smul hρ h'ρ v hw₃)).neg.congr
         fun n => (integral_lineDeriv_smul_normed_convolution_eq h hψ (ρ n) φ).symm)
   rw [← integral_add (hw₂c ψ hψ.continuous) (hψ.integrable_lineDeriv_smul hw₃)]

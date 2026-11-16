@@ -312,15 +312,8 @@ theorem peterssonInnerCosets_trace_translate {Γ₁ Γ₂ : Subgroup SL(2, ℤ)}
 
 /-! ### Orthogonality across two levels -/
 
-/-- **Orthogonality to the lower level survives restriction to the intersection.** Let
-`L = A ⊓ B`, with `A, B ≤ D` and every element of `D` a product of one of `A` and one of `B`. If a
-cusp form `F` for `B` is Petersson-orthogonal to (the restriction of) every cusp form for `D`,
-then on `L` its restriction is orthogonal to the restriction of every cusp form for `A`.
-
-For `A = Γ₁(N)`, `B = Γ₁(M)`, `D = Γ₁(gcd N M)` and `L = Γ₁(lcm N M)` this compares forms of two
-levels neither of which divides the other: a form of level `M` orthogonal to the forms of level
-`gcd N M` stays orthogonal, at level `lcm N M`, to all forms of level `N`. -/
-theorem peterssonInnerCosets_restrict_restrict_eq_zero {A B D L : Subgroup SL(2, ℤ)}
+/-- The case `A ≤ D` of `peterssonInnerCosets_restrict_restrict_eq_zero`. -/
+private theorem peterssonInnerCosets_restrict_restrict_eq_zero_of_le {A B D L : Subgroup SL(2, ℤ)}
     [A.FiniteIndex] [B.FiniteIndex] [D.FiniteIndex] [L.FiniteIndex] (hAD : A ≤ D) (hBD : B ≤ D)
     (hL : L = A ⊓ B) (hmul : ∀ d ∈ D, ∃ a ∈ A, ∃ b ∈ B, a * b = d)
     {F : CuspForm (B.map (mapGL ℝ)) k}
@@ -360,5 +353,33 @@ theorem peterssonInnerCosets_restrict_restrict_eq_zero {A B D L : Subgroup SL(2,
       ← peterssonInnerCosets_trace_left (hLAB.trans (inf_comm _ _)) (fun h ↦ absurd h hA1) F φ,
       ← CuspForm.restrict_trace (Subgroup.map_mono hAD) (hmap hmul), htr,
       (CuspForm.restrict_eq_zero_iff _).mpr rfl, peterssonInnerCosets_zero_left, map_zero]
+
+/-- **Orthogonality to the lower level survives restriction to the intersection.** Let
+`L = A ⊓ B`, with `B ≤ D` and every element of `D` a product of one of `A` and one of `B`. If a
+cusp form `F` for `B` is Petersson-orthogonal to (the restriction of) every cusp form for `D`,
+then on `L` its restriction is orthogonal to the restriction of every cusp form for `A`.
+
+For `A = Γ₁(N)`, `B = Γ₁(M)`, `D = Γ₁(gcd N M)` and `L = Γ₁(lcm N M)` this compares forms of two
+levels neither of which divides the other: a form of level `M` orthogonal to the forms of level
+`gcd N M` stays orthogonal, at level `lcm N M`, to all forms of level `N`. -/
+theorem peterssonInnerCosets_restrict_restrict_eq_zero {A B D L : Subgroup SL(2, ℤ)}
+    [A.FiniteIndex] [B.FiniteIndex] [D.FiniteIndex] [L.FiniteIndex] (hBD : B ≤ D)
+    (hL : L = A ⊓ B) (hmul : ∀ d ∈ D, ∃ a ∈ A, ∃ b ∈ B, a * b = d)
+    {F : CuspForm (B.map (mapGL ℝ)) k}
+    (hF : ∀ ψ : CuspForm (D.map (mapGL ℝ)) k,
+      peterssonInnerCosets (CuspForm.restrict (Subgroup.map_mono hBD) ψ) F = 0)
+    (φ : CuspForm (A.map (mapGL ℝ)) k) :
+    peterssonInnerCosets (CuspForm.restrict (Subgroup.map_mono (hL.trans_le inf_le_left)) φ)
+      (CuspForm.restrict (Subgroup.map_mono (hL.trans_le inf_le_right)) F) = 0 := by
+  -- replace `A` by `A ⊓ D`, which lies in `D`
+  have hL' : L = (A ⊓ D) ⊓ B := by rw [hL, inf_assoc, inf_eq_right.mpr hBD]
+  have hmul' : ∀ d ∈ D, ∃ a ∈ A ⊓ D, ∃ b ∈ B, a * b = d := fun d hd ↦ by
+    obtain ⟨a, ha, b, hb, rfl⟩ := hmul d hd
+    exact ⟨a, ⟨ha, by simpa using mul_mem_cancel_right (hBD hb) |>.mp hd⟩, b, hb, rfl⟩
+  have key := peterssonInnerCosets_restrict_restrict_eq_zero_of_le inf_le_right hBD hL' hmul' hF
+    (CuspForm.restrict (Subgroup.map_mono inf_le_left) φ)
+  convert key using 2
+  ext
+  simp
 
 end CuspForm

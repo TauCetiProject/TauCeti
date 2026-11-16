@@ -35,9 +35,8 @@ through `TauCeti.isDotAlternating_weylDenominator`.
 
 ## References
 
-This is the simple-reflection cancellation step in the combinatorial Weyl denominator identity
-required by `TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`, Layer 6 ("the Weyl
-character formula").
+This is the simple-reflection cancellation step in the combinatorial proof of the Weyl denominator
+identity.
 
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, Ch. VI, §24.
 * J.-P. Serre, *Complex Semisimple Lie Algebras*, Ch. VII.

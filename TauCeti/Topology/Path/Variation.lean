@@ -55,8 +55,8 @@ theorem eVariationOn_extend (γ : Path x y) :
 
 /-- A constant path has zero length. -/
 @[simp]
-theorem eVariationOn_refl (x : X) : eVariationOn (Path.refl x) univ = 0 := by
-  exact eVariationOn.constant_on (by rw [image_univ, refl_range]; exact subsingleton_singleton)
+theorem eVariationOn_refl (x : X) : eVariationOn (Path.refl x) univ = 0 :=
+  eVariationOn.constant_on (by simp)
 
 /-- Reversing a path preserves length, including infinite length. -/
 @[simp]
@@ -80,23 +80,16 @@ theorem eVariationOn_trans (γ : Path x y) (δ : Path y z) :
     eVariationOn (γ.trans δ) univ = eVariationOn γ univ + eVariationOn δ univ := by
   have hleft : eVariationOn (γ.trans δ).extend (Icc 0 (1 / 2)) =
       eVariationOn γ.extend (Icc 0 1) := by
-    have heq : EqOn (γ.trans δ).extend (γ.extend ∘ fun t : ℝ ↦ 2 * t)
-        (Icc 0 (1 / 2)) := fun t ht ↦ γ.extend_trans_of_le_half δ ht.2
-    rw [eVariationOn.eq_of_eqOn heq,
-      eVariationOn.comp_eq_of_monotoneOn γ.extend (fun t : ℝ ↦ 2 * t)
-        (fun _ _ _ _ h ↦ mul_le_mul_of_nonneg_left h (by norm_num))]
-    rw [image_mul_left_Icc' (by norm_num : (0 : ℝ) < 2)]
-    norm_num
+    rw [eVariationOn.eq_of_eqOn (f' := γ.extend ∘ (2 * ·)) (s := Icc 0 (1 / 2))
+        fun t ht ↦ γ.extend_trans_of_le_half δ ht.2,
+      eVariationOn.comp_eq_of_monotoneOn _ _ fun _ _ _ _ h ↦ by linarith]
+    norm_num [image_mul_left_Icc']
   have hright : eVariationOn (γ.trans δ).extend (Icc (1 / 2) 1) =
       eVariationOn δ.extend (Icc 0 1) := by
-    have heq : EqOn (γ.trans δ).extend (δ.extend ∘ fun t : ℝ ↦ 2 * t - 1)
-        (Icc (1 / 2) 1) := fun t ht ↦ γ.extend_trans_of_half_le δ ht.1
-    rw [eVariationOn.eq_of_eqOn heq,
-      eVariationOn.comp_eq_of_monotoneOn δ.extend (fun t : ℝ ↦ 2 * t - 1)
-        (fun _ _ _ _ h ↦ sub_le_sub_right (mul_le_mul_of_nonneg_left h (by norm_num)) _)]
-    simp only [sub_eq_add_neg]
-    rw [image_affine_Icc' (by norm_num : (0 : ℝ) < 2)]
-    norm_num
+    rw [eVariationOn.eq_of_eqOn (f' := δ.extend ∘ (2 * · - 1)) (s := Icc (1 / 2) 1)
+        fun t ht ↦ γ.extend_trans_of_half_le δ ht.1,
+      eVariationOn.comp_eq_of_monotoneOn _ _ fun _ _ _ _ h ↦ by linarith]
+    norm_num [sub_eq_add_neg, image_affine_Icc']
   have hadd := eVariationOn.Icc_add_Icc (γ.trans δ).extend (s := univ)
     (a := 0) (b := 1 / 2) (c := 1) (by norm_num) (by norm_num) (mem_univ _)
   simpa only [univ_inter, hleft, hright, eVariationOn_extend] using hadd.symm
@@ -132,13 +125,10 @@ theorem eVariationOn_subpath (γ : Path x y) (s t : I) :
   wlog hst : s ≤ t
   · rw [← symm_subpath, eVariationOn_symm, uIcc_comm]
     exact this γ t s (le_of_not_ge hst)
-  have hm : Monotone (Icc.convexComb s t) := by
-    intro u v huv
-    rw [← Subtype.coe_le_coe]
-    simp only [Icc.coe_convexComb]
-    have huv' : (u : ℝ) ≤ v := huv
-    have hst' : (s : ℝ) ≤ t := hst
-    nlinarith [mul_nonneg (sub_nonneg.mpr huv') (sub_nonneg.mpr hst')]
+  have hm : Monotone (Icc.convexComb s t) := fun u v huv ↦ by
+    rw [← Subtype.coe_le_coe, Icc.coe_convexComb, Icc.coe_convexComb]
+    linear_combination mul_le_mul_of_nonneg_right (Subtype.coe_le_coe.2 huv)
+      (sub_nonneg.2 (Subtype.coe_le_coe.2 hst))
   rw [coe_subpath, eVariationOn.comp_eq_of_monotoneOn γ _ (hm.monotoneOn univ),
     image_univ, range_subpathAux]
 
@@ -155,10 +145,8 @@ Pauses in the reparametrization are allowed. -/
 theorem eVariationOn_reparam (γ : Path x y) {f : I → I} (hf : Monotone f)
     (hc : Continuous f) (h0 : f 0 = 0) (h1 : f 1 = 1) :
     eVariationOn (γ.reparam f hc h0 h1) univ = eVariationOn γ univ := by
-  have hrange : range f = univ := by
-    rw [unitInterval.univ_eq_Icc, ← h0, ← h1,
-      ← hc.continuousOn.image_Icc_of_monotoneOn zero_le_one (hf.monotoneOn _),
-      ← unitInterval.univ_eq_Icc, image_univ]
+  have hrange : range f = univ := univ_subset_iff.1 <| by
+    simpa only [h0, h1, ← unitInterval.univ_eq_Icc] using intermediate_value_univ 0 1 hc
   rw [coe_reparam, eVariationOn.comp_eq_of_monotoneOn γ f (hf.monotoneOn univ), image_univ, hrange]
 
 /-- Increasing continuous reparametrization fixing the endpoints preserves rectifiability.

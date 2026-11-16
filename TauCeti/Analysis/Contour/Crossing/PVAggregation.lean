@@ -30,7 +30,8 @@ simple-pole and higher-order per-window theorems both discharge them.
 * `Contour.cauchyPVExistsAt_of_perWindow_tendsto_of_interiorDisjoint` — the single-point
   principal value on `[a, b]` from per-window convergence at finitely many crossings. The
   windows need only have disjoint *interiors* and lie in `[a, b]`, so they may touch each
-  other, or touch `a` or `b`; and the radius bound is required only when there is a window.
+  other, or touch `a` or `b`; and no sign condition on the radius is needed (a negative radius
+  leaves every window empty).
 * `Contour.hasCauchyPVAt_of_perWindow_boundary_tendsto_of_interiorDisjoint` — the telescoping
   form: when the integrand has a curve-antiderivative `Φ` off the pole and each window limit is
   the boundary difference of `Φ ∘ γ`, the principal value is `Φ (γ b) - Φ (γ a)` — zero around
@@ -107,7 +108,7 @@ aggregated principal value explicitly, together with the fact that its real part
 `Ψ b - Ψ a`. -/
 theorem exists_hasCauchyPVAt_re_eq_of_perWindow_tendsto_of_interiorDisjoint
     {γ : ℝ → ℂ} {s : ℂ} {g : ℂ → ℂ} {Ψ : ℝ → ℝ} {a b r m : ℝ}
-    (hab : a ≤ b) (crossings : Finset ℝ) (hr_nonneg : crossings.Nonempty → 0 ≤ r)
+    (hab : a ≤ b) (crossings : Finset ℝ)
     (h_lo : ∀ t ∈ crossings, a ≤ t - r) (h_hi : ∀ t ∈ crossings, t + r ≤ b)
     (h_pair : ∀ t ∈ crossings, ∀ t' ∈ crossings, t' ≠ t → 2 * r ≤ |t - t'|)
     (h_int_tr : ∀ ε : ℝ, 0 < ε →
@@ -135,11 +136,11 @@ theorem exists_hasCauchyPVAt_re_eq_of_perWindow_tendsto_of_interiorDisjoint
     (fun t ht ↦ h_hi t ((Finset.mem_sort _).mp ht))
     (fun t ht t' ht' hne ↦ h_pair t ((Finset.mem_sort _).mp ht)
       t' ((Finset.mem_sort _).mp ht') hne)
-    (fun t ht ↦ by
+    (fun t ht hr ↦ by
       have h_mem := (Finset.mem_sort (α := ℝ) (· ≤ ·)).mp ht
       obtain ⟨v, hv_re, hv_tendsto⟩ := h_win t h_mem
       exact ⟨v, hasCauchyPVAt_iff.mpr ⟨eventually_intervalIntegrable_truncated_window
-        (h_lo t h_mem) (h_hi t h_mem) (hr_nonneg ⟨t, h_mem⟩) h_int_tr, hv_tendsto⟩, hv_re⟩)
+        (h_lo t h_mem) (h_hi t h_mem) hr h_int_tr, hv_tendsto⟩, hv_re⟩)
     (fun u hu h_avoid ↦ hm u hu fun t ht ↦ h_avoid t ((Finset.mem_sort _).mpr ht))
 
 /-- **The single-point principal value from per-window convergence**: if the `ε`-truncated
@@ -150,7 +151,7 @@ positive distance from `s` off the windows, then the principal value at `s` exis
 `[a, b]`. The per-window limits are hypotheses, so both the simple-pole and higher-order
 per-window theorems discharge them. -/
 theorem cauchyPVExistsAt_of_perWindow_tendsto_of_interiorDisjoint {γ : ℝ → ℂ} {s : ℂ} {g : ℂ → ℂ}
-    {a b r : ℝ} (hab : a ≤ b) (crossings : Finset ℝ) (hr_nonneg : crossings.Nonempty → 0 ≤ r)
+    {a b r : ℝ} (hab : a ≤ b) (crossings : Finset ℝ)
     (h_lo : ∀ t ∈ crossings, a ≤ t - r) (h_hi : ∀ t ∈ crossings, t + r ≤ b)
     (h_pair : ∀ t ∈ crossings, ∀ t' ∈ crossings, t' ≠ t → 2 * r ≤ |t - t'|)
     (h_int_tr : ∀ ε : ℝ, 0 < ε →
@@ -174,11 +175,11 @@ theorem cauchyPVExistsAt_of_perWindow_tendsto_of_interiorDisjoint {γ : ℝ → 
     (fun t ht ↦ h_hi t ((Finset.mem_sort _).mp ht))
     (fun t ht t' ht' hne ↦ h_pair t ((Finset.mem_sort _).mp ht)
       t' ((Finset.mem_sort _).mp ht') hne)
-    (fun t ht ↦ by
+    (fun t ht hr ↦ by
       have h_mem := (Finset.mem_sort (α := ℝ) (· ≤ ·)).mp ht
       obtain ⟨v, hv⟩ := h_win t h_mem
       exact ⟨v, hasCauchyPVAt_iff.mpr ⟨eventually_intervalIntegrable_truncated_window
-        (h_lo t h_mem) (h_hi t h_mem) (hr_nonneg ⟨t, h_mem⟩) h_int_tr, hv⟩⟩)
+        (h_lo t h_mem) (h_hi t h_mem) hr h_int_tr, hv⟩⟩)
     (fun u hu h_avoid ↦ hm u hu fun t ht ↦ h_avoid t ((Finset.mem_sort _).mpr ht))
   exact CauchyPVExistsAt.intro hv
 
@@ -188,7 +189,6 @@ principal value on `[a, b]` is `Φ (γ b) - Φ (γ a)` — in particular zero ar
 The higher-order per-window limits have exactly this boundary-difference shape. -/
 theorem hasCauchyPVAt_of_perWindow_boundary_tendsto_of_interiorDisjoint {γ : ℝ → ℂ} {s : ℂ}
     {g : ℂ → ℂ} {Φ : ℂ → ℂ} {a b r : ℝ} (hab : a ≤ b) (crossings : Finset ℝ)
-    (hr_nonneg : crossings.Nonempty → 0 ≤ r)
     (h_lo : ∀ t ∈ crossings, a ≤ t - r) (h_hi : ∀ t ∈ crossings, t + r ≤ b)
     (h_pair : ∀ t ∈ crossings, ∀ t' ∈ crossings, t' ≠ t → 2 * r ≤ |t - t'|)
     (h_int_tr : ∀ ε : ℝ, 0 < ε →
@@ -207,11 +207,11 @@ theorem hasCauchyPVAt_of_perWindow_boundary_tendsto_of_interiorDisjoint {γ : �
   exact sorted_crossing_gluing_induction
     (Q := fun l u ↦ HasCauchyPVAt γ l u g s (Φ (γ u) - Φ (γ l)))
     (fun l u hA hlu hu h_far' ↦ by
+      have h0 := hasCauchyPVAt_plain_piece hm_pos h_int_tr hA hlu hu h_far'
       have h_ne : ∀ t ∈ Icc l u, γ t ≠ s := fun t ht h_eq ↦ by
         have h_bd := h_far' t ht
         rw [h_eq, sub_self, norm_zero] at h_bd
         linarith
-      have h0 := hasCauchyPVAt_plain_piece hm_pos h_int_tr hA hlu hu h_far'
       rwa [h_plain_eq l u hA hlu hu h_ne] at h0)
     (fun l u₀ u _ _ h₁ h₂ ↦ by
       have h0 := h₁.concat h₂
@@ -223,10 +223,10 @@ theorem hasCauchyPVAt_of_perWindow_boundary_tendsto_of_interiorDisjoint {γ : �
     (fun t ht ↦ h_hi t ((Finset.mem_sort _).mp ht))
     (fun t ht t' ht' hne ↦ h_pair t ((Finset.mem_sort _).mp ht)
       t' ((Finset.mem_sort _).mp ht') hne)
-    (fun t ht ↦ by
+    (fun t ht hr ↦ by
       have h_mem := (Finset.mem_sort (α := ℝ) (· ≤ ·)).mp ht
       exact hasCauchyPVAt_iff.mpr ⟨eventually_intervalIntegrable_truncated_window
-        (h_lo t h_mem) (h_hi t h_mem) (hr_nonneg ⟨t, h_mem⟩) h_int_tr, h_win t h_mem⟩)
+        (h_lo t h_mem) (h_hi t h_mem) hr h_int_tr, h_win t h_mem⟩)
     (fun u hu h_avoid ↦ hm u hu fun t ht ↦ h_avoid t ((Finset.mem_sort _).mpr ht))
 
 end TauCeti.Contour

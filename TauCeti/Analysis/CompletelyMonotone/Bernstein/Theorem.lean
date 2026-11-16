@@ -23,8 +23,7 @@ on `ℝ≥0`.
 
 ## Scope
 
-This is the **existence** half of the Bernstein milestone in
-`TauCetiRoadmap/OneParameterSemigroups/README.md`, Part B. Uniqueness of the representing measure
+This is the **existence** half of Bernstein's theorem. Uniqueness of the representing measure
 is `TauCeti.RepresentsLaplace.unique`, the converse direction is
 `TauCeti.isContinuousCompletelyMonotoneOnIoi_laplaceTransform`, and all three combine in
 `Bernstein/HausdorffBernsteinWidder.lean` as `TauCeti.hausdorff_bernstein_widder` and
@@ -53,8 +52,6 @@ Step 1 uses `finite_measure_cluster_limit` rather than its subsequence form
 suffices, and being `NeBot` it still gives uniqueness of limits.
 
 ## References
-
-* Roadmap: `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part B (Bernstein theorem milestone).
 
 * D. Chafaï, *Aspects of the Bernstein theorem* (2013) — the approximating measures this proof
   passes to the limit.

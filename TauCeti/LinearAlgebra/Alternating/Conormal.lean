@@ -5,6 +5,7 @@ Authors: Claude Code, Codex
 -/
 module
 
+public import Mathlib.Basic.Sign.Basic
 public import Mathlib.LinearAlgebra.Orientation
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 public import Mathlib.LinearAlgebra.Quotient.Basic
@@ -25,12 +26,17 @@ conormal orientations agree up to reversal (`Module.Ray.IsConormal.eq_or_eq_neg`
 along the injective pullback `Submodule.conormalPullback` and applying Mathlib's
 `Orientation.eq_or_eq_neg`.
 
+The evaluation sign `Module.Ray.evalSign` reads the sign of a conormal form on an edge frame,
+independently of its positive normalization. In the top degree of the normal quotient it is
+nonzero precisely on frames linearly independent modulo the tangent submodule.
+
 ## Attribution
 
 Adapted from `Mei/LinearAlgebra/Alternating/Conormal.lean` in
 [Mei](https://github.com/yuma-mizuno-lean/Mei) at commit
 `3d2e9c869ee44c41ae9c7b5c6e2042898430d0ca` (Apache 2.0). Original copyright and author credit are
-retained. The evaluation signs of a ray, which the source develops in the same file, are omitted.
+retained. The evaluation-sign API is adapted from the same file at commit
+`a79c57178cc83666fc244ca6e6eeaa722e9b8bc7` (Apache 2.0).
 -/
 
 public section
@@ -126,6 +132,13 @@ theorem conormalFormsEquiv_apply (W : Submodule R M) (α : (M ⧸ W) [⋀^ι]→
   rw [conormalFormsEquiv, LinearEquiv.ofBijective_apply, LinearMap.codRestrict_apply,
     conormalPullback_apply]
 
+/-- Descent of a conormal form evaluates on quotient classes by the original form. -/
+@[simp]
+theorem conormalFormsEquiv_symm_apply_mk (W : Submodule R M)
+    (α : W.conormalForms ι) (v : ι → M) :
+    W.conormalFormsEquiv.symm α (fun j => Submodule.Quotient.mk (v j)) = α.val v :=
+  AlternatingMap.congr_fun (congrArg Subtype.val (W.conormalFormsEquiv.apply_symm_apply α)) v
+
 end CommRing
 
 end Submodule
@@ -139,6 +152,10 @@ soon as one argument lies in `W`. By `isConormal_rayOfNeZero_iff`, every represe
 vanishes in this way. -/
 def IsConormal (o : Module.Ray R (M [⋀^ι]→ₗ[R] R)) (W : Submodule R M) : Prop :=
   o.someVector ∈ W.conormalForms ι
+
+/-- Conormality can be checked on the chosen nonzero representative. -/
+theorem isConormal_iff {o : Module.Ray R (M [⋀^ι]→ₗ[R] R)} {W : Submodule R M} :
+    o.IsConormal W ↔ o.someVector ∈ W.conormalForms ι := Iff.rfl
 
 /-- A ray is conormal exactly when any representing form is a conormal form. -/
 @[simp]
@@ -182,6 +199,59 @@ theorem IsConormal.exists_eq_rayOfNeZero_conormalPullback [Finite ι]
   rw [← o.someVector_ray]
   congr
   exact hα.symm
+
+/-- The sign of a ray of alternating forms on a tuple of vectors: the sign of the value of any
+representing form, by `Module.Ray.evalSign_rayOfNeZero`. -/
+noncomputable def evalSign (o : Module.Ray R (M [⋀^ι]→ₗ[R] R)) (v : ι → M) : SignType :=
+  SignType.sign (o.someVector v)
+
+/-- The sign of a ray can be computed using any nonzero representing form. -/
+@[simp]
+theorem evalSign_rayOfNeZero {α : M [⋀^ι]→ₗ[R] R} (hα : α ≠ 0) (v : ι → M) :
+    (rayOfNeZero R α hα).evalSign v = SignType.sign (α v) := by
+  have hβ := (rayOfNeZero R α hα).someVector_ne_zero
+  obtain ⟨r, hr, he⟩ := ((ray_eq_iff hβ hα).mp (someVector_ray _)).exists_pos_left hβ hα
+  have hv : α v = r * (rayOfNeZero R α hα).someVector v := by
+    rw [← smul_eq_mul, ← smul_apply, he]
+  rw [evalSign, hv, sign_mul, sign_pos hr, one_mul]
+
+/- The scaling formula uses Mathlib's `AlternatingMap.map_smul_univ` and `signHom`. -/
+/-- Scaling the arguments multiplies the evaluation sign by the product of
+the scalar signs. -/
+@[simp]
+theorem evalSign_smul [Fintype ι]
+    (o : Module.Ray R (M [⋀^ι]→ₗ[R] R)) (v : ι → M) (c : ι → R) :
+    o.evalSign (fun j => c j • v j) = (∏ j, SignType.sign (c j)) * o.evalSign v := by
+  simp only [evalSign, AlternatingMap.map_smul_univ, smul_eq_mul, sign_mul]
+  congr 1
+  exact map_prod (signHom : R →*₀ SignType) c Finset.univ
+
+/-- Reversing a ray negates its sign on every tuple. -/
+@[simp]
+theorem evalSign_neg (o : Module.Ray R (M [⋀^ι]→ₗ[R] R)) (v : ι → M) :
+    (-o).evalSign v = -o.evalSign v := by
+  induction o using Module.Ray.ind with
+  | h α hα =>
+    rw [neg_rayOfNeZero, evalSign_rayOfNeZero, evalSign_rayOfNeZero, neg_apply, Left.sign_neg]
+
+/-- A conormal ray whose degree is the dimension of the quotient has nonzero sign on a tuple
+exactly when the tuple is linearly independent modulo `W`, that is, when it maps to a basis
+of `M ⧸ W`. -/
+theorem IsConormal.evalSign_ne_zero_iff [Fintype ι] {o : Module.Ray R (M [⋀^ι]→ₗ[R] R)}
+    {W : Submodule R M} [FiniteDimensional R (M ⧸ W)] (ho : o.IsConormal W)
+    (hk : finrank R (M ⧸ W) = Fintype.card ι) (v : ι → M) :
+    o.evalSign v ≠ 0 ↔ LinearIndependent R (W.mkQ ∘ v) := by
+  let β := W.conormalFormsEquiv.symm ⟨o.someVector, ho⟩
+  have hβ : β ≠ 0 := by
+    rw [ne_eq, LinearEquiv.map_eq_zero_iff, Subtype.ext_iff]
+    exact o.someVector_ne_zero
+  have hv : o.someVector v = β (W.mkQ ∘ v) :=
+    (W.conormalFormsEquiv_symm_apply_mk ⟨o.someVector, ho⟩ v).symm
+  rw [evalSign, hv, sign_ne_zero]
+  refine ⟨fun hne => by_contra fun hli => hne (β.map_linearDependent _ hli), fun hli => ?_⟩
+  have hb := (β.map_basis_ne_zero_iff (basisOfLinearIndependentOfCardEqFinrank' _ hli hk.symm)).mpr
+    hβ
+  rwa [coe_basisOfLinearIndependentOfCardEqFinrank'] at hb
 
 /-- Two conormal orientations in the top degree of a finite-dimensional normal
 quotient agree up to reversal. -/

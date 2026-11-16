@@ -12,7 +12,6 @@ import TauCeti.Analysis.Calculus.ContDiff.Convolution
 import TauCeti.Analysis.Distribution.Order
 import TauCeti.Analysis.Distribution.Regularization
 import TauCeti.Analysis.Distribution.Support
-import TauCeti.Basic.Complex.OfRealSub
 import TauCeti.Probability.Distributions.Cauchy.ApproximateIdentity
 
 /-!
@@ -52,12 +51,29 @@ The proof has three steps.
 The limit theorem is stated for distributions on all of `ℝ`, where every translate of `ρ_γ` is a
 test function; the jump identity itself holds on every open subset of `ℝ`.
 
+## The support of the Cauchy representative
+
+As a consequence, the class of `C` in the space `O(ℂ ∖ ℝ) / O(W(V))` of hyperfunctions on an open
+`V ⊆ ℝ` vanishes exactly when `V` does not meet the support of `u`. One direction is
+`Distribution.cauchyTransform_mem_throughReal`. Conversely, if `C` extends to a holomorphic `g` on
+`W(V)`, then for a test function `φ` supported in `V` the integral of `φ` against the jump
+`g(x + iε) - g(x - iε)` is continuous in `ε` and vanishes at `ε = 0`, so its limit `u φ` is zero.
+Taking `V = ℝ`, the transform extends to an entire function only for `u = 0`. For a distribution
+`u` on an open set `Ω ⊆ ℝ` and a cutoff `χ` equal to one on `V`, the same criterion follows by
+extending `χ u` by zero to `ℝ`, which does not change the Cauchy transform.
+
 ## Main declarations
 
 * `Distribution.cauchyTransform_add_mul_I_sub_cauchyTransform_sub_mul_I`: the jump of the Cauchy
   transform at height `γ` is `u` paired with `χ` times the Poisson kernel.
 * `Distribution.tendsto_integral_smul_cauchyTransform_sub`: the Sokhotski–Plemelj formula
   `bv₊ C - bv₋ C = u` for a compactly supported distribution on `ℝ`.
+* `Distribution.cauchyTransform_mem_throughReal_iff`: `C` extends holomorphically across an open
+  `V ⊆ ℝ` exactly when `V` does not meet the support of `u`.
+* `Distribution.cauchyTransform_mem_throughReal_iff_of_eqOn_one`: the same criterion for a
+  distribution on an open set `Ω ⊆ ℝ` and a cutoff equal to one on `V`.
+* `Distribution.cauchyTransform_mem_throughReal_top_iff`: `C` extends to an entire function exactly
+  when `u = 0`.
 
 ## References
 
@@ -72,6 +88,7 @@ public section
 noncomputable section
 
 open Complex Filter Metric Set TopologicalSpace TestFunction MeasureTheory ProbabilityTheory
+open TauCeti.Hyperfunction
 open ContinuousLinearMap (lsmul)
 open scoped ContDiff Distributions NNReal Pointwise Real Topology Convolution
 
@@ -86,9 +103,9 @@ and scale `γ`, the Poisson kernel of the upper half-plane at the point `x + iγ
 theorem cauchyTransform_add_mul_I_sub_cauchyTransform_sub_mul_I (u : 𝓓'(Ω, ℂ)) (χ : 𝓓(Ω, ℝ))
     (x : ℝ) (γ : ℝ≥0) :
     cauchyTransform u χ (x + (γ : ℝ) * I) - cauchyTransform u χ (x - (γ : ℝ) * I) =
-      u (smulLeftCLM (TauCeti.Probability.contDiff_cauchyPDFReal x γ) χ) := by
+      u (TestFunction.smulLeftCLM (TauCeti.Probability.contDiff_cauchyPDFReal x γ) χ) := by
   rcases eq_or_ne γ 0 with rfl | hγ
-  · have h0 : smulLeftCLM (TauCeti.Probability.contDiff_cauchyPDFReal x 0) χ = 0 := by
+  · have h0 : TestFunction.smulLeftCLM (TauCeti.Probability.contDiff_cauchyPDFReal x 0) χ = 0 := by
       ext t
       simp
     rw [h0, map_zero]
@@ -96,16 +113,19 @@ theorem cauchyTransform_add_mul_I_sub_cauchyTransform_sub_mul_I (u : 𝓓'(Ω, �
   have hγ' : (0 : ℝ) < γ := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hγ)
   have hp : ((x : ℂ) + (γ : ℝ) * I).im ≠ 0 := by simpa using hγ'.ne'
   have hm : ((x : ℂ) - (γ : ℝ) * I).im ≠ 0 := by simpa using hγ'.ne'
-  have hk : cauchyKernel χ 1 hp - cauchyKernel χ 1 hm = (2 * π * I) •
-      postcompCLM ofRealCLM (smulLeftCLM (TauCeti.Probability.contDiff_cauchyPDFReal x γ) χ) := by
+  have hk : cauchyKernel χ 1 (notMem_image_ofReal_of_im_ne_zero hp) -
+      cauchyKernel χ 1 (notMem_image_ofReal_of_im_ne_zero hm) = (2 * π * I) •
+      postcompCLM ofRealCLM
+        (TestFunction.smulLeftCLM (TauCeti.Probability.contDiff_cauchyPDFReal x γ) χ) := by
     ext t
     have h1 := ofReal_sub_ne_zero_of_im_ne_zero hp t
     have h2 := ofReal_sub_ne_zero_of_im_ne_zero hm t
     have h3 : ((t : ℂ) - x) ^ 2 + ((γ : ℝ) : ℂ) ^ 2 ≠ 0 := by
       exact_mod_cast (by positivity : ((t - x) ^ 2 + (γ : ℝ) ^ 2 : ℝ) ≠ 0)
     simp only [FunLike.coe_sub, FunLike.coe_smul, Pi.sub_apply, Pi.smul_apply, cauchyKernel_apply,
-      pow_one, postcompCLM_apply, Function.comp_apply, ofRealCLM_apply, smulLeftCLM_apply,
-      cauchyPDFReal_def, smul_eq_mul, ofReal_mul, ofReal_inv, ofReal_add, ofReal_pow, ofReal_sub]
+      pow_one, postcompCLM_apply, Function.comp_apply, ofRealCLM_apply,
+      TestFunction.smulLeftCLM_apply, cauchyPDFReal_def, smul_eq_mul, ofReal_mul, ofReal_inv,
+      ofReal_add, ofReal_pow, ofReal_sub]
     field_simp
     linear_combination (2 * (χ t : ℂ) * ((γ : ℝ) : ℂ) ^ 3 * I) * I_sq
   rw [cauchyTransform_of_im_ne_zero u χ hp, cauchyTransform_of_im_ne_zero u χ hm, ← mul_sub,
@@ -230,7 +250,7 @@ private theorem integral_smul_cauchyTransform_sub_eq (u : 𝓓'((⊤ : Opens ℝ
   -- Near the support of `u`, `χ` times the Poisson kernel at `x ∈ tsupport φ` is the translate of
   -- the truncated kernel by `x`.
   have htrans (x : ℝ) (hx : x ∈ tsupport φ) :
-      u (smulLeftCLM (TauCeti.Probability.contDiff_cauchyPDFReal x γ) χ) =
+      u (TestFunction.smulLeftCLM (TauCeti.Probability.contDiff_cauchyPDFReal x γ) χ) =
         translatePairing u (truncatedPoissonKernel b γ) x := by
     have hmaps : MapsTo (· + x) ((⊤ : Opens ℝ) : Set ℝ) ((⊤ : Opens ℝ) : Set ℝ) := by simp
     rw [translatePairing_eq u
@@ -242,8 +262,8 @@ private theorem integral_smul_cauchyTransform_sub_eq (u : 𝓓'((⊤ : Opens ℝ
     have htb' : ‖t‖ < A + 1 := mem_ball_zero_iff.1 htb
     have hb1 : b (t - x) = 1 := b.one_of_mem_closedBall (mem_closedBall_zero_iff.2
       ((norm_sub_le t x).trans (by linarith)))
-    rw [TauCeti.translateTestFunction_apply, truncatedPoissonKernel_apply, hb1, smulLeftCLM_apply,
-      ht1]
+    rw [TauCeti.translateTestFunction_apply, truncatedPoissonKernel_apply, hb1,
+      TestFunction.smulLeftCLM_apply, ht1]
     simp [cauchyPDFReal_def]
   rw [apply_eq_integral_smul_translatePairing u (truncatedPoissonKernel b γ)
     (φ.continuous.integrable_of_hasCompactSupport φ.hasCompactSupport) φ.hasCompactSupport
@@ -277,5 +297,102 @@ theorem tendsto_integral_smul_cauchyTransform_sub (u : 𝓓'((⊤ : Opens ℝ), 
   filter_upwards [self_mem_nhdsWithin] with ε (hε : 0 < ε)
   rw [Function.comp_apply, ← integral_smul_cauchyTransform_sub_eq u hχ φ hA hB le_rfl,
     Real.coe_toNNReal ε hε.le]
+
+/-! ### The support of the Cauchy representative -/
+
+/-- **The support of the Cauchy representative.** Let `u` be a complex-valued distribution on `ℝ`
+and `χ` a real test function equal to one near the support of `u`. The Cauchy transform of `u`
+extends holomorphically from `ℂ ∖ ℝ` across an open set `V ⊆ ℝ` exactly when `u` vanishes on `V`.
+Equivalently, the class of the Cauchy transform in the space `O(ℂ ∖ ℝ) / O(W(V))` of
+hyperfunctions on `V` is zero exactly when `V` does not meet `dsupport u`. -/
+theorem cauchyTransform_mem_throughReal_iff (u : 𝓓'((⊤ : Opens ℝ), ℂ))
+    {χ : 𝓓((⊤ : Opens ℝ), ℝ)} (hχ : ∀ᶠ t in 𝓝ˢ (dsupport u), χ t = 1) {V : Opens ℝ} :
+    ⟨cauchyTransform u χ, cauchyTransform_mem_holomorphicSections u χ⟩ ∈ throughReal V ↔
+      Disjoint (V : Set ℝ) (dsupport u) := by
+  refine ⟨fun h ↦ ?_, fun h ↦ cauchyTransform_mem_throughReal u χ (h.mono_right inter_subset_left)⟩
+  obtain ⟨g, hg, hgf⟩ := mem_throughReal_iff.1 h
+  replace hg := (mem_holomorphicSections_iff.1 hg).1
+  rw [← isVanishingOn_iff_disjoint_dsupport u V.isOpen]
+  intro φ hφ
+  -- The pairing of `φ` with the jump of the extension `g` at height `ε` is continuous in `ε` and
+  -- vanishes at `ε = 0`; for `ε > 0` it is the Sokhotski–Plemelj integral, whose limit is `u φ`.
+  let F : ℝ → ℝ → ℂ := fun ε x ↦ φ x • (g (x + ε * I) - g (x - ε * I))
+  have hF : Continuous (Function.uncurry F) := by
+    refine continuous_iff_continuousAt.2 fun q ↦ ?_
+    by_cases hq : q.2 ∈ tsupport φ
+    · have hc (z : ℂ) (hz : z.re = q.2) : ContinuousAt g z :=
+        (hg.differentiableAt ((complexNeighborhood V).isOpen.mem_nhds
+          (mem_complexNeighborhood_iff.2 (Or.inr (by rw [hz]; exact hφ hq))))).continuousAt
+      exact (φ.continuous.comp continuous_snd).continuousAt.smul
+        (((hc _ (by simp)).comp (f := fun p : ℝ × ℝ ↦ (p.2 : ℂ) + p.1 * I)
+          (by fun_prop)).sub ((hc _ (by simp)).comp (f := fun p : ℝ × ℝ ↦ (p.2 : ℂ) - p.1 * I)
+          (by fun_prop)))
+    · refine (continuousAt_const : ContinuousAt (fun _ : ℝ × ℝ ↦ (0 : ℂ)) q).congr ?_
+      filter_upwards [(continuous_snd.tendsto q).eventually
+        (notMem_tsupport_iff_eventuallyEq.1 hq)] with p hp
+      simp [F, Function.uncurry_def, hp]
+  have hcont : Continuous fun ε ↦ ∫ x, F ε x :=
+    (continuous_parametric_integral_of_continuous (μ := volume) hF
+      φ.hasCompactSupport.isCompact).congr fun ε ↦
+        setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx ↦ by
+          simp [F, image_eq_zero_of_notMem_tsupport hx]
+  have hlim : Tendsto (fun ε ↦ ∫ x, F ε x) (𝓝[>] 0) (𝓝 0) := by
+    simpa [F] using (hcont.tendsto 0).mono_left nhdsWithin_le_nhds
+  refine tendsto_nhds_unique ((tendsto_integral_smul_cauchyTransform_sub u hχ φ).congr' ?_) hlim
+  filter_upwards [self_mem_nhdsWithin] with ε (hε : 0 < ε)
+  refine integral_congr_ae (.of_forall fun x ↦ ?_)
+  simp only [F]
+  rw [hgf (mem_nonRealOpen_iff.2 (by simpa using hε.ne')),
+    hgf (mem_nonRealOpen_iff.2 (by simpa using hε.ne'))]
+
+/-- **Injectivity of the Cauchy representative.** For a distribution `u` on `ℝ` and a cutoff `χ`
+equal to one near its support, the Cauchy transform of `u` extends to an entire function exactly
+when `u = 0`: the class of the transform in `O(ℂ ∖ ℝ) / O(ℂ)` determines `u`. -/
+theorem cauchyTransform_mem_throughReal_top_iff (u : 𝓓'((⊤ : Opens ℝ), ℂ))
+    {χ : 𝓓((⊤ : Opens ℝ), ℝ)} (hχ : ∀ᶠ t in 𝓝ˢ (dsupport u), χ t = 1) :
+    ⟨cauchyTransform u χ, cauchyTransform_mem_holomorphicSections u χ⟩ ∈ throughReal ⊤ ↔
+      u = 0 := by
+  rw [cauchyTransform_mem_throughReal_iff u hχ, Opens.coe_top, univ_disjoint,
+    dsupport_eq_empty_iff]
+  exact ⟨fun h ↦ ContinuousLinearMap.ext (congrFun h), fun h ↦ by simp [h]⟩
+
+/-- **The support of the Cauchy representative on an open set.** Let `u` be a complex-valued
+distribution on an open set `Ω ⊆ ℝ` and `χ` a real test function on `Ω` equal to one on an open
+set `V ⊆ ℝ`. The Cauchy transform of `u` with cutoff `χ` extends holomorphically from `ℂ ∖ ℝ`
+across `V` exactly when `u` vanishes on `V`. Equivalently, the class of the transform in the space
+`O(ℂ ∖ ℝ) / O(W(V))` of hyperfunctions on `V` is zero exactly when `V` does not meet
+`dsupport u`. -/
+theorem cauchyTransform_mem_throughReal_iff_of_eqOn_one (u : 𝓓'(Ω, ℂ)) {χ : 𝓓(Ω, ℝ)}
+    {V : Opens ℝ} (hχ : EqOn χ 1 V) :
+    ⟨cauchyTransform u χ, cauchyTransform_mem_holomorphicSections u χ⟩ ∈ throughReal V ↔
+      Disjoint (V : Set ℝ) (dsupport u) := by
+  -- The extension `v` of `χ u` by zero to `ℝ` is compactly supported, and with a cutoff `ρ` equal
+  -- to one near the support of `χ` it has the same Cauchy transform as `u` with cutoff `χ`.
+  have hχΩ : tsupport χ ∩ ((⊤ : Opens ℝ) : Set ℝ) ⊆ Ω := inter_subset_left.trans χ.tsupport_subset
+  set v : 𝓓'((⊤ : Opens ℝ), ℂ) := cutoffCLM χ.contDiff hχΩ u
+  obtain ⟨ρ, hρ, -⟩ := TestFunction.exists_eventually_eq_one (n := ⊤) (Ω := (⊤ : Opens ℝ))
+    χ.hasCompactSupport.isCompact (subset_univ _)
+  have hv : dsupport v ⊆ tsupport χ ∩ dsupport u := dsupport_cutoffCLM_subset_inter _ _ u
+  have hC : (⟨cauchyTransform u χ, cauchyTransform_mem_holomorphicSections u χ⟩ :
+      holomorphicSections nonRealOpen) =
+        ⟨cauchyTransform v ρ, cauchyTransform_mem_holomorphicSections v ρ⟩ :=
+    Subtype.ext (cauchyTransform_cutoffCLM u χ fun t ht ↦
+      hρ.self_of_nhdsSet t (subset_tsupport χ ht)).symm
+  rw [hC, cauchyTransform_mem_throughReal_iff v
+    (hρ.filter_mono (nhdsSet_mono (hv.trans inter_subset_left)))]
+  refine ⟨fun h ↦ ?_, fun h ↦ h.mono_right (hv.trans inter_subset_right)⟩
+  -- A test `φ` supported in `V`, where `χ = 1`, satisfies `u φ = v φ`.
+  rw [← isVanishingOn_iff_disjoint_dsupport u V.isOpen]
+  rw [← isVanishingOn_iff_disjoint_dsupport v V.isOpen] at h
+  intro φ hφ
+  have hφ' : ⇑(monoCLM ℝ φ : 𝓓((⊤ : Opens ℝ), ℝ)) = φ := by
+    ext t
+    simp
+  have hχφ : TestFunction.cutoffCLM χ.contDiff hχΩ (monoCLM ℝ φ) = φ := by
+    ext t
+    by_cases ht : t ∈ tsupport φ
+    · simp [hφ', hχ (hφ ht)]
+    · simp [hφ', image_eq_zero_of_notMem_tsupport ht]
+  simpa [v, hχφ] using h (monoCLM ℝ φ) (by rwa [hφ'])
 
 end Distribution

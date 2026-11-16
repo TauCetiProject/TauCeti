@@ -28,6 +28,8 @@ from the ambient measurable space with respect to the subtype σ-algebra.
   `InvMemClass` / `NegMemClass` subobjects.
 * `TauCeti.measurableAdd_of_measurableSub`: on an additive group, separately measurable
   subtraction gives separately measurable addition.
+* `TauCeti.measurableAdd₂_of_measurableSub₂`: on an additive group, jointly measurable subtraction
+  gives jointly measurable addition.
 -/
 
 public section
@@ -61,5 +63,14 @@ theorem measurableAdd_of_measurableSub {G : Type*} [AddGroup G] [MeasurableSpace
     fun c ↦ by
       have h : Measurable fun x : G ↦ x - -c := measurable_sub_const (-c)
       simpa using h⟩
+
+/-- On an additive group, jointly measurable subtraction gives jointly measurable addition, by
+`x + y = x - (0 - y)`. -/
+theorem measurableAdd₂_of_measurableSub₂ {G : Type*} [AddGroup G] [MeasurableSpace G]
+    [MeasurableSub₂ G] : MeasurableAdd₂ G :=
+  ⟨by
+    have h : Measurable fun p : G × G ↦ p.1 - (0 - p.2) :=
+      measurable_fst.sub (measurable_const.sub measurable_snd)
+    simpa using h⟩
 
 end TauCeti

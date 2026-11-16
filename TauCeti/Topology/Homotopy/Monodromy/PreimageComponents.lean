@@ -135,8 +135,10 @@ theorem exists_joinedIn_preimage (hp : IsCoveringMap p) {V : Set X}
 joining two points of the fibre over `v ∈ V` projects to a loop of `V`, which is null-homotopic
 in `V`, so its monodromy is trivial. -/
 theorem eq_of_joinedIn_preimage (hp : IsCoveringMap p) {V : Set X}
-    [SimplyConnectedSpace V] {v : X} (hv : v ∈ V) {e e' : p ⁻¹' {v}}
+    [SimplyConnectedSpace V] {v : X} {e e' : p ⁻¹' {v}}
     (h : JoinedIn (p ⁻¹' V) (e : E) (e' : E)) : e = e' := by
+  have hv : v ∈ V :=
+    Set.mem_singleton_iff.mp (Set.mem_preimage.mp e.2) ▸ Set.mem_preimage.mp h.source_mem
   obtain ⟨g, rfl⟩ := (hp.joinedIn_preimage_iff hv e e').1 h
   rw [Subsingleton.elim g 1, map_one, ← IsCoveringMap.coe_monodromyPerm, map_one,
     Equiv.Perm.one_apply]
@@ -153,7 +155,7 @@ noncomputable def fiberEquivZerothHomotopy (hp : IsCoveringMap p)
     exact hv
   haveI := hV.simplyConnectedSpace
   Equiv.ofBijective (fun e => ZerothHomotopy.mk (⟨e, hmem e⟩ : p ⁻¹' V))
-    ⟨fun e e' h => hp.eq_of_joinedIn_preimage hv
+    ⟨fun e e' h => hp.eq_of_joinedIn_preimage
         ((joinedIn_iff_joined (hmem e) (hmem e')).2 (Quotient.exact h)),
       fun a => by
         induction a with

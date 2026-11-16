@@ -50,13 +50,13 @@ lemma IsFredholm.prodMap
   · -- `LinearMap.isStrictMap_prodMap` is stated for the underlying linear maps.
     change Topology.IsStrictMap ⇑((T : E₁ →ₗ[K] F₁).prodMap (S : E₂ →ₗ[K] F₂))
     exact LinearMap.isStrictMap_prodMap hT.isStrictMap hS.isStrictMap
-  · rw [ContinuousLinearMap.coe_prodMap T S, LinearMap.range_prodMap]
+  · rw [coe_prodMap T S, LinearMap.range_prodMap]
     exact hT.isClosed_range.prod hS.isClosed_range
-  · rw [ContinuousLinearMap.coe_prodMap T S, LinearMap.ker_prodMap]
+  · rw [coe_prodMap T S, LinearMap.ker_prodMap]
     exact (Submodule.prodEquiv _ _).symm.finiteDimensional
-  · rw [ContinuousLinearMap.coe_prodMap T S, LinearMap.range_prodMap]
+  · rw [coe_prodMap T S, LinearMap.range_prodMap]
     exact (Submodule.quotientProdEquiv _ _).symm.finiteDimensional
-  · rw [ContinuousLinearMap.coe_prodMap T S, LinearMap.ker_prodMap]
+  · rw [coe_prodMap T S, LinearMap.ker_prodMap]
     obtain ⟨PT, hPT⟩ := hT.closedComplemented_ker
     obtain ⟨PS, hPS⟩ := hS.closedComplemented_ker
     let P : E₁ × E₂ →L[K] E₁ × E₂ :=

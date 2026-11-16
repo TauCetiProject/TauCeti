@@ -35,7 +35,8 @@ This file proves the topological argument principle for such functions:
   `TauCeti.not_hasContinuousLogOn_zpow_sub_sphere`).
 
 In particular the end framing of such a section determines its total number of zeros, counted
-with multiplicity, and that number is the degree of the framing.
+with multiplicity, and that number is the degree of the framing. A continuous function framed in
+positive degree therefore has a zero (`TauCeti.exists_eq_zero_of_tendsto_mul_inv_pow`).
 -/
 
 public section
@@ -103,7 +104,7 @@ theorem exists_continuous_ne_zero_eq_mul_prod_pow (hf : Continuous f) (s : Finse
   choose! v hvc hv0 hvf using hn
   set P : ℂ → ℂ := fun w ↦ ∏ z ∈ s, (w - z) ^ n z with hPdef
   -- `Q z` is the product with the factor at `z` removed
-  set Q : ℂ → ℂ → ℂ := fun z w ↦ ∏ y ∈ s.erase z, (w - y) ^ n y with hQdef
+  set Q : ℂ → ℂ → ℂ := fun z w ↦ ∏ y ∈ s.erase z, (w - y) ^ n y
   have hPQ : ∀ z ∈ s, ∀ w, P w = (w - z) ^ n z * Q z w := fun z hz w ↦
     (Finset.mul_prod_erase s (fun y ↦ (w - y) ^ n y) hz).symm
   have hQc : ∀ z, Continuous (Q z) := fun z ↦ by fun_prop
@@ -240,5 +241,16 @@ theorem finsum_eq_of_tendsto_mul_inv_pow
     {m : ℕ} (hm : Tendsto (fun z ↦ f z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1)) :
     ∑ᶠ z, n z = m := by
   exact_mod_cast natCast_finsum_eq_of_tendsto_mul_inv_zpow hn (m := m) (by simpa using hm)
+
+/-- **A continuous function of positive degree at infinity has a zero.** If `f` is continuous and
+`f z * ((z / |z|) ^ m)⁻¹ → 1` at infinity with `m ≠ 0`, then `f` vanishes somewhere. -/
+theorem exists_eq_zero_of_tendsto_mul_inv_pow (hf : Continuous f) {m : ℕ} (hm₀ : m ≠ 0)
+    (hm : Tendsto (fun z ↦ f z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1)) :
+    ∃ z, f z = 0 := by
+  by_contra! h
+  refine hm₀ ?_
+  rw [← finsum_eq_of_tendsto_mul_inv_pow (n := 0)
+    (fun z ↦ ⟨f, hf.continuousAt, h z, by simp⟩) hm]
+  simp
 
 end TauCeti

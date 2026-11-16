@@ -45,17 +45,13 @@ multiplicity, and hence each multiplicity, of every other partition of `ν`.
 * `TauCeti.kostantPartition_root_of_mem_support`: `P(αᵢ) = 1` for a simple root `αᵢ`, which is the
   statement that a simple root is a sum of positive roots in only the obvious way.
 
-## Roadmap
+## Implementation notes
 
-This is the “Kostant partition function” item of Layer 3 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`, which asks for it “**here** in
-Layer 3 as a combinatorial object attached to the positive roots”, to be consumed by the weight
-multiplicities of a Verma module in that layer and by Kostant's multiplicity formula in Layer 6.
-The target signature in that roadmap's `Suggested.lean` is `kostantPartition base nu` for a base of
-the root system of a Killing-semisimple Lie algebra; nothing in the definition uses the Lie algebra,
-so it is stated here for a base of an arbitrary root pairing, alongside
-`TauCeti.posRoots` in `TauCeti/LinearAlgebra/RootSystem/Positive.lean`, and specializes to that
-signature.
+The Kostant partition function is a combinatorial object attached to the positive roots: it gives
+the weight multiplicities of a Verma module and enters Kostant's multiplicity formula. Nothing in
+the definition uses a Lie algebra, so it is stated here for a base of an arbitrary root pairing,
+alongside `TauCeti.posRoots` in `TauCeti/LinearAlgebra/RootSystem/Positive.lean`, and specializes
+to a base of the root system of a Killing-semisimple Lie algebra.
 
 ## References
 

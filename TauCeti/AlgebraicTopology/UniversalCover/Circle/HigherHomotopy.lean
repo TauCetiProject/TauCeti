@@ -30,9 +30,6 @@ groups of such a space are subsingletons
 (`HomotopyGroup.subsingleton_of_topologicalVectorSpace`). Applying the covering-map
 isomorphism for `ℝ → AddCircle p` gives the circle calculation.
 
-This proves Stage 4, item 11 of the Tau Ceti universal-covers roadmap
-(`TauCetiRoadmap/UniversalCovers/README.md`): `π_n(S¹) = 0` for `n ≥ 2`.
-
 ## Main declarations
 
 * `AddCircle.subsingleton_homotopyGroup`: `π_N(AddCircle p)` is trivial when `N` has at least two

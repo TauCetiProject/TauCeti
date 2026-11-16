@@ -26,15 +26,9 @@ change respects the pointwise group law on homomorphisms
 
 The last statement is the concrete check that the ring homomorphism is the expected one: `[n]` is
 the image of the integer `n` in the endomorphism ring, and a ring homomorphism preserves integers,
-so `[n]` is intrinsic to the abelian variety and does not depend on the base field. That is also
-what a later Layer E statement about `[n]` being an isogeny needs in order to be checked after
-base change to an algebraic closure.
-
-This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer E, "Abelian variety = smooth,
-proper, geometrically connected group scheme over `k`; basic API" and its item "`[n]` as an
-isogeny", together with the base-change compatibility required in the roadmap's end goal: the
-Jacobian's universal property produces homomorphisms of abelian varieties, and comparing them
-after base change is exactly comparing them in the base-changed endomorphism ring.
+so `[n]` is intrinsic to the abelian variety and does not depend on the base field. This is what
+allows a statement about `[n]` being an isogeny to be checked after base change to an algebraic
+closure; that statement is not formalized here.
 
 No external mathematics is vendored. The ring structure is Mathlib's, transported along the
 already-established base-change functoriality of abelian-variety homomorphisms.

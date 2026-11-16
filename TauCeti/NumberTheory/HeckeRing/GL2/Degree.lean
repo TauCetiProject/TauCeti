@@ -60,10 +60,9 @@ theorem degree_diagCoset_prime_pow (hp : p.Prime) (i k : ℕ) (hk : 0 < k) :
     k hk (by simp [Nat.pow_div (Nat.le_add_right i k) hp.pos])
 
 /-- The degree of a nonzero diagonal operator is the degree of its double coset. -/
-private lemma deg_heckeTDiag_eq_diagCoset_degree {a d : ℕ} (ha : 0 < a) (hd : 0 < d)
-    (hdvd : a ∣ d) :
+private lemma deg_heckeTDiag_eq_diagCoset_degree {a d : ℕ} (hd : 0 < d) (hdvd : a ∣ d) :
     deg (posDetInt 2) (SLnZ 2) ℤ (heckeTDiag a d) = ((diagCoset ![a, d]).degree : ℤ) := by
-  rw [heckeTDiag_eq_diagElem ha hd hdvd, diagElem_def, deg_single, nsmul_eq_mul, mul_one]
+  rw [heckeTDiag_eq_diagElem hd hdvd, diagElem_def, deg_single, nsmul_eq_mul, mul_one]
 
 /-- A term of the `T(pᵏ)` expansion strictly below the middle has degree
 `p^(k - 2i - 1)(p + 1)`. -/
@@ -74,7 +73,7 @@ private lemma deg_prime_pow_term_lt (hp : p.Prime) (i k : ℕ) (h2i : 2 * i < k)
   -- hides that shape inside `k - i`, and `rw` matches syntactically, so re-index the exponent
   -- with `omega` before the degree lemmas can fire.
   rw [show k - i = i + (k - 2 * i) by omega,
-    deg_heckeTDiag_eq_diagCoset_degree (pow_pos hp.pos i) (pow_pos hp.pos _)
+    deg_heckeTDiag_eq_diagCoset_degree (pow_pos hp.pos _)
       (Nat.pow_dvd_pow p (Nat.le_add_right i _)),
     degree_diagCoset_prime_pow p hp i (k - 2 * i) (by omega)]
 
@@ -86,7 +85,7 @@ private lemma deg_prime_pow_term_eq (hp : p.Prime) (i k : ℕ) (h2i : 2 * i = k)
   -- and `degree_diagCoset_const` is stated for a constant *function*, which `![x, x]` is only
   -- extensionally — hence the `funext`.
   rw [show k - i = i by omega,
-    deg_heckeTDiag_eq_diagCoset_degree (pow_pos hp.pos i) (pow_pos hp.pos i) dvd_rfl,
+    deg_heckeTDiag_eq_diagCoset_degree (pow_pos hp.pos i) dvd_rfl,
     show ![p ^ i, p ^ i] = (fun _ : Fin 2 ↦ p ^ i) from funext fun j ↦ by fin_cases j <;> rfl,
     degree_diagCoset_const 2 _, Nat.cast_one]
 

@@ -39,8 +39,9 @@ consumer instantiate it. For a short model (`a₁ = a₃ = 0`, so
 * `WeierstrassCurve.eval_derivative_Ψ₂Sq_of_evalEval_ψ₂_eq_zero`: at a zero of `ψ₂`,
   `Ψ₂Sq'(x) = -4 W_X(x, y)`, and `WeierstrassCurve.neg_evalEval_polynomialX_eq_of_Ψ₂Sq_eq`
   computes `-W_X(e₁, t) = (e₁ - e₂)(e₁ - e₃)` from the roots `eᵢ` of `Ψ₂Sq`.
-* `WeierstrassCurve.eval_derivative_Ψ₂Sq_ne_zero`: on an elliptic curve with `2 ≠ 0` over a field,
-  the roots of `Ψ₂Sq` are simple.
+* `WeierstrassCurve.eval_derivative_Ψ₂Sq_ne_zero`: on an elliptic curve over a ring without zero
+  divisors in which `2 ≠ 0`, the roots of `Ψ₂Sq` are simple. A double root would make both
+  `Ψ₂Sq(x)` and `6x² + b₂x + b₄` vanish, and the Bézout certificate would give `4Δ = 0`.
 * `WeierstrassCurve.isUnit_two_of_evalEval_ψ₂_eq_zero`: if `W` is elliptic and `ψ₂` vanishes at
   two points whose `x`-coordinates differ by a unit, then `2` is a unit, since modulo `2` both `a₁`
   and `a₃` vanish and then so does `Δ`.
@@ -55,18 +56,16 @@ statement about polynomials, usable by any caller with a common divisor in hand,
 `evalEval_ψ₂_sq` is an unconditional on-curve evaluation. The torsion input that turns them into
 the Nagell–Lutz disjunct lives in `Torsion/Discriminant.lean`.
 
-This is an ingredient for the Nagell–Lutz milestone of `TauCetiRoadmap/EllipticCurves/README.md`,
-Layer 6, item "The torsion subgroup and Nagell–Lutz", whose short-model target `lutz_nagell` asks
-for `x, y ∈ ℤ` together with `y = 0 ∨ y² ∣ Δ`. It is the algebraic step feeding the **second
-disjunct** of that disjunction, in the long-model form the roadmap also names
-(`lutz_nagell_integrality_general`, "with its discriminant companion"). Establishing the full
+This is an ingredient for the Nagell–Lutz theorem, whose short-model form `lutz_nagell` concludes
+`x, y ∈ ℤ` together with `y = 0 ∨ y² ∣ Δ`. It is the algebraic step feeding the **second
+disjunct** of that disjunction, for long Weierstrass models as well. Establishing the full
 disjunction additionally requires the torsion input above and a separate treatment of the `y = 0`
 branch.
 
 ## Provenance
 
-Ported from the AINTLIB `NagellLutz` project (`github.com/CBirkbeck/AINTLIB`, Apache-2.0), pinned by
-that roadmap at `dev/modular-curves @ 9fec8eba7652`:
+Ported from the AINTLIB `NagellLutz` project (`github.com/CBirkbeck/AINTLIB`, Apache-2.0), at
+`dev/modular-curves @ 9fec8eba7652`:
 `LutzNagell/LutzNagellTheorem/PIDMain.lean`, declarations `kappa_sq_eq_Psi2Sq`, `bezout_identity`,
 `kappa_sq_dvd_four_delta`, `eval_Ψ₃` and `lutz_nagell_pid_discriminant`. Restated here against
 Mathlib's `ψ₂`, `Ψ₂Sq` and `Ψ₃` rather than the raw expressions the source carries, so no
@@ -185,26 +184,25 @@ end
 
 section
 
-variable {F : Type*} [Field F] (W : _root_.WeierstrassCurve F) [W.IsElliptic] {x : F}
+variable {R : Type*} [CommRing R] [NoZeroDivisors R] (W : _root_.WeierstrassCurve R) [W.IsElliptic]
+  {x : R}
 
-/-- **On an elliptic curve the roots of `Ψ₂Sq` are simple**, when `2 ≠ 0`: a root `x` is the
-abscissa of the point `(x, -(a₁x + a₃) / 2)`, at which `ψ₂` vanishes, so nonsingularity forces
-`W_X ≠ 0` there, and `Ψ₂Sq'(x) = -4 W_X`. -/
-theorem eval_derivative_Ψ₂Sq_ne_zero (h2 : (2 : F) ≠ 0)
+/-- **On an elliptic curve the roots of `Ψ₂Sq` are simple**, over a ring without zero divisors in
+which `2 ≠ 0`: `Ψ₂Sq'(x) ≠ 0` at every root `x` of `Ψ₂Sq`. -/
+theorem eval_derivative_Ψ₂Sq_ne_zero (h2 : (2 : R) ≠ 0)
     (hx : W.Ψ₂Sq.IsRoot x) : W.Ψ₂Sq.derivative.eval x ≠ 0 := by
-  set y := -(W.a₁ * x + W.a₃) / 2
-  have hψ : W.ψ₂.evalEval x y = 0 := by
-    rw [_root_.WeierstrassCurve.ψ₂, _root_.WeierstrassCurve.Affine.evalEval_polynomialY]
-    simp only [y]
-    field_simp
+  have : Nontrivial R := nontrivial_of_ne _ _ h2
+  intro hd
+  -- `Ψ₂Sq'(x) = 2 (6x² + b₂x + b₄)`, so both factors of the Bézout combination vanish at `x`
+  have hs : 6 * x ^ 2 + W.b₂ * x + W.b₄ = 0 := by
+    refine (mul_eq_zero.mp ?_).resolve_left h2
+    rw [← hd]
+    simp [_root_.WeierstrassCurve.Ψ₂Sq]
     ring
-  have h : W.toAffine.Nonsingular x y :=
-    _root_.WeierstrassCurve.Affine.equation_iff_nonsingular.mp
-      ((W.evalEval_ψ₂_sq_eq_iff h2).mp (by rw [hψ, hx.eq_zero, zero_pow two_ne_zero]))
-  have hX := h.2.resolve_right (by rwa [← _root_.WeierstrassCurve.ψ₂, not_not])
-  rw [W.eval_derivative_Ψ₂Sq_of_evalEval_ψ₂_eq_zero hψ]
-  exact mul_ne_zero (neg_ne_zero.mpr (by
-    rw [show (4 : F) = 2 * 2 by norm_num]; exact mul_ne_zero h2 h2)) hX
+  have h4 := W.bezout_four_mul_Δ x
+  rw [hx.eq_zero, hs] at h4
+  -- hence `4Δ = 0`, which `2 ≠ 0` and the unit `Δ` rule out
+  exact mul_ne_zero (mul_ne_zero h2 h2) W.isUnit_Δ.ne_zero (by linear_combination -h4)
 
 end
 

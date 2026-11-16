@@ -78,23 +78,18 @@ theorem galConj_single (τ : K ≃ₐ[F] K) (γ δ : K) :
 /-- Conjugation by the identity is the identity. -/
 @[simp]
 theorem galConj_refl : galConj (AlgEquiv.refl : K ≃ₐ[F] K) = AlgEquiv.refl := by
-  ext
-  simp
+  ext; simp
 
 /-- Conjugation is compatible with composition of automorphisms. -/
 @[simp]
 theorem galConj_trans (τ σ : K ≃ₐ[F] K) :
     galConj (τ.trans σ) = (galConj τ).trans (galConj σ) := by
-  ext
-  simp
+  ext; simp
 
 /-- The inverse of conjugation by `τ` is conjugation by `τ⁻¹`. -/
 @[simp]
 theorem galConj_symm (τ : K ≃ₐ[F] K) : (galConj τ).symm = galConj τ.symm := by
-  ext x : 1
-  rw [AlgEquiv.symm_apply_eq]
-  ext
-  simp
+  ext; simp [galConj]
 
 /-- Conjugation moves the support of a formal sum by `τ`. -/
 @[simp]
@@ -183,12 +178,9 @@ example :
       expEval (⊤ : IntermediateField ℚ ℂ) (single (0 : (⊤ : IntermediateField ℚ ℂ))
         (1 : (⊤ : IntermediateField ℚ ℂ)) - single ⟨2 * (Real.pi : ℂ) * I, trivial⟩ 1) = 0 := by
   have h : (⟨2 * (Real.pi : ℂ) * I, trivial⟩ : (⊤ : IntermediateField ℚ ℂ)) ≠ 0 := by
-    rw [ne_eq, Subtype.ext_iff]
-    simp [Real.pi_ne_zero, I_ne_zero]
-  refine ⟨fun h0 ↦ ?_, ?_⟩
-  · have := congrArg (fun y ↦ y.coeff 0) h0
-    simp [h.symm] at this
-  · simp [exp_two_pi_mul_I]
+    simp [Subtype.ext_iff, Real.pi_ne_zero, I_ne_zero]
+  exact ⟨sub_ne_zero.2 ((single_left_inj one_ne_zero).not.2 h.symm),
+    by simp [exp_two_pi_mul_I]⟩
 
 /- Conjugation fixes rational constants. -/
 example (τ : L ≃ₐ[ℚ] L) (q : ℚ) : galConj τ (single (0 : L) (q : L)) = single 0 (q : L) := by
@@ -211,8 +203,6 @@ example (s : L) (hs : (s : ℂ) = Real.sqrt 2) (τ : L ≃ₐ[ℚ] L) (hτ : τ 
       exp (-(Real.sqrt 2 : ℂ)) ≠ exp (Real.sqrt 2 : ℂ) ∧
       exp (Real.sqrt 2 : ℂ) = expEval L (single s 1) := by
   refine ⟨by simp [hτ, hs], ?_, by simp [hs]⟩
-  rw [← ofReal_neg, ← ofReal_exp, ← ofReal_exp, ne_eq, ofReal_inj, Real.exp_eq_exp]
-  have : 0 < Real.sqrt 2 := by positivity
-  linarith
+  exact_mod_cast Real.exp_injective.ne (by linarith [Real.sqrt_pos.2 two_pos])
 
 end TauCeti.LindemannWeierstrass

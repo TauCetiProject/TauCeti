@@ -8,14 +8,21 @@ module
 public import TauCeti.Probability.Distributions.Stable.Cdf
 public import TauCeti.Probability.Distributions.Stable.Support
 public import TauCeti.Probability.Quantile
+import TauCeti.Probability.Distributions.Dirac
 
 /-!
 # Quantiles of stable laws
+
+For a valid zero-scale stable law, every positive quantile level at most one gives its location,
+and both one-sided endpoint limits remain at that location.
 
 For a positive-scale stable law with strict interior skewness `|β| < 1`, the cdf is strictly
 increasing on the whole real line. Every interior probability level therefore has a unique
 real cdf root, given by `Measure.quantile`. The quantile is continuous and strictly increasing
 on `(0, 1)`, tending to minus and plus infinity at the respective endpoints.
+
+From shape one onward these conclusions also hold at full skewness, because the stable density
+is then strictly positive on the whole real line.
 
 Strict increase of the quantile itself only needs absence of atoms, so that result also covers
 full skewness. Below shape one, the fully skewed laws have half-line support. Their interior
@@ -39,6 +46,33 @@ open scoped NNReal
 namespace TauCeti.Probability
 
 variable {α β : ℝ} {s : ℝ≥0} {m u x : ℝ}
+
+/-! ### Zero-scale boundary -/
+
+/-- Every positive quantile level at most one of a valid zero-scale stable law is its location. -/
+theorem quantile_stableMeasure_zero_scale (hα : α ∈ Ioc 0 2) (hβ : |β| ≤ 1)
+    (hu : u ∈ Ioc 0 1) : (stableMeasure α β 0 m).quantile u = m := by
+  rw [stableMeasure_zero_scale hα hβ, Measure.quantile_dirac m hu.1 hu.2]
+
+/-- Zero-scale stable quantiles tend to their location as the level decreases to zero. -/
+theorem tendsto_quantile_stableMeasure_zero_scale_nhdsGT_zero (hα : α ∈ Ioc 0 2)
+    (hβ : |β| ≤ 1) (m : ℝ) :
+    Tendsto (fun u ↦ ((stableMeasure α β 0 m).quantile u : EReal))
+      (nhdsWithin 0 (Ioi 0)) (nhds m) := by
+  apply tendsto_const_nhds.congr'
+  filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with u hu
+  rw [quantile_stableMeasure_zero_scale hα hβ ⟨hu.1, hu.2.le⟩]
+
+/-- Zero-scale stable quantiles tend to their location as the level increases to one. -/
+theorem tendsto_quantile_stableMeasure_zero_scale_nhdsLT_one (hα : α ∈ Ioc 0 2)
+    (hβ : |β| ≤ 1) (m : ℝ) :
+    Tendsto (fun u ↦ ((stableMeasure α β 0 m).quantile u : EReal))
+      (nhdsWithin 1 (Iio 1)) (nhds m) := by
+  apply tendsto_const_nhds.congr'
+  filter_upwards [Ioo_mem_nhdsLT zero_lt_one] with u hu
+  rw [quantile_stableMeasure_zero_scale hα hβ ⟨hu.1, hu.2.le⟩]
+
+/-! ### Positive-scale laws -/
 
 /-- A positive-scale stable cdf with strict interior skewness is strictly increasing on `ℝ`,
 including at shapes one and two. -/
@@ -95,6 +129,48 @@ theorem tendsto_quantile_stableMeasure_nhdsLT_one_of_abs_lt_one (hα : α ∈ Io
   let := isProbabilityMeasure_stableMeasure hα hβ.le s m
   exact Measure.tendsto_quantile_nhdsLT_one_of_strictMono_cdf _
     (strictMono_cdf_stableMeasure_of_abs_lt_one hα hβ hs m)
+
+/-! ### Shapes from one onward -/
+
+/-- From shape one onward, a positive-scale stable quantile is characterized as the unique real
+root of its cdf equation at each interior probability level, including at full skewness. -/
+theorem quantile_stableMeasure_eq_iff_of_one_le (hα : α ∈ Icc 1 2) (hβ : |β| ≤ 1)
+    (hs : 0 < s) (hu : u ∈ Ioo 0 1) :
+    (stableMeasure α β s m).quantile u = x ↔ cdf (stableMeasure α β s m) x = u := by
+  let := isProbabilityMeasure_stableMeasure ⟨by linarith [hα.1], hα.2⟩ hβ s m
+  simpa using Measure.quantile_eq_iff_of_ae_mem_of_strictMonoOn _ ordConnected_univ
+    (ae_of_all _ mem_univ) (continuous_cdf_stableMeasure ⟨by linarith [hα.1], hα.2⟩ hβ hs)
+    ((strictMono_cdf_stableMeasure_of_one_le hα hβ hs m).strictMonoOn _) hu
+
+/-- From shape one onward, positive-scale stable quantiles vary continuously with the interior
+probability level, including at full skewness. -/
+theorem continuousOn_quantile_stableMeasure_of_one_le (hα : α ∈ Icc 1 2)
+    (hβ : |β| ≤ 1) (hs : 0 < s) (m : ℝ) :
+    ContinuousOn (stableMeasure α β s m).quantile (Ioo 0 1) := by
+  let := isProbabilityMeasure_stableMeasure ⟨by linarith [hα.1], hα.2⟩ hβ s m
+  exact Measure.continuousOn_quantile_of_strictMonoOn _ ordConnected_univ
+    ((strictMono_cdf_stableMeasure_of_one_le hα hβ hs m).strictMonoOn _)
+    (mapsTo_univ _ _)
+
+/-- From shape one onward, positive-scale stable quantiles tend to minus infinity as the level
+decreases to zero, including at full skewness. -/
+theorem tendsto_quantile_stableMeasure_nhdsGT_zero_of_one_le (hα : α ∈ Icc 1 2)
+    (hβ : |β| ≤ 1) (hs : 0 < s) (m : ℝ) :
+    Tendsto (fun u ↦ ((stableMeasure α β s m).quantile u : EReal))
+      (𝓝[>] 0) (𝓝 ⊥) := by
+  let := isProbabilityMeasure_stableMeasure ⟨by linarith [hα.1], hα.2⟩ hβ s m
+  exact Measure.tendsto_quantile_nhdsGT_zero_of_strictMono_cdf _
+    (strictMono_cdf_stableMeasure_of_one_le hα hβ hs m)
+
+/-- From shape one onward, positive-scale stable quantiles tend to plus infinity as the level
+increases to one, including at full skewness. -/
+theorem tendsto_quantile_stableMeasure_nhdsLT_one_of_one_le (hα : α ∈ Icc 1 2)
+    (hβ : |β| ≤ 1) (hs : 0 < s) (m : ℝ) :
+    Tendsto (fun u ↦ ((stableMeasure α β s m).quantile u : EReal))
+      (𝓝[<] 1) (𝓝 ⊤) := by
+  let := isProbabilityMeasure_stableMeasure ⟨by linarith [hα.1], hα.2⟩ hβ s m
+  exact Measure.tendsto_quantile_nhdsLT_one_of_strictMono_cdf _
+    (strictMono_cdf_stableMeasure_of_one_le hα hβ hs m)
 
 /-! ### Full positive skewness below shape one -/
 

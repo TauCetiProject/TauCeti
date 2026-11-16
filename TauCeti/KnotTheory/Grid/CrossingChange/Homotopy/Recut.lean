@@ -563,19 +563,19 @@ theorem existsUnique_crossingChangeUnpairedHexagonComposite_isRecut
 variable [CharP R 2]
 
 open scoped Classical in
-/-- If the annulus squares carry no `X`-marking, then off the diagonal and in characteristic two
+/-- If the annulus squares carry no `X`-marking, then in characteristic two
 the counted composites whose rectangles share a side column have the total weight of the unpaired
 ones: recut partners cancel in pairs
 (`GridRectangleDecomposition.sum_filter_not_hasDisjointSides_eq_sum_filter_forall_not_isRecut`). -/
 theorem sum_crossingChangeHexagonCompositeWeight_overlap_eq_sum_unpaired
-    (hX : Disjoint (crossingChangeAnnulusSquares C t) G.XSet) {x z : GridState n} (hzx : z ≠ x) :
+    (hX : Disjoint (crossingChangeAnnulusSquares C t) G.XSet) {x z : GridState n} :
     ∑ D ∈ (G.crossingChangeHexagonCompositeDecompositions C t x z).filter
         (fun D => ¬D.toRectangleDecomposition.HasDisjointSides),
         G.crossingChangeHexagonCompositeWeight C t R D =
       ∑ D ∈ G.crossingChangeUnpairedHexagonComposites C t x z,
         G.crossingChangeHexagonCompositeWeight C t R D := by
   rw [GridRectangleDecomposition.sum_filter_not_hasDisjointSides_eq_sum_filter_forall_not_isRecut
-    _ _ _ CharTwo.add_self_eq_zero hzx
+    _ _ _ CharTwo.add_self_eq_zero
     (fun _ hD => isEmpty_of_mem_crossingChangeHexagonCompositeDecompositions hD)
     (injOn_toRectangleDecomposition_crossingChangeHexagonCompositeDecompositions hX x z)
     (fun _ hD _ hE h => crossingChangeHexagonCompositeWeight_eq_of_isRepartition R hX hD hE h)]
@@ -604,9 +604,9 @@ theorem unblockedDifferential_crossingChangeHomotopy_add_eq_iff_unpaired (hst : 
             rename (Equiv.swap a b) (G.commutationPentagonCoefficient R C x y) *
               (G.swapColumns a b).commutationPentagonCoefficient R (C.withTurnRow t) y z := by
   rw [G.unblockedDifferential_crossingChangeHomotopy_add_eq_iff_ne C t R hst hX]
-  refine forall₂_congr fun x z => forall_congr' fun hxz => ?_
+  refine forall₂_congr fun x z => forall_congr' fun _ => ?_
   rw [← sum_crossingChangeHexagonCompositeWeight_filter_not_hasDisjointSides,
-    sum_crossingChangeHexagonCompositeWeight_overlap_eq_sum_unpaired R hX (Ne.symm hxz)]
+    sum_crossingChangeHexagonCompositeWeight_overlap_eq_sum_unpaired R hX]
 
 open scoped Classical in
 /-- **Reduction of the crossing change homotopy equation to unpaired composites**, for markings in

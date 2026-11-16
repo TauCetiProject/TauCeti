@@ -38,7 +38,8 @@ apply: the stage `c.F.obj (n + 1)` is surjective on `π_k` for `k ≤ n`
 which identifies them with their ranges. Attaching cells of a single dimension is such a relative
 CW complex (`HomotopicalAlgebra.AttachCells.toRelativeCWComplex`).
 
-Conversely, a cell attached along the constant map at `x` closes up to a sphere at `x`, so a map
+Conversely, a cell attached along the constant map at `x` closes up to a sphere at `x`
+(`TauCeti.cellAttachmentCellLoop`), so a map
 out of `Y` that is a generalized loop `γ` on such a cell sends the class of that sphere to the
 class of `γ` (`TauCeti.mk_mem_range_homotopyGroupMap_of_cellAttachmentCell_comp`). This is how
 cells realize classes of a target space in CW approximation.
@@ -182,6 +183,33 @@ open scoped Topology.Homotopy unitInterval
 
 variable {X Y : TopCat.{u}} {ι : Type u} {n : ℕ} {x : X} {y : Y}
 
+/-- **The sphere of a cell attached along a constant map**, as a generalized loop. If the `n`-cell
+indexed by `i` is attached along the constant map at `x`, its characteristic map, read on the cube
+through `TauCeti.diskHomeomorphCube` (`TauCeti.cellAttachmentCellLoop_apply`), sends the boundary
+of the cube to the boundary sphere of the disk, attached at `x`, so it is a generalized loop at
+`x`. -/
+def cellAttachmentCellLoop (φ : ι → (TopCat.diskBoundary n ⟶ X)) (i : ι)
+    (hi : φ i = TopCat.ofHom (ContinuousMap.const _ x)) :
+    Ω^ (Fin n) (cellAttachment φ) (cellAttachmentIncl φ x) :=
+  ⟨(cellAttachmentCell φ i).hom.comp
+      ((diskHomeomorphCube n).symm : C(I^(Fin n), TopCat.disk n)),
+    fun t ht ↦ by
+      obtain ⟨s, hs⟩ := (diskHomeomorphCube_mem_boundary_iff _).1
+        (((diskHomeomorphCube n).apply_symm_apply t).symm ▸ ht)
+      have h := ConcreteCategory.congr_hom (cellAttachment_boundary φ i) s
+      rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, hs, hi] at h
+      -- `h` evaluates the constant attaching map at `s` and the composite at `t`, both by
+      -- definition.
+      exact h.symm⟩
+
+/-- The sphere of a cell attached along a constant map is the characteristic map of the cell,
+read on the cube through `TauCeti.diskHomeomorphCube`. -/
+@[simp]
+lemma cellAttachmentCellLoop_apply (φ : ι → (TopCat.diskBoundary n ⟶ X)) (i : ι)
+    (hi : φ i = TopCat.ofHom (ContinuousMap.const _ x)) (t : I^(Fin n)) :
+    cellAttachmentCellLoop φ i hi t = cellAttachmentCell φ i ((diskHomeomorphCube n).symm t) :=
+  (rfl)
+
 /-- **A cell attached along a constant map realizes a class** (Hatcher, Proposition 4.13). If the
 `(n + 1)`-cell indexed by `i` is attached along the constant map at `x`, it closes up to a sphere
 at `x`. If a map `g` out of the cell attachment is a generalized loop `γ` on this cell, read on
@@ -193,24 +221,11 @@ theorem mk_mem_range_homotopyGroupMap_of_cellAttachmentCell_comp
     (hg : g (cellAttachmentIncl φ x) = y) (γ : Ω^ (Fin (n + 1)) Y y)
     (hγ : cellAttachmentCell φ i ≫ g = GenLoop.diskMap γ) :
     (⟦γ⟧ : HomotopyGroup (Fin (n + 1)) Y y) ∈ Set.range (HomotopyGroup.map g.hom hg) := by
-  let c := cellAttachmentCell φ i
-  -- The characteristic map of the cell, read on the cube, is a generalized loop: the boundary of
-  -- the cube goes to the boundary sphere of the disk, attached at `x`.
-  let q : Ω^ (Fin (n + 1)) (cellAttachment φ) (cellAttachmentIncl φ x) :=
-    ⟨c.hom.comp ((diskHomeomorphCube (n + 1)).symm : C(I^(Fin (n + 1)), TopCat.disk (n + 1))),
-      fun t ht ↦ by
-        obtain ⟨s, hs⟩ := (diskHomeomorphCube_mem_boundary_iff _).1
-          (((diskHomeomorphCube (n + 1)).apply_symm_apply t).symm ▸ ht)
-        have h := ConcreteCategory.congr_hom (cellAttachment_boundary φ i) s
-        rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, hs, hi] at h
-        -- `h` evaluates the constant attaching map at `s` and the composite at `t`, both by
-        -- definition.
-        exact h.symm⟩
-  refine ⟨⟦q⟧, ?_⟩
+  refine ⟨⟦cellAttachmentCellLoop φ i hi⟧, ?_⟩
   rw [HomotopyGroup.map_mk]
   congr 1
   ext t
-  rw [GenLoop.map_apply]
+  rw [GenLoop.map_apply, cellAttachmentCellLoop_apply]
   refine (ConcreteCategory.congr_hom hγ ((diskHomeomorphCube (n + 1)).symm t)).trans ?_
   simp
 

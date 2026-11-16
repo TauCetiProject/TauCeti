@@ -156,6 +156,19 @@ theorem kostantSubsystemSubgroup_eq_closure (S : Set ι) (A : CommAlgCat.{w} ℤ
         {g | ∃ i ∈ S, ∃ t, kostantRootSubgroupParam e h ρ M hM i (hnil i) A t = g} :=
   kostantSubsystemSubgroup_eq_closure_def e h ρ M hM hnil S A
 
+/-- The subgroup attached to a root set is the supremum of its root-subgroup ranges. -/
+theorem kostantSubsystemSubgroup_eq_iSup (S : Set ι) (A : CommAlgCat.{w} ℤ) :
+    kostantSubsystemSubgroup e h ρ M hM hnil S A =
+      ⨆ i ∈ S, (kostantRootSubgroupParam e h ρ M hM i (hnil i) A).range := by
+  rw [kostantSubsystemSubgroup_eq_closure]
+  apply le_antisymm
+  · refine (Subgroup.closure_le _).mpr ?_
+    rintro g ⟨i, hi, u, rfl⟩
+    exact Subgroup.mem_iSup_of_mem i (Subgroup.mem_iSup_of_mem hi ⟨u, rfl⟩)
+  · refine iSup_le fun i => iSup_le fun hi => ?_
+    rintro g ⟨u, rfl⟩
+    exact Subgroup.subset_closure ⟨i, hi, u, rfl⟩
+
 /-- **Elimination principle.** A subgroup contains `U_S(A)` exactly when it contains every
 root-subgroup element indexed by `S`. -/
 theorem kostantSubsystemSubgroup_le_iff {S : Set ι} {A : CommAlgCat.{w} ℤ}
@@ -274,6 +287,15 @@ of roots that maps it into itself. -/
 def IsChevalleyStableUnder (e : ι → L) (S T : Set ι) : Prop :=
   ∀ i ∈ T, ∀ j ∈ S, ⁅e i, e j⁆ = 0 ∨
     ∃ k ∈ S, ∃ c : ℤ, ⁅e i, e j⁆ = c • e k ∧ ⁅e i, e k⁆ = 0 ∧ ⁅e j, e k⁆ = 0
+
+omit [LieAlgebra ℚ L] in
+/-- Chevalley stability says that each relevant bracket vanishes or is a multiple of a root
+vector `e k` with `k ∈ S` commuting with both `e i` and `e j`. -/
+theorem isChevalleyStableUnder_iff {S T : Set ι} :
+    IsChevalleyStableUnder e S T ↔
+      ∀ i ∈ T, ∀ j ∈ S, ⁅e i, e j⁆ = 0 ∨
+        ∃ k ∈ S, ∃ c : ℤ, ⁅e i, e j⁆ = c • e k ∧ ⁅e i, e k⁆ = 0 ∧ ⁅e j, e k⁆ = 0 :=
+  Iff.rfl
 
 /-- A Chevalley-stable index set has its subsystem subgroup normalized by the larger one. -/
 theorem kostantSubsystemSubgroup_le_normalizer_of_isChevalleyStable {S T : Set ι}

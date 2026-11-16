@@ -70,14 +70,14 @@ The instance `IsGalois E L` follows from `IsGalois K L` (`IsGalois.tower_top_of_
 theorem globalArtinMap_ideleClassNormMap (ι : L →ₐ[K] SeparableClosure K)
     (ι' : L →ₐ[E] SeparableClosure E) (c : IdeleClassGroup (𝓞 E) E) :
     globalArtinMap K L ι (.ofMul (ideleClassNormMap K E c)) =
-      (Abelianization.map (AlgEquiv.restrictScalarsHom K)).toAdditive
+      (Group.Abelianization.map (AlgEquiv.restrictScalarsHom K)).toAdditive
         (globalArtinMap E L ι' (.ofMul c)) := by
   -- The two sides, as homomorphisms `C_E →* Gal(L/K)^ab`.
-  let F : IdeleClassGroup (𝓞 E) E →* Abelianization Gal(L/K) :=
+  let F : IdeleClassGroup (𝓞 E) E →* Group.Abelianization Gal(L/K) :=
     (MonoidHom.toAdditive.symm (globalArtinMap K L ι)).comp
       (ideleClassNormMap K E : IdeleClassGroup (𝓞 E) E →* IdeleClassGroup (𝓞 K) K)
-  let G : IdeleClassGroup (𝓞 E) E →* Abelianization Gal(L/K) :=
-    (Abelianization.map (AlgEquiv.restrictScalarsHom K)).comp
+  let G : IdeleClassGroup (𝓞 E) E →* Group.Abelianization Gal(L/K) :=
+    (Group.Abelianization.map (AlgEquiv.restrictScalarsHom K)).comp
       (MonoidHom.toAdditive.symm (globalArtinMap E L ι'))
   -- Their kernels contain the open norm groups, so both kill some ray subgroup of `C_E`.
   have hF : IsOpen (F.ker : Set (IdeleClassGroup (𝓞 E) E)) := by

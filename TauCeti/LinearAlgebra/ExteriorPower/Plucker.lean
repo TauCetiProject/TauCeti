@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.GCDMonoid.Finset
-public import TauCeti.LinearAlgebra.ExteriorPower.Basic
+public import Mathlib.LinearAlgebra.ExteriorPower.Basis
 
 import TauCeti.LinearAlgebra.Matrix.Rank
 import TauCeti.LinearAlgebra.Matrix.Determinant.SumElim
@@ -129,7 +129,7 @@ theorem _root_.Matrix.exists_det_submatrix_eq_sign_mul_plucker (A : Matrix (Fin 
 
 /-- The empty family has Plücker coordinate `1`. -/
 @[simp]
-theorem plucker_of_isEmpty (x : Fin 0 → ι → R) (s : powersetCard ι 0) : plucker x s = 1 :=
+theorem plucker_fin_zero (x : Fin 0 → ι → R) (s : powersetCard ι 0) : plucker x s = 1 :=
   Matrix.det_isEmpty
 
 /-- The Plücker coordinate of a single vector at the singleton `{i}` is its `i`-th coordinate. -/
@@ -151,12 +151,8 @@ theorem plucker_map (f : R →+* S) (x : Fin p → ι → R) (s : powersetCard �
 /-- The maximal minors of a matrix with a ring homomorphism applied to all entries are the
 images of the maximal minors of the matrix. -/
 theorem _root_.Matrix.plucker_row_map (f : R →+* S) (A : Matrix (Fin p) ι R) :
-    plucker (A.map f).row = f ∘ plucker A.row := by
-  have h : (A.map f).row = fun i k ↦ f (A.row i k) := by
-    ext i k
-    simp
-  ext s
-  rw [h, plucker_map, Function.comp_apply]
+    plucker (A.map f).row = f ∘ plucker A.row :=
+  funext fun s ↦ plucker_map f A.row s
 
 /-- Replacing a family by its product with a square matrix `A` multiplies its Plücker
 coordinates by `det A`. -/
@@ -258,7 +254,8 @@ theorem det_mul_transpose_eq_sum_plucker_mul [Fintype ι] (x y : Fin p → ι �
 the squares of the maximal minors of `A`, the Plücker coordinates of its rows. -/
 theorem _root_.Matrix.det_mul_transpose_eq_sum_plucker_sq [Fintype ι] (A : Matrix (Fin p) ι R) :
     (A * A.transpose).det = ∑ s, plucker A.row s ^ 2 := by
-  simpa [sq, Matrix.row_eq_self] using det_mul_transpose_eq_sum_plucker_mul A.row A.row
+  have hA : Matrix.of A.row = A := by ext; simp only [Matrix.of_apply, Matrix.row_apply]
+  simpa [sq, hA] using det_mul_transpose_eq_sum_plucker_mul A.row A.row
 
 /-- Over a commutative ring with a compatible linear order, the Gram determinant `det (A * Aᵀ)` of
 the rows of a matrix is nonnegative: by the Cauchy–Binet formula it is a sum of squares. -/
@@ -329,7 +326,7 @@ private theorem plucker_eq_det_mul_transpose_single (y : Fin q → ι → K) (t 
   rw [plucker_apply]
   congr 1
   ext i j
-  simp [Matrix.mul_apply, Pi.single_apply]
+  simp [Matrix.mul_apply, Pi.single_apply, Function.swap]
 
 /-- Against any identification `e` of the index types, the determinant of `x` followed by the
 standard basis vectors at the elements of `t` is, up to sign, the Plücker coordinate of `x` at the
@@ -380,18 +377,9 @@ theorem exists_plucker_eq_mul_plucker_compl_or_eq_neg (hm : p + q = Fintype.card
   have hsurj : Function.Surjective (Matrix.of y).mulVec := hy.mulVec_surjective
   choose w hw using fun j ↦ hsurj (Pi.single j 1)
   -- The vectors orthogonal to every `y j` are the span of `x`, by counting dimensions.
-  have hker : LinearMap.ker (Matrix.of y).mulVecLin ≤ Submodule.span K (range x) := by
-    have hle : Submodule.span K (range x) ≤ LinearMap.ker (Matrix.of y).mulVecLin := by
-      rw [Submodule.span_le]
-      rintro _ ⟨i, rfl⟩
-      ext j
-      simp [Matrix.mulVec, dotProduct_comm, hxy]
-    refine (Submodule.eq_of_le_of_finrank_eq hle ?_).ge
-    have h := LinearMap.finrank_range_add_finrank_ker (Matrix.of y).mulVecLin
-    rw [LinearMap.range_eq_top.2 hsurj, finrank_top, Module.finrank_fin_fun,
-      Module.finrank_fintype_fun_eq_card] at h
-    rw [finrank_span_eq_card hx, Fintype.card_fin]
-    omega
+  have hker := (Matrix.ker_mulVecLin_eq_span_of_dotProduct_eq_zero (A := Matrix.of y)
+    (by simpa only [Fintype.card_fin] using hm) hx (by rwa [Matrix.row_of])
+    (by simpa only [Matrix.row_of] using hxy)).le
   obtain ⟨e⟩ : Nonempty (Fin p ⊕ Fin q ≃ ι) := ⟨Fintype.equivOfCardEq (by simp [hm])⟩
   set D := (Matrix.of fun a b ↦ Sum.elim x w a (e b)).det
   have key : ∀ t, ∃ ε : ℤˣ, plucker y t * D = ((ε : ℤ) : K) * plucker x (compl hm t) := by

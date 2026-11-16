@@ -70,7 +70,7 @@ theorem exists_mem_level (hF : IsProP p F) (e : F ≃ₜ* freeProP p (Fin r)) (u
   | succ n ih =>
     obtain ⟨c, d, hc0, hcd⟩ := ih
     obtain ⟨c', d', -, -, hc'0, hlev⟩ :=
-      exists_mem_level_succ hF e u (n + 1) (Nat.le_add_left 1 n) c d hcd
+      exists_mem_level_succ hF e u (n + 1) c d hcd
     exact ⟨_, _, fun h0 ↦ by rw [hc0 h0, hc'0 h0, mul_one], hlev⟩
 
 /-- **The compactness step.** If every peripheral level of a family `x` in a pro-`p` group

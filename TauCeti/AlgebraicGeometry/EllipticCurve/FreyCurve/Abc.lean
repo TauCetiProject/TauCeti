@@ -180,7 +180,6 @@ theorem AlgorithmicSzpiroConjecture.exists_sq_le (h : AlgorithmicSzpiroConjectur
   obtain ⟨C, hC⟩ := algorithmicSzpiroConjecture_iff.1 h ε hε
   refine ⟨2 ^ 8 * max C 0 * (2 ^ 11 : ℝ) ^ (6 + ε), fun A B hAB hP ↦ ?_⟩
   obtain ⟨E, _, hD, hN⟩ := exists_natAbs_sq_le_absNorm_minimalDiscriminantIdeal hAB hP
-  have h6 : 0 ≤ 6 + ε := by linarith
   have hD' : ((A * B * (A + B) : ℤ) : ℝ) ^ 2 ≤
       2 ^ 8 * (Ideal.absNorm (minimalDiscriminantIdeal ℤ E) : ℝ) := by
     rw [← sq_abs, ← Int.cast_abs, Int.abs_eq_natAbs]

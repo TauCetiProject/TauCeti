@@ -117,7 +117,7 @@ points, modulo the centre of that derived subgroup, so it is finite because the 
 instance finite_group_ofA (r : ℕ) (q : PrimePower)
     (hv : (LieTypeIndex.A r q).Valid) : Finite (ofA r q hv).Group :=
   finiteFixedPointCandidate (F := (ofA r q hv).steinberg)
-    (h := finite_fixedPoints_ofA r q hv)
+    (_h := finite_fixedPoints_ofA r q hv)
 
 /-- A valid `A_r(q)` has rank at least one, and field order at least four in rank one. -/
 private theorem one_le_and_four_le_card_of_valid {r : ℕ} {q : PrimePower}

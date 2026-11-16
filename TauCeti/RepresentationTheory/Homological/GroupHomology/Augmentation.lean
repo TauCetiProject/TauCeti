@@ -51,7 +51,7 @@ private theorem shortExact_aug (k G : Type u) [CommRing k] [Group G] :
 /-- The augmentation connecting map sends `g ⊗ a` to the class of `[g⁻¹] a - [1] a`. -/
 theorem δ_mkH1OfIsTrivial (g : G) (a : k) :
     δ (augmentationSES_def k G ▸ augmentationSES_shortExact k G) 1 0 rfl
-        (mkH1OfIsTrivial (trivial k G k) (Additive.ofMul (Abelianization.of g)) a) =
+        (mkH1OfIsTrivial (trivial k G k) (Additive.ofMul (Group.Abelianization.of g)) a) =
       H0π (augmentationIdeal k G) (TauCeti.AugmentationIdeal.singleSub k G a g⁻¹) := by
   rw [mkH1OfIsTrivial_apply]
   exact δ₀_apply (shortExact_aug k G) _
@@ -68,7 +68,7 @@ theorem δ_res_mkH1OfIsTrivial (S : Subgroup G)
       (augmentationι_comp_augmentation k G)).ShortExact) (s : S) (a : k) :
     δ ((shortExact_res S.subtype).2 hAug) 1 0 rfl
         (mkH1OfIsTrivial (res S.subtype (trivial k G k))
-          (Additive.ofMul (Abelianization.of s)) a) =
+          (Additive.ofMul (Group.Abelianization.of s)) a) =
       H0π (res S.subtype (augmentationIdeal k G))
         (TauCeti.AugmentationIdeal.singleSub k G a (s⁻¹ : S)) := by
   rw [mkH1OfIsTrivial_apply]

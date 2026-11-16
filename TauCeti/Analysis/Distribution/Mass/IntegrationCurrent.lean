@@ -63,7 +63,7 @@ the volume integral of the coefficient of the test form in `b`. -/
 private theorem enorm_integrationCurrent_apply_eq (o : Orientation ℝ E (Fin m))
     (b : OrthonormalBasis (Fin m) ℝ E) (ω : 𝓓^{n}(Ω, E [⋀^Fin m]→L[ℝ] ℝ)) :
     ‖o.integrationCurrent Ω ω‖ₑ = ‖∫ x, ω x b‖ₑ := by
-  rw [integrationCurrent_apply_eq_signBasis_mul o Ω b.toBasis, b.addHaar_eq_volume, enorm_mul,
+  rw [integrationCurrent_apply_eq_signBasis_mul o Ω b.toBasis, b.addHaar_eq_volume, eNorm_mul,
     b.coe_toBasis]
   rcases Int.units_eq_one_or (o.signBasis b.toBasis) with h | h <;> simp [h]
 
@@ -73,7 +73,7 @@ theorem enorm_integrationCurrent_apply_le_lintegral_enorm (o : Orientation ℝ E
   by_cases hm : finrank ℝ E = m
   · let b : OrthonormalBasis (Fin m) ℝ E := (stdOrthonormalBasis ℝ E).reindex (finCongr hm)
     rw [enorm_integrationCurrent_apply_eq o b]
-    refine (enorm_integral_le_lintegral_enorm _).trans (lintegral_mono fun x => ?_)
+    refine (eNorm_integral_le_lintegral_eNorm _).trans (lintegral_mono fun x => ?_)
     rw [← ofReal_norm, ← ofReal_norm, (ω x).norm_eq_norm_apply_orthonormalBasis b]
   · simp [integrationCurrent_eq_zero_of_finrank_ne o Ω hm]
 

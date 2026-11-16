@@ -47,10 +47,7 @@ quotient, and the Hodge filtration is transported across that identification.
 
 The conventions for opposed and induced filtrations follow Deligne, *Théorie de Hodge II*,
 §1.2.1; the graded-piece comparison is the one used throughout Peters–Steenbrink, *Mixed Hodge
-Structures*, Ch. 3. The signatures of `weightGradedRat`, `gradedComplexEquiv` and `gradedF` are
-adapted from the proposed definitions in
-[`HodgeStructures/Suggested.lean`](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/HodgeStructures/Suggested.lean),
-whose definitive mathematical specification is the accompanying Hodge structures roadmap.
+Structures*, Ch. 3.
 -/
 
 public section

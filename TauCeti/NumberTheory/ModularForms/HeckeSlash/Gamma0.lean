@@ -36,8 +36,8 @@ modular-form and cusp-form operator respectively to `heckeSlashSum`, and
 short of that: it is the untwisted `Γ₀(N)` instantiation, matching `Gamma1.lean` declaration for
 declaration.
 
-⚠ Identifying particular cosets with the classical `Tₙ` is likewise a separate milestone and is
-not proved here.
+⚠ Identifying particular cosets with the classical `Tₙ` is likewise a separate step and is not
+proved here.
 
 ## Main definitions
 

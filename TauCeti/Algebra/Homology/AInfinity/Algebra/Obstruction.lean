@@ -49,6 +49,8 @@ transformation adds `[m_𝒜, φ]` to the Taylor map, and `[m_𝒜, φ]` agrees 
 * `TauCeti.AInfinityAlgebra.taylor_apply_eq_of_forall_m_eq`: two `A∞` structures with the same
   grading and the same operations of arity at most `n` have the same Taylor map on the words of
   length at most `n`.
+* `TauCeti.AInfinityAlgebra.obstruction_eq_zero_of_m_eq`: the obstruction in arity `n`
+  vanishes when the operations of arity `n` agree.
 * `TauCeti.AInfinityAlgebra.hochschildDifferential_taylor_sub_taylor`: the Maurer--Cartan
   equation `[m_ℋ, D] = -D{D}` for the difference of two `A∞` structures.
 * `TauCeti.AInfinityAlgebra.hochschildDifferential_eq_add_gerstenhaberBracket`: the Hochschild
@@ -180,6 +182,21 @@ theorem obstruction_apply_of_mem_filtration {n : ℕ}
     apply_lengthProj_of_mem_filtration R A (fun w hw ↦ by
       rw [LinearMap.sub_apply, h w hw, sub_self]) hz, LinearMap.sub_apply]
 
+/-- If two `A∞` structures with the same grading have the same operation of arity `n`, the
+obstruction in arity `n` vanishes. -/
+theorem obstruction_eq_zero_of_m_eq (hG : 𝒜.grading = ℋ.grading)
+    {n : {n : ℕ // 0 < n}} (hm : 𝒜.m n.1 = ℋ.m n.1) :
+    𝒜.obstruction ℋ n = 0 := by
+  have h : 𝒜.taylor ∘ₗ of R A n = ℋ.taylor ∘ₗ of R A n := by
+    apply PiTensorProduct.ext
+    apply MultilinearMap.ext
+    intro x
+    simp only [LinearMap.compMultilinearMap_apply, LinearMap.comp_apply]
+    rw [taylor_of_tprod, taylor_of_tprod, hG, hm]
+  refine LinearMap.ext fun z ↦ ?_
+  rw [obstruction_def, LinearMap.comp_apply, LinearMap.sub_apply, lengthProj_apply,
+    ← LinearMap.comp_apply 𝒜.taylor, h, LinearMap.comp_apply, sub_self, LinearMap.zero_apply]
+
 /-! ### The obstruction is a Hochschild cocycle -/
 
 /-- The Taylor map of a minimal `A∞` algebra without operations above arity two, that is of a
@@ -246,14 +263,14 @@ theorem hochschildDifferential_obstruction (hℋ : ℋ.IsMinimal) (hm : ∀ k, 3
 
 /-- **A gauge transformation removes a bounded obstruction.**  Let `𝒜` be a minimal `A∞`
 structure whose Taylor map agrees with that of `ℋ`, which has the same grading, on the words of
-length at most `e + 1`, for some `e ≥ 1`.  Let `φ` be a degree-zero cochain vanishing on the words
+length at most `e + 1`.  Let `φ` be a degree-zero cochain vanishing on the words
 of length at most `e` whose Hochschild differential for `ℋ` is `m_ℋ - m_𝒜` on the words of length
 at most `e + 2`.  Then the gauge transformation of `𝒜` by `φ` agrees with `ℋ` on the words of
 length at most `e + 2`. -/
 theorem IsMinimal.taylor_gauge_apply_eq_of_hochschildDifferential (h𝒜 : 𝒜.IsMinimal)
     (hG : 𝒜.grading = ℋ.grading) {φ : ReducedTensorWords R A →ₗ[R] A}
     (hφ : LinearMap.IsHomogeneous φ (gradedPiece (𝒜.grading.shift 1)) (𝒜.grading.shift 1).piece 0)
-    (hφ₁ : φ ∘ₗ ofLetter R A = 0) {e : ℕ} (he : 1 ≤ e)
+    (hφ₁ : φ ∘ₗ ofLetter R A = 0) {e : ℕ}
     (h : ∀ z ∈ filtration R A (e + 1), 𝒜.taylor z = ℋ.taylor z)
     (hφe : ∀ z ∈ filtration R A e, φ z = 0)
     (hδ : ∀ z ∈ filtration R A (e + 2), ℋ.hochschildDifferential 0 φ z = ℋ.taylor z - 𝒜.taylor z)
@@ -261,13 +278,18 @@ theorem IsMinimal.taylor_gauge_apply_eq_of_hochschildDifferential (h𝒜 : 𝒜.
     (𝒜.gauge φ hφ hφ₁).taylor z = ℋ.taylor z := by
   have hD : ∀ w ∈ filtration R A (e + 1), (𝒜.taylor - ℋ.taylor) w = 0 := fun w hw ↦ by
     rw [LinearMap.sub_apply, h w hw, sub_self]
-  -- The bracket `[m_𝒜 - m_ℋ, φ]` vanishes on the words of length at most `2 e + 1`.
+  -- `φ` also vanishes on the words of length at most `max e 1`, since it vanishes on letters.
+  have hφm : ∀ z ∈ filtration R A (max e 1), φ z = 0 := fun w hw ↦ by
+    rcases Nat.eq_zero_or_pos e with rfl | he
+    · exact apply_eq_zero_of_mem_filtration_one R A hφ₁ w (by simpa using hw)
+    · exact hφe w (by rwa [max_eq_left he] at hw)
+  -- The bracket `[m_𝒜 - m_ℋ, φ]` vanishes on the words of length at most `e + 2`.
   have hbracket : gerstenhaberBracket (ℋ.grading.shift 1) 1 0 (𝒜.taylor - ℋ.taylor) φ z = 0 := by
     rw [gerstenhaberBracket_def, LinearMap.sub_apply, LinearMap.smul_apply,
-      brace_apply_eq_zero_of_mem_filtration _ _ hD hφe (filtration_monotone R A (by omega) hz),
-      brace_apply_eq_zero_of_mem_filtration _ _ hφe hD (filtration_monotone R A (by omega) hz),
+      brace_apply_eq_zero_of_mem_filtration _ _ hD hφm (filtration_monotone R A (by omega) hz),
+      brace_apply_eq_zero_of_mem_filtration _ _ hφm hD (filtration_monotone R A (by omega) hz),
       smul_zero, sub_zero]
-  rw [h𝒜.taylor_gauge_apply_of_mem_filtration hφ hφ₁ hφe (filtration_monotone R A (by omega) hz),
+  rw [h𝒜.taylor_gauge_apply_of_mem_filtration hφ hφ₁ hφm (filtration_monotone R A (by omega) hz),
     hochschildDifferential_eq_add_gerstenhaberBracket hG, LinearMap.add_apply, hbracket, add_zero,
     hδ z hz, add_sub_cancel]
 

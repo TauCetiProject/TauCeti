@@ -105,7 +105,6 @@ private theorem hasFDerivAt_inversionCoordinates (r : ℝ × ℝ × ℝ) :
   have hd := (hx.pow 2).add (hy.exp.pow 2)
   have hd0 := (denominator_pos r).ne'
   have he0 := exp_ne_zero r.2.1
-  have ha0 : 1 + (r.1 / exp r.2.1) ^ 2 ≠ 0 := by positivity
   have hdi := (hasDerivAt_inv hd0).comp_hasFDerivAt r hd
   have hei := (hasDerivAt_inv he0).comp_hasFDerivAt r hy.exp
   convert (hx.neg.mul hdi).prodMk
@@ -155,7 +154,6 @@ private theorem inner_mfderiv_inversionFun (p : SL2Tilde)
     (v w : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) p) :
     inner ℝ (mfderiv 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) inversionFun p v)
       (mfderiv 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) inversionFun p w) = inner ℝ v w := by
-  have hd := (denominator_pos (toProd p)).ne'
   have he := exp_ne_zero p.y
   have h1 : exp (-(inversionFun p).y) = denominator (toProd p) / exp p.y := by
     rw [exp_neg]

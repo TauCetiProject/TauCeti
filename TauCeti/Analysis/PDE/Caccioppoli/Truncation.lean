@@ -172,7 +172,7 @@ theorem UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_
       W1p.value_contDiffSMul_ae hψ hM hψM' hgradM' w] with x hvx hzx
     rw [hvx, hzx, smul_eq_mul, smul_eq_mul]
     ring
-  exact W1p.setIntegral_sq_mul_norm_gradient_sq_le_of_pointwise hlam w hψ hψM hgradM hE hpt
+  exact W1p.setIntegral_sq_mul_norm_gradient_sq_le_of_pointwise hlam w hψ hgradM hE hpt
     hforce
 
 /-- **The zero-forcing Caccioppoli inequality for a positive truncation of a weak
@@ -233,7 +233,7 @@ only on the dimension, such that the following holds for every additive Haar mea
 Let `a` be measurable and uniformly elliptic on `Ω` with constants `0 < λ ≤ Λ`, and let
 `u ∈ H¹(Ω)` be a weak subsolution of `-∂ᵢ(aⁱʲ ∂ⱼu) ≤ 0`. At any level `k` with
 `w = (u - k)⁺ ∈ L²(Ω)`, and for every pair of balls `B(x₀, r) ⊆ B(x₀, R) ⊆ Ω` with
-`0 < r < R`,
+`r < R`,
 
 `∫_{B(x₀, r)} ‖∇w‖² ≤ (2Λ/λ)² (c / (R - r))² ∫_{B(x₀, R)} w²`. -/
 theorem exists_setIntegral_ball_norm_gradient_posPartAbove_sq_le :
@@ -247,17 +247,17 @@ theorem exists_setIntegral_ball_norm_gradient_posPartAbove_sq_le :
       (∀ v : W1p0 mu Omega 2,
         (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
           energyFormH1 a 0 0 u (v : W1p mu Omega 2) ≤ 0) →
-      0 < r → r < R → ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
+      r < R → ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
       ∫ x in ball x₀ r,
           ‖W1p.gradient (W1p.posPartAboveOfMemLp (by norm_num) k u hwLp) x‖ ^ 2 ∂mu ≤
         (2 * Lam / lam) ^ 2 * (c / (R - r)) ^ 2 *
           ∫ x in ball x₀ R, max (W1p.value u x - k) 0 ^ 2 ∂mu := by
   obtain ⟨c, hc0, hc⟩ := exists_setIntegral_ball_norm_gradient_sq_le_of_cutoff (ι := ι)
   refine ⟨c, hc0, ?_⟩
-  intro mu _ Omega a lam Lam u k hwLp x₀ r R h ha hu hr hrR hball
+  intro mu _ Omega a lam Lam u k hwLp x₀ r R h ha hu hrR hball
   set w := W1p.posPartAboveOfMemLp (by norm_num) k u hwLp
   -- Caccioppoli's inequality for `w`, with zero forcing, localized to the balls.
-  have hloc := hc w (A := (2 * Lam / lam) ^ 2) (B := 0) (sq_nonneg _) le_rfl hr hrR hball
+  have hloc := hc w (A := (2 * Lam / lam) ^ 2) (B := 0) (sq_nonneg _) le_rfl hrR hball
     fun ψ hψ hcpt hts => by
       simpa using h.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_of_nonpos ha hu hwLp
         hψ hcpt hts

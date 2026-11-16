@@ -84,7 +84,7 @@ theorem neg_sum_hurwitzClassNumber_mul_dickson_one_sub_half {w : ℕ} (hw : Even
     split_ifs <;> omega
   -- the weights at `t = 1` and `t = 0` have periods `6` and `4` in `w`
   have h₁ : (dickson 2 (1 : ℂ) (12 * q + 2 * m)).eval 1 = (dickson 2 (1 : ℂ) (2 * m)).eval 1 := by
-    rw [show 12 * q + 2 * m = 6 * (2 * q) + 2 * m by ring, dickson_two_one_eval_one_six_mul_add]
+    rw [show 12 * q + 2 * m = 6 * (2 * q) + 2 * m by ring, dickson_eval_one_six_mul_add]
   have h₀ : (dickson 2 (1 : ℂ) (12 * q + 2 * m)).eval 0 = (-1) ^ m := by
     rw [show 12 * q + 2 * m = 2 * (6 * q + m) by ring, dickson_two_eval_zero_two_mul, pow_add,
       pow_mul]
@@ -92,7 +92,7 @@ theorem neg_sum_hurwitzClassNumber_mul_dickson_one_sub_half {w : ℕ} (hw : Even
   rw [show (Finset.Icc (-4 : ℤ) 4).filter (fun t ↦ t ^ 2 ≤ 4) = {-2, -1, 0, 1, 2} by decide]
   simp +decide only [Finset.sum_insert, Finset.sum_singleton, Finset.mem_insert,
     Finset.mem_singleton]
-  norm_num [dickson_eval_neg_of_even _ _ _ hw, h₂, h₁, h₀]
+  norm_num [dickson_eval_neg, hw.neg_one_pow, h₂, h₁, h₀]
   -- the remaining weights `P_{2m+2}(1, 1)` for `m < 6`
   interval_cases m <;>
   · have h := congrArg (Nat.cast (R := ℂ)) hR'

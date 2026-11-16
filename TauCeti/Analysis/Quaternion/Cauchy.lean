@@ -72,7 +72,7 @@ theorem cauchy_box {a b : Fin 4 → ℝ} (hab : a ≤ b) {f g : ℍ → ℍ}
       (hfl _ (mem_image_of_mem _ hx))
     apply Eq.trans _ hsum
     apply Finset.sum_congr rfl
-    intro i hi
+    intro i _
     rw [ContinuousLinearMap.comp_apply, dq_single, one_smul]
 
 /-- The box Cauchy theorem for a left Fueter regular function. The coefficients are ordered

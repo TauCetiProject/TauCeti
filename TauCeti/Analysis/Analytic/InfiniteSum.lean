@@ -66,7 +66,7 @@ theorem hasFPowerSeriesOnBall_tsum {ι : Type*} {g : ι → E → F}
   refine ⟨hradius, ENNReal.coe_pos.mpr hr, fun {y} hy ↦ ?_⟩
   have hynorm : ‖y‖ < (r : ℝ) := by
     have h : ‖y‖₊ < r := by
-      simpa only [mem_eball_zero_iff, enorm_eq_nnnorm, ENNReal.coe_lt_coe] using hy
+      simpa only [mem_eball_zero_iff, eNorm_eq_nnNorm, ENNReal.coe_lt_coe] using hy
     exact_mod_cast h
   -- Absolute convergence permits either order of summation of the evaluated terms.
   have hdbl : Summable fun ki : ℕ × ι ↦ p ki.2 ki.1 (fun _ ↦ y) := by

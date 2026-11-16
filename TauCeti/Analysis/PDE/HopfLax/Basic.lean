@@ -267,7 +267,6 @@ private lemma le_add_norm_rpow_div_of_far {t₀ t m c : ℝ} {x₀ x y : E} (hp 
     linarith
   have h1 : 1 ≤ ‖x - y‖ := le_trans (by nlinarith [abs_nonneg (c - m)]) hfar
   have hmax : t ^ (p - 1) ≤ D := Real.rpow_le_rpow ht.le hS (by linarith)
-  have hmax0 : 0 < t ^ (p - 1) := Real.rpow_pos_of_pos ht _
   calc c ≤ m + (1 + |c - m| * D) / D := by
         have h : (1 + |c - m| * D) / D = 1 / D + |c - m| := by field_simp
         rw [h]

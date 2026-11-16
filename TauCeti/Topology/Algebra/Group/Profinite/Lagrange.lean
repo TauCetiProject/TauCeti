@@ -12,7 +12,7 @@ public import TauCeti.Topology.Algebra.Group.Profinite.Order
 /-!
 # Lagrange's theorem for profinite groups
 
-For a closed subgroup `H` of a profinite group `G`, the supernatural order of `G` is the
+For a subgroup `H` of a profinite group `G`, the supernatural order of `G` is the
 product of the supernatural order of `H` and its supernatural index in `G`. The order of `H`
 is represented by its finite images in the quotients of `G`, and finite Lagrange formulas in
 these quotients relate their orders to the corresponding finite indices. This yields both the
@@ -44,13 +44,12 @@ section Profinite
 
 variable [IsTopologicalGroup G] [CompactSpace G] [TotallyDisconnectedSpace G]
 
-/-- Primewise Lagrange formula for a closed subgroup of a profinite group: the exponent in
+/-- Primewise Lagrange formula for a subgroup of a profinite group: the exponent in
 the ambient order is the exponent in the subgroup order plus the exponent in the index. -/
-theorem profiniteOrder_apply_eq_add_profiniteIndex (H : Subgroup G)
-    (hH : IsClosed (H : Set G)) (ℓ : Nat.Primes) :
+theorem profiniteOrder_apply_eq_add_profiniteIndex (H : Subgroup G) (ℓ : Nat.Primes) :
     profiniteOrder G ℓ = profiniteOrder H ℓ + H.profiniteIndex ℓ := by
   have : Fact (ℓ : ℕ).Prime := ⟨ℓ.prop⟩
-  rw [profiniteOrder_apply, H.profiniteOrder_apply_eq_iSup_image hH,
+  rw [profiniteOrder_apply, H.profiniteOrder_apply_eq_iSup_image,
     Subgroup.profiniteIndex_apply]
   calc
     (⨆ N : OpenNormalSubgroup G,
@@ -85,16 +84,15 @@ theorem profiniteOrder_apply_eq_add_profiniteIndex (H : Subgroup G)
           ← Subgroup.relIndex_ker H (QuotientGroup.mk' K.toSubgroup),
           QuotientGroup.ker_mk', QuotientGroup.ker_mk']
         exact Subgroup.relIndex_dvd_of_le_left _ inf_le_left
-      · exact H.padicValNat_index_map_mk'_anti ℓ inf_le_right
+      · exact Nat.cast_le.mpr <| H.padicValNat_index_map_mk'_anti ℓ inf_le_right
 
 /-- **Lagrange's theorem for profinite groups**: the supernatural order of the ambient group
-is the order of a closed subgroup times its supernatural index. -/
-theorem profiniteOrder_eq_mul_profiniteIndex (H : Subgroup G)
-    (hH : IsClosed (H : Set G)) :
+is the order of a subgroup times its supernatural index. -/
+theorem profiniteOrder_eq_mul_profiniteIndex (H : Subgroup G) :
     profiniteOrder G = profiniteOrder H * H.profiniteIndex := by
   ext ℓ
   rw [Supernatural.mul_apply]
-  exact H.profiniteOrder_apply_eq_add_profiniteIndex hH ℓ
+  exact H.profiniteOrder_apply_eq_add_profiniteIndex ℓ
 
 end Profinite
 

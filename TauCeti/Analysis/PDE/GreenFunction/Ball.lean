@@ -338,7 +338,7 @@ theorem ballGreenKernel_pos (hn : n ≠ 2) {x y : EuclideanSpace ℝ (Fin n)} (h
     ← Real.sq_rpow_div_two (norm_nonneg _), mul_sub]
   exact sub_pos.mpr (by simpa only [mul_sub] using
     (newtonianKernel_rpow_sq_lt n hn
-      (pos_of_ne_zero_euclideanSpace (sub_ne_zero.mpr hxy)) hsub hlt))
+      (pos_of_ne_euclideanSpace hxy) hsub hlt))
 
 /-- The Fréchet derivative of the Green kernel of the unit ball in `y`, away from the pole and
 wherever the reflection polynomial `‖x‖² ‖y‖² - 2 ⟪x, y⟫ + 1` is positive. -/
@@ -384,7 +384,7 @@ theorem ballPoissonKernel_eq_zero_of_norm_eq_one_left {x : EuclideanSpace ℝ (F
 point. -/
 theorem ballPoissonKernel_pos {x y : EuclideanSpace ℝ (Fin n)} (hx : ‖x‖ < 1) (hxy : x ≠ y) :
     0 < ballPoissonKernel n x y := by
-  have hn : 0 < n := pos_of_ne_zero_euclideanSpace (sub_ne_zero.mpr hxy)
+  have hn : 0 < n := pos_of_ne_euclideanSpace hxy
   have hω := volume_real_unitBall_pos n
   have hsub : 0 < ‖x - y‖ := norm_pos_iff.mpr (sub_ne_zero.mpr hxy)
   have hx' : 0 < 1 - ‖x‖ ^ 2 := by nlinarith [norm_nonneg x]
@@ -409,9 +409,8 @@ theorem ballPoissonKernel_le_mul_ballPoissonKernel_zero {x y : EuclideanSpace �
     (hx : ‖x‖ < 1) (hy : ‖y‖ = 1) :
     ballPoissonKernel n x y ≤ (1 + ‖x‖) / (1 - ‖x‖) ^ (n - 1) * ballPoissonKernel n 0 y := by
   have hy0 : y ≠ 0 := fun h ↦ by simp [h] at hy
-  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero (pos_of_ne_zero_euclideanSpace hy0).ne'
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero (pos_of_ne_euclideanSpace hy0).ne'
   have hN := mul_pos (Nat.cast_pos.mpr k.succ_pos) (volume_real_unitBall_pos (k + 1))
-  have ha : 0 < 1 - ‖x‖ := by linarith
   -- The distance from the pole to the boundary point is at least `1 - ‖x‖`.
   have hm : 1 - ‖x‖ ≤ ‖x - y‖ := by
     simpa [hy, norm_sub_rev] using norm_sub_norm_le y x
@@ -434,7 +433,7 @@ theorem mul_ballPoissonKernel_zero_le_ballPoissonKernel {x y : EuclideanSpace �
     (hx : ‖x‖ < 1) (hy : ‖y‖ = 1) :
     (1 - ‖x‖) / (1 + ‖x‖) ^ (n - 1) * ballPoissonKernel n 0 y ≤ ballPoissonKernel n x y := by
   have hy0 : y ≠ 0 := fun h ↦ by simp [h] at hy
-  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero (pos_of_ne_zero_euclideanSpace hy0).ne'
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero (pos_of_ne_euclideanSpace hy0).ne'
   have hN := mul_pos (Nat.cast_pos.mpr k.succ_pos) (volume_real_unitBall_pos (k + 1))
   have hm : 0 < ‖x - y‖ := norm_pos_iff.mpr (sub_ne_zero.mpr fun h ↦ by simp [h, hy] at hx)
   -- The distance from the pole to the boundary point is at most `1 + ‖x‖`.
@@ -459,7 +458,7 @@ theorem contDiffOn_ballPoissonKernel {k : WithTop ℕ∞} :
       ballPoissonKernel n p.1 p.2) {p | p.1 ≠ p.2} := by
   intro p hp
   have hsub : p.1 - p.2 ≠ 0 := sub_ne_zero.mpr hp
-  have hn : (0 : ℝ) < n := by exact_mod_cast pos_of_ne_zero_euclideanSpace hsub
+  have hn : (0 : ℝ) < n := by exact_mod_cast pos_of_ne_euclideanSpace hsub
   have hω := volume_real_unitBall_pos n
   have hden : (n : ℝ) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1) * ‖p.1 - p.2‖ ^ n ≠
       0 := by

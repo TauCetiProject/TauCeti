@@ -59,7 +59,7 @@ No differentiability is assumed, the derivative being `0` where `f` is not diffe
 @[fun_prop]
 theorem measurable_det_fderiv [CompleteSpace 𝕜] [MeasurableSpace 𝕜] [BorelSpace 𝕜]
     [FiniteDimensional 𝕜 E] (f : E → E) : Measurable fun x ↦ (fderiv 𝕜 f x).det := by
-  have := FiniteDimensional.complete 𝕜 E
+  have := FiniteDimensional.completeSpace 𝕜 E
   borelize (E →L[𝕜] E)
   exact ContinuousLinearMap.continuous_det.measurable.comp (measurable_fderiv 𝕜 f)
 

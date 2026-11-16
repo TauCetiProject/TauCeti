@@ -58,7 +58,6 @@ theorem norm_LFunction_mul_mul_le_of_mem_closedBall (hχ : χ ≠ 1) (hψ : ψ �
     have hb := ρ.norm_LFunction_le_level_mul_norm_div_re hρ (by linarith : 0 < s.re)
     apply hb.trans
     apply (div_le_iff₀ (by linarith : 0 < s.re)).mpr
-    have hL : (0 : ℝ) ≤ L := Nat.cast_nonneg L
     nlinarith
   have hlcm : (Nat.lcm M N : ℝ) ≤ (M : ℝ) * N := by
     exact_mod_cast Nat.le_of_dvd (Nat.mul_pos (NeZero.pos M) (NeZero.pos N))

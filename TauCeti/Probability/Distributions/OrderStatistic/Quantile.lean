@@ -22,6 +22,9 @@ adjunction, so it requires no continuity assumption on the source law or its qua
 
 * `quantile_map_orderStatistic_pi` computes the quantile of the product-measure law.
 * `quantile_of_hasLaw_orderStatistic_iid` gives the same formula for an independent sample.
+* `tendsto_quantile_map_orderStatistic_pi_nhdsGT_zero` and
+  `tendsto_quantile_map_orderStatistic_pi_nhdsLT_one` identify the endpoint limits with those
+  of the source law.
 
 ## References
 
@@ -32,7 +35,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory ProbabilityTheory Set
+open Filter MeasureTheory ProbabilityTheory Set Topology
 
 namespace TauCeti.Probability
 
@@ -64,5 +67,47 @@ theorem quantile_of_hasLaw_orderStatistic_iid {Ω : Type*} [MeasurableSpace Ω]
   simp only [Function.comp_def] at hstat
   rw [hstat.map_eq]
   exact quantile_map_orderStatistic_pi k hu
+
+/-- As the probability level tends to zero from above, the quantiles of an iid order statistic
+tend to the infimum of the source law's topological support. The infimum is taken in `EReal`, so
+this includes source laws unbounded below. -/
+theorem tendsto_quantile_map_orderStatistic_pi_nhdsGT_zero (k : Fin n) :
+    Tendsto
+      (fun u ↦ (((Measure.pi fun _ : Fin n => μ).map (orderStatistic k)).quantile u : EReal))
+      (𝓝[>] 0) (𝓝 (⨅ x : μ.support, (x.1 : EReal))) := by
+  have ha : (0 : ℝ) < (k : ℝ) + 1 := by positivity
+  have hb : (0 : ℝ) < (n : ℝ) - k := sub_pos.mpr (by exact_mod_cast k.isLt)
+  have hbeta : Tendsto
+      (inverseRegularizedIncompleteBeta ((k : ℝ) + 1) ((n : ℝ) - k))
+      (𝓝[>] 0) (𝓝[>] 0) := by
+    refine tendsto_nhdsWithin_iff.2 ⟨
+      tendsto_inverseRegularizedIncompleteBeta_zero ((k : ℝ) + 1) ((n : ℝ) - k), ?_⟩
+    filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with u hu
+    exact (inverseRegularizedIncompleteBeta_mem_Ioo ha hb hu.1 hu.2).1
+  refine ((Measure.tendsto_quantile_nhdsGT_zero μ).comp hbeta).congr' ?_
+  filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with u hu
+  rw [quantile_map_orderStatistic_pi k hu]
+  rfl
+
+/-- As the probability level tends to one from below, the quantiles of an iid order statistic
+tend to the supremum of the source law's topological support. The supremum is taken in `EReal`, so
+this includes source laws unbounded above. -/
+theorem tendsto_quantile_map_orderStatistic_pi_nhdsLT_one (k : Fin n) :
+    Tendsto
+      (fun u ↦ (((Measure.pi fun _ : Fin n => μ).map (orderStatistic k)).quantile u : EReal))
+      (𝓝[<] 1) (𝓝 (⨆ x : μ.support, (x.1 : EReal))) := by
+  have ha : (0 : ℝ) < (k : ℝ) + 1 := by positivity
+  have hb : (0 : ℝ) < (n : ℝ) - k := sub_pos.mpr (by exact_mod_cast k.isLt)
+  have hbeta : Tendsto
+      (inverseRegularizedIncompleteBeta ((k : ℝ) + 1) ((n : ℝ) - k))
+      (𝓝[<] 1) (𝓝[<] 1) := by
+    refine tendsto_nhdsWithin_iff.2 ⟨
+      tendsto_inverseRegularizedIncompleteBeta_one ha hb, ?_⟩
+    filter_upwards [Ioo_mem_nhdsLT zero_lt_one] with u hu
+    exact (inverseRegularizedIncompleteBeta_mem_Ioo ha hb hu.1 hu.2).2
+  refine ((Measure.tendsto_quantile_nhdsLT_one μ).comp hbeta).congr' ?_
+  filter_upwards [Ioo_mem_nhdsLT zero_lt_one] with u hu
+  rw [quantile_map_orderStatistic_pi k hu]
+  rfl
 
 end TauCeti.Probability

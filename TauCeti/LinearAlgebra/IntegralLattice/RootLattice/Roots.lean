@@ -49,6 +49,10 @@ the reflection of its negative in itself.
   norm-`2` shell of the root lattice.
 * `TauCeti.DynkinType.representationNumber_rootLattice_two`: the root lattice has exactly
   `t.numRoots` vectors of norm `2`.
+* `TauCeti.IntegralLattice.representationNumber_typeARootLattice_two`: the type `Aₙ` lattice
+  has exactly `n(n+1)` vectors of norm `2`.
+* `TauCeti.IntegralLattice.kissingNumber_typeARootLattice`: the type `Aₙ` lattice has kissing
+  number `n(n+1)`, including rank zero.
 
 ## References
 
@@ -191,3 +195,32 @@ theorem representationNumber_rootLattice_two :
     ← Nat.card_congr (t.rootLatticeRootEquiv ht hv), Nat.card_eq_fintype_card, Fintype.card_fin]
 
 end TauCeti.DynkinType
+
+namespace TauCeti.IntegralLattice
+
+/-- The type `Aₙ` root lattice has exactly `n(n+1)` vectors of norm two, including the empty
+shell in rank zero. -/
+@[simp]
+theorem representationNumber_typeARootLattice_two (n : ℕ) :
+    (typeARootLattice n).representationNumber 2 = n * (n + 1) := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp [representationNumber_eq_zero_of_subsingleton]
+  have h := (DynkinType.A n).representationNumber_rootLattice_two
+    (DynkinType.isSimplyLaced_A n) (DynkinType.valid_A.mpr (Nat.one_le_iff_ne_zero.mpr hn))
+  -- `rank_A` identifies the ambient carriers `Fin (A n).rank → ℚ` and `Fin n → ℚ`;
+  -- `erw` reduces this rank when matching `rootLattice_A`.
+  erw [DynkinType.rootLattice_A, DynkinType.numRoots_A] at h
+  exact h
+
+/-- The kissing number of the type `Aₙ` root lattice is `n(n+1)`, including rank zero.
+For `n ≥ 1`, its minimum is two, so its minimal vectors are exactly its roots. -/
+@[simp]
+theorem kissingNumber_typeARootLattice (n : ℕ) :
+    (typeARootLattice n).kissingNumber = n * (n + 1) := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp only [kissingNumber_eq_zero_of_subsingleton, Nat.zero_mul]
+  rw [kissingNumber_eq_representationNumber (by simp [minimum_typeARootLattice n hn]),
+    minimum_typeARootLattice n hn]
+  exact representationNumber_typeARootLattice_two n
+
+end TauCeti.IntegralLattice

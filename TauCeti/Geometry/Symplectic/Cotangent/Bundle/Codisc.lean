@@ -106,11 +106,11 @@ theorem snd_ne_zero_of_mem_cosphereBundle {z : CotangentBundle I M}
   rw [mem_cosphereBundle, h, (ContinuousLinearMap.opNorm_zero_iff _).2 rfl] at hz
   exact zero_ne_one hz
 
-variable [FiniteDimensional ℝ E] [IsManifold I 1 M]
+variable [FiniteDimensional ℝ E]
 
 section Topology
 
-variable [IsContMDiffRiemannianBundle I 0 E (fun x : M ↦ TangentSpace I x)]
+variable [IsManifold I 1 M] [IsContMDiffRiemannianBundle I 0 E (fun x : M ↦ TangentSpace I x)]
 
 theorem isClosed_codiscBundle : IsClosed (codiscBundle I M) :=
   isClosed_le continuous_norm_snd continuous_const

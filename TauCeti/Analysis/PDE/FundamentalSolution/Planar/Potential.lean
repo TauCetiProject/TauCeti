@@ -30,7 +30,7 @@ support:
 * `u` solves **Poisson's equation** `-Δu = f` on all of `ℂ`;
 * `u` is harmonic off the support of `f`;
 * `u` grows like `G` times the total mass of `f`: `u z - G z • ∫ f → 0` as `z → ∞` (already for
-  continuous `f` with compact support);
+  any `f` with compact support);
 * `u` is the **unique** `C²` solution `v` of `-Δv = f` with `v z - G z • ∫ f → 0` at infinity.
 
 Unlike in dimension `n ≥ 3` (`TauCeti.laplacian_newtonianKernel_convolution`), the potential does
@@ -87,68 +87,72 @@ theorem laplacian_planarNewtonianKernel_convolution [CompleteSpace F] (hf : Cont
 
 /-- The planar Newtonian potential of a `C²` function `f` with compact support is harmonic off
 the support of `f`. -/
-theorem harmonicOnNhd_planarNewtonianKernel_convolution [CompleteSpace F] (hf : ContDiff ℝ 2 f)
+theorem harmonicOnNhd_planarNewtonianKernel_convolution (hf : ContDiff ℝ 2 f)
     (hc : HasCompactSupport f) :
     HarmonicOnNhd (planarNewtonianKernel ⋆ f) (tsupport f)ᶜ := fun x hx => by
   refine ⟨(contDiff_planarNewtonianKernel_convolution hf hc).contDiffAt, ?_⟩
+  by_cases hF : CompleteSpace F
+  swap
+  · have h0 : planarNewtonianKernel ⋆ f = 0 :=
+      funext fun y => by simp [convolution_def, integral_of_not_completeSpace hF]
+    exact Eventually.of_forall fun y => by
+      rw [h0]
+      exact congrFun (laplacian_const (c := (0 : F))) y
   filter_upwards [(isClosed_tsupport f).isOpen_compl.mem_nhds hx] with y hy
   rw [laplacian_planarNewtonianKernel_convolution hf hc, Pi.neg_apply,
     image_eq_zero_of_notMem_tsupport hy, neg_zero, Pi.zero_apply]
 
-/-- Moving the pole of the planar Newtonian kernel by at most `R` changes its value at a point `z`
-with `2 R ≤ ‖z‖` by at most `π⁻¹ R / ‖z‖`. -/
-private lemma abs_planarNewtonianKernel_sub_sub_le {z y : ℂ} {R : ℝ} (hy : ‖y‖ ≤ R)
-    (hz : 2 * R ≤ ‖z‖) (hz₀ : 0 < ‖z‖) :
-    |planarNewtonianKernel (z - y) - planarNewtonianKernel z| ≤ Real.pi⁻¹ * (R / ‖z‖) := by
-  have hR : 0 ≤ R := (norm_nonneg y).trans hy
-  have hzy : ‖z‖ - R ≤ ‖z - y‖ := by linarith [norm_sub_norm_le z y]
-  have hzy' : ‖z - y‖ ≤ ‖z‖ + R := by linarith [norm_sub_le z y]
-  have hhalf : ‖z‖ / 2 ≤ ‖z - y‖ := by linarith
-  have hpos : 0 < ‖z - y‖ := by linarith
-  -- `|log a - log b| ≤ |a - b| / min a b`, here with `|a - b| ≤ R` and `min a b ≥ ‖z‖ / 2`.
-  have hlog : |Real.log ‖z - y‖ - Real.log ‖z‖| ≤ 2 * (R / ‖z‖) := by
-    have h₁ : Real.log ‖z - y‖ - Real.log ‖z‖ ≤ R / ‖z‖ := by
-      rw [← Real.log_div hpos.ne' hz₀.ne']
-      refine (Real.log_le_sub_one_of_pos (div_pos hpos hz₀)).trans ?_
-      rw [div_sub_one hz₀.ne']
-      exact div_le_div_of_nonneg_right (by linarith) hz₀.le
-    have h₂ : Real.log ‖z‖ - Real.log ‖z - y‖ ≤ 2 * (R / ‖z‖) := by
-      rw [← Real.log_div hz₀.ne' hpos.ne']
-      refine (Real.log_le_sub_one_of_pos (div_pos hz₀ hpos)).trans ?_
-      rw [div_sub_one hpos.ne']
-      calc (‖z‖ - ‖z - y‖) / ‖z - y‖ ≤ R / (‖z‖ / 2) :=
-            div_le_div₀ hR (by linarith) (by positivity) hhalf
-        _ = 2 * (R / ‖z‖) := by field_simp
-    have : 0 ≤ R / ‖z‖ := div_nonneg hR hz₀.le
-    rw [abs_le]
-    constructor <;> linarith
-  rw [planarNewtonianKernel_def, planarNewtonianKernel_def, ← mul_sub, abs_mul, abs_neg,
-    abs_inv, abs_of_pos (by positivity : (0 : ℝ) < 2 * Real.pi)]
-  calc (2 * Real.pi)⁻¹ * |Real.log ‖z - y‖ - Real.log ‖z‖|
-      ≤ (2 * Real.pi)⁻¹ * (2 * (R / ‖z‖)) := by gcongr
-    _ = Real.pi⁻¹ * (R / ‖z‖) := by field_simp
+/-- If `f` vanishes off `closedBall 0 R` and `R + 1 < ‖z‖`, then `y ↦ G (z - y) • f y` is
+integrable if and only if `f` is: on the support of `f` the kernel `y ↦ G (z - y)` is bounded and
+bounded away from zero. -/
+private theorem integrable_planarNewtonianKernel_sub_smul_iff {R : ℝ}
+    (hR : Function.support f ⊆ closedBall 0 R) {z : ℂ} (hz : R + 1 < ‖z‖) :
+    Integrable (fun w ↦ planarNewtonianKernel (z - w) • f w) ↔ Integrable f := by
+  have hz1 : ∀ w ∈ closedBall (0 : ℂ) R, 1 < ‖z - w‖ := fun w hw => by
+    linarith [norm_sub_norm_le z w, mem_closedBall_zero_iff.1 hw]
+  have hne : ∀ w ∈ closedBall (0 : ℂ) R, planarNewtonianKernel (z - w) ≠ 0 := fun w hw => by
+    rw [planarNewtonianKernel_def]
+    exact mul_ne_zero (neg_ne_zero.2 (inv_ne_zero (by positivity))) (Real.log_pos (hz1 w hw)).ne'
+  have hzw : ∀ w ∈ closedBall (0 : ℂ) R, z - w ≠ 0 := fun w hw =>
+    norm_pos_iff.1 (by linarith [hz1 w hw])
+  have hcont : ContinuousOn (fun w ↦ planarNewtonianKernel (z - w)) (closedBall 0 R) :=
+    fun w hw => ((contDiffAt_planarNewtonianKernel (n := 2) (hzw w hw)).continuousAt.comp
+      (continuousAt_const.sub continuousAt_id)).continuousWithinAt
+  have hsupp : Function.support (fun w ↦ planarNewtonianKernel (z - w) • f w) ⊆ closedBall 0 R :=
+    (Function.support_smul_subset_right _ _).trans hR
+  rw [← integrableOn_iff_integrable_of_support_subset hsupp,
+    ← integrableOn_iff_integrable_of_support_subset hR]
+  refine ⟨fun hg => ?_, fun hf => hf.continuousOn_smul hcont (isCompact_closedBall _ _)⟩
+  refine (hg.continuousOn_smul (hcont.inv₀ hne) (isCompact_closedBall _ _)).congr_fun
+    (fun w hw => ?_) measurableSet_closedBall
+  simp only [Pi.inv_apply, smul_smul, inv_mul_cancel₀ (hne w hw), one_smul]
 
-/-- **The planar Newtonian potential grows logarithmically.** For `f` continuous with compact
+/-- **The planar Newtonian potential grows logarithmically.** For `f` with compact
 support on `ℂ`, `(G ⋆ f) z - G z • ∫ f → 0` as `z → ∞`: far from the support of `f`, the
 potential is that of a point mass `∫ f` at the origin. -/
-theorem tendsto_planarNewtonianKernel_convolution_sub_cocompact (hf : Continuous f)
+theorem tendsto_planarNewtonianKernel_convolution_sub_cocompact
     (hc : HasCompactSupport f) :
     Tendsto (fun z ↦ (planarNewtonianKernel ⋆ f) z - planarNewtonianKernel z • ∫ w, f w)
       (cocompact ℂ) (𝓝 0) := by
   obtain ⟨R, hR⟩ := hc.isCompact.isBounded.subset_closedBall 0
   set R' := max R 1
   have hR' : 0 < R' := lt_of_lt_of_le one_pos (le_max_right _ _)
-  have hfi : Integrable f := hf.integrable_of_hasCompactSupport hc
+  have hRs : Function.support f ⊆ closedBall 0 R := (subset_tsupport f).trans hR
   -- The pointwise bound off a large ball.
-  have hbound : ∀ z : ℂ, 2 * R' ≤ ‖z‖ →
+  have hbound : ∀ z : ℂ, 2 * R' < ‖z‖ →
       ‖(planarNewtonianKernel ⋆ f) z - planarNewtonianKernel z • ∫ w, f w‖ ≤
         Real.pi⁻¹ * (R' / ‖z‖) * ∫ w, ‖f w‖ := by
     intro z hz
     have hz₀ : 0 < ‖z‖ := by linarith
-    have hconv : Integrable fun w ↦ planarNewtonianKernel (z - w) • f w := by
-      have h := (hc.convolutionExists_right (lsmul ℝ ℝ) locallyIntegrable_planarNewtonianKernel
-        hf z).integrable_swap
-      simpa using h
+    have hz1 : R + 1 < ‖z‖ := by linarith [le_max_left R 1, le_max_right R 1]
+    have hiff := integrable_planarNewtonianKernel_sub_smul_iff hRs hz1
+    by_cases hfi : Integrable f
+    swap
+    · rw [convolution_lsmul_swap, integral_undef (mt hiff.1 hfi), integral_undef hfi, smul_zero,
+        sub_zero, norm_zero]
+      exact mul_nonneg (mul_nonneg (inv_nonneg.2 Real.pi_pos.le) (div_nonneg hR'.le hz₀.le))
+        (integral_nonneg fun _ => norm_nonneg _)
+    have hconv := hiff.2 hfi
     rw [convolution_lsmul_swap, ← integral_smul, ← integral_sub hconv
       (hfi.smul (planarNewtonianKernel z) : Integrable fun w ↦ planarNewtonianKernel z • f w),
       ← integral_const_mul]
@@ -156,7 +160,7 @@ theorem tendsto_planarNewtonianKernel_convolution_sub_cocompact (hf : Continuous
     rw [← sub_smul, norm_smul, Real.norm_eq_abs]
     by_cases hw : w ∈ tsupport f
     · have hwR : ‖w‖ ≤ R' := (mem_closedBall_zero_iff.1 (hR hw)).trans (le_max_left _ _)
-      exact mul_le_mul_of_nonneg_right (abs_planarNewtonianKernel_sub_sub_le hwR hz hz₀)
+      exact mul_le_mul_of_nonneg_right (abs_planarNewtonianKernel_sub_sub_le hwR hz.le hz₀)
         (norm_nonneg _)
     · simp [image_eq_zero_of_notMem_tsupport hw]
   have hlim : Tendsto (fun z : ℂ ↦ Real.pi⁻¹ * (R' / ‖z‖) * ∫ w, ‖f w‖) (cocompact ℂ)
@@ -165,7 +169,7 @@ theorem tendsto_planarNewtonianKernel_convolution_sub_cocompact (hf : Continuous
     simpa [Function.comp_def, div_eq_mul_inv] using
       (h.const_mul Real.pi⁻¹).mul_const (∫ w, ‖f w‖)
   refine squeeze_zero_norm' ?_ hlim
-  filter_upwards [tendsto_norm_cocompact_atTop.eventually_ge_atTop (2 * R')] with z hz
+  filter_upwards [tendsto_norm_cocompact_atTop.eventually_gt_atTop (2 * R')] with z hz
   exact hbound z hz
 
 /-- **Uniqueness for Poisson's equation in the plane.** For `f` of class `C²` with compact
@@ -181,7 +185,7 @@ theorem eq_planarNewtonianKernel_convolution_of_laplacian_eq_neg [CompleteSpace 
     ⟨(hv.sub hu).contDiffAt, Eventually.of_forall fun y => by
       rw [hv.contDiffAt.laplacian_sub hu.contDiffAt, hΔ,
         laplacian_planarNewtonianKernel_convolution hf hc, sub_self, Pi.zero_apply]⟩
-  have hw₀ := hv₀.sub (tendsto_planarNewtonianKernel_convolution_sub_cocompact hf.continuous hc)
+  have hw₀ := hv₀.sub (tendsto_planarNewtonianKernel_convolution_sub_cocompact hc)
   rw [sub_zero] at hw₀
   refine sub_eq_zero.1 (hw.eq_zero_of_tendsto_cocompact ?_)
   refine hw₀.congr fun z => ?_

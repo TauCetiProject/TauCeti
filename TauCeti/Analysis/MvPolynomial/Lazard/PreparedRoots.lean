@@ -81,7 +81,7 @@ the Laurent branches, and the weight of its Lazard exponent, with respect to the
 evaluator, equals the factorial-scaled weight of the leading coefficient plus the sum of the
 negative branch exponents. -/
 private theorem roots_weight_lazardEval_of_laurent
-    (p : Polynomial (MvPolynomial (Fin n) ℝ)) (hp : p ≠ 0) {a x : ι → ℝ} {ρ R : ℝ} (hρ : 0 < ρ)
+    (p : Polynomial (MvPolynomial (Fin n) ℝ)) {a x : ι → ℝ} {ρ R : ℝ} (hρ : 0 < ρ)
     (hR : 0 < R) (hx : dist x a < ρ) {c : Fin n → ℕ} {vLead : Fin n →₀ ℕ}
     {T : Set (Fin n →₀ ℕ)} (hc : TauCeti.IsLazardEvaluator T c)
     {Φ : (ι → ℂ) → Fin n → ℂ} {s : Fin n → ℝ} {u : (ι → ℂ) × ℂ → ℂ}
@@ -123,12 +123,6 @@ private theorem roots_weight_lazardEval_of_laurent
   let f := Polynomial.mapRingHom Complex.ofRealHom
   let qC := MvPolynomial.map f q
   have hf : Injective f := Polynomial.map_injective Complex.ofRealHom Complex.ofReal_injective
-  have hq : q ≠ 0 := by
-    simpa only [q, AlgEquiv.trans_apply, map_zero] using
-      ((MvPolynomial.optionEquivLeft ℝ (Fin n)).symm.trans
-        (MvPolynomial.optionEquivRight ℝ (Fin n))).injective.ne hp
-  have hqC : qC ≠ 0 := by
-    simpa only [qC, map_zero] using (MvPolynomial.map_injective f hf).ne hq
   let d := p.natDegree.factorial
   have hd : 0 < d := Nat.factorial_pos _
   let U : ℂ → ℂ := fun y ↦ u (z, y ^ d)
@@ -156,8 +150,8 @@ private theorem roots_weight_lazardEval_of_laurent
     (hxan i).comp (analyticAt_const.prod analyticAt_id)
   have hw0' (i) (hi : e i < 0) : w i (z, 0) ≠ 0 := hxne i hi
   rw [← heval, ← hexp]
-  exact ⟨MvPolynomial.roots_lazardEval_eq_map_of_laurent qC hqC _ _ hcx hU hU0 hw' hw0' hsplit,
-    MvPolynomial.weight_lazardExponent_eq_of_laurent qC hqC _ _ hcx hU hU0 hw' hw0' hsplit⟩
+  exact ⟨MvPolynomial.roots_lazardEval_eq_map_of_laurent qC _ _ hcx hU hU0 hw' hw0' hsplit,
+    MvPolynomial.weight_lazardExponent_eq_of_laurent qC _ _ hcx hU hU0 hw' hw0' hsplit⟩
 
 /-- Finite locally constant valuations along real analytic centers construct Laurent branches
 whose finite limits give the complete complex root multiset of the Lazard evaluation near the
@@ -235,9 +229,6 @@ theorem exists_complexification_isLazardEvaluator_lazardEval_roots
     exact ⟨fun i ↦ hwne i b hb, fun hb0 i ↦ hform b ⟨hb.1, hb.2, hb0⟩ i⟩
   refine ⟨ρ, hρ, Φ, c, hc, hΦ, hreal, hstar, u, v, hu, hunit, hv, hvunit,
     R, hR, hfit, r, g, hr, hg, hfac, e, w, he, hw, hw0, hlocal, ?_⟩
-  have hp : p ≠ 0 := by
-    rintro rfl
-    simpa using hlead.exists
   -- A unit family chosen once at the central parameter stays analytic and nonzero nearby.
   have hregular : ∀ᶠ b in 𝓝 ((fun j ↦ (a j : ℂ)), (0 : ℂ)),
       ∀ i, AnalyticAt ℂ (w i) b ∧ w i b ≠ 0 :=
@@ -261,7 +252,7 @@ theorem exists_complexification_isLazardEvaluator_lazardEval_roots
     filter_upwards [ball_mem_nhds a hρ, hcenters.eventually
         ((tendsto_id.prodMk_nhds tendsto_const_nhds).eventually hregular),
       hcenters.eventually hcurried] with x hx hxregular hxlocal
-    exact roots_weight_lazardEval_of_laurent p hp hρ hR hx hc
+    exact roots_weight_lazardEval_of_laurent p hρ hR hx hc
       (Set.mem_union_right _ (Set.mem_range_self _)) (hreal x hx) hu hunit
       (fun b hb ↦ (hfac b hb).2) (fun i ↦ (hxregular i).1) (fun i _ ↦ (hxregular i).2)
       (hxlocal.mono fun y hy ↦ hy.2)

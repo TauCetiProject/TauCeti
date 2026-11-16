@@ -19,7 +19,9 @@ with all the factor permutations is an `R`-linear combination of diagonal ones.
 
 That is one half of the double centralizer of Schur-Weyl duality, at the level of image
 subalgebras: the commutant of the image of `R[S_ι]` in `End (M^{⊗ι})` is the span of the diagonal
-operators, through which the general linear group acts.
+operators, through which the general linear group acts. The other half, that the commutant of the
+diagonal operators is the symmetric-group image, needs semisimplicity and is proved in
+`TauCeti/RepresentationTheory/Symmetric/TensorAction/SchurWeyl.lean`.
 
 The proof runs the computation on the other side of the comparison isomorphism
 `PiTensorProduct.piTensorHomEquiv`, which identifies `End (M^{⊗ι})` with `(End M)^{⊗ι}`. Under that
@@ -42,10 +44,6 @@ and the invertibility of `(#ι)!` is what averaging over the symmetric group nee
 
 ## References
 
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 8, "The double centralizer (image-level)", whose first half asks for exactly the commutant
-  of the symmetric-group image inside `End (V^{⊗n})`. The other half, that the commutant of the
-  diagonal operators is the symmetric-group image, is not proved here.
 * W. Fulton and J. Harris, *Representation Theory: A First Course*, Lecture 6 and Appendix B.1.
 -/
 

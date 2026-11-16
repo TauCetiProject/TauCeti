@@ -16,7 +16,6 @@ import Mathlib.Algebra.Polynomial.SpecificDegree
 import Mathlib.NumberTheory.LegendreSymbol.Basic
 import Mathlib.NumberTheory.Padics.RingHoms
 import TauCeti.Algebra.Group.Units.Basic
-import TauCeti.NumberTheory.LocalField.PowerSubgroup.Basic
 import TauCeti.NumberTheory.Padics.RingHoms
 
 /-!
@@ -35,8 +34,14 @@ concrete p-adic norm and valuation APIs.
 * `Padic.valuation_le_valuation_iff_norm_le`, `Padic.valuation_eq_valuation_iff_norm_eq` and
   `Padic.valuation_le_valuation_natCast_pow_iff` compare the valuation of the valuative relation
   on `ℚ_[p]` with Mathlib's norm.
-* `Padic.integerRingEquiv` identifies the ring of integers of `ℚ_[p]` with `ℤ_[p]`, and
-  `Padic.isUnit_intCast_integerRing` shows that an integer prime to `p` is a unit of it.
+* `Padic.integerRing_eq_subring` identifies the ring of integers of `ℚ_[p]` with Mathlib's subring
+  `PadicInt.subring p`, and `Padic.integerRingEquiv` with `ℤ_[p]`; the simp lemmas
+  `Padic.coe_integerRingEquiv_apply` and `Padic.coe_integerRingEquiv_symm_apply` say that it is the
+  identity on the underlying `p`-adic numbers, and `Padic.coe_two_integerRing` that the inclusion
+  sends `2` to `2`. `Padic.isUnit_intCast_integerRing` shows that an integer prime to `p` is a unit
+  of the ring of integers.
+* `Padic.normalizedValuationWithZero_eq_inv_mulValuation`: the zero-preserving normalized valuation
+  on `ℚ_[p]` is the inverse of `Padic.mulValuation`.
 * `Padic.natCard_residueField` computes the residue-field cardinality of `ℚ_[p]`.
 * `Padic.normalizedAbsoluteValue_eq_nnnorm` identifies the normalized absolute value with
   Mathlib's norm on `ℚ_[p]`.
@@ -52,8 +57,9 @@ concrete p-adic norm and valuation APIs.
 * `TauCeti.Padic.mem_maximalIdeal_pow_iff_norm_le`: `𝓂 ^ i` is the disc `‖x‖ ≤ p ^ (-i)`.
 * `TauCeti.Padic.valuation_eq_one_of_coe_eq`: a unit of `ℤ_[p]` has valuation one in `ℚ_[p]`.
 * `TauCeti.Padic.spanSingleton_natCast_pow_eq_maximalIdeal_zpow`: `p ^ n 𝒪[ℚ_[p]] = 𝓂 ^ n`.
-* `Padic.not_isSquare_neg_one_of_mod_four_eq_three`: `-1` is nonsquare in `ℚ_[p]` when
-  `p ≡ 3 (mod 4)`.
+* `Padic.not_isSquare_neg_one_of_mod_four_ne_one`: `-1` is nonsquare in `ℚ_[p]` when
+  `p ≢ 1 (mod 4)`; its case `p = 2` is the instance `Fact (¬ IsSquare (-1 : ℚ_[2]))`, which makes
+  the quadratic algebra `ℚ_2(i)` a field.
 * `Padic.not_isSquare_intCast_of_not_isSquare_zmod`: an integer that is not a square modulo a
   power of `p` is not a square in `ℚ_[p]`; `Padic.not_isSquare_five` (`5` in `ℚ_[2]`) and
   `Padic.not_isSquare_neg_three` (`-3` in `ℚ_[5]`) are its two instances.
@@ -193,7 +199,7 @@ theorem normalizedAbsoluteValue_eq_nnnorm (x : ℚ_[p]) :
   apply NNReal.eq
   rw [TauCeti.normalizedAbsoluteValue_apply_ne_zero x hx,
     natCard_residueField p, toAdd_normalizedValuation_eq_valuation]
-  simp only [coe_nnnorm]
+  simp only [coe_nnNorm]
   simpa using (Padic.norm_eq_zpow_neg_valuation hx).symm
 
 /-- The normalized valuation of a natural number in `ℚ_[p]` is its `p`-adic valuation. -/
@@ -227,24 +233,6 @@ theorem isUnit_two_integerRing (hp : p ≠ 2) : IsUnit (2 : 𝒪[ℚ_[p]]) :=
   (TauCeti.natCastValuation_eq_zero_iff (K := ℚ_[p]) 2 (by norm_num)).mp
     (natCastValuation_two p hp)
 
-/-- If `p ≡ 3 (mod 4)`, then `-1` is not a square in `ℚ_[p]`. Combined with
-`TauCeti.anisotropic_binary_one_one_iff`, this shows that the binary form `⟨1, 1⟩` is anisotropic
-over `ℚ_[p]` for such primes. -/
-theorem not_isSquare_neg_one_of_mod_four_eq_three (hp : p % 4 = 3) :
-    ¬ IsSquare (-1 : ℚ_[p]) := by
-  intro hs0
-  have hs : IsSquare (-1 : ℚ_[p]ˣ) := Units.isSquare_coe_iff.mp hs0
-  have h2 : IsUnit (2 : 𝒪[ℚ_[p]]) := isUnit_two_integerRing (by omega)
-  have hsres : IsSquare (-1 : 𝓀[ℚ_[p]]ˣ) := by
-    have h := (TauCeti.isSquare_unitsMap_subtype_iff h2 (-1 : 𝒪[ℚ_[p]]ˣ)).mp
-    exact (by simpa using h (by simpa using hs))
-  have hs' : IsSquare (-1 : 𝓀[ℚ_[p]]) :=
-    Units.isSquare_coe_iff.mpr hsres
-  let : Fintype 𝓀[ℚ_[p]] := Fintype.ofFinite _
-  have hcard : Fintype.card 𝓀[ℚ_[p]] = p := by
-    simpa only [Nat.card_eq_fintype_card] using natCard_residueField p
-  exact ((FiniteField.isSquare_neg_one_iff).mp hs') (by simpa [hcard] using hp)
-
 variable {p} in
 /-- A square root in `ℚ_[p]` of an integer is a `p`-adic integer, so an integer that is not a
 square modulo some power of `p` is not a square in `ℚ_[p]`. -/
@@ -257,6 +245,21 @@ theorem not_isSquare_intCast_of_not_isSquare_zmod {a : ℤ} {k : ℕ}
   obtain ⟨c, rfl⟩ : ∃ c : ℤ_[p], (c : ℚ_[p]) = b := ⟨⟨b, hb1⟩, rfl⟩
   have hc : c * c = a := PadicInt.ext (by push_cast; exact hb.symm)
   exact h ⟨PadicInt.toZModPow k c, by rw [← map_mul, hc, map_intCast]⟩
+
+/-- If `p ≢ 1 (mod 4)`, then `-1` is not a square in `ℚ_[p]`. Combined with
+`TauCeti.anisotropic_binary_one_one_iff`, this shows that the binary form `⟨1, 1⟩` is anisotropic
+over `ℚ_[p]` for such primes. -/
+theorem not_isSquare_neg_one_of_mod_four_ne_one (hp : p % 4 ≠ 1) :
+    ¬ IsSquare (-1 : ℚ_[p]) := by
+  rcases (Fact.out : p.Prime).eq_two_or_odd with rfl | hodd
+  · simpa using not_isSquare_intCast_of_not_isSquare_zmod (p := 2) (a := -1) (k := 2)
+      (by rw [IsSquare]; decide)
+  simpa using not_isSquare_intCast_of_not_isSquare_zmod (p := p) (a := -1) (k := 1)
+    (by rw [pow_one, Int.cast_neg, Int.cast_one, ZMod.exists_sq_eq_neg_one_iff]; omega)
+
+/-- `-1` is not a square in `ℚ_2`, so the quadratic algebra `ℚ_2(i)` is a field. -/
+instance : Fact (¬ IsSquare (-1 : ℚ_[2])) :=
+  ⟨not_isSquare_neg_one_of_mod_four_ne_one 2 (by decide)⟩
 
 /-- `5` is not a square in `ℚ_[2]`, since no square is `5` modulo `8`. -/
 theorem not_isSquare_five : ¬IsSquare (5 : ℚ_[2]) := by
