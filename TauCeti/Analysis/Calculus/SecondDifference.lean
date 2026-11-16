@@ -18,8 +18,8 @@ Let `f` be differentiable on a convex set `s`, with derivative of norm at most `
 `‖(f (a + b) - f a) - (f (a' + b') - f a')‖ ≤ C ‖b - b'‖ + L ‖b'‖ ‖a - a'‖`
 
 whenever `a`, `a'`, `a + b`, `a + b'` and `a' + b'` lie in `s`
-(`Convex.norm_sub_sub_sub_le_of_norm_fderiv_le`). The first term changes the increment `b` into
-`b'` at the base point `a`; the second moves the base point of `y ↦ f (y + b') - f y`, whose
+(`Convex.norm_image_sub_sub_sub_le_of_norm_fderiv_le`). The first term changes the increment `b`
+into `b'` at the base point `a`; the second moves the base point of `y ↦ f (y + b') - f y`, whose
 derivative `Df(y + b') - Df(y)` is at most `L ‖b'‖`, from `a'` to `a`. Both steps are Mathlib's
 mean value inequality `Convex.norm_image_sub_le_of_norm_hasFDerivWithin_le`.
 
@@ -36,7 +36,7 @@ variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddComm
 `‖Df‖ ≤ C` and `Df` `L`-Lipschitz there, then
 `‖(f (a + b) - f a) - (f (a' + b') - f a')‖ ≤ C ‖b - b'‖ + L ‖b'‖ ‖a - a'‖`
 when `a`, `a'`, `a + b`, `a + b'` and `a' + b'` lie in `s`. -/
-theorem Convex.norm_sub_sub_sub_le_of_norm_fderiv_le (hs : Convex ℝ s)
+theorem Convex.norm_image_sub_sub_sub_le_of_norm_fderiv_le (hs : Convex ℝ s)
     (hd : ∀ x ∈ s, DifferentiableAt ℝ f x) (hC : ∀ x ∈ s, ‖fderiv ℝ f x‖ ≤ C)
     (hL : ∀ x ∈ s, ∀ y ∈ s, ‖fderiv ℝ f x - fderiv ℝ f y‖ ≤ L * ‖x - y‖)
     {a a' b b' : E} (ha : a ∈ s) (ha' : a' ∈ s) (hab : a + b ∈ s) (hab' : a + b' ∈ s)

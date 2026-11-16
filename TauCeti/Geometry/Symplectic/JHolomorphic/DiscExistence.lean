@@ -8,8 +8,6 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
-public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
-public import TauCeti.Geometry.Symplectic.JHolomorphic.Varying
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Topology.MetricSpace.Contracting
@@ -33,7 +31,7 @@ centred at a point where it is standard. This file solves the nonlinear Cauchy�
 for maps `u` from a disc in `ℂ = {s + i t}` to `F`. The theorems are stated for this equation and
 an arbitrary field `J`. When every `J(x)` is an almost complex structure, `J(x)² = -1`, a solution
 is `J`-holomorphic for the standard structure of `ℂ` in the sense of `TauCeti.IsJHolomorphicAt`
-(`TauCeti.isJHolomorphicAt_of_fderiv_one_add_apply_fderiv_I_eq_zero`).
+(`TauCeti.isJHolomorphicAt_iff_fderiv_one_add_apply_fderiv_I_eq_zero`).
 Through the centre `0` there is a solution in every complex direction: for every `ξ ∈ F` there is
 a `C¹` solution near `0` with `u(0) = 0` and `∂ₛu(0) = ξ`
 (`TauCeti.exists_fderiv_one_add_apply_fderiv_I_eq_zero_of_contDiffAt`).
@@ -63,7 +61,7 @@ The contraction adapts the small-coefficient Beltrami fixed point
 (`TauCeti/Analysis/Complex/Beltrami/Holder.lean`) to a nonlinear coefficient, and
 `cauchyTransform_regularity` follows its Cauchy transform regularity helper. The Lipschitz bound
 for `h ↦ K(u)` is the second-difference estimate
-`Convex.norm_sub_sub_sub_le_of_norm_fderiv_le`.
+`Convex.norm_image_sub_sub_sub_le_of_norm_fderiv_le`.
 
 ## Main results
 
@@ -73,9 +71,6 @@ for `h ↦ K(u)` is the second-difference estimate
   values of norm at most `2` on the unit disc.
 * `TauCeti.exists_fderiv_one_add_apply_fderiv_I_eq_zero_of_contDiffAt`: for a structure of class
   `C²` near `0`, a solution near `0` with `u(0) = 0` and `∂ₛu(0) = ξ`, for every `ξ`.
-* `TauCeti.isJHolomorphicAt_of_fderiv_one_add_apply_fderiv_I_eq_zero`: for a field of almost
-  complex structures, a differentiable solution of the equation at a point is `J`-holomorphic
-  there.
 
 ## References
 
@@ -95,32 +90,6 @@ open Complex Metric Set Function
 open scoped NNReal BoundedContinuousFunction
 
 namespace TauCeti
-
-/-! ### The equation and `J`-holomorphicity -/
-
-/-- For a field `J` of almost complex structures, a map `u : ℂ → V` differentiable at `z` with
-`∂ₛu(z) + J(u(z)) ∂ₜu(z) = 0` is `J`-holomorphic at `z` for the standard structure of `ℂ`. -/
-theorem isJHolomorphicAt_of_fderiv_one_add_apply_fderiv_I_eq_zero {V : Type*}
-    [NormedAddCommGroup V] [NormedSpace ℝ V] {J : V → AlmostComplexStructure V} {u : ℂ → V}
-    {z : ℂ} (hu : DifferentiableAt ℝ u z) (h : fderiv ℝ u z 1 + J (u z) (fderiv ℝ u z I) = 0) :
-    IsJHolomorphicAt (fun _ ↦ AlmostComplexStructure.ofComplexModule ℂ) J u z := by
-  refine isJHolomorphicAt_of_hasFDerivAt hu.hasFDerivAt
-    ((isComplexLinearMap_iff_apply _ _ _).mpr fun v ↦ ?_)
-  set D := fderiv ℝ u z
-  have hJI : J (u z) (D I) = -D 1 := eq_neg_of_add_eq_zero_right h
-  have hJ1 : J (u z) (D 1) = D I := by
-    rw [eq_neg_of_add_eq_zero_left h]
-    simp
-  -- Both sides are real-linear in `v = re v + (im v) i`, and `i v = -(im v) + (re v) i`.
-  have hv : v = v.re • (1 : ℂ) + v.im • I := by simp
-  have hIv : I * v = (-v.im) • (1 : ℂ) + v.re • I := by simp [Complex.ext_iff]
-  simp only [AlmostComplexStructure.ofComplexModule_apply, smul_eq_mul,
-    ContinuousLinearMap.coe_coe]
-  rw [hIv, map_add, map_smul, map_smul]
-  conv_rhs => rw [hv, map_add, map_smul, map_smul]
-  rw [AlmostComplexStructure.apply_add, AlmostComplexStructure.apply_smul,
-    AlmostComplexStructure.apply_smul, hJ1, hJI, smul_neg, neg_smul]
-  abel
 
 /-! ### The radial cutoff -/
 
@@ -611,7 +580,7 @@ private theorem norm_kField_sub_le (hξ : ‖ξ‖ ≤ 1)
     -- The second difference of `J` at `a = u_g`, `b = u_f - u_g`.
     have hgz := norm_discMap_le hξ hg z.2
     have hgw := norm_discMap_le hξ hg w.2
-    have h := (convex_closedBall (0 : F) 4).norm_sub_sub_sub_le_of_norm_fderiv_le hd h1 h2
+    have h := (convex_closedBall (0 : F) 4).norm_image_sub_sub_sub_le_of_norm_fderiv_le hd h1 h2
       (mem_closedBall_four hgz) (mem_closedBall_four hgw)
       (add_mem_closedBall_four hgz ((hdiff z).trans hDd))
       (add_mem_closedBall_four hgz ((hdiff w).trans hDd))
