@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Calculus.FormalMultilinearSeries
 import Mathlib.Analysis.Normed.Operator.Mul
 import Mathlib.Analysis.Normed.Ring.InfiniteSum
 import TauCeti.Analysis.Normed.Module.InfiniteSum
+import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
 # Analytic constructions: products, finite sums, and one-variable Cauchy products
@@ -29,8 +30,7 @@ vector-valued series, scalar multiplication `f • g` over a normed algebra, and
 `f * g` in a normed algebra admit the explicit Cauchy-product formal power series on the same ball
 (`HasFPowerSeriesWithinOnBall.clm_apply`, `HasFPowerSeriesOnBall.clm_apply`,
 `HasFPowerSeriesWithinOnBall.smul`, `HasFPowerSeriesOnBall.smul`,
-`HasFPowerSeriesWithinOnBall.mul`, `HasFPowerSeriesOnBall.mul`), supported by the weighted operator
-Cauchy-product norm estimate (`TauCeti.norm_sum_range_clm_apply_mul_pow_le`).
+`HasFPowerSeriesWithinOnBall.mul`, `HasFPowerSeriesOnBall.mul`).
 -/
 
 public section
@@ -110,40 +110,6 @@ end FinsetSum
 section CauchyProduct
 
 open scoped BigOperators ENNReal NNReal
-
-namespace TauCeti
-
-/-- Weighted norm bound for the Cauchy product `∑_{k=0}^n A_{n-k}(v_k)` of a sequence of continuous
-semilinear maps and a sequence of vectors. -/
-theorem norm_sum_range_clm_apply_mul_pow_le
-    {𝕜 𝕜₂ E F : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜₂]
-    [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
-    [SeminormedAddCommGroup F] [NormedSpace 𝕜₂ F]
-    {σ : 𝕜 →+* 𝕜₂} [RingHomIsometric σ]
-    (A : ℕ → E →SL[σ] F) (v : ℕ → E) {r : ℝ} (hr : 0 ≤ r) (n : ℕ) :
-    ‖∑ k ∈ Finset.range (n + 1), A (n - k) (v k)‖ * r ^ n ≤
-      ∑ k ∈ Finset.range (n + 1), (‖A (n - k)‖ * r ^ (n - k)) * (‖v k‖ * r ^ k) := by
-  calc
-    ‖∑ k ∈ Finset.range (n + 1), A (n - k) (v k)‖ * r ^ n
-        ≤ (∑ k ∈ Finset.range (n + 1), ‖A (n - k) (v k)‖) * r ^ n := by
-          gcongr
-          exact norm_sum_le _ _
-    _ = ∑ k ∈ Finset.range (n + 1), ‖A (n - k) (v k)‖ * r ^ n := Finset.sum_mul ..
-    _ ≤ ∑ k ∈ Finset.range (n + 1), (‖A (n - k)‖ * r ^ (n - k)) * (‖v k‖ * r ^ k) := by
-          refine Finset.sum_le_sum fun k hk ↦ ?_
-          have hkn : n - k + k = n :=
-            Nat.sub_add_cancel (Nat.lt_succ_iff.mp (Finset.mem_range.mp hk))
-          calc
-            ‖A (n - k) (v k)‖ * r ^ n
-                ≤ (‖A (n - k)‖ * ‖v k‖) * r ^ (n - k + k) := by
-                  rw [hkn]
-                  gcongr
-                  exact (A (n - k)).le_opNorm (v k)
-            _ = (‖A (n - k)‖ * r ^ (n - k)) * (‖v k‖ * r ^ k) := by
-                  rw [pow_add]
-                  ring
-
-end TauCeti
 
 variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E]

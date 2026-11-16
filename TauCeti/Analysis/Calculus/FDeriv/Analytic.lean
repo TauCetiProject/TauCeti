@@ -35,8 +35,8 @@ theorem HasFPowerSeriesOnBall.deriv
   convert (ContinuousLinearMap.apply 𝕜 E (1 : 𝕜)).comp_hasFPowerSeriesOnBall hf.fderiv using 1
   · ext z
     simp only [Function.comp_apply, ContinuousLinearMap.apply_apply, fderiv_apply_one_eq_deriv]
-  · rw [FormalMultilinearSeries.eq_mkPiRingSeries_coeff
-      ((ContinuousLinearMap.apply 𝕜 E (1 : 𝕜)).compFormalMultilinearSeries p.derivSeries)]
+  · rw [← ((ContinuousLinearMap.apply 𝕜 E (1 : 𝕜)).compFormalMultilinearSeries
+      p.derivSeries).mkPiRingSeries_coeff]
     congr 1
     ext n
     simp [← Nat.cast_smul_eq_nsmul 𝕜]

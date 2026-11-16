@@ -14,6 +14,7 @@ import TauCeti.Analysis.Analytic.TaylorSeries
 import TauCeti.Analysis.Calculus.FDeriv.Analytic
 import TauCeti.Analysis.Calculus.FDeriv.Matrix
 import TauCeti.Analysis.Complex.TaylorSeries
+import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
 # Linear differential equations at ordinary points in the complex domain
@@ -784,7 +785,7 @@ theorem ordinaryPointCoeff_add (f g : ℕ → ℂ) (w₀ w₁ u₀ u₁ : ℂ) :
 
 /-- `TauCeti.ordinaryPointCoeff` commutes with scalar multiplication in `(w₀, w₁)`. -/
 theorem ordinaryPointCoeff_smul (f g : ℕ → ℂ) (c w₀ w₁ : ℂ) :
-    ordinaryPointCoeff f g (c • w₀) (c • w₁) = c • ordinaryPointCoeff f g w₀ w₁ := by
+    ordinaryPointCoeff f g (c * w₀) (c * w₁) = c • ordinaryPointCoeff f g w₀ w₁ := by
   symm
   refine eq_ordinaryPointCoeff_iff.mpr ⟨by simp, by simp, fun n ↦ ?_⟩
   have h := mul_ordinaryPointCoeff_add_two f g w₀ w₁ n

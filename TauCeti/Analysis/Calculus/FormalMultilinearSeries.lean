@@ -18,7 +18,7 @@ For a sequence `c : ℕ → E` in a topological `𝕜`-module, `TauCeti.mkPiRing
 one-variable formal multilinear series whose `n`-th term sends `v : Fin n → 𝕜` to
 `(∏ i, v i) • c n`. Over a nontrivially normed field this is inverse to
 `FormalMultilinearSeries.coeff` (`TauCeti.coeff_mkPiRingSeries`,
-`FormalMultilinearSeries.eq_mkPiRingSeries_coeff`). Composing a one-variable series on the left
+`FormalMultilinearSeries.mkPiRingSeries_coeff`). Composing a one-variable series on the left
 with a continuous linear map applies that map to each coefficient
 (`ContinuousLinearMap.coeff_compFormalMultilinearSeries`).
 -/
@@ -186,11 +186,12 @@ theorem norm_mkPiRingSeries (c : ℕ → E) (n : ℕ) :
 
 /-- Every one-variable formal multilinear series over a nontrivially normed field is recovered
 from its coefficient sequence via `TauCeti.mkPiRingSeries`. -/
-theorem _root_.FormalMultilinearSeries.eq_mkPiRingSeries_coeff
+@[simp]
+theorem _root_.FormalMultilinearSeries.mkPiRingSeries_coeff
     (p : FormalMultilinearSeries 𝕜 𝕜 E) :
-    p = mkPiRingSeries 𝕜 p.coeff := by
+    mkPiRingSeries 𝕜 p.coeff = p := by
   ext1 n
-  exact (p.mkPiRing_coeff_eq n).symm
+  exact p.mkPiRing_coeff_eq n
 
 end Normed
 
