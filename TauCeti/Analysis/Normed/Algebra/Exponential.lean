@@ -214,21 +214,17 @@ theorem norm_exp_smul_one_le [NormedAlgebra ℝ 𝔸] (h_one : ‖(1 : 𝔸)‖ 
 end TauCeti
 
 namespace IsIdempotentElem
-
 /-- For an idempotent `e` in a normed algebra over `𝕜`, `exp (z • e) = 1 + (exp z - 1) • e`. -/
 theorem exp_smul {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [CharZero 𝕜] [ContinuousSMul ℚ 𝕜]
     [CompleteSpace 𝕜] [NormedRing A] [NormedAlgebra 𝕜 A] {e : A} (he : IsIdempotentElem e) (z : 𝕜) :
     NormedSpace.exp (z • e) = 1 + (NormedSpace.exp z - 1) • e := by
   have he1 : HasSum (fun n : ℕ => (((n + 1)! : 𝕜))⁻¹ • (z • e) ^ (n + 1))
-      ((NormedSpace.exp z - 1) • e) :=
-    ((NormedSpace.hasSum_exp_sub_one 𝕜 z).smul_const e).congr_fun fun n => by
-      rw [smul_pow, he.pow_succ_eq n, smul_assoc]
+      ((NormedSpace.exp z - 1) • e) := ((NormedSpace.hasSum_exp_sub_one 𝕜 z).smul_const e).congr_fun
+    fun n => by rw [smul_pow, he.pow_succ_eq n, smul_assoc]
   rw [NormedSpace.exp_eq_tsum 𝕜]
   exact ((hasSum_nat_add_iff' 1).mp (by simpa [add_comm] using he1)).tsum_eq
-
 /-- Complex-scalar specialization of `IsIdempotentElem.exp_smul` written with `Complex.exp`. -/
 theorem exp_complex_smul {A : Type*} [NormedRing A] [NormedAlgebra ℂ A] {e : A}
     (he : IsIdempotentElem e) (z : ℂ) : NormedSpace.exp (z • e) = 1 + (Complex.exp z - 1) • e := by
   rw [he.exp_smul z, ← Complex.exp_eq_exp_ℂ]
-
 end IsIdempotentElem
