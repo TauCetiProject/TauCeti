@@ -90,9 +90,9 @@ def twistedHomology₀EquivQuotientTwo [ConnectedSpace B] [LocallyPathConnectedS
       R ⧸ Ideal.span {(2 : R)} :=
   haveI : PathConnectedSpace B := PathConnectedSpace.of_locallyPathConnectedSpace
   LocalCoefficientSystem.twistedHomology₀EquivQuotientTwo.{u, uB, max uE uι u} _ b
-    (signLocalSystemFiberEquiv hι o)
     (monodromyRepresentation_signLocalSystem_eq_one_or_eq_neg_one hι b)
-    (exists_monodromyRepresentation_signLocalSystem_eq_neg_one hι h b).choose_spec
+    (exists_monodromyRepresentation_signLocalSystem_eq_neg_one hι h b).choose_spec ≪≫ₗ
+    Submodule.Quotient.equiv _ _ (signLocalSystemFiberEquiv hι o) (by simp [Submodule.map_smul''])
 
 /-- The identification of `H₀(B; o(E))` with `R ⧸ 2R` sends the class of an element of the fibre
 over `b` to the residue of its value at `o`. -/
@@ -101,10 +101,11 @@ theorem twistedHomology₀EquivQuotientTwo_ιTwistedHomology₀_self [ConnectedS
     [LocallyPathConnectedSpace B] (h : IsEmpty (VectorBundleOrientation F E ι)) {b : B}
     (o : Orientation ℝ (E b) ι) (a : (signLocalSystem F E R hι).obj (FundamentalGroupoid.mk b)) :
     twistedHomology₀EquivQuotientTwo hι h o (ιTwistedHomology₀ (signLocalSystem F E R hι) b a) =
-      Ideal.Quotient.mk _ (signLocalSystemFiberEquiv hι o a) :=
-  haveI : PathConnectedSpace B := PathConnectedSpace.of_locallyPathConnectedSpace
-  LocalCoefficientSystem.twistedHomology₀EquivQuotientTwo_ιTwistedHomology₀.{u, uB, max uE uι u}
-    _ _ _ _ _ a
+      Ideal.Quotient.mk _ (signLocalSystemFiberEquiv hι o a) := by
+  have : PathConnectedSpace B := PathConnectedSpace.of_locallyPathConnectedSpace
+  rw [twistedHomology₀EquivQuotientTwo, LinearEquiv.trans_apply,
+    LocalCoefficientSystem.twistedHomology₀EquivQuotientTwo_ιTwistedHomology₀.{u, uB, max uE uι u}]
+  simp
 
 /-- The identification of `H₀(B; o(E))` with `R ⧸ 2R` sends the class of an element of the fibre
 over any point `b'` to the residue of its value at any orientation `o'` of `E_b'`. -/
