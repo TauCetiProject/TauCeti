@@ -185,21 +185,20 @@ section Atlas
 
 variable [ChartedSpace (EuclideanHalfSpace (n + 1)) M]
 
-/-- **In collar coordinates the boundary is the zero slice of the normal coordinate.** For an
-atlas chart `e` and a point of `e.source`, the collar chart isolates the coordinate that
+/-- **In collar coordinates the boundary is the zero slice of the normal coordinate.** For any
+chart `e` and a point of `e.source`, the collar chart isolates the coordinate that
 `Boundary.Charts` tests as a product factor, so the boundary condition is one equation in it. -/
-theorem mem_boundary_iff_collarChart_snd_apply_zero_eq_zero [IsManifold (𝓡∂ (n + 1)) k M]
-    (hk : k ≠ 0) {e : OpenPartialHomeomorph M (EuclideanHalfSpace (n + 1))}
-    (he : e ∈ atlas (EuclideanHalfSpace (n + 1)) M) {x : M} (hx : x ∈ e.source) :
+theorem mem_boundary_iff_collarChart_snd_apply_zero_eq_zero
+    {e : OpenPartialHomeomorph M (EuclideanHalfSpace (n + 1))} {x : M} (hx : x ∈ e.source) :
     x ∈ (𝓡∂ (n + 1)).boundary M ↔ (collarChart e x).2.1 0 = 0 := by
   rw [collarChart_snd_apply_zero]
-  exact ModelWithCorners.mem_boundary_euclideanHalfSpace_iff_of_mem_atlas hk he hx
+  exact ModelWithCorners.mem_boundary_euclideanHalfSpace_iff hx
 
 /-- **On the boundary, the tangential coordinate of a collar chart is the boundary chart.** The
 collar coordinates of `Boundary.Collar.Basic` and the boundary manifold structure of
 `Boundary.Charts` are the same coordinate system: the boundary chart is the restriction of the
 collar chart's first component. -/
-theorem collarChart_fst_eq_boundaryChartedSpace_chartAt_apply [IsManifold (𝓡∂ (n + 1)) 1 M]
+theorem collarChart_fst_eq_boundaryChartedSpace_chartAt_apply
     (p q : ↥((𝓡∂ (n + 1)).boundary M)) :
     (collarChart (chartAt (EuclideanHalfSpace (n + 1)) (p : M)) (q : M)).1 =
       chartAt (EuclideanSpace ℝ (Fin n)) p q := by

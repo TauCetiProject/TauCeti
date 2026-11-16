@@ -512,7 +512,7 @@ theorem isOpenMap_codRestrict_point_modelWithCornersEuclideanHalfSpace (hn : n �
   rintro ⟨y, hy⟩ ⟨hyO, hye⟩
   have hy0 : e.extend (𝓡∂ (m + 1)) y 0 = 0 := by
     simpa [OpenPartialHomeomorph.extend_coe] using
-      (TauCeti.ModelWithCorners.mem_boundary_euclideanHalfSpace_iff_of_mem_atlas hn he hye).1 hy
+      (TauCeti.ModelWithCorners.mem_boundary_euclideanHalfSpace_iff hye).1 hy
   refine ⟨faceSection he hi ⟨y, hye, hy0⟩, ?_, rfl⟩
   rw [← mem_preimage, ← hOU]
   exact hyO

@@ -212,7 +212,7 @@ variable {K : SmoothCircleEmbedding (𝓡 3) (sphere (0 : E) 1)}
 
 /-- The first singular homology `H₁(S; ℚ)` of a `0`-shake surface, with rational coefficients. -/
 abbrev firstHomology (S : ZeroShakeSurface K) : Type :=
-  ((singularHomologyFunctor (ModuleCat ℚ) 1).obj (ModuleCat.of ℚ ℚ)).obj (TopCat.of S.carrier)
+  ((singularHomologyFunctor (ModuleCat.{0} ℚ) 1).obj (ModuleCat.of ℚ ℚ)).obj (TopCat.of S.carrier)
 
 /-- The **genus** of a `0`-shake surface: `(dim H₁(S; ℚ) + 1 - b) / 2`, `b` the number of parallel
 copies of the knot bounding it. A compact, connected, orientable surface of genus `g` with `b`
@@ -522,7 +522,7 @@ def IsSmoothSliceDisc.toZeroShakeSurface (h : IsSmoothSliceDisc K Φ)
     -- `singularHomologyFunctor` unfolds to the homology of the singular chain complex, so the
     -- vanishing of the first homology of the contractible disc is the chain-level statement.
     have : Subsingleton (((singularChains ℤ).obj (TopCat.of (closedBall (0 : ℂ) 1))).homology 1) :=
-      inferInstanceAs (Subsingleton (((singularHomologyFunctor (ModuleCat ℤ) 1).obj
+      inferInstanceAs (Subsingleton (((singularHomologyFunctor (ModuleCat.{0} ℤ) 1).obj
         (ModuleCat.of ℤ ℤ)).obj (TopCat.of (closedBall (0 : ℂ) 1))))
     rw [LinearMap.ker_eq_top.2 (Subsingleton.elim _ _), Submodule.map_top, LinearMap.range_eq_top]
     -- The projection of the boundary circle to the core circle is a homeomorphism.
@@ -570,7 +570,7 @@ theorem IsSmoothSliceDisc.genus_toZeroShakeSurface (h : IsSmoothSliceDisc K Φ)
   have := contractibleSpace_closedBall (x := (0 : ℂ)) zero_le_one
   -- The carrier of `h.toZeroShakeSurface hΨ hl` is the closed unit disc by definition.
   have : Subsingleton (h.toZeroShakeSurface hΨ hl).firstHomology :=
-    inferInstanceAs (Subsingleton (((singularHomologyFunctor (ModuleCat ℚ) 1).obj
+    inferInstanceAs (Subsingleton (((singularHomologyFunctor (ModuleCat.{0} ℚ) 1).obj
       (ModuleCat.of ℚ ℚ)).obj (TopCat.of (closedBall (0 : ℂ) 1))))
   rw [ZeroShakeSurface.genus_def, finrank_zero_of_subsingleton]
   simp
