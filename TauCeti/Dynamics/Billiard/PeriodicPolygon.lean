@@ -18,6 +18,7 @@ import Mathlib.Analysis.Convex.StrictConvexBetween
 import Mathlib.Analysis.InnerProductSpace.Convex
 import TauCeti.Analysis.Calculus.Deriv.PeriodicSegment
 import TauCeti.Analysis.InnerProductSpace.NormPow
+import TauCeti.Analysis.InnerProductSpace.Triangle
 
 /-!
 # Periodic billiard polygons by perimeter maximization
@@ -127,6 +128,11 @@ theorem inscribedPerimeter_def (χ : α → F) (s : ZMod N → α) :
     inscribedPerimeter χ s = ∑ k, ‖χ (s (k + 1)) - χ (s k)‖ :=
   (rfl)
 
+/-- The inscribed perimeter is nonnegative. -/
+theorem inscribedPerimeter_nonneg (χ : α → F) (s : ZMod N → α) : 0 ≤ inscribedPerimeter χ s := by
+  rw [inscribedPerimeter_def]
+  exact Finset.sum_nonneg fun _ _ ↦ norm_nonneg _
+
 /-- The inscribed perimeter depends only on the vertices `χ(s_k)`. -/
 theorem inscribedPerimeter_congr {s s' : ZMod N → α} (h : ∀ k, χ (s k) = χ (s' k)) :
     inscribedPerimeter χ s = inscribedPerimeter χ s' := by
@@ -230,15 +236,6 @@ theorem inscribedPerimeter_three (χ : α → F) (s : ZMod 3 → α) :
 
 variable [InnerProductSpace ℝ F]
 
-/-- The sum of the squared sides of the triangle with vertices `a, b, c` is
-`3 (‖a‖ ^ 2 + ‖b‖ ^ 2 + ‖c‖ ^ 2) - ‖a + b + c‖ ^ 2`. -/
-theorem norm_sub_sq_add_norm_sub_sq_add_norm_sub_sq (a b c : F) :
-    ‖b - a‖ ^ 2 + ‖c - b‖ ^ 2 + ‖a - c‖ ^ 2 =
-      3 * (‖a‖ ^ 2 + ‖b‖ ^ 2 + ‖c‖ ^ 2) - ‖a + b + c‖ ^ 2 := by
-  rw [norm_sub_sq_real, norm_sub_sq_real, norm_sub_sq_real, norm_add_sq_real, norm_add_sq_real,
-    inner_add_left, real_inner_comm a b, real_inner_comm b c]
-  ring
-
 /-- The squared perimeter of a triangle is at most three times the sum of its squared sides. -/
 private theorem sq_inscribedPerimeter_three_le (χ : α → F) (s : ZMod 3 → α) :
     inscribedPerimeter χ s ^ 2 ≤ 3 * (3 * (‖χ (s 0)‖ ^ 2 + ‖χ (s 1)‖ ^ 2 + ‖χ (s 2)‖ ^ 2) -
@@ -257,23 +254,10 @@ theorem inscribedPerimeter_le_three_mul_sqrt_three (h : ∀ t, ‖χ t‖ ≤ R)
     inscribedPerimeter χ s ≤ 3 * √3 * R := by
   have hR : 0 ≤ R := (norm_nonneg _).trans (h (s 0))
   have hle (k : ZMod 3) : ‖χ (s k)‖ ^ 2 ≤ R ^ 2 := pow_le_pow_left₀ (norm_nonneg _) (h _) 2
-  have hP : 0 ≤ inscribedPerimeter χ s := Finset.sum_nonneg fun _ _ ↦ norm_nonneg _
-  refine (pow_le_pow_iff_left₀ hP (by positivity) two_ne_zero).1 ?_
+  refine (pow_le_pow_iff_left₀ (inscribedPerimeter_nonneg χ s) (by positivity) two_ne_zero).1 ?_
   rw [three_mul_sqrt_three_mul_sq]
   linarith [sq_inscribedPerimeter_three_le χ s, sq_nonneg ‖χ (s 0) + χ (s 1) + χ (s 2)‖, hle 0,
     hle 1, hle 2]
-
-/-- Two vertices of a triangle inscribed in the sphere of radius `R`, with centroid at the
-centre, are at distance `√3 R`. -/
-theorem norm_sub_eq_sqrt_three_mul_of_add_add_eq_zero {a b c : F} (ha : ‖a‖ = R) (hb : ‖b‖ = R)
-    (hc : ‖c‖ = R) (habc : a + b + c = 0) : ‖b - a‖ = √3 * R := by
-  have hR : 0 ≤ R := ha ▸ norm_nonneg a
-  have hab : a + b = -c := eq_neg_of_add_eq_zero_left habc
-  have h1 := norm_add_sq_real a b
-  rw [hab, norm_neg, ha, hb, hc] at h1
-  refine (sq_eq_sq₀ (norm_nonneg _) (by positivity)).1 ?_
-  rw [norm_sub_sq_real, ha, hb, mul_pow, Real.sq_sqrt (by norm_num), real_inner_comm]
-  linarith
 
 /-- A triangle inscribed in the sphere of radius `R` has the largest possible perimeter `3 √3 R`
 exactly when the centre of the sphere is its centroid, that is, when it is equilateral. -/

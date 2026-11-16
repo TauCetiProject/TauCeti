@@ -12,6 +12,8 @@ import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.InnerProductSpace.Convex
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.InverseDeriv
+import TauCeti.Analysis.SpecialFunctions.Complex.CircleMap
+import TauCeti.Order.Filter.Extr
 import TauCeti.Topology.Circle.Metric
 
 /-!
@@ -85,16 +87,6 @@ namespace StrictConvexBilliardTable
 
 variable {R : ℝ} (hR : 0 < R)
 
-private theorem hasDerivAt_circleMap_div (hR : R ≠ 0) (s : ℝ) :
-    HasDerivAt (fun s : ℝ ↦ circleMap 0 R (s / R)) (circleMap 0 1 (s / R) * I) s := by
-  have h : HasDerivAt (fun s : ℝ ↦ ((s / R : ℝ) : ℂ) * I) ((1 / R : ℝ) * I) s := by
-    simpa using ((hasDerivAt_id s).div_const R).ofReal_comp.mul_const I
-  have h2 := (h.cexp).const_mul (R : ℂ)
-  convert h2 using 1
-  · funext s; simp [circleMap]
-  · simp only [circleMap, zero_add, one_mul, ofReal_one, ofReal_div]
-    field_simp [ofReal_ne_zero.2 hR]
-
 private theorem inner_circleMap_sub (a b c : ℝ) :
     ⟪circleMap 0 R (b / R) - circleMap 0 R (a / R), circleMap 0 1 (c / R) * I⟫ =
       R * (Real.sin ((b - c) / R) - Real.sin ((a - c) / R)) := by
@@ -134,7 +126,7 @@ def circle : StrictConvexBilliardTable Complex.orientation where
     simp only
     rw [add_div, mul_div_assoc, div_self hR.ne', mul_one, periodic_circleMap]
   norm_deriv s := by
-    rw [(hasDerivAt_circleMap_div hR.ne' s).deriv]
+    rw [(hasDerivAt_circleMap_div 0 hR.ne' s).deriv]
     simp
   injOn s hs t ht h := by
     have := injOn_circleMap_of_abs_sub_le' (c := 0) hR.ne' (a := 0) (b := 2 * π) (by simp)
@@ -142,7 +134,7 @@ def circle : StrictConvexBilliardTable Complex.orientation where
       ⟨div_nonneg ht.1 hR.le, (div_lt_iff₀ hR).2 (by linarith [ht.2])⟩ h
     exact (div_left_inj₀ hR.ne').1 this
   areaForm_pos s t h := by
-    simp only [(hasDerivAt_circleMap_div hR.ne' s).deriv, areaForm_circleMap_sub, sub_self,
+    simp only [(hasDerivAt_circleMap_div 0 hR.ne' s).deriv, areaForm_circleMap_sub, sub_self,
       zero_div, Real.cos_zero]
     -- The chord `2 R |sin ((t - s) / 2 R)|` is nonzero, and `1 - cos x = 2 sin (x / 2) ^ 2`.
     have h2 := dist_pos.2 h
@@ -165,7 +157,7 @@ theorem period_circle : (circle hR).period = 2 * π * R :=
 /-- The unit tangent of the circle table at `χ(s)` is `i e^{i s / R}`. -/
 @[simp]
 theorem deriv_circle (s : ℝ) : deriv (circle hR) s = circleMap 0 1 (s / R) * I :=
-  (hasDerivAt_circleMap_div hR.ne' s).deriv
+  (hasDerivAt_circleMap_div 0 hR.ne' s).deriv
 
 /-- The tangential component of a chord of the circle at a vertex `χ(c)`. -/
 theorem inner_circle_sub_deriv (a b c : ℝ) :
@@ -439,12 +431,6 @@ theorem inner_circle_right_triangle {s : ZMod 3 → ℝ} (hs : ∀ k, s k = k.va
     rw [Real.sq_sqrt (by norm_num)]
 
 /-! ### Inscribed polygons of maximal perimeter -/
-
-/-- A point attaining an upper bound `M` that some point attains is a maximizer exactly when it
-attains `M`. -/
-private theorem isMaxOn_univ_iff_eq {β : Type*} {f : β → ℝ} {M : ℝ} {s : β} (hle : ∀ t, f t ≤ M)
-    (hM : ∃ d, f d = M) : IsMaxOn f univ s ↔ f s = M :=
-  ⟨fun h ↦ hM.elim fun d hd ↦ le_antisymm (hle s) (hd ▸ h (mem_univ d)), fun h t _ ↦ h ▸ hle t⟩
 
 private theorem circle_mul_pi (x : ℝ) : circle hR (x * (π * R)) = circleMap 0 R (x * π) := by
   rw [circle_apply, ← mul_assoc, mul_div_cancel_right₀ _ hR.ne']

@@ -8,10 +8,12 @@ module
 public import Mathlib.Order.Filter.Extr
 
 /-!
-# Minima on sublevels
+# Minima on sublevels, and maxima attaining a bound
 
 A minimum on a sublevel transfers to the full admissible set. At a minimizer, the
-sublevel at the minimum value is exactly the set of all minimizers.
+sublevel at the minimum value is exactly the set of all minimizers. When an upper bound of a
+function is attained, the global maximizers are exactly the points attaining it
+(`TauCeti.isMaxOn_univ_iff_eq`).
 -/
 
 public section
@@ -29,6 +31,12 @@ theorem isMinOn_sublevel_iff {X β : Type*} [LinearOrder β] {f : X → β}
   by_cases hb : f x ≤ b
   · exact h ⟨hx, hb⟩
   · exact hu.trans (le_of_not_ge hb)
+
+/-- If some point attains an upper bound `M` of `f`, then `s` is a global maximizer of `f` exactly
+when it attains `M`. -/
+theorem isMaxOn_univ_iff_eq {X β : Type*} [PartialOrder β] {f : X → β} {M : β} {s : X}
+    (hle : ∀ t, f t ≤ M) (hM : ∃ d, f d = M) : IsMaxOn f univ s ↔ f s = M :=
+  ⟨fun h ↦ hM.elim fun d hd ↦ le_antisymm (hle s) (hd ▸ h (mem_univ d)), fun h t _ ↦ h ▸ hle t⟩
 
 end TauCeti
 
