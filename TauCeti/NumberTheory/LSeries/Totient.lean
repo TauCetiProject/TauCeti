@@ -34,13 +34,11 @@ private theorem totient_convolution_one :
     _root_.LSeries.convolution (fun n ↦ (n.totient : ℂ)) 1 = fun n : ℕ ↦ (n : ℂ) := by
   let f : ArithmeticFunction ℂ := ⟨fun n ↦ (n.totient : ℂ), by simp⟩
   have hf (n : ℕ) : f n = (n.totient : ℂ) := rfl
-  have hφ : toArithmeticFunction (fun n ↦ (n.totient : ℂ)) = f := by
-    ext n
-    by_cases hn : n = 0 <;> simp [toArithmeticFunction, hn, hf]
-  have hz : toArithmeticFunction (1 : ℕ → ℂ) = (ζ : ArithmeticFunction ℂ) := by
-    ext n
-    rw [natCoe_apply, zeta_apply]
-    by_cases hn : n = 0 <;> simp [toArithmeticFunction, hn]
+  have hφ : toArithmeticFunction (fun n ↦ (n.totient : ℂ)) = f :=
+    toArithmeticFunction_eq_self f
+  have hz : toArithmeticFunction (1 : ℕ → ℂ) = (ζ : ArithmeticFunction ℂ) :=
+    (toArithmeticFunction_congr (const_one_eq_zeta (R := ℂ))).trans
+      (toArithmeticFunction_eq_self (ζ : ArithmeticFunction ℂ))
   funext n
   rw [_root_.LSeries.convolution, hφ, hz, coe_mul_zeta_apply]
   simp only [hf]
