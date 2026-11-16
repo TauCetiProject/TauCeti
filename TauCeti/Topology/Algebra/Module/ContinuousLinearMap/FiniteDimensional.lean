@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.SimpleRing.Basic
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 import Mathlib.LinearAlgebra.Eigenspace.Minpoly
+import Mathlib.RingTheory.SimpleRing.Congr
+import TauCeti.Algebra.CentralSimple.End
 
 /-!
 # Continuous endomorphisms of a finite-dimensional topological vector space
@@ -16,6 +19,11 @@ invertible as a linear map. Neither a norm nor completeness of the scalars is ne
 spectrum of such a map over the scalar field `𝕜` is the spectrum of its underlying linear map,
 which is the finite set of its eigenvalues. Consequently its spectrum over any field `S` of scalars
 acting compatibly, for instance over `ℝ` for a map on a complex space, is finite.
+
+Over a complete nontrivially normed field, every linear endomorphism of a finite-dimensional
+Hausdorff topological vector space is continuous, so `V →L[𝕜] V` is ring-isomorphic to
+`Module.End 𝕜 V` and is therefore a simple ring whenever `V` is nontrivial
+(`ContinuousLinearMap.instIsSimpleRing`).
 
 Mathlib's `ContinuousLinearMap.isUnit_iff_isUnit_toLinearMap` and
 `ContinuousLinearMap.spectrum_eq` are the corresponding statements on a Banach space.
@@ -31,6 +39,8 @@ Mathlib's `ContinuousLinearMap.isUnit_iff_isUnit_toLinearMap` and
   subfields of the scalars such as `ℝ ⊆ ℂ`.
 * `ContinuousLinearMap.isUnit_smul_one_sub`: `c • 1 - T` is invertible when `T` has no
   eigenvector of eigenvalue `c`.
+* `ContinuousLinearMap.instIsSimpleRing`: on a nontrivial finite-dimensional Hausdorff topological
+  vector space over a complete nontrivially normed field, `V →L[𝕜] V` is a simple ring.
 -/
 
 public section
@@ -81,5 +91,16 @@ theorem isUnit_smul_one_sub {T : V →L[𝕜] V} {c : 𝕜} (h : ∀ v, T v = c 
     ((LinearMap.isUnit_iff_ker_eq_bot _).2 (LinearMap.ker_eq_bot'.2 fun v hv ↦ h v ?_))
   have hv' : c • v - T v = 0 := by simpa using hv
   exact (sub_eq_zero.1 hv').symm
+
+/-- On a nontrivial finite-dimensional Hausdorff topological vector space over a complete
+nontrivially normed field, the endomorphism ring `V →L[𝕜] V` is simple. -/
+instance instIsSimpleRing {𝕜 V : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+    [AddCommGroup V] [Module 𝕜 V] [TopologicalSpace V] [T2Space V] [IsTopologicalAddGroup V]
+    [ContinuousSMul 𝕜 V] [FiniteDimensional 𝕜 V] [Nontrivial V] :
+    IsSimpleRing (V →L[𝕜] V) := by
+  let e : Module.End 𝕜 V ≃+* (V →L[𝕜] V) :=
+    { LinearMap.toContinuousLinearMap (𝕜 := 𝕜) (E := V) (F' := V) with
+      map_mul' := fun _ _ ↦ rfl }
+  exact IsSimpleRing.of_ringEquiv e (IsSimpleRing.moduleEnd_of_field 𝕜 V)
 
 end ContinuousLinearMap

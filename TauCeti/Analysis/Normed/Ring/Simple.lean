@@ -32,8 +32,8 @@ Two structural consequences follow:
 * `TwoSidedIdeal.topologicalClosure_ne_top`: the closure of a proper two-sided ideal is proper.
 * `TwoSidedIdeal.isClosed_of_isCoatom`: maximal two-sided ideals are closed.
 * `IsSimpleRing.of_forall_isClosed_eq_bot_or_eq_top` and
-  `isSimpleRing_iff_forall_isClosed_eq_bot_or_eq_top`: equivalence of algebraic and topological
-  simplicity for unital normed rings with summable geometric series.
+  `TauCeti.isSimpleRing_iff_forall_isClosed_eq_bot_or_eq_top`: equivalence of algebraic and
+  topological simplicity for unital normed rings with summable geometric series.
 
 ## References
 
@@ -41,6 +41,12 @@ Two structural consequences follow:
   II.5.4.1.
 * H. G. Dales, *Banach Algebras and Automatic Continuity*, London Mathematical Society Monographs
   24, Clarendon Press (2000), §1.3.
+
+The two-sided ideal closure lemmas (`TwoSidedIdeal.eq_top_of_norm_lt_one`,
+`TwoSidedIdeal.topologicalClosure_ne_top`, `TwoSidedIdeal.topologicalClosure_eq_self_of_isCoatom`,
+and `TwoSidedIdeal.isClosed_of_isCoatom`) adapt Heather Macbeth's `Ideal.eq_top_of_norm_lt_one`,
+`Ideal.closure_ne_top`, `Ideal.IsMaximal.closure_eq`, and `Ideal.IsMaximal.isClosed` in
+`Mathlib/Analysis/Normed/Ring/Units.lean` to `TwoSidedIdeal`.
 -/
 
 public section
@@ -64,9 +70,8 @@ theorem topologicalClosure_ne_top {I : TwoSidedIdeal R} (hI : I ≠ ⊤) :
   have hcl : I.asIdeal.closure ≠ ⊤ := I.asIdeal.closure_ne_top hproper
   intro htop
   apply hcl
-  rw [Ideal.eq_top_iff_one, ← SetLike.mem_coe, Ideal.coe_closure, I.coe_asIdeal,
+  simp [Ideal.eq_top_iff_one, ← SetLike.mem_coe, Ideal.coe_closure, I.coe_asIdeal,
     ← I.coe_topologicalClosure, htop]
-  exact Set.mem_univ 1
 
 /-- A maximal two-sided ideal in a normed ring with summable geometric series equals its
 topological closure. -/
@@ -97,6 +102,8 @@ theorem of_forall_isClosed_eq_bot_or_eq_top [Nontrivial R]
 
 end IsSimpleRing
 
+namespace TauCeti
+
 /-- A unital normed ring with summable geometric series is simple if and only if it is nontrivial
 and its only closed two-sided ideals are `⊥` and `⊤`. -/
 theorem isSimpleRing_iff_forall_isClosed_eq_bot_or_eq_top (R : Type*) [NormedRing R]
@@ -105,5 +112,7 @@ theorem isSimpleRing_iff_forall_isClosed_eq_bot_or_eq_top (R : Type*) [NormedRin
       Nontrivial R ∧ ∀ I : TwoSidedIdeal R, IsClosed (I : Set R) → I = ⊥ ∨ I = ⊤ :=
   ⟨fun _ ↦ ⟨inferInstance, fun I _ ↦ IsSimpleOrder.eq_bot_or_eq_top I⟩,
     fun ⟨_, h⟩ ↦ IsSimpleRing.of_forall_isClosed_eq_bot_or_eq_top h⟩
+
+end TauCeti
 
 end

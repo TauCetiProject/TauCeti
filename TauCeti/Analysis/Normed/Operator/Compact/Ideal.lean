@@ -5,54 +5,61 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.Normed.Operator.Compact.FiniteDimension
 public import Mathlib.RingTheory.TwoSidedIdeal.Instances
-public import TauCeti.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.InnerProductSpace.RankOne
-public import TauCeti.Analysis.Normed.Ring.Simple
-import Mathlib.Analysis.InnerProductSpace.l2Space
+import Mathlib.Analysis.Normed.Module.HahnBanach
+import Mathlib.RingTheory.TwoSidedIdeal.Operations
+import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Basic
+import TauCeti.Analysis.InnerProductSpace.OrthogonalFamily
 import TauCeti.Analysis.Normed.Operator.Compact.Finite.Rank
 import TauCeti.Analysis.Normed.Operator.Compact.Orthonormal
 import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Schmidt
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.IdempotentRange
 
 /-!
 # The compact-operator and separable-range ideals of bounded operators
 
-For a topological module `M` over a ring `R`, the compact endomorphisms form a two-sided ideal
-`ContinuousLinearMap.compactIdeal R M` of `M →L[R] M`, and the endomorphisms with separable range
-form a larger two-sided ideal `ContinuousLinearMap.separableRangeIdeal R M`. On a Banach space `E`
-over a nontrivially normed field `𝕜`, both ideals are closed in the operator-norm topology,
-`compactIdeal 𝕜 E = ⊤` if and only if `E` is finite-dimensional, and `separableRangeIdeal 𝕜 E = ⊤`
-if and only if `E` is separable.
+For a topological module `M` over a ring `R`, the compact continuous linear endomorphisms form a
+two-sided ideal `ContinuousLinearMap.compactIdeal R M` of `M →L[R] M`, and the continuous linear
+endomorphisms with separable range form a two-sided ideal
+`ContinuousLinearMap.separableRangeIdeal R M`, with `separableRangeIdeal R M = ⊤` if and only if
+`M` is separable. Over a locally compact nontrivially normed field `𝕜` (`[LocallyCompactSpace 𝕜]`),
+a Hausdorff topological vector space `E` satisfies `compactIdeal 𝕜 E = ⊤` if and only if `E` is
+finite-dimensional. On a seminormed space `E` over a nontrivially normed field `𝕜`,
+`separableRangeIdeal 𝕜 E` is closed in the operator-norm topology and contains `compactIdeal 𝕜 E`;
+when `E` is a Banach space, `compactIdeal 𝕜 E` is also closed.
 
 On a Hilbert space `H` over `𝕜` (`ℝ` or `ℂ`), every nonzero bounded operator `T` with `T x ≠ 0`
 gives all rank-one operators by the two-sided product
 `rankOneDivNormSq 𝕜 u (T x) * T * rankOne 𝕜 x v = rankOne 𝕜 u v`. Combining this algebraic
 extraction with the norm-convergent singular value expansion of compact operators yields:
-* Every nonzero closed two-sided ideal of `H →L[𝕜] H` contains `compactIdeal 𝕜 H`.
 * The nonunital ring `↥(compactIdeal 𝕜 H)` is topologically simple: its only closed two-sided
   ideals are `⊥` and `⊤`, with `⊥ ≠ ⊤` whenever `H` is nontrivial.
+* Every nonzero closed two-sided ideal of `H →L[𝕜] H` contains `compactIdeal 𝕜 H`.
 * When `H` is nonseparable, `compactIdeal 𝕜 H < separableRangeIdeal 𝕜 H < ⊤`, witnessed by the
   orthogonal projection onto the closed span of a countably infinite orthonormal sequence.
-* When `H` is separable, every noncompact star projection `p : H →L[𝕜] H` has infinite-dimensional
-  closed range, so there is a linear isometry `v : H →ₗᵢ[𝕜] H` into `p.range` satisfying
-  `p * v = v` and `star v * p * v = 1`.
+* When `H` is separable, every noncompact idempotent operator `p : H →L[𝕜] H` admits a linear
+  isometry `v : H →ₗᵢ[𝕜] H` satisfying `p * v = v` and `star v * p * v = 1`.
 
 ## Main declarations
 
-* `ContinuousLinearMap.compactIdeal`: the two-sided ideal of compact operators on `M`, closed when
-  `M` is a Banach space (`ContinuousLinearMap.isClosed_compactIdeal`).
-* `ContinuousLinearMap.separableRangeIdeal`: the two-sided ideal of bounded operators with
-  separable range, closed on normed spaces (`ContinuousLinearMap.isClosed_separableRangeIdeal`) and
-  containing `compactIdeal` (`ContinuousLinearMap.compactIdeal_le_separableRangeIdeal`).
+* `ContinuousLinearMap.compactIdeal`: the two-sided ideal of compact continuous linear
+  endomorphisms of `M`, closed when `M` is a Banach space
+  (`ContinuousLinearMap.isClosed_compactIdeal`).
+* `ContinuousLinearMap.separableRangeIdeal`: the two-sided ideal of continuous linear endomorphisms
+  of `M` with separable range, closed (`ContinuousLinearMap.isClosed_separableRangeIdeal`) and
+  containing `compactIdeal` (`ContinuousLinearMap.compactIdeal_le_separableRangeIdeal`) on
+  seminormed spaces over a nontrivially normed field.
+* `ContinuousLinearMap.twoSidedIdeal_compactIdeal_eq_bot_or_eq_top_of_isClosed`:
+  `↥(compactIdeal 𝕜 H)` has no proper nonzero closed two-sided ideals.
 * `ContinuousLinearMap.compactIdeal_le_of_isClosed_of_ne_bot`: every nonzero closed two-sided ideal
   of `H →L[𝕜] H` contains `compactIdeal 𝕜 H`.
-* `ContinuousLinearMap.compactIdeal_eq_bot_or_eq_top_of_isClosed`: `↥(compactIdeal 𝕜 H)` has no
-  nontrivial closed two-sided ideals.
 * `ContinuousLinearMap.compactIdeal_lt_separableRangeIdeal`: on a nonseparable Hilbert space,
   `compactIdeal 𝕜 H < separableRangeIdeal 𝕜 H`.
-* `IsStarProjection.exists_linearIsometry_mul_eq_and_star_mul_mul_eq_one`: on a separable Hilbert
-  space, a noncompact star projection `p` admits an isometry `v` with `p * v = v` and
+* `IsIdempotentElem.exists_linearIsometry_mul_eq_and_star_mul_mul_eq_one`: on a separable Hilbert
+  space, a noncompact idempotent operator `p` admits a linear isometry `v` with `p * v = v` and
   `star v * p * v = 1`.
 
 ## References
@@ -105,10 +112,7 @@ end Topological
 section Banach
 
 variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-
-section Closed
-
-variable [CompleteSpace E]
+  [CompleteSpace E]
 
 /-- On a Banach space, `compactIdeal` is closed in the operator-norm topology. -/
 theorem isClosed_compactIdeal : IsClosed (compactIdeal 𝕜 E : Set (E →L[𝕜] E)) := by
@@ -119,14 +123,16 @@ theorem isClosed_compactIdeal : IsClosed (compactIdeal 𝕜 E : Set (E →L[𝕜
 instance instIsClosedCompactIdeal : IsClosed (compactIdeal 𝕜 E : Set (E →L[𝕜] E)) :=
   isClosed_compactIdeal
 
-end Closed
+end Banach
 
 section FiniteDimensional
 
-variable [LocallyCompactSpace 𝕜]
+variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [LocallyCompactSpace 𝕜]
+  [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E] [T2Space E]
+  [IsTopologicalAddGroup E] [ContinuousSMul 𝕜 E]
 
-/-- Over a locally compact field, every bounded operator on `E` is compact if and only if `E` is
-finite-dimensional. -/
+/-- Over a locally compact field, every continuous linear endomorphism of a Hausdorff topological
+vector space `E` is compact if and only if `E` is finite-dimensional. -/
 @[simp]
 theorem compactIdeal_eq_top_iff_finiteDimensional :
     compactIdeal 𝕜 E = ⊤ ↔ FiniteDimensional 𝕜 E := by
@@ -134,24 +140,57 @@ theorem compactIdeal_eq_top_iff_finiteDimensional :
   rw [← TwoSidedIdeal.one_mem_iff, mem_compactIdeal, one_def, coe_id',
     isCompactOperator_id_iff_finiteDimensional (𝕜 := 𝕜)]
 
-/-- On a finite-dimensional normed space over a locally compact field, `compactIdeal` is the whole
-endomorphism algebra. -/
+/-- On a finite-dimensional Hausdorff topological vector space over a locally compact field,
+`compactIdeal` is the whole endomorphism algebra. -/
 theorem compactIdeal_eq_top [FiniteDimensional 𝕜 E] : compactIdeal 𝕜 E = ⊤ :=
   compactIdeal_eq_top_iff_finiteDimensional.mpr ‹_›
 
-/-- On an infinite-dimensional normed space over a locally compact field, `compactIdeal` is a
-proper two-sided ideal. -/
+/-- On an infinite-dimensional Hausdorff topological vector space over a locally compact field,
+`compactIdeal` is a proper two-sided ideal. -/
 theorem compactIdeal_ne_top (hE : ¬ FiniteDimensional 𝕜 E) : compactIdeal 𝕜 E ≠ ⊤ :=
   mt compactIdeal_eq_top_iff_finiteDimensional.mp hE
 
-/-- On an infinite-dimensional normed space over a locally compact field, `compactIdeal` is
-strictly below `⊤`. -/
+/-- On an infinite-dimensional Hausdorff topological vector space over a locally compact field,
+`compactIdeal` is strictly below `⊤`. -/
 theorem compactIdeal_lt_top (hE : ¬ FiniteDimensional 𝕜 E) : compactIdeal 𝕜 E < ⊤ :=
   lt_top_iff_ne_top.mpr (compactIdeal_ne_top hE)
 
 end FiniteDimensional
 
-end Banach
+section NormedNontrivial
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+
+/-- On a normed space over `ℝ` or `ℂ`, `compactIdeal 𝕜 E` is trivial if and only if `E` is a
+subsingleton. -/
+@[simp]
+theorem compactIdeal_eq_bot_iff : compactIdeal 𝕜 E = ⊥ ↔ Subsingleton E := by
+  refine ⟨fun h ↦ subsingleton_iff_forall_eq 0 |>.mpr fun x ↦ ?_,
+    fun _ ↦ eq_bot_iff.mpr fun T _ ↦ ?_⟩
+  · by_contra hx
+    obtain ⟨g, -, hgx⟩ := exists_dual_vector 𝕜 x (norm_ne_zero_iff.mpr hx)
+    have hmem : toSpanSingleton 𝕜 x ∘L g ∈ compactIdeal 𝕜 E :=
+      mem_compactIdeal.mpr <|
+        (isCompactOperator_of_locallyCompactSpace_rng (toSpanSingleton 𝕜 x)).comp_clm g
+    rw [h, TwoSidedIdeal.mem_bot] at hmem
+    have h0 := DFunLike.congr_fun hmem x
+    simp [hgx, hx] at h0
+  · rw [TwoSidedIdeal.mem_bot]
+    exact Subsingleton.elim T 0
+
+/-- On a nontrivial normed space over `ℝ` or `ℂ`, `compactIdeal` is nonzero. -/
+theorem compactIdeal_ne_bot [Nontrivial E] : compactIdeal 𝕜 E ≠ ⊥ :=
+  mt compactIdeal_eq_bot_iff.mp (not_subsingleton E)
+
+/-- On a nontrivial normed space over `ℝ` or `ℂ`, the nonunital ring `↥(compactIdeal 𝕜 E)` is
+nontrivial. -/
+instance instNontrivialCompactIdeal [Nontrivial E] : Nontrivial ↥(compactIdeal 𝕜 E) := by
+  obtain ⟨T, hT, hT0⟩ :=
+    IsConcreteLE.exists_of_lt (bot_lt_iff_ne_bot.mpr (compactIdeal_ne_bot (𝕜 := 𝕜) (E := E)))
+  rw [TwoSidedIdeal.mem_bot] at hT0
+  exact ⟨⟨⟨T, hT⟩, 0, Subtype.coe_ne_coe.mp hT0⟩⟩
+
+end NormedNontrivial
 
 end CompactIdeal
 
@@ -220,15 +259,14 @@ section Normed
 
 variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
 
-/-- On a seminormed space, `separableRangeIdeal` is closed in the operator-norm topology: if `f` is
-approximated in operator norm by a sequence `gₙ` with separable ranges, then `Set.range f` lies in
-the closure of `⋃ n, Set.range (gₙ)`. -/
+/-- On a seminormed space, `separableRangeIdeal` is closed in the operator-norm topology. -/
 theorem isClosed_separableRangeIdeal :
     IsClosed (separableRangeIdeal 𝕜 E : Set (E →L[𝕜] E)) := by
   refine isClosed_of_closure_subset fun f hf ↦ mem_separableRangeIdeal.mpr ?_
   have hex : ∀ n : ℕ, ∃ g ∈ separableRangeIdeal 𝕜 E, dist f g < 1 / (n + 1 : ℝ) := fun n ↦
     Metric.mem_closure_iff.mp hf (1 / (n + 1 : ℝ)) (by positivity)
   choose g hg hdist using hex
+  -- Approximate `f x` by `g n x` inside `⋃ n, Set.range (g n)`.
   have hsep : IsSeparable (closure (⋃ n : ℕ, Set.range (g n))) :=
     (IsSeparable.iUnion fun n ↦ mem_separableRangeIdeal.mp (hg n)).closure
   refine hsep.mono ?_
@@ -255,25 +293,16 @@ instance instIsClosedSeparableRangeIdeal :
   isClosed_separableRangeIdeal
 
 /-- Every compact operator on a seminormed space over a nontrivially normed field has separable
-range: `f` maps a ball around `0` into a compact (hence separable) set `K`, and `Set.range f` is
-covered by countably many scalar multiples of `K`. -/
+range. -/
 theorem compactIdeal_le_separableRangeIdeal : compactIdeal 𝕜 E ≤ separableRangeIdeal 𝕜 E := by
   intro f hf
-  obtain ⟨K, hK, hnhds⟩ := mem_compactIdeal.mp hf
-  obtain ⟨r, hr, hball⟩ := Metric.mem_nhds_iff.mp hnhds
   rw [mem_separableRangeIdeal]
-  obtain ⟨c, hc⟩ := NormedField.exists_one_lt_norm 𝕜
-  have hcov : Set.range f ⊆ ⋃ n : ℕ, (c ^ n • ·) '' K := by
-    rintro _ ⟨x, rfl⟩
-    obtain ⟨n, hn⟩ := pow_unbounded_of_one_lt (‖x‖ / r) hc
-    have hcn : c ^ n ≠ 0 := pow_ne_zero n (norm_pos_iff.mp (zero_lt_one.trans hc))
-    refine Set.mem_iUnion.mpr ⟨n, f ((c ^ n)⁻¹ • x), ?_, ?_⟩
-    · apply hball
-      rw [Metric.mem_ball, dist_zero_right, norm_smul, norm_inv, norm_pow]
-      exact (inv_mul_lt_iff₀ (pow_pos (zero_lt_one.trans hc) n)).mpr ((div_lt_iff₀ hr).mp hn)
-    · dsimp only
-      rw [← map_smul, smul_inv_smul₀ hcn]
-  exact (IsSeparable.iUnion fun n ↦ hK.isSeparable.image (continuous_const_smul (c ^ n))).mono hcov
+  choose K hK hsub using fun n : ℕ ↦
+    (mem_compactIdeal.mp hf).image_closedBall_subset_compact (f := f.toLinearMap) n
+  refine (IsSeparable.iUnion fun n ↦ (hK n).isSeparable).mono ?_
+  rintro _ ⟨x, rfl⟩
+  obtain ⟨n, hn⟩ := exists_nat_ge ‖x‖
+  exact Set.mem_iUnion.mpr ⟨n, hsub n ⟨x, mem_closedBall_zero_iff.mpr hn, rfl⟩⟩
 
 end Normed
 
@@ -283,92 +312,111 @@ end ContinuousLinearMap
 
 section RankOneAndSimplicity
 
-variable {𝕜 E F H : Type*} [RCLike 𝕜]
-  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
-  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
-  [NormedAddCommGroup H] [InnerProductSpace 𝕜 H]
-
-/-- Every rank-one operator between inner product spaces is compact. -/
-theorem InnerProductSpace.isCompactOperator_rankOne (x : E) (y : F) :
+/-- Every rank-one operator is compact. -/
+theorem InnerProductSpace.isCompactOperator_rankOne {𝕜 E F : Type*} [RCLike 𝕜]
+    [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [SeminormedAddCommGroup F] [InnerProductSpace 𝕜 F] (x : E) (y : F) :
     IsCompactOperator (rankOne 𝕜 x y) := by
   rw [rankOne_def']
   exact (isCompactOperator_of_locallyCompactSpace_rng
     (ContinuousLinearMap.toSpanSingleton 𝕜 x)).comp_clm _
 
 /-- Every normalized rank-one operator `TauCeti.rankOneDivNormSq 𝕜 y x` is compact. -/
-theorem TauCeti.isCompactOperator_rankOneDivNormSq (y : F) (x : E) :
+theorem TauCeti.isCompactOperator_rankOneDivNormSq {𝕜 E F : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] (y : F) (x : E) :
     IsCompactOperator (TauCeti.rankOneDivNormSq 𝕜 y x) := by
   rw [TauCeti.rankOneDivNormSq_def]
   exact (InnerProductSpace.isCompactOperator_rankOne y x).smul _
 
 namespace ContinuousLinearMap
 
-/-- Sandwiching a bounded operator `T` with `T x ≠ 0` between `rankOneDivNormSq 𝕜 u (T x)` and
-`rankOne 𝕜 x v` produces the arbitrary rank-one operator `rankOne 𝕜 u v`. -/
-theorem rankOneDivNormSq_mul_mul_rankOne {T : H →L[𝕜] H} {x : H} (hx : T x ≠ 0) (u v : H) :
-    TauCeti.rankOneDivNormSq 𝕜 u (T x) * T * rankOne 𝕜 x v = rankOne 𝕜 u v := by
-  ext w
-  simp [map_smul, TauCeti.rankOneDivNormSq_apply_self u hx]
+variable {𝕜 H : Type*} [RCLike 𝕜] [NormedAddCommGroup H] [InnerProductSpace 𝕜 H]
 
 /-- Every nonzero two-sided ideal of `H →L[𝕜] H` contains every rank-one operator. -/
 theorem rankOne_mem_of_ne_zero {I : TwoSidedIdeal (H →L[𝕜] H)} {T : H →L[𝕜] H}
     (hTI : T ∈ I) (hT0 : T ≠ 0) (u v : H) : rankOne 𝕜 u v ∈ I := by
-  obtain ⟨x, hx⟩ : ∃ x, T x ≠ 0 := by
-    by_contra! h
-    exact hT0 (ext h)
-  rw [← rankOneDivNormSq_mul_mul_rankOne hx u v]
+  obtain ⟨x, hx⟩ := DFunLike.ne_iff.mp hT0
+  have hprod : TauCeti.rankOneDivNormSq 𝕜 u (T x) * T * rankOne 𝕜 x v = rankOne 𝕜 u v := by
+    simpa [mul_def, comp_assoc] using rankOneDivNormSq_comp_comp_rankOne hx u v
+  rw [← hprod]
   exact I.mul_mem_right _ _ (I.mul_mem_left _ _ hTI)
-
-/-- On an inner product space `H`, `compactIdeal 𝕜 H` is trivial if and only if `H` is a
-subsingleton. -/
-@[simp]
-theorem compactIdeal_eq_bot_iff : compactIdeal 𝕜 H = ⊥ ↔ Subsingleton H := by
-  refine ⟨fun h ↦ subsingleton_iff_forall_eq 0 |>.mpr fun x ↦ ?_,
-    fun _ ↦ eq_bot_iff.mpr fun T _ ↦ ?_⟩
-  · by_contra hx
-    have hmem : rankOne 𝕜 x x ∈ compactIdeal 𝕜 H :=
-      mem_compactIdeal.mpr (InnerProductSpace.isCompactOperator_rankOne x x)
-    rw [h, TwoSidedIdeal.mem_bot, rankOne_eq_zero, or_self] at hmem
-    exact hx hmem
-  · rw [TwoSidedIdeal.mem_bot]
-    exact Subsingleton.elim T 0
-
-/-- On a nontrivial inner product space, `compactIdeal` is nonzero. -/
-theorem compactIdeal_ne_bot [Nontrivial H] : compactIdeal 𝕜 H ≠ ⊥ :=
-  mt compactIdeal_eq_bot_iff.mp (not_subsingleton H)
-
-/-- On a nontrivial inner product space, the nonunital ring `↥(compactIdeal 𝕜 H)` is nontrivial. -/
-instance instNontrivialCompactIdeal [Nontrivial H] : Nontrivial ↥(compactIdeal 𝕜 H) := by
-  obtain ⟨x, hx⟩ := exists_ne (0 : H)
-  refine ⟨⟨⟨rankOne 𝕜 x x, mem_compactIdeal.mpr (InnerProductSpace.isCompactOperator_rankOne x x)⟩,
-    0, fun h ↦ ?_⟩⟩
-  have h0 := congrArg Subtype.val h
-  simp only [ZeroMemClass.coe_zero, rankOne_eq_zero, or_self] at h0
-  exact hx h0
 
 section Complete
 
 variable [CompleteSpace H]
 
+/-- Any closed additive submonoid of `H →L[𝕜] H` containing every rank-one operator contains every
+compact operator. -/
+theorem mem_of_isCompactOperator_of_forall_rankOne_mem {S : Type*}
+    [SetLike S (H →L[𝕜] H)] [AddSubmonoidClass S (H →L[𝕜] H)] {s : S}
+    (hs : IsClosed (s : Set (H →L[𝕜] H))) (hrank : ∀ u v : H, rankOne 𝕜 u v ∈ s)
+    {K : H →L[𝕜] H} (hK : IsCompactOperator K) : K ∈ s := by
+  obtain ⟨ι, e, f, σ, -, -, -, -, -, hsum, -⟩ := hK.exists_orthonormal_hasSum_rankOne
+  refine hs.mem_of_tendsto hsum (Eventually.of_forall fun _ ↦ sum_mem fun i _ ↦ ?_)
+  rw [← smul_apply, ← map_smul]
+  exact hrank _ _
+
+/-- **Topological simplicity of `K(H)`.** Every closed two-sided ideal of `↥(compactIdeal 𝕜 H)` is
+either `⊥` or `⊤`. When `H` is nontrivial, `⊥ ≠ ⊤` by `instNontrivialCompactIdeal`. -/
+theorem twoSidedIdeal_compactIdeal_eq_bot_or_eq_top_of_isClosed
+    (J : TwoSidedIdeal ↥(compactIdeal 𝕜 H)) (hJ : IsClosed (J : Set ↥(compactIdeal 𝕜 H))) :
+    J = ⊥ ∨ J = ⊤ := by
+  refine or_iff_not_imp_left.mpr fun hne ↦ eq_top_iff.mpr fun K _ ↦ ?_
+  obtain ⟨T, hTJ, hT0⟩ := IsConcreteLE.exists_of_lt (bot_lt_iff_ne_bot.mpr hne)
+  rw [TwoSidedIdeal.mem_bot] at hT0
+  obtain ⟨x, hx⟩ := DFunLike.ne_iff.mp (Subtype.coe_ne_coe.mpr hT0)
+  let s : AddSubgroup (H →L[𝕜] H) :=
+    (AddSubgroup.ofClass J).map (compactIdeal 𝕜 H).coeAddMonoidHom
+  have hs_closed : IsClosed (s : Set (H →L[𝕜] H)) := by
+    have hcoe : (s : Set (H →L[𝕜] H)) = Subtype.val '' (J : Set ↥(compactIdeal 𝕜 H)) := by
+      ext f
+      simp [s]
+    rw [hcoe]
+    exact isClosed_compactIdeal.isClosedMap_subtype_val _ hJ
+  have hrank : ∀ u v : H, rankOne 𝕜 u v ∈ s := fun u v ↦ by
+    let L : ↥(compactIdeal 𝕜 H) :=
+      ⟨TauCeti.rankOneDivNormSq 𝕜 u ((T : H →L[𝕜] H) x),
+        mem_compactIdeal.mpr (TauCeti.isCompactOperator_rankOneDivNormSq u _)⟩
+    let R : ↥(compactIdeal 𝕜 H) :=
+      ⟨rankOne 𝕜 x v, mem_compactIdeal.mpr (InnerProductSpace.isCompactOperator_rankOne x v)⟩
+    refine ⟨L * T * R, J.mul_mem_right _ R (J.mul_mem_left L T hTJ), ?_⟩
+    simpa [L, R, mul_def, comp_assoc] using rankOneDivNormSq_comp_comp_rankOne hx u v
+  obtain ⟨K', hK'J, hK'eq⟩ :=
+    mem_of_isCompactOperator_of_forall_rankOne_mem hs_closed hrank (mem_compactIdeal.mp K.2)
+  have hK' : K' = K := Subtype.ext hK'eq
+  exact hK' ▸ hK'J
+
 /-- Every nonzero closed two-sided ideal of `H →L[𝕜] H` on a Hilbert space contains all compact
-operators: a nonzero element generates every rank-one operator algebraically, and every compact
-operator is an operator-norm sum of rank-one operators. -/
+operators. -/
 theorem compactIdeal_le_of_isClosed_of_ne_bot {I : TwoSidedIdeal (H →L[𝕜] H)}
     (hI : IsClosed (I : Set (H →L[𝕜] H))) (hne : I ≠ ⊥) :
     compactIdeal 𝕜 H ≤ I := by
-  obtain ⟨T, hTI, hT0⟩ : ∃ T ∈ I, T ≠ 0 := by
-    by_contra! h
-    refine hne (le_bot_iff.mp fun T hT ↦ ?_)
-    rw [TwoSidedIdeal.mem_bot]
-    exact h T hT
+  let ι : ↥(compactIdeal 𝕜 H) →ₙ+* (H →L[𝕜] H) :=
+    NonUnitalSubsemiringClass.subtype (compactIdeal 𝕜 H)
+  let J : TwoSidedIdeal ↥(compactIdeal 𝕜 H) := I.comap ι
+  have hJ_set : (J : Set ↥(compactIdeal 𝕜 H)) = Subtype.val ⁻¹' (I : Set (H →L[𝕜] H)) := by
+    ext K
+    exact TwoSidedIdeal.mem_comap ι
+  have hJ_closed : IsClosed (J : Set ↥(compactIdeal 𝕜 H)) :=
+    hJ_set ▸ hI.preimage continuous_subtype_val
+  have hJ_ne_bot : J ≠ ⊥ := by
+    obtain ⟨T, hTI, hT0⟩ := IsConcreteLE.exists_of_lt (bot_lt_iff_ne_bot.mpr hne)
+    rw [TwoSidedIdeal.mem_bot] at hT0
+    obtain ⟨x, hx⟩ := DFunLike.ne_iff.mp hT0
+    have hx0 : x ≠ 0 := fun hx0 ↦ hx (by simp [hx0])
+    intro hbot
+    have hmem :
+        (⟨rankOne 𝕜 x x, mem_compactIdeal.mpr (InnerProductSpace.isCompactOperator_rankOne x x)⟩ :
+          ↥(compactIdeal 𝕜 H)) ∈ J :=
+      (TwoSidedIdeal.mem_comap ι).mpr (rankOne_mem_of_ne_zero hTI hT0 x x)
+    rw [hbot, TwoSidedIdeal.mem_bot] at hmem
+    exact hx0 (by simpa [Subtype.ext_iff] using hmem)
+  have hJ_top : J = ⊤ :=
+    (twoSidedIdeal_compactIdeal_eq_bot_or_eq_top_of_isClosed J hJ_closed).resolve_left hJ_ne_bot
   intro K hK
-  obtain ⟨ι, e, f, σ, -, -, -, -, -, hsum, -⟩ :=
-    (mem_compactIdeal.mp hK).exists_orthonormal_hasSum_rankOne
-  -- Each singular-value term `(σ i : 𝕜) • rankOne 𝕜 (f i) (e i)` rewrites to
-  -- `rankOne 𝕜 ((σ i : 𝕜) • f i) (e i) ∈ I`, so `K` is a norm limit of finite sums in `I`.
-  refine hI.mem_of_tendsto hsum (Eventually.of_forall fun _ ↦ sum_mem fun i _ ↦ ?_)
-  rw [← smul_apply, ← map_smul]
-  exact rankOne_mem_of_ne_zero hTI hT0 _ _
+  have hmem : (⟨K, hK⟩ : ↥(compactIdeal 𝕜 H)) ∈ J := hJ_top ▸ TwoSidedIdeal.mem_top _
+  exact (TwoSidedIdeal.mem_comap ι).mp hmem
 
 /-- Every closed two-sided ideal of `H →L[𝕜] H` is either `⊥` or contains `compactIdeal 𝕜 H`. -/
 theorem eq_bot_or_compactIdeal_le_of_isClosed {I : TwoSidedIdeal (H →L[𝕜] H)}
@@ -376,57 +424,7 @@ theorem eq_bot_or_compactIdeal_le_of_isClosed {I : TwoSidedIdeal (H →L[𝕜] H
     I = ⊥ ∨ compactIdeal 𝕜 H ≤ I :=
   or_iff_not_imp_left.mpr (compactIdeal_le_of_isClosed_of_ne_bot hI)
 
-/-- **Topological simplicity of `K(H)`.** Every closed two-sided ideal of `↥(compactIdeal 𝕜 H)` is
-either `⊥` or `⊤`. When `H` is nontrivial, `⊥ ≠ ⊤` by `instNontrivialCompactIdeal`. -/
-theorem compactIdeal_eq_bot_or_eq_top_of_isClosed
-    (J : TwoSidedIdeal ↥(compactIdeal 𝕜 H)) (hJ : IsClosed (J : Set ↥(compactIdeal 𝕜 H))) :
-    J = ⊥ ∨ J = ⊤ := by
-  refine or_iff_not_imp_left.mpr fun hne ↦ eq_top_iff.mpr fun K _ ↦ ?_
-  obtain ⟨T, hTJ, hT0⟩ : ∃ T ∈ J, T ≠ 0 := by
-    by_contra! h
-    refine hne (le_bot_iff.mp fun T hT ↦ ?_)
-    rw [TwoSidedIdeal.mem_bot]
-    exact h T hT
-  have hTval : (T : H →L[𝕜] H) ≠ 0 := Subtype.coe_ne_coe.mpr hT0
-  obtain ⟨x, hx⟩ : ∃ x, (T : H →L[𝕜] H) x ≠ 0 := by
-    by_contra! h
-    exact hTval (ext h)
-  -- Both sandwich factors lie in `compactIdeal 𝕜 H`, so every rank-one operator lies in `J`.
-  have hrank : ∀ u v : H,
-      (⟨rankOne 𝕜 u v, mem_compactIdeal.mpr (InnerProductSpace.isCompactOperator_rankOne u v)⟩ :
-        ↥(compactIdeal 𝕜 H)) ∈ J := fun u v ↦ by
-    let L : ↥(compactIdeal 𝕜 H) :=
-      ⟨TauCeti.rankOneDivNormSq 𝕜 u ((T : H →L[𝕜] H) x),
-        mem_compactIdeal.mpr (TauCeti.isCompactOperator_rankOneDivNormSq u _)⟩
-    let R : ↥(compactIdeal 𝕜 H) :=
-      ⟨rankOne 𝕜 x v, mem_compactIdeal.mpr (InnerProductSpace.isCompactOperator_rankOne x v)⟩
-    have hprod : L * T * R =
-        ⟨rankOne 𝕜 u v, mem_compactIdeal.mpr (InnerProductSpace.isCompactOperator_rankOne u v)⟩ :=
-      Subtype.ext (rankOneDivNormSq_mul_mul_rankOne hx u v)
-    exact hprod ▸ J.mul_mem_right _ R (J.mul_mem_left L T hTJ)
-  obtain ⟨ι, e, f, σ, -, -, -, -, -, hsum, -⟩ :=
-    (mem_compactIdeal.mp K.2).exists_orthonormal_hasSum_rankOne
-  let term : ι → ↥(compactIdeal 𝕜 H) := fun i ↦
-    ⟨rankOne 𝕜 ((σ i : 𝕜) • f i) (e i),
-      mem_compactIdeal.mpr (InnerProductSpace.isCompactOperator_rankOne _ _)⟩
-  have hsum_sub : HasSum term K := by
-    rw [HasSum, Topology.IsInducing.subtypeVal.tendsto_nhds_iff]
-    refine hsum.congr fun s ↦ ?_
-    rw [Function.comp_apply]
-    refine (Finset.sum_congr rfl fun i _ ↦ ?_).trans
-      (map_sum (compactIdeal 𝕜 H).coeAddMonoidHom term s).symm
-    simp [term]
-  exact hJ.mem_of_tendsto hsum_sub (Eventually.of_forall fun _ ↦ sum_mem fun _ _ ↦ hrank _ _)
-
 end Complete
-
-/-- On a nonzero finite-dimensional inner product space, the endomorphism algebra `H →L[𝕜] H` is a
-simple ring. -/
-instance instIsSimpleRing [FiniteDimensional 𝕜 H] [Nontrivial H] : IsSimpleRing (H →L[𝕜] H) := by
-  have : CompleteSpace H := FiniteDimensional.completeSpace 𝕜 H
-  refine IsSimpleRing.of_forall_isClosed_eq_bot_or_eq_top fun I hI ↦ ?_
-  refine (eq_bot_or_compactIdeal_le_of_isClosed hI).imp_right fun hle ↦ ?_
-  rwa [compactIdeal_eq_top, top_le_iff] at hle
 
 end ContinuousLinearMap
 
@@ -434,41 +432,17 @@ end RankOneAndSimplicity
 
 section SeparabilityAndProjections
 
-variable {𝕜 ι E H : Type*} [RCLike 𝕜]
-  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+variable {𝕜 H : Type*} [RCLike 𝕜]
   [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] [CompleteSpace H]
 
-/-- An orthonormal family in a separable inner product space has a countable index type: the open
-balls of radius `1 / 2` around distinct vectors are pairwise disjoint. -/
-theorem Orthonormal.countable [SeparableSpace E] {v : ι → E} (hv : Orthonormal 𝕜 v) :
-    Countable ι := by
-  refine Pairwise.countable_of_isOpen_disjoint (s := fun i ↦ Metric.ball (v i) (1 / 2))
-    ?_ (fun _ ↦ Metric.isOpen_ball) (fun i ↦ ⟨v i, Metric.mem_ball_self (by norm_num)⟩)
-  intro i j hij
-  refine Metric.ball_disjoint_ball ?_
-  have hsq : dist (v i) (v j) ^ 2 = 2 := by
-    rw [dist_eq_norm, norm_sub_sq (𝕜 := 𝕜), hv.2 hij, map_zero, mul_zero, sub_zero,
-      hv.1 i, hv.1 j]
-    norm_num
-  nlinarith [dist_nonneg (x := v i) (y := v j)]
-
-/-- On a nonseparable Hilbert space, `compactIdeal` is strictly contained in `separableRangeIdeal`:
-the orthogonal projection onto the closed span of a countably infinite orthonormal sequence has
-separable range but is not compact. -/
+/-- On a nonseparable Hilbert space, `compactIdeal` is strictly contained in `separableRangeIdeal`.
+-/
 theorem ContinuousLinearMap.compactIdeal_lt_separableRangeIdeal (hH : ¬ SeparableSpace H) :
     compactIdeal 𝕜 H < separableRangeIdeal 𝕜 H := by
   refine lt_of_le_of_ne compactIdeal_le_separableRangeIdeal fun heq ↦ ?_
   obtain ⟨w, b, -⟩ := exists_hilbertBasis 𝕜 H
-  have hnot_count : ¬ Countable w := fun hcw ↦ hH <| by
-    have : Countable w := hcw
-    have hsep : IsSeparable (closure (Submodule.span 𝕜 (Set.range b) : Set H)) :=
-      (Set.countable_range b).isSeparable.span.closure
-    have hcl : closure (Submodule.span 𝕜 (Set.range b) : Set H) = Set.univ := by
-      rw [← Submodule.topologicalClosure_coe, b.dense_span, Submodule.top_coe]
-    exact isSeparable_univ_iff.mp (hcl ▸ hsep)
-  have : Infinite w := not_finite_iff_infinite.mp fun hfin ↦ by
-    have := Fintype.ofFinite w
-    exact hnot_count inferInstance
+  have hnot_count : ¬ Countable w := fun _ ↦ hH b.separableSpace
+  have : Infinite w := not_finite_iff_infinite.mp fun _ ↦ hnot_count inferInstance
   let e := Infinite.natEmbedding w
   let v : ℕ → H := fun n ↦ b (e n)
   have hv : Orthonormal 𝕜 v := b.orthonormal.comp e e.injective
@@ -493,23 +467,15 @@ theorem ContinuousLinearMap.compactIdeal_lt_separableRangeIdeal (hH : ¬ Separab
   simp only [norm_one, le_refl, Set.ofPred_true] at hfin
   exact Set.infinite_univ hfin
 
-/-- On a separable Hilbert space, every noncompact star projection `p` has infinite-dimensional
-closed range, so there exists a linear isometry `v : H →ₗᵢ[𝕜] H` mapping `H` into `p.range` such
-that `p * v = v` and `star v * p * v = 1`. -/
-theorem IsStarProjection.exists_linearIsometry_mul_eq_and_star_mul_mul_eq_one [SeparableSpace H]
-    {p : H →L[𝕜] H} (hp : IsStarProjection p) (hnc : ¬ IsCompactOperator p) :
+/-- On a separable Hilbert space, every noncompact idempotent operator `p` admits a linear isometry
+`v : H →ₗᵢ[𝕜] H` satisfying `p * v = v` and `star v * p * v = 1`. -/
+theorem IsIdempotentElem.exists_linearIsometry_mul_eq_and_star_mul_mul_eq_one [SeparableSpace H]
+    {p : H →L[𝕜] H} (hp : IsIdempotentElem p) (hnc : ¬ IsCompactOperator p) :
     ∃ v : H →ₗᵢ[𝕜] H,
       p * v.toContinuousLinearMap = v.toContinuousLinearMap ∧
-        star v.toContinuousLinearMap * p * v.toContinuousLinearMap = 1 := by
-  have hp_closed : IsClosed (p.range : Set H) := by
-    have hset : (p.range : Set H) = {x : H | p x = x} := by
-      ext x
-      refine ⟨?_, fun hx ↦ ⟨x, hx⟩⟩
-      rintro ⟨y, rfl⟩
-      exact DFunLike.congr_fun hp.isIdempotentElem.eq y
-    rw [hset]
-    exact isClosed_eq p.continuous continuous_id
-  have : CompleteSpace p.range := hp_closed.completeSpace_coe
+        Star.star v.toContinuousLinearMap * p * v.toContinuousLinearMap = 1 := by
+  have : CompleteSpace p.range :=
+    (ContinuousLinearMap.IsIdempotentElem.isClosed_range hp).completeSpace_coe
   have hinf : ¬ FiniteDimensional 𝕜 p.range := fun _ ↦
     hnc (LinearMap.HasFiniteRange.isCompactOperator Submodule.FG.of_finite)
   obtain ⟨w₁, b₁, -⟩ := exists_hilbertBasis 𝕜 p.range
@@ -527,11 +493,7 @@ theorem IsStarProjection.exists_linearIsometry_mul_eq_and_star_mul_mul_eq_one [S
     p.range.subtypeₗᵢ.comp (hu.orthogonalFamily.linearIsometry.comp b₂.repr.toLinearIsometry)
   have hpv : p * v.toContinuousLinearMap = v.toContinuousLinearMap := by
     ext x
-    obtain ⟨y, hy⟩ := (hu.orthogonalFamily.linearIsometry (b₂.repr x)).2
-    have hval : v x = p y := hy.symm
-    rw [ContinuousLinearMap.mul_def, ContinuousLinearMap.comp_apply,
-      LinearIsometry.coe_toContinuousLinearMap, hval]
-    exact DFunLike.congr_fun hp.isIdempotentElem.eq y
+    simp [v, ContinuousLinearMap.IsIdempotentElem.apply_coe_range hp]
   refine ⟨v, hpv, ?_⟩
   rw [mul_assoc, hpv, ContinuousLinearMap.star_eq_adjoint, ContinuousLinearMap.mul_def,
     v.adjoint_comp_self]

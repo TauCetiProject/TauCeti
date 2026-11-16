@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Analysis.Normed.Lp.lpSpace
 public import Mathlib.Analysis.Normed.Operator.Mul
+public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.LinearAlgebra.StdBasis
+import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 import TauCeti.Analysis.Normed.Operator.Dense
 
 /-!
@@ -199,6 +201,29 @@ theorem apply_eq_zero_of_mem_span_single {κ : Type*} (f : κ → ι) {x : ℓ^p
   simpa only [evalₗ_apply] using LinearMap.mem_ker.mp (hle hx)
 
 end Single
+
+/-- For an infinite index type `ι` with nontrivial fibers `E i`, `lp E p` is infinite-dimensional
+for every exponent `p`. -/
+theorem not_finiteDimensional {𝕜 ι : Type*} {E : ι → Type*} [NormedDivisionRing 𝕜]
+    [∀ i, NormedAddCommGroup (E i)] [∀ i, Module 𝕜 (E i)] [∀ i, IsBoundedSMul 𝕜 (E i)]
+    [∀ i, Nontrivial (E i)] {p : ℝ≥0∞} [Infinite ι] :
+    ¬ FiniteDimensional 𝕜 (lp E p) := fun _ ↦ by
+  classical
+  choose v hv using fun i ↦ exists_ne (0 : E i)
+  have hpi : LinearIndependent 𝕜 (fun i : ι ↦ Pi.single i (v i)) := by
+    rw [← linearIndependent_equiv (Equiv.sigmaPUnit ι)]
+    exact Pi.linearIndependent_single (fun i (_ : Unit) ↦ v i) fun i ↦
+      linearIndependent_unique_iff.mpr (hv i)
+  have hli : LinearIndependent 𝕜 (fun i : ι ↦ lp.single p i (v i)) := by
+    apply LinearIndependent.of_comp (lpSubmodule 𝕜 E p).subtype
+    have hcoe : (lpSubmodule 𝕜 E p).subtype ∘ (fun i : ι ↦ lp.single p i (v i)) =
+        fun i ↦ Pi.single i (v i) := by
+      funext i
+      exact lp.coeFn_single p i (v i)
+    rw [hcoe]
+    exact hpi
+  have : Finite ι := hli.finite_of_isNoetherian
+  exact not_finite ι
 
 /-- The square of the `ℓ²` norm of a finite sum of single-coordinate vectors is the sum of the
 squared norms of the coordinates. -/

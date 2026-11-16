@@ -115,6 +115,22 @@ protected theorem eq {I : TwoSidedIdeal A} {x y : A} :
     mk I x = mk I y ↔ x - y ∈ I := by
   rw [← sub_eq_zero, ← map_sub, eq_zero_iff_mem]
 
+/-- The quotient `A ⧸ I` is a subsingleton if and only if `I = ⊤`. -/
+protected theorem subsingleton_iff {I : TwoSidedIdeal A} :
+    Subsingleton (A ⧸ I) ↔ I = ⊤ := by
+  refine ⟨fun h ↦ eq_top_iff.mpr fun a _ ↦ ?_, fun h ↦ ⟨fun x y ↦ ?_⟩⟩
+  · rw [← eq_zero_iff_mem]
+    exact Subsingleton.elim _ _
+  · obtain ⟨a, rfl⟩ := mk_surjective I x
+    obtain ⟨b, rfl⟩ := mk_surjective I y
+    rw [Quotient.eq, h]
+    exact TwoSidedIdeal.mem_top A
+
+/-- The quotient `A ⧸ I` is nontrivial if and only if `I ≠ ⊤`. -/
+protected theorem nontrivial_iff {I : TwoSidedIdeal A} :
+    Nontrivial (A ⧸ I) ↔ I ≠ ⊤ :=
+  not_subsingleton_iff_nontrivial.symm.trans (not_congr Quotient.subsingleton_iff)
+
 @[simp]
 theorem ker_mk (I : TwoSidedIdeal A) : TwoSidedIdeal.ker (mk I) = I := by
   ext x

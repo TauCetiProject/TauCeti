@@ -102,4 +102,18 @@ theorem norm_rankOneDivNormSq_map_le (C : E →L[𝕜'] F) (x : E) :
   rw [norm_rankOneDivNormSq]
   exact C.ratio_le_opNorm x
 
+/-- Sandwiching a continuous linear map `T` with `T x ≠ 0` between
+`rankOneDivNormSq 𝕜 u (T x)` and `InnerProductSpace.rankOne 𝕜 x v` produces
+`InnerProductSpace.rankOne 𝕜 u v`. -/
+theorem rankOneDivNormSq_comp_comp_rankOne {𝕜 E₁ E₂ E₃ E₄ : Type*} [RCLike 𝕜]
+    [SeminormedAddCommGroup E₁] [InnerProductSpace 𝕜 E₁]
+    [SeminormedAddCommGroup E₂] [NormedSpace 𝕜 E₂]
+    [NormedAddCommGroup E₃] [InnerProductSpace 𝕜 E₃]
+    [NormedAddCommGroup E₄] [NormedSpace 𝕜 E₄]
+    {T : E₂ →L[𝕜] E₃} {x : E₂} (hx : T x ≠ 0) (u : E₄) (v : E₁) :
+    (rankOneDivNormSq 𝕜 u (T x)).comp (T.comp (InnerProductSpace.rankOne 𝕜 x v)) =
+      InnerProductSpace.rankOne 𝕜 u v := by
+  ext w
+  simp [map_smul, rankOneDivNormSq_apply_self u hx]
+
 end ContinuousLinearMap
