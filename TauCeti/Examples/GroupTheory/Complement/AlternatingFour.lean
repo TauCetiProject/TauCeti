@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.SpecificGroups.Alternating.KleinFour
-public import TauCeti.GroupTheory.Complement.Sylow
-public import TauCeti.GroupTheory.Complement.Invariant.Internal
-import Mathlib.GroupTheory.Perm.Cycle.Concrete
+public import TauCeti.GroupTheory.Complement.KleinFour
+public import Mathlib.GroupTheory.Perm.Cycle.Concrete
+import TauCeti.GroupTheory.Complement.Sylow
+import TauCeti.GroupTheory.Complement.Invariant.Internal
+import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
 
 /-!
 # Concrete complements, crossed projections, and invariant complements in `A₄` and `S₄`
@@ -34,8 +35,8 @@ we check:
   detects complements of `V₄` from the trivial local complement `⊥` in `V₄`;
 * under conjugation by `⟨(0 1 2)⟩` (`q = 3 ≠ 2 = p`), `Subgroup.exists_invariant_complement` and
   `Subgroup.exists_invariant_local_complement` produce `⟨(0 1 2)⟩` as the unique invariant global
-  complement in `A₄` and local complement in `S₄`, whereas the other three point stabilizers are
-  not normalized by `(0 1 2)`;
+  complement in `A₄` and local complement of `V₄` in `A₄` (inside `S₄`), whereas the other three
+  point stabilizers are not normalized by `(0 1 2)`;
 * inside `S₄`, the `2`-subgroup `⟨(0 1)⟩` (`q = 2 = p`, outside the `p ≠ q` hypothesis of
   `Subgroup.exists_invariant_local_complement`) still normalizes `⟨(0 1 2)⟩`, inverting its
   generator.
@@ -59,18 +60,24 @@ private instance : IsMulCommutative (alternatingGroup.kleinFour (Fin 4)) :=
 def threeCycle012 : alternatingGroup (Fin 4) :=
   ⟨[0, 1, 2].formPerm, mem_alternatingGroup.mpr (by decide)⟩
 
+/-- As a permutation of `Fin 4`, `threeCycle012` is the `3`-cycle `[0, 1, 2].formPerm`. -/
+@[simp]
+theorem coe_threeCycle012 :
+    (threeCycle012 : Perm (Fin 4)) = [0, 1, 2].formPerm := by
+  rfl
+
 /-- The double transposition `(0 1)(2 3)` in `alternatingGroup.kleinFour (Fin 4)`. -/
-def doubleSwap0123 : alternatingGroup.kleinFour (Fin 4) :=
+private def doubleSwap0123 : alternatingGroup.kleinFour (Fin 4) :=
   ⟨⟨swap 0 1 * swap 2 3, mem_alternatingGroup.mpr (by decide)⟩,
     (mem_kleinFour_iff_sq_eq_one (Nat.card_fin 4).le).mpr (by decide)⟩
 
 /-- The double transposition `(0 2)(1 3)` in `alternatingGroup.kleinFour (Fin 4)`. -/
-def doubleSwap0213 : alternatingGroup.kleinFour (Fin 4) :=
+private def doubleSwap0213 : alternatingGroup.kleinFour (Fin 4) :=
   ⟨⟨swap 0 2 * swap 1 3, mem_alternatingGroup.mpr (by decide)⟩,
     (mem_kleinFour_iff_sq_eq_one (Nat.card_fin 4).le).mpr (by decide)⟩
 
 /-- The double transposition `(0 3)(1 2)` in `alternatingGroup.kleinFour (Fin 4)`. -/
-def doubleSwap0312 : alternatingGroup.kleinFour (Fin 4) :=
+private def doubleSwap0312 : alternatingGroup.kleinFour (Fin 4) :=
   ⟨⟨swap 0 3 * swap 1 2, mem_alternatingGroup.mpr (by decide)⟩,
     (mem_kleinFour_iff_sq_eq_one (Nat.card_fin 4).le).mpr (by decide)⟩
 
@@ -87,7 +94,8 @@ theorem stabilizer_three_eq_zpowers :
     decide
   · have hord : orderOf threeCycle012 = 3 := by
       rw [← orderOf_injective (alternatingGroup (Fin 4)).subtype
-        (alternatingGroup (Fin 4)).subtype_injective threeCycle012]
+        (alternatingGroup (Fin 4)).subtype_injective threeCycle012,
+        Subgroup.coe_subtype, coe_threeCycle012]
       exact orderOf_eq_prime (by decide : ([0, 1, 2].formPerm : Perm (Fin 4)) ^ 3 = 1) (by decide)
     rw [Nat.card_zpowers, hord,
       card_stabilizer_alternatingGroup_of_card_eq_four (Nat.card_fin 4) (3 : Fin 4)]
@@ -177,9 +185,7 @@ example :
   have hconj (v : alternatingGroup.kleinFour (Fin 4)) :
       MulAut.conj (v : alternatingGroup (Fin 4)) • Subgroup.zpowers threeCycle012 =
         MulAction.stabilizer (alternatingGroup (Fin 4)) (v • (3 : Fin 4)) := by
-    rw [← stabilizer_three_eq_zpowers, Subgroup.smul_def,
-      MulAction.stabilizer_smul_eq_stabilizer_map_conj, MulEquiv.toMonoidHom_eq_coe,
-      map_conj_eq_conj_smul]
+    rw [← stabilizer_three_eq_zpowers, Subgroup.smul_def, stabilizer_smul_eq_conj_smul]
   refine ⟨?_, ?_, ?_⟩
   · simpa only [(by decide : doubleSwap0312 • (3 : Fin 4) = 0)] using hconj doubleSwap0312
   · simpa only [(by decide : doubleSwap0213 • (3 : Fin 4) = 1)] using hconj doubleSwap0213
@@ -265,7 +271,7 @@ example :
     have hEq := (huniq _).mp ⟨isComplement'_kleinFour_stabilizer (Nat.card_fin 4) _, hnorm⟩
     rw [← stabilizer_three_eq_zpowers] at hEq
     have hidx := (existsUnique_stabilizer_eq_of_isComplement'_kleinFour (Nat.card_fin 4)
-      (isComplement'_kleinFour_stabilizer (Nat.card_fin 4) _)).unique rfl hEq
+      (isComplement'_kleinFour_stabilizer (Nat.card_fin 4) (3 : Fin 4))).unique hEq rfl
     revert hidx
     decide
 
@@ -286,28 +292,21 @@ example :
     alternatingGroup.two_sylow_eq_kleinFour_of_card_eq_four (Nat.card_fin 4) P
   have hNW : N ≤ alternatingGroup (Fin 4) := Subgroup.map_subtype_le _
   have hA_map : (Subgroup.zpowers threeCycle012).map (alternatingGroup (Fin 4)).subtype = A := by
-    rw [MonoidHom.map_zpowers]
-    rfl
+    rw [MonoidHom.map_zpowers, Subgroup.coe_subtype, coe_threeCycle012]
   have hA_eq : A = MulAction.stabilizer (Perm (Fin 4)) (3 : Fin 4) ⊓ alternatingGroup (Fin 4) := by
     rw [← hA_map, ← stabilizer_three_eq_zpowers, ← MulAction.stabilizer_subgroupOf,
       Subgroup.subgroupOf_map_subtype]
-  have hA3 : Nat.card A = 3 := by
-    rw [← hA_map, Subgroup.card_map_of_injective (alternatingGroup (Fin 4)).subtype_injective,
-      ← stabilizer_three_eq_zpowers,
-      card_stabilizer_alternatingGroup_of_card_eq_four (Nat.card_fin 4) (3 : Fin 4)]
-  have hAW : A ≤ Subgroup.normalizer (alternatingGroup (Fin 4)) := by
-    rw [Subgroup.normalizer_eq_top_iff.mpr inferInstance]
-    exact le_top
-  have hAN : A ≤ Subgroup.normalizer N := by
-    rw [Subgroup.normalizer_eq_top_iff.mpr inferInstance]
-    exact le_top
+  have hA_p : IsPGroup 3 A := by
+    have hA3 : IsPGroup 3 (Subgroup.zpowers threeCycle012) :=
+      IsPGroup.of_card (p := 3) (n := 1) <| by
+        rw [← stabilizer_three_eq_zpowers]
+        exact card_stabilizer_alternatingGroup_of_card_eq_four (Nat.card_fin 4) (3 : Fin 4)
+    exact hA_map ▸ hA3.map (alternatingGroup (Fin 4)).subtype
   have hN_p : IsPGroup 2 N :=
-    (isPGroup_two_kleinFour (Nat.card_fin 4).le).of_equiv
-      ((alternatingGroup.kleinFour (Fin 4)).equivMapOfInjective (alternatingGroup (Fin 4)).subtype
-        (alternatingGroup (Fin 4)).subtype_injective)
-  refine ⟨Subgroup.exists_invariant_local_complement (alternatingGroup (Fin 4)) hNW hAW hAN
-    hN_p (IsPGroup.of_card (p := 3) (n := 1) hA3) (by decide) P
-    ⟨⊥, by simp [N, hP]⟩, fun D => ?_⟩
+    (isPGroup_two_kleinFour (Nat.card_fin 4).le).map (alternatingGroup (Fin 4)).subtype
+  refine ⟨Subgroup.exists_invariant_local_complement (alternatingGroup (Fin 4)) hNW
+    Subgroup.le_normalizer_of_normal Subgroup.le_normalizer_of_normal
+    hN_p hA_p (by decide) P ⟨⊥, by simp [N, hP]⟩, fun D => ?_⟩
   simpa only [N, hA_eq] using
     isLocalComplement_map_subtype_kleinFour_and_le_normalizer_iff (Nat.card_fin 4) (3 : Fin 4)
       (K := D)

@@ -6,11 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.SpecificGroups.Alternating.KleinFour
-public import TauCeti.GroupTheory.Complement.CrossedProjection
+public import Mathlib.GroupTheory.Complement
+public import Mathlib.Algebra.Group.Subgroup.Pointwise
+import TauCeti.Algebra.Group.Subgroup.Normalizer
 import TauCeti.Algebra.Group.Subgroup.Pointwise
+import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
+import TauCeti.GroupTheory.SpecificGroups.Alternating.Basic
 
 /-!
-# Complements of the Klein four-group in the alternating and symmetric groups on four letters
+# Complements of the Klein four-group in the alternating group on four letters
 
 On a four-element type `α`, the subgroup `alternatingGroup.kleinFour α` of `alternatingGroup α`
 consists of the identity and the three double transpositions. Every nonidentity element has cycle
@@ -24,17 +28,13 @@ any complement has order three, is a Sylow `3`-subgroup, and fixes a unique poin
 `4 ≡ 1 [MOD 3]`. Thus `a ↦ MulAction.stabilizer (alternatingGroup α) a` is a bijection from `α`
 onto the complements of `alternatingGroup.kleinFour α` (`TauCeti.kleinFourComplementEquiv`).
 
-Along `MulAction.stabilizer (alternatingGroup α) a`, the crossed projection
-`alternatingGroup α → alternatingGroup.kleinFour α` sends `g` to the unique element of
-`alternatingGroup.kleinFour α` carrying `a` to `g • a`
-(`TauCeti.crossedProjection_isComplement'_kleinFour_stabilizer`). Conjugation by
-`alternatingGroup.kleinFour α` permutes the four complements sharply transitively
-(`TauCeti.existsUnique_kleinFour_conj_smul_eq`) and shifts their crossed projections by principal
-crossed maps (`TauCeti.crossedProjection_isComplement'_kleinFour_stabilizer_smul`). Consequently,
-`MulAction.stabilizer (alternatingGroup α) a` is the unique complement normalized by itself
-(`TauCeti.isComplement'_kleinFour_and_stabilizer_le_normalizer_iff`), and the analogous local
-statement holds inside `Equiv.Perm α`
-(`TauCeti.isLocalComplement_map_subtype_kleinFour_and_le_normalizer_iff`).
+Conjugation by `alternatingGroup.kleinFour α` permutes the four complements sharply transitively
+(`TauCeti.existsUnique_kleinFour_conj_smul_eq`), and consequently
+`MulAction.stabilizer (alternatingGroup α) a` is the unique complement normalized by
+`MulAction.stabilizer (alternatingGroup α) a`
+(`TauCeti.isComplement'_kleinFour_and_stabilizer_le_normalizer_iff`). Crossed projections and
+local complements of `alternatingGroup.kleinFour α` in `alternatingGroup α` (inside `Equiv.Perm α`)
+are developed in `TauCeti.GroupTheory.Complement.KleinFour`.
 
 ## Main definitions
 
@@ -43,13 +43,11 @@ statement holds inside `Equiv.Perm α`
 * `TauCeti.kleinFourComplementEquiv`: the bijection between `α` and the complements of
   `alternatingGroup.kleinFour α` in `alternatingGroup α` sending `a` to
   `MulAction.stabilizer (alternatingGroup α) a`.
-* `TauCeti.kleinFourCrossedProjectionEquiv`: the bijection between `α` and the normalized additive
-  crossed maps `alternatingGroup α → Additive (alternatingGroup.kleinFour α)`.
 
 ## Main results
 
-* `TauCeti.normal_kleinFour'`, `TauCeti.normal_map_subtype_kleinFour`: normality of
-  `alternatingGroup.kleinFour α` in `alternatingGroup α` and in `Equiv.Perm α`, for arbitrary `α`.
+* `TauCeti.normal_map_subtype_kleinFour`, `TauCeti.normal_kleinFour'`: normality of
+  `alternatingGroup.kleinFour α` in `Equiv.Perm α` and in `alternatingGroup α`, for arbitrary `α`.
 * `TauCeti.mem_kleinFour_iff_sq_eq_one`: for `Nat.card α ≤ 4`, `alternatingGroup.kleinFour α`
   consists of the elements whose square is `1`.
 * `TauCeti.isComplement'_kleinFour_iff_card_eq_three`,
@@ -57,16 +55,11 @@ statement holds inside `Equiv.Perm α`
   `TauCeti.isComplement'_kleinFour_iff_exists_stabilizer`: characterizations of the complements of
   `alternatingGroup.kleinFour α` by order `3`, as Sylow `3`-subgroups (for `Nat.card α ≤ 4`), and
   as point stabilizers.
-* `TauCeti.crossedProjection_isComplement'_kleinFour_stabilizer`,
-  `TauCeti.crossedProjection_isComplement'_kleinFour_stabilizer_smul`: explicit evaluation of the
-  crossed projection along a point stabilizer and its transformation under conjugation by
-  `alternatingGroup.kleinFour α`.
 * `TauCeti.existsUnique_kleinFour_conj_smul_eq`: for `Nat.card α ≤ 4`, any two complements of
   `alternatingGroup.kleinFour α` are conjugate by a unique element of
   `alternatingGroup.kleinFour α`.
-* `TauCeti.isComplement'_kleinFour_and_stabilizer_le_normalizer_iff`,
-  `TauCeti.isLocalComplement_map_subtype_kleinFour_and_le_normalizer_iff`: uniqueness of the
-  complement (or local complement in `Equiv.Perm α`) normalized by a point stabilizer.
+* `TauCeti.isComplement'_kleinFour_and_stabilizer_le_normalizer_iff`: uniqueness of the complement
+  normalized by a point stabilizer `MulAction.stabilizer (alternatingGroup α) a`.
 
 ## References
 
@@ -85,22 +78,6 @@ variable {α : Type*} [Fintype α] [DecidableEq α]
 
 /-! ### Normality, commutativity, and action of `alternatingGroup.kleinFour` -/
 
-/-- The subgroup `alternatingGroup.kleinFour α` generated by permutations of cycle type `{2, 2}`
-is normal in `alternatingGroup α` for any finite type `α`. -/
-instance normal_kleinFour' : (alternatingGroup.kleinFour α).Normal := by
-  constructor
-  intro n hn g
-  rw [alternatingGroup.kleinFour] at hn ⊢
-  induction hn using Subgroup.closure_induction with
-  | mem x hx =>
-      apply Subgroup.subset_closure
-      simpa only [Set.mem_ofPred_eq, Subgroup.coe_mul, Subgroup.coe_inv, cycleType_conj] using hx
-  | one => simp
-  | mul _ _ _ _ ih₁ ih₂ => simpa only [mul_assoc, inv_mul_cancel_left] using mul_mem ih₁ ih₂
-  | inv _ _ ih =>
-      convert inv_mem ih using 1
-      group
-
 /-- Viewed inside `Equiv.Perm α`, the subgroup `alternatingGroup.kleinFour α` is normal in the
 full symmetric group for any finite type `α`. -/
 instance normal_map_subtype_kleinFour :
@@ -111,24 +88,21 @@ instance normal_map_subtype_kleinFour :
     exact congrArg Subgroup.closure
       (Subtype.coe_image_of_subset cycleType_eq_two_two_subset_alternatingGroup)
   rw [heq]
-  constructor
-  intro n hn g
-  induction hn using Subgroup.closure_induction with
-  | mem x hx =>
-      apply Subgroup.subset_closure
-      simpa only [Set.mem_ofPred_eq, cycleType_conj] using hx
-  | one => simp
-  | mul _ _ _ _ ih₁ ih₂ => simpa only [mul_assoc, inv_mul_cancel_left] using mul_mem ih₁ ih₂
-  | inv _ _ ih =>
-      convert inv_mem ih using 1
-      group
+  exact Subgroup.closure_normal_of_forall_conj_mem fun g σ hσ => by
+    simpa only [Set.mem_ofPred_eq, cycleType_conj] using hσ
+
+/-- The subgroup `alternatingGroup.kleinFour α` generated by permutations of cycle type `{2, 2}`
+is normal in `alternatingGroup α` for any finite type `α`. -/
+instance normal_kleinFour' : (alternatingGroup.kleinFour α).Normal :=
+  normal_map_subtype_kleinFour.of_map_subtype
 
 /-- When `α` has fewer than four elements, there are no double transpositions and
 `alternatingGroup.kleinFour α` is trivial. -/
 theorem kleinFour_eq_bot_of_card_lt_four (hα : Nat.card α < 4) :
     alternatingGroup.kleinFour α = ⊥ := by
   rw [alternatingGroup.kleinFour, Subgroup.closure_eq_bot_iff]
-  intro g (hg : (g : Perm α).cycleType = {2, 2})
+  intro g hg
+  rw [Set.mem_ofPred_eq] at hg
   have hsum : (g : Perm α).cycleType.sum ≤ Nat.card α := by
     rw [sum_cycleType, Nat.card_eq_fintype_card]
     exact (g : Perm α).support.card_le_univ
@@ -153,12 +127,6 @@ theorem isPGroup_two_kleinFour (hα : Nat.card α ≤ 4) :
   · rw [kleinFour_eq_bot_of_card_lt_four hlt]
     exact IsPGroup.of_bot
   · exact IsPGroup.of_card (n := 2) (alternatingGroup.kleinFour_card_of_card_eq_four hα4)
-
-private theorem card_alternatingGroup_of_card_eq_three (hα3 : Nat.card α = 3) :
-    Nat.card (alternatingGroup α) = 3 := by
-  have : Nontrivial α := Finite.one_lt_card_iff_nontrivial.mp (by omega)
-  rw [nat_card_alternatingGroup, hα3]
-  decide
 
 /-- For `Nat.card α ≤ 4`, an element of `alternatingGroup α` belongs to
 `alternatingGroup.kleinFour α` if and only if its square is `1`. -/
@@ -203,6 +171,7 @@ theorem smul_ne_self_of_mem_kleinFour (hα : Nat.card α ≤ 4) {g : alternating
       apply Finset.eq_univ_of_card
       rw [← sum_cycleType, hc, ← Nat.card_eq_fintype_card, hα4]
       decide
+    rw [Subgroup.smul_def, Perm.smul_def]
     exact mem_support.mp (hsupp ▸ Finset.mem_univ a)
 
 /-- For `Nat.card α ≤ 4`, the action of `alternatingGroup.kleinFour α` on `α` has trivial point
@@ -213,6 +182,7 @@ theorem stabilizer_kleinFour_eq_bot (hα : Nat.card α ≤ 4) (a : α) :
   intro v hv
   rw [Subgroup.mem_bot]
   by_contra hne
+  rw [MulAction.mem_stabilizer_iff, Subgroup.smul_def] at hv
   exact smul_ne_self_of_mem_kleinFour hα v.2 (Subtype.coe_ne_coe.mpr hne) a hv
 
 /-- For `Nat.card α ≤ 4`, evaluating elements of `alternatingGroup.kleinFour α` at a base point
@@ -223,7 +193,7 @@ theorem smul_kleinFour_injective (hα : Nat.card α ≤ 4) (a : α) :
   have hfix : (v₁⁻¹ * v₂) • a = a := by
     rw [mul_smul, ← h, inv_smul_smul]
   have hmem : v₁⁻¹ * v₂ ∈ (⊥ : Subgroup (alternatingGroup.kleinFour α)) := by
-    rw [← stabilizer_kleinFour_eq_bot hα a]
+    rw [← stabilizer_kleinFour_eq_bot hα a, MulAction.mem_stabilizer_iff]
     exact hfix
   exact inv_mul_eq_one.mp (Subgroup.mem_bot.mp hmem)
 
@@ -244,10 +214,27 @@ theorem kleinFourEquiv_apply (hα4 : Nat.card α = 4) (a : α) (v : alternatingG
 
 /-- The inverse of `TauCeti.kleinFourEquiv` sends `b` to an element carrying `a` to `b`. -/
 @[simp]
-theorem smul_kleinFourEquiv_symm_apply (hα4 : Nat.card α = 4) (a b : α) :
+theorem kleinFourEquiv_symm_apply_smul (hα4 : Nat.card α = 4) (a b : α) :
     (kleinFourEquiv hα4 a).symm b • a = b := by
   rw [← kleinFourEquiv_apply hα4 a]
   exact (kleinFourEquiv hα4 a).apply_symm_apply b
+
+/-- The inverse of `TauCeti.kleinFourEquiv` cancels the action of `alternatingGroup.kleinFour α`
+on the base point `a`. -/
+@[simp]
+theorem kleinFourEquiv_symm_smul (hα4 : Nat.card α = 4) (a : α)
+    (v : alternatingGroup.kleinFour α) :
+    (kleinFourEquiv hα4 a).symm (v • a) = v := by
+  rw [← kleinFourEquiv_apply hα4 a]
+  exact (kleinFourEquiv hα4 a).symm_apply_apply v
+
+/-- The inverse of `TauCeti.kleinFourEquiv` cancels the coerced `alternatingGroup α`-action of
+`v : alternatingGroup.kleinFour α` on the base point `a`. -/
+@[simp]
+theorem kleinFourEquiv_symm_coe_smul (hα4 : Nat.card α = 4) (a : α)
+    (v : alternatingGroup.kleinFour α) :
+    (kleinFourEquiv hα4 a).symm ((v : alternatingGroup α) • a) = v := by
+  rw [← Subgroup.smul_def, kleinFourEquiv_symm_smul]
 
 /-- The inverse of `TauCeti.kleinFourEquiv` sends the base point `a` to `1`. -/
 @[simp]
@@ -269,10 +256,11 @@ theorem kleinFourEquiv_symm_eq_iff (hα4 : Nat.card α = 4) (a b : α)
 theorem isComplement'_kleinFour_stabilizer (hα4 : Nat.card α = 4) (a : α) :
     (alternatingGroup.kleinFour α).IsComplement' (MulAction.stabilizer (alternatingGroup α) a) := by
   refine Subgroup.isComplement'_stabilizer a
-    (fun v hv => Subgroup.mem_bot.mp (stabilizer_kleinFour_eq_bot hα4.le a ▸ hv)) fun g => ?_
+    (fun v hv => Subgroup.mem_bot.mp
+      (stabilizer_kleinFour_eq_bot hα4.le a ▸ MulAction.mem_stabilizer_iff.mpr hv)) fun g => ?_
   refine ⟨((kleinFourEquiv hα4 a).symm (g • a))⁻¹, ?_⟩
   rw [Subgroup.smul_def, Subgroup.coe_inv, inv_smul_eq_iff]
-  exact (smul_kleinFourEquiv_symm_apply hα4 a (g • a)).symm
+  exact (kleinFourEquiv_symm_apply_smul hα4 a (g • a)).symm
 
 /-- When `Nat.card α = 4`, every point stabilizer in `alternatingGroup α` has order `3`. -/
 theorem card_stabilizer_alternatingGroup_of_card_eq_four (hα4 : Nat.card α = 4) (a : α) :
@@ -308,8 +296,7 @@ theorem isComplement'_kleinFour_iff_exists_sylow_three (hα : Nat.card α ≤ 4)
       ∃ P : Sylow 3 (alternatingGroup α), (P : Subgroup (alternatingGroup α)) = D := by
   let _ : Fact (Nat.Prime 3) := ⟨Nat.prime_three⟩
   rcases lt_or_eq_of_le hα with hlt | hα4
-  · rw [kleinFour_eq_bot_of_card_lt_four hlt, ← Subgroup.isLocalComplement_top_iff,
-      Subgroup.isLocalComplement_bot_left]
+  · rw [kleinFour_eq_bot_of_card_lt_four hlt, Subgroup.isComplement'_bot_left]
     have hP3 : IsPGroup 3 (alternatingGroup α) := by
       rcases le_or_gt (Nat.card α) 2 with hle2 | hgt2
       · exact IsPGroup.of_card (p := 3) (n := 0)
@@ -351,51 +338,22 @@ theorem isComplement'_kleinFour_iff_exists_stabilizer (hα4 : Nat.card α = 4)
       rw [hz] at hmod
       exact absurd hmod (by decide)
     obtain ⟨⟨a, ha⟩⟩ := (Nat.card_pos_iff.mp (Nat.pos_of_ne_zero hne)).1
-    refine ⟨a, Subgroup.eq_of_le_of_card_ge (fun g hg => ha ⟨g, hg⟩) ?_⟩
-    rw [hD3, card_stabilizer_alternatingGroup_of_card_eq_four hα4 a]
+    refine ⟨a, Subgroup.eq_of_le_of_card_ge (fun g hg => ?_) ?_⟩
+    · rw [MulAction.mem_stabilizer_iff, ← Subgroup.smul_def ⟨g, hg⟩]
+      exact MulAction.mem_fixedPoints.mp ha ⟨g, hg⟩
+    · rw [hD3, card_stabilizer_alternatingGroup_of_card_eq_four hα4 a]
   · rintro ⟨a, rfl⟩
     exact isComplement'_kleinFour_stabilizer hα4 a
-
-/-- For `4 ≤ Nat.card α`, `a` is the unique fixed point of
-`MulAction.stabilizer (alternatingGroup α) a`: for any `b ≠ a`, some three-cycle fixing `a`
-moves `b`. -/
-theorem eq_of_forall_mem_stabilizer_alternatingGroup_smul_eq (hα : 4 ≤ Nat.card α) {a b : α}
-    (hb : ∀ g ∈ MulAction.stabilizer (alternatingGroup α) a, g • b = b) : b = a := by
-  by_contra hba
-  have hc_lt : ({a, b} : Finset α).card < (Finset.univ : Finset α).card := by
-    rw [Finset.card_univ, ← Nat.card_eq_fintype_card]
-    exact (Finset.card_le_two (a := a) (b := b)).trans_lt (by omega)
-  obtain ⟨c, -, hc⟩ := Finset.exists_mem_notMem_of_card_lt_card hc_lt
-  simp only [Finset.mem_insert, Finset.mem_singleton, not_or] at hc
-  have hd_lt : ({a, b, c} : Finset α).card < (Finset.univ : Finset α).card := by
-    rw [Finset.card_univ, ← Nat.card_eq_fintype_card]
-    exact (Finset.card_le_three (a := a) (b := b) (c := c)).trans_lt (by omega)
-  obtain ⟨d, -, hd⟩ := Finset.exists_mem_notMem_of_card_lt_card hd_lt
-  simp only [Finset.mem_insert, Finset.mem_singleton, not_or] at hd
-  let σ : Perm α := swap b c * swap c d
-  have hbc : b ≠ c := Ne.symm hc.2
-  have hbd : b ≠ d := Ne.symm hd.2.1
-  have hcd : c ≠ d := Ne.symm hd.2.2
-  have hσ_even : σ ∈ alternatingGroup α := by
-    rw [mem_alternatingGroup, map_mul, sign_swap hbc, sign_swap hcd]
-    decide
-  have hσa : (⟨σ, hσ_even⟩ : alternatingGroup α) ∈ MulAction.stabilizer (alternatingGroup α) a := by
-    rw [MulAction.mem_stabilizer_iff, Subgroup.smul_def, Perm.smul_def, Perm.mul_apply,
-      swap_apply_of_ne_of_ne (Ne.symm hc.1) (Ne.symm hd.1),
-      swap_apply_of_ne_of_ne (Ne.symm hba) (Ne.symm hc.1)]
-  have hσb : σ b = b := hb ⟨σ, hσ_even⟩ hσa
-  rw [Perm.mul_apply, swap_apply_of_ne_of_ne hbc hbd, swap_apply_left] at hσb
-  exact hc.2 hσb
 
 /-- When `Nat.card α = 4`, every complement of `alternatingGroup.kleinFour α` in
 `alternatingGroup α` is the point stabilizer of a unique element of `α`. -/
 theorem existsUnique_stabilizer_eq_of_isComplement'_kleinFour (hα4 : Nat.card α = 4)
     {D : Subgroup (alternatingGroup α)} (hD : (alternatingGroup.kleinFour α).IsComplement' D) :
-    ∃! a : α, D = MulAction.stabilizer (alternatingGroup α) a := by
+    ∃! a : α, MulAction.stabilizer (alternatingGroup α) a = D := by
   obtain ⟨a, rfl⟩ := (isComplement'_kleinFour_iff_exists_stabilizer hα4).mp hD
   refine ⟨a, rfl, fun b hb => ?_⟩
   exact eq_of_forall_mem_stabilizer_alternatingGroup_smul_eq hα4.ge fun g hg =>
-    MulAction.mem_stabilizer_iff.mp (hb ▸ hg)
+    MulAction.mem_stabilizer_iff.mp (hb.symm ▸ hg)
 
 /-- When `Nat.card α = 4`, sending `a : α` to `MulAction.stabilizer (alternatingGroup α) a`
 identifies `α` with the complements of `alternatingGroup.kleinFour α` in `alternatingGroup α`. -/
@@ -407,7 +365,7 @@ noncomputable def kleinFourComplementEquiv (hα4 : Nat.card α = 4) :
       have hEq : MulAction.stabilizer (alternatingGroup α) a =
           MulAction.stabilizer (alternatingGroup α) b := congrArg Subtype.val hab
       exact (existsUnique_stabilizer_eq_of_isComplement'_kleinFour hα4
-        (isComplement'_kleinFour_stabilizer hα4 a)).unique rfl hEq,
+        (isComplement'_kleinFour_stabilizer hα4 b)).unique hEq rfl,
       fun ⟨D, hD⟩ =>
         let ⟨a, ha⟩ := (isComplement'_kleinFour_iff_exists_stabilizer hα4).mp hD
         ⟨a, Subtype.ext ha.symm⟩⟩
@@ -442,54 +400,7 @@ theorem card_isComplement'_kleinFour (hα4 : Nat.card α = 4) :
       (alternatingGroup.kleinFour α).IsComplement' D} = 4 :=
   (Nat.card_congr (kleinFourComplementEquiv hα4).symm).trans hα4
 
-/-! ### Crossed projections and `V₄`-conjugacy -/
-
-section CrossedProjection
-
-attribute [local instance] Subgroup.conjugationAction
-
-/-- Along `MulAction.stabilizer (alternatingGroup α) a`, the crossed projection of `g` onto
-`alternatingGroup.kleinFour α` is the unique element of `alternatingGroup.kleinFour α` sending `a`
-to `g • a`. -/
-theorem crossedProjection_isComplement'_kleinFour_stabilizer (hα4 : Nat.card α = 4) (a : α)
-    (g : alternatingGroup α) :
-    (isComplement'_kleinFour_stabilizer hα4 a).crossedProjection g =
-      (kleinFourEquiv hα4 a).symm (g • a) := by
-  obtain ⟨⟨n, d⟩, rfl⟩ := (isComplement'_kleinFour_stabilizer hα4 a).surjective g
-  dsimp only
-  rw [Subgroup.IsComplement'.crossedProjection_mul, eq_comm, kleinFourEquiv_symm_eq_iff]
-  have hd : (d : alternatingGroup α) • a = a := d.2
-  rw [mul_smul, hd, Subgroup.smul_def]
-
-/-- Applying the crossed projection of `g` along `MulAction.stabilizer (alternatingGroup α) a` to
-`a` agrees with `g • a`. -/
-theorem smul_crossedProjection_isComplement'_kleinFour_stabilizer (hα4 : Nat.card α = 4) (a : α)
-    (g : alternatingGroup α) :
-    (isComplement'_kleinFour_stabilizer hα4 a).crossedProjection g • a = g • a := by
-  rw [crossedProjection_isComplement'_kleinFour_stabilizer hα4 a g, smul_kleinFourEquiv_symm_apply]
-
-/-- The crossed projection of `g` along `MulAction.stabilizer (alternatingGroup α) a` equals `v`
-if and only if `v • a = g • a`. -/
-theorem crossedProjection_isComplement'_kleinFour_stabilizer_eq_iff (hα4 : Nat.card α = 4) (a : α)
-    (g : alternatingGroup α) (v : alternatingGroup.kleinFour α) :
-    (isComplement'_kleinFour_stabilizer hα4 a).crossedProjection g = v ↔ v • a = g • a := by
-  rw [crossedProjection_isComplement'_kleinFour_stabilizer hα4 a g, kleinFourEquiv_symm_eq_iff,
-    eq_comm]
-
-/-- Translating the base point `a` by `v ∈ alternatingGroup.kleinFour α` multiplies the crossed
-projection along `MulAction.stabilizer (alternatingGroup α) a` by the principal crossed map
-`g ↦ g • v / v`. -/
-theorem crossedProjection_isComplement'_kleinFour_stabilizer_smul (hα4 : Nat.card α = 4) (a : α)
-    (v : alternatingGroup.kleinFour α) (g : alternatingGroup α) :
-    (isComplement'_kleinFour_stabilizer hα4 (v • a)).crossedProjection g =
-      (isComplement'_kleinFour_stabilizer hα4 a).crossedProjection g * (g • v / v) := by
-  have := isMulCommutative_kleinFour hα4.le
-  have hconj : MulAction.stabilizer (alternatingGroup α) (v • a) =
-      MulAut.conj (v : alternatingGroup α) • MulAction.stabilizer (alternatingGroup α) a := by
-    rw [Subgroup.smul_def, MulAction.stabilizer_smul_eq_stabilizer_map_conj,
-      MulEquiv.toMonoidHom_eq_coe, map_conj_eq_conj_smul]
-  exact ((isComplement'_kleinFour_stabilizer hα4 a).eq_conj_smul_iff_crossedProjection_eq
-    (isComplement'_kleinFour_stabilizer hα4 (v • a)) v).mp hconj g
+/-! ### `V₄`-conjugacy and invariant complements in `alternatingGroup α` -/
 
 /-- For `Nat.card α ≤ 4`, any two complements of `alternatingGroup.kleinFour α` in
 `alternatingGroup α` are conjugate by a unique element of `alternatingGroup.kleinFour α`. -/
@@ -498,84 +409,23 @@ theorem existsUnique_kleinFour_conj_smul_eq (hα : Nat.card α ≤ 4)
     (hD : (alternatingGroup.kleinFour α).IsComplement' D)
     (hD' : (alternatingGroup.kleinFour α).IsComplement' D') :
     ∃! v : alternatingGroup.kleinFour α,
-      D' = MulAut.conj (v : alternatingGroup α) • D := by
+      MulAut.conj (v : alternatingGroup α) • D = D' := by
   rcases lt_or_eq_of_le hα with hlt | hα4
   · have hbot := kleinFour_eq_bot_of_card_lt_four hlt
-    rw [hbot, ← Subgroup.isLocalComplement_top_iff, Subgroup.isLocalComplement_bot_left] at hD hD'
+    rw [hbot, Subgroup.isComplement'_bot_left] at hD hD'
     refine ⟨1, by simp [hD, hD'], fun v _ => ?_⟩
     exact Subtype.ext (Subgroup.mem_bot.mp (hbot ▸ v.2))
   · obtain ⟨a, rfl⟩ := (isComplement'_kleinFour_iff_exists_stabilizer hα4).mp hD
     obtain ⟨b, rfl⟩ := (isComplement'_kleinFour_iff_exists_stabilizer hα4).mp hD'
     refine ⟨(kleinFourEquiv hα4 a).symm b, ?_, fun v hv => ?_⟩
     · dsimp only
-      conv_lhs => rw [← smul_kleinFourEquiv_symm_apply hα4 a b, Subgroup.smul_def]
-      rw [MulAction.stabilizer_smul_eq_stabilizer_map_conj, MulEquiv.toMonoidHom_eq_coe,
-        map_conj_eq_conj_smul]
+      rw [← stabilizer_smul_eq_conj_smul, ← Subgroup.smul_def, kleinFourEquiv_symm_apply_smul]
     · dsimp only at hv
-      rw [← map_conj_eq_conj_smul, ← MulEquiv.toMonoidHom_eq_coe,
-        ← MulAction.stabilizer_smul_eq_stabilizer_map_conj, ← Subgroup.smul_def] at hv
+      rw [← stabilizer_smul_eq_conj_smul, ← Subgroup.smul_def] at hv
       have hva : v • a = b :=
         (existsUnique_stabilizer_eq_of_isComplement'_kleinFour hα4
           (isComplement'_kleinFour_stabilizer hα4 b)).unique hv rfl
       exact ((kleinFourEquiv_symm_eq_iff hα4 a b v).mpr hva).symm
-
-/-- When `Nat.card α = 4`, sending `a : α` to the crossed projection along
-`MulAction.stabilizer (alternatingGroup α) a` identifies `α` with the normalized additive crossed
-maps `alternatingGroup α → Additive (alternatingGroup.kleinFour α)`. -/
-noncomputable def kleinFourCrossedProjectionEquiv (hα4 : Nat.card α = 4)
-    [IsMulCommutative (alternatingGroup.kleinFour α)] :
-    α ≃ {c : alternatingGroup α → Additive (alternatingGroup.kleinFour α) //
-      groupCohomology.IsCocycle₁ c ∧
-        ∀ n : alternatingGroup.kleinFour α, c n = Additive.ofMul n} :=
-  (kleinFourComplementEquiv hα4).trans (alternatingGroup.kleinFour α).crossedProjectionEquiv
-
-/-- The normalized additive crossed map attached to `a : α` sends `g` to the unique element of
-`alternatingGroup.kleinFour α` carrying `a` to `g • a`, read additively. -/
-@[simp]
-theorem coe_kleinFourCrossedProjectionEquiv_apply (hα4 : Nat.card α = 4)
-    [IsMulCommutative (alternatingGroup.kleinFour α)] (a : α) (g : alternatingGroup α) :
-    (kleinFourCrossedProjectionEquiv hα4 a).val g =
-      Additive.ofMul ((kleinFourEquiv hα4 a).symm (g • a)) := by
-  rw [kleinFourCrossedProjectionEquiv, Equiv.trans_apply, Subgroup.crossedProjectionEquiv_apply]
-  exact congrArg Additive.ofMul (crossedProjection_isComplement'_kleinFour_stabilizer hα4 a g)
-
-/-- The zero locus of the normalized additive crossed map attached to `a : α` is the point
-stabilizer of `a`. -/
-@[simp]
-theorem zeroLocus_kleinFourCrossedProjectionEquiv_apply (hα4 : Nat.card α = 4)
-    [IsMulCommutative (alternatingGroup.kleinFour α)] (a : α) :
-    groupCohomology.zeroLocus (kleinFourCrossedProjectionEquiv hα4 a).2.1 =
-      MulAction.stabilizer (alternatingGroup α) a := by
-  rw [← Subgroup.crossedProjectionEquiv_symm_apply]
-  exact congrArg Subtype.val
-    ((alternatingGroup.kleinFour α).crossedProjectionEquiv.symm_apply_apply
-      (kleinFourComplementEquiv hα4 a))
-
-/-- `(kleinFourCrossedProjectionEquiv hα4).symm c` is `a` if and only if the zero locus of `c` is
-the stabilizer of `a`. -/
-theorem kleinFourCrossedProjectionEquiv_symm_eq_iff (hα4 : Nat.card α = 4)
-    [IsMulCommutative (alternatingGroup.kleinFour α)]
-    (c : {c : alternatingGroup α → Additive (alternatingGroup.kleinFour α) //
-      groupCohomology.IsCocycle₁ c ∧
-        ∀ n : alternatingGroup.kleinFour α, c n = Additive.ofMul n})
-    (a : α) :
-    (kleinFourCrossedProjectionEquiv hα4).symm c = a ↔
-      groupCohomology.zeroLocus c.2.1 = MulAction.stabilizer (alternatingGroup α) a := by
-  rw [kleinFourCrossedProjectionEquiv, Equiv.symm_trans_apply,
-    kleinFourComplementEquiv_symm_eq_iff, Subgroup.crossedProjectionEquiv_symm_apply]
-
-/-- When `Nat.card α = 4`, there are exactly four normalized additive crossed maps
-`alternatingGroup α → Additive (alternatingGroup.kleinFour α)`. -/
-theorem card_kleinFour_crossedProjection (hα4 : Nat.card α = 4)
-    [IsMulCommutative (alternatingGroup.kleinFour α)] :
-    Nat.card {c : alternatingGroup α → Additive (alternatingGroup.kleinFour α) //
-      groupCohomology.IsCocycle₁ c ∧
-        ∀ n : alternatingGroup.kleinFour α, c n = Additive.ofMul n} = 4 :=
-  (Nat.card_congr (kleinFourCrossedProjectionEquiv hα4).symm).trans hα4
-
-end CrossedProjection
-
-/-! ### Invariant complements in `alternatingGroup α` and local complements in `Equiv.Perm α` -/
 
 /-- When `Nat.card α = 4`, `MulAction.stabilizer (alternatingGroup α) a` is the unique complement
 of `alternatingGroup.kleinFour α` in `alternatingGroup α` normalized by
@@ -589,69 +439,13 @@ theorem isComplement'_kleinFour_and_stabilizer_le_normalizer_iff (hα4 : Nat.car
   · obtain ⟨b, rfl⟩ := (isComplement'_kleinFour_iff_exists_stabilizer hα4).mp hD
     suffices hba : b = a by rw [hba]
     refine eq_of_forall_mem_stabilizer_alternatingGroup_smul_eq hα4.ge fun g hg => ?_
-    have hconj : MulAction.stabilizer (alternatingGroup α) b =
-        MulAction.stabilizer (alternatingGroup α) (g • b) := by
-      rw [MulAction.stabilizer_smul_eq_stabilizer_map_conj, MulEquiv.toMonoidHom_eq_coe,
-        map_conj_eq_conj_smul]
-      exact (Subgroup.conjAct_pointwise_smul_eq_self (hnorm hg)).symm
+    have hconj : MulAction.stabilizer (alternatingGroup α) (g • b) =
+        MulAction.stabilizer (alternatingGroup α) b := by
+      rw [stabilizer_smul_eq_conj_smul, ← map_conj_eq_conj_smul,
+        Subgroup.mem_normalizer_iff_map_conj_eq.mp (hnorm hg)]
     exact (existsUnique_stabilizer_eq_of_isComplement'_kleinFour hα4
       (isComplement'_kleinFour_stabilizer hα4 b)).unique hconj rfl
   · rintro rfl
     exact ⟨isComplement'_kleinFour_stabilizer hα4 a, Subgroup.le_normalizer⟩
-
-/-- When `Nat.card α = 4`, the local complements of
-`(alternatingGroup.kleinFour α).map (alternatingGroup α).subtype` in `alternatingGroup α` (inside
-`Equiv.Perm α`) are precisely the subgroups
-`MulAction.stabilizer (Perm α) a ⊓ alternatingGroup α`. -/
-theorem isLocalComplement_map_subtype_kleinFour_iff_exists_stabilizer (hα4 : Nat.card α = 4)
-    {K : Subgroup (Perm α)} :
-    ((alternatingGroup.kleinFour α).map (alternatingGroup α).subtype).IsLocalComplement K
-        (alternatingGroup α) ↔
-      ∃ a : α, K = MulAction.stabilizer (Perm α) a ⊓ alternatingGroup α := by
-  have hN_le : (alternatingGroup.kleinFour α).map (alternatingGroup α).subtype ≤
-      alternatingGroup α := Subgroup.map_subtype_le _
-  have hN_sub : ((alternatingGroup.kleinFour α).map (alternatingGroup α).subtype).subgroupOf
-      (alternatingGroup α) = alternatingGroup.kleinFour α :=
-    Subgroup.comap_map_eq_self_of_injective (alternatingGroup α).subtype_injective _
-  refine ⟨fun hK => ?_, ?_⟩
-  · have hcomp : (alternatingGroup.kleinFour α).IsComplement'
-        (K.subgroupOf (alternatingGroup α)) :=
-      hN_sub ▸ (Subgroup.isLocalComplement_iff_isComplement'_subgroupOf hN_le hK.right_le).mp hK
-    obtain ⟨a, ha⟩ := (isComplement'_kleinFour_iff_exists_stabilizer hα4).mp hcomp
-    refine ⟨a, ?_⟩
-    rw [← Subgroup.map_subgroupOf_eq_of_le hK.right_le, ha,
-      ← MulAction.stabilizer_subgroupOf, Subgroup.subgroupOf_map_subtype]
-  · rintro ⟨a, rfl⟩
-    rw [← Subgroup.subgroupOf_map_subtype, MulAction.stabilizer_subgroupOf]
-    have hm := (Subgroup.isLocalComplement_top_iff.mpr
-      (isComplement'_kleinFour_stabilizer hα4 a)).map (alternatingGroup α).subtype_injective
-    simpa only [Subgroup.map_top, Subgroup.range_subtype] using hm
-
-/-- When `Nat.card α = 4`, `MulAction.stabilizer (Perm α) a ⊓ alternatingGroup α` is the unique
-local complement of `(alternatingGroup.kleinFour α).map (alternatingGroup α).subtype` in
-`alternatingGroup α` normalized by `MulAction.stabilizer (Perm α) a ⊓ alternatingGroup α`. -/
-theorem isLocalComplement_map_subtype_kleinFour_and_le_normalizer_iff (hα4 : Nat.card α = 4)
-    (a : α) {K : Subgroup (Perm α)} :
-    ((alternatingGroup.kleinFour α).map (alternatingGroup α).subtype).IsLocalComplement K
-        (alternatingGroup α) ∧
-        MulAction.stabilizer (Perm α) a ⊓ alternatingGroup α ≤ Subgroup.normalizer K ↔
-      K = MulAction.stabilizer (Perm α) a ⊓ alternatingGroup α := by
-  refine ⟨fun ⟨hK, hnorm⟩ => ?_, ?_⟩
-  · obtain ⟨b, rfl⟩ :=
-      (isLocalComplement_map_subtype_kleinFour_iff_exists_stabilizer hα4).mp hK
-    have hD : (alternatingGroup.kleinFour α).IsComplement'
-        (MulAction.stabilizer (alternatingGroup α) b) ∧
-        MulAction.stabilizer (alternatingGroup α) a ≤
-          Subgroup.normalizer (MulAction.stabilizer (alternatingGroup α) b) := by
-      refine ⟨isComplement'_kleinFour_stabilizer hα4 b, ?_⟩
-      rw [Subgroup.le_normalizer_iff]
-      intro g hg x hx
-      exact ((Subgroup.le_normalizer_iff.mp hnorm) (g : Perm α) ⟨hg, g.2⟩ (x : Perm α) ⟨hx, x.2⟩).1
-    have heq := (isComplement'_kleinFour_and_stabilizer_le_normalizer_iff hα4 a).mp hD
-    rw [← Subgroup.subgroupOf_map_subtype, MulAction.stabilizer_subgroupOf, heq,
-      ← MulAction.stabilizer_subgroupOf, Subgroup.subgroupOf_map_subtype]
-  · rintro rfl
-    exact ⟨(isLocalComplement_map_subtype_kleinFour_iff_exists_stabilizer hα4).mpr ⟨a, rfl⟩,
-      Subgroup.le_normalizer⟩
 
 end TauCeti
