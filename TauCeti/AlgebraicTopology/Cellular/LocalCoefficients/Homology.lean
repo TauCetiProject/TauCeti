@@ -471,11 +471,8 @@ theorem isIso_twistedHomologySkeletonBasePairToComplex_of_eq {m : ℕ}
     (hm : (skeletonLT C ((m + 1 : ℕ) : ℕ∞) : Set X) = C) (k : ℕ) :
     IsIso (twistedHomologySkeletonBasePairToComplex C L m k) := by
   have := isIso_skeletonBasePairToComplex_of_eq C m hm
-  have : IsIso (TopPair.twistedHomologyMap (skeletonBasePairToComplex C m) L k) :=
-    LocalCoefficientSystem.isIso_relativeTwistedHomologyMap_of_homotopyInverse _ _
-      (inv (skeletonBasePairToComplex C m))
-      ⟨(IsIso.hom_inv_id (skeletonBasePairToComplex C m)) ▸ TopPair.Homotopy.refl _⟩
-      ⟨(IsIso.inv_hom_id (skeletonBasePairToComplex C m)) ▸ TopPair.Homotopy.refl _⟩ k
+  have := LocalCoefficientSystem.isIso_relativeTwistedHomologyMap_of_isIso L
+    (skeletonBasePairToComplex C m) k
   have := @TopPair.isIso_twistedHomologyCoefficientMap _ _ (skeletonBasePair C m) _ _
     (eqToHom (skeletonSystem_eq_pullback C L m))
     (Iso.isIso_hom (eqToIso (skeletonSystem_eq_pullback C L m))) k
