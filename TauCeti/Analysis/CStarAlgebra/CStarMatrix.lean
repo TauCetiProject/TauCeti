@@ -6,7 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.CStarMatrix
-import TauCeti.Algebra.Star.Basic
+public import Mathlib.Analysis.CStarAlgebra.Classes
+public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
+public import Mathlib.Analysis.CStarAlgebra.Matrix
+public import Mathlib.LinearAlgebra.Matrix.Trace
+public import Mathlib.LinearAlgebra.Trace
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Instances
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.PosPart.Basic
@@ -14,9 +18,11 @@ import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
 import Mathlib.LinearAlgebra.Matrix.DotProduct
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
+import TauCeti.Algebra.Star.Basic
+import TauCeti.LinearAlgebra.Matrix.Trace.Duality
 
 /-!
-# Positivity in matrix C⋆-algebras by quadratic forms
+# Positivity, trace duality, and Euclidean operators on matrix C⋆-algebras
 
 For a non-unital C⋆-algebra `A` and a finite type `n`, Mathlib makes `CStarMatrix n n A` a
 C⋆-algebra and orders it by the spectral order. This file proves that a matrix `M` is positive in
@@ -28,20 +34,28 @@ No self-adjointness hypothesis is needed for the converse: positivity of all the
 already forces `M` to be self-adjoint, by polarization over `ℂ`. The criterion is the standard way
 to recognise positive matrices over a C⋆-algebra, for instance Gram matrices of vectors in a
 Hilbert C⋆-module. We also show that a diagonal matrix in `CStarMatrix n n A` has operator norm
-equal to the supremum norm of its diagonal.
+equal to the supremum norm of its diagonal, expose linear trace duality on `CStarMatrix`, and
+construct the isometric `⋆`-algebra isomorphism `CStarMatrix.toEuclideanCLM` between
+`CStarMatrix n n ℂ` and `EuclideanSpace ℂ n →L[ℂ] EuclideanSpace ℂ n`.
 
 ## Main declarations
 
 * `CStarMatrix.instNonUnitalContinuousFunctionalCalculusReal`: the real continuous functional
   calculus of `CStarMatrix n n A`, which instance search does not find on its own.
-* `CStarMatrix.ofMatrix_symm_mul`, `CStarMatrix.ofMatrix_symm_star`: reading a C⋆-matrix as an
-  ordinary matrix respects multiplication and sends `star` to the conjugate transpose.
+* `CStarMatrix.ofMatrix_symm_zero`, `CStarMatrix.ofMatrix_symm_smul`,
+  `CStarMatrix.ofMatrix_symm_mul`, `CStarMatrix.ofMatrix_symm_star`: reading a C⋆-matrix as an
+  ordinary matrix respects algebraic operations and sends `star` to the conjugate transpose.
+* `CStarMatrix.traceLinearMap`, `CStarMatrix.existsUnique_trace_mul_eq`,
+  `CStarMatrix.existsUnique_sum_trace_mul_eq`: trace linear map and trace duality on `CStarMatrix`.
 * `CStarMatrix.isSelfAdjoint_of_forall_isSelfAdjoint_sum`: a matrix all of whose quadratic forms
   are self-adjoint is self-adjoint. This is purely algebraic, and holds over any complex
   star-algebra whose star is proper.
 * `CStarMatrix.nonneg_iff_forall_sum_nonneg`: the quadratic-form criterion for positivity.
 * `CStarMatrix.norm_ofMatrix_diagonal`: `‖ofMatrix (diagonal d)‖ = ‖d‖` over any non-unital
   C⋆-algebra.
+* `CStarMatrix.toEuclideanCLM`, `CStarMatrix.norm_toEuclideanCLM`,
+  `CStarMatrix.trace_toEuclideanCLM`: the isometric, trace-preserving `⋆`-algebra isomorphism with
+  Euclidean endomorphisms.
 
 ## References
 
@@ -56,7 +70,7 @@ namespace CStarMatrix
 
 section Algebraic
 
-variable {n R A : Type*}
+variable {m n R A : Type*}
 
 /-- Scalars commute past matrix multiplication on the left, as for `Matrix`. -/
 instance instIsScalarTowerSelf [Fintype n] [Monoid R] [NonUnitalNonAssocSemiring A]
@@ -70,6 +84,23 @@ instance instSMulCommClassSelf [Fintype n] [Monoid R] [NonUnitalNonAssocSemiring
     SMulCommClass R (CStarMatrix n n A) (CStarMatrix n n A) :=
   ⟨fun r M N => (mul_smul M r N).symm⟩
 
+/-- `ofMatrixₗ` agrees with `ofMatrix` on underlying matrices. -/
+@[simp] lemma ofMatrixₗ_apply [AddCommMonoid A] [Semiring R] [Module R A] (M : Matrix m n A) :
+    ofMatrixₗ (R := R) M = ofMatrix M := (rfl)
+
+/-- `ofMatrixₗ.symm` agrees with `ofMatrix.symm` on underlying C⋆-matrices. -/
+@[simp] lemma ofMatrixₗ_symm_apply [AddCommMonoid A] [Semiring R] [Module R A]
+    (M : CStarMatrix m n A) : (ofMatrixₗ (R := R)).symm M = ofMatrix.symm M := (rfl)
+
+/-- Reading a C⋆-matrix as an ordinary matrix sends `0` to `0`. -/
+@[simp] lemma ofMatrix_symm_zero [Zero A] : ofMatrix.symm (0 : CStarMatrix m n A) = 0 := by
+  rw [← of_zero, Equiv.symm_apply_apply]
+
+/-- Reading a C⋆-matrix as an ordinary matrix respects scalar multiplication. -/
+@[simp] lemma ofMatrix_symm_smul [SMul R A] (r : R) (M : CStarMatrix m n A) :
+    ofMatrix.symm (r • M) = r • ofMatrix.symm M := by
+  rw [ofMatrix.symm_apply_eq, ← smul_of, Equiv.apply_symm_apply]
+
 /-- Reading a C⋆-matrix as an ordinary matrix respects multiplication. -/
 @[simp]
 lemma ofMatrix_symm_mul [Fintype n] [Mul A] [AddCommMonoid A] (M N : CStarMatrix n n A) :
@@ -79,6 +110,40 @@ lemma ofMatrix_symm_mul [Fintype n] [Mul A] [AddCommMonoid A] (M N : CStarMatrix
 @[simp]
 lemma ofMatrix_symm_star [Star A] (M : CStarMatrix n n A) :
     ofMatrix.symm (star M) = (ofMatrix.symm M)ᴴ := (rfl)
+
+/-- The matrix trace of a C⋆-matrix bundled as a linear map. -/
+def traceLinearMap (n R A : Type*) [Fintype n] [AddCommMonoid A] [Semiring R] [Module R A] :
+    CStarMatrix n n A →ₗ[R] A :=
+  (Matrix.traceLinearMap n R A).comp (ofMatrixₗ (R := R)).symm.toLinearMap
+
+@[simp] theorem traceLinearMap_apply [Fintype n] [AddCommMonoid A] [Semiring R] [Module R A]
+    (M : CStarMatrix n n A) : traceLinearMap n R A M = Matrix.trace (ofMatrix.symm M) := (rfl)
+
+/-- **Trace duality on `CStarMatrix`.** Every linear functional on `CStarMatrix n n R` is
+`M ↦ tr(ρ * M)` for a unique `ρ : CStarMatrix n n R`. -/
+theorem existsUnique_trace_mul_eq [Fintype n] [CommSemiring R] (φ : CStarMatrix n n R →ₗ[R] R) :
+    ∃! ρ : CStarMatrix n n R, ∀ M, φ M = Matrix.trace (ofMatrix.symm (ρ * M)) := by
+  obtain ⟨ρ, hρ, huniq⟩ := (φ.comp (ofMatrixₗ (R := R)).toLinearMap).existsUnique_trace_mul_eq
+  refine ⟨ofMatrix ρ, fun M => by simpa [ofMatrix_symm_mul] using hρ (ofMatrix.symm M),
+    fun ρ' hρ' => ofMatrix.symm.injective <| by
+      rw [Equiv.symm_apply_apply]
+      exact huniq (ofMatrix.symm ρ') fun M => by simpa [ofMatrix_symm_mul] using hρ' (ofMatrix M)⟩
+
+/-- **Trace duality on finite families of `CStarMatrix`.** Every linear functional on
+`ι → CStarMatrix n n R` is `b ↦ ∑ k, tr(x k * b k)` for a unique family `x`. -/
+theorem existsUnique_sum_trace_mul_eq {ι : Type*} [Fintype ι] [Fintype n] [CommSemiring R]
+    (φ : (ι → CStarMatrix n n R) →ₗ[R] R) :
+    ∃! x : ι → CStarMatrix n n R, ∀ b, φ b = ∑ k, Matrix.trace (ofMatrix.symm (x k * b k)) := by
+  classical
+  let emb (k : ι) := LinearMap.single R (fun _ : ι => CStarMatrix n n R) k
+  choose x hx huniq using fun k => existsUnique_trace_mul_eq (φ.comp (emb k))
+  refine ⟨x, fun b => ?_, fun y hy => funext fun k => huniq k (y k) fun M => ?_⟩
+  · conv_lhs => rw [← Finset.univ_sum_single b]
+    rw [map_sum]; exact Finset.sum_congr rfl fun k _ => hx k (b k)
+  · have h := hy (Pi.single k M)
+    rw [Finset.sum_eq_single k (fun j _ hj => by simp [Pi.single_eq_of_ne hj])
+      (fun hk => absurd (Finset.mem_univ k) hk)] at h
+    simpa [emb] using h
 
 /-- A matrix over a complex star-algebra with proper star all of whose quadratic forms are
 self-adjoint is self-adjoint. -/
@@ -175,17 +240,17 @@ theorem nonneg_iff_forall_sum_nonneg {M : CStarMatrix n n A} :
   calc N * N = star R * (R * N) := by rw [← mul_assoc, ← hR]
     _ = 0 := by rw [hRN, mul_zero]
 
-/-- The operator norm of a diagonal matrix in `CStarMatrix n n A` is at most the supremum norm of
-its diagonal. -/
-theorem norm_ofMatrix_diagonal_le [DecidableEq n] (d : n → A) :
-    ‖ofMatrix (diagonal d)‖ ≤ ‖d‖ := by
+/-- The operator norm of a diagonal matrix in `CStarMatrix n n A` equals `‖d‖`. -/
+@[simp]
+theorem norm_ofMatrix_diagonal [DecidableEq n] (d : n → A) : ‖ofMatrix (diagonal d)‖ = ‖d‖ := by
+  refine le_antisymm ?_ ((pi_norm_le_iff_of_nonneg (norm_nonneg _)).mpr fun i => by
+    simpa using norm_entry_le_norm (M := ofMatrix (diagonal d)) (i := i) (j := i))
   rw [norm_def]
   refine (toCLM (ofMatrix (diagonal d))).opNorm_le_bound (norm_nonneg d) fun v => ?_
   refine (sq_le_sq₀ (norm_nonneg _) (mul_nonneg (norm_nonneg d) (norm_nonneg v))).mp ?_
   rw [WithCStarModule.pi_norm_sq, mul_pow, WithCStarModule.pi_norm_sq]
-  have hsum :
-      ∑ j, inner A (toCLM (ofMatrix (diagonal d)) v j) (toCLM (ofMatrix (diagonal d)) v j) ≤
-        ‖d‖ ^ 2 • ∑ j, inner A (v j) (v j) := by
+  have hsum : ∑ j, inner A (toCLM (ofMatrix (diagonal d)) v j) (toCLM (ofMatrix (diagonal d)) v j) ≤
+      ‖d‖ ^ 2 • ∑ j, inner A (v j) (v j) := by
     rw [Finset.smul_sum]
     refine Finset.sum_le_sum fun j _ => ?_
     have happly : toCLM (ofMatrix (diagonal d)) v j = v j * d j := by
@@ -203,14 +268,34 @@ theorem norm_ofMatrix_diagonal_le [DecidableEq n] (d : n → A) :
     CStarAlgebra.norm_le_norm_of_le_of_nonneg hsum
       (Finset.sum_nonneg fun _ _ => CStarModule.inner_self_nonneg)
 
-/-- The operator norm of a diagonal matrix in `CStarMatrix n n A` equals the supremum norm of its
-diagonal. -/
+section Euclidean
+
+open scoped ComplexOrder
+
+variable {m : Type*} [Fintype m] [DecidableEq m]
+
+/-- The natural `⋆`-algebra equivalence `CStarMatrix m m ℂ ≃⋆ₐ[ℂ] (EuclideanSpace ℂ m →L[ℂ] _)`. -/
+noncomputable def toEuclideanCLM :
+    CStarMatrix m m ℂ ≃⋆ₐ[ℂ] (EuclideanSpace ℂ m →L[ℂ] EuclideanSpace ℂ m) :=
+  ofMatrixStarAlgEquiv.symm.trans (Matrix.toEuclideanCLM (n := m) (𝕜 := ℂ))
+
+/-- `toEuclideanCLM` acts on an underlying matrix via `Matrix.toEuclideanCLM`. -/
+theorem toEuclideanCLM_apply (x : CStarMatrix m m ℂ) :
+    toEuclideanCLM x = Matrix.toEuclideanCLM (n := m) (𝕜 := ℂ) (ofMatrix.symm x) := (rfl)
+
+/-- `toEuclideanCLM` is isometric between the C⋆-matrix norm and Euclidean operator norm. -/
 @[simp]
-theorem norm_ofMatrix_diagonal [DecidableEq n] (d : n → A) :
-    ‖ofMatrix (diagonal d)‖ = ‖d‖ := by
-  refine le_antisymm (norm_ofMatrix_diagonal_le d) ?_
-  rw [pi_norm_le_iff_of_nonneg (norm_nonneg _)]
-  intro i
-  simpa using norm_entry_le_norm (M := ofMatrix (diagonal d)) (i := i) (j := i)
+theorem norm_toEuclideanCLM (x : CStarMatrix m m ℂ) : ‖toEuclideanCLM x‖ = ‖x‖ :=
+  StarAlgEquiv.norm_map toEuclideanCLM x
+
+/-- The operator trace of `toEuclideanCLM x` equals the matrix trace of `x`. -/
+@[simp]
+theorem trace_toEuclideanCLM (x : CStarMatrix m m ℂ) :
+    LinearMap.trace ℂ (EuclideanSpace ℂ m) (toEuclideanCLM x).toLinearMap =
+      Matrix.trace (ofMatrix.symm x) := by
+  rw [toEuclideanCLM_apply, Matrix.coe_toEuclideanCLM_eq_toEuclideanLin,
+    Matrix.toEuclideanLin_eq_toLin_orthonormal, Matrix.trace_toLin_eq]
+
+end Euclidean
 
 end CStarMatrix
