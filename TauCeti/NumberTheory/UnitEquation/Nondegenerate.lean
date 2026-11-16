@@ -37,7 +37,9 @@ elementary manipulations used to reduce general solutions to nondegenerate ones:
 * `TauCeti.isNondegenerateHomogeneousSolution_option_iff`: dehomogenization, adjoining the term
   `-1 · 1`;
 * `TauCeti.IsNondegenerateHomogeneousSolution.merge`: two proportional unknowns may be merged into
-  one, as in the induction proving finiteness of the ratios `xᵢ / xⱼ`.
+  one, as in the induction proving finiteness of the ratios `xᵢ / xⱼ`;
+* `TauCeti.exists_minimal_vanishing_subsum`: a vanishing sum with a nonzero term has a minimal
+  vanishing subsum with at least two terms.
 
 ## References
 
@@ -173,6 +175,29 @@ theorem isNondegenerateSolution_fin_two_iff {α x : Fin 2 → R} :
     exact h0 (by rw [← mul_one (α 0 * x 0), h10, mul_zero])
 
 end Semiring
+
+/-- A vanishing sum `∑ fᵢ = 0` with a nonzero term has a minimal vanishing subsum with at least two
+terms: an index set `I` with `∑ i ∈ I, fᵢ = 0` such that no nonempty proper subset of `I` has
+vanishing sum. Applied to a linear relation `∑ cᵢxᵢ = 0` among the unknowns of a unit equation,
+it yields a nondegenerate homogeneous solution in fewer unknowns. -/
+theorem exists_minimal_vanishing_subsum {M : Type*} [AddCommMonoid M] {f : ι → M}
+    (h : ∑ i, f i = 0) (hf : f ≠ 0) :
+    ∃ I : Finset ι, 2 ≤ #I ∧ ∑ i ∈ I, f i = 0 ∧ ∀ J ⊂ I, J.Nonempty → ∑ i ∈ J, f i ≠ 0 := by
+  classical
+  -- Choose `I` of least cardinality among the nonempty vanishing subsums of nonzero terms.
+  let s := univ.filter (f · ≠ 0)
+  let F := s.powerset.filter fun J ↦ J.Nonempty ∧ ∑ i ∈ J, f i = 0
+  have hsF : s ∈ F := by
+    obtain ⟨i, hi⟩ := Function.ne_iff.mp hf
+    exact mem_filter.mpr ⟨mem_powerset_self s, ⟨i, by simpa [s] using hi⟩,
+      by rw [sum_filter_ne_zero, h]⟩
+  obtain ⟨I, hIF, hImin⟩ := F.exists_min_image card ⟨s, hsF⟩
+  obtain ⟨hIs, hIne, hI0⟩ : I ⊆ s ∧ I.Nonempty ∧ ∑ i ∈ I, f i = 0 := by simpa [F] using hIF
+  refine ⟨I, ?_, hI0, fun J hJI hJ hJ0 ↦ ?_⟩
+  · by_contra! hI
+    obtain ⟨i, rfl⟩ := card_eq_one.mp (le_antisymm (Nat.lt_succ_iff.mp hI) hIne.card_pos)
+    exact (by simpa [s] using hIs (mem_singleton_self i) : f i ≠ 0) (by simpa using hI0)
+  · exact (card_lt_card hJI).not_ge (hImin J (by simpa [F, hJ, hJ0] using hJI.subset.trans hIs))
 
 namespace IsNondegenerateHomogeneousSolution
 
