@@ -33,11 +33,11 @@ Differential operators are taken in Grothendieck's sense (`TauCeti.differentialO
 operators all of whose `(m + 1)`-fold commutators with multiplication operators vanish. They are
 local, and on a boundaryless manifold they preserve compact supports, which makes formal
 transposes of differential operators reverse compositions. For a measure that is positive on open
-sets and finite on compact sets of a Hausdorff σ-compact manifold, a differential operator has at
-most one formal transpose that is a differential operator, and it has the same order and principal
-symbol `ξ ↦ (-1) ^ m σ(ξ)`. Indeed, since multiplication operators are their own transposes, the
-transpose of a commutator `[D, a]` is `-[D', a]`, so the `m`-fold commutators of `D'` are `(-1) ^ m`
-times those of `D`.
+sets and finite on compact sets of a Hausdorff σ-compact boundaryless manifold, a differential
+operator has at most one formal transpose that is a differential operator, and it has the same
+order and principal symbol `ξ ↦ (-1) ^ m σ(ξ)`. Indeed, since multiplication operators are their
+own transposes, the transpose of a commutator `[D, a]` is `-[D', a]`, so the `m`-fold commutators
+of `D'` are `(-1) ^ m` times those of `D`.
 
 On a finite-dimensional real vector space `E` with an additive Haar measure, every differential
 operator of order at most `m` has a formal transpose of order at most `m`. The proof writes the
