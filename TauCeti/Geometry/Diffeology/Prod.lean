@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.ConstMulAction
 public import Mathlib.Topology.CompactOpen
+public import TauCeti.Geometry.Diffeology.Basic
 public import TauCeti.Geometry.Diffeology.Quotient
 
 /-!

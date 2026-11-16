@@ -246,6 +246,10 @@ theorem toHomeomorph_injective : Injective (toHomeomorph : DSmoothEquiv X Y → 
 @[simp, grind =] theorem toHomeomorph_symm (e : DSmoothEquiv X Y) :
     e.symm.toHomeomorph = e.toHomeomorph.symm := (rfl)
 
+@[simp, grind =] theorem coe_toHomeomorph_symm (e : DSmoothEquiv X Y) :
+    ⇑e.toHomeomorph.symm = ⇑e.symm := by
+  rw [← toHomeomorph_symm, coe_toHomeomorph]
+
 @[simp] theorem toHomeomorph_trans [TopologicalSpace Z] [IsDTopologyCompatible Z]
     (e₁ : DSmoothEquiv X Y) (e₂ : DSmoothEquiv Y Z) :
     (e₁.trans e₂).toHomeomorph = e₁.toHomeomorph.trans e₂.toHomeomorph :=
@@ -308,7 +312,8 @@ def uniqueProd [Unique X] : DSmoothEquiv (X × Y) Y :=
 @[simp, grind =] theorem uniqueProd_symm_apply [Unique X] (y : Y) :
     (uniqueProd X Y).symm y = (default, y) := (rfl)
 @[simp] theorem toEquiv_uniqueProd [Unique X] :
-    (uniqueProd X Y).toEquiv = Equiv.uniqueProd Y X := (rfl)
+    (uniqueProd X Y).toEquiv = Equiv.uniqueProd Y X := by
+  simp [uniqueProd, prodComm]
 
 end DSmoothEquiv
 

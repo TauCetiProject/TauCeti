@@ -23,7 +23,7 @@ diffeological spaces and functional diffeologies:
   `TauCeti.Diffeology.DSmoothMap.mulLeft` and `TauCeti.Diffeology.DSmoothMap.mulRight`
   (`TauCeti.toDSmoothMap_smoothLeftMul`, `TauCeti.toDSmoothMap_smoothRightMul`), so the left- and
   right-translation families `G → DSmoothMap G G` are smooth for the functional diffeology
-  (`TauCeti.dSmooth_smoothLeftMul_toDSmoothMap`, `TauCeti.dSmooth_smoothRightMul_toDSmoothMap`).
+  (`TauCeti.dSmooth_toDSmoothMap_smoothLeftMul`, `TauCeti.dSmooth_toDSmoothMap_smoothRightMul`).
 
 ## References
 
@@ -80,7 +80,7 @@ theorem toDSmoothMap_smoothRightMul [Mul G] [ContMDiffMul I ∞ G] (g : G) :
 /-- Left translation `g ↦ (smoothLeftMul I g).toDSmoothMap` on a manifold-compatible space with
 smooth multiplication is smooth into the functional diffeology `DSmoothMap G G`. -/
 @[fun_prop]
-theorem dSmooth_smoothLeftMul_toDSmoothMap [Mul G] [ContMDiffMul I ∞ G] :
+theorem dSmooth_toDSmoothMap_smoothLeftMul [Mul G] [ContMDiffMul I ∞ G] :
     DSmooth (fun g : G ↦ (smoothLeftMul I g).toDSmoothMap) := by
   simp_rw [toDSmoothMap_smoothLeftMul]
   exact Diffeology.DSmoothMap.dSmooth_mulLeft (dSmooth_mul I)
@@ -88,7 +88,7 @@ theorem dSmooth_smoothLeftMul_toDSmoothMap [Mul G] [ContMDiffMul I ∞ G] :
 /-- Right translation `g ↦ (smoothRightMul I g).toDSmoothMap` on a manifold-compatible space with
 smooth multiplication is smooth into the functional diffeology `DSmoothMap G G`. -/
 @[fun_prop]
-theorem dSmooth_smoothRightMul_toDSmoothMap [Mul G] [ContMDiffMul I ∞ G] :
+theorem dSmooth_toDSmoothMap_smoothRightMul [Mul G] [ContMDiffMul I ∞ G] :
     DSmooth (fun g : G ↦ (smoothRightMul I g).toDSmoothMap) := by
   simp_rw [toDSmoothMap_smoothRightMul]
   exact Diffeology.DSmoothMap.dSmooth_mulRight (dSmooth_mul I)

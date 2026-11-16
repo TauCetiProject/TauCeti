@@ -111,6 +111,12 @@ theorem toDSmoothEquiv_injective :
 @[simp] theorem toDSmoothEquiv_symm (e : M ≃ₘ^∞⟮I, J⟯ N) :
     e.symm.toDSmoothEquiv = e.toDSmoothEquiv.symm :=
   DSmoothEquiv.ext fun _ ↦ e.toDSmoothEquiv.eq_symm_apply.mpr (by simp)
+@[simp, grind =] theorem coe_toDSmoothEquiv_symm (e : M ≃ₘ^∞⟮I, J⟯ N) :
+    ⇑e.toDSmoothEquiv.symm = ⇑e.symm := by
+  rw [← toDSmoothEquiv_symm, coe_toDSmoothEquiv]
+@[simp, grind =] theorem toDSmoothEquiv_symm_apply (e : M ≃ₘ^∞⟮I, J⟯ N) (y : N) :
+    e.toDSmoothEquiv.symm y = e.symm y :=
+  congrFun e.coe_toDSmoothEquiv_symm y
 @[simp] theorem toDSmoothEquiv_trans (e₁ : M ≃ₘ^∞⟮I, J⟯ N) (e₂ : N ≃ₘ^∞⟮J, K⟯ P) :
     (e₁.trans e₂).toDSmoothEquiv = e₁.toDSmoothEquiv.trans e₂.toDSmoothEquiv :=
   DSmoothEquiv.ext fun _ ↦ by simp
@@ -212,7 +218,7 @@ def toDiffeomorph (e : DSmoothEquiv M N) : M ≃ₘ^∞⟮I, J⟯ N :=
 theorem toDiffeomorph_injective : Injective (toDiffeomorph : DSmoothEquiv M N → (M ≃ₘ^∞⟮I, J⟯ N)) :=
   fun _ _ h ↦ ext fun x ↦ congr($(h) x)
 
-@[simp] theorem coe_toDiffeomorph_contMDiffMap (e : DSmoothEquiv M N) :
+@[simp] theorem toContMDiffMap_toDiffeomorph (e : DSmoothEquiv M N) :
     ((e.toDiffeomorph : M ≃ₘ^∞⟮I, J⟯ N) : C^∞⟮I, M; J, N⟯) = e.toDSmoothMap.toContMDiffMap :=
   ContMDiffMap.ext fun _ ↦ by simp
 @[simp] theorem toDiffeomorph_refl :
@@ -221,6 +227,12 @@ theorem toDiffeomorph_injective : Injective (toDiffeomorph : DSmoothEquiv M N �
 @[simp] theorem toDiffeomorph_symm (e : DSmoothEquiv M N) :
     (e.symm.toDiffeomorph : N ≃ₘ^∞⟮J, I⟯ M) = (e.toDiffeomorph : M ≃ₘ^∞⟮I, J⟯ N).symm :=
   Diffeomorph.ext fun _ ↦ EquivLike.injective (e.toDiffeomorph : M ≃ₘ^∞⟮I, J⟯ N) (by simp)
+@[simp, grind =] theorem coe_toDiffeomorph_symm (e : DSmoothEquiv M N) :
+    ⇑(e.toDiffeomorph : M ≃ₘ^∞⟮I, J⟯ N).symm = ⇑e.symm := by
+  rw [← toDiffeomorph_symm, coe_toDiffeomorph]
+@[simp, grind =] theorem toDiffeomorph_symm_apply (e : DSmoothEquiv M N) (y : N) :
+    (e.toDiffeomorph : M ≃ₘ^∞⟮I, J⟯ N).symm y = e.symm y :=
+  congrFun e.coe_toDiffeomorph_symm y
 
 variable (J) in
 theorem toDiffeomorph_trans [FiniteDimensional ℝ E'] [IsManifold K ∞ P] [BoundarylessManifold K P]

@@ -54,7 +54,8 @@ theorem continuous_dTopology_iff {X W : Type*} [DiffeologicalSpace X] [tW : Topo
 /-- Every map from a Cartesian space into a subsingleton diffeological space is a plot. -/
 theorem isPlot_of_subsingleton {X : Type*} [DiffeologicalSpace X] [Subsingleton X] {n : ℕ}
     (p : 𝔼ⁿ → X) : IsPlot p := by
-  convert isPlot_const (x := p 0)
+  rw [Subsingleton.elim p fun _ ↦ p 0]
+  exact isPlot_const
 
 /-- Every map into a subsingleton diffeological space is smooth. -/
 theorem dSmooth_of_subsingleton {X Y : Type*} [DiffeologicalSpace X] [DiffeologicalSpace Y]
@@ -83,11 +84,6 @@ instance instDiffeologicalSpacePUnit : DiffeologicalSpace PUnit where
   locality _ := mem_univ _
   dTopology := inferInstance
   isOpen_iff_preimages_plots {u} :=
-    ⟨fun _ _ p _ ↦ by
-      rcases u.eq_empty_or_nonempty with rfl | ⟨x, hx⟩
-      · exact isOpen_empty
-      · convert isOpen_univ
-        exact eq_univ_of_forall fun z ↦ mem_preimage.mpr (Subsingleton.elim x (p z) ▸ hx),
-      fun _ ↦ trivial⟩
+    ⟨fun hu _ _ _ ↦ IsOpen.preimage continuous_of_indiscreteTopology hu, fun _ ↦ isOpen_discrete u⟩
 
 end TauCeti.Diffeology

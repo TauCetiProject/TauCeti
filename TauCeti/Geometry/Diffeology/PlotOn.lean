@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Diffeology.Basic
+public import Mathlib.Geometry.Diffeology.Basic
 
 /-!
 # Plots on subsets of Cartesian spaces

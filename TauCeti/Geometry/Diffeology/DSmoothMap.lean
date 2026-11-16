@@ -322,13 +322,13 @@ def evalAt (x : X) : DSmoothMap (DSmoothMap X Y) Y :=
 @[simp, grind =] theorem evalAt_apply (x : X) (f : DSmoothMap X Y) : evalAt x f = f x := (rfl)
 
 /-- Evaluating a smooth map at a fixed point `x : X` is smooth on `DSmoothMap X Y`. -/
-@[fun_prop] theorem dSmooth_evalAt (x : X) : DSmooth (fun f : DSmoothMap X Y ↦ f x) :=
+@[fun_prop] theorem dSmooth_eval_const (x : X) : DSmooth (fun f : DSmoothMap X Y ↦ f x) :=
   (evalAt x).dSmooth
 
 /-- Evaluating a smooth family `f : Z → DSmoothMap X Y` at a fixed point `x : X` is smooth. -/
 @[fun_prop] protected theorem _root_.Diffeology.DSmooth.eval_const {f : Z → DSmoothMap X Y}
     (hf : DSmooth f) (x : X) : DSmooth (f · x) :=
-  (dSmooth_evalAt x).comp hf
+  (dSmooth_eval_const x).comp hf
 
 /-- Composition `DSmoothMap Y Z × DSmoothMap X Y → DSmoothMap X Z` is smooth. -/
 @[fun_prop] theorem dSmooth_comp :
@@ -434,7 +434,7 @@ def constMap (X Y : Type*) [DiffeologicalSpace X] [DiffeologicalSpace Y] :
 theorem isInduction_const [Nonempty X] : IsInduction (const X : Y → DSmoothMap X Y) where
   injective y₁ y₂ h := let ⟨x₀⟩ := ‹Nonempty X›; congr($(h) x₀)
   isPlot_iff {n p} := ⟨fun hp ↦ dSmooth_const n p hp,
-    fun hp ↦ let ⟨x₀⟩ := ‹Nonempty X›; (dSmooth_evalAt x₀) n (const X ∘ p) hp⟩
+    fun hp ↦ let ⟨x₀⟩ := ‹Nonempty X›; (dSmooth_eval_const x₀) n (const X ∘ p) hp⟩
 
 /-- When `X` has a unique element, evaluation at `default` identifies `DSmoothMap X Y` with `Y`
 as a diffeological space, with inverse `DSmoothMap.constMap`. -/
@@ -496,7 +496,7 @@ instance instContinuousEvalConst
     [TopologicalSpace (DSmoothMap X Y)] [IsDTopologyCompatible (DSmoothMap X Y)]
     [TopologicalSpace Y] [IsDTopologyCompatible Y] :
     ContinuousEvalConst (DSmoothMap X Y) X Y where
-  continuous_eval_const x := (dSmooth_evalAt x).continuous'
+  continuous_eval_const x := (dSmooth_eval_const x).continuous'
 
 /-- When `DSmoothMap X Y × X` and `Y` carry topologies compatible with their D-topologies (for
 instance when `DSmoothMap X Y` and `X` are D-topology-compatible and `X` is locally compact), joint
