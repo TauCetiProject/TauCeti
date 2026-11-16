@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.AlmostComplex.Capping
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Exchange
+import TauCeti.Geometry.Manifold.ContMDiff.Prod
 
 /-!
 # Almost complex structures along the input-exchange family
@@ -49,7 +50,9 @@ main results are:
   the end lift `c + φ_∞`. These are the end coordinates in which the members of
   `TauCeti.Floer.exchangePerturbation` are `H_q(t) dt`.
 * `TauCeti.Floer.contMDiffAt_exchangeAlmostComplex`: for period-one `C^n` end families, the family
-  is `C^n` jointly in the parameter `-1 < c < 2`, the domain point of `S` and the point `x`.
+  is `C^n` jointly in the parameter `-1 < c < 2`, the domain point of `S` and the point `x`; for a
+  normed space `V`, `TauCeti.Floer.contDiffAt_exchangeAlmostComplex` is the same statement with the
+  domain point read in real coordinates.
 * `TauCeti.Floer.isComplexLinearMap_perturbedFDeriv_exchange_one`: for a symplectic vector space
   target, if `u` solves the Floer equation at `σ(z)` for the pair-of-pants data with exchanged
   inputs, then `u ∘ σ` solves it at `z` for the member `c = 1` of the family, perturbation and
@@ -297,6 +300,24 @@ theorem contMDiffAt_exchangeAlmostComplex (h₀ : ω.Compatible J₀) {n : ℕ�
         pairOfPantsAlmostComplex_update_inf_base_eq (hJb := hJ) h₀ hw₀ hw₁,
         negativePlaneAlmostComplex_eq_of_norm_le h₀ hle]
     · rw [exchangeAlmostComplex_of_lt_norm h₀ hgt]
+
+/-- **The family is smooth in real coordinates.** For period-one families `J q t x` of `ω`-tame
+structures on a normed space `V` which are `C^n` on `ℝ × V`, the input-exchange family is `C^n`
+jointly in the parameter `c`, the domain point of `S = ℂ ∖ {0, 1}`, in real coordinates, and the
+point `x`, at every parameter `-1 < c < 2`. -/
+theorem contDiffAt_exchangeAlmostComplex (h₀ : ω.Compatible J₀) {n : ℕ∞}
+    {J : Puncture → ℝ → V → AlmostComplexStructure V} {hJ : ∀ q t x, ω.Tames (J q t x)}
+    (hJp : ∀ q, Periodic (J q) 1)
+    (hJs : ∀ q, ContDiff ℝ n fun p : ℝ × V ↦ (J q p.1 p.2).toLinearMap.toContinuousLinearMap)
+    {c : ℝ} (hc : c ∈ Ioo (-1) 2) {z : ℝ × ℝ} (hz : z ∈ thricePuncturedSphereReal) (x : V) :
+    ContDiffAt ℝ n (fun p : ℝ × ((ℝ × ℝ) × V) ↦ (exchangeAlmostComplex h₀ J hJ p.1
+      (Complex.equivRealProdCLM.symm p.2.1) p.2.2).toLinearMap.toContinuousLinearMap)
+      (c, (z, x)) := by
+  have h := contMDiffAt_exchangeAlmostComplex (I := 𝓘(ℝ, V)) (hJ := hJ) h₀ hJp
+    (fun q ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hJs q).contMDiff) hc ⟨_, hz⟩ x
+  have h' := h.comp (c, (z, x)) (contMDiff_prodMap_id_prodMap_equivRealProdCLM_symm (V := V)
+    (n := n)).contMDiffAt
+  exact contMDiffAt_iff_contDiffAt.1 h'
 
 end Smooth
 

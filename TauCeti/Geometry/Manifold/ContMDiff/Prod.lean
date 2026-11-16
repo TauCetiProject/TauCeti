@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.ContMDiff.Defs
+public import Mathlib.Analysis.Complex.Basic
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 
@@ -34,6 +35,8 @@ compact slice `{x} × K` is `C^n` on a product of open neighbourhoods of `x` and
   a product `(E₁ × E₂) × N₃` with an arbitrary manifold `N₃`.
 * `TauCeti.exists_isOpen_prod_contMDiffOn`: the tube lemma for maps from a product which are
   `C^n` along a compact slice.
+* `TauCeti.contMDiff_prodMap_id_prodMap_equivRealProdCLM_symm`: reading the complex factor of
+  `ℝ × ℂ × V` in real coordinates is `C^n` from the self-model of `ℝ × (ℝ × ℝ) × V`.
 
 -/
 
@@ -147,5 +150,23 @@ theorem contMDiffAt_extChartAt_symm_comp_extChartAt_prod [I'.Boundaryless] (a : 
     exact contMDiffWithinAt_extChartAt_symm_range_self a
   have hcomp := hinv.comp_of_eq hinner hφ0
   simpa only [Function.comp_def] using hcomp
+
+section RealCoords
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+
+/-- Reading the domain point in real coordinates is smooth: the map `(c, z, x) ↦ (c, z, x)` from
+`ℝ × (ℝ × ℝ) × V` to `ℝ × ℂ × V` is `C^n` from the self-model of the product to the product of the
+self-models. Composing with it turns the smoothness of data on `ℝ × ℂ × V` into smoothness in real
+coordinates. -/
+theorem contMDiff_prodMap_id_prodMap_equivRealProdCLM_symm :
+    ContMDiff 𝓘(ℝ, ℝ × ((ℝ × ℝ) × V)) (𝓘(ℝ, ℝ).prod (𝓘(ℝ, ℂ).prod 𝓘(ℝ, V))) n
+      (Prod.map id (Prod.map Complex.equivRealProdCLM.symm id) :
+        ℝ × ((ℝ × ℝ) × V) → ℝ × (ℂ × V)) :=
+  contDiff_fst.contMDiff.prodMk
+    ((Complex.equivRealProdCLM.symm.contDiff.comp (contDiff_fst.comp contDiff_snd)).contMDiff.prodMk
+      (contDiff_snd.comp contDiff_snd).contMDiff)
+
+end RealCoords
 
 end TauCeti
