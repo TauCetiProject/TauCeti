@@ -28,6 +28,9 @@ and the darts in `S`. More generally, a set `A` of vertices together with a reve
 vertices, `Γ.inducedDarts C` is the set of darts with both endpoints in `C`: the darts of the
 subgraph induced on `C`.
 
+A map of vertices that joins the two ends of every dart by a path joins the two ends of every path
+(`SerreGraph.nonempty_path_of_path`).
+
 In a graph all of whose darts are loops, such as the graph `noEdge V` with the vertices `V` and no
 edges, a path never leaves its starting vertex. Such a graph is preconnected exactly when it has
 at most one vertex, and connected exactly when it has exactly one: the empty graph is
@@ -287,6 +290,18 @@ theorem eq_of_path_of_forall_src_eq_tgt (h : ∀ e, Γ.src e = Γ.tgt e) {a b : 
   induction p with
   | nil => rfl
   | cons _ e ih => exact ih.trans (e.2.1.symm.trans ((h e.1).trans e.2.2))
+
+variable {Γ} in
+/-- A map of vertices that joins the two ends of every dart by a path joins the two ends of every
+path by a path. -/
+theorem nonempty_path_of_path {Δ : SerreGraph.{w, x}} (f : Γ.V → Δ.V)
+    (hf : ∀ e : Γ.E, Nonempty (Δ.Path (f (Γ.src e)) (f (Γ.tgt e)))) {a b : Γ.V}
+    (p : Γ.Path a b) : Nonempty (Δ.Path (f a) (f b)) := by
+  induction p with
+  | nil => exact ⟨.nil⟩
+  | cons _ e ih =>
+    obtain ⟨e, rfl, rfl⟩ := e
+    exact ih.elim fun P => (hf e).elim fun Q => ⟨P.comp Q⟩
 
 /-- A preconnected Serre graph without darts has at most one vertex. -/
 theorem Preconnected.subsingleton_of_isEmpty {Γ : SerreGraph.{u, v}} [IsEmpty Γ.E]
