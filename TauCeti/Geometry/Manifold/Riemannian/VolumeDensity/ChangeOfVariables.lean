@@ -10,9 +10,12 @@ public import TauCeti.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 public import Mathlib.Analysis.InnerProductSpace.NormDet
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
+import Mathlib.Analysis.Calculus.FDeriv.Measurable
+import Mathlib.Analysis.Matrix.MeasurableSpace
 import TauCeti.Geometry.Manifold.ChartedSpace
 import TauCeti.Geometry.Manifold.Polish
 import TauCeti.MeasureTheory.Covering.DisjointCover
+import TauCeti.MeasureTheory.Constructions.BorelSpace.Basic
 
 /-!
 # Change of variables for the Riemannian volume
@@ -60,8 +63,9 @@ orientation is used, and `M` may have boundary or corners.
 * `Module.Basis.map_withDensity_riemannianJacobian_of_injOn` and
   `Module.Basis.restrict_map_withDensity_riemannianJacobian_of_injOn`: the corresponding
   pushforward identities for the map and its subtype restriction.
-* `Module.Basis.aemeasurable_riemannianJacobian`: almost everywhere measurability of the
-  Jacobian weight on a carrier of pointwise differentiability.
+* `Module.Basis.measurable_restrict_riemannianJacobian` and
+  `Module.Basis.aemeasurable_riemannianJacobian`: measurability of the Jacobian restricted to a
+  carrier of pointwise continuity, and almost everywhere measurability for any source measure.
 * `Module.Basis.setIntegral_riemannianVolume_image_of_injOn` and
   `Module.Basis.integrableOn_riemannianVolume_image_iff_of_injOn`: Bochner change of variables
   and integrability on measurable injective carriers of pointwise differentiable maps.
@@ -77,7 +81,23 @@ orientation is used, and `M` may have boundary or corners.
   `IsLocalDiffeomorphOn.integrableOn_riemannianVolume_image_iff`: the corresponding formulas
   for local diffeomorphisms injective on measurable sets.
 
+The measurable-carrier change of variables and the subtype-pushforward proofs for Bochner
+integration and integrability follow Sébastien Gouëzel's development in
+`Mathlib.MeasureTheory.Function.Jacobian`, following Fremlin, *Measure Theory*, Vol. 2.
+The central Euclidean results used or followed are
+`MeasureTheory.aemeasurable_ofReal_abs_det_fderivWithin`,
+`MeasureTheory.lintegral_image_eq_lintegral_abs_det_fderiv_mul`,
+`MeasureTheory.map_withDensity_abs_det_fderiv_eq_addHaar`,
+`MeasureTheory.restrict_map_withDensity_abs_det_fderiv_eq_addHaar`,
+`MeasureTheory.integral_image_eq_integral_abs_det_fderiv_smul`, and
+`MeasureTheory.integrableOn_image_iff_integrableOn_abs_det_fderiv_smul`.
+Measurability in arbitrary dimensions uses `measurable_fderiv_apply_const` from
+`Mathlib.Analysis.Calculus.FDeriv.Measurable` by Sébastien Gouëzel and Yury Kudryashov.
+
 ## References
+
+* D. H. Fremlin, *Measure Theory*, Vol. 2.
+* Sébastien Gouëzel, `Mathlib.MeasureTheory.Function.Jacobian`.
 
 * J. M. Lee, *Introduction to Riemannian Manifolds*, 2nd ed., Springer GTM 176 (2018), Chapter 2.
 -/
@@ -371,98 +391,128 @@ private theorem setLIntegral_riemannianVolume_image_of_subset_chart
   simp only [Function.comp_apply]
   rw [riemannianJacobian_comp_continuousLinearEquiv A c (hf _ hx), hcb]
 
-omit [MeasurableSpace M] [BorelSpace M] [LindelofSpace M] in
-private theorem aemeasurable_ofReal_riemannianJacobian_of_model
-    (b : Module.Basis ι ℝ E) {f : E → M} {s : Set E} (hs : MeasurableSet s)
-    (hf : ∀ x ∈ s, MDifferentiableAt 𝓘(ℝ, E) I f x) :
-    AEMeasurable (fun x ↦ ENNReal.ofReal (riemannianJacobian (I := I) b f x))
-      (b.addHaar.restrict s) := by
-  have hc : ContinuousOn f s := fun x hx ↦ (hf x hx).continuousAt.continuousWithinAt
+omit [MeasurableSpace M] [BorelSpace M] [LindelofSpace M]
+  [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
+  [MeasurableSpace F] [BorelSpace F] in
+private theorem gram_mfderiv_eq_chart_matrix (b : Module.Basis ι ℝ F)
+    {f : F → M} {x : F} {α : M} (hc : ContinuousAt f x)
+    (hx : f x ∈ (chartAt H α).source) :
+    Matrix.gram ℝ (fun i ↦ mfderiv 𝓘(ℝ, F) I f x (b i)) =
+      (LinearMap.toMatrix b (Module.finBasis ℝ E)
+        (fderiv ℝ (extChartAt I α ∘ f) x).toLinearMap).transpose *
+      chartGramMatrix (I := I) α (f x) *
+      LinearMap.toMatrix b (Module.finBasis ℝ E)
+        (fderiv ℝ (extChartAt I α ∘ f) x).toLinearMap := by
+  have hα : f x ∈ (trivializationAt E (TangentSpace I) α).baseSet := by
+    simpa only [TangentBundle.trivializationAt_baseSet] using hx
+  let bα := (trivializationAt E (TangentSpace I) α).basisAt (Module.finBasis ℝ E) hα
+  let D : F →L[ℝ] TangentSpace I (f x) := mfderiv 𝓘(ℝ, F) I f x
+  have hmat : LinearMap.toMatrix b bα D.toLinearMap =
+      LinearMap.toMatrix b (Module.finBasis ℝ E)
+        (fderiv ℝ (extChartAt I α ∘ f) x).toLinearMap := by
+    ext k i
+    simp only [LinearMap.toMatrix_apply, bα, Trivialization.basisAt,
+      Module.Basis.map_repr, LinearEquiv.trans_apply, LinearEquiv.symm_symm,
+      Trivialization.linearEquivAt_apply]
+    rw [← Trivialization.continuousLinearMapAt_apply_of_mem (R := ℝ) _ hα,
+      TangentBundle.continuousLinearMapAt_trivializationAt hx]
+    -- `mfderiv` uses tangent spaces of `F` and `E`; the coordinate equality reads them as
+    -- the normed spaces themselves, so transport it through the basis coordinates directly.
+    exact congrArg (fun v : E ↦ (Module.finBasis ℝ E).repr v k)
+      (hc.fderiv_extChartAt_comp_apply (by simpa only [extChartAt_source] using hx) (b i)).symm
+  have hgram : Matrix.gram ℝ (fun i ↦ D (b i)) = LinearMap.BilinForm.toMatrix b
+      (LinearMap.BilinForm.comp (innerₗ (TangentSpace I (f x))) D.toLinearMap D.toLinearMap) := by
+    ext i j
+    simp [Matrix.gram_apply, LinearMap.BilinForm.toMatrix_apply]
+  -- Read the source tangent space as `F` so the matrix identity matches `D`.
+  change Matrix.gram ℝ (fun i ↦ D (b i)) = _
+  rw [hgram, LinearMap.BilinForm.toMatrix_comp bα b, hmat,
+    ← chartGramMatrix_eq_toMatrix α hα]
+
+omit [MeasurableSpace M] [BorelSpace M] [LindelofSpace M] [BorelSpace F] in
+private theorem measurable_restrict_riemannianJacobian_of_subset_chart [OpensMeasurableSpace F]
+    (b : Module.Basis ι ℝ F) {f : F → M} {s : Set F} {α : M}
+    (hf : ∀ x ∈ s, ContinuousAt f x) (hmap : MapsTo f s (chartAt H α).source) :
+    Measurable (s.domRestrict (riemannianJacobian (I := I) b f)) := by
+  have : FiniteDimensional ℝ F := b.finiteDimensional_of_finite
   have : IsManifold I (0 + 1) M := by
     simpa using (inferInstance : IsManifold I 1 M)
   have : IsContMDiffRiemannianBundle I 0 E (fun x : M ↦ TangentSpace I x) :=
     IsContinuousRiemannianBundle.toIsContMDiffZero
+  let T := fun x : F ↦ LinearMap.toMatrix b (Module.finBasis ℝ E)
+    (fderiv ℝ (extChartAt I α ∘ f) x).toLinearMap
+  have hT (k i) : Measurable (fun x : s ↦ T x k i) := by
+    simp only [T, LinearMap.toMatrix_apply, ContinuousLinearMap.coe_coe]
+    exact ((Module.finBasis ℝ E).coord k).continuous_of_finiteDimensional.measurable.comp
+      ((measurable_fderiv_apply_const ℝ (extChartAt I α ∘ f) (b i)).comp
+        measurable_subtype_coe)
+  have hG (k l) : Measurable (fun x : s ↦ chartGramMatrix (I := I) α (f x) k l) := by
+    apply Continuous.measurable
+    apply ((contMDiffOn_chartGramMatrix_entry (I := I) (n := 0) α k l).continuousOn.comp
+      (fun x hx ↦ (hf x hx).continuousWithinAt) (fun x hx ↦ ?_)).domRestrict
+    simpa only [TangentBundle.trivializationAt_baseSet] using hmap hx
+  have hmat : Measurable
+      (fun x : s ↦ (T x).transpose * chartGramMatrix (I := I) α (f x) * T x) := by
+    apply Measurable.of_eval_matrix
+    intro i j
+    simp only [Matrix.mul_apply, Matrix.transpose_apply]
+    exact Finset.measurable_sum _ fun k _ ↦
+      (Finset.measurable_sum _ fun l _ ↦ (hT l i).mul (hG l k)).mul (hT k j)
+  have heq : s.domRestrict (riemannianJacobian (I := I) b f) =
+      fun x : s ↦ Real.sqrt ((T x).transpose * chartGramMatrix (I := I) α (f x) * T x).det := by
+    funext x
+    rw [Set.domRestrict_apply, riemannianJacobian_eq_sqrt_det_gram,
+      gram_mfderiv_eq_chart_matrix b (hf x x.2) (hmap x.2)]
+  rw [heq]
+  exact (continuous_id.matrix_det.measurable.comp hmat).sqrt
+
+omit [MeasurableSpace M] [BorelSpace M] [LindelofSpace M] [BorelSpace F] in
+/-- The Jacobian restricted to a carrier of pointwise continuity is measurable, with no
+restriction on the dimensions of the source and target model. -/
+theorem _root_.Module.Basis.measurable_restrict_riemannianJacobian [OpensMeasurableSpace F]
+    (b : Module.Basis ι ℝ F) {f : F → M} {s : Set F}
+    (hf : ∀ x ∈ s, ContinuousAt f x) :
+    Measurable (s.domRestrict (riemannianJacobian (I := I) b f)) := by
+  have : FiniteDimensional ℝ F := b.finiteDimensional_of_finite
+  have hc : ContinuousOn f s := fun x hx ↦ (hf x hx).continuousWithinAt
   obtain ⟨t, ht, -, hcover⟩ :=
     ((HereditarilyLindelofSpace.isLindelof s).image_of_continuousOn hc).elim_nhds_subcover
       (fun x : M ↦ (chartAt H x).source) fun x _ ↦ chart_source_mem_nhds H x
   have : Countable t := ht.to_subtype
-  let a := fun α : t ↦ f ⁻¹' (chartAt H α.val).source ∩ s
-  have ha (α : t) : MeasurableSet (a α) := by
-    dsimp only [a]
-    rw [inter_comm, ← Subtype.image_preimage_coe]
-    exact (MeasurableEmbedding.subtype_coe hs).measurableSet_image.mpr
-      ((chartAt H α.val).open_source.preimage hc.domRestrict).measurableSet
-  have hUnion : ⋃ α, a α = s := by
-    apply Subset.antisymm (iUnion_subset fun _ ↦ inter_subset_right)
-    intro x hx
-    obtain ⟨α, hα, hxα⟩ := mem_iUnion₂.mp (hcover (mem_image_of_mem f hx))
-    exact mem_iUnion.mpr ⟨⟨α, hα⟩, hxα, hx⟩
-  -- On each chart piece, the coordinate derivative is a.e. measurable and the metric is continuous.
-  have hfin : AEMeasurable (fun x ↦ ENNReal.ofReal
-      (riemannianJacobian (I := I) (Module.finBasis ℝ E) f x)) (b.addHaar.restrict s) := by
-    rw [← hUnion]
-    apply AEMeasurable.iUnion
-    intro α
-    let D := fun x ↦ (mfderiv I 𝓘(ℝ, E) (extChartAt I α.val) (f x) ∘L
-      mfderiv 𝓘(ℝ, E) I f x : E →L[ℝ] E)
-    have hD : ∀ x ∈ a α, HasFDerivWithinAt (extChartAt I α.val ∘ f) (D x) (a α) x := by
-      intro x hx
-      have h := (hf x hx.2).hasMFDerivAt.hasFDerivAt_extChartAt_comp hx.1
-      rw [TangentBundle.continuousLinearMapAt_trivializationAt hx.1] at h
-      exact h.hasFDerivWithinAt
-    have hdensity : ContinuousOn
-        (fun x ↦ ENNReal.ofReal (chartVolumeDensity (I := I) α.val (f x))) (a α) := by
-      apply ENNReal.continuous_ofReal.comp_continuousOn
-      apply (contMDiffOn_chartVolumeDensity (I := I) (n := 0) α.val).continuousOn.comp
-        (hc.mono inter_subset_right)
-      intro x hx
-      rw [TangentBundle.trivializationAt_baseSet]
-      exact hx.1
-    apply ((aemeasurable_ofReal_abs_det_fderivWithin b.addHaar (ha α) hD).mul
-      (hdensity.aemeasurable (ha α))).congr
-    filter_upwards [ae_restrict_mem (ha α)] with x hx
-    rw [riemannianJacobian_finBasis_eq_abs_det_mul_chartVolumeDensity hx.1,
-      ENNReal.ofReal_mul (abs_nonneg _)]
-    rfl
-  -- Transfer the weight from the coordinate basis to the chosen basis.
-  let e : ι ≃ Fin (Module.finrank ℝ E) :=
-    Fintype.equivFinOfCardEq (Module.finrank_eq_card_basis b).symm
-  apply (aemeasurable_const.mul hfin : AEMeasurable
-      (fun x ↦ ENNReal.ofReal |(Module.finBasis ℝ E).det (b.reindex e)| *
-        ENNReal.ofReal (riemannianJacobian (I := I) (Module.finBasis ℝ E) f x))
-      (b.addHaar.restrict s)).congr
-  exact Filter.Eventually.of_forall fun x ↦ by
-    simp only [Pi.mul_apply]
-    rw [← ENNReal.ofReal_mul (abs_nonneg _),
-      ← riemannianJacobian_changeBasis, riemannianJacobian_reindex]
+  let a := fun α : t ↦ (s.domRestrict f) ⁻¹' (chartAt H α.val).source
+  have ha (α : t) : MeasurableSet (a α) :=
+    ((chartAt H α.val).open_source.preimage hc.domRestrict).measurableSet
+  intro A hA
+  have hpre : (s.domRestrict (riemannianJacobian (I := I) b f)) ⁻¹' A =
+      ⋃ α : t, a α ∩ (s.domRestrict (riemannianJacobian (I := I) b f)) ⁻¹' A := by
+    ext x
+    obtain ⟨α, hα, hxα⟩ := mem_iUnion₂.mp (hcover (mem_image_of_mem f x.2))
+    simp only [mem_iUnion, mem_inter_iff]
+    exact ⟨fun hx ↦ ⟨⟨α, hα⟩, hxα, hx⟩, fun ⟨_, _, hx⟩ ↦ hx⟩
+  rw [hpre]
+  apply MeasurableSet.iUnion
+  intro α
+  have hm := measurable_restrict_riemannianJacobian_of_subset_chart (I := I) b (f := f) (α := α.val)
+    (s := f ⁻¹' (chartAt H α.val).source ∩ s)
+    (fun x hx ↦ hf x hx.2) (fun _ hx ↦ hx.1)
+  let j : a α → ↥(f ⁻¹' (chartAt H α.val).source ∩ s) :=
+    fun x ↦ ⟨x.val.val, x.2, x.val.2⟩
+  have hj : Measurable j :=
+    (measurable_subtype_coe.comp measurable_subtype_coe).subtype_mk
+  -- Specify the subtype map so elaboration does not unfold the Jacobian to infer it.
+  have hm' : Measurable (fun x : a α ↦ riemannianJacobian (I := I) b f x.val.val) :=
+    hm.comp (f := j) hj
+  rw [← Subtype.image_preimage_coe]
+  exact (MeasurableEmbedding.subtype_coe (ha α)).measurableSet_image.mpr (hm' hA)
 
-omit [MeasurableSpace M] [BorelSpace M] [LindelofSpace M] in
-/-- The real-valued Jacobian is almost everywhere measurable on a measurable carrier on which the
-map is differentiable at every point, when the source and target model have equal dimension. -/
-theorem _root_.Module.Basis.aemeasurable_riemannianJacobian
-    (b : Module.Basis ι ℝ F) (hdim : Module.finrank ℝ F = Module.finrank ℝ E)
-    {f : F → M} {s : Set F} (hs : MeasurableSet s)
-    (hf : ∀ x ∈ s, MDifferentiableAt 𝓘(ℝ, F) I f x) :
-    AEMeasurable (riemannianJacobian (I := I) b f) (b.addHaar.restrict s) := by
-  suffices h : AEMeasurable (fun x ↦ ENNReal.ofReal (riemannianJacobian (I := I) b f x))
-      (b.addHaar.restrict s) by
-    simpa only [ENNReal.toReal_ofReal (riemannianJacobian_nonneg b f _)] using h.ennreal_toReal
-  have : FiniteDimensional ℝ F := b.finiteDimensional_of_finite
-  let A : E ≃L[ℝ] F := ContinuousLinearEquiv.ofFinrankEq hdim.symm
-  let c := b.map A.symm.toLinearEquiv
-  have hcb : c.map A.toLinearEquiv = b := by
-    ext i
-    simp [c, Module.Basis.map_apply]
-  have hμ : Measure.map A c.addHaar = b.addHaar := by
-    rw [Module.Basis.map_addHaar, hcb]
-  have hA : MeasurableEmbedding A := A.toHomeomorph.measurableEmbedding
-  rw [← hμ, hA.restrict_map, hA.aemeasurable_map_iff]
-  apply (aemeasurable_ofReal_riemannianJacobian_of_model c
-    (hs.preimage A.continuous.measurable)
-    (fun x hx ↦ (hf (A x) hx).comp x A.differentiableAt.mdifferentiableAt)).congr
-  filter_upwards [ae_restrict_mem (hs.preimage A.continuous.measurable)] with x hx
-  simp only [Function.comp_apply,
-    riemannianJacobian_comp_continuousLinearEquiv A c (hf _ hx), hcb]
+omit [MeasurableSpace M] [BorelSpace M] [LindelofSpace M] [BorelSpace F] in
+/-- The Jacobian is almost everywhere measurable on a measurable carrier of pointwise
+continuity, for any source measure and without an equal-dimension assumption. -/
+theorem _root_.Module.Basis.aemeasurable_riemannianJacobian [OpensMeasurableSpace F]
+    (b : Module.Basis ι ℝ F) {f : F → M} {s : Set F} {μ : Measure F}
+    (hs : MeasurableSet s) (hf : ∀ x ∈ s, ContinuousAt f x) :
+    AEMeasurable (riemannianJacobian (I := I) b f) (μ.restrict s) :=
+  aemeasurable_restrict_of_measurable_subtype hs (b.measurable_restrict_riemannianJacobian hf)
 
 /-- Change of variables for an injective map differentiable at every point of a measurable
 carrier. The nonnegative weight need not be measurable, and the manifold need not be Hausdorff. -/
@@ -475,11 +525,9 @@ theorem _root_.Module.Basis.setLIntegral_riemannianVolume_image_of_injOn
   have : FiniteDimensional ℝ F := b.finiteDimensional_of_finite
   have hc : ContinuousOn f s := fun x hx ↦ (hf x hx).continuousAt.continuousWithinAt
   have : T2Space H := I.isClosedEmbedding.isEmbedding.t2Space
-  have he := hc.measurableEmbedding_chartedSpace F H hs hinj
   have himage {a : Set F} (ha : MeasurableSet a) (has : a ⊆ s) :
-      MeasurableSet (f '' a) := by
-    rw [← inter_eq_right.mpr has, ← Subtype.image_preimage_coe, ← image_comp]
-    exact he.measurableSet_image.mpr (ha.preimage measurable_subtype_coe)
+      MeasurableSet (f '' a) :=
+    ha.image_of_continuousOn_injOn_chartedSpace F H (hc.mono has) (hinj.mono has)
   -- Partition the target into disjoint measurable chart pieces and pull them back to the carrier.
   have := I.secondCountableTopology
   have := ChartedSpace.secondCountable_of_lindelof H M
@@ -490,10 +538,7 @@ theorem _root_.Module.Basis.setLIntegral_riemannianVolume_image_of_injOn
   choose c _ hcsub using hsub
   let a := fun n ↦ f ⁻¹' d n ∩ s
   have ha (n : ℕ) : MeasurableSet (a n) := by
-    dsimp only [a]
-    rw [inter_comm, ← Subtype.image_preimage_coe]
-    exact (MeasurableEmbedding.subtype_coe hs).measurableSet_image.mpr
-      (hc.domRestrict.measurable (hd n))
+    exact hc.measurableSet_preimage_inter hs (hd n)
   have has (n : ℕ) : a n ⊆ s := inter_subset_right
   have hmap (n : ℕ) : MapsTo f (a n) (chartAt H (c n)).source :=
     fun _ hx ↦ hcsub n hx.1
@@ -532,10 +577,8 @@ theorem _root_.Module.Basis.map_withDensity_riemannianJacobian_of_injOn
   have hF := (hc.aemeasurable hs).mono_ac (withDensity_absolutelyContinuous
     (b.addHaar.restrict s) (fun x ↦ ENNReal.ofReal (riemannianJacobian (I := I) b f x)))
   ext A hA
-  have hS : MeasurableSet (f ⁻¹' A ∩ s) := by
-    rw [inter_comm, ← Subtype.image_preimage_coe]
-    exact (MeasurableEmbedding.subtype_coe hs).measurableSet_image.mpr
-      (hc.domRestrict.measurable hA)
+  have hS : MeasurableSet (f ⁻¹' A ∩ s) :=
+    hc.measurableSet_preimage_inter hs hA
   have hcov := b.setLIntegral_riemannianVolume_image_of_injOn hdim hS
     (hinj.mono inter_subset_right) (fun x hx ↦ hf x hx.2) (fun _ ↦ 1)
   simp only [image_preimage_inter, lintegral_one, Measure.restrict_apply_univ, mul_one] at hcov
@@ -576,7 +619,8 @@ theorem _root_.Module.Basis.setIntegral_riemannianVolume_image_of_injOn
   have : T2Space H := I.isClosedEmbedding.isEmbedding.t2Space
   have hc : ContinuousOn f s := fun x hx ↦ (hf x hx).continuousAt.continuousWithinAt
   have he := hc.measurableEmbedding_chartedSpace F H hs hinj
-  have hρ := (b.aemeasurable_riemannianJacobian hdim hs hf).ennreal_ofReal
+  have hρ := (b.aemeasurable_riemannianJacobian (I := I) (μ := b.addHaar) hs
+    (fun x hx ↦ (hf x hx).continuousAt)).ennreal_ofReal
   rw [← b.restrict_map_withDensity_riemannianJacobian_of_injOn hdim hs hinj hf,
     he.integral_map]
   simp only [Set.domRestrict_apply]
@@ -597,7 +641,8 @@ theorem _root_.Module.Basis.integrableOn_riemannianVolume_image_iff_of_injOn
   have : T2Space H := I.isClosedEmbedding.isEmbedding.t2Space
   have hc : ContinuousOn f s := fun x hx ↦ (hf x hx).continuousAt.continuousWithinAt
   have he := hc.measurableEmbedding_chartedSpace F H hs hinj
-  have hρ := (b.aemeasurable_riemannianJacobian hdim hs hf).ennreal_ofReal
+  have hρ := (b.aemeasurable_riemannianJacobian (I := I) (μ := b.addHaar) hs
+    (fun x hx ↦ (hf x hx).continuousAt)).ennreal_ofReal
   rw [IntegrableOn, ← b.restrict_map_withDensity_riemannianJacobian_of_injOn hdim hs hinj hf,
     he.integrable_map_iff]
   rw [Set.domRestrict_eq, ← Function.comp_assoc,

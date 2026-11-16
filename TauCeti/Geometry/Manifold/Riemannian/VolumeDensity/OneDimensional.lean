@@ -9,7 +9,6 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import TauCeti.Geometry.Manifold.Instances.AddCircle
 public import TauCeti.Geometry.Manifold.MFDeriv.Curve
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.ChangeOfVariables
-import TauCeti.Geometry.Manifold.Riemannian.ArcLength
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Null
 import TauCeti.MeasureTheory.Measure.Haar.OfBasis
 
@@ -127,16 +126,23 @@ variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
 /-- For a `p`-periodic `C^n` local diffeomorphism `γ` from `ℝ` to a Riemannian manifold, with
 `n ≠ 0`, which is injective on the open interval `(a, a + p)`, the integral of `f` over the range
 of `γ` against the Riemannian volume is the integral over a period of `f ∘ γ` weighted by the
-speed of `γ`. -/
+speed of `γ`. The integrand need not be measurable or integrable. -/
 theorem _root_.IsLocalDiffeomorph.setIntegral_riemannianVolume_range_of_periodic
     {n : ℕ∞ω} {γ : ℝ → M} {p : ℝ} (hγ : IsLocalDiffeomorph 𝓘(ℝ) I n γ) (hn : n ≠ 0)
-    (hper : γ.Periodic p) (hp : 0 < p) (a : ℝ) (hinj : InjOn γ (Ioo a (a + p))) {f : M → G}
-    (hf : AEStronglyMeasurable f ((riemannianVolume I M).restrict (range γ))) :
+    (hper : γ.Periodic p) (hp : 0 < p) (a : ℝ) (hinj : InjOn γ (Ioo a (a + p))) (f : M → G) :
     ∫ y in range γ, f y ∂riemannianVolume I M =
-      ∫ t in a..a + p, ‖curveVelocity I γ t‖ • f (γ t) :=
-  ContMDiff.integral_eq_intervalIntegral_norm_curveVelocity_smul
-    (hγ.contMDiff.of_le (ENat.one_le_iff_ne_zero_withTop.mpr hn)) (le_add_of_nonneg_right hp.le)
-    (hγ.map_withDensity_enorm_curveVelocity_of_periodic hn hper hp a hinj) hf
+      ∫ t in a..a + p, ‖curveVelocity I γ t‖ • f (γ t) := by
+  have hdim : Module.finrank ℝ E = 1 :=
+    ((hγ a).finrank_eq hn).symm.trans (Module.finrank_self ℝ)
+  have : Nontrivial E := Module.nontrivial_of_finrank_eq_succ hdim
+  have hrange : range γ = insert (γ (a + p)) (γ '' Ioo a (a + p)) := by
+    rw [← hper.image_Ioc hp a, ← insert_right_Ioo (lt_add_of_pos_right a hp), image_insert_eq]
+  rw [hrange, Measure.restrict_congr_set (insert_ae_eq_self _ _),
+    intervalIntegral.integral_of_le (le_add_of_nonneg_right hp.le),
+    ← Measure.restrict_congr_set Ioo_ae_eq_Ioc]
+  simpa only [Module.Basis.addHaar_singleton, riemannianJacobian_singleton] using
+    (hγ.isLocalDiffeomorphOn (Ioo a (a + p))).setIntegral_riemannianVolume_image hn
+      measurableSet_Ioo hinj (Module.Basis.singleton (Fin 1) ℝ) f
 
 /-! ### Parametrizations by `AddCircle p` -/
 
@@ -159,16 +165,20 @@ theorem _root_.Diffeomorph.map_withDensity_enorm_curveVelocity_addCircle {n : �
 
 /-- For a `C^n` diffeomorphism `e` from `AddCircle p` onto a Riemannian manifold `M`, with
 `n ≠ 0`, the integral of `f` against the Riemannian volume of `M` is the integral over a period of
-`t ↦ f (e t)` weighted by the speed of `t ↦ e t`. -/
+`t ↦ f (e t)` weighted by the speed of `t ↦ e t`. No measurability or integrability
+assumption on `f` is needed. -/
 theorem _root_.Diffeomorph.integral_riemannianVolume_addCircle {n : ℕ∞ω} {p : ℝ}
-    [Fact (0 < p)] (e : AddCircle p ≃ₘ^n⟮𝓘(ℝ), I⟯ M) (hn : n ≠ 0) (a : ℝ) {f : M → G}
-    (hf : AEStronglyMeasurable f (riemannianVolume I M)) :
+    [Fact (0 < p)] (e : AddCircle p ≃ₘ^n⟮𝓘(ℝ), I⟯ M) (hn : n ≠ 0) (a : ℝ) (f : M → G) :
     ∫ y, f y ∂riemannianVolume I M =
-      ∫ t in a..a + p, ‖curveVelocity I (fun r : ℝ ↦ e r) t‖ • f (e t) :=
-  ContMDiff.integral_eq_intervalIntegral_norm_curveVelocity_smul
-    ((e.contMDiff.comp (AddCircle.contMDiff_coe p n)).of_le
-      (ENat.one_le_iff_ne_zero_withTop.mpr hn))
-    (le_add_of_nonneg_right (Fact.out : 0 < p).le)
-    (e.map_withDensity_enorm_curveVelocity_addCircle hn a) hf
+      ∫ t in a..a + p, ‖curveVelocity I (fun r : ℝ ↦ e r) t‖ • f (e t) := by
+  have h := IsLocalDiffeomorph.setIntegral_riemannianVolume_range_of_periodic
+    (γ := fun t : ℝ ↦ e t)
+    (fun t ↦ (AddCircle.isLocalDiffeomorph_coe p n t).comp I M (e.isLocalDiffeomorph t)) hn
+    (fun t ↦ congrArg e (AddCircle.coe_add_period p t)) Fact.out a
+    (fun _ hx _ hy h ↦ (AddCircle.coe_eq_coe_iff_of_mem_Ico (Ioo_subset_Ico_self hx)
+      (Ioo_subset_Ico_self hy)).mp (e.injective h)) f
+  have hrange : range (fun t : ℝ ↦ e t) = univ :=
+    (e.surjective.comp QuotientAddGroup.mk_surjective).range_eq
+  rwa [hrange, Measure.restrict_univ] at h
 
 end TauCeti
