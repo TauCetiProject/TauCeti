@@ -6,14 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Ray
-public import Mathlib.Order.Interval.Set.UnorderedInterval
 public import TauCeti.Analysis.Fredholm.DeterminantLine.Chart
+import Mathlib.Order.Interval.Set.UnorderedInterval
 import Mathlib.Topology.Order.IntermediateValue
 import TauCeti.Analysis.Fredholm.Stabilization
 import TauCeti.LinearAlgebra.Ray
 
 /-!
-# Transport of orientations of Fredholm determinant lines
+# Coherent families of elements of Fredholm determinant lines
 
 Let `T : X → E →L[ℝ] F` be a continuous family of operators between real Banach spaces. At a
 Fredholm member the determinant line `det (ker T x) ⊗ (det (F ⧸ range T x))^*` is a real line,
@@ -46,24 +46,12 @@ So the condition holds for every kernel chart valid at `x₀` as soon as it hold
   exists on `[p, t]` is open and closed in `[p, q]`: a family on `[p, u]` is continued past `u` by
   holding its reading constant in a kernel chart valid near `u`.
 
-Together these give the **transport of orientations** along a path of Fredholm operators which is
-continuous on the interval `[[a, b]]` of transport (`TauCeti.detLineOrientationTransport`): the
-orientation of the determinant line of `T a` given by `v₀ ≠ 0` is carried to the orientation of
-`T b` given by `v b`, for the coherent family `v` on `[[a, b]]` with `v a = v₀`. It is
-characterized by `TauCeti.detLineOrientationTransport_rayOfNeZero` and satisfies the identity
-(`TauCeti.detLineOrientationTransport_self`), reversal
-(`TauCeti.detLineOrientationTransport_symm`) and concatenation
-(`TauCeti.detLineOrientationTransport_trans`) laws, and is the identity along a constant path
-(`TauCeti.detLineOrientationTransport_const`). Since the negative of a coherent family is coherent
-(`TauCeti.IsDetLineCoherentOn.neg`), the opposite orientation is transported to the opposite
-orientation (`TauCeti.detLineOrientationTransport_neg`). Only orientations are transported: a line
-bundle carries no canonical linear isomorphism between distant fibres, and none is constructed
-here.
-
-This is how the determinant lines of linearized operators are oriented: an orientation fixed at a
-reference operator, for instance the complex orientation of a complex-linear operator
-(`TauCeti.IsComplexPositiveTMulDual`), is transported along a path of Fredholm operators to the
-operator of interest.
+Transport of orientations of determinant lines along paths of Fredholm operators is not
+constructed here. It is the transport `TauCeti.VectorBundleOrientationCover.orientationTransport`
+of the separate module `TauCeti.Topology.VectorBundle.Orientation.Cover.Transport`, applied to the
+determinant line bundle by lifting to its orientation double cover, which is a covering map by
+`TauCeti.FredholmDetLine.isCoveringMap_orientationCover_proj` in the module
+`TauCeti.Analysis.Fredholm.DeterminantLine.Orientation`.
 
 ## Main definitions
 
@@ -72,19 +60,12 @@ operator of interest.
   nonnegative multiples of its reading at `x₀`.
 * `TauCeti.IsDetLineCoherentOn T v s`: `v` is coherent at every point of `s`; it is a continuous
   orientation of the determinant lines over `s`.
-* `TauCeti.detLineOrientationTransport`: the transport of orientations of determinant lines along
-  a continuous path of Fredholm operators.
 
 ## Main results
 
 * `TauCeti.IsDetLineCoherentWithinAt.eventually_sameRay`: coherence holds in every kernel chart.
 * `TauCeti.IsDetLineCoherentOn.sameRay`: uniqueness on preconnected sets.
 * `TauCeti.exists_isDetLineCoherentOn_Icc`: existence along a compact interval.
-* `TauCeti.detLineOrientationTransport_rayOfNeZero`: orientation transport follows coherent
-  families.
-* `TauCeti.detLineOrientationTransport_self`, `TauCeti.detLineOrientationTransport_symm`,
-  `TauCeti.detLineOrientationTransport_trans`, `TauCeti.detLineOrientationTransport_neg`,
-  `TauCeti.detLineOrientationTransport_const`: the laws of orientation transport.
 
 ## References
 
@@ -400,114 +381,5 @@ theorem exists_isDetLineCoherentOn_Icc {p q : ℝ} (hT : ContinuousOn T (Icc p q
 end Interval
 
 end Coherent
-
-section Transport
-
-variable [CompleteSpace E] [CompleteSpace F] {T : ℝ → E →L[ℝ] F} {a b c : ℝ}
-
-/-- **Transport of orientations** of determinant lines along a path `T` of operators which are
-continuous and Fredholm between `a` and `b`. The orientation of the determinant line of `T a` given
-by `v₀ ≠ 0` is carried to the orientation of the determinant line of `T b` given by `v b`, for any
-coherent family `v` on `[[a, b]]` with `v a = v₀` (`TauCeti.exists_isDetLineCoherentOn_Icc`);
-by uniqueness (`TauCeti.IsDetLineCoherentOn.sameRay`) the result does not depend on the choice
-of `v` or of `v₀` in its ray. -/
-noncomputable def detLineOrientationTransport (a b : ℝ) (hT : ContinuousOn T (uIcc a b))
-    (hF : ∀ t ∈ uIcc a b, IsFredholm (T t)) :
-    Module.Ray ℝ (T a : E →ₗ[ℝ] F).detLine → Module.Ray ℝ (T b : E →ₗ[ℝ] F).detLine :=
-  Quotient.lift (s := RayVector.Setoid ℝ _)
-    (fun u ↦ rayOfNeZero ℝ ((exists_isDetLineCoherentOn_Icc hT hF left_mem_uIcc u.2).choose b)
-      ((exists_isDetLineCoherentOn_Icc hT hF left_mem_uIcc u.2).choose_spec.2.ne_zero
-        right_mem_uIcc))
-    fun u u' (h : SameRay ℝ (u : (T a : E →ₗ[ℝ] F).detLine) u') ↦ by
-      have hu := (exists_isDetLineCoherentOn_Icc hT hF left_mem_uIcc u.2).choose_spec
-      have hu' := (exists_isDetLineCoherentOn_Icc hT hF left_mem_uIcc u'.2).choose_spec
-      exact (ray_eq_iff _ _).2 (hu.2.sameRay hT isPreconnected_uIcc hu'.2 left_mem_uIcc
-        right_mem_uIcc (by rwa [hu.1, hu'.1]))
-
-/-- **Characterization of orientation transport**: along a coherent family `v` on `[[a, b]]`,
-the orientation of `v a` is transported to the orientation of `v b`. -/
-theorem detLineOrientationTransport_rayOfNeZero (hT : ContinuousOn T (uIcc a b))
-    (hF : ∀ t ∈ uIcc a b, IsFredholm (T t)) {v : ∀ t, (T t : E →ₗ[ℝ] F).detLine}
-    (hv : IsDetLineCoherentOn T v (uIcc a b)) :
-    detLineOrientationTransport a b hT hF (rayOfNeZero ℝ (v a) (hv.ne_zero left_mem_uIcc)) =
-      rayOfNeZero ℝ (v b) (hv.ne_zero right_mem_uIcc) := by
-  have hex := (exists_isDetLineCoherentOn_Icc hT hF left_mem_uIcc
-    (hv.ne_zero left_mem_uIcc)).choose_spec
-  exact (ray_eq_iff _ _).2 (hex.2.sameRay hT isPreconnected_uIcc hv left_mem_uIcc right_mem_uIcc
-    (by rw [hex.1]))
-
-/-- Orientation transport from a point to itself is the identity. -/
-@[simp]
-theorem detLineOrientationTransport_self (a : ℝ) (hT : ContinuousOn T (uIcc a a))
-    (hF : ∀ t ∈ uIcc a a, IsFredholm (T t)) : detLineOrientationTransport a a hT hF = id := by
-  funext o
-  induction o using Module.Ray.ind with | h v₀ hv₀ => ?_
-  obtain ⟨v, rfl, hv⟩ := exists_isDetLineCoherentOn_Icc hT hF left_mem_uIcc hv₀
-  exact detLineOrientationTransport_rayOfNeZero hT hF hv
-
-/-- **Reversal law**: transporting an orientation from `a` to `b` and back gives the original
-orientation. -/
-@[simp]
-theorem detLineOrientationTransport_symm (hT : ContinuousOn T (uIcc a b))
-    (hT' : ContinuousOn T (uIcc b a)) (hF : ∀ t ∈ uIcc a b, IsFredholm (T t))
-    (hF' : ∀ t ∈ uIcc b a, IsFredholm (T t)) (o : Module.Ray ℝ (T a : E →ₗ[ℝ] F).detLine) :
-    detLineOrientationTransport b a hT' hF' (detLineOrientationTransport a b hT hF o) = o := by
-  induction o using Module.Ray.ind with | h v₀ hv₀ => ?_
-  obtain ⟨v, rfl, hv⟩ := exists_isDetLineCoherentOn_Icc hT hF left_mem_uIcc hv₀
-  rw [detLineOrientationTransport_rayOfNeZero hT hF hv]
-  exact detLineOrientationTransport_rayOfNeZero hT' hF' (uIcc_comm a b ▸ hv)
-
-/-- **Concatenation law**: transporting an orientation from `a` to `b` and then from `b` to `c`
-is transporting it from `a` to `c`. -/
-theorem detLineOrientationTransport_trans (hTab : ContinuousOn T (uIcc a b))
-    (hTbc : ContinuousOn T (uIcc b c)) (hTac : ContinuousOn T (uIcc a c))
-    (hab : ∀ t ∈ uIcc a b, IsFredholm (T t)) (hbc : ∀ t ∈ uIcc b c, IsFredholm (T t))
-    (hac : ∀ t ∈ uIcc a c, IsFredholm (T t)) (o : Module.Ray ℝ (T a : E →ₗ[ℝ] F).detLine) :
-    detLineOrientationTransport b c hTbc hbc (detLineOrientationTransport a b hTab hab o) =
-      detLineOrientationTransport a c hTac hac o := by
-  induction o using Module.Ray.ind with | h v₀ hv₀ => ?_
-  -- A coherent family on the interval spanned by `a`, `b` and `c`.
-  set I := Icc (min (min a b) c) (max (max a b) c)
-  have hmem {x : ℝ} (hx : x = a ∨ x = b ∨ x = c) : x ∈ I := by
-    rcases hx with rfl | rfl | rfl <;> constructor <;> simp
-  have hsub {x y : ℝ} (hx : x = a ∨ x = b ∨ x = c) (hy : y = a ∨ y = b ∨ y = c) : uIcc x y ⊆ I :=
-    uIcc_subset_Icc (hmem hx) (hmem hy)
-  -- `I` is covered by `[[a, b]]` and `[[b, c]]`, which share `b`.
-  have hcover : I ⊆ uIcc a b ∪ uIcc b c := by
-    rintro t ⟨h₁, h₂⟩
-    simp only [mem_union, mem_uIcc, min_le_iff, le_max_iff] at h₁ h₂ ⊢
-    grind
-  have hT : ContinuousOn T I := (hTab.union_of_isClosed hTbc isClosed_Icc isClosed_Icc).mono hcover
-  have hF (t : ℝ) (ht : t ∈ I) : IsFredholm (T t) := (hcover ht).elim (hab t) (hbc t)
-  obtain ⟨v, rfl, hv⟩ := exists_isDetLineCoherentOn_Icc hT hF (hmem (.inl rfl)) hv₀
-  rw [detLineOrientationTransport_rayOfNeZero hTab hab
-      (hv.mono (hsub (.inl rfl) (.inr (.inl rfl)))),
-    detLineOrientationTransport_rayOfNeZero hTbc hbc
-      (hv.mono (hsub (.inr (.inl rfl)) (.inr (.inr rfl)))),
-    detLineOrientationTransport_rayOfNeZero hTac hac
-      (hv.mono (hsub (.inl rfl) (.inr (.inr rfl))))]
-
-/-- Orientation transport carries the opposite orientation to the opposite orientation. -/
-@[simp]
-theorem detLineOrientationTransport_neg (hT : ContinuousOn T (uIcc a b))
-    (hF : ∀ t ∈ uIcc a b, IsFredholm (T t)) (o : Module.Ray ℝ (T a : E →ₗ[ℝ] F).detLine) :
-    detLineOrientationTransport a b hT hF (-o) = -detLineOrientationTransport a b hT hF o := by
-  induction o using Module.Ray.ind with | h v₀ hv₀ => ?_
-  obtain ⟨v, rfl, hv⟩ := exists_isDetLineCoherentOn_Icc hT hF left_mem_uIcc hv₀
-  rw [detLineOrientationTransport_rayOfNeZero hT hF hv]
-  -- Negation of rays is negation of representatives (`neg_rayOfNeZero`, which holds by `rfl`).
-  exact detLineOrientationTransport_rayOfNeZero hT hF hv.neg
-
-/-- Along a constant path, orientation transport is the identity. -/
-@[simp]
-theorem detLineOrientationTransport_const {T₀ : E →L[ℝ] F} (hT₀ : IsFredholm T₀) (a b : ℝ) :
-    detLineOrientationTransport (T := fun _ ↦ T₀) a b continuousOn_const (fun _ _ ↦ hT₀) =
-      id := by
-  funext o
-  induction o using Module.Ray.ind with | h v₀ hv₀ => ?_
-  exact detLineOrientationTransport_rayOfNeZero continuousOn_const _
-    (isDetLineCoherentOn_const hT₀ hv₀ _)
-
-end Transport
 
 end TauCeti
