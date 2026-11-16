@@ -17,6 +17,7 @@ import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Geometry.Manifold.MFDeriv.Tangent
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Constancy
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # Differentiating along a curve in a manifold
@@ -759,8 +760,9 @@ theorem _root_.ContMDiffWithinAt.contMDiffWithinAt_curveVelocityLiftWithin
     ContMDiffWithinAt 𝓘(𝕜, 𝕜) I.tangent m (curveVelocityLiftWithin I γ u) u t := by
   let ι : 𝕜 → TangentBundle 𝓘(𝕜, 𝕜) 𝕜 := fun r ↦
     TotalSpace.mk' 𝕜 r ((NormedSpace.fromTangentSpace (𝕜 := 𝕜) r).symm 1)
-  have hι : ContMDiffAt 𝓘(𝕜, 𝕜) 𝓘(𝕜, 𝕜).tangent m ι t :=
-    contMDiffAt_vectorSpace_iff_contDiffAt.2 contDiffAt_const
+  have hι : ContMDiffAt 𝓘(𝕜, 𝕜) 𝓘(𝕜, 𝕜).tangent m ι t := by
+    simp only [ι, NormedSpace.fromTangentSpace_symm_apply]
+    exact contMDiffAt_vectorSpace_iff_contDiffAt.2 contDiffAt_const
   have hcomp := (hγ.contMDiffWithinAt_tangentMapWithin (x₀ := ι t) ht hmn hu).comp t
     hι.contMDiffWithinAt (fun _ hr ↦ hr)
   exact hcomp.congr (fun r _ ↦

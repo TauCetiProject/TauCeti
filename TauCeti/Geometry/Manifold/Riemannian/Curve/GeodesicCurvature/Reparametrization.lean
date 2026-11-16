@@ -132,9 +132,11 @@ theorem geodesicCurvature_orientedUnitNormal_comp_const_sub
     curveVelocity_comp_const_sub, orientedUnitNormal_comp_const_sub,
     norm_neg, inner_neg_right, neg_div]
 
-/-- Reversing a curve together with its normal field preserves geodesic curvature.
+/-- Reflecting the parameter `r ↦ d - r` preserves geodesic curvature relative to the
+transported normal field `r ↦ n (d - r)`.
 The normal need not be orthogonal to the velocity, and no regularity is assumed. -/
-theorem geodesicCurvature_comp_const_sub (n : ∀ r, TangentSpace I (γ r)) (d t : ℝ) :
+theorem geodesicCurvature_comp_const_sub (γ : ℝ → M)
+    (n : ∀ r, TangentSpace I (γ r)) (d t : ℝ) :
     geodesicCurvature (fun r ↦ γ (d - r)) (fun r ↦ n (d - r)) t =
       geodesicCurvature γ n (d - t) := by
   rw [geodesicCurvature_def, geodesicCurvature_def, acceleration_comp_const_sub,
@@ -153,9 +155,7 @@ theorem geodesicCurvature_orientedUnitNormal_mul_norm_curveVelocity_comp
   rw [geodesicCurvature_orientedUnitNormal_comp o hγ hφ hφ',
     curveVelocity_comp hφ.hasDerivAt (hγ.mdifferentiableAt two_ne_zero),
     norm_smul, Real.norm_eq_abs]
-  rcases lt_trichotomy (deriv φ t) 0 with hneg | hzero | hpos
-  · simp [hneg, abs_of_neg hneg, mul_comm, mul_assoc]
-  · simp [hzero]
-  · simp [hpos, abs_of_pos hpos, mul_comm, mul_assoc]
+  rw [mul_mul_mul_comm, sign_mul_abs]
+  ring
 
 end TauCeti.Manifold

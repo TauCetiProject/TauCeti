@@ -22,8 +22,7 @@ Curves agreeing on the open interval have equal integrals regardless of their en
 
 * `Set.EqOn.integral_geodesicCurvature_orientedUnitNormal_mul_norm_curveVelocity_eq`:
   equality on an open interval suffices for equality of total geodesic curvature.
-* `integral_geodesicCurvature_orientedUnitNormal_mul_norm_curveVelocity_comp_const_sub`:
-  reflection negates total signed geodesic curvature, without regularity assumptions.
+* Reflection negates total signed geodesic curvature, without regularity assumptions.
 * `TauCeti.Manifold.integral_geodesicCurvature_orientedUnitNormal_mul_norm_curveVelocity_comp`:
   change of variables, including changes with critical points.
 
@@ -68,7 +67,7 @@ theorem
 /-- Reflection `r ↦ d - r` negates the interval integral of geodesic curvature times speed
 relative to the oriented unit normal. No regularity or integrability assumptions are needed. -/
 theorem integral_geodesicCurvature_orientedUnitNormal_mul_norm_curveVelocity_comp_const_sub
-    (d a b : ℝ) :
+    (γ : ℝ → M) (d a b : ℝ) :
     ∫ t in a..b, geodesicCurvature (fun r ↦ γ (d - r)) (orientedUnitNormal o fun r ↦ γ (d - r)) t *
         ‖curveVelocity I (fun r ↦ γ (d - r)) t‖ =
       -∫ t in d - b..d - a, geodesicCurvature γ (orientedUnitNormal o γ) t *

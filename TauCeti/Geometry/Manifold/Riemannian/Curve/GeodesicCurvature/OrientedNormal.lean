@@ -97,10 +97,8 @@ theorem continuousAt_geodesicCurvature_orientedUnitNormal (hγ : ContMDiffAt �
     exact hγ.contMDiffAt_curveVelocityLift (by norm_num)
   have hA := contMDiffAt_acceleration_leviCivitaConnection (n := 0) (m := 2) (k := 1)
     (by norm_num) (by norm_num) hγ
-  -- Normalize the regularity indices required by the volume-form evaluation API.
+  -- Normalize the manifold regularity index for isSmoothForm_riemannianVolumeForm.
   have : IsManifold I (0 + 1) M := by simpa using (inferInstance : IsManifold I 1 M)
-  have : ContMDiffVectorBundle (0 + 1) E (TangentSpace I : M → Type _) I := by
-    simpa using (inferInstance : ContMDiffVectorBundle 1 E (TangentSpace I : M → Type _) I)
   have hvol := ((isSmoothForm_riemannianVolumeForm (n := 0) o).contMDiff (γ t)).comp t
     (hγ.of_le (by norm_num))
   have heval := hvol.continuousAlternatingMap_bundle_apply
