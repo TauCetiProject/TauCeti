@@ -8,38 +8,48 @@ module
 public import TauCeti.Algebra.Homology.DerivedCategory.Ext.WithAction
 public import TauCeti.Algebra.Homology.UniversalCoefficient.Cochain.Basic
 public import TauCeti.CategoryTheory.Preadditive.Endomorphism
+public import TauCeti.CategoryTheory.Preadditive.HomWithAction
+import TauCeti.Algebra.Homology.ModuleCat.Basic
 
 /-!
 # Target scalar actions on `linearHomComplex` and the `R`-linear universal coefficient theorem
 
 Let `C` be a `k`-linear category, `K : CochainComplex C ℤ`, and `Y : C` an object with an action
-`ρ : R →+* End Y` of a semiring `R`. Postcomposition with `ρ r` induces compatible left `R`-actions
-on morphism groups (`TauCeti.Abelian.HomWithAction`), degree-`i` cochains into `Y[0]`
-(`TauCeti.CochainSingle₀WithAction`, identified `R`-linearly with `HomWithAction ρ (K.X (-i))` by
-`TauCeti.toSingleLinearEquivWithAction`, assembling for a ring `R` into
-`TauCeti.linearHomComplexSingle₀WithAction` in `ModuleCat R`), cohomology `Hⁱ(Hom(K, Y[0]))`
-(`TauCeti.HomologySingle₀WithAction`), and `Ext¹(Hʲ(K), Y)` (`TauCeti.Abelian.ExtWithAction`).
-When `C = ModuleCat ℤ` and `Y = ModuleCat.of ℤ R`, this equips duals of integral complexes with
-their `R`-module structure (`ModuleCat.endRingHomOfModule`, `HomWithAction.moduleCatLinearEquiv`).
+`ρ : R →+* End Y` of a semiring `R`. Postcomposition with `(ρ r).asHom` induces compatible left
+`R`-actions on degree-`i` cochains into `Y[0]` (`TauCeti.CochainSingle₀WithAction`, identified
+`R`-linearly with `TauCeti.HomWithAction ρ (K.X (-i))` by `TauCeti.toSingleLinearEquivWithAction`,
+assembling for a ring `R` into `TauCeti.linearHomComplexSingle₀WithAction` in `ModuleCat R`), on
+cohomology `Hⁱ(Hom(K, Y[0]))` (`TauCeti.HomologySingle₀WithAction`, identified `R`-linearly with
+`(linearHomComplexSingle₀WithAction k K ρ).homology i` by
+`TauCeti.linearHomComplexSingle₀WithActionHomologyEquiv`), and on `Ext¹(Hʲ(K), Y)`
+(`TauCeti.Abelian.ExtWithAction`).
 
-Because `cochainKronecker`, `cochainKroneckerSection`, and `cochainExtToHomology` are natural in
-`Y`, the universal coefficient sequence upgrades `R`-linearly to
+When `C` is abelian with `HasExt C`, `k` is commutative, `i + j = 1`, `K.cycles j` is projective,
+and `K.iCycles j` and `K.iCycles (-i)` split, naturality of `cochainKronecker`,
+`cochainKroneckerSection`, and `cochainExtToHomology` in `Y` upgrades the universal coefficient
+decomposition `R`-linearly to
 `HomologySingle₀WithAction k K ρ i ≃ₗ[R] ExtWithAction ρ (K.homology j) 1 ×
   HomWithAction ρ (K.homology (-i))`
-(`TauCeti.cochainUniversalCoefficientEquivWithAction`) for `i + j = 1`.
+(`TauCeti.cochainUniversalCoefficientEquivWithAction`).
 
 ## Main definitions and results
 
-* `TauCeti.Abelian.HomWithAction`, `HomWithAction.precompLinearMap`,
-  `HomWithAction.precompLinearEquiv`, `ModuleCat.endRingHomOfModule`, and
-  `HomWithAction.moduleCatLinearEquiv`.
 * `TauCeti.linearHomComplexSingle₀Action`, `TauCeti.CochainSingle₀WithAction`,
   `TauCeti.toSingleLinearEquivWithAction`, `TauCeti.linearHomComplexSingle₀WithAction`,
-  `TauCeti.HomologySingle₀WithAction`, and `HomologySingle₀WithAction.precompLinearMap`.
+  `TauCeti.linearHomComplexSingle₀WithActionHomologyEquiv`, `TauCeti.HomologySingle₀WithAction`,
+  and `HomologySingle₀WithAction.precompLinearMap`.
 * `TauCeti.cochainKroneckerWithAction`, `TauCeti.cochainKroneckerEquivWithAction`,
   `TauCeti.cochainKroneckerEquivOfProjectiveHomologyWithAction`,
   `TauCeti.cochainKroneckerSectionWithAction`, `TauCeti.cochainExtToHomologyWithAction`, and
   `TauCeti.cochainUniversalCoefficientEquivWithAction`.
+
+## Implementation notes
+
+The `@[expose]` target-action type-synonym pattern used by `TauCeti.CochainSingle₀WithAction` and
+`TauCeti.HomologySingle₀WithAction` (as well as `TauCeti.HomWithAction` in
+`TauCeti/CategoryTheory/Preadditive/HomWithAction.lean`) adapts the design of
+`TauCeti.Abelian.ExtWithAction` in `TauCeti/Algebra/Homology/DerivedCategory/Ext/WithAction.lean`
+(Axel Delaval, Jie Xu, Shitan Xu).
 -/
 
 public section
@@ -50,121 +60,6 @@ open CategoryTheory Limits HomologicalComplex CochainComplex CochainComplex.HomC
   Abelian
 
 universe w v u
-
-namespace TauCeti.Abelian
-
-section HomWithAction
-
-variable {C : Type u} [Category.{v} C] [Preadditive C]
-  {R : Type*} [Semiring R] {Y : C} (ρ : R →+* End Y)
-
-/-- `X ⟶ Y` equipped with the left `R`-module structure induced by `ρ : R →+* End Y`:
-`r • f = f ≫ (ρ r).asHom`. -/
--- Expose the synonym so additive and scalar instances share the `X ⟶ Y` carrier.
-@[expose]
-def HomWithAction (_ρ : R →+* End Y) (X : C) : Type v := X ⟶ Y
-
-namespace HomWithAction
-
-instance (X : C) : AddCommGroup (HomWithAction ρ X) := inferInstanceAs (AddCommGroup (X ⟶ Y))
-
-instance (X : C) : Module R (HomWithAction ρ X) := Module.compHom (X ⟶ Y) ρ
-
-/-- The underlying additive equivalence `HomWithAction ρ X ≃+ (X ⟶ Y)`. -/
-def toHom {X : C} : HomWithAction ρ X ≃+ (X ⟶ Y) := AddEquiv.refl _
-
-@[simp]
-lemma toHom_smul {X : C} (r : R) (f : HomWithAction ρ X) :
-    toHom ρ (r • f) = toHom ρ f ≫ (ρ r).asHom := (rfl)
-
-@[simp]
-lemma toHom_symm_comp_asHom {X : C} (r : R) (f : X ⟶ Y) :
-    (toHom ρ).symm (f ≫ (ρ r).asHom) = r • (toHom ρ).symm f := (rfl)
-
-/-- Precomposition with `φ : X ⟶ X'` is `R`-linear on `HomWithAction ρ`. -/
-def precompLinearMap {X X' : C} (φ : X ⟶ X') :
-    HomWithAction ρ X' →ₗ[R] HomWithAction ρ X where
-  toFun f := (toHom ρ).symm (φ ≫ toHom ρ f)
-  map_add' _ _ := Preadditive.comp_add _ _ _ _ _ _
-  map_smul' r f := (Category.assoc φ (toHom ρ f) (ρ r).asHom).symm
-
-@[simp]
-lemma toHom_precompLinearMap {X X' : C} (φ : X ⟶ X') (f : HomWithAction ρ X') :
-    toHom ρ (precompLinearMap ρ φ f) = φ ≫ toHom ρ f := (rfl)
-
-/-- Precomposition with an isomorphism `e : X ≅ X'` as an `R`-linear equivalence on
-`HomWithAction ρ`. -/
-def precompLinearEquiv {X X' : C} (e : X ≅ X') :
-    HomWithAction ρ X' ≃ₗ[R] HomWithAction ρ X :=
-  LinearEquiv.ofLinearMap (precompLinearMap ρ e.hom) (precompLinearMap ρ e.inv)
-    (LinearMap.ext fun f ↦ (toHom ρ).injective (e.hom_inv_id_assoc (toHom ρ f)))
-    (LinearMap.ext fun f ↦ (toHom ρ).injective (e.inv_hom_id_assoc (toHom ρ f)))
-
-@[simp]
-lemma toHom_precompLinearEquiv {X X' : C} (e : X ≅ X') (f : HomWithAction ρ X') :
-    toHom ρ (precompLinearEquiv ρ e f) = e.hom ≫ toHom ρ f := (rfl)
-
-@[simp]
-lemma toHom_precompLinearEquiv_symm {X X' : C} (e : X ≅ X') (f : HomWithAction ρ X) :
-    toHom ρ ((precompLinearEquiv ρ e).symm f) = e.inv ≫ toHom ρ f := (rfl)
-
-end HomWithAction
-
-end HomWithAction
-
-end TauCeti.Abelian
-
-namespace ModuleCat
-
-/-- A commuting `R`-module structure on `Y : ModuleCat k` induces `R →+* End Y` sending `r` to
-scalar multiplication by `r`. -/
-def endRingHomOfModule (k R : Type*) [Ring k] [Semiring R] (Y : ModuleCat.{v} k)
-    [Module R Y] [SMulCommClass k R Y] : R →+* End Y where
-  toFun r := End.of (ModuleCat.ofHom
-    { toFun y := r • y
-      map_add' := smul_add r
-      map_smul' c y := (smul_comm c r y).symm })
-  map_one' := by ext y; exact one_smul R y
-  map_mul' r s := by ext y; exact mul_smul r s y
-  map_zero' := by ext y; exact zero_smul R y
-  map_add' r s := by ext y; exact add_smul r s y
-
-@[simp]
-lemma endRingHomOfModule_apply_asHom_apply {k R : Type*} [Ring k] [Semiring R]
-    (Y : ModuleCat.{v} k) [Module R Y] [SMulCommClass k R Y] (r : R) (y : Y) :
-    (endRingHomOfModule k R Y r).asHom.hom y = r • y := (rfl)
-
-end ModuleCat
-
-namespace TauCeti.Abelian.HomWithAction
-
-section ModuleCat
-
-variable {k R : Type*} [Ring k] [Semiring R]
-
-/-- For `X Y : ModuleCat k` with a commuting `R`-action on `Y`, `HomWithAction` for
-`ModuleCat.endRingHomOfModule k R Y` agrees `R`-linearly with `X →ₗ[k] Y` equipped with its
-pointwise `R`-action. -/
-def moduleCatLinearEquiv (X Y : ModuleCat.{v} k) [Module R Y] [SMulCommClass k R Y] :
-    HomWithAction (ModuleCat.endRingHomOfModule k R Y) X ≃ₗ[R] (X →ₗ[k] Y) where
-  toAddEquiv := (toHom (ModuleCat.endRingHomOfModule k R Y)).trans
-    (ModuleCat.homLinearEquiv (S := R)).toAddEquiv
-  map_smul' _ _ := by ext x; rfl
-
-@[simp]
-lemma moduleCatLinearEquiv_apply {X Y : ModuleCat.{v} k} [Module R Y] [SMulCommClass k R Y]
-    (f : HomWithAction (ModuleCat.endRingHomOfModule k R Y) X) :
-    moduleCatLinearEquiv X Y f = (toHom (ModuleCat.endRingHomOfModule k R Y) f).hom := (rfl)
-
-@[simp]
-lemma moduleCatLinearEquiv_symm_apply {X Y : ModuleCat.{v} k} [Module R Y] [SMulCommClass k R Y]
-    (f : X →ₗ[k] Y) :
-    toHom (ModuleCat.endRingHomOfModule k R Y) ((moduleCatLinearEquiv X Y).symm f) =
-      ModuleCat.ofHom f := (rfl)
-
-end ModuleCat
-
-end TauCeti.Abelian.HomWithAction
 
 namespace TauCeti
 
@@ -209,16 +104,23 @@ variable (k) in
 /-- The action of `R` on degree-`i` cochains into `Y[0]` induced by `ρ`, as a ring homomorphism to
 `k`-linear endomorphisms. -/
 def smulEnd (K : CochainComplex C ℤ) (ρ : R →+* End Y) (i : ℤ) :
-    R →+* Module.End k ((linearHomComplex k K ((singleFunctor C 0).obj Y)).X i) where
-  toFun r := ((linearHomComplexPostcomp k K ((singleFunctor C 0).map (ρ r).asHom)).f i).hom
-  map_one' := by ext z; simp
-  map_mul' r s := by ext z; simp [End.mul_asHom]
-  map_zero' := by ext z; simp
-  map_add' r s := by ext z; simp
+    R →+* Module.End k (Cochain K ((singleFunctor C 0).obj Y) i) :=
+  (ModuleCat.endRingEquiv _).toRingHom.comp
+    (((HomologicalComplex.eval _ _ i).mapEndRingHom _).comp
+      (linearHomComplexSingle₀Action k K ρ))
+
+@[simp]
+lemma smulEnd_apply {K : CochainComplex C ℤ} (ρ : R →+* End Y) (i : ℤ) (r : R) :
+    smulEnd k K ρ i r =
+      ((linearHomComplexPostcomp k K ((singleFunctor C 0).map (ρ r).asHom)).f i).hom := by
+  simp only [smulEnd, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe,
+    RingEquiv.coe_toRingHom, ModuleCat.endRingEquiv_apply,
+    Functor.mapEndRingHom_apply_asHom, linearHomComplexSingle₀Action_apply_asHom,
+    HomologicalComplex.eval_map]
 
 instance (K : CochainComplex C ℤ) (ρ : R →+* End Y) (i : ℤ) :
     Module R (CochainSingle₀WithAction k K ρ i) :=
-  Module.compHom ((linearHomComplex k K ((singleFunctor C 0).obj Y)).X i) (smulEnd k K ρ i)
+  Module.compHom (Cochain K ((singleFunctor C 0).obj Y) i) (smulEnd k K ρ i)
 
 /-- The underlying additive equivalence `CochainSingle₀WithAction k K ρ i ≃+ Cochain K Y[0] i`. -/
 def toCochain {K : CochainComplex C ℤ} (ρ : R →+* End Y) {i : ℤ} :
@@ -230,7 +132,8 @@ lemma toCochain_smul {K : CochainComplex C ℤ} (ρ : R →+* End Y) {i : ℤ}
     (r : R) (z : CochainSingle₀WithAction k K ρ i) :
     toCochain ρ (r • z) =
       ((linearHomComplexPostcomp k K ((singleFunctor C 0).map (ρ r).asHom)).f i).hom
-        (toCochain ρ z) := (rfl)
+        (toCochain ρ z) :=
+  LinearMap.congr_fun (smulEnd_apply (k := k) ρ i r) (toCochain ρ z)
 
 end CochainSingle₀WithAction
 
@@ -240,37 +143,42 @@ variable (k) in
 `HomWithAction ρ (K.X (-i))`. -/
 def toSingleLinearEquivWithAction (K : CochainComplex C ℤ) (ρ : R →+* End Y) (i : ℤ) :
     CochainSingle₀WithAction k K ρ i ≃ₗ[R] HomWithAction ρ (K.X (-i)) where
-  toAddEquiv := (CochainSingle₀WithAction.toCochain ρ).trans <|
-    (Cochain.toSingleEquiv (neg_add_cancel i)).trans (HomWithAction.toHom ρ).symm
-  map_smul' r z := by
-    apply (HomWithAction.toHom ρ).injective
-    apply (Cochain.toSingleEquiv (neg_add_cancel i)).symm.injective
-    let z' : ModuleCat.of k (Cochain K ((singleFunctor C 0).obj Y) i) :=
-      CochainSingle₀WithAction.toCochain ρ z
-    have hz := Cochain.toSingleMk_toSingleEquiv (neg_add_cancel i) z'
-    change Cochain.toSingleMk (Cochain.toSingleEquiv (neg_add_cancel i)
-        (((linearHomComplexPostcomp k K ((singleFunctor C 0).map (ρ r).asHom)).f i).hom z'))
-          (neg_add_cancel i) =
-      Cochain.toSingleMk (Cochain.toSingleEquiv (neg_add_cancel i) z' ≫ (ρ r).asHom)
-        (neg_add_cancel i)
-    rw [Cochain.toSingleMk_toSingleEquiv, linearHomComplexPostcomp_f_apply,
-      Cochain.toSingleMk_postcomp, hz]
+  toFun z := (HomWithAction.toHom ρ).symm <|
+    Cochain.toSingleLinearEquiv (R := k) (neg_add_cancel i)
+      (CochainSingle₀WithAction.toCochain ρ z)
+  invFun f := (CochainSingle₀WithAction.toCochain ρ).symm <|
+    (Cochain.toSingleLinearEquiv (R := k) (neg_add_cancel i)).symm
+      (HomWithAction.toHom ρ f)
+  left_inv z := by
+    simp only [AddEquiv.apply_symm_apply, LinearEquiv.symm_apply_apply, AddEquiv.symm_apply_apply]
+  right_inv f := by
+    simp only [AddEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply, AddEquiv.symm_apply_apply]
+  map_add' z₁ z₂ := by simp only [map_add]
+  map_smul' r z := (HomWithAction.toHom ρ).injective <| by
+    simpa only [AddEquiv.apply_symm_apply, RingHom.id_apply, HomWithAction.toHom_smul,
+      CochainSingle₀WithAction.toCochain_smul] using
+      toSingleLinearEquiv_linearHomComplexPostcomp_f_apply (k := k) K (ρ r).asHom i
+        (CochainSingle₀WithAction.toCochain ρ z)
 
 @[simp]
 lemma toHom_toSingleLinearEquivWithAction {K : CochainComplex C ℤ} (ρ : R →+* End Y)
     {i : ℤ} (z : CochainSingle₀WithAction k K ρ i) :
     HomWithAction.toHom ρ (toSingleLinearEquivWithAction k K ρ i z) =
-      Cochain.toSingleEquiv (neg_add_cancel i) (CochainSingle₀WithAction.toCochain ρ z) := (rfl)
+      Cochain.toSingleEquiv (neg_add_cancel i) (CochainSingle₀WithAction.toCochain ρ z) := by
+  simp [toSingleLinearEquivWithAction, Cochain.toSingleLinearEquiv]
 
 @[simp]
 lemma toCochain_toSingleLinearEquivWithAction_symm {K : CochainComplex C ℤ}
     (ρ : R →+* End Y) {i : ℤ} (f : HomWithAction ρ (K.X (-i))) :
     CochainSingle₀WithAction.toCochain ρ ((toSingleLinearEquivWithAction k K ρ i).symm f) =
-      Cochain.toSingleMk (HomWithAction.toHom ρ f) (neg_add_cancel i) := (rfl)
+      Cochain.toSingleMk (HomWithAction.toHom ρ f) (neg_add_cancel i) := by
+  apply (Cochain.toSingleEquiv (neg_add_cancel i)).injective
+  rw [← toHom_toSingleLinearEquivWithAction (k := k) ρ, LinearEquiv.apply_symm_apply,
+    Cochain.toSingleEquiv_toSingleMk]
 
 variable (k) in
 /-- The `R`-linear differential on `CochainSingle₀WithAction` induced by `linearHomComplex`. -/
-def CochainSingle₀WithAction.differential (K : CochainComplex C ℤ) {R : Type v} [Ring R]
+def CochainSingle₀WithAction.differential (K : CochainComplex C ℤ)
     (ρ : R →+* End Y) (i j : ℤ) :
     CochainSingle₀WithAction k K ρ i →ₗ[R] CochainSingle₀WithAction k K ρ j where
   toFun z := (CochainSingle₀WithAction.toCochain ρ).symm <|
@@ -286,58 +194,55 @@ def CochainSingle₀WithAction.differential (K : CochainComplex C ℤ) {R : Type
       ModuleCat.hom_comp, LinearMap.comp_apply] using hcomm
 
 @[simp]
-lemma CochainSingle₀WithAction.toCochain_differential_apply {K : CochainComplex C ℤ} {R : Type v}
-    [Ring R] (ρ : R →+* End Y) {i j : ℤ} (z : CochainSingle₀WithAction k K ρ i) :
+lemma CochainSingle₀WithAction.toCochain_differential_apply {K : CochainComplex C ℤ}
+    (ρ : R →+* End Y) {i j : ℤ} (z : CochainSingle₀WithAction k K ρ i) :
     CochainSingle₀WithAction.toCochain ρ (CochainSingle₀WithAction.differential k K ρ i j z) =
       ((linearHomComplex k K ((singleFunctor C 0).obj Y)).d i j).hom
         (CochainSingle₀WithAction.toCochain ρ z) := (rfl)
 
-lemma CochainSingle₀WithAction.differential_shape (K : CochainComplex C ℤ) {R : Type v} [Ring R]
+lemma CochainSingle₀WithAction.differential_shape (K : CochainComplex C ℤ)
     (ρ : R →+* End Y) (i j : ℤ) (hij : ¬ (ComplexShape.up ℤ).Rel i j) :
-    (ModuleCat.ofHom (CochainSingle₀WithAction.differential k K ρ i j) :
-      ModuleCat.of R (CochainSingle₀WithAction k K ρ i) ⟶
-        ModuleCat.of R (CochainSingle₀WithAction k K ρ j)) = 0 := by
+    CochainSingle₀WithAction.differential k K ρ i j = 0 := by
   ext z
   apply (CochainSingle₀WithAction.toCochain (k := k) ρ).injective
-  rw [ModuleCat.ofHom_apply, CochainSingle₀WithAction.toCochain_differential_apply (k := k),
-    (linearHomComplex k K ((singleFunctor C 0).obj Y)).shape i j hij]
-  rfl
+  simp only [CochainSingle₀WithAction.toCochain_differential_apply (k := k),
+    (linearHomComplex k K ((singleFunctor C 0).obj Y)).shape i j hij,
+    ModuleCat.hom_zero, LinearMap.zero_apply, map_zero]
 
 lemma CochainSingle₀WithAction.differential_comp_differential (K : CochainComplex C ℤ)
-    {R : Type v} [Ring R] (ρ : R →+* End Y) (i j m : ℤ) :
-    (ModuleCat.ofHom (CochainSingle₀WithAction.differential k K ρ i j) :
-      ModuleCat.of R (CochainSingle₀WithAction k K ρ i) ⟶
-        ModuleCat.of R (CochainSingle₀WithAction k K ρ j)) ≫
-      ModuleCat.ofHom (CochainSingle₀WithAction.differential k K ρ j m) = 0 := by
+    (ρ : R →+* End Y) (i j m : ℤ) :
+    (CochainSingle₀WithAction.differential k K ρ j m).comp
+      (CochainSingle₀WithAction.differential k K ρ i j) = 0 := by
   ext z
   apply (CochainSingle₀WithAction.toCochain (k := k) ρ).injective
-  rw [ModuleCat.comp_apply, ModuleCat.ofHom_apply, ModuleCat.ofHom_apply,
-    CochainSingle₀WithAction.toCochain_differential_apply (k := k),
-    CochainSingle₀WithAction.toCochain_differential_apply (k := k), ← ModuleCat.comp_apply,
-    HomologicalComplex.d_comp_d]
-  rfl
+  simp only [LinearMap.comp_apply, CochainSingle₀WithAction.toCochain_differential_apply (k := k),
+    ← ModuleCat.comp_apply, HomologicalComplex.d_comp_d, ModuleCat.hom_zero, LinearMap.zero_apply,
+    map_zero]
 
 variable (k) in
 -- The terms must reduce to cochain modules to typecheck `linearHomComplexSingle₀WithAction_d`.
 /-- When `R` is a ring, `CochainSingle₀WithAction k K ρ` assembles into a cochain complex in
 `ModuleCat R`. -/
 @[expose]
-def linearHomComplexSingle₀WithAction (K : CochainComplex C ℤ) {R : Type v} [Ring R]
+def linearHomComplexSingle₀WithAction (K : CochainComplex C ℤ) {R : Type*} [Ring R]
     (ρ : R →+* End Y) : CochainComplex (ModuleCat.{v} R) ℤ where
   X i := ModuleCat.of R (CochainSingle₀WithAction k K ρ i)
   d i j := ModuleCat.ofHom (CochainSingle₀WithAction.differential k K ρ i j)
-  shape i j hij := CochainSingle₀WithAction.differential_shape (k := k) K ρ i j hij
-  d_comp_d' i j m _ _ :=
-    CochainSingle₀WithAction.differential_comp_differential (k := k) K ρ i j m
+  shape i j hij := by
+    rw [CochainSingle₀WithAction.differential_shape (k := k) K ρ i j hij, ModuleCat.ofHom_zero]
+  d_comp_d' i j m _ _ := by
+    rw [← ModuleCat.ofHom_comp,
+      CochainSingle₀WithAction.differential_comp_differential (k := k) K ρ i j m,
+      ModuleCat.ofHom_zero]
 
 @[simp]
-lemma linearHomComplexSingle₀WithAction_X {K : CochainComplex C ℤ} {R : Type v} [Ring R]
+lemma linearHomComplexSingle₀WithAction_X {K : CochainComplex C ℤ} {R : Type*} [Ring R]
     (ρ : R →+* End Y) (i : ℤ) :
     (linearHomComplexSingle₀WithAction k K ρ).X i =
       ModuleCat.of R (CochainSingle₀WithAction k K ρ i) := (rfl)
 
 @[simp]
-lemma linearHomComplexSingle₀WithAction_d {K : CochainComplex C ℤ} {R : Type v} [Ring R]
+lemma linearHomComplexSingle₀WithAction_d {K : CochainComplex C ℤ} {R : Type*} [Ring R]
     (ρ : R →+* End Y) (i j : ℤ) :
     (linearHomComplexSingle₀WithAction k K ρ).d i j =
       ModuleCat.ofHom (CochainSingle₀WithAction.differential k K ρ i j) := (rfl)
@@ -360,13 +265,28 @@ variable (k) in
 /-- The action of `R` on `(linearHomComplex k K ((singleFunctor C 0).obj Y)).homology i` induced by
 `ρ`, as a ring homomorphism to `k`-linear endomorphisms. -/
 def smulEnd (K : CochainComplex C ℤ) (ρ : R →+* End Y) (i : ℤ) :
-    R →+* Module.End k ((linearHomComplex k K ((singleFunctor C 0).obj Y)).homology i) where
-  toFun r :=
-    (homologyMap (linearHomComplexPostcomp k K ((singleFunctor C 0).map (ρ r).asHom)) i).hom
-  map_one' := by ext x; simp
-  map_mul' r s := by ext x; simp [End.mul_asHom, HomologicalComplex.homologyMap_comp]
-  map_zero' := by ext x; simp
-  map_add' r s := by ext x; simp [HomologicalComplex.homologyMap_add]
+    R →+* Module.End k ((linearHomComplex k K ((singleFunctor C 0).obj Y)).homology i) :=
+  (ModuleCat.endRingEquiv
+    ((HomologicalComplex.homologyFunctor (ModuleCat.{v} k) (ComplexShape.up ℤ) i).obj
+      (linearHomComplex k K ((singleFunctor C 0).obj Y)))).toRingHom.comp
+    (((HomologicalComplex.homologyFunctor (ModuleCat.{v} k) (ComplexShape.up ℤ) i).mapEndRingHom
+      (linearHomComplex k K ((singleFunctor C 0).obj Y))).comp
+      (linearHomComplexSingle₀Action k K ρ))
+
+@[simp]
+lemma smulEnd_apply {K : CochainComplex C ℤ} (ρ : R →+* End Y) (i : ℤ) (r : R) :
+    smulEnd k K ρ i r =
+      (homologyMap (linearHomComplexPostcomp k K ((singleFunctor C 0).map (ρ r).asHom)) i).hom := by
+  let F := HomologicalComplex.homologyFunctor (ModuleCat.{v} k) (ComplexShape.up ℤ) i
+  have h : ((ModuleCat.endRingEquiv
+      (F.obj (linearHomComplex k K ((singleFunctor C 0).obj Y)))).toRingHom.comp
+        ((F.mapEndRingHom (linearHomComplex k K ((singleFunctor C 0).obj Y))).comp
+          (linearHomComplexSingle₀Action k K ρ))) r =
+      (F.map (linearHomComplexPostcomp k K ((singleFunctor C 0).map (ρ r).asHom))).hom := by
+    simp only [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
+      ModuleCat.endRingEquiv_apply, Functor.mapEndRingHom_apply_asHom]
+    exact congrArg (fun φ ↦ (F.map φ).hom) (linearHomComplexSingle₀Action_apply_asHom K ρ r)
+  exact h
 
 instance (K : CochainComplex C ℤ) (ρ : R →+* End Y) (i : ℤ) :
     Module R (HomologySingle₀WithAction k K ρ i) :=
@@ -384,7 +304,8 @@ lemma toHomology_smul {K : CochainComplex C ℤ} (ρ : R →+* End Y) {i : ℤ}
     (r : R) (x : HomologySingle₀WithAction k K ρ i) :
     toHomology ρ (r • x) =
       (homologyMap (linearHomComplexPostcomp k K ((singleFunctor C 0).map (ρ r).asHom)) i).hom
-        (toHomology ρ x) := (rfl)
+        (toHomology ρ x) :=
+  LinearMap.congr_fun (smulEnd_apply (k := k) ρ i r) (toHomology ρ x)
 
 variable (k) in
 /-- Contravariant functoriality of `HomologySingle₀WithAction` along `φ : K₁ ⟶ K₂` is
@@ -415,6 +336,223 @@ lemma toHomology_precompLinearMap (ρ : R →+* End Y) {K₁ K₂ : CochainCompl
 
 end HomologySingle₀WithAction
 
+section ComplexHomologyComparison
+
+variable (k) in
+private def toCochainX {K : CochainComplex C ℤ} {R : Type*} [Ring R] (ρ : R →+* End Y) {i : ℤ} :
+    (linearHomComplexSingle₀WithAction k K ρ).X i ≃+
+      (linearHomComplex k K ((singleFunctor C 0).obj Y)).X i :=
+  CochainSingle₀WithAction.toCochain (k := k) ρ
+
+private lemma toCochainX_d_apply {K : CochainComplex C ℤ} {R : Type*} [Ring R]
+    (ρ : R →+* End Y) {i j : ℤ} (x : (linearHomComplexSingle₀WithAction k K ρ).X i) :
+    toCochainX k ρ ((linearHomComplexSingle₀WithAction k K ρ).d i j x) =
+      (linearHomComplex k K ((singleFunctor C 0).obj Y)).d i j (toCochainX k ρ x) :=
+  CochainSingle₀WithAction.toCochain_differential_apply (k := k) ρ x
+
+private lemma toCochainX_smul {K : CochainComplex C ℤ} {R : Type*} [Ring R]
+    (ρ : R →+* End Y) {i : ℤ} (r : R) (x : (linearHomComplexSingle₀WithAction k K ρ).X i) :
+    toCochainX k ρ (r • x) =
+      (linearHomComplexPostcomp k K ((singleFunctor C 0).map (ρ r).asHom)).f i (toCochainX k ρ x) :=
+  CochainSingle₀WithAction.toCochain_smul (k := k) ρ r x
+
+variable (k) in
+private def toUnderlyingCycle {K : CochainComplex C ℤ} {R : Type*} [Ring R]
+    (ρ : R →+* End Y) (i : ℤ)
+    (z : (linearHomComplexSingle₀WithAction k K ρ).cycles i) :
+    (linearHomComplex k K ((singleFunctor C 0).obj Y)).cycles i :=
+  (linearHomComplex k K ((singleFunctor C 0).obj Y)).moduleCatCyclesMk
+    (toCochainX k ρ ((linearHomComplexSingle₀WithAction k K ρ).iCycles i z))
+    (i + 1) (by simp) <| by
+      rw [← toCochainX_d_apply (k := k) ρ]
+      exact (congrArg (toCochainX k ρ)
+        ((linearHomComplexSingle₀WithAction k K ρ).moduleCat_d_iCycles_apply i (i + 1) z)).trans
+        (map_zero (toCochainX k ρ))
+
+private lemma iCycles_toUnderlyingCycle {K : CochainComplex C ℤ} {R : Type*} [Ring R]
+    (ρ : R →+* End Y) (i : ℤ)
+    (z : (linearHomComplexSingle₀WithAction k K ρ).cycles i) :
+    (linearHomComplex k K ((singleFunctor C 0).obj Y)).iCycles i
+        (toUnderlyingCycle k ρ i z) =
+      toCochainX k ρ ((linearHomComplexSingle₀WithAction k K ρ).iCycles i z) :=
+  (linearHomComplex k K ((singleFunctor C 0).obj Y)).iCycles_moduleCatCyclesMk i _ _ _ _
+
+variable (k) in
+private def linearHomComplexSingle₀WithActionCyclesToHomology (K : CochainComplex C ℤ)
+    {R : Type*} [Ring R] (ρ : R →+* End Y) (i : ℤ) :
+    (linearHomComplexSingle₀WithAction k K ρ).cycles i →ₗ[R] HomologySingle₀WithAction k K ρ i where
+  toFun z := (HomologySingle₀WithAction.toHomology (k := k) ρ).symm <|
+    (linearHomComplex k K ((singleFunctor C 0).obj Y)).homologyπ i (toUnderlyingCycle k ρ i z)
+  map_add' z₁ z₂ := (HomologySingle₀WithAction.toHomology (k := k) ρ).injective <| by
+    simp only [AddEquiv.apply_symm_apply, map_add]
+    rw [← map_add]
+    congr 1
+    apply (linearHomComplex k K ((singleFunctor C 0).obj Y)).moduleCat_iCycles_injective i
+    rw [map_add, iCycles_toUnderlyingCycle, iCycles_toUnderlyingCycle, iCycles_toUnderlyingCycle,
+      map_add, map_add]
+  map_smul' r z := (HomologySingle₀WithAction.toHomology (k := k) ρ).injective <| by
+    simp only [AddEquiv.apply_symm_apply, RingHom.id_apply,
+      HomologySingle₀WithAction.toHomology_smul, ModuleCat.Hom.hom]
+    rw [HomologicalComplex.moduleCat_homologyMap_homologyπ]
+    congr 1
+    apply (linearHomComplex k K ((singleFunctor C 0).obj Y)).moduleCat_iCycles_injective i
+    rw [HomologicalComplex.moduleCat_iCycles_cyclesMap_apply,
+      iCycles_toUnderlyingCycle, iCycles_toUnderlyingCycle, map_smul, toCochainX_smul]
+
+variable (k) in
+private lemma linearHomComplexSingle₀WithActionCyclesToHomology_toCycles (K : CochainComplex C ℤ)
+    {R : Type*} [Ring R] (ρ : R →+* End Y) (i : ℤ) :
+    (linearHomComplexSingle₀WithAction k K ρ).toCycles (i - 1) i ≫
+        ModuleCat.ofHom (linearHomComplexSingle₀WithActionCyclesToHomology k K ρ i) = 0 := by
+  let L := linearHomComplex k K ((singleFunctor C 0).obj Y)
+  let L' := linearHomComplexSingle₀WithAction k K ρ
+  ext y
+  apply (HomologySingle₀WithAction.toHomology (k := k) ρ).injective
+  simp only [ConcreteCategory.comp_apply, ModuleCat.hom_ofHom, ModuleCat.hom_zero,
+    LinearMap.zero_apply, map_zero, linearHomComplexSingle₀WithActionCyclesToHomology,
+    LinearMap.coe_mk, AddHom.coe_mk, AddEquiv.apply_symm_apply]
+  have hcyc : toUnderlyingCycle k ρ i (L'.toCycles (i - 1) i y) =
+      L.toCycles (i - 1) i (toCochainX k ρ y) := by
+    apply L.moduleCat_iCycles_injective i
+    rw [iCycles_toUnderlyingCycle, HomologicalComplex.moduleCat_iCycles_toCycles_apply,
+      HomologicalComplex.moduleCat_iCycles_toCycles_apply]
+    exact toCochainX_d_apply (k := k) ρ y
+  rw [hcyc, L.moduleCat_homologyπ_eq_zero_iff (m := i - 1) (by simp)]
+  exact ⟨toCochainX k ρ y, rfl⟩
+
+variable (k) in
+private def linearHomComplexSingle₀WithActionHomologyMap (K : CochainComplex C ℤ)
+    {R : Type*} [Ring R] (ρ : R →+* End Y) (i : ℤ) :
+    (linearHomComplexSingle₀WithAction k K ρ).homology i ⟶
+      ModuleCat.of R (HomologySingle₀WithAction k K ρ i) :=
+  (CokernelCofork.IsColimit.desc'
+    ((linearHomComplexSingle₀WithAction k K ρ).homologyIsCokernel (i - 1) i (by simp))
+    (ModuleCat.ofHom (linearHomComplexSingle₀WithActionCyclesToHomology k K ρ i))
+    (linearHomComplexSingle₀WithActionCyclesToHomology_toCycles k K ρ i)).1
+
+variable (k) in
+private lemma homologyπ_linearHomComplexSingle₀WithActionHomologyMap (K : CochainComplex C ℤ)
+    {R : Type*} [Ring R] (ρ : R →+* End Y) (i : ℤ) :
+    (linearHomComplexSingle₀WithAction k K ρ).homologyπ i ≫
+        linearHomComplexSingle₀WithActionHomologyMap k K ρ i =
+      ModuleCat.ofHom (linearHomComplexSingle₀WithActionCyclesToHomology k K ρ i) :=
+  (CokernelCofork.IsColimit.desc'
+    ((linearHomComplexSingle₀WithAction k K ρ).homologyIsCokernel (i - 1) i (by simp))
+    (ModuleCat.ofHom (linearHomComplexSingle₀WithActionCyclesToHomology k K ρ i))
+    (linearHomComplexSingle₀WithActionCyclesToHomology_toCycles k K ρ i)).2
+
+variable (k) in
+private lemma linearHomComplexSingle₀WithActionHomologyMap_bijective (K : CochainComplex C ℤ)
+    {R : Type*} [Ring R] (ρ : R →+* End Y) (i : ℤ) :
+    Function.Bijective (linearHomComplexSingle₀WithActionHomologyMap k K ρ i).hom := by
+  let L := linearHomComplex k K ((singleFunctor C 0).obj Y)
+  let L' := linearHomComplexSingle₀WithAction k K ρ
+  let f := linearHomComplexSingle₀WithActionHomologyMap k K ρ i
+  have hfπ : L'.homologyπ i ≫ f =
+      ModuleCat.ofHom (linearHomComplexSingle₀WithActionCyclesToHomology k K ρ i) :=
+    homologyπ_linearHomComplexSingle₀WithActionHomologyMap k K ρ i
+  refine ⟨?_, ?_⟩
+  · rw [injective_iff_map_eq_zero]
+    intro x hx
+    obtain ⟨z, rfl⟩ := L'.moduleCat_homologyπ_surjective i x
+    have h0 : (linearHomComplexSingle₀WithActionCyclesToHomology k K ρ i) z = 0 := by
+      have := congrArg (fun g ↦ g z) hfπ
+      simpa only [ConcreteCategory.comp_apply, ModuleCat.hom_ofHom] using this.symm.trans hx
+    have h0' : L.homologyπ i (toUnderlyingCycle k ρ i z) = 0 := by
+      simpa only [linearHomComplexSingle₀WithActionCyclesToHomology, LinearMap.coe_mk,
+        AddHom.coe_mk, AddEquiv.apply_symm_apply, map_zero] using
+        congrArg (HomologySingle₀WithAction.toHomology (k := k) ρ) h0
+    obtain ⟨y, hy⟩ := (L.moduleCat_homologyπ_eq_zero_iff (m := i - 1) (by simp) _).1 h0'
+    rw [L'.moduleCat_homologyπ_eq_zero_iff (m := i - 1) (by simp)]
+    refine ⟨(toCochainX k ρ).symm y, L'.moduleCat_iCycles_injective i ?_⟩
+    apply (toCochainX k ρ).injective
+    have hy' := congrArg (L.iCycles i) hy
+    rw [HomologicalComplex.moduleCat_iCycles_toCycles_apply, iCycles_toUnderlyingCycle] at hy'
+    rw [HomologicalComplex.moduleCat_iCycles_toCycles_apply, toCochainX_d_apply (k := k) ρ,
+      AddEquiv.apply_symm_apply]
+    exact hy'
+  · intro x
+    obtain ⟨w, hw⟩ := L.moduleCat_homologyπ_surjective i
+      (HomologySingle₀WithAction.toHomology (k := k) ρ x)
+    let x' : L'.X i := (toCochainX k ρ).symm (L.iCycles i w)
+    have hdz : L'.d i (i + 1) x' = 0 := by
+      apply (toCochainX k ρ).injective
+      rw [toCochainX_d_apply (k := k) ρ, AddEquiv.apply_symm_apply, map_zero]
+      exact L.moduleCat_d_iCycles_apply i (i + 1) w
+    let z := L'.moduleCatCyclesMk x' (i + 1) (by simp) hdz
+    refine ⟨L'.homologyπ i z, (HomologySingle₀WithAction.toHomology (k := k) ρ).injective ?_⟩
+    have hcomp := congrArg (fun g ↦ g.hom z) hfπ
+    simp only [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_ofHom,
+      ModuleCat.Hom.hom] at hcomp
+    simp only [ModuleCat.Hom.hom]
+    rw [hcomp]
+    simp only [linearHomComplexSingle₀WithActionCyclesToHomology, LinearMap.coe_mk, AddHom.coe_mk,
+      AddEquiv.apply_symm_apply]
+    rw [← hw]
+    congr 1
+    apply L.moduleCat_iCycles_injective i
+    rw [iCycles_toUnderlyingCycle]
+    have hiz : L'.iCycles i z = x' := L'.iCycles_moduleCatCyclesMk i x' (i + 1) (by simp) hdz
+    exact (congrArg (toCochainX k ρ) hiz).trans (AddEquiv.apply_symm_apply _ _)
+
+variable (k) in
+/-- **Canonical `R`-linear cohomology comparison** between the `ModuleCat R` cochain complex
+`linearHomComplexSingle₀WithAction k K ρ` and `HomologySingle₀WithAction k K ρ i`: taking
+cohomology in `ModuleCat R` agrees with equipping the `ModuleCat k` cohomology with the
+postcomposition `R`-action. -/
+def linearHomComplexSingle₀WithActionHomologyEquiv (K : CochainComplex C ℤ)
+    {R : Type*} [Ring R] (ρ : R →+* End Y) (i : ℤ) :
+    (linearHomComplexSingle₀WithAction k K ρ).homology i ≃ₗ[R]
+      HomologySingle₀WithAction k K ρ i :=
+  LinearEquiv.ofBijective (linearHomComplexSingle₀WithActionHomologyMap k K ρ i).hom
+    (linearHomComplexSingle₀WithActionHomologyMap_bijective k K ρ i)
+
+/-- `linearHomComplexSingle₀WithActionHomologyEquiv` sends the cohomology class of a cocycle `z` in
+`linearHomComplexSingle₀WithAction` to the cohomology class of the matching cocycle `w` in
+`linearHomComplex`. -/
+lemma toHomology_linearHomComplexSingle₀WithActionHomologyEquiv_homologyπ
+    {K : CochainComplex C ℤ} {R : Type*} [Ring R] (ρ : R →+* End Y) (i : ℤ)
+    (z : (linearHomComplexSingle₀WithAction k K ρ).cycles i)
+    (w : (linearHomComplex k K ((singleFunctor C 0).obj Y)).cycles i)
+    (hzw : CochainSingle₀WithAction.toCochain (k := k) ρ
+        ((linearHomComplexSingle₀WithAction k K ρ).iCycles i z) =
+      (linearHomComplex k K ((singleFunctor C 0).obj Y)).iCycles i w) :
+    HomologySingle₀WithAction.toHomology (k := k) ρ
+        (linearHomComplexSingle₀WithActionHomologyEquiv k K ρ i
+          ((linearHomComplexSingle₀WithAction k K ρ).homologyπ i z)) =
+      (linearHomComplex k K ((singleFunctor C 0).obj Y)).homologyπ i w := by
+  have hcomp := congrArg (fun g ↦ g z)
+    (homologyπ_linearHomComplexSingle₀WithActionHomologyMap k K ρ i)
+  simp only [ConcreteCategory.comp_apply, ModuleCat.hom_ofHom] at hcomp
+  rw [linearHomComplexSingle₀WithActionHomologyEquiv, LinearEquiv.ofBijective_apply]
+  simp only [ModuleCat.Hom.hom, hcomp, linearHomComplexSingle₀WithActionCyclesToHomology,
+    LinearMap.coe_mk, AddHom.coe_mk, AddEquiv.apply_symm_apply]
+  congr 1
+  apply (linearHomComplex k K ((singleFunctor C 0).obj Y)).moduleCat_iCycles_injective i
+  rw [iCycles_toUnderlyingCycle]
+  exact hzw
+
+/-- The inverse of `linearHomComplexSingle₀WithActionHomologyEquiv` sends the cohomology class of a
+cocycle `w` in `linearHomComplex` to the cohomology class of the matching cocycle `z` in
+`linearHomComplexSingle₀WithAction`. -/
+lemma linearHomComplexSingle₀WithActionHomologyEquiv_symm_homologyπ
+    {K : CochainComplex C ℤ} {R : Type*} [Ring R] (ρ : R →+* End Y) (i : ℤ)
+    (z : (linearHomComplexSingle₀WithAction k K ρ).cycles i)
+    (w : (linearHomComplex k K ((singleFunctor C 0).obj Y)).cycles i)
+    (hzw : CochainSingle₀WithAction.toCochain (k := k) ρ
+        ((linearHomComplexSingle₀WithAction k K ρ).iCycles i z) =
+      (linearHomComplex k K ((singleFunctor C 0).obj Y)).iCycles i w) :
+    (linearHomComplexSingle₀WithActionHomologyEquiv k K ρ i).symm
+        ((HomologySingle₀WithAction.toHomology (k := k) ρ).symm
+          ((linearHomComplex k K ((singleFunctor C 0).obj Y)).homologyπ i w)) =
+      (linearHomComplexSingle₀WithAction k K ρ).homologyπ i z := by
+  apply (linearHomComplexSingle₀WithActionHomologyEquiv k K ρ i).injective
+  apply (HomologySingle₀WithAction.toHomology (k := k) ρ).injective
+  rw [LinearEquiv.apply_symm_apply, AddEquiv.apply_symm_apply,
+    toHomology_linearHomComplexSingle₀WithActionHomologyEquiv_homologyπ ρ i z w hzw]
+
+end ComplexHomologyComparison
+
 end ComplexAction
 
 section UniversalCoefficientWithAction
@@ -430,8 +568,7 @@ def cochainKroneckerWithAction (K : CochainComplex C ℤ) (ρ : R →+* End Y) (
     HomologySingle₀WithAction k K ρ i →ₗ[R] HomWithAction ρ (K.homology (-i)) where
   toFun x := (HomWithAction.toHom ρ).symm <|
     cochainKronecker k K Y i (HomologySingle₀WithAction.toHomology ρ x)
-  map_add' x y := map_add (cochainKronecker k K Y i)
-    (HomologySingle₀WithAction.toHomology ρ x) (HomologySingle₀WithAction.toHomology ρ y)
+  map_add' x y := by simp only [map_add]
   map_smul' r x := (HomWithAction.toHom ρ).injective <| by
     simp only [AddEquiv.apply_symm_apply, HomWithAction.toHom_smul, RingHom.id_apply,
       HomologySingle₀WithAction.toHomology_smul]
@@ -441,7 +578,8 @@ def cochainKroneckerWithAction (K : CochainComplex C ℤ) (ρ : R →+* End Y) (
 lemma toHom_cochainKroneckerWithAction {K : CochainComplex C ℤ} (ρ : R →+* End Y) {i : ℤ}
     (x : HomologySingle₀WithAction k K ρ i) :
     HomWithAction.toHom ρ (cochainKroneckerWithAction k K ρ i x) =
-      cochainKronecker k K Y i (HomologySingle₀WithAction.toHomology ρ x) := (rfl)
+      cochainKronecker k K Y i (HomologySingle₀WithAction.toHomology ρ x) := by
+  simp [cochainKroneckerWithAction]
 
 /-- Naturality of `cochainKroneckerWithAction` in the cochain complex `K`. -/
 theorem cochainKroneckerWithAction_naturality (ρ : R →+* End Y)
@@ -451,16 +589,20 @@ theorem cochainKroneckerWithAction_naturality (ρ : R →+* End Y)
         (HomologySingle₀WithAction.precompLinearMap k ρ φ i x) =
       HomWithAction.precompLinearMap ρ (homologyMap φ (-i))
         (cochainKroneckerWithAction k K₂ ρ i x) :=
-  (HomWithAction.toHom ρ).injective <|
-    cochainKronecker_naturality φ i (HomologySingle₀WithAction.toHomology ρ x)
+  (HomWithAction.toHom ρ).injective <| by
+    simpa only [toHom_cochainKroneckerWithAction, HomWithAction.toHom_precompLinearMap,
+      HomologySingle₀WithAction.toHomology_precompLinearMap] using
+      cochainKronecker_naturality φ i (HomologySingle₀WithAction.toHomology ρ x)
 
 variable (k) in
 /-- When `Y` is injective, `cochainKroneckerWithAction` is an `R`-linear equivalence. -/
 def cochainKroneckerEquivWithAction (K : CochainComplex C ℤ) (ρ : R →+* End Y)
     [Injective Y] (i : ℤ) :
     HomologySingle₀WithAction k K ρ i ≃ₗ[R] HomWithAction ρ (K.homology (-i)) :=
-  LinearEquiv.ofBijective (cochainKroneckerWithAction k K ρ i)
-    (cochainKronecker_bijective (k := k) (K := K) (Y := Y) i)
+  LinearEquiv.ofBijective (cochainKroneckerWithAction k K ρ i) <|
+    (HomWithAction.toHom ρ).symm.bijective.comp <|
+      (cochainKronecker_bijective (k := k) (K := K) (Y := Y) i).comp
+        (HomologySingle₀WithAction.toHomology (k := k) ρ).bijective
 
 @[simp]
 lemma cochainKroneckerEquivWithAction_apply {K : CochainComplex C ℤ} (ρ : R →+* End Y)
@@ -474,8 +616,10 @@ def cochainKroneckerEquivOfProjectiveHomologyWithAction (K : CochainComplex C �
     (ρ : R →+* End Y) {i j : ℤ} (hij : i + j = 1)
     [Projective (K.homology j)] [IsSplitMono (K.iCycles j)] [IsSplitMono (K.iCycles (-i))] :
     HomologySingle₀WithAction k K ρ i ≃ₗ[R] HomWithAction ρ (K.homology (-i)) :=
-  LinearEquiv.ofBijective (cochainKroneckerWithAction k K ρ i)
-    (cochainKronecker_bijective_of_projective_homology (k := k) (K := K) (Y := Y) hij)
+  LinearEquiv.ofBijective (cochainKroneckerWithAction k K ρ i) <|
+    (HomWithAction.toHom ρ).symm.bijective.comp <|
+      (cochainKronecker_bijective_of_projective_homology (k := k) (K := K) (Y := Y) hij).comp
+        (HomologySingle₀WithAction.toHomology (k := k) ρ).bijective
 
 @[simp]
 lemma cochainKroneckerEquivOfProjectiveHomologyWithAction_apply {K : CochainComplex C ℤ}
@@ -493,8 +637,7 @@ def cochainKroneckerSectionWithAction (K : CochainComplex C ℤ) (ρ : R →+* E
     HomWithAction ρ (K.homology (-i)) →ₗ[R] HomologySingle₀WithAction k K ρ i where
   toFun g := (HomologySingle₀WithAction.toHomology ρ).symm <|
     cochainKroneckerSection k K Y i (HomWithAction.toHom ρ g)
-  map_add' g₁ g₂ := map_add (cochainKroneckerSection k K Y i)
-    (HomWithAction.toHom ρ g₁) (HomWithAction.toHom ρ g₂)
+  map_add' g₁ g₂ := by simp only [map_add]
   map_smul' r g := (HomologySingle₀WithAction.toHomology ρ).injective <| by
     simp only [AddEquiv.apply_symm_apply, HomologySingle₀WithAction.toHomology_smul,
       RingHom.id_apply, HomWithAction.toHom_smul]
@@ -512,8 +655,10 @@ lemma cochainKroneckerWithAction_cochainKroneckerSectionWithAction {K : CochainC
     (ρ : R →+* End Y) {i : ℤ} [IsSplitMono (K.iCycles (-i))]
     (g : HomWithAction ρ (K.homology (-i))) :
     cochainKroneckerWithAction k K ρ i (cochainKroneckerSectionWithAction k K ρ i g) = g :=
-  (HomWithAction.toHom ρ).injective <|
-    cochainKronecker_cochainKroneckerSection (k := k) i (HomWithAction.toHom ρ g)
+  (HomWithAction.toHom ρ).injective <| by
+    simpa only [toHom_cochainKroneckerWithAction,
+      toHomology_cochainKroneckerSectionWithAction] using
+      cochainKronecker_cochainKroneckerSection (k := k) i (HomWithAction.toHom ρ g)
 
 end UniversalCoefficientWithAction
 
@@ -525,7 +670,8 @@ variable {C : Type u} [Category.{v} C] [Abelian C] [HasExt.{w} C]
 
 variable (k) in
 /-- **The `R`-linear `Ext` inclusion** `Ext¹(Hʲ(K), Y) →ₗ[R] Hⁱ(Hom(K, Y[0]))` (`i + j = 1`) for a
-target `Y` with action `ρ : R →+* End Y`. -/
+target `Y` with action `ρ : R →+* End Y`, assuming `K.cycles j` is projective and `K.iCycles j`
+splits. -/
 def cochainExtToHomologyWithAction (K : CochainComplex C ℤ) (ρ : R →+* End Y)
     {i j : ℤ} (hij : i + j = 1) [Projective (K.cycles j)] [IsSplitMono (K.iCycles j)] :
     ExtWithAction.{w} ρ (K.homology j) 1 →ₗ[R] HomologySingle₀WithAction k K ρ i where
@@ -562,16 +708,20 @@ theorem exact_cochainExtToHomologyWithAction_cochainKroneckerWithAction
     {K : CochainComplex C ℤ} (ρ : R →+* End Y) {i j : ℤ} (hij : i + j = 1)
     [Projective (K.cycles j)] [IsSplitMono (K.iCycles j)] :
     Function.Exact (cochainExtToHomologyWithAction.{w} k K ρ hij)
-      (cochainKroneckerWithAction k K ρ i) := by
-  intro x
-  have hkr : cochainKroneckerWithAction k K ρ i x = 0 ↔
-      cochainKronecker k K Y i (HomologySingle₀WithAction.toHomology ρ x) = 0 :=
-    (HomWithAction.toHom ρ).injective.eq_iff' (map_zero _) |>.symm
-  rw [hkr, exact_cochainExtToHomology_cochainKronecker (k := k) (K := K) (Y := Y) hij]
-  exact ⟨fun ⟨e, he⟩ ↦ ⟨(ExtWithAction.toExt ρ).symm e,
-    (HomologySingle₀WithAction.toHomology ρ).injective <| by
-      simpa only [toHomology_cochainExtToHomologyWithAction, AddEquiv.apply_symm_apply] using he⟩,
-    fun ⟨e, h⟩ ↦ ⟨ExtWithAction.toExt ρ e, by rw [← h]; rfl⟩⟩
+      (cochainKroneckerWithAction k K ρ i) :=
+  Function.Exact.of_ladder_addEquiv_of_exact
+    (f₁₂ := (cochainExtToHomology.{w} k K Y hij).toAddMonoidHom)
+    (f₂₃ := (cochainKronecker k K Y i).toAddMonoidHom)
+    (g₁₂ := (cochainExtToHomologyWithAction.{w} k K ρ hij).toAddMonoidHom)
+    (g₂₃ := (cochainKroneckerWithAction k K ρ i).toAddMonoidHom)
+    (ExtWithAction.toExt ρ).symm
+    (HomologySingle₀WithAction.toHomology ρ).symm
+    (HomWithAction.toHom ρ).symm
+    (AddMonoidHom.ext fun e ↦ (HomologySingle₀WithAction.toHomology ρ).injective <| by
+      simp [AddMonoidHom.comp_apply])
+    (AddMonoidHom.ext fun x ↦ (HomWithAction.toHom ρ).injective <| by
+      simp [AddMonoidHom.comp_apply])
+    (exact_cochainExtToHomology_cochainKronecker (k := k) (K := K) (Y := Y) hij)
 
 /-- Naturality of `cochainExtToHomologyWithAction` in the cochain complex `K`. -/
 theorem cochainExtToHomologyWithAction_naturality (ρ : R →+* End Y)
@@ -590,18 +740,41 @@ theorem cochainExtToHomologyWithAction_naturality (ρ : R →+* End Y)
 
 variable (k) in
 /-- **The `R`-linear split universal coefficient decomposition** for `linearHomComplex` into a
-degree-zero target `Y` with action `ρ : R →+* End Y`: for `i + j = 1`, cohomology in degree `i`
-decomposes `R`-linearly as `Ext¹(Hʲ(K), Y) × (H⁻ⁱ(K) ⟶ Y)`. -/
+degree-zero target `Y` with action `ρ : R →+* End Y`: when `i + j = 1`, `K.cycles j` is projective,
+and `K.iCycles j` and `K.iCycles (-i)` split, cohomology in degree `i` decomposes `R`-linearly as
+`Ext¹(Hʲ(K), Y) × (H⁻ⁱ(K) ⟶ Y)`. -/
 def cochainUniversalCoefficientEquivWithAction (K : CochainComplex C ℤ) (ρ : R →+* End Y)
     {i j : ℤ} (hij : i + j = 1)
     [Projective (K.cycles j)] [IsSplitMono (K.iCycles j)] [IsSplitMono (K.iCycles (-i))] :
     HomologySingle₀WithAction k K ρ i ≃ₗ[R]
       ExtWithAction.{w} ρ (K.homology j) 1 × HomWithAction ρ (K.homology (-i)) :=
-  ((exact_cochainExtToHomologyWithAction_cochainKroneckerWithAction.{w}
-    (k := k) (K := K) ρ hij).splitSurjectiveEquiv
-      (cochainExtToHomologyWithAction_injective (k := k) ρ hij)
-      ⟨cochainKroneckerSectionWithAction k K ρ i,
-        LinearMap.ext (cochainKroneckerWithAction_cochainKroneckerSectionWithAction ρ)⟩).1
+  let e : (ExtWithAction.{w} ρ (K.homology j) 1 × HomWithAction ρ (K.homology (-i))) ≃ₗ[R]
+      HomologySingle₀WithAction k K ρ i :=
+    { toFun p := (HomologySingle₀WithAction.toHomology ρ).symm <|
+        (cochainUniversalCoefficientEquiv.{w} k K Y hij).symm
+          (ExtWithAction.toExt ρ p.1, HomWithAction.toHom ρ p.2)
+      invFun x :=
+        ((ExtWithAction.toExt ρ).symm
+            ((cochainUniversalCoefficientEquiv.{w} k K Y hij
+              (HomologySingle₀WithAction.toHomology ρ x)).1),
+          (HomWithAction.toHom ρ).symm
+            ((cochainUniversalCoefficientEquiv.{w} k K Y hij
+              (HomologySingle₀WithAction.toHomology ρ x)).2))
+      left_inv p := by
+        ext <;> simp only [AddEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply,
+          AddEquiv.symm_apply_apply]
+      right_inv x := by
+        simp only [AddEquiv.apply_symm_apply, Prod.mk.eta, LinearEquiv.symm_apply_apply,
+          AddEquiv.symm_apply_apply]
+      map_add' p q := (HomologySingle₀WithAction.toHomology ρ).injective <| by
+        simp only [AddEquiv.apply_symm_apply, Prod.fst_add, Prod.snd_add, map_add, ← Prod.mk_add_mk]
+      map_smul' r p := (HomologySingle₀WithAction.toHomology ρ).injective <| by
+        simp only [AddEquiv.apply_symm_apply, Prod.smul_fst, Prod.smul_snd, RingHom.id_apply,
+          HomologySingle₀WithAction.toHomology_smul, ExtWithAction.toExt_smul,
+          HomWithAction.toHom_smul, cochainUniversalCoefficientEquiv_symm_apply, map_add,
+          cochainExtToHomology_coefficient_naturality,
+          cochainKroneckerSection_coefficient_naturality] }
+  e.symm
 
 @[simp]
 lemma cochainUniversalCoefficientEquivWithAction_symm_apply {K : CochainComplex C ℤ}
@@ -610,20 +783,13 @@ lemma cochainUniversalCoefficientEquivWithAction_symm_apply {K : CochainComplex 
     (e : ExtWithAction.{w} ρ (K.homology j) 1) (g : HomWithAction ρ (K.homology (-i))) :
     (cochainUniversalCoefficientEquivWithAction.{w} k K ρ hij).symm (e, g) =
       cochainExtToHomologyWithAction k K ρ hij e +
-        cochainKroneckerSectionWithAction k K ρ i g := by
-  let S := (exact_cochainExtToHomologyWithAction_cochainKroneckerWithAction.{w}
-    (k := k) (K := K) ρ hij).splitSurjectiveEquiv
-      (cochainExtToHomologyWithAction_injective (k := k) ρ hij)
-  let sec : { s // (cochainKroneckerWithAction k K ρ i).comp s = LinearMap.id } :=
-    ⟨cochainKroneckerSectionWithAction k K ρ i,
-      LinearMap.ext (cochainKroneckerWithAction_cochainKroneckerSectionWithAction ρ)⟩
-  have he : (cochainUniversalCoefficientEquivWithAction.{w} k K ρ hij).symm (e, 0) =
-      cochainExtToHomologyWithAction k K ρ hij e :=
-    (LinearMap.congr_fun (S sec).property.left e).symm
-  have hg : (cochainUniversalCoefficientEquivWithAction.{w} k K ρ hij).symm (0, g) =
-      cochainKroneckerSectionWithAction k K ρ i g :=
-    LinearMap.congr_fun (congrArg Subtype.val (S.left_inv sec)) g
-  simpa only [← map_add, Prod.mk_add_mk, add_zero, zero_add] using congrArg₂ (· + ·) he hg
+        cochainKroneckerSectionWithAction k K ρ i g :=
+  (HomologySingle₀WithAction.toHomology ρ).injective <| by
+    simpa only [cochainUniversalCoefficientEquivWithAction, LinearEquiv.symm_symm,
+      LinearEquiv.coe_mk, LinearMap.coe_mk, AddHom.coe_mk, AddEquiv.apply_symm_apply, map_add,
+      toHomology_cochainExtToHomologyWithAction, toHomology_cochainKroneckerSectionWithAction] using
+      cochainUniversalCoefficientEquiv_symm_apply (k := k) (K := K) (Y := Y) hij
+        (ExtWithAction.toExt ρ e) (HomWithAction.toHom ρ g)
 
 @[simp]
 lemma cochainUniversalCoefficientEquivWithAction_apply_snd {K : CochainComplex C ℤ}
@@ -631,11 +797,15 @@ lemma cochainUniversalCoefficientEquivWithAction_apply_snd {K : CochainComplex C
     [Projective (K.cycles j)] [IsSplitMono (K.iCycles j)] [IsSplitMono (K.iCycles (-i))]
     (x : HomologySingle₀WithAction k K ρ i) :
     (cochainUniversalCoefficientEquivWithAction.{w} k K ρ hij x).2 =
-      cochainKroneckerWithAction k K ρ i x :=
-  (LinearMap.congr_fun
-    ((exact_cochainExtToHomologyWithAction_cochainKroneckerWithAction.{w}
-      (k := k) (K := K) ρ hij).splitSurjectiveEquiv
-        (cochainExtToHomologyWithAction_injective (k := k) ρ hij) _).property.right x).symm
+      cochainKroneckerWithAction k K ρ i x := by
+  have hx : (cochainUniversalCoefficientEquivWithAction.{w} k K ρ hij).symm
+      ((cochainUniversalCoefficientEquivWithAction.{w} k K ρ hij x).1,
+        (cochainUniversalCoefficientEquivWithAction.{w} k K ρ hij x).2) = x :=
+    (cochainUniversalCoefficientEquivWithAction.{w} k K ρ hij).symm_apply_apply x
+  have := congrArg (cochainKroneckerWithAction k K ρ i) hx
+  simpa only [cochainUniversalCoefficientEquivWithAction_symm_apply, map_add,
+    (exact_cochainExtToHomologyWithAction_cochainKroneckerWithAction ρ hij).apply_apply_eq_zero,
+    zero_add, cochainKroneckerWithAction_cochainKroneckerSectionWithAction] using this
 
 end ExtWithAction
 

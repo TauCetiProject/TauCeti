@@ -193,6 +193,17 @@ lemma homologyπ_kronecker_homologyClassOfComp {i : α} {A : C} (f : X.X i ⟶ A
   rw [homologyClassOfComp_eq f hf g _ (iCycles_cocycleOfComp f hf g), kronecker_homologyπ,
     iCycles_cocycleOfComp]
 
+/-- `homologyClassOfComp` commutes with changing the coefficient object. -/
+lemma homologyClassOfComp_coefficient_naturality {i : α} {A Z : C} (f : X.X i ⟶ A)
+    (hf : X.d ((ComplexShape.up α).next i) i ≫ f = 0) (g : A ⟶ Y) (h : Y ⟶ Z) :
+    homologyMap (X.linearYonedaObjMap k h) i (homologyClassOfComp k Y f hf g) =
+      homologyClassOfComp k Z f hf (g ≫ h) := by
+  rw [homologyClassOfComp_eq f hf g _ (iCycles_cocycleOfComp f hf g),
+    X.homologyMap_linearYonedaObjMap_homologyπ_apply k h i]
+  exact (homologyClassOfComp_eq f hf (g ≫ h) _ (by
+    rw [X.iCycles_cyclesMap_linearYonedaObjMap_apply k h i,
+      iCycles_cocycleOfComp, Category.assoc])).symm
+
 /-- For an injective object `Y`, every morphism `Hᵢ(X) ⟶ Y` is the evaluation of a cohomology
 class: it extends from the cycles of `X` to a cochain, which is a cocycle. -/
 private lemma kronecker_surjective [Injective Y] (i : α) :
@@ -276,6 +287,13 @@ lemma kronecker_kroneckerSection (i : α) [IsSplitMono (X.iCycles i)] (g : X.hom
     kronecker k X Y i (kroneckerSection k X Y i g) = g := by
   rw [← cancel_epi (X.homologyπ i), kroneckerSection, homologyπ_kronecker_homologyClassOfComp,
     Category.assoc, IsSplitMono.id_assoc]
+
+/-- `TauCeti.ChainComplex.kroneckerSection` commutes with changing the coefficient object. -/
+lemma kroneckerSection_coefficient_naturality {Z : C} (h : Y ⟶ Z) (i : α)
+    [IsSplitMono (X.iCycles i)] (g : X.homology i ⟶ Y) :
+    homologyMap (X.linearYonedaObjMap k h) i (kroneckerSection k X Y i g) =
+      kroneckerSection k X Z i (g ≫ h) :=
+  homologyClassOfComp_coefficient_naturality _ _ g h
 
 /-- If the inclusion of the cycles `Zᵢ ⟶ Xᵢ` is a split monomorphism, then every morphism
 `Hᵢ(X) ⟶ Y` is the evaluation of a cohomology class of `Hom(X, Y)`. -/
