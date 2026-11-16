@@ -153,15 +153,14 @@ theorem componentCount_conj {n : ℕ} (b c : BraidGroup (n + 1)) :
 /-- Every braid closure has at least one component, as a braid has at least one strand. -/
 theorem componentCount_pos (β : MarkovBraid) : 0 < β.componentCount := by
   unfold componentCount
-  rw [orbitCount_def]
-  let _ : Nonempty β.Components := ⟨Quotient.mk _ 0⟩
-  exact Nat.card_pos
+  exact Equiv.Perm.orbitCount_pos _
 
 /-- Adding an uncrossed strand adds one component, a split unknot, to the closure. -/
 @[simp]
 theorem componentCount_strandIncl {n : ℕ} (b : BraidGroup (n + 1)) :
-    componentCount ⟨n + 1, strandIncl b⟩ = componentCount ⟨n, b⟩ + 1 :=
-  (orbitCount_add_one_eq_of_semiconj
+    componentCount ⟨n + 1, strandIncl b⟩ = componentCount ⟨n, b⟩ + 1 := by
+  unfold componentCount
+  exact (orbitCount_add_one_eq_of_semiconj
     (f := (Fin.castSucc : Fin (n + 1) → Fin (n + 2))) (p := Fin.last (n + 1))
     (σ := permHom (n + 1) b) (τ := permHom (n + 2) (strandIncl b))
     (Fin.castSucc_injective _) (fun i ↦ (Fin.castSucc_lt_last i).ne)
@@ -186,9 +185,10 @@ private theorem orbitCount_permHom_strandIncl_mul_swap {n : ℕ} (b : BraidGroup
       orbitCount (permHom (n + 1) b) := by
   have hsplice := orbitCount_mul_swap_add_one (τ := permHom (n + 2) (strandIncl b))
     (permHom_strandIncl_last b) (Fin.castSucc_lt_last (Fin.last n)).ne
-  have hextend : orbitCount (permHom (n + 2) (strandIncl b)) = orbitCount (permHom (n + 1) b) + 1 :=
-    MarkovBraid.componentCount_strandIncl b
-  omega
+  have hextend := MarkovBraid.componentCount_strandIncl b
+  unfold MarkovBraid.componentCount at hextend
+  dsimp only at hextend
+  exact Nat.add_right_cancel (hsplice.trans hextend)
 
 namespace MarkovBraid
 

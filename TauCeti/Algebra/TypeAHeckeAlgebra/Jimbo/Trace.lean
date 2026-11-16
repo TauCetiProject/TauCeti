@@ -50,16 +50,22 @@ remain distinct objects: `ocneanuTrace` is defined for an arbitrary parameter `z
 
 ## Main results
 
-* `TauCeti.TypeAHeckeAlgebra.jimbo_strandIncl_lmapDomain_snoc`: appending a fixed colour
-  intertwines `jimbo` along `strandIncl`.
+* `TauCeti.TypeAHeckeAlgebra.jimbo_strandIncl_lmapDomain_snoc`,
+  `TauCeti.TypeAHeckeAlgebra.jimbo_strandIncl_single_snoc`, and
+  `TauCeti.TypeAHeckeAlgebra.jimbo_strandIncl_single_snoc_apply_snoc`: appending a fixed colour
+  intertwines `jimbo` along `strandIncl` for all strand counts `n`.
 * `TauCeti.TypeAHeckeAlgebra.commute_jimboEnhancement_jimbo`: Turaev's enhancement commutes with
   the Hecke action on the q-tensor space.
 * `TauCeti.TypeAHeckeAlgebra.jimboWeightedTrace_strandIncl`,
-  `TauCeti.TypeAHeckeAlgebra.jimboWeightedTrace_strandIncl_mul_T_last`, and
-  `TauCeti.TypeAHeckeAlgebra.jimboWeightedTrace_strandIncl_mul_inv_unitT_last`: the uncrossed-strand
-  and positive/negative stabilization laws on the Hecke algebra.
-* `TauCeti.TypeAHeckeAlgebra.mul_jimboWeightedTrace_eq_ocneanuTrace` and
-  `TauCeti.TypeAHeckeAlgebra.jimboWeightedTrace_eq_pow_mul_ocneanuTrace`: comparison with the
+  `TauCeti.TypeAHeckeAlgebra.jimboWeightedTrace_strandIncl_mul_T_last`,
+  `TauCeti.TypeAHeckeAlgebra.jimboWeightedTrace_strandIncl_mul_inv_unitT_last`,
+  `TauCeti.TypeAHeckeAlgebra.jimboWeightedTrace_T`, and
+  `TauCeti.TypeAHeckeAlgebra.jimboWeightedTrace_val_inv_unitT`: the uncrossed-strand,
+  positive/negative stabilization, and generator evaluation laws on the Hecke algebra.
+* `TauCeti.TypeAHeckeAlgebra.mul_jimboWeightedTrace_eq_ocneanuTrace`,
+  `TauCeti.TypeAHeckeAlgebra.jimboWeightedTrace_eq_pow_mul_ocneanuTrace`,
+  `TauCeti.InfiniteTypeAHeckeAlgebra.ocneanuTrace_braidHom_eq_mul_jimboWeightedTrace`, and
+  `TauCeti.KnotTheory.jimboWeightedTrace_eq_pow_mul_ocneanuTrace_braidHom`: comparison with the
   Ocneanu trace at parameter `c * q ^ N` when `c` inverts the quantum dimension.
 
 ## References
@@ -77,7 +83,9 @@ public section
 open Finsupp
 open scoped BigOperators
 
-namespace TauCeti.TypeAHeckeAlgebra
+namespace TauCeti
+
+namespace TypeAHeckeAlgebra
 
 variable {R : Type*} [CommRing R]
 
@@ -88,29 +96,51 @@ variable (ι : Type*) [LinearOrder ι] (q : Rˣ) {n : ℕ}
 /-- Appending a fixed colour to every word intertwines the Jimbo representation of the Hecke
 algebra along the tower inclusion `strandIncl`. -/
 @[simp↓]
-theorem jimbo_strandIncl_lmapDomain_snoc (x : TypeAHeckeAlgebra R q (n + 1)) (a : ι)
-    (v : (Fin (n + 1) → ι) →₀ R) :
-    jimbo ι q (strandIncl R q (n + 1) x) (lmapDomain R R (fun w ↦ Fin.snoc w a) v) =
+theorem jimbo_strandIncl_lmapDomain_snoc (x : TypeAHeckeAlgebra R q n) (a : ι)
+    (v : (Fin n → ι) →₀ R) :
+    jimbo ι q (strandIncl R q n x) (lmapDomain R R (fun w ↦ Fin.snoc w a) v) =
       lmapDomain R R (fun w ↦ Fin.snoc w a) (jimbo ι q x v) := by
-  let L : TypeAHeckeAlgebra R q (n + 1) →ₗ[R] (Fin (n + 2) → ι) →₀ R :=
-    LinearMap.applyₗ (lmapDomain R R (fun w ↦ Fin.snoc w a) v) ∘ₗ
-      (jimbo ι q (n := n + 2)).toLinearMap ∘ₗ (strandIncl R q (n + 1)).toLinearMap
-  let M : TypeAHeckeAlgebra R q (n + 1) →ₗ[R] (Fin (n + 2) → ι) →₀ R :=
-    lmapDomain R R (fun w ↦ Fin.snoc w a) ∘ₗ
-      LinearMap.applyₗ v ∘ₗ (jimbo ι q (n := n + 1)).toLinearMap
-  have hLM : L = M := LinearMap.ext_on_range span_range_braidHom fun b ↦ by
-    simp only [L, M, LinearMap.comp_apply, LinearMap.applyₗ_apply_apply, AlgHom.toLinearMap_apply,
-      ← braidHom_strandIncl, jimbo_braidHom, KnotTheory.jimbo_strandIncl_lmapDomain_snoc]
-  exact LinearMap.congr_fun hLM x
+  rcases n with _ | m
+  · obtain ⟨r, rfl⟩ := algebraMap_surjective_of_le_one (Nat.zero_le 1) x
+    simp [Algebra.algebraMap_eq_smul_one]
+  · let L : TypeAHeckeAlgebra R q (m + 1) →ₗ[R] (Fin (m + 2) → ι) →₀ R :=
+      LinearMap.applyₗ (lmapDomain R R (fun w ↦ Fin.snoc w a) v) ∘ₗ
+        (jimbo ι q (n := m + 2)).toLinearMap ∘ₗ (strandIncl R q (m + 1)).toLinearMap
+    let M : TypeAHeckeAlgebra R q (m + 1) →ₗ[R] (Fin (m + 2) → ι) →₀ R :=
+      lmapDomain R R (fun w ↦ Fin.snoc w a) ∘ₗ
+        LinearMap.applyₗ v ∘ₗ (jimbo ι q (n := m + 1)).toLinearMap
+    have hLM : L = M := LinearMap.ext_on_range span_range_braidHom fun b ↦ by
+      simp only [L, M, LinearMap.comp_apply, LinearMap.applyₗ_apply_apply, AlgHom.toLinearMap_apply,
+        ← braidHom_strandIncl, jimbo_braidHom, KnotTheory.jimbo_strandIncl_lmapDomain_snoc]
+    exact LinearMap.congr_fun hLM x
 
 /-- Basis-vector form of the strand-inclusion intertwining identity for `jimbo`. -/
 @[simp]
-theorem jimbo_strandIncl_single_snoc (x : TypeAHeckeAlgebra R q (n + 1))
-    (w : Fin (n + 1) → ι) (a : ι) (c : R) :
-    jimbo ι q (strandIncl R q (n + 1) x) (single (Fin.snoc w a) c) =
+theorem jimbo_strandIncl_single_snoc (x : TypeAHeckeAlgebra R q n)
+    (w : Fin n → ι) (a : ι) (c : R) :
+    jimbo ι q (strandIncl R q n x) (single (Fin.snoc w a) c) =
       mapDomain (fun u ↦ Fin.snoc u a) (jimbo ι q x (single w c)) := by
   simpa only [lmapDomain_apply, mapDomain_single] using
     jimbo_strandIncl_lmapDomain_snoc ι q x a (single w c)
+
+/-- Inclusion preserves coefficients on each fixed-last-colour block and has zero coefficients
+between blocks with different last colours. -/
+@[simp↓]
+theorem jimbo_strandIncl_single_snoc_apply_snoc (x : TypeAHeckeAlgebra R q n)
+    (w u : Fin n → ι) (a d : ι) (c : R) :
+    jimbo ι q (strandIncl R q n x) (single (Fin.snoc w a) c) (Fin.snoc u d) =
+      if a = d then jimbo ι q x (single w c) u else 0 := by
+  classical
+  rw [jimbo_strandIncl_single_snoc]
+  by_cases h : a = d
+  · subst d
+    simp only [ite_true]
+    exact mapDomain_apply_of_injective (@Fin.snoc_left_injective _ (fun _ ↦ ι) a) _ _
+  · rw [ite_eq_right h]
+    apply mapDomain_of_notMem_range
+    rintro ⟨v, hv⟩
+    apply h
+    simpa using congrArg (fun z : Fin (n + 1) → ι ↦ z (Fin.last n)) hv
 
 end Intertwining
 
@@ -247,6 +277,33 @@ theorem jimboWeightedTrace_strandIncl_mul_inv_unitT_last (x : TypeAHeckeAlgebra 
       KnotTheory.jimboWeightedTrace_stabilizeInv]
   exact LinearMap.congr_fun hLM x
 
+/-- Every generator `T q i` on `n` strands has weighted trace `q ^ N * [N]_q ^ (n - 1)`. -/
+@[simp]
+theorem jimboWeightedTrace_T (i : Fin (n - 1)) :
+    jimboWeightedTrace N q n (T q i) =
+      ↑(q ^ N) * (∑ a : Fin N, KnotTheory.jimboWeight q a) ^ (n - 1) := by
+  induction n with
+  | zero => exact i.elim0
+  | succ m ih =>
+    rcases m with _ | k
+    · exact i.elim0
+    · refine Fin.lastCases ?_ (fun j ↦ ?_) i
+      · simpa only [map_one, one_mul, jimboWeightedTrace_one, Nat.add_sub_cancel] using
+          jimboWeightedTrace_strandIncl_mul_T_last N q k (1 : TypeAHeckeAlgebra R q (k + 1))
+      · rw [← strandIncl_T_castSucc, jimboWeightedTrace_strandIncl, ih j]
+        simp [pow_succ, mul_assoc]
+
+/-- Every inverse generator `↑(unitT q i)⁻¹` on `n` strands has weighted trace
+`(q⁻¹) ^ N * [N]_q ^ (n - 1)`. -/
+theorem jimboWeightedTrace_val_inv_unitT (i : Fin (n - 1)) :
+    jimboWeightedTrace N q n (↑(unitT q i)⁻¹ : TypeAHeckeAlgebra R q n) =
+      ↑((q⁻¹) ^ N) * (∑ a : Fin N, KnotTheory.jimboWeight q a) ^ (n - 1) := by
+  rcases n with _ | m
+  · exact i.elim0
+  · rw [val_inv_unitT, map_sub, jimboWeightedTrace_T, jimboWeightedTrace_algebraMap,
+      Nat.add_sub_cancel, pow_succ', ← mul_assoc, KnotTheory.jimboWeight_sum]
+    ring
+
 end WeightedTrace
 
 section OcneanuComparison
@@ -291,25 +348,43 @@ theorem jimboWeightedTrace_eq_pow_mul_ocneanuTrace
   rw [← mul_jimboWeightedTrace_eq_ocneanuTrace hc x, ← mul_assoc, ← mul_pow, mul_comm _ c, hc,
     one_pow, one_mul]
 
+end OcneanuComparison
+
+end TypeAHeckeAlgebra
+
+namespace InfiniteTypeAHeckeAlgebra
+
+variable {R : Type*} [CommRing R] {N : ℕ} {q : Rˣ} {c : R}
+
 /-- On the image of a braid on `n` strands in the infinite Hecke algebra, the Ocneanu trace at
 `c * q ^ N` is `c ^ n` times Turaev's weighted Jimbo braid trace. -/
 theorem ocneanuTrace_braidHom_eq_mul_jimboWeightedTrace
     (hc : c * ∑ a : Fin N, KnotTheory.jimboWeight q a = 1) {n : ℕ} (b : BraidGroup n) :
-    ocneanuTrace R q (c * ↑(q ^ N)) (InfiniteTypeAHeckeAlgebra.braidHom R q n b) =
+    ocneanuTrace R q (c * ↑(q ^ N)) (braidHom R q n b) =
       c ^ n * KnotTheory.jimboWeightedTrace (N := N) q b := by
-  rw [← toInfinite_braidHom, ← mul_jimboWeightedTrace_eq_ocneanuTrace hc,
-    jimboWeightedTrace_braidHom]
+  rw [← TypeAHeckeAlgebra.toInfinite_braidHom,
+    ← TypeAHeckeAlgebra.mul_jimboWeightedTrace_eq_ocneanuTrace hc,
+    TypeAHeckeAlgebra.jimboWeightedTrace_braidHom]
+
+end InfiniteTypeAHeckeAlgebra
+
+namespace KnotTheory
+
+open InfiniteTypeAHeckeAlgebra
+
+variable {R : Type*} [CommRing R] {N : ℕ} {q : Rˣ} {c : R}
 
 /-- On a braid on `n` strands, Turaev's weighted Jimbo trace is the `n`-th power of the quantum
 dimension times the Ocneanu trace at `c * q ^ N`. -/
 theorem jimboWeightedTrace_eq_pow_mul_ocneanuTrace_braidHom
-    (hc : c * ∑ a : Fin N, KnotTheory.jimboWeight q a = 1) {n : ℕ} (b : BraidGroup n) :
-    KnotTheory.jimboWeightedTrace (N := N) q b =
-      (∑ a : Fin N, KnotTheory.jimboWeight q a) ^ n *
+    (hc : c * ∑ a : Fin N, jimboWeight q a = 1) {n : ℕ} (b : BraidGroup n) :
+    jimboWeightedTrace (N := N) q b =
+      (∑ a : Fin N, jimboWeight q a) ^ n *
         ocneanuTrace R q (c * ↑(q ^ N)) (InfiniteTypeAHeckeAlgebra.braidHom R q n b) := by
-  rw [← toInfinite_braidHom, ← jimboWeightedTrace_eq_pow_mul_ocneanuTrace hc,
-    jimboWeightedTrace_braidHom]
+  rw [← TypeAHeckeAlgebra.toInfinite_braidHom,
+    ← TypeAHeckeAlgebra.jimboWeightedTrace_eq_pow_mul_ocneanuTrace hc,
+    TypeAHeckeAlgebra.jimboWeightedTrace_braidHom]
 
-end OcneanuComparison
+end KnotTheory
 
-end TauCeti.TypeAHeckeAlgebra
+end TauCeti

@@ -27,9 +27,9 @@ For positive `N`, the writhe-normalized trace at the generic Laurent unit `T` of
 polynomial quotient `MarkovBraid.jimboReducedLaurent` evaluates along
 `LaurentPolynomial.eval₂ (Int.castRingHom R) q` at every unit `q : Rˣ` of every
 commutative ring `R`: over a field with nonzero quantum dimension it agrees with
-`MarkovBraid.jimboReducedTrace`, while at zero-factor specializations it remains
-regular, evaluating at `q = 1` to `N ^ (β.componentCount - 1)` and at `q = -1` to
-`((-1) ^ (N - 1) * N) ^ (β.componentCount - 1)`.
+`MarkovBraid.jimboReducedTrace`, while at any zero-factor specialization `(q : R) - ↑q⁻¹ = 0` it
+remains regular (`MarkovBraid.eval₂_jimboReducedLaurent_of_sub_inv_eq_zero`), evaluating at `q = 1`
+to `N ^ (β.componentCount - 1)` and at `q = -1` to `((-1) ^ (N - 1) * N) ^ (β.componentCount - 1)`.
 
 ## References
 
@@ -172,40 +172,48 @@ end MarkovBraid
 
 /-! ### Universal Laurent polynomial quotient and specializations -/
 
-/-- Ring homomorphisms commute with the Jimbo enhancement weights along `Units.map`. -/
-@[simp]
-theorem _root_.RingHom.map_jimboWeight {R S : Type*} [Ring R] [Ring S]
-    (f : R →+* S) (q : Rˣ) (a : Fin N) :
-    f (jimboWeight q a) = jimboWeight (Units.map (f : R →* S) q) a := by
-  simp only [jimboWeight_def, ← map_zpow]
-  rfl
-
 namespace KnotTheory
 
-/-- At `q = -1` for positive `N`, every enhancement weight equals `(-1) ^ (N - 1)`. -/
-@[simp]
-theorem jimboWeight_neg_one {R : Type*} [Ring R] {N : ℕ} [NeZero N] (a : Fin N) :
-    jimboWeight (-1 : Rˣ) a = (-1 : R) ^ (N - 1) := by
-  have he : (N : ℤ) - 1 - 2 * (a : ℕ) = ((N - 1 : ℕ) : ℤ) - 2 * (a : ℤ) := by
-    have := NeZero.ne N
-    omega
-  have hsq : (-1 : Rˣ) ^ (2 : ℤ) = 1 := Units.ext (by simp)
-  rw [jimboWeight_def, he, zpow_sub, zpow_mul, hsq, one_zpow, inv_one, mul_one, zpow_natCast]
-  simp
-
-/-- For positive `N` over a nontrivial ring, the generic quantum dimension `[N]_T` in `R[T;T⁻¹]`
-is nonzero. -/
-theorem jimboWeight_sum_genericUnit_ne_zero (R : Type*) [Ring R] [Nontrivial R]
+/-- For positive `N` over a nontrivial semiring, the generic quantum dimension `[N]_T` in
+`R[T;T⁻¹]` is nonzero. -/
+theorem jimboWeight_sum_genericUnit_ne_zero (R : Type*) [Semiring R] [Nontrivial R]
     (N : ℕ) [NeZero N] :
     (∑ a : Fin N, jimboWeight (LaurentPolynomial.genericUnit R) a) ≠ 0 := by
   intro h
-  have hs := jimboWeight_sum (N := N) (LaurentPolynomial.genericUnit R)
-  have hN : (N : ℤ) ≠ -(N : ℤ) := by
-    have := NeZero.ne N
-    omega
-  rw [h, mul_zero, inv_pow, ← zpow_natCast, ← zpow_neg,
-    LaurentPolynomial.genericUnit_zpow_val, LaurentPolynomial.genericUnit_zpow_val] at hs
-  exact LaurentPolynomial.T_sub_T_ne_zero hN hs.symm
+  have hc := congrArg (fun p : LaurentPolynomial R ↦ p.coeff ((N : ℤ) - 1)) h
+  simp only [jimboWeight_def, LaurentPolynomial.genericUnit_zpow_val,
+    AddMonoidAlgebra.coeff_sum, AddMonoidAlgebra.coeff_zero,
+    Finset.sum_apply', Finsupp.zero_apply] at hc
+  have hterm : ∀ a : Fin N,
+      (LaurentPolynomial.T ((N : ℤ) - 1 - 2 * (a : ℕ)) : LaurentPolynomial R).coeff
+        ((N : ℤ) - 1) = if a = 0 then 1 else 0 := by
+    intro a
+    rw [LaurentPolynomial.T_apply]
+    have hiff : (N : ℤ) - 1 - 2 * (a : ℕ) = (N : ℤ) - 1 ↔ a = 0 := by
+      constructor
+      · intro heq
+        exact Fin.ext (by simp only [Fin.val_zero]; omega)
+      · rintro rfl
+        simp
+    simp [hiff]
+  simp_rw [hterm] at hc
+  simp at hc
+
+/-- Evaluating a generic-unit Jimbo weight at a unit `q` along any ring homomorphism gives the
+Jimbo weight at `q`. -/
+theorem eval₂_jimboWeight_genericUnit {R S : Type*} [CommSemiring R] [CommSemiring S]
+    (f : R →+* S) (q : Sˣ) (a : Fin N) :
+    LaurentPolynomial.eval₂ f q (jimboWeight (LaurentPolynomial.genericUnit R) a) =
+      jimboWeight q a := by
+  simp [jimboWeight_def]
+
+/-- Evaluating the generic quantum dimension `[N]_T` at a unit `q` along any ring homomorphism
+recovers `[N]_q`. -/
+theorem eval₂_sum_jimboWeight_genericUnit {R S : Type*} [CommSemiring R] [CommSemiring S]
+    (f : R →+* S) (q : Sˣ) (N : ℕ) :
+    LaurentPolynomial.eval₂ f q (∑ a : Fin N, jimboWeight (LaurentPolynomial.genericUnit R) a) =
+      ∑ a : Fin N, jimboWeight q a := by
+  simp only [map_sum, eval₂_jimboWeight_genericUnit]
 
 /-- Over any commutative ring `R`, the unnormalized weighted Jimbo trace of a nonempty braid at
 `LaurentPolynomial.genericUnit R` is divisible by the generic quantum dimension `[N]_T`. -/
@@ -253,36 +261,10 @@ end KnotTheory
 
 namespace MarkovBraid
 
-/-- Ring homomorphisms commute with the writhe-normalized Jimbo trace, mapping the parameter unit
-along `Units.map`. -/
-theorem map_jimboTrace {R S : Type*} [CommRing R] [CommRing S] (β : MarkovBraid)
-    (f : R →+* S) (q : Rˣ) :
-    f (β.jimboTrace (N := N) q) = β.jimboTrace (N := N) (Units.map (f : R →* S) q) := by
-  let qS : Sˣ := Units.map (f : R →* S) q
-  have hqS : (qS : S) = f q := rfl
-  have hqS_inv : (↑qS⁻¹ : S) = f ↑q⁻¹ := by rw [← map_inv]; rfl
-  have hsum : f (∑ a : Fin N, jimboWeight q a) = ∑ a : Fin N, jimboWeight qS a := by
-    simp [qS]
-  refine congrFun (eq_of_skein (qS ^ N) ((qS : S) - ↑qS⁻¹) (∑ a : Fin N, jimboWeight qS a)
-    (F := fun γ ↦ f (γ.jimboTrace (N := N) q))
-    (G := fun γ ↦ γ.jimboTrace (N := N) qS)
-    (fun _ _ h ↦ congrArg f (h.jimboTrace_eq q))
-    (fun _ _ h ↦ h.jimboTrace_eq qS) ?_ ?_ ?_ ?_ ?_) β
-  · intro m c i
-    have hs := congrArg f (jimboTrace_skein (N := N) q 1 c i)
-    simpa only [one_mul, map_sub, map_mul, Units.val_pow_eq_pow_val, map_pow, ← inv_pow,
-      smul_eq_mul, hqS, hqS_inv] using hs
-  · intro m c i
-    simpa only [one_mul, smul_eq_mul, inv_pow] using jimboTrace_skein (N := N) qS 1 c i
-  · intro m b
-    simp [smul_eq_mul, hsum]
-  · intro m b
-    simp [smul_eq_mul]
-  · simp [hsum]
-
 /-- Over any commutative ring `R`, the writhe-normalized `N`-colour Jimbo trace at the generic
 Laurent unit `T` is divisible in `R[T;T⁻¹]` by the generic quantum dimension `[N]_T`. -/
-theorem dvd_jimboTrace_genericUnit {R : Type*} [CommRing R] (β : MarkovBraid) (N : ℕ) :
+theorem sum_jimboWeight_dvd_jimboTrace_genericUnit {R : Type*} [CommRing R] (β : MarkovBraid)
+    (N : ℕ) :
     (∑ a : Fin N, jimboWeight (LaurentPolynomial.genericUnit R) a) ∣
       β.jimboTrace (N := N) (LaurentPolynomial.genericUnit R) := by
   rw [jimboTrace_def]
@@ -295,7 +277,7 @@ the reduced invariant without dividing by `[N]_q`, so zero-factor specialization
 and quantum roots of unity remain regular. -/
 noncomputable def jimboReducedLaurent (β : MarkovBraid) (N : ℕ) :
     LaurentPolynomial ℤ :=
-  (β.dvd_jimboTrace_genericUnit (R := ℤ) N).choose
+  (β.sum_jimboWeight_dvd_jimboTrace_genericUnit (R := ℤ) N).choose
 
 /-- Multiplying `jimboReducedLaurent` by the generic quantum dimension recovers `jimboTrace` at
 `LaurentPolynomial.genericUnit ℤ`. -/
@@ -304,7 +286,7 @@ theorem jimboReducedLaurent_mul_sum (β : MarkovBraid) (N : ℕ) :
     β.jimboReducedLaurent N *
         (∑ a : Fin N, jimboWeight (LaurentPolynomial.genericUnit ℤ) a) =
       β.jimboTrace (N := N) (LaurentPolynomial.genericUnit ℤ) :=
-  (mul_comm _ _).trans (β.dvd_jimboTrace_genericUnit (R := ℤ) N).choose_spec.symm
+  (mul_comm _ _).trans (β.sum_jimboWeight_dvd_jimboTrace_genericUnit (R := ℤ) N).choose_spec.symm
 
 /-- A Laurent polynomial equals `β.jimboReducedLaurent N` if and only if its product with the
 generic quantum dimension is `β.jimboTrace` at `LaurentPolynomial.genericUnit ℤ`. -/
@@ -359,6 +341,20 @@ theorem jimboReducedLaurent_skein {n : ℕ} (N : ℕ) [NeZero N]
     LaurentPolynomial.genericUnit_val, LaurentPolynomial.genericUnit_inv] at hs
   simpa only [sub_mul, mul_assoc, jimboReducedLaurent_mul_sum] using hs
 
+/-- Evaluating `jimboReducedLaurent` at any unit `q : Rˣ` satisfies the oriented HOMFLY skein
+relation with `a = q ^ N` and `z = q - q⁻¹` in every braid context. -/
+theorem eval₂_jimboReducedLaurent_skein {R : Type*} [CommRing R] {n : ℕ} (N : ℕ) [NeZero N]
+    (q : Rˣ) (b c : BraidGroup (n + 1)) (i : Fin n) :
+    ↑(q ^ N) * LaurentPolynomial.eval₂ (Int.castRingHom R) q
+        (jimboReducedLaurent ⟨n, b * BraidGroup.sigma (n := n + 1) i * c⟩ N) -
+      ↑((q ^ N)⁻¹) * LaurentPolynomial.eval₂ (Int.castRingHom R) q
+        (jimboReducedLaurent ⟨n, b * (BraidGroup.sigma (n := n + 1) i)⁻¹ * c⟩ N) =
+      ((q : R) - ↑q⁻¹) * LaurentPolynomial.eval₂ (Int.castRingHom R) q
+        (jimboReducedLaurent ⟨n, b * c⟩ N) := by
+  have hs := congrArg (laurentEval (R := ℤ) q) (jimboReducedLaurent_skein N b c i)
+  simp only [map_sub, map_mul, laurentEval_T, zpow_natCast, zpow_neg, zpow_one] at hs
+  simpa only [laurentEval_eq_eval₂, RingHom.eq_intCast' (algebraMap ℤ R)] using hs
+
 /-- Evaluating `jimboReducedLaurent` at any unit `q : Rˣ` and multiplying by `[N]_q` recovers the
 writhe-normalized Jimbo trace `β.jimboTrace q` over any commutative ring `R`. -/
 theorem eval₂_jimboReducedLaurent_mul_sum {R : Type*} [CommRing R] (β : MarkovBraid)
@@ -366,11 +362,17 @@ theorem eval₂_jimboReducedLaurent_mul_sum {R : Type*} [CommRing R] (β : Marko
     LaurentPolynomial.eval₂ (Int.castRingHom R) q (β.jimboReducedLaurent N) *
         (∑ a : Fin N, jimboWeight q a) =
       β.jimboTrace (N := N) q := by
-  let f : LaurentPolynomial ℤ →+* R := LaurentPolynomial.eval₂ (Int.castRingHom R) q
-  have hmap : Units.map (f : LaurentPolynomial ℤ →* R) (LaurentPolynomial.genericUnit ℤ) = q :=
-    Units.ext (by simp [f])
-  have h := congrArg f (β.jimboReducedLaurent_mul_sum N)
-  simpa only [f, map_mul, map_sum, RingHom.map_jimboWeight, β.map_jimboTrace, hmap] using h
+  have h := congrArg (laurentEval (R := ℤ) q).toRingHom (β.jimboReducedLaurent_mul_sum N)
+  have hcoe : ((laurentEval (R := ℤ) q).toRingHom : LaurentPolynomial ℤ →* R) =
+      (laurentEval (R := ℤ) q : LaurentPolynomial ℤ →* R) := by
+    ext x
+    simp
+  have hmap : Units.map ((laurentEval (R := ℤ) q).toRingHom : LaurentPolynomial ℤ →* R)
+      (LaurentPolynomial.genericUnit ℤ) = q := by
+    rw [hcoe, LaurentPolynomial.map_genericUnit, laurentEvalEquiv_symm_laurentEval]
+  rw [map_mul, β.map_jimboTrace, hmap] at h
+  simpa only [AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom, laurentEval_eq_eval₂,
+    RingHom.eq_intCast' (algebraMap ℤ R), eval₂_sum_jimboWeight_genericUnit] using h
 
 /-- Over a field with nonzero quantum dimension `[N]_q ≠ 0`, evaluating `jimboReducedLaurent` at
 `q` agrees with the field quotient `β.jimboReducedTrace q`. -/
@@ -381,6 +383,35 @@ theorem eval₂_jimboReducedLaurent_eq_jimboReducedTrace (β : MarkovBraid) (N :
   apply mul_right_cancel₀ hδ
   rw [eval₂_jimboReducedLaurent_mul_sum, jimboReducedTrace_mul_sum β q hδ]
 
+/-- At any unit `q : Rˣ` satisfying `(q : R) - ↑q⁻¹ = 0` (so `q⁻¹ = q`, including `q = ±1`),
+evaluating `β.jimboReducedLaurent N` at `q` gives
+`(∑ a : Fin N, jimboWeight q a) ^ (β.componentCount - 1)`. -/
+theorem eval₂_jimboReducedLaurent_of_sub_inv_eq_zero {R : Type*} [CommRing R] (β : MarkovBraid)
+    (N : ℕ) [NeZero N] {q : Rˣ} (hq : (q : R) - ↑q⁻¹ = 0) :
+    LaurentPolynomial.eval₂ (Int.castRingHom R) q (β.jimboReducedLaurent N) =
+      (∑ a : Fin N, jimboWeight q a) ^ (β.componentCount - 1) := by
+  have hqinv : q⁻¹ = q := Units.ext (sub_eq_zero.mp hq).symm
+  have hε : ((q ^ N)⁻¹ : Rˣ) = q ^ N := by rw [← inv_pow, hqinv]
+  refine congrFun (eq_of_skein (q ^ N) (0 : R) (∑ a : Fin N, jimboWeight q a)
+    (F := fun γ ↦ LaurentPolynomial.eval₂ (Int.castRingHom R) q (γ.jimboReducedLaurent N))
+    (G := fun γ ↦ (∑ a : Fin N, jimboWeight q a) ^ (γ.componentCount - 1))
+    (fun _ _ h ↦ congrArg _ (h.jimboReducedLaurent_eq N))
+    (fun _ _ h ↦ by rw [h.componentCount_eq]) ?_ ?_ ?_ ?_ ?_) β
+  · intro m c i
+    simpa only [one_mul, smul_eq_mul, hq, zero_mul] using
+      eval₂_jimboReducedLaurent_skein N q 1 c i
+  · intro m c i
+    have hc := componentCount_mul_sigma_inv_mul 1 c i
+    simp only [one_mul] at hc
+    simp [hc, hε]
+  · intro m b
+    rw [jimboReducedLaurent_strandIncl, map_mul, eval₂_sum_jimboWeight_genericUnit, smul_eq_mul]
+  · intro m b
+    have hpos : 1 ≤ componentCount ⟨m, b⟩ := componentCount_pos ⟨m, b⟩
+    have he : componentCount ⟨m, b⟩ + 1 - 1 = (componentCount ⟨m, b⟩ - 1) + 1 := by omega
+    rw [componentCount_strandIncl, he, pow_succ', smul_eq_mul]
+  · simp
+
 /-- Specializing `jimboReducedLaurent` at the zero-factor parameter `q = 1` gives
 `N ^ (β.componentCount - 1)` over any commutative ring, even though `q - q⁻¹ = 0`. -/
 @[simp]
@@ -388,30 +419,7 @@ theorem eval₂_jimboReducedLaurent_one {R : Type*} [CommRing R] (β : MarkovBra
     (N : ℕ) [NeZero N] :
     LaurentPolynomial.eval₂ (Int.castRingHom R) (1 : Rˣ) (β.jimboReducedLaurent N) =
       (N : R) ^ (β.componentCount - 1) := by
-  let f : LaurentPolynomial ℤ →+* R := LaurentPolynomial.eval₂ (Int.castRingHom R) (1 : Rˣ)
-  have hmap : Units.map (f : LaurentPolynomial ℤ →* R) (LaurentPolynomial.genericUnit ℤ) =
-      (1 : Rˣ) := Units.ext (by simp [f])
-  have hsum : f (∑ a : Fin N, jimboWeight (LaurentPolynomial.genericUnit ℤ) a) = (N : R) := by
-    simp [f, RingHom.map_jimboWeight, hmap]
-  refine congrFun (eq_of_skein (1 : Rˣ) (0 : R) (N : R)
-    (F := fun γ ↦ f (γ.jimboReducedLaurent N))
-    (G := fun γ ↦ (N : R) ^ (γ.componentCount - 1))
-    (fun _ _ h ↦ congrArg f (h.jimboReducedLaurent_eq N))
-    (fun _ _ h ↦ by rw [h.componentCount_eq]) ?_ ?_ ?_ ?_ ?_) β
-  · intro m c i
-    have hs := congrArg f (jimboReducedLaurent_skein N 1 c i)
-    simpa [f, smul_eq_mul] using hs
-  · intro m c i
-    have hc := componentCount_mul_sigma_inv_mul 1 c i
-    simp only [one_mul] at hc
-    simp [hc]
-  · intro m b
-    simp [f, smul_eq_mul, hsum]
-  · intro m b
-    have hpos : 1 ≤ componentCount ⟨m, b⟩ := componentCount_pos ⟨m, b⟩
-    have he : componentCount ⟨m, b⟩ + 1 - 1 = (componentCount ⟨m, b⟩ - 1) + 1 := by omega
-    rw [componentCount_strandIncl, he, pow_succ', smul_eq_mul]
-  · simp [f]
+  simpa using β.eval₂_jimboReducedLaurent_of_sub_inv_eq_zero (q := (1 : Rˣ)) N (by simp)
 
 /-- Specializing `jimboReducedLaurent` at the zero-factor parameter `q = -1` gives
 `((-1) ^ (N - 1) * N) ^ (β.componentCount - 1)` over any commutative ring. -/
@@ -420,36 +428,8 @@ theorem eval₂_jimboReducedLaurent_neg_one {R : Type*} [CommRing R] (β : Marko
     (N : ℕ) [NeZero N] :
     LaurentPolynomial.eval₂ (Int.castRingHom R) (-1 : Rˣ) (β.jimboReducedLaurent N) =
       ((-1 : R) ^ (N - 1) * (N : R)) ^ (β.componentCount - 1) := by
-  let f : LaurentPolynomial ℤ →+* R := LaurentPolynomial.eval₂ (Int.castRingHom R) (-1 : Rˣ)
-  have hmap : Units.map (f : LaurentPolynomial ℤ →* R) (LaurentPolynomial.genericUnit ℤ) =
-      (-1 : Rˣ) := Units.ext (by simp [f])
-  have hsum : f (∑ a : Fin N, jimboWeight (LaurentPolynomial.genericUnit ℤ) a) =
-      (-1 : R) ^ (N - 1) * (N : R) := by
-    simp [f, RingHom.map_jimboWeight, hmap, mul_comm (N : R)]
-  have hε : (((-1 : Rˣ) ^ N)⁻¹ : Rˣ) = (-1 : Rˣ) ^ N := Units.ext (by simp [← inv_pow])
-  refine congrFun (eq_of_skein ((-1 : Rˣ) ^ N) (0 : R) ((-1 : R) ^ (N - 1) * (N : R))
-    (F := fun γ ↦ f (γ.jimboReducedLaurent N))
-    (G := fun γ ↦ ((-1 : R) ^ (N - 1) * (N : R)) ^ (γ.componentCount - 1))
-    (fun _ _ h ↦ congrArg f (h.jimboReducedLaurent_eq N))
-    (fun _ _ h ↦ by rw [h.componentCount_eq]) ?_ ?_ ?_ ?_ ?_) β
-  · intro m c i
-    have hs := congrArg f (jimboReducedLaurent_skein N 1 c i)
-    have hT₁ : f (LaurentPolynomial.T (N : ℤ)) = ↑((-1 : Rˣ) ^ N) := by simp [f]
-    have hT₂ : f (LaurentPolynomial.T (-(N : ℤ))) = ↑(((-1 : Rˣ) ^ N)⁻¹) := by
-      simp [f, zpow_neg]
-    have hT₀ : f (LaurentPolynomial.T 1 - LaurentPolynomial.T (-1)) = 0 := by simp [f]
-    simpa only [one_mul, map_sub, map_mul, smul_eq_mul, zero_mul, hT₁, hT₂, hT₀] using hs
-  · intro m c i
-    have hc := componentCount_mul_sigma_inv_mul 1 c i
-    simp only [one_mul] at hc
-    simp [hc, hε]
-  · intro m b
-    simp [f, smul_eq_mul, hsum]
-  · intro m b
-    have hpos : 1 ≤ componentCount ⟨m, b⟩ := componentCount_pos ⟨m, b⟩
-    have he : componentCount ⟨m, b⟩ + 1 - 1 = (componentCount ⟨m, b⟩ - 1) + 1 := by omega
-    rw [componentCount_strandIncl, he, pow_succ', smul_eq_mul]
-  · simp [f]
+  simpa [mul_comm (N : R)] using
+    β.eval₂_jimboReducedLaurent_of_sub_inv_eq_zero (q := (-1 : Rˣ)) N (by simp)
 
 end MarkovBraid
 
