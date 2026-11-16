@@ -562,7 +562,7 @@ noncomputable def actionShortComplex :
     fun _ ↦ not_lt.symm
 
 @[simp]
-theorem actionShortComplex_eq :
+theorem actionShortComplex_def :
     m.actionShortComplex hm hM a =
       m.restrictShortComplex hM {x | act x < a} {x | a ≤ act x} (m.m_eq_zero_of_mem_setOf_lt hm)
         fun _ ↦ not_lt.symm :=
