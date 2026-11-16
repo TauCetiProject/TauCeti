@@ -228,6 +228,18 @@ private def newTowerCellEquiv (k n : ℕ) :
     (W := fun k ↦ (range (c.ι.app k) : Set c.pt)) (stageCellMap hF hc (ι := ι)) i).trans
     (newCellEquiv hF hc k n)
 
+/-- The cells of the colimit are the cells of the union of the ranges of the stages. -/
+private abbrev towerCell (n : ℕ) :
+    letI := fun k ↦ stageCWComplex hF hc k
+    @cell c.pt _ univ ∅ (@CWComplex.instRelCWComplex _ _ _ (cwComplexOfIsColimit hF hι hc)) n ≃
+      TowerNewCell (W := fun k ↦ (range (c.ι.app k) : Set c.pt)) (stageCellMap hF hc (ι := ι)) n :=
+  letI := fun k ↦ stageCWComplex hF hc k
+  (@IsClosedEmbedding.relCWComplexCellEquiv c.pt c.pt _ _ id .id _ ∅
+    (@CWComplex.instRelCWComplex _ _ _ (towerCWComplex hF hι hc)) univ ∅
+    (image_id_iUnion_range hc) (image_empty _) n).trans
+    (cwSubcomplexTowerUnionCellEquiv (coe_map_stageCellMap hF hι hc)
+      (isClosed_of_forall_isClosed_inter_range hc) n)
+
 /-- **The cells of a sequential colimit of CW complexes.** The `n`-cells of the CW structure
 `TauCeti.cwComplexOfIsColimit` on the colimit are the `n`-cells of the first stage `F 0`, together
 with, for every `k`, the `n`-cells of `F (k + 1)` which are not images of cells of `F k`. -/
@@ -235,12 +247,9 @@ def cwComplexOfIsColimitCellEquiv (n : ℕ) :
     @cell c.pt _ univ ∅ (@CWComplex.instRelCWComplex _ _ _ (cwComplexOfIsColimit hF hι hc)) n ≃
       cell (univ : Set (F.obj 0)) n ⊕ Σ k, ↥(range (ι k n))ᶜ :=
   letI := fun k ↦ stageCWComplex hF hc k
-  letI := towerCWComplex hF hι hc
   -- The cells of the colimit are the new cells of the tower of ranges, indexed by their birth
   -- stage; every cell of the first stage is new.
-  (IsClosedEmbedding.id.relCWComplexCellEquiv (image_id_iUnion_range hc) (image_empty _) n).trans <|
-    (cwSubcomplexTowerUnionCellEquiv (coe_map_stageCellMap hF hι hc)
-      (isClosed_of_forall_isClosed_inter_range hc) n).trans <|
+  (towerCell hF hι hc n).trans <|
     (Equiv.sigmaNatSucc _).trans <|
       Equiv.sumCongr (firstCellEquiv hF hc n) (Equiv.sigmaCongrRight fun k ↦
         newTowerCellEquiv hF hc k n)
@@ -280,31 +289,38 @@ theorem coe_map_cwComplexOfIsColimitCellEquiv_symm_inr {n : ℕ}
   simp [cwComplexOfIsColimitCellEquiv, Equiv.sigmaNatSucc, map_cwSubcomplexTowerUnionCellEquiv_symm,
     Equiv.sigmaCongrRight_symm, Sigma.map, newTowerCellEquiv, newCellEquiv]
 
-/-- The cells of the colimit are the cells of the union of the ranges of the stages. -/
-private abbrev towerCell (n : ℕ) :
-    letI := fun k ↦ stageCWComplex hF hc k
-    @cell c.pt _ univ ∅ (@CWComplex.instRelCWComplex _ _ _ (cwComplexOfIsColimit hF hι hc)) n ≃
-      TowerNewCell (W := fun k ↦ (range (c.ι.app k) : Set c.pt)) (stageCellMap hF hc (ι := ι)) n :=
-  letI := fun k ↦ stageCWComplex hF hc k
-  (@IsClosedEmbedding.relCWComplexCellEquiv c.pt c.pt _ _ id .id _ ∅
-    (@CWComplex.instRelCWComplex _ _ _ (towerCWComplex hF hι hc)) univ ∅
-    (image_id_iUnion_range hc) (image_empty _) n).trans
-    (cwSubcomplexTowerUnionCellEquiv (coe_map_stageCellMap hF hι hc)
-      (isClosed_of_forall_isClosed_inter_range hc) n)
+/-- The stage at which a cell of the colimit is born: `0` for the cells of the first stage `F 0`,
+and `k + 1` for the cells of `F (k + 1)` not coming from `F k`
+(`TauCeti.cwComplexOfIsColimitCellEquiv`). -/
+def cwComplexOfIsColimitCellStage {n : ℕ}
+    (j : @cell c.pt _ univ ∅
+      (@CWComplex.instRelCWComplex _ _ _ (cwComplexOfIsColimit hF hι hc)) n) : ℕ :=
+  Sum.elim (fun _ ↦ 0) (fun i ↦ i.1 + 1) (cwComplexOfIsColimitCellEquiv hF hι hc n j)
 
-/-- The stage at which a cell of the colimit is born, read off from
-`TauCeti.cwComplexOfIsColimitCellEquiv`, is the stage of the underlying new cell of the tower of
-ranges. -/
-private theorem sumElim_cwComplexOfIsColimitCellEquiv {n : ℕ}
+/-- The cells of the first stage `F 0` are born at stage `0`. -/
+@[simp]
+theorem cwComplexOfIsColimitCellStage_symm_inl {n : ℕ} (i : cell (univ : Set (F.obj 0)) n) :
+    cwComplexOfIsColimitCellStage hF hι hc ((cwComplexOfIsColimitCellEquiv hF hι hc n).symm
+      (.inl i)) = 0 := by
+  simp [cwComplexOfIsColimitCellStage]
+
+/-- The cells of `F (k + 1)` not coming from `F k` are born at stage `k + 1`. -/
+@[simp]
+theorem cwComplexOfIsColimitCellStage_symm_inr {n : ℕ} (i : Σ k, ↥(range (ι k n))ᶜ) :
+    cwComplexOfIsColimitCellStage hF hι hc ((cwComplexOfIsColimitCellEquiv hF hι hc n).symm
+      (.inr i)) = i.1 + 1 := by
+  simp [cwComplexOfIsColimitCellStage]
+
+/-- The stage at which a cell of the colimit is born is the stage of the underlying new cell of
+the tower of ranges. -/
+private theorem cwComplexOfIsColimitCellStage_eq {n : ℕ}
     (j : @cell c.pt _ univ ∅
       (@CWComplex.instRelCWComplex _ _ _ (cwComplexOfIsColimit hF hι hc)) n) :
-    Sum.elim (fun _ ↦ 0) (fun i ↦ i.1 + 1) (cwComplexOfIsColimitCellEquiv hF hι hc n j) =
-      (towerCell hF hι hc n j).1 := by
-  obtain ⟨t, ht⟩ : ∃ t, towerCell hF hι hc n j = t := ⟨_, rfl⟩
-  simp only [towerCell, Equiv.trans_apply] at ht
-  simp only [cwComplexOfIsColimitCellEquiv, Equiv.trans_apply, ht]
-  rcases t with ⟨_ | k, x⟩ <;> simp [Equiv.sigmaNatSucc, firstCellEquiv, newTowerCellEquiv,
-    newCellEquiv]
+    cwComplexOfIsColimitCellStage hF hι hc j = (towerCell hF hι hc n j).1 := by
+  rw [cwComplexOfIsColimitCellStage, cwComplexOfIsColimitCellEquiv, Equiv.trans_apply,
+    Equiv.trans_apply]
+  rcases towerCell hF hι hc n j with ⟨_ | k, x⟩ <;> simp [Equiv.sigmaNatSucc, firstCellEquiv,
+    newTowerCellEquiv, newCellEquiv]
 
 /-- The open cells of the colimit are those of the stages where they are born. -/
 private theorem openCell_cwComplexOfIsColimit {n : ℕ}
@@ -324,7 +340,8 @@ private theorem openCell_cwComplexOfIsColimit {n : ℕ}
     simp only [towerCell, Equiv.trans_apply, Equiv.symm_apply_apply]
   have hm := coe_map_cwComplexOfIsColimit hF hι hc j
   rw [hj, map_cwSubcomplexTowerUnionCellEquiv_symm, Function.id_comp] at hm
-  exact congrArg (· '' Metric.ball (0 : Fin n → ℝ) 1) hm
+  unfold RelCWComplex.openCell
+  rw [hm]
 
 /-- **The stages of a sequential colimit of CW complexes are subcomplexes.** The range of the
 stage `F k` in the colimit is the subcomplex of `TauCeti.cwComplexOfIsColimit` made of the cells
@@ -337,7 +354,7 @@ def cwComplexOfIsColimitSubcomplex (k : ℕ) :
   { carrier := range (c.ι.app k)
     I := fun n ↦ {j : @cell c.pt _ univ ∅
       (@CWComplex.instRelCWComplex _ _ _ (cwComplexOfIsColimit hF hι hc)) n |
-        Sum.elim (fun _ ↦ 0) (fun i ↦ i.1 + 1) (cwComplexOfIsColimitCellEquiv hF hι hc n j) ≤ k}
+        cwComplexOfIsColimitCellStage hF hι hc j ≤ k}
     closed' := (TopCat.isClosedEmbedding_ι_of_isColimit_of_succ hF hc k).isClosedMap.isClosed_range
     union' := by
       let := fun k ↦ stageCWComplex hF hc k
@@ -346,7 +363,7 @@ def cwComplexOfIsColimitSubcomplex (k : ℕ) :
         (W := fun k ↦ (range (c.ι.app k) : Set c.pt)) (coe_map_stageCellMap hF hι hc) k]
       refine iUnion_congr fun n ↦ ((towerCell hF hι hc n).subtypeEquiv fun j ↦ ?_).iSup_congr
         fun j ↦ (openCell_cwComplexOfIsColimit hF hι hc j.1).symm
-      rw [mem_ofPred_eq, sumElim_cwComplexOfIsColimitCellEquiv] }
+      rw [mem_ofPred_eq, cwComplexOfIsColimitCellStage_eq] }
 
 /-- The subcomplex of the colimit given by the stage `F k` is the range of `F k`. -/
 @[simp]
@@ -363,7 +380,7 @@ theorem mem_cwComplexOfIsColimitSubcomplex_I_iff {k n : ℕ}
     j ∈ @Subcomplex.I c.pt _ univ ∅
       (@CWComplex.instRelCWComplex _ _ _ (cwComplexOfIsColimit hF hι hc))
       (cwComplexOfIsColimitSubcomplex hF hι hc k) n ↔
-      Sum.elim (fun _ ↦ 0) (fun i ↦ i.1 + 1) (cwComplexOfIsColimitCellEquiv hF hι hc n j) ≤ k :=
+      cwComplexOfIsColimitCellStage hF hι hc j ≤ k :=
   Iff.rfl
 
 /-- Every cell of the first stage `F 0` is a cell of every stage. -/
