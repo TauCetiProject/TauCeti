@@ -219,6 +219,24 @@ theorem etaMultiplier_S : etaMultiplier S = cexp (-(π * I / 4)) := by
     ← Complex.exp_neg]
   simp [coe_S]
 
+/-- The first column of `γ Tⁿ` is that of `γ`. -/
+private theorem mul_T_zpow_apply_zero (γ : SL(2, ℤ)) (n : ℤ) (i : Fin 2) :
+    (γ * T ^ n) i 0 = γ i 0 := by
+  simp [Matrix.SpecialLinearGroup.coe_mul, coe_T_zpow, Matrix.mul_apply, Fin.sum_univ_two]
+
+/-- The second column of `γ Tⁿ` is `n` times the first column of `γ` plus its second column. -/
+private theorem mul_T_zpow_apply_one (γ : SL(2, ℤ)) (n : ℤ) (i : Fin 2) :
+    (γ * T ^ n) i 1 = γ i 0 * n + γ i 1 := by
+  simp [Matrix.SpecialLinearGroup.coe_mul, coe_T_zpow, Matrix.mul_apply, Fin.sum_univ_two]
+
+/-- The first column of `γ S` is the second column of `γ`. -/
+private theorem mul_S_apply_zero (γ : SL(2, ℤ)) (i : Fin 2) : (γ * S) i 0 = γ i 1 := by
+  simp [Matrix.SpecialLinearGroup.coe_mul, coe_S, Matrix.mul_apply, Fin.sum_univ_two]
+
+/-- The second column of `γ S` is minus the first column of `γ`. -/
+private theorem mul_S_apply_one (γ : SL(2, ℤ)) (i : Fin 2) : (γ * S) i 1 = -γ i 0 := by
+  simp [Matrix.SpecialLinearGroup.coe_mul, coe_S, Matrix.mul_apply, Fin.sum_univ_two]
+
 /-- `ε(γ Tⁿ) = e^{π i n / 12} ε(γ)`: right translation by `Tⁿ` replaces `τ` by `τ + n`. -/
 theorem etaMultiplier_mul_T_zpow (γ : SL(2, ℤ)) (n : ℤ) :
     etaMultiplier (γ * T ^ n) = cexp (π * I * n / 12) * etaMultiplier γ := by
@@ -230,11 +248,7 @@ theorem etaMultiplier_mul_T_zpow (γ : SL(2, ℤ)) (n : ℤ) :
     congr 1
     ext
     exact coe_T_zpow_smul_eq _
-  have hentry0 : (γ * T ^ n) 1 0 = γ 1 0 := by
-    simp [Matrix.SpecialLinearGroup.coe_mul, coe_T_zpow, Matrix.mul_apply, Fin.sum_univ_two]
-  have hentry1 : (γ * T ^ n) 1 1 = γ 1 0 * n + γ 1 1 := by
-    simp [Matrix.SpecialLinearGroup.coe_mul, coe_T_zpow, Matrix.mul_apply, Fin.sum_univ_two]
-  rw [hsmul, h, hentry0, hentry1]
+  rw [hsmul, h, mul_T_zpow_apply_zero, mul_T_zpow_apply_one]
   simp only [eta_add_intCast, Int.cast_add, Int.cast_mul]
   rw [mul_add, add_assoc]
   ring
@@ -260,10 +274,6 @@ theorem etaMultiplier_T_mul (γ : SL(2, ℤ)) :
 lower-right entry is positive. No sign condition on the lower-left entry is needed. -/
 theorem etaMultiplier_mul_S (γ : SL(2, ℤ)) (hd : 0 < γ 1 1) :
     etaMultiplier (γ * S) = cexp (-(π * I / 4)) * etaMultiplier γ := by
-  have hentry0 : (γ * S) 1 0 = γ 1 1 := by
-    simp [Matrix.SpecialLinearGroup.coe_mul, coe_S, Matrix.mul_apply, Fin.sum_univ_two]
-  have hentry1 : (γ * S) 1 1 = -γ 1 0 := by
-    simp [Matrix.SpecialLinearGroup.coe_mul, coe_S, Matrix.mul_apply, Fin.sum_univ_two]
   have hpos : 0 < ((γ 1 1 : ℂ) * I - γ 1 0).im := by
     simpa using (Int.cast_pos.mpr hd : (0 : ℝ) < γ 1 1)
   have hroot := Complex.sqrt_neg_I_mul hpos
@@ -276,7 +286,7 @@ theorem etaMultiplier_mul_S (γ : SL(2, ℤ)) (hd : 0 < γ 1 1) :
     apply UpperHalfPlane.ext
     rw [UpperHalfPlane.modular_S_smul]
     simp
-  rw [mul_smul, hfixed, eta_smul, hentry0, hentry1]
+  rw [mul_smul, hfixed, eta_smul, mul_S_apply_zero, mul_S_apply_one]
   simp only [UpperHalfPlane.coe_I, Int.cast_neg, ← sub_eq_add_neg]
   rw [hroot]
   ring
@@ -308,13 +318,8 @@ private theorem etaMultiplier_eq_of_mul_T_zpow (γ : SL(2, ℤ)) (n : ℤ) (hc :
       (12 * (γ * T ^ n) 1 0) - dedekindSum ((γ * T ^ n) 1 1) ((γ * T ^ n) 1 0) - 1 / 4))) :
     etaMultiplier γ = cexp (π * I * (((γ 0 0 : ℂ) + γ 1 1) / (12 * γ 1 0) -
       dedekindSum (γ 1 1) (γ 1 0) - 1 / 4)) := by
-  have ha : (γ * T ^ n) 0 0 = γ 0 0 := by
-    simp [Matrix.SpecialLinearGroup.coe_mul, coe_T_zpow, Matrix.mul_apply, Fin.sum_univ_two]
-  have hc' : (γ * T ^ n) 1 0 = γ 1 0 := by
-    simp [Matrix.SpecialLinearGroup.coe_mul, coe_T_zpow, Matrix.mul_apply, Fin.sum_univ_two]
-  have hd : (γ * T ^ n) 1 1 = γ 1 0 * n + γ 1 1 := by
-    simp [Matrix.SpecialLinearGroup.coe_mul, coe_T_zpow, Matrix.mul_apply, Fin.sum_univ_two]
-  rw [etaMultiplier_mul_T_zpow, ha, hc', hd, dedekindSum_self_mul_add] at h
+  rw [etaMultiplier_mul_T_zpow, mul_T_zpow_apply_zero, mul_T_zpow_apply_zero,
+    mul_T_zpow_apply_one, dedekindSum_self_mul_add] at h
   rw [← mul_right_inj' (Complex.exp_ne_zero (π * I * n / 12)), h, ← Complex.exp_add]
   congr 1
   have hc'' : (γ 1 0 : ℂ) ≠ 0 := by exact_mod_cast hc
@@ -330,15 +335,9 @@ private theorem etaMultiplier_eq_of_mul_S (γ : SL(2, ℤ)) (hc : 0 < γ 1 0) (h
       (12 * (γ * S) 1 0) - dedekindSum ((γ * S) 1 1) ((γ * S) 1 0) - 1 / 4))) :
     etaMultiplier γ = cexp (π * I * (((γ 0 0 : ℂ) + γ 1 1) / (12 * γ 1 0) -
       dedekindSum (γ 1 1) (γ 1 0) - 1 / 4)) := by
-  have hb : (γ * S) 0 0 = γ 0 1 := by
-    simp [Matrix.SpecialLinearGroup.coe_mul, coe_S, Matrix.mul_apply, Fin.sum_univ_two]
-  have hd' : (γ * S) 1 0 = γ 1 1 := by
-    simp [Matrix.SpecialLinearGroup.coe_mul, coe_S, Matrix.mul_apply, Fin.sum_univ_two]
-  have hc' : (γ * S) 1 1 = -γ 1 0 := by
-    simp [Matrix.SpecialLinearGroup.coe_mul, coe_S, Matrix.mul_apply, Fin.sum_univ_two]
   have hdet := γ.det_coe
   rw [Matrix.det_fin_two] at hdet
-  have hcop : IsCoprime (γ 1 1) (γ 1 0) := ⟨γ 0 0, -γ 0 1, by linear_combination hdet⟩
+  have hcop := (γ.isCoprime_row 1).symm
   have hrec := dedekindSum_add_dedekindSum hd hc hcop
   -- The exponents agree in `ℚ`, by the reciprocity law and `a d - b c = 1`.
   have hexp : ((γ 0 1 - γ 1 0 : ℤ) : ℚ) / (12 * γ 1 1) + dedekindSum (γ 1 0) (γ 1 1) =
@@ -350,7 +349,8 @@ private theorem etaMultiplier_eq_of_mul_S (γ : SL(2, ℤ)) (hc : 0 < γ 1 0) (h
     push_cast
     field_simp
     linear_combination (-4 : ℚ) * hdetq
-  rw [etaMultiplier_mul_S γ hd, hb, hd', hc', dedekindSum_neg] at h
+  rw [etaMultiplier_mul_S γ hd, mul_S_apply_zero, mul_S_apply_zero, mul_S_apply_one,
+    dedekindSum_neg] at h
   rw [← mul_right_inj' (Complex.exp_ne_zero (-(π * I / 4))), h, ← Complex.exp_add]
   congr 1
   have hexpC := congrArg (fun x : ℚ ↦ (x : ℂ)) hexp
@@ -381,23 +381,18 @@ theorem etaMultiplier_of_c_pos (γ : SL(2, ℤ)) (hc : 0 < γ 1 0) :
   refine etaMultiplier_eq_of_mul_T_zpow γ n (by omega) ?_
   set γ' := γ * T ^ n
   have hc' : γ' 1 0 = c := by
-    simp [γ', ← hγc, Matrix.SpecialLinearGroup.coe_mul, coe_T_zpow, Matrix.mul_apply,
-      Fin.sum_univ_two]
+    rw [mul_T_zpow_apply_zero, hγc]
   have hd' : γ' 1 1 = γ 1 1 % c := by
-    simp [γ', n, ← hγc, Matrix.SpecialLinearGroup.coe_mul, coe_T_zpow, Matrix.mul_apply,
-      Fin.sum_univ_two, Int.emod_def]
+    rw [mul_T_zpow_apply_one, hγc, Int.emod_def]
     ring
-  -- The reduced `d` is positive: if `c ∣ d` then `c ∣ a d - b c = 1`.
+  -- The reduced `d` is positive: `c` and `d` are coprime, so `c ∣ d` forces `c = 1`.
   have hdpos : 0 < γ' 1 1 := by
     refine lt_of_le_of_ne (hd' ▸ Int.emod_nonneg _ (by omega)) fun h ↦ hc1 ?_
-    have hdet := γ'.det_coe
-    rw [Matrix.det_fin_two, ← h, hc'] at hdet
-    have : (c : ℤ) ∣ 1 := ⟨-γ' 0 1, by linear_combination -hdet⟩
-    exact_mod_cast Int.eq_one_of_dvd_one (by omega) this
+    have hunit := (γ'.isCoprime_row 1).isUnit_of_dvd (h ▸ dvd_zero _)
+    rcases Int.isUnit_iff.mp hunit with h1 | h1 <;> omega
   have hdlt : γ' 1 1 < c := hd' ▸ Int.emod_lt_of_pos _ (by omega)
   -- Invert: `γ' S` has lower-left entry `d mod c`, which lies strictly between `0` and `c`.
-  have hS : (γ' * S) 1 0 = γ' 1 1 := by
-    simp [Matrix.SpecialLinearGroup.coe_mul, coe_S, Matrix.mul_apply, Fin.sum_univ_two]
+  have hS : (γ' * S) 1 0 = γ' 1 1 := mul_S_apply_zero γ' 1
   exact etaMultiplier_eq_of_mul_S γ' (by omega) hdpos
     (ih (γ' 1 1).toNat (by omega) (γ' * S) (by omega) (by omega))
 
