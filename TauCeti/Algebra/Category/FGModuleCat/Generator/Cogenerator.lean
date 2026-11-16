@@ -13,6 +13,7 @@ public import TauCeti.CategoryTheory.Preadditive.AdditiveClosure.Duality
 public import TauCeti.CategoryTheory.Preadditive.KrullSchmidt.AdditiveClosure
 
 import TauCeti.Algebra.Module.Injective.Envelope.Existence
+import TauCeti.Algebra.Subalgebra.Center
 import TauCeti.RingTheory.Artinian.Subalgebra
 
 /-!
@@ -168,9 +169,7 @@ theorem _root_.FGModuleCat.isCoseparator_iff_forall_indecomposable (R : Type u) 
   have := IsArtinianRing.of_finite R A
   -- Replace `R` by the centre `C` of `A`, which lies in the universe of `A`, to take `E` there.
   let C := Subalgebra.center R A
-  let _ : Algebra C A := inferInstanceAs (Algebra (Subring.center A) A)
-  have : IsScalarTower R C A := .of_algebraMap_eq fun _ ↦ rfl
-  have : Module.Finite C A := .of_restrictScalars_finite R C A
+  have : Module.Finite C A := Subalgebra.finite_centerAlgebra_of_finite
   obtain ⟨E, _, _, f, hf⟩ := exists_isInjectiveEnvelope C (C ⧸ Ring.jacobson C)
   have := hf.injective_fgModuleCatMatlisDualRegular (A := A)
   rw [hf.isCoseparator_iff_additiveClosure]
@@ -195,9 +194,9 @@ theorem isGeneratorCogenerator_iff_forall_indecomposable (R : Type u) [CommRing 
     (FGModuleCat.isSeparator_iff_forall_indecomposable M)
       (FGModuleCat.isCoseparator_iff_forall_indecomposable R M)
 
-/-- **`ℤ` is not a coseparator of `mod ℤ`**: every morphism `ℤ/2ℤ ⟶ ℤ` is zero, so the identity of
-the nonzero module `ℤ/2ℤ` is not detected by morphisms into `ℤ`. -/
+/-- **`ℤ` is not a coseparator of `mod ℤ`.** -/
 theorem _root_.FGModuleCat.not_isCoseparator_int : ¬ IsCoseparator (FGModuleCat.of ℤ ℤ) := by
+  -- Every morphism `ℤ/2ℤ ⟶ ℤ` is zero, so the identity of `ℤ/2ℤ` is not detected by them.
   intro h
   have hz : ∀ g : FGModuleCat.of ℤ (ZMod 2) ⟶ FGModuleCat.of ℤ ℤ, g = 0 := fun g ↦ by
     refine ObjectProperty.hom_ext _ (ModuleCat.hom_ext (LinearMap.ext fun x ↦ ?_))

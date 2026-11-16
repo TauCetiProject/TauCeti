@@ -114,10 +114,11 @@ theorem _root_.CategoryTheory.Equivalence.moduleProjective_functor_obj_regular
 
 variable {R} in
 /-- **Finitely generated projective modules are summands of finite free modules**: a projective
-object of `FGModuleCat R` lies in the additive closure of the regular module. A finite generating
-family gives an epimorphism from a finite sum of copies of `R`, which splits. -/
+object of `FGModuleCat R` lies in the additive closure of the regular module. -/
 theorem additiveClosure_regular_of_projective (P : FGModuleCat.{u} R) [Projective P] :
     additiveClosure (FGModuleCat.of R R) P := by
+  -- A finite generating family gives an epimorphism from a finite sum of copies of `R`, which
+  -- splits since `P` is projective.
   obtain ⟨n, x, hx⟩ := Module.Finite.exists_fin (R := R) (M := P)
   let p : (⨁ fun _ : Fin n ↦ FGModuleCat.of R R) ⟶ P := biproduct.desc fun i ↦
     ObjectProperty.homMk (ModuleCat.ofHom (LinearMap.toSpanSingleton R P (x i)))

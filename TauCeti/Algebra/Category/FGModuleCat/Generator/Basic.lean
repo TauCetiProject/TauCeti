@@ -22,19 +22,24 @@ Over any ring `R`, a finitely generated module `M` is a separator of `mod R = FG
 when `R` is a direct summand of a finite sum `Mⁿ`, that is, `R ∈ add M`
 (`FGModuleCat.isSeparator_iff_exists_retract`), exactly when `M` is a generator of the module
 category in the sense of `TauCeti.Module.IsGenerator` (`FGModuleCat.isSeparator_iff_isGenerator`).
-One direction holds in any preadditive category: a separator in `add M` makes `M` a separator. For
-the other, the images of the morphisms `M ⟶ R` span a left ideal `τ`, the trace of `M`, and the
-quotient map `R ⟶ R ⧸ τ` vanishes after composing with every morphism out of `M`; so a separator
-`M` has `τ = R`. Since `1 ∈ τ` is a finite sum, finitely many morphisms `M ⟶ R` already cover `R`,
-and the resulting `Mⁿ ⟶ R` splits. Categorically, `R` is a projective object that is compact for
-directed unions of subobjects, and the quotient `R ⧸ τ` is again finitely generated, although `τ`
-need not be: this is why no Noetherian hypothesis is needed.
+One direction holds in any preadditive category with finite biproducts: a separator in `add M`
+makes `M` a separator. For the other, the images of the morphisms `M ⟶ R` span a left ideal `τ`,
+the trace of `M`, and the quotient map `R ⟶ R ⧸ τ` vanishes after composing with every morphism out
+of `M`; so a separator `M` has `τ = R`. Since `1 ∈ τ` is a finite sum, finitely many morphisms
+`M ⟶ R` already cover `R`, and the resulting `Mⁿ ⟶ R` splits. Categorically, `R` is a projective
+object that is compact for directed unions of subobjects, and the quotient `R ⧸ τ` is again finitely
+generated, although `τ` need not be: this is why no Noetherian hypothesis is needed.
+
+The comparison with `TauCeti.Module.IsGenerator` holds for modules in any universe in which `R` is
+small, with the regular module and `R ⧸ τ` replaced by their `Shrink`s; a generator is a separator
+in every universe (`FGModuleCat.isSeparator_of_isGenerator`).
 
 ## Main results
 
 * `FGModuleCat.isSeparator`: the regular module is a separator of `FGModuleCat R`.
 * `FGModuleCat.isSeparator_iff_isGenerator`: the separators of `mod R` are the generators of the
   module category.
+* `FGModuleCat.isSeparator_of_isGenerator`: a generator is a separator, in any universe.
 * `FGModuleCat.isSeparator_iff_additiveClosure` and `FGModuleCat.isSeparator_iff_exists_retract`:
   `M` is a separator of `mod R` exactly when `R ∈ add M`.
 -/
@@ -45,7 +50,7 @@ namespace TauCeti
 
 open CategoryTheory CategoryTheory.Limits
 
-universe u
+universe u v
 
 variable (R : Type u) [Ring R]
 
@@ -63,11 +68,11 @@ theorem _root_.FGModuleCat.isSeparator : IsSeparator (FGModuleCat.of R R) :=
 
 variable {R}
 
-/-- **The regular module lies in the additive closure of a generator**: if `∑ᵢ φᵢ(mᵢ) = 1` for
-linear forms `φᵢ` on `M` and vectors `mᵢ`, the maps `r ↦ r • mᵢ` and `φᵢ` exhibit `R` as a direct
-summand of `Mⁿ`. -/
+/-- **The regular module lies in the additive closure of a generator**: if `M` is a generator of
+the module category, then the regular module lies in `add M`. -/
 theorem _root_.FGModuleCat.additiveClosure_of_isGenerator (M : FGModuleCat.{u} R)
     [Module.IsGenerator R M] : additiveClosure M (FGModuleCat.of R R) := by
+  -- If `∑ᵢ φᵢ(mᵢ) = 1`, the maps `r ↦ r • mᵢ` and `φᵢ` exhibit `R` as a retract of `Mⁿ`.
   obtain ⟨n, φ, m, h⟩ := Module.IsGenerator.exists_sum_eq_one (R := R) (M := M)
   refine additiveClosure_iff_exists_sum_comp_eq_id.2
     ⟨n, fun i ↦ ObjectProperty.homMk (ModuleCat.ofHom (LinearMap.toSpanSingleton R M (m i))),
@@ -77,26 +82,43 @@ theorem _root_.FGModuleCat.additiveClosure_of_isGenerator (M : FGModuleCat.{u} R
   refine ModuleCat.hom_ext (LinearMap.ext_ring ?_)
   simpa using h
 
+/-- **A generator of the module category is a separator of `mod R`**, in any universe of modules.
+-/
+theorem _root_.FGModuleCat.isSeparator_of_isGenerator (M : FGModuleCat.{v} R)
+    [Module.IsGenerator R M] : IsSeparator M := by
+  refine (Preadditive.isSeparator_iff _).2 fun X Y f hf ↦ ?_
+  -- `f` vanishes on the image of every morphism `M ⟶ X`, and these images span `X`.
+  have h : ⨆ g : M →ₗ[R] X, LinearMap.range g ≤ LinearMap.ker f.hom.hom :=
+    iSup_le fun g ↦ LinearMap.range_le_ker_iff.2 <|
+      congr(($(hf (ObjectProperty.homMk (ModuleCat.ofHom g)))).hom.hom)
+  rw [Module.IsGenerator.iSup_range_eq_top, top_le_iff, LinearMap.ker_eq_top] at h
+  exact ObjectProperty.hom_ext _ (ModuleCat.hom_ext h)
+
 /-- **A separator of `mod R` is a generator of the module category**: the trace of `M`, spanned by
-the images of the linear forms on `M`, is all of `R`. -/
-theorem _root_.FGModuleCat.isGenerator_of_isSeparator {M : FGModuleCat.{u} R}
+the images of the linear forms on `M`, is all of `R`. The modules may live in any universe in which
+`R` is small. -/
+theorem _root_.FGModuleCat.isGenerator_of_isSeparator [Small.{v} R] {M : FGModuleCat.{v} R}
     (hM : IsSeparator M) : Module.IsGenerator R M := by
   rw [Module.isGenerator_iff_iSup_range_eq_top]
   set τ := ⨆ φ : M →ₗ[R] R, LinearMap.range φ
-  let π : FGModuleCat.of R R ⟶ FGModuleCat.of R (R ⧸ τ) :=
-    ObjectProperty.homMk (ModuleCat.ofHom τ.mkQ)
+  have : Small.{v} (R ⧸ τ) := small_of_surjective τ.mkQ_surjective
+  let e := Shrink.linearEquiv.{v} R R
+  let e' := Shrink.linearEquiv.{v} R (R ⧸ τ)
+  -- The quotient map `R ⟶ R ⧸ τ`, transported to the universe `v`, vanishes on every `M ⟶ R`.
+  let π : FGModuleCat.of R (Shrink.{v} R) ⟶ FGModuleCat.of R (Shrink.{v} (R ⧸ τ)) :=
+    FGModuleCat.ofHom (e'.symm.toLinearMap ∘ₗ τ.mkQ ∘ₗ e.toLinearMap)
   have hπ : π = 0 := (Preadditive.isSeparator_iff _).1 hM π fun g ↦ by
     refine ObjectProperty.hom_ext _ (ModuleCat.hom_ext (LinearMap.ext fun x ↦ ?_))
-    simpa [π, ObjectProperty.FullSubcategory.comp_hom] using
-      Submodule.mem_iSup_of_mem g.hom.hom (LinearMap.mem_range_self g.hom.hom x)
-  refine eq_top_iff.2 fun r _ ↦ (Submodule.Quotient.mk_eq_zero τ).1 ?_
-  simpa [π] using congr(($hπ).hom.hom r)
+    simpa [π, ObjectProperty.FullSubcategory.comp_hom] using Submodule.mem_iSup_of_mem
+      (e.toLinearMap ∘ₗ g.hom.hom) (LinearMap.mem_range_self (e.toLinearMap ∘ₗ g.hom.hom) x)
+  refine eq_top_iff.2 fun r _ ↦ (Submodule.Quotient.mk_eq_zero τ).1 (e'.symm.map_eq_zero_iff.1 ?_)
+  simpa [π] using congr(($hπ).hom.hom (e.symm r))
 
-/-- **The separators of `mod R` are the generators of the module category.** -/
-theorem _root_.FGModuleCat.isSeparator_iff_isGenerator (M : FGModuleCat.{u} R) :
+/-- **The separators of `mod R` are the generators of the module category**, in any universe of
+modules in which `R` is small. -/
+theorem _root_.FGModuleCat.isSeparator_iff_isGenerator [Small.{v} R] (M : FGModuleCat.{v} R) :
     IsSeparator M ↔ Module.IsGenerator R M :=
-  ⟨FGModuleCat.isGenerator_of_isSeparator, fun _ ↦
-    (FGModuleCat.isSeparator R).of_additiveClosure (FGModuleCat.additiveClosure_of_isGenerator M)⟩
+  ⟨FGModuleCat.isGenerator_of_isSeparator, fun _ ↦ FGModuleCat.isSeparator_of_isGenerator M⟩
 
 /-- **The separators of `mod R`, through additive closures**: `M` is a separator of `mod R` exactly
 when the regular module lies in `add M`. -/

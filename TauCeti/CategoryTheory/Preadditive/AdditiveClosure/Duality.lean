@@ -41,8 +41,7 @@ variable {C : Type u} [Category.{v} C] [Preadditive C] [HasFiniteBiproducts C]
 
 /-- **Additive closures under a contravariant fully faithful functor**: for an additive, fully
 faithful functor `F : Cᵒᵖ ⥤ D`, `F (op X)` lies in `add (F (op M))` exactly when `X` lies in
-`add M`. Sums of composites `X ⟶ M ⟶ X` and `F (op X) ⟶ F (op M) ⟶ F (op X)` correspond under `F`
-with the order of composition reversed. -/
+`add M`. -/
 theorem CategoryTheory.Functor.additiveClosure_obj_op_iff (F : Cᵒᵖ ⥤ D) [F.Full] [F.Faithful]
     [F.Additive] {M X : C} :
     additiveClosure (F.obj (op M)) (F.obj (op X)) ↔ additiveClosure M X := by
@@ -56,8 +55,7 @@ theorem CategoryTheory.Functor.additiveClosure_obj_op_iff (F : Cᵒᵖ ⥤ D) [F
     rw [← Functor.map_sum, ← op_sum, h, op_id, F.map_id]
 
 /-- **Additive closures under a duality**: for an equivalence `e : Cᵒᵖ ≌ D`, `e (op X)` lies in
-`add (e (op M))` exactly when `X` lies in `add M`. The functor of `e` is additive, as a right
-adjoint between preadditive categories. -/
+`add (e (op M))` exactly when `X` lies in `add M`. -/
 theorem CategoryTheory.Equivalence.additiveClosure_functor_obj_op_iff (e : Cᵒᵖ ≌ D) {M X : C} :
     additiveClosure (e.functor.obj (Opposite.op M)) (e.functor.obj (Opposite.op X)) ↔
       additiveClosure M X :=

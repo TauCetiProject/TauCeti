@@ -81,11 +81,12 @@ theorem isLocalRing_end_of_indecomposable {X : FGModuleCat.{w} A} [IsNoetherian 
   exact ((ObjectProperty.fullyFaithfulι _).ringEquivEnd X).symm.isLocalRing
 
 /-- A finitely generated module is indecomposable in the category of all modules exactly when it
-is an indecomposable object of `mod A`, over any ring. The inclusion `mod A ⥤ Mod A` is additive
-and fully faithful: it reflects indecomposability because it reflects zero objects, and preserves
-it because it is bijective on endomorphisms and idempotents split in `mod A`. -/
+is an indecomposable object of `mod A`, over any ring. -/
 theorem indecomposable_obj_iff (P : FGModuleCat.{w} A) :
     Indecomposable P.obj ↔ Indecomposable P := by
+  -- The inclusion `mod A ⥤ Mod A` is additive and fully faithful: it reflects indecomposability
+  -- because it reflects zero objects, and preserves it because it is bijective on endomorphisms
+  -- and idempotents split in `mod A`.
   let ι := ObjectProperty.ι (ModuleCat.isFG.{w} A)
   have := preservesBinaryBiproducts_of_preservesBiproducts ι
   exact ⟨fun h ↦ ι.indecomposable_of_indecomposable_obj_of_reflects_isZero_retract h
