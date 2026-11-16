@@ -214,16 +214,9 @@ theorem cappedExchangeAlmostComplex_one (hL : 2 < L) (hJp : Periodic (J inf) 1)
       h₀.cappingAlmostComplex (Floer.exchangeEndData J) hJ' one L (1 - w) := by
   by_cases hw : (1 - w ≠ 0 ∧ 1 - w ≠ 1) ∧ 1 - w ≠ one.plumbingMap L 1
   · refine SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x => ?_
-    have hJx : ∀ q t (y : Unit), (h₀.isNondegenerate.symplecticFormAt x).Tames
-        (Floer.exchangeEndData (fun q t (_ : Unit) => (J q t).almostComplexStructureAt x) q t
-          y) := by
-      intro q t _
-      cases q
-      · simpa using h₀.isNondegenerate.tames_iff.mp (hJ' zero t) x
-      · simpa using h₀.isNondegenerate.tames_iff.mp (hJ' one t) x
-      · simpa using h₀.isNondegenerate.tames_iff.mp (hJ' inf t) x
     rw [almostComplexStructureAt_cappedExchangeAlmostComplex,
-      Floer.cappedExchangeAlmostComplex_one _ (fun t => by simp only [hJp t]) hJx,
+      Floer.cappedExchangeAlmostComplex_one _ (fun t => by simp only [hJp t])
+        (h₀.tames_exchangeEndData_almostComplexStructureAt J hJ' x),
       almostComplexStructureAt_cappingAlmostComplex h₀ _ hJ' hw]
     -- The fiberwise exchanged end structures are the exchanged fiberwise end structures.
     have hex : (fun r t (_ : Unit) => (Floer.exchangeEndData J r t).almostComplexStructureAt x) =

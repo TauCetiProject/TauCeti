@@ -252,6 +252,18 @@ theorem exchangeAlmostComplex_zero (w : ThricePuncturedSphere) :
     rw [almostComplexStructureAt_exchangeAlmostComplex, Floer.exchangeAlmostComplex_zero,
       almostComplexStructureAt_pairOfPantsAlmostComplex]
 
+omit [FiniteDimensional ℝ E] in
+/-- If the exchanged end structures are tame, then on the tangent space at every point `x` the
+exchanged end structures of the fiberwise end structures `J q t x` are tamed by `σ x`. -/
+theorem tames_exchangeEndData_almostComplexStructureAt
+    (hJ' : ∀ q t, σ.Tames (Floer.exchangeEndData J q t)) (x : M) (q : Puncture) (t : ℝ)
+    (y : Unit) : (h₀.isNondegenerate.symplecticFormAt x).Tames
+      (Floer.exchangeEndData (fun q t (_ : Unit) => (J q t).almostComplexStructureAt x) q t y) := by
+  cases q
+  · simpa using h₀.isNondegenerate.tames_iff.mp (hJ' zero t) x
+  · simpa using h₀.isNondegenerate.tames_iff.mp (hJ' one t) x
+  · simpa using h₀.isNondegenerate.tames_iff.mp (hJ' inf t) x
+
 /-- **The end of the family is the exchanged pair-of-pants structure.** If the output structures
 `J ∞` have period one in `t`, the member `c = 1` of the family at `1 - w` is the pair-of-pants
 structure with exchanged end structures (`TauCeti.Floer.exchangeEndData`: `J 1` at `0`, `J 0` at
@@ -261,16 +273,9 @@ theorem exchangeAlmostComplex_one (hJp : Periodic (J inf) 1)
     h₀.exchangeAlmostComplex J hJ 1 (1 - w) =
       h₀.pairOfPantsAlmostComplex (Floer.exchangeEndData J) hJ' w :=
   SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x => by
-    have hJx : ∀ q t (y : Unit), (h₀.isNondegenerate.symplecticFormAt x).Tames
-        (Floer.exchangeEndData (fun q t (_ : Unit) => (J q t).almostComplexStructureAt x) q t
-          y) := by
-      intro q t _
-      cases q
-      · simpa using h₀.isNondegenerate.tames_iff.mp (hJ' zero t) x
-      · simpa using h₀.isNondegenerate.tames_iff.mp (hJ' one t) x
-      · simpa using h₀.isNondegenerate.tames_iff.mp (hJ' inf t) x
     rw [almostComplexStructureAt_exchangeAlmostComplex,
-      Floer.exchangeAlmostComplex_one (h₀.compatibleAt x) (fun t => by simp only [hJp t]) hJx,
+      Floer.exchangeAlmostComplex_one (h₀.compatibleAt x) (fun t => by simp only [hJp t])
+        (h₀.tames_exchangeEndData_almostComplexStructureAt J hJ' x),
       sub_sub_cancel, almostComplexStructureAt_pairOfPantsAlmostComplex]
     -- Both sides are the linear pair-of-pants structure of the same exchanged end structures.
     refine (h₀.compatibleAt x).eq_of_cayley_eq
