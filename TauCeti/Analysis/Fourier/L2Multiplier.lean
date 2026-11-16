@@ -101,6 +101,11 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [InnerProductSpace ℂ F]
   [CompleteSpace F]
 
+/-- The Fourier transform on `L²` commutes with real scalars. -/
+theorem fourier_real_smul (r : ℝ) (f : Lp F 2 (volume : Measure E)) : 𝓕 (r • f) = r • 𝓕 f := by
+  rw [RCLike.real_smul_eq_coe_smul (K := ℂ), FourierTransform.fourier_smul,
+    ← RCLike.real_smul_eq_coe_smul]
+
 variable (F) in
 /-- The **Fourier multiplier** on `L²(E, F)` with symbol `m ∈ L^∞(E)`: the bounded operator
 `f ↦ 𝓕⁻ (m • 𝓕 f)`, where `𝓕` is the Fourier transform on `L²`. -/
@@ -401,10 +406,8 @@ private theorem norm_slope_fourierMultiplierCLM_toLp_sub {m : ℝ → E → ℂ}
   rw [← norm_fourier_eq, Lp.norm_def]
   congr 1
   refine eLpNorm_congr_ae ?_
-  have hreal : ∀ (r : ℝ) (x : Lp F 2 (volume : Measure E)), 𝓕 (r • x) = r • 𝓕 x :=
-    fun r x ↦ by rw [RCLike.real_smul_eq_coe_smul (K := ℂ), FourierTransform.fourier_smul,
-      ← RCLike.real_smul_eq_coe_smul]
-  rw [slope_def_module, FourierTransform.fourier_sub, hreal, FourierTransform.fourier_sub]
+  rw [slope_def_module, FourierTransform.fourier_sub, fourier_real_smul,
+    FourierTransform.fourier_sub]
   set A := 𝓕 (fourierMultiplierCLM F ((hm s).toLp (m s)) f)
   set B := 𝓕 (fourierMultiplierCLM F ((hm t).toLp (m t)) f)
   set D := 𝓕 (fourierMultiplierCLM F (hm'.toLp m') h)

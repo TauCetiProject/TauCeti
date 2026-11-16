@@ -96,6 +96,11 @@ theorem IsWaveSolutionOn.mono (hu : IsWaveSolutionOn u u' u'' G s) {s' : Set ℝ
   hasDerivWithinAt_deriv t ht := (hu.hasDerivWithinAt_deriv t (hs ht)).mono hs
   laplacian_eq t ht := hu.laplacian_eq t (hs ht)
 
+/-- For a strong solution of the free equation, the Laplacian is the acceleration. -/
+theorem IsWaveSolutionOn.laplacian_eq_of_zero (hu : IsWaveSolutionOn u u' u'' 0 s) {t : ℝ}
+    (ht : t ∈ s) : Δ (u t : 𝓢'(E, F)) = (u'' t : 𝓢'(E, F)) := by
+  simpa only [Pi.zero_apply, sub_zero] using hu.laplacian_eq t ht
+
 /-- **Existence of strong solutions.** If the Laplacians of `f` and `g` are the `L²` functions
 `h₁` and `h₂`, then `u(t) = cos(tD) f + D⁻¹ sin(tD) g` is a strong solution of the free wave
 equation on every set of times, with velocity `D⁻¹ sin(tD) h₁ + cos(tD) g` and acceleration
@@ -235,9 +240,7 @@ private theorem truncatedEnergy_eq [s.OrdConnected] (hu : IsWaveSolutionOn u u' 
       |>.comp_hasDerivWithinAt τ (hu.hasDerivWithinAt_deriv τ hτ)))
   refine (Set.OrdConnected.isPreconnected ‹_›).eq_of_hasDerivWithinAt_zero
     (fun τ hτ ↦ (hderiv τ hτ).congr_deriv ?_) ht ht₀
-  have hΔ := hu.laplacian_eq τ hτ
-  simp only [Pi.zero_apply, sub_zero] at hΔ
-  rw [inner_truncate_eq hΔ, Complex.neg_re,
+  rw [inner_truncate_eq (hu.laplacian_eq_of_zero hτ), Complex.neg_re,
     ← inner_conj_symm (truncateSqrt F R (u' τ)), Complex.conj_re]
   ring
 
@@ -254,14 +257,12 @@ order-connected set of times `s`, the energy
 theorem IsWaveSolutionOn.norm_sq_sub_re_inner_eq [s.OrdConnected]
     (hu : IsWaveSolutionOn u u' u'' 0 s) {t₀ t : ℝ} (ht₀ : t₀ ∈ s) (ht : t ∈ s) :
     ‖u' t‖ ^ 2 - (⟪u t, u'' t⟫).re = ‖u' t₀‖ ^ 2 - (⟪u t₀, u'' t₀⟫).re := by
-  have hΔ : ∀ τ ∈ s, Δ (u τ : 𝓢'(E, F)) = (u'' τ : 𝓢'(E, F)) := fun τ hτ ↦ by
-    simpa using hu.laplacian_eq τ hτ
   -- The truncated energies converge to the energy as the cutoff is removed.
   have hlim : ∀ τ ∈ s, Tendsto (fun R : ℕ ↦
       (⟪truncateSqrt F (R : ℝ) (u τ), truncateSqrt F (R : ℝ) (u τ)⟫).re +
         (⟪truncate F (R : ℝ) (u' τ), truncate F (R : ℝ) (u' τ)⟫).re) atTop
         (𝓝 (‖u' τ‖ ^ 2 - (⟪u τ, u'' τ⟫).re)) := fun τ hτ ↦ by
-    simp only [re_inner_truncateSqrt_self (hΔ τ hτ)]
+    simp only [re_inner_truncateSqrt_self (hu.laplacian_eq_of_zero hτ)]
     rw [sub_eq_neg_add, ← inner_self_eq_norm_sq (𝕜 := ℂ)]
     exact (((Complex.continuous_re.tendsto _).comp ((tendsto_truncate (u τ)).inner
       (tendsto_truncate (u'' τ)))).neg).add ((Complex.continuous_re.tendsto _).comp
@@ -277,7 +278,7 @@ theorem IsWaveSolutionOn.eq_zero [s.OrdConnected] (hu : IsWaveSolutionOn u u' u'
   have hu' : ∀ τ ∈ s, u' τ = 0 := fun τ hτ ↦ by
     have hE := hu.norm_sq_sub_re_inner_eq ht₀ hτ
     have hneg := Lp.re_inner_nonpos_of_laplacian_toTemperedDistribution_eq
-      (by simpa using hu.laplacian_eq τ hτ)
+      (hu.laplacian_eq_of_zero hτ)
     rw [h₀, h₁, norm_zero, inner_zero_left, Complex.zero_re] at hE
     have : ‖u' τ‖ ^ 2 ≤ 0 := by linarith
     exact norm_eq_zero.1 (pow_eq_zero_iff two_ne_zero |>.1 (le_antisymm this (sq_nonneg _)))

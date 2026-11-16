@@ -132,21 +132,16 @@ theorem _root_.MeasureTheory.Lp.laplacian_toTemperedDistribution_eq_iff
       (fun ξ : E ↦ ((laplacianSymbol ξ : ℝ) : ℂ))
         ((𝓕 f : Lp F 2 (volume : Measure E)) : 𝓢'(E, F)) := by
     have hsym : (fun ξ : E ↦ ((laplacianSymbol ξ : ℝ) : ℂ)) =
-        (-(2 * π) ^ 2 : ℂ) • fun ξ : E ↦ ((‖ξ‖ ^ 2 : ℝ) : ℂ) := by
+        ((-(2 * π) ^ 2 : ℝ) : ℂ) • fun ξ : E ↦ ((‖ξ‖ ^ 2 : ℝ) : ℂ) := by
       ext ξ
       simp only [laplacianSymbol_apply, Pi.smul_apply, smul_eq_mul]
       push_cast
       ring
-    rw [TemperedDistribution.laplacian_eq_fourierMultiplierCLM, hsym,
-      TemperedDistribution.smulLeftCLM_smul (by fun_prop), _root_.smul_apply,
-      ← Complex.coe_smul, FourierTransform.fourier_smul,
+    -- Move the scalar `-(2π)²` into the symbol of the multiplier, then cancel `𝓕 ∘ 𝓕⁻`.
+    rw [TemperedDistribution.laplacian_eq_fourierMultiplierCLM, ← Complex.coe_smul,
+      ← _root_.smul_apply, ← TemperedDistribution.fourierMultiplierCLM_smul (by fun_prop), ← hsym,
       TemperedDistribution.fourierMultiplierCLM_apply, FourierTransform.fourier_fourierInv_eq,
       Lp.fourier_toTemperedDistribution_eq]
-    -- The two sides use two elaborations of the scalar action of `ℂ` on `𝓢'(E, F)`, which agree
-    -- on unfolding instances; `congr 1` matches them and leaves the cast of the scalar.
-    congr 1
-    push_cast
-    ring
   have hpair : ∀ φ : 𝓢(E, ℂ), 𝓕 (Δ (f : 𝓢'(E, F))) φ =
       ∫ ξ, φ ξ • (laplacianSymbol ξ : ℂ) • (𝓕 f : Lp F 2 (volume : Measure E)) ξ := fun φ ↦ by
     rw [hF, Lp.smulLeftCLM_toTemperedDistribution_apply hg]
