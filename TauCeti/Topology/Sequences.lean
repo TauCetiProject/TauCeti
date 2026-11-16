@@ -10,16 +10,16 @@ public import Mathlib.Topology.Sequences
 /-!
 # Blow-up of a sequence of functions on a compact set
 
-If every function of a sequence `g k` is bounded above on a compact set `C` of a first-countable
-space, but the sequence is not uniformly bounded above there, then it blows up along a
-subsequence at points of `C` converging to a point of `C`: there are `φ` strictly increasing and
-`z n ∈ C` with `z n → z₀ ∈ C` and `g (φ n) (z n) → ∞`. The indices of large values cannot stay
-bounded, because finitely many functions have a common bound, so they can be chosen strictly
-increasing; sequential compactness of `C` then makes the points converge.
+Let `g k` take values in a directed preorder. If each function is bounded above on a
+sequentially compact set `C` and the values are strictly cofinal there
+(`∀ M, ∃ k, ∃ y ∈ C, M < g k y`), then there are a strictly increasing `φ` and points `z n ∈ C`
+converging to `z₀ ∈ C` with `g (φ n) (z n) → atTop`. The indices of large values cannot stay
+bounded, because finitely many functions have a common upper bound; sequential compactness
+then gives a convergent subsequence of points.
 
-The values may lie in any directed preorder; no topology or arithmetic on the value space is
-used. The large-value hypothesis requires strict cofinality. Sequential compactness suffices;
-compactness gives the same conclusion in a first-countable space.
+No topology or arithmetic on the value space is used. Compactness of `C` suffices when its
+ambient space is first countable. Strict cofinality is stronger than failure of uniform
+boundedness for general preorders; they coincide for linear orders.
 
 This is how blow-up points are located in compactness arguments for sequences of maps, with
 `g k` the norm of the differential of the `k`-th map.
@@ -27,9 +27,9 @@ This is how blow-up points are located in compactness arguments for sequences of
 ## Main results
 
 * `IsSeqCompact.exists_strictMono_tendsto_atTop`: sequentially compact blow-up extraction.
-* `IsCompact.exists_strictMono_tendsto_atTop`: a sequence of functions that is bounded above on a
-  compact set one function at a time, but not uniformly, blows up at a convergent sequence of
-  points along a subsequence.
+* `IsCompact.exists_strictMono_tendsto_atTop`: on a compact set in a first-countable space,
+  functions with values in a directed preorder, each bounded above and with strictly cofinal
+  values on the set, blow up along a convergent sequence of points and a subsequence.
 
 ## References
 

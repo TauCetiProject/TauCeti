@@ -67,13 +67,11 @@ theorem isGδ_of_isCompletelyMetrizableSpace [T2Space X] {s : Set X}
     obtain ⟨V, hVo, hV⟩ :=
       isOpen_induced_iff.1 (isOpen_ball (x := (⟨x, hx⟩ : s)) (ε := 1 / (n + 1) / 2))
     refine ⟨V, ⟨hVo, fun a b ha hb ↦ ?_⟩, ?_⟩
-    · have ha' : a ∈ ball ⟨x, hx⟩ (1 / (n + 1) / 2) := hV ▸ mem_preimage.2 ha
-      have hb' : b ∈ ball ⟨x, hx⟩ (1 / (n + 1) / 2) := hV ▸ mem_preimage.2 hb
-      calc dist a b ≤ dist a ⟨x, hx⟩ + dist b ⟨x, hx⟩ := dist_triangle_right _ _ _
-        _ < 1 / (n + 1) / 2 + 1 / (n + 1) / 2 := add_lt_add ha' hb'
+    · calc dist a b ≤ dist a ⟨x, hx⟩ + dist b ⟨x, hx⟩ := dist_triangle_right _ _ _
+        _ < 1 / (n + 1) / 2 + 1 / (n + 1) / 2 :=
+          add_lt_add (mem_ball.1 (hV ▸ mem_preimage.2 ha)) (mem_ball.1 (hV ▸ mem_preimage.2 hb))
         _ = 1 / (n + 1) := add_halves _
-    · have : (⟨x, hx⟩ : s) ∈ ball ⟨x, hx⟩ (1 / (n + 1) / 2) := mem_ball_self (by positivity)
-      exact mem_preimage.1 (hV ▸ this)
+    · exact mem_preimage.1 (hV ▸ mem_ball_self (by positivity))
   suffices closure s ∩ ⋂ n, U n = s from
     this ▸ hclosure.inter (.iInter_of_isOpen hUo)
   refine Subset.antisymm (fun x ⟨hxc, hxU⟩ ↦ ?_) (subset_inter subset_closure (subset_iInter hsU))
