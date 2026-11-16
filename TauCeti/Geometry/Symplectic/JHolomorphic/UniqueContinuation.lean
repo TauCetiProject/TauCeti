@@ -299,7 +299,6 @@ theorem exists_isTheta_pow_of_cauchyRiemann
   obtain ⟨z, hz, hzne⟩ := hne
   obtain ⟨m, hm, hθ, -⟩ := exists_analyticOrderAt_eq_of_hasSimilarityFactorizationAt hΩ hΩc hc
     hfac ⟨z, hz, mt (symm_sub_eq_zero_iff Ψ _).1 hzne⟩ hz₀ ((symm_sub_eq_zero_iff Ψ _).2 hu₀)
-  refine ⟨m, hm, IsTheta.trans ⟨?_, Ψ.symm.isBigO_comp _ _⟩ hθ⟩
-  simpa using Ψ.isBigO_comp (fun z ↦ Ψ.symm (u z - x₀)) (𝓝 z₀)
+  exact ⟨m, hm, IsTheta.trans ⟨Ψ.symm.isBigO_comp_rev _ _, Ψ.symm.isBigO_comp _ _⟩ hθ⟩
 
 end TauCeti
