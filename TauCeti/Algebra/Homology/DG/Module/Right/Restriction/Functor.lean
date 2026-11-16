@@ -21,7 +21,9 @@ of extension/restriction of scalars.
 The construction follows the change-of-rings interface of Mathlib's
 `ModuleCat.restrictScalarsId` and `ModuleCat.restrictScalarsComp`, with the additional grading and
 differential conditions of DG modules. Restriction does not change the underlying complex, so it
-preserves quasi-isomorphisms (`TauCeti.DGRightModuleCat.isQuasiIso_restrictScalars_map`).
+preserves quasi-isomorphisms (`TauCeti.DGRightModuleCat.isQuasiIso_restrictScalars_map`) and
+carries homotopy retract data to homotopy retract data
+(`TauCeti.DGRightModuleCat.restrictScalars_homotopyRetract`).
 
 ## References
 
@@ -357,6 +359,37 @@ noncomputable def restrictScalarsComp (f : DGAlgHom hA hB) (g : DGAlgHom hB hC) 
 theorem restrictScalarsComp_app (f : DGAlgHom hA hB) (g : DGAlgHom hB hC)
     (M : DGRightModuleCat.{uR, uC, uM} hC) :
     (restrictScalarsComp f g).app M = restrictScalarsCompApp f g M := (rfl)
+
+/-- **Restriction of scalars carries homotopy retracts.** If `M` is a homotopy retract of a
+complex `M₀` over the ground ring, through chain maps `i : M → M₀` and `r : M₀ → M` with
+`r ∘ i = 1 + d K + K d`, then so is its restriction, through `i ∘ e`, `e⁻¹ ∘ r` and `e⁻¹ ∘ K ∘ e`
+for `e = restrictScalarsEquiv f M`. The three conclusions are the hypotheses on the restricted
+side of `TauCeti.DGRightModuleHom.isQuasiIso_of_homotopyRetract`. -/
+theorem restrictScalars_homotopyRetract (f : DGAlgHom hA hB)
+    (M : DGRightModuleCat.{uR, uB, uM} hB) {M₀ : Type*} [AddCommGroup M₀] [Module R M₀]
+    {d₀ : M₀ →ₗ[R] M₀} {i : M →ₗ[R] M₀} {r : M₀ →ₗ[R] M} {K : M →ₗ[R] M}
+    (hi : ∀ x, d₀ (i x) = i (M.differential x)) (hr : ∀ x, M.differential (r x) = r (d₀ x))
+    (hK : ∀ x, r (i x) = x + M.differential (K x) + K (M.differential x)) :
+    (∀ x, d₀ ((i ∘ₗ (restrictScalarsEquiv f M).toLinearMap) x) =
+        (i ∘ₗ (restrictScalarsEquiv f M).toLinearMap)
+          (((restrictScalars f).obj M).differential x)) ∧
+      (∀ x, ((restrictScalars f).obj M).differential
+          (((restrictScalarsEquiv f M).symm.toLinearMap ∘ₗ r) x) =
+        ((restrictScalarsEquiv f M).symm.toLinearMap ∘ₗ r) (d₀ x)) ∧
+      ∀ x, ((restrictScalarsEquiv f M).symm.toLinearMap ∘ₗ r)
+          ((i ∘ₗ (restrictScalarsEquiv f M).toLinearMap) x) =
+        x + ((restrictScalars f).obj M).differential
+            (((restrictScalarsEquiv f M).symm.toLinearMap ∘ₗ K ∘ₗ
+              (restrictScalarsEquiv f M).toLinearMap) x) +
+          ((restrictScalarsEquiv f M).symm.toLinearMap ∘ₗ K ∘ₗ
+            (restrictScalarsEquiv f M).toLinearMap) (((restrictScalars f).obj M).differential x) :=
+  ⟨fun x ↦ by simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, hi,
+      restrictScalarsEquiv_differential],
+    fun x ↦ by simp only [LinearMap.comp_apply, LinearEquiv.coe_coe,
+      restrictScalarsEquiv_symm_differential, hr],
+    fun x ↦ by simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, hK, map_add,
+      LinearEquiv.symm_apply_apply, restrictScalarsEquiv_symm_differential,
+      restrictScalarsEquiv_differential]⟩
 
 /-- **Restriction of scalars preserves quasi-isomorphisms**, since it does not change the
 underlying complexes. -/

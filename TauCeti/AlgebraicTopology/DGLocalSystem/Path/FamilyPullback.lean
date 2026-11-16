@@ -178,8 +178,11 @@ private theorem differential_changeBasepointPullbackBilin {p : ℤ} {m : (pullba
           (cubicalChainModuleDifferential _ _ R c) := by
   apply (restrictScalarsEquiv (loopChainMap R f (rfl : f b = f b))
     (tensorBimoduleObj M (pathChainBimodule B (f a) (f b) R))).injective
-  -- Rewriting is avoided: matching the pattern `e (φ m c)` against the other values of `e` would
-  -- unfold the bilinear map. The three values are computed separately and assembled instead.
+  -- Writing `e` for the restriction equivalences, both sides are
+  -- `d (e m) ⊗ f_* c + (-1)^p e m ⊗ f_* (d c)`: by the Leibniz rule in the tensor product on the
+  -- left, and `e ∘ d = d ∘ e` and `d ∘ f_* = f_* ∘ d` on the right. The three values of `e ∘ φ`
+  -- are computed separately and assembled as terms: rewriting with the Leibniz rule or with
+  -- `map_add` here times out unifying the carriers of the tensor product and its restriction.
   have e1 := restrictScalarsEquiv_changeBasepointPullbackBilin f M m c
   have e2 := (restrictScalarsEquiv_changeBasepointPullbackBilin f M
     (((pullback R f rfl).obj M).differential m) c).trans
@@ -260,23 +263,13 @@ theorem changeBasepointPullbackHom_naturality {N : DGLocalSystem.{v} B (f a) R} 
   | ht m c =>
     apply (restrictScalarsEquiv (loopChainMap R f (rfl : f b = f b))
       (tensorBimoduleObj N (pathChainBimodule B (f a) (f b) R))).injective
-    rw [DGRightModuleCat.comp_apply, DGRightModuleCat.comp_apply]
     -- Writing `e` for the restriction equivalences and `g'` for `g ⊗ 1`, both sides are computed
     -- to `g m ⊗ f_* c`: on the left `e (φ_N (g m ⊗ c)) = g m ⊗ f_* c`, on the right
-    -- `e (f^* g' (φ_M (m ⊗ c))) = g' (e (φ_M (m ⊗ c))) = g' (m ⊗ f_* c)`. Each step is an explicit
-    -- term: rewriting would match the pattern `e _` against the other values of `e` and unfold
-    -- the tensor products.
-    refine (congrArg (fun z ↦ restrictScalarsEquiv (loopChainMap R f (rfl : f b = f b))
-      (tensorBimoduleObj N (pathChainBimodule B (f a) (f b) R)) (changeBasepointPullbackHom f N z))
-        (tensorBimoduleMap_tmul _ _ m c)).trans ?_
-    refine (restrictScalarsEquiv_changeBasepointPullbackHom_tmul (f := f) (M := N) _ _).trans ?_
-    refine Eq.trans ?_ (restrictScalars_map_apply (loopChainMap R f (rfl : f b = f b))
-      (tensorBimoduleMap g (𝟙 (pathChainBimodule B (f a) (f b) R))) _).symm
-    refine Eq.trans ?_ (congrArg (tensorBimoduleMap g (𝟙 (pathChainBimodule B (f a) (f b) R)))
-      (restrictScalarsEquiv_changeBasepointPullbackHom_tmul (f := f) (M := M) m c)).symm
-    refine Eq.trans ?_ (tensorBimoduleMap_tmul _ _ _ _).symm
-    exact congrArg₂ (tmul R (loopChainAlgebra B (f a) R)) (restrictScalars_map_apply _ g m)
-      (by rw [DGBimoduleCat.id_apply, DGBimoduleCat.id_apply])
+    -- `e (f^* g' (φ_M (m ⊗ c))) = g' (e (φ_M (m ⊗ c))) = g' (m ⊗ f_* c)`.
+    rw [DGRightModuleCat.comp_apply, DGRightModuleCat.comp_apply, tensorBimoduleMap_tmul,
+      restrictScalarsEquiv_changeBasepointPullbackHom_tmul, restrictScalars_map_apply,
+      restrictScalars_map_apply, restrictScalarsEquiv_changeBasepointPullbackHom_tmul,
+      tensorBimoduleMap_tmul, DGBimoduleCat.id_apply, DGBimoduleCat.id_apply]
 
 variable (R f a b) in
 /-- **Changing the basepoint commutes with pullback**, as a natural transformation
@@ -308,16 +301,10 @@ private theorem tensorPathChainAct_changeBasepointPullbackHom (δ : MoorePathBet
   | ht m c =>
     -- Both sides are `m · ρ(f_* c)`, where `ρ` appends the reversal of `f ∘ δ`: on the left after
     -- computing `e (φ (m ⊗ c)) = m ⊗ f_* c`, on the right by `ρ_{f ∘ δ} ∘ f_* = C_*(Ωf) ∘ ρ_δ`
-    -- (`pathChainToLoopChain_cubicalChainModuleLinearMap`) and the restricted action. The chain
-    -- is an explicit term: rewriting would match the pattern `e _` against the other values of
-    -- the restriction equivalence `e` and unfold the tensor products.
-    exact ((congrArg (tensorPathChainAct M (MoorePathBetween.map f δ))
-      (restrictScalarsEquiv_changeBasepointPullbackHom_tmul m c)).trans <|
-        (tensorPathChainAct_tmul M _ _ _).trans <|
-          congrArg (fun α ↦ op α • restrictScalarsEquiv (loopChainMap R f rfl) M m)
-            (pathChainToLoopChain_cubicalChainModuleLinearMap f δ c)).trans
-      ((congrArg (restrictScalarsEquiv (loopChainMap R f rfl) M)
-        (tensorPathChainAct_tmul _ δ m c)).trans (restrictScalarsEquiv_smul _ _ _ _)).symm
+    -- (`pathChainToLoopChain_cubicalChainModuleLinearMap`) and the restricted action.
+    rw [restrictScalarsEquiv_changeBasepointPullbackHom_tmul, tensorPathChainAct_tmul,
+      pathChainToLoopChain_cubicalChainModuleLinearMap, tensorPathChainAct_tmul,
+      restrictScalarsEquiv_smul, unop_op]
 
 /-- `changeBasepointPullbackHom` is compatible with the sections `m ↦ m ⊗ [δ]` of both sides,
 through a path `δ` and its image. -/
@@ -332,16 +319,10 @@ private theorem changeBasepointPullbackHom_tensorPathChainPoint (δ : MoorePathB
     (tensorBimoduleObj M (pathChainBimodule B (f a) (f b) R))).injective
   -- Both sides are `m ⊗ [f ∘ δ]`: on the left `e (φ (e⁻¹ m ⊗ [δ])) = m ⊗ f_* [δ]` and
   -- `f_* [δ] = [f ∘ δ]` (`cubicalChainModuleLinearMap_pathChainPoint`), on the right
-  -- `e (e⁻¹ (m ⊗ [f ∘ δ]))`. The chain is an explicit term: rewriting would match the pattern
-  -- `e _` against the other values of the restriction equivalence `e` and unfold the tensor
-  -- products.
-  exact ((congrArg (fun z ↦ restrictScalarsEquiv (loopChainMap R f (rfl : f b = f b))
-      (tensorBimoduleObj M (pathChainBimodule B (f a) (f b) R)) (changeBasepointPullbackHom f M z))
-    (tensorPathChainPoint_apply _ δ _)).trans <|
-      (restrictScalarsEquiv_changeBasepointPullbackHom_tmul _ _).trans <|
-        congrArg₂ (tmul R (loopChainAlgebra B (f a) R)) (LinearEquiv.apply_symm_apply _ m)
-          (cubicalChainModuleLinearMap_pathChainPoint f δ)).trans
-    ((LinearEquiv.apply_symm_apply _ _).trans (tensorPathChainPoint_apply M _ m)).symm
+  -- `e (e⁻¹ (m ⊗ [f ∘ δ]))`.
+  rw [tensorPathChainPoint_apply, restrictScalarsEquiv_changeBasepointPullbackHom_tmul,
+    LinearEquiv.apply_symm_apply, cubicalChainModuleLinearMap_pathChainPoint,
+    LinearEquiv.apply_symm_apply, tensorPathChainPoint_apply]
 
 variable (f M) in
 /-- **Changing the basepoint commutes with pullback up to quasi-isomorphism**: if `a` and `b` are
@@ -364,6 +345,12 @@ theorem isQuasiIso_changeBasepointPullbackHom (h : Nonempty (MoorePathBetween B'
   let := (tensorBimoduleObj N (pathChainBimodule B' a b R)).gradedSMul
   let := ((pullback R f (rfl : f b = f b)).obj
     (tensorBimoduleObj M (pathChainBimodule B (f a) (f b) R))).gradedSMul
+  -- The target is the restriction of `M ⊗ C_*(P_{f a→f b} B)`, a homotopy retract of `M`
+  -- through `f ∘ δ`; restriction carries this retract data along `e'`.
+  obtain ⟨hiN, hrN, hKN⟩ := restrictScalars_homotopyRetract (loopChainMap R f (rfl : f b = f b))
+    (tensorBimoduleObj M (pathChainBimodule B (f a) (f b) R)) (differential_tensorPathChainAct δ')
+    (differential_tensorPathChainPoint δ') (tensorPathChainPoint_tensorPathChainAct δ')
+  -- The source `N ⊗ C_*(P_{a→b} B')` is a homotopy retract of `N`, hence of `M` through `e`.
   refine DGRightModuleHom.isQuasiIso_of_homotopyRetract (changeBasepointPullbackHom f M)
     (dM₀ := M.differential) (dN₀ := M.differential) LinearMap.id
     (fun x y _ hxy ↦ ⟨y, 0, hxy.symm, by rw [map_zero, add_zero, LinearMap.id_apply]⟩)
@@ -371,27 +358,15 @@ theorem isQuasiIso_changeBasepointPullbackHom (h : Nonempty (MoorePathBetween B'
     (tensorPathChainHomotopy N δ)
     (tensorPathChainAct M δ' ∘ₗ e'.toLinearMap) (e'.symm.toLinearMap ∘ₗ tensorPathChainPoint M δ')
     (e'.symm.toLinearMap ∘ₗ tensorPathChainHomotopy M δ' ∘ₗ e'.toLinearMap)
-    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
-  -- The goals are closed by explicit terms: rewriting would match the pattern against the other
-  -- values of the same equivalences and unfold the tensor products.
-  · exact fun x ↦ (restrictScalarsEquiv_differential _ _ _).symm.trans
-      (congrArg e (differential_tensorPathChainAct δ x))
-  · exact fun x ↦ (differential_tensorPathChainPoint δ _).trans
-      (congrArg _ (restrictScalarsEquiv_symm_differential _ _ _))
-  · exact fun y ↦ (differential_tensorPathChainAct δ' _).trans
-      (congrArg _ (restrictScalarsEquiv_differential _ _ _).symm)
-  · exact fun y ↦ (restrictScalarsEquiv_symm_differential _ _ _).trans
-      (congrArg e'.symm (differential_tensorPathChainPoint δ' y))
-  · exact fun x ↦ (congrArg _ (e.symm_apply_apply _)).trans
-      (tensorPathChainPoint_tensorPathChainAct δ x)
-  · exact fun y ↦ (congrArg e'.symm (tensorPathChainPoint_tensorPathChainAct δ' (e' y))).trans
-      ((map_add _ _ _).trans (congrArg₂ (· + ·) ((map_add _ _ _).trans
-        (congrArg₂ (· + ·) (e'.symm_apply_apply y)
-          (restrictScalarsEquiv_symm_differential _ _ _).symm))
-        (congrArg (fun z ↦ e'.symm (tensorPathChainHomotopy M δ' z))
-          (restrictScalarsEquiv_differential _ _ _).symm)))
-  · exact tensorPathChainAct_changeBasepointPullbackHom δ
-  · exact changeBasepointPullbackHom_tensorPathChainPoint δ
+    (fun x ↦ ?_) (fun x ↦ ?_) hiN hrN (fun x ↦ ?_) hKN
+    (tensorPathChainAct_changeBasepointPullbackHom δ)
+    (changeBasepointPullbackHom_tensorPathChainPoint δ)
+  · rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
+      ← differential_tensorPathChainAct, restrictScalarsEquiv_differential]
+  · rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
+      differential_tensorPathChainPoint, restrictScalarsEquiv_symm_differential]
+  · simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply]
+    exact tensorPathChainPoint_tensorPathChainAct δ x
 
 end DGLocalSystem
 
