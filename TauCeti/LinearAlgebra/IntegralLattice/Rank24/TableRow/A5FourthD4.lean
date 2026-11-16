@@ -17,7 +17,7 @@ the `A₅` components in positions `1, 2, 3` for cyclic rotation.  Unlike the ma
 every other row (`TauCeti.RootfulNiemeierType.mem_glueSymmetries_of_mem_symmetries`), this rotation
 alone does not preserve the glue subgroup `H`: it permutes the `A₅` parts `3300`, `3030`, `3003`
 of the last three words but keeps their `D₄` labels `1, 2, 3` in place.  For instance it carries
-`[33001]` to `[30031]`, whose sum with `[30033]` is the nonzero word `[00002]` of shortest norm
+`[33001]` to `[30301]`, whose sum with `[30302]` is the nonzero word `[00003]` of shortest norm
 `1`, while every nonzero word of `H` has shortest norm at least `4`.
 
 The rotation becomes a symmetry when it is combined with the triality isometry of the `D₄`
@@ -70,10 +70,69 @@ theorem a5FourthD4BlockRotation_def :
   (rfl)
 
 /-- The inverse of the rotation of the marked block is the cycle `1 ↦ 3 ↦ 2 ↦ 1`. -/
-@[simp]
 theorem a5FourthD4BlockRotation_symm_eq :
     a5FourthD4BlockRotation.symm = (c[1, 3, 2] : Equiv.Perm (Fin 5)) :=
   Equiv.ext <| by decide
+
+/-- The rotation of the marked block fixes position `0`. -/
+@[simp]
+theorem a5FourthD4BlockRotation_apply_mk_zero (h : 0 < a5FourthD4.components.length) :
+    a5FourthD4BlockRotation ⟨0, h⟩ = ⟨0, h⟩ :=
+  (rfl)
+
+/-- The rotation of the marked block moves position `1` to position `2`. -/
+@[simp]
+theorem a5FourthD4BlockRotation_apply_mk_one (h : 1 < a5FourthD4.components.length) :
+    a5FourthD4BlockRotation ⟨1, h⟩ = ⟨2, by decide⟩ :=
+  (rfl)
+
+/-- The rotation of the marked block moves position `2` to position `3`. -/
+@[simp]
+theorem a5FourthD4BlockRotation_apply_mk_two (h : 2 < a5FourthD4.components.length) :
+    a5FourthD4BlockRotation ⟨2, h⟩ = ⟨3, by decide⟩ :=
+  (rfl)
+
+/-- The rotation of the marked block moves position `3` to position `1`. -/
+@[simp]
+theorem a5FourthD4BlockRotation_apply_mk_three (h : 3 < a5FourthD4.components.length) :
+    a5FourthD4BlockRotation ⟨3, h⟩ = ⟨1, by decide⟩ :=
+  (rfl)
+
+/-- The rotation of the marked block fixes position `4`. -/
+@[simp]
+theorem a5FourthD4BlockRotation_apply_mk_four (h : 4 < a5FourthD4.components.length) :
+    a5FourthD4BlockRotation ⟨4, h⟩ = ⟨4, h⟩ :=
+  (rfl)
+
+/-- The inverse of the rotation of the marked block fixes position `0`. -/
+@[simp]
+theorem a5FourthD4BlockRotation_symm_apply_mk_zero (h : 0 < a5FourthD4.components.length) :
+    a5FourthD4BlockRotation.symm ⟨0, h⟩ = ⟨0, h⟩ :=
+  (rfl)
+
+/-- The inverse of the rotation of the marked block moves position `1` to position `3`. -/
+@[simp]
+theorem a5FourthD4BlockRotation_symm_apply_mk_one (h : 1 < a5FourthD4.components.length) :
+    a5FourthD4BlockRotation.symm ⟨1, h⟩ = ⟨3, by decide⟩ :=
+  (rfl)
+
+/-- The inverse of the rotation of the marked block moves position `2` to position `1`. -/
+@[simp]
+theorem a5FourthD4BlockRotation_symm_apply_mk_two (h : 2 < a5FourthD4.components.length) :
+    a5FourthD4BlockRotation.symm ⟨2, h⟩ = ⟨1, by decide⟩ :=
+  (rfl)
+
+/-- The inverse of the rotation of the marked block moves position `3` to position `2`. -/
+@[simp]
+theorem a5FourthD4BlockRotation_symm_apply_mk_three (h : 3 < a5FourthD4.components.length) :
+    a5FourthD4BlockRotation.symm ⟨3, h⟩ = ⟨2, by decide⟩ :=
+  (rfl)
+
+/-- The inverse of the rotation of the marked block fixes position `4`. -/
+@[simp]
+theorem a5FourthD4BlockRotation_symm_apply_mk_four (h : 4 < a5FourthD4.components.length) :
+    a5FourthD4BlockRotation.symm ⟨4, h⟩ = ⟨4, h⟩ :=
+  (rfl)
 
 /-- The generator of the indicated symmetries of a marked block of three positions between one
 leading and one trailing position is the cycle `1 ↦ 2 ↦ 3 ↦ 1`. -/
@@ -129,11 +188,13 @@ theorem componentType_a5FourthD4BlockRotation_symm (k : Fin a5FourthD4.component
   rw [componentType_a5FourthD4, componentType_a5FourthD4]
   exact if_congr (h k) rfl rfl
 
-/-- **The marked rotation of `A₅⁴ D₄` is not a glue symmetry.**  If it were, the rotation
-`[30031]` of the glue word `[33001]` would lie in the glue subgroup, and so would its sum `[00002]`
-with `[30033]`; but that word is nonzero of shortest norm `1 < 4`. -/
+/-- **The marked rotation of `A₅⁴ D₄` is not a glue symmetry.** -/
 theorem a5FourthD4BlockRotation_notMem_glueSymmetries :
     a5FourthD4BlockRotation ∉ a5FourthD4.glueSymmetries := by
+  -- Glue symmetries act by pulling back along the permutation: membership would put the word
+  -- `[30031]`, whose digit in position `k` is the digit of `[33001]` in position
+  -- `a5FourthD4BlockRotation k`, into the glue subgroup, and with it the sum `[00002]` with
+  -- `[30033]`; but that word is nonzero of shortest norm `1 < 4`.
   intro hρ
   obtain ⟨w, hw, hw'⟩ := exists_decodeGlueWord_mem_glueGenerators (r := a5FourthD4)
     (l := [3, 3, 0, 0, 1]) (by decide)
@@ -317,8 +378,7 @@ theorem encodeGlueWord_a5FourthD4BlockTriality (w : a5FourthD4.glueModule) :
     List.getD_eq_getElem _ _ (by simp), getElem_encodeGlueWord]
 
 /-- **The rotation of the marked block combined with triality preserves the glue subgroup** of
-`A₅⁴ D₄`: on digits it permutes the six glue words `[20240]`, `[22400]`, `[24020]`, `[33001]`,
-`[30302]` and `[30033]` of the row. -/
+`A₅⁴ D₄`. -/
 theorem map_glueSubgroup_a5FourthD4BlockTriality :
     a5FourthD4.glueSubgroup.map a5FourthD4BlockTriality.toAddEquiv = a5FourthD4.glueSubgroup := by
   have hle : a5FourthD4.glueSubgroup.map a5FourthD4BlockTriality.toAddEquiv ≤
@@ -367,7 +427,7 @@ private theorem blockRotationGlue_mem_rotatedGlueSubgroup_iff (w : a5FourthD4.gl
 glued lattice**: the self-isometry of `N = a5FourthD4.lattice` which moves the `A₅` components in
 positions `1, 2, 3` to positions `2, 3, 1`, fixes the first `A₅` component and applies
 `typeD4Triality` to the `D₄` component (`a5FourthD4BlockTrialityIsometry_apply_of_ne`,
-`a5FourthD4BlockTrialityIsometry_apply_last`). -/
+`a5FourthD4BlockTrialityIsometry_apply_four`, `a5FourthD4BlockTrialityIsometry_apply_mk_four`). -/
 noncomputable def a5FourthD4BlockTrialityIsometry :
     Isometry a5FourthD4.lattice a5FourthD4.lattice :=
   (Isometry.ofEq (lattice_def a5FourthD4)).trans <|
@@ -412,16 +472,26 @@ private theorem a5FourthD4BlockTrialityIsometry_apply_d4Position
     (x : ∀ i, Fin (a5FourthD4.componentType i).rank → ℚ) :
     a5FourthD4BlockTrialityIsometry x d4Position = d4PositionTriality (x d4Position) := by
   rw [a5FourthD4BlockTrialityIsometry_apply, componentTriality, Pi.mulSingle_eq_same]
-  exact congrArg _ (funext fun j ↦ (a5FourthD4.apply_cast_eq_apply_cast x (by decide) _ rfl j).trans
+  exact congrArg _ (funext fun j ↦ (Fin.apply_cast_eq_apply_cast x (by decide) _ rfl j).trans
     (congrArg (x d4Position) (Fin.cast_eq_self j)))
 
-/-- On the `D₄` component, `a5FourthD4BlockTrialityIsometry` is triality. -/
+/-- On the `D₄` component in position `4`, `a5FourthD4BlockTrialityIsometry` is triality.  This
+is the `simp` normal form of the position `Fin.last 4`. -/
 @[simp]
-theorem a5FourthD4BlockTrialityIsometry_apply_last
+theorem a5FourthD4BlockTrialityIsometry_apply_four
     (x : ∀ i, Fin (a5FourthD4.componentType i).rank → ℚ) :
-    a5FourthD4BlockTrialityIsometry x (Fin.last 4) =
-      typeD4Triality (isSimplyLaced_D 4) (x (Fin.last 4)) :=
-  -- `d4Position` unfolds to `Fin.last 4`, and `d4PositionTriality` to
+    a5FourthD4BlockTrialityIsometry x (4 : Fin 5) =
+      typeD4Triality (isSimplyLaced_D 4) (x (4 : Fin 5)) :=
+  -- `d4Position` unfolds to `4`, and `d4PositionTriality` to
+  -- `typeD4Triality (isSimplyLaced_D 4)` at the component type `D 4` evaluated there.
+  a5FourthD4BlockTrialityIsometry_apply_d4Position x
+
+/-- On the `D₄` component in position `⟨4, h⟩`, `a5FourthD4BlockTrialityIsometry` is triality. -/
+@[simp]
+theorem a5FourthD4BlockTrialityIsometry_apply_mk_four
+    (x : ∀ i, Fin (a5FourthD4.componentType i).rank → ℚ) (h : 4 < a5FourthD4.components.length) :
+    a5FourthD4BlockTrialityIsometry x ⟨4, h⟩ = typeD4Triality (isSimplyLaced_D 4) (x ⟨4, h⟩) :=
+  -- `d4Position` unfolds to `⟨4, h⟩`, and `d4PositionTriality` to
   -- `typeD4Triality (isSimplyLaced_D 4)` at the component type `D 4` evaluated there.
   a5FourthD4BlockTrialityIsometry_apply_d4Position x
 
@@ -447,7 +517,7 @@ theorem orderOf_a5FourthD4BlockTrialityIsometry : orderOf a5FourthD4BlockTrialit
         revert k
         decide
       rw [Fin.cast_cast, Fin.cast_cast]
-      exact (a5FourthD4.apply_cast_eq_apply_cast x h3 _ rfl j).trans
+      exact (Fin.apply_cast_eq_apply_cast x h3 _ rfl j).trans
         (congrArg (x k) (Fin.cast_eq_self j))
   · -- The vector which is `1` on the second `A₅` component and `0` elsewhere is moved.
     have hx := congrFun (congrFun (DFunLike.congr_fun h

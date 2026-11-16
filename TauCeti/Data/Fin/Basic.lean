@@ -62,6 +62,8 @@ range, so the value is a `dite` rather than a plain application.
 * `Finset.card_filter_val_lt_le`: at most `j` indices have value below `j`.
 * `Fin.sum_rev_castLE`: the sum of the values of a reversed embedded finite ordinal.
 * `Fin.castLE_last`: the last index of an initial segment embeds as the specified endpoint.
+* `Fin.apply_cast_eq_apply_cast`: a family of functions on `Fin (d i)` takes the same value at
+  equal indices `i` on casts of one argument.
 * `Fin.partialProd_last_eq_mul_tail`, `Fin.partialProd_last_eq_init_mul`: the final partial
   product of a tuple in a monoid, split at its first or its last entry.
 * `Fin.castSucc_add_one_of_ne_last`, `Fin.castSucc_sub_one_of_ne_zero`: how `Fin.castSucc`
@@ -204,6 +206,15 @@ namespace Fin
 /-- The last index of the initial segment ending at `i` embeds as `i`. -/
 theorem castLE_last {n : ℕ} (i : Fin (n + 1)) :
     castLE (Nat.succ_le_iff.mpr i.isLt) (last i.val) = i := by
+  rfl
+
+/-- Reading a family of functions `x i : Fin (d i) → α` at equal indices, through casts of one
+argument to the two sizes, gives the same value. -/
+theorem apply_cast_eq_apply_cast {ι : Sort*} {α : Sort*} {d : ι → ℕ} (x : ∀ i, Fin (d i) → α)
+    {a b : ι} (hab : a = b) {n : ℕ} (ha : n = d a) (hb : n = d b) (j : Fin n) :
+    x a (Fin.cast ha j) = x b (Fin.cast hb j) := by
+  subst hab
+  -- The two casts now have the same source and target, so they agree by proof irrelevance.
   rfl
 
 /-- The sum of the values in the first `k` positions of the reversed finite ordinal `Fin N`. -/
