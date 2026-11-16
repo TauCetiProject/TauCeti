@@ -199,7 +199,7 @@ private theorem exists_basis_stabilizerHopfIdeal_eq_of_isBorelOverAlgClosed
   let _ : Algebra.Smooth k Q := (smoothCommHopfAlgProperty_iff _).mp hcand.smooth
   let _ : _root_.IsReduced (G ⧸ B.toIdeal) := isReduced_of_smooth k Q
   let _ : ConnectedSpace (PrimeSpectrum (G ⧸ B.toIdeal)) :=
-    hcand.geometricallyConnected.connectedSpace k Q.obj
+    hcand.geometricallyConnected.connectedSpace
   let _ : Group.IsSolvable (WithConv ((G ⧸ B.toIdeal) →ₐ[k] k)) :=
     isSolvable_points_of_isBorelOverAlgClosed hB
   let _ : Comodule k (G ⧸ B.toIdeal) M :=
