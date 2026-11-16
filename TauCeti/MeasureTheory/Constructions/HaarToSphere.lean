@@ -1,10 +1,11 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors, Axel Delaval, Zhiyuan Zhang, Leheng Chen
+Authors: The Tau Ceti contributors, Axel Delaval, Zhiyuan Zhang, Leheng Chen, Giada Franz
 -/
 module
 
+public import Mathlib.Analysis.Normed.Group.BallSphere
 public import Mathlib.MeasureTheory.Constructions.HaarToSphere
 public import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import Mathlib.Analysis.SpecialFunctions.Pow.Integral
@@ -61,6 +62,12 @@ Public formalization references:
   integrable on a ball about `c` if and only if its radial integrand is integrable.
 * `LinearIsometryEquiv.map_toSphere`: a linear isometric equivalence carries the surface
   measure of `μ` to the surface measure of the image of `μ`.
+* `MeasureTheory.Measure.map_neg_toSphere`, `MeasureTheory.Measure.integral_coe_toSphere`:
+  the sphere measure is antipodally invariant and has barycentre zero.
+* `MeasureTheory.Measure.toSphere_singleton`: points are null in dimension at least two.
+
+The antipodal-invariance and singleton lemmas are adapted from Giada Franz's local
+formalization of Hersch's balancing lemma.
 -/
 
 public section
@@ -385,6 +392,55 @@ theorem map_toSphere (f : E ≃ₗᵢ[ℝ] F) (μ : Measure E) :
 end Isometry
 
 end LinearIsometryEquiv
+
+namespace MeasureTheory.Measure
+
+open Metric Set Module
+open scoped Pointwise
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure]
+
+/-- The sphere measure of a Haar measure is invariant under `x ↦ -x`. -/
+theorem map_neg_toSphere : μ.toSphere.map Neg.neg = μ.toSphere := by
+  have hneg :
+      (Subtype.map (LinearIsometryEquiv.neg ℝ (E := E)) (fun x hx ↦ by simpa using hx) :
+        sphere (0 : E) 1 → sphere (0 : E) 1) = Neg.neg := by
+    funext x
+    apply Subtype.ext
+    simp
+  have h := (LinearIsometryEquiv.neg ℝ (E := E)).map_toSphere μ
+  rw [hneg] at h
+  simpa using h
+
+/-- The barycentre of the sphere measure is zero. -/
+theorem integral_coe_toSphere : ∫ x : sphere (0 : E) 1, (x : E) ∂μ.toSphere = 0 := by
+  have h := integral_map (μ := μ.toSphere) (φ := Neg.neg) continuous_neg.aemeasurable
+    (f := fun x : sphere (0 : E) 1 ↦ (x : E)) continuous_subtype_val.aestronglyMeasurable
+  rw [map_neg_toSphere] at h
+  simp only [coe_neg_sphere, integral_neg] at h
+  have h2 : (2 : ℝ) • ∫ x : sphere (0 : E) 1, (x : E) ∂μ.toSphere = 0 := by
+    rw [two_smul]
+    nth_rewrite 2 [h]
+    exact add_neg_cancel _
+  exact (smul_eq_zero.1 h2).resolve_left two_ne_zero
+
+/-- In dimension at least two, the points of the sphere are null for the sphere measure. -/
+theorem toSphere_singleton (hE : 1 < finrank ℝ E) (p : sphere (0 : E) 1) :
+    μ.toSphere {p} = 0 := by
+  rw [μ.toSphere_apply' (measurableSet_singleton p), image_singleton]
+  have hp : (p : E) ≠ 0 := ne_zero_of_mem_unit_sphere p
+  have hspan : (ℝ ∙ (p : E)) ≠ ⊤ := by
+    intro htop
+    have h1 := finrank_span_singleton (K := ℝ) hp
+    rw [htop, finrank_top] at h1
+    omega
+  refine mul_eq_zero_of_right _ (measure_mono_null ?_ (Measure.addHaar_submodule μ _ hspan))
+  rw [Set.smul_singleton]
+  rintro _ ⟨r, -, rfl⟩
+  exact Submodule.smul_mem _ r (Submodule.mem_span_singleton_self _)
+
+end MeasureTheory.Measure
 
 namespace TauCeti
 

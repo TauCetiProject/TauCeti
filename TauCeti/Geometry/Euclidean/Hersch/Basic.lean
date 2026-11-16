@@ -1,16 +1,19 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: Giada Franz, The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.InnerProductSpace.Sphere.Basic
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Real
 
 /-!
 # The conformal maps of Hersch's balancing lemma
+
+Adapted from Giada Franz's local formalization of Hersch's balancing lemma.
 
 For a point `a` of the open unit ball of a real inner product space `E`, Hersch's map is
 
@@ -63,22 +66,11 @@ theorem herschMap_def (a x : E) :
 theorem herschMap_zero (x : E) : herschMap 0 x = x := by
   simp [herschMap]
 
-/-- On the unit sphere, `1 + ⟪a, x⟫` is positive for `‖a‖ < 1`. -/
-theorem one_add_inner_pos {a x : E} (ha : ‖a‖ < 1) (hx : ‖x‖ = 1) : 0 < 1 + ⟪a, x⟫ := by
-  have := neg_le_of_abs_le (abs_real_inner_le_norm a x)
-  rw [hx, mul_one] at this
-  linarith
-
-omit [InnerProductSpace ℝ E] in
-private theorem sqrt_one_sub_sq {a : E} (ha : ‖a‖ ≤ 1) :
-    √(1 - ‖a‖ ^ 2) ^ 2 = 1 - ‖a‖ ^ 2 :=
-  Real.sq_sqrt (by nlinarith [norm_nonneg a])
-
 /-- `T_a` maps the unit sphere to itself. -/
 theorem norm_herschMap {a x : E} (ha : ‖a‖ ≤ 1) (hx : ‖x‖ = 1) (h : ⟪a, x⟫ ≠ -1) :
     ‖herschMap a x‖ = 1 := by
   set s := √(1 - ‖a‖ ^ 2) with hs_def
-  have hs : s ^ 2 = 1 - ‖a‖ ^ 2 := sqrt_one_sub_sq ha
+  have hs : s ^ 2 = 1 - ‖a‖ ^ 2 := Real.sq_sqrt (by nlinarith [norm_nonneg a])
   have hD : 1 + ⟪a, x⟫ ≠ 0 := fun h' ↦ h (by linarith)
   have hs1 : 1 + s ≠ 0 := by positivity
   rw [herschMap, ← hs_def, norm_smul, norm_inv, Real.norm_eq_abs,
@@ -90,11 +82,30 @@ theorem norm_herschMap {a x : E} (ha : ‖a‖ ≤ 1) (hx : ‖x‖ = 1) (h : �
   field_simp
   ring
 
+/-- For `x ⊥ a`, `T_a(x) = √(1 - ‖a‖²) x + a`. -/
+theorem herschMap_of_inner_eq_zero {a x : E} (h : ⟪a, x⟫ = 0) :
+    herschMap a x = √(1 - ‖a‖ ^ 2) • x + a := by
+  rw [herschMap_def, h]
+  simp
+
+/-- For a unit `x ⊥ a` with `‖a‖ ≤ 1`, `√(1 - ‖a‖²) x + a` is a unit vector. -/
+theorem norm_sqrt_smul_add_of_inner_eq_zero {a x : E} (ha : ‖a‖ ≤ 1) (hx : ‖x‖ = 1)
+    (h : ⟪a, x⟫ = 0) : ‖√(1 - ‖a‖ ^ 2) • x + a‖ = 1 := by
+  rw [← herschMap_of_inner_eq_zero h]
+  exact norm_herschMap ha hx (by rw [h]; norm_num)
+
+/-- For `x ⊥ a`, `⟪-a, T_a(x)⟫ = -‖a‖²`. -/
+theorem inner_neg_herschMap_of_inner_eq_zero {a x : E} (h : ⟪a, x⟫ = 0) :
+    ⟪-a, herschMap a x⟫ = -‖a‖ ^ 2 := by
+  rw [herschMap_of_inner_eq_zero h, inner_neg_left, inner_add_right, real_inner_smul_right, h,
+    real_inner_self_eq_norm_sq]
+  ring
+
 /-- `T_(-a)` inverts `T_a` at every `x` with `⟪a, x⟫ ≠ -1`, for `‖a‖ < 1`. -/
 theorem herschMap_neg_herschMap {a x : E} (ha : ‖a‖ < 1) (h : ⟪a, x⟫ ≠ -1) :
     herschMap (-a) (herschMap a x) = x := by
   set s := √(1 - ‖a‖ ^ 2) with hs_def
-  have hs : s ^ 2 = 1 - ‖a‖ ^ 2 := sqrt_one_sub_sq ha.le
+  have hs : s ^ 2 = 1 - ‖a‖ ^ 2 := Real.sq_sqrt (by nlinarith [norm_nonneg a])
   have hspos : 0 < s := Real.sqrt_pos.2 (by nlinarith [norm_nonneg a])
   have hD : 1 + ⟪a, x⟫ ≠ 0 := fun h' ↦ h (by linarith)
   have hs1 : 1 + s ≠ 0 := by positivity
@@ -162,16 +173,6 @@ theorem tendsto_herschMap {v x : E} (hv : ‖v‖ = 1) (h : ⟪v, x⟫ ≠ -1) :
   have := (continuousAt_herschMap_left h).tendsto
   rwa [herschMap_of_norm_eq_one hv h] at this
 
-/-- For `‖a‖ ≤ 1` and a unit vector `x`, `⟪a, x⟫ = -1` only for `‖a‖ = 1` and `x = -a`. -/
-theorem eq_neg_of_inner_eq_neg_one {a x : E} (ha : ‖a‖ ≤ 1) (hx : ‖x‖ = 1)
-    (h : ⟪a, x⟫ = -1) : x = -a := by
-  have h2 : ‖a + x‖ ^ 2 = ‖a‖ ^ 2 - 1 := by
-    rw [norm_add_sq_real, h, hx]
-    ring
-  have : ‖a + x‖ ^ 2 ≤ 0 := by nlinarith [norm_nonneg a]
-  have : a + x = 0 := norm_eq_zero.1 (by nlinarith [norm_nonneg (a + x)])
-  rw [← sub_eq_zero, sub_neg_eq_add, add_comm, this]
-
 /-- Where `⟪a, x⟫ = -1` the formula divides by zero, and `T_a(x) = 0`. -/
 theorem herschMap_of_inner_eq_neg_one {a x : E} (h : ⟪a, x⟫ = -1) : herschMap a x = 0 := by
   rw [herschMap, h]
@@ -184,44 +185,47 @@ theorem norm_herschMap_le_one {a x : E} (ha : ‖a‖ ≤ 1) (hx : ‖x‖ = 1) 
   · simp [herschMap_of_inner_eq_neg_one h]
   · exact (norm_herschMap ha hx h).le
 
-theorem inner_ne_neg_one {a x : E} (ha : ‖a‖ < 1) (hx : ‖x‖ = 1) : ⟪a, x⟫ ≠ -1 := by
-  have := one_add_inner_pos ha hx
-  intro h
-  linarith
-
 /-- For `‖a‖ < 1`, `T_a` maps the unit sphere to itself. -/
 theorem herschMap_mem_sphere {a x : E} (ha : ‖a‖ < 1) (hx : x ∈ sphere (0 : E) 1) :
     herschMap a x ∈ sphere (0 : E) 1 := by
   rw [mem_sphere_zero_iff_norm] at hx ⊢
   exact norm_herschMap ha.le hx (inner_ne_neg_one ha hx)
 
+/-- For `‖a‖ < 1`, Hersch's map is continuous on the unit sphere. -/
+@[fun_prop]
+theorem continuous_herschMap_sphere {a : E} (ha : ‖a‖ < 1) :
+    Continuous fun x : sphere (0 : E) 1 ↦ herschMap a x := by
+  refine continuous_iff_continuousAt.2 fun x ↦ ?_
+  exact (continuousAt_herschMap
+    (inner_ne_neg_one ha (mem_sphere_zero_iff_norm.1 x.2))).comp
+    (f := fun y : sphere (0 : E) 1 ↦ (a, (y : E))) (by fun_prop)
+
 /-- For `‖a‖ < 1`, `T_a` is a homeomorphism of the unit sphere, with inverse `T_(-a)`. -/
-@[expose] noncomputable def herschHomeomorph {a : E} (ha : ‖a‖ < 1) :
-    sphere (0 : E) 1 ≃ₜ sphere (0 : E) 1 where
-  toFun x := ⟨herschMap a x, herschMap_mem_sphere ha x.2⟩
-  invFun x := ⟨herschMap (-a) x, herschMap_mem_sphere (by rwa [norm_neg]) x.2⟩
-  left_inv x := Subtype.ext <| herschMap_neg_herschMap ha <|
-    inner_ne_neg_one ha (mem_sphere_zero_iff_norm.1 x.2)
-  right_inv x := Subtype.ext <| by
-    simpa using herschMap_neg_herschMap (a := -a) (by rwa [norm_neg])
-      (inner_ne_neg_one (by rwa [norm_neg]) (mem_sphere_zero_iff_norm.1 x.2))
-  continuous_toFun := by
-    refine Continuous.subtype_mk (continuous_iff_continuousAt.2 fun x ↦ ?_) _
-    exact (continuousAt_herschMap
-      (inner_ne_neg_one ha (mem_sphere_zero_iff_norm.1 x.2))).comp
-      (f := fun y : sphere (0 : E) 1 ↦ (a, (y : E))) (by fun_prop)
-  continuous_invFun := by
-    have ha' : ‖-a‖ < 1 := by rwa [norm_neg]
-    refine Continuous.subtype_mk (continuous_iff_continuousAt.2 fun x ↦ ?_) _
-    exact (continuousAt_herschMap
-      (inner_ne_neg_one ha' (mem_sphere_zero_iff_norm.1 x.2))).comp
-      (f := fun y : sphere (0 : E) 1 ↦ (-a, (y : E))) (by fun_prop)
+noncomputable def herschHomeomorph {a : E} (ha : ‖a‖ < 1) :
+    sphere (0 : E) 1 ≃ₜ sphere (0 : E) 1 :=
+  have ha' : ‖-a‖ < 1 := by rwa [norm_neg]
+  { toFun := fun x ↦ ⟨herschMap a x, herschMap_mem_sphere ha x.2⟩
+    invFun := fun x ↦ ⟨herschMap (-a) x, herschMap_mem_sphere ha' x.2⟩
+    left_inv := fun x ↦ Subtype.ext <| herschMap_neg_herschMap ha <|
+      inner_ne_neg_one ha (mem_sphere_zero_iff_norm.1 x.2)
+    right_inv := fun x ↦ Subtype.ext <| by
+      simpa using herschMap_neg_herschMap ha'
+        (inner_ne_neg_one ha' (mem_sphere_zero_iff_norm.1 x.2))
+    continuous_toFun := (continuous_herschMap_sphere ha).subtype_mk _
+    continuous_invFun := (continuous_herschMap_sphere ha').subtype_mk _ }
 
 @[simp]
 theorem coe_herschHomeomorph {a : E} (ha : ‖a‖ < 1) (x : sphere (0 : E) 1) :
     (herschHomeomorph ha x : E) = herschMap a x :=
-  rfl
+  (rfl)
 
+/-- The inverse of Hersch's sphere homeomorphism is induced by `T_(-a)`. -/
+@[simp]
+theorem coe_herschHomeomorph_symm {a : E} (ha : ‖a‖ < 1) (x : sphere (0 : E) 1) :
+    ((herschHomeomorph ha).symm x : E) = herschMap (-a) x :=
+  (rfl)
+
+@[fun_prop]
 theorem measurable_herschMap [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E]
     (a : E) : Measurable (herschMap a) := by
   unfold herschMap

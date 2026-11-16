@@ -1,16 +1,18 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: Giada Franz, The Tau Ceti contributors
 -/
 module
 
 public import TauCeti.Geometry.Euclidean.Hersch.Basic
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
-public import TauCeti.AlgebraicTopology.Singular.BrouwerFixedPoint
+import TauCeti.AlgebraicTopology.Singular.BrouwerFixedPoint
 
 /-!
 # Hersch's conformal balancing lemma
+
+Adapted from Giada Franz's local formalization of Hersch's balancing lemma.
 
 Let `(X, μ)` be a finite measure space and `Φ : X → E` a measurable map into the unit
 sphere of a finite-dimensional real inner product space whose fibres over the points of the
@@ -58,7 +60,8 @@ private theorem ae_inner_ne_neg_one (hΦ : ∀ q, Φ q ∈ sphere (0 : E) 1)
   rcases ha.lt_or_eq with ha | ha
   · exact Eventually.of_forall fun q ↦ inner_ne_neg_one ha (mem_sphere_zero_iff_norm.1 (hΦ q))
   · refine measure_mono_null (fun q hq ↦ ?_) (hfib (-a) (by simp [ha]))
-    exact eq_neg_of_inner_eq_neg_one ha.le (mem_sphere_zero_iff_norm.1 (hΦ q)) (not_not.1 hq)
+    exact (inner_eq_neg_one_iff_of_norm_eq_one (mem_sphere_zero_iff_norm.1 (hΦ q)) ha).1
+      (by rw [real_inner_comm]; exact not_not.1 hq)
 
 /-- On the unit sphere, `∫ T_v ∘ Φ dμ = μ(X) v`. -/
 private theorem integral_herschMap_of_norm_eq_one [CompleteSpace E]
@@ -114,22 +117,24 @@ theorem exists_integral_herschMap_eq_zero [IsFiniteMeasure μ]
   have hGc := continuousOn_integral_herschMap hΦm hΦ hfib
   have hgc : ContinuousOn (fun a ↦ -(‖G a‖⁻¹ • G a)) (closedBall (0 : E) 1) :=
     ((hGc.norm.inv₀ fun a ha ↦ norm_ne_zero_iff.2 (hG0 a ha)).smul hGc).neg
+  have hunit : ∀ a ∈ closedBall (0 : E) 1, ‖-(‖G a‖⁻¹ • G a)‖ = 1 := fun a ha ↦ by
+    rw [norm_neg]
+    exact norm_smul_inv_norm (hG0 a ha)
   have hgmaps : MapsTo (fun a ↦ -(‖G a‖⁻¹ • G a)) (closedBall (0 : E) 1)
       (closedBall (0 : E) 1) := by
     intro a ha
-    rw [mem_closedBall_zero_iff, norm_neg, norm_smul, norm_inv, norm_norm,
-      inv_mul_cancel₀ (norm_ne_zero_iff.2 (hG0 a ha))]
+    exact mem_closedBall_zero_iff.2 (hunit a ha).le
   obtain ⟨a, ha, hfix⟩ := brouwerFixedPoint_compactConvex_continuousOn
     (isCompact_closedBall 0 1) (convex_closedBall 0 1) (nonempty_closedBall.2 zero_le_one)
     hgc hgmaps
   have hfix' : -(‖G a‖⁻¹ • G a) = a := hfix
-  have hnorm : ‖a‖ = 1 := by
-    rw [← hfix', norm_neg, norm_smul, norm_inv, norm_norm,
-      inv_mul_cancel₀ (norm_ne_zero_iff.2 (hG0 a ha))]
+  have hnorm : ‖a‖ = 1 := hfix' ▸ hunit a ha
   have hGa : G a = μ.real univ • a := integral_herschMap_of_norm_eq_one hΦ hfib hnorm
-  rw [hGa, norm_smul, Real.norm_of_nonneg hc.le, hnorm, mul_one, smul_smul,
-    inv_mul_cancel₀ hc.ne', one_smul, neg_eq_iff_add_eq_zero, ← two_smul ℝ] at hfix'
-  have : a = 0 := (smul_eq_zero.1 hfix').resolve_left two_ne_zero
+  rw [hGa] at hfix'
+  have hneg : -a = a := by
+    simpa [norm_smul_of_nonneg hc.le, hnorm, smul_smul, hc.ne'] using hfix'
+  rw [neg_eq_iff_add_eq_zero, ← two_smul ℝ] at hneg
+  have : a = 0 := (smul_eq_zero.1 hneg).resolve_left two_ne_zero
   simp [this] at hnorm
 
 end TauCeti
