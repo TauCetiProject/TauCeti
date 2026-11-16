@@ -61,7 +61,9 @@ This generalizes the compactified space of index-two trajectories of
 `M × M`, to any index difference and any family of levels, countable for the closure result. That
 every broken trajectory is a limit of unbroken ones needs gluing; it is
 `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.closure_morseTrajectoryRecords`. Charts of the
-compactified space near broken trajectories are constructed here only for index two.
+compactified space near broken trajectories are only constructed for index two
+(`IsMorseSmale.exists_homeomorph_Ico_of_mem_unstableSet_inter_stableSet` in the namespace
+`TauCeti.IsAdaptedPseudoGradient`).
 
 ## Main declarations
 

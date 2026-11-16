@@ -44,9 +44,6 @@ Morse chart, `g` is the Morse function and `v` is the pseudo-gradient.
 * `TauCeti.exists_param_inter_preimage_of_span_mtangentConeAt_sup_eq_top`: a parametrization of
   the level cut of `s` near `y` whose derivative, read in `e` and followed by `P`, is invertible,
   and which reaches every point of the cut near `y`.
-* `TauCeti.exists_param_of_span_mtangentConeAt_sup_eq_top`: with no condition on the dimension of
-  `s`, a disc in `s` through `y` of the dimension of `G` whose derivative, read in `e` and followed
-  by `P`, is invertible.
 
 ## References
 
@@ -169,85 +166,5 @@ theorem exists_param_inter_preimage_of_span_mtangentConeAt_sup_eq_top [FiniteDim
     have h0 := Submodule.disjoint_def.1 hπdisj _ (hA'F z z.2)
       (LinearMap.mem_ker.2 (by simpa [π, hDF] using hz))
     simpa using h0
-
-/-- **A disc transverse to a projection.** Let a chart of the maximal atlas flatten `s` near a
-point `y` of `s ∩ s'`, where the tangent spaces of `s` and `s'` span the model space, and let `e`
-be a chart around `y` and `P : E →L[𝕜] G` a surjective linear map with `P ∘ e = 0` on `s'` near
-`y`. Then there are a linear subspace `F` of the model space and a map `ι : F → M`, continuous at
-`0` with `ι 0 = y` and with values in `s` near `0`, such that `e ∘ ι` is strictly differentiable at
-`0` with derivative `ι'` and `P ∘ ι'` is invertible.
-
-Unlike `TauCeti.exists_param_inter_preimage_of_span_mtangentConeAt_sup_eq_top`, this puts no
-condition on the dimension of `s`: transversality makes `P` onto from the tangent space of `s`,
-and `F` is the image of a section of this surjection, so `ι` parametrizes a disc in `s` of the
-dimension of `G`, which is in general only part of `s`. -/
-theorem exists_param_of_span_mtangentConeAt_sup_eq_top [FiniteDimensional 𝕜 E]
-    [FiniteDimensional 𝕜 G] (hn : n ≠ 0)
-    (hq : q ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n M) (hs : IsSliceChart q (L : Set E) s)
-    (hy : y ∈ q.source) (hys : y ∈ s) (hys' : y ∈ s')
-    (htr : Submodule.span 𝕜 (mtangentConeAt 𝓘(𝕜, E) s y) ⊔
-      Submodule.span 𝕜 (mtangentConeAt 𝓘(𝕜, E) s' y) = ⊤)
-    (he : e ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n M) (hye : y ∈ e.source)
-    (hP : Function.Surjective P) (hs'P : ∀ᶠ w in 𝓝 y, w ∈ s' → P (e w) = 0) :
-    ∃ (F : Submodule 𝕜 E) (ι : F → M) (ι' : F →L[𝕜] E), ι 0 = y ∧ ContinuousAt ι 0 ∧
-      (∀ᶠ z in 𝓝 0, ι z ∈ s) ∧ HasStrictFDerivAt (fun z ↦ e (ι z)) ι' 0 ∧
-      (P ∘L ι').IsInvertible := by
-  -- Derivatives of the transitions from the preferred chart at `y` to `q` and to `e`.
-  have hchart := IsManifold.chart_mem_maximalAtlas (I := 𝓘(𝕜, E)) (n := n) y
-  obtain ⟨A, hA⟩ := exists_hasFDerivAt_symm_trans (z := chartAt E y y) hn hchart hq
-    (by simp [hy, mem_chart_source])
-  obtain ⟨Ae, hAe⟩ := exists_hasFDerivAt_symm_trans (z := chartAt E y y) hn hchart he
-    (by simp [hye, mem_chart_source])
-  -- `A` identifies the tangent space of `s` with the slice `L`.
-  have hAs : A '' mtangentConeAt 𝓘(𝕜, E) s y = L := by
-    rw [image_mtangentConeAt_eq_tangentConeAt hy hA,
-      tangentConeAt_preimage_symm_eq hs (Submodule.isClosed_of_finiteDimensional _) hy hys]
-  have hTL : Submodule.span 𝕜 (mtangentConeAt 𝓘(𝕜, E) s y) ≤ L.comap (A : E →ₗ[𝕜] E) :=
-    Submodule.span_le.2 fun w hw ↦ by simpa [← hAs] using mem_image_of_mem A hw
-  -- Transversality makes `π = P ∘ Ae` onto from the tangent space of `s`, since it kills that of
-  -- `s'`; read in `q`, `P ∘ D` is onto from `L`, where `D ∘ A = Ae`.
-  set D := fderiv 𝕜 (q.symm.trans e) (q y)
-  have hDA : D ∘L (A : E →L[𝕜] E) = Ae := fderiv_symm_trans_comp_eq hy hA hAe
-  set τ : L →ₗ[𝕜] G := ((P ∘L D : E →L[𝕜] G) : E →ₗ[𝕜] G) ∘ₗ L.subtype
-  have hτ : LinearMap.range τ = ⊤ := by
-    refine LinearMap.range_eq_top.2 fun b ↦ ?_
-    obtain ⟨u, rfl⟩ := hP.comp Ae.surjective b
-    have hu : u ∈ Submodule.span 𝕜 (mtangentConeAt 𝓘(𝕜, E) s y) ⊔
-        Submodule.span 𝕜 (mtangentConeAt 𝓘(𝕜, E) s' y) := htr ▸ Submodule.mem_top
-    obtain ⟨t, ht, t', ht', rfl⟩ := Submodule.mem_sup.1 hu
-    have hπt' : P (Ae t') = 0 := (Submodule.span_le (p := LinearMap.ker
-      ((P ∘L (Ae : E →L[𝕜] E) : E →L[𝕜] G) : E →ₗ[𝕜] G))).2
-        (fun w hw ↦ map_mtangentConeAt_eq_zero hAe hye hys' hs'P hw) ht'
-    refine ⟨⟨A t, hTL ht⟩, ?_⟩
-    have h := congrArg (fun B : E →L[𝕜] E ↦ P (B t)) hDA
-    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe] at h
-    simp [τ, h, hπt']
-  -- A section `σ` of `τ`; its image `F` is the parameter space of the disc.
-  obtain ⟨σ, hσ⟩ := τ.exists_rightInverse_of_surjective hτ
-  have hστ (b : G) : P (D (σ b : E)) = b := LinearMap.congr_fun hσ b
-  set F : Submodule 𝕜 E := LinearMap.range (L.subtype ∘ₗ σ)
-  have hσinj : Function.Injective (L.subtype ∘ₗ σ) := fun b b' hb ↦ by
-    rw [← hστ b, ← hστ b']
-    exact congrArg (fun w ↦ P (D w)) hb
-  have hFL : F ≤ L := by
-    rintro _ ⟨b, rfl⟩
-    exact (σ b).2
-  have hdimF : Module.finrank 𝕜 F = Module.finrank 𝕜 G := LinearMap.finrank_range_of_inj hσinj
-  -- The disc `ι z = q⁻¹ (q y + z)` over `F ⊆ L` lies in `s`.
-  have hι0 : q.symm (q y + ((0 : F) : E)) = y := by simp [q.left_inv hy]
-  have hcont : ContinuousAt (fun z : F ↦ q.symm (q y + (z : E))) 0 :=
-    (q.continuousAt_symm_add hy).comp_of_eq continuous_subtype_val.continuousAt rfl
-  have hincl : Tendsto (Submodule.inclusion hFL) (𝓝 0) (𝓝 0) := by
-    simpa using (Submodule.inclusion hFL).continuous_of_finiteDimensional.tendsto 0
-  refine ⟨F, fun z ↦ q.symm (q y + z), D ∘L F.subtypeL, hι0, hcont,
-    hincl.eventually (hs.eventually_symm_add_mem hy hys),
-    hasStrictFDerivAt_comp_symm_add_subtypeL hn hq he hy hye F, ?_⟩
-  refine ContinuousLinearMap.isInvertible_of_injective_of_finrank_eq _ hdimF ?_
-  refine (injective_iff_map_eq_zero (P ∘L D ∘L F.subtypeL)).2 fun z hz ↦ Subtype.ext ?_
-  obtain ⟨b, hb⟩ := z.2
-  have h0 : b = 0 := by
-    rw [← hστ b]
-    simpa [← hb] using hz
-  simp [← hb, h0]
 
 end TauCeti

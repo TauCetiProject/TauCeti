@@ -31,8 +31,9 @@ time, and then glue `z 0` to `u` at `x 1`. A trajectory that passes near enough 
 the same `z j` at shifted times, since the flow at a fixed time is continuous
 (`IsMorseSmale.exists_mem_unstableSet_inter_stableSet_forall_flow_mem`). Along approximating
 trajectories, the points on each level converge to the point where the component crossing that
-level meets it (`TauCeti.IsAdaptedPseudoGradient.exists_tendsto_flow_of_tendsto`), so the records
-converge to the record of the broken trajectory.
+level meets it
+(`TauCeti.IsAdaptedPseudoGradient.tendsto_flow_of_tendsto_flow_of_mem_unstableSet_inter_stableSet`),
+so the records converge to the record of the broken trajectory.
 
 ## Main results
 
@@ -148,13 +149,9 @@ theorem morseBrokenTrajectoryRecords_subset_closure {p r : M} (hpr : p ≠ r) {c
   -- The point on the level `c i` converges to the point where the component through `w i` meets
   -- that level, which is `w i`.
   obtain ⟨hwc, j, t, ht⟩ := hwi i
-  have hshift (n : ℕ) :
-      hX.flow (τ n i - s n j) (hX.flow (s n j) (u n)) = hX.flow (τ n i) (u n) := by
-    rw [← Flow.map_add, sub_add_cancel]
   rw [← ht]
-  simpa only [hshift] using hX.tendsto_flow_of_flow_eq_of_mem_unstableSet_inter_stableSet
-    (hxne j) (hz j) (by rw [ht, hwc]) (hlim j) (s := fun n ↦ τ n i - s n j)
-    fun n ↦ by rw [hshift]; exact hτ n i
+  exact hX.tendsto_flow_of_tendsto_flow_of_mem_unstableSet_inter_stableSet (hxne j) (hz j)
+    (by rw [ht, hwc]) (hlim j) fun n ↦ hτ n i
 
 include h hf in
 /-- **The compactified space of trajectories is the space of broken trajectories.** Let `X` satisfy
