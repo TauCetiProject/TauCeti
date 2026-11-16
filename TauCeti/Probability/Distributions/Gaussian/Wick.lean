@@ -68,8 +68,9 @@ theorem integral_prod_sub_dual_eq_sum_perfectMatching (μ : Measure E) [IsGaussi
           congr 2 with x
           exact (Finset.mul_prod_erase _ _ (mem_univ a)).symm
         _ = ∑ b ∈ univ.erase a, cov[L a, L b; μ] *
-            ∫ x, ∏ j ∈ (univ.erase a).erase b, (L j x - μ[L j]) ∂μ :=
-          integral_sub_dual_mul_prod_sub_dual μ (univ.erase a) (L a) L
+            ∫ x, ∏ j ∈ (univ.erase a).erase b, (L j x - μ[L j]) ∂μ := by
+          simpa only [covariance] using
+            integral_sub_clm_mul_prod_sub_clm μ (univ.erase a) (L a) L
         _ = ∑ b : {b : ι // b ≠ a}, cov[L a, L b; μ] *
             ∫ x, ∏ j : {x : ι // x ≠ a ∧ x ≠ b}, (L j x - μ[L j]) ∂μ := by
           rw [Finset.sum_subtype (p := fun b : ι ↦ b ≠ a) (univ.erase a) (by simp)]
