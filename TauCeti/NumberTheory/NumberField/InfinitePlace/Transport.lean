@@ -52,6 +52,12 @@ in another universe, such as `Shrink K`.
   `NumberField.InfinitePlace.realEquivOfRingEquiv_trans`: functoriality of `realEquivOfRingEquiv`.
 * `NumberField.InfinitePlace.eq_equivOfRingEquiv_iff`: an infinite place `w'` equals
   `equivOfRingEquiv e w` iff `∀ x, w' (e x) = w x`.
+* `NumberField.InfinitePlace.comap_equivOfRingEquiv`: compatibility of `equivOfRingEquiv` with
+  restriction of infinite places along a commuting square of field isomorphisms.
+* `NumberField.InfinitePlace.isUnramified_equivOfRingEquiv_iff`: invariance of unramifiedness of
+  an infinite place under a commuting square of field isomorphisms.
+* `IsUnramifiedAtInfinitePlaces.of_equiv_equiv`, `IsUnramifiedAtInfinitePlaces.iff_of_equiv_equiv`:
+  invariance of `IsUnramifiedAtInfinitePlaces` under a commuting square of field isomorphisms.
 -/
 
 public section
@@ -212,4 +218,56 @@ theorem eq_equivOfRingEquiv_iff {e : K ≃+* L} {w : InfinitePlace K} {w' : Infi
   refine ⟨fun h x ↦ by subst h; simp, fun h ↦ InfinitePlace.ext _ _ fun y ↦ ?_⟩
   rw [equivOfRingEquiv_apply, ← h, e.apply_symm_apply]
 
+/-- Restricting a transported infinite place along a compatible ring homomorphism is transporting
+the restricted place along the base isomorphism. -/
+theorem comap_equivOfRingEquiv {k l : Type*} [Field k] [Field l]
+    (f : k ≃+* l) (g : K ≃+* L) {i₁ : k →+* K} {i₂ : l →+* L}
+    (hcomp : i₂.comp (f : k →+* l) = (g : K →+* L).comp i₁) (w : InfinitePlace K) :
+    (equivOfRingEquiv g w).comap i₂ = equivOfRingEquiv f (w.comap i₁) := by
+  rw [equivOfRingEquiv_eq_comap, equivOfRingEquiv_eq_comap, ← comap_comp, ← comap_comp]
+  congr 1
+  ext x
+  have h := RingHom.congr_fun hcomp (f.symm x)
+  simpa using congrArg g.symm h
+
+/-- Unramifiedness of an infinite place is invariant under a commuting square of field
+isomorphisms. -/
+theorem isUnramified_equivOfRingEquiv_iff {k l : Type*} [Field k] [Field l]
+    [Algebra k K] [Algebra l L] (f : k ≃+* l) (g : K ≃+* L)
+    (hcomp : (algebraMap l L).comp (f : k →+* l) = (g : K →+* L).comp (algebraMap k K))
+    (w : InfinitePlace K) :
+    (equivOfRingEquiv g w).IsUnramified l ↔ w.IsUnramified k := by
+  rw [IsUnramified, IsUnramified, comap_equivOfRingEquiv f g hcomp,
+    mult_equivOfRingEquiv, mult_equivOfRingEquiv]
+
 end NumberField.InfinitePlace
+
+namespace IsUnramifiedAtInfinitePlaces
+
+open NumberField NumberField.InfinitePlace
+
+variable {k K l L : Type*} [Field k] [Field K] [Algebra k K]
+  [Field l] [Field L] [Algebra l L]
+
+/-- **Being unramified at all infinite places transports along a commuting square of field
+isomorphisms.** -/
+theorem of_equiv_equiv [IsUnramifiedAtInfinitePlaces k K]
+    (f : k ≃+* l) (g : K ≃+* L)
+    (hcomp : (algebraMap l L).comp (f : k →+* l) = (g : K →+* L).comp (algebraMap k K)) :
+    IsUnramifiedAtInfinitePlaces l L where
+  isUnramified w := by
+    rw [← (equivOfRingEquiv g).apply_symm_apply w,
+      isUnramified_equivOfRingEquiv_iff f g hcomp]
+    exact ((equivOfRingEquiv g).symm w).isUnramified k
+
+/-- **Being unramified at all infinite places is invariant under a commuting square of field
+isomorphisms.** -/
+theorem iff_of_equiv_equiv
+    (f : k ≃+* l) (g : K ≃+* L)
+    (hcomp : (algebraMap l L).comp (f : k →+* l) = (g : K →+* L).comp (algebraMap k K)) :
+    IsUnramifiedAtInfinitePlaces k K ↔ IsUnramifiedAtInfinitePlaces l L :=
+  ⟨fun _ ↦ of_equiv_equiv f g hcomp, fun _ ↦ of_equiv_equiv f.symm g.symm <| by
+    ext x
+    simpa [RingEquiv.eq_symm_apply] using (RingHom.congr_fun hcomp (f.symm x)).symm⟩
+
+end IsUnramifiedAtInfinitePlaces
