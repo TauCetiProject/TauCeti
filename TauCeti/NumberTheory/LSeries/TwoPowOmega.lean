@@ -53,7 +53,7 @@ theorem LSeriesSummable_two_pow_cardDistinctFactors_iff {s : ℂ} :
       convert LSeriesSummable_mul hz hz using 1
       funext n
       rw [← natCoe_mul, heq]
-      rfl
+      simp only [natCoe_apply]
     apply Summable.of_norm_bounded ht.norm
     intro n
     by_cases hn : n = 0
