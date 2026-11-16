@@ -12,16 +12,14 @@ import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
 # Hadamard's determinant inequality and diagonal quadratic lower bounds
 
 For a positive-semidefinite matrix `A` over `ℝ` or `ℂ`, **Hadamard's determinant inequality**
-bounds the determinant by the product of the diagonal entries: `A.det ≤ ∏ i, A i i`. It follows
-by induction on the number of indices from the `2 × 2` block Hadamard–Fischer inequality
-`Matrix.PosSemidef.det_fromBlocks_le`, splitting off one index at a time. Both singular matrices
-and empty index types are included.
+bounds the determinant by the product of the diagonal entries: `A.det ≤ ∏ i, A i i`, including when
+`A` is singular or the index type is empty.
 
 When a positive-definite real matrix `B` satisfies a converse Hadamard bound
 `∏ i, B i i ≤ D * B.det` (as reduced Gram matrices do), Hadamard's inequality on the complementary
-principal minor bounds each inverse diagonal entry `(B⁻¹) k k` by `D / B k k`, and Cauchy–Schwarz
-for the quadratic form of `B` yields the quantitative lower bound
-`a k ^ 2 * B k k / D ≤ a ⬝ᵥ B *ᵥ a` for every vector `a` and coordinate `k`.
+principal minor bounds each inverse diagonal entry `(B⁻¹) k k` by `D / B k k`, yielding the
+quantitative quadratic lower bound `a k ^ 2 * B k k / D ≤ a ⬝ᵥ B *ᵥ a` for every vector `a` and
+coordinate `k`.
 
 ## Main results
 
@@ -56,8 +54,7 @@ theorem PosSemidef.det_le_prod_diag {𝕜 n : Type*} [RCLike 𝕜] [Fintype n] [
     have : IsEmpty n := Fintype.card_eq_zero_iff.mp hk
     simp
   | succ k ih =>
-    have : Nonempty n := Fintype.card_pos_iff.mp (by omega)
-    obtain ⟨i⟩ := ‹Nonempty n›
+    obtain ⟨i⟩ : Nonempty n := Fintype.card_pos_iff.mp (by omega)
     let e := Equiv.sumCompl (· = i)
     set A₁₁ : Matrix {a // a = i} {a // a = i} 𝕜 := A.submatrix (↑) (↑)
     set A₁₂ : Matrix {a // a = i} {a // a ≠ i} 𝕜 := A.submatrix (↑) (↑)
@@ -70,24 +67,17 @@ theorem PosSemidef.det_le_prod_diag {𝕜 n : Type*} [RCLike 𝕜] [Fintype n] [
       · rfl
     have hcard : Fintype.card {a // a ≠ i} = k := by
       rw [Fintype.card_of_subtype (Finset.univ.erase i) (by simp),
-        Finset.card_erase_of_mem (Finset.mem_univ i), Finset.card_univ, hk]
-      rfl
-    have hdiag_nonneg : 0 ≤ A i i := by
-      simpa using hA.dotProduct_mulVec_nonneg (Pi.single i 1)
-    have hdet₁₁ : A₁₁.det = A i i := by
-      rw [det_unique]
-      simp [A₁₁, (default : {a // a = i}).2]
-    have hprod : A i i * (∏ j : {a // a ≠ i}, A j j) = ∏ j, A j j := by
-      rw [← Finset.prod_subtype (Finset.univ.erase i) (by simp) (fun j ↦ A j j),
-        Finset.mul_prod_erase Finset.univ (fun j ↦ A j j) (Finset.mem_univ i)]
+        Finset.card_erase_of_mem (Finset.mem_univ i), Finset.card_univ, hk, Nat.add_sub_cancel]
+    have hdet₁₁ : A₁₁.det = A i i := by rw [det_unique]; simp [A₁₁, (default : {a // a = i}).2]
     have hsub : (fromBlocks A₁₁ A₁₂ A₁₂ᴴ A₂₂).PosSemidef := hblk ▸ hA.submatrix e
     calc A.det = (fromBlocks A₁₁ A₁₂ A₁₂ᴴ A₂₂).det := by rw [← hblk, det_submatrix_equiv_self]
-      _ ≤ A₁₁.det * A₂₂.det := hsub.det_fromBlocks_le
-      _ = A i i * A₂₂.det := by rw [hdet₁₁]
+      _ ≤ A i i * A₂₂.det := hdet₁₁ ▸ hsub.det_fromBlocks_le
       _ ≤ A i i * ∏ j : {a // a ≠ i}, A j j :=
-          mul_le_mul_of_nonneg_left
-            (ih (hA.submatrix (Subtype.val : {a // a ≠ i} → n)) hcard) hdiag_nonneg
-      _ = ∏ j, A j j := hprod
+          mul_le_mul_of_nonneg_left (ih (hA.submatrix (Subtype.val : {a // a ≠ i} → n)) hcard)
+            (by simpa using hA.dotProduct_mulVec_nonneg (Pi.single i 1))
+      _ = ∏ j, A j j := by
+          rw [← Finset.prod_subtype (Finset.univ.erase i) (by simp) (fun j ↦ A j j),
+            Finset.mul_prod_erase Finset.univ (fun a ↦ A a a) (Finset.mem_univ i)]
 
 /-- If a positive-definite real matrix `B` satisfies `∏ i, B i i ≤ D * B.det`, then every diagonal
 entry of `B⁻¹` satisfies `(B⁻¹) k k ≤ D / B k k`. -/
@@ -95,22 +85,16 @@ theorem PosDef.inv_apply_self_le_div {n : Type*} [Fintype n] [DecidableEq n]
     {B : Matrix n n ℝ} (hB : B.PosDef) {D : ℝ} (hD : ∏ i, B i i ≤ D * B.det) (k : n) :
     B⁻¹ k k ≤ D / B k k := by
   set B' : Matrix {a // a ≠ k} {a // a ≠ k} ℝ := B.submatrix (↑) (↑)
-  have hdet_pos : 0 < B.det := hB.det_pos
-  have hdiag_pos : 0 < B k k := hB.diag_pos
-  have hprod : B k k * (∏ j : {a // a ≠ k}, B j j) = ∏ i, B i i := by
-    rw [← Finset.prod_subtype (Finset.univ.erase k) (by simp) (fun i ↦ B i i),
-      Finset.mul_prod_erase Finset.univ (fun i ↦ B i i) (Finset.mem_univ k)]
-  have hB'_le : B k k * B'.det ≤ D * B.det := by
-    calc B k k * B'.det
-        ≤ B k k * ∏ j : {a // a ≠ k}, B j j :=
-          mul_le_mul_of_nonneg_left
-            (hB.submatrix Subtype.val_injective).posSemidef.det_le_prod_diag hdiag_pos.le
-      _ = ∏ i, B i i := hprod
-      _ ≤ D * B.det := hD
-  have hinv : B⁻¹ k k = B'.det / B.det := by
-    rw [inv_def, Matrix.smul_apply, B.adjugate_apply_self k, Ring.inverse_eq_inv', smul_eq_mul,
-      div_eq_inv_mul]
-  rw [hinv, div_le_div_iff₀ hdet_pos hdiag_pos]
+  have hB'_le : B k k * B'.det ≤ D * B.det := calc
+    B k k * B'.det ≤ B k k * ∏ j : {a // a ≠ k}, B j j :=
+      mul_le_mul_of_nonneg_left
+        (hB.submatrix Subtype.val_injective).posSemidef.det_le_prod_diag hB.diag_pos.le
+    _ = ∏ i, B i i := by
+      rw [← Finset.prod_subtype (Finset.univ.erase k) (by simp) (fun i ↦ B i i),
+        Finset.mul_prod_erase Finset.univ (fun a ↦ B a a) (Finset.mem_univ k)]
+    _ ≤ D * B.det := hD
+  rw [inv_def, Matrix.smul_apply, B.adjugate_apply_self k, Ring.inverse_eq_inv', smul_eq_mul,
+    ← div_eq_inv_mul, div_le_div_iff₀ hB.det_pos hB.diag_pos]
   linarith
 
 /-- **Lower bound on a positive-definite quadratic form by its diagonal entries.** If `B` is a
@@ -120,29 +104,25 @@ theorem PosDef.sq_mul_apply_self_div_le_dotProduct_mulVec {n : Type*} [Fintype n
     {B : Matrix n n ℝ} (hB : B.PosDef) {D : ℝ} (hD : ∏ i, B i i ≤ D * B.det)
     (a : n → ℝ) (k : n) :
     a k ^ 2 * B k k / D ≤ a ⬝ᵥ B *ᵥ a := by
-  have hdet_pos : 0 < B.det := hB.det_pos
   have hinv_pos : 0 < B⁻¹ k k := hB.inv.diag_pos
-  have hinv_le : B⁻¹ k k ≤ D / B k k := hB.inv_apply_self_le_div hD k
   set u : n → ℝ := B⁻¹ *ᵥ Pi.single k 1
   have hBu : B *ᵥ u = Pi.single k 1 := by
-    rw [mulVec_mulVec, mul_nonsing_inv B hdet_pos.ne'.isUnit, one_mulVec]
-  have huk : u k = B⁻¹ k k := by simp [u]
-  have huBu : u ⬝ᵥ B *ᵥ u = B⁻¹ k k := by rw [hBu, dotProduct_single_one, huk]
+    rw [mulVec_mulVec, mul_nonsing_inv B hB.det_pos.ne'.isUnit, one_mulVec]
+  have huBu : u ⬝ᵥ B *ᵥ u = B⁻¹ k k := by rw [hBu, dotProduct_single_one]; simp [u]
   have haBu : a ⬝ᵥ B *ᵥ u = a k := by rw [hBu, dotProduct_single_one]
-  have huBa : u ⬝ᵥ B *ᵥ a = a k := by
-    rw [hB.isHermitian.isSymm.dotProduct_mulVec_comm, haBu]
-  set t : ℝ := a k / B⁻¹ k k
-  have hnonneg : 0 ≤ (a - t • u) ⬝ᵥ B *ᵥ (a - t • u) := by
-    simpa using hB.posSemidef.dotProduct_mulVec_nonneg (a - t • u)
-  have hexpand : (a - t • u) ⬝ᵥ B *ᵥ (a - t • u) = a ⬝ᵥ B *ᵥ a - a k ^ 2 / B⁻¹ k k := by
+  have huBa : u ⬝ᵥ B *ᵥ a = a k := by rw [hB.isHermitian.isSymm.dotProduct_mulVec_comm, haBu]
+  have hnonneg : 0 ≤ (a - (a k / B⁻¹ k k) • u) ⬝ᵥ B *ᵥ (a - (a k / B⁻¹ k k) • u) := by
+    simpa only [star_trivial] using
+      hB.posSemidef.dotProduct_mulVec_nonneg (a - (a k / B⁻¹ k k) • u)
+  have hexpand : (a - (a k / B⁻¹ k k) • u) ⬝ᵥ B *ᵥ (a - (a k / B⁻¹ k k) • u) =
+      a ⬝ᵥ B *ᵥ a - a k ^ 2 / B⁻¹ k k := by
     simp only [mulVec_sub, mulVec_smul, sub_dotProduct, dotProduct_sub, smul_dotProduct,
-      dotProduct_smul, smul_eq_mul, haBu, huBa, huBu, t]
+      dotProduct_smul, smul_eq_mul, haBu, huBa, huBu]
     field_simp [hinv_pos.ne']
     ring
-  rw [hexpand, sub_nonneg] at hnonneg
-  calc a k ^ 2 * B k k / D
-      = a k ^ 2 / (D / B k k) := by rw [div_div_eq_mul_div]
-    _ ≤ a k ^ 2 / B⁻¹ k k := div_le_div_of_nonneg_left (sq_nonneg _) hinv_pos hinv_le
-    _ ≤ a ⬝ᵥ B *ᵥ a := hnonneg
+  calc a k ^ 2 * B k k / D = a k ^ 2 / (D / B k k) := by rw [div_div_eq_mul_div]
+    _ ≤ a k ^ 2 / B⁻¹ k k :=
+        div_le_div_of_nonneg_left (sq_nonneg _) hinv_pos (hB.inv_apply_self_le_div hD k)
+    _ ≤ a ⬝ᵥ B *ᵥ a := sub_nonneg.mp (hexpand ▸ hnonneg)
 
 end Matrix
