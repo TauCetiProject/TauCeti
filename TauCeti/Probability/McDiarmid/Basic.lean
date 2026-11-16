@@ -31,7 +31,7 @@ and the coordinate bounds.
   finite index type;
 * `TauCeti.Probability.hasSubgaussianMGF_of_bounded_differences_fin` specializes it to `Fin n`
   with a uniform oscillation bound;
-* `TauCeti.Probability.eq_integral_of_bounded_differences_of_sum_sq_eq_zero` handles zero
+* `MeasureTheory.Measure.eq_integral_of_bounded_differences_of_sum_sq_eq_zero` handles zero
   total oscillation, even without independence;
 * `TauCeti.Probability.neg_sq_div_two_mul_variance_proxy` computes the exponent of the resulting
   two-sided tail bound for bounded differences `q / n`.
@@ -362,7 +362,7 @@ theorem hasSubgaussianMGF_of_bounded_differences
 /-- With zero total squared coordinate oscillation, a bounded-differences function equals its
 mean after composition with any map from a probability space. No independence, measurability,
 or moment assumptions on the map or function are needed, nor measurable coordinate spaces. -/
-theorem eq_integral_of_bounded_differences_of_sum_sq_eq_zero
+theorem _root_.MeasureTheory.Measure.eq_integral_of_bounded_differences_of_sum_sq_eq_zero
     {Ω ι : Type*} [MeasurableSpace Ω] [Fintype ι] {β : ι → Type*}
     (μ : Measure Ω) [IsProbabilityMeasure μ]
     (X : Ω → ∀ i, β i) (f : (∀ i, β i) → ℝ) (c : ι → ℝ)

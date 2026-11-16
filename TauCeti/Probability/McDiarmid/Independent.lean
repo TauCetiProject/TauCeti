@@ -18,7 +18,7 @@ everywhere measurability of each coordinate suffices.
 
 The one-sided and two-sided McDiarmid inequalities have exponent `-2 t² / ∑ i, (c i)²`.
 When this denominator vanishes,
-`TauCeti.Probability.eq_integral_of_bounded_differences_of_sum_sq_eq_zero` applied to
+`MeasureTheory.Measure.eq_integral_of_bounded_differences_of_sum_sq_eq_zero` applied to
 `fun ω i => X i ω` proves that the statistic equals its mean at every point, including for an
 empty coordinate family. No moment assumptions on the coordinates are needed.
 
@@ -93,7 +93,7 @@ theorem measureReal_sub_integral_ge_le_of_bounded_differences (h : iIndepFun X P
 /-- **Two-sided McDiarmid inequality.** For independent coordinates and bounded differences
 `c i`, the probability of an absolute deviation of at least `t ≥ 0` is at most
 `2 exp (-2 t² / ∑ i, (c i)²)`. When the denominator is zero, use
-`TauCeti.Probability.eq_integral_of_bounded_differences_of_sum_sq_eq_zero`
+`MeasureTheory.Measure.eq_integral_of_bounded_differences_of_sum_sq_eq_zero`
 with the map `fun ω i => X i ω` for pointwise equality to the mean. -/
 theorem measureReal_abs_sub_integral_ge_le_of_bounded_differences (h : iIndepFun X P)
     (hX : ∀ i, AEMeasurable (X i) P) (f : (∀ i, β i) → ℝ) (hf : Measurable f)
