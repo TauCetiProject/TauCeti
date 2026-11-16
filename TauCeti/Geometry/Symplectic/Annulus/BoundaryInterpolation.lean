@@ -11,7 +11,7 @@ import Mathlib.Algebra.Field.Periodic
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.Calculus.Deriv.Prod
-import TauCeti.Dynamics.Circle.RotationNumber.Deriv
+import TauCeti.Analysis.Calculus.Deriv.AddCircle
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 
 /-!
@@ -41,16 +41,16 @@ The `x`-derivative of the first component of `B_t` at `(x, y)` is the slope
 a convex combination of `1`, `b₀'(x)` and `b₁'(x)` when `t, y ∈ [0, 1]`; it is positive there as
 soon as `b₀' > 0` and `b₁' > 0`. Let `D` be the set of parameters `(t, (x, y))` at which this slope
 is positive for every `x` (`TauCeti.stripBoundaryInterpolationDomain`). Since the slope is
-`1`-periodic in `x` (`CircleDeg1Lift.periodic_deriv`), this is an open set when the derivatives
+`1`-periodic in `x` (`AddCircle.periodic_deriv_lift`), this is an open set when the derivatives
 of `b₀` and `b₁` are continuous, and it contains
 `[0, 1] × ℝ × [0, 1]` when the derivatives of `b₀` and `b₁` are positive. On each horizontal line
 over a parameter in `D`, the first component of `B_t` is a strictly increasing continuous lift, so a
 homeomorphism of the line. The Jacobian of the track `(t, p) ↦ (t, B_t(p))` is invertible on `D`,
 so by the inverse function theorem the track is a `C^n` partial diffeomorphism of `ℝ × ℝ × ℝ` with
 source and target `D` (`TauCeti.stripBoundaryInterpolationPartialDiffeomorph`). Its inverse is
-`C^n` jointly in `t` and `p`: the family `B_t`, `t ∈ [0, 1]`, is a smooth isotopy of
-diffeomorphisms of a neighbourhood of the strip, and the inverse commutes with the deck
-translations as well
+`C^n` jointly in `t` and `p`, so when `b₀' > 0` and `b₁' > 0` the family `B_t`, `t ∈ [0, 1]`, is a
+smooth isotopy of diffeomorphisms of a neighbourhood of the strip. The inverse commutes with the
+deck translations as well
 (`TauCeti.stripBoundaryInterpolationPartialDiffeomorph_symm_apply_mk_add_int`).
 
 ## Main definitions
@@ -98,8 +98,10 @@ variable (b₀ b₁ : CircleDeg1Lift)
 /-! ### The interpolation -/
 
 /-- The **boundary interpolation** `B_t(x, y) = ((1 - t) x + t ((1 - y) b₀(x) + y b₁(x)), y)` of
-the plane. For `t ∈ [0, 1]` it is an isotopy of the strip `ℝ × [0, 1]` from the identity to a map
-that restricts to the lifts `b₀` and `b₁` on the two boundary lines. -/
+the plane. It is the identity at `t = 0`, and at `t = 1` it restricts to the lifts `b₀` and `b₁` on
+the two boundary lines. When `b₀` and `b₁` are continuous and strictly increasing, for `t ∈ [0, 1]`
+it is a bijection of the strip `ℝ × [0, 1]` (`TauCeti.bijOn_stripBoundaryInterpolation`), so an
+isotopy of the strip from the identity. -/
 def stripBoundaryInterpolation (t : ℝ) (p : ℝ × ℝ) : ℝ × ℝ :=
   ((1 - t) * p.1 + t * ((1 - p.2) * b₀ p.1 + p.2 * b₁ p.1), p.2)
 
@@ -176,6 +178,12 @@ component of the boundary interpolation `B_t` at `(x, y)`
 def stripBoundaryInterpolationSlope (t y x : ℝ) : ℝ :=
   1 - t + t * ((1 - y) * deriv b₀ x + y * deriv b₁ x)
 
+/-- The formula for the slope. -/
+theorem stripBoundaryInterpolationSlope_def (t y x : ℝ) :
+    stripBoundaryInterpolationSlope b₀ b₁ t y x =
+      1 - t + t * ((1 - y) * deriv b₀ x + y * deriv b₁ x) :=
+  (rfl)
+
 /-- The slope is the derivative in `x` of the first component of the boundary interpolation. -/
 theorem hasDerivAt_stripBoundaryInterpolation_fst {x : ℝ} (hb₀ : DifferentiableAt ℝ b₀ x)
     (hb₁ : DifferentiableAt ℝ b₁ x) (t y : ℝ) :
@@ -186,13 +194,14 @@ theorem hasDerivAt_stripBoundaryInterpolation_fst {x : ℝ} (hb₀ : Differentia
   convert h using 1
   · funext z
     simp only [stripBoundaryInterpolation_fst, Pi.add_apply, id]
-  · rw [stripBoundaryInterpolationSlope]
+  · rw [stripBoundaryInterpolationSlope_def]
     ring
 
 /-- The slope is `1`-periodic along every horizontal line. -/
 theorem stripBoundaryInterpolationSlope_periodic (t y : ℝ) :
     Periodic (stripBoundaryInterpolationSlope b₀ b₁ t y) 1 := fun x ↦ by
-  simp [stripBoundaryInterpolationSlope, b₀.periodic_deriv x, b₁.periodic_deriv x]
+  simp [stripBoundaryInterpolationSlope_def, AddCircle.periodic_deriv_lift b₀.map_add_one x,
+    AddCircle.periodic_deriv_lift b₁.map_add_one x]
 
 /-- For `t, y ∈ [0, 1]` the weights `1 - t`, `t (1 - y)` and `t y` are nonnegative and sum to `1`,
 so the corresponding convex combination of three positive numbers is positive. -/
@@ -216,7 +225,8 @@ positive when the derivatives of `b₀` and `b₁` are. -/
 theorem stripBoundaryInterpolationSlope_pos (h₀ : ∀ x, 0 < deriv b₀ x)
     (h₁ : ∀ x, 0 < deriv b₁ x) {t y : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) (hy : y ∈ Icc (0 : ℝ) 1)
     (x : ℝ) : 0 < stripBoundaryInterpolationSlope b₀ b₁ t y x := by
-  simpa [stripBoundaryInterpolationSlope] using convexCombination_pos ht hy one_pos (h₀ x) (h₁ x)
+  simpa [stripBoundaryInterpolationSlope_def] using
+    convexCombination_pos ht hy one_pos (h₀ x) (h₁ x)
 
 /-! ### The domain of positive slope -/
 
@@ -238,7 +248,7 @@ theorem isOpen_stripBoundaryInterpolationDomain (h₀ : Continuous (deriv b₀))
     (h₁ : Continuous (deriv b₁)) : IsOpen (stripBoundaryInterpolationDomain b₀ b₁) := by
   have hD : Continuous fun z : (ℝ × ℝ × ℝ) × ℝ ↦
       stripBoundaryInterpolationSlope b₀ b₁ z.1.1 z.1.2.2 z.2 := by
-    unfold stripBoundaryInterpolationSlope
+    simp only [stripBoundaryInterpolationSlope_def]
     fun_prop
   rw [isOpen_iff_eventually]
   intro q hq
@@ -285,8 +295,7 @@ private theorem surjective_fst_of_strictMono (hb₀ : Continuous b₀) (hb₁ : 
       map_add_one' := fun x ↦ by
         simp [stripBoundaryInterpolation_mk_add_one] }
   have hf : Continuous f := by
-    change Continuous fun x ↦ (stripBoundaryInterpolation b₀ b₁ t (x, y)).1
-    simp only [stripBoundaryInterpolation_fst]
+    simp only [f, CircleDeg1Lift.coe_mk, OrderHom.coe_mk, stripBoundaryInterpolation_fst]
     fun_prop
   exact f.continuous_iff_surjective.1 hf
 
@@ -314,9 +323,11 @@ private theorem image_track (hb₀ : Differentiable ℝ b₀) (hb₁ : Different
 /-- The derivative of the track is injective at every point of the domain: it fixes the time and
 height components and acts on the `x`-direction by the positive slope. -/
 private theorem injective_fderiv_track (hb₀ : Differentiable ℝ b₀) (hb₁ : Differentiable ℝ b₁)
-    (hdiff : Differentiable ℝ (track b₀ b₁)) {q : ℝ × ℝ × ℝ}
-    (hq : q ∈ stripBoundaryInterpolationDomain b₀ b₁) :
+    {q : ℝ × ℝ × ℝ} (hq : q ∈ stripBoundaryInterpolationDomain b₀ b₁) :
     Injective (fderiv ℝ (track b₀ b₁) q) := by
+  have hdiff : Differentiable ℝ (track b₀ b₁) := by
+    unfold track stripBoundaryInterpolation
+    fun_prop
   set L := fderiv ℝ (track b₀ b₁) q
   have hL : HasFDerivAt (track b₀ b₁) L q := (hdiff q).hasFDerivAt
   -- The time component of the track is the time.
@@ -347,7 +358,8 @@ private theorem injective_fderiv_track (hb₀ : Differentiable ℝ b₀) (hb₁ 
     ext <;> simp [hu₁, hu₃]
   have hu₂ : u.2.1 * stripBoundaryInterpolationSlope b₀ b₁ q.1 q.2.2 q.2.1 = 0 := by
     have := congr(($hvw).2.1)
-    rwa [hu, map_smul, Prod.smul_snd, Prod.smul_fst, h₂, smul_eq_mul] at this
+    rw [hu, map_smul] at this
+    simpa [h₂] using this
   have hu₂' : u.2.1 = 0 := (mul_eq_zero.1 hu₂).resolve_right (hq q.2.1).ne'
   rw [hu, hu₂', zero_smul]
 
@@ -357,11 +369,9 @@ private theorem isLocalDiffeomorphOn_track {n : WithTop ℕ∞} (hb₀ : ContDif
       (stripBoundaryInterpolationDomain b₀ b₁) := by
   have hC : ContDiff ℝ n (track b₀ b₁) :=
     contDiff_fst.prodMk (contDiff_stripBoundaryInterpolation b₀ b₁ hb₀ hb₁)
-  have hn0 : n ≠ 0 := by rintro rfl; exact absurd hn (by simp)
-  have hd₀ := hb₀.differentiable hn0
-  have hd₁ := hb₁.differentiable hn0
+  have hn0 : n ≠ 0 := (zero_lt_one.trans_le hn).ne'
   rintro ⟨q, hq⟩
-  have hinj := injective_fderiv_track b₀ b₁ hd₀ hd₁ (hC.differentiable hn0) hq
+  have hinj := injective_fderiv_track b₀ b₁ (hb₀.differentiable hn0) (hb₁.differentiable hn0) hq
   exact TauCeti.isLocalDiffeomorphAt_of_fderiv_eq hC.contDiffOn
     (isOpen_stripBoundaryInterpolationDomain b₀ b₁ (hb₀.continuous_deriv hn)
       (hb₁.continuous_deriv hn)) hq hn
@@ -370,16 +380,18 @@ private theorem isLocalDiffeomorphOn_track {n : WithTop ℕ∞} (hb₀ : ContDif
 
 /-- The track `(t, p) ↦ (t, B_t(p))` of the boundary interpolation, as a `C^n` partial
 diffeomorphism of `ℝ × ℝ × ℝ` whose source and target are both the domain of positive slope.
-Its inverse is `C^n` jointly in the time and the point, so for `t ∈ [0, 1]` the maps `B_t` form a
-`C^n` isotopy of diffeomorphisms of a neighbourhood of the strip. -/
+Its inverse is `C^n` jointly in the time and the point. When `b₀' > 0` and `b₁' > 0`, the source
+contains `[0, 1] × ℝ × [0, 1]` (`TauCeti.Icc_prod_subset_stripBoundaryInterpolationDomain`), so for
+`t ∈ [0, 1]` the maps `B_t` form a `C^n` isotopy of diffeomorphisms of a neighbourhood of the
+strip. -/
 def stripBoundaryInterpolationPartialDiffeomorph {n : WithTop ℕ∞} (hb₀ : ContDiff ℝ n b₀)
     (hb₁ : ContDiff ℝ n b₁) (hn : 1 ≤ n) :
     PartialDiffeomorph 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) (ℝ × ℝ × ℝ) (ℝ × ℝ × ℝ) n :=
-  have hn0 : n ≠ 0 := by rintro rfl; exact absurd hn (by simp)
   (isLocalDiffeomorphOn_track b₀ b₁ hb₀ hb₁ hn).partialDiffeomorphOfInjOn
     (isOpen_stripBoundaryInterpolationDomain b₀ b₁ (hb₀.continuous_deriv hn)
       (hb₁.continuous_deriv hn))
-    (injOn_track b₀ b₁ (hb₀.differentiable hn0) (hb₁.differentiable hn0))
+    (injOn_track b₀ b₁ (hb₀.differentiable (zero_lt_one.trans_le hn).ne')
+      (hb₁.differentiable (zero_lt_one.trans_le hn).ne'))
 
 section PartialDiffeomorph
 
@@ -401,7 +413,7 @@ theorem stripBoundaryInterpolationPartialDiffeomorph_source :
 theorem stripBoundaryInterpolationPartialDiffeomorph_target :
     (stripBoundaryInterpolationPartialDiffeomorph b₀ b₁ hb₀ hb₁ hn).target =
       stripBoundaryInterpolationDomain b₀ b₁ := by
-  have hn0 : n ≠ 0 := by rintro rfl; exact absurd hn (by simp)
+  have hn0 : n ≠ 0 := (zero_lt_one.trans_le hn).ne'
   rw [stripBoundaryInterpolationPartialDiffeomorph,
     IsLocalDiffeomorphOn.partialDiffeomorphOfInjOn_target]
   exact image_track b₀ b₁ (hb₀.differentiable hn0) (hb₁.differentiable hn0)
@@ -468,7 +480,9 @@ theorem stripBoundaryInterpolationPartialDiffeomorph_symm_apply_mk_add_int {t x 
   have hy : y' = y := congr_arg (fun q ↦ q.2.2) h
   have hx : (stripBoundaryInterpolation b₀ b₁ t' (x', y')).1 = x := congr_arg (fun q ↦ q.2.1) h
   subst ht hy
-  have hs' : ((t', x' + m, y') : ℝ × ℝ × ℝ) ∈ stripBoundaryInterpolationDomain b₀ b₁ := hs
+  -- Membership in the domain depends only on the time and the height.
+  have hs' : ((t', x' + m, y') : ℝ × ℝ × ℝ) ∈ stripBoundaryInterpolationDomain b₀ b₁ := by
+    simpa using hs
   -- The translated point is the track of the translate of the preimage.
   have key : ((t', x + m, y') : ℝ × ℝ × ℝ) =
       (t', stripBoundaryInterpolation b₀ b₁ t' (x' + m, y')) := by
@@ -485,7 +499,7 @@ theorem stripBoundaryInterpolationPartialDiffeomorph_symm_apply_one_mk_zero
     (stripBoundaryInterpolationPartialDiffeomorph b₀ b₁ hb₀ hb₁ hn).symm (1, b₀ x, 0) =
       (1, x, 0) := by
   have hq : ((1, x, 0) : ℝ × ℝ × ℝ) ∈ stripBoundaryInterpolationDomain b₀ b₁ := fun x' ↦ by
-    simpa [stripBoundaryInterpolationSlope] using h₀ x'
+    simpa [stripBoundaryInterpolationSlope_def] using h₀ x'
   simpa using stripBoundaryInterpolationPartialDiffeomorph_symm_apply_apply hb₀ hb₁ hn hq
 
 /-- At time `1` the inverse of the track undoes `b₁` on the upper boundary line. Hence if a lift
@@ -495,7 +509,7 @@ theorem stripBoundaryInterpolationPartialDiffeomorph_symm_apply_one_mk_one
     (stripBoundaryInterpolationPartialDiffeomorph b₀ b₁ hb₀ hb₁ hn).symm (1, b₁ x, 1) =
       (1, x, 1) := by
   have hq : ((1, x, 1) : ℝ × ℝ × ℝ) ∈ stripBoundaryInterpolationDomain b₀ b₁ := fun x' ↦ by
-    simpa [stripBoundaryInterpolationSlope] using h₁ x'
+    simpa [stripBoundaryInterpolationSlope_def] using h₁ x'
   simpa using stripBoundaryInterpolationPartialDiffeomorph_symm_apply_apply hb₀ hb₁ hn hq
 
 end PartialDiffeomorph
