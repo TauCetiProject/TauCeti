@@ -7,7 +7,6 @@ module
 
 public import Mathlib.FieldTheory.RatFunc.AsPolynomial
 public import TauCeti.Analysis.Complex.RiemannSurface.FunctionField
-import Mathlib.FieldTheory.IntermediateField.Adjoin.Defs
 import TauCeti.Analysis.Meromorphic.FactorizedRational
 import TauCeti.Topology.Compactification.OnePoint.Nhds
 
@@ -72,8 +71,6 @@ nonconstant holomorphic map to the sphere are studied algebraically.
 public noncomputable section
 
 open Filter Function OnePoint Polynomial Set Topology
-
-open scoped Manifold nonZeroDivisors
 
 namespace TauCeti.RiemannSurface.MeromorphicFunction
 

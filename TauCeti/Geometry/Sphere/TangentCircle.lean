@@ -84,10 +84,27 @@ theorem tangentCircle_add_two_pi (p u q : V) (θ : ℝ) :
     tangentCircle p u q (θ + 2 * π) = tangentCircle p u q θ := by
   simp [tangentCircle]
 
+@[simp]
+theorem tangentCircle_two_pi (p u q : V) : tangentCircle p u q (2 * π) = p := by
+  simp [tangentCircle]
+
+/-- The circle through `p` tangent to `u` and through `q` depends continuously on all of `p`,
+`u`, `q` and the angle. -/
+@[fun_prop]
+theorem _root_.Continuous.tangentCircle {X : Type*} [TopologicalSpace X] {p u q : X → V}
+    {θ : X → ℝ} (hp : Continuous p) (hu : Continuous u) (hq : Continuous q)
+    (hθ : Continuous θ) : Continuous fun x ↦ tangentCircle (p x) (u x) (q x) (θ x) := by
+  simp only [tangentCircle_def]
+  fun_prop
+
 theorem continuous_tangentCircle (p u : V) :
     Continuous fun x : V × ℝ ↦ tangentCircle p u x.1 x.2 := by
-  unfold tangentCircle
   fun_prop
+
+/-- A vector orthogonal to `p`, `q` and `u` is orthogonal to the whole circle. -/
+theorem inner_tangentCircle_eq_zero {p u q w : V} (hp : ⟪p, w⟫ = 0) (hu : ⟪u, w⟫ = 0)
+    (hq : ⟪q, w⟫ = 0) (θ : ℝ) : ⟪tangentCircle p u q θ, w⟫ = 0 := by
+  simp [tangentCircle, inner_add_left, real_inner_smul_left, hp, hu, hq]
 
 variable {p u q : V}
 

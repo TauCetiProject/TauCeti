@@ -125,7 +125,7 @@ canonical surjection from the relative sign space onto `Cl(K) / Cl(K)²`. -/
 noncomputable def candidateGenusFieldOrdinaryClassGroupSignMap (hd : Squarefree d)
     (hnsq : ¬ IsSquare ((d : ℤ) : ℚ)) :
     candidateGenusFieldRelativeSignSubmodule hd →ₗ[ZMod 2]
-      TauCeti.ClassGroup.ElementaryTwoQuotient (𝓞 (candidateGenusFieldBase hd)) :=
+      ClassGroup.ElementaryTwoQuotient (𝓞 (candidateGenusFieldBase hd)) :=
   (NarrowClassGroup.toClassGroupElementaryTwoQuotient (candidateGenusFieldBase hd)).comp
     (narrowElementaryTwoQuotientEquivRelativeSign hd
       hnsq).symm.toLinearMap
@@ -224,7 +224,7 @@ squarefree `d`, `Cl(ℚ(√d)) / Cl(ℚ(√d))²` is the even-parity sign space 
 by the negative-coordinate vector. -/
 noncomputable def ordinaryElementaryTwoQuotientEquivRelativeSignQuotient
     (hd : Squarefree d) (hnsq : ¬ IsSquare ((d : ℤ) : ℚ)) (hpos : 0 < d) :
-    TauCeti.ClassGroup.ElementaryTwoQuotient (𝓞 (candidateGenusFieldBase hd)) ≃ₗ[ZMod 2]
+    ClassGroup.ElementaryTwoQuotient (𝓞 (candidateGenusFieldBase hd)) ≃ₗ[ZMod 2]
       (candidateGenusFieldRelativeSignSubmodule hd ⧸
         ZMod 2 ∙
           (⟨candidateGenusFieldNegativeSign hd,

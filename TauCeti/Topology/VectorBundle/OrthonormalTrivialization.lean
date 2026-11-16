@@ -20,6 +20,8 @@ coordinate changes used to trivialize the orthonormal frame bundle.
 
 The construction uses Mathlib's `OrthonormalBasis.repr` and the continuous local
 Gram–Schmidt bases in `TauCeti.Topology.VectorBundle.GramSchmidt`.
+`TauCeti.orthonormalBasisOfOrthonormalSections` additionally turns a pointwise orthonormal family
+of sections matching the fibre rank into a pointwise `OrthonormalBasis` over any `RCLike` field.
 
 ## References
 
@@ -32,6 +34,8 @@ noncomputable section
 
 open Bundle Set
 open scoped Topology InnerProductSpace
+
+section
 
 variable {B : Type*} [TopologicalSpace B]
   {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
@@ -178,6 +182,16 @@ def orthonormal : Trivialization F (π F E) :=
   OrthonormalBasis.bundleTrivialization c e.open_baseSet
     (e.orthonormalBasis c.toBasis) (e.continuous_orthonormalBasis c.toBasis)
 
+/-- `Bundle.Trivialization.orthonormal` is `OrthonormalBasis.bundleTrivialization` applied to the
+Gram–Schmidt basis `e.orthonormalBasis c.toBasis`, independent of the continuity proof by proof
+irrelevance. -/
+theorem orthonormal_eq_bundleTrivialization
+    (hd : ∀ i, Continuous fun b : e.baseSet ↦
+      TotalSpace.mk' F (b : B) (e.orthonormalBasis c.toBasis b i)) :
+    e.orthonormal c =
+      OrthonormalBasis.bundleTrivialization c e.open_baseSet (e.orthonormalBasis c.toBasis) hd :=
+  (rfl)
+
 @[simp]
 theorem orthonormal_baseSet : (e.orthonormal c).baseSet = e.baseSet := by
   simp [orthonormal]
@@ -221,3 +235,41 @@ theorem exists_orthonormal_trivialization (c : OrthonormalBasis ι ℝ F) (x : B
     simp [hb']
 
 end OrthonormalBasis
+
+end
+
+namespace TauCeti
+
+section OrthonormalSections
+
+variable {𝕜 B₀ F₀ : Type*} [RCLike 𝕜] [TopologicalSpace B₀]
+  [NormedAddCommGroup F₀] [NormedSpace 𝕜 F₀] [FiniteDimensional 𝕜 F₀]
+  {E₀ : B₀ → Type*} [TopologicalSpace (TotalSpace F₀ E₀)]
+  [∀ b, NormedAddCommGroup (E₀ b)] [∀ b, InnerProductSpace 𝕜 (E₀ b)]
+  [FiberBundle F₀ E₀] [VectorBundle 𝕜 F₀ E₀]
+  {ι₀ : Type*} [Fintype ι₀]
+
+/-- A pointwise orthonormal family of sections indexed by `ι₀` with
+`Fintype.card ι₀ = finrank 𝕜 F₀` defines a pointwise `OrthonormalBasis` of every fibre (including
+rank zero). -/
+def orthonormalBasisOfOrthonormalSections {v : ι₀ → ∀ b : B₀, E₀ b}
+    (hv : ∀ b, Orthonormal 𝕜 (fun i ↦ v i b))
+    (hrank : Fintype.card ι₀ = Module.finrank 𝕜 F₀) (b : B₀) :
+    OrthonormalBasis ι₀ 𝕜 (E₀ b) := by
+  have hlin := (trivializationAt F₀ E₀ b).linearEquivAt 𝕜 b (mem_baseSet_trivializationAt F₀ E₀ b)
+  haveI : FiniteDimensional 𝕜 (E₀ b) := hlin.symm.finiteDimensional
+  have hfin : Fintype.card ι₀ = Module.finrank 𝕜 (E₀ b) := hrank.trans hlin.finrank_eq.symm
+  exact (basisOfLinearIndependentOfCardEqFinrank' (fun i ↦ v i b)
+    (hv b).linearIndependent hfin).toOrthonormalBasis
+    (by simpa only [coe_basisOfLinearIndependentOfCardEqFinrank'] using hv b)
+
+@[simp]
+theorem orthonormalBasisOfOrthonormalSections_apply {v : ι₀ → ∀ b : B₀, E₀ b}
+    (hv : ∀ b, Orthonormal 𝕜 (fun i ↦ v i b))
+    (hrank : Fintype.card ι₀ = Module.finrank 𝕜 F₀) (b : B₀) (i : ι₀) :
+    orthonormalBasisOfOrthonormalSections hv hrank b i = v i b := by
+  simp [orthonormalBasisOfOrthonormalSections]
+
+end OrthonormalSections
+
+end TauCeti

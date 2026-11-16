@@ -94,9 +94,8 @@ theorem toBoundedContinuousFunction_apply (f : HolderSpace α X Y) (x : X) :
 
 @[simp]
 theorem coe_toBoundedContinuousFunction (f : HolderSpace α X Y) :
-    (f.toBoundedContinuousFunction : X → Y) = f := by
-  funext x
-  exact toBoundedContinuousFunction_apply f x
+    (f.toBoundedContinuousFunction : X → Y) = f :=
+  (rfl)
 
 @[simp]
 theorem ofBoundedContinuousFunction_apply (f : X →ᵇ Y) (hf : MemHolder α (f : X → Y))
@@ -452,9 +451,8 @@ theorem norm_const [Nonempty X] (c : Y) : ‖const (α := α) (X := X) c‖ = �
 
 @[simp]
 theorem const_zero : const (α := α) (X := X) (0 : Y) = 0 := by
-  apply toBoundedContinuousFunction_injective
-  ext x
-  simp
+  ext
+  rfl
 
 @[simp]
 theorem const_add (c d : Y) :
@@ -487,12 +485,8 @@ theorem norm_constL_le_one : ‖constL (α := α) (X := X) (Y := Y)‖ ≤ 1 :=
 /-- On a nonempty domain with nontrivial values, the constant map has operator norm one. -/
 @[simp]
 theorem norm_constL [Nonempty X] [Nontrivial Y] :
-    ‖constL (α := α) (X := X) (Y := Y)‖ = 1 := by
-  obtain ⟨y, hy⟩ := exists_ne (0 : Y)
-  refine le_antisymm norm_constL_le_one ?_
-  have h := (constL (α := α) (X := X)).le_opNorm y
-  simpa only [constL_apply, norm_const,
-    le_mul_iff_one_le_left (norm_pos_iff.mpr hy)] using h
+    ‖constL (α := α) (X := X) (Y := Y)‖ = 1 :=
+  ContinuousLinearMap.homothety_norm _ (by simp)
 
 /-- On a nonempty domain with nontrivial values, the inclusion has operator norm one. -/
 @[simp]
@@ -508,7 +502,7 @@ theorem norm_toBoundedContinuousFunctionCLM [Nonempty X] [Nontrivial Y] :
 /-- With nontrivial values, evaluation has operator norm one. -/
 @[simp]
 theorem norm_evalCLM [Nontrivial Y] (x : X) : ‖evalCLM (α := α) (Y := Y) x‖ = 1 := by
-  let : Nonempty X := ⟨x⟩
+  have : Nonempty X := ⟨x⟩
   obtain ⟨y, hy⟩ := exists_ne (0 : Y)
   refine le_antisymm (norm_evalCLM_le_one x) ?_
   have h := (evalCLM (α := α) x).le_opNorm (const y)
@@ -674,10 +668,8 @@ theorem mem_supportedHolderSubmodule_iff {X Y : Type*} [MetricSpace X]
 /-- A bounded Hölder function in the fixed-support submodule is supported in that set. -/
 theorem support_subset_of_mem_supportedHolderSubmodule {X Y : Type*} [MetricSpace X]
     [NormedAddCommGroup Y] [NormedSpace ℝ Y] {α : ℝ≥0} {s : Set X}
-    {f : HolderSpace α X Y} (hf : f ∈ supportedHolderSubmodule α s) : Function.support f ⊆ s := by
-  intro z hz
-  by_contra h
-  exact hz (hf z h)
+    {f : HolderSpace α X Y} (hf : f ∈ supportedHolderSubmodule α s) : Function.support f ⊆ s :=
+  Function.support_subset_iff'.2 hf
 
 /-- The fixed-support Hölder subspace is closed, as an intersection of kernels of evaluations. -/
 theorem isClosed_supportedHolderSubmodule {X Y : Type*} [MetricSpace X] [NormedAddCommGroup Y]

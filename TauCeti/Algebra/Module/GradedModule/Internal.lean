@@ -73,8 +73,11 @@ Koszul twist and its tuple operation work over any ring: their integer signs are
   addition by the Koszul sign.
 * `TauCeti.LinearMap.IsHomogeneous.linearEquiv_symm`: the inverse of a degree-zero homogeneous
   linear equivalence is homogeneous.
-* `TauCeti.LinearMap.IsHomogeneous.map_decompose`: a homogeneous map commutes with homogeneous
+* `TauCeti.LinearMap.IsHomogeneous.map_decompose` and
+  `TauCeti.LinearMap.IsHomogeneous.restrict_decompose`: a homogeneous map commutes with homogeneous
   projection, up to the shift of degree.
+* `TauCeti.InternalGrading.mem_piece_of_piece_eq_bot`: when all pieces outside one degree vanish,
+  every element lies in that piece.
 * `TauCeti.LinearMap.IsHomogeneous.isHomogeneous_ker` and
   `TauCeti.LinearMap.IsHomogeneous.isHomogeneous_range`: the kernel and the image of a homogeneous
   map are homogeneous submodules.
@@ -351,6 +354,12 @@ theorem map_eq_map_decompose {N : Type w} [AddCommMonoid N] (G : InternalGrading
 
 end InternalGrading
 
+/-- When all homogeneous pieces outside degree `i` vanish, every element has degree `i`. -/
+theorem InternalGrading.mem_piece_of_piece_eq_bot {R M : Type*} [Semiring R] [AddCommMonoid M]
+    [Module R M] {ι : Type*} [DecidableEq ι] (G : InternalGrading R M ι) {i : ι}
+    (hG : ∀ j, j ≠ i → G.piece j = ⊥) (x : M) : x ∈ G.piece i :=
+  DirectSum.mem_of_forall_ne_eq_bot hG x
+
 namespace LinearMap.IsHomogeneous
 
 variable {R S : Type*} {M : Type v} {N : Type w} [Semiring R] [Semiring S]
@@ -419,6 +428,20 @@ theorem isHomogeneous_ker (hf : LinearMap.IsHomogeneous f G.piece H.piece r) :
 
 end Decompose
 
+/-- Restricting a degree-zero homogeneous map to a graded piece commutes with decomposition into
+homogeneous components, for degrees in any additive monoid. -/
+@[simp]
+theorem restrict_decompose {ι : Type*} [DecidableEq ι] [AddMonoid ι]
+    {g : M →ₗ[R] N} {ℳ : ι → Submodule R M} [DirectSum.Decomposition ℳ]
+    {𝒩 : ι → Submodule R N} [DirectSum.Decomposition 𝒩]
+    (hg : LinearMap.IsHomogeneous g ℳ 𝒩 0) (k : ι) (x : M) :
+    hg.restrict k (DirectSum.decompose ℳ x k) = DirectSum.decompose 𝒩 (g x) k := by
+  apply Subtype.ext
+  rw [hg.coe_restrict_apply]
+  exact DirectSum.map_decompose_shift ℳ 𝒩 g.toAddMonoidHom id Function.injective_id
+    (fun _ _ hx ↦ by
+      simpa only [_root_.LinearMap.toAddMonoidHom_coe, id_eq, add_zero] using hg.map_mem hx) k x
+
 /-- The image of a homogeneous linear map is a homogeneous submodule, for degrees in any
 additive monoid. -/
 theorem isHomogeneous_range {ι : Type*} [DecidableEq ι] [AddMonoid ι]
@@ -444,16 +467,12 @@ section FiniteSupport
 variable {ι : Type*} [DecidableEq ι]
   {R : Type u} {M : Type v} [Semiring R] [AddCommMonoid M] [Module R M]
 
-private theorem InternalGrading.finite_piece_ne_bot_aux (G : InternalGrading R M ι)
-    [Module.Finite R M] : {p | G.piece p ≠ ⊥}.Finite :=
-  G.isInternal.submodule_iSupIndep.finite_ne_bot_of_fg
-    (by rw [G.isInternal.submodule_iSup_eq_top]; exact Module.Finite.fg_top)
-
 /-- A finitely generated internally graded module has only finitely many nonzero homogeneous
 pieces. -/
 theorem InternalGrading.finite_piece_ne_bot (G : InternalGrading R M ι) [Module.Finite R M] :
     {p | G.piece p ≠ ⊥}.Finite :=
-  G.finite_piece_ne_bot_aux
+  G.isInternal.submodule_iSupIndep.finite_ne_bot_of_fg
+    (by rw [G.isInternal.submodule_iSup_eq_top]; exact Module.Finite.fg_top)
 
 /-- Summing the homogeneous components over the finite set of nonzero pieces reconstructs the
 original element. -/

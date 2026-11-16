@@ -59,7 +59,8 @@ variable {m c x : ℝ}
 /-! ### Definition and boundary behavior -/
 
 /-- The Lévy law with location `m` and scale `c`: the inverse-gamma law of shape `1 / 2` and scale
-`c / 2`, translated by `m`. It is the zero measure if `c ≤ 0`. -/
+`c / 2`, translated by `m`. It is the zero measure if `c ≤ 0`. This is the Lévy distribution, not a
+Lévy measure in the sense of the Lévy–Khintchine formula (see `stableLevyMeasure`). -/
 def levyMeasure (m c : ℝ) : Measure ℝ :=
   (inverseGammaMeasure (1 / 2) (c / 2)).map (m + ·)
 
