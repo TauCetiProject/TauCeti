@@ -29,7 +29,7 @@ homology `Hₙ(E_s, E_{s-1}; k)` for `n < s`
 singular chains with coefficients in `k` are projective, so the relative cohomology vanishes in
 the same range (`TauCeti.TopCat.isZero_singularCohomology_preimageSkeleton`).
 
-* **First quadrant.** The object at `(s, t)` on the first page vanishes when `t < 0`
+* **Vanishing below the `s`-axis.** The object at `(s, t)` on the first page vanishes when `t < 0`
   (`TauCeti.TopCat.isZero_serreCohomologySpectralSequence_page_one_X`).
 * **Strong convergence.** Over a CW complex `K` containing the image of `f`, with no finiteness
   or dimension bound on `K`, the filtration of the cochains is complete and separated in each
@@ -84,9 +84,8 @@ relative CW complex `C ⊆ B`, with coefficients in a `k`-module `M`. Its abutme
 cohomology of the pairs `(E, f⁻¹(C^(s-1)))`; the piece `F^s` sits at index `-s`. -/
 abbrev serreCohomologySpectralObject (C : Set B) {D : Set B} [RelCWComplex C D] (f : E ⟶ B)
     (k : Type u) [CommRing k] (M : ModuleCat.{u} k) :=
-  CochainComplex.spectralObject (CochainComplex.filtrationFunctor _
-    ((antitone_singularCochainFiltration (ModuleCat.of k k) k M
-      (monotone_preimageSkeleton (C := C) f)).comp fun _ _ h ↦ neg_le_neg h))
+  filteredSpaceCohomologySpectralObject (ModuleCat.of k k) k M
+    (monotone_preimageSkeleton (C := C) f)
 
 end Defs
 
@@ -118,8 +117,8 @@ theorem isZero_singularCohomology_preimageSkeleton (s : ℤ) (n : ℕ) (hn : n <
 
 include hf in
 variable (C) in
-/-- **The cohomological Serre spectral sequence is a first-quadrant spectral sequence.** The
-object at `(s, t)` on the first page, `H^{s+t}(E_s, E_{s-1}; M)`, vanishes when `t < 0`. -/
+/-- **The first page of the cohomological Serre spectral sequence vanishes below the `s`-axis.**
+The object at `(s, t)` on the first page, `H^{s+t}(E_s, E_{s-1}; M)`, vanishes when `t < 0`. -/
 theorem isZero_serreCohomologySpectralSequence_page_one_X (s t : ℤ) (ht : t < 0) :
     IsZero (((serreCohomologySpectralSequence C f k M).page 1).X (s, t)) := by
   rcases lt_or_ge (s + t) 0 with hneg | hpos
@@ -135,14 +134,14 @@ section Absolute
 variable {K : Set B} [CWComplex K]
 
 include hf in
-/-- **The filtration of the abutment of the cohomological Serre spectral sequence is finite.**
-Let `f : E ⟶ B` be a Serre fibration with values in a CW complex `K ⊆ B`, with no finiteness or
-dimension bound on `K`. The piece `F^s Hⁿ(E; M)` of the filtration of the abutment, the image of
-`Hⁿ(E, E_{s-1}; M)`, vanishes for `n < s`. -/
+/-- **The filtration of the abutment of the cohomological Serre spectral sequence vanishes above
+the degree.** Let `f : E ⟶ B` be a Serre fibration with values in a CW complex `K ⊆ B`, with no
+finiteness or dimension bound on `K`. The piece `F^s Hⁿ(E; M)` of the filtration of the abutment,
+the image of `Hⁿ(E, E_{s-1}; M)`, vanishes for `n < s`. -/
 theorem isZero_serreCohomologySpectralObject_abutmentFiltration (hfK : range f ⊆ K) {s n : ℤ}
     (hn : n < s) :
     IsZero ((serreCohomologySpectralObject K f k M).abutmentFiltration (-s) n) :=
-  isZero_filteredSpaceCohomologyAbutmentFiltration (monotone_preimageSkeleton f)
+  isZero_filteredSpaceCohomologySpectralObject_abutmentFiltration (monotone_preimageSkeleton f)
     (fun _ hS ↦ exists_subset_preimageSkeleton_of_isCompact f.hom.continuous hfK hS)
     (fun s n hn ↦ isZero_singularCohomology_preimageSkeleton hf k M K s n hn) hn
 
@@ -156,7 +155,8 @@ def serreCohomologySpectralSequencePageXIsoGraded (hfK : range f ⊆ K) (r : ℤ
     (s t : ℤ) (hs : s < r) (ht : t + 1 < r) :
     ((serreCohomologySpectralSequence K f k M).page r).X (s, t) ≅
       cokernel ((serreCohomologySpectralObject K f k M).abutmentFiltrationMap (-s - 1) (s + t)) :=
-  filteredSpaceCohomologySpectralSequencePageXIsoGraded (monotone_preimageSkeleton f)
+  filteredSpaceCohomologySpectralSequencePageXIsoGradedOfFirstQuadrant
+    (monotone_preimageSkeleton f)
     (fun _ hS ↦ exists_subset_preimageSkeleton_of_isCompact f.hom.continuous hfK hS)
     (preimageSkeleton_eq_empty f (by lia))
     (fun s n hn ↦ isZero_singularCohomology_preimageSkeleton hf k M K s n hn) r hr s t hs ht

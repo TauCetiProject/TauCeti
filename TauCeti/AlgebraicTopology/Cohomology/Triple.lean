@@ -71,9 +71,12 @@ instance isSplitMono_singularChainComplexMap_innerToTotal_f (n : ℕ) :
   -- `Cₙ(A) ⟶ Cₙ(X)`.
   let S := SSetPair.chainComplexXSplitting R (TopPair.toSSetPair.obj (totalPair.obj T)) n
   obtain ⟨rA, hrA⟩ : ∃ r, (SSet.chainComplexMap (TopCat.toSSet.map T.outerMap) R).f n ≫ r = 𝟙 _ :=
-    have h := SSetPair.instIsSplitMonoFNatChainComplexMapHomSSet_tauCeti R
-      (TopPair.toSSetPair.obj (outerPair.obj T)) n
-    ⟨h.exists_splitMono.some.retraction, h.exists_splitMono.some.id⟩
+    -- `T.outerMap` is the inclusion of the pair `outerPair.obj T`, so the splitting of the chains
+    -- of a pair of simplicial sets applies.
+    have : IsSplitMono ((SSet.chainComplexMap (TopCat.toSSet.map T.outerMap) R).f n) :=
+      inferInstanceAs (IsSplitMono
+        ((SSet.chainComplexMap (TopPair.toSSetPair.obj (outerPair.obj T)).hom R).f n))
+    ⟨retraction _, IsSplitMono.id _⟩
   have hπA : Epi (((innerPair.obj T).singularChainComplexπ R).f n) := inferInstanceAs (Epi
     (((TopPair.toSSetPair.obj (innerPair.obj T)).chainComplexπ R).f n))
   refine IsSplitMono.mk' ⟨S.s ≫ rA ≫ ((innerPair.obj T).singularChainComplexπ R).f n,
