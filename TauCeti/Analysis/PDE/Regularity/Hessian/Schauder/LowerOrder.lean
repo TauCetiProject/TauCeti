@@ -60,7 +60,7 @@ bounded by multiples of `N`.
 On the whole space only `‖u‖_∞` is allowed on the right, so the bounds of `Du` and `D²u` entering
 through the lower-order terms are removed by the interpolation inequalities
 `‖Du‖_∞, ‖D²u‖_∞ ≤ C_ε ‖u‖_∞ + 2 ε^α [D²u]_α`
-(`HolderWith.norm_iteratedFDeriv_succ_le_and_norm_iteratedFDeriv_add_two_le`), and the resulting
+(`HolderWith.norm_fderiv_le_and_norm_iteratedFDeriv_two_le`), and the resulting
 multiple of
 `[D²u]_α` is absorbed into the global principal-part estimate
 (`TauCeti.PDE.exists_holderWith_iteratedFDeriv_two_and_norm_le_of_sum_smul_fderiv_fderiv`) for

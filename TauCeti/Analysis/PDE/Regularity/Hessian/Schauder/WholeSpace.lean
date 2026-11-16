@@ -51,17 +51,17 @@ on the ball by the bound `N` of `‖D²u‖`, since `R ≤ 1`. At larger distanc
 (`TauCeti.PDE.exists_holderWith_iteratedFDeriv_two_of_sum_smul_fderiv_fderiv_of_holderWith`), where
 `K` is the Hölder constant of `L u`.
 
-The first and second derivatives are then removed from the right side by the interpolation
-inequalities `‖D²u‖_∞ ≤ 32 ε⁻² ‖u‖_∞ + 2 ε^α [D²u]_α` and
-`‖Du‖_∞ ≤ 34 ε⁻¹ ‖u‖_∞ + 2 ε^(1+α) [D²u]_α`
+The bound of `‖D²u‖_∞` on the right side is then removed by interpolation. The inequalities
+`‖D²u‖_∞ ≤ 32 ε⁻² ‖u‖_∞ + 2 ε^α [D²u]_α` and `‖Du‖_∞ ≤ 34 ε⁻¹ ‖u‖_∞ + 2 ε^(1+α) [D²u]_α`
 (`HolderWith.norm_iteratedFDeriv_add_two_le_of_norm_le`,
-`HolderWith.norm_iteratedFDeriv_succ_le_of_norm_le_of_bddAbove`), which for `ε ≤ 1` give the
-common bound `(34 ε⁻¹ + 32 ε⁻²) ‖u‖_∞ + 2 ε^α [D²u]_α`
-(`HolderWith.norm_fderiv_le_and_norm_iteratedFDeriv_two_le`). The a priori bound on `‖D²u‖_∞`
-that these need follows from `|u| ≤ N` and the Hölder bound, by the local interpolation inequality
-on balls of radius `2` (`HolderWith.bddAbove_norm_iteratedFDeriv_two`). Taking for `[D²u]_α` the
-Hölder norm `nnHolderNorm`, which is finite, and `ε` so small that `2 C ε^α ≤ 1 / 2`, the resulting
-multiple of `[D²u]_α` is absorbed into the left side.
+`HolderWith.norm_iteratedFDeriv_succ_le_of_norm_le_add_two`) give, for `ε ≤ 1`, the common bound
+`(34 ε⁻¹ + 32 ε⁻²) ‖u‖_∞ + 2 ε^α [D²u]_α` of both
+(`HolderWith.norm_fderiv_le_and_norm_iteratedFDeriv_two_le`); it bounds `‖D²u‖_∞` in the first
+estimate and is also the bound on `‖Du‖_∞` in the conclusion. The finiteness of `‖D²u‖_∞` that
+these inequalities need follows from `|u| ≤ N` and the Hölder bound
+(`HolderWith.bddAbove_norm_iteratedFDeriv_add_two`). Taking for `[D²u]_α` the Hölder norm
+`nnHolderNorm`, which is finite, and `ε` so small that `2 C ε^α ≤ 1 / 2`, the resulting multiple of
+`[D²u]_α` is absorbed into the left side.
 
 ## Main declarations
 
@@ -96,10 +96,8 @@ local notation "E" => EuclideanSpace ℝ (Fin (n + 1))
 
 /-- **The interior estimate on a small ball from a bound on `D²u` alone.** Let `C₁` be a constant
 for the interior estimate for `L u = ∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu` from `ball x₀ R` to `closedBall x₀ ρ`, stated
-with a common bound on `|u|`, `‖Du‖` and `‖D²u‖` on the ball. If `R ≤ 1`, the same estimate holds
-with `N` bounding `‖D²u‖` alone. Indeed, `u` minus its first-order Taylor polynomial at `x₀` has
-the same second derivatives, hence the same `L u`, and by the mean value inequality it and its
-derivative are bounded by `N R ≤ N` on the ball. -/
+with a common bound on `|u|`, `‖Du‖` and `‖D²u‖` on the ball. If `R ≤ 1` and `u` is globally `C²`
+(`ContDiff ℝ 2 u`), the same estimate holds with `N` bounding `‖D²u‖` alone on the ball. -/
 private theorem holderOnWith_iteratedFDeriv_two_closedBall_of_norm_iteratedFDeriv_two_le
     {α C₁ : ℝ≥0} {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {x₀ : E} {R ρ : ℝ} (hR1 : R ≤ 1)
     (hC₁ : ∀ {u : E → ℝ} {N K V : ℝ≥0}, ContDiffOn ℝ 2 u (ball x₀ R) →
@@ -149,7 +147,7 @@ private theorem holderOnWith_iteratedFDeriv_two_closedBall_of_norm_iteratedFDeri
     (fun x hx => by rw [hDv]; exact hDuN x hx) (fun x hx => by rw [hv2]; exact hN x hx)
     (by rwa [hv2]) (by rwa [hD2v])
 
-/-- **The global Schauder estimate with lower-order bounds.** Let `α < 1`, and let `λ`, `Λ`
+/-- **The global Schauder estimate with a Hessian bound.** Let `α < 1`, and let `λ`, `Λ`
 and `L` be given. Then there is a constant `C`, depending only on `n`, `α`, `λ`, `Λ` and `L`, with
 the following property. Let `a` be a matrix-valued coefficient on `ℝ^{n+1}` which is uniformly
 elliptic and bounded with constants `0 < λ ≤ Λ` (`UniformlyEllipticOn univ a λ Λ`) and globally
