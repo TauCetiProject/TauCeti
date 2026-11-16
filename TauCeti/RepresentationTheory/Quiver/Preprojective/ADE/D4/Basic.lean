@@ -221,7 +221,7 @@ theorem preprojectiveMk_D4_ofPath_eq_zero_of_five_le
     (x : Quiver.TotalPath (Symmetrify (OrientedQuiver zigzagD4Graph o)))
     (hx : 5 ≤ x.2.2.length) :
     preprojectiveMk k (OrientedQuiver zigzagD4Graph o) (ofPath x) = 0 :=
-  zigzagD4Coloring.preprojectiveMk_ofPath_eq_zero_of_le k
+  SimpleGraph.IsBipartite.preprojectiveMk_ofPath_eq_zero_of_le zigzagD4Coloring.colorable k
     (signlessPreprojectiveMk_D4_ofPath_eq_zero_of_five_le k) o x hx
 
 /-- **The preprojective relation ideal of every orientation of `D₄` is admissible.** It lies in

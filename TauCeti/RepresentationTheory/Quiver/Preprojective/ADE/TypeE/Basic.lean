@@ -502,7 +502,7 @@ theorem preprojectiveMk_E6_ofPath_eq_zero_of_le
     (hx : 24 ≤ x.2.2.length) :
     preprojectiveMk k (OrientedQuiver (diagramGraph DynkinType.E6.cartanMatrix) o)
       (ofPath x) = 0 :=
-  e6Coloring.preprojectiveMk_ofPath_eq_zero_of_le k
+  SimpleGraph.IsBipartite.preprojectiveMk_ofPath_eq_zero_of_le e6Coloring.colorable k
     (signlessPreprojectiveMk_E6_ofPath_eq_zero_of_le k) o x hx
 
 /-- **The preprojective relation ideal of every orientation of `E₆` is admissible.** It lies in
@@ -577,7 +577,7 @@ theorem preprojectiveMk_E8_ofPath_eq_zero_of_le
     (x : Quiver.TotalPath (Symmetrify (OrientedQuiver zigzagE8Graph o)))
     (hx : 46 ≤ x.2.2.length) :
     preprojectiveMk k (OrientedQuiver zigzagE8Graph o) (ofPath x) = 0 :=
-  zigzagE8Coloring.preprojectiveMk_ofPath_eq_zero_of_le k
+  SimpleGraph.IsBipartite.preprojectiveMk_ofPath_eq_zero_of_le zigzagE8Coloring.colorable k
     (signlessPreprojectiveMk_E8_ofPath_eq_zero_of_le k) o x hx
 
 /-- **The preprojective relation ideal of every orientation of `E₈` is admissible.** It lies in

@@ -299,8 +299,8 @@ theorem preprojectiveMk_A_ofPath_eq_zero_of_le
     (hx : n ≤ x.2.2.length) :
     preprojectiveMk k (OrientedQuiver (diagramGraph (DynkinType.A n).cartanMatrix) o)
       (ofPath x) = 0 := by
-  exact (diagramGraphAColoring n).preprojectiveMk_ofPath_eq_zero_of_le k
-    (signlessPreprojectiveMk_A_ofPath_eq_zero_of_le k) o x hx
+  exact SimpleGraph.IsBipartite.preprojectiveMk_ofPath_eq_zero_of_le
+    (diagramGraphAColoring n).colorable k (signlessPreprojectiveMk_A_ofPath_eq_zero_of_le k) o x hx
 
 /-- **The preprojective relation ideal of every orientation of `Aₙ` is admissible.** It lies in
 the square of the arrow ideal, and it contains every path of length at least `n`. -/

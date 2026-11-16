@@ -198,17 +198,23 @@ theorem signlessPreprojectiveRelator_mem_signlessPreprojectiveIdeal (v : R) :
   exact TwoSidedIdeal.subset_span ⟨v, rfl⟩
 
 variable {R} in
-/-- A ring homomorphism out of the path algebra sending every signless relator into a two-sided
-ideal of the target pulls that ideal back above the signless ideal. -/
-theorem signlessPreprojectiveIdeal_asIdeal_le_comap [Finite R] {B F : Type*} [Semiring B]
-    [FunLike F (pathAlgebra k R) B] [RingHomClass F (pathAlgebra k R) B] (f : F)
-    (I : Ideal B) [I.IsTwoSided] (hf : ∀ v : R, f (signlessPreprojectiveRelator k v) ∈ I) :
-    (signlessPreprojectiveIdeal k R).asIdeal ≤ I.comap f := by
-  have h : signlessPreprojectiveIdeal k R ≤ (I.comap f).toTwoSided := by
-    rw [signlessPreprojectiveIdeal_eq_span, TwoSidedIdeal.span_le]
-    rintro _ ⟨v, rfl⟩
-    exact Ideal.mem_toTwoSided.mpr (hf v)
-  exact fun _ hx => Ideal.mem_toTwoSided.mp (h hx)
+/-- The signless ideal lies in a two-sided ideal exactly when every signless relator does. -/
+theorem signlessPreprojectiveIdeal_le_iff {I : TwoSidedIdeal (pathAlgebra k R)} :
+    signlessPreprojectiveIdeal k R ≤ I ↔ ∀ v : R, signlessPreprojectiveRelator k v ∈ I := by
+  rw [signlessPreprojectiveIdeal_eq_span, TwoSidedIdeal.span_le, Set.range_subset_iff]
+  rfl
+
+variable {R} in
+/-- The signless ideal, as a left ideal, lies in a two-sided ideal exactly when every signless
+relator does. -/
+theorem signlessPreprojectiveIdeal_asIdeal_le_iff [Finite R] {I : Ideal (pathAlgebra k R)}
+    [I.IsTwoSided] :
+    (signlessPreprojectiveIdeal k R).asIdeal ≤ I ↔
+      ∀ v : R, signlessPreprojectiveRelator k v ∈ I := by
+  refine ⟨fun h v => h (TwoSidedIdeal.mem_asIdeal.2
+    (signlessPreprojectiveRelator_mem_signlessPreprojectiveIdeal k v)), fun h _ hx => ?_⟩
+  exact Ideal.mem_toTwoSided.1 ((signlessPreprojectiveIdeal_le_iff k).2
+    (fun v => Ideal.mem_toTwoSided.2 (h v)) (TwoSidedIdeal.mem_asIdeal.1 hx))
 
 end Ideal
 
@@ -260,11 +266,8 @@ variable {k : Type w} {R : Type u} {B : Type*} [CommRing k] [Quiver.{v} R] [HasR
 /-- An algebra map out of the path algebra which kills every signless relator kills the signless
 ideal. -/
 theorem signlessPreprojectiveIdeal_le_ker (hf : ∀ v : R, f (signlessPreprojectiveRelator k v) = 0) :
-    signlessPreprojectiveIdeal k R ≤ TwoSidedIdeal.ker f := by
-  rw [signlessPreprojectiveIdeal_eq_span]
-  refine TwoSidedIdeal.span_le.2 ?_
-  rintro _ ⟨v, rfl⟩
-  exact (TwoSidedIdeal.mem_ker f).2 (hf v)
+    signlessPreprojectiveIdeal k R ≤ TwoSidedIdeal.ker f :=
+  (signlessPreprojectiveIdeal_le_iff k).2 fun v => (TwoSidedIdeal.mem_ker f).2 (hf v)
 
 /-- **The universal property of the signless algebra**: an algebra map out of the path algebra
 which kills every signless relator descends to the quotient. -/
