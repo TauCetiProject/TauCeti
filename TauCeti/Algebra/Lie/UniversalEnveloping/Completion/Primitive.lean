@@ -11,24 +11,20 @@ public import TauCeti.Algebra.Lie.UniversalEnveloping.Primitive
 /-!
 # Primitive elements of completed universal enveloping algebras
 
-Over a commutative rational algebra `R : Type`, the canonical Lie homomorphism
-`TauCeti.PositiveDegrees.completedLieToU` identifies the completed positively graded Lie algebra
-`d.completedLie ℒ` with the completed primitive elements of the completed universal enveloping
-algebra `(d.envelopingFiltration ℒ).completion`, with no freeness, flatness, or finite-rank
-hypothesis on the Lie algebra `L`:
+Over a commutative rational algebra `R : Type`, `TauCeti.PositiveDegrees.completedLieToU`
+identifies the completed positively graded Lie algebra `d.completedLie ℒ` with the completed
+primitive elements of `(d.envelopingFiltration ℒ).completion`, with no freeness, flatness, or
+finite-rank hypothesis on `L`:
 
-* `TauCeti.PositiveDegrees.isCompletedPrimitive_iff_mem_range_completedLieToU`: an element of the
-  completed enveloping algebra is completed primitive if and only if it lies in the range of
-  `d.completedLieToU ℒ`.
-* `TauCeti.PositiveDegrees.completedPrimitiveEquiv`: the resulting `R`-linear equivalence between
-  `d.completedLie ℒ` and the completed primitive submodule, sending the Lie bracket to the
-  associative commutator.
+* `TauCeti.PositiveDegrees.isCompletedPrimitive_iff_mem_range_completedLieToU`: completed primitive
+  elements are precisely the range of `d.completedLieToU ℒ`.
+* `TauCeti.PositiveDegrees.completedPrimitiveEquiv`: the resulting `R`-linear equivalence carrying
+  the Lie bracket to the associative commutator.
 
-When `U(L)` carries a compatible `ℚ`-algebra structure (in particular when `R = ℚ`), combining
-`completedPrimitiveEquiv` with `TauCeti.AlgFiltration.completedExpPrimitiveEquivOfKerLe` identifies
-`d.completedLie ℒ` via `completedExp` and `completedLog` with the completed group-like elements
-(`TauCeti.PositiveDegrees.completedLieExpEquiv`) and defines the completed Baker–Campbell–Hausdorff
-product `TauCeti.PositiveDegrees.completedLieBCH` on `d.completedLie ℒ`.
+When `U(L)` carries a compatible `ℚ`-algebra structure, combining `completedPrimitiveEquiv` with
+`TauCeti.AlgFiltration.completedExpPrimitiveEquivOfKerLe` identifies `d.completedLie ℒ` with the
+completed group-like elements (`TauCeti.PositiveDegrees.completedLieExpEquiv`) and defines the
+associative completed Baker–Campbell–Hausdorff product (`TauCeti.PositiveDegrees.completedLieBCH`).
 
 ## References
 
@@ -53,8 +49,7 @@ theorem ι_injective_of_rat (R : Type) (L : Type v) [CommRing R] [Algebra ℚ R]
     [LieRing L] [LieAlgebra R L] :
     Function.Injective (_root_.UniversalEnvelopingAlgebra.ι R :
       L → _root_.UniversalEnvelopingAlgebra R L) :=
-  fun _ _ h => (primitiveEquiv R L).injective <| Subtype.ext <| by
-    simpa only [coe_primitiveEquiv_apply] using h
+  fun _ _ h => (primitiveEquiv R L).injective (Subtype.ext (by simpa using h))
 
 end TauCeti.UniversalEnvelopingAlgebra
 
@@ -75,16 +70,14 @@ private noncomputable def spanSingletonLieHom {M : Type*} [LieRing M] [LieAlgebr
   toLinearMap := LinearMap.toSpanSingleton R M m
   map_lie' {r s} := by
     rw [LieRing.of_associative_ring_bracket, mul_comm, sub_self]
-    simp only [AddHom.toFun_eq_coe, LinearMap.coe_toAddHom, LinearMap.toSpanSingleton_apply,
-      zero_smul, smul_lie, lie_smul, lie_self, smul_zero]
+    simp [LinearMap.toSpanSingleton_apply]
 
 @[simp]
 private theorem spanSingletonLieHom_apply {M : Type*} [LieRing M] [LieAlgebra R M]
     (m : M) (r : R) : spanSingletonLieHom (R := R) m r = r • m := (rfl)
 
 private noncomputable def lieIdealCompletionMk {I : ℕ → LieIdeal R L} (hI : Antitone I)
-    (y : ∀ k, L ⧸ I k)
-    (hy : ∀ k, LieIdeal.factor (hI (Nat.le_succ k)) (y (k + 1)) = y k) :
+    (y : ∀ k, L ⧸ I k) (hy : ∀ k, LieIdeal.factor (hI (Nat.le_succ k)) (y (k + 1)) = y k) :
     LieIdeal.completion I hI :=
   LieIdeal.completionLift I hI (fun k => spanSingletonLieHom (y k))
     (fun k => LieHom.ext fun r => by
@@ -130,51 +123,36 @@ private theorem exists_sub_mem_envelopingFiltration_of_degree_le (a : U) (k : �
   let H := homogeneousSubmodule ℒ
   let b : U := ∑ n ∈ (DirectSum.decompose H a).support with d.degree n ≤ k,
     (DirectSum.decompose H a n : U)
-  refine ⟨b, ?_, ?_⟩
-  · have hsum := Finset.sum_filter_add_sum_filter_not
-      (s := (DirectSum.decompose H a).support) (p := fun n => d.degree n ≤ k)
-      (f := fun n => (DirectSum.decompose H a n : U))
-    have ha_eq := (DirectSum.sum_support_decompose H a).symm
-    have hdiff : a - b = ∑ n ∈ (DirectSum.decompose H a).support with ¬ d.degree n ≤ k,
-        (DirectSum.decompose H a n : U) :=
-      (eq_sub_of_add_eq' (by simpa only [b] using hsum.trans ha_eq.symm)).symm
-    rw [hdiff]
-    refine Submodule.sum_mem _ fun n hn => ?_
-    have hn' : ¬ d.degree n ≤ k := (Finset.mem_filter.mp hn).2
-    exact d.mem_envelopingFiltration_of_mem_homogeneousSubmodule ℒ
-      (DirectSum.decompose H a n).property (by omega)
-  · intro m hm
-    simp only [b]
-    rw [← DirectSum.decomposeLinearEquiv_apply, map_sum, _root_.DirectSum.sum_apply,
+  refine ⟨b, ?_, fun m hm => ?_⟩
+  · have hsum := (Finset.sum_filter_add_sum_filter_not (s := (DirectSum.decompose H a).support)
+      (p := fun n => d.degree n ≤ k) (f := fun n => (DirectSum.decompose H a n : U))).trans
+      (DirectSum.sum_support_decompose H a)
+    rw [(eq_sub_of_add_eq' (by simpa only [b] using hsum)).symm]
+    exact Submodule.sum_mem _ fun n hn => d.mem_envelopingFiltration_of_mem_homogeneousSubmodule ℒ
+      (DirectSum.decompose H a n).property (by have := (Finset.mem_filter.mp hn).2; omega)
+  · simp only [b, ← DirectSum.decomposeLinearEquiv_apply, map_sum, _root_.DirectSum.sum_apply,
       Submodule.coe_sum]
-    refine Finset.sum_eq_zero fun n hn => ?_
-    have hnk : d.degree n ≤ k := (Finset.mem_filter.mp hn).2
-    rw [DirectSum.decomposeLinearEquiv_apply]
-    exact DirectSum.decompose_of_mem_ne H (DirectSum.decompose H a n).property
-      (fun hnm => by subst hnm; omega)
+    refine Finset.sum_eq_zero fun n hn => DirectSum.decompose_of_mem_ne H
+      (DirectSum.decompose H a n).property fun hnm => ?_
+    have := (Finset.mem_filter.mp hn).2; subst hnm; omega
 
-private theorem exists_truncatedLieToU_eq_projection
-    {u : (d.envelopingFiltration ℒ).completion}
+private theorem exists_truncatedLieToU_eq_projection {u : (d.envelopingFiltration ℒ).completion}
     (hu : (d.envelopingFiltration ℒ).IsCompletedPrimitive R
       (d.envelopingFiltration_ideal_le_comap_comul ℒ)
-      (d.envelopingFiltration_one_le_ker_counit ℒ) u)
-    (k : ℕ) :
+      (d.envelopingFiltration_one_le_ker_counit ℒ) u) (k : ℕ) :
     ∃ y : d.truncatedLie ℒ k, d.truncatedLieToU ℒ k y =
       (d.envelopingFiltration ℒ).projection k u := by
   obtain ⟨a, ha⟩ := Ideal.Quotient.mk_surjective ((d.envelopingFiltration ℒ).projection k u)
   obtain ⟨b, hab, hdeg⟩ := d.exists_sub_mem_envelopingFiltration_of_degree_le ℒ a k
   have hbu : u - (d.envelopingFiltration ℒ).toCompletion b ∈
       (d.envelopingFiltration ℒ).completionIdeal (k + 1) := by
-    rw [AlgFiltration.completionIdeal_succ, RingHom.mem_ker, map_sub,
+    rwa [AlgFiltration.completionIdeal_succ, RingHom.mem_ker, map_sub,
       AlgFiltration.projection_toCompletion, ← ha, ← map_sub, Ideal.Quotient.eq_zero_iff_mem]
-    exact hab
-  have hb_prim : Bialgebra.IsPrimitiveElem R b :=
+  obtain ⟨x, hx⟩ := (_root_.UniversalEnvelopingAlgebra.isPrimitiveElem_iff_mem_range_ι b).mp <|
     d.isPrimitiveElem_of_mem_envelopingFiltration_tensorProduct_succ ℒ hdeg
       ((d.envelopingFiltration ℒ).comul_sub_mem_of_isCompletedPrimitive_of_sub_mem
         (d.envelopingFiltration_ideal_le_comap_comul ℒ)
         (d.envelopingFiltration_one_le_ker_counit ℒ) hu hbu)
-  obtain ⟨x, hx⟩ :=
-    (_root_.UniversalEnvelopingAlgebra.isPrimitiveElem_iff_mem_range_ι b).mp hb_prim
   refine ⟨LieSubmodule.Quotient.mk x, ?_⟩
   rw [truncatedLieToU_mk, hx, ← (d.envelopingFiltration ℒ).projection_toCompletion k b]
   exact ((d.envelopingFiltration ℒ).projection_eq_of_sub_mem_completionIdeal_succ hbu).symm
@@ -187,20 +165,16 @@ theorem isCompletedPrimitive_iff_mem_range_completedLieToU
       (d.envelopingFiltration_ideal_le_comap_comul ℒ)
       (d.envelopingFiltration_one_le_ker_counit ℒ) u ↔
       u ∈ Set.range (d.completedLieToU ℒ) := by
-  constructor
-  · intro hu
-    choose y hy using d.exists_truncatedLieToU_eq_projection ℒ hu
-    have hcompat (k : ℕ) :
-        LieIdeal.factor (d.degreeIdeal_antitone ℒ (Nat.le_succ k)) (y (k + 1)) = y k := by
-      apply d.truncatedLieToU_injective_of_rat ℒ k
+  refine ⟨fun hu => ?_, fun ⟨z, hz⟩ => hz ▸ d.isCompletedPrimitive_completedLieToU ℒ z⟩
+  choose y hy using d.exists_truncatedLieToU_eq_projection ℒ hu
+  have hcompat (k : ℕ) :
+      LieIdeal.factor (d.degreeIdeal_antitone ℒ (Nat.le_succ k)) (y (k + 1)) = y k :=
+    d.truncatedLieToU_injective_of_rat ℒ k <| by
       rw [← d.factor_truncatedLieToU ℒ (Nat.le_succ k) (y (k + 1)), hy (k + 1),
         (d.envelopingFiltration ℒ).factor_projection (Nat.le_succ k) u, hy k]
-    refine ⟨lieIdealCompletionMk (d.degreeIdeal_antitone ℒ) y hcompat, ?_⟩
-    apply (d.envelopingFiltration ℒ).completion_ext
-    intro k
-    rw [projection_completedLieToU, completionProjection_lieIdealCompletionMk, hy k]
-  · rintro ⟨z, rfl⟩
-    exact d.isCompletedPrimitive_completedLieToU ℒ z
+  refine ⟨lieIdealCompletionMk (d.degreeIdeal_antitone ℒ) y hcompat,
+    (d.envelopingFiltration ℒ).completion_ext fun k => ?_⟩
+  rw [projection_completedLieToU, completionProjection_lieIdealCompletionMk, hy k]
 
 /-- Over a commutative rational algebra `R : Type`, `completedLieToU` identifies the completed
 positively graded Lie algebra with the `R`-submodule of completed primitive elements. -/
@@ -213,11 +187,10 @@ noncomputable def completedPrimitiveEquiv :
     ((d.completedLieToU ℒ).toLinearMap.codRestrict _ fun z =>
       ((d.envelopingFiltration ℒ).mem_completedPrimitiveSubmodule R _ _).mpr
         (d.isCompletedPrimitive_completedLieToU ℒ z))
-    ⟨(LinearMap.injective_codRestrict_iff _).mpr (d.completedLieToU_injective_of_rat ℒ),
-      fun p => by
-        obtain ⟨z, hz⟩ := (d.isCompletedPrimitive_iff_mem_range_completedLieToU ℒ p.val).mp
-          (((d.envelopingFiltration ℒ).mem_completedPrimitiveSubmodule R _ _).mp p.property)
-        exact ⟨z, Subtype.ext hz⟩⟩
+    ⟨(LinearMap.injective_codRestrict_iff _).mpr (d.completedLieToU_injective_of_rat ℒ), fun p =>
+      let ⟨z, hz⟩ := (d.isCompletedPrimitive_iff_mem_range_completedLieToU ℒ p.val).mp
+        (((d.envelopingFiltration ℒ).mem_completedPrimitiveSubmodule R _ _).mp p.property)
+      ⟨z, Subtype.ext hz⟩⟩
 
 /-- `completedPrimitiveEquiv` coerces to `completedLieToU`. -/
 @[simp]
@@ -232,10 +205,8 @@ theorem completedPrimitiveEquiv_symm_completedLieToU (z : d.completedLie ℒ)
       (d.envelopingFiltration ℒ).completedPrimitiveSubmodule R
         (d.envelopingFiltration_ideal_le_comap_comul ℒ)
         (d.envelopingFiltration_one_le_ker_counit ℒ)) :
-    (d.completedPrimitiveEquiv ℒ).symm ⟨d.completedLieToU ℒ z, hz⟩ = z := by
-  apply (d.completedPrimitiveEquiv ℒ).injective
-  apply Subtype.ext
-  simp
+    (d.completedPrimitiveEquiv ℒ).symm ⟨d.completedLieToU ℒ z, hz⟩ = z :=
+  (d.completedPrimitiveEquiv ℒ).injective (Subtype.ext (by simp))
 
 /-- Applying `completedLieToU` to the inverse of `completedPrimitiveEquiv` recovers the completed
 primitive element. -/
@@ -264,18 +235,14 @@ theorem completedPrimitiveEquiv_symm_commutator
     (p q : (d.envelopingFiltration ℒ).completedPrimitiveSubmodule R
       (d.envelopingFiltration_ideal_le_comap_comul ℒ)
       (d.envelopingFiltration_one_le_ker_counit ℒ)) :
-    (d.completedPrimitiveEquiv ℒ).symm
-        ⟨p.val * q.val - q.val * p.val,
-          ((d.envelopingFiltration ℒ).mem_completedPrimitiveSubmodule R _ _).mpr
-            ((((d.envelopingFiltration ℒ).mem_completedPrimitiveSubmodule R _ _).mp
-                p.property).commutator
-              (((d.envelopingFiltration ℒ).mem_completedPrimitiveSubmodule R _ _).mp
-                q.property))⟩ =
+    (d.completedPrimitiveEquiv ℒ).symm ⟨p.val * q.val - q.val * p.val,
+        ((d.envelopingFiltration ℒ).mem_completedPrimitiveSubmodule R _ _).mpr
+          ((((d.envelopingFiltration ℒ).mem_completedPrimitiveSubmodule R _ _).mp
+              p.property).commutator
+            (((d.envelopingFiltration ℒ).mem_completedPrimitiveSubmodule R _ _).mp q.property))⟩ =
       ⁅(d.completedPrimitiveEquiv ℒ).symm p, (d.completedPrimitiveEquiv ℒ).symm q⁆ := by
   apply (d.completedPrimitiveEquiv ℒ).injective
-  apply Subtype.ext
-  rw [d.coe_completedPrimitiveEquiv_lie ℒ]
-  simp only [LinearEquiv.apply_symm_apply]
+  exact Subtype.ext (by simp [d.coe_completedPrimitiveEquiv_lie ℒ])
 
 end Primitive
 
@@ -309,9 +276,7 @@ theorem coe_completedLieExpEquiv_apply (z : d.completedLie ℒ) :
     (d.completedLieExpEquiv ℒ z : (d.envelopingFiltration ℒ).completion) =
       (d.envelopingFiltration ℒ).completedExp
         ⟨d.completedLieToU ℒ z, d.completedLieToU_mem_completionIdeal_one ℒ z⟩ := by
-  simp only [completedLieExpEquiv, Equiv.trans_apply, LinearEquiv.coe_toEquiv,
-    Equiv.subtypeEquivRight_apply_coe, AlgFiltration.coe_completedExpPrimitiveEquivOfKerLe,
-    coe_completedPrimitiveEquiv_apply]
+  simp [completedLieExpEquiv]
 
 /-- The completed Baker–Campbell–Hausdorff product of two elements of `d.completedLie ℒ`, defined
 by multiplying their exponentials in the completed enveloping algebra, taking the completed
@@ -325,8 +290,8 @@ noncomputable def completedLieBCH (x y : d.completedLie ℒ) : d.completedLie �
             ⟨d.completedLieToU ℒ y, d.completedLieToU_mem_completionIdeal_one ℒ y⟩,
           (d.envelopingFiltration ℒ).completedExp_mul_completedExp_sub_one_mem _ _⟩,
       ((d.envelopingFiltration ℒ).mem_completedPrimitiveSubmodule R _ _).mpr <|
-        (d.envelopingFiltration ℒ).isCompletedPrimitive_completedLog_completedExp_mul_completedExp
-          R (d.envelopingFiltration_ideal_le_comap_comul ℒ)
+        (d.envelopingFiltration ℒ).isCompletedPrimitive_completedLog_completedExp_mul_completedExp R
+          (d.envelopingFiltration_ideal_le_comap_comul ℒ)
           (d.envelopingFiltration_one_le_ker_counit ℒ)
           (x := ⟨d.completedLieToU ℒ x, d.completedLieToU_mem_completionIdeal_one ℒ x⟩)
           (y := ⟨d.completedLieToU ℒ y, d.completedLieToU_mem_completionIdeal_one ℒ y⟩)
@@ -343,8 +308,8 @@ theorem completedLieToU_completedLieBCH (x y : d.completedLie ℒ) :
             ⟨d.completedLieToU ℒ x, d.completedLieToU_mem_completionIdeal_one ℒ x⟩ *
           (d.envelopingFiltration ℒ).completedExp
             ⟨d.completedLieToU ℒ y, d.completedLieToU_mem_completionIdeal_one ℒ y⟩,
-          (d.envelopingFiltration ℒ).completedExp_mul_completedExp_sub_one_mem _ _⟩ := by
-  rw [completedLieBCH, d.completedLieToU_completedPrimitiveEquiv_symm ℒ]
+          (d.envelopingFiltration ℒ).completedExp_mul_completedExp_sub_one_mem _ _⟩ :=
+  d.completedLieToU_completedPrimitiveEquiv_symm ℒ _
 
 /-- Exponentiating `completedLieBCH x y` in the completed enveloping algebra recovers the product
 of the exponentials of `x` and `y`. -/
@@ -362,10 +327,9 @@ theorem completedExp_completedLieBCH (x y : d.completedLie ℒ) :
 multiplication in the completed enveloping algebra. -/
 theorem completedLieBCH_assoc (x y z : d.completedLie ℒ) :
     d.completedLieBCH ℒ (d.completedLieBCH ℒ x y) z =
-      d.completedLieBCH ℒ x (d.completedLieBCH ℒ y z) := by
-  apply (d.completedLieExpEquiv ℒ).injective
-  apply Subtype.ext
-  simp only [coe_completedLieExpEquiv_apply, completedExp_completedLieBCH, mul_assoc]
+      d.completedLieBCH ℒ x (d.completedLieBCH ℒ y z) :=
+  (d.completedLieExpEquiv ℒ).injective <| Subtype.ext <| by
+    simp only [coe_completedLieExpEquiv_apply, completedExp_completedLieBCH, mul_assoc]
 
 end Exp
 
