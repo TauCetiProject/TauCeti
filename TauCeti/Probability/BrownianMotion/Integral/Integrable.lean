@@ -101,6 +101,14 @@ theorem BrownianIntegrable.locallyBrownianIntegrable [SFinite P]
   exact ((h.memLp n).comp_measurePreserving
     (Measure.measurePreserving_swap (μ := P) (ν := _))).ae_memLp_prod_right
 
+/-- The zero process belongs to the expected-square-energy integrand domain. -/
+theorem BrownianIntegrable.zero : BrownianIntegrable ℱ P (0 : ℝ≥0 → Ω → ℝ) :=
+  ⟨stronglyMeasurable_const, fun _ ↦ .zero⟩
+
+/-- The zero process belongs to the pathwise square-energy integrand domain. -/
+theorem LocallyBrownianIntegrable.zero : LocallyBrownianIntegrable ℱ P (0 : ℝ≥0 → Ω → ℝ) :=
+  ⟨stronglyMeasurable_const, .of_forall fun _ _ ↦ .zero⟩
+
 /-- The expected-energy domain is closed under addition. -/
 theorem BrownianIntegrable.add (hH : BrownianIntegrable ℱ P H)
     (hK : BrownianIntegrable ℱ P K) :
@@ -120,6 +128,17 @@ theorem LocallyBrownianIntegrable.add (hH : LocallyBrownianIntegrable ℱ P H)
 theorem BrownianIntegrable.const_mul (h : BrownianIntegrable ℱ P H) (c : ℝ) :
     BrownianIntegrable ℱ P (fun t ω ↦ c * H t ω) :=
   ⟨h.isStronglyPredictable.const_mul c, fun T ↦ (h.memLp T).const_mul c⟩
+
+/-- Negation preserves finite expected square energy. -/
+theorem BrownianIntegrable.neg (h : BrownianIntegrable ℱ P H) :
+    BrownianIntegrable ℱ P (fun t ω ↦ -H t ω) := by
+  simpa only [neg_one_mul] using h.const_mul (-1)
+
+/-- Subtraction preserves finite expected square energy. -/
+theorem BrownianIntegrable.sub (hH : BrownianIntegrable ℱ P H)
+    (hK : BrownianIntegrable ℱ P K) :
+    BrownianIntegrable ℱ P (fun t ω ↦ H t ω - K t ω) := by
+  simpa only [sub_eq_add_neg] using hH.add hK.neg
 
 /-- Multiplication by a predictable process that is essentially bounded on every finite
 horizon preserves finite expected square energy. -/
@@ -145,12 +164,32 @@ theorem LocallyBrownianIntegrable.const_mul (h : LocallyBrownianIntegrable ℱ P
   ⟨h.isStronglyPredictable.const_mul c,
     h.ae_memLp.mono fun _ hω T ↦ (hω T).const_mul c⟩
 
+/-- Negation preserves finite pathwise square energy. -/
+theorem LocallyBrownianIntegrable.neg (h : LocallyBrownianIntegrable ℱ P H) :
+    LocallyBrownianIntegrable ℱ P (fun t ω ↦ -H t ω) := by
+  simpa only [neg_one_mul] using h.const_mul (-1)
+
+/-- Subtraction preserves finite pathwise square energy. -/
+theorem LocallyBrownianIntegrable.sub (hH : LocallyBrownianIntegrable ℱ P H)
+    (hK : LocallyBrownianIntegrable ℱ P K) :
+    LocallyBrownianIntegrable ℱ P (fun t ω ↦ H t ω - K t ω) := by
+  simpa only [sub_eq_add_neg] using hH.add hK.neg
+
 /-- Restriction to a predictable set preserves finite expected square energy. -/
 theorem BrownianIntegrable.indicator (hH : BrownianIntegrable ℱ P H)
     {A : Set (ℝ≥0 × Ω)} (hA : MeasurableSet[ℱ.predictable] A) :
     BrownianIntegrable ℱ P (fun t ω ↦ A.indicator (Function.uncurry H) (t, ω)) := by
   refine ⟨hH.isStronglyPredictable.indicator hA, fun T ↦ ?_⟩
   exact (hH.memLp T).indicator (ℱ.predictable_le_prod A hA).nullMeasurableSet
+
+/-- Restricting an expected-square-integrable predictable integrand to a predictable rectangle
+`(u, v] × E` preserves `BrownianIntegrable`. -/
+theorem BrownianIntegrable.indicator_Ioc_prod (hH : BrownianIntegrable ℱ P H) (u v : ℝ≥0)
+    {E : Set Ω} (hE : MeasurableSet[ℱ u] E) :
+    BrownianIntegrable ℱ P (fun t ω ↦ (Ioc u v).indicator (fun _ ↦ E.indicator (H t) ω) t) := by
+  convert hH.indicator (measurableSet_predictable_Ioc_prod u v hE) using 1
+  ext t ω
+  by_cases ht : t ∈ Ioc u v <;> by_cases hω : ω ∈ E <;> simp [ht, hω]
 
 /-- Restriction to a predictable set preserves finite pathwise square energy. -/
 theorem LocallyBrownianIntegrable.indicator (hH : LocallyBrownianIntegrable ℱ P H)

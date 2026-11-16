@@ -8,15 +8,19 @@ module
 public import TauCeti.Probability.BrownianMotion.Integral.OptionalStopping
 public import TauCeti.Probability.BrownianMotion.Integral.Energy.Localization
 public import Mathlib.Probability.Process.LocalProperty
-import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 import Mathlib.MeasureTheory.Integral.Lebesgue.Markov
+import TauCeti.Analysis.Normed.Group.Basic
+import TauCeti.Analysis.Normed.Group.Real
+import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
 import TauCeti.Probability.BrownianMotion.Integral.Energy.Bound
 import TauCeti.Probability.Finance.SimpleStrategy.Approximation
 import TauCeti.Probability.Finance.SimpleStrategy.Refinement
 import TauCeti.Probability.Martingale.Local.Congruence
 import TauCeti.Probability.Martingale.Local.Version
 import TauCeti.Probability.Process.Indistinguishable
+import TauCeti.Probability.Process.LocalProperty
 import TauCeti.Probability.Process.Patching
+import TauCeti.Probability.Process.Stopping
 
 /-!
 # The continuous-time Brownian Itô integral
@@ -24,15 +28,18 @@ import TauCeti.Probability.Process.Patching
 For a filtration-relative Brownian motion `W` with almost surely continuous paths and a locally
 square-integrable predictable integrand `H` (`TauCeti.LocallyBrownianIntegrable ℱ P H`), this file
 defines the elementary-approximation specification `TauCeti.Probability.IsItoIntegral` and proves
-existence, uniqueness up to indistinguishability, local-martingale regularity, optional stopping,
-and local pathwise congruence on the original raw filtration.
+linearity, vanishing at `0`, existence, uniqueness up to indistinguishability, local-martingale
+regularity, optional stopping, and local pathwise congruence on the original raw filtration.
 
 `IsItoIntegral ℱ P W H I` asserts that `H` is strongly predictable, `I` has almost surely
 continuous paths, and at every horizon `t` there is a sequence of finite-grid elementary holdings
 converging to `H` in probability in pathwise square energy on `(0, t]` whose Brownian simple gains
-converge to `I t` in probability. Uniqueness up to indistinguishability (`isItoIntegral_unique`)
-combines common-grid refinement of signed elementary differences with the energy-to-probability
-bound `IsFilteredPreBrownianReal.tendstoInMeasure_sum_mul_sub_of_energy` and path continuity.
+converge to `I t` in probability. Directly from this specification, every Itô integral vanishes
+almost surely at `0` (`IsItoIntegral.ae_eval_zero`) and the relation is closed under linear
+combinations (`IsItoIntegral.add`, `IsItoIntegral.const_mul`, `IsItoIntegral.neg`,
+`IsItoIntegral.sub`). Uniqueness up to indistinguishability (`isItoIntegral_unique`) combines
+common-grid refinement of signed elementary differences with the energy-to-probability bound
+`IsFilteredPreBrownianReal.tendstoInMeasure_sum_mul_sub_of_energy` and path continuity.
 
 Existence (`exists_isItoIntegral`) localizes `H` by closed-level hits of its repaired energy clock
 (`TauCeti.nnvolume.energyLocalizer`), constructs continuous martingale stages via
@@ -56,27 +63,6 @@ noncomputable section
 open Filter MeasureTheory ProbabilityTheory Set TopologicalSpace
 open Finset hiding Iic mem_Iic
 open scoped ENNReal NNReal Topology
-
-namespace TauCeti.LocallyBrownianIntegrable
-
-variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 mΩ}
-  {P : Measure Ω} {H K : ℝ≥0 → Ω → ℝ}
-
-/-- The zero process belongs to the pathwise square-energy integrand domain. -/
-theorem zero : LocallyBrownianIntegrable ℱ P (0 : ℝ≥0 → Ω → ℝ) :=
-  ⟨stronglyMeasurable_const, .of_forall fun _ _ ↦ .zero⟩
-
-/-- Negation preserves finite pathwise square energy. -/
-theorem neg (h : LocallyBrownianIntegrable ℱ P H) :
-    LocallyBrownianIntegrable ℱ P (fun t ω ↦ -H t ω) := by
-  simpa only [neg_one_mul] using h.const_mul (-1)
-
-/-- Subtraction preserves finite pathwise square energy. -/
-theorem sub (hH : LocallyBrownianIntegrable ℱ P H) (hK : LocallyBrownianIntegrable ℱ P K) :
-    LocallyBrownianIntegrable ℱ P (fun t ω ↦ H t ω - K t ω) := by
-  simpa only [sub_eq_add_neg] using hH.add hK.neg
-
-end TauCeti.LocallyBrownianIntegrable
 
 namespace TauCeti.Probability
 
@@ -112,18 +98,9 @@ theorem IsItoIntegral.zero : IsItoIntegral ℱ P W 0 0 where
   ae_continuous := .of_forall fun _ ↦ continuous_const
   exists_seq_approx t := ⟨fun _ ↦ 0, fun _ _ ↦ 0, fun _ _ _ ↦ 0,
     fun _ _ _ _ _ _ ↦ le_rfl, fun _ _ h ↦ (Nat.not_lt_zero _ h).elim,
-    fun ε hε ↦ by
-      have hempty : {ω : Ω | ε ≤ ∫⁻ s,
-          ‖Finance.simpleHolding (fun _ ↦ 0) 0 (fun _ _ ↦ 0) s ω - (0 : ℝ≥0 → Ω → ℝ) s ω‖ₑ ^ 2
-            ∂timeMeasure t} = ∅ := by
-        ext ω; simp [Finance.simpleHolding_def, not_le.mpr hε]
-      exact tendsto_const_nhds.congr fun _ ↦ by rw [hempty, measure_empty],
-    by
-      have hfg : (fun _ : ℕ ↦ Finance.simpleGains (fun _ ↦ 0) 0 (fun _ _ ↦ 0) W t) =
-          fun _ ↦ (0 : Ω → ℝ) := by
-        ext _ _; simp [Finance.simpleGains_def]
-      rw [hfg]
-      exact fun ε hε ↦ by simp [not_le.mpr hε]⟩
+    fun ε hε ↦ tendsto_const_nhds.congr fun _ ↦ by
+      simp [Finance.simpleHolding_def, not_le.mpr hε],
+    fun ε hε ↦ by simp [Finance.simpleGains_def, not_le.mpr hε]⟩
 
 /-- Indistinguishable replacements preserve `IsItoIntegral`. -/
 theorem IsItoIntegral.of_indist (hI : IsItoIntegral ℱ P W H I) (hIJ : I ≡ᵐ[P] J) :
@@ -144,19 +121,145 @@ theorem IsItoIntegral.congr_integrand [SFinite P] (hI : IsItoIntegral ℱ P W H 
   ae_continuous := hI.ae_continuous
   exists_seq_approx t := by
     obtain ⟨n, τ, a, hτ, ha, hen, hg⟩ := hI.exists_seq_approx t
-    have heq_set : MeasurableSet {p : ℝ≥0 × Ω | H p.1 p.2 = K p.1 p.2} :=
-      measurableSet_eq_fun (hI.isStronglyPredictable.mono ℱ.predictable_le_prod).measurable
-        (hK.mono ℱ.predictable_le_prod).measurable
     have hae_ω : ∀ᵐ ω ∂P, (fun s ↦ H s ω) =ᵐ[timeMeasure t] (fun s ↦ K s ω) :=
-      (Measure.ae_ae_comm heq_set).mp (Measure.ae_ae_of_ae_prod (hHK t))
-    refine ⟨n, τ, a, hτ, ha, fun ε hε ↦ (hen ε hε).congr' (.of_forall fun k ↦ ?_), hg⟩
-    refine measure_congr (hae_ω.mono fun ω hω ↦ ?_)
-    have hlin : (∫⁻ s, ‖Finance.simpleHolding (τ k) (n k) (a k) s ω - H s ω‖ₑ ^ 2
-          ∂timeMeasure t) =
-        ∫⁻ s, ‖Finance.simpleHolding (τ k) (n k) (a k) s ω - K s ω‖ₑ ^ 2 ∂timeMeasure t :=
-      lintegral_congr_ae (hω.mono fun s hs ↦ by dsimp only at hs ⊢; rw [hs])
-    dsimp only [mem_ofPred_eq]
-    rw [hlin]
+      (Measure.ae_ae_comm (p := fun s ω ↦ H s ω = K s ω) (measurableSet_eq_fun
+        (hI.isStronglyPredictable.mono ℱ.predictable_le_prod).measurable
+        (hK.mono ℱ.predictable_le_prod).measurable)).mp (Measure.ae_ae_of_ae_prod (hHK t))
+    refine ⟨n, τ, a, hτ, ha, fun ε hε ↦ (hen ε hε).congr' (.of_forall fun k ↦
+      measure_congr (hae_ω.mono fun ω hω ↦ ?_)), hg⟩
+    simp only [mem_ofPred_eq]
+    rw [lintegral_congr_ae (hω.mono fun s (hs : H s ω = K s ω) ↦ by rw [hs])]
+
+/-- Every process satisfying `IsItoIntegral` vanishes almost surely at `0`, directly from the
+elementary-approximation specification without Brownian, continuity, or integrability
+hypotheses. -/
+theorem IsItoIntegral.ae_eval_zero (hI : IsItoIntegral ℱ P W H I) : I 0 =ᵐ[P] 0 := by
+  obtain ⟨_, _, _, _, _, _, hg⟩ := hI.exists_seq_approx 0
+  exact tendstoInMeasure_ae_unique hg fun ε hε ↦ by simp [Finance.simpleGains_def, not_le.mpr hε]
+
+/-- Scalar multiplication preserves `IsItoIntegral`. -/
+theorem IsItoIntegral.const_mul (hI : IsItoIntegral ℱ P W H I) (c : ℝ) :
+    IsItoIntegral ℱ P W (fun t ω ↦ c * H t ω) (fun t ω ↦ c * I t ω) where
+  isStronglyPredictable := hI.isStronglyPredictable.const_mul c
+  ae_continuous := hI.ae_continuous.mono fun _ hc ↦ continuous_const.mul hc
+  exists_seq_approx t := by
+    obtain ⟨n, τ, a, hτ, ha, hen, hg⟩ := hI.exists_seq_approx t
+    refine ⟨n, τ, fun k i ω ↦ c * a k i ω, hτ, fun k i hi ↦ (ha k i hi).const_mul c,
+      fun ε hε ↦ ?_, (hg.const_smul c).congr_left fun k ↦ .of_forall fun ω ↦ by
+        simp only [Finance.simpleGains_def, smul_eq_mul, Finset.mul_sum, mul_assoc]⟩
+    have hhold (k : ℕ) (s : ℝ≥0) (ω : Ω) :
+        Finance.simpleHolding (τ k) (n k) (fun i ω' ↦ c * a k i ω') s ω - c * H s ω =
+          c * (Finance.simpleHolding (τ k) (n k) (a k) s ω - H s ω) := by
+      simp only [Finance.simpleHolding_def, mul_sub, Finset.mul_sum]
+      congr 1; exact sum_congr rfl fun i _ ↦ by
+        by_cases hs : s ∈ Ioc (τ k i) (τ k (i + 1)) <;> simp [hs]
+    by_cases hc : c = 0
+    · subst hc
+      exact tendsto_const_nhds.congr fun k ↦ (by simp_rw [hhold]; simp [not_le.mpr hε])
+    · have hc2_ne0 : ‖c‖ₑ ^ 2 ≠ 0 := pow_ne_zero 2 (eNorm_ne_zero.mpr hc)
+      have hc2_top : ‖c‖ₑ ^ 2 ≠ ∞ := ENNReal.pow_ne_top eNorm_ne_top
+      refine (hen _ (ENNReal.div_pos hε.ne' hc2_top)).congr fun k ↦ congrArg P (Set.ext fun ω ↦ ?_)
+      simp_rw [mem_ofPred_eq, hhold, eNorm_mul, mul_pow, lintegral_const_mul' _ _ hc2_top,
+        ENNReal.div_le_iff' hc2_ne0 hc2_top]
+
+/-- Negation preserves `IsItoIntegral`. -/
+theorem IsItoIntegral.neg (hI : IsItoIntegral ℱ P W H I) :
+    IsItoIntegral ℱ P W (fun t ω ↦ -H t ω) (fun t ω ↦ -I t ω) := by
+  simpa only [neg_one_mul] using hI.const_mul (-1)
+
+private theorem exists_sum_simpleStrategy
+    {n₁ n₂ : ℕ} {τ₁ τ₂ : ℕ → ℝ≥0} {a₁ a₂ : ℕ → Ω → ℝ}
+    (hτ₁ : MonotoneOn τ₁ (Iic n₁)) (ha₁ : ∀ i < n₁, StronglyMeasurable[ℱ (τ₁ i)] (a₁ i))
+    (hτ₂ : MonotoneOn τ₂ (Iic n₂)) (ha₂ : ∀ i < n₂, StronglyMeasurable[ℱ (τ₂ i)] (a₂ i)) :
+    ∃ (M : ℕ) (σ : ℕ → ℝ≥0) (b : ℕ → Ω → ℝ),
+      MonotoneOn σ (Iic M) ∧ (∀ j < M, StronglyMeasurable[ℱ (σ j)] (b j)) ∧
+      (∀ s ω, Finance.simpleHolding σ M b s ω =
+        Finance.simpleHolding τ₁ n₁ a₁ s ω + Finance.simpleHolding τ₂ n₂ a₂ s ω) ∧
+      ∀ W t ω, Finance.simpleGains σ M b W t ω =
+        Finance.simpleGains τ₁ n₁ a₁ W t ω + Finance.simpleGains τ₂ n₂ a₂ W t ω := by
+  let l : Fin n₁ ⊕ Fin n₂ → ℝ≥0 := Sum.elim (fun i ↦ τ₁ i) (fun j ↦ τ₂ j)
+  let u : Fin n₁ ⊕ Fin n₂ → ℝ≥0 := Sum.elim (fun i ↦ τ₁ (i + 1)) (fun j ↦ τ₂ (j + 1))
+  let c : Fin n₁ ⊕ Fin n₂ → Ω → ℝ := Sum.elim (fun i ↦ a₁ i) (fun j ↦ a₂ j)
+  have hc : ∀ x ∈ (Finset.univ : Finset (Fin n₁ ⊕ Fin n₂)), StronglyMeasurable[ℱ (l x)] (c x) := by
+    rintro (i | j) _
+    · exact ha₁ i i.isLt
+    · exact ha₂ j j.isLt
+  obtain ⟨M, σ, b, _, hσ, hb, _, hhold, hgain⟩ :=
+    Finance.exists_simpleHolding_simpleGains_eq_sum ℱ Finset.univ l u c hc
+  refine ⟨M, σ, b, hσ.monotoneOn, hb, fun s ω ↦ ?_, fun W t ω ↦ ?_⟩
+  · rw [hhold s ω, Fintype.sum_sum_type, Finance.simpleHolding_def, Finance.simpleHolding_def,
+      ← Fin.sum_univ_eq_sum_range, ← Fin.sum_univ_eq_sum_range]; rfl
+  · rw [hgain W t ω, Fintype.sum_sum_type, Finance.simpleGains_def, Finance.simpleGains_def,
+      ← Fin.sum_univ_eq_sum_range, ← Fin.sum_univ_eq_sum_range]
+    exact congrArg₂ (· + ·)
+      (sum_congr rfl fun i _ ↦ ite_eq_left
+        (hτ₁ (mem_Iic.mpr i.isLt.le) (mem_Iic.mpr i.isLt) i.val.le_succ))
+      (sum_congr rfl fun j _ ↦ ite_eq_left
+        (hτ₂ (mem_Iic.mpr j.isLt.le) (mem_Iic.mpr j.isLt) j.val.le_succ))
+
+private theorem tendsto_meas_ge_lintegral_of_le_two_mul_add {t : ℝ≥0}
+    {f₁ f₂ g : ℕ → ℝ≥0 → Ω → ℝ}
+    (hf₁ : ∀ k ω, Measurable fun s ↦ ‖f₁ k s ω‖ₑ ^ 2)
+    (hle : ∀ k s ω, ‖g k s ω‖ₑ ^ 2 ≤ 2 * ‖f₁ k s ω‖ₑ ^ 2 + 2 * ‖f₂ k s ω‖ₑ ^ 2)
+    (h₁ : ∀ ε : ℝ≥0∞, 0 < ε →
+      Tendsto (fun k ↦ P {ω | ε ≤ ∫⁻ s, ‖f₁ k s ω‖ₑ ^ 2 ∂timeMeasure t}) atTop (𝓝 0))
+    (h₂ : ∀ ε : ℝ≥0∞, 0 < ε →
+      Tendsto (fun k ↦ P {ω | ε ≤ ∫⁻ s, ‖f₂ k s ω‖ₑ ^ 2 ∂timeMeasure t}) atTop (𝓝 0))
+    {ε : ℝ≥0∞} (hε : 0 < ε) :
+    Tendsto (fun k ↦ P {ω | ε ≤ ∫⁻ s, ‖g k s ω‖ₑ ^ 2 ∂timeMeasure t}) atTop (𝓝 0) := by
+  have hε4 : (0 : ℝ≥0∞) < ε / 4 := ENNReal.div_pos hε.ne' (by norm_num)
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
+    (by simpa only [zero_add] using (h₁ _ hε4).add (h₂ _ hε4)) (fun _ ↦ bot_le) fun k ↦
+    (measure_mono fun ω hω ↦ ?_).trans (measure_union_le _ _)
+  have htri : ε ≤ 2 * (∫⁻ s, ‖f₁ k s ω‖ₑ ^ 2 ∂timeMeasure t) +
+      2 * ∫⁻ s, ‖f₂ k s ω‖ₑ ^ 2 ∂timeMeasure t :=
+    hω.trans ((lintegral_mono (hle k · ω)).trans (by
+      rw [lintegral_add_left ((hf₁ k ω).const_mul 2),
+        lintegral_const_mul' 2 _ ENNReal.ofNat_ne_top,
+        lintegral_const_mul' 2 _ ENNReal.ofNat_ne_top]))
+  by_contra hnot
+  obtain ⟨h1, h2⟩ := not_or.mp hnot
+  simp only [mem_ofPred_eq, not_le] at h1 h2
+  have hlt := ENNReal.add_lt_add
+    (ENNReal.mul_lt_mul_right two_ne_zero ENNReal.ofNat_ne_top h1)
+    (ENNReal.mul_lt_mul_right two_ne_zero ENNReal.ofNat_ne_top h2)
+  have h4 : (2 : ℝ≥0∞) * (ε / 4) + 2 * (ε / 4) = ε := by
+    calc (2 : ℝ≥0∞) * (ε / 4) + 2 * (ε / 4) = 4 * (ε / 4) := by ring
+      _ = ε := ENNReal.mul_div_cancel (by norm_num) (by norm_num)
+  exact (h4 ▸ hlt).not_ge htri
+
+/-- Addition preserves `IsItoIntegral`. -/
+theorem IsItoIntegral.add (hI : IsItoIntegral ℱ P W H I) (hJ : IsItoIntegral ℱ P W K J) :
+    IsItoIntegral ℱ P W (fun t ω ↦ H t ω + K t ω) (fun t ω ↦ I t ω + J t ω) where
+  isStronglyPredictable := hI.isStronglyPredictable.add hJ.isStronglyPredictable
+  ae_continuous := by
+    filter_upwards [hI.ae_continuous, hJ.ae_continuous] with _ hcI hcJ; exact hcI.add hcJ
+  exists_seq_approx t := by
+    obtain ⟨n₁, τ₁, a₁, hτ₁, ha₁, hE₁, hG₁⟩ := hI.exists_seq_approx t
+    obtain ⟨n₂, τ₂, a₂, hτ₂, ha₂, hE₂, hG₂⟩ := hJ.exists_seq_approx t
+    choose M σ b hσ hb hhold hgain using fun k ↦
+      exists_sum_simpleStrategy (hτ₁ k) (ha₁ k) (hτ₂ k) (ha₂ k)
+    refine ⟨M, σ, b, hσ, hb, fun ε hε ↦
+      tendsto_meas_ge_lintegral_of_le_two_mul_add (fun k ω ↦ ?_) (fun k s ω ↦ ?_) hE₁ hE₂ hε,
+      (hG₁.add hG₂).congr_left fun k ↦ .of_forall fun ω ↦ (hgain k W t ω).symm⟩
+    · exact ((((Finance.isStronglyPredictable_simpleHolding (ha₁ k)).sub
+        hI.isStronglyPredictable).mono ℱ.predictable_le_prod).comp_measurable
+        (measurable_id.prodMk measurable_const)).eNorm.pow_const 2
+    · rw [hhold k s ω]
+      have hpt : Finance.simpleHolding (τ₁ k) (n₁ k) (a₁ k) s ω +
+            Finance.simpleHolding (τ₂ k) (n₂ k) (a₂ k) s ω - (H s ω + K s ω) =
+          (Finance.simpleHolding (τ₁ k) (n₁ k) (a₁ k) s ω - H s ω) -
+            (-(Finance.simpleHolding (τ₂ k) (n₂ k) (a₂ k) s ω - K s ω)) := by ring
+      rw [hpt]
+      simpa only [sub_zero, eNorm_neg, mul_add] using
+        TauCeti.eNorm_sub_sq_le_two_mul
+          (Finance.simpleHolding (τ₁ k) (n₁ k) (a₁ k) s ω - H s ω)
+          (-(Finance.simpleHolding (τ₂ k) (n₂ k) (a₂ k) s ω - K s ω)) 0
+
+/-- Subtraction preserves `IsItoIntegral`. -/
+theorem IsItoIntegral.sub (hI : IsItoIntegral ℱ P W H I) (hJ : IsItoIntegral ℱ P W K J) :
+    IsItoIntegral ℱ P W (fun t ω ↦ H t ω - K t ω) (fun t ω ↦ I t ω - J t ω) := by
+  simpa only [sub_eq_add_neg] using hI.add hJ.neg
 
 end Spec
 
@@ -193,14 +296,14 @@ private theorem clipStrategy_spec {n : ℕ} {τ : ℕ → ℝ≥0} {a : ℕ → 
       ∀ ω, ENNReal.ofReal (elementaryEnergy (clipTau t τ) (clipHeight t τ a) n ω) =
         ∫⁻ s, ‖Finance.simpleHolding τ n a s ω‖ₑ ^ 2 ∂timeMeasure t := by
   have hm : MonotoneOn (clipTau t τ) (Iic n) :=
-    fun i hi j hj hij ↦ min_le_min_right t (hτ hi hj hij)
+    fun _ hi _ hj hij ↦ min_le_min_right t (hτ hi hj hij)
   refine ⟨hm, fun i hi ↦ ?_, fun ω ↦ ?_, fun ω ↦ ?_⟩
   · by_cases h : τ i ≤ t
-    · rw [show clipTau t τ i = τ i from min_eq_left h, show clipHeight t τ a i = a i from
-        ite_eq_left h]
-      exact ha i hi
-    · rw [show clipHeight t τ a i = fun _ ↦ 0 from ite_eq_right h]
-      exact stronglyMeasurable_const
+    · have h1 : clipTau t τ i = τ i := min_eq_left h
+      have h2 : clipHeight t τ a i = a i := ite_eq_left h
+      rw [h1, h2]; exact ha i hi
+    · have h2 : clipHeight t τ a i = fun _ ↦ 0 := ite_eq_right h
+      rw [h2]; exact stronglyMeasurable_const
   · rw [Finance.simpleGains_def]
     refine sum_congr rfl fun i hi ↦ ?_
     by_cases h : τ i ≤ t
@@ -215,14 +318,13 @@ private theorem clipStrategy_spec {n : ℕ} {τ : ℕ → ℝ≥0} {a : ℕ → 
       rw [timeMeasure_def]
       exact setLIntegral_congr_fun measurableSet_Ioc fun s hs ↦ by
         rw [simpleHolding_clipTau_eq_of_le hs.2 ω]
-    rw [hcongr, Finance.lintegral_enorm_sq_simpleHolding_timeMeasure hm t ω,
-      elementaryEnergy_def, ENNReal.ofReal_sum_of_nonneg fun j hj ↦ mul_nonneg (sq_nonneg _)
-        (sub_nonneg.mpr (NNReal.coe_le_coe.mpr
-          (hm (mem_Iic.mpr (mem_range.mp hj).le) (mem_Iic.mpr (mem_range.mp hj)) j.le_succ)))]
+    rw [hcongr, Finance.lintegral_enorm_sq_simpleHolding_timeMeasure hm t ω, elementaryEnergy_def,
+      ENNReal.ofReal_sum_of_nonneg fun j hj ↦ mul_nonneg (sq_nonneg _) (sub_nonneg.mpr
+        (NNReal.coe_le_coe.mpr (hm (mem_Iic.mpr (mem_range.mp hj).le)
+          (mem_Iic.mpr (mem_range.mp hj)) j.le_succ)))]
     refine sum_congr rfl fun j _ ↦ ?_
-    rw [show min (clipTau t τ (j + 1)) t = clipTau t τ j.succ from min_eq_left (min_le_right _ _),
-      ENNReal.ofReal_mul (sq_nonneg _), Real.eNorm_eq_ofReal_abs,
-      ← ENNReal.ofReal_pow (abs_nonneg _), sq_abs]
+    rw [min_eq_left (a := clipTau t τ (j + 1)) (min_le_right _ _), ENNReal.ofReal_mul (sq_nonneg _),
+      Real.enorm_sq_eq_ofReal_sq]
 
 private theorem exists_diff_clipped_strategy
     {n₁ n₂ : ℕ} {τ₁ τ₂ : ℕ → ℝ≥0} {a₁ a₂ : ℕ → Ω → ℝ}
@@ -230,132 +332,25 @@ private theorem exists_diff_clipped_strategy
     (hτ₂ : MonotoneOn τ₂ (Iic n₂)) (ha₂ : ∀ i < n₂, StronglyMeasurable[ℱ (τ₂ i)] (a₂ i))
     (t : ℝ≥0) :
     ∃ (M : ℕ) (g : ℕ → ℝ≥0) (d : ℕ → Ω → ℝ),
-      MonotoneOn g (Iic M) ∧
-      (∀ j < M, StronglyMeasurable[ℱ (g j)] (d j)) ∧
+      MonotoneOn g (Iic M) ∧ (∀ j < M, StronglyMeasurable[ℱ (g j)] (d j)) ∧
       (∀ ω, (∑ j ∈ range M, d j ω * (W (g (j + 1)) ω - W (g j) ω)) =
         Finance.simpleGains τ₁ n₁ a₁ W t ω - Finance.simpleGains τ₂ n₂ a₂ W t ω) ∧
       ∀ ω, ENNReal.ofReal (elementaryEnergy g d M ω) =
         ∫⁻ s, ‖Finance.simpleHolding τ₁ n₁ a₁ s ω - Finance.simpleHolding τ₂ n₂ a₂ s ω‖ₑ ^ 2
           ∂timeMeasure t := by
-  let l : Fin n₁ ⊕ Fin n₂ → ℝ≥0 := Sum.elim (fun i ↦ τ₁ i) (fun j ↦ τ₂ j)
-  let u : Fin n₁ ⊕ Fin n₂ → ℝ≥0 := Sum.elim (fun i ↦ τ₁ (i + 1)) (fun j ↦ τ₂ (j + 1))
-  let c : Fin n₁ ⊕ Fin n₂ → Ω → ℝ := Sum.elim (fun i ↦ a₁ i) (fun j ↦ -a₂ j)
-  have hc : ∀ x ∈ (Finset.univ : Finset (Fin n₁ ⊕ Fin n₂)), StronglyMeasurable[ℱ (l x)] (c x) := by
-    rintro (i | j) _
-    · exact ha₁ i i.isLt
-    · exact (ha₂ j j.isLt).neg
-  obtain ⟨M, σ, b, _, hσ, hb, _, hhold, hgain⟩ :=
-    Finance.exists_simpleHolding_simpleGains_eq_sum ℱ Finset.univ l u c hc
-  obtain ⟨hm, hd, hsum, hen⟩ := clipStrategy_spec (W := W) hσ.monotoneOn hb t
+  obtain ⟨M, σ, b, hσ, hb, hhold, hgain⟩ :=
+    exists_sum_simpleStrategy hτ₁ ha₁ hτ₂ (fun j hj ↦ (ha₂ j hj).neg)
+  obtain ⟨hm, hd, hsum, hen⟩ := clipStrategy_spec (W := W) hσ hb t
   refine ⟨M, clipTau t σ, clipHeight t σ b, hm, hd, fun ω ↦ ?_, fun ω ↦ ?_⟩
-  · rw [hsum ω, hgain W t ω, Fintype.sum_sum_type, Finance.simpleGains_def,
-      Finance.simpleGains_def, sub_eq_add_neg, ← sum_neg_distrib, ← Fin.sum_univ_eq_sum_range,
-      ← Fin.sum_univ_eq_sum_range]
-    exact congrArg₂ (· + ·)
-      (sum_congr rfl fun i _ ↦ ite_eq_left
-        (hτ₁ (mem_Iic.mpr i.isLt.le) (mem_Iic.mpr i.isLt) i.val.le_succ))
-      (sum_congr rfl fun j _ ↦ by
-        have h2 : l (.inr j) ≤ u (.inr j) :=
-          hτ₂ (mem_Iic.mpr j.isLt.le) (mem_Iic.mpr j.isLt) j.val.le_succ
-        rw [ite_eq_left h2]
-        exact neg_mul _ _)
+  · rw [hsum ω, hgain W t ω]
+    simp only [Finance.simpleGains_def, sub_eq_add_neg, ← sum_neg_distrib, Pi.neg_apply, neg_mul]
   · rw [hen ω]
     refine lintegral_congr fun s ↦ ?_
-    rw [hhold s ω, Fintype.sum_sum_type]
-    dsimp only [l, u, c, Sum.elim_inl, Sum.elim_inr]
-    rw [Fin.sum_univ_eq_sum_range (fun i ↦ (Ioc (τ₁ i) (τ₁ (i + 1))).indicator (fun _ ↦ a₁ i ω) s),
-      Fin.sum_univ_eq_sum_range
-        (fun j ↦ (Ioc (τ₂ j) (τ₂ (j + 1))).indicator (fun _ ↦ (-a₂ j) ω) s)]
-    simp only [Pi.neg_apply, indicator_neg, sum_neg_distrib, Finance.simpleHolding_def,
-      ← sub_eq_add_neg]
-
-private theorem eNorm_sub_sq_le (x y z : ℝ) :
-    ‖x - y‖ₑ ^ 2 ≤ 2 * ‖x - z‖ₑ ^ 2 + 2 * ‖y - z‖ₑ ^ 2 := by
-  have hreal : (x - y) ^ 2 ≤ 2 * (x - z) ^ 2 + 2 * (y - z) ^ 2 := by
-    nlinarith [sq_nonneg ((x - z) + (y - z))]
-  have hsq (r : ℝ) : ‖r‖ₑ ^ 2 = ENNReal.ofReal (r ^ 2) := by
-    rw [Real.eNorm_eq_ofReal_abs, ← ENNReal.ofReal_pow (abs_nonneg r), sq_abs]
-  rw [hsq, hsq, hsq, ← ENNReal.ofReal_ofNat 2, ← ENNReal.ofReal_mul zero_le_two,
-    ← ENNReal.ofReal_mul zero_le_two, ← ENNReal.ofReal_add (by positivity) (by positivity)]
-  exact ENNReal.ofReal_le_ofReal hreal
-
-private theorem tendstoInMeasure_elementaryEnergy_of_approx
-    (hH : IsStronglyPredictable ℱ H) (t : ℝ≥0)
-    {n₁ n₂ M : ℕ → ℕ} {τ₁ τ₂ g : ℕ → ℕ → ℝ≥0} {a₁ a₂ d : ℕ → ℕ → Ω → ℝ}
-    (ha₁ : ∀ k i, i < n₁ k → StronglyMeasurable[ℱ (τ₁ k i)] (a₁ k i))
-    (hg : ∀ k, MonotoneOn (g k) (Iic (M k)))
-    (hen_eq : ∀ k ω, ENNReal.ofReal (elementaryEnergy (g k) (d k) (M k) ω) =
-      ∫⁻ s, ‖Finance.simpleHolding (τ₁ k) (n₁ k) (a₁ k) s ω -
-        Finance.simpleHolding (τ₂ k) (n₂ k) (a₂ k) s ω‖ₑ ^ 2 ∂timeMeasure t)
-    (hE₁ : ∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun k ↦ P {ω |
-      ε ≤ ∫⁻ s, ‖Finance.simpleHolding (τ₁ k) (n₁ k) (a₁ k) s ω - H s ω‖ₑ ^ 2
-        ∂timeMeasure t}) atTop (𝓝 0))
-    (hE₂ : ∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun k ↦ P {ω |
-      ε ≤ ∫⁻ s, ‖Finance.simpleHolding (τ₂ k) (n₂ k) (a₂ k) s ω - H s ω‖ₑ ^ 2
-        ∂timeMeasure t}) atTop (𝓝 0)) :
-    TendstoInMeasure P (fun k ↦ elementaryEnergy (g k) (d k) (M k)) atTop (fun _ ↦ 0) := by
-  refine tendstoInMeasure_iff_norm.mpr fun δ hδ ↦ ?_
-  have hδ4 : (0 : ℝ≥0∞) < ENNReal.ofReal (δ / 4) := ENNReal.ofReal_pos.mpr (by positivity)
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
-    (by simpa only [zero_add] using (hE₁ _ hδ4).add (hE₂ _ hδ4)) (fun _ ↦ bot_le) fun k ↦ ?_
-  have hsub : {ω | δ ≤ ‖elementaryEnergy (g k) (d k) (M k) ω - 0‖} ⊆
-      {ω | ENNReal.ofReal (δ / 4) ≤ ∫⁻ s,
-        ‖Finance.simpleHolding (τ₁ k) (n₁ k) (a₁ k) s ω - H s ω‖ₑ ^ 2 ∂timeMeasure t} ∪
-      {ω | ENNReal.ofReal (δ / 4) ≤ ∫⁻ s,
-        ‖Finance.simpleHolding (τ₂ k) (n₂ k) (a₂ k) s ω - H s ω‖ₑ ^ 2 ∂timeMeasure t} := by
-    intro ω hω
-    have hnn := elementaryEnergy_nonneg (a := d k) (hg k) ω
-    have hle_en : ENNReal.ofReal δ ≤ ENNReal.ofReal (elementaryEnergy (g k) (d k) (M k) ω) := by
-      simp only [mem_ofPred_eq, sub_zero, Real.norm_eq_abs, abs_of_nonneg hnn] at hω
-      exact ENNReal.ofReal_le_ofReal hω
-    have hm₁ : Measurable (fun s : ℝ≥0 ↦
-        2 * ‖Finance.simpleHolding (τ₁ k) (n₁ k) (a₁ k) s ω - H s ω‖ₑ ^ 2) := by
-      have hs : StronglyMeasurable (fun s : ℝ≥0 ↦
-          Finance.simpleHolding (τ₁ k) (n₁ k) (a₁ k) s ω - H s ω) :=
-        (((Finance.isStronglyPredictable_simpleHolding (ha₁ k)).sub hH).mono
-          ℱ.predictable_le_prod).comp_measurable (measurable_id.prodMk measurable_const)
-      exact (hs.eNorm.pow_const 2).const_mul 2
-    have htri : ENNReal.ofReal δ ≤
-        2 * (∫⁻ s, ‖Finance.simpleHolding (τ₁ k) (n₁ k) (a₁ k) s ω - H s ω‖ₑ ^ 2 ∂timeMeasure t) +
-        2 * ∫⁻ s, ‖Finance.simpleHolding (τ₂ k) (n₂ k) (a₂ k) s ω - H s ω‖ₑ ^ 2 ∂timeMeasure t := by
-      rw [hen_eq k ω] at hle_en
-      refine hle_en.trans ((lintegral_mono fun s ↦ eNorm_sub_sq_le _ _ (H s ω)).trans ?_)
-      rw [lintegral_add_left hm₁, lintegral_const_mul' 2 _ ENNReal.ofNat_ne_top,
-        lintegral_const_mul' 2 _ ENNReal.ofNat_ne_top]
-    by_contra hnot
-    obtain ⟨h1, h2⟩ := not_or.mp hnot
-    simp only [mem_ofPred_eq, not_le] at h1 h2
-    have hlt : 2 * (∫⁻ s, ‖Finance.simpleHolding (τ₁ k) (n₁ k) (a₁ k) s ω - H s ω‖ₑ ^ 2
-          ∂timeMeasure t) +
-        2 * ∫⁻ s, ‖Finance.simpleHolding (τ₂ k) (n₂ k) (a₂ k) s ω - H s ω‖ₑ ^ 2
-          ∂timeMeasure t < ENNReal.ofReal δ := by
-      calc
-        _ < 2 * ENNReal.ofReal (δ / 4) + 2 * ENNReal.ofReal (δ / 4) :=
-          ENNReal.add_lt_add
-            (ENNReal.mul_lt_mul_right two_ne_zero ENNReal.ofNat_ne_top h1)
-            (ENNReal.mul_lt_mul_right two_ne_zero ENNReal.ofNat_ne_top h2)
-        _ = ENNReal.ofReal δ := by
-          rw [← ENNReal.ofReal_ofNat 2, ← ENNReal.ofReal_mul zero_le_two,
-            ← ENNReal.ofReal_add (by positivity) (by positivity)]
-          congr 1; ring
-    exact hlt.not_ge htri
-  exact (measure_mono hsub).trans (measure_union_le _ _)
-
-private theorem ae_eq_of_tendstoInMeasure_sub_zero
-    {G₁ G₂ : ℕ → Ω → ℝ} {f₁ f₂ : Ω → ℝ}
-    (h₁ : TendstoInMeasure P G₁ atTop f₁)
-    (h₂ : TendstoInMeasure P G₂ atTop f₂)
-    (hsub : TendstoInMeasure P (fun k ω ↦ G₁ k ω - G₂ k ω) atTop (fun _ ↦ 0)) :
-    f₁ =ᵐ[P] f₂ := by
-  obtain ⟨ns₁, hns₁, hae₁⟩ := h₁.exists_seq_tendsto_ae
-  obtain ⟨ns₂, hns₂, hae₂⟩ := (h₂.comp hns₁.tendsto_atTop).exists_seq_tendsto_ae
-  obtain ⟨ns₃, hns₃, haed⟩ :=
-    ((hsub.comp hns₁.tendsto_atTop).comp hns₂.tendsto_atTop).exists_seq_tendsto_ae
-  filter_upwards [hae₁, hae₂, haed] with ω hc₁ hc₂ hcd
-  have hlim : Tendsto (fun i ↦ G₁ (ns₁ (ns₂ (ns₃ i))) ω - G₂ (ns₁ (ns₂ (ns₃ i))) ω)
-      atTop (𝓝 (f₁ ω - f₂ ω)) :=
-    ((hc₁.comp hns₂.tendsto_atTop).comp hns₃.tendsto_atTop).sub (hc₂.comp hns₃.tendsto_atTop)
-  exact sub_eq_zero.mp (tendsto_nhds_unique hlim hcd)
+    rw [hhold s ω]
+    simp only [Finance.simpleHolding_def, sub_eq_add_neg, ← sum_neg_distrib]
+    congr 3
+    refine sum_congr rfl fun j _ ↦ ?_
+    by_cases hs : s ∈ Ioc (τ₂ j) (τ₂ (j + 1)) <;> simp [hs]
 
 /-- **Uniqueness of the Brownian Itô integral.** Any two processes satisfying `IsItoIntegral` for
 the same predictable integrand `H` are indistinguishable on the original raw filtration. -/
@@ -365,59 +360,53 @@ theorem isItoIntegral_unique (hW : IsFilteredPreBrownianReal ℱ W P)
   refine Indistinguishable.of_ae_eq hI.ae_continuous hJ.ae_continuous fun t ↦ ?_
   obtain ⟨n₁, τ₁, a₁, hτ₁, ha₁, hE₁, hG₁⟩ := hI.exists_seq_approx t
   obtain ⟨n₂, τ₂, a₂, hτ₂, ha₂, hE₂, hG₂⟩ := hJ.exists_seq_approx t
-  have hdiff (k : ℕ) :=
+  choose M g d hg hd hsum hen using fun k ↦
     exists_diff_clipped_strategy (W := W) (hτ₁ k) (ha₁ k) (hτ₂ k) (ha₂ k) t
-  choose M g d hg hd hsum hen using hdiff
   have hen_zero : TendstoInMeasure P (fun k ↦ elementaryEnergy (g k) (d k) (M k))
-      atTop (fun _ ↦ 0) :=
-    tendstoInMeasure_elementaryEnergy_of_approx hI.isStronglyPredictable t ha₁ hg hen hE₁ hE₂
-  have hsum_zero := hW.tendstoInMeasure_sum_mul_sub_of_energy hg hd hen_zero
-  have hgain_zero : TendstoInMeasure P
-      (fun k ω ↦ Finance.simpleGains (τ₁ k) (n₁ k) (a₁ k) W t ω -
-        Finance.simpleGains (τ₂ k) (n₂ k) (a₂ k) W t ω) atTop (fun _ ↦ 0) :=
-    hsum_zero.congr_left fun k ↦ .of_forall (hsum k)
-  exact ae_eq_of_tendstoInMeasure_sub_zero hG₁ hG₂ hgain_zero
+      atTop (fun _ ↦ 0) := tendstoInMeasure_iff_norm.mpr fun δ hδ ↦ by
+    refine (tendsto_meas_ge_lintegral_of_le_two_mul_add (fun k ω ↦ ?_)
+      (fun k s ω ↦ (TauCeti.eNorm_sub_sq_le_two_mul _ _ (H s ω)).trans_eq (mul_add _ _ _))
+      hE₁ hE₂ (ENNReal.ofReal_pos.mpr hδ)).congr fun k ↦ congrArg P (Set.ext fun ω ↦ ?_)
+    · exact ((((Finance.isStronglyPredictable_simpleHolding (ha₁ k)).sub
+        hI.isStronglyPredictable).mono ℱ.predictable_le_prod).comp_measurable
+        (measurable_id.prodMk measurable_const)).eNorm.pow_const 2
+    · have hnn := elementaryEnergy_nonneg (a := d k) (hg k) ω
+      simp only [mem_ofPred_eq, sub_zero, Real.norm_eq_abs, abs_of_nonneg hnn, ← hen k ω,
+        ENNReal.ofReal_le_ofReal_iff hnn]
+  exact ae_eq_of_tendstoInMeasure_sub_zero hG₁ hG₂
+    ((hW.tendstoInMeasure_sum_mul_sub_of_energy hg hd hen_zero).congr_left
+      fun k ↦ .of_forall (hsum k))
 
 private theorem tendsto_meas_ge_lintegral_eNorm_sq_of_eLpNorm [SFinite P]
     {g : ℕ → ℝ≥0 × Ω → ℝ} (hg : ∀ k, StronglyMeasurable (g k)) (t : ℝ≥0)
     (hlim : Tendsto (fun k ↦ eLpNorm (g k) 2 ((timeMeasure t).prod P)) atTop (𝓝 0))
     {ε : ℝ≥0∞} (hε : 0 < ε) :
     Tendsto (fun k ↦ P {ω | ε ≤ ∫⁻ s, ‖g k (s, ω)‖ₑ ^ 2 ∂timeMeasure t}) atTop (𝓝 0) := by
+  have hm (k : ℕ) : Measurable (fun p : ℝ≥0 × Ω ↦ ‖g k p‖ₑ ^ 2) := (hg k).eNorm.pow_const 2
+  have hint (k : ℕ) : ∫⁻ ω, ∫⁻ s, ‖g k (s, ω)‖ₑ ^ 2 ∂timeMeasure t ∂P =
+      eLpNorm (g k) 2 ((timeMeasure t).prod P) ^ 2 := by
+    rw [← lintegral_prod_symm _ (hm k).aemeasurable,
+      TauCeti.lintegral_enorm_pow_eq_eLpNorm_pow (by decide) (hg k).aestronglyMeasurable]
+    simp only [Nat.cast_ofNat]
   have hsq : Tendsto (fun k ↦ eLpNorm (g k) 2 ((timeMeasure t).prod P) ^ 2) atTop (𝓝 0) := by
     simpa only [Function.comp_def, zero_pow (by decide : 2 ≠ 0)] using
-      ((ENNReal.continuous_pow 2).continuousAt.tendsto.comp hlim)
+      (ENNReal.continuous_pow 2).continuousAt.tendsto.comp hlim
   by_cases htop : ε = ∞
   · subst htop
     refine tendsto_const_nhds.congr' ?_
     filter_upwards [hsq.eventually (gt_mem_nhds zero_lt_one)] with k hk
-    have hm : Measurable (fun p : ℝ≥0 × Ω ↦ ‖g k p‖ₑ ^ 2) := (hg k).eNorm.pow_const 2
-    have hlt : ∫⁻ ω, ∫⁻ s, ‖g k (s, ω)‖ₑ ^ 2 ∂timeMeasure t ∂P < ∞ := by
-      rw [← lintegral_prod_symm (fun p ↦ ‖g k p‖ₑ ^ 2) hm.aemeasurable,
-        TauCeti.lintegral_enorm_pow_eq_eLpNorm_pow (by decide) (hg k).aestronglyMeasurable]
-      simpa only [Nat.cast_ofNat] using hk.trans ENNReal.one_lt_top
-    have hae := ae_lt_top hm.lintegral_prod_left' hlt.ne
+    have hae := ae_lt_top (hm k).lintegral_prod_left'
+      ((hint k).trans_lt (hk.trans ENNReal.one_lt_top)).ne
     simpa only [not_lt, top_le_iff] using (ae_iff.mp hae).symm
   · refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
-      (by simpa only [Function.comp_def, mul_zero] using
-        ((ENNReal.continuous_const_mul
-          (ENNReal.inv_ne_top.mpr hε.ne')).continuousAt.tendsto.comp hsq))
+      (by simpa only [mul_zero] using
+        ENNReal.Tendsto.const_mul hsq (Or.inr (ENNReal.inv_ne_top.mpr hε.ne')))
       (fun _ ↦ bot_le) fun k ↦ ?_
-    have hm : Measurable (fun p : ℝ≥0 × Ω ↦ ‖g k p‖ₑ ^ 2) := (hg k).eNorm.pow_const 2
-    have hmarkov : ε * P {ω | ε ≤ ∫⁻ s, ‖g k (s, ω)‖ₑ ^ 2 ∂timeMeasure t} ≤
-        eLpNorm (g k) 2 ((timeMeasure t).prod P) ^ 2 := by
-      calc
-        ε * P {ω | ε ≤ ∫⁻ s, ‖g k (s, ω)‖ₑ ^ 2 ∂timeMeasure t}
-          ≤ ∫⁻ ω, ∫⁻ s, ‖g k (s, ω)‖ₑ ^ 2 ∂timeMeasure t ∂P :=
-            mul_meas_ge_le_lintegral hm.lintegral_prod_left' ε
-        _ = eLpNorm (g k) 2 ((timeMeasure t).prod P) ^ 2 := by
-            rw [← lintegral_prod_symm (fun p ↦ ‖g k p‖ₑ ^ 2) hm.aemeasurable,
-              TauCeti.lintegral_enorm_pow_eq_eLpNorm_pow (by decide) (hg k).aestronglyMeasurable]
-            simp only [Nat.cast_ofNat]
-    calc
-      P {ω | ε ≤ ∫⁻ s, ‖g k (s, ω)‖ₑ ^ 2 ∂timeMeasure t}
-        = ε⁻¹ * (ε * P {ω | ε ≤ ∫⁻ s, ‖g k (s, ω)‖ₑ ^ 2 ∂timeMeasure t}) := by
+    calc P {ω | ε ≤ ∫⁻ s, ‖g k (s, ω)‖ₑ ^ 2 ∂timeMeasure t}
+      _ = ε⁻¹ * (ε * P {ω | ε ≤ ∫⁻ s, ‖g k (s, ω)‖ₑ ^ 2 ∂timeMeasure t}) := by
           rw [← mul_assoc, ENNReal.inv_mul_cancel hε.ne' htop, one_mul]
-      _ ≤ ε⁻¹ * eLpNorm (g k) 2 ((timeMeasure t).prod P) ^ 2 := mul_le_mul_right hmarkov _
+      _ ≤ ε⁻¹ * eLpNorm (g k) 2 ((timeMeasure t).prod P) ^ 2 := mul_le_mul_right
+          ((mul_meas_ge_le_lintegral (hm k).lintegral_prod_left' ε).trans_eq (hint k)) _
 
 /-- Any almost surely continuous modification of `t ↦ hW.l2Integral t (hH.toPredictableLp t)`
 satisfies the elementary-approximation specification `IsItoIntegral`. -/
@@ -434,137 +423,22 @@ theorem isItoIntegral_of_ae_eq_l2Integral
     have ha₂ (k j : ℕ) (hj : j < n k) : MemLp (a k j) 2 P :=
       MemLp.of_bound ((ha k j hj).mono (ℱ.le _)).aestronglyMeasurable (C k)
         (Eventually.of_forall (hb k j hj))
-    refine ⟨n, τ, a, fun k ↦ (hτ k).monotoneOn, ha, fun ε hε ↦ ?_, ?_⟩
-    · exact tendsto_meas_ge_lintegral_eNorm_sq_of_eLpNorm
+    refine ⟨n, τ, a, fun k ↦ (hτ k).monotoneOn, ha, fun _ hε ↦
+      tendsto_meas_ge_lintegral_eNorm_sq_of_eLpNorm
         (fun k ↦ ((Finance.isStronglyPredictable_simpleHolding (ha k)).sub
-          hH.isStronglyPredictable).mono ℱ.predictable_le_prod) t (herr t) hε
-    · refine tendstoInMeasure_of_tendsto_eLpNorm (p := 2) (by norm_num) ?_
-      have heq (k : ℕ) : eLpNorm (Finance.simpleGains (τ k) (n k) (a k) W t - I t) 2 P =
-          eLpNorm (fun p ↦ Finance.simpleHolding (τ k) (n k) (a k) p.1 p.2 - H p.1 p.2) 2
-            ((timeMeasure t).prod P) :=
-        (eLpNorm_congr_ae (EventuallyEq.rfl.sub (hI t))).trans
-          (hW.eLpNorm_simpleGains_sub_l2Integral hH (hτ k).monotoneOn (ha k) (ha₂ k) t)
-      simpa only [heq] using herr t
-
-private theorem continuous_stoppedProcess {u : ℝ≥0 → Ω → ℝ} (τ : Ω → WithTop ℝ≥0) {ω : Ω}
-    (hu : Continuous (fun t ↦ u t ω)) :
-    Continuous (fun t ↦ stoppedProcess u τ t ω) := by
-  cases hτ : τ ω with
-  | top => simpa only [stoppedProcess, hτ, le_top, min_eq_left, WithTop.untopA,
-      WithTop.untopD_coe] using hu
-  | coe s =>
-    simpa only [stoppedProcess, hτ, ← WithTop.coe_min, WithTop.untopA, WithTop.untopD_coe,
-      Function.comp_def, id_eq] using hu.comp (continuous_id.min continuous_const)
-
-private theorem tendsto_measure_le_of_isLocalizingSequence [IsFiniteMeasure P]
-    {τ : ℕ → Ω → WithTop ℝ≥0} (hloc : IsLocalizingSequence ℱ τ P)
-    (hmono : ∀ ω, Monotone (τ · ω)) (t : ℝ≥0) :
-    Tendsto (fun k ↦ P {ω | τ k ω ≤ (t : WithTop ℝ≥0)}) atTop (𝓝 0) := by
-  let A (k : ℕ) : Set Ω := {ω | τ k ω ≤ (t : WithTop ℝ≥0)}
-  have hA_anti : Antitone A := fun i j hij ω hω ↦ (hmono ω hij).trans hω
-  have hA_meas (k : ℕ) : NullMeasurableSet (A k) P :=
-    (ℱ.le t _ ((hloc.isStoppingTime k) t)).nullMeasurableSet
-  have hA_inter : P (⋂ k, A k) = 0 := by
-    have hset : (⋂ k, A k) = {ω | ¬ ∃ k, (t : WithTop ℝ≥0) < τ k ω} := by
-      ext ω; simp only [mem_iInter, A, mem_ofPred_eq, not_exists, not_lt]
-    rw [hset, ← ae_iff]
-    filter_upwards [hloc.tendsto_top] with ω hω
-    exact (hω.eventually (eventually_gt_nhds (WithTop.coe_lt_top t))).exists
-  simpa only [Function.comp_def, hA_inter] using
-    tendsto_measure_iInter_atTop hA_meas hA_anti ⟨0, measure_ne_top P _⟩
-
-private theorem tendsto_measure_of_ae_imp_of_lt [IsFiniteMeasure P]
-    {τ : ℕ → Ω → WithTop ℝ≥0} (hloc : IsLocalizingSequence ℱ τ P)
-    (hmono : ∀ ω, Monotone (τ · ω)) (t : ℝ≥0) {A B : ℕ → Set Ω}
-    (hB : Tendsto (fun k ↦ P (B k)) atTop (𝓝 0))
-    (himp : ∀ k, ∀ᵐ ω ∂P, (t : WithTop ℝ≥0) < τ k ω → ω ∈ A k → ω ∈ B k) :
-    Tendsto (fun k ↦ P (A k)) atTop (𝓝 0) := by
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
-    (by simpa only [zero_add] using
-      hB.add (tendsto_measure_le_of_isLocalizingSequence hloc hmono t))
-    (fun _ ↦ bot_le) fun k ↦ ?_
-  have hnull : P {ω | ¬ ((t : WithTop ℝ≥0) < τ k ω → ω ∈ A k → ω ∈ B k)} = 0 :=
-    ae_iff.mp (himp k)
-  have hinc : A k ⊆ B k ∪ {ω | τ k ω ≤ (t : WithTop ℝ≥0)} ∪
-      {ω | ¬ ((t : WithTop ℝ≥0) < τ k ω → ω ∈ A k → ω ∈ B k)} := fun ω hω ↦ by
-    by_cases hle : τ k ω ≤ (t : WithTop ℝ≥0)
-    · exact Or.inl (Or.inr hle)
-    · by_cases hgood : (t : WithTop ℝ≥0) < τ k ω → ω ∈ A k → ω ∈ B k
-      · exact Or.inl (Or.inl (hgood (not_le.mp hle) hω))
-      · exact Or.inr hgood
-  exact (measure_mono hinc).trans ((measure_union_le _ _).trans
-    (by rw [hnull, add_zero]; exact measure_union_le _ _))
-
-private theorem tendsto_localized_energy_approx [IsFiniteMeasure P]
-    {Hstage : ℕ → ℝ≥0 → Ω → ℝ} (hHstage_pred : ∀ k, IsStronglyPredictable ℱ (Hstage k))
-    {τ : ℕ → Ω → WithTop ℝ≥0} (hloc : IsLocalizingSequence ℱ τ P)
-    (hmono : ∀ ω, Monotone (τ · ω)) (t : ℝ≥0)
-    {n : ℕ → ℕ} {grid : ℕ → ℕ → ℝ≥0} {a : ℕ → ℕ → Ω → ℝ}
-    (ha : ∀ k j, j < n k → StronglyMeasurable[ℱ (grid k j)] (a k j))
-    (herr_lim : Tendsto (fun k ↦ eLpNorm
-      (fun p ↦ Finance.simpleHolding (grid k) (n k) (a k) p.1 p.2 - Hstage k p.1 p.2) 2
-        ((timeMeasure t).prod P)) atTop (𝓝 0))
-    (hstage_eq : ∀ᵐ ω ∂P, ∀ k, (t : WithTop ℝ≥0) < τ k ω →
-      EqOn (fun s ↦ Hstage k s ω) (fun s ↦ H s ω) (Iic t))
-    {ε : ℝ≥0∞} (hε : 0 < ε) :
-    Tendsto (fun k ↦ P {ω | ε ≤ ∫⁻ s,
-      ‖Finance.simpleHolding (grid k) (n k) (a k) s ω - H s ω‖ₑ ^ 2 ∂timeMeasure t})
-      atTop (𝓝 0) := by
-  refine tendsto_measure_of_ae_imp_of_lt hloc hmono t
-    (tendsto_meas_ge_lintegral_eNorm_sq_of_eLpNorm
-      (fun k ↦ ((Finance.isStronglyPredictable_simpleHolding (ha k)).sub
-        (hHstage_pred k)).mono ℱ.predictable_le_prod) t herr_lim hε)
-    fun k ↦ hstage_eq.mono fun ω hgood hlt hω ↦ ?_
-  have heq_int : (∫⁻ s, ‖Finance.simpleHolding (grid k) (n k) (a k) s ω - Hstage k s ω‖ₑ ^ 2
-        ∂timeMeasure t) =
-      ∫⁻ s, ‖Finance.simpleHolding (grid k) (n k) (a k) s ω - H s ω‖ₑ ^ 2 ∂timeMeasure t := by
-    rw [timeMeasure_def]
-    exact setLIntegral_congr_fun measurableSet_Ioc fun s hs ↦ by
-      have hs_eq : Hstage k s ω = H s ω := hgood k hlt hs.2; rw [hs_eq]
-  simpa only [mem_ofPred_eq, Pi.sub_apply, Function.uncurry_apply_pair, heq_int] using hω
-
-private theorem tendstoInMeasure_localized_simpleGains
-    (hW : IsFilteredPreBrownianReal ℱ W P)
-    {X : ℝ≥0 → Ω → ℝ} {τ : ℕ → Ω → WithTop ℝ≥0} (hloc : IsLocalizingSequence ℱ τ P)
-    (hmono : ∀ ω, Monotone (τ · ω))
-    {Hstage : ℕ → ℝ≥0 → Ω → ℝ} (hHstage : ∀ k, BrownianIntegrable ℱ P (Hstage k))
-    {U : ℕ → ℝ≥0 → Ω → ℝ}
-    (hUae : ∀ k t, U k t =ᵐ[P] hW.l2Integral t ((hHstage k).toPredictableLp t))
-    (hstop : ∀ k, stoppedProcess X (τ k) ≡ᵐ[P] U k) (t : ℝ≥0)
-    {n : ℕ → ℕ} {grid : ℕ → ℕ → ℝ≥0} {a : ℕ → ℕ → Ω → ℝ}
-    (hgrid : ∀ k, MonotoneOn (grid k) (Iic (n k)))
-    (ha : ∀ k j, j < n k → StronglyMeasurable[ℱ (grid k j)] (a k j))
-    (ha₂ : ∀ k j, j < n k → MemLp (a k j) 2 P)
-    (herr_lim : Tendsto (fun k ↦ eLpNorm
-      (fun p ↦ Finance.simpleHolding (grid k) (n k) (a k) p.1 p.2 - Hstage k p.1 p.2) 2
-        ((timeMeasure t).prod P)) atTop (𝓝 0)) :
-    TendstoInMeasure P (fun k ↦ Finance.simpleGains (grid k) (n k) (a k) W t) atTop (X t) := by
-  let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
-  have hG_stage : TendstoInMeasure P
-      (fun k ω ↦ Finance.simpleGains (grid k) (n k) (a k) W t ω - U k t ω)
-      atTop (0 : Ω → ℝ) := by
-    refine tendstoInMeasure_of_tendsto_eLpNorm (p := 2) (by norm_num) ?_
-    have heq (k : ℕ) :
-        eLpNorm ((fun ω ↦ Finance.simpleGains (grid k) (n k) (a k) W t ω - U k t ω) - 0) 2 P =
-        eLpNorm (fun p ↦ Finance.simpleHolding (grid k) (n k) (a k) p.1 p.2 -
-          Hstage k p.1 p.2) 2 ((timeMeasure t).prod P) := by
-      rw [sub_zero]
-      exact (eLpNorm_congr_ae (EventuallyEq.rfl.sub (hUae k t))).trans
-        (hW.eLpNorm_simpleGains_sub_l2Integral (hHstage k) (hgrid k) (ha k) (ha₂ k) t)
-    simpa only [heq] using herr_lim
-  refine tendstoInMeasure_iff_norm.mpr fun ε hε ↦ ?_
-  have hG_ε := (tendstoInMeasure_iff_norm.mp hG_stage) ε hε
-  simp only [Pi.zero_apply, sub_zero] at hG_ε
-  exact tendsto_measure_of_ae_imp_of_lt hloc hmono t hG_ε fun k ↦
-    ((hstop k).ae_eq_eval t).mono fun ω heq_u hlt hω ↦ by
-      simpa only [mem_ofPred_eq, ← heq_u, stoppedProcess_eq_of_le (u := X) hlt.le] using hω
+          hH.isStronglyPredictable).mono ℱ.predictable_le_prod) t (herr t) hε,
+      tendstoInMeasure_of_tendsto_eLpNorm (p := 2) (by norm_num) ?_⟩
+    have heq (k : ℕ) : eLpNorm (Finance.simpleGains (τ k) (n k) (a k) W t - I t) 2 P =
+        eLpNorm (fun p ↦ Finance.simpleHolding (τ k) (n k) (a k) p.1 p.2 - H p.1 p.2) 2
+          ((timeMeasure t).prod P) :=
+      (eLpNorm_congr_ae (EventuallyEq.rfl.sub (hI t))).trans
+        (hW.eLpNorm_simpleGains_sub_l2Integral hH (hτ k).monotoneOn (ha k) (ha₂ k) t)
+    simpa only [heq] using herr t
 
 private theorem isItoIntegral_of_localized_stages
-    (hW : IsFilteredPreBrownianReal ℱ W P)
-    (hH : IsStronglyPredictable ℱ H)
+    (hW : IsFilteredPreBrownianReal ℱ W P) (hH : IsStronglyPredictable ℱ H)
     {X : ℝ≥0 → Ω → ℝ} (hX_cont : ∀ᵐ ω ∂P, Continuous (fun t ↦ X t ω))
     {τ : ℕ → Ω → WithTop ℝ≥0} (hloc : IsLocalizingSequence ℱ τ P)
-    (hmono : ∀ ω, Monotone (τ · ω))
     {Hstage : ℕ → ℝ≥0 → Ω → ℝ} (hHstage : ∀ k, BrownianIntegrable ℱ P (Hstage k))
     {U : ℕ → ℝ≥0 → Ω → ℝ}
     (hUae : ∀ k t, U k t =ᵐ[P] hW.l2Integral t ((hHstage k).toPredictableLp t))
@@ -576,25 +450,49 @@ private theorem isItoIntegral_of_localized_stages
   ae_continuous := hX_cont
   exists_seq_approx t := by
     let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
-    have hex (k : ℕ) := ℱ.exists_simpleHolding_eLpNorm_sub_lt_timeMeasure P t
-      (hHstage k).isStronglyPredictable ((hHstage k).memLp_timeMeasure t)
-      (ENNReal.inv_pos.mpr (ENNReal.natCast_ne_top (k + 1)))
-    choose n grid a C _ hgrid ha hb herr using hex
-    have hinv : Tendsto (fun k : ℕ ↦ ((k + 1 : ℕ) : ℝ≥0∞)⁻¹) atTop (𝓝 0) :=
-      ENNReal.tendsto_inv_nat_nhds_zero.comp (tendsto_add_atTop_nat 1)
+    choose n grid a C _ hgrid ha hb herr using fun k : ℕ ↦
+      ℱ.exists_simpleHolding_eLpNorm_sub_lt_timeMeasure P t (hHstage k).isStronglyPredictable
+        ((hHstage k).memLp_timeMeasure t) (ENNReal.inv_pos.mpr (ENNReal.natCast_ne_top (k + 1)))
     have herr_lim : Tendsto (fun k ↦ eLpNorm
         (fun p ↦ Finance.simpleHolding (grid k) (n k) (a k) p.1 p.2 - Hstage k p.1 p.2) 2
           ((timeMeasure t).prod P)) atTop (𝓝 0) :=
-      tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hinv
+      tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
+        (ENNReal.tendsto_inv_nat_nhds_zero.comp (tendsto_add_atTop_nat 1))
         (fun _ ↦ bot_le) fun k ↦ (herr k).le
     have ha₂ (k j : ℕ) (hj : j < n k) : MemLp (a k j) 2 P :=
       MemLp.of_bound ((ha k j hj).mono (ℱ.le _)).aestronglyMeasurable (C k)
         (Eventually.of_forall (hb k j hj))
-    exact ⟨n, grid, a, fun k ↦ (hgrid k).monotoneOn, ha,
-      fun _ hε ↦ tendsto_localized_energy_approx (fun k ↦ (hHstage k).isStronglyPredictable)
-        hloc hmono t ha herr_lim (hstage_eq t) hε,
-      hW.tendstoInMeasure_localized_simpleGains hloc hmono hHstage hUae hstop t
-        (fun k ↦ (hgrid k).monotoneOn) ha ha₂ herr_lim⟩
+    refine ⟨n, grid, a, fun k ↦ (hgrid k).monotoneOn, ha, fun _ hε ↦
+      hloc.tendsto_measure_of_ae_imp_of_lt t
+        (tendsto_meas_ge_lintegral_eNorm_sq_of_eLpNorm
+          (fun k ↦ ((Finance.isStronglyPredictable_simpleHolding (ha k)).sub
+            (hHstage k).isStronglyPredictable).mono ℱ.predictable_le_prod) t herr_lim hε)
+        fun k ↦ (hstage_eq t).mono fun ω hgood hlt hω ↦ ?_,
+      tendstoInMeasure_iff_norm.mpr fun ε hε ↦ ?_⟩
+    · have heq_int : (∫⁻ s, ‖Finance.simpleHolding (grid k) (n k) (a k) s ω - Hstage k s ω‖ₑ ^ 2
+          ∂timeMeasure t) =
+        ∫⁻ s, ‖Finance.simpleHolding (grid k) (n k) (a k) s ω - H s ω‖ₑ ^ 2 ∂timeMeasure t := by
+        rw [timeMeasure_def]
+        exact setLIntegral_congr_fun measurableSet_Ioc fun s hs ↦ by
+          have hs_eq : Hstage k s ω = H s ω := hgood k hlt hs.2; rw [hs_eq]
+      simpa only [mem_ofPred_eq, Pi.sub_apply, Function.uncurry_apply_pair, heq_int] using hω
+    · have hG_stage : TendstoInMeasure P
+          (fun k ω ↦ Finance.simpleGains (grid k) (n k) (a k) W t ω - U k t ω) atTop 0 := by
+        refine tendstoInMeasure_of_tendsto_eLpNorm (p := 2) (by norm_num) ?_
+        have heq (k : ℕ) : eLpNorm
+            ((fun ω ↦ Finance.simpleGains (grid k) (n k) (a k) W t ω - U k t ω) - 0) 2 P =
+            eLpNorm (fun p ↦ Finance.simpleHolding (grid k) (n k) (a k) p.1 p.2 -
+              Hstage k p.1 p.2) 2 ((timeMeasure t).prod P) := by
+          rw [sub_zero]
+          exact (eLpNorm_congr_ae (EventuallyEq.rfl.sub (hUae k t))).trans
+            (hW.eLpNorm_simpleGains_sub_l2Integral (hHstage k) (hgrid k).monotoneOn
+              (ha k) (ha₂ k) t)
+        simpa only [heq] using herr_lim
+      have hG_ε := (tendstoInMeasure_iff_norm.mp hG_stage) ε hε
+      simp only [Pi.zero_apply, sub_zero] at hG_ε
+      exact hloc.tendsto_measure_of_ae_imp_of_lt t hG_ε fun k ↦
+        ((hstop k).ae_eq_eval t).mono fun ω heq_u hlt hω ↦ by
+          simpa only [mem_ofPred_eq, ← heq_u, stoppedProcess_eq_of_le (u := X) hlt.le] using hω
 
 private theorem exists_patched_energyLocalizer_process
     (hW : IsFilteredPreBrownianReal ℱ W P)
@@ -620,7 +518,7 @@ private theorem exists_patched_energyLocalizer_process
   choose U hUp hUm hUcont hUae using fun m ↦ hW.exists_continuous_l2Integral hcont (hHstage m)
   have hcompat (n m : ℕ) (hnm : n ≤ m) : stoppedProcess (U m) (τ n) ≡ᵐ[P] U n := by
     refine Indistinguishable.of_ae_eq
-      ((hUcont m).mono fun _ hc ↦ continuous_stoppedProcess (τ n) hc) (hUcont n) fun t ↦ ?_
+      ((hUcont m).mono fun _ hc ↦ hc.stoppedProcess) (hUcont n) fun t ↦ ?_
     have hstop_ae := hW.stoppedProcess_ae_eq_l2Integral (hHstage m) (hUp m).stronglyAdapted
       ((hUcont m).mono fun _ hc _ ↦ hc.continuousWithinAt) (hUae m) (hloc.isStoppingTime n) t
     have hlp_eq : ((hHstage m).ite_le (hloc.isStoppingTime n)).toPredictableLp t =
@@ -638,14 +536,15 @@ private theorem exists_patched_energyLocalizer_process
       (fun m ↦ (hUp m).isStronglyProgressive) hUcont hcompat
   have hX_loc : Locally (fun Z ↦ Martingale Z ℱ P) ℱ X P := by
     refine hX_prog.locally_martingale_of_ae_stopped_eq hloc hUm fun n t ↦ ?_
-    rw [show (fun s ↦ {ω | (⊥ : WithTop ℝ≥0) < τ n ω}.indicator (X s)) = X by
-      ext s ω; exact indicator_of_mem (show 0 < τ n ω from TauCeti.nnvolume.energyLocalizer_pos H
-        (C := (n : ℝ≥0) + 1) (by positivity) ω) _]
+    have hX_ind : (fun s ↦ {ω | (⊥ : WithTop ℝ≥0) < τ n ω}.indicator (X s)) = X := by
+      ext s ω
+      have hpos : (⊥ : WithTop ℝ≥0) < τ n ω :=
+        TauCeti.nnvolume.energyLocalizer_pos H (C := (n : ℝ≥0) + 1) (by positivity) ω
+      exact indicator_of_mem hpos _
+    rw [hX_ind]
     exact (hX_stop n).symm.ae_eq_eval t
   have hX_ito : IsItoIntegral ℱ P W H X :=
     hW.isItoIntegral_of_localized_stages hH.isStronglyPredictable hX_cont hloc
-      (fun ω _ _ hij ↦ TauCeti.nnvolume.monotone_energyLocalizer H ω
-        (add_le_add (Nat.cast_le.mpr hij) le_rfl))
       hHstage hUae hX_stop fun t ↦ hH.ae_accumulatedEnergy_lt_top.mono fun ω hfin k hlt s hs ↦ by
         have hle : (s : WithTop ℝ≥0) ≤ τ k ω :=
           (WithTop.coe_le_coe.mpr (mem_Iic.mp hs)).trans hlt.le
@@ -715,10 +614,8 @@ theorem itoIntegral_stoppedProcess
       (fun t : ℝ≥0 ↦ fun ω ↦ if (t : WithTop ℝ≥0) ≤ σ ω then H t ω else 0)
       (stoppedProcess X σ) := by
     refine hW.isItoIntegral_of_localized_stages (hH.isStronglyPredictable.ite_le hσ)
-      (hX_cont.mono fun _ hc ↦ continuous_stoppedProcess σ hc)
+      (hX_cont.mono fun _ hc ↦ hc.stoppedProcess)
       hH.isLocalizingSequence_energyLocalizer
-      (fun ω _ _ hij ↦ TauCeti.nnvolume.monotone_energyLocalizer H ω
-        (add_le_add (Nat.cast_le.mpr hij) le_rfl))
       hHstage hUσ_ae hXσ_stop fun t ↦ ?_
     filter_upwards [hH.ae_accumulatedEnergy_lt_top] with ω hfin k hlt s hs
     have hle : (s : WithTop ℝ≥0) ≤ τ k ω := (WithTop.coe_le_coe.mpr (mem_Iic.mp hs)).trans hlt.le
@@ -746,30 +643,6 @@ theorem itoIntegral_local_congr
   have hIσ := (hW.itoIntegral_stoppedProcess hcont hH hI hσ).congr_integrand
     (hK.isStronglyPredictable.ite_le hσ) hHK
   exact hW.isItoIntegral_unique hIσ (hW.itoIntegral_stoppedProcess hcont hK hJ hσ)
-
-/-- Every Itô integral of a `LocallyBrownianIntegrable` integrand vanishes almost surely at `0`. -/
-theorem itoIntegral_ae_eval_zero
-    (hW : IsFilteredPreBrownianReal ℱ W P)
-    (hcont : ∀ᵐ ω ∂P, Continuous (fun t ↦ W t ω))
-    (hH : LocallyBrownianIntegrable ℱ P H) (hI : IsItoIntegral ℱ P W H I) :
-    I 0 =ᵐ[P] 0 := by
-  let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
-  have h0 : IsStoppingTime ℱ (fun _ : Ω ↦ (0 : WithTop ℝ≥0)) := isStoppingTime_const ℱ 0
-  have hHK (t : ℝ≥0) :
-      Function.uncurry (fun s : ℝ≥0 ↦ fun ω ↦
-        if (s : WithTop ℝ≥0) ≤ (0 : WithTop ℝ≥0) then H s ω else 0) =ᵐ[
-        (timeMeasure t).prod P] Function.uncurry (0 : ℝ≥0 → Ω → ℝ) := by
-    rw [timeMeasure_def]
-    have hmem : ∀ᵐ p ∂((Measure.comap ((↑) : ℝ≥0 → ℝ) volume).restrict (Ioc 0 t)).prod P,
-        0 < p.1 :=
-      (Measure.ae_prod_iff_ae_ae (measurableSet_lt measurable_const measurable_fst)).mpr
-        ((ae_restrict_mem measurableSet_Ioc).mono fun _ hs ↦ .of_forall fun _ ↦ hs.1)
-    exact hmem.mono fun ⟨s, ω⟩ hs ↦ ite_eq_right (not_le.mpr (WithTop.coe_lt_coe.mpr hs))
-  have hind := hW.isItoIntegral_unique
-    ((hW.itoIntegral_stoppedProcess hcont hH hI h0).congr_integrand
-      (IsItoIntegral.zero (ℱ := ℱ) (P := P) (W := W)).isStronglyPredictable hHK)
-    IsItoIntegral.zero
-  exact hind.mono fun ω hω ↦ by simpa [stoppedProcess] using hω 0
 
 /-- When `H` has finite expected square energy on every finite horizon (`BrownianIntegrable`), any
 process `I` satisfying `IsItoIntegral ℱ P W H I` agrees almost everywhere at each time `t` with

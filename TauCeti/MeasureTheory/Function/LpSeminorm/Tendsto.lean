@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
+import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import Mathlib.MeasureTheory.Function.LpSeminorm.Monotonicity
+import Mathlib.MeasureTheory.Function.LpSeminorm.TriangleInequality
 
 /-!
-# Convergence to zero of `Lᵖ` seminorms from pointwise smallness
+# Convergence to zero of `Lᵖ` seminorms
 
 If a family `f i` is eventually bounded almost everywhere by `δ ‖b‖ₑ` for every `δ > 0`, where `b`
 has finite `Lᵖ` seminorm, then `eLpNorm (f i) p μ → 0`
@@ -18,6 +20,9 @@ a family that eventually becomes uniformly small almost everywhere tends to `0` 
 (`TauCeti.tendsto_eLpNorm_zero_of_eventually_ae_le`). This is how uniform convergence on a set of
 finite measure, or uniform convergence of a coefficient multiplying a fixed `Lᵖ` function, is
 turned into convergence in `Lᵖ`. No lower bound on `p` is needed.
+
+In a normed ring, `L²` convergence `eLpNorm (f i - g) 2 μ → 0` to a limit with finite `L²`
+seminorm implies `L¹` convergence of the squares (`TauCeti.tendsto_eLpNorm_one_sq_sub_sq`).
 -/
 
 public section
@@ -53,5 +58,39 @@ theorem tendsto_eLpNorm_zero_of_eventually_ae_le [IsFiniteMeasure μ]
   filter_upwards [h δ hδ] with i hi
   filter_upwards [hi] with x hx
   simpa using hx
+
+/-- In a normed ring, `L²` convergence `eLpNorm (f i - g) 2 μ → 0` to a function with finite `L²`
+seminorm implies `L¹` convergence of the squares `f i ^ 2 → g ^ 2`. No measurability assumption on
+`f i` or `g` is needed. -/
+theorem tendsto_eLpNorm_one_sq_sub_sq {R : Type*} [NormedRing R] {f : ι → α → R} {g : α → R}
+    (hg : eLpNorm g 2 μ ≠ ∞)
+    (hlim : Tendsto (fun i ↦ eLpNorm (f i - g) 2 μ) l (𝓝 0)) :
+    Tendsto (fun i ↦ eLpNorm (fun x ↦ f i x ^ 2 - g x ^ 2) 1 μ) l (𝓝 0) := by
+  let : ENNReal.HolderTriple 2 2 1 := ⟨by simp [ENNReal.inv_two_add_inv_two]⟩
+  have hbound (i : ι) : eLpNorm (fun x ↦ f i x ^ 2 - g x ^ 2) 1 μ ≤
+      eLpNorm (f i - g) 2 μ * eLpNorm (f i - g) 2 μ +
+        (eLpNorm (f i - g) 2 μ * eLpNorm g 2 μ + eLpNorm g 2 μ * eLpNorm (f i - g) 2 μ) := by
+    have hsplit : (fun x ↦ f i x ^ 2 - g x ^ 2) =
+        ((f i - g) • (f i - g)) + (((f i - g) • g) + (g • (f i - g))) := by
+      ext x
+      simp only [smul_eq_mul, Pi.add_apply, Pi.mul_apply, Pi.sub_apply, sq]
+      noncomm_ring
+    rw [hsplit]
+    refine (eLpNorm_add_le le_rfl).trans (add_le_add
+      (eLpNorm_smul_le_mul_eLpNorm_of_pos (p := 2) (q := 2) zero_lt_one)
+      ((eLpNorm_add_le le_rfl).trans (add_le_add
+        (eLpNorm_smul_le_mul_eLpNorm_of_pos (p := 2) (q := 2) zero_lt_one)
+        (eLpNorm_smul_le_mul_eLpNorm_of_pos (p := 2) (q := 2) zero_lt_one))))
+  have hrhs : Tendsto (fun i ↦ eLpNorm (f i - g) 2 μ * eLpNorm (f i - g) 2 μ +
+      (eLpNorm (f i - g) 2 μ * eLpNorm g 2 μ + eLpNorm g 2 μ * eLpNorm (f i - g) 2 μ)) l (𝓝 0) := by
+    have h1 : Tendsto (fun i ↦ eLpNorm (f i - g) 2 μ * eLpNorm (f i - g) 2 μ) l (𝓝 0) := by
+      simpa only [zero_mul] using
+        ENNReal.Tendsto.mul hlim (Or.inr ENNReal.zero_ne_top) hlim (Or.inr ENNReal.zero_ne_top)
+    have h2 : Tendsto (fun i ↦ eLpNorm (f i - g) 2 μ * eLpNorm g 2 μ) l (𝓝 0) := by
+      simpa only [zero_mul] using ENNReal.Tendsto.mul_const hlim (Or.inr hg)
+    have h3 : Tendsto (fun i ↦ eLpNorm g 2 μ * eLpNorm (f i - g) 2 μ) l (𝓝 0) := by
+      simpa only [mul_zero] using ENNReal.Tendsto.const_mul hlim (Or.inr hg)
+    simpa only [zero_add] using h1.add (h2.add h3)
+  exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hrhs (fun _ ↦ bot_le) hbound
 
 end TauCeti

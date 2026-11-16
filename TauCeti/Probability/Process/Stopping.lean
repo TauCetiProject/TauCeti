@@ -14,9 +14,9 @@ A stopping time remains a stopping time for a larger filtration. This transports
 arguments and localizing sequences when augmenting a filtration. Finite suprema preserve
 the stopping-time property.
 
-Stopping preserves right continuity at each time, including when the stopping time is infinite.
-This pathwise fact requires no measurability or stopping-time hypothesis and lets local-martingale
-arguments retain the right continuity of their native stopped stages.
+Stopping preserves continuity and right continuity of paths, including when the stopping time is
+infinite. These pathwise facts require no measurability or stopping-time hypothesis and let
+local-martingale and localization arguments retain the path regularity of stopped stages.
 
 Simultaneous almost-sure nonnegativity controls random-time evaluations, including stopped
 processes restricted by an indicator (`MeasureTheory.ae_nonneg_stoppedProcess_indicator`).
@@ -51,6 +51,22 @@ theorem Finset.isStoppingTime_sup {κ ι Ω : Type*}
 
 open Filter Set
 open scoped Topology
+
+/-- Stopping preserves path continuity, without any measurability assumption on the random time.
+At an infinite stopping time the path is unchanged. -/
+theorem Continuous.stoppedProcess {ι Ω E : Type*} [LinearOrder ι] [Nonempty ι]
+    [TopologicalSpace ι] [OrderClosedTopology ι] [TopologicalSpace E]
+    {X : ι → Ω → E} {τ : Ω → WithTop ι} {ω : Ω}
+    (hX : Continuous (X · ω)) :
+    Continuous (MeasureTheory.stoppedProcess X τ · ω) := by
+  cases hτ : τ ω with
+  | top =>
+    simpa only [MeasureTheory.stoppedProcess, hτ, le_top, min_eq_left, WithTop.untopA,
+      WithTop.untopD_coe] using hX
+  | coe s =>
+    simpa only [MeasureTheory.stoppedProcess, hτ, ← WithTop.coe_min, WithTop.untopA,
+      WithTop.untopD_coe, Function.comp_def, id_eq] using
+      hX.comp (continuous_id.min continuous_const)
 
 /-- Stopping preserves right continuity of a path at a given time, without any measurability
 assumption on the random time. At an infinite stopping time the path is unchanged. -/

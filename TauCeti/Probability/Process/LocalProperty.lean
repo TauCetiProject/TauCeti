@@ -38,6 +38,10 @@ indicator-restricted stopped stages suffice to establish any local property
 
 Enlarging a filtration preserves its localizing sequences. The stopping-time property
 transports to the larger filtration, while monotonicity and divergence are unchanged.
+On a finite measure space, any pre-localizing sequence has tail probabilities
+`P {ω | τ k ω ≤ t} → 0` (`ProbabilityTheory.IsPreLocalizingSequence.tendsto_measure_le`),
+which transfers vanishing-measure bounds across events agreeing on `{t < τ k}`
+(`ProbabilityTheory.IsPreLocalizingSequence.tendsto_measure_of_ae_imp_of_lt`).
 
 ## References
 
@@ -51,6 +55,63 @@ open MeasureTheory Filter TopologicalSpace
 open scoped Topology
 
 namespace ProbabilityTheory
+
+/-- Along any pre-localizing sequence on a finite measure space, the event `{τ k ≤ t}` has
+measure tending to `0` for every fixed horizon `t`. Neither monotonicity nor a bottom time is
+required. -/
+theorem IsPreLocalizingSequence.tendsto_measure_le {ι Ω : Type*}
+    [Preorder ι] [TopologicalSpace ι] [OrderTopology ι]
+    {mΩ : MeasurableSpace Ω} {ℱ : Filtration ι mΩ} {P : Measure Ω} [IsFiniteMeasure P]
+    {τ : ℕ → Ω → WithTop ι} (hτ : IsPreLocalizingSequence ℱ τ P) (t : ι) :
+    Tendsto (fun k ↦ P {ω | τ k ω ≤ (t : WithTop ι)}) atTop (𝓝 0) := by
+  let B (k : ℕ) : Set Ω := ⋃ j ∈ Set.Ici k, {ω | τ j ω ≤ (t : WithTop ι)}
+  have hB_anti : Antitone B := fun _ _ hij ↦
+    Set.biUnion_subset_biUnion_left fun _ hm ↦ hij.trans hm
+  have hB_meas (k : ℕ) : NullMeasurableSet (B k) P :=
+    (MeasurableSet.biUnion (Set.to_countable _) fun j _ ↦
+      ℱ.le t _ ((hτ.isStoppingTime j) t)).nullMeasurableSet
+  have hB_inter : P (⋂ k, B k) = 0 := by
+    have hopen : IsOpen (Set.Ioi (t : WithTop ι)) := by
+      rw [OrderTopology.topology_eq_generate_intervals (α := WithTop ι)]
+      exact .basic _ ⟨t, Or.inl rfl⟩
+    refine measure_mono_null (s := ⋂ k, B k)
+      (t := {ω | ¬ Tendsto (τ · ω) atTop (𝓝 ⊤)}) (fun ω hω htend ↦ ?_)
+      (ae_iff.mp hτ.tendsto_top)
+    obtain ⟨k, hk⟩ := eventually_atTop.mp
+      (htend.eventually (hopen.mem_nhds (WithTop.coe_lt_top t)))
+    rcases Set.mem_iUnion₂.mp (Set.mem_iInter.mp hω k) with ⟨j, hkj, hle⟩
+    exact not_le_of_gt (hk j hkj) hle
+  have hB_tend : Tendsto (fun k ↦ P (B k)) atTop (𝓝 0) := by
+    simpa only [Function.comp_def, hB_inter] using
+      tendsto_measure_iInter_atTop hB_meas hB_anti ⟨0, measure_ne_top P _⟩
+  exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hB_tend (fun _ ↦ bot_le)
+    fun k ↦ measure_mono (Set.subset_biUnion_of_mem (u := fun j ↦ {ω | τ j ω ≤ (t : WithTop ι)})
+      Set.self_mem_Ici)
+
+/-- If events `A k` are almost surely contained in `B k` on `{t < τ k}` along a pre-localizing
+sequence and `P (B k) → 0`, then `P (A k) → 0` as well. Neither monotonicity nor a bottom time
+is required. -/
+theorem IsPreLocalizingSequence.tendsto_measure_of_ae_imp_of_lt {ι Ω : Type*}
+    [LinearOrder ι] [TopologicalSpace ι] [OrderTopology ι]
+    {mΩ : MeasurableSpace Ω} {ℱ : Filtration ι mΩ} {P : Measure Ω} [IsFiniteMeasure P]
+    {τ : ℕ → Ω → WithTop ι} (hτ : IsPreLocalizingSequence ℱ τ P) (t : ι) {A B : ℕ → Set Ω}
+    (hB : Tendsto (fun k ↦ P (B k)) atTop (𝓝 0))
+    (himp : ∀ k, ∀ᵐ ω ∂P, (t : WithTop ι) < τ k ω → ω ∈ A k → ω ∈ B k) :
+    Tendsto (fun k ↦ P (A k)) atTop (𝓝 0) := by
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
+    (by simpa only [zero_add] using hB.add (hτ.tendsto_measure_le t))
+    (fun _ ↦ bot_le) fun k ↦ ?_
+  have hnull : P {ω | ¬ ((t : WithTop ι) < τ k ω → ω ∈ A k → ω ∈ B k)} = 0 :=
+    ae_iff.mp (himp k)
+  have hinc : A k ⊆ B k ∪ {ω | τ k ω ≤ (t : WithTop ι)} ∪
+      {ω | ¬ ((t : WithTop ι) < τ k ω → ω ∈ A k → ω ∈ B k)} := fun ω hω ↦ by
+    by_cases hle : τ k ω ≤ (t : WithTop ι)
+    · exact Or.inl (Or.inr hle)
+    · by_cases hgood : (t : WithTop ι) < τ k ω → ω ∈ A k → ω ∈ B k
+      · exact Or.inl (Or.inl (hgood (not_le.mp hle) hω))
+      · exact Or.inr hgood
+  exact (measure_mono hinc).trans ((measure_union_le _ _).trans
+    (by rw [hnull, add_zero]; exact measure_union_le _ _))
 
 /-- Cutting a localizing sequence off at the initial time outside increasing initial-measurable
 events which eventually contain almost every sample point preserves localization. -/
