@@ -31,11 +31,10 @@ charts used to verify it.
 
 * `OpenPartialHomeomorph.det_fderiv_ne_zero`: a chart of a space to itself that is
   differentiable in both directions at a point has a derivative with nonzero determinant there.
-* `OpenPartialHomeomorph.differentiableAt_of_contDiffOn`,
-  `OpenPartialHomeomorph.det_fderiv_ne_zero_of_contDiffOn`,
+* `OpenPartialHomeomorph.det_fderiv_ne_zero_of_contDiffOn`,
   `OpenPartialHomeomorph.det_fderiv_symm_apply_of_contDiffOn`: for a chart that is `C^n`, `n ≠ 0`,
-  in both directions, differentiability on the source, a nonzero Jacobian determinant there, and
-  reciprocity of the Jacobian determinants of `e` and `e.symm`.
+  in both directions, a nonzero Jacobian determinant on the source, and reciprocity of the
+  Jacobian determinants of `e` and `e.symm`.
 * `OpenPartialHomeomorph.exists_hasFDerivAt_of_chart`: a chart that is differentiable at a
   point, with inverse differentiable at the image point, has a derivative there represented by a
   continuous linear equivalence.
@@ -76,20 +75,13 @@ theorem det_fderiv_ne_zero (e : OpenPartialHomeomorph E E) {y : E} (hy : y ∈ e
   rw [← hA]
   exact A.toLinearEquiv.isUnit_det'.ne_zero
 
-/-- A partial homeomorphism that is `C^n`, `n ≠ 0`, on its source is differentiable at every point
-of its source. Applied to `e.symm`, the same holds for the inverse on the target. -/
-theorem differentiableAt_of_contDiffOn (e : OpenPartialHomeomorph E F) {n : WithTop ℕ∞}
-    (he : ContDiffOn 𝕜 n e e.source) (hn : n ≠ 0) {x : E} (hx : x ∈ e.source) :
-    DifferentiableAt 𝕜 e x :=
-  (he.contDiffAt (e.open_source.mem_nhds hx)).differentiableAt hn
-
 /-- A chart of a space to itself that is `C^n`, `n ≠ 0`, on its source, with inverse `C^n` on its
 target, has a derivative with nonzero determinant at every point of its source. -/
 theorem det_fderiv_ne_zero_of_contDiffOn (e : OpenPartialHomeomorph E E) {n : WithTop ℕ∞}
     (he : ContDiffOn 𝕜 n e e.source) (hes : ContDiffOn 𝕜 n e.symm e.target) (hn : n ≠ 0) {x : E}
     (hx : x ∈ e.source) : (fderiv 𝕜 e x).det ≠ 0 :=
-  e.det_fderiv_ne_zero hx (e.differentiableAt_of_contDiffOn he hn hx)
-    (e.symm.differentiableAt_of_contDiffOn hes hn (e.map_source hx))
+  e.det_fderiv_ne_zero hx ((he.differentiableOn hn).differentiableAt (e.open_source.mem_nhds hx))
+    ((hes.differentiableOn hn).differentiableAt (e.open_target.mem_nhds (e.map_source hx)))
 
 /-- For a chart of a space to itself that is `C^n`, `n ≠ 0`, on its source, with inverse `C^n` on
 its target, the Jacobian determinant of the inverse at `e x` is the reciprocal of that of `e` at a
@@ -98,8 +90,9 @@ theorem det_fderiv_symm_apply_of_contDiffOn (e : OpenPartialHomeomorph E E) {n :
     (he : ContDiffOn 𝕜 n e e.source) (hes : ContDiffOn 𝕜 n e.symm e.target) (hn : n ≠ 0) {x : E}
     (hx : x ∈ e.source) : (fderiv 𝕜 e.symm (e x)).det = (fderiv 𝕜 e x).det⁻¹ := by
   have h := e.det_fderiv_mul_det_fderiv_symm (e.map_source hx)
-    (e.differentiableAt_of_contDiffOn he hn (e.map_target (e.map_source hx)))
-    (e.symm.differentiableAt_of_contDiffOn hes hn (e.map_source hx))
+    ((he.differentiableOn hn).differentiableAt
+      (e.open_source.mem_nhds (e.map_target (e.map_source hx))))
+    ((hes.differentiableOn hn).differentiableAt (e.open_target.mem_nhds (e.map_source hx)))
   rw [e.left_inv hx] at h
   exact eq_inv_of_mul_eq_one_right h
 

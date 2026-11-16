@@ -247,7 +247,8 @@ theorem integral_pushforwardCLM_smul [MeasurableSpace E] [BorelSpace E] (μ : Me
     rw [image_eq_zero_of_notMem_tsupport fun h ↦ hx (hU (φ.tsupport_subset h)), zero_smul]
   have hd (y : E) (hy : y ∈ e.target) :
       HasFDerivWithinAt e.symm (fderiv ℝ e.symm y) e.target y :=
-    (e.symm.differentiableAt_of_contDiffOn he' (by simp) hy).hasFDerivAt.hasFDerivWithinAt
+    ((he'.differentiableOn (by simp)).differentiableAt
+      (e.open_target.mem_nhds hy)).hasFDerivAt.hasFDerivWithinAt
   -- Both integrands vanish off the target, respectively the source; then change variables
   -- `x = e⁻¹ y` on the target.
   rw [← setIntegral_eq_integral_of_forall_compl_eq_zero hφ,
@@ -266,12 +267,10 @@ theorem pushforwardCLM_pushforwardCLM_symm {he₁ : ContDiffOn ℝ (⊤ : ℕ∞
     pushforwardCLM e he he' hU hUV (pushforwardCLM e.symm he₁ he₁' hV hVU φ) = φ := by
   ext y
   by_cases hy : y ∈ e.target
-  · have hs : e.symm y ∈ e.symm.target := e.map_target hy
-    rw [pushforwardCLM_apply_of_mem _ hy, pushforwardCLM_apply_of_mem _ hs,
-      OpenPartialHomeomorph.symm_symm, e.right_inv hy, smul_smul, ← abs_mul,
-      mul_comm (fderiv ℝ e.symm y).det, e.det_fderiv_mul_det_fderiv_symm hy
-        (e.differentiableAt_of_contDiffOn he (by simp) (e.map_target hy))
-        (e.symm.differentiableAt_of_contDiffOn he' (by simp) hy), abs_one, one_smul]
+  · obtain ⟨x, hx, rfl⟩ : ∃ x ∈ e.source, e x = y := ⟨e.symm y, e.map_target hy, e.right_inv hy⟩
+    rw [pushforwardCLM_apply_of_mem_source _ hx, pushforwardCLM_apply_of_mem _ (by simpa using hx),
+      OpenPartialHomeomorph.symm_symm, smul_smul, inv_mul_cancel₀
+        (abs_ne_zero.2 (e.det_fderiv_ne_zero_of_contDiffOn he he' (by simp) hx)), one_smul]
   · rw [pushforwardCLM_apply_of_notMem _ hy,
       image_eq_zero_of_notMem_tsupport fun h : y ∈ tsupport φ ↦
         hy (by simpa using hV (φ.tsupport_subset h))]
@@ -300,7 +299,7 @@ theorem pushforwardCLM_refl
     {hU : (U : Set E) ⊆ (OpenPartialHomeomorph.refl E).source}
     {hUΩ : MapsTo (OpenPartialHomeomorph.refl E) U Ω} (φ : 𝓓(U, F)) :
     pushforwardCLM (OpenPartialHomeomorph.refl E) he he' hU hUΩ φ = monoCLM ℝ φ := by
-  have hUΩ' : U ≤ Ω := hUΩ
+  have hUΩ' : U ≤ Ω := SetLike.coe_subset_coe.1 fun x hx ↦ by simpa using hUΩ hx
   ext y
   rw [pushforwardCLM_apply_of_mem φ (mem_univ y)]
   simp [hUΩ']
@@ -327,8 +326,9 @@ theorem pushforwardCLM_pushforwardCLM {e₁ e₂ : OpenPartialHomeomorph E E}
       have hd : fderiv ℝ (e₁.trans e₂).symm z =
           (fderiv ℝ e₁.symm (e₂.symm z)).comp (fderiv ℝ e₂.symm z) := by
         rw [OpenPartialHomeomorph.coe_trans_symm]
-        exact fderiv_comp z (e₁.symm.differentiableAt_of_contDiffOn he₁' (by simp) hz₁)
-          (e₂.symm.differentiableAt_of_contDiffOn he₂' (by simp) hz₂)
+        exact fderiv_comp z
+          ((he₁'.differentiableOn (by simp)).differentiableAt (e₁.open_target.mem_nhds hz₁))
+          ((he₂'.differentiableOn (by simp)).differentiableAt (e₂.open_target.mem_nhds hz₂))
       rw [pushforwardCLM_apply_of_mem _ hz₂, pushforwardCLM_apply_of_mem _ hz₁,
         pushforwardCLM_apply_of_mem _ hz, hd, ContinuousLinearMap.det_comp, abs_mul, smul_smul,
         mul_comm, OpenPartialHomeomorph.coe_trans_symm, Function.comp_apply]
