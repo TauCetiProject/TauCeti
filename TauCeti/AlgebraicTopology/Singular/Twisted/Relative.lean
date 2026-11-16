@@ -39,6 +39,9 @@ only the absolute one of `TauCeti.AlgebraicTopology.Singular.Twisted.Basic`, nec
   with the corresponding `TopPair.twistedHomologyCoefficientMap`.
 * `TopPair.shortExact_twistedChainComplexShortComplex`: the twisted chains of the subspace, of the
   ambient space and of the pair form a short exact sequence of chain complexes.
+* `TopPair.twistedChainComplexXSplitting`, `TopPair.twistedChainComplexXRetract`: that sequence is
+  split in each degree, so the relative twisted chains are a retract of the ambient ones, and are
+  projective when the fibres of the system are (`TopPair.projective_twistedChainComplex_X`).
 * `TopPair.twistedHomology`, `TopPair.twistedHomologyπ` and `TopPair.twistedHomologyδ`, with the
   three exactness statements `TopPair.twistedHomology_exact_subspace`,
   `TopPair.twistedHomology_exact_space` and `TopPair.twistedHomology_exact_relative`.
@@ -142,6 +145,32 @@ def isColimitCokernelCoforkTwistedChainComplexX (i : ℕ) :
       (P.twistedChainComplex_condition_f L i)) :=
   CokernelCofork.mapIsColimit _ (P.isColimitCokernelCoforkTwistedChainComplex L)
     (HomologicalComplex.eval _ _ i)
+
+/-- The degree-`i` part `0 ⟶ Cᵢ(A; L|A) ⟶ Cᵢ(X; L) ⟶ Cᵢ(X, A; L) ⟶ 0` of the twisted chain
+sequence of a pair is split: it is exact since the relative chains are the cokernel of the
+subspace chains, and its first map is a split monomorphism, induced by the injection of the
+singular simplices of `A` into those of `X`. -/
+def twistedChainComplexXSplitting (i : ℕ) :
+    (ShortComplex.mk _ _ (P.twistedChainComplex_condition_f L i)).Splitting :=
+  ShortComplex.Splitting.ofExactOfRetraction _
+    (ShortComplex.exact_of_g_is_cokernel _ (P.isColimitCokernelCoforkTwistedChainComplexX L i))
+    (retraction ((LocalCoefficientSystem.twistedChainComplexMap P.map L).f i))
+    (IsSplitMono.id _) (epi_of_isColimit_cofork (P.isColimitCokernelCoforkTwistedChainComplexX L i))
+
+/-- The relative twisted chains `Cᵢ(X, A; L)` of a pair are a retract of the ambient twisted
+chains `Cᵢ(X; L)`: the degree-`i` twisted chain sequence of the pair is split
+(`TopPair.twistedChainComplexXSplitting`), so the quotient map to the relative chains has a
+section. -/
+def twistedChainComplexXRetract (i : ℕ) :
+    Retract ((P.twistedChainComplex L).X i) (L.twistedChainComplex.X i) :=
+  ⟨(P.twistedChainComplexXSplitting L i).s, (P.twistedChainComplexπ L).f i,
+    (P.twistedChainComplexXSplitting L i).s_g⟩
+
+/-- If every fibre of `L` is projective, then so is every degree of the relative twisted chain
+complex of a pair, a retract of the ambient twisted chains. -/
+instance projective_twistedChainComplex_X [∀ x, Projective (L.obj x)] (i : ℕ) :
+    Projective ((P.twistedChainComplex L).X i) :=
+  (P.twistedChainComplexXRetract L i).projective
 
 /-- Descend a map out of the ambient twisted chains to the relative twisted chain complex when it
 vanishes on the chains of the subspace. -/
@@ -405,20 +434,7 @@ lemma twistedHomologyπ_comp_twistedHomologyCoefficientMap
     {L K : LocalCoefficientSystem.{u, v, max v w} R P.fst} (f : L ⟶ K) (k : ℕ) :
     P.twistedHomologyπ L k ≫ P.twistedHomologyCoefficientMap f k =
       LocalCoefficientSystem.twistedHomologyCoefficientMap f k ≫ P.twistedHomologyπ K k := by
-  calc
-    _ = HomologicalComplex.homologyMap
-          (P.twistedChainComplexπ L ≫ P.twistedChainComplexCoefficientMap f) k :=
-      (HomologicalComplex.homologyMap_comp _ _ _).symm
-    _ = HomologicalComplex.homologyMap
-          (LocalCoefficientSystem.twistedChainComplexCoefficientMap f ≫
-            P.twistedChainComplexπ K) k :=
-      congrArg (fun φ ↦ HomologicalComplex.homologyMap φ k)
-        (P.twistedChainComplexπ_comp_twistedChainComplexCoefficientMap f)
-    _ = _ := by
-      simpa only [LocalCoefficientSystem.twistedHomologyCoefficientMap] using
-        HomologicalComplex.homologyMap_comp
-          (LocalCoefficientSystem.twistedChainComplexCoefficientMap f)
-          (P.twistedChainComplexπ K) k
+  simp [← HomologicalComplex.homologyMap_comp]
 
 /-- The identity coefficient morphism induces the identity on relative twisted homology. -/
 @[simp]
@@ -448,6 +464,24 @@ instance isIso_twistedHomologyCoefficientMap {K : LocalCoefficientSystem.{u, v, 
     by rw [← twistedHomologyCoefficientMap_comp, IsIso.inv_hom_id,
       twistedHomologyCoefficientMap_id]⟩
 
+variable {L} in
+/-- The relative twisted homology maps of an isomorphism of local coefficient systems and of its
+inverse compose to the identity. -/
+@[reassoc (attr := simp)]
+lemma twistedHomologyCoefficientMap_hom_inv_id
+    {K : LocalCoefficientSystem.{u, v, max v w} R P.fst} (e : L ≅ K) (k : ℕ) :
+    P.twistedHomologyCoefficientMap e.hom k ≫ P.twistedHomologyCoefficientMap e.inv k = 𝟙 _ := by
+  rw [← twistedHomologyCoefficientMap_comp, e.hom_inv_id, twistedHomologyCoefficientMap_id]
+
+variable {L} in
+/-- The relative twisted homology maps of the inverse of an isomorphism of local coefficient
+systems and of the isomorphism compose to the identity. -/
+@[reassoc (attr := simp)]
+lemma twistedHomologyCoefficientMap_inv_hom_id
+    {K : LocalCoefficientSystem.{u, v, max v w} R P.fst} (e : L ≅ K) (k : ℕ) :
+    P.twistedHomologyCoefficientMap e.inv k ≫ P.twistedHomologyCoefficientMap e.hom k = 𝟙 _ := by
+  rw [← twistedHomologyCoefficientMap_comp, e.inv_hom_id, twistedHomologyCoefficientMap_id]
+
 @[reassoc (attr := simp)]
 lemma twistedHomologyMap_comp_twistedHomologyπ (k : ℕ) :
     LocalCoefficientSystem.twistedHomologyMap P.map L k ≫ P.twistedHomologyπ L k = 0 := by
@@ -473,8 +507,8 @@ lemma twistedHomologyδ_naturality_coefficient
     P.twistedHomologyδ L n m h ≫
         LocalCoefficientSystem.twistedHomologyCoefficientMap
           ((LocalCoefficientSystem.pullback P.map.hom).map f) m =
-      P.twistedHomologyCoefficientMap f n ≫ P.twistedHomologyδ K n m h := by
-  exact HomologicalComplex.HomologySequence.δ_naturality
+      P.twistedHomologyCoefficientMap f n ≫ P.twistedHomologyδ K n m h :=
+  HomologicalComplex.HomologySequence.δ_naturality
     (P.twistedChainComplexShortComplexCoefficientMap f)
     (P.shortExact_twistedChainComplexShortComplex L)
     (P.shortExact_twistedChainComplexShortComplex K) n m (by simpa)

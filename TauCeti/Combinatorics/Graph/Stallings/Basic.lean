@@ -229,6 +229,14 @@ theorem subgroup_eq_bot_of_isAcyclic (h : S.graph.IsAcyclic) (a : S.graph.V) :
   obtain ⟨p, hp, rfl⟩ := S.mem_subgroup_iff_exists_reduced_path.mp hg
   simp [(S.graph.isAcyclic_iff.mp h) a p hp]
 
+/-- A labelled graph without darts accepts only the trivial subgroup, at every vertex. -/
+@[simp] theorem subgroup_eq_bot_of_isEmpty [IsEmpty S.graph.E] (a : S.graph.V) :
+    S.subgroup a = ⊥ :=
+  S.subgroup_eq_bot_of_isAcyclic (S.graph.isAcyclic_iff.mpr fun _ p _ => by
+    cases p with
+    | nil => rfl
+    | cons _ e => exact isEmptyElim e.1) a
+
 /-- Moving the base vertex along a path conjugates the accepted subgroup by its label. -/
 theorem subgroup_conj {a b : S.graph.V} (p : S.graph.Path a b) :
     S.subgroup b = (S.subgroup a).map (MulAut.conj (S.read p)⁻¹).toMonoidHom := by

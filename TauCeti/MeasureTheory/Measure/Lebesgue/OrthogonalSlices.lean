@@ -11,6 +11,7 @@ public import TauCeti.Analysis.InnerProductSpace.LinearIsometry
 public import Mathlib.Geometry.Euclidean.Volume.Measure
 public import TauCeti.MeasureTheory.Integral.Lebesgue.Subsequence
 public import Mathlib.MeasureTheory.Integral.Prod
+public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
@@ -26,10 +27,13 @@ The length of a line section is independent of its base point along the line, in
 
 Dually, the volume is the integral over heights `t` of the volumes of the hyperplane sections
 `{y ∈ (ℝ ∙ e)ᗮ | y + t • e ∈ s}`, and restricting the heights to a Borel set gives the volume
-of the corresponding part of the set. Hyperplane sections of bounded sets have finite volume,
-and hyperplane sections through interior points have positive volume. The heights of interior
-points form an open set, and a set has positive volume at any open set of heights containing the
-height of an interior point.
+of the corresponding part of the set. These section volumes are an a.e. measurable function of
+the height. When almost all of them are finite, the real volume (`volume.real`) of the part of the
+set below a height is the interval integral of their real values from any lower bound of the
+heights of its points; both sides vanish if that part has infinite volume. Hyperplane sections of
+bounded sets have finite volume, and hyperplane sections through interior points have positive
+volume. The heights of interior points form an open set, and a set has positive volume at any
+open set of heights containing the height of an interior point.
 
 Pairing the line integrals `y ↦ ∫ f (y + t • e) dt` with a bounded transverse weight `ψ` is an
 integral of `ψ (y) f (y + t • e)` over product coordinates
@@ -308,6 +312,61 @@ theorem volume_sep_inner_mem_eq_setLIntegral (e : E) (he : ‖e‖ = 1) {s : Set
     (hs.inter (hI.preimage hm).nullMeasurableSet), ← lintegral_indicator hI]
   congr 1 with t
   by_cases ht : t ∈ I <;> simp [ht, inner_add_smul e he]
+
+/-- The hyperplane sections of a Lebesgue-measurable set orthogonal to a vector `e` have a.e.
+measurable volume as a function of the height. -/
+theorem aemeasurable_volume_hyperplaneSection (e : E) {s : Set E}
+    (hs : NullMeasurableSet s volume) :
+    AEMeasurable (fun t : ℝ ↦ volume {y : (ℝ ∙ e)ᗮ | (y : E) + t • e ∈ s}) volume := by
+  -- For a unit vector `u`, almost every hyperplane section of `s` agrees a.e. with that of
+  -- `toMeasurable s`, by Fubini in product coordinates with the height first.
+  have unit (u : E) (hu : ‖u‖ = 1) :
+      AEMeasurable (fun t : ℝ ↦ volume {y : (ℝ ∙ u)ᗮ | (y : E) + t • u ∈ s}) volume := by
+    have hp := ((measurePreserving_orthogonalLineEquiv u hu).comp
+      Measure.measurePreserving_swap).quasiMeasurePreserving.preimage_ae_eq hs.toMeasurable_ae_eq
+    refine (measurable_volume_hyperplaneSection u hu
+      (measurableSet_toMeasurable volume s)).aemeasurable.congr ?_
+    filter_upwards [Measure.ae_ae_of_ae_prod hp] with t ht
+    refine measure_congr ?_
+    filter_upwards [ht] with y hy
+    simpa only [mem_preimage, Function.comp_apply, Prod.swap_prod_mk, orthogonalLineEquiv_apply,
+      mem_ofPred_eq] using hy
+  rcases eq_or_ne e 0 with rfl | he
+  · simp only [smul_zero, add_zero]
+    exact aemeasurable_const
+  -- Otherwise `e = r • u` for a unit vector `u` spanning the same line, and the heights rescale.
+  obtain ⟨r, hr, u, hu, rfl⟩ : ∃ r : ℝ, r ≠ 0 ∧ ∃ u : E, ‖u‖ = 1 ∧ e = r • u :=
+    ⟨‖e‖, norm_ne_zero_iff.2 he, ‖e‖⁻¹ • e, norm_smul_inv_norm he,
+      (smul_inv_smul₀ (norm_ne_zero_iff.2 he) e).symm⟩
+  rw [Submodule.span_singleton_smul_eq hr.isUnit]
+  simpa only [Function.comp_def, smul_eq_mul, mul_comm r, mul_smul] using
+    (unit u hu).comp_quasiMeasurePreserving (Measure.quasiMeasurePreserving_smul volume hr)
+
+/-- **The volume below a hyperplane as an interval integral** (Cavalieri). Let `s` be a
+Lebesgue-measurable set whose heights `⟪e, x⟫` along a unit vector `e` are all at least `a`, and
+let `c` be a height such that almost every hyperplane section at a height in `(a, c]` has finite
+volume. Then the real volume (`volume.real`) of the part of `s` below `c` is the integral of the
+real volumes of the sections from `a` to `c`. Both sides vanish when `c ≤ a`, and also, by the
+conventions for `volume.real` and the Bochner integral, when `{x ∈ s | ⟪e, x⟫ ≤ c}` has infinite
+volume (equivalently, when the section volumes are not integrable on `(a, c]`). -/
+theorem volume_real_sep_inner_le_eq_intervalIntegral (e : E) (he : ‖e‖ = 1) {s : Set E}
+    (hs : NullMeasurableSet s volume) {a : ℝ} (ha : ∀ x ∈ s, a ≤ ⟪e, x⟫) (c : ℝ)
+    (hfin : ∀ᵐ t ∂volume.restrict (Ioc a c), volume {y : (ℝ ∙ e)ᗮ | (y : E) + t • e ∈ s} < ∞) :
+    volume.real {x ∈ s | ⟪e, x⟫ ≤ c} =
+      ∫ t in a..c, volume.real {y : (ℝ ∙ e)ᗮ | (y : E) + t • e ∈ s} := by
+  have hsep : {x ∈ s | ⟪e, x⟫ ≤ c} = {x ∈ s | ⟪e, x⟫ ∈ Icc a c} := by
+    ext x
+    exact and_congr_right fun hx ↦ ⟨fun h ↦ ⟨ha x hx, h⟩, And.right⟩
+  -- At heights `t < a` the sections are empty.
+  have h0 (t : ℝ) (ht : t ∈ Ioo c a) : volume.real {y : (ℝ ∙ e)ᗮ | (y : E) + t • e ∈ s} = 0 := by
+    have hempty : {y : (ℝ ∙ e)ᗮ | (y : E) + t • e ∈ s} = ∅ := eq_empty_of_forall_notMem
+      fun y hy ↦ (ha _ hy).not_gt ((inner_add_smul e he y t).trans_lt ht.2)
+    rw [hempty, measureReal_empty]
+  rw [intervalIntegral, ← restrict_Ioo_eq_restrict_Ioc (a := c) (b := a),
+    setIntegral_eq_zero_of_forall_eq_zero h0, sub_zero, measureReal_def, hsep,
+    volume_sep_inner_mem_eq_setLIntegral e he hs measurableSet_Icc, ← restrict_Ioc_eq_restrict_Icc,
+    ← integral_toReal (aemeasurable_volume_hyperplaneSection e hs).restrict hfin]
+  rfl
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- On the line through `y` parallel to `e`, the second-moment integrand of a set `u` is
