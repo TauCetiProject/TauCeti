@@ -554,19 +554,6 @@ private lemma normalizationInvComp_naturality {p q : Γ} (g : p ⟶ q)
   dsimp only [Cat.Hom.comp_toFunctor, Functor.comp_map] at hc'
   erw [hc', reassoc_of% joint_naturality_factor φ g a hf ((L.fiberEquivalence p).inverse.obj x)]
 
-private lemma normalizationInvComp_fiber_compatibility {A B C C' : Cat.{v, w}}
-    {I : A ⟶ C} {P : C ⟶ C'} {I' : A ⟶ C'}
-    {E : C ⟶ B} {E' : C' ⟶ B} {U : A ⟶ B}
-    (m : I ≫ P ⟶ 𝟙 A ≫ I') (ε' : I' ≫ E' ⟶ U) (u : 𝟙 A ≫ U ⟶ U)
-    (f : P ≫ E' ⟶ E) (ε : I ≫ E ⟶ U)
-    (h : ∀ x : A, E'.toFunctor.map (m.toNatTrans.app x) ≫
-        ε'.toNatTrans.app x ≫ u.toNatTrans.app x =
-      f.toNatTrans.app (I.toFunctor.obj x) ≫ ε.toNatTrans.app x) :
-    m ▷ E' ≫ ((α_ (𝟙 A) I' E').hom ≫ 𝟙 A ◁ ε' ≫ u) =
-      (α_ I P E').hom ≫ I ◁ f ≫ ε := by
-  ext x
-  simpa using h x
-
 /-- Applying a morphism of lifts `φ : L ⟶ L'` after `L.normalizationInv` is canonically isomorphic
 to applying the reconstructed normalized comparison `φ.normalizedTransportHom.toLiftHom` and then
 `L'.normalizationInv`. Its joint components are the inverse-fiber comparisons
@@ -584,7 +571,9 @@ noncomputable def normalizationInvCompIso :
     fun p a ↦ by
       obtain ⟨⟨⟩⟩ := a
       simp only [EquivariantGroupoidLift.comp_fiberIso, comp_fiberIso_hom_as_app]
-      refine normalizationInvComp_fiber_compatibility _ _ _ _ _ fun x ↦ ?_
+      refine
+        Cat.whiskerRight_comp_associator_hom_comp_whiskerLeft_eq_associator_hom_comp_whiskerLeft
+          _ _ _ _ _ fun x ↦ ?_
       erw [normalizationInvCompJointAppIso_hom_app φ p x,
         L'.normalizationInv_fiberIso_hom_as_app p ⟨SingleObj.star H⟩,
         NormalizedTransport.Hom.toLiftHom_fiberIso_hom_as_app,
