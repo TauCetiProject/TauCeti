@@ -165,9 +165,7 @@ theorem nsmul_cohomologyClass_eq_zero_iff (n : ℕ) :
     fun h ↦ (coboundariesOfIsMulCoboundary₂ h).2⟩
 
 /-- The cardinality `Nat.card M` of the coefficient group annihilates the cohomology class of every
-factor set: `α p ^ Nat.card M = 1` pointwise by Lagrange's theorem (`pow_card_eq_one'`), which is
-the coboundary of the constant function `1` (including when `M` is infinite, where
-`Nat.card M = 0`). -/
+factor set (when `M` is infinite, `Nat.card M = 0` and the left-hand side vanishes trivially). -/
 @[simp]
 theorem natCard_nsmul_cohomologyClass_eq_zero : Nat.card M • α.cohomologyClass = 0 :=
   (α.nsmul_cohomologyClass_eq_zero_iff (Nat.card M)).2 ⟨1, fun _ _ ↦ by simp⟩

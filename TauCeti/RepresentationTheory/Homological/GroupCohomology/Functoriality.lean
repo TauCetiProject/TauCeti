@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import Mathlib.CategoryTheory.Preadditive.Biproducts
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.Functoriality
 public import TauCeti.Algebra.Homology.Linear
+import TauCeti.CategoryTheory.Linear.Endomorphism
 
 /-!
 # Functoriality of group cohomology
@@ -33,8 +34,8 @@ if `c` is a biproduct bicone of `A` and `B`, for instance the concrete product
 * `TauCeti.groupCohomology.map_id_add` and `TauCeti.groupCohomology.map_id_smul`: the map induced
   on cohomology is `k`-linear in the morphism of representations.
 * `groupCohomology.smul_eq_zero_of_forall_smul_eq_zero` and
-  `groupCohomology.natCard_coe_nsmul_eq_zero`: scalars annihilating `A` (in particular
-  `Nat.card A`) annihilate `Hⁿ(G, A)` in every degree.
+  `groupCohomology.natCard_V_nsmul_eq_zero`: scalars annihilating `A` (in particular `Nat.card A`)
+  annihilate `Hⁿ(G, A)` in every degree.
 * `TauCeti.groupCohomology.smul_bijective` and `TauCeti.groupCohomology.nsmul_bijective`: a
   bijective scalar action on `A` induces a bijective scalar action on `Hⁿ(G, A)`.
 * `CategoryTheory.Limits.BinaryBicone.IsBilimit.groupCohomologyProdEquiv`: the cohomology of a
@@ -113,21 +114,17 @@ theorem map_id_nsmul {A B : Rep k G} (m : ℕ) (φ : A ⟶ B) (n : ℕ) :
 theorem smul_bijective (c : k) (A : Rep k G)
     (hA : Function.Bijective fun a : A ↦ c • a) (n : ℕ) :
     Function.Bijective fun x : groupCohomology A n ↦ c • x := by
-  let e : A.V ≃ₗ[k] A.V := LinearEquiv.ofBijective (c • LinearMap.id) hA
-  let eRep : A.ρ.Equiv A.ρ := Representation.Equiv.mk e fun g ↦ by
-    ext a
-    simp [e]
-  let eA : A ≅ A := Rep.mkIso eRep
-  have heA : eA.hom = c • 𝟙 A := by
-    ext a
-    simp [eA, eRep, e, Rep.smul_hom]
-  let eH : groupCohomology A n ≅ groupCohomology A n := (functor k G n).mapIso eA
-  have heH : eH.hom = c • 𝟙 (groupCohomology A n) := by
-    rw [CategoryTheory.Functor.mapIso_hom, functor_map, heA, map_id_smul, map_id]
-  have hfun : (fun x : groupCohomology A n ↦ c • x) = eH.hom := by
-    funext x
-    simp [heH]
-  simpa only [← hfun] using ConcreteCategory.bijective_of_isIso eH.hom
+  have : IsIso ((forget (Rep k G)).map (c • 𝟙 A)) :=
+    (ConcreteCategory.isIso_iff_bijective _).2 <| by
+      convert hA using 1
+      ext a
+      simp [Rep.smul_hom]
+  have : IsIso (c • 𝟙 A) := isIso_of_reflects_iso _ (forget (Rep k G))
+  have : IsIso (c • 𝟙 (groupCohomology A n)) :=
+    CategoryTheory.Functor.isIso_smul_id_obj (functor k G n) c A
+  have hfun : (fun x : groupCohomology A n ↦ c • x) = ⇑(c • 𝟙 (groupCohomology A n)) :=
+    funext fun x ↦ by simp
+  exact hfun ▸ ConcreteCategory.bijective_of_isIso (c • 𝟙 (groupCohomology A n))
 
 /-- Multiplication by `m : ℕ`, if bijective on `A`, is bijective on `Hⁿ(G, A)` in every degree
 `n`. -/
@@ -152,9 +149,7 @@ theorem smul_eq_zero_of_forall_smul_eq_zero {A : Rep k G} {c : k} {n : ℕ}
   have hc : c • (𝟙 A : A ⟶ A) = 0 := by
     ext a
     simp [Rep.smul_hom, hA a]
-  have hmap := congrArg (fun f ↦ f.hom x) (map_id_smul c (𝟙 A) n)
-  rw [hc, map_id_zero, map_id] at hmap
-  exact hmap.symm
+  simpa [hc] using congrArg (fun f ↦ f.hom x) (map_id_smul c (𝟙 A) n).symm
 
 /-- A natural number `m` that annihilates every element of `A` annihilates `Hⁿ(G, A)` in every
 degree `n`. -/
@@ -167,7 +162,7 @@ theorem nsmul_eq_zero_of_forall_nsmul_eq_zero {A : Rep k G} {m n : ℕ}
 /-- `Hⁿ(G, A)` is annihilated by `Nat.card A` in every degree `n`. When `A` is infinite,
 `Nat.card A = 0` and both sides vanish trivially. -/
 @[simp]
-theorem natCard_coe_nsmul_eq_zero {A : Rep k G} {n : ℕ} (x : groupCohomology A n) :
+theorem natCard_V_nsmul_eq_zero {A : Rep k G} {n : ℕ} (x : groupCohomology A n) :
     Nat.card A • x = 0 :=
   nsmul_eq_zero_of_forall_nsmul_eq_zero (fun _ ↦ card_nsmul_eq_zero') x
 

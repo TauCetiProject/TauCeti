@@ -65,8 +65,8 @@ restrictions.
   `TauCeti.groupCohomology.map_subtype_injective_of_isAddPGroup`: restriction to `S` is injective
   when `[G : S]` acts bijectively on `A`, in particular when `[G : S]` is coprime to `Nat.card A`
   or when `A` is an additive `p`-group with `p` coprime to `[G : S]`.
-* `groupCohomology.natCard_nsmul_eq_zero`: positive-degree cohomology of a finite group is killed
-  by the order of the group.
+* `groupCohomology.natCard_nsmul_eq_zero`: positive-degree cohomology of a group is killed by
+  `Nat.card G`.
 * `groupCohomology.subsingleton_of_isUnit_natCard`: positive-degree cohomology of a group
   vanishes when `Nat.card G` is a unit of the coefficient ring.
 * `groupCohomology.subsingleton_of_bijective_nsmul`: positive-degree cohomology of a group
@@ -74,8 +74,9 @@ restrictions.
 * `groupCohomology.isIso_δ_of_bijective_nsmul`: the connecting homomorphisms of a short exact
   sequence are isomorphisms in positive degree when multiplication by `Nat.card G` is bijective on
   the middle term.
-* `groupCohomology.zmultiples_map_subtype_eq_top`: a class of full `p`-order restricts to a
-  generator on a `p`-subgroup whose cohomology has the order of the subgroup.
+* `groupCohomology.zmultiples_map_subtype_eq_top`: for a finite group `G`, a class of full
+  `p`-order restricts to a generator on a `p`-subgroup whose cohomology has the order of the
+  subgroup.
 * `TauCeti.groupCohomology.corestriction_trans`: corestriction from `A` to `B` followed by
   corestriction from `B` to `C` is corestriction from `A` to `C`.
 
@@ -182,52 +183,43 @@ theorem map_subtype_id_comp_corestriction (A : Rep.{u} k G) (n : ℕ) :
       CategoryTheory.Functor.map_id]
   exact congrArg (S.index • ·) (CategoryTheory.Functor.map_id _ _)
 
-/-- A class in `Hⁿ(G, A)` whose restriction to the finite-index subgroup `S` vanishes is killed by
-the index of `S`. -/
-theorem index_nsmul_eq_zero_of_map_eq_zero {A : Rep.{u} k G} {n : ℕ} {x : groupCohomology A n}
-    (h : map S.subtype (𝟙 (res S.subtype A)) n x = 0) : S.index • x = 0 := by
-  rw [← map_subtype_id_comp_corestriction_apply S A n x, h, map_zero]
-
 section RestrictionInjective
 
 omit [S.FiniteIndex]
+
+/-- A class in `Hⁿ(G, A)` whose restriction to a subgroup `S` vanishes is killed by the index
+`[G : S]` (when `S` has infinite index, `S.index = 0` and the left-hand side vanishes trivially). -/
+theorem index_nsmul_eq_zero_of_map_eq_zero {A : Rep.{u} k G} {n : ℕ} {x : groupCohomology A n}
+    (h : map S.subtype (𝟙 (res S.subtype A)) n x = 0) : S.index • x = 0 := by
+  rcases eq_or_ne S.index 0 with h0 | h0
+  · rw [h0, zero_smul]
+  · have : S.FiniteIndex := ⟨h0⟩
+    rw [← map_subtype_id_comp_corestriction_apply S A n x, h, map_zero]
 
 /-- A class in `Hⁿ(G, A)` killed by an integer `m` coprime to `[G : S]` and by restriction to `S`
 is zero. No `[S.FiniteIndex]` assumption is needed: when `S` has infinite index, `S.index = 0` and
 coprimality forces `m = 1`. -/
 theorem eq_zero_of_nsmul_eq_zero_of_map_eq_zero {A : Rep.{u} k G} {m n : ℕ}
     {x : groupCohomology A n} (hcop : m.Coprime S.index) (hx : m • x = 0)
-    (h : map S.subtype (𝟙 (res S.subtype A)) n x = 0) : x = 0 := by
-  rcases eq_or_ne S.index 0 with h0 | h0
-  · rw [h0, Nat.coprime_zero_right] at hcop
-    simpa [hcop] using hx
-  · have : S.FiniteIndex := ⟨h0⟩
-    exact (nsmul_eq_zero_iff_of_coprime hcop).1 ⟨hx, index_nsmul_eq_zero_of_map_eq_zero S h⟩
+    (h : map S.subtype (𝟙 (res S.subtype A)) n x = 0) : x = 0 :=
+  (nsmul_eq_zero_iff_of_coprime hcop).1 ⟨hx, index_nsmul_eq_zero_of_map_eq_zero S h⟩
 
 /-- Restriction `Hⁿ(G, A) ⟶ Hⁿ(S, Res_S A)` is injective in every degree `n` whenever
 multiplication by `[G : S]` is bijective on `A`. When `S` has infinite index (`S.index = 0`),
 bijectivity of `0 • ·` forces `A` and `Hⁿ(G, A)` to be subsingletons. -/
 theorem map_subtype_injective_of_bijective_index_nsmul {A : Rep.{u} k G}
     (hA : Function.Bijective fun a : A ↦ S.index • a) (n : ℕ) :
-    Function.Injective (map S.subtype (𝟙 (res S.subtype A)) n) := by
-  have hinj := (nsmul_bijective S.index A hA n).1
-  rcases eq_or_ne S.index 0 with h0 | h0
-  · intro x y _
-    exact hinj (by simp [h0])
-  · have : S.FiniteIndex := ⟨h0⟩
-    intro x y hxy
-    refine hinj ?_
-    dsimp only
-    rw [← map_subtype_id_comp_corestriction_apply S A n x,
-      ← map_subtype_id_comp_corestriction_apply S A n y, hxy]
+    Function.Injective (map S.subtype (𝟙 (res S.subtype A)) n) := fun x y hxy ↦
+  (nsmul_bijective S.index A hA n).1 <| sub_eq_zero.1 <| by
+    rw [← smul_sub]
+    exact index_nsmul_eq_zero_of_map_eq_zero S (by rw [map_sub, hxy, sub_self])
 
 /-- Restriction `Hⁿ(G, A) ⟶ Hⁿ(S, Res_S A)` is injective in every degree `n` when `[G : S]` is
 coprime to `Nat.card A`. Neither `G`, `S.index`, nor `A` need be finite. -/
 theorem map_subtype_injective_of_coprime_index {A : Rep.{u} k G}
     (hcop : S.index.Coprime (Nat.card A)) (n : ℕ) :
-    Function.Injective (map S.subtype (𝟙 (res S.subtype A)) n) := fun x y hxy ↦
-  sub_eq_zero.1 <| eq_zero_of_nsmul_eq_zero_of_map_eq_zero S hcop.symm
-    (natCard_coe_nsmul_eq_zero _) (by rw [map_sub, hxy, sub_self])
+    Function.Injective (map S.subtype (𝟙 (res S.subtype A)) n) :=
+  map_subtype_injective_of_bijective_index_nsmul S hcop.symm.nsmul_right_bijective n
 
 /-- Restriction `Hⁿ(G, A) ⟶ Hⁿ(S, Res_S A)` is injective in every degree `n` when the underlying
 additive group of `A` is a `p`-group (possibly infinite) and `p` is coprime to `[G : S]`. -/
@@ -493,9 +485,8 @@ variable {k G : Type u} [CommRing k] [Group G]
 
 open Limits
 
-variable [Finite G] in
-/-- Positive-degree cohomology of a finite group is killed by the order of the group (Milne II
-1.31). -/
+/-- Positive-degree cohomology of a group is killed by `Nat.card G` (Milne II 1.31; when `G` is
+infinite, `Nat.card G = 0` and the left-hand side vanishes trivially). -/
 theorem natCard_nsmul_eq_zero {A : Rep k G} {n : ℕ} (x : groupCohomology A (n + 1)) :
     Nat.card G • x = 0 := by
   -- Restriction to the trivial subgroup lands in the vanishing cohomology of the trivial group.
@@ -509,13 +500,10 @@ space over any coefficient ring (when `G` is infinite, `Nat.card G = 0` and bije
 to be a subsingleton). -/
 theorem subsingleton_of_bijective_nsmul (A : Rep k G)
     (h : Function.Bijective fun a : A ↦ Nat.card G • a) (n : ℕ) :
-    Subsingleton (groupCohomology A (n + 1)) := by
-  have hinj := (TauCeti.groupCohomology.nsmul_bijective (Nat.card G) A h (n + 1)).1
-  rcases eq_or_ne (Nat.card G) 0 with h0 | h0
-  · exact subsingleton_of_forall_eq 0 fun x ↦ hinj (by simp [h0])
-  · have : Finite G := Nat.finite_of_card_ne_zero h0
-    exact subsingleton_of_forall_eq 0 fun x ↦
-      hinj (by dsimp only; rw [natCard_nsmul_eq_zero, smul_zero])
+    Subsingleton (groupCohomology A (n + 1)) :=
+  subsingleton_of_forall_eq 0 fun x ↦
+    (TauCeti.groupCohomology.nsmul_bijective (Nat.card G) A h (n + 1)).1
+      (by dsimp only; rw [natCard_nsmul_eq_zero, smul_zero])
 
 /-- Positive-degree cohomology of a group vanishes when `Nat.card G` is a unit of the coefficient
 ring. -/
@@ -536,10 +524,9 @@ theorem isIso_δ_of_bijective_nsmul {X : ShortComplex (Rep k G)} (hX : X.ShortEx
     (ModuleCat.isZero_of_subsingleton _)
 
 variable [Finite G] in
-/-- **A class of full `p`-order restricts to a generator on a `p`-subgroup.** Let `u ∈ Hⁿ(G, A)`
-have order divisible by the `p`-part of `#G`, and let `S` be a `p`-subgroup of `G` with
-`#Hⁿ(S, A) = #S`. Then the restriction of `u` generates `Hⁿ(S, A)`: corestriction carries it to
-`[G : S] • u`, whose order is divisible by `#S`. -/
+/-- **A class of full `p`-order restricts to a generator on a `p`-subgroup.** For a finite group
+`G`, let `u ∈ Hⁿ(G, A)` have order divisible by the `p`-part of `#G`, and let `S` be a
+`p`-subgroup of `G` with `#Hⁿ(S, A) = #S`. Then the restriction of `u` generates `Hⁿ(S, A)`. -/
 theorem zmultiples_map_subtype_eq_top {p : ℕ} [Fact p.Prime] {A : Rep k G} {n : ℕ}
     {u : groupCohomology A n} (hu : p ^ padicValNat p (Nat.card G) ∣ addOrderOf u)
     {S : Subgroup G} (hS : IsPGroup p S)
