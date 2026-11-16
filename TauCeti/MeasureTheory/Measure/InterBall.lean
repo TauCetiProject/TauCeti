@@ -34,10 +34,13 @@ For an arbitrary measure, a bound `μ (closedBall x r) ≤ f r` on concentric cl
 for radii arbitrarily close to `ρ` from the right holds at `ρ` when `f` is right-continuous there
 (`MeasureTheory.Measure.measure_closedBall_le_of_frequently_le`).
 
-The balls about a point `z` have measures tending to `μ {z}` as the radius decreases to `0`,
-once one of them has finite measure (`TauCeti.tendsto_measure_ball_nhdsGT_zero`). Dually, the
-integrals of a function integrable on a ball over the concentric balls of smaller radius tend to
-its integral over the ball (`MeasureTheory.IntegrableOn.tendsto_integral_ball_nhdsLT`).
+The balls and closed balls about a point `z` have measures tending to `μ {z}` as the radius
+decreases to `0`, once one of them has finite measure (`TauCeti.tendsto_measure_ball_nhdsGT_zero`,
+`TauCeti.tendsto_measure_closedBall_nhdsGE_zero`), while punctured closed balls
+`closedBall z r \ {z}` have measures tending to `0` at `0` once one of them has finite measure
+(`TauCeti.tendsto_measure_closedBall_sdiff_singleton_nhds_zero`). Dually, the integrals of a
+function integrable on a ball over the concentric balls of smaller radius tend to its integral over
+the ball (`MeasureTheory.IntegrableOn.tendsto_integral_ball_nhdsLT`).
 
 ## Main results
 
@@ -51,8 +54,9 @@ its integral over the ball (`MeasureTheory.IntegrableOn.tendsto_integral_ball_nh
   arbitrarily close to `ρ` from the right extends to `ρ` for a right-continuous gauge.
 * `MeasureTheory.Measure.measure_ball_le_of_forall_lt`: a bound on the measures of the open balls
   of radius less than `ρ` bounds the open ball of radius `ρ`.
-* `TauCeti.tendsto_measure_ball_nhdsGT_zero`: shrinking balls about `z` have measures tending to
-  `μ {z}`.
+* `TauCeti.tendsto_measure_ball_nhdsGT_zero`, `TauCeti.tendsto_measure_closedBall_nhdsGE_zero`,
+  `TauCeti.tendsto_measure_closedBall_sdiff_singleton_nhds_zero`: shrinking balls and closed balls
+  about `z` have measures tending to `μ {z}`, and punctured closed balls tend in measure to `0`.
 * `MeasureTheory.IntegrableOn.tendsto_integral_ball_nhdsLT`: as `r → R⁻`, the integral over
   `ball x r` tends to the integral over `ball x R`.
 -/
@@ -158,8 +162,8 @@ end MeasureTheory.Measure
 
 namespace TauCeti
 
-open MeasureTheory Metric Filter
-open scoped Topology
+open MeasureTheory Metric Filter Set
+open scoped ENNReal Topology
 
 variable {X : Type*} [MetricSpace X] [MeasurableSpace X] [OpensMeasurableSpace X] {μ : Measure X}
 
@@ -169,6 +173,41 @@ theorem tendsto_measure_ball_nhdsGT_zero {z : X} (hfin : ∃ R > 0, μ (ball z R
     Tendsto (fun r ↦ μ (ball z r)) (𝓝[>] 0) (𝓝 (μ {z})) := by
   simpa [thickening_singleton] using
     tendsto_measure_thickening (μ := μ) (s := {z}) (by simpa [thickening_singleton] using hfin)
+
+/-- The closed balls about a point `z`, one of positive radius having finite measure, have measures
+tending to `μ {z}` as the radius approaches `0` from the right. -/
+theorem tendsto_measure_closedBall_nhdsGE_zero {z : X} (hfin : ∃ R > 0, μ (closedBall z R) ≠ ⊤) :
+    Tendsto (fun r ↦ μ (closedBall z r)) (𝓝[≥] 0) (𝓝 (μ {z})) := by
+  obtain ⟨R, hR, hRfin⟩ := hfin
+  have hlim := tendsto_measure_cthickening_of_isClosed (μ := μ) (s := {z})
+    ⟨R, hR, by rwa [cthickening_singleton z hR.le]⟩ isClosed_singleton
+  exact (hlim.mono_left nhdsWithin_le_nhds).congr' <|
+    eventually_nhdsWithin_of_forall fun r (hr : 0 ≤ r) ↦
+      congrArg μ (cthickening_singleton z hr)
+
+/-- Punctured closed balls `closedBall z r \ {z}` about `z` have measures tending to `0` at `0`
+whenever one of positive radius has finite measure. -/
+theorem tendsto_measure_closedBall_sdiff_singleton_nhds_zero {z : X}
+    (hfin : ∃ R > 0, μ (closedBall z R \ {z}) ≠ ⊤) :
+    Tendsto (fun r ↦ μ (closedBall z r \ {z})) (𝓝 0) (𝓝 0) := by
+  have hgt : Tendsto (fun r ↦ μ (closedBall z r \ {z})) (𝓝[>] 0) (𝓝 0) := by
+    have hiInter : ⋂ r > (0 : ℝ), closedBall z r \ {z} = ∅ :=
+      eq_empty_iff_forall_notMem.2 fun y hy ↦ by
+        obtain ⟨-, hne⟩ := mem_iInter₂.1 hy 1 zero_lt_one
+        have hd : 0 < dist y z := dist_pos.2 hne
+        exact (not_le_of_gt (half_lt_self hd))
+          (mem_closedBall.1 (mem_iInter₂.1 hy (dist y z / 2) (half_pos hd)).1)
+    simpa only [Function.comp_def, hiInter, measure_empty] using
+      tendsto_measure_biInter_gt
+        (fun r _ ↦ (measurableSet_closedBall.diff (measurableSet_singleton z)).nullMeasurableSet)
+        (fun _ _ _ hij ↦ sdiff_subset_sdiff_left (closedBall_subset_closedBall hij)) hfin
+  have hle : Tendsto (fun r ↦ μ (closedBall z r \ {z})) (𝓝[≤] 0) (𝓝 0) := by
+    refine tendsto_const_nhds.congr' <| eventually_nhdsWithin_of_forall fun r (hr : r ≤ 0) ↦ ?_
+    have hempty : closedBall z r \ {z} = ∅ := eq_empty_iff_forall_notMem.2 fun y ⟨hy, hyz⟩ ↦
+      hyz (mem_singleton_iff.2 (dist_le_zero.1 ((mem_closedBall.1 hy).trans hr)))
+    simp [hempty]
+  rw [← nhdsLE_sup_nhdsGT 0]
+  exact hle.sup hgt
 
 end TauCeti
 

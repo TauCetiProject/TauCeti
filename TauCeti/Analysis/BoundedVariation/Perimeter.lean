@@ -35,9 +35,9 @@ the semicontinuity half of the direct method for perimeter problems.
 
 * `TauCeti.perimeter μ Ω s`: the perimeter of `s` in `Ω`.
 * `TauCeti.perimeter_eq_iSup`: the perimeter of a null-measurable set as a supremum of `∫_s div φ`.
-* `TauCeti.perimeter_congr_ae`, `TauCeti.perimeter_congr_of_inter_eq`, `TauCeti.perimeter_mono`
-  and `TauCeti.perimeter_iSup`: invariance under null modification inside `Ω` and locality, and
-  monotonicity and inner continuity in `Ω`.
+* `TauCeti.perimeter_congr_ae`, `TauCeti.perimeter_congr_of_inter_eq`, `TauCeti.perimeter_mono`,
+  `TauCeti.perimeter_iSup` and `TauCeti.perimeter_smul_nnreal`: invariance under null modification
+  inside `Ω` and locality, monotonicity and inner continuity in `Ω`, and scaling in the measure.
 * `TauCeti.perimeter_compl`, `TauCeti.perimeter_empty` and `TauCeti.perimeter_univ`.
 * `TauCeti.perimeter_le_liminf`: lower semicontinuity of the perimeter.
 
@@ -54,7 +54,7 @@ noncomputable section
 namespace TauCeti
 
 open MeasureTheory TopologicalSpace Filter TestFunction Set
-open scoped ENNReal Distributions Topology symmDiff
+open scoped ENNReal NNReal Distributions Topology symmDiff
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] {μ : Measure E} {Ω Ω' : Opens E} {s t : Set E}
@@ -115,6 +115,15 @@ theorem perimeter_restrict_of_subset {t : Set E} (h : t ⊆ s) :
   refine iSup_congr fun φ => iSup_congr fun _ => congrArg ENNReal.ofReal ?_
   exact setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx => by
     simp [indicator_of_notMem (fun hxt => hx (h hxt))]
+
+/-- Scaling the ambient measure by `c : ℝ≥0` scales the perimeter by `c`. -/
+@[simp]
+theorem perimeter_smul_nnreal (c : ℝ≥0) (μ : Measure E) (Ω : Opens E) (s : Set E) :
+    perimeter (c • μ) Ω s = c * perimeter μ Ω s := by
+  simp_rw [perimeter_def, totalVariationOn_def, ENNReal.mul_iSup]
+  refine iSup_congr fun φ => iSup_congr fun _ => ?_
+  rw [integral_smul_nnreal_measure, NNReal.smul_def, smul_eq_mul,
+    ENNReal.ofReal_mul NNReal.zero_le_coe, ENNReal.ofReal_coe_nnreal]
 
 section Haar
 

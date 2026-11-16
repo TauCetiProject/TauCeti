@@ -54,12 +54,15 @@ longer windows linearly in their length, and so makes the measure locally finite
   `MeasureTheory.Measure.isLocallyFiniteMeasure_of_measure_Icc_add_one_le`: a measure on `ℝ`
   whose unit windows `[a, a + 1]` have mass at most `C` gives `[a, a + n]` mass at most
   `(n + 1) * C`, and is locally finite.
+* `MeasureTheory.measure_symmDiff_Iio_or_Ioi_inter_Ioo_eq_zero`: a set that is neither null nor
+  conull on `(a, b)`, is null or conull on each subinterval `(a, c)` and `(c, b)`, and has `{c}`
+  null agrees up to a null set on `(a, b)` with `(-∞, c)` or `(c, ∞)`.
 -/
 
 public section
 
 open Set Filter
-open scoped Topology ENNReal NNReal
+open scoped Topology ENNReal NNReal symmDiff
 
 namespace MeasureTheory
 
@@ -278,5 +281,47 @@ theorem isLocallyFiniteMeasure_of_measure_Icc_add_one_le {η : Measure ℝ} {C :
     (hC _).trans_lt ENNReal.coe_lt_top⟩⟩
 
 end Measure
+
+/-- In a linearly ordered measurable space, if a set `s` has both `s ∩ (a, b)` and `(a, b) \ s` of
+nonzero `μ`-measure, is either null or conull on each subinterval `(a, c)` and `(c, b)`, and `{c}`
+is `μ`-null, then `s` agrees up to a `μ`-null set on `(a, b)` with either `(-∞, c)` or `(c, ∞)`. -/
+theorem measure_symmDiff_Iio_or_Ioi_inter_Ioo_eq_zero [LinearOrder α] {a b c : α} {s : Set α}
+    (hs1 : μ (s ∩ Ioo a b) ≠ 0) (hs0 : μ (Ioo a b \ s) ≠ 0)
+    (hleft : μ (s ∩ Ioo a c) = 0 ∨ μ (Ioo a c \ s) = 0)
+    (hright : μ (s ∩ Ioo c b) = 0 ∨ μ (Ioo c b \ s) = 0) (hc : μ {c} = 0) :
+    μ ((s ∆ Iio c) ∩ Ioo a b) = 0 ∨ μ ((s ∆ Ioi c) ∩ Ioo a b) = 0 := by
+  have hcov {t : α} (htI : t ∈ Ioo a b) :
+      t ∈ Ioo a c ∨ t ∈ Ioo c b ∨ t ∈ ({c} : Set α) := by
+    rcases lt_trichotomy t c with h | rfl | h
+    exacts [.inl ⟨htI.1, h⟩, .inr (.inr rfl), .inr (.inl ⟨h, htI.2⟩)]
+  rcases hleft with hneg0 | hneg1 <;> rcases hright with hpos0 | hpos1
+  · refine (hs1 (measure_mono_null ?_
+      (measure_union_null hneg0 (measure_union_null hpos0 hc)))).elim
+    intro t ht
+    rcases hcov ht.2 with h | h | h
+    exacts [.inl ⟨ht.1, h⟩, .inr (.inl ⟨ht.1, h⟩), .inr (.inr h)]
+  · refine .inr (measure_mono_null ?_
+      (measure_union_null hneg0 (measure_union_null hpos1 hc)))
+    intro t ht
+    rcases hcov ht.2 with h | h | h
+    · rcases ht.1 with ⟨htT, _⟩ | ⟨ht1, _⟩
+      exacts [.inl ⟨htT, h⟩, absurd ht1 (not_lt.2 h.2.le)]
+    · rcases ht.1 with ⟨_, ht1⟩ | ⟨_, htT⟩
+      exacts [absurd h.1 ht1, .inr (.inl ⟨h, htT⟩)]
+    · exact .inr (.inr h)
+  · refine .inl (measure_mono_null ?_
+      (measure_union_null hneg1 (measure_union_null hpos0 hc)))
+    intro t ht
+    rcases hcov ht.2 with h | h | h
+    · rcases ht.1 with ⟨_, ht1⟩ | ⟨_, htT⟩
+      exacts [absurd h.2 ht1, .inl ⟨h, htT⟩]
+    · rcases ht.1 with ⟨htT, _⟩ | ⟨ht1, _⟩
+      exacts [.inr (.inl ⟨htT, h⟩), absurd ht1 (not_lt.2 h.1.le)]
+    · exact .inr (.inr h)
+  · refine (hs0 (measure_mono_null ?_
+      (measure_union_null hneg1 (measure_union_null hpos1 hc)))).elim
+    intro t ht
+    rcases hcov ht.1 with h | h | h
+    exacts [.inl ⟨h, ht.2⟩, .inr (.inl ⟨h, ht.2⟩), .inr (.inr h)]
 
 end MeasureTheory

@@ -16,6 +16,7 @@ import TauCeti.Algebra.BigOperators.Fin
 import TauCeti.Analysis.BoundedVariation.DerivativeMeasure
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # Variation and perimeter on the real line
@@ -44,7 +45,11 @@ one-dimensional isoperimetric inequality and its rigidity:
   perimeter at least `4` (`TauCeti.Real.four_le_perimeter`);
 * a bounded open interval has perimeter `2` (`TauCeti.Real.perimeter_Ioo`), and a set of
   finite measure has perimeter `2` exactly when it agrees almost everywhere with a nonempty such
-  interval (`TauCeti.Real.perimeter_eq_two_iff`).
+  interval (`TauCeti.Real.perimeter_eq_two_iff`);
+* on an open interval `(a, b)`, a set whose intersection and relative complement in `(a, b)` are
+  null-measurable and non-null has perimeter at least `1` (`TauCeti.Real.one_le_perimeter_Ioo`), so
+  zero perimeter on `(a, b)` characterizes sets that are null or conull in `(a, b)`
+  (`TauCeti.Real.perimeter_Ioo_eq_zero_iff`).
 
 These are the statements about almost every line section that slicing arguments for sets of
 finite perimeter in higher dimensions apply: a section of perimeter less than `4` is an interval
@@ -55,7 +60,8 @@ up to a null set.
 * `TauCeti.Real.ofReal_sum_abs_sub_le_totalVariationOn`: the variation of `u` along Lebesgue
   points in `Ω` is at most `|Du|(Ω)`.
 * `TauCeti.Real.two_le_perimeter`, `TauCeti.Real.four_le_perimeter`,
-  `TauCeti.Real.perimeter_Ioo` and `TauCeti.Real.perimeter_eq_two_iff`.
+  `TauCeti.Real.perimeter_Ioo`, `TauCeti.Real.perimeter_eq_two_iff`,
+  `TauCeti.Real.one_le_perimeter_Ioo` and `TauCeti.Real.perimeter_Ioo_eq_zero_iff`.
 
 ## References
 
@@ -373,5 +379,59 @@ theorem perimeter_le_two_iff {s : Set ℝ} (hs : NullMeasurableSet s) (hfin : vo
     · obtain ⟨a, b, hab, hIab⟩ := hI.exists_ae_eq_Ioo
         ((measure_congr hsI).symm ▸ hzero) ((measure_congr hsI).symm ▸ hfin)
       exact (perimeter_eq_two_iff hs hfin).mpr ⟨a, b, hab, hsI.trans hIab⟩ |>.le
+
+/-- On an open interval `(a, b) ⊆ ℝ`, any set `s` whose intersection with `(a, b)` is
+null-measurable and for which both `s ∩ (a, b)` and `(a, b) \ s` have nonzero Lebesgue measure has
+perimeter at least `1` in `(a, b)`. -/
+theorem one_le_perimeter_Ioo {a b : ℝ} {s : Set ℝ} (hs : NullMeasurableSet (s ∩ Ioo a b))
+    (h0 : volume (s ∩ Ioo a b) ≠ 0) (hc : volume (Ioo a b \ s) ≠ 0) :
+    1 ≤ perimeter volume ⟨Ioo a b, isOpen_Ioo⟩ s := by
+  set s' := s ∩ Ioo a b
+  have hu : LocallyIntegrable (s'.indicator (1 : ℝ → ℝ)) volume := by
+    rw [Pi.one_def]
+    exact (locallyIntegrable_const (1 : ℝ)).indicator₀ hs
+  have hae := IsUnifLocDoublingMeasure.ae_tendsto_average_closedBall_norm_sub volume hu
+  obtain ⟨p, hps', hp⟩ := Measure.exists_mem_of_measure_ne_zero_of_ae h0
+    (ae_restrict_of_ae hae)
+  have hdiff : Ioo a b \ s' = Ioo a b \ s := by ext z; simp [s']
+  obtain ⟨q, hqs', hq⟩ := Measure.exists_mem_of_measure_ne_zero_of_ae
+    (s := Ioo a b \ s') (by rwa [hdiff]) (ae_restrict_of_ae hae)
+  let pts : Fin 2 → ℝ := ![min p q, max p q]
+  have hmono : Monotone pts := Fin.monotone_iff_le_succ.2 fun i => by
+    fin_cases i; exact min_le_max
+  have hIcc : Icc (pts 0) (pts (Fin.last 1)) ⊆ Ioo a b :=
+    Icc_subset_Ioo (lt_min hps'.2.1 hqs'.1.1) (max_lt hps'.2.2 hqs'.1.2)
+  have hleb (i : Fin 2) : Tendsto (fun r => ⨍ y in closedBall (pts i) r,
+      ‖s'.indicator (1 : ℝ → ℝ) y - s'.indicator (1 : ℝ → ℝ) (pts i)‖) (𝓝[>] 0) (𝓝 0) := by
+    fin_cases i
+    · rcases min_choice p q with h | h <;> simp only [pts, h] <;> assumption
+    · rcases max_choice p q with h | h <;> simp only [pts, h] <;> assumption
+  have hbound := ofReal_sum_abs_sub_le_totalVariationOn (Ω := ⟨Ioo a b, isOpen_Ioo⟩)
+    (hu.locallyIntegrableOn _) hmono hIcc hleb
+  have hval : |s'.indicator (1 : ℝ → ℝ) (max p q) - s'.indicator (1 : ℝ → ℝ) (min p q)| = 1 := by
+    rcases le_total p q with hpq | hqp
+    · simp [min_eq_left hpq, max_eq_right hpq, hps', hqs'.2]
+    · simp [min_eq_right hqp, max_eq_left hqp, hps', hqs'.2]
+  rw [perimeter_congr_of_inter_eq (t := s') (by simp [s']), perimeter_def]
+  simpa [pts, Fin.sum_univ_one, hval] using hbound
+
+/-- For a set `s ⊆ ℝ` whose intersection with `(a, b)` is null-measurable, the perimeter of `s` in
+`(a, b)` vanishes if and only if `s` is either null or conull in `(a, b)`. -/
+theorem perimeter_Ioo_eq_zero_iff {a b : ℝ} {s : Set ℝ} (hs : NullMeasurableSet (s ∩ Ioo a b)) :
+    perimeter volume ⟨Ioo a b, isOpen_Ioo⟩ s = 0 ↔
+      volume (s ∩ Ioo a b) = 0 ∨ volume (Ioo a b \ s) = 0 := by
+  refine ⟨fun hP => ?_, ?_⟩
+  · by_contra! h
+    have hle := one_le_perimeter_Ioo hs h.1 h.2
+    simp [hP] at hle
+  · rintro (h0 | hc)
+    · have hae : s =ᵐ[volume.restrict (Ioo a b)] (∅ : Set ℝ) :=
+        ae_eq_empty.2 (by rwa [Measure.restrict_apply' measurableSet_Ioo])
+      rw [perimeter_congr_ae hae, perimeter_empty]
+    · have hae : s =ᵐ[volume.restrict (Ioo a b)] (univ : Set ℝ) :=
+        ae_eq_univ.2 (by
+          rw [Measure.restrict_apply' measurableSet_Ioo, inter_comm, ← sdiff_eq]
+          exact hc)
+      rw [perimeter_congr_ae hae, perimeter_univ]
 
 end TauCeti.Real
