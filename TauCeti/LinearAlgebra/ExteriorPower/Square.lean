@@ -33,6 +33,8 @@ comparing the index set `{(i, j) | i < j}` with Mathlib's index set of two-eleme
 * `exteriorPower.ιMulti_two_add_right` and `exteriorPower.ιMulti_two_smul_right`: the wedge
   `u ∧ w` of two vectors is linear in `w`.
 * `exteriorPower.ιMulti_two_smul_left`: the wedge `u ∧ w` is homogeneous in `u`.
+* `exteriorPower.ιMulti_two_neg_right` and `exteriorPower.ιMulti_two_swap`: `u ∧ (-w) = -(u ∧ w)`
+  and `w ∧ u = -(u ∧ w)`.
 -/
 
 public section
@@ -58,6 +60,17 @@ theorem ιMulti_two_smul_left (u w : M) (c : R) :
     ιMulti R 2 ![c • u, w] = c • ιMulti R 2 ![u, w] := by
   apply Subtype.ext
   simp [ExteriorAlgebra.ιMulti_apply, Matrix.vecTail]
+
+/-- The wedge `u ∧ w` changes sign when `w` is negated. -/
+theorem ιMulti_two_neg_right (u w : M) :
+    ιMulti R 2 ![u, -w] = -ιMulti R 2 ![u, w] := by
+  apply Subtype.ext
+  simp [ExteriorAlgebra.ιMulti_apply, Matrix.vecTail]
+
+/-- The wedge `u ∧ w` is antisymmetric: `w ∧ u = -(u ∧ w)`. -/
+theorem ιMulti_two_swap (u w : M) :
+    ιMulti R 2 ![w, u] = -ιMulti R 2 ![u, w] := by
+  simpa using (ιMulti R 2).map_swap ![u, w] (i := 0) (j := 1) Fin.zero_ne_one
 
 end exteriorPower
 

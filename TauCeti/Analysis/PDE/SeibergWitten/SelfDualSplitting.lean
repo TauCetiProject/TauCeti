@@ -44,7 +44,9 @@ imaginary form `i q(ψ)`, so `q(u₀) = ω / 4` is the identity `q(u₀) = i ω 
   projection.
 * `cliffordProjection_apply_eq_self_iff`,
   `bivectorExterior_apply_of_cliffordProjection_apply_eq_self`: the fixed vectors of `P_α` are
-  the `2`-eigenvectors of `C(iω)`, on which `c₂(ω)` acts by `-2i`. Conversely
+  the `2`-eigenvectors of `C(iω)`, on which `c₂(ω)` acts by `-2i`, and
+  `bivectorExterior_apply_of_cliffordProjection_apply_eq_zero`: `c₂(ω)` acts by `2i` on the
+  kernel of `P_α`. Conversely
   `cliffordProjection_apply_eq_self_of_bivectorExterior_apply` and
   `cliffordProjection_apply_eq_zero_of_bivectorExterior_apply`: `P_α` fixes the
   `-2i`-eigenvectors of `c₂(ω)` and kills its `2i`-eigenvectors.
@@ -195,6 +197,22 @@ theorem cliffordProjection_apply_eq_zero_iff {ψ : positiveHalfSpinors o ρ} :
   constructor <;> intro h
   · linear_combination (norm := module) (4 : ℂ) • h
   · linear_combination (norm := module) (4⁻¹ : ℂ) • h
+
+variable {ω} in
+/-- On the kernel of `P_α`, the Clifford action of `ω` is multiplication by `2i`: it consists of
+`2i`-eigenvectors of `c₂(ω)`. -/
+theorem bivectorExterior_apply_of_cliffordProjection_apply_eq_zero {ψ : positiveHalfSpinors o ρ}
+    (hψ : cliffordProjection o ρ ω ψ = 0) :
+    ρ (bivectorExterior Q ω) ψ = (2 * Complex.I) • (ψ : W) := by
+  have h := congrArg Subtype.val ((cliffordProjection_apply_eq_zero_iff o ρ).1 hψ)
+  rw [coe_cliffordRestriction_apply, Submodule.coe_smul] at h
+  -- Multiply `i c₂(ω) ψ = -2 ψ` by `-i`.
+  calc ρ (bivectorExterior Q ω) ψ = (-Complex.I) • (Complex.I • ρ (bivectorExterior Q ω) ψ) := by
+        rw [smul_smul, neg_mul, Complex.I_mul_I, neg_neg, one_smul]
+    _ = (2 * Complex.I) • (ψ : W) := by
+        rw [h, smul_smul]
+        congr 1
+        ring
 
 variable {ω} in
 /-- A positive half-spinor on which `c₂(ω)` acts by `2i` is killed by `P_α`. -/
