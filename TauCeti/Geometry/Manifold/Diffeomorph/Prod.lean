@@ -169,6 +169,9 @@ theorem mfderiv_prodShear_apply (hn : n ≠ 0) (p : M × W)
         NormedSpace.fromTangentSpace p.2 (TauCeti.Manifold.tangentSpaceProdEquiv p w).2 +
           mvfderiv I f p.1 (TauCeti.Manifold.tangentSpaceProdEquiv p w).1) := by
   set fst := ContinuousLinearMap.fst 𝕜 E W
+  -- The tangent spaces `TangentSpace I p.1`, `TangentSpace 𝓘(𝕜, V) (ψ p.1)` and
+  -- `TangentSpace 𝓘(𝕜, W) (f p.1)` are by definition the model spaces `E`, `V` and `W`, so the
+  -- differentials of `ψ` and `f` are linear maps between the model spaces.
   set dψ : E →L[𝕜] V := by exact mfderiv I 𝓘(𝕜, V) ψ p.1
   set df : E →L[𝕜] W := by exact mfderiv I 𝓘(𝕜, W) f p.1
   have hψ : HasMFDerivAt (I.prod 𝓘(𝕜, W)) 𝓘(𝕜, V) (fun p : M × W ↦ ψ p.1) p (dψ.comp fst) :=
@@ -182,6 +185,8 @@ theorem mfderiv_prodShear_apply (hn : n ≠ 0) (p : M × W)
     ⟨(ψ.prodShear hf).continuous.continuousAt, hψ.2.prodMk hs.2⟩
   rw [h.mfderiv]
   simp only [TauCeti.Manifold.tangentSpaceProdEquiv_apply, NormedSpace.fromTangentSpace_apply]
+  -- `mvfderiv` is `mfderiv` read through the identity identification of the tangent space of a
+  -- normed space with the space itself, and the tangent space of `M × W` is `E × W`.
   rfl
 
 end prodShear
