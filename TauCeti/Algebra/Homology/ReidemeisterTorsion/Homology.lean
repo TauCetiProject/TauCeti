@@ -566,16 +566,12 @@ theorem parityTorsionWithHomology_eq_mul_det (c' : ∀ i, Basis (Fin (n i)) F (C
     C.parityTorsionWithHomology c' h =
       C.parityTorsionWithHomology c h * ((c 0).det (c' 0) * ((c 1).det (c' 1))⁻¹) := by
   -- Compute both torsions with the same boundary bases, cycles and lifts.
-  rw [parityTorsionWithHomology_eq (c := c) h (chosenBoundaryBasis C c 1 0)
+  rw [parityTorsionWithHomology_eq (c := c') h (chosenBoundaryBasis C c 1 0)
       (chosenBoundaryBasis C c 0 1) (chosenCycle C h 0) (chosenCycle_spec C h 0)
       (chosenCycle C h 1) (chosenCycle_spec C h 1) (chosenBoundaryLift C c 0 1)
       (chosenBoundaryLift_spec C c 0 1) (chosenBoundaryLift C c 1 0)
       (chosenBoundaryLift_spec C c 1 0),
-    parityTorsionWithHomology_eq (c := c') h (chosenBoundaryBasis C c 1 0)
-      (chosenBoundaryBasis C c 0 1) (chosenCycle C h 0) (chosenCycle_spec C h 0)
-      (chosenCycle C h 1) (chosenCycle_spec C h 1) (chosenBoundaryLift C c 0 1)
-      (chosenBoundaryLift_spec C c 0 1) (chosenBoundaryLift C c 1 0)
-      (chosenBoundaryLift_spec C c 1 0),
+    parityTorsionWithHomology,
     torsionBracketWithHomology_eq_det_mul c _ _ _ _ _ _ _ _ _ c',
     torsionBracketWithHomology_eq_det_mul c _ _ _ _ _ _ _ _ _ c']
   have hinv (i : ZMod 2) : (c' i).det (c i) = ((c i).det (c' i))⁻¹ :=
@@ -591,24 +587,11 @@ theorem parityTorsionWithHomology_eq_mul_det_homology
     C.parityTorsionWithHomology c h' =
       C.parityTorsionWithHomology c h * ((h 1).det (h' 1) * ((h 0).det (h' 0))⁻¹) := by
   -- Compute both torsions with the same boundary bases and lifts.
-  rw [parityTorsionWithHomology_eq c h (chosenBoundaryBasis C c 1 0)
-      (chosenBoundaryBasis C c 0 1) (chosenCycle C h 0) (chosenCycle_spec C h 0)
-      (chosenCycle C h 1) (chosenCycle_spec C h 1) (chosenBoundaryLift C c 0 1)
-      (chosenBoundaryLift_spec C c 0 1) (chosenBoundaryLift C c 1 0)
-      (chosenBoundaryLift_spec C c 1 0),
-    parityTorsionWithHomology_eq c h' (chosenBoundaryBasis C c 1 0)
-      (chosenBoundaryBasis C c 0 1) (chosenCycle C h' 0) (chosenCycle_spec C h' 0)
-      (chosenCycle C h' 1) (chosenCycle_spec C h' 1) (chosenBoundaryLift C c 0 1)
-      (chosenBoundaryLift_spec C c 0 1) (chosenBoundaryLift C c 1 0)
-      (chosenBoundaryLift_spec C c 1 0),
-    torsionBracketWithHomology_eq_mul c _ _ (chosenBoundaryBasis C c 0 1) (h 1)
-      (chosenCycle C h 1) (chosenCycle_spec C h 1) (chosenBoundaryBasis C c 1 0)
-      (chosenBoundaryLift C c 1 0) (chosenBoundaryLift_spec C c 1 0)
-      (chosenBoundaryBasis C c 0 1) (h' 1) (chosenCycle C h' 1) (chosenCycle_spec C h' 1),
-    torsionBracketWithHomology_eq_mul c _ _ (chosenBoundaryBasis C c 1 0) (h 0)
-      (chosenCycle C h 0) (chosenCycle_spec C h 0) (chosenBoundaryBasis C c 0 1)
-      (chosenBoundaryLift C c 0 1) (chosenBoundaryLift_spec C c 0 1)
-      (chosenBoundaryBasis C c 1 0) (h' 0) (chosenCycle C h' 0) (chosenCycle_spec C h' 0)]
+  rw [parityTorsionWithHomology, parityTorsionWithHomology,
+    torsionBracketWithHomology_eq_mul c _ _ (chosenBoundaryBasis C c 0 1) _ _
+      (chosenCycle_spec C h 1) _ _ (chosenBoundaryLift_spec C c 1 0) _ (h' 1),
+    torsionBracketWithHomology_eq_mul c _ _ (chosenBoundaryBasis C c 1 0) _ _
+      (chosenCycle_spec C h 0) _ _ (chosenBoundaryLift_spec C c 0 1) _ (h' 0)]
   simp only [Basis.det_self, one_mul, mul_one, mul_inv]
   ring
 
