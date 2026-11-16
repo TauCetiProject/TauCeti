@@ -25,7 +25,7 @@ iteration: with a right inverse `Q` of `D_w`, a solution is a fixed point of
 `ξ ↦ -Q (F(w) + N_w(ξ))`. The iteration contracts once `N_w` is quadratically small in the sense
 `‖N_w(ξ₁) - N_w(ξ₂)‖ ≲ (‖ξ₁‖ + ‖ξ₂‖) ‖ξ₁ - ξ₂‖`, which is the hypothesis of the abstract
 theorem `TauCeti.exists_mem_range_norm_le_add_add_eq_zero`. This file proves the pointwise form of
-that estimate, from which its Sobolev forms follow.
+that estimate and its `Lᵖ` form; the `W^{1,p}` form follows by Sobolev embedding.
 
 **The remainder depends only on first-order data.** The `∂s` terms of `F` are linear and cancel
 from `N_w`, so at a domain point `z` the remainder is a function

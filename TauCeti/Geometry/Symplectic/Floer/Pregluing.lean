@@ -12,6 +12,7 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.Normed.Operator.Prod
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.FDeriv.Remainder
+import TauCeti.MeasureTheory.Function.LpSeminorm.Support
 
 /-!
 # Pre-gluing Floer cylinders broken at an orbit
@@ -236,13 +237,6 @@ theorem contDiff_preglue {n : ℕ∞} (hx : ContDiff ℝ n x) (hu : ContDiff ℝ
     ((hu.comp (contDiff_id.add contDiff_const)).sub hx'))).add
     ((contDiff_pregluingCutoff.comp contDiff_fst.neg).smul
       ((hv.comp (contDiff_id.sub contDiff_const)).sub hx'))
-
-/-- The pre-glued map of continuous maps is continuous. -/
-theorem continuous_preglue (hx : Continuous x) (hu : Continuous u) (hv : Continuous v) :
-    Continuous (preglue x u v R) := by
-  have hρ : Continuous pregluingCutoff := contDiff_pregluingCutoff.continuous (n := 0)
-  unfold preglue
-  fun_prop
 
 /-- The pre-glued map is within `‖u(s + R, t) - x(t)‖ + ‖v(s - R, t) - x(t)‖` of the loop `x`. -/
 theorem norm_preglue_sub_le :
@@ -571,41 +565,42 @@ theorem exists_eventually_eLpNorm_floerOperator_preglue_le_of_floerOperator_eq_z
   set S : Set (ℝ × ℝ) := univ ×ˢ Icc (0 : ℝ) 1
   set N : Set (ℝ × ℝ) := Icc (-1 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1
   have hN : MeasurableSet N := measurableSet_Icc.prod measurableSet_Icc
-  have hNS : N ⊆ S := prod_mono (subset_univ _) le_rfl
-  have hFm : AEStronglyMeasurable F (volume.restrict N) := by
-    have hxc : Continuous x := continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt
+  have hSm : MeasurableSet S := MeasurableSet.univ.prod measurableSet_Icc
+  have hFm : AEStronglyMeasurable F (volume.restrict S) := by
+    have hxc : ContDiff ℝ 0 x :=
+      contDiff_zero.2 (continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt)
     have hpt : ContDiff ℝ ⊤ fun q : (ℝ × ℝ) × V ↦ (q.1.2, q.2) :=
       contDiff_fst.snd.prodMk contDiff_snd
     exact ω.aestronglyMeasurable_floerOperator (J := fun p ↦ J p.2) (Ks := fun _ _ ↦ 0)
       (Kt := fun p ↦ H p.2) (hJ.comp hpt.continuous) contDiff_const
-      ((hH.of_le (by norm_num)).comp (hpt.of_le le_top)) (continuous_preglue hxc huc hvc) _
-  -- The error vanishes off the neck, so its `Lᵖ` norm on the strip is its `Lᵖ` norm on the
-  -- neck, of area `2`.
-  have hS : eLpNorm F p (volume.restrict S) = eLpNorm F p (volume.restrict N) := by
-    have hSm : MeasurableSet S := MeasurableSet.univ.prod measurableSet_Icc
-    calc eLpNorm F p (volume.restrict S) = eLpNorm (N.indicator F) p (volume.restrict S) := by
-          refine eLpNorm_congr_ae (ae_restrict_of_forall_mem hSm fun z hz ↦ ?_)
-          by_cases hzN : z ∈ N
-          · rw [indicator_of_mem hzN]
-          · rw [indicator_of_notMem hzN]
-            exact ω.floerOperator_preglue_eq_zero J H x R huF hvF hz hzN
-      _ = eLpNorm F p ((volume.restrict S).restrict N) :=
-          eLpNorm_indicator_eq_eLpNorm_restrict hN.nullMeasurableSet
-      _ = eLpNorm F p (volume.restrict N) := by
-          rw [Measure.restrict_restrict hN, inter_eq_left.2 hNS]
-  have hvol : volume.restrict N univ = 2 := by
-    rw [Measure.restrict_apply_univ, Measure.volume_eq_prod, Measure.prod_prod, Real.volume_Icc,
-      Real.volume_Icc]
+      ((hH.of_le (by norm_num)).comp (hpt.of_le le_top))
+      (contDiff_zero.1 (contDiff_preglue hxc (contDiff_zero.2 huc)
+        (contDiff_zero.2 hvc))).aestronglyMeasurable
+  -- The error vanishes off the neck, so on the strip it is its indicator on the neck, of area `2`.
+  have hFN : F =ᵐ[volume.restrict S] N.indicator F := by
+    refine ae_restrict_of_forall_mem hSm fun z hz ↦ ?_
+    by_cases hzN : z ∈ N
+    · rw [indicator_of_mem hzN]
+    · rw [indicator_of_notMem hzN]
+      exact ω.floerOperator_preglue_eq_zero J H x R huF hvF hz hzN
+  have hvol : volume.restrict S N = 2 := by
+    rw [Measure.restrict_apply hN, inter_eq_left.2 (prod_mono (subset_univ _) le_rfl),
+      Measure.volume_eq_prod, Measure.prod_prod, Real.volume_Icc, Real.volume_Icc]
     norm_num
+  have hpos : 0 ≤ C' * Real.exp (-(κ * R)) :=
+    (norm_nonneg _).trans (hR (0, 0) ⟨⟨by norm_num, by norm_num⟩, by norm_num, by norm_num⟩)
   -- The exponent `1 / p` is at most `1`, so `2 ^ (1 / p) ≤ 2`.
   have hexp : p.toReal⁻¹ ≤ 1 := by
     rcases eq_or_ne p ⊤ with rfl | hpt
     · simp
     exact inv_le_one_of_one_le₀ (by simpa using ENNReal.toReal_mono hpt hp)
-  rw [hS]
-  calc eLpNorm F p (volume.restrict N) ≤
-        volume.restrict N univ ^ p.toReal⁻¹ * ENNReal.ofReal (C' * Real.exp (-(κ * R))) :=
-        eLpNorm_le_of_ae_bound hFm (ae_restrict_of_forall_mem hN hR)
+  rw [eLpNorm_congr_ae hFN]
+  calc eLpNorm (N.indicator F) p (volume.restrict S) ≤
+        volume.restrict S N ^ p.toReal⁻¹ * ENNReal.ofReal (C' * Real.exp (-(κ * R))) := by
+        refine eLpNorm_le_of_ae_bound_of_support_subset (hFm.indicator hN)
+          support_indicator_subset (Eventually.of_forall fun z ↦ ?_)
+        rw [norm_indicator_eq_indicator_norm]
+        exact indicator_le' hR (fun _ _ ↦ hpos) z
     _ ≤ 2 * ENNReal.ofReal (C' * Real.exp (-(κ * R))) := by
         rw [hvol]
         gcongr
