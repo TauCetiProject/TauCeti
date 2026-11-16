@@ -18,9 +18,9 @@ reciprocal kernels in sectorial integrals. A nonzero point of such a sector, wit
 the slit plane.
 
 For open discs centered in a sector, the tangent angle from the origin to `Metric.ball c r` is
-controlled by `r / ‖c‖`: when `0 < δ ≤ π / 2` and `r ≤ ‖c‖ * sin δ` (with `arg c ± δ` avoiding the
+controlled by `r / ‖c‖`: when `0 ≤ δ ≤ π / 2` and `r ≤ ‖c‖ * sin δ` (with `arg c ± δ` avoiding the
 branch cut), every `z ∈ Metric.ball c r` satisfies `|arg z - arg c| < δ`
-(`Complex.abs_arg_sub_lt_of_mem_ball`), placing the whole disc inside an open sector
+(`Complex.abs_arg_sub_arg_lt_of_mem_ball`), placing the whole disc inside an open sector
 (`Complex.arg_mem_Ioo_of_mem_ball`).
 -/
 
@@ -74,10 +74,10 @@ theorem mem_slitPlane_of_abs_arg_le {s : ℂ} {δ : ℝ} (hδ : 0 < δ) (hs : |s
     (hs0 : s ≠ 0) : s ∈ slitPlane :=
   mem_slitPlane_of_abs_arg_lt (by linarith) hs0
 
-/-- **Sharp tangent-angle bound on `ball 1 (sin δ)`.** If `0 < δ ≤ π / 2` and `‖u‖ < sin δ`, then
+/-- **Sharp tangent-angle bound on `ball 1 (sin δ)`.** If `0 ≤ δ ≤ π / 2` and `‖u‖ < sin δ`, then
 `|(1 + u).arg| < δ`. -/
 theorem abs_arg_one_add_lt_of_norm_lt_sin {u : ℂ} {δ : ℝ}
-    (hδ₀ : 0 < δ) (hδ₁ : δ ≤ Real.pi / 2) (hu : ‖u‖ < Real.sin δ) :
+    (hδ₀ : 0 ≤ δ) (hδ₁ : δ ≤ Real.pi / 2) (hu : ‖u‖ < Real.sin δ) :
     |(1 + u).arg| < δ := by
   have hre_lt : |u.re| < 1 :=
     (abs_re_le_norm u).trans_lt (hu.trans_le (Real.sin_le_one δ))
@@ -118,18 +118,22 @@ theorem abs_arg_one_add_lt_of_norm_lt_sin {u : ℂ} {δ : ℝ}
     ⟨by linarith [hδ₀, Real.pi_pos], hδ₁⟩
     ⟨by linarith [abs_nonneg (1 + u).arg, Real.pi_pos], harg_pi.le⟩).mpr hge |>.not_gt hsin_lt
 
-/-- If `z ∈ Metric.ball c r` with `r ≤ ‖c‖ * sin δ` (`0 < δ ≤ π / 2`) and `[arg c - δ, arg c + δ]`
+/-- If `z ∈ Metric.ball c r` with `r ≤ ‖c‖ * sin δ` (`0 ≤ δ ≤ π / 2`) and `[arg c - δ, arg c + δ]`
 lies in `[-π, π]`, then `|arg z - arg c| < δ`. -/
-theorem abs_arg_sub_lt_of_mem_ball {c z : ℂ} {r δ : ℝ} (hc : c ≠ 0)
-    (hδ₀ : 0 < δ) (hδ₁ : δ ≤ Real.pi / 2)
+theorem abs_arg_sub_arg_lt_of_mem_ball {c z : ℂ} {r δ : ℝ}
+    (hδ₀ : 0 ≤ δ) (hδ₁ : δ ≤ Real.pi / 2)
     (hlo : -Real.pi ≤ c.arg - δ) (hhi : c.arg + δ ≤ Real.pi)
     (hr : r ≤ ‖c‖ * Real.sin δ) (hz : z ∈ Metric.ball c r) :
     |z.arg - c.arg| < δ := by
+  have hz_lt : ‖z - c‖ < r := mem_ball_iff_norm.mp hz
+  have hc : c ≠ 0 := fun h0 => by
+    rw [h0, norm_zero, zero_mul] at hr
+    linarith [norm_nonneg (z - c)]
   set u : ℂ := (z - c) / c
   have hc_pos : 0 < ‖c‖ := norm_pos_iff.mpr hc
   have hu_lt : ‖u‖ < Real.sin δ := by
     rw [norm_div, div_lt_iff₀ hc_pos, mul_comm]
-    exact (mem_ball_iff_norm.mp hz).trans_le hr
+    exact hz_lt.trans_le hr
   have harg_u : |(1 + u).arg| < δ := abs_arg_one_add_lt_of_norm_lt_sin hδ₀ hδ₁ hu_lt
   have h1u_ne : 1 + u ≠ 0 := by
     intro h0
@@ -147,16 +151,16 @@ theorem abs_arg_sub_lt_of_mem_ball {c z : ℂ} {r δ : ℝ} (hc : c ≠ 0)
   rw [hz_eq, arg_mul hc h1u_ne hIoc]
   simpa using harg_u
 
-/-- **Sector containment for an open disc.** If `c ≠ 0`, `θ₁` and `θ₂` lie in `[-π, π]`, and
-`0 < δ ≤ min (π / 2) (min (arg c - θ₁) (θ₂ - arg c))` with `r ≤ ‖c‖ * sin δ`, then every
-`z ∈ Metric.ball c r` satisfies `θ₁ < arg z ∧ arg z < θ₂`. -/
+/-- **Sector containment for an open disc.** If `θ₁` and `θ₂` lie in `[-π, π]`, and
+`0 ≤ δ ≤ min (π / 2) (min (arg c - θ₁) (θ₂ - arg c))` with `r ≤ ‖c‖ * sin δ`, then every
+`z ∈ Metric.ball c r` satisfies `z.arg ∈ Set.Ioo θ₁ θ₂`. -/
 theorem arg_mem_Ioo_of_mem_ball {θ₁ θ₂ : ℝ} {c z : ℂ} {r δ : ℝ}
-    (hθ₁ : -Real.pi ≤ θ₁) (hθ₂ : θ₂ ≤ Real.pi) (hc : c ≠ 0)
-    (hδ₀ : 0 < δ) (hδ₁ : δ ≤ Real.pi / 2)
+    (hθ₁ : -Real.pi ≤ θ₁) (hθ₂ : θ₂ ≤ Real.pi)
+    (hδ₀ : 0 ≤ δ) (hδ₁ : δ ≤ Real.pi / 2)
     (hd₁ : δ ≤ c.arg - θ₁) (hd₂ : δ ≤ θ₂ - c.arg)
     (hr : r ≤ ‖c‖ * Real.sin δ) (hz : z ∈ Metric.ball c r) :
-    θ₁ < z.arg ∧ z.arg < θ₂ := by
-  have h := abs_lt.mp <| abs_arg_sub_lt_of_mem_ball hc hδ₀ hδ₁
+    z.arg ∈ Set.Ioo θ₁ θ₂ := by
+  have h := abs_lt.mp <| abs_arg_sub_arg_lt_of_mem_ball hδ₀ hδ₁
     (by linarith) (by linarith) hr hz
   exact ⟨by linarith, by linarith⟩
 
