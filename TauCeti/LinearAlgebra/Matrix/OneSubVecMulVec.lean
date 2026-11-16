@@ -38,6 +38,7 @@ is computed for vectors in any algebra over a commutative ring.
   inverse.
 * `TauCeti.oneSubVecMulVecGL_toLinearEquiv_apply` and its inverse counterpart compute the
   induced linear automorphism on column vectors.
+* `Matrix.mul_one_sub_vecMulVec_apply`: the entries of `M * (1 - u vᵀ)`.
 * `Matrix.one_sub_smul_vecMulVec_mulVec`: the matrix `1 - c v wᵀ`, such as a Householder
   reflection, sends `x` to `x - c v (w ⬝ᵥ x)`.
 -/
@@ -168,6 +169,12 @@ theorem oneSubVecMulVecGL_toLinearEquiv_symm_apply (t : Rˣ) (u v x : α → R)
 end TauCeti
 
 namespace Matrix
+
+/-- Right multiplication by `1 - u vᵀ` subtracts `(M u) vᵀ`, entrywise. -/
+theorem mul_one_sub_vecMulVec_apply {m n R : Type*} [Fintype n] [DecidableEq n] [Ring R]
+    (M : Matrix m n R) (u v : n → R) (k : m) (j : n) :
+    (M * (1 - vecMulVec u v) : Matrix m n R) k j = M k j - (M *ᵥ u) k * v j := by
+  rw [Matrix.mul_sub, Matrix.mul_one, mul_vecMulVec, Matrix.sub_apply, vecMulVec_apply]
 
 variable {n R α : Type*} [Fintype n] [DecidableEq n] [CommRing R] [Ring α] [Algebra R α]
 
