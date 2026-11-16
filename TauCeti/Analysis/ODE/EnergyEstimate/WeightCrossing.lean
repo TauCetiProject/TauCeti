@@ -43,7 +43,7 @@ eigenvalue, and leave the index unchanged.
 
 For the symmetric weight `w(s) = δ log (cosh s)`, which is `δ |s|` up to a bounded error, the slope
 is `δ tanh s` and the index is `n_{< -δ}(A⁻) - n_{< δ}(A⁺)`
-(`TauCeti.WeakDerivStep.index_trajectoryOperator_sub_mul_tanh_smul_id_eq_finrank_sub_finrank`).
+(`index_trajectoryOperator_sub_mul_tanh_smul_id_eq_finrank_pointSpectralSubspace_sub_finrank`).
 In the scalar case `E = ℝ` with constant coefficient `a`, the operator `u ↦ u' + (a - δ tanh s) u`
 has index `0` for `|δ| < |a|` and index `-1` for `δ > |a|`: as `δ` increases through `|a|`, one
 of the two slopes `±δ` crosses the simple eigenvalue `a` of the limits.
@@ -59,11 +59,11 @@ In the namespace `TauCeti.WeakDerivStep`:
 * `index_trajectoryOperator_eq_add_finrank_eigenspace_atTop`,
   `index_trajectoryOperator_eq_add_finrank_eigenspace_atBot`: crossing one eigenvalue
   at one end changes the index by its multiplicity.
-* `index_trajectoryOperator_sub_mul_tanh_smul_id_eq_finrank_sub_finrank`: the index for the
-  symmetric weight `δ log (cosh s)`.
-* `index_trajectoryOperator_smul_id_sub_mul_tanh_smul_id_of_lt_abs`,
-  `index_trajectoryOperator_smul_id_sub_mul_tanh_smul_id_of_abs_lt`: the scalar crossing, index `0`
-  below `|a|` and `-1` above it.
+* `index_trajectoryOperator_sub_mul_tanh_smul_id_eq_finrank_pointSpectralSubspace_sub_finrank`:
+  the index for the symmetric weight `δ log (cosh s)`.
+* `index_trajectoryOperator_smul_id_sub_mul_tanh_smul_id_eq_zero_of_abs_lt_abs`,
+  `index_trajectoryOperator_smul_id_sub_mul_tanh_smul_id_eq_neg_one_of_abs_lt`: the scalar crossing,
+  index `0` below `|a|` and `-1` above it.
 
 ## References
 
@@ -246,7 +246,7 @@ symmetric limits `A±`, and let `δ` be a real number such that `-δ` is not an 
 and `δ` is not an eigenvalue of `A⁺`. The weight `δ log (cosh s)`, which is `δ |s|` up to a
 bounded error, has slope `δ tanh s`, and the index of `u ↦ u' + (A - δ tanh s) u` is the number of
 eigenvalues of `A⁻` below `-δ` minus the number of eigenvalues of `A⁺` below `δ`. -/
-theorem index_trajectoryOperator_sub_mul_tanh_smul_id_eq_finrank_sub_finrank
+theorem index_trajectoryOperator_sub_mul_tanh_smul_id_eq_finrank_pointSpectralSubspace_sub_finrank
     (hA : Continuous A) (hsymminus : (Aminus : E →ₗ[ℝ] E).IsSymmetric)
     (hsymplus : (Aplus : E →ₗ[ℝ] E).IsSymmetric)
     (hbot : Tendsto A atBot (𝓝 Aminus)) (htop : Tendsto A atTop (𝓝 Aplus)) {δ : ℝ}
@@ -268,7 +268,7 @@ section Scalar
 variable {a δ : ℝ}
 
 /-- The index of the scalar operator `u ↦ u' + (a - δ tanh s) u`, by the symmetric weight formula
-`TauCeti.WeakDerivStep.index_trajectoryOperator_sub_mul_tanh_smul_id_eq_finrank_sub_finrank`:
+`index_trajectoryOperator_sub_mul_tanh_smul_id_eq_finrank_pointSpectralSubspace_sub_finrank`:
 the scalar `a` has the single eigenvalue `a`, so it has one eigenvalue below `t` if `a < t` and
 none otherwise. -/
 private theorem index_trajectoryOperator_smul_id_sub_mul_tanh_smul_id (h₁ : a ≠ -δ)
@@ -300,14 +300,15 @@ private theorem index_trajectoryOperator_smul_id_sub_mul_tanh_smul_id (h₁ : a 
       simp only [RCLike.ofReal_real_eq_id, id_eq] at hs
       rw [hcoe, hs, finrank_top, Module.finrank_self]
     · rw [hscalar _ h, finrank_bot]
-  rw [index_trajectoryOperator_sub_mul_tanh_smul_id_eq_finrank_sub_finrank continuous_const hsym
-      hsym tendsto_const_nhds tendsto_const_nhds (hne (Ne.symm h₁)) (hne (Ne.symm h₂)) BL hBL,
+  rw [index_trajectoryOperator_sub_mul_tanh_smul_id_eq_finrank_pointSpectralSubspace_sub_finrank
+      continuous_const hsym hsym tendsto_const_nhds tendsto_const_nhds (hne (Ne.symm h₁))
+      (hne (Ne.symm h₂)) BL hBL,
     hfinrank, hfinrank]
 
 /-- **The scalar crossing below the rate.** For `|δ| < |a|`, the operator
 `u ↦ u' + (a - δ tanh s) u` on `W^{1,2}(ℝ)`, the conjugate of `u ↦ u' + a u` on the spaces weighted
 by `exp (δ log (cosh s))`, has index `0`. -/
-theorem index_trajectoryOperator_smul_id_sub_mul_tanh_smul_id_of_lt_abs
+theorem index_trajectoryOperator_smul_id_sub_mul_tanh_smul_id_eq_zero_of_abs_lt_abs
     (hδa : |δ| < |a|) (BL : Lp (ℝ →L[ℝ] ℝ) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
     (hBL : BL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
       fun s ↦ a • ContinuousLinearMap.id ℝ ℝ - (δ * Real.tanh s) • ContinuousLinearMap.id ℝ ℝ) :
@@ -323,7 +324,7 @@ theorem index_trajectoryOperator_smul_id_sub_mul_tanh_smul_id_of_lt_abs
 /-- **The scalar crossing above the rate.** For `δ > |a|`, the operator
 `u ↦ u' + (a - δ tanh s) u` on `W^{1,2}(ℝ)`, the conjugate of `u ↦ u' + a u` on the spaces weighted
 by `exp (δ log (cosh s))`, has index `-1`. -/
-theorem index_trajectoryOperator_smul_id_sub_mul_tanh_smul_id_of_abs_lt (hδa : |a| < δ)
+theorem index_trajectoryOperator_smul_id_sub_mul_tanh_smul_id_eq_neg_one_of_abs_lt (hδa : |a| < δ)
     (BL : Lp (ℝ →L[ℝ] ℝ) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
     (hBL : BL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
       fun s ↦ a • ContinuousLinearMap.id ℝ ℝ - (δ * Real.tanh s) • ContinuousLinearMap.id ℝ ℝ) :
