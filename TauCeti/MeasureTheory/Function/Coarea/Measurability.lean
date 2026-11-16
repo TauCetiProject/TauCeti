@@ -26,10 +26,10 @@ remainder) are measurable by `IsCompact.measurable_hausdorffMeasure_inter_preima
 `TauCeti.MeasureTheory.Measure.Hausdorff`. This file extends them to measurable sets via
 Eilenberg's inequality.
 
-If `f` is Lipschitz (or, in a second-countable domain, locally Lipschitz) on `A` with values in a
-real normed space `Y` with additive Haar measure `μ`, and `A` is σ-compact up to a
-`μH[finrank ℝ Y + t]`-null set, then `y ↦ μH[t] (A ∩ f ⁻¹' {y})` is `μ`-almost everywhere
-measurable: the fibers of the null part are null for almost every `y` by Eilenberg's inequality.
+If `f` is Lipschitz (or locally Lipschitz) on `A` with values in a real normed space `Y` with
+additive Haar measure `μ`, and `A` is σ-compact up to a `μH[finrank ℝ Y + t]`-null set, then
+`y ↦ μH[t] (A ∩ f ⁻¹' {y})` is `μ`-almost everywhere measurable: the fibers of the null part are
+null for almost every `y` by Eilenberg's inequality.
 In particular this holds for any map locally Lipschitz on a Lebesgue measurable subset `A` of a
 finite-dimensional real inner product space of dimension `n` and the normalized Hausdorff measures
 `μHE[k]` with `n ≤ finrank ℝ Y + k`, which include the coarea dimension `k = n - finrank ℝ Y`.
@@ -43,8 +43,8 @@ derivative nor integrability of the weight is required.
 
 * `LipschitzOnWith.aemeasurable_hausdorffMeasure_inter_preimage`,
   `LocallyLipschitzOn.aemeasurable_hausdorffMeasure_inter_preimage`: fiber measures of a Lipschitz
-  (or, on a second-countable domain, locally Lipschitz) map are almost everywhere measurable on a
-  set that is σ-compact up to a null set.
+  (or locally Lipschitz) map are almost everywhere measurable on a set that is σ-compact up to a
+  null set.
 * `LocallyLipschitzOn.aemeasurable_euclideanHausdorffMeasure_inter_preimage`: the normalized fiber
   measures `μHE[k]` of a map locally Lipschitz on a Lebesgue measurable subset of an
   `n`-dimensional real inner product space into a real normed space `Y` are almost everywhere
@@ -84,14 +84,13 @@ theorem LipschitzOnWith.aemeasurable_hausdorffMeasure_inter_preimage {f : X → 
     (hf.continuousOn.mono hSA)
     ((hf.mono sdiff_subset).ae_hausdorffMeasure_inter_preimage_eq_zero μ hAS)
 
-/-- **Fiber measures of a locally Lipschitz map on a second-countable domain are almost everywhere
-measurable.** Let `f` be locally Lipschitz on `A`, with values in a real normed space `Y` with
-additive Haar measure `μ`, and let `t` be real. If `A` contains a σ-compact set `S` with
-`μH[finrank ℝ Y + t] (A \ S) = 0`, then `y ↦ μH[t] (A ∩ f ⁻¹' {y})` is `μ`-almost everywhere
-measurable. Unlike `LipschitzOnWith.aemeasurable_hausdorffMeasure_inter_preimage`, this assumes
-`[SecondCountableTopology X]` to cover `A \ S` by countably many Lipschitz pieces. -/
+/-- **Fiber measures of a locally Lipschitz map are almost everywhere measurable.** Let `f` be
+locally Lipschitz on `A`, with values in a real normed space `Y` with additive Haar measure `μ`,
+and let `t` be real. If `A` contains a σ-compact set `S` with `μH[finrank ℝ Y + t] (A \ S) = 0`,
+then `y ↦ μH[t] (A ∩ f ⁻¹' {y})` is `μ`-almost everywhere measurable. The null set `A \ S` is
+separable, so countably many Lipschitz pieces cover it. -/
 theorem LocallyLipschitzOn.aemeasurable_hausdorffMeasure_inter_preimage
-    [SecondCountableTopology X] {f : X → Y} {A S : Set X}
+    {f : X → Y} {A S : Set X}
     (hf : LocallyLipschitzOn A f) (hSA : S ⊆ A) (hS : IsSigmaCompact S)
     (hAS : μH[finrank ℝ Y + t] (A \ S) = 0) :
     AEMeasurable (fun y ↦ μH[t] (A ∩ f ⁻¹' {y})) μ :=
