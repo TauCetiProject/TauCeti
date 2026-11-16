@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Combinatorics.CoboundaryExpansion.Sym3.Basic
 import TauCeti.Combinatorics.SimpleGraph.Staircase
+import TauCeti.Combinatorics.SimpleGraph.OddTriple
+import TauCeti.Order.Hom.PowersetCard
 import TauCeti.GroupTheory.Perm.ParityRetract
 import Mathlib.GroupTheory.Perm.Cycle.Basic
 import Mathlib.Tactic.Linarith
@@ -206,84 +208,39 @@ private theorem card_eq_sum_lt {n : ℕ} (F : Finset (Sym2 (Fin n))) (hF : ∀ u
       · exact absurd he (hF u)
       · exact ⟨(v, u), by simp [h, Sym2.eq_swap ▸ he], Sym2.eq_swap⟩
 
-/-- The edges inside `{a, b, c}` are those among its three pairs. -/
-private theorem filter_subset_triple {n : ℕ} (H : SimpleGraph (Fin n)) [DecidableRel H.Adj]
-    {a b c : Fin n} :
-    {e ∈ H.edgeFinset | e.toFinset ⊆ {a, b, c}} =
-      ({s(a, b), s(b, c), s(a, c)} : Finset (Sym2 (Fin n))).filter (· ∈ H.edgeFinset) := by
-  ext e
-  induction e using Sym2.ind with
-  | _ x y =>
-    simp only [mem_filter, mem_insert, mem_singleton, Sym2.toFinset_mk_eq, insert_subset_iff,
-      singleton_subset_iff, SimpleGraph.mem_edgeFinset, SimpleGraph.mem_edgeSet]
-    constructor
-    · rintro ⟨hxy, hx, hy⟩
-      refine ⟨?_, hxy⟩
-      rcases hx with rfl | rfl | rfl <;> rcases hy with rfl | rfl | rfl <;>
-        simp_all [Sym2.eq_swap]
-    · rintro ⟨h | h | h, hxy⟩ <;>
-        rcases Sym2.eq_iff.mp h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> simp [hxy]
-
-/-- A triangle `a < b < c` is odd exactly when an odd number of its three pairs are edges. -/
+/-- A triangle is odd exactly when an odd number of its three pairs are edges
+(`SimpleGraph.triple_mem_oddTripleFinset_iff`). -/
 private theorem mem_oddTriangleFinset_triple {n : ℕ} (H : SimpleGraph (Fin n))
-    [DecidableRel H.Adj] {a b c : Fin n} (hab : a < b) (hbc : b < c) :
+    [DecidableRel H.Adj] {a b c : Fin n} :
     {a, b, c} ∈ H.oddTriangleFinset ↔
       xor (xor (decide (H.Adj a b)) (decide (H.Adj b c))) (decide (H.Adj a c)) = true := by
-  have hac := hab.trans hbc
-  have h3 : #({a, b, c} : Finset (Fin n)) = 3 := by
-    rw [card_insert_of_notMem (by simp [hab.ne, hac.ne]),
-      card_insert_of_notMem (by simp [hbc.ne]), card_singleton]
-  have h1 : s(a, b) ∉ ({s(b, c), s(a, c)} : Finset (Sym2 (Fin n))) := by
-    simp [hab.ne, hac.ne, hbc.ne, hab.ne']
-  have h2 : s(b, c) ∉ ({s(a, c)} : Finset (Sym2 (Fin n))) := by
-    simp [hab.ne', hac.ne']
-  rw [SimpleGraph.mem_oddTriangleFinset, filter_subset_triple, card_filter,
-    sum_insert h1, sum_insert h2, sum_singleton]
-  simp only [h3, true_and, SimpleGraph.mem_edgeFinset, SimpleGraph.mem_edgeSet]
-  by_cases x : H.Adj a b <;> by_cases y : H.Adj b c <;> by_cases z : H.Adj a c <;>
-    simp [x, y, z, Nat.odd_iff]
+  rw [SimpleGraph.mem_oddTriangleFinset, SimpleGraph.filter_edgeFinset_toFinset_subset,
+    ← SimpleGraph.mem_oddTripleFinset, SimpleGraph.triple_mem_oddTripleFinset_iff]
+  by_cases x : H.Adj a b <;> by_cases y : H.Adj b c <;> by_cases z : H.Adj a c <;> simp [x, y, z]
 
 /-- The sorted triples `u < v < w` spanning an odd triangle. -/
 private def oddTriples {n : ℕ} (H : SimpleGraph (Fin n)) [DecidableRel H.Adj] :
     Finset (Fin n × Fin n × Fin n) :=
   {p | p.1 < p.2.1 ∧ p.2.1 < p.2.2 ∧ {p.1, p.2.1, p.2.2} ∈ H.oddTriangleFinset}
 
-/-- An odd triangle is the set of a unique sorted triple (`Finset.orderEmbOfFin`). -/
+/-- An odd triangle is the set of a unique sorted triple (`Set.powersetCard.ofLtTriple`). -/
 private theorem card_oddTriples {n : ℕ} (H : SimpleGraph (Fin n)) [DecidableRel H.Adj] :
     #(oddTriples H) = #H.oddTriangleFinset := by
   refine card_bij (fun p _ => {p.1, p.2.1, p.2.2})
     (fun p hp => (mem_filter.mp hp).2.2.2) ?_ ?_
   · rintro ⟨a, b, c⟩ ha ⟨a', b', c'⟩ hb h
-    obtain ⟨-, hab, hbc, hs⟩ := mem_filter.mp ha
+    obtain ⟨-, hab, hbc, -⟩ := mem_filter.mp ha
     obtain ⟨-, hab', hbc', -⟩ := mem_filter.mp hb
-    have h3 := (SimpleGraph.mem_oddTriangleFinset.mp hs).1
-    simp only at h hab hbc hab' hbc' h3
-    have hf := orderEmbOfFin_unique h3 (f := ![a, b, c]) (fun i => by fin_cases i <;> simp)
-      (Fin.strictMono_iff_lt_succ.mpr fun i => by fin_cases i <;> simpa)
-    have hf' := orderEmbOfFin_unique (h ▸ h3) (f := ![a', b', c'])
-      (fun i => by fin_cases i <;> simp) (Fin.strictMono_iff_lt_succ.mpr fun i => by
-        fin_cases i <;> simpa)
-    simp only [h] at hf
-    have := hf.trans hf'.symm
-    exact Prod.ext (congrFun this 0) (Prod.ext (congrFun this 1) (congrFun this 2))
+    have := Set.powersetCard.ofLtTriple.injective (a₁ := ⟨(a, b, c), hab, hbc⟩)
+      (a₂ := ⟨(a', b', c'), hab', hbc'⟩)
+      (Subtype.ext (by simpa only [Set.powersetCard.val_ofLtTriple] using h))
+    simpa using congrArg Subtype.val this
   · intro s hs
-    have h3 := (SimpleGraph.mem_oddTriangleFinset.mp hs).1
-    set g := s.orderEmbOfFin h3
-    have hs3 : ({g 0, g 1, g 2} : Finset (Fin n)) = s := by
-      rw [← image_orderEmbOfFin_univ s h3]
-      ext x
-      simp only [mem_insert, mem_singleton, mem_image, mem_univ, true_and]
-      constructor
-      · rintro (rfl | rfl | rfl) <;> exact ⟨_, rfl⟩
-      · rintro ⟨i, rfl⟩
-        fin_cases i <;> simp [g]
-    refine ⟨(g 0, g 1, g 2), ?_, hs3⟩
-    simp only [oddTriples, mem_filter, mem_univ, true_and, hs3, hs, and_true]
-    exact ⟨g.strictMono (by decide), g.strictMono (by decide)⟩
-
-/-- `Bool.toNat b` as an indicator. -/
-private theorem toNat_eq_ite (b : Bool) : Bool.toNat b = if b = true then 1 else 0 := by
-  cases b <;> rfl
+    obtain ⟨a, b, c, hab, hbc, hs3⟩ :=
+      Set.powersetCard.exists_lt_lt_val_eq ⟨s, (SimpleGraph.mem_oddTriangleFinset.mp hs).1⟩
+    refine ⟨(a, b, c), ?_, hs3.symm⟩
+    simp only [oddTriples, mem_filter, mem_univ, true_and]
+    exact ⟨hab, hbc, hs3 ▸ hs⟩
 
 /-- The odd triangles of a graph on `Fin n`, counted over the triples `u < v < w`. -/
 private theorem card_oddTriangleFinset_eq_sum {n : ℕ} (H : SimpleGraph (Fin n))
@@ -296,7 +253,7 @@ private theorem card_oddTriangleFinset_eq_sum {n : ℕ} (H : SimpleGraph (Fin n)
   refine Finset.sum_congr rfl fun u _ => Finset.sum_congr rfl fun v _ =>
     Finset.sum_congr rfl fun w _ => ?_
   by_cases h : u < v ∧ v < w
-  · simp only [h.1, h.2, true_and, mem_oddTriangleFinset_triple H h.1 h.2, toNat_eq_ite,
+  · simp only [h.1, h.2, true_and, mem_oddTriangleFinset_triple, Bool.toNat, Bool.cond_eq_ite,
       ↓reduceIte]
   · rw [ite_eq_right h, ite_eq_right fun h' => h ⟨h'.1, h'.2.1⟩]
 
