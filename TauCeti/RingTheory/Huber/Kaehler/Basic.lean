@@ -170,6 +170,17 @@ theorem smul_eq_mulRingHom_smul (x : CompletedTensor A B B)
   refine Ideal.Cotangent.smul_eq_zero_of_mem (I := ideal A B) ?_ ω
   simp
 
+/-- Scalar multiplication of `B ⊗̂_A B` on `Ωᶜ[B⁄A]` is continuous for the natural `B`-module
+topology. -/
+instance : ContinuousSMul (CompletedTensor A B B) (ContinuousKaehlerDifferential A B) where
+  continuous_smul := by
+    have h : (fun p : CompletedTensor A B B × ContinuousKaehlerDifferential A B ↦ p.1 • p.2) =
+        fun p ↦ mulRingHom A B p.1 • p.2 := by
+      ext ⟨r, ω⟩
+      exact smul_eq_mulRingHom_smul r ω
+    rw [h]
+    exact ((continuous_mulRingHom A B).comp continuous_fst).smul continuous_snd
+
 /-- The right coprojection induces the same `B`-action on `Ωᶜ[B⁄A]` as the left one. -/
 @[simp] theorem inr_smul (b : B) (ω : ContinuousKaehlerDifferential A B) :
     inr A B B b • ω = b • ω := by

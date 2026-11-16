@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.Huber.Kaehler.Map
 public import TauCeti.RingTheory.Huber.Kaehler.UniversalProperty
 
+import TauCeti.RingTheory.Derivation.Quotient
 import TauCeti.RingTheory.Huber.NoetherianType.Quotient
 import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Comp
 
@@ -15,39 +16,62 @@ import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Comp
 # Base change and exact sequences for continuous differentials
 
 This file establishes the three fundamental functorial properties of the module of continuous
-differentials `Ωᶜ[B⁄A]` of topologically finite type Huber algebras (Huber 1996, Proposition 1.6.3):
+differentials `Ωᶜ[B⁄A]` of topologically finite type Huber algebras (Huber 1996, Proposition 1.6.3),
+which feed the sheafification of continuous differentials to `Ω¹_{X/Y}` on adic spaces,
+rational-localisation base change (Huber 1996, Proposition 1.6.3(iv)), and the theory of
+unramified, smooth, and étale morphisms of adic spaces:
 
 * **First fundamental exact sequence (Proposition 1.6.3(i))**: for a tower `A → B → C` of adic
-  homomorphisms into complete Hausdorff rings, with `C` a Huber ring of noetherian type and
-  `A → C` (or `A → B` and `B → C`) topologically of finite type,
-  `C ⊗[B] Ωᶜ[B⁄A] → Ωᶜ[C⁄A] → Ωᶜ[C⁄B] → 0` is exact (`exact_mapBaseChange_mapTower`,
-  `mapTower_surjective`).
-* **Conormal exact sequence (Proposition 1.6.3(ii))**: when `A → B` is topologically of finite type
-  into a complete Hausdorff Huber ring `B` of noetherian type and `B → C` is an open quotient map
-  into a complete Hausdorff Huber ring `C` with kernel `J = ker(B → C)`,
-  `J / J² → C ⊗[B] Ωᶜ[B⁄A] → Ωᶜ[C⁄A] → 0` is exact (`exact_kerCotangentToTensor_mapBaseChange`,
-  `mapBaseChange_surjective`).
+  homomorphisms:
+  - `exact_mapBaseChange_mapTower_of_comp`: `C ⊗[B] Ωᶜ[B⁄A] → Ωᶜ[C⁄A] → Ωᶜ[C⁄B]` is exact at
+    `Ωᶜ[C⁄A]` when `A, C` are Huber rings, `B, C` are complete Hausdorff nonarchimedean rings with
+    `C` of noetherian type, `B → C` is continuous, and `A → C` is topologically of finite type.
+  - `mapTower_surjective`: `Ωᶜ[C⁄A] → Ωᶜ[C⁄B]` is surjective when `B, C` are Huber rings, `C` is
+    complete Hausdorff of noetherian type, and `B → C` is topologically of finite type.
+  - `exact_mapBaseChange_mapTower`: `C ⊗[B] Ωᶜ[B⁄A] → Ωᶜ[C⁄A] → Ωᶜ[C⁄B]` is exact at `Ωᶜ[C⁄A]`
+    when `A, B, C` are Huber rings, `B, C` are complete Hausdorff with `B` of noetherian type,
+    `B → C` is continuous, and both `A → B` and `B → C` are topologically of finite type.
+* **Conormal exact sequence (Proposition 1.6.3(ii))**: for a tower `A → B → C` with kernel
+  `J = ker(B → C)`:
+  - `exact_kerCotangentToTensor_mapBaseChange`: `J / J² → C ⊗[B] Ωᶜ[B⁄A] → Ωᶜ[C⁄A]` is exact at
+    `C ⊗[B] Ωᶜ[B⁄A]` when `A, B` are Huber rings, `B` is complete Hausdorff of noetherian type,
+    `A → B` is topologically of finite type, and `B → C` is an open quotient map into a complete
+    Hausdorff nonarchimedean ring `C`.
+  - `mapBaseChange_surjective`: `C ⊗[B] Ωᶜ[B⁄A] → Ωᶜ[C⁄A]` is surjective when `A, C` are Huber
+    rings, `B, C` are complete Hausdorff nonarchimedean rings with `C` of noetherian type, `B → C`
+    is a continuous surjection, and `A → C` is topologically of finite type.
 * **Completed base change (Proposition 1.6.3(iii))**: when `A → B` is topologically of finite type
   into a complete Hausdorff Huber ring `B` of noetherian type and `A → A'` is an adic homomorphism
-  into a Huber ring `A'` of noetherian type (with no completeness hypothesis on `A'`), scalar
-  extension induces a `B'`-linear isomorphism `B' ⊗[B] Ωᶜ[B⁄A] ≃ₗ[B'] Ωᶜ[B'⁄A']` for
-  `B' = B ⊗̂_A A'` (`baseChangeEquiv`).
+  into a Huber ring `A'` of noetherian type (with no completeness hypothesis on `A'`), there is a
+  `B'`-linear isomorphism `Ωᶜ[B'⁄A'] ≃ₗ[B'] B' ⊗[B] Ωᶜ[B⁄A]` for `B' = B ⊗̂_A A'`
+  (`baseChangeEquiv`). Here `B' = CompletedTensor A B A'` carries the non-global local instances
+  `CompletedTensor.leftAlgebra` (as a `B`-algebra), `CompletedTensor.rightAlgebra` (as an
+  `A'`-algebra), and `CompletedTensor.isAdicHom_rightAlgebra`.
+
+The conormal maps (`kerToTensor`, `kerCotangentToTensor`) are adapted from
+`KaehlerDifferential.kerToTensor` and `KaehlerDifferential.kerCotangentToTensor` in
+`Mathlib.RingTheory.Kaehler.Basic`, and the exact-sequence and base-change API mirrors
+`KaehlerDifferential.exact_mapBaseChange_map`,
+`KaehlerDifferential.exact_kerCotangentToTensor_mapBaseChange`, and
+`KaehlerDifferential.tensorKaehlerEquiv` in `Mathlib.RingTheory.Kaehler.Basic` and
+`Mathlib.RingTheory.Kaehler.TensorProduct`.
 
 ## Main definitions and results
 
-* `TauCeti.Huber.ContinuousKaehlerDifferential.mapBaseChange`,
-  `TauCeti.Huber.ContinuousKaehlerDifferential.mapTower`: the maps in the first fundamental
+* `TauCeti.Huber.ContinuousKaehlerDifferential.mapTower`,
+  `TauCeti.Huber.ContinuousKaehlerDifferential.mapBaseChange`: the maps in the first fundamental
   sequence `C ⊗[B] Ωᶜ[B⁄A] →ₗ[C] Ωᶜ[C⁄A] →ₗ[C] Ωᶜ[C⁄B]`.
 * `TauCeti.Huber.ContinuousKaehlerDifferential.exact_mapBaseChange_mapTower_of_comp`,
   `TauCeti.Huber.ContinuousKaehlerDifferential.exact_mapBaseChange_mapTower`,
   `TauCeti.Huber.ContinuousKaehlerDifferential.mapTower_surjective`: exactness and surjectivity of
   the first fundamental sequence.
-* `TauCeti.Huber.ContinuousKaehlerDifferential.kerCotangentToTensor`,
+* `TauCeti.Huber.ContinuousKaehlerDifferential.kerToTensor`,
+  `TauCeti.Huber.ContinuousKaehlerDifferential.kerCotangentToTensor`,
   `TauCeti.Huber.ContinuousKaehlerDifferential.exact_kerCotangentToTensor_mapBaseChange`,
   `TauCeti.Huber.ContinuousKaehlerDifferential.mapBaseChange_surjective`: the conormal map
   `J / J² →ₗ[B] C ⊗[B] Ωᶜ[B⁄A]` and exactness of the conormal sequence.
 * `TauCeti.Huber.ContinuousKaehlerDifferential.baseChangeEquiv`: the completed base-change
-  isomorphism `(B ⊗̂_A A') ⊗[B] Ωᶜ[B⁄A] ≃ₗ[B ⊗̂_A A'] Ωᶜ[(B ⊗̂_A A')⁄A']`.
+  isomorphism `Ωᶜ[(B ⊗̂_A A')⁄A'] ≃ₗ[B ⊗̂_A A'] (B ⊗̂_A A') ⊗[B] Ωᶜ[B⁄A]`.
 
 ## References
 
@@ -65,7 +89,85 @@ open CompletedTensor
 
 /-! ### Maps in a tower `A → B → C` -/
 
-section TowerMaps
+section MapTower
+
+variable (A B C : Type*) [CommRing A] [CommRing B] [CommRing C]
+  [Algebra A B] [Algebra B C] [Algebra A C] [IsScalarTower A B C]
+  [TopologicalSpace A] [IsTopologicalRing A]
+  [TopologicalSpace B] [IsTopologicalRing B]
+  [UniformSpace C] [IsUniformAddGroup C] [NonarchimedeanRing C] [CompleteSpace C] [T0Space C]
+  [IsAdicHom (algebraMap A C)] [IsAdicHom (algebraMap B C)]
+
+/-- The relative projection `Ωᶜ[C⁄A] →ₗ[C] Ωᶜ[C⁄B]` in a tower `A → B → C`. -/
+noncomputable def mapTower :
+    ContinuousKaehlerDifferential A C →ₗ[C] ContinuousKaehlerDifferential B C :=
+  mapSemilinear (algebraMap A B) (RingHom.id C)
+    (by ext a; exact IsScalarTower.algebraMap_apply A B C a) continuous_id
+
+/-- `mapTower` agrees with the semilinear change-of-rings map along `A → B` and `id_C`. -/
+theorem mapTower_eq_mapSemilinear :
+    mapTower A B C =
+      mapSemilinear (algebraMap A B) (RingHom.id C)
+        (by ext a; exact IsScalarTower.algebraMap_apply A B C a) continuous_id := (rfl)
+
+/-- `mapTower` sends a diagonal class in `ideal A C` to the class of its image in `ideal B C`. -/
+@[simp]
+theorem mapTower_fromIdeal (x : ideal A C) :
+    mapTower A B C (fromIdeal A C x) =
+      fromIdeal B C
+        ⟨CompletedTensor.map (algebraMap A B) (RingHom.id C) (RingHom.id C)
+            (by ext a; exact IsScalarTower.algebraMap_apply A B C a)
+            (by ext a; exact IsScalarTower.algebraMap_apply A B C a)
+            continuous_id continuous_id x,
+          ideal_le_comap_map (algebraMap A B) (RingHom.id C) _ continuous_id x.2⟩ :=
+  mapSemilinear_fromIdeal _ _ _ continuous_id x
+
+/-- `mapTower` carries `d_A c` to `d_B c`. -/
+@[simp]
+theorem mapTower_D (c : C) :
+    mapTower A B C (D A C c) = D B C c :=
+  mapSemilinear_D _ _ _ continuous_id c
+
+end MapTower
+
+section MapTowerComp
+
+variable (A B C E : Type*) [CommRing A] [CommRing B] [CommRing C] [CommRing E]
+  [Algebra A B] [Algebra B C] [Algebra C E]
+  [Algebra A C] [Algebra B E] [Algebra A E]
+  [IsScalarTower B C E] [IsScalarTower A B E] [IsScalarTower A C E]
+  [TopologicalSpace A] [IsTopologicalRing A]
+  [TopologicalSpace B] [IsTopologicalRing B]
+  [TopologicalSpace C] [IsTopologicalRing C]
+  [UniformSpace E] [IsUniformAddGroup E] [NonarchimedeanRing E] [CompleteSpace E] [T0Space E]
+  [IsAdicHom (algebraMap A E)] [IsAdicHom (algebraMap B E)] [IsAdicHom (algebraMap C E)]
+
+/-- Applying two consecutive relative projections in a tower `A → B → C → E` equals the single
+projection `Ωᶜ[E⁄A] → Ωᶜ[E⁄C]`. -/
+@[simp]
+theorem mapTower_mapTower (ω : ContinuousKaehlerDifferential A E) :
+    mapTower B C E (mapTower A B E ω) = mapTower A C E ω := by
+  rw [mapTower_eq_mapSemilinear, mapTower_eq_mapSemilinear, mapTower_eq_mapSemilinear,
+    mapSemilinear_comp]
+  obtain ⟨x, rfl⟩ := fromIdeal_surjective A E ω
+  simp only [mapSemilinear_fromIdeal]
+  congr 1
+  ext
+  exact congrArg (fun f : CompletedTensor A E E →+* CompletedTensor C E E ↦ f x) <|
+    CompletedTensor.hom_ext (CompletedTensor.continuous_map ..)
+      (CompletedTensor.continuous_map ..)
+      (by ext e; simp) (by ext e; simp)
+
+/-- Composing relative projections in a tower `A → B → C → E` equals the projection from `A` to
+`C`. -/
+@[simp]
+theorem mapTower_comp_mapTower :
+    (mapTower B C E).comp (mapTower A B E) = mapTower A C E :=
+  LinearMap.ext (mapTower_mapTower A B C E)
+
+end MapTowerComp
+
+section MapBaseChange
 
 variable (A B C : Type*) [CommRing A] [CommRing B] [CommRing C]
   [Algebra A B] [Algebra B C] [Algebra A C] [IsScalarTower A B C]
@@ -79,6 +181,14 @@ noncomputable def mapBaseChange [IsAdicHom (algebraMap A B)] [IsAdicHom (algebra
     C ⊗[B] ContinuousKaehlerDifferential A B →ₗ[C] ContinuousKaehlerDifferential A C :=
   map (RingHom.id A) (by ext a; exact (IsScalarTower.algebraMap_apply A B C a).symm) hc
 
+/-- `mapBaseChange` is the scalar-extended change-of-rings map along `id_A` and `B → C`. -/
+theorem mapBaseChange_eq_map [IsAdicHom (algebraMap A B)] [IsAdicHom (algebraMap A C)]
+    (hc : Continuous (algebraMap B C)) :
+    mapBaseChange A B C hc =
+      map (RingHom.id A) (by ext a; exact (IsScalarTower.algebraMap_apply A B C a).symm) hc :=
+  (rfl)
+
+/-- Evaluating `mapBaseChange` on a pure tensor `c ⊗ₜ ω`. -/
 @[simp]
 theorem mapBaseChange_tmul [IsAdicHom (algebraMap A B)] [IsAdicHom (algebraMap A C)]
     (hc : Continuous (algebraMap B C)) (c : C) (ω : ContinuousKaehlerDifferential A B) :
@@ -87,23 +197,11 @@ theorem mapBaseChange_tmul [IsAdicHom (algebraMap A B)] [IsAdicHom (algebraMap A
         (by ext a; exact (IsScalarTower.algebraMap_apply A B C a).symm) hc ω :=
   map_tmul _ _ hc c ω
 
+/-- Evaluating `mapBaseChange` on `c ⊗ₜ d b` yields `c • d (algebraMap B C b)`. -/
 theorem mapBaseChange_tmul_D [IsAdicHom (algebraMap A B)] [IsAdicHom (algebraMap A C)]
     (hc : Continuous (algebraMap B C)) (c : C) (b : B) :
     mapBaseChange A B C hc (c ⊗ₜ[B] D A B b) = c • D A C (algebraMap B C b) := by
   rw [mapBaseChange_tmul, mapSemilinear_D]
-
-omit [IsUniformAddGroup B] [CompleteSpace B] [T0Space B] in
-/-- The relative projection `Ωᶜ[C⁄A] →ₗ[C] Ωᶜ[C⁄B]` in a tower `A → B → C`. -/
-noncomputable def mapTower [IsAdicHom (algebraMap A C)] [IsAdicHom (algebraMap B C)] :
-    ContinuousKaehlerDifferential A C →ₗ[C] ContinuousKaehlerDifferential B C :=
-  mapSemilinear (algebraMap A B) (RingHom.id C)
-    (by ext a; exact IsScalarTower.algebraMap_apply A B C a) continuous_id
-
-omit [IsUniformAddGroup B] [CompleteSpace B] [T0Space B] in
-@[simp]
-theorem mapTower_D [IsAdicHom (algebraMap A C)] [IsAdicHom (algebraMap B C)] (c : C) :
-    mapTower A B C (D A C c) = D B C c :=
-  mapSemilinear_D _ _ _ continuous_id c
 
 /-- The composite `C ⊗[B] Ωᶜ[B⁄A] → Ωᶜ[C⁄A] → Ωᶜ[C⁄B]` is zero on every class, without any
 noetherian or finite-type hypotheses. -/
@@ -114,7 +212,7 @@ theorem mapTower_mapBaseChange [IsAdicHom (algebraMap A B)] [IsAdicHom (algebraM
     mapTower A B C (mapBaseChange A B C hc z) = 0 := by
   induction z using TensorProduct.inductionOn with
   | tmul c ω =>
-    rw [mapBaseChange_tmul, map_smul, mapTower, mapSemilinear_comp]
+    rw [mapBaseChange_tmul, map_smul, mapTower_eq_mapSemilinear, mapSemilinear_comp]
     obtain ⟨⟨x, hx⟩, rfl⟩ := fromIdeal_surjective A B ω
     rw [mapSemilinear_fromIdeal]
     have hmap : CompletedTensor.map ((algebraMap A B).comp (RingHom.id A))
@@ -135,7 +233,7 @@ theorem mapTower_mapBaseChange [IsAdicHom (algebraMap A B)] [IsAdicHom (algebraM
     rw [hzero, map_zero, smul_zero]
   | add x y hx hy => rw [map_add, map_add, hx, hy, add_zero]
 
-end TowerMaps
+end MapBaseChange
 
 section ConormalMap
 
@@ -145,7 +243,8 @@ variable (A B C : Type*) [CommRing A] [CommRing B] [CommRing C]
   [UniformSpace B] [IsUniformAddGroup B] [NonarchimedeanRing B] [CompleteSpace B] [T0Space B]
   [IsAdicHom (algebraMap A B)]
 
-/-- The `B`-linear map `J →ₗ[B] C ⊗[B] Ωᶜ[B⁄A]` for `J = ker(B → C)`, sending `x ↦ 1 ⊗ₜ d x`. -/
+/-- The `B`-linear map `J →ₗ[B] C ⊗[B] Ωᶜ[B⁄A]` for `J = ker(B → C)`, sending `x ↦ 1 ⊗ₜ d x`,
+adapted from Mathlib's `KaehlerDifferential.kerToTensor`. -/
 noncomputable def kerToTensor :
     RingHom.ker (algebraMap B C) →ₗ[B] C ⊗[B] ContinuousKaehlerDifferential A B where
   toFun x := 1 ⊗ₜ[B] D A B x.1
@@ -155,23 +254,29 @@ noncomputable def kerToTensor :
       smul_tmul', ← Algebra.algebraMap_eq_smul_one, RingHom.mem_ker.mp x.2, zero_tmul, add_zero,
       RingHom.id_apply]
 
+/-- Evaluating `kerToTensor` on `x ∈ ker(B → C)` yields `1 ⊗ₜ d x`. -/
+@[simp]
+theorem kerToTensor_apply (x : RingHom.ker (algebraMap B C)) :
+    kerToTensor A B C x = 1 ⊗ₜ[B] D A B x.1 := (rfl)
+
 /-- The conormal map `J / J² →ₗ[B] C ⊗[B] Ωᶜ[B⁄A]` for `J = ker(B → C)` (Huber 1996,
-Proposition 1.6.3(ii)). -/
+Proposition 1.6.3(ii)), adapted from Mathlib's `KaehlerDifferential.kerCotangentToTensor`. -/
 noncomputable def kerCotangentToTensor :
     (RingHom.ker (algebraMap B C)).Cotangent →ₗ[B] C ⊗[B] ContinuousKaehlerDifferential A B :=
-  Submodule.liftQ _ (kerToTensor A B C) <| by
-    rw [Submodule.smul_eq_map₂]
-    refine iSup_le_iff.mpr ?_
-    simp only [Submodule.map_le_iff_le_comap, Subtype.forall]
-    rintro x hx y -
-    simp [kerToTensor, TensorProduct.smul_tmul', ← Algebra.algebraMap_eq_smul_one,
-      RingHom.mem_ker.mp hx]
+  Ideal.Cotangent.lift (kerToTensor A B C) fun x y ↦ by
+    simp only [kerToTensor_apply, MulMemClass.coe_mul, Derivation.leibniz, tmul_add,
+      ← smul_tmul, ← Algebra.algebraMap_eq_smul_one, RingHom.mem_ker.mp x.2,
+      RingHom.mem_ker.mp y.2, zero_tmul, add_zero]
 
+/-- Evaluating `kerCotangentToTensor` on the cotangent class of `x ∈ ker(B → C)` gives
+`1 ⊗ₜ d x`. -/
 @[simp]
 theorem kerCotangentToTensor_toCotangent (x : RingHom.ker (algebraMap B C)) :
     kerCotangentToTensor A B C ((RingHom.ker (algebraMap B C)).toCotangent x) =
-      1 ⊗ₜ[B] D A B x.1 := (rfl)
+      1 ⊗ₜ[B] D A B x.1 := by
+  rw [kerCotangentToTensor, Ideal.Cotangent.lift_toCotangent, kerToTensor_apply]
 
+/-- The composite `J / J² → C ⊗[B] Ωᶜ[B⁄A] → Ωᶜ[C⁄A]` vanishes identically. -/
 @[simp]
 theorem mapBaseChange_kerCotangentToTensor [Algebra A C] [IsScalarTower A B C]
     [UniformSpace C] [IsUniformAddGroup C] [NonarchimedeanRing C] [CompleteSpace C] [T0Space C]
@@ -186,32 +291,42 @@ end ConormalMap
 
 /-! ### First fundamental exact sequence (Huber 1996, Proposition 1.6.3(i)) -/
 
-section FirstFundamentalSequence
+section MapTowerSurjective
 
 variable {A B C : Type*} [CommRing A] [CommRing B] [CommRing C]
   [Algebra A B] [Algebra B C] [Algebra A C] [IsScalarTower A B C]
   [TopologicalSpace A] [IsTopologicalRing A]
-  [UniformSpace B] [IsUniformAddGroup B] [NonarchimedeanRing B] [CompleteSpace B] [T0Space B]
+  [TopologicalSpace B] [IsTopologicalRing B] [IsHuberRing B]
   [UniformSpace C] [IsUniformAddGroup C] [IsTopologicalRing C] [IsHuberRing C]
-  [CompleteSpace C] [T0Space C]
+  [CompleteSpace C] [T0Space C] [IsNoetherianType C]
+  [IsAdicHom (algebraMap A C)] [IsAdicHom (algebraMap B C)]
 
-omit [IsUniformAddGroup B] [CompleteSpace B] [T0Space B] in
 /-- **Surjectivity in the first fundamental sequence** (Huber 1996, Proposition 1.6.3(i)): when
-`B → C` is topologically of finite type and `C` is of noetherian type, `Ωᶜ[C⁄A] → Ωᶜ[C⁄B]` is
-surjective. -/
-theorem mapTower_surjective [IsHuberRing B] [IsNoetherianType C]
-    [IsAdicHom (algebraMap A C)] [IsAdicHom (algebraMap B C)]
-    (hBC : IsTopologicallyFiniteType (algebraMap B C)) :
+`B` and `C` are Huber rings, `C` is complete Hausdorff of noetherian type, and `B → C` is
+topologically of finite type, `Ωᶜ[C⁄A] → Ωᶜ[C⁄B]` is surjective. -/
+theorem mapTower_surjective (hBC : IsTopologicallyFiniteType (algebraMap B C)) :
     Function.Surjective (mapTower A B C) := by
   rw [← LinearMap.range_eq_top, eq_top_iff, ← span_range_derivation hBC, Submodule.span_le]
   rintro _ ⟨c, rfl⟩
   exact ⟨D A C c, mapTower_D A B C c⟩
 
-/-- **First fundamental exact sequence from topological finite type of the composite**: if `A → C`
-is topologically of finite type and `C` is of noetherian type, then
+end MapTowerSurjective
+
+section FirstFundamentalSequenceOfComp
+
+variable {A B C : Type*} [CommRing A] [CommRing B] [CommRing C]
+  [Algebra A B] [Algebra B C] [Algebra A C] [IsScalarTower A B C]
+  [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
+  [UniformSpace B] [IsUniformAddGroup B] [NonarchimedeanRing B] [CompleteSpace B] [T0Space B]
+  [UniformSpace C] [IsUniformAddGroup C] [IsTopologicalRing C] [IsHuberRing C]
+  [CompleteSpace C] [T0Space C] [IsNoetherianType C]
+  [IsAdicHom (algebraMap A B)] [IsAdicHom (algebraMap B C)] [IsAdicHom (algebraMap A C)]
+
+/-- **First fundamental exact sequence from topological finite type of the composite**: when `A, C`
+are Huber rings, `B, C` are complete Hausdorff nonarchimedean rings with `C` of noetherian type,
+`B → C` is continuous, and `A → C` is topologically of finite type,
 `C ⊗[B] Ωᶜ[B⁄A] → Ωᶜ[C⁄A] → Ωᶜ[C⁄B]` is exact. -/
-theorem exact_mapBaseChange_mapTower_of_comp [IsHuberRing A] [IsNoetherianType C]
-    [IsAdicHom (algebraMap A B)] [IsAdicHom (algebraMap B C)] [IsAdicHom (algebraMap A C)]
+theorem exact_mapBaseChange_mapTower_of_comp
     (hc : Continuous (algebraMap B C)) (hAC : IsTopologicallyFiniteType (algebraMap A C)) :
     Function.Exact (mapBaseChange A B C hc) (mapTower A B C) := by
   refine LinearMap.exact_iff.mpr (le_antisymm ?_
@@ -232,25 +347,37 @@ theorem exact_mapBaseChange_mapTower_of_comp [IsHuberRing A] [IsNoetherianType C
         rw [RingHom.id_apply, Algebra.smul_def, Derivation.leibniz, map_add, map_smul, map_smul]
         have h0 : R.mkQ (D A C (algebraMap B C b)) = 0 :=
           (Submodule.Quotient.mk_eq_zero R).mpr ⟨1 ⊗ₜ[B] D A B b, by simp⟩
-        rw [h0, smul_zero, add_zero]
-        rfl
+        rw [h0, smul_zero, add_zero, ← algebraMap_smul C b]
       map_one_eq_zero' := by simp
       leibniz' x y := by simp [Derivation.leibniz] }
+  have hδB_apply (c : C) : δB c = R.mkQ (D A C c) := rfl
   have hδB : Continuous δB :=
     (IsModuleTopology.continuous_of_linearMap R.mkQ).comp (continuous_D hAC)
   let s : ContinuousKaehlerDifferential B C →ₗ[C] Q := liftOfFinite δB hδB
   have hs : s.comp (mapTower A B C) = R.mkQ :=
     linearMap_ext hAC fun c ↦ by
-      simp only [LinearMap.comp_apply, mapTower_D, s, liftOfFinite_D]; rfl
+      simp only [LinearMap.comp_apply, mapTower_D, s, liftOfFinite_D, hδB_apply]
   intro ω hω
   have h0 : R.mkQ ω = 0 := by rw [← hs, LinearMap.comp_apply, LinearMap.mem_ker.mp hω, map_zero]
   exact (Submodule.Quotient.mk_eq_zero R).mp h0
 
+end FirstFundamentalSequenceOfComp
+
+section FirstFundamentalSequence
+
+variable {A B C : Type*} [CommRing A] [CommRing B] [CommRing C]
+  [Algebra A B] [Algebra B C] [Algebra A C] [IsScalarTower A B C]
+  [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
+  [UniformSpace B] [IsUniformAddGroup B] [IsTopologicalRing B] [IsHuberRing B]
+  [CompleteSpace B] [T0Space B] [IsNoetherianType B]
+  [UniformSpace C] [IsUniformAddGroup C] [IsTopologicalRing C] [IsHuberRing C]
+  [CompleteSpace C] [T0Space C]
+  [IsAdicHom (algebraMap A B)] [IsAdicHom (algebraMap B C)] [IsAdicHom (algebraMap A C)]
+
 /-- **Huber Proposition 1.6.3(i) (First fundamental exact sequence)**: for topologically finite
-type homomorphisms `A → B` and `B → C` with `B` of noetherian type,
-`C ⊗[B] Ωᶜ[B⁄A] → Ωᶜ[C⁄A] → Ωᶜ[C⁄B]` is exact. -/
-theorem exact_mapBaseChange_mapTower [IsHuberRing A] [IsHuberRing B] [IsNoetherianType B]
-    [IsAdicHom (algebraMap A B)] [IsAdicHom (algebraMap B C)] [IsAdicHom (algebraMap A C)]
+type homomorphisms `A → B` and `B → C` between Huber rings with `B, C` complete Hausdorff and `B`
+of noetherian type, `C ⊗[B] Ωᶜ[B⁄A] → Ωᶜ[C⁄A] → Ωᶜ[C⁄B]` is exact. -/
+theorem exact_mapBaseChange_mapTower
     (hc : Continuous (algebraMap B C))
     (hAB : IsTopologicallyFiniteType (algebraMap A B))
     (hBC : IsTopologicallyFiniteType (algebraMap B C)) :
@@ -262,42 +389,23 @@ theorem exact_mapBaseChange_mapTower [IsHuberRing A] [IsHuberRing B] [IsNoetheri
 
 end FirstFundamentalSequence
 
-/-- Two `R`-linear maps out of `R ⊗[B] Ωᶜ[B⁄A]` into a scalar-tower `(B, R)`-module agreeing on
-`1 ⊗ₜ d b` for all `b : B` are equal. -/
-private theorem linearMap_tensor_ext {A B R : Type*} [CommRing A] [CommRing B] [CommRing R]
-    [Algebra A B] [Algebra B R]
-    [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
-    [UniformSpace B] [IsUniformAddGroup B] [IsTopologicalRing B] [IsHuberRing B]
-    [CompleteSpace B] [T0Space B] [IsNoetherianType B] [IsAdicHom (algebraMap A B)]
-    (hAB : IsTopologicallyFiniteType (algebraMap A B))
-    {Q : Type*} [AddCommGroup Q] [Module B Q] [Module R Q] [IsScalarTower B R Q]
-    {f g : R ⊗[B] ContinuousKaehlerDifferential A B →ₗ[R] Q}
-    (h : ∀ b : B, f (1 ⊗ₜ[B] D A B b) = g (1 ⊗ₜ[B] D A B b)) : f = g := by
-  have h1 : (f.restrictScalars B).comp (TensorProduct.mk B R _ 1) =
-      (g.restrictScalars B).comp (TensorProduct.mk B R _ 1) :=
-    linearMap_ext hAB fun b ↦ h b
-  refine LinearMap.restrictScalars_injective B (TensorProduct.ext' fun r ω ↦ ?_)
-  have hr : r ⊗ₜ[B] ω = r • ((1 : R) ⊗ₜ[B] ω) := by rw [smul_tmul', smul_eq_mul, mul_one]
-  simp only [LinearMap.restrictScalars_apply, hr, map_smul]
-  exact congrArg (r • ·) (DFunLike.congr_fun h1 ω)
-
 /-! ### Conormal exact sequence (Huber 1996, Proposition 1.6.3(ii)) -/
 
-section ConormalSequence
+section MapBaseChangeSurjective
 
 variable {A B C : Type*} [CommRing A] [CommRing B] [CommRing C]
   [Algebra A B] [Algebra B C] [Algebra A C] [IsScalarTower A B C]
   [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
-  [UniformSpace B] [IsUniformAddGroup B] [IsTopologicalRing B] [IsHuberRing B]
-  [CompleteSpace B] [T0Space B]
+  [UniformSpace B] [IsUniformAddGroup B] [NonarchimedeanRing B] [CompleteSpace B] [T0Space B]
   [UniformSpace C] [IsUniformAddGroup C] [IsTopologicalRing C] [IsHuberRing C]
-  [CompleteSpace C] [T0Space C]
+  [CompleteSpace C] [T0Space C] [IsNoetherianType C]
   [IsAdicHom (algebraMap A B)] [IsAdicHom (algebraMap A C)]
 
-/-- **Surjectivity in the conormal sequence** (Huber 1996, Proposition 1.6.3(ii)): when `B → C` is
-surjective and `A → C` is topologically of finite type into `C` of noetherian type,
+/-- **Surjectivity in the conormal sequence** (Huber 1996, Proposition 1.6.3(ii)): when `A, C` are
+Huber rings, `B, C` are complete Hausdorff nonarchimedean rings with `C` of noetherian type, `B → C`
+is a continuous surjection, and `A → C` is topologically of finite type,
 `C ⊗[B] Ωᶜ[B⁄A] → Ωᶜ[C⁄A]` is surjective. -/
-theorem mapBaseChange_surjective [IsNoetherianType C]
+theorem mapBaseChange_surjective
     (hc : Continuous (algebraMap B C)) (hsurj : Function.Surjective (algebraMap B C))
     (hAC : IsTopologicallyFiniteType (algebraMap A C)) :
     Function.Surjective (mapBaseChange A B C hc) := by
@@ -306,8 +414,20 @@ theorem mapBaseChange_surjective [IsNoetherianType C]
   obtain ⟨b, rfl⟩ := hsurj c
   exact ⟨1 ⊗ₜ[B] D A B b, by simp⟩
 
+end MapBaseChangeSurjective
+
+section ConormalSequence
+
+variable {A B C : Type*} [CommRing A] [CommRing B] [CommRing C]
+  [Algebra A B] [Algebra B C] [Algebra A C] [IsScalarTower A B C]
+  [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
+  [UniformSpace B] [IsUniformAddGroup B] [IsTopologicalRing B] [IsHuberRing B]
+  [CompleteSpace B] [T0Space B]
+  [UniformSpace C] [IsUniformAddGroup C] [NonarchimedeanRing C] [CompleteSpace C] [T0Space C]
+  [IsAdicHom (algebraMap A B)] [IsAdicHom (algebraMap A C)]
+
 omit [IsHuberRing A] [IsHuberRing B] [UniformSpace C] [IsUniformAddGroup C]
-  [IsTopologicalRing C] [IsHuberRing C] [CompleteSpace C] [T0Space C]
+  [NonarchimedeanRing C] [CompleteSpace C] [T0Space C]
   [IsAdicHom (algebraMap A C)] in
 /-- Algebraic quotient derivation `C → (C ⊗[B] Ωᶜ[B⁄A]) ⧸ L` along a surjection `B → C`, sending
 the image of `b` to the class of `1 ⊗ₜ d b`. -/
@@ -318,43 +438,38 @@ private noncomputable def conormalQuotientDerivation
     {δ : Derivation A C ((C ⊗[B] ContinuousKaehlerDifferential A B) ⧸ L) //
       ∀ b : B, δ (algebraMap B C b) = L.mkQ (1 ⊗ₜ[B] D A B b)} := by
   let Q := (C ⊗[B] ContinuousKaehlerDifferential A B) ⧸ L
-  let f : B → Q := fun b ↦ L.mkQ (1 ⊗ₜ[B] D A B b)
-  have hf_eq {b₁ b₂ : B} (h : algebraMap B C b₁ = algebraMap B C b₂) : f b₁ = f b₂ := by
-    rw [← sub_eq_zero]
-    change L.mkQ (1 ⊗ₜ[B] D A B b₁) - L.mkQ (1 ⊗ₜ[B] D A B b₂) = 0
-    rw [← map_sub, ← tmul_sub, ← map_sub, Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero]
-    exact hL (b₁ - b₂) (by rw [RingHom.mem_ker, map_sub, h, sub_self])
-  let g : C → Q := fun c ↦ f (hsurj c).choose
-  have hg (b : B) : g (algebraMap B C b) = f b := hf_eq (hsurj (algebraMap B C b)).choose_spec
-  refine ⟨{ toFun := g
-            map_add' c₁ c₂ := by
-              obtain ⟨b₁, rfl⟩ := hsurj c₁; obtain ⟨b₂, rfl⟩ := hsurj c₂
-              rw [← map_add, hg, hg, hg]; simp [f, tmul_add]
-            map_smul' a c := by
-              obtain ⟨b, rfl⟩ := hsurj c
-              rw [RingHom.id_apply, Algebra.smul_def, IsScalarTower.algebraMap_apply A B C a,
-                ← map_mul, hg, hg]
-              dsimp only [f]
-              rw [← Algebra.smul_def, Derivation.map_smul,
-                ← IsScalarTower.algebraMap_smul B a (D A B b), ← smul_tmul]
-              have htmul : (algebraMap A C a • ((1 : C) ⊗ₜ[B] D A B b)) =
-                  (algebraMap A B a • (1 : C)) ⊗ₜ[B] D A B b := by
-                rw [smul_tmul', smul_eq_mul, Algebra.smul_def,
-                  ← IsScalarTower.algebraMap_apply A B C a]
-              rw [← htmul, L.mkQ.map_smul, algebraMap_smul]
-            map_one_eq_zero' := by
-              change g 1 = 0
-              rw [← map_one (algebraMap B C), hg]; simp [f]
-            leibniz' c₁ c₂ := by
-              change g (c₁ * c₂) = c₁ • g c₂ + c₂ • g c₁
-              obtain ⟨b₁, rfl⟩ := hsurj c₁; obtain ⟨b₂, rfl⟩ := hsurj c₂
-              rw [← map_mul, hg, hg, hg]
-              simp only [f, Derivation.leibniz, tmul_add, map_add, ← smul_tmul, ← smul_tmul']
-              rw [← algebraMap_smul C b₁, ← algebraMap_smul C b₂, L.mkQ.map_smul,
-                L.mkQ.map_smul] }, hg⟩
+  let f : B →ₐ[A] C := IsScalarTower.toAlgHom A B C
+  let J : Ideal B := RingHom.ker f
+  let e : (B ⧸ J) ≃ₐ[A] C := Ideal.quotientKerAlgEquivOfSurjective (f := f) hsurj
+  letI : Module (B ⧸ J) Q := Module.compHom Q e.toRingHom
+  have hsmul_e (x : B ⧸ J) (q : Q) : x • q = e x • q := rfl
+  haveI : IsScalarTower B (B ⧸ J) Q := IsScalarTower.of_algebraMap_smul fun b q ↦ by
+    have he : e (Ideal.Quotient.mk J b) = algebraMap B C b :=
+      Ideal.quotientKerAlgEquivOfSurjective_mk (f := f) hsurj b
+    rw [hsmul_e, Ideal.Quotient.algebraMap_eq, he, algebraMap_smul]
+  let lB : ContinuousKaehlerDifferential A B →ₗ[B] Q :=
+    (L.mkQ.restrictScalars B).comp (TensorProduct.mk B C (ContinuousKaehlerDifferential A B) 1)
+  let dB : Derivation A B Q := lB.compDer (D A B)
+  let dQ : Derivation A (B ⧸ J) Q :=
+    dB.liftQuotient J fun b hb ↦ (Submodule.Quotient.mk_eq_zero L).mpr (hL b hb)
+  letI : Algebra C (B ⧸ J) := e.symm.toRingHom.toAlgebra
+  haveI : IsScalarTower A C (B ⧸ J) :=
+    IsScalarTower.of_algebraMap_eq fun a ↦ (e.symm.commutes a).symm
+  haveI : IsScalarTower C (B ⧸ J) Q := IsScalarTower.of_algebraMap_smul fun c q ↦ by
+    simp only [hsmul_e, RingHom.algebraMap_toAlgebra, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe,
+      AlgEquiv.coe_toRingEquiv, e.apply_symm_apply]
+  refine ⟨dQ.compAlgebraMap C, fun b ↦ ?_⟩
+  have hmk : e.symm (algebraMap B C b) = Ideal.Quotient.mk J b :=
+    Ideal.quotientKerAlgEquivOfSurjective_symm_apply (f := f) hsurj b
+  have hdQ : dQ (Ideal.Quotient.mk J b) = dB b := Derivation.liftQuotient_mk ..
+  simp only [Derivation.compAlgebraMap_apply, RingHom.algebraMap_toAlgebra,
+    RingEquiv.toRingHom_eq_coe, RingHom.coe_coe, AlgEquiv.coe_toRingEquiv, hmk, hdQ, dB,
+    Derivation.coe_comp, Derivation.coeFn_coe, lB, LinearMap.comp_apply,
+    LinearMap.restrictScalars_apply, TensorProduct.mk_apply]
 
-/-- **Huber Proposition 1.6.3(ii) (Conormal exact sequence)**: when `A → B` is topologically of
-finite type into `B` of noetherian type and `B → C` is an open quotient map, the sequence
+/-- **Huber Proposition 1.6.3(ii) (Conormal exact sequence)**: when `A, B` are Huber rings, `B` is
+complete Hausdorff of noetherian type, `A → B` is topologically of finite type, and `B → C` is an
+open quotient map into a complete Hausdorff nonarchimedean ring `C`, the sequence
 `J / J² → C ⊗[B] Ωᶜ[B⁄A] → Ωᶜ[C⁄A]` is exact for `J = ker(B → C)`. -/
 theorem exact_kerCotangentToTensor_mapBaseChange [IsNoetherianType B]
     (hAB : IsTopologicallyFiniteType (algebraMap A B))
@@ -362,17 +477,12 @@ theorem exact_kerCotangentToTensor_mapBaseChange [IsNoetherianType B]
     Function.Exact (kerCotangentToTensor A B C) (mapBaseChange A B C hBC.continuous) := by
   intro z
   refine ⟨fun hz ↦ ?_, fun ⟨u, hu⟩ ↦ hu ▸ mapBaseChange_kerCotangentToTensor A B C hBC.continuous u⟩
+  have : IsHuberRing C := .of_isOpenQuotientMap hBC
   have : IsNoetherianType C := .of_isOpenQuotientMap hBC
   have : Module.Finite B (ContinuousKaehlerDifferential A B) := finite hAB
   let L : Submodule C (C ⊗[B] ContinuousKaehlerDifferential A B) :=
-    { carrier := Set.range (kerCotangentToTensor A B C)
-      zero_mem' := ⟨0, map_zero _⟩
-      add_mem' := by rintro _ _ ⟨u, rfl⟩ ⟨v, rfl⟩; exact ⟨u + v, map_add _ u v⟩
-      smul_mem' := by
-        rintro c _ ⟨u, rfl⟩
-        obtain ⟨b, rfl⟩ := hBC.surjective c
-        exact ⟨b • u, ((kerCotangentToTensor A B C).map_smul b u).trans
-          (algebraMap_smul C b _).symm⟩ }
+    (Submodule.orderIsoOfAlgebraMapSurjective hBC.surjective).symm
+      (LinearMap.range (kerCotangentToTensor A B C))
   let Q := (C ⊗[B] ContinuousKaehlerDifferential A B) ⧸ L
   let : TopologicalSpace Q := moduleTopology C Q
   have : IsModuleTopology C Q := ⟨rfl⟩
@@ -413,83 +523,6 @@ variable {A B A' : Type*} [CommRing A] [CommRing B] [CommRing A']
 
 attribute [local instance] leftAlgebra rightAlgebra isAdicHom_rightAlgebra
 
-omit [IsHuberRing A] [IsUniformAddGroup B] [IsHuberRing B] [CompleteSpace B] [T0Space B]
-  [IsNoetherianType B] [IsHuberRing A'] [IsNoetherianType A'] in
-/-- The `A'`-subalgebra generated by `inl '' univ` is dense in `B ⊗̂_A A'`. -/
-private theorem dense_adjoin_range_inl :
-    Dense (Algebra.adjoin A' (Set.range (inl A B A')) : Set (CompletedTensor A B A')) := by
-  refine (denseRange_toCompletion A B A').mono ?_
-  rintro _ ⟨x, rfl⟩
-  induction x using TensorProduct.inductionOn with
-  | tmul b a' =>
-    rw [toCompletion_tmul, mul_comm, ← algebraMap_rightAlgebra]
-    exact Subalgebra.mul_mem _
-      (Subalgebra.algebraMap_mem _ a') (Algebra.subset_adjoin ⟨b, rfl⟩)
-  | add x y hx hy =>
-    rw [map_add]
-    exact Subalgebra.add_mem _ hx hy
-
-omit [IsHuberRing A] [IsUniformAddGroup B] [IsHuberRing B] [CompleteSpace B] [T0Space B]
-  [IsNoetherianType B] [IsHuberRing A'] [IsNoetherianType A'] in
-/-- Lift a continuous `inl`-derivation `d₀ : B →+ M` vanishing on `A` into a complete Hausdorff
-nonarchimedean `(B ⊗̂_A A')`-module `M` to a continuous `A'`-derivation `B ⊗̂_A A' → M`. -/
-private noncomputable def liftBaseChangeDerivation
-    {M : Type*} [AddCommGroup M] [UniformSpace M] [IsUniformAddGroup M]
-    [NonarchimedeanAddGroup M] [CompleteSpace M] [T0Space M]
-    [Module (CompletedTensor A B A') M] [ContinuousSMul (CompletedTensor A B A') M]
-    [Module A' M] [IsScalarTower A' (CompletedTensor A B A') M]
-    (d₀ : B →+ M) (hd₀_cont : Continuous d₀) (hd₀_one : d₀ 1 = 0)
-    (hd₀_mul : ∀ b₁ b₂ : B, d₀ (b₁ * b₂) = inl A B A' b₁ • d₀ b₂ + inl A B A' b₂ • d₀ b₁)
-    (hd₀_alg : ∀ a : A, d₀ (algebraMap A B a) = 0) :
-    {δ : Derivation A' (CompletedTensor A B A') M //
-      Continuous δ ∧ ∀ b : B, δ (inl A B A' b) = d₀ b} := by
-  let B' := CompletedTensor A B A'
-  letI : Module B'ᵐᵒᵖ M := Module.compHom M ((RingHom.id B').fromOpposite mul_comm)
-  letI : IsCentralScalar B' M := ⟨fun _ _ ↦ rfl⟩
-  letI : ContinuousSMul B'ᵐᵒᵖ M :=
-    ⟨(MulOpposite.continuous_unop.comp continuous_fst).smul continuous_snd⟩
-  letI : NonarchimedeanRing (TrivSqZeroExt B' M) :=
-    { is_nonarchimedean := (inferInstance : NonarchimedeanAddGroup (B' × M)).is_nonarchimedean }
-  let φB : B →+* TrivSqZeroExt B' M :=
-    { toFun b := TrivSqZeroExt.inl (inl A B A' b) + TrivSqZeroExt.inr (d₀ b)
-      map_one' := by simp [hd₀_one]
-      map_mul' b₁ b₂ := by ext <;> simp [hd₀_mul, add_comm]
-      map_zero' := by simp
-      map_add' b₁ b₂ := by ext <;> simp [map_add, add_add_add_comm] }
-  have hφB_cont : Continuous φB :=
-    (TrivSqZeroExt.continuous_inl.comp (continuous_inl A B A')).add
-      (TrivSqZeroExt.continuous_inr.comp hd₀_cont)
-  let ψA' : A' →+* TrivSqZeroExt B' M := (TrivSqZeroExt.inlHom B' M).comp (inr A B A')
-  have hcomm : φB.comp (algebraMap A B) = ψA'.comp (algebraMap A A') := by
-    ext a
-    · simp only [RingHom.comp_apply, φB, ψA', RingHom.coe_mk, MonoidHom.coe_mk, OneHom.coe_mk,
-        TrivSqZeroExt.fst_add, TrivSqZeroExt.fst_inl, TrivSqZeroExt.fst_inr, add_zero,
-        TrivSqZeroExt.inlHom_apply]
-      exact RingHom.congr_fun (inl_comp_algebraMap A B A') a
-    · simp [φB, ψA', hd₀_alg]
-  let Ψ : B' →+* TrivSqZeroExt B' M :=
-    CompletedTensor.lift φB ψA' hcomm hφB_cont
-      (TrivSqZeroExt.continuous_inl.comp (continuous_inr A B A'))
-  have Ψ_inl (b : B) : Ψ (inl A B A' b) = φB b := lift_inl _ _ hcomm _ _ b
-  have Ψ_inr (a' : A') : Ψ (inr A B A' a') = ψA' a' := lift_inr _ _ hcomm _ _ a'
-  let fstHom : TrivSqZeroExt B' M →+* B' := (TrivSqZeroExt.fstHom B' B' M).toRingHom
-  have hfst : fstHom.comp Ψ = RingHom.id B' :=
-    CompletedTensor.hom_ext (TrivSqZeroExt.continuous_fst.comp (continuous_lift ..)) continuous_id
-      (RingHom.ext fun b ↦ by simp [fstHom, Ψ_inl, φB])
-      (RingHom.ext fun a' ↦ by simp [fstHom, Ψ_inr, ψA'])
-  have hfst_apply (z : B') : (Ψ z).fst = z := RingHom.congr_fun hfst z
-  have hsnd_mul (x y : B') : (Ψ (x * y)).snd = x • (Ψ y).snd + y • (Ψ x).snd := by
-    rw [map_mul, TrivSqZeroExt.snd_mul, hfst_apply, hfst_apply]; rfl
-  refine ⟨{ toFun z := (Ψ z).snd
-            map_add' x y := by simp [map_add]
-            map_smul' a' z := by
-              rw [RingHom.id_apply, Algebra.smul_def, ← algebraMap_smul B' a' (Ψ z).snd,
-                algebraMap_rightAlgebra, hsnd_mul, Ψ_inr]; simp [ψA']
-            map_one_eq_zero' := by simp [map_one]
-            leibniz' x y := hsnd_mul x y },
-    TrivSqZeroExt.continuous_snd.comp (continuous_lift ..),
-    fun b ↦ by simp [Ψ_inl, φB]⟩
-
 /-- Equip `(B ⊗̂_A A') ⊗[B] Ωᶜ[B⁄A]` with its natural `(B ⊗̂_A A')`-module topology and construct
 the universal continuous `A'`-derivation `B ⊗̂_A A' → (B ⊗̂_A A') ⊗[B] Ωᶜ[B⁄A]`. -/
 private noncomputable def baseChangeDerivation
@@ -508,36 +541,55 @@ private noncomputable def baseChangeDerivation
   have : IsModuleTopology B' M := ⟨rfl⟩
   letI : IsTopologicalAddGroup M := IsModuleTopology.isTopologicalAddGroup B' M
   letI : UniformSpace M := IsTopologicalAddGroup.rightUniformSpace M
-  have : IsUniformAddGroup M := isUniformAddGroup_of_addCommGroup
-  obtain ⟨_, _⟩ := isNaturallyComplete_iff.mp
-    (IsNoetherianType.isNaturallyComplete (A := B') (M := M))
-  have : NonarchimedeanAddGroup M := by
-    rw [eq_moduleTopology B' M]
-    exact TauCeti.nonarchimedeanAddGroup_moduleTopology (A := B')
+  obtain ⟨_, _, _, _⟩ :=
+    IsNoetherianType.complete_t2_nonarchimedean_of_isModuleTopology (A := B') (M := M)
+  haveI : IsScalarTower A B B' := IsScalarTower.of_algebraMap_eq fun a ↦ by simp [B']
+  haveI : IsScalarTower A A' B' := IsScalarTower.of_algebraMap_eq fun a ↦ by simp [B']
   have : ContinuousSMul B M := ⟨by
     have h : (fun p : B × M ↦ p.1 • p.2) = fun p ↦ inl A B A' p.1 • p.2 := by
       ext ⟨b, m⟩; rw [← algebraMap_leftAlgebra, algebraMap_smul]
     rw [h]
     exact ((continuous_inl A B A').comp continuous_fst).smul continuous_snd⟩
-  exact liftBaseChangeDerivation
-    (AddMonoidHom.mk' (fun b ↦ (1 : B') ⊗ₜ[B] D A B b) (fun x y ↦ by simp [tmul_add]))
-    ((IsModuleTopology.continuous_of_linearMap
-      (TensorProduct.mk B B' (ContinuousKaehlerDifferential A B) 1)).comp (continuous_D hAB))
-    (by simp)
-    (fun b₁ b₂ ↦ by
-      simp only [AddMonoidHom.mk'_apply, Derivation.leibniz, tmul_add, ← smul_tmul, ← smul_tmul']
-      rw [← algebraMap_smul B' b₁, ← algebraMap_smul B' b₂]
-      dsimp [B']; rw [algebraMap_leftAlgebra])
-    (fun a ↦ by simp)
+  let dB : Derivation A B M :=
+    (TensorProduct.mk B B' (ContinuousKaehlerDifferential A B) 1).compDer (D A B)
+  have hdB : Continuous dB :=
+    (IsModuleTopology.continuous_of_linearMap
+      (TensorProduct.mk B B' (ContinuousKaehlerDifferential A B) 1)).comp (continuous_D hAB)
+  have h0 : Continuous (0 : Derivation A A' M) := continuous_const
+  have hinl : (algebraMap B' B').comp (inl A B A') = algebraMap B B' := by
+    rw [Algebra.algebraMap_self, RingHom.id_comp, algebraMap_leftAlgebra]
+  have hinr : (algebraMap B' B').comp (inr A B A') = algebraMap A' B' := by
+    rw [Algebra.algebraMap_self, RingHom.id_comp, algebraMap_rightAlgebra]
+  let dA : Derivation A B' M :=
+    CompletedTensor.liftDerivation (R := B') dB (0 : Derivation A A' M) hdB h0 continuous_id
+      hinl hinr
+  have hdA_inr (a' : A') : dA (inr A B A' a') = 0 :=
+    (liftDerivation_inr (R := B') dB (0 : Derivation A A' M) hdB h0 continuous_id
+      hinl hinr a').trans (zero_apply a')
+  let δ : Derivation A' B' M :=
+    Derivation.mk'
+      { toFun := dA
+        map_add' := dA.map_add
+        map_smul' a' z := by
+          rw [RingHom.id_apply, Algebra.smul_def, dA.leibniz, algebraMap_smul,
+            algebraMap_rightAlgebra, hdA_inr, smul_zero, add_zero] }
+      dA.leibniz
+  exact ⟨δ, continuous_liftDerivation (R := B') dB (0 : Derivation A A' M) hdB h0 continuous_id
+      hinl hinr, fun b ↦ liftDerivation_inl (R := B') dB (0 : Derivation A A' M) hdB h0
+      continuous_id hinl hinr b⟩
 
-/-- **Huber Proposition 1.6.3(iii) (Base change of continuous differentials)**: when `A → B` is
-topologically of finite type into a complete Hausdorff Huber ring `B` of noetherian type and
-`A → A'` is an adic homomorphism into a Huber ring `A'` of noetherian type, scalar extension
-induces a linear equivalence
-`(B ⊗̂_A A') ⊗[B] Ωᶜ[B⁄A] ≃ₗ[B ⊗̂_A A'] Ωᶜ[(B ⊗̂_A A')⁄A']`. -/
-noncomputable def baseChangeEquiv (hAB : IsTopologicallyFiniteType (algebraMap A B)) :
-    CompletedTensor A B A' ⊗[B] ContinuousKaehlerDifferential A B ≃ₗ[CompletedTensor A B A']
-      ContinuousKaehlerDifferential A' (CompletedTensor A B A') := by
+/-- Scalar-extended comparison map `(B ⊗̂_A A') ⊗[B] Ωᶜ[B⁄A] →ₗ[B ⊗̂_A A'] Ωᶜ[(B ⊗̂_A A')⁄A']`. -/
+private noncomputable def baseChangeFromTensor :
+    CompletedTensor A B A' ⊗[B] ContinuousKaehlerDifferential A B →ₗ[CompletedTensor A B A']
+      ContinuousKaehlerDifferential A' (CompletedTensor A B A') :=
+  map (algebraMap A A') (by ext a; simp)
+    (by rw [algebraMap_leftAlgebra]; exact continuous_inl A B A')
+
+/-- Universal-property map `Ωᶜ[(B ⊗̂_A A')⁄A'] →ₗ[B ⊗̂_A A'] (B ⊗̂_A A') ⊗[B] Ωᶜ[B⁄A]`. -/
+private noncomputable def baseChangeToTensor
+    (hAB : IsTopologicallyFiniteType (algebraMap A B)) :
+    ContinuousKaehlerDifferential A' (CompletedTensor A B A') →ₗ[CompletedTensor A B A']
+      CompletedTensor A B A' ⊗[B] ContinuousKaehlerDifferential A B := by
   let B' := CompletedTensor A B A'
   let M := B' ⊗[B] ContinuousKaehlerDifferential A B
   have hA'B' : IsTopologicallyFiniteType (algebraMap A' B') := by
@@ -546,49 +598,106 @@ noncomputable def baseChangeEquiv (hAB : IsTopologicallyFiniteType (algebraMap A
   have : Module.Finite B (ContinuousKaehlerDifferential A B) := finite hAB
   letI : TopologicalSpace M := moduleTopology B' M
   have : IsModuleTopology B' M := ⟨rfl⟩
-  let fwd : M →ₗ[B'] ContinuousKaehlerDifferential A' B' :=
-    map (algebraMap A A') (by ext a; simp [B'])
-      (by dsimp [B']; rw [algebraMap_leftAlgebra]; exact continuous_inl A B A')
-  obtain ⟨δ', hδ', hδ'_inl⟩ := baseChangeDerivation (A' := A') hAB
-  let inv : ContinuousKaehlerDifferential A' B' →ₗ[B'] M := liftOfFinite δ' hδ'
-  have hleft : inv.comp fwd = LinearMap.id :=
-    linearMap_tensor_ext hAB fun b ↦ by
-      simp only [LinearMap.comp_apply, LinearMap.id_apply, fwd, inv, B', M]
-      rw [map_tmul, mapSemilinear_D, one_smul, algebraMap_leftAlgebra, liftOfFinite_D, hδ'_inl]
-  have hright : fwd.comp inv = LinearMap.id := by
-    refine linearMap_ext_of_dense_adjoin hA'B' dense_adjoin_range_inl ?_
-    rintro _ ⟨b, rfl⟩
-    simp only [LinearMap.comp_apply, LinearMap.id_apply, fwd, inv, B', M]
-    rw [liftOfFinite_D, hδ'_inl, map_tmul, mapSemilinear_D, one_smul, algebraMap_leftAlgebra]
-  exact LinearEquiv.ofLinearMap fwd inv hright hleft
+  exact liftOfFinite (baseChangeDerivation (A' := A') hAB).1
+    (baseChangeDerivation (A' := A') hAB).2.1
 
+private theorem baseChangeToTensor_D_inl
+    (hAB : IsTopologicallyFiniteType (algebraMap A B)) (b : B) :
+    baseChangeToTensor (A' := A') hAB
+        (D A' (CompletedTensor A B A') (inl A B A' b)) =
+      (1 : CompletedTensor A B A') ⊗ₜ[B] D A B b := by
+  let B' := CompletedTensor A B A'
+  let M := B' ⊗[B] ContinuousKaehlerDifferential A B
+  have hA'B' : IsTopologicallyFiniteType (algebraMap A' B') := by
+    rw [algebraMap_rightAlgebra]; exact isTopologicallyFiniteType_inr hAB
+  have : IsNoetherianType B' := .of_isTopologicallyFiniteType hA'B'
+  have : Module.Finite B (ContinuousKaehlerDifferential A B) := finite hAB
+  let : TopologicalSpace M := moduleTopology B' M
+  have : IsModuleTopology B' M := ⟨rfl⟩
+  exact (liftOfFinite_D (baseChangeDerivation (A' := A') hAB).1
+    (baseChangeDerivation (A' := A') hAB).2.1 (inl A B A' b)).trans
+    ((baseChangeDerivation (A' := A') hAB).2.2 b)
+
+private theorem baseChangeToTensor_comp_fromTensor
+    (hAB : IsTopologicallyFiniteType (algebraMap A B)) :
+    (baseChangeToTensor (A' := A') hAB).comp baseChangeFromTensor = LinearMap.id :=
+  linearMap_tensor_ext hAB fun b ↦ by
+    simp only [LinearMap.comp_apply, LinearMap.id_apply, baseChangeFromTensor, map_tmul,
+      mapSemilinear_D, one_smul, algebraMap_leftAlgebra]
+    exact baseChangeToTensor_D_inl (A' := A') hAB b
+
+private theorem baseChangeFromTensor_comp_toTensor
+    (hAB : IsTopologicallyFiniteType (algebraMap A B)) :
+    baseChangeFromTensor.comp (baseChangeToTensor (A' := A') hAB) = LinearMap.id := by
+  have hA'B' : IsTopologicallyFiniteType (algebraMap A' (CompletedTensor A B A')) := by
+    rw [algebraMap_rightAlgebra]; exact isTopologicallyFiniteType_inr hAB
+  have : IsNoetherianType (CompletedTensor A B A') := .of_isTopologicallyFiniteType hA'B'
+  refine linearMap_ext_of_dense_adjoin hA'B' (CompletedTensor.dense_adjoin_range_inl A B A') ?_
+  rintro _ ⟨b, rfl⟩
+  simp only [LinearMap.comp_apply, LinearMap.id_apply, baseChangeToTensor_D_inl,
+    baseChangeFromTensor, map_tmul, mapSemilinear_D, one_smul, algebraMap_leftAlgebra]
+
+/-- **Huber Proposition 1.6.3(iii) (Base change of continuous differentials)**: when `A → B` is
+topologically of finite type into a complete Hausdorff Huber ring `B` of noetherian type and
+`A → A'` is an adic homomorphism into a Huber ring `A'` of noetherian type, completed base change
+induces a linear equivalence
+`Ωᶜ[(B ⊗̂_A A')⁄A'] ≃ₗ[B ⊗̂_A A'] (B ⊗̂_A A') ⊗[B] Ωᶜ[B⁄A]`.
+
+Here `B ⊗̂_A A' = CompletedTensor A B A'` carries the `B`-algebra structure
+`CompletedTensor.leftAlgebra` and the adic `A'`-algebra structure `CompletedTensor.rightAlgebra`
+and `CompletedTensor.isAdicHom_rightAlgebra`. -/
+noncomputable def baseChangeEquiv (A' : Type*) [CommRing A'] [Algebra A A']
+    [TopologicalSpace A'] [IsTopologicalRing A'] [IsHuberRing A'] [IsNoetherianType A']
+    [IsAdicHom (algebraMap A A')]
+    (hAB : IsTopologicallyFiniteType (algebraMap A B)) :
+    ContinuousKaehlerDifferential A' (CompletedTensor A B A') ≃ₗ[CompletedTensor A B A']
+      CompletedTensor A B A' ⊗[B] ContinuousKaehlerDifferential A B :=
+  LinearEquiv.ofLinearMap (baseChangeToTensor (A' := A') hAB) baseChangeFromTensor
+    (baseChangeToTensor_comp_fromTensor (A' := A') hAB)
+    (baseChangeFromTensor_comp_toTensor (A' := A') hAB)
+
+/-- The inverse of `baseChangeEquiv` evaluates on a pure tensor `b' ⊗ₜ ω` via the semilinear
+change-of-rings map along `A → A'` and `inl : B → B ⊗̂_A A'`. -/
 @[simp]
-theorem baseChangeEquiv_tmul (hAB : IsTopologicallyFiniteType (algebraMap A B))
+theorem baseChangeEquiv_symm_tmul (hAB : IsTopologicallyFiniteType (algebraMap A B))
     (b' : CompletedTensor A B A') (ω : ContinuousKaehlerDifferential A B) :
-    baseChangeEquiv hAB (b' ⊗ₜ[B] ω) =
+    (baseChangeEquiv A' hAB).symm (b' ⊗ₜ[B] ω) =
       b' • mapSemilinear (algebraMap A A') (algebraMap B (CompletedTensor A B A'))
         (by ext a; simp)
-        (by rw [algebraMap_leftAlgebra]; exact continuous_inl A B A') ω := by
-  dsimp [baseChangeEquiv]
-  exact map_tmul _ _ _ b' ω
+        (by rw [algebraMap_leftAlgebra]; exact continuous_inl A B A') ω :=
+  map_tmul _ _ _ b' ω
 
-theorem baseChangeEquiv_tmul_D (hAB : IsTopologicallyFiniteType (algebraMap A B))
+/-- The inverse of `baseChangeEquiv` sends `b' ⊗ₜ d b` to `b' • d (inl b)`. -/
+theorem baseChangeEquiv_symm_tmul_D (hAB : IsTopologicallyFiniteType (algebraMap A B))
     (b' : CompletedTensor A B A') (b : B) :
-    baseChangeEquiv hAB (b' ⊗ₜ[B] D A B b) =
+    (baseChangeEquiv A' hAB).symm (b' ⊗ₜ[B] D A B b) =
       b' • D A' (CompletedTensor A B A') (inl A B A' b) := by
-  rw [baseChangeEquiv_tmul, mapSemilinear_D, algebraMap_leftAlgebra]
+  rw [baseChangeEquiv_symm_tmul, mapSemilinear_D, algebraMap_leftAlgebra]
 
+/-- `baseChangeEquiv` sends `d (inl b)` to `1 ⊗ₜ d b`. -/
 @[simp]
-theorem baseChangeEquiv_symm_D_inl (hAB : IsTopologicallyFiniteType (algebraMap A B)) (b : B) :
-    (baseChangeEquiv (A' := A') hAB).symm (D A' (CompletedTensor A B A') (inl A B A' b)) =
-      (1 : CompletedTensor A B A') ⊗ₜ[B] D A B b := by
-  refine (baseChangeEquiv (A' := A') hAB).injective ?_
-  rw [LinearEquiv.apply_symm_apply, baseChangeEquiv_tmul_D, one_smul]
+theorem baseChangeEquiv_D_inl (A' : Type*) [CommRing A'] [Algebra A A']
+    [TopologicalSpace A'] [IsTopologicalRing A'] [IsHuberRing A'] [IsNoetherianType A']
+    [IsAdicHom (algebraMap A A')]
+    (hAB : IsTopologicallyFiniteType (algebraMap A B)) (b : B) :
+    baseChangeEquiv A' hAB (D A' (CompletedTensor A B A') (inl A B A' b)) =
+      (1 : CompletedTensor A B A') ⊗ₜ[B] D A B b :=
+  baseChangeToTensor_D_inl (A' := A') hAB b
 
+/-- `baseChangeEquiv` annihilates `d (inr a')`. -/
 @[simp]
-theorem baseChangeEquiv_symm_D_inr (hAB : IsTopologicallyFiniteType (algebraMap A B)) (a' : A') :
-    (baseChangeEquiv (A' := A') hAB).symm (D A' (CompletedTensor A B A') (inr A B A' a')) = 0 := by
+theorem baseChangeEquiv_D_inr (hAB : IsTopologicallyFiniteType (algebraMap A B)) (a' : A') :
+    baseChangeEquiv A' hAB (D A' (CompletedTensor A B A') (inr A B A' a')) = 0 := by
   rw [← algebraMap_rightAlgebra, Derivation.map_algebraMap, map_zero]
+
+/-- `baseChangeEquiv` sends `d (toCompletion (b ⊗ₜ a'))` to `inr a' ⊗ₜ d b`. -/
+theorem baseChangeEquiv_D_toCompletion_tmul (hAB : IsTopologicallyFiniteType (algebraMap A B))
+    (b : B) (a' : A') :
+    baseChangeEquiv A' hAB (D A' (CompletedTensor A B A') (toCompletion A B A' (b ⊗ₜ[A] a'))) =
+      inr A B A' a' ⊗ₜ[B] D A B b := by
+  rw [CompletedTensor.toCompletion_tmul, Derivation.leibniz, map_add, map_smul, map_smul,
+    baseChangeEquiv_D_inr, smul_zero, zero_add, baseChangeEquiv_D_inl, smul_tmul', smul_eq_mul,
+    mul_one]
 
 end BaseChange
 
