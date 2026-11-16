@@ -113,6 +113,12 @@ theorem basis_repr_algebraMap (r : R) :
   rw [Algebra.algebraMap_eq_smul_one, map_smul, basis_repr_one, Finsupp.smul_single,
     smul_eq_mul, mul_one]
 
+/-- The scalar semiring embeds in its based quantum torus. -/
+theorem algebraMap_injective :
+    Function.Injective (algebraMap R (QuantumTorus R L u Λ)) := by
+  intro r s h
+  simpa using congrArg (fun x ↦ (basis u Λ).repr x 0) h
+
 /-- A map out of a based quantum torus is determined by its normalized monomials. -/
 @[ext]
 theorem algHom_ext {B : Type*} [Semiring B] [Algebra R B]
@@ -155,7 +161,6 @@ theorem monomialUnit_zero : monomialUnit u Λ 0 = 1 :=
   Units.ext monomial_zero
 
 /-- The underlying inverse of a normalized monomial, including the diagonal correction. -/
-@[simp]
 theorem val_inv_monomialUnit (a : L) :
     (((monomialUnit u Λ a)⁻¹ : (QuantumTorus R L u Λ)ˣ) : QuantumTorus R L u Λ) =
       ((u ^ (Λ a a) : Rˣ) : R) • monomial u Λ (-a) :=
@@ -173,7 +178,7 @@ theorem monomialUnit_inv_eq_map_mul (a : L) :
 /-- For alternating forms, negation of an exponent inverts its monomial. -/
 theorem monomialUnit_neg (hΛ : Λ.IsAlt) (a : L) :
     monomialUnit u Λ (-a) = (monomialUnit u Λ a)⁻¹ :=
-  Units.ext <| by simp [hΛ.self_eq_zero]
+  Units.ext <| by simp [val_inv_monomialUnit, hΛ.self_eq_zero]
 
 /-- For alternating forms, the inverse of a monomial unit has negated exponent. -/
 @[simp]

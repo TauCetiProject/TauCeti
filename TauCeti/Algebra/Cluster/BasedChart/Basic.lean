@@ -97,6 +97,15 @@ theorem eval_injective (M : BasedChart u Λ B) : Function.Injective M.eval := by
   rw [← AlgHom.coe_toLinearMap, M.eval_toLinearMap]
   exact (QuantumTorus.basis u Λ).injective_constr_of_linearIndependent M.linearIndependent
 
+/-- A chart embeds its scalar semiring in the ambient algebra. -/
+theorem algebraMap_injective (M : BasedChart u Λ B) : Function.Injective (algebraMap R B) := by
+  rw [← M.eval.comp_algebraMap]
+  exact M.eval_injective.comp QuantumTorus.algebraMap_injective
+
+/-- A chart makes scalar multiplication on the ambient algebra faithful. -/
+theorem faithfulSMul (M : BasedChart u Λ B) : FaithfulSMul R B :=
+  (faithfulSMul_iff_algebraMap_injective R B).mpr M.algebraMap_injective
+
 /-- Transport a chart through an injective map of ambient algebras. -/
 noncomputable def map (M : BasedChart u Λ B) (f : B →ₐ[R] C) (hf : Function.Injective f) :
     BasedChart u Λ C where
@@ -249,7 +258,6 @@ theorem eval_repr_symm (M : BasedChart u Λ B) (c : L →₀ R) :
 
 /-- The underlying inverse of a chart monomial, including the diagonal correction
 for a non-alternating form. -/
-@[simp]
 theorem val_inv_monomial (M : BasedChart u Λ B) (a : L) :
     (((M.monomial a)⁻¹ : Bˣ) : B) =
       ((u ^ (Λ a a) : Rˣ) : R) • (M.monomial (-a) : B) := by
@@ -343,15 +351,22 @@ theorem ext_coordinate {I : Type*} {M N : BasedChart u Λ B}
   exact h i
 
 @[simp]
-theorem coordinate_ofInjective {I : Type*} (f : QuantumTorus R L u Λ →ₐ[R] B)
-    (hf : Function.Injective f) (b : Module.Basis I ℤ L) (i : I) :
-    (ofInjective f hf).coordinate b i = Units.map f ((canonical u Λ).coordinate b i) :=
-  (rfl)
-
-@[simp]
 theorem coordinate_canonical {I : Type*} (b : Module.Basis I ℤ L) (i : I) :
     (canonical u Λ).coordinate b i = QuantumTorus.monomialUnit u Λ (b i) :=
   (rfl)
+
+@[simp]
+theorem coordinate_ofInjective {I : Type*} (f : QuantumTorus R L u Λ →ₐ[R] B)
+    (hf : Function.Injective f) (b : Module.Basis I ℤ L) (i : I) :
+    (ofInjective f hf).coordinate b i = Units.map f (QuantumTorus.monomialUnit u Λ (b i)) :=
+  (rfl)
+
+/-- Coordinates in a reindexed lattice basis are coordinates at the original indices. -/
+@[simp]
+theorem coordinate_basis_reindex {I I' : Type*} (M : BasedChart u Λ B)
+    (b : Module.Basis I ℤ L) (e : I ≃ I') (i' : I') :
+    M.coordinate (b.reindex e) i' = M.coordinate b (e.symm i') := by
+  simp [coordinate_def]
 
 /-- Ambient transport applies the ambient homomorphism to each coordinate. -/
 @[simp]
@@ -505,6 +520,24 @@ theorem untwistedEquiv_symm_apply (h : ∀ a b, u ^ (Λ a b) = 1)
   apply Units.ext
   rw [val_untwistedEquiv_symm_monomial]
   simp
+
+/-- The inverse chart evaluates by composing with the quantum-torus equivalence. -/
+@[simp]
+theorem eval_untwistedEquiv_symm (h : ∀ a b, u ^ (Λ a b) = 1)
+    (f : {f : AddMonoidAlgebra R L →ₐ[R] B // Function.Injective f}) :
+    ((untwistedEquiv h).symm f).eval =
+      f.val.comp (QuantumTorus.untwistedEquiv u Λ h).toAlgHom := by
+  rw [untwistedEquiv_symm_apply, eval_ofInjective]
+
+/-- Coordinates of the inverse chart are the images of the lattice basis monomials. -/
+@[simp]
+theorem val_coordinate_untwistedEquiv_symm {I : Type*} (h : ∀ a b, u ^ (Λ a b) = 1)
+    (f : {f : AddMonoidAlgebra R L →ₐ[R] B // Function.Injective f})
+    (b : Module.Basis I ℤ L) (i : I) :
+    (((untwistedEquiv h).symm f).coordinate b i : B) =
+      f.val (AddMonoidAlgebra.single (b i) 1) := by
+  rw [coordinate_def, val_untwistedEquiv_symm_monomial]
+
 end BasedChart
 
 end TauCeti
