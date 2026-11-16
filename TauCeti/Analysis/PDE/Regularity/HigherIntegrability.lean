@@ -568,11 +568,11 @@ private theorem exists_setLAverage_enorm_indicator_gradient_sq_le_of_mul_le [Non
         12 / lam ^ 2 * ∫ x in ball y (2 * ρ),
           ‖(Omega : Set (EuclideanSpace ℝ ι)).indicator F x‖ ^ 2 ∂mu := by
     have hA := two_mul_sq_add_one_le_of_le_mul h hK
-    rw [show 2 * ρ - ρ = ρ by ring, integral_congr_ae (f := fun x => ‖W1p.gradient ub x‖ ^ 2)
+    rw [integral_congr_ae (f := fun x => ‖W1p.gradient ub x‖ ^ 2)
         (ae_restrict_of_ae (hgrad0.mono fun x hx => by beta_reduce; rw [hx])),
       integral_congr_ae (f := fun x => ‖W1p.value ub x‖ ^ 2)
         (ae_restrict_of_ae (hval0.mono fun x hx => by beta_reduce; rw [hx]))]
-    refine (hC h ha hF hu hρ).trans ?_
+    refine (hC h ha hF hu (by linarith : ρ < 2 * ρ)).trans ?_
     gcongr
   -- `u₀` vanishes on `S = B(z, ρ/2) \ Ω ⊆ B(y, 2ρ)`, a proportion `θ / 4ⁿ` of `B(y, 2ρ)`.
   set S := ball z (ρ / 2) \ (Omega : Set (EuclideanSpace ℝ ι))

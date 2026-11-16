@@ -71,8 +71,6 @@ for set and probability integrals.
   function with that of its pointwise minimum or maximum with another integrable function.
 * `ofReal_setIntegral_norm_sq_eq` reads the set integral of `‖f‖²` in `ℝ≥0∞` as the lower
   integral of `‖f‖ₑ ^ 2`.
-* `setIntegral_norm_indicator_sq` reads the integral of `‖1_t f‖²` over `B` as that of `‖f‖²`
-  over `B ∩ t`.
 * `toReal_lintegral_coe_eq_integral` identifies `(∫⁻ ω, (f ω : ℝ≥0∞) ∂μ).toReal` with
   `∫ ω, (f ω : ℝ) ∂μ` for any almost-everywhere measurable `f : Ω → ℝ≥0`.
 
@@ -606,15 +604,6 @@ theorem ofReal_setIntegral_norm_sq_eq {X V : Type*} [MeasurableSpace X] {μ : Me
   rw [ofReal_integral_eq_lintegral_ofReal hf (ae_of_all _ fun _ => sq_nonneg _)]
   refine lintegral_congr fun x => ?_
   rw [ENNReal.rpow_two, ← ofReal_norm, ENNReal.ofReal_pow (norm_nonneg _)]
-
-/-- The integral of `‖1_t f‖²` over `B` is that of `‖f‖²` over `B ∩ t`. -/
-theorem setIntegral_norm_indicator_sq {X V : Type*} [MeasurableSpace X] {μ : Measure X}
-    [NormedAddCommGroup V] {t : Set X} (ht : MeasurableSet t) (f : X → V) (B : Set X) :
-    ∫ x in B, ‖t.indicator f x‖ ^ 2 ∂μ = ∫ x in B ∩ t, ‖f x‖ ^ 2 ∂μ := by
-  rw [← setIntegral_indicator ht]
-  congr 1
-  funext x
-  by_cases hx : x ∈ t <;> simp [hx]
 
 /-- The real value of the extended Lebesgue integral of an almost-everywhere measurable
 `ℝ≥0`-valued function equals its Bochner integral. Neither finiteness of the measure nor
