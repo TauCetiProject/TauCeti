@@ -118,7 +118,7 @@ theorem Path.mem_map_src_darts_iff_nonempty_path {a : Γ.V} {p : Γ.Path a a}
 
 -- The reversal of darts, as a perfect matching of the darts.
 private def revMatching (Γ : SerreGraph) : PerfectMatching Γ.E :=
-  PerfectMatching.ofInvolutive (show Function.Involutive Γ.rev from Γ.rev_rev) Γ.rev_ne
+  PerfectMatching.ofInvolutive Γ.rev_involutive Γ.rev_ne
 
 section TwoRegular
 
@@ -148,13 +148,12 @@ private theorem eq_other_of_ne {e f : Γ.E} (hf : Γ.src f = Γ.src e) (hne : f 
   congrArg Subtype.val <| (existsUnique_ne hΓ e).unique (y₁ := ⟨f, hf⟩)
     (fun h => hne (congrArg Subtype.val h)) (existsUnique_ne hΓ e).exists.choose_spec
 
-private theorem other_other (e : Γ.E) : other hΓ (other hΓ e) = e :=
+private theorem other_involutive : Function.Involutive (other hΓ) := fun e =>
   (eq_other_of_ne hΓ (src_other hΓ e).symm (other_ne hΓ e).symm).symm
 
 -- `other` and `rev` are fixed-point-free involutions of the darts, and `next` is their product.
 private noncomputable def otherMatching : PerfectMatching Γ.E :=
-  PerfectMatching.ofInvolutive (show Function.Involutive (other hΓ) from other_other hΓ)
-    (other_ne hΓ)
+  PerfectMatching.ofInvolutive (other_involutive hΓ) (other_ne hΓ)
 
 private noncomputable def next : Equiv.Perm Γ.E :=
   (otherMatching hΓ).val * (revMatching Γ).val
