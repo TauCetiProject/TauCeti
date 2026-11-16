@@ -93,11 +93,31 @@ private theorem prod_take_map_finRange_apply {T : Fin n → Matrix (Fin n) (Fin 
     split_ifs <;> omega
   | succ m ih =>
     rw [List.prod_take_succ _ _ (by simp; omega), List.getElem_map, List.getElem_finRange,
-      hT _ (by simp; omega), mul_one_sub_vecMulVec_apply, mulVec_sub, mulVec_single_one,
-      mulVec_single_one, Pi.sub_apply, col_apply, col_apply, ih (by omega), ih (by omega),
-      ih (by omega)]
-    simp only [Fin.cast_mk, Pi.sub_apply, Pi.single_apply, Fin.eq_mk_iff_val_eq]
+      hT _ (by simp; omega), mul_one_sub_vecMulVec_apply]
+    simp [ih (by omega), mulVec_sub, Pi.single_apply, Fin.ext_iff]
     grind
+
+/-- The cycle `e₀ ↦ e₁ ↦ ⋯ ↦ eₘ ↦ e₀` of `prod_take_map_finRange_apply` shifts the coordinates of
+a vector cyclically: coordinate `k` of the image is coordinate `k - 1`, and coordinate `0` is the
+last one. -/
+private theorem prod_take_map_finRange_mulVec_apply {m : ℕ}
+    {T : Fin (m + 1) → Matrix (Fin (m + 1)) (Fin (m + 1)) ℤ}
+    (hT : ∀ (i : Fin (m + 1)) (h : (i : ℕ) + 1 < m + 1),
+      T i = 1 - vecMulVec (Pi.single i 1 - Pi.single ⟨(i : ℕ) + 1, h⟩ 1)
+        (Pi.single i 1 - Pi.single ⟨(i : ℕ) + 1, h⟩ 1))
+    (u : Fin (m + 1) → ℤ) (k : Fin (m + 1)) :
+    ((((List.finRange (m + 1)).map T).take m).prod *ᵥ u) k =
+      if (k : ℕ) = 0 then u (Fin.last m) else u ⟨k - 1, by omega⟩ := by
+  have hP := prod_take_map_finRange_apply hT (Nat.lt_succ_self m)
+  -- Row `k` of the cycle has a single nonzero entry, a `1` in column `k - 1` (cyclically).
+  let l₀ : Fin (m + 1) := if (k : ℕ) = 0 then Fin.last m else ⟨k - 1, by omega⟩
+  have hrow (l : Fin (m + 1)) :
+      (((List.finRange (m + 1)).map T).take m).prod k l = if l = l₀ then 1 else 0 := by
+    simp only [hP, l₀, Fin.ext_iff]
+    split_ifs <;> grind
+  simp only [mulVec, dotProduct, hrow, ite_mul, one_mul, zero_mul, Finset.sum_ite_eq',
+    Finset.mem_univ, ite_true, l₀]
+  split_ifs <;> rfl
 
 /-- If the last of `m + 1` ambient reflections is `1 - vecMulVec u v` and the others are the
 reflections in the chain roots, then the product is the cycle `e₀ ↦ e₁ ↦ ⋯ ↦ eₘ ↦ e₀` of
@@ -111,30 +131,15 @@ private theorem prod_map_finRange_apply {m : ℕ}
     ((List.finRange (m + 1)).map T).prod k j =
       (if (j : ℕ) < m then (if (k : ℕ) = j + 1 then 1 else 0) else if (k : ℕ) = 0 then 1 else 0) -
         (if (k : ℕ) = 0 then u (Fin.last m) else u ⟨k - 1, by omega⟩) * v j := by
-  have hP := prod_take_map_finRange_apply hT (Nat.lt_succ_self m)
+  have hmap : ((List.finRange (m + 1)).map T)[m]'(by simp) = T (Fin.last m) := by
+    rw [List.getElem_map, List.getElem_finRange]
+    exact congrArg T (Fin.ext (Fin.val_last m).symm)
   rw [← List.take_length (l := (List.finRange (m + 1)).map T), List.length_map,
-    List.length_finRange, List.prod_take_succ _ _ (by simp), List.getElem_map,
-    List.getElem_finRange, Fin.cast_mk, show (⟨m, _⟩ : Fin (m + 1)) = Fin.last m from rfl, hlast,
-    mul_one_sub_vecMulVec_apply, hP]
+    List.length_finRange, List.prod_take_succ _ _ (by simp), hmap, hlast,
+    mul_one_sub_vecMulVec_apply, prod_take_map_finRange_mulVec_apply hT,
+    prod_take_map_finRange_apply hT (Nat.lt_succ_self m)]
   congr 1
-  · split_ifs <;> omega
-  · congr 1
-    rw [mulVec, dotProduct]
-    have := k.isLt
-    split_ifs with hk
-    · rw [Finset.sum_eq_single (Fin.last m) (fun l _ hl => ?_) (by simp)]
-      · simp [hP, hk]
-      · have hl' : (l : ℕ) ≠ m := fun h' => hl (Fin.ext h')
-        have := l.isLt
-        rw [hP]
-        split_ifs <;> omega
-    · rw [Finset.sum_eq_single ⟨k - 1, by omega⟩ (fun l _ hl => ?_) (by simp)]
-      · rw [hP, Fin.val_mk]
-        split_ifs <;> omega
-      · have hl' : (l : ℕ) ≠ k - 1 := fun h' => hl (Fin.ext h')
-        have := l.isLt
-        rw [hP]
-        split_ifs <;> omega
+  split_ifs <;> omega
 
 /-- The product, in order, of the ambient reflections of the simple roots of type `Bₙ` is the
 negacyclic shift. -/

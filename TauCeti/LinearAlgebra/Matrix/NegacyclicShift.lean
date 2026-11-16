@@ -96,7 +96,7 @@ theorem negacyclicShift_pow_apply {i : ℕ} (hi : i ≤ n) (k j : Fin n) :
       have := j.isLt
       simp only [zero_add, show i < n by omega, ite_true, show ¬(j : ℕ) + (i + 1) < n by omega,
         ite_false]
-      split_ifs <;> first | rfl | omega | simp
+      split_ifs <;> grind
 
 /-- The `n`-th power of the negacyclic shift is `-1`. -/
 theorem negacyclicShift_pow_self : negacyclicShift R n ^ n = -1 := by
@@ -156,7 +156,6 @@ theorem orderOf_negacyclicShift [Ring R] [NeZero (2 : R)] (hn : 0 < n) :
     orderOf (negacyclicShift R n) = 2 * n := by
   have hne : (-1 : R) ≠ 1 := fun h => NeZero.ne (2 : R) (by
     rw [← one_add_one_eq_two]; nth_rw 1 [← h]; exact neg_add_cancel 1)
-  have h01 : (0 : R) ≠ 1 := fun h => hne (by simp [← h])
   refine (orderOf_eq_iff (by omega)).2 ⟨by rw [pow_mul', negacyclicShift_pow_self]; simp, ?_⟩
   intro d hd hd0 h
   have h00 := congr_fun₂ h ⟨0, hn⟩ ⟨0, hn⟩
@@ -164,10 +163,10 @@ theorem orderOf_negacyclicShift [Ring R] [NeZero (2 : R)] (hn : 0 < n) :
   by_cases hdn : d ≤ n
   · rw [negacyclicShift_pow_apply hdn] at h00
     simp only [zero_add] at h00
-    split_ifs at h00 <;> first | omega | exact h01 h00 | exact hne h00
+    split_ifs at h00 <;> grind
   · rw [show d = n + (d - n) by omega, pow_add, negacyclicShift_pow_self, neg_one_mul,
       Matrix.neg_apply, negacyclicShift_pow_apply (by omega)] at h00
     simp only [zero_add] at h00
-    split_ifs at h00 <;> first | omega | exact h01 (by simpa using h00)
+    split_ifs at h00 <;> grind
 
 end TauCeti
