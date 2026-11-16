@@ -14,9 +14,9 @@ public import TauCeti.Geometry.Symplectic.LinearReduction
 
 Let `ω` be a linear symplectic form on a real vector space `V`, and let `L ≤ U` be subspaces.
 Reducing along `U` gives the symplectic vector space `U_red = U ⧸ (U ∩ U^ω)`
-(`TauCeti.SymplecticForm.ReducedSpace ω U`), in which `L` has the image
-`L' = (L ∩ U) ⧸ (U ∩ U^ω)`. This file shows that reducing `U_red` along `L'` is the same as
-reducing `V` along `L` directly:
+(`TauCeti.SymplecticForm.ReducedSpace ω U`), in which `L` has an image `L'` under the quotient
+map, equivalently `L' = (L + U ∩ U^ω) ⧸ (U ∩ U^ω)`. This file shows that reducing `U_red` along
+`L'` is the same as reducing `V` along `L` directly:
 
 `(U_red)_red along L' ≃ L ⧸ (L ∩ L^ω)`, `[[l]] ↤ [l]`,
 
