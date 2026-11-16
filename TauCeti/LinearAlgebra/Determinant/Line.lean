@@ -74,6 +74,8 @@ the linear algebra itself is standard.
   `LinearEquiv.detLineCongr_symm`: the induced isomorphisms are functorial.
 * `LinearEquiv.detLineCongr_apply_eq_det_smul`: an automorphism acts on the determinant line by
   its determinant.
+* `LinearEquiv.detLineCongr_neg_apply`: negation acts on the determinant line by
+  `(-1) ^ finrank R V`.
 * `LinearMap.finrank_detLine`: the determinant line of a linear map between vector spaces has
   dimension one (for an infinite-dimensional kernel or cokernel, by the `finrank = 0`
   convention).
@@ -187,6 +189,13 @@ theorem detLineCongr_apply_eq_det_smul [Module.Free R V] (e : V ≃ₗ[R] V) (x 
   refine Subtype.ext ?_
   rw [coe_detLineCongr, ← exteriorPower.coe_map, LinearMap.map_exteriorPower_finrank_eq_det_smul]
   simp
+
+/-- Negation of a free module acts on its determinant line by `(-1) ^ finrank R V`. -/
+theorem detLineCongr_neg_apply [Module.Free R V] (x : detLine R V) :
+    detLineCongr (LinearEquiv.neg R : V ≃ₗ[R] V) x = (-1 : R) ^ finrank R V • x := by
+  rw [detLineCongr_apply_eq_det_smul, ← LinearEquiv.coe_det,
+    LinearEquiv.det_eq_pow_of_forall_eq_smul _ (-1) fun x ↦ by simp, Units.val_pow_eq_pow_val,
+    Units.val_neg, Units.val_one]
 
 end LinearEquiv
 
