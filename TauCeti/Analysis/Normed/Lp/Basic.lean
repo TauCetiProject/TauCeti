@@ -18,9 +18,10 @@ The characteristic equation for Mathlib's bundled coordinate evaluation lets use
 with `lp.evalCLM` without unfolding its construction as a bounded linear map, and the ℓ¹ norm is
 the sum of the norms of the coordinates (`lp.hasSum_norm_one`, and `lp.hasSum_enorm_one` for
 extended norms); for `1 ≤ p` it bounds the `ℓ^p` norm (`lp.norm_le_tsum_norm`). Sequences whose
-coordinates have the same norms have the same `ℓᵖ` norm (`lp.norm_eq_of_forall_norm_eq`), and for
-Hölder conjugate exponents `p` and `q`, including `1` and `∞`, every finite sum of
-`‖f i‖ ‖g i‖` is at most `‖f‖ ‖g‖` (`lp.sum_norm_mul_norm_le`). For `0 < p ≤ q`
+coordinates have the same norms have the same `ℓᵖ` norm (`lp.norm_eq_of_forall_norm_eq`); in
+particular the sequence `i ↦ ‖f i‖` of coordinate norms of `f ∈ ℓᵖ` (`lp.normSeq`) has `ℓᵖ` norm
+`‖f‖` (`lp.norm_normSeq`). For Hölder conjugate exponents `p` and `q`, including `1` and `∞`,
+every finite sum of `‖f i‖ ‖g i‖` is at most `‖f‖ ‖g‖` (`lp.sum_norm_mul_norm_le`). For `0 < p ≤ q`
 the `ℓ^q` norm of a sequence is at most its `ℓᵖ` norm (`lp.norm_le_norm_of_exponent_le`), the norm
 form of Mathlib's inclusion `Memℓp.of_exponent_ge`. A sequence indexed by `ℕ` whose terms are
 bounded by a geometric sequence `C rⁱ` with `0 ≤ r < 1` lies in every `ℓᵖ` with `p ≠ 0`
@@ -169,6 +170,18 @@ theorem norm_eq_of_forall_norm_eq {F : ι → Type*} [∀ i, NormedAddCommGroup 
     simp only [norm_eq_card_dsupport, hs]
   · exact (norm_mono hp fun i ↦ (h i).le).antisymm (norm_mono hp fun i ↦ (h i).ge)
 
+/-- The sequence `i ↦ ‖f i‖` of the norms of the coordinates of `f ∈ ℓᵖ`, as an element of the
+scalar `ℓᵖ`. It has the same norm as `f` (`lp.norm_normSeq`). -/
+@[expose] def normSeq (f : lp E p) : lp (fun _ : ι ↦ ℝ) p :=
+  ⟨fun i ↦ ‖f i‖, (lp.memℓp f).norm⟩
+
+@[simp]
+theorem normSeq_apply (f : lp E p) (i : ι) : normSeq f i = ‖f i‖ := rfl
+
+@[simp]
+theorem norm_normSeq (f : lp E p) : ‖normSeq f‖ = ‖f‖ :=
+  norm_eq_of_forall_norm_eq fun i ↦ by simp
+
 /-- **Hölder's inequality in `ℓᵖ`, for finite sums.** For Hölder conjugate exponents `p` and `q`,
 every finite sum of `‖f i‖ ‖g i‖` is at most `‖f‖ ‖g‖`. Unlike `lp.tsum_mul_le_mul_norm`, this
 allows the exponents `1` and `∞`. -/
@@ -180,18 +193,15 @@ theorem sum_norm_mul_norm_le {F : ι → Type*} [∀ i, NormedAddCommGroup (F i)
   -- Pair the sequences of norms by multiplication, a bilinear map of norm at most `1`.
   have hB : ∀ _ : ι, ‖ContinuousLinearMap.mul ℝ ℝ‖ ≤ (1 : ℝ≥0) := fun _ ↦ by simp
   set P := holderL (p := p) (q := q) 1 (fun _ : ι ↦ ContinuousLinearMap.mul ℝ ℝ) hB
-  set a : lp (fun _ : ι ↦ ℝ) p := ⟨fun i ↦ ‖f i‖, (lp.memℓp f).norm⟩
-  set b : lp (fun _ : ι ↦ ℝ) q := ⟨fun i ↦ ‖g i‖, (lp.memℓp g).norm⟩
-  have h1 := sum_rpow_le_norm_rpow (p := 1) (by simp) (P a b) s
+  have h1 := sum_rpow_le_norm_rpow (p := 1) (by simp) (P (normSeq f) (normSeq g)) s
   simp only [ENNReal.toReal_one, Real.rpow_one] at h1
-  calc ∑ i ∈ s, ‖f i‖ * ‖g i‖ ≤ ∑ i ∈ s, ‖P a b i‖ :=
+  calc ∑ i ∈ s, ‖f i‖ * ‖g i‖ ≤ ∑ i ∈ s, ‖P (normSeq f) (normSeq g) i‖ :=
         Finset.sum_le_sum fun i _ ↦ Real.le_norm_self _
-    _ ≤ ‖P‖ * ‖a‖ * ‖b‖ := h1.trans (P.le_opNorm₂ a b)
+    _ ≤ ‖P‖ * ‖normSeq f‖ * ‖normSeq g‖ := h1.trans (P.le_opNorm₂ _ _)
     _ ≤ 1 * ‖f‖ * ‖g‖ := by
+        rw [norm_normSeq, norm_normSeq]
         gcongr
-        · exact norm_holderL_le 1 _ hB
-        · exact (norm_eq_of_forall_norm_eq fun i ↦ norm_norm (f i)).le
-        · exact (norm_eq_of_forall_norm_eq fun i ↦ norm_norm (g i)).le
+        exact norm_holderL_le 1 _ hB
     _ = ‖f‖ * ‖g‖ := by rw [one_mul]
 
 /-- For a finite exponent and a countable index type, `lp E p` is separable when every `E i` is.
