@@ -7,7 +7,9 @@ module
 
 public import Mathlib.LinearAlgebra.Determinant
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Matrix
+public import TauCeti.Algebra.Category.GradedModuleCat.Resolution
 public import TauCeti.Algebra.Polynomial.Laurent.Units
+public import TauCeti.CategoryTheory.Exact.Resolution.OfChainComplex
 public import TauCeti.CategoryTheory.GrothendieckGroup.Laurent.Resolution
 
 /-!
@@ -27,8 +29,15 @@ bases indexed by the same finite type, has determinant a unit of `ℤ[q,q⁻¹]`
 degree-zero part of `A`. Neither the sign nor the exponent is determined: changing the bases
 multiplies the determinant by a unit of `ℤ[q,q⁻¹]`.
 
+Even without a decomposition of `𝒜` or global finite projective dimension, any finite resolution of
+a graded module `M` by finite graded projectives — in particular, any concrete
+`TauCeti.GradedProjectiveResolution` with finitely generated terms vanishing at some homological
+degree `N` — maps under `TauCeti.gradedCartanMap` from its alternating projective sum to `[M]`.
+
 ## Main definitions
 
+* `TauCeti.GradedProjectiveResolution.finiteProjectiveTerm`: a finitely generated term of a
+  concrete graded projective resolution, bundled in `gradedFiniteProjectiveModules 𝒜`.
 * `TauCeti.gradedFiniteProjectiveResolutionExactStructure`: the induced graded exact structure
   on graded modules admitting finite resolutions by finite graded projectives.
 * `TauCeti.gradedModuleResolutionEquiv`: the graded resolution equivalence onto that
@@ -38,6 +47,10 @@ multiplies the determinant by a unit of `ℤ[q,q⁻¹]`.
 
 ## Main results
 
+* `TauCeti.gradedCartanMap_foldAlternating_finiteResolution` and
+  `TauCeti.GradedProjectiveResolution.gradedCartanMap_sum_alternating_finiteProjectiveTerm`:
+  the alternating sum of a finite resolution by finite graded projectives maps under
+  `gradedCartanMap` to `[M]`.
 * `TauCeti.gradedCartanMap_apply`: the graded Cartan map factors through the modules admitting
   finite graded-projective resolutions.
 * `TauCeti.gradedCartanInverse_of_eq_foldAlternating`: the inverse sends the class of a finite
@@ -65,6 +78,8 @@ namespace TauCeti
 open CategoryTheory
 
 universe uk uA
+
+section ResolutionEquivalence
 
 variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
   (𝒜 : ℤ → Submodule k A) [DirectSum.Decomposition 𝒜]
@@ -335,5 +350,136 @@ theorem exists_gradedCartanMatrix_det_eq_T_or_neg_T_of_le_admitsFiniteResolution
     (isUnit_det_gradedCartanMatrix_of_le_admitsFiniteResolution 𝒜 h bP bM)
 
 end Inverse
+
+end ResolutionEquivalence
+
+section ConcreteResolution
+
+variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
+  {𝒜 : ℤ → Submodule k A}
+
+/-- For any finite resolution `R` of `M` by finite graded projectives in the canonical abelian exact
+structure on `GradedModuleCat 𝒜`, the alternating sum of the resolving terms along `R` maps under
+`gradedCartanMap 𝒜` to `[M]` in `G₀^gr(mod A)`. No decomposition of `𝒜` is needed. -/
+theorem gradedCartanMap_foldAlternating_finiteResolution
+    {M : GradedModuleCat.{uA} 𝒜}
+    (R : (ExactStructure.abelian (GradedModuleCat.{uA} 𝒜)).FiniteResolution
+      (gradedFiniteProjectiveModules 𝒜) M)
+    (hM : gradedFiniteModules 𝒜 M :=
+      gradedAdmitsFiniteProjectiveResolution_le_finiteModules 𝒜 M <| by
+        rw [gradedModuleCanonicalExactStructure, GradedExactStructure.abelian_toExactStructure,
+          ExactStructure.admitsFiniteResolution_iff]
+        exact ⟨R⟩) :
+    gradedCartanMap 𝒜
+        (R.foldAlternating fun Z hZ ↦
+          LaurentK0.of.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜) ⟨Z, hZ⟩) =
+      LaurentK0.of.{uA} (gradedFiniteModulesExactStructure 𝒜) ⟨M, hM⟩ := by
+  induction R with
+  | base hX =>
+    rw [ExactStructure.FiniteResolution.foldAlternating_base, gradedCartanMap_of]
+  | @step K Q X hQ i p zero hp r ih =>
+    have hK : gradedFiniteModules 𝒜 K :=
+      gradedAdmitsFiniteProjectiveResolution_le_finiteModules 𝒜 K <| by
+        rw [gradedModuleCanonicalExactStructure, GradedExactStructure.abelian_toExactStructure,
+          ExactStructure.admitsFiniteResolution_iff]
+        exact ⟨r⟩
+    have hS : (ShortComplex.mk i p zero).ShortExact :=
+      (ExactStructure.abelian_conflation _).mp hp
+    rw [ExactStructure.FiniteResolution.foldAlternating_step, map_sub, gradedCartanMap_of, ih hK,
+      laurentK0_of_shortExact hS hK (gradedFiniteProjectiveModules_le_finiteModules Q hQ) hM,
+      add_sub_cancel_left]
+
+namespace GradedProjectiveResolution
+
+variable {M : GradedModuleCat.{uA} 𝒜}
+  (r : GradedProjectiveResolution.{uk, uA, uA, uA} 𝒜 M.grading)
+
+/-- A finitely generated term of a concrete graded projective resolution, bundled in the full
+subcategory of finite graded projectives. -/
+@[expose]
+def finiteProjectiveTerm (n : ℕ) [Module.Finite A (r.X n)] :
+    (gradedFiniteProjectiveModules 𝒜).FullSubcategory :=
+  ⟨r.termObj n, gradedFiniteProjectiveModules_iff.mpr ⟨inferInstance, r.projective n⟩⟩
+
+/-- The underlying graded module of `r.finiteProjectiveTerm n` is `r.termObj n`. -/
+@[simp]
+theorem finiteProjectiveTerm_obj (n : ℕ) [Module.Finite A (r.X n)] :
+    (r.finiteProjectiveTerm n).obj = r.termObj n := by
+  rfl
+
+/-- A subsingleton resolution term vanishes in `K₀^gr(proj A)`. -/
+theorem of_finiteProjectiveTerm_eq_zero_of_subsingleton (n : ℕ)
+    [Module.Finite A (r.X n)] [Subsingleton (r.X n)] :
+    LaurentK0.of.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)
+        (r.finiteProjectiveTerm n) = 0 :=
+  LaurentK0.of_eq_zero_of_isZero.{uA} _ <|
+    Limits.IsZero.of_full_of_faithful_of_isZero (gradedFiniteProjectiveModules 𝒜).ι
+      (r.finiteProjectiveTerm n) (GradedModuleCat.isZero_of_subsingleton (r.termObj n))
+
+/-- Shifting a resolution to `M{d}` multiplies the class of each resolution term by `qᵈ`. -/
+@[simp]
+theorem of_finiteProjectiveTerm_shiftObj (d : ℤ) (n : ℕ) [Module.Finite A (r.X n)] :
+    LaurentK0.of.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)
+        ((r.shiftObj d).finiteProjectiveTerm n) =
+      (LaurentPolynomial.T d : LaurentPolynomial ℤ) •
+        LaurentK0.of.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)
+          (r.finiteProjectiveTerm n) := by
+  have hterm : (r.shiftObj d).finiteProjectiveTerm n =
+      ⟨(r.finiteProjectiveTerm n).obj.shiftObj d,
+        gradedFiniteProjectiveModules_shiftObj (r.finiteProjectiveTerm n).property d⟩ :=
+    ObjectProperty.FullSubcategory.ext (by simp)
+  rw [hterm]
+  exact laurentK0_projective_of_shiftObj (r.finiteProjectiveTerm n) d
+
+/-- **Graded Euler relation for a finite graded projective resolution.** If `r.X N` is a
+subsingleton at homological degree `N`, the alternating sum of `[Pₙ]` over `n < N` maps under
+`gradedCartanMap 𝒜` to `[M]` in `G₀^gr(mod A)`. Neither a field, a grading decomposition, nor
+minimality is assumed. -/
+theorem gradedCartanMap_sum_alternating_finiteProjectiveTerm
+    [∀ n, Module.Finite A (r.X n)] (N : ℕ) [Subsingleton (r.X N)]
+    (hM : gradedFiniteModules 𝒜 M :=
+      gradedFiniteModules_iff.mpr (Module.Finite.of_surjective r.π r.surjective_π)) :
+    gradedCartanMap 𝒜
+        (∑ n ∈ Finset.range N,
+          (-1 : LaurentPolynomial ℤ) ^ n •
+            LaurentK0.of.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)
+              (r.finiteProjectiveTerm n)) =
+      LaurentK0.of.{uA} (gradedFiniteModulesExactStructure 𝒜) ⟨M, hM⟩ := by
+  cases N with
+  | zero =>
+    have : Subsingleton (⟨M, hM⟩ : (gradedFiniteModules 𝒜).FullSubcategory).obj :=
+      r.surjective_π.subsingleton
+    rw [Finset.sum_range_zero, map_zero,
+      laurentK0_of_gradedFiniteModules_eq_zero_of_subsingleton ⟨M, hM⟩]
+  | succ m =>
+    let ε : r.complex.X 0 ⟶ M := r.augmentation
+    have : Epi ε := r.epi_augmentation
+    have h₀ : (ShortComplex.mk (r.complex.d 1 0) ε r.complex_d_one_zero_comp_augmentation).Exact :=
+      r.exact_complex_d_one_zero_augmentation
+    have hK : ∀ i < m, (ShortComplex.mk (r.complex.d (i + 2) (i + 1)) (r.complex.d (i + 1) i)
+        (r.complex.d_comp_d _ _ _)).Exact :=
+      fun i _ ↦ (HomologicalComplex.exactAt_iff' r.complex (i + 2) (i + 1) i
+        (by simp) (by simp)).mp (r.complex_exactAt_succ i)
+    have hm : Limits.IsZero (r.complex.X (m + 1)) :=
+      GradedModuleCat.isZero_of_subsingleton (r.termObj (m + 1))
+    have hP : ∀ i ≤ m, gradedFiniteProjectiveModules 𝒜 (r.complex.X i) :=
+      fun i _ ↦ gradedFiniteProjectiveModules_iff.mpr ⟨inferInstanceAs (Module.Finite A (r.X i)),
+        r.projective i⟩
+    have hfold := ExactStructure.FiniteResolution.foldAlternating_ofChainComplex h₀ hK hm hP
+      (fun Z hZ ↦ LaurentK0.of.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜) ⟨Z, hZ⟩)
+      (fun e _ _ ↦ LaurentK0.of_congr.{uA} _
+        ((gradedFiniteProjectiveModules 𝒜).fullyFaithfulι.preimageIso e))
+    rw [← gradedCartanMap_foldAlternating_finiteResolution
+      (ExactStructure.FiniteResolution.ofChainComplex h₀ hK hm hP) hM]
+    refine congrArg (gradedCartanMap 𝒜) (Eq.symm ?_)
+    rw [hfold, ← Fin.sum_univ_eq_sum_range]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    rw [← Int.cast_smul_eq_zsmul (LaurentPolynomial ℤ), Int.cast_pow, Int.cast_neg, Int.cast_one]
+    exact congrArg ((-1 : LaurentPolynomial ℤ) ^ (i : ℕ) • ·) <|
+      congrArg _ (ObjectProperty.FullSubcategory.ext (r.finiteProjectiveTerm_obj i).symm)
+
+end GradedProjectiveResolution
+
+end ConcreteResolution
 
 end TauCeti

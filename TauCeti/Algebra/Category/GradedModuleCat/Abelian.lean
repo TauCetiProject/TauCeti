@@ -58,6 +58,8 @@ graded abelian category, whose canonical exact structure is
   `TauCeti.GradedModuleCat.isIso_iff_bijective`: epimorphisms, monomorphisms and isomorphisms are
   precisely the maps whose underlying linear maps are surjective, injective and bijective,
   respectively.
+* `TauCeti.GradedModuleCat.isZero_of_subsingleton`: a graded module whose carrier is a subsingleton
+  is a zero object.
 * `TauCeti.GradedModuleCat.isIso_biprod_desc_of_bijective`: a map out of a binary biproduct is an
   isomorphism when the induced map out of the product of underlying modules is bijective.
 * The instances `PreservesFiniteLimits`, `PreservesFiniteColimits` and `PreservesHomology` of the
@@ -365,5 +367,9 @@ theorem shortExact_cokernelπ [Mono f] :
     (ShortComplex.mk f (cokernelπ f) (comp_cokernelπ f)).ShortExact where
   exact := exact_iff.mpr (LinearMap.exact_map_mkQ_range f.hom)
   epi_g := (epi_iff_surjective _).mpr (Submodule.mkQ_surjective _)
+
+/-- A graded module whose underlying carrier is a subsingleton is a zero object. -/
+theorem isZero_of_subsingleton (M : GradedModuleCat.{v} 𝒜) [Subsingleton M] : IsZero M :=
+  (IsZero.iff_id_eq_zero M).mpr <| hom_ext <| LinearMap.ext fun _ ↦ Subsingleton.elim _ _
 
 end TauCeti.GradedModuleCat

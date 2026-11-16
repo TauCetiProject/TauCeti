@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.PowerSeries.Trunc
-public import TauCeti.Algebra.Category.GradedModuleCat.LinearResolution.ProjectiveCoordinates
+public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Resolution
 public import TauCeti.Algebra.Category.GradedModuleCat.MinimalResolution
 
 /-!
@@ -44,16 +44,17 @@ for finitely generated terms when `𝒜` is nonnegatively graded.
 
 ## Main results
 
-* `TauCeti.GradedProjectiveResolution.bettiPoincarePowerSeries_shiftObj` and
-  `TauCeti.GradedProjectiveResolution.IsMinimal.bettiPoincarePowerSeries_shiftObj_eq_of_neg`:
+* `TauCeti.GradedProjectiveResolution.bettiPoincarePowerSeries_shiftObj`,
+  `TauCeti.GradedProjectiveResolution.IsMinimal.bettiPoincarePowerSeries_shiftObj_eq`, and
+  `TauCeti.GradedProjectiveResolution.IsMinimal.bettiPoincarePowerSeries_shiftObj_eq_of_nonneg`:
   shifting `M` to `M{d}` multiplies the Betti Poincaré series by `qᵈ`.
 * `TauCeti.GradedProjectiveResolution.bettiPoincarePowerSeries_eq_coe_trunc`: for a resolution
   whose terms vanish from homological degree `N` onward, the Betti Poincaré power series equals its
   polynomial truncation.
 * `TauCeti.GradedProjectiveResolution.IsMinimal.bettiPoincarePowerSeries_eq`,
-  `TauCeti.GradedProjectiveResolution.IsMinimal.bettiPoincarePowerSeries_eq_of_neg`, and
-  `TauCeti.bettiPoincarePowerSeriesMatrix_eq_of_neg`: minimal graded projective resolutions yield
-  the same Betti Poincaré series and matrix.
+  `TauCeti.GradedProjectiveResolution.IsMinimal.bettiPoincarePowerSeries_eq_of_nonneg`, and
+  `TauCeti.bettiPoincarePowerSeriesMatrix_eq_of_nonneg`: minimal graded projective resolutions
+  yield the same Betti Poincaré series and matrix.
 
 ## References
 
@@ -103,13 +104,6 @@ theorem coeff_bettiPoincarePowerSeries (n : ℕ) (i : I) :
         (r.finiteProjectiveTerm n)) i := by
   simp [bettiPoincarePowerSeries]
 
-/-- The bidegree `(n, p)` integer coefficient `[qᵖ][tⁿ]` of `r.bettiPoincarePowerSeries bP i`. -/
-theorem coeff_coeff_bettiPoincarePowerSeries (n : ℕ) (p : ℤ) (i : I) :
-    (PowerSeries.coeff n (r.bettiPoincarePowerSeries bP i)).coeff p =
-      (bP.repr (LaurentK0.of.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)
-        (r.finiteProjectiveTerm n)) i).coeff p := by
-  rw [coeff_bettiPoincarePowerSeries]
-
 /-- The constant term (`n = 0`) of `r.bettiPoincarePowerSeries bP i` is the `i`th projective-basis
 coordinate of `[P₀]`. -/
 @[simp]
@@ -129,19 +123,6 @@ theorem of_finiteProjectiveTerm_eq_sum_bettiPoincarePowerSeries [Fintype I] (n :
     rw [← bP.sum_repr (LaurentK0.of.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)
       (r.finiteProjectiveTerm n))]
   simp only [coeff_bettiPoincarePowerSeries]
-
-/-- A subsingleton resolution term vanishes in `K₀^gr(proj A)`. -/
-theorem of_finiteProjectiveTerm_eq_zero_of_subsingleton (n : ℕ) [Subsingleton (r.X n)] :
-    LaurentK0.of.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)
-      (r.finiteProjectiveTerm n) = 0 := by
-  have : Subsingleton (r.finiteProjectiveTerm n).obj := by
-    rw [finiteProjectiveTerm_obj]
-    exact ‹Subsingleton (r.X n)›
-  have hzero : Limits.IsZero (r.finiteProjectiveTerm n) :=
-    (Limits.IsZero.iff_id_eq_zero _).mpr <|
-      ObjectProperty.hom_ext _ (GradedModuleCat.hom_ext (LinearMap.ext fun _ ↦
-        Subsingleton.elim _ _))
-  rw [← LaurentK0.ofExactK0_exactK0_of.{uA}, ExactK0.of_eq_zero_of_isZero.{uA} hzero, map_zero]
 
 /-- If the `n`th term of `r` is a subsingleton, the `n`th coefficient of every Betti Poincaré
 series vanishes. -/
@@ -176,27 +157,11 @@ theorem coeff_bettiPoincarePowerSeries_of_iso_shiftObj [DecidableEq I] {n : ℕ}
       if i = j then T d else 0 := by
   have hiso : r.finiteProjectiveTerm n ≅
       ⟨P.obj.shiftObj d, gradedFiniteProjectiveModules_shiftObj P.property d⟩ :=
-    (gradedFiniteProjectiveModules 𝒜).fullyFaithfulι.preimageIso
-      (eqToIso (r.finiteProjectiveTerm_obj n) ≪≫ e)
+    (gradedFiniteProjectiveModules 𝒜).fullyFaithfulι.preimageIso e
   rw [coeff_bettiPoincarePowerSeries, LaurentK0.of_congr.{uA} _ hiso,
     laurentK0_projective_of_shiftObj P d, ← hbP, map_smul, bP.repr_self,
     Finsupp.smul_single, smul_eq_mul, mul_one, Finsupp.single_apply]
   simp [eq_comm]
-
-/-- Shifting a resolution to `M{d}` multiplies the class of each resolution term by `qᵈ`. -/
-@[simp]
-theorem of_finiteProjectiveTerm_shiftObj (d : ℤ) (n : ℕ) :
-    LaurentK0.of.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)
-        ((r.shiftObj d).finiteProjectiveTerm n) =
-      (T d : LaurentPolynomial ℤ) •
-        LaurentK0.of.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)
-          (r.finiteProjectiveTerm n) := by
-  have hterm : (r.shiftObj d).finiteProjectiveTerm n =
-      ⟨(r.finiteProjectiveTerm n).obj.shiftObj d,
-        gradedFiniteProjectiveModules_shiftObj (r.finiteProjectiveTerm n).property d⟩ :=
-    ObjectProperty.FullSubcategory.ext (by simp)
-  rw [hterm]
-  exact laurentK0_projective_of_shiftObj (r.finiteProjectiveTerm n) d
 
 /-- **Internal-shift law for Betti Poincaré series**: shifting a resolution of `M` to `M{d}`
 multiplies each Betti Poincaré power series by `qᵈ`. -/
@@ -266,49 +231,100 @@ namespace GradedProjectiveResolution
 
 variable {M : GradedModuleCat.{uA} 𝒜}
   {r₁ r₂ : GradedProjectiveResolution.{uk, uA, uA, uA} 𝒜 M.grading}
-  [∀ n, Module.Finite A (r₁.X n)] [∀ n, Module.Finite A (r₂.X n)]
 
-/-- Any two minimal graded projective resolutions of `M` with finitely generated bounded-below terms
-have isomorphic finite-projective terms in every homological degree. -/
+/-- Any two minimal graded projective resolutions of `M` with bounded-below terms have isomorphic
+finite-projective terms in any homological degree `n` where both `n`th terms are finitely
+generated. -/
 def IsMinimal.finiteProjectiveTermIso
     (hr₁ : r₁.IsMinimal) (hr₂ : r₂.IsMinimal)
-    (hb₁ : ∀ n, ∃ b : ℤ, ∀ p < b, (r₁.grading n).piece p = ⊥)
-    (hb₂ : ∀ n, ∃ b : ℤ, ∀ p < b, (r₂.grading n).piece p = ⊥) (n : ℕ) :
+    (hb₁ : ∀ m, ∃ b : ℤ, ∀ p < b, (r₁.grading m).piece p = ⊥)
+    (hb₂ : ∀ m, ∃ b : ℤ, ∀ p < b, (r₂.grading m).piece p = ⊥) (n : ℕ)
+    [Module.Finite A (r₁.X n)] [Module.Finite A (r₂.X n)] :
     r₁.finiteProjectiveTerm n ≅ r₂.finiteProjectiveTerm n :=
   (gradedFiniteProjectiveModules 𝒜).fullyFaithfulι.preimageIso
-    (eqToIso (r₁.finiteProjectiveTerm_obj n) ≪≫ hr₁.termObjIso hr₂ hb₁ hb₂ n ≪≫
-      eqToIso (r₂.finiteProjectiveTerm_obj n).symm)
+    (hr₁.termObjIso hr₂ hb₁ hb₂ n)
 
-/-- Over a nonnegatively graded algebra, any two minimal graded projective resolutions of `M` with
-finitely generated terms have isomorphic finite-projective terms in every homological degree. -/
-def IsMinimal.finiteProjectiveTermIsoOfModuleFinite
-    (hneg : ∀ p < 0, 𝒜 p = ⊥) (hr₁ : r₁.IsMinimal) (hr₂ : r₂.IsMinimal) (n : ℕ) :
-    r₁.finiteProjectiveTerm n ≅ r₂.finiteProjectiveTerm n :=
-  (gradedFiniteProjectiveModules 𝒜).fullyFaithfulι.preimageIso
-    (eqToIso (r₁.finiteProjectiveTerm_obj n) ≪≫ hr₁.termObjIsoOfModuleFinite hneg hr₂ n ≪≫
-      eqToIso (r₂.finiteProjectiveTerm_obj n).symm)
+/-- The underlying morphism of `(finiteProjectiveTermIso ...).hom` is `(termObjIso ...).hom`. -/
+@[simp]
+theorem IsMinimal.finiteProjectiveTermIso_hom_hom
+    (hr₁ : r₁.IsMinimal) (hr₂ : r₂.IsMinimal)
+    (hb₁ : ∀ m, ∃ b : ℤ, ∀ p < b, (r₁.grading m).piece p = ⊥)
+    (hb₂ : ∀ m, ∃ b : ℤ, ∀ p < b, (r₂.grading m).piece p = ⊥) (n : ℕ)
+    [Module.Finite A (r₁.X n)] [Module.Finite A (r₂.X n)] :
+    (hr₁.finiteProjectiveTermIso hr₂ hb₁ hb₂ n).hom.hom =
+      (hr₁.termObjIso hr₂ hb₁ hb₂ n).hom := by
+  rw [← ObjectProperty.ι_map]
+  exact (gradedFiniteProjectiveModules 𝒜).fullyFaithfulι.map_preimage _
 
-/-- Any two minimal graded projective resolutions of `M` with finitely generated bounded-below terms
-have equal term classes in `K₀^gr(proj A)` in every homological degree. -/
+/-- Including `finiteProjectiveTermIso` into `GradedModuleCat 𝒜` recovers `termObjIso`. -/
+@[simp]
+theorem IsMinimal.mapIso_finiteProjectiveTermIso
+    (hr₁ : r₁.IsMinimal) (hr₂ : r₂.IsMinimal)
+    (hb₁ : ∀ m, ∃ b : ℤ, ∀ p < b, (r₁.grading m).piece p = ⊥)
+    (hb₂ : ∀ m, ∃ b : ℤ, ∀ p < b, (r₂.grading m).piece p = ⊥) (n : ℕ)
+    [Module.Finite A (r₁.X n)] [Module.Finite A (r₂.X n)] :
+    (gradedFiniteProjectiveModules 𝒜).ι.mapIso
+        (hr₁.finiteProjectiveTermIso hr₂ hb₁ hb₂ n) =
+      hr₁.termObjIso hr₂ hb₁ hb₂ n :=
+  Iso.ext <| by rw [Functor.mapIso_hom, ObjectProperty.ι_map, finiteProjectiveTermIso_hom_hom]
+
+/-- The underlying morphism of `(finiteProjectiveTermIso ...).inv` is `(termObjIso ...).inv`. -/
+@[simp]
+theorem IsMinimal.finiteProjectiveTermIso_inv_hom
+    (hr₁ : r₁.IsMinimal) (hr₂ : r₂.IsMinimal)
+    (hb₁ : ∀ m, ∃ b : ℤ, ∀ p < b, (r₁.grading m).piece p = ⊥)
+    (hb₂ : ∀ m, ∃ b : ℤ, ∀ p < b, (r₂.grading m).piece p = ⊥) (n : ℕ)
+    [Module.Finite A (r₁.X n)] [Module.Finite A (r₂.X n)] :
+    (hr₁.finiteProjectiveTermIso hr₂ hb₁ hb₂ n).inv.hom =
+      (hr₁.termObjIso hr₂ hb₁ hb₂ n).inv := by
+  rw [← ObjectProperty.ι_map]
+  exact congrArg Iso.inv (hr₁.mapIso_finiteProjectiveTermIso hr₂ hb₁ hb₂ n)
+
+/-- Any two minimal graded projective resolutions of `M` with bounded-below terms have equal term
+classes in `K₀^gr(proj A)` in any homological degree `n` where both `n`th terms are finitely
+generated. -/
 theorem IsMinimal.of_finiteProjectiveTerm_eq
     (hr₁ : r₁.IsMinimal) (hr₂ : r₂.IsMinimal)
-    (hb₁ : ∀ n, ∃ b : ℤ, ∀ p < b, (r₁.grading n).piece p = ⊥)
-    (hb₂ : ∀ n, ∃ b : ℤ, ∀ p < b, (r₂.grading n).piece p = ⊥) (n : ℕ) :
+    (hb₁ : ∀ m, ∃ b : ℤ, ∀ p < b, (r₁.grading m).piece p = ⊥)
+    (hb₂ : ∀ m, ∃ b : ℤ, ∀ p < b, (r₂.grading m).piece p = ⊥) (n : ℕ)
+    [Module.Finite A (r₁.X n)] [Module.Finite A (r₂.X n)] :
     LaurentK0.of.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)
         (r₁.finiteProjectiveTerm n) =
       LaurentK0.of.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)
         (r₂.finiteProjectiveTerm n) :=
   LaurentK0.of_congr.{uA} _ (hr₁.finiteProjectiveTermIso hr₂ hb₁ hb₂ n)
 
+variable [∀ n, Module.Finite A (r₁.X n)] [∀ n, Module.Finite A (r₂.X n)]
+
+/-- Over a nonnegatively graded algebra, any two minimal graded projective resolutions of `M` with
+finitely generated terms have isomorphic finite-projective terms in every homological degree. -/
+def IsMinimal.finiteProjectiveTermIsoOfNonneg
+    (hneg : ∀ p < 0, 𝒜 p = ⊥) (hr₁ : r₁.IsMinimal) (hr₂ : r₂.IsMinimal) (n : ℕ) :
+    r₁.finiteProjectiveTerm n ≅ r₂.finiteProjectiveTerm n :=
+  hr₁.finiteProjectiveTermIso hr₂
+    (fun _ ↦ InternalGrading.exists_piece_eq_bot_of_lt_of_moduleFinite 𝒜 hneg)
+    (fun _ ↦ InternalGrading.exists_piece_eq_bot_of_lt_of_moduleFinite 𝒜 hneg) n
+
+/-- `finiteProjectiveTermIsoOfNonneg` specializes `finiteProjectiveTermIso` using the automatic
+lower bounds on finitely generated modules over a nonnegatively graded algebra. -/
+@[simp]
+theorem IsMinimal.finiteProjectiveTermIsoOfNonneg_eq_finiteProjectiveTermIso
+    (hneg : ∀ p < 0, 𝒜 p = ⊥) (hr₁ : r₁.IsMinimal) (hr₂ : r₂.IsMinimal) (n : ℕ) :
+    hr₁.finiteProjectiveTermIsoOfNonneg hneg hr₂ n =
+      hr₁.finiteProjectiveTermIso hr₂
+        (fun _ ↦ InternalGrading.exists_piece_eq_bot_of_lt_of_moduleFinite 𝒜 hneg)
+        (fun _ ↦ InternalGrading.exists_piece_eq_bot_of_lt_of_moduleFinite 𝒜 hneg) n :=
+  (rfl)
+
 /-- Over a nonnegatively graded algebra, any two minimal graded projective resolutions of `M` with
 finitely generated terms have equal term classes in `K₀^gr(proj A)` in every homological degree. -/
-theorem IsMinimal.of_finiteProjectiveTerm_eq_of_neg
+theorem IsMinimal.of_finiteProjectiveTerm_eq_of_nonneg
     (hneg : ∀ p < 0, 𝒜 p = ⊥) (hr₁ : r₁.IsMinimal) (hr₂ : r₂.IsMinimal) (n : ℕ) :
     LaurentK0.of.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)
         (r₁.finiteProjectiveTerm n) =
       LaurentK0.of.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)
         (r₂.finiteProjectiveTerm n) :=
-  LaurentK0.of_congr.{uA} _ (hr₁.finiteProjectiveTermIsoOfModuleFinite hneg hr₂ n)
+  LaurentK0.of_congr.{uA} _ (hr₁.finiteProjectiveTermIsoOfNonneg hneg hr₂ n)
 
 /-- **Minimal-resolution independence of the Betti Poincaré series**: any two minimal graded
 projective resolutions of `M` with finitely generated bounded-below terms define the same Betti
@@ -324,23 +340,43 @@ theorem IsMinimal.bettiPoincarePowerSeries_eq
 /-- **Minimal-resolution independence over a nonnegatively graded algebra**: any two minimal graded
 projective resolutions of `M` with finitely generated terms define the same Betti Poincaré formal
 power series. -/
-theorem IsMinimal.bettiPoincarePowerSeries_eq_of_neg
+theorem IsMinimal.bettiPoincarePowerSeries_eq_of_nonneg
     (hneg : ∀ p < 0, 𝒜 p = ⊥) (hr₁ : r₁.IsMinimal) (hr₂ : r₂.IsMinimal) (i : I) :
-    r₁.bettiPoincarePowerSeries bP i = r₂.bettiPoincarePowerSeries bP i := by
-  ext n
-  simp only [coeff_bettiPoincarePowerSeries, hr₁.of_finiteProjectiveTerm_eq_of_neg hneg hr₂ n]
+    r₁.bettiPoincarePowerSeries bP i = r₂.bettiPoincarePowerSeries bP i :=
+  hr₁.bettiPoincarePowerSeries_eq bP hr₂
+    (fun _ ↦ InternalGrading.exists_piece_eq_bot_of_lt_of_moduleFinite 𝒜 hneg)
+    (fun _ ↦ InternalGrading.exists_piece_eq_bot_of_lt_of_moduleFinite 𝒜 hneg) i
+
+/-- The Betti Poincaré series of **any** minimal resolution `r'` of `M{d}` with finitely generated
+bounded-below terms equals `qᵈ` times that of any minimal resolution `r₁` of `M` with finitely
+generated bounded-below terms. -/
+theorem IsMinimal.bettiPoincarePowerSeries_shiftObj_eq {d : ℤ}
+    {r' : GradedProjectiveResolution.{uk, uA, uA, uA} 𝒜 (M.shiftObj d).grading}
+    [∀ n, Module.Finite A (r'.X n)]
+    (hr' : r'.IsMinimal) (hr₁ : r₁.IsMinimal)
+    (hb' : ∀ n, ∃ b : ℤ, ∀ p < b, (r'.grading n).piece p = ⊥)
+    (hb₁ : ∀ n, ∃ b : ℤ, ∀ p < b, (r₁.grading n).piece p = ⊥) (i : I) :
+    r'.bettiPoincarePowerSeries bP i =
+      PowerSeries.C (T d : LaurentPolynomial ℤ) * r₁.bettiPoincarePowerSeries bP i := by
+  have hb₁' : ∀ n, ∃ b : ℤ, ∀ p < b, ((r₁.shiftObj d).grading n).piece p = ⊥ := fun n ↦ by
+    obtain ⟨b, hbn⟩ := hb₁ n
+    refine ⟨b + d, fun p hp ↦ ?_⟩
+    simpa [sub_eq_add_neg] using hbn (p - d) (by omega)
+  exact (hr'.bettiPoincarePowerSeries_eq bP ((r₁.isMinimal_shiftObj_iff d).mpr hr₁)
+    hb' hb₁' i).trans (r₁.bettiPoincarePowerSeries_shiftObj bP d i)
 
 /-- Over a nonnegatively graded algebra, the Betti Poincaré series of **any** minimal resolution
 `r'` of `M{d}` with finitely generated terms equals `qᵈ` times that of any minimal resolution `r₁`
 of `M` with finitely generated terms. -/
-theorem IsMinimal.bettiPoincarePowerSeries_shiftObj_eq_of_neg {d : ℤ}
+theorem IsMinimal.bettiPoincarePowerSeries_shiftObj_eq_of_nonneg {d : ℤ}
     {r' : GradedProjectiveResolution.{uk, uA, uA, uA} 𝒜 (M.shiftObj d).grading}
     [∀ n, Module.Finite A (r'.X n)]
     (hneg : ∀ p < 0, 𝒜 p = ⊥) (hr' : r'.IsMinimal) (hr₁ : r₁.IsMinimal) (i : I) :
     r'.bettiPoincarePowerSeries bP i =
       PowerSeries.C (T d : LaurentPolynomial ℤ) * r₁.bettiPoincarePowerSeries bP i :=
-  (hr'.bettiPoincarePowerSeries_eq_of_neg bP hneg ((r₁.isMinimal_shiftObj_iff d).mpr hr₁) i).trans
-    (r₁.bettiPoincarePowerSeries_shiftObj bP d i)
+  hr'.bettiPoincarePowerSeries_shiftObj_eq bP hr₁
+    (fun _ ↦ InternalGrading.exists_piece_eq_bot_of_lt_of_moduleFinite 𝒜 hneg)
+    (fun _ ↦ InternalGrading.exists_piece_eq_bot_of_lt_of_moduleFinite 𝒜 hneg) i
 
 end GradedProjectiveResolution
 
@@ -358,13 +394,13 @@ theorem bettiPoincarePowerSeriesMatrix_eq {J : Type uJ}
 
 /-- Over a nonnegatively graded algebra, any two families of minimal graded projective resolutions
 with finitely generated terms define the same Betti Poincaré power-series matrix. -/
-theorem bettiPoincarePowerSeriesMatrix_eq_of_neg {J : Type uJ}
+theorem bettiPoincarePowerSeriesMatrix_eq_of_nonneg {J : Type uJ}
     {M : J → GradedModuleCat.{uA} 𝒜}
     {r₁ r₂ : ∀ j, GradedProjectiveResolution.{uk, uA, uA, uA} 𝒜 (M j).grading}
     [∀ j n, Module.Finite A ((r₁ j).X n)] [∀ j n, Module.Finite A ((r₂ j).X n)]
     (hneg : ∀ p < 0, 𝒜 p = ⊥) (hr₁ : ∀ j, (r₁ j).IsMinimal) (hr₂ : ∀ j, (r₂ j).IsMinimal) :
     bettiPoincarePowerSeriesMatrix bP r₁ = bettiPoincarePowerSeriesMatrix bP r₂ :=
-  Matrix.ext fun i j ↦ (hr₁ j).bettiPoincarePowerSeries_eq_of_neg bP hneg (hr₂ j) i
+  Matrix.ext fun i j ↦ (hr₁ j).bettiPoincarePowerSeries_eq_of_nonneg bP hneg (hr₂ j) i
 
 end Minimal
 
