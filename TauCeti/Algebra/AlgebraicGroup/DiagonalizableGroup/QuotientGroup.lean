@@ -69,7 +69,7 @@ theorem isNormal_of_groupLikeSetSpan_eq_top {R : Type u} [CommRing R]
   have : _root_.Coalgebra.IsCocomm R H :=
     Coalgebra.IsCocomm.of_surjective (MonoidAlgebra.liftGroupLikeBialgHom (R := R) (A := H))
       ((GroupLike.liftGroupLikeBialgHom_surjective_iff_groupLikeSetSpan_eq_top R H).mpr hH)
-  ((isCentral_bot_iff_isCocomm.mpr this).mono bot_le).isNormal
+  isNormal_of_isCocomm I
 
 variable {k : Type u} [Field k] {H : _root_.CommHopfAlgCat.{v} k}
 

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Coalgebra.Comodule.Weight.Decomposition
-import TauCeti.Algebra.Coalgebra.Basic
 import TauCeti.Algebra.Coalgebra.GroupLike.Map
 import TauCeti.Algebra.Coalgebra.Subcoalgebra.Map
 import TauCeti.Algebra.Coalgebra.Subcoalgebra.RegularSubcomodule
@@ -59,25 +58,10 @@ theorem toSubmodule_eq_span_groupLike
     (hC : Subcoalgebra.groupLikeSetSpan (R := k) (C := C) Set.univ = ⊤) (N : Subcomodule k C C) :
     N.toSubmodule = Submodule.span k ((↑) '' {g : GroupLike k C | (g : C) ∈ N}) := by
   refine le_antisymm (fun c hc ↦ ?_) (Submodule.span_le.mpr ?_)
-  · -- Each weight vector of `N` is a scalar multiple of its weight, which lies in `N` unless the
-    -- vector is zero.
-    have hle : (⨆ g : GroupLike k C, _root_.GroupLike.weightSpace (M := N) g) ≤
-        (Submodule.span k ((↑) '' {g : GroupLike k C | (g : C) ∈ N})).comap
-          N.subtype.toLinearMap := by
-      refine iSup_le fun g n hn ↦ ?_
-      have hw := N.subtype.map_mem_groupLikeWeightSpace hn
-      rw [_root_.GroupLike.mem_weightSpace, Comodule.instSelf_coact] at hw
-      obtain ⟨r, hr⟩ : ∃ r : k, N.subtype n = r • (g : C) :=
-        ⟨_, Coalgebra.eq_counit_smul_of_comul_eq_tmul hw⟩
-      rw [Submodule.mem_comap, Comodule.Hom.coe_toLinearMap, hr]
-      obtain rfl | hr0 := eq_or_ne r 0
-      · rw [zero_smul]
-        exact zero_mem _
-      · refine Submodule.smul_mem _ _ (Submodule.subset_span ⟨g, ?_, rfl⟩)
-        have h := N.toSubmodule.smul_mem r⁻¹ n.2
-        rwa [← Subcomodule.subtype_apply, hr, inv_smul_smul₀ hr0] at h
-    have hmem := hle (Comodule.iSup_groupLikeWeightSpace_eq_top (M := N) hC ▸
-      (Submodule.mem_top : (⟨c, hc⟩ : N) ∈ ⊤))
+  · -- `N` is the sum of its weight spaces, whose vectors are multiples of weights lying in `N`.
+    have hmem := iSup_groupLikeWeightSpace_le_comap_span_groupLike N
+      (Comodule.iSup_groupLikeWeightSpace_eq_top (M := N) hC ▸
+        (Submodule.mem_top : (⟨c, hc⟩ : N) ∈ ⊤))
     simpa only [Submodule.mem_comap, Subcomodule.subtype_toLinearMap,
       SMulMemClass.subtype_apply] using hmem
   · rintro _ ⟨g, hg, rfl⟩

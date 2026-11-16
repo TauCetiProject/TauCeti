@@ -52,6 +52,8 @@ producing a Hopf ideal from the cocommutativity defect of `H`.
   uses the conjugation-defect version of the tensor-kernel argument in
   `TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Normal.Image`.
 * `TauCeti.HopfIdeal.IsCentral.isNormal`: a central Hopf ideal is normal.
+* `TauCeti.HopfIdeal.isNormal_of_isCocomm`: every Hopf ideal of a cocommutative Hopf algebra is
+  normal.
 * `TauCeti.HopfIdeal.IsCentral.isCocomm_quotient`: the coordinate Hopf algebra of a central
   closed subgroup is cocommutative.
 * `TauCeti.HopfIdeal.isCentral_bot_iff_isCocomm`: the whole group is central exactly when the
@@ -308,6 +310,13 @@ theorem IsCentral.isNormal {H : _root_.CommHopfAlgCat.{v} R} {I : HopfIdeal R H}
   have : g * n * g⁻¹ = n := by
     rw [← hcom.eq, mul_assoc, mul_inv_cancel, mul_one]
   rwa [this]
+
+/-- **Every Hopf ideal of a cocommutative commutative Hopf algebra is normal.** Contravariantly,
+every closed subgroup of a commutative affine group is normal: the whole group is central, hence
+so is each of its closed subgroups. -/
+theorem isNormal_of_isCocomm {H : _root_.CommHopfAlgCat.{v} R} [_root_.Coalgebra.IsCocomm R H]
+    (I : HopfIdeal R H) : I.IsNormal :=
+  ((isCentral_bot_iff_isCocomm.mpr ‹_›).mono bot_le).isNormal
 
 /-- The coordinate Hopf algebra of a central closed subgroup is cocommutative. Equivalently,
 every central closed subgroup scheme is a commutative group scheme. -/

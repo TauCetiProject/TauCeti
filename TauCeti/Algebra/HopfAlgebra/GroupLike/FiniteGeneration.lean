@@ -129,8 +129,7 @@ theorem finiteType_of_injective_of_groupLikeSetSpan_eq_top [Algebra.FiniteType k
     Algebra.FiniteType k H := by
   have : Group.FG (GroupLike k K) :=
     TauCeti.GroupLike.fg_of_finiteType_of_groupLikeSetSpan_eq_top k K inferInstance hK
-  have hinj : Function.Injective f.mapGroupLike := fun x y hxy ↦
-    GroupLike.val_injective (hf (by simpa only [val_mapGroupLike] using congr(($hxy).val)))
+  have hinj := mapGroupLike_injective hf
   have : Group.FG (GroupLike k H) :=
     Group.fg_of_surjective (f := (MonoidHom.ofInjective hinj).symm.toMonoidHom)
       (MonoidHom.ofInjective hinj).symm.surjective
