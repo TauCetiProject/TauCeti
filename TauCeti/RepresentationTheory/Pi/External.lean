@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Group.Equiv.Pi
-public import TauCeti.Algebra.Module.Equiv.Pi
+public import TauCeti.LinearAlgebra.Pi
 public import TauCeti.RepresentationTheory.Intertwining
 public import TauCeti.RepresentationTheory.Pi.Basic
 
@@ -34,7 +34,7 @@ Pardon. The file provides the maps between these representations that the atlas 
 * for an equivalence `e : ι' ≃ ι` of index types, the identification of the external product of
   `ρ` with that of the relabelled family `ρ ∘ e`, compatible with composition of equivalences.
 
-The disjoint-union identification is associative and unital on underlying functions
+The disjoint-union identification is associative on underlying functions
 (`Equiv.restrict₂_piFinsetUnion_assoc`).
 
 ## Main definitions
@@ -173,8 +173,8 @@ noncomputable def externalPiUnion (h : Disjoint s t) :
         ((externalPi fun i : t ↦ ρ i).comp (MonoidHom.snd _ _))) :=
   .mk (LinearEquiv.piFinsetUnion k V h).symm fun g ↦ LinearMap.ext fun x ↦ by
     ext i
-    · simp [Equiv.piFinsetUnion_symm_apply, Equiv.piFinsetUnion_left G h i.2]
-    · simp [Equiv.piFinsetUnion_symm_apply, Equiv.piFinsetUnion_right G h i.2]
+    · simp [Equiv.piFinsetUnion_left G h i.2]
+    · simp [Equiv.piFinsetUnion_right G h i.2]
 
 /-- The splitting over a disjoint union takes the restrictions to the two pieces. -/
 @[simp]
@@ -183,7 +183,7 @@ theorem externalPiUnion_apply (h : Disjoint s t) (x : ∀ i : (s ∪ t : Finset 
       (Finset.restrict₂ Finset.subset_union_left x,
         Finset.restrict₂ Finset.subset_union_right x) := by
   rw [externalPiUnion, Equiv.mk_apply]
-  simp [Equiv.piFinsetUnion_symm_apply]
+  simp
 
 /-- The inverse of the splitting over a disjoint union glues the two families. -/
 @[simp]
@@ -235,16 +235,21 @@ theorem externalPiCongrLeft_apply (e : ι' ≃ ι) (x : ∀ i, V i) (i' : ι') :
     externalPiCongrLeft ρ e x i' = x (e i') := by
   rw [externalPiCongrLeft, Equiv.mk_apply, LinearEquiv.piCongrLeft_symm_apply]
 
+/-- The inverse of `externalPiCongrLeft ρ e` relabels the coordinates along `e`. -/
+@[simp]
+theorem externalPiCongrLeft_symm_apply (e : ι' ≃ ι) (x : ∀ i', V (e i')) :
+    (externalPiCongrLeft ρ e).symm x = LinearEquiv.piCongrLeft k V e x := by
+  rw [externalPiCongrLeft, Equiv.mk_symm, Equiv.mk_apply, LinearEquiv.symm_symm]
+
 /-- **Relabelling is compatible with composition**: relabelling along `e₂` and then along `e₁` is
 relabelling along `e₁.trans e₂`, on the underlying linear equivalences. -/
 theorem externalPiCongrLeft_trans (e₁ : ι'' ≃ ι') (e₂ : ι' ≃ ι) :
     (externalPiCongrLeft ρ e₂).toLinearEquiv.trans
         (externalPiCongrLeft (fun i' ↦ ρ (e₂ i')) e₁).toLinearEquiv =
-      (externalPiCongrLeft ρ (e₁.trans e₂)).toLinearEquiv :=
-  LinearEquiv.ext fun x ↦ funext fun i'' ↦
-    ((externalPiCongrLeft_apply (fun i' ↦ ρ (e₂ i')) e₁ _ i'').trans
-      (externalPiCongrLeft_apply ρ e₂ x _)).trans
-        (externalPiCongrLeft_apply ρ (e₁.trans e₂) x i'').symm
+      (externalPiCongrLeft ρ (e₁.trans e₂)).toLinearEquiv := by
+  simp only [externalPiCongrLeft, Equiv.toLinearEquiv_mk']
+  rw [← LinearEquiv.trans_symm]
+  exact congr_arg LinearEquiv.symm (LinearEquiv.piCongrLeft_trans k V e₁ e₂)
 
 end CongrLeft
 

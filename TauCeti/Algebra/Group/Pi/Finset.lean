@@ -19,8 +19,7 @@ For a family of monoids `π i` and finite sets `s ⊆ t` of indices, restricting
 For disjoint `s` and `t`, gluing a family on `s` and a family on `t` is a multiplicative
 equivalence `MulEquiv.piFinsetUnion π h : (∀ i : s, π i) × (∀ i : t, π i) ≃* ∀ i : s ∪ t, π i`.
 Under it the restrictions to `s` and to `t` are the two projections of the product. Gluing is
-associative and unital: these are the statements on underlying functions,
-`Equiv.restrict₂_piFinsetUnion_assoc` and `Equiv.restrict₂_piFinsetUnion_left`.
+associative: this is the statement on underlying functions, `Equiv.restrict₂_piFinsetUnion_assoc`.
 
 These are the projections `Γ_J → Γ_I` and the disjoint-union identifications
 `Γ_(I ⊔ J) ≅ Γ_I × Γ_J` of the groups `Γ_I = ∏_(α ∈ I) Γ_α` attached to the finite sets `I` of
@@ -33,6 +32,8 @@ charts of an implicit atlas, in the sense of Pardon.
 
 ## Main results
 
+* `Finset.restrict₂_mul`, `Finset.restrict₂_add` and `Finset.restrict₂_smul`: restriction commutes
+  with the pointwise operations.
 * `MulEquiv.restrict₂MonoidHom_comp_piFinsetUnion_left` and
   `MulEquiv.restrict₂MonoidHom_comp_piFinsetUnion_right`: the restrictions to the two pieces are
   the projections of the product.
@@ -46,6 +47,24 @@ charts of an implicit atlas, in the sense of Pardon.
 public section
 
 namespace Finset
+
+section Mul
+
+variable {ι : Type*} {π : ι → Type*} {s t : Finset ι}
+
+/-- Restriction to a smaller finite set commutes with multiplication. -/
+@[to_additive (attr := simp) /-- Restriction to a smaller finite set commutes with addition. -/]
+theorem restrict₂_mul [∀ i, Mul (π i)] (h : s ⊆ t) (f g : ∀ i : t, π i) :
+    restrict₂ h (f * g) = restrict₂ h f * restrict₂ h g :=
+  (rfl)
+
+/-- Restriction to a smaller finite set commutes with scalar multiplication. -/
+@[simp]
+theorem restrict₂_smul {M : Type*} [∀ i, SMul M (π i)] (h : s ⊆ t) (c : M) (f : ∀ i : t, π i) :
+    restrict₂ h (c • f) = c • restrict₂ h f :=
+  (rfl)
+
+end Mul
 
 variable {ι : Type*} (π : ι → Type*) [∀ i, MulOneClass (π i)] {s t u : Finset ι}
 
@@ -79,7 +98,11 @@ namespace MulEquiv
 
 open Finset
 
-variable {ι : Type*} [DecidableEq ι] (π : ι → Type*) [∀ i, MulOneClass (π i)] {s t : Finset ι}
+variable {ι : Type*} [DecidableEq ι] (π : ι → Type*) {s t : Finset ι}
+
+section Mul
+
+variable [∀ i, Mul (π i)]
 
 /-- Gluing a family on `s` and a family on `t` into a family on `s ∪ t`, for disjoint `s` and
 `t`. This is `Equiv.piFinsetUnion` as a `MulEquiv`. -/
@@ -88,11 +111,7 @@ disjoint `s` and `t`. This is `Equiv.piFinsetUnion` as an `AddEquiv`. -/]
 def piFinsetUnion (h : Disjoint s t) :
     ((∀ i : s, π i) × ∀ i : t, π i) ≃* ∀ i : (s ∪ t : Finset ι), π i where
   __ := Equiv.piFinsetUnion π h
-  map_mul' x y := restrict₂_union_injective
-    (by simpa using (map_mul (restrict₂MonoidHom π subset_union_left)
-      (Equiv.piFinsetUnion π h x) (Equiv.piFinsetUnion π h y)).symm)
-    (by simpa using (map_mul (restrict₂MonoidHom π subset_union_right)
-      (Equiv.piFinsetUnion π h x) (Equiv.piFinsetUnion π h y)).symm)
+  map_mul' _ _ := restrict₂_union_ext (by simp) (by simp)
 
 @[to_additive (attr := simp)]
 theorem coe_piFinsetUnion (h : Disjoint s t) :
@@ -103,6 +122,10 @@ theorem coe_piFinsetUnion (h : Disjoint s t) :
 theorem coe_piFinsetUnion_symm (h : Disjoint s t) :
     ⇑(piFinsetUnion π h).symm = (Equiv.piFinsetUnion π h).symm :=
   (rfl)
+
+end Mul
+
+variable [∀ i, MulOneClass (π i)]
 
 /-- Under `MulEquiv.piFinsetUnion`, restricting to `s` is the first projection. -/
 @[to_additive (attr := simp) /-- Under `AddEquiv.piFinsetUnion`, restricting to `s` is the first
