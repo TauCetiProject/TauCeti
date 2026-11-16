@@ -175,33 +175,81 @@ private theorem quotientSection_simple (hs : t ≠ .G2) (i : Fin t.rank) :
   simpa only [quotientSection, weylCoxeterSystem_simple,
     coe_simpleSupportEquivSimplyConnectedBase, Equiv.symm_apply_apply] using h
 
-private theorem quotientSection_surjective (hs : t ≠ .G2) :
-    Function.Surjective (D.quotientSection A hs) := by
-  have hdense : Subgroup.closure ((D.weylSubgroup A).subtype ⁻¹'
+private theorem closure_weylSubgroup_generators :
+    Subgroup.closure ((D.weylSubgroup A).subtype ⁻¹'
       (Set.range (D.torusPoints A) ∪
         Set.range (fun i => D.weylElement (t.simpleIndex ht i) A 1))) = ⊤ := by
-    rw [D.weylSubgroup_def]
-    exact Subgroup.closure_preimage_eq_top _
+  rw [D.weylSubgroup_def]
+  exact Subgroup.closure_preimage_eq_top _
+
+private theorem mk_torusPoints (s : Fin t.rank → Aˣ)
+    (hx : D.torusPoints A s ∈ N) :
+    (QuotientGroup.mk ⟨D.torusPoints A s, hx⟩ : Q) = 1 := by
+  rw [QuotientGroup.eq_one_iff, Subgroup.mem_subgroupOf, MonoidHom.mem_range]
+  exact ⟨s, rfl⟩
+
+private theorem quotientSection_surjective (hs : t ≠ .G2) :
+    Function.Surjective (D.quotientSection A hs) := by
   have hrange : (D.quotientSection A hs).range.comap (QuotientGroup.mk' H) = ⊤ := by
     apply top_unique
-    rw [← hdense, Subgroup.closure_le]
+    rw [← D.closure_weylSubgroup_generators A, Subgroup.closure_le]
     rintro ⟨x, hx⟩ (⟨s, rfl⟩ | ⟨i, rfl⟩)
-    · have htorus : (QuotientGroup.mk' H) ⟨D.torusPoints A s, hx⟩ = 1 := by
-        rw [QuotientGroup.mk'_apply, QuotientGroup.eq_one_iff,
-          Subgroup.mem_subgroupOf, MonoidHom.mem_range]
-        exact ⟨s, rfl⟩
-      -- Expose the comap membership hidden by the set coercion in closure_le.
-      change (QuotientGroup.mk' H) ⟨D.torusPoints A s, hx⟩ ∈
-        (D.quotientSection A hs).range
-      rw [htorus]
-      exact (D.quotientSection A hs).range.one_mem
-    · exact ⟨_, D.quotientSection_simple A hs i⟩
+    · rw [SetLike.mem_coe, Subgroup.mem_comap, QuotientGroup.mk'_apply,
+        D.mk_torusPoints A s hx, MonoidHom.mem_range]
+      exact ⟨1, map_one _⟩
+    · rw [SetLike.mem_coe, Subgroup.mem_comap, QuotientGroup.mk'_apply,
+        MonoidHom.mem_range]
+      exact ⟨_, D.quotientSection_simple A hs i⟩
   intro q
   obtain ⟨g, rfl⟩ := QuotientGroup.mk'_surjective H q
   have hg : g ∈ (D.quotientSection A hs).range.comap (QuotientGroup.mk' H) := by
     rw [hrange]
     trivial
+  rw [Subgroup.mem_comap, MonoidHom.mem_range] at hg
   exact hg
+
+private theorem map_weylElement_one {B : Type*} [CommRing B] (f : A →+* B)
+    (i : Fin t.rank) :
+    (D.pointsPresentation A).map (D.pointsPresentation B) f
+        (D.weylElement (t.simpleIndex ht i) A 1) =
+      D.weylElement (t.simpleIndex ht i) B 1 := by
+  apply Subtype.ext
+  rw [GeneralLinear.IntegralPointsPresentation.coe_map]
+  simpa only [map_one] using D.map_weylElement f (t.simpleIndex ht i) 1
+
+private theorem weylSubgroup_le_comap {B : Type*} [CommRing B] (f : A →+* B) :
+    N ≤ (D.weylSubgroup B).comap
+      ((D.pointsPresentation A).map (D.pointsPresentation B) f) := by
+  rw [D.weylSubgroup_def, Subgroup.closure_le]
+  rintro x (⟨s, rfl⟩ | ⟨i, rfl⟩)
+  · rw [SetLike.mem_coe, Subgroup.mem_comap, D.map_torusPoints]
+    exact D.torusPoints_mem_weylSubgroup B _
+  · rw [SetLike.mem_coe, Subgroup.mem_comap, D.map_weylElement_one]
+    exact D.weylElement_mem_weylSubgroup B i
+
+private def weylSubgroupMap {B : Type*} [CommRing B] (f : A →+* B) :
+    N →* D.weylSubgroup B :=
+  (((D.pointsPresentation A).map (D.pointsPresentation B) f).comp
+    (D.weylSubgroup A).subtype).codRestrict _
+    (fun g => by
+      simpa only [Subgroup.mem_comap, MonoidHom.comp_apply, Subgroup.subtype_apply] using
+        D.weylSubgroup_le_comap A f g.property)
+
+private theorem weylSubgroupMap_torusPoints {B : Type*} [CommRing B] (f : A →+* B)
+    (s : Fin t.rank → Aˣ) (hx : D.torusPoints A s ∈ N) :
+    D.weylSubgroupMap A f ⟨D.torusPoints A s, hx⟩ =
+      ⟨D.torusPoints B (fun i => Units.map f.toMonoidHom (s i)),
+        D.torusPoints_mem_weylSubgroup B _⟩ := by
+  apply Subtype.ext
+  simp only [weylSubgroupMap, MonoidHom.codRestrict_apply, MonoidHom.comp_apply,
+    Subgroup.subtype_apply, D.map_torusPoints]
+
+private theorem weylSubgroupMap_simpleLift {B : Type*} [CommRing B] (f : A →+* B)
+    (i : Fin t.rank) :
+    D.weylSubgroupMap A f (D.simpleLift A i) = D.simpleLift B i := by
+  apply Subtype.ext
+  simp only [weylSubgroupMap, MonoidHom.codRestrict_apply, MonoidHom.comp_apply,
+    Subgroup.subtype_apply, simpleLift, D.map_weylElement_one]
 
 private theorem quotientSection_injective [Nontrivial A] (hs : t ≠ .G2) :
     Function.Injective (D.quotientSection A hs) := by
@@ -209,41 +257,18 @@ private theorem quotientSection_injective [Nontrivial A] (hs : t ≠ .G2) :
   obtain ⟨M, hM⟩ := Ideal.exists_maximal A
   let : M.IsMaximal := hM
   let := Ideal.Quotient.field M
-  let f := (D.pointsPresentation A).map (D.pointsPresentation (A ⧸ M)) (Ideal.Quotient.mk M)
-  have hw (i : Fin t.rank) : f (D.weylElement (t.simpleIndex ht i) A 1) =
-      D.weylElement (t.simpleIndex ht i) (A ⧸ M) 1 := by
-    apply Subtype.ext
-    exact (GeneralLinear.IntegralPointsPresentation.coe_map
-      (D.pointsPresentation A) (D.pointsPresentation (A ⧸ M)) (Ideal.Quotient.mk M) _).trans
-        (by simpa only [map_one] using
-          D.map_weylElement (Ideal.Quotient.mk M) (t.simpleIndex ht i) 1)
-  -- Restrict scalar extension to the Weyl subgroups using their defining generators.
-  have hf : N ≤ (D.weylSubgroup (A ⧸ M)).comap f := by
-    rw [D.weylSubgroup_def, Subgroup.closure_le]
-    rintro x (⟨s, rfl⟩ | ⟨i, rfl⟩)
-    · -- Expose the comap membership hidden by the set coercion in closure_le.
-      change f (D.torusPoints A s) ∈ D.weylSubgroup (A ⧸ M)
-      simpa only [f, D.map_torusPoints] using
-        D.torusPoints_mem_weylSubgroup (A ⧸ M) _
-    · -- Likewise expose membership before rewriting the mapped representative.
-      change f (D.weylElement (t.simpleIndex ht i) A 1) ∈ D.weylSubgroup (A ⧸ M)
-      rw [hw]
-      exact D.weylElement_mem_weylSubgroup (A ⧸ M) i
-  let φ : N →* D.weylSubgroup (A ⧸ M) :=
-    (f.comp (D.weylSubgroup A).subtype).codRestrict _ (fun g => hf g.property)
-  -- Torus points still project trivially, so the residue-field projection descends.
-  have hker : H ≤ ((D.weylProjection (A ⧸ M)).comp φ).ker := by
+  have hker : H ≤ ((D.weylProjection (A ⧸ M)).comp
+      (D.weylSubgroupMap A (Ideal.Quotient.mk M))).ker := by
     intro g hg
     rw [Subgroup.mem_subgroupOf, MonoidHom.mem_range] at hg
     obtain ⟨s, hsg⟩ := hg
     have hg : g = ⟨D.torusPoints A s, D.torusPoints_mem_weylSubgroup A s⟩ :=
       Subtype.ext hsg.symm
-    rw [hg, MonoidHom.mem_ker, MonoidHom.comp_apply]
-    -- Evaluate the locally defined restriction φ; the remaining proof field is irrelevant.
-    change D.weylProjection (A ⧸ M) ⟨f (D.torusPoints A s), _⟩ = 1
-    simp only [f, D.map_torusPoints, D.weylProjection_torusPoints]
+    rw [hg, MonoidHom.mem_ker, MonoidHom.comp_apply, D.weylSubgroupMap_torusPoints,
+      D.weylProjection_torusPoints]
   let p : Q →* (t.simplyConnectedRootDatum ht).weylGroup :=
-    QuotientGroup.lift H ((D.weylProjection (A ⧸ M)).comp φ) hker
+    QuotientGroup.lift H ((D.weylProjection (A ⧸ M)).comp
+      (D.weylSubgroupMap A (Ideal.Quotient.mk M))) hker
   -- The descended map is a left inverse, as can be checked on simple reflections.
   have hp : p.comp (D.quotientSection A hs) = MonoidHom.id _ := by
     apply (weylCoxeterSystem (t.simplyConnectedRootDatum ht)
@@ -251,12 +276,10 @@ private theorem quotientSection_injective [Nontrivial A] (hs : t ≠ .G2) :
     intro a
     obtain ⟨i, rfl⟩ := (t.simpleSupportEquivSimplyConnectedBase ht).surjective a
     simp only [MonoidHom.comp_apply, MonoidHom.id_apply, weylCoxeterSystem_simple,
-      coe_simpleSupportEquivSimplyConnectedBase, D.quotientSection_simple]
-    simp only [simpleClass, p, QuotientGroup.lift_mk', MonoidHom.comp_apply]
-    -- Evaluate φ on the simple lift before applying the scalar-extension equation.
-    change D.weylProjection (A ⧸ M)
-      ⟨f (D.weylElement (t.simpleIndex ht i) A 1), _⟩ = _
-    simp only [hw, D.weylProjection_weylElement]
+      coe_simpleSupportEquivSimplyConnectedBase, D.quotientSection_simple,
+      simpleClass, p, QuotientGroup.lift_mk']
+    rw [D.weylSubgroupMap_simpleLift]
+    simp only [simpleLift, D.weylProjection_weylElement]
   exact Function.LeftInverse.injective (fun w => DFunLike.congr_fun hp w)
 
 /-- The quotient of a Chevalley datum's Weyl subgroup by its actual torus is the Weyl
@@ -299,50 +322,32 @@ variable (K : Type*) [Field K]
 local notation "Nₖ" => D.weylSubgroup K
 local notation "Hₖ" => Subgroup.subgroupOf (MonoidHom.range (D.torusPoints K)) Nₖ
 
-private theorem quotientSection_weylProjection (hs : t ≠ .G2) (g : Nₖ) :
-    D.quotientSection K hs (D.weylProjection K g) = QuotientGroup.mk' Hₖ g := by
-  have hdense : Subgroup.closure ((D.weylSubgroup K).subtype ⁻¹'
-      (Set.range (D.torusPoints K) ∪
-        Set.range (fun i => D.weylElement (t.simpleIndex ht i) K 1))) = ⊤ := by
-    rw [D.weylSubgroup_def]
-    exact Subgroup.closure_preimage_eq_top _
-  have hf : (D.quotientSection K hs).comp (D.weylProjection K) = QuotientGroup.mk' Hₖ := by
-    apply MonoidHom.eq_of_eqOn_dense hdense
-    rintro ⟨x, hx⟩ (⟨s, rfl⟩ | ⟨i, rfl⟩)
-    · simp only [MonoidHom.comp_apply, D.weylProjection_torusPoints, map_one,
-        QuotientGroup.mk'_apply]
-      symm
-      rw [QuotientGroup.eq_one_iff, Subgroup.mem_subgroupOf, MonoidHom.mem_range]
-      exact ⟨s, rfl⟩
-    · simp only [MonoidHom.comp_apply, D.weylProjection_weylElement,
-        D.quotientSection_simple]
-      rw [simpleClass, QuotientGroup.mk'_apply]
-      -- Both lifts have the same underlying Weyl element; membership proofs are irrelevant.
-      rfl
-  exact DFunLike.congr_fun hf g
+private theorem quotientSection_comp_weylProjection (hs : t ≠ .G2) :
+    (D.quotientSection K hs).comp (D.weylProjection K) = QuotientGroup.mk' Hₖ := by
+  apply MonoidHom.eq_of_eqOn_dense (D.closure_weylSubgroup_generators K)
+  rintro ⟨x, hx⟩ (⟨s, rfl⟩ | ⟨i, rfl⟩)
+  · simp only [MonoidHom.comp_apply, D.weylProjection_torusPoints, map_one,
+      QuotientGroup.mk'_apply, D.mk_torusPoints]
+  · simp only [MonoidHom.comp_apply, D.weylProjection_weylElement,
+      D.quotientSection_simple]
+    rw [simpleClass, QuotientGroup.mk'_apply]
+    -- Both lifts have the same underlying Weyl element; membership proofs are irrelevant.
+    rfl
 
 /-- Outside type G₂, the Weyl projection has kernel exactly the actual torus,
 regarded as a subgroup of the subgroup generated by the torus and Weyl representatives. -/
 theorem ker_weylProjection_of_ne_G2 (hs : t ≠ .G2) :
     (D.weylProjection K).ker = Hₖ := by
-  ext g
-  constructor
-  · intro hg
-    apply (QuotientGroup.eq_one_iff g).mp
-    rw [← QuotientGroup.mk'_apply, ← D.quotientSection_weylProjection K hs g,
-      MonoidHom.mem_ker.mp hg, map_one]
-  · rw [Subgroup.mem_subgroupOf, MonoidHom.mem_range]
-    rintro ⟨s, hsg⟩
-    have hg : g = ⟨D.torusPoints K s, D.torusPoints_mem_weylSubgroup K s⟩ :=
-      Subtype.ext hsg.symm
-    rw [hg, MonoidHom.mem_ker, D.weylProjection_torusPoints]
+  rw [← MonoidHom.ker_comp_of_injective (D.weylProjection K) (D.quotientSection K hs)
+    (D.quotientSection_injective K hs), D.quotientSection_comp_weylProjection K hs,
+    QuotientGroup.ker_mk']
 
 /-- The Weyl quotient equivalence is induced by the native Weyl projection. -/
 @[simp]
 theorem weylQuotientEquivOfNeG2_mk (hs : t ≠ .G2) (g : Nₖ) :
     D.weylQuotientEquivOfNeG2 K hs (QuotientGroup.mk g) = D.weylProjection K g := by
   apply (D.weylQuotientEquivOfNeG2 K hs).eq_symm_apply.mp
-  exact (D.quotientSection_weylProjection K hs g).symm
+  exact (DFunLike.congr_fun (D.quotientSection_comp_weylProjection K hs) g).symm
 
 /-- The inverse Weyl quotient equivalence sends a Weyl projection to its quotient class. -/
 @[simp]
