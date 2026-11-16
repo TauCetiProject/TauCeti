@@ -11,7 +11,7 @@ import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.MeasureTheory.Integral.Gamma
 
 /-!
-# Diagonal asymptotics of the incomplete Gamma functions and exponential partial sums
+# Diagonal asymptotics of the incomplete Gamma functions
 
 For large positive `a`, the Euler integral `Γ(a) = ∫₀^∞ t^{a - 1} e^{-t} dt` concentrates in a
 window of width `O(√a)` around its saddle point `t = a`. Splitting the integral at `t = a` splits
@@ -23,47 +23,25 @@ contribution of each half into a linear combination of Gaussian moments
 `a ∫₀^∞ u^k e^{-a u² / 2} du`, with coefficients `q_k` on the lower side and `(-1)^k q_k` on the
 upper side.
 
-Two algebraic cancellations govern the consequences:
-
-* Adding the two halves doubles the even-order moments and cancels every odd-order moment,
-  recovering the four-term Stirling expansion of `Γ(a)`.
-* Subtracting `Γ(a) / 2` from `γ(a, a)` cancels every even-order moment (all half-integer powers
-  and `√(2π)` factors), leaving a pure series in integer powers of `a⁻¹`:
-  `a^{1 - a} e^a (γ(a, a) - Γ(a) / 2) = 1/3 + 4/(135 a) - 8/(2835 a²) - 16/(8505 a³) + O(a^{-4})`.
-
-Specializing to positive integers `a = n` via the Erlang formula `TauCeti.regularizedGamma_natCast`
-identifies the left-hand side directly with Ramanujan's remainder `θ(n)` in
-`∑_{k < n} n^k / k! + (n^n / n!) θ(n) = e^n / 2`, yielding Ramanujan's four-term asymptotic
-expansion of `θ(n)` and the companion expansions of the central exponential partial sums
-`e^{-n} ∑_{k ≤ n} n^k / k!` and `e^{-n} ∑_{k < n} n^k / k!`.
-
-## Main definitions
-
-* `TauCeti.ramanujanTheta`: Ramanujan's remainder function `θ(n)` determined for every `n : ℕ` by
-  `∑_{k < n} n^k / k! + (n^n / n!) θ(n) = e^n / 2`.
+Subtracting `Γ(a) / 2` from `γ(a, a)` cancels every even-order moment (all half-integer powers and
+`√(2π)` factors), leaving a pure series in integer powers of `a⁻¹`:
+`a^{1 - a} e^a (γ(a, a) - Γ(a) / 2) = 1/3 + 4/(135 a) - 8/(2835 a²) - 16/(8505 a³) + O(a^{-4})`.
 
 ## Main results
 
+* `TauCeti.isBigO_mul_lowerIncompleteGamma_diag_sub` and
+  `TauCeti.isBigO_mul_Gamma_sub_lowerIncompleteGamma_diag_sub`: eight-term normalized diagonal
+  expansions of `γ(a, a)` and `Γ(a) - γ(a, a)` to `O(a^{-7/2})`.
 * `TauCeti.isBigO_Gamma_sub_lowerIncompleteGamma_diag` and
-  `TauCeti.isBigO_lowerIncompleteGamma_diag`: six-term diagonal expansions of `Γ(a) - γ(a, a)`
-  (DLMF 8.11.12) and `γ(a, a)`, from `TauCeti.isBigO_mul_Gamma_sub_lowerIncompleteGamma_diag_sub`
-  and `TauCeti.isBigO_mul_lowerIncompleteGamma_diag_sub`.
+  `TauCeti.isBigO_lowerIncompleteGamma_diag`: six-term unnormalized diagonal expansions of
+  `Γ(a) - γ(a, a)` (DLMF 8.11.12) and `γ(a, a)` to `O(a^{a - 7/2} e^{-a})`.
 * `TauCeti.isBigO_mul_lowerIncompleteGamma_diag_sub_half_Gamma`: pure integer-power expansion of
   `a^{1 - a} e^a (γ(a, a) - Γ(a) / 2)` to `O(a^{-4})`.
-* `TauCeti.isBigO_regularizedGamma_diag_sub` and `TauCeti.isBigO_regularizedGamma_add_one_diag_sub`:
-  four-term expansions of `P(a, a)` and `P(a + 1, a)` to `O(a^{-9/2})`, with diagonal limits
-  `TauCeti.tendsto_regularizedGamma_diag_atTop`, `TauCeti.tendsto_sub_regularizedGamma_diag_atTop`,
-  and `TauCeti.tendsto_regularizedGamma_add_one_diag_atTop` (DLMF 8.11.13).
-* `TauCeti.sum_range_add_ramanujanTheta`, `TauCeti.isBigO_ramanujanTheta_sub`,
-  `TauCeti.isBigO_exp_neg_mul_sum_range_succ_sub`, and `TauCeti.isBigO_exp_neg_mul_sum_range_sub`:
-  identities and four-term expansions for `θ(n)` and exponential sums (DLMF 8.11.14–8.11.17).
 
 ## References
 
 * *NIST Digital Library of Mathematical Functions*, [§8.11(v)](https://dlmf.nist.gov/8.11.v),
-  Eqs. 8.11.12–8.11.17.
-* S. Ramanujan, *Question 294*, J. Indian Math. Soc. **3** (1911), 128; *Collected Papers of
-  Srinivasa Ramanujan*, Cambridge Univ. Press (1927), 46–48 and 323–324.
+  Eq. 8.11.12.
 * E. T. Copson, *An approximation connected with $e^{-x}$*, Proc. Edinburgh Math. Soc. (2) **3**
   (1933), 201–206.
 * F. G. Tricomi, *Asymptotische Eigenschaften der unvollständigen Gammafunktion*, Math. Z. **53**
@@ -98,8 +76,8 @@ private theorem continuousOn_diagPhase : ContinuousOn diagPhase (Iio 1) := fun _
   (hasDerivAt_diagPhase hx).continuousAt.continuousWithinAt
 
 private theorem diagPhase_nonneg {x : ℝ} (hx : x < 1) : 0 ≤ diagPhase x := by
-  have h := Real.log_le_sub_one_of_pos (sub_pos.mpr hx)
-  unfold diagPhase; linarith
+  linarith [Real.log_le_sub_one_of_pos (sub_pos.mpr hx), show diagPhase x = -x - Real.log (1 - x)
+    from rfl]
 
 private theorem nonneg_of_hasDerivAt_mul_nonneg {f g : ℝ → ℝ} (hf0 : f 0 = 0)
     (hd : ∀ y ∈ Icc (-(1 / 3 : ℝ)) (1 / 3), HasDerivAt f (y * g y) y)
@@ -113,8 +91,7 @@ private theorem nonneg_of_hasDerivAt_mul_nonneg {f g : ℝ → ℝ} (hf0 : f 0 =
           |>.differentiableAt.differentiableWithinAt) fun y hy => ?_
       rw [interior_Icc] at hy
       have hy' : y ∈ Icc (-(1 / 3 : ℝ)) (1 / 3) := ⟨by linarith [hy.1], hy.2.le⟩
-      rw [(hd y hy').deriv]
-      exact mul_nonneg hy.1.le (hg y hy')
+      rw [(hd y hy').deriv]; exact mul_nonneg hy.1.le (hg y hy')
     simpa [hf0] using hmono (left_mem_Icc.mpr (by norm_num)) ⟨hx0, hx.2⟩ hx0
   · have hanti : AntitoneOn f (Icc (-(1 / 3 : ℝ)) 0) := by
       refine antitoneOn_of_deriv_nonpos (convex_Icc (-(1 / 3)) 0)
@@ -123,8 +100,7 @@ private theorem nonneg_of_hasDerivAt_mul_nonneg {f g : ℝ → ℝ} (hf0 : f 0 =
           |>.differentiableAt.differentiableWithinAt) fun y hy => ?_
       rw [interior_Icc] at hy
       have hy' : y ∈ Icc (-(1 / 3 : ℝ)) (1 / 3) := ⟨hy.1.le, by linarith [hy.2]⟩
-      rw [(hd y hy').deriv]
-      exact mul_nonpos_of_nonpos_of_nonneg hy.2.le (hg y hy')
+      rw [(hd y hy').deriv]; exact mul_nonpos_of_nonpos_of_nonneg hy.2.le (hg y hy')
     simpa [hf0] using hanti ⟨hx.1, hx0.le⟩ (right_mem_Icc.mpr (by norm_num)) hx0.le
 
 private theorem diagPhase_lower_quad {x : ℝ} (hx : x ∈ Icc (-(1 / 3 : ℝ)) (1 / 3)) :
@@ -335,28 +311,23 @@ private theorem abs_sub_le_of_diagPhase_sub_le {x y r M : ℝ}
       rcases le_total x y with hle | hle <;>
         simpa [min_eq_left, min_eq_right, max_eq_left, max_eq_right, hle, abs_sub_comm] using hpsi
     have hmul := (mul_le_mul_of_nonneg_right hderiv_lb (abs_nonneg _)).trans (hprod ▸ hpsi_ab)
-    rw [div_mul_eq_mul_div, le_div_iff₀ (by positivity : 0 < 3 * r)]
-    linarith
+    rw [div_mul_eq_mul_div, le_div_iff₀ (by positivity : 0 < 3 * r)]; linarith
 
 private theorem abs_sub_diagU_le {x u : ℝ} (hx : x ∈ Icc (-(1 / 3 : ℝ)) (1 / 3))
-    (hx0 : x ≠ 0) (hu_sq : u ^ 2 = 2 * diagPhase x) (hxu : 0 < x * u) :
+    (hx0 : x ≠ 0) (hu_sq : u ^ 2 = 2 * diagPhase x) (hxu : 0 < x * u)
+    (hu_half : |u| ≤ 1 / 2) (hx_lower : |u| / 2 ≤ |x|) :
     |x - diagU u| ≤ 20 * |u| ^ 10 := by
-  have hupp : u ^ 2 ≤ 3 / 2 * x ^ 2 := by linarith [diagPhase_upper_quad hx]
   have hu_pos : 0 < |u| := abs_pos.mpr fun hu0 => hx0
     (by nlinarith [diagPhase_lower_quad hx, sq_nonneg x])
-  have hu_half : |u| ≤ 1 / 2 :=
-    abs_le.mpr (abs_le_of_sq_le_sq' (by nlinarith [hx.1, hx.2] : u ^ 2 ≤ (1 / 2) ^ 2) (by norm_num))
-  have hx_lower : |u| / 2 ≤ |x| := by
-    have : (|u| / 2) ^ 2 ≤ |x| ^ 2 := by rw [sq_abs]; nlinarith [sq_abs u]
-    nlinarith [abs_nonneg u, abs_nonneg x]
   have hU_bds := diagU_bounds hu_half
   have hU_sign : 0 < u * diagU u := by
     have : |u * (diagU u - u)| ≤ 1 / 5 * u ^ 2 := by
       rw [abs_mul, ← sq_abs]; nlinarith [abs_diagU_sub_le hu_half, abs_nonneg u]
-    nlinarith [abs_le.mp this, sq_pos_of_pos hu_pos]
+    nlinarith [abs_le.mp this, sq_pos_of_pos hu_pos, sq_abs u]
   have hxU_sign : 0 < x * diagU u := by
     have : 0 < (x * u) * (u * diagU u) := mul_pos hxu hU_sign
-    nlinarith [sq_pos_of_pos hu_pos, show (x * u) * (u * diagU u) = u ^ 2 * (x * diagU u) by ring]
+    nlinarith [sq_pos_of_pos hu_pos, sq_abs u,
+      show (x * u) * (u * diagU u) = u ^ 2 * (x * diagU u) by ring]
   have hdiff_psi : |diagPhase x - diagPhase (diagU u)| ≤ 3 * |u| ^ 11 := by
     rw [abs_sub_comm, show diagPhase x = u ^ 2 / 2 by linarith]
     exact abs_diagPhase_diagU_sub_le hu_half
@@ -376,7 +347,7 @@ private theorem abs_div_sub_diagQ_le {x u : ℝ} (hx : x ∈ Icc (-(1 / 3 : ℝ)
   have hx_lower : |u| / 2 ≤ |x| := by
     have : (|u| / 2) ^ 2 ≤ |x| ^ 2 := by rw [sq_abs]; nlinarith [sq_abs u]
     nlinarith [abs_nonneg u, abs_nonneg x]
-  have hxU := abs_sub_diagU_le hx hx0 hu_sq hxu
+  have hxU := abs_sub_diagU_le hx hx0 hu_sq hxu hu_half hx_lower
   have hQ_le : |diagQ u| ≤ 2 := abs_diagQ_le_two (by linarith)
   have hR_le : |diagR u| ≤ 1 := abs_diagR_le_one (by linarith)
   have hnum : |u - x * diagQ u| ≤ 41 * |u| ^ 10 := by
@@ -415,17 +386,14 @@ private theorem gaussMoment_eq {a : ℝ} (ha : 0 < a) (k : ℕ) :
     rw [div_eq_mul_inv, Real.mul_rpow ha.le (by positivity), ← Real.rpow_neg_one 2,
       ← Real.rpow_mul zero_le_two]
     congr 2; ring
-  have ha_pow : a * a ^ (-((k : ℝ) + 1) / 2) = a ^ ((1 - (k : ℝ)) / 2) :=
-    calc a * a ^ (-((k : ℝ) + 1) / 2)
-        = a ^ (1 : ℝ) * a ^ (-((k : ℝ) + 1) / 2) := by rw [Real.rpow_one]
-      _ = a ^ ((1 - (k : ℝ)) / 2) := by rw [← Real.rpow_add ha]; congr 1; ring
+  have ha_pow : a * a ^ (-((k : ℝ) + 1) / 2) = a ^ ((1 - (k : ℝ)) / 2) := by
+    conv_lhs => arg 1; rw [← Real.rpow_one a]
+    rw [← Real.rpow_add ha]; congr 1; ring
   have h2_pow : (2 : ℝ) ^ (((k : ℝ) + 1) / 2) * (1 / 2) = 2 ^ (((k : ℝ) - 1) / 2) := by
     rw [one_div, ← Real.rpow_neg_one 2, ← Real.rpow_add two_pos]; congr 1; ring
-  calc a * ((a / 2) ^ (-((k : ℝ) + 1) / 2) * (1 / 2) * Real.Gamma (((k : ℝ) + 1) / 2))
-      = (2 ^ (((k : ℝ) + 1) / 2) * (1 / 2)) * Real.Gamma (((k : ℝ) + 1) / 2) *
-          (a * a ^ (-((k : ℝ) + 1) / 2)) := by rw [hdiv]; ring
-    _ = 2 ^ (((k : ℝ) - 1) / 2) * Real.Gamma (((k : ℝ) + 1) / 2) *
-          a ^ ((1 - (k : ℝ)) / 2) := by rw [h2_pow, ha_pow]
+  rw [hdiv]; linear_combination
+    (2 ^ (((k : ℝ) - 1) / 2) * Real.Gamma (((k : ℝ) + 1) / 2)) * ha_pow +
+      (Real.Gamma (((k : ℝ) + 1) / 2) * (a * a ^ (-((k : ℝ) + 1) / 2))) * h2_pow
 
 private theorem gaussMoment_odd {a : ℝ} (ha : 0 < a) (m : ℕ) :
     (a * ∫ u in Ioi (0 : ℝ), u ^ (2 * m + 1) * Real.exp (-(a / 2) * u ^ 2)) =
@@ -445,12 +413,11 @@ private theorem even_gaussMoment_coeffs :
     139 / 777600 * (2 ^ (5 / 2 : ℝ) * Real.Gamma (7 / 2)) =
       139 * Real.sqrt (2 * Real.pi) / 103680 := by
   have hG3 : Real.Gamma (3 / 2) = 1 / 2 * Real.sqrt Real.pi := by
-    rw [show (3 / 2 : ℝ) = 1 / 2 + 1 by ring, Real.Gamma_add_one (by norm_num),
-      Real.Gamma_one_half_eq]
+    have := Real.Gamma_nat_add_half_eq_factorial 1; norm_num [Nat.factorial] at this; linarith
   have hG5 : Real.Gamma (5 / 2) = 3 / 4 * Real.sqrt Real.pi := by
-    rw [show (5 / 2 : ℝ) = 3 / 2 + 1 by ring, Real.Gamma_add_one (by norm_num), hG3]; ring
+    have := Real.Gamma_nat_add_half_eq_factorial 2; norm_num [Nat.factorial] at this; linarith
   have hG7 : Real.Gamma (7 / 2) = 15 / 8 * Real.sqrt Real.pi := by
-    rw [show (7 / 2 : ℝ) = 5 / 2 + 1 by ring, Real.Gamma_add_one (by norm_num), hG5]; ring
+    have := Real.Gamma_nat_add_half_eq_factorial 3; norm_num [Nat.factorial] at this; linarith
   have h2_half : (2 : ℝ) ^ (1 / 2 : ℝ) = Real.sqrt 2 := (Real.sqrt_eq_rpow 2).symm
   have h2_neg : (2 : ℝ) ^ (-(1 / 2 : ℝ)) = (Real.sqrt 2)⁻¹ := by
     rw [Real.rpow_neg zero_le_two, h2_half]
@@ -474,13 +441,15 @@ private def diagSeries8 (s a : ℝ) : ℝ :=
     Real.sqrt (2 * Real.pi) / 576 * a ^ (-3 / 2 : ℝ) - s * (8 / (2835 * a ^ 2)) -
     139 * Real.sqrt (2 * Real.pi) / 103680 * a ^ (-5 / 2 : ℝ) - s * (16 / (8505 * a ^ 3))
 
-private theorem integrableOn_diagQ_mul_exp {a : ℝ} (ha : 0 < a) (s : ℝ) :
-    IntegrableOn (fun u : ℝ => diagQ (s * u) * Real.exp (-(a / 2) * u ^ 2)) (Ioi 0) := by
-  have h : (fun u : ℝ => diagQ (s * u) * Real.exp (-(a / 2) * u ^ 2)) =
+private theorem diagQ_mul_exp_eq_sum (a s : ℝ) :
+    (fun u : ℝ => diagQ (s * u) * Real.exp (-(a / 2) * u ^ 2)) =
       fun u => ∑ k ∈ Finset.range 9,
         (diagQCoeff k * s ^ k) * (u ^ k * Real.exp (-(a / 2) * u ^ 2)) := by
-    ext u; rw [diagQ_mul_eq_sum, Finset.sum_mul]; simp only [mul_assoc]
-  rw [h]
+  ext u; rw [diagQ_mul_eq_sum, Finset.sum_mul]; simp only [mul_assoc]
+
+private theorem integrableOn_diagQ_mul_exp {a : ℝ} (ha : 0 < a) (s : ℝ) :
+    IntegrableOn (fun u : ℝ => diagQ (s * u) * Real.exp (-(a / 2) * u ^ 2)) (Ioi 0) := by
+  rw [diagQ_mul_exp_eq_sum]
   exact integrable_finsetSum _ fun k _ => (integrableOn_pow_mul_exp_half_sq ha k).const_mul _
 
 private theorem integral_diagQ_mul_exp_eq {a s : ℝ} (ha : 0 < a) (hs : |s| = 1) :
@@ -488,17 +457,9 @@ private theorem integral_diagQ_mul_exp_eq {a s : ℝ} (ha : 0 < a) (hs : |s| = 1
       diagSeries8 s a -
         571 / 261273600 * (2 ^ (7 / 2 : ℝ) * Real.Gamma (9 / 2)) * a ^ (-7 / 2 : ℝ) := by
   have hs2 : s ^ 2 = 1 := by rw [← sq_abs, hs, one_pow]
-  have hs4 : s ^ 4 = 1 := by linear_combination (s ^ 2 + 1) * hs2
-  have hs6 : s ^ 6 = 1 := by linear_combination (s ^ 4 + s ^ 2 + 1) * hs2
-  have hs8 : s ^ 8 = 1 := by linear_combination (s ^ 6 + s ^ 4 + s ^ 2 + 1) * hs2
-  have hs3 : s ^ 3 = s := by linear_combination s * hs2
-  have hs5 : s ^ 5 = s := by linear_combination (s ^ 3 + s) * hs2
-  have hs7 : s ^ 7 = s := by linear_combination (s ^ 5 + s ^ 3 + s) * hs2
-  have hfun : (fun u : ℝ => diagQ (s * u) * Real.exp (-(a / 2) * u ^ 2)) =
-      fun u => ∑ k ∈ Finset.range 9,
-        (diagQCoeff k * s ^ k) * (u ^ k * Real.exp (-(a / 2) * u ^ 2)) := by
-    ext u; rw [diagQ_mul_eq_sum, Finset.sum_mul]; simp only [mul_assoc]
-  rw [hfun, integral_finsetSum _ fun k _ =>
+  have hs_even (k : ℕ) : s ^ (2 * k) = 1 := by rw [pow_mul, hs2, one_pow]
+  have hs_odd (k : ℕ) : s ^ (2 * k + 1) = s := by rw [pow_succ, hs_even, one_mul]
+  rw [diagQ_mul_exp_eq_sum, integral_finsetSum _ fun k _ =>
     (integrableOn_pow_mul_exp_half_sq ha k).const_mul _, Finset.mul_sum]
   have hterm (k : ℕ) : a * (∫ u in Ioi (0 : ℝ),
       (diagQCoeff k * s ^ k) * (u ^ k * Real.exp (-(a / 2) * u ^ 2))) =
@@ -509,7 +470,8 @@ private theorem integral_diagQ_mul_exp_eq {a s : ℝ} (ha : 0 < a) (hs : |s| = 1
   rw [gaussMoment_eq ha 0, gaussMoment_odd ha (m := 0), gaussMoment_eq ha 2,
     gaussMoment_odd ha (m := 1), gaussMoment_eq ha 4, gaussMoment_odd ha (m := 2),
     gaussMoment_eq ha 6, gaussMoment_odd ha (m := 3), gaussMoment_eq ha 8]
-  simp only [diagSeries8, pow_zero, pow_one, hs2, hs3, hs4, hs5, hs6, hs7, hs8, Nat.factorial]
+  simp only [diagSeries8, pow_zero, pow_one, hs2, hs_odd 1, hs_even 2, hs_odd 2, hs_even 3,
+    hs_odd 3, hs_even 4, Nat.factorial]
   norm_num only [Nat.cast_zero, Nat.cast_one, Nat.cast_ofNat, mul_one, zero_add]
   obtain ⟨he0, he2, he4, he6⟩ := even_gaussMoment_coeffs
   linear_combination
@@ -531,8 +493,20 @@ private theorem isBigO_mul_self_rpow_neg_four_of_exp {f : ℝ → ℝ} {c : ℝ}
   have hrpow := hf.trans (isLittleO_exp_neg_mul_rpow_atTop hc (-5)).isBigO
   refine ((isBigO_refl (fun a : ℝ => a) atTop).mul hrpow).congr' .rfl ?_
   filter_upwards [eventually_gt_atTop (0 : ℝ)] with a ha
-  calc a * a ^ (-5 : ℝ) = a ^ (1 : ℝ) * a ^ (-5 : ℝ) := by rw [Real.rpow_one]
-    _ = a ^ (-4 : ℝ) := by rw [← Real.rpow_add ha]; norm_num
+  conv_lhs => arg 1; rw [← Real.rpow_one a]
+  rw [← Real.rpow_add ha]; norm_num
+
+private theorem isBigO_mul_integral_of_exp_bound {c a₀ : ℝ} (hc : 0 < c) {s : Set ℝ}
+    {F : ℝ → ℝ → ℝ} {g : ℝ → ℝ} (hg : IntegrableOn g s)
+    (hpt : ∀ a ≥ a₀, ∀ᵐ u ∂(volume.restrict s), ‖F a u‖ ≤ Real.exp (-c * a) * g u) :
+    (fun a : ℝ => a * ∫ u in s, F a u) =O[atTop] fun a : ℝ => a ^ (-4 : ℝ) := by
+  refine isBigO_mul_self_rpow_neg_four_of_exp hc (IsBigO.of_bound |∫ u in s, g u| ?_)
+  filter_upwards [eventually_ge_atTop a₀] with a ha
+  have hint := norm_integral_le_of_norm_le (hg.const_mul _) (hpt a ha)
+  rw [integral_const_mul] at hint
+  rw [Real.norm_of_nonneg (Real.exp_pos _).le]
+  exact hint.trans (by
+    rw [mul_comm]; exact mul_le_mul_of_nonneg_right (le_abs_self _) (Real.exp_pos _).le)
 
 private theorem isBigO_gauss_tail {c s : ℝ} (hc : 0 < c) (hs : |s| = 1) :
     (fun a : ℝ => a * ∫ u in Ioi c, diagQ (s * u) * Real.exp (-(a / 2) * u ^ 2))
@@ -543,33 +517,23 @@ private theorem isBigO_gauss_tail {c s : ℝ} (hc : 0 < c) (hs : |s| = 1) :
     exact integrable_finsetSum _ fun k _ =>
       ((integrableOn_pow_mul_exp_half_sq two_pos k).mono_set (Ioi_subset_Ioi hc.le)).congr_fun
         (fun u _ => by dsimp only; congr 2; ring) measurableSet_Ioi
-  refine isBigO_mul_self_rpow_neg_four_of_exp (c := c ^ 2 / 4) (by positivity) ?_
-  refine IsBigO.of_bound (|∫ u in Ioi c, (∑ k ∈ Finset.range 9, u ^ k) * Real.exp (-u ^ 2)|) ?_
-  filter_upwards [eventually_ge_atTop (4 : ℝ)] with a ha
-  have hpt : ∀ᵐ u ∂(volume.restrict (Ioi c)),
-      ‖diagQ (s * u) * Real.exp (-(a / 2) * u ^ 2)‖ ≤
-        Real.exp (-(c ^ 2 / 4) * a) * ((∑ k ∈ Finset.range 9, u ^ k) * Real.exp (-u ^ 2)) := by
-    filter_upwards [ae_restrict_mem measurableSet_Ioi] with u hu
-    have hu0 : 0 ≤ u := (lt_trans hc hu).le
-    have hexp_le : Real.exp (-(a / 2) * u ^ 2) ≤
-        Real.exp (-(c ^ 2 / 4) * a) * Real.exp (-u ^ 2) := by
-      rw [← Real.exp_add]
-      have h1 : 0 ≤ (a - 4) * u ^ 2 := mul_nonneg (by linarith) (sq_nonneg u)
-      have h2 : 0 ≤ a * ((u - c) * (u + c)) :=
-        mul_nonneg (by linarith) (mul_nonneg (by linarith [mem_Ioi.mp hu]) (by linarith))
-      have huc : a * ((u - c) * (u + c)) = a * u ^ 2 - a * c ^ 2 := by ring
-      exact Real.exp_le_exp.mpr (by linarith [huc])
-    rw [Real.norm_eq_abs, abs_mul, abs_of_pos (Real.exp_pos _)]
-    calc |diagQ (s * u)| * Real.exp (-(a / 2) * u ^ 2)
-        ≤ (∑ k ∈ Finset.range 9, u ^ k) * (Real.exp (-(c ^ 2 / 4) * a) * Real.exp (-u ^ 2)) :=
-          mul_le_mul (abs_diagQ_le_sum hu0 s hs) hexp_le (Real.exp_pos _).le
-            (Finset.sum_nonneg fun k _ => pow_nonneg hu0 k)
-      _ = _ := by ring
-  have hint := norm_integral_le_of_norm_le (hdom.const_mul _) hpt
-  rw [integral_const_mul] at hint
-  rw [Real.norm_of_nonneg (Real.exp_pos _).le]
-  exact hint.trans (by
-    rw [mul_comm]; exact mul_le_mul_of_nonneg_right (le_abs_self _) (Real.exp_pos _).le)
+  refine isBigO_mul_integral_of_exp_bound (c := c ^ 2 / 4) (a₀ := 4) (by positivity) hdom
+    fun a ha => ?_
+  filter_upwards [ae_restrict_mem measurableSet_Ioi] with u hu
+  have hu0 : 0 ≤ u := (lt_trans hc hu).le
+  have hexp_le : Real.exp (-(a / 2) * u ^ 2) ≤
+      Real.exp (-(c ^ 2 / 4) * a) * Real.exp (-u ^ 2) := by
+    rw [← Real.exp_add]
+    have h1 : 0 ≤ (a - 4) * u ^ 2 := mul_nonneg (by linarith) (sq_nonneg u)
+    have h2 : 0 ≤ a * ((u - c) * (u + c)) :=
+      mul_nonneg (by linarith) (mul_nonneg (by linarith [mem_Ioi.mp hu]) (by linarith))
+    exact Real.exp_le_exp.mpr (by nlinarith)
+  rw [Real.norm_eq_abs, abs_mul, abs_of_pos (Real.exp_pos _)]
+  calc |diagQ (s * u)| * Real.exp (-(a / 2) * u ^ 2)
+      ≤ (∑ k ∈ Finset.range 9, u ^ k) * (Real.exp (-(c ^ 2 / 4) * a) * Real.exp (-u ^ 2)) :=
+        mul_le_mul (abs_diagQ_le_sum hu0 s hs) hexp_le (Real.exp_pos _).le
+          (Finset.sum_nonneg fun k _ => pow_nonneg hu0 k)
+    _ = _ := by ring
 
 /-- Coordinate `u_-(v) = √(2 ψ(v))` for `v ∈ [0, 1/3]` and `u_+(v) = √(2 ψ(-v))` for `s = -1`. -/
 private def diagCoord (s v : ℝ) : ℝ := Real.sqrt (2 * diagPhase (s * v))
@@ -577,6 +541,14 @@ private def diagCoord (s v : ℝ) : ℝ := Real.sqrt (2 * diagPhase (s * v))
 private theorem mem_Icc_third_of_abs_eq_one {s v : ℝ} (hs : |s| = 1)
     (hv : v ∈ Icc (0 : ℝ) (1 / 3)) : s * v ∈ Icc (-(1 / 3 : ℝ)) (1 / 3) :=
   abs_le.mp (by rw [abs_mul, hs, one_mul, abs_of_nonneg hv.1]; exact hv.2)
+
+private theorem diagCoord_pos {s v : ℝ} (hs : |s| = 1) (hv : v ∈ Ioc (0 : ℝ) (1 / 3)) :
+    0 < diagCoord s v := by
+  refine Real.sqrt_pos.mpr ?_
+  have hs2 : s ^ 2 = 1 := by rw [← sq_abs, hs, one_pow]
+  have hq := diagPhase_lower_quad (mem_Icc_third_of_abs_eq_one hs ⟨hv.1.le, hv.2⟩)
+  have hsq : (s * v) ^ 2 = v ^ 2 := by rw [mul_pow, hs2, one_mul]
+  nlinarith [sq_pos_of_pos hv.1]
 
 private theorem continuousOn_diagCoord {s : ℝ} (hs : |s| = 1) :
     ContinuousOn (diagCoord s) [[0, (1 / 3 : ℝ)]] := by
@@ -589,10 +561,8 @@ private theorem hasDerivAt_diagCoord {s v : ℝ} (hs : |s| = 1) (hv : v ∈ Ioo 
     HasDerivAt (diagCoord s) (v / ((1 - s * v) * diagCoord s v)) v := by
   have hs2 : s ^ 2 = 1 := by rw [← sq_abs, hs, one_pow]
   have hsv_mem := mem_Icc_third_of_abs_eq_one hs ⟨hv.1.le, hv.2.le⟩
-  have hpsi_pos : 0 < 2 * diagPhase (s * v) := by
-    have hq := diagPhase_lower_quad hsv_mem
-    have hsv_sq : (s * v) ^ 2 = v ^ 2 := by rw [mul_pow, hs2, one_mul]
-    nlinarith [sq_pos_of_pos hv.1]
+  have hu_pos : 0 < diagCoord s v := diagCoord_pos hs ⟨hv.1, hv.2.le⟩
+  have hpsi_pos : 0 < 2 * diagPhase (s * v) := Real.sqrt_pos.mp hu_pos
   have hd_inner : HasDerivAt (fun w => 2 * diagPhase (s * w))
       (2 * ((s * v / (1 - s * v)) * (s * 1))) v :=
     ((hasDerivAt_diagPhase (x := s * v) (by linarith [hsv_mem.2])).comp v
@@ -600,7 +570,7 @@ private theorem hasDerivAt_diagCoord {s v : ℝ} (hs : |s| = 1) (hv : v ∈ Ioo 
   refine (HasDerivAt.sqrt hd_inner hpsi_pos.ne').congr_deriv ?_
   unfold diagCoord
   have h1 : 1 - s * v ≠ 0 := by linarith [hsv_mem.2]
-  have h2 : Real.sqrt (2 * diagPhase (s * v)) ≠ 0 := (Real.sqrt_pos.mpr hpsi_pos).ne'
+  have h2 : Real.sqrt (2 * diagPhase (s * v)) ≠ 0 := hu_pos.ne'
   field_simp; linear_combination v * hs2
 
 private theorem integral_comp_diagCoord {s : ℝ} (hs : |s| = 1) {g : ℝ → ℝ} (hg : Continuous g) :
@@ -632,11 +602,7 @@ private theorem norm_main_integrand_sub_le {a s v : ℝ} (hs : |s| = 1)
       (v / ((1 - s * v) * diagCoord s v)) := by
   have hs2 : s ^ 2 = 1 := by rw [← sq_abs, hs, one_pow]
   have hsv_mem := mem_Icc_third_of_abs_eq_one hs ⟨hv.1.le, hv.2⟩
-  have hu_pos : 0 < diagCoord s v := by
-    refine Real.sqrt_pos.mpr ?_
-    have hq := diagPhase_lower_quad hsv_mem
-    have : (s * v) ^ 2 = v ^ 2 := by rw [mul_pow, hs2, one_mul]
-    nlinarith [sq_pos_of_pos hv.1]
+  have hu_pos : 0 < diagCoord s v := diagCoord_pos hs hv
   have hu_sq : (diagCoord s v) ^ 2 = 2 * diagPhase (s * v) :=
     Real.sq_sqrt (mul_nonneg zero_le_two (diagPhase_nonneg (by linarith [hsv_mem.2])))
   have h1 : 0 < 1 - s * v := by linarith [hsv_mem.2]
@@ -684,19 +650,18 @@ private theorem isBigO_main_interval_err {s : ℝ} (hs : |s| = 1) :
       (fun v => (1 - s * v)⁻¹ * Real.exp (-a * diagPhase (s * v))) volume 0 (1 / 3) := by
     refine ContinuousOn.intervalIntegrable ?_
     rw [uIcc_of_le (by norm_num)]
-    refine ContinuousOn.mul (ContinuousOn.inv₀ (by fun_prop) fun v hv => ?_) ?_
-    · exact (sub_pos.mpr (by linarith [(mem_Icc_third_of_abs_eq_one hs hv).2])).ne'
-    · refine Real.continuous_exp.comp_continuousOn (continuousOn_const.mul ?_)
-      exact continuousOn_diagPhase.comp ((continuous_const.mul continuous_id).continuousOn)
-        fun v hv => mem_Iio.mpr (by linarith [(mem_Icc_third_of_abs_eq_one hs hv).2])
+    refine ContinuousOn.mul (ContinuousOn.inv₀ (by fun_prop) fun v hv =>
+      (sub_pos.mpr (by linarith [(mem_Icc_third_of_abs_eq_one hs hv).2])).ne') ?_
+    exact Real.continuous_exp.comp_continuousOn (continuousOn_const.mul
+      (continuousOn_diagPhase.comp (continuous_const.mul continuous_id).continuousOn
+        fun v hv => mem_Iio.mpr (by linarith [(mem_Icc_third_of_abs_eq_one hs hv).2])))
   rw [← hQ_sub.1, ← intervalIntegral.integral_sub hcont_lhs hQ_sub.2]
   have hle1 := intervalIntegral.norm_integral_le_of_norm_le (by norm_num)
     (Eventually.of_forall fun v hv => norm_main_integrand_sub_le hs hv) h9_sub.2
   rw [h9_sub.1, intervalIntegral.integral_of_le hc_nn] at hle1
   have hle2 : (∫ u in Ioc 0 (diagCoord s (1 / 3)), 82 * u ^ 9 * Real.exp (-(a / 2) * u ^ 2)) ≤
       82 * ∫ u in Ioi (0 : ℝ), u ^ 9 * Real.exp (-(a / 2) * u ^ 2) := by
-    simp_rw [mul_assoc]
-    rw [← integral_const_mul]
+    simp_rw [mul_assoc]; rw [← integral_const_mul]
     exact setIntegral_mono_set ((integrableOn_pow_mul_exp_half_sq ha 9).const_mul 82)
       ((ae_restrict_mem measurableSet_Ioi).mono fun u hu => by have : 0 < u := hu; positivity)
       (Eventually.of_forall fun _ hu => hu.1)
@@ -717,12 +682,7 @@ private theorem isBigO_main_interval {s : ℝ} (hs : |s| = 1) :
       (diagSeries8 s a -
         571 / 261273600 * (2 ^ (7 / 2 : ℝ) * Real.Gamma (9 / 2)) * a ^ (-7 / 2 : ℝ)))
       =O[atTop] fun a : ℝ => a ^ (-4 : ℝ) := by
-  have hc_pos : 0 < diagCoord s (1 / 3) := by
-    refine Real.sqrt_pos.mpr ?_
-    have hsv := mem_Icc_third_of_abs_eq_one hs ⟨by norm_num, le_rfl⟩
-    have hq := diagPhase_lower_quad hsv
-    have hsq : (s * (1 / 3)) ^ 2 = 1 / 9 := by rw [mul_pow, ← sq_abs, hs]; norm_num
-    linarith [hsq]
+  have hc_pos : 0 < diagCoord s (1 / 3) := diagCoord_pos hs ⟨by norm_num, le_rfl⟩
   refine ((isBigO_main_interval_err hs).sub (isBigO_gauss_tail hc_pos hs)).congr' ?_ .rfl
   filter_upwards [eventually_gt_atTop (0 : ℝ)] with a ha
   have hsplit := intervalIntegral.integral_Ioi_sub_Ioi (integrableOn_diagQ_mul_exp ha s) hc_pos.le
@@ -733,18 +693,18 @@ private theorem isBigO_main_interval {s : ℝ} (hs : |s| = 1) :
 
 private theorem rpow_exp_cancel {a : ℝ} (ha : 0 < a) :
     a ^ (1 - a) * Real.exp a * (a ^ a * Real.exp (-a)) = a ∧
-    a ^ (a - 1) * Real.exp (-a) * (a ^ (1 - a) * Real.exp a) = 1 := by
+    a ^ (a - 1) * Real.exp (-a) * (a ^ (1 - a) * Real.exp a) = 1 ∧
+    a * a ^ (a - 1) = a ^ a := by
   have ha1 : a ^ (1 - a) * a ^ a = a := by
     rw [← Real.rpow_add ha, show 1 - a + a = 1 by ring, Real.rpow_one]
   have ha0 : a ^ (a - 1) * a ^ (1 - a) = 1 := by
     rw [← Real.rpow_add ha, show a - 1 + (1 - a) = 0 by ring, Real.rpow_zero]
+  have haa : a * a ^ (a - 1) = a ^ a := by
+    conv_lhs => arg 1; rw [← Real.rpow_one a]
+    rw [← Real.rpow_add ha]; congr 1; ring
   have he1 : Real.exp a * Real.exp (-a) = 1 := by rw [← Real.exp_add, add_neg_cancel, Real.exp_zero]
-  exact ⟨calc a ^ (1 - a) * Real.exp a * (a ^ a * Real.exp (-a))
-        = (a ^ (1 - a) * a ^ a) * (Real.exp a * Real.exp (-a)) := by ring
-      _ = a := by rw [ha1, he1, mul_one],
-    calc a ^ (a - 1) * Real.exp (-a) * (a ^ (1 - a) * Real.exp a)
-        = (a ^ (a - 1) * a ^ (1 - a)) * (Real.exp a * Real.exp (-a)) := by ring
-      _ = 1 := by rw [ha0, he1, mul_one]⟩
+  exact ⟨by linear_combination Real.exp a * Real.exp (-a) * ha1 + a * he1,
+    by linear_combination Real.exp a * Real.exp (-a) * ha0 + he1, haa⟩
 
 private theorem lower_scaled_integral {a : ℝ} (ha : 2 ≤ a) :
     a ^ (1 - a) * Real.exp a * lowerIncompleteGamma a a =
@@ -768,12 +728,8 @@ private theorem lower_scaled_integral {a : ℝ} (ha : 2 ≤ a) :
     rw [uIcc_of_le zero_le_one] at hv
     rw [Real.mul_rpow ha0.le (sub_nonneg.mpr hv.2),
       show -(a * (1 - v)) = -a + a * v by ring, Real.exp_add]
-    have ha_a : a * a ^ (a - 1) = a ^ a :=
-      calc a * a ^ (a - 1) = a ^ (1 : ℝ) * a ^ (a - 1) := by rw [Real.rpow_one]
-        _ = a ^ a := by rw [← Real.rpow_add ha0]; congr 1; ring
-    calc a * (a ^ (a - 1) * (1 - v) ^ (a - 1) * (Real.exp (-a) * Real.exp (a * v)))
-        = (a * a ^ (a - 1)) * Real.exp (-a) * ((1 - v) ^ (a - 1) * Real.exp (a * v)) := by ring
-      _ = a ^ a * Real.exp (-a) * ((1 - v) ^ (a - 1) * Real.exp (a * v)) := by rw [ha_a]
+    linear_combination Real.exp (-a) * ((1 - v) ^ (a - 1) * Real.exp (a * v)) *
+      (rpow_exp_cancel ha0).2.2
   have hcont : Continuous fun v : ℝ => (1 - v) ^ (a - 1) * Real.exp (a * v) :=
     ((Real.continuous_rpow_const (by linarith : 0 ≤ a - 1)).comp
       (continuous_const.sub continuous_id)).mul (Real.continuous_exp.comp (by fun_prop))
@@ -794,8 +750,8 @@ private theorem lower_scaled_integral {a : ℝ} (ha : 2 ≤ a) :
 private theorem isBigO_lower_tail :
     (fun a : ℝ => a * ∫ v in (1 / 3 : ℝ)..1, (1 - v) ^ (a - 1) * Real.exp (a * v))
       =O[atTop] fun a : ℝ => a ^ (-4 : ℝ) := by
-  refine isBigO_mul_self_rpow_neg_four_of_exp (by norm_num : (0 : ℝ) < 1 / 48) ?_
-  refine IsBigO.of_bound 1 ?_
+  refine isBigO_mul_self_rpow_neg_four_of_exp (by norm_num : (0 : ℝ) < 1 / 48)
+    (IsBigO.of_bound 1 ?_)
   filter_upwards [eventually_ge_atTop (50 : ℝ)] with a ha
   have hpt : ∀ v ∈ Ι (1 / 3 : ℝ) 1,
       ‖(1 - v) ^ (a - 1) * Real.exp (a * v)‖ ≤ Real.exp (-(1 / 48) * a) := fun v hv => by
@@ -817,6 +773,15 @@ private theorem isBigO_lower_tail :
         rw [abs_of_pos (by norm_num : (0 : ℝ) < 1 - 1 / 3)]
         linarith [Real.exp_pos (-(1 / 48) * a)]
 
+private theorem upper_integrand_eq {a s : ℝ} (ha : 0 < a) (hs : 0 < s) :
+    (a * s) ^ (a - 1) * Real.exp (-(a * s)) =
+      a ^ (a - 1) * Real.exp (-a) * (s⁻¹ * Real.exp (-a * diagPhase (-(s - 1)))) := by
+  rw [Real.mul_rpow ha.le hs.le, Real.rpow_def_of_pos hs, mul_assoc (a ^ (a - 1)), ← Real.exp_add,
+    show Real.log s * (a - 1) + -(a * s) = -Real.log s + (-a + (-a * diagPhase (-(s - 1)))) by
+      unfold diagPhase; simp [sub_eq_add_neg]; ring,
+    Real.exp_add, Real.exp_add, Real.exp_neg s.log, Real.exp_log hs]
+  ring
+
 private theorem integrableOn_upper_scaled {a : ℝ} (ha : 0 < a) :
     IntegrableOn (fun s : ℝ => s⁻¹ * Real.exp (-a * diagPhase (-(s - 1)))) (Ioi 1) := by
   have hint_G : IntegrableOn (fun t : ℝ => t ^ (a - 1) * Real.exp (-t)) (Ioi 0) :=
@@ -829,17 +794,8 @@ private theorem integrableOn_upper_scaled {a : ℝ} (ha : 0 < a) :
       (Ioi 1) := h2.const_mul _
   refine h3.congr_fun (fun s hs => ?_) measurableSet_Ioi
   dsimp only
-  have hs0 : 0 < s := lt_trans zero_lt_one hs
-  rw [Real.mul_rpow ha.le hs0.le, Real.rpow_def_of_pos hs0, mul_assoc (a ^ (a - 1)),
-    ← Real.exp_add, show Real.log s * (a - 1) + -(a * s) =
-      -Real.log s + (-a + (-a * diagPhase (-(s - 1)))) by
-        unfold diagPhase; simp [sub_eq_add_neg]; ring,
-    Real.exp_add, Real.exp_add, Real.exp_neg s.log, Real.exp_log hs0]
-  calc a ^ (1 - a) * Real.exp a *
-        (a ^ (a - 1) * (s⁻¹ * (Real.exp (-a) * Real.exp (-a * diagPhase (-(s - 1))))))
-      = (a ^ (a - 1) * Real.exp (-a) * (a ^ (1 - a) * Real.exp a)) *
-          (s⁻¹ * Real.exp (-a * diagPhase (-(s - 1)))) := by ring
-    _ = s⁻¹ * Real.exp (-a * diagPhase (-(s - 1))) := by rw [(rpow_exp_cancel ha).2, one_mul]
+  rw [upper_integrand_eq ha (lt_trans zero_lt_one hs)]
+  linear_combination (s⁻¹ * Real.exp (-a * diagPhase (-(s - 1)))) * (rpow_exp_cancel ha).2.1
 
 private theorem upper_scaled_integral {a : ℝ} (ha : 2 ≤ a) :
     a ^ (1 - a) * Real.exp a * (Real.Gamma a - lowerIncompleteGamma a a) =
@@ -860,20 +816,9 @@ private theorem upper_scaled_integral {a : ℝ} (ha : 2 ≤ a) :
     simp only [mul_one, smul_eq_mul] at hm
     rw [← hm, ← integral_const_mul, ← integral_const_mul]
     refine setIntegral_congr_fun measurableSet_Ioi fun s hs => ?_
-    have hs0 : 0 < s := lt_trans zero_lt_one hs
-    have ha_c : a * a ^ (a - 1) = a ^ a :=
-      calc a * a ^ (a - 1) = a ^ (1 : ℝ) * a ^ (a - 1) := by rw [Real.rpow_one]
-        _ = a ^ a := by rw [← Real.rpow_add ha0]; congr 1; ring
-    rw [Real.mul_rpow ha0.le hs0.le, Real.rpow_def_of_pos hs0, mul_assoc (a ^ (a - 1)),
-      ← Real.exp_add, show Real.log s * (a - 1) + -(a * s) =
-        -Real.log s + (-a + (-a * diagPhase (-(s - 1)))) by
-          unfold diagPhase; simp [sub_eq_add_neg]; ring,
-      Real.exp_add, Real.exp_add, Real.exp_neg s.log, Real.exp_log hs0]
-    calc a * (a ^ (a - 1) * (s⁻¹ * (Real.exp (-a) * Real.exp (-a * diagPhase (-(s - 1))))))
-        = (a * a ^ (a - 1)) * Real.exp (-a) *
-            (s⁻¹ * Real.exp (-a * diagPhase (-(s - 1)))) := by ring
-      _ = a ^ a * Real.exp (-a) *
-            (s⁻¹ * Real.exp (-a * diagPhase (-(s - 1)))) := by rw [ha_c]
+    rw [upper_integrand_eq ha0 (lt_trans zero_lt_one hs)]
+    linear_combination Real.exp (-a) * (s⁻¹ * Real.exp (-a * diagPhase (-(s - 1)))) *
+      (rpow_exp_cancel ha0).2.2
   have hint_s := integrableOn_upper_scaled ha0
   have hsplit := intervalIntegral.integral_interval_add_Ioi hint_s
     (hint_s.mono_set (Ioi_subset_Ioi (by norm_num : (1 : ℝ) ≤ 4 / 3)))
@@ -891,27 +836,18 @@ private theorem isBigO_upper_tail :
       =O[atTop] fun a : ℝ => a ^ (-4 : ℝ) := by
   have hdom : IntegrableOn (fun s : ℝ => Real.exp (4 / 3 : ℝ) * Real.exp (-1 * s)) (Ioi (4 / 3)) :=
     (exp_neg_integrableOn_Ioi (4 / 3) one_pos).const_mul _
-  refine isBigO_mul_self_rpow_neg_four_of_exp (by norm_num : (0 : ℝ) < 1 / 24) ?_
-  refine IsBigO.of_bound (|∫ s in Ioi (4 / 3 : ℝ), Real.exp (4 / 3 : ℝ) * Real.exp (-1 * s)|) ?_
-  filter_upwards [eventually_ge_atTop (4 : ℝ)] with a ha
-  have hpt : ∀ᵐ s ∂(volume.restrict (Ioi (4 / 3 : ℝ))),
-      ‖s⁻¹ * Real.exp (-a * diagPhase (-(s - 1)))‖ ≤
-        Real.exp (-(1 / 24) * a) * (Real.exp (4 / 3 : ℝ) * Real.exp (-1 * s)) := by
-    filter_upwards [ae_restrict_mem measurableSet_Ioi] with s hs
-    have hs4 : 4 / 3 < s := hs
-    have hpsi := diagPhase_upper_tail (v := s - 1) (by linarith)
-    have hs_inv : s⁻¹ ≤ 1 := inv_le_one_of_one_le₀ (by linarith)
-    have hexp_le : Real.exp (-a * diagPhase (-(s - 1))) ≤
-        Real.exp (-(1 / 24) * a) * (Real.exp (4 / 3 : ℝ) * Real.exp (-1 * s)) := by
-      rw [← Real.exp_add, ← Real.exp_add]
-      exact Real.exp_le_exp.mpr (by nlinarith)
-    rw [Real.norm_of_nonneg (by positivity)]
-    exact (mul_le_of_le_one_left (Real.exp_pos _).le hs_inv).trans hexp_le
-  have hint := norm_integral_le_of_norm_le (hdom.const_mul _) hpt
-  rw [integral_const_mul] at hint
-  rw [Real.norm_of_nonneg (Real.exp_pos _).le]
-  exact hint.trans (by
-    rw [mul_comm]; exact mul_le_mul_of_nonneg_right (le_abs_self _) (Real.exp_pos _).le)
+  refine isBigO_mul_integral_of_exp_bound (c := 1 / 24) (a₀ := 4) (by norm_num) hdom
+    fun a ha => ?_
+  filter_upwards [ae_restrict_mem measurableSet_Ioi] with s hs
+  have hs4 : 4 / 3 < s := hs
+  have hpsi := diagPhase_upper_tail (v := s - 1) (by linarith)
+  have hs_inv : s⁻¹ ≤ 1 := inv_le_one_of_one_le₀ (by linarith)
+  have hexp_le : Real.exp (-a * diagPhase (-(s - 1))) ≤
+      Real.exp (-(1 / 24) * a) * (Real.exp (4 / 3 : ℝ) * Real.exp (-1 * s)) := by
+    rw [← Real.exp_add, ← Real.exp_add]
+    exact Real.exp_le_exp.mpr (by nlinarith)
+  rw [Real.norm_of_nonneg (by positivity)]
+  exact (mul_le_of_le_one_left (Real.exp_pos _).le hs_inv).trans hexp_le
 
 private theorem isBigO_lower_sharp :
     (fun a : ℝ => a ^ (1 - a) * Real.exp a * lowerIncompleteGamma a a -
@@ -947,18 +883,7 @@ private theorem isBigO_rpow_le {p q : ℝ} (hpq : p ≤ q) :
     Real.norm_of_nonneg (Real.rpow_nonneg ha0.le q)]
   exact Real.rpow_le_rpow_of_exponent_le ha hpq
 
-private theorem isBigO_div_pow (k m : ℕ) (hkm : m ≤ k) (c : ℝ) :
-    (fun a : ℝ => c / a ^ k) =O[atTop] fun a : ℝ => a ^ (-(m : ℝ)) := by
-  have hle : -(k : ℝ) ≤ -(m : ℝ) := neg_le_neg (Nat.cast_le.mpr hkm)
-  refine ((isBigO_rpow_le hle).const_mul_left c).congr' ?_ .rfl
-  filter_upwards [eventually_gt_atTop (0 : ℝ)] with a ha
-  rw [Real.rpow_neg ha.le, Real.rpow_natCast, div_eq_mul_inv]
-
-private theorem isBigO_div_pow_one (k : ℕ) (c : ℝ) :
-    (fun a : ℝ => c / a ^ k) =O[atTop] fun _ : ℝ => (1 : ℝ) :=
-  (isBigO_div_pow k 0 (Nat.zero_le k) c).congr_right fun _ => by simp
-
-/-! ### Diagonal incomplete Gamma expansions and limits -/
+/-! ### Diagonal incomplete Gamma expansions -/
 
 /-- Eight-term normalized diagonal asymptotic expansion of `TauCeti.lowerIncompleteGamma a a` as
 `a → +∞`. -/
@@ -999,12 +924,16 @@ private theorem isBigO_unnormalized_six {f : ℝ → ℝ} (s : ℝ)
   have h8 := hf.trans (isBigO_rpow_le (by norm_num : (-7 / 2 : ℝ) ≤ -5 / 2))
   have h6 := (isBigO_refl (fun a : ℝ => a ^ (-5 / 2 : ℝ)) atTop).const_mul_left
     (-139 * Real.sqrt (2 * Real.pi) / 103680)
-  have h7 : (fun a : ℝ => -(s * 16 / 8505) / a ^ 3) =O[atTop] fun a : ℝ => a ^ (-5 / 2 : ℝ) :=
-    (isBigO_div_pow 3 3 le_rfl _).trans (isBigO_rpow_le (by norm_num : (-(3 : ℝ)) ≤ -5 / 2))
+  have h7 : (fun a : ℝ => -(s * 16 / 8505) / a ^ 3) =O[atTop] fun a : ℝ => a ^ (-5 / 2 : ℝ) := by
+    refine ((isBigO_rpow_le (by norm_num : (-3 : ℝ) ≤ -5 / 2)).const_mul_left
+      (-(s * 16 / 8505))).congr' ?_ .rfl
+    filter_upwards [eventually_gt_atTop (0 : ℝ)] with a ha
+    rw [show (-3 : ℝ) = -((3 : ℕ) : ℝ) by norm_num, Real.rpow_neg ha.le, Real.rpow_natCast]
+    ring
   refine ((isBigO_refl (fun a : ℝ => a ^ (a - 1) * Real.exp (-a)) atTop).mul
     ((h8.add h6).add h7)).congr' ?_ ?_
   · filter_upwards [eventually_gt_atTop (0 : ℝ)] with a ha
-    have hc := (rpow_exp_cancel ha).2
+    have hc := (rpow_exp_cancel ha).2.1
     unfold diagSeries8; linear_combination f a * hc
   · filter_upwards [eventually_gt_atTop (0 : ℝ)] with a ha
     rw [mul_right_comm, ← Real.rpow_add ha]; congr 2; ring
@@ -1043,411 +972,6 @@ theorem isBigO_mul_lowerIncompleteGamma_diag_sub_half_Gamma :
       =O[atTop] fun a : ℝ => a ^ (-4 : ℝ) :=
   ((isBigO_lower_sharp.sub isBigO_upper_sharp).const_mul_left (1 / 2 : ℝ)).congr'
     (Eventually.of_forall fun a => by unfold diagSeries8; ring) .rfl
-
-/-- Four-term Stirling expansion of `a^{1/2 - a} e^a Γ(a)` obtained by adding the lower and upper
-diagonal expansions. -/
-private theorem isBigO_stirling_four :
-    (fun a : ℝ => a ^ (1 / 2 - a) * Real.exp a * Real.Gamma a -
-      Real.sqrt (2 * Real.pi) * (1 + 1 / (12 * a) + 1 / (288 * a ^ 2) - 139 / (51840 * a ^ 3)))
-      =O[atTop] fun a : ℝ => a ^ (-4 : ℝ) := by
-  have hsum := isBigO_lower_sharp.add isBigO_upper_sharp
-  have h8 := (isBigO_refl (fun a : ℝ => a ^ (-7 / 2 : ℝ)) atTop).const_mul_left
-    (-2 * (571 / 261273600 * (2 ^ (7 / 2 : ℝ) * Real.Gamma (9 / 2))))
-  have htot := (hsum.trans (isBigO_rpow_le (by norm_num : (-4 : ℝ) ≤ -7 / 2))).add h8
-  refine ((isBigO_refl (fun a : ℝ => a ^ (-1 / 2 : ℝ)) atTop).mul htot).congr' ?_ ?_
-  · filter_upwards [eventually_gt_atTop (0 : ℝ)] with a ha
-    have hp (p : ℝ) : a ^ (-1 / 2 : ℝ) * a ^ p = a ^ (p - 1 / 2) := by
-      rw [← Real.rpow_add ha]; congr 1; ring
-    have hn (k : ℕ) : a ^ (-(k : ℝ)) = 1 / a ^ k := by
-      rw [Real.rpow_neg ha.le, Real.rpow_natCast, one_div]
-    have hp0 := hp (1 - a)
-    have hp1 : a ^ (-1 / 2 : ℝ) * a ^ (1 / 2 : ℝ) = 1 := by rw [hp]; norm_num
-    have hp2 : a ^ (-1 / 2 : ℝ) * a ^ (-1 / 2 : ℝ) = 1 / a := by
-      rw [hp, show (-1 / 2 : ℝ) - 1 / 2 = -((1 : ℕ) : ℝ) by norm_num, hn 1, pow_one]
-    have hp3 : a ^ (-1 / 2 : ℝ) * a ^ (-3 / 2 : ℝ) = 1 / a ^ 2 := by
-      rw [hp, show (-3 / 2 : ℝ) - 1 / 2 = -((2 : ℕ) : ℝ) by norm_num, hn 2]
-    have hp4 : a ^ (-1 / 2 : ℝ) * a ^ (-5 / 2 : ℝ) = 1 / a ^ 3 := by
-      rw [hp, show (-5 / 2 : ℝ) - 1 / 2 = -((3 : ℕ) : ℝ) by norm_num, hn 3]
-    have hpi : 2 * Real.sqrt (Real.pi / 2) = Real.sqrt (2 * Real.pi) := by
-      rw [Real.sqrt_div Real.pi_pos.le, Real.sqrt_mul zero_le_two]
-      have : (2 : ℝ) / Real.sqrt 2 = Real.sqrt 2 := by
-        rw [div_eq_iff (Real.sqrt_pos.mpr two_pos).ne', Real.mul_self_sqrt zero_le_two]
-      linear_combination Real.sqrt Real.pi * this
-    rw [show (1 - a) - 1 / 2 = 1 / 2 - a by ring] at hp0
-    unfold diagSeries8
-    linear_combination
-      Real.exp a * Real.Gamma a * hp0 - Real.sqrt (2 * Real.pi) * hp1 - hpi * (a ^ (-1 / 2 : ℝ) *
-        a ^ (1 / 2 : ℝ)) - (Real.sqrt (2 * Real.pi) / 12) * hp2 -
-        (Real.sqrt (2 * Real.pi) / 288) * hp3 + (139 * Real.sqrt (2 * Real.pi) / 51840) * hp4
-  · filter_upwards [eventually_gt_atTop (0 : ℝ)] with a ha
-    rw [← Real.rpow_add ha]; congr 1; ring
-
-private theorem eventually_one_le_stirling :
-    ∀ᶠ a : ℝ in atTop, 1 ≤ a ^ (1 / 2 - a) * Real.exp a * Real.Gamma a := by
-  obtain ⟨C, hC⟩ := isBigO_stirling_four.bound
-  filter_upwards [eventually_ge_atTop (max 2 (2 * |C| + 1)), hC] with a ha hCa
-  have ha2 : 2 ≤ a := le_trans (le_max_left _ _) ha
-  have haC : 2 * |C| + 1 ≤ a := le_trans (le_max_right _ _) ha
-  have hA : 3 / 4 ≤ 1 + 1 / (12 * a) + 1 / (288 * a ^ 2) - 139 / (51840 * a ^ 3) := by
-    have h1 : 0 ≤ 1 / (12 * a) := by positivity
-    have h2 : 0 ≤ 1 / (288 * a ^ 2) := by positivity
-    have h3 : 139 / (51840 * a ^ 3) ≤ 1 / 4 := by
-      rw [div_le_iff₀ (by positivity)]; nlinarith [sq_nonneg a]
-    linarith
-  have hpi : 2 ≤ Real.sqrt (2 * Real.pi) :=
-    calc (2 : ℝ) = Real.sqrt (2 ^ 2) := (Real.sqrt_sq zero_le_two).symm
-      _ ≤ Real.sqrt (2 * Real.pi) := Real.sqrt_le_sqrt (by linarith [Real.two_le_pi])
-  have ha4 : a ^ (-4 : ℝ) ≤ (2 * |C| + 1)⁻¹ :=
-    calc a ^ (-4 : ℝ) ≤ a ^ (-1 : ℝ) :=
-          Real.rpow_le_rpow_of_exponent_le (by linarith) (by norm_num)
-      _ = a⁻¹ := Real.rpow_neg_one a
-      _ ≤ (2 * |C| + 1)⁻¹ := inv_anti₀ (by positivity) haC
-  rw [Real.norm_eq_abs, Real.norm_of_nonneg (Real.rpow_nonneg (by positivity) _)] at hCa
-  have herr : |a ^ (1 / 2 - a) * Real.exp a * Real.Gamma a - Real.sqrt (2 * Real.pi) *
-      (1 + 1 / (12 * a) + 1 / (288 * a ^ 2) - 139 / (51840 * a ^ 3))| ≤ 1 / 2 :=
-    calc _ ≤ C * a ^ (-4 : ℝ) := hCa
-      _ ≤ |C| * (2 * |C| + 1)⁻¹ := mul_le_mul (le_abs_self C) ha4 (by positivity) (abs_nonneg C)
-      _ ≤ 1 / 2 := by rw [← div_eq_mul_inv, div_le_iff₀ (by positivity)]; linarith [abs_nonneg C]
-  nlinarith [(abs_le.mp herr).1]
-
-private theorem isBigO_cubic_inv_one (c0 c1 c2 c3 : ℝ) :
-    (fun a : ℝ => c0 + c1 / a + c2 / a ^ 2 + c3 / a ^ 3) =O[atTop] fun _ : ℝ => (1 : ℝ) :=
-  ((((isBigO_div_pow_one 0 c0).add (isBigO_div_pow_one 1 c1)).add
-    (isBigO_div_pow_one 2 c2)).add (isBigO_div_pow_one 3 c3)).congr_left fun a => by ring
-
-private theorem rpow_neg_half_mul_inv_sqrt_two_pi {a : ℝ} (ha : 0 < a) :
-    a ^ (-1 / 2 : ℝ) * (Real.sqrt (2 * Real.pi))⁻¹ = (Real.sqrt (2 * Real.pi * a))⁻¹ := by
-  rw [Real.sqrt_mul (by positivity : 0 ≤ 2 * Real.pi) a, mul_inv, mul_comm,
-    show (-1 / 2 : ℝ) = -(1 / 2) by ring, Real.rpow_neg ha.le, ← Real.sqrt_eq_rpow]
-
-private theorem isBigO_inv_stirling_four :
-    (fun a : ℝ => (a ^ (1 / 2 - a) * Real.exp a * Real.Gamma a)⁻¹ -
-      (Real.sqrt (2 * Real.pi))⁻¹ * (1 - 1 / (12 * a) + 1 / (288 * a ^ 2) + 139 / (51840 * a ^ 3)))
-      =O[atTop] fun a : ℝ => a ^ (-4 : ℝ) := by
-  let S : ℝ → ℝ := fun a => a ^ (1 / 2 - a) * Real.exp a * Real.Gamma a
-  let A : ℝ → ℝ := fun a => 1 + 1 / (12 * a) + 1 / (288 * a ^ 2) - 139 / (51840 * a ^ 3)
-  let B : ℝ → ℝ := fun a => 1 - 1 / (12 * a) + 1 / (288 * a ^ 2) + 139 / (51840 * a ^ 3)
-  have hinvS : (fun a : ℝ => (S a)⁻¹) =O[atTop] fun _ : ℝ => (1 : ℝ) := by
-    refine IsBigO.of_bound 1 ?_
-    filter_upwards [eventually_one_le_stirling] with a ha
-    rw [Real.norm_of_nonneg (by positivity), norm_one, one_mul]
-    exact inv_le_one_of_one_le₀ ha
-  have hB_bdd : B =O[atTop] fun _ : ℝ => (1 : ℝ) :=
-    (isBigO_cubic_inv_one 1 (-1 / 12) (1 / 288) (139 / 51840)).congr_left fun a => by
-      dsimp only [B]; ring
-  have hAB : (fun a : ℝ => 1 - A a * B a) =O[atTop] fun a : ℝ => a ^ (-4 : ℝ) := by
-    refine ((isBigO_div_pow 4 4 le_rfl (-571 / 1244160)).add
-      (isBigO_div_pow 6 4 (by omega) (19321 / 2687385600))).congr' ?_
-      (Eventually.of_forall fun _ => by norm_num)
-    filter_upwards [eventually_gt_atTop (0 : ℝ)] with a ha
-    have : a ≠ 0 := ha.ne'; dsimp only [A, B]; field_simp; ring
-  have h1 : (fun a : ℝ => -(Real.sqrt (2 * Real.pi))⁻¹ * ((S a)⁻¹ *
-      ((S a - Real.sqrt (2 * Real.pi) * A a) * B a))) =O[atTop] fun a : ℝ => a ^ (-4 : ℝ) :=
-    ((hinvS.mul (isBigO_stirling_four.mul hB_bdd)).const_mul_left _).congr_right fun _ => by ring
-  have h2 : (fun a : ℝ => (S a)⁻¹ * (1 - A a * B a)) =O[atTop] fun a : ℝ => a ^ (-4 : ℝ) :=
-    (hinvS.mul hAB).congr_right fun _ => by ring
-  refine (h1.add h2).congr' ?_ .rfl
-  filter_upwards [eventually_one_le_stirling] with a ha
-  have hS0 : S a ≠ 0 := by dsimp only [S]; linarith
-  have hpi0 : Real.sqrt (2 * Real.pi) ≠ 0 := (Real.sqrt_pos.mpr (by positivity)).ne'
-  change _ = (S a)⁻¹ - (Real.sqrt (2 * Real.pi))⁻¹ * B a
-  field_simp [hS0, hpi0]; ring
-
-/-- Four-term asymptotic expansion of the diagonal regularized lower incomplete Gamma function
-`TauCeti.regularizedGamma a a` as `a → +∞`, with remainder `O(a^{-9/2})`. -/
-theorem isBigO_regularizedGamma_diag_sub :
-    (fun a : ℝ => regularizedGamma a a -
-      (1 / 2 + (Real.sqrt (2 * Real.pi * a))⁻¹ *
-        (1 / 3 + 1 / (540 * a) - 25 / (6048 * a ^ 2) - 101 / (155520 * a ^ 3))))
-      =O[atTop] fun a : ℝ => a ^ (-9 / 2 : ℝ) := by
-  let D : ℝ → ℝ := fun a => a ^ (1 - a) * Real.exp a * (lowerIncompleteGamma a a - Real.Gamma a / 2)
-  let P_D : ℝ → ℝ := fun a => 1 / 3 + 4 / (135 * a) - 8 / (2835 * a ^ 2) - 16 / (8505 * a ^ 3)
-  let S_inv : ℝ → ℝ := fun a => (a ^ (1 / 2 - a) * Real.exp a * Real.Gamma a)⁻¹
-  let P_S : ℝ → ℝ := fun a => (Real.sqrt (2 * Real.pi))⁻¹ *
-    (1 - 1 / (12 * a) + 1 / (288 * a ^ 2) + 139 / (51840 * a ^ 3))
-  let P_out : ℝ → ℝ := fun a => (Real.sqrt (2 * Real.pi))⁻¹ *
-    (1 / 3 + 1 / (540 * a) - 25 / (6048 * a ^ 2) - 101 / (155520 * a ^ 3))
-  have hPD : P_D =O[atTop] fun _ : ℝ => (1 : ℝ) :=
-    (isBigO_cubic_inv_one (1 / 3) (4 / 135) (-8 / 2835) (-16 / 8505)).congr_left fun a => by
-      dsimp only [P_D]; ring
-  have hPS : P_S =O[atTop] fun _ : ℝ => (1 : ℝ) :=
-    ((isBigO_cubic_inv_one 1 (-1 / 12) (1 / 288) (139 / 51840)).const_mul_left
-      (Real.sqrt (2 * Real.pi))⁻¹).congr_left fun a => by dsimp only [P_S]; ring
-  have hSinv : S_inv =O[atTop] fun _ : ℝ => (1 : ℝ) :=
-    ((isBigO_inv_stirling_four.trans (isBigO_rpow_le (by norm_num : (-4 : ℝ) ≤ 0)) |>.congr_right
-      fun a => Real.rpow_zero a).add hPS).congr_left fun a => by ring
-  have hpoly : (fun a : ℝ => P_D a * P_S a - P_out a) =O[atTop] fun a : ℝ => a ^ (-4 : ℝ) := by
-    refine ((((isBigO_div_pow 4 4 le_rfl (2773 / 12247200)).sub
-      (isBigO_div_pow 5 4 (by omega) (37 / 2624400))).sub
-      (isBigO_div_pow 6 4 (by omega) (139 / 27556200))).const_mul_left
-      (Real.sqrt (2 * Real.pi))⁻¹).congr' ?_ (Eventually.of_forall fun _ => by norm_num)
-    filter_upwards [eventually_gt_atTop (0 : ℝ)] with a ha
-    have : a ≠ 0 := ha.ne'; dsimp only [P_D, P_S, P_out]; field_simp; ring
-  have hprod : (fun a : ℝ => D a * S_inv a - P_out a) =O[atTop] fun a : ℝ => a ^ (-4 : ℝ) :=
-    ((((isBigO_mul_lowerIncompleteGamma_diag_sub_half_Gamma.mul hSinv).congr_right
-      fun _ => mul_one _).add ((hPD.mul isBigO_inv_stirling_four).congr_right
-      fun _ => one_mul _)).add hpoly).congr_left fun a => by ring
-  refine ((isBigO_refl (fun a : ℝ => a ^ (-1 / 2 : ℝ)) atTop).mul hprod).congr' ?_ ?_
-  · filter_upwards [eventually_gt_atTop (0 : ℝ)] with a ha
-    rw [regularizedGamma_eq_div]
-    have hG : Real.Gamma a ≠ 0 := (Real.Gamma_pos_of_pos ha).ne'
-    have he : Real.exp a ≠ 0 := (Real.exp_pos a).ne'
-    have hp : a ^ (-1 / 2 : ℝ) * a ^ (1 - a) = a ^ (1 / 2 - a) := by
-      rw [← Real.rpow_add ha]; congr 1; ring
-    have hrel : a ^ (-1 / 2 : ℝ) * D a * S_inv a =
-        lowerIncompleteGamma a a / Real.Gamma a - 1 / 2 := by
-      dsimp only [D, S_inv]; rw [← mul_assoc, ← mul_assoc, hp]
-      field_simp [hG, he, (Real.rpow_pos_of_pos ha (1 / 2 - a)).ne']
-    dsimp only [P_out]
-    linear_combination hrel -
-      (1 / 3 + 1 / (540 * a) - 25 / (6048 * a ^ 2) - 101 / (155520 * a ^ 3)) *
-        rpow_neg_half_mul_inv_sqrt_two_pi ha
-  · filter_upwards [eventually_gt_atTop (0 : ℝ)] with a ha
-    rw [← Real.rpow_add ha]; congr 1; ring
-
-/-- Four-term asymptotic expansion of `TauCeti.regularizedGamma (a + 1) a` as `a → +∞`, with
-remainder `O(a^{-9/2})`. -/
-theorem isBigO_regularizedGamma_add_one_diag_sub :
-    (fun a : ℝ => regularizedGamma (a + 1) a -
-      (1 / 2 - (Real.sqrt (2 * Real.pi * a))⁻¹ *
-        (2 / 3 - 23 / (270 * a) + 23 / (3024 * a ^ 2) + 259 / (77760 * a ^ 3))))
-      =O[atTop] fun a : ℝ => a ^ (-9 / 2 : ℝ) := by
-  have hterm : (fun a : ℝ => -(a ^ a * Real.exp (-a) / Real.Gamma (a + 1)) +
-      (Real.sqrt (2 * Real.pi * a))⁻¹ *
-        (1 - 1 / (12 * a) + 1 / (288 * a ^ 2) + 139 / (51840 * a ^ 3)))
-      =O[atTop] fun a : ℝ => a ^ (-9 / 2 : ℝ) := by
-    refine (((isBigO_refl (fun a : ℝ => a ^ (-1 / 2 : ℝ)) atTop).mul
-      isBigO_inv_stirling_four).neg_left).congr' ?_ ?_
-    · filter_upwards [eventually_gt_atTop (0 : ℝ)] with a ha
-      rw [Real.Gamma_add_one ha.ne']
-      have hG : Real.Gamma a ≠ 0 := (Real.Gamma_pos_of_pos ha).ne'
-      have hp : a ^ (-1 / 2 : ℝ) * (a ^ (1 / 2 - a))⁻¹ = a ^ a / a := by
-        rw [← Real.rpow_neg ha.le, ← Real.rpow_add ha,
-          show (-1 / 2 : ℝ) + -(1 / 2 - a) = a + (-1) by ring,
-          Real.rpow_add ha, Real.rpow_neg_one, div_eq_mul_inv]
-      have hid : a ^ (-1 / 2 : ℝ) * (a ^ (1 / 2 - a) * Real.exp a * Real.Gamma a)⁻¹ =
-          a ^ a * Real.exp (-a) / (a * Real.Gamma a) :=
-        calc a ^ (-1 / 2 : ℝ) * (a ^ (1 / 2 - a) * Real.exp a * Real.Gamma a)⁻¹
-            = (a ^ (-1 / 2 : ℝ) * (a ^ (1 / 2 - a))⁻¹) * Real.exp (-a) * (Real.Gamma a)⁻¹ := by
-                rw [Real.exp_neg, mul_inv, mul_inv]; ring
-          _ = a ^ a * Real.exp (-a) / (a * Real.Gamma a) := by rw [hp]; field_simp [ha.ne', hG]
-      linear_combination -hid +
-        (1 - 1 / (12 * a) + 1 / (288 * a ^ 2) + 139 / (51840 * a ^ 3)) *
-          rpow_neg_half_mul_inv_sqrt_two_pi ha
-    · filter_upwards [eventually_gt_atTop (0 : ℝ)] with a ha
-      rw [← Real.rpow_add ha]; congr 1; ring
-  refine (isBigO_regularizedGamma_diag_sub.add hterm).congr' ?_ .rfl
-  filter_upwards [eventually_gt_atTop (0 : ℝ)] with a ha
-  rw [regularizedGamma_add_one ha ha.le]; ring
-
-private theorem tendsto_of_sub_regularized_isBigO {f : ℝ → ℝ} (c0 c1 c2 c3 : ℝ)
-    (hf : (fun a : ℝ => f a - (1 / 2 + (Real.sqrt (2 * Real.pi * a))⁻¹ *
-      (c0 + c1 / a + c2 / a ^ 2 + c3 / a ^ 3))) =O[atTop] fun a : ℝ => a ^ (-9 / 2 : ℝ)) :
-    Tendsto f atTop (𝓝 (1 / 2)) := by
-  have hb := isBigO_cubic_inv_one c0 c1 c2 c3
-  have hsq : (fun a : ℝ => (Real.sqrt (2 * Real.pi * a))⁻¹) =O[atTop]
-      fun a : ℝ => a ^ (-(1 / 2 : ℝ)) := by
-    refine ((isBigO_refl (fun a : ℝ => a ^ (-(1 / 2 : ℝ))) atTop).const_mul_left
-      (Real.sqrt (2 * Real.pi))⁻¹).congr' ?_ .rfl
-    filter_upwards [eventually_gt_atTop (0 : ℝ)] with a ha
-    rw [← rpow_neg_half_mul_inv_sqrt_two_pi ha, show (-1 / 2 : ℝ) = -(1 / 2) by ring, mul_comm]
-  have hdiff : (fun a : ℝ => f a - 1 / 2) =O[atTop] fun a : ℝ => a ^ (-(1 / 2 : ℝ)) :=
-    ((hf.trans (isBigO_rpow_le (by norm_num : (-9 / 2 : ℝ) ≤ -(1 / 2)))).add
-      ((hsq.mul hb).congr_right fun _ => mul_one _)).congr_left fun a => by ring
-  simpa using (hdiff.trans_tendsto
-    (tendsto_rpow_neg_atTop (by norm_num : (0 : ℝ) < 1 / 2))).add_const (1 / 2 : ℝ)
-
-/-- **DLMF 8.11.13** on `(0, ∞)`: `P(a, a) → 1 / 2` as `a → +∞`. -/
-theorem tendsto_regularizedGamma_diag_atTop :
-    Tendsto (fun a : ℝ => regularizedGamma a a) atTop (𝓝 (1 / 2)) :=
-  tendsto_of_sub_regularized_isBigO (1 / 3) (1 / 540) (-25 / 6048) (-101 / 155520)
-    (isBigO_regularizedGamma_diag_sub.congr_left fun a => by ring)
-
-/-- **DLMF 8.11.13** on `(0, ∞)`: `1 - P(a, a) → 1 / 2` as `a → +∞`. -/
-theorem tendsto_sub_regularizedGamma_diag_atTop :
-    Tendsto (fun a : ℝ => 1 - regularizedGamma a a) atTop (𝓝 (1 / 2)) := by
-  have h := (tendsto_const_nhds (x := (1 : ℝ))).sub tendsto_regularizedGamma_diag_atTop
-  norm_num at h; exact h
-
-/-- `P(a + 1, a) → 1 / 2` as `a → +∞`. -/
-theorem tendsto_regularizedGamma_add_one_diag_atTop :
-    Tendsto (fun a : ℝ => regularizedGamma (a + 1) a) atTop (𝓝 (1 / 2)) :=
-  tendsto_of_sub_regularized_isBigO (-2 / 3) (23 / 270) (-23 / 3024) (-259 / 77760)
-    (isBigO_regularizedGamma_add_one_diag_sub.congr_left fun a => by ring)
-
-/-! ### Ramanujan's `θ(n)` and central exponential partial sums -/
-
-/-- Ramanujan's remainder function `θ(n)` for the central partial sum of the exponential series
-(Ramanujan 1911; DLMF 8.11.14–8.11.15), uniquely determined for every `n : ℕ` by
-`∑ k < n, n ^ k / k! + (n ^ n / n!) * θ(n) = exp n / 2`. -/
-def ramanujanTheta (n : ℕ) : ℝ :=
-  (n ! : ℝ) / (n : ℝ) ^ n * (Real.exp n / 2 - ∑ k ∈ Finset.range n, (n : ℝ) ^ k / (k ! : ℝ))
-
-/-- Explicit formula unfolding `TauCeti.ramanujanTheta`. -/
-theorem ramanujanTheta_def (n : ℕ) :
-    ramanujanTheta n = (n ! : ℝ) / (n : ℝ) ^ n *
-      (Real.exp n / 2 - ∑ k ∈ Finset.range n, (n : ℝ) ^ k / (k ! : ℝ)) := by rfl
-
-private theorem natCast_pow_self_pos (n : ℕ) : 0 < (n : ℝ) ^ n := by
-  rcases eq_or_ne n 0 with rfl | hn
-  · simp
-  · exact pow_pos (Nat.cast_pos.mpr (Nat.pos_of_ne_zero hn)) n
-
-/-- At `n = 0`, `θ(0) = 1 / 2` under the convention `0 ^ 0 = 1`. -/
-@[simp]
-theorem ramanujanTheta_zero : ramanujanTheta 0 = 1 / 2 := by simp [ramanujanTheta_def]
-
-/-- At `n = 1`, `θ(1) = e / 2 - 1`. -/
-@[simp]
-theorem ramanujanTheta_one : ramanujanTheta 1 = Real.exp 1 / 2 - 1 := by simp [ramanujanTheta_def]
-
-/-- **DLMF 8.11.14 / Ramanujan's defining equation**: for every `n : ℕ`,
-`∑_{k < n} n^k / k! + (n^n / n!) θ(n) = e^n / 2`. -/
-theorem sum_range_add_ramanujanTheta (n : ℕ) :
-    (∑ k ∈ Finset.range n, (n : ℝ) ^ k / (k ! : ℝ)) +
-      (n : ℝ) ^ n / (n ! : ℝ) * ramanujanTheta n = Real.exp n / 2 := by
-  rw [ramanujanTheta_def]
-  have hf : (n ! : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero n)
-  have hp : (n : ℝ) ^ n ≠ 0 := (natCast_pow_self_pos n).ne'
-  field_simp [hf, hp]; ring
-
-/-- Normalized form of DLMF 8.11.14 for the strict partial sum `k < n`, valid for every `n : ℕ`. -/
-theorem exp_neg_mul_sum_range_eq_sub_ramanujanTheta (n : ℕ) :
-    Real.exp (-(n : ℝ)) * (∑ k ∈ Finset.range n, (n : ℝ) ^ k / (k ! : ℝ)) =
-      1 / 2 - Real.exp (-(n : ℝ)) * (n : ℝ) ^ n / (n ! : ℝ) * ramanujanTheta n := by
-  have h := congr_arg (Real.exp (-(n : ℝ)) * ·) (sum_range_add_ramanujanTheta n)
-  have he : Real.exp (-(n : ℝ)) * Real.exp (n : ℝ) = 1 := by
-    rw [← Real.exp_add, neg_add_cancel, Real.exp_zero]
-  linear_combination h + 1 / 2 * he
-
-/-- Normalized form of DLMF 8.11.14 for the inclusive partial sum `k ≤ n`, valid for every
-`n : ℕ`. -/
-theorem exp_neg_mul_sum_range_succ_eq_add_sub_ramanujanTheta (n : ℕ) :
-    Real.exp (-(n : ℝ)) * (∑ k ∈ Finset.range (n + 1), (n : ℝ) ^ k / (k ! : ℝ)) =
-      1 / 2 + Real.exp (-(n : ℝ)) * (n : ℝ) ^ n / (n ! : ℝ) * (1 - ramanujanTheta n) := by
-  rw [Finset.sum_range_succ, mul_add, exp_neg_mul_sum_range_eq_sub_ramanujanTheta]; ring
-
-/-- **DLMF 8.11.15**: for `n ≠ 0`, `P(n, n) = 1 / 2 + e^{-n} (n^n / n!) θ(n)`.
-The hypothesis `n ≠ 0` is necessary because `TauCeti.regularizedGamma 0 0 = 0`, whereas the
-right-hand side evaluates to `1` at `n = 0`. -/
-theorem regularizedGamma_diag_natCast_eq_add_ramanujanTheta {n : ℕ} (hn : n ≠ 0) :
-    regularizedGamma n n =
-      1 / 2 + Real.exp (-(n : ℝ)) * (n : ℝ) ^ n / (n ! : ℝ) * ramanujanTheta n := by
-  rw [regularizedGamma_natCast hn (Nat.cast_nonneg n), exp_neg_mul_sum_range_eq_sub_ramanujanTheta]
-  ring
-
-/-- Exact incomplete-Gamma representation of `θ(n)` for `n ≠ 0`:
-`θ(n) = n^{1 - n} e^n (γ(n, n) - Γ(n) / 2)`.
-The hypothesis `n ≠ 0` is necessary because at `n = 0` the right-hand side is `0`, whereas
-`θ(0) = 1 / 2`. -/
-theorem ramanujanTheta_eq_mul_lowerIncompleteGamma_sub_half_Gamma {n : ℕ} (hn : n ≠ 0) :
-    ramanujanTheta n =
-      (n : ℝ) ^ (1 - (n : ℝ)) * Real.exp n * (lowerIncompleteGamma n n - Real.Gamma n / 2) := by
-  have hn_pos : 0 < (n : ℝ) := Nat.cast_pos.mpr (Nat.pos_of_ne_zero hn)
-  have hP := regularizedGamma_diag_natCast_eq_add_ramanujanTheta hn
-  rw [regularizedGamma_eq_div] at hP
-  have hG_pos : 0 < Real.Gamma n := Real.Gamma_pos_of_pos hn_pos
-  have hfact : (n ! : ℝ) = (n : ℝ) * Real.Gamma n := by
-    obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
-    rw [Nat.succ_eq_add_one, Nat.factorial_succ, Nat.cast_mul, Nat.cast_add, Nat.cast_one,
-      Real.Gamma_nat_eq_factorial]
-  have hrpow : (n : ℝ) ^ (1 - (n : ℝ)) * (n : ℝ) ^ n = (n : ℝ) := by
-    rw [← Real.rpow_natCast (n : ℝ) n, ← Real.rpow_add hn_pos,
-      show 1 - (n : ℝ) + (n : ℝ) = 1 by ring, Real.rpow_one]
-  have hexp : Real.exp n * Real.exp (-(n : ℝ)) = 1 := by
-    rw [← Real.exp_add, add_neg_cancel, Real.exp_zero]
-  have hsub : lowerIncompleteGamma n n - Real.Gamma n / 2 =
-      Real.Gamma n * (Real.exp (-(n : ℝ)) * (n : ℝ) ^ n / (n ! : ℝ) * ramanujanTheta n) := by
-    have hG_ne := hG_pos.ne'; field_simp [hG_ne] at hP ⊢; linarith
-  symm
-  calc (n : ℝ) ^ (1 - (n : ℝ)) * Real.exp n * (lowerIncompleteGamma n n - Real.Gamma n / 2)
-      = ((n : ℝ) ^ (1 - (n : ℝ)) * (n : ℝ) ^ n) * (Real.exp n * Real.exp (-(n : ℝ))) *
-          (Real.Gamma n / ((n : ℝ) * Real.Gamma n)) * ramanujanTheta n := by
-            rw [hsub, hfact]; ring
-    _ = ramanujanTheta n := by rw [hrpow, hexp, mul_one]; field_simp [hn_pos.ne', hG_pos.ne']
-
-/-- **DLMF 8.11.17 (Ramanujan's asymptotic expansion)**: four-term asymptotic expansion of
-`TauCeti.ramanujanTheta n` as `n → ∞`, with sharp remainder `O(n^{-4})`. -/
-theorem isBigO_ramanujanTheta_sub :
-    (fun n : ℕ => ramanujanTheta n -
-      (1 / 3 + 4 / (135 * (n : ℝ)) - 8 / (2835 * (n : ℝ) ^ 2) - 16 / (8505 * (n : ℝ) ^ 3)))
-      =O[atTop] fun n : ℕ => (n : ℝ) ^ (-4 : ℝ) := by
-  refine (isBigO_mul_lowerIncompleteGamma_diag_sub_half_Gamma.comp_tendsto
-    tendsto_natCast_atTop_atTop).congr' ?_ .rfl
-  filter_upwards [eventually_ge_atTop 1] with n hn
-  simp only [Function.comp_apply,
-    ramanujanTheta_eq_mul_lowerIncompleteGamma_sub_half_Gamma (Nat.one_le_iff_ne_zero.mp hn)]
-
-/-- Ramanujan's limit `θ(n) → 1 / 3` as `n → ∞`. -/
-theorem tendsto_ramanujanTheta_atTop :
-    Tendsto ramanujanTheta atTop (𝓝 (1 / 3)) := by
-  have h1 : (fun a : ℝ => 4 / (135 * a) - 8 / (2835 * a ^ 2) - 16 / (8505 * a ^ 3))
-      =O[atTop] fun a : ℝ => a ^ (-(1 : ℝ)) :=
-    ((((isBigO_div_pow 1 1 le_rfl (4 / 135)).sub
-      (isBigO_div_pow 2 1 (by omega) (8 / 2835))).sub
-      (isBigO_div_pow 3 1 (by omega) (16 / 8505))).congr_left fun a => by ring).congr_right
-      fun _ => by norm_num
-  have hdiff : (fun n : ℕ => ramanujanTheta n - 1 / 3) =O[atTop]
-      fun n : ℕ => (n : ℝ) ^ (-(1 : ℝ)) :=
-    ((isBigO_ramanujanTheta_sub.trans
-      ((isBigO_rpow_le (by norm_num : (-4 : ℝ) ≤ -(1 : ℝ))).comp_tendsto
-        tendsto_natCast_atTop_atTop)).add
-      (h1.comp_tendsto tendsto_natCast_atTop_atTop)).congr_left fun n => by
-        simp only [Function.comp_apply]; ring
-  simpa using (hdiff.trans_tendsto
-    ((tendsto_rpow_neg_atTop one_pos).comp tendsto_natCast_atTop_atTop)).add_const (1 / 3 : ℝ)
-
-/-- **DLMF 8.11.16**: four-term asymptotic expansion of the central exponential partial sum
-`e^{-n} ∑_{k ≤ n} n^k / k!` as `n → ∞`, with remainder `O(n^{-9/2})`. -/
-theorem isBigO_exp_neg_mul_sum_range_succ_sub :
-    (fun n : ℕ => Real.exp (-(n : ℝ)) * (∑ k ∈ Finset.range (n + 1), (n : ℝ) ^ k / (k ! : ℝ)) -
-      (1 / 2 + (Real.sqrt (2 * Real.pi * n))⁻¹ *
-        (2 / 3 - 23 / (270 * (n : ℝ)) + 23 / (3024 * (n : ℝ) ^ 2) +
-          259 / (77760 * (n : ℝ) ^ 3))))
-      =O[atTop] fun n : ℕ => (n : ℝ) ^ (-9 / 2 : ℝ) := by
-  refine ((isBigO_regularizedGamma_add_one_diag_sub.comp_tendsto
-    tendsto_natCast_atTop_atTop).neg_left).congr' ?_ .rfl
-  filter_upwards [eventually_ge_atTop 1] with n _
-  have hcast : ((n : ℝ) + 1) = ((n + 1 : ℕ) : ℝ) := by push_cast; ring
-  simp only [Function.comp_apply, hcast,
-    regularizedGamma_natCast (Nat.succ_ne_zero n) (Nat.cast_nonneg n)]; ring
-
-/-- Four-term asymptotic expansion of the strict central exponential partial sum
-`e^{-n} ∑_{k < n} n^k / k!` as `n → ∞`, with remainder `O(n^{-9/2})`. -/
-theorem isBigO_exp_neg_mul_sum_range_sub :
-    (fun n : ℕ => Real.exp (-(n : ℝ)) * (∑ k ∈ Finset.range n, (n : ℝ) ^ k / (k ! : ℝ)) -
-      (1 / 2 - (Real.sqrt (2 * Real.pi * n))⁻¹ *
-        (1 / 3 + 1 / (540 * (n : ℝ)) - 25 / (6048 * (n : ℝ) ^ 2) -
-          101 / (155520 * (n : ℝ) ^ 3))))
-      =O[atTop] fun n : ℕ => (n : ℝ) ^ (-9 / 2 : ℝ) := by
-  refine ((isBigO_regularizedGamma_diag_sub.comp_tendsto
-    tendsto_natCast_atTop_atTop).neg_left).congr' ?_ .rfl
-  filter_upwards [eventually_ge_atTop 1] with n hn
-  simp only [Function.comp_apply,
-    regularizedGamma_natCast (Nat.one_le_iff_ne_zero.mp hn) (Nat.cast_nonneg n)]; ring
-
-/-- Limit `e^{-n} ∑_{k < n} n^k / k! → 1 / 2` as `n → ∞`. -/
-theorem tendsto_exp_neg_mul_sum_range_atTop :
-    Tendsto (fun n : ℕ => Real.exp (-(n : ℝ)) * ∑ k ∈ Finset.range n, (n : ℝ) ^ k / (k ! : ℝ))
-      atTop (𝓝 (1 / 2)) := by
-  refine (tendsto_sub_regularizedGamma_diag_atTop.comp tendsto_natCast_atTop_atTop).congr' ?_
-  filter_upwards [eventually_ge_atTop 1] with n hn
-  simp only [Function.comp_apply,
-    regularizedGamma_natCast (Nat.one_le_iff_ne_zero.mp hn) (Nat.cast_nonneg n)]; ring
-
-/-- Limit `e^{-n} ∑_{k ≤ n} n^k / k! → 1 / 2` as `n → ∞`. -/
-theorem tendsto_exp_neg_mul_sum_range_succ_atTop :
-    Tendsto
-      (fun n : ℕ => Real.exp (-(n : ℝ)) * ∑ k ∈ Finset.range (n + 1), (n : ℝ) ^ k / (k ! : ℝ))
-      atTop (𝓝 (1 / 2)) := by
-  have h := ((tendsto_const_nhds (x := (1 : ℝ))).sub
-    tendsto_regularizedGamma_add_one_diag_atTop).comp tendsto_natCast_atTop_atTop
-  rw [show (1 : ℝ) - 1 / 2 = 1 / 2 by ring] at h
-  refine h.congr' ?_
-  filter_upwards [eventually_ge_atTop 1] with n _
-  have hcast : ((n : ℝ) + 1) = ((n + 1 : ℕ) : ℝ) := by push_cast; ring
-  simp only [Function.comp_apply, hcast,
-    regularizedGamma_natCast (Nat.succ_ne_zero n) (Nat.cast_nonneg n)]; ring
 
 end TauCeti
 
