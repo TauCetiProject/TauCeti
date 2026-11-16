@@ -262,16 +262,16 @@ theorem smul_mem_range_point {rels stab : List (List (Fin m))}
   have : NeZero k := ⟨Nat.ne_zero_of_lt i.isLt⟩
   exact smul_mem_range_point_of_edges (smul_point hT.2 hrels hstab) (hg ▸ Subgroup.mem_top x)
 
-/-- The cosets named by a nonempty table with sound generator edges are all the cosets of `H`,
-if the generators `g` generate `G`. No empty-word row or deduction certificate is required. -/
-theorem surjective_point_of_edges [NeZero k] {H : Subgroup G}
+/-- The points named by a nonempty table with sound generator edges are all the points of a
+pretransitive `G`-set, if the generators `g` generate `G`. No empty-word row or deduction
+certificate is required. For the cosets of a subgroup `H`, take the base point
+`((1 : G) : G ⧸ H)`. -/
+theorem surjective_point_of_edges [NeZero k] [MulAction.IsPretransitive G α]
     (hg : Subgroup.closure (Set.range g) = ⊤)
-    (hedges : ∀ t i,
-      g t • T.point g ((1 : G) : G ⧸ H) i = T.point g ((1 : G) : G ⧸ H) (T.act t i)) :
-    Function.Surjective (T.point g ((1 : G) : G ⧸ H)) := by
-  refine QuotientGroup.mk_surjective.forall.2 fun x ↦ ?_
-  simpa [MulAction.Quotient.smul_mk] using
-    smul_mem_range_point_of_edges hedges (hg ▸ Subgroup.mem_top x)
+    (hedges : ∀ t i, g t • T.point g a i = T.point g a (T.act t i)) :
+    Function.Surjective (T.point g a) := fun y ↦ by
+  obtain ⟨x, rfl⟩ := MulAction.exists_smul_eq G a y
+  exact smul_mem_range_point_of_edges hedges (hg ▸ Subgroup.mem_top x)
 
 /-- A nonempty table on `k` points with sound generator edges on the cosets of `H` shows that
 `H` has index at most `k`, if the generators `g` generate `G`. -/

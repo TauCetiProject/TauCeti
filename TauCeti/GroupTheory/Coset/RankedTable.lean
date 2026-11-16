@@ -32,10 +32,12 @@ of
 An edge `(t, j)` passes `TauCeti.RankedCosetTable.checkEdge` if it is an edge of the forest, which
 holds by the definition of the points, or if its closed word, a cyclic rotation of a relator, or a
 subgroup generator at a root, has the form `t :: u` where `u` leads from `T.act t j` back to `j`
-through edges of rank smaller than `T.rank t j`. Then the edge `(t, j)` is the only edge of the
-closed word that is not yet known, and the closed word proves it. By induction on the rank, every
-edge that passes holds in the group (`TauCeti.RankedCosetTable.smul_point`). The ranks replace the
-order of the deductions of a replay: no state is carried from one edge to the next.
+through edges of rank smaller than `T.rank t j`. Once the edges of smaller rank are known to hold,
+the edge `(t, j)` is the only edge of the closed word that is not yet known, and the closed word
+proves it. So passing the check does not make a single edge hold on its own: when every edge of
+the table passes, induction on the rank shows that every edge holds in the group
+(`TauCeti.RankedCosetTable.smul_point`). The ranks replace the order of the deductions of a
+replay: no state is carried from one edge to the next.
 
 The generators `g : Fin m → G` are an arbitrary family, so inverses of generators can be listed as
 letters of their own; the relators then include the two-letter words `[t', t]` with
@@ -52,8 +54,9 @@ letters of their own; the relators then include the two-letter words `[t', t]` w
 
 * `TauCeti.RankedCosetTable.smul_point`: if every edge passes the check, the table describes the
   action of the generators on the points it names.
-* `TauCeti.RankedCosetTable.index_le` and `TauCeti.RankedCosetTable.finiteIndex`: such a table
-  on `k` points for a subgroup `H` shows `H.index ≤ k`.
+* `TauCeti.RankedCosetTable.index_le` and `TauCeti.RankedCosetTable.finiteIndex`: a nonempty
+  such table on `k` points for a subgroup `H` shows `H.index ≤ k`, and in particular that `H` has
+  finite index.
 
 ## References
 
@@ -278,16 +281,17 @@ private theorem smul_point_mk {H : Subgroup G} {rels stab : List (List (Fin m))}
     (fun r hr ↦ by simpa [MulAction.Quotient.smul_mk, QuotientGroup.eq] using hstab r hr) hT t j
 
 /-- **A ranked coset table bounds the index.** If the generators `g` generate `G`, the relators
-`rels` hold for them, the words `stab` lie in the subgroup `H` and every edge of a ranked coset
-table on `k` points passes the check, then `H` has index at most `k`. -/
+`rels` hold for them, the words `stab` lie in the subgroup `H` and every edge of a nonempty ranked
+coset table on `k` points passes the check, then `H` has index at most `k`. -/
 theorem index_le [NeZero k] {H : Subgroup G} {rels stab : List (List (Fin m))}
     (hg : Subgroup.closure (Set.range g) = ⊤) (hrels : ∀ r ∈ rels, (r.map g).prod = 1)
     (hstab : ∀ r ∈ stab, (r.map g).prod ∈ H) (hT : ∀ t j, T.checkEdge rels stab t j = true) :
     H.index ≤ k :=
   CosetTable.index_le_of_edges hg (smul_point_mk hrels hstab hT)
 
-/-- A subgroup admitting a ranked coset table all of whose edges pass the check has finite
-index. -/
+/-- A subgroup `H` has finite index if it admits a nonempty ranked coset table all of whose edges
+pass the check, for generators `g` that generate `G`, relators `rels` that hold for them and words
+`stab` that lie in `H`. -/
 theorem finiteIndex [NeZero k] {H : Subgroup G} {rels stab : List (List (Fin m))}
     (hg : Subgroup.closure (Set.range g) = ⊤) (hrels : ∀ r ∈ rels, (r.map g).prod = 1)
     (hstab : ∀ r ∈ stab, (r.map g).prod ∈ H) (hT : ∀ t j, T.checkEdge rels stab t j = true) :
