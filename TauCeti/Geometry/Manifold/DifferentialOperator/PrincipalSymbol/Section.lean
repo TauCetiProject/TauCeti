@@ -127,6 +127,16 @@ def sectionCommutatorSymbol (hx : I.IsInteriorPoint x) {m : ℕ} :
   map_add' P₁ P₂ := by ext; simp
   map_smul' c P := by ext; simp
 
+/-- The commutator symbol at `(ξ₁, …, ξₘ)` is the fibre map at `x` of the iterated commutator with
+the lifts of the covectors `ξᵢ`. -/
+theorem sectionCommutatorSymbol_apply (hx : I.IsInteriorPoint x) {m : ℕ}
+    (P : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ m)
+    (ξ : Fin m → TangentSpace I x →L[ℝ] ℝ) :
+    sectionCommutatorSymbol I hx P ξ =
+      smoothSectionFiberMap x (commutatorSymbol ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ m P
+        fun i ↦ covectorLift I hx (ξ i)) :=
+  (rfl)
+
 /-! ### The principal symbol -/
 
 variable (I) in
@@ -209,8 +219,7 @@ theorem sectionCommutatorSymbol_mvfderiv (hx : I.IsInteriorPoint x) {m : ℕ}
   have h := apply_eq_zero_of_mem_smoothVanishingIdeal_smul_top
     (commutatorSymbol_covectorLift_sub_mem_smul_top hx P f s)
   rw [ContMDiffSection.coe_sub, Pi.sub_apply, sub_eq_zero] at h
-  rw [← h]
-  exact smoothSectionFiberMap_apply x _ s
+  rwa [sectionCommutatorSymbol_apply, smoothSectionFiberMap_apply]
 
 /-- A real multilinear map on `T_x*M` with values in `Hom(V_x, W_x)` is the commutator symbol of
 `P` at `x` as soon as it sends the differentials at `x` of smooth functions `f₁, …, fₘ` and the
@@ -385,10 +394,12 @@ theorem sectionPrincipalSymbol_comp (hx : I.IsInteriorPoint x) {m k : ℕ}
   rw [ContMDiffSection.evalLinearMap_apply, LinearMap.comp_apply, hQ,
     sectionPrincipalSymbol_mvfderiv, sectionPrincipalSymbol_mvfderiv,
     smulCommutator_pow_comp_of_mem P.2 Q.2]
-  simp only [t, ← Nat.cast_smul_eq_nsmul ℝ]
-  simp [smul_smul, Nat.cast_add_choose]
-  congr 1
-  field_simp
+  have hc : ((m + k).factorial : ℝ)⁻¹ * ((m + k).choose m : ℕ) =
+      (m.factorial : ℝ)⁻¹ * (k.factorial : ℝ)⁻¹ := by
+    rw [Nat.cast_add_choose]
+    field_simp
+  simp only [t, ← Nat.cast_smul_eq_nsmul ℝ, LinearMap.smul_apply, LinearMap.comp_apply, map_smul,
+    ContMDiffSection.coe_smul, Pi.smul_apply, smul_smul, hc]
 
 end FiniteRank
 

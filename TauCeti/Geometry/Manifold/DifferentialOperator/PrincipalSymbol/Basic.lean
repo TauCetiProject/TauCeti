@@ -196,6 +196,16 @@ def smoothCommutatorSymbol (hx : I.IsInteriorPoint x) {m : ℕ} :
   map_add' D₁ D₂ := by ext; simp
   map_smul' c D := by ext; simp
 
+/-- The commutator symbol at `(ξ₁, …, ξₘ)` is the value at `x` of the iterated commutator with the
+lifts of the covectors `ξᵢ`, applied to `1`. -/
+theorem smoothCommutatorSymbol_apply (hx : I.IsInteriorPoint x) {m : ℕ}
+    (D : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m)
+    (ξ : Fin m → TangentSpace I x →L[ℝ] ℝ) :
+    smoothCommutatorSymbol I hx D ξ =
+      commutatorSymbol ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m D
+        (fun i ↦ covectorLift I hx (ξ i)) 1 x :=
+  (rfl)
+
 /-- The commutator symbol at `x`, evaluated on the differentials at `x` of smooth functions
 `f₁, …, fₘ`, is the value at `x` of the iterated commutator `[⋯[D, f₁], …, fₘ] 1`. -/
 theorem smoothCommutatorSymbol_mvfderiv (hx : I.IsInteriorPoint x) {m : ℕ}
@@ -206,7 +216,7 @@ theorem smoothCommutatorSymbol_mvfderiv (hx : I.IsInteriorPoint x) {m : ℕ}
   have h := commutatorSymbol_covectorLift_sub_mem_smul_top hx D f 1
   rw [smul_eq_mul, Ideal.mul_top, mem_smoothVanishingIdeal_iff, ContMDiffMap.coe_sub,
     Pi.sub_apply, sub_eq_zero] at h
-  exact h
+  rwa [smoothCommutatorSymbol_apply]
 
 /-- The commutator symbol is symmetric. -/
 theorem smoothCommutatorSymbol_comp_perm (hx : I.IsInteriorPoint x) {m : ℕ}
