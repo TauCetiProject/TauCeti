@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Fourier.Torus.Kernel
 import Mathlib.Algebra.Module.ZLattice.Basic
+import TauCeti.Algebra.Module.ZLattice.ZSpanEquiv
 import TauCeti.MeasureTheory.Measure.Haar.UnitAddTorus
 import TauCeti.Topology.Instances.AddCircle.UnitAddTorus
 
@@ -227,21 +228,19 @@ theorem lintegral_enorm_periodize_le {f : (d → ℝ) → ℂ} (hf : AEMeasurabl
   have : VAddInvariantMeasure L (d → ℝ) volume :=
     inferInstanceAs (VAddInvariantMeasure L.toAddSubgroup (d → ℝ) volume)
   -- The lattice vectors are the integer vectors.
-  set e : (d → ℤ) ≃ L := ((b.restrictScalars ℤ).equivFun.symm).toEquiv
-  have he (n : d → ℤ) : ((e n : L) : d → ℝ) = fun i ↦ (n i : ℝ) := by
+  have he (n : d → ℤ) : ((b.zspanEquiv n : L) : d → ℝ) = fun i ↦ (n i : ℝ) := by
     classical
     ext i
-    simp [e, b, Module.Basis.equivFun_symm_apply, Pi.basisFun_apply, Pi.single_apply]
+    simp [b, Pi.single_apply]
   -- The unit cube `(0, 1]^d` and the fundamental domain `[0, 1)^d` agree up to a null set.
   have hcube : {x : d → ℝ | ∀ i, x i ∈ Ioc ((0 : d → ℝ) i) ((0 : d → ℝ) i + 1)} =ᵐ[volume]
       ZSpan.fundamentalDomain b := by
-    have h1 := (Measure.univ_pi_Ioc_ae_eq_Icc (μ := fun _ : d ↦ (volume : Measure ℝ))
-      (f := 0) (g := 1)).trans (Measure.univ_pi_Ico_ae_eq_Icc (f := 0) (g := 1)).symm
-    have h2 : ZSpan.fundamentalDomain b = univ.pi fun _ : d ↦ Ico (0 : ℝ) 1 := by
+    have h : ZSpan.fundamentalDomain b =
+        univ.pi fun i ↦ Ico ((0 : d → ℝ) i) ((0 : d → ℝ) i + 1) := by
       ext x
       simp [ZSpan.mem_fundamentalDomain, b]
-    rw [h2]
-    simpa [Set.pi, volume_pi] using h1
+    rw [h]
+    exact TauCeti.UnitAddTorus.setOf_mem_Ioc_ae_eq_pi_Ico 0
   -- The integral over the torus is the integral over the unit cube.
   have hlift : ∫⁻ z, ‖periodize f z‖ₑ =
       ∫⁻ x in {x : d → ℝ | ∀ i, x i ∈ Ioc ((0 : d → ℝ) i) ((0 : d → ℝ) i + 1)},
@@ -261,9 +260,9 @@ theorem lintegral_enorm_periodize_le {f : (d → ℝ) → ℂ} (hf : AEMeasurabl
         lintegral_tsum hmeas
     _ = ∫⁻ x, ‖f x‖ₑ := by
         -- The translates of the fundamental domain by the lattice tile `d → ℝ`.
-        rw [hD.lintegral_eq_tsum'' (fun x ↦ ‖f x‖ₑ), ← e.tsum_eq]
+        rw [hD.lintegral_eq_tsum'' (fun x ↦ ‖f x‖ₑ), ← b.zspanEquiv.toEquiv.tsum_eq]
         congr 1 with ℓ
-        simp only [Submodule.vadd_def, vadd_eq_add, he, add_comm]
+        simp only [LinearEquiv.coe_toEquiv, Submodule.vadd_def, vadd_eq_add, he, add_comm]
 
 /-! ### Tensor products -/
 
