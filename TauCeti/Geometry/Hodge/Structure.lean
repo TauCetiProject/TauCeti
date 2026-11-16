@@ -102,9 +102,9 @@ theorem mem_conjF_iff (hs : HodgeStructureOn W ω n) (p : ℤ) (x : W) :
 
 /-- Conjugating a filtration step twice recovers that step. -/
 @[simp]
-theorem conjF_conjF (hs : HodgeStructureOn W ω n) (p : ℤ) :
+theorem map_conjF (hs : HodgeStructureOn W ω n) (p : ℤ) :
     (hs.conjF p).map ω.toEquiv.toLinearMap = hs.F p :=
-  ω.conjFiltration_conjFiltration hs.F p
+  ω.map_conjFiltration hs.F p
 
 /-- Opposedness expressed using `conjF`. -/
 theorem isCompl_F_conjF (hs : HodgeStructureOn W ω n) (p : ℤ) :
@@ -122,7 +122,7 @@ theorem F_bot (hs : HodgeStructureOn W ω n) : ∃ p, hs.F p = ⊥ := by
   calc
     hs.F (n + 1 - q) =
         (hs.conjF (n + 1 - q)).map ω.toEquiv.toLinearMap :=
-      (hs.conjF_conjF (n + 1 - q)).symm
+      (hs.map_conjF (n + 1 - q)).symm
     _ = ⊥ := by rw [hconj, Submodule.map_bot]
 
 /-- At every index below a top step, the decreasing filtration is also the whole space. -/
@@ -317,7 +317,7 @@ theorem IsEffective.F_eq_bot {hs : HodgeStructureOn W ω n} (h : hs.IsEffective)
     simpa only [h, sub_zero] using hs.isCompl_F_conjF 0
   calc
     hs.F (n + 1) = (hs.conjF (n + 1)).map ω.toEquiv.toLinearMap :=
-      (hs.conjF_conjF (n + 1)).symm
+      (hs.map_conjF (n + 1)).symm
     _ = ⊥ := by rw [hconj, Submodule.map_bot]
 
 /-- Effectivity is equivalently the condition that the Hodge filtration vanishes immediately

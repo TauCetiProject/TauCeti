@@ -160,7 +160,7 @@ theorem isDemushkin_marked_of_q_two_odd (hG : IsDemushkin 2 G) (hodd : Odd (demu
         ∀ i : ℕ, i ≠ 0 → i ≠ 2 → i < demushkinRank hG →
           demushkinCharacter hG (e.symm (presentedProPGen 2 (demushkinRank hG) _ i)) = 1 := by
   obtain ⟨e⟩ :=
-    hG.nonempty_continuousMulEquiv_presentedProP_demushkinWordTwoOdd_of_range_eq hodd hn hf hrange
+    hG.nonempty_continuousMulEquiv_presentedProP_demushkinWordTwoOdd_of_range_eq hodd hf hrange
   obtain ⟨hfirst, hthird, htrivial⟩ :=
     demushkinCharacter_apply_equiv_symm_of_equiv_demushkinWordTwoOdd hG (by omega) hodd (by omega) e
   exact ⟨e, hfirst, hthird, fun i hi hi' _ ↦ htrivial i hi hi'⟩

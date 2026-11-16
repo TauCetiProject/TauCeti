@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.MvPowerSeries.NonZeroDivisors
-public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Rueckert
+public import Mathlib.RingTheory.MvPowerSeries.Restricted
+public import Mathlib.RingTheory.UniqueFactorizationDomain.Defs
+import TauCeti.RingTheory.MvPowerSeries.NonZeroDivisors
+import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Rueckert
 
 /-!
 # Tate algebras are unique factorisation domains

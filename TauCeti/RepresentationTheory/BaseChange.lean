@@ -5,10 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RepresentationTheory.Basic
-public import Mathlib.RepresentationTheory.Character
-public import Mathlib.RepresentationTheory.Intertwining
-public import Mathlib.Data.Finsupp.SMul
 public import Mathlib.RingTheory.Flat.Basic
 public import TauCeti.LinearAlgebra.TensorProduct.Basis
 public import TauCeti.LinearAlgebra.TensorProduct.Hom
@@ -16,10 +12,10 @@ public import TauCeti.RepresentationTheory.CharacterTable.ClassFunction
 public import TauCeti.RepresentationTheory.PermutationModule
 public import TauCeti.RepresentationTheory.QuotSMulTop
 public import TauCeti.RepresentationTheory.RestrictScalars
--- Non-public: flat base change of kernels (`LinearMap.tensorKerEquiv`) and of finite products
--- (`TensorProduct.piRight`) are used only to construct the invariant and intertwiner comparisons.
+-- Non-public: flat base change of kernels (`LinearMap.tensorKerEquiv`) and, through this import,
+-- of finite products (`TensorProduct.piRight`) are used only to construct the invariant and
+-- intertwiner comparisons.
 import Mathlib.RingTheory.Flat.Equalizer
-import Mathlib.LinearAlgebra.TensorProduct.Pi
 -- Non-public: bijectivity of the base-changed quotient map (`QuotSMulTop.baseChange_mkQ_bijective`)
 -- is used only to construct `Representation.baseChangeQuotSMulTopEquiv`.
 import TauCeti.LinearAlgebra.TensorProduct.Quotient
@@ -285,7 +281,6 @@ theorem exists_common_fixed_vector_of_baseChange
     (ρ : Representation R G V) {w : A ⊗[R] V} (hw : w ≠ 0)
     (hfixed : ∀ g, baseChange A ρ g w = w) :
     ∃ v : V, v ≠ 0 ∧ ∀ g, ρ g v = v := by
-  classical
   let b := Module.Free.chooseBasis R A
   let e := TensorProduct.equivFinsuppOfBasisLeft b (N := V)
   have he : e w ≠ 0 := fun h ↦ hw (e.map_eq_zero_iff.mp h)
@@ -302,8 +297,6 @@ end
 end Representation
 
 section Character
-
-open TensorProduct
 
 variable {K : Type*} {L : Type*} [Field K] [Field L] [Algebra K L]
 variable {V : Type*} [AddCommGroup V] [Module K V]
@@ -671,8 +664,6 @@ end Intertwiner
 
 section IntertwinerDimension
 
-open TensorProduct
-
 variable {K L G V W : Type*} [Field K] [CommRing L] [Nontrivial L] [Algebra K L]
   [Monoid G] [Finite G] [AddCommGroup V] [Module K V] [FiniteDimensional K V]
   [AddCommGroup W] [Module K W]
@@ -695,8 +686,6 @@ end IntertwinerDimension
 namespace TauCeti
 
 section PermutationRepresentation
-
-open TensorProduct
 
 section PermutationModule
 

@@ -82,6 +82,11 @@ theorem geodesicCurvature_def (γ : ℝ → M) (n : ∀ r, TangentSpace I (γ r)
       ⟪acceleration (leviCivitaConnection I M) γ t, n t⟫_ℝ / ‖curveVelocity I γ t‖ ^ 2 :=
   (rfl)
 
+/-- Geodesic curvature depends only on the normal at the current parameter. -/
+theorem geodesicCurvature_congr_normal {n₁ n₂ : ∀ r, TangentSpace I (γ r)}
+    (hn : n₁ t = n₂ t) : geodesicCurvature γ n₁ t = geodesicCurvature γ n₂ t := by
+  rw [geodesicCurvature_def, geodesicCurvature_def, hn]
+
 /-- Reversing the normal field reverses the sign of the geodesic curvature. -/
 @[to_fun (attr := simp) geodesicCurvature_fun_neg]
 theorem geodesicCurvature_neg (γ : ℝ → M) (n : ∀ r, TangentSpace I (γ r)) (t : ℝ) :

@@ -82,11 +82,11 @@ jobs:
     # Re-pin together with .github/actions/checkout-merge-policy
     # (scripts/test_workflow_pins.py checks they agree). The called workflow checks out its own
     # commit, supplied explicitly as review_ref.
-    uses: TauCetiProject/TauCetiReview/.github/workflows/review.yml@6b07b400ba129a0f2771d2d315a410f72d462244
+    uses: TauCetiProject/TauCetiReview/.github/workflows/review.yml@ddb128180df46b7cc8e0a53188871578f2510498
     with:
-      review_ref: 6b07b400ba129a0f2771d2d315a410f72d462244
+      review_ref: ddb128180df46b7cc8e0a53188871578f2510498
       tools_repository: TauCetiProject/TauCetiTools
-      tools_ref: 4d2579da7cdb5679ab523d281f61c73ffb502f75
+      tools_ref: cccfd6b73106bb49e5e59383e5c718279daefece
       pr: ${{ needs.resolve.outputs.pr }}
       trigger: ${{ github.event_name }}
       # The queue service owns admission; this workflow only publishes review evidence.
