@@ -181,16 +181,12 @@ noncomputable def iso {X Y₁ Y₂ : CAff.{u}} {φ₁ : X ⟶ Y₁} {φ₂ : X �
     Y₁ ≅ Y₂ where
   hom := (h₁.existsUnique_factorization φ₂ h₂.mapsTo_spaComap).choose
   inv := (h₂.existsUnique_factorization φ₁ h₁.mapsTo_spaComap).choose
-  hom_inv_id := by
-    have h12 := (h₁.existsUnique_factorization φ₂ h₂.mapsTo_spaComap).choose_spec.1
-    have h21 := (h₂.existsUnique_factorization φ₁ h₁.mapsTo_spaComap).choose_spec.1
-    refine (h₁.existsUnique_factorization φ₁ h₁.mapsTo_spaComap).unique ?_ (Category.comp_id φ₁)
-    rw [← Category.assoc, h12, h21]
-  inv_hom_id := by
-    have h12 := (h₁.existsUnique_factorization φ₂ h₂.mapsTo_spaComap).choose_spec.1
-    have h21 := (h₂.existsUnique_factorization φ₁ h₁.mapsTo_spaComap).choose_spec.1
-    refine (h₂.existsUnique_factorization φ₂ h₂.mapsTo_spaComap).unique ?_ (Category.comp_id φ₂)
-    rw [← Category.assoc, h21, h12]
+  hom_inv_id := (h₁.existsUnique_factorization φ₁ h₁.mapsTo_spaComap).unique (by
+    rw [← Category.assoc, (h₁.existsUnique_factorization φ₂ h₂.mapsTo_spaComap).choose_spec.1,
+      (h₂.existsUnique_factorization φ₁ h₁.mapsTo_spaComap).choose_spec.1]) (Category.comp_id φ₁)
+  inv_hom_id := (h₂.existsUnique_factorization φ₂ h₂.mapsTo_spaComap).unique (by
+    rw [← Category.assoc, (h₂.existsUnique_factorization φ₁ h₁.mapsTo_spaComap).choose_spec.1,
+      (h₁.existsUnique_factorization φ₂ h₂.mapsTo_spaComap).choose_spec.1]) (Category.comp_id φ₂)
 
 @[reassoc (attr := simp)]
 theorem comp_iso_hom {X Y₁ Y₂ : CAff.{u}} {φ₁ : X ⟶ Y₁} {φ₂ : X ⟶ Y₂}
@@ -219,11 +215,10 @@ theorem rationalLocalizationHom_comp_isoCanonical_hom {X Y : CAff.{u}} {φ : X �
     X.rationalLocalizationHom T s hφ.isOpen_span ≫ hφ.isoCanonical.hom = φ :=
   comp_iso_hom _ hφ
 
-/-- Any rational localization `φ : X ⟶ Y` for `(T, s)` induces an open embedding
-`Spa(Y) → Spa(X)`. -/
-theorem isOpenEmbedding_spaComap {X Y : CAff.{u}} {φ : X ⟶ Y} {T : Finset X.ring} {s : X.ring}
-    (hφ : IsRationalLocalization φ T s) :
-    IsOpenEmbedding φ.spaComap := by
+private theorem isOpenEmbedding_and_range_spaComap {X Y : CAff.{u}} {φ : X ⟶ Y}
+    {T : Finset X.ring} {s : X.ring} (hφ : IsRationalLocalization φ T s) :
+    IsOpenEmbedding φ.spaComap ∧
+      Set.range φ.spaComap = Subtype.val ⁻¹' rationalSubset X.pair.plus T s := by
   let P := X.pairOfDefinition
   let hden := hasDenominatorPower_of_isOpen_span P T s (Localization.Away s) hφ.isOpen_span
   let _ := locUniformSpace P T s (Localization.Away s) hden
@@ -234,41 +229,33 @@ theorem isOpenEmbedding_spaComap {X Y : CAff.{u}} {φ : X ⟶ Y} {T : Finset X.r
       (X.rationalLocalizationHom T s hφ.isOpen_span).spaComap ∘ hφ.isoCanonical.hom.spaComap := by
     rw [← comp_spaComap, rationalLocalizationHom_comp_isoCanonical_hom]
   have hloc : (X.rationalLocalizationHom T s hφ.isOpen_span).spaComap =
-      spaComapLoc P X.pair.plus T s (Localization.Away s) hden := by
-    funext w
-    exact Subtype.ext ((Pair.Hom.spaComap_val _ w).trans (spaComapLoc_val _ _ _ _ _ _ w).symm)
-  have he : IsOpenEmbedding hφ.isoCanonical.hom.spaComap :=
-    (TopCat.homeoOfIso (spa.mapIso hφ.isoCanonical.op)).isOpenEmbedding
-  rw [hcomp, hloc]
-  exact (isOpenEmbedding_spaComapLoc P X.pair.plus X.ringOfDefinition_le_plus T s
-    (Localization.Away s) hden).comp he
+      spaComapLoc P X.pair.plus T s (Localization.Away s) hden :=
+    funext fun w ↦
+      Subtype.ext ((Pair.Hom.spaComap_val _ w).trans (spaComapLoc_val _ _ _ _ _ _ w).symm)
+  let he := TopCat.homeoOfIso (spa.mapIso hφ.isoCanonical.op)
+  have he_surj : Function.Surjective hφ.isoCanonical.hom.spaComap := he.surjective
+  refine ⟨?_, ?_⟩
+  · rw [hcomp, hloc]
+    exact (isOpenEmbedding_spaComapLoc P X.pair.plus X.ringOfDefinition_le_plus T s
+      (Localization.Away s) hden).comp he.isOpenEmbedding
+  · rw [hcomp, Set.range_comp, he_surj.range_eq, Set.image_univ]
+    have hrange := range_spaComapLoc P X.pair.plus X.ringOfDefinition_le_plus T s
+      (Localization.Away s) hden
+    refine (Set.ext fun _ ↦ ?_).trans (hrange.trans (Set.ext fun _ ↦ mem_spaBasicOpen))
+    exact ⟨fun ⟨w, hw⟩ ↦ ⟨w, hloc ▸ hw⟩, fun ⟨w, hw⟩ ↦ ⟨w, hloc.symm ▸ hw⟩⟩
+
+/-- Any rational localization `φ : X ⟶ Y` for `(T, s)` induces an open embedding
+`Spa(Y) → Spa(X)`. -/
+theorem isOpenEmbedding_spaComap {X Y : CAff.{u}} {φ : X ⟶ Y} {T : Finset X.ring} {s : X.ring}
+    (hφ : IsRationalLocalization φ T s) : IsOpenEmbedding φ.spaComap :=
+  hφ.isOpenEmbedding_and_range_spaComap.1
 
 /-- The image of `Spa(Y) → Spa(X)` for any rational localization `φ : X ⟶ Y` at `(T, s)` is the
 rational subset `R(T/s)`. -/
 theorem range_spaComap {X Y : CAff.{u}} {φ : X ⟶ Y} {T : Finset X.ring} {s : X.ring}
     (hφ : IsRationalLocalization φ T s) :
-    Set.range φ.spaComap = Subtype.val ⁻¹' rationalSubset X.pair.plus T s := by
-  let P := X.pairOfDefinition
-  let hden := hasDenominatorPower_of_isOpen_span P T s (Localization.Away s) hφ.isOpen_span
-  let _ := locUniformSpace P T s (Localization.Away s) hden
-  have _ := isUniformAddGroup_locUniformSpace P T s (Localization.Away s) hden
-  have _ := isTopologicalRing_locUniformSpace P T s (Localization.Away s) hden
-  have _ := isHuberRing_completion_locTopology P T s (Localization.Away s) hden
-  have hcomp : φ.spaComap =
-      (X.rationalLocalizationHom T s hφ.isOpen_span).spaComap ∘ hφ.isoCanonical.hom.spaComap := by
-    rw [← comp_spaComap, rationalLocalizationHom_comp_isoCanonical_hom]
-  have hloc : (X.rationalLocalizationHom T s hφ.isOpen_span).spaComap =
-      spaComapLoc P X.pair.plus T s (Localization.Away s) hden := by
-    funext w
-    exact Subtype.ext ((Pair.Hom.spaComap_val _ w).trans (spaComapLoc_val _ _ _ _ _ _ w).symm)
-  have he : Function.Surjective hφ.isoCanonical.hom.spaComap :=
-    (TopCat.homeoOfIso (spa.mapIso hφ.isoCanonical.op)).surjective
-  have hrange : Set.range (X.rationalLocalizationHom T s hφ.isOpen_span).spaComap =
-      spaBasicOpen X.pair.plus T s :=
-    hloc ▸ range_spaComapLoc P X.pair.plus X.ringOfDefinition_le_plus T s (Localization.Away s) hden
-  rw [hcomp, Set.range_comp, he.range_eq, Set.image_univ, hrange]
-  ext v
-  exact mem_spaBasicOpen
+    Set.range φ.spaComap = Subtype.val ⁻¹' rationalSubset X.pair.plus T s :=
+  hφ.isOpenEmbedding_and_range_spaComap.2
 
 end IsRationalLocalization
 
@@ -277,9 +264,7 @@ theorem isRationalLocalization_id_one (X : CAff.{u}) :
     IsRationalLocalization (𝟙 X) {1} 1 where
   isOpen_span := by simp
   mapsTo_spaComap w := by
-    change ((Pair.Hom.id X.pair).spaComap w).1 ∈ rationalSubset X.pair.plus {1} 1
-    rw [Pair.Hom.spaComap_id, rationalSubset_singleton_one]
-    exact w.2
+    rw [id_spaComap, id_eq, rationalSubset_singleton_one]; exact w.2
   existsUnique_factorization {Z} ψ _ := ⟨ψ, Category.id_comp ψ, fun χ hχ ↦ by simpa using hχ⟩
 
 /-- For an open numerator ideal `(T)`, the identity `𝟙 X` is a rational localization at `(T, 0)`
@@ -287,14 +272,13 @@ if and only if `X.ring` is trivial. -/
 theorem isRationalLocalization_id_zero_iff (X : CAff.{u}) (T : Finset X.ring)
     (hT : IsOpen (Ideal.span (T : Set X.ring) : Set X.ring)) :
     IsRationalLocalization (𝟙 X) T 0 ↔ Subsingleton X.ring := by
-  refine ⟨fun h ↦ (isEmpty_spa_iff X).mp ⟨fun w ↦ ?_⟩, fun hsub ↦ ?_⟩
-  · have hw := h.mapsTo_spaComap w
-    change ((Pair.Hom.id X.pair).spaComap w).1 ∈ rationalSubset X.pair.plus T 0 at hw
-    rw [Pair.Hom.spaComap_id] at hw
-    exact ((mem_rationalSubset_iff X.pair.plus T 0 w.1).mp hw).2.2 (w.1.toValuativeRel.vle_refl 0)
-  · have hemp : IsEmpty (ValuationSpectrum.spa X.pair.plus) := (isEmpty_spa_iff X).mpr hsub
-    exact ⟨hT, fun w ↦ hemp.elim w, fun {Z} ψ _ ↦
-      ⟨ψ, Category.id_comp ψ, fun χ hχ ↦ by simpa using hχ⟩⟩
+  refine ⟨fun h ↦ (isEmpty_spa_iff X).mp ⟨fun w ↦ ?_⟩, fun hsub ↦
+    ⟨hT, fun w ↦ ((isEmpty_spa_iff X).mpr hsub).elim w, fun {Z} ψ _ ↦
+      ⟨ψ, Category.id_comp ψ, fun χ hχ ↦ by simpa using hχ⟩⟩⟩
+  have hw := h.mapsTo_spaComap w
+  change ((Pair.Hom.id X.pair).spaComap w).1 ∈ rationalSubset X.pair.plus T 0 at hw
+  rw [Pair.Hom.spaComap_id] at hw
+  exact ((mem_rationalSubset_iff X.pair.plus T 0 w.1).mp hw).2.2 (w.1.toValuativeRel.vle_refl 0)
 
 /-! ### Rational coverings, the rational coverage, and `ratTopology` -/
 
@@ -312,13 +296,12 @@ structure IsRationalCovering (X : CAff.{u}) {ι : Type*} [Finite ι]
 /-- An empty family is a rational covering of `X` if and only if `X.ring` is trivial. -/
 theorem isRationalCovering_empty_iff (X : CAff.{u}) {ι : Type*} [IsEmpty ι]
     (T : ι → Finset X.ring) (s : ι → X.ring) :
-    IsRationalCovering X T s ↔ Subsingleton X.ring := by
-  refine ⟨fun h ↦ (isEmpty_spa_iff X).mp ⟨fun w ↦ ?_⟩, fun hsub ↦ ?_⟩
-  · have hw : w ∈ (Set.univ : Set ↥(ValuationSpectrum.spa X.pair.plus)) := Set.mem_univ w
-    rw [← h.iUnion_eq_univ, Set.iUnion_of_empty] at hw
-    exact hw
-  · have hemp : IsEmpty ↥(ValuationSpectrum.spa X.pair.plus) := (isEmpty_spa_iff X).mpr hsub
-    exact ⟨fun i ↦ IsEmpty.elim ‹_› i, Set.eq_univ_of_forall fun w ↦ hemp.elim w⟩
+    IsRationalCovering X T s ↔ Subsingleton X.ring :=
+  ⟨fun h ↦ (isEmpty_spa_iff X).mp ⟨fun w ↦ by
+      have hw : w ∈ (Set.univ : Set ↥(ValuationSpectrum.spa X.pair.plus)) := Set.mem_univ w
+      rwa [← h.iUnion_eq_univ, Set.iUnion_of_empty] at hw⟩,
+    fun hsub ↦ ⟨fun i ↦ IsEmpty.elim ‹_› i,
+      Set.eq_univ_of_forall fun w ↦ ((isEmpty_spa_iff X).mpr hsub).elim w⟩⟩
 
 open scoped Classical in
 /-- Along an adic morphism `ψ : X ⟶ Y` in `CAff`, a rational covering `(T i, s i)` of `X` pulls
@@ -357,22 +340,16 @@ def rationalCoverage : Coverage (CAff.{u}ᵒᵖ) where
       (s : ι → (unop U).ring) (hcov : IsRationalCovering (unop U) T s),
       R = (unop U).rationalCoverPresieve T s hcov.isOpen_span}
   pullback := by
-    rintro U V f R ⟨ι, hfin, T, s, hcov, rfl⟩
-    let X₀ : CAff.{u} := unop U
-    let Y₀ : CAff.{u} := unop V
-    let ψ : X₀ ⟶ Y₀ := f.unop
+    rintro U V f R ⟨ι, _, T, s, hcov, rfl⟩
+    let X₀ := unop U; let Y₀ := unop V; let ψ : X₀ ⟶ Y₀ := f.unop
     have hpoint : ∀ w : ↥(ValuationSpectrum.spa Y₀.pair.plus),
         ∃ (i : ι) (T' : Finset Y₀.ring) (s' : Y₀.ring),
           IsOpen (Ideal.span (T' : Set Y₀.ring) : Set Y₀.ring) ∧
           w ∈ Subtype.val ⁻¹' rationalSubset Y₀.pair.plus T' s' ∧
           (Subtype.val ⁻¹' rationalSubset Y₀.pair.plus T' s' :
             Set ↥(ValuationSpectrum.spa Y₀.pair.plus)) ⊆
-            ψ.spaComap ⁻¹' (Subtype.val ⁻¹' rationalSubset X₀.pair.plus (T i) (s i)) := by
-      intro w
-      have hw : ψ.spaComap w ∈ (Set.univ : Set ↥(ValuationSpectrum.spa X₀.pair.plus)) :=
-        Set.mem_univ _
-      rw [← hcov.iUnion_eq_univ, Set.mem_iUnion] at hw
-      obtain ⟨i, hi⟩ := hw
+            ψ.spaComap ⁻¹' (Subtype.val ⁻¹' rationalSubset X₀.pair.plus (T i) (s i)) := fun w ↦ by
+      obtain ⟨i, hi⟩ := Set.mem_iUnion.mp (hcov.iUnion_eq_univ ▸ Set.mem_univ (ψ.spaComap w))
       have hopen : IsOpen (ψ.spaComap ⁻¹'
           (Subtype.val ⁻¹' rationalSubset X₀.pair.plus (T i) (s i))) :=
         (isOpen_val_preimage_rationalSubset X₀.pair.plus (T i) (s i)).preimage ψ.continuous_spaComap
@@ -392,26 +369,16 @@ def rationalCoverage : Coverage (CAff.{u}ᵒᵖ) where
           obtain ⟨y, hy, hwy⟩ := Set.mem_iUnion₂.mp (hF (Set.mem_univ w))
           exact Set.mem_iUnion.mpr ⟨⟨y, hy⟩, hwy⟩ }
     refine ⟨Y₀.rationalCoverPresieve (fun k : ↥F ↦ T' k.1) (fun k : ↥F ↦ s' k.1)
-      hcovY.isOpen_span, ⟨↥F, inferInstance, _, _, hcovY, rfl⟩, ?_⟩
-    intro Z g hg
-    obtain ⟨k⟩ := hg
+      hcovY.isOpen_span, ⟨↥F, inferInstance, _, _, hcovY, rfl⟩, fun Z g ⟨k⟩ ↦ ?_⟩
     let φX := X₀.rationalLocalizationHom (T (idx k.1)) (s (idx k.1)) (hcov.isOpen_span (idx k.1))
     let φY := Y₀.rationalLocalizationHom (T' k.1) (s' k.1) (hcovY.isOpen_span k)
-    have hXloc := isRationalLocalization_rationalLocalizationHom X₀
-      (T (idx k.1)) (s (idx k.1)) (hcov.isOpen_span (idx k.1))
-    have hYloc := isRationalLocalization_rationalLocalizationHom Y₀
-      (T' k.1) (s' k.1) (hcovY.isOpen_span k)
-    have hmaps : ∀ u : ValuationSpectrum.spa
-        (Y₀.rationalLocalization (T' k.1) (s' k.1) (hcovY.isOpen_span k)).pair.plus,
-        ((ψ ≫ φY).spaComap u).1 ∈ rationalSubset X₀.pair.plus (T (idx k.1)) (s (idx k.1)) := by
-      intro u
+    obtain ⟨χ, hχ, -⟩ := (isRationalLocalization_rationalLocalizationHom X₀ (T (idx k.1))
+      (s (idx k.1)) (hcov.isOpen_span (idx k.1))).existsUnique_factorization (ψ ≫ φY) fun u ↦ by
       rw [comp_spaComap]
-      exact hsub k.1 (hYloc.mapsTo_spaComap u)
-    obtain ⟨χ, hχ, -⟩ := hXloc.existsUnique_factorization (ψ ≫ φY) hmaps
-    refine ⟨op (X₀.rationalLocalization (T (idx k.1)) (s (idx k.1)) (hcov.isOpen_span (idx k.1))),
-      χ.op, φX.op, Presieve.ofArrows.mk (idx k.1), ?_⟩
-    rw [← op_comp, hχ, op_comp]
-    rfl
+      exact hsub k.1
+        ((isRationalLocalization_rationalLocalizationHom Y₀ _ _
+          (hcovY.isOpen_span k)).mapsTo_spaComap u)
+    exact ⟨_, χ.op, φX.op, Presieve.ofArrows.mk (idx k.1), by rw [← op_comp, hχ, op_comp]; rfl⟩
 
 /-- Membership in `CAff.rationalCoverage (op X)`: a presieve belongs to the rational coverage on
 `op X` if and only if it is `X.rationalCoverPresieve T s` for a finite rational covering `(T, s)`.
@@ -434,20 +401,11 @@ private theorem exists_mem_range_spaComap_of_saturate {U : CAff.{u}ᵒᵖ} {S : 
   induction hS with
   | of U R hR =>
     obtain ⟨ι, _, T, s, hcov, rfl⟩ := hR
-    have hv : v ∈ (Set.univ : Set ↥(ValuationSpectrum.spa (unop U).pair.plus)) := Set.mem_univ v
-    rw [← hcov.iUnion_eq_univ, Set.mem_iUnion] at hv
-    obtain ⟨i, hi⟩ := hv
+    obtain ⟨i, hi⟩ := Set.mem_iUnion.mp (hcov.iUnion_eq_univ ▸ Set.mem_univ v)
     let φ := (unop U).rationalLocalizationHom (T i) (s i) (hcov.isOpen_span i)
-    have hloc := isRationalLocalization_rationalLocalizationHom (unop U)
-      (T i) (s i) (hcov.isOpen_span i)
-    refine ⟨(unop U).rationalLocalization (T i) (s i) (hcov.isOpen_span i), φ,
-      ⟨_, 𝟙 _, φ.op, Presieve.ofArrows.mk i, Category.id_comp _⟩, ?_⟩
-    rwa [hloc.range_spaComap]
-  | top U =>
-    refine ⟨unop U, 𝟙 (unop U), trivial, v, ?_⟩
-    change (Pair.Hom.id (unop U).pair).spaComap v = v
-    rw [Pair.Hom.spaComap_id]
-    rfl
+    refine ⟨_, φ, ⟨_, 𝟙 _, φ.op, Presieve.ofArrows.mk i, Category.id_comp _⟩, ?_⟩
+    rwa [(isRationalLocalization_rationalLocalizationHom (unop U) _ _ _).range_spaComap]
+  | top U => exact ⟨unop U, 𝟙 _, trivial, v, by rw [id_spaComap]; rfl⟩
   | transitive U R S _ _ ihR ihS =>
     obtain ⟨Y, φ, hφ, w, rfl⟩ := ihR v
     obtain ⟨Z, ψ, hψ, u, rfl⟩ := ihS hφ w
@@ -468,19 +426,15 @@ theorem exists_mem_range_spaComap_of_mem_ratTopology {X : CAff.{u}} {S : Sieve (
 /-- The empty sieve `⊥` covers `op X` in `CAff.ratTopology` if and only if `X.ring` is trivial. -/
 theorem bot_mem_ratTopology_iff (X : CAff.{u}) :
     (⊥ : Sieve (op X)) ∈ ratTopology (op X) ↔ Subsingleton X.ring := by
-  refine ⟨fun hbot ↦ (isEmpty_spa_iff X).mp ⟨fun v ↦ ?_⟩, fun hsub ↦ ?_⟩
-  · obtain ⟨_, _, hmem, -⟩ := exists_mem_range_spaComap_of_mem_ratTopology hbot v
-    exact hmem
-  · have hcov : IsRationalCovering X (fun _ : PEmpty.{u + 1} ↦ ∅) (fun _ ↦ 0) :=
-      (isRationalCovering_empty_iff X _ _).mpr hsub
-    have hgen : Sieve.generate (X.rationalCoverPresieve
-        (fun _ : PEmpty.{u + 1} ↦ ∅) (fun _ ↦ 0) hcov.isOpen_span) = ⊥ := by
-      ext Y f
-      simp only [Sieve.bot_apply, iff_false]
-      rintro ⟨_, _, _, ⟨i⟩, -⟩
-      exact PEmpty.elim i
-    rw [← hgen]
-    exact Coverage.Saturate.of (op X) _ ⟨PEmpty.{u + 1}, inferInstance, _, _, hcov, rfl⟩
+  refine ⟨fun hbot ↦ (isEmpty_spa_iff X).mp ⟨fun v ↦ by
+      obtain ⟨_, _, hmem, -⟩ := exists_mem_range_spaComap_of_mem_ratTopology hbot v; exact hmem⟩,
+    fun hsub ↦ ?_⟩
+  have hcov : IsRationalCovering X (fun _ : PEmpty.{u + 1} ↦ ∅) (fun _ ↦ 0) :=
+    (isRationalCovering_empty_iff X _ _).mpr hsub
+  have hgen : Sieve.generate (X.rationalCoverPresieve
+      (fun _ : PEmpty.{u + 1} ↦ ∅) (fun _ ↦ 0) hcov.isOpen_span) = ⊥ :=
+    Sieve.ext fun _ _ ↦ ⟨fun ⟨_, _, _, ⟨i⟩, _⟩ ↦ PEmpty.elim i, False.elim⟩
+  exact hgen ▸ Coverage.Saturate.of (op X) _ ⟨PEmpty.{u + 1}, inferInstance, _, _, hcov, rfl⟩
 
 /-- A `Type*`-valued presheaf on `CAff.{u}ᵒᵖ` is a sheaf for `CAff.ratTopology` if and only if it
 satisfies `Presieve.IsSheafFor` for every rational covering presieve on every `X : CAff.{u}`. -/
@@ -537,31 +491,25 @@ theorem isSheafFor_globalSections_rationalCoverPresieve_iff (Y : CAff.{u}) {ι :
   have hePiece_top (i : ι) (b : Y.ring) :
       ePiece i ((presentationLimitMap (P := P) (le_top : U i ≤ ⊤)).hom.1 (eTop b)) =
         (Y.rationalLocalizationHom (T i) (s i) (hT i)).toRingHom b := by
-    let _ := locUniformSpace P (p i).num (p i).den (Localization.Away (p i).den)
-      (p i).hasDenominatorPower
-    have _ := isUniformAddGroup_locUniformSpace P (p i).num (p i).den
-      (Localization.Away (p i).den) (p i).hasDenominatorPower
-    have _ := isTopologicalRing_locUniformSpace P (p i).num (p i).den
-      (Localization.Away (p i).den) (p i).hasDenominatorPower
+    let _ := locUniformSpace P (p i).num (p i).den _ (p i).hasDenominatorPower
+    have _ := isUniformAddGroup_locUniformSpace P (p i).num (p i).den _ (p i).hasDenominatorPower
+    have _ := isTopologicalRing_locUniformSpace P (p i).num (p i).den _ (p i).hasDenominatorPower
     have hcomp : toPresentationLimit (P := P) Y.pair.plus ⊤ ≫
         presentationLimitMap (P := P) (le_top : U i ≤ ⊤) ≫
         (presentationLimitRationalIso (P := P) Y.pair.plus hAplus (p i) (hT i)).hom =
         (p i).toCompletionLocObjHom := by
       rw [toPresentationLimit_comp_presentationLimitMap_assoc, presentationLimitRationalIso_hom,
         toPresentationLimit_comp_πToPresentation]
-    have hcomp' := congrArg (fun f ↦ f.hom) hcomp
+    have hcomp' := congrArg (·.hom) hcomp
     rw [ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.FullSubcategory.comp_hom,
       Presentation.toCompletionLocObjHom_hom] at hcomp'
     have h1 : eqToHom (CompleteSeparatedTopCommRingCat.of_obj Y.ring).symm ≫
         ((toPresentationLimit (P := P) Y.pair.plus ⊤).hom ≫
           ((presentationLimitMap (P := P) (le_top : U i ≤ ⊤)).hom ≫
             (presentationLimitRationalIso (P := P) Y.pair.plus hAplus (p i) (hT i)).hom.hom)) ≫
-        eqToHom (completionLocObj_obj P (p i).num (p i).den (Localization.Away (p i).den)
-          (p i).hasDenominatorPower) =
-        (⟨toCompletionLoc P (p i).num (p i).den (Localization.Away (p i).den)
-            (p i).hasDenominatorPower,
-          continuous_toCompletionLoc P (p i).num (p i).den (Localization.Away (p i).den)
-            (p i).hasDenominatorPower⟩ :
+        eqToHom (completionLocObj_obj P (p i).num (p i).den _ (p i).hasDenominatorPower) =
+        (⟨toCompletionLoc P (p i).num (p i).den _ (p i).hasDenominatorPower,
+          continuous_toCompletionLoc P (p i).num (p i).den _ (p i).hasDenominatorPower⟩ :
           TopCommRingCat.of Y.ring ⟶
             TopCommRingCat.of (Completion (Localization.Away (p i).den))) := by
       rw [hcomp']
@@ -584,59 +532,65 @@ theorem isSheafFor_globalSections_rationalCoverPresieve_iff (Y : CAff.{u}) {ι :
           (((presentationLimitRationalIso (P := P) Y.pair.plus hAplus q hT').hom).hom.1
             ((presentationLimitMap (P := P) hsub).hom.1 z)) := by
     intro q
-    let _ := locUniformSpace P (p i).num (p i).den (Localization.Away (p i).den)
-      (p i).hasDenominatorPower
-    have _ := isUniformAddGroup_locUniformSpace P (p i).num (p i).den
-      (Localization.Away (p i).den) (p i).hasDenominatorPower
-    have _ := isTopologicalRing_locUniformSpace P (p i).num (p i).den
-      (Localization.Away (p i).den) (p i).hasDenominatorPower
-    let _ := locUniformSpace P q.num q.den (Localization.Away q.den) q.hasDenominatorPower
-    have _ := isUniformAddGroup_locUniformSpace P q.num q.den
-      (Localization.Away q.den) q.hasDenominatorPower
-    have _ := isTopologicalRing_locUniformSpace P q.num q.den
-      (Localization.Away q.den) q.hasDenominatorPower
+    let _ := locUniformSpace P (p i).num (p i).den _ (p i).hasDenominatorPower
+    have _ := isUniformAddGroup_locUniformSpace P (p i).num (p i).den _ (p i).hasDenominatorPower
+    have _ := isTopologicalRing_locUniformSpace P (p i).num (p i).den _ (p i).hasDenominatorPower
+    let _ := locUniformSpace P q.num q.den _ q.hasDenominatorPower
+    have _ := isUniformAddGroup_locUniformSpace P q.num q.den _ q.hasDenominatorPower
+    have _ := isTopologicalRing_locUniformSpace P q.num q.den _ q.hasDenominatorPower
     let g : Completion (Localization.Away (p i).den) →+* Completion (Localization.Away q.den) :=
       r.toRingHom
     have hg : Continuous g := r.continuous_toRingHom
-    have hr_ring : g.comp (toCompletionLoc P (p i).num (p i).den (Localization.Away (p i).den)
-        (p i).hasDenominatorPower) =
-        toCompletionLoc P q.num q.den (Localization.Away q.den) q.hasDenominatorPower := by
-      have h := congrArg Pair.Hom.toRingHom hr
-      rwa [comp_toRingHom] at h
-    have hEq :
-        (presentationLimitRationalIso (P := P) Y.pair.plus hAplus (p i) (hT i)).hom ≫
-          completionLocObjHom P (p i).num (p i).den (Localization.Away (p i).den)
-            (p i).hasDenominatorPower q.num q.den (Localization.Away q.den) q.hasDenominatorPower
-            g hg =
-          presentationLimitMap (P := P) hsub ≫
-            (presentationLimitRationalIso (P := P) Y.pair.plus hAplus q hT').hom := by
+    have hr_ring : g.comp (toCompletionLoc P (p i).num (p i).den _ (p i).hasDenominatorPower) =
+        toCompletionLoc P q.num q.den _ q.hasDenominatorPower := by
+      have h := congrArg Pair.Hom.toRingHom hr; rwa [comp_toRingHom] at h
+    have hEq : (presentationLimitRationalIso (P := P) Y.pair.plus hAplus (p i) (hT i)).hom ≫
+          completionLocObjHom P (p i).num (p i).den _ (p i).hasDenominatorPower
+            q.num q.den _ q.hasDenominatorPower g hg =
+        presentationLimitMap (P := P) hsub ≫
+          (presentationLimitRationalIso (P := P) Y.pair.plus hAplus q hT').hom := by
       refine presentationLimit_spaBasicOpen_hom_ext Y.pair.plus hAplus (p i) (hT i) ?_
       rw [← Category.assoc, presentationLimitRationalIso_hom,
         toPresentationLimit_comp_πToPresentation,
         Presentation.toCompletionLocObjHom_comp_completionLocObjHom (p i) q g hg hr_ring,
         toPresentationLimit_comp_presentationLimitMap_assoc, presentationLimitRationalIso_hom,
         toPresentationLimit_comp_πToPresentation]
-    have hEq' := congrArg (fun f ↦ f.hom) hEq
+    have hEq' := congrArg (·.hom) hEq
     rw [ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.FullSubcategory.comp_hom,
       completionLocObjHom_hom] at hEq'
-    have h1 :
-        ((presentationLimitRationalIso (P := P) Y.pair.plus hAplus (p i) (hT i)).hom.hom ≫
-          (eqToHom (completionLocObj_obj P (p i).num (p i).den (Localization.Away (p i).den)
-              (p i).hasDenominatorPower) ≫
-            (⟨g, hg⟩ : TopCommRingCat.of (Completion (Localization.Away (p i).den)) ⟶
-              TopCommRingCat.of (Completion (Localization.Away q.den))) ≫
-            eqToHom (completionLocObj_obj P q.num q.den (Localization.Away q.den)
-              q.hasDenominatorPower).symm)) ≫
-          eqToHom (completionLocObj_obj P q.num q.den (Localization.Away q.den)
-            q.hasDenominatorPower) =
-        ((presentationLimitMap (P := P) hsub).hom ≫
-          (presentationLimitRationalIso (P := P) Y.pair.plus hAplus q hT').hom.hom) ≫
-          eqToHom (completionLocObj_obj P q.num q.den (Localization.Away q.den)
-            q.hasDenominatorPower) :=
-      congrArg (· ≫ eqToHom (completionLocObj_obj P q.num q.den (Localization.Away q.den)
-        q.hasDenominatorPower)) hEq'
+    have h1 := congrArg (· ≫ eqToHom (completionLocObj_obj P q.num q.den _
+      q.hasDenominatorPower)) hEq'
     simp only [Category.assoc, eqToHom_trans, eqToHom_refl, Category.comp_id] at h1
     exact ConcreteCategory.congr_hom h1 z
+  -- Shared presentation and factorization data on pairwise overlaps `U i ⊓ U j`.
+  have hmap_comp {U₁ U₂ U₃ : Opens ↥(ValuationSpectrum.spa Y.pair.plus)}
+      (h₁₂ : U₁ ≤ U₂) (h₂₃ : U₂ ≤ U₃) (z : presentationLimit (P := P) Y.pair.plus U₃) :
+      (presentationLimitMap (P := P) (h₁₂.trans h₂₃)).hom.1 z =
+        (presentationLimitMap (P := P) h₁₂).hom.1
+          ((presentationLimitMap (P := P) h₂₃).hom.1 z) := by
+    rw [← presentationLimitMap_comp (P := P) h₂₃ h₁₂]; rfl
+  have hoverlap (i j : ι) :
+      ∃ (T' : Finset Y.ring) (s' : Y.ring)
+        (hT' : IsOpen (Ideal.span (T' : Set Y.ring) : Set Y.ring))
+        (r₁ : Y.rationalLocalization (T i) (s i) (hT i) ⟶ Y.rationalLocalization T' s' hT')
+        (r₂ : Y.rationalLocalization (T j) (s j) (hT j) ⟶ Y.rationalLocalization T' s' hT'),
+        U i ⊓ U j = spaBasicOpen Y.pair.plus T' s' ∧
+        Y.rationalLocalizationHom (T i) (s i) (hT i) ≫ r₁ = Y.rationalLocalizationHom T' s' hT' ∧
+        Y.rationalLocalizationHom (T j) (s j) (hT j) ≫ r₂ =
+          Y.rationalLocalizationHom T' s' hT' := by
+    obtain ⟨T', s', hT', hUij⟩ := mem_spaRationalOpens_iff_exists_spaBasicOpen.mp <|
+      inf_mem_spaRationalOpens (spaBasicOpen_mem_spaRationalOpens (hT i))
+        (spaBasicOpen_mem_spaRationalOpens (hT j))
+    have hφ' := isRationalLocalization_rationalLocalizationHom Y T' s' hT'
+    obtain ⟨r₁, hr₁, -⟩ := (isRationalLocalization_rationalLocalizationHom Y (T i) (s i)
+      (hT i)).existsUnique_factorization (Y.rationalLocalizationHom T' s' hT') fun w ↦
+      mem_spaBasicOpen.mp ((hUij.symm.le.trans inf_le_left)
+        (mem_spaBasicOpen.mpr (hφ'.mapsTo_spaComap w)))
+    obtain ⟨r₂, hr₂, -⟩ := (isRationalLocalization_rationalLocalizationHom Y (T j) (s j)
+      (hT j)).existsUnique_factorization (Y.rationalLocalizationHom T' s' hT') fun w ↦
+      mem_spaBasicOpen.mp ((hUij.symm.le.trans inf_le_right)
+        (mem_spaBasicOpen.mpr (hφ'.mapsTo_spaComap w)))
+    exact ⟨T', s', hT', r₁, r₂, hUij, hr₁, hr₂⟩
   -- Compatibility equivalence between `CAffᵒᵖ` arrows and `U i ⊓ U j` restrictions.
   have hcompat_iff (x : ∀ i, presentationLimit (P := P) Y.pair.plus (U i)) :
       Presieve.Arrows.Compatible globalSections
@@ -645,28 +599,9 @@ theorem isSheafFor_globalSections_rationalCoverPresieve_iff (Y : CAff.{u}) {ι :
       ∀ i j, (presentationLimitMap (P := P) (inf_le_left : U i ⊓ U j ≤ U i)).hom.1 (x i) =
         (presentationLimitMap (P := P) (inf_le_right : U i ⊓ U j ≤ U j)).hom.1 (x j) := by
     refine ⟨fun hcompat i j ↦ ?_, fun hcompat i j Z g₁ g₂ hg ↦ ?_⟩
-    · have hinf : U i ⊓ U j ∈ spaRationalOpens Y.pair.plus :=
-        inf_mem_spaRationalOpens (spaBasicOpen_mem_spaRationalOpens (hT i))
-          (spaBasicOpen_mem_spaRationalOpens (hT j))
-      obtain ⟨T', s', hT', hUij⟩ := mem_spaRationalOpens_iff_exists_spaBasicOpen.mp hinf
+    · obtain ⟨T', s', hT', r₁, r₂, hUij, hr₁, hr₂⟩ := hoverlap i j
       let q : Presentation P :=
         ⟨T', s', hasDenominatorPower_of_isOpen_span P T' s' (Localization.Away s') hT'⟩
-      let φ' := Y.rationalLocalizationHom T' s' hT'
-      have hφ' := isRationalLocalization_rationalLocalizationHom Y T' s' hT'
-      have hφi := isRationalLocalization_rationalLocalizationHom Y (T i) (s i) (hT i)
-      have hφj := isRationalLocalization_rationalLocalizationHom Y (T j) (s j) (hT j)
-      have hmaps_i : ∀ w : ValuationSpectrum.spa (Y.rationalLocalization T' s' hT').pair.plus,
-          (φ'.spaComap w).1 ∈ rationalSubset Y.pair.plus (T i) (s i) := fun w ↦ by
-        have hw : φ'.spaComap w ∈ spaBasicOpen Y.pair.plus T' s' :=
-          mem_spaBasicOpen.mpr (hφ'.mapsTo_spaComap w)
-        exact mem_spaBasicOpen.mp ((hUij.symm.le.trans inf_le_left) hw)
-      have hmaps_j : ∀ w : ValuationSpectrum.spa (Y.rationalLocalization T' s' hT').pair.plus,
-          (φ'.spaComap w).1 ∈ rationalSubset Y.pair.plus (T j) (s j) := fun w ↦ by
-        have hw : φ'.spaComap w ∈ spaBasicOpen Y.pair.plus T' s' :=
-          mem_spaBasicOpen.mpr (hφ'.mapsTo_spaComap w)
-        exact mem_spaBasicOpen.mp ((hUij.symm.le.trans inf_le_right) hw)
-      obtain ⟨r₁, hr₁, -⟩ := hφi.existsUnique_factorization φ' hmaps_i
-      obtain ⟨r₂, hr₂, -⟩ := hφj.existsUnique_factorization φ' hmaps_j
       have heval : r₁.toRingHom (ePiece i (x i)) = r₂.toRingHom (ePiece j (x j)) :=
         hcompat i j (op (Y.rationalLocalization T' s' hT')) r₁.op r₂.op
           (by rw [← op_comp, ← op_comp, hr₁, hr₂])
@@ -674,110 +609,47 @@ theorem isSheafFor_globalSections_rationalCoverPresieve_iff (Y : CAff.{u}) {ι :
         hoverlap_hom hT' (hUij.symm.le.trans inf_le_right) r₂ hr₂ (x j)] at heval
       have hinj := (bijective_presentationLimitRationalIso_hom (P := P) Y.pair.plus
         hAplus q hT').injective heval
-      have heqL : (presentationLimitMap (P := P) (hUij.symm.le.trans inf_le_left)).hom.1 (x i) =
-          (presentationLimitMap (P := P) hUij.symm.le).hom.1
-            ((presentationLimitMap (P := P) (inf_le_left : U i ⊓ U j ≤ U i)).hom.1 (x i)) := by
-        rw [← presentationLimitMap_comp (P := P) inf_le_left hUij.symm.le]
-        rfl
-      have heqR : (presentationLimitMap (P := P) (hUij.symm.le.trans inf_le_right)).hom.1 (x j) =
-          (presentationLimitMap (P := P) hUij.symm.le).hom.1
-            ((presentationLimitMap (P := P) (inf_le_right : U i ⊓ U j ≤ U j)).hom.1 (x j)) := by
-        rw [← presentationLimitMap_comp (P := P) inf_le_right hUij.symm.le]
-        rfl
-      rw [heqL, heqR] at hinj
-      have hbij_eq : Function.Injective
-          (presentationLimitMap (P := P) hUij.symm.le).hom.1 := by
-        have hiso : IsIso (presentationLimitMap (P := P) hUij.symm.le) :=
-          ⟨presentationLimitMap (P := P) hUij.le,
-            by rw [presentationLimitMap_comp, presentationLimitMap_refl],
-            by rw [presentationLimitMap_comp, presentationLimitMap_refl]⟩
-        exact (ConcreteCategory.bijective_of_isIso
-          (TopCommRingCat.isCompleteSeparated.ι.map
-            (presentationLimitMap (P := P) hUij.symm.le))).injective
-      exact hbij_eq hinj
-    · let W : CAff.{u} := unop Z
-      let h₁ : Y.rationalLocalization (T i) (s i) (hT i) ⟶ W := g₁.unop
-      let h₂ : Y.rationalLocalization (T j) (s j) (hT j) ⟶ W := g₂.unop
+      rw [hmap_comp hUij.symm.le inf_le_left, hmap_comp hUij.symm.le inf_le_right] at hinj
+      have _ : IsIso (presentationLimitMap (P := P) hUij.symm.le) :=
+        ⟨presentationLimitMap (P := P) hUij.le,
+          by rw [presentationLimitMap_comp, presentationLimitMap_refl],
+          by rw [presentationLimitMap_comp, presentationLimitMap_refl]⟩
+      exact (ConcreteCategory.bijective_of_isIso
+        (TopCommRingCat.isCompleteSeparated.ι.map
+          (presentationLimitMap (P := P) hUij.symm.le))).injective hinj
+    · obtain ⟨T', s', hT', r₁, r₂, hUij, hr₁, hr₂⟩ := hoverlap i j
+      let h₁ := g₁.unop; let h₂ := g₂.unop
       have hcomm : Y.rationalLocalizationHom (T i) (s i) (hT i) ≫ h₁ =
-          Y.rationalLocalizationHom (T j) (s j) (hT j) ≫ h₂ :=
-        Quiver.Hom.op_inj hg
-      have hinf : U i ⊓ U j ∈ spaRationalOpens Y.pair.plus :=
-        inf_mem_spaRationalOpens (spaBasicOpen_mem_spaRationalOpens (hT i))
-          (spaBasicOpen_mem_spaRationalOpens (hT j))
-      obtain ⟨T', s', hT', hUij⟩ := mem_spaRationalOpens_iff_exists_spaBasicOpen.mp hinf
-      let φ' := Y.rationalLocalizationHom T' s' hT'
-      have hφ' := isRationalLocalization_rationalLocalizationHom Y T' s' hT'
+          Y.rationalLocalizationHom (T j) (s j) (hT j) ≫ h₂ := Quiver.Hom.op_inj hg
       have hφi := isRationalLocalization_rationalLocalizationHom Y (T i) (s i) (hT i)
       have hφj := isRationalLocalization_rationalLocalizationHom Y (T j) (s j) (hT j)
-      have hmaps_i : ∀ w : ValuationSpectrum.spa (Y.rationalLocalization T' s' hT').pair.plus,
-          (φ'.spaComap w).1 ∈ rationalSubset Y.pair.plus (T i) (s i) := fun w ↦ by
-        have hw : φ'.spaComap w ∈ spaBasicOpen Y.pair.plus T' s' :=
-          mem_spaBasicOpen.mpr (hφ'.mapsTo_spaComap w)
-        exact mem_spaBasicOpen.mp ((hUij.symm.le.trans inf_le_left) hw)
-      have hmaps_j : ∀ w : ValuationSpectrum.spa (Y.rationalLocalization T' s' hT').pair.plus,
-          (φ'.spaComap w).1 ∈ rationalSubset Y.pair.plus (T j) (s j) := fun w ↦ by
-        have hw : φ'.spaComap w ∈ spaBasicOpen Y.pair.plus T' s' :=
-          mem_spaBasicOpen.mpr (hφ'.mapsTo_spaComap w)
-        exact mem_spaBasicOpen.mp ((hUij.symm.le.trans inf_le_right) hw)
-      obtain ⟨r₁, hr₁, -⟩ := hφi.existsUnique_factorization φ' hmaps_i
-      obtain ⟨r₂, hr₂, -⟩ := hφj.existsUnique_factorization φ' hmaps_j
-      have hmaps_W : ∀ w : ValuationSpectrum.spa W.pair.plus,
-          (((Y.rationalLocalizationHom (T i) (s i) (hT i) ≫ h₁).spaComap w).1) ∈
-            rationalSubset Y.pair.plus T' s' := by
-        intro w
-        have hwi : (Y.rationalLocalizationHom (T i) (s i) (hT i) ≫ h₁).spaComap w ∈ U i := by
-          rw [comp_spaComap]
-          exact mem_spaBasicOpen.mpr (hφi.mapsTo_spaComap (h₁.spaComap w))
-        have hwj : (Y.rationalLocalizationHom (T i) (s i) (hT i) ≫ h₁).spaComap w ∈ U j := by
-          rw [hcomm, comp_spaComap]
-          exact mem_spaBasicOpen.mpr (hφj.mapsTo_spaComap (h₂.spaComap w))
-        have hw_ij : (Y.rationalLocalizationHom (T i) (s i) (hT i) ≫ h₁).spaComap w ∈
-            spaBasicOpen Y.pair.plus T' s' := hUij ▸ ⟨hwi, hwj⟩
-        exact mem_spaBasicOpen.mp hw_ij
-      obtain ⟨χ, hχ, -⟩ := hφ'.existsUnique_factorization
-        (Y.rationalLocalizationHom (T i) (s i) (hT i) ≫ h₁) hmaps_W
-      have hh₁ : r₁ ≫ χ = h₁ :=
-        (hφi.existsUnique_factorization
-          (Y.rationalLocalizationHom (T i) (s i) (hT i) ≫ h₁)
-          (fun w ↦ by rw [comp_spaComap]; exact hφi.mapsTo_spaComap _)).unique
+      obtain ⟨χ, hχ, -⟩ := (isRationalLocalization_rationalLocalizationHom Y T' s'
+          hT').existsUnique_factorization (Y.rationalLocalizationHom (T i) (s i) (hT i) ≫ h₁)
+        fun w ↦ mem_spaBasicOpen.mp <| hUij ▸ ⟨by
+          rw [comp_spaComap]; exact mem_spaBasicOpen.mpr (hφi.mapsTo_spaComap _),
+        by rw [hcomm, comp_spaComap]; exact mem_spaBasicOpen.mpr (hφj.mapsTo_spaComap _)⟩
+      have hh₁ : r₁ ≫ χ = h₁ := (hφi.existsUnique_factorization _ fun w ↦ by
+        rw [comp_spaComap]; exact hφi.mapsTo_spaComap _).unique
           (by rw [← Category.assoc, hr₁, hχ]) rfl
-      have hh₂ : r₂ ≫ χ = h₂ :=
-        (hφj.existsUnique_factorization
-          (Y.rationalLocalizationHom (T j) (s j) (hT j) ≫ h₂)
-          (fun w ↦ by rw [comp_spaComap]; exact hφj.mapsTo_spaComap _)).unique
+      have hh₂ : r₂ ≫ χ = h₂ := (hφj.existsUnique_factorization _ fun w ↦ by
+        rw [comp_spaComap]; exact hφj.mapsTo_spaComap _).unique
           (by rw [← Category.assoc, hr₂, hχ, hcomm]) rfl
       change h₁.toRingHom (ePiece i (x i)) = h₂.toRingHom (ePiece j (x j))
       rw [← hh₁, ← hh₂, comp_toRingHom, comp_toRingHom, RingHom.comp_apply, RingHom.comp_apply]
       refine congrArg χ.toRingHom ?_
       rw [hoverlap_hom hT' (hUij.symm.le.trans inf_le_left) r₁ hr₁ (x i),
-        hoverlap_hom hT' (hUij.symm.le.trans inf_le_right) r₂ hr₂ (x j)]
-      have hres_eq : (presentationLimitMap (P := P) (hUij.symm.le.trans inf_le_left)).hom.1 (x i) =
-          (presentationLimitMap (P := P) (hUij.symm.le.trans inf_le_right)).hom.1 (x j) := by
-        have heqL : (presentationLimitMap (P := P) (hUij.symm.le.trans inf_le_left)).hom.1 (x i) =
-            (presentationLimitMap (P := P) hUij.symm.le).hom.1
-              ((presentationLimitMap (P := P) (inf_le_left : U i ⊓ U j ≤ U i)).hom.1 (x i)) := by
-          rw [← presentationLimitMap_comp (P := P) inf_le_left hUij.symm.le]
-          rfl
-        have heqR : (presentationLimitMap (P := P) (hUij.symm.le.trans inf_le_right)).hom.1 (x j) =
-            (presentationLimitMap (P := P) hUij.symm.le).hom.1
-              ((presentationLimitMap (P := P) (inf_le_right : U i ⊓ U j ≤ U j)).hom.1 (x j)) := by
-          rw [← presentationLimitMap_comp (P := P) inf_le_right hUij.symm.le]
-          rfl
-        rw [heqL, heqR, hcompat i j]
-      rw [hres_eq]
+        hoverlap_hom hT' (hUij.symm.le.trans inf_le_right) r₂ hr₂ (x j),
+        hmap_comp hUij.symm.le inf_le_left, hmap_comp hUij.symm.le inf_le_right, hcompat i j]
   -- Assemble the `IsSheafFor` equivalence using `eTop` and `ePiece`.
   rw [rationalCoverPresieve, Presieve.isSheafFor_arrows_iff,
     isSheafFor_ofArrows_iff_existsUnique_presentationLimitMap P (fun i ↦ (le_top : U i ≤ ⊤))]
   refine ⟨fun hO x hx ↦ ?_, fun hLim y hy ↦ ?_⟩
   · obtain ⟨b, hb, hbu⟩ := hO (fun i ↦ ePiece i (x i)) ((hcompat_iff x).mpr hx)
-    let b₀ : Y.ring := b
-    refine ⟨eTop b₀, fun i ↦ (ePiece i).injective ?_, fun a ha ↦ ?_⟩
-    · exact (hePiece_top i b₀).trans (hb i)
-    · rw [← eTop.apply_symm_apply a]
-      refine congrArg eTop (hbu (eTop.symm a) fun i ↦ ?_)
-      change (Y.rationalLocalizationHom (T i) (s i) (hT i)).toRingHom (eTop.symm a) =
-        ePiece i (x i)
-      rw [← hePiece_top, eTop.apply_symm_apply, ha i]
+    refine ⟨eTop b, fun i ↦ (ePiece i).injective ((hePiece_top i b).trans (hb i)), fun a ha ↦ ?_⟩
+    rw [← eTop.apply_symm_apply a]
+    refine congrArg eTop (hbu (eTop.symm a) fun i ↦ ?_)
+    change (Y.rationalLocalizationHom (T i) (s i) (hT i)).toRingHom (eTop.symm a) = ePiece i (x i)
+    rw [← hePiece_top, eTop.apply_symm_apply, ha i]
   · let y' : ∀ i, (Y.rationalLocalization (T i) (s i) (hT i)).ring := y
     have hy_eq : (fun i ↦ (ePiece i ((ePiece i).symm (y' i)) :
         globalSections.obj (op (op (Y.rationalLocalization (T i) (s i) (hT i)))))) = y :=
@@ -788,12 +660,10 @@ theorem isSheafFor_globalSections_rationalCoverPresieve_iff (Y : CAff.{u}) {ι :
     · change (Y.rationalLocalizationHom (T i) (s i) (hT i)).toRingHom (eTop.symm a) = y' i
       rw [← hePiece_top, eTop.apply_symm_apply, ha i, Equiv.apply_symm_apply]
     · let b₀ : Y.ring := b
-      have hb₀ (i : ι) : (Y.rationalLocalizationHom (T i) (s i) (hT i)).toRingHom b₀ = y' i :=
-        hb i
       change b₀ = eTop.symm a
       rw [← eTop.symm_apply_apply b₀]
       refine congrArg eTop.symm (hau (eTop b₀) fun i ↦ (ePiece i).injective ?_)
-      rw [hePiece_top, Equiv.apply_symm_apply, hb₀ i]
+      rw [hePiece_top, Equiv.apply_symm_apply]; exact hb i
 
 /-- Topological sheafiness (`IsSheafyForEveryPresentation`) passes along any rational localization
 `φ : X ⟶ Y` in `CAff`, without any Tate hypothesis. -/
@@ -807,33 +677,31 @@ theorem IsRationalLocalization.isSheafyForEveryPresentation {X Y : CAff.{u}} {φ
   have _ := isUniformAddGroup_locUniformSpace P T₀ s₀ (Localization.Away s₀) hden
   have _ := isTopologicalRing_locUniformSpace P T₀ s₀ (Localization.Away s₀) hden
   have _ := isHuberRing_completion_locTopology P T₀ s₀ (Localization.Away s₀) hden
-  have hsheaf₀ := isSheaf_presentationLimitPresheaf_completionLocalization P X.pair.plus
-    X.pair.isRingOfIntegralElements.isPowerBounded_of_mem X.ringOfDefinition_le_plus T₀ s₀
-    (Localization.Away s₀) hden hφ.isOpen_span (hX.isSheaf P X.ringOfDefinition_le_plus)
   have hY₀ : IsSheafyForEveryPresentation
       (X.rationalLocalization T₀ s₀ hφ.isOpen_span).pair.plus :=
     (isSheafyForEveryPresentation_iff_isRingOfIntegralElements_and_isSheaf
       (completionLocalization P T₀ s₀ (Localization.Away s₀) hden)).mpr
-      ⟨(X.rationalLocalization T₀ s₀ hφ.isOpen_span).pair.isRingOfIntegralElements, hsheaf₀⟩
+      ⟨(X.rationalLocalization T₀ s₀ hφ.isOpen_span).pair.isRingOfIntegralElements,
+        isSheaf_presentationLimitPresheaf_completionLocalization P X.pair.plus
+          X.pair.isRingOfIntegralElements.isPowerBounded_of_mem X.ringOfDefinition_le_plus T₀ s₀
+          (Localization.Away s₀) hden hφ.isOpen_span (hX.isSheaf P X.ringOfDefinition_le_plus)⟩
   let eIso := hφ.isoCanonical
   let eRing : (X.rationalLocalization T₀ s₀ hφ.isOpen_span).ring ≃+* Y.ring :=
     { toFun := eIso.hom.toRingHom
       invFun := eIso.inv.toRingHom
       left_inv x := by
         have h := congrArg Pair.Hom.toRingHom eIso.hom_inv_id
-        rw [comp_toRingHom, id_toRingHom] at h
-        exact DFunLike.congr_fun h x
+        rw [comp_toRingHom, id_toRingHom] at h; exact DFunLike.congr_fun h x
       right_inv y := by
         have h := congrArg Pair.Hom.toRingHom eIso.inv_hom_id
-        rw [comp_toRingHom, id_toRingHom] at h
-        exact DFunLike.congr_fun h y
+        rw [comp_toRingHom, id_toRingHom] at h; exact DFunLike.congr_fun h y
       map_mul' := map_mul eIso.hom.toRingHom
       map_add' := map_add eIso.hom.toRingHom }
   have hplus : (X.rationalLocalization T₀ s₀ hφ.isOpen_span).pair.plus.map
       (eRing : _ →+* Y.ring) = Y.pair.plus := by
     ext y
-    refine ⟨fun ⟨x, hx, hxy⟩ ↦ hxy ▸ eIso.hom.map_mem_plus x hx, fun hy ↦ ?_⟩
-    refine ⟨eIso.inv.toRingHom y, eIso.inv.map_mem_plus y hy, eRing.right_inv y⟩
+    exact ⟨fun ⟨x, hx, hxy⟩ ↦ hxy ▸ eIso.hom.map_mem_plus x hx,
+      fun hy ↦ ⟨eIso.inv.toRingHom y, eIso.inv.map_mem_plus y hy, eRing.right_inv y⟩⟩
   exact (isSheafyForEveryPresentation_iff_of_ringEquiv eRing
     eIso.hom.continuous_toRingHom eIso.inv.continuous_toRingHom hplus).mp hY₀
 
@@ -866,20 +734,13 @@ theorem IsRationalSheafy.isSheafFor {X Y : CAff.{u}} (hX : X.IsRationalSheafy)
 (without any Tate hypothesis). -/
 theorem IsRationalSheafy.of_isSheafyForEveryPresentation {X : CAff.{u}}
     (hX : IsSheafyForEveryPresentation X.pair.plus) : X.IsRationalSheafy := by
-  rintro Y φ T₀ s₀ hφ R ⟨ι, hfin, T, s, hcov, rfl⟩
-  have hY : IsSheafyForEveryPresentation Y.pair.plus := hφ.isSheafyForEveryPresentation hX
-  have hsheaf_set : Presheaf.IsSheaf
-      (Opens.grothendieckTopology ↥(ValuationSpectrum.spa Y.pair.plus))
-      (presentationLimitPresheaf Y.pairOfDefinition Y.pair.plus ⋙
-        TopCommRingCat.isCompleteSeparated.ι ⋙ forget _root_.TopCommRingCat) :=
-    Presheaf.isSheaf_comp_of_isSheaf _ _
-      (TopCommRingCat.isCompleteSeparated.ι ⋙ forget _root_.TopCommRingCat)
-      (hY.isSheaf Y.pairOfDefinition Y.ringOfDefinition_le_plus)
+  rintro Y φ T₀ s₀ hφ R ⟨ι, _, T, s, hcov, rfl⟩
+  have hsheaf_set := Presheaf.isSheaf_comp_of_isSheaf _ _
+    (TopCommRingCat.isCompleteSeparated.ι ⋙ forget _root_.TopCommRingCat)
+    ((hφ.isSheafyForEveryPresentation hX).isSheaf Y.pairOfDefinition Y.ringOfDefinition_le_plus)
   rw [isSheafFor_globalSections_rationalCoverPresieve_iff, Presieve.isSheafFor_iff_generate]
   refine hsheaf_set.isSheafFor _ fun x _ ↦ ?_
-  have hx : x ∈ (Set.univ : Set ↥(ValuationSpectrum.spa Y.pair.plus)) := Set.mem_univ x
-  rw [← hcov.iUnion_eq_univ, Set.mem_iUnion] at hx
-  obtain ⟨i, hxi⟩ := hx
+  obtain ⟨i, hxi⟩ := Set.mem_iUnion.mp (hcov.iUnion_eq_univ ▸ Set.mem_univ x)
   exact ⟨spaBasicOpen Y.pair.plus (T i) (s i), homOfLE le_top,
     Sieve.ofArrows_mk _ _ i, mem_spaBasicOpen.mpr hxi⟩
 
@@ -896,20 +757,15 @@ private theorem isSheafFor_presentationLimitPresheaf_forget_iff_of_pairOfDefinit
   have hid : spaComapTopHom (RingHom.id B) continuous_id (fun (_ : B) (ha : _ ∈ Bplus) ↦ ha) =
       𝟙 (TopCat.of ↥(ValuationSpectrum.spa Bplus)) :=
     TopCat.ext fun v ↦ congrFun (spaComap_id Bplus) v
-  let ePush := presentationLimitPresheafIsoPushforward (P := Q₁) (P' := Q₂) (Aplus := Bplus)
-    (Bplus := Bplus) (RingHom.id B) continuous_id (fun _ ha ↦ ha)
-    (RingHom.id B) continuous_id (fun _ ↦ rfl) (fun _ ↦ rfl) (fun _ ha ↦ ha)
-  let eId : (TopCat.Presheaf.pushforward _ (spaComapTopHom (RingHom.id B) continuous_id
-      (fun (_ : B) (ha : _ ∈ Bplus) ↦ ha))).obj (presentationLimitPresheaf Q₂ Bplus) ≅
-      presentationLimitPresheaf Q₂ Bplus :=
+  let eForget := Functor.isoWhiskerRight
+    (presentationLimitPresheafIsoPushforward (P := Q₁) (P' := Q₂) (Aplus := Bplus) (Bplus := Bplus)
+      (RingHom.id B) continuous_id (fun _ ha ↦ ha) (RingHom.id B) continuous_id
+      (fun _ ↦ rfl) (fun _ ↦ rfl) (fun _ ha ↦ ha) ≪≫
     NatIso.ofComponents
-      (fun U ↦ (presentationLimitPresheaf Q₂ Bplus).mapIso
-        (eqToIso (by rw [hid]; rfl)))
+      (fun U ↦ (presentationLimitPresheaf Q₂ Bplus).mapIso (eqToIso (by rw [hid]; rfl)))
       (fun {U₁ U₂} g ↦ by
         dsimp [TopCat.Presheaf.pushforward]
-        rw [← Functor.map_comp, ← Functor.map_comp]
-        congr 1)
-  let eForget := Functor.isoWhiskerRight (ePush ≪≫ eId)
+        rw [← Functor.map_comp, ← Functor.map_comp]; congr 1))
     (TopCommRingCat.isCompleteSeparated.ι ⋙ forget _root_.TopCommRingCat)
   exact ⟨Presieve.isSheafFor_iso eForget, Presieve.isSheafFor_iso eForget.symm⟩
 
@@ -923,8 +779,7 @@ theorem isRationalSheafy_iff_isSheafyForEveryPresentation (X : CAff.{u}) [IsTate
   rw [isSheafyForEveryPresentation_iff_isRingOfIntegralElements_and_isSheaf X.pairOfDefinition]
   refine ⟨X.pair.isRingOfIntegralElements, ?_⟩
   let P := X.pairOfDefinition
-  have hAplus : ∀ ⦃a⦄, a ∈ X.pair.plus → IsPowerBounded a :=
-    X.pair.isRingOfIntegralElements.isPowerBounded_of_mem
+  have hAplus := X.pair.isRingOfIntegralElements.isPowerBounded_of_mem
   refine isSheaf_presentationLimitPresheaf_of_isSheafFor_finite_rationalOpens P hAplus
     fun {W} {κ} hfin {V} hW hV hcov ↦ ?_
   obtain ⟨T₀, s₀, hT₀, rfl⟩ := mem_spaRationalOpens_iff_exists_spaBasicOpen.mp hW
@@ -934,64 +789,40 @@ theorem isRationalSheafy_iff_isSheafyForEveryPresentation (X : CAff.{u}) [IsTate
   have _ := isTopologicalRing_locUniformSpace P T₀ s₀ (Localization.Away s₀) hden₀
   have _ := isHuberRing_completion_locTopology P T₀ s₀ (Localization.Away s₀) hden₀
   let Y := X.rationalLocalization T₀ s₀ hT₀
-  let φ := X.rationalLocalizationHom T₀ s₀ hT₀
   have hVW (k : κ) : V k ≤ spaBasicOpen X.pair.plus T₀ s₀ := (le_iSup V k).trans_eq hcov
   -- Transport `IsSheafFor` along `j : Spa(Y) → Spa(X)` via Wedhorn Remark 8.4.
   rw [isSheafFor_ofArrows_iff_locOpensComap P X.pair.plus T₀ s₀ (Localization.Away s₀) hden₀
     hAplus hT₀ hW le_rfl hV hVW]
   let Q₀ := completionLocalization P T₀ s₀ (Localization.Away s₀) hden₀
   let Bplus := completedPlusSubring P X.pair.plus T₀ s₀ (Localization.Away s₀) hden₀
-  -- Express each `locOpensComap ... (V k)` as `spaBasicOpen Bplus (T' k) (s' k)`.
-  have hloc_rat (k : κ) :
-      locOpensComap P X.pair.plus T₀ s₀ (Localization.Away s₀) hden₀ (V k) ∈
-        spaRationalOpens Bplus :=
-    locOpensComap_mem_spaRationalOpens P X.pair.plus T₀ s₀
-      (Localization.Away s₀) hden₀ (hV k)
-  choose T' s' hT' hU'_eq using fun k ↦
-    mem_spaRationalOpens_iff_exists_spaBasicOpen.mp (hloc_rat k)
-  have htop_loc :
-      locOpensComap P X.pair.plus T₀ s₀ (Localization.Away s₀) hden₀
-        (spaBasicOpen X.pair.plus T₀ s₀) = ⊤ := by
-    refine le_antisymm le_top fun w _ ↦ (mem_locOpensComap P X.pair.plus T₀ s₀
-      (Localization.Away s₀) hden₀ _ w).mpr (mem_spaBasicOpen.mpr
-        (spaComapLoc_mem_rationalSubset P X.pair.plus T₀ s₀ (Localization.Away s₀) hden₀ w))
+  choose T' s' hT' hU'_eq using fun k ↦ mem_spaRationalOpens_iff_exists_spaBasicOpen.mp <|
+    locOpensComap_mem_spaRationalOpens P X.pair.plus T₀ s₀ (Localization.Away s₀) hden₀ (hV k)
+  have htop_loc : locOpensComap P X.pair.plus T₀ s₀ (Localization.Away s₀) hden₀
+      (spaBasicOpen X.pair.plus T₀ s₀) = ⊤ :=
+    le_antisymm le_top fun w _ ↦ (mem_locOpensComap P X.pair.plus T₀ s₀ _ hden₀ _ w).mpr <|
+      mem_spaBasicOpen.mpr (spaComapLoc_mem_rationalSubset P X.pair.plus T₀ s₀ _ hden₀ w)
   have hcovY : IsRationalCovering Y T' s' :=
     { isOpen_span := hT'
       iUnion_eq_univ := Set.eq_univ_of_forall fun w ↦ by
-        have hwW : spaComapLoc P X.pair.plus T₀ s₀ (Localization.Away s₀) hden₀ w ∈
-            spaBasicOpen X.pair.plus T₀ s₀ :=
-          mem_spaBasicOpen.mpr
-            (spaComapLoc_mem_rationalSubset P X.pair.plus T₀ s₀ (Localization.Away s₀) hden₀ w)
-        rw [← hcov] at hwW
-        obtain ⟨k, hwk⟩ := Opens.mem_iSup.mp hwW
-        have hwk' : w ∈ locOpensComap P X.pair.plus T₀ s₀ (Localization.Away s₀) hden₀ (V k) :=
-          (mem_locOpensComap P X.pair.plus T₀ s₀ (Localization.Away s₀) hden₀ (V k) w).mpr hwk
-        rw [hU'_eq k] at hwk'
-        exact Set.mem_iUnion.mpr ⟨k, mem_spaBasicOpen.mp hwk'⟩ }
-  -- Apply `hrat` to the rational localization `φ : X ⟶ Y` and the rational cover `(T', s')`.
-  have hO_sheaf : Presieve.IsSheafFor globalSections
-      (Y.rationalCoverPresieve T' s' hcovY.isOpen_span) :=
-    hrat φ T₀ s₀ (isRationalLocalization_rationalLocalizationHom X T₀ s₀ hT₀) _
-      ⟨κ, hfin, T', s', hcovY, rfl⟩
-  have hLim_Y :=
-    (isSheafFor_globalSections_rationalCoverPresieve_iff Y T' s' hcovY.isOpen_span).mp hO_sheaf
-  have hLim_Q₀ :
-      (Presieve.ofArrows (fun k ↦ spaBasicOpen Bplus (T' k) (s' k))
-        fun k ↦ homOfLE le_top).IsSheafFor
-          (presentationLimitPresheaf Q₀ Bplus ⋙
-            TopCommRingCat.isCompleteSeparated.ι ⋙ forget _root_.TopCommRingCat) :=
-    (isSheafFor_presentationLimitPresheaf_forget_iff_of_pairOfDefinition
-      Y.pairOfDefinition Q₀ Bplus _).mp hLim_Y
+        obtain ⟨k, hwk⟩ := Opens.mem_iSup.mp <| hcov ▸ mem_spaBasicOpen.mpr
+          (spaComapLoc_mem_rationalSubset P X.pair.plus T₀ s₀ (Localization.Away s₀) hden₀ w)
+        exact Set.mem_iUnion.mpr ⟨k, mem_spaBasicOpen.mp <| hU'_eq k ▸
+          (mem_locOpensComap P X.pair.plus T₀ s₀ (Localization.Away s₀) hden₀ (V k) w).mpr hwk⟩ }
+  -- Apply `hrat` to the rational localization `X ⟶ Y` and the rational cover `(T', s')`.
+  have hLim_Q₀ := (isSheafFor_presentationLimitPresheaf_forget_iff_of_pairOfDefinition
+    Y.pairOfDefinition Q₀ Bplus _).mp <|
+    (isSheafFor_globalSections_rationalCoverPresieve_iff Y T' s' hcovY.isOpen_span).mp <|
+      hrat (X.rationalLocalizationHom T₀ s₀ hT₀) T₀ s₀
+        (isRationalLocalization_rationalLocalizationHom X T₀ s₀ hT₀) _
+        ⟨κ, hfin, T', s', hcovY, rfl⟩
   have hcongr {α : Type u} [TopologicalSpace α] (F : (Opens α)ᵒᵖ ⥤ Type u)
       {W₁ W₂ : Opens α} (hW' : W₁ = W₂) {U₁ U₂ : κ → Opens α} (hU' : U₁ = U₂)
       (h₁ : ∀ k, U₁ k ≤ W₁) (h₂ : ∀ k, U₂ k ≤ W₂) :
       (Presieve.ofArrows U₁ fun k ↦ homOfLE (h₁ k)).IsSheafFor F ↔
         (Presieve.ofArrows U₂ fun k ↦ homOfLE (h₂ k)).IsSheafFor F := by
-    subst hW' hU'
-    rfl
+    subst hW' hU'; rfl
   exact (hcongr _ htop_loc (funext hU'_eq) _ _).mpr hLim_Q₀
 
 end TauCeti.CAff
 
 end
-

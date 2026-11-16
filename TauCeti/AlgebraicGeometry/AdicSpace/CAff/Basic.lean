@@ -255,35 +255,27 @@ private theorem isIntegrallyClosedIn_range_C {R : Type u} [CommRing R] [IsDomain
   by_cases hf : f.natDegree = 0
   · exact ⟨f.coeff 0, (eq_C_of_natDegree_eq_zero hf).symm⟩
   exfalso
-  have hf_pos : 0 < f.natDegree := Nat.pos_of_ne_zero hf
   by_cases hq_deg : q.natDegree = 0
   · rw [eq_one_of_monic_natDegree_zero hq_monic hq_deg, eval₂_one] at hq_eval
     exact one_ne_zero hq_eval
-  have hq_pos : 0 < q.natDegree := Nat.pos_of_ne_zero hq_deg
+  have hf_pos : 0 < f.natDegree := Nat.pos_of_ne_zero hf
   rw [eval₂_eq_sum_range, Finset.sum_range_succ, hq_monic.coeff_natDegree,
     map_one, one_mul] at hq_eval
-  have heq : f ^ q.natDegree =
-      -∑ i ∈ Finset.range q.natDegree, (q.coeff i : R[X]) * f ^ i :=
-    eq_neg_of_add_eq_zero_right hq_eval
-  have hdeg_lhs : (f ^ q.natDegree).natDegree = q.natDegree * f.natDegree :=
-    Polynomial.natDegree_pow f q.natDegree
+  have heq := eq_neg_of_add_eq_zero_right hq_eval
   have hdeg_rhs :
       (-∑ i ∈ Finset.range q.natDegree, (q.coeff i : R[X]) * f ^ i).natDegree <
         q.natDegree * f.natDegree := by
     rw [natDegree_neg]
     refine (natDegree_sum_le (Finset.range q.natDegree) _).trans_lt ?_
     rw [Finset.fold_max_lt]
-    refine ⟨Nat.mul_pos hq_pos hf_pos, fun i hi ↦ ?_⟩
-    rw [Finset.mem_range] at hi
+    refine ⟨Nat.mul_pos (Nat.pos_of_ne_zero hq_deg) hf_pos, fun i hi ↦ ?_⟩
     obtain ⟨r, hr⟩ := (q.coeff i).2
     calc ((q.coeff i : R[X]) * f ^ i).natDegree
         ≤ (q.coeff i : R[X]).natDegree + (f ^ i).natDegree := natDegree_mul_le
-      _ ≤ 0 + i * f.natDegree := by
-        rw [← hr, natDegree_C, Polynomial.natDegree_pow]
+      _ ≤ 0 + i * f.natDegree := by rw [← hr, natDegree_C, Polynomial.natDegree_pow]
       _ < q.natDegree * f.natDegree := by
-        rw [zero_add]
-        exact Nat.mul_lt_mul_of_pos_right hi hf_pos
-  exact hdeg_rhs.ne (congrArg Polynomial.natDegree heq ▸ hdeg_lhs)
+        rw [zero_add]; exact Nat.mul_lt_mul_of_pos_right (Finset.mem_range.mp hi) hf_pos
+  exact hdeg_rhs.ne (congrArg Polynomial.natDegree heq ▸ Polynomial.natDegree_pow f q.natDegree)
 
 /-- Underlying pair `(ℤ[T], ℤ)` in universe `u` with the discrete topology on `(ULift ℤ)[X]`. -/
 private noncomputable def affineLinePair :
@@ -324,8 +316,7 @@ power-bounded) elements of `A`. -/
 theorem affineLineVar_notMem_plus : affineLineVar.{u} ∉ affineLine.{u}.pair.plus := by
   change (Polynomial.X : (ULift.{u} ℤ)[X]) ∉ (Polynomial.C (R := ULift.{u} ℤ)).range
   rintro ⟨c, hc⟩
-  have h := congrArg (fun p : (ULift.{u} ℤ)[X] ↦ p.coeff 1) hc
-  simp at h
+  simpa using congrArg (fun p : (ULift.{u} ℤ)[X] ↦ p.coeff 1) hc
 
 /-- Evaluate `(ℤ[T], ℤ)` at an arbitrary element `a : X.ring` to obtain a morphism
 `CAff.affineLine ⟶ X` in `CAff`. Continuity is automatic because `ℤ[T]` carries the discrete
@@ -353,15 +344,11 @@ theorem eval_comp {X Y : CAff.{u}} (a : X.ring) (f : X ⟶ Y) :
     eval X a ≫ f = eval Y (f.toRingHom a) := by
   apply hom_ext
   rw [comp_toRingHom]
-  have h : f.toRingHom.comp
+  change f.toRingHom.comp
       (Polynomial.eval₂RingHom ((Int.castRingHom X.ring).comp ULift.ringEquiv.toRingHom) a) =
       Polynomial.eval₂RingHom ((Int.castRingHom Y.ring).comp ULift.ringEquiv.toRingHom)
-        (f.toRingHom a) := by
-    refine Polynomial.ringHom_ext' ?_ ?_
-    · ext ⟨n⟩
-      simp
-    · simp
-  exact h
+        (f.toRingHom a)
+  exact Polynomial.ringHom_ext' (by ext ⟨n⟩; simp) (by simp)
 
 /-- Morphisms `CAff.affineLine ⟶ X` in `CAff` correspond bijectively to elements of `X.ring` via
 evaluation at `CAff.affineLineVar`. -/
@@ -372,24 +359,20 @@ noncomputable def evalEquiv (X : CAff.{u}) : X.ring ≃ (affineLine.{u} ⟶ X) w
   right_inv f := by
     apply hom_ext
     let g : (ULift.{u} ℤ)[X] →+* X.ring := f.toRingHom
-    let a : X.ring := g Polynomial.X
-    change Polynomial.eval₂RingHom ((Int.castRingHom X.ring).comp ULift.ringEquiv.toRingHom) a = g
-    refine Polynomial.ringHom_ext' ?_ ?_
-    · ext ⟨n⟩
-      have hn : Polynomial.C (⟨n⟩ : ULift.{u} ℤ) = (n : (ULift.{u} ℤ)[X]) := by
-        rw [← Polynomial.C_eq_intCast]
-        rfl
-      rw [RingHom.comp_apply, RingHom.comp_apply, hn, map_intCast, map_intCast]
-    · simp [a]
+    change Polynomial.eval₂RingHom
+      ((Int.castRingHom X.ring).comp ULift.ringEquiv.toRingHom) (g Polynomial.X) = g
+    refine Polynomial.ringHom_ext' ?_ (by simp)
+    ext ⟨n⟩
+    have hn : Polynomial.C (⟨n⟩ : ULift.{u} ℤ) = (n : (ULift.{u} ℤ)[X]) := by
+      rw [← Polynomial.C_eq_intCast]; rfl
+    rw [RingHom.comp_apply, RingHom.comp_apply, hn, map_intCast, map_intCast]
 
 @[simp]
-theorem evalEquiv_apply (X : CAff.{u}) (a : X.ring) : evalEquiv X a = eval X a :=
-  (rfl)
+theorem evalEquiv_apply (X : CAff.{u}) (a : X.ring) : evalEquiv X a = eval X a := (rfl)
 
 @[simp]
 theorem evalEquiv_symm_apply (X : CAff.{u}) (f : affineLine.{u} ⟶ X) :
-    (evalEquiv X).symm f = f.toRingHom affineLineVar :=
-  (rfl)
+    (evalEquiv X).symm f = f.toRingHom affineLineVar := (rfl)
 
 /-- `CAff.eval X : X.ring → (CAff.affineLine ⟶ X)` is bijective. -/
 theorem eval_bijective (X : CAff.{u}) : Function.Bijective (eval X) :=
@@ -400,7 +383,6 @@ noncomputable def globalSectionsRepresentableBy :
     globalSections.{u}.RepresentableBy (op affineLine.{u}) where
   homEquiv {Z} := Quiver.Hom.opEquiv.symm.trans (evalEquiv (unop Z)).symm
   homEquiv_comp {Z₁ Z₂} g f := by
-    dsimp [evalEquiv]
     change (f.unop ≫ g.unop).toRingHom affineLineVar =
       g.unop.toRingHom (f.unop.toRingHom affineLineVar)
     rw [comp_toRingHom, RingHom.comp_apply]
@@ -413,18 +395,15 @@ noncomputable def globalSectionsIsoYoneda : globalSections.{u} ≅ yoneda.obj (o
     (fun W ↦ (evalEquiv (unop (unop W))).trans Quiver.Hom.opEquiv |>.toIso)
     (fun {W₁ W₂} g ↦ by
       ext a
-      dsimp [Iso.toEquiv, evalEquiv]
       exact congrArg Quiver.Hom.op (eval_comp a g.unop.unop).symm)
 
 @[simp]
 theorem globalSectionsIsoYoneda_hom_app (X : CAff.{u}) (a : X.ring) :
-    globalSectionsIsoYoneda.hom.app (op (op X)) a = (eval X a).op :=
-  (rfl)
+    globalSectionsIsoYoneda.hom.app (op (op X)) a = (eval X a).op := (rfl)
 
 @[simp]
 theorem globalSectionsIsoYoneda_inv_app (X : CAff.{u}) (f : op X ⟶ op affineLine.{u}) :
-    globalSectionsIsoYoneda.inv.app (op (op X)) f = f.unop.toRingHom affineLineVar :=
-  (rfl)
+    globalSectionsIsoYoneda.inv.app (op (op X)) f = f.unop.toRingHom affineLineVar := (rfl)
 
 end AffineLine
 

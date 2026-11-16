@@ -184,68 +184,56 @@ theorem isInducing_presentationLimitMap_of_isSheafFor_spaRationalOpens
   have hglue := (isSheafFor_ofArrows_iff_existsUnique_presentationLimitMap P hVW).mp hSheaf
   have hr_compat (x : presentationLimit (P := P) Aplus W) (k l : κ) :
       (presentationLimitMap (P := P) (inf_le_left : V k ⊓ V l ≤ V k)).hom.1 (r x k) =
-        (presentationLimitMap (P := P) (inf_le_right : V k ⊓ V l ≤ V l)).hom.1 (r x l) := by
-    have hc₁ := ConcreteCategory.congr_hom (congrArg (fun f ↦ f.hom)
-      (presentationLimitMap_comp (P := P) (Aplus := Aplus) (hVW k)
-        (inf_le_left : V k ⊓ V l ≤ V k))) x
-    have hc₂ := ConcreteCategory.congr_hom (congrArg (fun f ↦ f.hom)
-      (presentationLimitMap_comp (P := P) (Aplus := Aplus) (hVW l)
-        (inf_le_right : V k ⊓ V l ≤ V l))) x
-    exact hc₁.trans hc₂.symm
-  have hr_inj : Function.Injective r := by
-    intro x₁ x₂ hx
-    obtain ⟨a, _, hu⟩ := hglue (r x₁) (hr_compat x₁)
+        (presentationLimitMap (P := P) (inf_le_right : V k ⊓ V l ≤ V l)).hom.1 (r x l) :=
+    (ConcreteCategory.congr_hom (congrArg (fun f ↦ f.hom) (presentationLimitMap_comp (P := P)
+        (Aplus := Aplus) (hVW k) (inf_le_left : V k ⊓ V l ≤ V k))) x).trans
+      (ConcreteCategory.congr_hom (congrArg (fun f ↦ f.hom) (presentationLimitMap_comp (P := P)
+        (Aplus := Aplus) (hVW l) (inf_le_right : V k ⊓ V l ≤ V l))) x).symm
+  have hr_inj : Function.Injective r := fun x₁ x₂ hx ↦ by
+    obtain ⟨_, _, hu⟩ := hglue (r x₁) (hr_compat x₁)
     exact (hu x₁ fun _ ↦ rfl).trans (hu x₂ fun k ↦ congrFun hx.symm k).symm
   have hr_range : Set.range r = { y | ∀ k l : κ,
       (presentationLimitMap (P := P) (inf_le_left : V k ⊓ V l ≤ V k)).hom.1 (y k) =
-        (presentationLimitMap (P := P) (inf_le_right : V k ⊓ V l ≤ V l)).hom.1 (y l) } := by
-    ext y
-    refine ⟨?_, fun hy ↦ ?_⟩
-    · rintro ⟨x, rfl⟩ k l
-      exact hr_compat x k l
-    · obtain ⟨a, ha, -⟩ := hglue y hy
-      exact ⟨a, funext ha⟩
+        (presentationLimitMap (P := P) (inf_le_right : V k ⊓ V l ≤ V l)).hom.1 (y l) } :=
+    Set.ext fun y ↦ ⟨by rintro ⟨x, rfl⟩; exact hr_compat x,
+      fun hy ↦ by obtain ⟨a, ha, -⟩ := hglue y hy; exact ⟨a, funext ha⟩⟩
   have hr_closed : IsClosed (Set.range r) := by
     rw [hr_range]
-    have hEq : { y : ∀ k : κ, presentationLimit (P := P) Aplus (V k) | ∀ k l : κ,
-        (presentationLimitMap (P := P) (inf_le_left : V k ⊓ V l ≤ V k)).hom.1 (y k) =
-          (presentationLimitMap (P := P) (inf_le_right : V k ⊓ V l ≤ V l)).hom.1 (y l) } =
-        ⋂ (k : κ) (l : κ), { y |
-          (presentationLimitMap (P := P) (inf_le_left : V k ⊓ V l ≤ V k)).hom.1 (y k) =
-            (presentationLimitMap (P := P) (inf_le_right : V k ⊓ V l ≤ V l)).hom.1 (y l) } := by
-      ext y; simp
-    rw [hEq]
-    refine isClosed_iInter fun k ↦ isClosed_iInter fun l ↦ isClosed_eq ?_ ?_
-    · exact ((presentationLimitMap (P := P) (inf_le_left : V k ⊓ V l ≤ V k)).hom.2).comp
-        (continuous_apply k)
-    · exact ((presentationLimitMap (P := P) (inf_le_right : V k ⊓ V l ≤ V l)).hom.2).comp
-        (continuous_apply l)
+    simp_rw [Set.ofPred_forall]
+    exact isClosed_iInter fun k ↦ isClosed_iInter fun l ↦ isClosed_eq
+      ((presentationLimitMap (P := P) (inf_le_left : V k ⊓ V l ≤ V k)).hom.2.comp
+        (continuous_apply k))
+      ((presentationLimitMap (P := P) (inf_le_right : V k ⊓ V l ≤ V l)).hom.2.comp
+        (continuous_apply l))
   -- Transfer closedness and injectivity along `eW` and `ePi` to `L`, and apply Open Mapping.
   have hL_range : (L.range : Set N) = ePi '' Set.range r := by
     ext z
     simp only [Set.mem_image, Set.mem_range]
-    constructor
-    · rintro ⟨b, rfl⟩
-      exact ⟨r (eW.symm b), ⟨eW.symm b, rfl⟩, by rw [← hcomm, eW.apply_symm_apply]⟩
-    · rintro ⟨_, ⟨x, rfl⟩, rfl⟩
-      exact ⟨eW x, hcomm x⟩
-  have hL_closed : IsClosed (L.range : Set N) := by
-    rw [hL_range]
-    exact ePi.isClosedMap _ hr_closed
-  have hL_inj : Function.Injective L := by
-    intro b₁ b₂ hb
-    apply eW.symm.injective
-    apply hr_inj
-    apply ePi.injective
-    rw [← hcomm, ← hcomm, eW.apply_symm_apply, eW.apply_symm_apply, hb]
+    exact ⟨by rintro ⟨b, rfl⟩
+              exact ⟨r (eW.symm b), ⟨_, rfl⟩, by rw [← hcomm, eW.apply_symm_apply]⟩,
+      by rintro ⟨_, ⟨x, rfl⟩, rfl⟩; exact ⟨eW x, hcomm x⟩⟩
+  have hL_closed : IsClosed (L.range : Set N) := hL_range ▸ ePi.isClosedMap _ hr_closed
+  have hL_inj : Function.Injective L := fun b₁ b₂ hb ↦ eW.symm.injective <| hr_inj <|
+    ePi.injective <| by rw [← hcomm, ← hcomm, eW.apply_symm_apply, eW.apply_symm_apply, hb]
   have hL_emb : IsEmbedding (L : B → N) :=
     isEmbedding_iff_isStrictMap_injective.mpr
       ⟨L.isStrictMap_of_isClosed_range_of_isTateRing hLcont.continuousAt hL_closed, hL_inj⟩
-  have hcomp : (L : B → N) ∘ eW = ePi ∘ r := funext hcomm
-  have hePi_r : IsInducing (ePi ∘ r) := by
-    rw [← hcomp]
-    exact hL_emb.isInducing.comp eW.isInducing
-  exact ePi.isInducing.of_comp_iff.mp hePi_r
+  exact ePi.isInducing.of_comp_iff.mp <|
+    (funext hcomm : (L : B → N) ∘ eW = ePi ∘ r) ▸ hL_emb.isInducing.comp eW.isInducing
+
+include P in
+omit [IsTateRing A] in
+/-- Quasi-compactness of rational opens extracts a finite subcover from any open cover. -/
+private theorem exists_finite_subcover_spaRationalOpens {W : Opens ↥(spa Aplus)}
+    (hW : W ∈ spaRationalOpens Aplus) {ι : Type*} {U : ι → Opens ↥(spa Aplus)}
+    (hcov : ⨆ i, U i = W) : ∃ I : Finset ι, (⨆ k : ↥I, U k.1) = W := by
+  have _ : IsHuberRing A := ⟨⟨P⟩⟩
+  obtain ⟨I, hIW⟩ := (isCompact_of_mem_spaRationalFamily
+      (mem_spaRationalOpens.mp hW)).elim_finite_subcover (fun i ↦ (U i : Set ↥(spa Aplus)))
+    (fun i ↦ (U i).isOpen) (by rw [← Opens.coe_iSup, hcov])
+  refine ⟨I, le_antisymm (iSup_le fun k ↦ (le_iSup U k.1).trans_eq hcov) fun x hx ↦ ?_⟩
+  obtain ⟨i, hi, hxU⟩ := Set.mem_iUnion₂.mp (hIW hx)
+  exact Opens.mem_iSup.mpr ⟨⟨i, hi⟩, hxU⟩
 
 omit [IsTateRing A] in
 /-- Compactness of rational opens upgrades set-level gluing from finite rational covers of rational
@@ -264,21 +252,11 @@ private theorem isSheafFor_spaRationalOpens_of_finite
       (presentationLimitPresheaf P Aplus ⋙ TopCommRingCat.isCompleteSeparated.ι ⋙
         forget _root_.TopCommRingCat) := by
   have _ : IsHuberRing A := ⟨⟨P⟩⟩
-  have hWcomp : IsCompact (W : Set ↥(spa Aplus)) :=
-    isCompact_of_mem_spaRationalFamily (mem_spaRationalOpens.mp hW)
-  obtain ⟨I, hIW⟩ := hWcomp.elim_finite_subcover (fun i ↦ (U i : Set ↥(spa Aplus)))
-    (fun i ↦ (U i).isOpen) (by rw [← Opens.coe_iSup, hcov])
-  have hcovI : (⨆ k : ↥I, U k.1) = W := by
-    refine le_antisymm (iSup_le fun k ↦ (le_iSup U k.1).trans_eq hcov) ?_
-    intro x hx
-    obtain ⟨i, hi, hxU⟩ := Set.mem_iUnion₂.mp (hIW hx)
-    exact Opens.mem_iSup.mpr ⟨⟨i, hi⟩, hxU⟩
+  obtain ⟨I, hcovI⟩ := exists_finite_subcover_spaRationalOpens P hW hcov
   have hcovUi (i : ι) : (⨆ k : ↥I, U i ⊓ U k.1) = U i := by
-    refine le_antisymm (iSup_le fun _ ↦ inf_le_left) ?_
-    intro x hx
-    have hxW : x ∈ W := ((le_iSup U i).trans_eq hcov) hx
-    obtain ⟨j, hj, hxUj⟩ := Set.mem_iUnion₂.mp (hIW hxW)
-    exact Opens.mem_iSup.mpr ⟨⟨j, hj⟩, hx, hxUj⟩
+    refine le_antisymm (iSup_le fun _ ↦ inf_le_left) fun x hx ↦ ?_
+    obtain ⟨k, hxk⟩ := Opens.mem_iSup.mp (hcovI ▸ ((le_iSup U i).trans_eq hcov) hx)
+    exact Opens.mem_iSup.mpr ⟨k, hx, hxk⟩
   refine Presieve.isSheafFor_ofArrows_of_factorsThru _
     (fun i ↦ Presieve.ofArrows (fun k : ↥I ↦ U i ⊓ U k.1)
       fun k ↦ homOfLE ((le_iSup (fun k : ↥I ↦ U i ⊓ U k.1) k).trans_eq (hcovUi i)))
@@ -287,13 +265,11 @@ private theorem isSheafFor_spaRationalOpens_of_finite
     (S := Presieve.ofArrows (fun k : ↥I ↦ U k.1)
       fun k ↦ homOfLE ((le_iSup (fun k : ↥I ↦ U k.1) k).trans_eq hcovI))
     (hfin (V := fun k : ↥I ↦ U k.1) hW (fun k ↦ hU k.1) hcovI)
-    (fun V g hg ↦ ?_) (fun i Z g hg ↦ ?_)
-  · obtain ⟨k⟩ := hg
-    exact ⟨U k.1, 𝟙 _, homOfLE ((le_iSup U k.1).trans_eq hcov), Presieve.ofArrows.mk k.1,
-      Category.id_comp _⟩
-  · obtain ⟨k⟩ := hg
-    exact ⟨U k.1, homOfLE inf_le_right, homOfLE ((le_iSup (fun k : ↥I ↦ U k.1) k).trans_eq hcovI),
-      Presieve.ofArrows.mk k, Subsingleton.elim _ _⟩
+    (fun V g ⟨k⟩ ↦ ⟨U k.1, 𝟙 _, homOfLE ((le_iSup U k.1).trans_eq hcov), Presieve.ofArrows.mk k.1,
+      Category.id_comp _⟩)
+    (fun i Z g ⟨k⟩ ↦ ⟨U k.1, homOfLE inf_le_right,
+      homOfLE ((le_iSup (fun k : ↥I ↦ U k.1) k).trans_eq hcovI), Presieve.ofArrows.mk k,
+      Subsingleton.elim _ _⟩)
 
 /-- **Topological sheafhood from finite rational covers of rational opens.** Over a Tate ring `A`
 with `A⁺ ⊆ A°`, if the presheaf of sets underlying `presentationLimitPresheaf P Aplus` satisfies
@@ -316,21 +292,12 @@ theorem isSheaf_presentationLimitPresheaf_of_isSheafFor_finite_rationalOpens
   refine isSheaf_rational_comp_of_isSheafFor_ofArrows P
     (TopCommRingCat.isCompleteSeparated.ι ⋙ coyoneda.obj (op E)) fun {W} {ι} {U} hW hU hcov ↦ ?_
   have hSet := isSheafFor_spaRationalOpens_of_finite P hfin hW hU hcov
-  -- Extract a finite subcover `I : Finset ι` of `W` to obtain the inducing property.
-  have hWcomp : IsCompact (W : Set ↥(spa Aplus)) :=
-    isCompact_of_mem_spaRationalFamily (mem_spaRationalOpens.mp hW)
-  obtain ⟨I, hIW⟩ := hWcomp.elim_finite_subcover (fun i ↦ (U i : Set ↥(spa Aplus)))
-    (fun i ↦ (U i).isOpen) (by rw [← Opens.coe_iSup, hcov])
-  have hcovI : (⨆ k : ↥I, U k.1) = W := by
-    refine le_antisymm (iSup_le fun k ↦ (le_iSup U k.1).trans_eq hcov) ?_
-    intro x hx
-    obtain ⟨i, hi, hxU⟩ := Set.mem_iUnion₂.mp (hIW hx)
-    exact Opens.mem_iSup.mpr ⟨⟨i, hi⟩, hxU⟩
+  obtain ⟨I, hcovI⟩ := exists_finite_subcover_spaRationalOpens P hW hcov
   have hIndI := (isInducing_restrictionMap_iff_isInducing_presentationLimitMap P
     (fun k : ↥I ↦ (le_iSup (fun k : ↥I ↦ U k.1) k).trans_eq hcovI)).mpr
       (isInducing_presentationLimitMap_of_isSheafFor_spaRationalOpens P hAplus hW
         (fun k : ↥I ↦ hU k.1) (fun k : ↥I ↦ (le_iSup (fun k : ↥I ↦ U k.1) k).trans_eq hcovI)
-        (hfin (V := fun k : ↥I ↦ U k.1) hW (fun k : ↥I ↦ hU k.1) hcovI))
+        (hfin (V := fun k : ↥I ↦ U k.1) hW (fun k ↦ hU k.1) hcovI))
   let F := presentationLimitPresheaf P Aplus ⋙ TopCommRingCat.isCompleteSeparated.ι
   have hIndU : IsInducing fun (x : F.obj (op W)) (i : ι) ↦
       (F.map (homOfLE ((le_iSup U i).trans_eq hcov)).op).1 x :=
