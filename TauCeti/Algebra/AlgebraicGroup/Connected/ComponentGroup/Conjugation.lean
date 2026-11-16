@@ -124,8 +124,14 @@ theorem componentGroupConjugationEquiv_subgroupComponentMap (I J : HopfIdeal k H
       subgroupComponentMap H J
         ⟨g * x.1 * g⁻¹,
           conj_mem_quotientPointsSubgroup_of_eq_conjugate H I J g hJ x.2⟩ := by
-  obtain ⟨q, rfl⟩ := (quotientPointsSubgroupMulEquiv H I (CommAlgCat.of k k)).surjective x
-  rw [subgroupComponentMap_quotientPointsSubgroupMulEquiv]
+  obtain ⟨q, rfl⟩ := (CommHopfAlgCat.quotientPointsSubgroupIso H.obj I
+    (CommAlgCat.of k k)).groupIsoToMulEquiv.surjective x
+  have hqeq :
+      (CommHopfAlgCat.quotientPointsSubgroupIso H.obj I (CommAlgCat.of k k)).groupIsoToMulEquiv q =
+      ⟨CommHopfAlgCat.quotientPointsHom H.obj I (CommAlgCat.of k k) q,
+        CommHopfAlgCat.quotientPointsHom_mem_quotientPointsSubgroup H.obj I _ q⟩ :=
+    CommHopfAlgCat.quotientPointsSubgroupIso_hom_apply H.obj I (CommAlgCat.of k k) q
+  rw [hqeq, subgroupComponentMap_quotientPointsHom]
   -- Expose `mapComponentGroup` in the definition of `componentGroupConjugationEquiv`.
   change mapComponentGroup
       (ofHom (I.quotientConjugationEquiv J g hJ).toBialgHom : quotient H J ⟶ quotient H I)
@@ -134,8 +140,7 @@ theorem componentGroupConjugationEquiv_subgroupComponentMap (I J : HopfIdeal k H
   let q' : HopfAlgebra.points (R := k) (H := quotient H J) (CommAlgCat.of k k) :=
     BialgHom.mapDomain (A := k) (I.quotientConjugationEquiv J g hJ).toBialgHom q
   have hval : CommHopfAlgCat.quotientPointsHom H.obj J (CommAlgCat.of k k) q' =
-      g * (quotientPointsSubgroupMulEquiv H I (CommAlgCat.of k k) q).1 * g⁻¹ := by
-    rw [quotientPointsSubgroupMulEquiv_apply_val]
+      g * CommHopfAlgCat.quotientPointsHom H.obj I (CommAlgCat.of k k) q * g⁻¹ := by
     have hconj :
         BialgHom.mapDomain (A := k) (HopfAlgebra.pointConjugationBialgEquiv g).toBialgHom
           (CommHopfAlgCat.quotientPointsHom H.obj I (CommAlgCat.of k k) q) =
@@ -156,9 +161,9 @@ theorem componentGroupConjugationEquiv_subgroupComponentMap (I J : HopfIdeal k H
       HopfIdeal.quotientConjugationEquiv_mk, CommHopfAlgCat.quotientPointsHom_apply_apply,
       Ideal.Quotient.mkₐ_eq_mk, hpt]
   have hsub :
-      (⟨g * (quotientPointsSubgroupMulEquiv H I (CommAlgCat.of k k) q).1 * g⁻¹,
+      (⟨g * CommHopfAlgCat.quotientPointsHom H.obj I (CommAlgCat.of k k) q * g⁻¹,
         conj_mem_quotientPointsSubgroup_of_eq_conjugate H I J g hJ
-          (quotientPointsSubgroupMulEquiv H I (CommAlgCat.of k k) q).2⟩ :
+          (CommHopfAlgCat.quotientPointsHom_mem_quotientPointsSubgroup H.obj I _ q)⟩ :
         CommHopfAlgCat.quotientPointsSubgroup H.obj J (CommAlgCat.of k k)) =
       ⟨CommHopfAlgCat.quotientPointsHom H.obj J (CommAlgCat.of k k) q',
         CommHopfAlgCat.quotientPointsHom_mem_quotientPointsSubgroup H.obj J _ q'⟩ :=

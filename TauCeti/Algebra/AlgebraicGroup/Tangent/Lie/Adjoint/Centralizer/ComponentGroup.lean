@@ -262,19 +262,6 @@ theorem ker_centralizerComponentMap (H : FiniteTypeCommHopfAlgCat.{u, u} k)
           (CommAlgCat.of k k)) :=
   ker_subgroupComponentMap H (centralizerHopfIdeal H x)
 
-/-- Evaluating `centralizerComponentMap` on an image of `quotientPointsSubgroupMulEquiv` recovers
-`rationalComponentMap` on the quotient coordinate Hopf algebra. -/
-@[simp]
-theorem centralizerComponentMap_quotientPointsSubgroupMulEquiv
-    (H : FiniteTypeCommHopfAlgCat.{u, u} k)
-    (x : Module.Dual k (Bialgebra.CotangentSpace k H))
-    (q : HopfAlgebra.points (R := k) (H := quotient H (centralizerHopfIdeal H x))
-      (CommAlgCat.of k k)) :
-    centralizerComponentMap H x
-        (quotientPointsSubgroupMulEquiv H (centralizerHopfIdeal H x) (CommAlgCat.of k k) q) =
-      rationalComponentMap (quotient H (centralizerHopfIdeal H x)) q :=
-  subgroupComponentMap_quotientPointsSubgroupMulEquiv H (centralizerHopfIdeal H x) q
-
 /-- Evaluating `centralizerComponentMap` on an included quotient point agrees with
 `rationalComponentMap`. -/
 @[simp]
@@ -612,9 +599,16 @@ theorem mapCentralizerComponentGroup_centralizerComponentMap
       centralizerComponentMap H (dualCotangentMap f.hom.hom x)
         ⟨BialgHom.mapDomain (A := k) f.hom.hom g.1,
           mapDomain_mem_centralizer_dualCotangentMap f x (CommAlgCat.of k k) g.2⟩ := by
-  obtain ⟨q, rfl⟩ := (quotientPointsSubgroupMulEquiv K (centralizerHopfIdeal K x)
-    (CommAlgCat.of k k)).surjective g
-  rw [centralizerComponentMap_quotientPointsSubgroupMulEquiv]
+  obtain ⟨q, rfl⟩ := (CommHopfAlgCat.quotientPointsSubgroupIso K.obj (centralizerHopfIdeal K x)
+    (CommAlgCat.of k k)).groupIsoToMulEquiv.surjective g
+  have hqeq :
+      (CommHopfAlgCat.quotientPointsSubgroupIso K.obj (centralizerHopfIdeal K x)
+        (CommAlgCat.of k k)).groupIsoToMulEquiv q =
+      ⟨CommHopfAlgCat.quotientPointsHom K.obj (centralizerHopfIdeal K x) (CommAlgCat.of k k) q,
+        CommHopfAlgCat.quotientPointsHom_mem_quotientPointsSubgroup K.obj _ _ q⟩ :=
+    CommHopfAlgCat.quotientPointsSubgroupIso_hom_apply K.obj (centralizerHopfIdeal K x)
+      (CommAlgCat.of k k) q
+  rw [hqeq, centralizerComponentMap_quotientPointsHom]
   have hmap : mapCentralizerComponentGroup f x
       ((quotient K (centralizerHopfIdeal K x)).rationalComponentMap q) =
       (quotient H (centralizerHopfIdeal H (dualCotangentMap f.hom.hom x))).rationalComponentMap
@@ -632,9 +626,8 @@ theorem mapCentralizerComponentGroup_centralizerComponentMap
       CommHopfAlgCat.quotientPointsHom H.obj
           (centralizerHopfIdeal H (dualCotangentMap f.hom.hom x)) (CommAlgCat.of k k) q' =
         BialgHom.mapDomain (A := k) f.hom.hom
-          (quotientPointsSubgroupMulEquiv K (centralizerHopfIdeal K x)
-            (CommAlgCat.of k k) q).1 := by
-    rw [quotientPointsSubgroupMulEquiv_apply_val]
+          (CommHopfAlgCat.quotientPointsHom K.obj (centralizerHopfIdeal K x)
+            (CommAlgCat.of k k) q) := by
     apply WithConv.ofConv_injective
     ext a
     rw [CommHopfAlgCat.quotientPointsHom_apply_apply, Ideal.Quotient.mkₐ_eq_mk]
@@ -644,9 +637,9 @@ theorem mapCentralizerComponentGroup_centralizerComponentMap
       Ideal.Quotient.mkₐ_eq_mk]
   have hsub :
       (⟨BialgHom.mapDomain (A := k) f.hom.hom
-          (quotientPointsSubgroupMulEquiv K (centralizerHopfIdeal K x) (CommAlgCat.of k k) q).1,
+          (CommHopfAlgCat.quotientPointsHom K.obj (centralizerHopfIdeal K x) (CommAlgCat.of k k) q),
         mapDomain_mem_centralizer_dualCotangentMap f x (CommAlgCat.of k k)
-          (quotientPointsSubgroupMulEquiv K (centralizerHopfIdeal K x) (CommAlgCat.of k k) q).2⟩ :
+          (CommHopfAlgCat.quotientPointsHom_mem_quotientPointsSubgroup K.obj _ _ q)⟩ :
         CommHopfAlgCat.quotientPointsSubgroup H.obj
           (centralizerHopfIdeal H (dualCotangentMap f.hom.hom x)) (CommAlgCat.of k k)) =
       ⟨CommHopfAlgCat.quotientPointsHom H.obj
