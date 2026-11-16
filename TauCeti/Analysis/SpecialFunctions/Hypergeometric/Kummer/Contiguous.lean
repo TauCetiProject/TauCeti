@@ -24,9 +24,8 @@ Kummer solution of the incomplete Gamma continued fraction (DLMF 8.9.1).
 
 ## Main results
 
-* `Complex.hasDerivAt_regularizedHGFun_singleton`, `Complex.deriv_regularizedHGFun_singleton`,
-  `Complex.differentiable_regularizedHGFun_singleton` —
-  `∂𝐌(a, b, z)/∂z = a 𝐌(a + 1, b + 1, z)` (DLMF 13.3.15), and `𝐌(a, b, ·)` is entire.
+* `Complex.hasDerivAt_regularizedHGFun_singleton`, `Complex.deriv_regularizedHGFun_singleton` —
+  `∂𝐌(a, b, z)/∂z = a 𝐌(a + 1, b + 1, z)` (DLMF 13.3.15).
 * `Complex.regularizedHGFun_one_singleton_eq_inv_Gamma_add_mul` —
   `𝐌(1, b, z) = (Γ b)⁻¹ + z 𝐌(1, b + 1, z)`.
 * `Complex.regularizedHGFun_add_one_singleton_sub` —
@@ -34,7 +33,7 @@ Kummer solution of the incomplete Gamma continued fraction (DLMF 8.9.1).
 * `Complex.regularizedHGFun_singleton_sub_mul` —
   `𝐌(a, b, z) - b 𝐌(a, b + 1, z) = a z 𝐌(a + 1, b + 2, z)`.
 * `Complex.regularizedHGFun_singleton_sub_mul_add_one_left` —
-  `𝐌(a, b, z) - b 𝐌(a + 1, b + 1, z) = (a - b) z 𝐌(a + 1, b + 2, z)` (DLMF 13.3.2).
+  `𝐌(a, b, z) - b 𝐌(a + 1, b + 1, z) = (a - b) z 𝐌(a + 1, b + 2, z)`.
 * `Complex.regularizedHGFun_singleton_eq_sub_mul_add_mul` —
   `𝐌(a, b, z) = (b - a) 𝐌(a, b + 1, z) + a 𝐌(a + 1, b + 1, z)` (DLMF 13.3.3).
 
@@ -84,19 +83,13 @@ theorem hasDerivAt_regularizedHGFun_singleton (a b z : ℂ) :
     simp only [div_eq_mul_inv, mul_inv]
     linear_combination a * (ascPochhammer ℂ n).eval (a + 1) * (n ! : ℂ)⁻¹ *
       (Gamma (b + 1 + n))⁻¹ * z ^ n * inv_mul_cancel₀ hn
-  exact hderiv ▸ (analyticAt_regularizedHGFun_of_card_le hcard z).differentiableAt.hasDerivAt
+  exact hderiv ▸ (differentiable_regularizedHGFun_of_card_le hcard z).hasDerivAt
 
 /-- The derivative of `𝐌(a, b, ·)` as a function: `deriv (𝐌(a, b, ·)) = a 𝐌(a + 1, b + 1, ·)`. -/
 @[simp]
 theorem deriv_regularizedHGFun_singleton (a b : ℂ) :
     deriv (regularizedHGFun {a} {b}) = fun z => a * regularizedHGFun {a + 1} {b + 1} z :=
   funext fun z => (hasDerivAt_regularizedHGFun_singleton a b z).deriv
-
-/-- For every complex `a` and `b`, the regularized Kummer function `𝐌(a, b, ·)` is entire. -/
-@[fun_prop]
-theorem differentiable_regularizedHGFun_singleton (a b : ℂ) :
-    Differentiable ℂ (regularizedHGFun {a} {b}) :=
-  fun z => (hasDerivAt_regularizedHGFun_singleton a b z).differentiableAt
 
 /-- Shifting the lower parameter in `𝐌(1, b, z) = ∑ zⁿ / Γ(b + n)` splits off the constant term:
 `𝐌(1, b, z) = (Γ b)⁻¹ + z 𝐌(1, b + 1, z)`, for all `b, z : ℂ`. -/
@@ -174,7 +167,7 @@ theorem regularizedHGFun_singleton_sub_mul (a b z : ℂ) :
     a * (ascPochhammer ℂ n).eval (a + 1) * (n ! : ℂ)⁻¹ * (Gamma (b + (n + 1) + 1))⁻¹ *
       z * z ^ n * mul_inv_cancel₀ hn
 
-/-- Contiguous relation combining `𝐌(a, b, z)` and `𝐌(a + 1, b + 1, z)` (DLMF 13.3.2):
+/-- Contiguous relation combining `𝐌(a, b, z)` and `𝐌(a + 1, b + 1, z)`:
 `𝐌(a, b, z) - b 𝐌(a + 1, b + 1, z) = (a - b) z 𝐌(a + 1, b + 2, z)`, for all `a, b, z : ℂ`. -/
 theorem regularizedHGFun_singleton_sub_mul_add_one_left (a b z : ℂ) :
     regularizedHGFun {a} {b} z - b * regularizedHGFun {a + 1} {b + 1} z =

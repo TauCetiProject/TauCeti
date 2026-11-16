@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.ContinuedFractions.ContinuantsRecurrence
-public import TauCeti.Analysis.SpecialFunctions.Hypergeometric.Kummer.Contiguous
+public import TauCeti.Algebra.ContinuedFractions.Pincherle
 public import TauCeti.Analysis.SpecialFunctions.IncompleteGamma.Lower
+import TauCeti.Analysis.SpecialFunctions.Hypergeometric.Kummer.Contiguous
 import TauCeti.Analysis.SpecialFunctions.Hypergeometric.Kummer.Limit
+import TauCeti.Analysis.SpecificLimits.Normed
 
 /-!
 # The continued fraction of Tricomi's incomplete Gamma function
@@ -23,19 +24,20 @@ Following Gautschi (1967), the file introduces the explicit Kummer sequence
 `f(n) = tricomiContFractSol a z n` solving the three-term recurrence
 `y(n + 1) = bₙ y(n) + aₙ y(n - 1)` (`n ≥ 1`), normalized by `f(0) = 1` and expressed through
 Mathlib's regularized Kummer function `𝐌(⌈n / 2⌉, a + n, z) = regularizedHGFun {⌈n / 2⌉} {a + n} z`
-so that `-f(1) / f(0) = Γ(a + 1) 𝐌(1, a + 1, z) = Γ(a + 1) e^z γ*(a, z)`. At `z = 0`, all partial
+so that `-f(1) = Γ(a + 1) 𝐌(1, a + 1, z) = Γ(a + 1) e^z γ*(a, z)`. At `z = 0`, all partial
 numerators from `a₂` onward vanish and every convergent from index `1` onward equals
 `1 = Γ(a + 1) γ*(a, 0)`. For `z ≠ 0`, `f` has the large-index asymptotic
 `Γ(a + m) f(m) / ((-1)^m (a₁ ⋯ aₘ) Γ(a + 1)) → e^{z / 2}`, so `f` is eventually nonzero and its
 reduction-of-order partial sums `∑_{m = N}^{n - 1} (-1)^m (a₁ ⋯ aₘ) / (f(m) f(m + 1))` diverge in
 norm, giving eventual nonvanishing of the continuant denominators and convergence of the
-continued fraction.
+continued fraction via `TauCeti.tendsto_convs_contFrac_of_tendsto_norm_sum`.
 
 ## Main definitions
 
 * `Complex.tricomiContFractNum a z` — the 1-indexed partial numerators of DLMF 8.9.1.
 * `Complex.tricomiContFractDen a` — the 1-indexed partial denominators of DLMF 8.9.1.
-* `Complex.tricomiContFract a z` — the `GenContFract ℂ` of DLMF 8.9.1.
+* `Complex.tricomiContFract a z` — the `GenContFract ℂ` of DLMF 8.9.1, defined through
+  `TauCeti.contFrac`.
 * `Complex.tricomiContFractSol a z` — the explicit Kummer solution of the recurrence with
   `f(0) = 1`.
 
@@ -43,7 +45,7 @@ continued fraction.
 
 * `Complex.tricomiContFract_zero_convs` — at `z = 0`, the convergents equal `1` for every `n ≥ 1`
   when `a + 1 ∉ -ℕ`.
-* `Complex.tricomiContFractSol_add_one` — `tricomiContFractSol a z` satisfies the three-term
+* `Complex.tricomiContFractSol_recurrence` — `tricomiContFractSol a z` satisfies the three-term
   recurrence `f(n + 1) = bₙ f(n) + aₙ f(n - 1)` for `n ≥ 1` when `a + 1 ∉ -ℕ`.
 * `Complex.tendsto_Gamma_mul_tricomiContFractSol_div` — Gautschi's large-index asymptotic
   `Γ(a + m) f(m) / ((-1)^m (a₁ ⋯ aₘ) Γ(a + 1)) → e^{z / 2}` for `a + 1 ∉ -ℕ` and `z ≠ 0`.
@@ -153,6 +155,16 @@ theorem tricomiContFractNum_ne_zero {a z : ℂ} (ha : ∀ k : ℕ, a + 1 ≠ -k)
   · rw [tricomiContFractNum_two_mul_add_one a z (by omega)]
     exact mul_ne_zero (Nat.cast_ne_zero.2 (by omega)) hz
 
+private theorem prod_Icc_tricomiContFractNum_ne_zero {a z : ℂ} (ha : ∀ k : ℕ, a + 1 ≠ -k)
+    (hz : z ≠ 0) (m : ℕ) : (∏ j ∈ Icc 1 m, tricomiContFractNum a z j) ≠ 0 :=
+  Finset.prod_ne_zero_iff.2 fun _ hj =>
+    tricomiContFractNum_ne_zero ha hz (Finset.mem_Icc.1 hj).1
+
+private theorem neg_one_pow_mul_prod_Icc_tricomiContFractNum_ne_zero {a z : ℂ}
+    (ha : ∀ k : ℕ, a + 1 ≠ -k) (hz : z ≠ 0) (m : ℕ) :
+    (-1 : ℂ) ^ m * (∏ j ∈ Icc 1 m, tricomiContFractNum a z j) ≠ 0 :=
+  mul_ne_zero (pow_ne_zero _ (by norm_num)) (prod_Icc_tricomiContFractNum_ne_zero ha hz m)
+
 /-- The 1-indexed partial denominators `bₙ` of the continued fraction DLMF 8.9.1 for Tricomi's
 incomplete Gamma function: `b₁ = 1` and `bₙ = a + n - 1` for `n ≥ 2` (with `b₀ = 0`). -/
 def tricomiContFractDen (a : ℂ) : ℕ → ℂ
@@ -185,97 +197,81 @@ theorem tricomiContFractDen_of_two_le (a : ℂ) {n : ℕ} (hn : 2 ≤ n) :
   ring
 
 /-- The generalized continued fraction of DLMF 8.9.1 for `Γ(a + 1) e^z γ*(a, z)`, with head `0`,
-partial numerators `tricomiContFractNum a z (n + 1)`, and partial denominators
-`tricomiContFractDen a (n + 1)`. -/
+partial numerators `tricomiContFractNum a z`, and partial denominators `tricomiContFractDen a`. -/
 def tricomiContFract (a z : ℂ) : GenContFract ℂ :=
-  ⟨0, Stream'.Seq.ofStream fun n =>
-    ⟨tricomiContFractNum a z (n + 1), tricomiContFractDen a (n + 1)⟩⟩
+  TauCeti.contFrac (tricomiContFractNum a z) (tricomiContFractDen a)
 
-/-- Unfolding `tricomiContFract` to its head and stream of numerator-denominator pairs. -/
+/-- Unfolding `tricomiContFract` to `TauCeti.contFrac`. -/
 theorem tricomiContFract_def (a z : ℂ) :
     tricomiContFract a z =
-      ⟨0, Stream'.Seq.ofStream fun n =>
-        ⟨tricomiContFractNum a z (n + 1), tricomiContFractDen a (n + 1)⟩⟩ := (rfl)
+      TauCeti.contFrac (tricomiContFractNum a z) (tricomiContFractDen a) := (rfl)
 
 /-- The head term of `tricomiContFract a z` is `0`. -/
 @[simp]
-theorem tricomiContFract_h (a z : ℂ) : (tricomiContFract a z).h = 0 := (rfl)
+theorem tricomiContFract_h (a z : ℂ) : (tricomiContFract a z).h = 0 :=
+  TauCeti.contFrac_h _ _
 
 /-- The `n`-th 0-indexed pair of `tricomiContFract a z` consists of `a_{n + 1}` and `b_{n + 1}`. -/
 @[simp]
 theorem tricomiContFract_s_get? (a z : ℂ) (n : ℕ) :
     (tricomiContFract a z).s.get? n =
-      some ⟨tricomiContFractNum a z (n + 1), tricomiContFractDen a (n + 1)⟩ := (rfl)
+      some ⟨tricomiContFractNum a z (n + 1), tricomiContFractDen a (n + 1)⟩ :=
+  TauCeti.contFrac_s_get? _ _ n
 
 /-- The infinite continued fraction `tricomiContFract a z` never terminates in `Stream'.Seq`. -/
 @[simp]
 theorem not_terminatedAt_tricomiContFract (a z : ℂ) (n : ℕ) :
-    ¬(tricomiContFract a z).TerminatedAt n := by
-  simp [GenContFract.terminatedAt_iff_s_none]
+    ¬(tricomiContFract a z).TerminatedAt n :=
+  TauCeti.not_terminatedAt_contFrac _ _ n
 
 /-! ### Exact evaluation at `z = 0` -/
+
+/-- At `z = 0`, the `n`-th continuant pair (`n ≥ 1`) of `tricomiContFract a 0` has both entries
+equal to the rising factorial `(a + 1)_{n - 1}`. -/
+theorem tricomiContFract_zero_conts (a : ℂ) {n : ℕ} (hn : 1 ≤ n) :
+    (tricomiContFract a 0).conts n =
+      ⟨(ascPochhammer ℂ (n - 1)).eval (a + 1), (ascPochhammer ℂ (n - 1)).eval (a + 1)⟩ := by
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hn
+  clear hn
+  rw [add_comm 1 k, add_tsub_cancel_right]
+  induction k using Nat.twoStepInduction with
+  | zero =>
+    rw [zero_add, GenContFract.first_cont_eq (tricomiContFract_s_get? a 0 0)]
+    simp
+  | one =>
+    have h1 : (tricomiContFract a 0).conts 1 = ⟨1, 1⟩ := by
+      rw [GenContFract.first_cont_eq (tricomiContFract_s_get? a 0 0)]
+      simp
+    rw [GenContFract.conts_recurrence (tricomiContFract_s_get? a 0 1) rfl h1]
+    simp
+  | more k ih0 ih1 =>
+    have hk : k + 2 + 1 = (k + 1) + 2 := by omega
+    rw [hk, GenContFract.conts_recurrence (tricomiContFract_s_get? a 0 (k + 1 + 1)) ih0 ih1,
+      tricomiContFractNum_zero_right a (by omega), tricomiContFractDen_add_two, zero_mul, add_zero,
+      ascPochhammer_succ_eval (n := k + 1)]
+    congr 1 <;> (push_cast; ring)
 
 /-- At `z = 0`, the `n`-th continuant numerator (`n ≥ 1`) of `tricomiContFract a 0` is the rising
 factorial `(a + 1)_{n - 1}`. -/
 theorem tricomiContFract_zero_nums (a : ℂ) {n : ℕ} (hn : 1 ≤ n) :
     (tricomiContFract a 0).nums n = (ascPochhammer ℂ (n - 1)).eval (a + 1) := by
-  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hn
-  clear hn
-  rw [add_comm 1 k, add_tsub_cancel_right]
-  induction k using Nat.twoStepInduction with
-  | zero =>
-    rw [zero_add, GenContFract.first_num_eq (tricomiContFract_s_get? a 0 0)]
-    simp
-  | one =>
-    have hs1 := tricomiContFract_s_get? a 0 1
-    have h1 : (tricomiContFract a 0).nums 1 = 1 := by
-      rw [GenContFract.first_num_eq (tricomiContFract_s_get? a 0 0)]
-      simp
-    rw [GenContFract.nums_recurrence hs1 rfl h1]
-    simp
-  | more k ih0 ih1 =>
-    have hk : k + 2 + 1 = (k + 1) + 2 := by omega
-    rw [hk, GenContFract.nums_recurrence (tricomiContFract_s_get? a 0 (k + 1 + 1)) ih0 ih1,
-      tricomiContFractNum_zero_right a (by omega), tricomiContFractDen_add_two, zero_mul, add_zero,
-      ascPochhammer_succ_eval (n := k + 1)]
-    push_cast
-    ring
+  rw [GenContFract.num_eq_conts_a, tricomiContFract_zero_conts a hn]
 
 /-- At `z = 0`, the `n`-th continuant denominator (`n ≥ 1`) of `tricomiContFract a 0` is the rising
 factorial `(a + 1)_{n - 1}`. -/
 theorem tricomiContFract_zero_dens (a : ℂ) {n : ℕ} (hn : 1 ≤ n) :
     (tricomiContFract a 0).dens n = (ascPochhammer ℂ (n - 1)).eval (a + 1) := by
-  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hn
-  clear hn
-  rw [add_comm 1 k, add_tsub_cancel_right]
-  induction k using Nat.twoStepInduction with
-  | zero =>
-    rw [zero_add, GenContFract.first_den_eq (tricomiContFract_s_get? a 0 0)]
-    simp
-  | one =>
-    have hs1 := tricomiContFract_s_get? a 0 1
-    have h1 : (tricomiContFract a 0).dens 1 = 1 := by
-      rw [GenContFract.first_den_eq (tricomiContFract_s_get? a 0 0)]
-      simp
-    rw [GenContFract.dens_recurrence hs1 rfl h1]
-    simp
-  | more k ih0 ih1 =>
-    have hk : k + 2 + 1 = (k + 1) + 2 := by omega
-    rw [hk, GenContFract.dens_recurrence (tricomiContFract_s_get? a 0 (k + 1 + 1)) ih0 ih1,
-      tricomiContFractNum_zero_right a (by omega), tricomiContFractDen_add_two, zero_mul, add_zero,
-      ascPochhammer_succ_eval (n := k + 1)]
-    push_cast
-    ring
+  rw [GenContFract.den_eq_conts_b, tricomiContFract_zero_conts a hn]
 
 /-- When `a + 1 ∉ -ℕ`, every convergent denominator of `tricomiContFract a 0` is nonzero. -/
 theorem tricomiContFract_zero_dens_ne_zero {a : ℂ} (ha : ∀ k : ℕ, a + 1 ≠ -k) (n : ℕ) :
     (tricomiContFract a 0).dens n ≠ 0 := by
   rcases n with _ | k
   · simp
-  · rw [tricomiContFract_zero_dens a (Nat.succ_pos k), Nat.succ_sub_one,
-      ← Gamma_add_nat_div_Gamma_eq (a + 1) ha]
-    refine div_ne_zero (Gamma_ne_zero fun m hm => ?_) (Gamma_ne_zero ha)
-    exact ha (k + m) (by push_cast; linear_combination hm)
+  · rw [tricomiContFract_zero_dens a (Nat.succ_pos k), Nat.succ_sub_one, ne_eq,
+      ascPochhammer_eval_eq_zero_iff]
+    rintro ⟨m, _, hm⟩
+    exact ha m (by linear_combination hm)
 
 /-- At `z = 0`, every convergent of `tricomiContFract a 0` from index `1` onward equals `1` when
 `a + 1 ∉ -ℕ`. -/
@@ -351,16 +347,15 @@ theorem tricomiContFractSol_two_mul_add_one (a z : ℂ) {k : ℕ} (hk : 1 ≤ k)
   have h3 : (2 * (m + 1) / 2) = 1 + m := by omega
   have h4 : 2 * (1 + m) = 2 * (m + 1) := by omega
   have h5 : 1 + m - 1 = m := by omega
-  rw [heq, tricomiContFractSol, h1, h2, h3, ← heq, h4, h5]
-  push_cast
-  rfl
+  have h6 : (((1 + m + 1 : ℕ) : ℂ)) = ((1 + m : ℕ) : ℂ) + 1 := Nat.cast_add_one (1 + m)
+  rw [heq, tricomiContFractSol, h1, h2, h3, ← heq, h4, h5, h6]
 
-/-- The initial ratio `-f(1) / f(0)` of `tricomiContFractSol` is `Γ(a + 1) e^z γ*(a, z)`. -/
-theorem neg_tricomiContFractSol_one_div_zero (a z : ℂ) :
-    -(tricomiContFractSol a z 1 / tricomiContFractSol a z 0) =
-      Gamma (a + 1) * cexp z * tricomiIncompleteGamma a z := by
-  rw [tricomiContFractSol_one, tricomiContFractSol_zero, div_one, tricomiIncompleteGamma_def,
-    mul_assoc, ← mul_assoc (cexp z), ← Complex.exp_add, add_neg_cancel, Complex.exp_zero, one_mul]
+/-- Value of `-tricomiContFractSol` at `1` in terms of `tricomiIncompleteGamma`:
+`-f(1) = Γ(a + 1) e^z γ*(a, z)`. -/
+theorem neg_tricomiContFractSol_one (a z : ℂ) :
+    -tricomiContFractSol a z 1 = Gamma (a + 1) * cexp z * tricomiIncompleteGamma a z := by
+  rw [tricomiContFractSol_one, tricomiIncompleteGamma_def, mul_assoc, ← mul_assoc (cexp z),
+    ← Complex.exp_add, add_neg_cancel, Complex.exp_zero, one_mul]
   ring
 
 private theorem neg_one_pow_mul_prod_tricomiContFractNum (a z : ℂ) (n : ℕ) :
@@ -382,9 +377,7 @@ private theorem neg_one_pow_mul_prod_tricomiContFractNum (a z : ℂ) (n : ℕ) :
       rcases Nat.even_or_odd' r with ⟨q, rfl | rfl⟩
       · have hidx : 2 * (q + 1) + 1 = 2 * q + 1 + 2 := by omega
         have hnum : tricomiContFractNum a z (2 * q + 1 + 2) = (q + 1 : ℂ) * z := by
-          rw [← hidx, tricomiContFractNum_two_mul_add_one a z (Nat.succ_pos q)]
-          push_cast
-          rfl
+          rw [← hidx, tricomiContFractNum_two_mul_add_one a z (Nat.succ_pos q), Nat.cast_add_one]
         have h1 : (2 * q + 1 + 2) / 2 = q + 1 := by omega
         have h2 : (2 * q + 1 - 1) / 2 = q := by omega
         have h3 : (2 * q + 1) / 2 = q := by omega
@@ -417,7 +410,7 @@ theorem tricomiContFractSol_eq_prod_mul (a z : ℂ) {m : ℕ} (hm : 1 ≤ m) :
         Gamma (a + 1) * regularizedHGFun {(((m + 1) / 2 : ℕ) : ℂ)} {a + m} z := by
   obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le hm
   rw [add_comm 1 n, neg_one_pow_mul_prod_tricomiContFractNum, tricomiContFractSol]
-  have hdiv : (n + 1 + 1) / 2 = (n + 2) / 2 := rfl
+  have hdiv : (n + 1 + 1) / 2 = (n + 2) / 2 := by omega
   rw [hdiv]
   ring
 
@@ -463,7 +456,7 @@ private theorem regularizedHGFun_tricomi_rel_of_two_le (a z : ℂ) {n : ℕ} (hm
 
 /-- When `a + 1 ∉ -ℕ`, `tricomiContFractSol a z` solves the three-term recurrence
 `f(n + 1) = bₙ f(n) + aₙ f(n - 1)` for every `n ≥ 1`. -/
-theorem tricomiContFractSol_add_one {a : ℂ} (ha : ∀ k : ℕ, a + 1 ≠ -k) (z : ℂ) {n : ℕ}
+theorem tricomiContFractSol_recurrence {a : ℂ} (ha : ∀ k : ℕ, a + 1 ≠ -k) (z : ℂ) {n : ℕ}
     (hn : 1 ≤ n) :
     tricomiContFractSol a z (n + 1) =
       tricomiContFractDen a n * tricomiContFractSol a z n +
@@ -486,7 +479,7 @@ theorem tricomiContFractSol_add_one {a : ℂ} (ha : ∀ k : ℕ, a + 1 ≠ -k) (
     have hP_step (k : ℕ) : P (k + 1) = -tricomiContFractNum a z (k + 1) * P k := by
       simp only [P, pow_succ, prod_Icc_succ_top (Nat.le_add_left 1 k)]
       ring
-    have hm_sub : m + 2 - 1 = m + 1 := rfl
+    have hm_sub : m + 2 - 1 = m + 1 := by omega
     have hrel := regularizedHGFun_tricomi_rel_of_two_le a z (Nat.le_add_left 2 m)
     rw [hm_sub] at hrel ⊢
     rw [tricomiContFractSol_eq_prod_mul a z (Nat.le_add_left 1 (m + 2)),
@@ -539,9 +532,7 @@ theorem tendsto_Gamma_mul_tricomiContFractSol_div {a z : ℂ} (ha : ∀ k : ℕ,
     · exact hK₁ k (by omega)
   refine hM.congr' ?_
   filter_upwards [eventually_ge_atTop 1] with m hm
-  have hP_ne : (∏ j ∈ Icc 1 m, tricomiContFractNum a z j) ≠ 0 :=
-    Finset.prod_ne_zero_iff.2 fun j hj =>
-      tricomiContFractNum_ne_zero ha hz (Finset.mem_Icc.1 hj).1
+  have hP_ne := prod_Icc_tricomiContFractNum_ne_zero ha hz m
   have hG_ne : Gamma (a + 1) ≠ 0 := Gamma_ne_zero ha
   rw [tricomiContFractSol_eq_prod_mul a z hm]
   field_simp
@@ -566,10 +557,7 @@ private theorem tricomiContFract_term_ratio_eq {a z : ℂ} (ha : ∀ k : ℕ, a 
           (Gamma (a + (m + 2 : ℕ)) * tricomiContFractSol a z (m + 2) /
             (((-1 : ℂ) ^ (m + 2) * ∏ j ∈ Icc 1 (m + 2), tricomiContFractNum a z j) *
               Gamma (a + 1)))) := by
-  have hPm : (-1 : ℂ) ^ m * (∏ j ∈ Icc 1 m, tricomiContFractNum a z j) ≠ 0 :=
-    mul_ne_zero (pow_ne_zero _ (by norm_num))
-      (Finset.prod_ne_zero_iff.2 fun j hj =>
-        tricomiContFractNum_ne_zero ha hz (Finset.mem_Icc.1 hj).1)
+  have hPm := neg_one_pow_mul_prod_Icc_tricomiContFractNum_ne_zero ha hz m
   have ha_m1 : tricomiContFractNum a z (m + 1) ≠ 0 := tricomiContFractNum_ne_zero ha hz (by omega)
   have ha_m2 : tricomiContFractNum a z (m + 2) ≠ 0 := tricomiContFractNum_ne_zero ha hz (by omega)
   have hG1 : Gamma (a + 1) ≠ 0 := Gamma_ne_zero ha
@@ -648,7 +636,7 @@ private theorem six_le_norm_mul_div_tricomiContFractNum {a z : ℂ} (ha : ∀ k 
         gcongr
 
 private theorem eventually_three_mul_norm_le_tricomiTerm {a z : ℂ} (ha : ∀ k : ℕ, a + 1 ≠ -k)
-    (hz : z ≠ 0) {N : ℕ} (hfN : ∀ n, N ≤ n → tricomiContFractSol a z n ≠ 0) :
+    (hz : z ≠ 0) :
     ∀ᶠ m in atTop,
       3 * ‖(-1) ^ m * (∏ j ∈ Icc 1 m, tricomiContFractNum a z j) /
           (tricomiContFractSol a z m * tricomiContFractSol a z (m + 1))‖ ≤
@@ -667,16 +655,11 @@ private theorem eventually_three_mul_norm_le_tricomiTerm {a z : ℂ} (ha : ∀ k
     hLratio.eventually (le_mem_nhds (by norm_num))
   have hbig : ∀ᶠ m : ℕ in atTop, 3 * ‖a‖ + 12 * ‖z‖ + 4 ≤ (m : ℝ) :=
     tendsto_natCast_atTop_atTop (R := ℝ) |>.eventually_ge_atTop (3 * ‖a‖ + 12 * ‖z‖ + 4)
-  filter_upwards [hLhalf, hbig, eventually_ge_atTop (max N 1)] with m hLh hmR hmN
-  have hmN1 : N ≤ m := le_trans (le_max_left _ _) hmN
-  have hm1 : 1 ≤ m := le_trans (le_max_right _ _) hmN
-  have hfm : tricomiContFractSol a z m ≠ 0 := hfN m hmN1
-  have hfm1 : tricomiContFractSol a z (m + 1) ≠ 0 := hfN (m + 1) (by omega)
-  have hfm2 : tricomiContFractSol a z (m + 2) ≠ 0 := hfN (m + 2) (by omega)
-  have hPm : (-1 : ℂ) ^ m * (∏ j ∈ Icc 1 m, tricomiContFractNum a z j) ≠ 0 :=
-    mul_ne_zero (pow_ne_zero _ (by norm_num))
-      (Finset.prod_ne_zero_iff.2 fun j hj =>
-        tricomiContFractNum_ne_zero ha hz (Finset.mem_Icc.1 hj).1)
+  have hfne := eventually_tricomiContFractSol_ne_zero ha hz
+  filter_upwards [hLhalf, hbig, eventually_ge_atTop 1, hfne,
+    (tendsto_add_atTop_nat 1).eventually hfne,
+    (tendsto_add_atTop_nat 2).eventually hfne] with m hLh hmR hm1 hfm hfm1 hfm2
+  have hPm := neg_one_pow_mul_prod_Icc_tricomiContFractNum_ne_zero ha hz m
   have hTm_ne : (-1) ^ m * (∏ j ∈ Icc 1 m, tricomiContFractNum a z j) /
       (tricomiContFractSol a z m * tricomiContFractSol a z (m + 1)) ≠ 0 :=
     div_ne_zero hPm (mul_ne_zero hfm hfm1)
@@ -691,140 +674,22 @@ private theorem eventually_three_mul_norm_le_tricomiTerm {a z : ℂ} (ha : ∀ k
           gcongr
   rwa [norm_div, le_div_iff₀ (norm_pos_iff.2 hTm_ne)] at hratio_ge
 
-/-- For `a + 1 ∉ -ℕ` and `z ≠ 0`, the reduction-of-order partial sums
+/-- For `a + 1 ∉ -ℕ`, `z ≠ 0`, and any starting index `N : ℕ`, the reduction-of-order partial sums
 `∑_{m = N}^{n - 1} (-1)^m (a₁ ⋯ aₘ) / (f(m) f(m + 1))` of `f = tricomiContFractSol a z` tend to
 infinity in norm. -/
 theorem tendsto_norm_sum_tricomiContFractSol_atTop {a z : ℂ} (ha : ∀ k : ℕ, a + 1 ≠ -k)
-    (hz : z ≠ 0) {N : ℕ} (hfN : ∀ n, N ≤ n → tricomiContFractSol a z n ≠ 0) :
+    (hz : z ≠ 0) (N : ℕ) :
     Tendsto (fun n => ‖∑ m ∈ Ico N n,
       (-1) ^ m * (∏ j ∈ Icc 1 m, tricomiContFractNum a z j) /
         (tricomiContFractSol a z m * tricomiContFractSol a z (m + 1))‖) atTop atTop := by
-  let T : ℕ → ℂ := fun m =>
-    (-1) ^ m * (∏ j ∈ Icc 1 m, tricomiContFractNum a z j) /
-      (tricomiContFractSol a z m * tricomiContFractSol a z (m + 1))
-  obtain ⟨M₀, hM₀⟩ := Filter.eventually_atTop.1
-    (eventually_three_mul_norm_le_tricomiTerm ha hz hfN)
-  set M := max N (max 1 M₀)
-  have hMN : N ≤ M := le_max_left _ _
-  have hTM_pos : 0 < ‖T M‖ := norm_pos_iff.2 <| div_ne_zero
-    (mul_ne_zero (pow_ne_zero _ (by norm_num))
-      (Finset.prod_ne_zero_iff.2 fun j hj =>
-        tricomiContFractNum_ne_zero ha hz (Finset.mem_Icc.1 hj).1))
-    (mul_ne_zero (hfN M hMN) (hfN (M + 1) (by omega)))
-  have hprefix (k : ℕ) :
-      ‖∑ m ∈ Ico M (M + k), T m‖ ≤ (1 / 2 : ℝ) * ‖T (M + k)‖ ∧
-        (3 : ℝ) ^ k * ‖T M‖ ≤ ‖T (M + k)‖ := by
-    induction k with
-    | zero => simp
-    | succ k ih =>
-      have hstep : 3 * ‖T (M + k)‖ ≤ ‖T (M + k + 1)‖ := hM₀ (M + k) (by omega)
-      have hMk : M + (k + 1) = (M + k) + 1 := by omega
-      refine ⟨?_, ?_⟩
-      · rw [hMk, sum_Ico_succ_top (by omega)]
-        calc ‖(∑ m ∈ Ico M (M + k), T m) + T (M + k)‖
-            ≤ ‖∑ m ∈ Ico M (M + k), T m‖ + ‖T (M + k)‖ := norm_add_le _ _
-          _ ≤ (1 / 2 : ℝ) * ‖T (M + k)‖ + ‖T (M + k)‖ := by linarith [ih.1]
-          _ ≤ (1 / 2 : ℝ) * ‖T (M + k + 1)‖ := by linarith
-      · rw [pow_succ', mul_assoc, hMk]
-        linarith [ih.2]
-  have htail : Tendsto (fun k : ℕ => (1 / 2 : ℝ) * ((3 : ℝ) ^ k * ‖T M‖) -
-      ‖∑ m ∈ Ico N M, T m‖) atTop atTop :=
-    tendsto_atTop_add_const_right _ (-‖∑ m ∈ Ico N M, T m‖) <|
-      Tendsto.const_mul_atTop (by positivity) <|
-        Tendsto.atTop_mul_const hTM_pos (tendsto_pow_atTop_atTop_of_one_lt (by norm_num))
-  rw [tendsto_atTop_atTop] at htail ⊢
-  intro B
-  obtain ⟨K, hK⟩ := htail B
-  refine ⟨M + K + 1, fun n hn => ?_⟩
-  obtain ⟨k, rfl⟩ : ∃ k, n = M + k + 1 := ⟨n - M - 1, by omega⟩
-  have hsplit : ∑ m ∈ Ico N (M + k + 1), T m =
-      (∑ m ∈ Ico N M, T m) + ((∑ m ∈ Ico M (M + k), T m) + T (M + k)) := by
-    rw [← sum_Ico_consecutive T hMN (by omega : M ≤ M + k + 1),
-      sum_Ico_succ_top (by omega : M ≤ M + k)]
-  have hrev1 : ‖T (M + k)‖ - ‖∑ m ∈ Ico M (M + k), T m‖ ≤
-      ‖(∑ m ∈ Ico M (M + k), T m) + T (M + k)‖ := by
-    have htri := norm_sub_norm_le (T (M + k)) (-(∑ m ∈ Ico M (M + k), T m))
-    rwa [sub_neg_eq_add, add_comm (T (M + k)), norm_neg] at htri
-  have hrev2 : ‖(∑ m ∈ Ico M (M + k), T m) + T (M + k)‖ - ‖∑ m ∈ Ico N M, T m‖ ≤
-      ‖∑ m ∈ Ico N (M + k + 1), T m‖ := by
-    have htri := norm_sub_norm_le ((∑ m ∈ Ico M (M + k), T m) + T (M + k))
-      (-(∑ m ∈ Ico N M, T m))
-    rwa [sub_neg_eq_add, add_comm _ (∑ m ∈ Ico N M, T m), ← hsplit, norm_neg] at htri
-  have hk_props := hprefix k
-  linarith [hK k (by omega), hk_props.1, hk_props.2]
+  refine TauCeti.tendsto_norm_sum_Ico_atTop_of_eventually_mul_norm_le (c := 3) (by norm_num)
+    (eventually_three_mul_norm_le_tricomiTerm ha hz) (Eventually.frequently ?_) N
+  have hfne := eventually_tricomiContFractSol_ne_zero ha hz
+  filter_upwards [hfne, (tendsto_add_atTop_nat 1).eventually hfne] with m hfm hfm1
+  exact norm_pos_iff.2 <| div_ne_zero
+    (neg_one_pow_mul_prod_Icc_tricomiContFractNum_ne_zero ha hz m) (mul_ne_zero hfm hfm1)
 
 /-! ### Convergence of DLMF 8.9.1 -/
-
-private theorem tricomiContFractSol_eq_contsAux {a : ℂ} (ha : ∀ k : ℕ, a + 1 ≠ -k) (z : ℂ)
-    (n : ℕ) :
-    tricomiContFractSol a z n =
-      ((tricomiContFract a z).contsAux n).a +
-        tricomiContFractSol a z 1 * ((tricomiContFract a z).contsAux n).b := by
-  induction n using Nat.twoStepInduction with
-  | zero => simp
-  | one => simp
-  | more m ih0 ih1 =>
-    have hm2 : m + 2 = (m + 1) + 1 := by omega
-    have hm1 : m + 1 - 1 = m := by omega
-    rw [GenContFract.contsAux_recurrence (tricomiContFract_s_get? a z m) rfl rfl,
-      hm2, tricomiContFractSol_add_one ha z (Nat.succ_pos m), hm1, ih1, ih0]
-    ring
-
-private theorem casoratian_tricomiContFractSol_contsAux_b {a : ℂ} (ha : ∀ k : ℕ, a + 1 ≠ -k)
-    (z : ℂ) (m : ℕ) :
-    tricomiContFractSol a z m * ((tricomiContFract a z).contsAux (m + 1)).b -
-        tricomiContFractSol a z (m + 1) * ((tricomiContFract a z).contsAux m).b =
-      (-1) ^ m * ∏ j ∈ Icc 1 m, tricomiContFractNum a z j := by
-  induction m with
-  | zero => simp
-  | succ m ih =>
-    have hm1 : m + 1 - 1 = m := by omega
-    rw [GenContFract.contsAux_recurrence (tricomiContFract_s_get? a z m) rfl rfl,
-      tricomiContFractSol_add_one ha z (Nat.succ_pos m), hm1, pow_succ,
-      prod_Icc_succ_top (by omega)]
-    linear_combination -tricomiContFractNum a z (m + 1) * ih
-
-private theorem contsAux_b_div_tricomiContFractSol_sub {a z : ℂ} (ha : ∀ k : ℕ, a + 1 ≠ -k)
-    {N : ℕ} (hfN : ∀ n, N ≤ n → tricomiContFractSol a z n ≠ 0) {n : ℕ} (hn : N ≤ n) :
-    ((tricomiContFract a z).contsAux n).b / tricomiContFractSol a z n -
-        ((tricomiContFract a z).contsAux N).b / tricomiContFractSol a z N =
-      ∑ m ∈ Ico N n, (-1) ^ m * (∏ j ∈ Icc 1 m, tricomiContFractNum a z j) /
-        (tricomiContFractSol a z m * tricomiContFractSol a z (m + 1)) := by
-  rw [← sum_Ico_sub (fun m => ((tricomiContFract a z).contsAux m).b / tricomiContFractSol a z m) hn]
-  refine sum_congr rfl fun m hm => ?_
-  have hmN : N ≤ m := (mem_Ico.1 hm).1
-  have hfm : tricomiContFractSol a z m ≠ 0 := hfN m hmN
-  have hfm1 : tricomiContFractSol a z (m + 1) ≠ 0 := hfN (m + 1) (by omega)
-  have hcas := casoratian_tricomiContFractSol_contsAux_b ha z m
-  field_simp
-  linear_combination hcas
-
-private theorem tendsto_norm_dens_div_tricomiContFractSol_atTop {a z : ℂ}
-    (ha : ∀ k : ℕ, a + 1 ≠ -k) (hz : z ≠ 0) :
-    Tendsto (fun n => ‖(tricomiContFract a z).dens n / tricomiContFractSol a z (n + 1)‖)
-      atTop atTop := by
-  obtain ⟨N, hfN⟩ := Filter.eventually_atTop.1 (eventually_tricomiContFractSol_ne_zero ha hz)
-  have hsum_div := tendsto_norm_sum_tricomiContFractSol_atTop ha hz hfN
-  have hshift := tendsto_atTop_add_const_right atTop
-    (-‖((tricomiContFract a z).contsAux N).b / tricomiContFractSol a z N‖)
-    (hsum_div.comp (tendsto_add_atTop_nat 1))
-  refine tendsto_atTop_mono' atTop ?_ hshift
-  filter_upwards [eventually_ge_atTop N] with n hn
-  simp only [Function.comp_apply]
-  have hd : (tricomiContFract a z).dens n = ((tricomiContFract a z).contsAux (n + 1)).b := rfl
-  have ht := contsAux_b_div_tricomiContFractSol_sub ha hfN (n := n + 1) (by omega)
-  have htri := norm_sub_norm_le
-    (((tricomiContFract a z).contsAux (n + 1)).b / tricomiContFractSol a z (n + 1) -
-      ((tricomiContFract a z).contsAux N).b / tricomiContFractSol a z N)
-    (-(((tricomiContFract a z).contsAux N).b / tricomiContFractSol a z N))
-  have hadd : ((tricomiContFract a z).contsAux (n + 1)).b / tricomiContFractSol a z (n + 1) -
-      ((tricomiContFract a z).contsAux N).b / tricomiContFractSol a z N -
-      (-(((tricomiContFract a z).contsAux N).b / tricomiContFractSol a z N)) =
-      (tricomiContFract a z).dens n / tricomiContFractSol a z (n + 1) := by
-    rw [hd]
-    ring
-  rw [hadd, norm_neg, ht] at htri
-  linarith
 
 /-- **DLMF 8.9.1**: for every `a ∉ {-1, -2, …}` (`∀ k : ℕ, a + 1 ≠ -k`) and every `z : ℂ`, the
 continued fraction `tricomiContFract a z` has eventually nonzero denominators and its convergents
@@ -839,34 +704,13 @@ theorem tendsto_convs_tricomiContFract {a : ℂ} (ha : ∀ k : ℕ, a + 1 ≠ -k
     refine tendsto_const_nhds.congr' ?_
     filter_upwards [eventually_ge_atTop 1] with n hn
     exact (tricomiContFract_zero_convs_eq_Gamma_mul ha hn).symm
-  · have hratio_norm := tendsto_norm_dens_div_tricomiContFractSol_atTop ha hz
-    have hdens_ne : ∀ᶠ n in atTop, (tricomiContFract a z).dens n ≠ 0 := by
-      filter_upwards [hratio_norm.eventually_gt_atTop 0] with n hn h0
-      rw [h0, zero_div, norm_zero] at hn
-      exact lt_irrefl 0 hn
-    have hinv_zero : Tendsto
-        (fun n => tricomiContFractSol a z (n + 1) / (tricomiContFract a z).dens n) atTop (𝓝 0) := by
-      have hcob : Tendsto
-          (fun n => (tricomiContFract a z).dens n / tricomiContFractSol a z (n + 1))
-          atTop (Bornology.cobounded ℂ) :=
-        tendsto_norm_atTop_iff_cobounded.1 hratio_norm
-      exact (tendsto_inv₀_cobounded.comp hcob).congr fun n => by simp [inv_div]
-    refine ⟨hdens_ne, ?_⟩
-    rw [← neg_tricomiContFractSol_one_div_zero a z, tricomiContFractSol_zero, div_one]
-    have hlim : Tendsto
-        (fun n => tricomiContFractSol a z (n + 1) / (tricomiContFract a z).dens n -
-          tricomiContFractSol a z 1)
-        atTop (𝓝 (-tricomiContFractSol a z 1)) := by
-      simpa using hinv_zero.sub_const (tricomiContFractSol a z 1)
-    refine hlim.congr' ?_
-    filter_upwards [hdens_ne] with n hdn
-    have hcomb := tricomiContFractSol_eq_contsAux ha z (n + 1)
-    have hnum : ((tricomiContFract a z).contsAux (n + 1)).a = (tricomiContFract a z).nums n := rfl
-    have hden : ((tricomiContFract a z).contsAux (n + 1)).b = (tricomiContFract a z).dens n := rfl
-    rw [hnum, hden] at hcomb
-    rw [GenContFract.conv_eq_num_div_den]
-    field_simp [hdn]
-    linear_combination hcomb
+  · have hconv := TauCeti.tendsto_convs_contFrac_of_tendsto_norm_sum
+      (fun _ hn => tricomiContFractSol_recurrence ha z hn)
+      (by simp : tricomiContFractSol a z 0 ≠ 0)
+      (eventually_tricomiContFractSol_ne_zero ha hz)
+      (tendsto_norm_sum_tricomiContFractSol_atTop ha hz 0)
+    rwa [← tricomiContFract_def, tricomiContFractSol_zero, div_one,
+      neg_tricomiContFractSol_one] at hconv
 
 /-- At `a = 0`, the continued fraction `tricomiContFract 0 z` converges to `e^z` for every
 `z : ℂ`. -/

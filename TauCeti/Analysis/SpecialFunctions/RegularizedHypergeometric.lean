@@ -28,8 +28,9 @@ Because `1 / Γ` vanishes at the poles of `Γ`, none of these statements needs a
 
 * `Complex.hasSum_regularizedHGFun` — the power series of `regularizedHGFun a b` converges to it
   everywhere when `a.card ≤ b.card`, absolutely by `Complex.summable_norm_regularizedHGFun`.
-* `Complex.hasSum_deriv_regularizedHGFun` — the termwise differentiated series converges to the
-  derivative.
+* `Complex.differentiable_regularizedHGFun_of_card_le` — `regularizedHGFun a b` is entire when
+  `a.card ≤ b.card`, and `Complex.hasSum_deriv_regularizedHGFun` expresses its derivative as the
+  termwise differentiated series.
 * `Complex.regularizedHGFunCoeff_one_singleton` — the coefficients `1 / Γ(b + n)` of the Kummer
   function `𝐌(1, b, z) = ∑ zⁿ / Γ(b + n)`.
 * `Complex.hasSum_regularizedHGFun_zero_singleton_ofReal_re` — the real series of `₀F₁` at real
@@ -78,6 +79,12 @@ theorem summable_norm_regularizedHGFun {a b : Multiset ℂ} (h : a.card ≤ b.ca
   have := (regularizedHGFunSeries a b).summable_norm_apply (x := z)
     (by simp [radius_regularizedHGFunSeries_eq_top h])
   simpa [regularizedHGFunSeries, FormalMultilinearSeries.ofScalars_apply_eq, mul_comm] using this
+
+/-- When there are at most as many upper as lower parameters, `regularizedHGFun a b` is entire. -/
+@[fun_prop]
+theorem differentiable_regularizedHGFun_of_card_le {a b : Multiset ℂ} (h : a.card ≤ b.card) :
+    Differentiable ℂ (regularizedHGFun a b) :=
+  fun z => (analyticAt_regularizedHGFun_of_card_le h z).differentiableAt
 
 /-- When there are at most as many upper as lower parameters, the derivative of
 `regularizedHGFun a b` is the sum of its termwise differentiated power series. -/

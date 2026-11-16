@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import Mathlib.MeasureTheory.Integral.DominatedConvergence
 public import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric
+import TauCeti.Analysis.SpecialFunctions.Hypergeometric.Kummer.Contiguous
 
 /-!
 # Tricomi's entire incomplete Gamma function
@@ -92,12 +93,9 @@ theorem hasSum_tricomiIncompleteGamma (a z : ℂ) :
 theorem tricomiIncompleteGamma_eq_mul_tricomiIncompleteGamma_add_one (a z : ℂ) :
     tricomiIncompleteGamma a z =
       z * tricomiIncompleteGamma (a + 1) z + cexp (-z) / Gamma (a + 1) := by
-  have h := (hasSum_nat_add_iff' 1).mpr (hasSum_tricomiIncompleteGamma a z)
-  have h' := (hasSum_tricomiIncompleteGamma (a + 1) z).mul_left z
-  simp only [range_one, sum_singleton, CharP.cast_eq_zero, add_zero, pow_zero, mul_one] at h
-  rw [← sub_eq_iff_eq_add, h.unique (h'.congr_fun fun k => ?_)]
-  push_cast
-  ring_nf
+  rw [tricomiIncompleteGamma_def, tricomiIncompleteGamma_def,
+    regularizedHGFun_one_singleton_eq_inv_Gamma_add_mul (a + 1) z, div_eq_mul_inv]
+  ring
 
 /-- The value of Tricomi's function at `z = 0` (DLMF 8.4.2): `γ*(a, 0) = 1 / Γ(a + 1)`. This is
 `0` at `a ∈ {−1, −2, …}`. -/
