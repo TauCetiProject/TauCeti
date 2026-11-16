@@ -96,6 +96,12 @@ variable (B : Type w) [TopologicalSpace B] (F : Type w) [TopologicalSpace F] [Ze
 abbrev prodThomPair : TopPair.{w} :=
   TopPair.ofSubset (X := TopCat.of (B × F)) {p | p.2 ≠ 0}
 
+variable {B F} in
+/-- When `F` is a subsingleton, the punctured product `B × (F ∖ {0})` is empty. -/
+instance isEmpty_prodThomPair_snd [Subsingleton F] :
+    IsEmpty (prodThomPair B F).snd :=
+  ⟨fun p ↦ p.2 (Subsingleton.elim p.1.2 0)⟩
+
 variable {B} {B' : Type w} [TopologicalSpace B'] {B'' : Type w} [TopologicalSpace B'']
 
 /-- The map of Thom pairs of product bundles `(B × F, B × (F ∖ {0})) ⟶ (B' × F, B' × (F ∖ {0}))`
@@ -166,6 +172,18 @@ theorem prodThomPairSnd_comp_prodThomPairFiberMap :
   TopPair.hom_ext_of_fst _ (TopCat.ext fun p ↦
     (prodThomPairFiberMap_fst_apply F _ _).trans
       (congrArg (Prod.mk PUnit.unit) (prodThomPairSnd_fst_apply F p)))
+
+variable (B) in
+/-- A constant map `B → B'` of the bases induces the projection onto the fibre pair followed by
+the fibre inclusion over the target point. -/
+@[reassoc]
+theorem prodThomPairMap_const (b : B') :
+    prodThomPairMap F (ContinuousMap.const B b) =
+      prodThomPairSnd B F ≫ prodThomPairFiberMap F b :=
+  TopPair.hom_ext_of_fst _ (TopCat.ext fun p ↦
+    (prodThomPairMap_fst_apply F _ p).trans <|
+      (prodThomPairFiberMap_fst_apply F b p.2).symm.trans <|
+        congrArg (TopPair.Hom.fst (prodThomPairFiberMap F b)) (prodThomPairSnd_fst_apply F p).symm)
 
 /-- Over a point, the fibre inclusion is an isomorphism from the pair `(F, F ∖ {0})` onto the Thom
 pair of the product bundle, with inverse the projection to the fibre. -/

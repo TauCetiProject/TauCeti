@@ -104,6 +104,13 @@ variable {X Y Z : TopCat.{u}} (g : X ⟶ Y) (g' : Y ⟶ Z) {B : Set X} {B' : Set
 lemma range_ofSubset_map : Set.range (ofSubset B).map = B :=
   Subtype.range_coe
 
+/-- The complement of a point in a subsingleton space is empty, so the subspace of the pair
+`(X, X ∖ {x})` is empty. -/
+instance isEmpty_ofSubset_compl_singleton_snd {X : Type u} [TopologicalSpace X]
+    [Subsingleton X] (x : X) :
+    IsEmpty (ofSubset (X := TopCat.of X) ({x}ᶜ : Set X)).snd :=
+  ⟨fun z ↦ z.2 (Subsingleton.elim z.1 x)⟩
+
 /-- A continuous map `g : X ⟶ Y` carrying `B` into `B'` induces a map of pairs
 `(X, B) ⟶ (Y, B')`. -/
 def ofSubsetMap : ofSubset B ⟶ ofSubset B' :=

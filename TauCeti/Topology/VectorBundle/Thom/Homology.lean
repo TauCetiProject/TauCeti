@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Cohomology.Cap.Kronecker
 public import TauCeti.AlgebraicTopology.Cohomology.UniversalCoefficient.Field
-public import TauCeti.Topology.VectorBundle.Thom.Isomorphism
+public import TauCeti.Topology.VectorBundle.Thom.FiniteCover
 
 /-!
 # The homology Thom map of a vector bundle
@@ -23,8 +23,10 @@ push-forward along the projection `π : E ⟶ B`, for any `K`-module of coeffici
 a Thom class of a real vector bundle of rank `n` (for instance the unique Thom class with
 coefficients in `ZMod 2`, or the Thom class of an orientation) it is the map of the Thom
 isomorphism in homology, which is bijective in every degree (Spanier, Chapter 5, Section 7); this
-file does not prove that. It is the homological counterpart of the cohomology Thom map
-`TauCeti.thomMap`, `a ↦ π^*a ⌣ u`, whose bijectivity is Milnor and Stasheff's Theorem 10.4.
+file establishes that bijectivity with field coefficients over finite trivializing covers and
+compact bases, while arbitrary commutative rings and arbitrary bases are not proved here. It is the
+homological counterpart of the cohomology Thom map `TauCeti.thomMap`, `a ↦ π^*a ⌣ u`, whose
+bijectivity is Milnor and Stasheff's Theorem 10.4.
 
 Relative homology of Thom pairs is what attaching a disc bundle produces: when a bundle `ν` is
 attached along its sphere bundle, the relative homology of the attachment is that of the Thom pair
@@ -49,7 +51,10 @@ and absolute classes (`TopPair.singularCup_gradedComm`) moves `u` to the right, 
 has it. Over a field the Kronecker pairing identifies cohomology with the dual of homology, so the
 homology Thom map is bijective in a degree exactly when the Thom map is bijective in the
 corresponding degree (`TauCeti.bijective_homologyThomMap_iff`): the Thom isomorphism in cohomology
-over a field gives the one in homology, and conversely.
+over a field gives the one in homology
+(`TauCeti.IsThomClass.bijective_homologyThomMap_of_biUnion_eq_univ`,
+`TauCeti.IsThomClass.bijective_homologyThomMap_of_compactSpace`,
+`TauCeti.IsThomClass.homologyThomIsoOfCompactSpace`), and conversely.
 
 ## Main definitions and results
 
@@ -60,6 +65,10 @@ over a field gives the one in homology, and conversely.
   Thom map, up to the sign `(-1)^(n p)`.
 * `TauCeti.bijective_homologyThomMap_iff`: over a field, the homology Thom map is bijective exactly
   when the Thom map is.
+* `TauCeti.IsThomClass.bijective_homologyThomMap_of_biUnion_eq_univ`,
+  `TauCeti.IsThomClass.bijective_homologyThomMap_of_compactSpace`,
+  `TauCeti.IsThomClass.homologyThomIsoOfCompactSpace`: the homological Thom isomorphism over finite
+  trivializing covers and compact bases with field coefficients.
 
 ## References
 
@@ -74,7 +83,7 @@ public section
 
 noncomputable section
 
-open Bundle CategoryTheory MonoidalCategory AlgebraicTopology
+open Bundle CategoryTheory MonoidalCategory AlgebraicTopology Module Set
 
 universe w
 
@@ -211,5 +220,64 @@ theorem bijective_homologyThomMap_iff {K : Type w} [Field K] {n p m : ℕ} (h : 
     simp only [Function.comp_apply, ← key, LinearEquiv.symm_apply_apply]
   rw [e, EquivLike.comp_bijective, EquivLike.comp_bijective, EquivLike.bijective_comp,
     LinearMap.dualMap_bijective_iff]
+
+end TauCeti
+
+namespace TauCeti
+
+section HomologyIso
+
+variable {B : Type w} [TopologicalSpace B] {F : Type w} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {E : B → Type w} [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommMonoid (E b)]
+  [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
+  {K : Type w} [Field K]
+
+/-- **The homological Thom isomorphism over a finite trivializing cover** with coefficients in a
+field `K`: `x ↦ π_*(x ⌢ u)` (`TauCeti.homologyThomMap`) is bijective in every degree. -/
+theorem IsThomClass.bijective_homologyThomMap_of_biUnion_eq_univ {ι : Type*} (s : Finset ι)
+    {W : ι → Set B} (hW : ⋃ i ∈ s, W i = univ)
+    (hWe : ∀ i ∈ s, ∃ (e : Trivialization F (π F E)) (_ : e.IsLinear ℝ), W i ⊆ e.baseSet)
+    {p m : ℕ} (h : finrank ℝ F + p = m)
+    {u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F)}
+    (hu : IsThomClass F E u) :
+    Function.Bijective
+      (homologyThomMap F E (ModuleCat.of K K) (finrank ℝ F) p m h u).hom :=
+  (bijective_homologyThomMap_iff F E h u).2
+    (hu.bijective_thomMap_of_biUnion_eq_univ (ModuleCat.of K K) s hW hWe (by omega))
+
+/-- **The homological Thom isomorphism over a compact base** with coefficients in a field `K`:
+`Hₘ(E, E₀; K) ⟶ Hₚ(B; K)`, `x ↦ π_*(x ⌢ u)`, is bijective whenever `finrank ℝ F + p = m`. -/
+theorem IsThomClass.bijective_homologyThomMap_of_compactSpace [CompactSpace B] [VectorBundle ℝ F E]
+    {p m : ℕ} (h : finrank ℝ F + p = m)
+    {u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F)}
+    (hu : IsThomClass F E u) :
+    Function.Bijective
+      (homologyThomMap F E (ModuleCat.of K K) (finrank ℝ F) p m h u).hom :=
+  (bijective_homologyThomMap_iff F E h u).2
+    (hu.bijective_thomMap_of_compactSpace (ModuleCat.of K K) (by omega))
+
+/-- **The homological Thom isomorphism** `Hₘ(E, E₀; K) ≅ Hₚ(B; K)` in `ModuleCat K` over a compact
+base with coefficients in a field `K`. -/
+def IsThomClass.homologyThomIsoOfCompactSpace [CompactSpace B] [VectorBundle ℝ F E]
+    {p m : ℕ} (h : finrank ℝ F + p = m)
+    {u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F)}
+    (hu : IsThomClass F E u) :
+    (thomPair F E).singularHomology (ModuleCat.of K K) m ≅
+      ((singularHomologyFunctor (ModuleCat.{w} K) p).obj
+        (ModuleCat.of K K)).obj (TopCat.of B) :=
+  have : IsIso (homologyThomMap F E (ModuleCat.of K K) (finrank ℝ F) p m h u) :=
+    (ConcreteCategory.isIso_iff_bijective _).2 (hu.bijective_homologyThomMap_of_compactSpace h)
+  asIso (homologyThomMap F E (ModuleCat.of K K) (finrank ℝ F) p m h u)
+
+@[simp]
+theorem IsThomClass.homologyThomIsoOfCompactSpace_hom [CompactSpace B] [VectorBundle ℝ F E]
+    {p m : ℕ} (h : finrank ℝ F + p = m)
+    {u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F)}
+    (hu : IsThomClass F E u) :
+    (hu.homologyThomIsoOfCompactSpace h).hom =
+      homologyThomMap F E (ModuleCat.of K K) (finrank ℝ F) p m h u :=
+  (rfl)
+
+end HomologyIso
 
 end TauCeti

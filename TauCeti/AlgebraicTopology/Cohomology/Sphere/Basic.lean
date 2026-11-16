@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Cohomology.Cup.Basic
+public import TauCeti.AlgebraicTopology.Cohomology.DegreeZero
 public import TauCeti.AlgebraicTopology.Cohomology.Kunneth
 public import TauCeti.AlgebraicTopology.Cohomology.UniversalCoefficient
 public import TauCeti.AlgebraicTopology.Singular.Sphere
@@ -27,7 +27,13 @@ applied to a nonzero coefficient gives a nonzero top cohomology class.
 Dually to the standard generator `TauCeti.singularHomologyTopCatSphereGenerator` of
 `Hₙ₊₁(Sⁿ⁺¹; k)`, the class `TauCeti.singularCohomologyTopCatSphereGenerator` of `Hⁿ⁺¹(Sⁿ⁺¹; k)`
 takes the value `1` on it. Its cup square vanishes, since `H²ⁿ⁺²(Sⁿ⁺¹; k) = 0`
-(`TopCat.singularCup_singularCohomologyTopCatSphereGenerator_self`).
+(`TopCat.singularCup_singularCohomologyTopCatSphereGenerator_self`). On the zero-sphere `S⁰`,
+`TauCeti.singularCohomologyTopCatSpherePlusIndicator` is the indicator `0`-class of
+`TauCeti.spherePlus` in `H⁰(S⁰; k)`, taking value `1` at `spherePlus` and `0` at `sphereMinus`
+(spanning a complement to the constant classes `k · 1` and representing the standard generator of
+degree-`0` reduced cohomology of `S⁰`). Together they form
+`TauCeti.singularCohomologyTopCatSphereClass`, which represents the generator of degree-`d` reduced
+cohomology of `Sᵈ` for every `d : ℕ`.
 
 Since the homology of a sphere is free of finite rank, the Künneth theorem for cohomology applies
 to a product with a sphere over every commutative ring and with no hypothesis on the other factor
@@ -119,6 +125,58 @@ lemma singularKronecker_singularCohomologyTopCatSphereGenerator (n : ℕ) :
         (singularCohomologyTopCatSphereGenerator k n)
         (singularHomologyTopCatSphereGenerator k n) = (1 : k) :=
   singularKronecker_singularCohomologyTopCatSphereEquiv_symm k _ n 1
+
+private theorem exists_singularCohomologyTopCatSpherePlusIndicator :
+    ∃ θ : (TopCat.sphere.{w} 0).singularCohomology
+        (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) 0,
+      singularCohomologyZeroEval (X := TopCat.sphere.{w} 0) spherePlus θ = 1 ∧
+        singularCohomologyZeroEval (X := TopCat.sphere.{w} 0) sphereMinus θ = 0 := by
+  classical
+  obtain ⟨θ, hθ⟩ := exists_singularCohomologyZeroEval_eq (k := k) (X := TopCat.sphere.{w} 0)
+    (fun s : TopCat.sphere.{w} 0 ↦ if s = spherePlus then 1 else 0)
+    fun x y hxy ↦ by rw [hxy.eq_of_totallyDisconnectedSpace]
+  exact ⟨θ, (hθ _).trans (ite_eq_left_iff.2 fun h ↦ (h rfl).elim), (hθ _).trans (by simp)⟩
+
+/-- **The indicator `0`-class of `TauCeti.spherePlus` on `S⁰`**: the class of
+`H⁰(TopCat.sphere 0; k)` taking value `1` at `TauCeti.spherePlus` and `0` at
+`TauCeti.sphereMinus`, spanning a complement to the constant classes `k · 1` (and representing the
+standard generator of degree-`0` reduced cohomology of `S⁰`). -/
+def singularCohomologyTopCatSpherePlusIndicator :
+    (TopCat.sphere.{w} 0).singularCohomology
+      (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) 0 :=
+  (exists_singularCohomologyTopCatSpherePlusIndicator k).choose
+
+@[simp]
+theorem singularCohomologyZeroEval_singularCohomologyTopCatSpherePlusIndicator_spherePlus :
+    singularCohomologyZeroEval (X := TopCat.sphere.{w} 0) spherePlus
+      (singularCohomologyTopCatSpherePlusIndicator k) = 1 :=
+  (exists_singularCohomologyTopCatSpherePlusIndicator k).choose_spec.1
+
+@[simp]
+theorem singularCohomologyZeroEval_singularCohomologyTopCatSpherePlusIndicator_sphereMinus :
+    singularCohomologyZeroEval (X := TopCat.sphere.{w} 0) sphereMinus
+      (singularCohomologyTopCatSpherePlusIndicator k) = 0 :=
+  (exists_singularCohomologyTopCatSpherePlusIndicator k).choose_spec.2
+
+/-- **The canonical degree-`d` cohomology class of `TopCat.sphere d`**, representing the generator
+of degree-`d` reduced cohomology of `Sᵈ`: given at `d = 0` by the indicator class
+`TauCeti.singularCohomologyTopCatSpherePlusIndicator` of `TauCeti.spherePlus` in `H⁰(S⁰; k)`, and
+at `d + 1` by the generator `TauCeti.singularCohomologyTopCatSphereGenerator` of
+`Hᵈ⁺¹(Sᵈ⁺¹; k)`. -/
+def singularCohomologyTopCatSphereClass : (d : ℕ) →
+    (TopCat.sphere.{w} d).singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) d
+  | 0 => singularCohomologyTopCatSpherePlusIndicator k
+  | d + 1 => singularCohomologyTopCatSphereGenerator k d
+
+@[simp]
+theorem singularCohomologyTopCatSphereClass_zero :
+    singularCohomologyTopCatSphereClass k 0 = singularCohomologyTopCatSpherePlusIndicator k :=
+  (rfl)
+
+@[simp]
+theorem singularCohomologyTopCatSphereClass_succ (d : ℕ) :
+    singularCohomologyTopCatSphereClass k (d + 1) = singularCohomologyTopCatSphereGenerator k d :=
+  (rfl)
 
 /-- Positive-degree singular cohomology of a sphere vanishes away from its dimension,
 with arbitrary module coefficients over any commutative ring. -/

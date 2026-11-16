@@ -70,7 +70,7 @@ with the same restrictions to the fibres where two sets meet glue to a class ove
 These finite-union results are the input for Thom classes over an arbitrary base: the gluing over
 arbitrary trivializing covers, and the Thom classes it produces, are in
 `TauCeti.Topology.VectorBundle.MayerVietoris.DirectedUnion` and
-`TauCeti.Topology.VectorBundle.Orientation.ThomClass`.
+`TauCeti.Topology.VectorBundle.Orientation.Thom.Class`.
 
 In homology, the Mayer–Vietoris sequence of the Thom pairs over open sets `U` and `V` is exact at
 `Hₙ(E|_U, E₀|_U) ⊞ Hₙ(E|_V, E₀|_V)` (`TauCeti.singularHomology_thomPairOver_mayerVietoris_exact`),
@@ -155,12 +155,8 @@ theorem singularHomology_thomPairOver_hom_ext {T : C}
   -- Transport `g` and `g'` to the product bundle and compare them there, fibre by fibre.
   rw [← cancel_epi (TopPair.singularHomologyMap φ.inv R (finrank ℝ F))]
   refine singularHomology_prodThomPair_hom_ext fun b ↦ ?_
-  have hφ : prodThomPairFiberMap F b ≫ φ.inv =
-      (e.continuousLinearEquivAt ℝ b (hW b.2)).complZeroPairIso.inv ≫
-        fiberThomPairOverMap F E b.2 := by
-    rw [Iso.comp_inv_eq, Category.assoc, Iso.eq_inv_comp,
-      e.fiberThomPairOverMap_comp_thomPairOverIso_hom ℝ hW b.2]
-  rw [← TopPair.singularHomologyMap_comp_assoc, ← TopPair.singularHomologyMap_comp_assoc, hφ,
+  rw [← TopPair.singularHomologyMap_comp_assoc, ← TopPair.singularHomologyMap_comp_assoc,
+    e.prodThomPairFiberMap_comp_thomPairOverIso_inv ℝ hW b,
     TopPair.singularHomologyMap_comp_assoc, TopPair.singularHomologyMap_comp_assoc, h b b.2]
 
 end Bundle.Trivialization

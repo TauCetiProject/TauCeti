@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Foliation.EulerClass
-public import TauCeti.Topology.VectorBundle.Orientation.ThomClass
+public import TauCeti.Topology.VectorBundle.Orientation.Thom.Class
 public import TauCeti.Topology.VectorBundle.Orientation.Transverse
 
 /-!
