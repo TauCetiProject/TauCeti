@@ -86,7 +86,7 @@ theorem W1p.exists_morreyEmbeddingL_of_isLipschitzDomainWith
     ∃ T : W1p volume Ω p →L[ℝ] HolderSpace (1 - finrank ℝ (WithLp 2 (ℝ × E)) / p)
         (closure (Ω : Set (WithLp 2 (ℝ × E)))) ℝ,
       ∀ u, ∀ᵐ x ∂volume, ∀ hx : x ∈ Ω, T u ⟨x, subset_closure hx⟩ = W1p.value u x := by
-  obtain ⟨X, hX⟩ := W1p.exists_extensionL_of_isLipschitzDomainWith (p := p) hΩ hb
+  obtain ⟨X, hX, _⟩ := W1p.exists_extensionL_of_isLipschitzDomainWith (p := p) hΩ hb
   refine ⟨(HolderSpace.compLipschitzL Subtype.val (LipschitzWith.subtype_val _)).comp
     ((W1p.morreyEmbedding hp).comp X), fun u => ?_⟩
   have hu : W1p.restrictL le_top (X u) = u := by
@@ -165,7 +165,7 @@ theorem W1p.exists_mulL_of_isLipschitzDomainWith
       ∀ u v, W1p.value (M u v) =ᵐ[volume.restrict (Ω : Set (WithLp 2 (ℝ × E)))]
         fun x => W1p.value u x * W1p.value v x := by
   have hext := W1p.exists_extensionL_of_isLipschitzDomainWith (p := (p : ℝ≥0∞)) hΩ hb
-  obtain ⟨X, hX⟩ := hext
+  obtain ⟨X, hX, _⟩ := hext
   refine ⟨(ContinuousLinearMap.compL ℝ _ _ _
     (W1p.restrictL (mu := volume) (p := (p : ℝ≥0∞)) (le_top : Ω ≤ ⊤))).comp
       ((W1p.mulL (mu := volume) hp).bilinearComp X X), fun u v => ?_⟩
