@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.Huber.WeightedEval.Mul
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Basic
+import TauCeti.Analysis.Normed.Ring.Ultra
 
 /-!
 # Evaluating restricted power series at bounded arguments
@@ -47,6 +48,11 @@ algebras, as in Kedlaya's Lemma 4.9 for the interval rings of the Fargues–Font
 * `MvPowerSeries.norm_restrictedEval₂_le`: evaluation does not increase the Gauss norm.
 * `MvPowerSeries.eq_restrictedEval₂`: a continuous ring homomorphism out of `R{X/c}` is determined
   by its values on constants and variables.
+* `MvPowerSeries.norm_restrictedEval₂_sub_le`: perturbing the evaluation point by at most
+  `δ * cᵢ` in each coordinate changes `f(a)` by at most `δ * ‖f‖`.
+* `MvPowerSeries.uniformContinuous_restrictedEval₂_arg` and
+  `MvPowerSeries.continuous_restrictedEval₂_arg`: evaluation of a fixed restricted series is
+  uniformly continuous in the point of the closed polydisc.
 
 ## References
 
@@ -194,5 +200,144 @@ theorem eq_restrictedEval₂ (ψ : IsRestricted.subring (R := R) c →+* S) (hψ
   | zero => simp
   | add _ _ _ _ h₁ h₂ => simp [h₁, h₂]
   | neg _ _ h => simp [h]
+
+section ContinuityInArg
+
+variable {k : ℕ} {R S : Type*} [NormedCommRing R] [IsUltrametricDist R]
+  [NormedCommRing S] [IsUltrametricDist S] [CompleteSpace S]
+  {c : Fin k → ℝ} (φ : R →+* S)
+
+omit [CompleteSpace S] in
+/-- Perturbing each coordinate of `a` by at most `δ * cᵢ` perturbs every monomial
+`∏ i, aᵢ ^ tᵢ` by at most `δ * ∏ i, cᵢ ^ tᵢ`. -/
+private theorem norm_prod_pow_sub_prod_pow_le {a b : Fin k → S} (ha : ∀ i, ‖a i‖ ≤ c i)
+    (hb : ∀ i, ‖b i‖ ≤ c i) {δ : ℝ} (hδ : 0 ≤ δ)
+    (hab : ∀ i, ‖a i - b i‖ ≤ δ * c i) (t : Fin k →₀ ℕ) :
+    ‖∏ i, a i ^ t i - ∏ i, b i ^ t i‖ ≤ δ * t.prod (c · ^ ·) := by
+  have hpow (i : Fin k) {m : ℕ} (hm : 0 < m) :
+      ‖a i ^ m - b i ^ m‖ ≤ δ * c i ^ m := by
+    have h := TauCeti.norm_prod_sub_prod_le (s := Finset.range m)
+      (f := fun _ ↦ a i) (g := fun _ ↦ b i) (M := c i) (ε := δ * c i)
+      (mul_nonneg hδ ((norm_nonneg (a i)).trans (ha i)))
+      (fun _ _ ↦ ha i) (fun _ _ ↦ hb i) (fun _ _ ↦ hab i)
+    simp only [Finset.prod_const, Finset.card_range] at h
+    calc ‖a i ^ m - b i ^ m‖ ≤ δ * c i * c i ^ (m - 1) := h
+      _ = δ * (c i * c i ^ (m - 1)) := mul_assoc _ _ _
+      _ = δ * c i ^ m := by rw [← pow_succ', Nat.sub_add_cancel hm]
+  rw [← Finsupp.prod_fintype t (a · ^ ·) fun _ ↦ pow_zero _,
+    ← Finsupp.prod_fintype t (b · ^ ·) fun _ ↦ pow_zero _,
+    Finsupp.prod, Finsupp.prod, Finsupp.prod]
+  suffices ∀ s : Finset (Fin k), (∀ i ∈ s, 0 < t i) →
+      ‖∏ i ∈ s, a i ^ t i - ∏ i ∈ s, b i ^ t i‖ ≤ δ * ∏ i ∈ s, c i ^ t i from
+    this t.support fun i hi ↦ Nat.pos_of_ne_zero (Finsupp.mem_support_iff.mp hi)
+  intro s
+  induction s using Finset.induction_on with
+  | empty =>
+    intro _
+    simp [hδ]
+  | insert j s hj ih =>
+    intro hpos
+    have hjpos : 0 < t j := hpos j (Finset.mem_insert_self j s)
+    have hc_nonneg (i : Fin k) : 0 ≤ c i := (norm_nonneg (a i)).trans (ha i)
+    rw [Finset.prod_insert hj, Finset.prod_insert hj, Finset.prod_insert hj]
+    rcases s.eq_empty_or_nonempty with rfl | hs
+    · simpa using hpow j hjpos
+    have hPa : ‖∏ i ∈ s, a i ^ t i‖ ≤ ∏ i ∈ s, c i ^ t i :=
+      (Finset.norm_prod_le' s hs _).trans <|
+        Finset.prod_le_prod₀ (fun _ _ ↦ norm_nonneg _) fun i hi ↦
+          (norm_pow_le' _ (hpos i (Finset.mem_insert_of_mem hi))).trans
+            (pow_le_pow_left₀ (norm_nonneg _) (ha i) _)
+    have hbj : ‖b j ^ t j‖ ≤ c j ^ t j :=
+      (norm_pow_le' _ hjpos).trans (pow_le_pow_left₀ (norm_nonneg _) (hb j) _)
+    have htail := ih fun i hi ↦ hpos i (Finset.mem_insert_of_mem hi)
+    calc ‖a j ^ t j * ∏ i ∈ s, a i ^ t i - b j ^ t j * ∏ i ∈ s, b i ^ t i‖
+        = ‖(a j ^ t j - b j ^ t j) * ∏ i ∈ s, a i ^ t i +
+            b j ^ t j * (∏ i ∈ s, a i ^ t i - ∏ i ∈ s, b i ^ t i)‖ := by
+          congr 1; ring
+      _ ≤ max ‖(a j ^ t j - b j ^ t j) * ∏ i ∈ s, a i ^ t i‖
+            ‖b j ^ t j * (∏ i ∈ s, a i ^ t i - ∏ i ∈ s, b i ^ t i)‖ :=
+          IsUltrametricDist.norm_add_le_max _ _
+      _ ≤ max (δ * c j ^ t j * ∏ i ∈ s, c i ^ t i)
+            (c j ^ t j * (δ * ∏ i ∈ s, c i ^ t i)) :=
+          max_le_max
+            ((norm_mul_le _ _).trans (mul_le_mul (hpow j hjpos) hPa (norm_nonneg _)
+              (mul_nonneg hδ (pow_nonneg (hc_nonneg j) _))))
+            ((norm_mul_le _ _).trans (mul_le_mul hbj htail (norm_nonneg _)
+              (pow_nonneg (hc_nonneg j) _)))
+      _ = δ * (c j ^ t j * ∏ i ∈ s, c i ^ t i) := by
+          rw [mul_assoc, mul_left_comm (c j ^ t j) δ, max_self]
+
+variable [∀ i, Fact (0 < c i)]
+
+/-- **Perturbation bound for evaluation in the argument.** On the closed polydisc of polyradii
+`c`, if `‖aᵢ - bᵢ‖ ≤ δ * cᵢ` for all `i`, then `‖f(a) - f(b)‖ ≤ δ * ‖f‖`. -/
+theorem norm_restrictedEval₂_sub_le (hφ : ∀ r, ‖φ r‖ ≤ ‖r‖)
+    {a b : Fin k → S} (ha : ∀ i, ‖a i‖ ≤ c i) (hb : ∀ i, ‖b i‖ ≤ c i)
+    {δ : ℝ} (hδ : 0 ≤ δ) (hab : ∀ i, ‖a i - b i‖ ≤ δ * c i)
+    (f : IsRestricted.subring (R := R) c) :
+    ‖restrictedEval₂ φ a hφ ha f - restrictedEval₂ φ b hφ hb f‖ ≤ δ * ‖f‖ := by
+  have hsum := (hasSum_restrictedEval₂ φ a hφ ha f).sub (hasSum_restrictedEval₂ φ b hφ hb f)
+  rw [← hsum.tsum_eq]
+  refine IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg
+    (mul_nonneg hδ (norm_nonneg f)) fun t ↦ ?_
+  have hterm : weightedEvalTerm φ a (f : MvPowerSeries (Fin k) R) t -
+      weightedEvalTerm φ b (f : MvPowerSeries (Fin k) R) t =
+      φ (coeff t (f : MvPowerSeries (Fin k) R)) * (∏ i, a i ^ t i - ∏ i, b i ^ t i) := by
+    simp only [weightedEvalTerm_def, mul_sub]
+  rw [hterm]
+  calc ‖φ (coeff t (f : MvPowerSeries (Fin k) R)) * (∏ i, a i ^ t i - ∏ i, b i ^ t i)‖
+      ≤ ‖φ (coeff t (f : MvPowerSeries (Fin k) R))‖ *
+          ‖∏ i, a i ^ t i - ∏ i, b i ^ t i‖ :=
+        norm_mul_le _ _
+    _ ≤ ‖coeff t (f : MvPowerSeries (Fin k) R)‖ * (δ * t.prod (c · ^ ·)) :=
+        mul_le_mul (hφ _) (norm_prod_pow_sub_prod_pow_le ha hb hδ hab t)
+          (norm_nonneg _) (norm_nonneg _)
+    _ = δ * (‖coeff t (f : MvPowerSeries (Fin k) R)‖ * t.prod (c · ^ ·)) := by ring
+    _ ≤ δ * ‖f‖ := mul_le_mul_of_nonneg_left (norm_coeff_mul_prod_le f t) hδ
+
+/-- **Evaluation of a restricted series is uniformly continuous in its argument** on the closed
+polydisc `{a | ∀ i, ‖aᵢ‖ ≤ cᵢ}`. -/
+theorem uniformContinuous_restrictedEval₂_arg (hφ : ∀ r, ‖φ r‖ ≤ ‖r‖)
+    (f : IsRestricted.subring (R := R) c) :
+    UniformContinuous fun a : {a : Fin k → S // ∀ i, ‖a i‖ ≤ c i} ↦
+      restrictedEval₂ φ a.1 hφ a.2 f := by
+  classical
+  refine Metric.uniformContinuous_iff.mpr fun ε hε ↦ ?_
+  let η : ℝ := ε / (2 * (‖f‖ + 1))
+  have hη : 0 < η :=
+    div_pos hε (mul_pos two_pos (add_pos_of_nonneg_of_pos (norm_nonneg f) one_pos))
+  let s : Finset ℝ := insert 1 (Finset.univ.image fun i : Fin k ↦ η * c i)
+  have hs : s.Nonempty := ⟨1, Finset.mem_insert_self _ _⟩
+  refine ⟨s.min' hs, (Finset.lt_min'_iff s hs).mpr fun r hr ↦ ?_, fun {a b} hab ↦ ?_⟩
+  · rcases Finset.mem_insert.mp hr with rfl | hr
+    · exact one_pos
+    · obtain ⟨i, -, rfl⟩ := Finset.mem_image.mp hr
+      exact mul_pos hη (Fact.out : 0 < c i)
+  · rw [dist_eq_norm]
+    have hcoord (i : Fin k) : ‖a.1 i - b.1 i‖ ≤ η * c i := by
+      have hmin : s.min' hs ≤ η * c i :=
+        Finset.min'_le s _
+          (Finset.mem_insert_of_mem (Finset.mem_image_of_mem _ (Finset.mem_univ i)))
+      have hdist : ‖a.1 i - b.1 i‖ ≤ dist a b := by
+        simpa only [Subtype.dist_eq, dist_eq_norm, Pi.sub_apply] using norm_le_pi_norm (a.1 - b.1) i
+      exact hdist.trans (hab.le.trans hmin)
+    calc ‖restrictedEval₂ φ a.1 hφ a.2 f - restrictedEval₂ φ b.1 hφ b.2 f‖
+        ≤ η * ‖f‖ := norm_restrictedEval₂_sub_le φ hφ a.2 b.2 hη.le hcoord f
+      _ < η * (‖f‖ + 1) := mul_lt_mul_of_pos_left (lt_add_one ‖f‖) hη
+      _ = ε / 2 := by
+          dsimp only [η]
+          rw [div_mul_eq_mul_div, mul_comm (2 : ℝ), ← div_div,
+            mul_div_cancel_right₀ ε (add_pos_of_nonneg_of_pos (norm_nonneg f) one_pos).ne']
+      _ < ε := half_lt_self hε
+
+/-- **Evaluation of a restricted series is continuous in its argument** on the closed polydisc
+`{a | ∀ i, ‖aᵢ‖ ≤ cᵢ}`. -/
+theorem continuous_restrictedEval₂_arg (hφ : ∀ r, ‖φ r‖ ≤ ‖r‖)
+    (f : IsRestricted.subring (R := R) c) :
+    Continuous fun a : {a : Fin k → S // ∀ i, ‖a i‖ ≤ c i} ↦
+      restrictedEval₂ φ a.1 hφ a.2 f :=
+  (uniformContinuous_restrictedEval₂_arg φ hφ f).continuous
+
+end ContinuityInArg
 
 end MvPowerSeries
