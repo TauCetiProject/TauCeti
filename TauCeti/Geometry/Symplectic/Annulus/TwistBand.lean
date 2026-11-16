@@ -81,16 +81,20 @@ variable {F : ℝ × ℝ → ℝ × ℝ} {J : Set ℝ}
 
 /-! ### The twist coordinates on a strip -/
 
+/-- Where `F = (X, Y)` twists at `(x, t)`, the vertical slice `s ↦ X(x, s)` has derivative the
+twist `∂_y X(x, t)` at `t`. -/
+private theorem hasDerivAt_fst_slice {x t : ℝ} (htwist : (fderiv ℝ F (x, t) (0, 1)).1 ≠ 0) :
+    HasDerivAt (fun s ↦ (F (x, s)).1) (fderiv ℝ F (x, t) (0, 1)).1 t :=
+  (ContinuousLinearMap.fst ℝ ℝ ℝ).hasFDerivAt.comp_hasDerivAt t <| hasDerivAt_slice_right <|
+    differentiableAt_of_fderiv_ne_zero fun h ↦ htwist (by simp [h])
+
 /-- On a strip `ℝ × J` over an interval `J`, where `F = (X, Y)` twists,
 each vertical slice `t ↦ X(x, t)` is strictly monotone or strictly antitone on `J`: by Darboux's
 theorem the twist `∂_y X` has constant sign along it. -/
 theorem strictMonoOn_or_strictAntiOn_fst_slice (hJ : J.OrdConnected)
     (htwist : ∀ q ∈ Prod.snd ⁻¹' J, (fderiv ℝ F q (0, 1)).1 ≠ 0) (x : ℝ) :
     StrictMonoOn (fun t ↦ (F (x, t)).1) J ∨ StrictAntiOn (fun t ↦ (F (x, t)).1) J := by
-  have hd (t : ℝ) (ht : t ∈ J) :
-      HasDerivAt (fun s ↦ (F (x, s)).1) (fderiv ℝ F (x, t) (0, 1)).1 t :=
-    (ContinuousLinearMap.fst ℝ ℝ ℝ).hasFDerivAt.comp_hasDerivAt t <| hasDerivAt_slice_right <|
-      differentiableAt_of_fderiv_ne_zero fun h ↦ htwist (x, t) (mem_preimage.2 ht) (by simp [h])
+  have hd (t : ℝ) (ht : t ∈ J) := hasDerivAt_fst_slice (htwist (x, t) (mem_preimage.2 ht))
   have hc : ContinuousOn (fun t ↦ (F (x, t)).1) J :=
     fun t ht ↦ (hd t ht).continuousAt.continuousWithinAt
   have hd' (t : ℝ) (ht : t ∈ interior J) :=
@@ -136,9 +140,8 @@ theorem image_stripTwistCoord_preimage_snd_uIcc (hJ : J.OrdConnected)
     · exact (ha.antitoneOn.mono hsub).mapsTo_uIcc ht
   · intro hX
     have hcont : ContinuousOn (fun t ↦ (F (x, t)).1) [[c, d]] := fun t ht ↦
-      ((ContinuousLinearMap.fst ℝ ℝ ℝ).hasFDerivAt.comp_hasDerivAt t <| hasDerivAt_slice_right <|
-        differentiableAt_of_fderiv_ne_zero fun h ↦ htwist (x, t) (mem_preimage.2 (hsub ht))
-          (by simp [h])).continuousAt.continuousWithinAt
+      (hasDerivAt_fst_slice (htwist (x, t) (mem_preimage.2 (hsub ht)))).continuousAt
+        |>.continuousWithinAt
     obtain ⟨t, ht, htX⟩ := intermediate_value_uIcc hcont hX
     exact ⟨(x, t), mem_preimage.2 ht, by simp [htX]⟩
 
