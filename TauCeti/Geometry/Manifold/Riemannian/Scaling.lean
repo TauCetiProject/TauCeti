@@ -56,6 +56,8 @@ differentiable fields; this determines the curvature tensor.
 * `Bundle.ContMDiffRiemannianMetric.ricciTensor_leviCivitaConnection_eq_of_inner_eq_smul` and
   `Bundle.ContMDiffRiemannianMetric.scalarCurvature_eq_inv_mul_of_inner_eq_smul`: the same for a
   metric `g'` known only to satisfy `g' = a g` for a constant `a`, with no sign condition.
+* `scalarCurvature_eq_of_inner_eq_smul_of_ricciTensor_eq_smul_inner`, in the namespace
+  `Bundle.ContMDiffRiemannianMetric`: `Scal(a g) = n c / a` when `Ric(g) = c g`.
 * `Bundle.ContMDiffRiemannianMetric.sectionalCurvature_leviCivitaConnection_rescale_const`:
   `K(c g) = c⁻¹ K(g)`.
 * `Bundle.ContMDiffRiemannianMetric.isConstantCurvatureTensor_rescale_const_iff` and its
@@ -347,6 +349,21 @@ theorem scalarCurvature_eq_inv_mul_of_inner_eq_smul
     simp only [scalarCurvature_def]
     simp [CovariantDerivative.scalarCurvature_eq_zero_of_ricciTensor_eq_zero,
       CovariantDerivative.ricciTensor_eq_zero_of_finrank_le_one _ x hE]
+
+/-- A constant multiple `g' = a g` of a metric with `Ric(g) = c g` at `x` has scalar curvature
+`Scal(g') = n c / a` at `x`, where `n` is the dimension. -/
+theorem scalarCurvature_eq_of_inner_eq_smul_of_ricciTensor_eq_smul_inner
+    {g' g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)} {a : ℝ} {x : M}
+    (h : ∀ y, g'.inner y = a • g.inner y)
+    (hRic : letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
+      (CovariantDerivative.leviCivitaConnection I M).ricciTensor x =
+        c • innerₗ (TangentSpace I x)) :
+    g'.scalarCurvature x = Module.finrank ℝ E * c / a := by
+  let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+  rw [scalarCurvature_eq_inv_mul_of_inner_eq_smul h x, scalarCurvature_def,
+    (CovariantDerivative.leviCivitaConnection I M).scalarCurvature_eq_of_ricciTensor_eq_smul_inner
+      x c hRic,
+    TauCeti.finrank_tangentSpace, inv_mul_eq_div]
 
 /-- **Scaling of sectional curvature.** Multiplying a smooth metric by a positive constant `c`
 multiplies the sectional curvature of every pair of tangent vectors by `c⁻¹`. -/
