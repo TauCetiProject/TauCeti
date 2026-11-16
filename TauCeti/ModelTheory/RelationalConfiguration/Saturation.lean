@@ -13,21 +13,18 @@ import TauCeti.ModelTheory.RelationalConfiguration.Separation
 # Asymptotic back-and-forth saturation of model classes
 
 On a countable carrier `V` in a relational language `L` with countably many relation symbols of
-each arity, the model class `modelsOf θ` of an infinitary sentence `θ` with countable branching is
-Borel (`measurableSet_modelsOf`) and invariant under isomorphism (`isoSetoid_mem_modelsOf_iff`).
-Applying uniform back-and-forth separation (`exists_bfLevel_mem_iff_of_measurableSet`) therefore
-produces a single countable threshold `α < ω₁` above which `bfEquivSetoid L V β` respects `θ`
-(`exists_bfLevel_saturated_modelsOf`), both globally on `RelationalConfiguration L V` and
-relatively on any analytic set of configurations (`exists_bfLevel_mem_modelsOf_iff_of_analyticSet`).
+each arity, every infinitary sentence `θ` with countable branching is asymptotically saturated by
+back-and-forth equivalence: there is a countable threshold `α < ω₁` such that for all `β ≥ α`,
+`bfEquivSetoid L V β`-equivalent configurations agree on `modelsOf θ`
+(`exists_bfLevel_saturated_modelsOf`). More generally, on any analytic set `C` of configurations,
+membership in `modelsOf θ` is invariant under `bfEquivSetoid L V β` within `C` from some countable
+level `α < ω₁` onward (`exists_bfLevel_mem_modelsOf_iff_of_analyticSet`).
 
-Descriptive boundedness replaces syntactic induction on infinitary quantifier rank: no hierarchy of
-`Π_α` formulas or syntactic preservation theorem is needed to find a countable level at which a
-sentence is a union of back-and-forth classes.
+Asymptotic sentence saturation lets counting and splitting-tree arguments refine sentence cuts of a
+configuration class into unions of back-and-forth classes at a common countable level below `ω₁`.
 
 ## Main results
 
-* `TauCeti.RelationalConfiguration.isoSetoid_mem_modelsOf_iff`: isomorphic configurations on the
-  same carrier satisfy the same infinitary sentences.
 * `TauCeti.RelationalConfiguration.exists_bfLevel_mem_modelsOf_iff_of_analyticSet`: relative
   asymptotic back-and-forth saturation of `modelsOf θ` on an analytic set of configurations.
 * `TauCeti.RelationalConfiguration.exists_bfLevel_saturated_modelsOf`: global asymptotic
@@ -56,12 +53,6 @@ open FirstOrder FirstOrder.Language MeasureTheory Ordinal Set
 namespace TauCeti.RelationalConfiguration
 
 variable {L : Language.{u, v}} [L.IsRelational] {V : Type w} {ι : Type uι}
-
-/-- Isomorphic configurations on the same carrier satisfy the same infinitary sentences. -/
-theorem isoSetoid_mem_modelsOf_iff {c d : RelationalConfiguration L V} {φ : L.SentenceInf ι}
-    (h : isoSetoid L V c d) : c ∈ modelsOf φ ↔ d ∈ modelsOf φ := by
-  obtain ⟨e⟩ := isoSetoid_apply.mp h
-  exact e.mem_modelsOf_iff φ
 
 /-- **Relative back-and-forth saturation of a model class.** On a countable carrier in a
 relational language with countably many relation symbols of each arity, for any analytic set `C` of

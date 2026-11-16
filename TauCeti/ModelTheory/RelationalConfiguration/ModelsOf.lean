@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.ModelTheory.Infinitary.Infinite
-public import TauCeti.ModelTheory.RelationalConfiguration.Structure
-public import TauCeti.ModelTheory.RelationalConfiguration.Topology
+public import TauCeti.ModelTheory.RelationalConfiguration.Isomorphism
 import TauCeti.ModelTheory.Syntax
 
 /-!
@@ -48,8 +47,9 @@ Descriptive Set Theory*, and Kechris, *Classical Descriptive Set Theory*.
 * `TauCeti.RelationalConfiguration.measurableSet_modelsOf`: model classes of such sentences are
   measurable, and `TauCeti.RelationalConfiguration.standardBorelSpace_modelsOf` makes them
   standard Borel.
-* `FirstOrder.Language.Equiv.mem_modelsOf_iff`: model classes are invariant under isomorphism of
-  the decoded structures.
+* `FirstOrder.Language.Equiv.mem_modelsOf_iff` and
+  `TauCeti.RelationalConfiguration.isoSetoid_mem_modelsOf_iff`: model classes are invariant under
+  isomorphism of the decoded structures.
 -/
 
 public section
@@ -207,3 +207,15 @@ theorem mem_modelsOf_iff {c : RelationalConfiguration L V} {d : RelationalConfig
   @StrongHomClass.realize_sentenceInf L ι V W c.toStructure d.toStructure _ _ _ e φ
 
 end FirstOrder.Language.Equiv
+
+namespace TauCeti.RelationalConfiguration
+
+variable {L : Language.{u, v}} [L.IsRelational] {V : Type w} {ι : Type uι}
+
+/-- Isomorphic configurations on the same carrier satisfy the same infinitary sentences. -/
+theorem isoSetoid_mem_modelsOf_iff {c d : RelationalConfiguration L V} {φ : L.SentenceInf ι}
+    (h : isoSetoid L V c d) : c ∈ modelsOf φ ↔ d ∈ modelsOf φ := by
+  obtain ⟨e⟩ := isoSetoid_apply.mp h
+  exact e.mem_modelsOf_iff φ
+
+end TauCeti.RelationalConfiguration

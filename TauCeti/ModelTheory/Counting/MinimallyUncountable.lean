@@ -34,26 +34,17 @@ identifies scattered minimally uncountable analytic classes with uncountable cla
 back-and-forth levels (`TauCeti.bfScattered_and_minimallyUncountableOn_iff_concentratedAtBFLevels`).
 
 The main result is the **Harnik–Makkai reduction**
-(`TauCeti.exists_minimallyUncountableOn_inf_of_bfScattered`, generalized to level-saturated
-scattered classes in `TauCeti.BFScattered.exists_minimallyUncountableOn_inter_modelsOf`): if `Θ` is
-an `L_{ω₁ω}` sentence whose model class on `ℕ` is back-and-forth scattered and meets uncountably
-many isomorphism classes, then some strengthening `Θ ⊓ θ` is minimally uncountable. Assuming no
-sentence cut `K ∩ modelsOf θ` is minimally uncountable, one recursively constructs a binary
-splitting tree of configurations on `ℕ` along a strictly increasing sequence of countable levels
-`α n < ω₁` with `α n + ω ≤ α (n + 1)`:
-
-1. At stage `n`, each node `w : Fin n → Bool` has an `α n`-class inside `K` meeting uncountably
-   many isomorphism classes; since that class is defined by `(node w).scottSentenceAtLevel (α n)`
-   (`modelsOf_scottSentenceAtLevel`), some sentence `φ w` splits it into two uncountable sides.
-2. Asymptotic sentence saturation (`exists_bfLevel_saturated_modelsOf`) chooses one countable level
-   `α (n + 1) ≥ α n + ω` saturating all `2 ^ n` splitting sentences simultaneously, and countable
-   level quotients (`Setoid.exists_class_not_countable_image`) select uncountable
-   `α (n + 1)`-classes on both sides of each split.
-3. For every branch `X : ℕ → Bool`, the back-and-forth chain-limit construction
-   (`exists_limit_of_bfEquiv_chain`) produces a configuration `d X ∈ K` matching the `(i + 1)`-st
-   node along `X` at level `α i`. Distinct branches separate at `α (i + 1)` at their first
-   disagreement `i`, embedding Cantor space `ℕ → Bool` into the countable quotient of `K` at
-   `⨆ n, α n < ω₁`, a contradiction.
+(`TauCeti.exists_minimallyUncountableOn_inf_of_bfScattered`): in a countable relational vocabulary,
+if `Θ` is an `L_{ω₁ω}` sentence whose model class on `ℕ` is back-and-forth scattered and meets
+uncountably many isomorphism classes, then some strengthening `Θ ⊓ θ` is minimally uncountable.
+More generally, any back-and-forth scattered set `K` of configurations on `ℕ` meeting uncountably
+many isomorphism classes admits an `L_{ω₁ω}` sentence `θ` with `K ∩ modelsOf θ` minimally
+uncountable whenever `K` is closed under some countable back-and-forth level
+(`TauCeti.BFScattered.exists_minimallyUncountableOn_inter_modelsOf`), in particular whenever `K` is
+isomorphism-invariant and Borel
+(`TauCeti.BFScattered.exists_minimallyUncountableOn_inter_modelsOf_of_measurableSet`) or the model
+class of a countably branching infinitary sentence
+(`TauCeti.exists_minimallyUncountableOn_modelsOf_inter_of_bfScattered`).
 
 Consequently, every counterexample `Θ` to Vaught's dichotomy has a scattered minimally uncountable
 strengthening `Θ ⊓ θ` (`TauCeti.exists_minimallyUncountable_inf_of_not_hasVaughtDichotomy`), the
@@ -492,11 +483,18 @@ theorem IsThinOnNatModels.minimallyUncountable_iff_minimallyUnbounded
 
 end ScatteredAndConcentrated
 
-/-! ### The Harnik–Makkai splitting tree and reduction -/
+/-! ### The Harnik–Makkai reduction -/
 
 section HarnikMakkai
 
 variable {L : Language.{u, v}} [L.IsRelational] [Countable (Σ n, L.Relations n)]
+
+-- Assuming no sentence cut `K ∩ modelsOf θ` is minimally uncountable, we recursively build a
+-- binary splitting tree along countable levels `α n < ω₁` with `α n + ω ≤ α (n + 1)`: each node's
+-- `α n`-class is defined by `scottSentenceAtLevel` and splits into two uncountable sides, a common
+-- level `α (n + 1)` saturates all `2 ^ n` splitting sentences (`exists_bfLevel_saturated_modelsOf`)
+-- and selects uncountable child classes, and chain limits along Cantor branches (`ℕ → Bool`) embed
+-- into the countable quotient of `K` at `⨆ n, α n < ω₁`.
 
 /-- Finite stage `n` of the Harnik–Makkai binary splitting tree inside `K`: a countable level
 `level < ω₁` and one configuration `node w` for each `w : Fin n → Bool` whose `level`-class lies in
@@ -724,10 +722,11 @@ theorem exists_minimallyUncountableOn_inf_of_bfScattered {Θ : L.Sentenceω}
   obtain ⟨θ, hθ⟩ := exists_minimallyUncountableOn_modelsOf_inter_of_bfScattered hK hunc
   exact ⟨θ, by rwa [modelsOf_inf]⟩
 
-/-- Sentence-level form of the Harnik–Makkai reduction: a scattered infinitary sentence with
-countable branching and uncountably many models on `ℕ` up to isomorphism has a strengthening by an
-`L_{ω₁ω}` sentence whose models on `ℕ` are both scattered and minimally uncountable, and for
-`Θ : L.Sentenceω` the conjunction `Θ ⊓ θ` is both scattered and minimally uncountable. -/
+/-- Sentence-level form of the Harnik–Makkai reduction: an `L_{ω₁ω}` sentence `Θ` whose models on
+`ℕ` are back-and-forth scattered and uncountably many up to isomorphism has a strengthening `Θ ⊓ θ`
+that is both back-and-forth scattered on `ℕ` and minimally uncountable (see
+`exists_minimallyUncountableOn_modelsOf_inter_of_bfScattered` for intersections with arbitrary
+countably branching infinitary sentences). -/
 theorem exists_minimallyUncountable_inf_of_bfScattered {Θ : L.Sentenceω}
     (hK : BFScattered (modelsOf (V := ℕ) Θ))
     (hunc : ¬ Countable (Quotient (isoSetoidOn ℕ Θ))) :
