@@ -10,23 +10,15 @@ public import TauCeti.AlgebraicTopology.Singular.Basic
 public import TauCeti.Algebra.Module.LocalizedModule.TwoDivisible
 public import TauCeti.Algebra.Category.ModuleCat.ZModCoefficientSequence
 public import Mathlib.Algebra.Category.ModuleCat.Colimits
-import TauCeti.AlgebraicTopology.Singular.Coefficients.ModTwo
+import TauCeti.AlgebraicTopology.Singular.Coefficients.ZModCoefficientSequence
 
 /-!
 # Mod-two vanishing and integral homology
 
-If the mod-two homology of a space vanishes in degrees n and n + 1, multiplication by two on
-its integral homology in degree n is bijective. This is the algebraic step used with the Hurewicz
-isomorphism to deduce unique two-divisibility of a first nonzero homotopy group.
-
-The proof uses the long exact sequence of the coefficient sequence ℤ → ℤ → ℤ/2, through the
-reduction modulo two: its kernel is twice integral homology
-(`TopCat.ker_singularHomologyReductionModTwo`), and it is onto in degree n + 1 exactly when
-multiplication by two is injective in degree n
-(`TopCat.surjective_singularHomologyReductionModTwo_succ_iff`). It requires no connectivity or
-finite-generation assumptions. The coefficients are universe-lifted so that the space can live
-in any universe. The reusable coefficient sequence and its exactness are
-`TauCeti.zmodCoefficientSequence 2` and `TauCeti.zmodCoefficientSequence_shortExact`.
+If the mod-two homology of a space vanishes in degrees `n` and `n + 1`, multiplication by two on
+its integral homology in degree `n` is bijective. This is the `m = 2` specialization of
+`TopCat.bijective_zsmul_singularHomology_of_isZero_zmod`, phrased with
+`TauCeti.IsUniquelyTwoDivisible`.
 
 ## References
 
@@ -52,17 +44,8 @@ theorem isUniquelyTwoDivisible_singularHomology_of_isZero_mod_two (X : TopCat.{u
     TauCeti.IsUniquelyTwoDivisible
       (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} ℤ) n).obj
         (ModuleCat.of ℤ (ULift.{u} ℤ))).obj X) := by
-  -- Vanishing in degree `n + 1` makes the reduction onto, so two is injective in degree `n`.
-  have hinj := (X.surjective_singularHomologyReductionModTwo_succ_iff n).1 fun y ↦
-    ⟨0, (ModuleCat.isZero_iff_subsingleton.1 hn').elim _ _⟩
-  -- Vanishing in degree `n` makes every class reduce to zero, hence twice a class.
-  have hsurj := LinearMap.range_eq_top.1 ((X.ker_singularHomologyReductionModTwo n).symm.trans
-    (LinearMap.ker_eq_top.2
-      (LinearMap.ext fun _ ↦ (ModuleCat.isZero_iff_subsingleton.1 hn).elim _ _)))
   rw [TauCeti.isUniquelyTwoDivisible_iff]
-  -- the integer action of the abelian group agrees with that of the integer module
-  convert (show Function.Bijective _ from ⟨hinj, hsurj⟩) using 1
-  ext x
-  simp [two_smul, two_zsmul]
+  simpa only [Nat.cast_ofNat] using
+    X.bijective_zsmul_singularHomology_of_isZero_zmod 2 n hn hn'
 
 end TopCat
