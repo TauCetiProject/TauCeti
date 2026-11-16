@@ -88,6 +88,15 @@ def IsOreAdmissible (n j : ℕ) : Prop :=
       (0 < j % n ∧ addVal 𝒪[K] ((j % n : ℕ) : 𝒪[K]) ≤ (j / n : ℕ) ∧
         ((j / n : ℕ) : ℕ∞) + 1 ≤ addVal 𝒪[K] (n : 𝒪[K])))
 
+/-- Unfolding `TauCeti.IsOreAdmissible`. -/
+theorem isOreAdmissible_iff {n j : ℕ} :
+    IsOreAdmissible K n j ↔
+      0 < n ∧
+        ((j % n = 0 ∧ ((j / n : ℕ) : ℕ∞) = addVal 𝒪[K] (n : 𝒪[K])) ∨
+          (0 < j % n ∧ addVal 𝒪[K] ((j % n : ℕ) : 𝒪[K]) ≤ (j / n : ℕ) ∧
+            ((j / n : ℕ) : ℕ∞) + 1 ≤ addVal 𝒪[K] (n : 𝒪[K]))) := by
+  rw [IsOreAdmissible]
+
 namespace IsOreAdmissible
 
 /-- An Ore-admissible pair has positive degree. -/

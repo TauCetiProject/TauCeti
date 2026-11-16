@@ -413,7 +413,7 @@ theorem measure_eisensteinBox {n j : ℕ} (hadm : IsOreAdmissible K n j)
   rcases Nat.eq_zero_or_pos (j % n) with hmod | hmod
   · -- Case `j % n = 0`: `eisensteinBox K n j` is a single ideal-box difference `S e`.
     rw [eisensteinBox_eq_sdiff_of_mod_eq_zero hadm hmod, ite_eq_left hmod, mul_one,
-      measure_univ_pi_image_maximalIdeal_pow_sdiff_update_add_one μ hμ e i₀, hsum]
+      Measure.measure_univ_pi_image_maximalIdeal_pow_sdiff_update_add_one μ e i₀, hμ, mul_one, hsum]
   · -- Case `0 < j % n`: `eisensteinBox K n j = S e \ S e₂`, where `e₂` deepens coordinate `j % n`
     -- by `1` and scales the volume of `S e` by `q⁻¹`.
     set ib : Fin n := ⟨j % n, Nat.mod_lt j hn⟩
@@ -435,7 +435,8 @@ theorem measure_eisensteinBox {n j : ℕ} (hadm : IsOreAdmissible K n j)
     have hq : q ≠ 0 := by simp [q, Nat.card_pos.ne']
     have hqt : q ≠ ∞ := ENNReal.natCast_ne_top _
     have hY_vol : μ (S e₂) = (1 / q ^ N * (1 - 1 / q)) * (1 / q) := by
-      rw [measure_univ_pi_image_maximalIdeal_pow_sdiff_update_add_one μ hμ e₂ i₀, hsum₂]
+      rw [Measure.measure_univ_pi_image_maximalIdeal_pow_sdiff_update_add_one μ e₂ i₀, hμ, mul_one,
+        hsum₂]
       simp only [one_div]
       rw [pow_succ, ENNReal.mul_inv (.inl (pow_ne_zero _ hq)) (.inl (ENNReal.pow_ne_top hqt))]
       ring
@@ -447,8 +448,8 @@ theorem measure_eisensteinBox {n j : ℕ} (hadm : IsOreAdmissible K n j)
     rw [hbox, ite_eq_right hmod.ne', measure_sdiff hYX
       ((measurableSet_univ_pi_image_maximalIdeal_pow _).diff
         (measurableSet_univ_pi_image_maximalIdeal_pow _)).nullMeasurableSet hY_fin,
-      measure_univ_pi_image_maximalIdeal_pow_sdiff_update_add_one μ hμ e i₀, hsum, hY_vol,
-      ENNReal.mul_sub fun _ _ ↦ hfin_base, mul_one]
+      Measure.measure_univ_pi_image_maximalIdeal_pow_sdiff_update_add_one μ e i₀, hμ, mul_one, hsum,
+      hY_vol, ENNReal.mul_sub fun _ _ ↦ hfin_base, mul_one]
 
 /-- **Roots of polynomials in `eisensteinBox K n j` generate extensions of wild exponent `j`.** For
 an Eisenstein coefficient vector `a` and any root `x : SeparableClosure K` of `monicOfCoeff a`, `a`

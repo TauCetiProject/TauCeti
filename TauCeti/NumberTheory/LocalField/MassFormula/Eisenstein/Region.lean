@@ -56,9 +56,6 @@ product structure on the measure is used.
   Eisenstein at `𝓂[K]`.
 * `TauCeti.irreducible_monicOfCoeff_of_mem_eisensteinSet`: a positive-degree Eisenstein
   coefficient vector defines an irreducible polynomial over `K`.
-* `TauCeti.mem_univ_pi_image_maximalIdeal_pow_sdiff_update_iff`,
-  `TauCeti.measure_univ_pi_image_maximalIdeal_pow_sdiff_update_add_one`: membership and volume of
-  an ideal box minus the subbox deepened in one coordinate.
 * `TauCeti.eisensteinSet_eq_sdiff`: for `0 < n`, the Eisenstein region is the box `𝓂[K] ^ n` minus
   the box whose constant coordinate lies in `𝓂[K] ^ 2`.
 * `TauCeti.measurableSet_eisensteinSet`: the Eisenstein region is measurable.
@@ -114,21 +111,6 @@ theorem mem_eisensteinSet {n : ℕ} {a : Fin n → K} :
 /-- The Eisenstein region lies in the integer box: its coefficients are integral. -/
 theorem eisensteinSet_subset_integerBox (n : ℕ) : eisensteinSet K n ⊆ integerBox K (Fin n) :=
   fun _ ha ↦ mem_integerBox.2 fun i ↦ (Valuation.mem_integer_iff _ _).2 (ha.1 i).le
-
-/-- Removing from an ideal box the subbox with coordinate `k` replaced by `𝓂[K] ^ m` leaves the
-vectors in the box whose `k`-th coordinate avoids `𝓂[K] ^ m`. -/
-theorem mem_univ_pi_image_maximalIdeal_pow_sdiff_update_iff {ι : Type*} [DecidableEq ι]
-    (d : ι → ℕ) (k : ι) (m : ℕ) {a : ι → K} :
-    a ∈ (Set.univ.pi fun i ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ d i)) \
-        (Set.univ.pi fun i ↦
-          ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ Function.update d k m i)) ↔
-      (∀ i, a i ∈ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ d i)) ∧
-        a k ∉ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ m) := by
-  simp only [Set.mem_sdiff, Set.mem_univ_pi]
-  refine and_congr_right fun ha ↦ not_congr ⟨fun h ↦ by simpa using h k, fun hk i ↦ ?_⟩
-  rcases eq_or_ne i k with rfl | hik
-  · simpa using hk
-  · simpa [Function.update_of_ne hik] using ha i
 
 end CoefficientSpace
 
@@ -215,36 +197,6 @@ theorem measurableSet_eisensteinSet {n : ℕ} [MeasurableSpace (Fin n → K)]
     rw [eisensteinSet_eq_sdiff hn]
     exact h₁.diff (measurableSet_univ_pi_image_maximalIdeal_pow _)
 
-/-- For a left-invariant measure on `ι → K` normalized on the integer box, removing from an ideal
-box the subbox where coordinate `k` is deepened by `1` leaves volume
-`q ^ (-∑ i, d i) * (1 - q⁻¹)`, where `q = Nat.card 𝓀[K]`. -/
-theorem measure_univ_pi_image_maximalIdeal_pow_sdiff_update_add_one
-    {ι : Type*} [Fintype ι] [DecidableEq ι] [MeasurableSpace (ι → K)] [BorelSpace (ι → K)]
-    (μ : Measure (ι → K)) [μ.IsAddLeftInvariant] (hμ : μ (integerBox K ι) = 1)
-    (d : ι → ℕ) (k : ι) :
-    μ ((Set.univ.pi fun i ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ d i)) \
-        Set.univ.pi fun i ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ Function.update d k (d k + 1) i)) =
-      1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ (∑ i, d i) * (1 - 1 / (Nat.card 𝓀[K] : ℝ≥0∞)) := by
-  set d' := Function.update d k (d k + 1)
-  have hsub := univ_pi_image_maximalIdeal_pow_subset (K := K) (e' := d) (e := d')
-    (le_update_iff.2 ⟨Nat.le_succ _, fun _ _ ↦ le_rfl⟩)
-  have hsum : ∑ i, d' i = (∑ i, d i) + 1 := by
-    rw [Finset.sum_update_of_mem (Finset.mem_univ k),
-      ← Finset.add_sum_erase Finset.univ d (Finset.mem_univ k),
-      Finset.sdiff_singleton_eq_erase]
-    omega
-  have h₁ := Measure.measure_univ_pi_image_maximalIdeal_pow μ d
-  have h₂ := Measure.measure_univ_pi_image_maximalIdeal_pow μ d'
-  rw [hμ, mul_one] at h₁ h₂
-  rw [hsum] at h₂
-  have hq : (Nat.card 𝓀[K] : ℝ≥0∞) ≠ 0 := by simp [Nat.card_pos.ne']
-  rw [measure_sdiff hsub (measurableSet_univ_pi_image_maximalIdeal_pow d').nullMeasurableSet
-    (h₂ ▸ ENNReal.div_ne_top ENNReal.one_ne_top (pow_ne_zero _ hq)), h₁, h₂]
-  simp only [one_div]
-  rw [ENNReal.mul_sub fun _ _ ↦ ENNReal.inv_ne_top.2 (pow_ne_zero _ hq), mul_one, pow_succ,
-    ENNReal.mul_inv (.inl (pow_ne_zero _ hq))
-      (.inl (ENNReal.pow_ne_top (ENNReal.natCast_ne_top _)))]
-
 /-- **The volume of the Eisenstein region**: for a left-invariant measure on `Fin n → K`
 normalized on the integer box, the Eisenstein region has volume `q ^ (-n) (1 - q⁻¹)` for
 `0 < n`, where `q = Nat.card 𝓀[K]`. -/
@@ -253,9 +205,9 @@ theorem measure_eisensteinSet {n : ℕ} (hn : 0 < n) [MeasurableSpace (Fin n →
     (hμ : μ (integerBox K (Fin n)) = 1) :
     μ (eisensteinSet K n) =
       1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ n * (1 - 1 / (Nat.card 𝓀[K] : ℝ≥0∞)) := by
-  have h := measure_univ_pi_image_maximalIdeal_pow_sdiff_update_add_one μ hμ
+  have h := Measure.measure_univ_pi_image_maximalIdeal_pow_sdiff_update_add_one μ
     (fun _ : Fin n ↦ 1) ⟨0, hn⟩
-  simpa [eisensteinSet_eq_sdiff hn] using h
+  simpa [eisensteinSet_eq_sdiff hn, hμ] using h
 
 /-- The Eisenstein region has finite volume for every measure that is finite on compact sets,
 since it lies in the compact integer box. -/

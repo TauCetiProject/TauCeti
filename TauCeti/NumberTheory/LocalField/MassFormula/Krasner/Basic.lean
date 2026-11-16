@@ -78,6 +78,18 @@ def krasnerCount (n j : ℕ) : ℚ :=
         (if j % n = 0 then 1 else 1 - (Nat.card 𝓀[K] : ℚ)⁻¹)
   else 0
 
+open Classical in
+variable (K) in
+/-- Unfolding `TauCeti.krasnerCount`. -/
+theorem krasnerCount_def (n j : ℕ) :
+    krasnerCount K n j =
+      if IsOreAdmissible K n j then
+        (n : ℚ) * (Nat.card 𝓀[K] : ℚ) ^ (((n + j - 1 : ℕ) : ℤ) -
+          ((∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth K n j h : ℕ) : ℤ)) *
+            (if j % n = 0 then 1 else 1 - (Nat.card 𝓀[K] : ℚ)⁻¹)
+      else 0 := by
+  rw [krasnerCount]
+
 /-- For an Ore-admissible wild exponent, `krasnerCount` evaluates to Krasner's box formula. -/
 theorem krasnerCount_of_isOreAdmissible {n j : ℕ} (h : IsOreAdmissible K n j) :
     krasnerCount K n j =
@@ -274,8 +286,9 @@ theorem ncard_mem_totallyRamifiedOfDegree_wildExponent_eq_mul_pow {n j : ℕ}
   have hq0 : (Nat.card 𝓀[K] : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'
   apply Nat.cast_injective (R := ℝ)
   push_cast
-  rw [show 2 + ∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth K n j h =
-    (1 + ∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth K n j h) + 1 by omega, pow_succ]
+  have hexp : 2 + ∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth K n j h =
+      (1 + ∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth K n j h) + 1 := by omega
+  rw [hexp, pow_succ]
   split_ifs at hR ⊢
   · field_simp at hR ⊢
     exact hR
@@ -296,7 +309,8 @@ theorem natCast_ncard_mem_totallyRamifiedOfDegree_wildExponent_eq_eq_krasnerCoun
     have hq0 : (Nat.card 𝓀[K] : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'
     apply Rat.cast_injective (α := ℝ)
     rw [krasnerCount_of_isOreAdmissible hadm, zpow_sub₀ hq0_rat, zpow_natCast, zpow_natCast]
-    rw [show n + j = (n + j - 1) + 1 by omega, pow_succ, pow_add, pow_one] at hR
+    have hexp : n + j = (n + j - 1) + 1 := by omega
+    rw [hexp, pow_succ, pow_add, pow_one] at hR
     split_ifs at hR ⊢
     · push_cast
       field_simp at hR ⊢
