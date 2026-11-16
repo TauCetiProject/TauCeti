@@ -5,16 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Elliptic.Gamma0
+public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Elliptic.Gamma.Zero
 
 /-!
 # The elliptic points of `Γ(N)`
 
 The principal congruence subgroup `Γ(N)` is normal in `SL(2, ℤ)`, so a conjugate of `S` or of
-`T⁻¹ S` lies in `Γ(N)` only if `S`, resp. `T⁻¹ S`, does. Both have lower-left entry `1`, so this
-happens only at level `1`. Hence `Γ(N)` has no elliptic points for `N ≠ 1`, while `Γ(1)` is all of
-`SL(2, ℤ)`, with one elliptic point of each order. These are the counts `ε₂` and `ε₃` of the
-dimension formulas for `Γ(N)`.
+`T⁻¹ S` lies in `Γ(N)` only if `S`, resp. `T⁻¹ S`, does. Both have lower-left entry `1`, which
+is divisible by `N` only at level `1`
+(`CongruenceSubgroup.dvd_apply_one_zero_of_conj_mem_Gamma`). Hence `Γ(N)` has no elliptic points
+for `N ≠ 1`, while `Γ(1)` is all of `SL(2, ℤ)`, with one elliptic point of each order. These are
+the counts `ε₂` and `ε₃` of the dimension formulas for `Γ(N)`.
 
 ## Main results
 
@@ -35,15 +36,6 @@ namespace TauCeti
 
 variable {N : ℕ}
 
-/-- A conjugate of a matrix with lower-left entry `1` lies in `Γ(N)` only at level `1`: as `Γ(N)`
-is normal, the matrix itself would lie in `Γ(N)`, making `1` zero modulo `N`. -/
-private theorem eq_one_of_conj_mem_Gamma {γ g : SL(2, ℤ)} (h : γ * g * γ⁻¹ ∈ Gamma N)
-    (h10 : g 1 0 = 1) : N = 1 := by
-  have hg : g ∈ Gamma N := by simpa [mul_assoc] using (Gamma_normal N).conj_mem _ h γ⁻¹
-  by_contra hN
-  have : Nontrivial (ZMod N) := ZMod.nontrivial_iff.mpr hN
-  simpa [h10] using (Gamma_mem.mp hg).2.2.1
-
 /-- **The count `ε₂(Γ(N))`**: `Γ(N)` has one elliptic point of order two at level `1`, and none
 at any other level. -/
 theorem card_orderTwoElliptic_Gamma :
@@ -53,8 +45,9 @@ theorem card_orderTwoElliptic_Gamma :
   · subst hN
     rw [Gamma_one_top, ← Gamma0_one_top, card_orderTwoElliptic_Gamma0, Nat.card_eq_fintype_card]
     decide
-  · exact (Gamma N).card_orderTwoElliptic_map_eq_zero fun _ h ↦
-      hN (eq_one_of_conj_mem_Gamma h (by decide))
+  · -- the lower-left entry of `S = !![0, -1; 1, 0]` is `1`
+    refine (Gamma N).card_orderTwoElliptic_map_eq_zero fun _ h ↦ hN (Nat.dvd_one.mp ?_)
+    exact_mod_cast (by simpa [coe_S] using dvd_apply_one_zero_of_conj_mem_Gamma h : (N : ℤ) ∣ 1)
 
 /-- **The count `ε₃(Γ(N))`**: `Γ(N)` has one elliptic point of order three at level `1`, and none
 at any other level. -/
@@ -65,7 +58,9 @@ theorem card_orderThreeElliptic_Gamma :
   · subst hN
     rw [Gamma_one_top, ← Gamma0_one_top, card_orderThreeElliptic_Gamma0, Nat.card_eq_fintype_card]
     decide
-  · exact (Gamma N).card_orderThreeElliptic_map_eq_zero fun _ h ↦
-      hN (eq_one_of_conj_mem_Gamma h (by decide))
+  · -- the lower-left entry of `T⁻¹ S = !![-1, -1; 1, 0]` is `1`
+    refine (Gamma N).card_orderThreeElliptic_map_eq_zero fun _ h ↦ hN (Nat.dvd_one.mp ?_)
+    exact_mod_cast (by simpa [coe_mul, coe_T_inv, coe_S, Matrix.mul_fin_two] using
+      dvd_apply_one_zero_of_conj_mem_Gamma h : (N : ℤ) ∣ 1)
 
 end TauCeti
