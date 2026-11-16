@@ -527,7 +527,7 @@ theorem exists_mextDeriv_eq_of_forall_eventuallyEq_add_const [IsManifold I 1 M]
 
 end Regularity
 
-/-- Every zero-dimensional form is smooth: its coordinate functions have singleton domain. -/
+/-- Every zero-dimensional form is smooth: a manifold modelled on a singleton space is discrete. -/
 theorem isSmoothForm_zeroDim {E M : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] [Subsingleton E] [TopologicalSpace M] [ChartedSpace E M]
     [IsManifold 𝓘(ℝ, E) 1 M]
@@ -535,11 +535,8 @@ theorem isSmoothForm_zeroDim {E M : Type*} [NormedAddCommGroup E]
     (φ : RoughForm 𝓘(ℝ, E) M F k) :
     IsSmoothForm 𝓘(ℝ, E) n φ := by
   rw [isSmoothForm_def]
-  intro x
-  rw [Bundle.contMDiffAt_section_iff x, contMDiffAt_iff_source,
-    contMDiffWithinAt_iff_contDiffWithinAt]
-  exact (contDiffWithinAt_const (c := _)).congr (fun y _ ↦ congrArg _ (Subsingleton.elim y 0))
-    (congrArg _ (Subsingleton.elim _ 0))
+  have : DiscreteTopology M := ChartedSpace.discreteTopology E M
+  exact contMDiff_of_discreteTopology
 
 /-- Over the model space `𝓘(ℝ, E)`, a form is a `C^n` section exactly when it is a `C^n`
 function into the space of alternating maps. -/
