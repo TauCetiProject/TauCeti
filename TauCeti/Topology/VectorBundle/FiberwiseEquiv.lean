@@ -44,8 +44,7 @@ def totalSpaceEquiv : TotalSpace F E₂ ≃ TotalSpace F E₁ where
 @[simp] theorem totalSpaceEquiv_symm_apply (p : TotalSpace F E₁) :
     (totalSpaceEquiv F e).symm p = ⟨p.proj, e p.proj p.2⟩ := (rfl)
 
-theorem proj_totalSpaceEquiv (p : TotalSpace F E₂) :
-    (totalSpaceEquiv F e p).proj = p.proj := (rfl)
+theorem proj_totalSpaceEquiv (p : TotalSpace F E₂) : (totalSpaceEquiv F e p).proj = p.proj := (rfl)
 
 theorem proj_totalSpaceEquiv_symm (p : TotalSpace F E₁) :
     ((totalSpaceEquiv F e).symm p).proj = p.proj := (rfl)
@@ -68,8 +67,7 @@ theorem continuous_totalSpace_iff {Y : Type*} [TopologicalSpace Y] {g : Y → To
 /-- Continuity of `(b, v) ↦ (b, (e b).symm v)` from `totalSpaceTopology F e`. -/
 theorem continuous_totalSpace_to :
     @Continuous (TotalSpace F E₂) (TotalSpace F E₁) (totalSpaceTopology F e) _
-      (fun p => ⟨p.proj, (e p.proj).symm p.2⟩) :=
-  continuous_induced_dom
+      (fun p => ⟨p.proj, (e p.proj).symm p.2⟩) := continuous_induced_dom
 
 /-- With the induced topology on `TotalSpace F E₂`, `totalSpaceEquiv F e` is a homeomorphism
 covering the identity on `B`. -/
@@ -86,7 +84,6 @@ def totalSpaceHomeomorph :
     (totalSpaceHomeomorph F e).symm p = ⟨p.proj, e p.proj p.2⟩ := (rfl)
 
 end Homeomorph
-
 end Equiv
 
 section FiberBundle
@@ -101,48 +98,37 @@ variable {𝕜 B : Type*} (F : Type*) [Semiring 𝕜] [TopologicalSpace B] [Topo
 def trivialization (t : Trivialization F (π F E₁)) :
     @Trivialization B F (TotalSpace F E₂) _ _ (totalSpaceTopology F e) (π F E₂) :=
   letI : TopologicalSpace (TotalSpace F E₂) := totalSpaceTopology F e
-  let h := totalSpaceHomeomorph F e
-  { toOpenPartialHomeomorph := h.transOpenPartialHomeomorph t.toOpenPartialHomeomorph
-    baseSet := t.baseSet
-    open_baseSet := t.open_baseSet
-    source_eq := by ext p; simp [t.source_eq, h]
-    target_eq := t.target_eq
-    proj_toFun p hp := t.proj_toFun (h p) (by simpa [h] using hp) }
+  t.compHomeomorph (totalSpaceHomeomorph F e)
 
 @[simp] theorem baseSet_trivialization (t : Trivialization F (π F E₁)) :
-    letI : TopologicalSpace (TotalSpace F E₂) := totalSpaceTopology F e
-    (trivialization F e t).baseSet = t.baseSet := (rfl)
+    letI := totalSpaceTopology F e; (trivialization F e t).baseSet = t.baseSet := (rfl)
 
 @[simp] theorem trivialization_apply (t : Trivialization F (π F E₁)) (p : TotalSpace F E₂) :
-    letI : TopologicalSpace (TotalSpace F E₂) := totalSpaceTopology F e
+    letI := totalSpaceTopology F e
     trivialization F e t p = t ⟨p.proj, (e p.proj).symm p.2⟩ := (rfl)
 
 /-- Transport the `FiberBundle` structure of `E₁` along fibrewise equivalences. -/
 @[instance_reducible]
 def fiberBundle [FiberBundle F E₁] :
-    letI : TopologicalSpace (TotalSpace F E₂) := totalSpaceTopology F e
-    FiberBundle F E₂ :=
+    letI := totalSpaceTopology F e; FiberBundle F E₂ :=
   letI : TopologicalSpace (TotalSpace F E₂) := totalSpaceTopology F e
-  { totalSpaceMk_isInducing' b := by
-      rw [← (totalSpaceHomeomorph F e).isInducing.of_comp_iff]
-      exact (FiberBundle.totalSpaceMk_isInducing F E₁ b).comp (e b).symm.toHomeomorph.isInducing
+  { totalSpaceMk_isInducing' b := (totalSpaceHomeomorph F e).isInducing.of_comp_iff.mp <|
+      (FiberBundle.totalSpaceMk_isInducing F E₁ b).comp (e b).symm.toHomeomorph.isInducing
     trivializationAtlas' := trivialization F e '' trivializationAtlas F E₁
     trivializationAt' b := trivialization F e (trivializationAt F E₁ b)
     mem_baseSet_trivializationAt' b := mem_baseSet_trivializationAt F E₁ b
     trivialization_mem_atlas' b := ⟨_, trivialization_mem_atlas F E₁ b, rfl⟩ }
 
 @[simp] theorem trivializationAt_fiberBundle [FiberBundle F E₁] (b : B) :
-    letI : TopologicalSpace (TotalSpace F E₂) := totalSpaceTopology F e
-    letI : FiberBundle F E₂ := fiberBundle F e
+    letI := totalSpaceTopology F e; letI := fiberBundle F e
     trivializationAt F E₂ b = trivialization F e (trivializationAt F E₁ b) := (rfl)
 
 /-- Transporting a linear trivialization of `E₁` along `e` yields a linear trivialization of
 `E₂`. -/
 theorem isLinear_trivialization [AddCommMonoid F] [Module 𝕜 F]
     (t : Trivialization F (π F E₁)) [t.IsLinear 𝕜] :
-    letI : TopologicalSpace (TotalSpace F E₂) := totalSpaceTopology F e
-    (trivialization F e t).IsLinear 𝕜 := by
-  let _ : TopologicalSpace (TotalSpace F E₂) := totalSpaceTopology F e
+    letI := totalSpaceTopology F e; (trivialization F e t).IsLinear 𝕜 := by
+  let _ := totalSpaceTopology F e
   refine ⟨fun b hb => ?_⟩
   have hlin := t.linear 𝕜 (hb : b ∈ t.baseSet)
   exact ⟨fun _ _ => by simp only [trivialization_apply, map_add, hlin.map_add],
@@ -163,15 +149,12 @@ variable {𝕜 B : Type*} (F : Type*) [NontriviallyNormedField 𝕜] [Topologica
 original coordinate changes on `E₁`, since `e b` and `(e b).symm` cancel on overlaps. -/
 theorem coordChangeL_trivialization
     (t t' : Trivialization F (π F E₁)) [t.IsLinear 𝕜] [t'.IsLinear 𝕜] (b : B) :
-    letI : TopologicalSpace (TotalSpace F E₂) := totalSpaceTopology F e
-    letI := isLinear_trivialization F e t
+    letI := totalSpaceTopology F e; letI := isLinear_trivialization F e t
     letI := isLinear_trivialization F e t'
-    (trivialization F e t).coordChangeL 𝕜 (trivialization F e t') b =
-      t.coordChangeL 𝕜 t' b := by
+    (trivialization F e t).coordChangeL 𝕜 (trivialization F e t') b = t.coordChangeL 𝕜 t' b := by
   let _ := totalSpaceTopology F e
   let _ := isLinear_trivialization F e t; let _ := isLinear_trivialization F e t'
-  ext v
-  by_cases hb : b ∈ t.baseSet ∩ t'.baseSet
+  ext v; by_cases hb : b ∈ t.baseSet ∩ t'.baseSet
   · have hb' : b ∈ (trivialization F e t).baseSet ∩ (trivialization F e t').baseSet := hb
     rw [Trivialization.coordChangeL_apply' _ _ hb', Trivialization.coordChangeL_apply' _ _ hb]
     exact congrArg (fun p => (t' p).2)
@@ -185,66 +168,52 @@ variable [FiberBundle F E₁] [VectorBundle 𝕜 F E₁]
 /-- Transport the `VectorBundle` structure of `E₁` along fibrewise continuous linear
 equivalences. -/
 theorem vectorBundle :
-    letI : TopologicalSpace (TotalSpace F E₂) := totalSpaceTopology F e
-    letI : FiberBundle F E₂ := fiberBundle F e
-    VectorBundle 𝕜 F E₂ := by
+    letI := totalSpaceTopology F e; letI := fiberBundle F e; VectorBundle 𝕜 F E₂ := by
   let _ := totalSpaceTopology F e; let _ := fiberBundle F e
   refine ⟨?_, ?_⟩
-  · rintro _ ⟨⟨t, ht, rfl⟩⟩
-    have : MemTrivializationAtlas t := ⟨ht⟩
+  · rintro _ ⟨⟨t, ht, rfl⟩⟩; have : MemTrivializationAtlas t := ⟨ht⟩
     exact isLinear_trivialization F e t
   · rintro _ _ ⟨⟨t, ht, rfl⟩⟩ ⟨⟨t', ht', rfl⟩⟩
-    have : MemTrivializationAtlas t := ⟨ht⟩
-    have : MemTrivializationAtlas t' := ⟨ht'⟩
+    have : MemTrivializationAtlas t := ⟨ht⟩; have : MemTrivializationAtlas t' := ⟨ht'⟩
     exact (continuousOn_coordChange 𝕜 t t').congr fun b _ =>
       congrArg ContinuousLinearEquiv.toContinuousLinearMap (coordChangeL_trivialization F e t t' b)
 
 /-- Transporting a bundle along fibrewise continuous linear equivalences leaves its point-indexed
 coordinate core strictly unchanged. -/
 @[simp] theorem pointIndexedCore_eq :
-    letI : TopologicalSpace (TotalSpace F E₂) := totalSpaceTopology F e
-    letI : FiberBundle F E₂ := fiberBundle F e
-    letI : VectorBundle 𝕜 F E₂ := vectorBundle F e
+    letI := totalSpaceTopology F e; letI := fiberBundle F e; letI := vectorBundle F e
     pointIndexedCore 𝕜 F E₂ = pointIndexedCore 𝕜 F E₁ := by
   let _ := totalSpaceTopology F e; let _ := fiberBundle F e; let _ := vectorBundle F e
-  refine VectorBundleCore.ext (fun b => ?_) (fun b => ?_) (fun b c x => ?_)
-  · exact (pointIndexedCore_localTriv_baseSet 𝕜 F E₂ b).trans <|
-      (congrArg Trivialization.baseSet (trivializationAt_fiberBundle F e b)).trans <|
-        (baseSet_trivialization F e (trivializationAt F E₁ b)).trans
-          (pointIndexedCore_localTriv_baseSet 𝕜 F E₁ b).symm
-  · rw [pointIndexedCore_indexAt, pointIndexedCore_indexAt]
-  · rw [pointIndexedCore_coordChange, pointIndexedCore_coordChange]
-    exact congrArg ContinuousLinearEquiv.toContinuousLinearMap
-      (coordChangeL_trivialization F e (trivializationAt F E₁ b) (trivializationAt F E₁ c) x)
+  refine VectorBundleCore.ext (fun b => (pointIndexedCore_localTriv_baseSet 𝕜 F E₂ b).trans <|
+    (congrArg Trivialization.baseSet (trivializationAt_fiberBundle F e b)).trans <|
+      (baseSet_trivialization F e (trivializationAt F E₁ b)).trans
+        (pointIndexedCore_localTriv_baseSet 𝕜 F E₁ b).symm)
+    (fun b => by rw [pointIndexedCore_indexAt, pointIndexedCore_indexAt]) fun b c x => ?_
+  rw [pointIndexedCore_coordChange, pointIndexedCore_coordChange]
+  exact congrArg ContinuousLinearEquiv.toContinuousLinearMap
+    (coordChangeL_trivialization F e (trivializationAt F E₁ b) (trivializationAt F E₁ c) x)
 
 /-- Reading a vector of the transported bundle in its preferred chart applies `(e b).symm` and
 then the preferred chart of `E₁`. -/
 theorem pointIndexedCoreFiberEquiv_symm_apply_eq (b : B) (w : E₂ b) :
-    letI : TopologicalSpace (TotalSpace F E₂) := totalSpaceTopology F e
-    letI : FiberBundle F E₂ := fiberBundle F e
-    letI : VectorBundle 𝕜 F E₂ := vectorBundle F e
+    letI := totalSpaceTopology F e; letI := fiberBundle F e; letI := vectorBundle F e
     (pointIndexedCoreFiberEquiv 𝕜 F E₂ b).symm w =
       (pointIndexedCoreFiberEquiv 𝕜 F E₁ b).symm ((e b).symm w) := by
   let _ := totalSpaceTopology F e; let _ := fiberBundle F e; let _ := vectorBundle F e
   simp only [pointIndexedCoreFiberEquiv_symm_apply, trivializationAt_fiberBundle,
-    trivialization_apply]
-  rfl
+    trivialization_apply]; rfl
 
 /-- The preferred-chart fibre equivalence of the transported bundle evaluates as that of `E₁`
 followed by the fibrewise equivalence `e b`. -/
 theorem pointIndexedCoreFiberEquiv_apply_eq (b : B) (v : F) :
-    letI : TopologicalSpace (TotalSpace F E₂) := totalSpaceTopology F e
-    letI : FiberBundle F E₂ := fiberBundle F e
-    letI : VectorBundle 𝕜 F E₂ := vectorBundle F e
-    pointIndexedCoreFiberEquiv 𝕜 F E₂ b v =
-      e b (pointIndexedCoreFiberEquiv 𝕜 F E₁ b v) := by
+    letI := totalSpaceTopology F e; letI := fiberBundle F e; letI := vectorBundle F e
+    pointIndexedCoreFiberEquiv 𝕜 F E₂ b v = e b (pointIndexedCoreFiberEquiv 𝕜 F E₁ b v) := by
   let _ := totalSpaceTopology F e; let _ := fiberBundle F e; let _ := vectorBundle F e
-  apply (pointIndexedCoreFiberEquiv 𝕜 F E₂ b).symm.injective
-  exact ((pointIndexedCoreFiberEquiv 𝕜 F E₂ b).symm_apply_apply v).trans <|
-    ((pointIndexedCoreFiberEquiv 𝕜 F E₁ b).symm_apply_apply v).symm.trans <|
-      (congrArg (pointIndexedCoreFiberEquiv 𝕜 F E₁ b).symm ((e b).symm_apply_apply _).symm).trans
-        (pointIndexedCoreFiberEquiv_symm_apply_eq F e b _).symm
+  exact (pointIndexedCoreFiberEquiv 𝕜 F E₂ b).symm.injective <|
+    ((pointIndexedCoreFiberEquiv 𝕜 F E₂ b).symm_apply_apply v).trans <|
+      ((pointIndexedCoreFiberEquiv 𝕜 F E₁ b).symm_apply_apply v).symm.trans <|
+        (congrArg (pointIndexedCoreFiberEquiv 𝕜 F E₁ b).symm ((e b).symm_apply_apply _).symm).trans
+          (pointIndexedCoreFiberEquiv_symm_apply_eq F e b _).symm
 
 end VectorBundle
-
 end TauCeti.FiberwiseEquiv

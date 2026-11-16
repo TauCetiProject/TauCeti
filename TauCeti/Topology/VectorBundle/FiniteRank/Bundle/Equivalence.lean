@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.VectorBundle.FiniteRank.Atlas.CoordinateHom
+public import TauCeti.Topology.VectorBundle.FiniteRank.Atlas.Preadditive
+public import TauCeti.Topology.VectorBundle.FiniteRank.Atlas.Small
 public import TauCeti.Topology.VectorBundle.FiniteRank.Bundle.Basic
 public import Mathlib.Topology.Algebra.Module.Equiv.Pi
 public import Mathlib.Topology.Algebra.Module.TransferInstance
+
+import TauCeti.Topology.VectorBundle.FiniteRank.Atlas.CoordinateHom
 
 /-!
 # Equivalence between variable-rank vector bundles and small coordinate atlases
@@ -18,8 +21,8 @@ public import Mathlib.Topology.Algebra.Module.TransferInstance
 and lies in `Type (max u v)`. We show without compactness, bounded-rank, or completeness
 hypotheses that `FiniteRankVectorBundle.toAtlasFunctor` is unconditionally additive, full, and
 faithful, yielding `EssentiallySmall.{u} (FiniteRankVectorBundle.{w} 𝕜 X)` under `Small.{u} 𝕜` and
-`isIso_iff_bijective` over a complete field. Reconstructing bundles via `FiniteRankAtlas.toBundle`
-and `toBundleShrink.{w}` gives `atlasEquivalence`, `uliftToAtlasIso`,
+`isIso_iff_bijective`. Reconstructing bundles via `FiniteRankAtlas.toBundle` and
+`toBundleShrink.{w}` gives `atlasEquivalence`, `uliftToAtlasIso`,
 `(uliftFunctor.{w, w'} 𝕜 X).IsEquivalence`, and `universeEquivalence.{w, w'}`.
 
 ## References
@@ -53,13 +56,12 @@ noncomputable def toAtlas : FiniteRankAtlas 𝕜 X :=
 
 /-- Transporting fibres along continuous linear equivalences leaves the coordinate atlas literally
 unchanged. -/
-@[simp] theorem toAtlas_mapFibers {E₂ : X → Type w'}
-    [∀ x, AddCommGroup (E₂ x)] [∀ x, Module 𝕜 (E₂ x)] [∀ x, TopologicalSpace (E₂ x)]
-    (e : ∀ x, V.Fiber x ≃L[𝕜] E₂ x) : (V.mapFibers e).toAtlas = V.toAtlas := by
-  dsimp only [toAtlas, FiniteRankAtlas.ofBundles, rank_mapFibers]
-  congr; funext n
-  exact FiberwiseEquiv.pointIndexedCore_eq (𝕜 := 𝕜) (Fin n → 𝕜)
-    (E₁ := V.StratumFiber n) (fun y => e y.1)
+@[simp] theorem toAtlas_mapFibers {E₂ : X → Type w'} [∀ x, AddCommGroup (E₂ x)]
+    [∀ x, Module 𝕜 (E₂ x)] [∀ x, TopologicalSpace (E₂ x)] (e : ∀ x, V.Fiber x ≃L[𝕜] E₂ x) :
+    (V.mapFibers e).toAtlas = V.toAtlas := by
+  dsimp only [toAtlas, FiniteRankAtlas.ofBundles, rank_mapFibers]; congr; funext n
+  exact FiberwiseEquiv.pointIndexedCore_eq (𝕜 := 𝕜) (Fin n → 𝕜) (E₁ := V.StratumFiber n)
+    fun y => e y.1
 
 /-- Lifting the fibre universe via `ulift` leaves the coordinate atlas literally unchanged. -/
 @[simp] theorem toAtlas_ulift : (ulift.{w, w'} V).toAtlas = V.toAtlas :=
@@ -78,15 +80,13 @@ noncomputable def atlasHomeomorph : TotalSpace Unit V.toAtlas.Fiber ≃ₜ Total
 @[simp] theorem atlasHomeomorph_apply (p : TotalSpace Unit V.toAtlas.Fiber) :
     V.atlasHomeomorph p = ⟨p.proj, V.atlasFiberEquiv p.proj p.2⟩ := by
   rw [atlasHomeomorph, Homeomorph.trans_apply, FiniteRankAtlas.reconstructionHomeomorph_apply,
-    totalSpaceHomeomorph_apply]
-  rfl
+    totalSpaceHomeomorph_apply]; rfl
 
 @[simp] theorem atlasHomeomorph_symm_apply (p : TotalSpace Unit V.Fiber) :
     V.atlasHomeomorph.symm p = ⟨p.proj, (V.atlasFiberEquiv p.proj).symm p.2⟩ := by
   rw [atlasHomeomorph, Homeomorph.symm_trans_apply, totalSpaceHomeomorph_symm_apply,
     FiniteRankAtlas.reconstructionHomeomorph_symm_apply,
-    FiniteRankAtlas.totalSpaceHomeomorph_apply]
-  rfl
+    FiniteRankAtlas.totalSpaceHomeomorph_apply]; rfl
 
 end Obj
 
@@ -95,16 +95,13 @@ variable (𝕜 X) in
 point-indexed coordinate atlas. -/
 -- Expose the object assignment so composed functors see `V.toAtlas`.
 @[expose, implicit_reducible]
-noncomputable def toAtlasFunctor :
-    FiniteRankVectorBundle.{w} 𝕜 X ⥤ FiniteRankAtlas 𝕜 X where
+noncomputable def toAtlasFunctor : FiniteRankVectorBundle.{w} 𝕜 X ⥤ FiniteRankAtlas 𝕜 X where
   obj V := V.toAtlas
   map {V W} f :=
     { fiberMap x := (W.atlasFiberEquiv x).symm.toLinearMap.comp
         ((f.fiberMap x).comp (V.atlasFiberEquiv x).toLinearMap)
-      continuous_totalSpaceMap :=
-        (W.atlasHomeomorph.symm.continuous.comp
-          (f.totalSpaceMap.continuous.comp V.atlasHomeomorph.continuous)).congr
-          fun _ => by simp }
+      continuous_totalSpaceMap := (W.atlasHomeomorph.symm.continuous.comp
+        (f.totalSpaceMap.continuous.comp V.atlasHomeomorph.continuous)).congr fun _ => by simp }
   map_id V := FiniteRankAtlas.hom_ext fun x => LinearMap.ext (V.atlasFiberEquiv x).symm_apply_apply
   map_comp _ _ := FiniteRankAtlas.hom_ext fun _ => LinearMap.ext fun _ => by simp
 
@@ -112,8 +109,7 @@ noncomputable def toAtlasFunctor :
     (toAtlasFunctor.{w} 𝕜 X).obj V = V.toAtlas := (rfl)
 
 @[simp] theorem fiberMap_toAtlasFunctor_map {V W : FiniteRankVectorBundle.{w} 𝕜 X}
-    (f : V ⟶ W) (x : X) :
-    ((toAtlasFunctor.{w} 𝕜 X).map f).fiberMap x =
+    (f : V ⟶ W) (x : X) : ((toAtlasFunctor.{w} 𝕜 X).map f).fiberMap x =
       (W.atlasFiberEquiv x).symm.toLinearMap.comp
         ((f.fiberMap x).comp (V.atlasFiberEquiv x).toLinearMap) := (rfl)
 
@@ -136,14 +132,14 @@ instance : (toAtlasFunctor.{w} 𝕜 X).Full where
          fun _ => by simp },
       FiniteRankAtlas.hom_ext fun _ => LinearMap.ext fun _ => by simp; rfl⟩
 
-/-- Over a complete scalar field, a morphism of variable-rank vector bundles is a categorical
-isomorphism if and only if it is bijective on every fibre. -/
-theorem isIso_iff_bijective [CompleteSpace 𝕜] {V W : FiniteRankVectorBundle.{w} 𝕜 X}
-    (f : V ⟶ W) : IsIso f ↔ ∀ x, Function.Bijective (f.fiberMap x) := by
+/-- A morphism of variable-rank vector bundles is a categorical isomorphism if and only if it is
+bijective on every fibre. -/
+theorem isIso_iff_bijective {V W : FiniteRankVectorBundle.{w} 𝕜 X} (f : V ⟶ W) :
+    IsIso f ↔ ∀ x, Function.Bijective (f.fiberMap x) := by
   refine ⟨fun _ x => ((fiberFunctor x).mapIso (asIso f)).toLinearEquiv.bijective, fun hbij => ?_⟩
   have : IsIso ((toAtlasFunctor.{w} 𝕜 X).map f) := (FiniteRankAtlas.isIso_iff_bijective _).2
-    fun x => (W.atlasFiberEquiv x).symm.bijective.comp
-      ((hbij x).comp (V.atlasFiberEquiv x).bijective)
+    fun x => (W.atlasFiberEquiv x).symm.bijective.comp <|
+      (hbij x).comp (V.atlasFiberEquiv x).bijective
   exact isIso_of_fully_faithful (toAtlasFunctor.{w} 𝕜 X) f
 
 instance : EssentiallySmall.{max u v} (FiniteRankVectorBundle.{w} 𝕜 X) :=
@@ -153,7 +149,6 @@ instance [Small.{u} 𝕜] : EssentiallySmall.{u} (FiniteRankVectorBundle.{w} �
   essentiallySmall_of_fully_faithful (toAtlasFunctor.{w} 𝕜 X)
 
 end ToAtlas
-
 end FiniteRankVectorBundle
 
 namespace FiniteRankAtlas
@@ -166,24 +161,18 @@ variable (A : FiniteRankAtlas 𝕜 X)
 literal coordinate fibres `Fin (A.rank x) → 𝕜`. -/
 -- Expose `rank` and `Fiber` projections so reconstructed fibres reduce to `A.Fiber`.
 @[expose, implicit_reducible]
-def toBundle : FiniteRankVectorBundle.{v} 𝕜 X where
-  rank := A.rank
-  Fiber := A.Fiber
-  addCommGroupFiber _ := inferInstance
-  moduleFiber _ := inferInstance
-  topologicalSpaceFiber _ := inferInstance
-  topologicalSpaceStratum n :=
-    FiberwiseEquiv.totalSpaceTopology (Fin n → 𝕜) (E₁ := (A.charts n).Fiber)
-      (fun y => (ContinuousLinearEquiv.piCongrLeft (R := 𝕜) (fun _ : Fin n => 𝕜)
-        (finCongr y.2)).symm)
-  fiberBundleStratum n :=
-    FiberwiseEquiv.fiberBundle (Fin n → 𝕜) (E₁ := (A.charts n).Fiber)
-      (fun y => (ContinuousLinearEquiv.piCongrLeft (R := 𝕜) (fun _ : Fin n => 𝕜)
-        (finCongr y.2)).symm)
-  vectorBundleStratum n :=
-    FiberwiseEquiv.vectorBundle (𝕜 := 𝕜) (Fin n → 𝕜) (E₁ := (A.charts n).Fiber)
-      (fun y => (ContinuousLinearEquiv.piCongrLeft (R := 𝕜) (fun _ : Fin n => 𝕜)
-        (finCongr y.2)).symm)
+def toBundle : FiniteRankVectorBundle.{v} 𝕜 X :=
+  let eqv (n : ℕ) (y : {x : X // A.rank x = n}) :=
+    (ContinuousLinearEquiv.piCongrLeft (R := 𝕜) (fun _ : Fin n => 𝕜) (finCongr y.2)).symm
+  { rank := A.rank, Fiber := A.Fiber
+    addCommGroupFiber _ := inferInstance, moduleFiber _ := inferInstance
+    topologicalSpaceFiber _ := inferInstance
+    topologicalSpaceStratum n :=
+      FiberwiseEquiv.totalSpaceTopology (Fin n → 𝕜) (E₁ := (A.charts n).Fiber) (eqv n)
+    fiberBundleStratum n :=
+      FiberwiseEquiv.fiberBundle (Fin n → 𝕜) (E₁ := (A.charts n).Fiber) (eqv n)
+    vectorBundleStratum n :=
+      FiberwiseEquiv.vectorBundle (𝕜 := 𝕜) (Fin n → 𝕜) (E₁ := (A.charts n).Fiber) (eqv n) }
 
 @[simp] theorem rank_toBundle : A.toBundle.rank = A.rank := (rfl)
 
@@ -196,18 +185,16 @@ def toBundleHomeomorph : TotalSpace Unit A.toBundle.Fiber ≃ₜ TotalSpace Unit
   invFun p := ⟨p.proj, p.2⟩
   left_inv _ := rfl
   right_inv _ := rfl
-  continuous_toFun :=
-    (A.continuous_mk_iff_rankStrata A.toBundle.continuous_proj _).2 fun n =>
-      ((FiberwiseEquiv.continuous_totalSpace_to (Fin n → 𝕜) (E₁ := (A.charts n).Fiber)
-        (E₂ := A.toBundle.StratumFiber n) _).comp <|
-        (A.toBundle.continuous_mk_iff_rankStrata A.toBundle.continuous_proj
-          (fun p => p.2)).1 continuous_id n).congr fun ⟨⟨_, _⟩, hy⟩ => by cases hy; rfl
-  continuous_invFun :=
-    (A.toBundle.continuous_mk_iff_rankStrata A.continuous_proj _).2 fun n =>
-      (FiberwiseEquiv.continuous_totalSpace_iff (Fin n → 𝕜) (E₁ := (A.charts n).Fiber)
-        (E₂ := A.toBundle.StratumFiber n) _).2 <|
-        ((A.continuous_mk_iff_rankStrata A.continuous_proj (fun p => p.2)).1
-          continuous_id n).congr fun ⟨⟨_, _⟩, hy⟩ => by cases hy; rfl
+  continuous_toFun := (A.continuous_mk_iff_rankStrata A.toBundle.continuous_proj _).2 fun n =>
+    ((FiberwiseEquiv.continuous_totalSpace_to (Fin n → 𝕜) (E₁ := (A.charts n).Fiber)
+      (E₂ := A.toBundle.StratumFiber n) _).comp <|
+      (A.toBundle.continuous_mk_iff_rankStrata A.toBundle.continuous_proj
+        (fun p => p.2)).1 continuous_id n).congr fun ⟨⟨_, _⟩, hy⟩ => by cases hy; rfl
+  continuous_invFun := (A.toBundle.continuous_mk_iff_rankStrata A.continuous_proj _).2 fun n =>
+    (FiberwiseEquiv.continuous_totalSpace_iff (Fin n → 𝕜) (E₁ := (A.charts n).Fiber)
+      (E₂ := A.toBundle.StratumFiber n) _).2 <|
+      ((A.continuous_mk_iff_rankStrata A.continuous_proj (fun p => p.2)).1
+        continuous_id n).congr fun ⟨⟨_, _⟩, hy⟩ => by cases hy; rfl
 
 @[simp] theorem toBundleHomeomorph_apply (p : TotalSpace Unit A.toBundle.Fiber) :
     A.toBundleHomeomorph p = ⟨p.proj, p.2⟩ := (rfl)
@@ -221,8 +208,7 @@ variable [Small.{w} 𝕜]
 
 /-- Reconstruct a bundle in `FiniteRankVectorBundle.{w} 𝕜 X` for any `w` with `Small.{w} 𝕜`. -/
 -- Expose `rank` and `Fiber` projections so shrunk fibres reduce to `Shrink (A.Fiber x)`.
-@[expose, implicit_reducible] noncomputable def toBundleShrink :
-    FiniteRankVectorBundle.{w} 𝕜 X :=
+@[expose, implicit_reducible] noncomputable def toBundleShrink : FiniteRankVectorBundle.{w} 𝕜 X :=
   A.toBundle.mapFibers fun x => (Shrink.continuousLinearEquiv.{w} 𝕜 (A.Fiber x)).symm
 
 /-- Homeomorphism between `TotalSpace Unit (A.toBundleShrink.{w}).Fiber` and
@@ -232,8 +218,7 @@ noncomputable def toBundleShrinkHomeomorph :
   (A.toBundle.mapFibersHomeomorph fun x =>
     (Shrink.continuousLinearEquiv.{w} 𝕜 (A.Fiber x)).symm).trans A.toBundleHomeomorph
 
-@[simp] theorem toBundleShrinkHomeomorph_apply
-    (p : TotalSpace Unit (A.toBundleShrink.{w}).Fiber) :
+@[simp] theorem toBundleShrinkHomeomorph_apply (p : TotalSpace Unit (A.toBundleShrink.{w}).Fiber) :
     A.toBundleShrinkHomeomorph.{w} p =
       ⟨p.proj, Shrink.continuousLinearEquiv.{w} 𝕜 (A.Fiber p.proj) p.2⟩ := by
   rw [toBundleShrinkHomeomorph, Homeomorph.trans_apply,
@@ -248,23 +233,20 @@ noncomputable def toBundleShrinkHomeomorph :
 
 /-- Canonical atlas isomorphism `(A.toBundleShrink.{w}).toAtlas ≅ A`. -/
 noncomputable def toAtlasToBundleShrinkIso : (A.toBundleShrink.{w}).toAtlas ≅ A :=
-  isoMk
-    (fun x => ((A.toBundleShrink.{w}).atlasFiberEquiv x).toLinearEquiv.trans
+  isoMk (fun x => ((A.toBundleShrink.{w}).atlasFiberEquiv x).toLinearEquiv.trans
       (Shrink.continuousLinearEquiv.{w} 𝕜 (A.Fiber x)).toLinearEquiv)
     (((A.toBundleShrinkHomeomorph.{w}).continuous.comp
       (A.toBundleShrink.{w}).atlasHomeomorph.continuous).congr fun _ => by
-      simp only [Function.comp_apply, FiniteRankVectorBundle.atlasHomeomorph_apply,
-        toBundleShrinkHomeomorph_apply, LinearEquiv.trans_apply,
-        ContinuousLinearEquiv.coe_toLinearEquiv])
+        simp only [Function.comp_apply, FiniteRankVectorBundle.atlasHomeomorph_apply,
+          toBundleShrinkHomeomorph_apply, LinearEquiv.trans_apply,
+          ContinuousLinearEquiv.coe_toLinearEquiv])
     (((A.toBundleShrink.{w}).atlasHomeomorph.symm.continuous.comp
       (A.toBundleShrinkHomeomorph.{w}).symm.continuous).congr fun _ => by
-      simp only [Function.comp_apply, toBundleShrinkHomeomorph_symm_apply,
-        FiniteRankVectorBundle.atlasHomeomorph_symm_apply, LinearEquiv.symm_trans_apply]; rfl)
+        simp only [Function.comp_apply, toBundleShrinkHomeomorph_symm_apply,
+          FiniteRankVectorBundle.atlasHomeomorph_symm_apply, LinearEquiv.symm_trans_apply]; rfl)
 
 end Shrink
-
 end ToBundle
-
 end FiniteRankAtlas
 
 namespace FiniteRankVectorBundle
@@ -287,17 +269,16 @@ private noncomputable def uliftToAtlasComponentIso (V : FiniteRankVectorBundle.{
     (fun x => ((ulift.{w, w'} V).atlasFiberEquiv x).toLinearEquiv.trans
       ((ULift.moduleEquiv : ULift.{w'} (V.Fiber x) ≃ₗ[𝕜] V.Fiber x).trans
         (V.atlasFiberEquiv x).symm.toLinearEquiv))
-    ((V.atlasHomeomorph.symm.continuous.comp <|
-      (uliftHomeomorph.{w, w'} V).continuous.comp
-        (ulift.{w, w'} V).atlasHomeomorph.continuous).congr fun _ => by
-      simp only [Function.comp_apply, atlasHomeomorph_apply, uliftHomeomorph_apply,
-        atlasHomeomorph_symm_apply, LinearEquiv.trans_apply,
-        ContinuousLinearEquiv.coe_toLinearEquiv]; rfl)
+    ((V.atlasHomeomorph.symm.continuous.comp <| (uliftHomeomorph.{w, w'} V).continuous.comp
+      (ulift.{w, w'} V).atlasHomeomorph.continuous).congr fun _ => by
+        simp only [Function.comp_apply, atlasHomeomorph_apply, uliftHomeomorph_apply,
+          atlasHomeomorph_symm_apply, LinearEquiv.trans_apply,
+          ContinuousLinearEquiv.coe_toLinearEquiv]; rfl)
     (((ulift.{w, w'} V).atlasHomeomorph.symm.continuous.comp <|
-      (uliftHomeomorph.{w, w'} V).symm.continuous.comp
-        V.atlasHomeomorph.continuous).congr fun _ => by
-      simp only [Function.comp_apply, atlasHomeomorph_apply, uliftHomeomorph_symm_apply,
-        atlasHomeomorph_symm_apply, LinearEquiv.symm_trans_apply]; rfl)
+      (uliftHomeomorph.{w, w'} V).symm.continuous.comp V.atlasHomeomorph.continuous).congr
+        fun _ => by
+          simp only [Function.comp_apply, atlasHomeomorph_apply, uliftHomeomorph_symm_apply,
+            atlasHomeomorph_symm_apply, LinearEquiv.symm_trans_apply]; rfl)
 
 private theorem fiberMap_uliftToAtlasComponentIso_hom (V : FiniteRankVectorBundle.{w} 𝕜 X)
     (x : X) (v : (ulift.{w, w'} V).toAtlas.Fiber x) :
@@ -331,7 +312,8 @@ theorem fiberMap_uliftToAtlasIso_inv_app (V : FiniteRankVectorBundle.{w} 𝕜 X)
     (x : X) (v : V.toAtlas.Fiber x) :
     ((uliftToAtlasIso.{w, w'} 𝕜 X).inv.app V).fiberMap x v =
       ((ulift.{w, w'} V).atlasFiberEquiv x).symm (ULift.up (V.atlasFiberEquiv x v)) := by
-  change ((uliftToAtlasComponentIso.{w, w'} V).inv.fiberMap x) v = _
+  refine (congrArg (fun f : V.toAtlas ⟶ (ulift.{w, w'} V).toAtlas => f.fiberMap x v)
+    (NatIso.ofComponents_inv_app _ _ V)).trans ?_
   rw [uliftToAtlasComponentIso, FiniteRankAtlas.fiberMap_isoMk_inv]; rfl
 
 instance [Small.{w} 𝕜] : (uliftFunctor.{w, w'} 𝕜 X).IsEquivalence :=
@@ -349,5 +331,4 @@ noncomputable def universeEquivalence [Small.{w} 𝕜] [Small.{w'} 𝕜] :
   (atlasEquivalence.{w} 𝕜 X).trans (atlasEquivalence.{w'} 𝕜 X).symm
 
 end FiniteRankVectorBundle
-
 end TauCeti
