@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Geometry.Symplectic.Darboux.Basis
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Quadratic
+public import Mathlib.LinearAlgebra.QuadraticForm.IsometryEquiv
+public import Mathlib.LinearAlgebra.QuadraticForm.Signature
 
 /-!
 # The elliptic blocks
@@ -25,6 +27,12 @@ Let `(V, ω)` be a finite-dimensional real symplectic vector space with a Darbou
 `∑ₖ cₖ Iₖ` rotates each plane `span(qₖ, pₖ)` with angular frequency `cₖ`
 (`IsDarbouxBasis.hamiltonianEnd_sum_smul_elliptic_apply_fst`,
 `IsDarbouxBasis.hamiltonianEnd_sum_smul_elliptic_apply_snd`).
+
+In the coordinates of `b` such a combination is a weighted sum of squares in which `cₖ / 2` is the
+weight of both `xₖ` and `yₖ` (`TauCeti.SymplecticForm.equivalent_sum_smul_elliptic`). By
+Sylvester's law of inertia its negative and positive indices of inertia are twice the numbers of
+negative and positive `cₖ` (`TauCeti.SymplecticForm.sigNeg_sum_smul_elliptic`,
+`TauCeti.SymplecticForm.sigPos_sum_smul_elliptic`); in particular both are even.
 
 These are the elliptic blocks of Williamson's normal forms of nondegenerate rank-zero singularities
 of integrable systems. That they form a nondegenerate family, in every dimension, is
@@ -70,6 +78,50 @@ theorem polar_elliptic (b : Basis (Fin n × Fin 2) ℝ V) (k : Fin n) (u v : V) 
       b.repr u (k, 0) * b.repr v (k, 0) + b.repr u (k, 1) * b.repr v (k, 1) := by
   simp only [QuadraticMap.polar, elliptic_apply, map_add, Finsupp.add_apply]
   ring
+
+/-- **Combinations of elliptic blocks are doubled weighted sums of squares.** In the coordinates
+`(x₁, y₁, …, xₙ, yₙ)` of `b`, the combination `∑ₖ cₖ Iₖ` is the weighted sum of squares in which
+`cₖ / 2` is the weight of both `xₖ` and `yₖ`. -/
+theorem equivalent_sum_smul_elliptic (b : Basis (Fin n × Fin 2) ℝ V) (c : Fin n → ℝ) :
+    (∑ k, c k • elliptic b k).Equivalent
+      (QuadraticMap.weightedSumSquares ℝ fun p : Fin n × Fin 2 ↦ c p.1 / 2) := by
+  have h : (∑ k, c k • elliptic b k).basisRepr b =
+      QuadraticMap.weightedSumSquares ℝ fun p : Fin n × Fin 2 ↦ c p.1 / 2 := by
+    ext w
+    have hw (p : Fin n × Fin 2) : b.repr (∑ i, w i • b i) p = w p := by
+      rw [← b.equivFun_symm_apply, ← b.equivFun_apply, b.equivFun.apply_symm_apply]
+    rw [QuadraticMap.basisRepr_apply]
+    simp only [sum_apply, smul_apply, elliptic_apply, hw]
+    simp only [QuadraticMap.weightedSumSquares_apply, smul_eq_mul, Fintype.sum_prod_type,
+      Fin.sum_univ_two]
+    exact Finset.sum_congr rfl fun k _ ↦ by ring
+  exact ⟨h ▸ QuadraticMap.isometryEquivBasisRepr _ b⟩
+
+/-- The pairs `(k, i)` of indices of a basis `(q₁, p₁, …, qₙ, pₙ)` whose first index satisfies a
+property are twice as many as the `k` satisfying it. -/
+private theorem ncard_setOf_fst (P : Fin n → Prop) :
+    {p : Fin n × Fin 2 | P p.1}.ncard = 2 * {k | P k}.ncard := by
+  rw [show {p : Fin n × Fin 2 | P p.1} = {k | P k} ×ˢ (Set.univ : Set (Fin 2)) by ext; simp,
+    Set.ncard_prod, Set.ncard_univ, Nat.card_eq_fintype_card, Fintype.card_fin, mul_comm]
+
+/-- **The negative index of a combination of elliptic blocks.** The negative index of inertia of
+`∑ₖ cₖ Iₖ` is twice the number of `k` with `cₖ < 0`. -/
+theorem sigNeg_sum_smul_elliptic (b : Basis (Fin n × Fin 2) ℝ V) (c : Fin n → ℝ) :
+    sigNeg (∑ k, c k • elliptic b k) = 2 * {k | c k < 0}.ncard := by
+  rw [QuadraticForm.sigNeg_of_equiv_weightedSumSquares (equivalent_sum_smul_elliptic b c),
+    ← ncard_setOf_fst]
+  congr 1
+  ext p
+  simp only [Set.mem_ofPred_eq]
+  constructor <;> intro h <;> linarith
+
+/-- **The positive index of a combination of elliptic blocks.** The positive index of inertia of
+`∑ₖ cₖ Iₖ` is twice the number of `k` with `0 < cₖ`. -/
+theorem sigPos_sum_smul_elliptic (b : Basis (Fin n × Fin 2) ℝ V) (c : Fin n → ℝ) :
+    sigPos (∑ k, c k • elliptic b k) = 2 * {k | 0 < c k}.ncard := by
+  rw [QuadraticForm.sigPos_of_equiv_weightedSumSquares (equivalent_sum_smul_elliptic b c),
+    ← ncard_setOf_fst]
+  simp
 
 variable [FiniteDimensional ℝ V] {ω : SymplecticForm V} {b : Basis (Fin n × Fin 2) ℝ V}
 
