@@ -15,9 +15,10 @@ import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Calculus.ContDiff.Differentiable
 import TauCeti.Analysis.Calculus.DifferentialForm.Basic
-import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Trace
 import TauCeti.Analysis.InnerProductSpace.HodgeStar.Isometry
 import TauCeti.Analysis.InnerProductSpace.Laplacian.LocalExtr
+import TauCeti.Analysis.InnerProductSpace.SquaredDistance
+import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector.OrthonormalBasis
 
 /-!
 # The flat Weitzenböck formula for the Seiberg–Witten Dirac operator
@@ -72,14 +73,16 @@ identity**
 
 (`laplacian_norm_sq_eq_of_add_hodgeStar_eq`). Writing `χ = α u₀ + β`, the potential is
 `(r / 4) (|χ|² - 1) |χ|² + (r / 2) |β|²`. At a local maximum of `|χ|²` the left side is
-nonpositive, which gives the first of Taubes's coarse bounds,
+nonpositive, which gives the pointwise inequality
 
-`|α|² + |β|² ≤ 1 + 2 √2 |η| / r`
+`|χ|² ≤ 1 + 2 √2 |η| / r`
 
-(`norm_sq_le_one_add_of_isLocalMax`). For the flat limiting equations, `r = 1 / 2` and `η = 0`,
-so `|χ| ≤ 1` at every local maximum of `|χ|`. On a manifold the same computation acquires the
-scalar curvature, the curvature of the canonical connection `A₀` and the derivatives of `u₀`;
-here the chart is flat and these terms are absent.
+at that point (`norm_sq_le_one_add_of_isLocalMax`), the key step of Taubes's coarse bound
+`|α|² + |β|² ≤ 1 + C / r`. The coarse bound itself follows by the maximum principle on a
+compact manifold, which this file does not provide. For the flat limiting equations,
+`r = 1 / 2` and `η = 0`, so `|χ| ≤ 1` at every local maximum of `|χ|`. On a manifold the same
+computation acquires the scalar curvature, the curvature of the canonical connection `A₀` and
+the derivatives of `u₀`; here the chart is flat and these terms are absent.
 
 ## References
 
@@ -208,45 +211,6 @@ private theorem spinorCovariantDeriv_sum_apply [FiniteDimensional ℂ W] {κ : T
 
 /-! ### The Laplacian of `|ψ|²` -/
 
-/-- `Re ⟪u, i w⟫ + Re ⟪w, i u⟫ = 0`. -/
-private theorem re_inner_I_smul_add_re_inner_I_smul (u w : W) :
-    (⟪u, I • w⟫_ℂ).re + (⟪w, I • u⟫_ℂ).re = 0 := by
-  rw [inner_smul_right, inner_smul_right, ← inner_conj_symm u w]
-  simp only [Complex.mul_re, I_re, I_im, Complex.conj_re, Complex.conj_im]
-  ring
-
-/-- The derivative along `w` of `y ↦ L y v` is `dL(w)(v)`. -/
-private theorem fderiv_apply_const_apply {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    {L : V → V →L[ℝ] E} (hL : DifferentiableAt ℝ L x) (v w : V) :
-    fderiv ℝ (fun y ↦ L y v) x w = fderiv ℝ L x w v := by
-  rw [fderiv_clm_apply hL (differentiableAt_const v)]
-  simp
-
-/-- The second derivative of `|ψ|²` along a vector `v`:
-`d²|ψ|²(v, v) = 2 (Re ⟪ψ, d²ψ(v, v)⟫ + |dψ(v)|²)`. -/
-private theorem fderiv_fderiv_norm_sq_apply (hψ : ContDiffAt ℝ 2 ψ x) (v : V) :
-    fderiv ℝ (fderiv ℝ fun y ↦ ‖ψ y‖ ^ 2) x v v =
-      2 * ((⟪ψ x, fderiv ℝ (fderiv ℝ ψ) x v v⟫_ℂ).re + ‖fderiv ℝ ψ x v‖ ^ 2) := by
-  let := InnerProductSpace.complexToReal (G := W)
-  have hψ₁ : DifferentiableAt ℝ ψ x := hψ.differentiableAt (by norm_num)
-  have hψ₂ : DifferentiableAt ℝ (fderiv ℝ ψ) x :=
-    (hψ.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
-  have hg₂ : DifferentiableAt ℝ (fderiv ℝ fun y ↦ ‖ψ y‖ ^ 2) x :=
-    ((ContDiffAt.norm_sq ℂ hψ).fderiv_right (m := 1) (by norm_num)).differentiableAt
-      (by norm_num)
-  have hv : DifferentiableAt ℝ (fun y ↦ fderiv ℝ ψ y v) x :=
-    hψ₂.clm_apply (differentiableAt_const v)
-  -- Near `x`, the derivative of `|ψ|²` along `v` is `2 Re ⟪ψ, dψ(v)⟫`.
-  have hfd : (fun y ↦ fderiv ℝ (fun y ↦ ‖ψ y‖ ^ 2) y v) =ᶠ[𝓝 x]
-      fun y ↦ 2 * ⟪ψ y, fderiv ℝ ψ y v⟫_ℝ := by
-    filter_upwards [hψ.eventually_differentiableAt (by norm_num)] with y hy
-    rw [hy.hasFDerivAt.norm_sq.fderiv]
-    simp
-  rw [← fderiv_apply_const_apply hg₂, hfd.fderiv_eq, fderiv_const_mul (hψ₁.inner ℝ hv),
-    _root_.smul_apply, smul_eq_mul, fderiv_inner_apply ℝ hψ₁ hv,
-    fderiv_apply_const_apply hψ₂,
-    real_inner_self_eq_norm_sq, real_inner_eq_re_inner ℂ, RCLike.re_to_complex]
-
 /-- The connection terms cancel from `Re ⟪ψ, ∇_v ∇_v ψ⟫ + |∇_v ψ|²`, which is half the second
 derivative of `|ψ|²` along `v`. -/
 private theorem re_inner_add_norm_sq_spinorCovariantDeriv (hψ : DifferentiableAt ℝ ψ x)
@@ -259,7 +223,9 @@ private theorem re_inner_add_norm_sq_spinorCovariantDeriv (hψ : DifferentiableA
     rw [real_inner_eq_re_inner ℂ, RCLike.re_to_complex]
   have h₁ (z : W) : ⟪z, I • z⟫_ℝ = 0 := real_inner_I_smul_self ℂ z
   have h₂ (u w : W) : ⟪u, I • w⟫_ℝ + ⟪w, I • u⟫_ℝ = 0 := by
-    rw [← hre, ← hre, re_inner_I_smul_add_re_inner_I_smul]
+    rw [← hre, ← hre, inner_smul_right, inner_smul_right, ← inner_conj_symm u w]
+    simp only [Complex.mul_re, I_re, I_im, Complex.conj_re, Complex.conj_im]
+    ring
   have h₃ (z : W) : ⟪I • z, I • z⟫_ℝ = ⟪z, z⟫_ℝ := by
     rw [real_inner_self_eq_norm_sq, real_inner_self_eq_norm_sq, norm_smul, norm_I, one_mul]
   rw [spinorCovariantDeriv_spinorCovariantDeriv_apply hψ hψ' hb, spinorCovariantDeriv_apply,
@@ -286,7 +252,9 @@ theorem laplacian_norm_sq_eq [FiniteDimensional ℝ V] (hψ : ContDiffAt ℝ 2 �
   rw [laplacian_eq_iteratedFDeriv_orthonormalBasis _ e, Finset.mul_sum]
   refine Finset.sum_congr rfl fun k _ ↦ ?_
   rw [re_inner_add_norm_sq_spinorCovariantDeriv hψ₁ hψ₂ hb, iteratedFDeriv_two_apply]
-  exact fderiv_fderiv_norm_sq_apply hψ (e k)
+  let := InnerProductSpace.complexToReal (G := W)
+  simpa [real_inner_eq_re_inner ℂ, real_inner_self_eq_norm_sq, add_comm] using
+    fderiv_fderiv_norm_sq_sub_comp_apply (a := (0 : W)) hψ (e k) (e k)
 
 /-! ### The Dirac operator and the Weitzenböck formula -/
 
@@ -322,64 +290,6 @@ theorem flatDirac_smul_const {α : V → ℂ} (hα : DifferentiableAt ℝ α x) 
     [Fintype κ] (e : OrthonormalBasis κ ℝ V) :
     flatDirac ρ b (fun y ↦ α y • u₀) x = ∑ k, covariantDeriv b α x (e k) • ρ (ι Q (e k)) u₀ := by
   simp [flatDirac_eq_sum ρ e, spinorCovariantDeriv_smul_const hα]
-
-/-- **The Clifford action of a two-vector in an orthonormal basis**:
-`2 c₂(x) = ∑ⱼ ∑ₖ ⟪x, eⱼ ∧ eₖ⟫ c₂(eⱼ, eₖ)`, where `c₂(u, w) = (c(u) c(w) - c(w) c(u)) / 2` is the
-Clifford bivector of `u` and `w`. -/
-theorem _root_.CliffordAlgebra.two_smul_bivectorExterior_eq_sum {κ : Type*} [Fintype κ]
-    (e : OrthonormalBasis κ ℝ V) (x : ⋀[ℝ]^2 V) :
-    (2 : ℝ) • bivectorExterior Q x =
-      ∑ j, ∑ k, ⟪x, exteriorPower.ιMulti ℝ 2 ![e j, e k]⟫ • bivector Q (e j) (e k) := by
-  have h := LinearMap.congr_fun (e.sum_rankOne_ιMulti_two) x
-  simp only [LinearMap.sum_apply, ContinuousLinearMap.coe_coe, InnerProductSpace.rankOne_apply,
-    LinearMap.smul_apply, LinearMap.id_apply] at h
-  rw [← map_smul, ← h]
-  simp [map_sum, map_smul, real_inner_comm]
-
-/-- The Clifford algebra of the Weitzenböck formula: if the antisymmetric part of `T` is
-`T j k - T k j = ⟪F, eⱼ ∧ eₖ⟫ z`, then `∑ⱼ ∑ₖ c(eⱼ) c(eₖ) T j k = -∑ₖ T k k + c₂(F) z`. -/
-private theorem sum_ι_sum_ι_apply (hQ : ∀ v, Q v = -‖v‖ ^ 2) {κ : Type*} [Fintype κ]
-    (e : OrthonormalBasis κ ℝ V) (F : ⋀[ℝ]^2 V) (z : W) (T : κ → κ → W)
-    (hT : ∀ j k, T j k - T k j = ⟪F, exteriorPower.ιMulti ℝ 2 ![e j, e k]⟫ • z) :
-    ∑ j, ρ (ι Q (e j)) (∑ k, ρ (ι Q (e k)) (T j k)) =
-      -∑ k, T k k + ρ (bivectorExterior Q F) z := by
-  classical
-  -- `c(eⱼ) c(eₖ) = c₂(eⱼ, eₖ) - ⟪eⱼ, eₖ⟫`, by the Clifford relation.
-  have hcc (j k : κ) (y : W) :
-      ρ (ι Q (e j)) (ρ (ι Q (e k)) y) = ρ (bivector Q (e j) (e k)) y - ⟪e j, e k⟫ • y := by
-    have hpolar : QuadraticMap.polar Q (e j) (e k) = -2 * ⟪e j, e k⟫ := by
-      simp only [QuadraticMap.polar, hQ, norm_add_sq_real]
-      ring
-    rw [← mul_apply_eq_comp, ← map_mul, ι_mul_ι_eq_bivector_add, hpolar, map_add, map_smul,
-      AlgHom.commutes, LinearMap.add_apply, LinearMap.smul_apply, Module.algebraMap_end_apply,
-      smul_smul, invOf_eq_inv]
-    module
-  -- The symmetric part contracts to the trace.
-  have hsym : ∑ j, ∑ k, ⟪e j, e k⟫ • T j k = ∑ k, T k k := by
-    simp only [e.inner_eq_ite, ite_smul, one_smul, zero_smul, Finset.sum_ite_eq,
-      Finset.mem_univ, ite_true]
-  -- The antisymmetric part: `S = c₂(F) z`, computed from `2 S`.
-  set S := ∑ j, ∑ k, ρ (bivector Q (e j) (e k)) (T j k) with hS
-  have hswap : S = -∑ j, ∑ k, ρ (bivector Q (e j) (e k)) (T k j) := by
-    rw [hS, Finset.sum_comm, ← Finset.sum_neg_distrib]
-    refine Finset.sum_congr rfl fun j _ ↦ ?_
-    rw [← Finset.sum_neg_distrib]
-    refine Finset.sum_congr rfl fun k _ ↦ ?_
-    rw [bivector_swap Q (e j) (e k), map_neg, LinearMap.neg_apply]
-  have h2 : (2 : ℝ) • S = (2 : ℝ) • ρ (bivectorExterior Q F) z := by
-    calc (2 : ℝ) • S = S + S := two_smul ℝ S
-      _ = ∑ j, ∑ k, ρ (bivector Q (e j) (e k)) (T j k - T k j) := by
-        nth_rw 2 [hswap]
-        simp only [hS, map_sub, Finset.sum_sub_distrib]
-        abel
-      _ = ρ (∑ j, ∑ k,
-          ⟪F, exteriorPower.ιMulti ℝ 2 ![e j, e k]⟫ • bivector Q (e j) (e k)) z := by
-        simp [hT, map_sum, LinearMap.map_smul_of_tower]
-      _ = (2 : ℝ) • ρ (bivectorExterior Q F) z := by
-        rw [← two_smul_bivectorExterior_eq_sum e F, map_smul, LinearMap.smul_apply]
-  have hSF : S = ρ (bivectorExterior Q F) z := smul_right_injective W two_ne_zero h2
-  simp only [map_sum, hcc, Finset.sum_sub_distrib, ← hS, hsym, hSF]
-  abel
 
 variable [FiniteDimensional ℂ W]
 
@@ -575,8 +485,9 @@ maximum at `x`, then
 
 `|χ|² ≤ 1 + 2 √2 |η| / r`.
 
-With `χ = α u₀ + β` this is Taubes's coarse bound `|α|² + |β|² ≤ 1 + C / r`; for the flat limiting
-equations (`r = 1 / 2`, `η = 0`) it gives `|χ| ≤ 1`. -/
+This pointwise inequality at a local maximum is the key step of Taubes's coarse bound
+`|α|² + |β|² ≤ 1 + C / r`; for the flat limiting equations (`r = 1 / 2`, `η = 0`) it gives
+`|χ| ≤ 1`. -/
 theorem norm_sq_le_one_add_of_isLocalMax (hψ : ContDiffAt ℝ 2 ψ x)
     (hb : DifferentiableAt ℝ b x) (hD : flatDirac ρ b ψ =ᶠ[𝓝 x] 0)
     {χ : positiveHalfSpinors o ρ} (hχ : ψ x = χ) {r : ℝ} (hr : 0 < r) {ω η : ⋀[ℝ]^2 V}
