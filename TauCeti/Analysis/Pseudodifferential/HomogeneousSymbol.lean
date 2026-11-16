@@ -892,6 +892,18 @@ theorem exists_norm_iteratedFDeriv_le [ProperSpace E] {K : Set X} (hK : IsCompac
   exists_norm_iteratedFDeriv_append_le_of_smul_snd_eq hK a.contDiffOn_coefficient
     (fun x ξ _ t ht ↦ a.homogeneous x ξ t ht) (mod_cast le_top)
 
+/-- At frequencies `‖ξ‖ > 2` the cut-off term `χ(ξ) a(x, ξ)` agrees with `a` near `(x, ξ)`, so
+their derivatives there are equal. -/
+theorem iteratedFDeriv_smul_coefficient_of_two_lt_norm (χ : FrequencyCutoff E) {x : X} {ξ : E}
+    (hξ : 2 < ‖ξ‖) (k : ℕ) :
+    iteratedFDeriv ℝ k (fun p : X × E ↦ χ p.2 • a.coefficient p) (x, ξ) =
+      iteratedFDeriv ℝ k a.coefficient (x, ξ) := by
+  have heq : (fun p : X × E ↦ χ p.2 • a.coefficient p) =ᶠ[𝓝 (x, ξ)] a.coefficient := by
+    filter_upwards [continuous_snd.continuousAt.eventually
+      (χ.eventuallyEq_one_of_two_lt_norm hξ)] with q hq
+    simp [hq]
+  exact heq.iteratedFDeriv ℝ k |>.eq_of_nhds
+
 /-- On a proper frequency space, the cut-off term `χ(ξ) a(x, ξ)` of a homogeneous symbol of
 degree `m` satisfies the symbol estimates of order `m`: its derivatives in `j` position
 directions and `l` frequency directions are bounded by `C ⟨ξ⟩ ^ (m - l)` for positions in a
@@ -916,11 +928,7 @@ theorem exists_norm_iteratedFDeriv_smul_coefficient_le [ProperSpace E] (χ : Fre
     exact mul_le_mul_of_nonneg_right (le_max_left _ _) (by positivity)
   · -- At large frequencies the cut-off term agrees with the homogeneous symbol.
     have hξ0 : ξ ≠ 0 := norm_pos_iff.mp (two_pos.trans hξ)
-    have heq : (fun p : X × E ↦ χ p.2 • a.coefficient p) =ᶠ[𝓝 (x, ξ)] a.coefficient := by
-      filter_upwards [continuous_snd.continuousAt.eventually
-        (χ.eventuallyEq_one_of_two_lt_norm hξ)] with q hq
-      simp [hq]
-    rw [heq.iteratedFDeriv ℝ (j + l) |>.eq_of_nhds]
+    rw [a.iteratedFDeriv_smul_coefficient_of_two_lt_norm χ hξ]
     refine (h₂ x hx ξ hξ0 u w).trans ?_
     rw [mul_assoc]
     refine mul_le_mul_of_nonneg_right ?_ hprod

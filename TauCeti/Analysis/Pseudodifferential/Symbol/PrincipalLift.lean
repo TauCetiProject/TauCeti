@@ -183,11 +183,8 @@ theorem exists_seminorm_cutoffSymbol_le (χ : FrequencyCutoff (CoordinateSpace n
             (Real.rpow_nonneg zero_le_two (|m - l| / 2))]
   · -- At large frequencies the cut-off term is the homogeneous symbol itself.
     have hξ0 : ξ ≠ 0 := norm_pos_iff.1 (two_pos.trans hξ2)
-    have heq : (cutoffSymbol χ a).coefficient =ᶠ[𝓝 (x, ξ)] a.coefficient := by
-      filter_upwards [continuous_snd.continuousAt.eventually
-        (χ.eventuallyEq_one_of_two_lt_norm hξ2)] with q hq
-      simp [hq]
-    rw [heq.iteratedFDeriv ℝ k |>.eq_of_nhds]
+    rw [show (cutoffSymbol χ a).coefficient = fun p ↦ χ p.2 • a.coefficient p from
+      funext (coefficient_cutoffSymbol χ a), a.iteratedFDeriv_smul_coefficient_of_two_lt_norm χ hξ2]
     refine (a.norm_iteratedFDeriv_append_le_seminorm K hx hξ0 _ _).trans ?_
     rw [hunit, mul_one]
     have hk : k ∈ Finset.range (k + 1) := Finset.self_mem_range_succ k

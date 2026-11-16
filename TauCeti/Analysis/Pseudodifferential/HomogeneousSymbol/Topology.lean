@@ -42,6 +42,10 @@ Homogeneity transports the estimates on the sphere to every nonzero frequency:
 These are the estimates that make the cut-off terms of homogeneous symbols depend continuously on
 them in the symbol classes `S^m_{1,0}`.
 
+The seminorms are set up following `TauCeti.Symbol.seminorm`
+(`TauCeti/Analysis/Pseudodifferential/Symbol/Topology.lean`) and Mathlib's seminorms of the
+Schwartz space (`SchwartzMap.seminorm`).
+
 ## Main declarations
 
 * `TauCeti.HomogeneousSymbol.seminorm`: the seminorm `p_{K,k}`, with `le_seminorm`,
@@ -358,8 +362,8 @@ instance instT1Space : T1Space (HomogeneousSymbol X E V W m) := by
   have hξ : ξ ≠ 0 := by
     rintro rfl
     exact hxξ (a.zero_covector x)
-  refine ⟨(⟨{x}, isCompact_singleton⟩, 0), fun h0 ↦ hxξ (norm_le_zero_iff.1 ?_)⟩
-  have h := a.norm_coefficient_le_rpow_mul_seminorm ⟨{x}, isCompact_singleton⟩ rfl hξ
+  refine ⟨(({x} : Compacts X), 0), fun h0 ↦ hxξ (norm_le_zero_iff.1 ?_)⟩
+  have h := a.norm_coefficient_le_rpow_mul_seminorm {x} ((Compacts.mem_singleton _ _).2 rfl) hξ
   rwa [← seminormFamily_apply, h0, mul_zero] at h
 
 variable (X E V W m) in
@@ -371,7 +375,7 @@ def coefficientCLM (p : X × E) : HomogeneousSymbol X E V W m →L[ℂ] V →L[�
       map_smul' _ _ := by simp }
   { f with
     cont := WithSeminorms.continuous_of_isBounded withSeminorms (norm_withSeminorms ℂ _) f
-      (Seminorm.IsBounded.of_real fun _ ↦ ⟨{(⟨{p.1}, isCompact_singleton⟩, 0)}, ‖p.2‖ ^ m,
+      (Seminorm.IsBounded.of_real fun _ ↦ ⟨{(({p.1} : Compacts X), 0)}, ‖p.2‖ ^ m,
         fun a ↦ by
           obtain ⟨x, ξ⟩ := p
           simp only [f, LinearMap.coe_mk, AddHom.coe_mk, coe_normSeminorm, Finset.sup_singleton,
@@ -379,7 +383,8 @@ def coefficientCLM (p : X × E) : HomogeneousSymbol X E V W m →L[ℂ] V →L[�
           rcases eq_or_ne ξ 0 with rfl | hξ
           · rw [zero_covector, norm_zero]
             exact mul_nonneg (Real.rpow_nonneg (norm_nonneg _) m) (apply_nonneg _ a)
-          · exact a.norm_coefficient_le_rpow_mul_seminorm _ rfl hξ⟩) }
+          · exact a.norm_coefficient_le_rpow_mul_seminorm _ ((Compacts.mem_singleton _ _).2 rfl)
+              hξ⟩) }
 
 @[simp]
 theorem coefficientCLM_apply (p : X × E) (a : HomogeneousSymbol X E V W m) :
