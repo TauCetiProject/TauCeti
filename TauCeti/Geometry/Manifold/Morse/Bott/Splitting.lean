@@ -66,6 +66,9 @@ In the namespace `TauCeti.SmoothEmbedding`:
 * `IsNondegenerateCriticalSubmanifold.isLocallyConstant_finrank_negativeNormalSpace` and
   `IsNondegenerateCriticalSubmanifold.isLocallyConstant_finrank_positiveNormalSpace`: these
   dimensions are locally constant along the submanifold.
+* `IsNondegenerateCriticalSubmanifold.exists_linearEquiv_negativeNormalSpace`: the negative
+  normal space, with minus half the normal Hessian as squared norm, is a Euclidean space whose
+  dimension is the Morse index.
 
 ## References
 
@@ -271,6 +274,27 @@ theorem isLocallyConstant_finrank_positiveNormalSpace :
     IsLocallyConstant fun s ↦ Module.finrank ℝ (h.positiveNormalSpace hn g s) := by
   simpa only [h.finrank_positiveNormalSpace hn g] using
     h.neg.isLocallyConstant_manifoldMorseIndex hn
+
+/-- **The negative normal space is Euclidean for minus half the normal Hessian.** There is a linear
+equivalence onto the negative normal space at `s` from the Euclidean space whose dimension is the
+Morse index at `i s`, along which `-½ Hessₛ (v, v)` is the squared norm. -/
+theorem exists_linearEquiv_negativeNormalSpace (s : S) :
+    ∃ e : EuclideanSpace ℝ (Fin (manifoldMorseIndex I f (i s))) ≃ₗ[ℝ] h.negativeNormalSpace hn g s,
+      ∀ x, -(2⁻¹ * h.normalHessian hn s (e x) (e x)) = ‖x‖ ^ 2 := by
+  rw [← h.finrank_negativeNormalSpace hn g s]
+  obtain ⟨e, he⟩ := LinearMap.BilinForm.exists_linearEquiv_euclideanSpace_apply_apply
+    (((h.isSymm_normalHessian hn s).restrict (h.negativeNormalSpace hn g s)).smul (-2⁻¹ : ℝ))
+    fun v hv ↦ by
+      have := h.normalHessian_apply_self_neg_of_mem_negativeNormalSpace hn g v.2
+        (Submodule.coe_eq_zero.not.2 hv)
+      simp only [LinearMap.smul_apply, LinearMap.BilinForm.restrict_apply,
+        LinearMap.domRestrict_apply, smul_eq_mul]
+      linarith
+  refine ⟨e, fun x ↦ ?_⟩
+  have hx := he x x
+  simp only [LinearMap.smul_apply, LinearMap.BilinForm.restrict_apply,
+    LinearMap.domRestrict_apply, smul_eq_mul, real_inner_self_eq_norm_sq] at hx
+  linarith
 
 end IsNondegenerateCriticalSubmanifold
 
