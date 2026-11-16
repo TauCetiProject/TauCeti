@@ -49,6 +49,9 @@ Rational descent uses `CommHopfAlgCat.baseChangeHopfIdeal_le_iff`; the integral 
   ring, the symplectic defining ideal is contained in the transported carrier ideal.
 * `TauCeti.SpStd.definingIdeal_eq_symplecticDefiningHopfIdeal`: the integral carrier and
   symplectic defining ideals agree.
+* `TauCeti.SpStd.points_eq_GLSymplecticFin_of_commRing` and
+  `TauCeti.SpStd.pointsMulEquivGLSymplecticFinOfCommRing`: over every commutative ring, the
+  carrier's matrix points are `GLSymplecticFin (n + 1)`.
 * `TauCeti.SpStd.baseChangeDefiningIdeal_eq_symplecticDefiningHopfIdeal`: over every commutative
   ring, the transported carrier and symplectic defining ideals agree.
 * `TauCeti.SpStd.baseChangeCoordinateSymplecticIso`: the induced coordinate Hopf-algebra
@@ -149,6 +152,57 @@ theorem definingIdeal_eq_symplecticDefiningHopfIdeal :
         (ConcreteCategory.bijective_of_isIso e.hom).2).mp hcarrier
     exact (ConcreteCategory.bijective_of_isIso e.hom).1 hxy ▸ hy
   · exact symplecticDefiningHopfIdeal_le_definingIdeal n
+
+/-- **The full-weight type-`C_(n+1)` carrier's points are the symplectic group over every
+commutative ring.** Unlike `TauCeti.SpStd.points_eq_GLSymplecticFin`, which establishes equality
+over fields by elementary generation, this holds over arbitrary commutative rings directly from
+`TauCeti.SpStd.definingIdeal_eq_symplecticDefiningHopfIdeal`. -/
+theorem points_eq_GLSymplecticFin_of_commRing (A : Type v) [CommRing A] :
+    points n A = GLSymplecticFin (n + 1) A := by
+  ext g
+  have h := ConstantForm.mem_definingPointsSubgroup_iff ℤ ((n + 1) + (n + 1)) (JFin (n + 1) ℤ)
+    ((GeneralLinear.pointsMulEquiv (R := ℤ) (A := A) ((n + 1) + (n + 1))).symm g)
+  rw [MulEquiv.apply_symm_apply, CommHopfAlgCat.mem_quotientPointsSubgroup_iff, JFin_map,
+    ← GLSymplecticFin.mem_iff] at h
+  rwa [points_def, definingIdeal_eq_symplecticDefiningHopfIdeal,
+    GeneralLinear.mem_hopfIdealPointsSubgroup_iff]
+
+/-- **The full-weight type-`C_(n+1)` carrier's points are isomorphic as a matrix subgroup to
+`GLSymplecticFin (n + 1) A` over every commutative ring `A`.** -/
+def pointsMulEquivGLSymplecticFinOfCommRing (A : Type v) [CommRing A] :
+    points n A ≃* GLSymplecticFin (n + 1) A :=
+  MulEquiv.subgroupCongr (points_eq_GLSymplecticFin_of_commRing n A)
+
+/-- `pointsMulEquivGLSymplecticFinOfCommRing` preserves the underlying invertible matrix. -/
+@[simp]
+theorem coe_pointsMulEquivGLSymplecticFinOfCommRing_apply {A : Type v} [CommRing A]
+    (g : points n A) :
+    ((pointsMulEquivGLSymplecticFinOfCommRing n A g : GLSymplecticFin (n + 1) A) :
+        GL (Fin ((n + 1) + (n + 1))) A) =
+      (g : GL (Fin ((n + 1) + (n + 1))) A) :=
+  MulEquiv.subgroupCongr_apply _ g
+
+/-- The inverse of `pointsMulEquivGLSymplecticFinOfCommRing` preserves the underlying invertible
+matrix. -/
+@[simp]
+theorem coe_pointsMulEquivGLSymplecticFinOfCommRing_symm_apply {A : Type v} [CommRing A]
+    (g : GLSymplecticFin (n + 1) A) :
+    (((pointsMulEquivGLSymplecticFinOfCommRing n A).symm g : points n A) :
+        GL (Fin ((n + 1) + (n + 1))) A) =
+      (g : GL (Fin ((n + 1) + (n + 1))) A) :=
+  MulEquiv.subgroupCongr_symm_apply _ g
+
+/-- `pointsMulEquivGLSymplecticFinOfCommRing` is natural with respect to ring homomorphisms
+`f : A →+* B` across universes. -/
+theorem pointsMulEquivGLSymplecticFinOfCommRing_map {A : Type u} {B : Type v}
+    [CommRing A] [CommRing B] (f : A →+* B) (g : points n A) :
+    pointsMulEquivGLSymplecticFinOfCommRing n B
+        ((pointsPresentation n A).map (pointsPresentation n B) f g) =
+      GLSymplecticFin.map (n + 1) A f (pointsMulEquivGLSymplecticFinOfCommRing n A g) := by
+  apply Subtype.ext
+  rw [coe_pointsMulEquivGLSymplecticFinOfCommRing_apply,
+    GeneralLinear.IntegralPointsPresentation.coe_map, GLSymplecticFin.coe_map,
+    coe_pointsMulEquivGLSymplecticFinOfCommRing_apply]
 
 /-- Over every commutative ring, the transported defining ideal of the full-weight
 type-`C_(n+1)` carrier is the symplectic ideal. No flatness assumption on the new base

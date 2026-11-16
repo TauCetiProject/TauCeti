@@ -262,6 +262,14 @@ def g2SpecialIsogeny :
   rw [g2SpecialIsogeny]
   simp
 
+/-- In fundamental-weight coordinates, `g2SpecialIsogeny.weightMap` evaluates `χ` at
+`lengthPermRankTwo i` and rescales by the squared root length at `lengthPermRankTwo i`. -/
+theorem g2SpecialIsogeny_weightMap_apply (χ : Fin 2 → ℤ) (i : Fin 2) :
+    g2SpecialIsogeny.weightMap χ i =
+      G2.rootLength (lengthPermRankTwo i) * χ (lengthPermRankTwo i) := by
+  fin_cases i <;>
+    simp [g2SpecialIsogenyMatrix_def, rootLength_G2, Matrix.vecHead, Matrix.vecTail]
+
 @[simp] lemma g2SpecialIsogeny_coweightMap :
     g2SpecialIsogeny.coweightMap = g2SpecialIsogenyMatrixᵀ.mulVecLin := by
   rw [g2SpecialIsogeny]
@@ -347,6 +355,15 @@ noncomputable def f4SpecialIsogeny :
     f4SpecialIsogeny.weightMap = f4SpecialIsogenyMatrix.mulVecLin := by
   rw [f4SpecialIsogeny]
   simp
+
+/-- In fundamental-weight coordinates, `f4SpecialIsogeny.weightMap` evaluates `χ` at
+`lengthPermF4 i` and rescales by the squared root length at `lengthPermF4 i`. -/
+theorem f4SpecialIsogeny_weightMap_apply (χ : Fin 4 → ℤ) (i : Fin 4) :
+    f4SpecialIsogeny.weightMap χ i =
+      F4.rootLength (lengthPermF4 i) * χ (lengthPermF4 i) := by
+  fin_cases i <;>
+    simp [f4SpecialIsogenyMatrix_def, rootLength_F4, lengthPermF4_apply,
+      Matrix.vecHead, Matrix.vecTail]
 
 @[simp] lemma f4SpecialIsogeny_coweightMap :
     f4SpecialIsogeny.coweightMap = f4SpecialIsogenyMatrixᵀ.mulVecLin := by

@@ -17,7 +17,7 @@ Pulling the four-dimensional standard symplectic representation `TauCeti.SpStd.r
 `TauCeti.SpStd.b2PinnedLieEquiv` makes the standard rational module `(Fin 2 ⊕ Fin 2) → ℚ` and its
 coordinate `ℤ`-lattice `TauCeti.SpStd.lattice 1` an admissible faithful representation of the
 pinned rational Lie algebra of type `B₂`. Reading the four coordinate weights across the Bourbaki
-node swap `TauCeti.SpStd.b2NodeEquiv` gives a full-weight Chevalley datum
+node swap `TauCeti.lengthPermRankTwo` gives a full-weight Chevalley datum
 `TauCeti.SpStd.b2ChevalleyDatum` for `TauCeti.DynkinType.B 2`.
 
 Because the four weights `(0, ±1)` and `(±1, ∓1)` span the entire fundamental-weight lattice
@@ -112,7 +112,7 @@ theorem b2PinnedRepresentation_ι_h {ht : (DynkinType.B 2).Valid}
     (i : Fin (DynkinType.B 2).rank) :
     b2PinnedRepresentation
         (_root_.UniversalEnvelopingAlgebra.ι ℚ (((DynkinType.B 2).lieBasis ht).h i)) =
-      rep 1 (_root_.UniversalEnvelopingAlgebra.ι ℚ (cartanGenerator 1 (b2NodeEquiv i))) := by
+      rep 1 (_root_.UniversalEnvelopingAlgebra.ι ℚ (cartanGenerator 1 (lengthPermRankTwo i))) := by
   rw [b2PinnedRepresentation_ι, b2PinnedLieEquiv_lieBasis_h]
 
 /-- A pinned `B₂` raising generator acts as the standard symplectic raising operator at the swapped
@@ -122,7 +122,8 @@ theorem b2PinnedRepresentation_ι_e {ht : (DynkinType.B 2).Valid}
     (i : Fin (DynkinType.B 2).rank) :
     b2PinnedRepresentation
         (_root_.UniversalEnvelopingAlgebra.ι ℚ (((DynkinType.B 2).lieBasis ht).e i)) =
-      rep 1 (_root_.UniversalEnvelopingAlgebra.ι ℚ (rootGenerator 1 (.inl (b2NodeEquiv i)))) := by
+      rep 1 (_root_.UniversalEnvelopingAlgebra.ι ℚ
+        (rootGenerator 1 (.inl (lengthPermRankTwo i)))) := by
   rw [b2PinnedRepresentation_ι, b2PinnedLieEquiv_lieBasis_e]
 
 /-- A pinned `B₂` lowering generator acts as the standard symplectic lowering operator at the
@@ -132,18 +133,19 @@ theorem b2PinnedRepresentation_ι_f {ht : (DynkinType.B 2).Valid}
     (i : Fin (DynkinType.B 2).rank) :
     b2PinnedRepresentation
         (_root_.UniversalEnvelopingAlgebra.ι ℚ (((DynkinType.B 2).lieBasis ht).f i)) =
-      rep 1 (_root_.UniversalEnvelopingAlgebra.ι ℚ (rootGenerator 1 (.inr (b2NodeEquiv i)))) := by
+      rep 1 (_root_.UniversalEnvelopingAlgebra.ι ℚ
+        (rootGenerator 1 (.inr (lengthPermRankTwo i)))) := by
   rw [b2PinnedRepresentation_ι, b2PinnedLieEquiv_lieBasis_f]
 
 /-- On the signed simple-root family, `b2PinnedRepresentation` acts as `rep 1` on the signed
-symplectic generators reindexed by `b2NodeEquiv`. -/
+symplectic generators reindexed by `lengthPermRankTwo`. -/
 @[simp↓]
 theorem b2PinnedRepresentation_ι_rootGenerator {ht : (DynkinType.B 2).Valid}
     (k : Fin (DynkinType.B 2).rank ⊕ Fin (DynkinType.B 2).rank) :
     b2PinnedRepresentation
         (_root_.UniversalEnvelopingAlgebra.ι ℚ (((DynkinType.B 2).lieBasis ht).rootGenerator k)) =
       rep 1 (_root_.UniversalEnvelopingAlgebra.ι ℚ
-        (rootGenerator 1 (Sum.map b2NodeEquiv b2NodeEquiv k))) := by
+        (rootGenerator 1 (Sum.map lengthPermRankTwo lengthPermRankTwo k))) := by
   rw [b2PinnedRepresentation_ι, b2PinnedLieEquiv_lieBasis_rootGenerator]
 
 /-- **The four-dimensional symplectic representation of the pinned `B₂` Lie algebra is
@@ -174,10 +176,11 @@ theorem b2PinnedRepresentation_kostantForm_mem_lattice :
     ((DynkinType.B 2).lieBasis (DynkinType.valid_B.mpr le_rfl)).rootGenerator
     ((DynkinType.B 2).lieBasis (DynkinType.valid_B.mpr le_rfl)).h
     (rootGenerator 1) (cartanGenerator 1)
-    (Sum.map b2NodeEquiv b2NodeEquiv) b2NodeEquiv (fun _ => 1) (fun _ => 1)
-    (b2NodeEquiv.sumCongr b2NodeEquiv).surjective b2NodeEquiv.surjective
+    (Sum.map lengthPermRankTwo lengthPermRankTwo) lengthPermRankTwo (fun _ => 1) (fun _ => 1)
+    (lengthPermRankTwo.sumCongr lengthPermRankTwo).surjective lengthPermRankTwo.surjective
     (fun k => by
-      rw [LieEquiv.coe_toLieHom, b2PinnedLieEquiv_lieBasis_rootGenerator, Units.val_one, one_smul])
+      rw [LieEquiv.coe_toLieHom, Units.val_one, one_smul]
+      exact b2PinnedLieEquiv_lieBasis_rootGenerator k)
     (fun i => by simp)
   rw [← hmap]
   exact Subring.mem_map.mpr ⟨u, hu, rfl⟩
@@ -185,14 +188,22 @@ theorem b2PinnedRepresentation_kostantForm_mem_lattice :
 /-! ## Coordinate weights in Bourbaki `B₂` numbering -/
 
 /-- The integral weight of a standard symplectic coordinate in Bourbaki `B₂` fundamental-weight
-coordinates, obtained by reindexing `TauCeti.SpStd.weight 1` along `TauCeti.SpStd.b2NodeEquiv`. -/
+coordinates, obtained by reindexing `TauCeti.SpStd.weight 1` along `TauCeti.lengthPermRankTwo`. -/
 def b2Weight (a : Fin (1 + 1) ⊕ Fin (1 + 1)) (i : Fin (DynkinType.B 2).rank) : ℤ :=
-  weight 1 a (b2NodeEquiv i)
+  weight 1 a (lengthPermRankTwo i)
 
 @[simp]
 theorem b2Weight_apply (a : Fin (1 + 1) ⊕ Fin (1 + 1)) (i : Fin (DynkinType.B 2).rank) :
-    b2Weight a i = weight 1 a (b2NodeEquiv i) :=
+    b2Weight a i = weight 1 a (lengthPermRankTwo i) :=
   (rfl)
+
+/-- `b2Weight` is `weight 1` postcomposed with `LinearEquiv.funCongrLeft ℤ ℤ lengthPermRankTwo`. -/
+theorem b2Weight_eq_comp_lengthPermRankTwo :
+    b2Weight = LinearEquiv.funCongrLeft ℤ ℤ lengthPermRankTwo ∘ weight 1 := by
+  funext a
+  ext i
+  rw [Function.comp_apply, LinearEquiv.funCongrLeft_apply, b2Weight_apply]
+  exact (LinearMap.funLeft_apply ℤ ℤ lengthPermRankTwo (weight 1 a) i).symm
 
 /-- The integral weight attached to the enumerated coordinate basis `latticeBasis 1` in Bourbaki
 `B₂` fundamental-weight coordinates. -/
@@ -205,8 +216,17 @@ theorem b2BasisWeight_apply (a : Fin ((1 + 1) + (1 + 1))) :
   (rfl)
 
 theorem b2BasisWeight_apply_apply (a : Fin ((1 + 1) + (1 + 1))) (i : Fin (DynkinType.B 2).rank) :
-    b2BasisWeight a i = basisWeight 1 a (b2NodeEquiv i) := by
+    b2BasisWeight a i = basisWeight 1 a (lengthPermRankTwo i) := by
   rw [b2BasisWeight_apply, b2Weight_apply, basisWeight_apply]
+
+/-- `b2BasisWeight` applies `LinearEquiv.funCongrLeft ℤ ℤ lengthPermRankTwo` to `basisWeight 1`. -/
+theorem b2BasisWeight_eq_funCongrLeft :
+    b2BasisWeight =
+      fun a => (LinearEquiv.funCongrLeft ℤ ℤ lengthPermRankTwo).toLinearMap (basisWeight 1 a) := by
+  funext a
+  ext i
+  rw [LinearEquiv.coe_coe, LinearEquiv.funCongrLeft_apply, b2BasisWeight_apply_apply]
+  exact (LinearMap.funLeft_apply ℤ ℤ lengthPermRankTwo (basisWeight 1 a) i).symm
 
 /-- Every standard coordinate vector is a Cartan weight vector of weight `b2Weight a` for the
 pinned `B₂` Cartan generators. -/
@@ -217,7 +237,7 @@ theorem isCartanWeightVector_b2PinnedRepresentation_single (a : Fin (1 + 1) ⊕ 
   refine (TauCeti.UniversalEnvelopingAlgebra.isCartanWeightVector_iff _ _).mpr fun i => ?_
   rw [b2PinnedRepresentation_ι_h, b2Weight_apply]
   exact (TauCeti.UniversalEnvelopingAlgebra.isCartanWeightVector_iff _ _).mp
-    (isCartanWeightVector_single 1 a) (b2NodeEquiv i)
+    (isCartanWeightVector_single 1 a) (lengthPermRankTwo i)
 
 /-- Every vector of `latticeBasis 1` is a Cartan weight vector of weight `b2BasisWeight a` for the
 pinned `B₂` Cartan generators. -/
@@ -234,18 +254,18 @@ theorem isCartanWeightVector_b2PinnedRepresentation_latticeBasis
 /-- **The four coordinate weights of the symplectic module span the full `B₂` character
 lattice.** -/
 theorem span_range_b2Weight_eq_top : Submodule.span ℤ (Set.range b2Weight) = ⊤ := by
-  let e : (Fin (1 + 1) → ℤ) ≃ₗ[ℤ] (Fin (DynkinType.B 2).rank → ℤ) :=
-    LinearEquiv.funCongrLeft ℤ ℤ b2NodeEquiv
-  have hrange : Set.range b2Weight = e '' Set.range (weight 1) :=
-    Set.range_comp' e (weight 1)
-  rw [hrange, Submodule.span_image_linearEquiv, span_range_weight_eq_top 1, Submodule.map_top,
-    LinearEquiv.range]
+  let e := LinearEquiv.funCongrLeft ℤ ℤ lengthPermRankTwo
+  let w : Fin 2 ⊕ Fin 2 → Fin 2 → ℤ := weight 1
+  have hspan : Submodule.span ℤ (Set.range (e ∘ w)) = ⊤ := by
+    have hw : Submodule.span ℤ (Set.range w) = ⊤ := span_range_weight_eq_top 1
+    rw [Set.range_comp, Submodule.span_image_linearEquiv, hw, Submodule.map_top,
+      LinearEquiv.range]
+  exact (congrArg (Submodule.span ℤ ∘ Set.range) b2Weight_eq_comp_lengthPermRankTwo).trans hspan
 
 /-- **The weights of `latticeBasis 1` span the full `B₂` character lattice.** -/
 theorem span_range_b2BasisWeight_eq_top : Submodule.span ℤ (Set.range b2BasisWeight) = ⊤ := by
-  have hrange : Set.range b2BasisWeight = Set.range b2Weight :=
-    finSumFinEquiv.symm.surjective.range_comp b2Weight
-  rw [hrange]
+  have h : b2BasisWeight = b2Weight ∘ finSumFinEquiv.symm := funext b2BasisWeight_apply
+  rw [h, finSumFinEquiv.symm.surjective.range_comp]
   exact span_range_b2Weight_eq_top
 
 /-! ## The full-weight Chevalley datum of type `B₂` -/
@@ -326,35 +346,27 @@ theorem coe_b2ChevalleyDatum_weightLatticeBasis (i : Fin (DynkinType.B 2).rank) 
 /-- The coordinate weights of `b2ChevalleyDatum` equal `b2BasisWeight`, without a lattice-index
 correction. -/
 @[simp]
-theorem b2ChevalleyDatum_coordinateWeight : b2ChevalleyDatum.coordinateWeight = b2BasisWeight := by
-  funext a
-  rw [DynkinType.ChevalleyDatum.coordinateWeight_def, b2ChevalleyDatum_weightLatticeBasis,
-    Module.Basis.map_repr]
-  simp only [LinearEquiv.symm_symm, LinearEquiv.trans_apply, LinearEquiv.ofTop_apply]
-  ext i
-  exact Pi.basisFun_repr ℤ _ _ i
+theorem b2ChevalleyDatum_coordinateWeight : b2ChevalleyDatum.coordinateWeight = b2BasisWeight :=
+  b2ChevalleyDatum.coordinateWeight_eq_of_coe_weightLatticeBasis
+    coe_b2ChevalleyDatum_weightLatticeBasis
 
 /-- Restriction from the full weight lattice is the identity on torus parameters of
 `b2ChevalleyDatum`. -/
 @[simp↓]
 theorem b2ChevalleyDatum_fullWeightTorusRestriction {A : Type v} [CommRing A]
     (s : Fin (DynkinType.B 2).rank → Aˣ) :
-    b2ChevalleyDatum.fullWeightTorusRestriction A s = s := by
-  funext i
-  rw [DynkinType.ChevalleyDatum.fullWeightTorusRestriction_apply,
-    coe_b2ChevalleyDatum_weightLatticeBasis, torusCharacter_single, zpow_one]
+    b2ChevalleyDatum.fullWeightTorusRestriction A s = s :=
+  b2ChevalleyDatum.fullWeightTorusRestriction_eq_of_coe_weightLatticeBasis A
+    coe_b2ChevalleyDatum_weightLatticeBasis s
 
 /-- The coordinate roots of `b2ChevalleyDatum` are the roots of the pinned `B₂` root datum in
 fundamental-weight coordinates. -/
 @[simp]
 theorem b2ChevalleyDatum_coordinateRoot (γ : Fin (DynkinType.B 2).numRoots) :
     b2ChevalleyDatum.coordinateRoot γ =
-      ((DynkinType.B 2).simplyConnectedRootDatum (DynkinType.valid_B.mpr le_rfl)).root γ := by
-  rw [DynkinType.ChevalleyDatum.coordinateRoot_def, b2ChevalleyDatum_weightLatticeBasis,
-    Module.Basis.map_repr]
-  simp only [LinearEquiv.symm_symm, LinearEquiv.trans_apply, LinearEquiv.ofTop_apply]
-  ext i
-  exact Pi.basisFun_repr ℤ _ _ i
+      ((DynkinType.B 2).simplyConnectedRootDatum (DynkinType.valid_B.mpr le_rfl)).root γ :=
+  b2ChevalleyDatum.coordinateRoot_eq_of_coe_weightLatticeBasis
+    coe_b2ChevalleyDatum_weightLatticeBasis γ
 
 end
 

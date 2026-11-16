@@ -10,8 +10,6 @@ public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Chevalley
 import TauCeti.Algebra.Lie.Symplectic.Coordinates
 import TauCeti.Algebra.Lie.Symplectic.StandardCarrier.LieGeneration
-import TauCeti.Algebra.Lie.Weights.Dimension
-import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.System
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.SerrePresentation
 
 /-!
@@ -22,20 +20,19 @@ because `TauCeti.DynkinType.C 2` is excluded by `TauCeti.DynkinType.Valid` in fa
 `TauCeti.DynkinType.B 2`. In Bourbaki numbering, node `0` of `B₂` is long and node `1` is short,
 whereas `TauCeti.SpStd` at `n = 1` numbers node `0` as short and node `1` as long.
 
-`TauCeti.SpStd.b2NodeEquiv` packages that Bourbaki node correspondence between
-`Fin (DynkinType.B 2).rank` and `Fin 2`, and `TauCeti.SpStd.b2PinnedLieEquiv` identifies the
-independently constructed rational Lie algebra of type `B 2` with `sp (Fin 2) ℚ`, matching the
-Cartan, raising, and lowering generators across `b2NodeEquiv`. Thus the four-dimensional symplectic
-module and its standard integral coordinate lattice become a representation of the pinned `B₂`
-algebra.
+`TauCeti.lengthPermRankTwo` exchanges those two Bourbaki nodes, and
+`TauCeti.SpStd.b2PinnedLieEquiv` identifies the independently constructed rational Lie algebra of
+type `B 2` with `sp (Fin 2) ℚ`, matching the Cartan, raising, and lowering generators across
+`lengthPermRankTwo`. Thus the four-dimensional symplectic module and its standard integral
+coordinate lattice become a representation of the pinned `B₂` algebra.
 
-The construction applies `IsSerreSystem.submatrix` along `b2NodeEquiv` to
+The construction applies `IsSerreSystem.submatrix` along `lengthPermRankTwo` to
 `TauCeti.SpStd.isSerreSystem_rootGenerator 1`, rewrites the reindexed Cartan matrix via
-`TauCeti.DynkinType.cartanMatrix_C_two_apply_eq_cartanMatrix_B_two`, and lifts through
-`TauCeti.DynkinType.serreLiftEquiv`. Surjectivity follows from
-`TauCeti.SpStd.lieSpan_range_rootGenerator_eq_top 1`, and injectivity from the root-space
-dimension count `2 + 8 = 10`. This is a rational Lie-algebra comparison; it does not assert an
-identification of group schemes or of their points.
+`TauCeti.DynkinType.cartanMatrix_C_two_apply_eq_cartanMatrix_B_two`, and invokes
+`TauCeti.DynkinType.lieEquivOfIsSerreSystem` using
+`TauCeti.SpStd.lieSpan_range_rootGenerator_eq_top` and the dimension count `2 + 8 = 10`. This is a
+rational Lie-algebra comparison; it does not assert an identification of group schemes or of their
+points.
 
 ## References
 
@@ -52,121 +49,63 @@ namespace TauCeti.SpStd
 
 open _root_.LieAlgebra.Symplectic
 
-/-- **The rank-two symplectic carrier node corresponding to a Bourbaki-numbered node of `B₂`.** It
-exchanges the two nodes via `Equiv.swap 0 1`, sending the long node `0` of `B₂` to the final node
-`1` of `SpStd 1` and the short node `1` of `B₂` to node `0` of `SpStd 1`. -/
-def b2NodeEquiv : Fin (DynkinType.B 2).rank ≃ Fin 2 :=
-  (Equiv.swap 0 1 : Equiv.Perm (Fin 2))
-
-/-- The node correspondence is `Equiv.swap 0 1`. -/
-theorem b2NodeEquiv_def : b2NodeEquiv = (Equiv.swap 0 1 : Equiv.Perm (Fin 2)) :=
-  (rfl)
-
-/-- Evaluating `b2NodeEquiv` swaps the two nodes `0` and `1`. This is not a `simp` lemma so that
-`Equiv.apply_symm_apply` and `Equiv.symm_apply_apply` remain applicable to `b2NodeEquiv`. -/
-theorem b2NodeEquiv_apply (i : Fin (DynkinType.B 2).rank) :
-    b2NodeEquiv i = (Equiv.swap 0 1 : Equiv.Perm (Fin 2)) i :=
-  (rfl)
-
-/-- Evaluating `b2NodeEquiv.symm` swaps the two nodes `0` and `1`. -/
-theorem b2NodeEquiv_symm_apply (i : Fin 2) :
-    b2NodeEquiv.symm i = (Equiv.swap 0 1 : Equiv.Perm (Fin 2)) i :=
-  (rfl)
-
-/-- The node swap `b2NodeEquiv` agrees with `TauCeti.lengthPermRankTwo`. -/
-theorem b2NodeEquiv_apply_eq_lengthPermRankTwo (i : Fin (DynkinType.B 2).rank) :
-    b2NodeEquiv i = lengthPermRankTwo i := by
-  obtain ⟨j, rfl⟩ := b2NodeEquiv.symm.surjective i
-  rw [Equiv.apply_symm_apply, b2NodeEquiv_symm_apply]
-  fin_cases j <;> simp
-
-/-- **The final carrier node `1` corresponds to the long simple root of `B₂`.** -/
-theorem b2NodeEquiv_eq_one_iff (i : Fin (DynkinType.B 2).rank) :
-    b2NodeEquiv i = 1 ↔ (DynkinType.B 2).IsLongSimpleRoot i := by
-  obtain ⟨j, rfl⟩ := b2NodeEquiv.symm.surjective i
-  rw [Equiv.apply_symm_apply, DynkinType.isLongSimpleRoot_B, b2NodeEquiv_symm_apply]
-  fin_cases j <;> simp
-
-/-- **The initial carrier node `0` corresponds to the short simple root of `B₂`.** -/
-theorem b2NodeEquiv_eq_zero_iff (i : Fin (DynkinType.B 2).rank) :
-    b2NodeEquiv i = 0 ↔ ¬ (DynkinType.B 2).IsLongSimpleRoot i := by
-  rw [← b2NodeEquiv_eq_one_iff]
-  generalize b2NodeEquiv i = c
-  fin_cases c <;> decide
-
 noncomputable section
 
 private abbrev validB2 : (DynkinType.B 2).Valid := DynkinType.valid_B.mpr le_rfl
 
 private theorem isSerreSystem_b2 :
     IsSerreSystem ℚ (DynkinType.B 2).cartanMatrix.transpose
-      (fun i => cartanGenerator 1 (b2NodeEquiv i))
-      (fun i => rootGenerator 1 (.inl (b2NodeEquiv i)))
-      (fun i => rootGenerator 1 (.inr (b2NodeEquiv i))) := by
-  have h := (isSerreSystem_rootGenerator 1).submatrix (f := b2NodeEquiv) b2NodeEquiv.injective
-  have hCM : (CartanMatrix.C 2).transpose.submatrix b2NodeEquiv b2NodeEquiv =
-      (DynkinType.B 2).cartanMatrix.transpose := by
+      (fun i => cartanGenerator 1 (lengthPermRankTwo i))
+      (fun i => rootGenerator 1 (.inl (lengthPermRankTwo i)))
+      (fun i => rootGenerator 1 (.inr (lengthPermRankTwo i))) := by
+  have h1 : IsSerreSystem ℚ (CartanMatrix.C 2).transpose
+      (fun i : Fin 2 => cartanGenerator 1 i)
+      (fun i : Fin 2 => rootGenerator 1 (.inl i))
+      (fun i : Fin 2 => rootGenerator 1 (.inr i)) :=
+    isSerreSystem_rootGenerator 1
+  have h := h1.submatrix (f := lengthPermRankTwo) lengthPermRankTwo.injective
+  have hCM : (CartanMatrix.C 2).transpose.submatrix lengthPermRankTwo lengthPermRankTwo =
+      (CartanMatrix.B 2).transpose := by
     ext i j
     rw [Matrix.submatrix_apply, Matrix.transpose_apply, Matrix.transpose_apply]
     have hC := DynkinType.cartanMatrix_C_two_apply_eq_cartanMatrix_B_two
-      (b2NodeEquiv j) (b2NodeEquiv i)
-    rw [DynkinType.cartanMatrix_C] at hC
-    exact hC.trans (by
-      rw [← b2NodeEquiv_symm_apply, ← b2NodeEquiv_symm_apply,
-        Equiv.symm_apply_apply, Equiv.symm_apply_apply])
-  simpa only [hCM, Function.comp_def] using h
+      (lengthPermRankTwo j) (lengthPermRankTwo i)
+    rw [DynkinType.cartanMatrix_C, DynkinType.cartanMatrix_B] at hC
+    exact hC.trans (by fin_cases i <;> fin_cases j <;> simp)
+  simpa only [DynkinType.cartanMatrix_B, DynkinType.rank_B, hCM, Function.comp_def] using h
 
-private def b2PinnedLieHom :
-    (DynkinType.B 2).lieAlgebra validB2 →ₗ⁅ℚ⁆ sp (Fin 2) ℚ :=
-  (serreLift isSerreSystem_b2).comp ((DynkinType.B 2).serreLiftEquiv validB2).symm.toLieHom
-
-private theorem b2PinnedLieHom_surjective : Function.Surjective b2PinnedLieHom := by
-  have hpos : Set.range (fun i : Fin (DynkinType.B 2).rank =>
-      rootGenerator 1 (.inl (b2NodeEquiv i))) =
-        Set.range (fun i : Fin 2 => rootGenerator 1 (.inl i)) :=
-    b2NodeEquiv.surjective.range_comp (fun i => rootGenerator 1 (.inl i))
-  have hneg : Set.range (fun i : Fin (DynkinType.B 2).rank =>
-      rootGenerator 1 (.inr (b2NodeEquiv i))) =
-        Set.range (fun i : Fin 2 => rootGenerator 1 (.inr i)) :=
-    b2NodeEquiv.surjective.range_comp (fun i => rootGenerator 1 (.inr i))
-  have hspan : LieSubalgebra.lieSpan ℚ (sp (Fin 2) ℚ)
+private theorem lieSpan_b2 :
+    LieSubalgebra.lieSpan ℚ (sp (Fin 2) ℚ)
       (Set.range (fun i : Fin (DynkinType.B 2).rank =>
-          rootGenerator 1 (.inl (b2NodeEquiv i))) ∪
+          rootGenerator 1 (.inl (lengthPermRankTwo i))) ∪
         Set.range (fun i : Fin (DynkinType.B 2).rank =>
-          rootGenerator 1 (.inr (b2NodeEquiv i)))) = ⊤ := by
-    rw [hpos, hneg]
-    simpa only [Sum.range_eq, Function.comp_def] using lieSpan_range_rootGenerator_eq_top 1
-  exact (serreLift_surjective isSerreSystem_b2 hspan).comp
-    ((DynkinType.B 2).serreLiftEquiv validB2).symm.surjective
+          rootGenerator 1 (.inr (lengthPermRankTwo i)))) = ⊤ := by
+  simp only [DynkinType.rank_B]
+  have hpos : Set.range (fun i : Fin 2 => rootGenerator 1 (.inl (lengthPermRankTwo i))) =
+      Set.range (fun i : Fin 2 => rootGenerator 1 (.inl i)) :=
+    lengthPermRankTwo.surjective.range_comp (fun i => rootGenerator 1 (.inl i))
+  have hneg : Set.range (fun i : Fin 2 => rootGenerator 1 (.inr (lengthPermRankTwo i))) =
+      Set.range (fun i : Fin 2 => rootGenerator 1 (.inr i)) :=
+    lengthPermRankTwo.surjective.range_comp (fun i => rootGenerator 1 (.inr i))
+  rw [hpos, hneg]
+  have htop :
+      LieSubalgebra.lieSpan ℚ (sp (Fin 2) ℚ)
+        (Set.range (fun k : Fin 2 ⊕ Fin 2 => rootGenerator 1 k)) = ⊤ :=
+    lieSpan_range_rootGenerator_eq_top 1
+  simpa only [Sum.range_eq, Function.comp_def] using htop
 
-private theorem b2PinnedLieHom_bijective : Function.Bijective b2PinnedLieHom := by
-  have hcard : ((DynkinType.B 2).cartanSubalgebra validB2).root.card =
-      (DynkinType.B 2).numRoots := by
-    simpa only [Fintype.card_coe, Fintype.card_fin] using
-      (Fintype.card_congr ((DynkinType.B 2).rootEquiv validB2)).symm
-  have hdim : Module.finrank ℚ ((DynkinType.B 2).lieAlgebra validB2) =
-      Module.finrank ℚ (sp (Fin 2) ℚ) := by
-    rw [finrank_eq_finrank_cartan_add_card_root ((DynkinType.B 2).cartanSubalgebra validB2),
-      DynkinType.finrank_cartanSubalgebra, hcard,
-      TauCeti.LieAlgebra.Symplectic.finrank_sp, Fintype.card_fin,
-      DynkinType.rank_B, DynkinType.numRoots_B]
-    norm_num
-  exact ⟨(LinearMap.injective_iff_surjective_of_finrank_eq_finrank hdim).mpr
-    b2PinnedLieHom_surjective, b2PinnedLieHom_surjective⟩
+private theorem finrank_sp_two :
+    Module.finrank ℚ (sp (Fin 2) ℚ) = (DynkinType.B 2).rank + (DynkinType.B 2).numRoots := by
+  rw [TauCeti.LieAlgebra.Symplectic.finrank_sp, Fintype.card_fin,
+    DynkinType.rank_B, DynkinType.numRoots_B]
+  norm_num
 
 /-- **The pinned rational type-`B₂` Lie algebra is the four-by-four symplectic Lie algebra**, with
 the Cartan and positive and negative simple-root generators matched across
-`TauCeti.SpStd.b2NodeEquiv`. -/
+`TauCeti.lengthPermRankTwo`. -/
 def b2PinnedLieEquiv :
     (DynkinType.B 2).lieAlgebra (DynkinType.valid_B.mpr le_rfl) ≃ₗ⁅ℚ⁆ sp (Fin 2) ℚ :=
-  LieEquiv.ofBijective b2PinnedLieHom b2PinnedLieHom_bijective
-
-private theorem b2PinnedLieEquiv_apply
-    (x : (DynkinType.B 2).lieAlgebra (DynkinType.valid_B.mpr le_rfl)) :
-    b2PinnedLieEquiv x = serreLift isSerreSystem_b2
-      (((DynkinType.B 2).serreLiftEquiv validB2).symm x) := by
-  rw [b2PinnedLieEquiv, LieEquiv.ofBijective_toFun, b2PinnedLieHom, LieHom.comp_apply,
-    LieEquiv.coe_toLieHom]
+  (DynkinType.B 2).lieEquivOfIsSerreSystem validB2 isSerreSystem_b2 lieSpan_b2 finrank_sp_two
 
 /-- The comparison sends each pinned `B₂` Cartan generator to the standard simple coroot at the
 swapped symplectic node. -/
@@ -174,11 +113,10 @@ swapped symplectic node. -/
 theorem b2PinnedLieEquiv_lieBasis_h {ht : (DynkinType.B 2).Valid}
     (i : Fin (DynkinType.B 2).rank) :
     b2PinnedLieEquiv (((DynkinType.B 2).lieBasis ht).h i) =
-      cartanGenerator 1 (b2NodeEquiv i) := by
-  rw [b2PinnedLieEquiv_apply]
-  exact (congrArg (serreLift isSerreSystem_b2)
-    ((DynkinType.B 2).serreLiftEquiv_symm_lieBasis_h validB2 i)).trans
-    (serreLift_serreH isSerreSystem_b2 i)
+      cartanGenerator 1 (lengthPermRankTwo i) := by
+  obtain rfl : ht = validB2 := Subsingleton.elim _ _
+  exact (DynkinType.B 2).lieEquivOfIsSerreSystem_lieBasis_h validB2 isSerreSystem_b2 lieSpan_b2
+    finrank_sp_two i
 
 /-- The comparison sends each pinned `B₂` raising generator to the standard positive simple root at
 the swapped symplectic node. -/
@@ -186,11 +124,10 @@ the swapped symplectic node. -/
 theorem b2PinnedLieEquiv_lieBasis_e {ht : (DynkinType.B 2).Valid}
     (i : Fin (DynkinType.B 2).rank) :
     b2PinnedLieEquiv (((DynkinType.B 2).lieBasis ht).e i) =
-      rootGenerator 1 (.inl (b2NodeEquiv i)) := by
-  rw [b2PinnedLieEquiv_apply]
-  exact (congrArg (serreLift isSerreSystem_b2)
-    ((DynkinType.B 2).serreLiftEquiv_symm_lieBasis_e validB2 i)).trans
-    (serreLift_serreE isSerreSystem_b2 i)
+      rootGenerator 1 (.inl (lengthPermRankTwo i)) := by
+  obtain rfl : ht = validB2 := Subsingleton.elim _ _
+  exact (DynkinType.B 2).lieEquivOfIsSerreSystem_lieBasis_e validB2 isSerreSystem_b2 lieSpan_b2
+    finrank_sp_two i
 
 /-- The comparison sends each pinned `B₂` lowering generator to the standard negative simple root
 at the swapped symplectic node. -/
@@ -198,60 +135,64 @@ at the swapped symplectic node. -/
 theorem b2PinnedLieEquiv_lieBasis_f {ht : (DynkinType.B 2).Valid}
     (i : Fin (DynkinType.B 2).rank) :
     b2PinnedLieEquiv (((DynkinType.B 2).lieBasis ht).f i) =
-      rootGenerator 1 (.inr (b2NodeEquiv i)) := by
-  rw [b2PinnedLieEquiv_apply]
-  exact (congrArg (serreLift isSerreSystem_b2)
-    ((DynkinType.B 2).serreLiftEquiv_symm_lieBasis_f validB2 i)).trans
-    (serreLift_serreF isSerreSystem_b2 i)
+      rootGenerator 1 (.inr (lengthPermRankTwo i)) := by
+  obtain rfl : ht = validB2 := Subsingleton.elim _ _
+  exact (DynkinType.B 2).lieEquivOfIsSerreSystem_lieBasis_f validB2 isSerreSystem_b2 lieSpan_b2
+    finrank_sp_two i
 
-/-- On the signed simple-root family, the comparison acts by `TauCeti.SpStd.b2NodeEquiv` on both
+/-- On the signed simple-root family, the comparison acts by `TauCeti.lengthPermRankTwo` on both
 signs. -/
 @[simp↓]
 theorem b2PinnedLieEquiv_lieBasis_rootGenerator {ht : (DynkinType.B 2).Valid}
     (k : Fin (DynkinType.B 2).rank ⊕ Fin (DynkinType.B 2).rank) :
     b2PinnedLieEquiv (((DynkinType.B 2).lieBasis ht).rootGenerator k) =
-      rootGenerator 1 (Sum.map b2NodeEquiv b2NodeEquiv k) := by
+      rootGenerator 1 (Sum.map lengthPermRankTwo lengthPermRankTwo k) := by
   cases k with
-  | inl i =>
-      rw [LieAlgebra.Basis.rootGenerator_inl, Sum.map_inl, b2PinnedLieEquiv_lieBasis_e]
-  | inr i =>
-      rw [LieAlgebra.Basis.rootGenerator_inr, Sum.map_inr, b2PinnedLieEquiv_lieBasis_f]
+  | inl i => exact (congrArg b2PinnedLieEquiv
+      (LieAlgebra.Basis.rootGenerator_inl _ i)).trans (b2PinnedLieEquiv_lieBasis_e i)
+  | inr i => exact (congrArg b2PinnedLieEquiv
+      (LieAlgebra.Basis.rootGenerator_inr _ i)).trans (b2PinnedLieEquiv_lieBasis_f i)
 
 /-- The inverse comparison sends each standard symplectic simple coroot to the pinned `B₂` Cartan
 generator at the swapped node. -/
 @[simp]
 theorem b2PinnedLieEquiv_symm_cartanGenerator (i : Fin 2) :
     b2PinnedLieEquiv.symm (cartanGenerator 1 i) =
-      ((DynkinType.B 2).lieBasis (DynkinType.valid_B.mpr le_rfl)).h (b2NodeEquiv.symm i) := by
-  rw [LieEquiv.symm_apply_eq, b2PinnedLieEquiv_lieBasis_h, Equiv.apply_symm_apply]
+      ((DynkinType.B 2).lieBasis (DynkinType.valid_B.mpr le_rfl)).h (lengthPermRankTwo i) := by
+  rw [LieEquiv.symm_apply_eq, b2PinnedLieEquiv_lieBasis_h (lengthPermRankTwo i),
+    lengthPermRankTwo_lengthPermRankTwo]
 
 /-- The inverse comparison sends each standard positive simple root to the pinned `B₂` raising
 generator at the swapped node. -/
 @[simp]
 theorem b2PinnedLieEquiv_symm_rootGenerator_inl (i : Fin 2) :
     b2PinnedLieEquiv.symm (rootGenerator 1 (.inl i)) =
-      ((DynkinType.B 2).lieBasis (DynkinType.valid_B.mpr le_rfl)).e (b2NodeEquiv.symm i) := by
-  rw [LieEquiv.symm_apply_eq, b2PinnedLieEquiv_lieBasis_e, Equiv.apply_symm_apply]
+      ((DynkinType.B 2).lieBasis (DynkinType.valid_B.mpr le_rfl)).e (lengthPermRankTwo i) := by
+  rw [LieEquiv.symm_apply_eq, b2PinnedLieEquiv_lieBasis_e (lengthPermRankTwo i),
+    lengthPermRankTwo_lengthPermRankTwo]
 
 /-- The inverse comparison sends each standard negative simple root to the pinned `B₂` lowering
 generator at the swapped node. -/
 @[simp]
 theorem b2PinnedLieEquiv_symm_rootGenerator_inr (i : Fin 2) :
     b2PinnedLieEquiv.symm (rootGenerator 1 (.inr i)) =
-      ((DynkinType.B 2).lieBasis (DynkinType.valid_B.mpr le_rfl)).f (b2NodeEquiv.symm i) := by
-  rw [LieEquiv.symm_apply_eq, b2PinnedLieEquiv_lieBasis_f, Equiv.apply_symm_apply]
+      ((DynkinType.B 2).lieBasis (DynkinType.valid_B.mpr le_rfl)).f (lengthPermRankTwo i) := by
+  rw [LieEquiv.symm_apply_eq, b2PinnedLieEquiv_lieBasis_f (lengthPermRankTwo i),
+    lengthPermRankTwo_lengthPermRankTwo]
 
 /-- The inverse comparison sends the signed simple-root family of `sp₄` to the pinned `B₂` signed
-simple-root family reindexed by `b2NodeEquiv.symm`. -/
+simple-root family reindexed by `lengthPermRankTwo`. -/
 theorem b2PinnedLieEquiv_symm_rootGenerator (k : Fin 2 ⊕ Fin 2) :
     b2PinnedLieEquiv.symm (rootGenerator 1 k) =
       ((DynkinType.B 2).lieBasis (DynkinType.valid_B.mpr le_rfl)).rootGenerator
-        (Sum.map b2NodeEquiv.symm b2NodeEquiv.symm k) := by
+        (Sum.map lengthPermRankTwo lengthPermRankTwo k) := by
   cases k with
   | inl i =>
-      rw [Sum.map_inl, LieAlgebra.Basis.rootGenerator_inl, b2PinnedLieEquiv_symm_rootGenerator_inl]
+      exact (b2PinnedLieEquiv_symm_rootGenerator_inl i).trans
+        (LieAlgebra.Basis.rootGenerator_inl _ (lengthPermRankTwo i)).symm
   | inr i =>
-      rw [Sum.map_inr, LieAlgebra.Basis.rootGenerator_inr, b2PinnedLieEquiv_symm_rootGenerator_inr]
+      exact (b2PinnedLieEquiv_symm_rootGenerator_inr i).trans
+        (LieAlgebra.Basis.rootGenerator_inr _ (lengthPermRankTwo i)).symm
 
 end
 
