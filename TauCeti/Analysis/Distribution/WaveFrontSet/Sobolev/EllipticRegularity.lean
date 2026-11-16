@@ -199,7 +199,8 @@ private theorem exists_isEllipticAbove_eventually_coefficient_eq {ι : Type*} {t
     (ClassicalSymbol.isElliptic_ofDifferentialSymbol_smul_id_iff hd hk).2 fun x ξ hξ ↦
       hδell _ ((sum_norm_sub_mul_prod_le c g m ⟨θ.nonneg, θ.le_one⟩ hε.le fun hx i hi ↦
         (hρg x (ball_subset_ball (show ρ / 2 ≤ ρ by linarith)
-          (θ.support_eq ▸ hx : x ∈ ball x₀ (ρ / 2))) i hi).le).trans_lt hεA) ξ hξ
+          (θ.support_eq ▸ Function.mem_support.2 hx : x ∈ ball x₀ (ρ / 2))) i hi).le).trans_lt
+            hεA) ξ hξ
   -- Outside `closedBall x₀ (ρ / 2)` the symbol of `p` is its symbol at `x₀`.
   have hθx₀ : θ x₀ = 1 := θ.one_of_mem_closedBall (mem_closedBall_self (by positivity))
   obtain ⟨R, hR⟩ := hpell.exists_isUniformlyEllipticAbove_of_forall_exists_mem
