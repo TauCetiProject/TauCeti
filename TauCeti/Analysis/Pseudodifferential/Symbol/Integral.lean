@@ -417,11 +417,7 @@ private theorem continuous_iteratedFDeriv_smul_coefficient (χ : FrequencyCutoff
         continuous_const).mem_nhds (by simp [hp])
     refine (continuousAt_const (y := (0 : X × E [×k]→L[ℝ] V →L[ℂ] W))).congr
       (Filter.mem_of_superset hnhds fun q hq ↦ ?_)
-    have hzero : (fun r : X × E ↦ χ r.2 • (a q.1).coefficient r) =ᶠ[𝓝 q.2] 0 := by
-      filter_upwards [(χ.eventuallyEq_zero_of_norm_lt_one hq).comp_tendsto
-        continuous_snd.continuousAt] with r hr
-      simp only [Function.comp_apply, Pi.zero_apply] at hr
-      simp [hr]
+    have hzero := χ.comp_snd_smul_eventuallyEq_zero (a q.1).coefficient hq
     exact (by rw [(hzero.iteratedFDeriv ℝ k).eq_of_nhds, iteratedFDeriv_zero, Pi.zero_apply] :
       iteratedFDeriv ℝ k (fun r ↦ χ r.2 • (a q.1).coefficient r) q.2 = 0).symm
   · exact hon.continuousAt ((isOpen_univ.prod hopen).mem_nhds ⟨mem_univ _, hp⟩)
@@ -508,7 +504,7 @@ variable (a : Y → ClassicalSymbol n V W m)
 omit [CompactSpace Y] [MeasurableSpace Y] [OpensMeasurableSpace Y] in
 include hjets htjets in
 /-- The remainders of the family after `N` terms, for any cutoff, have jointly continuous jets. -/
-private theorem continuous_iteratedFDeriv_remainder (χ : FrequencyCutoff (CoordinateSpace n))
+theorem continuous_iteratedFDeriv_remainder (χ : FrequencyCutoff (CoordinateSpace n))
     (N k : ℕ) :
     Continuous (fun p : Y × (CoordinateSpace n × CoordinateSpace n) ↦
       iteratedFDeriv ℝ k ((a p.1).remainder χ N).coefficient p.2) := by
@@ -560,7 +556,9 @@ private theorem integral_coefficient_remainder (χ : FrequencyCutoff (Coordinate
 
 omit [TopologicalSpace Y] [CompactSpace Y] [MeasurableSpace Y] [OpensMeasurableSpace Y] in
 include hbound in
-private theorem exists_bound_toSymbol (K : Set (CoordinateSpace n)) (hK : IsCompact K)
+/-- Seminorms of the remainders bounded independently of the parameter for one cutoff give the
+parameter-uniform estimates of `TauCeti.Symbol.integral` for the full symbols. -/
+theorem exists_bound_toSymbol (K : Set (CoordinateSpace n)) (hK : IsCompact K)
     (α β : List (Fin n)) :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ y : Y, ∀ x ∈ K, ∀ ξ,
       ‖mixedDeriv α β (a y).toSymbol.coefficient x ξ‖ ≤
@@ -579,7 +577,8 @@ homogeneous terms. The full symbols must have jointly continuous jets, the homog
 jointly continuous jets away from the zero frequency, and the remainders after `N` terms, for some
 frequency cutoff, seminorms bounded independently of the parameter for every `N`. Then the
 remainders of the integral are the integrals of the remainders
-(`TauCeti.ClassicalSymbol.coefficient_remainder_integral`), with the same seminorm control
+(`TauCeti.ClassicalSymbol.coefficient_remainder_integral`), and a parameter-uniform seminorm
+bound `C` on them becomes `μ.real univ * C`
 (`TauCeti.ClassicalSymbol.seminorm_remainder_integral_le`). -/
 def integral : ClassicalSymbol n V W m where
   toSymbol := Symbol.integral μ (fun y ↦ (a y).toSymbol) hjets (exists_bound_toSymbol a hbound)
@@ -594,6 +593,13 @@ def integral : ClassicalSymbol n V W m where
 
 /-- The full symbol of the integral of classical symbols is the integral of the full symbols. -/
 @[simp]
+theorem toSymbol_integral :
+    (integral μ a hjets htjets hbound).toSymbol =
+      Symbol.integral μ (fun y ↦ (a y).toSymbol) hjets (exists_bound_toSymbol a hbound) :=
+  (rfl)
+
+/-- The coefficient of the full symbol of the integral of classical symbols is the integral of
+the coefficients. -/
 theorem coefficient_toSymbol_integral (p : CoordinateSpace n × CoordinateSpace n) :
     (integral μ a hjets htjets hbound).toSymbol.coefficient p =
       ∫ y, (a y).toSymbol.coefficient p ∂μ :=
@@ -617,6 +623,7 @@ theorem term_integral (j : ℕ) :
 
 /-- The principal symbol of the integral of classical symbols is the integral of the principal
 symbols. -/
+@[simp]
 theorem principal_integral :
     (integral μ a hjets htjets hbound).principal =
       HomogeneousSymbol.integral μ (fun y ↦ (a y).principal)
@@ -643,6 +650,18 @@ theorem coefficient_remainder_integral (χ : FrequencyCutoff (CoordinateSpace n)
       ∫ y, ((a y).remainder χ N).coefficient p ∂μ := by
   rw [coefficient_remainder, integral_coefficient_remainder μ a hjets htjets]
   simp
+
+/-- The remainder of the integral of classical symbols after `N` terms, for any frequency cutoff,
+is the symbol integral of the remainders, given parameter-uniform estimates on them. -/
+theorem remainder_integral (χ : FrequencyCutoff (CoordinateSpace n)) (N : ℕ)
+    (hb : ∀ K : Set (CoordinateSpace n), IsCompact K → ∀ α β : List (Fin n),
+      ∃ C : ℝ, 0 ≤ C ∧ ∀ y : Y, ∀ x ∈ K, ∀ ξ,
+        ‖mixedDeriv α β ((a y).remainder χ N).coefficient x ξ‖ ≤
+          C * (1 + ‖ξ‖ ^ 2) ^ ((m - N - β.length) / 2)) :
+    (integral μ a hjets htjets hbound).remainder χ N =
+      Symbol.integral μ (fun y ↦ (a y).remainder χ N)
+        (continuous_iteratedFDeriv_remainder a hjets htjets χ N) hb :=
+  Symbol.ext (funext (coefficient_remainder_integral μ a hjets htjets hbound χ N))
 
 /-- A parameter-uniform seminorm bound `C ≥ 0` on the remainders after `N` terms becomes
 `μ.real univ * C` for the remainder of the integral. -/

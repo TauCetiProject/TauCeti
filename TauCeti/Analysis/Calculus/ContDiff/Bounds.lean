@@ -64,6 +64,8 @@ how symbol estimates are proved near the zero frequency, where no decay is neede
 * `ContDiff.isBigO_iteratedFDeriv_smulRight`: the same for `y ↦ (f y).smulRight (g y)`.
 * `ContinuousLinearMap.isBigO_iteratedFDeriv_comp_left`: along any filter, if the order-`n`
   derivative of `f` is `O(ρ)`, then so is that of `y ↦ L (f y)`.
+* `TauCeti.norm_iteratedFDeriv_smul_le_of_isOpen`: the Leibniz bound for `z ↦ c z • f z` at a
+  point of an open set on which both factors are smooth.
 -/
 
 public section
@@ -351,5 +353,18 @@ theorem norm_iteratedFDeriv_comp_le_of_contDiffAt {n : ℕ} {f : E → F}
   · intro j hj₁ hj
     rw [iteratedFDerivWithin_of_isOpen j hU hxU]
     exact hD j hj₁ hj
+
+/-- The Leibniz bound `norm_iteratedFDeriv_smul_le` at a point of an open set on which both
+factors are smooth. -/
+theorem norm_iteratedFDeriv_smul_le_of_isOpen {𝕜' : Type*} [NormedField 𝕜'] [NormedAlgebra 𝕜 𝕜']
+    [NormedSpace 𝕜' F] [IsScalarTower 𝕜 𝕜' F] {U : Set E} (hU : IsOpen U) {c : E → 𝕜'}
+    {f : E → F} {N : ℕ∞ω} (hc : ContDiffOn 𝕜 N c U) (hf : ContDiffOn 𝕜 N f U) {x : E}
+    (hx : x ∈ U) {k : ℕ} (hk : k ≤ N) :
+    ‖iteratedFDeriv 𝕜 k (fun z ↦ c z • f z) x‖ ≤ ∑ i ∈ Finset.range (k + 1),
+      (k.choose i : ℝ) * ‖iteratedFDeriv 𝕜 i c x‖ * ‖iteratedFDeriv 𝕜 (k - i) f x‖ := by
+  have h := norm_iteratedFDerivWithin_smul_le hc hf hU.uniqueDiffOn hx hk
+  rw [iteratedFDerivWithin_of_isOpen k hU hx] at h
+  refine h.trans_eq (Finset.sum_congr rfl fun i _ ↦ ?_)
+  rw [iteratedFDerivWithin_of_isOpen i hU hx, iteratedFDerivWithin_of_isOpen _ hU hx]
 
 end TauCeti

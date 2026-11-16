@@ -6,7 +6,7 @@ Authors: Axel Delaval, Zhiyuan Zhang, Leheng Chen
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
-import Mathlib.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.Calculus.ContDiff.Bounds
 
 /-!
 # Joint regularity of all spatial derivatives
@@ -198,24 +198,13 @@ section ContinuousSpatialJets
 open Filter
 
 variable {Y E F : Type*} [TopologicalSpace Y] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-
-/-- The Leibniz bound `norm_iteratedFDeriv_smul_le` at a point of an open set on which both
-factors are smooth. -/
-theorem norm_iteratedFDeriv_smul_le_of_isOpen {U : Set E} (hU : IsOpen U) {c : E → 𝕜}
-    {f : E → F} {N : ℕ∞ω} (hc : ContDiffOn 𝕜 N c U) (hf : ContDiffOn 𝕜 N f U) {x : E}
-    (hx : x ∈ U) {k : ℕ} (hk : k ≤ N) :
-    ‖iteratedFDeriv 𝕜 k (fun z ↦ c z • f z) x‖ ≤ ∑ i ∈ Finset.range (k + 1),
-      (k.choose i : ℝ) * ‖iteratedFDeriv 𝕜 i c x‖ * ‖iteratedFDeriv 𝕜 (k - i) f x‖ := by
-  have h := norm_iteratedFDerivWithin_smul_le hc hf hU.uniqueDiffOn hx hk
-  rw [iteratedFDerivWithin_of_isOpen k hU hx] at h
-  refine h.trans_eq (Finset.sum_congr rfl fun i _ ↦ ?_)
-  rw [iteratedFDerivWithin_of_isOpen i hU hx, iteratedFDerivWithin_of_isOpen _ hU hx]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] {𝕜' : Type*} [NormedField 𝕜'] [NormedAlgebra 𝕜 𝕜']
+  [NormedSpace 𝕜' F] [IsScalarTower 𝕜 𝕜' F]
 
 /-- Multiplying a family by a fixed smooth scalar function preserves joint continuity of every
 spatial derivative, in the parameter and the point. The parameter space need only be a
 topological space; the spatial set is open. -/
-theorem continuousOn_spatial_jets_smul {U : Set E} (hU : IsOpen U) {c : E → 𝕜}
+theorem continuousOn_spatial_jets_smul {U : Set E} (hU : IsOpen U) {c : E → 𝕜'}
     (hc : ContDiffOn 𝕜 ∞ c U) {f : Y → E → F} (hf : ∀ y, ContDiffOn 𝕜 ∞ (f y) U)
     (hjets : ∀ q : ℕ,
       ContinuousOn (fun p : Y × E ↦ iteratedFDeriv 𝕜 q (f p.1) p.2) (univ ×ˢ U)) (k : ℕ) :
