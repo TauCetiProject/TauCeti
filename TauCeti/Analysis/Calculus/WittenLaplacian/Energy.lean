@@ -255,9 +255,7 @@ private theorem diagonalQuadraticWittenEigenvalue_zero_mul_integral_le (a : ι �
   have hμ : diagonalQuadraticWittenEigenvalue a t 0 s * ∫ x, φ x s ^ 2 ∂μ =
       ∑ i, t * |a i| * ∫ x, φ x s ^ 2 ∂μ +
         t * (∑ i, if i ∈ s then a i else -a i) * ∫ x, φ x s ^ 2 ∂μ := by
-    simp only [diagonalQuadraticWittenEigenvalue_def, Pi.zero_apply, CharP.cast_eq_zero,
-      mul_zero, zero_add, mul_one, Finset.sum_add_distrib, ← Finset.sum_mul, ← Finset.mul_sum]
-    ring
+    rw [diagonalQuadraticWittenEigenvalue_zero, add_mul, Finset.sum_mul]
   linarith
 
 /-- **The harmonic-oscillator lower bound.** For the diagonal quadratic function
@@ -351,9 +349,7 @@ theorem
   -- in degree `s₀` the degree shift is `-t ∑ᵢ |aᵢ|`, the ground state energy of the oscillators
   have hshift : t * (∑ i, if i ∈ s₀ then a i else -a i) = -∑ i, t * |a i| := by
     have h := diagonalQuadraticWittenEigenvalue_zero_filter_neg a t
-    simp only [diagonalQuadraticWittenEigenvalue_def, Pi.zero_apply, CharP.cast_eq_zero,
-      mul_zero, zero_add, mul_one, Finset.sum_add_distrib, mul_add] at h
-    rw [← Finset.mul_sum]
+    rw [diagonalQuadraticWittenEigenvalue_zero] at h
     linarith
   -- the coefficient `u = φ_{s₀}` is orthogonal to the ground state of the oscillators
   set L := ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Finset ι ↦ ℝ) s₀

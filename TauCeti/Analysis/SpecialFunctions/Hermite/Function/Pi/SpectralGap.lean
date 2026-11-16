@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.Hermite.Function.Pi.Parseval
 import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
+import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.SpecialFunctions.Hermite.Function.Pi.Oscillator
-import TauCeti.MeasureTheory.Integral.Dilation
 
 /-!
 # The spectral gap of the harmonic oscillator on `ℝ^ι`
@@ -43,10 +43,6 @@ comparison of two convergent series in which the coefficient of the ground state
 
 ## Main results
 
-* `TauCeti.hasSum_integral_prod_hermiteFunction_mul_mul_integral`: Parseval's identity for the
-  Hermite coefficients of continuous compactly supported functions.
-* `TauCeti.hasSum_integral_prod_hermiteFunction_comp_mul_mul_mul_integral`: Parseval's identity
-  for the dilated Hermite functions.
 * `TauCeti.integral_prod_hermiteFunction_comp_mul_mul_neg_fderiv_fderiv_add`: the oscillator
   acts on the Hermite coefficients by its eigenvalues.
 * `TauCeti.hasSum_mul_sq_integral_prod_hermiteFunction_comp_mul_mul`: the quadratic form of one
@@ -69,65 +65,6 @@ namespace TauCeti
 open MeasureTheory
 
 variable {ι : Type*} [Fintype ι]
-
-/-- **Parseval's identity for continuous compactly supported functions.** The products of the
-multi-index Hermite coefficients `∫ ∏ᵢ ψ_{aᵢ}(xᵢ) f(x) dx` of two continuous compactly supported
-functions `f` and `g` on `ℝ^ι` sum to `∫ f g`. -/
-theorem hasSum_integral_prod_hermiteFunction_mul_mul_integral {f g : (ι → ℝ) → ℝ}
-    (hf : Continuous f) (hfc : HasCompactSupport f) (hg : Continuous g)
-    (hgc : HasCompactSupport g) :
-    HasSum (fun a : ι → ℕ ↦ (∫ x, (∏ i, hermiteFunction (a i) (x i)) * f x) *
-      ∫ x, (∏ i, hermiteFunction (a i) (x i)) * g x) (∫ x, f x * g x) := by
-  set b := hermiteFunctionPiBasis ℝ ι
-  have hcoeff : ∀ (h : (ι → ℝ) → ℝ) (hh : MemLp h 2 (Measure.pi fun _ : ι ↦ volume)) (a : ι → ℕ),
-      inner ℝ (b a) (hh.toLp h) = ∫ x, (∏ i, hermiteFunction (a i) (x i)) * h x := by
-    intro h hh a
-    rw [← b.repr_apply_apply, hermiteFunctionPiBasis_repr_eq_integral]
-    refine integral_congr_ae ?_
-    filter_upwards [hh.coeFn_toLp] with x hx
-    simp [hx]
-  have hf2 : MemLp f 2 (Measure.pi fun _ : ι ↦ volume) := hf.memLp_of_hasCompactSupport hfc
-  have hg2 : MemLp g 2 (Measure.pi fun _ : ι ↦ volume) := hg.memLp_of_hasCompactSupport hgc
-  have key := b.hasSum_inner_mul_inner (hf2.toLp f) (hg2.toLp g)
-  rw [L2.inner_def] at key
-  convert key using 1
-  · funext a
-    rw [real_inner_comm, hcoeff f hf2, hcoeff g hg2]
-  · refine integral_congr_ae ?_
-    filter_upwards [hf2.coeFn_toLp, hg2.coeFn_toLp] with x hfx hgx
-    simp [hfx, hgx, mul_comm]
-
-/-- **Parseval's identity for the dilated Hermite functions.** For nonzero dilation factors `cᵢ`,
-the products of the coefficients `∫ ∏ᵢ ψ_{aᵢ}(cᵢ xᵢ) f(x) dx` of two continuous compactly
-supported functions `f` and `g` sum to `|∏ᵢ cᵢ|⁻¹ ∫ f g`. -/
-theorem hasSum_integral_prod_hermiteFunction_comp_mul_mul_mul_integral {c : ι → ℝ}
-    (hc : ∀ i, c i ≠ 0) {f g : (ι → ℝ) → ℝ} (hf : Continuous f) (hfc : HasCompactSupport f)
-    (hg : Continuous g) (hgc : HasCompactSupport g) :
-    HasSum (fun a : ι → ℕ ↦ (∫ x, (∏ i, hermiteFunction (a i) (c i * x i)) * f x) *
-      ∫ x, (∏ i, hermiteFunction (a i) (c i * x i)) * g x) (|∏ i, c i|⁻¹ * ∫ x, f x * g x) := by
-  -- Undo the dilation: `f = f' ∘ (x ↦ c x)` for `f' = f ∘ (y ↦ c⁻¹ y)`.
-  let d : (ι → ℝ) ≃ₜ (ι → ℝ) :=
-    Homeomorph.piCongrRight fun i ↦ Homeomorph.mulLeft₀ (c i)⁻¹ (inv_ne_zero (hc i))
-  have hd : ∀ x : ι → ℝ, d (fun i ↦ c i * x i) = x := fun x ↦ by
-    funext i
-    simp [d, inv_mul_cancel_left₀ (hc i)]
-  have key := hasSum_integral_prod_hermiteFunction_mul_mul_integral
-    (hf.comp d.continuous) (hfc.comp_homeomorph d) (hg.comp d.continuous) (hgc.comp_homeomorph d)
-  have hcoeff : ∀ (h : (ι → ℝ) → ℝ) (a : ι → ℕ),
-      ∫ x, (∏ i, hermiteFunction (a i) (c i * x i)) * h x =
-        |∏ i, c i|⁻¹ * ∫ y, (∏ i, hermiteFunction (a i) (y i)) * (h ∘ d) y := by
-    intro h a
-    rw [← smul_eq_mul, ← integral_comp_mul_pi hc]
-    simp only [Function.comp_apply, hd]
-  have hint : ∫ x, f x * g x = |∏ i, c i|⁻¹ * ∫ y, (f ∘ d) y * (g ∘ d) y := by
-    rw [← smul_eq_mul, ← integral_comp_mul_pi hc]
-    simp only [Function.comp_apply, hd]
-  convert key.mul_left (|∏ i, c i|⁻¹ * |∏ i, c i|⁻¹) using 1
-  · funext a
-    rw [hcoeff f, hcoeff g]
-    ring
-  · rw [hint]
-    ring
 
 /-- Away from the ground state, the oscillator eigenvalue `∑ᵢ ωᵢ (2aᵢ + 1)` is at least
 `∑ᵢ ωᵢ + 2κ` when `0 ≤ κ ≤ ωᵢ` for every `i`. -/
@@ -159,23 +96,17 @@ theorem integral_prod_hermiteFunction_comp_mul_mul_neg_fderiv_fderiv_add (c : ι
   set v : ι → ℝ := Pi.single i 1
   have hP : ContDiff ℝ 2 P := contDiff_prod_hermiteFunction_comp_mul c a
   -- every integrand below has a factor vanishing off the support of `u`
-  have hint : ∀ {p q : (ι → ℝ) → ℝ}, Continuous p → Continuous q →
-      (∀ x, x ∉ tsupport u → q x = 0) → Integrable (fun x ↦ p x * q x) :=
-    fun hp hq hq0 ↦ (hp.mul hq).integrable_of_hasCompactSupport <| HasCompactSupport.mul_left <|
-      huc.mono' fun x hx ↦ by_contra fun h ↦ hx (hq0 x h)
-  have hD2u : ∀ x, x ∉ tsupport u → fderiv ℝ (fderiv ℝ u) x = 0 := fun x hx ↦
-    fderiv_of_notMem_tsupport ℝ fun h ↦ hx (tsupport_fderiv_subset ℝ h)
   have hxPu : Integrable fun x ↦ P x * (c i ^ 4 * x i ^ 2 * u x) :=
-    hint hP.continuous (continuous_const.mul ((continuous_apply i).pow 2) |>.mul hu.continuous)
+    integrable_mul_of_forall_notMem_tsupport_eq_zero huc hP.continuous
+      (continuous_const.mul ((continuous_apply i).pow 2) |>.mul hu.continuous)
       fun x hx ↦ by simp [image_eq_zero_of_notMem_tsupport hx]
   have hPu2 : Integrable fun x ↦ P x * fderiv ℝ (fderiv ℝ u) x v v :=
-    hint hP.continuous ((((hu.fderiv_right (m := 1) (by norm_num)).continuous_fderiv
-      one_ne_zero).clm_apply continuous_const).clm_apply continuous_const)
-      fun x hx ↦ by simp [hD2u x hx]
+    integrable_mul_of_forall_notMem_tsupport_eq_zero huc hP.continuous
+      (hu.continuous_fderiv_fderiv_apply v v)
+      fun x hx ↦ by simp [fderiv_fderiv_of_notMem_tsupport hx]
   have hP2u : Integrable fun x ↦ fderiv ℝ (fderiv ℝ P) x v v * u x :=
-    hint ((((hP.fderiv_right (m := 1) (by norm_num)).continuous_fderiv one_ne_zero).clm_apply
-      continuous_const).clm_apply continuous_const) hu.continuous
-      fun x hx ↦ image_eq_zero_of_notMem_tsupport hx
+    integrable_mul_of_forall_notMem_tsupport_eq_zero huc (hP.continuous_fderiv_fderiv_apply v v)
+      hu.continuous fun x hx ↦ image_eq_zero_of_notMem_tsupport hx
   have heig : ∀ x, fderiv ℝ (fderiv ℝ P) x v v =
       c i ^ 2 * ((c i * x i) ^ 2 - (2 * a i + 1)) * P x :=
     fun x ↦ fderiv_fderiv_prod_hermiteFunction_comp_mul_apply_single_single c a x i
@@ -208,17 +139,15 @@ theorem hasSum_mul_sq_integral_prod_hermiteFunction_comp_mul_mul {c : ι → ℝ
           u x) := by
   have hcont : Continuous fun x ↦
       -fderiv ℝ (fderiv ℝ u) x (Pi.single i 1) (Pi.single i 1) + c i ^ 4 * x i ^ 2 * u x :=
-    ((((hu.fderiv_right (m := 1) (by norm_num)).continuous_fderiv one_ne_zero).clm_apply
-      continuous_const).clm_apply continuous_const).neg.add
+    (hu.continuous_fderiv_fderiv_apply _ _).neg.add
       ((continuous_const.mul ((continuous_apply i).pow 2)).mul hu.continuous)
   have hsupp : HasCompactSupport fun x ↦
       -fderiv ℝ (fderiv ℝ u) x (Pi.single i 1) (Pi.single i 1) + c i ^ 4 * x i ^ 2 * u x := by
     refine huc.mono' fun x hx ↦ by_contra fun h ↦ hx ?_
-    have h2 : fderiv ℝ (fderiv ℝ u) x = 0 :=
-      fderiv_of_notMem_tsupport ℝ fun h' ↦ h (tsupport_fderiv_subset ℝ h')
-    simp [h2, image_eq_zero_of_notMem_tsupport h]
-  convert hasSum_integral_prod_hermiteFunction_comp_mul_mul_mul_integral hc hcont hsupp
-    hu.continuous huc using 1
+    simp [fderiv_fderiv_of_notMem_tsupport h, image_eq_zero_of_notMem_tsupport h]
+  convert hasSum_integral_prod_hermiteFunction_comp_mul_mul_mul_integral hc
+    (hcont.memLp_of_hasCompactSupport hsupp) (hu.continuous.memLp_of_hasCompactSupport huc)
+    using 1
   · funext a
     rw [integral_prod_hermiteFunction_comp_mul_mul_neg_fderiv_fderiv_add c hu huc]
     ring
@@ -249,8 +178,9 @@ private theorem add_two_mul_mul_integral_sq_le_sum_integral_of_pos {ω : ι → 
   have hnorm : HasSum (fun a ↦ (∑ i, ω i + 2 * κ) * d a ^ 2)
       ((∑ i, ω i + 2 * κ) * (|∏ j, c j|⁻¹ * ∫ x, u x ^ 2)) := by
     refine HasSum.mul_left _ ?_
-    simpa only [sq] using hasSum_integral_prod_hermiteFunction_comp_mul_mul_mul_integral hc
-      hu.continuous huc hu.continuous huc
+    have hu2 : MemLp u 2 (Measure.pi fun _ : ι ↦ volume) :=
+      hu.continuous.memLp_of_hasCompactSupport huc
+    simpa only [sq] using hasSum_integral_prod_hermiteFunction_comp_mul_mul_mul_integral hc hu2 hu2
   -- the ground state coefficient vanishes, and every other eigenvalue lies above the gap
   have hterm : ∀ a : ι → ℕ, (∑ i, ω i + 2 * κ) * d a ^ 2 ≤ ∑ i, ω i * (2 * a i + 1) * d a ^ 2 := by
     intro a
