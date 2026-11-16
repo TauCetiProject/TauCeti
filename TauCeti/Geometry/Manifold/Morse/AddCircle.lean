@@ -14,10 +14,10 @@ import TauCeti.Analysis.Calculus.Morse.OneDimensional
 
 A function on the circle `AddCircle p` is the same as a `p`-periodic function `f : ℝ → ℝ`, through
 its lift `Function.Periodic.lift`. The quotient map `ℝ → AddCircle p` is a smooth local
-diffeomorphism (`AddCircle.isLocalDiffeomorph_coe`), so smoothness, critical points and their
-nondegeneracy can be read on `f`:
+diffeomorphism (`AddCircle.isLocalDiffeomorph_coe`), so, as for smoothness
+(`Function.Periodic.contMDiff_lift_iff`), critical points and their nondegeneracy can be read on
+`f`:
 
-* the lift is `C^n` exactly when `f` is (`Function.Periodic.contMDiff_lift_iff`);
 * the class of `t` is a critical point of the lift exactly when `f' t = 0`
   (`Function.Periodic.coe_mem_criticalPoints_lift_iff`);
 * it is a nondegenerate critical point exactly when moreover `f'' t ≠ 0`, for `f` of class `C²`
@@ -43,22 +43,6 @@ open scoped Manifold ContDiff
 namespace Function.Periodic
 
 variable {p : ℝ} [Fact (0 < p)] {f : ℝ → ℝ}
-
-omit [Fact (0 < p)] in
-/-- The lift of a periodic function, composed with the quotient map, is the function itself. -/
-theorem lift_comp_coe (hf : Periodic f p) : hf.lift ∘ ((↑) : ℝ → AddCircle p) = f :=
-  funext hf.lift_coe
-
-/-- The lift of a `p`-periodic function to `AddCircle p` is `C^n` exactly when the function is. -/
-theorem contMDiff_lift_iff (hf : Periodic f p) {n : ℕ∞ω} :
-    ContMDiff 𝓘(ℝ) 𝓘(ℝ) n hf.lift ↔ ContDiff ℝ n f := by
-  rw [← (AddCircle.isLocalDiffeomorph_coe p n).contMDiff_comp_iff QuotientAddGroup.mk_surjective
-    le_rfl, hf.lift_comp_coe, contMDiff_iff_contDiff]
-
-/-- The lift of a `C^n` periodic function to the circle is `C^n`. -/
-theorem contMDiff_lift (hf : Periodic f p) {n : ℕ∞ω} (h : ContDiff ℝ n f) :
-    ContMDiff 𝓘(ℝ) 𝓘(ℝ) n hf.lift :=
-  hf.contMDiff_lift_iff.2 h
 
 /-- The class of `t` is a critical point of the lift of a periodic function `f` to the circle
 exactly when `f' t = 0`. -/

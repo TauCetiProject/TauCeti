@@ -73,6 +73,8 @@ analytic diffeomorphism with derivative `p⁻¹ * q`.
   `AddCircle p → AddCircle q` lifting a map `f : ℝ → ℝ` is as smooth as `f`, and has the
   derivative of `f`. Conversely a continuous lift of a `C^n` map is `C^n`
   (`AddCircle.contDiff_of_comp_coe_eq`).
+* `Function.Periodic.contMDiff_lift_iff`: the lift of a `p`-periodic function to `AddCircle p` is
+  `C^n` exactly when the function is.
 * `AddCircle.hasMFDerivAt_coe`, `AddCircle.mfderiv_add_right`: the quotient map and the
   translations have derivative the identity of `ℝ`.
 * `AddCircle.isLocalDiffeomorph_prodMap_coe`, `AddCircle.hasMFDerivAt_prodMap_coe`,
@@ -605,6 +607,40 @@ theorem hasMFDerivAt_of_comp_coe_eq {g : AddCircle p → AddCircle q} {f : ℝ �
   exact hg.hasMFDerivAt
 
 end Lift
+
+end AddCircle
+
+/-! ### Functions on a circle lifting periodic functions -/
+
+namespace Function.Periodic
+
+variable {p : ℝ}
+
+/-- The lift of a periodic function, composed with the quotient map, is the function itself. -/
+theorem lift_comp_coe {α : Type*} {f : ℝ → α} (hf : Periodic f p) :
+    hf.lift ∘ ((↑) : ℝ → AddCircle p) = f :=
+  funext hf.lift_coe
+
+variable [Fact (0 < p)] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {f : ℝ → F}
+
+/-- The lift of a `p`-periodic function to `AddCircle p` is `C^n` exactly when the function is. -/
+theorem contMDiff_lift_iff (hf : Periodic f p) {n : ℕ∞ω} :
+    ContMDiff 𝓘(ℝ) 𝓘(ℝ, F) n hf.lift ↔ ContDiff ℝ n f := by
+  rw [← (AddCircle.isLocalDiffeomorph_coe p n).contMDiff_comp_iff QuotientAddGroup.mk_surjective
+    le_rfl, hf.lift_comp_coe, contMDiff_iff_contDiff]
+
+/-- The lift of a `C^n` periodic function to the circle is `C^n`. -/
+theorem contMDiff_lift (hf : Periodic f p) {n : ℕ∞ω} (h : ContDiff ℝ n f) :
+    ContMDiff 𝓘(ℝ) 𝓘(ℝ, F) n hf.lift :=
+  hf.contMDiff_lift_iff.2 h
+
+end Function.Periodic
+
+namespace AddCircle
+
+open TauCeti PeriodLine
+
+variable (p : ℝ) [Fact (0 < p)]
 
 /-- Every translation of `AddCircle p` has derivative the identity of `ℝ`. -/
 @[simp]

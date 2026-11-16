@@ -80,16 +80,12 @@ private theorem circleCos_eq : circleCos = cos_periodic.lift :=
 theorem contMDiff_circleCos {n : ℕ∞ω} : ContMDiff 𝓘(ℝ) 𝓘(ℝ) n circleCos :=
   circleCos_eq ▸ cos_periodic.contMDiff_lift contDiff_cos
 
-private theorem iteratedDeriv_two_cos (θ : ℝ) : iteratedDeriv 2 cos θ = -cos θ := by
-  rw [iteratedDeriv_succ, iteratedDeriv_one, Real.deriv_cos']
-  exact (hasDerivAt_sin θ).fun_neg.deriv
-
 /-- **The cosine is a Morse function on the circle**, with critical points `0` and `π`. -/
 theorem isMorse_circleCos : IsMorse 𝓘(ℝ) circleCos := by
   rw [circleCos_eq, cos_periodic.isMorse_lift_iff contDiff_cos]
   intro θ hθ
   rw [Real.deriv_cos, neg_eq_zero] at hθ
-  rw [iteratedDeriv_two_cos, neg_ne_zero]
+  rw [show iteratedDeriv 2 cos θ = -cos θ by simp, neg_ne_zero]
   intro hc
   simpa [hθ, hc] using sin_sq_add_cos_sq θ
 
@@ -105,7 +101,7 @@ theorem isManifoldNondegenerateCriticalPoint_circleCos_add_lift {h : ℝ → ℝ
   have heq : circleCos + hh.lift = hper.lift := by
     funext y
     induction y using QuotientAddGroup.induction_on
-    rfl
+    simp only [Pi.add_apply, circleCos_coe, hh.lift_coe, hper.lift_coe]
   have hd : Differentiable ℝ h := h₂.differentiable (by simp)
   have hd' : Differentiable ℝ (deriv h) :=
     ((contDiff_succ_iff_deriv (n := 1)).1 h₂).2.2.differentiable one_ne_zero
@@ -124,9 +120,9 @@ theorem isManifoldNondegenerateCriticalPoint_circleCos_add_lift {h : ℝ → ℝ
   intro hc
   -- At a degenerate critical point `h' = sin` and `h'' = cos`, so `h'² + h''² = 1`.
   have h₁ : deriv h θ = sin θ := by linarith
-  have h₂ : iteratedDeriv 2 h θ = cos θ := by linarith
+  have hcos₂ : iteratedDeriv 2 h θ = cos θ := by linarith
   have := hb θ
-  rw [h₁, h₂, sin_sq_add_cos_sq] at this
+  rw [h₁, hcos₂, sin_sq_add_cos_sq] at this
   exact lt_irrefl _ this
 
 /-- **Openness of the Morse condition near the cosine in `C^n`, `n ≥ 2`.** Every `C^n` function
@@ -278,9 +274,9 @@ private theorem periodic_cosRipple (N : ℕ) :
     Periodic (fun θ ↦ cos θ + (1 - cos (N * θ)) / N ^ 2) (2 * π) := fun θ ↦ by
   simp only [cos_add_two_pi, mul_add, cos_add_nat_mul_two_pi]
 
-/-- The function `θ ↦ cos θ + (1 - cos (N θ)) / N²` on the circle `AddCircle (2π)`. It differs from
-the cosine by at most `2 / N²`, and its derivative from that of the cosine by at most `1 / N`,
-but its second derivative at `0` vanishes. -/
+/-- The function `θ ↦ cos θ + (1 - cos (N θ)) / N²` on the circle `AddCircle (2π)`. For `N ≠ 0`,
+it differs from the cosine by at most `2 / N²`, and its derivative from that of the cosine by at
+most `1 / N`, but its second derivative at `0` vanishes. -/
 noncomputable def circleCosRipple (N : ℕ) : AddCircle (2 * π) → ℝ :=
   (periodic_cosRipple N).lift
 
