@@ -15,9 +15,12 @@ Over a spherically complete nonarchimedean field, a finite orthogonal span admit
 approximations. Nested balls in the scalar coordinates give an approximation attaining the
 infimum, even when the residue field is infinite and bounded balls need not be compact.
 This is the exact, rather than approximate, Gram–Schmidt step. A maximal finite orthogonal
-family therefore gives an orthogonal basis in every finite-dimensional space. Complete fields
-with discrete value group satisfy the spherical completeness hypothesis; no condition on the
-values of the module norm is needed.
+family therefore gives an orthogonal basis in every finite-dimensional space, and coordinatewise
+intersection of balls along that basis shows that every finite-dimensional ultrametric space over a
+spherically complete field is itself spherically complete
+(`TauCeti.sphericallyCompleteSpace_of_finiteDimensional`). Complete fields with discrete value
+group satisfy the spherical completeness hypothesis; no condition on the values of the module norm
+is needed.
 
 ## References
 
@@ -162,5 +165,40 @@ theorem exists_basis_isTOrthogonalFamily_one_of_norm_eq_zpow [CompleteSpace K]
       simpa only [dist_eq_norm] using
         hdiscrete (x - y) (by simpa only [dist_eq_norm, ne_eq, norm_eq_zero] using hxy)
   exact exists_basis_isTOrthogonalFamily_one_of_sphericallyComplete
+
+variable (K E) in
+/-- A finite-dimensional ultrametric normed space over a spherically complete field is spherically
+complete. This is a theorem rather than an instance to avoid typeclass search for an unknown scalar
+field `K`. -/
+theorem sphericallyCompleteSpace_of_finiteDimensional [FiniteDimensional K E] :
+    SphericallyCompleteSpace E := by
+  obtain ⟨b, hb⟩ := exists_basis_isTOrthogonalFamily_one_of_sphericallyComplete (K := K) (E := E)
+  refine sphericallyCompleteSpace_of_antitone_radii fun {c r} hr0 hranti hstep ↦ ?_
+  have hex (i : Fin (Module.finrank K E)) :
+      (⋂ n, closedBall (b.repr (c n) i) (r n / ‖b i‖)).Nonempty := by
+    refine SphericallyCompleteSpace.nonempty_iInter_closedBall
+      (fun n ↦ div_nonneg (hr0 n) (norm_nonneg _)) (antitone_nat_of_succ_le fun n ↦ ?_)
+    have hcenter : b.repr (c (n + 1)) i ∈ closedBall (b.repr (c n) i) (r n / ‖b i‖) := by
+      rw [mem_closedBall, dist_eq_norm, le_div_iff₀ (norm_pos_iff.2 (b.ne_zero i))]
+      have h := hb.mul_norm_smul_le (Finset.mem_univ i)
+        (fun j ↦ b.repr (c (n + 1)) j - b.repr (c n) j)
+      have hsum : ∑ j, (b.repr (c (n + 1)) j - b.repr (c n) j) • b j = c (n + 1) - c n := by
+        simp only [sub_smul, Finset.sum_sub_distrib, b.sum_repr]
+      simp only [NNReal.coe_one, one_mul, norm_smul, hsum] at h
+      exact h.trans (by simpa only [dist_eq_norm] using hstep n)
+    rw [IsUltrametricDist.closedBall_eq_of_mem hcenter]
+    exact closedBall_subset_closedBall
+      (div_le_div_of_nonneg_right (hranti n.le_succ) (norm_nonneg _))
+  choose a ha using hex
+  refine ⟨∑ i, a i • b i, Set.mem_iInter.2 fun n ↦ ?_⟩
+  rw [mem_closedBall, dist_eq_norm]
+  have hid : (∑ i, a i • b i) - c n = ∑ i, (a i - b.repr (c n) i) • b i := by
+    conv_lhs => rw [← b.sum_repr (c n)]
+    simp only [sub_smul, Finset.sum_sub_distrib]
+  rw [hid]
+  refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg (hr0 n) fun i _ ↦ ?_
+  rw [norm_smul]
+  exact (le_div_iff₀ (norm_pos_iff.2 (b.ne_zero i))).1
+    (by simpa only [mem_closedBall, dist_eq_norm] using Set.mem_iInter.1 (ha i) n)
 
 end TauCeti

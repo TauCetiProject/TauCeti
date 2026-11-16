@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Normed.Operator.SNumbers.Gelfand
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Basic
 public import TauCeti.Analysis.Normed.Module.Dual.Embedding
-public import TauCeti.Analysis.Normed.Module.HahnBanach
+public import TauCeti.Analysis.Normed.Module.HahnBanach.Basic
 
 /-!
 # Pietsch's embedding identity
