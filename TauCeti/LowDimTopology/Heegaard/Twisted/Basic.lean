@@ -290,6 +290,11 @@ noncomputable def twistedHatCoefficient (r : H.ReferenceDomains) (χ : Region �
 
 variable {r : H.ReferenceDomains} {χ : Region → ℤ} {x y : H.Generator}
 
+theorem twistedHatCoefficient_def :
+    H.twistedHatCoefficient r χ x y = ∑ᶠ D : H.hatDomains χ x y, single (Multiplicative.ofAdd
+      ⟨r.label x y D, r.label_mem_periodicDomains_of_mem_hatDomains D.2⟩) 1 :=
+  (rfl)
+
 /-- When finitely many domains are counted, the twisted coefficient is the finite sum of the
 monomials of their labels. -/
 theorem twistedHatCoefficient_eq_sum [Fintype (H.hatDomains χ x y)] :
@@ -310,6 +315,13 @@ theorem twistedHatCoefficient_eq_zero_of_hatDomains_eq_empty (h : H.hatDomains �
     H.twistedHatCoefficient r χ x y = 0 := by
   have : IsEmpty (H.hatDomains χ x y) := by rw [h]; infer_instance
   exact finsum_of_isEmpty _
+
+/-- In a weakly admissible diagram the twisted hat differential has no diagonal terms. -/
+@[simp]
+theorem WeaklyAdmissible.twistedHatCoefficient_self (hW : H.WeaklyAdmissible)
+    (r : H.ReferenceDomains) (χ : Region → ℤ) (x : H.Generator) :
+    H.twistedHatCoefficient r χ x x = 0 :=
+  twistedHatCoefficient_eq_zero_of_hatDomains_eq_empty (hW.hatDomains_self χ x)
 
 /-- The coefficient of the monomial `t^P` in the twisted coefficient is the number, modulo two,
 of counted domains with label `P`, provided finitely many domains are counted. -/

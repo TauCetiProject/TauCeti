@@ -175,13 +175,11 @@ theorem twistedHatCoefficient_circleTimesSphere_zero (a b : Fin 2) :
       else 0 := by
   fin_cases a <;> fin_cases b <;> simp only [Fin.zero_eta, Fin.mk_one, and_true,
     ite_true, one_ne_zero, zero_ne_one, and_false, ite_false]
-  · exact twistedHatCoefficient_eq_zero_of_hatDomains_eq_empty
-      (weaklyAdmissible_circleTimesSphere_zero.hatDomains_self _ _)
+  · exact weaklyAdmissible_circleTimesSphere_zero.twistedHatCoefficient_self _ _ _
   · exact twistedHatCoefficient_circleTimesSphere_zero_zero_one
   · exact twistedHatCoefficient_eq_zero_of_hatDomains_eq_empty
       hatDomains_circleTimesSphere_zero_one_zero
-  · exact twistedHatCoefficient_eq_zero_of_hatDomains_eq_empty
-      (weaklyAdmissible_circleTimesSphere_zero.hatDomains_self _ _)
+  · exact weaklyAdmissible_circleTimesSphere_zero.twistedHatCoefficient_self _ _ _
 
 /-- The twisted hat differential of the genus-one diagram of `S¹ × S²` sends a chain `c` to
 `c(p₀) (1 + t) p₁`. -/
