@@ -19,11 +19,13 @@ The unweighted form, `MeasureTheory.Martingale.integral_sum_sq_sub`, identifies 
 quadratic sums with the second moment of the total increment. Bounded predictable heights
 give the transform estimate `MeasureTheory.Martingale.integral_sq_sum_mul_sub_le`.
 
-On a finite measure space, `MeasureTheory.Martingale.integral_sq_sum_sq_sub_le` bounds the
-second moment of quadratic sums independently of the grid, using only a deterministic bound
-on the total increment, not on the initial value. This estimate is used downstream to establish
-uniform integrability of grid families, without constructing a stochastic integral. The algebraic
-second-moment expansion reuses `TauCeti.integral_sq_sum_of_pairwise_integral_mul_eq_zero`.
+`MeasureTheory.Martingale.integral_sq_sum_sq_sub_le` bounds the second moment of quadratic
+sums by the second moment of the total increment, independently of the grid, using only a
+deterministic bound on that increment, not on the initial value. On a finite measure space,
+`MeasureTheory.Martingale.integral_sq_sum_sq_sub_le_of_bound` bounds it by the total mass.
+This estimate establishes uniform integrability of grid families, without constructing a stochastic
+integral. The algebraic second-moment expansion reuses
+`TauCeti.integral_sq_sum_of_pairwise_integral_mul_eq_zero`.
 
 ## References
 
@@ -44,7 +46,7 @@ variable {ι Ω : Type*} [Preorder ι] {mΩ : MeasurableSpace Ω} {P : Measure �
 /-- **Discrete martingale isometry.** The second moment of a finite sum of square-integrable
 predictably weighted martingale increments on chronologically disjoint intervals equals
 the sum of their second moments. Heights need only be a.e. strongly measurable. -/
-theorem integral_sq_sum_mul_sub_of_pairwise_disjoint [SigmaFiniteFiltration P ℱ]
+theorem integral_sq_sum_mul_sub_of_pairwise_disjoint
     (hM : Martingale M ℱ P)
     {κ : Type*} (I : Finset κ) {s t : κ → ι} {a : κ → Ω → ℝ}
     (hst : ∀ i ∈ I, s i ≤ t i)
@@ -61,9 +63,21 @@ theorem integral_sq_sum_mul_sub_of_pairwise_disjoint [SigmaFiniteFiltration P �
         ((((hM.stronglyMeasurable (t i)).mono (ℱ.mono hij)).sub
           ((hM.stronglyMeasurable (s i)).mono
             (ℱ.mono ((hst i hi).trans hij)))).aestronglyMeasurable)).mul (ha j hj)
-    simpa only [Z, mul_assoc] using hM.integral_mul_sub_eq_zero (hst j hj) hm
-      (by simpa only [Pi.mul_def, Pi.sub_def, Z, mul_assoc] using
-        (hZ i hi).integrable_mul (hZ j hj))
+    by_cases hσ : SigmaFinite (P.trim (ℱ.le (s j)))
+    · simpa only [Z, mul_assoc] using hM.integral_mul_sub_eq_zero (hst j hj) hm
+        (by simpa only [Pi.mul_def, Pi.sub_def, Z, mul_assoc] using
+          (hZ i hi).integrable_mul (hZ j hj))
+    · have ht : ¬SigmaFinite (P.trim (ℱ.le (t i))) := fun _ ↦
+        hσ (sigmaFiniteTrim_mono (ℱ.le (s j)) (ℱ.mono hij))
+      have hs : ¬SigmaFinite (P.trim (ℱ.le (s i))) := fun _ ↦
+        ht (sigmaFiniteTrim_mono (ℱ.le (t i)) (ℱ.mono (hst i hi)))
+      have hti := hM.condExp_ae_eq (i := t i) le_rfl
+      have hsi := hM.condExp_ae_eq (i := s i) le_rfl
+      simp only [condExp_of_not_sigmaFinite _ ht, condExp_of_not_sigmaFinite _ hs] at hti hsi
+      apply integral_eq_zero_of_ae
+      filter_upwards [hti, hsi] with ω htω hsω
+      simp only [Pi.zero_apply] at htω hsω
+      simp [Z, ← htω, ← hsω]
   apply TauCeti.integral_sq_sum_of_pairwise_integral_mul_eq_zero hZ
   intro i hi j hj hij
   rcases hdisj hi hj hij with h | h
@@ -75,7 +89,7 @@ variable {τ : ℕ → ι} {n : ℕ} {a : ℕ → Ω → ℝ}
 /-- On a nondecreasing finite grid, the second moment of the sum of square-integrable
 predictably weighted martingale increments equals the sum of their second moments.
 Heights need not be bounded. -/
-theorem integral_sq_sum_mul_sub [SigmaFiniteFiltration P ℱ] (hM : Martingale M ℱ P)
+theorem integral_sq_sum_mul_sub (hM : Martingale M ℱ P)
     (hτ : MonotoneOn τ (Set.Iic n))
     (ha : ∀ i < n, AEStronglyMeasurable[ℱ (τ i)] (a i) P)
     (hZ : ∀ i < n, MemLp (fun ω ↦ a i ω * (M (τ (i + 1)) ω - M (τ i) ω)) 2 P) :
@@ -89,21 +103,10 @@ theorem integral_sq_sum_mul_sub [SigmaFiniteFiltration P ℱ] (hM : Martingale M
   · exact Or.inl (hτ (by simpa using (mem_range.mp hi)) (mem_range.mp hj).le h)
   · exact Or.inr (hτ (by simpa using (mem_range.mp hj)) (mem_range.mp hi).le h)
 
-/-- A bounded a.e. strongly measurable multiplier times a grid increment has finite Lᵖ
-norm if the total martingale increment does, for `p ≥ 1`.
-The multiplier need not be predictable. -/
-theorem memLp_mul_sub_of_bound (hM : Martingale M ℱ P)
-    (hτ : MonotoneOn τ (Set.Iic n)) {p : ℝ≥0∞} (hp : 1 ≤ p)
-    (h₂ : MemLp (M (τ n) - M (τ 0)) p P) {i : ℕ} (hi : i < n) {ξ : Ω → ℝ}
-    (hξ : AEStronglyMeasurable ξ P) {C : ℝ} (hb : ∀ᵐ ω ∂P, |ξ ω| ≤ C) :
-    MemLp (fun ω ↦ ξ ω * (M (τ (i + 1)) ω - M (τ i) ω)) p P := by
-  exact (memLp_top_of_bound hξ C (by simpa only [Real.norm_eq_abs] using hb)).mul
-    (hM.memLp_sub_of_monotoneOn hτ hp h₂ hi)
-
 /-- The expected sum of squared martingale increments equals the second moment of the
 total increment. Only this increment needs to be square-integrable; empty grids and
 repeated dates are allowed. -/
-theorem integral_sum_sq_sub [SigmaFiniteFiltration P ℱ] (hM : Martingale M ℱ P)
+theorem integral_sum_sq_sub (hM : Martingale M ℱ P)
     (hτ : MonotoneOn τ (Set.Iic n)) (h₂ : MemLp (M (τ n) - M (τ 0)) 2 P) :
     ∫ ω, ∑ i ∈ range n, (M (τ (i + 1)) ω - M (τ i) ω) ^ 2 ∂P =
       ∫ ω, (M (τ n) ω - M (τ 0) ω) ^ 2 ∂P := by
@@ -121,7 +124,7 @@ theorem integral_sum_sq_sub [SigmaFiniteFiltration P ℱ] (hM : Martingale M ℱ
 /-- Bounded a.e. predictable heights bound the second moment of a martingale transform by
 `C²` times the second moment of the total increment. Only this increment needs to be
 square-integrable. -/
-theorem integral_sq_sum_mul_sub_le [SigmaFiniteFiltration P ℱ] (hM : Martingale M ℱ P)
+theorem integral_sq_sum_mul_sub_le (hM : Martingale M ℱ P)
     (hτ : MonotoneOn τ (Set.Iic n)) (h₂ : MemLp (M (τ n) - M (τ 0)) 2 P)
     (ha : ∀ i < n, AEStronglyMeasurable[ℱ (τ i)] (a i) P) {C : ℝ}
     (hb : ∀ i < n, ∀ᵐ ω ∂P, |a i ω| ≤ C) :
@@ -130,8 +133,9 @@ theorem integral_sq_sum_mul_sub_le [SigmaFiniteFiltration P ℱ] (hM : Martingal
   let Δ (i : ℕ) (ω : Ω) := M (τ (i + 1)) ω - M (τ i) ω
   have hΔ (i : ℕ) (hi : i < n) : MemLp (Δ i) 2 P :=
     hM.memLp_sub_of_monotoneOn hτ (by norm_num) h₂ hi
-  have hZ (i : ℕ) (hi : i < n) :=
-    hM.memLp_mul_sub_of_bound hτ (by norm_num) h₂ hi ((ha i hi).mono (ℱ.le _)) (hb i hi)
+  have hZ (i : ℕ) (hi : i < n) : MemLp (fun ω ↦ a i ω * Δ i ω) 2 P :=
+    (memLp_top_of_bound ((ha i hi).mono (ℱ.le _)) C
+      (by simpa only [Real.norm_eq_abs] using hb i hi)).mul (hΔ i hi)
   rw [hM.integral_sq_sum_mul_sub hτ ha hZ]
   calc
     _ ≤ ∑ i ∈ range n, C ^ 2 * ∫ ω, Δ i ω ^ 2 ∂P := by
@@ -169,15 +173,14 @@ theorem integral_sq_sum_mul_sub_le_of_bound [IsFiniteMeasure P] (hM : Martingale
           (sq_le_sq₀ (abs_nonneg _) ((abs_nonneg _).trans hω)).2 hω)
     _ = _ := by simp [mul_comm]
 
-/-- On a finite measure space, the quadratic sum of a martingale whose total grid increment
-is bounded by `C` has second moment at most `10 * C ^ 4 * P.real Set.univ`, independently of
-the grid. Families sharing an increment bound can use this estimate downstream to establish
-uniform integrability. The numerical constant is not asserted to be sharp. -/
-theorem integral_sq_sum_sq_sub_le [IsFiniteMeasure P] (hM : Martingale M ℱ P)
+/-- If a martingale's total grid increment is bounded by `C`, the second moment of its
+quadratic sum is at most `10 * C²` times the second moment of that increment, independently
+of the grid. The numerical constant is not asserted to be sharp. -/
+theorem integral_sq_sum_sq_sub_le (hM : Martingale M ℱ P)
     (hτ : MonotoneOn τ (Set.Iic n)) {C : ℝ}
     (hb : ∀ᵐ ω ∂P, |M (τ n) ω - M (τ 0) ω| ≤ C) :
     ∫ ω, (∑ i ∈ range n, (M (τ (i + 1)) ω - M (τ i) ω) ^ 2) ^ 2 ∂P ≤
-      10 * C ^ 4 * P.real Set.univ := by
+      10 * C ^ 2 * ∫ ω, (M (τ n) ω - M (τ 0) ω) ^ 2 ∂P := by
   let a (i : ℕ) (ω : Ω) := M (τ i) ω - M (τ 0) ω
   have ha (i : ℕ) (hi : i ≤ n) : StronglyMeasurable[ℱ (τ i)] (a i) :=
     (hM.stronglyMeasurable _).sub
@@ -185,20 +188,21 @@ theorem integral_sq_sum_sq_sub_le [IsFiniteMeasure P] (hM : Martingale M ℱ P)
   have hb' (i : ℕ) (hi : i ≤ n) : ∀ᵐ ω ∂P, |a i ω| ≤ C := by
     simpa only [Real.norm_eq_abs] using hM.ae_norm_sub_le_of_le
       (hτ (by simp) hi (Nat.zero_le i)) (hτ hi (by simp) hi) hb
-  have h₂ : MemLp (M (τ n) - M (τ 0)) 2 P :=
-    MemLp.of_bound ((ha n le_rfl).mono (ℱ.le _)).aestronglyMeasurable C (hb' n le_rfl)
+  have hint := (hM.integrable (τ n)).sub (hM.integrable (τ 0))
+  have h₂ : MemLp (a n) 2 P :=
+    (memLp_two_iff_integrable_sq hint.aestronglyMeasurable).2 (by
+      simpa only [pow_two] using hint.bdd_mul hint.aestronglyMeasurable
+        (by simpa only [Pi.sub_apply, Real.norm_eq_abs] using hb))
   let J (ω : Ω) := ∑ i ∈ range n, a i ω * (M (τ (i + 1)) ω - M (τ i) ω)
   have hJi : Integrable (fun ω ↦ J ω ^ 2) P := (memLp_finsetSum _ fun i hi ↦
-    hM.memLp_mul_sub_of_bound hτ (by norm_num) h₂ (mem_range.mp hi)
-      ((ha i (mem_range.mp hi).le).mono (ℱ.le _)).aestronglyMeasurable
-      (hb' i (mem_range.mp hi).le)).integrable_sq
-  have hJ : ∫ ω, J ω ^ 2 ∂P ≤ C ^ 4 * P.real Set.univ := by
-    have h := hM.integral_sq_sum_mul_sub_le_of_bound hτ
-      (fun i hi ↦ (ha i hi.le).aestronglyMeasurable) hb (fun i hi ↦ hb' i hi.le)
-    nlinarith [h]
+    (memLp_top_of_bound ((ha i (mem_range.mp hi).le).mono (ℱ.le _)).aestronglyMeasurable C
+      (by simpa only [Real.norm_eq_abs] using hb' i (mem_range.mp hi).le)).mul
+        (hM.memLp_sub_of_monotoneOn hτ (by norm_num) h₂ (mem_range.mp hi))).integrable_sq
+  have hJ := hM.integral_sq_sum_mul_sub_le hτ h₂
+    (fun i hi ↦ (ha i hi.le).aestronglyMeasurable) (fun i hi ↦ hb' i hi.le)
   have hpoint : ∀ᵐ ω ∂P,
       (∑ i ∈ range n, (M (τ (i + 1)) ω - M (τ i) ω) ^ 2) ^ 2 ≤
-        2 * C ^ 4 + 8 * J ω ^ 2 := by
+        2 * C ^ 2 * a n ω ^ 2 + 8 * J ω ^ 2 := by
     filter_upwards [hb' n le_rfl] with ω hω
     have hid : ∑ i ∈ range n, (M (τ (i + 1)) ω - M (τ i) ω) ^ 2 =
         a n ω ^ 2 - 2 * J ω := by
@@ -207,15 +211,36 @@ theorem integral_sq_sum_sq_sub_le [IsFiniteMeasure P] (hM : Martingale M ℱ P)
     rw [hid]
     have hs : a n ω ^ 2 ≤ C ^ 2 := by
       simpa only [sq_abs] using (sq_le_sq₀ (abs_nonneg _) ((abs_nonneg _).trans hω)).2 hω
-    nlinarith [mul_self_le_mul_self (sq_nonneg (a n ω)) hs,
+    nlinarith [mul_le_mul_of_nonneg_right hs (sq_nonneg (a n ω)),
       sq_nonneg (a n ω ^ 2 + 2 * J ω)]
   calc
-    _ ≤ ∫ ω, 2 * C ^ 4 + 8 * J ω ^ 2 ∂P := integral_mono_of_nonneg
+    _ ≤ ∫ ω, 2 * C ^ 2 * a n ω ^ 2 + 8 * J ω ^ 2 ∂P := integral_mono_of_nonneg
       (Filter.Eventually.of_forall fun _ ↦ sq_nonneg _)
-      ((integrable_const _).add (hJi.const_mul _)) hpoint
-    _ = 2 * C ^ 4 * P.real Set.univ + 8 * ∫ ω, J ω ^ 2 ∂P := by
-      rw [integral_add (integrable_const _) (hJi.const_mul _), integral_const,
-        integral_const_mul, smul_eq_mul]; ring
-    _ ≤ 10 * C ^ 4 * P.real Set.univ := by linarith
+      ((h₂.integrable_sq.const_mul _).add (hJi.const_mul _)) hpoint
+    _ = 2 * C ^ 2 * ∫ ω, a n ω ^ 2 ∂P + 8 * ∫ ω, J ω ^ 2 ∂P := by
+      rw [integral_add (h₂.integrable_sq.const_mul _) (hJi.const_mul _),
+        integral_const_mul, integral_const_mul]
+    _ ≤ 10 * C ^ 2 * ∫ ω, a n ω ^ 2 ∂P := by linarith
+
+/-- On a finite measure space, the quadratic sum of a martingale whose total grid increment
+is bounded by `C` has second moment at most `10 * C⁴` times the total mass, independently of
+the grid. Families sharing an increment bound can use this estimate to establish uniform
+integrability. -/
+theorem integral_sq_sum_sq_sub_le_of_bound [IsFiniteMeasure P] (hM : Martingale M ℱ P)
+    (hτ : MonotoneOn τ (Set.Iic n)) {C : ℝ}
+    (hb : ∀ᵐ ω ∂P, |M (τ n) ω - M (τ 0) ω| ≤ C) :
+    ∫ ω, (∑ i ∈ range n, (M (τ (i + 1)) ω - M (τ i) ω) ^ 2) ^ 2 ∂P ≤
+      10 * C ^ 4 * P.real Set.univ := by
+  have h₂ : MemLp (M (τ n) - M (τ 0)) 2 P := MemLp.of_bound
+    ((hM.integrable _).sub (hM.integrable _)).aestronglyMeasurable C hb
+  apply (hM.integral_sq_sum_sq_sub_le hτ hb).trans
+  calc
+    _ ≤ 10 * C ^ 2 * ∫ _ : Ω, C ^ 2 ∂P := by
+      apply mul_le_mul_of_nonneg_left _ (by positivity)
+      apply integral_mono_ae h₂.integrable_sq (integrable_const _)
+      filter_upwards [hb] with ω hω
+      simpa only [Pi.sub_apply, sq_abs] using
+        (sq_le_sq₀ (abs_nonneg _) ((abs_nonneg _).trans hω)).2 hω
+    _ = _ := by simp [integral_const]; ring
 
 end MeasureTheory.Martingale

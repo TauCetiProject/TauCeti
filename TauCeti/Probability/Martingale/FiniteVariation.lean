@@ -67,10 +67,11 @@ theorem ae_eq_of_boundedVariationOn_of_bound (hM : Martingale M ℱ P) {S T : �
       hv (fun k ↦ (hu k).monotoneOn _) humem (fun k i _ ↦ hmesh k i) hlim
     simpa only [Q, pow_two] using h
   have hbound (k : ℕ) : ∫ ω, Q k ω ^ 2 ∂P ≤ 10 * C ^ 4 * P.real univ :=
-    hM.integral_sq_sum_sq_sub_le ((hu k).monotoneOn _) (by simpa only [huS, huT] using hb)
-  have hp (p : ℝ≥0∞) (t : ℝ≥0) (ht : t ∈ Icc S T) : MemLp (M t - M S) p P :=
-    MemLp.of_bound ((hM.integrable t).sub (hM.integrable S)).aestronglyMeasurable C
-      (hM.ae_norm_sub_le_of_le ht.1 ht.2 (by simpa only [Real.norm_eq_abs] using hb))
+    hM.integral_sq_sum_sq_sub_le_of_bound ((hu k).monotoneOn _)
+      (by simpa only [huS, huT] using hb)
+  have hp (p : ℝ≥0∞) : MemLp (M T - M S) p P :=
+    MemLp.of_bound ((hM.integrable T).sub (hM.integrable S)).aestronglyMeasurable C
+      (by simpa only [Pi.sub_apply, Real.norm_eq_abs] using hb)
   have hQ₂ (k : ℕ) : MemLp (Q k) 2 P := by
     let : ENNReal.HolderTriple 4 4 2 := .of_toReal (by
       norm_num [Real.holderTriple_iff])
@@ -78,7 +79,7 @@ theorem ae_eq_of_boundedVariationOn_of_bound (hM : Martingale M ℱ P) {S T : �
     intro i hi
     have hd := hM.memLp_sub_of_monotoneOn ((hu k).monotoneOn (Set.Iic (k + 1)))
       (by norm_num : 1 ≤ (4 : ℝ≥0∞))
-      (by simpa only [huS, huT] using hp 4 T ⟨hST, le_rfl⟩) (mem_range.mp hi)
+      (by simpa only [huS, huT] using hp 4) (mem_range.mp hi)
     simpa only [pow_two, Pi.sub_def] using hd.fun_mul hd
   -- The moment bound replaces domination by the random variation.
   have hmean := TauCeti.tendsto_integral_of_integral_norm_sq_le hQ₂
@@ -88,13 +89,13 @@ theorem ae_eq_of_boundedVariationOn_of_bound (hM : Martingale M ℱ P) {S T : �
   have heq (k : ℕ) : ∫ ω, Q k ω ∂P = ∫ ω, (M T ω - M S ω) ^ 2 ∂P := by
     simpa only [Q, huS, huT] using
       hM.integral_sum_sq_sub (n := k + 1) ((hu k).monotoneOn _)
-        (by simpa only [huS, huT] using hp 2 T ⟨hST, le_rfl⟩)
+        (by simpa only [huS, huT] using hp 2)
   have hzero : ∫ ω, (M T ω - M S ω) ^ 2 ∂P = 0 :=
     tendsto_nhds_unique tendsto_const_nhds (hmean.congr (fun k ↦ heq k))
   have hz := (integral_eq_zero_iff_of_nonneg_ae
     (Filter.Eventually.of_forall fun ω ↦ sq_nonneg (M T ω - M S ω))
     (by simpa only [Pi.sub_def] using
-      (hp 2 T ⟨hST, le_rfl⟩).integrable_sq)).1 hzero
+      (hp 2).integrable_sq)).1 hzero
   filter_upwards [hz] with ω hω
   exact sub_eq_zero.mp (by simpa only [Pi.zero_apply, sq_eq_zero_iff] using hω)
 

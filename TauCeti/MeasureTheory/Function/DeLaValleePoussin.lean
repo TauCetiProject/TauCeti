@@ -27,8 +27,11 @@ control on small sets from a uniform bound on `∫ Φ(‖fᵢ‖)`.
   (`TauCeti.exists_setLIntegral_enorm_le_mul_add`). In particular a family of a.e. strongly
   measurable functions with such a bound is uniformly integrable in Mathlib's sense
   (`TauCeti.unifIntegrable_of_lintegral_ofReal_le`).
-* On a finite measure space, almost-everywhere convergence of square-integrable functions
-  with uniformly bounded integrals of squared norms implies convergence of Bochner integrals
+* On a finite measure space, the same superlinear bound gives `UniformIntegrable`
+  (`TauCeti.uniformIntegrable_of_lintegral_ofReal_le`) and turns almost-everywhere convergence
+  along countably generated filters into convergence of Bochner integrals
+  (`TauCeti.tendsto_integral_of_lintegral_ofReal_le`). The square-integrable specialization
+  uses uniformly bounded integrals of squared norms
   (`TauCeti.tendsto_integral_of_integral_norm_sq_le`).
 
 ## Implementation notes
@@ -217,6 +220,40 @@ theorem unifIntegrable_of_lintegral_ofReal_le {Φ : ℝ → ℝ}
     _ ≤ ε / 2 + ε / 2 := by gcongr
     _ = ε := ENNReal.add_halves ε
 
+/-- **De la Vallée Poussin's criterion on a finite measure space.** A family of a.e.
+strongly measurable functions with uniformly bounded integrals of a superlinear function
+of their norms is uniformly integrable, including a uniform bound on their L¹ norms. -/
+theorem uniformIntegrable_of_lintegral_ofReal_le [IsFiniteMeasure μ] {Φ : ℝ → ℝ}
+    (hΦ : Tendsto (fun t ↦ Φ t / t) atTop atTop) {f : ι → α → F}
+    (hfm : ∀ i, AEStronglyMeasurable (f i) μ) {C : ℝ≥0∞} (hC : C ≠ ∞)
+    (hf : ∀ i, ∫⁻ a, ENNReal.ofReal (Φ ‖f i a‖) ∂μ ≤ C) : UniformIntegrable f 1 μ := by
+  refine ⟨unifIntegrable_of_lintegral_ofReal_le hΦ hfm hC hf, ?_⟩
+  obtain ⟨T, hT⟩ := exists_setLIntegral_enorm_le_mul_add hΦ hC hf (ε := 1) one_ne_zero
+  have hfinite : (T : ℝ≥0∞) * μ univ + 1 < ∞ := by finiteness
+  apply lt_of_le_of_lt (iSup_le fun i ↦ ?_) hfinite
+  simpa only [eLpNorm_one_eq_lintegral_eNorm (hfm i), Measure.restrict_univ] using hT i univ
+
+/-- On a finite measure space, a uniform integral bound on a superlinear function of the
+norms turns almost-everywhere convergence of a.e. strongly measurable functions along a
+countably generated filter into convergence of Bochner integrals.
+No integrability assumption on the limit is needed. -/
+theorem tendsto_integral_of_lintegral_ofReal_le [NormedSpace ℝ F] [IsFiniteMeasure μ]
+    {Φ : ℝ → ℝ} (hΦ : Tendsto (fun t ↦ Φ t / t) atTop atTop) {f : ι → α → F}
+    (hfm : ∀ i, AEStronglyMeasurable (f i) μ) {C : ℝ≥0∞} (hC : C ≠ ∞)
+    (hf : ∀ i, ∫⁻ a, ENNReal.ofReal (Φ ‖f i a‖) ∂μ ≤ C)
+    {l : Filter ι} [l.IsCountablyGenerated] {g : α → F}
+    (hlim : ∀ᵐ x ∂μ, Tendsto (fun i ↦ f i x) l (𝓝 (g x))) :
+    Tendsto (fun i ↦ ∫ x, f i x ∂μ) l (𝓝 (∫ x, g x ∂μ)) := by
+  refine tendsto_iff_seq_tendsto.2 fun u hu ↦ ?_
+  have hlim' : ∀ᵐ x ∂μ, Tendsto (fun k ↦ f (u k) x) atTop (𝓝 (g x)) :=
+    hlim.mono fun _ hx ↦ hx.comp hu
+  have hUI' := uniformIntegrable_of_lintegral_ofReal_le hΦ (fun k ↦ hfm (u k)) hC
+    (fun k ↦ hf (u k))
+  have hL1 := tendsto_Lp_finite_of_tendsto_ae le_rfl ENNReal.one_ne_top
+    (fun k ↦ hfm (u k)) (hUI'.memLp_of_ae_tendsto hlim') hUI'.unifIntegrable hlim'
+  exact tendsto_integral_of_L1' g
+    (Eventually.of_forall fun k ↦ memLp_one_iff_integrable.mp (hUI'.memLp k)) hL1
+
 /-- On a finite measure space, almost-everywhere convergence of square-integrable
 (`MemLp · 2 μ`) functions with uniformly bounded integrals of squared norms
 (`∫ x, ‖f k x‖ ^ 2 ∂μ ≤ B`) implies convergence of Bochner integrals.
@@ -235,17 +272,7 @@ theorem tendsto_integral_of_integral_norm_sq_le [NormedSpace ℝ F] [IsFiniteMea
     rw [← ofReal_integral_eq_lintegral_ofReal ((hf k).integrable_norm_pow (by norm_num))
       (Eventually.of_forall fun _ ↦ sq_nonneg _)]
     exact ENNReal.ofReal_le_ofReal (hbound k)
-  have hUI : UniformIntegrable f 1 μ := by
-    refine ⟨unifIntegrable_of_lintegral_ofReal_le hΦ (fun k ↦ (hf k).aestronglyMeasurable)
-      ENNReal.ofReal_ne_top hbound', ?_⟩
-    obtain ⟨T, hT⟩ := exists_setLIntegral_enorm_le_mul_add hΦ ENNReal.ofReal_ne_top hbound'
-      (ε := 1) one_ne_zero
-    apply lt_of_le_of_lt (iSup_le fun k ↦ ?_) (show (T : ℝ≥0∞) * μ univ + 1 < ∞ by finiteness)
-    simpa only [eLpNorm_one_eq_lintegral_eNorm (hf k).aestronglyMeasurable,
-      Measure.restrict_univ] using hT k univ
-  have hL1 := tendsto_Lp_finite_of_tendsto_ae le_rfl ENNReal.one_ne_top
-    (fun k ↦ (hf k).aestronglyMeasurable) (hUI.memLp_of_ae_tendsto hlim) hUI.unifIntegrable hlim
-  exact tendsto_integral_of_L1' g
-    (Eventually.of_forall fun k ↦ (hf k).integrable (by norm_num)) hL1
+  exact tendsto_integral_of_lintegral_ofReal_le hΦ (fun k ↦ (hf k).aestronglyMeasurable)
+    ENNReal.ofReal_ne_top hbound' hlim
 
 end TauCeti

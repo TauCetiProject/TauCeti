@@ -314,8 +314,8 @@ theorem Submartingale.integral_mul_le [SigmaFiniteFiltration μ ℱ]
 
 /-- A predictable height times a later martingale increment has mean zero whenever the
 product is integrable. No separate moment assumption on the height is needed. -/
-theorem Martingale.integral_smul_sub_eq_zero [SigmaFiniteFiltration μ ℱ]
-    (hX : Martingale X ℱ μ) {s t : ι} (hst : s ≤ t)
+theorem Martingale.integral_smul_sub_eq_zero
+    (hX : Martingale X ℱ μ) {s t : ι} [SigmaFinite (μ.trim (ℱ.le s))] (hst : s ≤ t)
     {ξ : Ω → ℝ} (hξ : AEStronglyMeasurable[ℱ s] ξ μ)
     (hint : Integrable (ξ • (X t - X s)) μ) :
     ∫ ω, ξ ω • (X t ω - X s ω) ∂μ = 0 := by
@@ -331,8 +331,8 @@ theorem Martingale.integral_smul_sub_eq_zero [SigmaFiniteFiltration μ ℱ]
 
 /-- A predictable real height times a later real martingale increment has mean zero
 whenever the product is integrable. -/
-theorem Martingale.integral_mul_sub_eq_zero [SigmaFiniteFiltration μ ℱ]
-    (hM : Martingale Y ℱ μ) {s t : ι} (hst : s ≤ t)
+theorem Martingale.integral_mul_sub_eq_zero
+    (hM : Martingale Y ℱ μ) {s t : ι} [SigmaFinite (μ.trim (ℱ.le s))] (hst : s ≤ t)
     {ξ : Ω → ℝ} (hξ : AEStronglyMeasurable[ℱ s] ξ μ)
     (hint : Integrable (ξ * (Y t - Y s)) μ) :
     ∫ ω, ξ ω * (Y t ω - Y s ω) ∂μ = 0 :=
