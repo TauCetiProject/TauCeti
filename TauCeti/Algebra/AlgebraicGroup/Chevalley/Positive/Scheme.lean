@@ -11,14 +11,14 @@ public import TauCeti.Algebra.AlgebraicGroup.Chevalley.OrderedProduct
 /-!
 # Ordered positive-root multiplication as a scheme morphism
 
-For a list of distinct positive roots, ordered root multiplication is a monomorphism
-into the simply connected Chevalley scheme. The assertion is integral: it tests arbitrary
-commutative rings, not just fields. It is the uniqueness part of the scheme-theoretic
-positive-root factorization, and does not assert that its image is the unipotent radical
-or that the multiplication is a closed immersion.
+For any Chevalley datum `D` and any list of distinct positive roots, ordered root multiplication is
+a monomorphism into `D.groupScheme`. The assertion is integral: it tests arbitrary commutative
+rings, not just fields or reduced schemes. It is the uniqueness part of the scheme-theoretic
+positive-root factorization, and does not assert that its image is the unipotent radical or that
+the multiplication is a closed immersion.
 
 The monomorphism criterion `ChevalleyDatum.mono_rootProduct_of_injective` applies to
-`list_prod_map_scChevalleyDatum_rootSubgroupPoints_inj`.
+`ChevalleyDatum.list_prod_map_rootSubgroupPoints_inj`.
 
 ## References
 
@@ -30,15 +30,16 @@ public section
 
 open CategoryTheory
 
-namespace TauCeti.DynkinType
+namespace TauCeti.DynkinType.ChevalleyDatum
 
-/-- Ordered multiplication of distinct positive root schemes is a monomorphism into the
-simply connected Chevalley scheme. The test schemes need not be affine or reduced. -/
-theorem mono_rootProduct_scChevalleyDatum (t : DynkinType) (ht : t.Valid)
-    (l : List (Fin t.numRoots)) (hl : l.Nodup)
+variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
+
+/-- Ordered multiplication of distinct positive root schemes is a monomorphism into the Chevalley
+group scheme of any Chevalley datum. The test schemes need not be affine or reduced. -/
+theorem mono_rootProduct (l : List (Fin t.numRoots)) (hl : l.Nodup)
     (hpos : ∀ γ ∈ l, γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht)) :
-    Mono ((t.scChevalleyDatum ht).rootProduct l) :=
-  (t.scChevalleyDatum ht).mono_rootProduct_of_injective l fun A _ _ _ h =>
-    (t.list_prod_map_scChevalleyDatum_rootSubgroupPoints_inj ht A hl hpos).mp h
+    Mono (D.rootProduct l) :=
+  D.mono_rootProduct_of_injective l fun A _ _ _ h =>
+    (D.list_prod_map_rootSubgroupPoints_inj A hl hpos).mp h
 
-end TauCeti.DynkinType
+end TauCeti.DynkinType.ChevalleyDatum

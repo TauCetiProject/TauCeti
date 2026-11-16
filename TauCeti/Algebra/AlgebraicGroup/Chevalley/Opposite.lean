@@ -5,42 +5,52 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Basic
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Coordinates
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Product
+import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Root
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.OppositeBorel
+import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.PositiveSubsystem
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Weight.Order
+import TauCeti.LinearAlgebra.RootSystem.LongestElement
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.WeightDegree
 
 /-!
-# Opposite root subgroups of a Chevalley datum
+# Opposite root subgroups and negative-root coordinates of a Chevalley datum
 
-On the base-changed admissible lattice of a Chevalley datum, let `U⁺` and `U⁻` be generated
-by all positive and all negative root subgroups, respectively. Over every commutative ring,
-`U⁺ ∩ (U⁻ ⊔ T) = 1` and `U⁻ ∩ (U⁺ ⊔ T) = 1`, where `T` is the actual weight-lattice
-torus, not merely the image of the full-weight parametrization. These are the
-opposite-intersection inputs to uniqueness of
-Bruhat and big-cell factorizations. No existence of those factorizations or generation of
-all scheme points is asserted.
+On the base-changed admissible lattice of a Chevalley datum `D`, let `U⁺` and `U⁻` be generated
+by all positive and all negative root subgroups, respectively. Over every commutative ring `A`,
+`U⁻` is nilpotent, `negativePoints` realizes `U⁻` inside the datum's point group, multiplication
+of the negative root subgroups in any duplicate-free enumeration of all negative roots is a
+bijection onto `D.negativePoints A` (`ChevalleyDatum.negativeRootEquiv`) natural under arbitrary
+ring homomorphisms, and `U⁺ ∩ (U⁻ ⊔ T) = 1` and `U⁻ ∩ (U⁺ ⊔ T) = 1`, where `T` is the actual
+weight-lattice torus. In particular, `positivePoints` and `negativePoints` intersect trivially,
+and ordered multiplication of distinct negative root subgroup schemes is a scheme monomorphism
+(`ChevalleyDatum.mono_rootProduct_of_negRoots`).
 
 The negative subgroup uses the same named root vectors and enumeration as the positive one.
-The intersection specializes the generic opposite-intersection theorem in
-`TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.OppositeBorel`:
-height orders the weight basis, positive roots act upper unitriangularly, negative roots act
-lower unitriangularly, and the actual torus acts diagonally. Its coordinate characters need
-not be the Cartan weights.
+Nilpotence of `U⁻` applies the ordered-weight-basis construction to the negated height degree.
+The opposite intersection specializes the generic theorem in
+`TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.OppositeBorel`: height orders the
+weight basis, positive roots act upper unitriangularly, negative roots act lower unitriangularly,
+and the actual torus acts diagonally. Existence of negative-root coordinates transports
+positive-root collection along an integral lift of the longest Weyl-group element from
+`ChevalleyDatum.exists_conj_rootSubgroupPoints_eq_of_weylGroup`, while uniqueness uses
+`ChevalleyDatum.list_prod_map_rootSubgroupPoints_inj_of_negRoots`.
 
 ## References
 
-* R. Steinberg, *Lectures on Chevalley Groups*, Chapter 3, Theorem 4 and its proof.
-* R. W. Carter, *Simple Groups of Lie Type*, §§5.3 and 8.3.
+* R. Steinberg, *Lectures on Chevalley Groups*, Chapter 3, Lemmas 17, 19, 22, and Theorem 4.
+* R. W. Carter, *Simple Groups of Lie Type*, §§5.3, 7.2, and 8.3.
+* M. Demazure and A. Grothendieck, *SGA 3*, Exp. XXII, §4.1.
 -/
 
 public section
 
-open TensorProduct TauCeti.UniversalEnvelopingAlgebra
+open CategoryTheory Multiplicative TensorProduct TauCeti.UniversalEnvelopingAlgebra
 
 namespace TauCeti.DynkinType.ChevalleyDatum
 
-universe v
+universe v v'
 
 variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
 
@@ -65,6 +75,16 @@ theorem negativeSubgroup_eq_closure (A : CommAlgCat.{v} ℤ) :
         ∃ u, chevalleyRootSubgroup D.representation D.lattice D.representation_mem_lattice
           D.isNilpotent_representation_rootGenerator γ A u = g} := by
   simp only [negativeSubgroup, kostantSubsystemSubgroup_eq_closure,
+    kostantRootSubgroupParam_chevalleySystem D.representation D.lattice
+      D.representation_mem_lattice D.isNilpotent_representation_rootGenerator]
+
+/-- The negative lattice subgroup is the join of the negative root subgroup ranges. -/
+theorem negativeSubgroup_eq_iSup (A : CommAlgCat.{v} ℤ) :
+    D.negativeSubgroup A =
+      ⨆ γ ∈ negRoots (t.rationalRootSystem ht) (t.rationalBase ht),
+        (chevalleyRootSubgroup D.representation D.lattice D.representation_mem_lattice
+          D.isNilpotent_representation_rootGenerator γ A).range := by
+  simp only [negativeSubgroup, kostantSubsystemSubgroup_eq_iSup,
     kostantRootSubgroupParam_chevalleySystem D.representation D.lattice
       D.representation_mem_lattice D.isNilpotent_representation_rootGenerator]
 
@@ -121,6 +141,132 @@ theorem map_negativeSubgroup_le {A B : CommAlgCat.{v} ℤ} (f : A ⟶ B) :
       D.negativeSubgroup B := by
   unfold negativeSubgroup
   exact map_kostantSubsystemSubgroup_le _ _ _ _ _ _ _ f
+
+/-- The subgroup generated by any subset of negative roots on a Chevalley datum's lattice is
+nilpotent over every commutative ring. No closure condition on the root subset is required. -/
+theorem isNilpotent_kostantSubsystemSubgroup_of_subset_negRoots
+    {S : Set (Fin t.numRoots)}
+    (hS : S ⊆ negRoots (t.rationalRootSystem ht) (t.rationalBase ht))
+    (A : Type v) [CommRing A] :
+    Group.IsNilpotent (kostantSubsystemSubgroup (t.chevalleySystem ht) (t.lieBasis ht).h
+      D.representation D.lattice
+      (kostantForm_chevalleySystem_smul_mem D.representation D.lattice
+        D.representation_mem_lattice D.isNilpotent_representation_rootGenerator)
+      (isNilpotent_apply_ι_chevalleySystem D.representation
+        D.isNilpotent_representation_rootGenerator) S (CommAlgCat.of ℤ A)) := by
+  exact isNilpotent_kostantSubsystemSubgroup_of_isPositive
+    (t.chevalleySystem ht) (t.lieBasis ht).h D.representation D.lattice
+    (kostantForm_chevalleySystem_smul_mem D.representation D.lattice
+      D.representation_mem_lattice D.isNilpotent_representation_rootGenerator)
+    (isNilpotent_apply_ι_chevalleySystem D.representation
+      D.isNilpotent_representation_rootGenerator)
+    (orderedWeightBasis (-t.weightDegree ht) D.weight D.basis)
+    (orderedWeight (-t.weightDegree ht) D.weight) (t.simplyConnectedRootDatum ht).root
+    S
+    (isCartanWeightVector_coe_orderedWeightBasis (t.lieBasis ht).h D.representation
+      D.lattice D.basis D.weight (-t.weightDegree ht) D.isCartanWeightVector_basis)
+    (fun γ _ i => t.lie_lieBasis_h_chevalleySystem ht γ i)
+    (fun γ hγ {_ _ _} hn heq =>
+      orderedWeight_lt_of_eq_add_nsmul (-t.weightDegree ht) D.weight
+        (neg_pos.mpr (t.weightDegree_root_neg ht (hS hγ))) hn heq) A
+
+/-- The subgroup generated by all negative roots of a Chevalley datum is nilpotent over every
+commutative ring. -/
+theorem isNilpotent_negativeSubgroup (A : Type v) [CommRing A] :
+    Group.IsNilpotent (D.negativeSubgroup (CommAlgCat.of ℤ A)) := by
+  unfold negativeSubgroup
+  exact D.isNilpotent_kostantSubsystemSubgroup_of_subset_negRoots (Set.Subset.refl _) A
+
+/-- The negative subgroup inside the group of datum points, obtained by writing its lattice
+operators in the datum's weight basis. -/
+noncomputable def negativePoints (A : Type v) [CommRing A] : Subgroup (D.points A) :=
+  ((D.negativeSubgroup (CommAlgCat.of ℤ A)).map
+    (Units.map (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMulEquiv)).subgroupOf
+      (D.points A)
+
+/-- A datum point is negative exactly when its underlying matrix lies in the image of the
+negative lattice subgroup. -/
+theorem mem_negativePoints_iff {A : Type v} [CommRing A] {g : D.points A} :
+    g ∈ D.negativePoints A ↔
+      g.val ∈ (D.negativeSubgroup (CommAlgCat.of ℤ A)).map
+        (Units.map (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMulEquiv) :=
+  Iff.rfl
+
+/-- Forgetting that negative elements are datum points gives exactly their matrix image. -/
+theorem map_negativePoints_subtype (A : Type v) [CommRing A] :
+    (D.negativePoints A).map (D.points A).subtype =
+      (D.negativeSubgroup (CommAlgCat.of ℤ A)).map
+        (Units.map (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMulEquiv) :=
+  Subgroup.map_subgroupOf_eq_of_le (D.map_negativeSubgroup_le_points A)
+
+/-- The negative point subgroup is generated by all negative root maps. -/
+theorem negativePoints_eq_closure (A : Type v) [CommRing A] :
+    D.negativePoints A = Subgroup.closure
+      {g | ∃ γ ∈ negRoots (t.rationalRootSystem ht) (t.rationalBase ht),
+        ∃ u, D.rootSubgroupPoints γ A u = g} := by
+  apply Subgroup.map_injective (D.points A).subtype_injective
+  rw [D.map_negativePoints_subtype, D.negativeSubgroup_eq_closure,
+    MonoidHom.map_closure, MonoidHom.map_closure]
+  congr 1
+  ext g
+  constructor
+  · rintro ⟨_, ⟨γ, hγ, u, rfl⟩, h⟩
+    exact ⟨D.rootSubgroupPoints γ A u, ⟨γ, hγ, u, rfl⟩,
+      (D.coe_rootSubgroupPoints γ A u).trans h⟩
+  · rintro ⟨_, ⟨γ, hγ, u, rfl⟩, h⟩
+    exact ⟨_, ⟨γ, hγ, u, rfl⟩, (D.coe_rootSubgroupPoints γ A u).symm.trans h⟩
+
+/-- Containment of the negative point subgroup can be checked on all negative root parameters. -/
+theorem negativePoints_le_iff {A : Type v} [CommRing A] {P : Subgroup (D.points A)} :
+    D.negativePoints A ≤ P ↔
+      ∀ γ ∈ negRoots (t.rationalRootSystem ht) (t.rationalBase ht), ∀ u,
+        D.rootSubgroupPoints γ A u ∈ P := by
+  rw [D.negativePoints_eq_closure, Subgroup.closure_le]
+  constructor
+  · intro h γ hγ u
+    exact h ⟨γ, hγ, u, rfl⟩
+  · rintro h _ ⟨γ, hγ, u, rfl⟩
+    exact h γ hγ u
+
+/-- Each negative root element belongs to the negative point subgroup. -/
+@[simp]
+theorem rootSubgroupPoints_mem_negativePoints (A : Type v) [CommRing A] {γ : Fin t.numRoots}
+    (hγ : γ ∈ negRoots (t.rationalRootSystem ht) (t.rationalBase ht))
+    (u : Multiplicative A) : D.rootSubgroupPoints γ A u ∈ D.negativePoints A :=
+  (D.negativePoints_le_iff.mp le_rfl) γ hγ u
+
+/-- The negative point subgroup is the join of the negative root subgroup ranges. -/
+theorem negativePoints_eq_iSup (A : Type v) [CommRing A] :
+    D.negativePoints A =
+      ⨆ γ ∈ negRoots (t.rationalRootSystem ht) (t.rationalBase ht),
+        (D.rootSubgroupPoints γ A).range := by
+  apply le_antisymm
+  · apply D.negativePoints_le_iff.mpr
+    intro γ hγ u
+    exact le_iSup₂ (f := fun γ _ => (D.rootSubgroupPoints γ A).range) γ hγ ⟨u, rfl⟩
+  · refine iSup_le fun γ => iSup_le fun hγ => ?_
+    rintro _ ⟨u, rfl⟩
+    exact D.rootSubgroupPoints_mem_negativePoints A hγ u
+
+/-- The negative point subgroup is nilpotent over every commutative ring. -/
+theorem isNilpotent_negativePoints (A : Type v) [CommRing A] :
+    Group.IsNilpotent (D.negativePoints A) := by
+  let := D.isNilpotent_negativeSubgroup A
+  let e := (D.negativeSubgroup (CommAlgCat.of ℤ A)).equivMapOfInjective
+    (Units.map (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMonoidHom)
+    (Units.map_injective (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).injective)
+  exact Group.nilpotent_of_mulEquiv
+    (e.trans (Subgroup.subgroupOfEquivOfLe (D.map_negativeSubgroup_le_points A)).symm)
+
+/-- A ring map carries every negative point into the negative subgroup over the target ring. -/
+theorem map_negativePoints_le {A : Type v} {B : Type v'} [CommRing A] [CommRing B]
+    (f : A →+* B) :
+    (D.negativePoints A).map ((D.pointsPresentation A).map (D.pointsPresentation B) f) ≤
+      D.negativePoints B := by
+  rw [Subgroup.map_le_iff_le_comap, D.negativePoints_le_iff]
+  intro γ hγ u
+  simpa only [Subgroup.mem_comap, D.map_rootSubgroupPoints] using
+    D.rootSubgroupPoints_mem_negativePoints B hγ (Multiplicative.ofAdd (f u.toAdd))
 
 private theorem closure_inf_closure_sup_range_kostantTorusPoints_eq_bot
     (degree : (Fin t.rank → ℤ) →+ ℚ) {S S' : Set (Fin t.numRoots)}
@@ -189,5 +335,246 @@ theorem negativeSubgroup_inf_positiveSubgroup_sup_range_kostantTorusPoints_eq_bo
   exact D.closure_inf_closure_sup_range_kostantTorusPoints_eq_bot (-t.weightDegree ht)
     (fun _ hγ => neg_pos.mpr (t.weightDegree_root_neg ht hγ))
     (fun _ hγ => neg_neg_of_pos (t.weightDegree_root_pos ht hγ)) A
+
+/-- The positive and negative point subgroups intersect trivially over every commutative ring. -/
+@[simp]
+theorem positivePoints_inf_negativePoints_eq_bot (A : Type v) [CommRing A] :
+    D.positivePoints A ⊓ D.negativePoints A = ⊥ := by
+  rw [eq_bot_iff]
+  rintro g ⟨hpos, hneg⟩
+  obtain ⟨u, hu, hgu⟩ := D.mem_positivePoints_iff.mp hpos
+  obtain ⟨v, hv, hgv⟩ := D.mem_negativePoints_iff.mp hneg
+  have huv : u = v :=
+    Units.map_injective (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).injective
+      (hgu.trans hgv.symm)
+  have hubot : u ∈ (⊥ : Subgroup _) := by
+    rw [← D.positiveSubgroup_inf_negativeSubgroup_sup_range_kostantTorusPoints_eq_bot A]
+    exact ⟨hu, Subgroup.mem_sup_left (huv ▸ hv)⟩
+  apply Subtype.ext
+  exact hgu.symm.trans (by simp [Subgroup.mem_bot.mp hubot])
+
+/-- The negative and positive point subgroups intersect trivially over every commutative ring. -/
+@[simp]
+theorem negativePoints_inf_positivePoints_eq_bot (A : Type v) [CommRing A] :
+    D.negativePoints A ⊓ D.positivePoints A = ⊥ := by
+  rw [inf_comm, D.positivePoints_inf_negativePoints_eq_bot]
+
+/-- Ordered multiplication of distinct negative root schemes is a monomorphism into the Chevalley
+group scheme of any Chevalley datum. The test schemes need not be affine or reduced. -/
+theorem mono_rootProduct_of_negRoots (l : List (Fin t.numRoots)) (hl : l.Nodup)
+    (hneg : ∀ γ ∈ l, γ ∈ negRoots (t.rationalRootSystem ht) (t.rationalBase ht)) :
+    Mono (D.rootProduct l) :=
+  D.mono_rootProduct_of_injective l fun A _ _ _ h =>
+    (D.list_prod_map_rootSubgroupPoints_inj_of_negRoots A hl hneg).mp h
+
+local notation "NegativeRoot" =>
+  {γ // γ ∈ negRoots (t.rationalRootSystem ht) (t.rationalBase ht)}
+
+local notation "PositiveRoot" =>
+  {γ // γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht)}
+
+/-- Multiply negative-root parameters in the order of `l`, as an element of the negative
+point subgroup. This is a map of sets, not an assertion that coordinates add under multiplication.
+-/
+noncomputable def negativeRootProduct (l : List NegativeRoot) (A : Type v) [CommRing A]
+    (u : NegativeRoot → A) : D.negativePoints A :=
+  ⟨(l.map fun γ => D.rootSubgroupPoints γ.1 A (ofAdd (u γ))).prod,
+    Subgroup.list_prod_mem _ fun _ hg => by
+      obtain ⟨γ, _, rfl⟩ := List.mem_map.mp hg
+      exact D.rootSubgroupPoints_mem_negativePoints A γ.2 _⟩
+
+/-- The negative-root product has the stated ordered factors in the datum point group. -/
+@[simp]
+theorem coe_negativeRootProduct (l : List NegativeRoot) (A : Type v) [CommRing A]
+    (u : NegativeRoot → A) :
+    (D.negativeRootProduct l A u : D.points A) =
+      (l.map fun γ => D.rootSubgroupPoints γ.1 A (ofAdd (u γ))).prod :=
+  (rfl)
+
+/-- Changing the value ring applies the ring map to each negative-root coordinate. -/
+theorem map_negativeRootProduct (l : List NegativeRoot)
+    {A : Type v} {B : Type v'} [CommRing A] [CommRing B] (f : A →+* B)
+    (u : NegativeRoot → A) :
+    (D.pointsPresentation A).map (D.pointsPresentation B) f
+        (D.negativeRootProduct l A u : D.points A) =
+      (D.negativeRootProduct l B (fun γ => f (u γ)) : D.points B) := by
+  simp only [coe_negativeRootProduct, map_list_prod, List.map_map, Function.comp_def,
+    D.map_rootSubgroupPoints, toAdd_ofAdd]
+
+/-- Every negative point of any Chevalley datum has coordinates in any duplicate-free enumeration
+of all negative roots, over any commutative ring. -/
+theorem negativeRootProduct_surjective (l : List NegativeRoot)
+    (hl : l.Nodup) (hcover : ∀ γ, γ ∈ l) (A : Type v) [CommRing A] :
+    Function.Surjective (D.negativeRootProduct l A) := by
+  intro g
+  let P := t.rationalRootSystem ht
+  let b := t.rationalBase ht
+  let w₀ := longestElement P b
+  obtain ⟨n, ε, hn⟩ := D.exists_conj_rootSubgroupPoints_eq_of_weylGroup w₀ A
+  let e : NegativeRoot ≃ PositiveRoot :=
+    { toFun := fun γ => ⟨P.weylGroupToPerm w₀ γ.1, mapsTo_negRoots_posRoots_longestElement P b γ.2⟩
+      invFun := fun δ => ⟨P.weylGroupToPerm w₀ δ.1, mapsTo_posRoots_negRoots_longestElement P b δ.2⟩
+      left_inv := fun γ => Subtype.ext (weylGroupToPerm_longestElement_involutive P b γ.1)
+      right_inv := fun δ => Subtype.ext (weylGroupToPerm_longestElement_involutive P b δ.1) }
+  have hconj_pos : MulAut.conj n (g : D.points A) ∈ D.positivePoints A := by
+    have hle : D.negativePoints A ≤ (D.positivePoints A).comap (MulAut.conj n).toMonoidHom := by
+      rw [D.negativePoints_le_iff]
+      intro γ hγ u
+      rw [Subgroup.mem_comap, MulEquiv.coe_toMonoidHom, ← ofAdd_toAdd u, hn γ (toAdd u)]
+      exact D.rootSubgroupPoints_mem_positivePoints A
+        (mapsTo_negRoots_posRoots_longestElement P b hγ) _
+    exact hle g.2
+  let l_pos : List PositiveRoot := l.map e
+  have hl_pos : l_pos.Nodup := hl.map e.injective
+  have hcover_pos : ∀ δ : PositiveRoot, δ ∈ l_pos := fun δ =>
+    List.mem_map.mpr ⟨e.symm δ, hcover _, e.apply_symm_apply δ⟩
+  obtain ⟨v, hv⟩ := D.positiveRootProduct_surjective l_pos hl_pos hcover_pos A
+    ⟨MulAut.conj n (g : D.points A), hconj_pos⟩
+  refine ⟨fun γ => ((((ε γ.1)⁻¹ : ℤˣ) : ℤ) : A) * v (e γ), ?_⟩
+  apply Subtype.ext
+  apply (MulAut.conj n).injective
+  have hv' : (l_pos.map fun δ => D.rootSubgroupPoints δ.1 A (ofAdd (v δ))).prod =
+      MulAut.conj n (g : D.points A) := by
+    simpa only [coe_positiveRootProduct] using congrArg Subtype.val hv
+  rw [← hv', coe_negativeRootProduct, ← MulEquiv.coe_toMonoidHom, map_list_prod]
+  simp only [l_pos, List.map_map, Function.comp_def, MulEquiv.coe_toMonoidHom]
+  congr 1
+  refine List.map_congr_left fun γ _ => ?_
+  rw [hn γ.1]
+  have hunit : ((ε γ.1 : ℤ) : A) * (((((ε γ.1)⁻¹ : ℤˣ) : ℤ) : A) * v (e γ)) = v (e γ) := by
+    rw [← mul_assoc, ← Int.cast_mul, ← Units.val_mul, mul_inv_cancel, Units.val_one, Int.cast_one,
+      one_mul]
+  rw [hunit]
+  rfl
+
+/-- Every element of the negative point subgroup of a Chevalley datum is an ordered product of
+negative root elements in any duplicate-free enumeration of the negative roots, over any
+commutative value ring. -/
+theorem mem_negativePoints_iff_exists_prod
+    (l : List (Fin t.numRoots)) (hl : l.Nodup)
+    (hcover : ∀ γ, γ ∈ l ↔ γ ∈ negRoots (t.rationalRootSystem ht) (t.rationalBase ht))
+    (A : Type v) [CommRing A] (g : D.points A) :
+    g ∈ D.negativePoints A ↔ ∃ u : Fin t.numRoots → Multiplicative A,
+      (l.map fun γ => D.rootSubgroupPoints γ A (u γ)).prod = g := by
+  classical
+  constructor
+  · intro hg
+    let l_neg : List NegativeRoot :=
+      l.attach.map fun x => ⟨x.1, (hcover x.1).mp x.2⟩
+    have hl_val : l_neg.map Subtype.val = l := by
+      simp [l_neg, Function.comp_def]
+    have hl_neg : l_neg.Nodup := List.Nodup.of_map Subtype.val (hl_val ▸ hl)
+    have hcover_neg : ∀ γ : NegativeRoot, γ ∈ l_neg := fun γ =>
+      List.mem_map.mpr ⟨⟨γ.1, (hcover γ.1).mpr γ.2⟩, List.mem_attach _ _, rfl⟩
+    obtain ⟨u₀, hu₀⟩ := D.negativeRootProduct_surjective l_neg hl_neg hcover_neg A ⟨g, hg⟩
+    refine ⟨fun γ =>
+      if h : γ ∈ negRoots (t.rationalRootSystem ht) (t.rationalBase ht)
+      then ofAdd (u₀ ⟨γ, h⟩) else 1, ?_⟩
+    have hprod : (l.map fun γ => D.rootSubgroupPoints γ A
+        (if h : γ ∈ negRoots (t.rationalRootSystem ht) (t.rationalBase ht)
+          then ofAdd (u₀ ⟨γ, h⟩) else 1)).prod =
+        (D.negativeRootProduct l_neg A u₀ : D.points A) := by
+      rw [← hl_val, coe_negativeRootProduct, List.map_map, Function.comp_def]
+      congr 1
+      refine List.map_congr_left fun γ _ => ?_
+      simp only [dite_eq_left γ.2]
+    exact hprod.trans (congrArg Subtype.val hu₀)
+  · rintro ⟨u, rfl⟩
+    refine Subgroup.list_prod_mem _ fun _ hx => ?_
+    obtain ⟨γ, hγ, rfl⟩ := List.mem_map.mp hx
+    exact D.rootSubgroupPoints_mem_negativePoints A ((hcover γ).mp hγ) (u γ)
+
+/-- For every Chevalley datum, an ordered enumeration of all negative roots without repetitions
+gives an injective parameter map over any commutative ring. -/
+theorem negativeRootProduct_injective (l : List NegativeRoot) (hl : l.Nodup)
+    (hcover : ∀ γ, γ ∈ l) (A : Type v) [CommRing A] :
+    Function.Injective (D.negativeRootProduct l A) := by
+  classical
+  intro u v huv
+  let extend := fun (u : NegativeRoot → A) (γ : Fin t.numRoots) =>
+    if h : γ ∈ negRoots (t.rationalRootSystem ht) (t.rationalBase ht) then u ⟨γ, h⟩ else 0
+  have heq := congrArg (fun g : D.negativePoints A => (g : D.points A)) huv
+  have hprod (u : NegativeRoot → A) :
+      ((l.map Subtype.val).map fun γ => D.rootSubgroupPoints γ A
+        (ofAdd (extend u γ))).prod = (D.negativeRootProduct l A u : D.points A) := by
+    simp only [coe_negativeRootProduct, List.map_map, Function.comp_def]
+    congr 1
+    apply List.map_congr_left
+    intro γ _
+    simp only [extend, dite_eq_left γ.2]
+  have hparams := (D.list_prod_map_rootSubgroupPoints_inj_of_negRoots A
+    (hl.map Subtype.val_injective)
+    (by rintro γ hγ; obtain ⟨γ, _, rfl⟩ := List.mem_map.mp hγ; exact γ.2)).mp
+      ((hprod u).trans (heq.trans (hprod v).symm))
+  funext γ
+  simpa only [extend, dite_eq_left γ.2] using
+    hparams γ.1 (List.mem_map.mpr ⟨γ, hcover γ, rfl⟩)
+
+/-- A datum point belongs to `D.negativePoints A` if and only if it admits a unique expression as
+an ordered product of negative-root elements in the prescribed order `l`. -/
+theorem mem_negativePoints_iff_existsUnique_prod (l : List NegativeRoot) (hl : l.Nodup)
+    (hcover : ∀ γ, γ ∈ l) (A : Type v) [CommRing A] (g : D.points A) :
+    g ∈ D.negativePoints A ↔ ∃! u : NegativeRoot → A,
+      (l.map fun γ => D.rootSubgroupPoints γ.1 A (ofAdd (u γ))).prod = g := by
+  constructor
+  · intro hg
+    obtain ⟨u, hu⟩ := D.negativeRootProduct_surjective l hl hcover A ⟨g, hg⟩
+    refine ⟨u, congrArg Subtype.val hu, fun v hv => ?_⟩
+    exact D.negativeRootProduct_injective l hl hcover A
+      (Subtype.ext (hv.trans (congrArg Subtype.val hu).symm))
+  · rintro ⟨u, rfl, _⟩
+    exact (D.negativeRootProduct l A u).2
+
+/-- Negative-root coordinates for any Chevalley datum over an arbitrary commutative ring.
+The list enumerates all negative roots in any fixed order without repetitions. -/
+noncomputable def negativeRootEquiv (l : List NegativeRoot)
+    (hl : l.Nodup) (hcover : ∀ γ, γ ∈ l) (A : Type v) [CommRing A] :
+    (NegativeRoot → A) ≃ D.negativePoints A :=
+  Equiv.ofBijective (D.negativeRootProduct l A)
+    ⟨D.negativeRootProduct_injective l hl hcover A,
+      D.negativeRootProduct_surjective l hl hcover A⟩
+
+/-- The coordinate equivalence multiplies the given negative-root parameters in the specified
+order. -/
+@[simp]
+theorem negativeRootEquiv_apply (l : List NegativeRoot)
+    (hl : l.Nodup) (hcover : ∀ γ, γ ∈ l) (A : Type v) [CommRing A]
+    (u : NegativeRoot → A) :
+    D.negativeRootEquiv l hl hcover A u = D.negativeRootProduct l A u :=
+  (rfl)
+
+/-- Extracting coordinates from an ordered negative-root product recovers its parameters. -/
+@[simp]
+theorem negativeRootEquiv_symm_negativeRootProduct
+    (l : List NegativeRoot) (hl : l.Nodup) (hcover : ∀ γ, γ ∈ l)
+    (A : Type v) [CommRing A] (u : NegativeRoot → A) :
+    (D.negativeRootEquiv l hl hcover A).symm (D.negativeRootProduct l A u) = u :=
+  (D.negativeRootEquiv l hl hcover A).symm_apply_apply u
+
+/-- Multiplying the extracted negative-root coordinates reproduces the original negative point. -/
+@[simp]
+theorem negativeRootProduct_negativeRootEquiv_symm
+    (l : List NegativeRoot) (hl : l.Nodup) (hcover : ∀ γ, γ ∈ l)
+    (A : Type v) [CommRing A] (g : D.negativePoints A) :
+    D.negativeRootProduct l A ((D.negativeRootEquiv l hl hcover A).symm g) = g :=
+  (D.negativeRootEquiv l hl hcover A).apply_symm_apply g
+
+/-- Extracting negative-root coordinates after scalar change applies the ring map coordinatewise,
+even when the ring map is not injective. -/
+@[simp]
+theorem negativeRootEquiv_symm_map (l : List NegativeRoot)
+    (hl : l.Nodup) (hcover : ∀ γ, γ ∈ l)
+    {A : Type v} {B : Type v'} [CommRing A] [CommRing B] (f : A →+* B)
+    (g : D.negativePoints A) :
+    (D.negativeRootEquiv l hl hcover B).symm
+        ⟨(D.pointsPresentation A).map (D.pointsPresentation B) f (g : D.points A),
+          D.map_negativePoints_le f (Subgroup.mem_map.mpr ⟨g, g.2, rfl⟩)⟩ =
+      fun γ => f ((D.negativeRootEquiv l hl hcover A).symm g γ) := by
+  apply (D.negativeRootEquiv l hl hcover B).injective
+  simp only [Equiv.apply_symm_apply, negativeRootEquiv_apply]
+  apply Subtype.ext
+  rw [← D.map_negativeRootProduct l f]
+  exact congrArg ((D.pointsPresentation A).map (D.pointsPresentation B) f)
+    (congrArg Subtype.val ((D.negativeRootEquiv l hl hcover A).apply_symm_apply g).symm)
 
 end TauCeti.DynkinType.ChevalleyDatum
