@@ -145,7 +145,7 @@ namespace TauCeti.SeibergWitten
 variable {χ : ℝ → ℝ}
 
 /-- A cutoff vanishing near `0` takes the value `1` on `|w|²` only for `w ≠ 0`. -/
-private theorem ne_zero_of_cutoff_eq_one (hχ₀ : χ =ᶠ[𝓝 0] 0) {w : ℂ} (h : χ (normSq w) = 1) :
+theorem ne_zero_of_cutoff_eq_one (hχ₀ : χ =ᶠ[𝓝 0] 0) {w : ℂ} (h : χ (normSq w) = 1) :
     w ≠ 0 := by
   rintro rfl
   rw [normSq_zero, hχ₀.eq_of_nhds, Pi.zero_apply] at h
