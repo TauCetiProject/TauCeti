@@ -215,7 +215,7 @@ private theorem setIntegral_indicator_matrixBilinearForm_le
   have hfm : ∫ x in Omega, f x * W1p.value m x ∂mu ≤
       ε * ∫ x in Omega, max (f x) 0 * W1p.value v x ∂mu := by
     rw [← integral_const_mul]
-    refine MeasureTheory.integral_le_of_ae_le_of_integral_nonneg ?_ (hfv.const_mul ε)
+    refine MeasureTheory.integral_mono_of_integral_nonneg ?_ (hfv.const_mul ε)
       (integral_nonneg_of_ae ?_)
     · filter_upwards [hval, hm0] with x hx hx0
       calc f x * W1p.value m x ≤ max (f x) 0 * W1p.value m x :=

@@ -69,7 +69,7 @@ for set and probability integrals.
   integrable function `N`.
 * `integral_min_le_left` and `integral_le_integral_max` compare the integral of an integrable
   function with that of its pointwise minimum or maximum with another integrable function.
-* `integral_le_of_ae_le_of_integral_nonneg` gives `∫ g ≤ ∫ h` for `g ≤ h` almost everywhere,
+* `integral_mono_of_integral_nonneg` gives `∫ g ≤ ∫ h` for `g ≤ h` almost everywhere,
   with `h` integrable and `∫ h ≥ 0`, without assuming `g` integrable.
 * `ofReal_setIntegral_norm_sq_eq` reads the set integral of `‖f‖²` in `ℝ≥0∞` as the lower
   integral of `‖f‖ₑ ^ 2`.
@@ -567,7 +567,7 @@ theorem integral_le_integral_max {α : Type*} [MeasurableSpace α] {μ : Measure
 
 /-- `∫ g ≤ ∫ h` when `g ≤ h` almost everywhere, `h` is integrable and `∫ h ≥ 0`, also when `g` is
 not integrable, since then `∫ g = 0`. -/
-theorem integral_le_of_ae_le_of_integral_nonneg {α : Type*} [MeasurableSpace α]
+theorem integral_mono_of_integral_nonneg {α : Type*} [MeasurableSpace α]
     {μ : Measure α} {g h : α → ℝ} (hgh : g ≤ᵐ[μ] h) (hh : Integrable h μ)
     (h0 : 0 ≤ ∫ x, h x ∂μ) : ∫ x, g x ∂μ ≤ ∫ x, h x ∂μ := by
   by_cases hg : Integrable g μ
