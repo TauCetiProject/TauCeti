@@ -25,7 +25,9 @@ Complete coefficient groups give complete restricted families. The construction 
 variable sets and seminormed additive coefficient groups. It is a norm for normed coefficients.
 Neither completeness nor an ultrametric norm is needed for the additive norm; the latter is
 required for the convolution estimate. For ring-valued coefficients, the existing comparison
-with scalar restricted series preserves the Gauss norm.
+with scalar restricted series preserves the Gauss norm. Over an ultrametric ring, bounded
+coefficient maps induce continuous linear maps over the scalar restricted series, and
+coefficient equivalences bounded in both directions induce topological isomorphisms.
 
 ## References
 
@@ -465,6 +467,132 @@ theorem norm_subringLinearEquiv (f : IsRestricted.subring (R := R) c) :
     ‖ofAddSubgroup (IsRestrictedFamily.subringLinearEquiv f)‖ = ‖f‖ := by
   rw [norm_eq_iSup, _root_.MvPowerSeries.norm_eq_gaussNorm, gaussNorm]
   simp only [coe_subringLinearEquiv]
+
+variable [SeminormedAddCommGroup F] [IsUltrametricDist F] [Module R F] [IsBoundedSMul R F]
+
+/-- A coefficient map bounded by `C` induces a continuous linear map of Gauss families over the
+scalar restricted series. -/
+def mapContinuousLinearMap (φ : E →ₗ[R] F) {C : ℝ} (hφ : ∀ e, ‖φ e‖ ≤ C * ‖e‖) :
+    Gauss c E →L[IsRestricted.subring (R := R) c] Gauss c F where
+  toFun := mapLinearMap φ hφ
+  map_add' := map_add _
+  map_smul' := LinearMap.mapGaussFamily_isRestrictedSubring_smul φ hφ
+  cont := (uniformContinuous_mapLinearMap φ hφ).continuous
+
+/-- The induced continuous linear map applies the coefficient map coefficientwise. -/
+@[simp]
+theorem mapContinuousLinearMap_apply (φ : E →ₗ[R] F) {C : ℝ} (hφ : ∀ e, ‖φ e‖ ≤ C * ‖e‖)
+    (a : Gauss c E) (t : σ →₀ ℕ) : mapContinuousLinearMap φ hφ a t = φ (a t) :=
+  mapLinearMap_apply φ hφ a t
+
+/-- The induced continuous linear map has the underlying function of `mapLinearMap`. -/
+theorem coe_mapContinuousLinearMap (φ : E →ₗ[R] F) {C : ℝ} (hφ : ∀ e, ‖φ e‖ ≤ C * ‖e‖) :
+    ⇑(mapContinuousLinearMap (c := c) φ hφ) = mapLinearMap φ hφ :=
+  (rfl)
+
+/-- The induced continuous linear map is bounded by the coefficient bound. -/
+theorem norm_mapContinuousLinearMap_le (φ : E →ₗ[R] F) {C : ℝ} (hφ : ∀ e, ‖φ e‖ ≤ C * ‖e‖)
+    (a : Gauss c E) : ‖mapContinuousLinearMap φ hφ a‖ ≤ C * ‖a‖ :=
+  norm_mapLinearMap_le φ hφ a
+
+/-- The identity coefficient map induces the identity. -/
+@[simp]
+theorem mapContinuousLinearMap_id {C : ℝ} (hφ : ∀ e : E, ‖LinearMap.id (R := R) e‖ ≤ C * ‖e‖) :
+    mapContinuousLinearMap (c := c) LinearMap.id hφ = .id _ _ := by
+  ext a t
+  simp
+
+/-- Composite coefficient maps induce the composite continuous linear maps. -/
+theorem mapContinuousLinearMap_comp {G : Type*} [SeminormedAddCommGroup G] [IsUltrametricDist G]
+    [Module R G] [IsBoundedSMul R G] (ψ : F →ₗ[R] G) (φ : E →ₗ[R] F) {B C D : ℝ}
+    (hψ : ∀ f, ‖ψ f‖ ≤ B * ‖f‖) (hφ : ∀ e, ‖φ e‖ ≤ C * ‖e‖)
+    (hψφ : ∀ e, ‖(ψ ∘ₗ φ) e‖ ≤ D * ‖e‖) :
+    mapContinuousLinearMap (c := c) (ψ ∘ₗ φ) hψφ =
+      (mapContinuousLinearMap ψ hψ).comp (mapContinuousLinearMap φ hφ) := by
+  ext a t
+  simp
+
+/-- The induced continuous linear map sends finitely supported families to finitely supported
+families. -/
+@[simp]
+theorem mapContinuousLinearMap_ofFinsupp (φ : E →ₗ[R] F) {C : ℝ}
+    (hφ : ∀ e, ‖φ e‖ ≤ C * ‖e‖) (a : (σ →₀ ℕ) →₀ E) :
+    mapContinuousLinearMap φ hφ (ofFinsupp R c a) = ofFinsupp R c (a.mapRange φ φ.map_zero) := by
+  ext t
+  simp
+
+/-- A coefficient equivalence bounded in both directions induces a topological isomorphism of
+Gauss families over the scalar restricted series. -/
+def mapContinuousLinearEquiv (e : E ≃ₗ[R] F) {C D : ℝ} (he : ∀ x, ‖e x‖ ≤ C * ‖x‖)
+    (he' : ∀ y, ‖e.symm y‖ ≤ D * ‖y‖) :
+    Gauss c E ≃L[IsRestricted.subring (R := R) c] Gauss c F :=
+  .equivOfInverse (mapContinuousLinearMap e.toLinearMap he)
+    (mapContinuousLinearMap e.symm.toLinearMap he')
+    (fun a ↦ ext fun t ↦ by simp) (fun b ↦ ext fun t ↦ by simp)
+
+/-- The induced isomorphism applies the coefficient equivalence coefficientwise. -/
+@[simp]
+theorem mapContinuousLinearEquiv_apply (e : E ≃ₗ[R] F) {C D : ℝ}
+    (he : ∀ x, ‖e x‖ ≤ C * ‖x‖) (he' : ∀ y, ‖e.symm y‖ ≤ D * ‖y‖)
+    (a : Gauss c E) (t : σ →₀ ℕ) : mapContinuousLinearEquiv e he he' a t = e (a t) :=
+  mapLinearMap_apply _ he a t
+
+/-- The inverse of the induced isomorphism applies the inverse equivalence coefficientwise. -/
+@[simp]
+theorem mapContinuousLinearEquiv_symm_apply (e : E ≃ₗ[R] F) {C D : ℝ}
+    (he : ∀ x, ‖e x‖ ≤ C * ‖x‖) (he' : ∀ y, ‖e.symm y‖ ≤ D * ‖y‖)
+    (b : Gauss c F) (t : σ →₀ ℕ) :
+    (mapContinuousLinearEquiv e he he').symm b t = e.symm (b t) :=
+  mapLinearMap_apply _ he' b t
+
+/-- The induced isomorphism, as a continuous linear map, is the induced continuous linear map. -/
+@[simp]
+theorem toContinuousLinearMap_mapContinuousLinearEquiv (e : E ≃ₗ[R] F) {C D : ℝ}
+    (he : ∀ x, ‖e x‖ ≤ C * ‖x‖) (he' : ∀ y, ‖e.symm y‖ ≤ D * ‖y‖) :
+    (mapContinuousLinearEquiv (c := c) e he he' : Gauss c E →L[IsRestricted.subring (R := R) c]
+      Gauss c F) = mapContinuousLinearMap e.toLinearMap he :=
+  (rfl)
+
+/-- The inverse of the induced isomorphism is induced by the inverse equivalence. -/
+theorem mapContinuousLinearEquiv_symm (e : E ≃ₗ[R] F) {C D : ℝ}
+    (he : ∀ x, ‖e x‖ ≤ C * ‖x‖) (he' : ∀ y, ‖e.symm y‖ ≤ D * ‖y‖) :
+    (mapContinuousLinearEquiv (c := c) e he he').symm = mapContinuousLinearEquiv e.symm he' he :=
+  (rfl)
+
+/-- The induced isomorphism is bounded by the coefficient bound. -/
+theorem norm_mapContinuousLinearEquiv_le (e : E ≃ₗ[R] F) {C D : ℝ}
+    (he : ∀ x, ‖e x‖ ≤ C * ‖x‖) (he' : ∀ y, ‖e.symm y‖ ≤ D * ‖y‖) (a : Gauss c E) :
+    ‖mapContinuousLinearEquiv e he he' a‖ ≤ C * ‖a‖ :=
+  norm_mapLinearMap_le _ he a
+
+/-- The identity coefficient equivalence induces the identity. -/
+@[simp]
+theorem mapContinuousLinearEquiv_refl {C D : ℝ}
+    (he : ∀ x : E, ‖LinearEquiv.refl R E x‖ ≤ C * ‖x‖)
+    (he' : ∀ y : E, ‖(LinearEquiv.refl R E).symm y‖ ≤ D * ‖y‖) :
+    mapContinuousLinearEquiv (c := c) (.refl R E) he he' = .refl _ _ := by
+  ext a t
+  simp
+
+/-- Composite coefficient equivalences induce the composite isomorphisms. -/
+theorem mapContinuousLinearEquiv_trans {G : Type*} [SeminormedAddCommGroup G]
+    [IsUltrametricDist G] [Module R G] [IsBoundedSMul R G] (e : E ≃ₗ[R] F) (f : F ≃ₗ[R] G)
+    {C D C' D' C'' D'' : ℝ} (he : ∀ x, ‖e x‖ ≤ C * ‖x‖) (he' : ∀ y, ‖e.symm y‖ ≤ D * ‖y‖)
+    (hf : ∀ x, ‖f x‖ ≤ C' * ‖x‖) (hf' : ∀ y, ‖f.symm y‖ ≤ D' * ‖y‖)
+    (hef : ∀ x, ‖e.trans f x‖ ≤ C'' * ‖x‖) (hef' : ∀ y, ‖(e.trans f).symm y‖ ≤ D'' * ‖y‖) :
+    mapContinuousLinearEquiv (c := c) (e.trans f) hef hef' =
+      (mapContinuousLinearEquiv e he he').trans (mapContinuousLinearEquiv f hf hf') := by
+  ext a t
+  simp
+
+/-- The induced isomorphism sends finitely supported families to finitely supported families. -/
+@[simp]
+theorem mapContinuousLinearEquiv_ofFinsupp (e : E ≃ₗ[R] F) {C D : ℝ}
+    (he : ∀ x, ‖e x‖ ≤ C * ‖x‖) (he' : ∀ y, ‖e.symm y‖ ≤ D * ‖y‖) (a : (σ →₀ ℕ) →₀ E) :
+    mapContinuousLinearEquiv e he he' (ofFinsupp R c a) =
+      ofFinsupp R c (a.mapRange e e.map_zero) := by
+  ext t
+  simp
 
 end Convolution
 

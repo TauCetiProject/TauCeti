@@ -44,7 +44,7 @@ the quotient splitting of `D` evaluated at the coset of `g`. -/
 theorem coe_mulEquivSubgroup_symm_right_eq_quotientSplitting (g : G) :
     (((SemidirectProduct.mulEquivSubgroup h).symm g).right : G) =
       h.quotientSplitting (g : G ⧸ N) := by
-  rw [SemidirectProduct.mulEquivSubgroup_symm_right, h.quotientSplitting_mk_eq_coe_equiv_snd]
+  rw [SemidirectProduct.mulEquivSubgroup_symm_apply_right, h.quotientSplitting_mk_eq_coe_equiv_snd]
 
 /-- Projecting `(SemidirectProduct.mulEquivSubgroup h).symm` to `D` and including into `G` agrees
 with `Subgroup.IsComplement'.quotientSplitting` composed with the quotient map `G →* G ⧸ N`. -/
