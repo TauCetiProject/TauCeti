@@ -35,6 +35,8 @@ pairs fit into a short exact sequence.
   subcomplex.
 * `TauCeti.NormalizedCubicalChain.range_map_eq_supportedIn_range`: the push-forward along an
   inducing map has image the chains supported in its range.
+* `TauCeti.NormalizedCubicalChain.map_mem_supportedIn_image_iff`: along an embedding `ι`, a chain is
+  supported in `A` exactly when its push-forward is supported in `ι '' A`.
 * `TauCeti.NormalizedCubicalChain.supportedIn_inter`: chains supported in `A` and in `B` are
   supported in `A ∩ B`.
 * `TauCeti.RelativeCubicalChain.boundary_boundary`: `∂ ∘ ∂ = 0` on relative chains.
@@ -135,6 +137,23 @@ theorem range_map_eq_supportedIn_range {Y : Type*} [TopologicalSpace Y] {f : C(X
     | ofCube c =>
       rw [map_ofCube]
       exact ofCube_mem_range_map R hf fun _ ⟨t, ht⟩ ↦ ht ▸ (c t).2
+
+/-- **Supports along an embedding**: a chain is supported in `A` exactly when its push-forward
+along an embedding `ι` is supported in `ι '' A`. -/
+theorem map_mem_supportedIn_image_iff {Y : Type*} [TopologicalSpace Y] {ι : C(X, Y)}
+    (hι : Topology.IsEmbedding ι) (A : Set X) {n : ℕ} (c : NormalizedCubicalChain X R n) :
+    map R ι n c ∈ supportedIn R (ι '' A) n ↔ c ∈ supportedIn R A n := by
+  refine ⟨fun hc ↦ ?_, fun hc ↦ map_mem_supportedIn R (Set.mapsTo_image ι A) hc⟩
+  have hrange : Set.range (ι.comp (ContinuousMap.subtypeVal A)) = ι '' A := by
+    rw [ContinuousMap.coe_comp, Set.range_comp]
+    exact congrArg _ Subtype.range_coe
+  have hind : Topology.IsInducing (ι.comp (ContinuousMap.subtypeVal A)) :=
+    hι.isInducing.comp Topology.IsInducing.subtypeVal
+  rw [← hrange, ← range_map_eq_supportedIn_range R hind] at hc
+  obtain ⟨c₀, hc₀⟩ := hc
+  obtain rfl : map R (ContinuousMap.subtypeVal A) n c₀ = c :=
+    map_injective R ι hι.injective n (by rw [← map_comp_apply, hc₀])
+  exact map_subtypeVal_mem_supportedIn R c₀
 
 open Classical in
 /-- The projection of normalized chains onto the chains supported in `A`, keeping the cubes with

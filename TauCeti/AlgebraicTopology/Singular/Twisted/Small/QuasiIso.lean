@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Small.Chains
 public import TauCeti.Algebra.Homology.ModuleCat.QuasiIso
+import TauCeti.Algebra.Homology.ComplexShape.Basic
 
 /-!
 # The small-chain theorem with local coefficients
@@ -50,7 +51,7 @@ theorem quasiIso_smallTwistedChainComplexι (hU : ∀ i, IsOpen (U i))
   intro n
   rw [HomologicalComplex.moduleCat_quasiIsoAt_iff _ (n := n) (p := n + 1)
     (m := n - 1) (by simp)
-    (by cases n <;> simp [ChainComplex.next_nat_zero, ChainComplex.next_nat_succ])]
+    (ChainComplex.next_nat n)]
   let C := L.twistedChainComplex
   let S := smallTwistedChainComplex L U
   let j := smallTwistedChainComplexι L U
