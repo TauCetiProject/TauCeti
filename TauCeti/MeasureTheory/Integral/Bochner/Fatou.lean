@@ -63,7 +63,8 @@ theorem integrable_of_tendsto_of_integral_le (hF : ∀ᶠ i in l, Integrable (F 
   exact ⟨aestronglyMeasurable_of_tendsto_ae atTop (fun n ↦ (hFu n).aestronglyMeasurable)
       (hlim.mono fun x hx ↦ hx.comp hu),
     (hasFiniteIntegral_iff_ofReal
-      (ae_le_of_tendsto hF₀.frequently (.of_forall fun _ ↦ tendsto_const_nhds) hlim)).2 <|
+      (ae_le_of_tendsto_of_tendsto_of_frequently
+        (.of_forall fun _ ↦ tendsto_const_nhds) hlim hF₀.frequently)).2 <|
       (lintegral_ofReal_le_of_tendsto_of_integral_le hF hF₀ hlim hD).trans_lt
         ENNReal.ofReal_lt_top⟩
 
@@ -77,7 +78,8 @@ theorem integral_le_of_tendsto_of_integral_le (hF : ∀ᶠ i in l, Integrable (F
   have : l.NeBot := (frequently_true_iff_neBot l).1 (hD.mono fun _ _ ↦ trivial)
   obtain ⟨i, hiD, hi₀⟩ := (hD.and_eventually hF₀).exists
   rw [integral_eq_lintegral_of_nonneg_ae
-    (ae_le_of_tendsto hF₀.frequently (.of_forall fun _ ↦ tendsto_const_nhds) hlim)
+    (ae_le_of_tendsto_of_tendsto_of_frequently
+      (.of_forall fun _ ↦ tendsto_const_nhds) hlim hF₀.frequently)
     (integrable_of_tendsto_of_integral_le hF hF₀ hlim hD).aestronglyMeasurable]
   exact ENNReal.toReal_le_of_le_ofReal ((integral_nonneg_of_ae hi₀).trans hiD)
     (lintegral_ofReal_le_of_tendsto_of_integral_le hF hF₀ hlim hD)

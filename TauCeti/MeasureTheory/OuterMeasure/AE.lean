@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Measure.MeasureSpaceDef
+public import Mathlib.MeasureTheory.OuterMeasure.AE
 public import Mathlib.Topology.Order.OrderClosed
 import Mathlib.Order.Filter.AtTopBot.CountablyGenerated
 
@@ -20,21 +20,21 @@ so the result also applies to subsequences used in integral limit arguments.
 public section
 
 open Filter MeasureTheory
-open scoped Topology
+open scoped ENNReal Topology
 
 namespace TauCeti
 
-variable {α ι : Type*} [MeasurableSpace α] {μ : Measure α} {l : Filter ι}
+variable {α ι M : Type*} [FunLike M (Set α) ℝ≥0∞] [OuterMeasureClass M α] {μ : M} {l : Filter ι}
   [l.IsCountablyGenerated]
 
 /-- Almost everywhere inequalities between two families of functions pass to their almost
 everywhere limits along a countably generated filter when the order relation is closed.
 The inequalities need only hold frequently along the filter. -/
-theorem ae_le_of_tendsto {β : Type*} [TopologicalSpace β] [Preorder β]
+theorem ae_le_of_tendsto_of_tendsto_of_frequently {β : Type*} [TopologicalSpace β] [Preorder β]
     [OrderClosedTopology β] {F₁ F₂ : ι → α → β} {G₁ G₂ : α → β}
-    (hF : ∃ᶠ i in l, F₁ i ≤ᵐ[μ] F₂ i)
     (hlim₁ : ∀ᵐ x ∂μ, Tendsto (fun i ↦ F₁ i x) l (𝓝 (G₁ x)))
-    (hlim₂ : ∀ᵐ x ∂μ, Tendsto (fun i ↦ F₂ i x) l (𝓝 (G₂ x))) : G₁ ≤ᵐ[μ] G₂ := by
+    (hlim₂ : ∀ᵐ x ∂μ, Tendsto (fun i ↦ F₂ i x) l (𝓝 (G₂ x)))
+    (hF : ∃ᶠ i in l, F₁ i ≤ᵐ[μ] F₂ i) : G₁ ≤ᵐ[μ] G₂ := by
   obtain ⟨u, hu, hle⟩ := exists_seq_forall_of_frequently hF
   filter_upwards [hlim₁, hlim₂, ae_all_iff.2 hle] with x hx₁ hx₂ hle using
     le_of_tendsto_of_tendsto' (hx₁.comp hu) (hx₂.comp hu) hle

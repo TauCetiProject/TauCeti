@@ -264,29 +264,41 @@ theorem LogSobolevInequality.integrable_exp_mul_of_lipschitzWith
   refine (hi.mul_const (exp (t * ∫ y, f y ∂μ))).congr (.of_forall fun x ↦ ?_)
   simp only [← exp_add, mul_sub, sub_add_cancel]
 
-/-- Under a logarithmic Sobolev inequality, every Lipschitz function is integrable. -/
-theorem LogSobolevInequality.integrable_of_lipschitzWith (h : LogSobolevInequality μ C)
-    (hf : LipschitzWith K f) : Integrable f μ :=
-  ((h.hasSubgaussianMGF_of_lipschitzWith hf).integrable.add
-    (integrable_const (∫ y, f y ∂μ))).congr
-      (.of_forall fun x ↦ sub_add_cancel (f x) (∫ y, f y ∂μ))
+/-- Under a logarithmic Sobolev inequality, every Lipschitz function into a seminormed group
+belongs to `Lᵖ` for every finite nonnegative exponent `p`. -/
+theorem LogSobolevInequality.memLp_of_lipschitzWith {F : Type*} [SeminormedAddGroup F]
+    {g : E → F} (h : LogSobolevInequality μ C) (hg : LipschitzWith K g) (p : ℝ≥0) :
+    MemLp g p μ := by
+  have hnorm : MemLp (fun x ↦ ‖g x‖) p μ :=
+    MemLp.ae_eq (.of_forall fun x ↦ sub_add_cancel (‖g x‖) (∫ y, ‖g y‖ ∂μ)) <|
+      ((h.hasSubgaussianMGF_of_lipschitzWith (lipschitzWith_one_norm.comp hg)).memLp p).add
+        (memLp_const (∫ y, ‖g y‖ ∂μ))
+  exact hnorm.of_le_eNorm hg.continuous.aestronglyMeasurable
+    (.of_forall fun x ↦ by simp [eNorm_le_iff_norm_le])
 
-/-- Under a logarithmic Sobolev inequality, every Lipschitz function belongs to `Lᵖ` for every
-finite nonnegative exponent `p`. -/
-theorem LogSobolevInequality.memLp_of_lipschitzWith (h : LogSobolevInequality μ C)
-    (hf : LipschitzWith K f) (p : ℝ≥0) : MemLp f p μ := by
-  exact MemLp.ae_eq (.of_forall fun x ↦ sub_add_cancel (f x) (∫ y, f y ∂μ)) <|
-    ((h.hasSubgaussianMGF_of_lipschitzWith hf).memLp p).add
-      (memLp_const (∫ y, f y ∂μ))
+/-- Under a logarithmic Sobolev inequality, every Lipschitz function into a seminormed group
+is integrable. -/
+theorem LogSobolevInequality.integrable_of_lipschitzWith {F : Type*} [SeminormedAddGroup F]
+    {g : E → F} (h : LogSobolevInequality μ C) (hg : LipschitzWith K g) : Integrable g μ :=
+  memLp_one_iff_integrable.1 (h.memLp_of_lipschitzWith hg 1)
 
 /-- **Gaussian concentration of Lipschitz functions** under a logarithmic Sobolev inequality with
-nonnegative constant `C`: a `K`-Lipschitz function `f` deviates from its mean by at least `t ≥ 0`
+real constant `C`: a `K`-Lipschitz function `f` deviates from its mean by at least `t ≥ 0`
 with probability at most `2 exp (-t² / (2 C K²))`. -/
 theorem LogSobolevInequality.measureReal_abs_sub_integral_ge_le_of_lipschitzWith
-    (h : LogSobolevInequality μ C) (hC : 0 ≤ C) (hf : LipschitzWith K f) {t : ℝ} (ht : 0 ≤ t) :
+    (h : LogSobolevInequality μ C) (hf : LipschitzWith K f) {t : ℝ} (ht : 0 ≤ t) :
     μ.real {x | t ≤ |f x - ∫ y, f y ∂μ|} ≤ 2 * exp (-t ^ 2 / (2 * (C * (K : ℝ) ^ 2))) := by
-  simpa only [NNReal.coe_mul, NNReal.coe_pow, Real.coe_toNNReal C hC] using
-    (h.hasSubgaussianMGF_of_lipschitzWith hf).measureReal_abs_ge_le ht
+  by_cases hC : 0 ≤ C
+  · simpa only [NNReal.coe_mul, NNReal.coe_pow, Real.coe_toNNReal C hC] using
+      (h.hasSubgaussianMGF_of_lipschitzWith hf).measureReal_abs_ge_le ht
+  · calc
+      _ ≤ 1 := measureReal_le_one
+      _ ≤ 2 * exp (-t ^ 2 / (2 * (C * (K : ℝ) ^ 2))) := by
+        have hexp : 1 ≤ exp (-t ^ 2 / (2 * (C * (K : ℝ) ^ 2))) :=
+          Real.one_le_exp <| div_nonneg_of_nonpos (neg_nonpos.2 (sq_nonneg t))
+            (mul_nonpos_of_nonneg_of_nonpos (by norm_num)
+              (mul_nonpos_of_nonpos_of_nonneg (le_of_not_ge hC) (sq_nonneg _)))
+        linarith
 
 end Lipschitz
 
