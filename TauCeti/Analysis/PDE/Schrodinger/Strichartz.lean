@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Schrodinger.Dispersive
 public import TauCeti.Analysis.PDE.Strichartz.TTStar
 import TauCeti.Analysis.PDE.Strichartz.Retarded
+import TauCeti.MeasureTheory.Integral.ChristKiselev
 
 /-!
 # Strichartz estimates for the Schrödinger equation
@@ -39,10 +40,11 @@ For every such pair with `2 < q < ∞`, that is every admissible pair other than
 `‖∫_{s < t} S(t - s) F(s) ds‖_{L^q_t L^r_x} ≤ C ‖F‖_{L^{q'}_t L^{r'}_x}` in weak form.
 
 The retarded estimate also holds with the forcing measured along a second non-endpoint admissible
-pair `(q₁, r₁)`, `‖∫_{s < t} S(t - s) F(s) ds‖_{L^q_t L^r_x} ≤ C ‖F‖_{L^{q₁'}_t L^{r₁'}_x}`. Its
-untruncated form is bounded by the dual estimates for the two pairs, and the Christ–Kiselev lemma
-passes the bound to `s < t`, since `q₁' < 2 < q`
-(`TauCeti.Analysis.PDE.Strichartz.Retarded`).
+pair `(q₁, r₁)`, `‖∫_{s < t} S(t - s) F(s) ds‖_{L^q_t L^r_x} ≤ C ‖F‖_{L^{q₁'}_t L^{r₁'}_x}`, in
+weak form and for forcings `F` and test functions `G` with `s ↦ S(-s) F(s)` and `t ↦ S(-t) G(t)`
+integrable; the constant does not depend on these qualitative hypotheses. The untruncated form is
+bounded by the dual estimates for the two pairs, and the Christ–Kiselev lemma passes the bound to
+`s < t`, since `q₁' < 2 < q` (`TauCeti.Analysis.PDE.Strichartz.Retarded`).
 
 ## Main declarations
 
@@ -313,16 +315,6 @@ section TwoPairs
 
 variable {p q p₁ q₁ : ℝ≥0} {r r' r₁ r₁' : ℝ≥0∞} [r'.HolderConjugate r] [r₁'.HolderConjugate r₁]
 
-/-- The Duhamel pairing `⟪S(t - s) f, g⟫` is the pairing `⟪S(s)* f, S(t)* g⟫` of the data pulled
-back to time zero. -/
-private theorem inner_schrodingerPropagator_sub_apply (s t : ℝ)
-    (f g : Lp ℂ 2 (volume : Measure E)) :
-    ⟪schrodingerPropagator ℂ (t - s) f, g⟫_ℂ =
-      ⟪((schrodingerPropagator ℂ s)†) f, ((schrodingerPropagator ℂ t)†) g⟫_ℂ := by
-  rw [adjoint_phasePropagator, adjoint_phasePropagator,
-    ← inner_phasePropagator_apply laplacianSymbol (-t) (schrodingerPropagator ℂ (t - s) f) g,
-    schrodingerPropagator_def, ← phasePropagator_add_apply, neg_add_eq_sub, sub_sub_cancel_left]
-
 /-- The dual Strichartz estimate, with `S(-s)` written as the adjoint `S(s)*`. -/
 private theorem enorm_integral_adjoint_schrodingerPropagator_le {a b : ℝ≥0∞} {C : ℝ≥0}
     (hC : ∀ F : ℝ → Lp ℂ 2 (volume : Measure E), AEStronglyMeasurable F →
@@ -371,19 +363,18 @@ theorem exists_enorm_integral_setIntegral_Iio_inner_schrodingerPropagator_sub_le
     have h₁ := hpq₁.coe.inv_add_inv_eq_one
     have hq' : (q : ℝ)⁻¹ < 2⁻¹ := inv_strictAnti₀ two_pos (by exact_mod_cast hq)
     have hq₁' : (q₁ : ℝ)⁻¹ < 2⁻¹ := inv_strictAnti₀ two_pos (by exact_mod_cast hq₁)
-    rw [← ENNReal.coe_inv hpq₁.ne_zero, ← ENNReal.coe_inv hpq.ne_zero, ← ENNReal.coe_add,
-      ← ENNReal.coe_one, ENNReal.coe_lt_coe, ← NNReal.coe_lt_coe]
-    push_cast
-    linarith
+    have hlt : (1 : ℝ≥0) < p₁⁻¹ + p⁻¹ := by
+      rw [← NNReal.coe_lt_coe]
+      push_cast
+      linarith
+    simp only [← ENNReal.coe_inv hpq.ne_zero, ← ENNReal.coe_inv hpq₁.ne_zero]
+    exact_mod_cast hlt
   set K : ℝ≥0∞ := (1 - 2 ^ (-((p₁ : ℝ≥0∞)⁻¹ + (p : ℝ≥0∞)⁻¹ - 1).toReal))⁻¹
-  have hK : K ≠ ∞ := by
-    refine ENNReal.inv_ne_top.2 (tsub_pos_of_lt (ENNReal.rpow_lt_one_of_one_lt_of_neg
-      (by norm_num) (neg_neg_of_pos (ENNReal.toReal_pos (tsub_pos_of_lt hpp).ne' ?_)))).ne'
-    exact ENNReal.sub_ne_top (ENNReal.add_ne_top.2 ⟨ENNReal.inv_ne_top.2 (by simp [hpq₁.ne_zero]),
-      ENNReal.inv_ne_top.2 (by simp [hpq.ne_zero])⟩)
+  have hK : K ≠ ∞ :=
+    inv_one_sub_two_rpow_neg_ne_top (ENNReal.coe_ne_zero.2 hpq₁.ne_zero) hp hpp
   refine ⟨K.toNNReal * C₁ * C, fun F G hF hG hSF hSG ↦ ?_⟩
   rw [ENNReal.coe_mul, ENNReal.coe_mul, ENNReal.coe_toNNReal hK]
-  simp_rw [inner_schrodingerPropagator_sub_apply]
+  simp_rw [schrodingerPropagator_def, inner_phasePropagator_sub_apply]
   exact enorm_integral_setIntegral_Iio_inner_adjoint_le hp hpp
     (enorm_integral_adjoint_schrodingerPropagator_le hC₁)
     (enorm_integral_adjoint_schrodingerPropagator_le hC) hF hG

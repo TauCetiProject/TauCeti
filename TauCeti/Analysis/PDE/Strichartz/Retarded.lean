@@ -9,7 +9,6 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.MeasureTheory.Integral.Prod
-import TauCeti.MeasureTheory.Function.Lp.Integral.Functional
 import TauCeti.MeasureTheory.Integral.ChristKiselev
 
 /-!
@@ -135,8 +134,8 @@ theorem enorm_integral_setIntegral_Iio_inner_adjoint_le {p₁ p a₁ a : ℝ≥0
   rw [hregion]
   -- On every rectangle of times the pairing factors as `⟪∫_I u, ∫_J w⟫`, and the dual estimates
   -- bound the two factors; the Christ–Kiselev lemma passes the bound to `s < t`.
-  refine (eNorm_setIntegral_fst_lt_snd_le_ennreal hp hpp
-    (by rw [Measure.volume_eq_prod]; exact hβ.integrableOn) (A := C₁ * C)
+  refine (eNorm_setIntegral_fst_lt_snd_le hp hpp
+    (by rw [Measure.volume_eq_prod]; exact hβ.integrableOn) _ _ (A := C₁ * C)
     fun I J hI hJ _ ↦ ?_).trans_eq (by ring)
   have hfac : ∫ z in I ×ˢ J, ⟪u z.1, w z.2⟫_𝕜 = ⟪∫ s in I, u s, ∫ t in J, w t⟫_𝕜 := by
     rw [Measure.volume_eq_prod, setIntegral_prod _ hβ.integrableOn]
