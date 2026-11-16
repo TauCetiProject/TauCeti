@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Network.AuxiliaryTerminals
+public import TauCeti.Combinatorics.Network.AuxiliaryTerminals.Paths
 public import TauCeti.Combinatorics.Network.Menger.Vertex
 import Mathlib.Basic.Finite.Sum
 
@@ -82,7 +82,9 @@ theorem card_le_sum_of_forall_not_reachableAvoiding [DecidableEq V] {A B : Finse
     (hX : ∀ a ∈ A, ∀ b ∈ B, ¬ReachableAvoiding Q (X : Set V) a b) :
     Fintype.card ι ≤ ∑ v ∈ X, c v := by
   -- Lift every member to a walk between the auxiliary terminals.
-  choose P' hP' using fun i ↦ AuxTerminalHom.exists_arrowWalk_vertices_eq (ha i) (hb i) (P i)
+  let P' (i : ι) := AuxTerminalHom.lift (ha i) (hb i) (P i)
+  have hP' (i : ι) : (P' i).vertices = inr false :: (P i).vertices.map inl ++ [inr true] :=
+    AuxTerminalHom.lift_vertices (ha i) (hb i) (P i)
   have hsep : ¬ReachableAvoiding (AuxTerminalHom Q A B)
       ((X.map .inl : Finset (V ⊕ Bool)) : Set (V ⊕ Bool)) (inr false) (inr true) := by
     rw [reachableAvoiding_auxTerminalHom_iff (by simp) (by simp)]
@@ -113,24 +115,18 @@ theorem exists_paths_setSeparator_sum_eq [Finite V] [DecidableEq V] (c : V → �
   obtain ⟨k, P', X', -, hP', hσ, hτ, hX', hk⟩ :=
     exists_paths_vertexSeparator_sum_eq (Q := AuxTerminalHom Q A B) (Sum.elim c 0)
       (s := inr false) (t := inr true) (by simp) inferInstance
-  -- Project every member to a walk from `A` to `B`, and trim it to an `A`–`B` path.
-  have h (i : Fin k) : ∃ a ∈ A, ∃ b ∈ B, ∃ q : ArrowWalk Q a b, q.IsPath ∧
-      q.vertices.map inl ⊆ (P' i).vertices ∧
-      ∀ v ∈ q.vertices, v ≠ a → v ≠ b → v ∉ A ∧ v ∉ B := by
-    obtain ⟨a, ha, b, hb, q, hq⟩ := AuxTerminalHom.exists_arrowWalk_map_vertices_subset (P' i)
-    obtain ⟨a', ha', b', hb', r, hr, hrq, -, hint⟩ :=
-      ArrowWalk.exists_isPath_interior_notMem (A := (A : Set V)) (B := (B : Set V)) q ha hb
-    exact ⟨a', ha', b', hb', r, hr, List.Subset.trans (List.map_subset _ hrq) hq,
-      by simpa using hint⟩
-  choose a ha b hb P hP hsub hint using h
+  -- Project and trim every member using the shared auxiliary-terminal path operation.
+  let T (i : Fin k) := AuxTerminalHom.trim (P' i)
   have hpre : inl ⁻¹' (X' : Set (V ⊕ Bool)) = (X'.toLeft : Set V) := by
     ext
     simp
-  refine ⟨k, a, b, P, X'.toLeft, ha, hb, hP, hint, fun v ↦ ?_, fun a ha b hb h ↦ hX' ?_, ?_⟩
+  refine ⟨k, fun i ↦ (T i).source, fun i ↦ (T i).target, fun i ↦ (T i).walk, X'.toLeft,
+    fun i ↦ (T i).source_mem, fun i ↦ (T i).target_mem, fun i ↦ (T i).isPath,
+    fun i ↦ (T i).interior_notMem, fun v ↦ ?_, fun a ha b hb h ↦ hX' ?_, ?_⟩
   · -- A member through `v` comes from a member of the packing through `inl v`.
     refine (card_le_card fun i hi ↦ ?_).trans (hP' (inl v) inl_ne_inr inl_ne_inr)
     simp only [mem_filter, mem_univ, true_and] at hi ⊢
-    exact hsub i (List.mem_map_of_mem hi)
+    exact (T i).vertices_map_subset (List.mem_map_of_mem hi)
   · refine (reachableAvoiding_auxTerminalHom_iff (by simpa using hσ) (by simpa using hτ)).2
       ⟨a, ha, b, hb, ?_⟩
     rwa [hpre]
