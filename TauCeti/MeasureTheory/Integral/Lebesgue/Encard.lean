@@ -9,6 +9,8 @@ public import Mathlib.MeasureTheory.Integral.Lebesgue.Countable
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Markov
 public import TauCeti.Topology.Algebra.InfiniteSum.ENNReal
 
+import Mathlib.MeasureTheory.MeasurableSpace.NCard
+
 /-!
 # Lebesgue integrals of counting functions
 
@@ -65,18 +67,10 @@ theorem measure_lt_encard_setOf_le {ι Ω : Type*} [Countable ι] [MeasurableSpa
     (μ : Measure Ω) (s : ι → Set Ω) (k : ℕ) :
     μ {ω | (k : ℕ∞) < {i | ω ∈ s i}.encard} ≤
       (∑' i, μ (s i)) / (k + 1 : ℝ≥0∞) := by
-  classical
   let f (ω : Ω) : ℝ≥0∞ := {i | ω ∈ toMeasurable μ (s i)}.encard
-  have hf : Measurable f := by
-    have hcount : f = fun ω ↦ ∑' i, (toMeasurable μ (s i)).indicator (fun _ ↦ 1) ω := by
-      funext ω
-      dsimp only [f]
-      rw [← ENNReal.tsum_indicator_one]
-      exact tsum_congr fun i ↦ by simp only [Set.indicator, Set.mem_ofPred_eq]
-    rw [hcount]
-    simp only [tsum_eq_iSup_sum]
-    exact Measurable.iSup fun t ↦ Finset.measurable_sum t fun i _ ↦
-      measurable_const.indicator (measurableSet_toMeasurable μ (s i))
+  have hf : Measurable f := (Measurable.of_discrete (f := ENat.toENNReal)).comp <|
+    measurable_encard.comp <| Measurable.of_mem fun i ↦
+      (measurableSet_toMeasurable μ (s i)).mem
   have hfi : ∫⁻ ω, f ω ∂μ = ∑' i, μ (s i) := by
     simpa only [f, Set.ofPred_mem_eq, measure_toMeasurable] using
       lintegral_encard_setOf_eq_tsum μ
@@ -95,14 +89,18 @@ theorem measure_lt_encard_setOf_le {ι Ω : Type*} [Countable ι] [MeasurableSpa
 
 /-- The outer measure of points lying in more than `k` sets of a finite family is at most
 the sum of their outer measures divided by `k + 1`. The sets need not be measurable. -/
-theorem measure_lt_card_filter_le {ι Ω : Type*} [Fintype ι] [MeasurableSpace Ω]
-    {P : Measure Ω} (s : ι → Set Ω) [∀ ω i, Decidable (ω ∈ s i)] (k : ℕ) :
-    P {ω | k < (Finset.univ.filter fun i ↦ ω ∈ s i).card} ≤
-      (∑ i, P (s i)) / (k + 1 : ℝ≥0∞) := by
-  have hcount (ω : Ω) : {i | ω ∈ s i} = ↑(Finset.univ.filter fun i ↦ ω ∈ s i) := by
-    ext i
-    simp
-  simpa only [hcount, Set.encard_coe_eq_coe_finsetCard, ENat.natCast_lt_natCast, tsum_fintype]
-    using measure_lt_encard_setOf_le P s k
+theorem measure_lt_card_filter_le {ι Ω : Type*} [MeasurableSpace Ω]
+    {P : Measure Ω} (I : Finset ι) (s : ι → Set Ω) [∀ ω i, Decidable (ω ∈ s i)] (k : ℕ) :
+    P {ω | k < (I.filter fun i ↦ ω ∈ s i).card} ≤
+      (∑ i ∈ I, P (s i)) / (k + 1 : ℝ≥0∞) := by
+  have hcount (ω : Ω) : {i : I | ω ∈ s i}.encard =
+      ((I.filter fun i ↦ ω ∈ s i).card : ℕ∞) := by
+    rw [← Subtype.val_injective.encard_image]
+    have himage : Subtype.val '' {i : I | ω ∈ s i} = ↑(I.filter fun i ↦ ω ∈ s i) := by
+      ext i
+      simp [and_comm]
+    rw [himage, Set.encard_coe_eq_coe_finsetCard]
+  simpa only [hcount, ENat.natCast_lt_natCast, I.tsum_subtype (fun i ↦ P (s i))]
+    using measure_lt_encard_setOf_le P (fun i : I ↦ s i) k
 
 end MeasureTheory

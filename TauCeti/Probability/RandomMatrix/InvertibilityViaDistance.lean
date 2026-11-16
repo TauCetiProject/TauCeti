@@ -52,7 +52,7 @@ theorem measure_exists_isIncompressibleVector_norm_sum_lt_le
       (∑ i, P {ω | infDist (v ω i)
         (Submodule.span 𝕜 (range fun j : {j // j ≠ i} ↦ v ω j) : Set E) < ε}) /
         (k + 1 : ℝ≥0∞) := by
-  apply le_trans (measure_mono ?_) (measure_lt_card_filter_le (P := P) _ k)
+  apply le_trans (measure_mono ?_) (measure_lt_card_filter_le (P := P) univ _ k)
   rintro ω ⟨x, hx, hsmall⟩
   exact hx.lt_card_filter_infDist_span_range_ne hρ ha haρ (v ω) hsmall
 
@@ -104,7 +104,7 @@ theorem measureReal_exists_isIncompressibleVector_norm_sum_lt_le
         (Submodule.span 𝕜 (range fun j : {j // j ≠ i} ↦ v ω j) : Set E) < ε}) /
         (k + 1 : ℝ) := by
   simpa [ENNReal.toReal_add] using
-    P.real_le_sum_div_of_le (by positivity : (k + 1 : ℝ≥0∞) ≠ 0)
+    P.measureReal_le_sum_div_of_le (by positivity : (k + 1 : ℝ≥0∞) ≠ 0)
     (measure_exists_isIncompressibleVector_norm_sum_lt_le
       (𝕜 := 𝕜) (k := k) (ε := ε) hρ ha haρ v)
 
@@ -118,7 +118,7 @@ theorem measureReal_exists_isIncompressibleVector_norm_sum_lt_div_sqrt_mul_le
         (Submodule.span 𝕜 (range fun j : {j // j ≠ i} ↦ v ω j) : Set E) < ε}) /
         (k + 1 : ℝ) := by
   simpa [ENNReal.toReal_add] using
-    P.real_le_sum_div_of_le (by positivity : (k + 1 : ℝ≥0∞) ≠ 0)
+    P.measureReal_le_sum_div_of_le (by positivity : (k + 1 : ℝ≥0∞) ≠ 0)
     (measure_exists_isIncompressibleVector_norm_sum_lt_div_sqrt_mul_le
       (𝕜 := 𝕜) (k := k) (ε := ε) hρ v)
 
@@ -134,7 +134,7 @@ theorem measureReal_exists_isIncompressibleVector_norm_toEuclideanLin_lt_le
           WithLp.toLp 2 fun r ↦ A ω r j) : Set (EuclideanSpace 𝕜 κ)) < ε}) /
         (k + 1 : ℝ) := by
   simpa [ENNReal.toReal_add] using
-    P.real_le_sum_div_of_le (by positivity : (k + 1 : ℝ≥0∞) ≠ 0)
+    P.measureReal_le_sum_div_of_le (by positivity : (k + 1 : ℝ≥0∞) ≠ 0)
     (measure_exists_isIncompressibleVector_norm_toEuclideanLin_lt_le
       (k := k) (ε := ε) hρ A)
 

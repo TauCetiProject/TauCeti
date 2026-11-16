@@ -24,8 +24,8 @@ half-line, squaring is undone by `Real.sqrt`, so the pushforward determines the 
 
 ## Main results
 
-* `MeasureTheory.Measure.real_le_sum_div_of_le` — a bound by a finite sum divided by a nonzero
-  constant passes to real-valued measures when each summand is finite;
+* `MeasureTheory.Measure.measureReal_le_sum_div_of_le` — a bound by a finite sum divided by a
+  nonzero constant passes to real-valued measures when each summand is finite;
 * `TauCeti.volume_Ioc_inter_Ioo_of_le_of_le` — the portion of an interval inside a larger open
   interval keeps its full length;
 * `MeasureTheory.Measure.map_abs_eq_restrict_add_restrict` — decomposition of the image under
@@ -50,7 +50,7 @@ namespace MeasureTheory.Measure
 
 /-- A bound by a finite sum of measures divided by a nonzero constant passes to real-valued
 measures when each summand is finite. -/
-theorem real_le_sum_div_of_le {Ω ι : Type*} [MeasurableSpace Ω]
+theorem measureReal_le_sum_div_of_le {Ω ι : Type*} [MeasurableSpace Ω]
     (P : Measure Ω) {I : Finset ι} {s : Set Ω} {t : ι → Set Ω} {c : ℝ≥0∞}
     (hc : c ≠ 0) (h : P s ≤ (∑ i ∈ I, P (t i)) / c)
     (ht : ∀ i ∈ I, P (t i) ≠ ∞ := by finiteness) :
