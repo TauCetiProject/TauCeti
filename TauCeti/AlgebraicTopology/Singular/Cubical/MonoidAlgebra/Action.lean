@@ -326,6 +326,22 @@ theorem cubicalChainModuleLof_mem {n : ℕ} (c : NormalizedCubicalChain Y R n) :
     cubicalChainModuleLof Y G R n c ∈ cubicalChainModuleGrading Y G R (-(n : ℤ)) :=
   mem_cubicalChainModuleGrading_iff.2 (Or.inr ⟨n, c, by simp, rfl⟩)
 
+/-- A homogeneous element of degree `-m` is a chain of dimension `m`. -/
+theorem exists_cubicalChainModuleLof_eq {i : ℤ} {x : cubicalChainModule Y G R}
+    (hx : x ∈ cubicalChainModuleGrading Y G R i) (m : ℕ) (hm : (m : ℤ) = -i) :
+    ∃ c, cubicalChainModuleLof Y G R m c = x := by
+  rcases mem_cubicalChainModuleGrading_iff.1 hx with rfl | ⟨n, c, hn, rfl⟩
+  · exact ⟨0, map_zero _⟩
+  · obtain rfl : n = m := by omega
+    exact ⟨c, rfl⟩
+
+/-- The module vanishes in positive degrees. -/
+theorem eq_zero_of_mem_cubicalChainModuleGrading {i : ℤ} {x : cubicalChainModule Y G R}
+    (hx : x ∈ cubicalChainModuleGrading Y G R i) (hi : 0 < i) : x = 0 := by
+  rcases mem_cubicalChainModuleGrading_iff.1 hx with rfl | ⟨n, c, hn, rfl⟩
+  · rfl
+  · omega
+
 variable (Y G R) in
 /-- The decomposition of the module along its grading. -/
 def cubicalChainModuleDecompose :
