@@ -165,15 +165,13 @@ theorem _root_.HasFDerivWithinAt.normalGraphEmbedding {φ : V → ℝ} {φ' : V 
     HasFDerivWithinAt (TauCeti.normalGraphEmbedding φ) φ'.normalGraphL s x := by
   have h : TauCeti.normalGraphEmbedding φ =
       (WithLp.prodContinuousLinearEquiv 2 ℝ ℝ V).symm ∘ fun y ↦ (φ y, y) :=
-    funext fun y ↦ (WithLp.ext_iff 2).2 <| Prod.ext (normalGraphEmbedding_fst φ y)
-      (normalGraphEmbedding_snd φ y)
+    funext fun y ↦ by simp [normalGraphEmbedding_apply]
   rw [h]
   refine (((WithLp.prodContinuousLinearEquiv 2 ℝ ℝ V).symm :
     (ℝ × V) →L[ℝ] WithLp 2 (ℝ × V)).hasFDerivAt.comp_hasFDerivWithinAt x
       (hφ.prodMk (hasFDerivWithinAt_id x s))).congr_fderiv ?_
   ext v
-  simpa using (WithLp.ext_iff 2).2 <| Prod.ext (normalGraphEmbedding_fst φ' v).symm
-    (normalGraphEmbedding_snd φ' v).symm
+  simp [normalGraphEmbedding_apply]
 
 /-- The derivative of a graph parametrization is the graph of the derivative. -/
 theorem _root_.HasFDerivAt.normalGraphEmbedding {φ : V → ℝ} {φ' : V →L[ℝ] ℝ} {x : V}

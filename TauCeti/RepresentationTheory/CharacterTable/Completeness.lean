@@ -124,7 +124,11 @@ end Basis
 section Orthogonality
 
 variable {k : Type u} {G : Type v} [Field k] [Group G] [Fintype G] [IsAlgClosed k]
-  [Invertible (Nat.card G : k)] {ι : Type*} [Fintype ι] {V : ι → Type w}
+  [Invertible (Nat.card G : k)] {ι : Type*}
+
+section FintypeIndex
+
+variable [Fintype ι] {V : ι → Type w}
   [∀ i, AddCommGroup (V i)] [∀ i, Module k (V i)]
   (ρ : ∀ i, Representation k G (V i)) [∀ i, (ρ i).IsIrreducible]
   (hind : Pairwise fun i j => IsEmpty ((ρ i).Equiv (ρ j)))
@@ -153,7 +157,21 @@ theorem sum_characterPairing_smul_ofCharacter (f : ClassFunction k G) :
       = ∑ i, b.repr f i • b i := Finset.sum_congr rfl fun i _ => by rw [hrepr i, hbi i]
     _ = f := b.sum_repr f
 
-omit [Fintype ι] in
+/-- The pointwise form of the expansion of a class function in the irreducible characters. -/
+theorem apply_eq_sum_characterPairing_mul_character (f : ClassFunction k G) (y : G) :
+    f.1 y = ∑ i, characterPairing (ofCharacter (ρ i)) f * (ρ i).character y := by
+  conv_lhs => rw [← sum_characterPairing_smul_ofCharacter ρ hind hcard f]
+  simp
+
+end FintypeIndex
+
+variable {V : ι → Type w} [∀ i, AddCommGroup (V i)] [∀ i, Module k (V i)]
+  (ρ : ∀ i, Representation k G (V i)) [∀ i, (ρ i).IsIrreducible]
+  (hind : Pairwise fun i j => IsEmpty ((ρ i).Equiv (ρ j)))
+  (hcard : Nat.card ι = Nat.card (ConjClasses G))
+
+include hind hcard
+
 /-- **A class function is determined by its pairings with the irreducible characters**: two class
 functions with the same pairing against every character of a complete family of pairwise
 inequivalent irreducible representations are equal. -/
@@ -164,12 +182,6 @@ theorem eq_of_forall_characterPairing_ofCharacter_eq [Finite ι] {f₁ f₂ : Cl
   rw [← sum_characterPairing_smul_ofCharacter ρ hind hcard f₁,
     ← sum_characterPairing_smul_ofCharacter ρ hind hcard f₂]
   simp only [h]
-
-/-- The pointwise form of the expansion of a class function in the irreducible characters. -/
-theorem apply_eq_sum_characterPairing_mul_character (f : ClassFunction k G) (y : G) :
-    f.1 y = ∑ i, characterPairing (ofCharacter (ρ i)) f * (ρ i).character y := by
-  conv_lhs => rw [← sum_characterPairing_smul_ofCharacter ρ hind hcard f]
-  simp
 
 end Orthogonality
 
@@ -242,7 +254,7 @@ end Columns
 section Classification
 
 variable {k : Type u} {G : Type v} [Field k] [Group G] [Finite G] [IsAlgClosed k]
-  [Invertible (Nat.card G : k)] {ι : Type*} [Finite ι] {V : ι → Type w}
+  [Invertible (Nat.card G : k)] {ι : Type*} {V : ι → Type w}
   [∀ i, AddCommGroup (V i)] [∀ i, Module k (V i)]
   (ρ : ∀ i, Representation k G (V i)) [∀ i, (ρ i).IsIrreducible]
   (hind : Pairwise fun i j => IsEmpty ((ρ i).Equiv (ρ j)))
@@ -250,7 +262,6 @@ variable {k : Type u} {G : Type v} [Field k] [Group G] [Finite G] [IsAlgClosed k
 
 include hind hcard
 
-omit [Finite ι] in
 /-- **A complete family exhausts the irreducibles**: every irreducible
 representation of `G` is equivalent to a member of the family. Were it equivalent to none of them,
 its character would be orthogonal to a basis of the class functions, hence zero; but an irreducible
@@ -270,7 +281,6 @@ theorem exists_nonempty_equiv {W : Type*} [AddCommGroup W] [Module k W]
   rw [h0] at h1
   simp at h1
 
-omit [Finite ι] in
 /-- **Two complete families of irreducibles are relabellings of each other**: there is a bijection
 between their indices matching each member of the first family with an equivalent member of the
 second. -/
