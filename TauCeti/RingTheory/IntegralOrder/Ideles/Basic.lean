@@ -11,7 +11,6 @@ public import TauCeti.Algebra.Module.Submodule.Pointwise
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Gluing
 public import TauCeti.RingTheory.IntegralOrder.Basic
 public import TauCeti.RingTheory.TensorProduct.Maps
-import Mathlib.RingTheory.DedekindDomain.Factorization
 import TauCeti.Algebra.Module.Lattice
 import TauCeti.LinearAlgebra.TensorProduct.Tower
 
@@ -163,22 +162,10 @@ for all but finitely many `v` when `Λ` spans `B`. -/
 noncomputable def principal (hΛ : span F (Λ : Set B) = ⊤) : Bˣ →* FiniteIdeles F Λ where
   toFun b := .mk (fun v ↦ Units.map (Algebra.TensorProduct.includeRight :
       B →ₐ[A] v.adicCompletionIntegers F ⊗[A] B).toMonoidHom b) <| by
-    obtain ⟨a₁, ha₁, h₁⟩ := IsLattice.exists_ne_zero_smul_mem F (Subalgebra.toSubmodule Λ) hΛ
-      (b : B)
-    obtain ⟨a₂, ha₂, h₂⟩ := IsLattice.exists_ne_zero_smul_mem F (Subalgebra.toSubmodule Λ) hΛ
-      (↑b⁻¹ : B)
-    -- Off the finitely many primes containing `a₁ a₂`, both `b` and `b⁻¹` are integral.
-    have hfin : {v : HeightOneSpectrum A | v.asIdeal ∣ Ideal.span {a₁ * a₂}}.Finite :=
-      Ideal.finite_factors (by simpa using mul_ne_zero ha₁ ha₂)
-    refine Filter.eventually_cofinite.2 (hfin.subset fun v hv ↦ ?_)
-    rw [Set.mem_ofPred_eq, Ideal.dvd_span_singleton]
-    by_contra h
-    refine hv ⟨(Subalgebra.toSubmodule Λ).one_tmul_mem_baseChange_of_smul_mem
-      ((v.isUnit_algebraMap_adicCompletionIntegers_iff (K := F) _).2
-        fun h' ↦ h (Ideal.mul_mem_right _ _ h')) h₁,
-      (Subalgebra.toSubmodule Λ).one_tmul_mem_baseChange_of_smul_mem
-        ((v.isUnit_algebraMap_adicCompletionIntegers_iff (K := F) _).2
-          fun h' ↦ h (Ideal.mul_mem_left _ _ h')) h₂⟩
+    filter_upwards [eventually_one_tmul_mem_baseChange (N := Subalgebra.toSubmodule Λ) hΛ (b : B),
+      eventually_one_tmul_mem_baseChange (N := Subalgebra.toSubmodule Λ) hΛ (↑b⁻¹ : B)]
+      with v h₁ h₂
+    exact ⟨h₁, h₂⟩
   map_one' := RestrictedProduct.ext _ _ fun _ ↦ Units.ext (by simp)
   map_mul' _ _ := RestrictedProduct.ext _ _ fun _ ↦ Units.ext (by simp)
 
