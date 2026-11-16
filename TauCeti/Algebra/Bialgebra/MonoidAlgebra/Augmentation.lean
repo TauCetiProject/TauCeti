@@ -7,13 +7,16 @@ module
 
 public import TauCeti.Algebra.MonoidAlgebra.Augmentation
 public import Mathlib.RingTheory.Bialgebra.MonoidAlgebra
+import TauCeti.Algebra.MonoidAlgebra.MapDomain
 
 /-!
 # The monoid-algebra counit is the coefficient sum
 
 This identifies the bialgebra counit with the augmentation used in the ideal-theoretic
 exactness of monoid algebras, and the bialgebra map induced by a monoid homomorphism with the
-ring map `MonoidAlgebra.mapDomainRingHom` appearing there.
+ring map `MonoidAlgebra.mapDomainRingHom` appearing there, deducing surjectivity of
+`MonoidAlgebra.mapDomainBialgHom` along a surjective monoid homomorphism
+(`MonoidAlgebra.mapDomainBialgHom_surjective`).
 -/
 
 public section
@@ -37,5 +40,14 @@ theorem mapDomainBialgHom_toRingHom (R : Type*) {M N : Type*} [CommSemiring R] [
         MonoidAlgebra R M →+* MonoidAlgebra R N) =
       MonoidAlgebra.mapDomainRingHom R f :=
   rfl
+
+/-- Pushing coefficients of a monoid algebra forward along a surjective monoid homomorphism induces
+a surjective bialgebra homomorphism. -/
+theorem _root_.MonoidAlgebra.mapDomainBialgHom_surjective (R : Type*) {M N : Type*}
+    [CommSemiring R] [Monoid M] [Monoid N] {f : M →* N} (hf : Function.Surjective f) :
+    Function.Surjective (MonoidAlgebra.mapDomainBialgHom R f) := by
+  rw [← BialgHom.coe_toAlgHom, ← RingHom.coe_coe, mapDomainBialgHom_toRingHom]
+  exact fun y ↦ (MonoidAlgebra.mapDomain_surjective hf y).imp fun x hx ↦
+    (MonoidAlgebra.mapDomainRingHom_apply R f x).trans hx
 
 end TauCeti.MonoidAlgebra

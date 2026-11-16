@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Ring.Action.End
 public import TauCeti.RingTheory.WeilRestriction.Basic
 
 /-!
@@ -38,6 +39,8 @@ point of the fixed-point schemes of Edixhoven's tame descent.
 * `TauCeti.Algebra.WeilRestriction.inducedAction ρB ρC h`: the action of a monoid `Γ` on
   `WeilRestriction A B C` induced by actions `ρB` on `B` and `ρC` on `C` that are compatible
   with the algebra map `B → C`.
+* `TauCeti.Algebra.WeilRestriction.inducedMulSemiringAction ρB ρC h`: the corresponding
+  `MulSemiringAction` of `Γ` on `WeilRestriction A B C`.
 
 ## Main results
 
@@ -49,6 +52,10 @@ point of the fixed-point schemes of Edixhoven's tame descent.
   action of `γ` sends a point `y` to `(γ⁻¹ ⊗ id) ∘ y ∘ γ`.
 * `TauCeti.Algebra.WeilRestriction.comp_inducedAction_eq_iff`: a point is fixed by `γ` if and
   only if the point it classifies is `γ`-equivariant.
+* `TauCeti.Algebra.WeilRestriction.instMulSemiringAction` and
+  `TauCeti.Algebra.WeilRestriction.instSMulCommClass`: typeclass instances equipping
+  `WeilRestriction A B C` with the induced `Γ`-action for `[Group Γ]` and
+  `[SMulDistribClass Γ B C]`.
 
 ## References
 
@@ -245,6 +252,46 @@ theorem inducedAction_eq_one (hB : ρB = 1) (hC : ρC = 1) : inducedAction ρB �
       (MonoidHom.one_apply γ) (RingHom.ext fun _ ↦ rfl) (h γ), semilinearMap_one,
     AlgHom.id_apply, MonoidHom.one_apply, AlgEquiv.one_apply]
 
+/-- The `MulSemiringAction` of `Γ` on `WeilRestriction A B C` induced by an action `ρB` on `B` by
+`A`-algebra automorphisms and a `ρB`-semilinear action `ρC` on `C` by ring automorphisms. -/
+abbrev inducedMulSemiringAction : _root_.MulSemiringAction Γ (WeilRestriction A B C) :=
+  _root_.MulSemiringAction.compHom (WeilRestriction A B C) (inducedAction ρB ρC h)
+
+/-- Scalar multiplication in `inducedMulSemiringAction` commutes with the `A`-algebra structure. -/
+theorem inducedSMulCommClass :
+    letI := inducedMulSemiringAction ρB ρC h
+    SMulCommClass Γ A (WeilRestriction A B C) := by
+  let _ := inducedMulSemiringAction ρB ρC h
+  refine ⟨fun γ a x ↦ ?_⟩
+  rw [MulAction.compHom_smul_def, MulAction.compHom_smul_def, AlgEquiv.smul_def, AlgEquiv.smul_def]
+  exact map_smul (inducedAction ρB ρC h γ) a x
+
 end Action
+
+section TypeclassAction
+
+variable [Module.Finite A B] [Module.Projective A B] [FinitePresentation B C]
+  {Γ : Type*} [Group Γ] [_root_.MulSemiringAction Γ B] [SMulCommClass Γ A B]
+  [_root_.MulSemiringAction Γ C] [SMulDistribClass Γ B C]
+
+/-- A group `Γ` acting on `B` by `A`-algebra automorphisms and semilinearly on `C`
+(`[SMulDistribClass Γ B C]`) acts on `WeilRestriction A B C` by `A`-algebra automorphisms. -/
+instance instMulSemiringAction : _root_.MulSemiringAction Γ (WeilRestriction A B C) :=
+  inducedMulSemiringAction (_root_.MulSemiringAction.toAlgAut Γ A B)
+    (_root_.MulSemiringAction.toRingAut Γ C) fun γ b ↦ (algebraMap.smul' γ b C).symm
+
+/-- The induced `Γ`-action on `WeilRestriction A B C` commutes with the `A`-algebra structure. -/
+instance instSMulCommClass : SMulCommClass Γ A (WeilRestriction A B C) :=
+  inducedSMulCommClass (_root_.MulSemiringAction.toAlgAut Γ A B)
+    (_root_.MulSemiringAction.toRingAut Γ C) fun γ b ↦ (algebraMap.smul' γ b C).symm
+
+/-- Explicit formula for the `Γ`-action on `WeilRestriction A B C` via `semilinearMap`. -/
+theorem smul_def (γ : Γ) (x : WeilRestriction A B C) :
+    γ • x = semilinearMap (_root_.MulSemiringAction.toAlgAut Γ A B γ)
+      (_root_.MulSemiringAction.toRingAut Γ C γ : C →+* C)
+      (fun b ↦ (algebraMap.smul' γ b C).symm) x :=
+  inducedAction_apply _ _ _ γ x
+
+end TypeclassAction
 
 end TauCeti.Algebra.WeilRestriction

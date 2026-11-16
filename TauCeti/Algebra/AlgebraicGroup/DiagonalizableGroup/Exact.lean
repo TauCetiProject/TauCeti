@@ -11,7 +11,6 @@ import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Kernel
 import TauCeti.Algebra.Bialgebra.MonoidAlgebra.Augmentation
 import TauCeti.Algebra.MonoidAlgebra.Exactness
 import TauCeti.Algebra.MonoidAlgebra.FaithfullyFlat
-import TauCeti.Algebra.MonoidAlgebra.MapDomain
 
 /-!
 # Exactness of the diagonalizable-group functor
@@ -74,10 +73,8 @@ theorem isShortExact_mapDomainBialgHom (hp : Function.Injective p)
     rw [ofHom_mapDomainBialgHom_toRingHom]
     exact MonoidAlgebra.faithfullyFlat_mapDomainRingHom_of_injective R p hp
   surjective := by
-    rw [_root_.CommHopfAlgCat.hom_ofHom, ← BialgHom.coe_toAlgHom, ← RingHom.coe_coe,
-      MonoidAlgebra.mapDomainBialgHom_toRingHom]
-    exact fun y ↦ (MonoidAlgebra.mapDomain_surjective hq y).imp fun x hx ↦
-      (MonoidAlgebra.mapDomainRingHom_apply R q x).trans hx
+    rw [_root_.CommHopfAlgCat.hom_ofHom]
+    exact _root_.MonoidAlgebra.mapDomainBialgHom_surjective R hq
   ker_eq := by
     rw [kernelHopfIdeal_mapDomainBialgHom_toIdeal, ofHom_mapDomainBialgHom_toRingHom]
     exact (MonoidAlgebra.map_ker_augmentation_eq_ker_mapDomainRingHom R p q

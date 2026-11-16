@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Finprod
-public import Mathlib.RingTheory.Invariant.Basic
 public import Mathlib.RingTheory.Smooth.Basic
 import Mathlib.SetTheory.Cardinal.Finite
 
@@ -24,7 +23,7 @@ A ring homomorphism out of `A` kills `fixedPointIdeal Γ A` precisely when it is
 coordinate ring of the closed subscheme `(Spec A)^Γ` of fixed points: for every `R`-algebra `B`,
 `R`-algebra homomorphisms `A ⧸ fixedPointIdeal Γ A →ₐ[R] B` correspond bijectively to `Γ`-fixed
 points in `A →ₐ[R] B` (`TauCeti.MulSemiringAction.quotientFixedPointIdealAlgHomEquiv`). This is
-distinct from the invariant subalgebra `MulSemiringAction.FixedPoints.subalgebra R A Γ`, which is
+distinct from the invariant subalgebra `FixedPoints.subalgebra R A Γ`, which is
 the coordinate ring of the coarse quotient rather than of the fixed-point subscheme.
 
 Two finiteness and smoothness results hold over an arbitrary base ring `R`, with no Noetherian
@@ -165,13 +164,12 @@ theorem fixedPointIdeal_le_ker_algHom_iff {B : Type x} [Ring B] [Algebra R B] (f
 /-- When `Γ` acts by `R`-algebra endomorphisms, an `R`-algebra map kills `fixedPointIdeal Γ A`
 if and only if precomposing it with each `γ : Γ` leaves it unchanged. -/
 theorem fixedPointIdeal_le_ker_iff_comp_toAlgHom_eq [SMulCommClass Γ R A]
-    {B : Type x} [CommRing B] [Algebra R B] (f : A →ₐ[R] B) :
+    {B : Type x} [Ring B] [Algebra R B] (f : A →ₐ[R] B) :
     fixedPointIdeal Γ A ≤ RingHom.ker f ↔
       ∀ γ : Γ, f.comp (_root_.MulSemiringAction.toAlgHom R A γ) = f := by
   rw [fixedPointIdeal_le_ker_algHom_iff]
   refine forall_congr' fun γ ↦ ?_
-  rw [AlgHom.ext_iff]
-  rfl
+  simp [AlgHom.ext_iff]
 
 /-- In the quotient `A ⧸ fixedPointIdeal Γ A`, the canonical `R`-algebra projection is
 `Γ`-invariant. -/
@@ -185,19 +183,19 @@ variable (R Γ A) in
 /-- **Representability of fixed points on affine schemes** (Edixhoven, Proposition 3.1):
 `R`-algebra homomorphisms out of `A ⧸ fixedPointIdeal Γ A` into `B` correspond bijectively to
 `Γ`-invariant `R`-algebra homomorphisms `A →ₐ[R] B`. -/
-def quotientFixedPointIdealAlgHomEquiv (B : Type x) [CommRing B] [Algebra R B] :
+def quotientFixedPointIdealAlgHomEquiv (B : Type x) [Ring B] [Algebra R B] :
     (A ⧸ fixedPointIdeal Γ A →ₐ[R] B) ≃ {f : A →ₐ[R] B // ∀ (γ : Γ) (a : A), f (γ • a) = f a} where
   toFun g := ⟨g.comp (Ideal.Quotient.mkₐ R (fixedPointIdeal Γ A)), fun γ a ↦ by
     rw [AlgHom.comp_apply, AlgHom.comp_apply, mkₐ_fixedPointIdeal_smul]⟩
   invFun f := Ideal.Quotient.liftₐ (fixedPointIdeal Γ A) f.1 fun a ha ↦
     (fixedPointIdeal_le_ker_algHom_iff f.1).mpr f.2 ha
-  left_inv g := Ideal.Quotient.algHom_ext R rfl
+  left_inv g := Ideal.Quotient.algHom_ext R (Ideal.Quotient.liftₐ_comp (fixedPointIdeal Γ A) _ _)
   right_inv f := Subtype.ext (Ideal.Quotient.liftₐ_comp (fixedPointIdeal Γ A) f.1 _)
 
 /-- Forward direction of `quotientFixedPointIdealAlgHomEquiv`: precomposition with the quotient
 map. -/
 @[simp]
-theorem quotientFixedPointIdealAlgHomEquiv_apply {B : Type x} [CommRing B] [Algebra R B]
+theorem quotientFixedPointIdealAlgHomEquiv_apply {B : Type x} [Ring B] [Algebra R B]
     (g : A ⧸ fixedPointIdeal Γ A →ₐ[R] B) :
     (quotientFixedPointIdealAlgHomEquiv R Γ A B g).1 =
       g.comp (Ideal.Quotient.mkₐ R (fixedPointIdeal Γ A)) :=
@@ -205,7 +203,7 @@ theorem quotientFixedPointIdealAlgHomEquiv_apply {B : Type x} [CommRing B] [Alge
 
 /-- Inverse direction of `quotientFixedPointIdealAlgHomEquiv` evaluated on a quotient class. -/
 @[simp]
-theorem quotientFixedPointIdealAlgHomEquiv_symm_apply_mk {B : Type x} [CommRing B] [Algebra R B]
+theorem quotientFixedPointIdealAlgHomEquiv_symm_apply_mk {B : Type x} [Ring B] [Algebra R B]
     (f : {f : A →ₐ[R] B // ∀ (γ : Γ) (a : A), f (γ • a) = f a}) (a : A) :
     (quotientFixedPointIdealAlgHomEquiv R Γ A B).symm f
         (Ideal.Quotient.mk (fixedPointIdeal Γ A) a) = f.1 a :=
@@ -393,14 +391,27 @@ theorem reynoldsAlgHom_sub_mem {J : Ideal C} (hJ : J ^ 2 = ⊥) (φ : A →ₐ[R
     reynoldsAlgHom hJ φ hφ a - φ a ∈ J :=
   reynoldsLinearMap_sub_mem φ hφ a
 
+/-- Reducing `reynoldsAlgHom` modulo `J` recovers the reduction of `φ`. -/
+@[simp]
+theorem mk_reynoldsAlgHom {J : Ideal C} (hJ : J ^ 2 = ⊥) (φ : A →ₐ[R] C)
+    (hφ : ∀ (γ : Γ) (a : A), φ (γ • a) - φ a ∈ J) (a : A) :
+    Ideal.Quotient.mk J (reynoldsAlgHom hJ φ hφ a) = Ideal.Quotient.mk J (φ a) :=
+  Ideal.Quotient.eq.mpr (reynoldsAlgHom_sub_mem hJ φ hφ a)
+
+/-- Applying `Ideal.Quotient.mkₐ R J` to `reynoldsAlgHom` recovers the reduction of `φ`. -/
+@[simp]
+theorem mkₐ_reynoldsAlgHom {J : Ideal C} (hJ : J ^ 2 = ⊥) (φ : A →ₐ[R] C)
+    (hφ : ∀ (γ : Γ) (a : A), φ (γ • a) - φ a ∈ J) (a : A) :
+    Ideal.Quotient.mkₐ R J (reynoldsAlgHom hJ φ hφ a) = Ideal.Quotient.mkₐ R J (φ a) :=
+  mk_reynoldsAlgHom hJ φ hφ a
+
 /-- Composing `reynoldsAlgHom` with the quotient map `C →ₐ[R] C ⧸ J` recovers the reduction of
 `φ`. -/
 @[simp]
 theorem mkₐ_comp_reynoldsAlgHom {J : Ideal C} (hJ : J ^ 2 = ⊥) (φ : A →ₐ[R] C)
     (hφ : ∀ (γ : Γ) (a : A), φ (γ • a) - φ a ∈ J) :
-    (Ideal.Quotient.mkₐ R J).comp (reynoldsAlgHom hJ φ hφ) = (Ideal.Quotient.mkₐ R J).comp φ := by
-  ext a
-  exact Ideal.Quotient.eq.mpr (reynoldsAlgHom_sub_mem hJ φ hφ a)
+    (Ideal.Quotient.mkₐ R J).comp (reynoldsAlgHom hJ φ hφ) = (Ideal.Quotient.mkₐ R J).comp φ :=
+  AlgHom.ext (mkₐ_reynoldsAlgHom hJ φ hφ)
 
 end Reynolds
 
@@ -415,9 +426,11 @@ instance formallySmooth_quotient_fixedPointIdeal [Algebra.FormallySmooth R A]
   -- Lift the given invariant point across `C → C ⧸ J` to an arbitrary `R`-algebra map `φ`.
   obtain ⟨φ, hφ⟩ := Algebra.FormallySmooth.comp_surjective R A J hJ
     (f.comp (Ideal.Quotient.mkₐ R (fixedPointIdeal Γ A)))
+  have hφ_apply (x : A) :
+      Ideal.Quotient.mk J (φ x) = f (Ideal.Quotient.mk (fixedPointIdeal Γ A) x) := by
+    simpa using AlgHom.congr_fun hφ x
   have hφJ (γ : Γ) (a : A) : φ (γ • a) - φ a ∈ J := by
-    rw [← Ideal.Quotient.eq, ← Ideal.Quotient.mkₐ_eq_mk R, ← AlgHom.comp_apply,
-      ← AlgHom.comp_apply, hφ, AlgHom.comp_apply, AlgHom.comp_apply, mkₐ_fixedPointIdeal_smul]
+    rw [← Ideal.Quotient.eq, hφ_apply, hφ_apply, mk_fixedPointIdeal_smul]
   -- Average `φ` over `Γ` to make the lift `Γ`-invariant without changing its reduction mod `J`.
   let ψ := reynoldsAlgHom (Γ := Γ) hJ φ hφJ
   have hψ : fixedPointIdeal Γ A ≤ RingHom.ker ψ :=
