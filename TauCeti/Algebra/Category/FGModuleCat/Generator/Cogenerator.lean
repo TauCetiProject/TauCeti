@@ -27,7 +27,8 @@ indecomposable injective object of `mod A` is a direct summand of `M`
 (`TauCeti.isGeneratorCogenerator_iff_forall_indecomposable`). The base ring `R` may live in any
 universe; the statements about `D A` ask that it be small in the universe of `A` and its modules,
 which can always be arranged by replacing `R` with the centre of `A`, a commutative Artinian ring
-over which `A` is again an Artin algebra.
+over which `A` is again an Artin algebra. The descriptions through indecomposable objects hold for
+modules in any universe in which `A` is small.
 
 The generator half holds over any ring (`FGModuleCat.isSeparator_iff_additiveClosure`). The
 cogenerator half is its dual: the Matlis duality `(mod A)ᵒᵖ ≌ mod Aᵐᵒᵖ`
@@ -39,9 +40,9 @@ the duality (`CategoryTheory.Equivalence.additiveClosure_functor_obj_op_iff`). S
 coseparator exactly when `D A ∈ add M`
 (`TauCeti.IsInjectiveEnvelope.isCoseparator_iff_additiveClosure`), with no separate injective
 argument. The descriptions through indecomposable objects then follow from the
-Krull-Schmidt property of `mod A`, with `FGModuleCat.additiveClosure_regular_of_projective`, its
-dual `TauCeti.IsInjectiveEnvelope.additiveClosure_fgModuleCatMatlisDualRegular_of_injective`, and
-`FGModuleCat.indecomposable_obj_iff`.
+Krull-Schmidt property of `mod A`, with `FGModuleCat.indecomposable_obj_iff` and
+`FGModuleCat.additiveClosure_of_isGenerator_of_projective`: a projective object lies in `add M` for
+every separator `M`, and dually an injective object lies in `add M` for every coseparator `M`.
 
 The two halves are not symmetric outside the categorical statements. Over every ring the regular
 module is a finitely generated projective generator, so separators of `mod R` have the elementwise
@@ -91,24 +92,29 @@ namespace TauCeti
 
 open CategoryTheory CategoryTheory.Limits Opposite
 
-universe u v
+universe u v w
 
 attribute [local instance] hasBinaryBiproducts_of_finite_biproducts
 
 /-- **The separators of `mod A` through indecomposables**: over a left Artinian ring, `M` is a
 separator of `mod A` exactly when every indecomposable projective object is a direct summand of
-`M`. -/
+`M`. The modules may live in any universe in which `A` is small. -/
 theorem _root_.FGModuleCat.isSeparator_iff_forall_indecomposable {A : Type u} [Ring A]
-    [IsArtinianRing A] (M : FGModuleCat.{u} A) :
+    [IsArtinianRing A] [Small.{w} A] (M : FGModuleCat.{w} A) :
     IsSeparator M ↔
-      ∀ P : FGModuleCat.{u} A, Projective P → Indecomposable P.obj → Nonempty (Retract P M) := by
-  have : Projective (FGModuleCat.of A A) := FGModuleCat.projective_of_free A _
-  rw [FGModuleCat.isSeparator_iff_additiveClosure]
+      ∀ P : FGModuleCat.{w} A, Projective P → Indecomposable P.obj → Nonempty (Retract P M) := by
+  -- The regular module, shrunk to the universe `w`, is a projective separator.
+  let e := Shrink.linearEquiv.{w} A A
+  have : Module.Free A (Shrink.{w} A) := .of_equiv e.symm
+  have : Module.IsGenerator A (Shrink.{w} A) := .of_linearEquiv e
+  have : Projective (FGModuleCat.of A (Shrink.{w} A)) := FGModuleCat.projective_of_free A _
   refine ⟨fun hM P hP hPi ↦ ?_, fun h ↦ ?_⟩
   · have := FGModuleCat.isLocalRing_end_of_indecomposable hPi
+    have := FGModuleCat.isGenerator_of_isSeparator hM
     exact additiveClosure_iff_nonempty_retract.1
-      (additiveClosure_le_iff.2 hM _ (FGModuleCat.additiveClosure_regular_of_projective P))
-  · refine additiveClosure_iff_forall_indecomposable.2 fun Y hY ⟨r⟩ ↦ ?_
+      (FGModuleCat.additiveClosure_of_isGenerator_of_projective M P)
+  · refine (FGModuleCat.isSeparator_of_isGenerator (FGModuleCat.of A (Shrink.{w} A)))
+      |>.of_additiveClosure (additiveClosure_iff_forall_indecomposable.2 fun Y hY ⟨r⟩ ↦ ?_)
     exact h Y r.projective ((FGModuleCat.indecomposable_obj_iff Y).2 hY)
 
 section Artin
@@ -160,35 +166,55 @@ end Artin
 
 /-- **The coseparators of `mod A` through indecomposables**: over an Artin algebra, `M` is a
 coseparator of `mod A` exactly when every indecomposable injective object is a direct summand of
-`M`. -/
+`M`. The modules may live in any universe in which `A` is small. -/
 theorem _root_.FGModuleCat.isCoseparator_iff_forall_indecomposable (R : Type u) [CommRing R]
-    [IsArtinianRing R] {A : Type v} [Ring A] [Algebra R A] [Module.Finite R A]
-    (M : FGModuleCat.{v} A) :
+    [IsArtinianRing R] {A : Type v} [Ring A] [Algebra R A] [Module.Finite R A] [Small.{w} A]
+    (M : FGModuleCat.{w} A) :
     IsCoseparator M ↔
-      ∀ I : FGModuleCat.{v} A, Injective I → Indecomposable I.obj → Nonempty (Retract I M) := by
+      ∀ I : FGModuleCat.{w} A, Injective I → Indecomposable I.obj → Nonempty (Retract I M) := by
   have := IsArtinianRing.of_finite R A
-  -- Replace `R` by the centre `C` of `A`, which lies in the universe of `A`, to take `E` there.
+  -- Replace `R` by the centre `C` of `A`, which is small in the universe `w`, and take an injective
+  -- hull `E` of `C ⧸ J(C)` there.
   let C := Subalgebra.center R A
   have : Module.Finite C A := Subalgebra.finite_centerAlgebra_of_finite
-  obtain ⟨E, _, _, f, hf⟩ := exists_isInjectiveEnvelope C (C ⧸ Ring.jacobson C)
-  have := hf.injective_fgModuleCatMatlisDualRegular (A := A)
-  rw [hf.isCoseparator_iff_additiveClosure]
+  have : Small.{w} C := inferInstanceAs (Small.{w} {a : A // a ∈ C})
+  have : Small.{w} (C ⧸ Ring.jacobson C) := small_of_surjective Ideal.Quotient.mk_surjective
+  let e := Shrink.linearEquiv.{w} C (C ⧸ Ring.jacobson C)
+  obtain ⟨E, _, _, i, hi⟩ := exists_isInjectiveEnvelope C (Shrink.{w} (C ⧸ Ring.jacobson C))
+  have hf := hi.comp e.symm.injective (by rw [LinearEquiv.range]; exact isEssential_top)
+  -- The Matlis duality turns coseparators and injectives of `mod A` into separators and
+  -- projectives of `mod Aᵐᵒᵖ`, where the shrunk regular module is a projective separator.
+  let Φ := hf.fgModuleCatMatlisDuality (A := A)
+  have : Small.{w} Aᵐᵒᵖ := small_of_injective MulOpposite.unop_injective
+  let e' := Shrink.linearEquiv.{w} Aᵐᵒᵖ Aᵐᵒᵖ
+  have : Module.Free Aᵐᵒᵖ (Shrink.{w} Aᵐᵒᵖ) := .of_equiv e'.symm
+  have : Module.IsGenerator Aᵐᵒᵖ (Shrink.{w} Aᵐᵒᵖ) := .of_linearEquiv e'
+  let G := FGModuleCat.of Aᵐᵒᵖ (Shrink.{w} Aᵐᵒᵖ)
+  have : Projective G := FGModuleCat.projective_of_free _ _
   refine ⟨fun hM I hI hIi ↦ ?_, fun h ↦ ?_⟩
   · have := FGModuleCat.isLocalRing_end_of_indecomposable hIi
-    exact additiveClosure_iff_nonempty_retract.1 (additiveClosure_le_iff.2 hM _
-      (hf.additiveClosure_fgModuleCatMatlisDualRegular_of_injective I))
-  · refine additiveClosure_iff_forall_indecomposable.2 fun Y hY ⟨r⟩ ↦ ?_
+    have := FGModuleCat.isGenerator_of_isSeparator (((isSeparator_op_iff M).2 hM).of_equivalence Φ)
+    have : Projective (Φ.functor.obj (op I)) := (Φ.map_projective_iff _).2 inferInstance
+    exact additiveClosure_iff_nonempty_retract.1 (Φ.additiveClosure_functor_obj_op_iff.1
+      (FGModuleCat.additiveClosure_of_isGenerator_of_projective _ _))
+  · -- The dual `D` of `G` is an injective coseparator of `mod A`, and lies in `add M`.
+    have : Projective (Φ.inverse.obj G) := (Φ.symm.map_projective_iff _).2 inferInstance
+    have : Injective (Φ.inverse.obj G).unop := inferInstanceAs (Injective (unop _))
+    have hD : IsCoseparator (Φ.inverse.obj G).unop := (isCoseparator_unop_iff _).2
+      ((FGModuleCat.isSeparator_of_isGenerator G).of_equivalence Φ.symm)
+    refine hD.of_additiveClosure (additiveClosure_iff_forall_indecomposable.2 fun Y hY ⟨r⟩ ↦ ?_)
     exact h Y r.injective ((FGModuleCat.indecomposable_obj_iff Y).2 hY)
 
 /-- **Generator-cogenerators through indecomposables**: over an Artin algebra, `M` is a
 generator-cogenerator of `mod A` exactly when every indecomposable projective and every
-indecomposable injective object of `mod A` is a direct summand of `M`. -/
+indecomposable injective object of `mod A` is a direct summand of `M`. The modules may live in any
+universe in which `A` is small. -/
 theorem isGeneratorCogenerator_iff_forall_indecomposable (R : Type u) [CommRing R]
-    [IsArtinianRing R] {A : Type v} [Ring A] [Algebra R A] [Module.Finite R A]
-    (M : FGModuleCat.{v} A) :
+    [IsArtinianRing R] {A : Type v} [Ring A] [Algebra R A] [Module.Finite R A] [Small.{w} A]
+    (M : FGModuleCat.{w} A) :
     IsGeneratorCogenerator M ↔
-      (∀ P : FGModuleCat.{v} A, Projective P → Indecomposable P.obj → Nonempty (Retract P M)) ∧
-        ∀ I : FGModuleCat.{v} A, Injective I → Indecomposable I.obj → Nonempty (Retract I M) := by
+      (∀ P : FGModuleCat.{w} A, Projective P → Indecomposable P.obj → Nonempty (Retract P M)) ∧
+        ∀ I : FGModuleCat.{w} A, Injective I → Indecomposable I.obj → Nonempty (Retract I M) := by
   have := IsArtinianRing.of_finite R A
   exact isGeneratorCogenerator_iff.trans <| and_congr
     (FGModuleCat.isSeparator_iff_forall_indecomposable M)
