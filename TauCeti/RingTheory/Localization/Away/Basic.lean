@@ -107,7 +107,7 @@ here directly from Mathlib's `mk'` API.
 
 `Localization.isScalarTower_awayMap` and `TauCeti.Localization.algebraMap_away_injective` are
 **also later additions with no AINTLIB analogue**, proved here directly from Mathlib's
-`IsLocalization.map_eq` and `IsLocalization.eq_iff_exists`.
+`IsLocalization.map_eq` and `IsLocalization.injectiveₛ`.
 
 `map_divBy_eq_mul_inv` is a **generalisation of an AINTLIB statement**, checked against the same
 commit. There, `awayLift_divByS_one_eq_unit_inv` in
@@ -422,9 +422,9 @@ instance isLocalizationAwayOne (R : Type*) [CommSemiring R] : IsLocalization.Awa
 subtraction), localizing away from a nonzero element `x` yields an injective `algebraMap R S`. -/
 theorem algebraMap_away_injective {R : Type*} (S : Type*) [CommSemiring R] [IsCancelMulZero R]
     [CommSemiring S] [Algebra R S] {x : R} [IsLocalization.Away x S] (hx : x ≠ 0) :
-    Function.Injective (algebraMap R S) := fun _ _ hab ↦ by
-  obtain ⟨⟨_, k, rfl⟩, hc⟩ := (IsLocalization.eq_iff_exists (Submonoid.powers x) S).mp hab
-  exact mul_left_cancel₀ (pow_ne_zero k hx) hc
+    Function.Injective (algebraMap R S) :=
+  IsLocalization.injectiveₛ (M := Submonoid.powers x) S
+    fun _ ⟨k, hk⟩ ↦ hk ▸ (IsRegular.of_ne_zero hx).pow k
 
 end TauCeti.Localization
 
