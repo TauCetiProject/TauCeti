@@ -26,7 +26,9 @@ The inclusion `e ↦ (k, e)` of a fibre of `p` into the base change along `g` at
 it is `TopCat.Hom.pullbackFiberι`. A map of fibrations over a map of bases, with a compatible map
 of parameter spaces, induces a map of base changes (`CategoryTheory.CommSq.pullbackMapOfCompEq`),
 which is the map of fibres on these fibre inclusions
-(`CategoryTheory.CommSq.pullbackFiberι_comp_pullbackMapOfCompEq`).
+(`CategoryTheory.CommSq.pullbackFiberι_comp_pullbackMapOfCompEq`); for the identity of the
+parameter space and of the base it is `TopCat.pullbackMapOfCompEq`
+(`CategoryTheory.CommSq.pullbackMapOfCompEq_id`).
 -/
 
 public section
@@ -222,6 +224,27 @@ def pullbackMapOfCompEq (sq : CommSq f p p' g) {h : K ⟶ B} {h' : K' ⟶ B'} (�
 lemma coe_pullbackMapOfCompEq_apply (sq : CommSq f p p' g) {h : K ⟶ B} {h' : K' ⟶ B'}
     (φ : K ⟶ K') (hφ : φ ≫ h' = h ≫ g) (x : TopCat.of {x : K × E // h x.1 = p x.2}) :
     (sq.pullbackMapOfCompEq φ hφ x : K' × E') = (φ x.1.1, f x.1.2) :=
+  (rfl)
+
+@[reassoc (attr := simp)]
+lemma pullbackMapOfCompEq_comp_pullbackFst (sq : CommSq f p p' g) {h : K ⟶ B} {h' : K' ⟶ B'}
+    (φ : K ⟶ K') (hφ : φ ≫ h' = h ≫ g) :
+    sq.pullbackMapOfCompEq φ hφ ≫ TopCat.pullbackFst h' p' = TopCat.pullbackFst h p ≫ φ :=
+  (rfl)
+
+@[reassoc (attr := simp)]
+lemma pullbackMapOfCompEq_comp_pullbackSnd (sq : CommSq f p p' g) {h : K ⟶ B} {h' : K' ⟶ B'}
+    (φ : K ⟶ K') (hφ : φ ≫ h' = h ≫ g) :
+    sq.pullbackMapOfCompEq φ hφ ≫ TopCat.pullbackSnd h' p' = TopCat.pullbackSnd h p ≫ f :=
+  (rfl)
+
+/-- For a map `f` over `B` and the identity of the parameter space, the map of base changes is
+`TopCat.pullbackMapOfCompEq`. -/
+@[simp]
+lemma pullbackMapOfCompEq_id {p' : E' ⟶ B} (sq : CommSq f p p' (𝟙 B)) (h : K ⟶ B)
+    (hφ : 𝟙 K ≫ h = h ≫ 𝟙 B) :
+    sq.pullbackMapOfCompEq (𝟙 K) hφ =
+      TopCat.pullbackMapOfCompEq h (sq.w.trans (Category.comp_id p)) :=
   (rfl)
 
 /-- On fibres, the map of base changes induced by a map of fibrations is the map of fibres: the
