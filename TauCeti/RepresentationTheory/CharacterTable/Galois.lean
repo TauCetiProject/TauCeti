@@ -160,11 +160,11 @@ namespace FDRep
 
 variable {G : Type v} [Monoid G]
 
-/-- **The Galois action on complex character values is by power maps.** If `g ^ n = 1` and the ring
-endomorphism `σ` of `ℂ` raises every `n`-th root of unity to the `j`-th power, then
-`σ (χ(g)) = χ(g ^ j)`. -/
-theorem map_character_eq_character_pow (X : FDRep ℂ G) {g : G} {n j : ℕ}
-    (hg : g ^ n = 1) (σ : ℂ →+* ℂ) (hσ : ∀ μ : ℂ, μ ^ n = 1 → σ μ = μ ^ j) :
+/-- **The Galois action on character values is by power maps.** If `g ^ n = 1` and the ring
+endomorphism `σ` of the algebraically closed coefficient field raises every `n`-th root of unity to
+the `j`-th power, then `σ (χ(g)) = χ(g ^ j)`. -/
+theorem map_character_eq_character_pow {k : Type u} [Field k] [IsAlgClosed k] (X : FDRep k G)
+    {g : G} {n j : ℕ} (hg : g ^ n = 1) (σ : k →+* k) (hσ : ∀ μ : k, μ ^ n = 1 → σ μ = μ ^ j) :
     σ (X.character g) = X.character (g ^ j) :=
   Representation.map_character_eq_character_pow X.ρ hg σ hσ
 

@@ -16,6 +16,7 @@ public import Mathlib.LinearAlgebra.Eigenspace.Semisimple
 public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.RingTheory.IntegralClosure.IsIntegralClosure.Basic
 import TauCeti.Analysis.RCLike.Sum
+import TauCeti.LinearAlgebra.Matrix.Charpoly.Roots
 import TauCeti.LinearAlgebra.Trace.Basic
 
 /-!
@@ -38,12 +39,12 @@ Over an algebraically closed field semisimplicity is diagonalizability, so the e
 an `f` decompose the space. Every power of `f` acts on the `μ`-eigenspace as the scalar `μ ^ m`,
 which turns the trace of `f ^ m` into the sum `∑ μ, dim(V_μ) * μ ^ m` over the eigenvalues.
 
-Without semisimplicity the same holds with the generalized eigenspaces, which decompose the space
-over an algebraically closed field for every `f`: on the generalized `μ`-eigenspace `f - μ` is
-nilpotent, so the trace of `f ^ m` there is `dim * μ ^ m`. That sum is what makes the trace
-transform predictably under a ring endomorphism `σ` of the coefficient field: the dimensions are
-natural numbers and so are fixed by `σ`, so if `σ` raises every `n`-th root of unity to the `j`-th
-power then `σ (tr f) = tr (f ^ j)`, whether or not `n` is invertible in the field. Over `ℂ` complex
+Without semisimplicity the trace of `f ^ m` is still the sum of `μ ^ m` over the roots `μ` of the
+characteristic polynomial of `f`, counted with multiplicity
+(`Matrix.trace_aeval_eq_sum_roots_charpoly_of_splits`). That sum is what makes the trace transform
+predictably under a ring endomorphism `σ` of the coefficient field: the multiplicities are natural
+numbers and so are fixed by `σ`, so if `σ` raises every `n`-th root of unity to the `j`-th power
+then `σ (tr f) = tr (f ^ j)`, whether or not `n` is invertible in the field. Over `ℂ` complex
 conjugation is such a `σ`, with `j = n - 1`, since it sends a root of unity `μ` to
 `μ⁻¹ = μ ^ (n - 1)`; that instance is the source of `conj (χ g) = χ g⁻¹` for characters of complex
 representations.
@@ -178,36 +179,7 @@ theorem trace_pow_restrict_eigenspace (f : End k V) (μ : k) (m : ℕ) :
     simpa using End.aeval_apply_of_mem_apply_eq_smul (p := X ^ m) (End.mem_eigenspace_iff.1 x.2)
   rw [hrestrict, map_smul, LinearMap.trace_id, smul_eq_mul, mul_comm]
 
-/-- The trace of the `m`-th power of `f` on its generalized `μ`-eigenspace is
-`finrank k (f.maxGenEigenspace μ) * μ ^ m`, since `f - μ` is nilpotent there. -/
-private theorem trace_pow_restrict_maxGenEigenspace (f : End k V) (μ : k) (m : ℕ) :
-    LinearMap.trace k _ ((f.restrict (f.mapsTo_maxGenEigenspace_of_comm (Commute.refl f) μ)) ^ m) =
-      (finrank k (f.maxGenEigenspace μ) : k) * μ ^ m := by
-  induction m with
-  | zero => rw [pow_zero, LinearMap.trace_one, pow_zero, mul_one]
-  | succ m ih =>
-    rw [pow_succ, Module.End.mul_eq_comp, LinearMap.trace_comp_eq_mul_of_commute_of_isNilpotent μ
-      ((Commute.refl _).pow_left m) (f.isNilpotent_restrict_maxGenEigenspace_sub_algebraMap μ),
-      ih, pow_succ]
-    ring
-
 variable [IsAlgClosed k]
-
-/-- Over an algebraically closed field, the trace of `f ^ m` is the sum of `dim * μ ^ m` over the
-generalized eigenspaces of `f`, which decompose the space. -/
-private theorem trace_pow_eq_sum_maxGenEigenspace (f : End k V) (m : ℕ) :
-    LinearMap.trace k V (f ^ m) =
-      ∑ μ ∈ (WellFoundedGT.finite_ne_bot_of_iSupIndep f.independent_maxGenEigenspace).toFinset,
-        (finrank k (f.maxGenEigenspace μ) : k) * μ ^ m := by
-  classical
-  have hds := DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top
-    f.independent_maxGenEigenspace f.iSup_maxGenEigenspace_eq_top
-  rw [LinearMap.trace_eq_sum_trace_restrict' hds
-    (WellFoundedGT.finite_ne_bot_of_iSupIndep f.independent_maxGenEigenspace)
-    (fun μ ↦ f.mapsTo_maxGenEigenspace_of_comm ((Commute.refl f).pow_right m) μ)]
-  refine Finset.sum_congr rfl fun μ _ ↦ ?_
-  rw [← trace_pow_restrict_maxGenEigenspace f μ m]
-  exact congrArg _ (Module.End.pow_restrict m _).symm
 
 /-- **The eigenspaces of an endomorphism of finite order decompose the space**, `n` being invertible
 in the algebraically closed field `k`: such an `f` is semisimple, hence diagonalizable. -/
@@ -232,23 +204,24 @@ omit [FiniteDimensional k V] in
 /-- **A ring endomorphism raising the roots of unity to the `j`-th power raises an endomorphism of
 finite order to the `j`-th power, as far as the trace can see**: if `f ^ n = 1` and `σ μ = μ ^ j`
 for every `n`-th root of unity `μ`, then `σ (tr f) = tr (f ^ j)`. For finite-dimensional `V`, both
-sides are the sum `∑ μ, dim · μ ^ j` over the generalized eigenspaces, whose eigenvalues are `n`-th
-roots of unity, since a ring homomorphism fixes the dimensions, which enter as natural numbers. If
-`V` is not finite-dimensional, `LinearMap.trace` is `0` by convention, so both sides are `0`. -/
+sides are the sum of `μ ^ j` over the roots `μ` of the characteristic polynomial of `f`, counted
+with multiplicity, and those roots are `n`-th roots of unity. If `V` is not finite-dimensional,
+`LinearMap.trace` is `0` by convention, so both sides are `0`. -/
 theorem map_trace_eq_trace_pow {j : ℕ} (hf : f ^ n = 1) (σ : k →+* k)
     (hσ : ∀ μ : k, μ ^ n = 1 → σ μ = μ ^ j) :
     σ (LinearMap.trace k V f) = LinearMap.trace k V (f ^ j) := by
   by_cases hfin : Module.Finite k V
   swap
   · simp [TauCeti.LinearMap.trace_eq_zero_of_not_finite hfin]
-  conv_lhs => rw [← pow_one f]
-  rw [trace_pow_eq_sum_maxGenEigenspace, trace_pow_eq_sum_maxGenEigenspace, map_sum]
-  refine Finset.sum_congr rfl fun μ hμ ↦ ?_
-  have hμ' : f.HasEigenvalue μ := by
-    refine hasEigenvalue_of_hasGenEigenvalue (k := finrank k V) ?_
-    rw [hasGenEigenvalue_iff, ← maxGenEigenspace_eq_genEigenspace_finrank]
-    exact (Set.Finite.mem_toFinset _).1 hμ
-  rw [map_mul, map_natCast, pow_one, hσ μ (pow_eq_one_of_hasEigenvalue hf hμ')]
+  classical
+  let b := Module.Free.chooseBasis k V
+  have h := Matrix.trace_aeval_eq_sum_roots_charpoly_of_splits
+    (IsAlgClosed.splits (LinearMap.toMatrix b b f).charpoly) (X ^ j)
+  rw [aeval_X_pow, LinearMap.toMatrix_pow, ← LinearMap.trace_eq_matrix_trace,
+    LinearMap.charpoly_toMatrix] at h
+  rw [h, Module.End.trace_eq_sum_roots_charpoly_of_splits (IsAlgClosed.splits _), map_multiset_sum]
+  refine congrArg Multiset.sum (Multiset.map_congr rfl fun μ hμ ↦ ?_)
+  simp [hσ μ (pow_eq_one_of_isRoot_charpoly hf (isRoot_of_mem_roots hμ))]
 
 end Eigenspace
 
