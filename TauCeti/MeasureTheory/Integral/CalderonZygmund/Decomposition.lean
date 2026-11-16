@@ -56,6 +56,8 @@ run the same stopping time on functions in `Lᵖ`.
   `TauCeti.biUnion_calderonZygmundCubes_subset`,
   `TauCeti.ae_le_of_forall_notMem_calderonZygmundCubes` and
   `TauCeti.mul_volume_biUnion_calderonZygmundCubes_le`.
+* `TauCeti.volume_biUnion_ball_le_three_pow_mul_volume_biUnion`: the concentric cubes of three
+  times the side have at most `3ⁿ` times the total volume.
 * `TauCeti.calderonZygmundBad`, `TauCeti.calderonZygmundGood`: the bad parts and the good part,
   with `TauCeti.calderonZygmundGood_add_tsum_calderonZygmundBad` (the decomposition),
   `TauCeti.integral_calderonZygmundBad`, `TauCeti.lintegral_enorm_calderonZygmundBad_le`,
@@ -299,6 +301,23 @@ theorem mul_volume_biUnion_calderonZygmundCubes_le :
     ← ENNReal.tsum_mul_left]
   exact tsum_le_tsum fun q =>
     (mul_volume_lt_setLIntegral_of_mem_calderonZygmundCubes q.2).le
+
+/-- The concentric cubes of three times the side of the Calderón–Zygmund cubes, open sup-norm
+balls about their centres, have total volume at most `3ⁿ` times that of the Calderón–Zygmund
+cubes. -/
+theorem volume_biUnion_ball_le_three_pow_mul_volume_biUnion :
+    volume (⋃ q ∈ calderonZygmundCubes g t,
+        Metric.ball (fun i => ((q.2 i : ℝ) + 2⁻¹) * 2 ^ q.1) (3 * 2 ^ q.1 / 2)) ≤
+      3 ^ Fintype.card ι * volume (⋃ q ∈ calderonZygmundCubes g t, dyadicCube q.1 q.2) := by
+  calc volume (⋃ q ∈ calderonZygmundCubes g t,
+        Metric.ball (fun i => ((q.2 i : ℝ) + 2⁻¹) * 2 ^ q.1) (3 * 2 ^ q.1 / 2))
+      ≤ ∑' q : calderonZygmundCubes g t,
+          volume (Metric.ball (fun i => ((q.1.2 i : ℝ) + 2⁻¹) * 2 ^ q.1.1) (3 * 2 ^ q.1.1 / 2)) :=
+        measure_biUnion_le _ (to_countable _) _
+    _ = 3 ^ Fintype.card ι * volume (⋃ q ∈ calderonZygmundCubes g t, dyadicCube q.1 q.2) := by
+        rw [measure_biUnion (to_countable _) pairwiseDisjoint_calderonZygmundCubes
+          fun q _ => measurableSet_dyadicCube q.1 q.2, ← ENNReal.tsum_mul_left]
+        exact tsum_congr fun q => volume_ball_eq_three_pow_mul_volume_dyadicCube q.1.1 q.1.2
 
 end Cubes
 

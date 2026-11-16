@@ -259,19 +259,10 @@ theorem volume_lt_maximalFunction_le_mul_volume_lt_dyadicMaximalFunction [Nonemp
     calc dist x (c q) ≤ dist x y + dist y (c q) := dist_triangle _ _ _
       _ < r + 2 ^ q.1 / 2 := add_lt_add_of_lt_of_le (mem_ball'.1 hyB) hyq
       _ ≤ 3 * 2 ^ q.1 / 2 := by linarith
-  have hvol (q : ℤ × (ι → ℤ)) :
-      volume (ball (c q) (3 * 2 ^ q.1 / 2)) = 3 ^ n * volume (dyadicCube q.1 q.2) := by
-    rw [Real.volume_pi_ball _ (by positivity), volume_dyadicCube,
-      show 2 * (3 * (2 : ℝ) ^ q.1 / 2) = 3 * 2 ^ q.1 by ring, mul_pow,
-      ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_pow (by norm_num), ENNReal.ofReal_ofNat]
   calc volume {x | 3 ^ n * t < maximalFunction volume f x}
       ≤ volume (⋃ q ∈ C, ball (c q) (3 * 2 ^ q.1 / 2)) := measure_mono hsub
-    _ ≤ ∑' q : C, volume (ball (c q) (3 * 2 ^ q.1.1 / 2)) :=
-        measure_biUnion_le _ C.to_countable _
-    _ = 3 ^ n * volume (⋃ q ∈ C, dyadicCube q.1 q.2) := by
-        rw [measure_biUnion C.to_countable pairwiseDisjoint_calderonZygmundCubes
-          fun q _ => measurableSet_dyadicCube q.1 q.2, ← ENNReal.tsum_mul_left]
-        exact tsum_congr fun q => hvol q
+    _ ≤ 3 ^ n * volume (⋃ q ∈ C, dyadicCube q.1 q.2) :=
+        volume_biUnion_ball_le_three_pow_mul_volume_biUnion
     _ = 3 ^ n * volume {x | t < dyadicMaximalFunction f x} := by
         rw [setOf_lt_dyadicMaximalFunction_eq hf ht]
 
