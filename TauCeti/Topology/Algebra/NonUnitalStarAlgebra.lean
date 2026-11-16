@@ -18,6 +18,8 @@ This file provides:
   `StarSubalgebra.topologicalClosure_coe`.
 * `NonUnitalStarAlgHom.denseRange_op_iff`: passing to `MulOpposite` via `NonUnitalStarAlgHom.op`
   preserves `DenseRange`, without requiring any topology on the domain.
+* `NonUnitalStarSubalgebraClass.denseRange_subtype_op_iff`: the opposite subtype inclusion of a
+  nonunital `⋆`-subalgebra has dense range if and only if the subalgebra is dense.
 -/
 
 public section
@@ -54,3 +56,16 @@ theorem denseRange_op_iff {R A₀ A : Type*} [Monoid R]
     MulOpposite.opHomeomorph.isDenseEmbedding.dense_image]
 
 end NonUnitalStarAlgHom
+
+namespace NonUnitalStarSubalgebraClass
+
+/-- Taking `MulOpposite` on the subtype inclusion of a nonunital `⋆`-subalgebra has dense range
+if and only if the subalgebra is dense. -/
+theorem denseRange_subtype_op_iff {R A S : Type*} [CommSemiring R]
+    [NonUnitalNonAssocSemiring A] [Star A] [Module R A] [TopologicalSpace A]
+    [SetLike S A] [NonUnitalSubsemiringClass S A] [SMulMemClass S R A] [StarMemClass S A]
+    (s : S) :
+    DenseRange (subtype (R := R) s).op ↔ Dense (s : Set A) := by
+  simp
+
+end NonUnitalStarSubalgebraClass

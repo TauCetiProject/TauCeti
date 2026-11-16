@@ -9,6 +9,7 @@ public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 public import Mathlib.Analysis.CStarAlgebra.Module.Defs
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Isometric
 public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Sqrt
+import TauCeti.Analysis.CStarAlgebra.Module.Semidefinite
 
 /-!
 # Basic norm estimates for Hilbert C⋆-modules
@@ -73,14 +74,14 @@ variable [NonUnitalSeminormedRing A] [StarRing A] [Module ℂ A] [PartialOrder A
 /-- The `A`-valued inner product is conjugate-linear for the right action in its first variable:
 `⟨x a, y⟩_A = a⋆ ⟨x, y⟩_A`. -/
 lemma unop_inner_op_smul_left (a : A) (x y : E) :
-    unop (inner Aᵐᵒᵖ (op a • x) y) = star a * unop (inner Aᵐᵒᵖ x y) := by
-  simp
+    unop (inner Aᵐᵒᵖ (op a • x) y) = star a * unop (inner Aᵐᵒᵖ x y) :=
+  TauCeti.SemiCStarModule.unop_inner_op_smul_left a x y
 
 /-- The `A`-valued inner product is linear for the right action in its second variable:
 `⟨x, y a⟩_A = ⟨x, y⟩_A a`. -/
 lemma unop_inner_op_smul_right (a : A) (x y : E) :
-    unop (inner Aᵐᵒᵖ x (op a • y)) = unop (inner Aᵐᵒᵖ x y) * a := by
-  simp
+    unop (inner Aᵐᵒᵖ x (op a • y)) = unop (inner Aᵐᵒᵖ x y) * a :=
+  TauCeti.SemiCStarModule.unop_inner_op_smul_right a x y
 
 end Right
 
@@ -92,11 +93,8 @@ variable, is determined by its values `⟪z, z⟫_A` on the diagonal. This holds
 convention, in particular for right Hilbert modules `CStarModule Aᵐᵒᵖ E`. -/
 lemma inner_polarization (x y : E) :
     inner A x y = (4 : ℂ)⁻¹ • (inner A (x + y) (x + y) - inner A (x - y) (x - y) -
-      I • inner A (x + I • y) (x + I • y) + I • inner A (x - I • y) (x - I • y)) := by
-  simp only [inner_add_left, inner_add_right, inner_sub_left, inner_sub_right,
-    inner_smul_left_complex, inner_smul_right_complex, Complex.star_def, conj_I, smul_add,
-    smul_sub, smul_neg, smul_smul, neg_smul, I_mul_I]
-  module
+      I • inner A (x + I • y) (x + I • y) + I • inner A (x - I • y) (x - I • y)) :=
+  TauCeti.SemiCStarModule.inner_polarization x y
 
 /-- Vectors are determined by their inner products against all vectors in the first slot. -/
 theorem ext_inner_left {x y : E} (h : ∀ z, inner A z x = inner A z y) : x = y := by
@@ -140,12 +138,8 @@ theorem isGreatest_norm_inner (x : E) :
 `|x| = CFC.sqrt ⟪x, x⟫_A`. -/
 lemma inner_smul_smul (a : A) (x : E) :
     inner A (a • x) (a • x) =
-      a * CFC.sqrt (inner A x x) * star (a * CFC.sqrt (inner A x x)) := by
-  set s := CFC.sqrt (inner A x x)
-  have hs : s * s = inner A x x := CFC.sqrt_mul_sqrt_self _ inner_self_nonneg
-  have hs' : star s = s := (CFC.sqrt_nonneg _).isSelfAdjoint.star_eq
-  rw [inner_op_smul_left, inner_op_smul_right, star_mul, hs', ← hs]
-  noncomm_ring
+      a * CFC.sqrt (inner A x x) * star (a * CFC.sqrt (inner A x x)) :=
+  TauCeti.SemiCStarModule.inner_smul_smul a x
 
 /-- The inner product of `a x - x` with itself is `(a |x| - |x|) (a |x| - |x|)⋆`, where
 `|x| = CFC.sqrt ⟪x, x⟫_A`. -/
@@ -161,9 +155,8 @@ lemma inner_smul_sub_self (a : A) (x : E) :
   noncomm_ring
 
 /-- The norm of `a x` is the norm of `a |x|` in `A`, where `|x| = CFC.sqrt ⟪x, x⟫_A`. -/
-protected theorem norm_smul (a : A) (x : E) : ‖a • x‖ = ‖a * CFC.sqrt (inner A x x)‖ := by
-  rw [norm_eq_sqrt_norm_inner_self (A := A), inner_smul_smul, CStarRing.norm_self_mul_star,
-    Real.sqrt_mul_self (norm_nonneg _)]
+protected theorem norm_smul (a : A) (x : E) : ‖a • x‖ = ‖a * CFC.sqrt (inner A x x)‖ :=
+  TauCeti.SemiCStarModule.norm_smul a x
 
 /-- The norm of `a x - x` is the norm of `a |x| - |x|` in `A`, where `|x| = CFC.sqrt ⟪x, x⟫_A`. -/
 theorem norm_smul_sub_self (a : A) (x : E) :
@@ -172,10 +165,8 @@ theorem norm_smul_sub_self (a : A) (x : E) :
     Real.sqrt_mul_self (norm_nonneg _)]
 
 /-- The action of a C⋆-algebra on a Hilbert C⋆-module is bounded: `‖a x‖ ≤ ‖a‖ ‖x‖`. -/
-protected theorem norm_smul_le (a : A) (x : E) : ‖a • x‖ ≤ ‖a‖ * ‖x‖ := by
-  rw [CStarModule.norm_smul]
-  refine (norm_mul_le _ _).trans_eq ?_
-  rw [CFC.norm_sqrt _ inner_self_nonneg, ← norm_eq_sqrt_norm_inner_self]
+protected theorem norm_smul_le (a : A) (x : E) : ‖a • x‖ ≤ ‖a‖ * ‖x‖ :=
+  TauCeti.SemiCStarModule.norm_smul_le a x
 
 end Norm
 
@@ -188,15 +179,13 @@ variable [AddCommGroup E] [Module ℂ E] [SMul Aᵐᵒᵖ E] [Norm E] [CStarModu
 /-- The Cauchy–Schwarz inequality for a right Hilbert C⋆-module, in the C⋆-algebra:
 `⟨x, y⟩_A⋆ ⟨x, y⟩_A ≤ ‖x‖² ⟨y, y⟩_A`. -/
 theorem star_unop_inner_mul_unop_inner_le (x y : E) :
-    star (unop (inner Aᵐᵒᵖ x y)) * unop (inner Aᵐᵒᵖ x y) ≤ ‖x‖ ^ 2 • unop (inner Aᵐᵒᵖ y y) := by
-  have h := unop_le_unop.mpr (inner_mul_inner_swap_le (A := Aᵐᵒᵖ) (x := x) (y := y))
-  rwa [unop_mul, unop_smul, ← star_inner x y, unop_star] at h
+    star (unop (inner Aᵐᵒᵖ x y)) * unop (inner Aᵐᵒᵖ x y) ≤ ‖x‖ ^ 2 • unop (inner Aᵐᵒᵖ y y) :=
+  TauCeti.SemiCStarModule.star_unop_inner_mul_unop_inner_le x y
 
 /-- The Cauchy–Schwarz inequality for a right Hilbert C⋆-module, in norm:
 `‖⟨x, y⟩_A‖ ≤ ‖x‖ ‖y‖`. -/
-theorem norm_unop_inner_le (x y : E) : ‖unop (inner Aᵐᵒᵖ x y)‖ ≤ ‖x‖ * ‖y‖ := by
-  rw [norm_unop]
-  exact norm_inner_le E
+theorem norm_unop_inner_le (x y : E) : ‖unop (inner Aᵐᵒᵖ x y)‖ ≤ ‖x‖ * ‖y‖ :=
+  TauCeti.SemiCStarModule.norm_unop_inner_le x y
 
 /-- Norm recovery for a right Hilbert C⋆-module: `‖x‖` is the largest value of `‖⟨y, x⟩_A‖` for
 `y` in the closed unit ball, attained at `y = ‖x‖⁻¹ x`. -/
@@ -232,9 +221,8 @@ theorem norm_op_smul_sub_self (a : A) (x : E) :
 
 /-- The right action of a C⋆-algebra on a right Hilbert module is bounded:
 `‖x a‖ ≤ ‖x‖ ‖a‖`. -/
-theorem norm_op_smul_le (a : A) (x : E) : ‖op a • x‖ ≤ ‖x‖ * ‖a‖ := by
-  rw [mul_comm, ← norm_op a]
-  exact CStarModule.norm_smul_le _ x
+theorem norm_op_smul_le (a : A) (x : E) : ‖op a • x‖ ≤ ‖x‖ * ‖a‖ :=
+  TauCeti.SemiCStarModule.norm_op_smul_le a x
 
 end Right
 

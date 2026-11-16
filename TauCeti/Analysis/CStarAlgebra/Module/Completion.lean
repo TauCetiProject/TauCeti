@@ -6,8 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Operator.Extend
+public import TauCeti.Analysis.CStarAlgebra.Module.Self
 public import TauCeti.Analysis.CStarAlgebra.Module.Semidefinite
+public import TauCeti.Analysis.Normed.Operator.Completion
 public import TauCeti.Topology.Algebra.NonUnitalStarAlgebra
+import TauCeti.Topology.Algebra.LinearMapCompletion
 
 /-!
 # Completions of pre-Hilbert and positive semidefinite C⋆-modules
@@ -27,11 +30,15 @@ continuous `A`-action extending the `A₀`-action and making `Completion E` a Hi
   `CStarModule A (Completion E)`.
 * `UniformSpace.Completion.instCStarModule`: global `CStarModule A (Completion E)` instance for any
   seminormed `SemiCStarModule A E` (left or right via `Aᵐᵒᵖ`).
-* Compatibility of `UniformSpace.Completion.separationQuotientEquiv` with the `A`-action and inner
-  product, and preservation of fullness (`topologicalClosure_span_range_inner`) under completion.
-* Universal properties for bounded module maps (`fromCompletion_extendSMulCLM_iff`,
-  `ContinuousLinearMap.fromCompletion_smul_iff`, `comp_toComplL_eq_iff`) and plain
-  inner-product-preserving maps (`fromCompletionInnerₗᵢ`, `equivOfDenseInner`).
+* Inner-product compatibility of `UniformSpace.Completion.separationQuotientEquiv`
+  (`inner_separationQuotientEquiv`, `inner_separationQuotientEquiv_symm`), and preservation of
+  fullness (`TauCeti.SemiCStarModuleAlong.topologicalClosure_span_range_inner_completion`,
+  `TauCeti.SemiCStarModule.topologicalClosure_span_range_inner_completion`, and right-module
+  variants) under completion.
+* Universal properties for continuous module maps
+  (`TauCeti.SemiCStarModuleAlong.fromCompletion_extendSMulCLM_iff`) and plain
+  inner-product-preserving maps (`TauCeti.SemiCStarModuleAlong.{fromCompletionInnerₗᵢ,
+  equivOfDenseInner}`, `TauCeti.SemiCStarModule.{fromCompletionInnerₗᵢ, equivOfDenseInner}`).
 * `NonUnitalStarSubalgebra.completionEquiv`: `Completion S ≃ₗᵢ[ℂ] A` for dense `S ⊆ A`.
 
 ## References
@@ -52,7 +59,7 @@ namespace TauCeti.SemiCStarModuleAlong
 
 section CompletionAlong
 
-variable {A₀ A E : Type*} [NonUnitalRing A₀] [StarRing A₀] [Module ℂ A₀]
+variable {A₀ A E : Type*} [NonUnitalSemiring A₀] [StarRing A₀] [Module ℂ A₀]
   [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
   {φ : A₀ →⋆ₙₐ[ℂ] A} [SeminormedAddCommGroup E] [NormedSpace ℂ E] [SMul A₀ E] [Inner A E]
   [SemiCStarModuleAlong φ E]
@@ -189,7 +196,7 @@ variable (E) in
 `Completion E →L[ℂ] Completion E`. Even when `E` is non-separated and the `A₀`-action on `E` fails
 to distribute on null vectors, definiteness of the completed inner product makes the induced action
 on `Completion E` strictly `ℂ`-linear in both variables. -/
-noncomputable def smulAlongCLM (hφ : DenseRange φ) :
+private noncomputable def smulAlongCLM (hφ : DenseRange φ) :
     A₀ →ₗ[ℂ] Completion E →L[ℂ] Completion E where
   toFun a₀ := LinearMap.mkContinuous
     { toFun x := a₀ • x
@@ -209,16 +216,45 @@ noncomputable def smulAlongCLM (hφ : DenseRange φ) :
       simp [inner_smul_right_complex_completion hφ, inner_op_smul_right_completion hφ,
         smul_mul_assoc]
 
-@[simp]
-theorem smulAlongCLM_apply (hφ : DenseRange φ) (a₀ : A₀) (x : Completion E) :
+private theorem smulAlongCLM_apply (hφ : DenseRange φ) (a₀ : A₀) (x : Completion E) :
     smulAlongCLM E hφ a₀ x = a₀ • x :=
   (rfl)
 
 variable (E) in
-theorem norm_smulAlongCLM_le (hφ : DenseRange φ) (a₀ : A₀) :
+private theorem norm_smulAlongCLM_le (hφ : DenseRange φ) (a₀ : A₀) :
     ‖smulAlongCLM E hφ a₀‖ ≤ ‖φ a₀‖ :=
   ContinuousLinearMap.opNorm_le_bound _ (_root_.norm_nonneg _) fun x ↦
     norm_smul_along_completion_le (φ := φ) a₀ x
+
+variable (E) in
+/-- Completion preserves the closed complex linear span of `A`-valued inner products. -/
+theorem topologicalClosure_span_range_inner_completion (hφ : DenseRange φ) :
+    (Submodule.span ℂ
+        (Set.range fun p : Completion E × Completion E ↦ inner A p.1 p.2)).topologicalClosure =
+      (Submodule.span ℂ (Set.range fun p : E × E ↦ inner A p.1 p.2)).topologicalClosure := by
+  refine le_antisymm
+    (Submodule.topologicalClosure_minimal _ ?_ (Submodule.isClosed_topologicalClosure _))
+    (Submodule.topologicalClosure_mono <| Submodule.span_mono ?_)
+  · rw [Submodule.span_le]
+    rintro _ ⟨⟨x, y⟩, rfl⟩
+    refine Completion.induction_on₂ x y
+      ((Submodule.isClosed_topologicalClosure _).preimage (continuous_inner_completion hφ))
+      fun u v ↦ ?_
+    simp only [inner_coe_coe hφ]
+    exact Submodule.le_topologicalClosure _ (Submodule.subset_span ⟨(u, v), rfl⟩)
+  · rintro _ ⟨⟨u, v⟩, rfl⟩
+    exact ⟨((u : Completion E), (v : Completion E)), inner_coe_coe hφ u v⟩
+
+end CompletionAlong
+
+section ExtendSMul
+
+variable {A₀ A E : Type*} [NonUnitalRing A₀] [StarRing A₀] [Module ℂ A₀]
+  [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+  {φ : A₀ →⋆ₙₐ[ℂ] A} [SeminormedAddCommGroup E] [NormedSpace ℂ E] [SMul A₀ E] [Inner A E]
+  [SemiCStarModuleAlong φ E]
+
+include φ
 
 variable (E) in
 /-- Continuous extension of the `A₀`-action along `φ : A₀ →⋆ₙₐ[ℂ] A` (`DenseRange φ`) to a
@@ -228,12 +264,12 @@ noncomputable def extendSMulCLM (hφ : DenseRange φ) :
   (smulAlongCLM E hφ).extendOfNorm (φ : A₀ →ₗ[ℂ] A)
 
 variable (E) in
-@[simp]
-theorem extendSMulCLM_map (hφ : DenseRange φ) (a₀ : A₀) :
+private theorem extendSMulCLM_map (hφ : DenseRange φ) (a₀ : A₀) :
     extendSMulCLM E hφ (φ a₀) = smulAlongCLM E hφ a₀ :=
   LinearMap.extendOfNorm_eq hφ
     ⟨1, fun b₀ ↦ by simpa using norm_smulAlongCLM_le E hφ b₀⟩ a₀
 
+@[simp]
 theorem extendSMulCLM_map_apply (hφ : DenseRange φ) (a₀ : A₀) (x : Completion E) :
     extendSMulCLM E hφ (φ a₀) x = a₀ • x := by
   rw [extendSMulCLM_map, smulAlongCLM_apply]
@@ -309,7 +345,7 @@ theorem eq_extendSMulCLM_iff (hφ : DenseRange φ)
 variable (E) in
 /-- Reducible `SMul A (Completion E)` given by `extendSMulCLM E hφ`. Kept as an `abbrev` rather than
 a global instance so that when `A₀ = A` it does not compete with `Completion`'s existing `SMul`
-instance (with which it agrees by `UniformSpace.Completion.extendSMulCLM_id_apply`). -/
+instance (with which it agrees by `extendSMulCLM_id_apply`). -/
 noncomputable abbrev completedSMul (hφ : DenseRange φ) : SMul A (Completion E) where
   smul a x := extendSMulCLM E hφ a x
 
@@ -343,42 +379,66 @@ noncomputable abbrev completedCStarModule (hφ : DenseRange φ) :
       star_inner := star_inner_completion hφ
       norm_eq_sqrt_norm_inner_self := norm_eq_sqrt_norm_inner_self_completion hφ }
 
-variable (E) in
-/-- Completion preserves the closed complex linear span of `A`-valued inner products. -/
-theorem topologicalClosure_span_range_inner_completion (hφ : DenseRange φ) :
-    (Submodule.span ℂ
-        (Set.range fun p : Completion E × Completion E ↦ inner A p.1 p.2)).topologicalClosure =
-      (Submodule.span ℂ (Set.range fun p : E × E ↦ inner A p.1 p.2)).topologicalClosure := by
-  refine le_antisymm
-    (Submodule.topologicalClosure_minimal _ ?_ (Submodule.isClosed_topologicalClosure _))
-    (Submodule.topologicalClosure_mono <| Submodule.span_mono ?_)
-  · rw [Submodule.span_le]
-    rintro _ ⟨⟨x, y⟩, rfl⟩
-    refine Completion.induction_on₂ x y
-      ((Submodule.isClosed_topologicalClosure _).preimage (continuous_inner_completion hφ))
-      fun u v ↦ ?_
-    simp only [inner_coe_coe hφ]
-    exact Submodule.le_topologicalClosure _ (Submodule.subset_span ⟨(u, v), rfl⟩)
-  · rintro _ ⟨⟨u, v⟩, rfl⟩
-    exact ⟨((u : Completion E), (v : Completion E)), inner_coe_coe hφ u v⟩
+end ExtendSMul
 
-end CompletionAlong
+/-- When `A` already acts on `E`, the extended action `extendSMulCLM` along `id` coincides with
+`Completion E`'s standard `SMul A (Completion E)`. -/
+@[simp]
+theorem extendSMulCLM_id_apply {A E : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A]
+    [StarOrderedRing A] [SeminormedAddCommGroup E] [NormedSpace ℂ E] [SMul A E]
+    [TauCeti.SemiCStarModule A E] (a : A) (x : Completion E) :
+    extendSMulCLM E (φ := NonUnitalStarAlgHom.id ℂ A) Function.surjective_id.denseRange a x =
+      a • x :=
+  extendSMulCLM_map_apply Function.surjective_id.denseRange a x
+
+/-- Right-module form of `topologicalClosure_span_range_inner_completion`: completion preserves the
+closed complex linear span of `⟨x, y⟩_A = unop (inner Aᵐᵒᵖ x y)`. -/
+theorem topologicalClosure_span_range_unop_inner_mulOpposite_completion {A₀ A : Type*} (E : Type*)
+    [NonUnitalSemiring A₀] [StarRing A₀] [Module ℂ A₀]
+    [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+    {φ : A₀ →⋆ₙₐ[ℂ] Aᵐᵒᵖ} [SeminormedAddCommGroup E] [NormedSpace ℂ E] [SMul A₀ E]
+    [Inner Aᵐᵒᵖ E] [SemiCStarModuleAlong φ E] (hφ : DenseRange φ) :
+    (Submodule.span ℂ
+        (Set.range fun p : Completion E × Completion E ↦
+          unop (inner Aᵐᵒᵖ p.1 p.2))).topologicalClosure =
+      (Submodule.span ℂ
+        (Set.range fun p : E × E ↦ unop (inner Aᵐᵒᵖ p.1 p.2))).topologicalClosure := by
+  have h := congrArg (fun S : Submodule ℂ Aᵐᵒᵖ ↦
+      (MulOpposite.opHomeomorph.symm : Aᵐᵒᵖ ≃ₜ A) '' (S : Set Aᵐᵒᵖ))
+    (topologicalClosure_span_range_inner_completion E hφ)
+  have himg (s : Set Aᵐᵒᵖ) :
+      (MulOpposite.opHomeomorph.symm : Aᵐᵒᵖ ≃ₜ A) ''
+        ((Submodule.span ℂ s).topologicalClosure : Set Aᵐᵒᵖ) =
+        ((Submodule.span ℂ (unop '' s)).topologicalClosure : Set A) := by
+    rw [Submodule.topologicalClosure_coe, Submodule.topologicalClosure_coe,
+      Homeomorph.image_closure]
+    congr 1
+    have hcoe : ((MulOpposite.opHomeomorph.symm : Aᵐᵒᵖ ≃ₜ A) : Aᵐᵒᵖ → A) =
+        ((MulOpposite.opLinearEquiv ℂ (M := A)).symm.toLinearMap : Aᵐᵒᵖ → A) := by
+      ext x; simp
+    have hcoe' : ((MulOpposite.opLinearEquiv ℂ (M := A)).symm.toLinearMap : Aᵐᵒᵖ → A) = unop := by
+      ext x; simp
+    rw [hcoe, ← Submodule.map_coe, Submodule.map_span, hcoe']
+  exact SetLike.coe_injective <| by
+    simpa only [himg, ← Set.range_comp, Function.comp_def] using h
 
 /-! ### Universal properties along a dense `⋆`-subalgebra homomorphism -/
 
-section UniversalAlong
+section ExtendSMulUniversal
 
 variable {A₀ A E F : Type*} [NonUnitalRing A₀] [StarRing A₀] [Module ℂ A₀]
   [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
   {φ : A₀ →⋆ₙₐ[ℂ] A} [SeminormedAddCommGroup E] [NormedSpace ℂ E] [SMul A₀ E] [Inner A E]
   [SemiCStarModuleAlong φ E]
-  [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F] [SMul A F] [CStarModule A F]
+  [UniformSpace F] [AddCommGroup F] [IsUniformAddGroup F] [Module ℂ F]
+  [UniformContinuousConstSMul ℂ F] [T0Space F] [CompleteSpace F] [SMul A F] [ContinuousSMul A F]
 
 include φ
 
-/-- A bounded `ℂ`-linear map `f : E →L[ℂ] F` into a complete `CStarModule A F` extends to a bounded
-map `f.fromCompletion : Completion E →L[ℂ] F` intertwining the extended `A`-action `extendSMulCLM`
-if and only if `f` intertwines `A₀` with `A` along `φ` on `E`. -/
+/-- A continuous `ℂ`-linear map `f : E →L[ℂ] F` into a complete separated uniform `ℂ`-module `F`
+with a continuous `A`-action extends to `f.fromCompletion : Completion E →L[ℂ] F` intertwining the
+extended `A`-action `extendSMulCLM` if and only if `f` intertwines `A₀` with `A` along `φ` on
+`E`. -/
 theorem fromCompletion_extendSMulCLM_iff (hφ : DenseRange φ) (f : E →L[ℂ] F) :
     (∀ (a : A) (x : Completion E),
         f.fromCompletion (extendSMulCLM E hφ a x) = a • f.fromCompletion x) ↔
@@ -399,12 +459,18 @@ theorem fromCompletion_extendSMulCLM_iff (hφ : DenseRange φ) (f : E →L[ℂ] 
     rw [extendSMulCLM_map_coe, ContinuousLinearMap.fromCompletion_apply_coe,
       ContinuousLinearMap.fromCompletion_apply_coe, h a₀ u]
 
+end ExtendSMulUniversal
+
 section InnerMaps
 
-section WithoutOrder
+section Algebraic
 
-omit [StarOrderedRing A]
-variable (φ) (f : E → F) (hf : ∀ x y : E, inner A (f x) (f y) = inner A x y)
+variable {A₀ A E F : Type*} [NonUnitalSemiring A₀] [StarRing A₀] [Module ℂ A₀]
+  [NonUnitalRing A] [StarRing A] [Module ℂ A] [StarModule ℂ A] [PartialOrder A] [Norm A]
+  (φ : A₀ →⋆ₙₐ[ℂ] A) [SeminormedAddCommGroup E] [NormedSpace ℂ E] [SMul A₀ E] [Inner A E]
+  [SemiCStarModuleAlong φ E]
+  [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F] [SMul A F] [CStarModule A F]
+  (f : E → F) (hf : ∀ x y : E, inner A (f x) (f y) = inner A x y)
 
 /-- Extend any plain function `f : E → F` into a complete `CStarModule A F` preserving `A`-valued
 inner products to a `ℂ`-linear isometry `Completion E →ₗᵢ[ℂ] F`. -/
@@ -418,9 +484,27 @@ theorem fromCompletionInnerₗᵢ_coe (x : E) : fromCompletionInnerₗᵢ φ f h
 /-- Uniqueness in the universal property of `Completion E` for inner-product-preserving maps. -/
 theorem eq_fromCompletionInnerₗᵢ_iff (g : Completion E →ₗᵢ[ℂ] F) :
     g = fromCompletionInnerₗᵢ φ f hf ↔ ∀ x : E, g (x : Completion E) = f x :=
-  ⟨fun h x ↦ by rw [h, fromCompletionInnerₗᵢ_coe], fun h ↦ LinearIsometry.ext fun x ↦
-    Completion.induction_on x (isClosed_eq g.continuous (fromCompletionInnerₗᵢ φ f hf).continuous)
-      fun u ↦ (h u).trans (fromCompletionInnerₗᵢ_coe φ f hf u).symm⟩
+  ⟨fun h x ↦ by rw [h, fromCompletionInnerₗᵢ_coe], fun h ↦
+    LinearIsometry.toContinuousLinearMap_injective <| by
+      rw [fromCompletionInnerₗᵢ, LinearIsometry.toContinuousLinearMap_fromCompletion]
+      exact (ContinuousLinearMap.fromCompletion_unique
+        (linearIsometryOfInner φ f hf).toContinuousLinearMap g.toContinuousLinearMap fun u ↦ by
+          rw [LinearIsometry.coe_toContinuousLinearMap,
+            LinearIsometry.coe_toContinuousLinearMap, linearIsometryOfInner_apply, h u]).symm⟩
+
+/-- `fromCompletionInnerₗᵢ` intertwines the `A₀`-action on `Completion E` with the `A`-action on `F`
+along `φ`. -/
+@[simp]
+theorem fromCompletionInnerₗᵢ_smul [UniformContinuousConstSMul A₀ E] [ContinuousConstSMul A F]
+    (a₀ : A₀) (x : Completion E) :
+    fromCompletionInnerₗᵢ φ f hf (a₀ • x) = φ a₀ • fromCompletionInnerₗᵢ φ f hf x := by
+  have hclm := (ContinuousLinearMap.fromCompletion_smul_iff φ
+    (linearIsometryOfInner φ f hf).toContinuousLinearMap).mpr fun b₀ u ↦ by
+      rw [LinearIsometry.coe_toContinuousLinearMap, linearIsometryOfInner_apply,
+        linearIsometryOfInner_apply]
+      exact map_smul_along_of_inner φ hf b₀ u
+  simpa only [fromCompletionInnerₗᵢ, ← LinearIsometry.coe_toContinuousLinearMap,
+    LinearIsometry.toContinuousLinearMap_fromCompletion] using hclm a₀ x
 
 /-- Any plain inner-product-preserving map `f : E → F` with dense range into a complete
 `CStarModule A F` induces a `ℂ`-linear isometric equivalence `Completion E ≃ₗᵢ[ℂ] F`. -/
@@ -440,11 +524,28 @@ theorem equivOfDenseInner_coe (hdf : DenseRange f) (x : E) :
     equivOfDenseInner φ f hf hdf (x : Completion E) = f x :=
   fromCompletionInnerₗᵢ_coe φ f hf x
 
-end WithoutOrder
+@[simp]
+theorem equivOfDenseInner_symm_apply (hdf : DenseRange f) (x : E) :
+    (equivOfDenseInner φ f hf hdf).symm (f x) = (x : Completion E) :=
+  (equivOfDenseInner φ f hf hdf).symm_apply_eq.mpr (equivOfDenseInner_coe φ f hf hdf x).symm
 
-section WithOrder
+@[simp]
+theorem equivOfDenseInner_smul [UniformContinuousConstSMul A₀ E] [ContinuousConstSMul A F]
+    (hdf : DenseRange f) (a₀ : A₀) (x : Completion E) :
+    equivOfDenseInner φ f hf hdf (a₀ • x) = φ a₀ • equivOfDenseInner φ f hf hdf x :=
+  fromCompletionInnerₗᵢ_smul φ f hf a₀ x
 
-variable (hφ : DenseRange φ) (f : E → F) (hf : ∀ x y : E, inner A (f x) (f y) = inner A x y)
+end Algebraic
+
+section CStar
+
+variable {A₀ A E F : Type*} [NonUnitalSemiring A₀] [StarRing A₀] [Module ℂ A₀]
+  [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+  {φ : A₀ →⋆ₙₐ[ℂ] A} [SeminormedAddCommGroup E] [NormedSpace ℂ E] [SMul A₀ E] [Inner A E]
+  [SemiCStarModuleAlong φ E]
+  [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F] [SMul A F] [CStarModule A F]
+  (hφ : DenseRange φ) (f : E → F) (hf : ∀ x y : E, inner A (f x) (f y) = inner A x y)
+
 include hφ
 
 @[simp]
@@ -460,16 +561,42 @@ theorem inner_fromCompletionInnerₗᵢ (x y : Completion E) :
   rw [fromCompletionInnerₗᵢ_coe, fromCompletionInnerₗᵢ_coe, inner_coe_coe hφ, hf]
 
 @[simp]
-theorem fromCompletionInnerₗᵢ_extendSMulCLM (a : A) (x : Completion E) :
-    fromCompletionInnerₗᵢ φ f hf (extendSMulCLM E hφ a x) =
-      a • fromCompletionInnerₗᵢ φ f hf x :=
-  (fromCompletion_extendSMulCLM_iff hφ (linearIsometryOfInner φ f hf).toContinuousLinearMap).mpr
-    (fun a₀ u ↦ by simpa [linearIsometryOfInner_apply] using map_smul_along_of_inner φ hf a₀ u) a x
-
-@[simp]
 theorem inner_equivOfDenseInner (hdf : DenseRange f) (x y : Completion E) :
     inner A (equivOfDenseInner φ f hf hdf x) (equivOfDenseInner φ f hf hdf y) = inner A x y :=
   inner_fromCompletionInnerₗᵢ hφ f hf x y
+
+@[simp]
+theorem inner_equivOfDenseInner_symm (hdf : DenseRange f) (x y : F) :
+    inner A ((equivOfDenseInner φ f hf hdf).symm x)
+      ((equivOfDenseInner φ f hf hdf).symm y) = inner A x y := by
+  rw [← inner_equivOfDenseInner hφ f hf hdf, LinearIsometryEquiv.apply_symm_apply,
+    LinearIsometryEquiv.apply_symm_apply]
+
+end CStar
+
+section CStarExtendSMul
+
+variable {A₀ A E F : Type*} [NonUnitalRing A₀] [StarRing A₀] [Module ℂ A₀]
+  [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+  {φ : A₀ →⋆ₙₐ[ℂ] A} [SeminormedAddCommGroup E] [NormedSpace ℂ E] [SMul A₀ E] [Inner A E]
+  [SemiCStarModuleAlong φ E]
+  [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F] [SMul A F] [CStarModule A F]
+  (hφ : DenseRange φ) (f : E → F) (hf : ∀ x y : E, inner A (f x) (f y) = inner A x y)
+
+include hφ
+
+@[simp]
+theorem fromCompletionInnerₗᵢ_extendSMulCLM (a : A) (x : Completion E) :
+    fromCompletionInnerₗᵢ φ f hf (extendSMulCLM E hφ a x) =
+      a • fromCompletionInnerₗᵢ φ f hf x := by
+  rw [fromCompletionInnerₗᵢ, ← LinearIsometry.coe_toContinuousLinearMap,
+    LinearIsometry.toContinuousLinearMap_fromCompletion]
+  exact (fromCompletion_extendSMulCLM_iff hφ
+    (linearIsometryOfInner φ f hf).toContinuousLinearMap).mpr
+    (fun a₀ u ↦ by
+      rw [LinearIsometry.coe_toContinuousLinearMap, linearIsometryOfInner_apply,
+        linearIsometryOfInner_apply]
+      exact map_smul_along_of_inner φ hf a₀ u) a x
 
 @[simp]
 theorem equivOfDenseInner_extendSMulCLM (hdf : DenseRange f) (a : A) (x : Completion E) :
@@ -477,69 +604,20 @@ theorem equivOfDenseInner_extendSMulCLM (hdf : DenseRange f) (a : A) (x : Comple
       a • equivOfDenseInner φ f hf hdf x :=
   fromCompletionInnerₗᵢ_extendSMulCLM hφ f hf a x
 
-end WithOrder
+@[simp]
+theorem equivOfDenseInner_symm_smul (hdf : DenseRange f) (a : A) (y : F) :
+    (equivOfDenseInner φ f hf hdf).symm (a • y) =
+      extendSMulCLM E hφ a ((equivOfDenseInner φ f hf hdf).symm y) :=
+  (equivOfDenseInner φ f hf hdf).symm_apply_eq.mpr <| by
+    rw [equivOfDenseInner_extendSMulCLM hφ f hf hdf, LinearIsometryEquiv.apply_symm_apply]
+
+end CStarExtendSMul
 
 end InnerMaps
 
-end UniversalAlong
-
 end TauCeti.SemiCStarModuleAlong
 
-/-! ### Bounded module maps on completions -/
-
-namespace ContinuousLinearMap
-
-variable {A E F : Type*} [SeminormedAddCommGroup E] [NormedSpace ℂ E]
-  [SMul A E] [UniformContinuousConstSMul A E]
-  [SeminormedAddCommGroup F] [NormedSpace ℂ F] [SMul A F]
-
-/-- `f.fromCompletion : Completion E →L[ℂ] F` commutes with `A` if and only if `f` does. -/
-@[simp]
-theorem fromCompletion_smul_iff [T2Space F] [CompleteSpace F] [ContinuousConstSMul A F]
-    (f : E →L[ℂ] F) :
-    (∀ (a : A) (x : Completion E), f.fromCompletion (a • x) = a • f.fromCompletion x) ↔
-      ∀ (a : A) (x : E), f (a • x) = a • f x := by
-  refine ⟨fun h a x ↦ by simpa only [← Completion.coe_smul, fromCompletion_apply_coe] using h a x,
-    fun h a x ↦ Completion.induction_on x
-      (isClosed_eq (f.fromCompletion.continuous.comp (continuous_const_smul a))
-        ((continuous_const_smul a).comp f.fromCompletion.continuous))
-      fun u ↦ by simp [← Completion.coe_smul, h a u]⟩
-
-/-- If `f : E →L[ℂ] F` commutes with `A`, then so does `f.completion : Completion E →L[ℂ]
-Completion F`. -/
-theorem completion_smul [UniformContinuousConstSMul A F] (f : E →L[ℂ] F)
-    (hf : ∀ (a : A) (x : E), f (a • x) = a • f x) (a : A) (x : Completion E) :
-    f.completion (a • x) = a • f.completion x :=
-  Completion.induction_on x
-    (isClosed_eq (f.completion.continuous.comp (continuous_const_smul a))
-      ((continuous_const_smul a).comp f.completion.continuous))
-    fun u ↦ by simp [← Completion.coe_smul, hf a u]
-
-/-- When `F` is separated, `f.completion : Completion E →L[ℂ] Completion F` commutes with `A` if and
-only if `f` does. -/
-@[simp]
-theorem completion_smul_iff [T0Space F] [UniformContinuousConstSMul A F] (f : E →L[ℂ] F) :
-    (∀ (a : A) (x : Completion E), f.completion (a • x) = a • f.completion x) ↔
-      ∀ (a : A) (x : E), f (a • x) = a • f x := by
-  refine ⟨fun h a x ↦ ?_, completion_smul f⟩
-  have hcoe := h a (x : Completion E)
-  rwa [← Completion.coe_smul, completion_apply_coe, completion_apply_coe,
-    ← Completion.coe_smul, Completion.coe_inj] at hcoe
-
-/-- Universal property of `Completion E` for bounded linear maps into a complete separated space
-`G`: `g : Completion E →L[ℂ] G` factors `f : E →L[ℂ] G` through `Completion.toComplL` if and only if
-`g = f.fromCompletion`. -/
-theorem comp_toComplL_eq_iff {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G] [CompleteSpace G]
-    (f : E →L[ℂ] G) (g : Completion E →L[ℂ] G) :
-    g.comp Completion.toComplL = f ↔ g = f.fromCompletion :=
-  ⟨fun h ↦ ContinuousLinearMap.ext fun x ↦
-      Completion.induction_on x (isClosed_eq g.continuous f.fromCompletion.continuous)
-        fun u ↦ by simpa using LinearMap.congr_fun (congr_arg toLinearMap h) u,
-    fun h ↦ by ext x; simp [h]⟩
-
-end ContinuousLinearMap
-
-/-! ### Global `CStarModule` instance and universal properties on `UniformSpace.Completion` -/
+/-! ### Global `CStarModule` instance on `UniformSpace.Completion` -/
 
 namespace UniformSpace.Completion
 
@@ -556,14 +634,6 @@ variable {A E : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRi
 theorem inner_coe_of_semiCStarModule (x y : E) :
     inner A (x : Completion E) (y : Completion E) = inner A x y :=
   TauCeti.SemiCStarModuleAlong.inner_coe_coe (denseRange_idHom A) x y
-
-/-- When `A` already acts on `E`, the extended action `extendSMulCLM` along `id` coincides with
-`Completion E`'s standard `SMul A (Completion E)`. -/
-@[simp]
-theorem extendSMulCLM_id_apply (a : A) (x : Completion E) :
-    TauCeti.SemiCStarModuleAlong.extendSMulCLM E
-      (φ := NonUnitalStarAlgHom.id ℂ A) Function.surjective_id.denseRange a x = a • x :=
-  TauCeti.SemiCStarModuleAlong.extendSMulCLM_map_apply (denseRange_idHom A) a x
 
 /-- The completion of any pre-Hilbert or positive semidefinite `A`-module is a Hilbert `A`-module
 (`CStarModule A (Completion E)`). -/
@@ -603,94 +673,89 @@ theorem inner_separationQuotientEquiv (x y : Completion (SeparationQuotient E)) 
     inner_coe_of_semiCStarModule, ← SeparationQuotient.inner_mk_mk_of_semiCStarModule (A := A)]
   exact (inner_coe_of_semiCStarModule (A := A) (E := SeparationQuotient E) _ _).symm
 
-/-- `separationQuotientEquiv ℂ E : Completion (SeparationQuotient E) ≃ₗᵢ[ℂ] Completion E` commutes
-with the `A`-action. -/
+/-- The inverse of `separationQuotientEquiv ℂ E` preserves `A`-valued inner products. -/
 @[simp]
-theorem separationQuotientEquiv_smul (a : A) (x : Completion (SeparationQuotient E)) :
-    separationQuotientEquiv ℂ E (a • x) = a • separationQuotientEquiv ℂ E x :=
-  Completion.induction_on x
-    (isClosed_eq ((separationQuotientEquiv ℂ E).continuous.comp (continuous_const_smul a))
-      ((continuous_const_smul a).comp (separationQuotientEquiv ℂ E).continuous))
-    (SeparationQuotient.surjective_mk.forall.2 fun u ↦ by
-      rw [← Completion.coe_smul, ← SeparationQuotient.mk_smul, separationQuotientEquiv_coe_mk,
-        separationQuotientEquiv_coe_mk, Completion.coe_smul])
-
-/-- Completion preserves the closed complex linear span of inner products, so `Completion E` is full
-if and only if `E` has dense inner-product span. -/
-theorem topologicalClosure_span_range_inner :
-    (Submodule.span ℂ
-        (Set.range fun p : Completion E × Completion E ↦ inner A p.1 p.2)).topologicalClosure =
-      (Submodule.span ℂ (Set.range fun p : E × E ↦ inner A p.1 p.2)).topologicalClosure :=
-  TauCeti.SemiCStarModuleAlong.topologicalClosure_span_range_inner_completion E (denseRange_idHom A)
+theorem inner_separationQuotientEquiv_symm (x y : Completion E) :
+    inner A ((separationQuotientEquiv ℂ E).symm x)
+      ((separationQuotientEquiv ℂ E).symm y) = inner A x y := by
+  rw [← inner_separationQuotientEquiv, LinearIsometryEquiv.apply_symm_apply,
+    LinearIsometryEquiv.apply_symm_apply]
 
 end SemiCStarModule
 
-section RightFull
+end UniformSpace.Completion
 
-variable {A E : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
-  [SeminormedAddCommGroup E] [NormedSpace ℂ E] [SMul Aᵐᵒᵖ E] [TauCeti.SemiCStarModule Aᵐᵒᵖ E]
+/-! ### Fullness and completion universal properties for `TauCeti.SemiCStarModule` -/
 
-/-- Right-module form of `topologicalClosure_span_range_inner`: completing a right module preserves
-the closed complex linear span of `⟨x, y⟩_A = unop (inner Aᵐᵒᵖ x y)`. -/
-theorem topologicalClosure_span_range_unop_inner_mulOpposite :
+namespace TauCeti.SemiCStarModule
+
+section Fullness
+
+/-- Completion preserves the closed complex linear span of inner products, so `Completion E` is
+full if and only if `E` has dense inner-product span. -/
+theorem topologicalClosure_span_range_inner_completion {A : Type*} (E : Type*)
+    [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+    [SeminormedAddCommGroup E] [NormedSpace ℂ E] [SMul A E] [SemiCStarModule A E] :
+    (Submodule.span ℂ
+        (Set.range fun p : Completion E × Completion E ↦ inner A p.1 p.2)).topologicalClosure =
+      (Submodule.span ℂ (Set.range fun p : E × E ↦ inner A p.1 p.2)).topologicalClosure :=
+  SemiCStarModuleAlong.topologicalClosure_span_range_inner_completion
+    (φ := NonUnitalStarAlgHom.id ℂ A) E Function.surjective_id.denseRange
+
+/-- Right-module form of `topologicalClosure_span_range_inner_completion`: completing a right
+module preserves the closed complex linear span of `⟨x, y⟩_A = unop (inner Aᵐᵒᵖ x y)`. -/
+theorem topologicalClosure_span_range_unop_inner_mulOpposite_completion {A : Type*} (E : Type*)
+    [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+    [SeminormedAddCommGroup E] [NormedSpace ℂ E] [SMul Aᵐᵒᵖ E] [SemiCStarModule Aᵐᵒᵖ E] :
     (Submodule.span ℂ
         (Set.range fun p : Completion E × Completion E ↦
           unop (inner Aᵐᵒᵖ p.1 p.2))).topologicalClosure =
       (Submodule.span ℂ
-        (Set.range fun p : E × E ↦ unop (inner Aᵐᵒᵖ p.1 p.2))).topologicalClosure := by
-  refine le_antisymm
-    (Submodule.topologicalClosure_minimal _ ?_ (Submodule.isClosed_topologicalClosure _))
-    (Submodule.topologicalClosure_mono <| Submodule.span_mono ?_)
-  · rw [Submodule.span_le]
-    rintro _ ⟨⟨x, y⟩, rfl⟩
-    refine Completion.induction_on₂ x y
-      ((Submodule.isClosed_topologicalClosure _).preimage
-        (continuous_unop.comp (CStarModule.continuous_inner (A := Aᵐᵒᵖ) (E := Completion E))))
-      fun u v ↦ ?_
-    simp only [inner_coe_of_semiCStarModule]
-    exact Submodule.le_topologicalClosure _ (Submodule.subset_span ⟨(u, v), rfl⟩)
-  · rintro _ ⟨⟨u, v⟩, rfl⟩
-    exact ⟨((u : Completion E), (v : Completion E)),
-      congr_arg unop (inner_coe_of_semiCStarModule u v)⟩
+        (Set.range fun p : E × E ↦ unop (inner Aᵐᵒᵖ p.1 p.2))).topologicalClosure :=
+  SemiCStarModuleAlong.topologicalClosure_span_range_unop_inner_mulOpposite_completion
+    (φ := NonUnitalStarAlgHom.id ℂ Aᵐᵒᵖ) E Function.surjective_id.denseRange
 
-end RightFull
+end Fullness
 
 section UniversalInner
 
-variable {A E F : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A]
-  [SeminormedAddCommGroup E] [NormedSpace ℂ E] [SMul A E] [TauCeti.SemiCStarModule A E]
+section Algebraic
+
+variable {A E F : Type*} [NonUnitalRing A] [StarRing A] [Module ℂ A] [StarModule ℂ A]
+  [PartialOrder A] [Norm A]
+  [SeminormedAddCommGroup E] [NormedSpace ℂ E] [SMul A E] [SemiCStarModule A E]
   [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F] [SMul A F] [CStarModule A F]
   (f : E → F) (hf : ∀ x y : E, inner A (f x) (f y) = inner A x y)
 
 /-- Extend any plain inner-product-preserving function `f : E → F` into a complete
 `CStarModule A F` to a `ℂ`-linear isometry `Completion E →ₗᵢ[ℂ] F`. -/
 noncomputable def fromCompletionInnerₗᵢ : Completion E →ₗᵢ[ℂ] F :=
-  TauCeti.SemiCStarModuleAlong.fromCompletionInnerₗᵢ (NonUnitalStarAlgHom.id ℂ A) f hf
+  SemiCStarModuleAlong.fromCompletionInnerₗᵢ (NonUnitalStarAlgHom.id ℂ A) f hf
 
 @[simp]
 theorem fromCompletionInnerₗᵢ_coe (x : E) : fromCompletionInnerₗᵢ f hf (x : Completion E) = f x :=
-  TauCeti.SemiCStarModuleAlong.fromCompletionInnerₗᵢ_coe (NonUnitalStarAlgHom.id ℂ A) f hf x
-
-@[simp]
-theorem inner_fromCompletionInnerₗᵢ [StarOrderedRing A] (x y : Completion E) :
-    inner A (fromCompletionInnerₗᵢ f hf x) (fromCompletionInnerₗᵢ f hf y) = inner A x y :=
-  TauCeti.SemiCStarModuleAlong.inner_fromCompletionInnerₗᵢ (denseRange_idHom A) f hf x y
-
-@[simp]
-theorem fromCompletionInnerₗᵢ_smul [StarOrderedRing A] (a : A) (x : Completion E) :
-    fromCompletionInnerₗᵢ f hf (a • x) = a • fromCompletionInnerₗᵢ f hf x := by
-  rw [← extendSMulCLM_id_apply]
-  exact TauCeti.SemiCStarModuleAlong.fromCompletionInnerₗᵢ_extendSMulCLM
-    (denseRange_idHom A) f hf a x
+  SemiCStarModuleAlong.fromCompletionInnerₗᵢ_coe (NonUnitalStarAlgHom.id ℂ A) f hf x
 
 theorem eq_fromCompletionInnerₗᵢ_iff (g : Completion E →ₗᵢ[ℂ] F) :
     g = fromCompletionInnerₗᵢ f hf ↔ ∀ x : E, g (x : Completion E) = f x :=
-  TauCeti.SemiCStarModuleAlong.eq_fromCompletionInnerₗᵢ_iff (NonUnitalStarAlgHom.id ℂ A) f hf g
+  SemiCStarModuleAlong.eq_fromCompletionInnerₗᵢ_iff (NonUnitalStarAlgHom.id ℂ A) f hf g
+
+@[simp]
+theorem fromCompletionInnerₗᵢ_smul [UniformContinuousConstSMul A E] [ContinuousConstSMul A F]
+    (a : A) (x : Completion E) :
+    fromCompletionInnerₗᵢ f hf (a • x) = a • fromCompletionInnerₗᵢ f hf x :=
+  SemiCStarModuleAlong.fromCompletionInnerₗᵢ_smul (NonUnitalStarAlgHom.id ℂ A) f hf a x
 
 /-- Any plain inner-product-preserving function `f : E → F` with dense range into a complete
-`CStarModule A F` induces a unitary equivalence `Completion E ≃ₗᵢ[ℂ] F`. -/
+`CStarModule A F` induces a `ℂ`-linear isometric equivalence `Completion E ≃ₗᵢ[ℂ] F`. Under
+`[NonUnitalCStarAlgebra A] [StarOrderedRing A]` it preserves `A`-valued inner products
+(`inner_equivOfDenseInner`), and under `[UniformContinuousConstSMul A E] [ContinuousConstSMul A F]`
+it commutes with the `A`-action (`equivOfDenseInner_smul`). -/
 noncomputable def equivOfDenseInner (hdf : DenseRange f) : Completion E ≃ₗᵢ[ℂ] F :=
-  TauCeti.SemiCStarModuleAlong.equivOfDenseInner (NonUnitalStarAlgHom.id ℂ A) f hf hdf
+  SemiCStarModuleAlong.equivOfDenseInner (NonUnitalStarAlgHom.id ℂ A) f hf hdf
+
+theorem equivOfDenseInner_apply (hdf : DenseRange f) (x : Completion E) :
+    equivOfDenseInner f hf hdf x = fromCompletionInnerₗᵢ f hf x := (rfl)
 
 @[simp]
 theorem equivOfDenseInner_coe (hdf : DenseRange f) (x : E) :
@@ -698,57 +763,108 @@ theorem equivOfDenseInner_coe (hdf : DenseRange f) (x : E) :
   fromCompletionInnerₗᵢ_coe f hf x
 
 @[simp]
-theorem inner_equivOfDenseInner [StarOrderedRing A] (hdf : DenseRange f) (x y : Completion E) :
+theorem equivOfDenseInner_symm_apply (hdf : DenseRange f) (x : E) :
+    (equivOfDenseInner f hf hdf).symm (f x) = (x : Completion E) :=
+  SemiCStarModuleAlong.equivOfDenseInner_symm_apply (NonUnitalStarAlgHom.id ℂ A) f hf hdf x
+
+@[simp]
+theorem equivOfDenseInner_smul [UniformContinuousConstSMul A E] [ContinuousConstSMul A F]
+    (hdf : DenseRange f) (a : A) (x : Completion E) :
+    equivOfDenseInner f hf hdf (a • x) = a • equivOfDenseInner f hf hdf x :=
+  fromCompletionInnerₗᵢ_smul f hf a x
+
+@[simp]
+theorem equivOfDenseInner_symm_smul [UniformContinuousConstSMul A E] [ContinuousConstSMul A F]
+    (hdf : DenseRange f) (a : A) (y : F) :
+    (equivOfDenseInner f hf hdf).symm (a • y) = a • (equivOfDenseInner f hf hdf).symm y :=
+  (equivOfDenseInner f hf hdf).symm_apply_eq.mpr <| by
+    rw [equivOfDenseInner_smul, LinearIsometryEquiv.apply_symm_apply]
+
+end Algebraic
+
+section CStar
+
+variable {A E F : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+  [SeminormedAddCommGroup E] [NormedSpace ℂ E] [SMul A E] [SemiCStarModule A E]
+  [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F] [SMul A F] [CStarModule A F]
+  (f : E → F) (hf : ∀ x y : E, inner A (f x) (f y) = inner A x y)
+
+@[simp]
+theorem inner_fromCompletionInnerₗᵢ (x y : Completion E) :
+    inner A (fromCompletionInnerₗᵢ f hf x) (fromCompletionInnerₗᵢ f hf y) = inner A x y :=
+  SemiCStarModuleAlong.inner_fromCompletionInnerₗᵢ Function.surjective_id.denseRange f hf x y
+
+@[simp]
+theorem inner_equivOfDenseInner (hdf : DenseRange f) (x y : Completion E) :
     inner A (equivOfDenseInner f hf hdf x) (equivOfDenseInner f hf hdf y) = inner A x y :=
   inner_fromCompletionInnerₗᵢ f hf x y
 
 @[simp]
-theorem equivOfDenseInner_smul [StarOrderedRing A] (hdf : DenseRange f) (a : A) (x : Completion E) :
-    equivOfDenseInner f hf hdf (a • x) = a • equivOfDenseInner f hf hdf x :=
-  fromCompletionInnerₗᵢ_smul f hf a x
+theorem inner_equivOfDenseInner_symm (hdf : DenseRange f) (x y : F) :
+    inner A ((equivOfDenseInner f hf hdf).symm x)
+      ((equivOfDenseInner f hf hdf).symm y) = inner A x y :=
+  SemiCStarModuleAlong.inner_equivOfDenseInner_symm Function.surjective_id.denseRange f hf hdf x y
+
+end CStar
 
 end UniversalInner
 
-end UniformSpace.Completion
+end TauCeti.SemiCStarModule
 
 /-! ### Completion of a dense nonunital `⋆`-subalgebra as a right Hilbert `A`-module -/
 
 namespace NonUnitalStarSubalgebra
 
-variable {A : Type*} [NonUnitalCStarAlgebra A]
-
-/-- If `S` is a dense nonunital `⋆`-subalgebra of `A`, then `(NonUnitalStarSubalgebraClass.subtype
-S).op : Sᵐᵒᵖ →⋆ₙₐ[ℂ] Aᵐᵒᵖ` has dense range. -/
-theorem denseRange_subtype_op (S : NonUnitalStarSubalgebra ℂ A) (hS : Dense (S : Set A)) :
-    DenseRange (NonUnitalStarSubalgebraClass.subtype S).op := by
-  rw [NonUnitalStarAlgHom.denseRange_op_iff]
-  exact denseRange_subtype_val.mpr hS
-
-variable [PartialOrder A] [StarOrderedRing A] (S : NonUnitalStarSubalgebra ℂ A)
-  (hS : Dense (S : Set A))
+variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+  (S : NonUnitalStarSubalgebra ℂ A) (hS : Dense (S : Set A))
 
 /-- The completion of a dense nonunital `⋆`-subalgebra `S ⊆ A` (viewed as a right `S`-module with
 positivity and norm measured in `A`) is canonically unitarily equivalent to the right Hilbert
 self-module `A`, intertwining the extended right `A`-action with multiplication in `A`. -/
 noncomputable def completionEquiv : Completion S ≃ₗᵢ[ℂ] A :=
   TauCeti.SemiCStarModuleAlong.equivOfDenseInner (NonUnitalStarSubalgebraClass.subtype S).op
-    Subtype.val (fun _ _ ↦ rfl) (denseRange_subtype_val.mpr hS)
+    Subtype.val (fun _ _ ↦ by rw [CStarModule.inner_mulOpposite, inner_mulOpposite_apply])
+    (denseRange_subtype_val.mpr hS)
 
 @[simp]
 theorem completionEquiv_coe (x : S) : S.completionEquiv hS (x : Completion S) = (x : A) :=
   TauCeti.SemiCStarModuleAlong.equivOfDenseInner_coe _ _ _ _ x
 
 @[simp]
+theorem completionEquiv_symm_coe (x : S) :
+    (S.completionEquiv hS).symm (x : A) = (x : Completion S) :=
+  TauCeti.SemiCStarModuleAlong.equivOfDenseInner_symm_apply _ _ _ _ x
+
+@[simp]
 theorem inner_completionEquiv (x y : Completion S) :
     inner Aᵐᵒᵖ (S.completionEquiv hS x) (S.completionEquiv hS y) = inner Aᵐᵒᵖ x y :=
-  TauCeti.SemiCStarModuleAlong.inner_equivOfDenseInner (S.denseRange_subtype_op hS) _ _ _ x y
+  TauCeti.SemiCStarModuleAlong.inner_equivOfDenseInner
+    ((NonUnitalStarSubalgebraClass.denseRange_subtype_op_iff S).mpr hS) _ _ _ x y
+
+@[simp]
+theorem inner_completionEquiv_symm (x y : A) :
+    inner Aᵐᵒᵖ ((S.completionEquiv hS).symm x) ((S.completionEquiv hS).symm y) = inner Aᵐᵒᵖ x y :=
+  TauCeti.SemiCStarModuleAlong.inner_equivOfDenseInner_symm
+    ((NonUnitalStarSubalgebraClass.denseRange_subtype_op_iff S).mpr hS) _ _ _ x y
 
 @[simp]
 theorem completionEquiv_extendSMulCLM (a : A) (x : Completion S) :
     S.completionEquiv hS
-        (TauCeti.SemiCStarModuleAlong.extendSMulCLM S (S.denseRange_subtype_op hS) (op a) x) =
+        (TauCeti.SemiCStarModuleAlong.extendSMulCLM S
+          ((NonUnitalStarSubalgebraClass.denseRange_subtype_op_iff S).mpr hS) (op a) x) =
       S.completionEquiv hS x * a :=
-  TauCeti.SemiCStarModuleAlong.equivOfDenseInner_extendSMulCLM
-    (S.denseRange_subtype_op hS) _ _ _ (op a) x
+  (TauCeti.SemiCStarModuleAlong.equivOfDenseInner_extendSMulCLM
+    ((NonUnitalStarSubalgebraClass.denseRange_subtype_op_iff S).mpr hS) _ _ _ (op a) x).trans
+    (op_smul_eq_mul a _)
+
+@[simp]
+theorem completionEquiv_symm_mul (y a : A) :
+    (S.completionEquiv hS).symm (y * a) =
+      TauCeti.SemiCStarModuleAlong.extendSMulCLM S
+        ((NonUnitalStarSubalgebraClass.denseRange_subtype_op_iff S).mpr hS) (op a)
+        ((S.completionEquiv hS).symm y) := by
+  rw [← op_smul_eq_mul a y]
+  exact TauCeti.SemiCStarModuleAlong.equivOfDenseInner_symm_smul
+    ((NonUnitalStarSubalgebraClass.denseRange_subtype_op_iff S).mpr hS) _ _ _ (op a) y
 
 end NonUnitalStarSubalgebra
