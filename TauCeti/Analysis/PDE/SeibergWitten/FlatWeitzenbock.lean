@@ -463,7 +463,7 @@ theorem laplacian_norm_sq_eq_of_add_hodgeStar_eq (hψ : ContDiffAt ℝ 2 ψ x)
 
 include hQ hρ h₂ in
 /-- **Taubes's pointwise bound at a local maximum of `|ψ|²`.** Under the hypotheses of
-`laplacian_norm_sq_eq_of_add_hodgeStar_eq`, with `r > 0` and `‖ω‖² = 2`, if `|ψ|²` has a local
+`laplacian_norm_sq_eq_of_add_hodgeStar_eq`, with `r > 0` and `‖ω‖ ≤ √2`, if `|ψ|²` has a local
 maximum at `x`, then
 
 `|χ|² ≤ 1 + 2 √2 |η| / r`.
@@ -474,7 +474,7 @@ This pointwise inequality at a local maximum is the key step of Taubes's coarse 
 theorem norm_sq_le_one_add_of_isLocalMax (hψ : ContDiffAt ℝ 2 ψ x)
     (hb : DifferentiableAt ℝ b x) (hD : flatDirac ρ b ψ =ᶠ[𝓝 x] 0)
     {χ : positiveHalfSpinors o ρ} (hχ : ψ x = χ) {r : ℝ} (hr : 0 < r) {ω η : ⋀[ℝ]^2 V}
-    (hω₂ : ‖ω‖ ^ 2 = 2)
+    (hω : ‖ω‖ ≤ √2)
     (hF : (alternatingFormEquiv V 2).symm (-extDeriv b x) +
         o.hodgeStar hkl ((alternatingFormEquiv V 2).symm (-extDeriv b x)) =
       (r / 4) • ω - r • (quadraticTwoForm o ρ hkl χ : ⋀[ℝ]^2 V) - η)
@@ -487,14 +487,14 @@ theorem norm_sq_le_one_add_of_isLocalMax (hψ : ContDiffAt ℝ 2 ψ x)
   have hP := inner_quadraticTwoForm o hQ hkl (ω := ω) χ
   have hsum : 0 ≤ ∑ k, ‖covariantDeriv b ψ x (stdOrthonormalBasis ℝ V k)‖ ^ 2 :=
     Finset.sum_nonneg fun _ _ ↦ by positivity
-  -- `|q(χ)| = |χ|² / (2 √2)` and `|ω| = √2` bound the two pairings of `q(χ)`.
+  -- `|q(χ)| = |χ|² / (2 √2)` and `|ω| ≤ √2` bound the two pairings of `q(χ)`.
   have hq : ‖q‖ = ‖χ‖ ^ 2 / (2 * √2) :=
     (Submodule.norm_coe _).trans (norm_quadraticTwoForm o hQ hkl hρ h₂ χ)
-  have hω : ‖ω‖ = √2 := by rw [← Real.sqrt_sq (norm_nonneg ω), hω₂]
   have hs : √2 ^ 2 = 2 := Real.sq_sqrt zero_le_two
   have h₁ : ⟪q, ω⟫ ≤ ‖χ‖ ^ 2 / 2 := by
-    refine (real_inner_le_norm q ω).trans_eq ?_
-    rw [hq, hω]
+    refine ((real_inner_le_norm q ω).trans
+      (mul_le_mul_of_nonneg_left hω (norm_nonneg q))).trans_eq ?_
+    rw [hq]
     field_simp
   have hη : -⟪q, η⟫ ≤ ‖χ‖ ^ 2 / (2 * √2) * ‖η‖ := by
     have h := abs_le.1 (abs_real_inner_le_norm q η)
