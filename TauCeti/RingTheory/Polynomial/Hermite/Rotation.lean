@@ -117,10 +117,6 @@ private theorem rotationSum_add_two {p q x y : R} (h : p ^ 2 + q ^ 2 = 1) {a b :
   rw [h₁, h₂']
   linear_combination (-(m + 1 : R) * rotationSum p q a b m) * h
 
-private theorem aeval_hermite_succ (x : R) (n : ℕ) :
-    aeval x (hermite (n + 1)) = x * aeval x (hermite n) - n * aeval x (hermite (n - 1)) := by
-  simp [hermite_succ, nsmul_eq_mul]
-
 /-- **Rotation formula for the Hermite polynomials.** If `c² + s² = 1`, then
 `Hₙ(c x + s y) = ∑_{m ≤ n} (n choose m) c^{n-m} s^m H_{n-m}(x) Hₘ(y)`, where
 `Hₙ = Polynomial.hermite n` are the probabilists' Hermite polynomials. -/
@@ -128,15 +124,19 @@ theorem hermite_aeval_mul_add_mul {c s : R} (h : c ^ 2 + s ^ 2 = 1) (x y : R) (n
     aeval (c * x + s * y) (hermite n) =
       ∑ m ∈ range (n + 1), (n.choose m : R) * c ^ (n - m) * s ^ m *
         aeval x (hermite (n - m)) * aeval y (hermite m) := by
+  have hrec (z : R) (j : ℕ) :
+      aeval z (hermite (j + 1)) = z * aeval z (hermite j) - j * aeval z (hermite (j - 1)) := by
+    cases j with
+    | zero => simp
+    | succ j => simpa using aeval_hermite_add_two z j
   have key : aeval (s * y + c * x) (hermite n) =
       rotationSum s c (fun j => aeval y (hermite j)) (fun i => aeval x (hermite i)) n := by
     induction n using Nat.twoStepInduction with
     | zero => simp [rotationSum]
     | one => simp [rotationSum, Nat.antidiagonal_succ]; ring
     | more n ih₀ ih₁ =>
-      rw [rotationSum_add_two (by linear_combination h) (aeval_hermite_succ y)
-        (aeval_hermite_succ x), ← ih₀, ← ih₁, hermite_add_two]
-      simp [nsmul_eq_mul]
+      rw [rotationSum_add_two (by linear_combination h) (hrec y) (hrec x), ← ih₀, ← ih₁,
+        aeval_hermite_add_two]
   rw [add_comm, key, rotationSum, Nat.sum_antidiagonal_eq_sum_range_succ
     (fun i j => (n.choose i : R) * (s ^ i * c ^ j * aeval y (hermite i) * aeval x (hermite j)))]
   exact sum_congr rfl fun m _ => by ring

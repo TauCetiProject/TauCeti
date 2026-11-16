@@ -32,7 +32,7 @@ polynomial rotation formula `Polynomial.hermite_aeval_mul_add_mul` and the ident
 
 ## Main statements
 
-* `TauCeti.aeval_hermite_mul_cexp_cos_mul_add_sin_mul`: the Gaussian-weighted rotation formula.
+* `TauCeti.aeval_hermite_mul_cos_add_mul_sin_mul_cexp`: the Gaussian-weighted rotation formula.
 
 ## References
 
@@ -52,7 +52,7 @@ open Complex Finset Polynomial
 `D_n(x cos t + y sin t)
   = (cos t)ⁿ exp((x sin t - y cos t)²/4) ∑_{m ≤ n} (n choose m) (tan t)^m D_{n-m}(x) D_m(y)`.
 This is DLMF 12.13.5 at the terminating parameter `a = -n - 1/2`. -/
-theorem aeval_hermite_mul_cexp_cos_mul_add_sin_mul (n : ℕ) (x y t : ℂ) (ht : cos t ≠ 0) :
+theorem aeval_hermite_mul_cos_add_mul_sin_mul_cexp (n : ℕ) (x y t : ℂ) (ht : cos t ≠ 0) :
     aeval (x * cos t + y * sin t) (hermite n) * cexp (-(x * cos t + y * sin t) ^ 2 / 4) =
       cos t ^ n * cexp ((x * sin t - y * cos t) ^ 2 / 4) *
         ∑ m ∈ range (n + 1), (n.choose m : ℂ) * tan t ^ m *
