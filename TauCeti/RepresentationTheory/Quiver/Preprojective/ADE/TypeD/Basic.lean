@@ -13,7 +13,6 @@ public import TauCeti.RepresentationTheory.Quiver.AdmissibleIdeal.Basic
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Admissible
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.GraphOrientation
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Signless
--- Proof-only: signs act on the signless algebra by `zsmul`.
 
 /-!
 # Path reduction in the type-`D` preprojective algebra

@@ -15,7 +15,6 @@ public import TauCeti.RepresentationTheory.Quiver.Preprojective.Isomorphism
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.ADE.Preprojective
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.GraphOrientation
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Signless
--- Proof-only: signs act on the signless algebra by `zsmul`.
 
 /-!
 # The preprojective algebras of `E₆`, `E₇`, and `E₈` are finite-dimensional
