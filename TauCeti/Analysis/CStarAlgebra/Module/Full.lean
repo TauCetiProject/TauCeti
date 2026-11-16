@@ -250,9 +250,8 @@ every `A`-valued inner product `⟨x, y⟩_A`. -/
 theorem rightInnerIdeal_le_iff_inner [Inner Aᵐᵒᵖ E] {J : TwoSidedIdeal A}
     [IsClosed (J : Set A)] :
     rightInnerIdeal A E ≤ J ↔ ∀ x y : E, unop (inner Aᵐᵒᵖ x y) ∈ J := by
-  rw [← TwoSidedIdeal.opOrderIso.le_iff_le]
-  change (rightInnerIdeal A E).op ≤ J.op ↔ _
-  rw [op_rightInnerIdeal, innerIdeal_le_iff_inner]
+  rw [← TwoSidedIdeal.opOrderIso.le_iff_le, TwoSidedIdeal.opOrderIso_apply,
+    TwoSidedIdeal.opOrderIso_apply, op_rightInnerIdeal, innerIdeal_le_iff_inner]
   simp [TwoSidedIdeal.mem_op_iff]
 
 theorem isFull_iff_innerIdeal_eq_top [Inner A E] : IsFull A E ↔ innerIdeal A E = ⊤ :=
@@ -260,8 +259,8 @@ theorem isFull_iff_innerIdeal_eq_top [Inner A E] : IsFull A E ↔ innerIdeal A E
 
 @[simp]
 theorem isFull_mulOpposite_iff [Inner Aᵐᵒᵖ E] : IsFull Aᵐᵒᵖ E ↔ rightInnerIdeal A E = ⊤ := by
-  rw [IsFull, rightInnerIdeal, ← TwoSidedIdeal.opOrderIso.symm.injective.eq_iff]
-  rfl
+  rw [IsFull, ← op_rightInnerIdeal, ← TwoSidedIdeal.opOrderIso_apply,
+    ← TopHomClass.map_top TwoSidedIdeal.opOrderIso, TwoSidedIdeal.opOrderIso.injective.eq_iff]
 
 /-- Restricting the codomain of `inner A` to `innerIdeal A E` equips `E` with an
 `(innerIdeal A E)`-valued inner product. Scalar multiplication `SMul (innerIdeal A E) E` is already
@@ -418,12 +417,11 @@ contains every diagonal inner product `⟪x, x⟫_A`. -/
 theorem innerIdeal_le_iff {J : TwoSidedIdeal A} [IsClosed (J : Set A)] :
     innerIdeal A E ≤ J ↔ ∀ x : E, inner A x x ∈ J := by
   refine ⟨fun h x => h (inner_mem_innerIdeal x x), fun h => ?_⟩
-  rw [innerIdeal_le_iff_inner]
-  intro x y
-  rw [inner_polarization]
-  exact J.smul_mem_of_isClosed _ <|
-    J.add_mem (J.sub_mem (J.sub_mem (h _) (h _)) (J.smul_mem_of_isClosed _ (h _)))
-      (J.smul_mem_of_isClosed _ (h _))
+  have hsub : (innerIdeal A E).toSubmodule ≤ J.toSubmodule := by
+    rw [toSubmodule_innerIdeal]
+    exact Submodule.topologicalClosure_minimal _
+      (innerSubmodule_le_iff_self.mpr fun x => J.mem_toSubmodule.mpr (h x)) J.isClosed_toSubmodule
+  exact fun a ha => J.mem_toSubmodule.mp (hsub ((innerIdeal A E).mem_toSubmodule.mpr ha))
 
 /-- Mapping `innerSubmodule (innerIdeal A E) E` into `A` recovers `innerSubmodule A E`. -/
 theorem image_coe_innerSubmodule_innerIdeal :
@@ -475,9 +473,8 @@ variable [AddCommGroup E] [Module ℂ E] [SMul Aᵐᵒᵖ E] [Norm E] [CStarModu
 every diagonal inner product `⟨x, x⟩_A = unop (inner Aᵐᵒᵖ x x)`. -/
 theorem rightInnerIdeal_le_iff {J : TwoSidedIdeal A} [IsClosed (J : Set A)] :
     rightInnerIdeal A E ≤ J ↔ ∀ x : E, unop (inner Aᵐᵒᵖ x x) ∈ J := by
-  rw [← TwoSidedIdeal.opOrderIso.le_iff_le]
-  change (rightInnerIdeal A E).op ≤ J.op ↔ _
-  rw [op_rightInnerIdeal, innerIdeal_le_iff]
+  rw [← TwoSidedIdeal.opOrderIso.le_iff_le, TwoSidedIdeal.opOrderIso_apply,
+    TwoSidedIdeal.opOrderIso_apply, op_rightInnerIdeal, innerIdeal_le_iff]
   simp [TwoSidedIdeal.mem_op_iff]
 
 /-- Every right Hilbert `A`-module `E` is canonically a right Hilbert `(rightInnerIdeal A E)`-module
@@ -498,11 +495,11 @@ noncomputable instance instCStarModuleRightInnerIdeal :
     exact unop_injective <| Subtype.ext (by simp)
   inner_smul_right_complex {c x y} := unop_injective <| Subtype.ext (by simp)
   star_inner x y := unop_injective <| Subtype.ext <| by
-    change star (unop (inner Aᵐᵒᵖ x y)) = unop (inner Aᵐᵒᵖ y x)
-    rw [← unop_star, star_inner]
+    rw [unop_star, TwoSidedIdeal.coe_star, coe_unop_inner_rightInnerIdeal,
+      coe_unop_inner_rightInnerIdeal, ← unop_star, star_inner]
   norm_eq_sqrt_norm_inner_self x := by
-    simpa only [norm_op] using
-      (norm_eq_sqrt_norm_inner_self (A := Aᵐᵒᵖ) x).trans (by rw [← norm_unop]; rfl)
+    rw [← norm_unop, AddSubgroupClass.coe_norm, coe_unop_inner_rightInnerIdeal, norm_unop]
+    exact norm_eq_sqrt_norm_inner_self (A := Aᵐᵒᵖ) x
 
 /-- Viewed as a right module over `I_E = rightInnerIdeal A E`, the right inner-product ideal of `E`
 is all of `I_E`. -/
@@ -605,13 +602,15 @@ theorem idealSubmodule_eq_bot_iff {J : TwoSidedIdeal A} [IsClosed (J : Set A)] :
       have hle : innerSubmodule A E ≤ LinearMap.ker mulLeftLM := by
         rw [innerSubmodule_le_iff]
         intro x y
-        change a * inner A x y = 0
+        simp only [LinearMap.mem_ker, mulLeftLM, LinearMap.coe_mk, AddHom.coe_mk]
         rw [← inner_op_smul_right]
         have hay : a • y = 0 := by
           have hmem : a • y ∈ (⊥ : Submodule ℂ E) := h ▸ smul_mem_idealSubmodule haJ y
           rwa [Submodule.mem_bot] at hmem
         rw [hay, inner_zero_right]
-      exact fun b hb => hle hb
+      exact fun b hb => by
+        simpa only [Set.mem_ofPred_eq, LinearMap.mem_ker, mulLeftLM, LinearMap.coe_mk,
+          AddHom.coe_mk] using hle hb
     have hclosed_ker : IsClosed {b : A | a * b = 0} :=
       isClosed_eq (continuous_const_mul a) continuous_const
     have hann_ideal : ∀ b ∈ innerIdeal A E, a * b = 0 := fun b hb =>
@@ -691,7 +690,8 @@ variable [NormedAddCommGroup E] [NormedSpace ℂ E] [SMul Aᵐᵒᵖ E] [CStarMo
 `rightInnerIdeal A E ≤ J`. -/
 theorem idealSubmodule_op_eq_top_iff {J : TwoSidedIdeal A} [IsClosed (J : Set A)] :
     idealSubmodule J.op E = ⊤ ↔ rightInnerIdeal A E ≤ J := by
-  rw [idealSubmodule_eq_top_iff, ← op_rightInnerIdeal]
+  rw [idealSubmodule_eq_top_iff, ← op_rightInnerIdeal, ← TwoSidedIdeal.opOrderIso_apply,
+    ← TwoSidedIdeal.opOrderIso_apply]
   exact TwoSidedIdeal.opOrderIso.le_iff_le
 
 theorem idealSubmodule_op_rightInnerIdeal :
@@ -702,10 +702,9 @@ theorem idealSubmodule_op_rightInnerIdeal :
 `rightInnerIdeal A E ⊓ J = ⊥`. -/
 theorem idealSubmodule_op_eq_bot_iff {J : TwoSidedIdeal A} [IsClosed (J : Set A)] :
     idealSubmodule J.op E = ⊥ ↔ rightInnerIdeal A E ⊓ J = ⊥ := by
-  rw [idealSubmodule_eq_bot_iff, ← op_rightInnerIdeal]
-  change TwoSidedIdeal.opOrderIso (rightInnerIdeal A E) ⊓ TwoSidedIdeal.opOrderIso J = ⊥ ↔ _
-  rw [← map_inf TwoSidedIdeal.opOrderIso, ← map_bot TwoSidedIdeal.opOrderIso,
-    TwoSidedIdeal.opOrderIso.injective.eq_iff]
+  rw [idealSubmodule_eq_bot_iff, ← op_rightInnerIdeal, ← TwoSidedIdeal.opOrderIso_apply,
+    ← TwoSidedIdeal.opOrderIso_apply, ← map_inf TwoSidedIdeal.opOrderIso,
+    ← map_bot TwoSidedIdeal.opOrderIso, TwoSidedIdeal.opOrderIso.injective.eq_iff]
 
 /-- Right-module form: `rightInnerIdeal (A ⧸ J) (E ⧸ idealSubmodule J.op E)` is the pushforward of
 `rightInnerIdeal A E` along `mk J : A →ₙ+* A ⧸ J`. -/

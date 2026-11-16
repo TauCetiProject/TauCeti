@@ -298,7 +298,8 @@ subtype partial order, transported from `Subtype.starOrderedRing I.toNonUnitalSt
 instance instStarOrderedRing [PartialOrder A] [StarOrderedRing A] : StarOrderedRing I where
   le_iff x y := by
     let e := I.toNonUnitalStarSubalgebraEquiv
-    have hle : x ≤ y ↔ e x ≤ e y := Iff.rfl
+    have hle : x ≤ y ↔ e x ≤ e y := by
+      simp only [← Subtype.coe_le_coe, e, coe_toNonUnitalStarSubalgebraEquiv_apply]
     rw [hle, StarOrderedRing.le_iff]
     refine ⟨fun ⟨p, hp, hpy⟩ => ⟨e.symm p, ?_, ?_⟩, fun ⟨p, hp, hpy⟩ => ⟨e p, ?_, ?_⟩⟩
     · refine AddSubmonoid.closure_induction

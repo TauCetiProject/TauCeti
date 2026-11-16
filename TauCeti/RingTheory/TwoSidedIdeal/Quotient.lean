@@ -207,8 +207,9 @@ def opEquiv (I : TwoSidedIdeal A) : (A ⧸ I)ᵐᵒᵖ ≃+* Aᵐᵒᵖ ⧸ I.op
       map_mul' := fun u v => by rw [MulOpposite.unop_mul, map_mul, ← MulOpposite.op_mul] }
   { toFun := fun x => toFunAux x.unop
     invFun := lift I.op invHom fun u hu => by
-      change MulOpposite.op (mk I u.unop) = 0
-      rw [eq_zero_iff_mem.mpr (mem_op_iff.mp hu), MulOpposite.op_zero]
+      rw [← invHom.coe_toMulHom]
+      simp only [invHom, MulHom.coe_mk, eq_zero_iff_mem.mpr (mem_op_iff.mp hu),
+        MulOpposite.op_zero]
     left_inv := fun x => by
       obtain ⟨x, rfl⟩ := MulOpposite.op_surjective x
       obtain ⟨a, rfl⟩ := mk_surjective I x
