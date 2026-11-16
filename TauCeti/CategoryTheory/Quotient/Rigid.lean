@@ -345,7 +345,7 @@ variable {D : Type*} [Category* D] [MonoidalCategory D] (F : C ⥤ D) [F.Monoida
 @[simp]
 theorem lift_mapRightDualIso (X : Quotient r) [HasRightDual X.as]
     [hFX : HasRightDual ((lift r F H).obj X)] :
-    (lift r F H).mapRightDualIso X = F.mapRightDualIso X.as (hFX := hFX) := by
+    (lift r F H).mapRightDualIso X = F.mapRightDualIso X.as (_hFX := hFX) := by
   -- The lift's object map computes to `F.obj X.as`; keep the same target dual at both
   -- presentations, since instance search does not unfold that object map.
   let : HasRightDual (F.obj X.as) := hFX
@@ -359,7 +359,7 @@ theorem lift_mapRightDualIso (X : Quotient r) [HasRightDual X.as]
 @[simp↓]
 theorem lift_mapRightDualIso_obj (X : C) [HasRightDual X]
     [hFX : HasRightDual ((lift r F H).obj ((functor r).obj X))] :
-    (lift r F H).mapRightDualIso ((functor r).obj X) = F.mapRightDualIso X (hFX := hFX) := by
+    (lift r F H).mapRightDualIso ((functor r).obj X) = F.mapRightDualIso X (_hFX := hFX) := by
   let : HasRightDual ((lift r F H).obj (Quotient.mk X : Quotient r)) := hFX
   exact lift_mapRightDualIso F H (Quotient.mk X)
 
