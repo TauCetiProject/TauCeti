@@ -7,22 +7,15 @@ module
 
 public import Mathlib.RepresentationTheory.Stabilizer
 public import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Basic
+public import TauCeti.Geometry.Lie.Tangent.Prod
 
 /-!
 # The coadjoint representation of a product of Lie groups
 
-The tangent Lie algebra of a product `G × K` of Lie groups at the identity is the product
-`𝔤 × 𝔨` of the tangent Lie algebras: the differentials of the projections `pr_G : G × K → G` and
-`pr_K : G × K → K` give a continuous linear equivalence `Lie(G × K) ≃ 𝔤 × 𝔨`
-(`TauCeti.Lie.groupLieAlgebraProdEquiv`), whose inverse is given by the differentials of the
-inclusions of the two factors. Dually, a pair of covectors `ν ∈ 𝔤*`, `ν' ∈ 𝔨*` gives the covector
-
-`ν ∘ d(pr_G) + ν' ∘ d(pr_K)`
-
-on the Lie algebra of `G × K`, and this is a linear equivalence `𝔤* × 𝔨* ≃ Lie(G × K)*`
-(`TauCeti.Lie.groupLieAlgebraDualProdDualEquivDual`, Mathlib's `Module.dualProdDualEquivDual`
-transported along `TauCeti.Lie.groupLieAlgebraProdEquiv`), whose inverse restricts a covector
-along the inclusions of the two factors.
+The dual of the tangent Lie algebra of a product `G × K` of Lie groups is identified with the
+product `𝔤* × 𝔨*` of the duals (`TauCeti.Lie.groupLieAlgebraDualProdDualEquivDual`): the pair
+`(ν, ν')` corresponds to the covector `ν ∘ d(pr_G) + ν' ∘ d(pr_K)`, where `pr_G : G × K → G` and
+`pr_K : G × K → K` are the projections.
 
 This identification is equivariant: the coadjoint action of `(g, k)` acts on the two components
 by the coadjoint actions of `g` and of `k`
@@ -35,11 +28,6 @@ stabilizer of `(ν, ν')` is the product `G_ν × K_ν'` of the coadjoint stabil
 These are the coadjoint ingredients of the reduction of a product of Hamiltonian spaces by the
 product group: a moment map of `G × K` acting factorwise on `M × N` takes values in `𝔤* × 𝔨*`,
 its level sets are products of levels, and the stabilizer that acts on the level is a product.
-
-## Main definitions
-
-* `TauCeti.Lie.groupLieAlgebraDualProdDualEquivDual`: the linear equivalence
-  `𝔤* × 𝔨* ≃ Lie(G × K)*`.
 
 ## Main results
 
@@ -70,74 +58,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {HK : Type*} [TopologicalSpace HK] {J : ModelWithCorners 𝕜 F HK}
   {K : Type*} [TopologicalSpace K] [ChartedSpace HK K] [Group K]
 
-variable (𝕜 I G J K) in
-/-- The dual of the tangent Lie algebra of a product of Lie groups is the product of the duals:
-the pair `(ν, ν') ∈ 𝔤* × 𝔨*` corresponds to the covector `ν ∘ d(pr_G) + ν' ∘ d(pr_K)` on the
-Lie algebra of `G × K`. This is Mathlib's `Module.dualProdDualEquivDual` transported along
-`TauCeti.Lie.groupLieAlgebraProdEquiv`. -/
-def groupLieAlgebraDualProdDualEquivDual :
-    (Module.Dual 𝕜 (GroupLieAlgebra I G) × Module.Dual 𝕜 (GroupLieAlgebra J K)) ≃ₗ[𝕜]
-      Module.Dual 𝕜 (GroupLieAlgebra (I.prod J) (G × K)) :=
-  (Module.dualProdDualEquivDual 𝕜 _ _).trans
-    (groupLieAlgebraProdEquiv 𝕜 I G J K).toLinearEquiv.dualMap
-
-/-- The covector of `G × K` defined by `(ν, ν')` evaluates as `ν ∘ d(pr_G) + ν' ∘ d(pr_K)`. -/
-@[simp]
-theorem groupLieAlgebraDualProdDualEquivDual_apply
-    (ν : Module.Dual 𝕜 (GroupLieAlgebra I G) × Module.Dual 𝕜 (GroupLieAlgebra J K))
-    (ξ : GroupLieAlgebra (I.prod J) (G × K)) :
-    groupLieAlgebraDualProdDualEquivDual 𝕜 I G J K ν ξ =
-      ν.1 ((MonoidHom.fst G K).groupLieAlgebraMap (I.prod J) I ξ) +
-        ν.2 ((MonoidHom.snd G K).groupLieAlgebraMap (I.prod J) J ξ) := by
-  rw [groupLieAlgebraDualProdDualEquivDual, LinearEquiv.trans_apply, LinearEquiv.dualMap_apply,
-    ContinuousLinearEquiv.coe_toLinearEquiv, groupLieAlgebraProdEquiv_apply,
-    Module.dualProdDualEquivDual_apply, LinearMap.coprod_apply]
-
-/-- The covector of `G × K` defined by `(ν, ν')` restricts to `ν` along the inclusion of `G`. -/
-@[simp]
-theorem groupLieAlgebraDualProdDualEquivDual_comp_groupLieAlgebraMap_inl
-    (ν : Module.Dual 𝕜 (GroupLieAlgebra I G) × Module.Dual 𝕜 (GroupLieAlgebra J K)) :
-    groupLieAlgebraDualProdDualEquivDual 𝕜 I G J K ν ∘ₗ
-        ((MonoidHom.inl G K).groupLieAlgebraMap I (I.prod J)).toLinearMap =
-      ν.1 := by
-  ext ξ
-  simp
-
-/-- The covector of `G × K` defined by `(ν, ν')` restricts to `ν'` along the inclusion of `K`. -/
-@[simp]
-theorem groupLieAlgebraDualProdDualEquivDual_comp_groupLieAlgebraMap_inr
-    (ν : Module.Dual 𝕜 (GroupLieAlgebra I G) × Module.Dual 𝕜 (GroupLieAlgebra J K)) :
-    groupLieAlgebraDualProdDualEquivDual 𝕜 I G J K ν ∘ₗ
-        ((MonoidHom.inr G K).groupLieAlgebraMap J (I.prod J)).toLinearMap =
-      ν.2 := by
-  ext ξ
-  simp
-
-/-- A covector of `G × K` is the covector defined by its restrictions along the inclusions of the
-two factors. -/
-@[simp]
-theorem groupLieAlgebraDualProdDualEquivDual_comp_groupLieAlgebraMap_inl_groupLieAlgebraMap_inr
-    (ω : Module.Dual 𝕜 (GroupLieAlgebra (I.prod J) (G × K))) :
-    groupLieAlgebraDualProdDualEquivDual 𝕜 I G J K
-        (ω ∘ₗ ((MonoidHom.inl G K).groupLieAlgebraMap I (I.prod J)).toLinearMap,
-          ω ∘ₗ ((MonoidHom.inr G K).groupLieAlgebraMap J (I.prod J)).toLinearMap) =
-      ω := by
-  ext ξ
-  rw [groupLieAlgebraDualProdDualEquivDual_apply, LinearMap.comp_apply, LinearMap.comp_apply,
-    ContinuousLinearMap.coe_coe, ContinuousLinearMap.coe_coe, ← map_add]
-  simp
-
-/-- The pair of covectors of `G` and `K` defined by a covector of `G × K` consists of its
-restrictions along the inclusions of the two factors. -/
-@[simp]
-theorem groupLieAlgebraDualProdDualEquivDual_symm_apply
-    (ω : Module.Dual 𝕜 (GroupLieAlgebra (I.prod J) (G × K))) :
-    (groupLieAlgebraDualProdDualEquivDual 𝕜 I G J K).symm ω =
-      (ω ∘ₗ ((MonoidHom.inl G K).groupLieAlgebraMap I (I.prod J)).toLinearMap,
-        ω ∘ₗ ((MonoidHom.inr G K).groupLieAlgebraMap J (I.prod J)).toLinearMap) := by
-  rw [LinearEquiv.symm_apply_eq,
-    groupLieAlgebraDualProdDualEquivDual_comp_groupLieAlgebraMap_inl_groupLieAlgebraMap_inr]
-
 variable [LieGroup I 1 G] [LieGroup J 1 K]
 
 /-- **The coadjoint action of a product.** Under `𝔤* × 𝔨* ≃ Lie(G × K)*`, the coadjoint action of
@@ -151,12 +71,9 @@ theorem coadjointRepresentation_groupLieAlgebraDualProdDualEquivDual (g : G × K
         (coadjointRepresentation 𝕜 I G g.1 ν.1, coadjointRepresentation 𝕜 J K g.2 ν.2) := by
   ext ξ
   -- The projections intertwine the adjoint actions: `d(pr_G) ∘ Ad_{g⁻¹} = Ad_{g.1⁻¹} ∘ d(pr_G)`.
-  rw [coadjointRepresentation_apply, groupLieAlgebraDualProdDualEquivDual_apply,
-    groupLieAlgebraDualProdDualEquivDual_apply,
-    MonoidHom.groupLieAlgebraMap_adjointContinuousLinearMap,
-    MonoidHom.groupLieAlgebraMap_adjointContinuousLinearMap, coadjointRepresentation_apply,
-    coadjointRepresentation_apply, MonoidHom.coe_fst, MonoidHom.coe_snd, Prod.fst_inv,
-    Prod.snd_inv]
+  simp only [coadjointRepresentation_apply, groupLieAlgebraDualProdDualEquivDual_apply,
+    MonoidHom.groupLieAlgebraMap_adjointContinuousLinearMap, MonoidHom.coe_fst, MonoidHom.coe_snd,
+    Prod.fst_inv, Prod.snd_inv]
 
 /-- **The coadjoint stabilizer of a product** is the product of the coadjoint stabilizers:
 `(G × K)_{(ν, ν')} = G_ν × K_ν'`. -/
@@ -167,8 +84,6 @@ theorem stabilizer_coadjointRepresentation_groupLieAlgebraDualProdDualEquivDual
       ((coadjointRepresentation 𝕜 I G).stabilizer ν.1).prod
         ((coadjointRepresentation 𝕜 J K).stabilizer ν.2) := by
   ext g
-  rw [Representation.mem_stabilizer, coadjointRepresentation_groupLieAlgebraDualProdDualEquivDual,
-    EquivLike.apply_eq_iff_eq, Subgroup.mem_prod, Representation.mem_stabilizer,
-    Representation.mem_stabilizer, Prod.ext_iff]
+  simp [Subgroup.mem_prod, Prod.ext_iff]
 
 end TauCeti.Lie

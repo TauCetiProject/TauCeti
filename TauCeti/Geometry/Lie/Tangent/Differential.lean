@@ -21,8 +21,6 @@ identify the tangent Lie algebra of `G × K` with the product of those of `G` an
 
 * `MonoidHom.groupLieAlgebraMap`: the differential at the identity of a group homomorphism, as a
   continuous linear map between tangent Lie algebras.
-* `TauCeti.Lie.groupLieAlgebraProdEquiv`: the continuous linear equivalence
-  `Lie(G × K) ≃ Lie(G) × Lie(K)` given by the differentials of the two projections.
 
 ## Main results
 
@@ -164,54 +162,3 @@ theorem
   exact Prod.ext (add_zero _) (zero_add _)
 
 end MonoidHom
-
-namespace TauCeti.Lie
-
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
-  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
-  {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
-  {F HK : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace HK]
-  {J : ModelWithCorners 𝕜 F HK} {K : Type*} [TopologicalSpace K] [ChartedSpace HK K] [Group K]
-
-variable (𝕜 I G J K) in
-/-- The tangent Lie algebra of `G × K` at the identity is the product of the tangent Lie algebras
-of `G` and `K`: `ξ ↦ (d(pr_G) ξ, d(pr_K) ξ)`, with inverse `(ξ, η) ↦ d(in_G) ξ + d(in_K) η`. -/
-def groupLieAlgebraProdEquiv :
-    GroupLieAlgebra (I.prod J) (G × K) ≃L[𝕜] GroupLieAlgebra I G × GroupLieAlgebra J K :=
-  .equivOfInverse
-    (((MonoidHom.fst G K).groupLieAlgebraMap (I.prod J) I).prod
-      ((MonoidHom.snd G K).groupLieAlgebraMap (I.prod J) J))
-    (((MonoidHom.inl G K).groupLieAlgebraMap I (I.prod J)).coprod
-      ((MonoidHom.inr G K).groupLieAlgebraMap J (I.prod J)))
-    (fun ξ ↦ by
-      rw [ContinuousLinearMap.coprod_apply, ContinuousLinearMap.prod_apply]
-      simp)
-    fun ν ↦ by
-      ext <;>
-      simp only [ContinuousLinearMap.coprod_apply, ContinuousLinearMap.prod_apply, map_add,
-        MonoidHom.groupLieAlgebraMap_fst_groupLieAlgebraMap_inl,
-        MonoidHom.groupLieAlgebraMap_snd_groupLieAlgebraMap_inl,
-        MonoidHom.groupLieAlgebraMap_fst_groupLieAlgebraMap_inr,
-        MonoidHom.groupLieAlgebraMap_snd_groupLieAlgebraMap_inr, Prod.mk_add_mk, add_zero,
-        zero_add]
-
-/-- The components of an element of the Lie algebra of `G × K` are its images under the
-differentials of the two projections. -/
-@[simp]
-theorem groupLieAlgebraProdEquiv_apply (ξ : GroupLieAlgebra (I.prod J) (G × K)) :
-    groupLieAlgebraProdEquiv 𝕜 I G J K ξ =
-      ((MonoidHom.fst G K).groupLieAlgebraMap (I.prod J) I ξ,
-        (MonoidHom.snd G K).groupLieAlgebraMap (I.prod J) J ξ) :=
-  (rfl)
-
-/-- A pair of elements of the Lie algebras of `G` and `K` is the sum of their images under the
-differentials of the two inclusions. -/
-@[simp]
-theorem groupLieAlgebraProdEquiv_symm_apply (ξ : GroupLieAlgebra I G × GroupLieAlgebra J K) :
-    (groupLieAlgebraProdEquiv 𝕜 I G J K).symm ξ =
-      (MonoidHom.inl G K).groupLieAlgebraMap I (I.prod J) ξ.1 +
-        (MonoidHom.inr G K).groupLieAlgebraMap J (I.prod J) ξ.2 :=
-  (rfl)
-
-end TauCeti.Lie

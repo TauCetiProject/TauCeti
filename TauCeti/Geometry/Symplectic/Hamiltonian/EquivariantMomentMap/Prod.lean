@@ -210,8 +210,7 @@ theorem prodMap [MulAction (G × G') (M × N)]
   convert hμ.prod_comp_monoidHom hν (MonoidHom.fst G G') (MonoidHom.snd G G')
     mdifferentiableAt_fst mdifferentiableAt_snd hsmul using 2 with p
   ext ξ
-  rw [Lie.groupLieAlgebraDualProdDualEquivDual_apply, LinearMap.add_apply, LinearMap.comp_apply,
-    LinearMap.comp_apply, ContinuousLinearMap.coe_coe, ContinuousLinearMap.coe_coe]
+  simp
 
 end IsMomentMap
 
@@ -236,10 +235,9 @@ theorem prod_comp_monoidHom {EK HK : Type*} [NormedAddCommGroup EK] [NormedSpace
         (ν p.2).comp (ψ.groupLieAlgebraMap IK I').toLinearMap := by
   refine isEquivariantMomentMap_iff_momentDefect_eq_zero.2
     ⟨hμ.toIsMomentMap.prod_comp_monoidHom hν.toIsMomentMap φ ψ hφ hψ hsmul, fun k p ↦ ?_⟩
-  rw [momentDefect_prod_comp_groupLieAlgebraMap hsmul,
+  simp [momentDefect_prod_comp_groupLieAlgebraMap hsmul,
     (isEquivariantMomentMap_iff_momentDefect_eq_zero.1 hμ).2,
-    (isEquivariantMomentMap_iff_momentDefect_eq_zero.1 hν).2, LinearMap.zero_comp,
-    LinearMap.zero_comp, add_zero]
+    (isEquivariantMomentMap_iff_momentDefect_eq_zero.1 hν).2]
 
 /-- **The product of Hamiltonian spaces.** Let `G × G'` act on `M × N` factorwise,
 `(g, g') • (x, y) = (g • x, g' • y)`. If `μ` and `ν` are coadjoint-equivariant moment maps of the
@@ -251,12 +249,10 @@ theorem prodMap [MulAction (G × G') (M × N)]
     (hν : τ.IsEquivariantMomentMap ν)
     (hsmul : ∀ (g : G × G') (p : M × N), g • p = (g.1 • p.1, g.2 • p.2)) :
     (σ.prod τ).IsEquivariantMomentMap fun p ↦
-      Lie.groupLieAlgebraDualProdDualEquivDual ℝ I G I' G' (μ p.1, ν p.2) := by
-  convert hμ.prod_comp_monoidHom hν (MonoidHom.fst G G') (MonoidHom.snd G G')
-    mdifferentiableAt_fst mdifferentiableAt_snd hsmul using 2 with p
-  ext ξ
-  rw [Lie.groupLieAlgebraDualProdDualEquivDual_apply, LinearMap.add_apply, LinearMap.comp_apply,
-    LinearMap.comp_apply, ContinuousLinearMap.coe_coe, ContinuousLinearMap.coe_coe]
+      Lie.groupLieAlgebraDualProdDualEquivDual ℝ I G I' G' (μ p.1, ν p.2) where
+  toIsMomentMap := hμ.toIsMomentMap.prodMap hν.toIsMomentMap hsmul
+  -- The identification `𝔤* × 𝔤'* ≃ Lie(G × G')*` intertwines the coadjoint actions.
+  apply_smul g p := by simp [hsmul, hμ.apply_smul, hν.apply_smul]
 
 end IsEquivariantMomentMap
 
