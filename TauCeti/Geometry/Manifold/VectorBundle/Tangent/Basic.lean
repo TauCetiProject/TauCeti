@@ -217,6 +217,51 @@ variable
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
 
+section Casts
+
+/-- Between the same base point and itself, `tangentSpaceCast` is the identity equivalence of the
+tangent space. -/
+@[simp]
+theorem tangentSpaceCast_self (I : ModelWithCorners 𝕜 E H) (x : M) :
+    tangentSpaceCast I x x = ContinuousLinearEquiv.refl 𝕜 (TangentSpace I x) := by
+  -- At this foundational bridge, `tangentSpaceCast` is the identity on the model space `E`.
+  ext v
+  rfl
+
+/-- Inverting `tangentSpaceCast I x y` reverses the source and target base points. -/
+@[simp]
+theorem tangentSpaceCast_symm (I : ModelWithCorners 𝕜 E H) (x y : M) :
+    (tangentSpaceCast I x y).symm = tangentSpaceCast I y x := by
+  -- At this foundational bridge, both directions of `tangentSpaceCast` act as the identity on `E`.
+  ext v
+  rfl
+
+/-- Reading a tangent vector in the model space `E` is invariant under `tangentSpaceCast`. -/
+@[simp]
+theorem tangentSpaceCastModel_tangentSpaceCast (I : ModelWithCorners 𝕜 E H) (x y : M)
+    (v : TangentSpace I x) :
+    tangentSpaceCastModel I y (tangentSpaceCast I x y v) = tangentSpaceCastModel I x v := by
+  -- At this foundational bridge, both implementation casts act as the identity on `E`.
+  rfl
+
+/-- The foundational tangent-to-model cast preserves the underlying vector in `E`.
+Use this equation explicitly: automatic simplification would erase the distinction between
+`TangentSpace I x` and `E`. -/
+theorem tangentSpaceCastModel_apply (I : ModelWithCorners 𝕜 E H) (x : M)
+    (v : TangentSpace I x) :
+    tangentSpaceCastModel I x v = v := by
+  -- At this foundational bridge, `tangentSpaceCastModel` is the identity on `E`.
+  rfl
+
+/-- The inverse model-to-tangent cast preserves the underlying vector in `E`.
+As with `tangentSpaceCastModel_apply`, use this equation only at explicit tangent/model bridges. -/
+theorem tangentSpaceCastModel_symm_apply (I : ModelWithCorners 𝕜 E H) (x : M) (v : E) :
+    (tangentSpaceCastModel I x).symm v = v := by
+  -- At this foundational bridge, `(tangentSpaceCastModel I x).symm` is the identity on `E`.
+  rfl
+
+end Casts
+
 section BasePoint
 
 variable [IsManifold I 1 M]
@@ -245,6 +290,16 @@ theorem continuousLinearMapAt_trivializationAt_self (x : M) (v : TangentSpace I 
   rw [TangentBundle.continuousLinearMapAt_trivializationAt_eq_core (mem_chart_source H x)]
   exact (tangentBundleCore I M).coordChange_self (achart H x) x (mem_chart_source H x) v
 
+/-- Over its own base point `x`, the continuous linear map of the canonical tangent-bundle
+trivialization is `tangentSpaceCastModel I x`. Not `@[simp]`: evaluation already simplifies via
+`continuousLinearMapAt_trivializationAt_self`. -/
+theorem continuousLinearMapAt_trivializationAt_self_eq_tangentSpaceCastModel (x : M) :
+    (trivializationAt E (TangentSpace I) x).continuousLinearMapAt 𝕜 x =
+      (tangentSpaceCastModel I x).toContinuousLinearMap := by
+  ext v
+  rw [continuousLinearMapAt_trivializationAt_self]
+  exact (tangentSpaceCastModel_apply I x v).symm
+
 /-- The inverse form of `TauCeti.Manifold.continuousLinearMapAt_trivializationAt_self`: over its
 own base point, the inverse of the canonical trivialization is the identity. -/
 @[simp]
@@ -252,6 +307,16 @@ theorem symmL_trivializationAt_self (x : M) (v : E) :
     (trivializationAt E (TangentSpace I) x).symmL 𝕜 x v = v := by
   rw [TangentBundle.symmL_trivializationAt_eq_core (mem_chart_source H x)]
   exact (tangentBundleCore I M).coordChange_self (achart H x) x (mem_chart_source H x) v
+
+/-- Over its own base point `x`, the inverse continuous linear map of the canonical tangent-bundle
+trivialization is `(tangentSpaceCastModel I x).symm`. Not `@[simp]`: evaluation already simplifies
+via `symmL_trivializationAt_self`. -/
+theorem symmL_trivializationAt_self_eq_tangentSpaceCastModel_symm (x : M) :
+    (trivializationAt E (TangentSpace I) x).symmL 𝕜 x =
+      (tangentSpaceCastModel I x).symm.toContinuousLinearMap := by
+  ext v
+  rw [symmL_trivializationAt_self]
+  exact (tangentSpaceCastModel_symm_apply I x v).symm
 
 /-- The vector field with constant coordinates `u` in the trivialization of the tangent bundle at
 `x` takes the value `u` at `x`. -/
