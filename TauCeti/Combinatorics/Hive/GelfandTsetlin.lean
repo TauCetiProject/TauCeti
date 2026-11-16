@@ -10,7 +10,6 @@ public import TauCeti.RepresentationTheory.ClassicalGroups.GelfandTsetlin.Weight
 import Mathlib.Tactic.Abel
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.Ring
 
 /-!
 # The hive-to-Gelfand–Tsetlin difference map and its reconstruction
@@ -256,8 +255,7 @@ theorem gtCompletion_shift_of_le (l : Fin n → ℤ) (a b : ℤ) (P : GTPattern 
     (hij : i ≤ j) (hjn : j ≤ n) :
     gtCompletion (fun r => l r + a) (P.shift b) i j =
       gtCompletion l P i j + j • a + i • b := by
-  rw [GTPattern.shift_eq_add_const,
-    show (fun r : Fin n => l r + a) = l + fun _ => a from rfl, gtCompletion_add,
+  rw [GTPattern.shift_eq_add_const, (Pi.add_def l fun _ => a).symm, gtCompletion_add,
     gtCompletion_const_of_le (fun _ => a) b hij hjn, prefixSum_eq_sum_castLE hjn]
   simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin]; abel
 
@@ -276,8 +274,7 @@ theorem gtCompletion_diag_of_rowWeight_eq {l g : Fin n → ℤ} {P : GTPattern n
 
 @[grind =] theorem gtCompletion_top_right (l : Fin n → ℤ) (P : GTPattern n) (i : ℕ) :
     gtCompletion l P i n = (∑ r : Fin n, l r) + prefixSum i P.topRow := by
-  rw [gtCompletion_def, prefixSum_of_le le_rfl,
-    show P.topRow = fun r : Fin n => P r n from funext P.topRow_apply,
+  rw [gtCompletion_def, prefixSum_of_le le_rfl, funext P.topRow_apply,
     prefixSum_eq_sum_range i (fun k => P k n)]
   rcases le_total i n with hin | hni
   · rw [min_eq_left hin]
@@ -334,7 +331,7 @@ def gtCompletionVertex (l : Fin n → ℤ) (P : GTPattern n) (p : Vertex n) : �
 @[simp, grind =] theorem gtCompletionVertex_productChart (l : Fin n → ℤ) (P : GTPattern n) {i j : ℕ}
     (hij : i ≤ j) (hjn : j ≤ n) :
     gtCompletionVertex l P (Vertex.productChart n i j hij hjn) = gtCompletion l P i j := by
-  simp [gtCompletionVertex, show n - (n - j) = j by omega]
+  simp [gtCompletionVertex, Nat.sub_sub_self hjn]
 
 @[simp, grind =] theorem gtCompletionVertex_cornerA (l : Fin n → ℤ) (P : GTPattern n) :
     gtCompletionVertex l P (Vertex.cornerA n) = 0 := by simp [gtCompletionVertex]
@@ -351,17 +348,14 @@ theorem boundaryLinear_gtCompletionVertex (l : Fin n → ℤ) (P : GTPattern n) 
   · simp only [Fin.zero_eta, Matrix.cons_val_zero, boundaryLinear_apply, gtCompletionVertex_def,
       Vertex.edgePoint_zero_z, Vertex.edgePoint_zero_x, Fin.val_succ, Fin.val_castSucc,
       gtCompletion_zero_left]
-    rw [show n - (n - (r.val + 1)) = r.val + 1 by omega, show n - (n - r.val) = r.val by omega,
-      prefixSum_succ r.isLt]
+    rw [Nat.sub_sub_self r.isLt, Nat.sub_sub_self r.isLt.le, prefixSum_succ r.isLt]
     abel
   · simp [boundaryLinear_apply, gtCompletionVertex_def, GTPattern.topRow_apply]
-  · have hrl := r.isLt
+  · have hnr : n - r.val = r.rev.val + 1 := by have := r.isLt; rw [Fin.val_rev]; omega
     simp only [Fin.reduceFinMk, Matrix.cons_val_two, Matrix.tail_cons, Matrix.head_cons,
       boundaryLinear_apply, gtCompletionVertex_def, Vertex.edgePoint_two_z,
       Vertex.edgePoint_two_x, Fin.val_succ, Fin.val_castSucc]
-    rw [show n - (r.val + 1) = r.rev.val by simp [Fin.val_rev],
-      show n - r.val = r.rev.val + 1 by simp [Fin.val_rev]; omega,
-      hdiag r.rev.val (by omega), hdiag (r.rev.val + 1) (by omega),
+    rw [← Fin.val_rev, hnr, hdiag r.rev.val r.rev.isLt.le, hdiag (r.rev.val + 1) r.rev.isLt,
       prefixSum_succ r.rev.isLt, Fin.eta]
     abel
 
@@ -379,7 +373,7 @@ theorem toGTPattern_of_eq_gtCompletion {l : Fin n → ℤ} {P : GTPattern n} {h 
   ext i j
   by_cases hij : i < j ∧ j ≤ n
   · rw [toGTPattern_apply_of_lt_of_le h hij.1 hij.2, heq, heq]
-    simp only [Vertex.productChart_z, Vertex.productChart_x, show n - (n - j) = j by omega,
+    simp only [Vertex.productChart_z, Vertex.productChart_x, Nat.sub_sub_self hij.2,
       gtCompletion_succ_left_sub]
   · rw [GTPattern.entry_eq_zero _ (by omega), GTPattern.entry_eq_zero _ (by omega)]
 
@@ -425,8 +419,8 @@ theorem gtCompletion_rem_le_iff (l : Fin n → ℤ) (P : GTPattern n) {i j : ℕ
           ∑ k ∈ Finset.range i, (P k (j + 1) - P k j) := by
   have hj1 : j < n := by omega
   have hj2 : j + 1 < n := by omega
-  simp only [gtCompletion_def, show j + 2 = (j + 1) + 1 from rfl,
-    prefixSum_succ hj2, prefixSum_succ hj1, Finset.sum_sub_distrib]
+  simp only [gtCompletion_def, Finset.sum_sub_distrib]
+  rw [prefixSum_succ hj2, prefixSum_succ hj1]
   omega
 
 theorem isProductHiveFeasible_iff_gtCompletion (l : Fin n → ℤ) (P : GTPattern n) :
@@ -515,8 +509,8 @@ theorem isRhombusConcave_gtCompletionVertex_iff (l : Fin n → ℤ) (P : GTPatte
     fun hrem => ⟨fun i j hij hjn => ?_, fun i j hij hjn => ?_, fun i j hij hjn => ?_⟩⟩
   · simp only [gtCompletionVertex_productChart, gtCompletion_succ_left]
     linarith [P.entry_le_entry_succ_row hij hjn]
-  · simp only [gtCompletionVertex_productChart, show i + 2 = (i + 1) + 1 from rfl,
-      gtCompletion_succ_left]
+  · simp only [gtCompletionVertex_productChart]
+    rw [gtCompletion_succ_left l P (i + 1), gtCompletion_succ_left l P i j]
     linarith [P.entry_succ_succ_le_entry (i := i) hjn]
   · simpa only [gtCompletionVertex_productChart] using hrem i j hij hjn
 
@@ -866,9 +860,8 @@ theorem hiveCount_three_zero_adjoint_zero :
     hiveCount (productBoundary (0 : DominantWeight 3) ⟨![1, 0, -1], by decide⟩ 0) = 0 := by
   let μ : DominantWeight 3 := ⟨![1, 0, -1], by decide⟩
   have h0 : (0 : DominantWeight 3) = (0 : DominantWeight 3).dual := by ext i; simp
-  rw [show productBoundary (0 : DominantWeight 3) μ 0 =
-      productBoundary 0 μ (0 : DominantWeight 3).dual by rw [← h0],
-    ← cyclicBoundary_eq_productBoundary_dual, hiveCount_cyclicBoundary]
+  rw [congrArg (productBoundary 0 μ) h0, ← cyclicBoundary_eq_productBoundary_dual,
+    hiveCount_cyclicBoundary]
   refine hiveCount_eq_zero_iff.mpr ⟨fun ⟨_, hb⟩ => ?_⟩
   have hle := first_le_of_productBoundary hb; simp [μ] at hle
 

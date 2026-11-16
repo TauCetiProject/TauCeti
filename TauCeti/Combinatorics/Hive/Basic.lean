@@ -312,8 +312,7 @@ private theorem coords_of_isRhombus_dx_two {n : ℕ} {a b c d : Vertex n} (hr : 
   have hmx := hr.midpoint_x; have hmy := hr.midpoint_y
   have hab := hr.side_ab; rw [Vertex.sqDist_def] at hab
   have hda := hr.side_da; rw [Vertex.sqDist_comm, Vertex.sqDist_def] at hda
-  rw [show (b.x : ℤ) = d.x + 2 by omega, show (b.y : ℤ) = d.y - 1 by omega,
-    show (b.z : ℤ) = d.z - 1 by omega] at hab
+  rw [sub_eq_iff_eq_add.mp hdx, sub_eq_iff_eq_add.mp hdy, sub_eq_iff_eq_add.mp hdz] at hab
   obtain ⟨_, ⟨_, _⟩ | ⟨_, _⟩⟩ := unit_step_split
     (u₁ := (a.x : ℤ) - d.x) (u₂ := (a.y : ℤ) - d.y) (u₃ := (a.z : ℤ) - d.z)
     (by omega) hda (by linear_combination hab)

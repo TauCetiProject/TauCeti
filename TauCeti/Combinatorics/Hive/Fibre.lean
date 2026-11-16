@@ -524,9 +524,7 @@ instance uniqueFixedIntegerHiveZero (n : ℕ) :
 def fixedIntegerHiveRotateEquiv {n : ℕ} (B : Fin 3 → Fin n → ℤ) :
     FixedIntegerHive B ≃ FixedIntegerHive (fun s => B (s + 1)) where
   toFun h := ⟨h.1.rotate, by ext s i; simp [h.2]⟩
-  invFun h := ⟨h.1.rotate.rotate, by
-    ext s i; rw [boundary_rotate, boundary_rotate, h.2]; dsimp only
-    rw [show s + 1 + 1 + 1 = s by fin_cases s <;> decide]⟩
+  invFun h := ⟨h.1.rotate.rotate, by ext s i; fin_cases s <;> simp [h.2]⟩
   left_inv h := Subtype.ext h.1.rotate_rotate_rotate
   right_inv h := Subtype.ext h.1.rotate_rotate_rotate
 
@@ -643,7 +641,7 @@ theorem suffix_sum_le_of_productBoundary {n : ℕ} {lam μ γ : DominantWeight n
   have hdual : (∑ i : Fin n with i.val < n - k, γ.dual.1 i) =
       -∑ j : Fin n with k ≤ j.val, γ.1 j := by
     have hrev := sum_filter_rev_eq_prefixSum (n - k) (fun i : Fin n => γ.1 i.rev)
-    simp only [show n - (n - k) = k by omega, Fin.rev_rev, prefixSum_def] at hrev
+    simp only [Nat.sub_sub_self hk, Fin.rev_rev, prefixSum_def] at hrev
     simp [DominantWeight.dual_apply, Finset.sum_neg_distrib, hrev]
   rw [hdual, ← Finset.sum_filter_add_sum_filter_not Finset.univ
     (fun i : Fin n => i.val < k) μ.1] at hup
