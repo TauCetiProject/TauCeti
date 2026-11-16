@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Nondegenerate.CurvatureVariation
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Ricci
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Variation
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Nondegenerate.Regularity
 
 /-!
 # The first variation of the Ricci tensor of a family of nondegenerate metrics
@@ -22,10 +23,10 @@ connection induced by `∇ᵗ` on `Hom(TM, Hom(TM, TM))`. This file proves the *
 `∂ₛ Ric^s(u, v) = tr (w ↦ (∇ᵗ_w Γ')(v, u)) - tr (w ↦ (∇ᵗ_u Γ')(v, w))` at `s = t`,
 
 in index notation `∂ₜ R_ij = ∇_k Γ'^k_ij - ∇_i Γ'^k_kj` with `Γ'(∂_j, ∂_i) = Γ'^k_ij ∂_k`. It is
-the contraction of the pointwise curvature variation
-`ContMDiffNondegenerateMetricFamily.hasDerivAt_curvatureTensor_of_isLeviCivitaConnection`, since
-`Ric(u, v) = tr (w ↦ R(w, u) v)`
-(`TauCeti.Manifold.hasDerivAt_ricciTensor_of_hasDerivAt_curvatureTensor`).
+the Palatini identity for families of connections,
+`TauCeti.Manifold.hasDerivAt_ricciTensor_of_hasDerivAt_difference`, whose hypotheses hold for
+Levi-Civita connections as in
+`ContMDiffNondegenerateMetricFamily.hasDerivAt_curvatureTensor_of_isLeviCivitaConnection`.
 The traces are also expanded as sums of coordinates in an arbitrary basis of `T_x M`, as in
 `CovariantDerivative.ricciTensor_eq_sum`.
 
@@ -99,10 +100,16 @@ theorem hasDerivAt_ricciTensor_of_isLeviCivitaConnection
               (ContinuousLinearMap.coeLM ℝ)).flip v).flip u) -
         LinearMap.trace ℝ (TangentSpace I x)
           ((cov t).hom ((cov t).hom (cov t))
-            (fun y ↦ deriv (fun s ↦ (cov s).difference (cov t) y) t) x u v)) t := by
-  rw [← map_sub]
-  refine hasDerivAt_ricciTensor_of_hasDerivAt_curvatureTensor fun w ↦ ?_
-  simpa using g.hasDerivAt_curvatureTensor_of_isLeviCivitaConnection hc hcov x w u v
+            (fun y ↦ deriv (fun s ↦ (cov s).difference (cov t) y) t) x u v)) t :=
+  hasDerivAt_ricciTensor_of_hasDerivAt_difference
+    (Eventually.of_forall fun y ↦ DifferentiableAt.hasDerivAt (𝕜 := ℝ) (F := E →L[ℝ] E →L[ℝ] E)
+      (g.differentiableAt_difference_of_isLeviCivitaConnection hc hcov y))
+    ((g.contMDiff_deriv_difference_of_isLeviCivitaConnection hc hcov x).mdifferentiableAt
+      (by simp))
+    (congrFun (hcov t).torsion x)
+    (fun _ _ hX hZ ↦ g.contMDiffAt_covariantDerivative_apply_of_isLeviCivitaConnection hc hcov
+      ((hX x).of_le (by simp)) ((hZ x).of_le (by simp)))
+    u v
 
 /-- **The Palatini identity in a basis.** In the setting of
 `hasDerivAt_ricciTensor_of_isLeviCivitaConnection`, for every basis `b` of `T_x M`,
@@ -120,7 +127,7 @@ theorem hasDerivAt_ricciTensor_sum_of_isLeviCivitaConnection
         (cov t).hom ((cov t).hom (cov t))
           (fun y ↦ deriv (fun s ↦ (cov s).difference (cov t) y) t) x u v (b i)) i) t := by
   classical
-  convert g.hasDerivAt_ricciTensor_of_isLeviCivitaConnection hc hcov x u v using 1
+  refine (g.hasDerivAt_ricciTensor_of_isLeviCivitaConnection hc hcov x u v).congr_deriv ?_
   rw [← map_sub, LinearMap.trace_eq_matrix_trace ℝ b]
   simp [Matrix.trace, LinearMap.toMatrix_apply]
 

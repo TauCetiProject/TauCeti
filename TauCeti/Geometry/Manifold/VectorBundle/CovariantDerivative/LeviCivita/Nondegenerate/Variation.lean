@@ -17,7 +17,6 @@ import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Non
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 import TauCeti.Geometry.Manifold.VectorBundle.NondegenerateMetric.Musical
-import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.ChartGram
 
 /-!
 # The first variation of the Levi-Civita connection
@@ -90,7 +89,7 @@ public section
 
 noncomputable section
 
-open Bundle FiberBundle Filter Module Riemannian.Tensor Set VectorField
+open Bundle FiberBundle Filter Module Set VectorField
 open scoped ContDiff Manifold Topology
 
 namespace TauCeti.Manifold
@@ -423,13 +422,12 @@ private theorem contMDiffOn_apply_deriv_difference [IsManifold IP 1 P]
       s := by
   set h := g.variation (c t) (mfderiv 𝓘(ℝ) IP c t 1)
   have hh := g.contMDiff_variation (c t) (mfderiv 𝓘(ℝ) IP c t 1)
-  have : IsManifold I (∞ + 1) M := IsManifold.of_le (n := ∞) (by simp)
   have hcovX := ((hcov t).contMDiffOn le_rfl hs (by simpa using hX)).clm_bundle_apply hY
   have hK := (contMDiffOn_const (c := (2 : ℝ)⁻¹)).mul
     (contMDiffOn_koszulBilinear (n := ∞) (m := ∞) (b := h) hs (by simp)
       (by simpa using hh.contMDiffOn) (by simpa using hY) (by simpa using hX)
       (by simpa using hZ))
-  refine (hK.sub (contMDiffOn_apply_apply hh.contMDiffOn hcovX hZ)).congr fun y hy ↦ ?_
+  refine (hK.sub (hh.contMDiffOn.clm_section_apply₂ hcovX hZ)).congr fun y hy ↦ ?_
   have hd {U : Π y : M, TangentSpace I y}
       (hU : ContMDiffOn I (I.prod 𝓘(ℝ, E)) ∞ (fun y ↦ TotalSpace.mk' E y (U y)) s) :
       MDiffAt (T% U) y :=
@@ -456,14 +454,13 @@ theorem contMDiff_deriv_difference_of_isLeviCivitaConnection [IsManifold IP 1 P]
       (fun y ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] E)
         (E := fun y : M ↦ TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] TangentSpace I y) y
         (deriv (fun s ↦ (cov s).difference (cov t) y) t)) := by
-  have : IsManifold I (∞ + 1) M := IsManifold.of_le (n := ∞) (by simp)
   intro x
   set e := trivializationAt E (TangentSpace I) x
   set fr := e.localFrame (finBasis ℝ E)
   have hs : IsOpen e.baseSet := e.open_baseSet
   have hframe (j : Fin (finrank ℝ E)) : ContMDiffOn I (I.prod 𝓘(ℝ, E)) ∞
       (fun y ↦ TotalSpace.mk' E y (fr j y)) e.baseSet :=
-    by simpa only [chartLocalFrame_def] using contMDiffOn_chartLocalFrame (I := I) (n := ∞) x j
+    e.contMDiffOn_localFrame_baseSet ∞ (finBasis ℝ E) j
   have hbase : MapsTo id e.baseSet (e.baseSet ∩ e.baseSet) := fun y hy ↦ ⟨hy, hy⟩
   -- The vectors `Γ'(eⱼ, eₖ)` are the sharps of the covectors `g_{c t}(Γ'(eⱼ, eₖ), ·)`, which are
   -- smooth since their evaluations on the frame are.

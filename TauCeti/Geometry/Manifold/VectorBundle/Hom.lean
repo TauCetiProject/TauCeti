@@ -272,7 +272,7 @@ theorem _root_.Bundle.Trivialization.contMDiffOn_compl₁₂_symmₗ
     (contMDiffOn_const (c := u)) y hy
   refine TauCeti.contMDiffWithinAt_clm_apply.mpr fun v ↦
     TauCeti.contMDiffWithinAt_clm_apply.mpr fun w ↦ ?_
-  exact (contMDiffWithinAt_apply_apply (hβ y hy) (hs v) (hs w)).congr
+  exact ((hβ y hy).clm_section_apply₂ (hs v) (hs w)).congr
     (fun z hz ↦ by simp [e.symmₗ_apply hz]) (by simp [e.symmₗ_apply hy])
 
 end TrivializationForm

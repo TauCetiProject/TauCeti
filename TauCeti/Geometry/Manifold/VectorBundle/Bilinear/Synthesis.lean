@@ -56,7 +56,7 @@ theorem contMDiffOn_bilinearComp_synthesisMap {d : ℕ}
       (fun y ↦ (Q y).bilinearComp (synthesisMap ℝ (ε · y)).toContinuousLinearMap
         (synthesisMap ℝ (ε · y)).toContinuousLinearMap) U := by
   have hc (i j : Fin d) : ContMDiffOn IB 𝓘(ℝ) n (fun y ↦ Q y (ε i y) (ε j y)) U :=
-    TauCeti.Manifold.contMDiffOn_apply_apply hQ.contMDiffOn (hε i) (hε j)
+    hQ.contMDiffOn.clm_section_apply₂ (hε i) (hε j)
   simp_rw [bilinearComp_synthesisMap_eq_sum]
   exact contMDiffOn_finsetSum fun i _ ↦ contMDiffOn_finsetSum fun j _ ↦
     (hc i j).smul contMDiffOn_const

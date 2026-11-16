@@ -13,7 +13,7 @@ public import Mathlib.LinearAlgebra.Projection
 # `C^n` bilinear fields
 
 Pairing two `C^n` sections with a `C^n` bilinear field gives a `C^n` function
-(`TauCeti.Manifold.contMDiffWithinAt_apply_apply` and its variant on a set).
+(`ContMDiffWithinAt.clm_section_apply₂` and its variant on a set).
 
 The transpose of a `C^n` bilinear field is `C^n`. When two is nonzero in the scalar field,
 averaging a field with its transpose defines a linear projection onto the symmetric `C^n`
@@ -94,34 +94,6 @@ theorem contMDiff_flip_section
   fun x ↦ contMDiffAt_flip_section (hb x)
 
 end Flip
-
-section Pairing
-
-variable {s : Set B} {x : B}
-
-/-- Pairing two `C^n` sections with a `C^n` bilinear field gives a `C^n` function, within a set
-at a point. -/
-theorem contMDiffWithinAt_apply_apply {β : ∀ x : B, V x →L[𝕜] V x →L[𝕜] G} {U W : ∀ x : B, V x}
-    (hβ : ContMDiffWithinAt IB (IB.prod 𝓘(𝕜, F →L[𝕜] F →L[𝕜] G)) n
-      (fun y ↦ TotalSpace.mk' (F →L[𝕜] F →L[𝕜] G) (E := fun y ↦ V y →L[𝕜] V y →L[𝕜] G) y (β y))
-      s x)
-    (hU : ContMDiffWithinAt IB (IB.prod 𝓘(𝕜, F)) n (fun y ↦ TotalSpace.mk' F y (U y)) s x)
-    (hW : ContMDiffWithinAt IB (IB.prod 𝓘(𝕜, F)) n (fun y ↦ TotalSpace.mk' F y (W y)) s x) :
-    ContMDiffWithinAt IB 𝓘(𝕜, G) n (fun y ↦ β y (U y) (W y)) s x :=
-  (contMDiffWithinAt_totalSpace_iff.mp (ContMDiffWithinAt.clm_bundle_apply₂ (F₃ := G)
-    (E₃ := Bundle.Trivial B G) (b := id) hβ hU hW)).2
-
-/-- Pairing two `C^n` sections with a `C^n` bilinear field gives a `C^n` function on a set. -/
-theorem contMDiffOn_apply_apply {β : ∀ x : B, V x →L[𝕜] V x →L[𝕜] G} {U W : ∀ x : B, V x}
-    (hβ : ContMDiffOn IB (IB.prod 𝓘(𝕜, F →L[𝕜] F →L[𝕜] G)) n
-      (fun y ↦ TotalSpace.mk' (F →L[𝕜] F →L[𝕜] G) (E := fun y ↦ V y →L[𝕜] V y →L[𝕜] G) y (β y))
-      s)
-    (hU : ContMDiffOn IB (IB.prod 𝓘(𝕜, F)) n (fun y ↦ TotalSpace.mk' F y (U y)) s)
-    (hW : ContMDiffOn IB (IB.prod 𝓘(𝕜, F)) n (fun y ↦ TotalSpace.mk' F y (W y)) s) :
-    ContMDiffOn IB 𝓘(𝕜, G) n (fun y ↦ β y (U y) (W y)) s :=
-  fun y hy ↦ contMDiffWithinAt_apply_apply (hβ y hy) (hU y hy) (hW y hy)
-
-end Pairing
 
 /-- Transposition as a linear involution on `C^n` bilinear fields. -/
 def transposeBilinearSection :
@@ -237,6 +209,55 @@ theorem range_symmetrizeBilinearSection :
     exact ⟨b, (symmetrizeBilinearSection_eq_self_iff b).mpr hb⟩
 
 end TauCeti.Manifold
+
+section Pairing
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {EM : Type*} [NormedAddCommGroup EM] [NormedSpace 𝕜 EM]
+  {HM : Type*} [TopologicalSpace HM] {IM : ModelWithCorners 𝕜 EM HM}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace HM M]
+  {EB : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB]
+  {HB : Type*} [TopologicalSpace HB] {IB : ModelWithCorners 𝕜 EB HB}
+  {B : Type*} [TopologicalSpace B] [ChartedSpace HB B]
+  {F₁ : Type*} [NormedAddCommGroup F₁] [NormedSpace 𝕜 F₁]
+  {V₁ : B → Type*} [TopologicalSpace (TotalSpace F₁ V₁)]
+  [∀ x, TopologicalSpace (V₁ x)] [∀ x, AddCommGroup (V₁ x)] [∀ x, Module 𝕜 (V₁ x)]
+  [FiberBundle F₁ V₁] [VectorBundle 𝕜 F₁ V₁]
+  {F₂ : Type*} [NormedAddCommGroup F₂] [NormedSpace 𝕜 F₂]
+  {V₂ : B → Type*} [TopologicalSpace (TotalSpace F₂ V₂)]
+  [∀ x, TopologicalSpace (V₂ x)] [∀ x, AddCommGroup (V₂ x)] [∀ x, Module 𝕜 (V₂ x)]
+  [FiberBundle F₂ V₂] [VectorBundle 𝕜 F₂ V₂]
+  {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+  {n : ℕ∞ω} {b : M → B} {s : Set M} {x : M}
+
+/-- Pairing two `C^n` sections with a `C^n` bilinear field, over a base map `b`, gives a `C^n`
+function, within a set at a point. -/
+theorem ContMDiffWithinAt.clm_section_apply₂
+    {β : ∀ x : M, V₁ (b x) →L[𝕜] V₂ (b x) →L[𝕜] G} {U : ∀ x : M, V₁ (b x)}
+    {W : ∀ x : M, V₂ (b x)}
+    (hβ : ContMDiffWithinAt IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂ →L[𝕜] G)) n
+      (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂ →L[𝕜] G)
+        (E := fun z ↦ V₁ z →L[𝕜] V₂ z →L[𝕜] G) (b y) (β y)) s x)
+    (hU : ContMDiffWithinAt IM (IB.prod 𝓘(𝕜, F₁)) n (fun y ↦ TotalSpace.mk' F₁ (b y) (U y)) s x)
+    (hW : ContMDiffWithinAt IM (IB.prod 𝓘(𝕜, F₂)) n (fun y ↦ TotalSpace.mk' F₂ (b y) (W y)) s x) :
+    ContMDiffWithinAt IM 𝓘(𝕜, G) n (fun y ↦ β y (U y) (W y)) s x :=
+  (contMDiffWithinAt_totalSpace_iff.mp (hβ.clm_bundle_apply₂ (F₃ := G)
+    (E₃ := Bundle.Trivial B G) hU hW)).2
+
+/-- Pairing two `C^n` sections with a `C^n` bilinear field, over a base map `b`, gives a `C^n`
+function on a set. -/
+theorem ContMDiffOn.clm_section_apply₂
+    {β : ∀ x : M, V₁ (b x) →L[𝕜] V₂ (b x) →L[𝕜] G} {U : ∀ x : M, V₁ (b x)}
+    {W : ∀ x : M, V₂ (b x)}
+    (hβ : ContMDiffOn IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂ →L[𝕜] G)) n
+      (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂ →L[𝕜] G)
+        (E := fun z ↦ V₁ z →L[𝕜] V₂ z →L[𝕜] G) (b y) (β y)) s)
+    (hU : ContMDiffOn IM (IB.prod 𝓘(𝕜, F₁)) n (fun y ↦ TotalSpace.mk' F₁ (b y) (U y)) s)
+    (hW : ContMDiffOn IM (IB.prod 𝓘(𝕜, F₂)) n (fun y ↦ TotalSpace.mk' F₂ (b y) (W y)) s) :
+    ContMDiffOn IM 𝓘(𝕜, G) n (fun y ↦ β y (U y) (W y)) s :=
+  fun y hy ↦ (hβ y hy).clm_section_apply₂ (hU y hy) (hW y hy)
+
+end Pairing
 
 section BilinearComp
 

@@ -46,7 +46,9 @@ and the formula becomes the pointwise identity
 
 for the curvature tensors `R^s` at a point. Since `Ric(u, v) = tr (w ↦ R(w, u) v)`, the parameter
 derivative of the Ricci tensor is the trace of that of the curvature tensor; this needs neither a
-metric nor vanishing torsion.
+metric nor vanishing torsion. Contracting the curvature formula gives the Palatini identity
+
+`∂ₛ Ric^s(u, v) = tr (w ↦ (∇ᵗ_w Γ')(v, u)) - tr (w ↦ (∇ᵗ_u Γ')(v, w))` at `s = t`.
 
 ## Main results
 
@@ -56,6 +58,9 @@ metric nor vanishing torsion.
   the curvature tensor at a point, in terms of the covariant derivative of `Γ'`.
 * `TauCeti.Manifold.hasDerivAt_ricciTensor_of_hasDerivAt_curvatureTensor`: the first variation of
   the Ricci tensor is the trace of that of the curvature tensor.
+* `TauCeti.Manifold.hasDerivAt_ricciTensor_of_hasDerivAt_difference`: the Palatini identity for
+  the first variation of the Ricci tensor of a family of connections, and
+  `TauCeti.Manifold.hasDerivAt_ricciTensor_sum_of_hasDerivAt_difference` its form in a basis.
 
 ## References
 
@@ -74,8 +79,7 @@ namespace TauCeti.Manifold
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
-  {cov : ℝ → CovariantDerivative I E (TangentSpace I : M → Type _)}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   {C : Π x : M, TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] TangentSpace I x}
   {t : ℝ} {x : M}
 
@@ -89,7 +93,8 @@ Then the curvature `R^s(X, Y) Z` at `x` has parameter derivative
 
 at `t`, where `(∇_X Γ')(Z, Y) = ∇_X (Γ'(Z, Y)) - Γ'(∇_X Z, Y) - Γ'(Z, ∇_X Y)` and `Γ'(Z, Y)` is the
 one-form `Γ'` evaluated on `Y` and applied to `Z`, so that `Γ'(Z, Y) = ∂ₛ ∇ˢ_Y Z`. -/
-theorem hasDerivAt_curvatureOperator_of_hasDerivAt_difference
+theorem hasDerivAt_curvatureOperator_of_hasDerivAt_difference [IsManifold I 2 M]
+    {cov : ℝ → CovariantDerivative I E (TangentSpace I : M → Type _)}
     (hC : ∀ᶠ y in 𝓝 x, HasDerivAt (fun s ↦ (cov s).difference (cov t) y) (C y) t)
     (htors : (cov t).torsion x = 0) {X Y Z : Π y : M, TangentSpace I y}
     (hX : MDiffAt (T% X) x) (hY : MDiffAt (T% Y) x) (hZ : ∀ᶠ y in 𝓝 x, MDiffAt (T% Z) y)
@@ -123,6 +128,7 @@ theorem hasDerivAt_curvatureOperator_of_hasDerivAt_difference
 section Tensor
 
 variable [T2Space M] [IsManifold I ∞ M]
+  {cov : ℝ → CovariantDerivative I E (TangentSpace I : M → Type _)}
   [∀ s, CovariantDerivative.ContMDiffCovariantDerivative (cov s) ∞]
 
 /-- **The first variation of the curvature tensor of a family of connections.** Let `∇ˢ` be a
@@ -181,6 +187,56 @@ theorem hasDerivAt_ricciTensor_of_hasDerivAt_curvatureTensor {u v : TangentSpace
   have hDi : HasDerivAt (F := E) (fun s ↦ (cov s).curvatureTensor x (b i) u v) (D (b i)) t :=
     hD (b i)
   exact (LinearMap.toContinuousLinearMap (b'.coord i)).hasFDerivAt.comp_hasDerivAt t hDi
+
+/-- **The Palatini identity for a family of connections.** In the setting of
+`hasDerivAt_curvatureTensor_of_hasDerivAt_difference`, write `∇ᵗΓ'` for the covariant derivative
+of `Γ'` along the connection induced by `∇ᵗ` on `Hom(TM, Hom(TM, TM))`, so that `∇ᵗΓ' x u w v` is
+`(∇ᵗ_u Γ')(w, v)`. Then for `u, v ∈ T_x M`,
+
+`∂ₛ Ric^s(u, v) = tr (w ↦ (∇ᵗ_w Γ')(v, u)) - tr (w ↦ (∇ᵗ_u Γ')(v, w))` at `s = t`.
+
+The first trace is that of the endomorphism `w ↦ ∇ᵗΓ' x w v u`, obtained from `∇ᵗΓ' x` by
+flipping its arguments, and the second that of `∇ᵗΓ' x u v`. No metric is involved. -/
+theorem hasDerivAt_ricciTensor_of_hasDerivAt_difference
+    (hC : ∀ᶠ y in 𝓝 x, HasDerivAt (fun s ↦ (cov s).difference (cov t) y) (C y) t)
+    (hCd : MDiffAt (fun y ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] E)
+      (E := fun y : M ↦ TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] TangentSpace I y) y (C y)) x)
+    (htors : (cov t).torsion x = 0)
+    (hreg : ∀ X Z : Π y : M, TangentSpace I y, CMDiff ∞ (T% X) → CMDiff ∞ (T% Z) →
+      ContMDiffAt (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E)) 2
+        (fun q : ℝ × M ↦ TotalSpace.mk' E q.2 (cov q.1 Z q.2 (X q.2))) (t, x))
+    (u v : TangentSpace I x) :
+    HasDerivAt (fun s ↦ (cov s).ricciTensor x u v)
+      (LinearMap.trace ℝ (TangentSpace I x)
+          (((((cov t).hom ((cov t).hom (cov t)) C x).toLinearMap₁₂.compr₂
+              (ContinuousLinearMap.coeLM ℝ)).flip v).flip u) -
+        LinearMap.trace ℝ (TangentSpace I x) ((cov t).hom ((cov t).hom (cov t)) C x u v)) t := by
+  rw [← map_sub]
+  refine hasDerivAt_ricciTensor_of_hasDerivAt_curvatureTensor fun w ↦ ?_
+  simpa using hasDerivAt_curvatureTensor_of_hasDerivAt_difference hC hCd htors hreg w u v
+
+/-- **The Palatini identity for a family of connections, in a basis.** In the setting of
+`hasDerivAt_ricciTensor_of_hasDerivAt_difference`, for every basis `b` of `T_x M`,
+
+`∂ₛ Ric^s(u, v) = ∑ᵢ bᵢ* ((∇ᵗ_{bᵢ} Γ')(v, u) - (∇ᵗ_u Γ')(v, bᵢ))` at `s = t`,
+
+where `bᵢ*` is the `i`-th coordinate in `b`. -/
+theorem hasDerivAt_ricciTensor_sum_of_hasDerivAt_difference
+    (hC : ∀ᶠ y in 𝓝 x, HasDerivAt (fun s ↦ (cov s).difference (cov t) y) (C y) t)
+    (hCd : MDiffAt (fun y ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] E)
+      (E := fun y : M ↦ TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] TangentSpace I y) y (C y)) x)
+    (htors : (cov t).torsion x = 0)
+    (hreg : ∀ X Z : Π y : M, TangentSpace I y, CMDiff ∞ (T% X) → CMDiff ∞ (T% Z) →
+      ContMDiffAt (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E)) 2
+        (fun q : ℝ × M ↦ TotalSpace.mk' E q.2 (cov q.1 Z q.2 (X q.2))) (t, x))
+    {ι : Type*} [Fintype ι] (b : Module.Basis ι ℝ (TangentSpace I x)) (u v : TangentSpace I x) :
+    HasDerivAt (fun s ↦ (cov s).ricciTensor x u v)
+      (∑ i, b.repr ((cov t).hom ((cov t).hom (cov t)) C x (b i) v u -
+        (cov t).hom ((cov t).hom (cov t)) C x u v (b i)) i) t := by
+  classical
+  refine (hasDerivAt_ricciTensor_of_hasDerivAt_difference hC hCd htors hreg u v).congr_deriv ?_
+  rw [← map_sub, LinearMap.trace_eq_matrix_trace ℝ b]
+  simp [Matrix.trace, LinearMap.toMatrix_apply]
 
 end Tensor
 
