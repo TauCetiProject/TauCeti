@@ -13,44 +13,16 @@ public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgeb
 /-!
 # Chevalley commutator relations and simple-root determination for the `G₂` exceptional isogeny
 
-Over a commutative ring `A` of exponential characteristic `3`, Steinberg's exceptional
-root-subgroup family `TauCeti.DynkinType.ChevalleyDatum.g2SpecialIsogenyRootSubgroup`
-(`x_α(u) ↦ x_{f(α)}(ε_α u ^ q(α))` with signs `TauCeti.DynkinType.g2SpecialIsogenySign`) satisfies
-every Chevalley commutator relation of the pinned `G₂` Chevalley system:
-
-* commuting pairs (`α + β` neither a root nor `0`) map either to commuting pairs or to two short
-  roots whose sum is long, where `N_{f(α), f(β)} = ±3` vanishes in characteristic `3`;
-* pairs with long sum (`γ = α + β` long) either have short `α, β` (both sides `1` in
-  characteristic `3`) or long `α, β` (mapped to a `G₂` short-pair commutator whose two extra
-  factors carry explicit multiples of `3` and vanish in characteristic `3`);
-* `G₂` short pairs (`i, j, i + j` short) map to long sums, while the two extra factors on the
-  right carry multiples of `3` and vanish;
-* four-factor `G₂` strings (`short_long` and `long_short`) reverse orientation under `f`,
-  exchanging `short_long` on `(α, β, γ, δ, ε, ζ)` with `long_short` on
-  `(f(β), f(α), f(ε), f(ζ), f(γ), f(δ))`, and the four factors pairwise commute in
-  characteristic `3`.
-
-From these commutator relations in characteristic `3`, any group homomorphism between `G₂`
-Chevalley point groups matching `g2SpecialIsogenyRootSubgroup` on the four signed simple roots
-(`±α₁`, `±α₂`) matches it on all twelve roots of `G₂`, and any endomorphism matching it on the
-signed simple roots squares to `D.frobenius 3 1 A` on `D.elementarySubgroup A`.
-
-## Main results
-
-* `TauCeti.DynkinType.ChevalleyDatum.commute_g2SpecialIsogenyRootSubgroup`
-* `TauCeti.DynkinType.ChevalleyDatum.commutatorElement_g2SpecialIsogenyRootSubgroup_of_long_sum`
-* `TauCeti.DynkinType.ChevalleyDatum.commutatorElement_g2SpecialIsogenyRootSubgroup_of_root_eq_add`
-* `TauCeti.DynkinType.ChevalleyDatum.commutatorElement_g2SpecialIsogenyRootSubgroup_of_short_pair`
-* `TauCeti.DynkinType.ChevalleyDatum.commutatorElement_g2SpecialIsogenyRootSubgroup_of_short_long`
-* `TauCeti.DynkinType.ChevalleyDatum.commutatorElement_g2SpecialIsogenyRootSubgroup_of_long_short`
-* `TauCeti.DynkinType.ChevalleyDatum.map_rootSubgroupPoints_of_g2SpecialIsogeny_simple`
-* `TauCeti.DynkinType.ChevalleyDatum.comp_self_eq_frobenius_of_g2SpecialIsogeny_simple`
+Over `[ExpChar A 3]`, `g2SpecialIsogenyRootSubgroup` satisfies all Chevalley commutator relations
+of the pinned `G₂` Chevalley system (`commute_g2SpecialIsogenyRootSubgroup` and
+`commutatorElement_g2SpecialIsogenyRootSubgroup_of_*`), is determined on all twelve roots by the
+four signed simple roots (`map_rootSubgroupPoints_of_g2SpecialIsogeny_simple`), and squares to
+`D.frobenius 3 1 A` on `D.elementarySubgroup A` (`comp_self_eq_frobenius_of_g2SpecialIsogeny_simple`
+above).
 
 ## References
 
-* R. Steinberg, *Lectures on Chevalley Groups*, AMS University Lecture Series 66 (2016),
-  Chapter 10, Lemma 53 and Theorem 28.
-* R. W. Carter, *Simple Groups of Lie Type*, §§12.3–12.4.
+* R. Steinberg, *Lectures on Chevalley Groups*, Ch. 10; R. W. Carter, *Simple Groups*, §§12.3–12.4.
 -/
 
 public section
@@ -62,132 +34,55 @@ namespace TauCeti.DynkinType.ChevalleyDatum
 
 universe v
 
-section G2Aux
+section G2
+
+local notation "fI" => g2SpecialIsogenyIndex
+local notation "fS" => g2SpecialIsogenySign
+local notation "g2SC" => g2StructureConstant
 
 private abbrev g2ModThreeComm (i j : Fin 12) : Prop :=
   (g2Root i + g2Root j ∉ Set.range g2Root ∧ g2Root i + g2Root j ≠ 0) ∨
-    ∃ k : Fin 12, g2Length k = 3 ∧ g2Root k = g2Root i + g2Root j ∧
-      (3 : ℤ) ∣ g2StructureConstant i j
+    ∃ k : Fin 12, g2Length k = 3 ∧ g2Root k = g2Root i + g2Root j ∧ (3 : ℤ) ∣ g2SC i j
 
 private theorem cast_eq_of_three_dvd (A : Type*) [CommRing A] [CharP A 3] {a b : ℤ}
     (h : (3 : ℤ) ∣ a - b) : (a : A) = (b : A) := by
-  obtain ⟨m, hm⟩ := h
-  have h3 : (3 : A) = 0 := CharP.cast_eq_zero A 3
-  have h0 : ((a - b : ℤ) : A) = 0 := by
-    rw [hm]; push_cast; rw [h3, zero_mul]
-  rwa [Int.cast_sub, sub_eq_zero] at h0
-
-private theorem g2_sc_eq (ht : G2.Valid) (i j : Fin 12) :
-    G2.structureConstant ht i j = g2StructureConstant i j :=
-  structureConstant_G2 ht i j
-
-private theorem g2Root_injective : Function.Injective g2Root := by
-  intro i j h
-  simp only [g2Root_apply] at h
-  revert i j h
-  decide
-
-private theorem g2_root_eq_add_iff {ht : G2.Valid} {α β γ : Fin G2.numRoots} :
-    ((G2.simplyConnectedRootDatum ht).root γ =
-        (G2.simplyConnectedRootDatum ht).root α + (G2.simplyConnectedRootDatum ht).root β) ↔
-      g2Root γ = g2Root α + g2Root β := by
-  simp +instances only [simplyConnectedRootDatum_G2, g2SimplyConnectedRootDatum_root,
-    rank, numRoots]
-
-private theorem g2_sum_excluded_iff {ht : G2.Valid} (α β : Fin G2.numRoots) :
-    ((G2.simplyConnectedRootDatum ht).root α + (G2.simplyConnectedRootDatum ht).root β ∉
-        Set.range (G2.simplyConnectedRootDatum ht).root ∧
-      (G2.simplyConnectedRootDatum ht).root α + (G2.simplyConnectedRootDatum ht).root β ≠ 0) ↔
-    (g2Root α + g2Root β ∉ Set.range g2Root ∧ g2Root α + g2Root β ≠ 0) := by
-  simp +instances only [simplyConnectedRootDatum_G2, g2SimplyConnectedRootDatum_root,
-    rank, numRoots, Pi.zero_def]
-
-private theorem g2_two_nsmul_notMem_iff {ht : G2.Valid} (α β : Fin G2.numRoots) :
-    (2 • (G2.simplyConnectedRootDatum ht).root α + (G2.simplyConnectedRootDatum ht).root β ∉
-        Set.range (G2.simplyConnectedRootDatum ht).root) ↔
-      2 • g2Root α + g2Root β ∉ Set.range g2Root := by
-  simp +instances only [simplyConnectedRootDatum_G2, g2SimplyConnectedRootDatum_root,
-    rank, numRoots]
-
-private theorem g2SpecialIsogenyRootSubgroup_eq {ht : G2.Valid} (D : ChevalleyDatum G2 ht)
-    (A : Type v) [CommRing A] [ExpChar A 3] (α : Fin G2.numRoots) (u : A) :
-    D.g2SpecialIsogenyRootSubgroup A α (ofAdd u) =
-      D.rootSubgroupPoints (g2SpecialIsogenyIndex α) A
-        (ofAdd (((g2SpecialIsogenySign α : ℤ) : A) *
-          u ^ (g2Length (g2SpecialIsogenyIndex α)).toNat)) := by
-  rw [g2SpecialIsogenyRootSubgroup_ofAdd]
-  have hidx : ∀ i : Fin 12, g2SpecialIsogeny.indexEquiv i = g2SpecialIsogenyIndex i :=
-    g2SpecialIsogeny_indexEquiv_apply
-  have hexp : ∀ i : Fin 12, g2SpecialIsogeny.exponent i = g2Length i :=
-    g2SpecialIsogeny_exponent
-  rw [hidx α, hexp (g2SpecialIsogenyIndex α)]
-
-private theorem commute_rootSubgroup_of_g2ModThreeComm {ht : G2.Valid} (D : ChevalleyDatum G2 ht)
-    (A : Type v) [CommRing A] [CharP A 3] {i j : Fin G2.numRoots}
-    (h : g2ModThreeComm i j) (u v : Multiplicative A) :
-    Commute (D.rootSubgroupPoints i A u) (D.rootSubgroupPoints j A v) := by
-  rcases h with hexcl | ⟨k, hk, hadd, hdvd⟩
-  · obtain ⟨hrange, h0⟩ := (g2_sum_excluded_iff i j).mpr hexcl
-    exact D.commute_rootSubgroup hrange h0 A u v
-  · rw [← ofAdd_toAdd u, ← ofAdd_toAdd v, commute_iff_eq,
-      ← commutatorElement_eq_one_iff_mul_comm,
-      D.commutatorElement_rootSubgroup_G2_of_long_sum hk
-        (g2_root_eq_add_iff (γ := k).mpr hadd) A,
-      structureConstant_G2,
-      cast_eq_of_three_dvd A (a := g2StructureConstant i j) (b := 0) (by simpa using hdvd),
-      Int.cast_zero, zero_mul, ofAdd_zero, map_one]
+  obtain ⟨m, hm⟩ := h; have h3 : (3 : A) = 0 := CharP.cast_eq_zero A 3
+  rw [← sub_eq_zero, ← Int.cast_sub, hm, Int.cast_mul, Int.cast_ofNat, h3, zero_mul]
 
 private theorem g2_commute_partner_cases {α β : Fin 12}
     (h : g2Root α + g2Root β ∉ Set.range g2Root) (h0 : g2Root α + g2Root β ≠ 0) :
-    g2ModThreeComm (g2SpecialIsogenyIndex α) (g2SpecialIsogenyIndex β) := by
+    g2ModThreeComm (fI α) (fI β) := by
   simp only [g2ModThreeComm, Set.mem_range, g2Root_apply, g2Length_apply,
-    g2SpecialIsogenyIndex_def, g2StructureConstant_def] at *
-  decide +revert
+    g2SpecialIsogenyIndex_def, g2StructureConstant_def] at *; decide +revert
 
 private theorem g2_long_sum_partner_cases {α β γ : Fin 12} (hγ : g2Length γ = 3)
     (hadd : g2Root γ = g2Root α + g2Root β) :
-    (g2Root (g2SpecialIsogenyIndex α) + g2Root (g2SpecialIsogenyIndex β) ∉ Set.range g2Root ∧
-        g2Root (g2SpecialIsogenyIndex α) + g2Root (g2SpecialIsogenyIndex β) ≠ 0 ∧
-        (3 : ℤ) ∣ g2StructureConstant α β) ∨
-      (g2Length (g2SpecialIsogenyIndex α) = 1 ∧ g2Length (g2SpecialIsogenyIndex β) = 1 ∧
-        g2Length (g2SpecialIsogenyIndex γ) = 1 ∧
-        g2Root (g2SpecialIsogenyIndex γ) =
-          g2Root (g2SpecialIsogenyIndex α) + g2Root (g2SpecialIsogenyIndex β) ∧
-        (∃ l m : Fin 12,
-          g2Root l = g2Root (g2SpecialIsogenyIndex α) + g2Root (g2SpecialIsogenyIndex γ) ∧
-          g2Root m = g2Root (g2SpecialIsogenyIndex γ) + g2Root (g2SpecialIsogenyIndex β)) ∧
-        (3 : ℤ) ∣
-          ((g2StructureConstant (g2SpecialIsogenyIndex α) (g2SpecialIsogenyIndex β) / 2) * 2 *
-              (g2SpecialIsogenySign α : ℤ) * (g2SpecialIsogenySign β : ℤ) -
-            (g2SpecialIsogenySign γ : ℤ) * g2StructureConstant α β)) := by
+    (g2Root (fI α) + g2Root (fI β) ∉ Set.range g2Root ∧ g2Root (fI α) + g2Root (fI β) ≠ 0 ∧
+        (3 : ℤ) ∣ g2SC α β) ∨
+      (g2Length (fI α) = 1 ∧ g2Length (fI β) = 1 ∧ g2Length (fI γ) = 1 ∧
+        g2Root (fI γ) = g2Root (fI α) + g2Root (fI β) ∧
+        (∃ l m : Fin 12, g2Root l = g2Root (fI α) + g2Root (fI γ) ∧
+          g2Root m = g2Root (fI γ) + g2Root (fI β)) ∧
+        (3 : ℤ) ∣ ((g2SC (fI α) (fI β) / 2) * 2 * (fS α : ℤ) * (fS β : ℤ) -
+          (fS γ : ℤ) * g2SC α β)) := by
   simp only [Set.mem_range, g2Root_apply, g2Length_apply, g2SpecialIsogenyIndex_def,
-    g2SpecialIsogenySign_def, g2StructureConstant_def] at *
-  decide +revert
+    g2SpecialIsogenySign_def, g2StructureConstant_def] at *; decide +revert
 
 private theorem g2_length_eq_three_of_no_two_nsmul {α β γ : Fin 12}
-    (hγ : g2Root γ = g2Root α + g2Root β)
-    (hα : 2 • g2Root α + g2Root β ∉ Set.range g2Root)
-    (hβ : g2Root α + 2 • g2Root β ∉ Set.range g2Root) :
-    g2Length γ = 3 := by
-  simp only [Set.mem_range, g2Root_apply, g2Length_apply] at *
-  decide +revert
+    (hγ : g2Root γ = g2Root α + g2Root β) (hα : 2 • g2Root α + g2Root β ∉ Set.range g2Root)
+    (hβ : g2Root α + 2 • g2Root β ∉ Set.range g2Root) : g2Length γ = 3 := by
+  simp only [Set.mem_range, g2Root_apply, g2Length_apply] at *; decide +revert
 
 private theorem g2_short_pair_partner (i j k : Fin 12)
     (hi : g2Length i = 1) (hj : g2Length j = 1) (hk : g2Length k = 1)
     (hij : g2Root k = g2Root i + g2Root j) :
-    g2Length (g2SpecialIsogenyIndex i) = 3 ∧ g2Length (g2SpecialIsogenyIndex j) = 3 ∧
-      g2Length (g2SpecialIsogenyIndex k) = 3 ∧
-      g2Root (g2SpecialIsogenyIndex k) =
-        g2Root (g2SpecialIsogenyIndex i) + g2Root (g2SpecialIsogenyIndex j) ∧
-      (3 : ℤ) ∣
-        (g2StructureConstant (g2SpecialIsogenyIndex i) (g2SpecialIsogenyIndex j) *
-            (g2SpecialIsogenySign i : ℤ) * (g2SpecialIsogenySign j : ℤ) -
-          (g2SpecialIsogenySign k : ℤ) * (2 * (g2StructureConstant i j / 2)) ^ 3) := by
+    g2Length (fI i) = 3 ∧ g2Length (fI j) = 3 ∧ g2Length (fI k) = 3 ∧
+      g2Root (fI k) = g2Root (fI i) + g2Root (fI j) ∧
+      (3 : ℤ) ∣ (g2SC (fI i) (fI j) * (fS i : ℤ) * (fS j : ℤ) -
+        (fS k : ℤ) * (2 * (g2SC i j / 2)) ^ 3) := by
   revert i j k hi hj hk hij
-  simp only [g2Root_apply, g2Length_apply, g2SpecialIsogenyIndex_def,
-    g2SpecialIsogenySign_def, g2StructureConstant_def, funext_iff, Fin.forall_fin_two,
-    Pi.add_apply]
-  decide
+  simp only [g2Root_apply, g2Length_apply, g2SpecialIsogenyIndex_def, g2SpecialIsogenySign_def,
+    g2StructureConstant_def, funext_iff, Fin.forall_fin_two, Pi.add_apply]; decide
 
 private def g2ShortLongTuples : List (Fin 12 × Fin 12 × Fin 12 × Fin 12 × Fin 12 × Fin 12) :=
   [(0, 1, 2, 3, 4, 5), (0, 10, 9, 8, 7, 11), (2, 7, 0, 3, 5, 4), (2, 11, 9, 6, 1, 10),
@@ -195,262 +90,155 @@ private def g2ShortLongTuples : List (Fin 12 × Fin 12 × Fin 12 × Fin 12 × Fi
    (8, 1, 6, 9, 11, 10), (8, 5, 3, 0, 7, 4), (9, 4, 0, 8, 11, 7), (9, 5, 2, 6, 10, 1)]
 
 private theorem mem_g2ShortLongTuples {α β γ δ ε ζ : Fin 12}
-    (hγ : g2Root γ = g2Root α + g2Root β)
-    (hδ : g2Root δ = g2Root α + g2Root γ)
-    (hε : g2Root ε = g2Root α + g2Root δ)
-    (hζ : g2Root ζ = g2Root δ + g2Root γ) :
+    (hγ : g2Root γ = g2Root α + g2Root β) (hδ : g2Root δ = g2Root α + g2Root γ)
+    (hε : g2Root ε = g2Root α + g2Root δ) (hζ : g2Root ζ = g2Root δ + g2Root γ) :
     (α, β, γ, δ, ε, ζ) ∈ g2ShortLongTuples := by
   have h1 : g2Root α + g2Root β ∈ Set.range g2Root := ⟨γ, hγ⟩
   have h2 : 2 • g2Root α + g2Root β ∈ Set.range g2Root := ⟨δ, by rw [hδ, hγ]; module⟩
   have h3 : 3 • g2Root α + g2Root β ∈ Set.range g2Root := ⟨ε, by rw [hε, hδ, hγ]; module⟩
   have h4 : 3 • g2Root α + 2 • g2Root β ∈ Set.range g2Root := ⟨ζ, by rw [hζ, hδ, hγ]; module⟩
   have hex : ∃ q ∈ g2ShortLongTuples, q.1 = α ∧ q.2.1 = β ∧
-      g2Root q.2.2.1 = g2Root α + g2Root β ∧
-      g2Root q.2.2.2.1 = g2Root α + g2Root q.2.2.1 ∧
+      g2Root q.2.2.1 = g2Root α + g2Root β ∧ g2Root q.2.2.2.1 = g2Root α + g2Root q.2.2.1 ∧
       g2Root q.2.2.2.2.1 = g2Root α + g2Root q.2.2.2.1 ∧
       g2Root q.2.2.2.2.2 = g2Root q.2.2.2.1 + g2Root q.2.2.1 := by
     clear hγ hδ hε hζ γ δ ε ζ
-    simp only [g2ShortLongTuples, Set.mem_range, g2Root_apply] at h1 h2 h3 h4 ⊢
-    decide +revert
-  obtain ⟨⟨α₀, β₀, γ₀, δ₀, ε₀, ζ₀⟩, hmem, rfl, rfl, eγ, eδ, eε, eζ⟩ := hex
-  obtain rfl := g2Root_injective (hγ.trans eγ.symm)
-  obtain rfl := g2Root_injective (hδ.trans eδ.symm)
-  obtain rfl := g2Root_injective (hε.trans eε.symm)
-  obtain rfl := g2Root_injective (hζ.trans eζ.symm)
-  exact hmem
+    simp only [g2ShortLongTuples, Set.mem_range, g2Root_apply] at h1 h2 h3 h4 ⊢; decide +revert
+  obtain ⟨⟨_, _, γ₀, δ₀, ε₀, ζ₀⟩, hmem, rfl, rfl, eγ, eδ, eε, eζ⟩ := hex
+  obtain rfl := g2Root.injective (hγ.trans eγ.symm)
+  obtain rfl := g2Root.injective (hδ.trans eδ.symm)
+  obtain rfl := g2Root.injective (hε.trans eε.symm)
+  obtain rfl := g2Root.injective (hζ.trans eζ.symm); exact hmem
 
 private theorem permute_four_comm {G : Type*} [Group G] {e z g d : G}
     (heg : Commute e g) (hed : Commute e d) (hzg : Commute z g) (hzd : Commute z d) :
     e * z * g * d = g * d * e * z := by
-  calc
-    e * z * g * d = e * (z * g) * d := by group
-    _ = e * (g * z) * d := by rw [hzg.eq]
-    _ = (e * g) * (z * d) := by group
-    _ = (g * e) * (d * z) := by rw [heg.eq, hzd.eq]
-    _ = g * (e * d) * z := by group
-    _ = g * (d * e) * z := by rw [hed.eq]
-    _ = g * d * e * z := by group
+  rw [mul_assoc (e * z) g d, ((heg.mul_left hzg).mul_right (hed.mul_left hzd)).eq, ← mul_assoc]
 
 private theorem mul_four_inv_of_commute {G : Type*} [Group G] {a b c d : G}
     (hab : Commute a b) (hac : Commute a c) (had : Commute a d)
     (hbc : Commute b c) (hbd : Commute b d) (hcd : Commute c d) :
     (a * b * c * d)⁻¹ = a⁻¹ * b⁻¹ * c⁻¹ * d⁻¹ := by
-  simp only [mul_inv_rev]
-  calc
-    d⁻¹ * (c⁻¹ * (b⁻¹ * a⁻¹)) = d⁻¹ * (c⁻¹ * (a⁻¹ * b⁻¹)) := by rw [hab.inv_inv.symm.eq]
-    _ = d⁻¹ * ((c⁻¹ * a⁻¹) * b⁻¹) := by group
-    _ = d⁻¹ * ((a⁻¹ * c⁻¹) * b⁻¹) := by rw [hac.inv_inv.symm.eq]
-    _ = (d⁻¹ * a⁻¹) * (c⁻¹ * b⁻¹) := by group
-    _ = (a⁻¹ * d⁻¹) * (b⁻¹ * c⁻¹) := by rw [had.inv_inv.symm.eq, hbc.inv_inv.symm.eq]
-    _ = a⁻¹ * (d⁻¹ * b⁻¹) * c⁻¹ := by group
-    _ = a⁻¹ * (b⁻¹ * d⁻¹) * c⁻¹ := by rw [hbd.inv_inv.symm.eq]
-    _ = a⁻¹ * b⁻¹ * (d⁻¹ * c⁻¹) := by group
-    _ = a⁻¹ * b⁻¹ * (c⁻¹ * d⁻¹) := by rw [hcd.inv_inv.symm.eq]
-    _ = a⁻¹ * b⁻¹ * c⁻¹ * d⁻¹ := by group
+  have inv2 {x y : G} (h : Commute x y) : (x * y)⁻¹ = x⁻¹ * y⁻¹ := by rw [mul_inv_rev, h.inv_inv.eq]
+  rw [inv2 ((had.mul_left hbd).mul_left hcd), inv2 (hac.mul_left hbc), inv2 hab]
 
 private theorem collect_four_comm {G : Type*} [Group G] {g₁ d₁ e₁ z₁ g₂ d₂ e₂ z₂ : G}
     (hgd : Commute d₁ g₂) (hge : Commute e₁ g₂) (hde : Commute e₁ d₂)
     (hgz : Commute z₁ g₂) (hdz : Commute z₁ d₂) (hez : Commute z₁ e₂) :
-    g₁ * d₁ * e₁ * z₁ * (g₂ * d₂ * e₂ * z₂) =
-      (g₁ * g₂) * (d₁ * d₂) * (e₁ * e₂) * (z₁ * z₂) := by
+    g₁ * d₁ * e₁ * z₁ * (g₂ * d₂ * e₂ * z₂) = (g₁ * g₂) * (d₁ * d₂) * (e₁ * e₂) * (z₁ * z₂) := by
   have c1 : Commute (g₂ * d₂) e₁ := hge.symm.mul_left hde.symm
   have c2 : Commute (g₂ * d₂ * e₂) z₁ := (hgz.symm.mul_left hdz.symm).mul_left hez.symm
-  calc
-    g₁ * d₁ * e₁ * z₁ * (g₂ * d₂ * e₂ * z₂) =
-        g₁ * d₁ * e₁ * (z₁ * (g₂ * d₂ * e₂)) * z₂ := by group
-    _ = g₁ * d₁ * e₁ * (g₂ * d₂ * e₂ * z₁) * z₂ := by rw [c2.symm.eq]
-    _ = g₁ * d₁ * (e₁ * (g₂ * d₂)) * (e₂ * (z₁ * z₂)) := by group
-    _ = g₁ * d₁ * (g₂ * d₂ * e₁) * (e₂ * (z₁ * z₂)) := by rw [c1.symm.eq]
-    _ = g₁ * (d₁ * g₂) * d₂ * (e₁ * e₂) * (z₁ * z₂) := by group
-    _ = (g₁ * g₂) * (d₁ * d₂) * (e₁ * e₂) * (z₁ * z₂) := by rw [hgd.eq]; group
+  calc g₁ * d₁ * e₁ * z₁ * (g₂ * d₂ * e₂ * z₂)
+      = g₁ * d₁ * e₁ * (g₂ * d₂ * e₂ * z₁) * z₂ := by rw [← c2.symm.eq]; group
+    _ = g₁ * d₁ * (g₂ * d₂ * e₁) * (e₂ * (z₁ * z₂)) := by rw [← c1.symm.eq]; group
+    _ = (g₁ * g₂) * (d₁ * d₂) * (e₁ * e₂) * (z₁ * z₂) := by
+        rw [show g₁ * d₁ * (g₂ * d₂ * e₁) * (e₂ * (z₁ * z₂)) =
+          g₁ * (d₁ * g₂) * d₂ * (e₁ * e₂) * (z₁ * z₂) by group, hgd.eq]; group
 
-private theorem g2_short_long_partner_roots {α β γ δ ε ζ : Fin 12}
-    (hγ : g2Root γ = g2Root α + g2Root β)
-    (hδ : g2Root δ = g2Root α + g2Root γ)
-    (hε : g2Root ε = g2Root α + g2Root δ)
-    (hζ : g2Root ζ = g2Root δ + g2Root γ) :
-    g2Root (g2SpecialIsogenyIndex ε) =
-        g2Root (g2SpecialIsogenyIndex β) + g2Root (g2SpecialIsogenyIndex α) ∧
-      g2Root (g2SpecialIsogenyIndex ζ) =
-        g2Root (g2SpecialIsogenyIndex β) + g2Root (g2SpecialIsogenyIndex ε) ∧
-      g2Root (g2SpecialIsogenyIndex γ) =
-        g2Root (g2SpecialIsogenyIndex β) + g2Root (g2SpecialIsogenyIndex ζ) ∧
-      g2Root (g2SpecialIsogenyIndex δ) =
-        g2Root (g2SpecialIsogenyIndex ζ) + g2Root (g2SpecialIsogenyIndex ε) ∧
-      (g2Length (g2SpecialIsogenyIndex α)).toNat = 3 ∧
-      (g2Length (g2SpecialIsogenyIndex β)).toNat = 1 ∧
-      (g2Length (g2SpecialIsogenyIndex γ)).toNat = 3 ∧
-      (g2Length (g2SpecialIsogenyIndex δ)).toNat = 3 ∧
-      (g2Length (g2SpecialIsogenyIndex ε)).toNat = 1 ∧
-      (g2Length (g2SpecialIsogenyIndex ζ)).toNat = 1 := by
-  have hall : ∀ q ∈ g2ShortLongTuples,
-      let α := q.1; let β := q.2.1; let γ := q.2.2.1
-      let δ := q.2.2.2.1; let ε := q.2.2.2.2.1; let ζ := q.2.2.2.2.2
-      g2Root (g2SpecialIsogenyIndex ε) =
-          g2Root (g2SpecialIsogenyIndex β) + g2Root (g2SpecialIsogenyIndex α) ∧
-        g2Root (g2SpecialIsogenyIndex ζ) =
-          g2Root (g2SpecialIsogenyIndex β) + g2Root (g2SpecialIsogenyIndex ε) ∧
-        g2Root (g2SpecialIsogenyIndex γ) =
-          g2Root (g2SpecialIsogenyIndex β) + g2Root (g2SpecialIsogenyIndex ζ) ∧
-        g2Root (g2SpecialIsogenyIndex δ) =
-          g2Root (g2SpecialIsogenyIndex ζ) + g2Root (g2SpecialIsogenyIndex ε) ∧
-        (g2Length (g2SpecialIsogenyIndex α)).toNat = 3 ∧
-        (g2Length (g2SpecialIsogenyIndex β)).toNat = 1 ∧
-        (g2Length (g2SpecialIsogenyIndex γ)).toNat = 3 ∧
-        (g2Length (g2SpecialIsogenyIndex δ)).toNat = 3 ∧
-        (g2Length (g2SpecialIsogenyIndex ε)).toNat = 1 ∧
-        (g2Length (g2SpecialIsogenyIndex ζ)).toNat = 1 := by
-    simp only [g2ShortLongTuples, g2Root_apply, g2Length_apply, g2SpecialIsogenyIndex_def]
-    decide
-  exact hall (α, β, γ, δ, ε, ζ) (mem_g2ShortLongTuples hγ hδ hε hζ)
+private theorem g2_short_long_partner : ∀ q ∈ g2ShortLongTuples,
+    let (α, β, γ, δ, ε, ζ) := q
+    let fa := fI α; let fb := fI β; let fe := fI ε; let fz := fI ζ
+    (g2Root fe = g2Root fb + g2Root fa ∧ g2Root fz = g2Root fb + g2Root fe ∧
+        g2Root (fI γ) = g2Root fb + g2Root fz ∧ g2Root (fI δ) = g2Root fz + g2Root fe ∧
+        (g2Length fa).toNat = 3 ∧ (g2Length fb).toNat = 1 ∧ (g2Length (fI γ)).toNat = 3 ∧
+        (g2Length (fI δ)).toNat = 3 ∧ (g2Length fe).toNat = 1 ∧ (g2Length fz).toNat = 1) ∧
+      (3 : ℤ) ∣ (-g2SC fb fa * (fS β : ℤ) * (fS α : ℤ) -
+          (fS ε : ℤ) * (g2SC α β * (g2SC α γ / 2) * (g2SC α δ / 3))) ∧
+      (3 : ℤ) ∣ (-(g2SC fb fa * (g2SC fb fe / 2)) * (fS β : ℤ) ^ 2 * (fS α : ℤ) -
+          (fS ζ : ℤ) * (2 * (g2SC α β * (g2SC α γ / 2) * g2SC α β * (g2SC δ γ / 3)))) ∧
+      (3 : ℤ) ∣ (-(g2SC fb fa * (g2SC fb fe / 2) * (g2SC fb fz / 3)) *
+          (fS β : ℤ) ^ 3 * (fS α : ℤ) - (fS γ : ℤ) * g2SC α β ^ 3) ∧
+      (3 : ℤ) ∣ ((g2SC fb fa * (g2SC fb fe / 2) * g2SC fb fa * (g2SC fz fe / 3)) *
+          (fS β : ℤ) ^ 3 * (fS α : ℤ) ^ 2 - (fS δ : ℤ) * (g2SC α β * (g2SC α γ / 2)) ^ 3) := by
+  simp only [g2ShortLongTuples, g2Root_apply, g2Length_apply, g2SpecialIsogenyIndex_def,
+    g2SpecialIsogenySign_def, g2StructureConstant_def]; decide
 
-private theorem g2_short_long_partner_coeffs {α β γ δ ε ζ : Fin 12}
-    (hγ : g2Root γ = g2Root α + g2Root β)
-    (hδ : g2Root δ = g2Root α + g2Root γ)
-    (hε : g2Root ε = g2Root α + g2Root δ)
-    (hζ : g2Root ζ = g2Root δ + g2Root γ) :
-    (let fa := g2SpecialIsogenyIndex α; let fb := g2SpecialIsogenyIndex β
-     let fe := g2SpecialIsogenyIndex ε; let fz := g2SpecialIsogenyIndex ζ
-     (3 : ℤ) ∣ (-g2StructureConstant fb fa * (g2SpecialIsogenySign β : ℤ) *
-         (g2SpecialIsogenySign α : ℤ) -
-       (g2SpecialIsogenySign ε : ℤ) *
-         (g2StructureConstant α β * (g2StructureConstant α γ / 2) *
-           (g2StructureConstant α δ / 3))) ∧
-     (3 : ℤ) ∣ (-(g2StructureConstant fb fa * (g2StructureConstant fb fe / 2)) *
-         (g2SpecialIsogenySign β : ℤ) ^ 2 * (g2SpecialIsogenySign α : ℤ) -
-       (g2SpecialIsogenySign ζ : ℤ) *
-         (2 * (g2StructureConstant α β * (g2StructureConstant α γ / 2) *
-           g2StructureConstant α β * (g2StructureConstant δ γ / 3)))) ∧
-     (3 : ℤ) ∣ (-(g2StructureConstant fb fa * (g2StructureConstant fb fe / 2) *
-           (g2StructureConstant fb fz / 3)) *
-         (g2SpecialIsogenySign β : ℤ) ^ 3 * (g2SpecialIsogenySign α : ℤ) -
-       (g2SpecialIsogenySign γ : ℤ) * g2StructureConstant α β ^ 3) ∧
-     (3 : ℤ) ∣ ((g2StructureConstant fb fa * (g2StructureConstant fb fe / 2) *
-           g2StructureConstant fb fa * (g2StructureConstant fz fe / 3)) *
-         (g2SpecialIsogenySign β : ℤ) ^ 3 * (g2SpecialIsogenySign α : ℤ) ^ 2 -
-       (g2SpecialIsogenySign δ : ℤ) *
-         (g2StructureConstant α β * (g2StructureConstant α γ / 2)) ^ 3)) := by
-  have hall : ∀ q ∈ g2ShortLongTuples,
-      let α := q.1; let β := q.2.1; let γ := q.2.2.1
-      let δ := q.2.2.2.1; let ε := q.2.2.2.2.1; let ζ := q.2.2.2.2.2
-      let fa := g2SpecialIsogenyIndex α; let fb := g2SpecialIsogenyIndex β
-      let fe := g2SpecialIsogenyIndex ε; let fz := g2SpecialIsogenyIndex ζ
-      (3 : ℤ) ∣ (-g2StructureConstant fb fa * (g2SpecialIsogenySign β : ℤ) *
-          (g2SpecialIsogenySign α : ℤ) -
-        (g2SpecialIsogenySign ε : ℤ) *
-          (g2StructureConstant α β * (g2StructureConstant α γ / 2) *
-            (g2StructureConstant α δ / 3))) ∧
-      (3 : ℤ) ∣ (-(g2StructureConstant fb fa * (g2StructureConstant fb fe / 2)) *
-          (g2SpecialIsogenySign β : ℤ) ^ 2 * (g2SpecialIsogenySign α : ℤ) -
-        (g2SpecialIsogenySign ζ : ℤ) *
-          (2 * (g2StructureConstant α β * (g2StructureConstant α γ / 2) *
-            g2StructureConstant α β * (g2StructureConstant δ γ / 3)))) ∧
-      (3 : ℤ) ∣ (-(g2StructureConstant fb fa * (g2StructureConstant fb fe / 2) *
-            (g2StructureConstant fb fz / 3)) *
-          (g2SpecialIsogenySign β : ℤ) ^ 3 * (g2SpecialIsogenySign α : ℤ) -
-        (g2SpecialIsogenySign γ : ℤ) * g2StructureConstant α β ^ 3) ∧
-      (3 : ℤ) ∣ ((g2StructureConstant fb fa * (g2StructureConstant fb fe / 2) *
-            g2StructureConstant fb fa * (g2StructureConstant fz fe / 3)) *
-          (g2SpecialIsogenySign β : ℤ) ^ 3 * (g2SpecialIsogenySign α : ℤ) ^ 2 -
-        (g2SpecialIsogenySign δ : ℤ) *
-          (g2StructureConstant α β * (g2StructureConstant α γ / 2)) ^ 3) := by
-    simp only [g2ShortLongTuples, g2SpecialIsogenyIndex_def, g2SpecialIsogenySign_def,
-      g2StructureConstant_def]
-    decide
-  exact hall (α, β, γ, δ, ε, ζ) (mem_g2ShortLongTuples hγ hδ hε hζ)
+private theorem g2_short_long_factors_comm : ∀ q ∈ g2ShortLongTuples,
+    let (_, _, g, d, e, z) := q
+    g2ModThreeComm g d ∧ g2ModThreeComm g e ∧ g2ModThreeComm g z ∧ g2ModThreeComm d e ∧
+      g2ModThreeComm d z ∧ g2ModThreeComm e z ∧ g2ModThreeComm (fI e) (fI g) ∧
+      g2ModThreeComm (fI e) (fI d) ∧ g2ModThreeComm (fI z) (fI g) ∧
+      g2ModThreeComm (fI z) (fI d) := by
+  dsimp only [g2ShortLongTuples]; simp only [List.mem_cons, List.not_mem_nil, or_false]
+  rintro _ (rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl) <;>
+    simp only [g2ModThreeComm, Set.mem_range, g2Root_apply, g2Length_apply,
+      g2SpecialIsogenyIndex_def, g2StructureConstant_def, ne_eq, funext_iff, Fin.forall_fin_two,
+      Pi.add_apply, Pi.zero_apply] <;>
+    refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> decide
 
-private theorem g2_short_long_factors_comm {α β γ δ ε ζ : Fin 12}
-    (hγ : g2Root γ = g2Root α + g2Root β)
-    (hδ : g2Root δ = g2Root α + g2Root γ)
-    (hε : g2Root ε = g2Root α + g2Root δ)
-    (hζ : g2Root ζ = g2Root δ + g2Root γ) :
-    g2ModThreeComm γ δ ∧ g2ModThreeComm γ ε ∧ g2ModThreeComm γ ζ ∧
-      g2ModThreeComm δ ε ∧ g2ModThreeComm δ ζ ∧ g2ModThreeComm ε ζ ∧
-      g2ModThreeComm (g2SpecialIsogenyIndex ε) (g2SpecialIsogenyIndex γ) ∧
-      g2ModThreeComm (g2SpecialIsogenyIndex ε) (g2SpecialIsogenyIndex δ) ∧
-      g2ModThreeComm (g2SpecialIsogenyIndex ζ) (g2SpecialIsogenyIndex γ) ∧
-      g2ModThreeComm (g2SpecialIsogenyIndex ζ) (g2SpecialIsogenyIndex δ) := by
-  have hall : ∀ q ∈ g2ShortLongTuples,
-      g2ModThreeComm q.2.2.1 q.2.2.2.1 ∧ g2ModThreeComm q.2.2.1 q.2.2.2.2.1 ∧
-        g2ModThreeComm q.2.2.1 q.2.2.2.2.2 ∧ g2ModThreeComm q.2.2.2.1 q.2.2.2.2.1 ∧
-        g2ModThreeComm q.2.2.2.1 q.2.2.2.2.2 ∧ g2ModThreeComm q.2.2.2.2.1 q.2.2.2.2.2 ∧
-        g2ModThreeComm (g2SpecialIsogenyIndex q.2.2.2.2.1) (g2SpecialIsogenyIndex q.2.2.1) ∧
-        g2ModThreeComm (g2SpecialIsogenyIndex q.2.2.2.2.1) (g2SpecialIsogenyIndex q.2.2.2.1) ∧
-        g2ModThreeComm (g2SpecialIsogenyIndex q.2.2.2.2.2) (g2SpecialIsogenyIndex q.2.2.1) ∧
-        g2ModThreeComm (g2SpecialIsogenyIndex q.2.2.2.2.2) (g2SpecialIsogenyIndex q.2.2.2.1) := by
-    dsimp only [g2ShortLongTuples]
-    simp only [List.mem_cons, List.not_mem_nil, or_false]
-    rintro _ (rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl) <;>
-      simp only [g2ModThreeComm, Set.mem_range, g2Root_apply, g2Length_apply,
-        g2SpecialIsogenyIndex_def, g2StructureConstant_def, ne_eq, funext_iff, Fin.forall_fin_two,
-        Pi.add_apply, Pi.zero_apply] <;>
-      refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
-      decide
-  exact hall (α, β, γ, δ, ε, ζ) (mem_g2ShortLongTuples hγ hδ hε hζ)
+private def g2HalfTuple (a b g d e z a' l m : Fin 12) (s : ℤ) : Prop :=
+  s ^ 2 = 1 ∧ g2Length d = 1 ∧ g2Length a' = 1 ∧ g2Length g = 1 ∧ g2Length z = 3 ∧
+    g2Root g = g2Root a + g2Root b ∧ g2Root d = g2Root a + g2Root g ∧
+    g2Root e = g2Root a + g2Root d ∧ g2Root z = g2Root d + g2Root g ∧
+    g2Root g = g2Root d + g2Root a' ∧ g2Root l = g2Root d + g2Root g ∧
+    g2Root m = g2Root g + g2Root a' ∧ g2Root z = g2Root b + g2Root e ∧
+    g2SC a b = s ∧ g2SC a b * (g2SC a g / 2) = 1 ∧
+    g2SC a b * (g2SC a g / 2) * (g2SC a d / 3) = s ∧
+    2 * (g2SC a b * (g2SC a g / 2) * g2SC a b * (g2SC d g / 3)) = 2 ∧
+    (3 : ℤ) ∣ (g2SC d a' / 2) * 2 - s ∧ g2SC b e = s
 
-private theorem g2_quadruple_words {A H : Type*} [CommRing A] [CharP A 3] [Group H]
+private def g2QuadWords {A H : Type*} [CommRing A] [Group H]
+    (x : Fin 12 → Multiplicative A →* H) (a b g d e z a' : Fin 12) (s : ℤ) (u : A) : Prop :=
+  x d (ofAdd u) = ⁅x a (ofAdd 1), x b (ofAdd (-u))⁆ * ⁅x a (ofAdd (-1)), x b (ofAdd (-u))⁆ ∧
+    x g (ofAdd u) = ⁅x d (ofAdd ((s : A) * u)), x a' (ofAdd 1)⁆ ∧
+    x e (ofAdd u) = ((x g (ofAdd (-u)) * x d (ofAdd (-(s : A) * u)))⁻¹ *
+        ⁅x a (ofAdd 1), x b (ofAdd (-(s : A) * u))⁆) * ((x g (ofAdd u) *
+        x d (ofAdd ((s : A) * u)))⁻¹ * ⁅x a (ofAdd 1), x b (ofAdd ((s : A) * u))⁆)⁻¹ ∧
+    x z (ofAdd u) = ⁅x b (ofAdd 1), x e (ofAdd ((s : A) * u))⁆
+
+variable {ht : G2.Valid}
+
+local notation "ΦG2" => G2.simplyConnectedRootDatum ht
+local notation "NG2" => G2.structureConstant ht
+
+private theorem sc_eq (i j : Fin 12) : NG2 i j = g2SC i j := structureConstant_G2 ht i j
+
+private theorem g2_sum_excluded_iff (α β : Fin G2.numRoots) :
+    ((ΦG2).root α + (ΦG2).root β ∉ Set.range (ΦG2).root ∧ (ΦG2).root α + (ΦG2).root β ≠ 0) ↔
+      (g2Root α + g2Root β ∉ Set.range g2Root ∧ g2Root α + g2Root β ≠ 0) := by
+  simp +instances only [simplyConnectedRootDatum_G2, g2SimplyConnectedRootDatum_root,
+    rank, numRoots, Pi.zero_def]
+
+private theorem commute_of_g2ModThreeComm {A H : Type*} [CommRing A] [CharP A 3] [Group H]
     (x : Fin G2.numRoots → Multiplicative A →* H)
-    {a b g d e z a' : Fin G2.numRoots} {s : ℤ} (hs : s ^ 2 = 1)
-    (hsl : ∀ t w : A, ⁅x a (ofAdd t), x b (ofAdd w)⁆ =
-      x g (ofAdd ((s : A) * t * w)) * x d (ofAdd (t ^ 2 * w)) *
-        x e (ofAdd ((s : A) * t ^ 3 * w)) * x z (ofAdd (2 * t ^ 3 * w ^ 2)))
-    (hcgd : ∀ u v, Commute (x g u) (x d v)) (hcge : ∀ u v, Commute (x g u) (x e v))
-    (hcgz : ∀ u v, Commute (x g u) (x z v)) (hcde : ∀ u v, Commute (x d u) (x e v))
-    (hcdz : ∀ u v, Commute (x d u) (x z v)) (hcez : ∀ u v, Commute (x e u) (x z v))
-    (hsp : ∀ u : A, ⁅x d (ofAdd u), x a' (ofAdd 1)⁆ = x g (ofAdd ((s : A) * u)))
-    (hls : ∀ u : A, ⁅x b (ofAdd 1), x e (ofAdd u)⁆ = x z (ofAdd ((s : A) * u))) (u : A) :
-    x d (ofAdd u) = ⁅x a (ofAdd 1), x b (ofAdd (-u))⁆ * ⁅x a (ofAdd (-1)), x b (ofAdd (-u))⁆ ∧
-      x g (ofAdd u) = ⁅x d (ofAdd ((s : A) * u)), x a' (ofAdd 1)⁆ ∧
-      x e (ofAdd u) =
-        ((x g (ofAdd (-u)) * x d (ofAdd (-(s : A) * u)))⁻¹ *
-            ⁅x a (ofAdd 1), x b (ofAdd (-(s : A) * u))⁆) *
-          ((x g (ofAdd u) * x d (ofAdd ((s : A) * u)))⁻¹ *
-            ⁅x a (ofAdd 1), x b (ofAdd ((s : A) * u))⁆)⁻¹ ∧
-      x z (ofAdd u) = ⁅x b (ofAdd 1), x e (ofAdd ((s : A) * u))⁆ := by
-  have h3 : (3 : A) = 0 := CharP.cast_eq_zero A 3
-  have hsA : (s : A) ^ 2 = 1 := by rw [← Int.cast_pow, hs, Int.cast_one]
-  have hadd (r : Fin G2.numRoots) (w₁ w₂ : A) :
-      x r (ofAdd w₁) * x r (ofAdd w₂) = x r (ofAdd (w₁ + w₂)) := by rw [← map_mul, ofAdd_add]
-  refine ⟨?_, ?_, ?_, ?_⟩
-  · rw [hsl 1 (-u), hsl (-1) (-u),
-      collect_four_comm (hcgd _ _).symm (hcge _ _).symm (hcde _ _).symm
-        (hcgz _ _).symm (hcdz _ _).symm (hcez _ _).symm,
-      hadd, hadd, hadd, hadd]
-    have z₁ : (s : A) * 1 * -u + (s : A) * -1 * -u = 0 := by ring
-    have z₂ : 1 ^ 2 * -u + (-1 : A) ^ 2 * -u = u := by linear_combination -u * h3
-    have z₃ : (s : A) * 1 ^ 3 * -u + (s : A) * (-1) ^ 3 * -u = 0 := by ring
-    have z₄ : 2 * 1 ^ 3 * (-u) ^ 2 + 2 * (-1 : A) ^ 3 * (-u) ^ 2 = 0 := by ring
-    rw [z₁, z₂, z₃, z₄]
-    simp
-  · rw [hsp]; congr 2; linear_combination -u * hsA
-  · have q (w : A) : (x g (ofAdd ((s : A) * w)) * x d (ofAdd w))⁻¹ *
-        ⁅x a (ofAdd 1), x b (ofAdd w)⁆ =
-        x e (ofAdd ((s : A) * w)) * x z (ofAdd (2 * w ^ 2)) := by
-      rw [hsl 1 w]; simp only [mul_one, one_pow, one_mul]; group
-    have r₁ : (s : A) * (-(s : A) * u) = -u := by linear_combination -u * hsA
-    have r₂ : (s : A) * ((s : A) * u) = u := by linear_combination u * hsA
-    have hq₁ := q (-(s : A) * u); rw [r₁] at hq₁
-    have hq₂ := q ((s : A) * u); rw [r₂] at hq₂
-    have r₃ : 2 * (-(s : A) * u) ^ 2 = 2 * ((s : A) * u) ^ 2 := by ring
-    rw [hq₁, hq₂, r₃, mul_inv_rev, mul_assoc, mul_inv_cancel_left, ← map_inv, ← ofAdd_neg, hadd]
-    congr 2; linear_combination u * h3
-  · rw [hls]; congr 2; linear_combination -u * hsA
+    (hexcl : ∀ {i j}, (ΦG2).root i + (ΦG2).root j ∉ Set.range (ΦG2).root →
+      (ΦG2).root i + (ΦG2).root j ≠ 0 → ∀ u v : A, Commute (x i (ofAdd u)) (x j (ofAdd v)))
+    (hlong : ∀ {i j k}, g2Length k = 3 → (ΦG2).root k = (ΦG2).root i + (ΦG2).root j →
+      ∀ u v : A, ⁅x i (ofAdd u), x j (ofAdd v)⁆ = x k (ofAdd ((NG2 i j : A) * (u * v))))
+    {i j : Fin G2.numRoots} (h : g2ModThreeComm i j) (u v : Multiplicative A) :
+    Commute (x i u) (x j v) := by
+  rw [← ofAdd_toAdd u, ← ofAdd_toAdd v]
+  rcases h with he | ⟨k, hk, hadd, hdvd⟩
+  · obtain ⟨hr, h0⟩ := (g2_sum_excluded_iff (ht := ht) i j).mpr he; exact hexcl hr h0 _ _
+  · rw [commute_iff_eq, ← commutatorElement_eq_one_iff_mul_comm,
+      hlong hk ((g2_root_add_iff i j k).mpr hadd), structureConstant_G2,
+      cast_eq_of_three_dvd A (a := g2SC i j) (b := 0) (by simpa using hdvd),
+      Int.cast_zero, zero_mul, ofAdd_zero, map_one]
 
-end G2Aux
+private theorem commute_rootSubgroup_of_g2ModThreeComm (D : ChevalleyDatum G2 ht) (A : Type v)
+    [CommRing A] [CharP A 3] {i j : Fin G2.numRoots} (h : g2ModThreeComm i j)
+    (u v : Multiplicative A) : Commute (D.rootSubgroupPoints i A u) (D.rootSubgroupPoints j A v) :=
+  commute_of_g2ModThreeComm (ht := ht) (fun r => D.rootSubgroupPoints r A)
+    (fun hr h0 _ _ => D.commute_rootSubgroup hr h0 A _ _)
+    (fun hk hadd => D.commutatorElement_rootSubgroup_G2_of_long_sum hk hadd A) h u v
 
-section G2
+variable (D E : ChevalleyDatum G2 ht) (A : Type v) [CommRing A] [ExpChar A 3]
 
-variable {ht : G2.Valid} (D E : ChevalleyDatum G2 ht)
-variable (A : Type v) [CommRing A] [ExpChar A 3]
+local notation "xG2" => D.g2SpecialIsogenyRootSubgroup A
+local notation "xE" => E.g2SpecialIsogenyRootSubgroup A
+
+private theorem g2SpecialIsogenyRootSubgroup_eq (α : Fin G2.numRoots) (u : A) :
+    xG2 α (ofAdd u) =
+      D.rootSubgroupPoints (fI α) A (ofAdd (((fS α : ℤ) : A) * u ^ (g2Length (fI α)).toNat)) :=
+  let P (r : Fin 12) (e : ℤ) : D.points A :=
+    D.rootSubgroupPoints r A (ofAdd (((fS α : ℤ) : A) * u ^ e.toNat))
+  have hi : g2SpecialIsogeny.indexEquiv α = fI α := g2SpecialIsogeny_indexEquiv_apply α
+  (D.g2SpecialIsogenyRootSubgroup_ofAdd A α u).trans <| congrArg₂ P hi <|
+    (congrArg g2SpecialIsogeny.exponent hi).trans (g2SpecialIsogeny_exponent (fI α))
 
 /-- **Commuting root subgroups under the `G₂` exceptional isogeny.** -/
 theorem commute_g2SpecialIsogenyRootSubgroup {α β : Fin G2.numRoots}
-    (h : (G2.simplyConnectedRootDatum ht).root α + (G2.simplyConnectedRootDatum ht).root β ∉
-      Set.range (G2.simplyConnectedRootDatum ht).root)
-    (h0 : (G2.simplyConnectedRootDatum ht).root α + (G2.simplyConnectedRootDatum ht).root β ≠ 0)
-    (u v : A) :
-    Commute (D.g2SpecialIsogenyRootSubgroup A α (ofAdd u))
-      (D.g2SpecialIsogenyRootSubgroup A β (ofAdd v)) := by
+    (h : (ΦG2).root α + (ΦG2).root β ∉ Set.range (ΦG2).root) (h0 : (ΦG2).root α + (ΦG2).root β ≠ 0)
+    (u v : A) : Commute (xG2 α (ofAdd u)) (xG2 β (ofAdd v)) := by
   have : CharP A 3 := (expChar_prime_iff (R := A) Nat.prime_three).mp ‹_›
   rw [g2SpecialIsogenyRootSubgroup_eq, g2SpecialIsogenyRootSubgroup_eq]
   obtain ⟨hr, hne⟩ := (g2_sum_excluded_iff α β).mp ⟨h, h0⟩
@@ -458,482 +246,275 @@ theorem commute_g2SpecialIsogenyRootSubgroup {α β : Fin G2.numRoots}
 
 /-- **Long-sum Chevalley commutator relation under the `G₂` exceptional isogeny.** -/
 theorem commutatorElement_g2SpecialIsogenyRootSubgroup_of_long_sum {α β γ : Fin G2.numRoots}
-    (hγ : g2Length γ = 3)
-    (hadd : (G2.simplyConnectedRootDatum ht).root γ =
-      (G2.simplyConnectedRootDatum ht).root α + (G2.simplyConnectedRootDatum ht).root β)
-    (u v : A) :
-    ⁅D.g2SpecialIsogenyRootSubgroup A α (ofAdd u),
-        D.g2SpecialIsogenyRootSubgroup A β (ofAdd v)⁆ =
-      D.g2SpecialIsogenyRootSubgroup A γ
-        (ofAdd ((G2.structureConstant ht α β : A) * (u * v))) := by
+    (hγ : g2Length γ = 3) (hadd : (ΦG2).root γ = (ΦG2).root α + (ΦG2).root β) (u v : A) :
+    ⁅xG2 α (ofAdd u), xG2 β (ofAdd v)⁆ = xG2 γ (ofAdd ((NG2 α β : A) * (u * v))) := by
   have : CharP A 3 := (expChar_prime_iff (R := A) Nat.prime_three).mp ‹_›
   have h3 : (3 : A) = 0 := CharP.cast_eq_zero A 3
   simp only [g2SpecialIsogenyRootSubgroup_eq]
-  rcases g2_long_sum_partner_cases hγ (g2_root_eq_add_iff.mp hadd) with
+  rcases g2_long_sum_partner_cases hγ ((g2_root_add_iff α β γ).mp hadd) with
     ⟨hr, hne, hdvd⟩ | ⟨hfa, hfb, hfg, hadd', ⟨l, m, hl, hm⟩, hdvd⟩
-  · obtain ⟨hr', hne'⟩ := (g2_sum_excluded_iff
-      (g2SpecialIsogenyIndex α) (g2SpecialIsogenyIndex β)).mpr ⟨hr, hne⟩
-    have hfg1 : g2Length (g2SpecialIsogenyIndex γ) = 1 :=
-      (g2Length_g2SpecialIsogenyIndex_eq_one_iff γ).mpr hγ
+  · obtain ⟨hr', hne'⟩ := (g2_sum_excluded_iff _ _).mpr ⟨hr, hne⟩
     rw [commutatorElement_eq_one_iff_mul_comm.mpr ((D.commute_rootSubgroup hr' hne' A _ _).eq),
       structureConstant_G2,
-      cast_eq_of_three_dvd A (a := g2StructureConstant α β) (b := 0) (by simpa using hdvd),
-      Int.cast_zero, zero_mul, hfg1]
-    simp
+      cast_eq_of_three_dvd A (a := g2SC α β) (b := 0) (by simpa using hdvd),
+      Int.cast_zero, zero_mul, (g2Length_g2SpecialIsogenyIndex_eq_one_iff γ).mpr hγ]; simp
   · rw [hfa, hfb, hfg,
       D.commutatorElement_rootSubgroup_of_g2_short_pair hfa hfb hfg
-        (g2_root_eq_add_iff.mpr hadd') (g2_root_eq_add_iff (γ := l).mpr hl)
-        (g2_root_eq_add_iff (γ := m).mpr hm) A]
-    simp only [Int.toNat_one, pow_one, h3, zero_mul, mul_zero, ofAdd_zero, map_one, mul_one]
-    congr 2
-    simp only [structureConstant_G2, g2_sc_eq]
-    have hc := cast_eq_of_three_dvd A hdvd
-    push_cast at hc ⊢
+        ((g2_root_add_iff _ _ _).mpr hadd') ((g2_root_add_iff _ _ l).mpr hl)
+        ((g2_root_add_iff _ _ m).mpr hm) A]
+    simp only [Int.toNat_one, pow_one, h3, zero_mul, mul_zero, ofAdd_zero, map_one, mul_one,
+      structureConstant_G2, sc_eq]
+    congr 2; have hc := cast_eq_of_three_dvd A hdvd; push_cast at hc ⊢
     linear_combination u * v * hc
 
 /-- **One-factor Chevalley commutator relation under the `G₂` exceptional isogeny.** -/
 theorem commutatorElement_g2SpecialIsogenyRootSubgroup_of_root_eq_add {α β γ : Fin G2.numRoots}
-    (hγ : (G2.simplyConnectedRootDatum ht).root γ =
-      (G2.simplyConnectedRootDatum ht).root α + (G2.simplyConnectedRootDatum ht).root β)
-    (hα : 2 • (G2.simplyConnectedRootDatum ht).root α +
-        (G2.simplyConnectedRootDatum ht).root β ∉
-      Set.range (G2.simplyConnectedRootDatum ht).root)
-    (hβ : (G2.simplyConnectedRootDatum ht).root α +
-        2 • (G2.simplyConnectedRootDatum ht).root β ∉
-      Set.range (G2.simplyConnectedRootDatum ht).root)
-    (u v : A) :
-    ⁅D.g2SpecialIsogenyRootSubgroup A α (ofAdd u),
-        D.g2SpecialIsogenyRootSubgroup A β (ofAdd v)⁆ =
-      D.g2SpecialIsogenyRootSubgroup A γ
-        (ofAdd ((G2.structureConstant ht α β : A) * (u * v))) := by
-  have hα' := (g2_two_nsmul_notMem_iff α β).mp hα
-  have hβ' : g2Root α + 2 • g2Root β ∉ Set.range g2Root := by
-    rw [add_comm] at hβ ⊢
-    exact (g2_two_nsmul_notMem_iff β α).mp hβ
+    (hγ : (ΦG2).root γ = (ΦG2).root α + (ΦG2).root β)
+    (hα : 2 • (ΦG2).root α + (ΦG2).root β ∉ Set.range (ΦG2).root)
+    (hβ : (ΦG2).root α + 2 • (ΦG2).root β ∉ Set.range (ΦG2).root) (u v : A) :
+    ⁅xG2 α (ofAdd u), xG2 β (ofAdd v)⁆ = xG2 γ (ofAdd ((NG2 α β : A) * (u * v))) := by
+  simp +instances only [simplyConnectedRootDatum_G2, g2SimplyConnectedRootDatum_root,
+    rank, numRoots] at hα hβ
   exact D.commutatorElement_g2SpecialIsogenyRootSubgroup_of_long_sum A
-    (g2_length_eq_three_of_no_two_nsmul (g2_root_eq_add_iff.mp hγ) hα' hβ') hγ u v
+    (g2_length_eq_three_of_no_two_nsmul ((g2_root_add_iff α β γ).mp hγ) hα hβ) hγ u v
 
-/-- **Short-pair Chevalley commutator relation under the `G₂` exceptional isogeny.** -/
-theorem commutatorElement_g2SpecialIsogenyRootSubgroup_of_short_pair
-    {i j k l m : Fin G2.numRoots}
+/-- **Short-pair Chevalley commutator relation under the `G₂` exceptional isogeny.** Since `3 = 0`
+in `A`, the `l`- and `m`-factors vanish for any indices `l, m`. -/
+theorem commutatorElement_g2SpecialIsogenyRootSubgroup_of_short_pair {i j k l m : Fin G2.numRoots}
     (hi : g2Length i = 1) (hj : g2Length j = 1) (hk : g2Length k = 1)
-    (hij : (G2.simplyConnectedRootDatum ht).root k =
-      (G2.simplyConnectedRootDatum ht).root i + (G2.simplyConnectedRootDatum ht).root j)
-    (hik : (G2.simplyConnectedRootDatum ht).root l =
-      (G2.simplyConnectedRootDatum ht).root i + (G2.simplyConnectedRootDatum ht).root k)
-    (hkj : (G2.simplyConnectedRootDatum ht).root m =
-      (G2.simplyConnectedRootDatum ht).root k + (G2.simplyConnectedRootDatum ht).root j)
-    (u v : A) :
-    ⁅D.g2SpecialIsogenyRootSubgroup A i (ofAdd u),
-        D.g2SpecialIsogenyRootSubgroup A j (ofAdd v)⁆ =
-      D.g2SpecialIsogenyRootSubgroup A k
-          (ofAdd (((G2.structureConstant ht i j / 2 : ℤ) : A) * (2 * u * v))) *
-        D.g2SpecialIsogenyRootSubgroup A l
-          (ofAdd (((G2.structureConstant ht i j / 2 *
-            (G2.structureConstant ht i k / 3) : ℤ) : A) * (3 * u ^ 2 * v))) *
-        D.g2SpecialIsogenyRootSubgroup A m
-          (ofAdd (-((G2.structureConstant ht i j / 2 *
-            (G2.structureConstant ht k j / 3) : ℤ) : A) * (3 * u * v ^ 2))) := by
+    (hij : (ΦG2).root k = (ΦG2).root i + (ΦG2).root j) (u v : A) :
+    ⁅xG2 i (ofAdd u), xG2 j (ofAdd v)⁆ =
+      xG2 k (ofAdd (((NG2 i j / 2 : ℤ) : A) * (2 * u * v))) *
+        xG2 l (ofAdd (((NG2 i j / 2 * (NG2 i k / 3) : ℤ) : A) * (3 * u ^ 2 * v))) *
+        xG2 m (ofAdd (-((NG2 i j / 2 * (NG2 k j / 3) : ℤ) : A) * (3 * u * v ^ 2))) := by
   have : CharP A 3 := (expChar_prime_iff (R := A) Nat.prime_three).mp ‹_›
   have h3 : (3 : A) = 0 := CharP.cast_eq_zero A 3
-  have _ := And.intro hik hkj
-  simp only [h3, zero_mul, mul_zero, ofAdd_zero, map_one, mul_one]
   obtain ⟨hfi, hfj, hfk, hadd', hdvd⟩ :=
-    g2_short_pair_partner i j k hi hj hk (g2_root_eq_add_iff.mp hij)
-  simp only [g2SpecialIsogenyRootSubgroup_eq, hfi, hfj, hfk]
-  rw [D.commutatorElement_rootSubgroup_G2_of_long_sum hfk (g2_root_eq_add_iff.mpr hadd') A]
-  congr 2
-  simp only [structureConstant_G2, g2_sc_eq]
-  have hc := cast_eq_of_three_dvd A hdvd
-  push_cast at hc ⊢
-  linear_combination u ^ 3 * v ^ 3 * hc
+    g2_short_pair_partner i j k hi hj hk ((g2_root_add_iff i j k).mp hij)
+  simp only [h3, zero_mul, mul_zero, ofAdd_zero, map_one, mul_one,
+    g2SpecialIsogenyRootSubgroup_eq, hfi, hfj, hfk]
+  rw [D.commutatorElement_rootSubgroup_G2_of_long_sum hfk ((g2_root_add_iff _ _ _).mpr hadd') A]
+  congr 2; simp only [structureConstant_G2, sc_eq]
+  have hc := cast_eq_of_three_dvd A hdvd; push_cast at hc ⊢; linear_combination u ^ 3 * v ^ 3 * hc
 
 /-- **Four-factor short-first Chevalley commutator relation under the `G₂` exceptional isogeny.** -/
 theorem commutatorElement_g2SpecialIsogenyRootSubgroup_of_short_long
-    {α β γ δ ε ζ : Fin G2.numRoots}
-    (hγ : (G2.simplyConnectedRootDatum ht).root γ =
-      (G2.simplyConnectedRootDatum ht).root α + (G2.simplyConnectedRootDatum ht).root β)
-    (hδ : (G2.simplyConnectedRootDatum ht).root δ =
-      (G2.simplyConnectedRootDatum ht).root α + (G2.simplyConnectedRootDatum ht).root γ)
-    (hε : (G2.simplyConnectedRootDatum ht).root ε =
-      (G2.simplyConnectedRootDatum ht).root α + (G2.simplyConnectedRootDatum ht).root δ)
-    (hζ : (G2.simplyConnectedRootDatum ht).root ζ =
-      (G2.simplyConnectedRootDatum ht).root δ + (G2.simplyConnectedRootDatum ht).root γ)
-    (u v : A) :
-    ⁅D.g2SpecialIsogenyRootSubgroup A α (ofAdd u),
-        D.g2SpecialIsogenyRootSubgroup A β (ofAdd v)⁆ =
-      D.g2SpecialIsogenyRootSubgroup A γ
-          (ofAdd ((G2.structureConstant ht α β : A) * (u * v))) *
-        D.g2SpecialIsogenyRootSubgroup A δ
-          (ofAdd (((G2.structureConstant ht α β *
-            (G2.structureConstant ht α γ / 2) : ℤ) : A) * (u ^ 2 * v))) *
-        D.g2SpecialIsogenyRootSubgroup A ε
-          (ofAdd (((G2.structureConstant ht α β * (G2.structureConstant ht α γ / 2) *
-            (G2.structureConstant ht α δ / 3) : ℤ) : A) * (u ^ 3 * v))) *
-        D.g2SpecialIsogenyRootSubgroup A ζ
-          (ofAdd (((2 * (G2.structureConstant ht α β * (G2.structureConstant ht α γ / 2) *
-            G2.structureConstant ht α β *
-              (G2.structureConstant ht δ γ / 3)) : ℤ) : A) * (u ^ 3 * v ^ 2))) := by
+    {α β γ δ ε ζ : Fin G2.numRoots} (hγ : (ΦG2).root γ = (ΦG2).root α + (ΦG2).root β)
+    (hδ : (ΦG2).root δ = (ΦG2).root α + (ΦG2).root γ)
+    (hε : (ΦG2).root ε = (ΦG2).root α + (ΦG2).root δ)
+    (hζ : (ΦG2).root ζ = (ΦG2).root δ + (ΦG2).root γ) (u v : A) :
+    ⁅xG2 α (ofAdd u), xG2 β (ofAdd v)⁆ =
+      xG2 γ (ofAdd ((NG2 α β : A) * (u * v))) *
+        xG2 δ (ofAdd (((NG2 α β * (NG2 α γ / 2) : ℤ) : A) * (u ^ 2 * v))) *
+        xG2 ε (ofAdd (((NG2 α β * (NG2 α γ / 2) * (NG2 α δ / 3) : ℤ) : A) * (u ^ 3 * v))) *
+        xG2 ζ (ofAdd (((2 * (NG2 α β * (NG2 α γ / 2) * NG2 α β *
+          (NG2 δ γ / 3)) : ℤ) : A) * (u ^ 3 * v ^ 2))) := by
   have : CharP A 3 := (expChar_prime_iff (R := A) Nat.prime_three).mp ‹_›
-  have hγ' := g2_root_eq_add_iff.mp hγ; have hδ' := g2_root_eq_add_iff.mp hδ
-  have hε' := g2_root_eq_add_iff.mp hε; have hζ' := g2_root_eq_add_iff.mp hζ
-  obtain ⟨r₁, r₂, r₃, r₄, qa, qb, qg, qd, qe, qz⟩ := g2_short_long_partner_roots hγ' hδ' hε' hζ'
-  obtain ⟨d₁, d₂, d₃, d₄⟩ := g2_short_long_partner_coeffs hγ' hδ' hε' hζ'
-  obtain ⟨_, _, _, _, _, _, ceg, ced, czg, czd⟩ := g2_short_long_factors_comm hγ' hδ' hε' hζ'
+  have hmem := mem_g2ShortLongTuples ((g2_root_add_iff α β γ).mp hγ)
+    ((g2_root_add_iff α γ δ).mp hδ) ((g2_root_add_iff α δ ε).mp hε) ((g2_root_add_iff δ γ ζ).mp hζ)
+  obtain ⟨⟨r₁, r₂, r₃, r₄, qa, qb, qg, qd, qe, qz⟩, d₁, d₂, d₃, d₄⟩ :=
+    g2_short_long_partner (α, β, γ, δ, ε, ζ) hmem
+  obtain ⟨_, _, _, _, _, _, ceg, ced, czg, czd⟩ :=
+    g2_short_long_factors_comm (α, β, γ, δ, ε, ζ) hmem
   simp only [g2SpecialIsogenyRootSubgroup_eq, qa, qb, qg, qd, qe, qz, pow_one]
-  rw [D.commutatorElement_rootSubgroup_of_g2_long_short (g2_root_eq_add_iff.mpr r₁)
-      (g2_root_eq_add_iff.mpr r₂) (g2_root_eq_add_iff.mpr r₃) (g2_root_eq_add_iff.mpr r₄) A,
-    permute_four_comm (commute_rootSubgroup_of_g2ModThreeComm D A ceg _ _)
-      (commute_rootSubgroup_of_g2ModThreeComm D A ced _ _)
-      (commute_rootSubgroup_of_g2ModThreeComm D A czg _ _)
-      (commute_rootSubgroup_of_g2ModThreeComm D A czd _ _)]
-  simp only [structureConstant_G2, g2_sc_eq]
+  have mc {i j} (c : g2ModThreeComm i j) := commute_rootSubgroup_of_g2ModThreeComm D A c
+  rw [D.commutatorElement_rootSubgroup_of_g2_long_short ((g2_root_add_iff _ _ _).mpr r₁)
+      ((g2_root_add_iff _ _ _).mpr r₂) ((g2_root_add_iff _ _ _).mpr r₃)
+      ((g2_root_add_iff _ _ _).mpr r₄) A,
+    permute_four_comm (mc ceg _ _) (mc ced _ _) (mc czg _ _) (mc czd _ _)]
+  simp only [structureConstant_G2, sc_eq]
   have e₁ := cast_eq_of_three_dvd A d₁; have e₂ := cast_eq_of_three_dvd A d₂
   have e₃ := cast_eq_of_three_dvd A d₃; have e₄ := cast_eq_of_three_dvd A d₄
   push_cast at e₁ e₂ e₃ e₄ ⊢
-  congr 1
-  · congr 1
-    · congr 1
-      · congr 2; linear_combination u ^ 3 * v ^ 3 * e₃
-      · congr 2; linear_combination u ^ 6 * v ^ 3 * e₄
-    · congr 2; linear_combination u ^ 3 * v * e₁
-  · congr 2; linear_combination u ^ 3 * v ^ 2 * e₂
+  refine congrArg₂ _ (congrArg₂ _ (congrArg₂ _ ?_ ?_) ?_) ?_ <;> congr 2
+  · linear_combination u ^ 3 * v ^ 3 * e₃
+  · linear_combination u ^ 6 * v ^ 3 * e₄
+  · linear_combination u ^ 3 * v * e₁
+  · linear_combination u ^ 3 * v ^ 2 * e₂
 
-private theorem commute_g2SpecialIsogeny_of_g2ModThreeComm [CharP A 3]
+private theorem commute_g2SpecialIsogeny_of_g2ModThreeComm
     {i j : Fin G2.numRoots} (hc : g2ModThreeComm i j) (w₁ w₂ : Multiplicative A) :
-    Commute (D.g2SpecialIsogenyRootSubgroup A i w₁)
-      (D.g2SpecialIsogenyRootSubgroup A j w₂) := by
-  rw [← ofAdd_toAdd w₁, ← ofAdd_toAdd w₂]
-  rcases hc with hexcl | ⟨k, hk, hadd, hdvd⟩
-  · obtain ⟨hr, hne⟩ := (g2_sum_excluded_iff i j).mpr hexcl
-    exact D.commute_g2SpecialIsogenyRootSubgroup A hr hne _ _
-  · rw [commute_iff_eq, ← commutatorElement_eq_one_iff_mul_comm,
-      D.commutatorElement_g2SpecialIsogenyRootSubgroup_of_long_sum A hk
-        (g2_root_eq_add_iff (γ := k).mpr hadd),
-      structureConstant_G2,
-      cast_eq_of_three_dvd A (a := g2StructureConstant i j) (b := 0) (by simpa using hdvd),
-      Int.cast_zero, zero_mul, ofAdd_zero, map_one]
+    Commute (xG2 i w₁) (xG2 j w₂) := by
+  have : CharP A 3 := (expChar_prime_iff (R := A) Nat.prime_three).mp ‹_›
+  exact commute_of_g2ModThreeComm (ht := ht) xG2
+    (fun hr h0 => D.commute_g2SpecialIsogenyRootSubgroup A hr h0)
+    (fun hk hadd => D.commutatorElement_g2SpecialIsogenyRootSubgroup_of_long_sum A hk hadd) hc w₁ w₂
 
 /-- **Four-factor long-first Chevalley commutator relation under the `G₂` exceptional isogeny.** -/
 theorem commutatorElement_g2SpecialIsogenyRootSubgroup_of_long_short
-    {α β γ δ ε ζ : Fin G2.numRoots}
-    (hγ : (G2.simplyConnectedRootDatum ht).root γ =
-      (G2.simplyConnectedRootDatum ht).root α + (G2.simplyConnectedRootDatum ht).root β)
-    (hδ : (G2.simplyConnectedRootDatum ht).root δ =
-      (G2.simplyConnectedRootDatum ht).root α + (G2.simplyConnectedRootDatum ht).root γ)
-    (hε : (G2.simplyConnectedRootDatum ht).root ε =
-      (G2.simplyConnectedRootDatum ht).root α + (G2.simplyConnectedRootDatum ht).root δ)
-    (hζ : (G2.simplyConnectedRootDatum ht).root ζ =
-      (G2.simplyConnectedRootDatum ht).root δ + (G2.simplyConnectedRootDatum ht).root γ)
-    (u v : A) :
-    ⁅D.g2SpecialIsogenyRootSubgroup A β (ofAdd v),
-        D.g2SpecialIsogenyRootSubgroup A α (ofAdd u)⁆ =
-      D.g2SpecialIsogenyRootSubgroup A γ
-          (ofAdd (-(G2.structureConstant ht α β : A) * (u * v))) *
-        D.g2SpecialIsogenyRootSubgroup A δ
-          (ofAdd (-((G2.structureConstant ht α β *
-            (G2.structureConstant ht α γ / 2) : ℤ) : A) * (u ^ 2 * v))) *
-        D.g2SpecialIsogenyRootSubgroup A ε
-          (ofAdd (-((G2.structureConstant ht α β * (G2.structureConstant ht α γ / 2) *
-            (G2.structureConstant ht α δ / 3) : ℤ) : A) * (u ^ 3 * v))) *
-        D.g2SpecialIsogenyRootSubgroup A ζ
-          (ofAdd (((G2.structureConstant ht α β * (G2.structureConstant ht α γ / 2) *
-            G2.structureConstant ht α β *
-              (G2.structureConstant ht δ γ / 3) : ℤ) : A) * (u ^ 3 * v ^ 2))) := by
+    {α β γ δ ε ζ : Fin G2.numRoots} (hγ : (ΦG2).root γ = (ΦG2).root α + (ΦG2).root β)
+    (hδ : (ΦG2).root δ = (ΦG2).root α + (ΦG2).root γ)
+    (hε : (ΦG2).root ε = (ΦG2).root α + (ΦG2).root δ)
+    (hζ : (ΦG2).root ζ = (ΦG2).root δ + (ΦG2).root γ) (u v : A) :
+    ⁅xG2 β (ofAdd v), xG2 α (ofAdd u)⁆ =
+      xG2 γ (ofAdd (-(NG2 α β : A) * (u * v))) *
+        xG2 δ (ofAdd (-((NG2 α β * (NG2 α γ / 2) : ℤ) : A) * (u ^ 2 * v))) *
+        xG2 ε (ofAdd (-((NG2 α β * (NG2 α γ / 2) * (NG2 α δ / 3) : ℤ) : A) * (u ^ 3 * v))) *
+        xG2 ζ (ofAdd (((NG2 α β * (NG2 α γ / 2) * NG2 α β *
+          (NG2 δ γ / 3) : ℤ) : A) * (u ^ 3 * v ^ 2))) := by
   have : CharP A 3 := (expChar_prime_iff (R := A) Nat.prime_three).mp ‹_›
-  have h3 : (3 : A) = 0 := CharP.cast_eq_zero A 3
-  obtain ⟨cgd, cge, cgz, cde, cdz, cez, _⟩ := g2_short_long_factors_comm
-    (g2_root_eq_add_iff.mp hγ) (g2_root_eq_add_iff.mp hδ)
-    (g2_root_eq_add_iff.mp hε) (g2_root_eq_add_iff.mp hζ)
+  obtain ⟨cgd, cge, cgz, cde, cdz, cez, _⟩ := g2_short_long_factors_comm (α, β, γ, δ, ε, ζ)
+    (mem_g2ShortLongTuples ((g2_root_add_iff α β γ).mp hγ) ((g2_root_add_iff α γ δ).mp hδ)
+      ((g2_root_add_iff α δ ε).mp hε) ((g2_root_add_iff δ γ ζ).mp hζ))
+  have mc {i j} (c : g2ModThreeComm i j) := commute_g2SpecialIsogeny_of_g2ModThreeComm D A c
   rw [← commutatorElement_inv,
     D.commutatorElement_g2SpecialIsogenyRootSubgroup_of_short_long A hγ hδ hε hζ u v,
-    mul_four_inv_of_commute
-      (commute_g2SpecialIsogeny_of_g2ModThreeComm D A cgd _ _)
-      (commute_g2SpecialIsogeny_of_g2ModThreeComm D A cge _ _)
-      (commute_g2SpecialIsogeny_of_g2ModThreeComm D A cgz _ _)
-      (commute_g2SpecialIsogeny_of_g2ModThreeComm D A cde _ _)
-      (commute_g2SpecialIsogeny_of_g2ModThreeComm D A cdz _ _)
-      (commute_g2SpecialIsogeny_of_g2ModThreeComm D A cez _ _)]
+    mul_four_inv_of_commute (mc cgd _ _) (mc cge _ _) (mc cgz _ _)
+      (mc cde _ _) (mc cdz _ _) (mc cez _ _)]
   simp only [← map_inv, ← ofAdd_neg]
-  congr 1
-  · congr 1
-    · congr 1
-      · congr 2; ring
-      · congr 2; push_cast; ring
-    · congr 2; push_cast; ring
-  · congr 2; push_cast
-    linear_combination -((G2.structureConstant ht α β : A) *
-      ((G2.structureConstant ht α γ / 2 : ℤ) : A) * (G2.structureConstant ht α β : A) *
-      ((G2.structureConstant ht δ γ / 3 : ℤ) : A) * u ^ 3 * v ^ 2) * h3
+  refine congrArg₂ _ (congrArg₂ _ (congrArg₂ _ ?_ ?_) ?_) ?_ <;> congr 2
+  · ring
+  · push_cast; ring
+  · push_cast; ring
+  · push_cast; linear_combination -((NG2 α β : A) * ((NG2 α γ / 2 : ℤ) : A) * (NG2 α β : A) *
+      ((NG2 δ γ / 3 : ℤ) : A) * u ^ 3 * v ^ 2) * CharP.cast_eq_zero A 3
 
-omit [ExpChar A 3] in
-private theorem g2_half_relations_rootSubgroup [CharP A 3]
-    {a b g d e z a' l m : Fin 12} {s : ℤ}
-    (hd1 : g2Length d = 1) (ha'1 : g2Length a' = 1) (hg1 : g2Length g = 1) (hz3 : g2Length z = 3)
-    (hγ : g2Root g = g2Root a + g2Root b) (hδ : g2Root d = g2Root a + g2Root g)
-    (hε : g2Root e = g2Root a + g2Root d) (hζ : g2Root z = g2Root d + g2Root g)
-    (hij : g2Root g = g2Root d + g2Root a') (hik : g2Root l = g2Root d + g2Root g)
-    (hkj : g2Root m = g2Root g + g2Root a') (hbe : g2Root z = g2Root b + g2Root e)
-    (hc1 : g2StructureConstant a b = s)
-    (hc2 : g2StructureConstant a b * (g2StructureConstant a g / 2) = 1)
-    (hc3 : g2StructureConstant a b * (g2StructureConstant a g / 2) *
-      (g2StructureConstant a d / 3) = s)
-    (hc4 : 2 * (g2StructureConstant a b * (g2StructureConstant a g / 2) *
-      g2StructureConstant a b * (g2StructureConstant d g / 3)) = 2)
-    (hcsp : (3 : ℤ) ∣ (g2StructureConstant d a' / 2) * 2 - s)
-    (hcls : g2StructureConstant b e = s) :
-    (∀ t w : A, ⁅D.rootSubgroupPoints a A (ofAdd t), D.rootSubgroupPoints b A (ofAdd w)⁆ =
-      D.rootSubgroupPoints g A (ofAdd ((s : A) * t * w)) *
-        D.rootSubgroupPoints d A (ofAdd (t ^ 2 * w)) *
-        D.rootSubgroupPoints e A (ofAdd ((s : A) * t ^ 3 * w)) *
-        D.rootSubgroupPoints z A (ofAdd (2 * t ^ 3 * w ^ 2))) ∧
-      (∀ u : A, ⁅D.rootSubgroupPoints d A (ofAdd u), D.rootSubgroupPoints a' A (ofAdd 1)⁆ =
-        D.rootSubgroupPoints g A (ofAdd ((s : A) * u))) ∧
-      (∀ u : A, ⁅D.rootSubgroupPoints b A (ofAdd 1), D.rootSubgroupPoints e A (ofAdd u)⁆ =
-        D.rootSubgroupPoints z A (ofAdd ((s : A) * u))) := by
+private theorem g2_words_of_halfTuple {H : Type*} [Group H]
+    (x : Fin 12 → Multiplicative A →* H)
+    {a b g d e z a' l m : Fin 12} {s : ℤ} (htup : g2HalfTuple a b g d e z a' l m s)
+    (hcomm : ∀ {i j : Fin 12}, g2ModThreeComm i j → ∀ u v, Commute (x i u) (x j v))
+    (hsl : ∀ t w : A, ⁅x a (ofAdd t), x b (ofAdd w)⁆ =
+      x g (ofAdd ((NG2 a b : A) * (t * w))) *
+        x d (ofAdd (((NG2 a b * (NG2 a g / 2) : ℤ) : A) * (t ^ 2 * w))) *
+        x e (ofAdd (((NG2 a b * (NG2 a g / 2) * (NG2 a d / 3) : ℤ) : A) * (t ^ 3 * w))) *
+        x z (ofAdd (((2 * (NG2 a b * (NG2 a g / 2) * NG2 a b *
+          (NG2 d g / 3)) : ℤ) : A) * (t ^ 3 * w ^ 2))))
+    (hsp : ∀ u : A, ⁅x d (ofAdd u), x a' (ofAdd 1)⁆ =
+      x g (ofAdd (((NG2 d a' / 2 : ℤ) : A) * (2 * u * 1))) *
+        x l (ofAdd (((NG2 d a' / 2 * (NG2 d g / 3) : ℤ) : A) * (3 * u ^ 2 * 1))) *
+        x m (ofAdd (-((NG2 d a' / 2 * (NG2 g a' / 3) : ℤ) : A) * (3 * u * 1 ^ 2))))
+    (hls : ∀ u : A, ⁅x b (ofAdd 1), x e (ofAdd u)⁆ = x z (ofAdd ((NG2 b e : A) * (1 * u))))
+    (u : A) : g2QuadWords x a b g d e z a' s u := by
+  have : CharP A 3 := (expChar_prime_iff (R := A) Nat.prime_three).mp ‹_›
   have h3 : (3 : A) = 0 := CharP.cast_eq_zero A 3
-  refine ⟨fun t w => ?_, fun u => ?_, fun u => ?_⟩
-  · rw [D.commutatorElement_rootSubgroup_of_g2_short_long (g2_root_eq_add_iff.mpr hγ)
-      (g2_root_eq_add_iff.mpr hδ) (g2_root_eq_add_iff.mpr hε) (g2_root_eq_add_iff.mpr hζ) A]
-    simp only [g2_sc_eq]
-    rw [hc4, hc3, hc2, hc1]
-    congr 1
-    · congr 1
-      · congr 1
-        · congr 2; ring
-        · congr 2; push_cast; ring
-      · congr 2; ring
-    · congr 2; push_cast; ring
-  · rw [D.commutatorElement_rootSubgroup_of_g2_short_pair hd1 ha'1 hg1
-      (g2_root_eq_add_iff.mpr hij) (g2_root_eq_add_iff.mpr hik) (g2_root_eq_add_iff.mpr hkj) A]
-    simp only [h3, zero_mul, mul_zero, ofAdd_zero, map_one, mul_one, g2_sc_eq]
-    congr 2
-    have hcs := cast_eq_of_three_dvd A hcsp
-    push_cast at hcs
-    linear_combination u * hcs
-  · rw [D.commutatorElement_rootSubgroup_G2_of_long_sum hz3 (g2_root_eq_add_iff.mpr hbe) A,
-      g2_sc_eq, hcls, one_mul]
+  obtain ⟨hs, _, _, _, _, hγ, hδ, hε, hζ, _, _, _, _, hc1, hc2, hc3, hc4, hcsp, hcls⟩ := htup
+  have hsA : (s : A) ^ 2 = 1 := by rw [← Int.cast_pow, hs, Int.cast_one]
+  have hsl' (t w : A) : ⁅x a (ofAdd t), x b (ofAdd w)⁆ =
+      x g (ofAdd ((s : A) * t * w)) * x d (ofAdd (t ^ 2 * w)) *
+        x e (ofAdd ((s : A) * t ^ 3 * w)) * x z (ofAdd (2 * t ^ 3 * w ^ 2)) := by
+    rw [hsl t w]; simp only [sc_eq]; rw [hc4, hc3, hc2, hc1]
+    refine congrArg₂ _ (congrArg₂ _ (congrArg₂ _ ?_ ?_) ?_) ?_ <;> congr 2 <;> push_cast <;> ring
+  obtain ⟨cgd, cge, cgz, cde, cdz, cez, _⟩ :=
+    g2_short_long_factors_comm (a, b, g, d, e, z) (mem_g2ShortLongTuples hγ hδ hε hζ)
+  have hadd (r : Fin 12) (w₁ w₂ : A) :
+      x r (ofAdd w₁) * x r (ofAdd w₂) = x r (ofAdd (w₁ + w₂)) := by rw [← map_mul, ofAdd_add]
+  refine ⟨?_, ?_, ?_, by
+    rw [hls, sc_eq, hcls, one_mul]; congr 2; linear_combination -u * hsA⟩
+  · rw [hsl' 1 (-u), hsl' (-1) (-u),
+      collect_four_comm (hcomm cgd _ _).symm (hcomm cge _ _).symm (hcomm cde _ _).symm
+        (hcomm cgz _ _).symm (hcomm cdz _ _).symm (hcomm cez _ _).symm,
+      hadd, hadd, hadd, hadd, show (s : A) * 1 * -u + (s : A) * -1 * -u = 0 by ring,
+      show 1 ^ 2 * -u + (-1 : A) ^ 2 * -u = u by linear_combination -u * h3,
+      show (s : A) * 1 ^ 3 * -u + (s : A) * (-1) ^ 3 * -u = 0 by ring,
+      show 2 * 1 ^ 3 * (-u) ^ 2 + 2 * (-1 : A) ^ 3 * (-u) ^ 2 = 0 by ring]; simp
+  · rw [hsp]; simp only [h3, zero_mul, mul_zero, ofAdd_zero, map_one, mul_one, sc_eq]
+    congr 2; have hcs := cast_eq_of_three_dvd A hcsp; push_cast at hcs
+    linear_combination -(s : A) * u * hcs - u * hsA
+  · have q (w : A) : (x g (ofAdd ((s : A) * w)) * x d (ofAdd w))⁻¹ *
+        ⁅x a (ofAdd 1), x b (ofAdd w)⁆ = x e (ofAdd ((s : A) * w)) * x z (ofAdd (2 * w ^ 2)) := by
+      rw [hsl' 1 w]; simp only [mul_one, one_pow, one_mul]; group
+    have hq₁ := q (-(s : A) * u); have hq₂ := q ((s : A) * u)
+    rw [show (s : A) * (-(s : A) * u) = -u by linear_combination -u * hsA] at hq₁
+    rw [show (s : A) * ((s : A) * u) = u by linear_combination u * hsA] at hq₂
+    rw [hq₁, hq₂, show 2 * (-(s : A) * u) ^ 2 = 2 * ((s : A) * u) ^ 2 by ring,
+      mul_inv_rev, mul_assoc, mul_inv_cancel_left, ← map_inv, ← ofAdd_neg, hadd]
+    congr 2; linear_combination u * h3
 
-private theorem g2_half_relations_specialIsogeny [CharP A 3]
-    {a b g d e z a' l m : Fin 12} {s : ℤ}
-    (hd1 : g2Length d = 1) (ha'1 : g2Length a' = 1) (hg1 : g2Length g = 1) (hz3 : g2Length z = 3)
-    (hγ : g2Root g = g2Root a + g2Root b) (hδ : g2Root d = g2Root a + g2Root g)
-    (hε : g2Root e = g2Root a + g2Root d) (hζ : g2Root z = g2Root d + g2Root g)
-    (hij : g2Root g = g2Root d + g2Root a') (hik : g2Root l = g2Root d + g2Root g)
-    (hkj : g2Root m = g2Root g + g2Root a') (hbe : g2Root z = g2Root b + g2Root e)
-    (hc1 : g2StructureConstant a b = s)
-    (hc2 : g2StructureConstant a b * (g2StructureConstant a g / 2) = 1)
-    (hc3 : g2StructureConstant a b * (g2StructureConstant a g / 2) *
-      (g2StructureConstant a d / 3) = s)
-    (hc4 : 2 * (g2StructureConstant a b * (g2StructureConstant a g / 2) *
-      g2StructureConstant a b * (g2StructureConstant d g / 3)) = 2)
-    (hcsp : (3 : ℤ) ∣ (g2StructureConstant d a' / 2) * 2 - s)
-    (hcls : g2StructureConstant b e = s) :
-    (∀ t w : A, ⁅E.g2SpecialIsogenyRootSubgroup A a (ofAdd t),
-        E.g2SpecialIsogenyRootSubgroup A b (ofAdd w)⁆ =
-      E.g2SpecialIsogenyRootSubgroup A g (ofAdd ((s : A) * t * w)) *
-        E.g2SpecialIsogenyRootSubgroup A d (ofAdd (t ^ 2 * w)) *
-        E.g2SpecialIsogenyRootSubgroup A e (ofAdd ((s : A) * t ^ 3 * w)) *
-        E.g2SpecialIsogenyRootSubgroup A z (ofAdd (2 * t ^ 3 * w ^ 2))) ∧
-      (∀ u : A, ⁅E.g2SpecialIsogenyRootSubgroup A d (ofAdd u),
-          E.g2SpecialIsogenyRootSubgroup A a' (ofAdd 1)⁆ =
-        E.g2SpecialIsogenyRootSubgroup A g (ofAdd ((s : A) * u))) ∧
-      (∀ u : A, ⁅E.g2SpecialIsogenyRootSubgroup A b (ofAdd 1),
-          E.g2SpecialIsogenyRootSubgroup A e (ofAdd u)⁆ =
-        E.g2SpecialIsogenyRootSubgroup A z (ofAdd ((s : A) * u))) := by
-  have h3 : (3 : A) = 0 := CharP.cast_eq_zero A 3
-  refine ⟨fun t w => ?_, fun u => ?_, fun u => ?_⟩
-  · rw [E.commutatorElement_g2SpecialIsogenyRootSubgroup_of_short_long A
-      (g2_root_eq_add_iff.mpr hγ) (g2_root_eq_add_iff.mpr hδ)
-      (g2_root_eq_add_iff.mpr hε) (g2_root_eq_add_iff.mpr hζ)]
-    simp only [g2_sc_eq]
-    rw [hc4, hc3, hc2, hc1]
-    congr 1
-    · congr 1
-      · congr 1
-        · congr 2; ring
-        · congr 2; push_cast; ring
-      · congr 2; ring
-    · congr 2; push_cast; ring
-  · rw [E.commutatorElement_g2SpecialIsogenyRootSubgroup_of_short_pair A hd1 ha'1 hg1
-      (g2_root_eq_add_iff.mpr hij) (g2_root_eq_add_iff.mpr hik) (g2_root_eq_add_iff.mpr hkj)]
-    simp only [h3, zero_mul, mul_zero, ofAdd_zero, map_one, mul_one, g2_sc_eq]
-    congr 2
-    have hcs := cast_eq_of_three_dvd A hcsp
-    push_cast at hcs
-    linear_combination u * hcs
-  · rw [E.commutatorElement_g2SpecialIsogenyRootSubgroup_of_long_sum A hz3
-      (g2_root_eq_add_iff.mpr hbe), g2_sc_eq, hcls, one_mul]
-
-private theorem eq_quadruple_of_g2_half [CharP A 3]
-    (φ : D.points A →* E.points A)
-    {a b g d e z a' l m : Fin 12} {s : ℤ} (hs : s ^ 2 = 1)
-    (hd1 : g2Length d = 1) (ha'1 : g2Length a' = 1) (hg1 : g2Length g = 1) (hz3 : g2Length z = 3)
-    (hγ : g2Root g = g2Root a + g2Root b) (hδ : g2Root d = g2Root a + g2Root g)
-    (hε : g2Root e = g2Root a + g2Root d) (hζ : g2Root z = g2Root d + g2Root g)
-    (hij : g2Root g = g2Root d + g2Root a') (hik : g2Root l = g2Root d + g2Root g)
-    (hkj : g2Root m = g2Root g + g2Root a') (hbe : g2Root z = g2Root b + g2Root e)
-    (hc1 : g2StructureConstant a b = s)
-    (hc2 : g2StructureConstant a b * (g2StructureConstant a g / 2) = 1)
-    (hc3 : g2StructureConstant a b * (g2StructureConstant a g / 2) *
-      (g2StructureConstant a d / 3) = s)
-    (hc4 : 2 * (g2StructureConstant a b * (g2StructureConstant a g / 2) *
-      g2StructureConstant a b * (g2StructureConstant d g / 3)) = 2)
-    (hcsp : (3 : ℤ) ∣ (g2StructureConstant d a' / 2) * 2 - s)
-    (hcls : g2StructureConstant b e = s)
-    (ha : ∀ w, φ (D.rootSubgroupPoints a A w) = E.g2SpecialIsogenyRootSubgroup A a w)
-    (hb : ∀ w, φ (D.rootSubgroupPoints b A w) = E.g2SpecialIsogenyRootSubgroup A b w)
-    (ha' : ∀ w, φ (D.rootSubgroupPoints a' A w) = E.g2SpecialIsogenyRootSubgroup A a' w) :
-    (∀ w, φ (D.rootSubgroupPoints g A w) = E.g2SpecialIsogenyRootSubgroup A g w) ∧
-      (∀ w, φ (D.rootSubgroupPoints d A w) = E.g2SpecialIsogenyRootSubgroup A d w) ∧
-      (∀ w, φ (D.rootSubgroupPoints e A w) = E.g2SpecialIsogenyRootSubgroup A e w) ∧
-      (∀ w, φ (D.rootSubgroupPoints z A w) = E.g2SpecialIsogenyRootSubgroup A z w) := by
-  obtain ⟨cgd, cge, cgz, cde, cdz, cez, _⟩ := g2_short_long_factors_comm hγ hδ hε hζ
-  obtain ⟨hslD, hspD, hlsD⟩ := g2_half_relations_rootSubgroup D A hd1 ha'1 hg1 hz3 hγ hδ hε hζ
-    hij hik hkj hbe hc1 hc2 hc3 hc4 hcsp hcls
-  obtain ⟨hslE, hspE, hlsE⟩ := g2_half_relations_specialIsogeny E A hd1 ha'1 hg1 hz3 hγ hδ hε hζ
-    hij hik hkj hbe hc1 hc2 hc3 hc4 hcsp hcls
-  let x : Fin G2.numRoots → Multiplicative A →* E.points A :=
-    fun r => φ.comp (D.rootSubgroupPoints r A)
-  have commX {i j : Fin 12} (hc : g2ModThreeComm i j) (u v : Multiplicative A) :
-      Commute (x i u) (x j v) :=
-    (commute_rootSubgroup_of_g2ModThreeComm D A hc u v).map φ
-  have hslX (t₁ w₁ : A) : ⁅x a (ofAdd t₁), x b (ofAdd w₁)⁆ =
-      x g (ofAdd ((s : A) * t₁ * w₁)) * x d (ofAdd (t₁ ^ 2 * w₁)) *
-        x e (ofAdd ((s : A) * t₁ ^ 3 * w₁)) * x z (ofAdd (2 * t₁ ^ 3 * w₁ ^ 2)) := by
-    simpa only [x, MonoidHom.comp_apply, map_commutatorElement, map_mul] using
-      congrArg (⇑φ) (hslD t₁ w₁)
-  have hspX (u₁ : A) : ⁅x d (ofAdd u₁), x a' (ofAdd 1)⁆ = x g (ofAdd ((s : A) * u₁)) := by
-    simpa only [x, MonoidHom.comp_apply, map_commutatorElement] using congrArg (⇑φ) (hspD u₁)
-  have hlsX (u₁ : A) : ⁅x b (ofAdd 1), x e (ofAdd u₁)⁆ = x z (ofAdd ((s : A) * u₁)) := by
-    simpa only [x, MonoidHom.comp_apply, map_commutatorElement] using congrArg (⇑φ) (hlsD u₁)
-  have wX := g2_quadruple_words x (a := a) (b := b) (g := g) (d := d) (e := e) (z := z)
-    (a' := a') hs hslX (commX cgd) (commX cge) (commX cgz) (commX cde) (commX cdz) (commX cez)
-    hspX hlsX
-  have wE := g2_quadruple_words (E.g2SpecialIsogenyRootSubgroup A)
-    (a := a) (b := b) (g := g) (d := d) (e := e) (z := z) (a' := a') hs hslE
-    (commute_g2SpecialIsogeny_of_g2ModThreeComm E A cgd)
-    (commute_g2SpecialIsogeny_of_g2ModThreeComm E A cge)
-    (commute_g2SpecialIsogeny_of_g2ModThreeComm E A cgz)
-    (commute_g2SpecialIsogeny_of_g2ModThreeComm E A cde)
-    (commute_g2SpecialIsogeny_of_g2ModThreeComm E A cdz)
-    (commute_g2SpecialIsogeny_of_g2ModThreeComm E A cez) hspE hlsE
-  have hd (u : A) : x d (ofAdd u) = E.g2SpecialIsogenyRootSubgroup A d (ofAdd u) := by
-    rw [(wX u).1, (wE u).1]; simp only [x, MonoidHom.comp_apply, ha, hb]
-  have hg (u : A) : x g (ofAdd u) = E.g2SpecialIsogenyRootSubgroup A g (ofAdd u) := by
-    rw [(wX u).2.1, (wE u).2.1, hd]; simp only [x, MonoidHom.comp_apply, ha']
-  have he (u : A) : x e (ofAdd u) = E.g2SpecialIsogenyRootSubgroup A e (ofAdd u) := by
-    rw [(wX u).2.2.1, (wE u).2.2.1, hg, hd, hg, hd]; simp only [x, MonoidHom.comp_apply, ha, hb]
-  have hz (u : A) : x z (ofAdd u) = E.g2SpecialIsogenyRootSubgroup A z (ofAdd u) := by
-    rw [(wX u).2.2.2, (wE u).2.2.2, he]; simp only [x, MonoidHom.comp_apply, hb]
-  exact ⟨fun w => by rw [← ofAdd_toAdd w]; exact hg (toAdd w),
-    fun w => by rw [← ofAdd_toAdd w]; exact hd (toAdd w),
-    fun w => by rw [← ofAdd_toAdd w]; exact he (toAdd w),
-    fun w => by rw [← ofAdd_toAdd w]; exact hz (toAdd w)⟩
+private theorem eq_quadruple_of_g2_half (φ : D.points A →* E.points A)
+    {a b g d e z a' l m : Fin 12} {s : ℤ} (htup : g2HalfTuple a b g d e z a' l m s)
+    (ha : ∀ w, φ (D.rootSubgroupPoints a A w) = xE a w)
+    (hb : ∀ w, φ (D.rootSubgroupPoints b A w) = xE b w)
+    (ha' : ∀ w, φ (D.rootSubgroupPoints a' A w) = xE a' w) :
+    (∀ w, φ (D.rootSubgroupPoints g A w) = xE g w) ∧
+      (∀ w, φ (D.rootSubgroupPoints d A w) = xE d w) ∧
+      (∀ w, φ (D.rootSubgroupPoints e A w) = xE e w) ∧
+      (∀ w, φ (D.rootSubgroupPoints z A w) = xE z w) := by
+  have : CharP A 3 := (expChar_prime_iff (R := A) Nat.prime_three).mp ‹_›
+  have ⟨_, hd1, ha'1, hg1, hz3, hγ, hδ, hε, hζ, hij, hik, hkj, hbe, _⟩ := htup
+  have ra {i j k} (h : g2Root k = g2Root i + g2Root j) := (g2_root_add_iff (ht := ht) i j k).mpr h
+  have wD := g2_words_of_halfTuple (ht := ht) A (fun r : Fin 12 => D.rootSubgroupPoints r A) htup
+    (fun hc => commute_rootSubgroup_of_g2ModThreeComm D A hc)
+    (D.commutatorElement_rootSubgroup_of_g2_short_long (ra hγ) (ra hδ) (ra hε) (ra hζ) A)
+    (fun u => D.commutatorElement_rootSubgroup_of_g2_short_pair hd1 ha'1 hg1
+      (ra hij) (ra hik) (ra hkj) A u 1)
+    (fun u => D.commutatorElement_rootSubgroup_G2_of_long_sum hz3 (ra hbe) A 1 u)
+  have wE := g2_words_of_halfTuple (ht := ht) A (fun r : Fin 12 => xE r) htup
+    (fun hc => commute_g2SpecialIsogeny_of_g2ModThreeComm E A hc)
+    (E.commutatorElement_g2SpecialIsogenyRootSubgroup_of_short_long A
+      (ra hγ) (ra hδ) (ra hε) (ra hζ))
+    (fun u => E.commutatorElement_g2SpecialIsogenyRootSubgroup_of_short_pair (l := l) (m := m) A
+      hd1 ha'1 hg1 (ra hij) u 1)
+    (fun u => E.commutatorElement_g2SpecialIsogenyRootSubgroup_of_long_sum A hz3 (ra hbe) 1 u)
+  have hd (u : A) : φ (D.rootSubgroupPoints d A (ofAdd u)) = xE d (ofAdd u) := by
+    rw [(wD u).1, (wE u).1]; simp only [map_mul, map_commutatorElement, ha, hb]
+  have hg (u : A) : φ (D.rootSubgroupPoints g A (ofAdd u)) = xE g (ofAdd u) := by
+    rw [(wD u).2.1, (wE u).2.1]; simp only [map_commutatorElement, hd, ha']
+  have he (u : A) : φ (D.rootSubgroupPoints e A (ofAdd u)) = xE e (ofAdd u) := by
+    rw [(wD u).2.2.1, (wE u).2.2.1]
+    simp only [map_mul, map_inv, map_commutatorElement, hg, hd, ha, hb]
+  have hz (u : A) : φ (D.rootSubgroupPoints z A (ofAdd u)) = xE z (ofAdd u) := by
+    rw [(wD u).2.2.2, (wE u).2.2.2]; simp only [map_commutatorElement, hb, he]
+  exact ⟨fun w => ofAdd_toAdd w ▸ hg (toAdd w), fun w => ofAdd_toAdd w ▸ hd (toAdd w),
+    fun w => ofAdd_toAdd w ▸ he (toAdd w), fun w => ofAdd_toAdd w ▸ hz (toAdd w)⟩
 
 /-- **Simple-root determination for the `G₂` exceptional isogeny.** Any group homomorphism between
 points of type `G₂` Chevalley data over `[ExpChar A 3]` matching `g2SpecialIsogenyRootSubgroup` on
 the positive and negative simple roots matches it on all twelve roots. -/
-theorem map_rootSubgroupPoints_of_g2SpecialIsogeny_simple
-    (φ : D.points A →* E.points A)
+theorem map_rootSubgroupPoints_of_g2SpecialIsogeny_simple (φ : D.points A →* E.points A)
     (hpos : ∀ i u, φ (D.rootSubgroupPoints (G2.simpleIndex ht i) A u) =
-      E.g2SpecialIsogenyRootSubgroup A (G2.simpleIndex ht i) u)
+      xE (G2.simpleIndex ht i) u)
     (hneg : ∀ i u, φ (D.rootSubgroupPoints
-        ((G2.simplyConnectedRootDatum ht).reflectionPerm
-          (G2.simpleIndex ht i) (G2.simpleIndex ht i)) A u) =
-      E.g2SpecialIsogenyRootSubgroup A
-        ((G2.simplyConnectedRootDatum ht).reflectionPerm
-          (G2.simpleIndex ht i) (G2.simpleIndex ht i)) u)
+        ((ΦG2).reflectionPerm (G2.simpleIndex ht i) (G2.simpleIndex ht i)) A u) =
+      xE ((ΦG2).reflectionPerm (G2.simpleIndex ht i) (G2.simpleIndex ht i)) u)
     (α : Fin G2.numRoots) (u : Multiplicative A) :
-    φ (D.rootSubgroupPoints α A u) = E.g2SpecialIsogenyRootSubgroup A α u := by
-  have : CharP A 3 := (expChar_prime_iff (R := A) Nat.prime_three).mp ‹_›
+    φ (D.rootSubgroupPoints α A u) = xE α u := by
+  let Q (r : Fin G2.numRoots) : Prop := ∀ w, φ (D.rootSubgroupPoints r A w) = xE r w
+  let refSelf (x : Fin G2.numRoots) : Fin G2.numRoots := (ΦG2).reflectionPerm x x
   have hs0 : G2.simpleIndex ht (0 : Fin 2) = (0 : Fin 12) := simpleIndex_G2 ht (0 : Fin 2)
   have hs1 : G2.simpleIndex ht (1 : Fin 2) = (1 : Fin 12) := simpleIndex_G2 ht (1 : Fin 2)
-  have h0 : ∀ w, φ (D.rootSubgroupPoints (0 : Fin 12) A w) =
-      E.g2SpecialIsogenyRootSubgroup A (0 : Fin 12) w := by simpa only [hs0] using hpos (0 : Fin 2)
-  have h1 : ∀ w, φ (D.rootSubgroupPoints (1 : Fin 12) A w) =
-      E.g2SpecialIsogenyRootSubgroup A (1 : Fin 12) w := by simpa only [hs1] using hpos (1 : Fin 2)
-  have href (i₀ r₀ : Fin 12) (hr : g2Root r₀ = -g2Root i₀) :
-      (G2.simplyConnectedRootDatum ht).reflectionPerm i₀ i₀ = r₀ := by
-    apply (G2.simplyConnectedRootDatum ht).root.injective
-    have h := ((G2.simplyConnectedRootDatum ht).root_reflectionPerm i₀ i₀).trans
-      ((G2.simplyConnectedRootDatum ht).reflection_apply_self i₀)
-    refine h.trans ?_
-    simpa +instances only [simplyConnectedRootDatum_G2, g2SimplyConnectedRootDatum_root,
-      rank, numRoots] using hr.symm
-  have h6 : ∀ w, φ (D.rootSubgroupPoints (6 : Fin 12) A w) =
-      E.g2SpecialIsogenyRootSubgroup A (6 : Fin 12) w := by
-    have hr6 := href 0 6 (by simp only [g2Root_apply]; decide)
-    simpa only [hs0, hr6] using hneg (0 : Fin 2)
-  have h7 : ∀ w, φ (D.rootSubgroupPoints (7 : Fin 12) A w) =
-      E.g2SpecialIsogenyRootSubgroup A (7 : Fin 12) w := by
-    have hr7 := href 1 7 (by simp only [g2Root_apply]; decide)
-    simpa only [hs1, hr7] using hneg (1 : Fin 2)
-  obtain ⟨h2, h3, h4, h5⟩ := eq_quadruple_of_g2_half D E A φ
-    (a := 0) (b := 1) (g := 2) (d := 3) (e := 4) (z := 5) (a' := 6) (l := 5) (m := 1) (s := 1)
-    (by decide) (by simp only [g2Length_apply]; decide) (by simp only [g2Length_apply]; decide)
-    (by simp only [g2Length_apply]; decide) (by simp only [g2Length_apply]; decide)
-    (by simp only [g2Root_apply]; decide) (by simp only [g2Root_apply]; decide)
-    (by simp only [g2Root_apply]; decide) (by simp only [g2Root_apply]; decide)
-    (by simp only [g2Root_apply]; decide) (by simp only [g2Root_apply]; decide)
-    (by simp only [g2Root_apply]; decide) (by simp only [g2Root_apply]; decide)
-    (by simp only [g2StructureConstant_def]; decide)
-    (by simp only [g2StructureConstant_def]; decide)
-    (by simp only [g2StructureConstant_def]; decide)
-    (by simp only [g2StructureConstant_def]; decide)
-    (by simp only [g2StructureConstant_def]; decide)
-    (by simp only [g2StructureConstant_def]; decide) h0 h1 h6
-  obtain ⟨h8, h9, h10, h11⟩ := eq_quadruple_of_g2_half D E A φ
-    (a := 6) (b := 7) (g := 8) (d := 9) (e := 10) (z := 11) (a' := 0) (l := 11) (m := 7) (s := -1)
-    (by decide) (by simp only [g2Length_apply]; decide) (by simp only [g2Length_apply]; decide)
-    (by simp only [g2Length_apply]; decide) (by simp only [g2Length_apply]; decide)
-    (by simp only [g2Root_apply]; decide) (by simp only [g2Root_apply]; decide)
-    (by simp only [g2Root_apply]; decide) (by simp only [g2Root_apply]; decide)
-    (by simp only [g2Root_apply]; decide) (by simp only [g2Root_apply]; decide)
-    (by simp only [g2Root_apply]; decide) (by simp only [g2Root_apply]; decide)
-    (by simp only [g2StructureConstant_def]; decide)
-    (by simp only [g2StructureConstant_def]; decide)
-    (by simp only [g2StructureConstant_def]; decide)
-    (by simp only [g2StructureConstant_def]; decide)
-    (by simp only [g2StructureConstant_def]; decide)
-    (by simp only [g2StructureConstant_def]; decide) h6 h7 h0
+  have h0 : Q (0 : Fin 12) := hs0 ▸ hpos (0 : Fin 2)
+  have h1 : Q (1 : Fin 12) := hs1 ▸ hpos (1 : Fin 2)
+  have href (i r : Fin 12) (hr : g2Root r = -g2Root i) : refSelf i = r :=
+    (ΦG2).root.injective <|
+      (((ΦG2).root_reflectionPerm i i).trans ((ΦG2).reflection_apply_self i)).trans
+        (by simpa +instances only [simplyConnectedRootDatum_G2, g2SimplyConnectedRootDatum_root,
+          rank, numRoots] using hr.symm)
+  have h6 : Q (6 : Fin 12) := ((congrArg refSelf hs0).trans
+    (href 0 6 (by simp only [g2Root_apply]; decide))) ▸ hneg (0 : Fin 2)
+  have h7 : Q (7 : Fin 12) := ((congrArg refSelf hs1).trans
+    (href 1 7 (by simp only [g2Root_apply]; decide))) ▸ hneg (1 : Fin 2)
+  obtain ⟨h2, h3, h4, h5⟩ := eq_quadruple_of_g2_half D E A φ (g := 2) (d := 3) (e := 4) (z := 5)
+    (l := 5) (m := 1) (s := 1)
+    (by simp only [g2HalfTuple, g2Length_apply, g2Root_apply, g2StructureConstant_def]; decide)
+    h0 h1 h6
+  obtain ⟨h8, h9, h10, h11⟩ := eq_quadruple_of_g2_half D E A φ (g := 8) (d := 9) (e := 10) (z := 11)
+    (l := 11) (m := 7) (s := -1)
+    (by simp only [g2HalfTuple, g2Length_apply, g2Root_apply, g2StructureConstant_def]; decide)
+    h6 h7 h0
   -- Expose `Fin 12` on `α` to dispatch the twelve roots to `h0` through `h11`.
   change Fin 12 at α
-  fin_cases α
-  · exact h0 u
-  · exact h1 u
-  · exact h2 u
-  · exact h3 u
-  · exact h4 u
-  · exact h5 u
-  · exact h6 u
-  · exact h7 u
-  · exact h8 u
-  · exact h9 u
-  · exact h10 u
-  · exact h11 u
+  fin_cases α <;>
+    first | exact h0 u | exact h1 u | exact h2 u | exact h3 u | exact h4 u | exact h5 u |
+      exact h6 u | exact h7 u | exact h8 u | exact h9 u | exact h10 u | exact h11 u
 
 /-- Any endomorphism of `D.points A` matching `g2SpecialIsogenyRootSubgroup` on the signed simple
 roots squares to `D.frobenius 3 1 A` on `D.elementarySubgroup A`. -/
-theorem comp_self_eq_frobenius_of_g2SpecialIsogeny_simple
-    (φ : D.points A →* D.points A)
+theorem comp_self_eq_frobenius_of_g2SpecialIsogeny_simple (φ : D.points A →* D.points A)
     (hpos : ∀ i u, φ (D.rootSubgroupPoints (G2.simpleIndex ht i) A u) =
-      D.g2SpecialIsogenyRootSubgroup A (G2.simpleIndex ht i) u)
+      xG2 (G2.simpleIndex ht i) u)
     (hneg : ∀ i u, φ (D.rootSubgroupPoints
-        ((G2.simplyConnectedRootDatum ht).reflectionPerm
-          (G2.simpleIndex ht i) (G2.simpleIndex ht i)) A u) =
-      D.g2SpecialIsogenyRootSubgroup A
-        ((G2.simplyConnectedRootDatum ht).reflectionPerm
-          (G2.simpleIndex ht i) (G2.simpleIndex ht i)) u)
-    {g : D.points A} (hg : g ∈ D.elementarySubgroup A) :
-    φ (φ g) = D.frobenius 3 1 A g := by
+        ((ΦG2).reflectionPerm (G2.simpleIndex ht i) (G2.simpleIndex ht i)) A u) =
+      xG2 ((ΦG2).reflectionPerm (G2.simpleIndex ht i) (G2.simpleIndex ht i)) u)
+    {g : D.points A} (hg : g ∈ D.elementarySubgroup A) : φ (φ g) = D.frobenius 3 1 A g := by
   have hall := map_rootSubgroupPoints_of_g2SpecialIsogeny_simple D D A φ hpos hneg
   refine (D.elementarySubgroup_le_iff A ((φ.comp φ).eqLocus (D.frobenius 3 1 A))).mpr
     (fun α u => ?_) hg
   -- Membership in `MonoidHom.eqLocus` unfolds to pointwise equality of the two homomorphisms.
   change φ (φ (D.rootSubgroupPoints α A u)) = D.frobenius 3 1 A (D.rootSubgroupPoints α A u)
-  rw [← ofAdd_toAdd u, hall, g2SpecialIsogenyRootSubgroup_ofAdd,
-    hall (g2SpecialIsogeny.indexEquiv α), g2SpecialIsogenyRootSubgroup_comp_self]
+  rw [← ofAdd_toAdd u]
+  exact (congrArg φ ((hall α _).trans (D.g2SpecialIsogenyRootSubgroup_ofAdd A α _))).trans
+    ((hall (g2SpecialIsogeny.indexEquiv α) _).trans
+      (D.g2SpecialIsogenyRootSubgroup_comp_self A α _))
 
 end G2
 
