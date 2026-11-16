@@ -6,16 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.PathSpace.Moore.Sampling
+public import TauCeti.Topology.UnitInterval
 
 /-!
 # Straightening the arcs of a subdivided path
 
-Subdivide the unit interval into `r` equal arcs `[i/r, (i+1)/r]`. A path `f : C(I, X)` can be
-compared with the *broken path* through its vertices `f (i/r)`, which runs on the `i`-th arc
-along a chosen interpolating path from `f (i/r)` to `f ((i+1)/r)`. In a Riemannian manifold the
-interpolating path is the minimizing geodesic between two close points; in a normed space it is
-the segment. This file constructs, for an abstract choice of interpolating paths, the canonical
-homotopy from `f` to its broken path.
+Subdivide the unit interval into `r` equal arcs `[i/r, (i+1)/r]` (`unitInterval.arcPoint`). A
+path `f : C(I, X)` can be compared with the *broken path* through its vertices `f (i/r)`, which
+runs on the `i`-th arc along a chosen interpolating path from `f (i/r)` to `f ((i+1)/r)`. In a
+Riemannian manifold the interpolating path is the minimizing geodesic between two close points; in
+a real topological vector space it is the segment. This file constructs, for an abstract choice of
+interpolating paths, the canonical homotopy from `f` to its broken path.
 
 The interpolation is a map `ρ : X × X → C(I, X)` which, on a set `U` of pairs of points, is
 continuous and runs from the first point to the second, and which is constant on the diagonal
@@ -31,7 +32,8 @@ interpolating path while fixing both of its end points. Doing this on every arc 
 `TauCeti.straightenArcs ρ r f t s`: at `t = 0` it is `f`, at `t = 1` the broken path
 `TauCeti.brokenPath ρ r f`, and every vertex `f (i/r)` stays fixed throughout. It is continuous
 in the path, the time and the parameter for every continuous family of paths whose arcs lie in
-`U` (`TauCeti.continuous_straightenArcs`). The broken path only depends on the vertices of `f`
+`U` (`TauCeti.continuous_straightenArcs`), so the broken path is continuous
+(`TauCeti.continuous_brokenPath`). The broken path only depends on the vertices of `f`
 (`TauCeti.brokenPath_congr`).
 
 For Moore paths the construction is applied to the reparametrization `γ.toUnitPath` to the unit
@@ -63,8 +65,10 @@ reparametrization at unit speed is a separate step.
 
 * `TauCeti.continuous_straightenArcs`: the homotopy is continuous in families.
 * `TauCeti.straightenArcs_zero`, `TauCeti.straightenArcs_one`: its two ends.
-* `TauCeti.straightenArcs_vertex`: it fixes the vertices.
-* `TauCeti.isPathInterpolation_lineMap`: segments interpolate in a normed space.
+* `TauCeti.straightenArcs_arcPoint_zero`: it fixes the vertices.
+* `TauCeti.continuous_brokenPath`: the broken path is continuous.
+* `TauCeti.isPathInterpolation_segment`: segments interpolate in a real topological vector
+  space.
 * `TauCeti.MoorePath.exists_subset_arcsWithin`: compact families are finely subdivided into arcs
   within an entourage.
 
@@ -85,105 +89,6 @@ open Set Topology unitInterval
 namespace TauCeti
 
 variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
-
-/-! ### Subdividing the unit interval -/
-
-section Subdivision
-
-/-- The point `(i + a) / r` of the unit interval: the point at parameter `a` of the `i`-th of the
-`r` equal arcs `[i/r, (i+1)/r]`. -/
-def arcPoint (r i : ℕ) (a : I) : I :=
-  projIcc 0 1 zero_le_one ((i + a) / r)
-
-theorem coe_arcPoint {r i : ℕ} (hi : i < r) (a : I) : (arcPoint r i a : ℝ) = (i + a) / r := by
-  have hr : (0 : ℝ) < r := by exact_mod_cast (Nat.zero_le i).trans_lt hi
-  have hir : (i : ℝ) + 1 ≤ r := by exact_mod_cast hi
-  rw [arcPoint, projIcc_of_mem]
-  exact ⟨by have := a.2.1; positivity, (div_le_one hr).2 (by linarith [a.2.2])⟩
-
-/-- The end of an arc is the start of the next one. -/
-theorem arcPoint_one (r i : ℕ) : arcPoint r i 1 = arcPoint r (i + 1) 0 := by
-  simp [arcPoint]
-
-/-- The index of the arc containing a point `s` of the unit interval, `⌊r s⌋`, except that the
-end point `1` belongs to the last arc. -/
-def arcIndex (r : ℕ) (s : I) : ℕ :=
-  min ⌊(r : ℝ) * s⌋₊ (r - 1)
-
-/-- The position `r s - arcIndex r s` of `s` inside its arc, rescaled to the unit interval. -/
-def arcParam (r : ℕ) (s : I) : I :=
-  projIcc 0 1 zero_le_one ((r : ℝ) * s - arcIndex r s)
-
-theorem arcIndex_lt {r : ℕ} (hr : 0 < r) (s : I) : arcIndex r s < r :=
-  (min_le_right _ _).trans_lt (Nat.sub_lt hr one_pos)
-
-theorem arcIndex_le_mul (r : ℕ) (s : I) : (arcIndex r s : ℝ) ≤ r * s :=
-  (Nat.cast_le.2 (min_le_left _ _)).trans (Nat.floor_le (by have := s.2.1; positivity))
-
-theorem mul_le_arcIndex_add_one {r : ℕ} (hr : 0 < r) (s : I) :
-    (r : ℝ) * s ≤ arcIndex r s + 1 := by
-  rcases le_total ⌊(r : ℝ) * s⌋₊ (r - 1) with h | h
-  · rw [arcIndex, min_eq_left h]
-    exact (Nat.lt_floor_add_one _).le
-  · rw [arcIndex, min_eq_right h, Nat.cast_sub (Nat.one_le_iff_ne_zero.2 hr.ne'), Nat.cast_one,
-      sub_add_cancel]
-    exact mul_le_of_le_one_right (Nat.cast_nonneg r) s.2.2
-
-theorem coe_arcParam {r : ℕ} (hr : 0 < r) (s : I) :
-    (arcParam r s : ℝ) = r * s - arcIndex r s := by
-  rw [arcParam, projIcc_of_mem]
-  exact ⟨sub_nonneg.2 (arcIndex_le_mul r s), by linarith [mul_le_arcIndex_add_one hr s]⟩
-
-/-- A point is the point of its arc at its position in the arc. -/
-theorem arcPoint_arcIndex_arcParam {r : ℕ} (hr : 0 < r) (s : I) :
-    arcPoint r (arcIndex r s) (arcParam r s) = s := by
-  have hr' : (r : ℝ) ≠ 0 := by exact_mod_cast hr.ne'
-  ext
-  rw [coe_arcPoint (arcIndex_lt hr s), coe_arcParam hr, add_sub_cancel, mul_div_cancel_left₀ _ hr']
-
-/-- A point of the `i`-th arc lies in the `i`-th arc, or it is the common end point of the `i`-th
-and the `(i+1)`-th arcs and is counted in the latter. -/
-theorem arcIndex_eq_or {r i : ℕ} (hi : i < r) {s : I} (h₀ : (i : ℝ) ≤ r * s)
-    (h₁ : (r : ℝ) * s ≤ i + 1) :
-    arcIndex r s = i ∨ arcIndex r s = i + 1 ∧ (r : ℝ) * s = i + 1 := by
-  have hs : (0 : ℝ) ≤ r * s := by have := s.2.1; positivity
-  have hle : i ≤ ⌊(r : ℝ) * s⌋₊ := Nat.le_floor h₀
-  have hge : ⌊(r : ℝ) * s⌋₊ ≤ i + 1 := Nat.floor_le_of_le (by exact_mod_cast h₁)
-  rcases (show ⌊(r : ℝ) * s⌋₊ = i ∨ ⌊(r : ℝ) * s⌋₊ = i + 1 by omega) with h | h
-  · left
-    rw [arcIndex, h]
-    omega
-  · have hrs : (r : ℝ) * s = i + 1 :=
-      le_antisymm h₁ (by exact_mod_cast h ▸ Nat.floor_le hs)
-    rcases Nat.lt_or_ge (i + 1) r with hi' | hi'
-    · exact Or.inr ⟨by rw [arcIndex, h]; omega, hrs⟩
-    · left
-      rw [arcIndex, h]
-      omega
-
-/-- The parameter of the arc starting at the vertex `j / r`. -/
-theorem arcIndex_vertex {r j : ℕ} (hj : j < r) :
-    arcIndex r (arcPoint r j 0) = j ∧ arcParam r (arcPoint r j 0) = 0 := by
-  have hr : (r : ℝ) ≠ 0 := by exact_mod_cast ((Nat.zero_le j).trans_lt hj).ne'
-  have hmul : (r : ℝ) * (arcPoint r j 0 : ℝ) = j := by
-    rw [coe_arcPoint hj, Icc.coe_zero, add_zero, mul_div_cancel₀ _ hr]
-  have hidx : arcIndex r (arcPoint r j 0) = j := by
-    rw [arcIndex, hmul, Nat.floor_natCast]
-    omega
-  refine ⟨hidx, ?_⟩
-  rw [arcParam, hidx, hmul, sub_self, projIcc_left]
-  rfl
-
-theorem arcIndex_one {r : ℕ} (hr : 0 < r) : arcIndex r 1 = r - 1 ∧ arcParam r 1 = 1 := by
-  have hidx : arcIndex r 1 = r - 1 := by
-    rw [arcIndex, Icc.coe_one, mul_one, Nat.floor_natCast]
-    omega
-  refine ⟨hidx, ?_⟩
-  rw [arcParam, hidx, Icc.coe_one, mul_one, Nat.cast_sub (Nat.one_le_iff_ne_zero.2 hr.ne'),
-    Nat.cast_one, sub_sub_cancel, projIcc_right]
-  rfl
-
-end Subdivision
 
 /-! ### Sweeping the square -/
 
@@ -228,23 +133,25 @@ end Sweep
 /-- `ρ` is a **path interpolation** on a set `U` of pairs of points: on `U` the path `ρ (x, y)`
 runs from `x` to `y` and depends continuously on `(x, y)`, and it is the constant path at `x`
 when `(x, x) ∈ U`. Minimizing geodesics between close points of a Riemannian manifold, and
-segments in a normed space (`TauCeti.isPathInterpolation_lineMap`), are examples. -/
+segments in a real topological vector space (`TauCeti.isPathInterpolation_segment`), are
+examples. -/
 structure IsPathInterpolation (ρ : X × X → C(I, X)) (U : Set (X × X)) : Prop where
   continuousOn : ContinuousOn ρ U
   apply_zero : ∀ p ∈ U, ρ p 0 = p.1
   apply_one : ∀ p ∈ U, ρ p 1 = p.2
   apply_diag : ∀ x, (x, x) ∈ U → ρ (x, x) = ContinuousMap.const I x
 
-/-- **Segments interpolate** between all pairs of points of a real normed space. -/
-theorem isPathInterpolation_lineMap {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] :
-    IsPathInterpolation (fun p : E × E ↦
-      (⟨fun t ↦ AffineMap.lineMap p.1 p.2 (t : ℝ), by fun_prop⟩ : C(I, E))) univ where
+/-- **Segments interpolate** between all pairs of points of a real topological vector space. -/
+theorem isPathInterpolation_segment {E : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E]
+    [ContinuousAdd E] [ContinuousSMul ℝ E] :
+    IsPathInterpolation (fun p : E × E ↦ (Path.segment p.1 p.2 : C(I, E))) univ where
   continuousOn := (ContinuousMap.continuous_of_continuous_uncurry _ (by
-    simp only [Function.uncurry_def, ContinuousMap.coe_mk, AffineMap.lineMap_apply_module]
+    simp only [Function.uncurry_def, ContinuousMap.coe_mk, Path.segment_apply,
+      AffineMap.lineMap_apply_module]
     fun_prop)).continuousOn
-  apply_zero p _ := by simp
-  apply_one p _ := by simp
-  apply_diag x _ := by ext; simp
+  apply_zero p _ := (Path.segment p.1 p.2).source
+  apply_one p _ := (Path.segment p.1 p.2).target
+  apply_diag x _ := by ext; simp [Path.segment_same]
 
 /-! ### The straightening homotopy -/
 
@@ -262,9 +169,14 @@ vertex: every point of the `i`-th arc forms with `f (i/r)` a pair in `U`. -/
 def ArcsWithin (U : Set (X × X)) (r : ℕ) (f : C(I, X)) : Prop :=
   ∀ i < r, ∀ a : I, (f (arcPoint r i 0), f (arcPoint r i a)) ∈ U
 
-/-- The canonical homotopy from a path `f` to the broken path through its vertices `f (i/r)`,
-`t` being the time of the homotopy and `s` the parameter of the path. On the `i`-th arc it is the
-map of the square `TauCeti.arcSquare` along the sweeping path `TauCeti.sweep`. -/
+/-- The straightening of the arcs of a path `f`, `t` being the time and `s` the parameter of the
+path. On the `i`-th arc, with initial vertex `x = f (i/r)`, it follows the map
+`(a, b) ↦ ρ (x, f ((i + a)/r)) b` of the unit square along a path through the square that runs
+along the top edge `b = 1` at `t = 0` and along the right edge `a = 1` at `t = 1`. At `t = 1` it is
+the broken path `TauCeti.brokenPath ρ r f` (`TauCeti.straightenArcs_one`). If
+`IsPathInterpolation ρ U`, `ArcsWithin U r f` and `0 < r`, it is `f` at `t = 0`
+(`TauCeti.straightenArcs_zero`) and it is continuous (`TauCeti.continuous_straightenArcs`), so it
+is a homotopy from `f` to its broken path. -/
 def straightenArcs (t s : I) : X :=
   arcSquare ρ r f (arcIndex r s) (sweep t (arcParam r s))
 
@@ -320,13 +232,9 @@ private theorem straightenArcs_eq_arcSquare (hρ : IsPathInterpolation ρ U) (hf
   · rw [straightenArcs, arcParam, h]
   · have hi' : i + 1 < r := h ▸ arcIndex_lt ((Nat.zero_le i).trans_lt hi) s
     have hθ : arcParam r s = 0 := by
-      rw [arcParam, h, hs]
-      push_cast
-      rw [sub_self, projIcc_left]
-      rfl
+      simp [arcParam, h, hs]
     have hθ' : projIcc 0 1 zero_le_one ((r : ℝ) * s - i) = 1 := by
-      rw [hs, add_sub_cancel_left, projIcc_right]
-      rfl
+      simp [hs]
     rw [straightenArcs, h, hθ, hθ', arcSquare_sweep_zero hρ hf hi', sweep_right,
       arcSquare_top hρ hf hi, arcPoint_one]
 
@@ -358,6 +266,13 @@ theorem continuous_straightenArcs (hρ : IsPathInterpolation ρ U) (hr : 0 < r)
         (p.2.1, projIcc 0 1 zero_le_one ((r : ℝ) * p.2.2 - i)) := by fun_prop
     exact continuous_snd.comp (continuous_sweep.comp hθ)
 
+/-- The broken path through the vertices of a path whose arcs lie in `U` is continuous. -/
+theorem continuous_brokenPath (hρ : IsPathInterpolation ρ U) (hr : 0 < r) (hf : ArcsWithin U r f) :
+    Continuous (brokenPath ρ r f) := by
+  simpa [Function.comp_def] using
+    (continuous_straightenArcs (Y := Unit) hρ hr continuous_const fun _ ↦ hf).comp
+      (by fun_prop : Continuous fun s : I ↦ ((), (1 : I), s))
+
 /-- At time zero the homotopy is the path itself. -/
 theorem straightenArcs_zero (hρ : IsPathInterpolation ρ U) (hr : 0 < r) (hf : ArcsWithin U r f)
     (s : I) : straightenArcs ρ r f 0 s = f s := by
@@ -365,25 +280,23 @@ theorem straightenArcs_zero (hρ : IsPathInterpolation ρ U) (hr : 0 < r) (hf : 
     arcPoint_arcIndex_arcParam hr]
 
 /-- The homotopy fixes the vertices `f (j/r)`, `j < r`. -/
-theorem straightenArcs_vertex (hρ : IsPathInterpolation ρ U) (hf : ArcsWithin U r f) {j : ℕ}
-    (hj : j < r) (t : I) : straightenArcs ρ r f t (arcPoint r j 0) = f (arcPoint r j 0) := by
-  obtain ⟨hidx, hθ⟩ := arcIndex_vertex hj
-  rw [straightenArcs, hidx, hθ, arcSquare_sweep_zero hρ hf hj]
+theorem straightenArcs_arcPoint_zero (hρ : IsPathInterpolation ρ U) (hf : ArcsWithin U r f)
+    {j : ℕ} (hj : j < r) (t : I) :
+    straightenArcs ρ r f t (arcPoint r j 0) = f (arcPoint r j 0) := by
+  rw [straightenArcs, arcIndex_arcPoint_zero hj, arcParam_arcPoint_zero hj,
+    arcSquare_sweep_zero hρ hf hj]
 
 /-- The homotopy fixes the start point. -/
-theorem straightenArcs_apply_zero (hρ : IsPathInterpolation ρ U) (hr : 0 < r)
+theorem straightenArcs_source (hρ : IsPathInterpolation ρ U) (hr : 0 < r)
     (hf : ArcsWithin U r f) (t : I) : straightenArcs ρ r f t 0 = f 0 := by
-  simpa [arcPoint] using straightenArcs_vertex hρ hf hr t
+  simpa using straightenArcs_arcPoint_zero hρ hf hr t
 
 /-- The homotopy fixes the end point. -/
-theorem straightenArcs_apply_one (hρ : IsPathInterpolation ρ U) (hr : 0 < r)
+theorem straightenArcs_target (hρ : IsPathInterpolation ρ U) (hr : 0 < r)
     (hf : ArcsWithin U r f) (t : I) : straightenArcs ρ r f t 1 = f 1 := by
-  obtain ⟨hidx, hθ⟩ := arcIndex_one hr
-  have hlast : arcPoint r (r - 1) 1 = 1 := by
-    ext
-    rw [coe_arcPoint (Nat.sub_lt hr one_pos), Nat.cast_sub (Nat.one_le_iff_ne_zero.2 hr.ne'),
-      Icc.coe_one, Nat.cast_one, sub_add_cancel, div_self (by exact_mod_cast hr.ne')]
-  rw [straightenArcs, hidx, hθ, sweep_right, arcSquare_top hρ hf (Nat.sub_lt hr one_pos), hlast]
+  rw [straightenArcs, arcIndex_one, arcParam_one hr, sweep_right,
+    arcSquare_top hρ hf (Nat.sub_lt hr one_pos), arcPoint_one, Nat.sub_one_add_one hr.ne',
+    arcPoint_self_zero hr]
 
 /-- The homotopy of a constant path is constant. -/
 theorem straightenArcs_const (hρ : IsPathInterpolation ρ U) {x : X} (hx : (x, x) ∈ U)
@@ -407,22 +320,24 @@ def arcsWithin : Set (MoorePath X) :=
 theorem mem_arcsWithin {γ : MoorePath X} : γ ∈ arcsWithin U r ↔ ArcsWithin U r γ.toUnitPath :=
   Iff.rfl
 
-/-- A Moore path of length zero is constant on the unit interval. -/
-theorem toUnitPath_eq_const_of_length_eq_zero {γ : MoorePath X} (h : γ.length = 0) :
-    γ.toUnitPath = ContinuousMap.const I γ.source := by
-  ext s
-  rw [toUnitPath_apply, h, zero_mul, ContinuousMap.const_apply, source_def]
+/-- A Moore path of length zero whose arcs lie in `U` gives a pair `(γ.source, γ.source)` in
+`U`. -/
+private theorem source_source_mem_of_length_eq_zero {γ : MoorePath X}
+    (hγ : ArcsWithin U r γ.toUnitPath) (hr : 0 < r) (h : γ.length = 0) :
+    (γ.source, γ.source) ∈ U := by
+  have := hγ 0 hr 0
+  rwa [(congrArg toUnitPath (eq_refl_of_length_eq_zero h)).trans (toUnitPath_refl _)] at this
 
 /-- The straightening homotopy on the unit interval, as a continuous map of the time, the Moore
 path and the parameter. -/
-def straightenArcsUnit (hρ : IsPathInterpolation ρ U) (hr : 0 < r) :
+private def straightenArcsUnit (hρ : IsPathInterpolation ρ U) (hr : 0 < r) :
     C((I × arcsWithin U r) × I, X) where
   toFun q := straightenArcs ρ r (q.1.2 : MoorePath X).toUnitPath q.1.1 q.2
   continuous_toFun := (continuous_straightenArcs hρ hr
     (continuous_toUnitPath.comp continuous_subtype_val) fun γ ↦ γ.2).comp
       (by fun_prop : Continuous fun q : (I × arcsWithin U r) × I ↦ (q.1.2, q.1.1, q.2))
 
-theorem straightenArcsUnit_apply (hρ : IsPathInterpolation ρ U) (hr : 0 < r) (t s : I)
+private theorem straightenArcsUnit_apply (hρ : IsPathInterpolation ρ U) (hr : 0 < r) (t s : I)
     (γ : arcsWithin U r) :
     straightenArcsUnit hρ hr ((t, γ), s) = straightenArcs ρ r (γ : MoorePath X).toUnitPath t s :=
   (rfl)
@@ -437,10 +352,8 @@ def arcStraighteningMap (hρ : IsPathInterpolation ρ U) (hr : 0 < r) :
       |>.moorePath_rescale_of_forall_eq_source (by fun_prop) fun p hp t ↦ ?_
     -- A Moore path of length zero is constant, and so is its straightening.
     obtain ⟨t', γ, hγ⟩ := p
-    have hγc := toUnitPath_eq_const_of_length_eq_zero (γ := γ) hp
-    have hx : (γ.source, γ.source) ∈ U := by
-      have := hγ 0 hr 0
-      rwa [hγc] at this
+    have hγc := (congrArg toUnitPath (eq_refl_of_length_eq_zero hp)).trans (toUnitPath_refl _)
+    have hx := source_source_mem_of_length_eq_zero hγ hr hp
     simp only [Function.comp_apply, ofUnitPath_apply, source_ofUnitPath,
       ContinuousMap.curry_apply, straightenArcsUnit_apply, hγc, straightenArcs_const hρ hx]
 
@@ -458,10 +371,8 @@ theorem toUnitPath_arcStraighteningMap (t : I) (γ : arcsWithin U r) (s : I) :
       straightenArcs ρ r (γ : MoorePath X).toUnitPath t s := by
   obtain ⟨γ, hγ⟩ := γ
   rcases eq_or_ne γ.length 0 with h | h
-  · have hγc := toUnitPath_eq_const_of_length_eq_zero h
-    have hx : (γ.source, γ.source) ∈ U := by
-      have := hγ 0 hr 0
-      rwa [hγc] at this
+  · have hγc := (congrArg toUnitPath (eq_refl_of_length_eq_zero h)).trans (toUnitPath_refl _)
+    have hx := source_source_mem_of_length_eq_zero hγ hr h
     simp only [toUnitPath_apply, length_arcStraighteningMap, h, zero_mul]
     simp [arcStraighteningMap, h, hγc, straightenArcs_const hρ hx, straightenArcsUnit_apply]
   · simp only [toUnitPath_apply, arcStraighteningMap, ContinuousMap.coe_mk, length_rescale,
@@ -486,12 +397,12 @@ theorem arcStraighteningMap_zero (γ : arcsWithin U r) :
 theorem source_arcStraighteningMap (t : I) (γ : arcsWithin U r) :
     (arcStraighteningMap hρ hr (t, γ)).source = (γ : MoorePath X).source := by
   rw [← toUnitPath_zero, toUnitPath_arcStraighteningMap,
-    straightenArcs_apply_zero hρ hr γ.2, toUnitPath_zero]
+    straightenArcs_source hρ hr γ.2, toUnitPath_zero]
 
 @[simp]
 theorem target_arcStraighteningMap (t : I) (γ : arcsWithin U r) :
     (arcStraighteningMap hρ hr (t, γ)).target = (γ : MoorePath X).target := by
-  rw [← toUnitPath_one, toUnitPath_arcStraighteningMap, straightenArcs_apply_one hρ hr γ.2,
+  rw [← toUnitPath_one, toUnitPath_arcStraighteningMap, straightenArcs_target hρ hr γ.2,
     toUnitPath_one]
 
 /-- The straightening homotopy fixes the sampled vertices. -/
@@ -499,19 +410,15 @@ theorem target_arcStraighteningMap (t : I) (γ : arcsWithin U r) :
 theorem sample_arcStraighteningMap (t : I) (γ : arcsWithin U r) :
     (arcStraighteningMap hρ hr (t, γ)).sample r = (γ : MoorePath X).sample r := by
   funext i
-  have hvertex : ∀ δ : MoorePath X, δ.sample r i = δ.toUnitPath (arcPoint r i 0) := fun δ ↦ by
-    rw [sample_apply, toUnitPath_apply]
-    congr 2
-    apply NNReal.coe_injective
-    rw [unitInterval.coe_toNNReal, coe_arcPoint i.2]
-    simp
-  rw [hvertex, hvertex, toUnitPath_arcStraighteningMap, straightenArcs_vertex hρ γ.2 i.2]
+  rw [sample_eq_toUnitPath_arcPoint, sample_eq_toUnitPath_arcPoint, toUnitPath_arcStraighteningMap,
+    straightenArcs_arcPoint_zero hρ γ.2 i.2]
 
 /-- The broken path through the sampled vertices of a Moore path whose arcs lie in `U`, of the
 same length. -/
 def brokenPathMap : C(arcsWithin U r, MoorePath X) :=
   (arcStraighteningMap hρ hr).comp ⟨fun γ ↦ (1, γ), by fun_prop⟩
 
+@[simp]
 theorem brokenPathMap_apply (γ : arcsWithin U r) :
     brokenPathMap hρ hr γ = arcStraighteningMap hρ hr (1, γ) :=
   (rfl)
@@ -626,13 +533,7 @@ theorem exists_subset_arcsWithin {K : Set (MoorePath X)} (hK : IsCompact K) {U :
   obtain ⟨N, hN, h⟩ := exists_sample_arc_dist_lt hK hε
   refine ⟨N, hN, fun r hr γ hγ i hi a ↦ hεU ?_⟩
   have hrpos : (0 : ℝ) < r := by exact_mod_cast (Nat.zero_le i).trans_lt hi
-  have hsample : γ.sample r ⟨i, hi⟩ = γ.toUnitPath (arcPoint r i 0) := by
-    rw [sample_apply, toUnitPath_apply]
-    congr 2
-    apply NNReal.coe_injective
-    rw [unitInterval.coe_toNNReal, coe_arcPoint hi]
-    simp
-  rw [← hsample]
+  rw [← sample_eq_toUnitPath_arcPoint γ ⟨i, hi⟩]
   refine h r hr γ hγ ⟨i, hi⟩ (arcPoint r i a) ?_ ?_ <;> rw [coe_arcPoint hi]
   · exact div_le_div_of_nonneg_right (le_add_of_nonneg_right a.2.1) hrpos.le
   · exact div_le_div_of_nonneg_right (by linarith [a.2.2]) hrpos.le
