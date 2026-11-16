@@ -41,7 +41,10 @@ namespace TauCeti.FiniteRankBundleCore
 variable {𝕜 B : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace B]
   {EB HB : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB]
   [TopologicalSpace HB] [ChartedSpace HB B] {I : ModelWithCorners 𝕜 EB HB} {n : ℕ∞ω}
-  (A D C : FiniteRankBundleCore 𝕜 B)
+
+section
+
+variable (A D C : FiniteRankBundleCore 𝕜 B)
   [A.core.IsContMDiff I n] [D.core.IsContMDiff I n] [C.core.IsContMDiff I n]
 
 -- The monoidal coherence isomorphisms are definitionally `constIso` with the data below;
@@ -164,7 +167,12 @@ theorem contMDiffOn_inChartCoordinates_associator_inv (i j : B) :
     (kroneckerAssoc 𝕜 A.rank D.rank C.rank)
     (fun _ _ _ _ _ ↦ kroneckerAssoc_comp_kronecker _ _ _) i j
 
-omit [D.core.IsContMDiff I n] [C.core.IsContMDiff I n] in
+end
+
+section Single
+
+variable (A : FiniteRankBundleCore 𝕜 B) [A.core.IsContMDiff I n]
+
 /-- The forward left unitor has `C^n` chart operators. -/
 theorem contMDiffOn_inChartCoordinates_leftUnitor_hom (i j : B) :
     ContMDiffOn I 𝓘(𝕜, (Fin ((𝟙_ (FiniteRankBundleCore 𝕜 B)) ⊗ A).rank → 𝕜) →L[𝕜]
@@ -176,7 +184,6 @@ theorem contMDiffOn_inChartCoordinates_leftUnitor_hom (i j : B) :
     (fun _ ↦ Set.univ_inter _) (kroneckerLid 𝕜 A.rank)
     (fun _ _ _ _ _ ↦ kroneckerLid_comp_kronecker _) i j
 
-omit [D.core.IsContMDiff I n] [C.core.IsContMDiff I n] in
 /-- The inverse left unitor has `C^n` chart operators. -/
 theorem contMDiffOn_inChartCoordinates_leftUnitor_inv (i j : B) :
     ContMDiffOn I 𝓘(𝕜, (Fin A.rank → 𝕜) →L[𝕜]
@@ -188,7 +195,6 @@ theorem contMDiffOn_inChartCoordinates_leftUnitor_inv (i j : B) :
     (fun _ ↦ Set.univ_inter _) (kroneckerLid 𝕜 A.rank)
     (fun _ _ _ _ _ ↦ kroneckerLid_comp_kronecker _) i j
 
-omit [D.core.IsContMDiff I n] [C.core.IsContMDiff I n] in
 /-- Left whiskering by a `C^n` finite-rank core preserves `C^n` chart operators. -/
 theorem contMDiffOn_inChartCoordinates_whiskerLeft {E E' : FiniteRankBundleCore 𝕜 B} (g : E ⟶ E')
     (hg : ∀ i j, ContMDiffOn I 𝓘(𝕜, (Fin E.rank → 𝕜) →L[𝕜] (Fin E'.rank → 𝕜)) n
@@ -200,29 +206,28 @@ theorem contMDiffOn_inChartCoordinates_whiskerLeft {E E' : FiniteRankBundleCore 
   contMDiffOn_inChartCoordinates_tensorHom (𝟙 A) g
     CoordinateHom.contMDiffOn_inChartCoordinates_id hg i j
 
+end Single
+
 /-! ### Smooth and holomorphic tensor powers -/
 
-omit [C.core.IsContMDiff I n] in
 /-- The monoidal tensor product `A ⊗ D` of `C^n` finite-rank cores is `C^n`. -/
-instance isContMDiff_tensorObj : (A ⊗ D).core.IsContMDiff I n :=
+instance isContMDiff_tensorObj (A D : FiniteRankBundleCore 𝕜 B)
+    [A.core.IsContMDiff I n] [D.core.IsContMDiff I n] : (A ⊗ D).core.IsContMDiff I n :=
   inferInstanceAs ((tensor A D).core.IsContMDiff I n)
 
-omit [A.core.IsContMDiff I n] [D.core.IsContMDiff I n] [C.core.IsContMDiff I n] in
 /-- The monoidal unit `𝟙_ (FiniteRankBundleCore 𝕜 B)` is `C^n` at every regularity. -/
 instance isContMDiff_tensorUnit : (𝟙_ (FiniteRankBundleCore 𝕜 B)).core.IsContMDiff I n :=
   inferInstanceAs ((trivial 𝕜 B 1).core.IsContMDiff I n)
 
-omit [D.core.IsContMDiff I n] [C.core.IsContMDiff I n] in
 /-- Iterated tensor powers of a finite-rank `C^n` core are `C^n`. Over a complex manifold at
 regularity `∞`, this equips `tensorPow A m` with its holomorphic vector-bundle structure. -/
-instance isContMDiff_tensorPow :
+instance isContMDiff_tensorPow (A : FiniteRankBundleCore 𝕜 B) [A.core.IsContMDiff I n] :
     ∀ m : ℕ, (tensorPow A m).core.IsContMDiff I n
   | 0 => inferInstance
   | m + 1 =>
-    letI := isContMDiff_tensorPow m
+    letI := isContMDiff_tensorPow A m
     inferInstance
 
-omit [A.core.IsContMDiff I n] [D.core.IsContMDiff I n] [C.core.IsContMDiff I n] in
 /-- Tensor powers of a morphism with `C^n` chart operators have `C^n` chart operators, without
 completeness or `C^n`-core assumptions on the factors. -/
 theorem contMDiffOn_inChartCoordinates_tensorPowMap {E E' : FiniteRankBundleCore 𝕜 B} (f : E ⟶ E')
@@ -242,10 +247,10 @@ theorem contMDiffOn_inChartCoordinates_tensorPowMap {E E' : FiniteRankBundleCore
     exact contMDiffOn_inChartCoordinates_tensorHom f (tensorPowMap f m) hf
       (contMDiffOn_inChartCoordinates_tensorPowMap f hf m) i j
 
-omit [C.core.IsContMDiff I n] in
 /-- Over a complete scalar field, tensor powers of a `C^n` bundle map between `C^n` finite-rank
 cores are `C^n` on total spaces. -/
 theorem contMDiff_totalSpaceMap_tensorPowMap [CompleteSpace 𝕜]
+    (A D : FiniteRankBundleCore 𝕜 B) [A.core.IsContMDiff I n] [D.core.IsContMDiff I n]
     (f : A ⟶ D)
     (hf : ContMDiff (I.prod 𝓘(𝕜, Fin A.rank → 𝕜)) (I.prod 𝓘(𝕜, Fin D.rank → 𝕜)) n
       f.totalSpaceMap) (m : ℕ) :
@@ -254,7 +259,6 @@ theorem contMDiff_totalSpaceMap_tensorPowMap [CompleteSpace 𝕜]
   (tensorPowMap f m).contMDiff_totalSpaceMap
     (contMDiffOn_inChartCoordinates_tensorPowMap f (f.contMDiff_totalSpaceMap_iff.1 hf) m)
 
-omit [A.core.IsContMDiff I n] [D.core.IsContMDiff I n] [C.core.IsContMDiff I n] in
 /-- The forward unit tensor-power comparison has `C^n` chart operators. -/
 theorem contMDiffOn_inChartCoordinates_tensorPowUnitIso_hom :
     ∀ (m : ℕ) (i j : B),
@@ -278,7 +282,6 @@ theorem contMDiffOn_inChartCoordinates_tensorPowUnitIso_hom :
         (tensorPowUnitIso (FiniteRankBundleCore 𝕜 B) m).hom
         (contMDiffOn_inChartCoordinates_tensorPowUnitIso_hom m)) i j
 
-omit [A.core.IsContMDiff I n] [D.core.IsContMDiff I n] [C.core.IsContMDiff I n] in
 /-- The inverse unit tensor-power comparison has `C^n` chart operators. -/
 theorem contMDiffOn_inChartCoordinates_tensorPowUnitIso_inv :
     ∀ (m : ℕ) (i j : B),
@@ -302,7 +305,6 @@ theorem contMDiffOn_inChartCoordinates_tensorPowUnitIso_inv :
       (contMDiffOn_inChartCoordinates_leftUnitor_inv (I := I) (n := n)
         (𝟙_ (FiniteRankBundleCore 𝕜 B))) i j
 
-omit [A.core.IsContMDiff I n] [D.core.IsContMDiff I n] [C.core.IsContMDiff I n] in
 /-- The unit tensor-power comparison `tensorPow (𝟙_ _) m ≅ 𝟙_ _` as a `C^n` bundle equivalence,
 without completeness assumptions on `𝕜`. -/
 noncomputable def tensorPowUnitDiffeomorph (m : ℕ) :
@@ -319,21 +321,22 @@ noncomputable def tensorPowUnitDiffeomorph (m : ℕ) :
     ((tensorPowUnitIso (FiniteRankBundleCore 𝕜 B) m).inv.contMDiff_totalSpaceMap
       (contMDiffOn_inChartCoordinates_tensorPowUnitIso_inv m))
 
-omit [A.core.IsContMDiff I n] [D.core.IsContMDiff I n] [C.core.IsContMDiff I n] in
 @[simp]
 theorem coe_tensorPowUnitDiffeomorph (m : ℕ) :
     ⇑(tensorPowUnitDiffeomorph (𝕜 := 𝕜) (B := B) (I := I) (n := n) m) =
       (tensorPowUnitIso (FiniteRankBundleCore 𝕜 B) m).hom.totalSpaceMap :=
   CoordinateHom.coe_toDiffeomorphOfInv _ _ _ _ _ _
 
-omit [A.core.IsContMDiff I n] [D.core.IsContMDiff I n] [C.core.IsContMDiff I n] in
 @[simp]
 theorem coe_tensorPowUnitDiffeomorph_symm (m : ℕ) :
     ⇑(tensorPowUnitDiffeomorph (𝕜 := 𝕜) (B := B) (I := I) (n := n) m).symm =
       (tensorPowUnitIso (FiniteRankBundleCore 𝕜 B) m).inv.totalSpaceMap :=
   CoordinateHom.coe_toDiffeomorphOfInv_symm _ _ _ _ _ _
 
-omit [D.core.IsContMDiff I n] [C.core.IsContMDiff I n] in
+section TensorPowAdd
+
+variable (A : FiniteRankBundleCore 𝕜 B) [A.core.IsContMDiff I n]
+
 /-- The forward block decomposition `tensorPow A m ⊗ tensorPow A k ⟶ tensorPow A (k + m)` has
 `C^n` chart operators. -/
 theorem contMDiffOn_inChartCoordinates_tensorPowAddIso_hom (k : ℕ) :
@@ -354,7 +357,6 @@ theorem contMDiffOn_inChartCoordinates_tensorPowAddIso_hom (k : ℕ) :
         (contMDiffOn_inChartCoordinates_tensorPowAddIso_hom k m))
       (contMDiffOn_inChartCoordinates_associator_hom A (tensorPow A m) (tensorPow A k)) i j
 
-omit [D.core.IsContMDiff I n] [C.core.IsContMDiff I n] in
 /-- The inverse block decomposition `tensorPow A (k + m) ⟶ tensorPow A m ⊗ tensorPow A k` has
 `C^n` chart operators. -/
 theorem contMDiffOn_inChartCoordinates_tensorPowAddIso_inv (k : ℕ) :
@@ -375,7 +377,6 @@ theorem contMDiffOn_inChartCoordinates_tensorPowAddIso_inv (k : ℕ) :
       (contMDiffOn_inChartCoordinates_whiskerLeft A (tensorPowAddIso A m k).inv
         (contMDiffOn_inChartCoordinates_tensorPowAddIso_inv k m)) i j
 
-omit [D.core.IsContMDiff I n] [C.core.IsContMDiff I n] in
 /-- The block decomposition `tensorPow A m ⊗ tensorPow A k ≅ tensorPow A (k + m)` as a `C^n`
 bundle equivalence, without completeness assumptions on `𝕜`. -/
 noncomputable def tensorPowAddDiffeomorph (m k : ℕ) :
@@ -391,18 +392,18 @@ noncomputable def tensorPowAddDiffeomorph (m k : ℕ) :
     ((tensorPowAddIso A m k).inv.contMDiff_totalSpaceMap
       (contMDiffOn_inChartCoordinates_tensorPowAddIso_inv A k m))
 
-omit [D.core.IsContMDiff I n] [C.core.IsContMDiff I n] in
 @[simp]
 theorem coe_tensorPowAddDiffeomorph (m k : ℕ) :
     ⇑(tensorPowAddDiffeomorph (I := I) (n := n) A m k) =
       (tensorPowAddIso A m k).hom.totalSpaceMap :=
   CoordinateHom.coe_toDiffeomorphOfInv _ _ _ _ _ _
 
-omit [D.core.IsContMDiff I n] [C.core.IsContMDiff I n] in
 @[simp]
 theorem coe_tensorPowAddDiffeomorph_symm (m k : ℕ) :
     ⇑(tensorPowAddDiffeomorph (I := I) (n := n) A m k).symm =
       (tensorPowAddIso A m k).inv.totalSpaceMap :=
   CoordinateHom.coe_toDiffeomorphOfInv_symm _ _ _ _ _ _
+
+end TensorPowAdd
 
 end TauCeti.FiniteRankBundleCore
