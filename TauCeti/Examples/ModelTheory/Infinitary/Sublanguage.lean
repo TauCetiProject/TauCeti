@@ -26,10 +26,12 @@ downstream module, through public statements only:
 * **Symbol-locality round-trip**: restricting a structure on `Bool` to a sublanguage and
   re-expanding empties out-of-sublanguage relations while preserving satisfaction of sentences
   whose symbols lie in the sublanguage;
-* **Generated countable sublanguage composed with `smallPresentation`**: over an uncountable
-  language in `Language.{1, 1}`, both `φ.symbSublang` (for a sentence `φ`) and
-  `BoundedFormulaInf.setSymbSublang T` (for a countable theory `T`) have countably many symbols,
-  shrink to `Language.{0, 0}` via `smallPresentation`, and preserve `Theoryω.IsSatisfiable` via
+* **Generated countable sublanguage of a sentence composed with `smallPresentation`**: over an
+  uncountable language in `Language.{1, 1}`, `φ.symbSublang` has countably many symbols and
+  shrinks to `Language.{0, 0}` via `smallPresentation`;
+* **Generated countable sublanguage of a countable theory**: over an uncountable language in
+  `Language.{1, 1}`, `BoundedFormulaInf.setSymbSublang T` and
+  `BoundedFormulaInf.toSetSymbSublang T` are countable and preserve `Theoryω.IsSatisfiable` via
   `expandSymbStructure`.
 -/
 
@@ -53,7 +55,7 @@ example :
   intro L R S₀ φ hR
   let : (symbSublang ∅ R).Structure Empty := S₀
   refine ⟨isExpansionOn_expandSymbStructure ∅ R Empty, reduct_expandSymbStructure ∅ R Empty,
-    fun r hr xs => expandSymbStructure_relMap_of_notMem (F := ∅) hr xs,
+    fun r hr xs => not_expandSymbStructure_relMap_of_notMem (F := ∅) hr xs,
     SentenceInf.realize_expandSymbStructure (F := ∅) φ (by simp) hR⟩
 
 -- Over an uncountable algebraic language in `Language.{1, 1}`, expanding a concrete sublanguage
@@ -113,7 +115,7 @@ example :
   refine ⟨fun h => Bool.noConfusion h, ?_, SentenceInf.realize_expandSymbStructure_reduct φ hF hR⟩
   let : (symbSublang (∅ : Set (Σ n, L.Functions n)) R).Structure Bool :=
     (symbSublangIncl ∅ R).reduct Bool
-  exact expandSymbStructure_relMap_of_notMem (F := ∅) hnot ![true]
+  exact not_expandSymbStructure_relMap_of_notMem (F := ∅) hnot ![true]
 
 -- For any `L_{ω₁ω}` sentence `φ` over an uncountable language in `Language.{1, 1}`, its generated
 -- symbol sublanguage `φ.symbSublang` has countably many function and relation symbols and shrinks
@@ -129,7 +131,7 @@ example (φ : (Language.mk.{1, 1} (fun _ => ULift.{1} (ℕ → Bool))
     φ.symbSublang.smallPresentationEquiv.toLHom.onBoundedFormulaInf φ.toSymbSublang, ?_⟩
   rw [← LHom.comp_onBoundedFormulaInf φ.symbSublang.smallPresentationEquiv.invLHom,
     LEquiv.left_inv, LHom.id_onBoundedFormulaInf,
-    BoundedFormulaInf.onBoundedFormulaInf_toSymbSublang]
+    BoundedFormulaInf.onBoundedFormulaInf_restrictSymbols]
 
 -- For any countable `L_{ω₁ω}` theory `T` over an uncountable language `L : Language.{1, 1}`, its
 -- generated symbol sublanguage `L₀ := BoundedFormulaInf.setSymbSublang T` is countable, the
@@ -148,19 +150,19 @@ example :
   dsimp only
   have : Countable T := hT.to_subtype
   refine ⟨inferInstance, inferInstance,
-    BoundedFormulaInf.countable_toSetSymbSublang hT, ?_⟩
+    BoundedFormulaInf.countable_restrictSymbolsSet hT subset_rfl subset_rfl, ?_⟩
   simp only [Theoryω.isSatisfiable_iff]
   constructor
   · rintro ⟨M, instL, hne, hM⟩
     let : (BoundedFormulaInf.setSymbSublang T).Structure M :=
       (BoundedFormulaInf.setSymbSublangIncl T).reduct M
     refine ⟨M, inferInstance, hne, Theoryω.model_iff.2 ?_⟩
-    exact (SentenceInf.forall_realize_toSetSymbSublang_iff T).2
+    exact (SentenceInf.forall_realize_restrictSymbolsSet_iff T subset_rfl subset_rfl).2
       (Theoryω.model_iff.1 hM)
   · rintro ⟨M, instL₀, hne, hM⟩
     let : L.Structure M :=
       expandSymbStructure (BoundedFormulaInf.functionsInSet T)
         (BoundedFormulaInf.relationsInSet T) M
     refine ⟨M, inferInstance, hne, Theoryω.model_iff.2 ?_⟩
-    exact (SentenceInf.forall_realize_expandSymbStructure_toSetSymbSublang_iff T).2
+    exact (SentenceInf.forall_realize_expandSymbStructure_iff T subset_rfl subset_rfl).2
       (Theoryω.model_iff.1 hM)

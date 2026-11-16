@@ -17,7 +17,7 @@ tagged by its arity, `symbSublang F R` is the sublanguage of `L` whose symbols a
 `F` and `R`, and `symbSublangIncl F R` is its inclusion into `L`. The inclusion is injective, the
 sublanguage has countably many symbols of each sort when `F` and `R` are countable, and it is
 relational whenever `L` is relational or `F` is empty. Nested symbol sets `F₁ ⊆ F₂` and `R₁ ⊆ R₂`
-induce an injective inclusion `symbSublangMono hF hR` commuting with the inclusions into `L`.
+induce an injective inclusion `symbSublangInclusion hF hR` commuting with the inclusions into `L`.
 
 Given a `(symbSublang F R)`-structure on `M` and `[Nonempty (L.Structure M)]`—which holds
 automatically on every nonempty carrier (`nonempty_structure_of_nonempty`) and on arbitrary,
@@ -39,7 +39,7 @@ sublanguages of formulas and sets of formulas live in `TauCeti.ModelTheory.Infin
 
 * `FirstOrder.Language.symbSublang`: the sublanguage with the given symbols.
 * `FirstOrder.Language.symbSublangIncl`: its inclusion into `L`, which is injective.
-* `FirstOrder.Language.symbSublangMono`: the inclusion between nested symbol sublanguages.
+* `FirstOrder.Language.symbSublangInclusion`: the inclusion between nested symbol sublanguages.
 * `FirstOrder.Language.expandSymbStructure`: expansion of a `(symbSublang F R)`-structure to an
   `L`-structure under `[Nonempty (L.Structure M)]`.
 * `FirstOrder.Language.Term.restrictSymbols`: the restriction of a term to a sublanguage
@@ -64,7 +64,8 @@ sublanguages of formulas and sets of formulas live in `TauCeti.ModelTheory.Infin
   at commit `518a366cba97b1ae8c4dc64a297a396939bc3e0b`, in
   `InfinitaryLogic/Methods/GeneratedSublanguage.lean`.
   Divergences from that source: the sublanguage lives in the universes of `L` rather than in
-  `Language.{0, 0}`, and `symbSublangMono` and the factorization through a language map are new.
+  `Language.{0, 0}`, and `symbSublangInclusion` and the factorization through a language map are
+  new.
 * `expandSymbStructure` and `isExpansionOn_expandSymbStructure` play the role of
   `InfinitaryLogic/Methods/SymbSublangExpansion.lean` in `cameronfreer/infinitary-logic` at commit
   `518a366cba97b1ae8c4dc64a297a396939bc3e0b` and parallel Mathlib's
@@ -148,57 +149,59 @@ instance isRelational_symbSublang [L.IsRelational] : (symbSublang F R).IsRelatio
 instance isRelational_symbSublang_of_isEmpty [IsEmpty F] : (symbSublang F R).IsRelational :=
   fun n => ⟨fun f => isEmptyElim (⟨⟨n, f.1⟩, f.2⟩ : F)⟩
 
-/-! ### Monotonicity of symbol sublanguages -/
+/-! ### Inclusions between symbol sublanguages -/
 
-section Mono
+section Inclusion
 
 variable {F₁ F₂ F₃ : Set (Σ n, L.Functions n)} {R₁ R₂ R₃ : Set (Σ n, L.Relations n)}
 
 /-- The inclusion of a smaller symbol sublanguage into a larger one. -/
-def symbSublangMono (hF : F₁ ⊆ F₂) (hR : R₁ ⊆ R₂) :
+def symbSublangInclusion (hF : F₁ ⊆ F₂) (hR : R₁ ⊆ R₂) :
     symbSublang F₁ R₁ →ᴸ symbSublang F₂ R₂ where
   onFunction _ f := ⟨f.1, hF f.2⟩
   onRelation _ r := ⟨r.1, hR r.2⟩
 
-/-- `symbSublangMono` sends a function symbol to the same symbol of `L` with widened membership. -/
+/-- `symbSublangInclusion` sends a function symbol to the same symbol of `L` with widened
+membership. -/
 @[simp]
-theorem symbSublangMono_onFunction (hF : F₁ ⊆ F₂) (hR : R₁ ⊆ R₂) {n : ℕ}
+theorem symbSublangInclusion_onFunction (hF : F₁ ⊆ F₂) (hR : R₁ ⊆ R₂) {n : ℕ}
     (f : (symbSublang F₁ R₁).Functions n) :
-    (symbSublangMono hF hR).onFunction f = ⟨f.1, hF f.2⟩ :=
+    (symbSublangInclusion hF hR).onFunction f = ⟨f.1, hF f.2⟩ :=
   (rfl)
 
-/-- `symbSublangMono` sends a relation symbol to the same symbol of `L` with widened membership. -/
+/-- `symbSublangInclusion` sends a relation symbol to the same symbol of `L` with widened
+membership. -/
 @[simp]
-theorem symbSublangMono_onRelation (hF : F₁ ⊆ F₂) (hR : R₁ ⊆ R₂) {n : ℕ}
+theorem symbSublangInclusion_onRelation (hF : F₁ ⊆ F₂) (hR : R₁ ⊆ R₂) {n : ℕ}
     (r : (symbSublang F₁ R₁).Relations n) :
-    (symbSublangMono hF hR).onRelation r = ⟨r.1, hR r.2⟩ :=
+    (symbSublangInclusion hF hR).onRelation r = ⟨r.1, hR r.2⟩ :=
   (rfl)
 
 /-- The inclusion between nested symbol sublanguages is injective. -/
-theorem symbSublangMono_injective (hF : F₁ ⊆ F₂) (hR : R₁ ⊆ R₂) :
-    (symbSublangMono hF hR).Injective :=
+theorem symbSublangInclusion_injective (hF : F₁ ⊆ F₂) (hR : R₁ ⊆ R₂) :
+    (symbSublangInclusion hF hR).Injective :=
   ⟨fun h => Subtype.ext (Subtype.mk.inj h), fun h => Subtype.ext (Subtype.mk.inj h)⟩
 
-/-- Composing the outer inclusion into `L` with `symbSublangMono` gives the inner inclusion. -/
+/-- Composing the outer inclusion into `L` with `symbSublangInclusion` gives the inner inclusion. -/
 @[simp]
-theorem symbSublangIncl_comp_symbSublangMono (hF : F₁ ⊆ F₂) (hR : R₁ ⊆ R₂) :
-    (symbSublangIncl F₂ R₂).comp (symbSublangMono hF hR) = symbSublangIncl F₁ R₁ :=
+theorem symbSublangIncl_comp_symbSublangInclusion (hF : F₁ ⊆ F₂) (hR : R₁ ⊆ R₂) :
+    (symbSublangIncl F₂ R₂).comp (symbSublangInclusion hF hR) = symbSublangIncl F₁ R₁ :=
   LHom.funext (funext fun _ => rfl) (funext fun _ => rfl)
 
-/-- Along reflexive subset proofs, `symbSublangMono` is the identity language map. -/
+/-- Along reflexive subset proofs, `symbSublangInclusion` is the identity language map. -/
 @[simp]
-theorem symbSublangMono_refl (hF : F ⊆ F) (hR : R ⊆ R) :
-    symbSublangMono hF hR = LHom.id (symbSublang F R) :=
+theorem symbSublangInclusion_refl (hF : F ⊆ F) (hR : R ⊆ R) :
+    symbSublangInclusion hF hR = LHom.id (symbSublang F R) :=
   LHom.funext (funext fun _ => rfl) (funext fun _ => rfl)
 
 /-- Inclusions between symbol sublanguages compose to the transitive inclusion. -/
 @[simp]
-theorem symbSublangMono_comp (hF₂ : F₂ ⊆ F₃) (hR₂ : R₂ ⊆ R₃) (hF₁ : F₁ ⊆ F₂) (hR₁ : R₁ ⊆ R₂) :
-    (symbSublangMono hF₂ hR₂).comp (symbSublangMono hF₁ hR₁) =
-      symbSublangMono (hF₁.trans hF₂) (hR₁.trans hR₂) :=
+theorem symbSublangInclusion_comp (hF₂ : F₂ ⊆ F₃) (hR₂ : R₂ ⊆ R₃) (hF₁ : F₁ ⊆ F₂) (hR₁ : R₁ ⊆ R₂) :
+    (symbSublangInclusion hF₂ hR₂).comp (symbSublangInclusion hF₁ hR₁) =
+      symbSublangInclusion (hF₁.trans hF₂) (hR₁.trans hR₂) :=
   LHom.funext (funext fun _ => rfl) (funext fun _ => rfl)
 
-end Mono
+end Inclusion
 
 /-! ### Expanding structures from symbol sublanguages -/
 
@@ -251,7 +254,7 @@ theorem expandSymbStructure_relMap_of_mem {n : ℕ} {r : L.Relations n} (hr : �
   simp [hr]
 
 /-- `expandSymbStructure` interprets every relation symbol outside `R` as empty. -/
-theorem expandSymbStructure_relMap_of_notMem {n : ℕ} {r : L.Relations n} (hr : ⟨n, r⟩ ∉ R)
+theorem not_expandSymbStructure_relMap_of_notMem {n : ℕ} {r : L.Relations n} (hr : ⟨n, r⟩ ∉ R)
     (xs : Fin n → M) :
     ¬ (expandSymbStructure F R M).RelMap r xs := by
   simp [hr]
@@ -319,12 +322,22 @@ theorem onTerm_restrictSymbols (t : L.Term α) (h : t.functionsIn ⊆ F) :
   | var => rfl
   | func f ts ih => simp [LHom.onTerm, ih]
 
-/-- Translating a restricted term along `symbSublangMono` widens its symbol-set bounds. -/
+/-- Restricting an included term recovers the original term. -/
 @[simp]
-theorem onTerm_symbSublangMono_restrictSymbols {F₁ F₂ : Set (Σ n, L.Functions n)}
+theorem restrictSymbols_onTerm (t : (symbSublang F R).Term α)
+    (h : ((symbSublangIncl F R).onTerm t).functionsIn ⊆ F) :
+    ((symbSublangIncl F R).onTerm t).restrictSymbols (R := R) h = t := by
+  induction t with
+  | var => rfl
+  | func f ts ih => simp [LHom.onTerm, ih]
+
+/-- Translating a restricted term along `symbSublangInclusion` widens its symbol-set bounds. -/
+@[simp]
+theorem onTerm_symbSublangInclusion_restrictSymbols {F₁ F₂ : Set (Σ n, L.Functions n)}
     {R₁ R₂ : Set (Σ n, L.Relations n)} (hF : F₁ ⊆ F₂) (hR : R₁ ⊆ R₂) (t : L.Term α)
     (ht : t.functionsIn ⊆ F₁) :
-    (symbSublangMono hF hR).onTerm (t.restrictSymbols ht) = t.restrictSymbols (ht.trans hF) := by
+    (symbSublangInclusion hF hR).onTerm (t.restrictSymbols ht) =
+      t.restrictSymbols (ht.trans hF) := by
   induction t with
   | var => rfl
   | func f ts ih => simp [LHom.onTerm, ih]
@@ -337,11 +350,8 @@ theorem mem_functionsIn_restrictSymbols (t : L.Term α) (h : t.functionsIn ⊆ F
     s ∈ (t.restrictSymbols h).functionsIn ↔
       (⟨s.1, s.2.1⟩ : Σ n, L.Functions n) ∈ t.functionsIn := by
   conv_rhs => rw [← t.onTerm_restrictSymbols (R := R) h, functionsIn_onTerm]
-  refine ⟨fun hs => ⟨s, hs, rfl⟩, ?_⟩
-  rintro ⟨⟨k, f, hf⟩, hs, heq⟩
-  rcases s with ⟨n, g, hg⟩
-  cases heq
-  exact hs
+  exact (Function.injective_id.sigma_map fun _ =>
+    (symbSublangIncl_injective F R).onFunction).mem_set_image.symm
 
 /-- On a carrier where the `L`-structure expands the `(symbSublang F R)`-structure along
 `symbSublangIncl F R`, the restriction of a term evaluates to the same element as the term. -/

@@ -407,126 +407,12 @@ theorem realize_congr_of_agreeOn {M : Type w} (φ : L.BoundedFormulaInf ι α n)
 /-! ### Symbols occurring across a set of formulas -/
 
 /-- The arity-tagged function symbols occurring in at least one formula of `S`. -/
-def functionsInSet (S : Set (L.BoundedFormulaInf ι α n)) : Set (Σ k, L.Functions k) :=
+abbrev functionsInSet (S : Set (L.BoundedFormulaInf ι α n)) : Set (Σ k, L.Functions k) :=
   ⋃ φ ∈ S, φ.functionsIn
 
 /-- The arity-tagged relation symbols occurring in at least one formula of `S`. -/
-def relationsInSet (S : Set (L.BoundedFormulaInf ι α n)) : Set (Σ k, L.Relations k) :=
+abbrev relationsInSet (S : Set (L.BoundedFormulaInf ι α n)) : Set (Σ k, L.Relations k) :=
   ⋃ φ ∈ S, φ.relationsIn
-
-/-- Unfolding equation for `functionsInSet`. -/
-theorem functionsInSet_def (S : Set (L.BoundedFormulaInf ι α n)) :
-    functionsInSet S = ⋃ φ ∈ S, φ.functionsIn :=
-  (rfl)
-
-/-- Unfolding equation for `relationsInSet`. -/
-theorem relationsInSet_def (S : Set (L.BoundedFormulaInf ι α n)) :
-    relationsInSet S = ⋃ φ ∈ S, φ.relationsIn :=
-  (rfl)
-
-/-- A function symbol lies in `functionsInSet S` iff it occurs in some member of `S`. -/
-@[simp]
-theorem mem_functionsInSet_iff {S : Set (L.BoundedFormulaInf ι α n)}
-    {s : Σ k, L.Functions k} :
-    s ∈ functionsInSet S ↔ ∃ φ ∈ S, s ∈ φ.functionsIn := by
-  simp [functionsInSet]
-
-/-- A relation symbol lies in `relationsInSet S` iff it occurs in some member of `S`. -/
-@[simp]
-theorem mem_relationsInSet_iff {S : Set (L.BoundedFormulaInf ι α n)}
-    {s : Σ k, L.Relations k} :
-    s ∈ relationsInSet S ↔ ∃ φ ∈ S, s ∈ φ.relationsIn := by
-  simp [relationsInSet]
-
-/-- `functionsInSet S` is contained in `F` iff every formula of `S` has its function symbols in
-`F`. -/
-@[simp]
-theorem functionsInSet_subset_iff {S : Set (L.BoundedFormulaInf ι α n)}
-    {F : Set (Σ k, L.Functions k)} :
-    functionsInSet S ⊆ F ↔ ∀ φ ∈ S, φ.functionsIn ⊆ F :=
-  Set.iUnion₂_subset_iff
-
-/-- `relationsInSet S` is contained in `R` iff every formula of `S` has its relation symbols in
-`R`. -/
-@[simp]
-theorem relationsInSet_subset_iff {S : Set (L.BoundedFormulaInf ι α n)}
-    {R : Set (Σ k, L.Relations k)} :
-    relationsInSet S ⊆ R ↔ ∀ φ ∈ S, φ.relationsIn ⊆ R :=
-  Set.iUnion₂_subset_iff
-
-/-- No function symbols occur in the empty set of formulas. -/
-@[simp]
-theorem functionsInSet_empty :
-    functionsInSet (∅ : Set (L.BoundedFormulaInf ι α n)) = ∅ := by
-  simp [functionsInSet_def]
-
-/-- No relation symbols occur in the empty set of formulas. -/
-@[simp]
-theorem relationsInSet_empty :
-    relationsInSet (∅ : Set (L.BoundedFormulaInf ι α n)) = ∅ := by
-  simp [relationsInSet_def]
-
-/-- The function symbols of a singleton `{φ}` are those of `φ`. -/
-@[simp]
-theorem functionsInSet_singleton (φ : L.BoundedFormulaInf ι α n) :
-    functionsInSet ({φ} : Set (L.BoundedFormulaInf ι α n)) = φ.functionsIn := by
-  simp [functionsInSet_def]
-
-/-- The relation symbols of a singleton `{φ}` are those of `φ`. -/
-@[simp]
-theorem relationsInSet_singleton (φ : L.BoundedFormulaInf ι α n) :
-    relationsInSet ({φ} : Set (L.BoundedFormulaInf ι α n)) = φ.relationsIn := by
-  simp [relationsInSet_def]
-
-/-- Inserting a formula adds its occurring function symbols. -/
-@[simp]
-theorem functionsInSet_insert (φ : L.BoundedFormulaInf ι α n)
-    (S : Set (L.BoundedFormulaInf ι α n)) :
-    functionsInSet (insert φ S) = φ.functionsIn ∪ functionsInSet S := by
-  simp [functionsInSet_def]
-
-/-- Inserting a formula adds its occurring relation symbols. -/
-@[simp]
-theorem relationsInSet_insert (φ : L.BoundedFormulaInf ι α n)
-    (S : Set (L.BoundedFormulaInf ι α n)) :
-    relationsInSet (insert φ S) = φ.relationsIn ∪ relationsInSet S := by
-  simp [relationsInSet_def]
-
-/-- The function symbols of a union of formula sets are the union of their function symbols. -/
-@[simp]
-theorem functionsInSet_union (S₁ S₂ : Set (L.BoundedFormulaInf ι α n)) :
-    functionsInSet (S₁ ∪ S₂) = functionsInSet S₁ ∪ functionsInSet S₂ := by
-  rw [functionsInSet_def, Set.biUnion_union]
-  rfl
-
-/-- The relation symbols of a union of formula sets are the union of their relation symbols. -/
-@[simp]
-theorem relationsInSet_union (S₁ S₂ : Set (L.BoundedFormulaInf ι α n)) :
-    relationsInSet (S₁ ∪ S₂) = relationsInSet S₁ ∪ relationsInSet S₂ := by
-  rw [relationsInSet_def, Set.biUnion_union]
-  rfl
-
-/-- Every member of `S` has its occurring function symbols in `functionsInSet S`. -/
-theorem subset_functionsInSet_of_mem {φ : L.BoundedFormulaInf ι α n}
-    {S : Set (L.BoundedFormulaInf ι α n)} (hφ : φ ∈ S) :
-    φ.functionsIn ⊆ functionsInSet S :=
-  Set.subset_biUnion_of_mem hφ
-
-/-- Every member of `S` has its occurring relation symbols in `relationsInSet S`. -/
-theorem subset_relationsInSet_of_mem {φ : L.BoundedFormulaInf ι α n}
-    {S : Set (L.BoundedFormulaInf ι α n)} (hφ : φ ∈ S) :
-    φ.relationsIn ⊆ relationsInSet S :=
-  Set.subset_biUnion_of_mem hφ
-
-/-- `functionsInSet` is monotone in the set of formulas. -/
-theorem functionsInSet_mono {S₁ S₂ : Set (L.BoundedFormulaInf ι α n)} (h : S₁ ⊆ S₂) :
-    functionsInSet S₁ ⊆ functionsInSet S₂ :=
-  Set.biUnion_mono h fun _ _ => subset_rfl
-
-/-- `relationsInSet` is monotone in the set of formulas. -/
-theorem relationsInSet_mono {S₁ S₂ : Set (L.BoundedFormulaInf ι α n)} (h : S₁ ⊆ S₂) :
-    relationsInSet S₁ ⊆ relationsInSet S₂ :=
-  Set.biUnion_mono h fun _ _ => subset_rfl
 
 /-- At a countable branching carrier, a countable set of formulas mentions only countably many
 function symbols. -/
@@ -591,9 +477,8 @@ theorem functionsInSet_image_onBoundedFormulaInf (g : L →ᴸ L')
     (S : Set (L.BoundedFormulaInf ι α n)) :
     BoundedFormulaInf.functionsInSet (g.onBoundedFormulaInf '' S) =
       (fun s => ⟨s.1, g.onFunction s.2⟩) '' BoundedFormulaInf.functionsInSet S := by
-  rw [BoundedFormulaInf.functionsInSet_def, BoundedFormulaInf.functionsInSet_def,
-    Set.biUnion_image, Set.image_iUnion₂]
-  simp_rw [functionsIn_onBoundedFormulaInf]
+  simp only [BoundedFormulaInf.functionsInSet, Set.biUnion_image, Set.image_iUnion₂,
+    functionsIn_onBoundedFormulaInf]
 
 /-- Language translation takes the relation symbols occurring across a set of formulas to their
 exact image. -/
@@ -602,9 +487,8 @@ theorem relationsInSet_image_onBoundedFormulaInf (g : L →ᴸ L')
     (S : Set (L.BoundedFormulaInf ι α n)) :
     BoundedFormulaInf.relationsInSet (g.onBoundedFormulaInf '' S) =
       (fun s => ⟨s.1, g.onRelation s.2⟩) '' BoundedFormulaInf.relationsInSet S := by
-  rw [BoundedFormulaInf.relationsInSet_def, BoundedFormulaInf.relationsInSet_def,
-    Set.biUnion_image, Set.image_iUnion₂]
-  simp_rw [relationsIn_onBoundedFormulaInf]
+  simp only [BoundedFormulaInf.relationsInSet, Set.biUnion_image, Set.image_iUnion₂,
+    relationsIn_onBoundedFormulaInf]
 
 end LHom
 

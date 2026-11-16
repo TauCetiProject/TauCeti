@@ -231,16 +231,26 @@ theorem onBoundedFormulaInf_restrictSymbols {n : ℕ} (φ : L.BoundedFormulaInf 
   | iSup φs ih => simp [ih]
   | iInf φs ih => simp [ih]
 
-/-- Translating a restricted formula along `symbSublangMono` widens its symbol-set bounds. -/
+/-- Restricting an included formula recovers the original formula. -/
 @[simp]
-theorem onBoundedFormulaInf_symbSublangMono_restrictSymbols
+theorem restrictSymbols_onBoundedFormulaInf {n : ℕ}
+    (φ : (symbSublang F R).BoundedFormulaInf ι α n)
+    (hF : ((symbSublangIncl F R).onBoundedFormulaInf φ).functionsIn ⊆ F)
+    (hR : ((symbSublangIncl F R).onBoundedFormulaInf φ).relationsIn ⊆ R) :
+    ((symbSublangIncl F R).onBoundedFormulaInf φ).restrictSymbols hF hR = φ :=
+  (symbSublangIncl_injective F R).onBoundedFormulaInf_injective
+    (onBoundedFormulaInf_restrictSymbols _ hF hR)
+
+/-- Translating a restricted formula along `symbSublangInclusion` widens its symbol-set bounds. -/
+@[simp]
+theorem onBoundedFormulaInf_symbSublangInclusion_restrictSymbols
     {F₁ F₂ : Set (Σ k, L.Functions k)} {R₁ R₂ : Set (Σ k, L.Relations k)}
     (hF : F₁ ⊆ F₂) (hR : R₁ ⊆ R₂) {n : ℕ} (φ : L.BoundedFormulaInf ι α n)
     (hF₁ : φ.functionsIn ⊆ F₁) (hR₁ : φ.relationsIn ⊆ R₁) :
-    (symbSublangMono hF hR).onBoundedFormulaInf (φ.restrictSymbols hF₁ hR₁) =
+    (symbSublangInclusion hF hR).onBoundedFormulaInf (φ.restrictSymbols hF₁ hR₁) =
       φ.restrictSymbols (hF₁.trans hF) (hR₁.trans hR) := by
   apply (symbSublangIncl_injective F₂ R₂).onBoundedFormulaInf_injective
-  rw [← LHom.comp_onBoundedFormulaInf, symbSublangIncl_comp_symbSublangMono,
+  rw [← LHom.comp_onBoundedFormulaInf, symbSublangIncl_comp_symbSublangInclusion,
     onBoundedFormulaInf_restrictSymbols, onBoundedFormulaInf_restrictSymbols]
 
 /-- A function symbol of `symbSublang F R` occurs in `φ.restrictSymbols hF hR` iff its underlying
@@ -252,13 +262,10 @@ theorem mem_functionsIn_restrictSymbols {n : ℕ} (φ : L.BoundedFormulaInf ι �
     s ∈ (φ.restrictSymbols hF hR).functionsIn ↔
       (⟨s.1, s.2.1⟩ : Σ k, L.Functions k) ∈ φ.functionsIn := by
   conv_rhs =>
-    rw [← φ.onBoundedFormulaInf_restrictSymbols hF hR, LHom.functionsIn_onBoundedFormulaInf]
-  refine ⟨fun hs => ⟨s, hs, by simp⟩, ?_⟩
-  rintro ⟨⟨k, f, hf⟩, hs, heq⟩
-  simp only [symbSublangIncl_onFunction] at heq
-  rcases s with ⟨m, g, hg⟩
-  cases heq
-  exact hs
+    rw [← φ.onBoundedFormulaInf_restrictSymbols hF hR, LHom.functionsIn_onBoundedFormulaInf,
+      ← symbSublangIncl_onFunction s.2]
+  exact (Function.injective_id.sigma_map fun _ =>
+    (symbSublangIncl_injective F R).onFunction).mem_set_image.symm
 
 /-- A relation symbol of `symbSublang F R` occurs in `φ.restrictSymbols hF hR` iff its underlying
 symbol of `L` occurs in `φ`. -/
@@ -269,13 +276,10 @@ theorem mem_relationsIn_restrictSymbols {n : ℕ} (φ : L.BoundedFormulaInf ι �
     s ∈ (φ.restrictSymbols hF hR).relationsIn ↔
       (⟨s.1, s.2.1⟩ : Σ k, L.Relations k) ∈ φ.relationsIn := by
   conv_rhs =>
-    rw [← φ.onBoundedFormulaInf_restrictSymbols hF hR, LHom.relationsIn_onBoundedFormulaInf]
-  refine ⟨fun hs => ⟨s, hs, by simp⟩, ?_⟩
-  rintro ⟨⟨k, r, hr⟩, hs, heq⟩
-  simp only [symbSublangIncl_onRelation] at heq
-  rcases s with ⟨m, q, hq⟩
-  cases heq
-  exact hs
+    rw [← φ.onBoundedFormulaInf_restrictSymbols hF hR, LHom.relationsIn_onBoundedFormulaInf,
+      ← symbSublangIncl_onRelation s.2]
+  exact (Function.injective_id.sigma_map fun _ =>
+    (symbSublangIncl_injective F R).onRelation).mem_set_image.symm
 
 /-! ### Realization across sublanguage expansions and symbol locality -/
 
@@ -355,20 +359,9 @@ protected abbrev symbSublangIncl {n : ℕ} (φ : L.BoundedFormulaInf ι α n) : 
   Language.symbSublangIncl φ.functionsIn φ.relationsIn
 
 /-- The formula `φ` restricted to its own symbol sublanguage `φ.symbSublang`. -/
-def toSymbSublang {n : ℕ} (φ : L.BoundedFormulaInf ι α n) :
+abbrev toSymbSublang {n : ℕ} (φ : L.BoundedFormulaInf ι α n) :
     φ.symbSublang.BoundedFormulaInf ι α n :=
   φ.restrictSymbols subset_rfl subset_rfl
-
-/-- Unfolding equation for `BoundedFormulaInf.toSymbSublang`. -/
-theorem toSymbSublang_def {n : ℕ} (φ : L.BoundedFormulaInf ι α n) :
-    φ.toSymbSublang = φ.restrictSymbols subset_rfl subset_rfl :=
-  (rfl)
-
-/-- Translating `φ.toSymbSublang` along `φ.symbSublangIncl` recovers `φ`. -/
-@[simp]
-theorem onBoundedFormulaInf_toSymbSublang {n : ℕ} (φ : L.BoundedFormulaInf ι α n) :
-    φ.symbSublangIncl.onBoundedFormulaInf φ.toSymbSublang = φ :=
-  φ.onBoundedFormulaInf_restrictSymbols subset_rfl subset_rfl
 
 /-- Every function symbol of `φ.symbSublang` occurs in `φ.toSymbSublang`. -/
 @[simp]
@@ -383,23 +376,6 @@ theorem relationsIn_toSymbSublang {n : ℕ} (φ : L.BoundedFormulaInf ι α n) :
     φ.toSymbSublang.relationsIn = Set.univ :=
   Set.eq_univ_of_forall fun s =>
     (φ.mem_relationsIn_restrictSymbols subset_rfl subset_rfl).2 s.2.2
-
-/-- Along any expansion of `φ.symbSublangIncl`, `φ.toSymbSublang` is realized iff `φ` is. -/
-@[simp]
-theorem realize_toSymbSublang {M : Type w} [L.Structure M] {n : ℕ}
-    (φ : L.BoundedFormulaInf ι α n) [φ.symbSublang.Structure M]
-    [φ.symbSublangIncl.IsExpansionOn M] (v : α → M) (xs : Fin n → M) :
-    φ.toSymbSublang.Realize v xs ↔ φ.Realize v xs :=
-  φ.realize_restrictSymbols subset_rfl subset_rfl v xs
-
-/-- Expanding a `φ.symbSublang`-structure on `M` via `expandSymbStructure` realizes `φ` iff the
-`φ.symbSublang`-structure realizes `φ.toSymbSublang`. -/
-theorem realize_expandSymbStructure_toSymbSublang {M : Type w} [Nonempty (L.Structure M)]
-    {n : ℕ} (φ : L.BoundedFormulaInf ι α n) [φ.symbSublang.Structure M]
-    (v : α → M) (xs : Fin n → M) :
-    @Realize L ι α M (expandSymbStructure φ.functionsIn φ.relationsIn M) n φ v xs ↔
-      φ.toSymbSublang.Realize v xs :=
-  φ.realize_expandSymbStructure subset_rfl subset_rfl v xs
 
 /-! ### The symbol sublanguage of a set of formulas or sentences -/
 
@@ -440,36 +416,39 @@ def restrictSymbolsSet (S : Set (L.BoundedFormulaInf ι α n))
     (hF : functionsInSet S ⊆ F) (hR : relationsInSet S ⊆ R) :
     Set ((symbSublang F R).BoundedFormulaInf ι α n) :=
   Set.range fun φ : S =>
-    φ.1.restrictSymbols ((subset_functionsInSet_of_mem φ.2).trans hF)
-      ((subset_relationsInSet_of_mem φ.2).trans hR)
+    φ.1.restrictSymbols ((Set.subset_biUnion_of_mem φ.2).trans hF)
+      ((Set.subset_biUnion_of_mem φ.2).trans hR)
 
 /-- Unfolding equation for `restrictSymbolsSet`. -/
 theorem restrictSymbolsSet_def (S : Set (L.BoundedFormulaInf ι α n))
     (hF : functionsInSet S ⊆ F) (hR : relationsInSet S ⊆ R) :
     restrictSymbolsSet S hF hR =
       Set.range fun φ : S =>
-        φ.1.restrictSymbols ((subset_functionsInSet_of_mem φ.2).trans hF)
-          ((subset_relationsInSet_of_mem φ.2).trans hR) :=
+        φ.1.restrictSymbols ((Set.subset_biUnion_of_mem φ.2).trans hF)
+          ((Set.subset_biUnion_of_mem φ.2).trans hR) :=
   (rfl)
 
-/-- Membership characterization for `restrictSymbolsSet`. -/
+/-- A formula in `symbSublang F R` lies in `restrictSymbolsSet S hF hR` iff its image under
+`symbSublangIncl F R` lies in `S`. -/
 @[simp]
 theorem mem_restrictSymbolsSet_iff {S : Set (L.BoundedFormulaInf ι α n)}
     {hF : functionsInSet S ⊆ F} {hR : relationsInSet S ⊆ R}
     {ψ : (symbSublang F R).BoundedFormulaInf ι α n} :
-    ψ ∈ restrictSymbolsSet S hF hR ↔
-      ∃ (φ : L.BoundedFormulaInf ι α n) (hφ : φ ∈ S),
-        φ.restrictSymbols ((subset_functionsInSet_of_mem hφ).trans hF)
-          ((subset_relationsInSet_of_mem hφ).trans hR) = ψ :=
-  Subtype.exists
+    ψ ∈ restrictSymbolsSet S hF hR ↔ (symbSublangIncl F R).onBoundedFormulaInf ψ ∈ S := by
+  constructor
+  · rintro ⟨⟨φ, hφ⟩, rfl⟩
+    simpa only [onBoundedFormulaInf_restrictSymbols] using hφ
+  · intro hψ
+    refine ⟨⟨_, hψ⟩, (symbSublangIncl_injective F R).onBoundedFormulaInf_injective ?_⟩
+    rw [onBoundedFormulaInf_restrictSymbols]
 
 /-- Restricting a member `φ ∈ S` produces a member of `restrictSymbolsSet S hF hR`. -/
 theorem restrictSymbols_mem_restrictSymbolsSet {S : Set (L.BoundedFormulaInf ι α n)}
     {hF : functionsInSet S ⊆ F} {hR : relationsInSet S ⊆ R}
     {φ : L.BoundedFormulaInf ι α n} (hφ : φ ∈ S)
     (hFφ : φ.functionsIn ⊆ F) (hRφ : φ.relationsIn ⊆ R) :
-    φ.restrictSymbols hFφ hRφ ∈ restrictSymbolsSet S hF hR :=
-  mem_restrictSymbolsSet_iff.2 ⟨φ, hφ, rfl⟩
+    φ.restrictSymbols hFφ hRφ ∈ restrictSymbolsSet S hF hR := by
+  simp [hφ]
 
 /-- Restricting the empty set of formulas gives the empty set. -/
 @[simp]
@@ -486,10 +465,46 @@ theorem restrictSymbolsSet_singleton (φ : L.BoundedFormulaInf ι α n)
     (hF : functionsInSet ({φ} : Set (L.BoundedFormulaInf ι α n)) ⊆ F)
     (hR : relationsInSet ({φ} : Set (L.BoundedFormulaInf ι α n)) ⊆ R) :
     restrictSymbolsSet {φ} hF hR =
-      {φ.restrictSymbols ((functionsInSet_singleton φ).symm.subset.trans hF)
-        ((relationsInSet_singleton φ).symm.subset.trans hR)} := by
+      {φ.restrictSymbols ((Set.biUnion_singleton φ _).symm.subset.trans hF)
+        ((Set.biUnion_singleton φ _).symm.subset.trans hR)} := by
   ext ψ
-  simp [eq_comm]
+  simp [← (symbSublangIncl_injective F R).onBoundedFormulaInf_injective.eq_iff]
+
+/-- Restricting `insert φ S` inserts `φ.restrictSymbols` into the restriction of `S`. -/
+@[simp]
+theorem restrictSymbolsSet_insert (φ : L.BoundedFormulaInf ι α n)
+    (S : Set (L.BoundedFormulaInf ι α n))
+    (hF : functionsInSet (insert φ S) ⊆ F) (hR : relationsInSet (insert φ S) ⊆ R) :
+    restrictSymbolsSet (insert φ S) hF hR =
+      insert
+        (φ.restrictSymbols ((Set.subset_biUnion_of_mem (Set.mem_insert φ S)).trans hF)
+          ((Set.subset_biUnion_of_mem (Set.mem_insert φ S)).trans hR))
+        (restrictSymbolsSet S
+          ((Set.biUnion_subset_biUnion_left (Set.subset_insert φ S)).trans hF)
+          ((Set.biUnion_subset_biUnion_left (Set.subset_insert φ S)).trans hR)) := by
+  ext ψ
+  simp [← (symbSublangIncl_injective F R).onBoundedFormulaInf_injective.eq_iff]
+
+/-- Restricting a union of formula sets is the union of their restrictions. -/
+@[simp]
+theorem restrictSymbolsSet_union (S₁ S₂ : Set (L.BoundedFormulaInf ι α n))
+    (hF : functionsInSet (S₁ ∪ S₂) ⊆ F) (hR : relationsInSet (S₁ ∪ S₂) ⊆ R) :
+    restrictSymbolsSet (S₁ ∪ S₂) hF hR =
+      restrictSymbolsSet S₁
+        ((Set.biUnion_subset_biUnion_left Set.subset_union_left).trans hF)
+        ((Set.biUnion_subset_biUnion_left Set.subset_union_left).trans hR) ∪
+      restrictSymbolsSet S₂
+        ((Set.biUnion_subset_biUnion_left Set.subset_union_right).trans hF)
+        ((Set.biUnion_subset_biUnion_left Set.subset_union_right).trans hR) := by
+  ext ψ
+  simp
+
+/-- `restrictSymbolsSet` is monotone in the set of formulas. -/
+theorem restrictSymbolsSet_mono {S₁ S₂ : Set (L.BoundedFormulaInf ι α n)} (h : S₁ ⊆ S₂)
+    {hF₁ : functionsInSet S₁ ⊆ F} {hR₁ : relationsInSet S₁ ⊆ R}
+    {hF₂ : functionsInSet S₂ ⊆ F} {hR₂ : relationsInSet S₂ ⊆ R} :
+    restrictSymbolsSet S₁ hF₁ hR₁ ⊆ restrictSymbolsSet S₂ hF₂ hR₂ :=
+  fun _ hψ => mem_restrictSymbolsSet_iff.2 (h (mem_restrictSymbolsSet_iff.1 hψ))
 
 /-- Translating `restrictSymbolsSet S hF hR` along `symbSublangIncl F R` recovers `S`. For
 `T : L.Theoryω`, the left-hand side is
@@ -501,44 +516,53 @@ theorem image_onBoundedFormulaInf_restrictSymbolsSet (S : Set (L.BoundedFormulaI
   ext φ
   simp [restrictSymbolsSet_def, ← Set.range_comp]
 
-/-- Translating `restrictSymbolsSet` along `symbSublangMono` widens its symbol-set bounds. -/
+/-- Restricting the image of a formula set under `symbSublangIncl F R` recovers the original
+set. -/
 @[simp]
-theorem image_onBoundedFormulaInf_symbSublangMono_restrictSymbolsSet
+theorem restrictSymbolsSet_image_onBoundedFormulaInf
+    (S : Set ((symbSublang F R).BoundedFormulaInf ι α n))
+    (hF : functionsInSet ((symbSublangIncl F R).onBoundedFormulaInf '' S) ⊆ F)
+    (hR : relationsInSet ((symbSublangIncl F R).onBoundedFormulaInf '' S) ⊆ R) :
+    restrictSymbolsSet ((symbSublangIncl F R).onBoundedFormulaInf '' S) hF hR = S := by
+  ext ψ
+  simp [(symbSublangIncl_injective F R).onBoundedFormulaInf_injective.mem_set_image]
+
+/-- Translating `restrictSymbolsSet` along `symbSublangInclusion` widens its symbol-set bounds. -/
+@[simp]
+theorem image_onBoundedFormulaInf_symbSublangInclusion_restrictSymbolsSet
     {F₁ F₂ : Set (Σ k, L.Functions k)} {R₁ R₂ : Set (Σ k, L.Relations k)}
     (hF : F₁ ⊆ F₂) (hR : R₁ ⊆ R₂) (S : Set (L.BoundedFormulaInf ι α n))
     (hF₁ : functionsInSet S ⊆ F₁) (hR₁ : relationsInSet S ⊆ R₁) :
-    (symbSublangMono hF hR).onBoundedFormulaInf '' restrictSymbolsSet S hF₁ hR₁ =
+    (symbSublangInclusion hF hR).onBoundedFormulaInf '' restrictSymbolsSet S hF₁ hR₁ =
       restrictSymbolsSet S (hF₁.trans hF) (hR₁.trans hR) := by
   ext ψ
   simp [restrictSymbolsSet_def, ← Set.range_comp]
 
 /-- A function symbol of `symbSublang F R` occurs in `restrictSymbolsSet S hF hR` iff its
 underlying symbol of `L` occurs in `S`. -/
-@[simp]
 theorem mem_functionsInSet_restrictSymbolsSet (S : Set (L.BoundedFormulaInf ι α n))
     (hF : functionsInSet S ⊆ F) (hR : relationsInSet S ⊆ R)
     {s : Σ k, (symbSublang F R).Functions k} :
     s ∈ functionsInSet (restrictSymbolsSet S hF hR) ↔
       (⟨s.1, s.2.1⟩ : Σ k, L.Functions k) ∈ functionsInSet S := by
-  rw [mem_functionsInSet_iff, mem_functionsInSet_iff]
-  simp only [mem_restrictSymbolsSet_iff]
-  refine ⟨?_, fun ⟨φ, hφ, hs⟩ => ⟨_, ⟨φ, hφ, rfl⟩, (φ.mem_functionsIn_restrictSymbols _ _).2 hs⟩⟩
-  rintro ⟨_, ⟨φ, hφ, rfl⟩, hs⟩
-  exact ⟨φ, hφ, (φ.mem_functionsIn_restrictSymbols _ _).1 hs⟩
+  conv_rhs =>
+    rw [← image_onBoundedFormulaInf_restrictSymbolsSet S hF hR,
+      LHom.functionsInSet_image_onBoundedFormulaInf, ← symbSublangIncl_onFunction s.2]
+  exact (Function.injective_id.sigma_map fun _ =>
+    (symbSublangIncl_injective F R).onFunction).mem_set_image.symm
 
 /-- A relation symbol of `symbSublang F R` occurs in `restrictSymbolsSet S hF hR` iff its
 underlying symbol of `L` occurs in `S`. -/
-@[simp]
 theorem mem_relationsInSet_restrictSymbolsSet (S : Set (L.BoundedFormulaInf ι α n))
     (hF : functionsInSet S ⊆ F) (hR : relationsInSet S ⊆ R)
     {s : Σ k, (symbSublang F R).Relations k} :
     s ∈ relationsInSet (restrictSymbolsSet S hF hR) ↔
       (⟨s.1, s.2.1⟩ : Σ k, L.Relations k) ∈ relationsInSet S := by
-  rw [mem_relationsInSet_iff, mem_relationsInSet_iff]
-  simp only [mem_restrictSymbolsSet_iff]
-  refine ⟨?_, fun ⟨φ, hφ, hs⟩ => ⟨_, ⟨φ, hφ, rfl⟩, (φ.mem_relationsIn_restrictSymbols _ _).2 hs⟩⟩
-  rintro ⟨_, ⟨φ, hφ, rfl⟩, hs⟩
-  exact ⟨φ, hφ, (φ.mem_relationsIn_restrictSymbols _ _).1 hs⟩
+  conv_rhs =>
+    rw [← image_onBoundedFormulaInf_restrictSymbolsSet S hF hR,
+      LHom.relationsInSet_image_onBoundedFormulaInf, ← symbSublangIncl_onRelation s.2]
+  exact (Function.injective_id.sigma_map fun _ =>
+    (symbSublangIncl_injective F R).onRelation).mem_set_image.symm
 
 /-- Restricting a countable set of formulas gives a countable set of formulas in the sublanguage. -/
 theorem countable_restrictSymbolsSet {S : Set (L.BoundedFormulaInf ι α n)} (hS : S.Countable)
@@ -573,40 +597,9 @@ theorem forall_realize_expandSymbStructure_iff {M : Type w} [Nonempty (L.Structu
   exact (forall_realize_restrictSymbolsSet_iff S hF hR v xs).symm
 
 /-- The set `S` restricted to its own generated symbol sublanguage `setSymbSublang S`. -/
-def toSetSymbSublang (S : Set (L.BoundedFormulaInf ι α n)) :
+abbrev toSetSymbSublang (S : Set (L.BoundedFormulaInf ι α n)) :
     Set ((setSymbSublang S).BoundedFormulaInf ι α n) :=
   restrictSymbolsSet S subset_rfl subset_rfl
-
-/-- Unfolding equation for `toSetSymbSublang`. -/
-theorem toSetSymbSublang_def (S : Set (L.BoundedFormulaInf ι α n)) :
-    toSetSymbSublang S = restrictSymbolsSet S subset_rfl subset_rfl :=
-  (rfl)
-
-/-- Membership characterization for `toSetSymbSublang`. -/
-@[simp]
-theorem mem_toSetSymbSublang_iff {S : Set (L.BoundedFormulaInf ι α n)}
-    {ψ : (setSymbSublang S).BoundedFormulaInf ι α n} :
-    ψ ∈ toSetSymbSublang S ↔
-      ∃ (φ : L.BoundedFormulaInf ι α n) (hφ : φ ∈ S),
-        φ.restrictSymbols (subset_functionsInSet_of_mem hφ)
-          (subset_relationsInSet_of_mem hφ) = ψ :=
-  mem_restrictSymbolsSet_iff
-
-/-- Translating `toSetSymbSublang S` along `setSymbSublangIncl S` recovers `S`. -/
-@[simp]
-theorem image_onBoundedFormulaInf_toSetSymbSublang (S : Set (L.BoundedFormulaInf ι α n)) :
-    (setSymbSublangIncl S).onBoundedFormulaInf '' toSetSymbSublang S = S :=
-  image_onBoundedFormulaInf_restrictSymbolsSet S subset_rfl subset_rfl
-
-/-- `toSetSymbSublang S` is countable whenever `S` is countable. -/
-theorem countable_toSetSymbSublang {S : Set (L.BoundedFormulaInf ι α n)} (hS : S.Countable) :
-    (toSetSymbSublang S).Countable :=
-  countable_restrictSymbolsSet hS subset_rfl subset_rfl
-
-/-- The subtype of `toSetSymbSublang S` is countable when `S` is countable. -/
-instance (S : Set (L.BoundedFormulaInf ι α n)) [Countable S] :
-    Countable (toSetSymbSublang S) :=
-  (countable_toSetSymbSublang (Set.to_countable S)).to_subtype
 
 /-- Every function symbol of `setSymbSublang S` occurs in `toSetSymbSublang S`. -/
 @[simp]
@@ -621,25 +614,6 @@ theorem relationsInSet_toSetSymbSublang (S : Set (L.BoundedFormulaInf ι α n)) 
     relationsInSet (toSetSymbSublang S) = Set.univ :=
   Set.eq_univ_of_forall fun s =>
     (mem_relationsInSet_restrictSymbolsSet S subset_rfl subset_rfl).2 s.2.2
-
-/-- Along any expansion of `setSymbSublangIncl S`, every formula in `toSetSymbSublang S` is
-realized at `(v, xs)` iff every formula in `S` is. -/
-theorem forall_realize_toSetSymbSublang_iff {M : Type w} [L.Structure M]
-    (S : Set (L.BoundedFormulaInf ι α n)) [(setSymbSublang S).Structure M]
-    [(setSymbSublangIncl S).IsExpansionOn M] (v : α → M) (xs : Fin n → M) :
-    (∀ ψ ∈ toSetSymbSublang S, ψ.Realize v xs) ↔ ∀ φ ∈ S, φ.Realize v xs :=
-  forall_realize_restrictSymbolsSet_iff S subset_rfl subset_rfl v xs
-
-/-- Expanding a `(setSymbSublang S)`-structure on `M` via `expandSymbStructure` realizes every
-formula in `S` at `(v, xs)` iff the `(setSymbSublang S)`-structure realizes every formula in
-`toSetSymbSublang S`. -/
-theorem forall_realize_expandSymbStructure_toSetSymbSublang_iff {M : Type w}
-    [Nonempty (L.Structure M)] (S : Set (L.BoundedFormulaInf ι α n))
-    [(setSymbSublang S).Structure M] (v : α → M) (xs : Fin n → M) :
-    (∀ φ ∈ S, @Realize L ι α M
-        (expandSymbStructure (functionsInSet S) (relationsInSet S) M) n φ v xs) ↔
-      ∀ ψ ∈ toSetSymbSublang S, ψ.Realize v xs :=
-  forall_realize_expandSymbStructure_iff S subset_rfl subset_rfl v xs
 
 end FormulaSet
 
@@ -693,21 +667,6 @@ theorem realize_expandSymbStructure_reduct {M : Type w} [S : L.Structure M]
   let : (symbSublang F R).Structure M := (symbSublangIncl F R).reduct M
   exact realize_congr_of_isExpansionOn_symbSublangIncl (expandSymbStructure F R M) S φ hF hR v
 
-/-- Along any expansion of `φ.symbSublangIncl`, `φ.toSymbSublang` is realized iff `φ` is. -/
-@[simp]
-theorem realize_toSymbSublang {M : Type w} [L.Structure M] (φ : L.FormulaInf ι α)
-    [φ.symbSublang.Structure M] [φ.symbSublangIncl.IsExpansionOn M] (v : α → M) :
-    FormulaInf.Realize φ.toSymbSublang v ↔ FormulaInf.Realize φ v :=
-  realize_restrictSymbols φ subset_rfl subset_rfl v
-
-/-- Expanding a `φ.symbSublang`-structure on `M` via `expandSymbStructure` realizes `φ` iff the
-`φ.symbSublang`-structure realizes `φ.toSymbSublang`. -/
-theorem realize_expandSymbStructure_toSymbSublang {M : Type w} [Nonempty (L.Structure M)]
-    (φ : L.FormulaInf ι α) [φ.symbSublang.Structure M] (v : α → M) :
-    @FormulaInf.Realize L ι α M (expandSymbStructure φ.functionsIn φ.relationsIn M) φ v ↔
-      FormulaInf.Realize φ.toSymbSublang v :=
-  realize_expandSymbStructure φ subset_rfl subset_rfl v
-
 end FormulaInf
 
 namespace SentenceInf
@@ -757,21 +716,6 @@ theorem realize_expandSymbStructure_reduct {M : Type w} [S : L.Structure M]
   let : (symbSublang F R).Structure M := (symbSublangIncl F R).reduct M
   exact realize_congr_of_isExpansionOn_symbSublangIncl (expandSymbStructure F R M) S φ hF hR
 
-/-- Along any expansion of `φ.symbSublangIncl`, `φ.toSymbSublang` holds iff `φ` does. -/
-@[simp]
-theorem realize_toSymbSublang {M : Type w} [L.Structure M] (φ : L.SentenceInf ι)
-    [φ.symbSublang.Structure M] [φ.symbSublangIncl.IsExpansionOn M] :
-    SentenceInf.Realize φ.toSymbSublang M ↔ SentenceInf.Realize φ M :=
-  realize_restrictSymbols φ subset_rfl subset_rfl
-
-/-- Expanding a `φ.symbSublang`-structure on `M` via `expandSymbStructure` satisfies `φ` iff the
-`φ.symbSublang`-structure satisfies `φ.toSymbSublang`. -/
-theorem realize_expandSymbStructure_toSymbSublang {M : Type w} [Nonempty (L.Structure M)]
-    (φ : L.SentenceInf ι) [φ.symbSublang.Structure M] :
-    @SentenceInf.Realize L ι φ M (expandSymbStructure φ.functionsIn φ.relationsIn M) ↔
-      SentenceInf.Realize φ.toSymbSublang M :=
-  realize_expandSymbStructure φ subset_rfl subset_rfl
-
 /-- Along any expansion of `symbSublangIncl F R`, every sentence in
 `BoundedFormulaInf.restrictSymbolsSet S hF hR` holds in `M` iff every sentence in `S` does. -/
 theorem forall_realize_restrictSymbolsSet_iff {M : Type w} [L.Structure M]
@@ -795,30 +739,6 @@ theorem forall_realize_expandSymbStructure_iff {M : Type w} [Nonempty (L.Structu
   let := expandSymbStructure F R M
   exact (forall_realize_restrictSymbolsSet_iff S hF hR).symm
 
-/-- Along any expansion of `BoundedFormulaInf.setSymbSublangIncl S`, every sentence in
-`BoundedFormulaInf.toSetSymbSublang S` holds in `M` iff every sentence in `S` does. -/
-theorem forall_realize_toSetSymbSublang_iff {M : Type w} [L.Structure M]
-    (S : Set (L.SentenceInf ι)) [(BoundedFormulaInf.setSymbSublang S).Structure M]
-    [(BoundedFormulaInf.setSymbSublangIncl S).IsExpansionOn M] :
-    (∀ ψ ∈ (BoundedFormulaInf.toSetSymbSublang S :
-        Set ((BoundedFormulaInf.setSymbSublang S).SentenceInf ι)),
-      SentenceInf.Realize ψ M) ↔ ∀ φ ∈ S, SentenceInf.Realize φ M :=
-  forall_realize_restrictSymbolsSet_iff S subset_rfl subset_rfl
-
-/-- Expanding a `(BoundedFormulaInf.setSymbSublang S)`-structure on `M` via `expandSymbStructure`
-satisfies every sentence in `S` iff the `(BoundedFormulaInf.setSymbSublang S)`-structure satisfies
-every sentence in `BoundedFormulaInf.toSetSymbSublang S`. -/
-theorem forall_realize_expandSymbStructure_toSetSymbSublang_iff {M : Type w}
-    [Nonempty (L.Structure M)] (S : Set (L.SentenceInf ι))
-    [(BoundedFormulaInf.setSymbSublang S).Structure M] :
-    (∀ φ ∈ S, @SentenceInf.Realize L ι φ M
-        (expandSymbStructure (BoundedFormulaInf.functionsInSet S)
-          (BoundedFormulaInf.relationsInSet S) M)) ↔
-      ∀ ψ ∈ (BoundedFormulaInf.toSetSymbSublang S :
-          Set ((BoundedFormulaInf.setSymbSublang S).SentenceInf ι)),
-        SentenceInf.Realize ψ M :=
-  forall_realize_expandSymbStructure_iff S subset_rfl subset_rfl
-
 end SentenceInf
 
 namespace LHom
@@ -837,7 +757,7 @@ theorem exists_eq_onBoundedFormulaInf_of_subset_range (g : L →ᴸ L') {ι : Ty
     ∃ ψ : L.BoundedFormulaInf ι α n, g.onBoundedFormulaInf ψ = φ := by
   obtain ⟨h, hh⟩ := g.exists_comp_eq_symbSublangIncl hF hR
   refine ⟨h.onBoundedFormulaInf φ.toSymbSublang, ?_⟩
-  rw [← comp_onBoundedFormulaInf, hh, BoundedFormulaInf.onBoundedFormulaInf_toSymbSublang]
+  rw [← comp_onBoundedFormulaInf, hh, BoundedFormulaInf.onBoundedFormulaInf_restrictSymbols]
 
 end LHom
 
