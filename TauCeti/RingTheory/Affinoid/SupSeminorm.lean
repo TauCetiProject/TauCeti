@@ -269,7 +269,7 @@ private theorem spectralNorm_le_norm {A : Type*} [NormedCommRing A] [NormedAlgeb
   have : IsUltrametricDist L :=
     IsUltrametricDist.isUltrametricDist_of_isNonarchimedean_norm fun a b ↦
       isNonarchimedean_spectralNorm (K := K) (L := L) a b
-  have : CompleteSpace L := FiniteDimensional.complete K L
+  have : CompleteSpace L := FiniteDimensional.completeSpace K L
   have hc : Continuous φ := (hA.of_surjective φ hφ).continuous_algHom φ
   let q : A →L[K] L := { toLinearMap := φ.toLinearMap, cont := hc }
   have hq : (φ : A →+* L).IsBounded :=

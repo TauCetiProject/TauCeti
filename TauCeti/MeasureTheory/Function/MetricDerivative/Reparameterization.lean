@@ -16,9 +16,7 @@ import TauCeti.MeasureTheory.Integral.IntervalIntegral.Affine
 An affine change of time multiplies the metric derivative by the absolute value of its slope.
 This pointwise chain rule uses the upper-limit definition of speed, so it requires neither
 differentiability nor absolute continuity of the curve. For nonzero slope, the integral of the
-`p`-th power of speed scales by the absolute slope to the power `p - 1`. Invertible affine changes
-of time preserve absolute continuity on pseudometric spaces, by the fundamental theorem
-for metric curves.
+`p`-th power of speed scales by the absolute slope to the power `p - 1`.
 
 ## References
 
@@ -81,51 +79,5 @@ theorem setLIntegral_metricDerivative_comp_mul_add_rpow (p : ℝ) (γ : ℝ → 
   rw [lintegral_const_mul' _ _ (ENNReal.rpow_ne_top_of_ne_zero h0 ENNReal.ofReal_ne_top)]
   rw [setLIntegral_comp_mul_add_uIoc (fun t ↦ metricDerivative γ t ^ p) hc d a b]
   rw [← mul_assoc, hscale]
-
-section AbsolutelyContinuous
-
-variable {Y : Type*} [PseudoMetricSpace Y] {γ : ℝ → Y} {c d a b : ℝ}
-
-/-- Invertible affine changes of time preserve absolute continuity of metric-valued curves. -/
-theorem _root_.AbsolutelyContinuousOnInterval.comp_mul_add
-    (hγ : AbsolutelyContinuousOnInterval γ (c * a + d) (c * b + d)) (hc : c ≠ 0) :
-    AbsolutelyContinuousOnInterval (fun t ↦ γ (c * t + d)) a b := by
-  have hint (s u : ℝ) :
-      ∫⁻ t in Ι s u, metricDerivative (fun t ↦ γ (c * t + d)) t =
-        ∫⁻ t in Ι (c * s + d) (c * u + d), metricDerivative γ t := by
-    simpa using setLIntegral_metricDerivative_comp_mul_add_rpow 1 γ hc d s u
-  have hmem {t : ℝ} (ht : t ∈ uIcc a b) :
-      c * t + d ∈ uIcc (c * a + d) (c * b + d) := by
-    have hmul : c * t ∈ uIcc (c * a) (c * b) :=
-      image_const_mul_uIcc c a b ▸ mem_image_of_mem (c * ·) ht
-    have hadd := mem_image_of_mem (fun x : ℝ ↦ x + d) hmul
-    rwa [image_add_const_uIcc] at hadd
-  refine absolutelyContinuousOnInterval_of_edist_le_lintegral
-    (m := metricDerivative (fun t ↦ γ (c * t + d))) ?_ ?_
-  · rw [hint]
-    exact hγ.lintegral_metricDerivative_lt_top.ne
-  · intro s hs u hu
-    rw [hint]
-    exact hγ.edist_le_lintegral_metricDerivative (hmem hs) (hmem hu)
-
-/-- Absolute continuity on the transformed interval is equivalent to absolute continuity
-of the affinely reparameterized curve on the original interval. -/
-theorem absolutelyContinuousOnInterval_comp_mul_add_iff (γ : ℝ → Y) {c : ℝ} (hc : c ≠ 0)
-    (d a b : ℝ) :
-    AbsolutelyContinuousOnInterval (fun t ↦ γ (c * t + d)) a b ↔
-      AbsolutelyContinuousOnInterval γ (c * a + d) (c * b + d) := by
-  refine ⟨fun h ↦ ?_, fun h ↦ h.comp_mul_add hc⟩
-  have hinv (t : ℝ) : c * (c⁻¹ * t + -(c⁻¹ * d)) + d = t := by
-    field_simp
-    ring
-  have ha : c⁻¹ * (c * a + d) + -(c⁻¹ * d) = a := by field_simp; ring
-  have hb : c⁻¹ * (c * b + d) + -(c⁻¹ * d) = b := by field_simp; ring
-  have h₁ : AbsolutelyContinuousOnInterval (fun t ↦ γ (c * t + d))
-      (c⁻¹ * (c * a + d) + -(c⁻¹ * d)) (c⁻¹ * (c * b + d) + -(c⁻¹ * d)) := by
-    rwa [ha, hb]
-  have h' := h₁.comp_mul_add (inv_ne_zero hc)
-  simpa only [hinv] using h'
-
-end AbsolutelyContinuous
 
 end TauCeti

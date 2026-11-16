@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.Taylor.Basic
+import TauCeti.Analysis.Normed.Group.UniformContinuity
+import Mathlib.Analysis.Asymptotics.Lemmas
 
 /-!
 # Accumulated Taylor remainders
@@ -13,14 +15,15 @@ public import TauCeti.Analysis.Calculus.Taylor.Basic
 Second-order Taylor errors can be summed along finite grids without a bound on the number of
 grid points. For a function C³ near a compact interval with bounded third derivative there,
 the error is bounded by the largest increment times the sum of squared increments. For a C²
-function, uniform continuity of the second derivative on a compact interval gives a vanishing
+function, local smoothness near a compact set gives a vanishing
 coefficient instead. Consequently, if the largest increment tends to zero and the quadratic
 sums remain bounded, the accumulated remainder tends to zero. The grids may contain
 repetitions or be empty.
 
 These are deterministic estimates for the Taylor-expansion step in change-of-variables
-formulas along paths with controlled quadratic sums. They do not assert convergence of the
-first- or second-order sums separately.
+formulas along paths with controlled quadratic sums. Continuous real paths on a compact
+metric set satisfy the vanishing-increment condition along vanishing-mesh grids.
+The results do not assert convergence of the first- or second-order sums separately.
 
 The one-step expansion uses Mathlib's Taylor theorem with Lagrange remainder.
 -/
@@ -28,7 +31,7 @@ The one-step expansion uses Mathlib's Taylor theorem with Lagrange remainder.
 public section
 
 open Set Filter
-open scoped Topology
+open scoped Topology NNReal
 
 namespace TauCeti
 
@@ -81,13 +84,14 @@ theorem abs_sum_sub_taylorWithinEval_two_le {f : ℝ → ℝ} {a b : ℝ}
     norm_sum_le_of_le (Finset.range n) hstep
 
 /-- The sum of the first- and second-order Taylor terms approximates the endpoint increment
-for functions C² near a fixed compact interval and grids eventually confined to it, with
-vanishing increments and eventually bounded quadratic sums. The grid family may be indexed
-by any filter. No nesting, ordering, or bound on the number of grid points is required. -/
-theorem tendsto_sub_sum_taylor_two {f : ℝ → ℝ} {a b K : ℝ}
-    (hf : ∀ z ∈ Icc a b, ContDiffAt ℝ 2 f z)
+for functions C² near a fixed compact set and grids whose left endpoints are eventually
+confined to it, with vanishing increments and eventually bounded quadratic sums. The grid family
+may be indexed by any filter. No nesting, ordering, or bound on the number of grid points
+is required. -/
+theorem tendsto_sub_sum_taylor_two {f : ℝ → ℝ} {s : Set ℝ} {K : ℝ}
+    (hf : ∀ z ∈ s, ContDiffAt ℝ 2 f z) (hs : IsCompact s)
     {ι : Type*} {l : Filter ι} {x : ι → ℕ → ℝ} {n : ι → ℕ} {δ : ι → ℝ}
-    (hx : ∀ᶠ k in l, ∀ i ≤ n k, x k i ∈ Icc a b)
+    (hx : ∀ᶠ k in l, ∀ i < n k, x k i ∈ s)
     (hδ : ∀ᶠ k in l, ∀ i < n k, |x k (i + 1) - x k i| ≤ δ k)
     (hδ0 : Tendsto δ l (𝓝 0))
     (hQ : ∀ᶠ k in l, ∑ i ∈ Finset.range (n k), (x k (i + 1) - x k i) ^ 2 ≤ K) :
@@ -96,29 +100,64 @@ theorem tendsto_sub_sum_taylor_two {f : ℝ → ℝ} {a b K : ℝ}
       1 / 2 * ∑ i ∈ Finset.range (n k),
         deriv (deriv f) (x k i) * (x k (i + 1) - x k i) ^ 2) l (𝓝 0) := by
   simp_rw [sub_sum_taylor_two_eq_sum_sub_taylorWithinEval]
-  apply Metric.tendsto_nhds.2
-  intro ε hε
-  obtain ⟨η, hη, hTaylor⟩ := exists_pos_forall_abs_sub_taylorWithinEval_two_le
-    hf (div_pos hε (by positivity : 0 < max K 0 + 1))
-  filter_upwards [(tendsto_order.1 hδ0).2 η hη, hx, hδ, hQ] with k hk hxk hδk hQk
-  have hstep i (hi : i ∈ Finset.range (n k)) :
-      ‖f (x k (i + 1)) - taylorWithinEval f 2 univ (x k i) (x k (i + 1))‖ ≤
-        ε / (max K 0 + 1) * (x k (i + 1) - x k i) ^ 2 := by
-    have hi' := Finset.mem_range.1 hi
-    simpa only [Real.norm_eq_abs] using
-      hTaylor _ (hxk i hi'.le) _ (hxk (i + 1) hi') ((hδk i hi').trans_lt hk)
-  have hbound : |∑ i ∈ Finset.range (n k),
-      (f (x k (i + 1)) - taylorWithinEval f 2 univ (x k i) (x k (i + 1)))| ≤
-      ε / (max K 0 + 1) * max K 0 := by
-    calc
-      _ ≤ ε / (max K 0 + 1) *
-          ∑ i ∈ Finset.range (n k), (x k (i + 1) - x k i) ^ 2 := by
-        simpa only [Real.norm_eq_abs, ← Finset.mul_sum] using
-          norm_sum_le_of_le (Finset.range (n k)) hstep
-      _ ≤ _ := by gcongr; exact hQk.trans (le_max_left _ _)
-  rw [Real.dist_eq, sub_zero]
-  apply hbound.trans_lt
-  rw [div_mul_eq_mul_div, div_lt_iff₀ (by positivity : 0 < max K 0 + 1)]
-  linarith
+  -- The compact set may have gaps where the function is not smooth, so use the compact-set
+  -- estimate rather than the parameter-family estimate on a containing interval.
+  have hQnonneg (k : ι) : 0 ≤ ∑ i ∈ Finset.range (n k),
+      (x k (i + 1) - x k i) ^ 2 := Finset.sum_nonneg fun _ _ ↦ sq_nonneg _
+  refine (Asymptotics.isLittleO_one_iff ℝ).1 <|
+    Asymptotics.IsLittleO.trans_isBigO
+      (g := fun k ↦ ∑ i ∈ Finset.range (n k), (x k (i + 1) - x k i) ^ 2)
+      (.of_bound ?_) (.of_bound K ?_)
+  · intro ε hε
+    obtain ⟨η, hη, hTaylor⟩ := exists_pos_forall_abs_sub_taylorWithinEval_two_le_of_isCompact
+      hf hs hε
+    filter_upwards [(tendsto_order.1 hδ0).2 η hη, hx, hδ] with k hk hxk hδk
+    have hstep i (hi : i ∈ Finset.range (n k)) :
+        ‖f (x k (i + 1)) - taylorWithinEval f 2 univ (x k i) (x k (i + 1))‖ ≤
+          ε * (x k (i + 1) - x k i) ^ 2 := by
+      have hi' := Finset.mem_range.1 hi
+      simpa only [Real.norm_eq_abs] using
+        hTaylor _ (hxk i hi') _ ((hδk i hi').trans_lt hk)
+    simpa only [Real.norm_eq_abs,
+      abs_of_nonneg (hQnonneg k), ← Finset.mul_sum] using
+      norm_sum_le_of_le (Finset.range (n k)) hstep
+  · filter_upwards [hQ] with k hk
+    simpa only [Real.norm_eq_abs,
+      abs_of_nonneg (hQnonneg k), norm_one, mul_one] using hk
+
+
+/-- Along grids eventually in a compact metric set with eventually controlled vanishing mesh
+and bounded quadratic sums, the second-order Taylor expansion along a continuous real path has
+vanishing accumulated remainder. The function need only be C² near the path values on that set.
+No variation bound on the path is assumed. -/
+theorem tendsto_sub_sum_taylor_two_of_continuousOn {f : ℝ → ℝ}
+    {α : Type*} [PseudoMetricSpace α] {g : α → ℝ} {s : Set α}
+    (hf : ∀ x ∈ s, ContDiffAt ℝ 2 f (g x)) (hs : IsCompact s) (hg : ContinuousOn g s)
+    {ι : Type*} {l : Filter ι}
+    {n : ι → ℕ} {t : ι → ℕ → α} {δ : ι → ℝ} {K : ℝ}
+    (ht : ∀ᶠ k in l, ∀ i ≤ n k, t k i ∈ s)
+    (hmesh : ∀ᶠ k in l, ∀ i < n k, dist (t k (i + 1)) (t k i) ≤ δ k)
+    (hδ : Tendsto δ l (𝓝 0))
+    (hQ : ∀ᶠ k in l, ∑ i ∈ Finset.range (n k), (g (t k (i + 1)) - g (t k i)) ^ 2 ≤ K) :
+    Tendsto (fun k ↦ f (g (t k (n k))) - f (g (t k 0)) -
+      (∑ i ∈ Finset.range (n k), deriv f (g (t k i)) *
+        (g (t k (i + 1)) - g (t k i))) -
+      1 / 2 * ∑ i ∈ Finset.range (n k), deriv (deriv f) (g (t k i)) *
+        (g (t k (i + 1)) - g (t k i)) ^ 2) l (𝓝 0) := by
+  let D (k : ι) := ‖fun i : Fin (n k) ↦ g (t k (i + 1)) - g (t k i)‖
+  have hD : Tendsto D l (𝓝 0) :=
+    (hs.uniformContinuousOn_of_continuous hg).tendsto_norm_sub_of_dist_le
+      (x := fun k (i : Fin (n k)) ↦ t k i)
+      (y := fun k i ↦ t k (i + 1))
+      (ht.mono fun k htk i ↦ htk i i.isLt.le)
+      (ht.mono fun k htk i ↦ htk (i + 1) i.isLt)
+      (hmesh.mono fun k hk i ↦ hk i i.isLt) hδ
+  apply tendsto_sub_sum_taylor_two
+    (fun z hz ↦ by obtain ⟨x, hx, rfl⟩ := hz; exact hf x hx)
+    (hs.image_of_continuousOn hg) (K := K) (δ := D)
+    (ht.mono fun k htk i hi ↦ mem_image_of_mem g (htk i hi.le))
+    (Eventually.of_forall fun k i hi ↦ ?_) hD hQ
+  simpa only [Real.norm_eq_abs] using
+    norm_le_pi_norm (fun i : Fin (n k) ↦ g (t k (i + 1)) - g (t k i)) ⟨i, hi⟩
 
 end TauCeti

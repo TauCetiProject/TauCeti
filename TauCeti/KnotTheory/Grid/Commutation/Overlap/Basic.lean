@@ -432,8 +432,6 @@ theorem recutLeftEqLeft_toRectangleDecomposition
         congrArg GridRectangleBetween.right hpentagon
   · simp only [recutLeftEqLeft,
       GridPentagonRectangleDecomposition.toRectangleDecomposition_second_left]
-  · simp only [recutLeftEqLeft,
-      GridPentagonRectangleDecomposition.toRectangleDecomposition_second_right]
 
 /-- The promoted pentagon--rectangle decomposition carries the generic recut relation. In
 particular, the two new underlying rectangles are empty and repartition the same covered squares

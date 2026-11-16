@@ -128,6 +128,16 @@ theorem eval_snoc (p : NormalClosureProgram α n) (s : NormalClosureStep α n)
     (p.snoc s).eval f x = Fin.snoc (p.eval f x) (s.eval f x (p.eval f x)) := by
   rfl
 
+/-- Evaluate an appended program at an arbitrary register, including a literal index,
+without expanding the values of unrelated registers. -/
+theorem eval_snoc_apply (p : NormalClosureProgram α n) (s : NormalClosureStep α n)
+    (f : α → G) (x : G) (i : Fin (n + 1)) :
+    (p.snoc s).eval f x i =
+      if hi : (i : ℕ) < n then p.eval f x ⟨i, hi⟩ else s.eval f x (p.eval f x) := by
+  refine Fin.lastCases ?_ (fun j ↦ ?_) i
+  · simp [eval_snoc, Fin.snoc]
+  · simp [eval_snoc, Fin.snoc, j.isLt]
+
 /-- Appending an instruction leaves earlier register values unchanged. -/
 @[simp]
 theorem eval_snoc_castSucc (p : NormalClosureProgram α n) (s : NormalClosureStep α n)

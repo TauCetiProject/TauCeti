@@ -143,7 +143,7 @@ private theorem infinityEval_of_mem_reps (hn : n ≠ 0) (A : TraceFormulaMatrix 
     fin_cases i <;> simp [Matrix.adjugate_fin_two, Matrix.mulVec, dotProduct, hc]
   simp only [infinityEval, LinearMap.comp_apply, hinf, evalCusp_infty, binaryFormAdjugateRep_apply,
     coe_binaryFormRep_apply, eval_linearSubst, hv, ((mem_homogeneousSubmodule _ _).1 P.2).eval_smul,
-    LinearMap.smul_apply]
+    LinearMap.smul_apply, smul_eq_mul]
 
 /-- The linear extension of `infinityEval` to `R[ℳₙ]`. -/
 private noncomputable def infinityEvalAction (hn : n ≠ 0) (hw : Even w) :

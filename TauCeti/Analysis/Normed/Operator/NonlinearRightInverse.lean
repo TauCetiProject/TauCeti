@@ -32,13 +32,13 @@ order of the original continuous linear maps. -/
 def comp (R : T.NonlinearRightInverse) (Q : S.NonlinearRightInverse) :
     (S.comp T).NonlinearRightInverse where
   toFun z := R (Q z)
-  nnnorm := R.nnnorm * Q.nnnorm
+  nnNorm := R.nnNorm * Q.nnNorm
   bound' z := by
     calc
-      ‖R (Q z)‖ ≤ R.nnnorm * ‖Q z‖ := R.bound _
-      _ ≤ R.nnnorm * (Q.nnnorm * ‖z‖) :=
-        mul_le_mul_of_nonneg_left (Q.bound z) R.nnnorm.coe_nonneg
-      _ = (R.nnnorm * Q.nnnorm : ℝ≥0) * ‖z‖ := by
+      ‖R (Q z)‖ ≤ R.nnNorm * ‖Q z‖ := R.bound _
+      _ ≤ R.nnNorm * (Q.nnNorm * ‖z‖) :=
+        mul_le_mul_of_nonneg_left (Q.bound z) R.nnNorm.coe_nonneg
+      _ = (R.nnNorm * Q.nnNorm : ℝ≥0) * ‖z‖ := by
         rw [NNReal.coe_mul, mul_assoc]
   right_inv' z := by
     rw [ContinuousLinearMap.comp_apply, R.right_inv, Q.right_inv]
@@ -52,7 +52,7 @@ theorem comp_apply (R : T.NonlinearRightInverse) (Q : S.NonlinearRightInverse) (
 /-- The public norm-bound constant of the composition is the product of the constants. -/
 @[simp]
 theorem comp_nnnorm (R : T.NonlinearRightInverse) (Q : S.NonlinearRightInverse) :
-    (R.comp Q).nnnorm = R.nnnorm * Q.nnnorm := by
+    (R.comp Q).nnNorm = R.nnNorm * Q.nnNorm := by
   simp only [comp]
 
 end ContinuousLinearMap.NonlinearRightInverse

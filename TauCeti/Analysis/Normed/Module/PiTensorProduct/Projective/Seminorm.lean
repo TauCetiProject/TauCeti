@@ -99,7 +99,7 @@ variable {F : Type*} [AddCommGroup F] [Module 𝕜 F]
 /-- A product-seminorm bound for a multilinear map extends to its canonical tensor lift
 without enlarging the constant or requiring continuity hypotheses. -/
 theorem seminorm_lift_le (p : ∀ i, Seminorm 𝕜 (E i)) (q : Seminorm 𝕜 F)
-    (f : MultilinearMap 𝕜 E F) {C : ℝ} (hC : 0 ≤ C)
+    (f : MultilinearMap (RingHom.id 𝕜) E F) {C : ℝ} (hC : 0 ≤ C)
     (h : ∀ m, q (f m) ≤ C * ∏ i, p i (m i)) (x : ⨂[𝕜] i, E i) :
     q (lift f x) ≤ C * projectiveSeminormOf p x :=
   seminorm_le_mul_projectiveSeminormOf p (q.comp (lift f)) hC (by simpa using h) x

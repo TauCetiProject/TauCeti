@@ -12,7 +12,8 @@ import Mathlib.Analysis.Calculus.LocalExtr.Basic
 /-!
 # Basic properties of sub-Gaussian moment-generating functions
 
-The quadratic MGF bound forces a sub-Gaussian random variable to have mean zero.
+The quadratic MGF bound forces a sub-Gaussian random variable to have mean zero, and is monotone in
+the variance proxy.
 -/
 
 public section
@@ -22,10 +23,18 @@ open scoped NNReal
 
 namespace ProbabilityTheory.HasSubgaussianMGF
 
-/-- A sub-Gaussian MGF bound forces the expectation to vanish. -/
+/-- Monotonicity of `HasSubgaussianMGF` in the variance proxy. -/
+theorem mono {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} {X : Ω → ℝ} {c₁ c₂ : ℝ≥0}
+    (h : HasSubgaussianMGF X c₁ μ) (hle : c₁ ≤ c₂) : HasSubgaussianMGF X c₂ μ :=
+  ⟨h.integrable_exp_mul, fun t ↦ (h.mgf_le t).trans <| by gcongr⟩
+
+/-- Under a zero or probability measure, a sub-Gaussian MGF bound forces the expectation to
+vanish. -/
 theorem integral_eq_zero {Ω : Type*} [MeasurableSpace Ω]
-    {μ : Measure Ω} [IsProbabilityMeasure μ] {X : Ω → ℝ} {c : ℝ≥0}
+    {μ : Measure Ω} [IsZeroOrProbabilityMeasure μ] {X : Ω → ℝ} {c : ℝ≥0}
     (hX : HasSubgaussianMGF X c μ) : μ[X] = 0 := by
+  rcases eq_zero_or_isProbabilityMeasure μ with rfl | hprob
+  · simp
   have hset := hX.integrableExpSet_eq_univ
   have hm : 0 ∈ interior (integrableExpSet X μ) := by simp [hset]
   let g : ℝ → ℝ := (fun t ↦ Real.exp ((c : ℝ) * t ^ 2 / 2)) - mgf X μ

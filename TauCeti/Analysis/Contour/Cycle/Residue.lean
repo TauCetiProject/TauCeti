@@ -153,7 +153,7 @@ theorem classicalResidueTheorem_nullHomologous (hU : IsOpen U)
       (Finset.sum_filter_of_ne fun s _ hs ↦ not_not.mp fun hsU ↦
         hs (by rw [isNullHomologous_iff.mp hnull s hsU, zero_mul])).symm⟩
   rw [hsum]
-  have decomp : PolarPartDecomposition f T U := .ofMeromorphic hU hfT hmeroT
+  have decomp : PolarPartDecomposition f T U := .ofMeromorphic hfT hmeroT
   rw [integral_eq_analyticRemainder_add_sum decomp hCU fun s hs ↦ hoff s (hTS s hs),
     homologyCauchyTheorem hU hCU decomp.analyticRemainder_differentiableOn hnull, zero_add]
 
@@ -190,8 +190,8 @@ theorem cauchyIntegralFormula_iteratedDeriv_nullHomologous {z : ℂ} (hU : IsOpe
     exact (hf.analyticOnNhd hU s hsU).meromorphicAt.div (by fun_prop)
   · exact fun s hs ↦ (Finset.mem_singleton.mp hs) ▸ hoff
 
-/-- **Cauchy's integral formula for a cycle** (roadmap Layer 3). For `f` holomorphic on an open `U`,
-`C` a contour cycle in `U` that is null-homologous there, and `z` off the trace of `C`,
+/-- **Cauchy's integral formula for a cycle.** For `f` holomorphic on an open `U`, `C` a contour
+cycle in `U` that is null-homologous there, and `z` off the trace of `C`,
 
 `Cycle.integral (fun w ↦ f w / (w − z)) C = 2πi · n_z(C) · f z`,
 
