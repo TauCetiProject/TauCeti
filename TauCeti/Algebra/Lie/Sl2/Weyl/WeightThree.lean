@@ -57,7 +57,7 @@ theorem weylAut_apply_of_weight_neg_three (t : IsSl2Triple h e f)
       norm_num [y₁, y₂, y₃, pow_succ', mul_apply_eq_comp]
   have hye : ⁅e, ⁅e, ⁅e, ⁅e, y⁆⁆⁆⁆ = 0 := by
     simpa [pow_succ', mul_apply_eq_comp] using
-      t.pow_ad_apply_eq_zero_of_weight_neg_nat he 3 hyh hyf
+      t.pow_ad_apply_eq_zero_of_weight_neg_nat (he y) 3 hyh hyf
   have hnf' : ∀ z, ∃ k, (ad K L (-f) ^ k) z = 0 :=
     fun z => (hf z).imp fun _ => TauCeti.ad_neg_pow_apply_eq_zero
   have he' := he

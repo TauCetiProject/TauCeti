@@ -38,16 +38,17 @@ variable {K L : Type*} [CommRing K] [LieRing L] [LieAlgebra K L] [LieAlgebra ℚ
 /-- On a lowest-weight vector of weight minus two, the pinned Weyl automorphism is the divided
 second raising bracket. -/
 theorem weylAut_apply_of_lie_eq_neg_two_smul (t : IsSl2Triple h e f)
-    (he : IsNilpotent (ad K L e)) (hf : IsNilpotent (ad K L f))
+    (he : ∀ z, ∃ k, (ad K L e ^ k) z = 0)
+    (hf : ∀ z, ∃ k, (ad K L f ^ k) z = 0)
     (hhy : ⁅h, y⁆ = (-2 : ℚ) • y) (hfy : ⁅f, y⁆ = 0) :
-    weylAut t he.exists_pow_apply_eq_zero hf.exists_pow_apply_eq_zero y =
+    weylAut t he hf y =
       (2⁻¹ : ℚ) • ⁅e, ⁅e, y⁆⁆ := by
-  have hf' := (show IsNilpotent (ad K L (-f)) by
-    simpa only [map_neg] using hf.neg).exists_pow_apply_eq_zero
-  have he' := he.exists_pow_apply_eq_zero
+  have hf' : ∀ z, ∃ k, (ad K L (-f) ^ k) z = 0 :=
+    fun z => (hf z).imp fun _ => ad_neg_pow_apply_eq_zero
+  have he' := he
   have heeey : ⁅e, ⁅e, ⁅e, y⁆⁆⁆ = 0 := by
     simpa only [pow_succ, pow_zero, one_mul, mul_apply_eq_comp, ad_apply] using
-      t.pow_ad_apply_eq_zero_of_weight_neg_nat he.exists_pow_apply_eq_zero 2
+      t.pow_ad_apply_eq_zero_of_weight_neg_nat (he y) 2
         (by simpa using hhy) hfy
   have hfey : ⁅f, ⁅e, y⁆⁆ = (2 : ℚ) • y := by
     simpa only [t.lie_e_f, hhy, hfy, lie_zero, zero_sub, neg_smul, neg_inj] using
@@ -78,20 +79,22 @@ theorem weylAut_apply_of_lie_eq_neg_two_smul (t : IsSl2Triple h e f)
     module
   have hE2 : expAd e he' ⁅e, ⁅e, y⁆⁆ = ⁅e, ⁅e, y⁆⁆ :=
     expAd_apply_of_lie_eq_zero he' heeey
-  rw [weylAut_apply he' hf.exists_pow_apply_eq_zero t, hmiddle, map_rat_smul, hE2]
+  rw [weylAut_apply he' hf t, hmiddle, map_rat_smul, hE2]
 
 /-- On a highest-weight vector of weight two, the pinned Weyl automorphism is the
 second lowering bracket divided by two. -/
 theorem weylAut_apply_of_lie_eq_two_smul (t : IsSl2Triple h e f)
-    (he : IsNilpotent (ad K L e)) (hf : IsNilpotent (ad K L f))
+    (he : ∀ z, ∃ k, (ad K L e ^ k) z = 0)
+    (hf : ∀ z, ∃ k, (ad K L f ^ k) z = 0)
     (hhy : ⁅h, y⁆ = (2 : ℚ) • y) (hey : ⁅e, y⁆ = 0) :
-    weylAut t he.exists_pow_apply_eq_zero hf.exists_pow_apply_eq_zero y =
+    weylAut t he hf y =
       (2⁻¹ : ℚ) • ⁅f, ⁅f, y⁆⁆ := by
-  have hnf : IsNilpotent (ad K L (-f)) := by simpa using hf.neg
-  have hne : IsNilpotent (ad K L (-e)) := by simpa using he.neg
+  have hnf : ∀ z, ∃ k, (ad K L (-f) ^ k) z = 0 :=
+    fun z => (hf z).imp fun _ => ad_neg_pow_apply_eq_zero
+  have hne : ∀ z, ∃ k, (ad K L (-e) ^ k) z = 0 :=
+    fun z => (he z).imp fun _ => ad_neg_pow_apply_eq_zero
   have hweight : ⁅-h, y⁆ = (-2 : ℚ) • y := by simp [hhy]
-  rw [← t.weylAut_neg_symm he.exists_pow_apply_eq_zero hf.exists_pow_apply_eq_zero
-    hnf.exists_pow_apply_eq_zero hne.exists_pow_apply_eq_zero]
+  rw [← t.weylAut_neg_symm he hf hnf hne]
   simpa only [neg_lie, lie_neg, neg_neg] using
     t.neg_symm.weylAut_apply_of_lie_eq_neg_two_smul hnf hne hweight (by simp [hey])
 
@@ -109,8 +112,9 @@ theorem weylUnit_conj_of_lie_eq_neg_two_smul (t : IsSl2Triple H E F)
     (weylUnit hE hF : A) * Y * ↑(weylUnit hE hF)⁻¹ =
       (2⁻¹ : ℚ) • ⁅E, ⁅E, Y⁆⁆ := by
   rw [← weylAut_apply_eq_weylUnit_conj (K := ℚ) t hE hF]
-  exact t.weylAut_apply_of_lie_eq_neg_two_smul (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hE)
-    (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hF) hHY hFY
+  exact t.weylAut_apply_of_lie_eq_neg_two_smul
+    (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hE).exists_pow_apply_eq_zero
+    (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hF).exists_pow_apply_eq_zero hHY hFY
 
 /-- The pinned Weyl unit conjugates a highest-weight vector of weight two to its
 second lowering bracket divided by two. -/
@@ -120,8 +124,9 @@ theorem weylUnit_conj_of_lie_eq_two_smul (t : IsSl2Triple H E F)
     (weylUnit hE hF : A) * Y * ↑(weylUnit hE hF)⁻¹ =
       (2⁻¹ : ℚ) • ⁅F, ⁅F, Y⁆⁆ := by
   rw [← weylAut_apply_eq_weylUnit_conj (K := ℚ) t hE hF]
-  exact t.weylAut_apply_of_lie_eq_two_smul (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hE)
-    (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hF) hHY hEY
+  exact t.weylAut_apply_of_lie_eq_two_smul
+    (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hE).exists_pow_apply_eq_zero
+    (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hF).exists_pow_apply_eq_zero hHY hEY
 
 end Associative
 

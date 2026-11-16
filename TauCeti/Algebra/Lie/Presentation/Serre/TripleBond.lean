@@ -80,10 +80,7 @@ private theorem long_node_string (hs : IsSerreSystem ℚ CM H E F)
     rw [lie_smul, hcomm, hcomm, ← lie_skew (F j) ⁅E i, E j⁆,
       hs.lie_lie_E_E_F_of_ne hne]
     simp
-  have heec : ⁅E j, ⁅E j, c⁆⁆ = 0 := by
-    simpa [pow_succ', mul_apply_eq_comp] using tj.pow_ad_apply_eq_zero_of_weight_neg_nat hej 1
-      (by simpa using hjc) hfjc
-  have hbc : b c = d := tj.weylAut_apply_of_lie_h_eq_neg hej hfj hjc hfjc heec
+  have hbc : b c = d := tj.weylAut_apply_of_lie_h_eq_neg hej hfj hjc hfjc
   have hfjd : ⁅F j, d⁆ = c := by
     dsimp only [d]
     rw [leibniz_lie (F j) (E j) c, ← lie_skew (F j) (E j), tj.lie_e_f, neg_lie,
@@ -137,7 +134,7 @@ private theorem short_node_fixes_highest_long_root (hs : IsSerreSystem ℚ CM H 
     simp only [smul_lie, lie_smul]
     module
   have hed : ⁅E i, d⁆ = 0 := by
-    simpa using ti.pow_ad_apply_eq_zero_of_weight_neg_nat hei 0 hhd hfd
+    simpa using ti.pow_ad_apply_eq_zero_of_weight_neg_nat (hei d) 0 hhd hfd
   exact weylAut_apply_of_lie_eq_zero hei hfi ti
     (by rw [← lie_skew d (E i), hed, neg_zero])
     (by rw [← lie_skew d (F i), hfd, neg_zero])

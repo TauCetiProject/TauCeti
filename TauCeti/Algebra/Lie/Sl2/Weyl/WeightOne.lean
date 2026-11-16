@@ -6,14 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Sl2.Weyl.Automorphism
+import TauCeti.Algebra.Lie.Sl2.WeightString
 
 /-!
 # The Weyl automorphism on a two-dimensional root string
 
-For an `sl₂` triple, a lowest-weight vector of weight minus one whose raising string has
-length two is sent to its raising bracket by the pinned Weyl automorphism. Dually, conjugation
-by the Weyl unit sends a highest-weight element of weight one to its negated lowering bracket.
-These formulas determine parameter signs when transporting root subgroups across a single bond.
+For an `sl₂` triple with locally nilpotent raising and lowering adjoints, a lowest-weight
+vector of weight minus one is sent to its raising bracket by the pinned Weyl automorphism.
+Dually, conjugation by the Weyl unit sends a highest-weight element of weight one to its negated
+lowering bracket. These formulas determine parameter signs when transporting root subgroups
+across a single bond.
 
 ## References
 
@@ -30,13 +32,16 @@ open TauCeti LieAlgebra
 variable {K L : Type*} [CommRing K] [LieRing L] [LieAlgebra K L] [LieAlgebra ℚ L]
   {h e f : L}
 
-/-- The pinned Weyl automorphism sends a lowest-weight vector of weight minus one on a
-length-two raising string to its raising bracket. -/
+/-- The pinned Weyl automorphism sends a lowest-weight vector of weight minus one
+to its raising bracket. -/
 theorem weylAut_apply_of_lie_h_eq_neg (t : IsSl2Triple h e f)
     (he : ∀ z, ∃ k, (ad K L e ^ k) z = 0)
     (hf : ∀ z, ∃ k, (ad K L f ^ k) z = 0) {y : L}
-    (hhy : ⁅h, y⁆ = -y) (hfy : ⁅f, y⁆ = 0) (heey : ⁅e, ⁅e, y⁆⁆ = 0) :
+    (hhy : ⁅h, y⁆ = -y) (hfy : ⁅f, y⁆ = 0) :
     weylAut t he hf y = ⁅e, y⁆ := by
+  have heey : ⁅e, ⁅e, y⁆⁆ = 0 := by
+    simpa [pow_succ', mul_apply_eq_comp] using
+      t.pow_ad_apply_eq_zero_of_weight_neg_nat (he y) 1 (by simpa using hhy) hfy
   have hf' : ∀ z, ∃ k, (ad K L (-f) ^ k) z = 0 :=
     fun z => (hf z).imp fun _ => ad_neg_pow_apply_eq_zero
   have he' := he
@@ -64,21 +69,21 @@ variable {A : Type*} [Ring A] [Algebra ℚ A] {H E F Y : A}
 attribute [local instance 100] LieRing.ofAssociativeRing
 
 /-- Conjugation by the pinned Weyl unit sends a lowest-weight element of weight minus one
-on a length-two raising string to its raising commutator. -/
+to its raising commutator. -/
 theorem weylUnit_conj_of_lie_h_eq_neg (t : IsSl2Triple H E F)
     (hE : IsNilpotent E) (hF : IsNilpotent F)
-    (hHY : ⁅H, Y⁆ = -Y) (hFY : ⁅F, Y⁆ = 0) (hEEY : ⁅E, ⁅E, Y⁆⁆ = 0) :
+    (hHY : ⁅H, Y⁆ = -Y) (hFY : ⁅F, Y⁆ = 0) :
     (weylUnit hE hF : A) * Y * (((weylUnit hE hF)⁻¹ : Aˣ) : A) = ⁅E, Y⁆ := by
   rw [← weylAut_apply_eq_weylUnit_conj (K := ℚ) t hE hF]
   exact t.weylAut_apply_of_lie_h_eq_neg
     (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hE).exists_pow_apply_eq_zero
-    (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hF).exists_pow_apply_eq_zero hHY hFY hEEY
+    (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hF).exists_pow_apply_eq_zero hHY hFY
 
-/-- Conjugation by the pinned Weyl unit sends a highest-weight element of weight one on a
-length-two lowering string to the negative of its lowering commutator. -/
+/-- Conjugation by the pinned Weyl unit sends a highest-weight element of weight one
+to the negative of its lowering commutator. -/
 theorem _root_.IsSl2Triple.weylUnit_conj_of_lie_h_eq_self (t : IsSl2Triple H E F)
     (hE : IsNilpotent E) (hF : IsNilpotent F)
-    (hHY : ⁅H, Y⁆ = Y) (hEY : ⁅E, Y⁆ = 0) (hFFY : ⁅F, ⁅F, Y⁆⁆ = 0) :
+    (hHY : ⁅H, Y⁆ = Y) (hEY : ⁅E, Y⁆ = 0) :
     (weylUnit hE hF : A) * Y * (((weylUnit hE hF)⁻¹ : Aˣ) : A) = -⁅F, Y⁆ := by
   let he := (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hE).exists_pow_apply_eq_zero
   let hf := (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hF).exists_pow_apply_eq_zero
@@ -90,7 +95,6 @@ theorem _root_.IsSl2Triple.weylUnit_conj_of_lie_h_eq_self (t : IsSl2Triple H E F
     (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hF.neg).exists_pow_apply_eq_zero
     (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hE.neg).exists_pow_apply_eq_zero
     (by simp only [neg_lie, hHY]) (by simp only [neg_lie, hEY, neg_zero])
-    (by simp only [neg_lie, lie_neg, neg_neg, hFFY])
 
 end Associative
 
