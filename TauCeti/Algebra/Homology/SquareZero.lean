@@ -276,18 +276,16 @@ theorem homologyMap_comp_homologyMap (g : N →ₛₗ[τ] P) (f : M →ₛₗ[σ
   (homologyMap_comp g f hd he hq hf hg).symm
 
 /-- Applying two induced maps on homology in turn is applying the map induced by the composite.
-The scalar homomorphism of the composite is fixed as `τ.comp σ`, so every parameter is determined
-by the left-hand side when this lemma is used by `simp`. -/
+The scalar homomorphism of the composite is selected by `RingHomCompTriple`, as for the bundled
+composition in `homologyMap_comp_homologyMap`. -/
 @[simp]
 theorem homologyMap_homologyMap (g : N →ₛₗ[τ] P) (f : M →ₛₗ[σ] N) (hd : d ∘ₗ d = 0)
     (he : e ∘ₗ e = 0) (hq : q ∘ₗ q = 0) (hf : f ∘ₛₗ d = e ∘ₛₗ f)
     (hg : g ∘ₛₗ e = q ∘ₛₗ g) (c : d.homology hd) :
     homologyMap g he hq hg (homologyMap f hd he hf c) =
-      letI : RingHomCompTriple σ τ (τ.comp σ) := ⟨rfl⟩
-      homologyMap (g ∘ₛₗ f : M →ₛₗ[τ.comp σ] P) hd hq
-        (by rw [comp_assoc, hf, ← comp_assoc, hg, comp_assoc]) c := by
-  have : RingHomCompTriple σ τ (τ.comp σ) := ⟨rfl⟩
-  exact congr($(homologyMap_comp_homologyMap (υ := τ.comp σ) g f hd he hq hf hg) c)
+      homologyMap (g ∘ₛₗ f : M →ₛₗ[υ] P) hd hq
+        (by rw [comp_assoc, hf, ← comp_assoc, hg, comp_assoc]) c :=
+  congr($(homologyMap_comp_homologyMap g f hd he hq hf hg) c)
 
 end SemilinearMap
 
