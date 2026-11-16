@@ -65,16 +65,6 @@ section ConnectedRing
 variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
   {𝒜 : ℤ → Submodule k A} [GradedAlgebra 𝒜]
 
-/-- Transporting `free 𝒜 s` (`[Fintype I]`) along `DirectSum.linearEquivFunOnFintype` identifies
-its homogeneous pieces with functions `v : I → A` satisfying `∀ j, v j ∈ 𝒜 (q - s j)`. -/
-private theorem mem_free_piece_symm_iff {I : Type uI} [Fintype I] (s : I → ℤ) (q : ℤ)
-    (v : I → A) :
-    (DirectSum.linearEquivFunOnFintype A I (fun _ ↦ A)).symm v ∈
-      (GradedModuleCat.free 𝒜 s).grading.piece q ↔ ∀ j, v j ∈ 𝒜 (q - s j) := by
-  rw [GradedModuleCat.mem_free_piece_iff]
-  refine forall_congr' fun j ↦ ?_
-  rw [← DirectSum.linearEquivFunOnFintype_apply A, LinearEquiv.apply_symm_apply]
-
 omit [GradedAlgebra 𝒜] in
 /-- Transporting a degree-zero endomorphism of `I → A` to `GradedModuleCat.free 𝒜 s`. -/
 private noncomputable def freeEndOfPiEnd {I : Type uI} [Fintype I] (s : I → ℤ)
@@ -85,7 +75,7 @@ private noncomputable def freeEndOfPiEnd {I : Type uI} [Fintype I] (s : I → �
   GradedModuleCat.ofHom (eF.symm.toLinearMap ∘ₗ p ∘ₗ eF.toLinearMap) <|
     LinearMap.isHomogeneous_def.mpr fun q x hx ↦ by
       rw [add_zero]
-      exact (mem_free_piece_symm_iff s q _).mpr
+      exact (GradedModuleCat.linearEquivFunOnFintype_symm_mem_free_piece_iff 𝒜 s q _).mpr
         (hhom q (eF x) ((GradedModuleCat.mem_free_piece_iff 𝒜 s q x).mp hx))
 
 /-- The graded range object in `GradedModuleCat 𝒜` of a degree-zero endomorphism of `I → A`. -/
@@ -201,7 +191,8 @@ theorem exists_homogeneous_splitting_of_idempotent_of_connected
       eD.symm u ∈ (GradedModuleCat.free 𝒜 (d ∘ ULift.down)).grading.piece q ↔
         ∀ i, u i ∈ 𝒜 (q - d i) := fun q u ↦ by
     dsimp only [eD]
-    rw [LinearEquiv.symm_trans_apply, mem_free_piece_symm_iff]
+    rw [LinearEquiv.symm_trans_apply,
+      GradedModuleCat.linearEquivFunOnFintype_symm_mem_free_piece_iff]
     exact ⟨fun h i ↦ h (ULift.up i), fun h j ↦ h j.down⟩
   let ι : (Fin n → A) →ₗ[A] (I → A) :=
     eF.toLinearMap ∘ₗ rR.i.hom ∘ₗ Φ.hom.hom ∘ₗ eD.symm.toLinearMap
@@ -224,7 +215,8 @@ theorem exists_homogeneous_splitting_of_idempotent_of_connected
       (GradedModuleCat.map_mem rR.i (GradedModuleCat.map_mem Φ.hom ((heD_symm q u).mpr hu)))
   · exact fun q v hv ↦ (heD_symm q (π v)).mp <| by
       simpa [π] using GradedModuleCat.map_mem Φ.inv
-        (GradedModuleCat.map_mem rR.r ((mem_free_piece_symm_iff s q v).mpr hv))
+        (GradedModuleCat.map_mem rR.r
+          ((GradedModuleCat.linearEquivFunOnFintype_symm_mem_free_piece_iff 𝒜 s q v).mpr hv))
 
 /-- **Homogeneous basis of the image of a degree-zero idempotent on `I → A`.**
 Over a connected nonnegatively graded algebra `A` over a PID `k`, the range of any degree-zero
@@ -289,16 +281,16 @@ theorem multiset_map_eq_of_homogeneous_basis_range_idempotent
   let mkIso : ∀ {n : ℕ} (b : Module.Basis (Fin n) A (LinearMap.range p)) (d : Fin n → ℤ),
       (∀ i j, (b i).val j ∈ 𝒜 (d i - s j)) →
         (GradedModuleCat.free 𝒜 (d ∘ ULift.down) ≅ rangeObjOfPiEnd s p hhom) :=
-    fun b d hb ↦ GradedModuleCat.isoFreeOfHomogeneousBasis
-      ((b.reindex Equiv.ulift.symm).map equivRange) fun i ↦
-        (InternalGrading.mem_submodule_piece _ _ _).mpr <| by
-          have hval : (((b.reindex Equiv.ulift.symm).map equivRange) i).1 =
-              (DirectSum.linearEquivFunOnFintype A I (fun _ ↦ A)).symm (b i.down).val := by
-            simp only [equivRange, rangeEquivRangeObj, Module.Basis.map_apply,
-              Module.Basis.reindex_apply]
-            rfl
-          rw [hval]
-          exact (mem_free_piece_symm_iff s (d i.down) (b i.down).val).mpr (hb i.down)
+    fun b d hb ↦ ((b.reindex Equiv.ulift.symm).map equivRange).isoGradedFree fun i ↦
+      (InternalGrading.mem_submodule_piece _ _ _).mpr <| by
+        have hval : (((b.reindex Equiv.ulift.symm).map equivRange) i).1 =
+            (DirectSum.linearEquivFunOnFintype A I (fun _ ↦ A)).symm (b i.down).val := by
+          simp only [equivRange, rangeEquivRangeObj, Module.Basis.map_apply,
+            Module.Basis.reindex_apply]
+          rfl
+        rw [hval]
+        exact (GradedModuleCat.linearEquivFunOnFintype_symm_mem_free_piece_iff
+          𝒜 s (d i.down) (b i.down).val).mpr (hb i.down)
   have hU := GradedModuleCat.multiset_map_eq_of_iso_free hneg hzero
     ((mkIso b₁ d₁ hb₁).trans (mkIso b₂ d₂ hb₂).symm)
   have huniv : ∀ {n : ℕ} (d : Fin n → ℤ),

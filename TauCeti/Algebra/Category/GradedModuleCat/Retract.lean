@@ -17,34 +17,35 @@ import TauCeti.Algebra.Module.GradedModule.Nakayama
 Let `A` be a `ℤ`-graded `k`-algebra (`𝒜 : ℤ → Submodule k A`) that is nonnegatively graded
 (`∀ i < 0, 𝒜 i = ⊥`) and connected (`𝒜 0` lies in the image of `algebraMap k A`, with
 `FaithfulSMul k A`), with canonical augmentation `GradedAlgebra.connectedAugmentation : A →ₐ[k] k`
-annihilating `A₊ = ⨆ i > 0, 𝒜 i`.
+annihilating the positive-degree ideal `A₊ = ⨆ i > 0, 𝒜 i`.
 
-Over a principal ideal domain `k`, every graded retract of a finitely generated shifted free
-graded `A`-module `free 𝒜 s` — and hence every finitely generated projective object in
-`GradedModuleCat 𝒜` — is isomorphic in `GradedModuleCat 𝒜` to a finite shifted free module and
-admits a finite `A`-basis of homogeneous elements:
+This file provides:
 
-1. Reading the augmented coordinates at summands of shift `q` defines a `k`-linear head map
-   `freeHeadCoord` on each degree-`q` piece whose kernel is the degree-`q` part of `A₊ M`.
-2. In each of the finitely many shifts appearing in `s`, the image of `M_q` under this head map is
-   a `k`-submodule of a finite free `k`-module, so `Submodule.basisOfPid` supplies a finite
-   `k`-basis that lifts homogeneously to `M_q`.
-3. Bounded-below graded Nakayama (`eq_top_of_piece_le_sup_positive_smul_top`) shows that the
-   induced morphism `Φ` from the finite shifted free module on these lifts is surjective.
-4. Projectivity splits `Φ`, making its kernel a bounded-below retract whose head coordinates vanish
-   by `k`-linear independence of the lifted bases, so graded Nakayama
-   (`subsingleton_of_positive_smul_top_eq_top`) forces the kernel to vanish.
-
-Moreover, over any nontrivial commutative base ring `k`, reducing modulo `A₊` recovers the fiber
-cardinalities `{i // d i = q}` via `InvariantBasisNumber k`, so the rank and the multiset of basis
-degrees of a finite shifted free graded module are uniquely determined by its graded isomorphism
-class.
+* The correspondence between homogeneous `A`-bases of a graded `A`-module `M` and isomorphisms
+  `free 𝒜 d ≅ M` in `GradedModuleCat 𝒜` (`Module.Basis.isoGradedFree` and
+  `CategoryTheory.Iso.homogeneousBasis`), together with basic stability of positive-degree
+  multiples and vanishing homogeneous pieces along graded retracts
+  (`CategoryTheory.Retract.mem_positive_smul_top_iff`, `CategoryTheory.Retract.piece_eq_bot`).
+* The `k`-linear head-coordinate map `TauCeti.GradedModuleCat.freeHeadCoord` on each homogeneous
+  piece of a shifted free graded module, whose kernel is the corresponding piece of
+  `A₊ (free 𝒜 s)`.
+* Over any nontrivial commutative base ring `k`, uniqueness of the shift multiplicities and rank
+  of a finite shifted free graded module up to graded isomorphism
+  (`TauCeti.GradedModuleCat.card_fiber_eq_of_iso_free`,
+  `TauCeti.GradedModuleCat.multiset_map_eq_of_iso_free`,
+  `TauCeti.GradedModuleCat.card_eq_of_iso_free`).
+* Over a principal ideal domain `k`, graded freeness of every graded retract of a finite shifted
+  free graded `A`-module — and hence of every finitely generated projective object in
+  `GradedModuleCat 𝒜` — both categorically (`free 𝒜 (d ∘ ULift.down) ≅ M`) and as a finite
+  homogeneous `A`-basis (`TauCeti.GradedModuleCat.exists_iso_free_of_retract`,
+  `TauCeti.GradedModuleCat.exists_homogeneous_basis_of_retract`,
+  `TauCeti.GradedModuleCat.exists_iso_free_of_projective`,
+  `TauCeti.GradedModuleCat.exists_homogeneous_basis_of_projective`).
 
 ## Main definitions
 
-* `TauCeti.GradedModuleCat.isoFreeOfHomogeneousBasis`,
-  `TauCeti.GradedModuleCat.homogeneousBasisOfIsoFree`: equivalence between homogeneous `A`-bases of
-  `M` and isomorphisms `free 𝒜 d ≅ M` in `GradedModuleCat 𝒜`.
+* `Module.Basis.isoGradedFree`, `CategoryTheory.Iso.homogeneousBasis`: correspondence between
+  homogeneous `A`-bases of `M` and isomorphisms `free 𝒜 d ≅ M` in `GradedModuleCat 𝒜`.
 * `TauCeti.GradedModuleCat.freeHeadCoord`: the `k`-linear head-coordinate map on
   `(free 𝒜 s).grading.piece q`.
 
@@ -74,22 +75,18 @@ noncomputable section
 open CategoryTheory _root_.DirectSum
 open scoped DirectSum
 
-namespace TauCeti
-
 universe uk uA v uI
 
-namespace GradedModuleCat
+namespace Module.Basis
 
-open _root_.TauCeti.GradedAlgebra
-
-section General
+open TauCeti TauCeti.GradedModuleCat
 
 variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
   {𝒜 : ℤ → Submodule k A} [GradedAlgebra 𝒜]
 
 /-- An `A`-basis of `M` consisting of homogeneous elements of degrees `d` induces an isomorphism
 `free 𝒜 d ≅ M` in `GradedModuleCat 𝒜`. -/
-def isoFreeOfHomogeneousBasis {I : Type uI} {d : I → ℤ} {M : GradedModuleCat.{max uA uI} 𝒜}
+def isoGradedFree {I : Type uI} {d : I → ℤ} {M : GradedModuleCat.{max uA uI} 𝒜}
     (b : Module.Basis I A M) (hb : ∀ i, b i ∈ M.grading.piece (d i)) : free 𝒜 d ≅ M := by
   classical
   let x : ∀ i, M.grading.piece (d i) := fun i ↦ ⟨b i, hb i⟩
@@ -111,42 +108,58 @@ def isoFreeOfHomogeneousBasis {I : Type uI} {d : I → ℤ} {M : GradedModuleCat
   have : IsIso (freeLift x) := (isIso_iff_bijective (freeLift x)).mpr hbij
   exact asIso (freeLift x)
 
-/-- `isoFreeOfHomogeneousBasis b hb` sends the `i`th free generator to `b i`. -/
+/-- `b.isoGradedFree hb` sends the `i`th free generator to `b i`. -/
 @[simp]
-theorem isoFreeOfHomogeneousBasis_hom_generator {I : Type uI} {d : I → ℤ}
+theorem isoGradedFree_hom_freeGenerator {I : Type uI} {d : I → ℤ}
     {M : GradedModuleCat.{max uA uI} 𝒜} (b : Module.Basis I A M)
     (hb : ∀ i, b i ∈ M.grading.piece (d i)) (i : I) :
-    (isoFreeOfHomogeneousBasis b hb).hom.hom (freeGenerator i) = b i := by
-  simp [isoFreeOfHomogeneousBasis]
+    (b.isoGradedFree hb).hom.hom (freeGenerator i) = b i := by
+  simp [isoGradedFree]
+
+end Module.Basis
+
+namespace CategoryTheory.Iso
+
+open TauCeti TauCeti.GradedModuleCat
+
+variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
+  {𝒜 : ℤ → Submodule k A} [GradedAlgebra 𝒜]
 
 /-- Conversely, an isomorphism `free 𝒜 d ≅ M` in `GradedModuleCat 𝒜` equips `M` with an `A`-basis
 whose `i`th vector is the image of `freeGenerator i` in degree `d i`. -/
-def homogeneousBasisOfIsoFree {I : Type uI} {d : I → ℤ} {M : GradedModuleCat.{max uA uI} 𝒜}
+def homogeneousBasis {I : Type uI} {d : I → ℤ} {M : GradedModuleCat.{max uA uI} 𝒜}
     (Φ : free 𝒜 d ≅ M) : Module.Basis I A M := by
   classical
-  have hbij : Function.Bijective Φ.hom.hom := (isIso_iff_bijective Φ.hom).mp inferInstance
+  have hbij : Function.Bijective Φ.hom.hom :=
+    (GradedModuleCat.isIso_iff_bijective Φ.hom).mp inferInstance
   exact (Finsupp.basisSingleOne (ι := I) (R := A)).map
     ((finsuppLequivDFinsupp A).trans (LinearEquiv.ofBijective Φ.hom.hom hbij))
 
-/-- The `i`th basis vector of `homogeneousBasisOfIsoFree Φ` is `Φ.hom.hom (freeGenerator i)`. -/
+/-- The `i`th basis vector of `Φ.homogeneousBasis` is `Φ.hom.hom (freeGenerator i)`. -/
 @[simp]
-theorem homogeneousBasisOfIsoFree_apply {I : Type uI} {d : I → ℤ}
+theorem homogeneousBasis_apply {I : Type uI} {d : I → ℤ}
     {M : GradedModuleCat.{max uA uI} 𝒜} (Φ : free 𝒜 d ≅ M) (i : I) :
-    homogeneousBasisOfIsoFree Φ i = Φ.hom.hom (freeGenerator i) := by
+    Φ.homogeneousBasis i = Φ.hom.hom (freeGenerator i) := by
   classical
-  unfold homogeneousBasisOfIsoFree
+  unfold homogeneousBasis
   rw [Module.Basis.map_apply, Finsupp.coe_basisSingleOne, LinearEquiv.trans_apply,
     LinearEquiv.ofBijective_apply, finsuppLequivDFinsupp_apply_apply,
     Finsupp.toDFinsupp_single, DirectSum.single_eq_lof A, ← freeGenerator_eq_lof (𝒜 := 𝒜) (d := d)]
 
-/-- The `i`th vector of `homogeneousBasisOfIsoFree Φ` is homogeneous of degree `d i`. -/
-theorem homogeneousBasisOfIsoFree_mem_piece {I : Type uI} {d : I → ℤ}
+/-- The `i`th vector of `Φ.homogeneousBasis` is homogeneous of degree `d i`. -/
+theorem homogeneousBasis_mem_piece {I : Type uI} {d : I → ℤ}
     {M : GradedModuleCat.{max uA uI} 𝒜} (Φ : free 𝒜 d ≅ M) (i : I) :
-    homogeneousBasisOfIsoFree Φ i ∈ M.grading.piece (d i) := by
-  rw [homogeneousBasisOfIsoFree_apply]
+    Φ.homogeneousBasis i ∈ M.grading.piece (d i) := by
+  rw [homogeneousBasis_apply]
   exact map_mem Φ.hom (freeGenerator_mem_free_piece i)
 
-omit [GradedAlgebra 𝒜] in
+end CategoryTheory.Iso
+
+namespace TauCeti.GradedModuleCat
+
+variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
+  {𝒜 : ℤ → Submodule k A}
+
 /-- Every morphism of graded modules preserves the positive-degree action `A₊ M`. -/
 theorem map_mem_positive_smul_top {M N : GradedModuleCat.{v} 𝒜} (f : M ⟶ N) {x : M}
     (hx : x ∈ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k M)) :
@@ -156,9 +169,17 @@ theorem map_mem_positive_smul_top {M N : GradedModuleCat.{v} 𝒜} (f : M ⟶ N)
   rw [map_smul]
   exact Submodule.smul_mem_smul ha Submodule.mem_top
 
-omit [GradedAlgebra 𝒜] in
+end TauCeti.GradedModuleCat
+
+namespace CategoryTheory.Retract
+
+open TauCeti TauCeti.GradedModuleCat
+
+variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
+  {𝒜 : ℤ → Submodule k A}
+
 /-- Along a graded retract, membership in the positive-degree action is preserved and reflected. -/
-theorem retract_mem_positive_smul_top_iff {M N : GradedModuleCat.{v} 𝒜} (r : Retract M N) {x : M} :
+theorem mem_positive_smul_top_iff {M N : GradedModuleCat.{v} 𝒜} (r : Retract M N) {x : M} :
     r.i.hom x ∈ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k N) ↔
       x ∈ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k M) := by
   refine ⟨fun hx ↦ ?_, map_mem_positive_smul_top r.i⟩
@@ -167,15 +188,27 @@ theorem retract_mem_positive_smul_top_iff {M N : GradedModuleCat.{v} 𝒜} (r : 
     LinearMap.congr_fun (congrArg Hom.hom r.retract) x
   rwa [hri] at h
 
-omit [GradedAlgebra 𝒜] in
 /-- Vanishing of a homogeneous piece passes to graded retracts. -/
-theorem piece_eq_bot_of_retract {M N : GradedModuleCat.{v} 𝒜} (r : Retract M N) {p : ℤ}
+theorem piece_eq_bot {M N : GradedModuleCat.{v} 𝒜} (r : Retract M N) {p : ℤ}
     (hp : N.grading.piece p = ⊥) : M.grading.piece p = ⊥ := by
   refine (Submodule.eq_bot_iff _).mpr fun x hx ↦ ?_
   have hix : r.i.hom x = 0 := by simpa [hp] using map_mem r.i hx
   have hri : r.r.hom (r.i.hom x) = x :=
     LinearMap.congr_fun (congrArg Hom.hom r.retract) x
   simpa [hix] using hri.symm
+
+end CategoryTheory.Retract
+
+namespace TauCeti
+
+namespace GradedModuleCat
+
+open _root_.TauCeti.GradedAlgebra
+
+section General
+
+variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
+  {𝒜 : ℤ → Submodule k A} [GradedAlgebra 𝒜]
 
 /-- Over a nonnegatively graded algebra, a finitely generated shifted free graded module is
 bounded below. -/
@@ -411,7 +444,7 @@ private theorem retractHeadMap_eq_zero_iff (hneg : ∀ i < 0, 𝒜 i = ⊥)
       (m : M) ∈ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k M) := by
   dsimp [retractHeadMap]
   exact (freeHeadCoord_eq_zero_iff hneg hzero s q ⟨r.i.hom m.1, map_mem r.i m.2⟩).trans
-    (retract_mem_positive_smul_top_iff r)
+    r.mem_positive_smul_top_iff
 
 /-- Degree-zero scalars act on `retractHeadMap` via `connectedAugmentation`. -/
 private theorem retractHeadMap_smul_eq_of_eq (hneg : ∀ i < 0, 𝒜 i = ⊥)
@@ -473,7 +506,7 @@ private theorem surjective_freeLift_of_retractHeadBasis (hneg : ∀ i < 0, 𝒜 
     fun u ↦ liftGen (ev u.down).1 (ev u.down).2
   let Φ : free 𝒜 d' ⟶ M := freeLift g'
   obtain ⟨bM, hbM⟩ := exists_piece_eq_bot_of_lt_free (𝒜 := 𝒜) hneg s
-  have hbelowM : ∀ p < bM, M.grading.piece p = ⊥ := fun p hp ↦ piece_eq_bot_of_retract r (hbM p hp)
+  have hbelowM : ∀ p < bM, M.grading.piece p = ⊥ := fun p hp ↦ r.piece_eq_bot (hbM p hp)
   refine LinearMap.range_eq_top.mp
     (InternalGrading.eq_top_of_piece_le_sup_positive_smul_top 𝒜
       (LinearMap.range Φ.hom) Φ.isHomogeneous.isHomogeneous_range bM hbelowM fun q m hm ↦ ?_)
@@ -585,20 +618,6 @@ private theorem freeHeadCoord_eq_zero_of_mem_ker_freeLift (hneg : ∀ i < 0, �
   rw [hu_eq]
   exact hlin t₀
 
-omit [FaithfulSMul k A] [GradedAlgebra 𝒜] in
-/-- A split epimorphism in `GradedModuleCat 𝒜` makes its kernel a graded retract of the domain. -/
-private def retractKernelOfSection {M N : GradedModuleCat.{v} 𝒜} (Φ : N ⟶ M) (ψ : M ⟶ N)
-    (hψΦ : ψ ≫ Φ = 𝟙 M) : Retract (kernelObj Φ) N where
-  i := kernelι Φ
-  r := ofHom (LinearMap.codRestrict (LinearMap.ker Φ.hom) (𝟙 N - Φ ≫ ψ).hom fun x ↦ by
-      have h := LinearMap.congr_fun (congrArg Hom.hom hψΦ) (Φ.hom x)
-      simpa using sub_eq_zero.mpr h.symm)
-    (LinearMap.isHomogeneous_def.mpr fun _ _ hx ↦ by
-      simpa [kernelObj] using map_mem (𝟙 N - Φ ≫ ψ) hx)
-  retract := hom_ext <| LinearMap.ext fun z ↦ Subtype.ext <| by
-    dsimp [kernelι]
-    simp
-
 end RetractHead
 
 section PIDRetract
@@ -638,16 +657,16 @@ theorem exists_iso_free_of_retract (hneg : ∀ i < 0, 𝒜 i = ⊥)
     surjective_freeLift_of_retractHeadBasis hneg hzero r nq bq liftGen hliftGen ev
   have : Epi Φ := (epi_iff_surjective Φ).mpr hsurjΦ
   have : Projective M := r.projective
-  let rK := retractKernelOfSection Φ (Projective.factorThru (𝟙 M) Φ)
-    (Projective.factorThru_comp (𝟙 M) Φ)
+  let sp := (shortExact_kernelι Φ).splittingOfProjective
+  let rK : Retract (kernelObj Φ) (free 𝒜 d') := ⟨kernelι Φ, sp.r, sp.f_r⟩
   -- The split kernel is bounded below with vanishing head coordinates, hence `0`.
   let _ := (kernelObj Φ).gradedSMul
   obtain ⟨bK, hbK⟩ := exists_piece_eq_bot_of_lt_free (𝒜 := 𝒜) hneg d'
   have hbelowK : ∀ p < bK, (kernelObj Φ).grading.piece p = ⊥ := fun p hp ↦
-    piece_eq_bot_of_retract rK (hbK p hp)
+    rK.piece_eq_bot (hbK p hp)
   have hker_pos : ∀ q : ℤ, (kernelObj Φ).grading.piece q ≤
       (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k (kernelObj Φ)) := fun q z hz ↦
-    (retract_mem_positive_smul_top_iff rK).mp
+    rK.mem_positive_smul_top_iff.mp
       ((freeHeadCoord_eq_zero_iff hneg hzero d' q ⟨z.1, map_mem (kernelι Φ) hz⟩).mp
         (freeHeadCoord_eq_zero_of_mem_ker_freeLift hneg hzero r nq bq liftGen hliftGen ev q
           (map_mem (kernelι Φ) hz) z.2))
@@ -674,8 +693,8 @@ theorem exists_homogeneous_basis_of_retract (hneg : ∀ i < 0, 𝒜 i = ⊥)
     ∃ (n : ℕ) (b : Module.Basis (Fin n) A M) (d : Fin n → ℤ),
       ∀ i, b i ∈ M.grading.piece (d i) := by
   obtain ⟨n, d, ⟨Φ⟩⟩ := exists_iso_free_of_retract hneg hzero r
-  refine ⟨n, (homogeneousBasisOfIsoFree Φ).reindex Equiv.ulift, d, fun i ↦ ?_⟩
-  simpa using homogeneousBasisOfIsoFree_mem_piece Φ (ULift.up i)
+  refine ⟨n, Φ.homogeneousBasis.reindex Equiv.ulift, d, fun i ↦ ?_⟩
+  simpa using Φ.homogeneousBasis_mem_piece (ULift.up i)
 
 /-- Every finitely generated projective object of `GradedModuleCat 𝒜` over a connected
 nonnegatively graded algebra over a PID admits a finite `A`-basis of homogeneous elements. -/
@@ -701,7 +720,7 @@ theorem exists_iso_free_of_projective (hneg : ∀ i < 0, 𝒜 i = ⊥)
     (M : GradedModuleCat.{max uA v} 𝒜) [Module.Finite A M] [Projective M] :
     ∃ (n : ℕ) (d : Fin n → ℤ), Nonempty (free 𝒜 (d ∘ ULift.down) ≅ M) := by
   obtain ⟨n, b, d, hb⟩ := exists_homogeneous_basis_of_projective hneg hzero M
-  exact ⟨n, d, ⟨isoFreeOfHomogeneousBasis (b.reindex Equiv.ulift.symm) fun i ↦ by
+  exact ⟨n, d, ⟨(b.reindex Equiv.ulift.symm).isoGradedFree fun i ↦ by
     simpa using hb i.down⟩⟩
 
 end PIDRetract

@@ -113,6 +113,7 @@ theorem grading_def (N : ℕ) :
   (rfl)
 
 /-- Membership in `grading N d` is weighted homogeneity of weight `d` with respect to `weight N`. -/
+@[simp]
 theorem mem_grading_iff {N : ℕ} {d : ℤ} {f : EquivariantRing N} :
     f ∈ grading N d ↔ f.IsWeightedHomogeneous (weight N) d := by
   rw [grading_def, MvPolynomial.mem_weightedHomogeneousSubmodule]
