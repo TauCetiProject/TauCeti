@@ -35,7 +35,9 @@ added.
 * `TauCeti.LieModuleCat.Hom.hom` and `TauCeti.LieModuleCat.ofHom`: conversions between
   categorical morphisms and morphisms of Lie modules.
 * `LieModuleEquiv.toLieModuleCatIso` and `CategoryTheory.Iso.toLieModuleEquiv`: conversion between
-  equivalences of Lie modules and categorical isomorphisms.
+  equivalences of Lie modules and categorical isomorphisms; `TauCeti.FGLieModuleCat.ofHom`,
+  `LieModuleEquiv.toFGLieModuleCatIso` and `TauCeti.FGLieModuleCat.isoToLieModuleEquiv` are their
+  analogues for finite Lie modules.
 * `TauCeti.LieModuleCat.binaryBicone`: the product bicone on `M × N`, a biproduct by
   `TauCeti.LieModuleCat.binaryBiconeIsBilimit`.
 * `TauCeti.LieModuleCat.biprodIsoProd` and `TauCeti.FGLieModuleCat.biprodLieModuleEquiv`: the
@@ -107,12 +109,15 @@ instance : ConcreteCategory (LieModuleCat.{w} R L) (fun M N ↦ M →ₗ⁅R,L�
   ofHom := Hom.mk
 
 variable {M N P : LieModuleCat.{w} R L}
+variable {X Y Z : Type w} [AddCommGroup X] [Module R X] [LieRingModule L X] [LieModule R L X]
+  [AddCommGroup Y] [Module R Y] [LieRingModule L Y] [LieModule R L Y]
+  [AddCommGroup Z] [Module R Z] [LieRingModule L Z] [LieModule R L Z]
 
 /-- The morphism of Lie modules underlying a categorical morphism. -/
 abbrev Hom.hom (f : M ⟶ N) : M →ₗ⁅R,L⁆ N := ConcreteCategory.hom f
 
 /-- Regard a morphism of Lie modules as a categorical morphism. -/
-abbrev ofHom (f : M →ₗ⁅R,L⁆ N) : M ⟶ N := ConcreteCategory.ofHom f
+abbrev ofHom (f : X →ₗ⁅R,L⁆ Y) : of R L X ⟶ of R L Y := ConcreteCategory.ofHom f
 
 /-- The underlying morphism of the identity is the identity morphism of Lie modules. -/
 @[simp]
@@ -124,11 +129,20 @@ theorem hom_comp (f : M ⟶ N) (g : N ⟶ P) : (f ≫ g).hom = g.hom.comp f.hom 
 
 /-- Constructing a categorical morphism preserves its underlying morphism. -/
 @[simp]
-theorem hom_ofHom (f : M →ₗ⁅R,L⁆ N) : (ofHom f).hom = f := rfl
+theorem hom_ofHom (f : X →ₗ⁅R,L⁆ Y) : (ofHom f).hom = f := rfl
 
 /-- A categorical morphism is recovered from its underlying morphism. -/
 @[simp]
 theorem ofHom_hom (f : M ⟶ N) : ofHom f.hom = f := rfl
+
+/-- The identity morphism of Lie modules gives the identity morphism. -/
+@[simp]
+theorem ofHom_id : ofHom (LieModuleHom.id : X →ₗ⁅R,L⁆ X) = 𝟙 (of R L X) := rfl
+
+/-- A composite of morphisms of Lie modules gives the composite of the categorical morphisms. -/
+@[simp]
+theorem ofHom_comp (f : X →ₗ⁅R,L⁆ Y) (g : Y →ₗ⁅R,L⁆ Z) :
+    ofHom (g.comp f) = ofHom f ≫ ofHom g := rfl
 
 /-- Categorical morphisms are equal if their underlying morphisms agree. -/
 @[ext]
@@ -176,6 +190,12 @@ instance : SMul ℤ (M ⟶ N) where
 /-- The underlying morphism of an integral multiple is that multiple of the underlying morphism. -/
 @[simp] theorem hom_zsmul (n : ℤ) (f : M ⟶ N) : (n • f).hom = n • f.hom := rfl
 
+/-- The zero morphism of Lie modules gives the zero morphism. -/
+@[simp] theorem ofHom_zero : ofHom (0 : X →ₗ⁅R,L⁆ Y) = 0 := rfl
+
+/-- A sum of morphisms of Lie modules gives the sum of the categorical morphisms. -/
+@[simp] theorem ofHom_add (f g : X →ₗ⁅R,L⁆ Y) : ofHom (f + g) = ofHom f + ofHom g := rfl
+
 instance : AddCommGroup (M ⟶ N) :=
   Function.Injective.addCommGroup Hom.hom hom_injective
     rfl (fun _ _ ↦ rfl) (fun _ ↦ rfl) (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
@@ -200,7 +220,7 @@ instance : HasZeroObject (LieModuleCat.{w} R L) :=
 variable (M N) in
 /-- The product bicone of two Lie modules: the product `M × N` with its two projections and two
 inclusions. Its point is exposed, so that it is the product `M × N` by definition. -/
-@[reducible, expose]
+@[expose]
 def binaryBicone : BinaryBicone M N where
   pt := of R L (M × N)
   fst := ofHom (LieModuleHom.fst R L M N)
@@ -214,32 +234,37 @@ def binaryBicone : BinaryBicone M N where
 
 /-- The point of the product bicone is the product of the two Lie modules. -/
 @[simp]
-theorem binaryBicone_pt : (binaryBicone M N).pt = of R L (M × N) := rfl
+theorem binaryBicone_pt : (binaryBicone M N).pt = of R L (M × N) := (rfl)
 
 /-- The first projection of the product bicone is the first projection of `M × N`. -/
 @[simp]
-theorem binaryBicone_fst_hom : (binaryBicone M N).fst.hom = LieModuleHom.fst R L M N := rfl
+theorem binaryBicone_fst : (binaryBicone M N).fst = ofHom (LieModuleHom.fst R L M N) := (rfl)
 
 /-- The second projection of the product bicone is the second projection of `M × N`. -/
 @[simp]
-theorem binaryBicone_snd_hom : (binaryBicone M N).snd.hom = LieModuleHom.snd R L M N := rfl
+theorem binaryBicone_snd : (binaryBicone M N).snd = ofHom (LieModuleHom.snd R L M N) := (rfl)
 
 /-- The first inclusion of the product bicone is the first inclusion into `M × N`. -/
 @[simp]
-theorem binaryBicone_inl_hom : (binaryBicone M N).inl.hom = LieModuleHom.inl R L M N := rfl
+theorem binaryBicone_inl : (binaryBicone M N).inl = ofHom (LieModuleHom.inl R L M N) := (rfl)
 
 /-- The second inclusion of the product bicone is the second inclusion into `M × N`. -/
 @[simp]
-theorem binaryBicone_inr_hom : (binaryBicone M N).inr.hom = LieModuleHom.inr R L M N := rfl
+theorem binaryBicone_inr : (binaryBicone M N).inr = ofHom (LieModuleHom.inr R L M N) := (rfl)
 
 variable (M N) in
 /-- The two idempotents of the product bicone add up to the identity. -/
 theorem binaryBicone_total :
     (binaryBicone M N).fst ≫ (binaryBicone M N).inl +
       (binaryBicone M N).snd ≫ (binaryBicone M N).inr = 𝟙 (binaryBicone M N).pt :=
-  hom_ext <| LieModuleHom.ext fun p ↦ by
-    rw [hom_add, hom_comp, hom_comp]
-    simp
+  -- The bicone is exposed, so its total identity is that of the product `M × N`.
+  have h : ofHom (LieModuleHom.fst R L M N) ≫ ofHom (LieModuleHom.inl R L M N) +
+      ofHom (LieModuleHom.snd R L M N) ≫ ofHom (LieModuleHom.inr R L M N) =
+        𝟙 (of R L (M × N)) :=
+    hom_ext <| LieModuleHom.ext fun p ↦ by
+      rw [hom_add, hom_comp, hom_comp]
+      simp
+  h
 
 variable (M N) in
 /-- **The product of two Lie modules is their biproduct.** -/
@@ -310,8 +335,8 @@ open TauCeti
 def LieModuleEquiv.toLieModuleCatIso {M N : Type w} [AddCommGroup M] [Module R M]
     [LieRingModule L M] [LieModule R L M] [AddCommGroup N] [Module R N] [LieRingModule L N]
     [LieModule R L N] (e : M ≃ₗ⁅R,L⁆ N) : LieModuleCat.of R L M ≅ LieModuleCat.of R L N where
-  hom := LieModuleCat.ofHom (M := LieModuleCat.of R L M) (N := LieModuleCat.of R L N) e
-  inv := LieModuleCat.ofHom (M := LieModuleCat.of R L N) (N := LieModuleCat.of R L M) e.symm
+  hom := LieModuleCat.ofHom e
+  inv := LieModuleCat.ofHom e.symm
   hom_inv_id := LieModuleCat.hom_ext <| LieModuleHom.ext e.symm_apply_apply
   inv_hom_id := LieModuleCat.hom_ext <| LieModuleHom.ext e.apply_symm_apply
 
@@ -344,6 +369,42 @@ theorem CategoryTheory.Iso.toLieModuleEquiv_apply {M N : LieModuleCat.{w} R L} (
 @[simp]
 theorem CategoryTheory.Iso.toLieModuleEquiv_symm_apply {M N : LieModuleCat.{w} R L} (e : M ≅ N)
     (x : N) : e.toLieModuleEquiv.symm x = e.inv.hom x := (rfl)
+
+/-- The morphism of Lie modules underlying the equivalence attached to an isomorphism is its
+forward morphism. -/
+@[simp]
+theorem CategoryTheory.Iso.toLieModuleEquiv_toLieModuleHom {M N : LieModuleCat.{w} R L}
+    (e : M ≅ N) : (e.toLieModuleEquiv : M →ₗ⁅R,L⁆ N) = e.hom.hom := (rfl)
+
+/-- The equivalence attached to the isomorphism attached to an equivalence is that
+equivalence. -/
+@[simp]
+theorem LieModuleEquiv.toLieModuleCatIso_toLieModuleEquiv {M N : Type w} [AddCommGroup M]
+    [Module R M] [LieRingModule L M] [LieModule R L M] [AddCommGroup N] [Module R N]
+    [LieRingModule L N] [LieModule R L N] (e : M ≃ₗ⁅R,L⁆ N) :
+    e.toLieModuleCatIso.toLieModuleEquiv = e := (rfl)
+
+/-- The isomorphism attached to the equivalence attached to an isomorphism is that
+isomorphism. -/
+@[simp]
+theorem CategoryTheory.Iso.toLieModuleEquiv_toLieModuleCatIso {M N : LieModuleCat.{w} R L}
+    (e : M ≅ N) : e.toLieModuleEquiv.toLieModuleCatIso = e := (rfl)
+
+namespace TauCeti.LieModuleCat
+
+/-- The inverse of `biprodIsoProd` is the sum of the two biproduct inclusions. -/
+@[simp]
+theorem biprodIsoProd_inv_apply {M N : LieModuleCat.{w} R L} (p : M × N) :
+    (biprodIsoProd M N).inv.hom p =
+      (biprod.inl : M ⟶ M ⊞ N).hom p.1 + (biprod.inr : N ⟶ M ⊞ N).hom p.2 := by
+  rw [← Iso.toLieModuleEquiv_symm_apply, LieModuleEquiv.symm_apply_eq,
+    Iso.toLieModuleEquiv_apply, map_add]
+  have h₁ := congrArg (fun f ↦ f.hom p.1) (inl_comp_biprodIsoProd_hom M N)
+  have h₂ := congrArg (fun f ↦ f.hom p.2) (inr_comp_biprodIsoProd_hom M N)
+  simp only [hom_comp, LieModuleHom.comp_apply, hom_ofHom] at h₁ h₂
+  simp [h₁, h₂]
+
+end TauCeti.LieModuleCat
 
 end Iso
 
@@ -383,6 +444,13 @@ theorem hom_ext {M N : FGLieModuleCat.{w} R L} {f g : M ⟶ N} (h : f.hom.hom = 
     f = g :=
   ObjectProperty.hom_ext _ (LieModuleCat.hom_ext h)
 
+/-- Regard a morphism of Lie modules between modules finite over the ring of scalars as a
+morphism of finite Lie modules. -/
+abbrev ofHom {X Y : Type w} [AddCommGroup X] [Module R X] [LieRingModule L X] [LieModule R L X]
+    [Module.Finite R X] [AddCommGroup Y] [Module R Y] [LieRingModule L Y] [LieModule R L Y]
+    [Module.Finite R Y] (f : X →ₗ⁅R,L⁆ Y) : of R L X ⟶ of R L Y :=
+  ObjectProperty.homMk (LieModuleCat.ofHom f)
+
 /-- An isomorphism of finite Lie modules gives an equivalence of their carriers. -/
 def isoToLieModuleEquiv {M N : FGLieModuleCat.{w} R L} (e : M ≅ N) : M ≃ₗ⁅R,L⁆ N :=
   ((LieModuleCat.isFG R L).ι.mapIso e).toLieModuleEquiv
@@ -391,30 +459,65 @@ def isoToLieModuleEquiv {M N : FGLieModuleCat.{w} R L} (e : M ≅ N) : M ≃ₗ�
 morphism. -/
 @[simp]
 theorem isoToLieModuleEquiv_apply {M N : FGLieModuleCat.{w} R L} (e : M ≅ N) (x : M.obj) :
-    isoToLieModuleEquiv e x = e.hom.hom.hom x := (rfl)
+    isoToLieModuleEquiv e x = e.hom.hom.hom x := by
+  simp [isoToLieModuleEquiv]
 
 /-- The inverse of the equivalence attached to an isomorphism of finite Lie modules applies its
 inverse morphism. -/
 @[simp]
 theorem isoToLieModuleEquiv_symm_apply {M N : FGLieModuleCat.{w} R L} (e : M ≅ N) (x : N.obj) :
-    (isoToLieModuleEquiv e).symm x = e.inv.hom.hom x := (rfl)
+    (isoToLieModuleEquiv e).symm x = e.inv.hom.hom x := by
+  simp [isoToLieModuleEquiv]
 
-/-- An equivalence of Lie modules gives an isomorphism of finite Lie modules. -/
-def _root_.LieModuleEquiv.toFGLieModuleCatIso {M N : FGLieModuleCat.{w} R L}
-    (e : M ≃ₗ⁅R,L⁆ N) : M ≅ N :=
-  (LieModuleCat.isFG R L).fullyFaithfulι.preimageIso e.toLieModuleCatIso
+/-- The morphism of Lie modules underlying the equivalence attached to an isomorphism of finite
+Lie modules is its forward morphism. -/
+@[simp]
+theorem isoToLieModuleEquiv_toLieModuleHom {M N : FGLieModuleCat.{w} R L} (e : M ≅ N) :
+    (isoToLieModuleEquiv e : M.obj →ₗ⁅R,L⁆ N.obj) = e.hom.hom.hom :=
+  LieModuleHom.ext (isoToLieModuleEquiv_apply e)
+
+section Equiv
+
+variable {X Y : Type w} [AddCommGroup X] [Module R X] [LieRingModule L X] [LieModule R L X]
+  [Module.Finite R X] [AddCommGroup Y] [Module R Y] [LieRingModule L Y] [LieModule R L Y]
+  [Module.Finite R Y]
+
+/-- An equivalence of Lie modules finite over the ring of scalars gives an isomorphism of finite
+Lie modules. -/
+def _root_.LieModuleEquiv.toFGLieModuleCatIso (e : X ≃ₗ⁅R,L⁆ Y) : of R L X ≅ of R L Y :=
+  (LieModuleCat.isFG R L).isoMk e.toLieModuleCatIso
 
 /-- The forward morphism of the isomorphism attached to an equivalence of finite Lie modules is
 the equivalence. -/
 @[simp]
-theorem _root_.LieModuleEquiv.toFGLieModuleCatIso_hom_hom {M N : FGLieModuleCat.{w} R L}
-    (e : M.obj ≃ₗ⁅R,L⁆ N.obj) : e.toFGLieModuleCatIso.hom.hom.hom = e := (rfl)
+theorem _root_.LieModuleEquiv.toFGLieModuleCatIso_hom_hom (e : X ≃ₗ⁅R,L⁆ Y) :
+    e.toFGLieModuleCatIso.hom.hom.hom = e := by
+  simp [LieModuleEquiv.toFGLieModuleCatIso]
 
 /-- The inverse morphism of the isomorphism attached to an equivalence of finite Lie modules is
 its inverse. -/
 @[simp]
-theorem _root_.LieModuleEquiv.toFGLieModuleCatIso_inv_hom {M N : FGLieModuleCat.{w} R L}
-    (e : M.obj ≃ₗ⁅R,L⁆ N.obj) : e.toFGLieModuleCatIso.inv.hom.hom = e.symm := (rfl)
+theorem _root_.LieModuleEquiv.toFGLieModuleCatIso_inv_hom (e : X ≃ₗ⁅R,L⁆ Y) :
+    e.toFGLieModuleCatIso.inv.hom.hom = e.symm := by
+  simp [LieModuleEquiv.toFGLieModuleCatIso]
+
+/-- The equivalence attached to the isomorphism attached to an equivalence of finite Lie modules
+is that equivalence. -/
+@[simp]
+theorem isoToLieModuleEquiv_toFGLieModuleCatIso (e : X ≃ₗ⁅R,L⁆ Y) :
+    isoToLieModuleEquiv e.toFGLieModuleCatIso = e := by
+  ext x
+  rw [isoToLieModuleEquiv_apply, LieModuleEquiv.toFGLieModuleCatIso_hom_hom]
+  rfl
+
+end Equiv
+
+/-- The isomorphism attached to the equivalence attached to an isomorphism of finite Lie modules
+is that isomorphism. -/
+@[simp]
+theorem toFGLieModuleCatIso_isoToLieModuleEquiv {M N : FGLieModuleCat.{w} R L} (e : M ≅ N) :
+    (isoToLieModuleEquiv e).toFGLieModuleCatIso = e :=
+  Iso.ext <| hom_ext <| by simp
 
 instance : (LieModuleCat.isFG.{w} R L).IsClosedUnderIsomorphisms where
   of_iso e hM := by
@@ -450,25 +553,27 @@ theorem biprodLieModuleEquiv_apply (M N : FGLieModuleCat.{w} R L) (x : (M ⊞ N)
     biprodLieModuleEquiv M N x =
       ((biprod.fst : M ⊞ N ⟶ M).hom.hom x, (biprod.snd : M ⊞ N ⟶ N).hom.hom x) := by
   have := preservesBinaryBiproducts_of_preservesBiproducts (LieModuleCat.isFG.{w} R L).ι
+  have h₁ : ((LieModuleCat.isFG R L).ι.mapBiprod M N).hom ≫ biprod.fst =
+      (biprod.fst : M ⊞ N ⟶ M).hom := biprod.lift_fst _ _
+  have h₂ : ((LieModuleCat.isFG R L).ι.mapBiprod M N).hom ≫ biprod.snd =
+      (biprod.snd : M ⊞ N ⟶ N).hom := biprod.lift_snd _ _
   rw [biprodLieModuleEquiv, Iso.toLieModuleEquiv_apply, Iso.trans_hom, LieModuleCat.hom_comp,
-    LieModuleHom.comp_apply, LieModuleCat.biprodIsoProd_hom_apply, ← LieModuleHom.comp_apply,
-    ← LieModuleHom.comp_apply, ← LieModuleCat.hom_comp, ← LieModuleCat.hom_comp,
-    Functor.mapBiprod_hom]
-  exact Prod.ext (congrArg (fun f ↦ LieModuleCat.Hom.hom f x) (biprod.lift_fst _ _))
-    (congrArg (fun f ↦ LieModuleCat.Hom.hom f x) (biprod.lift_snd _ _))
+    LieModuleHom.comp_apply, LieModuleCat.biprodIsoProd_hom_apply]
+  exact Prod.ext (congrArg (fun f ↦ f.hom x) h₁) (congrArg (fun f ↦ f.hom x) h₂)
 
 /-- The inverse of `biprodLieModuleEquiv` is the sum of the two biproduct inclusions. -/
 @[simp]
 theorem biprodLieModuleEquiv_symm_apply (M N : FGLieModuleCat.{w} R L) (p : M.obj × N.obj) :
     (biprodLieModuleEquiv M N).symm p =
       (biprod.inl : M ⟶ M ⊞ N).hom.hom p.1 + (biprod.inr : N ⟶ M ⊞ N).hom.hom p.2 := by
-  rw [LieModuleEquiv.symm_apply_eq, biprodLieModuleEquiv_apply]
-  simp only [map_add, ← LieModuleHom.comp_apply, ← LieModuleCat.hom_comp,
-    ← ObjectProperty.FullSubcategory.comp_hom, biprod.inl_fst, biprod.inl_snd, biprod.inr_fst,
-    biprod.inr_snd, ObjectProperty.FullSubcategory.id_hom, LieModuleCat.hom_id,
-    LieModuleHom.id_apply]
-  simp only [← ObjectProperty.ι_map, Functor.map_zero, LieModuleCat.hom_zero, zero_apply,
-    add_zero, zero_add]
+  have := preservesBinaryBiproducts_of_preservesBiproducts (LieModuleCat.isFG.{w} R L).ι
+  have h₁ : biprod.inl ≫ ((LieModuleCat.isFG R L).ι.mapBiprod M N).inv =
+      (biprod.inl : M ⟶ M ⊞ N).hom := biprod.inl_desc _ _
+  have h₂ : biprod.inr ≫ ((LieModuleCat.isFG R L).ι.mapBiprod M N).inv =
+      (biprod.inr : N ⟶ M ⊞ N).hom := biprod.inr_desc _ _
+  rw [biprodLieModuleEquiv, Iso.toLieModuleEquiv_symm_apply, Iso.trans_inv, LieModuleCat.hom_comp,
+    LieModuleHom.comp_apply, LieModuleCat.biprodIsoProd_inv_apply, map_add]
+  exact congrArg₂ (· + ·) (congrArg (fun f ↦ f.hom p.1) h₁) (congrArg (fun f ↦ f.hom p.2) h₂)
 
 end FGLieModuleCat
 
