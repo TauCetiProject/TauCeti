@@ -82,7 +82,7 @@ theorem hasDerivAt_Ioo_ite_ite {f g h f' g' h' : ℝ → E} {p q a b : ℝ} (hpa
   set l := (p + min t a) / 2
   set u := (max t b + q) / 2
   have htl := lt_min ht.1 hpa
-  have htu := max_lt ht.2 hbq
+  have htq := max_lt ht.2 hbq
   have hl : l ∈ Ioo p a := ⟨by simp only [l]; linarith, by
     have := min_le_right t a; simp only [l]; linarith⟩
   have hlt : l < t := by have := min_le_left t a; simp only [l]; linarith

@@ -112,9 +112,7 @@ private noncomputable def endTrajectory (κ c s θ t : ℝ) : ℝ :=
 
 private theorem endTrajectory_self {κ c s θ : ℝ} (h : |θ - c| < π / 2) :
     endTrajectory κ c s θ s = θ := by
-  simp only [endTrajectory]
-  rw [sub_self, mul_zero, exp_zero, mul_one,
-    arctan_tan (neg_lt_of_abs_lt h) (lt_of_abs_lt h), add_sub_cancel]
+  simp [endTrajectory, arctan_tan (neg_lt_of_abs_lt h) (lt_of_abs_lt h)]
 
 private theorem hasDerivAt_endTrajectory (κ c s θ : ℝ) {t : ℝ} (ht : t ∈ Ioo 0 1) :
     HasDerivAt (endTrajectory κ c s θ)
@@ -123,7 +121,8 @@ private theorem hasDerivAt_endTrajectory (κ c s θ : ℝ) {t : ℝ} (ht : t ∈
   have hg := ((((hasDerivAt_intervalBaseTimeCoordinate ht).sub_const
     (intervalBaseTimeCoordinate s)).const_mul (4 * κ)).exp).const_mul (tan (θ - c))
   convert (hg.arctan).const_add c using 1
-  · rfl
+  · funext τ
+    simp only [endTrajectory]
   · simp only [endTrajectory]
     rw [← mul_assoc (tan (θ - c))]
     set x := tan (θ - c) *
@@ -159,9 +158,8 @@ private theorem circleContinuationSlope_eq_of_add_pi_div_two_add_int_mul_pi {δ 
 /-- The maxima `r₀ + j π` of `δ cos (2 (θ - r₀))` are stationary while the path is `r₀`. -/
 private theorem hasDerivAt_const_add_int_mul_pi {δ r₀ t : ℝ} {r : ℝ → ℝ} (hr : r t = r₀) (j : ℤ) :
     HasDerivAt (fun _ ↦ r₀ + j * π) (circleContinuationSlope δ r t (r₀ + j * π)) t := by
-  rw [circleContinuationSlope_eq_of_add_int_mul_pi hr j, sub_self, mul_zero, sin_zero, mul_zero,
-    zero_div]
-  exact hasDerivAt_const t _
+  rw [circleContinuationSlope_eq_of_add_int_mul_pi hr j]
+  simpa using hasDerivAt_const t _
 
 /-- The minima `r₀ + π / 2 + j π` of `δ cos (2 (θ - r₀))` are stationary while the path is
 `r₀`. -/
@@ -169,9 +167,8 @@ private theorem hasDerivAt_const_add_pi_div_two_add_int_mul_pi {δ r₀ t : ℝ}
     (hr : r t = r₀) (j : ℤ) :
     HasDerivAt (fun _ ↦ r₀ + π / 2 + j * π)
       (circleContinuationSlope δ r t (r₀ + π / 2 + j * π)) t := by
-  rw [circleContinuationSlope_eq_of_add_pi_div_two_add_int_mul_pi hr j, sub_self, mul_zero,
-    sin_zero, mul_zero, zero_div]
-  exact hasDerivAt_const t _
+  rw [circleContinuationSlope_eq_of_add_pi_div_two_add_int_mul_pi hr j]
+  simpa using hasDerivAt_const t _
 
 /-- The explicit trajectory tends to `c` along a filter on which `4 κ (U t - U s) → -∞`. -/
 private theorem tendsto_endTrajectory {l : Filter ℝ} {κ c s θ : ℝ}
