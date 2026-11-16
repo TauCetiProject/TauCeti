@@ -21,6 +21,9 @@ For a linear surjection `A : V → V'` and a nonempty set `S ⊆ V'`, the differ
 direction of the affine span of `S`. Taking the product with a fixed nonempty set preserves and
 reflects equality of affine spans, and for nonempty sets also equality of their directions.
 
+The vector span of a finite family of points is spanned by its edge vectors from the initial
+point.
+
 A linear map whose kernel contains the direction of a set is constant on that set. If `f` is
 constant on a nonempty set `W₁` whose affine span is a fiber of `ν`, then `ker ν ≤ ker f`.
 
@@ -32,6 +35,8 @@ constant on a nonempty set `W₁` whose affine span is a fiber of `ν`, then `ke
   if and only if `affineSpan s = affineSpan t`.
 * `TauCeti.direction_affineSpan_prod_eq_iff`: the same for directions, for nonempty `s`, `t`
   and `u`.
+* `TauCeti.span_range_succ_vsub_zero_eq_vectorSpan`: the edge vectors `p j.succ -ᵥ p 0` of a
+  family `p : Fin (n + 1) → P` span its vector span.
 * `LinearMap.map_eq_zero_of_affineSpan_eq`: if `f` is constant on a set `W₁` containing a point
   `y`, and `affineSpan W₁ = affineSpan W₂` is a fiber of `ν`, then `ν q = 0` implies `f q = 0`.
 
@@ -104,6 +109,16 @@ namespace TauCeti
 variable {k V E P Q : Type*} [Ring k]
   [AddCommGroup V] [Module k V] [AddTorsor V P]
   [AddCommGroup E] [Module k E] [AddTorsor E Q]
+
+/-- The span of the edge vectors from the initial vertex of a finite family is its vector span. -/
+theorem span_range_succ_vsub_zero_eq_vectorSpan {n : ℕ} (p : Fin (n + 1) → P) :
+    Submodule.span k (Set.range fun j : Fin n => p j.succ -ᵥ p 0) =
+      vectorSpan k (Set.range p) := by
+  rw [vectorSpan_range_eq_span_range_vsub_right_ne k p 0]
+  congr 1
+  simpa only [Function.comp_def, finSuccAboveEquiv_apply, Fin.succAbove_zero] using
+    (finSuccAboveEquiv 0).surjective.range_comp
+      (fun j : {j : Fin (n + 1) // j ≠ 0} => p j -ᵥ p 0)
 
 /-- Taking the product with a fixed nonempty set preserves and reflects equality of affine spans,
 including for empty `s` and `t`. -/
