@@ -10,6 +10,7 @@ public import TauCeti.GroupTheory.BruhatTits.RootDatum
 public import TauCeti.GroupTheory.TitsSystem.Basic
 public import TauCeti.LinearAlgebra.RootSystem.Indivisible
 import Mathlib.Algebra.Module.Submodule.Union
+import TauCeti.GroupTheory.Commutator
 import TauCeti.GroupTheory.GroupAction.ConjAct
 import TauCeti.GroupTheory.TitsSystem.Bruhat.Length
 import TauCeti.LinearAlgebra.RootSystem.Inversions.StrongExchange
@@ -48,15 +49,9 @@ private theorem le_biSup_subgroup {ι' : Type*} {p : ι' → Prop} (B : ι' → 
 private theorem le_normalizer_of_commutator_le₂ {A H : Subgroup G} {ι' : Type*}
     {p : ι' → Prop} {B : ι' → Subgroup G} (hH : H = ⨆ (i) (_ : p i), B i)
     (hcomm : ∀ i, p i → ⁅A, B i⁆ ≤ H) : A ≤ Subgroup.normalizer (H : Set G) := by
-  have hBH (i) (hi : p i) : B i ≤ H := hH ▸ le_biSup_subgroup B i hi
-  have hconj (a) (ha : a ∈ A) : H ≤ H.comap (MulAut.conj a).toMonoidHom :=
-    hH.le.trans <| iSup₂_le fun i hi b hb ↦ by
-      simp only [Subgroup.mem_comap, MulEquiv.coe_toMonoidHom, MulAut.conj_apply]
-      exact (by group : a * b * a⁻¹ = ⁅a, b⁆ * b) ▸
-        mul_mem (hcomm i hi (Subgroup.commutator_mem_commutator ha hb)) (hBH i hi hb)
-  exact fun a ha ↦ Subgroup.mem_normalizer_iff.mpr fun h ↦
-    ⟨fun hh ↦ by simpa [MulAut.conj_apply] using hconj a ha hh,
-     fun hh ↦ by simpa [MulAut.conj_apply, mul_assoc] using hconj a⁻¹ (inv_mem ha) hh⟩
+  subst hH; rw [← iSup_subtype (f := fun i : {i // p i} ↦ B i.1)]
+  exact Subgroup.le_normalizer_iSup_of_commutator_le A (fun i : {i // p i} ↦ B i.1)
+    fun i ↦ iSup_subtype (f := fun i : {i // p i} ↦ B i.1) ▸ hcomm i.1 i.2
 
 section Subgroups
 variable (D : RootDatum P G)

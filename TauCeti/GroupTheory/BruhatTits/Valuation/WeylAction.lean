@@ -8,6 +8,7 @@ module
 public import TauCeti.GroupTheory.BruhatTits.Valuation.Basic
 public import TauCeti.GroupTheory.BruhatTits.WeylGroup
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+import TauCeti.GroupTheory.Commutator
 import TauCeti.LinearAlgebra.RootSystem.CoweightLattice
 
 /-!
@@ -25,21 +26,6 @@ open scoped Pointwise commutatorElement
 namespace TauCeti.BruhatTits
 
 variable {ι M N : Type*} [AddCommGroup M] [AddCommGroup N] {G : Type*} [Group G]
-
-private theorem conj_eq_one_iff (g x : G) : g⁻¹ * x * g = 1 ↔ x = 1 :=
-  ⟨fun h ↦ (by group : x = g * (g⁻¹ * x * g) * g⁻¹).trans (by rw [h]; group),
-   fun h ↦ by rw [h]; group⟩
-private theorem le_normalizer_iSup_of_commutator_le {K : Subgroup G} {ι' : Type*}
-    {L : ι' → Subgroup G} (h : ∀ b, ⁅K, L b⁆ ≤ ⨆ c, L c) :
-    K ≤ Subgroup.normalizer ((⨆ c, L c : Subgroup G) : Set G) := by
-  have hconj {k : G} (hk : k ∈ K) : (⨆ c, L c) ≤ (⨆ c, L c).comap (MulAut.conj k).toMonoidHom :=
-    iSup_le fun b x hx ↦ by
-      simp only [Subgroup.mem_comap, MulEquiv.coe_toMonoidHom, MulAut.conj_apply]
-      exact (by group : k * x * k⁻¹ = ⁅k, x⁆ * x) ▸
-        mul_mem (h b (Subgroup.commutator_mem_commutator hk hx)) (Subgroup.mem_iSup_of_mem b hx)
-  exact fun k hk ↦ Subgroup.mem_normalizer_iff.mpr fun g ↦
-    ⟨fun hg ↦ by simpa [MulAut.conj_apply] using hconj hk hg,
-     fun hg ↦ by simpa [MulAut.conj_apply, mul_assoc] using hconj (inv_mem hk) hg⟩
 
 section Discrete
 variable {R : Type*} [Field R] [LinearOrder R] [Module R M] [Module R N]
@@ -127,7 +113,9 @@ private theorem smul_exists_apply_eq_apply_conj_add (n : D.weylNormalizer) (φ :
   refine ⟨c, fun u hu ↦ ?_⟩
   let u' : D.U (P.reflectionPerm (permInv n i) (permInv n i)) :=
     ⟨(n : G)⁻¹ * u * n, hneg ▸ D.inv_mul_mul_mem_U_weylNormalizer n u.2⟩
-  have hu' : u' ≠ 1 := fun h ↦ hu (Subtype.ext ((conj_eq_one_iff _ _).mp (congrArg Subtype.val h)))
+  have hu' : u' ≠ 1 := fun h ↦ hu <| Subtype.ext <|
+    (conj_eq_one_iff (a := (n : G)⁻¹) (b := (u : G))).mp
+      (by simpa only [u', inv_inv, Subgroup.coe_one] using congrArg Subtype.val h)
   exact (φ.apply_congr hneg (v := u') rfl).trans ((hc u' hu').trans
     (congrArg (· + (c : WithTop ℝ)) (φ.apply_congr rfl (by dsimp [u', conjU]; group))))
 private theorem smul_commutator_mem (n : D.weylNormalizer) (φ : Valuation D) (i j : ι)
@@ -200,7 +188,8 @@ noncomputable instance : SMul D.weylNormalizer (Valuation D) where
       exact (φ.apply_le_apply_inv _ _).trans_eq
         (φ.apply_congr rfl (by simp only [Subgroup.coe_inv]; group))
     apply_eq_top_iff i u := by
-      rw [φ.apply_eq_top_iff, ← Subtype.coe_inj, ← Subtype.coe_inj]; exact conj_eq_one_iff _ _
+      rw [φ.apply_eq_top_iff, ← Subtype.coe_inj, ← Subtype.coe_inj]
+      simpa only [inv_inv, Subgroup.coe_one] using conj_eq_one_iff (a := (n : G)⁻¹) (b := (u : G))
     exists_apply_eq_apply_conj_add i m hm := by exact smul_exists_apply_eq_apply_conj_add n φ i m hm
     commutator_mem i j hij k l u v hu hv := by exact smul_commutator_mem n φ i j hij k l u v hu hv
     apply_eq_two_smul i j h u := by
@@ -380,7 +369,7 @@ private theorem filtration_le_normalizer_iSup_reflConeSubgroup {i j : ι} {y₀ 
     (hs₀ : P.root' s y₀ = 0) (hs_eq : P.root s = P.root' s y₁ • P.root i) :
     φ.filtration s (P.root' s y₁ * k) ≤
       Subgroup.normalizer ((⨆ c, φ.reflConeSubgroup i j y₀ y₁ k l c : Subgroup G) : Set G) := by
-  refine le_normalizer_iSup_of_commutator_le fun b ↦ ?_
+  refine Subgroup.le_normalizer_iSup_of_commutator_le _ _ fun b ↦ ?_
   by_cases hb : reflCone P i j y₀ y₁ b
   · have hnot_neg : ∀ c : ℝ, 0 < c → P.root b ≠ -(c • P.root s) := fun c _ hneg ↦ by
       have : P.root' b y₀ = -c * P.root' s y₀ := by simp [RootPairing.root', hneg]
@@ -526,7 +515,9 @@ private theorem smul_reflection_apply_self_aux {i : ι} {u : D.U i}
     have h1 := hc u'' (ne_one_right_of_mul_mul_mem_reflectionCoset hm_prod)
     rw [hφ_u'', hφ_conj] at h1; norm_cast at h1; linarith
   let y : D.U (P.reflectionPerm i i) := ⟨m⁻¹ * x * m, inv_mul_mul_mem_U_reflectionCoset hm x.2⟩
-  have hy_ne : y ≠ 1 := fun h ↦ hx (Subtype.ext ((conj_eq_one_iff m x).mp (congrArg Subtype.val h)))
+  have hy_ne : y ≠ 1 := fun h ↦ hx <| Subtype.ext <|
+    (conj_eq_one_iff (a := m⁻¹) (b := (x : G))).mp
+      (by simpa only [y, inv_inv, Subgroup.coe_one] using congrArg Subtype.val h)
   rw [φ.smul_reflection_apply_raw hm i x, hc y hy_ne, hc_eq]
   exact congrArg (· + ((-(2 * k) : ℝ) : WithTop ℝ)) (φ.apply_congr rfl (by dsimp only [y]; group))
 private theorem le_smul_reflection_of_linearIndependent {i j : ι}
@@ -602,8 +593,9 @@ private theorem smul_reflection_of_isIndivisible {i : ι} (hi : P.IsIndivisible 
     obtain ⟨l, hl⟩ := φ.exists_apply_eq_coe hx; set j' := P.reflectionPerm i j
     have hle₁ := φ.le_smul_reflection_of_linearIndependent hj hli hm hm_eq hφ hl.ge
     let x' : D.U j' := ⟨m⁻¹ * x * m, inv_mul_mul_mem_U_reflectionCoset hm x.2⟩
-    have hx'_ne : x' ≠ 1 :=
-      fun h ↦ hx (Subtype.ext ((conj_eq_one_iff m x).mp (congrArg Subtype.val h)))
+    have hx'_ne : x' ≠ 1 := fun h ↦ hx <| Subtype.ext <|
+      (conj_eq_one_iff (a := m⁻¹) (b := (x : G))).mp
+        (by simpa only [x', inv_inv, Subgroup.coe_one] using congrArg Subtype.val h)
     obtain ⟨l', hl'⟩ := φ.exists_apply_eq_coe hx'_ne
     have hsmul_eq := (φ.smul_reflection_apply_raw hm j x).trans hl'
     have hm_inv : m⁻¹ ∈ D.reflectionCoset i := D.inv_mem_reflectionCoset hm
@@ -673,8 +665,9 @@ private theorem exists_torus_smul_add_const {t : G} (ht : t ∈ D.T) :
     refine ⟨c₂ - c₁, fun x ↦ ?_⟩
     by_cases hx : x = 1; · simp [hx]
     let x₁ : D.U i := ⟨t⁻¹ * x * t, D.inv_mul_mul_mem_U ht x.2⟩
-    have hx₁ : x₁ ≠ 1 :=
-      fun h ↦ hx (Subtype.ext ((conj_eq_one_iff t x).mp (congrArg Subtype.val h)))
+    have hx₁ : x₁ ≠ 1 := fun h ↦ hx <| Subtype.ext <|
+      (conj_eq_one_iff (a := t⁻¹) (b := (x : G))).mp
+        (by simpa only [x₁, inv_inv, Subgroup.coe_one] using congrArg Subtype.val h)
     have hnt : (torusN ht • φ) i x = φ i x₁ := (smul_apply _ φ i x).trans
       (φ.apply_congr (by rw [D.weylGroupHom_torus ht]; simp) rfl)
     rw [hnt, hc₁ x hx, hc₂ x₁ hx₁, φ.apply_congr rfl
