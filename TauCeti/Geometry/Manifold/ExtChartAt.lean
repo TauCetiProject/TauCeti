@@ -240,6 +240,12 @@ theorem comp_extChartAt_symm_comp_extChartAt_eventuallyEq {α : Type*} (f : M �
   filter_upwards [extChartAt_source_mem_nhds (I := I) x] with y hy
   exact congrArg f ((extChartAt I x).left_inv hy)
 
+/-- The inverse of the extended chart at `x` sends a point of its target into the source of the
+chart at `x`. -/
+theorem extChartAt_symm_mem_chart_source {x : M} {z : E} (hz : z ∈ (extChartAt I x).target) :
+    (extChartAt I x).symm z ∈ (chartAt H x).source := by
+  simpa only [extChartAt_source] using (extChartAt I x).map_target hz
+
 variable (I) in
 /-- The extended chart at `x` maps punctured neighbourhoods of `x` into punctured neighbourhoods of
 `extChartAt I x x`. -/

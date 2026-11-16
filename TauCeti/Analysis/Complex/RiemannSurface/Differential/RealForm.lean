@@ -177,7 +177,7 @@ theorem isSmoothForm_toRoughForm {n : WithTop ℕ∞} (hω : ∀ x, ω.Holomorph
 exterior derivative of its real form vanishes. -/
 theorem mextDeriv_toRoughForm_eq_zero (hω : ω.HolomorphicAt x) :
     mextDeriv ω.toRoughForm x = 0 := by
-  rw [mextDeriv_def, ModelWithCorners.range_eq_univ, extDerivWithin_univ]
+  rw [mextDeriv_eq_extDeriv_inChartAt]
   exact ((ω.inChartAt_toRoughForm_eventuallyEq x (mem_chart_target ℂ x)).extDeriv_eq).trans
     ((holomorphicAt_def ω x).1 hω).differentiableAt.extDeriv_smul_dzForm
 
