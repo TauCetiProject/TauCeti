@@ -12,7 +12,6 @@ import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.StripTranslate
 import TauCeti.Geometry.Symplectic.Floer.Translation.Basic
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
-import TauCeti.Topology.UniformSpace.UniformConvergence.Translate
 
 /-!
 # Limits of translated Floer cylinders
@@ -184,19 +183,16 @@ private theorem tendsto_lintegral_enorm_perturbedFDeriv (hEU : E ⊆ U)
       atTop (𝓝 0)) :
     Tendsto (fun k ↦ ∫⁻ z in Icc (a + s k) (b + s k) ×ˢ Icc 0 1,
       ‖ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) (u k) z e‖ₑ) atTop (𝓝 0) := by
-  refine tendsto_setLIntegral_enorm_of_tendsto_setLIntegral_ofReal_norm_sq
-    (C := ENNReal.ofReal (b - a)) ENNReal.ofReal_ne_top (Eventually.of_forall fun k ↦ ?_)
+  refine tendsto_setLIntegral_enorm_Icc_prod_of_tendsto_setLIntegral_ofReal_norm_sq
     ((hW a b).mono fun k hk ↦ ((hg k).mono (hk.trans hEU)).aestronglyMeasurable
       (measurableSet_Icc.prod measurableSet_Icc))
     (tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h
       (Eventually.of_forall fun _ ↦ zero_le) (Eventually.of_forall fun k ↦ lintegral_mono
         fun z ↦ ENNReal.ofReal_le_ofReal ?_))
-  · rw [Measure.volume_eq_prod, Measure.prod_prod, Real.volume_Icc, Real.volume_Icc]
-    simp
   -- The square of a component is bounded by the sum of the squares of both components.
-  · rcases he with rfl | rfl
-    · exact le_add_of_nonneg_right (sq_nonneg _)
-    · exact le_add_of_nonneg_left (sq_nonneg _)
+  rcases he with rfl | rfl
+  · exact le_add_of_nonneg_right (sq_nonneg _)
+  · exact le_add_of_nonneg_left (sq_nonneg _)
 
 
 /-- **Limits of translated Floer cylinders along windows of vanishing energy are stationary.**

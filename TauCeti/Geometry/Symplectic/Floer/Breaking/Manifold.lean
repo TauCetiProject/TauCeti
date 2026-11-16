@@ -11,6 +11,7 @@ import TauCeti.Analysis.Calculus.StripTranslate
 import TauCeti.Geometry.Manifold.Immersion.Curve
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.VectorField.Regularity
+import TauCeti.Topology.Compactness.Compact
 
 /-!
 # Limits of translated Floer cylinders in a manifold
@@ -138,14 +139,11 @@ private theorem tendsto_setLIntegral_enorm_of_le_mul_energy {U : Set (ℝ × ℝ
     Tendsto (fun k ↦ ∫⁻ z in Icc (a + s k) (b + s k) ×ˢ Icc 0 1, ‖g k z‖ₑ) atTop (𝓝 0) := by
   have hlim := ENNReal.Tendsto.const_mul (hen a b) (Or.inr (ENNReal.ofReal_ne_top (r := c⁻¹)))
   rw [mul_zero] at hlim
-  refine tendsto_setLIntegral_enorm_of_tendsto_setLIntegral_ofReal_norm_sq
-    (C := ENNReal.ofReal (b - a)) ENNReal.ofReal_ne_top (Eventually.of_forall fun k ↦ ?_)
+  exact tendsto_setLIntegral_enorm_Icc_prod_of_tendsto_setLIntegral_ofReal_norm_sq
     ((hWU a b).mono fun k hk ↦ ((hg k).mono hk).aestronglyMeasurable
       (measurableSet_Icc.prod measurableSet_Icc))
     (tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hlim
       (Eventually.of_forall fun _ ↦ zero_le) hle)
-  rw [Measure.volume_eq_prod, Measure.prod_prod, Real.volume_Icc, Real.volume_Icc]
-  simp
 
 omit [NormedSpace ℝ F] in
 /-- A stationary limit `v` of the translates of `e ∘ u_k`, where the translates eventually take
@@ -161,9 +159,8 @@ private theorem exists_eq_comp_tendsto_of_tendstoLocallyUniformlyOn {K : Set M}
     ∃ x : ℝ → M, (∀ t, x t ∈ K) ∧ (∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, v z = e (x z.2)) ∧
       (∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, Tendsto (fun k ↦ u k (z + (s k, 0))) atTop (𝓝 (x z.2))) ∧
       ContinuousOn x (Icc 0 1) := by
-  have := isCompact_iff_compactSpace.1 hK
   have hemb : IsClosedEmbedding fun p : K ↦ e p :=
-    (he.comp continuous_subtype_val).isClosedEmbedding fun p q h ↦ Subtype.ext (he_inj p.2 q.2 h)
+    hK.isClosedEmbedding_domRestrict he.continuousOn he_inj
   -- The limit lies in the closed set `e(K)`.
   have hvK : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc (0 : ℝ) 1, v z ∈ e '' K := fun z hz ↦
     (hK.image he).isClosed.mem_of_tendsto (hv.tendsto_at hz)
@@ -204,10 +201,8 @@ private theorem exists_continuous_apply_eq_mvfderiv_hamiltonianVectorField
     (he : ContMDiff I 𝓘(ℝ, F) 1 e) {K : Set M} (hK : IsCompact K) (he_inj : InjOn e K) :
     ∃ Φ : ℝ × F → F, Continuous Φ ∧
       ∀ t, ∀ p ∈ K, Φ (t, e p) = mvfderiv I e p (ω.hamiltonianVectorField (H t) p) := by
-  have := isCompact_iff_compactSpace.1 hK
   have hemb : IsClosedEmbedding fun p : K ↦ e p :=
-    (he.continuous.comp continuous_subtype_val).isClosedEmbedding fun p q h ↦
-      Subtype.ext (he_inj p.2 q.2 h)
+    hK.isClosedEmbedding_domRestrict he.continuous.continuousOn he_inj
   have hXe : Continuous fun q : ℝ × M ↦ mvfderiv I e q.2 (ω.hamiltonianVectorField (H q.1) q.2) :=
     (he.contMDiff_mvfderiv_apply (m := 0) (by simp)).continuous.comp
       (hω.contMDiff_hamiltonianVectorField_uncurry (n := 0) (by simp)

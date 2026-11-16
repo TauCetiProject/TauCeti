@@ -52,6 +52,15 @@ protected theorem _root_.IsCompact.connectedComponentIn {K : Set X} (hK : IsComp
   · rw [connectedComponentIn_eq_empty hx]
     exact isCompact_empty
 
+/-- **A continuous injection on a compact set is a closed embedding of it.** If `f` is continuous
+and injective on a compact set `K` with values in a Hausdorff space, then its restriction to `K` is
+a closed embedding. -/
+theorem _root_.IsCompact.isClosedEmbedding_domRestrict {Y : Type*} [TopologicalSpace Y] [T2Space Y]
+    {K : Set X} {f : X → Y} (hK : IsCompact K) (hf : ContinuousOn f K) (hinj : InjOn f K) :
+    IsClosedEmbedding (K.domRestrict f) :=
+  have := isCompact_iff_compactSpace.1 hK
+  hf.domRestrict.isClosedEmbedding hinj.injective
+
 /-- **A continuous injection on a compact set maps components onto components.** If `f` is
 continuous and injective on a compact set `K` with values in a Hausdorff space, and `A ⊆ K`, then
 `f` maps the connected component of `A` at a point `x ∈ K` onto the connected component of

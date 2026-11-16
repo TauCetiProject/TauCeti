@@ -39,8 +39,10 @@ eventually lie in the domain where the `w i` are `C¹`. Suppose that the transla
   `∂_t w i - Φ(t, w i)`.
 
 On windows of bounded measure, convergence to zero in `L²` implies convergence to zero in `L¹`
-(`TauCeti.tendsto_setLIntegral_enorm_of_tendsto_setLIntegral_ofReal_norm_sq`), which is the form
-in which energy bounds supply the hypotheses.
+(`TauCeti.tendsto_setLIntegral_enorm_of_tendsto_setLIntegral_ofReal_norm_sq`, specialized to the
+translated windows in
+`TauCeti.tendsto_setLIntegral_enorm_Icc_prod_of_tendsto_setLIntegral_ofReal_norm_sq`), which is the
+form in which energy bounds supply the hypotheses.
 
 These are the analytic steps of the breaking of Floer cylinders along necks, where `Φ` is a
 Hamiltonian vector field and the derivative bounds come from the vanishing of the energy over the
@@ -86,6 +88,23 @@ theorem tendsto_setLIntegral_enorm_of_tendsto_setLIntegral_ofReal_norm_sq {ι α
   · norm_num
   · rw [show (1 / ENNReal.toReal 1 - 1 / ENNReal.toReal 2 : ℝ) = 1 / 2 by norm_num]
     exact ENNReal.rpow_le_rpow hiA (by norm_num)
+
+/-- **`L²` control gives `L¹` control on translated windows.** On the windows
+`[a + s_i, b + s_i] × [c, d]`, which all have measure `(b - a) (d - c)`, if the `L²` norms of `g i`
+tend to zero then so do their `L¹` norms. -/
+theorem tendsto_setLIntegral_enorm_Icc_prod_of_tendsto_setLIntegral_ofReal_norm_sq {ι F : Type*}
+    [NormedAddCommGroup F] {l : Filter ι} {s : ι → ℝ} {a b c d : ℝ} {g : ι → ℝ × ℝ → F}
+    (hg : ∀ᶠ i in l,
+      AEStronglyMeasurable (g i) (volume.restrict (Icc (a + s i) (b + s i) ×ˢ Icc c d)))
+    (h : Tendsto (fun i ↦ ∫⁻ z in Icc (a + s i) (b + s i) ×ˢ Icc c d,
+      ENNReal.ofReal (‖g i z‖ ^ 2)) l (𝓝 0)) :
+    Tendsto (fun i ↦ ∫⁻ z in Icc (a + s i) (b + s i) ×ˢ Icc c d, ‖g i z‖ₑ) l (𝓝 0) := by
+  refine tendsto_setLIntegral_enorm_of_tendsto_setLIntegral_ofReal_norm_sq
+    (C := ENNReal.ofReal (b - a) * ENNReal.ofReal (d - c))
+    (ENNReal.mul_ne_top ENNReal.ofReal_ne_top ENNReal.ofReal_ne_top)
+    (Eventually.of_forall fun i ↦ ?_) hg h
+  rw [Measure.volume_eq_prod, Measure.prod_prod, Real.volume_Icc, Real.volume_Icc]
+  simp
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
   {U : Set (ℝ × ℝ)} {w : ℝ × ℝ → F}
