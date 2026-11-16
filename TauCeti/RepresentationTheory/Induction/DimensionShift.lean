@@ -39,7 +39,8 @@ The constructions follow `ClassFieldTheory/Cohomology/Functors/UpDown.lean` in
 * `Rep.dimensionShiftDown`, `Rep.dimensionShiftDownι`, `Rep.dimensionShiftDownSES`: the kernel of
   `Ind_⊥^G A ⟶ A` and its short complex.
 * `Rep.dimensionShiftUpπIsCokernel`, `Rep.dimensionShiftDownιIsKernel`: their universal
-  properties. The definitions are opaque, so consumers construct maps through these properties.
+  properties. The shifts and their maps are opaque, so consumers construct maps through these
+  properties; the two short complexes are exposed as `ShortComplex.mk` of these maps.
 * `Rep.dimensionShiftUpMap`, `Rep.dimensionShiftDownMap`: the maps a morphism of coefficients
   induces on the two shifts, and `Rep.dimensionShiftUpSESMap`, `Rep.dimensionShiftDownSESMap`: the
   morphisms it induces between the short complexes.
@@ -102,32 +103,17 @@ def dimensionShiftUpπIsCokernel (A : Rep k G) :
       (coindBotUnit_comp_dimensionShiftUpπ A)) :=
   cokernelIsCokernel (coindBotUnit A)
 
-/-- The short complex `A ⟶ Coind_⊥^G A ⟶ dimensionShiftUp A`. -/
+/-- The short complex `A ⟶ Coind_⊥^G A ⟶ dimensionShiftUp A`, the cokernel sequence of
+`coindBotUnit A`. -/
+@[expose, implicit_reducible, simps X₁ X₂ X₃ f g]
 def dimensionShiftUpSES (A : Rep k G) : ShortComplex (Rep k G) :=
-  ShortComplex.cokernelSequence (coindBotUnit A)
+  ShortComplex.mk (coindBotUnit A) (dimensionShiftUpπ A) (coindBotUnit_comp_dimensionShiftUpπ A)
 
 /-- The upward dimension-shifting short complex has maps the embedding into the coinduced module
 and the dimension-shift projection. -/
 theorem dimensionShiftUpSES_def (A : Rep k G) :
     dimensionShiftUpSES A = ShortComplex.mk (coindBotUnit A) (dimensionShiftUpπ A)
       (coindBotUnit_comp_dimensionShiftUpπ A) :=
-  (rfl)
-
-/-- The first object in the upward dimension-shifting short complex is `A`. -/
-@[simp]
-theorem dimensionShiftUpSES_X₁ (A : Rep k G) : (dimensionShiftUpSES A).X₁ = A :=
-  (rfl)
-
-/-- The middle object in the upward dimension-shifting short complex is coinduced from `⊥`. -/
-@[simp]
-theorem dimensionShiftUpSES_X₂ (A : Rep k G) :
-    (dimensionShiftUpSES A).X₂ = coindBot k G A.V :=
-  (rfl)
-
-/-- The last object in the upward dimension-shifting short complex is `dimensionShiftUp A`. -/
-@[simp]
-theorem dimensionShiftUpSES_X₃ (A : Rep k G) :
-    (dimensionShiftUpSES A).X₃ = dimensionShiftUp A :=
   (rfl)
 
 /-- The short complex `A ⟶ Coind_⊥^G A ⟶ dimensionShiftUp A` is short exact. -/
@@ -175,32 +161,17 @@ def dimensionShiftDownιIsKernel (A : Rep k G) :
       (dimensionShiftDownι_comp_indBotCounit A)) :=
   kernelIsKernel (indBotCounit A)
 
-/-- The short complex `dimensionShiftDown A ⟶ Ind_⊥^G A ⟶ A`. -/
+/-- The short complex `dimensionShiftDown A ⟶ Ind_⊥^G A ⟶ A`, the kernel sequence of
+`indBotCounit A`. -/
+@[expose, implicit_reducible, simps X₁ X₂ X₃ f g]
 def dimensionShiftDownSES (A : Rep k G) : ShortComplex (Rep k G) :=
-  ShortComplex.kernelSequence (indBotCounit A)
+  ShortComplex.mk (dimensionShiftDownι A) (indBotCounit A) (dimensionShiftDownι_comp_indBotCounit A)
 
 /-- The downward dimension-shifting short complex has maps the dimension-shift inclusion and the
 projection onto `A`. -/
 theorem dimensionShiftDownSES_def (A : Rep k G) :
     dimensionShiftDownSES A = ShortComplex.mk (dimensionShiftDownι A) (indBotCounit A)
       (dimensionShiftDownι_comp_indBotCounit A) :=
-  (rfl)
-
-/-- The first object in the downward dimension-shifting short complex is `dimensionShiftDown A`. -/
-@[simp]
-theorem dimensionShiftDownSES_X₁ (A : Rep k G) :
-    (dimensionShiftDownSES A).X₁ = dimensionShiftDown A :=
-  (rfl)
-
-/-- The middle object in the downward dimension-shifting short complex is induced from `⊥`. -/
-@[simp]
-theorem dimensionShiftDownSES_X₂ (A : Rep k G) :
-    (dimensionShiftDownSES A).X₂ = indBot k G A.V :=
-  (rfl)
-
-/-- The last object in the downward dimension-shifting short complex is `A`. -/
-@[simp]
-theorem dimensionShiftDownSES_X₃ (A : Rep k G) : (dimensionShiftDownSES A).X₃ = A :=
   (rfl)
 
 /-- The short complex `dimensionShiftDown A ⟶ Ind_⊥^G A ⟶ A` is short exact. -/
@@ -251,13 +222,10 @@ theorem dimensionShiftUpMap_comp {A B C : Rep k G} (f : A ⟶ B) (g : B ⟶ C) :
   apply (cancel_epi (dimensionShiftUpπ A)).mp
   simp
 
-/-- A coefficient morphism induces a morphism of the public presentations of the upward
-dimension-shifting sequences (`dimensionShiftUpSES_def`). -/
+/-- The morphism of upward dimension-shifting short complexes induced by a coefficient
+morphism. -/
 def dimensionShiftUpSESMap {A B : Rep k G} (f : A ⟶ B) :
-    ShortComplex.mk (coindBotUnit A) (dimensionShiftUpπ A)
-        (coindBotUnit_comp_dimensionShiftUpπ A) ⟶
-      ShortComplex.mk (coindBotUnit B) (dimensionShiftUpπ B)
-        (coindBotUnit_comp_dimensionShiftUpπ B) :=
+    dimensionShiftUpSES A ⟶ dimensionShiftUpSES B :=
   { τ₁ := f
     τ₂ := coindBotMap f
     τ₃ := dimensionShiftUpMap f
@@ -305,13 +273,10 @@ theorem dimensionShiftDownMap_comp {A B C : Rep k G} (f : A ⟶ B) (g : B ⟶ C)
   apply (cancel_mono (dimensionShiftDownι C)).mp
   simp
 
-/-- A coefficient morphism induces a morphism of the public presentations of the downward
-dimension-shifting sequences (`dimensionShiftDownSES_def`). -/
+/-- The morphism of downward dimension-shifting short complexes induced by a coefficient
+morphism. -/
 def dimensionShiftDownSESMap {A B : Rep k G} (f : A ⟶ B) :
-    ShortComplex.mk (dimensionShiftDownι A) (indBotCounit A)
-        (dimensionShiftDownι_comp_indBotCounit A) ⟶
-      ShortComplex.mk (dimensionShiftDownι B) (indBotCounit B)
-        (dimensionShiftDownι_comp_indBotCounit B) :=
+    dimensionShiftDownSES A ⟶ dimensionShiftDownSES B :=
   { τ₁ := dimensionShiftDownMap f
     τ₂ := indBotMap f
     τ₃ := f

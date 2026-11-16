@@ -103,8 +103,8 @@ private theorem posMap_cup_fromGroupCohomology_succ (M : Rep k Q) (p : ℕ)
   -- Write `z = δ z'` for the dimension-shifting sequence `0 → N → Coind_⊥^Q N → N' → 0`.
   let D := ShortComplex.mk (coindBotUnit N) (dimensionShiftUpπ N)
     (coindBotUnit_comp_dimensionShiftUpπ N)
-  have hD : D.ShortExact := by
-    simpa only [dimensionShiftUpSES_def] using dimensionShiftUpSES_shortExact N
+  have hD : D.ShortExact :=
+    dimensionShiftUpSES_shortExact N
   have hresD : (D.map (Rep.resFunctor φ)).ShortExact := (shortExact_res φ).2 hD
   obtain ⟨z', rfl⟩ : ∃ z', groupCohomology.δ hD q (q + 1) rfl z' = z :=
     (ModuleCat.epi_iff_surjective _).1
