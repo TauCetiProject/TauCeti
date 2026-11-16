@@ -99,6 +99,14 @@ open ContCohomology _root_.ValuativeRel
 
 universe u v w
 
+/-- The image of `inertiaSubgroup K` inside `AbsoluteGaloisGroup K`. -/
+local notation "I[" K "]" =>
+  Subgroup.map
+    ((absoluteGaloisGroupRestrictEquiv K :
+        Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
+      Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K)
+    (inertiaSubgroup K)
+
 section FrobeniusSubId
 
 variable (K : Type u) [Field K] [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
@@ -106,16 +114,7 @@ variable (K : Type u) [Field K] [ValuativeRel K] [TopologicalSpace K] [IsNonarch
 /-- **The Frobenius-minus-identity endomorphism `Frob_K - 1`** on the inertia invariants `M^{I_K}`
 of an `AbsoluteGaloisGroup K`-module `M`. -/
 def frobeniusSubId (M : Type v) [AddCommGroup M] [DistribMulAction (AbsoluteGaloisGroup K) M] :
-    FixedPoints.addSubgroup
-        ((inertiaSubgroup K).map
-          ((absoluteGaloisGroupRestrictEquiv K :
-              Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-            Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K)) M →+
-      FixedPoints.addSubgroup
-        ((inertiaSubgroup K).map
-          ((absoluteGaloisGroupRestrictEquiv K :
-              Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-            Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K)) M where
+    FixedPoints.addSubgroup I[K] M →+ FixedPoints.addSubgroup I[K] M where
   toFun m := unramifiedQuotientFrobenius K • m - m
   map_zero' := by rw [smul_zero, sub_self]
   map_add' a b := by
@@ -125,12 +124,7 @@ def frobeniusSubId (M : Type v) [AddCommGroup M] [DistribMulAction (AbsoluteGalo
 /-- `frobeniusSubId K M` sends `m ∈ M^{I_K}` to `unramifiedQuotientFrobenius K • m - m`. -/
 @[simp]
 theorem frobeniusSubId_apply {M : Type v} [AddCommGroup M]
-    [DistribMulAction (AbsoluteGaloisGroup K) M]
-    (m : FixedPoints.addSubgroup
-      ((inertiaSubgroup K).map
-        ((absoluteGaloisGroupRestrictEquiv K :
-            Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-          Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K)) M) :
+    [DistribMulAction (AbsoluteGaloisGroup K) M] (m : FixedPoints.addSubgroup I[K] M) :
     frobeniusSubId K M m = unramifiedQuotientFrobenius K • m - m :=
   (rfl)
 
@@ -138,13 +132,7 @@ theorem frobeniusSubId_apply {M : Type v} [AddCommGroup M]
 scalar multiplication by `z : zHat` is scalar multiplication by
 `(quotientMapInertiaSubgroupEquivZHat K).symm z`. -/
 private theorem compHom_symm_smul {N : Type v} [AddCommGroup N]
-    [DistribMulAction
-      (AbsoluteGaloisGroup K ⧸
-        (inertiaSubgroup K).map
-          ((absoluteGaloisGroupRestrictEquiv K :
-              Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-            Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K)) N]
-    (z : zHat.{u}) (m : N) :
+    [DistribMulAction (AbsoluteGaloisGroup K ⧸ I[K]) N] (z : zHat.{u}) (m : N) :
     letI : DistribMulAction zHat.{u} N :=
       DistribMulAction.compHom N (quotientMapInertiaSubgroupEquivZHat K).symm.toMonoidHom
     z • m = (quotientMapInertiaSubgroupEquivZHat K).symm z • m := by
@@ -157,26 +145,10 @@ private theorem compHom_symm_smul {N : Type v} [AddCommGroup N]
 `zHat.genSubId` on `M^{I_K}` coincides with `frobeniusSubId K M`. -/
 private theorem genSubId_eq_frobeniusSubId (M : Type v) [AddCommGroup M]
     [DistribMulAction (AbsoluteGaloisGroup K) M] :
-    letI : DistribMulAction zHat.{u}
-        (FixedPoints.addSubgroup
-          ((inertiaSubgroup K).map
-            ((absoluteGaloisGroupRestrictEquiv K :
-                Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-              Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K)) M) :=
+    letI : DistribMulAction zHat.{u} (FixedPoints.addSubgroup I[K] M) :=
       DistribMulAction.compHom _ (quotientMapInertiaSubgroupEquivZHat K).symm.toMonoidHom
-    zHat.genSubId.{u}
-        (FixedPoints.addSubgroup
-          ((inertiaSubgroup K).map
-            ((absoluteGaloisGroupRestrictEquiv K :
-                Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-              Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K)) M) =
-      frobeniusSubId K M := by
-  let _ : DistribMulAction zHat.{u}
-      (FixedPoints.addSubgroup
-        ((inertiaSubgroup K).map
-          ((absoluteGaloisGroupRestrictEquiv K :
-              Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-            Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K)) M) :=
+    zHat.genSubId.{u} (FixedPoints.addSubgroup I[K] M) = frobeniusSubId K M := by
+  let _ : DistribMulAction zHat.{u} (FixedPoints.addSubgroup I[K] M) :=
     DistribMulAction.compHom _ (quotientMapInertiaSubgroupEquivZHat K).symm.toMonoidHom
   refine AddMonoidHom.ext fun m ↦ ?_
   rw [zHat.genSubId_apply, frobeniusSubId_apply, compHom_symm_smul,
@@ -187,34 +159,10 @@ is fixed by the entire unramified quotient `G_K ⧸ I_K`** (whenever the quotien
 is continuous, for instance when `M` is discrete). -/
 theorem ker_frobeniusSubId_eq_fixedPoints (M : Type v) [AddCommGroup M] [TopologicalSpace M]
     [T1Space M] [DistribMulAction (AbsoluteGaloisGroup K) M]
-    [ContinuousSMul
-      (AbsoluteGaloisGroup K ⧸
-        (inertiaSubgroup K).map
-          ((absoluteGaloisGroupRestrictEquiv K :
-              Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-            Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K))
-      (FixedPoints.addSubgroup
-        ((inertiaSubgroup K).map
-          ((absoluteGaloisGroupRestrictEquiv K :
-              Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-            Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K)) M)] :
+    [ContinuousSMul (AbsoluteGaloisGroup K ⧸ I[K]) (FixedPoints.addSubgroup I[K] M)] :
     (frobeniusSubId K M).ker =
-      FixedPoints.addSubgroup
-        (AbsoluteGaloisGroup K ⧸
-          (inertiaSubgroup K).map
-            ((absoluteGaloisGroupRestrictEquiv K :
-                Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-              Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K))
-        (FixedPoints.addSubgroup
-          ((inertiaSubgroup K).map
-            ((absoluteGaloisGroupRestrictEquiv K :
-                Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-              Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K)) M) := by
-  let I := (inertiaSubgroup K).map
-    ((absoluteGaloisGroupRestrictEquiv K :
-        Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-      Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K)
-  let N := FixedPoints.addSubgroup I M
+      FixedPoints.addSubgroup (AbsoluteGaloisGroup K ⧸ I[K]) (FixedPoints.addSubgroup I[K] M) := by
+  let N := FixedPoints.addSubgroup I[K] M
   let e := quotientMapInertiaSubgroupEquivZHat K
   let _ : DistribMulAction zHat.{u} N := DistribMulAction.compHom N e.symm.toMonoidHom
   have _ : ContinuousSMul zHat.{u} N := MulAction.continuousSMul_compHom e.symm.continuous
@@ -235,20 +183,11 @@ variable (K : Type u) [Field K] [ValuativeRel K] [TopologicalSpace K] [IsNonarch
 /-- **Unramified first Galois cohomology `H¹_ur(K, M)`**: the subgroup of `H¹(G_K, M)` consisting of
 classes whose restriction to the inertia subgroup `I_K` vanishes. -/
 def unramifiedH1 : AddSubgroup (H1 (AbsoluteGaloisGroup K) M) :=
-  (explicitRes1 (AbsoluteGaloisGroup K) M
-    ((inertiaSubgroup K).map
-      ((absoluteGaloisGroupRestrictEquiv K :
-          Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-        Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K))).ker
+  (explicitRes1 (AbsoluteGaloisGroup K) M I[K]).ker
 
 /-- `unramifiedH1 K M` is the kernel of restriction to inertia in `AbsoluteGaloisGroup K`. -/
 theorem unramifiedH1_def :
-    unramifiedH1 K M =
-      (explicitRes1 (AbsoluteGaloisGroup K) M
-        ((inertiaSubgroup K).map
-          ((absoluteGaloisGroupRestrictEquiv K :
-              Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-            Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K))).ker :=
+    unramifiedH1 K M = (explicitRes1 (AbsoluteGaloisGroup K) M I[K]).ker :=
   (rfl)
 
 variable {K M}
@@ -256,12 +195,7 @@ variable {K M}
 /-- A class in `H¹(G_K, M)` is unramified if and only if its restriction to inertia vanishes. -/
 @[simp]
 theorem mem_unramifiedH1_iff {c : H1 (AbsoluteGaloisGroup K) M} :
-    c ∈ unramifiedH1 K M ↔
-      explicitRes1 (AbsoluteGaloisGroup K) M
-        ((inertiaSubgroup K).map
-          ((absoluteGaloisGroupRestrictEquiv K :
-              Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-            Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K)) c = 0 :=
+    c ∈ unramifiedH1 K M ↔ explicitRes1 (AbsoluteGaloisGroup K) M I[K] c = 0 :=
   (Iff.rfl)
 
 /-- **Functoriality of `unramifiedH1` in the coefficient module.** A continuous `G_K`-equivariant
@@ -296,66 +230,28 @@ theorem _root_.AlgHom.explicitMap1_mem_unramifiedH1 {L : Type*} [Field L] [Valua
 
 section Inflation
 
-variable (K M)
-  [ContinuousSMul
-    (AbsoluteGaloisGroup K ⧸
-      (inertiaSubgroup K).map
-        ((absoluteGaloisGroupRestrictEquiv K :
-            Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-          Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K))
-    (FixedPoints.addSubgroup
-      ((inertiaSubgroup K).map
-        ((absoluteGaloisGroupRestrictEquiv K :
-            Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-          Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K)) M)]
+variable (K M) [ContinuousSMul (AbsoluteGaloisGroup K ⧸ I[K]) (FixedPoints.addSubgroup I[K] M)]
 
 /-- **The unramified subgroup of `H¹(G_K, M)` is the image of inflation from `G_K ⧸ I_K`.** -/
 theorem range_explicitInfl1_eq_unramifiedH1 :
-    (explicitInfl1 (AbsoluteGaloisGroup K) M
-      ((inertiaSubgroup K).map
-        ((absoluteGaloisGroupRestrictEquiv K :
-            Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-          Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K))).range =
-      unramifiedH1 K M :=
+    (explicitInfl1 (AbsoluteGaloisGroup K) M I[K]).range = unramifiedH1 K M :=
   explicitInfRes_exact (AbsoluteGaloisGroup K) M _
 
 variable {K M} in
 /-- Every class inflated from `H¹(G_K ⧸ I_K, M^{I_K})` is unramified. -/
 theorem explicitInfl1_mem_unramifiedH1
-    (x : H1 (AbsoluteGaloisGroup K ⧸
-        (inertiaSubgroup K).map
-          ((absoluteGaloisGroupRestrictEquiv K :
-              Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-            Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K))
-      (FixedPoints.addSubgroup
-        ((inertiaSubgroup K).map
-          ((absoluteGaloisGroupRestrictEquiv K :
-              Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-            Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K)) M)) :
-    explicitInfl1 (AbsoluteGaloisGroup K) M
-      ((inertiaSubgroup K).map
-        ((absoluteGaloisGroupRestrictEquiv K :
-            Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-          Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K)) x ∈
-      unramifiedH1 K M := by
+    (x : H1 (AbsoluteGaloisGroup K ⧸ I[K]) (FixedPoints.addSubgroup I[K] M)) :
+    explicitInfl1 (AbsoluteGaloisGroup K) M I[K] x ∈ unramifiedH1 K M := by
   rw [← range_explicitInfl1_eq_unramifiedH1]
   exact ⟨x, rfl⟩
 
 private theorem bijective_codRestrict_explicitInfl1 :
     Function.Bijective
-      ((explicitInfl1 (AbsoluteGaloisGroup K) M
-        ((inertiaSubgroup K).map
-          ((absoluteGaloisGroupRestrictEquiv K :
-              Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-            Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K))).codRestrict
-          (unramifiedH1 K M) explicitInfl1_mem_unramifiedH1) := by
-  let I := (inertiaSubgroup K).map
-    ((absoluteGaloisGroupRestrictEquiv K :
-        Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-      Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K)
-  refine ⟨fun a b h ↦ explicitInfl1_injective (AbsoluteGaloisGroup K) M I (congrArg Subtype.val h),
-    fun y ↦ ?_⟩
-  have hy : y.1 ∈ (explicitInfl1 (AbsoluteGaloisGroup K) M I).range := by
+      ((explicitInfl1 (AbsoluteGaloisGroup K) M I[K]).codRestrict
+        (unramifiedH1 K M) explicitInfl1_mem_unramifiedH1) := by
+  refine ⟨fun a b h ↦ explicitInfl1_injective (AbsoluteGaloisGroup K) M I[K]
+    (congrArg Subtype.val h), fun y ↦ ?_⟩
+  have hy : y.1 ∈ (explicitInfl1 (AbsoluteGaloisGroup K) M I[K]).range := by
     rw [range_explicitInfl1_eq_unramifiedH1]
     exact y.2
   obtain ⟨x, hx⟩ := hy
@@ -363,57 +259,25 @@ private theorem bijective_codRestrict_explicitInfl1 :
 
 /-- **Inflation identifies `H¹(G_K ⧸ I_K, M^{I_K})` with `unramifiedH1 K M`.** -/
 def quotientH1AddEquivUnramifiedH1 :
-    H1 (AbsoluteGaloisGroup K ⧸
-        (inertiaSubgroup K).map
-          ((absoluteGaloisGroupRestrictEquiv K :
-              Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-            Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K))
-      (FixedPoints.addSubgroup
-        ((inertiaSubgroup K).map
-          ((absoluteGaloisGroupRestrictEquiv K :
-              Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-            Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K)) M) ≃+
-      unramifiedH1 K M :=
+    H1 (AbsoluteGaloisGroup K ⧸ I[K]) (FixedPoints.addSubgroup I[K] M) ≃+ unramifiedH1 K M :=
   AddEquiv.ofBijective
-    ((explicitInfl1 (AbsoluteGaloisGroup K) M
-      ((inertiaSubgroup K).map
-        ((absoluteGaloisGroupRestrictEquiv K :
-            Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-          Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K))).codRestrict
-        (unramifiedH1 K M) explicitInfl1_mem_unramifiedH1)
+    ((explicitInfl1 (AbsoluteGaloisGroup K) M I[K]).codRestrict
+      (unramifiedH1 K M) explicitInfl1_mem_unramifiedH1)
     (bijective_codRestrict_explicitInfl1 K M)
 
 /-- `quotientH1AddEquivUnramifiedH1` acts as `explicitInfl1` into `H¹(G_K, M)`. -/
 @[simp]
 theorem coe_quotientH1AddEquivUnramifiedH1_apply
-    (x : H1 (AbsoluteGaloisGroup K ⧸
-        (inertiaSubgroup K).map
-          ((absoluteGaloisGroupRestrictEquiv K :
-              Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-            Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K))
-      (FixedPoints.addSubgroup
-        ((inertiaSubgroup K).map
-          ((absoluteGaloisGroupRestrictEquiv K :
-              Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-            Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K)) M)) :
+    (x : H1 (AbsoluteGaloisGroup K ⧸ I[K]) (FixedPoints.addSubgroup I[K] M)) :
     (quotientH1AddEquivUnramifiedH1 K M x : H1 (AbsoluteGaloisGroup K) M) =
-      explicitInfl1 (AbsoluteGaloisGroup K) M
-        ((inertiaSubgroup K).map
-          ((absoluteGaloisGroupRestrictEquiv K :
-              Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-            Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K)) x :=
+      explicitInfl1 (AbsoluteGaloisGroup K) M I[K] x :=
   (rfl)
 
 /-- Inflating the preimage of an unramified class under `quotientH1AddEquivUnramifiedH1` recovers
 the underlying class in `H¹(G_K, M)`. -/
 @[simp]
 theorem explicitInfl1_quotientH1AddEquivUnramifiedH1_symm (c : unramifiedH1 K M) :
-    explicitInfl1 (AbsoluteGaloisGroup K) M
-        ((inertiaSubgroup K).map
-          ((absoluteGaloisGroupRestrictEquiv K :
-              Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-            Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K))
-        ((quotientH1AddEquivUnramifiedH1 K M).symm c) =
+    explicitInfl1 (AbsoluteGaloisGroup K) M I[K] ((quotientH1AddEquivUnramifiedH1 K M).symm c) =
       (c : H1 (AbsoluteGaloisGroup K) M) := by
   rw [← coe_quotientH1AddEquivUnramifiedH1_apply, AddEquiv.apply_symm_apply]
 
@@ -427,41 +291,17 @@ variable (K : Type u) [Field K] [ValuativeRel K] [TopologicalSpace K] [IsNonarch
   (M : Type v) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
   [DistribMulAction (AbsoluteGaloisGroup K) M] [ContinuousSMul (AbsoluteGaloisGroup K) M]
 
-private local instance : DistribMulAction zHat.{u}
-    (FixedPoints.addSubgroup
-      ((inertiaSubgroup K).map
-        ((absoluteGaloisGroupRestrictEquiv K :
-            Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-          Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K)) M) :=
+private local instance : DistribMulAction zHat.{u} (FixedPoints.addSubgroup I[K] M) :=
   DistribMulAction.compHom _ (quotientMapInertiaSubgroupEquivZHat K).symm.toMonoidHom
 
-private local instance : ContinuousSMul zHat.{u}
-    (FixedPoints.addSubgroup
-      ((inertiaSubgroup K).map
-        ((absoluteGaloisGroupRestrictEquiv K :
-            Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-          Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K)) M) :=
+private local instance : ContinuousSMul zHat.{u} (FixedPoints.addSubgroup I[K] M) :=
   MulAction.continuousSMul_compHom (quotientMapInertiaSubgroupEquivZHat K).symm.continuous
 
 /-- Transporting `H¹(G_K ⧸ I_K, M^{I_K})` to `H¹(zHat, M^{I_K})` along
 `(quotientMapInertiaSubgroupEquivZHat K).symm`. -/
 private def quotientH1AddEquivZHatH1 :
-    H1 (AbsoluteGaloisGroup K ⧸
-        (inertiaSubgroup K).map
-          ((absoluteGaloisGroupRestrictEquiv K :
-              Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-            Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K))
-      (FixedPoints.addSubgroup
-        ((inertiaSubgroup K).map
-          ((absoluteGaloisGroupRestrictEquiv K :
-              Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-            Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K)) M) ≃+
-      H1 zHat.{u}
-        (FixedPoints.addSubgroup
-          ((inertiaSubgroup K).map
-            ((absoluteGaloisGroupRestrictEquiv K :
-                Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-              Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K)) M) :=
+    H1 (AbsoluteGaloisGroup K ⧸ I[K]) (FixedPoints.addSubgroup I[K] M) ≃+
+      H1 zHat.{u} (FixedPoints.addSubgroup I[K] M) :=
   explicitMap1Equiv _ _ zHat.{u} _
     (quotientMapInertiaSubgroupEquivZHat K).symm (AddEquiv.refl _)
     continuous_of_discreteTopology continuous_of_discreteTopology fun z m ↦ by
@@ -471,29 +311,13 @@ private def quotientH1AddEquivZHatH1 :
 /-- Transporting `unramifiedH1 K M` to `H¹(zHat, M^{I_K})` along
 `(quotientMapInertiaSubgroupEquivZHat K).symm`. -/
 private def unramifiedH1AddEquivZHatH1 :
-    unramifiedH1 K M ≃+
-      H1 zHat.{u}
-        (FixedPoints.addSubgroup
-          ((inertiaSubgroup K).map
-            ((absoluteGaloisGroupRestrictEquiv K :
-                Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-              Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K)) M) :=
+    unramifiedH1 K M ≃+ H1 zHat.{u} (FixedPoints.addSubgroup I[K] M) :=
   (quotientH1AddEquivUnramifiedH1 K M).symm.trans (quotientH1AddEquivZHatH1 K M)
 
 /-- On a `1`-cocycle `f` of `G_K ⧸ I_K`, `unramifiedH1AddEquivZHatH1` pulls `f` back along
 `(quotientMapInertiaSubgroupEquivZHat K).symm`. -/
 private theorem unramifiedH1AddEquivZHatH1_quotientH1AddEquivUnramifiedH1_mk
-    (f : Z1
-      (AbsoluteGaloisGroup K ⧸
-        (inertiaSubgroup K).map
-          ((absoluteGaloisGroupRestrictEquiv K :
-              Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-            Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K))
-      (FixedPoints.addSubgroup
-        ((inertiaSubgroup K).map
-          ((absoluteGaloisGroupRestrictEquiv K :
-              Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-            Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K)) M)) :
+    (f : Z1 (AbsoluteGaloisGroup K ⧸ I[K]) (FixedPoints.addSubgroup I[K] M)) :
     unramifiedH1AddEquivZHatH1 K M (quotientH1AddEquivUnramifiedH1 K M (f : H1 _ _)) =
       (cocyclesMap1 _ _ zHat.{u} _ (quotientMapInertiaSubgroupEquivZHat K).symm
         (AddEquiv.refl _).toAddMonoidHom continuous_of_discreteTopology
@@ -501,11 +325,7 @@ private theorem unramifiedH1AddEquivZHatH1_quotientH1AddEquivUnramifiedH1_mk
           rw [AddEquiv.coe_toAddMonoidHom, AddEquiv.refl_apply, AddEquiv.refl_apply,
             ContinuousMonoidHom.coe_coe]
           exact (compHom_symm_smul K z m).symm) f : H1 _ _) := by
-  let I := (inertiaSubgroup K).map
-    ((absoluteGaloisGroupRestrictEquiv K :
-        Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-      Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K)
-  let N := FixedPoints.addSubgroup I M
+  let N := FixedPoints.addSubgroup I[K] M
   have hequiv : ∀ (z : zHat.{u}) (m : N),
       AddEquiv.refl N ((quotientMapInertiaSubgroupEquivZHat K).symm z • m) =
         z • AddEquiv.refl N m := fun z m ↦ by
@@ -513,67 +333,40 @@ private theorem unramifiedH1AddEquivZHatH1_quotientH1AddEquivUnramifiedH1_mk
     exact (compHom_symm_smul K z m).symm
   exact (congrArg (quotientH1AddEquivZHatH1 K M)
       ((quotientH1AddEquivUnramifiedH1 K M).symm_apply_apply (f : H1 _ _))).trans <|
-    (explicitMap1Equiv_apply (AbsoluteGaloisGroup K ⧸ I) N zHat.{u} N
+    (explicitMap1Equiv_apply (AbsoluteGaloisGroup K ⧸ I[K]) N zHat.{u} N
       (quotientMapInertiaSubgroupEquivZHat K).symm (AddEquiv.refl N)
       continuous_of_discreteTopology continuous_of_discreteTopology hequiv (f : H1 _ _)).trans
-      (explicitMap1_mk (AbsoluteGaloisGroup K ⧸ I) N zHat.{u} N
+      (explicitMap1_mk (AbsoluteGaloisGroup K ⧸ I[K]) N zHat.{u} N
         (quotientMapInertiaSubgroupEquivZHat K).symm (AddEquiv.refl N).toAddMonoidHom
         continuous_of_discreteTopology hequiv f)
 
 /-- Transporting `H⁰(G_K, M)` to `H⁰(zHat, M^{I_K})` along `explicitInfl0Equiv` and
 `(quotientMapInertiaSubgroupEquivZHat K).symm`. -/
 private def h0AddEquivZHatH0 :
-    H0 (AbsoluteGaloisGroup K) M ≃+
-      H0 zHat.{u}
-        (FixedPoints.addSubgroup
-          ((inertiaSubgroup K).map
-            ((absoluteGaloisGroupRestrictEquiv K :
-                Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-              Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K)) M) :=
-  let I := (inertiaSubgroup K).map
-    ((absoluteGaloisGroupRestrictEquiv K :
-        Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-      Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K)
-  let N := FixedPoints.addSubgroup I M
+    H0 (AbsoluteGaloisGroup K) M ≃+ H0 zHat.{u} (FixedPoints.addSubgroup I[K] M) :=
+  let N := FixedPoints.addSubgroup I[K] M
   let e := quotientMapInertiaSubgroupEquivZHat K
   have hequiv0 : ∀ (z : zHat.{u}) (m : N),
       AddMonoidHom.id N (e.symm.toMonoidHom z • m) = z • AddMonoidHom.id N m := fun z m ↦ by
     rw [AddMonoidHom.id_apply, AddMonoidHom.id_apply]
     exact (MulAction.compHom_smul_def e.symm.toMonoidHom z m).symm
-  (explicitInfl0Equiv (AbsoluteGaloisGroup K) M I).symm.trans <|
+  (explicitInfl0Equiv (AbsoluteGaloisGroup K) M I[K]).symm.trans <|
     AddEquiv.ofBijective
-      (explicitMap0 (AbsoluteGaloisGroup K ⧸ I) N e.symm.toMonoidHom (AddMonoidHom.id N) hequiv0)
-      (explicitMap0_bijective (AbsoluteGaloisGroup K ⧸ I) N e.symm.toMonoidHom e.symm.surjective
+      (explicitMap0 (AbsoluteGaloisGroup K ⧸ I[K]) N e.symm.toMonoidHom (AddMonoidHom.id N) hequiv0)
+      (explicitMap0_bijective (AbsoluteGaloisGroup K ⧸ I[K]) N e.symm.toMonoidHom e.symm.surjective
         (AddMonoidHom.id N) Function.bijective_id hequiv0)
 
 omit [TopologicalSpace M] [DiscreteTopology M] [ContinuousSMul (AbsoluteGaloisGroup K) M] in
 /-- Specialization of `genSubId_eq_frobeniusSubId` using the local `zHat`-action instance. -/
 private theorem genSubId_eq_frobeniusSubId_local :
-    zHat.genSubId.{u}
-        (FixedPoints.addSubgroup
-          ((inertiaSubgroup K).map
-            ((absoluteGaloisGroupRestrictEquiv K :
-                Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-              Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K)) M) =
-      frobeniusSubId K M :=
+    zHat.genSubId.{u} (FixedPoints.addSubgroup I[K] M) = frobeniusSubId K M :=
   genSubId_eq_frobeniusSubId K M
 
 /-- **Unramified `H¹` is the Frobenius coinvariant quotient of `M^{I_K}`**: for a discrete
 `G_K`-module `M` whose inertia-fixed subgroup `M^{I_K}` is torsion,
 `unramifiedH1 K M ≃+ M^{I_K} ⧸ (Frob_K - 1) M^{I_K}`. -/
-def unramifiedH1AddEquivCoinvariants
-    (hM : IsAddTorsion (FixedPoints.addSubgroup
-      ((inertiaSubgroup K).map
-        ((absoluteGaloisGroupRestrictEquiv K :
-            Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-          Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K)) M)) :
-    unramifiedH1 K M ≃+
-      FixedPoints.addSubgroup
-        ((inertiaSubgroup K).map
-          ((absoluteGaloisGroupRestrictEquiv K :
-              Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-            Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K)) M ⧸
-        (frobeniusSubId K M).range :=
+def unramifiedH1AddEquivCoinvariants (hM : IsAddTorsion (FixedPoints.addSubgroup I[K] M)) :
+    unramifiedH1 K M ≃+ FixedPoints.addSubgroup I[K] M ⧸ (frobeniusSubId K M).range :=
   (unramifiedH1AddEquivZHatH1 K M).trans <|
     (zHat.h1AddEquivCoinvariants.{u} _ hM).trans
       (QuotientAddGroup.quotientAddEquivOfEq
@@ -584,22 +377,8 @@ def unramifiedH1AddEquivCoinvariants
 `f (unramifiedQuotientFrobenius K)`. -/
 @[simp]
 theorem unramifiedH1AddEquivCoinvariants_quotientH1AddEquivUnramifiedH1_mk
-    (hM : IsAddTorsion (FixedPoints.addSubgroup
-      ((inertiaSubgroup K).map
-        ((absoluteGaloisGroupRestrictEquiv K :
-            Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-          Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K)) M))
-    (f : Z1
-      (AbsoluteGaloisGroup K ⧸
-        (inertiaSubgroup K).map
-          ((absoluteGaloisGroupRestrictEquiv K :
-              Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-            Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K))
-      (FixedPoints.addSubgroup
-        ((inertiaSubgroup K).map
-          ((absoluteGaloisGroupRestrictEquiv K :
-              Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-            Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K)) M)) :
+    (hM : IsAddTorsion (FixedPoints.addSubgroup I[K] M))
+    (f : Z1 (AbsoluteGaloisGroup K ⧸ I[K]) (FixedPoints.addSubgroup I[K] M)) :
     unramifiedH1AddEquivCoinvariants K M hM
         (quotientH1AddEquivUnramifiedH1 K M (f : H1 _ _)) =
       QuotientAddGroup.mk (f.val (unramifiedQuotientFrobenius K)) := by
@@ -614,12 +393,7 @@ theorem unramifiedH1AddEquivCoinvariants_quotientH1AddEquivUnramifiedH1_mk
 inertia-fixed subgroup `M^{I_K}` is finite (in particular for every finite discrete `G_K`-module
 `M`, with no unramifiedness or residue-characteristic assumption),
 `#unramifiedH1 K M = #H⁰(G_K, M)`. -/
-theorem natCard_unramifiedH1_eq_natCard_H0
-    [Finite (FixedPoints.addSubgroup
-      ((inertiaSubgroup K).map
-        ((absoluteGaloisGroupRestrictEquiv K :
-            Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-          Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K)) M)] :
+theorem natCard_unramifiedH1_eq_natCard_H0 [Finite (FixedPoints.addSubgroup I[K] M)] :
     Nat.card (unramifiedH1 K M) = Nat.card (H0 (AbsoluteGaloisGroup K) M) :=
   calc
     Nat.card (unramifiedH1 K M) = Nat.card (H1 zHat.{u} _) :=
@@ -630,37 +404,19 @@ theorem natCard_unramifiedH1_eq_natCard_H0
 
 /-- **Unramified `H¹` is finite** for every discrete `G_K`-module `M` whose inertia-fixed subgroup
 `M^{I_K}` is finite (in particular for every finite discrete `G_K`-module `M`). -/
-instance finite_unramifiedH1
-    [Finite (FixedPoints.addSubgroup
-      ((inertiaSubgroup K).map
-        ((absoluteGaloisGroupRestrictEquiv K :
-            Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-          Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K)) M)] :
+instance finite_unramifiedH1 [Finite (FixedPoints.addSubgroup I[K] M)] :
     Finite (unramifiedH1 K M) := by
   have : Finite (H0 (AbsoluteGaloisGroup K) M) :=
-    Finite.of_equiv _ (explicitInfl0Equiv (AbsoluteGaloisGroup K) M
-      ((inertiaSubgroup K).map
-        ((absoluteGaloisGroupRestrictEquiv K :
-            Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-          Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K))).toEquiv
+    Finite.of_equiv _ (explicitInfl0Equiv (AbsoluteGaloisGroup K) M I[K]).toEquiv
   exact Nat.finite_of_card_ne_zero
     ((natCard_unramifiedH1_eq_natCard_H0 K M).trans_ne Nat.card_pos.ne')
 
 /-- **If a discrete `G_K`-module with finite `M^{I_K}` has trivial `G_K`-invariants, its unramified
 `H¹` vanishes.** -/
 theorem subsingleton_unramifiedH1_of_subsingleton_H0
-    [Finite (FixedPoints.addSubgroup
-      ((inertiaSubgroup K).map
-        ((absoluteGaloisGroupRestrictEquiv K :
-            Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-          Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K)) M)]
-    [Subsingleton (H0 (AbsoluteGaloisGroup K) M)] :
+    [Finite (FixedPoints.addSubgroup I[K] M)] [Subsingleton (H0 (AbsoluteGaloisGroup K) M)] :
     Subsingleton (unramifiedH1 K M) := by
-  let N := FixedPoints.addSubgroup
-    ((inertiaSubgroup K).map
-      ((absoluteGaloisGroupRestrictEquiv K :
-          Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-        Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K)) M
+  let N := FixedPoints.addSubgroup I[K] M
   have _ : Subsingleton (H0 zHat.{u} N) := (h0AddEquivZHatH0 K M).symm.toEquiv.subsingleton
   have _ : Subsingleton (H1 zHat.{u} N) := zHat.subsingleton_H1_of_subsingleton_H0.{u} N
   exact (unramifiedH1AddEquivZHatH1 K M).toEquiv.subsingleton
@@ -675,32 +431,13 @@ variable {K : Type u} [Field K] [ValuativeRel K] [TopologicalSpace K] [IsNonarch
 of the unramified quotient `G_K ⧸ I_K`, since `G_K ⧸ I_K ≃ₜ* zHat`. -/
 instance subsingleton_H2_quotient_inertiaSubgroup {N : Type v} [AddCommGroup N]
     [TopologicalSpace N] [IsTopologicalAddGroup N] [CompactSpace N] [TotallyDisconnectedSpace N]
-    [DistribMulAction
-      (AbsoluteGaloisGroup K ⧸
-        (inertiaSubgroup K).map
-          ((absoluteGaloisGroupRestrictEquiv K :
-              Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-            Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K)) N]
-    [ContinuousSMul
-      (AbsoluteGaloisGroup K ⧸
-        (inertiaSubgroup K).map
-          ((absoluteGaloisGroupRestrictEquiv K :
-              Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-            Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K)) N] :
-    Subsingleton (H2
-      (AbsoluteGaloisGroup K ⧸
-        (inertiaSubgroup K).map
-          ((absoluteGaloisGroupRestrictEquiv K :
-              Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-            Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K)) N) := by
-  let I := (inertiaSubgroup K).map
-    ((absoluteGaloisGroupRestrictEquiv K :
-        Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-      Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K)
+    [DistribMulAction (AbsoluteGaloisGroup K ⧸ I[K]) N]
+    [ContinuousSMul (AbsoluteGaloisGroup K ⧸ I[K]) N] :
+    Subsingleton (H2 (AbsoluteGaloisGroup K ⧸ I[K]) N) := by
   let e := quotientMapInertiaSubgroupEquivZHat K
   let _ : DistribMulAction zHat.{u} N := DistribMulAction.compHom N e.symm.toMonoidHom
   have _ : ContinuousSMul zHat.{u} N := MulAction.continuousSMul_compHom e.symm.continuous
-  exact (explicitMap2Equiv (AbsoluteGaloisGroup K ⧸ I) N zHat.{u} N e.symm (AddEquiv.refl N)
+  exact (explicitMap2Equiv (AbsoluteGaloisGroup K ⧸ I[K]) N zHat.{u} N e.symm (AddEquiv.refl N)
     continuous_id continuous_id fun z m ↦ by
       rw [AddEquiv.refl_apply, AddEquiv.refl_apply]
       exact (compHom_symm_smul K z m).symm).toEquiv.subsingleton
@@ -718,66 +455,22 @@ theorem _root_.AddMonoidHom.explicitCup11_eq_zero_of_mem_unramifiedH1
     [DistribMulAction (AbsoluteGaloisGroup K) B] [ContinuousSMul (AbsoluteGaloisGroup K) B]
     [AddCommGroup P] [TopologicalSpace P] [IsTopologicalAddGroup P]
     [DistribMulAction (AbsoluteGaloisGroup K) P] [ContinuousSMul (AbsoluteGaloisGroup K) P]
-    [ContinuousSMul
-      (AbsoluteGaloisGroup K ⧸
-        (inertiaSubgroup K).map
-          ((absoluteGaloisGroupRestrictEquiv K :
-              Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-            Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K))
-      (FixedPoints.addSubgroup
-        ((inertiaSubgroup K).map
-          ((absoluteGaloisGroupRestrictEquiv K :
-              Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-            Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K)) A)]
-    [ContinuousSMul
-      (AbsoluteGaloisGroup K ⧸
-        (inertiaSubgroup K).map
-          ((absoluteGaloisGroupRestrictEquiv K :
-              Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-            Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K))
-      (FixedPoints.addSubgroup
-        ((inertiaSubgroup K).map
-          ((absoluteGaloisGroupRestrictEquiv K :
-              Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-            Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K)) B)]
-    [ContinuousSMul
-      (AbsoluteGaloisGroup K ⧸
-        (inertiaSubgroup K).map
-          ((absoluteGaloisGroupRestrictEquiv K :
-              Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-            Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K))
-      (FixedPoints.addSubgroup
-        ((inertiaSubgroup K).map
-          ((absoluteGaloisGroupRestrictEquiv K :
-              Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-            Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K)) P)]
-    [Subsingleton (H2
-      (AbsoluteGaloisGroup K ⧸
-        (inertiaSubgroup K).map
-          ((absoluteGaloisGroupRestrictEquiv K :
-              Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-            Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K))
-      (FixedPoints.addSubgroup
-        ((inertiaSubgroup K).map
-          ((absoluteGaloisGroupRestrictEquiv K :
-              Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-            Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K)) P))]
+    [ContinuousSMul (AbsoluteGaloisGroup K ⧸ I[K]) (FixedPoints.addSubgroup I[K] A)]
+    [ContinuousSMul (AbsoluteGaloisGroup K ⧸ I[K]) (FixedPoints.addSubgroup I[K] B)]
+    [ContinuousSMul (AbsoluteGaloisGroup K ⧸ I[K]) (FixedPoints.addSubgroup I[K] P)]
+    [Subsingleton (H2 (AbsoluteGaloisGroup K ⧸ I[K]) (FixedPoints.addSubgroup I[K] P))]
     (μ : A →+ B →+ P) (hμ : Continuous fun p : A × B ↦ μ p.1 p.2)
     (hequiv : ∀ (g : AbsoluteGaloisGroup K) (x : A) (y : B), μ (g • x) (g • y) = g • μ x y)
     {a : H1 (AbsoluteGaloisGroup K) A} {b : H1 (AbsoluteGaloisGroup K) B}
     (ha : a ∈ unramifiedH1 K A) (hb : b ∈ unramifiedH1 K B) :
     explicitCup11 (AbsoluteGaloisGroup K) A B P μ hμ hequiv a b = 0 := by
-  let I := (inertiaSubgroup K).map
-    ((absoluteGaloisGroupRestrictEquiv K :
-        Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-      Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K)
-  have ha' : a ∈ (explicitInfl1 (AbsoluteGaloisGroup K) A I).range := by
+  have ha' : a ∈ (explicitInfl1 (AbsoluteGaloisGroup K) A I[K]).range := by
     rwa [range_explicitInfl1_eq_unramifiedH1]
-  have hb' : b ∈ (explicitInfl1 (AbsoluteGaloisGroup K) B I).range := by
+  have hb' : b ∈ (explicitInfl1 (AbsoluteGaloisGroup K) B I[K]).range := by
     rwa [range_explicitInfl1_eq_unramifiedH1]
   obtain ⟨a₀, rfl⟩ := ha'
   obtain ⟨b₀, rfl⟩ := hb'
-  rw [← explicitInfl2_explicitCup11 (AbsoluteGaloisGroup K) A B P I μ hμ hequiv a₀ b₀]
+  rw [← explicitInfl2_explicitCup11 (AbsoluteGaloisGroup K) A B P I[K] μ hμ hequiv a₀ b₀]
   rw [Subsingleton.elim (explicitCup11 _ _ _ _ _ _ _ a₀ b₀) 0, map_zero]
 
 end CupProduct

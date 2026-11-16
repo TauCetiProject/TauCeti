@@ -129,37 +129,26 @@ section QuotientZHat
 
 variable (K)
 
+/-- The image of `inertiaSubgroup K` inside `AbsoluteGaloisGroup K`. -/
+local notation "I[" K "]" =>
+  Subgroup.map
+    ((absoluteGaloisGroupRestrictEquiv K :
+        Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
+      Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K)
+    (inertiaSubgroup K)
+
 /-- **Inertia in `AbsoluteGaloisGroup K` is normal**, as the image of `inertiaSubgroup K` under the
 surjective isomorphism `absoluteGaloisGroupRestrictEquiv K`. -/
-instance normal_map_inertiaSubgroup_absoluteGaloisGroupRestrictEquiv :
-    ((inertiaSubgroup K).map
-      ((absoluteGaloisGroupRestrictEquiv K :
-          Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-        Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K)).Normal :=
+instance normal_map_inertiaSubgroup_absoluteGaloisGroupRestrictEquiv : (I[K]).Normal :=
   Subgroup.Normal.map (inertiaSubgroup_normal K) _ (absoluteGaloisGroupRestrictEquiv K).surjective
 
 /-- **The unramified quotient of `AbsoluteGaloisGroup K` is `zHat`.** Transporting from
 `Field.absoluteGaloisGroup K ⧸ inertiaSubgroup K` through `TauCeti.quotientInertiaSubgroupEquiv`
 and `TauCeti.maximalUnramifiedGaloisGroupEquivZHat` sends arithmetic Frobenius lifts to
 `zHat.gen`. -/
-def quotientMapInertiaSubgroupEquivZHat :
-    (AbsoluteGaloisGroup K ⧸
-      (inertiaSubgroup K).map
-        ((absoluteGaloisGroupRestrictEquiv K :
-            Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-          Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K)) ≃ₜ* zHat.{u} :=
-  ((absoluteGaloisGroupRestrictEquiv K).quotientCongr (inertiaSubgroup K)
-      ((inertiaSubgroup K).map
-        ((absoluteGaloisGroupRestrictEquiv K :
-            Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-          Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K))
-      (by
-        rw [ContinuousMulEquiv.toMulEquiv_eq_coe, MulEquiv.toMonoidHom_eq_coe] :
-        (inertiaSubgroup K).map (absoluteGaloisGroupRestrictEquiv K).toMulEquiv.toMonoidHom =
-          (inertiaSubgroup K).map
-            ((absoluteGaloisGroupRestrictEquiv K :
-                Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-              Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K))).symm.trans
+def quotientMapInertiaSubgroupEquivZHat : (AbsoluteGaloisGroup K ⧸ I[K]) ≃ₜ* zHat.{u} :=
+  ((absoluteGaloisGroupRestrictEquiv K).quotientCongr (inertiaSubgroup K) I[K]
+      (by rw [ContinuousMulEquiv.toMulEquiv_eq_coe, MulEquiv.toMonoidHom_eq_coe])).symm.trans
     ((quotientInertiaSubgroupEquiv K).trans
       (maximalUnramifiedGaloisGroupEquivZHat K (AlgebraicClosure K)))
 
@@ -168,12 +157,7 @@ maximal unramified extension and `maximalUnramifiedGaloisGroupEquivZHat`. -/
 @[simp]
 theorem quotientMapInertiaSubgroupEquivZHat_mk (σ : Field.absoluteGaloisGroup K) :
     quotientMapInertiaSubgroupEquivZHat K
-        (absoluteGaloisGroupRestrictEquiv K σ :
-          AbsoluteGaloisGroup K ⧸
-            (inertiaSubgroup K).map
-              ((absoluteGaloisGroupRestrictEquiv K :
-                  Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-                Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K)) =
+        (absoluteGaloisGroupRestrictEquiv K σ : AbsoluteGaloisGroup K ⧸ I[K]) =
       maximalUnramifiedGaloisGroupEquivZHat K (AlgebraicClosure K)
         (restrictMaximalUnramifiedHom K σ) := by
   rw [quotientMapInertiaSubgroupEquivZHat, ContinuousMulEquiv.trans_apply,
@@ -186,24 +170,14 @@ variable {K} in
 theorem quotientMapInertiaSubgroupEquivZHat_mk_of_isArithFrobeniusLift
     {σ : Field.absoluteGaloisGroup K} (hσ : IsArithFrobeniusLift K σ) :
     quotientMapInertiaSubgroupEquivZHat K
-        (absoluteGaloisGroupRestrictEquiv K σ :
-          AbsoluteGaloisGroup K ⧸
-            (inertiaSubgroup K).map
-              ((absoluteGaloisGroupRestrictEquiv K :
-                  Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-                Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K)) =
+        (absoluteGaloisGroupRestrictEquiv K σ : AbsoluteGaloisGroup K ⧸ I[K]) =
       zHat.gen := by
   rw [quotientMapInertiaSubgroupEquivZHat_mk, isArithFrobeniusLift_def.mp hσ,
     maximalUnramifiedGaloisGroupEquivZHat_apply_frobenius]
 
 /-- **The arithmetic Frobenius element of the unramified quotient** of `AbsoluteGaloisGroup K`,
 corresponding to `zHat.gen` under `quotientMapInertiaSubgroupEquivZHat K`. -/
-def unramifiedQuotientFrobenius :
-    AbsoluteGaloisGroup K ⧸
-      (inertiaSubgroup K).map
-        ((absoluteGaloisGroupRestrictEquiv K :
-            Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-          Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K) :=
+def unramifiedQuotientFrobenius : AbsoluteGaloisGroup K ⧸ I[K] :=
   (quotientMapInertiaSubgroupEquivZHat K).symm zHat.gen
 
 /-- `unramifiedQuotientFrobenius K` is the preimage of `zHat.gen` under
@@ -231,12 +205,7 @@ Frobenius lift. -/
 theorem unramifiedQuotientFrobenius_eq_mk_of_isArithFrobeniusLift {σ : Field.absoluteGaloisGroup K}
     (hσ : IsArithFrobeniusLift K σ) :
     unramifiedQuotientFrobenius K =
-      (absoluteGaloisGroupRestrictEquiv K σ :
-        AbsoluteGaloisGroup K ⧸
-          (inertiaSubgroup K).map
-            ((absoluteGaloisGroupRestrictEquiv K :
-                Field.absoluteGaloisGroup K ≃* AbsoluteGaloisGroup K) :
-              Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K)) := by
+      (absoluteGaloisGroupRestrictEquiv K σ : AbsoluteGaloisGroup K ⧸ I[K]) := by
   apply (quotientMapInertiaSubgroupEquivZHat K).injective
   rw [quotientMapInertiaSubgroupEquivZHat_unramifiedQuotientFrobenius,
     quotientMapInertiaSubgroupEquivZHat_mk_of_isArithFrobeniusLift hσ]
