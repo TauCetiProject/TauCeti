@@ -9,7 +9,7 @@ public import Mathlib.NumberTheory.Padics.ProperSpace
 public import Mathlib.NumberTheory.Padics.RingHoms
 public import Mathlib.Topology.Homeomorph.Lemmas
 public import Mathlib.Topology.Instances.ZMod
-import Mathlib.RingTheory.LocalRing.RingHom.Basic
+import TauCeti.NumberTheory.Padics.RingHoms
 
 /-!
 # The disc decomposition of `ℤ_p`
@@ -26,10 +26,8 @@ For `h : ℕ`, the residue classes `a ∈ ZMod (p ^ h)` cut `ℤ_p` into the dis
 ## Main results
 
 * `PadicInt.toZModPow_natCast_val_add_mul`: the point `a.val + pʰ w` reduces to `a` modulo `pʰ`.
-* `PadicInt.isUnit_toZModPow_iff`, `PadicInt.isUnit_natCast_val_iff`,
-  `PadicInt.isUnit_natCast_val_add_mul_iff`: for `h ≠ 0`, `x ∈ ℤ_p` (and hence `a.val` and every
-  point `a.val + pʰ w` of the disc of `a`) is a unit in `ℤ_p` iff its residue modulo `pʰ` is a
-  unit.
+* `PadicInt.isUnit_natCast_val_add_mul_iff`: for `h ≠ 0`, a point `a.val + pʰ w` of the disc of
+  `a` is a unit in `ℤ_p` iff `a` is a unit in `ZMod (p ^ h)`.
 * `PadicInt.fst_discHomeomorph_symm`: the disc of `x` is its residue class modulo `pʰ`.
 * `PadicInt.natCast_val_toZModPow_add_mul_snd_discHomeomorph_symm`: `x` is the natural
   representative of its residue class plus `pʰ` times its disc coordinate.
@@ -48,20 +46,6 @@ variable {p : ℕ} [hp : Fact p.Prime]
 theorem toZModPow_natCast_val_add_mul (h : ℕ) (a : ZMod (p ^ h)) (w : ℤ_[p]) :
     toZModPow h ((a.val : ℤ_[p]) + (p : ℤ_[p]) ^ h * w) = a := by
   simp [← Nat.cast_pow]
-
-/-- For `h ≠ 0`, a `p`-adic integer is a unit iff its truncation modulo `pʰ` is a unit. -/
-theorem isUnit_toZModPow_iff {h : ℕ} (hh : h ≠ 0) (x : ℤ_[p]) :
-    IsUnit (toZModPow h x) ↔ IsUnit x := by
-  have : Fact (1 < p ^ h) := ⟨Nat.one_lt_pow hh hp.out.one_lt⟩
-  have : IsLocalHom (toZModPow (p := p) h) :=
-    IsLocalHom.of_surjective _ (ZMod.ringHom_surjective _)
-  exact isUnit_map_iff (toZModPow h) x
-
-/-- For `h ≠ 0`, the natural representative `a.val` of `a : ZMod (p ^ h)` is a unit in `ℤ_p` iff
-`a` is a unit in `ZMod (p ^ h)`. -/
-theorem isUnit_natCast_val_iff {h : ℕ} (hh : h ≠ 0) (a : ZMod (p ^ h)) :
-    IsUnit (a.val : ℤ_[p]) ↔ IsUnit a := by
-  rw [← isUnit_toZModPow_iff hh, map_natCast, ZMod.natCast_zmod_val]
 
 /-- For `h ≠ 0`, a point `a.val + pʰ w` of the disc of `a` is a unit in `ℤ_p` iff `a` is a unit in
 `ZMod (p ^ h)`. -/

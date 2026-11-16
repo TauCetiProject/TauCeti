@@ -93,6 +93,9 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
   `PadicInt.continuous_quotientSpanToZModPow`), sending the class of `x` to `toZMod x`,
   respectively `toZModPow n x` (`PadicInt.quotientSpanToZMod_mk`,
   `PadicInt.quotientSpanToZModPow_mk`).
+* `PadicInt.isUnit_toZModPow_iff`, `PadicInt.isUnit_natCast_val_iff`: for `n ≠ 0`, an element of
+  `ℤ_[p]` (and hence the natural representative `a.val` of `a : ZMod (p ^ n)`) is a unit iff its
+  residue modulo `p ^ n` is a unit.
 * `PadicInt.unitsToZModPow`: truncation modulo `p ^ n` on the units of `ℤ_[p]`, as a continuous
   homomorphism to the units of `ZMod (p ^ n)`, acting as `toZModPow n` on the underlying
   elements (`PadicInt.coe_unitsToZModPow_apply`); it is surjective, that is, every unit of
@@ -555,6 +558,20 @@ theorem unitsToZModPow_surjective (n : ℕ) :
   · have : Fact (1 < p ^ n) := ⟨Nat.one_lt_pow hn.ne' hp.out.one_lt⟩
     exact IsLocalRing.surjective_units_map_of_local_ringHom _ (ZMod.ringHom_surjective _)
       (IsLocalHom.of_surjective _ (ZMod.ringHom_surjective _))
+
+/-- For `n ≠ 0`, a `p`-adic integer is a unit iff its truncation modulo `p ^ n` is a unit. -/
+theorem isUnit_toZModPow_iff {n : ℕ} (hn : n ≠ 0) (x : ℤ_[p]) :
+    IsUnit (toZModPow n x) ↔ IsUnit x := by
+  have : Fact (1 < p ^ n) := ⟨Nat.one_lt_pow hn hp.out.one_lt⟩
+  have : IsLocalHom (toZModPow (p := p) n) :=
+    IsLocalHom.of_surjective _ (ZMod.ringHom_surjective _)
+  exact isUnit_map_iff (toZModPow n) x
+
+/-- For `n ≠ 0`, the natural representative `a.val` of `a : ZMod (p ^ n)` is a unit in `ℤ_[p]` iff
+`a` is a unit in `ZMod (p ^ n)`. -/
+theorem isUnit_natCast_val_iff {n : ℕ} (hn : n ≠ 0) (a : ZMod (p ^ n)) :
+    IsUnit (a.val : ℤ_[p]) ↔ IsUnit a := by
+  rw [← isUnit_toZModPow_iff hn, map_natCast, ZMod.natCast_zmod_val]
 
 /-- Truncating modulo `p ^ n` and then reducing modulo `p ^ m`, for `p ^ m ∣ p ^ n`, is
 truncation modulo `p ^ m`. -/

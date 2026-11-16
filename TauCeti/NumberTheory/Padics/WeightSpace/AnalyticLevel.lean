@@ -99,10 +99,6 @@ theorem eventually_norm_coord_lt_amiceRadius {K : Type*} [NormedDivisionRing K]
     ∀ᶠ j in atTop, ‖κ.coord‖ < amiceRadius p j :=
   tendsto_amiceRadius.eventually (lt_mem_nhds (norm_coord_lt_one_of_normedAlgebra κ))
 
-section Field
-
-variable {K : Type*} [NormedField K] [NormedAlgebra ℚ_[p] K]
-
 /-- The modulus `q = p ^ k` lies in the disc of convergence of the exponential:
 `p ^ (-k) < r_0 = p ^ (-1 / (p - 1))`. -/
 private theorem zpow_neg_padicUnitsDepth_lt_amiceRadius_zero :
@@ -117,25 +113,69 @@ private theorem zpow_neg_padicUnitsDepth_lt_amiceRadius_zero :
   rw [pow_zero, mul_one, Int.cast_neg, Int.cast_natCast, neg_lt_neg_iff, div_lt_iff₀ hsub]
   linarith
 
+section LocallyAlgebraic
+
+variable {K : Type*} [SeminormedCommRing K] [NormOneClass K] [NormedAlgebra ℚ_[p] K]
+
+/-- **Conductor bound at `γ ^ (p ^ j)` for locally algebraic weights.** Over any commutative
+seminormed `ℚ_p`-algebra with `‖1‖ = 1`, if `ψ` is trivial on `1 + p ^ (k + j) ℤ_p`, then for every
+`m ∈ ℤ` the weight `x ↦ x ^ m ψ(x)` satisfies `‖(inclusion K ^ m * ψ)(γ ^ (p ^ j)) - 1‖ < r_0`. -/
+theorem norm_apply_inclusion_zpow_mul_padicUnitsGenerator_pow_sub_one_lt (m : ℤ)
+    {ψ : WeightSpace p K} {j : ℕ}
+    (hψ : unitsPrincipal p (padicUnitsDepth p + j) ≤ ψ.toMonoidHom.ker) :
+    ‖((inclusion (p := p) K ^ m * ψ) (padicUnitsGenerator p ^ p ^ j) : K) - 1‖ <
+      amiceRadius p 0 := by
+  have hu : padicUnitsGenerator p ^ p ^ j ∈ unitsPrincipal p (padicUnitsDepth p + j) :=
+    pow_pow_mem_unitsPrincipal (padicUnitsDepth_pos p) padicUnitsGenerator_mem_unitsPrincipal j
+  have hum := Subgroup.zpow_mem _ hu m
+  have hψu : ψ (padicUnitsGenerator p ^ p ^ j) = 1 := hψ hu
+  rw [ContinuousMonoidHom.mul_apply, hψu, mul_one, ContinuousMonoidHom.zpow_apply, ← map_zpow,
+    norm_coe_inclusion_apply_sub_one]
+  refine (mem_unitsPrincipal_iff_norm.mp hum).trans_lt
+    (lt_of_le_of_lt ?_ zpow_neg_padicUnitsDepth_lt_amiceRadius_zero)
+  exact zpow_le_zpow_right₀ (by exact_mod_cast hp.out.one_le) (by omega)
+
+/-- Over any commutative seminormed `ℚ_p`-algebra with `‖1‖ = 1`, every integer-power weight
+`inclusion K ^ m` (`m ∈ ℤ`) satisfies `‖(inclusion K ^ m)(γ ^ (p ^ j)) - 1‖ < r_0` at every level
+`padicUnitsDepth p + j`. -/
+theorem norm_apply_inclusion_zpow_padicUnitsGenerator_pow_sub_one_lt (m : ℤ) (j : ℕ) :
+    ‖((inclusion (p := p) K ^ m) (padicUnitsGenerator p ^ p ^ j) : K) - 1‖ < amiceRadius p 0 := by
+  have hker : unitsPrincipal p (padicUnitsDepth p + j) ≤ (1 : WeightSpace p K).toMonoidHom.ker :=
+    fun _ _ ↦ by simp
+  simpa using
+    norm_apply_inclusion_zpow_mul_padicUnitsGenerator_pow_sub_one_lt (p := p) (K := K) m hker
+
+end LocallyAlgebraic
+
+section Field
+
+variable {K : Type*} [NormedField K] [NormedAlgebra ℚ_[p] K]
+
 /-- **The conductor bound for locally algebraic weights.** If `ψ` is trivial on
 `1 + p ^ (k + j) ℤ_p`, where `q = p ^ k`, then for every `m ∈ ℤ` the coordinate of the weight
 `x ↦ x ^ m ψ(x)` satisfies `‖T‖ < r_j`: the weight satisfies the analyticity condition at every
 level `h ≥ k` at which `ψ` is trivial on `1 + pʰℤ_p`. -/
 theorem norm_coord_inclusion_zpow_mul_lt_amiceRadius (m : ℤ) {ψ : WeightSpace p K} {j : ℕ}
     (hψ : unitsPrincipal p (padicUnitsDepth p + j) ≤ ψ.toMonoidHom.ker) :
-    ‖(inclusion K ^ m * ψ).coord‖ < amiceRadius p j := by
+    ‖(inclusion (p := p) K ^ m * ψ).coord‖ < amiceRadius p j := by
   have := IsUltrametricDist.of_normedAlgebra ℚ_[p] (L := K)
-  have hu : padicUnitsGenerator p ^ p ^ j ∈ unitsPrincipal p (padicUnitsDepth p + j) :=
-    pow_pow_mem_unitsPrincipal (padicUnitsDepth_pos p) padicUnitsGenerator_mem_unitsPrincipal j
-  have hum := Subgroup.zpow_mem _ hu m
-  -- `ψ` is trivial at `γ ^ (p ^ j)`, so the weight takes the value `(γ ^ (p ^ j)) ^ m` there,
-  -- which is congruent to `1` modulo `p ^ (k + j)`.
-  have hψu : ψ (padicUnitsGenerator p ^ p ^ j) = 1 := hψ hu
-  rw [← norm_apply_padicUnitsGenerator_pow_sub_one_lt_iff, ContinuousMonoidHom.mul_apply, hψu,
-    mul_one, ContinuousMonoidHom.zpow_apply, ← map_zpow, norm_coe_inclusion_apply_sub_one]
-  refine (mem_unitsPrincipal_iff_norm.mp hum).trans_lt
-    (lt_of_le_of_lt ?_ zpow_neg_padicUnitsDepth_lt_amiceRadius_zero)
-  exact zpow_le_zpow_right₀ (by exact_mod_cast hp.out.one_le) (by omega)
+  exact (norm_apply_padicUnitsGenerator_pow_sub_one_lt_iff _ j).mp
+    (norm_apply_inclusion_zpow_mul_padicUnitsGenerator_pow_sub_one_lt m hψ)
+
+/-- Over a normed field over `ℚ_p`, the coordinate of every integer-power weight `inclusion K ^ m`
+(`m ∈ ℤ`) satisfies `‖(inclusion K ^ m).coord‖ < r_j` for all `j`. -/
+theorem norm_coord_inclusion_zpow_lt_amiceRadius (m : ℤ) (j : ℕ) :
+    ‖(inclusion (p := p) K ^ m).coord‖ < amiceRadius p j := by
+  have := IsUltrametricDist.of_normedAlgebra ℚ_[p] (L := K)
+  exact (norm_apply_padicUnitsGenerator_pow_sub_one_lt_iff _ j).mp
+    (norm_apply_inclusion_zpow_padicUnitsGenerator_pow_sub_one_lt m j)
+
+/-- Over a normed field over `ℚ_p`, the coordinate of every natural-power weight `inclusion K ^ n`
+(`n : ℕ`) satisfies `‖(inclusion K ^ n).coord‖ < r_j` for all `j`. -/
+theorem norm_coord_inclusion_pow_lt_amiceRadius (n j : ℕ) :
+    ‖(inclusion (p := p) K ^ n).coord‖ < amiceRadius p j := by
+  simpa only [zpow_natCast] using
+    norm_coord_inclusion_zpow_lt_amiceRadius (p := p) (K := K) (n : ℤ) j
 
 /-- **The analytic level of a weight of exact conductor `p ^ (k + j + 1)`**, where `q = p ^ k`:
 `‖T_κ‖ < r_i` exactly when `j < i`, so the weight satisfies the analyticity condition at level

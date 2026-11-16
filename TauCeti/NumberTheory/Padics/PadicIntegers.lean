@@ -84,7 +84,8 @@ calculation for first continuous cohomology with trivial integer coefficients.
   `p`, is `n`.
 * `Padic.inv_natCast_le_norm_natCast`: the `p`-adic norm of a natural number `m` is at least
   `1 / m`.
-* `Padic.norm_natCast_eq_zpow`: the `p`-adic norm of a positive integer `m` is `p ^ (-v_p(m))`.
+* `Padic.norm_natCast_eq_zpow`: the `p`-adic norm of a positive integer `m` is `p ^ (-v_p(m))`, so
+  `‖p ^ a / m‖ ≤ 1` whenever `v_p(m) ≤ a` (`Padic.norm_pow_div_natCast_le_one`).
 * `PadicInt.compactSpace_units`, `PadicInt.totallyDisconnectedSpace_units`: `ℤ_[p]ˣ` is a
   profinite group.
 
@@ -372,6 +373,13 @@ theorem norm_natCast_eq_zpow {m : ℕ} (hm : m ≠ 0) :
     ‖(m : ℚ_[p])‖ = (p : ℝ) ^ (-(padicValNat p m : ℤ)) := by
   rw [Nat.padicValNat_def, Padic.norm_eq_zpow_neg_valuation (by exact_mod_cast hm),
     Padic.valuation_natCast]
+
+/-- For `m ≠ 0` with `v_p(m) ≤ a`, the quotient `p ^ a / m` in `ℚ_[p]` has norm at most `1`. -/
+theorem norm_pow_div_natCast_le_one {a m : ℕ} (hm : m ≠ 0) (hle : padicValNat p m ≤ a) :
+    ‖(p : ℚ_[p]) ^ a / (m : ℚ_[p])‖ ≤ 1 := by
+  rw [norm_div, Padic.norm_p_pow, norm_natCast_eq_zpow hm,
+    div_le_one (zpow_pos (by exact_mod_cast (Fact.out : p.Prime).pos) _)]
+  exact zpow_le_zpow_right₀ (by exact_mod_cast (Fact.out : p.Prime).one_le) (by omega)
 
 end Padic
 
