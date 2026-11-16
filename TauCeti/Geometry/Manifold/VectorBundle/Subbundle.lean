@@ -379,9 +379,7 @@ theorem contMDiff_totalSpace_inclusion [Fintype ι] [ContMDiffVectorBundle n F E
 
 /-- A map into the total space of `E` with values in a subbundle given by `C^n` local frames,
 which is `C^k` within `s` at `m₀` for some `k ≤ n`, is `C^k` within `s` at `m₀` as a map into the
-subbundle, with the structures `hV.fiberBundle` and `hV.vectorBundle` installed by `letI`. The
-frame coordinates are recovered from the ambient vector by a `C^n` left inverse of the frame
-(`ContMDiffAt.exists_contMDiffAt_leftInverse`). -/
+subbundle, with the structures `hV.fiberBundle` and `hV.vectorBundle` installed by `letI`. -/
 theorem contMDiffWithinAt_totalSpace_mk [Fintype ι] [ContMDiffVectorBundle n F E IB]
     {EM : Type*} [NormedAddCommGroup EM] [NormedSpace 𝕜 EM]
     {HM : Type*} [TopologicalSpace HM] {J : ModelWithCorners 𝕜 EM HM}

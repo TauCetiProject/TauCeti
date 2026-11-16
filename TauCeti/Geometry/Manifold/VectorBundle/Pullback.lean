@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.Diffeomorph
 public import Mathlib.Geometry.Manifold.VectorBundle.Basic
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
+public import Mathlib.Geometry.Manifold.VectorBundle.Pullback
 public import TauCeti.Topology.VectorBundle.Pullback
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 
@@ -54,6 +55,10 @@ makes `f *ᵖ E` when `E` is one.
 The native Hom section between two pullbacks by the same map is `Cⁿ` exactly when its original
 Hom field along that map is `Cⁿ` (`Bundle.Pullback.contMDiff_hom_section_iff`). This dictionary
 requires neither finite rank nor a smooth bundle structure on the fibres.
+
+The pullback of a `C^n` vector bundle along a `C^n` map `f`, given as an element of any
+`ContinuousMapClass` rather than as a bundled `C^n` map, is a `C^n` vector bundle
+(`Bundle.Pullback.contMDiffVectorBundle`).
 
 -/
 
@@ -283,3 +288,24 @@ theorem Bundle.Pullback.contMDiff_hom_section_iff (f : K) (hf : ContMDiff IX IB 
     exact ⟨contMDiffAt_id, hx.2.congr_of_eventuallyEq (heq x)⟩
 
 end HomSection
+
+section ContMDiffVectorBundle
+
+variable {𝕜 B B' F K EB HB EB' HB' : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup EB] [NormedSpace 𝕜 EB] [TopologicalSpace HB]
+  {IB : ModelWithCorners 𝕜 EB HB} [TopologicalSpace B] [ChartedSpace HB B]
+  [NormedAddCommGroup EB'] [NormedSpace 𝕜 EB'] [TopologicalSpace HB']
+  {IB' : ModelWithCorners 𝕜 EB' HB'} [TopologicalSpace B'] [ChartedSpace HB' B']
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] {E : B → Type*}
+  [∀ b, AddCommMonoid (E b)] [∀ b, Module 𝕜 (E b)] [∀ b, TopologicalSpace (E b)]
+  [TopologicalSpace (TotalSpace F E)] [FiberBundle F E] [VectorBundle 𝕜 F E]
+  [FunLike K B' B] [ContinuousMapClass K B' B] {n : WithTop ℕ∞}
+
+/-- The pullback of a `C^n` vector bundle along a `C^n` map `f` is a `C^n` vector bundle. This is
+`ContMDiffVectorBundle.pullback` for `f` in any `ContinuousMapClass`, with the regularity of `f`
+supplied as a hypothesis. -/
+theorem Bundle.Pullback.contMDiffVectorBundle [ContMDiffVectorBundle n F E IB] {f : K}
+    (hf : ContMDiff IB' IB n f) : ContMDiffVectorBundle n F ((f : B' → B) *ᵖ E) IB' :=
+  ContMDiffVectorBundle.pullback F E IB' (⟨f, hf⟩ : C^n⟮IB', B'; IB, B⟯)
+
+end ContMDiffVectorBundle

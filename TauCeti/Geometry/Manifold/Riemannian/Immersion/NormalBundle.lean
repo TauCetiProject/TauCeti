@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
-public import Mathlib.Geometry.Manifold.VectorBundle.Pullback
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 public import TauCeti.Geometry.Manifold.VectorBundle.Subbundle
 import TauCeti.Geometry.Manifold.MFDeriv.Basic
@@ -276,15 +275,6 @@ end FiniteDimensionalSource
 variable [FiniteDimensional ℝ V] {n m : ℕ∞ω} [IsManifold I 1 M] [IsManifold J 1 N]
   [IsContMDiffRiemannianBundle J m V (fun y : N ↦ TangentSpace J y)] [IsManifold J (m + 1) N]
 
-omit [RiemannianBundle (fun y : N ↦ TangentSpace J y)] [FiniteDimensional ℝ V] [IsManifold I 1 M]
-  [IsContMDiffRiemannianBundle J m V (fun y : N ↦ TangentSpace J y)] in
-/-- The pulled-back tangent bundle `f *ᵖ TN` along a `C^m` map is a `C^m` vector bundle
-(`ContMDiffVectorBundle.pullback`). -/
-theorem contMDiffVectorBundle_pullback_tangentSpace {f : K} (hf : ContMDiff I J m f) :
-    ContMDiffVectorBundle m V ((f : M → N) *ᵖ (TangentSpace J)) I :=
-  letI := TangentBundle.contMDiffVectorBundle (I := J) (M := N) (n := m)
-  ContMDiffVectorBundle.pullback V (TangentSpace J) I (⟨f, hf⟩ : C^m⟮I, M; J, N⟯)
-
 /-- **Local frames of the normal bundle.** For a `C^n` immersion `f` with `m + 1 ≤ n`, a `C^m`
 ambient metric and `dim N = dim M + r`, the normal spaces have `C^m` local frames of size `r` in
 the pulled-back tangent bundle `f *ᵖ TN`. By
@@ -295,7 +285,9 @@ theorem hasLocalContMDiffSubbundleFrames_orthogonalNormalSpace {r : ℕ} {f : K}
     (hm : m + 1 ≤ n) (hr : finrank ℝ V = finrank ℝ E + r) :
     HasLocalContMDiffSubbundleFrames I m V (Fin r) (E := (f : M → N) *ᵖ (TangentSpace J))
       (orthogonalNormalSpace I J f) := by
-  have := contMDiffVectorBundle_pullback_tangentSpace (m := m) (hf.of_le (le_self_add.trans hm))
+  have := TangentBundle.contMDiffVectorBundle (I := J) (M := N) (n := m)
+  have := Pullback.contMDiffVectorBundle (F := V) (E := TangentSpace J)
+    (hf.of_le (le_self_add.trans hm))
   -- Elaborate in the fibres `TangentSpace J (f x)`, not in the pullback fibres.
   have hrange (x : M) : LinearMap.range ((orthogonalNormalSpace I J f x).starProjection :
       TangentSpace J (f x) →ₗ[ℝ] TangentSpace J (f x)) = orthogonalNormalSpace I J f x :=
@@ -371,7 +363,9 @@ theorem orthogonalNormalContMDiffVectorBundle {r : ℕ} {f : K} (hf : ContMDiff 
     letI := orthogonalNormalFiberBundle hf hinj hm hr
     letI := orthogonalNormalVectorBundle hf hinj hm hr
     ContMDiffVectorBundle m (Fin r → ℝ) (fun x ↦ orthogonalNormalSpace I J f x) I := by
-  have := contMDiffVectorBundle_pullback_tangentSpace (m := m) (hf.of_le (le_self_add.trans hm))
+  have := TangentBundle.contMDiffVectorBundle (I := J) (M := N) (n := m)
+  have := Pullback.contMDiffVectorBundle (F := V) (E := TangentSpace J)
+    (hf.of_le (le_self_add.trans hm))
   exact (hasLocalContMDiffSubbundleFrames_orthogonalNormalSpace hf hinj hm hr).contMDiffVectorBundle
 
 /-- The canonical inclusion `ν_f → f *ᵖ TN` of the normal bundle of an immersion is `C^m`. -/
@@ -384,7 +378,9 @@ theorem contMDiff_orthogonalNormalSpace_inclusion {r : ℕ} {f : K} (hf : ContMD
       (fun v : TotalSpace (Fin r → ℝ) (fun x ↦ orthogonalNormalSpace I J f x) ↦
         (⟨v.proj, (v.2 : TangentSpace J (f v.proj))⟩ :
           TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)))) := by
-  have := contMDiffVectorBundle_pullback_tangentSpace (m := m) (hf.of_le (le_self_add.trans hm))
+  have := TangentBundle.contMDiffVectorBundle (I := J) (M := N) (n := m)
+  have := Pullback.contMDiffVectorBundle (F := V) (E := TangentSpace J)
+    (hf.of_le (le_self_add.trans hm))
   exact (hasLocalContMDiffSubbundleFrames_orthogonalNormalSpace hf hinj hm hr
     ).contMDiff_totalSpace_inclusion
 
@@ -422,7 +418,9 @@ theorem contMDiffWithinAt_orthogonalNormalSpace_mk {r : ℕ} {f : K} (hf : ContM
     ContMDiffWithinAt IX (I.prod 𝓘(ℝ, Fin r → ℝ)) k
       (fun z ↦ (⟨b z, ⟨w z, hmem z⟩⟩ :
         TotalSpace (Fin r → ℝ) fun x ↦ orthogonalNormalSpace I J f x)) s z₀ := by
-  have := contMDiffVectorBundle_pullback_tangentSpace (m := m) (hf.of_le (le_self_add.trans hm))
+  have := TangentBundle.contMDiffVectorBundle (I := J) (M := N) (n := m)
+  have := Pullback.contMDiffVectorBundle (F := V) (E := TangentSpace J)
+    (hf.of_le (le_self_add.trans hm))
   exact (hasLocalContMDiffSubbundleFrames_orthogonalNormalSpace hf hinj hm hr
     ).contMDiffWithinAt_totalSpace_mk hk hw hmem
 
