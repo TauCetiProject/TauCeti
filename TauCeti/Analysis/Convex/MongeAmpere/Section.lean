@@ -29,7 +29,7 @@ each other, with constants depending only on `E` and `μ`:
 So a convex function with `λ ≤ MA_v ≤ Λ` vanishing on the boundary of `G` has depth comparable
 to `μ(G) ^ (2 / n)` when `n ≥ 1`. Both bounds, and the upper volume estimate for sections below,
 also hold in dimension zero, where `G` is the whole space and `MA_v(G) = μ(G)`
-(`TauCeti.mongeAmpereMeasure_ite_self_of_subsingleton`); the quantitative comparison on a section,
+(`TauCeti.mongeAmpereMeasure_ite_of_subsingleton`); the quantitative comparison on a section,
 the depth bound involving the distance to the boundary and the lower volume estimate for sections
 assume `n ≥ 1`. Both bounds are affine invariant. They are proved for a domain
 normalized by an affine equivalence `T` between the balls of radii `r` and `1` about `0`
@@ -347,7 +347,7 @@ theorem exists_ofReal_neg_pow_le_mul_measure_mul_mongeAmpereMeasure :
     refine ⟨((μ univ)⁻¹ * (μ univ)⁻¹).toNNReal, fun G _ v _ _ _ _ _ x₀ hx₀ => ?_⟩
     have hGu : G = univ := Subsingleton.eq_univ_of_nonempty ⟨x₀, hx₀⟩
     rw [finrank_zero_of_subsingleton, pow_zero,
-      mongeAmpereMeasure_ite_self_of_subsingleton μ hx₀, hGu, ENNReal.coe_toNNReal
+      mongeAmpereMeasure_ite_of_subsingleton, Measure.restrict_apply_self, hGu, ENNReal.coe_toNNReal
         (ENNReal.mul_ne_top (ENNReal.inv_ne_top.2 hpos) (ENNReal.inv_ne_top.2 hpos)),
       mul_assoc, mul_mul_mul_comm, ENNReal.inv_mul_cancel hpos (measure_ne_top μ univ), one_mul]
   obtain ⟨C, hC⟩ := exists_ofReal_neg_pow_le_mul_ofReal_mul_measure_mul_mongeAmpereMeasure μ
@@ -362,35 +362,6 @@ theorem exists_ofReal_neg_pow_le_mul_measure_mul_mongeAmpereMeasure :
     rw [dist_eq_norm]
     linarith [norm_sub_le (T x₀) z]
   simpa using hC G v 2 hGo hGb hv hvc hfr x₀ hx₀ hd
-
-omit [Nontrivial E] [μ.IsAddHaarMeasure] in
-/-- If `λ μ ≤ MA_v` on `G`, for the Monge–Ampère measure of `v` extended by `⊤` off `G`, then
-`λ μ(G)² ≤ μ(univ)²`: the Monge–Ampère mass of the whole space is the `μ`-measure of a set of
-subgradients, or `0`. This is the volume bound in dimension zero, where `μ` is finite. -/
-private theorem mul_measure_sq_le_measure_univ_sq {G : Set E} [DecidablePred (· ∈ G)]
-    {v : E → ℝ} {lam : ℝ≥0} (hMA : (lam : ℝ≥0∞) • μ.restrict G ≤
-      mongeAmpereMeasure μ (fun x => if x ∈ G then (v x : EReal) else ⊤)) :
-    lam * μ G ^ 2 ≤ μ univ ^ 2 := by
-  have hMAu : mongeAmpereMeasure μ (fun x => if x ∈ G then (v x : EReal) else ⊤) univ ≤
-      μ univ := by
-    by_cases hf : Convex ℝ {p : E × ℝ | (if p.1 ∈ G then (v p.1 : EReal) else ⊤) ≤ p.2}
-    swap
-    · rw [mongeAmpereMeasure_eq_zero_of_not_convex μ hf, _root_.zero_apply]
-      exact zero_le
-    by_cases hμ : μ ≪ (addHaar : Measure E)
-    swap
-    · rw [mongeAmpereMeasure_eq_zero_of_not_absolutelyContinuous μ hμ, _root_.zero_apply]
-      exact zero_le
-    rw [mongeAmpereMeasure_apply μ hf ite_ne_bot hμ MeasurableSet.univ]
-    exact measure_mono (subset_univ _)
-  have h₁ : (lam : ℝ≥0∞) * μ G ≤ μ univ :=
-    calc (lam : ℝ≥0∞) * μ G = ((lam : ℝ≥0∞) • μ.restrict G) univ := by
-          rw [_root_.smul_apply, Measure.restrict_apply_univ, smul_eq_mul]
-      _ ≤ mongeAmpereMeasure μ (fun x => if x ∈ G then (v x : EReal) else ⊤) univ :=
-          Measure.le_iff'.1 hMA univ
-      _ ≤ μ univ := hMAu
-  rw [pow_two, pow_two, ← mul_assoc]
-  exact mul_le_mul' h₁ (measure_mono (subset_univ _))
 
 omit [Nontrivial E] in
 /-- **The volume of a domain is controlled by the depth of a convex function on it.** There is a
@@ -407,10 +378,13 @@ theorem exists_mul_measure_sq_le_mul_ofReal_pow :
       lam * μ G ^ 2 ≤ C * ENNReal.ofReal h ^ finrank ℝ E := by
   classical
   rcases subsingleton_or_nontrivial E with _ | _
-  · refine ⟨(μ univ ^ 2).toNNReal, fun G _ v lam h _ _ _ _ _ _ hMA => ?_⟩
+  · -- In dimension zero `MA_v = μ` on `G`, so `λ μ(G) ≤ μ(G) ≤ μ(univ)`, which is finite.
+    refine ⟨(μ univ ^ 2).toNNReal, fun G _ v lam h _ _ _ _ _ _ hMA => ?_⟩
+    have h₁ : (lam : ℝ≥0∞) * μ G ≤ μ G := by
+      simpa [mongeAmpereMeasure_ite_of_subsingleton] using Measure.le_iff'.1 hMA G
     rw [finrank_zero_of_subsingleton, pow_zero, mul_one,
-      ENNReal.coe_toNNReal (ENNReal.pow_ne_top (measure_ne_top μ univ))]
-    exact mul_measure_sq_le_measure_univ_sq μ hMA
+      ENNReal.coe_toNNReal (ENNReal.pow_ne_top (measure_ne_top μ univ)), sq, sq, ← mul_assoc]
+    exact mul_le_mul' (h₁.trans (measure_mono (subset_univ _))) (measure_mono (subset_univ _))
   obtain ⟨r, hr, hnorm⟩ := exists_affineEquiv_ball_subset_image_subset_ball E
   set n := finrank ℝ E
   have hn : n ≠ 0 := finrank_pos.ne'
