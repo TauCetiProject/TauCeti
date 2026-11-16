@@ -125,8 +125,7 @@ private theorem frobeniusCurve_tautologicalCurve_eq_zero_iff {q : ℕ} (hq : q �
   rw [← F.logIso.curveEquiv.map_eq_zero_iff, Curve.ext_iff, PowerSeries.ext_iff]
   simp only [TauCeti.FormalGroupIso.curveEquiv_apply, logIso_toHom, Curve.toPowerSeries_zero,
     map_zero, TauCeti.FormalGroupHom.toPowerSeries_mapCurve, logHom_toPowerSeries,
-    subst_frobeniusCurve_log, toPowerSeries_tautologicalCurve, PowerSeries.X_subst,
-    PowerSeries.coeff_smul, PowerSeries.coeff_cartier, Nat.add_zero, smul_eq_mul,
+    coeff_subst_frobeniusCurve_log, toPowerSeries_tautologicalCurve, PowerSeries.X_subst,
     hunit.mul_right_eq_zero]
 
 /-- **`p`-typical laws over a `ℚ`-algebra**: for `p` prime, a commutative formal group law over a

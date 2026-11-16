@@ -239,6 +239,16 @@ private theorem X_pow_dvd_pTypicalProjectorCurve_sub (N : ℕ) (γ : F.Curve) :
   PowerSeries.X_pow_dvd_iff.mpr fun k hk ↦ by
     rw [map_sub, coeff_pTypicalProjectorCurve F hR (Nat.lt_succ_iff.mp hk), sub_self]
 
+/-- Through degree `k`, substituting `ε γ` into a series agrees with substituting the finite
+composite over the primes `q ≤ k`. -/
+private theorem coeff_subst_pTypicalProjectorCurve (k : ℕ) (γ : F.Curve) (g : PowerSeries R) :
+    PowerSeries.coeff k (PowerSeries.subst (F.pTypicalProjectorCurve hR γ).toPowerSeries g) =
+      PowerSeries.coeff k (PowerSeries.subst (truncProjector F hR k γ).toPowerSeries g) := by
+  have h := PowerSeries.X_pow_dvd_iff.mp (PowerSeries.X_pow_dvd_subst_sub_subst
+    (F.pTypicalProjectorCurve hR γ).constantCoeff_toPowerSeries
+    (X_pow_dvd_pTypicalProjectorCurve_sub F hR k γ) g) k (Nat.lt_succ_self k)
+  rwa [map_sub, sub_eq_zero] at h
+
 /-- Cartier's `p`-typical projector does not change the linear coefficient of a curve. -/
 @[simp]
 theorem coeff_one_pTypicalProjectorCurve (γ : F.Curve) :
@@ -268,11 +278,7 @@ theorem _root_.TauCeti.FormalGroupHom.mapCurve_pTypicalProjectorCurve {G : Forma
     [G.IsComm] (f : TauCeti.FormalGroupHom F G) (γ : F.Curve) :
     f.mapCurve (F.pTypicalProjectorCurve hR γ) = G.pTypicalProjectorCurve hR (f.mapCurve γ) :=
   Curve.ext <| PowerSeries.ext fun k ↦ by
-    have h := PowerSeries.X_pow_dvd_iff.mp (PowerSeries.X_pow_dvd_subst_sub_subst
-      (F.pTypicalProjectorCurve hR γ).constantCoeff_toPowerSeries
-      (X_pow_dvd_pTypicalProjectorCurve_sub F hR k γ) f.toPowerSeries) k (Nat.lt_succ_self k)
-    rw [map_sub, sub_eq_zero] at h
-    rw [TauCeti.FormalGroupHom.toPowerSeries_mapCurve, h,
+    rw [TauCeti.FormalGroupHom.toPowerSeries_mapCurve, coeff_subst_pTypicalProjectorCurve,
       coeff_pTypicalProjectorCurve G hR le_rfl, ← mapCurve_truncProjector F hR f,
       TauCeti.FormalGroupHom.toPowerSeries_mapCurve]
 
@@ -285,8 +291,8 @@ private theorem coeff_subst_truncProjector_log [Algebra ℚ R] (N : ℕ) {k : �
       else PowerSeries.coeff k (PowerSeries.subst γ.toPowerSeries F.log) := by
   induction N with
   | zero =>
-    rw [ite_eq_right fun ⟨q, hq, hq0, _⟩ ↦ (Nat.prime_of_mem_primeFactors hq).ne_zero (by omega)]
-    rfl
+    rw [ite_eq_right fun ⟨q, hq, hq0, _⟩ ↦ (Nat.prime_of_mem_primeFactors hq).ne_zero (by omega),
+      truncProjector, AddMonoidHom.id_apply]
   | succ N ih =>
     have hC : (∃ q ∈ k.primeFactors, q ≤ N + 1 ∧ q ≠ p) ↔
         (∃ q ∈ k.primeFactors, q ≤ N ∧ q ≠ p) ∨ ((N + 1).Prime ∧ N + 1 ≠ p ∧ N + 1 ∣ k) := by
@@ -316,11 +322,7 @@ theorem coeff_subst_pTypicalProjectorCurve_log [Algebra ℚ R] (k : ℕ) (γ : F
         (PowerSeries.constantCoeff_subst_eq_zero δ.constantCoeff_toPowerSeries _
           F.constantCoeff_log)
     rw [ite_eq_left (by simp), h0, h0]
-  have h := PowerSeries.X_pow_dvd_iff.mp (PowerSeries.X_pow_dvd_subst_sub_subst
-    (F.pTypicalProjectorCurve hR γ).constantCoeff_toPowerSeries
-    (X_pow_dvd_pTypicalProjectorCurve_sub F hR k γ) F.log) k (Nat.lt_succ_self k)
-  rw [map_sub, sub_eq_zero] at h
-  rw [h, coeff_subst_truncProjector_log F hR k hk γ, ← ite_not]
+  rw [coeff_subst_pTypicalProjectorCurve, coeff_subst_truncProjector_log F hR k hk γ, ← ite_not]
   refine if_congr ?_ rfl rfl
   rw [Finset.subset_singleton_iff']
   push Not
@@ -335,8 +337,7 @@ private theorem frobeniusCurve_pTypicalProjectorCurve_of_ratAlgebra [Algebra ℚ
   · rw [Curve.coeff_zero_toPowerSeries, Curve.coeff_zero_toPowerSeries]
   simp only [TauCeti.FormalGroupIso.curveEquiv_apply, logIso_toHom, map_zero,
     Curve.toPowerSeries_zero, TauCeti.FormalGroupHom.toPowerSeries_mapCurve, logHom_toPowerSeries,
-    subst_frobeniusCurve_log, PowerSeries.coeff_smul, PowerSeries.coeff_cartier, Nat.add_zero,
-    smul_eq_mul, coeff_subst_pTypicalProjectorCurve_log]
+    coeff_subst_frobeniusCurve_log, coeff_subst_pTypicalProjectorCurve_log]
   rw [ite_eq_right fun h ↦ hqp (Finset.subset_singleton_iff'.mp h q
     (Nat.mem_primeFactors.mpr ⟨hq, dvd_mul_right q k, mul_ne_zero hq.ne_zero hk⟩)), mul_zero]
 
