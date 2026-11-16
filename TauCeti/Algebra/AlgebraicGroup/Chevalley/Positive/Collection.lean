@@ -23,9 +23,6 @@ combined with collection in `TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.C
 
 ## Main results
 
-* `TauCeti.DynkinType.ChevalleyDatum.positiveSubgroup_eq_iSup` and
-  `TauCeti.DynkinType.ChevalleyDatum.positivePoints_eq_iSup`: the positive lattice and point
-  subgroups are the suprema of the positive root subgroups.
 * `TauCeti.DynkinType.ChevalleyDatum.mem_positiveSubgroup_iff_exists_prod`: every positive lattice
   automorphism factors as an ordered product along any duplicate-free cover of positive roots.
 * `TauCeti.DynkinType.ChevalleyDatum.mem_positivePoints_iff_exists_prod`: every positive point of
@@ -48,31 +45,6 @@ universe v
 variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
 
 attribute [local instance high] Algebra.toModule
-
-/-- The positive lattice subgroup is the supremum of the ranges of the positive root maps. -/
-theorem positiveSubgroup_eq_iSup (A : CommAlgCat.{v} ℤ) :
-    D.positiveSubgroup A =
-      ⨆ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht),
-        (chevalleyRootSubgroup D.representation D.lattice D.representation_mem_lattice
-          D.isNilpotent_representation_rootGenerator γ A).range := by
-  apply le_antisymm
-  · exact D.positiveSubgroup_le_iff.mpr fun γ hγ u =>
-      Subgroup.mem_iSup_of_mem γ (Subgroup.mem_iSup_of_mem hγ ⟨u, rfl⟩)
-  · exact iSup₂_le fun γ hγ => by
-      rintro _ ⟨u, rfl⟩
-      exact D.chevalleyRootSubgroup_mem_positiveSubgroup A hγ u
-
-/-- The positive point subgroup is the supremum of the ranges of the positive root-point maps. -/
-theorem positivePoints_eq_iSup (A : Type v) [CommRing A] :
-    D.positivePoints A =
-      ⨆ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht),
-        (D.rootSubgroupPoints γ A).range := by
-  apply le_antisymm
-  · exact D.positivePoints_le_iff.mpr fun γ hγ u =>
-      Subgroup.mem_iSup_of_mem γ (Subgroup.mem_iSup_of_mem hγ ⟨u, rfl⟩)
-  · exact iSup₂_le fun γ hγ => by
-      rintro _ ⟨u, rfl⟩
-      exact D.rootSubgroupPoints_mem_positivePoints A hγ u
 
 private theorem exists_fin6_list_of_posRoots_g2 {ht : G2.Valid}
     {l : List (Fin G2.numRoots)} (hl : l.Nodup)
