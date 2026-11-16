@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Jie Xu, Shitan Xu
 -/
 module
 
@@ -457,3 +457,35 @@ theorem exists_affine_pair_comp_eq {S : Scheme.{u}} {T T' : Over S} (f : T' ⟶ 
   exact ⟨Z, this, g₁, g₂, κ, Over.OverMorphism.ext hι, hκ χ₁, hκ χ₂⟩
 
 end TauCeti.AlgebraicGeometry
+
+open scoped AlgebraicGeometry
+
+/-- A finite subset of an affine open has a basic-open neighbourhood contained in any
+prescribed open containing the subset. -/
+theorem AlgebraicGeometry.IsAffineOpen.exists_basicOpen_superset_le
+    {X : AlgebraicGeometry.Scheme} {V W : X.Opens} (hV : AlgebraicGeometry.IsAffineOpen V)
+    {s : Set X} (hs : s.Finite) (hsV : s ⊆ V) (hsW : s ⊆ W) :
+    ∃ r : Γ(X, V), s ⊆ X.basicOpen r ∧ X.basicOpen r ≤ W := by
+  classical
+  let _ := hs.fintype
+  let primes : s → Ideal Γ(X, V) := fun x ↦ (hV.primeIdealOf ⟨x.1, hsV x.2⟩).asIdeal
+  let sections : Set Γ(X, V) := {r | X.basicOpen r ≤ W}
+  have hnot : ¬ (Ideal.span sections : Set Γ(X, V)) ⊆
+      ⋃ P ∈ Set.range primes, (P : Set Γ(X, V)) := by
+    rw [Ideal.subset_union_prime_finite (Set.finite_range primes) ⊤ ⊤ (by
+      rintro _ ⟨x, rfl⟩ _ _
+      exact (hV.primeIdealOf ⟨x.1, hsV x.2⟩).isPrime)]
+    rintro ⟨P, ⟨x, rfl⟩, hle⟩
+    obtain ⟨r, hrW, hrx⟩ := hV.exists_basicOpen_le ⟨x.1, hsW x.2⟩ (hsV x.2)
+    exact (hV.mem_basicOpen_iff_notMem_primeIdealOf ⟨x.1, hsV x.2⟩ r).mp hrx
+      (hle (Ideal.subset_span hrW))
+  obtain ⟨r, hrI, hr⟩ := Set.not_subset.mp hnot
+  refine ⟨r, ?_, ?_⟩
+  · intro x hx
+    apply (hV.mem_basicOpen_iff_notMem_primeIdealOf ⟨x, hsV hx⟩ r).mpr
+    intro h
+    apply hr
+    exact Set.mem_iUnion.mpr ⟨primes ⟨x, hx⟩,
+      Set.mem_iUnion.mpr ⟨Set.mem_range_self _, h⟩⟩
+  · exact (hV.basicOpen_le_iSup_basicOpen_iff.mpr
+      (Ideal.le_radical hrI)).trans (iSup₂_le fun r hr ↦ hr)
