@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Basic
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import TauCeti.Analysis.InnerProductSpace.OperatorIdentities
 public import TauCeti.Analysis.InnerProductSpace.TensorProduct
+import TauCeti.LinearAlgebra.LinearEquiv.Basic
 import TauCeti.LinearAlgebra.TensorProduct.Intersection
 
 /-!
@@ -290,13 +291,6 @@ theorem finrank_ker_externalProductBlock (A : V₀ →L[𝕜] V₁) (B : W₀ �
   rw [(kerExternalProductBlockEquiv A B).finrank_eq, Module.finrank_prod,
     Module.finrank_tensorProduct, Module.finrank_tensorProduct]
 
-/-- Following the identification `p ≃ q` of equal submodules by the inclusion of `q` is the
-inclusion of `p`. -/
-private theorem subtype_comp_ofEq {M : Type*} [AddCommMonoid M] [Module 𝕜 M]
-    {p q : Submodule 𝕜 M} (h : p = q) :
-    q.subtype ∘ₗ (LinearEquiv.ofEq p q h).toLinearMap = p.subtype :=
-  LinearMap.ext fun x ↦ LinearEquiv.coe_ofEq_apply h x
-
 /-- The kernel of the formal adjoint `externalProductBlock A† (-B)` of the external product
 block, identified with `(ker A† ⊗ ker B) × (ker A ⊗ ker B†)` through the inclusions of the kernels
 (`ContinuousLinearMap.coe_kerExternalProductBlockAdjointNegEquiv_symm_apply`). -/
@@ -321,7 +315,7 @@ theorem coe_kerExternalProductBlockAdjointNegEquiv_symm_apply (A : V₀ →L[�
     coe_kerExternalProductBlockEquiv_symm_apply, TensorProduct.congr_symm]
   simp only [← LinearEquiv.coe_coe, TensorProduct.toLinearMap_congr, TensorProduct.map_map,
     LinearEquiv.ofEq_symm, LinearEquiv.refl_symm, LinearEquiv.refl_toLinearMap, LinearMap.comp_id,
-    subtype_comp_ofEq]
+    Submodule.subtype_comp_ofEq]
 
 /-- The dimension of the kernel of the formal adjoint `externalProductBlock A† (-B)` of the
 external product block is `dim ker A† · dim ker B + dim ker A · dim ker B†`. -/
