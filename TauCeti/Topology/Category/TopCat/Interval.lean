@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Category.TopCat.Monoidal
-public import TauCeti.Topology.Homotopy.Contractible
 public import TauCeti.Topology.UnitInterval.Contractible
 
 /-!

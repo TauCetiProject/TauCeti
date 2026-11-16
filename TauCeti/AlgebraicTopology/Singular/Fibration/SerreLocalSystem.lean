@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicTopology.SingularHomology.HomotopyInvariance
 public import TauCeti.AlgebraicTopology.Singular.Fibration.LocalSystem
 public import TauCeti.AlgebraicTopology.Singular.Homotopy.WeakHomotopyEquivalence
+public import TauCeti.Topology.Homotopy.Contractible
 public import TauCeti.Topology.Homotopy.SerreFibration.WeakHomotopyEquivalence
 public import TauCeti.Topology.Homotopy.TopCat.Path
 
@@ -184,6 +185,7 @@ theorem pullbackFiberTransport_eq_id (g : K ⟶ B) {k₀ k₁ : K} {b : B}
 over `g_B : B ⟶ B'`, and a map `φ : K ⟶ K'` of contractible parameter spaces compatible with
 `g : K ⟶ B` and `g' : K' ⟶ B'`, transport along `g` followed by the map of fibres over `b₁` is the
 map of fibres over `b₀` followed by transport along `g'`. -/
+@[reassoc]
 theorem pullbackFiberTransport_naturality {E' B' K' : TopCat.{u}} {p' : E' ⟶ B'}
     [ContractibleSpace K'] {f : E ⟶ E'} {g_B : B ⟶ B'} (sq : CommSq f p p' g_B)
     (hp' : serreFibrations p') (g : K ⟶ B) (g' : K' ⟶ B') (φ : K ⟶ K')
@@ -286,7 +288,10 @@ theorem fiberHomologyTransport_refl (b : B) :
     fiberHomologyTransport hp M n (Path.refl b) = 𝟙 _ := by
   rw [fiberHomologyTransport_eq_pullbackFiberTransport]
   exact pullbackFiberTransport_eq_id hp M n (TopCat.pathEquiv.symm (Path.refl b)).hom (b := b)
-    ⟨⟨fun t ↦ TopCat.I.homeomorph.symm t, by fun_prop⟩, rfl, rfl⟩ (fun _ ↦ rfl) rfl rfl
+    ⟨⟨fun t ↦ TopCat.I.homeomorph.symm t, by fun_prop⟩,
+      TopCat.I.homeomorph.symm_apply_eq.2 TopCat.I.homeomorph_zero.symm,
+      TopCat.I.homeomorph.symm_apply_eq.2 TopCat.I.homeomorph_one.symm⟩
+    (fun _ ↦ by rw [TopCat.pathEquiv_symm_hom_apply, Path.refl_apply]) (by simp) (by simp)
 
 /-- **Transport is invariant under homotopy of paths** relative to their end points. -/
 theorem fiberHomologyTransport_congr {γ γ' : Path b₀ b₁}
@@ -305,11 +310,11 @@ theorem fiberHomologyTransport_congr {γ γ' : Path b₀ b₁}
   have hl : fiberHomologyTransport hp M n γ = pullbackFiberTransport hp M n g
       (k₀ := ULift.up (0, 0)) (k₁ := ULift.up (0, 1)) (F.source 0) (F.target 0) :=
     pullbackFiberTransport_comp_left hp M n g _ (φ 0)
-      (by ext t; exact F.apply_zero (TopCat.I.homeomorph t)) rfl rfl _ _ _ _
+      (by ext t; simp [g, φ]) (by simp [φ]) (by simp [φ]) _ _ _ _
   have hr : fiberHomologyTransport hp M n γ' = pullbackFiberTransport hp M n g
       (k₀ := ULift.up (1, 0)) (k₁ := ULift.up (1, 1)) (F.source 1) (F.target 1) :=
     pullbackFiberTransport_comp_left hp M n g _ (φ 1)
-      (by ext t; exact F.apply_one (TopCat.I.homeomorph t)) rfl rfl _ _ _ _
+      (by ext t; simp [g, φ]) (by simp [φ]) (by simp [φ]) _ _ _ _
   have hb := pullbackFiberTransport_eq_id hp M n g (edge 0) (fun s ↦ F.source s) (F.source 0)
     (F.source 1)
   have ht := pullbackFiberTransport_eq_id hp M n g (edge 1) (fun s ↦ F.target s) (F.target 0)
@@ -345,6 +350,7 @@ theorem fiberHomologyTransport_trans (γ : Path b₀ b₁)
 /-- **Transport along a path is natural in maps of Serre fibrations.** For a commutative square
 from `p` to `p'` over `g : B ⟶ B'`, transport along `γ` followed by the map of fibres over `b₁` is
 the map of fibres over `b₀` followed by transport along the image of `γ` under `g`. -/
+@[reassoc]
 theorem fiberHomologyTransport_naturality {E' B' : TopCat.{u}} {p' : E' ⟶ B'} {f : E ⟶ E'}
     {g : B ⟶ B'} (sq : CommSq f p p' g) (hp' : serreFibrations p') (γ : Path b₀ b₁) :
     fiberHomologyTransport hp M n γ ≫
@@ -352,8 +358,9 @@ theorem fiberHomologyTransport_naturality {E' B' : TopCat.{u}} {p' : E' ⟶ B'} 
       ((singularHomologyFunctor (ModuleCat.{u} R) n).obj M).map (sq.fiberMap b₀) ≫
         fiberHomologyTransport hp' M n (γ.map g.hom.continuous) :=
   pullbackFiberTransport_naturality hp M n sq hp' (TopCat.pathEquiv.symm γ).hom
-    (TopCat.pathEquiv.symm (γ.map g.hom.continuous)).hom (𝟙 _) rfl
-    (TopCat.pathEquiv.symm γ).hom₀ (TopCat.pathEquiv.symm γ).hom₁ _ _
+    (TopCat.pathEquiv.symm (γ.map g.hom.continuous)).hom (𝟙 _)
+    (by rw [Category.id_comp, TopCat.pathEquiv_symm_map_hom])
+    (TopCat.pathEquiv.symm γ).hom₀ (TopCat.pathEquiv.symm γ).hom₁ (by simp) (by simp)
 
 /-- **The local system of fibre homology of a Serre fibration** `b ↦ Hₙ(p⁻¹(b); M)`, with
 singular homology with coefficients in a module `M`. The class of a path acts by transport along

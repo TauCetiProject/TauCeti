@@ -35,6 +35,15 @@ lemma pathEquiv_symm_hom_apply (γ : _root_.Path x₀ x₁) (t : I.{u}) :
     (pathEquiv.symm γ).hom t = γ (I.homeomorph t) :=
   (rfl)
 
+/-- The morphism `TopCat.I ⟶ Y` of the image of a path `γ` under `g : X ⟶ Y` is the morphism of `γ`
+followed by `g`. -/
+@[simp]
+lemma pathEquiv_symm_map_hom {Y : TopCat.{u}} (γ : _root_.Path x₀ x₁) (g : X ⟶ Y) :
+    (pathEquiv.symm (γ.map g.hom.continuous)).hom = (pathEquiv.symm γ).hom ≫ g := by
+  ext t
+  rw [ConcreteCategory.comp_apply, pathEquiv_symm_hom_apply, pathEquiv_symm_hom_apply,
+    Path.map_coe, Function.comp_apply]
+
 /-- The concatenation of two paths passes through their common end point at the midpoint. -/
 lemma pathEquiv_symm_trans_hom_midpoint (γ : _root_.Path x₀ x₁) (δ : _root_.Path x₁ x₂) :
     (pathEquiv.symm (γ.trans δ)).hom I.midpoint = x₁ := by
