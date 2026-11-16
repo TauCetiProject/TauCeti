@@ -81,16 +81,17 @@ private theorem measure_exists_gt_le_of_stronglyMeasurable (hW : IsPreBrownianRe
     ext ω; simp only [mem_iUnion, mem_ofPred_eq, A]
     refine ⟨fun ⟨i, _, hi⟩ ↦ ⟨i, hi⟩, fun h ↦ ?_⟩; classical
     exact ⟨Fin.find _ h, fun _ hj ↦ not_lt.mp (Fin.find_min h hj), Fin.find_spec h⟩
-  have hbound (i : Fin (n + 1)) : P (A i) ≤ 2 * P (C i) := by
-    have hind := (Indep_iff _ _ _).mp (hWF.indep_sub (hg (Fin.le_last i)))
-      ((W (g N) - W (g i)) ⁻¹' Ici 0) (A i) ⟨Ici 0, measurableSet_Ici, rfl⟩ (hA_meas i)
-    have hlaw : P ((W (g N) - W (g i)) ⁻¹' Ici 0) = gaussianReal 0 (g N - g i) (Ici 0) :=
-      (hW.hasLaw_sub_of_le (hg (Fin.le_last i))).measure_eq (p := (· ∈ Ici 0)) measurableSet_Ici
-    calc P (A i) = (2 * 2⁻¹) * P (A i) := by
-          rw [ENNReal.mul_inv_cancel two_ne_zero ENNReal.ofNat_ne_top, one_mul]
-      _ ≤ (2 * gaussianReal 0 (g N - g i) (Ici 0)) * P (A i) := by
-          gcongr; exact (gaussianReal 0 _).inv_two_le_measure_Ici_zero
-      _ = 2 * P (C i) := by rw [mul_assoc, ← hlaw, ← hind]
+  have hbound (i : Fin (n + 1)) : P (A i) ≤ 2 * P (C i) := calc
+    P (A i) = (2 * 2⁻¹) * P (A i) := by
+        rw [ENNReal.mul_inv_cancel two_ne_zero ENNReal.ofNat_ne_top, one_mul]
+    _ ≤ (2 * gaussianReal 0 (g N - g i) (Ici 0)) * P (A i) := by
+        gcongr; exact (gaussianReal 0 _).inv_two_le_measure_Ici_zero
+    _ = 2 * P (C i) := by
+        rw [mul_assoc, (Indep_iff _ _ _).mp (hWF.indep_sub (hg (Fin.le_last i))) _ (A i)
+          ⟨Ici 0, measurableSet_Ici, rfl⟩ (hA_meas i)]
+        congr 2
+        exact ((hW.hasLaw_sub_of_le (hg (Fin.le_last i))).measure_eq (p := (· ∈ Ici 0))
+          measurableSet_Ici).symm
   rw [← hA_union, measure_iUnion hA_disj (fun i ↦ ℱ.le (g i) _ (hA_meas i)), tsum_fintype]
   calc ∑ i, P (A i) ≤ ∑ i, 2 * P (C i) := Finset.sum_le_sum fun i _ ↦ hbound i
     _ = 2 * P (⋃ i, C i) := by
@@ -98,9 +99,8 @@ private theorem measure_exists_gt_le_of_stronglyMeasurable (hW : IsPreBrownianRe
           inter_subset_right) (fun i ↦ (measurableSet_Ici.preimage
             ((hWm (g N)).measurable.sub (hWm (g i)).measurable)).inter (ℱ.le (g i) _ (hA_meas i))),
           tsum_fintype]
-    _ ≤ 2 * P {ω | b < W (g N) ω} := mul_le_mul_of_nonneg_left (measure_mono fun ω
-        ⟨_, ⟨i, rfl⟩, hΔ, _, hbi⟩ ↦ by
-          simp only [mem_preimage, mem_Ici, Pi.sub_apply, mem_ofPred_eq] at hΔ ⊢; linarith) bot_le
+    _ ≤ 2 * P {ω | b < W (g N) ω} := by
+        gcongr; exact fun ω ⟨_, ⟨i, rfl⟩, hΔ, _, hbi⟩ ↦ lt_of_lt_of_le hbi (sub_nonneg.mp hΔ)
 
 /-- **Discrete reflection inequality** for a real pre-Brownian motion: along any finite monotone
 grid `g : Fin (n + 1) → ℝ≥0`, the probability of exceeding `b` somewhere on the grid is at most
@@ -152,9 +152,8 @@ private theorem measure_exists_le_ge_le_of_continuous (hW : IsPreBrownianReal W 
     exact ⟨r, hr.2, le_of_tendsto hu_tend (.of_forall fun m ↦
       let ⟨s, hst, hs⟩ := h m; hs.le.trans (hmax ⟨bot_le, hst⟩))⟩
   have hG_inter : (⋂ m, {ω | u m < W t ω}) = {ω | a ≤ W t ω} := by
-    ext ω; simp only [mem_iInter, mem_ofPred_eq]
-    exact ⟨fun h ↦ le_of_tendsto hu_tend (.of_forall fun m ↦ (h m).le),
-      fun h m ↦ (hu_lt m).trans_le h⟩
+    ext ω; exact ⟨fun h ↦ le_of_tendsto hu_tend (.of_forall fun m ↦ (mem_iInter.mp h m).le),
+      fun h ↦ mem_iInter.mpr fun m ↦ (hu_lt m).trans_le h⟩
   rw [← hF_inter, ← hG_inter]
   exact le_of_tendsto_of_tendsto (tendsto_measure_iInter_atTop
       (fun _ ↦ (measurableSet_exists_le_gt (fun s ↦ (hWm s).measurable) hWc t _).nullMeasurableSet)
@@ -180,15 +179,12 @@ private theorem subset_dyadicCrossing_union_osc (hW0 : ∀ ω, W 0 ω = 0) (t : 
   · exact Or.inr hosc
   · refine Or.inl (mem_iUnion.mpr ?_); classical
     have hex : ∃ j, a ≤ W (g j) ω := ⟨.last _, by simp only [g, nnrealDyadicPoint_last]; linarith⟩
-    have hi₀_ge : a ≤ W (g (Fin.find _ hex)) ω := Fin.find_spec hex
-    have hi₀_min (j : Fin (2 ^ n + 1)) (hj : j < Fin.find _ hex) : W (g j) ω < a :=
-      not_le.mp (Fin.find_min hex hj)
-    obtain ⟨k, hk_eq⟩ := Fin.eq_succ_of_ne_zero (i := Fin.find _ hex) fun h0 ↦ by
-      have := hi₀_ge; rw [h0] at this; dsimp only [g] at this
-      rw [nnrealDyadicPoint_zero, hW0 ω] at this; linarith
-    rw [hk_eq] at hi₀_ge hi₀_min
-    exact ⟨k.succ, ⟨hi₀_min, hi₀_ge, by linarith [hi₀_min k.castSucc k.castSucc_lt_succ,
-      (abs_lt.mp (not_le.mp fun hle ↦ hosc ⟨k, hle⟩)).2]⟩, hω⟩
+    obtain ⟨k, hk⟩ := Fin.eq_succ_of_ne_zero (i := Fin.find _ hex) fun h0 ↦
+      ha.not_ge <| by simpa [g, h0, hW0] using Fin.find_spec hex
+    refine ⟨k.succ, ⟨fun j hj ↦ not_le.mp (Fin.find_min hex (hk ▸ hj)), hk ▸ Fin.find_spec hex,
+      ?_⟩, hω⟩
+    have := not_le.mp (Fin.find_min hex (hk ▸ k.castSucc_lt_succ))
+    have := (abs_lt.mp (not_le.mp fun hle ↦ hosc ⟨k, hle⟩)).2; linarith
 
 private theorem measurableSet_dyadicCrossingSet (hWm : ∀ s, StronglyMeasurable (W s)) (t : ℝ≥0)
     (a δ : ℝ) (n : ℕ) (i : Fin (2 ^ n + 1)) :
@@ -217,22 +213,20 @@ private theorem two_mul_measure_add_ge_le_step (hW : IsPreBrownianReal W P)
       fun h ↦ h.elim hik fun h' ↦ hk.2.1.not_gt (hi.1 k h')
   have hbound (i : Fin (2 ^ n + 1)) : 2 * P (D i) ≤ P (A i) := by
     let E : Set Ω := (W (g N) - W (g i)) ⁻¹' Ioi 0
-    have hsub : D i ⊆ E ∩ A i := fun ω ⟨hA, (hWt : a + δ ≤ W t ω)⟩ ↦ ⟨by
-      have hWt' : a + δ ≤ W (g N) ω := by simpa only [g, N, nnrealDyadicPoint_last] using hWt
-      simp only [E, mem_preimage, mem_Ioi, Pi.sub_apply]; linarith [hA.2.2], hA⟩
-    have hind := (Indep_iff _ _ _).mp
-      (hWF.indep_sub (monotone_nnrealDyadicPoint t n (Fin.le_last i)))
-      E (A i) ⟨Ioi 0, measurableSet_Ioi, rfl⟩ (hA_meas i)
-    have hlaw : P E = gaussianReal 0 (g N - g i) (Ioi 0) :=
-      (hW.hasLaw_sub_of_le (monotone_nnrealDyadicPoint t n (Fin.le_last i))).measure_eq
-        (p := (· ∈ Ioi 0)) measurableSet_Ioi
-    calc 2 * P (D i) ≤ 2 * P (E ∩ A i) := mul_le_mul_of_nonneg_left (measure_mono hsub) bot_le
-      _ = (2 * gaussianReal 0 (g N - g i) (Ioi 0)) * P (A i) := by rw [hind, hlaw, mul_assoc]
+    have hsub : D i ⊆ E ∩ A i := fun ω ⟨hA, (hWt : a + δ ≤ W t ω)⟩ ↦
+      ⟨sub_pos.mpr (hA.2.2.trans_le (by simpa only [g, N, nnrealDyadicPoint_last] using hWt)), hA⟩
+    calc 2 * P (D i) ≤ 2 * P (E ∩ A i) := by gcongr
+      _ = (2 * gaussianReal 0 (g N - g i) (Ioi 0)) * P (A i) := by
+          rw [(Indep_iff _ _ _).mp (hWF.indep_sub (monotone_nnrealDyadicPoint t n (Fin.le_last i)))
+            E (A i) ⟨Ioi 0, measurableSet_Ioi, rfl⟩ (hA_meas i), mul_assoc]
+          congr 2
+          exact (hW.hasLaw_sub_of_le (monotone_nnrealDyadicPoint t n (Fin.le_last i))).measure_eq
+            (p := (· ∈ Ioi 0)) measurableSet_Ioi
       _ ≤ (2 * 2⁻¹) * P (A i) := by gcongr; exact (gaussianReal 0 _).measure_Ioi_zero_le_inv_two
       _ = P (A i) := by rw [ENNReal.mul_inv_cancel two_ne_zero ENNReal.ofNat_ne_top, one_mul]
-  calc 2 * P {ω | a + δ ≤ W t ω} ≤ 2 * (P (⋃ i, D i) + P Osc) := mul_le_mul_of_nonneg_left
-        ((measure_mono (subset_dyadicCrossing_union_osc hW0 t ha hδ n)).trans
-          (measure_union_le _ _)) bot_le
+  calc 2 * P {ω | a + δ ≤ W t ω} ≤ 2 * (P (⋃ i, D i) + P Osc) := by
+        gcongr; exact (measure_mono (subset_dyadicCrossing_union_osc hW0 t ha hδ n)).trans
+          (measure_union_le _ _)
     _ = (∑ i, 2 * P (D i)) + 2 * P Osc := by
         rw [mul_add, measure_iUnion (fun i k hik ↦ (hA_disj hik).mono inter_subset_left
           inter_subset_left) (fun i ↦ (ℱ.le (g i) _ (hA_meas i)).inter
@@ -240,9 +234,8 @@ private theorem two_mul_measure_add_ge_le_step (hW : IsPreBrownianReal W P)
     _ ≤ (∑ i, P (A i)) + 2 * P Osc := by gcongr with i; exact hbound i
     _ = P (⋃ i, A i) + 2 * P Osc := by
         rw [measure_iUnion hA_disj (fun i ↦ ℱ.le (g i) _ (hA_meas i)), tsum_fintype]
-    _ ≤ P {ω | ∃ s ≤ t, a ≤ W s ω} + 2 * P Osc := add_le_add_left (measure_mono
-        (iUnion_subset fun i _ h ↦ ⟨g i, nnrealDyadicPoint_le t n i, h.2.1⟩ :
-          ⋃ i, A i ⊆ {ω | ∃ s ≤ t, a ≤ W s ω})) _
+    _ ≤ P {ω | ∃ s ≤ t, a ≤ W s ω} + 2 * P Osc := by
+        gcongr; exact iUnion_subset fun i _ h ↦ ⟨g i, nnrealDyadicPoint_le t n i, h.2.1⟩
 
 private theorem measure_exists_le_ge_of_continuous (hW : IsPreBrownianReal W P)
     (hWm : ∀ s, StronglyMeasurable (W s)) (hWc : ∀ ω, Continuous (W · ω)) (hW0 : ∀ ω, W 0 ω = 0)
@@ -257,10 +250,10 @@ private theorem measure_exists_le_ge_of_continuous (hW : IsPreBrownianReal W P)
       ((tendsto_const_nhds (x := P {ω | ∃ s ≤ t, a ≤ W s ω})).add hosc)
       (.of_forall fun n ↦ two_mul_measure_add_ge_le_step hW hWm hW0 t ha hδ n)
   obtain ⟨u, hu_anti, hu_gt, hu_tend⟩ := exists_seq_strictAnti_tendsto a
-  have hu_iff (y : ℝ) : (∃ m, u m ≤ y) ↔ a < y := by
-    simpa using Set.ext_iff.mp (iUnion_Ici_eq_Ioi_of_lt_of_tendsto hu_gt hu_tend) y
   rw [hW.measure_eval_ge_eq_measure_eval_gt (.inr ha.ne'),
-    show {ω | a < W t ω} = ⋃ m, {ω | u m ≤ W t ω} by ext ω; simp [hu_iff]]
+    show {ω | a < W t ω} = ⋃ m, {ω | u m ≤ W t ω} from
+      (congrArg (W t ⁻¹' ·) (iUnion_Ici_eq_Ioi_of_lt_of_tendsto hu_gt hu_tend)).symm.trans
+        preimage_iUnion]
   refine le_of_tendsto' (ENNReal.Tendsto.const_mul (tendsto_measure_iUnion_atTop (μ := P)
     fun _ _ hm _ hω ↦ (hu_anti.antitone hm).trans hω) (Or.inr ENNReal.ofNat_ne_top)) fun m ↦ ?_
   simpa only [Function.comp_apply, add_sub_cancel] using hδ_bound (sub_pos.mpr (hu_gt m))
@@ -320,12 +313,13 @@ theorem measureReal_exists_le_ge (hB : IsBrownianReal B P) (t : ℝ≥0) {a : �
 theorem measure_exists_le_gt (hB : IsBrownianReal B P) (t : ℝ≥0) {a : ℝ} (ha : 0 ≤ a) :
     P {ω | ∃ s ≤ t, a < B s ω} = 2 * P {ω | a < B t ω} := by
   obtain ⟨u, hu_anti, hu_gt, hu_tend⟩ := exists_seq_strictAnti_tendsto a
-  have hu_iff (y : ℝ) : (∃ m, u m ≤ y) ↔ a < y := by
-    simpa using Set.ext_iff.mp (iUnion_Ici_eq_Ioi_of_lt_of_tendsto hu_gt hu_tend) y
-  have hF_union : (⋃ m, {ω | ∃ s ≤ t, u m ≤ B s ω}) = {ω | ∃ s ≤ t, a < B s ω} := by
-    ext ω; simp only [mem_iUnion, mem_ofPred_eq, ← hu_iff]
-    exact exists_comm.trans (exists_congr fun _ ↦ exists_and_left)
-  rw [← hF_union, show {ω | a < B t ω} = ⋃ m, {ω | u m ≤ B t ω} by ext ω; simp [hu_iff]]
+  rw [show {ω | ∃ s ≤ t, a < B s ω} = ⋃ m, {ω | ∃ s ≤ t, u m ≤ B s ω} by
+      ext ω; simp only [← mem_Ioi, ← iUnion_Ici_eq_Ioi_of_lt_of_tendsto hu_gt hu_tend, mem_iUnion,
+        mem_Ici, mem_ofPred_eq]
+      exact (exists_congr fun _ ↦ exists_and_left.symm).trans exists_comm,
+    show {ω | a < B t ω} = ⋃ m, {ω | u m ≤ B t ω} from
+      (congrArg (B t ⁻¹' ·) (iUnion_Ici_eq_Ioi_of_lt_of_tendsto hu_gt hu_tend)).symm.trans
+        preimage_iUnion]
   exact tendsto_nhds_unique (tendsto_measure_iUnion_atTop (μ := P) fun _ _ hm _ ⟨s, hst, hs⟩ ↦
       ⟨s, hst, (hu_anti.antitone hm).trans hs⟩)
     ((ENNReal.Tendsto.const_mul (tendsto_measure_iUnion_atTop (μ := P) fun _ _ hm _ hω ↦

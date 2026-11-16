@@ -74,36 +74,40 @@ section NegInvariant
 
 variable {α : Type*} [AddCommGroup α] [MeasurableSpace α] [MeasurableNeg α]
 
+section
+variable [PartialOrder α] [IsOrderedAddMonoid α] (μ : Measure α) [μ.IsNegInvariant]
+
 /-- A negation-invariant measure on an ordered additive group gives `Iic (-x)` and `Ici x` the
 same measure. -/
-theorem measure_Iic_neg_eq_measure_Ici [PartialOrder α] [IsOrderedAddMonoid α] (μ : Measure α)
-    [μ.IsNegInvariant] (x : α) : μ (Iic (-x)) = μ (Ici x) := by
+theorem measure_Iic_neg_eq_measure_Ici (x : α) : μ (Iic (-x)) = μ (Ici x) := by
   simpa only [Set.neg_Ici] using measure_neg μ (Ici x)
 
 /-- A negation-invariant measure on an ordered additive group gives `Iio (-x)` and `Ioi x` the
 same measure. -/
-theorem measure_Iio_neg_eq_measure_Ioi [PartialOrder α] [IsOrderedAddMonoid α] (μ : Measure α)
-    [μ.IsNegInvariant] (x : α) : μ (Iio (-x)) = μ (Ioi x) := by
+theorem measure_Iio_neg_eq_measure_Ioi (x : α) : μ (Iio (-x)) = μ (Ioi x) := by
   simpa only [Set.neg_Ioi] using measure_neg μ (Ioi x)
 
 /-- A negation-invariant measure on an ordered additive group gives the same measure to `Iic x` as
 to `Ioi (-x)`, provided the point `-x` is null. -/
-theorem measure_Iic_eq_measure_Ioi_neg [PartialOrder α] [IsOrderedAddMonoid α] (μ : Measure α)
-    [μ.IsNegInvariant] {x : α} (hnull : μ {-x} = 0) : μ (Iic x) = μ (Ioi (-x)) := by
+theorem measure_Iic_eq_measure_Ioi_neg {x : α} (hnull : μ {-x} = 0) : μ (Iic x) = μ (Ioi (-x)) := by
   rw [← neg_neg x, μ.measure_Iic_neg_eq_measure_Ici (-x), neg_neg,
     ← measure_congr (Ioi_ae_eq_Ici' hnull)]
 
 /-- A negation-invariant measure on an ordered additive group gives the same mass to `Iic x` as to
 `Ioi (-x)`, provided the point `-x` is null. -/
-theorem measureReal_Iic_eq_measureReal_Ioi_neg [PartialOrder α] [IsOrderedAddMonoid α]
-    (μ : Measure α) [μ.IsNegInvariant] {x : α} (hnull : μ {-x} = 0) :
+theorem measureReal_Iic_eq_measureReal_Ioi_neg {x : α} (hnull : μ {-x} = 0) :
     μ.real (Iic x) = μ.real (Ioi (-x)) := by
   rw [Measure.real, Measure.real, measure_Iic_eq_measure_Ioi_neg μ hnull]
 
+end
+
+section
+variable [LinearOrder α] [IsOrderedAddMonoid α] (μ : Measure α) [IsProbabilityMeasure μ]
+  [μ.IsNegInvariant]
+
 /-- A negation-invariant probability measure on a linearly ordered additive group gives `Ici 0`
 measure at least `2⁻¹`. -/
-theorem inv_two_le_measure_Ici_zero [LinearOrder α] [IsOrderedAddMonoid α] (μ : Measure α)
-    [IsProbabilityMeasure μ] [μ.IsNegInvariant] : (2⁻¹ : ℝ≥0∞) ≤ μ (Ici 0) := by
+theorem inv_two_le_measure_Ici_zero : (2⁻¹ : ℝ≥0∞) ≤ μ (Ici 0) := by
   have hneg : μ (Iic 0) = μ (Ici 0) := by simpa [neg_zero] using μ.measure_Iic_neg_eq_measure_Ici 0
   have h1 : (1 : ℝ≥0∞) ≤ 2 * μ (Ici 0) := by
     simpa only [Iic_union_Ici, measure_univ, hneg, two_mul] using
@@ -113,60 +117,51 @@ theorem inv_two_le_measure_Ici_zero [LinearOrder α] [IsOrderedAddMonoid α] (μ
 
 /-- A negation-invariant probability measure on a linearly ordered additive group gives `Iic 0`
 measure at least `2⁻¹`. -/
-theorem inv_two_le_measure_Iic_zero [LinearOrder α] [IsOrderedAddMonoid α] (μ : Measure α)
-    [IsProbabilityMeasure μ] [μ.IsNegInvariant] : (2⁻¹ : ℝ≥0∞) ≤ μ (Iic 0) := by
+theorem inv_two_le_measure_Iic_zero : (2⁻¹ : ℝ≥0∞) ≤ μ (Iic 0) := by
   rw [← neg_zero, μ.measure_Iic_neg_eq_measure_Ici]; exact μ.inv_two_le_measure_Ici_zero
+
+section
+variable [TopologicalSpace α] [ClosedIicTopology α] [OpensMeasurableSpace α]
 
 /-- A negation-invariant probability measure on a linearly ordered additive group with measurable
 open rays gives `Ioi 0` measure at most `2⁻¹`. -/
-theorem measure_Ioi_zero_le_inv_two [LinearOrder α] [IsOrderedAddMonoid α] [TopologicalSpace α]
-    [ClosedIicTopology α] [OpensMeasurableSpace α] (μ : Measure α) [IsProbabilityMeasure μ]
-    [μ.IsNegInvariant] : μ (Ioi 0) ≤ 2⁻¹ := by
+theorem measure_Ioi_zero_le_inv_two : μ (Ioi 0) ≤ 2⁻¹ := by
   have hneg : μ (Iio 0) = μ (Ioi 0) := by simpa [neg_zero] using μ.measure_Iio_neg_eq_measure_Ioi 0
-  have hdisj : Disjoint (Iio (0 : α)) (Ioi 0) :=
-    disjoint_left.mpr fun _ (hx₁ : _ < 0) (hx₂ : 0 < _) ↦ (hx₁.trans hx₂).false
   have h2 : 2 * μ (Ioi 0) ≤ 1 := by
-    rw [two_mul]; nth_rw 1 [← hneg]; rw [← measure_union hdisj measurableSet_Ioi]
+    rw [two_mul]; nth_rw 1 [← hneg]
+    rw [← measure_union (disjoint_left.mpr fun _ h₁ h₂ ↦ (lt_trans h₁ h₂).false) measurableSet_Ioi]
     exact (measure_mono (subset_univ _)).trans_eq measure_univ
   simpa [ENNReal.inv_mul_cancel two_ne_zero ENNReal.ofNat_ne_top, ← mul_assoc] using
     mul_le_mul_of_nonneg_left h2 (bot_le : (0 : ℝ≥0∞) ≤ 2⁻¹)
 
 /-- A negation-invariant probability measure on a linearly ordered additive group with measurable
 open rays gives `Iio 0` measure at most `2⁻¹`. -/
-theorem measure_Iio_zero_le_inv_two [LinearOrder α] [IsOrderedAddMonoid α] [TopologicalSpace α]
-    [ClosedIicTopology α] [OpensMeasurableSpace α] (μ : Measure α) [IsProbabilityMeasure μ]
-    [μ.IsNegInvariant] : μ (Iio 0) ≤ 2⁻¹ := by
+theorem measure_Iio_zero_le_inv_two : μ (Iio 0) ≤ 2⁻¹ := by
   rw [← neg_zero, μ.measure_Iio_neg_eq_measure_Ioi]; exact μ.measure_Ioi_zero_le_inv_two
 
 /-- A negation-invariant probability measure on a linearly ordered additive group with `μ {0} = 0`
 gives `Ioi 0` measure `2⁻¹`. -/
-theorem measure_Ioi_zero_eq_inv_two [LinearOrder α] [IsOrderedAddMonoid α] [TopologicalSpace α]
-    [ClosedIicTopology α] [OpensMeasurableSpace α] (μ : Measure α) [IsProbabilityMeasure μ]
-    [μ.IsNegInvariant] (h0 : μ {0} = 0) : μ (Ioi 0) = 2⁻¹ :=
+theorem measure_Ioi_zero_eq_inv_two (h0 : μ {0} = 0) : μ (Ioi 0) = 2⁻¹ :=
   le_antisymm μ.measure_Ioi_zero_le_inv_two
     (measure_congr (Ioi_ae_eq_Ici' h0) ▸ μ.inv_two_le_measure_Ici_zero)
 
 /-- A negation-invariant probability measure on a linearly ordered additive group with `μ {0} = 0`
 gives `Iio 0` measure `2⁻¹`. -/
-theorem measure_Iio_zero_eq_inv_two [LinearOrder α] [IsOrderedAddMonoid α] [TopologicalSpace α]
-    [ClosedIicTopology α] [OpensMeasurableSpace α] (μ : Measure α) [IsProbabilityMeasure μ]
-    [μ.IsNegInvariant] (h0 : μ {0} = 0) : μ (Iio 0) = 2⁻¹ := by
+theorem measure_Iio_zero_eq_inv_two (h0 : μ {0} = 0) : μ (Iio 0) = 2⁻¹ := by
   rw [← neg_zero, μ.measure_Iio_neg_eq_measure_Ioi]; exact μ.measure_Ioi_zero_eq_inv_two h0
 
 /-- A negation-invariant probability measure on a linearly ordered additive group with `μ {0} = 0`
 gives `Ici 0` measure `2⁻¹`. -/
-theorem measure_Ici_zero_eq_inv_two [LinearOrder α] [IsOrderedAddMonoid α] [TopologicalSpace α]
-    [ClosedIicTopology α] [OpensMeasurableSpace α] (μ : Measure α) [IsProbabilityMeasure μ]
-    [μ.IsNegInvariant] (h0 : μ {0} = 0) : μ (Ici 0) = 2⁻¹ :=
+theorem measure_Ici_zero_eq_inv_two (h0 : μ {0} = 0) : μ (Ici 0) = 2⁻¹ :=
   (measure_congr (Ioi_ae_eq_Ici' h0)).symm.trans (μ.measure_Ioi_zero_eq_inv_two h0)
 
 /-- A negation-invariant probability measure on a linearly ordered additive group with `μ {0} = 0`
 gives `Iic 0` measure `2⁻¹`. -/
-theorem measure_Iic_zero_eq_inv_two [LinearOrder α] [IsOrderedAddMonoid α] [TopologicalSpace α]
-    [ClosedIicTopology α] [OpensMeasurableSpace α] (μ : Measure α) [IsProbabilityMeasure μ]
-    [μ.IsNegInvariant] (h0 : μ {0} = 0) : μ (Iic 0) = 2⁻¹ := by
+theorem measure_Iic_zero_eq_inv_two (h0 : μ {0} = 0) : μ (Iic 0) = 2⁻¹ := by
   rw [← neg_zero, μ.measure_Iic_neg_eq_measure_Ici]; exact μ.measure_Ici_zero_eq_inv_two h0
 
+end
+end
 end NegInvariant
 
 end Measure
