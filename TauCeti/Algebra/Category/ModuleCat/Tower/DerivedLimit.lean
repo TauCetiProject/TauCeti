@@ -196,8 +196,8 @@ theorem Q_map_homotopyLimitFst_comp_Q_map_complexShift
 /-- The homotopy limit sends quasi-isomorphisms of complexes of towers to quasi-isomorphisms. -/
 instance quasiIso_homotopyLimitFunctor_map {K L : CochainComplex (ModuleTower.{v} R) ℤ}
     (f : K ⟶ L) [QuasiIso f] : QuasiIso ((homotopyLimitFunctor R).map f) := by
-  have comm := ((complexShift R).naturality f).symm
-  exact (quasiIso_shift_iff _ (-1)).2 (mappingCone.quasiIso_map _ _ _ _ comm)
+  rw [homotopyLimitFunctor_map]
+  exact (quasiIso_shift_iff _ (-1)).2 inferInstance
 
 variable (R)
 

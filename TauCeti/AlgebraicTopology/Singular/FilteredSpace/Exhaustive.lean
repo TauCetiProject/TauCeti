@@ -77,7 +77,9 @@ some stage of the filtration by the singular chains of the `X q`. -/
 theorem exists_mem_range_singularChainFiltration_arrow (hX : Monotone X)
     (hK : ∀ K : Set Y, IsCompact K → ∃ q, K ⊆ X q) (m : ℤ)
     (x : (((TopCat.toSSet.obj Y).chainComplex M).extend ComplexShape.embeddingDownNat).X m) :
-    ∃ q, x ∈ LinearMap.range ((singularChainFiltration M X q).arrow.f m).hom := by
+    ∃ q, x ∈ LinearMap.range
+      ((chainFiltration ((AlgebraicTopology.singularChainComplexFunctor _).obj M) X q).arrow.f
+        m).hom := by
   by_cases hm : ∃ n : ℕ, ComplexShape.embeddingDownNat.f n = m
   · obtain ⟨n, hn⟩ := hm
     have : PreservesFilteredColimitsOfSize.{0, 0} (forget (ModuleCat.{w} k)) :=
@@ -93,11 +95,12 @@ theorem exists_mem_range_singularChainFiltration_arrow (hX : Monotone X)
       ((((TopCat.toSSet.obj Y).chainComplex M).extendXIso _ hn).hom x)
     -- Transport the preimage `y` from degree `n` to degree `m = -n` of the extended complexes.
     obtain ⟨z, rfl⟩ := (mem_range_extendMap_f_iff _
-      (SSet.chainComplexMap (TopCat.toSSet.map (TopPair.ofSubset (X q)).map) M) hn x).2 ⟨y, hy⟩
-    refine ⟨q, (singularChainFiltrationIso M X q).inv.f m z, ?_⟩
+      (((AlgebraicTopology.singularChainComplexFunctor _).obj M).map (TopPair.ofSubset (X q)).map)
+      hn x).2 ⟨y, hy⟩
+    refine ⟨q, (chainFiltrationIso ((AlgebraicTopology.singularChainComplexFunctor _).obj M) X
+      q).inv.f m z, ?_⟩
     rw [← ModuleCat.comp_apply, ← HomologicalComplex.comp_f,
-      ← singularChainFiltrationIso_hom_comp_singularChainFiltrationι, Iso.inv_hom_id_assoc,
-      singularChainFiltrationι_def]
+      ← chainFiltrationIso_hom_comp_chainFiltrationι, Iso.inv_hom_id_assoc, chainFiltrationι_def]
     -- The two sides differ only in the coercion of a linear map to a function.
     rfl
   · push Not at hm
@@ -111,10 +114,8 @@ variable (hX : Monotone X)
 class of `Hₙ(Y)` lies in some piece of its filtration. -/
 theorem exists_mem_range_filteredSpaceAbutmentFiltrationι
     (hK : ∀ K : Set Y, IsCompact K → ∃ q, K ⊆ X q) {n : ℤ}
-    (x : (CochainComplex.spectralObject (CochainComplex.filtrationFunctor _
-      (monotone_singularChainFiltration M hX))).abutment n) :
-    ∃ q, x ∈ LinearMap.range ((CochainComplex.spectralObject (CochainComplex.filtrationFunctor _
-      (monotone_singularChainFiltration M hX))).abutmentFiltrationι q n).hom :=
+    (x : (filteredSpaceSpectralObject M hX).abutment n) :
+    ∃ q, x ∈ LinearMap.range ((filteredSpaceSpectralObject M hX).abutmentFiltrationι q n).hom :=
   CochainComplex.exists_mem_range_filtrationAbutmentFiltrationι _ _
     (exists_mem_range_singularChainFiltration_arrow M hX hK n) x
 
@@ -126,8 +127,7 @@ theorem isIso_filteredSpaceAbutmentFiltrationι_of_exhaustive
     (hvanish : ∀ i, b ≤ i →
       IsZero ((TopPair.ofInclusion (hX (Int.le_add_one le_rfl) : X i ⊆ X (i + 1))).singularHomology
         M n)) :
-    IsIso ((CochainComplex.spectralObject (CochainComplex.filtrationFunctor _
-      (monotone_singularChainFiltration M hX))).abutmentFiltrationι b (-n)) :=
+    IsIso ((filteredSpaceSpectralObject M hX).abutmentFiltrationι b (-n)) :=
   CochainComplex.isIso_filtrationAbutmentFiltrationι_of_exhaustive _ _
     (exists_mem_range_singularChainFiltration_arrow M hX hK _) fun i hi ↦
       isZero_homology_cokernel_singularChainFiltration M _ _ fun n' hn' ↦ by
@@ -147,11 +147,11 @@ def filteredSpaceSpectralSequencePageXIsoGradedOfExhaustive
       IsZero ((TopPair.ofInclusion (hX (Int.le_add_one le_rfl) : X i ⊆ X (i + 1))).singularHomology
         M n)) :
     ((filteredSpaceSpectralSequence M hX).page r).X pq ≅
-      cokernel ((CochainComplex.spectralObject (CochainComplex.filtrationFunctor _
-        (monotone_singularChainFiltration M hX))).abutmentFiltrationMap pq.2 (pq.1 + pq.2)) :=
+      cokernel ((filteredSpaceSpectralObject M hX).abutmentFiltrationMap pq.2 (pq.1 + pq.2)) :=
   CochainComplex.filtrationSpectralSequencePageXIsoGradedOfExhaustive _ _ r hr pq
     (exists_mem_range_singularChainFiltration_arrow M hX hK _)
-    ((singularChainFiltration M X _).isZero_homology_of_eq_bot
+    ((chainFiltration ((AlgebraicTopology.singularChainComplexFunctor _).obj M) X
+      _).isZero_homology_of_eq_bot
       (singularChainFiltration_eq_bot M (Set.subset_empty_iff.1 (ha ▸ hX hra))) _)
     fun i hi ↦ isZero_homology_cokernel_singularChainFiltration M _ _ (hvanish i hi)
 

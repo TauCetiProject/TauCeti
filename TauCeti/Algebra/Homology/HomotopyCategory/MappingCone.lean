@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Homology.DerivedCategory.Basic
 public import Mathlib.Algebra.Homology.HomotopyCategory.Acyclic
 public import Mathlib.Algebra.Homology.HomotopyCategory.Pretriangulated
 public import TauCeti.Algebra.Homology.HomotopyCategory.HomComplex.Basic
 public import TauCeti.Algebra.Homology.Homotopy
-public import TauCeti.Algebra.Homology.HomotopyCofiber
 
 /-!
 # Mapping cones and homotopy equivalences
@@ -45,8 +45,9 @@ whose cones are acyclic.
   quasi-isomorphism exactly when its mapping cone is acyclic.
 * `CochainComplex.mappingCone.isIso_map_f`: the map of mapping cones induced by a commutative
   square is an isomorphism in each degree where the vertical maps are.
-* `CochainComplex.mappingCone.quasiIso_map`: the map of mapping cones induced by a commutative
-  square of quasi-isomorphisms is a quasi-isomorphism.
+* `CochainComplex.mappingCone.quasiIso_mapOfHomotopy`, `quasiIso_map`: the map of mapping cones
+  induced by a square of quasi-isomorphisms, commutative up to homotopy or strictly, is a
+  quasi-isomorphism.
 
 ## Mapping cones of natural transformations and shifts
 
@@ -501,25 +502,34 @@ theorem quasiIso_iff_acyclic_mappingCone {K L : CochainComplex C ℤ} (φ : K �
 
 namespace mappingCone
 
+/-- **Five lemma for mapping cones.** The map of mapping cones induced by a square of
+quasi-isomorphisms that commutes up to a homotopy `H` is a quasi-isomorphism: in the derived
+category it is the third component of a morphism of distinguished triangles whose first two
+components are isomorphisms. -/
+instance quasiIso_mapOfHomotopy {K₁ L₁ K₂ L₂ : CochainComplex C ℤ} {φ₁ : K₁ ⟶ L₁}
+    {φ₂ : K₂ ⟶ L₂} {a : K₁ ⟶ K₂} {b : L₁ ⟶ L₂} (H : Homotopy (φ₁ ≫ b) (a ≫ φ₂))
+    [QuasiIso a] [QuasiIso b] : QuasiIso (mapOfHomotopy H) := by
+  let _ := HasDerivedCategory.standard C
+  have e := DerivedCategory.quotientCompQhIso C
+  have h₁ : IsIso (DerivedCategory.Qh.map ((HomotopyCategory.quotient C _).map a)) :=
+    (NatIso.isIso_map_iff e a).2 inferInstance
+  have h₂ : IsIso (DerivedCategory.Qh.map ((HomotopyCategory.quotient C _).map b)) :=
+    (NatIso.isIso_map_iff e b).2 inferInstance
+  rw [← DerivedCategory.isIso_Q_map_iff_quasiIso, ← NatIso.isIso_map_iff e]
+  exact Pretriangulated.isIso₃_of_isIso₁₂
+    (DerivedCategory.Qh.mapTriangle.map (trianglehMapOfHomotopy H))
+    (DerivedCategory.Qh.map_distinguished _
+      (HomotopyCategory.mappingCone_triangleh_distinguished φ₁))
+    (DerivedCategory.Qh.map_distinguished _
+      (HomotopyCategory.mappingCone_triangleh_distinguished φ₂))
+    h₁ h₂
+
 /-- The map of mapping cones induced by a commutative square of quasi-isomorphisms is a
 quasi-isomorphism. -/
 instance quasiIso_map {K₁ L₁ K₂ L₂ : CochainComplex C ℤ} (φ₁ : K₁ ⟶ L₁) (φ₂ : K₂ ⟶ L₂)
     (a : K₁ ⟶ K₂) (b : L₁ ⟶ L₂) (comm : φ₁ ≫ b = a ≫ φ₂) [QuasiIso a] [QuasiIso b] :
-    QuasiIso (map φ₁ φ₂ a b comm) := by
-  have hc : ∀ j : ℤ, ∃ i, (ComplexShape.up ℤ).Rel i j := fun j ↦ ⟨j - 1, by simp⟩
-  have h : map φ₁ φ₂ a b comm =
-      HomologicalComplex.homotopyCofiber.mapArrowHom φ₁ φ₂ hc (Arrow.homMk a b comm.symm) := by
-    ext n
-    refine ext_from _ (n + 1) n rfl ?_ ?_
-    · rw [inl_v_map_f]
-      exact (HomologicalComplex.homotopyCofiber.inlX_mapArrowHom_f
-        φ₁ φ₂ hc (Arrow.homMk a b comm.symm) (n + 1) n rfl).symm
-    · rw [inr_f_map_f]
-      exact (HomologicalComplex.homotopyCofiber.inrX_mapArrowHom_f
-        φ₁ φ₂ hc (Arrow.homMk a b comm.symm) n).symm
-  have : QuasiIso (Arrow.homMk a b comm.symm : Arrow.mk φ₁ ⟶ Arrow.mk φ₂).left := ‹QuasiIso a›
-  have : QuasiIso (Arrow.homMk a b comm.symm : Arrow.mk φ₁ ⟶ Arrow.mk φ₂).right := ‹QuasiIso b›
-  exact h ▸ HomologicalComplex.homotopyCofiber.quasiIso_mapArrowHom φ₁ φ₂ hc _
+    QuasiIso (map φ₁ φ₂ a b comm) :=
+  map_eq_mapOfHomotopy φ₁ φ₂ a b comm ▸ inferInstance
 
 end mappingCone
 

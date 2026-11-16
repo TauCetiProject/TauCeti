@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.HomotopyCategory.MappingCone
+public import TauCeti.Algebra.Homology.SpectralObject.Basic
 public import TauCeti.Algebra.Homology.SpectralObject.SpectralSequenceMap
 public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.SpectralObject
 
@@ -49,6 +50,8 @@ cohomology of a morphism of mapping cones, which is a quasi-isomorphism by the f
   of graded pieces.
 * `CochainComplex.filtrationFunctorMap_id`, `CochainComplex.filtrationFunctorMap_comp`:
   functoriality of `filtrationFunctorMap`.
+* `CochainComplex.quasiIso_filtrationFunctorMap_app`: a quasi-isomorphism of filtered complexes
+  restricting to quasi-isomorphisms of the stages indexed by `ℤ` does so on all stages.
 -/
 
 public section
@@ -156,6 +159,29 @@ lemma filtrationFunctorMap_comp (f : K ⟶ L) (g : L ⟶ N)
     filtrationFunctorMap_app_comp,
     NatTrans.comp_app, Category.assoc, filtrationFunctorMap_app_comp,
     filtrationFunctorMap_app_comp_assoc]
+
+/-- A quasi-isomorphism of filtered complexes `f : K ⟶ L` which restricts to quasi-isomorphisms
+`F n ⟶ G n` on every stage restricts to quasi-isomorphisms on every stage indexed by `EInt`: the
+stages at `⊥` are zero and those at `⊤` are `K` and `L`. -/
+lemma quasiIso_filtrationFunctorMap_app (f : K ⟶ L) (hf : ∀ n, (G n).Factors ((F n).arrow ≫ f))
+    [QuasiIso f] (h : ∀ n : ℤ, QuasiIso ((filtrationFunctorMap hF hG f hf).app n)) (a : EInt) :
+    QuasiIso ((filtrationFunctorMap hF hG f hf).app a) := by
+  induction a using WithBotTop.rec with
+  | bot =>
+    have : IsIso ((filtrationFunctorMap hF hG f hf).app ⊥) :=
+      isIso_of_source_target_iso_zero _ (isZero_filtrationFunctor_obj_bot _ _).isoZero
+        (isZero_filtrationFunctor_obj_bot _ _).isoZero
+    infer_instance
+  | coe n => exact h n
+  | top =>
+    have : IsIso (filtrationEInt F ⊤).arrow :=
+      (Subobject.isIso_arrow_iff_eq_top _).2 (filtrationEInt_top _)
+    have : IsIso (filtrationEInt G ⊤).arrow :=
+      (Subobject.isIso_arrow_iff_eq_top _).2 (filtrationEInt_top _)
+    rw [← quasiIso_iff_comp_right _
+      ((filtrationFunctorObjIso G hG ⊤).hom ≫ (filtrationEInt G ⊤).arrow),
+      filtrationFunctorMap_app_comp]
+    infer_instance
 
 end FiltrationMap
 

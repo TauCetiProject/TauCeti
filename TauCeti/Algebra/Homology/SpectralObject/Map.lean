@@ -30,11 +30,10 @@ spectral sequences induced by `φ`.
 
 ## Main results
 
-* `CategoryTheory.Abelian.SpectralObject.EMap_id`, `EMap_comp`: functoriality.
+* `CategoryTheory.Abelian.SpectralObject.EMap_id`, `EMap_comp`: functoriality; in particular
+  `EMap φ`, `cyclesMapOfHom φ` and `opcyclesMapOfHom φ` are isomorphisms when `φ` is.
 * `CategoryTheory.Abelian.SpectralObject.map_EMap`: compatibility with `X.map`.
 * `CategoryTheory.Abelian.SpectralObject.d_EMap`: compatibility with the differentials.
-* `CategoryTheory.Abelian.SpectralObject.isIso_of_isIso_hom_app`: a morphism of spectral objects
-  is an isomorphism as soon as it is one on every `H^n(f)`.
 * `CategoryTheory.Abelian.SpectralObject.EMap_comp_EIsoH_hom`: on the objects `E^n(𝟙, f, 𝟙)`,
   identified with `H^n(f)`, `EMap φ` is the component of `φ` at `f`.
 
@@ -324,18 +323,24 @@ end FirstPage
 
 section IsIso
 
-/-- A morphism of spectral objects is an isomorphism as soon as it is one on every `H^n(f)`. -/
-lemma isIso_of_isIso_hom_app
-    (h : ∀ (n : ℤ) {i j : ι} (f : i ⟶ j), IsIso ((φ.hom n).app (mk₁ f))) : IsIso φ := by
-  have hφ (n : ℤ) : IsIso (φ.hom n) := by
-    rw [NatTrans.isIso_iff_isIso_app]
-    intro D
-    obtain ⟨_, _, f, rfl⟩ := mk₁_surjective D
-    exact h n f
-  refine ⟨⟨fun n ↦ inv (φ.hom n), fun n₀ n₁ hn₁ i j k f g ↦ ?_⟩, ?_, ?_⟩
-  · rw [← cancel_epi ((φ.hom n₀).app (mk₁ g)), ← φ.comm_assoc]
-    simp
-  all_goals exact Hom.ext (funext fun n ↦ by simp)
+variable [IsIso φ]
+
+instance isIso_EMap {i j k l : ι} (f₁ : i ⟶ j) (f₂ : j ⟶ k) (f₃ : k ⟶ l) (n₀ n₁ n₂ : ℤ)
+    (hn₁ : n₀ + 1 = n₁) (hn₂ : n₁ + 1 = n₂) : IsIso (EMap φ f₁ f₂ f₃ n₀ n₁ n₂ hn₁ hn₂) :=
+  ⟨EMap (inv φ) f₁ f₂ f₃ n₀ n₁ n₂ hn₁ hn₂, by rw [← EMap_comp, IsIso.hom_inv_id, EMap_id],
+    by rw [← EMap_comp, IsIso.inv_hom_id, EMap_id]⟩
+
+instance isIso_cyclesMapOfHom {i j k : ι} (f : i ⟶ j) (g : j ⟶ k) (n : ℤ) :
+    IsIso (cyclesMapOfHom φ f g n) :=
+  ⟨cyclesMapOfHom (inv φ) f g n,
+    by rw [← cyclesMapOfHom_comp, IsIso.hom_inv_id, cyclesMapOfHom_id],
+    by rw [← cyclesMapOfHom_comp, IsIso.inv_hom_id, cyclesMapOfHom_id]⟩
+
+instance isIso_opcyclesMapOfHom {i j k : ι} (f : i ⟶ j) (g : j ⟶ k) (n : ℤ) :
+    IsIso (opcyclesMapOfHom φ f g n) :=
+  ⟨opcyclesMapOfHom (inv φ) f g n,
+    by rw [← opcyclesMapOfHom_comp, IsIso.hom_inv_id, opcyclesMapOfHom_id],
+    by rw [← opcyclesMapOfHom_comp, IsIso.inv_hom_id, opcyclesMapOfHom_id]⟩
 
 end IsIso
 
