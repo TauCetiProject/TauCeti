@@ -95,16 +95,20 @@ section Measure
 
 variable [MeasurableSpace E] {μ : Measure E} [SigmaFinite μ] {φ : ι → E → 𝕜}
 
+/-- Almost everywhere equal generators have almost everywhere equal densities. -/
+theorem determinantalDensity_congr_ae {ψ : ι → E → 𝕜} (h : ∀ i, φ i =ᵐ[μ] ψ i) :
+    determinantalDensity φ =ᵐ[Measure.pi fun _ ↦ μ] determinantalDensity ψ := by
+  have h' : ∀ᵐ x : ι → E ∂Measure.pi (fun _ ↦ μ), ∀ i j, φ i (x j) = ψ i (x j) :=
+    Filter.eventually_all.2 fun i ↦ Filter.eventually_all.2 fun j ↦
+      (Measure.tendsto_eval_ae_ae (μ := fun _ : ι ↦ μ) (i := j)).eventually (h i)
+  filter_upwards [h'] with x hx
+  simp only [determinantalDensity_def, hx]
+
 /-- Almost everywhere measurable generators give an almost everywhere measurable density. -/
 theorem aemeasurable_determinantalDensity (hφ : ∀ i, AEMeasurable (φ i) μ) :
-    AEMeasurable (determinantalDensity φ) (Measure.pi fun _ ↦ μ) := by
-  have h : ∀ᵐ x : ι → E ∂Measure.pi (fun _ ↦ μ),
-      ∀ i j, φ i (x j) = (hφ i).mk (φ i) (x j) :=
-    Filter.eventually_all.2 fun i ↦ Filter.eventually_all.2 fun j ↦
-      (Measure.tendsto_eval_ae_ae (μ := fun _ : ι ↦ μ) (i := j)).eventually (hφ i).ae_eq_mk
-  refine (measurable_determinantalDensity fun i ↦ (hφ i).measurable_mk).aemeasurable.congr ?_
-  filter_upwards [h] with x hx
-  simp only [determinantalDensity_def, hx]
+    AEMeasurable (determinantalDensity φ) (Measure.pi fun _ ↦ μ) :=
+  (measurable_determinantalDensity fun i ↦ (hφ i).measurable_mk).aemeasurable.congr
+    (determinantalDensity_congr_ae fun i ↦ (hφ i).ae_eq_mk).symm
 
 /-- The labelled ensemble measure. Orthonormal square-integrable generators make it a
 probability measure; without orthonormality this definition is still the same density. -/
@@ -122,6 +126,15 @@ theorem determinantalEnsemble_apply {s : Set (ι → E)} (hs : MeasurableSet s) 
     determinantalEnsemble μ φ s =
       ∫⁻ x in s, ENNReal.ofReal (determinantalDensity φ x) ∂Measure.pi (fun _ ↦ μ) := by
   rw [determinantalEnsemble_def, withDensity_apply _ hs]
+
+/-- Almost everywhere equal generators define the same labelled ensemble law. In particular,
+any representatives of `L²` classes may be used as generators. -/
+theorem determinantalEnsemble_congr_ae {ψ : ι → E → 𝕜} (h : ∀ i, φ i =ᵐ[μ] ψ i) :
+    determinantalEnsemble μ φ = determinantalEnsemble μ ψ := by
+  rw [determinantalEnsemble_def, determinantalEnsemble_def]
+  refine withDensity_congr_ae ?_
+  filter_upwards [determinantalDensity_congr_ae h] with x hx
+  rw [hx]
 
 omit [SigmaFinite μ] in
 /-- Equal finite rank kernels define the same labelled ensemble law. -/
