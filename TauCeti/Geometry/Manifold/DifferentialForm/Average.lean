@@ -17,9 +17,11 @@ import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Chart
 
 Let a group `G` act on a manifold `M` and let `μ` be a measure on `G`. The average of a
 differential form `φ` on `M` is the form `x ↦ ∫ ((a •)^* φ)_x dμ(a)`, the fibrewise integral of the
-pullbacks of `φ` by the action maps (`TauCeti.averageForm`). It is linear in `φ`
-(`TauCeti.averageForm_smul`, `TauCeti.averageForm_add`, …). When `G` is compact, `μ` is finite, `φ`
-is continuous and the action is jointly `C¹`, it is evaluated on tangent vectors by
+pullbacks of `φ` by the action maps (`TauCeti.averageForm`). It commutes with negation and scalar
+multiplication (`TauCeti.averageForm_neg`, `TauCeti.averageForm_smul`). When `G` is compact, `μ` is
+finite and the action is jointly `C¹`, averaging is additive on continuous forms
+(`TauCeti.averageForm_add`, `TauCeti.averageForm_sub`), and the average of a form continuous along
+the orbit of `x` is evaluated on tangent vectors at `x` by
 
 `(averageForm μ φ)_x (v₁, …, vₖ) = ∫ φ_{a • x}(d(a •)_x v₁, …, d(a •)_x vₖ) dμ(a)`
 
@@ -39,12 +41,12 @@ averaging of tensors which produces invariant forms.
 * Exterior derivative: for a compact group acting jointly `C²` on a boundaryless `C²` manifold
   and a finite measure, averaging commutes with `d` (`TauCeti.mextDeriv_averageForm`), so the
   average of a closed form is closed.
-* Vanishing along invariant subsets: a form vanishing at every point of an invariant subset has
-  an average vanishing there (`TauCeti.averageForm_apply_eq_zero`), and if in addition its
-  coordinate expressions have zero derivative at these points, so do those of the average
-  (`TauCeti.hasFDerivAt_inChartAt_averageForm_zero`, under the hypotheses of the previous item).
-  Thus averaging preserves vanishing of the value and of the first jet along an invariant
-  submanifold.
+* Vanishing along orbits: a form vanishing at every point of the orbit of `x` has an average
+  vanishing at `x` (`TauCeti.averageForm_apply_eq_zero`), and if in addition its coordinate
+  expressions have zero derivative at these points, so does that of the average at `x`
+  (`TauCeti.hasFDerivAt_inChartAt_averageForm_zero`, under the hypotheses of the previous item,
+  with `φ` only required to be `C¹` along the orbit). Thus averaging preserves vanishing of the
+  value and of the first jet along an invariant subset, in particular an invariant submanifold.
 
 These are the properties of averaging used for the equivariant normal forms of Hamiltonian
 actions of compact groups, where symplectic forms and their differences are averaged over a
@@ -111,12 +113,12 @@ theorem averageForm_smul (c : ℝ) (φ : RoughForm I M F k) :
 theorem averageForm_neg (φ : RoughForm I M F k) : averageForm μ (-φ) = -averageForm μ φ := by
   rw [← neg_one_smul ℝ φ, averageForm_smul, neg_one_smul]
 
-/-- **Averaging preserves vanishing on invariant sets.** If a form vanishes at every point of a
-subset `s` preserved by the action, so does its average. -/
-theorem averageForm_apply_eq_zero {φ : RoughForm I M F k} {s : Set M}
-    (hs : ∀ a : G, ∀ x ∈ s, a • x ∈ s) (hφ : ∀ x ∈ s, φ x = 0) {x : M} (hx : x ∈ s) :
+/-- **Averaging preserves vanishing along orbits.** If a form vanishes at every point of the orbit
+of `x`, its average vanishes at `x`. In particular, averaging preserves vanishing on invariant
+subsets. -/
+theorem averageForm_apply_eq_zero {φ : RoughForm I M F k} {x : M} (hφ : ∀ a : G, φ (a • x) = 0) :
     averageForm μ φ x = 0 :=
-  parametricIntegralForm_apply_eq_zero fun a ↦ mpullback_apply_eq_zero (hφ _ (hs a x hx))
+  parametricIntegralForm_apply_eq_zero fun a ↦ mpullback_apply_eq_zero (hφ a)
 
 /-- **Averaging fixes invariant forms.** The average over a probability measure of a form
 preserved by every action map is the form itself. -/
@@ -128,6 +130,24 @@ end Defs
 
 variable [TopologicalSpace G] [ChartedSpace HG G] [IsManifold I 1 M] [IsManifold J 1 G]
 
+/-- **Pullbacks along a smooth action form a smooth family at a point.** If `G` acts jointly
+`C^n` on `M` and the form `φ` is `C^m` at `a • x`, with `m + 1 ≤ n`, then the pullbacks
+`(b •)^* φ` are jointly `C^m` in `(b, y)` at `(a, x)`. -/
+theorem contMDiffAt_mpullback_smul_form {m n : WithTop ℕ∞} [ContMDiffSMul J I n G M]
+    {φ : RoughForm I M F k} {a : G} {x : M}
+    (hφ : ContMDiffAt I (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F)) m
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) y (φ y)) (a • x)) (hmn : m + 1 ≤ n) :
+    ContMDiffAt (J.prod I) (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F)) m
+      (fun p : G × M ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F)
+        (E := fun y : M ↦ TangentSpace I y [⋀^Fin k]→L[ℝ] Trivial M F y) p.2
+        (mpullback I I (p.1 • ·) φ p.2)) (a, x) := by
+  have hsmul : ContMDiff ((J.prod I).prod I) I n
+      (Function.uncurry fun (q : G × M) (y : M) ↦ q.1 • y) :=
+    (contMDiff_smul (I := J) (I' := I)).comp
+      ((contMDiff_fst.comp contMDiff_fst).prodMk contMDiff_snd)
+  exact ContMDiffAt.mpullback_form_family hφ (f := fun q : G × M ↦ (q.1 • ·)) (g := Prod.snd)
+    hsmul.contMDiffAt contMDiffAt_snd hmn
+
 /-- **Pullbacks along a smooth action form a smooth family.** If `G` acts jointly `C^n` on `M`
 and the form `φ` is `C^m`, with `m + 1 ≤ n`, then the pullbacks `(a •)^* φ` are jointly `C^m` in
 `(a, x)`. -/
@@ -136,25 +156,22 @@ theorem contMDiff_mpullback_smul_form {m n : WithTop ℕ∞} [ContMDiffSMul J I 
     ContMDiff (J.prod I) (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F)) m
       (fun p : G × M ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F)
         (E := fun y : M ↦ TangentSpace I y [⋀^Fin k]→L[ℝ] Trivial M F y) p.2
-        (mpullback I I (p.1 • ·) φ p.2)) := by
-  have hsmul : ContMDiff ((J.prod I).prod I) I n
-      (Function.uncurry fun (q : G × M) (y : M) ↦ q.1 • y) :=
-    (contMDiff_smul (I := J) (I' := I)).comp
-      ((contMDiff_fst.comp contMDiff_fst).prodMk contMDiff_snd)
-  exact fun p ↦ ContMDiffAt.mpullback_form_family (hφ.contMDiff _)
-    (f := fun q : G × M ↦ (q.1 • ·)) (g := Prod.snd) hsmul.contMDiffAt contMDiffAt_snd hmn
+        (mpullback I I (p.1 • ·) φ p.2)) := fun _ ↦
+  contMDiffAt_mpullback_smul_form J (hφ.contMDiff _) hmn
 
 variable [MeasurableSpace G] [OpensMeasurableSpace G] [CompactSpace G] {μ : Measure G}
   [IsFiniteMeasure μ]
 
 include J
 
-/-- For a compact group acting jointly `C¹` and a finite measure, the pullbacks of a continuous
-form at a point are integrable. -/
-theorem integrable_mpullback_smul [ContMDiffSMul J I 1 G M] {φ : RoughForm I M F k}
-    (hφ : IsSmoothForm I 0 φ) (x : M) :
+/-- For a compact group acting jointly `C¹` and a finite measure, the pullbacks at `x` of a form
+continuous along the orbit of `x` are integrable. -/
+theorem integrable_mpullback_smul [ContMDiffSMul J I 1 G M] {φ : RoughForm I M F k} {x : M}
+    (hφ : ∀ a : G, ContMDiffAt I (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F)) 0
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) y (φ y)) (a • x)) :
     Integrable (fun a : G ↦ @id (E [⋀^Fin k]→L[ℝ] F) (mpullback I I (a • ·) φ x)) μ :=
-  integrable_family_apply (contMDiff_mpullback_smul_form J (n := 1) hφ (by simp)) x
+  RoughForm.integrable_family_apply fun a ↦
+    contMDiffAt_mpullback_smul_form J (n := 1) (hφ a) (by simp)
 
 /-- Averaging is additive on continuous forms, for a compact group acting jointly `C¹` and a
 finite measure. -/
@@ -162,8 +179,8 @@ theorem averageForm_add [ContMDiffSMul J I 1 G M] {φ ψ : RoughForm I M F k}
     (hφ : IsSmoothForm I 0 φ) (hψ : IsSmoothForm I 0 ψ) :
     averageForm μ (φ + ψ) = averageForm μ φ + averageForm μ ψ := by
   simp only [averageForm_def, mpullback_add]
-  exact parametricIntegralForm_add (integrable_mpullback_smul J hφ)
-    (integrable_mpullback_smul J hψ)
+  exact parametricIntegralForm_add (fun _ ↦ integrable_mpullback_smul J fun _ ↦ hφ.contMDiff _)
+    (fun _ ↦ integrable_mpullback_smul J fun _ ↦ hψ.contMDiff _)
 
 /-- Averaging is subtractive on continuous forms, for a compact group acting jointly `C¹` and a
 finite measure. -/
@@ -171,17 +188,20 @@ theorem averageForm_sub [ContMDiffSMul J I 1 G M] {φ ψ : RoughForm I M F k}
     (hφ : IsSmoothForm I 0 φ) (hψ : IsSmoothForm I 0 ψ) :
     averageForm μ (φ - ψ) = averageForm μ φ - averageForm μ ψ := by
   simp only [averageForm_def, mpullback_sub]
-  exact parametricIntegralForm_sub (integrable_mpullback_smul J hφ)
-    (integrable_mpullback_smul J hψ)
+  exact parametricIntegralForm_sub (fun _ ↦ integrable_mpullback_smul J fun _ ↦ hφ.contMDiff _)
+    (fun _ ↦ integrable_mpullback_smul J fun _ ↦ hψ.contMDiff _)
 
 variable [CompleteSpace F]
 
-/-- The average of a continuous form under a jointly `C¹` action of a compact group and a finite
-measure, evaluated on tangent vectors, is the integral of the values of the pulled-back forms. -/
-theorem averageForm_apply [ContMDiffSMul J I 1 G M] {φ : RoughForm I M F k}
-    (hφ : IsSmoothForm I 0 φ) (x : M) (v : Fin k → TangentSpace I x) :
+/-- For a jointly `C¹` action of a compact group and a finite measure, the average at `x` of a form
+continuous along the orbit of `x`, evaluated on tangent vectors, is the integral of the values of
+the pulled-back forms. -/
+theorem averageForm_apply [ContMDiffSMul J I 1 G M] {φ : RoughForm I M F k} {x : M}
+    (hφ : ∀ a : G, ContMDiffAt I (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F)) 0
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) y (φ y)) (a • x))
+    (v : Fin k → TangentSpace I x) :
     averageForm μ φ x v = ∫ a, φ (a • x) (fun i ↦ mfderiv I I (a • ·) x (v i)) ∂μ :=
-  (parametricIntegralForm_apply (integrable_mpullback_smul J hφ x) v).trans
+  (parametricIntegralForm_apply (integrable_mpullback_smul J hφ) v).trans
     (by simp only [mpullback_apply])
 
 /-- **Averages of smooth forms are smooth.** For a compact Hausdorff group acting jointly
@@ -205,27 +225,29 @@ theorem mextDeriv_averageForm [I.Boundaryless] [IsManifold I 2 M]
   exact (mpullback_mextDeriv (ContMDiffSMul.contMDiff_const_smul (I := J) a)
     ((isSmoothBundleForm_def 1 _).mpr hφ.contMDiff)).symm
 
-/-- **Averaging preserves vanishing first jets on invariant sets.** Let `s` be a subset preserved
-by a compact group acting jointly `C²` on a boundaryless `C²` manifold, and let `μ` be finite. If
-a `C¹` form vanishes on `s` and its coordinate expression in the chart at each point of `s` has
-zero derivative there, then the coordinate expression of its average in the chart at each point
-of `s` also has zero derivative there. -/
+/-- **Averaging preserves vanishing first jets along orbits.** Let a compact group act jointly
+`C²` on a boundaryless `C²` manifold, and let `μ` be finite. If a form is `C¹` along the orbit
+of `x`, vanishes there, and its coordinate expression in the chart at each point of the orbit has
+zero derivative there, then the coordinate expression of its average in the chart at `x` has zero
+derivative at the chart point of `x`. In particular, averaging preserves vanishing first jets on
+invariant subsets. -/
 theorem hasFDerivAt_inChartAt_averageForm_zero [I.Boundaryless]
-    [IsManifold I 2 M] [ContMDiffSMul J I 2 G M] {φ : RoughForm I M F k} (hφ : IsSmoothForm I 1 φ)
-    {s : Set M} (hs : ∀ a : G, ∀ x ∈ s, a • x ∈ s) (hφs : ∀ x ∈ s, φ x = 0)
-    (hdφs : ∀ x ∈ s, HasFDerivAt (φ.inChartAt x) (0 : E →L[ℝ] E [⋀^Fin k]→L[ℝ] F)
-      (extChartAt I x x))
-    {x : M} (hx : x ∈ s) :
+    [IsManifold I 2 M] [ContMDiffSMul J I 2 G M] {φ : RoughForm I M F k} {x : M}
+    (hφ : ∀ a : G, ContMDiffAt I (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F)) 1
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) y (φ y)) (a • x))
+    (hφ₀ : ∀ a : G, φ (a • x) = 0)
+    (hdφ : ∀ a : G, HasFDerivAt (φ.inChartAt (a • x)) (0 : E →L[ℝ] E [⋀^Fin k]→L[ℝ] F)
+      (extChartAt I (a • x) (a • x))) :
     HasFDerivAt ((averageForm μ φ).inChartAt x) (0 : E →L[ℝ] E [⋀^Fin k]→L[ℝ] F)
       (extChartAt I x x) := by
   have h := hasFDerivAt_inChartAt_parametricIntegralForm (μ := μ)
     (η := fun a : G ↦ mpullback I I (a • ·) φ)
-    (contMDiff_mpullback_smul_form J (G := G) (n := 2) hφ (by norm_num)) x
+    fun a ↦ contMDiffAt_mpullback_smul_form J (n := 2) (hφ a) (by norm_num)
   -- Each pulled-back form has a vanishing first jet at `x`.
   have h0 (a : G) : fderiv ℝ ((mpullback I I (a • ·) φ).inChartAt x) (extChartAt I x x) = 0 :=
     (RoughForm.hasFDerivAt_inChartAt_mpullback_zero
       ((ContMDiffSMul.contMDiff_const_smul (I := J) (I' := I) (n := 2) a).contMDiffAt.of_le
-        one_le_two) (hφs _ (hs a x hx)) (hdφs _ (hs a x hx))).fderiv
+        one_le_two) (hφ₀ a) (hdφ a)).fderiv
   simp only [h0, integral_zero] at h
   exact h
 
@@ -241,7 +263,7 @@ theorem mpullback_averageForm [SMul G M'] [ContMDiffSMul J I 1 G M] {f : M' → 
     (ContMDiffSMul.contMDiff_const_smul (I := J) (I' := I) (n := 1) a).mdifferentiable
       one_ne_zero
   rw [averageForm_def, averageForm_def,
-    mpullback_parametricIntegralForm fun y ↦ integrable_mpullback_smul J hφ (f y)]
+    mpullback_parametricIntegralForm fun _ ↦ integrable_mpullback_smul J fun _ ↦ hφ.contMDiff _]
   congr 1
   funext a
   -- Both sides are pullbacks along `(a •) ∘ f = f ∘ (a •)`.
@@ -278,16 +300,21 @@ theorem mpullback_smul_averageForm (hd : ∀ a : G, MDifferentiable I I (a • �
   -- Precomposition with `D` is a continuous linear equivalence, so it commutes with the integral.
   let L := (ContinuousLinearEquiv.equivOfInverse' D' D h₁ h₂).continuousAlternatingMapCongrLeft
     (ι := Fin k) (F := F)
+  -- `L` is the inverse of precomposition with `D'`, that is, precomposition with `D`.
+  have hL (ψ : E [⋀^Fin k]→L[ℝ] F) :
+      L ψ = ContinuousAlternatingMap.compContinuousLinearMapCLM D ψ := by
+    simp [L]
   -- Pulling back by `b` turns the integrand at `a` into the integrand at `a * b`.
   have hcomp (a : G) : L (@id (E [⋀^Fin k]→L[ℝ] F) (mpullback I I (a • ·) φ (b • x))) =
       @id (E [⋀^Fin k]→L[ℝ] F) (mpullback I I ((a * b) • ·) φ x) := by
     have hab : ((a * b) • · : M → M) = (a • ·) ∘ (b • ·) := funext fun y ↦ mul_smul a b y
-    rw [hab, mpullback_comp_at (hd b x) (hd a (b • x))]
+    rw [hab, mpullback_comp_at (hd b x) (hd a (b • x)), hL]
     exact (mpullback_apply_eq_compContinuousLinearMapCLM _ _ x).symm
   calc @id (E [⋀^Fin k]→L[ℝ] F) (mpullback I I (b • ·) (averageForm μ φ) x)
       = L (∫ a, @id (E [⋀^Fin k]→L[ℝ] F) (mpullback I I (a • ·) φ (b • x)) ∂μ) := by
-        rw [mpullback_apply_eq_compContinuousLinearMapCLM, averageForm_def,
+        rw [hL, mpullback_apply_eq_compContinuousLinearMapCLM, averageForm_def,
           parametricIntegralForm_def]
+        -- The two sides differ only by the `id` casts to the model fibre and the name `D`.
         rfl
     _ = ∫ a, @id (E [⋀^Fin k]→L[ℝ] F) (mpullback I I ((a * b) • ·) φ x) ∂μ := by
         rw [← L.integral_comp_comm]

@@ -311,6 +311,54 @@ theorem inChartAt_mpullback_eventuallyEq (φ : RoughForm I' M' F k) {f : M → M
   exact inChartAt_mpullback_eq_compContinuousLinearMap φ x (f x) hz
     (hz'.2.mdifferentiableAt one_ne_zero) hz'.1
 
+/-- **First jet of a pullback at a zero.** If a form `φ` vanishes at `f x` and its coordinate
+expression in the chart at `f x` has derivative `φ'` there, within the model range, then the
+coordinate expression of the pullback of `φ` along a map `f` that is `C¹` at `x` has, at the chart
+point of `x`, the derivative `v ↦ (φ' (D v)).compContinuousLinearMap D`, where `D` is the
+differential of `f` at `x`. Beyond the differentiability of its coordinate expression at `f x`,
+given by `hdφ`, no regularity of `φ` is needed. -/
+theorem hasFDerivWithinAt_inChartAt_mpullback_of_eq_zero {φ : RoughForm I' M' F k} {f : M → M'}
+    {x : M} {φ' : E' →L[ℝ] E' [⋀^Fin k]→L[ℝ] F} (hf : ContMDiffAt I I' 1 f x)
+    (hφ : φ (f x) = 0)
+    (hdφ : HasFDerivWithinAt (φ.inChartAt (f x)) φ' (range I') (extChartAt I' (f x) (f x))) :
+    HasFDerivWithinAt ((mpullback I I' f φ).inChartAt x)
+      ((ContinuousAlternatingMap.compContinuousLinearMapCLM
+        (@id (E →L[ℝ] E') (mfderiv I I' f x))).comp
+        (φ'.comp (@id (E →L[ℝ] E') (mfderiv I I' f x)))) (range I) (extChartAt I x x) := by
+  set z := extChartAt I x x
+  set g := writtenInExtChartAt I I' x f
+  have hzrange : z ∈ range I := extChartAt_target_subset_range x (mem_extChartAt_target x)
+  have hgz : g z = extChartAt I' (f x) (f x) :=
+    writtenInExtChartAt_apply_extChartAt (mem_extChartAt_source x)
+  have hg : ContDiffWithinAt ℝ 1 g (range I) z := (contMDiffAt_iff.mp hf).2
+  -- In charts, the differential of `f` at `x` is the derivative of its coordinate expression `g`.
+  rw [(hf.mdifferentiableAt one_ne_zero).mfderiv_abuse]
+  -- Every value of the coordinate expression `g` of `f` lies in the model range.
+  have hmaps : MapsTo g (range I) (range I') := fun w _ ↦ by
+    simp only [g, writtenInExtChartAt, extChartAt_coe, Function.comp_apply, mem_range_self]
+  -- The coordinates of `φ` along `g` vanish at `z`, and are differentiated by the chain rule.
+  have hA : HasFDerivWithinAt (fun w ↦ φ.inChartAt (f x) (g w))
+      (φ'.comp (fderivWithin ℝ g (range I) z)) (range I) z :=
+    (hgz ▸ hdφ).comp z (hg.differentiableWithinAt one_ne_zero).hasFDerivWithinAt hmaps
+  have hA0 : φ.inChartAt (f x) (g z) = 0 := by
+    rw [hgz, inChartAt_extChartAt_self, hφ]
+    -- The zero of the fibre over `f x` is the zero of the model fibre.
+    rfl
+  -- Precomposition with the derivative of `g` is continuous at `z`, so at a zero of the
+  -- coordinates of `φ` only the derivative of these coordinates contributes.
+  have hP : ContinuousWithinAt (fun w ↦ (ContinuousAlternatingMap.compContinuousLinearMapCLM
+      (fderivWithin ℝ g (range I) w) : (E' [⋀^Fin k]→L[ℝ] F) →L[ℝ] E [⋀^Fin k]→L[ℝ] F))
+      (range I) z :=
+    (ContinuousAlternatingMap.continuous_compContinuousLinearMapCLM.continuousAt (x := _)
+      ).comp_continuousWithinAt
+        (hg.continuousWithinAt_fderivWithin I.uniqueDiffOn one_ne_zero hzrange)
+  have h := HasFDerivWithinAt.clm_apply_of_eq_zero hP hA hA0
+  have hpull := inChartAt_mpullback_eventuallyEq φ hf
+  refine h.congr_of_eventuallyEq ?_ ?_
+  · filter_upwards [hpull] with w hw
+    rw [hw, ContinuousAlternatingMap.compContinuousLinearMapCLM_apply]
+  · rw [hpull.self_of_nhdsWithin hzrange, ContinuousAlternatingMap.compContinuousLinearMapCLM_apply]
+
 /-- **Pullback preserves vanishing first jets.** If a form `φ` vanishes at `f x` and its
 coordinate expression in the chart at `f x` has zero derivative there, then the coordinate
 expression of the pullback of `φ` along a map `f` that is `C¹` at `x` has zero derivative at the
@@ -322,53 +370,35 @@ theorem hasFDerivWithinAt_inChartAt_mpullback_zero {φ : RoughForm I' M' F k} {f
       (extChartAt I' (f x) (f x))) :
     HasFDerivWithinAt ((mpullback I I' f φ).inChartAt x) (0 : E →L[ℝ] E [⋀^Fin k]→L[ℝ] F)
       (range I) (extChartAt I x x) := by
-  set z := extChartAt I x x
-  set g := writtenInExtChartAt I I' x f
-  have hzrange : z ∈ range I := extChartAt_target_subset_range x (mem_extChartAt_target x)
-  have hgz : g z = extChartAt I' (f x) (f x) :=
-    writtenInExtChartAt_apply_extChartAt (mem_extChartAt_source x)
-  have hg : ContDiffWithinAt ℝ 1 g (range I) z := (contMDiffAt_iff.mp hf).2
-  -- Every value of the coordinate expression `g` of `f` lies in the model range.
-  have hmaps : MapsTo g (range I) (range I') := fun w _ ↦ by
-    simp only [g, writtenInExtChartAt, extChartAt_coe, Function.comp_apply, mem_range_self]
-  -- The coordinates of `φ` along `g` have zero value and zero derivative at `z`.
-  have hA : HasFDerivWithinAt (fun w ↦ φ.inChartAt (f x) (g w))
-      (0 : E →L[ℝ] E' [⋀^Fin k]→L[ℝ] F) (range I) z := by
-    simpa only [ContinuousLinearMap.zero_comp] using
-      (hgz ▸ hdφ).comp z (hg.differentiableWithinAt one_ne_zero).hasFDerivWithinAt hmaps
-  have hA0 : φ.inChartAt (f x) (g z) = 0 := by
-    rw [hgz, inChartAt_extChartAt_self, hφ]
-    -- The zero of the fibre over `f x` is the zero of the model fibre.
-    rfl
-  -- Precomposition with the derivative of `g` is continuous at `z`, so it does not contribute
-  -- to the derivative at a zero of the coordinates of `φ`.
-  have hP : ContinuousWithinAt (fun w ↦ (ContinuousAlternatingMap.compContinuousLinearMapCLM
-      (fderivWithin ℝ g (range I) w) : (E' [⋀^Fin k]→L[ℝ] F) →L[ℝ] E [⋀^Fin k]→L[ℝ] F))
-      (range I) z :=
-    (ContinuousAlternatingMap.continuous_compContinuousLinearMapCLM.continuousAt (x := _)
-      ).comp_continuousWithinAt
-        (hg.continuousWithinAt_fderivWithin I.uniqueDiffOn one_ne_zero hzrange)
-  have h := HasFDerivWithinAt.clm_apply_of_eq_zero hP hA hA0
-  rw [ContinuousLinearMap.comp_zero] at h
-  have hpull := inChartAt_mpullback_eventuallyEq φ hf
-  refine h.congr_of_eventuallyEq ?_ ?_
-  · filter_upwards [hpull] with w hw
-    rw [hw, ContinuousAlternatingMap.compContinuousLinearMapCLM_apply]
-  · rw [hpull.self_of_nhdsWithin hzrange, ContinuousAlternatingMap.compContinuousLinearMapCLM_apply]
+  simpa only [ContinuousLinearMap.zero_comp, ContinuousLinearMap.comp_zero] using
+    hasFDerivWithinAt_inChartAt_mpullback_of_eq_zero hf hφ hdφ
 
-/-- **Pullback preserves vanishing first jets**, on boundaryless manifolds: if a form `φ` vanishes
+/-- **First jet of a pullback at a zero**, for a boundaryless source: if a form `φ` vanishes at
+`f x` and its coordinate expression in the chart at `f x` has derivative `φ'` there, then the
+coordinate expression of the pullback of `φ` along a map `f` that is `C¹` at `x` has, at the chart
+point of `x`, the derivative `v ↦ (φ' (D v)).compContinuousLinearMap D`, where `D` is the
+differential of `f` at `x`. -/
+theorem hasFDerivAt_inChartAt_mpullback_of_eq_zero [I.Boundaryless] {φ : RoughForm I' M' F k}
+    {f : M → M'} {x : M} {φ' : E' →L[ℝ] E' [⋀^Fin k]→L[ℝ] F} (hf : ContMDiffAt I I' 1 f x)
+    (hφ : φ (f x) = 0) (hdφ : HasFDerivAt (φ.inChartAt (f x)) φ' (extChartAt I' (f x) (f x))) :
+    HasFDerivAt ((mpullback I I' f φ).inChartAt x)
+      ((ContinuousAlternatingMap.compContinuousLinearMapCLM
+        (@id (E →L[ℝ] E') (mfderiv I I' f x))).comp
+        (φ'.comp (@id (E →L[ℝ] E') (mfderiv I I' f x)))) (extChartAt I x x) := by
+  rw [← hasFDerivWithinAt_univ, ← I.range_eq_univ]
+  exact hasFDerivWithinAt_inChartAt_mpullback_of_eq_zero hf hφ hdφ.hasFDerivWithinAt
+
+/-- **Pullback preserves vanishing first jets**, for a boundaryless source: if a form `φ` vanishes
 at `f x` and its coordinate expression in the chart at `f x` has zero derivative there, then the
 coordinate expression of the pullback of `φ` along a map `f` that is `C¹` at `x` has zero
 derivative at the chart point of `x`. -/
-theorem hasFDerivAt_inChartAt_mpullback_zero [I.Boundaryless] [I'.Boundaryless]
-    {φ : RoughForm I' M' F k} {f : M → M'} {x : M} (hf : ContMDiffAt I I' 1 f x)
-    (hφ : φ (f x) = 0)
+theorem hasFDerivAt_inChartAt_mpullback_zero [I.Boundaryless] {φ : RoughForm I' M' F k}
+    {f : M → M'} {x : M} (hf : ContMDiffAt I I' 1 f x) (hφ : φ (f x) = 0)
     (hdφ : HasFDerivAt (φ.inChartAt (f x)) (0 : E' →L[ℝ] E' [⋀^Fin k]→L[ℝ] F)
       (extChartAt I' (f x) (f x))) :
     HasFDerivAt ((mpullback I I' f φ).inChartAt x) (0 : E →L[ℝ] E [⋀^Fin k]→L[ℝ] F)
       (extChartAt I x x) := by
-  rw [← hasFDerivWithinAt_univ, ← I'.range_eq_univ] at hdφ
-  rw [← hasFDerivWithinAt_univ, ← I.range_eq_univ]
-  exact hasFDerivWithinAt_inChartAt_mpullback_zero hf hφ hdφ
+  simpa only [ContinuousLinearMap.zero_comp, ContinuousLinearMap.comp_zero] using
+    hasFDerivAt_inChartAt_mpullback_of_eq_zero hf hφ hdφ
 
 end TauCeti.RoughForm
