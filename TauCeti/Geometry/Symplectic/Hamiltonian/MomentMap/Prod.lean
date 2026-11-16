@@ -29,10 +29,12 @@ moment map for the product form `σ₁.prod σ₂ = pr₁^* σ₁ + pr₂^* σ�
 (`TauCeti.SmoothTwoForm.IsMomentMap.differential_prodMap_apply`; for the diagonal action,
 `TauCeti.SmoothTwoForm.IsMomentMap.differential_prod_apply`): read in the product tangent space
 it is `dμ₁ × dμ₂` followed by `LinearMap.coprodEquiv`
-(`TauCeti.SmoothTwoForm.IsMomentMap.differential_prodMap`). So the tangent spaces `ker dμ`
-of its levels are the products of those of the factors
+(`TauCeti.SmoothTwoForm.IsMomentMap.differential_prodMap`). So the kernels `ker dμ` of its
+differentials are the products of those of the factors
 (`TauCeti.SmoothTwoForm.IsMomentMap.ker_differential_prodMap`), and `dμ` is surjective exactly
 when `dμ₁` and `dμ₂` are (`TauCeti.SmoothTwoForm.IsMomentMap.differential_prodMap_surjective_iff`).
+At a regular value these kernels are the tangent spaces of the level; in general, level data
+supply the equality of their tangent images with `ker dμ` as a hypothesis.
 
 The hypotheses on level data of
 `TauCeti.SmoothTwoForm.IsMomentMap.existsUnique_isSymplectic_mpullback_eq_mpullback` pass to
@@ -152,7 +154,7 @@ theorem prodMap (h₁ : σ₁.IsMomentMap a₁ μ₁) (h₂ : σ₂.IsMomentMap 
     LieHom.coe_toLinearMap, LieHom.coe_fst, comp_apply, LieHom.coe_snd]
 
 /-- The differential of the moment map `(x, y) ↦ μ(x) + ν(y)` of a diagonal action is the sum of
-the differentials of the factors: `dμ_(x, y)(v, w) = dμ_x(v) + dν_y(w)`. -/
+the differentials of the factors: `d(μ + ν)_(x, y)(v, w) = dμ_x(v) + dν_y(w)`. -/
 @[simp]
 theorem differential_prod_apply {b : InfinitesimalAction 𝔤₁ I₂ M₂} {ν : M₂ → Module.Dual ℝ 𝔤₁}
     (h₁ : σ₁.IsMomentMap a₁ μ₁) (h₂ : σ₂.IsMomentMap b ν) (p : M₁ × M₂)
@@ -198,20 +200,14 @@ theorem differential_prodMap_surjective_iff (h₁ : σ₁.IsMomentMap a₁ μ₁
   simp only [LinearEquiv.coe_coe, LinearMap.coe_prodMap, ContinuousLinearEquiv.coe_toLinearEquiv,
     EquivLike.comp_surjective, EquivLike.surjective_comp, Prod.map_surjective]
 
-/-- **The tangent spaces of a level of a product.** The kernel of the differential of the moment
+/-- **The kernel of the differential of a product.** The kernel of the differential of the moment
 map of a product at `(x₁, x₂)` is `ker (dμ₁)_{x₁} × ker (dμ₂)_{x₂}`. -/
 theorem ker_differential_prodMap (h₁ : σ₁.IsMomentMap a₁ μ₁) (h₂ : σ₂.IsMomentMap a₂ μ₂)
     (p : M₁ × M₂) :
     LinearMap.ker ((h₁.prodMap h₂).differential p) =
       ((LinearMap.ker (h₁.differential p.1)).prod (LinearMap.ker (h₂.differential p.2))).comap
         (Manifold.tangentSpaceProdEquiv p).toLinearMap := by
-  ext v
-  rw [LinearMap.mem_ker, differential_prodMap_apply h₁ h₂, Submodule.mem_comap,
-    Submodule.mem_prod, LinearMap.mem_ker, LinearMap.mem_ker]
-  -- A functional `f.coprod g` on `𝔤₁ × 𝔤₂` vanishes exactly when `f` and `g` do.
-  simpa only [LinearEquiv.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv,
-    LinearMap.coprodEquiv_apply, Prod.mk_eq_zero] using
-    (LinearMap.coprodEquiv ℝ).map_eq_zero_iff (x := (h₁.differential p.1 _, h₂.differential p.2 _))
+  rw [differential_prodMap h₁ h₂, LinearEquiv.ker_comp, LinearMap.ker_comp, LinearMap.ker_prodMap]
 
 /-- **Products of maps into levels.** The tangent images of `i₁ × i₂` at `(z₁, z₂)` lie in the
 kernel of the differential of the moment map of the product exactly when the tangent images of

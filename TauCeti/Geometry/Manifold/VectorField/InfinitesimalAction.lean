@@ -334,8 +334,9 @@ theorem toSubmodule_isotropy_prodMap (a : InfinitesimalAction 𝔤 I M)
     (b : InfinitesimalAction 𝔥 J N) (p : M × N) :
     ((a.prodMap b).isotropy p).toSubmodule =
       (a.isotropy p.1).toSubmodule.prod (b.isotropy p.2).toSubmodule := by
-  rw [prodMap_def, isotropy_prod, isotropy_comp, isotropy_comp]
-  exact (LinearMap.prod_eq_inf_comap _ _).symm
+  rw [isotropy_toSubmodule, isotropy_toSubmodule, isotropy_toSubmodule,
+    ← (Manifold.tangentSpaceProdEquiv p).toLinearEquiv.ker_comp,
+    tangentSpaceProdEquiv_comp_eval_prodMap, LinearMap.ker_prodMap]
 
 /-- An element `(Z, Z')` lies in the isotropy algebra at `(x, y)` of the componentwise action
 exactly when `Z ∈ 𝔤_x` and `Z' ∈ 𝔥_y`. -/

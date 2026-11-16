@@ -107,13 +107,11 @@ theorem tangentSpaceProdEquiv_comp_mfderiv_prodMap (hf : MDifferentiableAt I I' 
       (mfderiv (I.prod J) (I'.prod J') (Prod.map f g) p).toLinearMap =
       ((mfderiv I I' f p.1).toLinearMap.prodMap (mfderiv J J' g p.2).toLinearMap) ∘ₗ
         (Manifold.tangentSpaceProdEquiv (I := I) (J := J) p).toLinearEquiv.toLinearMap := by
-  apply LinearMap.ext
-  intro v
-  simp only [LinearMap.coe_comp, Function.comp_apply, LinearEquiv.coe_coe,
-    ContinuousLinearEquiv.coe_toLinearEquiv, tangentSpaceProdEquiv_apply]
-  -- Native product derivatives use definitionally equal product tangent synonyms.
-  erw [mfderiv_prodMap hf hg]
-  rfl
+  refine LinearMap.ext fun v ↦ ?_
+  have h := mfderiv_prodMap_apply hf hg (Manifold.tangentSpaceProdEquiv p v)
+  rw [ContinuousLinearEquiv.symm_apply_apply] at h
+  rw [LinearMap.comp_apply, LinearMap.comp_apply, ContinuousLinearMap.coe_coe, h]
+  exact (Manifold.tangentSpaceProdEquiv (f p.1, g p.2)).apply_symm_apply _
 
 /-- The tangent image of a product of differentiable maps, read in the product tangent spaces, is
 the product of the tangent images of the factors. -/
