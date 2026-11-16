@@ -35,8 +35,11 @@ normed complex `F`.
   `BesselPotentialSpace.toDistr_toLpₗᵢ_zero_symm_apply`: the identification `H^{0,p} = Lᵖ`.
 * `SchwartzMap.norm_toBesselPotentialSpaceCLM_zero`: on `H^{0,p}` the inclusion is isometric for
   the `Lᵖ` norm.
+* `BesselPotentialSpace.toDistrCLM`: the inclusion `H^{s,p}(E, F) →L[ℂ] 𝓢'(E, F)`.
 * `BesselPotentialSpace.continuousLinearMap_ext`: continuous linear maps out of `H^{s,p}`,
-  `p < ∞`, are determined by their values on Schwartz functions.
+  `p < ∞`, are determined by their values on Schwartz functions, and
+  `BesselPotentialSpace.toDistr_apply_eq_of_toBesselPotentialSpaceCLM`: so are the tempered
+  distributions of their values.
 * `BesselPotentialSpace.norm_eq_of_smulLeftCLM_fourier_eq`: for Hilbert-space values, the `H^s`
   norm is the `L²` norm of the weighted Fourier transform.
 * `SchwartzMap.norm_toBesselPotentialSpaceCLM`: for Hilbert-space values, the `H^s` norm of a
@@ -206,6 +209,27 @@ end SchwartzMap
 
 namespace BesselPotentialSpace
 
+variable (E F) in
+/-- The inclusion `H^{s,p}(E, F) ⊆ 𝓢'(E, F)` of a Bessel-potential space in the tempered
+distributions, as a continuous linear map. -/
+def toDistrCLM (s : ℝ) (p : ℝ≥0∞) [Fact (1 ≤ p)] : H^{s, p}(E, F) →L[ℂ] 𝓢'(E, F) where
+  toFun f := f.toDistr
+  map_add' := toDistr_add
+  map_smul' := toDistr_smul
+  cont := by
+    -- `f = J^{-s} f.toLp` is continuous in `f`, since `f ↦ f.toLp` is an isometry.
+    have h : (fun f : H^{s, p}(E, F) ↦ f.toDistr) = fun f ↦
+        besselPotential E F (-s) (Lp.toTemperedDistributionCLM F volume p (toLpₗᵢ E F s p f)) :=
+      funext fun f ↦ by simp
+    rw [h]
+    exact (besselPotential E F (-s)).continuous.comp
+      ((Lp.toTemperedDistributionCLM F volume p).continuous.comp (toLpₗᵢ E F s p).continuous)
+
+@[simp]
+theorem toDistrCLM_apply {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)] (f : H^{s, p}(E, F)) :
+    toDistrCLM E F s p f = f.toDistr :=
+  (rfl)
+
 /-- Continuous linear maps out of `H^{s,p}`, `p < ∞`, into a Hausdorff space are determined by
 their values on Schwartz functions. -/
 theorem continuousLinearMap_ext {G : Type*} [AddCommMonoid G] [Module ℂ G] [TopologicalSpace G]
@@ -216,6 +240,18 @@ theorem continuousLinearMap_ext {G : Type*} [AddCommMonoid G] [Module ℂ G] [To
   ContinuousLinearMap.ext fun f ↦ congrFun
     ((SchwartzMap.denseRange_toBesselPotentialSpaceCLM s hp).equalizer T.continuous T'.continuous
       (funext h)) f
+
+/-- Two continuous linear maps from `H^{s,p}`, `p < ∞`, to Bessel-potential spaces, possibly of
+different orders, give the same tempered distributions as soon as they do so on Schwartz
+functions. -/
+theorem toDistr_apply_eq_of_toBesselPotentialSpaceCLM {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℂ G] [CompleteSpace G] {s r r' : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : p ≠ ∞)
+    {T : H^{s, p}(E, F) →L[ℂ] H^{r, p}(E, G)} {T' : H^{s, p}(E, F) →L[ℂ] H^{r', p}(E, G)}
+    (h : ∀ u : 𝓢(E, F), (T (SchwartzMap.toBesselPotentialSpaceCLM s p u)).toDistr =
+      (T' (SchwartzMap.toBesselPotentialSpaceCLM s p u)).toDistr) (u : H^{s, p}(E, F)) :
+    (T u).toDistr = (T' u).toDistr := by
+  simpa using congrArg (· u) (continuousLinearMap_ext (T := toDistrCLM E G r p ∘L T)
+    (T' := toDistrCLM E G r' p ∘L T') hp fun u ↦ by simpa using h u)
 
 /-- In `H^{0,p} = Lᵖ` the element with `Lᵖ` part `f` is the tempered distribution of `f`. -/
 theorem toDistr_toLpₗᵢ_zero_symm_apply {p : ℝ≥0∞} [Fact (1 ≤ p)]
