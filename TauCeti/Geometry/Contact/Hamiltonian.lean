@@ -216,6 +216,13 @@ theorem contactHamiltonianVectorField_zero (α : SmoothForm I M ℝ 1) :
   funext x
   simp [contactHamiltonianVectorField_def, mvfderiv_zero]
 
+/-- A contact Hamiltonian with vanishing value and differential has a stationary vector field.
+This follows from the inverse-flat construction even without contactness. -/
+theorem contactHamiltonianVectorField_eq_zero_of_jet_eq_zero (α : SmoothForm I M ℝ 1)
+    {x : M} (hf : f x = 0) (hdf : mvfderiv I f x = 0) :
+    α.contactHamiltonianVectorField f x = 0 := by
+  simp [contactHamiltonianVectorField_def, hf, hdf]
+
 /-- The contact Hamiltonian vector field is additive on differentiable functions. -/
 theorem contactHamiltonianVectorField_add {x : M} (hf : MDifferentiableAt I 𝓘(ℝ) f x)
     (hg : MDifferentiableAt I 𝓘(ℝ) g x) :
@@ -363,20 +370,29 @@ theorem mdifferentiable_mvfderiv_reebVectorField (hf : ContMDiff I 𝓘(ℝ) 2 f
   (hα.contMDiff_mvfderiv_reebVectorField (n := 1) (by simp)
     (by norm_num [hf])).mdifferentiable one_ne_zero
 
+/-- **Local regularity of contact Hamiltonian vector fields.** A Hamiltonian which is
+`C^(n+1)` at a point has contact Hamiltonian field `C^n` there, for `n ≤ ∞`. -/
+theorem contMDiffAt_contactHamiltonianVectorField {n : WithTop ℕ∞} (hn : n ≤ ∞)
+    {x : M} (hf : ContMDiffAt I 𝓘(ℝ) (n + 1) f x) :
+    ContMDiffAt I I.tangent n (T% (α.contactHamiltonianVectorField f)) x := by
+  have hRf := (hf.contMDiffAt_mvfderiv_apply le_rfl).comp x
+    ((hα.contMDiff_reebVectorField x).of_le hn)
+  have hcov : ContMDiffAt I (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) n (fun y ↦
+      TotalSpace.mk' (E →L[ℝ] ℝ) (E := fun z : M ↦ TangentSpace I z →L[ℝ] ℝ) y
+        ((f y + mvfderiv I f y (α.reebVectorField y)) • degreeOneEquiv α y - mvfderiv I f y)) x :=
+    (((hf.of_le le_self_add).add hRf).smul_section
+      (((degreeOneEquiv α).contMDiff x).of_le hn)).sub_section
+        hf.contMDiffAt_totalSpaceMk_mvfderiv
+  exact ((((contMDiff_contactFlat α) x).clm_bundle_inverse
+    (hα.isInvertible_contactFlat x)).of_le hn).clm_bundle_apply hcov
+
 /-- **Regularity of contact Hamiltonian vector fields.** For a contact form on a
 finite-dimensional manifold, the contact Hamiltonian vector field of a `C^(n+1)` function is a
 `C^n` vector field, for `n ≤ ∞`. -/
 theorem contMDiff_contactHamiltonianVectorField {n : WithTop ℕ∞} (hn : n ≤ ∞)
     (hf : ContMDiff I 𝓘(ℝ) (n + 1) f) :
-    ContMDiff I I.tangent n (T% (α.contactHamiltonianVectorField f)) := by
-  have hRf := hα.contMDiff_mvfderiv_reebVectorField hn hf
-  have hcov : ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) n fun x ↦ TotalSpace.mk' (E →L[ℝ] ℝ)
-      (E := fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) x
-      ((f x + mvfderiv I f x (α.reebVectorField x)) • degreeOneEquiv α x - mvfderiv I f x) :=
-    (((hf.of_le le_self_add).add hRf).smul_section
-      ((degreeOneEquiv α).contMDiff.of_le hn)).sub_section hf.contMDiff_totalSpaceMk_mvfderiv
-  exact (((contMDiff_contactFlat α).clm_bundle_inverse hα.isInvertible_contactFlat).of_le
-    hn).clm_bundle_apply hcov
+    ContMDiff I I.tangent n (T% (α.contactHamiltonianVectorField f)) :=
+  fun x ↦ hα.contMDiffAt_contactHamiltonianVectorField hn (hf x)
 
 /-- **Regularity of contact Hamiltonian vector fields.** For a contact form on a
 finite-dimensional manifold, every contact Hamiltonian vector field of a `C^(n+1)` function is a
