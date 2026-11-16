@@ -45,6 +45,11 @@ the two orientations of `E_b`, and an orientation of the bundle trivializes it.
 
 * `IsCoveringMap.signLocalSystemObjEquiv_map_apply_monodromy`: transport along a path evaluated
   at the endpoint of a lift is the original function evaluated at its starting point.
+* `IsCoveringMap.monodromyRepresentation_signLocalSystem_eq_one` and
+  `IsCoveringMap.monodromyRepresentation_signLocalSystem_eq_neg_one`: for a double cover, a loop
+  acts by `1` when its lift starting at `e` closes up and by `-1` when that lift ends at `σ e`;
+  every loop does one or the other
+  (`IsCoveringMap.monodromyRepresentation_signLocalSystem_eq_one_or_eq_neg_one`).
 
 ## References
 
@@ -252,5 +257,52 @@ theorem signLocalSystemIsoOfSection_inv_app_apply_fiberMap (x : FundamentalGroup
   TauCeti.signFiberEquiv_symm_apply_fiberMap hfix hfib _ r
 
 end DoubleCover
+
+/-! ### Monodromy of the sign local system of a double cover -/
+
+section Monodromy
+
+open TauCeti.LocalCoefficientSystem (monodromyRepresentation)
+
+variable {σ hσ} (hfix : ∀ e, σ e ≠ e) (hfib : ∀ e e', p e' = p e → e' = e ∨ e' = σ e)
+
+include hfix hfib
+
+/-- A loop at `x` whose lift starting at `e` closes up acts trivially on the sign local system of a
+double cover. -/
+theorem monodromyRepresentation_signLocalSystem_eq_one {x : X} {g : FundamentalGroup X x}
+    {e : p ⁻¹' {x}} (he : hp.monodromy g.asHom e = e) :
+    monodromyRepresentation (hp.signLocalSystem R σ hσ) x g = 1 := by
+  ext f
+  apply ((hp.signLocalSystemObjEquiv σ hσ _).trans (TauCeti.signFiberEquiv hfix hfib e)).injective
+  simpa [he] using hp.signLocalSystemObjEquiv_map_apply_monodromy σ hσ g.asHom f e
+
+/-- A loop at `x` whose lift starting at `e` ends at `σ e` acts by `-1` on the sign local system of
+a double cover. -/
+theorem monodromyRepresentation_signLocalSystem_eq_neg_one {x : X} {g : FundamentalGroup X x}
+    {e : p ⁻¹' {x}} (he : hp.monodromy g.asHom e = Function.fiberMap σ hσ x e) :
+    monodromyRepresentation (hp.signLocalSystem R σ hσ) x g = -1 := by
+  ext f
+  apply ((hp.signLocalSystemObjEquiv σ hσ _).trans (TauCeti.signFiberEquiv hfix hfib e)).injective
+  have h := hp.signLocalSystemObjEquiv_map_apply_monodromy σ hσ g.asHom f e
+  -- The value at `σ e` of a function changing sign under `σ` is minus its value at `e`.
+  rw [he, TauCeti.mem_signFiber_iff.1 (hp.signLocalSystemObjEquiv σ hσ _ _).2] at h
+  simpa [neg_eq_iff_eq_neg] using h
+
+/-- Every loop at `x` acts by `1` or by `-1` on the sign local system of a double cover. -/
+theorem monodromyRepresentation_signLocalSystem_eq_one_or_eq_neg_one {x : X}
+    (g : FundamentalGroup X x) :
+    monodromyRepresentation (hp.signLocalSystem R σ hσ) x g = 1 ∨
+      monodromyRepresentation (hp.signLocalSystem R σ hσ) x g = -1 := by
+  rcases isEmpty_or_nonempty (p ⁻¹' {x}) with hx | ⟨⟨e⟩⟩
+  · -- Over an empty fibre the sign module is zero.
+    refine .inl (LinearMap.ext fun f ↦ (hp.signLocalSystemObjEquiv σ hσ _).injective
+      (Subtype.ext (funext fun e ↦ (IsEmpty.false e).elim)))
+  rcases hfib e (hp.monodromy g.asHom e) ((hp.monodromy g.asHom e).2.trans e.2.symm) with h | h
+  · exact .inl (hp.monodromyRepresentation_signLocalSystem_eq_one hfix hfib (Subtype.ext h))
+  · exact .inr (hp.monodromyRepresentation_signLocalSystem_eq_neg_one hfix hfib
+      (Subtype.ext (h.trans (Function.fiberMap_apply_coe σ hσ x e).symm)))
+
+end Monodromy
 
 end IsCoveringMap
