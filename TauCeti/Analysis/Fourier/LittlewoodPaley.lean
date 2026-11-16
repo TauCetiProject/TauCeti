@@ -824,15 +824,6 @@ namespace ContDiffBump
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   (φ : ContDiffBump (0 : V))
 
-/-- The homogeneous cutoff `ψⱼ` as a complex-valued Schwartz function. -/
-private def littlewoodPaleySchwartz (j : ℤ) : 𝓢(V, ℂ) :=
-  φ.littlewoodPaleyPiece (m := fun _ : V ↦ (1 : ℂ)) contDiffOn_const j
-
-private theorem coe_littlewoodPaleySchwartz (j : ℤ) :
-    ⇑(littlewoodPaleySchwartz φ j) = fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ) := by
-  funext ξ
-  rw [littlewoodPaleySchwartz, littlewoodPaleyPiece_apply, Complex.real_smul, mul_one]
-
 variable [MeasurableSpace V] [BorelSpace V]
 
 /-- Every symbol in `L^∞` almost everywhere equal to `ψⱼ` is the class of the Schwartz
