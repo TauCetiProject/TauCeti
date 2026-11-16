@@ -19,10 +19,10 @@ Hausdorff measure `μHE[k]`, by countably many Lipschitz images of subsets of
 nor local finiteness of Hausdorff measure is part of rectifiability.
 
 We prove closure under subsets, countable unions and null modifications, upward monotonicity
-in the dimension `k`, countable sets in every dimension, and transport
-by maps Lipschitz on the set. These operations allow rectifiable sets to be localized
-and their parametrizations to be composed without imposing regularity on the exceptional set.
-Patches are maps from subtypes, so even an empty target requires no arbitrary base point.
+in the dimension `k`, countable sets in every dimension, pushforward by maps Lipschitz on the
+set, and pullback by maps antilipschitz on the set. These operations allow rectifiable sets to be
+localized and their parametrizations to be composed without imposing regularity on the exceptional
+set. Patches are maps from subtypes, so even an empty target requires no arbitrary base point.
 In a finite-dimensional real normed space, the patches extend to Lipschitz maps defined
 on all of `EuclideanSpace ℝ (Fin k)` (`TauCeti.CountablyRectifiable.exists_lipschitzWith_cover`).
 
@@ -164,21 +164,26 @@ theorem image (hs : CountablyRectifiable k s) {g : X → Y} {K : ℝ≥0}
   obtain ⟨i, z, rfl⟩ := mem_iUnion.mp hx
   exact hy (mem_iUnion.mpr ⟨i, ⟨⟨z, ⟨z.property, hxs⟩⟩, rfl⟩⟩)
 
+/-- A set whose image under a map antilipschitz on it is countably rectifiable is itself countably
+rectifiable. -/
+theorem of_antilipschitzWith {f : X → Y} {K : ℝ≥0} (hs : CountablyRectifiable k (f '' s))
+    (hf : AntilipschitzWith K (s.domRestrict f)) : CountablyRectifiable k s := by
+  rcases s.eq_empty_or_nonempty with rfl | ⟨x₀, _⟩
+  · exact empty
+  have : Nonempty X := ⟨x₀⟩
+  have hmaps : MapsTo (Function.invFunOn f s) (f '' s) s := fun _ hy ↦ Function.invFunOn_mem hy
+  have hinv : RightInvOn (Function.invFunOn f s) f (f '' s) := fun _ hy ↦ Function.invFunOn_eq hy
+  have hlip : LipschitzOnWith K (Function.invFunOn f s) (f '' s) :=
+    lipschitzOnWith_iff_restrict.2 (hf.to_rightInvOn' hmaps hinv)
+  have hinj : InjOn f s := Set.injOn_iff_injective.2 hf.injective
+  simpa only [hinj.invFunOn_image Subset.rfl] using hs.image hlip
+
 /-- Isometric embeddings preserve and reflect countable rectifiability, without requiring
 surjectivity or a nonempty source. -/
 theorem isometry_image_iff {f : X → Y} (hf : Isometry f) :
-    CountablyRectifiable k (f '' s) ↔ CountablyRectifiable k s := by
-  classical
-  constructor
-  · intro hs
-    rcases isEmpty_or_nonempty X with hX | hX
-    · simpa only [eq_empty_of_isEmpty s] using (empty (X := X) (k := k))
-    have hinv : RightInvOn (Function.invFun f) f (f '' s) :=
-      fun _ hy ↦ Function.invFun_eq (image_subset_range f s hy)
-    have hLip : LipschitzOnWith 1 (Function.invFun f) (f '' s) :=
-      lipschitzOnWith_iff_restrict.mpr (hf.antilipschitzWith.to_rightInvOn hinv)
-    simpa only [← image_comp, Function.invFun_comp hf.injective, image_id] using hs.image hLip
-  · exact fun hs ↦ hs.image hf.lipschitzWith.lipschitzOnWith
+    CountablyRectifiable k (f '' s) ↔ CountablyRectifiable k s :=
+  ⟨fun hs ↦ hs.of_antilipschitzWith (hf.antilipschitzWith.domRestrict s),
+    fun hs ↦ hs.image hf.lipschitzWith.lipschitzOnWith⟩
 
 /-- Isometric equivalences preserve countable rectifiability in both directions. -/
 @[simp]

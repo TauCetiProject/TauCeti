@@ -71,14 +71,10 @@ theorem of_forall_infDist_sub_le {s : Set V} (P : Submodule ℝ V) [FiniteDimens
     {θ : ℝ} (hθ : θ < 1)
     (hs : ∀ x ∈ s, ∀ y ∈ s, infDist (y - x) (P : Set V) ≤ θ * ‖y - x‖) :
     CountablyRectifiable (finrank ℝ P) s := by
-  classical
-  rcases s.eq_empty_or_nonempty with rfl | hne
-  · exact empty
   set θ' : ℝ := max θ 0
   have hθ'1 : 0 < 1 - θ' := sub_pos.2 (max_lt hθ zero_lt_one)
   let c : ℝ≥0 := Real.toNNReal (1 - θ')
-  let f : s → P := s.domRestrict P.orthogonalProjectionOnto
-  have hanti : AntilipschitzWith c⁻¹ f := by
+  have hanti : AntilipschitzWith c⁻¹ (s.domRestrict P.orthogonalProjectionOnto) := by
     refine AntilipschitzWith.of_le_mul_dist fun x y ↦ ?_
     rw [NNReal.coe_inv, Real.coe_toNNReal _ hθ'1.le, ← div_eq_inv_mul, le_div_iff₀' hθ'1]
     have hdist : ‖(y : V) - x - P.starProjection ((y : V) - x)‖ ≤ θ' * ‖(y : V) - x‖ := by
@@ -88,23 +84,13 @@ theorem of_forall_infDist_sub_le {s : Set V} (P : Submodule ℝ V) [FiniteDimens
         ‖P.starProjection ((y : V) - x)‖ + ‖(y : V) - x - P.starProjection ((y : V) - x)‖ := by
       simpa only [add_sub_cancel] using norm_add_le (P.starProjection ((y : V) - x))
         ((y : V) - x - P.starProjection ((y : V) - x))
-    have hproj : ‖P.starProjection ((y : V) - x)‖ = dist (f y) (f x) := by
-      simp [f, ← map_sub, dist_eq_norm]
-    rw [Subtype.dist_eq, dist_eq_norm (x : V), norm_sub_rev (x : V), dist_comm (f x)]
+    have hproj : ‖P.starProjection ((y : V) - x)‖ =
+        dist (P.orthogonalProjectionOnto y) (P.orthogonalProjectionOnto x) := by
+      simp [← map_sub, dist_eq_norm]
+    rw [Subtype.dist_eq, dist_eq_norm (x : V), norm_sub_rev (x : V), domRestrict_apply,
+      domRestrict_apply, dist_comm (P.orthogonalProjectionOnto x)]
     linarith
-  have : Nonempty s := hne.to_subtype
-  have hinv : RightInvOn (Function.invFun f) f (range f) :=
-    fun _ hy ↦ Function.invFun_eq hy
-  have hlip : LipschitzOnWith c⁻¹ (Subtype.val ∘ Function.invFun f) (range f) := by
-    simpa only [one_mul] using (LipschitzWith.subtype_val s).comp_lipschitzOnWith
-      (lipschitzOnWith_iff_restrict.2 (hanti.to_rightInvOn hinv))
-  have himg : (Subtype.val ∘ Function.invFun f) '' range f = s := by
-    ext z
-    simp only [mem_image, mem_range, Function.comp_apply, exists_exists_eq_and]
-    refine ⟨by rintro ⟨x, rfl⟩; rw [Function.leftInverse_invFun hanti.injective x]; exact x.2,
-      fun hz ↦ ⟨⟨z, hz⟩, by rw [Function.leftInverse_invFun hanti.injective ⟨z, hz⟩]⟩⟩
-  rw [← himg]
-  exact (of_finiteDimensional (range f)).image hlip
+  exact (of_finiteDimensional (P.orthogonalProjectionOnto '' s)).of_antilipschitzWith hanti
 
 /-- On a stratum where every point `x ∈ T` has a `d`-dimensional subspace `P x`, radius at least
 `r₀ > 0`, and cone constant at most `θ₀ < 1`, the set `T` is countably `d`-rectifiable. -/

@@ -551,11 +551,8 @@ private theorem continuousWithinAt_setAverage_polarDensity_of_ne_top_ne_zero
     rw [hInter] at h1
     exact ((ENNReal.tendsto_toReal hSr_fin).comp h1).inv₀
       (ENNReal.toReal_pos (hpos r hr.1) hSr_fin).ne'
-  have hσ_le : ∀ᵐ y ∂lam, ‖σ y‖ ≤ 1 := by
-    by_cases h : LocallyIntegrableOn (s.indicator (1 : E → ℝ)) Ω μ ∧ ∀ K, IsCompact K → K ⊆ Ω →
-        ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U (s.indicator 1) ≠ ∞
-    · exact (ae_norm_polarDensity_eq_one h.1 h.2).mono fun _ hy => hy.le
-    · simp [lam, variationMeasure_eq_zero_of_not h]
+  have hσ_le : ∀ᵐ y ∂lam, ‖σ y‖ ≤ 1 :=
+    ae_tendsto_setAverage_polarDensity.mono fun _ hy => hy.1.le
   have hint_lim : Tendsto (fun t => ∫ y, (S t).indicator σ y ∂lam) (𝓝[>] r)
       (𝓝 (∫ y, (S r).indicator σ y ∂lam)) := by
     refine tendsto_integral_filter_of_dominated_convergence ((S b).indicator 1)

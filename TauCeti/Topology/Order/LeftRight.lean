@@ -29,6 +29,10 @@ equivalent to convergence along `𝓝[(D ∪ C) ∩ (a, ∞)] a`.
 * `Dense.tendsto_nhdsGT_iff`: for `g` eventually right-continuous along `𝓝[>] a` into a regular
   space, convergence to `c` along `𝓝[>] a` is equivalent to convergence along
   `𝓝[(D ∪ C) ∩ Ioi a] a`.
+* `TopologicalSpace.exists_countable_subset_tendsto_nhdsGT_iff`: in a second countable space,
+  every `s ∈ 𝓝[>] a` contains a countable `S ⊆ s ∩ Ioi a` with `(𝓝[S] a).NeBot ↔ (𝓝[>] a).NeBot`
+  along which convergence of any eventually right-continuous function is equivalent to convergence
+  along `𝓝[>] a`.
 * `TauCeti.le_of_forall_rat_add_le`: a function right-continuous at `t + h` that does not
   increase along rational increments from `t` does not increase along the real increment `h`.
 -/
@@ -111,6 +115,36 @@ theorem Dense.tendsto_nhdsGT_iff {E : Type*} [TopologicalSpace E] [RegularSpace 
       covBy_iff_Ioo_eq.2 ⟨lt_min hv hr.2, not_nonempty_iff_eq_empty.1 hne_Ioo⟩
     have hr_u : r ∈ Ioo a u := ⟨hr.1, hr.2.trans_le (min_le_left u b)⟩
     exact hrV (hWV ⟨huW hr_u, Or.inr ⟨_, hcov⟩, hr.1⟩)
+
+/-- In a second countable linear order with the order topology, every set `s ∈ 𝓝[>] a` contains a
+countable subset `S ⊆ s ∩ Ioi a` such that `(𝓝[S] a).NeBot ↔ (𝓝[>] a).NeBot` and, for every
+function `g : ι → E` into a regular space that is eventually right-continuous along `𝓝[>] a`,
+convergence to `c` along `𝓝[>] a` is equivalent to convergence along `𝓝[S] a`. -/
+theorem TopologicalSpace.exists_countable_subset_tendsto_nhdsGT_iff [SecondCountableTopology ι]
+    {E : Type*} [TopologicalSpace E] [RegularSpace E] {a : ι} {s : Set ι} (hs : s ∈ 𝓝[>] a) :
+    ∃ S : Set ι, S.Countable ∧ S ⊆ s ∩ Ioi a ∧ ((𝓝[S] a).NeBot ↔ (𝓝[>] a).NeBot) ∧
+      ∀ ⦃g : ι → E⦄, (∀ᶠ r in 𝓝[>] a, ContinuousWithinAt g (Ioi r) r) →
+        ∀ {c : E}, Tendsto g (𝓝[>] a) (𝓝 c) ↔ Tendsto g (𝓝[S] a) (𝓝 c) := by
+  obtain hbot | hne := eq_or_neBot (𝓝[>] a)
+  · refine ⟨∅, countable_empty, empty_subset _, by simp [hbot], fun _ _ _ ↦ by simp [hbot]⟩
+  obtain ⟨b₀, hb₀⟩ := Filter.nonempty_of_mem (self_mem_nhdsWithin (a := a) (s := Ioi a))
+  obtain ⟨r₀, hr₀, hr₀s⟩ := (mem_nhdsGT_iff_exists_Ioo_subset' hb₀).1 hs
+  obtain ⟨D, hDc, hD⟩ := exists_countable_dense ι
+  let S : Set ι := (D ∪ {x | ∃ y, x ⋖ y}) ∩ Ioo a r₀
+  have hS_eq : S = (D ∪ {x | ∃ y, x ⋖ y}) ∩ Ioi a ∩ Iio r₀ := by
+    ext; simp [S, Ioo, and_assoc]
+  have hnhds : 𝓝[S] a = 𝓝[(D ∪ {x | ∃ y, x ⋖ y}) ∩ Ioi a] a := by
+    rw [hS_eq, nhdsWithin_inter_of_mem' (nhdsWithin_le_nhds (Iio_mem_nhds hr₀))]
+  refine ⟨S, (hDc.union countable_setOfPred_covBy_right).mono inter_subset_left,
+    subset_inter (inter_subset_right.trans hr₀s) (inter_subset_right.trans Ioo_subset_Ioi_self),
+    iff_of_true ?_ hne, fun g hg c ↦ ?_⟩
+  · rw [hnhds, ← mem_closure_iff_nhdsWithin_neBot, mem_closure_iff]
+    intro o ho hao
+    obtain ⟨d, ⟨hdo, hda⟩, hdD⟩ := hD.inter_open_nonempty _ (ho.inter isOpen_Ioi)
+      (mem_closure_iff.1 (mem_closure_iff_nhdsWithin_neBot.2 hne) o ho hao)
+    exact ⟨d, hdo, Or.inl hdD, hda⟩
+  · rw [hnhds]
+    exact hD.tendsto_nhdsGT_iff hg
 
 end RegularSpace
 
