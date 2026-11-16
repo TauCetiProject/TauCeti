@@ -31,9 +31,11 @@ and some open cone `Γ` containing `ξ` make the weighted localized Fourier tran
 square integrable on `Γ`, where `η ↦ T (φ e_η)` is the Fourier transform `Distribution.localFourier`
 of the compactly supported distribution `φ T`. The weight is the symbol of Mathlib's Bessel
 potential `TemperedDistribution.besselPotential`; with `Γ = E` the condition is the Fourier
-description of `φ T ∈ H^s` (the comparison with `TemperedDistribution.MemSobolev` is not
-formalized here). The **`H^s` wave front set** `Distribution.sobolevWaveFrontSet s T` consists of
-the `(x, ξ)` with `x ∈ Ω` and `ξ ≠ 0` at which `T` is not microlocally `H^s`.
+description of `φ T ∈ H^s`; its comparison with `TemperedDistribution.MemSobolev` is
+`Distribution.memSobolev_cutoffTempered_iff`, in
+`TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Tempered`. The **`H^s` wave front set**
+`Distribution.sobolevWaveFrontSet s T` consists of the `(x, ξ)` with `x ∈ Ω` and `ξ ≠ 0` at which
+`T` is not microlocally `H^s`.
 
 The point mass in dimension `d` shows how the order enters: its localized Fourier transform has
 constant modulus, so it is microlocally `H^s` everywhere for `s < -d / 2`, while for `s ≥ -d / 2`
