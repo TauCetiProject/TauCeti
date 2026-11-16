@@ -375,6 +375,15 @@ theorem detLineCongr_tmul (f : M →ₗ[R] N) {g : M' →ₗ[R] N'} (e₁ : M �
           (f.map_range_eq_range_of_comp_eq e₁.surjective h))).symm.toLinearMap) :=
   (rfl)
 
+/-- Transport along a commuting square is the isomorphism induced by the restriction of `e₁` to
+kernels and the map of cokernels induced by `e₂`. -/
+theorem detLineCongr_eq_detLineCongrKerCoker (f : M →ₗ[R] N) {g : M' →ₗ[R] N'}
+    (e₁ : M ≃ₗ[R] M') (e₂ : N ≃ₗ[R] N') (h : g ∘ₗ e₁.toLinearMap = e₂.toLinearMap ∘ₗ f) :
+    f.detLineCongr e₁ e₂ h = detLineCongrKerCoker
+      (e₁.ofSubmodules _ _ (f.map_ker_eq_ker_of_comp_eq e₁.surjective e₂.injective h))
+      (Submodule.Quotient.equiv _ _ e₂ (f.map_range_eq_range_of_comp_eq e₁.surjective h)) := by
+  rw [detLineCongr]
+
 /-- Transport of determinant lines along a commuting square is the tensor product of the transport
 of the kernel line and the dual of the inverse transport of the cokernel line. -/
 theorem toLinearMap_detLineCongr (f : M →ₗ[R] N) {g : M' →ₗ[R] N'} (e₁ : M ≃ₗ[R] M')

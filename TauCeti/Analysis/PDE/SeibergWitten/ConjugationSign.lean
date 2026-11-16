@@ -106,7 +106,7 @@ theorem exists_neg_one_pow_smul_detLineCongr_eq (j₁ : P ≃ₗ[ℝ] P') (j₂ 
   refine ⟨z', hz', (congrArg ((-1 : ℝ) ^ k • ·) h).trans ?_⟩
   rw [smul_smul]
   congr 1
-  rw [hT₁, hT₂, mul_comm]
+  rw [hT₁, hT₂, mul_comm ((-1 : ℝ) ^ k)]
   exact neg_one_pow_mul_neg_one_pow_eq_negOnePow hd
 
 end TauCeti.SeibergWitten
