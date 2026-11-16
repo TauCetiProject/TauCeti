@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Topology.MetricSpace.Contracting
+import TauCeti.Analysis.Complex.Pompeiu.Basic
 import TauCeti.Analysis.Complex.Pompeiu.Holder.Operator
 import TauCeti.Analysis.Complex.Wirtinger.Basic
 import TauCeti.Analysis.Holder.Bilinear
@@ -31,8 +32,9 @@ This file proves that through the centre `0` there is such a disc in every compl
 for every `ξ ∈ F` there is a `C¹` solution near `0` with `u(0) = 0` and `∂ₛu(0) = ξ`
 (`TauCeti.exists_jHolomorphicDisc_of_contDiffAt`).
 
-The proof is a contraction for the Cauchy transform `T h(w) = π⁻¹ ∫ (w - z)⁻¹ h(z) dz`, which
-satisfies `\bar∂ T h = h`. Write `J(x) = i + K(x)` with `K(0) = 0`. The equation becomes
+The proof is a contraction for the Cauchy transform `T h(w) = π⁻¹ ∫ (w - z)⁻¹ h(z) dz`
+(`TauCeti.cauchyTransform`), which satisfies `\bar∂ T h = h`. Write `J(x) = i + K(x)` with
+`K(0) = 0`. The equation becomes
 `2 \bar∂u = -K(u) ∂ₜu`, and its solutions with the prescribed centre and first jet are sought as
 
 `u(w) = w ξ + T h(w) - T h(0) - w · ∂ₛ(T h)(0)`,
@@ -140,23 +142,19 @@ private theorem cutoffHolder_apply (hα1 : α ≤ 1) (z : ℂ) :
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
 
-/-- The Cauchy transform `T h(w) = π⁻¹ ∫ (w - z)⁻¹ h(z) dz` of a source `h`. -/
-private def cauchyT (h : ℂ → F) (w : ℂ) : F :=
-  (Real.pi : ℂ)⁻¹ • ∫ z, (w - z)⁻¹ • h z
-
 /-- The disc `w ↦ w ξ + T h(w) - T h(0) - w ∂ₛ(T h)(0)` with source `h`. Its centre is `0`, and
 the subtracted terms are holomorphic, so its conjugate Wirtinger derivative is that of `T h`. -/
 private def discMap (ξ : F) (h : ℂ → F) (w : ℂ) : F :=
-  w • ξ + cauchyT h w - cauchyT h 0 - w • fderiv ℝ (cauchyT h) 0 1
+  w • ξ + cauchyTransform h w - cauchyTransform h 0 - w • fderiv ℝ (cauchyTransform h) 0 1
 
 private theorem discMap_zero (ξ : F) (h : ℂ → F) : discMap ξ h 0 = 0 := by
   simp [discMap]
 
 private theorem hasFDerivAt_discMap (ξ : F) {h : ℂ → F} {z : ℂ}
-    (hT : DifferentiableAt ℝ (cauchyT h) z) :
+    (hT : DifferentiableAt ℝ (cauchyTransform h) z) :
     HasFDerivAt (discMap ξ h)
-      ((ContinuousLinearMap.id ℝ ℂ).smulRight ξ + fderiv ℝ (cauchyT h) z -
-        (ContinuousLinearMap.id ℝ ℂ).smulRight (fderiv ℝ (cauchyT h) 0 1)) z :=
+      ((ContinuousLinearMap.id ℝ ℂ).smulRight ξ + fderiv ℝ (cauchyTransform h) z -
+        (ContinuousLinearMap.id ℝ ℂ).smulRight (fderiv ℝ (cauchyTransform h) 0 1)) z :=
   ((((hasFDerivAt_id z).smul_const ξ).add hT.hasFDerivAt).sub_const _).sub
     ((hasFDerivAt_id z).smul_const _)
 
@@ -193,25 +191,28 @@ private def centre : closedBall (0 : ℂ) 1 := ⟨0, mem_closedBall_self zero_le
 private theorem coe_centre : (centre : ℂ) = 0 := (rfl)
 
 private theorem derivOp_apply (f : Source F) (z : closedBall (0 : ℂ) 1) :
-    derivOp F f z = fderiv ℝ (cauchyT ⇑f.1) z :=
-  cauchyDerivativeCLM_apply hα₀ hα₁ zero_le_one zero_le_one f z
+    derivOp F f z = fderiv ℝ (cauchyTransform ⇑f.1) z := by
+  rw [funext (cauchyTransform_apply _)]
+  exact cauchyDerivativeCLM_apply hα₀ hα₁ zero_le_one zero_le_one f z
 
 /-- The Cauchy transform of a source is `C¹` on the disc of radius `2`, with `\bar∂ T f = f`
 there. -/
-private theorem cauchyT_regularity (f : Source F) :
-    ContDiffOn ℝ 1 (cauchyT ⇑f.1) (ball 0 2) ∧
-      ∀ z ∈ ball (0 : ℂ) 2, conjWirtingerDeriv (cauchyT ⇑f.1) z 1 = f.1 z := by
+private theorem cauchyTransform_regularity (f : Source F) :
+    ContDiffOn ℝ 1 (cauchyTransform ⇑f.1) (ball 0 2) ∧
+      ∀ z ∈ ball (0 : ℂ) 2, conjWirtingerDeriv (cauchyTransform ⇑f.1) z 1 = f.1 z := by
   obtain ⟨C, hC⟩ := exists_contDiffOn_holderOnWith_fderiv_pi_inv_smul_integral_sub_inv_smul
     (F := F) hα₀ hα₁ (0 : ℂ) zero_le_one zero_le_one
   obtain ⟨hTC, -, -, hTbar⟩ := hC (support_subset_of_mem_supportedHolderSubmodule f.2)
     f.1.holderWith (M := ‖f.1.toBoundedContinuousFunction‖₊)
     (fun z ↦ by simpa using f.1.toBoundedContinuousFunction.norm_coe_le_norm z)
   rw [one_add_one_eq_two] at hTC hTbar
+  rw [funext (cauchyTransform_apply _)]
   exact ⟨hTC, hTbar⟩
 
-private theorem differentiableAt_cauchyT (f : Source F) {z : ℂ} (hz : z ∈ ball (0 : ℂ) 2) :
-    DifferentiableAt ℝ (cauchyT ⇑f.1) z :=
-  ((cauchyT_regularity f).1.contDiffAt (isOpen_ball.mem_nhds hz)).differentiableAt one_ne_zero
+private theorem differentiableAt_cauchyTransform (f : Source F) {z : ℂ}
+    (hz : z ∈ ball (0 : ℂ) 2) : DifferentiableAt ℝ (cauchyTransform ⇑f.1) z :=
+  ((cauchyTransform_regularity f).1.contDiffAt (isOpen_ball.mem_nhds hz)).differentiableAt
+    one_ne_zero
 
 private theorem closedBall_subset_ball_two : closedBall (0 : ℂ) 1 ⊆ ball 0 2 :=
   closedBall_subset_ball (by norm_num)
@@ -220,13 +221,14 @@ private theorem fderiv_discMap (ξ : F) (f : Source F) {z : ℂ} (hz : z ∈ clo
     fderiv ℝ (discMap ξ ⇑f.1) z =
       (ContinuousLinearMap.id ℝ ℂ).smulRight ξ + derivOp F f ⟨z, hz⟩ -
         (ContinuousLinearMap.id ℝ ℂ).smulRight (derivOp F f centre 1) := by
-  rw [(hasFDerivAt_discMap ξ (differentiableAt_cauchyT f (closedBall_subset_ball_two hz))).fderiv,
+  rw [(hasFDerivAt_discMap ξ
+      (differentiableAt_cauchyTransform f (closedBall_subset_ball_two hz))).fderiv,
     derivOp_apply, derivOp_apply]
   rfl
 
 private theorem differentiableAt_discMap (ξ : F) (f : Source F) {z : ℂ}
     (hz : z ∈ ball (0 : ℂ) 2) : DifferentiableAt ℝ (discMap ξ ⇑f.1) z :=
-  (hasFDerivAt_discMap ξ (differentiableAt_cauchyT f hz)).differentiableAt
+  (hasFDerivAt_discMap ξ (differentiableAt_cauchyTransform f hz)).differentiableAt
 
 private theorem norm_derivOp_apply_le (f : Source F) (z : closedBall (0 : ℂ) 1) :
     ‖derivOp F f z‖ ≤ ‖derivOp F‖ * ‖f‖ :=
@@ -725,14 +727,14 @@ omit [FiniteDimensional ℂ F] in
 /-- The equation at a point: if `\bar∂ T h(z) = -K(u(z)) ∂ₜu(z) / 2` with `K = J - J(0)` and
 `J(0) = i`, then the disc `u` of the source `h` solves `∂ₛu + J(u) ∂ₜu = 0` at `z`. -/
 private theorem fderiv_discMap_add_eq_zero {ξ : F} {h : ℂ → F} {z : ℂ}
-    (hJ0 : ∀ v, J 0 v = I • v) (hT : DifferentiableAt ℝ (cauchyT h) z)
-    (hbar : conjWirtingerDeriv (cauchyT h) z 1 =
+    (hJ0 : ∀ v, J 0 v = I • v) (hT : DifferentiableAt ℝ (cauchyTransform h) z)
+    (hbar : conjWirtingerDeriv (cauchyTransform h) z 1 =
       (-(2 : ℝ)⁻¹) • (J (discMap ξ h z) - J 0) (fderiv ℝ (discMap ξ h) z I)) :
     fderiv ℝ (discMap ξ h) z 1 + J (discMap ξ h z) (fderiv ℝ (discMap ξ h) z I) = 0 := by
   rw [conjWirtingerDeriv_apply, (hasFDerivAt_discMap ξ hT).fderiv] at hbar
   rw [(hasFDerivAt_discMap ξ hT).fderiv]
-  set A := fderiv ℝ (cauchyT h) z
-  set a := fderiv ℝ (cauchyT h) 0 1
+  set A := fderiv ℝ (cauchyTransform h) z
+  set a := fderiv ℝ (cauchyTransform h) 0 1
   set K := J (discMap ξ h z)
   simp only [add_apply, sub_apply, ContinuousLinearMap.smulRight_apply,
     ContinuousLinearMap.id_apply, one_smul, smul_eq_mul, mul_one, hJ0] at hbar ⊢
@@ -769,7 +771,7 @@ theorem exists_pos_forall_exists_jHolomorphicDisc :
   refine ⟨(320 * (‖cutoffHolder (α := 2⁻¹) hα₁.le‖ + 1) * (‖derivOp F‖ + 1))⁻¹, by positivity,
     fun J ξ hξ hJ0 hd h1 h2 ↦ ?_⟩
   obtain ⟨f, hf, hfix⟩ := exists_fixedPointMap_eq ξ J hξ hd h1 h2
-  obtain ⟨hTC, hTbar⟩ := cauchyT_regularity f
+  obtain ⟨hTC, hTbar⟩ := cauchyTransform_regularity f
   refine ⟨discMap ξ ⇑f.1, ?_, discMap_zero ξ _, ?_, fun z hz ↦ norm_discMap_le hξ hf hz,
     fun z hz ↦ ?_⟩
   · exact (((contDiffOn_id.smul contDiffOn_const).add hTC).sub contDiffOn_const).sub
@@ -782,7 +784,7 @@ theorem exists_pos_forall_exists_jHolomorphicDisc :
     have hzn : ‖z‖ ≤ 2⁻¹ := by
       rw [mem_ball, dist_zero_right] at hz
       exact hz.le
-    refine fderiv_discMap_add_eq_zero J hJ0 (differentiableAt_cauchyT f hz2) ?_
+    refine fderiv_discMap_add_eq_zero J hJ0 (differentiableAt_cauchyTransform f hz2) ?_
     -- At the fixed point, `\bar∂ T f = f = χ · (-K(u) ∂ₜu / 2)`, and `χ(z) = 1`.
     rw [hTbar z hz2]
     conv_lhs => rw [← hfix]
