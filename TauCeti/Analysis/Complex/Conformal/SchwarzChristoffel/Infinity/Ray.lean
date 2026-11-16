@@ -167,7 +167,7 @@ theorem range_schwarzChristoffelBoundary_of_neg_one_le_sum {n : ℕ}
       (Iic (a 0) ∪ ⋃ i : Fin n, Icc (a i.castSucc) (a i.succ)) ∪ Ici (a (Fin.last n)) := by
     rw [univ_eq_Iic_union_Ici_union_iUnion_Icc_castSucc_succ a, union_right_comm]
   have hbounded (i : Fin n) := schwarzChristoffelBoundary_image_Icc_prevertex a e z₀
-    (ha i.castSucc_le_succ) (fun j _ => not_mem_Ioo_castSucc_succ a ha i j)
+    (ha i.castSucc_le_succ) (fun j _ => notMem_Ioo_castSucc_succ a ha i j)
     (hfinite i.castSucc) (hfinite i.succ)
   have hleft := schwarzChristoffelBoundary_image_Iic_eq_ray_prevertex a e z₀ 0 (hfinite 0)
     (fun i _ => ha i.zero_le) hS

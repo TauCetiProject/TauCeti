@@ -38,7 +38,9 @@ at positions near a compact subset of `U`, with a function `C^k` on the whole pr
 (`ContDiffOn.exists_contDiff_eventually_eq_prod_univ`). On a set where the cutoff is one nearby the
 `Lᵖ` norm of the derivative of a function is at most that of its cut-off version
 (`TauCeti.eLpNorm_fderiv_restrict_le_of_subset_interior`). Locally finite sums of smooth
-functions are smooth (`contDiffAt_tsum_of_eventually_eq_zero`). A compactly supported `C¹`
+functions are smooth (`contDiffAt_tsum_of_eventually_eq_zero`); in particular the periodization
+`Σₙ f (x, t + n)` of a `C^k` map compactly supported in `E × (0, 1)` is a `C^k` map of period one
+in `t` (`TauCeti.exists_contDiff_periodic_eventuallyEq`). A compactly supported `C¹`
 function is bounded and Hölder continuous with every exponent at most one
 (`ContDiff.exists_holderWith_and_norm_le_of_hasCompactSupport`).
 
@@ -435,6 +437,46 @@ theorem contDiffAt_tsum_of_eventually_eq_zero {𝕜 ι F : Type*} [NontriviallyN
     (hs : ∀ᶠ y in 𝓝 x, ∀ j ∉ s, g j y = 0) :
     ContDiffAt 𝕜 n (fun y => ∑' j, g j y) x :=
   (ContDiffAt.sum hg).congr_of_eventuallyEq (hs.mono fun _ hy => tsum_eq_sum hy)
+
+open Filter in
+/-- **Periodization in the last coordinate.** The periodization `Σₙ f (x, t + n)` of a `C^k` map
+`f` compactly supported in `E × (0, 1)` is a `C^k` map of period one in `t`, which vanishes for
+`x` outside a compact set and agrees with `f` near `E × (0, 1)`. -/
+theorem exists_contDiff_periodic_eventuallyEq [NormedSpace ℝ E] {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {k : WithTop ℕ∞} {f : E × ℝ → F} (hf : ContDiff ℝ k f)
+    (hc : HasCompactSupport f) (hU : tsupport f ⊆ univ ×ˢ Ioo 0 1) :
+    ∃ g : E × ℝ → F, ContDiff ℝ k g ∧ (∀ x t, g (x, t + 1) = g (x, t)) ∧
+      (∀ᶠ z in comap Prod.fst (cocompact E), g z = 0) ∧
+      ∀ z ∈ univ ×ˢ Ioo (0 : ℝ) 1, g =ᶠ[𝓝 z] f := by
+  set φ : ℤ → E × ℝ → F := fun n z ↦ f (z.1, z.2 + n)
+  have hh {n : ℤ} {z : E × ℝ} (hz : z.2 + n ∉ Ioo (0 : ℝ) 1) : φ n z = 0 :=
+    image_eq_zero_of_notMem_tsupport (x := (z.1, z.2 + n)) fun h ↦ hz (hU h).2
+  refine ⟨fun z ↦ ∑' n, φ n z, contDiff_iff_contDiffAt.2 fun z ↦ ?_, fun x t ↦ ?_, ?_, ?_⟩
+  · -- Near `z`, only the terms with `-z.2 - 1 < n < 2 - z.2` can be nonzero.
+    refine contDiffAt_tsum_of_eventually_eq_zero (Finset.Ioo ⌊-z.2 - 1⌋ ⌈2 - z.2⌉)
+      (fun n _ ↦ (hf.comp (contDiff_fst.prodMk (contDiff_snd.add contDiff_const))).contDiffAt) ?_
+    filter_upwards [continuous_snd.continuousAt.preimage_mem_nhds
+      (Ioo_mem_nhds (sub_one_lt z.2) (lt_add_one z.2))] with w hw n hn
+    refine hh fun h ↦ hn (Finset.mem_Ioo.2 ⟨Int.floor_lt.2 ?_, Int.lt_ceil.2 ?_⟩) <;>
+      simp only [mem_preimage, mem_Ioo] at hw h <;> linarith
+  · -- Shifting `t` by one shifts the summation index.
+    refine Eq.trans (tsum_congr fun n ↦ ?_) ((Equiv.addRight (1 : ℤ)).tsum_eq fun n ↦ φ n (x, t))
+    simp only [φ, Equiv.coe_addRight, Int.cast_add, Int.cast_one]
+    ring_nf
+  · -- Off the projection of the support of `f` to `E`, every term vanishes.
+    filter_upwards [preimage_mem_comap (hc.isCompact.image continuous_fst).compl_mem_cocompact]
+      with z hz
+    exact (tsum_congr fun n : ℤ ↦ image_eq_zero_of_notMem_tsupport (f := f)
+      (x := (z.1, z.2 + n)) fun h ↦ hz ⟨_, h, rfl⟩).trans tsum_zero
+  · -- On `E × (0, 1)` only the term `n = 0` survives.
+    intro z hz
+    filter_upwards [(isOpen_univ.prod isOpen_Ioo).mem_nhds hz] with w hw
+    refine (tsum_eq_single 0 fun n hn ↦ hh fun h ↦ hn ?_).trans (by simp [φ])
+    have h₁ : (-1 : ℝ) < n := by linarith [hw.2.2, h.1]
+    have h₂ : (n : ℝ) < 1 := by linarith [hw.2.1, h.2]
+    have h₁' : (-1 : ℤ) < n := by exact_mod_cast h₁
+    have h₂' : n < 1 := by exact_mod_cast h₂
+    omega
 
 /-- The radial profile `Real.smoothTransition ((R ^ 2 - ‖x - x₀‖ ^ 2) / (R ^ 2 - r ^ 2))` is a
 smooth function with values in `[0, 1]`, equal to one on `closedBall x₀ r` and with topological

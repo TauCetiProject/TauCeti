@@ -69,7 +69,7 @@ jobs:
     if: ${{ !inputs.control_smoke }}
     # Every picker must reach the fleet without first waiting for a GitHub build slot.
     # Keep control work small, high priority, and isolated to this workflow run.
-    runs-on: ${{ inputs.fleet-staging && fromJSON('["self-hosted","linux","x64","tauceti-fleet-queue-control","fleet-74773fc7f54d4877add11d80113fe340"]') || 'ubuntu-24.04' }}
+    runs-on: ${{ (inputs.fleet-staging || inputs.fleet-pr) && fromJSON('["self-hosted","linux","x64","tauceti-fleet-queue-control","fleet-74773fc7f54d4877add11d80113fe340"]') || 'ubuntu-24.04' }}
     timeout-minutes: 5
     continue-on-error: true
     outputs:
