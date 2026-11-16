@@ -25,8 +25,6 @@ generated over `K` by such an element is finite and separable over `K`.
   a simple root of a polynomial is finite and separable.
 * `TauCeti.mem_range_algebraMap_of_two_mul_add_eq_zero`: a separable root `z` of `X² + u X - v`
   with `2 z + u = 0` lies in the base field.
-* `TauCeti.finrank_eq_one_of_two_mul_add_eq_zero`: a separable generator `z` of `L / K` with
-  `z² + u z - v = 0` and `2 z + u = 0` forces `L = K`.
 -/
 
 public section
@@ -96,16 +94,5 @@ theorem mem_range_algebraMap_of_two_mul_add_eq_zero {u v : K} {z : L} (hsep : Is
   rw [natDegree_mul (minpoly.ne_zero hint) (minpoly.ne_zero hint)] at hdeg
   rw [← minpoly.natDegree_eq_one_iff]
   omega
-
-/-- **A separable generator with `2 z + u = 0` of a quadratic extension is trivial.** If `z` is
-separable over `K`, generates `L / K`, satisfies `z² + u z - v = 0` and `2 z + u = 0`, then
-`L = K`, that is, `Module.finrank K L = 1`. -/
-theorem finrank_eq_one_of_two_mul_add_eq_zero {u v : K} {z : L} (hsep : IsSeparable K z)
-    (hgen : K⟮z⟯ = ⊤) (hz : z ^ 2 + algebraMap K L u * z - algebraMap K L v = 0)
-    (hd : 2 * z + algebraMap K L u = 0) : Module.finrank K L = 1 := by
-  have hbot : K⟮z⟯ = ⊥ := by
-    rw [IntermediateField.adjoin_simple_eq_bot_iff, IntermediateField.mem_bot]
-    exact mem_range_algebraMap_of_two_mul_add_eq_zero hsep hz hd
-  rw [← IntermediateField.finrank_top', ← hgen, hbot, IntermediateField.finrank_bot]
 
 end TauCeti

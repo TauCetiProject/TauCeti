@@ -207,7 +207,10 @@ end TauCeti
 
 /-- **A positive finite rank forces integrality**: if `0 < Module.finrank K L` for a commutative
 ring `K` with the strong rank condition (for example a nontrivial commutative ring) and a free
-`K`-algebra `L` (automatic over a field), then `L` is integral over `K`. -/
+`K`-algebra `L` (automatic over a field), then `L` is integral over `K`.
+
+This is the composition of Mathlib's `Module.finite_of_finrank_pos` (positive rank gives a finite
+module) and `Algebra.IsIntegral.of_finite` (finite algebras are integral). -/
 theorem Algebra.IsIntegral.of_finrank_pos {K L : Type*} [CommRing K] [Ring L] [Algebra K L]
     [StrongRankCondition K] [Module.Free K L] (h : 0 < Module.finrank K L) :
     Algebra.IsIntegral K L :=

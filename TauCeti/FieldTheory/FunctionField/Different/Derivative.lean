@@ -9,6 +9,7 @@ public import TauCeti.FieldTheory.FunctionField.Different.Complementary
 public import TauCeti.RingTheory.DedekindDomain.Different.Derivative
 public import TauCeti.RingTheory.DedekindDomain.Different.Monogenic
 import TauCeti.FieldTheory.FunctionField.Different.Localization
+import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 import TauCeti.FieldTheory.Separable.SimpleRoot
 
 /-!
@@ -201,7 +202,10 @@ theorem differentExponent_le_ord_two_mul_add {u v : F} (hu : algebraMap F F' u �
   by_cases hne : 2 * z + algebraMap F F' u = 0
   · rw [hne, P'.ord_zero]
     exact_mod_cast (differentExponent_eq_zero_of_finrank_eq_one k F P'
-      (finrank_eq_one_of_two_mul_add_eq_zero (Algebra.IsSeparable.isSeparable F z) hgen hz hne)).le
+      (IntermediateField.finrank_eq_one_of_adjoin_eq_top_of_mem_bot hgen
+        (IntermediateField.mem_bot.mpr
+          (mem_range_algebraMap_of_two_mul_add_eq_zero (Algebra.IsSeparable.isSeparable F z)
+            hz hne)))).le
   have hψ : (X ^ 2 + C u * X - C v : F[X]).Monic := by monicity!
   have hderiv : aeval z (derivative (X ^ 2 + C u * X - C v : F[X])) =
       2 * z + algebraMap F F' u := by
