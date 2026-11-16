@@ -11,9 +11,11 @@ import Mathlib.Tactic.NoncommRing
 /-!
 # Parallelogram upper bound in star-ordered rings
 
-In any `StarOrderedRing`, expanding `star (x + y) * (x + y) + star (x - y) * (x - y)` and dropping
-the nonnegative term `star (x - y) * (x - y)` yields the operator parallelogram bound
-`star (x + y) * (x + y) ≤ 2 • (star x * x + star y * y)`.
+In any `StarOrderedRing`, the quadratic expression `star (x + y) * (x + y)` is bounded above by
+`2 • (star x * x + star y * y)`. Consequently, whenever `C` is an order-connected additive
+submonoid or cone, the quadratic preimage `{x | star x * x ∈ C}` is closed under addition; this
+yields additive closure of the left ideals attached to hereditary positive cones and hereditary
+`⋆`-subalgebras.
 
 ## Main results
 
@@ -24,8 +26,7 @@ public section
 
 namespace TauCeti
 
-/-- In a star-ordered ring, `star (x + y) * (x + y) ≤ 2 • (star x * x + star y * y)` by the
-parallelogram identity and nonnegativity of `star (x - y) * (x - y)`. -/
+/-- In a star-ordered ring, `star (x + y) * (x + y) ≤ 2 • (star x * x + star y * y)`. -/
 theorem star_add_mul_self_le {R : Type*} [NonUnitalRing R] [StarRing R] [PartialOrder R]
     [StarOrderedRing R] (x y : R) :
     star (x + y) * (x + y) ≤ 2 • (star x * x + star y * y) := by

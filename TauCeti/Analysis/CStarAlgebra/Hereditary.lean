@@ -15,6 +15,7 @@ import Mathlib.LinearAlgebra.Complex.Module
 import TauCeti.Algebra.Order.Star.Basic
 import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 import TauCeti.Analysis.Normed.Module.CohenFactorization.Bimodule
+import TauCeti.Analysis.Normed.Ring.ApproximateUnit
 import TauCeti.Analysis.RCLike.Basic
 
 /-!
@@ -54,10 +55,13 @@ This file develops the structure theory of hereditary C⋆-subalgebras:
   `{x : A | star x * x ∈ B}` with the set of products `A * B`
   (`NonUnitalStarSubalgebra.coe_hereditaryLeftIdeal_eq_range_mul`).
 * **Closed ideal correspondence**: for an order-connected nonunital ⋆-subalgebra `B` generating the
-  closed two-sided ideal `B.closedIdeal`, restriction `J ↦ J ∩ B` and extension
-  `K ↦ (K.map (NonUnitalStarSubalgebraClass.subtype B)).topologicalClosure` form an order
-  isomorphism `B.closedIdealOrderIso` between closed two-sided ideals of `A` contained in
-  `B.closedIdeal` and closed two-sided ideals of `B`.
+  closed two-sided ideal `B.closedIdeal` (whose carrier is `closure (span ℂ {a * b * c | b ∈ B})`,
+  `NonUnitalStarSubalgebra.coe_closedIdeal_eq_closure_span`), restriction `J ↦ J ∩ B` and extension
+  `K ↦ (K.map (NonUnitalStarSubalgebraClass.subtype B)).topologicalClosure` (with carrier
+  `closure (span ℂ {a * (k : A) * c | k ∈ K})`,
+  `NonUnitalStarSubalgebra.coe_extendIdeal_eq_closure_span`) form an order isomorphism
+  `B.closedIdealOrderIso` between closed two-sided ideals of `A` contained in `B.closedIdeal` and
+  closed two-sided ideals of `B`.
 * **Generated hereditary subalgebras, full positive elements, and strictly positive elements**: for
   self-adjoint `a` (in particular for `0 ≤ a`), `TauCeti.CStarAlgebra.hereditarySubalgebra a` is the
   closure of `{a * x * a | x : A}` and is the smallest closed hereditary C⋆-subalgebra containing
@@ -126,6 +130,13 @@ instance ordConnected_of_isClosed (I : TwoSidedIdeal A) [IsClosed (I : Set A)] :
   exact I.toSubmodule.ordConnected_of_isClosed fun a x hx ↦
     I.mem_toSubmodule.mpr (I.mul_mem_left a x (I.mem_toSubmodule.mp hx))
 
+/-- Bundling a closed two-sided ideal of a C⋆-algebra as a `NonUnitalStarSubalgebra ℂ A` preserves
+order-connectedness. -/
+instance ordConnected_toNonUnitalStarSubalgebra (I : TwoSidedIdeal A) [IsClosed (I : Set A)] :
+    (I.toNonUnitalStarSubalgebra : Set A).OrdConnected := by
+  rw [I.coe_toNonUnitalStarSubalgebra]
+  infer_instance
+
 /-- Every closed two-sided ideal of a C⋆-algebra is hereditary: if `0 ≤ a ≤ b` and `b ∈ I`, then
 `a ∈ I`. -/
 theorem mem_of_nonneg_of_le (I : TwoSidedIdeal A) [IsClosed (I : Set A)] {a b : A}
@@ -146,6 +157,14 @@ instance ordConnected_of_isClosed (I : Ideal A) [hI : IsClosed (I : Set A)] :
   rw [← Submodule.coe_restrictScalars (S := ℂ)]
   exact (I.restrictScalars ℂ).ordConnected_of_isClosed fun a x hx ↦
     (I.restrictScalars_mem ℂ _).mpr (I.mul_mem_left a ((I.restrictScalars_mem ℂ x).mp hx))
+
+/-- Bundling a closed two-sided `Ideal` of a unital C⋆-algebra as a `NonUnitalStarSubalgebra ℂ A`
+preserves order-connectedness. -/
+instance ordConnected_toNonUnitalStarSubalgebra (I : Ideal A) [I.IsTwoSided]
+    [IsClosed (I : Set A)] :
+    (I.toNonUnitalStarSubalgebra : Set A).OrdConnected := by
+  rw [I.coe_toNonUnitalStarSubalgebra]
+  infer_instance
 
 /-- Every closed left ideal of a unital C⋆-algebra is hereditary: if `0 ≤ a ≤ b` and `b ∈ I`, then
 `a ∈ I`. -/
@@ -233,6 +252,14 @@ theorem mem_hereditaryLeftIdeal (C : ProperCone ℝ A) [(C : Set A).OrdConnected
 theorem coe_hereditaryLeftIdeal (C : ProperCone ℝ A) [(C : Set A).OrdConnected] :
     (C.hereditaryLeftIdeal : Set A) = {x : A | star x * x ∈ C} :=
   (rfl)
+
+/-- The hereditary left ideal associated to the ambient positive cone `ProperCone.positive ℝ A` is
+`⊤`. -/
+@[simp]
+theorem hereditaryLeftIdeal_positive :
+    (ProperCone.positive ℝ A).hereditaryLeftIdeal = ⊤ := by
+  ext x
+  simp [ProperCone.mem_positive, star_mul_self_nonneg]
 
 /-- The left ideal associated to an order-connected proper cone is closed. -/
 instance isClosed_hereditaryLeftIdeal (C : ProperCone ℝ A) [(C : Set A).OrdConnected] :
@@ -448,8 +475,8 @@ theorem starCore_hereditaryLeftIdeal (B : NonUnitalStarSubalgebra ℂ A) [IsClos
 /-- Recovering a closed complex left ideal `L` as the hereditary left ideal of its self-adjoint
 core `L.starCore hL`. -/
 @[simp]
-theorem hereditaryLeftIdeal_starCore (L : Submodule ℂ A) (hL : ∀ a : A, ∀ x ∈ L, a * x ∈ L)
-    [IsClosed (L : Set A)] :
+theorem _root_.Submodule.hereditaryLeftIdeal_starCore (L : Submodule ℂ A)
+    (hL : ∀ a : A, ∀ x ∈ L, a * x ∈ L) [IsClosed (L : Set A)] :
     (L.starCore hL).hereditaryLeftIdeal = L := by
   ext x
   simp only [mem_hereditaryLeftIdeal, L.star_mul_self_mem_starCore_iff hL]
@@ -480,6 +507,7 @@ theorem ordConnected_iff_mul_mul_mem (B : NonUnitalStarSubalgebra ℂ A) [IsClos
 
 /-! #### Cohen–Hewitt factorization for `{x : A | star x * x ∈ B}` -/
 
+omit [PartialOrder A] [StarOrderedRing A] in
 /-- By right-module Cohen–Hewitt factorization, if `B` is a closed nonunital ⋆-subalgebra of `A` and
 `star x * x ∈ B`, then `x` factors as `y * b` with `b ∈ B`, `‖b‖ ≤ 1`, `y` in the closure of
 `x · B`, and `‖y - x‖ < ε`. -/
@@ -487,6 +515,8 @@ theorem exists_mul_eq_of_star_mul_self_mem (B : NonUnitalStarSubalgebra ℂ A)
     [IsClosed (B : Set A)] {x : A} (hx : star x * x ∈ B) {ε : ℝ} (hε : 0 < ε) :
     ∃ y : A, ∃ b ∈ B, ‖b‖ ≤ 1 ∧ y ∈ closure (Set.range fun c : B ↦ x * (c : A)) ∧
       ‖y - x‖ < ε ∧ y * b = x := by
+  let _ := CStarAlgebra.spectralOrder A
+  have _ := CStarAlgebra.spectralOrderedRing A
   let R : A →L[ℂ] B →L[ℂ] A :=
     ((ContinuousLinearMap.mul ℂ A).flip.comp (Submodule.ofClass B).subtypeL).flip
   have hR_apply (y : A) (b : B) : R y b = y * (b : A) := rfl
@@ -584,16 +614,15 @@ private lemma exists_seq_mul_left_tendsto (B : NonUnitalStarSubalgebra ℂ A)
     exact hB.out (zero_mem B)
       ((SMulMemClass.ofIsScalarTower _ ℝ ℂ A).smul_mem _ (mul_mem (star_mem b.2) b.2))
       ⟨hu₀ n, hle⟩
-  refine ⟨fun n ↦ ⟨cfcₙ (g n) x, huB n⟩, hu₁, tendsto_iff_norm_sub_tendsto_zero.mpr ?_⟩
-  have hsqrt : Tendsto (fun n : ℕ ↦ Real.sqrt (((n : ℝ) + 1)⁻¹)) atTop (𝓝 0) := by
-    simpa only [Real.sqrt_zero, one_div, Function.comp_def] using
-      (Real.continuous_sqrt.tendsto 0).comp tendsto_one_div_add_atTop_nhds_zero_nat
-  refine squeeze_zero_norm' (Eventually.of_forall fun n ↦ ?_) hsqrt
-  rw [Real.norm_of_nonneg (norm_nonneg _), ← norm_star ((b : A) * cfcₙ (g n) x - (b : A)),
-    star_sub, star_mul, (hu₀ n).isSelfAdjoint.star_eq]
-  exact Real.le_sqrt_of_sq_le
-    ((TauCeti.CStarAlgebra.norm_mul_star_sub_star_sq_le (hu₀ n) (hu₁ n) (b : A)).trans
-      (TauCeti.CStarAlgebra.norm_sub_cfcₙ_min_mul_le hx₀ n))
+  have hux : Tendsto (fun n ↦ cfcₙ (g n) x * x) atTop (𝓝 x) := by
+    rw [tendsto_iff_norm_sub_tendsto_zero]
+    refine squeeze_zero_norm' (Eventually.of_forall fun n ↦ ?_)
+      tendsto_one_div_add_atTop_nhds_zero_nat
+    rw [Real.norm_of_nonneg (norm_nonneg _), norm_sub_rev, one_div]
+    exact TauCeti.CStarAlgebra.norm_sub_cfcₙ_min_mul_le hx₀ n
+  exact ⟨fun n ↦ ⟨cfcₙ (g n) x, huB n⟩, hu₁,
+    TauCeti.CStarAlgebra.tendsto_mul_left_of_star_mul_self_le
+      (Eventually.of_forall hu₀) (Eventually.of_forall hu₁) le_rfl hux⟩
 
 private lemma exists_seq_mul_tendsto (B : NonUnitalStarSubalgebra ℂ A)
     [(B : Set A).OrdConnected] (b : B) :
@@ -819,7 +848,7 @@ def hereditarySubalgebraLeftIdealOrderIso :
     exact Subtype.ext B.1.starCore_hereditaryLeftIdeal
   right_inv L := by
     have : IsClosed (L.1 : Set A) := L.2.1
-    exact Subtype.ext (NonUnitalStarSubalgebra.hereditaryLeftIdeal_starCore L.1 L.2.2)
+    exact Subtype.ext (L.1.hereditaryLeftIdeal_starCore L.2.2)
   map_rel_iff' {B₁ B₂} := by
     have : IsClosed (B₁.1 : Set A) := B₁.2.1
     have : (B₁.1 : Set A).OrdConnected := B₁.2.2
@@ -951,8 +980,10 @@ theorem restrictScalars_coe_hereditarySubalgebraClosedIdealOrderIso_apply {A : T
     [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
     (B : {B : NonUnitalStarSubalgebra ℂ A // IsClosed (B : Set A) ∧ (B : Set A).OrdConnected}) :
     ((hereditarySubalgebraClosedIdealOrderIso B).1).restrictScalars ℂ =
-      B.1.hereditaryLeftIdeal (hB := B.2.2) :=
-  (rfl)
+      B.1.hereditaryLeftIdeal (hB := B.2.2) := by
+  have : (B.1 : Set A).OrdConnected := B.2.2
+  ext x
+  simp
 
 @[simp]
 theorem coe_hereditarySubalgebraClosedIdealOrderIso_symm_apply {A : Type*} [CStarAlgebra A]
@@ -1069,6 +1100,66 @@ theorem self_mem_hereditarySubalgebra (a : A) (ha : IsSelfAdjoint a := by cfc_ta
     exact hle n
   exact mem_closure_of_tendsto hlim (Eventually.of_forall fun n ↦ ⟨cfcₙ (f n) a, rfl⟩)
 
+/-- `hereditarySubalgebra a` is trivial if and only if `a = 0`. -/
+@[simp]
+theorem hereditarySubalgebra_eq_bot_iff {a : A} {ha : IsSelfAdjoint a} :
+    hereditarySubalgebra a ha = ⊥ ↔ a = 0 := by
+  refine ⟨fun h ↦ ?_, ?_⟩
+  · have ha_mem : a ∈ (⊥ : NonUnitalStarSubalgebra ℂ A) := h ▸ self_mem_hereditarySubalgebra a ha
+    exact NonUnitalStarAlgebra.mem_bot.mp ha_mem
+  · rintro rfl
+    exact hereditarySubalgebra_zero
+
+/-- Negating a self-adjoint element leaves `hereditarySubalgebra` unchanged. -/
+@[simp]
+theorem hereditarySubalgebra_neg (a : A) (hna : IsSelfAdjoint (-a) := by cfc_tac) :
+    hereditarySubalgebra (-a) hna = hereditarySubalgebra a (neg_neg a ▸ hna.neg) := by
+  rw [← SetLike.coe_set_eq, coe_hereditarySubalgebra, coe_hereditarySubalgebra]
+  simp only [neg_mul, mul_neg, neg_neg]
+
+/-- Scaling a self-adjoint element `a` by a nonzero scalar `c` in a semifield leaves
+`hereditarySubalgebra` unchanged. -/
+theorem hereditarySubalgebra_smul {𝕜 : Type*} [Semifield 𝕜] [Module 𝕜 A] [IsScalarTower 𝕜 A A]
+    [SMulCommClass 𝕜 A A] {c : 𝕜} (hc : c ≠ 0) (a : A) (ha : IsSelfAdjoint a := by cfc_tac)
+    (hca : IsSelfAdjoint (c • a) := by cfc_tac) :
+    hereditarySubalgebra (c • a) hca = hereditarySubalgebra a ha := by
+  rw [← SetLike.coe_set_eq, coe_hereditarySubalgebra, coe_hereditarySubalgebra]
+  congr 1
+  ext y
+  constructor
+  · rintro ⟨x, rfl⟩
+    exact ⟨c • c • x, by simp only [smul_mul_assoc, mul_smul_comm]⟩
+  · rintro ⟨x, rfl⟩
+    exact ⟨c⁻¹ • c⁻¹ • x, by
+      simp only [smul_mul_assoc, mul_smul_comm, smul_inv_smul₀ hc, inv_smul_smul₀ hc]⟩
+
+/-- In a unital C⋆-algebra, the hereditary C⋆-subalgebra generated by `1` is `⊤`. -/
+@[simp]
+theorem hereditarySubalgebra_one {A : Type*} [CStarAlgebra A] :
+    hereditarySubalgebra (1 : A) = ⊤ := by
+  ext x
+  simp [mem_hereditarySubalgebra]
+
+/-- The closed two-sided ideal generated by `hereditarySubalgebra a` coincides with the closed
+two-sided ideal generated by `a`. -/
+@[simp]
+theorem closedIdeal_hereditarySubalgebra (a : A) (ha : IsSelfAdjoint a := by cfc_tac) :
+    (hereditarySubalgebra a ha).closedIdeal =
+      (TwoSidedIdeal.span ({a} : Set A)).topologicalClosure := by
+  have hclosed : IsClosed ((TwoSidedIdeal.span ({a} : Set A)).topologicalClosure : Set A) :=
+    TwoSidedIdeal.isClosed_topologicalClosure _
+  refine le_antisymm ?_ ?_
+  · rw [NonUnitalStarSubalgebra.closedIdeal_le_iff, coe_hereditarySubalgebra]
+    refine closure_minimal ?_ hclosed
+    rintro _ ⟨x, rfl⟩
+    refine TwoSidedIdeal.le_topologicalClosure _ ?_
+    exact (TwoSidedIdeal.span ({a} : Set A)).mul_mem_right (a * x) a
+      ((TwoSidedIdeal.span ({a} : Set A)).mul_mem_right a x (TwoSidedIdeal.subset_span rfl))
+  · rw [TwoSidedIdeal.topologicalClosure_le_iff _ _
+        (hereditarySubalgebra a ha).isClosed_closedIdeal,
+      TwoSidedIdeal.span_le, Set.singleton_subset_iff]
+    exact (hereditarySubalgebra a ha).mem_closedIdeal_of_mem (self_mem_hereditarySubalgebra a ha)
+
 variable [PartialOrder A] [StarOrderedRing A]
 
 /-- `hereditarySubalgebra a` is hereditary (`Set.OrdConnected`). -/
@@ -1112,6 +1203,13 @@ theorem isFullPositive_iff {a : A} :
     IsFullPositive a ↔ 0 ≤ a ∧ (TwoSidedIdeal.span ({a} : Set A)).topologicalClosure = ⊤ :=
   ⟨fun h ↦ ⟨h.nonneg, h.topologicalClosure_span_eq_top⟩, fun ⟨h1, h2⟩ ↦ ⟨h1, h2⟩⟩
 
+omit [StarOrderedRing A] in
+/-- For a nonnegative element `a`, full positivity is equivalent to density of the two-sided ideal
+generated by `a`. -/
+theorem isFullPositive_iff_of_nonneg {a : A} (ha : 0 ≤ a) :
+    IsFullPositive a ↔ (TwoSidedIdeal.span ({a} : Set A)).topologicalClosure = ⊤ :=
+  ⟨fun h ↦ h.topologicalClosure_span_eq_top, fun h ↦ ⟨ha, h⟩⟩
+
 /-- A nonnegative element `a` of a (possibly nonunital) C⋆-algebra `A` is *strictly positive* if the
 closed hereditary C⋆-subalgebra `hereditarySubalgebra a` generated by `a` is all of `A`. -/
 structure IsStrictlyPositive (a : A) : Prop where
@@ -1121,6 +1219,11 @@ structure IsStrictlyPositive (a : A) : Prop where
   hereditarySubalgebra_eq_top : hereditarySubalgebra a nonneg.isSelfAdjoint = ⊤
 
 attribute [aesop 20% apply (rule_sets := [CStarAlgebra])] IsStrictlyPositive.nonneg
+
+/-- Characterization of strict positivity as `0 ≤ a` together with `hereditarySubalgebra a = ⊤`. -/
+theorem isStrictlyPositive_iff {a : A} :
+    IsStrictlyPositive a ↔ ∃ ha : 0 ≤ a, hereditarySubalgebra a ha.isSelfAdjoint = ⊤ :=
+  ⟨fun h ↦ ⟨h.nonneg, h.hereditarySubalgebra_eq_top⟩, fun ⟨ha, h⟩ ↦ ⟨ha, h⟩⟩
 
 /-- For a nonnegative element `a`, strict positivity is equivalent to
 `hereditarySubalgebra a = ⊤`. -/
@@ -1136,39 +1239,82 @@ theorem IsFullPositive.isSelfAdjoint {a : A} (ha : IsFullPositive a) : IsSelfAdj
 theorem IsStrictlyPositive.isSelfAdjoint {a : A} (ha : IsStrictlyPositive a) : IsSelfAdjoint a :=
   ha.nonneg.isSelfAdjoint
 
-/-- Scaling a strictly positive element by a positive real scalar preserves strict positivity. -/
+/-- Scaling a full positive element by a positive scalar in an ordered semifield preserves full
+positivity. -/
 @[grind ←, aesop safe apply]
-theorem IsStrictlyPositive.smul {c : ℝ} (hc : 0 < c) {a : A} (ha : IsStrictlyPositive a) :
-    IsStrictlyPositive (c • a) where
+theorem IsFullPositive.smul {𝕜 : Type*} [Semifield 𝕜] [PartialOrder 𝕜] [Module 𝕜 A]
+    [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A] [PosSMulMono 𝕜 A] {c : 𝕜} (hc : 0 < c) {a : A}
+    (ha : IsFullPositive a) : IsFullPositive (c • a) where
   nonneg := smul_nonneg hc.le ha.nonneg
-  hereditarySubalgebra_eq_top := by
-    rw [eq_top_iff]
-    intro y _
-    have hy : y ∈ hereditarySubalgebra a ha.isSelfAdjoint := by
-      rw [ha.hereditarySubalgebra_eq_top]
-      trivial
-    rw [mem_hereditarySubalgebra] at hy ⊢
-    refine closure_mono ?_ hy
-    rintro _ ⟨x, rfl⟩
-    refine ⟨c⁻¹ • c⁻¹ • x, ?_⟩
-    simp only [smul_mul_assoc, mul_smul_comm, smul_inv_smul₀ hc.ne', inv_smul_smul₀ hc.ne']
+  topologicalClosure_span_eq_top := by
+    let J := (TwoSidedIdeal.span ({c • a} : Set A)).topologicalClosure
+    have hJ : IsClosed (J : Set A) := TwoSidedIdeal.isClosed_topologicalClosure _
+    refine le_antisymm le_top ?_
+    rw [← ha.topologicalClosure_span_eq_top, TwoSidedIdeal.topologicalClosure_le_iff _ J hJ,
+      TwoSidedIdeal.span_le, Set.singleton_subset_iff]
+    have hl := CStarAlgebra.increasingApproximateUnit A
+    refine hJ.mem_of_tendsto (hl.tendsto_mul_left a) (Eventually.of_forall fun e ↦ ?_)
+    have heq : a * e = (c • a) * (c⁻¹ • e) := by
+      rw [smul_mul_assoc, mul_smul_comm, smul_inv_smul₀ hc.ne']
+    rw [heq]
+    exact J.mul_mem_right (c • a) (c⁻¹ • e)
+      (TwoSidedIdeal.le_topologicalClosure _ (TwoSidedIdeal.subset_span rfl))
+
+/-- Scaling a strictly positive element by a positive scalar in an ordered semifield preserves
+strict positivity. -/
+@[grind ←, aesop safe apply]
+theorem IsStrictlyPositive.smul {𝕜 : Type*} [Semifield 𝕜] [PartialOrder 𝕜] [Module 𝕜 A]
+    [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A] [PosSMulMono 𝕜 A] {c : 𝕜} (hc : 0 < c) {a : A}
+    (ha : IsStrictlyPositive a) : IsStrictlyPositive (c • a) where
+  nonneg := smul_nonneg hc.le ha.nonneg
+  hereditarySubalgebra_eq_top :=
+    (hereditarySubalgebra_smul hc.ne' a ha.isSelfAdjoint
+      (smul_nonneg hc.le ha.nonneg).isSelfAdjoint).trans ha.hereditarySubalgebra_eq_top
 
 /-- Every strictly positive element of a C⋆-algebra is full positive. -/
+@[grind →]
 theorem IsStrictlyPositive.isFullPositive {a : A} (ha : IsStrictlyPositive a) :
     IsFullPositive a where
   nonneg := ha.nonneg
   topologicalClosure_span_eq_top := by
-    rw [eq_top_iff]
-    intro y _
-    have hy : y ∈ hereditarySubalgebra a ha.isSelfAdjoint := by
-      rw [ha.hereditarySubalgebra_eq_top]
-      trivial
-    rw [mem_hereditarySubalgebra] at hy
-    rw [TwoSidedIdeal.mem_topologicalClosure]
-    refine closure_mono ?_ hy
-    rintro _ ⟨x, rfl⟩
-    exact (TwoSidedIdeal.span ({a} : Set A)).mul_mem_right (a * x) a
-      ((TwoSidedIdeal.span ({a} : Set A)).mul_mem_right a x (TwoSidedIdeal.subset_span rfl))
+    rw [← closedIdeal_hereditarySubalgebra a ha.isSelfAdjoint, ha.hereditarySubalgebra_eq_top,
+      NonUnitalStarSubalgebra.closedIdeal_top]
+
+omit [StarOrderedRing A] in
+/-- In a subsingleton C⋆-algebra, every element is full positive. -/
+@[nontriviality]
+protected theorem IsFullPositive.of_subsingleton [Subsingleton A] {a : A} : IsFullPositive a where
+  nonneg := Subsingleton.elim (0 : A) a ▸ le_rfl
+  topologicalClosure_span_eq_top := eq_top_iff.mpr fun x _ ↦
+    Subsingleton.elim x 0 ▸ zero_mem _
+
+/-- In a subsingleton C⋆-algebra, every element is strictly positive. -/
+@[nontriviality]
+protected theorem IsStrictlyPositive.of_subsingleton [Subsingleton A] {a : A} :
+    IsStrictlyPositive a where
+  nonneg := Subsingleton.elim (0 : A) a ▸ le_rfl
+  hereditarySubalgebra_eq_top := Subsingleton.elim _ _
+
+omit [StarOrderedRing A] in
+/-- `0` is full positive if and only if `A` is a subsingleton. -/
+@[simp]
+theorem isFullPositive_zero : IsFullPositive (0 : A) ↔ Subsingleton A := by
+  refine ⟨fun h ↦ ⟨fun x y ↦ ?_⟩, fun _ ↦ IsFullPositive.of_subsingleton⟩
+  have hbot : (TwoSidedIdeal.span ({(0 : A)} : Set A)).topologicalClosure = ⊥ := by
+    rw [← NonUnitalStarAlgebra.coe_bot (R := ℂ) (A := A), ← NonUnitalStarSubalgebra.closedIdeal_def,
+      NonUnitalStarSubalgebra.closedIdeal_bot]
+  have hx : x = 0 := by
+    have hx' : x ∈ (⊤ : TwoSidedIdeal A) := trivial
+    rwa [← h.topologicalClosure_span_eq_top, hbot, TwoSidedIdeal.mem_bot] at hx'
+  have hy : y = 0 := by
+    have hy' : y ∈ (⊤ : TwoSidedIdeal A) := trivial
+    rwa [← h.topologicalClosure_span_eq_top, hbot, TwoSidedIdeal.mem_bot] at hy'
+  exact hx.trans hy.symm
+
+/-- `0` is strictly positive if and only if `A` is a subsingleton. -/
+@[simp]
+theorem isStrictlyPositive_zero : IsStrictlyPositive (0 : A) ↔ Subsingleton A :=
+  ⟨fun h ↦ isFullPositive_zero.mp h.isFullPositive, fun _ ↦ IsStrictlyPositive.of_subsingleton⟩
 
 /-- A strictly positive element has trivial right annihilator: `a * x = 0 ↔ x = 0`. -/
 theorem IsStrictlyPositive.mul_right_eq_zero_iff {a : A} (ha : IsStrictlyPositive a) {x : A} :
@@ -1233,6 +1379,19 @@ theorem isStrictlyPositive_iff_of_unital {A : Type*} [CStarAlgebra A] [PartialOr
       (u : A) * (↑u⁻¹ * y * ↑u⁻¹) * (u : A) = ((u : A) * ↑u⁻¹) * y * (↑u⁻¹ * (u : A)) := by
         simp only [mul_assoc]
       _ = y := by rw [u.mul_inv, u.inv_mul, one_mul, mul_one]
+
+/-- In a unital C⋆-algebra, `1` is strictly positive. -/
+@[simp, grind .]
+theorem isStrictlyPositive_one {A : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A] :
+    IsStrictlyPositive (1 : A) where
+  nonneg := zero_le_one
+  hereditarySubalgebra_eq_top := hereditarySubalgebra_one
+
+/-- In a unital C⋆-algebra, `1` is full positive. -/
+@[simp, grind .]
+theorem isFullPositive_one {A : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A] :
+    IsFullPositive (1 : A) :=
+  isStrictlyPositive_one.isFullPositive
 
 end GeneratedHereditary
 

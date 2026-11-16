@@ -29,7 +29,10 @@ We prove:
   `C + D + C * D`. In the unitization, `1 - (e + f - f * e) = (1 - f) * (1 - e)`;
 * transfer under continuous multiplicative maps with dense range, provided the image of the
   approximate unit is eventually norm bounded. This allows a bounded approximate unit of a
-  dense subalgebra to serve in its completion.
+  dense subalgebra to serve in its completion;
+* two-sided bounded sandwich convergence (`TauCeti.tendsto_mul_mul_of_tendsto`): if `u i` and
+  `v i` are eventually norm bounded along `l` while `f i → b`, `u i * b → b`, and `b * v i → b`,
+  then `u i * f i * v i → b`.
 
 ## References
 
@@ -194,6 +197,40 @@ theorem exists_isApproximateUnit_of_left_of_right
   obtain ⟨l₂, _, hD, h₂⟩ := h₂
   exact ⟨_, isApproximateUnit_map_add_sub_mul h₁ hC h₂ hD,
     eventually_map.2 (eventually_norm_add_sub_mul_le hC hD)⟩
+
+/-- In a nonunital seminormed ring, if `u i` and `v i` are eventually norm bounded along a filter
+`l` such that `f i → b`, `u i * b → b`, and `b * v i → b`, then `u i * f i * v i → b`. -/
+theorem tendsto_mul_mul_of_tendsto {ι : Type*} {l : Filter ι} {u f v : ι → A} {b : A}
+    (huC : ∀ᶠ i in l, ‖u i‖ ≤ C) (hvD : ∀ᶠ i in l, ‖v i‖ ≤ D) (hf : Tendsto f l (𝓝 b))
+    (hu : Tendsto (fun i ↦ u i * b) l (𝓝 b)) (hv : Tendsto (fun i ↦ b * v i) l (𝓝 b)) :
+    Tendsto (fun i ↦ u i * f i * v i) l (𝓝 b) := by
+  rw [tendsto_iff_norm_sub_tendsto_zero]
+  set C' : ℝ := max C 0
+  set D' : ℝ := max D 0
+  have hD' : 0 ≤ D' := le_max_right D 0
+  have hzero :
+      Tendsto (fun i ↦ C' * ‖f i - b‖ * D' + (‖u i * b - b‖ * D' + ‖b * v i - b‖)) l (𝓝 0) := by
+    have hf0 := ((tendsto_iff_norm_sub_tendsto_zero.mp hf).const_mul C').mul_const D'
+    have hu0 := (tendsto_iff_norm_sub_tendsto_zero.mp hu).mul_const D'
+    have hv0 := tendsto_iff_norm_sub_tendsto_zero.mp hv
+    simpa only [mul_zero, zero_mul, add_zero] using hf0.add (hu0.add hv0)
+  refine squeeze_zero_norm' ?_ hzero
+  filter_upwards [huC, hvD] with i hui hvi
+  have hui' : ‖u i‖ ≤ C' := hui.trans (le_max_left C 0)
+  have hvi' : ‖v i‖ ≤ D' := hvi.trans (le_max_left D 0)
+  have hsub : u i * f i * v i - b =
+      u i * (f i - b) * v i + ((u i * b - b) * v i + (b * v i - b)) := by
+    simp only [mul_sub, sub_mul, mul_assoc]
+    abel
+  rw [Real.norm_of_nonneg (norm_nonneg _), hsub]
+  refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
+  · refine (norm_mul_le _ _).trans ?_
+    refine (mul_le_mul (norm_mul_le _ _) hvi' (norm_nonneg _)
+      (mul_nonneg (norm_nonneg _) (norm_nonneg _))).trans ?_
+    exact mul_le_mul_of_nonneg_right
+      (mul_le_mul_of_nonneg_right hui' (norm_nonneg _)) hD'
+  · refine (norm_add_le _ _).trans (add_le_add ?_ le_rfl)
+    exact (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_left hvi' (norm_nonneg _))
 
 end TauCeti
 

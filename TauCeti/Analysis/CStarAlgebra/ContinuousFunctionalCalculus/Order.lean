@@ -11,15 +11,23 @@ import Mathlib.Analysis.SpecificLimits.Basic
 /-!
 # Order bounds and cutoff approximations via the continuous functional calculus
 
-This file provides operator inequalities and functional-calculus cutoff approximations for positive
-elements in (possibly nonunital) C⋆-algebras:
+This file supplies the operator-order inequality and nonunital continuous-functional-calculus
+cutoffs needed to build left ideals and sequential approximate multipliers from hereditary order
+hypotheses in (possibly nonunital) C⋆-algebras:
 
 * `TauCeti.CStarAlgebra.star_mul_mul_self_le`: left-multiplication operator bound
-  `star (a * x) * (a * x) ≤ ‖star a * a‖ • (star x * x)`.
-* `TauCeti.CStarAlgebra.tendsto_cfcₙ_max_sub_inv`: for `0 ≤ a`, the shifted positive-part cutoffs
-  `cfcₙ (fun t ↦ max (t - (n + 1)⁻¹) 0) a` converge in norm to `a` as `n → ∞`.
+  `star (a * x) * (a * x) ≤ ‖star a * a‖ • (star x * x)`, which shows that the quadratic preimage
+  `{x | star x * x ∈ C}` of an order-connected cone or `⋆`-subalgebra absorbs left multiplication
+  by arbitrary elements of `A`.
+* `TauCeti.CStarAlgebra.tendsto_cfcₙ_max_sub_inv`: for `0 ≤ a`, the shifted threshold cutoffs
+  `cfcₙ (fun t ↦ max (t - (n + 1)⁻¹) 0) a` converge in norm to `a` as `n → ∞`. Because each cutoff
+  is nonnegative and bounded above by `(n + 1) • (a * a)`, closedness and heredity of a proper cone
+  `C` yield `a * a ∈ C → a ∈ C`.
 * `TauCeti.CStarAlgebra.norm_sub_cfcₙ_min_mul_le`: for `0 ≤ x`, the contractive linear-ramp cutoffs
-  `u_n = cfcₙ (fun t ↦ min ((n + 1) * max t 0) 1) x` satisfy `‖x - u_n * x‖ ≤ (n + 1)⁻¹`.
+  `u_n = cfcₙ (fun t ↦ min ((n + 1) * max t 0) 1) x` satisfy `‖x - u_n * x‖ ≤ (n + 1)⁻¹`. Because
+  `0 ≤ u_n ≤ (n + 1) • x`, these elements belong to any order-connected `⋆`-subalgebra `B`
+  containing `x` even when `B` is not closed, furnishing sequential contractive multipliers for the
+  closed-ideal correspondence of hereditary `⋆`-subalgebras.
 -/
 
 public section

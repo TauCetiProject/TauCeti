@@ -9,6 +9,7 @@ public import Mathlib.Analysis.CStarAlgebra.ApproximateUnit
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Range
 public import TauCeti.Topology.ApproximateUnit
 import Mathlib.Algebra.Order.Interval.Set.Group
+import TauCeti.Analysis.Normed.Ring.ApproximateUnit
 
 /-!
 # Increasing approximate units: images, uniform convergence, and order-dominated limits
@@ -24,16 +25,20 @@ Since an increasing approximate unit eventually lies in the closed unit ball, th
 `Filter.IsIncreasingApproximateUnit.tendstoUniformlyOn_mul_right`, and so is the convergence
 `a * e → a`, `Filter.IsIncreasingApproximateUnit.tendstoUniformlyOn_mul_left`, while the two-sided
 product `e * a * e` converges pointwise to `a`,
-`Filter.IsIncreasingApproximateUnit.tendsto_mul_mul` (deduced from the general contractive
-sandwich limit `TauCeti.tendsto_mul_mul_of_tendsto`). Uniform convergence controls
-`e * α_r(b) → α_r(b)` along a compact set of group elements `r` for a continuous action `α`, as
-needed for approximate units of twisted convolution algebras.
+`Filter.IsIncreasingApproximateUnit.tendsto_mul_mul` (deduced from the general bounded sandwich
+limit `TauCeti.tendsto_mul_mul_of_tendsto`). Uniform convergence controls `e * α_r(b) → α_r(b)`
+along a compact set of group elements `r` for a continuous action `α`, as needed for approximate
+units of twisted convolution algebras.
 
 `TauCeti.CStarAlgebra.norm_sub_mul_sq_le_of_star_mul_self_le` bounds `‖x - x * e‖ ^ 2` by
 `‖b - e * b‖` whenever `0 ≤ e`, `‖e‖ ≤ 1`, and `star x * x ≤ b`, yielding both
 `TauCeti.CStarAlgebra.norm_mul_star_sub_star_sq_le` and
-`TauCeti.CStarAlgebra.norm_sqrt_sub_mul_sq_le`. For any closed star subalgebra `s` and any
-increasing approximate unit `l` of `s`, this drives
+`TauCeti.CStarAlgebra.norm_sqrt_sub_mul_sq_le`, as well as the unbundled filter convergence
+theorems `TauCeti.CStarAlgebra.tendsto_mul_left_of_star_mul_self_le`,
+`TauCeti.CStarAlgebra.tendsto_sqrt_mul_of_nonneg_of_le`, and
+`TauCeti.CStarAlgebra.tendsto_mul_mul_of_nonneg_of_le` along any filter of eventual positive
+contractions `u i` satisfying `u i * b → b`. Specializing to any closed star subalgebra `s` and any
+increasing approximate unit `l` of `s` gives
 `Filter.IsIncreasingApproximateUnit.tendsto_mul_left_of_star_mul_self_le`,
 `Filter.IsIncreasingApproximateUnit.tendsto_mul_left_of_star_mul_self_mem`,
 `Filter.IsIncreasingApproximateUnit.tendsto_sqrt_mul_of_nonneg_of_le`, and
@@ -47,40 +52,14 @@ public section
 open Filter Topology
 open scoped CStarAlgebra
 
-namespace TauCeti
-
-/-- In a nonunital seminormed ring, if `u i` and `v i` are eventually contractions along a filter
-`l` such that `f i → b`, `u i * b → b`, and `b * v i → b`, then `u i * f i * v i → b`. -/
-theorem tendsto_mul_mul_of_tendsto {ι A : Type*} [NonUnitalSeminormedRing A] {l : Filter ι}
-    {u f v : ι → A} {b : A} (hu₁ : ∀ᶠ i in l, ‖u i‖ ≤ 1) (hv₁ : ∀ᶠ i in l, ‖v i‖ ≤ 1)
-    (hf : Tendsto f l (𝓝 b)) (hu : Tendsto (fun i ↦ u i * b) l (𝓝 b))
-    (hv : Tendsto (fun i ↦ b * v i) l (𝓝 b)) :
-    Tendsto (fun i ↦ u i * f i * v i) l (𝓝 b) := by
-  rw [tendsto_iff_norm_sub_tendsto_zero]
-  have hzero : Tendsto (fun i ↦ ‖f i - b‖ + (‖u i * b - b‖ + ‖b * v i - b‖)) l (𝓝 0) := by
-    simpa only [add_zero] using (tendsto_iff_norm_sub_tendsto_zero.mp hf).add
-      ((tendsto_iff_norm_sub_tendsto_zero.mp hu).add (tendsto_iff_norm_sub_tendsto_zero.mp hv))
-  refine squeeze_zero_norm' ?_ hzero
-  filter_upwards [hu₁, hv₁] with i hui hvi
-  have hsub : u i * f i * v i - b =
-      u i * (f i - b) * v i + ((u i * b - b) * v i + (b * v i - b)) := by noncomm_ring
-  rw [Real.norm_of_nonneg (norm_nonneg _), hsub]
-  refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
-  · exact ((norm_mul_le _ _).trans (mul_le_of_le_one_right (norm_nonneg _) hvi)).trans
-      ((norm_mul_le _ _).trans (mul_le_of_le_one_left (norm_nonneg _) hui))
-  · exact (norm_add_le _ _).trans (add_le_add
-      ((norm_mul_le _ _).trans (mul_le_of_le_one_right (norm_nonneg _) hvi)) le_rfl)
-
-end TauCeti
-
 namespace TauCeti.CStarAlgebra
 
 open Unitization
 
 variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 
-/-- For a positive contraction `e` in a nonunital C⋆-algebra and `star x * x ≤ b`, the C⋆-identity
-and order monotonicity of the norm in `A⁺¹` give `‖x - x * e‖ ^ 2 ≤ ‖b - e * b‖`. -/
+/-- If `e` is a positive contraction in a nonunital C⋆-algebra and `star x * x ≤ b`, then
+`‖x - x * e‖ ^ 2 ≤ ‖b - e * b‖`. -/
 theorem norm_sub_mul_sq_le_of_star_mul_self_le {e x b : A} (he₀ : 0 ≤ e) (he₁ : ‖e‖ ≤ 1)
     (hxb : star x * x ≤ b) :
     ‖x - x * e‖ ^ 2 ≤ ‖b - e * b‖ := by
@@ -115,8 +94,8 @@ theorem norm_sub_mul_sq_le_of_star_mul_self_le {e x b : A} (he₀ : 0 ≤ e) (he
       exact mul_le_mul_of_nonneg_left hu_norm (norm_nonneg _)
     _ = ‖b - e * b‖ := mul_one _
 
-/-- For a positive contraction `e` in a nonunital C⋆-algebra and any `a`, the C⋆-identity in the
-unitization gives `‖e * star a - star a‖ ^ 2 ≤ ‖star a * a - e * (star a * a)‖`. -/
+/-- If `e` is a positive contraction in a nonunital C⋆-algebra, then
+`‖e * star a - star a‖ ^ 2 ≤ ‖star a * a - e * (star a * a)‖` for every `a`. -/
 theorem norm_mul_star_sub_star_sq_le {e : A} (he₀ : 0 ≤ e) (he₁ : ‖e‖ ≤ 1) (a : A) :
     ‖e * star a - star a‖ ^ 2 ≤ ‖star a * a - e * (star a * a)‖ := by
   have hnorm : ‖e * star a - star a‖ = ‖a - a * e‖ := by
@@ -125,13 +104,62 @@ theorem norm_mul_star_sub_star_sq_le {e : A} (he₀ : 0 ≤ e) (he₁ : ‖e‖ 
   rw [hnorm]
   exact norm_sub_mul_sq_le_of_star_mul_self_le he₀ he₁ le_rfl
 
-/-- For a positive contraction `e` in `A` and `0 ≤ a ≤ b`, the C⋆-identity and order monotonicity of
-the norm in `A⁺¹` give `‖CFC.sqrt a - CFC.sqrt a * e‖ ^ 2 ≤ ‖b - e * b‖`. -/
+/-- If `e` is a positive contraction in a nonunital C⋆-algebra and `0 ≤ a ≤ b`, then
+`‖CFC.sqrt a - CFC.sqrt a * e‖ ^ 2 ≤ ‖b - e * b‖`. -/
 theorem norm_sqrt_sub_mul_sq_le {e a b : A} (he₀ : 0 ≤ e) (he₁ : ‖e‖ ≤ 1)
     (ha : 0 ≤ a) (hab : a ≤ b) :
     ‖CFC.sqrt a - CFC.sqrt a * e‖ ^ 2 ≤ ‖b - e * b‖ := by
   refine norm_sub_mul_sq_le_of_star_mul_self_le he₀ he₁ ?_
   rwa [(CFC.sqrt_nonneg a).isSelfAdjoint.star_eq, CFC.sqrt_mul_sqrt_self a ha]
+
+/-- If `u i` is eventually a positive contraction along `l`, `star x * x ≤ b`, and `u i * b → b`,
+then `x * u i → x`. -/
+theorem tendsto_mul_left_of_star_mul_self_le {ι : Type*} {l : Filter ι} {u : ι → A} {x b : A}
+    (hu₀ : ∀ᶠ i in l, 0 ≤ u i) (hu₁ : ∀ᶠ i in l, ‖u i‖ ≤ 1) (hxb : star x * x ≤ b)
+    (hub : Tendsto (fun i ↦ u i * b) l (𝓝 b)) :
+    Tendsto (fun i ↦ x * u i) l (𝓝 x) := by
+  rw [tendsto_iff_norm_sub_tendsto_zero]
+  have hb_lim : Tendsto (fun i ↦ ‖b - u i * b‖) l (𝓝 0) := by
+    simpa only [norm_sub_rev] using tendsto_iff_norm_sub_tendsto_zero.mp hub
+  have hsqrt : Tendsto (fun i ↦ Real.sqrt ‖b - u i * b‖) l (𝓝 0) := by
+    simpa only [Real.sqrt_zero, Function.comp_def] using
+      (Real.continuous_sqrt.tendsto 0).comp hb_lim
+  refine squeeze_zero_norm' ?_ hsqrt
+  filter_upwards [hu₀, hu₁] with i hi₀ hi₁
+  rw [Real.norm_of_nonneg (norm_nonneg _), norm_sub_rev]
+  exact Real.le_sqrt_of_sq_le (norm_sub_mul_sq_le_of_star_mul_self_le hi₀ hi₁ hxb)
+
+/-- If `u i` is eventually a positive contraction along `l`, `0 ≤ a ≤ b`, and `u i * b → b`, then
+`CFC.sqrt a * u i → CFC.sqrt a`. -/
+theorem tendsto_sqrt_mul_of_nonneg_of_le {ι : Type*} {l : Filter ι} {u : ι → A} {a b : A}
+    (hu₀ : ∀ᶠ i in l, 0 ≤ u i) (hu₁ : ∀ᶠ i in l, ‖u i‖ ≤ 1) (ha : 0 ≤ a) (hab : a ≤ b)
+    (hub : Tendsto (fun i ↦ u i * b) l (𝓝 b)) :
+    Tendsto (fun i ↦ CFC.sqrt a * u i) l (𝓝 (CFC.sqrt a)) := by
+  refine tendsto_mul_left_of_star_mul_self_le hu₀ hu₁ ?_ hub
+  rwa [(CFC.sqrt_nonneg a).isSelfAdjoint.star_eq, CFC.sqrt_mul_sqrt_self a ha]
+
+/-- If `u i` is eventually a positive contraction along `l`, `0 ≤ a ≤ b`, and `u i * b → b`, then
+`u i * a * u i → a`. -/
+theorem tendsto_mul_mul_of_nonneg_of_le {ι : Type*} {l : Filter ι} {u : ι → A} {a b : A}
+    (hu₀ : ∀ᶠ i in l, 0 ≤ u i) (hu₁ : ∀ᶠ i in l, ‖u i‖ ≤ 1) (ha : 0 ≤ a) (hab : a ≤ b)
+    (hub : Tendsto (fun i ↦ u i * b) l (𝓝 b)) :
+    Tendsto (fun i ↦ u i * a * u i) l (𝓝 a) := by
+  have hright : Tendsto (fun i ↦ CFC.sqrt a * u i) l (𝓝 (CFC.sqrt a)) :=
+    tendsto_sqrt_mul_of_nonneg_of_le hu₀ hu₁ ha hab hub
+  have hs_star : star (CFC.sqrt a) = CFC.sqrt a := (CFC.sqrt_nonneg a).isSelfAdjoint.star_eq
+  have hleft : Tendsto (fun i ↦ u i * CFC.sqrt a) l (𝓝 (CFC.sqrt a)) := by
+    have hstar : Tendsto (fun i ↦ star (CFC.sqrt a * u i)) l (𝓝 (star (CFC.sqrt a))) :=
+      (continuous_star.tendsto _).comp hright
+    rw [hs_star] at hstar
+    refine hstar.congr' ?_
+    filter_upwards [hu₀] with i hi₀
+    rw [star_mul, hs_star, (IsSelfAdjoint.of_nonneg hi₀).star_eq]
+  have hmul : Tendsto (fun i ↦ (u i * CFC.sqrt a) * (CFC.sqrt a * u i)) l
+      (𝓝 (CFC.sqrt a * CFC.sqrt a)) :=
+    hleft.mul hright
+  rw [CFC.sqrt_mul_sqrt_self a ha] at hmul
+  refine hmul.congr fun i ↦ ?_
+  simp only [mul_assoc, ← mul_assoc (CFC.sqrt a), CFC.sqrt_mul_sqrt_self a ha]
 
 /-- For a positive contraction `e` in a nonunital C⋆-algebra and any `a` and `z`, the C⋆-identity in
 the unitization applied to `a * (1 - e)` gives `‖a - a * e‖ ^ 2 ≤ ‖star a * a + z‖ + ‖z - z * e‖`.
@@ -253,22 +281,14 @@ theorem tendsto_mul_left_of_star_mul_self_le (hl : l.IsIncreasingApproximateUnit
     (hxb : star x * x ≤ b) (hb : b ∈ s) :
     Tendsto (fun e : s ↦ x * (e : A)) l (𝓝 x) := by
   let bS : s := ⟨b, hb⟩
-  rw [tendsto_iff_norm_sub_tendsto_zero]
-  have hsq : ∀ᶠ e : s in l, ‖x * (e : A) - x‖ ^ 2 ≤ ‖bS - e * bS‖ := by
-    filter_upwards [hl.eventually_nonneg, hl.eventually_norm] with e he₀ he₁
-    rw [← Subtype.coe_le_coe, ZeroMemClass.coe_zero] at he₀
-    rw [AddSubgroupClass.coe_norm] at he₁
-    rw [norm_sub_rev, AddSubgroupClass.coe_norm, AddSubgroupClass.coe_sub, MulMemClass.coe_mul]
-    exact TauCeti.CStarAlgebra.norm_sub_mul_sq_le_of_star_mul_self_le he₀ he₁ hxb
-  have hb_lim : Tendsto (fun e : s ↦ ‖bS - e * bS‖) l (𝓝 0) := by
-    simpa only [norm_sub_rev] using tendsto_iff_norm_sub_tendsto_zero.mp (hl.tendsto_mul_right bS)
-  have hsqrt : Tendsto (fun e : s ↦ Real.sqrt ‖bS - e * bS‖) l (𝓝 0) := by
-    simpa only [Real.sqrt_zero, Function.comp_def] using
-      (Real.continuous_sqrt.tendsto 0).comp hb_lim
-  refine squeeze_zero_norm' ?_ hsqrt
-  filter_upwards [hsq] with e he
-  rw [Real.norm_of_nonneg (norm_nonneg _)]
-  exact Real.le_sqrt_of_sq_le he
+  have he₀ : ∀ᶠ e : s in l, 0 ≤ (e : A) :=
+    hl.eventually_nonneg.mono fun e he ↦ by rwa [← Subtype.coe_le_coe, ZeroMemClass.coe_zero] at he
+  have he₁ : ∀ᶠ e : s in l, ‖(e : A)‖ ≤ 1 :=
+    hl.eventually_norm.mono fun e he ↦ by rwa [AddSubgroupClass.coe_norm] at he
+  have heb : Tendsto (fun e : s ↦ (e : A) * b) l (𝓝 b) := by
+    simpa only [Function.comp_def, MulMemClass.coe_mul] using
+      (continuous_subtype_val.tendsto bS).comp (hl.tendsto_mul_right bS)
+  exact TauCeti.CStarAlgebra.tendsto_mul_left_of_star_mul_self_le he₀ he₁ hxb heb
 
 /-- If `star x * x` belongs to a closed star subalgebra `s`, then `x * (e : A) → x` along any
 increasing approximate unit `l` of `s`. -/
@@ -290,24 +310,15 @@ along any increasing approximate unit `l` of `s`. -/
 theorem tendsto_mul_mul_of_nonneg_of_le (hl : l.IsIncreasingApproximateUnit) {a b : A}
     (ha : 0 ≤ a) (hab : a ≤ b) (hb : b ∈ s) :
     Tendsto (fun e : s ↦ (e : A) * a * (e : A)) l (𝓝 a) := by
-  have hright : Tendsto (fun e : s ↦ CFC.sqrt a * (e : A)) l (𝓝 (CFC.sqrt a)) :=
-    hl.tendsto_sqrt_mul_of_nonneg_of_le ha hab hb
-  have hs_star : star (CFC.sqrt a) = CFC.sqrt a := (CFC.sqrt_nonneg a).isSelfAdjoint.star_eq
-  have hleft : Tendsto (fun e : s ↦ (e : A) * CFC.sqrt a) l (𝓝 (CFC.sqrt a)) := by
-    have hstar : Tendsto (fun e : s ↦ star (CFC.sqrt a * (e : A))) l (𝓝 (star (CFC.sqrt a))) :=
-      (continuous_star.tendsto _).comp hright
-    rw [hs_star] at hstar
-    refine hstar.congr' ?_
-    filter_upwards [hl.eventually_star_eq] with e he_star
-    have he_coe : star (e : A) = (e : A) := by
-      simpa only [StarMemClass.coe_star] using congrArg ((↑) : s → A) he_star
-    rw [star_mul, hs_star, he_coe]
-  have hmul : Tendsto (fun e : s ↦ ((e : A) * CFC.sqrt a) * (CFC.sqrt a * (e : A))) l
-      (𝓝 (CFC.sqrt a * CFC.sqrt a)) :=
-    hleft.mul hright
-  rw [CFC.sqrt_mul_sqrt_self a ha] at hmul
-  refine hmul.congr fun e ↦ ?_
-  simp only [mul_assoc, ← mul_assoc (CFC.sqrt a), CFC.sqrt_mul_sqrt_self a ha]
+  let bS : s := ⟨b, hb⟩
+  have he₀ : ∀ᶠ e : s in l, 0 ≤ (e : A) :=
+    hl.eventually_nonneg.mono fun e he ↦ by rwa [← Subtype.coe_le_coe, ZeroMemClass.coe_zero] at he
+  have he₁ : ∀ᶠ e : s in l, ‖(e : A)‖ ≤ 1 :=
+    hl.eventually_norm.mono fun e he ↦ by rwa [AddSubgroupClass.coe_norm] at he
+  have heb : Tendsto (fun e : s ↦ (e : A) * b) l (𝓝 b) := by
+    simpa only [Function.comp_def, MulMemClass.coe_mul] using
+      (continuous_subtype_val.tendsto bS).comp (hl.tendsto_mul_right bS)
+  exact TauCeti.CStarAlgebra.tendsto_mul_mul_of_nonneg_of_le he₀ he₁ ha hab heb
 
 end SubalgebraOrderLimits
 

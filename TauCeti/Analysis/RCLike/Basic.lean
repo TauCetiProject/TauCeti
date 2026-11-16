@@ -16,8 +16,8 @@ import TauCeti.Algebra.Star.Basic
 * `RCLike.re_eq_self_of_im_eq_zero`: a scalar with zero imaginary part equals its real part.
 * `RCLike.norm_le_abs_re_add_abs_im`: `‖z‖ ≤ |re z| + |im z|`, the `RCLike` counterpart of
   `Complex.norm_le_abs_re_add_abs_im`.
-* `TauCeti.star_smul_mul_self`: `star (c • x) * (c • x) = (‖c‖ ^ 2 : ℝ) • (star x * x)` in any star
-  module with compatible multiplication over an `RCLike` field `K`.
+* `TauCeti.star_smul_mul_self`: `star (c • x) * (c • x) = (‖c‖ ^ 2 : ℝ) • (star x * x)` in any
+  `StarMul` type equipped with compatible `K`- and `ℝ`-scalar actions satisfying `StarModule K A`.
 -/
 
 public section
@@ -42,8 +42,8 @@ end RCLike
 
 namespace TauCeti
 
-/-- In a star algebra over an `RCLike` field `K`, `star (c • x) * (c • x)` scales `star x * x` by
-`‖c‖ ^ 2`. -/
+/-- In a `StarMul` type `A` equipped with compatible `K`- and `ℝ`-scalar actions satisfying
+`StarModule K A`, `star (c • x) * (c • x)` scales `star x * x` by `‖c‖ ^ 2`. -/
 theorem star_smul_mul_self {K A : Type*} [RCLike K] [Mul A] [StarMul A] [MulAction K A] [SMul ℝ A]
     [IsScalarTower ℝ K A] [IsScalarTower K A A] [StarModule K A] (c : K) (x : A) :
     star (c • x) * (c • x) = (‖c‖ ^ 2 : ℝ) • (star x * x) := by

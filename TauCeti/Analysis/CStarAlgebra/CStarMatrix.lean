@@ -173,10 +173,21 @@ theorem nonneg_iff_forall_sum_nonneg {M : CStarMatrix n n A} :
   calc N * N = star R * (R * N) := by rw [← mul_assoc, ← hR]
     _ = 0 := by rw [hRN, mul_zero]
 
+/-- Evaluating `ofMatrixL.symm M` at row `i` agrees with `M i`. -/
+@[simp]
+theorem ofMatrixL_symm_apply {m n A : Type*} [NonUnitalCStarAlgebra A] (M : CStarMatrix m n A)
+    (i : m) : (ofMatrixL.symm M) i = M i := by
+  have h : ofMatrix (ofMatrixL.symm M) = M := by
+    rw [ofMatrix_eq_ofMatrixL]
+    exact ofMatrixL.apply_symm_apply M
+  conv_rhs => rw [← h, ofMatrix_apply]
+
 /-- Evaluation at any entry `(i, j)` is continuous on `CStarMatrix m n A`. -/
 @[continuity]
 theorem continuous_apply {m n A : Type*} [NonUnitalCStarAlgebra A] (i : m) (j : n) :
     Continuous fun x : CStarMatrix m n A ↦ x i j :=
-  (_root_.continuous_apply_apply i j).comp (ofMatrixL (m := m) (n := n) (A := A)).symm.continuous
+  ((_root_.continuous_apply_apply i j).comp
+    (ofMatrixL (m := m) (n := n) (A := A)).symm.continuous).congr fun x ↦
+      congrFun (ofMatrixL_symm_apply x i) j
 
 end CStarMatrix

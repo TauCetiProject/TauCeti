@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Group.Subgroup.Defs
 public import Mathlib.Algebra.Order.Group.Unbundled.Basic
-public import TauCeti.Order.Interval.Set.OrdConnected
+public import Mathlib.Order.Interval.Set.OrdConnected
 
 /-!
 # Order-connected subgroups

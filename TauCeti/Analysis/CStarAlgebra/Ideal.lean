@@ -60,6 +60,10 @@ algebra. When `A` has a proper involution (in particular, when `A` is a C⋆-alg
   `multiplierHom_coe` and `multiplierHom_comp_subtype`, norm bound `norm_multiplierHom_le`, and
   proper-star annihilator characterizations `multiplierHom_eq_zero_iff` and
   `multiplierHom_injective_iff`.
+* `NonUnitalStarSubalgebra.coe_extendIdeal_eq_closure_span` and
+  `NonUnitalStarSubalgebra.coe_closedIdeal_eq_closure_span`: in any C⋆-algebra, the carriers of
+  `B.extendIdeal K` and `B.closedIdeal` coincide with the closures of the complex linear spans of
+  two-sided products `a * (k : A) * c` and `a * b * c`.
 
 ## References
 
@@ -462,6 +466,83 @@ theorem multiplierHom_injective_iff [IsProperStar A] (hmul : ∀ a : A, ∀ x �
   exact forall_congr' fun _ => imp_congr_left (I.multiplierHom_eq_zero_iff hmul)
 
 end NormedStarAlgebra
+
+section ClosedIdealSpan
+
+variable {A : Type*} [NonUnitalCStarAlgebra A]
+
+/-- In a C⋆-algebra `A`, the carrier of `B.extendIdeal K` is the closure of the complex linear span
+of two-sided products `a * (k : A) * c` with `a, c : A` and `k ∈ K`. -/
+theorem coe_extendIdeal_eq_closure_span (B : NonUnitalStarSubalgebra ℂ A) (K : TwoSidedIdeal B) :
+    (B.extendIdeal K : Set A) = _root_.closure
+      (Submodule.span ℂ {y : A | ∃ a : A, ∃ k ∈ K, ∃ c : A, y = a * (k : A) * c} : Set A) := by
+  let S : Set A := {y : A | ∃ a : A, ∃ k ∈ K, ∃ c : A, y = a * (k : A) * c}
+  let M : Submodule ℂ A := Submodule.span ℂ S
+  refine Set.Subset.antisymm ?_ ?_
+  · rw [B.coe_extendIdeal K]
+    refine closure_minimal ?_ isClosed_closure
+    have hM_left (d : A) {x : A} (hx : x ∈ M) : d * x ∈ M :=
+      Submodule.span_induction
+        (fun _ ⟨a, k, hk, c, hy⟩ ↦
+          Submodule.subset_span ⟨d * a, k, hk, c, by rw [hy]; simp only [mul_assoc]⟩)
+        (by rw [mul_zero]; exact M.zero_mem)
+        (fun x y _ _ hx hy ↦ by rw [mul_add]; exact M.add_mem hx hy)
+        (fun r x _ hx ↦ by rw [mul_smul_comm]; exact M.smul_mem r hx)
+        hx
+    have hM_right (d : A) {x : A} (hx : x ∈ M) : x * d ∈ M :=
+      Submodule.span_induction
+        (fun _ ⟨a, k, hk, c, hy⟩ ↦ Submodule.subset_span ⟨a, k, hk, c * d, by rw [hy, mul_assoc]⟩)
+        (by rw [zero_mul]; exact M.zero_mem)
+        (fun x y _ _ hx hy ↦ by rw [add_mul]; exact M.add_mem hx hy)
+        (fun r x _ hx ↦ by rw [smul_mul_assoc]; exact M.smul_mem r hx)
+        hx
+    intro z hz
+    rw [SetLike.mem_coe, TwoSidedIdeal.map] at hz
+    rw [← Submodule.topologicalClosure_coe, SetLike.mem_coe]
+    refine TwoSidedIdeal.span_induction
+      (p := fun z _ ↦ z ∈ M.topologicalClosure)
+      (fun _ hk ↦ ?_)
+      M.topologicalClosure.zero_mem
+      (fun _ _ _ _ hx hy ↦ M.topologicalClosure.add_mem hx hy)
+      (fun _ _ hx ↦ M.topologicalClosure.neg_mem hx)
+      (fun d x _ hx ↦ ?_)
+      (fun d x _ hx ↦ ?_)
+      hz
+    · rcases hk with ⟨k, hk, rfl⟩
+      let _ := CStarAlgebra.spectralOrder A
+      have _ := CStarAlgebra.spectralOrderedRing A
+      have hl := CStarAlgebra.increasingApproximateUnit A
+      rw [← SetLike.mem_coe, Submodule.topologicalClosure_coe]
+      exact mem_closure_of_tendsto (hl.tendsto_mul_mul (k : A))
+        (Eventually.of_forall fun e ↦ Submodule.subset_span ⟨e, k, hk, e, rfl⟩)
+    · rw [← SetLike.mem_coe, Submodule.topologicalClosure_coe] at hx ⊢
+      exact (Set.MapsTo.closure (fun _ hy ↦ hM_left d hy) (continuous_const.mul continuous_id)) hx
+    · rw [← SetLike.mem_coe, Submodule.topologicalClosure_coe] at hx ⊢
+      exact (Set.MapsTo.closure (fun _ hy ↦ hM_right d hy) (continuous_id.mul continuous_const)) hx
+  · refine closure_minimal ?_ (B.isClosed_extendIdeal K)
+    rw [← (B.extendIdeal K).coe_toSubmodule, SetLike.coe_subset_coe, Submodule.span_le]
+    rintro _ ⟨a, k, hk, c, rfl⟩
+    exact ((B.extendIdeal K).mem_toSubmodule).mpr
+      ((B.extendIdeal K).mul_mem_right _ c
+        ((B.extendIdeal K).mul_mem_left a _ (B.coe_mem_extendIdeal K hk)))
+
+/-- In a C⋆-algebra `A`, the carrier of `B.closedIdeal` is the closure of the complex linear span of
+two-sided products `a * b * c` with `a, c : A` and `b ∈ B`. -/
+theorem coe_closedIdeal_eq_closure_span (B : NonUnitalStarSubalgebra ℂ A) :
+    (B.closedIdeal : Set A) = _root_.closure
+      (Submodule.span ℂ {y : A | ∃ a : A, ∃ b ∈ B, ∃ c : A, y = a * b * c} : Set A) := by
+  rw [← B.extendIdeal_top, B.coe_extendIdeal_eq_closure_span ⊤]
+  have hset : {y : A | ∃ a : A, ∃ k ∈ (⊤ : TwoSidedIdeal B), ∃ c : A, y = a * (k : A) * c} =
+      {y : A | ∃ a : A, ∃ b ∈ B, ∃ c : A, y = a * b * c} := by
+    ext y
+    constructor
+    · rintro ⟨a, k, -, c, rfl⟩
+      exact ⟨a, k, k.2, c, rfl⟩
+    · rintro ⟨a, b, hb, c, rfl⟩
+      exact ⟨a, ⟨b, hb⟩, trivial, c, rfl⟩
+  rw [hset]
+
+end ClosedIdealSpan
 
 end NonUnitalStarSubalgebra
 

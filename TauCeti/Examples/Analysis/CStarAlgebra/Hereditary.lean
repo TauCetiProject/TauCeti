@@ -22,7 +22,7 @@ This file illustrates the hereditary C⋆-subalgebra API on `CStarMatrix (Fin 2)
   rank-one projections `diagonal 1 0` and `averagingProjection`, the generated hereditary
   C⋆-subalgebras are the one-dimensional corners `ℂ • diagonal 1 0` and `ℂ • averagingProjection`.
   Moreover, `hereditarySubalgebra (diagonal 1 0)` is not closed under left multiplication by
-  `MatrixOrderExample.flip` (`hereditarySubalgebra_firstCoord_not_left_absorb`), separating closed
+  `MatrixOrderExample.flip` (`flip_mul_notMem_hereditarySubalgebra_firstCoord`), separating closed
   hereditary C⋆-subalgebras from closed left or two-sided ideals.
 * `isFullPositive_firstCoord`, `not_isStrictlyPositive_firstCoord`, and
   `isStrictlyPositive_diagonal_of_pos`: the rank-one projection `diagonal 1 0` generates the whole
@@ -136,7 +136,7 @@ theorem coe_hereditarySubalgebra_averagingProjection :
 `diagonal 1 0 ∈ hereditarySubalgebra (diagonal 1 0)` (`self_mem_hereditarySubalgebra`),
 `MatrixOrderExample.flip * diagonal 1 0` does not belong to `hereditarySubalgebra (diagonal 1 0)`.
 -/
-theorem hereditarySubalgebra_firstCoord_not_left_absorb :
+theorem flip_mul_notMem_hereditarySubalgebra_firstCoord :
     MatrixOrderExample.flip * diagonal 1 0 ∉ hereditarySubalgebra (diagonal 1 0) := by
   intro hmem
   rw [← SetLike.mem_coe, coe_hereditarySubalgebra_firstCoord] at hmem
@@ -190,14 +190,14 @@ theorem isStrictlyPositive_diagonal_of_pos {s t : ℝ} (hs : 0 < s) (ht : 0 < t)
   refine ⟨(diagonal_nonneg_iff s t).mpr ⟨hs.le, ht.le⟩, ?_⟩
   have hs0 : (s : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hs.ne'
   have ht0 : (t : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr ht.ne'
-  have hdiag : CStarMatrix.ofMatrixRingEquiv (Matrix.diagonal ![(s : ℂ), (t : ℂ)]) =
+  have hdiag : CStarMatrix.ofMatrixStarAlgEquiv (Matrix.diagonal ![(s : ℂ), (t : ℂ)]) =
       diagonal s t := by
-    change CStarMatrix.ofMatrix (Matrix.diagonal ![(s : ℂ), (t : ℂ)]) = diagonal s t
+    rw [← CStarMatrix.ofMatrix_eq_ofMatrixStarAlgEquiv]
     ext i j
     fin_cases i <;> fin_cases j <;> simp
   rw [← hdiag]
   exact (Matrix.isUnit_diagonal.mpr
     (Pi.isUnit_iff.mpr <| Fin.forall_fin_two.mpr ⟨hs0.isUnit, ht0.isUnit⟩)).map
-      CStarMatrix.ofMatrixRingEquiv
+      CStarMatrix.ofMatrixStarAlgEquiv
 
 end TauCeti.HereditaryExample
