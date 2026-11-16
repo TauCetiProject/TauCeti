@@ -89,11 +89,8 @@ theorem polarUnitary_inclusion (U : ↥(GLSymplectic n ℝ ⊓ unitarySubgroup (
 
 /-- The orthogonal polar factor depends continuously on the symplectic matrix. -/
 theorem continuous_polarUnitary :
-    Continuous (polarUnitary : GLSymplectic n ℝ → _) := by
-  have h := (polarHomotopy (n ⊕ n) ℝ).continuous.comp
-    (continuous_const.prodMk continuous_id : Continuous fun A : GL (n ⊕ n) ℝ ↦ ((1 : I), A))
-  simp only [Function.comp_def, polarHomotopy_apply, Set.Icc.coe_one, polarDeformation_one] at h
-  exact (h.comp continuous_subtype_val).subtype_mk _
+    Continuous (polarUnitary : GLSymplectic n ℝ → _) :=
+  (continuous_toUnits_polarUnitary.comp continuous_subtype_val).subtype_mk _
 
 /-- The orthogonal polar factor of a symplectic matrix depends continuously on it, as a
 symplectic matrix. -/
