@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Module.GradedModule.KoszulTwist.Algebra
+public import TauCeti.Algebra.Module.GradedModule.Parity
 public import TauCeti.LinearAlgebra.SignedSymmetricAlgebra.Parity.Grading
 import Mathlib.GroupTheory.GroupAction.Ring
 import TauCeti.Algebra.CharP.Invertible
@@ -151,52 +152,17 @@ theorem sq_eq_zero [Invertible (2 : R)] {a : ParitySignedSym G}
 
 /-! ### The grade involution -/
 
-/-- Auxiliary linear involution of `V` scaling each parity-`i` piece by `(-1 : ℤˣ) ^ i`. -/
-private noncomputable def generatorParityTwist : V →ₗ[R] V :=
-  (DirectSum.toModule R (ZMod 2) V fun i ↦ ((-1 : ℤˣ) ^ i) • (G.piece i).subtype) ∘ₗ
-    (DirectSum.decomposeLinearEquiv G.piece).toLinearMap
-
-private theorem generatorParityTwist_of_mem {i : ZMod 2} {x : V} (hx : x ∈ G.piece i) :
-    generatorParityTwist G x = ((-1 : ℤˣ) ^ i) • x := by
-  simp only [generatorParityTwist, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    DirectSum.decomposeLinearEquiv_apply, DirectSum.decompose_of_mem G.piece hx,
-    ← DirectSum.lof_eq_of R, DirectSum.toModule_lof, LinearMap.smul_apply,
-    Submodule.coe_subtype]
-
-private theorem generatorParityTwist_involutive :
-    Function.Involutive (generatorParityTwist G) := by
-  have hsq : generatorParityTwist G ∘ₗ generatorParityTwist G = LinearMap.id :=
-    G.linearMap_ext fun i x hx ↦ by
-      have hx' : ((-1 : ℤˣ) ^ i) • x ∈ G.piece i := by
-        rw [Units.smul_def]; exact zsmul_mem hx _
-      rw [LinearMap.comp_apply, generatorParityTwist_of_mem G hx,
-        generatorParityTwist_of_mem G hx', smul_smul, Int.units_mul_self, one_smul,
-        LinearMap.id_apply]
-  exact fun x ↦ LinearMap.congr_fun hsq x
-
-private noncomputable def generatorParityTwistEquiv : V ≃ₗ[R] V :=
-  LinearEquiv.ofInvolutive (generatorParityTwist G) (generatorParityTwist_involutive G)
-
-private theorem isHomogeneous_generatorParityTwist :
-    LinearMap.IsHomogeneous (generatorParityTwistEquiv G).toLinearMap G.piece G.piece 0 :=
-  LinearMap.isHomogeneous_def.2 fun i x hx ↦ by
-    simp only [generatorParityTwistEquiv, LinearEquiv.coe_coe, LinearEquiv.coe_ofInvolutive,
-      add_zero, generatorParityTwist_of_mem G hx]
-    rw [Units.smul_def]
-    exact zsmul_mem hx _
-
 /-- The grade involution of `ParitySignedSym G`: the involutive algebra automorphism scaling
 elements of parity `i` by `(-1 : ℤˣ) ^ i` (`gradeInvolution_apply_of_mem`), fixing the even piece
 and negating the odd piece. -/
 noncomputable def gradeInvolution : ParitySignedSym G ≃ₐ[R] ParitySignedSym G :=
-  congr G G (generatorParityTwistEquiv G) (isHomogeneous_generatorParityTwist G)
+  congr G G G.parityTwistEquiv G.isHomogeneous_parityTwistEquiv
 
 /-- On a generator of parity `i`, `gradeInvolution` acts by `(-1 : ℤˣ) ^ i`. -/
 theorem gradeInvolution_generator_of_mem {i : ZMod 2} {x : V} (hx : x ∈ G.piece i) :
     gradeInvolution G (generator G x) = ((-1 : ℤˣ) ^ i) • generator G x := by
-  rw [gradeInvolution, congr_generator]
-  simp only [generatorParityTwistEquiv, LinearEquiv.coe_ofInvolutive,
-    generatorParityTwist_of_mem G hx, Units.smul_def, map_zsmul]
+  rw [gradeInvolution, congr_generator, G.parityTwistEquiv_apply, G.parityTwist_apply_of_mem hx,
+    Units.smul_def, map_zsmul, ← Units.smul_def]
 
 /-- On an element of parity `i`, `gradeInvolution` multiplies by `(-1 : ℤˣ) ^ i`. -/
 theorem gradeInvolution_apply_of_mem {i : ZMod 2} {a : ParitySignedSym G}

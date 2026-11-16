@@ -8,8 +8,8 @@ module
 public import TauCeti.Algebra.Homology.DG.Algebra.Parity
 public import TauCeti.LinearAlgebra.SignedSymmetricAlgebra.Derivation
 public import TauCeti.LinearAlgebra.SignedSymmetricAlgebra.Parity.Supercommutativity
-import Mathlib.Data.Matrix.Basic
 import Mathlib.GroupTheory.GroupAction.Ring
+import TauCeti.RingTheory.Derivation.LowerTriangular
 
 /-!
 # Odd derivations of `ParitySignedSym`
@@ -127,61 +127,21 @@ private theorem mul_add_gradeInvolution_mul_comm {i j : ZMod 2}
   simp only [Units.smul_def, zsmul_add, smul_smul, ← Units.val_mul, h₁, h₂]
   exact add_comm _ _
 
-/-- The lower-triangular matrix `[[generator G x, 0], [δ x, gradeInvolution G (generator G x)]]`
-attached to a generator `x : V`. -/
-private noncomputable def triangular :
-    V →ₗ[R] Matrix (Fin 2) (Fin 2) (ParitySignedSym G) where
-  toFun x := !![generator G x, 0; δ x, gradeInvolution G (generator G x)]
-  map_add' x y := by
-    ext r c
-    fin_cases r <;> fin_cases c <;> simp
-  map_smul' c x := by
-    ext r s
-    fin_cases r <;> fin_cases s <;> simp
-
 variable {δ}
 variable (hδ : LinearMap.IsHomogeneous δ G.piece (paritySignedSymPiece G) 1)
 
-include hδ in
-/-- The triangular matrices of homogeneous generators obey the parity swap relation. -/
-private theorem triangular_mul_triangular {i j : ZMod 2} {x y : V}
-    (hx : x ∈ G.piece i) (hy : y ∈ G.piece j) :
-    triangular δ x * triangular δ y =
-      ((-1 : ℤˣ) ^ (i * j)) • (triangular δ y * triangular δ x) := by
-  have hgx := generator_mem_paritySignedSymPiece G hx
-  have hgy := generator_mem_paritySignedSymPiece G hy
-  have hdx := hδ.map_mem hx
-  have hdy := hδ.map_mem hy
-  ext r c
-  fin_cases r <;> fin_cases c
-  · simpa [triangular, Matrix.mul_apply, Units.smul_def] using
-      mul_eq_uzpow_smul_mul G hgx hgy
-  · simp [triangular, Matrix.mul_apply, Units.smul_def]
-  · simpa [triangular, Matrix.mul_apply, Fin.sum_univ_two, Units.smul_def] using
-      mul_add_gradeInvolution_mul_comm hgx hgy hdx hdy
-  · have key : gradeInvolution G (generator G x) * gradeInvolution G (generator G y) =
-        ((-1 : ℤˣ) ^ (i * j)) •
-          (gradeInvolution G (generator G y) * gradeInvolution G (generator G x)) := by
-      rw [← map_mul (gradeInvolution G), ← map_mul (gradeInvolution G),
-        generator_mul_generator G hx hy, Units.smul_def, map_zsmul, ← Units.smul_def]
-    simpa [triangular, Matrix.mul_apply, Fin.sum_univ_two, Units.smul_def] using key
-
-/-- The algebra map `a ↦ [[a, 0], [d a, gradeInvolution G a]]` extending `triangular δ`. -/
-private noncomputable def triangularLift :
+/-- The algebra map `a ↦ [[a, 0], [d a, gradeInvolution G a]]` extending the lower-triangular
+generator matrix of `δ`. -/
+private noncomputable abbrev triangularLift :
     ParitySignedSym G →ₐ[R] Matrix (Fin 2) (Fin 2) (ParitySignedSym G) :=
-  lift G (triangular δ) fun _ _ _ _ hx hy ↦ triangular_mul_triangular hδ hx hy
-
-/-- The diagonal and upper-right entries of `triangularLift` are `a`, `gradeInvolution G a`,
-and `0`. -/
-private theorem triangularLift_apply (a : ParitySignedSym G) :
-    triangularLift hδ a 0 0 = a ∧ triangularLift hδ a 0 1 = 0 ∧
-      triangularLift hδ a 1 1 = gradeInvolution G a := by
-  induction a using ParitySignedSym.induction with
-  | algebraMap r => simp [Matrix.algebraMap_matrix_apply]
-  | generator x => simp [triangularLift, triangular]
-  | mul a b ha hb =>
-    simp [Matrix.mul_apply, Fin.sum_univ_two, ha.1, ha.2.1, ha.2.2, hb.1, hb.2.1, hb.2.2]
-  | add a b ha hb => simp [ha.1, ha.2.1, ha.2.2, hb.1, hb.2.1, hb.2.2]
+  lift G (lowerTriangularDerivationMatrix (generator G) δ (gradeInvolution G).toAlgHom.toLinearMap)
+    fun _ _ _ _ hx hy ↦
+      (lowerTriangularDerivationMatrix_mul_eq_zsmul (generator G) δ (gradeInvolution G).toAlgHom
+        ((generator_mul_generator G hx hy).trans (Units.smul_def _ _))
+        ((mul_add_gradeInvolution_mul_comm
+          (generator_mem_paritySignedSymPiece G hx) (generator_mem_paritySignedSymPiece G hy)
+          (hδ.map_mem hx) (hδ.map_mem hy)).trans (Units.smul_def _ _))).trans
+        (Units.smul_def _ _).symm
 
 variable (δ) in
 /-- The odd derivation of `ParitySignedSym G` extending a parity-shifting linear map
@@ -189,25 +149,20 @@ variable (δ) in
 `TauCeti.ParitySignedSym.liftDerivation_mul`, shifts parity by `1`, and is the unique such
 extension of `δ` (`TauCeti.ParitySignedSym.eq_liftDerivation`). -/
 noncomputable def liftDerivation : ParitySignedSym G →ₗ[R] ParitySignedSym G :=
-  Matrix.entryLinearMap R (ParitySignedSym G) (1 : Fin 2) (0 : Fin 2) ∘ₗ
-    (triangularLift hδ).toLinearMap
-
-private theorem liftDerivation_apply (a : ParitySignedSym G) :
-    liftDerivation δ hδ a = triangularLift hδ a 1 0 :=
-  (rfl)
+  lowerTriangularDerivation (triangularLift hδ)
 
 /-- The odd derivation extends the assignment on generators. -/
 @[simp]
-theorem liftDerivation_generator (x : V) : liftDerivation δ hδ (generator G x) = δ x := by
-  simp [liftDerivation_apply, triangularLift, triangular]
+theorem liftDerivation_generator (x : V) : liftDerivation δ hδ (generator G x) = δ x :=
+  lowerTriangularDerivation_generator (lift_generator G _ _) x
 
 /-- **Unconditional Leibniz rule**: on any two elements of `ParitySignedSym G`,
 `d (a * b) = d a * b + gradeInvolution G a * d b`. -/
 theorem liftDerivation_mul_gradeInvolution (a b : ParitySignedSym G) :
     liftDerivation δ hδ (a * b) =
-      liftDerivation δ hδ a * b + gradeInvolution G a * liftDerivation δ hδ b := by
-  simp only [liftDerivation_apply, map_mul, Matrix.mul_apply, Fin.sum_univ_two,
-    (triangularLift_apply hδ a).2.2, (triangularLift_apply hδ b).1]
+      liftDerivation δ hδ a * b + gradeInvolution G a * liftDerivation δ hδ b :=
+  lowerTriangularDerivation_mul (fun h₁ h₂ h₃ h₄ ↦ ParitySignedSym.induction G h₁ h₂ h₃ h₄)
+    (lift_generator G _ _) a b
 
 /-- **The parity-signed Leibniz rule**: for a left factor of parity `i`,
 `d (a * b) = d a * b + ((-1 : ℤˣ) ^ i) • (a * d b)`. -/
@@ -232,16 +187,13 @@ theorem liftDerivation_mul_of_mem_one {a : ParitySignedSym G}
 
 /-- The odd derivation annihilates the unit. -/
 @[simp]
-theorem liftDerivation_one : liftDerivation δ hδ 1 = 0 := by
-  have h := liftDerivation_mul_of_mem_zero hδ
-    (SetLike.GradedOne.one_mem (A := paritySignedSymPiece G)) 1
-  simp only [mul_one, one_mul] at h
-  exact left_eq_add.mp h
+theorem liftDerivation_one : liftDerivation δ hδ 1 = 0 :=
+  lowerTriangularDerivation_one (triangularLift hδ)
 
 /-- The odd derivation annihilates the image of the coefficient ring. -/
 @[simp]
-theorem liftDerivation_algebraMap (r : R) : liftDerivation δ hδ (algebraMap R _ r) = 0 := by
-  rw [Algebra.algebraMap_eq_smul_one, map_smul, liftDerivation_one, smul_zero]
+theorem liftDerivation_algebraMap (r : R) : liftDerivation δ hδ (algebraMap R _ r) = 0 :=
+  lowerTriangularDerivation_algebraMap (triangularLift hδ) r
 
 /-- The odd derivation shifts parity by `1`. -/
 theorem isHomogeneous_liftDerivation :
