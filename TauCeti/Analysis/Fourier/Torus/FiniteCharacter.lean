@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.MonoidAlgebra.Basic
 public import Mathlib.Analysis.Fourier.AddCircleMulti
 public import Mathlib.LinearAlgebra.Matrix.Basis
+public import TauCeti.Topology.Algebra.Module.Matrix
 import TauCeti.Analysis.Fourier.Monomial
 import TauCeti.Analysis.Fourier.Torus.Decay
 import TauCeti.MeasureTheory.Measure.Haar.UnitAddTorus
@@ -34,24 +35,22 @@ monomials.
 By orthonormality of the monomials, the `n`-th Fourier coefficient of `χ_f` is the multiplicity
 of the weight with coordinates `n` (`Module.Basis.mFourierCoeff_torusEval`), so a finite
 character is recovered from its function on the torus (`Module.Basis.torusEval_injective`).
-Changing the lattice basis composes this function with the map of tori dual to the
-change-of-basis matrix (`Module.Basis.torusEval_eq_comp_dualTorusMap`); since each basis reads
+Changing the lattice basis composes this function with the map of tori induced by the transpose
+of the change-of-basis matrix (`Module.Basis.torusEval_eq_comp_smulVecHom`); since each basis reads
 off the multiplicity of `μ` at the coordinates of `μ`, the Fourier coefficients of a weight do
 not depend on the basis.
 
 ## Main definitions
 
-* `Matrix.dualTorusMap`: for an integer matrix `M : Matrix d' d ℤ`, the continuous map
-  `(ℝ / ℤ)^d' → (ℝ / ℤ)^d` dual to `M *ᵥ · : ℤ^d → ℤ^d'`.
 * `Module.Basis.torusEval`: the evaluation of finite characters on the unit torus.
 
 ## Main results
 
-* `Matrix.mFourier_comp_dualTorusMap`: `mFourier n ∘ M.dualTorusMap = mFourier (M *ᵥ n)`.
+* `Matrix.mFourier_comp_smulVecHom`: `mFourier n ∘ A.smulVecHom = mFourier (Aᵀ *ᵥ n)`.
 * `Module.Basis.torusEval_single`: `e^μ` evaluates to the monomial at the coordinates of `μ`.
 * `Module.Basis.mFourierCoeff_torusEval`: the Fourier coefficients of `χ_f` are the
   coefficients of `f`.
-* `Module.Basis.torusEval_eq_comp_dualTorusMap`: the change of lattice basis.
+* `Module.Basis.torusEval_eq_comp_smulVecHom`: the change of lattice basis.
 -/
 
 public section
@@ -62,56 +61,25 @@ open UnitAddTorus Complex Real
 
 namespace Matrix
 
-variable {d d' d'' : Type*} [Fintype d']
+variable {d d' : Type*} [Fintype d] [Fintype d']
 
-/-- The continuous map of unit tori `(ℝ / ℤ)^d' → (ℝ / ℤ)^d` dual to the homomorphism
-`n ↦ M *ᵥ n` from `ℤ^d` to `ℤ^d'`: it sends `θ` to `i ↦ ∑ j, M j i • θ j`, so that
-`mFourier n ∘ M.dualTorusMap = mFourier (M *ᵥ n)` (`Matrix.mFourier_comp_dualTorusMap`). -/
-def dualTorusMap (M : Matrix d' d ℤ) : C(UnitAddTorus d', UnitAddTorus d) where
-  toFun θ i := ∑ j, M j i • θ j
-  continuous_toFun := by fun_prop
-
-/-- The `i`-th coordinate of the dual torus map is `∑ j, M j i • θ j`. -/
-@[simp]
-theorem dualTorusMap_apply (M : Matrix d' d ℤ) (θ : UnitAddTorus d') (i : d) :
-    M.dualTorusMap θ i = ∑ j, M j i • θ j :=
-  (rfl)
-
-/-- On the image of `x : d' → ℝ`, the dual torus map is reduction modulo one of
-`i ↦ ∑ j, M j i * x j`. -/
-theorem dualTorusMap_coe (M : Matrix d' d ℤ) (x : d' → ℝ) :
-    M.dualTorusMap (fun j ↦ (x j : UnitAddCircle)) =
-      fun i ↦ ((∑ j, (M j i : ℝ) * x j : ℝ) : UnitAddCircle) := by
-  ext i
-  simp_rw [dualTorusMap_apply, ← zsmul_eq_mul]
-  rw [← QuotientAddGroup.mk'_apply, map_sum]
-  simp
-
-/-- The identity matrix induces the identity map of the torus. -/
-@[simp]
-theorem dualTorusMap_one [DecidableEq d'] :
-    (1 : Matrix d' d' ℤ).dualTorusMap = ContinuousMap.id _ := by
-  ext θ i
-  simp [Matrix.one_apply]
-
-/-- The dual torus map reverses products of matrices. -/
-theorem dualTorusMap_mul [Fintype d''] (N : Matrix d'' d' ℤ) (M : Matrix d' d ℤ) :
-    (N * M).dualTorusMap = M.dualTorusMap.comp N.dualTorusMap := by
-  ext θ i
-  simp only [dualTorusMap_apply, ContinuousMap.comp_apply, Matrix.mul_apply, Finset.sum_smul,
-    Finset.smul_sum, smul_smul]
-  rw [Finset.sum_comm]
-  exact Finset.sum_congr rfl fun j _ ↦ Finset.sum_congr rfl fun k _ ↦ by rw [mul_comm]
-
-/-- The Fourier monomial `mFourier n` pulled back along the dual torus map of `M` is the
-monomial `mFourier (M *ᵥ n)`. -/
-theorem mFourier_comp_dualTorusMap [Fintype d] (M : Matrix d' d ℤ) (n : d → ℤ) :
-    (mFourier n).comp M.dualTorusMap = mFourier (M *ᵥ n) := by
+/-- The Fourier monomial `mFourier n` pulled back along the map of unit tori induced by an
+integer matrix `A` is the monomial `mFourier (Aᵀ *ᵥ n)`. -/
+theorem mFourier_comp_smulVecHom (A : Matrix d d' ℤ) (n : d → ℤ) :
+    (mFourier n).comp (A.smulVecHom UnitAddCircle : C(UnitAddTorus d', UnitAddTorus d)) =
+      mFourier (Aᵀ *ᵥ n) := by
   ext θ
   obtain ⟨x, rfl⟩ := TauCeti.UnitAddTorus.surjective_coe θ
-  simp only [ContinuousMap.comp_apply, dualTorusMap_coe, TauCeti.UnitAddTorus.mFourier_coe_apply]
+  have h : A.smulVecHom UnitAddCircle (fun j ↦ (x j : UnitAddCircle)) =
+      fun i ↦ ((∑ j, (A i j : ℝ) * x j : ℝ) : UnitAddCircle) := by
+    ext i
+    simp_rw [smulVecHom_apply, ← zsmul_eq_mul]
+    rw [← QuotientAddGroup.mk'_apply, map_sum]
+    simp
+  simp only [ContinuousMap.comp_apply, ContinuousMap.coe_ofClass, h,
+    TauCeti.UnitAddTorus.mFourier_coe_apply]
   congr 2
-  simp only [mulVec, dotProduct]
+  simp only [mulVec, dotProduct, transpose_apply]
   push_cast
   simp only [Finset.mul_sum, Finset.sum_mul]
   rw [Finset.sum_comm]
@@ -165,31 +133,22 @@ evaluation of `f` on the torus is the coefficient of `f` at the weight with coor
 theorem mFourierCoeff_torusEval (b : Basis d ℤ X) (f : AddMonoidAlgebra R X) (n : d → ℤ) :
     mFourierCoeff (b.torusEval f) n = algebraMap R ℂ (f.coeff (b.equivFun.symm n)) := by
   classical
-  have hint (μ : X) : MeasureTheory.Integrable fun z : UnitAddTorus d ↦
-      mFourier (-n) z • (algebraMap R ℂ (f.coeff μ) * mFourier (b.repr μ) z) :=
-    (by fun_prop : Continuous fun z : UnitAddTorus d ↦
-      mFourier (-n) z • (algebraMap R ℂ (f.coeff μ) * mFourier (b.repr μ) z))
-      |>.integrable_of_hasCompactSupport (.of_compactSpace _)
-  have hcoeff (μ : X) : ∫ z, mFourier (-n) z • (algebraMap R ℂ (f.coeff μ) *
-      mFourier (b.repr μ) z) =
-        algebraMap R ℂ (f.coeff μ) * (Pi.single (⇑(b.repr μ)) 1 : (d → ℤ) → ℂ) n := by
-    rw [← TauCeti.UnitAddTorus.mFourierCoeff_mFourier,
-      TauCeti.UnitAddTorus.mFourierCoeff_eq_integral_volume, ← smul_eq_mul,
-      ← MeasureTheory.integral_smul]
-    refine MeasureTheory.integral_congr_ae (.of_forall fun z ↦ ?_)
-    simp only [smul_eq_mul]
-    ring
-  simp_rw [TauCeti.UnitAddTorus.mFourierCoeff_eq_integral_volume, torusEval_apply, Finsupp.sum,
-    Finset.smul_sum]
-  rw [MeasureTheory.integral_finsetSum _ fun μ _ ↦ hint μ]
-  simp_rw [hcoeff]
-  rw [Finset.sum_eq_single (b.equivFun.symm n)]
-  · rw [← b.equivFun_apply, LinearEquiv.apply_symm_apply, Pi.single_eq_same, mul_one]
-  · intro μ _ hμ
-    rw [Pi.single_eq_of_ne fun h ↦ hμ (by rw [h, ← b.equivFun_apply, LinearEquiv.symm_apply_apply]),
-      mul_zero]
-  · intro h
-    rw [Finsupp.notMem_support_iff.mp h, map_zero, zero_mul]
+  induction f using AddMonoidAlgebra.induction_linear with
+  | zero => simp [mFourierCoeff]
+  | add f g hf hg =>
+    rw [map_add, ContinuousMap.coe_add,
+      mFourierCoeff_add ((b.torusEval f).continuous.integrable_of_hasCompactSupport
+        (.of_compactSpace _)) ((b.torusEval g).continuous.integrable_of_hasCompactSupport
+        (.of_compactSpace _)), hf, hg, AddMonoidAlgebra.coeff_add, Finsupp.add_apply, map_add]
+  | single μ r =>
+    rw [torusEval_single, ← algebraMap_smul ℂ r (mFourier _), ContinuousMap.coe_smul,
+      mFourierCoeff_smul, TauCeti.UnitAddTorus.mFourierCoeff_mFourier,
+      AddMonoidAlgebra.coeff_single]
+    by_cases h : b.repr μ = n
+    · rw [← h, Pi.single_eq_same, ← b.equivFun_apply, LinearEquiv.symm_apply_apply,
+        Finsupp.single_eq_same, smul_eq_mul, mul_one]
+    · rw [Pi.single_eq_of_ne' h, Finsupp.single_eq_of_ne fun h' ↦ h (by
+        rw [← h', ← b.equivFun_apply, LinearEquiv.apply_symm_apply]), smul_zero, map_zero]
 
 /-- The Fourier coefficient of the evaluation of `f` at the coordinates of a weight `μ` is the
 multiplicity of `μ` in `f`, whichever lattice basis is used. -/
@@ -207,11 +166,13 @@ theorem torusEval_injective (b : Basis d ℤ X) (hR : Function.Injective (algebr
   rw [← mFourierCoeff_torusEval_repr b f μ, h, mFourierCoeff_torusEval_repr]
 
 /-- **Change of lattice basis.** Evaluating a finite character with the basis `b'` is evaluating
-it with the basis `b` and composing with the dual torus map of the change-of-basis matrix
-`b'.toMatrix b`. -/
-theorem torusEval_eq_comp_dualTorusMap (b : Basis d ℤ X) (b' : Basis d' ℤ X)
+it with the basis `b` and composing with the map of tori induced by the transpose of the
+change-of-basis matrix `b'.toMatrix b`. -/
+theorem torusEval_eq_comp_smulVecHom (b : Basis d ℤ X) (b' : Basis d' ℤ X)
     (f : AddMonoidAlgebra R X) :
-    b'.torusEval f = (b.torusEval f).comp (b'.toMatrix b).dualTorusMap := by
+    b'.torusEval f = (b.torusEval f).comp
+      ((b'.toMatrix b).transpose.smulVecHom UnitAddCircle :
+        C(UnitAddTorus d', UnitAddTorus d)) := by
   induction f using AddMonoidAlgebra.induction_linear with
   | zero => simp
   | add f g hf hg => rw [map_add, map_add, hf, hg, ContinuousMap.add_comp]
@@ -219,7 +180,7 @@ theorem torusEval_eq_comp_dualTorusMap (b : Basis d ℤ X) (b' : Basis d' ℤ X)
     ext z
     rw [torusEval_single, torusEval_single, ContinuousMap.comp_apply, ContinuousMap.smul_apply,
       ContinuousMap.smul_apply, ← ContinuousMap.comp_apply (mFourier _),
-      Matrix.mFourier_comp_dualTorusMap]
+      Matrix.mFourier_comp_smulVecHom]
     congr 3
     ext i
     simp [toMatrix_mulVec_repr]
