@@ -11,6 +11,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Borel
 public import TauCeti.GroupTheory.TitsSystem.Comap
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.RankOne
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Weyl
+import TauCeti.GroupTheory.DoubleCoset.Map
 import TauCeti.LinearAlgebra.RootSystem.Inversions.Exchange
 
 /-!
@@ -208,13 +209,14 @@ theorem mem_doubleCoset_subgroupOf_borelSubgroup_iff
         ((D.borelSubgroup K).subgroupOf (D.extendedElementarySubgroup K)) ↔
       (g : D.points K) ∈
         DoubleCoset.doubleCoset (x : D.points K) (D.borelSubgroup K) (D.borelSubgroup K) := by
-  simp only [DoubleCoset.mem_doubleCoset]
-  constructor
-  · rintro ⟨b₁, hb₁, b₂, hb₂, rfl⟩
-    exact ⟨b₁.val, hb₁, b₂.val, hb₂, rfl⟩
-  · rintro ⟨b₁, hb₁, b₂, hb₂, h⟩
-    exact ⟨⟨b₁, D.borelSubgroup_le_extendedElementarySubgroup K hb₁⟩, hb₁,
-      ⟨b₂, D.borelSubgroup_le_extendedElementarySubgroup K hb₂⟩, hb₂, Subtype.ext h⟩
+  have h := DoubleCoset.mem_doubleCoset_image_iff
+    (D.extendedElementarySubgroup K).subtype_injective x
+    ((D.borelSubgroup K).subgroupOf (D.extendedElementarySubgroup K))
+    ((D.borelSubgroup K).subgroupOf (D.extendedElementarySubgroup K)) g
+  rw [← Subgroup.coe_map,
+    Subgroup.map_subgroupOf_eq_of_le (D.borelSubgroup_le_extendedElementarySubgroup K),
+    Subgroup.subtype_apply, Subgroup.subtype_apply] at h
+  exact h.symm
 
 /-- The pinned `i`-th simple Weyl representative in the Weyl subgroup of
 `D.extendedElementarySubgroup K`. -/

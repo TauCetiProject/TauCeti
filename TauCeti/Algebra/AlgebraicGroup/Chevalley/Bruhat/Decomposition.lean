@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Quotient
 public import TauCeti.LinearAlgebra.RootSystem.Inversions.Basic
+import TauCeti.Algebra.Group.Subgroup.Map
+import TauCeti.GroupTheory.DoubleCoset.Map
 import TauCeti.GroupTheory.TitsSystem.Bruhat.Uniqueness
 import TauCeti.LinearAlgebra.RootSystem.Inversions.Exchange
 import TauCeti.LinearAlgebra.RootSystem.Inversions.StrongExchange
@@ -133,27 +135,15 @@ theorem eq_and_eq_of_mem_map_negativePoints_conj_of_mul_eq {n u₁ u₂ b₁ b�
     (hb₁ : b₁ ∈ D.borelSubgroup A) (hb₂ : b₂ ∈ D.borelSubgroup A)
     (heq : u₁ * n * b₁ = u₂ * n * b₂) :
     u₁ = u₂ ∧ b₁ = b₂ := by
-  obtain ⟨v₁, hv₁, rfl⟩ := hu₁
-  obtain ⟨v₂, hv₂, rfl⟩ := hu₂
-  have hvb : v₁ * b₁ = v₂ * b₂ := by
-    apply mul_left_cancel (a := n)
-    calc
-      n * (v₁ * b₁) = MulAut.conj n v₁ * n * b₁ := by simp [MulAut.conj_apply, mul_assoc]
-      _ = MulAut.conj n v₂ * n * b₂ := heq
-      _ = n * (v₂ * b₂) := by simp [MulAut.conj_apply, mul_assoc]
-  have hv21 : v₂⁻¹ * v₁ = b₂ * b₁⁻¹ := by
-    calc
-      v₂⁻¹ * v₁ = v₂⁻¹ * (v₁ * b₁) * b₁⁻¹ := by group
-      _ = v₂⁻¹ * (v₂ * b₂) * b₁⁻¹ := by rw [hvb]
-      _ = b₂ * b₁⁻¹ := by group
-  have hbot : v₂⁻¹ * v₁ ∈ (⊥ : Subgroup (D.points A)) := by
-    rw [← D.negativePoints_inf_borelSubgroup_eq_bot A]
-    refine ⟨mul_mem (Subgroup.inv_mem _ hv₂) hv₁, ?_⟩
-    rw [hv21]
-    exact mul_mem hb₂ (Subgroup.inv_mem _ hb₁)
-  have hv : v₁ = v₂ := (inv_mul_eq_one.mp (Subgroup.mem_bot.mp hbot)).symm
-  subst hv
-  exact ⟨rfl, mul_left_cancel hvb⟩
+  have hdisj : Disjoint ((D.negativePoints A).map (MulAut.conj n).toMonoidHom)
+      ((D.borelSubgroup A).map (MulAut.conj n).toMonoidHom) :=
+    Subgroup.disjoint_map (MulAut.conj n).injective
+      (disjoint_iff.mpr (D.negativePoints_inf_borelSubgroup_eq_bot A))
+  have hp := Subgroup.mul_mul_injective_of_disjoint
+    ((D.negativePoints A).map (MulAut.conj n).toMonoidHom) (D.borelSubgroup A) hdisj
+    (a₁ := (⟨u₁, hu₁⟩, ⟨b₁, hb₁⟩)) (a₂ := (⟨u₂, hu₂⟩, ⟨b₂, hb₂⟩)) heq
+  exact ⟨congrArg (fun p => (p.1 : D.points A)) hp,
+    congrArg (fun p => (p.2 : D.points A)) hp⟩
 
 end Ring
 
@@ -185,19 +175,12 @@ theorem bruhatCell_weylProjection (n : D.weylSubgroup K) :
     simp [nE]
   have hnval : ((nE : D.extendedElementarySubgroup K) : D.points K) = (n : D.points K) := by
     rw [← D.coe_titsSystemSubgroupNEquiv, MulEquiv.apply_symm_apply]
-  ext g
-  simp only [bruhatCell, hmk, TitsSystem.bruhatCell_mk, Set.mem_image, D.titsSystem_subgroupB,
-    D.mem_doubleCoset_subgroupOf_borelSubgroup_iff K, hnval]
-  constructor
-  · rintro ⟨_, hx, rfl⟩
-    exact hx
-  · intro hg
-    obtain ⟨b₁, hb₁, b₂, hb₂, rfl⟩ := DoubleCoset.mem_doubleCoset.mp hg
-    have hgE : b₁ * (n : D.points K) * b₂ ∈ D.extendedElementarySubgroup K :=
-      mul_mem (mul_mem (D.borelSubgroup_le_extendedElementarySubgroup K hb₁)
-        (D.weylSubgroup_le_extendedElementarySubgroup K n.2))
-        (D.borelSubgroup_le_extendedElementarySubgroup K hb₂)
-    exact ⟨⟨_, hgE⟩, DoubleCoset.mem_doubleCoset.mpr ⟨b₁, hb₁, b₂, hb₂, rfl⟩, rfl⟩
+  rw [bruhatCell, hmk, TitsSystem.bruhatCell_mk, D.titsSystem_subgroupB,
+    ← (D.extendedElementarySubgroup K).coe_subtype,
+    DoubleCoset.image_doubleCoset (D.extendedElementarySubgroup K).subtype,
+    ← Subgroup.coe_map,
+    Subgroup.map_subgroupOf_eq_of_le (D.borelSubgroup_le_extendedElementarySubgroup K),
+    Subgroup.subtype_apply, hnval]
 
 /-- If `D.weylProjection K n = w`, then `D.bruhatCell K w = B(K) n B(K)`. -/
 theorem bruhatCell_eq_doubleCoset {n : D.weylSubgroup K}
