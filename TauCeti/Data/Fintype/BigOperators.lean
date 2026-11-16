@@ -62,6 +62,17 @@ theorem sum_ite_eq_card_nsmul {ι M : Type*} [Fintype ι] [AddCommMonoid M] {p :
   rw [Fintype.card_subtype, ← sum_filter]
   exact sum_eq_card_nsmul fun i hi ↦ hf i (mem_filter.1 hi).2
 
+/-- Prescribing the values `a m ∈ s m` of the maps in a finite box at the coordinates `m` of a
+finset `I` leaves as many maps as the volume of the cells outside `I`. -/
+theorem card_filter_piFinset_forall_eq_of_forall_mem {ι : Type*} {κ : ι → Type*} [Fintype ι]
+    [DecidableEq ι] [∀ m, DecidableEq (κ m)] (s : ∀ m, Finset (κ m)) (I : Finset ι)
+    {a : ∀ m ∈ I, κ m} (ha : ∀ m (hm : m ∈ I), a m hm ∈ s m) :
+    #{h ∈ piFinset s | ∀ m (hm : m ∈ I), h m = a m hm} = ∏ m ∈ univ \ I, #(s m) := by
+  rw [show {h ∈ piFinset s | ∀ m (hm : m ∈ I), h m = a m hm} =
+      piFinset fun m ↦ if hm : m ∈ I then {a m hm} else s m by grind, card_piFinset,
+    ← prod_sdiff (subset_univ I), Finset.prod_eq_one (s := I) fun m hm ↦ by simp [hm], mul_one]
+  exact Finset.prod_congr rfl fun m hm ↦ by simp [(mem_sdiff.1 hm).2]
+
 /-- A sum of a function of two distinct coordinates over a finite box counts each pair
 of values once for every choice of the remaining coordinates. -/
 theorem sum_piFinset_apply_apply {ι κ M : Type*} [Fintype ι] [DecidableEq ι] [AddCommMonoid M]
@@ -72,17 +83,11 @@ theorem sum_piFinset_apply_apply {ι κ M : Type*} [Fintype ι] [DecidableEq ι]
   have hfib (p : κ × κ) (hp : p ∈ s i ×ˢ s j) :
       #{g ∈ piFinset s | (g i, g j) = p} = ∏ k ∈ univ \ {i, j}, #(s k) := by
     rw [mem_product] at hp
-    have hj : p.2 ∈ Function.update s i {p.1} j := by
-      simpa [Function.update_of_ne hij.symm] using hp.2
-    simp only [Prod.ext_iff, ← filter_filter]
-    rw [← piFinset_update_singleton_eq_filter_piFinset_eq s i hp.1,
-      ← piFinset_update_singleton_eq_filter_piFinset_eq _ j hj, card_piFinset]
-    simp_rw [Function.apply_update (fun _ ↦ Finset.card (α := κ))]
-    rw [prod_update_of_mem (mem_univ j), prod_update_of_mem (by simpa using hij)]
-    simp only [card_singleton, one_mul]
+    rw [← card_filter_piFinset_forall_eq_of_forall_mem s {i, j}
+      (a := fun m _ ↦ if m = i then p.1 else p.2) (by simp_all [hij.symm])]
     congr 1
-    ext k
-    simp [and_comm]
+    ext g
+    simp [Prod.ext_iff, hij.symm]
   rw [← sum_fiberwise_of_maps_to (g := fun g : ι → κ ↦ (g i, g j)) (t := s i ×ˢ s j)
     fun g hg ↦ mem_product.2 ⟨mem_piFinset.1 hg i, mem_piFinset.1 hg j⟩]
   calc ∑ p ∈ s i ×ˢ s j, ∑ g ∈ piFinset s with (g i, g j) = p, F (g i) (g j)
@@ -159,17 +164,6 @@ theorem sum_piFinset_eq_sum_filter_sum_sum_sum_update {ι κ M : Type*} [Fintype
   refine Finset.sum_congr rfl fun y _ ↦ Finset.sum_congr rfl fun z _ ↦ ?_
   rw [Function.update_comm hil.symm, Function.update_comm hjl.symm]
 
-/-- Prescribing the values `a m ∈ s m` of the maps in a finite box at the coordinates `m` of a
-finset `I` leaves as many maps as the volume of the cells outside `I`. -/
-theorem card_filter_piFinset_forall_eq_of_forall_mem {ι : Type*} {κ : ι → Type*} [Fintype ι]
-    [DecidableEq ι] [∀ m, DecidableEq (κ m)] (s : ∀ m, Finset (κ m)) (I : Finset ι)
-    {a : ∀ m ∈ I, κ m} (ha : ∀ m (hm : m ∈ I), a m hm ∈ s m) :
-    #{h ∈ piFinset s | ∀ m (hm : m ∈ I), h m = a m hm} = ∏ m ∈ univ \ I, #(s m) := by
-  rw [show {h ∈ piFinset s | ∀ m (hm : m ∈ I), h m = a m hm} =
-      piFinset fun m ↦ if hm : m ∈ I then {a m hm} else s m by grind, card_piFinset,
-    ← prod_sdiff (subset_univ I), Finset.prod_eq_one (s := I) fun m hm ↦ by simp [hm], mul_one]
-  exact Finset.prod_congr rfl fun m hm ↦ by simp [(mem_sdiff.1 hm).2]
-
 /-- The volume of a finite box is the number of maps in the box with prescribed values
 `a m ∈ s m` at the coordinates `m` of a finset `I`, times the volume of the cells on `I`. -/
 theorem prod_card_eq_card_filter_piFinset_mul_prod {ι : Type*} {κ : ι → Type*} [Fintype ι]
@@ -183,10 +177,7 @@ at the coordinate `i`, times the size of the cell at `i`. -/
 theorem prod_card_eq_card_filter_piFinset_mul {ι : Type*} {κ : ι → Type*} [Fintype ι]
     [DecidableEq ι] [∀ m, DecidableEq (κ m)] (s : ∀ m, Finset (κ m)) (i : ι) {a : κ i}
     (ha : a ∈ s i) : ∏ m, #(s m) = #{h ∈ piFinset s | h i = a} * #(s i) := by
-  rw [prod_card_eq_card_filter_piFinset_mul_prod s {i}
-    (a := fun m hm ↦ (mem_singleton.1 hm).symm ▸ a) (by grind), prod_singleton]
-  congr 2
-  grind
+  rw [card_filter_piFinset_eq_of_mem s i ha, prod_erase_mul _ _ (mem_univ i)]
 
 /-- The volume of a finite box is the number of maps in the box with prescribed values `a ∈ s i`
 and `b ∈ s j` at two distinct coordinates `i` and `j`, times the volume of the cells at those
