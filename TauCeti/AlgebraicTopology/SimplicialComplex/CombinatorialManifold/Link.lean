@@ -13,11 +13,12 @@ public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Stellar.Fa
 /-!
 # Links of faces in combinatorial manifolds
 
-A combinatorial `n`-manifold is defined by its vertex links: each is a combinatorial
-`(n - 1)`-sphere or ball. This file proves that then the link of *every* face `σ` is a
-combinatorial sphere or ball, of dimension `n - σ.card`
-(`IsCombinatorialManifold.isCombinatorialSphere_or_isCombinatorialBall_link`), that
-combinatorial balls and spheres are themselves combinatorial manifolds
+A combinatorial `n`-manifold is defined by its vertex links: for positive `n` each is a
+combinatorial `(n - 1)`-sphere or ball, and for `n = 0` each is void. This file proves that then
+the link of every face `σ` with at most `n` vertices is a combinatorial sphere or ball, of
+dimension `n - σ.card` (`IsCombinatorialManifold.isCombinatorialSphere_or_isCombinatorialBall_link`;
+faces with `n + 1` vertices have void link), that combinatorial balls and spheres are themselves
+combinatorial manifolds
 (`IsCombinatorialBall.isCombinatorialManifold`, `IsCombinatorialSphere.isCombinatorialManifold`),
 and that being a combinatorial manifold is invariant under stellar moves and intrinsic stellar
 equivalence (`isCombinatorialManifold_stellarSubdivision_iff`,
@@ -26,27 +27,28 @@ equivalence (`isCombinatorialManifold_stellarSubdivision_iff`,
 
 The three statements are proved together, by induction on the dimension.
 
-* Face links. For a face `σ ∋ w`, the link of `σ` is the link of `σ \ {w}` inside the link of
-  `w`, which is a combinatorial `(n - 1)`-sphere or ball, hence, by the lower-dimensional case, a
-  combinatorial `(n - 1)`-manifold.
+* Face links. For a face `σ ∋ w` with at most `n` vertices, the link of `σ` is the link of
+  `σ \ {w}` inside the link of `w`, which is a combinatorial `(n - 1)`-sphere or ball, hence, by
+  the lower-dimensional case, a combinatorial `(n - 1)`-manifold.
 * Stellar moves. Starring `σ` at a fresh vertex `v` replaces the link of each old vertex `w` by a
   starring of its old link, or leaves it alone, so inverse stellar moves preserve manifolds with
-  no further input. The new vertex has as link the join of the boundary of `σ`, a combinatorial
-  sphere, with the link of `σ` (`map_closedStar_inf_deletion_eq_join`); by the face-link step
-  this is a combinatorial sphere or ball of the right dimension. The case of a singleton `σ`,
-  where the new vertex just renames `w`, is separate.
+  no further input (`IsCombinatorialManifold.of_stellarSubdivision`). When `σ` has at most `n`
+  vertices and at least two, the new vertex has as link the join of the boundary of `σ`, a
+  combinatorial sphere, with the link of `σ` (`map_closedStar_inf_deletion_eq_join`); by the
+  face-link step this is a combinatorial sphere or ball of the right dimension. Two cases are
+  separate: a singleton `σ`, where the new vertex just renames `w`, and a top-dimensional face
+  (`σ.card = n + 1`), whose link is void (`IsCombinatorialManifold.stellarSubdivision_of_card`).
 * Balls and spheres. The standard simplex and the boundary of a simplex are combinatorial
   manifolds, and the manifold property is invariant under stellar moves and, by
   `PreAbstractSimplicialComplex.isCombinatorialManifold_map_iff`, under injective relabelings.
 
 ## Main results
 
-* `IsCombinatorialManifold.of_stellarSubdivision`: an inverse stellar move preserves
-  combinatorial manifolds.
-* `isCombinatorialSphere_or_isCombinatorialBall_link_stellarSubdivision_singleton`: the link of
-  the new vertex after starring a face with a sphere-or-ball link.
+* `isCombinatorialSphere_link_stellarSubdivision_singleton` and
+  `isCombinatorialBall_link_stellarSubdivision_singleton`: the link of the new vertex after
+  starring a face whose link is a combinatorial sphere, respectively ball.
 * `IsCombinatorialManifold.isCombinatorialSphere_or_isCombinatorialBall_link`: the link of a face
-  in a combinatorial manifold is a combinatorial sphere or ball.
+  with at most `n` vertices in a combinatorial `n`-manifold is a combinatorial sphere or ball.
 * `IsCombinatorialBall.isCombinatorialManifold` and `IsCombinatorialSphere.isCombinatorialManifold`.
 * `IsCombinatorialManifold.stellarSubdivision`: a stellar move preserves combinatorial manifolds.
 
@@ -69,58 +71,35 @@ namespace PreAbstractSimplicialComplex
 variable {ι : Type u} [DecidableEq ι] {K L : PreAbstractSimplicialComplex ι} {σ : Finset ι}
   {v : ι} {n : ℕ}
 
-/-! ### Inverse stellar moves -/
-
-/-- **Inverse stellar moves preserve combinatorial manifolds.** If starring a face of `K` at a
-fresh vertex gives a combinatorial `n`-manifold, then `K` is a combinatorial `n`-manifold. -/
-theorem IsCombinatorialManifold.of_stellarSubdivision (hσ : σ ∈ K)
-    (hv : ({v} : Finset ι) ∉ K) (h : IsCombinatorialManifold (stellarSubdivision K σ v) n) :
-    IsCombinatorialManifold K n := by
-  -- Every vertex link of `K` is stellar equivalent to a vertex link of the subdivision.
-  have key : ∀ ⦃w : ι⦄, ({w} : Finset ι) ∈ K → ∃ u, ({u} : Finset ι) ∈ stellarSubdivision K σ v ∧
-      StellarEquivalent (link K {w}) (link (stellarSubdivision K σ v) {u}) := by
-    intro w hw
-    have hvw : v ∉ ({w} : Finset ι) := notMem_singleton.mpr fun h => hv (h ▸ hw)
-    by_cases hσw : σ = {w}
-    · -- Starring a vertex renames it: the new vertex has the old link.
-      subst hσw
-      refine ⟨v, singleton_mem_stellarSubdivision_iff.mpr hσ, ?_⟩
-      rw [link_stellarSubdivision_singleton hv, closedStar_inf_deletion_singleton]
-    · have hsub : ¬ σ ⊆ {w} := fun h => hσw ((K.isRelLowerSet_faces hσ).1.subset_singleton_iff.mp h)
-      refine ⟨w, (mem_stellarSubdivision_iff_of_notMem hvw).mpr ⟨hw, hsub⟩, ?_⟩
-      rw [link_stellarSubdivision_of_notMem hvw]
-      by_cases hmem : σ \ {w} ∈ link K {w}
-      · exact stellarEquivalent_stellarSubdivision hmem (notMem_link_of_notMem hv)
-      · rw [stellarSubdivision_eq_self_of_notMem (notMem_link_of_notMem hv)
-          (sdiff_nonempty.mpr hsub) hmem]
-  cases n with
-  | zero =>
-    refine isCombinatorialManifold_zero_iff.mpr fun w hw => ?_
-    obtain ⟨u, hu, he⟩ := key hw
-    by_contra hne
-    exact he.symm.ne_bot hne (isCombinatorialManifold_zero_iff.mp h hu)
-  | succ n =>
-    refine isCombinatorialManifold_succ_iff.mpr fun w hw => ?_
-    obtain ⟨u, hu, he⟩ := key hw
-    exact (isCombinatorialManifold_succ_iff.mp h hu).imp
-      (·.of_stellarEquivalentUpToRelabeling he.stellarEquivalentUpToRelabeling)
-      (·.of_stellarEquivalentUpToRelabeling he.stellarEquivalentUpToRelabeling)
-
 /-! ### The link of the new vertex -/
 
-/-- **The link of a new stellar vertex.** Starring a face `σ` with `k + 2` vertices whose link is
-a combinatorial `m`-sphere or ball gives a new vertex whose link, the join of the boundary of `σ`
-with the link of `σ`, is a combinatorial `(k + m + 1)`-sphere or ball. -/
-theorem isCombinatorialSphere_or_isCombinatorialBall_link_stellarSubdivision_singleton
-    (hσ : σ ∈ K) (hv : ({v} : Finset ι) ∉ K) {k m : ℕ} (hk : σ.card = k + 2)
-    (hlink : IsCombinatorialSphere (link K σ) m ∨ IsCombinatorialBall (link K σ) m) :
-    IsCombinatorialSphere (link (stellarSubdivision K σ v) {v}) (k + m + 1) ∨
-      IsCombinatorialBall (link (stellarSubdivision K σ v) {v}) (k + m + 1) := by
+/-- **The link of a new stellar vertex, interior case.** Starring a set `σ` with `k + 2`
+vertices whose link is a combinatorial `m`-sphere gives a new vertex whose link, the join of the
+boundary of `σ` with the link of `σ`, is a combinatorial `(k + m + 1)`-sphere. -/
+theorem isCombinatorialSphere_link_stellarSubdivision_singleton (hv : ({v} : Finset ι) ∉ K)
+    {k m : ℕ} (hk : σ.card = k + 2) (hlink : IsCombinatorialSphere (link K σ) m) :
+    IsCombinatorialSphere (link (stellarSubdivision K σ v) {v}) (k + m + 1) := by
+  have hσ : σ ∈ K := by
+    by_contra hσ
+    exact hlink.ne_bot (link_eq_bot_of_notMem (card_pos.mp (by omega)) hσ)
   have hf := (partitionEmbedding (· ∈ σ)).injective
   rw [link_stellarSubdivision_singleton hv, ← isCombinatorialSphere_map_iff hf,
-    ← isCombinatorialBall_map_iff hf, map_closedStar_inf_deletion_eq_join hσ]
-  have hbd : IsCombinatorialSphere (simplexBoundary σ) k := isCombinatorialSphere_simplexBoundary hk
-  exact hlink.imp hbd.join hbd.join_ball
+    map_closedStar_inf_deletion_eq_join hσ]
+  exact (isCombinatorialSphere_simplexBoundary hk).join hlink
+
+/-- **The link of a new stellar vertex, boundary case.** Starring a set `σ` with `k + 2`
+vertices whose link is a combinatorial `m`-ball gives a new vertex whose link, the join of the
+boundary of `σ` with the link of `σ`, is a combinatorial `(k + m + 1)`-ball. -/
+theorem isCombinatorialBall_link_stellarSubdivision_singleton (hv : ({v} : Finset ι) ∉ K)
+    {k m : ℕ} (hk : σ.card = k + 2) (hlink : IsCombinatorialBall (link K σ) m) :
+    IsCombinatorialBall (link (stellarSubdivision K σ v) {v}) (k + m + 1) := by
+  have hσ : σ ∈ K := by
+    by_contra hσ
+    exact hlink.ne_bot (link_eq_bot_of_notMem (card_pos.mp (by omega)) hσ)
+  have hf := (partitionEmbedding (· ∈ σ)).injective
+  rw [link_stellarSubdivision_singleton hv, ← isCombinatorialBall_map_iff hf,
+    map_closedStar_inf_deletion_eq_join hσ]
+  exact (isCombinatorialSphere_simplexBoundary hk).join_ball hlink
 
 /-- A stellar move preserves a combinatorial `n`-manifold once the link of the starred face is
 known to be a combinatorial sphere or ball of the expected dimension. -/
@@ -144,14 +123,15 @@ private theorem IsCombinatorialManifold.stellarSubdivision_of_link
       exact isCombinatorialManifold_succ_iff.mp h hσ
     · have hm : k + (m + 1 - σ.card) + 1 = m := by omega
       rw [← hm]
-      exact isCombinatorialSphere_or_isCombinatorialBall_link_stellarSubdivision_singleton hσ hv
-        hk (hlink (by omega))
+      exact (hlink (by omega)).imp (isCombinatorialSphere_link_stellarSubdivision_singleton hv hk)
+        (isCombinatorialBall_link_stellarSubdivision_singleton hv hk)
   · exact h.stellarSubdivision_of_card hσ heq hv
 
 /-! ### Links of faces -/
 
-/-- The link of a face of a combinatorial `n`-manifold is a combinatorial sphere or ball, given
-that combinatorial balls and spheres of lower dimension are combinatorial manifolds. -/
+/-- The link of a face with at most `n` vertices of a combinatorial `n`-manifold is a
+combinatorial sphere or ball, given that combinatorial balls and spheres of lower dimension are
+combinatorial manifolds. -/
 private theorem link_of_forall_lt
     (hM : ∀ m < n, ∀ L : PreAbstractSimplicialComplex ι,
       IsCombinatorialSphere L m ∨ IsCombinatorialBall L m → IsCombinatorialManifold L m)
@@ -196,7 +176,7 @@ private theorem isCombinatorialManifold_iff_of_forall_lt
     obtain ⟨σ, v, hσ, hv, rfl⟩ := isStellarMove_iff.mp hAB
     exact ⟨fun h => h.stellarSubdivision_of_link hσ hv fun hcard =>
       link_of_forall_lt (fun m hm L hL => hM m hm L hL) h hσ hcard,
-      IsCombinatorialManifold.of_stellarSubdivision hσ hv⟩
+      .of_stellarSubdivision (A.isRelLowerSet_faces hσ).1 hv⟩
   refine h.induction_on
     (P := fun A B => IsCombinatorialManifold A n ↔ IsCombinatorialManifold B n)
     (fun A B f g he => ?_) (fun _ => Iff.rfl) (fun _ _ h => h.symm) (fun _ _ _ h h' => h.trans h')
@@ -218,14 +198,14 @@ private theorem isCombinatorialManifold_of_isCombinatorialSphere_or_isCombinator
     exact (isCombinatorialManifold_iff_of_forall_lt (fun m hm _ _ L hL => ihn m hm L hL) he).mpr
       (isCombinatorialManifold_simplex hV)
 
-/-- **A combinatorial `n`-sphere is a combinatorial `n`-manifold**: the link of each of its
-vertices is a combinatorial `(n - 1)`-sphere or ball. -/
+/-- **A combinatorial `n`-sphere is a combinatorial `n`-manifold**: for positive `n` the link of
+each of its vertices is a combinatorial `(n - 1)`-sphere or ball, and for `n = 0` it is void. -/
 theorem IsCombinatorialSphere.isCombinatorialManifold (h : IsCombinatorialSphere K n) :
     IsCombinatorialManifold K n :=
   isCombinatorialManifold_of_isCombinatorialSphere_or_isCombinatorialBall n K (Or.inl h)
 
-/-- **A combinatorial `n`-ball is a combinatorial `n`-manifold**: the link of each of its
-vertices is a combinatorial `(n - 1)`-sphere or ball. -/
+/-- **A combinatorial `n`-ball is a combinatorial `n`-manifold**: for positive `n` the link of
+each of its vertices is a combinatorial `(n - 1)`-sphere or ball, and for `n = 0` it is void. -/
 theorem IsCombinatorialBall.isCombinatorialManifold (h : IsCombinatorialBall K n) :
     IsCombinatorialManifold K n :=
   isCombinatorialManifold_of_isCombinatorialSphere_or_isCombinatorialBall n K (Or.inr h)
@@ -242,19 +222,27 @@ theorem IsCombinatorialManifold.isCombinatorialSphere_or_isCombinatorialBall_lin
 
 /-! ### Stellar invariance -/
 
-/-- **Stellar moves preserve combinatorial manifolds**: starring a face of a combinatorial
-`n`-manifold at a fresh vertex gives a combinatorial `n`-manifold. -/
+/-- **Stellar moves preserve combinatorial manifolds**: starring a combinatorial `n`-manifold at
+a fresh vertex gives a combinatorial `n`-manifold. -/
 theorem IsCombinatorialManifold.stellarSubdivision (h : IsCombinatorialManifold K n)
-    (hσ : σ ∈ K) (hv : ({v} : Finset ι) ∉ K) :
-    IsCombinatorialManifold (stellarSubdivision K σ v) n :=
-  h.stellarSubdivision_of_link hσ hv fun hcard =>
-    h.isCombinatorialSphere_or_isCombinatorialBall_link hσ hcard
+    (hv : ({v} : Finset ι) ∉ K) : IsCombinatorialManifold (stellarSubdivision K σ v) n := by
+  by_cases hσK : σ ∈ K
+  · exact h.stellarSubdivision_of_link hσK hv fun hcard =>
+      h.isCombinatorialSphere_or_isCombinatorialBall_link hσK hcard
+  rcases σ.eq_empty_or_nonempty with rfl | hσ
+  · -- Starring at the empty set gives the void complex, which has no vertices.
+    rw [stellarSubdivision_empty]
+    cases n
+    · exact isCombinatorialManifold_zero_iff.mpr fun _ hw => hw.elim
+    · exact isCombinatorialManifold_succ_iff.mpr fun _ hw => hw.elim
+  · rwa [stellarSubdivision_eq_self_of_notMem hv hσ hσK]
 
-/-- Starring a face at a fresh vertex preserves and reflects combinatorial manifolds. -/
-theorem isCombinatorialManifold_stellarSubdivision_iff (hσ : σ ∈ K)
+/-- Starring a nonempty set at a fresh vertex preserves and reflects combinatorial manifolds. -/
+@[simp]
+theorem isCombinatorialManifold_stellarSubdivision_iff (hσ : σ.Nonempty)
     (hv : ({v} : Finset ι) ∉ K) :
     IsCombinatorialManifold (stellarSubdivision K σ v) n ↔ IsCombinatorialManifold K n :=
-  ⟨.of_stellarSubdivision hσ hv, fun h => h.stellarSubdivision hσ hv⟩
+  ⟨.of_stellarSubdivision hσ hv, fun h => h.stellarSubdivision hv⟩
 
 /-- Intrinsically stellar equivalent complexes are combinatorial `n`-manifolds together. -/
 theorem StellarEquivalentUpToRelabeling.isCombinatorialManifold_iff
