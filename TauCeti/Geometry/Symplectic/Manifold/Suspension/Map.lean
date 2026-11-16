@@ -56,8 +56,6 @@ the pseudoholomorphic curves of one suspension to those of the other
 
 All declarations are in the namespace `TauCeti.SmoothMappingTorus`.
 
-* `prodMap_map_suspensionCover`: the induced map of suspensions lifts to `id × g` along the
-  covering maps.
 * `isPseudoholomorphicAt_prodMap_map_suspensionCover_iff`,
   `isPseudoholomorphic_prodMap_map_suspensionAlmostComplexStructure_iff`: the induced map of
   suspensions is pseudoholomorphic for the descended block structures, at a point or everywhere,
@@ -88,13 +86,6 @@ variable {E H M E' H' N : Type*}
   [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
   {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]
   {φ : M ≃ₘ⟮I, I⟯ M} {ψ : N ≃ₘ⟮J, J⟯ N}
-
-/-- The map `(θ, [t, x]) ↦ (θ, [t, g x])` of suspensions induced by a map `g` intertwining `φ` and
-`ψ` lifts along the covering maps to `((s, t), x) ↦ ((s, t), g x)`. -/
-theorem prodMap_map_suspensionCover {g : M → N} (h : Semiconj g φ ψ) (p : (ℝ × ℝ) × M) :
-    Prod.map id (map φ ψ g h) (suspensionCover φ p) = suspensionCover ψ (Prod.map id g p) := by
-  obtain ⟨⟨s, t⟩, x⟩ := p
-  simp
 
 variable [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M] [LocallyCompactSpace M]
   [FiniteDimensional ℝ E'] [IsManifold J ∞ N] [T2Space N] [LocallyCompactSpace N]
