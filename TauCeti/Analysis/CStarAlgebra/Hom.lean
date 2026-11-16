@@ -11,9 +11,10 @@ public import TauCeti.Topology.Algebra.Ring.TwoSidedIdeal
 /-!
 # Topological properties of C⋆-algebra homomorphisms and equivalences
 
-A `⋆`-algebra homomorphism between complex C⋆-algebras is automatically continuous, so its
-two-sided ideal kernel is closed (`NonUnitalStarAlgHom.isClosed_ker`, stated for any morphism
-class, so it covers unital `⋆`-homomorphisms and `⋆`-equivalences as well).
+A `⋆`-algebra homomorphism between complex C⋆-algebras is automatically continuous and contractive,
+so it bundles as a continuous linear map (`NonUnitalStarAlgHom.toContinuousLinearMap`, with operator
+norm at most one) and its two-sided ideal kernel is closed (`NonUnitalStarAlgHom.isClosed_ker`),
+stated for any morphism class so both cover unital `⋆`-homomorphisms and `⋆`-equivalences as well.
 A `⋆`-algebra equivalence of complex C⋆-algebras is isometric (`StarAlgEquiv.isometry`), so it
 bundles as a continuous linear equivalence `StarAlgEquiv.toContinuousLinearEquiv`.
 -/
@@ -30,6 +31,31 @@ open scoped CStarAlgebra in
 in any morphism class) is closed. -/
 instance isClosed_ker : IsClosed (TwoSidedIdeal.ker φ : Set A) :=
   TwoSidedIdeal.isClosed_ker (map_continuous φ)
+
+open scoped CStarAlgebra in
+/-- Any `⋆`-homomorphism between complex C⋆-algebras (unital or not, and in any morphism class)
+bundled as a continuous complex linear map. -/
+def toContinuousLinearMap : A →L[ℂ] B where
+  toFun := φ
+  map_add' := map_add φ
+  map_smul' := map_smul φ
+  cont := map_continuous φ
+
+/-- The underlying function of `toContinuousLinearMap φ` is `φ`. -/
+@[simp]
+theorem coe_toContinuousLinearMap : ⇑(toContinuousLinearMap φ) = φ :=
+  (rfl)
+
+/-- Applying `toContinuousLinearMap φ` evaluates `φ`. -/
+theorem toContinuousLinearMap_apply (a : A) : toContinuousLinearMap φ a = φ a :=
+  (rfl)
+
+open scoped CStarAlgebra in
+/-- Any `⋆`-homomorphism between complex C⋆-algebras is a contraction as a continuous linear
+map. -/
+theorem norm_toContinuousLinearMap_le : ‖toContinuousLinearMap φ‖ ≤ 1 :=
+  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun a => by
+    simpa only [toContinuousLinearMap_apply, one_mul] using norm_apply_le φ a
 
 end NonUnitalStarAlgHom
 

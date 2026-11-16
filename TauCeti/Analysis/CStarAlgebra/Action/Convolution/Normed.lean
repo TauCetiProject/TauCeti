@@ -63,6 +63,16 @@ def toL1 : ConvolutionAlgebra α μ →ₗ[ℂ] Lp A 1 μ where
     simpa only [ofConv_smul, CompactlySupportedContinuousMap.coe_smul, RingHom.id_apply] using
       Integrable.toL1_smul' (f.ofConv : G → A) f.ofConv.integrable c
 
+/-- `toL1` sends `f` to the Bochner `L¹` class of `f.ofConv`. -/
+theorem toL1_apply (f : ConvolutionAlgebra α μ) : toL1 f = f.ofConv.integrable.toL1 f.ofConv :=
+  (rfl)
+
+/-- `toL1` on `toConv f` is the Bochner `L¹` class of `f : C_c(G, A)`. -/
+@[simp]
+theorem toL1_toConv (f : C_c(G, A)) :
+    toL1 (toConv f : ConvolutionAlgebra α μ) = f.integrable.toL1 f :=
+  (rfl)
+
 /-- The L¹ class of a convolution coefficient is represented by its underlying function. -/
 theorem coeFn_toL1 (f : ConvolutionAlgebra α μ) : toL1 f =ᵐ[μ] f.ofConv :=
   f.ofConv.integrable.coeFn_toL1
@@ -100,6 +110,11 @@ def toL1LI : ConvolutionAlgebra α μ →ₗᵢ[ℂ] Lp A 1 μ where
 @[simp]
 theorem toL1LI_apply (f : ConvolutionAlgebra α μ) : toL1LI α μ f = toL1 f :=
   (rfl)
+
+/-- `toL1` preserves norms. -/
+@[simp]
+theorem norm_toL1 (f : ConvolutionAlgebra α μ) : ‖toL1 f‖ = ‖f‖ := by
+  rw [← toL1LI_apply, LinearIsometry.norm_map]
 
 section Multiplication
 
