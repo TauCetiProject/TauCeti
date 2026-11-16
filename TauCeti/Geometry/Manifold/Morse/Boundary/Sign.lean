@@ -72,6 +72,8 @@ in the namespace `TauCeti.IsAdaptedPseudoGradient`).
 In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 
 * `trajectoryComparison`: the comparison map `Vp → ℝ × Vq` at a point of a trajectory.
+* `TauCeti.MorseChart.flowNormalOrientation`: the orientation of `ℝ × Vq` given by the standard
+  orientation of `ℝ` followed by `oq`, against which the comparison map is measured.
 * `trajectorySign`: the sign of the trajectory through a point.
 * `signedTrajectoryCount`: the number of trajectories from `p` to `q` counted with signs.
 
@@ -117,17 +119,54 @@ namespace MorseChart
 variable {x : M} (φ : MorseChart E f x)
 
 /-- The orientation of `ℝ × V`, for `V` the space of coordinates of negative weight of a Morse
+chart at `q`, given by the standard orientation of `ℝ` followed by an orientation `oq` of `V`. In
+the comparison maps of trajectories ending at `q`, the factor `ℝ` measures the derivative of `f`,
+which is positive on the negative-flow direction, and `V` the normal coordinates of the stable
+manifold of `q`. -/
+noncomputable def flowNormalOrientation
+    (oq : Orientation ℝ ({i // φ.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f x))) :
+    Orientation ℝ (ℝ × ({i // φ.weight i < 0} → ℝ))
+      (Fin (1 + manifoldMorseIndex 𝓘(ℝ, E) f x)) :=
+  (Module.Basis.singleton (Fin 1) ℝ).orientation.prod oq (Module.finrank_self ℝ)
+    φ.finrank_negativeWeight_fun
+
+/-- The defining formula of `TauCeti.MorseChart.flowNormalOrientation`. -/
+theorem flowNormalOrientation_def
+    (oq : Orientation ℝ ({i // φ.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f x))) :
+    φ.flowNormalOrientation oq =
+      (Module.Basis.singleton (Fin 1) ℝ).orientation.prod oq (Module.finrank_self ℝ)
+        φ.finrank_negativeWeight_fun :=
+  (rfl)
+
+/-- Reversing `oq` reverses the orientation of `ℝ × V`. -/
+@[simp]
+theorem flowNormalOrientation_neg
+    (oq : Orientation ℝ ({i // φ.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f x))) :
+    φ.flowNormalOrientation (-oq) = -φ.flowNormalOrientation oq := by
+  rw [flowNormalOrientation_def, Orientation.prod_neg_right, flowNormalOrientation_def]
+
+/-- Transporting `oq` to the coordinates of negative weight of another Morse chart `φ'` at the
+same point, along a linear isomorphism `e`, transports the orientation of `ℝ × V` along the
+isomorphism `id × e`. -/
+theorem flowNormalOrientation_map (φ' : MorseChart E f x)
+    (e : ({i // φ.weight i < 0} → ℝ) ≃ₗ[ℝ] ({i // φ'.weight i < 0} → ℝ))
+    (oq : Orientation ℝ ({i // φ.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f x))) :
+    φ'.flowNormalOrientation (Orientation.map _ e oq) =
+      Orientation.map _ ((LinearEquiv.refl ℝ ℝ).prodCongr e) (φ.flowNormalOrientation oq) := by
+  rw [flowNormalOrientation_def, flowNormalOrientation_def, Orientation.map_prod,
+    Orientation.map_refl, Equiv.refl_apply]
+
+/-- The orientation of `ℝ × V`, for `V` the space of coordinates of negative weight of a Morse
 chart at `q`, against which the signs of the trajectories from a critical point `p` of index
-`ind q + 1` to `q` are measured: the standard orientation of `ℝ` followed by `oq`, indexed by
-`Fin (ind p)`. -/
+`ind q + 1` to `q` are measured: the orientation `TauCeti.MorseChart.flowNormalOrientation`, the
+standard orientation of `ℝ` followed by `oq`, indexed by `Fin (ind p)`. -/
 noncomputable def trajectoryTargetOrientation {p : M}
     (oq : Orientation ℝ ({i // φ.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f x)))
     (hpq : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f x + 1) :
     Orientation ℝ (ℝ × ({i // φ.weight i < 0} → ℝ)) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f p)) :=
   Orientation.reindex ℝ _
     (finCongr (by omega : 1 + manifoldMorseIndex 𝓘(ℝ, E) f x = manifoldMorseIndex 𝓘(ℝ, E) f p))
-    ((Module.Basis.singleton (Fin 1) ℝ).orientation.prod oq (Module.finrank_self ℝ)
-      φ.finrank_negativeWeight_fun)
+    (φ.flowNormalOrientation oq)
 
 variable {p : M}
   {oq : Orientation ℝ ({i // φ.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f x))}
@@ -137,15 +176,14 @@ variable {p : M}
 theorem trajectoryTargetOrientation_def :
     φ.trajectoryTargetOrientation oq hpq = Orientation.reindex ℝ _
       (finCongr (by omega : 1 + manifoldMorseIndex 𝓘(ℝ, E) f x = manifoldMorseIndex 𝓘(ℝ, E) f p))
-      ((Module.Basis.singleton (Fin 1) ℝ).orientation.prod oq (Module.finrank_self ℝ)
-        φ.finrank_negativeWeight_fun) :=
+      (φ.flowNormalOrientation oq) :=
   (rfl)
 
 /-- The target orientation of the reversed orientation is the reversed target orientation. -/
 @[simp]
 theorem trajectoryTargetOrientation_neg :
     φ.trajectoryTargetOrientation (-oq) hpq = -φ.trajectoryTargetOrientation oq hpq := by
-  rw [trajectoryTargetOrientation_def, Orientation.prod_neg_right, Orientation.reindex_neg,
+  rw [trajectoryTargetOrientation_def, flowNormalOrientation_neg, Orientation.reindex_neg,
     trajectoryTargetOrientation_def]
 
 /-- Every orientation of `ℝ × V` agrees with the target orientation or with its reverse. -/
@@ -165,7 +203,7 @@ theorem trajectoryTargetOrientation_map (φ' : MorseChart E f x)
       Orientation.map _ ((LinearEquiv.refl ℝ ℝ).prodCongr e)
         (φ.trajectoryTargetOrientation oq hpq) := by
   rw [trajectoryTargetOrientation_def, trajectoryTargetOrientation_def, Orientation.map_reindex,
-    Orientation.map_prod, Orientation.map_refl, Equiv.refl_apply]
+    flowNormalOrientation_map]
 
 end MorseChart
 
