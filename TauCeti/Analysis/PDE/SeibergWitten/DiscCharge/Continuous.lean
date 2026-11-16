@@ -102,8 +102,7 @@ theorem integral_cutoffCurrent_comp_closedBall_eq_two_pi_mul_degree_of_dist_lt {
         (cutoffCurrent χ b α (σ' z)).compContinuousLinearMap (fderiv ℝ σ' z) ![1, I] =
       2 * π * Circle.degree u.toBasedLoop := by
   have hsph (ζ : Circle) : z₀ + r * (ζ : ℂ) ∈ Metric.sphere z₀ r := by
-    rw [mem_sphere_iff_norm, add_sub_cancel_left, norm_mul, Circle.norm_coe, mul_one,
-      Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg hr]
+    simp [abs_of_nonneg hr]
   -- The segment from `σ z` to `σ' z` stays in the `δ`-neighbourhood, where `α` has no zero.
   have hseg (s : unitInterval) {z : ℂ} (hz : z ∈ Metric.sphere z₀ r) :
       σ z + (s : ℝ) • (σ' z - σ z) ∈ Metric.thickening δ (σ '' Metric.sphere z₀ r) := by
@@ -116,7 +115,8 @@ theorem integral_cutoffCurrent_comp_closedBall_eq_two_pi_mul_degree_of_dist_lt {
     ne_zero_of_cutoff_eq_one hχ₀ (hδ _ (hseg s hz))
   have hσ'U {z : ℂ} (hz : z ∈ Metric.sphere z₀ r) :
       σ' z ∈ Metric.thickening δ (σ '' Metric.sphere z₀ r) := by
-    simpa using hseg 1 hz
+    have h := hseg 1 hz
+    rwa [Set.Icc.coe_one, one_smul, add_sub_cancel] at h
   have hσc : Continuous fun ζ : Circle ↦ σ (z₀ + r * ζ) :=
     hσ.comp_continuous (by fun_prop) hsph
   let F : C(unitInterval × Circle, ℂ) :=

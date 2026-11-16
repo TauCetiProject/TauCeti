@@ -171,16 +171,17 @@ theorem windingNumber_comp_circleMap_eq_degree_toBasedLoop {f : ℂ → ℂ} {c 
       continuous_toFun := hf.continuous.comp (continuous_const.mul continuous_subtype_val)
       source' := rfl
       target' := hclosed.symm }
+  have hΓ_apply (t : I) : Γ t = γ (2 * Real.pi * t) := rfl
   have hΓ : EqOn Γ.extend (γ ∘ fun t ↦ 2 * Real.pi * t) (uIoo 0 1) := fun t ht ↦ by
-    rw [Path.extend_apply Γ (Ioo_subset_Icc_self (by simpa using ht))]
-    simp [Γ]
+    rw [Path.extend_apply Γ (Ioo_subset_Icc_self (by simpa using ht)), hΓ_apply,
+      Function.comp_apply]
   rw [← windingNumber_congr_curve hΓ]
   refine windingNumber_eq_degree_of_eq_div_norm Γ u.toBasedLoop ?_ (fun t ↦ hne _) fun t ↦ ?_
   · refine (IsPiecewiseC1On.of_contDiffOn (γ := γ ∘ fun t ↦ 2 * Real.pi * t)
       (hf.comp (contDiff_const.mul contDiff_id)).contDiffOn).congr fun t ht ↦ ?_
-    rw [Path.extend_apply Γ (by simpa [uIcc_of_le zero_le_one] using ht)]
-    rfl
-  · rw [ContinuousMap.toBasedLoop_apply, hu, TauCeti.unitToCircle_apply, ← hcirc, sub_zero]
-    rfl
+    rw [Path.extend_apply Γ (by simpa [uIcc_of_le zero_le_one] using ht), hΓ_apply,
+      Function.comp_apply]
+  · rw [ContinuousMap.toBasedLoop_apply, hu, TauCeti.unitToCircle_apply, ← hcirc, sub_zero,
+      hΓ_apply, hγdef, Function.comp_apply]
 
 end TauCeti.Contour
