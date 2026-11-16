@@ -546,7 +546,7 @@ theorem tendsto_primeSummatory_inv_absNorm_sub_log_log :
 
 /-- Over `ℚ`, the sum of a weight depending only on the norm over the primes of norm at most `x` is
 the corresponding sum over the rational primes in `Nat.primesLE ⌊x⌋₊`. -/
-theorem primeSummatory_rat_eq_sum_primesLE (f : ℕ → ℝ) (x : ℝ) :
+theorem primeSummatory_rat_eq_sum_primesLE {M : Type*} [AddCommMonoid M] (f : ℕ → M) (x : ℝ) :
     primeSummatory ℚ (fun v ↦ f (Ideal.absNorm v.asIdeal)) x = ∑ p ∈ Nat.primesLE ⌊x⌋₊, f p := by
   have hprime (v : IsDedekindDomain.HeightOneSpectrum (𝓞 ℚ)) : (Ideal.absNorm v.asIdeal).Prime := by
     rw [Rat.HeightOneSpectrum.absNorm_asIdeal]
