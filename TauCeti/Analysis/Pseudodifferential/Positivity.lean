@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Algebra.StrictPositivity
 public import Mathlib.Analysis.InnerProductSpace.Positive
 public import TauCeti.Analysis.Pseudodifferential.Recovery
-public import TauCeti.Analysis.Pseudodifferential.Rpow
+public import TauCeti.Analysis.Pseudodifferential.StrictlyPositive
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Classical
 import TauCeti.Analysis.Distribution.AELeOfIntegral
 
