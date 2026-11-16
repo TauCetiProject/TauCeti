@@ -16,11 +16,11 @@ carries the external semidirect product `H ⋊ K` into `G` (`SemidirectProduct.m
 its image is the join `H ⊔ K`, and it is injective precisely when `H` and `K` are disjoint. The
 corresponding elementwise normal form of `H ⊔ K` is
 `Subgroup.mem_sup_of_right_le_normalizer_left` in `TauCeti.Algebra.Group.Subgroup.Pointwise`.
-When `H` is normal and `H.IsComplement' K`, the isomorphism `SemidirectProduct.mulEquivSubgroup`
-is inverse to the complement decomposition `Subgroup.IsComplement.equiv`, and its right component
-factors through `QuotientGroup.mk' H` and `Subgroup.IsComplement'.QuotientMulEquiv`.
-An invariant normal subgroup of the first factor is normal in the full semidirect product
-(`Subgroup.normal_map_inl`).
+When `D` is a complement of the normal subgroup `N`, the inverse of Mathlib's isomorphism
+`SemidirectProduct.mulEquivSubgroup : N ⋊ D ≃* G` is the unique decomposition `g = n * d` of
+`Subgroup.IsComplement.equiv`, and its right component factors through `QuotientGroup.mk' N` and
+`Subgroup.IsComplement'.QuotientMulEquiv`. An invariant normal subgroup of the first factor is
+normal in the full semidirect product (`Subgroup.normal_map_inl`).
 
 ## Main results
 
@@ -35,11 +35,12 @@ An invariant normal subgroup of the first factor is normal in the full semidirec
   and is trivial if and only if `Disjoint H K`.
 * `SemidirectProduct.ker_monoidHomSubgroup_le_ker_lift_iff`: an external lift kills this kernel
   exactly when the two maps agree on the intersection.
-* `SemidirectProduct.toEquiv_mulEquivSubgroup_symm` and
-  `SemidirectProduct.mulEquivSubgroup_symm_eq_inl_mul_inr`: the inverse of
-  `SemidirectProduct.mulEquivSubgroup` agrees with `Subgroup.IsComplement.equiv`.
+* `SemidirectProduct.mulEquivSubgroup_symm_trans_equivProd` and
+  `SemidirectProduct.mulEquivSubgroup_symm_eq_inl_mul_inr`: for a complement `D` of a normal
+  subgroup `N`, the inverse of `N ⋊ D ≃* G` followed by `SemidirectProduct.equivProd` is the
+  complement decomposition `G ≃ N × D`.
 * `SemidirectProduct.rightHom_comp_mulEquivSubgroup_symm`: projecting the inverse of
-  `SemidirectProduct.mulEquivSubgroup` to `K` factors through `G ⧸ H`.
+  `SemidirectProduct.mulEquivSubgroup` to `D` factors through `G ⧸ N`.
 -/
 
 public section
@@ -96,6 +97,111 @@ theorem ker_rightHom_sup_range_inr {N Q : Type*} [Group N] [Group Q] {φ : Q →
   refine top_unique fun x _ ↦ ?_
   rw [← inl_left_mul_inr_right x]
   exact Subgroup.mul_mem_sup (by rw [← range_inl_eq_ker_rightHom]; exact ⟨_, rfl⟩) ⟨_, rfl⟩
+
+section mulEquivSubgroup
+
+variable {N : Subgroup G} [N.Normal] {D : Subgroup G} (h : N.IsComplement' D)
+
+/-- The inverse of `mulEquivSubgroup h` sends `g` to its complement decomposition `g = n * d`,
+read as a pair in the semidirect product. -/
+theorem mulEquivSubgroup_symm_apply_eq (g : G) :
+    (mulEquivSubgroup h).symm g = equivProd.symm (h.equiv g) := by
+  apply (mulEquivSubgroup h).injective
+  rw [MulEquiv.apply_symm_apply, mulEquivSubgroup_apply]
+  exact (h.equiv_fst_mul_equiv_snd g).symm
+
+/-- The normal component of `(mulEquivSubgroup h).symm g` is the `N`-factor of `g = n * d`. -/
+theorem mulEquivSubgroup_symm_apply_left (g : G) :
+    ((mulEquivSubgroup h).symm g).left = (h.equiv g).1 := by
+  rw [mulEquivSubgroup_symm_apply_eq, equivProd_symm_apply_left]
+
+/-- The acting component of `(mulEquivSubgroup h).symm g` is the `D`-factor of `g = n * d`. -/
+theorem mulEquivSubgroup_symm_apply_right (g : G) :
+    ((mulEquivSubgroup h).symm g).right = (h.equiv g).2 := by
+  rw [mulEquivSubgroup_symm_apply_eq, equivProd_symm_apply_right]
+
+/-- The isomorphism `N ⋊ D ≃* G` of complementary subgroups is inverse to the complement
+decomposition: its inverse, followed by the identification of `N ⋊ D` with `N × D` as types, is
+`Subgroup.IsComplement.equiv`. -/
+theorem mulEquivSubgroup_symm_trans_equivProd :
+    (mulEquivSubgroup h).symm.toEquiv.trans equivProd = h.equiv :=
+  Equiv.ext fun g =>
+    (congrArg equivProd (mulEquivSubgroup_symm_apply_eq h g)).trans (equivProd.apply_symm_apply _)
+
+/-- Evaluating `(mulEquivSubgroup h).symm` decomposes a group element into its normal and
+complementary factors inside the semidirect product. -/
+theorem mulEquivSubgroup_symm_eq_inl_mul_inr (g : G) :
+    (mulEquivSubgroup h).symm g = inl (h.equiv g).1 * inr (h.equiv g).2 := by
+  rw [← mulEquivSubgroup_symm_apply_left, ← mulEquivSubgroup_symm_apply_right,
+    inl_left_mul_inr_right]
+
+/-- Restricting `mulEquivSubgroup` to the left factor gives the subgroup inclusion. -/
+@[simp]
+theorem mulEquivSubgroup_comp_inl :
+    (MonoidHom.ofClass (mulEquivSubgroup h)).comp inl = N.subtype := by
+  ext a
+  simp
+
+/-- Restricting `mulEquivSubgroup` to the right factor gives the subgroup inclusion. -/
+@[simp]
+theorem mulEquivSubgroup_comp_inr :
+    (MonoidHom.ofClass (mulEquivSubgroup h)).comp inr = D.subtype := by
+  ext b
+  simp
+
+/-- The inverse of `mulEquivSubgroup` sends an element of the normal subgroup to the left
+factor. -/
+theorem mulEquivSubgroup_symm_coe_left (a : N) :
+    (mulEquivSubgroup h).symm (a : G) = inl a := by
+  rw [MulEquiv.symm_apply_eq]
+  simp
+
+/-- The inverse of `mulEquivSubgroup` sends an element of the complement to the right factor. -/
+theorem mulEquivSubgroup_symm_coe_right (b : D) :
+    (mulEquivSubgroup h).symm (b : G) = inr b := by
+  rw [MulEquiv.symm_apply_eq]
+  simp
+
+/-- Restricting `(mulEquivSubgroup h).symm` to the normal subgroup gives `inl`. -/
+@[simp]
+theorem mulEquivSubgroup_symm_comp_left_subtype :
+    (MonoidHom.ofClass (mulEquivSubgroup h).symm).comp N.subtype = inl := by
+  ext a : 1
+  simp [-mulEquivSubgroup_symm_apply, mulEquivSubgroup_symm_coe_left]
+
+/-- Restricting `(mulEquivSubgroup h).symm` to the complement gives `inr`. -/
+@[simp]
+theorem mulEquivSubgroup_symm_comp_right_subtype :
+    (MonoidHom.ofClass (mulEquivSubgroup h).symm).comp D.subtype = inr := by
+  ext b : 1
+  simp [-mulEquivSubgroup_symm_apply, mulEquivSubgroup_symm_coe_right]
+
+/-- The right component of `(mulEquivSubgroup h).symm` agrees with the quotient isomorphism
+evaluated on the coset. -/
+theorem right_mulEquivSubgroup_symm_eq_quotientMulEquiv (g : G) :
+    ((mulEquivSubgroup h).symm g).right = h.symm.QuotientMulEquiv (g : G ⧸ N) :=
+  (mulEquivSubgroup_symm_apply_right h g).trans (h.symm_quotientMulEquiv_mk g).symm
+
+/-- Projecting `(mulEquivSubgroup h).symm` to the acting factor factors through the quotient by
+the normal subgroup. -/
+theorem rightHom_comp_mulEquivSubgroup_symm :
+    rightHom.comp (MonoidHom.ofClass (mulEquivSubgroup h).symm) =
+      (MonoidHom.ofClass h.symm.QuotientMulEquiv).comp (QuotientGroup.mk' N) := by
+  ext g : 1
+  simp [-mulEquivSubgroup_symm_apply, right_mulEquivSubgroup_symm_eq_quotientMulEquiv]
+
+/-- Composing `mulEquivSubgroup` with the quotient map factors through `rightHom` and the
+quotient isomorphism of the complement. -/
+theorem quotientGroupMk'_comp_mulEquivSubgroup :
+    (QuotientGroup.mk' N).comp (MonoidHom.ofClass (mulEquivSubgroup h)) =
+      (MonoidHom.ofClass h.symm.QuotientMulEquiv.symm).comp rightHom := by
+  ext x : 1
+  apply h.symm.QuotientMulEquiv.injective
+  simpa only [MonoidHom.comp_apply, MonoidHom.coe_ofClass, QuotientGroup.mk'_apply,
+    rightHom_eq_right, MulEquiv.apply_symm_apply, MulEquiv.symm_apply_apply] using
+    (right_mulEquivSubgroup_symm_eq_quotientMulEquiv h (mulEquivSubgroup h x)).symm
+
+end mulEquivSubgroup
 
 section MonoidHomSubgroup
 
@@ -171,109 +277,5 @@ theorem ker_monoidHomSubgroup_le_ker_lift_iff :
     rw [MonoidHom.mem_ker, lift_apply, hleft, map_inv, heq, inv_mul_cancel]
 
 end MonoidHomSubgroup
-
-section MulEquivSubgroup
-
-variable [H.Normal] (h : H.IsComplement' K)
-
-/-- As a bijection of types, `SemidirectProduct.mulEquivSubgroup` is `equivProd` followed by the
-inverse of the complement decomposition `Subgroup.IsComplement.equiv`. -/
-theorem toEquiv_mulEquivSubgroup :
-    (mulEquivSubgroup h).toEquiv = equivProd.trans h.equiv.symm := by
-  ext x
-  exact (mulEquivSubgroup_apply h x).trans
-    (Subgroup.IsComplement.equiv_symm_apply h (x.1, x.2)).symm
-
-/-- The inverse of `SemidirectProduct.mulEquivSubgroup` is the complement decomposition
-`Subgroup.IsComplement.equiv` followed by `equivProd.symm`. -/
-theorem toEquiv_mulEquivSubgroup_symm :
-    (mulEquivSubgroup h).symm.toEquiv = h.equiv.trans equivProd.symm :=
-  congrArg Equiv.symm (toEquiv_mulEquivSubgroup h)
-
-/-- The left component of `(mulEquivSubgroup h).symm` is the first factor of the complement
-decomposition. -/
-theorem left_mulEquivSubgroup_symm (g : G) :
-    ((mulEquivSubgroup h).symm g).left = (h.equiv g).1 :=
-  congrArg SemidirectProduct.left (Equiv.congr_fun (toEquiv_mulEquivSubgroup_symm h) g)
-
-/-- The right component of `(mulEquivSubgroup h).symm` is the second factor of the complement
-decomposition. -/
-theorem right_mulEquivSubgroup_symm (g : G) :
-    ((mulEquivSubgroup h).symm g).right = (h.equiv g).2 :=
-  congrArg SemidirectProduct.right (Equiv.congr_fun (toEquiv_mulEquivSubgroup_symm h) g)
-
-/-- Evaluating `(mulEquivSubgroup h).symm` decomposes a group element into its normal and
-complementary factors inside the semidirect product. -/
-theorem mulEquivSubgroup_symm_eq_inl_mul_inr (g : G) :
-    (mulEquivSubgroup h).symm g = inl (h.equiv g).1 * inr (h.equiv g).2 := by
-  rw [← left_mulEquivSubgroup_symm, ← right_mulEquivSubgroup_symm, inl_left_mul_inr_right]
-
-/-- Restricting `mulEquivSubgroup` to the left factor gives the subgroup inclusion. -/
-@[simp]
-theorem mulEquivSubgroup_comp_inl :
-    (MonoidHom.ofClass (mulEquivSubgroup h)).comp inl = H.subtype := by
-  ext a
-  simp
-
-/-- Restricting `mulEquivSubgroup` to the right factor gives the subgroup inclusion. -/
-@[simp]
-theorem mulEquivSubgroup_comp_inr :
-    (MonoidHom.ofClass (mulEquivSubgroup h)).comp inr = K.subtype := by
-  ext b
-  simp
-
-/-- The inverse of `mulEquivSubgroup` sends an element of the normal subgroup to the left
-factor. -/
-theorem mulEquivSubgroup_symm_coe_left (a : H) :
-    (mulEquivSubgroup h).symm (a : G) = inl a := by
-  rw [MulEquiv.symm_apply_eq]
-  simp
-
-/-- The inverse of `mulEquivSubgroup` sends an element of the complement to the right factor. -/
-theorem mulEquivSubgroup_symm_coe_right (b : K) :
-    (mulEquivSubgroup h).symm (b : G) = inr b := by
-  rw [MulEquiv.symm_apply_eq]
-  simp
-
-/-- Restricting `(mulEquivSubgroup h).symm` to the normal subgroup gives `inl`. -/
-@[simp]
-theorem mulEquivSubgroup_symm_comp_left_subtype :
-    (MonoidHom.ofClass (mulEquivSubgroup h).symm).comp H.subtype = inl := by
-  ext a : 1
-  simp [-mulEquivSubgroup_symm_apply, mulEquivSubgroup_symm_coe_left]
-
-/-- Restricting `(mulEquivSubgroup h).symm` to the complement gives `inr`. -/
-@[simp]
-theorem mulEquivSubgroup_symm_comp_right_subtype :
-    (MonoidHom.ofClass (mulEquivSubgroup h).symm).comp K.subtype = inr := by
-  ext b : 1
-  simp [-mulEquivSubgroup_symm_apply, mulEquivSubgroup_symm_coe_right]
-
-/-- The right component of `(mulEquivSubgroup h).symm` agrees with the quotient isomorphism
-evaluated on the coset. -/
-theorem right_mulEquivSubgroup_symm_eq_quotientMulEquiv (g : G) :
-    ((mulEquivSubgroup h).symm g).right = h.symm.QuotientMulEquiv (g : G ⧸ H) :=
-  (right_mulEquivSubgroup_symm h g).trans (h.symm_quotientMulEquiv_mk g).symm
-
-/-- Projecting `(mulEquivSubgroup h).symm` to the acting factor factors through the quotient by
-the normal subgroup. -/
-theorem rightHom_comp_mulEquivSubgroup_symm :
-    rightHom.comp (MonoidHom.ofClass (mulEquivSubgroup h).symm) =
-      (MonoidHom.ofClass h.symm.QuotientMulEquiv).comp (QuotientGroup.mk' H) := by
-  ext g : 1
-  simp [-mulEquivSubgroup_symm_apply, right_mulEquivSubgroup_symm_eq_quotientMulEquiv]
-
-/-- Composing `mulEquivSubgroup` with the quotient map factors through `rightHom` and the
-quotient isomorphism of the complement. -/
-theorem quotientGroupMk'_comp_mulEquivSubgroup :
-    (QuotientGroup.mk' H).comp (MonoidHom.ofClass (mulEquivSubgroup h)) =
-      (MonoidHom.ofClass h.symm.QuotientMulEquiv.symm).comp rightHom := by
-  ext x : 1
-  apply h.symm.QuotientMulEquiv.injective
-  simpa only [MonoidHom.comp_apply, MonoidHom.coe_ofClass, QuotientGroup.mk'_apply,
-    rightHom_eq_right, MulEquiv.apply_symm_apply, MulEquiv.symm_apply_apply] using
-    (right_mulEquivSubgroup_symm_eq_quotientMulEquiv h (mulEquivSubgroup h x)).symm
-
-end MulEquivSubgroup
 
 end SemidirectProduct

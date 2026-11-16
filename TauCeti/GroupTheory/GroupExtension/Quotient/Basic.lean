@@ -145,8 +145,8 @@ after dividing out the quotient splitting value. -/
 theorem coe_left_mulEquivSubgroup_symm (g : G) :
     (((SemidirectProduct.mulEquivSubgroup h).symm g).left : G) =
       g * (h.quotientSplitting (g : G ⧸ N))⁻¹ := by
-  rw [← h.coe_right_mulEquivSubgroup_symm, SemidirectProduct.left_mulEquivSubgroup_symm,
-    SemidirectProduct.right_mulEquivSubgroup_symm, IsComplement.equiv_fst_eq_mul_inv]
+  rw [← h.coe_right_mulEquivSubgroup_symm, SemidirectProduct.mulEquivSubgroup_symm_apply_left,
+    SemidirectProduct.mulEquivSubgroup_symm_apply_right, IsComplement.equiv_fst_eq_mul_inv]
 
 /-- Composing `SemidirectProduct.mulEquivSubgroup` with `inr` and `G ⧸ N ≃* D` recovers the
 quotient splitting homomorphism. -/

@@ -181,7 +181,7 @@ variable [N.Normal] {D : Subgroup G} (h : N.IsComplement' D)
 theorem left_mulEquivSubgroup_symm_eq_leftProjection (g : G) :
     ((SemidirectProduct.mulEquivSubgroup h).symm g).left =
       (isLocalComplement_top_iff.mpr h).leftProjection ⟨g, mem_top g⟩ := by
-  rw [SemidirectProduct.left_mulEquivSubgroup_symm]
+  rw [SemidirectProduct.mulEquivSubgroup_symm_apply_left]
   simp
 
 /-- The right component of `(SemidirectProduct.mulEquivSubgroup h).symm` agrees with the local
@@ -189,7 +189,7 @@ theorem left_mulEquivSubgroup_symm_eq_leftProjection (g : G) :
 theorem right_mulEquivSubgroup_symm_eq_rightProjection (g : G) :
     ((SemidirectProduct.mulEquivSubgroup h).symm g).right =
       (isLocalComplement_top_iff.mpr h).rightProjection ⟨g, mem_top g⟩ := by
-  rw [SemidirectProduct.right_mulEquivSubgroup_symm]
+  rw [SemidirectProduct.mulEquivSubgroup_symm_apply_right]
   simp
 
 end IsComplement'
