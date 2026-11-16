@@ -312,12 +312,11 @@ private theorem finiteCWType_compl_of_innerProductSpace [T2Space M] [CompactSpac
     notMem_criticalPoints_punctureSum (fun p ↦ (hW p).2) hWd hbW hx
       (mem_criticalPoints_comp_subtypeVal.1 hcrit)
   have hK : IsCompact {x : U | F₀ x ≤ 4} := isCompact_sublevel_punctureSum hS b hF₀_cont 4
-  have hV : IsMorseOn I F₀ {x : U | 1 < F₀ x} :=
-    isMorseOn_iff_criticalPoints.2
-      ⟨F₀.contMDiff.contMDiffOn, fun _ hx hcrit ↦ (hF₀_crit hx hcrit).elim⟩
+  have hKC : IsMorseOn I F₀ ({x : U | F₀ x ≤ 4} ∩ {x : U | 2 ≤ F₀ x}) :=
+    isMorseOn_iff_criticalPoints.2 ⟨F₀.contMDiff.contMDiffOn, fun _ hx hcrit ↦
+      (hF₀_crit (lt_of_lt_of_le one_lt_two hx.2) hcrit).elim⟩
   obtain ⟨g, -, hgK, hgc, hgs⟩ := F₀.exists_isMorseOn_hasCompactSupport_sub_compl hK
-    (isClosed_le continuous_const hF₀_cont) (isOpen_lt continuous_const hF₀_cont)
-    (fun _ hx ↦ lt_of_lt_of_le one_lt_two hx.2) hV (𝒰 := univ) univ_mem
+    (isClosed_le continuous_const hF₀_cont) hKC (𝒰 := univ) univ_mem
   have hg_high {x : U} (hx : 2 < F₀ x) : x ∉ criticalPoints I g := by
     have hnts : x ∉ tsupport fun y ↦ g y - F₀ y := fun hts ↦ (hgs hts) hx.le
     have hev : (g : U → ℝ) =ᶠ[𝓝 x] F₀ := by
