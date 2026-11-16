@@ -13,65 +13,37 @@ public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeD.Weights
 /-!
 # Explicit shortest dual-lattice representatives of ADE glue labels and glue words
 
-`TauCeti.DynkinType.glueAlphabetIsometry` identifies the glue alphabet `t.glueAlphabet ht` of a
-valid simply-laced Dynkin type `t` with the discriminant quadratic module of `t.rootLattice ht`,
-and `TauCeti.DynkinType.isLeast_glueMinimum` shows existentially that every coset attains its
-shortest norm `t.glueMinimum ht a`.
+`TauCeti.DynkinType.glueAlphabetIsometry` identifies `t.glueAlphabet ht` of a valid simply-laced
+Dynkin type `t` with the discriminant quadratic module of `t.rootLattice ht`, while
+`TauCeti.DynkinType.isLeast_glueMinimum` shows existentially that every coset attains its shortest
+norm `t.glueMinimum ht a`.
 
-This file provides a canonical **computable** rational vector `t.glueRepresentativeVector ht a` in
-simple-root coordinates `Fin t.rank → ℚ` for every glue label `a : t.glueAlphabet ht` (and, at the
-digit level, `t.glueLabelVector d` for `d : ℕ`):
-
-* for `Aₙ` and residue `a ∈ ℤ/(n+1)`, it is `typeACosetRepresentative n a.val` (the Bourbaki
-  fundamental weight `ϖₖ` for `1 ≤ k ≤ n`, and `0` for `k = 0`);
-* for `Dₙ` and digits `0, 1, 2, 3` (`0`, spinor, vector, cospinor), it is `0`,
-  `typeDSpinorWeight n`, `typeDVectorWeight n`, `typeDCospinorWeight n`;
-* for `E₆` and residues `0, 1, 2 ∈ ℤ/3`, it is `0`, `typeE₆MinusculeWeight`,
-  `-typeE₆MinusculeWeight`;
-* for `E₇` and residues `0, 1 ∈ ℤ/2`, it is `0`, `typeE₇MinusculeWeight`;
-* for `E₈`, it is `0`.
-
-Bundled in `(t.rootLattice ht).dualCarrier` as `t.glueRepresentative hv ht a`, this vector:
-
-* represents `t.glueAlphabetIsometry hv ht a` (`mk_glueRepresentative`), so distinct labels yield
-  distinct representatives modulo the root lattice (`glueRepresentativeVector_injective`,
-  `glueRepresentativeVector_sub_mem_carrier_iff`);
-* attains the coset minimum `t.glueMinimum ht a` (`form_glueRepresentativeVector_self` and
-  `form_glueRepresentative_self_le`);
-* realizes the quadratic half-norm, polar bilinear pairing, and additive order of `t.glueAlphabet`
-  directly in the ambient rational form and root-lattice carrier
-  (`quadratic_glueAlphabet_eq_form_glueRepresentative_self_div_two`,
-  `pairing_glueAlphabet_eq_form_glueRepresentative`,
-  `zsmul_eq_zero_iff_zsmul_glueRepresentativeVector_mem_carrier`,
-  `addOrderOf_eq_addOrderOf_mk_glueRepresentative`).
-
-Applied componentwise to a finite family `t : ι → DynkinType`, `glueWordRepresentativeVector` gives
-computable shortest dual-lattice representatives for glue words, yielding choice-free generator and
-coset-membership formulas for `TauCeti.DynkinType.gluedLattice`
-(`gluedLattice_carrier_eq_sup_span_glueWordRepresentativeVector`,
-`glueWordRepresentativeVector_mem_gluedLattice_carrier_iff`,
-`mem_gluedLattice_carrier_iff_exists_sub_mem`, `mem_gluedLattice_carrier_iff_exists_int`).
+This file defines a canonical **computable** rational vector `t.glueRepresentativeVector ht a` in
+simple-root coordinates `Fin t.rank → ℚ` for every glue label `a : t.glueAlphabet ht` (and
+`t.glueLabelVector d` for digits `d : ℕ`): `typeACosetRepresentative n a.val` on `Aₙ`; `0`,
+`typeDSpinorWeight n`, `typeDVectorWeight n`, `typeDCospinorWeight n` on `Dₙ`; `0`,
+`±typeE₆MinusculeWeight` on `E₆`; `0`, `typeE₇MinusculeWeight` on `E₇`; and `0` on `E₈`. Bundled
+in `(t.rootLattice ht).dualCarrier` as `t.glueRepresentative hv ht a`, it represents
+`t.glueAlphabetIsometry hv ht a`, attains `t.glueMinimum ht a`, separates distinct labels modulo
+the root lattice, and realizes the quadratic half-norm, polar pairing, and additive order of
+`t.glueAlphabet`. Componentwise, `glueWordRepresentativeVector` gives choice-free generators and
+coset-membership criteria for `TauCeti.DynkinType.gluedLattice`.
 
 ## Main declarations
 
-* `TauCeti.DynkinType.glueLabelVector`: computable simple-root coordinates of a glue digit.
-* `TauCeti.DynkinType.glueRepresentativeVector` and `TauCeti.DynkinType.glueRepresentative`:
-  computable simple-root coordinates and bundled dual-carrier representative of a glue label.
-* `TauCeti.DynkinType.mk_glueRepresentative` and
-  `TauCeti.DynkinType.form_glueRepresentativeVector_self`: `glueRepresentative` lies in the coset
-  `glueAlphabetIsometry` and has squared norm `glueMinimum`.
-* `TauCeti.DynkinType.glueRepresentativeVector_injective` and
-  `TauCeti.DynkinType.glueRepresentativeVector_sub_mem_carrier_iff`: injectivity and root-lattice
-  coset uniqueness of `glueRepresentativeVector`.
+* `TauCeti.DynkinType.glueLabelVector`, `TauCeti.DynkinType.glueRepresentativeVector`,
+  `TauCeti.DynkinType.glueRepresentative`: computable simple-root coordinates and bundled
+  dual-carrier representatives of glue digits and labels, with `mk_glueRepresentative`,
+  `form_glueRepresentativeVector_self`, `glueRepresentativeVector_injective`, and
+  `glueRepresentativeVector_sub_mem_carrier_iff`.
 * `TauCeti.DynkinType.pairing_glueAlphabet_eq_form_glueRepresentative` and
   `TauCeti.DynkinType.zsmul_eq_zero_iff_zsmul_glueRepresentativeVector_mem_carrier`: bilinear
   pairings and torsion conditions in `glueAlphabet` read off `glueRepresentativeVector`.
-* `TauCeti.DynkinType.glueWordRepresentativeVector` and `TauCeti.DynkinType.glueWordRepresentative`:
-  componentwise shortest representatives of glue words.
-* `TauCeti.DynkinType.gluedLattice_carrier_eq_sup_span_glueWordRepresentativeVector`,
+* `TauCeti.DynkinType.glueWordRepresentativeVector`, `TauCeti.DynkinType.glueWordRepresentative`,
+  `TauCeti.DynkinType.gluedLattice_carrier_eq_sup_span_glueWordRepresentativeVector`,
   `TauCeti.DynkinType.glueWordRepresentativeVector_mem_gluedLattice_carrier_iff`, and
-  `TauCeti.DynkinType.mem_gluedLattice_carrier_iff_exists_int`: explicit generators, representative
-  membership, and coordinate coset membership for `gluedLattice`.
+  `TauCeti.DynkinType.mem_gluedLattice_carrier_iff_exists_int`: componentwise glue-word
+  representatives and explicit generator and membership formulas for `gluedLattice`.
 
 ## References
 
@@ -89,8 +61,7 @@ open IntegralLattice
 -- Private zero-vector and equal-lattice transport helpers.
 
 private theorem form_eq_zero_of_eq_zero {V : Type*} [AddCommGroup V] [Module ℚ V]
-    (L : IntegralLattice V) {x : V} (hx : x = 0) :
-    L.form x x = 0 := by
+    (L : IntegralLattice V) {x : V} (hx : x = 0) : L.form x x = 0 := by
   rw [hx, map_zero]
 
 private theorem mk_eq_zero_of_val_eq_zero {V : Type*} [AddCommGroup V] [Module ℚ V]
@@ -115,8 +86,7 @@ private theorem mk_eq_discriminantGroupEquiv_ofEq {V : Type*} [AddCommGroup V] [
   rw [hu, ← Isometry.discriminantGroupEquiv_mk, hmk]
 
 private theorem form_of_eq {V : Type*} [AddCommGroup V] [Module ℚ V]
-    {L₁ L₂ : IntegralLattice V} (h : L₁ = L₂) (x y : V) :
-    L₁.form x y = L₂.form x y :=
+    {L₁ L₂ : IntegralLattice V} (h : L₁ = L₂) (x y : V) : L₁.form x y = L₂.form x y :=
   h ▸ rfl
 
 /-! ## Computable representatives of Conway--Sloane glue digits -/
@@ -132,126 +102,46 @@ def glueLabelVector : (t : DynkinType) → ℕ → Fin t.rank → ℚ
   | D n, d =>
     if d = 1 then typeDSpinorWeight n
     else if d = 2 then typeDVectorWeight n
-    else if d = 3 then typeDCospinorWeight n
-    else 0
+    else if d = 3 then typeDCospinorWeight n else 0
   | E6, d =>
-    if d = 1 then typeE₆MinusculeWeight
-    else if d = 2 then -typeE₆MinusculeWeight
-    else 0
+    if d = 1 then typeE₆MinusculeWeight else if d = 2 then -typeE₆MinusculeWeight else 0
   | E7, d => if d = 1 then typeE₇MinusculeWeight else 0
   | _, _ => 0
 
 /-- On `Aₙ`, `glueLabelVector` is `typeACosetRepresentative n d`. -/
-@[simp]
-theorem glueLabelVector_A (n d : ℕ) :
-    (A n).glueLabelVector d = typeACosetRepresentative n d :=
-  (rfl)
+@[simp] theorem glueLabelVector_A (n d : ℕ) :
+    (A n).glueLabelVector d = typeACosetRepresentative n d := (rfl)
 
-/-- On `Dₙ`, digits `1, 2, 3` map to spinor, vector, and cospinor weights, and other digits to
-`0`. -/
-@[simp]
-theorem glueLabelVector_D (n d : ℕ) :
+/-- On `Dₙ`, digits `1, 2, 3` map to spinor, vector, and cospinor weights, and others to `0`. -/
+@[simp] theorem glueLabelVector_D (n d : ℕ) :
     (D n).glueLabelVector d =
       if d = 1 then typeDSpinorWeight n
       else if d = 2 then typeDVectorWeight n
-      else if d = 3 then typeDCospinorWeight n
-      else 0 :=
-  (rfl)
+      else if d = 3 then typeDCospinorWeight n else 0 := (rfl)
 
 /-- On `E₆`, digits `1, 2` map to `ϖ₁` and `-ϖ₁`, and other digits to `0`. -/
-@[simp]
-theorem glueLabelVector_E6 (d : ℕ) :
+@[simp] theorem glueLabelVector_E6 (d : ℕ) :
     E6.glueLabelVector d =
-      if d = 1 then typeE₆MinusculeWeight
-      else if d = 2 then -typeE₆MinusculeWeight
-      else 0 :=
-  (rfl)
+      if d = 1 then typeE₆MinusculeWeight else if d = 2 then -typeE₆MinusculeWeight else 0 := (rfl)
 
 /-- On `E₇`, digit `1` maps to `ϖ₇`, and other digits to `0`. -/
-@[simp]
-theorem glueLabelVector_E7 (d : ℕ) :
-    E7.glueLabelVector d = if d = 1 then typeE₇MinusculeWeight else 0 :=
-  (rfl)
+@[simp] theorem glueLabelVector_E7 (d : ℕ) :
+    E7.glueLabelVector d = if d = 1 then typeE₇MinusculeWeight else 0 := (rfl)
 
 /-- On `E₈`, `glueLabelVector` is identically `0`. -/
-@[simp]
-theorem glueLabelVector_E8 (d : ℕ) : E8.glueLabelVector d = 0 :=
-  (rfl)
+@[simp] theorem glueLabelVector_E8 (d : ℕ) : E8.glueLabelVector d = 0 := (rfl)
 
 /-- Digit `0` maps to the zero vector for every Dynkin type. -/
-@[simp]
-theorem glueLabelVector_zero (t : DynkinType) : t.glueLabelVector 0 = 0 := by
+@[simp] theorem glueLabelVector_zero (t : DynkinType) : t.glueLabelVector 0 = 0 := by
   cases t with
   | A n => exact typeACosetRepresentative_zero n
-  | D n =>
-    funext (j : Fin n)
-    simp only [glueLabelVector_D, OfNat.zero_ne_ofNat, zero_ne_one, ↓reduceIte]
-    -- `(0 : Fin (D n).rank → ℚ) j` is definitionally `0`.
-    rfl
-  | E6 =>
-    funext (j : Fin 6)
-    simp only [glueLabelVector_E6, OfNat.zero_ne_ofNat, zero_ne_one, ↓reduceIte]
-    -- `(0 : Fin E6.rank → ℚ) j` is definitionally `0`.
-    rfl
-  | E7 =>
-    funext (j : Fin 7)
-    simp only [glueLabelVector_E7, zero_ne_one, ↓reduceIte]
-    -- `(0 : Fin E7.rank → ℚ) j` is definitionally `0`.
-    rfl
-  | E8 | B _ | C _ | F4 | G2 => rfl
+  | D _ | E6 | E7 | E8 | B _ | C _ | F4 | G2 => rfl
 
 /-- `rootLatticeIsometryOfEq` preserves `glueLabelVector`. -/
-@[simp]
-theorem rootLatticeIsometryOfEq_glueLabelVector {t s : DynkinType} (h : t = s)
+@[simp] theorem rootLatticeIsometryOfEq_glueLabelVector {t s : DynkinType} (h : t = s)
     (ht : t.IsSimplyLaced) (hs : s.IsSimplyLaced) (d : ℕ) :
     t.rootLatticeIsometryOfEq ht h hs (t.glueLabelVector d) = s.glueLabelVector d := by
-  subst h
-  rw [rootLatticeIsometryOfEq_rfl, Isometry.refl_apply]
-
-private theorem glueLabelVector_mem_dualCarrier_D (n : ℕ) (hv : (D n).Valid)
-    (ht : (D n).IsSimplyLaced) (d : ℕ) :
-    (D n).glueLabelVector d ∈ ((D n).rootLattice ht).dualCarrier := by
-  have hn : 4 ≤ n := valid_D.mp hv
-  by_cases h1 : d = 1
-  · subst h1; exact typeDSpinorWeight_mem_dualCarrier hn ht
-  by_cases h2 : d = 2
-  · subst h2; exact typeDVectorWeight_mem_dualCarrier hn ht
-  by_cases h3 : d = 3
-  · subst h3; exact typeDCospinorWeight_mem_dualCarrier hn ht
-  have h0 : (D n).glueLabelVector d = 0 := by
-    funext (j : Fin n)
-    simp only [glueLabelVector_D, h1, h2, h3, ↓reduceIte]
-    -- `(0 : Fin (D n).rank → ℚ) j` is definitionally `0`.
-    rfl
-  exact h0 ▸ ((D n).rootLattice ht).dualCarrier.zero_mem
-
-private theorem glueLabelVector_mem_dualCarrier_E6 (ht : E6.IsSimplyLaced) (d : ℕ) :
-    E6.glueLabelVector d ∈ (E6.rootLattice ht).dualCarrier := by
-  by_cases h1 : d = 1
-  · subst h1
-    exact mem_dualCarrier_of_eq (rootLattice_E6 ht) typeE₆MinusculeWeight_mem_dualCarrier
-  by_cases h2 : d = 2
-  · subst h2
-    exact mem_dualCarrier_of_eq (rootLattice_E6 ht)
-      (typeE₆RootLattice.dualCarrier.neg_mem typeE₆MinusculeWeight_mem_dualCarrier)
-  have h0 : E6.glueLabelVector d = 0 := by
-    funext (j : Fin 6)
-    simp only [glueLabelVector_E6, h1, h2, ↓reduceIte]
-    -- `(0 : Fin E6.rank → ℚ) j` is definitionally `0`.
-    rfl
-  exact h0 ▸ (E6.rootLattice ht).dualCarrier.zero_mem
-
-private theorem glueLabelVector_mem_dualCarrier_E7 (ht : E7.IsSimplyLaced) (d : ℕ) :
-    E7.glueLabelVector d ∈ (E7.rootLattice ht).dualCarrier := by
-  by_cases h1 : d = 1
-  · subst h1
-    exact mem_dualCarrier_of_eq (rootLattice_E7 ht) typeE₇MinusculeWeight_mem_dualCarrier
-  have h0 : E7.glueLabelVector d = 0 := by
-    funext (j : Fin 7)
-    simp only [glueLabelVector_E7, h1, ↓reduceIte]
-    -- `(0 : Fin E7.rank → ℚ) j` is definitionally `0`.
-    rfl
-  exact h0 ▸ (E7.rootLattice ht).dualCarrier.zero_mem
+  subst h; rw [rootLatticeIsometryOfEq_rfl, Isometry.refl_apply]
 
 /-- Every `glueLabelVector` of a valid simply-laced Dynkin type lies in the dual carrier of its
 root lattice. -/
@@ -260,9 +150,29 @@ theorem glueLabelVector_mem_dualCarrier (t : DynkinType) (hv : t.Valid) (ht : t.
   cases t with
   | A n =>
     exact mem_dualCarrier_of_eq (rootLattice_A n ht) (typeACosetRepresentative_mem_dualCarrier n d)
-  | D n => exact glueLabelVector_mem_dualCarrier_D n hv ht d
-  | E6 => exact glueLabelVector_mem_dualCarrier_E6 ht d
-  | E7 => exact glueLabelVector_mem_dualCarrier_E7 ht d
+  | D n =>
+    have hn := valid_D.mp hv
+    rcases eq_or_ne d 1 with rfl | h1; · exact typeDSpinorWeight_mem_dualCarrier hn ht
+    rcases eq_or_ne d 2 with rfl | h2; · exact typeDVectorWeight_mem_dualCarrier hn ht
+    rcases eq_or_ne d 3 with rfl | h3; · exact typeDCospinorWeight_mem_dualCarrier hn ht
+    have h0 : (D n).glueLabelVector d = 0 := funext fun (j : Fin n) ↦ by
+      simp only [glueLabelVector_D, h1, h2, h3, ↓reduceIte]; rfl
+    exact h0 ▸ ((D n).rootLattice ht).dualCarrier.zero_mem
+  | E6 =>
+    rcases eq_or_ne d 1 with rfl | h1
+    · exact mem_dualCarrier_of_eq (rootLattice_E6 ht) typeE₆MinusculeWeight_mem_dualCarrier
+    rcases eq_or_ne d 2 with rfl | h2
+    · exact mem_dualCarrier_of_eq (rootLattice_E6 ht)
+        (typeE₆RootLattice.dualCarrier.neg_mem typeE₆MinusculeWeight_mem_dualCarrier)
+    have h0 : E6.glueLabelVector d = 0 := funext fun (j : Fin 6) ↦ by
+      simp only [glueLabelVector_E6, h1, h2, ↓reduceIte]; rfl
+    exact h0 ▸ (E6.rootLattice ht).dualCarrier.zero_mem
+  | E7 =>
+    rcases eq_or_ne d 1 with rfl | h1
+    · exact mem_dualCarrier_of_eq (rootLattice_E7 ht) typeE₇MinusculeWeight_mem_dualCarrier
+    have h0 : E7.glueLabelVector d = 0 := funext fun (j : Fin 7) ↦ by
+      simp only [glueLabelVector_E7, h1, ↓reduceIte]; rfl
+    exact h0 ▸ (E7.rootLattice ht).dualCarrier.zero_mem
   | E8 => exact (E8.rootLattice ht).dualCarrier.zero_mem
   | B n => exact absurd ht (not_isSimplyLaced_B n)
   | C n => exact absurd ht (not_isSimplyLaced_C n)
@@ -271,8 +181,8 @@ theorem glueLabelVector_mem_dualCarrier (t : DynkinType) (hv : t.Valid) (ht : t.
 
 private theorem mk_glueLabelVector_A (n : ℕ) (hv : (A n).Valid) (ht : (A n).IsSimplyLaced)
     (d : Fin (A n).glueLabelCount) :
-    (Submodule.Quotient.mk
-        ⟨(A n).glueLabelVector d.val, (A n).glueLabelVector_mem_dualCarrier hv ht d.val⟩ :
+    (Submodule.Quotient.mk ⟨(A n).glueLabelVector d.val,
+        (A n).glueLabelVector_mem_dualCarrier hv ht d.val⟩ :
         ((A n).rootLattice ht).DiscriminantGroup) =
       (A n).glueAlphabetIsometry hv ht ((A n).glueLabelEquiv ht d) := by
   have hd : ((d.val : ZMod (n + 1)).val) = d.val := ZMod.val_natCast_of_lt d.isLt
@@ -287,46 +197,37 @@ private theorem mk_glueLabelVector_A (n : ℕ) (hv : (A n).Valid) (ht : (A n).Is
 
 private theorem mk_glueLabelVector_D (n : ℕ) (hv : (D n).Valid) (ht : (D n).IsSimplyLaced)
     (d : Fin (D n).glueLabelCount) :
-    (Submodule.Quotient.mk
-        ⟨(D n).glueLabelVector d.val, (D n).glueLabelVector_mem_dualCarrier hv ht d.val⟩ :
+    (Submodule.Quotient.mk ⟨(D n).glueLabelVector d.val,
+        (D n).glueLabelVector_mem_dualCarrier hv ht d.val⟩ :
         ((D n).rootLattice ht).DiscriminantGroup) =
       (D n).glueAlphabetIsometry hv ht ((D n).glueLabelEquiv ht d) := by
-  obtain ⟨d, hd⟩ := d
-  simp only [glueLabelCount] at hd
-  interval_cases d
+  have hn : 4 ≤ n := valid_D.mp hv
+  have : NeZero n := ⟨by omega⟩
+  rcases d with ⟨d, hd⟩; simp only [glueLabelCount] at hd; interval_cases d
   · have h0 : (D n).glueLabelEquiv ht ⟨0, hd⟩ = 0 :=
       ((D n).glueLabelEquiv ht).symm.injective
         ((Equiv.symm_apply_apply _ _).trans ((D n).glueLabelEquiv_symm_zero ht).symm)
-    rw [h0, map_zero]
-    exact mk_eq_zero_of_val_eq_zero _ (glueLabelVector_zero (D n))
-  · have heq : (⟨(D n).glueLabelVector 1, (D n).glueLabelVector_mem_dualCarrier hv ht 1⟩ :
-          ((D n).rootLattice ht).dualCarrier) = typeDSpinorWeightDual n (valid_D.mp hv) ht :=
-      Subtype.ext (by simp)
-    rw [heq, mk_typeDSpinorWeightDual]
+    rw [h0, map_zero]; exact mk_eq_zero_of_val_eq_zero _ (glueLabelVector_zero (D n))
+  · rw [show (⟨(D n).glueLabelVector 1, (D n).glueLabelVector_mem_dualCarrier hv ht 1⟩ : _) =
+        typeDSpinorWeightDual n hn ht from Subtype.ext (by simp), mk_typeDSpinorWeightDual]
     rcases Nat.even_or_odd n with hpar | hpar
     · rw [glueAlphabetIsometry_D_apply_of_even n hv ht hpar, glueLabelEquiv_D_of_even n ht hpar]
       simp only [Nat.reduceDiv, Nat.cast_zero, Nat.reduceMod, Nat.cast_one,
         zmodTwoProdAddEquivCheckerboardDiscriminantGroup_apply_zero_one]
     · rw [glueAlphabetIsometry_D_apply_of_odd n hv ht hpar, glueLabelEquiv_D_of_odd n ht hpar,
         Nat.cast_one, zmodFourAddEquivCheckerboardDiscriminantGroup_apply_one n hpar]
-  · have heq : (⟨(D n).glueLabelVector 2, (D n).glueLabelVector_mem_dualCarrier hv ht 2⟩ :
-          ((D n).rootLattice ht).dualCarrier) = typeDVectorWeightDual n (valid_D.mp hv) ht :=
-      Subtype.ext (by simp)
-    rw [heq, mk_typeDVectorWeightDual]
+  · rw [show (⟨(D n).glueLabelVector 2, (D n).glueLabelVector_mem_dualCarrier hv ht 2⟩ : _) =
+        typeDVectorWeightDual n hn ht from Subtype.ext (by simp), mk_typeDVectorWeightDual]
     rcases Nat.even_or_odd n with hpar | hpar
-    · have : NeZero n := ⟨by have := valid_D.mp hv; omega⟩
-      rw [glueAlphabetIsometry_D_apply_of_even n hv ht hpar, glueLabelEquiv_D_of_even n ht hpar]
+    · rw [glueAlphabetIsometry_D_apply_of_even n hv ht hpar, glueLabelEquiv_D_of_even n ht hpar]
       simp only [Nat.div_self zero_lt_two, Nat.cast_one, Nat.mod_self, Nat.cast_zero,
         zmodTwoProdAddEquivCheckerboardDiscriminantGroup_apply_one_zero]
     · rw [glueAlphabetIsometry_D_apply_of_odd n hv ht hpar, glueLabelEquiv_D_of_odd n ht hpar,
         Nat.cast_ofNat, zmodFourAddEquivCheckerboardDiscriminantGroup_apply_two n hpar]
-  · have heq : (⟨(D n).glueLabelVector 3, (D n).glueLabelVector_mem_dualCarrier hv ht 3⟩ :
-          ((D n).rootLattice ht).dualCarrier) = typeDCospinorWeightDual n (valid_D.mp hv) ht :=
-      Subtype.ext (by simp)
-    rw [heq, mk_typeDCospinorWeightDual]
+  · rw [show (⟨(D n).glueLabelVector 3, (D n).glueLabelVector_mem_dualCarrier hv ht 3⟩ : _) =
+        typeDCospinorWeightDual n hn ht from Subtype.ext (by simp), mk_typeDCospinorWeightDual]
     rcases Nat.even_or_odd n with hpar | hpar
-    · have : NeZero n := ⟨by have := valid_D.mp hv; omega⟩
-      rw [glueAlphabetIsometry_D_apply_of_even n hv ht hpar, glueLabelEquiv_D_of_even n ht hpar]
+    · rw [glueAlphabetIsometry_D_apply_of_even n hv ht hpar, glueLabelEquiv_D_of_even n ht hpar]
       simp only [Nat.reduceDiv, Nat.cast_one, Nat.reduceMod,
         zmodTwoProdAddEquivCheckerboardDiscriminantGroup_apply_one_one]
     · rw [glueAlphabetIsometry_D_apply_of_odd n hv ht hpar, glueLabelEquiv_D_of_odd n ht hpar,
@@ -334,21 +235,19 @@ private theorem mk_glueLabelVector_D (n : ℕ) (hv : (D n).Valid) (ht : (D n).Is
 
 private theorem mk_glueLabelVector_E6 (hv : E6.Valid) (ht : E6.IsSimplyLaced)
     (d : Fin E6.glueLabelCount) :
-    (Submodule.Quotient.mk
-        ⟨E6.glueLabelVector d.val, E6.glueLabelVector_mem_dualCarrier hv ht d.val⟩ :
+    (Submodule.Quotient.mk ⟨E6.glueLabelVector d.val,
+        E6.glueLabelVector_mem_dualCarrier hv ht d.val⟩ :
         (E6.rootLattice ht).DiscriminantGroup) =
       E6.glueAlphabetIsometry hv ht (E6.glueLabelEquiv ht d) := by
-  obtain ⟨d, hd⟩ := d
-  simp only [glueLabelCount] at hd
+  rcases d with ⟨d, hd⟩; simp only [glueLabelCount] at hd
   rw [glueLabelEquiv_E6, glueAlphabetIsometry_E6_apply]
   interval_cases d
   · refine (mk_eq_zero_of_val_eq_zero _ (glueLabelVector_zero E6)).trans ?_
     rw [Nat.cast_zero, map_zero, map_zero]
     -- The two zero classes agree across `Fin E6.rank` and `Fin 6`.
     rfl
-  · refine (mk_eq_discriminantGroupEquiv_ofEq (rootLattice_E6 ht) _
-      typeE₆MinusculeWeightDual coe_typeE₆MinusculeWeightDual.symm
-      mk_typeE₆MinusculeWeightDual).trans ?_
+  · refine (mk_eq_discriminantGroupEquiv_ofEq (rootLattice_E6 ht) _ typeE₆MinusculeWeightDual
+      coe_typeE₆MinusculeWeightDual.symm mk_typeE₆MinusculeWeightDual).trans ?_
     rw [Nat.cast_one, typeE₆DiscriminantGroupEquiv_apply_one]
     -- Both sides agree across `Fin E6.rank` and `Fin 6`.
     rfl
@@ -357,28 +256,25 @@ private theorem mk_glueLabelVector_E6 (hv : E6.Valid) (ht : E6.IsSimplyLaced)
         typeE₆DiscriminantGroupEquiv ((2 : ℕ) : ZMod 3) := by
       rw [Submodule.Quotient.mk_neg, mk_typeE₆MinusculeWeightDual,
         show ((2 : ℕ) : ZMod 3) = -1 by decide, map_neg, typeE₆DiscriminantGroupEquiv_apply_one]
-    exact mk_eq_discriminantGroupEquiv_ofEq (rootLattice_E6 ht) _
-      (-typeE₆MinusculeWeightDual)
+    exact mk_eq_discriminantGroupEquiv_ofEq (rootLattice_E6 ht) _ (-typeE₆MinusculeWeightDual)
       ((Submodule.coe_neg _ typeE₆MinusculeWeightDual).trans
         (congrArg Neg.neg coe_typeE₆MinusculeWeightDual)).symm hmk2
 
 private theorem mk_glueLabelVector_E7 (hv : E7.Valid) (ht : E7.IsSimplyLaced)
     (d : Fin E7.glueLabelCount) :
-    (Submodule.Quotient.mk
-        ⟨E7.glueLabelVector d.val, E7.glueLabelVector_mem_dualCarrier hv ht d.val⟩ :
+    (Submodule.Quotient.mk ⟨E7.glueLabelVector d.val,
+        E7.glueLabelVector_mem_dualCarrier hv ht d.val⟩ :
         (E7.rootLattice ht).DiscriminantGroup) =
       E7.glueAlphabetIsometry hv ht (E7.glueLabelEquiv ht d) := by
-  obtain ⟨d, hd⟩ := d
-  simp only [glueLabelCount] at hd
+  rcases d with ⟨d, hd⟩; simp only [glueLabelCount] at hd
   rw [glueLabelEquiv_E7, glueAlphabetIsometry_E7_apply]
   interval_cases d
   · refine (mk_eq_zero_of_val_eq_zero _ (glueLabelVector_zero E7)).trans ?_
     rw [Nat.cast_zero, map_zero, map_zero]
     -- The two zero classes agree across `Fin E7.rank` and `Fin 7`.
     rfl
-  · refine (mk_eq_discriminantGroupEquiv_ofEq (rootLattice_E7 ht) _
-      typeE₇MinusculeWeightDual coe_typeE₇MinusculeWeightDual.symm
-      mk_typeE₇MinusculeWeightDual).trans ?_
+  · refine (mk_eq_discriminantGroupEquiv_ofEq (rootLattice_E7 ht) _ typeE₇MinusculeWeightDual
+      coe_typeE₇MinusculeWeightDual.symm mk_typeE₇MinusculeWeightDual).trans ?_
     rw [Nat.cast_one, typeE₇DiscriminantGroupEquiv_apply_one]
     -- Both sides agree across `Fin E7.rank` and `Fin 7`.
     rfl
@@ -387,8 +283,8 @@ private theorem mk_glueLabelVector_E7 (hv : E7.Valid) (ht : E7.IsSimplyLaced)
 discriminant class of `t.glueLabelEquiv ht d`. -/
 theorem mk_glueLabelVector (t : DynkinType) (hv : t.Valid) (ht : t.IsSimplyLaced)
     (d : Fin t.glueLabelCount) :
-    (Submodule.Quotient.mk
-        ⟨t.glueLabelVector d.val, t.glueLabelVector_mem_dualCarrier hv ht d.val⟩ :
+    (Submodule.Quotient.mk ⟨t.glueLabelVector d.val,
+        t.glueLabelVector_mem_dualCarrier hv ht d.val⟩ :
         (t.rootLattice ht).DiscriminantGroup) =
       t.glueAlphabetIsometry hv ht (t.glueLabelEquiv ht d) := by
   cases t with
@@ -406,28 +302,22 @@ theorem mk_glueLabelVector (t : DynkinType) (hv : t.Valid) (ht : t.IsSimplyLaced
 
 /-- **Squared norm of `glueLabelVector`.**  For every valid digit `d : Fin t.glueLabelCount`,
 `t.glueLabelVector d.val` has squared norm `t.glueLabelMinimum d.val`. -/
-@[simp]
-theorem form_glueLabelVector_self (t : DynkinType) (hv : t.Valid) (ht : t.IsSimplyLaced)
+@[simp] theorem form_glueLabelVector_self (t : DynkinType) (hv : t.Valid) (ht : t.IsSimplyLaced)
     (d : Fin t.glueLabelCount) :
     (t.rootLattice ht).form (t.glueLabelVector d.val) (t.glueLabelVector d.val) =
       t.glueLabelMinimum d.val := by
   cases t with
   | A n =>
-    exact (form_of_eq (rootLattice_A n ht) _ _).trans
-      (form_typeACosetRepresentative_self d.isLt.le)
+    exact (form_of_eq (rootLattice_A n ht) _ _).trans (form_typeACosetRepresentative_self d.isLt.le)
   | D n =>
     have hn4 : 4 ≤ n := valid_D.mp hv
-    obtain ⟨d, hd⟩ := d
-    simp only [glueLabelCount] at hd
-    interval_cases d
+    rcases d with ⟨d, hd⟩; simp only [glueLabelCount] at hd; interval_cases d
     · exact form_eq_zero_of_eq_zero _ (glueLabelVector_zero (D n))
     · exact form_typeDSpinorWeight_self hn4 ht
     · exact form_typeDVectorWeight_self hn4 ht
     · exact form_typeDCospinorWeight_self hn4 ht
   | E6 =>
-    obtain ⟨d, hd⟩ := d
-    simp only [glueLabelCount] at hd
-    interval_cases d
+    rcases d with ⟨d, hd⟩; simp only [glueLabelCount] at hd; interval_cases d
     · exact form_eq_zero_of_eq_zero _ (glueLabelVector_zero E6)
     · exact (form_of_eq (rootLattice_E6 ht) _ _).trans form_typeE₆MinusculeWeight_self
     · have hneg :
@@ -435,15 +325,11 @@ theorem form_glueLabelVector_self (t : DynkinType) (hv : t.Valid) (ht : t.IsSimp
         rw [LinearMap.map_neg₂, map_neg, neg_neg, form_typeE₆MinusculeWeight_self]
       exact (form_of_eq (rootLattice_E6 ht) _ _).trans hneg
   | E7 =>
-    obtain ⟨d, hd⟩ := d
-    simp only [glueLabelCount] at hd
-    interval_cases d
+    rcases d with ⟨d, hd⟩; simp only [glueLabelCount] at hd; interval_cases d
     · exact form_eq_zero_of_eq_zero _ (glueLabelVector_zero E7)
     · exact (form_of_eq (rootLattice_E7 ht) _ _).trans form_typeE₇MinusculeWeight_self
   | E8 =>
-    obtain ⟨d, hd⟩ := d
-    simp only [glueLabelCount] at hd
-    interval_cases d
+    rcases d with ⟨d, hd⟩; simp only [glueLabelCount] at hd; interval_cases d
     exact form_eq_zero_of_eq_zero _ (glueLabelVector_E8 0)
   | B n => exact absurd ht (not_isSimplyLaced_B n)
   | C n => exact absurd ht (not_isSimplyLaced_C n)
@@ -466,24 +352,21 @@ theorem glueRepresentativeVector_def (t : DynkinType) (ht : t.IsSimplyLaced)
 
 /-- On a digit `d : Fin t.glueLabelCount`, `glueRepresentativeVector` agrees with
 `glueLabelVector d.val`. -/
-@[simp]
-theorem glueRepresentativeVector_glueLabelEquiv (t : DynkinType) (ht : t.IsSimplyLaced)
+@[simp] theorem glueRepresentativeVector_glueLabelEquiv (t : DynkinType) (ht : t.IsSimplyLaced)
     (d : Fin t.glueLabelCount) :
     t.glueRepresentativeVector ht (t.glueLabelEquiv ht d) = t.glueLabelVector d.val := by
   rw [glueRepresentativeVector_def, Equiv.symm_apply_apply]
 
 /-- The zero glue label is represented by the zero vector. -/
-@[simp]
-theorem glueRepresentativeVector_zero (t : DynkinType) (ht : t.IsSimplyLaced) :
+@[simp] theorem glueRepresentativeVector_zero (t : DynkinType) (ht : t.IsSimplyLaced) :
     t.glueRepresentativeVector ht 0 = 0 := by
   rw [glueRepresentativeVector_def, glueLabelEquiv_symm_zero, glueLabelVector_zero]
 
 /-- On `Aₙ`, `glueRepresentativeVector` is `typeACosetRepresentative n a.val`. -/
-@[simp]
-theorem glueRepresentativeVector_A (n : ℕ) (ht : (A n).IsSimplyLaced) (a : ZMod (n + 1)) :
-    (A n).glueRepresentativeVector ht a = typeACosetRepresentative n a.val := by
-  refine ((A n).glueRepresentativeVector_def ht a).trans ?_
-  exact congrArg (A n).glueLabelVector (congrArg Fin.val (glueLabelEquiv_A_symm_apply n ht a))
+@[simp] theorem glueRepresentativeVector_A (n : ℕ) (ht : (A n).IsSimplyLaced) (a : ZMod (n + 1)) :
+    (A n).glueRepresentativeVector ht a = typeACosetRepresentative n a.val :=
+  ((A n).glueRepresentativeVector_def ht a).trans
+    (congrArg (A n).glueLabelVector (congrArg Fin.val (glueLabelEquiv_A_symm_apply n ht a)))
 
 /-- For even `n`, `glueRepresentativeVector` on `Dₙ` sends `(0, 1)`, `(1, 0)`, `(1, 1)` in
 `ℤ/2 × ℤ/2` to `typeDSpinorWeight n`, `typeDVectorWeight n`, `typeDCospinorWeight n`, and `0` to
@@ -494,8 +377,7 @@ theorem glueRepresentativeVector_D_of_even (n : ℕ) (ht : (D n).IsSimplyLaced) 
     (D n).glueRepresentativeVector ht a =
       if b = (0, 1) then typeDSpinorWeight n
       else if b = (1, 0) then typeDVectorWeight n
-      else if b = (1, 1) then typeDCospinorWeight n
-      else 0 := by
+      else if b = (1, 1) then typeDCospinorWeight n else 0 := by
   subst hb
   obtain ⟨⟨d, hd⟩, rfl⟩ := ((D n).glueLabelEquiv ht).surjective a
   simp only [glueLabelCount] at hd
@@ -520,8 +402,7 @@ theorem glueRepresentativeVector_D_of_odd (n : ℕ) (ht : (D n).IsSimplyLaced) (
     (D n).glueRepresentativeVector ht a =
       if b = 1 then typeDSpinorWeight n
       else if b = 2 then typeDVectorWeight n
-      else if b = 3 then typeDCospinorWeight n
-      else 0 := by
+      else if b = 3 then typeDCospinorWeight n else 0 := by
   subst hb
   obtain ⟨⟨d, hd⟩, rfl⟩ := ((D n).glueLabelEquiv ht).surjective a
   simp only [glueLabelCount] at hd
@@ -537,42 +418,34 @@ theorem glueRepresentativeVector_D_of_odd (n : ℕ) (ht : (D n).IsSimplyLaced) (
   · simp [show (3 : ZMod 4) ≠ 1 by decide, show (3 : ZMod 4) ≠ 2 by decide]
 
 /-- On `E₆`, `glueRepresentativeVector` sends `0, 1, 2 ∈ ℤ/3` to `0`, `ϖ₁`, `-ϖ₁`. -/
-@[simp]
-theorem glueRepresentativeVector_E6 (ht : E6.IsSimplyLaced) (a : ZMod 3) :
+@[simp] theorem glueRepresentativeVector_E6 (ht : E6.IsSimplyLaced) (a : ZMod 3) :
     E6.glueRepresentativeVector ht a =
-      if a = 1 then typeE₆MinusculeWeight
-      else if a = 2 then -typeE₆MinusculeWeight
-      else 0 := by
-  rcases (by decide : ∀ z : ZMod 3, z = 0 ∨ z = 1 ∨ z = 2) a with rfl | rfl | rfl
-  · have h01 : (0 : ZMod 3) ≠ 1 := by decide
-    have h02 : (0 : ZMod 3) ≠ 2 := by decide
-    simp only [h01, h02, ↓reduceIte]
-    exact E6.glueRepresentativeVector_zero ht
-  · simp only [↓reduceIte]
-    exact (congrArg (E6.glueRepresentativeVector ht)
-      (glueLabelEquiv_E6 ht ⟨1, by decide⟩).symm).trans
-      ((E6.glueRepresentativeVector_glueLabelEquiv ht ⟨1, by decide⟩).trans (by simp))
-  · have h21 : (2 : ZMod 3) ≠ 1 := by decide
-    simp only [h21, ↓reduceIte]
-    exact (congrArg (E6.glueRepresentativeVector ht)
-      (glueLabelEquiv_E6 ht ⟨2, by decide⟩).symm).trans
-      ((E6.glueRepresentativeVector_glueLabelEquiv ht ⟨2, by decide⟩).trans (by simp))
+      if a = 1 then typeE₆MinusculeWeight else if a = 2 then -typeE₆MinusculeWeight else 0 := by
+  obtain ⟨⟨d, hd⟩, rfl⟩ := (E6.glueLabelEquiv ht).surjective a
+  simp only [glueLabelCount] at hd
+  rw [glueRepresentativeVector_glueLabelEquiv, glueLabelEquiv_E6 ht]
+  interval_cases d
+  · simp only [glueLabelVector_zero E6, Nat.cast_zero,
+      show (0 : ZMod 3) ≠ 1 by decide, show (0 : ZMod 3) ≠ 2 by decide, ↓reduceIte]
+    -- `(0 : Fin E6.rank → ℚ)` and `(0 : Fin 6 → ℚ)` are definitionally equal.
+    rfl
+  · simp
+  · simp [show (2 : ZMod 3) ≠ 1 by decide]
 
 /-- On `E₇`, `glueRepresentativeVector` sends `0, 1 ∈ ℤ/2` to `0`, `ϖ₇`. -/
-@[simp]
-theorem glueRepresentativeVector_E7 (ht : E7.IsSimplyLaced) (a : ZMod 2) :
+@[simp] theorem glueRepresentativeVector_E7 (ht : E7.IsSimplyLaced) (a : ZMod 2) :
     E7.glueRepresentativeVector ht a = if a = 1 then typeE₇MinusculeWeight else 0 := by
-  rcases (by decide : ∀ z : ZMod 2, z = 0 ∨ z = 1) a with rfl | rfl
-  · simp only [zero_ne_one, ↓reduceIte]
-    exact E7.glueRepresentativeVector_zero ht
-  · simp only [↓reduceIte]
-    exact (congrArg (E7.glueRepresentativeVector ht)
-      (glueLabelEquiv_E7 ht ⟨1, by decide⟩).symm).trans
-      ((E7.glueRepresentativeVector_glueLabelEquiv ht ⟨1, by decide⟩).trans (by simp))
+  obtain ⟨⟨d, hd⟩, rfl⟩ := (E7.glueLabelEquiv ht).surjective a
+  simp only [glueLabelCount] at hd
+  rw [glueRepresentativeVector_glueLabelEquiv, glueLabelEquiv_E7 ht]
+  interval_cases d
+  · simp only [glueLabelVector_zero E7, Nat.cast_zero, zero_ne_one, ↓reduceIte]
+    -- `(0 : Fin E7.rank → ℚ)` and `(0 : Fin 7 → ℚ)` are definitionally equal.
+    rfl
+  · simp
 
 /-- On `E₈`, `glueRepresentativeVector` is identically `0`. -/
-@[simp]
-theorem glueRepresentativeVector_E8 (ht : E8.IsSimplyLaced) (a : E8.glueAlphabet ht) :
+@[simp] theorem glueRepresentativeVector_E8 (ht : E8.IsSimplyLaced) (a : E8.glueAlphabet ht) :
     E8.glueRepresentativeVector ht a = 0 := by
   rw [Subsingleton.elim a 0, glueRepresentativeVector_zero]
 
@@ -598,21 +471,17 @@ noncomputable def glueRepresentative (t : DynkinType) (hv : t.Valid) (ht : t.IsS
   ⟨t.glueRepresentativeVector ht a, t.glueRepresentativeVector_mem_dualCarrier hv ht a⟩
 
 /-- The underlying vector of `glueRepresentative` is `glueRepresentativeVector`. -/
-@[simp]
-theorem coe_glueRepresentative (t : DynkinType) (hv : t.Valid) (ht : t.IsSimplyLaced)
+@[simp] theorem coe_glueRepresentative (t : DynkinType) (hv : t.Valid) (ht : t.IsSimplyLaced)
     (a : t.glueAlphabet ht) :
-    (t.glueRepresentative hv ht a : Fin t.rank → ℚ) = t.glueRepresentativeVector ht a :=
-  (rfl)
+    (t.glueRepresentative hv ht a : Fin t.rank → ℚ) = t.glueRepresentativeVector ht a := (rfl)
 
 /-- The zero glue label has bundled representative `0`. -/
-@[simp]
-theorem glueRepresentative_zero (t : DynkinType) (hv : t.Valid) (ht : t.IsSimplyLaced) :
+@[simp] theorem glueRepresentative_zero (t : DynkinType) (hv : t.Valid) (ht : t.IsSimplyLaced) :
     t.glueRepresentative hv ht 0 = 0 :=
   Subtype.ext (t.glueRepresentativeVector_zero ht)
 
 /-- **`glueRepresentative` represents the discriminant coset `glueAlphabetIsometry`.** -/
-@[simp]
-theorem mk_glueRepresentative (t : DynkinType) (hv : t.Valid) (ht : t.IsSimplyLaced)
+@[simp] theorem mk_glueRepresentative (t : DynkinType) (hv : t.Valid) (ht : t.IsSimplyLaced)
     (a : t.glueAlphabet ht) :
     (Submodule.Quotient.mk (t.glueRepresentative hv ht a) :
         (t.rootLattice ht).DiscriminantGroup) =
@@ -632,44 +501,34 @@ theorem glueRepresentative_injective (t : DynkinType) (hv : t.Valid) (ht : t.IsS
   exact (t.glueAlphabetIsometry hv ht).injective hmk
 
 /-- Distinct glue labels have distinct rational representative vectors. -/
-theorem glueRepresentativeVector_injective (t : DynkinType) (hv : t.Valid)
-    (ht : t.IsSimplyLaced) :
-    Function.Injective (t.glueRepresentativeVector ht) := by
-  intro a b hab
-  apply t.glueRepresentative_injective hv ht
-  apply Subtype.ext
-  rw [coe_glueRepresentative, coe_glueRepresentative, hab]
+theorem glueRepresentativeVector_injective (t : DynkinType) (hv : t.Valid) (ht : t.IsSimplyLaced) :
+    Function.Injective (t.glueRepresentativeVector ht) := fun _ _ hab ↦
+  t.glueRepresentative_injective hv ht <| Subtype.ext <| by
+    rw [coe_glueRepresentative, coe_glueRepresentative, hab]
 
 /-- `glueRepresentative` vanishes if and only if the glue label is `0`. -/
-@[simp]
-theorem glueRepresentative_eq_zero_iff (t : DynkinType) (hv : t.Valid) (ht : t.IsSimplyLaced)
-    (a : t.glueAlphabet ht) :
+@[simp] theorem glueRepresentative_eq_zero_iff (t : DynkinType) (hv : t.Valid)
+    (ht : t.IsSimplyLaced) (a : t.glueAlphabet ht) :
     t.glueRepresentative hv ht a = 0 ↔ a = 0 := by
-  rw [← t.glueRepresentative_zero hv ht]
-  exact (t.glueRepresentative_injective hv ht).eq_iff
+  rw [← t.glueRepresentative_zero hv ht]; exact (t.glueRepresentative_injective hv ht).eq_iff
 
 /-- `glueRepresentativeVector` vanishes if and only if the glue label is `0`. -/
-@[simp]
-theorem glueRepresentativeVector_eq_zero_iff (t : DynkinType) (hv : t.Valid)
+@[simp] theorem glueRepresentativeVector_eq_zero_iff (t : DynkinType) (hv : t.Valid)
     (ht : t.IsSimplyLaced) (a : t.glueAlphabet ht) :
     t.glueRepresentativeVector ht a = 0 ↔ a = 0 := by
   rw [← t.glueRepresentativeVector_zero ht]
   exact (t.glueRepresentativeVector_injective hv ht).eq_iff
 
-/-- Two glue-label representative vectors differ by a root-lattice vector if and only if the labels
-are equal. -/
+/-- Two glue-label representative vectors differ by a root-lattice vector iff the labels agree. -/
 theorem glueRepresentativeVector_sub_mem_carrier_iff (t : DynkinType) (hv : t.Valid)
     (ht : t.IsSimplyLaced) (a b : t.glueAlphabet ht) :
     t.glueRepresentativeVector ht a - t.glueRepresentativeVector ht b ∈
-        (t.rootLattice ht).carrier ↔
-      a = b := by
-  rw [← coe_glueRepresentative t hv ht a, ← coe_glueRepresentative t hv ht b,
-    ← Submodule.coe_sub, ← discriminantGroup_mk_eq_iff, mk_glueRepresentative,
-    mk_glueRepresentative]
+        (t.rootLattice ht).carrier ↔ a = b := by
+  rw [← coe_glueRepresentative t hv ht a, ← coe_glueRepresentative t hv ht b, ← Submodule.coe_sub,
+    ← discriminantGroup_mk_eq_iff, mk_glueRepresentative, mk_glueRepresentative]
   exact (t.glueAlphabetIsometry hv ht).injective.eq_iff
 
-/-- `glueRepresentativeVector` belongs to the root-lattice carrier if and only if the glue label is
-`0`. -/
+/-- `glueRepresentativeVector` belongs to the root-lattice carrier iff the glue label is `0`. -/
 theorem glueRepresentativeVector_mem_carrier_iff (t : DynkinType) (hv : t.Valid)
     (ht : t.IsSimplyLaced) (a : t.glueAlphabet ht) :
     t.glueRepresentativeVector ht a ∈ (t.rootLattice ht).carrier ↔ a = 0 := by
@@ -677,14 +536,13 @@ theorem glueRepresentativeVector_mem_carrier_iff (t : DynkinType) (hv : t.Valid)
     t.glueRepresentativeVector_sub_mem_carrier_iff hv ht a 0
 
 /-- **`glueRepresentativeVector` attains the shortest norm `t.glueMinimum ht a`.** -/
-@[simp]
-theorem form_glueRepresentativeVector_self (t : DynkinType) (hv : t.Valid) (ht : t.IsSimplyLaced)
-    (a : t.glueAlphabet ht) :
+@[simp] theorem form_glueRepresentativeVector_self (t : DynkinType) (hv : t.Valid)
+    (ht : t.IsSimplyLaced) (a : t.glueAlphabet ht) :
     (t.rootLattice ht).form (t.glueRepresentativeVector ht a) (t.glueRepresentativeVector ht a) =
       t.glueMinimum ht a := by
   obtain ⟨d, rfl⟩ := (t.glueLabelEquiv ht).surjective a
-  rw [glueRepresentativeVector_glueLabelEquiv,
-    form_glueLabelVector_self t hv ht d, glueMinimum_glueLabelEquiv]
+  rw [glueRepresentativeVector_glueLabelEquiv, form_glueLabelVector_self t hv ht d,
+    glueMinimum_glueLabelEquiv]
 
 /-- **Minimality of `glueRepresentative`**: no dual vector in the coset `t.glueAlphabetIsometry hv
 ht a` has strictly smaller squared norm than `t.glueRepresentative hv ht a`. -/
@@ -697,8 +555,7 @@ theorem form_glueRepresentative_self_le (t : DynkinType) (hv : t.Valid) (ht : t.
   rw [coe_glueRepresentative, form_glueRepresentativeVector_self t hv ht a]
   exact (t.isLeast_glueMinimum hv ht a).2 ⟨x, hx, rfl⟩
 
-/-- **Quadratic half-norm of a glue label from its explicit representative**:
-`q(a) = ⟨v_a, v_a⟩ / 2 mod ℤ`. -/
+/-- **Quadratic half-norm of a glue label**: `q(a) = ⟨v_a, v_a⟩ / 2 mod ℤ`. -/
 theorem quadratic_glueAlphabet_eq_form_glueRepresentative_self_div_two (t : DynkinType)
     (hv : t.Valid) (ht : t.IsSimplyLaced) (a : t.glueAlphabet ht) :
     (t.glueAlphabet ht).quadratic a =
@@ -707,8 +564,7 @@ theorem quadratic_glueAlphabet_eq_form_glueRepresentative_self_div_two (t : Dynk
   rw [form_glueRepresentativeVector_self t hv ht a]
   exact quadratic_glueAlphabet_eq_glueMinimum_div_two t ht a
 
-/-- **Polar bilinear pairing of two glue labels from their explicit representatives**:
-`b(a, b) = ⟨v_a, v_b⟩ mod ℤ`. -/
+/-- **Polar bilinear pairing of two glue labels**: `b(a, b) = ⟨v_a, v_b⟩ mod ℤ`. -/
 theorem pairing_glueAlphabet_eq_form_glueRepresentative (t : DynkinType) (hv : t.Valid)
     (ht : t.IsSimplyLaced) (a b : t.glueAlphabet ht) :
     (t.glueAlphabet ht).toFiniteBilinearModule.pairing a b =
@@ -720,9 +576,8 @@ theorem pairing_glueAlphabet_eq_form_glueRepresentative (t : DynkinType) (hv : t
   rw [← mk_glueRepresentative t hv ht a, ← mk_glueRepresentative t hv ht b,
     discriminantPairing_mk, coe_glueRepresentative, coe_glueRepresentative]
 
-/-- **Torsion of a glue label in terms of its explicit representative**: an integer multiple
-`k • a` vanishes in `t.glueAlphabet ht` if and only if `k • v_a` belongs to the root-lattice
-carrier. -/
+/-- **Torsion of a glue label**: `k • a = 0` in `t.glueAlphabet ht` iff `k • v_a` belongs to the
+root-lattice carrier. -/
 theorem zsmul_eq_zero_iff_zsmul_glueRepresentativeVector_mem_carrier (t : DynkinType)
     (hv : t.Valid) (ht : t.IsSimplyLaced) (a : t.glueAlphabet ht) (k : ℤ) :
     k • a = 0 ↔ k • t.glueRepresentativeVector ht a ∈ (t.rootLattice ht).carrier := by
@@ -758,11 +613,9 @@ section GlueWord
 universe v
 
 /-- **Computable shortest dual-lattice representative of a glue word**
-`w : ∀ i, (t i).glueAlphabet (ht i)` in the ambient space `∀ i, Fin (t i).rank → ℚ` of the
-orthogonal sum of root lattices. -/
+`w : ∀ i, (t i).glueAlphabet (ht i)` in `∀ i, Fin (t i).rank → ℚ`. -/
 def glueWordRepresentativeVector {ι : Type v} (t : ι → DynkinType) (ht : ∀ i, (t i).IsSimplyLaced)
-    (w : ∀ i, (t i).glueAlphabet (ht i)) :
-    ∀ i, Fin (t i).rank → ℚ :=
+    (w : ∀ i, (t i).glueAlphabet (ht i)) : ∀ i, Fin (t i).rank → ℚ :=
   fun i ↦ (t i).glueRepresentativeVector (ht i) (w i)
 
 /-- `glueWordRepresentativeVector` acts componentwise by `glueRepresentativeVector`. -/
@@ -771,34 +624,25 @@ theorem glueWordRepresentativeVector_def {ι : Type v} (t : ι → DynkinType)
     glueWordRepresentativeVector t ht w = fun i ↦ (t i).glueRepresentativeVector (ht i) (w i) :=
   (rfl)
 
-/-- Evaluating `glueWordRepresentativeVector` at component `i` gives
-`(t i).glueRepresentativeVector (ht i) (w i)`. -/
-@[simp]
-theorem glueWordRepresentativeVector_apply {ι : Type v} (t : ι → DynkinType)
+/-- Evaluating `glueWordRepresentativeVector` at `i` gives `(t i).glueRepresentativeVector`. -/
+@[simp] theorem glueWordRepresentativeVector_apply {ι : Type v} (t : ι → DynkinType)
     (ht : ∀ i, (t i).IsSimplyLaced) (w : ∀ i, (t i).glueAlphabet (ht i)) (i : ι) :
-    glueWordRepresentativeVector t ht w i = (t i).glueRepresentativeVector (ht i) (w i) :=
-  (rfl)
+    glueWordRepresentativeVector t ht w i = (t i).glueRepresentativeVector (ht i) (w i) := (rfl)
 
 /-- The zero glue word is represented by the zero vector. -/
-@[simp]
-theorem glueWordRepresentativeVector_zero {ι : Type v} (t : ι → DynkinType)
-    (ht : ∀ i, (t i).IsSimplyLaced) :
-    glueWordRepresentativeVector t ht 0 = 0 := by
-  ext i j
-  simp
+@[simp] theorem glueWordRepresentativeVector_zero {ι : Type v} (t : ι → DynkinType)
+    (ht : ∀ i, (t i).IsSimplyLaced) : glueWordRepresentativeVector t ht 0 = 0 := by
+  ext i j; simp
 
 /-- Distinct glue words have distinct rational representative vectors when all components are
 valid. -/
 theorem glueWordRepresentativeVector_injective {ι : Type v} (t : ι → DynkinType)
     (ht : ∀ i, (t i).IsSimplyLaced) (hv : ∀ i, (t i).Valid) :
-    Function.Injective (glueWordRepresentativeVector t ht) := by
-  intro w₁ w₂ h
-  funext i
-  exact (t i).glueRepresentativeVector_injective (hv i) (ht i) (congrFun h i)
+    Function.Injective (glueWordRepresentativeVector t ht) := fun _ _ h ↦
+  funext fun i ↦ (t i).glueRepresentativeVector_injective (hv i) (ht i) (congrFun h i)
 
 /-- `glueWordRepresentativeVector` vanishes if and only if the glue word is `0`. -/
-@[simp]
-theorem glueWordRepresentativeVector_eq_zero_iff {ι : Type v} (t : ι → DynkinType)
+@[simp] theorem glueWordRepresentativeVector_eq_zero_iff {ι : Type v} (t : ι → DynkinType)
     (ht : ∀ i, (t i).IsSimplyLaced) (hv : ∀ i, (t i).Valid)
     (w : ∀ i, (t i).glueAlphabet (ht i)) :
     glueWordRepresentativeVector t ht w = 0 ↔ w = 0 := by
@@ -817,27 +661,22 @@ theorem glueWordRepresentativeVector_mem_dualCarrier (hv : ∀ i, (t i).Valid)
 
 /-- **Bundled shortest dual-lattice representative of a glue word.** -/
 noncomputable def glueWordRepresentative (hv : ∀ i, (t i).Valid)
-    (w : ∀ i, (t i).glueAlphabet (ht i)) :
-    (pi fun i ↦ (t i).rootLattice (ht i)).dualCarrier :=
+    (w : ∀ i, (t i).glueAlphabet (ht i)) : (pi fun i ↦ (t i).rootLattice (ht i)).dualCarrier :=
   ⟨glueWordRepresentativeVector t ht w, glueWordRepresentativeVector_mem_dualCarrier t ht hv w⟩
 
 /-- The underlying vector of `glueWordRepresentative` is `glueWordRepresentativeVector`. -/
-@[simp]
-theorem coe_glueWordRepresentative (hv : ∀ i, (t i).Valid)
+@[simp] theorem coe_glueWordRepresentative (hv : ∀ i, (t i).Valid)
     (w : ∀ i, (t i).glueAlphabet (ht i)) :
     (glueWordRepresentative t ht hv w : ∀ i, Fin (t i).rank → ℚ) =
-      glueWordRepresentativeVector t ht w :=
-  (rfl)
+      glueWordRepresentativeVector t ht w := (rfl)
 
 /-- The zero glue word has bundled representative `0`. -/
-@[simp]
-theorem glueWordRepresentative_zero (hv : ∀ i, (t i).Valid) :
+@[simp] theorem glueWordRepresentative_zero (hv : ∀ i, (t i).Valid) :
     glueWordRepresentative t ht hv 0 = 0 :=
   Subtype.ext (glueWordRepresentativeVector_zero t ht)
 
 /-- **`glueWordRepresentative` represents the discriminant coset `glueWordIsometry`.** -/
-@[simp]
-theorem mk_glueWordRepresentative (hv : ∀ i, (t i).Valid)
+@[simp] theorem mk_glueWordRepresentative (hv : ∀ i, (t i).Valid)
     (w : ∀ i, (t i).glueAlphabet (ht i)) :
     (Submodule.Quotient.mk (glueWordRepresentative t ht hv w) :
         (pi fun i ↦ (t i).rootLattice (ht i)).DiscriminantGroup) =
@@ -850,39 +689,32 @@ theorem mk_glueWordRepresentative (hv : ∀ i, (t i).Valid)
 
 /-- Distinct glue words have distinct bundled dual-lattice representatives. -/
 theorem glueWordRepresentative_injective (hv : ∀ i, (t i).Valid) :
-    Function.Injective (glueWordRepresentative t ht hv) := by
-  intro w₁ w₂ h
-  apply glueWordRepresentativeVector_injective t ht hv
-  rw [← coe_glueWordRepresentative t ht hv w₁, ← coe_glueWordRepresentative t ht hv w₂, h]
+    Function.Injective (glueWordRepresentative t ht hv) := fun w₁ w₂ h ↦
+  glueWordRepresentativeVector_injective t ht hv <| by
+    rw [← coe_glueWordRepresentative t ht hv w₁, ← coe_glueWordRepresentative t ht hv w₂, h]
 
 /-- `glueWordRepresentative` vanishes if and only if the glue word is `0`. -/
-@[simp]
-theorem glueWordRepresentative_eq_zero_iff (hv : ∀ i, (t i).Valid)
+@[simp] theorem glueWordRepresentative_eq_zero_iff (hv : ∀ i, (t i).Valid)
     (w : ∀ i, (t i).glueAlphabet (ht i)) :
     glueWordRepresentative t ht hv w = 0 ↔ w = 0 := by
   rw [← glueWordRepresentative_zero t ht hv]
   exact (glueWordRepresentative_injective t ht hv).eq_iff
 
-/-- Two glue-word representative vectors differ by a vector of the orthogonal sum of root lattices
-if and only if the glue words are equal. -/
+/-- Two glue-word representative vectors differ by a root-lattice vector iff the words agree. -/
 theorem glueWordRepresentativeVector_sub_mem_carrier_iff (hv : ∀ i, (t i).Valid)
     (w₁ w₂ : ∀ i, (t i).glueAlphabet (ht i)) :
     glueWordRepresentativeVector t ht w₁ - glueWordRepresentativeVector t ht w₂ ∈
-        (pi fun i ↦ (t i).rootLattice (ht i)).carrier ↔
-      w₁ = w₂ := by
+        (pi fun i ↦ (t i).rootLattice (ht i)).carrier ↔ w₁ = w₂ := by
   rw [← coe_glueWordRepresentative t ht hv w₁, ← coe_glueWordRepresentative t ht hv w₂,
     ← Submodule.coe_sub, ← discriminantGroup_mk_eq_iff, mk_glueWordRepresentative,
     mk_glueWordRepresentative]
   exact (glueWordIsometry t ht hv).injective.eq_iff
 
-/-- `glueWordRepresentativeVector` belongs to the orthogonal sum of root lattices if and only if
-the glue word is `0`. -/
+/-- `glueWordRepresentativeVector` belongs to the orthogonal sum of root lattices iff `w = 0`. -/
 theorem glueWordRepresentativeVector_mem_carrier_iff (hv : ∀ i, (t i).Valid)
     (w : ∀ i, (t i).glueAlphabet (ht i)) :
-    glueWordRepresentativeVector t ht w ∈
-        (pi fun i ↦ (t i).rootLattice (ht i)).carrier ↔
-      w = 0 := by
-  simpa only [glueWordRepresentativeVector_zero, sub_zero] using
+    glueWordRepresentativeVector t ht w ∈ (pi fun i ↦ (t i).rootLattice (ht i)).carrier ↔ w = 0 :=
+  by simpa only [glueWordRepresentativeVector_zero, sub_zero] using
     glueWordRepresentativeVector_sub_mem_carrier_iff t ht hv w 0
 
 /-- **`glueWordRepresentativeVector` attains the shortest norm
@@ -890,21 +722,18 @@ theorem glueWordRepresentativeVector_mem_carrier_iff (hv : ∀ i, (t i).Valid)
 theorem form_glueWordRepresentativeVector_self (hv : ∀ i, (t i).Valid)
     (w : ∀ i, (t i).glueAlphabet (ht i)) :
     (pi fun i ↦ (t i).rootLattice (ht i)).form (glueWordRepresentativeVector t ht w)
-        (glueWordRepresentativeVector t ht w) =
-      ∑ i, (t i).glueMinimum (ht i) (w i) := by
+        (glueWordRepresentativeVector t ht w) = ∑ i, (t i).glueMinimum (ht i) (w i) := by
   rw [pi_form, piForm_apply]
   exact Finset.sum_congr rfl fun i _ ↦ (t i).form_glueRepresentativeVector_self (hv i) (ht i) (w i)
 
 /-- **Minimality of `glueWordRepresentative`**: no dual vector in the coset `glueWordIsometry t ht
 hv w` has smaller squared norm. -/
 theorem form_glueWordRepresentative_self_le (hv : ∀ i, (t i).Valid)
-    (w : ∀ i, (t i).glueAlphabet (ht i))
-    (x : (pi fun i ↦ (t i).rootLattice (ht i)).dualCarrier)
+    (w : ∀ i, (t i).glueAlphabet (ht i)) (x : (pi fun i ↦ (t i).rootLattice (ht i)).dualCarrier)
     (hx : (Submodule.Quotient.mk x : (pi fun i ↦ (t i).rootLattice (ht i)).DiscriminantGroup) =
       glueWordIsometry t ht hv w) :
     (pi fun i ↦ (t i).rootLattice (ht i)).form (glueWordRepresentative t ht hv w)
-        (glueWordRepresentative t ht hv w) ≤
-      (pi fun i ↦ (t i).rootLattice (ht i)).form x x := by
+        (glueWordRepresentative t ht hv w) ≤ (pi fun i ↦ (t i).rootLattice (ht i)).form x x := by
   rw [coe_glueWordRepresentative, form_glueWordRepresentativeVector_self t ht hv w]
   exact (isLeast_sum_glueMinimum t hv ht w).2 ⟨x, hx, rfl⟩
 
@@ -922,8 +751,8 @@ theorem pairing_pi_glueAlphabet_eq_form_glueWordRepresentative (hv : ∀ i, (t i
     discriminantPairing_mk, coe_glueWordRepresentative, coe_glueWordRepresentative]
 
 /-- **Explicit generators of a glued lattice**: if `G` generates `H`, then `(gluedLattice t ht hv
-H hH).carrier` is spanned over `ℤ` by the root-lattice carrier and the computable vectors
-`glueWordRepresentativeVector t ht w` for `w ∈ G`. -/
+H hH).carrier` is spanned over `ℤ` by the root-lattice carrier and
+`glueWordRepresentativeVector t ht '' G`. -/
 theorem gluedLattice_carrier_eq_sup_span_glueWordRepresentativeVector (hv : ∀ i, (t i).Valid)
     (H : AddSubgroup (FiniteQuadraticModule.pi fun i ↦ (t i).glueAlphabet (ht i)))
     (hH : (FiniteQuadraticModule.pi fun i ↦ (t i).glueAlphabet (ht i)).IsIsotropic H)
@@ -936,9 +765,8 @@ theorem gluedLattice_carrier_eq_sup_span_glueWordRepresentativeVector (hv : ∀ 
     gluedLattice_carrier_eq_sup_span t ht hv H hH hG (glueWordRepresentative t ht hv)
       fun w _ ↦ mk_glueWordRepresentative t ht hv w
 
-/-- **Coset decomposition of a glued lattice**: a rational vector `x` lies in `gluedLattice` if and
-only if it differs from `glueWordRepresentativeVector t ht w`, for some glue word `w ∈ H`, by a
-vector of the orthogonal sum of root lattices. -/
+/-- **Coset decomposition of a glued lattice**: `x` lies in `gluedLattice` iff it differs from
+`glueWordRepresentativeVector t ht w`, for some `w ∈ H`, by a root-lattice vector. -/
 theorem mem_gluedLattice_carrier_iff_exists_sub_mem (hv : ∀ i, (t i).Valid)
     (H : AddSubgroup (FiniteQuadraticModule.pi fun i ↦ (t i).glueAlphabet (ht i)))
     (hH : (FiniteQuadraticModule.pi fun i ↦ (t i).glueAlphabet (ht i)).IsIsotropic H)
@@ -949,54 +777,41 @@ theorem mem_gluedLattice_carrier_iff_exists_sub_mem (hv : ∀ i, (t i).Valid)
   rw [mem_gluedLattice_carrier_iff]
   constructor
   · rintro ⟨hx, hw⟩
-    set w := (glueWordIsometry t ht hv).toAddEquiv.symm (Submodule.Quotient.mk ⟨x, hx⟩)
-    refine ⟨w, hw, ?_⟩
-    have hmk : (Submodule.Quotient.mk ⟨x, hx⟩ :
-          (pi fun i ↦ (t i).rootLattice (ht i)).DiscriminantGroup) =
-        Submodule.Quotient.mk (glueWordRepresentative t ht hv w) := by
-      rw [mk_glueWordRepresentative]
-      exact ((glueWordIsometry t ht hv).toAddEquiv.apply_symm_apply _).symm
-    have hsub := (discriminantGroup_mk_eq_iff _ ⟨x, hx⟩ (glueWordRepresentative t ht hv w)).mp hmk
+    refine ⟨_, hw, ?_⟩
+    have hsub := (discriminantGroup_mk_eq_iff _ ⟨x, hx⟩
+      (glueWordRepresentative t ht hv _)).mp <| by
+        rw [mk_glueWordRepresentative]
+        exact ((glueWordIsometry t ht hv).toAddEquiv.apply_symm_apply _).symm
     rwa [Submodule.coe_sub, coe_glueWordRepresentative] at hsub
   · rintro ⟨w, hw, hsub⟩
     have hx : x ∈ (pi fun i ↦ (t i).rootLattice (ht i)).dualCarrier := by
-      have hsub₁ := (pi fun i ↦ (t i).rootLattice (ht i)).le_dualCarrier hsub
-      have hrep := glueWordRepresentativeVector_mem_dualCarrier t ht hv w
-      simpa only [sub_add_cancel] using
-        (pi fun i ↦ (t i).rootLattice (ht i)).dualCarrier.add_mem hsub₁ hrep
-    have hsub' : (((⟨x, hx⟩ - glueWordRepresentative t ht hv w :
-          (pi fun i ↦ (t i).rootLattice (ht i)).dualCarrier) : ∀ i, Fin (t i).rank → ℚ)) ∈
-        (pi fun i ↦ (t i).rootLattice (ht i)).carrier := by
-      rwa [Submodule.coe_sub, coe_glueWordRepresentative]
+      simpa only [sub_add_cancel] using (pi fun i ↦ (t i).rootLattice (ht i)).dualCarrier.add_mem
+        ((pi fun i ↦ (t i).rootLattice (ht i)).le_dualCarrier hsub)
+        (glueWordRepresentativeVector_mem_dualCarrier t ht hv w)
     refine ⟨hx, ?_⟩
     have hmk : (Submodule.Quotient.mk ⟨x, hx⟩ :
           (pi fun i ↦ (t i).rootLattice (ht i)).DiscriminantGroup) =
         (glueWordIsometry t ht hv).toAddEquiv w :=
-      ((discriminantGroup_mk_eq_iff _ ⟨x, hx⟩
-        (glueWordRepresentative t ht hv w)).mpr hsub').trans
+      ((discriminantGroup_mk_eq_iff _ ⟨x, hx⟩ (glueWordRepresentative t ht hv w)).mpr
+        (by rwa [Submodule.coe_sub, coe_glueWordRepresentative])).trans
         (mk_glueWordRepresentative t ht hv w)
-    rw [hmk, AddEquiv.symm_apply_apply]
-    exact hw
+    rwa [hmk, AddEquiv.symm_apply_apply]
 
-/-- `glueWordRepresentativeVector t ht w` belongs to `(gluedLattice t ht hv H hH).carrier` if and
-only if `w ∈ H`. -/
-@[simp]
-theorem glueWordRepresentativeVector_mem_gluedLattice_carrier_iff (hv : ∀ i, (t i).Valid)
+/-- `glueWordRepresentativeVector t ht w` belongs to `(gluedLattice t ht hv H hH).carrier` iff
+`w ∈ H`. -/
+@[simp] theorem glueWordRepresentativeVector_mem_gluedLattice_carrier_iff (hv : ∀ i, (t i).Valid)
     (H : AddSubgroup (FiniteQuadraticModule.pi fun i ↦ (t i).glueAlphabet (ht i)))
     (hH : (FiniteQuadraticModule.pi fun i ↦ (t i).glueAlphabet (ht i)).IsIsotropic H)
     (w : ∀ i, (t i).glueAlphabet (ht i)) :
     glueWordRepresentativeVector t ht w ∈ (gluedLattice t ht hv H hH).carrier ↔ w ∈ H := by
   rw [mem_gluedLattice_carrier_iff_exists_sub_mem]
-  constructor
-  · rintro ⟨w', hw', hsub⟩
-    rwa [(glueWordRepresentativeVector_sub_mem_carrier_iff t ht hv w w').mp hsub]
-  · intro hw
-    exact ⟨w, hw, by
-      rw [sub_self]
-      exact (pi fun i ↦ (t i).rootLattice (ht i)).carrier.zero_mem⟩
+  exact ⟨fun ⟨w', hw', hsub⟩ ↦
+    (glueWordRepresentativeVector_sub_mem_carrier_iff t ht hv w w').mp hsub ▸ hw',
+    fun hw ↦ ⟨w, hw, sub_self (glueWordRepresentativeVector t ht w) ▸
+      (pi fun i ↦ (t i).rootLattice (ht i)).carrier.zero_mem⟩⟩
 
-/-- **Coordinatewise membership criterion for a glued lattice**: `x` belongs to `gluedLattice` if
-and only if there is a glue word `w ∈ H` such that every simple-root coordinate `x i j` differs from
+/-- **Coordinatewise membership criterion for a glued lattice**: `x` belongs to `gluedLattice` iff
+there is `w ∈ H` such that every coordinate `x i j` differs from
 `(t i).glueRepresentativeVector (ht i) (w i) j` by an integer. -/
 theorem mem_gluedLattice_carrier_iff_exists_int (hv : ∀ i, (t i).Valid)
     (H : AddSubgroup (FiniteQuadraticModule.pi fun i ↦ (t i).glueAlphabet (ht i)))
@@ -1007,10 +822,8 @@ theorem mem_gluedLattice_carrier_iff_exists_int (hv : ∀ i, (t i).Valid)
         (z : ℚ) = x i j - (t i).glueRepresentativeVector (ht i) (w i) j := by
   rw [mem_gluedLattice_carrier_iff_exists_sub_mem]
   refine exists_congr fun w ↦ and_congr_right fun _ ↦ ?_
-  rw [mem_pi_carrier_iff]
-  refine forall_congr' fun i ↦ ?_
-  rw [mem_rootLattice_carrier_iff]
-  refine forall_congr' fun j ↦ exists_congr fun z ↦ ?_
+  rw [mem_pi_carrier_iff]; refine forall_congr' fun i ↦ ?_
+  rw [mem_rootLattice_carrier_iff]; refine forall_congr' fun j ↦ exists_congr fun z ↦ ?_
   rw [Pi.sub_apply, Pi.sub_apply, glueWordRepresentativeVector_apply]
 
 end GlueWord
