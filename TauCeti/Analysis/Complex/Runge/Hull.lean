@@ -80,7 +80,7 @@ the relatively compact connected components of `Ω \ K` in `Ω`.
 
 * L. Hörmander, *An Introduction to Complex Analysis in Several Variables*, 3rd ed., §1.3,
   Theorem 1.3.4.
-* A. Rainer, *Advanced Complex Analysis*, §11.
+* A. Rainer, *Advanced Complex Analysis*, §11, Lemma 11.3.
 * W. Rudin, *Real and Complex Analysis*, 3rd ed., Chapter 13.
 -/
 
@@ -124,6 +124,7 @@ theorem holomorphicHull_mono {Ω K L : Set V} (h : K ⊆ L) :
 
 /-- Enlarging the ambient set `Ω` shrinks the family of functions holomorphic on `Ω`, hence enlarges
 the holomorphic hull. -/
+@[gcongr]
 theorem holomorphicHull_mono_left {Ω₁ Ω₂ K : Set V} (h : Ω₁ ⊆ Ω₂) :
     holomorphicHull Ω₁ K ⊆ holomorphicHull Ω₂ K :=
   fun _ hz ↦ ⟨h hz.1, fun f hf c hc ↦ hz.2 f (hf.mono h) c hc⟩

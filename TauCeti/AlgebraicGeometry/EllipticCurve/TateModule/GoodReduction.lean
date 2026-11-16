@@ -7,15 +7,9 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Terminal
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateModule.Unramified
-public import TauCeti.NumberTheory.LocalField.Unramified.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.Bound
-import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.TorsionReduction
-import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.VariableChange
 import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel.ValuativeExtension
-import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.TateModule.Inertia
-import TauCeti.NumberTheory.LocalField.FiniteExtension.IntermediateField
-import TauCeti.NumberTheory.LocalField.Henselian
 
 /-!
 # Good reduction from an unramified Tate module

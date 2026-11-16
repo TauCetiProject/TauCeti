@@ -22,10 +22,8 @@ import Mathlib.Topology.Algebra.Module.PerfectSpace
 import Mathlib.Topology.MetricSpace.Thickening
 import TauCeti.Analysis.Analytic.ExtractZeros
 import TauCeti.Analysis.Calculus.Deriv.Polynomial
-import TauCeti.Analysis.Complex.Conformal.NormalFamilies
 import TauCeti.Analysis.Complex.Polynomial.Approximation
-import TauCeti.Analysis.Complex.Pompeiu.Cutoff
-import TauCeti.Analysis.Complex.Quadrature
+import TauCeti.Analysis.Complex.Pompeiu.Discretization
 import TauCeti.Analysis.Complex.Runge.SimpleFraction
 import TauCeti.Analysis.Normed.Field.Inversion
 import TauCeti.Analysis.Normed.Module.Exhaustion
@@ -46,25 +44,20 @@ rational refinements, its converse, and the resulting topological description of
 hull `TauCeti.holomorphicHull Ω K`:
 
 1. **Universal linear finite-rank operators and finite-jet interpolation**
-   (`IsCompact.exists_sum_sub_inv_smul_norm_sub_le`,
-   `TauCeti.IsFilledIn.exists_differentiableOn_sum_smul_norm_sub_le`, and
+   (`TauCeti.IsFilledIn.exists_differentiableOn_sum_smul_norm_sub_le` and
    `TauCeti.IsFilledIn.exists_differentiableOn_iteratedDeriv_eq_and_norm_sub_lt`):
-   - First, for any compact pair `K ⊆ interior L` inside an open set `U ⊆ ℂ`, discretizing the
-     cutoff Cauchy–Pompeiu representation on `interior L` via
-     `IsCompact.exists_sum_smul_norm_setIntegral_sub_le` and controlling integrand oscillation
-     uniformly by Cauchy's derivative estimate
-     (`TauCeti.dist_le_of_forall_mem_closedBall_two_mul_norm_le`) produces finitely many nodes
-     `ζ j ∈ interior L \ K` and scalar weights `w j : ℂ` such that
-     `‖f z - ∑ j, (w j * (z - ζ j)⁻¹) • f (ζ j)‖ ≤ ε * B` for all `z ∈ K` and every Banach-valued
-     holomorphic map `f : ℂ → F` on `U` with `‖f‖ ≤ B` on `L`.
    - When `K` is filled in `Ω` (`TauCeti.IsFilledIn K Ω`), choosing a compact collar `L ⊆ U ∩ Ω`
-     with `K ⊆ interior L` and replacing each simple fraction `z ↦ (z - ζ j)⁻¹` (`ζ j ∉ K`) by a
-     function `g j` holomorphic on `Ω` via
+     with `K ⊆ interior L` (`IsCompact.exists_subset_interior_closedBall_sdiff_thickening`),
+     discretizing the Cauchy–Pompeiu formula on `(K, interior L)` via
+     `IsCompact.exists_norm_sub_sum_mul_sub_inv_smul_le`, and replacing each simple fraction
+     `z ↦ (z - ζ j)⁻¹` (`ζ j ∉ K`) by a function `g j` holomorphic on `Ω` via
      `TauCeti.IsFilledIn.exists_differentiableOn_norm_inv_sub_lt` yields universal linear
      finite-rank holomorphic approximation operators
 
-     `‖f z - ∑ j, (w j * g j z) • f (ζ j)‖ ≤ ε * B`.
+     `‖f z - ∑ j, (w j * g j z) • f (ζ j)‖ ≤ ε * B`
 
+     uniformly over all normed-space-valued maps `f : ℂ → F` holomorphic on `U` with `‖f‖ ≤ B` on
+     `L`.
    - Combining scalar Runge approximation with Hermite polynomial interpolation
      (`TauCeti.ordinaryHermiteJet_bijective`) and analytic zero extraction
      (`AnalyticOnNhd.exists_eq_prod_pow_smul`) yields approximants on `Ω` that match prescribed
@@ -96,12 +89,11 @@ hull `TauCeti.holomorphicHull Ω K`:
 
 ## Main results
 
-* `IsCompact.exists_sum_sub_inv_smul_norm_sub_le`: universal rational-kernel finite-rank
-  approximation on a compact collar `K ⊆ interior L ⊆ L ⊆ U`.
 * `TauCeti.IsFilledIn.exists_differentiableOn_sum_smul_norm_sub_le`: universal holomorphic
-  finite-rank approximation with uniform collar bound `ε * B` for Banach-valued maps `f : ℂ → F`.
-* `TauCeti.IsFilledIn.exists_differentiableOn_norm_sub_lt`: Banach-valued Runge approximation on a
-  filled compact set `K ⊆ Ω`.
+  finite-rank approximation with uniform collar bound `ε * B` for normed-space-valued maps
+  `f : ℂ → F`.
+* `TauCeti.IsFilledIn.exists_differentiableOn_norm_sub_lt`: normed-space-valued Runge approximation
+  on a filled compact set `K ⊆ Ω`.
 * `TauCeti.IsFilledIn.exists_differentiableOn_iteratedDeriv_eq_and_norm_sub_lt`: scalar Runge
   approximation matching prescribed finite jets at finitely many points of `K`.
 * `TauCeti.isFilledIn_iff_forall_exists_differentiableOn_norm_sub_lt`: equivalence between
@@ -120,7 +112,8 @@ hull `TauCeti.holomorphicHull Ω K`:
 
 ## References
 
-* A. Rainer, *Advanced Complex Analysis*, Theorem 11.1, Corollary 11.4, and Theorem 11.7.
+* A. Rainer, *Advanced Complex Analysis*, Theorem 11.1, Lemma 11.3, Corollary 11.4, and
+  Theorem 11.7.
 * W. Rudin, *Real and Complex Analysis*, 3rd ed., Theorems 13.5–13.9.
 * L. Hörmander, *An Introduction to Complex Analysis in Several Variables*, 3rd ed., Theorem 1.3.1
   and Theorem 1.3.4.
@@ -128,136 +121,14 @@ hull `TauCeti.holomorphicHull Ω K`:
 
 public section
 
-open Bornology Complex MeasureTheory Metric Polynomial Set
+open Bornology Complex Metric Polynomial Set
 open scoped OnePoint Topology
+
+universe u
 
 namespace TauCeti
 
 section FiniteRank
-
-/-- **Universal rational-kernel finite-rank approximation on a collar.** Let `K ⊆ ℂ` be compact and
-let `L, U ⊆ ℂ` satisfy `K ⊆ interior L` and `L ⊆ U`. For every `ε > 0`, there exist sample nodes
-`ζ : Fin N → ℂ` in `interior L \ K` and scalar weights `w : Fin N → ℂ` such that for every
-Banach-valued function `f : ℂ → F` holomorphic on `U` with `‖f‖ ≤ B` on `L` (`0 ≤ B`),
-
-`‖f z - ∑ j, (w j * (z - ζ j)⁻¹) • f (ζ j)‖ ≤ ε * B`
-
-for all `z ∈ K`. -/
-theorem _root_.IsCompact.exists_sum_sub_inv_smul_norm_sub_le {K L U : Set ℂ} (hK : IsCompact K)
-    (F : Type*) [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
-    (hKL : K ⊆ interior L) (hLU : L ⊆ U) {ε : ℝ} (hε : 0 < ε) :
-    ∃ (N : ℕ) (ζ : Fin N → ℂ) (w : Fin N → ℂ),
-      (∀ j, ζ j ∈ interior L \ K) ∧
-      ∀ {f : ℂ → F} {B : ℝ}, DifferentiableOn ℂ f U → 0 ≤ B → (∀ z ∈ L, ‖f z‖ ≤ B) →
-        ∀ z ∈ K, ‖f z - ∑ j, (w j * (z - ζ j)⁻¹) • f (ζ j)‖ ≤ ε * B := by
-  -- Cutoff Cauchy–Pompeiu representation on `(K, interior L)`.
-  obtain ⟨α, hα, -, hαL, hKα1, hK₁, hdisj, hrep⟩ :=
-    hK.exists_contDiff_setIntegral_sub_inv_smul_conjWirtingerDeriv_eq (F := F) isOpen_interior hKL
-  set K₁ : Set ℂ := tsupport (fun ζ ↦ conjWirtingerDeriv α ζ 1)
-  have hK₁L : K₁ ⊆ interior L := (tsupport_conjWirtingerDeriv_subset α 1).trans hαL
-  have hK₁notK {ζ : ℂ} (hζ : ζ ∈ K₁) : ζ ∉ K :=
-    fun hζK ↦ disjoint_left.1 hdisj hζ (hKα1 hζK)
-  -- Uniform radius `r` around `K₁` inside `interior L` for Cauchy's derivative estimate.
-  obtain ⟨r₀, hr₀, hr₀L⟩ := hK₁.exists_cthickening_subset_open isOpen_interior hK₁L
-  set r : ℝ := r₀ / 2
-  have hr : 0 < r := half_pos hr₀
-  have hballL {ζ : ℂ} (hζ : ζ ∈ K₁) : closedBall ζ (2 * r) ⊆ interior L := by
-    have h2r : 2 * r = r₀ := by dsimp only [r]; ring
-    rw [h2r]
-    exact (closedBall_subset_cthickening hζ r₀).trans hr₀L
-  -- Smooth scalar kernel `Φ (ζ, ξ) = π⁻¹ * (ξ - ζ)⁻¹ * bar∂ α (ζ)` on `K₁ ×ˢ K`.
-  set Φ : ℂ × ℂ → ℂ := fun p ↦ (Real.pi : ℂ)⁻¹ * (p.2 - p.1)⁻¹ * conjWirtingerDeriv α p.1 1
-  have hΦ_cont : ContinuousOn Φ (K₁ ×ˢ K) := by
-    have hsub_ne : ∀ p ∈ K₁ ×ˢ K, p.2 - p.1 ≠ 0 := fun p hp h0 ↦
-      hK₁notK hp.1 ((sub_eq_zero.1 h0 : p.2 = p.1) ▸ hp.2)
-    have hbar_cont : Continuous (fun p : ℂ × ℂ ↦ conjWirtingerDeriv α p.1 1) :=
-      ((hα.of_le (by simp)).continuous_conjWirtingerDeriv_apply 1).comp continuous_fst
-    exact (continuousOn_const.mul
-      ((continuous_snd.sub continuous_fst).continuousOn.inv₀ hsub_ne)).mul hbar_cont.continuousOn
-  obtain ⟨M₀, hM₀⟩ := (hK₁.prod hK).bddAbove_image hΦ_cont.norm
-  set M : ℝ := max M₀ 0
-  have hM_nonneg : 0 ≤ M := le_max_right M₀ 0
-  have hΦ_le {ζ ξ : ℂ} (hζ : ζ ∈ K₁) (hξ : ξ ∈ K) : ‖Φ (ζ, ξ)‖ ≤ M :=
-    (hM₀ (mem_image_of_mem _ ⟨hζ, hξ⟩)).trans (le_max_left M₀ 0)
-  -- Choose quadrature mesh `δ > 0` controlling both kernel oscillation and Cauchy Lipschitz bound.
-  set V₁ : ℝ := volume.real K₁
-  have hV₁_nonneg : 0 ≤ V₁ := measureReal_nonneg
-  have hV₁_pos : 0 < V₁ + 1 := add_pos_of_nonneg_of_pos hV₁_nonneg one_pos
-  have hM1_pos : 0 < M + 1 := add_pos_of_nonneg_of_pos hM_nonneg one_pos
-  set ω₁ : ℝ := ε / (2 * (V₁ + 1))
-  have hω₁ : 0 < ω₁ := by positivity
-  obtain ⟨r₁, hr₁, hr₁Φ⟩ := Metric.uniformContinuousOn_iff.1
-    ((hK₁.prod hK).uniformContinuousOn_of_continuous hΦ_cont) ω₁ hω₁
-  set δ : ℝ := min (r / 3) (min (r₁ / 3) (ε * r / (4 * (M + 1) * (V₁ + 1))))
-  have hδ : 0 < δ := lt_min (by positivity) (lt_min (by positivity) (by positivity))
-  have h2δ_r : 2 * δ < r := by
-    have : δ ≤ r / 3 := min_le_left _ _
-    linarith
-  have h2δ_r₁ : 2 * δ < r₁ := by
-    have : δ ≤ r₁ / 3 := (min_le_right _ _).trans (min_le_left _ _)
-    linarith
-  have h2δ_M : M * (2 * δ) / r ≤ ω₁ := by
-    have hδ₃ : δ ≤ ε * r / (4 * (M + 1) * (V₁ + 1)) :=
-      (min_le_right _ _).trans (min_le_right _ _)
-    have hmul : M * (2 * δ) ≤ (M + 1) * (2 * (ε * r / (4 * (M + 1) * (V₁ + 1)))) := by
-      gcongr; linarith
-    rw [div_le_iff₀ hr]
-    refine hmul.trans_eq ?_
-    dsimp only [ω₁]
-    field_simp [hM1_pos.ne', hV₁_pos.ne']
-    ring
-  obtain ⟨N, ζ, a, hζK₁, -, -, hquad⟩ := hK₁.exists_sum_smul_norm_setIntegral_sub_le (E := F) hδ
-  set w : Fin N → ℂ := fun j ↦ (a j : ℂ) * (Real.pi : ℂ)⁻¹ * conjWirtingerDeriv α (ζ j) 1
-  refine ⟨N, ζ, w, fun j ↦ ⟨hK₁L (hζK₁ j), hK₁notK (hζK₁ j)⟩, fun {f B} hf hB₀ hBL ξ hξ ↦ ?_⟩
-  have hf_intL : DifferentiableOn ℂ f (interior L) := hf.mono (interior_subset.trans hLU)
-  have hf_rep : f ξ = ∫ z in K₁, Φ (z, ξ) • f z := by
-    rw [← hrep hf_intL ξ (hKα1 hξ), ← integral_smul]
-    refine setIntegral_congr_fun hK₁.isClosed.measurableSet fun z _ ↦ ?_
-    simp [Φ, smul_smul, mul_assoc]
-  have hg_cont : ContinuousOn (fun z ↦ Φ (z, ξ) • f z) K₁ :=
-    (hΦ_cont.comp (continuous_id.prodMk continuous_const).continuousOn fun z hz ↦ ⟨hz, hξ⟩).smul
-      (hf_intL.continuousOn.mono hK₁L)
-  have hg_osc : ∀ z ∈ K₁, ∀ z' ∈ K₁, dist z z' ≤ 2 * δ →
-      ‖Φ (z, ξ) • f z - Φ (z', ξ) • f z'‖ ≤ 2 * ω₁ * B := by
-    intro z hz z' hz' hzz'
-    have hΦ_diff : ‖Φ (z, ξ) - Φ (z', ξ)‖ ≤ ω₁ := by
-      rw [← dist_eq_norm]
-      refine (hr₁Φ (z, ξ) ⟨hz, hξ⟩ (z', ξ) ⟨hz', hξ⟩ ?_).le
-      have hp : dist (z, ξ) (z', ξ) = dist z z' := by simp [Prod.dist_eq]
-      linarith
-    have hf_diff : ‖f z - f z'‖ ≤ B / r * dist z z' := by
-      rw [← dist_eq_norm]
-      exact dist_le_of_forall_mem_closedBall_two_mul_norm_le isOpen_interior hf_intL hr
-        (hballL hz) (fun u hu ↦ hBL u (interior_subset (hballL hz hu)))
-        (mem_ball_self hr) (mem_ball.2 (by rw [dist_comm]; exact hzz'.trans_lt h2δ_r))
-    have hsplit : Φ (z, ξ) • f z - Φ (z', ξ) • f z' =
-        (Φ (z, ξ) - Φ (z', ξ)) • f z + Φ (z', ξ) • (f z - f z') := by
-      rw [sub_smul, smul_sub, sub_add_sub_cancel]
-    rw [hsplit]
-    calc ‖(Φ (z, ξ) - Φ (z', ξ)) • f z + Φ (z', ξ) • (f z - f z')‖
-        ≤ ‖(Φ (z, ξ) - Φ (z', ξ)) • f z‖ + ‖Φ (z', ξ) • (f z - f z')‖ := norm_add_le _ _
-      _ = ‖Φ (z, ξ) - Φ (z', ξ)‖ * ‖f z‖ + ‖Φ (z', ξ)‖ * ‖f z - f z'‖ := by
-          rw [norm_smul, norm_smul]
-      _ ≤ ω₁ * B + M * (B / r * (2 * δ)) := by
-          refine add_le_add (mul_le_mul hΦ_diff (hBL z (interior_subset (hK₁L hz)))
-            (norm_nonneg _) hω₁.le) (mul_le_mul (hΦ_le hz' hξ) ?_ (norm_nonneg _) hM_nonneg)
-          exact hf_diff.trans (mul_le_mul_of_nonneg_left hzz' (div_nonneg hB₀ hr.le))
-      _ = ω₁ * B + (M * (2 * δ) / r) * B := by ring
-      _ ≤ ω₁ * B + ω₁ * B := add_le_add le_rfl (mul_le_mul_of_nonneg_right h2δ_M hB₀)
-      _ = 2 * ω₁ * B := by ring
-  have hsum_eq : (∑ j, a j • (Φ (ζ j, ξ) • f (ζ j))) =
-      ∑ j, (w j * (ξ - ζ j)⁻¹) • f (ζ j) := by
-    refine Finset.sum_congr rfl fun j _ ↦ ?_
-    rw [← smul_assoc, Complex.real_smul]
-    exact congrArg (· • f (ζ j)) (by dsimp only [w, Φ]; ring)
-  rw [hf_rep, ← hsum_eq]
-  calc ‖(∫ z in K₁, Φ (z, ξ) • f z) - ∑ j, a j • (Φ (ζ j, ξ) • f (ζ j))‖
-      ≤ (2 * ω₁ * B) * V₁ := hquad hg_cont hg_osc
-    _ ≤ (2 * ω₁ * B) * (V₁ + 1) :=
-        mul_le_mul_of_nonneg_left (by linarith) (by positivity)
-    _ = ε * B := by
-        dsimp only [ω₁]
-        field_simp [hV₁_pos.ne']
 
 /-- **Universal holomorphic finite-rank approximation operator.** Let `K ⊆ Ω` be a compact set
 filled in an open set `Ω ⊆ ℂ`, and let `U` be an open neighbourhood of `K`. There exists a compact
@@ -267,18 +138,18 @@ collar `L ⊆ U ∩ Ω` with `K ⊆ interior L` such that for every `ε > 0`, th
 
 `‖f z - ∑ j, (w j * g j z) • f (ζ j)‖ ≤ ε * B`
 
-for all `z ∈ K` and every Banach-valued function `f : ℂ → F` holomorphic on `U` with `‖f‖ ≤ B` on
-`L` (`0 ≤ B`). -/
+for all `z ∈ K` and every normed-space-valued function `f : ℂ → F` holomorphic on `U` with
+`‖f‖ ≤ B` on `L`. -/
 theorem IsFilledIn.exists_differentiableOn_sum_smul_norm_sub_le {K Ω U : Set ℂ}
-    (hfill : IsFilledIn K Ω) (F : Type*) [NormedAddCommGroup F] [NormedSpace ℂ F]
-    [CompleteSpace F] (hΩ : IsOpen Ω) (hK : IsCompact K) (hKΩ : K ⊆ Ω) (hU : IsOpen U)
+    (hfill : IsFilledIn K Ω) (hΩ : IsOpen Ω) (hK : IsCompact K) (hKΩ : K ⊆ Ω) (hU : IsOpen U)
     (hKU : K ⊆ U) :
     ∃ L : Set ℂ, IsCompact L ∧ K ⊆ interior L ∧ L ⊆ U ∩ Ω ∧
       ∀ {ε : ℝ}, 0 < ε →
         ∃ (N : ℕ) (ζ : Fin N → ℂ) (w : Fin N → ℂ) (g : Fin N → ℂ → ℂ),
           (∀ j, ζ j ∈ interior L \ K) ∧
           (∀ j, DifferentiableOn ℂ (g j) Ω) ∧
-          ∀ {f : ℂ → F} {B : ℝ}, DifferentiableOn ℂ f U → 0 ≤ B → (∀ z ∈ L, ‖f z‖ ≤ B) →
+          ∀ {F : Type u} [NormedAddCommGroup F] [NormedSpace ℂ F] {f : ℂ → F} {B : ℝ},
+            DifferentiableOn ℂ f U → (∀ z ∈ L, ‖f z‖ ≤ B) →
             ∀ z ∈ K, ‖f z - ∑ j, (w j * g j z) • f (ζ j)‖ ≤ ε * B := by
   obtain ⟨n, hKL⟩ :=
     hK.exists_subset_interior_closedBall_sdiff_thickening (hU.inter hΩ) (subset_inter hKU hKΩ)
@@ -288,7 +159,7 @@ theorem IsFilledIn.exists_differentiableOn_sum_smul_norm_sub_le {K Ω U : Set �
     by_contra fun hz' ↦ hz.2 (self_subset_thickening (by positivity) _ hz')
   refine ⟨L, hL, hKL, hLUΩ, fun {ε} hε ↦ ?_⟩
   obtain ⟨N, ζ, w, hζ, hrat⟩ :=
-    hK.exists_sum_sub_inv_smul_norm_sub_le F hKL (hLUΩ.trans inter_subset_left) (half_pos hε)
+    hK.exists_norm_sub_sum_mul_sub_inv_smul_le.{u} isOpen_interior hKL (half_pos hε)
   set S : ℝ := ∑ j : Fin N, ‖w j‖
   have hS_nonneg : 0 ≤ S := Finset.sum_nonneg fun _ _ ↦ norm_nonneg _
   have hS1_pos : 0 < S + 1 := add_pos_of_nonneg_of_pos hS_nonneg one_pos
@@ -298,7 +169,11 @@ theorem IsFilledIn.exists_differentiableOn_sum_smul_norm_sub_le {K Ω U : Set �
       ∃ g : ℂ → ℂ, DifferentiableOn ℂ g Ω ∧ ∀ ξ ∈ K, ‖(ξ - ζ j)⁻¹ - g ξ‖ < η :=
     hfill.exists_differentiableOn_norm_inv_sub_lt hΩ hK hKΩ (hζ j).2 hη
   choose g hg_diff hg_err using hpole
-  refine ⟨N, ζ, w, g, hζ, hg_diff, fun {f B} hf hB₀ hBL ξ hξ ↦ ?_⟩
+  refine ⟨N, ζ, w, g, hζ, hg_diff, fun {F} _ _ {f B} hf hBL ξ hξ ↦ ?_⟩
+  have hB₀ : 0 ≤ B := (norm_nonneg _).trans (hBL ξ (interior_subset (hKL hξ)))
+  have hf_intL : DifferentiableOn ℂ f (interior L) :=
+    hf.mono (interior_subset.trans (hLUΩ.trans inter_subset_left))
+  have hB_intL : ∀ z ∈ interior L, ‖f z‖ ≤ B := fun z hz ↦ hBL z (interior_subset hz)
   have hpole_err :
       ‖(∑ j, (w j * (ξ - ζ j)⁻¹) • f (ζ j)) - ∑ j, (w j * g j ξ) • f (ζ j)‖ ≤ ε / 2 * B := by
     rw [← Finset.sum_sub_distrib]
@@ -319,26 +194,24 @@ theorem IsFilledIn.exists_differentiableOn_sum_smul_norm_sub_le {K Ω U : Set �
       ≤ ‖f ξ - ∑ j, (w j * (ξ - ζ j)⁻¹) • f (ζ j)‖ +
           ‖(∑ j, (w j * (ξ - ζ j)⁻¹) • f (ζ j)) - ∑ j, (w j * g j ξ) • f (ζ j)‖ :=
         norm_sub_le_norm_sub_add_norm_sub _ _ _
-    _ ≤ ε / 2 * B + ε / 2 * B := add_le_add (hrat hf hB₀ hBL ξ hξ) hpole_err
+    _ ≤ ε / 2 * B + ε / 2 * B := add_le_add (hrat f B hf_intL hB_intL ξ hξ) hpole_err
     _ = ε * B := by ring
 
-/-- **Banach-valued Runge approximation.** If `K` is a compact subset filled in an open set
-`Ω ⊆ ℂ`, then every Banach-valued function `f : ℂ → F` holomorphic on an open neighbourhood `U` of
-`K` is uniformly approximable on `K` by functions holomorphic on all of `Ω`. -/
-theorem IsFilledIn.exists_differentiableOn_norm_sub_lt {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℂ F] [CompleteSpace F] {K Ω U : Set ℂ} (hfill : IsFilledIn K Ω) (hΩ : IsOpen Ω)
+/-- **Normed-space-valued Runge approximation.** If `K` is a compact subset filled in an open set
+`Ω ⊆ ℂ`, then every normed-space-valued function `f : ℂ → F` holomorphic on an open neighbourhood
+`U` of `K` is uniformly approximable on `K` by functions holomorphic on all of `Ω`. -/
+theorem IsFilledIn.exists_differentiableOn_norm_sub_lt {F : Type u} [NormedAddCommGroup F]
+    [NormedSpace ℂ F] {K Ω U : Set ℂ} (hfill : IsFilledIn K Ω) (hΩ : IsOpen Ω)
     (hK : IsCompact K) (hKΩ : K ⊆ Ω) (hU : IsOpen U) (hKU : K ⊆ U) {f : ℂ → F}
     (hf : DifferentiableOn ℂ f U) {ε : ℝ} (hε : 0 < ε) :
     ∃ g : ℂ → F, DifferentiableOn ℂ g Ω ∧ ∀ z ∈ K, ‖f z - g z‖ < ε := by
   obtain ⟨L, hL, -, hLUΩ, hFR⟩ :=
-    hfill.exists_differentiableOn_sum_smul_norm_sub_le F hΩ hK hKΩ hU hKU
+    hfill.exists_differentiableOn_sum_smul_norm_sub_le.{u} hΩ hK hKΩ hU hKU
   obtain ⟨M₀, hM₀⟩ :=
-    hL.bddAbove_image (hf.continuousOn.mono (hLUΩ.trans inter_subset_left)).norm
+    hL.exists_bound_of_continuousOn (hf.continuousOn.mono (hLUΩ.trans inter_subset_left))
   set B : ℝ := max M₀ 0
-  have hB₀ : 0 ≤ B := le_max_right M₀ 0
-  have hB1 : 0 < B + 1 := add_pos_of_nonneg_of_pos hB₀ one_pos
-  have hBL : ∀ z ∈ L, ‖f z‖ ≤ B :=
-    fun z hz ↦ (hM₀ (mem_image_of_mem _ hz)).trans (le_max_left M₀ 0)
+  have hB1 : 0 < B + 1 := add_pos_of_nonneg_of_pos (le_max_right M₀ 0) one_pos
+  have hBL : ∀ z ∈ L, ‖f z‖ ≤ B := fun z hz ↦ (hM₀ z hz).trans (le_max_left M₀ 0)
   set ε' : ℝ := ε / (B + 1)
   have hε' : 0 < ε' := div_pos hε hB1
   obtain ⟨N, ζ, w, g, -, hg, happrox⟩ := hFR hε'
@@ -346,7 +219,7 @@ theorem IsFilledIn.exists_differentiableOn_norm_sub_lt {F : Type*} [NormedAddCom
     DifferentiableOn.fun_sum fun j _ ↦ ((hg j).const_mul (w j)).smul_const (f (ζ j)),
     fun z hz ↦ ?_⟩
   calc ‖f z - ∑ j, (w j * g j z) • f (ζ j)‖
-      ≤ ε' * B := happrox hf hB₀ hBL z hz
+      ≤ ε' * B := happrox hf hBL z hz
     _ < ε' * (B + 1) := by gcongr; linarith
     _ = ε := div_mul_cancel₀ ε hB1.ne'
 
@@ -836,16 +709,16 @@ theorem _root_.IsCompact.exists_polynomial_add_sum_eval_sub_inv_norm_sub_lt
   obtain ⟨L, hL, hKL, hLU⟩ := exists_compact_between hK hU hKU
   obtain ⟨M₀, hM₀⟩ := hL.exists_bound_of_continuousOn (hf.continuousOn.mono hLU)
   set B : ℝ := max M₀ 0
-  have hB₀ : 0 ≤ B := le_max_right M₀ 0
-  have hB1 : 0 < B + 1 := add_pos_of_nonneg_of_pos hB₀ one_pos
+  have hB1 : 0 < B + 1 := add_pos_of_nonneg_of_pos (le_max_right M₀ 0) one_pos
   obtain ⟨N, ζ, w, hζ, hrat⟩ :=
-    hK.exists_sum_sub_inv_smul_norm_sub_le ℂ hKL hLU (div_pos (half_pos hε) hB1)
+    hK.exists_norm_sub_sum_mul_sub_inv_smul_le.{0} isOpen_interior hKL (div_pos (half_pos hε) hB1)
   set c : Fin N → ℂ := fun j ↦ w j * f (ζ j)
   obtain ⟨P, s, Q, hsA, hP0, hQ0, hpush⟩ := exists_polynomial_add_sum_eval_sub_inv_of_sum hK hA
     c ζ (fun j ↦ (hζ j).2) (half_pos hε)
   refine ⟨P, s, Q, hsA, hP0, hQ0, fun z hz ↦ ?_⟩
   have herr_rat : ‖f z - ∑ j, c j * (z - ζ j)⁻¹‖ < ε / 2 := by
-    have h1 := hrat hf hB₀ (fun u hu ↦ (hM₀ u hu).trans (le_max_left M₀ 0)) z hz
+    have h1 := hrat f B (hf.mono (interior_subset.trans hLU))
+      (fun u hu ↦ (hM₀ u (interior_subset hu)).trans (le_max_left M₀ 0)) z hz
     have heq : (∑ j, (w j * (z - ζ j)⁻¹) • f (ζ j)) = ∑ j, c j * (z - ζ j)⁻¹ :=
       Finset.sum_congr rfl fun j _ ↦ by dsimp only [c]; rw [smul_eq_mul]; ring
     rw [heq] at h1

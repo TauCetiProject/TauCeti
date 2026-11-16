@@ -10,8 +10,11 @@ public import Mathlib.Geometry.Manifold.ChartedSpace
 public import Mathlib.LinearAlgebra.Dimension.Basic
 public import TauCeti.Topology.FilledIn
 import Mathlib.Analysis.LocallyConvex.WithSeminorms
-import Mathlib.Geometry.Manifold.HasGroupoid
+import Mathlib.LinearAlgebra.Dimension.Finite
+import Mathlib.Topology.Algebra.Module.PerfectSpace
+import TauCeti.Geometry.Manifold.ChartedSpace
 import TauCeti.Geometry.Manifold.Connected
+import TauCeti.Topology.Perfect
 
 /-!
 # Adjoining discrete sets to filled-in subsets of manifolds
@@ -21,7 +24,7 @@ adjoining a closed discrete set `s` (for instance a finite set, or a single poin
 `K` that is filled in an open set `Ω` preserves `TauCeti.IsFilledIn`: each open connected component
 `C` of `Ω \ K` stays preconnected when `s` is deleted
 (`TauCeti.isPreconnected_sdiff_of_isOpen_of_isDiscrete_of_one_lt_rank`), and loses no closure
-points because punctured neighbourhoods in `E` are nonempty.
+points because the manifold is a perfect space (`ChartedSpace.perfectSpace`).
 
 This enters point-separation characterizations of Runge sets: to separate a point `a ∈ Ω \ K` from
 a filled compact set `K ⊆ Ω` by a function holomorphic on `Ω`, one applies Runge approximation on
@@ -29,10 +32,12 @@ a filled compact set `K ⊆ Ω` by a function holomorphic on `Ω`, one applies R
 
 ## Main results
 
-* `TauCeti.IsFilledIn.union_of_isDiscrete`: adjoining a closed discrete set preserves filledness in
-  an open set, in dimension greater than one.
-* `TauCeti.IsFilledIn.union_of_finite`: the special case of a finite set.
-* `TauCeti.IsFilledIn.insert`: adjoining a single point preserves filledness in an open set.
+* `TauCeti.IsFilledIn.union_of_isDiscrete`: adjoining a closed discrete set to a closed set `K`
+  preserves filledness in an open set, in dimension greater than one.
+* `TauCeti.IsFilledIn.union_of_finite`: the special case of adjoining a finite set to a closed set
+  `K`.
+* `TauCeti.IsFilledIn.insert`: adjoining a single point to a closed set `K` preserves filledness in
+  an open set.
 
 ## References
 
@@ -52,12 +57,15 @@ section Seminormed
 
 variable [SeminormedAddCommGroup E] [NormedSpace ℝ E] [ChartedSpace E X]
 
-/-- **Adjoining a closed discrete set preserves filledness in an open set**, on a manifold modelled
-on a real seminormed space of dimension greater than one. -/
+/-- **Adjoining a closed discrete set to a closed set preserves filledness in an open set**, on a
+manifold modelled on a real seminormed space of dimension greater than one. -/
 theorem IsFilledIn.union_of_isDiscrete {K Ω s : Set X} (hfill : IsFilledIn K Ω)
     (h : 1 < Module.rank ℝ E) (hK : IsClosed K) (hΩ : IsOpen Ω) (hs : IsClosed s)
     (hd : IsDiscrete s) : IsFilledIn (K ∪ s) Ω := by
   have := ChartedSpace.locallyConnectedSpace E X
+  have : Nontrivial E := (rank_pos_iff_nontrivial (R := ℝ)).1 (zero_lt_one.trans h)
+  have : PerfectSpace E := perfectSpace_of_module ℝ E
+  have : PerfectSpace X := ChartedSpace.perfectSpace (H := E)
   rw [isFilledIn_iff] at hfill ⊢
   rintro x ⟨hxΩ, hxKs⟩
   have hxK : x ∈ Ω \ K := ⟨hxΩ, fun hxK => hxKs (Or.inl hxK)⟩
@@ -74,20 +82,10 @@ theorem IsFilledIn.union_of_isDiscrete {K Ω s : Set X} (hfill : IsFilledIn K Ω
         ⟨mem_connectedComponentIn hxK, hxs⟩
         fun y ⟨hyC, hys⟩ => ⟨(connectedComponentIn_subset _ _ hyC).1,
           fun hyKs => hyKs.elim (connectedComponentIn_subset _ _ hyC).2 hys⟩
-  have hcl : closure (C \ s) = closure C := by
-    refine Subset.antisymm (closure_mono sdiff_subset)
-      (closure_minimal (fun y hyC => ?_) isClosed_closure)
-    by_cases hys : y ∈ s
-    · obtain ⟨u, hu, hus⟩ := isDiscrete_iff_forall_mem_exists_isOpen.1 hd y hys
-      have hyu : y ∈ u := (hus.symm ▸ mem_singleton y : y ∈ u ∩ s).1
-      refine mem_closure_iff_nhds.2 fun W hW => ?_
-      obtain ⟨V, -, hV, hc⟩ := exists_mem_nhds_subset_isConnected_sdiff_singleton h y
-        (Filter.inter_mem hW ((hCopen.inter hu).mem_nhds ⟨hyC, hyu⟩))
-      obtain ⟨z, hzV, hzy⟩ := hc.nonempty
-      refine ⟨z, (hV hzV).1, (hV hzV).2.1, fun hzs => hzy ?_⟩
-      have : z ∈ u ∩ s := ⟨(hV hzV).2.2, hzs⟩
-      rwa [hus] at this
-    · exact subset_closure ⟨hyC, hys⟩
+  have hcl : closure (C \ s) = closure C :=
+    Subset.antisymm (closure_mono sdiff_subset)
+      (closure_minimal (hCopen.subset_closure_sdiff_of_isDiscrete (hd.mono inter_subset_right))
+        isClosed_closure)
   rw [hcomp, hcl]
   exact hfill x hxK
 
@@ -97,16 +95,16 @@ section Normed
 
 variable [NormedAddCommGroup E] [NormedSpace ℝ E] [ChartedSpace E X]
 
-/-- **Adjoining a finite set preserves filledness in an open set**, on a manifold modelled on a
-real normed space of dimension greater than one. -/
+/-- **Adjoining a finite set to a closed set preserves filledness in an open set**, on a manifold
+modelled on a real normed space of dimension greater than one. -/
 theorem IsFilledIn.union_of_finite {K Ω s : Set X} (hfill : IsFilledIn K Ω)
     (h : 1 < Module.rank ℝ E) (hK : IsClosed K) (hΩ : IsOpen Ω) (hs : s.Finite) :
     IsFilledIn (K ∪ s) Ω :=
   have := ChartedSpace.t1Space E X
   hfill.union_of_isDiscrete h hK hΩ hs.isClosed hs.isDiscrete
 
-/-- **Adjoining a point preserves filledness in an open set**, on a manifold modelled on a real
-normed space of dimension greater than one. -/
+/-- **Adjoining a point to a closed set preserves filledness in an open set**, on a manifold
+modelled on a real normed space of dimension greater than one. -/
 theorem IsFilledIn.insert {K Ω : Set X} (hfill : IsFilledIn K Ω) (h : 1 < Module.rank ℝ E)
     (hK : IsClosed K) (hΩ : IsOpen Ω) (a : X) : IsFilledIn (insert a K) Ω := by
   rw [insert_eq, union_comm]

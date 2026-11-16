@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.DiffContOnCl
 public import TauCeti.Analysis.Complex.Wirtinger.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 
@@ -26,12 +27,13 @@ exactly when all its partial derivatives `∂g/∂(conj z_j)` vanish
 Adding a holomorphic function does not change the conjugate Wirtinger derivative, so a function
 that is locally a `Cⁿ` function plus a holomorphic one is `Cⁿ` with the same conjugate Wirtinger
 derivatives (`TauCeti.contDiffOn_and_conjWirtingerDeriv_eq_of_locally_eq_add`). This glues the
-local solutions in exhaustion proofs of the `\bar∂`-lemma. Likewise, multiplying a function
-holomorphic on an open neighbourhood of `tsupport α` by a real-differentiable cutoff `α` collapses
-the Leibniz rule globally to `\bar∂ (α • f) = (\bar∂ α) • f`
-(`DifferentiableOn.conjWirtingerDeriv_smul_of_tsupport_subset`).
+local solutions in exhaustion proofs of the `\bar∂`-lemma.
 
-These statements connect the real differential and its type decomposition with holomorphy.
+These statements connect the real differential and its type decomposition with holomorphy. In
+particular, two functions of one complex variable, continuous on the closure of an open set and real
+differentiable on it, with the same conjugate Wirtinger derivative there, differ by a function
+holomorphic on the set and continuous on its closure
+(`TauCeti.diffContOnCl_sub_of_conjWirtingerDeriv_eq`).
 
 ## References
 
@@ -104,22 +106,19 @@ theorem contDiffOn_and_conjWirtingerDeriv_eq_of_locally_eq_add {ι : Type*} {n :
         (hKz.restrictScalars ℝ), add_apply, hKz.conjWirtingerDeriv_eq_zero, zero_apply,
       add_zero, haf z hzO j]
 
-/-- **Global Leibniz collapse for `\bar∂ (α • f)`.** When `f` is complex differentiable on an open
-set `U` containing `tsupport α` and `α` is real differentiable on `U`,
-`\bar∂ (α • f) = (\bar∂ α) • f` everywhere on `V`, with no regularity assumed on `f` outside
-`U`. -/
-theorem _root_.DifferentiableOn.conjWirtingerDeriv_smul_of_tsupport_subset
-    {U : Set V} {α : V → ℂ} {f : V → W} (hf : DifferentiableOn ℂ f U) (hU : IsOpen U)
-    (hα : DifferentiableOn ℝ α U) (hαU : tsupport α ⊆ U) (z v : V) :
-    conjWirtingerDeriv (fun w ↦ α w • f w) z v = conjWirtingerDeriv α z v • f z := by
-  by_cases hz : z ∈ U
-  · have hαz : DifferentiableAt ℝ α z := (hα z hz).differentiableAt (hU.mem_nhds hz)
-    have hfz : DifferentiableAt ℂ f z := (hf z hz).differentiableAt (hU.mem_nhds hz)
-    simp [conjWirtingerDeriv_smul_apply hαz (hfz.restrictScalars ℝ) v,
-      hfz.conjWirtingerDeriv_eq_zero]
-  · have hzα : z ∉ tsupport α := fun h ↦ hz (hαU h)
-    have hzf : z ∉ tsupport (fun w ↦ α w • f w) :=
-      fun h ↦ hzα (tsupport_smul_subset_left α f h)
-    simp [conjWirtingerDeriv_of_notMem_tsupport hzα, conjWirtingerDeriv_of_notMem_tsupport hzf]
+/-- Two functions, continuous on the closure of an open set `U ⊆ ℂ` and real differentiable on
+`U`, with the same `∂/∂(conj z)` on `U`, differ by a function holomorphic on `U` and continuous on
+its closure. -/
+theorem diffContOnCl_sub_of_conjWirtingerDeriv_eq {U : Set ℂ} {u₁ u₂ : ℂ → W} (hU : IsOpen U)
+    (hc₁ : ContinuousOn u₁ (closure U)) (hc₂ : ContinuousOn u₂ (closure U))
+    (hd₁ : DifferentiableOn ℝ u₁ U) (hd₂ : DifferentiableOn ℝ u₂ U)
+    (heq : ∀ z ∈ U, conjWirtingerDeriv u₁ z 1 = conjWirtingerDeriv u₂ z 1) :
+    DiffContOnCl ℂ (u₁ - u₂) U := by
+  refine ⟨fun z hz ↦ ?_, hc₁.sub hc₂⟩
+  have h₁ := (hd₁ z hz).differentiableAt (hU.mem_nhds hz)
+  have h₂ := (hd₂ z hz).differentiableAt (hU.mem_nhds hz)
+  refine ((differentiableAt_iff_conjWirtingerDeriv_apply_one_eq_zero (h₁.sub h₂)).mpr
+    ?_).differentiableWithinAt
+  rw [conjWirtingerDeriv_sub h₁ h₂, sub_apply, heq z hz, sub_self]
 
 end TauCeti
