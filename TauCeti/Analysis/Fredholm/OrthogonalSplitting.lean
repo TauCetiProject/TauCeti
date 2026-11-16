@@ -79,6 +79,42 @@ open scoped InnerProductSpace
 
 namespace ContinuousLinearMap
 
+section SingleOperator
+
+variable {𝕜 E F : Type*} [TopologicalSpace E] [TopologicalSpace F]
+
+/-- If `π` takes values in the kernel of `T` and `R` is a right inverse of `T`, then so is
+`R - π R`. -/
+theorem rightInverse_sub_comp [Ring 𝕜] [AddCommGroup E] [Module 𝕜 E]
+    [IsTopologicalAddGroup E] [AddCommGroup F] [Module 𝕜 F]
+    {T : E →L[𝕜] F} {π : E →L[𝕜] E} {R : F →L[𝕜] E}
+    (hmem : ∀ e, π e ∈ T.ker) (hR : RightInverse R T) : RightInverse (R - π ∘L R) T := fun y ↦ by
+  have h0 : T (π (R y)) = 0 := LinearMap.mem_ker.1 (hmem (R y))
+  simp [hR y, h0]
+
+/-- Let `ι` be an injective operator into an inner product space, let `π` take values in the kernel
+of `T` with `ι (e - π e)` orthogonal to `ι` of the kernel, and let `Q` be a right inverse of `T`
+whose values are `ι`-orthogonal to the kernel. Then every `e` splits as `e = π e + Q (T e)`. -/
+theorem apply_add_apply_apply_eq_self {H : Type*} [RCLike 𝕜] [AddCommGroup E] [Module 𝕜 E]
+    [AddCommGroup F] [Module 𝕜 F] [NormedAddCommGroup H] [InnerProductSpace 𝕜 H]
+    {ι : E →L[𝕜] H} (hι : Injective ι) {T : E →L[𝕜] F}
+    {π : E →L[𝕜] E} {Q : F →L[𝕜] E} (hmem : ∀ e, π e ∈ T.ker)
+    (horth : ∀ e, ∀ k ∈ T.ker, ⟪ι (e - π e), ι k⟫_𝕜 = 0) (hQ : RightInverse Q T)
+    (hQorth : ∀ y, ∀ k ∈ T.ker, ⟪ι (Q y), ι k⟫_𝕜 = 0) (e : E) : π e + Q (T e) = e := by
+  -- The defect `d = e - π e - Q (T e)` lies in the kernel and is `ι`-orthogonal to it.
+  set d := e - π e - Q (T e)
+  have h0 : T (π e) = 0 := LinearMap.mem_ker.1 (hmem e)
+  have hd : d ∈ T.ker := by
+    simp [d, hQ (T e), h0]
+  have hdd : ⟪ι d, ι d⟫_𝕜 = 0 := by
+    have h : ⟪ι (e - π e) - ι (Q (T e)), ι d⟫_𝕜 = 0 := by
+      rw [inner_sub_left, horth e d hd, hQorth _ d hd, sub_zero]
+    rwa [← map_sub] at h
+  have : d = 0 := hι (by simpa using hdd)
+  exact (sub_eq_zero.1 (by simpa only [d, sub_sub] using this)).symm
+
+end SingleOperator
+
 section Family
 
 variable {𝕜 E F H : Type*} [RCLike 𝕜]
@@ -133,34 +169,6 @@ private theorem orthogonal_ker_projection_of_ker_parametrization {X : Type*} [To
     exact gramProjection_apply_apply hx.2 v
   · obtain ⟨v, rfl⟩ := hk
     exact inner_sub_gramProjection_apply hx.2 e v
-
-omit [CompleteSpace E] [CompleteSpace F] in
-/-- If `π` takes values in the kernel of `T` and `R` is a right inverse of `T`, then so is
-`R - π R`. -/
-theorem rightInverse_sub_comp {T : E →L[𝕜] F} {π : E →L[𝕜] E} {R : F →L[𝕜] E}
-    (hmem : ∀ e, π e ∈ T.ker) (hR : RightInverse R T) : RightInverse (R - π ∘L R) T := fun y ↦ by
-  have h0 : T (π (R y)) = 0 := LinearMap.mem_ker.1 (hmem (R y))
-  simp [hR y, h0]
-
-omit [CompleteSpace E] [CompleteSpace F] [CompleteSpace H] in
-/-- Let `ι` be an injective operator into an inner product space, let `π` take values in the kernel
-of `T` with `ι (e - π e)` orthogonal to `ι` of the kernel, and let `Q` be a right inverse of `T`
-whose values are `ι`-orthogonal to the kernel. Then every `e` splits as `e = π e + Q (T e)`. -/
-theorem apply_add_apply_apply_eq_self {ι : E →L[𝕜] H} (hι : Injective ι) {T : E →L[𝕜] F}
-    {π : E →L[𝕜] E} {Q : F →L[𝕜] E} (hmem : ∀ e, π e ∈ T.ker)
-    (horth : ∀ e, ∀ k ∈ T.ker, ⟪ι (e - π e), ι k⟫_𝕜 = 0) (hQ : RightInverse Q T)
-    (hQorth : ∀ y, ∀ k ∈ T.ker, ⟪ι (Q y), ι k⟫_𝕜 = 0) (e : E) : π e + Q (T e) = e := by
-  -- The defect `d = e - π e - Q (T e)` lies in the kernel and is `ι`-orthogonal to it.
-  set d := e - π e - Q (T e)
-  have h0 : T (π e) = 0 := LinearMap.mem_ker.1 (hmem e)
-  have hd : d ∈ T.ker := by
-    simp [d, hQ (T e), h0]
-  have hdd : ⟪ι d, ι d⟫_𝕜 = 0 := by
-    have h : ⟪ι (e - π e) - ι (Q (T e)), ι d⟫_𝕜 = 0 := by
-      rw [inner_sub_left, horth e d hd, hQorth _ d hd, sub_zero]
-    rwa [← map_sub] at h
-  have : d = 0 := hι (by simpa using hdd)
-  exact (sub_eq_zero.1 (by simpa only [d, sub_sub] using this)).symm
 
 variable {X : Type*} [TopologicalSpace X] {T : X → E →L[𝕜] F} {x₀ : X}
 
