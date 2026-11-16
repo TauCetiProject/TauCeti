@@ -56,7 +56,8 @@ spheres is in `TauCeti.Geometry.Symplectic.Coadjoint.Sphere`.
 
 ## Main results
 
-* `TauCeti.orthogonalAdjointRepresentation_lie`: the adjoint action is by Lie algebra
+* `TauCeti.orthogonalAdjointRepresentation_lie`,
+  `TauCeti.specialOrthogonalAdjointRepresentation_lie`: the adjoint action is by Lie algebra
   automorphisms.
 * `TauCeti.specialOrthogonalAdjointRepresentation_soThreeEquiv`,
   `TauCeti.specialOrthogonalCoadjointRepresentation_soThreeDualEquiv`: for `SO(3)` both actions
@@ -133,12 +134,26 @@ def specialOrthogonalAdjointRepresentation :
     Representation R (specialOrthogonalGroup n R) (so n R) :=
   (orthogonalAdjointRepresentation n R).comp specialOrthogonalGroup.toOrthogonalGroup
 
+theorem specialOrthogonalAdjointRepresentation_apply (g : specialOrthogonalGroup n R) :
+    specialOrthogonalAdjointRepresentation n R g =
+      orthogonalAdjointRepresentation n R (specialOrthogonalGroup.toOrthogonalGroup g) :=
+  (rfl)
+
 @[simp]
 theorem coe_specialOrthogonalAdjointRepresentation_apply (g : specialOrthogonalGroup n R)
     (A : so n R) :
     (specialOrthogonalAdjointRepresentation n R g A : Matrix n n R) =
       (g : Matrix n n R) * A * (g : Matrix n n R)ᵀ := by
-  simp [specialOrthogonalAdjointRepresentation]
+  simp [specialOrthogonalAdjointRepresentation_apply]
+
+/-- **The adjoint action of `SO(n)` is by Lie algebra automorphisms**:
+`Ad_g ⁅A, B⁆ = ⁅Ad_g A, Ad_g B⁆`. -/
+theorem specialOrthogonalAdjointRepresentation_lie (g : specialOrthogonalGroup n R)
+    (A B : so n R) :
+    specialOrthogonalAdjointRepresentation n R g ⁅A, B⁆ =
+      ⁅specialOrthogonalAdjointRepresentation n R g A,
+        specialOrthogonalAdjointRepresentation n R g B⁆ := by
+  simp only [specialOrthogonalAdjointRepresentation_apply, orthogonalAdjointRepresentation_lie]
 
 variable (n R) in
 /-- The **coadjoint representation** of `SO(n)` on the dual of `so(n)`, the restriction of
@@ -147,12 +162,17 @@ def specialOrthogonalCoadjointRepresentation :
     Representation R (specialOrthogonalGroup n R) (Dual R (so n R)) :=
   (orthogonalCoadjointRepresentation n R).comp specialOrthogonalGroup.toOrthogonalGroup
 
+theorem specialOrthogonalCoadjointRepresentation_apply (g : specialOrthogonalGroup n R) :
+    specialOrthogonalCoadjointRepresentation n R g =
+      orthogonalCoadjointRepresentation n R (specialOrthogonalGroup.toOrthogonalGroup g) :=
+  (rfl)
+
 theorem specialOrthogonalCoadjointRepresentation_apply_apply (g : specialOrthogonalGroup n R)
     (ν : Dual R (so n R)) (A : so n R) :
     specialOrthogonalCoadjointRepresentation n R g ν A =
       ν (specialOrthogonalAdjointRepresentation n R g⁻¹ A) := by
-  simp [specialOrthogonalCoadjointRepresentation, specialOrthogonalAdjointRepresentation,
-    orthogonalCoadjointRepresentation_apply_apply]
+  simp [specialOrthogonalCoadjointRepresentation_apply,
+    specialOrthogonalAdjointRepresentation_apply, orthogonalCoadjointRepresentation_apply_apply]
 
 /-! ### `SO(3)` in the coordinates of the hat map -/
 
