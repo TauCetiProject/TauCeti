@@ -66,6 +66,9 @@ maps agree after passing to a stable category that kills that term.
 
 `Homotopy.acyclic` says that a contractible complex, one whose identity is null-homotopic, is
 acyclic.
+
+`Homotopy.f_eq_of_dFrom_eq_zero_of_dTo_eq_zero` says that homotopic maps agree in a degree `i`
+where the differential out of the source and the differential into the target vanish.
 -/
 
 @[expose] public section
@@ -124,6 +127,13 @@ lemma acyclic {C : Type u} [Category.{v} C] [Preadditive C]
   rw [HomologicalComplex.exactAt_iff_isZero_homology, IsZero.iff_id_eq_zero]
   simpa only [HomologicalComplex.homologyMap_id, HomologicalComplex.homologyMap_zero] using
     h.homologyMap_eq i
+
+/-- Homotopic maps agree in a degree `i` where the differential out of `Kⁱ` and the differential
+into `Lⁱ` vanish. -/
+lemma f_eq_of_dFrom_eq_zero_of_dTo_eq_zero {C : Type u} [Category.{v} C] [Preadditive C]
+    {ι : Type*} {c : ComplexShape ι} {K L : HomologicalComplex C c} {g₁ g₂ : K ⟶ L}
+    (h : Homotopy g₁ g₂) {i : ι} (hK : K.dFrom i = 0) (hL : L.dTo i = 0) : g₁.f i = g₂.f i := by
+  simpa [dNext_eq_dFrom_fromNext, prevD_eq_toPrev_dTo, hK, hL] using h.comm i
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] {ι : Type*} {c : ComplexShape ι}
   {K L M L' M' : HomologicalComplex C c}
