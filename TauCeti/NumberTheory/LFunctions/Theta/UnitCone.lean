@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LFunctions.Theta.Mellin.Kernel
+public import TauCeti.NumberTheory.LFunctions.Theta.Mellin.Pair
 public import TauCeti.NumberTheory.LFunctions.Theta.Surface.Cone
 
 /-!
@@ -13,9 +14,11 @@ public import TauCeti.NumberTheory.LFunctions.Theta.Surface.Cone
 
 For a lattice theta series, `hasMellin_mellinKernel_sub` identifies the Mellin transform of the
 existing covolume-rescaled kernel, minus its constant term, with the weighted theta integral over
-the cone. Absolute integrability of that cone integral is an explicit hypothesis: this change of
-variables does not perform the separate arithmetic unfolding of unit orbits. In particular it
-does not identify a radial lattice-point sum with a partial zeta function.
+the cone. For a unit fundamental domain `D`, `mellinKernelFEPair_Λ_eq_integral_unitCone` equates
+`(mellinKernelFEPair hD L).Λ s` on `Re s > 1/2` with that cone integral. Absolute integrability of
+that cone integral is an explicit hypothesis: this change of variables does not perform the
+separate arithmetic unfolding of unit orbits. In particular it does not identify a radial
+lattice-point sum with a partial zeta function.
 
 ## References
 
@@ -66,5 +69,26 @@ theorem hasMellin_mellinKernel_sub {D : Set (realSpace K)} (hDm : MeasurableSet 
   rw [hscaled.2, Complex.ofReal_inv, Complex.inv_cpow_ofReal_nonneg (sq_nonneg _),
     Complex.cpow_neg, inv_inv] at hc
   simpa only [c, smul_eq_mul, Complex.ofReal_pow, mul_assoc] using hc
+
+open scoped Classical in
+/-- For a unit fundamental domain `D`, on `Re s > 1 / 2` the completed function
+`(mellinKernelFEPair hD L).Λ s` equals `(2^r₂ / w) (V_L²)^s` times the norm-weighted cone integral
+of `θ_L - 1`, provided that cone integral is absolutely integrable. -/
+theorem mellinKernelFEPair_Λ_eq_integral_unitCone {D : Set (realSpace K)}
+    (hD : IsUnitFundamentalDomain K D) (L : Submodule ℤ (mixedSpace K)) [DiscreteTopology L]
+    [IsZLattice ℝ L] {s : ℂ} (hs : 1 / 2 < s.re)
+    (h : IntegrableOn (fun y ↦ (archNorm y : ℂ) ^ s * (latticeTheta L y - 1))
+      (unitCone D) (archHaar K)) :
+    (mellinKernelFEPair hD L).Λ s =
+      (2 : ℂ) ^ nrComplexPlaces K / (Units.torsionOrder K : ℂ) *
+        (ZLattice.covolume L ^ 2 : ℂ) ^ s *
+          ∫ y in unitCone D, (archNorm y : ℂ) ^ s * (latticeTheta L y - 1) ∂archHaar K := by
+  have hm1 := hasMellin_mellinKernel_sub_mellinConstant hD L hs
+  have hm2 := hasMellin_mellinKernel_sub hD.measurableSet hD.isBounded L (2 * s)
+    (by simpa [mul_div_cancel_left₀ _ (two_ne_zero' ℂ)] using h)
+  rw [mul_div_cancel_left₀ _ (two_ne_zero' ℂ)] at hm2
+  rw [mellinConstant_eq_mul_surfaceHaar_real hD] at hm1
+  push_cast at hm1
+  exact hm1.2.symm.trans hm2.2
 
 end TauCeti.LFunctions

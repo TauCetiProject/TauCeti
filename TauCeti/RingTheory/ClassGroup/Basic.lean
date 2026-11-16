@@ -30,6 +30,9 @@ trivial class, and the class `[v]` of a height one prime.
   holds over any domain.
 * `ClassGroup.mk_num`: an invertible fractional ideal and its integral numerator have the
   same class, over any domain and any choice of fraction field.
+* `ClassGroup.isPrincipal_mul_iff_of_mk0_eq`: if a nonzero integral ideal `J` and an invertible
+  fractional ideal `I` share the same class in `ClassGroup R`, then `𝔟 * J` is principal if and
+  only if `𝔟 * I` is principal.
 * `TauCeti.isPrincipalIdealRing_iff_subsingleton_classGroup`: a Dedekind domain is a principal
   ideal ring exactly when its class group is trivial, with no finiteness of the class group
   assumed.
@@ -97,6 +100,19 @@ theorem ClassGroup.mk_num {R : Type*} [CommRing R] [IsDomain R] {K : Type*} [Fie
   rw [hnum, map_mul, ClassGroup.mk_toPrincipalIdeal, one_mul]
 
 variable {R : Type*} [CommRing R] [IsDedekindDomain R]
+
+/-- If a nonzero integral ideal `J` and an invertible fractional ideal `I` have the same class in
+`ClassGroup R`, then a nonzero integral ideal `𝔟` has principal product `𝔟 * J` if and only if
+`𝔟 * I` is principal as an `R`-submodule of `K`. -/
+theorem ClassGroup.isPrincipal_mul_iff_of_mk0_eq {K : Type*} [Field K] [Algebra R K]
+    [IsFractionRing R K] {I : (FractionalIdeal R⁰ K)ˣ} {J : (Ideal R)⁰}
+    (hJ : ClassGroup.mk0 J = ClassGroup.mk K I) (𝔟 : (Ideal R)⁰) :
+    Submodule.IsPrincipal ((𝔟 : Ideal R) * (J : Ideal R)) ↔
+      Submodule.IsPrincipal (((𝔟 : Ideal R) : FractionalIdeal R⁰ K) *
+        (I : FractionalIdeal R⁰ K) : Submodule R K) := by
+  rw [← Submonoid.coe_mul, ← ClassGroup.mk0_eq_one_iff (𝔟 * J).2, map_mul, hJ,
+    ← ClassGroup.mk_mk0 K 𝔟, ← map_mul, ClassGroup.mk_eq_one_iff, Units.val_mul,
+    FractionalIdeal.coe_mk0, FractionalIdeal.coeToSubmodule_mul]
 
 /-- **A Dedekind domain is a principal ideal ring exactly when its class group is trivial.**
 Mathlib's `card_classGroup_eq_one_iff` is the same statement with the class number, and needs a

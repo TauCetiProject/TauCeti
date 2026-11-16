@@ -15,7 +15,7 @@ has value zero at the nonpositive integers. These are poles of its meromorphic g
 This characterization complements `Complex.Gammaℝ_eq_zero_iff` for the real factor and
 identifies the exceptional values in finite products of shifted gamma factors.
 
-We also record the elementary identity `2 * (2⁻¹)^s * Gammaℝ (2 * s) = Gammaℂ s` relating the
+We also record the elementary identity `Gammaℝ (2 * s) = 2 ^ (s - 1) * Gammaℂ s` relating the
 complex archimedean factor to `Gammaℝ` at `2 * s` (as arises when unfolding Gaussian integrals at
 complex places of a number field).
 -/
@@ -30,17 +30,19 @@ namespace Complex
 theorem Gammaℂ_eq_zero_iff (z : ℂ) : Gammaℂ z = 0 ↔ ∃ n : ℕ, z = -(n : ℂ) := by
   simp [Gammaℂ_def, Real.pi_ne_zero, Gamma_eq_zero_iff]
 
-/-- Expressing `Gammaℂ s` in terms of `Gammaℝ (2 * s)`:
-`2 * (2⁻¹)^s * Gammaℝ (2 * s) = Gammaℂ s`. -/
-theorem two_mul_inv_two_cpow_mul_Gammaℝ_two_mul (s : ℂ) :
-    2 * ((2⁻¹ : ℝ) : ℂ) ^ s * Gammaℝ (2 * s) = Gammaℂ s := by
-  have h2 : ((2⁻¹ : ℝ) : ℂ) ^ s = (2 : ℂ) ^ (-s) := by
-    rw [ofReal_inv, inv_cpow_ofReal_nonneg zero_le_two, ← cpow_neg, ofReal_ofNat]
-  have h2s : -(2 * s) / 2 = -s := by ring
-  have h2s' : 2 * s / 2 = s := by ring
-  have h2pi : (2 : ℂ) ^ (-s) * (π : ℂ) ^ (-s) = (2 * π) ^ (-s) := by
-    simpa using (mul_cpow_ofReal_nonneg zero_le_two Real.pi_pos.le (-s)).symm
-  rw [h2, Gammaℝ_def, h2s, h2s', Gammaℂ_def, mul_assoc (2 : ℂ), ← mul_assoc ((2 : ℂ) ^ (-s)),
-    h2pi, mul_assoc]
+/-- Expressing `Gammaℝ (2 * s)` in terms of `Gammaℂ s`:
+`Gammaℝ (2 * s) = 2 ^ (s - 1) * Gammaℂ s`. -/
+theorem Gammaℝ_two_mul (s : ℂ) :
+    Gammaℝ (2 * s) = (2 : ℂ) ^ (s - 1) * Gammaℂ s := by
+  have h2pi : (2 * π : ℂ) ^ (-s) = (2 : ℂ) ^ (-s) * (π : ℂ) ^ (-s) := by
+    simpa using mul_cpow_ofReal_nonneg zero_le_two Real.pi_pos.le (-s)
+  have h2 : (2 : ℂ) ^ (s - 1) * 2 * (2 : ℂ) ^ (-s) = 1 := by
+    rw [cpow_sub _ _ two_ne_zero, cpow_one, div_mul_cancel₀ _ two_ne_zero,
+      ← cpow_add _ _ two_ne_zero, add_neg_cancel, cpow_zero]
+  rw [Gammaℝ_def, Gammaℂ_def, h2pi, show -(2 * s) / 2 = -s by ring, show 2 * s / 2 = s by ring]
+  calc (π : ℂ) ^ (-s) * Gamma s
+      = 1 * ((π : ℂ) ^ (-s) * Gamma s) := (one_mul _).symm
+    _ = (2 : ℂ) ^ (s - 1) * 2 * (2 : ℂ) ^ (-s) * ((π : ℂ) ^ (-s) * Gamma s) := by rw [h2]
+    _ = _ := by ring
 
 end Complex

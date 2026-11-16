@@ -34,7 +34,9 @@ gamma factor `Γ_ℝ(s)^r₁ Γ_ℂ(s)^r₂` of the completed Dedekind zeta func
 This is the gamma integral contributed by one unit orbit of lattice points when the theta series
 of an ideal lattice is integrated over the cone above a fundamental domain for the units (Hecke's
 integral representation of a partial zeta function). The integrand is integrable
-(`TauCeti.LFunctions.integrable_archGaussian_mul_archNorm_cpow`), as the interchange of the
+(`TauCeti.LFunctions.integrable_archGaussian_mul_archNorm_cpow`), as are its `L¹` norms
+(`TauCeti.LFunctions.integrable_norm_archGaussian_mul_archNorm_cpow`, with exact value given by
+`TauCeti.LFunctions.integral_norm_archGaussian_mul_archNorm_cpow`), as the interchange of the
 lattice sum with the integral requires.
 
 ## References
@@ -167,5 +169,45 @@ theorem integral_archGaussian_mul_archNorm_cpow (hx : mixedEmbedding.norm x ≠ 
     _ = _ := by
         rw [Finset.prod_mul_distrib, prod_Gammaℝ_mult_mul, mixedEmbedding.norm_apply,
           ofReal_prod_pow_mult_cpow fun w ↦ (ha w).le]
+
+/-- On the positive orthant, the norm of `archGaussian y x * N(y)^(s / 2)`, cast to `ℂ`, is the
+integrand at the real exponent `s.re`. -/
+private theorem ofReal_norm_archGaussian_mul_archNorm_cpow {y : realSpace K} (hy : ∀ w, 0 < y w)
+    (x : mixedSpace K) (s : ℂ) :
+    ((‖archGaussian y x * (archNorm y : ℂ) ^ (s / 2)‖ : ℝ) : ℂ) =
+      archGaussian y x * (archNorm y : ℂ) ^ ((s.re : ℂ) / 2) := by
+  have hN : 0 < archNorm y := archNorm_pos hy
+  have hexp : ‖archGaussian y x‖ = Real.exp (-π * ∑ w, y w * normAtPlace w x ^ 2) := by
+    rw [archGaussian_apply, norm_real, Real.norm_of_nonneg (Real.exp_pos _).le]
+  have hre : (s / 2).re = s.re / 2 := by simp
+  rw [norm_mul, hexp, norm_cpow_eq_rpow_re_of_pos hN, hre, ofReal_mul, archGaussian_apply,
+    ofReal_cpow hN.le, ofReal_div, ofReal_ofNat]
+
+/-- For `x` of nonzero norm and `0 < Re s`, `y ↦ ‖archGaussian y x * N(y)^(s / 2)‖` is integrable
+on `realSpace K` with respect to `archHaar K`. -/
+theorem integrable_norm_archGaussian_mul_archNorm_cpow (hx : mixedEmbedding.norm x ≠ 0)
+    (hs : 0 < s.re) :
+    Integrable (fun y ↦ ‖archGaussian y x * (archNorm y : ℂ) ^ (s / 2)‖) (archHaar K) :=
+  (integrable_archGaussian_mul_archNorm_cpow hx hs).norm
+
+/-- **Evaluation of the `L¹` norm of the archimedean Gaussian.** For a point `x : mixedSpace K`
+with `N(x) ≠ 0` and `0 < Re s`, the `archHaar K`-integral of `‖archGaussian y x * N(y)^(s / 2)‖` is
+`Re(Γ_ℝ(Re s)^r₁ Γ_ℝ(2 Re s)^r₂) |N(x)|^(-Re s)`. -/
+theorem integral_norm_archGaussian_mul_archNorm_cpow (hx : mixedEmbedding.norm x ≠ 0)
+    (hs : 0 < s.re) :
+    ∫ y, ‖archGaussian y x * (archNorm y : ℂ) ^ (s / 2)‖ ∂archHaar K =
+      (Gammaℝ s.re ^ nrRealPlaces K * Gammaℝ (2 * s.re) ^ nrComplexPlaces K).re *
+        mixedEmbedding.norm x ^ (-s.re) := by
+  have hxpos : 0 < mixedEmbedding.norm x := (mixedEmbedding.norm_nonneg x).lt_of_ne' hx
+  have hs0 : 0 < (s.re : ℂ).re := by simpa using hs
+  have hintC := integrable_archGaussian_mul_archNorm_cpow hx hs0
+  have hae : (fun y ↦ ‖archGaussian y x * (archNorm y : ℂ) ^ (s / 2)‖) =ᵐ[archHaar K]
+      fun y ↦ Complex.reCLM (archGaussian y x * (archNorm y : ℂ) ^ ((s.re : ℂ) / 2)) := by
+    filter_upwards [ae_archHaar_pos] with y hy
+    simpa only [ofReal_re, Complex.reCLM_apply] using
+      congrArg Complex.re (ofReal_norm_archGaussian_mul_archNorm_cpow hy x s)
+  rw [integral_congr_ae hae, Complex.reCLM.integral_comp_comm hintC, Complex.reCLM_apply,
+    integral_archGaussian_mul_archNorm_cpow hx hs0, ← ofReal_neg, ← ofReal_cpow hxpos.le]
+  simp only [mul_re, ofReal_re, ofReal_im, mul_zero, sub_zero]
 
 end TauCeti.LFunctions

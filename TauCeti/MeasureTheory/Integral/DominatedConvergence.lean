@@ -275,13 +275,8 @@ theorem integrable_tsum_of_summable_integral_norm {ι E : Type*} [Countable ι]
     have h := fun i ↦ (hF_int i).aestronglyMeasurable
     fun_prop
   refine ⟨hmeas, ?_⟩
-  have henorm (i : ι) : ∫⁻ a, ‖F i a‖ₑ ∂μ = ‖∫ a, ‖F i a‖ ∂μ‖ₑ := by
-    dsimp [eNorm]
-    rw [lintegral_coe_eq_integral _ (hF_int i).norm, ENNReal.coe_nnreal_eq, coe_nnNorm,
-      Real.norm_of_nonneg (integral_nonneg fun a ↦ norm_nonneg (F i a))]
-    simp only [coe_nnNorm]
   have htop : ∑' i, ∫⁻ a, ‖F i a‖ₑ ∂μ < ⊤ := by
-    rw [funext henorm, lt_top_iff_ne_top]
+    simp_rw [← eNorm_integral_norm_eq_lintegral_eNorm (hF_int _), lt_top_iff_ne_top]
     exact ENNReal.tsum_coe_ne_top_iff_summable.2 <| NNReal.summable_coe.1 hF_sum.abs
   refine (lintegral_mono fun a ↦ eNorm_tsum_le_tsum_eNorm).trans_lt ?_
   rwa [lintegral_tsum fun i ↦ (hF_int i).aestronglyMeasurable.eNorm]
