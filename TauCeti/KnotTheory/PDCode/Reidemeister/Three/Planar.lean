@@ -133,20 +133,8 @@ include h in
   simp only [↓reduceIte, map_mul, map_inv, localLift_slots] at hright
   have hr : (D.reidemeisterThree c).crossingRotation = D.crossingRotation := by
     simp only [crossingRotation_def, reidemeisterThree_halfEdge]
-  have heq : (D.reidemeisterThreePerm c).symm.permCongr
-      (D.crossingRotation * (D.reidemeisterThreePerm c).permCongr D.edgePair.val) =
-      (D.reidemeisterThreePerm c)⁻¹ * localLift D c localRotation *
-        D.reidemeisterThreePerm c * exteriorSlots D c (fun _ ↦ finRotate 4) * D.edgePair.val := by
-    rw [Equiv.permCongr_eq_mul, Equiv.permCongr_eq_mul, crossingRotation_split D c,
-      ← Perm.inv_def]
-    have hc := (localLift_commute_exteriorSlots D c reidemeisterThreeSlots (fun _ ↦ finRotate 4)).eq
-    rw [localLift_slots] at hc
-    calc
-      _ = (D.reidemeisterThreePerm c)⁻¹ * localLift D c localRotation *
-        (exteriorSlots D c (fun _ ↦ finRotate 4) * D.reidemeisterThreePerm c) *
-          D.edgePair.val := by group
-      _ = _ := by rw [← hc]; group
-  rw [← heq, Equiv.orbitCount_permCongr] at hright
+  rw [← reidemeisterThreePerm_symm_permCongr_mul D c, Equiv.orbitCount_permCongr,
+    ← crossingRotation_split D c] at hright
   rw [faceCount_def, faceCount_def, facePerm_def, facePerm_def, hr,
     reidemeisterThree_edgePair]
   calc
