@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Boundary.Collar.Local
 import Mathlib.Algebra.Order.Interval.Set.Group
 import TauCeti.Topology.ConnectedComponents
+import TauCeti.Topology.Order.LocalMonotone
 
 /-!
 # Boundary points of compact one-dimensional manifolds
@@ -583,6 +584,11 @@ its base point. -/
 private def CutData.arcOf (D : CutData M) (ω : M × Bool ⊕ M) : Set M :=
   connectedComponentIn D.Pᶜ (D.base ω)
 
+/-- The ends counted by the argument: the two sides of each point of `P`, and the points of a
+finite set `B` of boundary points. -/
+private def CutData.ends (D : CutData M) (B : Finset M) : Finset (M × Bool ⊕ M) :=
+  (D.finite.toFinset ×ˢ (Finset.univ : Finset Bool)).disjSum B
+
 /-- The side of a point of `P` lies in the arc of its chosen point. -/
 private theorem CutData.J_subset_arcOf (D : CutData M) {p : M} (hp : p ∈ D.P) (c : Bool) :
     D.J p c ⊆ D.arcOf (.inl (p, c)) :=
@@ -665,7 +671,7 @@ private theorem CutData.exists_of_endpoint [T2Space M] (D : CutData M) {y : M}
 /-- The base point of an element of `P × Bool ⊕ ∂M` lies outside `P`. -/
 private theorem CutData.base_notMem (D : CutData M) {B : Finset M}
     (hB : ∀ y ∈ B, y ∈ (𝓡∂ 1).boundary M) {ω : M × Bool ⊕ M}
-    (hω : ω ∈ (D.finite.toFinset ×ˢ (Finset.univ : Finset Bool)).disjSum B) : D.base ω ∉ D.P := by
+    (hω : ω ∈ D.ends B) : D.base ω ∉ D.P := by
   rcases Finset.mem_disjSum.1 hω with ⟨⟨p, c⟩, hpc, rfl⟩ | ⟨y, hy, rfl⟩
   · have hp : p ∈ D.P := by simpa using (Finset.mem_product.1 hpc).1
     exact disjoint_left.1 ((D.sides p hp).disjoint c) ((D.sides p hp).mem c)
@@ -680,13 +686,12 @@ private theorem CutData.injOn_and_image_filter_arcOf [T2Space M] (D : CutData M)
     {e : OpenPartialHomeomorph M (EuclideanHalfSpace 1)} {α β : ℝ}
     (h : IsArcIn e α β (D.arcOf ω₀)) :
     InjOn (fun ω : M × Bool ⊕ M ↦ (e (Sum.elim Prod.fst id ω)).1 0)
-        (((D.finite.toFinset ×ˢ (Finset.univ : Finset Bool)).disjSum hB.toFinset).filter
-          (fun ω ↦ D.arcOf ω = D.arcOf ω₀) : Set (M × Bool ⊕ M)) ∧
-      (((D.finite.toFinset ×ˢ (Finset.univ : Finset Bool)).disjSum hB.toFinset).filter
-          (fun ω ↦ D.arcOf ω = D.arcOf ω₀)).image (fun ω ↦ (e (Sum.elim Prod.fst id ω)).1 0) =
+        ((D.ends hB.toFinset).filter (fun ω ↦ D.arcOf ω = D.arcOf ω₀) : Set (M × Bool ⊕ M)) ∧
+      ((D.ends hB.toFinset).filter (fun ω ↦ D.arcOf ω = D.arcOf ω₀)).image
+          (fun ω ↦ (e (Sum.elim Prod.fst id ω)).1 0) =
         {sInf ((fun z ↦ (e z).1 0) '' D.arcOf ω₀), sSup ((fun z ↦ (e z).1 0) '' D.arcOf ω₀)} := by
   classical
-  set Ω := (D.finite.toFinset ×ˢ (Finset.univ : Finset Bool)).disjSum hB.toFinset
+  set Ω := D.ends hB.toFinset
   have hbase : ∀ ω ∈ Ω, D.base ω ∉ D.P := fun ω hω ↦
     D.base_notMem (fun y hy ↦ hB.mem_toFinset.1 hy) hω
   set K := D.arcOf ω₀
@@ -698,7 +703,7 @@ private theorem CutData.injOn_and_image_filter_arcOf [T2Space M] (D : CutData M)
   have hinl : ∀ p c, (.inl (p, c) : M × Bool ⊕ M) ∈ Ω → D.arcOf (.inl (p, c)) = K →
       p ∈ D.P ∧ D.J p c ⊆ K ∧ p ∈ e.source ∧ v (.inl (p, c)) ∉ I ∧
         (v (.inl (p, c)) = sInf I ∨ v (.inl (p, c)) = sSup I) := fun p c hω hK ↦ by
-    have hp : p ∈ D.P := by simpa [Ω] using hω
+    have hp : p ∈ D.P := by simpa [Ω, CutData.ends] using hω
     have hJ : D.J p c ⊆ K := by rw [← hK]; exact D.J_subset_arcOf hp c
     exact ⟨hp, hJ, h.coord_of_mem_closure (closure_mono hJ ((D.sides p hp).mem_closure c))
       (disjoint_right.1 hKP hp)⟩
@@ -706,7 +711,8 @@ private theorem CutData.injOn_and_image_filter_arcOf [T2Space M] (D : CutData M)
   have hinr : ∀ y, (.inr y : M × Bool ⊕ M) ∈ Ω → D.arcOf (.inr y) = K →
       y ∈ e.source ∧ v (.inr y) ∈ I ∧ v (.inr y) = sInf I := fun y hω hK ↦ by
     have hyK : y ∈ K := by rw [← hK]; exact mem_connectedComponentIn (hbase _ hω)
-    exact ⟨(h.mem y hyK).1, h.coord_eq_sInf_of_mem_boundary hyK (by simpa [Ω] using hω)⟩
+    exact ⟨(h.mem y hyK).1,
+      h.coord_eq_sInf_of_mem_boundary hyK (by simpa [Ω, CutData.ends] using hω)⟩
   refine ⟨?_, ?_⟩
   · rintro (⟨p, c⟩ | y) hω (⟨p', c'⟩ | y') hω' hvv <;>
       rw [Finset.coe_filter, mem_ofPred_eq] at hω hω'
@@ -736,9 +742,8 @@ private theorem CutData.injOn_and_image_filter_arcOf [T2Space M] (D : CutData M)
 /-- Every arc has exactly two ends, the sides of points of `P` and boundary points lying in it. -/
 private theorem CutData.card_filter_arcOf_eq_two [T2Space M] (D : CutData M)
     (hB : ((𝓡∂ 1).boundary M).Finite) {ω₀ : M × Bool ⊕ M}
-    (hω₀ : ω₀ ∈ (D.finite.toFinset ×ˢ (Finset.univ : Finset Bool)).disjSum hB.toFinset) :
-    (((D.finite.toFinset ×ˢ (Finset.univ : Finset Bool)).disjSum hB.toFinset).filter
-      (fun ω ↦ D.arcOf ω = D.arcOf ω₀)).card = 2 := by
+    (hω₀ : ω₀ ∈ D.ends hB.toFinset) :
+    ((D.ends hB.toFinset).filter (fun ω ↦ D.arcOf ω = D.arcOf ω₀)).card = 2 := by
   obtain ⟨e, α, β, h⟩ := D.arc _ (D.base_notMem (fun y hy ↦ hB.mem_toFinset.1 hy) hω₀)
   obtain ⟨hinj, himage⟩ := D.injOn_and_image_filter_arcOf hB h
   rw [← Finset.card_image_of_injOn hinj, himage]
@@ -761,7 +766,7 @@ theorem ModelWithCorners.even_ncard_boundary_euclideanHalfSpace_one [CompactSpac
   classical
   obtain ⟨D⟩ := nonempty_cutData (M := M)
   have hB := ModelWithCorners.finite_boundary_euclideanHalfSpace_one (M := M)
-  set Ω := (D.finite.toFinset ×ˢ (Finset.univ : Finset Bool)).disjSum hB.toFinset
+  set Ω := D.ends hB.toFinset
   -- Grouping the sides of points of `P` and the boundary points by their arc, each arc gets two.
   have hcard : Ω.card = (Ω.image D.arcOf).card * 2 := by
     rw [Finset.card_eq_sum_card_image D.arcOf Ω, ← smul_eq_mul, ← Finset.sum_const]
@@ -769,76 +774,11 @@ theorem ModelWithCorners.even_ncard_boundary_euclideanHalfSpace_one [CompactSpac
     obtain ⟨ω₀, hω₀, rfl⟩ := Finset.mem_image.1 hK
     exact D.card_filter_arcOf_eq_two hB hω₀
   have hΩ : Ω.card = D.finite.toFinset.card * 2 + hB.toFinset.card := by
-    simp [Ω, Finset.card_disjSum, Finset.card_product]
+    simp [Ω, CutData.ends, Finset.card_disjSum, Finset.card_product]
   rw [ncard_eq_toFinset_card _ hB]
   exact ⟨(Ω.image D.arcOf).card - D.finite.toFinset.card, by omega⟩
 
 end Main
-
-section LocalDirection
-
-/-! ### The direction of a continuous injective real function near a point -/
-
-variable {g h τ : ℝ → ℝ} {s : ℝ}
-
-/-- `g` is strictly increasing on a neighbourhood of `s`. -/
-private def IsIncAt (g : ℝ → ℝ) (s : ℝ) : Prop := ∃ V ∈ 𝓝 s, StrictMonoOn g V
-
-/-- `g` is strictly decreasing on a neighbourhood of `s`. -/
-private def IsDecAt (g : ℝ → ℝ) (s : ℝ) : Prop := ∃ V ∈ 𝓝 s, StrictAntiOn g V
-
-/-- A function continuous and injective near `s` is strictly monotone or strictly antitone near
-`s`. -/
-private theorem isIncAt_or_isDecAt {U : Set ℝ} (hU : U ∈ 𝓝 s) (hc : ContinuousOn g U)
-    (hi : InjOn g U) : IsIncAt g s ∨ IsDecAt g s := by
-  obtain ⟨δ, hδ, hδU⟩ := Metric.mem_nhds_iff.1 hU
-  have hsub : Icc (s - δ / 2) (s + δ / 2) ⊆ U := fun x hx ↦ hδU (by
-    rw [Metric.mem_ball, Real.dist_eq, abs_lt]; constructor <;> linarith [hx.1, hx.2])
-  have hI : Icc (s - δ / 2) (s + δ / 2) ∈ 𝓝 s := Icc_mem_nhds (by linarith) (by linarith)
-  exact ((hc.mono hsub).strictMonoOn_of_injOn_Icc' (by linarith) (hi.mono hsub)).imp
-    (fun h ↦ ⟨_, hI, h⟩) fun h ↦ ⟨_, hI, h⟩
-
-private theorem not_isIncAt_and_isDecAt : ¬(IsIncAt g s ∧ IsDecAt g s) := by
-  rintro ⟨⟨V, hV, hm⟩, V', hV', ha⟩
-  obtain ⟨ε, hε, hεV⟩ := Metric.mem_nhds_iff.1 (Filter.inter_mem hV hV')
-  have h₁ : s ∈ V ∩ V' := hεV (Metric.mem_ball_self hε)
-  have h₂ : s + ε / 2 ∈ V ∩ V' := hεV (by
-    rw [Metric.mem_ball, Real.dist_eq, add_sub_cancel_left, abs_of_pos (by linarith)]; linarith)
-  linarith [hm h₁.1 h₂.1 (by linarith), ha h₁.2 h₂.2 (by linarith)]
-
-/-- **The direction of a composite.** If `g = h ∘ τ` near `s`, and `τ` near `s` and `h` near
-`τ s` are each strictly monotone or strictly antitone, then `g` increases near `s` exactly when
-`h` and `τ` have the same direction. -/
-private theorem isIncAt_iff_of_eventuallyEq_comp (hg : g =ᶠ[𝓝 s] h ∘ τ) (hτc : ContinuousAt τ s)
-    (hτ : IsIncAt τ s ∨ IsDecAt τ s) (hh : IsIncAt h (τ s) ∨ IsDecAt h (τ s)) :
-    IsIncAt g s ↔ (IsIncAt h (τ s) ↔ IsIncAt τ s) := by
-  have key : ∀ {V W}, V ∈ 𝓝 (τ s) → W ∈ 𝓝 s →
-      ∃ W' ∈ 𝓝 s, W' ⊆ W ∧ MapsTo τ W' V ∧ EqOn (h ∘ τ) g W' := fun hV hW ↦
-    ⟨_, Filter.inter_mem (Filter.inter_mem hW (hτc.preimage_mem_nhds hV)) hg, fun _ hx ↦ hx.1.1,
-      fun _ hx ↦ hx.1.2, fun _ hx ↦ hx.2.symm⟩
-  have hgτ := @not_isIncAt_and_isDecAt τ s
-  have hgh := @not_isIncAt_and_isDecAt h (τ s)
-  have hgg := @not_isIncAt_and_isDecAt g s
-  rcases hh with ⟨V, hV, hhV⟩ | ⟨V, hV, hhV⟩ <;> rcases hτ with ⟨W, hW, hτW⟩ | ⟨W, hW, hτW⟩ <;>
-    obtain ⟨W', hW', hW'W, hmaps, heq⟩ := key hV hW
-  · have : IsIncAt g s := ⟨W', hW', (hhV.comp (hτW.mono hW'W) hmaps).congr heq⟩
-    have : IsIncAt h (τ s) := ⟨V, hV, hhV⟩
-    have : IsIncAt τ s := ⟨W, hW, hτW⟩
-    tauto
-  · have : IsDecAt g s := ⟨W', hW', (hhV.comp_strictAntiOn (hτW.mono hW'W) hmaps).congr heq⟩
-    have : IsIncAt h (τ s) := ⟨V, hV, hhV⟩
-    have : IsDecAt τ s := ⟨W, hW, hτW⟩
-    tauto
-  · have : IsDecAt g s := ⟨W', hW', (hhV.comp_strictMonoOn (hτW.mono hW'W) hmaps).congr heq⟩
-    have : IsDecAt h (τ s) := ⟨V, hV, hhV⟩
-    have : IsIncAt τ s := ⟨W, hW, hτW⟩
-    tauto
-  · have : IsIncAt g s := ⟨W', hW', (hhV.comp (hτW.mono hW'W) hmaps).congr heq⟩
-    have : IsDecAt h (τ s) := ⟨V, hV, hhV⟩
-    have : IsDecAt τ s := ⟨W, hW, hτW⟩
-    tauto
-
-end LocalDirection
 
 section Orientation
 
@@ -852,19 +792,39 @@ decreases near each interior point; it is *positive* for `e` there when it incre
 variable {M : Type*} [TopologicalSpace M] [ChartedSpace (EuclideanHalfSpace 1) M]
   {𝒪 : Set (OpenPartialHomeomorph M ℝ)} {e : OpenPartialHomeomorph M (EuclideanHalfSpace 1)}
 
+/-- `𝒪` orients the interior of `M`: its charts cover the interior points, and the transition
+map between any two of them is strictly increasing near every common point. -/
+private structure IsOrientation (𝒪 : Set (OpenPartialHomeomorph M ℝ)) : Prop where
+  cover : ∀ x ∉ (𝓡∂ 1).boundary M, ∃ c ∈ 𝒪, x ∈ c.source
+  compat : ∀ c ∈ 𝒪, ∀ c' ∈ 𝒪, ∀ x ∈ c.source ∩ c'.source, StrictMonoAt (c' ∘ c.symm) (c x)
+
+omit [ChartedSpace (EuclideanHalfSpace 1) M] in
+/-- The orientation `𝒪` points outward at `b`: the charts of `𝒪` are strictly decreasing along
+some injective path leaving `b`. -/
+private def IsOutward (𝒪 : Set (OpenPartialHomeomorph M ℝ)) (b : M) : Prop :=
+  ∃ γ : ℝ → M, ∃ η > 0, γ 0 = b ∧ ContinuousOn γ (Icc 0 η) ∧ InjOn γ (Icc 0 η) ∧
+    ∀ s ∈ Ioo 0 η, ∀ c ∈ 𝒪, γ s ∈ c.source → StrictAntiAt (c ∘ γ) s
+
+omit [ChartedSpace (EuclideanHalfSpace 1) M] in
+/-- The orientation `𝒪` points inward at `b`: the charts of `𝒪` are strictly increasing along
+some injective path leaving `b`. -/
+private def IsInward (𝒪 : Set (OpenPartialHomeomorph M ℝ)) (b : M) : Prop :=
+  ∃ γ : ℝ → M, ∃ η > 0, γ 0 = b ∧ ContinuousOn γ (Icc 0 η) ∧ InjOn γ (Icc 0 η) ∧
+    ∀ s ∈ Ioo 0 η, ∀ c ∈ 𝒪, γ s ∈ c.source → StrictMonoAt (c ∘ γ) s
+
 /-- The orientation `𝒪` increases along the coordinate of the chart `e` near `y`. -/
 private def IsPos (𝒪 : Set (OpenPartialHomeomorph M ℝ))
     (e : OpenPartialHomeomorph M (EuclideanHalfSpace 1)) (y : M) : Prop :=
-  ∃ c ∈ 𝒪, y ∈ c.source ∧ IsIncAt (fun s ↦ c (e.symm (normalRay s))) ((e y).1 0)
+  ∃ c ∈ 𝒪, y ∈ c.source ∧ StrictMonoAt (fun s ↦ c (e.symm (normalRay s))) ((e y).1 0)
 
 /-- Near an interior point `y`, a chart `c` to `ℝ` read along the coordinate of `e` is continuous
 and injective, so it is strictly monotone or strictly antitone. -/
-private theorem exists_isIncAt_or_isDecAt {c : OpenPartialHomeomorph M ℝ} {y : M}
+private theorem exists_strictMonoAt_or_strictAntiAt {c : OpenPartialHomeomorph M ℝ} {y : M}
     (hye : y ∈ e.source) (hy : y ∉ (𝓡∂ 1).boundary M) (hyc : y ∈ c.source) :
     ∃ V ∈ 𝓝 ((e y).1 0), (∀ s ∈ V, e.symm (normalRay s) ∈ c.source) ∧
       ContinuousOn (fun s ↦ c (e.symm (normalRay s))) V ∧
-      (IsIncAt (fun s ↦ c (e.symm (normalRay s))) ((e y).1 0) ∨
-        IsDecAt (fun s ↦ c (e.symm (normalRay s))) ((e y).1 0)) := by
+      (StrictMonoAt (fun s ↦ c (e.symm (normalRay s))) ((e y).1 0) ∨
+        StrictAntiAt (fun s ↦ c (e.symm (normalRay s))) ((e y).1 0)) := by
   set V := Ioi 0 ∩ normalRay ⁻¹' (e.target ∩ e.symm ⁻¹' c.source)
   have hV : IsOpen V := isOpen_Ioi.inter
     ((e.isOpen_inter_preimage_symm c.open_source).preimage continuous_normalRay)
@@ -878,55 +838,46 @@ private theorem exists_isIncAt_or_isDecAt {c : OpenPartialHomeomorph M ℝ} {y :
     simpa only [coord_symm_normalRay (le_of_lt hs.1) hs.2.1,
       coord_symm_normalRay (le_of_lt hs'.1) hs'.2.1] using this
   exact ⟨V, hV.mem_nhds hyV, fun _ hs ↦ hs.2.2, hcont,
-    isIncAt_or_isDecAt (hV.mem_nhds hyV) hcont hinj⟩
+    strictMonoAt_or_strictAntiAt (hV.mem_nhds hyV) hcont hinj⟩
 
 /-- The direction of the orientation along the coordinate of `e` does not depend on the chart of
 `𝒪` used to read it. -/
-private theorem isIncAt_iff_isIncAt
-    (hcompat : ∀ c ∈ 𝒪, ∀ c' ∈ 𝒪, ∀ x ∈ c.source ∩ c'.source,
-      ∃ U ∈ 𝓝 (c x), StrictMonoOn (c' ∘ c.symm) U)
+private theorem strictMonoAt_iff_strictMonoAt (h𝒪 : IsOrientation 𝒪)
     {c c' : OpenPartialHomeomorph M ℝ} (hc : c ∈ 𝒪) (hc' : c' ∈ 𝒪) {y : M} (hye : y ∈ e.source)
     (hy : y ∉ (𝓡∂ 1).boundary M) (hyc : y ∈ c.source) (hyc' : y ∈ c'.source) :
-    IsIncAt (fun s ↦ c' (e.symm (normalRay s))) ((e y).1 0) ↔
-      IsIncAt (fun s ↦ c (e.symm (normalRay s))) ((e y).1 0) := by
-  obtain ⟨V, hV, hVc, hcont, hdir⟩ := exists_isIncAt_or_isDecAt hye hy hyc
+    StrictMonoAt (fun s ↦ c' (e.symm (normalRay s))) ((e y).1 0) ↔
+      StrictMonoAt (fun s ↦ c (e.symm (normalRay s))) ((e y).1 0) := by
+  obtain ⟨V, hV, hVc, hcont, hdir⟩ := exists_strictMonoAt_or_strictAntiAt hye hy hyc
   have hτy : c (e.symm (normalRay ((e y).1 0))) = c y := by
     rw [normalRay_normalCoord, e.left_inv hye]
   have heq : (fun s ↦ c' (e.symm (normalRay s))) =ᶠ[𝓝 ((e y).1 0)]
       (c' ∘ c.symm) ∘ fun s ↦ c (e.symm (normalRay s)) :=
     Filter.eventually_of_mem hV fun s hs ↦ by simp only [comp_apply, c.left_inv (hVc s hs)]
-  have hh : IsIncAt (c' ∘ c.symm) (c y) := hcompat c hc c' hc' y ⟨hyc, hyc'⟩
-  rw [isIncAt_iff_of_eventuallyEq_comp heq (hcont.continuousAt hV) hdir
+  have hh : StrictMonoAt (c' ∘ c.symm) (c y) := h𝒪.compat c hc c' hc' y ⟨hyc, hyc'⟩
+  rw [strictMonoAt_iff_of_eventuallyEq_comp heq (hcont.continuousAt hV) hdir
     (by simp only [hτy]; exact Or.inl hh)]
   simp only [hτy]
   exact iff_true_left hh
 
-private theorem isPos_iff
-    (hcompat : ∀ c ∈ 𝒪, ∀ c' ∈ 𝒪, ∀ x ∈ c.source ∩ c'.source,
-      ∃ U ∈ 𝓝 (c x), StrictMonoOn (c' ∘ c.symm) U)
+private theorem isPos_iff (h𝒪 : IsOrientation 𝒪)
     {c : OpenPartialHomeomorph M ℝ} (hc : c ∈ 𝒪) {y : M} (hye : y ∈ e.source)
     (hy : y ∉ (𝓡∂ 1).boundary M) (hyc : y ∈ c.source) :
-    IsPos 𝒪 e y ↔ IsIncAt (fun s ↦ c (e.symm (normalRay s))) ((e y).1 0) :=
-  ⟨fun ⟨_, hc', hyc', h⟩ ↦ (isIncAt_iff_isIncAt hcompat hc hc' hye hy hyc hyc').1 h,
+    IsPos 𝒪 e y ↔ StrictMonoAt (fun s ↦ c (e.symm (normalRay s))) ((e y).1 0) :=
+  ⟨fun ⟨_, hc', hyc', h⟩ ↦ (strictMonoAt_iff_strictMonoAt h𝒪 hc hc' hye hy hyc hyc').1 h,
     fun h ↦ ⟨c, hc, hyc, h⟩⟩
 
-private theorem not_isPos_iff
-    (hcompat : ∀ c ∈ 𝒪, ∀ c' ∈ 𝒪, ∀ x ∈ c.source ∩ c'.source,
-      ∃ U ∈ 𝓝 (c x), StrictMonoOn (c' ∘ c.symm) U)
+private theorem not_isPos_iff (h𝒪 : IsOrientation 𝒪)
     {c : OpenPartialHomeomorph M ℝ} (hc : c ∈ 𝒪) {y : M} (hye : y ∈ e.source)
     (hy : y ∉ (𝓡∂ 1).boundary M) (hyc : y ∈ c.source) :
-    ¬IsPos 𝒪 e y ↔ IsDecAt (fun s ↦ c (e.symm (normalRay s))) ((e y).1 0) := by
-  rw [isPos_iff hcompat hc hye hy hyc]
-  obtain ⟨-, -, -, -, h⟩ := exists_isIncAt_or_isDecAt hye hy hyc
-  have := @not_isIncAt_and_isDecAt (fun s ↦ c (e.symm (normalRay s))) ((e y).1 0)
+    ¬IsPos 𝒪 e y ↔ StrictAntiAt (fun s ↦ c (e.symm (normalRay s))) ((e y).1 0) := by
+  rw [isPos_iff h𝒪 hc hye hy hyc]
+  obtain ⟨-, -, -, -, h⟩ := exists_strictMonoAt_or_strictAntiAt hye hy hyc
+  have := not_strictMonoAt_and_strictAntiAt (f := fun s ↦ c (e.symm (normalRay s))) (a := (e y).1 0)
   tauto
 
 /-- **An orientation is constant along preconnected sets.** On a preconnected set of interior
 points of the domain of `e`, the orientation is positive for `e` everywhere or nowhere. -/
-private theorem isPos_iff_isPos_of_isPreconnected
-    (hcover : ∀ x ∉ (𝓡∂ 1).boundary M, ∃ c ∈ 𝒪, x ∈ c.source)
-    (hcompat : ∀ c ∈ 𝒪, ∀ c' ∈ 𝒪, ∀ x ∈ c.source ∩ c'.source,
-      ∃ U ∈ 𝓝 (c x), StrictMonoOn (c' ∘ c.symm) U)
+private theorem isPos_iff_isPos_of_isPreconnected (h𝒪 : IsOrientation 𝒪)
     {S : Set M} (hS : IsPreconnected S) (hSe : S ⊆ e.source)
     (hSB : Disjoint S ((𝓡∂ 1).boundary M)) {y y' : M} (hy : y ∈ S) (hy' : y' ∈ S) :
     IsPos 𝒪 e y ↔ IsPos 𝒪 e y' := by
@@ -948,10 +899,10 @@ private theorem isPos_iff_isPos_of_isPreconnected
   have hmem : ∀ z ∈ S, (z ∈ A ↔ IsPos 𝒪 e z) ∧ (z ∈ A' ↔ ¬IsPos 𝒪 e z) := fun z hz ↦ by
     have hze := hSe hz
     have hzB := disjoint_left.1 hSB hz
-    obtain ⟨c, hc, hzc⟩ := hcover z hzB
+    obtain ⟨c, hc, hzc⟩ := h𝒪.cover z hzB
     exact ⟨⟨fun h ↦ h.2, fun h ↦ ⟨hze, h⟩⟩,
-      ⟨fun ⟨_, c', hc', hzc', h⟩ ↦ (not_isPos_iff hcompat hc' hze hzB hzc').2 h,
-        fun h ↦ ⟨hze, c, hc, hzc, (not_isPos_iff hcompat hc hze hzB hzc).1 h⟩⟩⟩
+      ⟨fun ⟨_, c', hc', hzc', h⟩ ↦ (not_isPos_iff h𝒪 hc' hze hzB hzc').2 h,
+        fun h ↦ ⟨hze, c, hc, hzc, (not_isPos_iff h𝒪 hc hze hzB hzc).1 h⟩⟩⟩
   have hSAA : S ⊆ A ∪ A' := fun z hz ↦ (em (IsPos 𝒪 e z)).imp ((hmem z hz).1.2) (hmem z hz).2.2
   have key : ∀ z ∈ S, ∀ z' ∈ S, IsPos 𝒪 e z → IsPos 𝒪 e z' := fun z hz z' hz' h ↦ by
     by_contra h'
@@ -998,15 +949,12 @@ private theorem IsArcIn.nonempty_diff_boundary {α β : ℝ} {K : Set M} (h : Is
 /-- **The orientation at a boundary point of an arc.** Let `b` be a boundary point in an arc `K`
 in the chart `e`, and `γ` an injective path from `b`. At some time `s`, the direction of a chart
 of `𝒪` along `γ` is the direction of the orientation along the arc in the chart `e`. -/
-private theorem IsArcIn.exists_isIncAt_iff_isPos
-    (hcover : ∀ x ∉ (𝓡∂ 1).boundary M, ∃ c ∈ 𝒪, x ∈ c.source)
-    (hcompat : ∀ c ∈ 𝒪, ∀ c' ∈ 𝒪, ∀ x ∈ c.source ∩ c'.source,
-      ∃ U ∈ 𝓝 (c x), StrictMonoOn (c' ∘ c.symm) U)
+private theorem IsArcIn.exists_strictMonoAt_iff_isPos (h𝒪 : IsOrientation 𝒪)
     {α β : ℝ} {K : Set M} (h : IsArcIn e α β K) {b : M} (hbK : b ∈ K)
     (hbB : b ∈ (𝓡∂ 1).boundary M) {z₀ : M} (hz₀K : z₀ ∈ K) (hz₀B : z₀ ∉ (𝓡∂ 1).boundary M)
     {γ : ℝ → M} {η : ℝ} (hη : 0 < η) (hγ0 : γ 0 = b) (hγc : ContinuousOn γ (Icc 0 η))
     (hγi : InjOn γ (Icc 0 η)) :
-    ∃ s ∈ Ioo 0 η, ∃ c ∈ 𝒪, γ s ∈ c.source ∧ (IsIncAt (c ∘ γ) s ↔ IsPos 𝒪 e z₀) := by
+    ∃ s ∈ Ioo 0 η, ∃ c ∈ 𝒪, γ s ∈ c.source ∧ (StrictMonoAt (c ∘ γ) s ↔ IsPos 𝒪 e z₀) := by
   have hbe := (h.mem b hbK).1
   have hb0 : (e b).1 0 = 0 := (ModelWithCorners.mem_boundary_euclideanHalfSpace_one_iff hbe).1 hbB
   -- An initial piece `γ [0, η']` of the path stays in the arc.
@@ -1037,15 +985,15 @@ private theorem IsArcIn.exists_isIncAt_iff_isPos
       (((ModelWithCorners.mem_boundary_euclideanHalfSpace_one_iff hye).1 hyB).trans hb0.symm)
     have := hγi (hη'η (Ioo_subset_Icc_self hu)) ⟨le_rfl, hη.le⟩ (hyb.trans hγ0.symm)
     linarith [hu.1]
-  obtain ⟨c, hc, hyc⟩ := hcover _ hyB
+  obtain ⟨c, hc, hyc⟩ := h𝒪.cover _ hyB
   refine ⟨u, ⟨hu.1, hu.2.trans_le (min_le_right _ _)⟩, c, hc, hyc, ?_⟩
   have heq : c ∘ γ =ᶠ[𝓝 u] (fun s ↦ c (e.symm (normalRay s))) ∘ τ :=
     Filter.eventually_of_mem hIcc fun s hs ↦ by
       simp only [comp_apply, τ, symm_normalRay_coord (hsub s hs).2]
-  obtain ⟨-, -, -, -, hdir⟩ := exists_isIncAt_or_isDecAt hye hyB hyc
-  rw [isIncAt_iff_of_eventuallyEq_comp heq (hτc.continuousAt hIcc) (Or.inl ⟨_, hIcc, hτm⟩) hdir,
-    iff_true_right (show IsIncAt τ u from ⟨_, hIcc, hτm⟩), ← isPos_iff hcompat hc hye hyB hyc]
-  exact isPos_iff_isPos_of_isPreconnected hcover hcompat h.isPreconnected_diff_boundary
+  obtain ⟨-, -, -, -, hdir⟩ := exists_strictMonoAt_or_strictAntiAt hye hyB hyc
+  rw [strictMonoAt_iff_of_eventuallyEq_comp heq (hτc.continuousAt hIcc) (Or.inl ⟨_, hIcc, hτm⟩)
+    hdir, iff_true_right (show StrictMonoAt τ u from ⟨_, hIcc, hτm⟩), ← isPos_iff h𝒪 hc hye hyB hyc]
+  exact isPos_iff_isPos_of_isPreconnected h𝒪 h.isPreconnected_diff_boundary
     (fun z hz ↦ (h.mem z hz.1).1) disjoint_sdiff_left ⟨hyK, hyB⟩ ⟨hz₀K, hz₀B⟩
 
 omit [ChartedSpace (EuclideanHalfSpace 1) M] in
@@ -1063,8 +1011,8 @@ private theorem IsArcIn.coord_eq_sSup_iff {α β : ℝ} {K : Set M} (h : IsArcIn
   set I := (fun z ↦ (e z).1 0) '' K
   have ha' : a ∈ Icc a b := ⟨le_rfl, hab.le⟩
   have hb' : b ∈ Icc a b := ⟨hab.le, le_rfl⟩
-  have hexcl : ¬(StrictMonoOn τ (Icc a b) ∧ StrictAntiOn τ (Icc a b)) := fun ⟨h₁, h₂⟩ ↦
-    lt_asymm (h₁ ha' hb' hab) (h₂ ha' hb' hab)
+  have hexcl : ¬(StrictMonoOn τ (Icc a b) ∧ StrictAntiOn τ (Icc a b)) :=
+    Set.Nontrivial.not_strictMonoOn_and_strictAntiOn ⟨a, ha', b, hb', hab.ne⟩
   -- A value of the arc below the coordinate of `p` makes it the supremum, one above prevents it.
   have hsup : ∀ x ∈ I, x < (e p).1 0 → (e p).1 0 = sSup I := fun x hx hlt ↦
     hpend.resolve_left fun hinf ↦ by linarith [csInf_le h.bddBelow hx]
@@ -1084,10 +1032,7 @@ coordinates of a chart `e'` whose image lies in the domain of a chart `e`, so th
 `τ` of `e` along it is strictly monotone or strictly antitone. At a point of the image with
 coordinate `u ∈ (a, b)`, the orientation is positive for `e'` exactly when its positivity for `e`
 agrees with `τ` increasing. -/
-private theorem isPos_iff_isPos_iff_strictMonoOn
-    (hcover : ∀ x ∉ (𝓡∂ 1).boundary M, ∃ c ∈ 𝒪, x ∈ c.source)
-    (hcompat : ∀ c ∈ 𝒪, ∀ c' ∈ 𝒪, ∀ x ∈ c.source ∩ c'.source,
-      ∃ U ∈ 𝓝 (c x), StrictMonoOn (c' ∘ c.symm) U)
+private theorem isPos_iff_isPos_iff_strictMonoOn (h𝒪 : IsOrientation 𝒪)
     {e' : OpenPartialHomeomorph M (EuclideanHalfSpace 1)} {a b : ℝ} (ha : 0 < a)
     (htarget : ∀ s ∈ Icc a b, normalRay s ∈ e'.target)
     (hγe : ∀ s ∈ Icc a b, e'.symm (normalRay s) ∈ e.source)
@@ -1106,28 +1051,27 @@ private theorem isPos_iff_isPos_iff_strictMonoOn
   have hyB : y ∉ (𝓡∂ 1).boundary M := fun hB ↦ by
     rw [ModelWithCorners.mem_boundary_euclideanHalfSpace_one_iff hye', hyu] at hB
     linarith [hu.1]
-  obtain ⟨c, hc, hyc⟩ := hcover y hyB
+  obtain ⟨c, hc, hyc⟩ := h𝒪.cover y hyB
   -- Along `e'`, the chart `c` is `c` along `e` composed with `τ`.
   have heq : (fun s ↦ c (e'.symm (normalRay s))) =ᶠ[𝓝 u]
       (fun s ↦ c (e.symm (normalRay s))) ∘ τ :=
     Filter.eventually_of_mem hIcc fun s hs ↦ by
       simp only [comp_apply, τ, symm_normalRay_coord (hγe s hs)]
-  have hτinc : IsIncAt τ u ↔ StrictMonoOn τ (Icc a b) := by
-    have := @not_isIncAt_and_isDecAt τ u
+  have hab : (Icc a b).Nontrivial := ⟨a, left_mem_Icc.2 (hu.1.trans hu.2).le, b,
+    right_mem_Icc.2 (hu.1.trans hu.2).le, (hu.1.trans hu.2).ne⟩
+  have hτinc : StrictMonoAt τ u ↔ StrictMonoOn τ (Icc a b) := by
     rcases hmono with hm | hm
     · exact iff_of_true ⟨_, hIcc, hm⟩ hm
-    · exact iff_of_false (fun h' ↦ this ⟨h', _, hIcc, hm⟩) fun h' ↦
-        lt_asymm (h' ⟨le_rfl, (hu.1.trans hu.2).le⟩ ⟨(hu.1.trans hu.2).le, le_rfl⟩
-          (hu.1.trans hu.2)) (hm ⟨le_rfl, (hu.1.trans hu.2).le⟩ ⟨(hu.1.trans hu.2).le, le_rfl⟩
-            (hu.1.trans hu.2))
-  obtain ⟨-, -, -, -, hdir⟩ := exists_isIncAt_or_isDecAt hye hyB hyc
-  have hcomp := isIncAt_iff_of_eventuallyEq_comp heq
+    · exact iff_of_false (fun h' ↦ not_strictMonoAt_and_strictAntiAt ⟨h', _, hIcc, hm⟩)
+        fun h' ↦ hab.not_strictMonoOn_and_strictAntiOn ⟨h', hm⟩
+  obtain ⟨-, -, -, -, hdir⟩ := exists_strictMonoAt_or_strictAntiAt hye hyB hyc
+  have hcomp := strictMonoAt_iff_of_eventuallyEq_comp heq
     ((continuousOn_coord.comp (continuousOn_symm_normalRay htarget) hγe).continuousAt hIcc)
     (hmono.imp (fun hm ↦ ⟨_, hIcc, hm⟩) fun hm ↦ ⟨_, hIcc, hm⟩) hdir
-  have hpos' : IsPos 𝒪 e' y ↔ IsIncAt (fun s ↦ c (e'.symm (normalRay s))) u := by
-    rw [isPos_iff hcompat hc hye' hyB hyc, hyu]
-  have hpos : IsPos 𝒪 e y ↔ IsIncAt (fun s ↦ c (e.symm (normalRay s))) (τ u) :=
-    isPos_iff hcompat hc hye hyB hyc
+  have hpos' : IsPos 𝒪 e' y ↔ StrictMonoAt (fun s ↦ c (e'.symm (normalRay s))) u := by
+    rw [isPos_iff h𝒪 hc hye' hyB hyc, hyu]
+  have hpos : IsPos 𝒪 e y ↔ StrictMonoAt (fun s ↦ c (e.symm (normalRay s))) (τ u) :=
+    isPos_iff h𝒪 hc hye hyB hyc
   rw [hpos', hpos, ← hτinc]
   exact hcomp
 
@@ -1138,10 +1082,7 @@ end of `K` towards which the orientation points, the supremum of the coordinates
 orientation is positive for `e`, exactly when the orientation along `e'` points from the side
 `[a, b]` towards `p`, that is, when it is positive for `e'` at `p` and `t = b`, or negative and
 `t = a`. -/
-private theorem IsArcIn.side_iff
-    (hcover : ∀ x ∉ (𝓡∂ 1).boundary M, ∃ c ∈ 𝒪, x ∈ c.source)
-    (hcompat : ∀ c ∈ 𝒪, ∀ c' ∈ 𝒪, ∀ x ∈ c.source ∩ c'.source,
-      ∃ U ∈ 𝓝 (c x), StrictMonoOn (c' ∘ c.symm) U)
+private theorem IsArcIn.side_iff (h𝒪 : IsOrientation 𝒪)
     [T2Space M] {α β : ℝ} {K : Set M} (h : IsArcIn e α β K) {z₀ : M} (hz₀K : z₀ ∈ K)
     (hz₀B : z₀ ∉ (𝓡∂ 1).boundary M) {e' : OpenPartialHomeomorph M (EuclideanHalfSpace 1)}
     {p : M} (hpK : p ∉ K) (hpcl : p ∈ closure K) {a b t : ℝ} (ha : 0 < a) (hab : a < b)
@@ -1169,7 +1110,7 @@ private theorem IsArcIn.side_iff
   set u := (a + b) / 2 with hu_def
   have hu : u ∈ Ioo a b := ⟨by linarith, by linarith⟩
   have hut : u ≠ t := by rcases ht with rfl | rfl <;> [exact ne_of_gt hu.1; exact ne_of_lt hu.2]
-  have hcomp := isPos_iff_isPos_iff_strictMonoOn hcover hcompat ha htarget hγe hmono hu
+  have hcomp := isPos_iff_isPos_iff_strictMonoOn h𝒪 ha htarget hγe hmono hu
   set y := e'.symm (normalRay u)
   have hyK : y ∈ K := hK u (Ioo_subset_Icc_self hu) hut
   -- The orientation is constant along `K` for `e` and along `e' [a, b]` for `e'`.
@@ -1182,10 +1123,10 @@ private theorem IsArcIn.side_iff
   have hyB : y ∉ (𝓡∂ 1).boundary M :=
     disjoint_left.1 hSB (mem_image_of_mem _ (Ioo_subset_Icc_self hu))
   have hK₀ : IsPos 𝒪 e y ↔ IsPos 𝒪 e z₀ :=
-    isPos_iff_isPos_of_isPreconnected hcover hcompat h.isPreconnected_diff_boundary
+    isPos_iff_isPos_of_isPreconnected h𝒪 h.isPreconnected_diff_boundary
       (fun z hz ↦ (h.mem z hz.1).1) disjoint_sdiff_left ⟨hyK, hyB⟩ ⟨hz₀K, hz₀B⟩
   have hp' : IsPos 𝒪 e' y ↔ IsPos 𝒪 e' p :=
-    isPos_iff_isPos_of_isPreconnected hcover hcompat
+    isPos_iff_isPos_of_isPreconnected h𝒪
       (isPreconnected_Icc.image _ (continuousOn_symm_normalRay htarget))
       (image_subset_iff.2 fun s hs ↦ e'.map_target (htarget s hs)) hSB
       (mem_image_of_mem _ (Ioo_subset_Icc_self hu)) ⟨t, htab, hp⟩
@@ -1198,22 +1139,13 @@ inward boundary points `Bᵢ`, call outward the side `true` of a cut point `p` i
 negative at `p` for the chart at `p`, its side `false` if it is positive, and a boundary point if
 it lies in `Bₒ`. Then an element of `P × Bool ⊕ ∂M` in an arc is outward exactly when it lies at
 the end of the arc towards which the orientation points. -/
-private theorem CutData.outward_iff [T2Space M]
-    (hcover : ∀ x ∉ (𝓡∂ 1).boundary M, ∃ c ∈ 𝒪, x ∈ c.source)
-    (hcompat : ∀ c ∈ 𝒪, ∀ c' ∈ 𝒪, ∀ x ∈ c.source ∩ c'.source,
-      ∃ U ∈ 𝓝 (c x), StrictMonoOn (c' ∘ c.symm) U)
+private theorem CutData.outward_iff [T2Space M] (h𝒪 : IsOrientation 𝒪)
     {Bₒ Bᵢ : Set M} (hB : (𝓡∂ 1).boundary M = Bₒ ∪ Bᵢ)
-    (hBₒ : ∀ b ∈ Bₒ, ∃ γ : ℝ → M, ∃ η > 0, γ 0 = b ∧ ContinuousOn γ (Icc 0 η) ∧
-      InjOn γ (Icc 0 η) ∧ ∀ s ∈ Ioo 0 η, ∀ c ∈ 𝒪, γ s ∈ c.source →
-        ∃ U ∈ 𝓝 s, StrictAntiOn (c ∘ γ) U)
-    (hBᵢ : ∀ b ∈ Bᵢ, ∃ γ : ℝ → M, ∃ η > 0, γ 0 = b ∧ ContinuousOn γ (Icc 0 η) ∧
-      InjOn γ (Icc 0 η) ∧ ∀ s ∈ Ioo 0 η, ∀ c ∈ 𝒪, γ s ∈ c.source →
-        ∃ U ∈ 𝓝 s, StrictMonoOn (c ∘ γ) U)
+    (hBₒ : ∀ b ∈ Bₒ, IsOutward 𝒪 b) (hBᵢ : ∀ b ∈ Bᵢ, IsInward 𝒪 b)
     (D : CutData M) (hBf : ((𝓡∂ 1).boundary M).Finite) {ω₀ : M × Bool ⊕ M} {α β : ℝ}
     (h : IsArcIn e α β (D.arcOf ω₀)) {z₀ : M} (hz₀K : z₀ ∈ D.arcOf ω₀)
     (hz₀B : z₀ ∉ (𝓡∂ 1).boundary M) :
-    ∀ ω ∈ (D.finite.toFinset ×ˢ (Finset.univ : Finset Bool)).disjSum hBf.toFinset,
-      D.arcOf ω = D.arcOf ω₀ →
+    ∀ ω ∈ D.ends hBf.toFinset, D.arcOf ω = D.arcOf ω₀ →
       (Sum.elim (fun pc : M × Bool ↦ IsPos 𝒪 (chartAt (EuclideanHalfSpace 1) pc.1) pc.1 ↔
           pc.2 = false) (· ∈ Bₒ) ω ↔
         ((e (Sum.elim Prod.fst id ω)).1 0 = sSup ((fun z ↦ (e z).1 0) '' D.arcOf ω₀) ↔
@@ -1222,45 +1154,45 @@ private theorem CutData.outward_iff [T2Space M]
     subset_compl_iff_disjoint_right.1 (connectedComponentIn_subset _ _)
   rintro (⟨p, c⟩ | b) hω hK
   · -- A side of a cut point `p`: compare with the chart at `p`.
-    have hp : p ∈ D.P := by simpa using hω
+    have hp : p ∈ D.P := by simpa [CutData.ends] using hω
     have hJ : D.J p c ⊆ D.arcOf ω₀ := hK ▸ D.J_subset_arcOf hp c
     have hpK : p ∉ D.arcOf ω₀ := disjoint_right.1 hKP hp
     have hpcl := closure_mono hJ ((D.sides p hp).mem_closure c)
     have hpB := disjoint_left.1 D.disjoint hp
     obtain ⟨η, hη, hηt, htarget, hJeq⟩ := (D.sides p hp).param
+    -- Reduce the goal to the point `p` and its chart `e'`.
+    simp only [Sum.elim_inl]
     set e' := chartAt (EuclideanHalfSpace 1) p
     set t := (e' p).1 0
     have hpe' : e'.symm (normalRay t) = p := symm_normalRay_coord (mem_chart_source _ p)
     have ht0 : 0 < t := coord_pos_of_notMem_boundary (mem_chart_source _ p) hpB
-    simp only [Sum.elim_inl]
     cases c
-    · have := h.side_iff hcover hcompat hz₀K hz₀B hpK hpcl (by linarith : 0 < t - η)
+    · have := h.side_iff h𝒪 hz₀K hz₀B hpK hpcl (by linarith : 0 < t - η)
         (by linarith : t - η < t) (Or.inr rfl)
         (fun s hs ↦ htarget s ⟨hs.1, by linarith [hs.2]⟩) hpe' fun s hs hst ↦
           hJ (by rw [hJeq false]; exact mem_image_of_mem _ ⟨hs.1, lt_of_le_of_ne hs.2 hst⟩)
-      simpa using this.symm
-    · have := h.side_iff hcover hcompat hz₀K hz₀B hpK hpcl ht0
+      rw [this, eq_self false, eq_self t]
+    · have := h.side_iff h𝒪 hz₀K hz₀B hpK hpcl ht0
         (by linarith : t < t + η) (Or.inl rfl)
         (fun s hs ↦ htarget s ⟨by linarith [hs.1], hs.2⟩) hpe' fun s hs hst ↦
           hJ (by rw [hJeq true]; exact mem_image_of_mem _ ⟨lt_of_le_of_ne hs.1 (Ne.symm hst), hs.2⟩)
       rw [this, iff_false_right (by linarith : t ≠ t + η)]
       simp only [Bool.true_eq_false, iff_false]
-      rfl
   · -- A boundary point `b`, at the infimum end: compare with the path from `b`.
-    have hbB : b ∈ (𝓡∂ 1).boundary M := by simpa using hω
+    have hbB : b ∈ (𝓡∂ 1).boundary M := by simpa [CutData.ends] using hω
     have hbK : b ∈ D.arcOf ω₀ := hK ▸ mem_connectedComponentIn (disjoint_right.1 D.disjoint hbB)
     simp only [Sum.elim_inr, id]
     rw [(h.coord_eq_sInf_of_mem_boundary hbK hbB).2, iff_false_left h.sInf_lt_sSup.ne]
     have hBi : b ∈ Bᵢ → IsPos 𝒪 e z₀ := fun hb ↦ by
       obtain ⟨γ, η, hη, hγ0, hγc, hγi, hγo⟩ := hBᵢ b hb
       obtain ⟨s, hs, c, hc, hsc, hiff⟩ :=
-        h.exists_isIncAt_iff_isPos hcover hcompat hbK hbB hz₀K hz₀B hη hγ0 hγc hγi
+        h.exists_strictMonoAt_iff_isPos h𝒪 hbK hbB hz₀K hz₀B hη hγ0 hγc hγi
       exact hiff.1 (hγo s hs c hc hsc)
     have hBo : b ∈ Bₒ → ¬IsPos 𝒪 e z₀ := fun hb hpos ↦ by
       obtain ⟨γ, η, hη, hγ0, hγc, hγi, hγo⟩ := hBₒ b hb
       obtain ⟨s, hs, c, hc, hsc, hiff⟩ :=
-        h.exists_isIncAt_iff_isPos hcover hcompat hbK hbB hz₀K hz₀B hη hγ0 hγc hγi
-      exact not_isIncAt_and_isDecAt ⟨hiff.2 hpos, hγo s hs c hc hsc⟩
+        h.exists_strictMonoAt_iff_isPos h𝒪 hbK hbB hz₀K hz₀B hη hγ0 hγc hγi
+      exact not_strictMonoAt_and_strictAntiAt ⟨hiff.2 hpos, hγo s hs c hc hsc⟩
     rw [hB] at hbB
     exact ⟨hBo, fun hpos ↦ hbB.resolve_right fun hb ↦ hpos (hBi hb)⟩
 
@@ -1270,29 +1202,26 @@ infimum end of the arc, then exactly one of the elements in the arc has it. -/
 private theorem CutData.card_filter_filter_arcOf_eq_one [T2Space M] (D : CutData M)
     (hBf : ((𝓡∂ 1).boundary M).Finite) {ω₀ : M × Bool ⊕ M} (O : M × Bool ⊕ M → Prop)
     [DecidablePred O] {α β : ℝ} (h : IsArcIn e α β (D.arcOf ω₀)) (σ : Prop)
-    (hO : ∀ ω ∈ (D.finite.toFinset ×ˢ (Finset.univ : Finset Bool)).disjSum hBf.toFinset,
-      D.arcOf ω = D.arcOf ω₀ →
+    (hO : ∀ ω ∈ D.ends hBf.toFinset, D.arcOf ω = D.arcOf ω₀ →
         (O ω ↔ ((e (Sum.elim Prod.fst id ω)).1 0 = sSup ((fun z ↦ (e z).1 0) '' D.arcOf ω₀) ↔
           σ))) :
-    ((((D.finite.toFinset ×ˢ (Finset.univ : Finset Bool)).disjSum hBf.toFinset).filter
-      (fun ω ↦ D.arcOf ω = D.arcOf ω₀)).filter O).card = 1 := by
+    (((D.ends hBf.toFinset).filter (fun ω ↦ D.arcOf ω = D.arcOf ω₀)).filter O).card = 1 := by
   classical
   obtain ⟨hinj, himage⟩ := D.injOn_and_image_filter_arcOf hBf h
   set I := (fun z ↦ (e z).1 0) '' D.arcOf ω₀
   set v : M × Bool ⊕ M → ℝ := fun ω ↦ (e (Sum.elim Prod.fst id ω)).1 0
   have hne : sInf I ≠ sSup I := h.sInf_lt_sSup.ne
   have htarget : (if σ then sSup I else sInf I) ∈
-      (((D.finite.toFinset ×ˢ (Finset.univ : Finset Bool)).disjSum hBf.toFinset).filter
-        (fun ω ↦ D.arcOf ω = D.arcOf ω₀)).image v := by
+      ((D.ends hBf.toFinset).filter (fun ω ↦ D.arcOf ω = D.arcOf ω₀)).image v := by
     rw [himage]; split_ifs <;> simp
   obtain ⟨ω₁, hω₁, hv₁⟩ := Finset.mem_image.1 htarget
-  have hiff : ∀ ω ∈ ((D.finite.toFinset ×ˢ (Finset.univ : Finset Bool)).disjSum
-      hBf.toFinset).filter (fun ω ↦ D.arcOf ω = D.arcOf ω₀),
+  have hiff : ∀ ω ∈ (D.ends hBf.toFinset).filter (fun ω ↦ D.arcOf ω = D.arcOf ω₀),
         O ω ↔ v ω = if σ then sSup I else sInf I := fun ω hω ↦ by
     rw [hO ω (Finset.mem_filter.1 hω).1 (Finset.mem_filter.1 hω).2]
     have hv := Finset.mem_image_of_mem v hω
     rw [himage, Finset.mem_insert, Finset.mem_singleton] at hv
-    by_cases hσ : σ <;> rcases hv with hv | hv <;> simp [v, hv, hne, hne.symm, hσ] at *
+    by_cases hσ : σ <;> rcases hv with hv | hv <;> simp only [v] at hv ⊢ <;>
+      simp [hv, hne, hne.symm, hσ]
   rw [Finset.card_eq_one]
   refine ⟨ω₁, Finset.ext fun ω ↦ ?_⟩
   rw [Finset.mem_filter, Finset.mem_singleton]
@@ -1303,14 +1232,11 @@ private theorem CutData.card_filter_filter_arcOf_eq_one [T2Space M] (D : CutData
 arcs. -/
 private theorem CutData.card_filter_eq_card_image (D : CutData M)
     (hBf : ((𝓡∂ 1).boundary M).Finite) (Q : M × Bool ⊕ M → Prop) [DecidablePred Q]
-    (hQ : ∀ ω₀ ∈ (D.finite.toFinset ×ˢ (Finset.univ : Finset Bool)).disjSum hBf.toFinset,
-      ((((D.finite.toFinset ×ˢ (Finset.univ : Finset Bool)).disjSum hBf.toFinset).filter
-        fun ω ↦ D.arcOf ω = D.arcOf ω₀).filter Q).card = 1) :
-    (((D.finite.toFinset ×ˢ (Finset.univ : Finset Bool)).disjSum hBf.toFinset).filter Q).card =
-      (((D.finite.toFinset ×ˢ (Finset.univ : Finset Bool)).disjSum hBf.toFinset).image
-        D.arcOf).card := by
+    (hQ : ∀ ω₀ ∈ D.ends hBf.toFinset,
+      (((D.ends hBf.toFinset).filter fun ω ↦ D.arcOf ω = D.arcOf ω₀).filter Q).card = 1) :
+    ((D.ends hBf.toFinset).filter Q).card = ((D.ends hBf.toFinset).image D.arcOf).card := by
   classical
-  set Ω := (D.finite.toFinset ×ˢ (Finset.univ : Finset Bool)).disjSum hBf.toFinset
+  set Ω := D.ends hBf.toFinset
   rw [Finset.card_eq_sum_card_fiberwise (f := D.arcOf) (t := Ω.image D.arcOf)
     fun ω hω ↦ Finset.mem_image_of_mem _ (Finset.mem_filter.1 hω).1,
     Finset.card_eq_sum_ones (Ω.image D.arcOf)]
@@ -1324,10 +1250,10 @@ it are the cut points and the boundary points with it. -/
 private theorem CutData.card_filter_eq_card_add (D : CutData M)
     (hBf : ((𝓡∂ 1).boundary M).Finite) (Q : M × Bool ⊕ M → Prop) [DecidablePred Q]
     (hQ : ∀ p, (Q (.inl (p, true)) ↔ ¬Q (.inl (p, false)))) :
-    (((D.finite.toFinset ×ˢ (Finset.univ : Finset Bool)).disjSum hBf.toFinset).filter Q).card =
+    ((D.ends hBf.toFinset).filter Q).card =
       D.finite.toFinset.card + (hBf.toFinset.filter fun b ↦ Q (.inr b)).card := by
-  rw [Finset.card_filter, Finset.sum_disjSum, Finset.sum_product, Finset.card_filter,
-    Finset.card_eq_sum_ones D.finite.toFinset]
+  rw [CutData.ends, Finset.card_filter, Finset.sum_disjSum, Finset.sum_product,
+    Finset.card_filter, Finset.card_eq_sum_ones D.finite.toFinset]
   congr 1
   refine Finset.sum_congr rfl fun p _ ↦ ?_
   rw [Fintype.sum_bool]
@@ -1336,28 +1262,20 @@ private theorem CutData.card_filter_eq_card_add (D : CutData M)
 /-- **A boundary point is not both outward and inward.** The charts of an orientation cannot
 decrease along one injective path leaving a boundary point and increase along another. -/
 private theorem CutData.not_and_of_mem_boundary (D : CutData M)
-    (hcover : ∀ x ∉ (𝓡∂ 1).boundary M, ∃ c ∈ 𝒪, x ∈ c.source)
-    (hcompat : ∀ c ∈ 𝒪, ∀ c' ∈ 𝒪, ∀ x ∈ c.source ∩ c'.source,
-      ∃ U ∈ 𝓝 (c x), StrictMonoOn (c' ∘ c.symm) U)
-    {b : M} (hbB : b ∈ (𝓡∂ 1).boundary M)
-    (hBₒ : ∃ γ : ℝ → M, ∃ η > 0, γ 0 = b ∧ ContinuousOn γ (Icc 0 η) ∧
-      InjOn γ (Icc 0 η) ∧ ∀ s ∈ Ioo 0 η, ∀ c ∈ 𝒪, γ s ∈ c.source →
-        ∃ U ∈ 𝓝 s, StrictAntiOn (c ∘ γ) U)
-    (hBᵢ : ∃ γ : ℝ → M, ∃ η > 0, γ 0 = b ∧ ContinuousOn γ (Icc 0 η) ∧
-      InjOn γ (Icc 0 η) ∧ ∀ s ∈ Ioo 0 η, ∀ c ∈ 𝒪, γ s ∈ c.source →
-        ∃ U ∈ 𝓝 s, StrictMonoOn (c ∘ γ) U) :
-    False := by
+    (h𝒪 : IsOrientation 𝒪) {b : M} (hbB : b ∈ (𝓡∂ 1).boundary M) (hBₒ : IsOutward 𝒪 b)
+    (hBᵢ : IsInward 𝒪 b) : False := by
   have hbP : b ∉ D.P := disjoint_right.1 D.disjoint hbB
   obtain ⟨e, α, β, h⟩ := D.arc b hbP
   obtain ⟨z₀, hz₀K, hz₀B⟩ := h.nonempty_diff_boundary
   have hbK : b ∈ connectedComponentIn D.Pᶜ b := mem_connectedComponentIn hbP
   obtain ⟨γ, η, hη, hγ0, hγc, hγi, hγo⟩ := hBₒ
   obtain ⟨s, hs, c, hc, hsc, hiff⟩ :=
-    h.exists_isIncAt_iff_isPos hcover hcompat hbK hbB hz₀K hz₀B hη hγ0 hγc hγi
+    h.exists_strictMonoAt_iff_isPos h𝒪 hbK hbB hz₀K hz₀B hη hγ0 hγc hγi
   obtain ⟨γ', η', hη', hγ0', hγc', hγi', hγo'⟩ := hBᵢ
   obtain ⟨s', hs', c', hc', hsc', hiff'⟩ :=
-    h.exists_isIncAt_iff_isPos hcover hcompat hbK hbB hz₀K hz₀B hη' hγ0' hγc' hγi'
-  exact not_isIncAt_and_isDecAt ⟨hiff.2 (hiff'.1 (hγo' s' hs' c' hc' hsc')), hγo s hs c hc hsc⟩
+    h.exists_strictMonoAt_iff_isPos h𝒪 hbK hbB hz₀K hz₀B hη' hγ0' hγc' hγi'
+  exact not_strictMonoAt_and_strictAntiAt
+    ⟨hiff.2 (hiff'.1 (hγo' s' hs' c' hc' hsc')), hγo s hs c hc hsc⟩
 
 /-- **A compact oriented one-dimensional manifold has as many outward as inward boundary
 points.** Let `M` be a compact Hausdorff topological manifold modelled on the half-line
@@ -1387,9 +1305,13 @@ theorem ModelWithCorners.ncard_eq_ncard_boundary_euclideanHalfSpace_one [Compact
         ∃ U ∈ 𝓝 s, StrictMonoOn (c ∘ γ) U) :
     Bₒ.ncard = Bᵢ.ncard := by
   classical
+  -- Bundle the hypotheses as `IsOrientation`, `IsOutward` and `IsInward`, which they unfold.
+  have h𝒪 : IsOrientation 𝒪 := ⟨hcover, hcompat⟩
+  replace hBₒ : ∀ b ∈ Bₒ, IsOutward 𝒪 b := hBₒ
+  replace hBᵢ : ∀ b ∈ Bᵢ, IsInward 𝒪 b := hBᵢ
   obtain ⟨D⟩ := nonempty_cutData (M := M)
   have hBf := ModelWithCorners.finite_boundary_euclideanHalfSpace_one (M := M)
-  set Ω := (D.finite.toFinset ×ˢ (Finset.univ : Finset Bool)).disjSum hBf.toFinset
+  set Ω := D.ends hBf.toFinset
   set O : M × Bool ⊕ M → Prop := Sum.elim (fun pc : M × Bool ↦
     IsPos 𝒪 (chartAt (EuclideanHalfSpace 1) pc.1) pc.1 ↔ pc.2 = false) (· ∈ Bₒ)
   have hbase : ∀ ω ∈ Ω, D.base ω ∉ D.P := fun ω hω ↦
@@ -1402,7 +1324,7 @@ theorem ModelWithCorners.ncard_eq_ncard_boundary_euclideanHalfSpace_one [Compact
     obtain ⟨z₀, hz₀K, hz₀B⟩ := h.nonempty_diff_boundary
     have hO : ∀ ω ∈ Ω, D.arcOf ω = D.arcOf ω₀ → (O ω ↔ ((e (Sum.elim Prod.fst id ω)).1 0 =
         sSup ((fun z ↦ (e z).1 0) '' D.arcOf ω₀) ↔ IsPos 𝒪 e z₀)) :=
-      D.outward_iff hcover hcompat hB hBₒ hBᵢ hBf h hz₀K hz₀B
+      D.outward_iff h𝒪 hB hBₒ hBᵢ hBf h hz₀K hz₀B
     exact ⟨D.card_filter_filter_arcOf_eq_one hBf O h _ hO,
       D.card_filter_filter_arcOf_eq_one hBf (fun ω ↦ ¬O ω) h (¬IsPos 𝒪 e z₀)
         fun ω hω hK ↦ by rw [hO ω hω hK]; tauto⟩
@@ -1415,7 +1337,7 @@ theorem ModelWithCorners.ncard_eq_ncard_boundary_euclideanHalfSpace_one [Compact
     simp only [O, Sum.elim_inl]; tauto] at h₂
   -- The outward boundary points are `Bₒ`, and the inward ones `Bᵢ`.
   have hdisj : ∀ b ∈ Bₒ, b ∉ Bᵢ := fun b hbo hbi ↦
-    D.not_and_of_mem_boundary hcover hcompat (hB ▸ Or.inl hbo) (hBₒ b hbo) (hBᵢ b hbi)
+    D.not_and_of_mem_boundary h𝒪 (hB ▸ Or.inl hbo) (hBₒ b hbo) (hBᵢ b hbi)
   have hBₒeq : Bₒ = ↑(hBf.toFinset.filter fun b ↦ O (.inr b)) := by
     ext b
     rw [Finset.mem_coe, Finset.mem_filter, Set.Finite.mem_toFinset]

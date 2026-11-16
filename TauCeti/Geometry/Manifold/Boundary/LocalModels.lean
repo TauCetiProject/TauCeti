@@ -162,9 +162,7 @@ private theorem exists_path_of_homeomorph_Ico {x : X} {N : Set X} {ε : ℝ} (h�
     have hrI : r ∈ Ico 0 ε := Ioo_subset_Ico_self hr.2
     have hr'I : r' ∈ Ico 0 ε := Ioo_subset_Ico_self hr'.2
     simp only [comp_apply, hγ r hrI, hγ r' hr'I]
-    exact hmono (hVU (show (⟨r, hrI⟩ : Ico (0 : ℝ) ε) ∈ Subtype.val ⁻¹' V from hr.1))
-      (hVU (show (⟨r', hr'I⟩ : Ico (0 : ℝ) ε) ∈ Subtype.val ⁻¹' V from hr'.1))
-      (Subtype.mk_lt_mk.2 hrr')
+    exact hmono (hVU (mem_preimage.2 hr.1)) (hVU (mem_preimage.2 hr'.1)) (Subtype.mk_lt_mk.2 hrr')
 
 variable [CompactSpace X]
 
