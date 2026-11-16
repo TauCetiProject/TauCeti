@@ -55,9 +55,7 @@ theorem roots_X_pow_add_one {n : ℕ} {ζ : R} (hζ : IsPrimitiveRoot ζ (2 * n)
     (X ^ n + 1 : R[X]).roots = (Multiset.range n).map fun k ↦ ζ ^ (2 * k + 1) := by
   obtain rfl | hn := eq_or_ne n 0
   · rw [pow_zero, ← C_1, ← map_add, roots_C]; simp
-  have hζn : ζ ^ n = -1 :=
-    (sq_eq_one_iff.mp (by rw [← pow_mul, mul_comm, hζ.pow_eq_one])).resolve_left fun h1 ↦ by
-      have := Nat.le_of_dvd (Nat.pos_of_ne_zero hn) (hζ.dvd_of_pow_eq_one n h1); omega
+  have hζn : ζ ^ n = -1 := (hζ.pow (by omega) (mul_comm 2 n)).eq_neg_one_of_two_right
   rw [show (X ^ n + 1 : R[X]) = X ^ n - C (-1) by simp [sub_neg_eq_add], ← nthRoots,
     (hζ.pow (by omega) rfl : IsPrimitiveRoot (ζ ^ 2) n).nthRoots_eq hζn]
   exact Multiset.map_congr rfl fun k _ ↦ by rw [← pow_mul, ← pow_succ]

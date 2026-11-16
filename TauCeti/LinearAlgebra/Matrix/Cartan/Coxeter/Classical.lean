@@ -96,11 +96,6 @@ theorem isOneDegenerateOrder_D (n : ℕ) :
 
 /-! ### Prefix-product and intertwining helpers -/
 
-private theorem ext_of_mulVec_single_one {m n R : Type*} [Fintype n] [DecidableEq n]
-    [NonAssocSemiring R] {A B : Matrix m n R}
-    (h : ∀ j, A *ᵥ Pi.single j 1 = B *ᵥ Pi.single j 1) : A = B :=
-  ext_col fun j => by rw [← mulVec_single_one, ← mulVec_single_one, h j]
-
 private theorem take_finRange_succ {n m : ℕ} (hm : m < n) :
     (List.finRange n).take (m + 1) = (List.finRange n).take m ++ [⟨m, hm⟩] := by
   rw [List.take_add_one, List.getElem?_eq_getElem (by simp [hm])]; simp
@@ -224,7 +219,7 @@ private def invBasisB (n : ℕ) : Matrix (Fin n) (Fin n) ℤ :=
   of fun k i => if (i : ℕ) ≤ (k : ℕ) then 1 else 0
 
 private theorem invBasisB_mul_basisB (n : ℕ) : invBasisB n * basisB n = 1 := by
-  refine ext_of_mulVec_single_one fun j => ?_
+  refine Matrix.ext_of_mulVec_single fun j => ?_
   rw [← mulVec_mulVec, one_mulVec]
   rcases lt_or_ge ((j : ℕ) + 1) n with hj | hj
   · have hv : basisB n *ᵥ Pi.single j 1 = Pi.single j 1 - Pi.single ⟨(j : ℕ) + 1, hj⟩ 1 := by
@@ -264,7 +259,7 @@ private theorem prod_reflStdB_eq_companion {n : ℕ} (hn : 0 < n) :
   have hm : n - 1 < n := by omega
   have hlist : List.finRange n = (List.finRange n).take (n - 1) ++ [⟨n - 1, hm⟩] := by
     simpa [show n - 1 + 1 = n by omega, take_finRange_self] using take_finRange_succ hm
-  refine ext_of_mulVec_single_one fun j => ?_
+  refine Matrix.ext_of_mulVec_single fun j => ?_
   conv_lhs => rw [hlist]
   rw [List.map_append, List.map_singleton, List.prod_append, List.prod_singleton,
     ← mulVec_mulVec, show reflStdB n ⟨n - 1, hm⟩ = signFlipLast n from
@@ -352,7 +347,7 @@ private def twiceInvBasisD (n : ℕ) : Matrix (Fin n) (Fin n) ℤ :=
 
 private theorem twiceInvBasisD_mul_basisD {n : ℕ} (hn : 2 ≤ n) :
     twiceInvBasisD n * basisD n = (2 : ℤ) • 1 := by
-  refine ext_of_mulVec_single_one fun j => ?_
+  refine Matrix.ext_of_mulVec_single fun j => ?_
   rw [← mulVec_mulVec, smul_mulVec, one_mulVec]
   rcases lt_or_ge ((j : ℕ) + 1) n with hj | hj
   · have hv : basisD n *ᵥ Pi.single j 1 = Pi.single j 1 - Pi.single ⟨(j : ℕ) + 1, hj⟩ 1 := by
@@ -456,7 +451,7 @@ private theorem prod_reflStdD_eq_modelD {n : ℕ} (hn : 2 ≤ n) :
         (List.finRange n).take (n - 2) ++ [⟨n - 2, hm2⟩] := by
       simpa [show (n - 2) + 1 = n - 1 by omega] using take_finRange_succ hm2
     (conv_lhs => rw [h1, h2, List.append_assoc]); rfl
-  refine ext_of_mulVec_single_one fun j => ?_
+  refine Matrix.ext_of_mulVec_single fun j => ?_
   conv_lhs => rw [hlist]
   rw [List.map_append, List.prod_append]
   simp only [List.map_cons, List.map_nil, List.prod_cons, List.prod_nil, Matrix.mul_one]
