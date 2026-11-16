@@ -60,7 +60,7 @@ commit `3d2e9c869ee44c41ae9c7b5c6e2042898430d0ca` (Apache 2.0).
   their exponentials `IsNilpotent.exp`.
 * `Module.End.restrictScalars_exp`: scalar restriction commutes with `IsNilpotent.exp`.
 * `Module.End.exp_apply_mem_of_forall_mem`: `IsNilpotent.exp` of an endomorphism preserves every
-  submodule stable under it.
+  submodule stable under it whose coefficient semiring carries a compatible `ℚ`-action.
 * `Module.End.exp_apply_of_apply_eq_zero`: the exponential of a nilpotent endomorphism fixes the
   vectors in its kernel.
 * `LinearMap.exp_bilinear_of_leibniz`: a Leibniz-compatible bilinear pairing intertwines the
@@ -246,10 +246,10 @@ end Module.End
 ### Nilpotent exponentials and algebra automorphisms
 
 This section studies Mathlib's `IsNilpotent.exp` of an endomorphism. It commutes with scalar
-restriction and preserves stable submodules. For a nilpotent endomorphism it fixes the vectors
-in the kernel, and a Leibniz-compatible bilinear pairing intertwines the exponentials of
-nilpotent endomorphisms. Consequently, a nilpotent derivation of an algebra exponentiates to an
-algebra automorphism.
+restriction and preserves stable submodules whose coefficient semiring carries a compatible
+`ℚ`-action. For a nilpotent endomorphism it fixes the vectors in the kernel, and a
+Leibniz-compatible bilinear pairing intertwines the exponentials of nilpotent endomorphisms.
+Consequently, a nilpotent derivation of an algebra exponentiates to an algebra automorphism.
 -/
 
 section BilinearPairings
@@ -322,8 +322,8 @@ end RestrictScalars
 
 /-! ### Invariant submodules
 
-Mathlib's exponential of an endomorphism preserves every submodule stable under it. Here the
-submodule's coefficient semiring and the module have compatible `ℚ`-actions, expressed by
+Mathlib's exponential of an endomorphism preserves every submodule stable under it whose
+coefficient semiring carries a compatible `ℚ`-action. The compatibility is expressed by
 `SMul ℚ K`, `Module ℚ M`, and `IsScalarTower ℚ K M`; the endomorphism may use a different
 semiring.
 -/

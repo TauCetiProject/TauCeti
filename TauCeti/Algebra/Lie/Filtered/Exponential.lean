@@ -13,11 +13,11 @@ public import TauCeti.LinearAlgebra.End.Exp
 
 Each element of a positively graded Lie algebra acting by filtration-raising derivations
 exponentiates to an algebra automorphism of every finite coefficient quotient. The inverse
-is obtained by negating the Lie element. Quotient transitions intertwine these automorphisms,
-and the action depends only on the corresponding Lie truncation. The coefficient algebra
-may be noncommutative, and the original derivations need not be nilpotent. The coefficient
-algebra must be a `ℚ`-module, `[Module ℚ A]`, to divide by factorials; the base ring `R`
-can be any commutative ring independently of this rational structure.
+is obtained by negating the Lie element. Quotient transitions intertwine these automorphisms and
+their inverses, and the action depends only on the corresponding Lie truncation. The coefficient
+algebra may be noncommutative, and the original derivations need not be nilpotent. The
+coefficient algebra must be a `ℚ`-module, `[Module ℚ A]`, to divide by factorials; the base ring
+`R` can be any commutative ring independently of this rational structure.
 
 `AlgFiltration.quotientExpLieAction` and `AlgFiltration.truncatedExpLieAction` are obtained by
 applying `Module.End.expAlgEquiv` to `AlgFiltration.quotientLieAction` and
@@ -75,6 +75,12 @@ theorem quotientExpLieAction_neg (k : ℕ) (x : L) :
   simp only [quotientExpLieAction, map_neg]
   exact (Module.End.expAlgEquiv_symm _ _ _).symm
 
+/-- The inverse finite-order exponential evaluates as the exponential of the negated action. -/
+theorem quotientExpLieAction_symm_apply (k : ℕ) (x : L) (a : A ⧸ F.ideal (k + 1)) :
+    (F.quotientExpLieAction d ℒ k x).symm a =
+      IsNilpotent.exp (-F.quotientLieAction d ℒ k x) a :=
+  Module.End.expAlgEquiv_symm_apply _ _ _ a
+
 /-- The zero Lie element acts as the identity automorphism. -/
 @[simp]
 theorem quotientExpLieAction_zero (k : ℕ) :
@@ -92,6 +98,17 @@ theorem factor_quotientExpLieAction {k l : ℕ} (h : k ≤ l) (x : L)
   rw [quotientExpLieAction_apply, quotientExpLieAction_apply]
   exact Module.End.map_exp _ (F.isNilpotent_quotientLieAction d ℒ l x)
     (F.isNilpotent_quotientLieAction d ℒ k x) _ (F.factor_quotientLieAction d ℒ h x) a
+
+/-- Coefficient truncations intertwine the inverse finite-order exponentials. -/
+@[simp]
+theorem factor_quotientExpLieAction_symm {k l : ℕ} (h : k ≤ l) (x : L)
+    (a : A ⧸ F.ideal (l + 1)) :
+    Ideal.Quotient.factor (F.antitone (Nat.add_le_add_right h 1))
+      ((F.quotientExpLieAction d ℒ l x).symm a) =
+        (F.quotientExpLieAction d ℒ k x).symm
+          (Ideal.Quotient.factor (F.antitone (Nat.add_le_add_right h 1)) a) := by
+  rw [← quotientExpLieAction_neg F d ℒ l x, ← quotientExpLieAction_neg F d ℒ k x]
+  exact F.factor_quotientExpLieAction d ℒ h (-x) a
 
 end Decomposition
 
@@ -141,6 +158,13 @@ theorem truncatedExpLieAction_neg (k : ℕ) (x : d.truncatedLie ℒ k) :
   rw [← map_neg, LieIdeal.mkQ_apply, LieIdeal.mkQ_apply]
   simp only [truncatedExpLieAction_mk, quotientExpLieAction_neg]
 
+/-- The inverse truncated exponential evaluates as the exponential of the negated action. -/
+theorem truncatedExpLieAction_symm_apply (k : ℕ) (x : d.truncatedLie ℒ k)
+    (a : A ⧸ F.ideal (k + 1)) :
+    (F.truncatedExpLieAction d ℒ k x).symm a =
+      IsNilpotent.exp (-F.truncatedLieAction d ℒ k x) a :=
+  Module.End.expAlgEquiv_symm_apply _ _ _ a
+
 /-- Lie truncation and coefficient truncation intertwine the exponential actions. -/
 @[simp]
 theorem factor_truncatedExpLieAction {k l : ℕ} (h : k ≤ l)
@@ -152,6 +176,17 @@ theorem factor_truncatedExpLieAction {k l : ℕ} (h : k ≤ l)
   obtain ⟨x, rfl⟩ := (d.degreeIdeal ℒ l).surjective_mkQ x
   simp only [LieIdeal.mkQ_apply, truncatedExpLieAction_mk, PositiveDegrees.truncationMap_mk]
   exact F.factor_quotientExpLieAction d ℒ h x a
+
+/-- Lie truncation and coefficient truncation intertwine the inverse exponential actions. -/
+@[simp]
+theorem factor_truncatedExpLieAction_symm {k l : ℕ} (h : k ≤ l)
+    (x : d.truncatedLie ℒ l) (a : A ⧸ F.ideal (l + 1)) :
+    Ideal.Quotient.factor (F.antitone (Nat.add_le_add_right h 1))
+      ((F.truncatedExpLieAction d ℒ l x).symm a) =
+        (F.truncatedExpLieAction d ℒ k (d.truncationMap ℒ h x)).symm
+          (Ideal.Quotient.factor (F.antitone (Nat.add_le_add_right h 1)) a) := by
+  rw [← truncatedExpLieAction_neg F d ℒ l x, ← truncatedExpLieAction_neg, ← map_neg]
+  exact F.factor_truncatedExpLieAction d ℒ h (-x) a
 
 end Truncated
 

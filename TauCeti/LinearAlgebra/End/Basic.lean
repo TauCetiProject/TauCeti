@@ -35,8 +35,8 @@ A finite nontrivial module has more than one endomorphism (`Module.End.one_lt_na
 Of two endomorphisms conjugate by a linear equivalence, one squares to `κ • 1` exactly when the
 other does (`Module.End.mul_self_eq_smul_one_iff_of_forall_apply_eq`).
 
-Scalar restriction of endomorphisms is packaged as a ring homomorphism, with power and nilpotence
-compatibility (`Module.End.restrictScalarsRingHom`).
+Scalar restriction of endomorphisms is packaged as a ring homomorphism, with identity, product,
+power and nilpotence compatibility (`Module.End.restrictScalarsRingHom`).
 
 An endomorphism acting as a scalar `a` from a monoid acting on the module has `k`-th power acting
 as `a ^ k` (`Module.End.pow_apply_eq_pow_smul`), so it is `1` once `a ^ k = 1`
@@ -94,6 +94,17 @@ def restrictScalarsRingHom (R S M : Type*) [Semiring R] [Semiring S] [AddCommMon
   map_add' _ _ := rfl
   map_mul' _ _ := rfl
 
+/-- Restricting the scalars of the identity endomorphism gives the identity. -/
+@[simp]
+theorem restrictScalars_one : (1 : Module.End S M).restrictScalars R = 1 :=
+  (restrictScalarsRingHom R S M).map_one
+
+/-- Restricting the scalars of endomorphisms preserves their products. -/
+@[simp]
+theorem restrictScalars_mul (D E : Module.End S M) :
+    (D * E).restrictScalars R = D.restrictScalars R * E.restrictScalars R :=
+  (restrictScalarsRingHom R S M).map_mul D E
+
 /-- Restricting the scalars of an endomorphism preserves its powers. -/
 @[simp]
 theorem restrictScalars_pow (D : Module.End S M) (n : ℕ) :
@@ -106,8 +117,10 @@ theorem isNilpotent_restrictScalars_iff {D : Module.End S M} :
     IsNilpotent (D.restrictScalars R) ↔ IsNilpotent D :=
   IsNilpotent.map_iff (f := restrictScalarsRingHom R S M) (LinearMap.restrictScalars_injective R)
 
-/-- The scalar-restriction ring homomorphism is the underlying scalar-restriction map. -/
-@[simp]
+/-- The scalar-restriction ring homomorphism is the underlying scalar-restriction map. It has
+`low` priority so that the generic morphism lemmas such as `map_mul` fire first; see Mathlib's
+library note on hom simp lemma priority. -/
+@[simp low]
 theorem restrictScalarsRingHom_apply (R S M : Type*) [Semiring R] [Semiring S] [AddCommMonoid M]
     [Module R M] [Module S M] [LinearMap.CompatibleSMul M M R S] (D : Module.End S M) :
     restrictScalarsRingHom R S M D = D.restrictScalars R := (rfl)

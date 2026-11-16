@@ -12,9 +12,9 @@ public import TauCeti.Algebra.Lie.Derivation.Basic
 
 For a possibly non-unital, non-associative ring, `IsDerivationAction` states the Leibniz rule for
 a Lie action. A linear action with this property gives a homomorphism into the derivation Lie
-algebra. A derivation action on a unital ring kills its unit; on an associative algebra it kills
-scalars, and includes the inner commutator action. These results apply in particular to
-noncommutative coefficient algebras.
+algebra. A derivation action on a unital ring kills its unit; an `R`-linear derivation action on
+a unital associative `R`-algebra kills scalars. The inner commutator action is a derivation
+action. These results apply in particular to noncommutative coefficient algebras.
 
 Adapted from `Mei/Algebra/Lie/Derivation/Action.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), commit
@@ -86,7 +86,7 @@ variable {R L A : Type*} [CommRing R]
 theorem IsDerivationAction.lie_one (x : L) : ⁅x, (1 : A)⁆ = 0 := by
   simpa using IsDerivationAction.lie_mul x (1 : A) (1 : A)
 
-/-- A derivation action kills scalars in a unital associative algebra. -/
+/-- An `R`-linear derivation action kills scalars in a unital associative `R`-algebra. -/
 @[simp]
 theorem IsDerivationAction.lie_algebraMap [LieAlgebra R L]
     {A : Type*} [Ring A] [Algebra R A]
