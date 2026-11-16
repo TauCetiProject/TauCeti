@@ -623,12 +623,12 @@ theorem sum_boundaryLinear_lt [AddCommGroup R] (f : Vertex n → R) (s : Fin 3) 
     (hk : k ≤ n) :
     (∑ i : Fin n with i.val < k, boundaryLinear ℤ n R f s i) =
       f (Vertex.edgePoint n s ⟨k, by omega⟩) - f (Vertex.edgePoint n s 0) := by
+  rw [← prefixSum_def]
   induction k with
   | zero => simp
   | succ m ih =>
-    have hsplit := prefixSum_succ (by omega : m < n) (boundaryLinear ℤ n R f s)
-    rw [prefixSum_def, prefixSum_def] at hsplit
-    rw [hsplit, ih (by omega), boundaryLinear_apply, Fin.succ_mk, Fin.castSucc_mk]; abel
+    rw [prefixSum_succ (by omega), ih (by omega), boundaryLinear_apply, Fin.succ_mk,
+      Fin.castSucc_mk]; abel
 
 /-- Along side `s`, the `n` edge differences telescope to the difference of its two corners. -/
 theorem sum_boundaryLinear_side [AddCommGroup R] (f : Vertex n → R) (s : Fin 3) :

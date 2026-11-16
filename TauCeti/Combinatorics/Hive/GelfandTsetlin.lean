@@ -163,9 +163,9 @@ theorem gtChart_eq_add_sum (h : IntegerHive n) {i j : ℕ} (hij : i ≤ j) :
   abel
 
 /-- Along side `A → B`, the chart values are the partial sums of the first boundary weight. -/
-theorem gtChart_zero_eq_sum (h : IntegerHive n) {j : ℕ} (hj : j ≤ n) :
-    gtChart (⇑h) 0 j = ∑ r : Fin n with r.val < j, h.boundary 0 r := by
-  rw [gtChart_zero_left _ hj, h.apply_edgePoint_zero]
+theorem gtChart_zero_eq_prefixSum (h : IntegerHive n) {j : ℕ} (hj : j ≤ n) :
+    gtChart (⇑h) 0 j = prefixSum j (h.boundary 0) := by
+  rw [gtChart_zero_left _ hj, h.apply_edgePoint_zero, prefixSum_def]
 
 /-! ### The chart completion of a pattern -/
 
@@ -173,14 +173,14 @@ theorem gtChart_zero_eq_sum (h : IntegerHive n) {j : ℕ} (hj : j ≤ n) :
 `(i, j) ↦ (l₀ + ⋯ + lⱼ₋₁) + (P 0 j + ⋯ + P (i-1) j)`, whose value at `(0, j)` is the partial sum of
 `l` and whose horizontal differences are the entries of `P`. -/
 def gtCompletion (l : Fin n → ℤ) (P : GTPattern n) (i j : ℕ) : ℤ :=
-  (∑ r : Fin n with r.val < j, l r) + ∑ k ∈ Finset.range i, P k j
+  prefixSum j l + ∑ k ∈ Finset.range i, P k j
 
 theorem gtCompletion_def (l : Fin n → ℤ) (P : GTPattern n) (i j : ℕ) :
-    gtCompletion l P i j = (∑ r : Fin n with r.val < j, l r) + ∑ k ∈ Finset.range i, P k j := (rfl)
+    gtCompletion l P i j = prefixSum j l + ∑ k ∈ Finset.range i, P k j := (rfl)
 
 @[simp]
 theorem gtCompletion_zero_left (l : Fin n → ℤ) (P : GTPattern n) (j : ℕ) :
-    gtCompletion l P 0 j = ∑ r : Fin n with r.val < j, l r := by
+    gtCompletion l P 0 j = prefixSum j l := by
   simp [gtCompletion]
 
 theorem gtCompletion_succ_left (l : Fin n → ℤ) (P : GTPattern n) (i j : ℕ) :
@@ -189,7 +189,7 @@ theorem gtCompletion_succ_left (l : Fin n → ℤ) (P : GTPattern n) (i j : ℕ)
 
 /-- On the diagonal, the completion is the partial sum of `l` plus the row sum of `P`. -/
 theorem gtCompletion_self (l : Fin n → ℤ) (P : GTPattern n) (j : ℕ) :
-    gtCompletion l P j j = (∑ r : Fin n with r.val < j, l r) + P.rowSum j := by
+    gtCompletion l P j j = prefixSum j l + P.rowSum j := by
   rw [gtCompletion_def, GTPattern.rowSum_def]
 
 /-- The chart completion of `l` and `P` satisfies the third family of rhombus inequalities
@@ -226,8 +226,8 @@ its Gelfand-Tsetlin pattern. -/
 theorem apply_eq_gtCompletion (h : IntegerHive n) (v : Vertex n) :
     h v = gtCompletion (h.boundary 0) h.toGTPattern v.z (n - v.x) := by
   have := v.sum_eq
-  rw [← gtChart_z_sub_x (⇑h) v, h.gtChart_eq_add_sum (by omega), h.gtChart_zero_eq_sum (by omega),
-    gtCompletion_def]
+  rw [← gtChart_z_sub_x (⇑h) v, h.gtChart_eq_add_sum (by omega),
+    h.gtChart_zero_eq_prefixSum (by omega), gtCompletion_def]
 
 /-- The completion of the pattern of an integer hive satisfies the third family of rhombus
 inequalities. -/
@@ -307,7 +307,7 @@ theorem ofGTPattern_toGTPattern (h : IntegerHive n) :
 
 /-- Along side `A → B`, the hive of a pattern takes the partial sums of `l`. -/
 private theorem ofGTPattern_edgePoint_zero (k : Fin (n + 1)) :
-    ofGTPattern l P hP (Vertex.edgePoint n 0 k) = ∑ r : Fin n with r.val < k.val, l r := by
+    ofGTPattern l P hP (Vertex.edgePoint n 0 k) = prefixSum k l := by
   rw [ofGTPattern_apply, Vertex.edgePoint_zero_z, Vertex.edgePoint_zero_x,
     Nat.sub_sub_self (Nat.le_of_lt_succ k.2), gtCompletion_zero_left]
 
@@ -326,17 +326,15 @@ the dual of `l + wt(P)`. -/
 theorem boundary_ofGTPattern :
     (ofGTPattern l P hP).boundary = ![l, P.topRow, fun i => -(l i.rev + P.weight i.rev)] := by
   have h₀ (i : Fin n) : (ofGTPattern l P hP).boundary 0 i = l i := by
-    have hl := prefixSum_succ i.2 l
-    rw [prefixSum_def, prefixSum_def] at hl
     rw [boundary_apply, ofGTPattern_edgePoint_zero, ofGTPattern_edgePoint_zero]
-    exact sub_eq_of_eq_add' hl
+    exact sub_eq_of_eq_add' (prefixSum_succ i.2 l)
   have h₁ (i : Fin n) : (ofGTPattern l P hP).boundary 1 i = P.topRow i := by
     rw [boundary_apply, ofGTPattern_edgePoint_one, ofGTPattern_edgePoint_one,
       GTPattern.topRow_apply]
     exact sub_eq_of_eq_add' (gtCompletion_succ_left l P i n)
   have h₂ (i : Fin n) : (ofGTPattern l P hP).boundary 2 i = -(l i.rev + P.weight i.rev) := by
     have hl := prefixSum_succ i.rev.2 l
-    simp only [prefixSum_def, Fin.eta] at hl
+    rw [Fin.eta] at hl
     have e₁ : n - (i.succ : ℕ) = i.rev := by simp [Fin.val_rev]
     have e₂ : n - (i.castSucc : ℕ) = i.rev + 1 := by simp [Fin.val_rev]; omega
     rw [boundary_apply, ofGTPattern_edgePoint_two, ofGTPattern_edgePoint_two, gtCompletion_self,
@@ -436,12 +434,9 @@ theorem gtCompletionConcave_of_gap (l : Fin (n + 1) → ℤ) (P : GTPattern (n +
     GTCompletionConcave l P := by
   intro i j hij hj
   -- The partial sums of `l` contribute `l (j + 1) - l j`.
-  have hl₁ : ∑ r : Fin (n + 1) with r.val < j + 1, l r =
-      (∑ r : Fin (n + 1) with r.val < j, l r) + l ⟨j, by omega⟩ := by
-    simpa only [prefixSum_def] using prefixSum_succ (by omega : j < n + 1) l
-  have hl₂ : ∑ r : Fin (n + 1) with r.val < j + 2, l r =
-      (∑ r : Fin (n + 1) with r.val < j + 1, l r) + l ⟨j + 1, by omega⟩ := by
-    simpa only [prefixSum_def] using prefixSum_succ (by omega : j + 1 < n + 1) l
+  have hl₁ := prefixSum_succ (by omega : j < n + 1) l
+  have hl₂ : prefixSum (j + 2) l = prefixSum (j + 1) l + l ⟨j + 1, by omega⟩ :=
+    prefixSum_succ (by omega) l
   -- The entries of row `j` are at most those of row `j + 1`.
   have hA : ∑ k ∈ Finset.range i, P k j ≤ ∑ k ∈ Finset.range i, P k (j + 1) :=
     Finset.sum_le_sum fun k hk =>
