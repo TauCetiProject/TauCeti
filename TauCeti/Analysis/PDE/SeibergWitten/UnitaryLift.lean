@@ -9,7 +9,6 @@ public import TauCeti.Analysis.PDE.SeibergWitten.CanonicalLine
 public import TauCeti.Geometry.Symplectic.AlmostComplex.UnitaryGroup
 public import TauCeti.Geometry.Symplectic.Complex.Module.Hom
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.CircleLift
-import TauCeti.Geometry.Symplectic.Finrank
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Surjectivity
 
 /-!
@@ -551,32 +550,30 @@ theorem det_unitaryLift (A : J.unitaryGroup Q) :
     exists_ne_zero_cliffordProjection_kahlerForm_apply_eq_self_forall_eq_smul hQ he h₀ h₂ hW
   obtain ⟨u, rfl⟩ := (positiveHalfSpinorsEquiv o ρ).symm.surjective u₀
   have hb := bivectorExterior_apply_of_cliffordProjection_apply_eq_self o ρ hu
+  have hW₁ : finrank ℂ (eigenspace (ρ (chirality Q o)) 1) = 2 :=
+    (positiveHalfSpinorsEquiv o ρ).finrank_eq.symm.trans hW
   have hW' : finrank ℂ (eigenspace (ρ (chirality Q o)) (-1)) = 2 :=
-    (finrank_eigenspace_chirality_neg o ρ 1).trans
-      ((positiveHalfSpinorsEquiv o ρ).finrank_eq.symm.trans hW)
-  have hV : finrank ℂ V = 2 := by
-    have h := J.finrank_real_eq_two_mul_complexFinrank
-    rw [J.complexFinrank_def, (Fact.out : finrank ℝ V = 4)] at h
-    omega
-  -- `T : v ↦ c(v) u` is a `ℂ`-linear isomorphism from `(V, J)` onto the negative half-spinors.
-  let T : V →ₗ[ℂ] eigenspace (ρ (chirality Q o)) (-1) :=
-    { toFun v := halfSpinCliffordMul o ρ 1 v u
-      map_add' v w := by simp
+    (finrank_eigenspace_chirality_neg o ρ 1).trans hW₁
+  -- The real isomorphism `v ↦ c(v) u` from `V` onto the negative half-spinors is `ℂ`-linear for
+  -- the complex structure `J` on `V`.
+  let E := cliffordMulEquiv o hQ u.2 (by simpa using hu₀) hW₁
+  have hE (v : V) : E v = halfSpinCliffordMul o ρ 1 v u :=
+    Subtype.ext (by rw [coe_cliffordMulEquiv_apply, coe_halfSpinCliffordMul_apply_apply])
+  let Te : V ≃ₗ[ℂ] eigenspace (ρ (chirality Q o)) (-1) :=
+    { E with
       map_smul' z v := by
+        simp only [AddHom.toFun_eq_coe, LinearMap.coe_toAddHom, LinearEquiv.coe_coe, hE]
         rw [J.complexModule_smul_def, halfSpinCliffordMul_smul_add_smul_apply hQ he h₀ h₂ hb,
           Complex.re_add_im, RingHom.id_apply] }
-  have hQn : Q.Anisotropic := fun v hv ↦ by simpa [hQ] using hv
-  have hT : Function.Injective fun v ↦ halfSpinCliffordMul o ρ 1 v u := fun v w hvw ↦
-    map_ι_apply_left_injective ρ hQn (ψ := (u : W)) (by simpa using hu₀)
-      (by simpa using congrArg Subtype.val hvw)
-  let Te := T.linearEquivOfInjective hT (hV.trans hW'.symm)
-  -- By the intertwining lemma, the canonical lift acts on the negative half-spinors as `T A T⁻¹`.
+  have hTe (v : V) : Te v = halfSpinCliffordMul o ρ 1 v u := hE v
+  -- By the intertwining lemma, the canonical lift acts on the negative half-spinors as
+  -- `Te A Te⁻¹`.
   rw [← det_spinCGroupHalfSpinRep o ρ (-1) hQ₀ hQ hW', ← LinearMap.det_conj _ Te]
   congr 1
   refine LinearMap.ext fun w ↦ ?_
   obtain ⟨v, rfl⟩ := Te.surjective w
-  rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.coe_coe,
-    Te.symm_apply_apply]
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply]
+  rw [IsComplexLinearMap.toComplexLinearMap_apply, hTe, hTe]
   exact spinCGroupHalfSpinRep_unitaryLift_halfSpinCliffordMul hQ he h₀ h₂ hQ₀ hW hρ hb A v
 
 end ComplexDeterminant
