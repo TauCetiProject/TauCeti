@@ -76,7 +76,8 @@ one of them: `W.autGroup ≃* (Hom W W)ˣ`.
 * `TauCeti.Isogeny.pullbackDifferential_variableChangeIsogeny_invariantDifferential`: a change of
   variables `C` pulls the invariant differential back to `C.u` times the invariant differential.
 * `TauCeti.Isogeny.conjByVariableChange_comp_variableChangeIsogeny`,
-  `TauCeti.Isogeny.conjByVariableChange_id`, `TauCeti.Isogeny.comp_conjByVariableChange`, and
+  `TauCeti.Isogeny.conjByVariableChange_id`,
+  `TauCeti.Isogeny.conjByVariableChange_comp_conjByVariableChange`, and
   `TauCeti.Isogeny.conjByVariableChange_inj`: intertwining, functoriality, and injectivity of
   conjugation by changes of variables.
 * `TauCeti.Isogeny.exists_algebraMap_eq_pullback_of_degree_eq_one`: an isogeny of degree one out
@@ -295,7 +296,7 @@ theorem conjByVariableChange_id (W : WeierstrassCurve.Affine F) (C : VariableCha
 
 /-- Conjugation by changes of variables commutes with composition of isogenies. -/
 @[simp]
-theorem comp_conjByVariableChange (ψ : Isogeny W₂ W₃) (φ : Isogeny W₁ W₂)
+theorem conjByVariableChange_comp_conjByVariableChange (ψ : Isogeny W₂ W₃) (φ : Isogeny W₁ W₂)
     (C₁ C₂ C₃ : VariableChange F) :
     (ψ.conjByVariableChange C₂ C₃).comp (φ.conjByVariableChange C₁ C₂) =
       (ψ.comp φ).conjByVariableChange C₁ C₃ := by
@@ -306,6 +307,7 @@ theorem comp_conjByVariableChange (ψ : Isogeny W₂ W₃) (φ : Isogeny W₁ W�
     conjByVariableChange_comp_variableChangeIsogeny]
 
 /-- Conjugating by changes of variables is injective on isogenies. -/
+@[simp]
 theorem conjByVariableChange_inj {φ ψ : Isogeny W₁ W₂} (C₁ C₂ : VariableChange F) :
     φ.conjByVariableChange C₁ C₂ = ψ.conjByVariableChange C₁ C₂ ↔ φ = ψ := by
   refine ⟨fun h ↦ ?_, fun h ↦ by rw [h]⟩

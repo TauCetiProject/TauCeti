@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GlobalMinimalModel
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 import Mathlib.RingTheory.Valuation.ValuationSubring
+import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
 import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Basic
 import TauCeti.RingTheory.DedekindDomain.AdicCompletionExtension

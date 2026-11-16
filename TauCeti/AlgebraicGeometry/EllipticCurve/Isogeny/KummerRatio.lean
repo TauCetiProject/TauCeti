@@ -97,15 +97,13 @@ theorem kummerRatio_eq_one_of_degree_eq_one (φ : Isogeny W₁ W₂) (hφ : φ.d
     rw [← Hom.comp_pointMapHom, Hom.ofIsogeny_comp_ofIsogeny, hφψ, ← Hom.id_def,
       Hom.id_pointMapHom]
   have hker : (Hom.ofIsogeny φ).pointMapHom.ker = ⊥ :=
-    eq_bot_iff.mpr fun P hP ↦ by
-      have hP₀ : (Hom.ofIsogeny ψ).pointMapHom ((Hom.ofIsogeny φ).pointMapHom P) = P := by
-        rw [← AddMonoidHom.comp_apply, hcomp₁, AddMonoidHom.id_apply]
-      rw [← hP₀, AddMonoidHom.mem_ker.mp hP, map_zero]
-      exact zero_mem ⊥
+    AddMonoidHom.ker_eq_bot _
+      (Function.LeftInverse.injective (g := (Hom.ofIsogeny ψ).pointMapHom)
+        (DFunLike.congr_fun hcomp₁))
   have hrange : (Hom.ofIsogeny φ).pointMapHom.range = ⊤ :=
-    AddMonoidHom.range_eq_top.mpr fun Q ↦
-      ⟨(Hom.ofIsogeny ψ).pointMapHom Q, by
-        rw [← AddMonoidHom.comp_apply, hcomp₂, AddMonoidHom.id_apply]⟩
+    AddMonoidHom.range_eq_top_of_surjective _
+      (Function.RightInverse.surjective (g := (Hom.ofIsogeny ψ).pointMapHom)
+        (DFunLike.congr_fun hcomp₂))
   simp [kummerRatio_def, hker, hrange]
 
 /-- The isogeny associated to an admissible change of variables has Kummer ratio one. -/

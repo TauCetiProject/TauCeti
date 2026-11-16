@@ -93,11 +93,6 @@ open scoped nonZeroDivisors WithZero
 
 namespace TauCeti.Isogeny
 
-private theorem natCast_ne_zero_of_injective {S T : Type*} [NonAssocSemiring S]
-    [NonAssocSemiring T] {f : S →+* T} (hf : Function.Injective f) {n : ℕ} (hn : (n : S) ≠ 0) :
-    (n : T) ≠ 0 := by
-  simpa using hf.ne hn
-
 private theorem div_eq_zpow_sub_mul_div_of_mul_eq {a b q m c₁ c₂ k j : ℕ}
     (hb : b ≠ 0) (hq : q ≠ 0) (hm : m ≠ 0) (hc₁ : c₁ ≠ 0)
     (h : a * (q ^ k * m * c₁) = (q ^ j * m * c₂) * b) :
@@ -132,7 +127,7 @@ private local instance : HenselianLocalRing R_u :=
   inferInstanceAs (HenselianLocalRing O_u)
 
 private local instance : Finite (IsLocalRing.ResidueField R_u) :=
-  Finite.of_equiv _ (u.residueFieldEquivAdicCompletionIntegers (K := F)).toEquiv
+  inferInstanceAs (Finite (IsLocalRing.ResidueField O_u))
 
 /-- **The local Kummer ratio on minimal equations over an adic completion.** Assume
 `Finite (A ⧸ u.asIdeal)`. Let `W₁` and `W₂` be elliptic equations over `F_u` minimal over `O_u`,
@@ -153,10 +148,9 @@ theorem kummerRatio_eq_zpow_mul_tamagawaNumber_div_of_isMinimal
   classical
   obtain ⟨C₁, rfl⟩ := (inferInstance : IsIntegral O_u W₁).integral
   obtain ⟨C₂, rfl⟩ := (inferInstance : IsIntegral O_u W₂).integral
-  have hdeg_ne : (φ.degree : F_u) ≠ 0 :=
-    natCast_ne_zero_of_injective (RingHom.injective (algebraMap F F_u))
-      (natCast_ne_zero_of_injective (IsFractionRing.injective A F) hn)
-  have hc0 : c ≠ 0 := φ.ne_zero_of_pullbackDifferential_eq_smul_of_degree_ne_zero hdeg_ne hc
+  have hdeg_ne : (φ.degree : F_u) ≠ 0 := by
+    simpa using ((algebraMap F F_u).injective.comp (IsFractionRing.injective A F)).ne hn
+  have hc0 : c ≠ 0 := φ.ne_zero_of_pullbackDifferential_eq_smul_of_degree_ne_zero hc hdeg_ne
   have hvc : Valued.v c ≠ 0 := (Valued.v : Valuation F_u ℤᵐ⁰).ne_zero_iff.mpr hc0
   -- Choose a deep formal level `k₀ + 1` with `j₀ = k₀ - log (v c) ≥ 0`.
   obtain ⟨N, hN⟩ := eventually_atTop.mp
@@ -382,8 +376,8 @@ theorem finiteKummerRatio_eq_zpow_obstructionExponentAt_mul_tamagawaNumberAt_div
       (Nat.card (R ⧸ v.asIdeal) : ℚ) ^
         ((v.valuation K).ord c + obstructionExponentAt R v E₂ - obstructionExponentAt R v E₁) *
         E₂.tamagawaNumberAt v / E₁.tamagawaNumberAt v := by
-  have hφK : (φ.degree : K) ≠ 0 := natCast_ne_zero_of_injective (IsFractionRing.injective R K) hφ
-  have hc0 : c ≠ 0 := φ.ne_zero_of_pullbackDifferential_eq_smul_of_degree_ne_zero hφK hc
+  have hφK : (φ.degree : K) ≠ 0 := by simpa using (IsFractionRing.injective R K).ne hφ
+  have hc0 : c ≠ 0 := φ.ne_zero_of_pullbackDifferential_eq_smul_of_degree_ne_zero hc hφK
   obtain ⟨C₁, hC₁⟩ := exists_isMinimal (Localization.AtPrime v.asIdeal) E₁
   obtain ⟨C₂, hC₂⟩ := exists_isMinimal (Localization.AtPrime v.asIdeal) E₂
   rw [finiteKummerRatio_eq_zpow_mul_tamagawaNumberAt_div φ v hc C₁ C₂ h2 hφ,
@@ -404,8 +398,8 @@ theorem finprod_finiteKummerRatio_mul_tamagawaProduct_eq_finprod_zpow_obstructio
         (Nat.card (R ⧸ v.asIdeal) : ℚ) ^
           ((v.valuation K).ord c + obstructionExponentAt R v E₂ - obstructionExponentAt R v E₁)) *
         E₂.tamagawaProduct (R := R) := by
-  have hφK : (φ.degree : K) ≠ 0 := natCast_ne_zero_of_injective (IsFractionRing.injective R K) hφ
-  have hc0 : c ≠ 0 := φ.ne_zero_of_pullbackDifferential_eq_smul_of_degree_ne_zero hφK hc
+  have hφK : (φ.degree : K) ≠ 0 := by simpa using (IsFractionRing.injective R K).ne hφ
+  have hc0 : c ≠ 0 := φ.ne_zero_of_pullbackDifferential_eq_smul_of_degree_ne_zero hc hφK
   obtain ⟨D₁, hD₁⟩ := exists_smul_isIntegral R E₁
   obtain ⟨D₂, hD₂⟩ := exists_smul_isIntegral R E₂
   have hsupp_exp : Function.HasFiniteMulSupport fun v : HeightOneSpectrum R ↦
@@ -450,8 +444,8 @@ theorem finprod_finiteKummerRatio_mul_tamagawaProduct_eq_finprod_zpow_mul
       (∏ᶠ v : HeightOneSpectrum R,
         (Nat.card (R ⧸ v.asIdeal) : ℚ) ^ (-WithZero.log (v.valuation K (c * C₂.u / C₁.u)))) *
         E₂.tamagawaProduct (R := R) := by
-  have hφK : (φ.degree : K) ≠ 0 := natCast_ne_zero_of_injective (IsFractionRing.injective R K) hφ
-  have hc0 : c ≠ 0 := φ.ne_zero_of_pullbackDifferential_eq_smul_of_degree_ne_zero hφK hc
+  have hφK : (φ.degree : K) ≠ 0 := by simpa using (IsFractionRing.injective R K).ne hφ
+  have hc0 : c ≠ 0 := φ.ne_zero_of_pullbackDifferential_eq_smul_of_degree_ne_zero hc hφK
   rw [finprod_finiteKummerRatio_mul_tamagawaProduct_eq_finprod_zpow_obstructionExponentAt_mul
     φ hc h2 hφ]
   congr 1

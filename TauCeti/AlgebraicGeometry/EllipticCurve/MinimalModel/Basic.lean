@@ -92,10 +92,8 @@ have the same `c₄` valuation too.
   valuation rings, good and multiplicative reduction of an integral equation are unchanged.
 * `WeierstrassCurve.HasSplitMultiplicativeReduction.of_isMinimal_smul`: split multiplicative
   reduction transfers along such a change of variables.
-* `WeierstrassCurve.VariableChange.valuation_mul_inv_le_one`,
-  `WeierstrassCurve.isIntegral_smul_of_valuation_sub_le`, and
-  `WeierstrassCurve.isMinimal_smul_of_valuation_sub_le`: valuation-approximation criteria
-  transferring integrality and minimality across close changes of variables.
+* `WeierstrassCurve.isMinimal_smul_of_valuation_sub_le`: valuation-approximation criterion
+  transferring minimality across close changes of variables.
 
 `valuation_u_eq_one_of_isMinimal_smul` and
 `VariableChange.exists_unit_algebraMap_eq_u_of_isMinimal_smul` supply the unit needed for descent.
@@ -650,53 +648,11 @@ theorem HasSplitMultiplicativeReduction.of_isMinimal_smul {W₁ W₂ : Weierstra
 
 section ValuationApproximation
 
-/-- **The translation parameters of `C * D⁻¹` have valuation at most `1`** as soon as those of `C`
-agree with those of `D` to the orders `w D.u ^ 2`, `w D.u`, and `w D.u ^ 3`, the last corrected by
-`D.s * (C.r - D.r)`. -/
-theorem VariableChange.valuation_mul_inv_le_one {F Γ₀ : Type*} [Field F]
-    [LinearOrderedCommGroupWithZero Γ₀] (w : Valuation F Γ₀) (C D : VariableChange F)
-    (hr : w (C.r - D.r) ≤ w D.u ^ 2)
-    (hs : w (C.s - D.s) ≤ w D.u)
-    (ht : w (C.t - D.t - D.s * (C.r - D.r)) ≤ w D.u ^ 3) :
-    w (C * D⁻¹).r ≤ 1 ∧ w (C * D⁻¹).s ≤ 1 ∧ w (C * D⁻¹).t ≤ 1 := by
-  have hD : 0 < w D.u := zero_lt_iff.2 ((Valuation.ne_zero_iff _).2 D.u.ne_zero)
-  have hBr : (C * D⁻¹).r = (C.r - D.r) / (D.u : F) ^ 2 := by
-    rw [VariableChange.mul_inv_r, Units.val_inv_eq_inv_val, inv_pow, div_eq_mul_inv]
-  have hBs : (C * D⁻¹).s = (C.s - D.s) / (D.u : F) := by
-    rw [VariableChange.mul_inv_s, Units.val_inv_eq_inv_val, div_eq_mul_inv]
-  have hBt : (C * D⁻¹).t = (C.t - D.t - D.s * (C.r - D.r)) / (D.u : F) ^ 3 := by
-    rw [VariableChange.mul_inv_t, Units.val_inv_eq_inv_val, inv_pow, div_eq_mul_inv]
-  refine ⟨?_, ?_, ?_⟩
-  · rw [hBr, map_div₀, map_pow]; exact (div_le_one₀ (pow_pos hD 2)).2 hr
-  · rw [hBs, map_div₀]; exact (div_le_one₀ hD).2 hs
-  · rw [hBt, map_div₀, map_pow]; exact (div_le_one₀ (pow_pos hD 3)).2 ht
-
-/-- **Integrality over `S` from valuation approximation of a change of variables.** If `D` carries
-`W` to an equation integral over `S` (where `w.Integers S`), then so does every `C` whose
-translation parameters approximate those of `D` as in `VariableChange.valuation_mul_inv_le_one` and
-whose scaling factor has `w`-valuation at least `w D.u`. -/
-theorem isIntegral_smul_of_valuation_sub_le {S F Γ₀ : Type*} [CommRing S] [Field F] [Algebra S F]
-    [LinearOrderedCommGroupWithZero Γ₀] {w : Valuation F Γ₀} (hw : w.Integers S)
-    (W : WeierstrassCurve F) (C D : VariableChange F) [IsIntegral S (D • W)]
-    (hu : w D.u ≤ w C.u)
-    (hr : w (C.r - D.r) ≤ w D.u ^ 2)
-    (hs : w (C.s - D.s) ≤ w D.u)
-    (ht : w (C.t - D.t - D.s * (C.r - D.r)) ≤ w D.u ^ 3) :
-    IsIntegral S (C • W) := by
-  have hBu : (↑(C * D⁻¹).u⁻¹ : F) = (C.u : F)⁻¹ * D.u := by
-    rw [VariableChange.mul_inv_u, mul_inv, inv_inv, Units.val_mul, Units.val_inv_eq_inv_val]
-  obtain ⟨hr', hs', ht'⟩ := VariableChange.valuation_mul_inv_le_one w C D hr hs ht
-  have hCW : C • W = (C * D⁻¹) • (D • W) := by rw [smul_smul, inv_mul_cancel_right]
-  rw [hCW]
-  refine isIntegral_smul_of_exists_lift (hw.exists_of_le_one ?_) (hw.exists_of_le_one hr')
-    (hw.exists_of_le_one hs') (hw.exists_of_le_one ht')
-  rw [hBu, map_mul, map_inv₀]
-  exact inv_mul_le_one_of_le₀ hu zero_le
-
 /-- **Minimality over `S` from valuation approximation of a minimalising change of variables.** If
 `D` carries `W` to an equation minimal over the discrete valuation ring `S` (where `w.Integers S`),
 then so does every `C` whose scaling factor has the same `w`-valuation as `D.u` and whose
-translation parameters approximate those of `D` as in `VariableChange.valuation_mul_inv_le_one`. -/
+translation parameters approximate those of `D` as in
+`VariableChange.valuation_mul_inv_r_s_t_le_one`. -/
 theorem isMinimal_smul_of_valuation_sub_le {S F Γ₀ : Type*} [CommRing S] [IsDomain S]
     [IsDiscreteValuationRing S] [Field F] [Algebra S F] [IsFractionRing S F]
     [LinearOrderedCommGroupWithZero Γ₀] {w : Valuation F Γ₀} (hw : w.Integers S)
@@ -709,7 +665,7 @@ theorem isMinimal_smul_of_valuation_sub_le {S F Γ₀ : Type*} [CommRing S] [IsD
   have hD : 0 < w D.u := zero_lt_iff.2 ((Valuation.ne_zero_iff _).2 D.u.ne_zero)
   have hBu : ((C * D⁻¹).u : F) = C.u / D.u := by
     rw [VariableChange.mul_inv_u, Units.val_mul, Units.val_inv_eq_inv_val, div_eq_mul_inv]
-  obtain ⟨hr', hs', ht'⟩ := VariableChange.valuation_mul_inv_le_one w C D hr hs ht
+  obtain ⟨hr', hs', ht'⟩ := VariableChange.valuation_mul_inv_r_s_t_le_one w C D hr hs ht
   obtain ⟨u, hu'⟩ := hw.exists_of_le_one (r := ((C * D⁻¹).u : F)) (by
     rw [hBu, map_div₀, hu, div_self hD.ne'])
   obtain ⟨r, hr'⟩ := hw.exists_of_le_one hr'

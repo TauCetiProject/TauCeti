@@ -90,9 +90,9 @@ theorem mul_eq_degree_of_pullbackDifferential_eq_smul {c c' : F}
 
 /-- If `φ^*ω₂ = c ω₁` for the invariant differentials `ω₁` and `ω₂` and the degree of `φ` is
 nonzero in the base field, then `c ≠ 0`. -/
-theorem ne_zero_of_pullbackDifferential_eq_smul_of_degree_ne_zero
-    (hdeg : (φ.degree : F) ≠ 0) {c : F}
-    (hc : φ.pullbackDifferential (invariantDifferential W₂) = c • invariantDifferential W₁) :
+theorem ne_zero_of_pullbackDifferential_eq_smul_of_degree_ne_zero {c : F}
+    (hc : φ.pullbackDifferential (invariantDifferential W₂) = c • invariantDifferential W₁)
+    (hdeg : (φ.degree : F) ≠ 0) :
     c ≠ 0 := by
   rintro rfl
   exact φ.isSeparable_iff_pullbackDifferential_ne_zero.mp
