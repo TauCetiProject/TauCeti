@@ -110,23 +110,6 @@ theorem withSeminorms_supSeminorm_self :
   · rw [Finset.sup_singleton, one_smul]
     exact supSeminorm_le_supSeminorm_self 𝕜 i
 
-/-- The seminorms `N_j` do not depend on the field of scalars. -/
-theorem seminorm_apply_eq_of_scalars {n : ℕ∞} (j : ℕ) (f : 𝓓^{n}_{K}(E, F)) :
-    ContDiffMapSupportedIn.seminorm 𝕜 E F n K j f =
-      ContDiffMapSupportedIn.seminorm ℝ E F n K j f := by
-  rw [ContDiffMapSupportedIn.seminorm_apply, ContDiffMapSupportedIn.seminorm_apply,
-    structureMapCLM_eq_of_scalars 𝕜 ℝ]
-
-/-- The seminorms `max_{j ≤ i} N_j` do not depend on the field of scalars. -/
-theorem supSeminorm_apply_eq_of_scalars {n : ℕ∞} (i : ℕ) (f : 𝓓^{n}_{K}(E, F)) :
-    ContDiffMapSupportedIn.supSeminorm 𝕜 E F n K i f =
-      ContDiffMapSupportedIn.supSeminorm ℝ E F n K i f :=
-  le_antisymm
-    (Seminorm.finset_sup_apply_le (apply_nonneg _ _) fun _ hj ↦
-      (seminorm_apply_eq_of_scalars _ f).trans_le (Seminorm.le_finset_sup_apply hj))
-    (Seminorm.finset_sup_apply_le (apply_nonneg _ _) fun _ hj ↦
-      (seminorm_apply_eq_of_scalars _ f).symm.trans_le (Seminorm.le_finset_sup_apply hj))
-
 /-- For a finite order `ℓ`, the seminorm `max_{j ≤ ℓ} N_j` vanishes only at zero. -/
 theorem supSeminorm_self_eq_zero_iff (f : 𝓓^{ℓ}_{K}(E, F)) :
     ContDiffMapSupportedIn.supSeminorm 𝕜 E F ℓ K ℓ f = 0 ↔ f = 0 := by

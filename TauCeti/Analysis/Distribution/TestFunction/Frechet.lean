@@ -39,6 +39,8 @@ sets, `LinearMap.exists_schwartzKernel_supportedIn`.
 * `ContDiffMapSupportedIn.instBaireSpace`: with the countably generated uniformity
   (`ContDiffMapSupportedIn.instIsCountablyGeneratedUniformity`), completeness makes
   `𝓓^{n}_{K}(E, F)` completely metrizable, hence a Baire space and barrelled.
+* `ContDiffMapSupportedIn.supSeminorm_apply_eq_of_scalars`: the seminorms `N_{≤i}` do not depend
+  on the field of scalars.
 * `LinearMap.exists_bound_supportedIn_of_continuous`: a separately continuous bilinear map on two
   such spaces is bounded by `C N_{≤k}(φ) N_{≤k}(ψ)` for some `C` and `k`.
 
@@ -117,6 +119,29 @@ instance instCompleteSpace [CompleteSpace F] : CompleteSpace 𝓓^{n}_{K}(E, F) 
 barrelled (`BaireSpace.instBarrelledSpace`), so the Banach–Steinhaus theorem applies to it. -/
 instance instBaireSpace [CompleteSpace F] : BaireSpace 𝓓^{n}_{K}(E, F) :=
   BaireSpace.of_completelyPseudoMetrizable
+
+section Scalars
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 F] [SMulCommClass ℝ 𝕜 F]
+
+/-- The seminorms `N_j` do not depend on the field of scalars. -/
+theorem seminorm_apply_eq_of_scalars (j : ℕ) (f : 𝓓^{n}_{K}(E, F)) :
+    ContDiffMapSupportedIn.seminorm 𝕜 E F n K j f =
+      ContDiffMapSupportedIn.seminorm ℝ E F n K j f := by
+  rw [ContDiffMapSupportedIn.seminorm_apply, ContDiffMapSupportedIn.seminorm_apply,
+    structureMapCLM_eq_of_scalars 𝕜 ℝ]
+
+/-- The seminorms `max_{j ≤ i} N_j` do not depend on the field of scalars. -/
+theorem supSeminorm_apply_eq_of_scalars (i : ℕ) (f : 𝓓^{n}_{K}(E, F)) :
+    ContDiffMapSupportedIn.supSeminorm 𝕜 E F n K i f =
+      ContDiffMapSupportedIn.supSeminorm ℝ E F n K i f :=
+  le_antisymm
+    (Seminorm.finset_sup_apply_le (apply_nonneg _ _) fun _ hj ↦
+      (seminorm_apply_eq_of_scalars _ f).trans_le (Seminorm.le_finset_sup_apply hj))
+    (Seminorm.finset_sup_apply_le (apply_nonneg _ _) fun _ hj ↦
+      (seminorm_apply_eq_of_scalars _ f).symm.trans_le (Seminorm.le_finset_sup_apply hj))
+
+end Scalars
 
 end ContDiffMapSupportedIn
 
