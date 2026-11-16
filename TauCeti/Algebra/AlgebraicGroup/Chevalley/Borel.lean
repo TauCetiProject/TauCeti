@@ -24,11 +24,12 @@ adjoint type A₁ over ℚ. The subgroup and membership results hold over every 
 We call the generated subgroup `borelSubgroup`; we do not identify it with all points of a Borel
 subgroup scheme or assert maximal solvability here. No ordered-product normal form for `U` is
 assumed.
-The opposite-intersection theorem also shows that a negative root element in `B` must be
-the identity; this detects when conjugating an element of a simple-root subgroup by its pinned
-Weyl representative leaves `B`. Over every nontrivial commutative ring, the simple-root element
-with additive parameter one witnesses that each pinned simple Weyl representative conjugates
-some element of `B` outside `B`. This is the
+The opposite-intersection theorem shows that the entire negative subgroup `U⁻` meets `B`
+trivially (`ChevalleyDatum.negativePoints_inf_borelSubgroup_eq_bot`) and in particular that
+a negative root element in `B` must be the identity; this detects when conjugating an element
+of a simple-root subgroup by its pinned Weyl representative leaves `B`. Over every nontrivial
+commutative ring, the simple-root element with additive parameter one witnesses that each
+pinned simple Weyl representative conjugates some element of `B` outside `B`. This is the
 noncontainment required by the last Tits-system axiom, without assuming a Bruhat decomposition.
 
 ## References
@@ -155,6 +156,20 @@ theorem rootSubgroupPoints_mem_borelSubgroup_iff_of_mem_negRoots {γ : Fin t.num
   · intro ha
     rw [ha]
     exact (D.borelSubgroup A).one_mem
+
+/-- The negative subgroup meets the positive Borel-type subgroup trivially over every
+commutative ring. -/
+@[simp]
+theorem negativePoints_inf_borelSubgroup_eq_bot :
+    D.negativePoints A ⊓ D.borelSubgroup A = ⊥ := by
+  rw [D.borelSubgroup_def]
+  exact D.negativePoints_inf_positivePoints_sup_range_torusPoints_eq_bot A
+
+/-- The negative subgroup and the positive Borel-type subgroup are disjoint over every
+commutative ring. -/
+theorem disjoint_negativePoints_borelSubgroup :
+    Disjoint (D.negativePoints A) (D.borelSubgroup A) :=
+  disjoint_iff.mpr (D.negativePoints_inf_borelSubgroup_eq_bot A)
 
 /-- Conjugating a positive simple-root element by its pinned Weyl representative lands
 in the positive Borel-type subgroup exactly when that root element is trivial. -/
