@@ -25,6 +25,10 @@ the vertex statements use the induced isomorphism of underlying simple graphs. A
 are actual vertices. No finiteness is needed, so the results include infinite connectivity
 and the empty-graph conventions.
 
+An isomorphism also induces an equivalence of connected-component subgraphs, sending each
+component to the component with the transported vertices and edges. Hence it preserves
+connectedness and the component count.
+
 The set transport is stated on the ambient vertex and edge types because Mathlib's
 `Graph.edgeCut`, `Graph.IsEdgeCut`, and `Graph.IsBond` use ambient sets. Elements outside the
 actual carrier are discarded. On subsets of the actual carrier, transport along the inverse
@@ -205,6 +209,132 @@ theorem isVertexConnected_iff (f : Iso G H) (k : ℕ) :
 empty actual vertex set. -/
 theorem vertexConnectivity_eq (f : Iso G H) : H.vertexConnectivity = G.vertexConnectivity :=
   f.toSimpleGraphIso.vertexConnectivity_eq
+
+/-! ### Connected components -/
+
+/-- Multigraph connectedness is invariant under isomorphism, including for empty actual vertex
+sets. -/
+theorem connected_iff (f : Iso G H) : H.Connected ↔ G.Connected := by
+  rw [connected_iff_toSimpleGraph_connected, connected_iff_toSimpleGraph_connected]
+  exact f.toSimpleGraphIso.connected_iff.symm
+
+/-- A multigraph isomorphism induces an equivalence of connected-component subgraphs. -/
+noncomputable def connectedComponentEquiv (f : Iso G H) :
+    G.ConnectedComponent ≃ H.ConnectedComponent :=
+  G.connectedComponentEquiv.trans
+    (f.toSimpleGraphIso.connectedComponentEquiv.trans H.connectedComponentEquiv.symm)
+
+/-- The component of an actual vertex is sent to the component of its image. -/
+@[simp]
+theorem connectedComponentEquiv_connectedComponentOf (f : Iso G H) {x : α} (hx : x ∈ V(G)) :
+    f.connectedComponentEquiv (G.connectedComponentOf x hx) =
+      H.connectedComponentOf (f.vertexEquiv ⟨x, hx⟩) (f.vertexEquiv ⟨x, hx⟩).2 := by
+  apply H.connectedComponentEquiv.injective
+  simp [connectedComponentEquiv]
+
+/-- An actual vertex lies in the transported component exactly when its preimage lies in the
+original component. -/
+@[simp]
+theorem vertexEquiv_mem_vertexSet_connectedComponentEquiv_iff (f : Iso G H)
+    (C : G.ConnectedComponent) (x : V(G)) :
+    (f.vertexEquiv x : α') ∈ V((f.connectedComponentEquiv C).1) ↔ (x : α) ∈ V(C.1) := by
+  obtain ⟨z, hz⟩ := C.property.nonempty
+  rw [ConnectedComponent.eq_connectedComponentOf (C := C) hz,
+    mem_vertexSet_connectedComponentOf_iff, connectedComponentEquiv_connectedComponentOf,
+    mem_vertexSet_connectedComponentOf_iff]
+  exact f.reachable_iff ⟨z, _⟩ x
+
+/-- An actual edge lies in the transported component exactly when its preimage lies in the
+original component. -/
+@[simp]
+theorem edgeEquiv_mem_edgeSet_connectedComponentEquiv_iff (f : Iso G H)
+    (C : G.ConnectedComponent) (e : E(G)) :
+    (f.edgeEquiv e : β') ∈ E((f.connectedComponentEquiv C).1) ↔ (e : β) ∈ E(C.1) := by
+  obtain ⟨x, y, hxy⟩ := G.exists_isLink_of_mem_edgeSet e.2
+  have hfxy := f.map_isLink hxy
+  rw [Subtype.coe_eta] at hfxy
+  exact (((f.connectedComponentEquiv C).property.isClosedSubgraph.mem_tfae_of_isLink hfxy).out
+    3 1).trans ((f.vertexEquiv_mem_vertexSet_connectedComponentEquiv_iff C _).trans
+      ((C.property.isClosedSubgraph.mem_tfae_of_isLink hxy).out 1 3))
+
+/-- The vertices of a transported component are the transported vertices of the component. -/
+theorem vertexSet_connectedComponentEquiv (f : Iso G H) (C : G.ConnectedComponent) :
+    V((f.connectedComponentEquiv C).1) = f.mapVertexSet V(C.1) := by
+  ext y
+  by_cases hy : y ∈ V(H)
+  · let y' : V(H) := ⟨y, hy⟩
+    have h := f.vertexEquiv_mem_vertexSet_connectedComponentEquiv_iff C (f.vertexEquiv.symm y')
+    rw [Equiv.apply_symm_apply] at h
+    exact h.trans (f.mem_mapVertexSet_iff _ y').symm
+  · exact iff_of_false (fun h ↦ hy ((f.connectedComponentEquiv C).property.le.vertexSet_mono h))
+      fun h ↦ hy (f.mapVertexSet_subset_vertexSet _ h)
+
+/-- The edges of a transported component are the transported edges of the component. -/
+theorem edgeSet_connectedComponentEquiv (f : Iso G H) (C : G.ConnectedComponent) :
+    E((f.connectedComponentEquiv C).1) = f.mapEdgeSet E(C.1) := by
+  ext e
+  by_cases he : e ∈ E(H)
+  · let e' : E(H) := ⟨e, he⟩
+    have h := f.edgeEquiv_mem_edgeSet_connectedComponentEquiv_iff C (f.edgeEquiv.symm e')
+    rw [Equiv.apply_symm_apply] at h
+    exact h.trans (f.mem_mapEdgeSet_iff _ e').symm
+  · exact iff_of_false (fun h ↦ he ((f.connectedComponentEquiv C).property.le.edgeSet_mono h))
+      fun h ↦ he (f.mapEdgeSet_subset_edgeSet _ h)
+
+/-- The identity isomorphism induces the identity on connected components. -/
+@[simp]
+theorem connectedComponentEquiv_refl : (refl G).connectedComponentEquiv = Equiv.refl _ := by
+  ext1 C
+  simp [connectedComponentEquiv]
+
+/-- The inverse isomorphism induces the inverse equivalence of connected components. -/
+@[simp]
+theorem connectedComponentEquiv_symm (f : Iso G H) :
+    f.symm.connectedComponentEquiv = f.connectedComponentEquiv.symm := by
+  ext1 C
+  simp [connectedComponentEquiv]
+
+/-- The inverse component equivalence sends the component of an actual vertex to the component of
+its preimage. -/
+@[simp]
+theorem connectedComponentEquiv_symm_connectedComponentOf (f : Iso G H) {y : α'}
+    (hy : y ∈ V(H)) :
+    f.connectedComponentEquiv.symm (H.connectedComponentOf y hy) =
+      G.connectedComponentOf (f.vertexEquiv.symm ⟨y, hy⟩)
+        (f.vertexEquiv.symm ⟨y, hy⟩).2 := by
+  simpa using f.symm.connectedComponentEquiv_connectedComponentOf hy
+
+/-- An actual vertex lies in the component pulled back along the isomorphism exactly when its
+image lies in the original component. -/
+@[simp]
+theorem vertexEquiv_symm_mem_vertexSet_connectedComponentEquiv_symm_iff (f : Iso G H)
+    (D : H.ConnectedComponent) (y : V(H)) :
+    (f.vertexEquiv.symm y : α) ∈ V((f.connectedComponentEquiv.symm D).1) ↔
+      (y : α') ∈ V(D.1) := by
+  simpa using f.symm.vertexEquiv_mem_vertexSet_connectedComponentEquiv_iff D y
+
+/-- An actual edge lies in the component pulled back along the isomorphism exactly when its image
+lies in the original component. -/
+@[simp]
+theorem edgeEquiv_symm_mem_edgeSet_connectedComponentEquiv_symm_iff (f : Iso G H)
+    (D : H.ConnectedComponent) (e : E(H)) :
+    (f.edgeEquiv.symm e : β) ∈ E((f.connectedComponentEquiv.symm D).1) ↔
+      (e : β') ∈ E(D.1) := by
+  simpa using f.symm.edgeEquiv_mem_edgeSet_connectedComponentEquiv_iff D e
+
+/-- Composing isomorphisms composes their equivalences of connected components. -/
+@[simp]
+theorem connectedComponentEquiv_trans {α'' β'' : Type*} {K : Graph α'' β''} (f : Iso G H)
+    (g : Iso H K) :
+    (f.trans g).connectedComponentEquiv =
+      f.connectedComponentEquiv.trans g.connectedComponentEquiv := by
+  ext1 C
+  simp [connectedComponentEquiv]
+
+/-- The number of connected components is invariant under multigraph isomorphism. -/
+theorem componentCount_eq (f : Iso G H) : H.componentCount = G.componentCount := by
+  rw [componentCount_def, componentCount_def]
+  exact Nat.card_congr f.connectedComponentEquiv.symm
 
 end Iso
 
