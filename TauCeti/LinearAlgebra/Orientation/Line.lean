@@ -20,7 +20,7 @@ When `𝕜` is a linearly ordered field and the index type `ι` has the dimensio
 has exactly two opposite orientations, it is a free `R`-module of rank one, with no preferred
 generator: evaluation at any orientation `o` identifies it with `R`
 (`Orientation.orientationLineEquiv`, an instance of
-`TauCeti.bijective_eval_of_mem_iff_apply_eq_neg`), and evaluation at `-o` is the opposite
+`TauCeti.eval_bijective_of_mem_iff_apply_eq_neg`), and evaluation at `-o` is the opposite
 identification. For `R = ℤ` this is the orientation group `o(M)` of `M`, whose two generators are
 the two orientations. It is the fibre of the sign local system of an orientation double cover
 (`TauCeti.signFiber`), for a single vector space rather than the fibres of a bundle.
@@ -101,10 +101,10 @@ variable {R : Type*} [Ring R] {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜] [Is
 
 /-- Evaluation at an orientation is bijective on the orientation line, when `ι` has the dimension
 of `M`: the orientations are `o` and `-o`. -/
-private theorem orientationLine_bijective_eval [Fintype ι] (h : Fintype.card ι = finrank 𝕜 M)
+private theorem orientationLine_eval_bijective [Fintype ι] (h : Fintype.card ι = finrank 𝕜 M)
     (o : Orientation 𝕜 M ι) :
     Function.Bijective fun g : orientationLine R 𝕜 M ι ↦ (g : Orientation 𝕜 M ι → R) o :=
-  bijective_eval_of_mem_iff_apply_eq_neg (σ := Neg.neg) (fun o' ↦ (Module.Ray.ne_neg_self o').symm)
+  eval_bijective_of_mem_iff_apply_eq_neg (σ := Neg.neg) (fun o' ↦ (Module.Ray.ne_neg_self o').symm)
     (fun o' : Orientation 𝕜 M ι ↦ o'.eq_or_eq_neg_of_card_eq_finrank o h)
     fun _ ↦ mem_orientationLine_iff
 
@@ -113,7 +113,7 @@ has the dimension of `M`. -/
 theorem orientationLine_ext [Fintype ι] (h : Fintype.card ι = finrank 𝕜 M)
     (o : Orientation 𝕜 M ι) {g g' : orientationLine R 𝕜 M ι}
     (hg : (g : Orientation 𝕜 M ι → R) o = (g' : Orientation 𝕜 M ι → R) o) : g = g' :=
-  (orientationLine_bijective_eval h o).1 hg
+  (orientationLine_eval_bijective h o).1 hg
 
 end Field
 
@@ -132,7 +132,7 @@ variable (o : Orientation 𝕜 M ι) (R : Type*) [Ring R] (h : Fintype.card ι =
 `ι` has the dimension of `M`. -/
 noncomputable def orientationLineEquiv : orientationLine R 𝕜 M ι ≃ₗ[R] R :=
   LinearEquiv.ofBijective ((LinearMap.proj o).comp (orientationLine R 𝕜 M ι).subtype)
-    (orientationLine_bijective_eval h o)
+    (orientationLine_eval_bijective h o)
 
 variable {o R h}
 

@@ -53,9 +53,11 @@ lines are transported (`LinearEquiv.orientationLineCongr`). These transports int
 boundaries defined in the two families of charts
 (`TauCeti.orientationLineChartEquiv_orientationLineBoundary`), because the
 signed counts do not depend on the charts
-(`TauCeti.IsAdaptedPseudoGradient.signedTrajectoryCount_map_negativeChange`). So the integral Morse
-boundary is defined, up to canonical isomorphism, by `f` and `X` alone, among the Morse charts in
-which `X` is linear (which exist, `TauCeti.IsAdaptedPseudoGradient.nonempty_morseOrientation`).
+(`TauCeti.IsAdaptedPseudoGradient.signedTrajectoryCount_map_negativeChange`). So the boundary on
+orientation lines is defined, up to canonical isomorphism, by `f` and `X` alone, among the Morse
+charts in which `X` is linear (which exist,
+`TauCeti.IsAdaptedPseudoGradient.nonempty_morseOrientation`); the integral Morse boundary is
+isomorphic to it, though only through a choice of orientations.
 The transports are coherent: the one from a family of charts to itself is the identity
 (`TauCeti.orientationLineChartEquiv_self`), and they compose
 (`TauCeti.orientationLineChartEquiv_trans_orientationLineChartEquiv`).

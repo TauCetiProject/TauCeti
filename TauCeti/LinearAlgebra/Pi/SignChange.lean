@@ -14,7 +14,7 @@ public import Mathlib.Algebra.Module.Submodule.Defs
 Let `σ` be a map without fixed points on a type `α` whose elements are `a` and `σ a`. A function
 `α → R` that changes sign under `σ` (`g (σ a') = -g a'`) is determined by its value at `a`, and
 that value can be any element of `R`. So evaluation at `a` is a bijection from the functions
-changing sign under `σ` onto `R` (`TauCeti.bijective_eval_of_mem_iff_apply_eq_neg`), stated for
+changing sign under `σ` onto `R` (`TauCeti.eval_bijective_of_mem_iff_apply_eq_neg`), stated for
 any submodule of `α → R` with exactly these functions as elements.
 
 This is the common rank-one argument behind the sign module of a fibre of a double cover
@@ -31,7 +31,7 @@ variable {R : Type*} [Ring R] {α : Type*}
 /-- Let `σ` have no fixed points on a type whose elements are `a` and `σ a`. On a submodule of the
 functions `α → R` whose elements are exactly the functions changing sign under `σ`, evaluation at
 `a` is bijective. -/
-theorem bijective_eval_of_mem_iff_apply_eq_neg {σ : α → α} (hfix : ∀ a', σ a' ≠ a') {a : α}
+theorem eval_bijective_of_mem_iff_apply_eq_neg {σ : α → α} (hfix : ∀ a', σ a' ≠ a') {a : α}
     (hcases : ∀ a', a' = a ∨ a' = σ a) {S : Submodule R (α → R)}
     (hS : ∀ g, g ∈ S ↔ ∀ a', g (σ a') = -g a') :
     Function.Bijective fun g : S ↦ (g : α → R) a := by

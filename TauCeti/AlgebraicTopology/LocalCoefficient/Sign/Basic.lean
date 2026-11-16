@@ -86,9 +86,9 @@ variable {σ : E → E} {hσ : p ∘ σ = p} (hfix : ∀ e, σ e ≠ e)
   (hfib : ∀ e e', p e' = p e → e' = e ∨ e' = σ e)
 
 include hfix hfib in
-private theorem signFiber_bijective_eval {x : X} (e : p ⁻¹' {x}) :
+private theorem signFiber_eval_bijective {x : X} (e : p ⁻¹' {x}) :
     Function.Bijective fun f : signFiber R σ hσ x ↦ (f : p ⁻¹' {x} → R) e := by
-  refine bijective_eval_of_mem_iff_apply_eq_neg (σ := Function.fiberMap σ hσ x)
+  refine eval_bijective_of_mem_iff_apply_eq_neg (σ := Function.fiberMap σ hσ x)
     (fun e' h ↦ hfix e'
       ((Function.fiberMap_apply_coe σ hσ x e').symm.trans (congrArg Subtype.val h)))
     (fun e' ↦ ?_) fun _ ↦ mem_signFiber_iff
@@ -101,7 +101,7 @@ private theorem signFiber_bijective_eval {x : X} (e : p ⁻¹' {x}) :
 the fibre over `x` identifies the functions changing sign under `σ` with `R`. -/
 def signFiberEquiv {x : X} (e : p ⁻¹' {x}) : signFiber R σ hσ x ≃ₗ[R] R :=
   LinearEquiv.ofBijective ((LinearMap.proj e).comp (signFiber R σ hσ x).subtype)
-    (signFiber_bijective_eval hfix hfib e)
+    (signFiber_eval_bijective hfix hfib e)
 
 @[simp]
 theorem signFiberEquiv_apply {x : X} (e : p ⁻¹' {x}) (f : signFiber R σ hσ x) :
