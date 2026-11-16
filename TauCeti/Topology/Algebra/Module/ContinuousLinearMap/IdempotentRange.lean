@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Idempotent
-public import Mathlib.Topology.Algebra.Module.Equiv.Basic
+public import Mathlib.Topology.Algebra.Module.Equiv.Submodule
 import Mathlib.Tactic.Abel
 
 /-!
@@ -21,7 +21,9 @@ and it shows that nearby projections have isomorphic ranges.
 
 For a retract `r ∘ i = id` of `M` through `N`, the extension `i ∘ e ∘ r` of an endomorphism `e`
 of `M` is idempotent when `e` is, and `i` identifies the range of `e` with the range of
-`i ∘ e ∘ r` (`ContinuousLinearMap.rangeEquivOfRetract`).
+`i ∘ e ∘ r` (`ContinuousLinearMap.rangeEquivOfRetract`). When `i` and `r` come from a continuous
+linear equivalence `e : M ≃L[R] N`, this upgrades to the continuous linear equivalence
+`ContinuousLinearMap.rangeConjEquiv`.
 
 A pseudo-inverse `g` of `f`, with `f ∘ g ∘ f = f`, gives the projection `g ∘ f`
 (`ContinuousLinearMap.isIdempotentElem_comp_of_comp_comp_eq_self`).
@@ -30,8 +32,12 @@ A pseudo-inverse `g` of `f`, with `f ∘ g ∘ f = f`, gives the projection `g �
 
 * `ContinuousLinearMap.IsIdempotentElem.rangeEquiv`: the isomorphism of the ranges of `p` and
   `q` induced by `q * p + (1 - q) * (1 - p)`, when that operator is invertible.
-* `ContinuousLinearMap.rangeEquivOfRetract`: the identification of the range of `e` with the
-  range of its extension `i ∘ e ∘ r` along a retract.
+* `ContinuousLinearMap.rangeEquivOfRetract`: the linear identification of the range of `e` with
+  the range of its extension `i ∘ e ∘ r` along a retract.
+* `ContinuousLinearMap.rangeRetractEquiv`: the continuous linear equivalence upgrading
+  `rangeEquivOfRetract` when `i` and `r` are continuous linear maps.
+* `ContinuousLinearMap.rangeConjEquiv`: the continuous linear equivalence between `p.range` and
+  `(e ∘L p ∘L e.symm).range` induced by `e : M ≃L[R] N`.
 
 ## Main results
 
@@ -198,6 +204,56 @@ theorem coe_rangeEquivOfRetract_symm_apply (e : M →L[R] M) (hri : r.comp i = .
   obtain ⟨x, rfl⟩ := (rangeEquivOfRetract e hri).surjective y
   rw [LinearEquiv.symm_apply_apply, coe_rangeEquivOfRetract_apply]
   exact (DFunLike.congr_fun hri (x : M)).symm
+
+/-- Continuous linear equivalence between the range of `e : M →L[R] M` and the range of its
+extension `i ∘L e ∘L r` along a continuous linear retract `r ∘L i = id`. -/
+def rangeRetractEquiv (e : M →L[R] M) (hri : r.comp i = .id R M) :
+    e.range ≃L[R] (i ∘L e ∘L r).range :=
+  have hri' (x : M) : r (i x) = x := by simpa using DFunLike.congr_fun hri x
+  .equivOfInverse
+    ((i ∘L e.range.subtypeL).codRestrict _ fun w ↦
+      let ⟨x, hx⟩ := w.2
+      ⟨i x, (congrArg (fun z ↦ i (e z)) (hri' x)).trans (congrArg i hx)⟩)
+    ((r ∘L Submodule.subtypeL _).codRestrict _ fun w ↦
+      let ⟨y, hy⟩ := w.2
+      ⟨r y, (hri' (e (r y))).symm.trans (congrArg r hy)⟩)
+    (fun w ↦ Subtype.ext (hri' w))
+    (fun w ↦ Subtype.ext <|
+      let ⟨y, hy⟩ := w.2
+      (congrArg (fun z ↦ i (r z)) hy.symm).trans <| (congrArg i (hri' (e (r y)))).trans hy)
+
+/-- `rangeRetractEquiv` acts by the inclusion `i`. -/
+theorem coe_rangeRetractEquiv_apply (e : M →L[R] M) (hri : r.comp i = .id R M) (w : e.range) :
+    (rangeRetractEquiv e hri w : N) = i w :=
+  (rfl)
+
+/-- The inverse of `rangeRetractEquiv` acts by the retraction `r`. -/
+theorem coe_rangeRetractEquiv_symm_apply (e : M →L[R] M) (hri : r.comp i = .id R M)
+    (w : (i ∘L e ∘L r).range) :
+    ((rangeRetractEquiv e hri).symm w : M) = r w :=
+  (rfl)
+
+/-- A continuous linear equivalence `e : M ≃L[R] N` restricts to a continuous linear equivalence
+between the range of `p : M →L[R] M` and the range of its conjugate `e ∘L p ∘L e.symm`. -/
+def rangeConjEquiv (p : M →L[R] M) (e : M ≃L[R] N) :
+    p.range ≃L[R] ((e : M →L[R] N) ∘L p ∘L (e.symm : N →L[R] M)).range :=
+  (e.submoduleMap p.range).trans <| ContinuousLinearEquiv.ofEq _ _ <| by
+    symm
+    rw [toLinearMap_comp, toLinearMap_comp, LinearMap.range_comp,
+      LinearMap.range_comp_of_range_eq_top]
+    · rfl
+    · exact LinearMap.range_eq_top.mpr e.symm.surjective
+
+/-- `rangeConjEquiv p e` acts by `e`. -/
+theorem coe_rangeConjEquiv_apply (p : M →L[R] M) (e : M ≃L[R] N) (w : p.range) :
+    (p.rangeConjEquiv e w : N) = e w :=
+  (rfl)
+
+/-- `(rangeConjEquiv p e).symm` acts by `e.symm`. -/
+theorem coe_rangeConjEquiv_symm_apply (p : M →L[R] M) (e : M ≃L[R] N)
+    (w : ((e : M →L[R] N) ∘L p ∘L (e.symm : N →L[R] M)).range) :
+    ((p.rangeConjEquiv e).symm w : M) = e.symm w :=
+  (rfl)
 
 end Retract
 

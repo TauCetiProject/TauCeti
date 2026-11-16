@@ -42,9 +42,9 @@ operator homotopy through relatively compact perturbations, by a normalized Fred
    `(x, y) ↦ (-y, x)` and therefore has trace zero.
 3. **Full normalization (`normalize`).** Composing `sinContraction` with `double` normalizes an
    arbitrary Fredholm module in either parity.
-4. **Forced unitization (`unitize`).** Once `F² = 1`, the defect `F² - 1` vanishes identically on
-   `H`, so `Unitization.starLift` extends `π` to a unital `*`-algebra homomorphism on
-   `Unitization ℂ A` without assuming `A` is unital.
+4. **Forced unitization (`unitize`).** Whenever the defect `F² - 1` is compact on `H` (in
+   particular when `M` is normalized so `F² - 1 = 0`), `Unitization.starLift` extends `π` to a
+   unital `*`-algebra homomorphism on `Unitization ℂ A` without assuming `A` is unital.
 
 ## Main definitions
 
@@ -57,8 +57,8 @@ operator homotopy through relatively compact perturbations, by a normalized Fred
 * `TauCeti.FredholmModule.double`, `TauCeti.FredholmModule.doubleHomotopy`,
   `TauCeti.FredholmModule.normalize`: operator doubling of a contraction and two-step normalization
   of an arbitrary Fredholm module (odd and even).
-* `TauCeti.FredholmModule.unitize`, `TauCeti.EvenFredholmModule.unitize`: extension of a normalized
-  Fredholm module over a non-unital `*`-algebra `A` to `Unitization ℂ A`.
+* `TauCeti.FredholmModule.unitize`, `TauCeti.EvenFredholmModule.unitize`: extension of a Fredholm
+  module with compact defect `F² - 1` over a non-unital `*`-algebra `A` to `Unitization ℂ A`.
 
 ## References
 
@@ -120,11 +120,6 @@ theorem odd_sin_pi_div_two_mul : Function.Odd (fun x : ℝ ↦ Real.sin (Real.pi
   dsimp
   rw [mul_neg, Real.sin_neg]
 
-private theorem isSelfAdjoint_ofReal_smul {H : Type*} [NormedAddCommGroup H]
-    [InnerProductSpace ℂ H] [CompleteSpace H] {K : H →L[ℂ] H} (hK : IsSelfAdjoint K) (t : ℝ) :
-    IsSelfAdjoint ((t : ℂ) • K) := by
-  rw [IsSelfAdjoint, star_smul, hK.star_eq, Complex.star_def, Complex.conj_ofReal]
-
 /-! ### Predicates, zero modules, and orthogonal direct sums -/
 
 section BasicConstructions
@@ -140,6 +135,12 @@ namespace FredholmModule
 /-- A Fredholm module is **normalized** (or involutive) when `F² = 1`. -/
 def IsNormalized (M : FredholmModule A H) : Prop :=
   M.operator * M.operator = 1
+
+/-- Characterization of normalized Fredholm modules by `F² = 1` (not `@[simp]`, so conditional
+`@[simp]` lemmas taking `hM : M.IsNormalized` remain in `simp` normal form). -/
+theorem isNormalized_iff {M : FredholmModule A H} :
+    M.IsNormalized ↔ M.operator * M.operator = 1 :=
+  (Iff.rfl)
 
 /-- A Fredholm module is **degenerate** when `[F, π(a)] = 0` and `(F² - 1) π(a) = 0` for every
 `a : A`. -/
@@ -162,6 +163,11 @@ theorem IsDegenerate.rep_mul_mul_self_sub_one_eq_zero {M : FredholmModule A H}
 theorem IsNormalized.operator_mul_operator {M : FredholmModule A H} (hM : M.IsNormalized) :
     M.operator * M.operator = 1 :=
   hM
+
+theorem IsNormalized.isCompactOperator_mul_self_sub_one {M : FredholmModule A H}
+    (hM : M.IsNormalized) : IsCompactOperator ⇑(M.operator * M.operator - 1) := by
+  rw [hM.operator_mul_operator, sub_self]
+  exact isCompactOperator_zero
 
 theorem IsNormalized.conj {M : FredholmModule A H} (hM : M.IsNormalized) (U : H ≃ₗᵢ[ℂ] H₁) :
     (M.conj U).IsNormalized := by
@@ -291,6 +297,10 @@ variable (M : FredholmModule A H)
 def sinPerturbation : H →L[ℂ] H :=
   cfc (fun x : ℝ ↦ Real.sin (Real.pi / 2 * x)) M.operator - M.operator
 
+theorem sinPerturbation_def :
+    M.sinPerturbation = cfc (fun x : ℝ ↦ Real.sin (Real.pi / 2 * x)) M.operator - M.operator :=
+  (rfl)
+
 theorem isSelfAdjoint_sinPerturbation : IsSelfAdjoint M.sinPerturbation :=
   (cfc_predicate (fun x : ℝ ↦ Real.sin (Real.pi / 2 * x)) M.operator).sub M.isSelfAdjoint_operator
 
@@ -333,7 +343,7 @@ theorem isCompactOperator_sinPerturbation_mul_rep (a : A) :
 `M.sinContraction` at `t = 1` through relatively compact self-adjoint perturbations. -/
 def sinContractionHomotopy (t : ℝ) : FredholmModule A H :=
   M.perturb ((t : ℂ) • M.sinPerturbation)
-    (isSelfAdjoint_ofReal_smul M.isSelfAdjoint_sinPerturbation t)
+    (IsSelfAdjoint.smul (Complex.conj_ofReal t) M.isSelfAdjoint_sinPerturbation)
     fun a ↦ by
       rw [smul_mul_assoc, FunLike.coe_smul]
       exact (M.isCompactOperator_sinPerturbation_mul_rep a).smul (t : ℂ)
@@ -371,15 +381,18 @@ theorem sinContractionHomotopy_zero : M.sinContractionHomotopy 0 = M := by
 theorem sinContractionHomotopy_one : M.sinContractionHomotopy 1 = M.sinContraction := by
   ext1 <;> simp [sinPerturbation]
 
+/-- The linear operator homotopy `t ↦ (M.sinContractionHomotopy t).operator` is norm-continuous. -/
 theorem continuous_sinContractionHomotopy_operator :
     Continuous fun t : ℝ ↦ (M.sinContractionHomotopy t).operator := by
   simp only [sinContractionHomotopy_operator]
   fun_prop
 
+/-- The spectral contraction `sin(π F / 2)` has operator norm at most `1`. -/
 theorem norm_sinContraction_operator_le_one : ‖M.sinContraction.operator‖ ≤ 1 := by
   rw [sinContraction_operator]
   exact norm_cfc_le zero_le_one fun x _ ↦ by simpa using Real.abs_sin_le_one (Real.pi / 2 * x)
 
+/-- The spectral contraction `S = sin(π F / 2)` satisfies `0 ≤ 1 - S²`. -/
 theorem sub_sinContraction_operator_mul_self_nonneg :
     0 ≤ 1 - M.sinContraction.operator * M.sinContraction.operator := by
   have hF_sa : IsSelfAdjoint M.operator := M.isSelfAdjoint_operator
@@ -396,6 +409,7 @@ theorem sub_sinContraction_operator_mul_self_nonneg :
   rw [h1]
   exact cfc_nonneg fun x _ ↦ sub_nonneg.mpr (by simpa [sq] using Real.sin_sq_le_one _)
 
+/-- Spectral contraction fixes every already-normalized Fredholm module. -/
 theorem sinContraction_eq_self_of_isNormalized (hM : M.IsNormalized) :
     M.sinContraction = M := by
   have hK : M.sinPerturbation = 0 := by
@@ -448,8 +462,8 @@ def doubleHomotopy (hF : 0 ≤ 1 - M.operator * M.operator) (t : ℝ) :
     FredholmModule A (WithLp 2 (H × H)) :=
   (M.prod (zeroRep A (-M.operator) M.isSelfAdjoint_operator.neg)).perturb
     ((t : ℂ) • (CFC.sqrt (1 - M.operator * M.operator)).hermitianDilation)
-    (isSelfAdjoint_ofReal_smul
-      (CFC.sqrt (1 - M.operator * M.operator)).isSelfAdjoint_hermitianDilation t)
+    (IsSelfAdjoint.smul (Complex.conj_ofReal t)
+      (CFC.sqrt (1 - M.operator * M.operator)).isSelfAdjoint_hermitianDilation)
     fun a ↦ by
       rw [prod_rep_apply, zeroRep_rep_apply, smul_mul_assoc, FunLike.coe_smul]
       exact ((ContinuousLinearMap.isCompactOperator_hermitianDilation_comp_withLpProdMap_zero_right
@@ -507,6 +521,7 @@ theorem doubleHomotopy_one (hF : 0 ≤ 1 - M.operator * M.operator) :
     simp
   · simp
 
+/-- The doubling operator homotopy `t ↦ (M.doubleHomotopy hF t).operator` is norm-continuous. -/
 theorem continuous_doubleHomotopy_operator (hF : 0 ≤ 1 - M.operator * M.operator) :
     Continuous fun t : ℝ ↦ (M.doubleHomotopy hF t).operator := by
   simp only [doubleHomotopy_operator]
@@ -543,8 +558,10 @@ theorem isNormalized_double (hF : 0 ≤ 1 - M.operator * M.operator) :
         rw [← ContinuousLinearMap.withLpProdMap_add, add_sub_cancel,
           ContinuousLinearMap.withLpProdMap_one]
 
-/-- The doubled operator on `WithLp 2 (H × H)` has trace zero because it anticommutes with the
-symplectic rotation `(x, y) ↦ (-y, x)`. -/
+/-- The doubled operator on `WithLp 2 (H × H)` has `LinearMap.trace` equal to zero because it
+anticommutes with the symplectic rotation `(x, y) ↦ (-y, x)`. Note that `LinearMap.trace` vanishes
+by definition on infinite-dimensional spaces, so this identity is non-vacuous only when `H` is
+finite-dimensional. -/
 theorem trace_double_operator_eq_zero (hF : 0 ≤ 1 - M.operator * M.operator) :
     LinearMap.trace ℂ (WithLp 2 (H × H)) (M.double hF).operator.toLinearMap = 0 := by
   let J : WithLp 2 (H × H) →L[ℂ] WithLp 2 (H × H) :=
@@ -597,6 +614,7 @@ theorem normalize_rep_apply (a : A) :
     M.normalize.rep a = (M.rep a).withLpProdMap 2 0 := by
   simp [normalize]
 
+/-- Two-step normalization produces a normalized (`F² = 1`) odd Fredholm module. -/
 theorem isNormalized_normalize : M.normalize.IsNormalized :=
   M.sinContraction.isNormalized_double M.sub_sinContraction_operator_mul_self_nonneg
 
@@ -606,97 +624,67 @@ end Double
 
 section ScalarHalfCheck
 
-/-- The constant scalar contraction `(2⁻¹ : ℂ) • 1` on `H` is self-adjoint. -/
-theorem isSelfAdjoint_half_smul_one : IsSelfAdjoint ((2⁻¹ : ℂ) • (1 : H →L[ℂ] H)) := by
-  simpa using isSelfAdjoint_ofReal_smul (IsSelfAdjoint.one (R := H →L[ℂ] H)) (2⁻¹ : ℝ)
+private theorem isSelfAdjoint_half_smul_one : IsSelfAdjoint ((2⁻¹ : ℂ) • (1 : H →L[ℂ] H)) := by
+  simpa using IsSelfAdjoint.smul (Complex.conj_ofReal (2⁻¹ : ℝ))
+    (IsSelfAdjoint.one (R := H →L[ℂ] H))
 
-/-- For `F = (2⁻¹ : ℂ) • 1` on `H`, `0 ≤ 1 - F * F` with square root `((√3 / 2 : ℝ) : ℂ) • 1`. -/
-theorem one_sub_half_smul_one_mul_self_nonneg :
-    0 ≤ (1 : H →L[ℂ] H) - ((2⁻¹ : ℂ) • (1 : H →L[ℂ] H)) * ((2⁻¹ : ℂ) • 1) := by
-  let S : H →L[ℂ] H := ((Real.sqrt 3 / 2 : ℝ) : ℂ) • 1
-  have hS_sa : IsSelfAdjoint S :=
-    isSelfAdjoint_ofReal_smul (IsSelfAdjoint.one (R := H →L[ℂ] H)) (Real.sqrt 3 / 2)
+omit [CompleteSpace H] in
+private theorem one_sub_half_smul_one_mul_self_eq_mul_self :
+    (1 : H →L[ℂ] H) - ((2⁻¹ : ℂ) • (1 : H →L[ℂ] H)) * ((2⁻¹ : ℂ) • 1) =
+      (((Real.sqrt 3 / 2 : ℝ) : ℂ) • (1 : H →L[ℂ] H)) *
+        (((Real.sqrt 3 / 2 : ℝ) : ℂ) • (1 : H →L[ℂ] H)) := by
   have hreal : (1 : ℝ) - 2⁻¹ * 2⁻¹ = Real.sqrt 3 / 2 * (Real.sqrt 3 / 2) := by
     have h3 : Real.sqrt 3 * Real.sqrt 3 = 3 := Real.mul_self_sqrt (by positivity)
     linarith
   have hnum : (1 : ℂ) - 2⁻¹ * 2⁻¹ = ((Real.sqrt 3 / 2 : ℝ) : ℂ) * ((Real.sqrt 3 / 2 : ℝ) : ℂ) := by
     simpa using congrArg Complex.ofReal hreal
-  have hsq :
-      (1 : H →L[ℂ] H) - ((2⁻¹ : ℂ) • (1 : H →L[ℂ] H)) * ((2⁻¹ : ℂ) • 1) = star S * S := by
-    rw [hS_sa.star_eq]
-    ext x
-    simp only [S, sub_apply, ContinuousLinearMap.mul_def, ContinuousLinearMap.comp_apply,
-      smul_apply, one_apply_eq_self, smul_smul]
-    conv_lhs =>
-      enter [1]
-      rw [← one_smul ℂ x]
-    rw [← sub_smul, hnum]
-  rw [hsq]
-  exact star_mul_self_nonneg S
-
-theorem sqrt_one_sub_half_smul_one_mul_self :
-    CFC.sqrt ((1 : H →L[ℂ] H) - ((2⁻¹ : ℂ) • (1 : H →L[ℂ] H)) * ((2⁻¹ : ℂ) • 1)) =
-      ((Real.sqrt 3 / 2 : ℝ) : ℂ) • (1 : H →L[ℂ] H) := by
-  let S : H →L[ℂ] H := ((Real.sqrt 3 / 2 : ℝ) : ℂ) • 1
-  have hS_nonneg : 0 ≤ S := by
-    let T : H →L[ℂ] H := ((Real.sqrt (Real.sqrt 3 / 2) : ℝ) : ℂ) • 1
-    have hT_sa : IsSelfAdjoint T :=
-      isSelfAdjoint_ofReal_smul (IsSelfAdjoint.one (R := H →L[ℂ] H))
-        (Real.sqrt (Real.sqrt 3 / 2))
-    have hpos : (0 : ℝ) ≤ Real.sqrt 3 / 2 := by positivity
-    have hT_num :
-        ((Real.sqrt (Real.sqrt 3 / 2) : ℝ) : ℂ) * ((Real.sqrt (Real.sqrt 3 / 2) : ℝ) : ℂ) =
-          ((Real.sqrt 3 / 2 : ℝ) : ℂ) := by
-      rw [← Complex.ofReal_mul, Real.mul_self_sqrt hpos]
-    have hTT : star T * T = S := by
-      rw [hT_sa.star_eq]
-      ext x
-      simp only [T, S, ContinuousLinearMap.mul_def, ContinuousLinearMap.comp_apply,
-        smul_apply, one_apply_eq_self, smul_smul, hT_num]
-    exact hTT ▸ star_mul_self_nonneg T
-  have hreal : Real.sqrt 3 / 2 * (Real.sqrt 3 / 2) = (1 : ℝ) - 2⁻¹ * 2⁻¹ := by
-    have h3 : Real.sqrt 3 * Real.sqrt 3 = 3 := Real.mul_self_sqrt (by positivity)
-    linarith
-  have hnum : ((Real.sqrt 3 / 2 : ℝ) : ℂ) * ((Real.sqrt 3 / 2 : ℝ) : ℂ) = (1 : ℂ) - 2⁻¹ * 2⁻¹ := by
-    simpa using congrArg Complex.ofReal hreal
-  refine CFC.sqrt_unique ?_ hS_nonneg
   ext x
   simp only [sub_apply, ContinuousLinearMap.mul_def, ContinuousLinearMap.comp_apply,
     smul_apply, one_apply_eq_self, smul_smul]
-  conv_rhs =>
+  conv_lhs =>
     enter [1]
     rw [← one_smul ℂ x]
   rw [← sub_smul, hnum]
 
+private theorem one_sub_half_smul_one_mul_self_nonneg :
+    0 ≤ (1 : H →L[ℂ] H) - ((2⁻¹ : ℂ) • (1 : H →L[ℂ] H)) * ((2⁻¹ : ℂ) • 1) := by
+  let S : H →L[ℂ] H := ((Real.sqrt 3 / 2 : ℝ) : ℂ) • 1
+  have hS_sa : IsSelfAdjoint S :=
+    IsSelfAdjoint.smul (Complex.conj_ofReal (Real.sqrt 3 / 2))
+      (IsSelfAdjoint.one (R := H →L[ℂ] H))
+  rw [one_sub_half_smul_one_mul_self_eq_mul_self]
+  simpa only [S, hS_sa.star_eq] using star_mul_self_nonneg S
+
+private theorem sqrt_one_sub_half_smul_one_mul_self :
+    CFC.sqrt ((1 : H →L[ℂ] H) - ((2⁻¹ : ℂ) • (1 : H →L[ℂ] H)) * ((2⁻¹ : ℂ) • 1)) =
+      ((Real.sqrt 3 / 2 : ℝ) : ℂ) • (1 : H →L[ℂ] H) := by
+  open scoped ComplexOrder in
+  have hS_nonneg : 0 ≤ ((Real.sqrt 3 / 2 : ℝ) : ℂ) • (1 : H →L[ℂ] H) :=
+    ContinuousLinearMap.nonneg_iff_isPositive.mpr <|
+      ContinuousLinearMap.isPositive_one.smul_of_nonneg (Complex.zero_le_real.mpr (by positivity))
+  exact CFC.sqrt_unique one_sub_half_smul_one_mul_self_eq_mul_self.symm hS_nonneg
+
 variable (A H) in
-/-- Degenerate Fredholm module on `H` with zero representation and constant scalar contraction
-`F = (2⁻¹ : ℂ) • 1`. -/
-def halfSmulZeroRep : FredholmModule A H :=
+private def halfSmulZeroRep : FredholmModule A H :=
   zeroRep A ((2⁻¹ : ℂ) • (1 : H →L[ℂ] H)) isSelfAdjoint_half_smul_one
 
-theorem sub_halfSmulZeroRep_operator_mul_self_nonneg :
+@[simp]
+private theorem halfSmulZeroRep_operator :
+    (halfSmulZeroRep A H).operator = (2⁻¹ : ℂ) • (1 : H →L[ℂ] H) :=
+  (rfl)
+
+private theorem sub_halfSmulZeroRep_operator_mul_self_nonneg :
     0 ≤ 1 - (halfSmulZeroRep A H).operator * (halfSmulZeroRep A H).operator :=
   one_sub_half_smul_one_mul_self_nonneg
 
 variable (A) in
-/-- Concrete check on the constant scalar contraction `F = (2⁻¹ : ℂ) • 1` on any Hilbert space `H`
-(in particular `H = ℂ`): doubling produces an involutive operator (`F_dbl² = 1`) on
-`WithLp 2 (H × H)` with off-diagonal entry `(√3 / 2) • 1` and trace zero. -/
-theorem double_halfSmulZeroRep_check :
-    ((halfSmulZeroRep A H).double sub_halfSmulZeroRep_operator_mul_self_nonneg).IsNormalized ∧
-      ((halfSmulZeroRep A H).double sub_halfSmulZeroRep_operator_mul_self_nonneg).operator =
-        ((2⁻¹ : ℂ) • (1 : H →L[ℂ] H)).withLpProdMap 2 (-((2⁻¹ : ℂ) • 1)) +
-          (((Real.sqrt 3 / 2 : ℝ) : ℂ) • (1 : H →L[ℂ] H)).hermitianDilation ∧
-      LinearMap.trace ℂ (WithLp 2 (H × H))
-        ((halfSmulZeroRep A H).double
-          sub_halfSmulZeroRep_operator_mul_self_nonneg).operator.toLinearMap = 0 := by
-  refine ⟨(halfSmulZeroRep A H).isNormalized_double sub_halfSmulZeroRep_operator_mul_self_nonneg,
-    ?_, (halfSmulZeroRep A H).trace_double_operator_eq_zero
-      sub_halfSmulZeroRep_operator_mul_self_nonneg⟩
-  rw [double_operator]
-  change ((2⁻¹ : ℂ) • (1 : H →L[ℂ] H)).withLpProdMap 2 (-((2⁻¹ : ℂ) • 1)) +
-      (CFC.sqrt (1 - ((2⁻¹ : ℂ) • (1 : H →L[ℂ] H)) * ((2⁻¹ : ℂ) • 1))).hermitianDilation = _
-  rw [sqrt_one_sub_half_smul_one_mul_self]
+/-- Doubling the constant scalar contraction `F = (2⁻¹ : ℂ) • 1` yields the explicit involutive
+operator `((2⁻¹ : ℂ) • 1 ⊕ -((2⁻¹ : ℂ) • 1)) + [[0, (√3 / 2) • 1], [(√3 / 2) • 1, 0]]`. -/
+private theorem double_halfSmulZeroRep_operator :
+    ((halfSmulZeroRep A H).double sub_halfSmulZeroRep_operator_mul_self_nonneg).operator =
+      ((2⁻¹ : ℂ) • (1 : H →L[ℂ] H)).withLpProdMap 2 (-((2⁻¹ : ℂ) • 1)) +
+        (((Real.sqrt 3 / 2 : ℝ) : ℂ) • (1 : H →L[ℂ] H)).hermitianDilation := by
+  rw [double_operator, halfSmulZeroRep_operator, sqrt_one_sub_half_smul_one_mul_self]
 
 end ScalarHalfCheck
 
@@ -709,6 +697,10 @@ namespace EvenFredholmModule
 /-- An even Fredholm module is **normalized** when its underlying operator satisfies `F² = 1`. -/
 abbrev IsNormalized (M : EvenFredholmModule A H) : Prop :=
   M.toFredholmModule.IsNormalized
+
+theorem isNormalized_iff {M : EvenFredholmModule A H} :
+    M.IsNormalized ↔ M.operator * M.operator = 1 :=
+  (Iff.rfl)
 
 /-- An even Fredholm module is **degenerate** when `[F, π(a)] = 0` and `(F² - 1) π(a) = 0` for
 every `a : A`. -/
@@ -797,6 +789,26 @@ theorem flipGrading_grading : M.flipGrading.grading = -M.grading :=
 theorem flipGrading_flipGrading : M.flipGrading.flipGrading = M := by
   ext1 <;> simp
 
+/-- Degenerate even Fredholm module `(H, 0, -F, -γ)` used as the zero-representation summand in
+`EvenFredholmModule.double` and `EvenFredholmModule.doubleHomotopy`. -/
+def negZeroRep : EvenFredholmModule A H :=
+  zeroRep A (-M.operator) (-M.grading) M.isSelfAdjoint_operator.neg M.isSelfAdjoint_grading.neg
+    (by rw [neg_mul_neg, M.grading_mul_grading])
+    (by rw [neg_mul_neg, mul_neg, neg_mul, neg_neg, M.grading_mul_operator])
+
+@[simp]
+theorem negZeroRep_toFredholmModule :
+    M.negZeroRep.toFredholmModule =
+      FredholmModule.zeroRep A (-M.operator) M.isSelfAdjoint_operator.neg :=
+  (rfl)
+
+@[simp]
+theorem negZeroRep_grading : M.negZeroRep.grading = -M.grading :=
+  (rfl)
+
+theorem isDegenerate_negZeroRep : M.negZeroRep.IsDegenerate :=
+  FredholmModule.isDegenerate_zeroRep (-M.operator) M.isSelfAdjoint_operator.neg
+
 theorem grading_mul_sinPerturbation :
     M.grading * M.toFredholmModule.sinPerturbation =
       -(M.toFredholmModule.sinPerturbation * M.grading) := by
@@ -811,7 +823,7 @@ theorem grading_mul_sinPerturbation :
 `M.sinContraction` at `t = 1`. -/
 def sinContractionHomotopy (t : ℝ) : EvenFredholmModule A H :=
   M.perturb ((t : ℂ) • M.toFredholmModule.sinPerturbation)
-    (isSelfAdjoint_ofReal_smul M.toFredholmModule.isSelfAdjoint_sinPerturbation t)
+    (IsSelfAdjoint.smul (Complex.conj_ofReal t) M.toFredholmModule.isSelfAdjoint_sinPerturbation)
     (fun a ↦ by
       rw [smul_mul_assoc, FunLike.coe_smul]
       exact (M.toFredholmModule.isCompactOperator_sinPerturbation_mul_rep a).smul (t : ℂ))
@@ -865,23 +877,21 @@ theorem commute_grading_sqrt_one_sub :
             rw [← neg_eq_iff_eq_neg.mpr M.grading_mul_operator, neg_mul, neg_neg, mul_assoc]
   exact (hsq.cfcₙ_nnreal NNReal.sqrt).symm
 
-/-- **Linear operator homotopy** of even Fredholm modules connecting
-`M.prod (zeroRep A (-F) (-γ) ...)` at `t = 0` to `M.double hF` at `t = 1`. -/
+/-- **Linear operator homotopy** of even Fredholm modules connecting `M.prod M.negZeroRep` at
+`t = 0` to `M.double hF` at `t = 1`. -/
 def doubleHomotopy (hF : 0 ≤ 1 - M.operator * M.operator) (t : ℝ) :
     EvenFredholmModule A (WithLp 2 (H × H)) :=
-  (M.prod (zeroRep A (-M.operator) (-M.grading) M.isSelfAdjoint_operator.neg
-    M.isSelfAdjoint_grading.neg (by rw [neg_mul_neg, M.grading_mul_grading])
-    (by rw [neg_mul_neg, mul_neg, neg_mul, neg_neg, M.grading_mul_operator]))).perturb
+  (M.prod M.negZeroRep).perturb
     ((t : ℂ) • (CFC.sqrt (1 - M.operator * M.operator)).hermitianDilation)
-    (isSelfAdjoint_ofReal_smul
-      (CFC.sqrt (1 - M.operator * M.operator)).isSelfAdjoint_hermitianDilation t)
+    (IsSelfAdjoint.smul (Complex.conj_ofReal t)
+      (CFC.sqrt (1 - M.operator * M.operator)).isSelfAdjoint_hermitianDilation)
     (fun a ↦ by
-      rw [prod_toFredholmModule, FredholmModule.prod_rep_apply, zeroRep_toFredholmModule,
+      rw [prod_toFredholmModule, FredholmModule.prod_rep_apply, negZeroRep_toFredholmModule,
         FredholmModule.zeroRep_rep_apply, smul_mul_assoc, FunLike.coe_smul]
       exact ((ContinuousLinearMap.isCompactOperator_hermitianDilation_comp_withLpProdMap_zero_right
         _ _).mpr (M.toFredholmModule.isCompactOperator_sqrt_one_sub_mul_rep hF a)).smul (t : ℂ))
     (by
-      rw [prod_grading, zeroRep_grading, mul_smul_comm, smul_mul_assoc,
+      rw [prod_grading, negZeroRep_grading, mul_smul_comm, smul_mul_assoc,
         ContinuousLinearMap.withLpProdMap_neg_mul_hermitianDilation_eq_neg
           (CFC.sqrt_nonneg _).isSelfAdjoint M.commute_grading_sqrt_one_sub,
         smul_neg])
@@ -890,18 +900,16 @@ def doubleHomotopy (hF : 0 ≤ 1 - M.operator * M.operator) (t : ℝ) :
 `γ ⊕ (-γ)`, which commutes with `π ⊕ 0` and anticommutes with `[[0, √(1 - F²)], [√(1 - F²), 0]]`. -/
 def double (hF : 0 ≤ 1 - M.operator * M.operator) :
     EvenFredholmModule A (WithLp 2 (H × H)) :=
-  (M.prod (zeroRep A (-M.operator) (-M.grading) M.isSelfAdjoint_operator.neg
-    M.isSelfAdjoint_grading.neg (by rw [neg_mul_neg, M.grading_mul_grading])
-    (by rw [neg_mul_neg, mul_neg, neg_mul, neg_neg, M.grading_mul_operator]))).perturb
+  (M.prod M.negZeroRep).perturb
     (CFC.sqrt (1 - M.operator * M.operator)).hermitianDilation
     (CFC.sqrt (1 - M.operator * M.operator)).isSelfAdjoint_hermitianDilation
     (fun a ↦ by
-      rw [prod_toFredholmModule, FredholmModule.prod_rep_apply, zeroRep_toFredholmModule,
+      rw [prod_toFredholmModule, FredholmModule.prod_rep_apply, negZeroRep_toFredholmModule,
         FredholmModule.zeroRep_rep_apply]
       exact (ContinuousLinearMap.isCompactOperator_hermitianDilation_comp_withLpProdMap_zero_right
         _ _).mpr (M.toFredholmModule.isCompactOperator_sqrt_one_sub_mul_rep hF a))
     (by
-      rw [prod_grading, zeroRep_grading]
+      rw [prod_grading, negZeroRep_grading]
       exact ContinuousLinearMap.withLpProdMap_neg_mul_hermitianDilation_eq_neg
         (CFC.sqrt_nonneg _).isSelfAdjoint M.commute_grading_sqrt_one_sub)
 
@@ -927,10 +935,7 @@ theorem doubleHomotopy_grading (hF : 0 ≤ 1 - M.operator * M.operator) (t : ℝ
 
 @[simp]
 theorem doubleHomotopy_zero (hF : 0 ≤ 1 - M.operator * M.operator) :
-    M.doubleHomotopy hF 0 =
-      M.prod (zeroRep A (-M.operator) (-M.grading) M.isSelfAdjoint_operator.neg
-        M.isSelfAdjoint_grading.neg (by rw [neg_mul_neg, M.grading_mul_grading])
-        (by rw [neg_mul_neg, mul_neg, neg_mul, neg_neg, M.grading_mul_operator])) := by
+    M.doubleHomotopy hF 0 = M.prod M.negZeroRep := by
   ext1 <;> simp
 
 @[simp]
@@ -938,6 +943,7 @@ theorem doubleHomotopy_one (hF : 0 ≤ 1 - M.operator * M.operator) :
     M.doubleHomotopy hF 1 = M.double hF := by
   ext1 <;> simp
 
+/-- Contraction doubling produces a normalized (`F² = 1`) even Fredholm module. -/
 theorem isNormalized_double (hF : 0 ≤ 1 - M.operator * M.operator) :
     (M.double hF).IsNormalized := by
   rw [IsNormalized, double_toFredholmModule]
@@ -964,6 +970,7 @@ theorem normalize_grading :
     M.normalize.grading = M.grading.withLpProdMap 2 (-M.grading) := by
   simp [normalize]
 
+/-- Two-step normalization produces a normalized (`F² = 1`) even Fredholm module. -/
 theorem isNormalized_normalize : M.normalize.IsNormalized := by
   rw [IsNormalized, normalize_toFredholmModule]
   exact M.toFredholmModule.isNormalized_normalize
@@ -974,7 +981,7 @@ end EvenFredholmModule
 
 end BasicConstructions
 
-/-! ### Forced unitization of normalized Fredholm modules -/
+/-! ### Forced unitization of Fredholm modules with compact defect -/
 
 section Unitization
 
@@ -982,27 +989,28 @@ variable {A : Type*} [NonUnitalSemiring A] [StarRing A] [Module ℂ A]
   [IsScalarTower ℂ A A] [SMulCommClass ℂ A A]
 variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
 
+private theorem starLift_inr (π : A →⋆ₙₐ[ℂ] H →L[ℂ] H) (a : A) :
+    Unitization.starLift π (Unitization.inr a) = π a :=
+  DFunLike.congr_fun (Unitization.starLift.symm_apply_apply π) a
+
 private theorem starLift_rep_inl_add_inr (π : A →⋆ₙₐ[ℂ] H →L[ℂ] H) (c : ℂ) (a : A) :
     Unitization.starLift π (Unitization.inl c + Unitization.inr a) = c • 1 + π a := by
-  have hinr : Unitization.starLift π (Unitization.inr a) = π a :=
-    DFunLike.congr_fun (Unitization.starLift.symm_apply_apply π) a
   have hinl : Unitization.starLift π (Unitization.inl c) = c • 1 := by
     rw [← Unitization.algebraMap_eq_inl, AlgHomClass.commutes, Algebra.algebraMap_eq_smul_one]
-  rw [map_add, hinl, hinr]
+  rw [map_add, hinl, starLift_inr]
 
 namespace FredholmModule
 
-/-- **Forced unitization.** A normalized (`F² = 1`) Fredholm module over a non-unital `*`-algebra
-`A` extends canonically to a unital Fredholm module over `Unitization ℂ A` via
-`Unitization.starLift M.rep`, sending `(c, a) ↦ c • 1 + π(a)`. -/
-def unitize (M : FredholmModule A H) (hM : M.IsNormalized) :
+/-- **Forced unitization.** A Fredholm module over a non-unital `*`-algebra `A` whose defect
+`F² - 1` is compact (in particular any normalized module) extends canonically to a unital Fredholm
+module over `Unitization ℂ A` via `Unitization.starLift M.rep`, sending `(c, a) ↦ c • 1 + π(a)`. -/
+def unitize (M : FredholmModule A H) (hK : IsCompactOperator ⇑(M.operator * M.operator - 1)) :
     FredholmModule (Unitization ℂ A) H where
   rep := (Unitization.starLift M.rep).toNonUnitalStarAlgHom
   operator := M.operator
   isSelfAdjoint_operator := M.isSelfAdjoint_operator
   isCompactOperator_commutator x := by
-    change IsCompactOperator
-      ⇑(M.operator * Unitization.starLift M.rep x - Unitization.starLift M.rep x * M.operator)
+    rw [StarAlgHom.coe_toNonUnitalStarAlgHom]
     induction x with
     | inl_add_inr c a =>
       have hcomm :
@@ -1013,49 +1021,55 @@ def unitize (M : FredholmModule A H) (hM : M.IsNormalized) :
           one_mul, add_sub_add_left_eq_sub]
       rw [hcomm]
       exact M.isCompactOperator_commutator a
-  isCompactOperator_mul_self_sub_one_mul _ := by
-    rw [hM.operator_mul_operator, sub_self, zero_mul]
-    exact isCompactOperator_zero
+  isCompactOperator_mul_self_sub_one_mul x :=
+    hK.comp_clm ((Unitization.starLift M.rep).toNonUnitalStarAlgHom x)
 
 @[simp]
-theorem unitize_operator (M : FredholmModule A H) (hM : M.IsNormalized) :
-    (M.unitize hM).operator = M.operator :=
+theorem unitize_operator (M : FredholmModule A H)
+    (hK : IsCompactOperator ⇑(M.operator * M.operator - 1)) :
+    (M.unitize hK).operator = M.operator :=
   (rfl)
 
 @[simp]
-theorem unitize_rep_one (M : FredholmModule A H) (hM : M.IsNormalized) :
-    (M.unitize hM).rep 1 = 1 :=
+theorem unitize_rep_apply (M : FredholmModule A H)
+    (hK : IsCompactOperator ⇑(M.operator * M.operator - 1)) (x : Unitization ℂ A) :
+    (M.unitize hK).rep x = Unitization.starLift M.rep x :=
+  (rfl)
+
+theorem unitize_rep_one (M : FredholmModule A H)
+    (hK : IsCompactOperator ⇑(M.operator * M.operator - 1)) :
+    (M.unitize hK).rep 1 = 1 :=
   (Unitization.starLift M.rep).map_one
 
-@[simp]
-theorem unitize_rep_inr (M : FredholmModule A H) (hM : M.IsNormalized) (a : A) :
-    (M.unitize hM).rep (Unitization.inr a) = M.rep a :=
-  DFunLike.congr_fun (Unitization.starLift.symm_apply_apply M.rep) a
+theorem unitize_rep_inr (M : FredholmModule A H)
+    (hK : IsCompactOperator ⇑(M.operator * M.operator - 1)) (a : A) :
+    (M.unitize hK).rep (Unitization.inr a) = M.rep a :=
+  starLift_inr M.rep a
 
-@[simp]
-theorem unitize_rep_algebraMap (M : FredholmModule A H) (hM : M.IsNormalized) (c : ℂ) :
-    (M.unitize hM).rep (algebraMap ℂ (Unitization ℂ A) c) = c • 1 := by
-  change Unitization.starLift M.rep (algebraMap ℂ (Unitization ℂ A) c) = c • 1
-  rw [AlgHomClass.commutes, Algebra.algebraMap_eq_smul_one]
+theorem unitize_rep_algebraMap (M : FredholmModule A H)
+    (hK : IsCompactOperator ⇑(M.operator * M.operator - 1)) (c : ℂ) :
+    (M.unitize hK).rep (algebraMap ℂ (Unitization ℂ A) c) = c • 1 := by
+  rw [unitize_rep_apply, AlgHomClass.commutes, Algebra.algebraMap_eq_smul_one]
 
+/-- Forced unitization preserves normalization (`F² = 1`). -/
 theorem isNormalized_unitize (M : FredholmModule A H) (hM : M.IsNormalized) :
-    (M.unitize hM).IsNormalized :=
+    (M.unitize hM.isCompactOperator_mul_self_sub_one).IsNormalized :=
   hM
 
 end FredholmModule
 
 namespace EvenFredholmModule
 
-/-- **Forced unitization**, even version: extends a normalized even Fredholm module over `A` to
-`Unitization ℂ A`, preserving `F` and `γ`. -/
-def unitize (M : EvenFredholmModule A H) (hM : M.IsNormalized) :
+/-- **Forced unitization**, even version: extends an even Fredholm module over `A` with compact
+defect `F² - 1` to `Unitization ℂ A`, preserving `F` and `γ`. -/
+def unitize (M : EvenFredholmModule A H) (hK : IsCompactOperator ⇑(M.operator * M.operator - 1)) :
     EvenFredholmModule (Unitization ℂ A) H where
-  toFredholmModule := M.toFredholmModule.unitize hM
+  toFredholmModule := M.toFredholmModule.unitize hK
   grading := M.grading
   isSelfAdjoint_grading := M.isSelfAdjoint_grading
   grading_mul_grading := M.grading_mul_grading
   commute_grading_rep x := by
-    change Commute M.grading (Unitization.starLift M.rep x)
+    rw [FredholmModule.unitize_rep_apply]
     induction x with
     | inl_add_inr c a =>
       rw [starLift_rep_inl_add_inr]
@@ -1063,17 +1077,20 @@ def unitize (M : EvenFredholmModule A H) (hM : M.IsNormalized) :
   grading_mul_operator := M.grading_mul_operator
 
 @[simp]
-theorem unitize_toFredholmModule (M : EvenFredholmModule A H) (hM : M.IsNormalized) :
-    (M.unitize hM).toFredholmModule = M.toFredholmModule.unitize hM :=
+theorem unitize_toFredholmModule (M : EvenFredholmModule A H)
+    (hK : IsCompactOperator ⇑(M.operator * M.operator - 1)) :
+    (M.unitize hK).toFredholmModule = M.toFredholmModule.unitize hK :=
   (rfl)
 
 @[simp]
-theorem unitize_grading (M : EvenFredholmModule A H) (hM : M.IsNormalized) :
-    (M.unitize hM).grading = M.grading :=
+theorem unitize_grading (M : EvenFredholmModule A H)
+    (hK : IsCompactOperator ⇑(M.operator * M.operator - 1)) :
+    (M.unitize hK).grading = M.grading :=
   (rfl)
 
+/-- Forced unitization preserves normalization (`F² = 1`) for even Fredholm modules. -/
 theorem isNormalized_unitize (M : EvenFredholmModule A H) (hM : M.IsNormalized) :
-    (M.unitize hM).IsNormalized :=
+    (M.unitize hM.isCompactOperator_mul_self_sub_one).IsNormalized :=
   hM
 
 end EvenFredholmModule

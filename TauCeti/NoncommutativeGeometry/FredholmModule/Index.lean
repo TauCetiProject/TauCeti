@@ -7,13 +7,12 @@ module
 
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import TauCeti.Analysis.Fredholm.CompactPerturbation
+public import TauCeti.Analysis.Fredholm.Compression
 public import TauCeti.Analysis.Matrix.EuclideanLin
 public import TauCeti.NoncommutativeGeometry.FredholmModule.Normalization
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.NoncommRing
 import Mathlib.Topology.Algebra.Module.Complement
-import TauCeti.Analysis.Fredholm.Prod
-import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.IdempotentRange
 
 /-!
 # Analytic index pairings of Fredholm modules
@@ -28,7 +27,10 @@ Every even Fredholm module `(H, π, F, γ)` over a complex `*`-algebra `A` pairs
   with closed ranges `π(e) H₊` and `π(e) H₋` whenever `e² = e`. Compressing `F` gives
   `evenCompression M e : range P₊ →L[ℂ] range P₋` with parametrix
   `evenParametrix M e : range P₋ →L[ℂ] range P₊` modulo compact operators, because
-  `P₊ F P₋ F P₊ - P₊ = (π(e) ((F² - 1) π(e)) - π(e) F [F, π(e)] π(e)) γ₊`.
+  `P₊ F P₋ F P₊ - P₊ = (π(e) ((F² - 1) π(e)) - π(e) F [F, π(e)] π(e)) γ₊`. Equivalently,
+  `evenIndex M e` is the compression index of the off-diagonal block `gradePosToNeg : H₊ →L[ℂ] H₋`
+  between the restricted actions `repPos e` and `repNeg e`
+  (`evenIndex_eq_compressionIndex_gradePosToNeg`).
 * **Odd index pairing (`FredholmModule.oddIndex`).** Let `P = (1 + F) / 2`. For any `a ∈ A`, the
   Toeplitz-type operator `oddToeplitzElem M a = 1 + P π(a - 1) P` on `H` is well-defined without
   requiring `π` to be unital or `F² = 1`, and satisfies `oddToeplitzElem a * oddToeplitzElem b -
@@ -38,16 +40,19 @@ Every even Fredholm module `(H, π, F, γ)` over a complex `*`-algebra `A` pairs
   `oddToeplitz M u` with `oddCompression M u ⊕ id`, recovering the compressed Toeplitz operator
   `P (1 + π(u - 1)) P : range P → range P` (equal to `P π(u) P` whenever `π(1) = 1`).
 
-Both pairings vanish on degenerate modules, change sign under `flipGrading` (in the even case), add
-under orthogonal direct sums `prod`, and are invariant under unitary conjugation `conj`, relatively
-compact perturbations `perturb`, spectral contraction `sinContraction`, contraction doubling
-`double`, two-step normalization `normalize`, and forced unitization `unitize`.
+Both pairings vanish on degenerate modules, add under orthogonal direct sums `prod`, and are
+invariant under unitary conjugation `conj`, relatively compact perturbations `perturb`, spectral
+contraction `sinContraction`, contraction doubling `double`, and two-step normalization
+`normalize`. In addition, the even pairing changes sign under `flipGrading` and is invariant under
+forced unitization `unitize`.
 
 ## Main definitions
 
 * `TauCeti.EvenFredholmModule.gradingPos`, `TauCeti.EvenFredholmModule.gradingNeg`,
+  `TauCeti.EvenFredholmModule.gradePosToNeg`, `TauCeti.EvenFredholmModule.gradePosToNegEquiv`,
   `TauCeti.EvenFredholmModule.evenProjPos`, `TauCeti.EvenFredholmModule.evenProjNeg`:
-  grading projections and idempotent range projections of an even Fredholm module.
+  grading projections, off-diagonal operator block `H₊ →L[ℂ] H₋`, and idempotent range projections
+  of an even Fredholm module.
 * `TauCeti.EvenFredholmModule.evenCompression`, `TauCeti.EvenFredholmModule.evenParametrix`,
   `TauCeti.EvenFredholmModule.evenIndex`: Fredholm compression, parametrix, and integer index
   pairing with idempotents `e ∈ A`.
@@ -71,116 +76,6 @@ noncomputable section
 
 namespace TauCeti
 
-/-! ### Auxiliary index invariance for operator compressions between projection ranges -/
-
-section CompressionHelpers
-
-variable {H H' H₁ H₂ : Type*}
-variable [NormedAddCommGroup H] [NormedSpace ℂ H]
-variable [NormedAddCommGroup H'] [NormedSpace ℂ H']
-variable [NormedAddCommGroup H₁] [NormedSpace ℂ H₁]
-variable [NormedAddCommGroup H₂] [NormedSpace ℂ H₂]
-
-private def compressionIndex (p q F : H →L[ℂ] H) : ℤ :=
-  (q.rangeRestrict ∘L F ∘L p.range.subtypeL).index
-
-private def rangeConjEquiv (e : H ≃L[ℂ] H') (p : H →L[ℂ] H) :
-    p.range ≃L[ℂ] ((e : H →L[ℂ] H') ∘L p ∘L (e.symm : H' →L[ℂ] H)).range :=
-  .equivOfInverse
-    (((e : H →L[ℂ] H') ∘L p.range.subtypeL).codRestrict _ fun w ↦ by
-      obtain ⟨u, hu⟩ := w.2
-      exact ⟨e u, by simp [← hu]⟩)
-    (((e.symm : H' →L[ℂ] H) ∘L Submodule.subtypeL _).codRestrict _ fun w ↦ by
-      obtain ⟨u, hu⟩ := w.2
-      refine ⟨e.symm u, ?_⟩
-      have hu' : e (p (e.symm u)) = w := hu
-      change p (e.symm u) = e.symm w
-      exact (e.symm_apply_apply (p (e.symm u))).symm.trans (congrArg e.symm hu'))
-    (fun w ↦ Subtype.ext (e.symm_apply_apply w))
-    (fun w ↦ Subtype.ext (e.apply_symm_apply w))
-
-private theorem compressionIndex_conj (e : H ≃L[ℂ] H') (p q F : H →L[ℂ] H) :
-    compressionIndex ((e : H →L[ℂ] H') ∘L p ∘L (e.symm : H' →L[ℂ] H))
-      ((e : H →L[ℂ] H') ∘L q ∘L (e.symm : H' →L[ℂ] H))
-      ((e : H →L[ℂ] H') ∘L F ∘L (e.symm : H' →L[ℂ] H)) = compressionIndex p q F := by
-  let p' := (e : H →L[ℂ] H') ∘L p ∘L (e.symm : H' →L[ℂ] H)
-  let q' := (e : H →L[ℂ] H') ∘L q ∘L (e.symm : H' →L[ℂ] H)
-  let F' := (e : H →L[ℂ] H') ∘L F ∘L (e.symm : H' →L[ℂ] H)
-  let ep := rangeConjEquiv e p
-  let eq_ := rangeConjEquiv e q
-  let T := q.rangeRestrict ∘L F ∘L p.range.subtypeL
-  let T' := q'.rangeRestrict ∘L F' ∘L p'.range.subtypeL
-  have intertwine : T'.comp (ep : p.range →L[ℂ] p'.range) =
-      (eq_ : q.range →L[ℂ] q'.range).comp T := by
-    ext w
-    change e (q (e.symm (e (F (e.symm (e w)))))) = e (q (F w))
-    simp
-  calc
-    T'.index = (T'.comp (ep : p.range →L[ℂ] p'.range)).index := (T'.index_comp_equiv ep).symm
-    _ = ((eq_ : q.range →L[ℂ] q'.range).comp T).index := by rw [intertwine]
-    _ = T.index := T.index_equiv_comp eq_
-
-private def rangeWithLpProdMapEquiv (p₁ : H₁ →L[ℂ] H₁) (p₂ : H₂ →L[ℂ] H₂) :
-    (p₁.range × p₂.range) ≃L[ℂ] (p₁.withLpProdMap 2 p₂).range :=
-  let eLp := (WithLp.prodContinuousLinearEquiv 2 ℂ H₁ H₂).symm
-  .equivOfInverse
-    (((eLp : H₁ × H₂ →L[ℂ] WithLp 2 (H₁ × H₂)).comp
-        (p₁.range.subtypeL.prodMap p₂.range.subtypeL)).codRestrict _ fun w ↦ by
-      obtain ⟨u₁, hu₁⟩ := w.1.2
-      obtain ⟨u₂, hu₂⟩ := w.2.2
-      refine ⟨WithLp.toLp 2 (u₁, u₂), ?_⟩
-      apply (WithLp.prodContinuousLinearEquiv 2 ℂ H₁ H₂).injective
-      ext <;> simp [eLp, hu₁, hu₂])
-    ((((ContinuousLinearMap.fst ℂ H₁ H₂).comp
-          ((WithLp.prodContinuousLinearEquiv 2 ℂ H₁ H₂ :
-            WithLp 2 (H₁ × H₂) →L[ℂ] H₁ × H₂).comp (Submodule.subtypeL _))).codRestrict p₁.range
-        fun w ↦ by
-          obtain ⟨u, hu⟩ := w.2
-          refine ⟨u.fst, ?_⟩
-          simpa using congrArg WithLp.fst hu).prod
-      (((ContinuousLinearMap.snd ℂ H₁ H₂).comp
-          ((WithLp.prodContinuousLinearEquiv 2 ℂ H₁ H₂ :
-            WithLp 2 (H₁ × H₂) →L[ℂ] H₁ × H₂).comp (Submodule.subtypeL _))).codRestrict p₂.range
-        fun w ↦ by
-          obtain ⟨u, hu⟩ := w.2
-          refine ⟨u.snd, ?_⟩
-          simpa using congrArg WithLp.snd hu))
-    (fun ⟨_, _⟩ ↦ Prod.ext (Subtype.ext rfl) (Subtype.ext rfl))
-    (fun _ ↦ Subtype.ext
-      ((WithLp.prodContinuousLinearEquiv 2 ℂ H₁ H₂).injective (Prod.ext rfl rfl)))
-
-private theorem compressionIndex_withLpProdMap (p₁ q₁ F₁ : H₁ →L[ℂ] H₁)
-    (p₂ q₂ F₂ : H₂ →L[ℂ] H₂)
-    (h₁ : (q₁.rangeRestrict ∘L F₁ ∘L p₁.range.subtypeL).IsFredholm)
-    (h₂ : (q₂.rangeRestrict ∘L F₂ ∘L p₂.range.subtypeL).IsFredholm) :
-    compressionIndex (p₁.withLpProdMap 2 p₂) (q₁.withLpProdMap 2 q₂) (F₁.withLpProdMap 2 F₂) =
-      compressionIndex p₁ q₁ F₁ + compressionIndex p₂ q₂ F₂ := by
-  let P := p₁.withLpProdMap 2 p₂
-  let Q := q₁.withLpProdMap 2 q₂
-  let ep := rangeWithLpProdMapEquiv p₁ p₂
-  let eq_ := rangeWithLpProdMapEquiv q₁ q₂
-  let T₁ := q₁.rangeRestrict ∘L F₁ ∘L p₁.range.subtypeL
-  let T₂ := q₂.rangeRestrict ∘L F₂ ∘L p₂.range.subtypeL
-  let T := Q.rangeRestrict ∘L (F₁.withLpProdMap 2 F₂) ∘L P.range.subtypeL
-  have intertwine : T.comp (ep : (p₁.range × p₂.range) →L[ℂ] P.range) =
-      (eq_ : (q₁.range × q₂.range) →L[ℂ] Q.range).comp (T₁.prodMap T₂) := by
-    refine ContinuousLinearMap.ext fun ⟨w₁, w₂⟩ ↦ Subtype.ext ?_
-    apply (WithLp.prodContinuousLinearEquiv 2 ℂ H₁ H₂).injective
-    ext <;> simp [T, T₁, T₂, P, Q, ep, eq_, rangeWithLpProdMapEquiv]
-  have := h₁.finite_ker
-  have := h₂.finite_ker
-  have := h₁.finite_coker
-  have := h₂.finite_coker
-  calc
-    T.index = (T.comp (ep : (p₁.range × p₂.range) →L[ℂ] P.range)).index :=
-      (T.index_comp_equiv ep).symm
-    _ = ((eq_ : (q₁.range × q₂.range) →L[ℂ] Q.range).comp (T₁.prodMap T₂)).index := by
-      rw [intertwine]
-    _ = (T₁.prodMap T₂).index := (T₁.prodMap T₂).index_equiv_comp eq_
-    _ = T₁.index + T₂.index := T₁.index_prodMap T₂
-
-end CompressionHelpers
-
 /-! ### Even index pairing with idempotents -/
 
 namespace EvenFredholmModule
@@ -200,9 +95,15 @@ variable (M : EvenFredholmModule A H)
 def gradingPos : H →L[ℂ] H :=
   (2 : ℂ)⁻¹ • (1 + M.grading)
 
+theorem gradingPos_def : M.gradingPos = (2 : ℂ)⁻¹ • (1 + M.grading) :=
+  (rfl)
+
 /-- Negative grading projection `(1 - γ) / 2` onto the `-1`-eigenspace of `M.grading`. -/
 def gradingNeg : H →L[ℂ] H :=
   (2 : ℂ)⁻¹ • (1 - M.grading)
+
+theorem gradingNeg_def : M.gradingNeg = (2 : ℂ)⁻¹ • (1 - M.grading) :=
+  (rfl)
 
 @[simp]
 theorem flipGrading_gradingPos : M.flipGrading.gradingPos = M.gradingNeg := by
@@ -261,8 +162,8 @@ theorem range_gradingPos :
       _ = x := hfix
   · have hx' : M.grading x = x := hx
     refine ⟨x, ?_⟩
-    change (2 : ℂ)⁻¹ • (x + M.grading x) = x
-    rw [hx', ← two_smul ℂ x, smul_smul]
+    simp only [ContinuousLinearMap.coe_coe, gradingPos_def, smul_apply, add_apply,
+      one_apply_eq_self, hx', ← two_smul ℂ x, smul_smul]
     norm_num
 
 theorem range_gradingNeg :
@@ -271,13 +172,108 @@ theorem range_gradingNeg :
   ext x
   simp [neg_eq_iff_eq_neg]
 
+/-- Off-diagonal block `F₊ : H₊ →L[ℂ] H₋` of `M.operator` mapping the `+1`-grading subspace
+`M.gradingPos.range` into the `-1`-grading subspace `M.gradingNeg.range`. -/
+def gradePosToNeg : M.gradingPos.range →L[ℂ] M.gradingNeg.range :=
+  M.gradingNeg.rangeRestrict ∘L M.operator ∘L M.gradingPos.range.subtypeL
+
+theorem gradePosToNeg_def :
+    M.gradePosToNeg = M.gradingNeg.rangeRestrict ∘L M.operator ∘L M.gradingPos.range.subtypeL :=
+  (rfl)
+
+@[simp]
+theorem coe_gradePosToNeg_apply (w : M.gradingPos.range) :
+    (M.gradePosToNeg w : H) = M.operator w := by
+  have hw : M.gradingPos w = w :=
+    ContinuousLinearMap.IsIdempotentElem.apply_coe_range M.isIdempotentElem_gradingPos w
+  have hcomm : M.gradingNeg (M.operator w) = M.operator (M.gradingPos w) :=
+    congr($M.gradingNeg_mul_operator w)
+  simpa [gradePosToNeg_def, hw] using hcomm
+
+/-- When `M` is normalized (`F² = 1`), `M.gradePosToNeg` upgrades to a continuous linear
+equivalence `H₊ ≃L[ℂ] H₋`, with inverse induced by `M.operator` from `H₋` to `H₊`. -/
+def gradePosToNegEquiv (hM : M.IsNormalized) :
+    M.gradingPos.range ≃L[ℂ] M.gradingNeg.range :=
+  .equivOfInverse M.gradePosToNeg
+    (M.gradingPos.rangeRestrict ∘L M.operator ∘L M.gradingNeg.range.subtypeL)
+    (fun w ↦ Subtype.ext <| by
+      have hw : M.gradingPos w = w :=
+        ContinuousLinearMap.IsIdempotentElem.apply_coe_range M.isIdempotentElem_gradingPos w
+      have hFF : M.operator (M.operator w) = w := congr($hM.operator_mul_operator w)
+      simpa [coe_gradePosToNeg_apply, hFF] using hw)
+    (fun w ↦ Subtype.ext <| by
+      have hw : M.gradingNeg w = w :=
+        ContinuousLinearMap.IsIdempotentElem.apply_coe_range M.isIdempotentElem_gradingNeg w
+      have hpos : M.gradingPos (M.operator w) = M.operator w := by
+        have hcomm : M.gradingPos (M.operator w) = M.operator (M.gradingNeg w) :=
+          congr($M.gradingPos_mul_operator w)
+        rwa [hw] at hcomm
+      have hFF : M.operator (M.operator w) = w := congr($hM.operator_mul_operator w)
+      have hval :
+          (((M.gradingPos.rangeRestrict ∘L M.operator ∘L M.gradingNeg.range.subtypeL) w) : H) =
+            M.gradingPos (M.operator w) := rfl
+      rw [coe_gradePosToNeg_apply, hval, hpos, hFF])
+
+@[simp]
+theorem coe_gradePosToNegEquiv (hM : M.IsNormalized) :
+    (M.gradePosToNegEquiv hM : M.gradingPos.range →L[ℂ] M.gradingNeg.range) = M.gradePosToNeg :=
+  (rfl)
+
+/-- For a normalized even Fredholm module (`F² = 1`), `M.gradePosToNeg : H₊ →L[ℂ] H₋` is
+invertible and therefore has Fredholm index `0`. -/
+@[simp]
+theorem index_gradePosToNeg_of_isNormalized (hM : M.IsNormalized) :
+    M.gradePosToNeg.index = 0 := by
+  rw [← M.coe_gradePosToNegEquiv hM]
+  exact ContinuousLinearMap.index_eq_zero_of_bijective _ (M.gradePosToNegEquiv hM).bijective
+
+/-- Restriction `π₊(a) : H₊ →L[ℂ] H₊` of `M.rep a` to the `+1`-grading subspace. -/
+def repPos (a : A) : M.gradingPos.range →L[ℂ] M.gradingPos.range :=
+  M.gradingPos.rangeRestrict ∘L M.rep a ∘L M.gradingPos.range.subtypeL
+
+theorem repPos_def (a : A) :
+    M.repPos a = M.gradingPos.rangeRestrict ∘L M.rep a ∘L M.gradingPos.range.subtypeL :=
+  (rfl)
+
+@[simp]
+theorem coe_repPos_apply (a : A) (w : M.gradingPos.range) :
+    (M.repPos a w : H) = M.rep a w := by
+  have hw : M.gradingPos w = w :=
+    ContinuousLinearMap.IsIdempotentElem.apply_coe_range M.isIdempotentElem_gradingPos w
+  have hcomm : M.gradingPos (M.rep a w) = M.rep a (M.gradingPos w) :=
+    DFunLike.congr_fun (M.commute_gradingPos_rep a).eq (w : H)
+  simpa [repPos_def, hw] using hcomm
+
+/-- Restriction `π₋(a) : H₋ →L[ℂ] H₋` of `M.rep a` to the `-1`-grading subspace. -/
+def repNeg (a : A) : M.gradingNeg.range →L[ℂ] M.gradingNeg.range :=
+  M.gradingNeg.rangeRestrict ∘L M.rep a ∘L M.gradingNeg.range.subtypeL
+
+theorem repNeg_def (a : A) :
+    M.repNeg a = M.gradingNeg.rangeRestrict ∘L M.rep a ∘L M.gradingNeg.range.subtypeL :=
+  (rfl)
+
+@[simp]
+theorem coe_repNeg_apply (a : A) (w : M.gradingNeg.range) :
+    (M.repNeg a w : H) = M.rep a w := by
+  have hw : M.gradingNeg w = w :=
+    ContinuousLinearMap.IsIdempotentElem.apply_coe_range M.isIdempotentElem_gradingNeg w
+  have hcomm : M.gradingNeg (M.rep a w) = M.rep a (M.gradingNeg w) :=
+    DFunLike.congr_fun (M.commute_gradingNeg_rep a).eq (w : H)
+  simpa [repNeg_def, hw] using hcomm
+
 /-- Positive graded projection `π(e) (1 + γ) / 2` associated to an element `e : A`. -/
 def evenProjPos (e : A) : H →L[ℂ] H :=
   M.rep e * M.gradingPos
 
+theorem evenProjPos_def (e : A) : M.evenProjPos e = M.rep e * M.gradingPos :=
+  (rfl)
+
 /-- Negative graded projection `π(e) (1 - γ) / 2` associated to an element `e : A`. -/
 def evenProjNeg (e : A) : H →L[ℂ] H :=
   M.rep e * M.gradingNeg
+
+theorem evenProjNeg_def (e : A) : M.evenProjNeg e = M.rep e * M.gradingNeg :=
+  (rfl)
 
 @[simp]
 theorem flipGrading_evenProjPos (e : A) : M.flipGrading.evenProjPos e = M.evenProjNeg e := by
@@ -328,15 +324,88 @@ theorem range_evenProjNeg_eq_map_eigenspace (e : A) :
 def evenCompression (e : A) : (M.evenProjPos e).range →L[ℂ] (M.evenProjNeg e).range :=
   (M.evenProjNeg e).rangeRestrict ∘L M.operator ∘L (M.evenProjPos e).range.subtypeL
 
+theorem evenCompression_def (e : A) :
+    M.evenCompression e =
+      (M.evenProjNeg e).rangeRestrict ∘L M.operator ∘L (M.evenProjPos e).range.subtypeL :=
+  (rfl)
+
 /-- **Even parametrix.** Restriction of `M.operator` in the opposite direction
 `P₊ F : range P₋ → range P₊`. -/
 def evenParametrix (e : A) : (M.evenProjNeg e).range →L[ℂ] (M.evenProjPos e).range :=
   (M.evenProjPos e).rangeRestrict ∘L M.operator ∘L (M.evenProjNeg e).range.subtypeL
 
+theorem evenParametrix_def (e : A) :
+    M.evenParametrix e =
+      (M.evenProjPos e).rangeRestrict ∘L M.operator ∘L (M.evenProjNeg e).range.subtypeL :=
+  (rfl)
+
 /-- **Even analytic index pairing** of an even Fredholm module `M` with an idempotent `e ∈ A`,
 defined as the Fredholm index of `M.evenCompression e : range P₊ →L[ℂ] range P₋`. -/
 def evenIndex (e : A) : ℤ :=
   (M.evenCompression e).index
+
+theorem evenIndex_def (e : A) : M.evenIndex e = (M.evenCompression e).index :=
+  (rfl)
+
+private theorem evenIndex_eq_compressionIndex (e : A) :
+    M.evenIndex e =
+      ContinuousLinearMap.compressionIndex (M.evenProjPos e) (M.evenProjNeg e) M.operator := by
+  rw [evenIndex_def, ContinuousLinearMap.compressionIndex_def, evenCompression_def,
+    ContinuousLinearMap.rangeCompression_def]
+
+private theorem index_evenParametrix_eq_compressionIndex (e : A) :
+    (M.evenParametrix e).index =
+      ContinuousLinearMap.compressionIndex (M.evenProjNeg e) (M.evenProjPos e) M.operator := by
+  rw [ContinuousLinearMap.compressionIndex_def, evenParametrix_def,
+    ContinuousLinearMap.rangeCompression_def]
+
+/-- **Identification of `evenIndex` with `gradePosToNeg` on `H₊ → H₋`.** For every `e : A`,
+`M.evenIndex e` equals the compression index of `M.gradePosToNeg : H₊ →L[ℂ] H₋` between the
+restricted actions `M.repPos e : H₊ →L[ℂ] H₊` and `M.repNeg e : H₋ →L[ℂ] H₋`. -/
+theorem evenIndex_eq_compressionIndex_gradePosToNeg (e : A) :
+    M.evenIndex e =
+      ContinuousLinearMap.compressionIndex (M.repPos e) (M.repNeg e) M.gradePosToNeg := by
+  have hri_pos : M.gradingPos.rangeRestrict.comp M.gradingPos.range.subtypeL =
+      .id ℂ M.gradingPos.range := by
+    ext w
+    simpa using ContinuousLinearMap.IsIdempotentElem.apply_coe_range M.isIdempotentElem_gradingPos w
+  have hri_neg : M.gradingNeg.rangeRestrict.comp M.gradingNeg.range.subtypeL =
+      .id ℂ M.gradingNeg.range := by
+    ext w
+    simpa using ContinuousLinearMap.IsIdempotentElem.apply_coe_range M.isIdempotentElem_gradingNeg w
+  have hp : M.gradingPos.range.subtypeL ∘L M.repPos e ∘L M.gradingPos.rangeRestrict =
+      M.evenProjPos e := by
+    have hmul : M.gradingPos * M.rep e * M.gradingPos = M.evenProjPos e := by
+      rw [(M.commute_gradingPos_rep e).eq, mul_assoc, M.isIdempotentElem_gradingPos.eq,
+        evenProjPos_def]
+    ext x
+    rw [← hmul]
+    rfl
+  have hq : M.gradingNeg.range.subtypeL ∘L M.repNeg e ∘L M.gradingNeg.rangeRestrict =
+      M.evenProjNeg e := by
+    have hmul : M.gradingNeg * M.rep e * M.gradingNeg = M.evenProjNeg e := by
+      rw [(M.commute_gradingNeg_rep e).eq, mul_assoc, M.isIdempotentElem_gradingNeg.eq,
+        evenProjNeg_def]
+    ext x
+    rw [← hmul]
+    rfl
+  rw [M.evenIndex_eq_compressionIndex, ← hp, ← hq,
+    ContinuousLinearMap.compressionIndex_retract hri_pos hri_neg, ← M.gradePosToNeg_def]
+
+/-- When `π(1) = 1`, the even index at `1` equals the Fredholm index of
+`M.gradePosToNeg : H₊ →L[ℂ] H₋`. -/
+theorem evenIndex_one_eq_index_gradePosToNeg [One A] (h1 : M.rep 1 = 1) :
+    M.evenIndex 1 = M.gradePosToNeg.index := by
+  have hpos : M.evenProjPos 1 = M.gradingPos := by rw [evenProjPos_def, h1, one_mul]
+  have hneg : M.evenProjNeg 1 = M.gradingNeg := by rw [evenProjNeg_def, h1, one_mul]
+  rw [M.evenIndex_eq_compressionIndex, hpos, hneg, ContinuousLinearMap.compressionIndex_def,
+    ContinuousLinearMap.rangeCompression_def, M.gradePosToNeg_def]
+
+/-- For a normalized even Fredholm module (`F² = 1`) with unital representation (`π(1) = 1`), the
+even index at `1` vanishes. -/
+theorem evenIndex_one_eq_zero_of_isNormalized [One A] (hM : M.IsNormalized) (h1 : M.rep 1 = 1) :
+    M.evenIndex 1 = 0 := by
+  rw [M.evenIndex_one_eq_index_gradePosToNeg h1, M.index_gradePosToNeg_of_isNormalized hM]
 
 /-- Ambient algebraic defect formula for the composite `P₊ F P₋ F P₊ - P₊` on `H`. -/
 theorem evenProjPos_mul_operator_defect {e : A} (he : IsIdempotentElem e) :
@@ -458,12 +527,10 @@ theorem isCompactOperator_evenCompression_comp_evenParametrix_sub_one {e : A}
 operator `M.evenCompression e : range P₊ →L[ℂ] range P₋` is Fredholm. -/
 theorem isFredholm_evenCompression {e : A} (he : IsIdempotentElem e) :
     (M.evenCompression e).IsFredholm := by
-  have : CompleteSpace (M.evenProjPos e).range :=
-    (ContinuousLinearMap.IsIdempotentElem.isClosed_range
-      (M.isIdempotentElem_evenProjPos he)).isComplete.completeSpace_coe
-  have : CompleteSpace (M.evenProjNeg e).range :=
-    (ContinuousLinearMap.IsIdempotentElem.isClosed_range
-      (M.isIdempotentElem_evenProjNeg he)).isComplete.completeSpace_coe
+  have := ContinuousLinearMap.IsIdempotentElem.completeSpace_range
+    (M.isIdempotentElem_evenProjPos he)
+  have := ContinuousLinearMap.IsIdempotentElem.completeSpace_range
+    (M.isIdempotentElem_evenProjNeg he)
   exact .of_isCompactOperator_comp_sub_one
     (M.isCompactOperator_evenParametrix_comp_evenCompression_sub_one he)
     (M.isCompactOperator_evenCompression_comp_evenParametrix_sub_one he)
@@ -472,18 +539,14 @@ theorem isFredholm_evenCompression {e : A} (he : IsIdempotentElem e) :
 @[simp]
 theorem evenIndex_flipGrading {e : A} (he : IsIdempotentElem e) :
     M.flipGrading.evenIndex e = -M.evenIndex e := by
-  have : CompleteSpace (M.evenProjPos e).range :=
-    (ContinuousLinearMap.IsIdempotentElem.isClosed_range
-      (M.isIdempotentElem_evenProjPos he)).isComplete.completeSpace_coe
-  have : CompleteSpace (M.evenProjNeg e).range :=
-    (ContinuousLinearMap.IsIdempotentElem.isClosed_range
-      (M.isIdempotentElem_evenProjNeg he)).isComplete.completeSpace_coe
+  have := ContinuousLinearMap.IsIdempotentElem.completeSpace_range
+    (M.isIdempotentElem_evenProjPos he)
+  have := ContinuousLinearMap.IsIdempotentElem.completeSpace_range
+    (M.isIdempotentElem_evenProjNeg he)
   have hop : M.flipGrading.operator = M.operator := by simp
   have hflip : M.flipGrading.evenIndex e = (M.evenParametrix e).index := by
-    change compressionIndex (M.flipGrading.evenProjPos e) (M.flipGrading.evenProjNeg e)
-      M.flipGrading.operator = _
-    rw [M.flipGrading_evenProjPos, M.flipGrading_evenProjNeg, hop]
-    rfl
+    rw [evenIndex_eq_compressionIndex, M.flipGrading_evenProjPos, M.flipGrading_evenProjNeg, hop,
+      M.index_evenParametrix_eq_compressionIndex]
   rw [hflip, evenIndex]
   exact ContinuousLinearMap.index_eq_neg_of_isCompactOperator_comp_sub_one
     (M.isCompactOperator_evenParametrix_comp_evenCompression_sub_one he)
@@ -522,19 +585,14 @@ theorem evenIndex_eq_of_isCompactOperator_sub_mul_rep {M' : EvenFredholmModule A
     (he : IsIdempotentElem e) (hrep : M'.rep e = M.rep e) (hγ : M'.grading = M.grading)
     (hK : IsCompactOperator ⇑((M'.operator - M.operator) * M.rep e)) :
     M'.evenIndex e = M.evenIndex e := by
-  have : CompleteSpace (M.evenProjPos e).range :=
-    (ContinuousLinearMap.IsIdempotentElem.isClosed_range
-      (M.isIdempotentElem_evenProjPos he)).isComplete.completeSpace_coe
-  have : CompleteSpace (M.evenProjNeg e).range :=
-    (ContinuousLinearMap.IsIdempotentElem.isClosed_range
-      (M.isIdempotentElem_evenProjNeg he)).isComplete.completeSpace_coe
+  have := ContinuousLinearMap.IsIdempotentElem.completeSpace_range
+    (M.isIdempotentElem_evenProjPos he)
+  have := ContinuousLinearMap.IsIdempotentElem.completeSpace_range
+    (M.isIdempotentElem_evenProjNeg he)
   have hpos : M'.evenProjPos e = M.evenProjPos e := by
     simp [evenProjPos, gradingPos, hrep, hγ]
   have hneg : M'.evenProjNeg e = M.evenProjNeg e := by
     simp [evenProjNeg, gradingNeg, hrep, hγ]
-  change compressionIndex (M'.evenProjPos e) (M'.evenProjNeg e) M'.operator =
-    compressionIndex (M.evenProjPos e) (M.evenProjNeg e) M.operator
-  rw [hpos, hneg]
   let C : (M.evenProjPos e).range →L[ℂ] (M.evenProjNeg e).range :=
     (M.evenProjNeg e).rangeRestrict ∘L ((M'.operator - M.operator) * M.rep e) ∘L M.gradingPos ∘L
       (M.evenProjPos e).range.subtypeL
@@ -553,9 +611,8 @@ theorem evenIndex_eq_of_isCompactOperator_sub_mul_rep {M' : EvenFredholmModule A
       ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply, hrr, ContinuousLinearMap.mul_def,
       sub_apply, hw, map_sub]
     exact (add_sub_cancel _ _).symm
-  change ((M.evenProjNeg e).rangeRestrict ∘L M'.operator ∘L
-      (M.evenProjPos e).range.subtypeL).index = (M.evenCompression e).index
-  rw [hrw]
+  rw [M'.evenIndex_eq_compressionIndex, hpos, hneg, ContinuousLinearMap.compressionIndex_def,
+    ContinuousLinearMap.rangeCompression_def, M.evenIndex_def, hrw]
   exact ContinuousLinearMap.index_add_of_isCompactOperator (M.isFredholm_evenCompression he) hC
 
 /-- Relatively compact perturbations leave the even index unchanged. -/
@@ -581,11 +638,11 @@ theorem evenIndex_conj (U : H ≃ₗᵢ[ℂ] H') (e : A) :
       (eU : H →L[ℂ] H') ∘L M.evenProjNeg e ∘L (eU.symm : H' →L[ℂ] H) := by
     rw [← hconj]
     simp [evenProjNeg, gradingNeg, map_mul, map_smul, map_sub, map_one]
-  change compressionIndex ((M.conj U).evenProjPos e) ((M.conj U).evenProjNeg e)
-    (M.conj U).operator = compressionIndex (M.evenProjPos e) (M.evenProjNeg e) M.operator
-  rw [hpos, hneg, show (M.conj U).operator =
-    (eU : H →L[ℂ] H') ∘L M.operator ∘L (eU.symm : H' →L[ℂ] H) by simp [hconj]]
-  exact compressionIndex_conj eU (M.evenProjPos e) (M.evenProjNeg e) M.operator
+  rw [(M.conj U).evenIndex_eq_compressionIndex, M.evenIndex_eq_compressionIndex, hpos, hneg,
+    show (M.conj U).operator = (eU : H →L[ℂ] H') ∘L M.operator ∘L (eU.symm : H' →L[ℂ] H) by
+      simp [hconj]]
+  exact ContinuousLinearMap.compressionIndex_conj eU eU (M.evenProjPos e) (M.evenProjNeg e)
+    M.operator
 
 /-- Orthogonal direct sums add even indices. -/
 @[simp]
@@ -608,20 +665,15 @@ theorem evenIndex_prod (M₁ : EvenFredholmModule A H₁) (M₂ : EvenFredholmMo
       FredholmModule.prod_rep_apply, ContinuousLinearMap.withLpProdMap_mul]
   have hop : (M₁.prod M₂).operator = M₁.operator.withLpProdMap 2 M₂.operator := by
     simp
-  change compressionIndex ((M₁.prod M₂).evenProjPos e) ((M₁.prod M₂).evenProjNeg e)
-    (M₁.prod M₂).operator = _
-  rw [hpos, hneg, hop]
-  exact compressionIndex_withLpProdMap _ _ _ _ _ _
-    (M₁.isFredholm_evenCompression he) (M₂.isFredholm_evenCompression he)
+  rw [(M₁.prod M₂).evenIndex_eq_compressionIndex, M₁.evenIndex_eq_compressionIndex,
+    M₂.evenIndex_eq_compressionIndex, hpos, hneg, hop]
+  exact ContinuousLinearMap.compressionIndex_withLpProdMap _ _ _ _ _ _
+    (by rw [ContinuousLinearMap.rangeCompression_def, ← evenCompression_def]
+        exact M₁.isFredholm_evenCompression he)
+    (by rw [ContinuousLinearMap.rangeCompression_def, ← evenCompression_def]
+        exact M₂.isFredholm_evenCompression he)
 
-end EvenPairing
-
-section EvenNormalizationInvariance
-
-variable {A : Type*} [NonUnitalSemiring A] [StarRing A] [Module ℂ A]
-variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
-variable (M : EvenFredholmModule A H)
-
+/-- The linear operator homotopy to `sin(π F / 2)` preserves the even index at every idempotent. -/
 @[simp]
 theorem evenIndex_sinContractionHomotopy (t : ℝ) {e : A} (he : IsIdempotentElem e) :
     (M.sinContractionHomotopy t).evenIndex e = M.evenIndex e := by
@@ -632,18 +684,18 @@ theorem evenIndex_sinContractionHomotopy (t : ℝ) {e : A} (he : IsIdempotentEle
   rw [hsub, smul_mul_assoc, FunLike.coe_smul]
   exact (M.toFredholmModule.isCompactOperator_sinPerturbation_mul_rep e).smul (t : ℂ)
 
+/-- Spectral contraction `sin(π F / 2)` preserves the even index at every idempotent. -/
 @[simp]
 theorem evenIndex_sinContraction {e : A} (he : IsIdempotentElem e) :
     M.sinContraction.evenIndex e = M.evenIndex e := by
   rw [← M.sinContractionHomotopy_one, M.evenIndex_sinContractionHomotopy 1 he]
 
+/-- The doubling operator homotopy preserves the even index at every idempotent. -/
 @[simp]
 theorem evenIndex_doubleHomotopy (hF : 0 ≤ 1 - M.operator * M.operator) (t : ℝ) {e : A}
     (he : IsIdempotentElem e) :
     (M.doubleHomotopy hF t).evenIndex e = M.evenIndex e := by
-  let M₀ := M.prod (zeroRep A (-M.operator) (-M.grading) M.isSelfAdjoint_operator.neg
-    M.isSelfAdjoint_grading.neg (by rw [neg_mul_neg, M.grading_mul_grading])
-    (by rw [neg_mul_neg, mul_neg, neg_mul, neg_neg, M.grading_mul_operator]))
+  let M₀ := M.prod M.negZeroRep
   have hhom : (M.doubleHomotopy hF t).evenIndex e = M₀.evenIndex e := by
     refine M₀.evenIndex_eq_of_isCompactOperator_sub_mul_rep he
       (by simp [M₀]) (by simp [M₀]) ?_
@@ -656,9 +708,9 @@ theorem evenIndex_doubleHomotopy (hF : 0 ≤ 1 - M.operator * M.operator) (t : �
     exact ((ContinuousLinearMap.isCompactOperator_hermitianDilation_comp_withLpProdMap_zero_right
       _ _).mpr (M.toFredholmModule.isCompactOperator_sqrt_one_sub_mul_rep hF e)).smul (t : ℂ)
   rw [hhom, EvenFredholmModule.evenIndex_prod _ _ he,
-    EvenFredholmModule.evenIndex_eq_zero_of_isDegenerate _ (isDegenerate_zeroRep _ _ _ _ _ _) he,
-    add_zero]
+    EvenFredholmModule.evenIndex_eq_zero_of_isDegenerate _ M.isDegenerate_negZeroRep he, add_zero]
 
+/-- Contraction doubling preserves the even index at every idempotent. -/
 @[simp]
 theorem evenIndex_double (hF : 0 ≤ 1 - M.operator * M.operator) {e : A}
     (he : IsIdempotentElem e) :
@@ -673,22 +725,30 @@ theorem evenIndex_normalize {e : A} (he : IsIdempotentElem e) :
     M.normalize.evenIndex e = M.evenIndex e := by
   rw [M.normalize_def, M.sinContraction.evenIndex_double _ he, M.evenIndex_sinContraction he]
 
+end EvenPairing
+
+section EvenUnitizationInvariance
+
+variable {A : Type*} [NonUnitalSemiring A] [StarRing A] [Module ℂ A]
+  [IsScalarTower ℂ A A] [SMulCommClass ℂ A A]
+variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
+variable (M : EvenFredholmModule A H)
+
 /-- Forced unitization onto `Unitization ℂ A` preserves the even index on idempotents from `A`. -/
 @[simp]
-theorem evenIndex_unitize [IsScalarTower ℂ A A] [SMulCommClass ℂ A A]
-    (hM : M.IsNormalized) {e : A} :
-    (M.unitize hM).evenIndex (Unitization.inr e) = M.evenIndex e := by
-  change compressionIndex ((M.unitize hM).evenProjPos (Unitization.inr e))
-    ((M.unitize hM).evenProjNeg (Unitization.inr e)) (M.unitize hM).operator =
-    compressionIndex (M.evenProjPos e) (M.evenProjNeg e) M.operator
-  have hpos : (M.unitize hM).evenProjPos (Unitization.inr e) = M.evenProjPos e := by
-    simp [evenProjPos, gradingPos]
-  have hneg : (M.unitize hM).evenProjNeg (Unitization.inr e) = M.evenProjNeg e := by
-    simp [evenProjNeg, gradingNeg]
-  have hop : (M.unitize hM).operator = M.operator := by simp
-  rw [hpos, hneg, hop]
+theorem evenIndex_unitize (hK : IsCompactOperator ⇑(M.operator * M.operator - 1)) {e : A} :
+    (M.unitize hK).evenIndex (Unitization.inr e) = M.evenIndex e := by
+  have hpos : (M.unitize hK).evenProjPos (Unitization.inr e) = M.evenProjPos e := by
+    rw [evenProjPos_def, evenProjPos_def, unitize_toFredholmModule,
+      FredholmModule.unitize_rep_inr, gradingPos_def, gradingPos_def, unitize_grading]
+  have hneg : (M.unitize hK).evenProjNeg (Unitization.inr e) = M.evenProjNeg e := by
+    rw [evenProjNeg_def, evenProjNeg_def, unitize_toFredholmModule,
+      FredholmModule.unitize_rep_inr, gradingNeg_def, gradingNeg_def, unitize_grading]
+  have hop : (M.unitize hK).operator = M.operator := by simp
+  rw [(M.unitize hK).evenIndex_eq_compressionIndex, M.evenIndex_eq_compressionIndex,
+    hpos, hneg, hop]
 
-end EvenNormalizationInvariance
+end EvenUnitizationInvariance
 
 /-! ### Finite-dimensional point cycles and `M₂(ℂ)` idempotent check -/
 
@@ -702,6 +762,12 @@ representation `π`, operator `F = 0`, and grading `γ = 1`. -/
 def pointCycle [FiniteDimensional ℂ H] (π : A →⋆ₙₐ[ℂ] H →L[ℂ] H) : EvenFredholmModule A H :=
   ofFiniteDimensional π 0 (IsSelfAdjoint.zero _) 1 (IsSelfAdjoint.one _) (one_mul 1)
     (fun a ↦ Commute.one_left (π a)) (by simp)
+
+theorem pointCycle_def [FiniteDimensional ℂ H] (π : A →⋆ₙₐ[ℂ] H →L[ℂ] H) :
+    pointCycle π =
+      ofFiniteDimensional π 0 (IsSelfAdjoint.zero _) 1 (IsSelfAdjoint.one _) (one_mul 1)
+        (fun a ↦ Commute.one_left (π a)) (by simp) :=
+  (rfl)
 
 /-- The even index of a finite-dimensional point cycle `(H, π, F = 0, γ = 1)` at `e` is the complex
 dimension of `range π(e)`. -/
@@ -718,15 +784,19 @@ theorem evenIndex_pointCycle [FiniteDimensional ℂ H] (π : A →⋆ₙₐ[ℂ]
   have hneg : (pointCycle π).evenProjNeg e = 0 := by
     ext x
     simp [pointCycle, evenProjNeg, gradingNeg]
-  change compressionIndex ((pointCycle π).evenProjPos e) ((pointCycle π).evenProjNeg e)
-    (pointCycle π).operator = _
-  rw [hpos, hneg, compressionIndex, ContinuousLinearMap.index_eq_of_finiteDimensional]
+  rw [(pointCycle π).evenIndex_eq_compressionIndex, hpos, hneg,
+    ContinuousLinearMap.compressionIndex_def, ContinuousLinearMap.index_eq_of_finiteDimensional]
   simp
 
 /-- Canonical point cycle of `Matrix ι ι ℂ` acting on `EuclideanSpace ℂ ι`. -/
 def matrixPointCycle (ι : Type*) [Fintype ι] [DecidableEq ι] :
     EvenFredholmModule (Matrix ι ι ℂ) (EuclideanSpace ℂ ι) :=
   pointCycle (Matrix.toEuclideanCLM (n := ι) (𝕜 := ℂ)).toStarAlgHom.toNonUnitalStarAlgHom
+
+theorem matrixPointCycle_def (ι : Type*) [Fintype ι] [DecidableEq ι] :
+    matrixPointCycle ι =
+      pointCycle (Matrix.toEuclideanCLM (n := ι) (𝕜 := ℂ)).toStarAlgHom.toNonUnitalStarAlgHom :=
+  (rfl)
 
 /-- The even index of `matrixPointCycle ι` on any matrix `E` equals `(E.rank : ℤ)`. -/
 @[simp]
@@ -735,22 +805,20 @@ theorem evenIndex_matrixPointCycle (ι : Type*) [Fintype ι] [DecidableEq ι] (E
   rw [matrixPointCycle, evenIndex_pointCycle, Matrix.rank_eq_finrank_range_toEuclideanLin]
   rfl
 
-/-- Family of `2 × 2` idempotent matrices `!![1, a; 0, 0]`, which are non-self-adjoint whenever
-`a ≠ 0`. -/
-def matIdem (a : ℂ) : Matrix (Fin 2) (Fin 2) ℂ :=
+private def matIdem (a : ℂ) : Matrix (Fin 2) (Fin 2) ℂ :=
   !![1, a; 0, 0]
 
-theorem isIdempotentElem_matIdem (a : ℂ) : IsIdempotentElem (matIdem a) := by
+private theorem isIdempotentElem_matIdem (a : ℂ) : IsIdempotentElem (matIdem a) := by
   rw [IsIdempotentElem]
   ext i j
   fin_cases i <;> fin_cases j <;> simp [matIdem, Matrix.mul_apply, Fin.sum_univ_two]
 
-theorem matIdem_ne_star_of_ne_zero {a : ℂ} (ha : a ≠ 0) : matIdem a ≠ star (matIdem a) := by
+private theorem matIdem_ne_star_of_ne_zero {a : ℂ} (ha : a ≠ 0) : matIdem a ≠ star (matIdem a) := by
   intro h
   have h01 := congrFun (congrFun h 0) 1
   simp [matIdem, Matrix.star_apply, ha] at h01
 
-theorem rank_matIdem (a : ℂ) : (matIdem a).rank = 1 := by
+private theorem rank_matIdem (a : ℂ) : (matIdem a).rank = 1 := by
   rw [Matrix.rank_eq_finrank_range_toEuclideanLin]
   let e₀ : EuclideanSpace ℂ (Fin 2) := EuclideanSpace.single 0 1
   have he₀ : e₀ ≠ 0 := by
@@ -771,19 +839,18 @@ theorem rank_matIdem (a : ℂ) : (matIdem a).rank = 1 := by
       fin_cases i <;> simp [e₀, matIdem, Matrix.toLpLin_apply]
   rw [hrange, finrank_span_singleton he₀]
 
-/-- Concrete check on `M₂(ℂ)`: for every `a : ℂ` (both the orthogonal projection `a = 0` and every
-non-self-adjoint idempotent `a ≠ 0`), `matIdem a = !![1, a; 0, 0]` pairs to `1` with
-`matrixPointCycle (Fin 2)` and its normalization, and to `-1` with its opposite-graded module. -/
-theorem evenIndex_matrixPointCycle_matIdem_check (a : ℂ) :
-    (matrixPointCycle (Fin 2)).evenIndex (matIdem a) = 1 ∧
-      (matrixPointCycle (Fin 2)).normalize.evenIndex (matIdem a) = 1 ∧
-      (matrixPointCycle (Fin 2)).flipGrading.evenIndex (matIdem a) = -1 := by
-  have he := isIdempotentElem_matIdem a
-  have hbase : (matrixPointCycle (Fin 2)).evenIndex (matIdem a) = 1 := by
-    rw [evenIndex_matrixPointCycle, rank_matIdem]
-    rfl
-  exact ⟨hbase, by rw [evenIndex_normalize _ he, hbase],
-    by rw [evenIndex_flipGrading _ he, hbase]⟩
+private theorem evenIndex_matrixPointCycle_matIdem (a : ℂ) :
+    (matrixPointCycle (Fin 2)).evenIndex (matIdem a) = 1 := by
+  rw [evenIndex_matrixPointCycle, rank_matIdem]
+  rfl
+
+private theorem evenIndex_normalize_matrixPointCycle_matIdem (a : ℂ) :
+    (matrixPointCycle (Fin 2)).normalize.evenIndex (matIdem a) = 1 := by
+  rw [evenIndex_normalize _ (isIdempotentElem_matIdem a), evenIndex_matrixPointCycle_matIdem]
+
+private theorem evenIndex_flipGrading_matrixPointCycle_matIdem (a : ℂ) :
+    (matrixPointCycle (Fin 2)).flipGrading.evenIndex (matIdem a) = -1 := by
+  rw [evenIndex_flipGrading _ (isIdempotentElem_matIdem a), evenIndex_matrixPointCycle_matIdem]
 
 end PointCycle
 
@@ -802,6 +869,9 @@ variable (M : FredholmModule A H)
 /-- Approximate positive spectral projection `P = (1 + F) / 2` of an odd Fredholm module. -/
 def posProj : H →L[ℂ] H :=
   (2 : ℂ)⁻¹ • (1 + M.operator)
+
+theorem posProj_def : M.posProj = (2 : ℂ)⁻¹ • (1 + M.operator) :=
+  (rfl)
 
 theorem isSelfAdjoint_posProj : IsSelfAdjoint M.posProj :=
   isSelfAdjoint_iff.mpr <| by
@@ -867,22 +937,6 @@ theorem isCompactOperator_rep_mul_posProj_sub (M' : FredholmModule A H)
 
 end PosProj
 
-private theorem index_one_add_mul_eq {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H]
-    [CompleteSpace H] (P P' X : H →L[ℂ] H)
-    (hF : (1 + P * X * P).IsFredholm)
-    (h1 : IsCompactOperator ⇑((P' - P) * X))
-    (h2 : IsCompactOperator ⇑(X * (P' - P))) :
-    (1 + P' * X * P').index = (1 + P * X * P).index := by
-  let C : H →L[ℂ] H := ((P' - P) * X) * P' + P * (X * (P' - P))
-  have hC : IsCompactOperator C := (h1.mul_right P').add (h2.mul_left P)
-  have halg : 1 + P' * X * P' = (1 + P * X * P) + C := by
-    ext x
-    simp only [C, add_apply, sub_apply, one_apply_eq_self, ContinuousLinearMap.mul_def,
-      ContinuousLinearMap.comp_apply, map_sub]
-    rw [sub_add_sub_cancel, add_assoc, add_sub_cancel]
-  rw [halg]
-  exact ContinuousLinearMap.index_add_of_isCompactOperator hF hC
-
 section OddPairing
 
 variable {A : Type*} [Ring A] [StarRing A] [Algebra ℂ A]
@@ -899,20 +953,35 @@ or `F² = 1`. When `π(1) = 1` and `F² = 1`, this equals `(1 - P) + P π(a) P`.
 def oddToeplitzElem (a : A) : H →L[ℂ] H :=
   1 + M.posProj * M.rep (a - 1) * M.posProj
 
+theorem oddToeplitzElem_def (a : A) :
+    M.oddToeplitzElem a = 1 + M.posProj * M.rep (a - 1) * M.posProj :=
+  (rfl)
+
 /-- **Odd Toeplitz operator** associated to an invertible element `u ∈ Aˣ`. -/
 def oddToeplitz (u : Aˣ) : H →L[ℂ] H :=
   M.oddToeplitzElem u
+
+theorem oddToeplitz_def (u : Aˣ) : M.oddToeplitz u = M.oddToeplitzElem u :=
+  (rfl)
 
 /-- **Odd analytic index pairing** of an odd Fredholm module `M` with an invertible element
 `u ∈ Aˣ`, defined as the Fredholm index of `M.oddToeplitz u`. -/
 def oddIndex (u : Aˣ) : ℤ :=
   (M.oddToeplitz u).index
 
+theorem oddIndex_def (u : Aˣ) : M.oddIndex u = (M.oddToeplitz u).index :=
+  (rfl)
+
 /-- **Compressed odd Toeplitz operator** `P (1 + π(u - 1)) P : range P →L[ℂ] range P` on the
 positive spectral subspace `range ((1 + F) / 2)`. When `F² = 1`, `oddToeplitz M u` splits as
 `oddCompression M u ⊕ id` along `H ≃ range P × ker P`. -/
 def oddCompression (u : Aˣ) : M.posProj.range →L[ℂ] M.posProj.range :=
   M.posProj.rangeRestrict ∘L (1 + M.rep (↑u - 1)) ∘L M.posProj.range.subtypeL
+
+theorem oddCompression_def (u : Aˣ) :
+    M.oddCompression u =
+      M.posProj.rangeRestrict ∘L (1 + M.rep (↑u - 1)) ∘L M.posProj.range.subtypeL :=
+  (rfl)
 
 @[simp]
 theorem oddToeplitzElem_one : M.oddToeplitzElem 1 = 1 := by
@@ -1007,6 +1076,7 @@ theorem oddIndex_mul (u v : Aˣ) : M.oddIndex (u * v) = M.oddIndex u + M.oddInde
     ContinuousLinearMap.index_add_of_isCompactOperator huv hK] at hcomp
   simpa only [oddIndex, ContinuousLinearMap.index_def] using hcomp
 
+/-- Inversion in `Aˣ` negates the odd index pairing. -/
 @[simp]
 theorem oddIndex_inv (u : Aˣ) : M.oddIndex u⁻¹ = -M.oddIndex u := by
   have h := M.oddIndex_mul u⁻¹ u
@@ -1047,27 +1117,31 @@ theorem oddIndex_eq_zero_of_finiteDimensional [FiniteDimensional ℂ H] (u : Aˣ
     M.oddIndex u = 0 := by
   rw [oddIndex, ContinuousLinearMap.index_eq_of_finiteDimensional, sub_self]
 
-/-- **Fredholmness and index equality of the normalized compression.** When `M` is normalized
-(`F² = 1`), splitting `H ≃ range P × ker P` conjugates `M.oddToeplitz u` to
-`M.oddCompression u ⊕ id`, so `M.oddCompression u` is Fredholm with index `M.oddIndex u`. -/
+/-- When `M` is normalized (`F² = 1`), the topological direct-sum equivalence
+`range P × ker P ≃L[ℂ] H` intertwines `M.oddCompression u ⊕ id` with `M.oddToeplitz u`. -/
 theorem oddToeplitz_comp_prodEquivOfIsTopCompl (hM : M.IsNormalized) (u : Aˣ) :
-    let htop := ContinuousLinearMap.IsIdempotentElem.isTopCompl (M.isIdempotentElem_posProj hM)
-    let e := M.posProj.range.prodEquivOfIsTopCompl M.posProj.ker htop
-    (M.oddToeplitz u).comp (e : (M.posProj.range × M.posProj.ker) →L[ℂ] H) =
-      (e : (M.posProj.range × M.posProj.ker) →L[ℂ] H).comp
+    (M.oddToeplitz u).comp
+        ((M.posProj.range.prodEquivOfIsTopCompl M.posProj.ker
+          (ContinuousLinearMap.IsIdempotentElem.isTopCompl (M.isIdempotentElem_posProj hM)) :
+            (M.posProj.range × M.posProj.ker) →L[ℂ] H)) =
+      ((M.posProj.range.prodEquivOfIsTopCompl M.posProj.ker
+          (ContinuousLinearMap.IsIdempotentElem.isTopCompl (M.isIdempotentElem_posProj hM)) :
+            (M.posProj.range × M.posProj.ker) →L[ℂ] H)).comp
         ((M.oddCompression u).prodMap (.id ℂ M.posProj.ker)) := by
-  intro htop e
   have hP := M.isIdempotentElem_posProj hM
   have hrr (z : H) : (M.posProj.rangeRestrict z : H) = M.posProj z := rfl
+  have he {h} (z : M.posProj.range × M.posProj.ker) :
+      M.posProj.range.prodEquivOfIsTopCompl M.posProj.ker h z = (z.1 : H) + z.2 := rfl
   refine ContinuousLinearMap.ext fun ⟨x, y⟩ ↦ ?_
   have hx : M.posProj x = x := ContinuousLinearMap.IsIdempotentElem.apply_coe_range hP x
   have hy : M.posProj y = 0 := LinearMap.mem_ker.mp y.2
-  have he (z : M.posProj.range × M.posProj.ker) : e z = (z.1 : H) + z.2 := rfl
   simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, he,
     ContinuousLinearMap.coe_prodMap', Prod.map_apply, ContinuousLinearMap.id_apply, oddToeplitz,
     oddToeplitzElem, oddCompression, add_apply, one_apply_eq_self, ContinuousLinearMap.mul_def,
     Submodule.subtypeL_apply, Submodule.coe_add, hrr, map_add, map_zero, hx, hy, add_zero]
 
+/-- When `M` is normalized (`F² = 1`), the compressed Toeplitz operator `M.oddCompression u` on
+`range ((1 + F) / 2)` is Fredholm. -/
 theorem isFredholm_oddCompression (hM : M.IsNormalized) (u : Aˣ) :
     (M.oddCompression u).IsFredholm := by
   let htop := ContinuousLinearMap.IsIdempotentElem.isTopCompl (M.isIdempotentElem_posProj hM)
@@ -1077,6 +1151,8 @@ theorem isFredholm_oddCompression (hM : M.IsNormalized) (u : Aˣ) :
     (ContinuousLinearMap.isFredholm_iff_of_comp_eq e e hconj).mpr (M.isFredholm_oddToeplitz u)
   exact hprod.of_prodMap_left
 
+/-- When `M` is normalized (`F² = 1`), the Fredholm index of `M.oddCompression u` agrees with
+`M.oddIndex u`. -/
 @[simp]
 theorem index_oddCompression_eq_oddIndex (hM : M.IsNormalized) (u : Aˣ) :
     (M.oddCompression u).index = M.oddIndex u := by
@@ -1113,13 +1189,9 @@ theorem oddIndex_eq_of_isCompactOperator_sub_mul_rep {M' : FredholmModule A H} (
     M.isFredholm_oddToeplitz u
   have h1 := isCompactOperator_posProj_sub_mul_rep M M' hKc (↑u - 1)
   have h2 := isCompactOperator_rep_mul_posProj_sub M M' hKc (↑u - 1)
-  have f0 := index_one_add_mul_eq M.posProj M'.posProj (M.rep (↑u - 1))
-  have f1 := f0 hFred
-  have f2 := f1 h1
-  have f3 := f2 h2
-  rw [oddIndex, oddIndex, oddToeplitz, oddToeplitz, oddToeplitzElem, oddToeplitzElem,
-    hrep (↑u - 1)]
-  exact f3
+  rw [oddIndex_def, oddIndex_def, oddToeplitz_def, oddToeplitz_def, oddToeplitzElem_def,
+    oddToeplitzElem_def, hrep (↑u - 1)]
+  exact ContinuousLinearMap.index_one_add_mul_eq _ _ _ hFred h1 h2
 
 /-- Relatively compact perturbations leave the odd index unchanged. -/
 @[simp]
@@ -1133,10 +1205,13 @@ theorem oddIndex_perturb (K : H →L[ℂ] H) (hK : IsSelfAdjoint K)
 theorem oddIndex_conj (U : H ≃ₗᵢ[ℂ] H') (u : Aˣ) :
     (M.conj U).oddIndex u = M.oddIndex u := by
   let eU : H ≃L[ℂ] H' := U.toContinuousLinearEquiv
+  have hconj (T : H →L[ℂ] H) :
+      U.conjStarAlgEquiv T =
+        ((eU : H →L[ℂ] H').comp T).comp (eU.symm : H' →L[ℂ] H) := rfl
   have hT : (M.conj U).oddToeplitz u =
       ((eU : H →L[ℂ] H').comp (M.oddToeplitz u)).comp (eU.symm : H' →L[ℂ] H) := by
-    change (M.conj U).oddToeplitz u = U.conjStarAlgEquiv (M.oddToeplitz u)
-    simp [oddToeplitz, oddToeplitzElem, posProj, map_add, map_mul, map_smul, map_one]
+    rw [← hconj]
+    simp [oddToeplitz_def, oddToeplitzElem_def, posProj_def, map_add, map_mul, map_smul, map_one]
   rw [oddIndex, hT, ContinuousLinearMap.index_comp_equiv, ContinuousLinearMap.index_equiv_comp]
   rfl
 
@@ -1178,6 +1253,7 @@ theorem oddIndex_prod (M₁ : FredholmModule A H₁) (M₂ : FredholmModule A H�
     _ = (M₁.oddToeplitz u).index + (M₂.oddToeplitz u).index :=
           (M₁.oddToeplitz u).index_prodMap (M₂.oddToeplitz u)
 
+/-- The linear operator homotopy to `sin(π F / 2)` preserves the odd index at every `u ∈ Aˣ`. -/
 @[simp]
 theorem oddIndex_sinContractionHomotopy (t : ℝ) (u : Aˣ) :
     (M.sinContractionHomotopy t).oddIndex u = M.oddIndex u := by
@@ -1187,11 +1263,13 @@ theorem oddIndex_sinContractionHomotopy (t : ℝ) (u : Aˣ) :
   rw [hsub, smul_mul_assoc, FunLike.coe_smul]
   exact (M.isCompactOperator_sinPerturbation_mul_rep a).smul (t : ℂ)
 
+/-- Spectral contraction `sin(π F / 2)` preserves the odd index at every `u ∈ Aˣ`. -/
 @[simp]
 theorem oddIndex_sinContraction (u : Aˣ) :
     M.sinContraction.oddIndex u = M.oddIndex u := by
   rw [← M.sinContractionHomotopy_one, M.oddIndex_sinContractionHomotopy 1 u]
 
+/-- The doubling operator homotopy preserves the odd index at every `u ∈ Aˣ`. -/
 @[simp]
 theorem oddIndex_doubleHomotopy (hF : 0 ≤ 1 - M.operator * M.operator) (t : ℝ) (u : Aˣ) :
     (M.doubleHomotopy hF t).oddIndex u = M.oddIndex u := by
@@ -1209,6 +1287,7 @@ theorem oddIndex_doubleHomotopy (hF : 0 ≤ 1 - M.operator * M.operator) (t : �
   rw [hhom, FredholmModule.oddIndex_prod,
     FredholmModule.oddIndex_eq_zero_of_isDegenerate _ (isDegenerate_zeroRep _ _) u, add_zero]
 
+/-- Contraction doubling preserves the odd index at every `u ∈ Aˣ`. -/
 @[simp]
 theorem oddIndex_double (hF : 0 ≤ 1 - M.operator * M.operator) (u : Aˣ) :
     (M.double hF).oddIndex u = M.oddIndex u := by

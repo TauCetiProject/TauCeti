@@ -57,6 +57,76 @@ public section
 
 open ContinuousMap
 
+section Core
+
+private theorem eq_cfc_of_intertwine {𝕜 A B C : Type*} {pa : A → Prop} {pb : B → Prop}
+    [RCLike 𝕜] [Ring A] [StarRing A] [Algebra 𝕜 A] [TopologicalSpace A]
+    [ContinuousFunctionalCalculus 𝕜 A pa]
+    [Ring B] [StarRing B] [Algebra 𝕜 B] [TopologicalSpace B]
+    [ContinuousFunctionalCalculus 𝕜 B pb]
+    [TopologicalSpace C] [T2Space C]
+    {L : A → C} {R : B → C} (hL : Continuous L) (hR : Continuous R)
+    {a : A} {b : B}
+    (hconst : ∀ r : 𝕜, L (algebraMap 𝕜 A r) = R (algebraMap 𝕜 B r))
+    (hid : L a = R b)
+    (hstar : L (star a) = R (star b))
+    (hadd : ∀ a₁ a₂ b₁ b₂, L a₁ = R b₁ → L a₂ = R b₂ → L (a₁ + a₂) = R (b₁ + b₂))
+    (hmul : ∀ a₁ a₂ b₁ b₂, L a₁ = R b₁ → L a₂ = R b₂ → L (a₁ * a₂) = R (b₁ * b₂))
+    (f : 𝕜 → 𝕜)
+    (hfa : ContinuousOn f (spectrum 𝕜 a))
+    (hfb : ContinuousOn f (spectrum 𝕜 b))
+    (ha : pa a) (hb : pb b) :
+    L (cfc f a) = R (cfc f b) := by
+  -- Both calculi are read on continuous symbols on the common compact set `K`.
+  set K := spectrum 𝕜 a ∪ spectrum 𝕜 b
+  have hca := ContinuousFunctionalCalculus.isCompact_spectrum (R := 𝕜) (p := pa) a
+  have hcb := ContinuousFunctionalCalculus.isCompact_spectrum (R := 𝕜) (p := pb) b
+  have : CompactSpace K := isCompact_iff_compactSpace.mp (hca.union hcb)
+  let ιa : C(spectrum 𝕜 a, K) := ⟨Set.inclusion Set.subset_union_left, continuous_inclusion _⟩
+  let ιb : C(spectrum 𝕜 b, K) := ⟨Set.inclusion Set.subset_union_right, continuous_inclusion _⟩
+  let φa := (cfcHom ha).comp (ιa.compStarAlgHom' 𝕜 𝕜)
+  let φb := (cfcHom hb).comp (ιb.compStarAlgHom' 𝕜 𝕜)
+  have hφa : Continuous φa := (cfcHom_continuous ha).comp (continuous_precomp ιa)
+  have hφb : Continuous φb := (cfcHom_continuous hb).comp (continuous_precomp ιb)
+  have hφa_id : φa (.restrict K (.id 𝕜)) = a := by
+    rw [← cfcHom_id (R := 𝕜) ha]
+    exact congrArg (cfcHom ha) (ContinuousMap.ext fun _ => rfl)
+  have hφb_id : φb (.restrict K (.id 𝕜)) = b := by
+    rw [← cfcHom_id (R := 𝕜) hb]
+    exact congrArg (cfcHom hb) (ContinuousMap.ext fun _ => rfl)
+  -- The symbols on `K` intertwined by `(L, R)` contain the constants, the identity and its
+  -- conjugate, and are closed under sums, products and limits, so by Stone–Weierstrass they are
+  -- all continuous symbols on `K`.
+  have key (g : C(K, 𝕜)) : L (φa g) = R (φb g) := by
+    induction g using ContinuousMap.induction_on_of_compact with
+    | const r =>
+      have hr : ContinuousMap.const K r = algebraMap 𝕜 C(K, 𝕜) r := by ext; simp
+      rw [hr, AlgHomClass.commutes, AlgHomClass.commutes]
+      exact hconst r
+    | id => rwa [hφa_id, hφb_id]
+    | star_id => rwa [map_star, map_star, hφa_id, hφb_id]
+    | add f g hf hg =>
+      rw [map_add, map_add]
+      exact hadd _ _ _ _ hf hg
+    | mul f g hf hg =>
+      rw [map_mul, map_mul]
+      exact hmul _ _ _ _ hf hg
+    | frequently g hg =>
+      have hclosed : IsClosed {g : C(K, 𝕜) | L (φa g) = R (φb g)} :=
+        isClosed_eq (hL.comp hφa) (hR.comp hφb)
+      exact hclosed.closure_subset_iff.mpr subset_rfl (mem_closure_iff_frequently.mpr hg)
+  have hf : ContinuousOn f K := hfa.union_of_isClosed hfb hca.isClosed hcb.isClosed
+  have hfa' : cfc f a = φa ⟨_, hf.domRestrict⟩ := by
+    rw [cfc_apply f a]
+    exact congrArg (cfcHom ha) (ContinuousMap.ext fun _ => rfl)
+  have hfb' : cfc f b = φb ⟨_, hf.domRestrict⟩ := by
+    rw [cfc_apply f b]
+    exact congrArg (cfcHom hb) (ContinuousMap.ext fun _ => rfl)
+  rw [hfa', hfb']
+  exact key _
+
+end Core
+
 namespace ContinuousLinearMap
 
 variable {𝕜 E F : Type*} [RCLike 𝕜]
@@ -74,50 +144,15 @@ theorem comp_cfc_eq_cfc_comp {p : (E →L[𝕜] E) → Prop} {q : (F →L[𝕜] 
     (hfa : ContinuousOn f (spectrum 𝕜 a) := by cfc_cont_tac)
     (hfb : ContinuousOn f (spectrum 𝕜 b) := by cfc_cont_tac)
     (ha : p a := by cfc_tac) (hb : q b := by cfc_tac) :
-    X ∘L cfc f a = cfc f b ∘L X := by
-  -- Both calculi are read on continuous symbols on the common compact set `K`.
-  set K := spectrum 𝕜 a ∪ spectrum 𝕜 b
-  have hca := ContinuousFunctionalCalculus.isCompact_spectrum (R := 𝕜) (p := p) a
-  have hcb := ContinuousFunctionalCalculus.isCompact_spectrum (R := 𝕜) (p := q) b
-  have : CompactSpace K := isCompact_iff_compactSpace.mp (hca.union hcb)
-  let ιa : C(spectrum 𝕜 a, K) := ⟨Set.inclusion Set.subset_union_left, continuous_inclusion _⟩
-  let ιb : C(spectrum 𝕜 b, K) := ⟨Set.inclusion Set.subset_union_right, continuous_inclusion _⟩
-  let φa := (cfcHom ha).comp (ιa.compStarAlgHom' 𝕜 𝕜)
-  let φb := (cfcHom hb).comp (ιb.compStarAlgHom' 𝕜 𝕜)
-  have hφa : Continuous φa := (cfcHom_continuous ha).comp (continuous_precomp ιa)
-  have hφb : Continuous φb := (cfcHom_continuous hb).comp (continuous_precomp ιb)
-  have hφa_id : φa (.restrict K (.id 𝕜)) = a := by
-    rw [← cfcHom_id (R := 𝕜) ha]
-    exact congrArg (cfcHom ha) (ContinuousMap.ext fun _ => rfl)
-  have hφb_id : φb (.restrict K (.id 𝕜)) = b := by
-    rw [← cfcHom_id (R := 𝕜) hb]
-    exact congrArg (cfcHom hb) (ContinuousMap.ext fun _ => rfl)
-  -- The symbols on `K` intertwined by `X` contain the constants, the identity and its conjugate,
-  -- and are closed under sums, products and limits, so by Stone–Weierstrass they are all symbols.
-  have key (g : C(K, 𝕜)) : X ∘L φa g = φb g ∘L X := by
-    induction g using ContinuousMap.induction_on_of_compact with
-    | const r =>
-      have hr : ContinuousMap.const K r = algebraMap 𝕜 C(K, 𝕜) r := by ext; simp
-      simp [hr, Algebra.algebraMap_eq_smul_one, one_def]
-    | id => rwa [hφa_id, hφb_id]
-    | star_id => rwa [map_star, map_star, hφa_id, hφb_id]
-    | add f g hf hg => rw [map_add, map_add, comp_add, add_comp, hf, hg]
-    | mul f g hf hg =>
-      rw [map_mul, map_mul, mul_def, mul_def, ← comp_assoc, hf, comp_assoc, hg, comp_assoc]
-    | frequently g hg =>
-      have hclosed : IsClosed {g : C(K, 𝕜) | X ∘L φa g = φb g ∘L X} :=
-        isClosed_eq (by fun_prop) (by fun_prop)
-      exact hclosed.closure_subset_iff.mpr subset_rfl (mem_closure_iff_frequently.mpr hg)
-  -- `cfc f a` and `cfc f b` are the two calculi at the restriction of `f` to `K`.
-  have hf : ContinuousOn f K :=
-    hfa.union_of_isClosed hfb hca.isClosed hcb.isClosed
-  have hfa' : cfc f a = φa ⟨_, hf.domRestrict⟩ := by
-    rw [cfc_apply f a]
-    exact congrArg (cfcHom ha) (ContinuousMap.ext fun _ => rfl)
-  have hfb' : cfc f b = φb ⟨_, hf.domRestrict⟩ := by
-    rw [cfc_apply f b]
-    exact congrArg (cfcHom hb) (ContinuousMap.ext fun _ => rfl)
-  rw [hfa', hfb', key]
+    X ∘L cfc f a = cfc f b ∘L X :=
+  eq_cfc_of_intertwine (L := fun u ↦ X ∘L u) (R := fun v ↦ v ∘L X)
+    (by fun_prop) (by fun_prop)
+    (fun r ↦ by simp [Algebra.algebraMap_eq_smul_one, one_def])
+    h h_star
+    (fun _ _ _ _ h₁ h₂ ↦ by rw [comp_add, add_comp, h₁, h₂])
+    (fun _ _ _ _ h₁ h₂ ↦ by
+      rw [mul_def, mul_def, ← comp_assoc, h₁, comp_assoc, h₂, comp_assoc])
+    f hfa hfb ha hb
 
 /-- If `X` intertwines a coisometry `u` and an isometry `v`, then it also intertwines their
 adjoints. In particular this holds for unitaries `u` and `v`. -/
@@ -143,46 +178,14 @@ protected theorem SemiconjBy.cfc {x a b : A} (h : SemiconjBy x a b)
     (hfa : ContinuousOn f (spectrum 𝕜 a) := by cfc_cont_tac)
     (hfb : ContinuousOn f (spectrum 𝕜 b) := by cfc_cont_tac)
     (ha : p a := by cfc_tac) (hb : p b := by cfc_tac) :
-    SemiconjBy x (cfc f a) (cfc f b) := by
-  set K := spectrum 𝕜 a ∪ spectrum 𝕜 b
-  have hca := ContinuousFunctionalCalculus.isCompact_spectrum (R := 𝕜) (p := p) a
-  have hcb := ContinuousFunctionalCalculus.isCompact_spectrum (R := 𝕜) (p := p) b
-  have : CompactSpace K := isCompact_iff_compactSpace.mp (hca.union hcb)
-  let ιa : C(spectrum 𝕜 a, K) := ⟨Set.inclusion Set.subset_union_left, continuous_inclusion _⟩
-  let ιb : C(spectrum 𝕜 b, K) := ⟨Set.inclusion Set.subset_union_right, continuous_inclusion _⟩
-  let φa := (cfcHom ha).comp (ιa.compStarAlgHom' 𝕜 𝕜)
-  let φb := (cfcHom hb).comp (ιb.compStarAlgHom' 𝕜 𝕜)
-  have hφa : Continuous φa := (cfcHom_continuous ha).comp (continuous_precomp ιa)
-  have hφb : Continuous φb := (cfcHom_continuous hb).comp (continuous_precomp ιb)
-  have hφa_id : φa (.restrict K (.id 𝕜)) = a := by
-    rw [← cfcHom_id (R := 𝕜) ha]
-    exact congrArg (cfcHom ha) (ContinuousMap.ext fun _ => rfl)
-  have hφb_id : φb (.restrict K (.id 𝕜)) = b := by
-    rw [← cfcHom_id (R := 𝕜) hb]
-    exact congrArg (cfcHom hb) (ContinuousMap.ext fun _ => rfl)
-  have key (g : C(K, 𝕜)) : SemiconjBy x (φa g) (φb g) := by
-    induction g using ContinuousMap.induction_on_of_compact with
-    | const r =>
-      have hr : ContinuousMap.const K r = algebraMap 𝕜 C(K, 𝕜) r := by ext; simp
-      rw [hr, AlgHomClass.commutes, AlgHomClass.commutes]
-      simp [SemiconjBy, Algebra.algebraMap_eq_smul_one]
-    | id => rwa [hφa_id, hφb_id]
-    | star_id => rwa [map_star, map_star, hφa_id, hφb_id]
-    | add f g hf hg => rw [map_add, map_add]; exact hf.add_right hg
-    | mul f g hf hg => rw [map_mul, map_mul]; exact hf.mul_right hg
-    | frequently g hg =>
-      have hclosed : IsClosed {g : C(K, 𝕜) | x * φa g = φb g * x} :=
-        isClosed_eq (by fun_prop) (by fun_prop)
-      exact hclosed.closure_subset_iff.mpr subset_rfl (mem_closure_iff_frequently.mpr hg)
-  have hf : ContinuousOn f K := hfa.union_of_isClosed hfb hca.isClosed hcb.isClosed
-  have hfa' : cfc f a = φa ⟨_, hf.domRestrict⟩ := by
-    rw [cfc_apply f a]
-    exact congrArg (cfcHom ha) (ContinuousMap.ext fun _ => rfl)
-  have hfb' : cfc f b = φb ⟨_, hf.domRestrict⟩ := by
-    rw [cfc_apply f b]
-    exact congrArg (cfcHom hb) (ContinuousMap.ext fun _ => rfl)
-  rw [hfa', hfb']
-  exact key _
+    SemiconjBy x (cfc f a) (cfc f b) :=
+  eq_cfc_of_intertwine (L := (x * ·)) (R := (· * x))
+    (by fun_prop) (by fun_prop)
+    (fun r ↦ by simp [Algebra.algebraMap_eq_smul_one])
+    h h_star
+    (fun _ _ _ _ h₁ h₂ ↦ SemiconjBy.add_right h₁ h₂)
+    (fun _ _ _ _ h₁ h₂ ↦ SemiconjBy.mul_right h₁ h₂)
+    f hfa hfb ha hb
 
 /-- For self-adjoint `a` and `b`, `SemiconjBy x a b` passes to `SemiconjBy x (cfc f a) (cfc f b)`
 without a separate star hypothesis. -/
