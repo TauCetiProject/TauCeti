@@ -109,7 +109,7 @@ theorem heatKernel_le {t : ℝ} (ht : 0 < t) (x : E) :
 theorem heatKernel_neg (t : ℝ) (x : E) : heatKernel t (-x) = heatKernel t x := by
   simp [heatKernel_apply]
 
-/-- At a positive time the heat kernel is radially nonincreasing: it is smaller at the point
+/-- At a positive time the heat kernel is radially nonincreasing: it is no larger at the point
 farther from the origin. -/
 theorem heatKernel_le_heatKernel_of_norm_le {t : ℝ} (ht : 0 < t) {x y : E} (h : ‖x‖ ≤ ‖y‖) :
     heatKernel t y ≤ heatKernel t x := by
@@ -346,7 +346,7 @@ theorem heatKernel_convolution_cexp_inner {t : ℝ} (ht : 0 < t) (ξ x : E) :
   have hF := fourier_heatKernel ht ((2 * π)⁻¹ • ξ)
   rw [Real.fourier_eq'] at hF
   have hexp : -(4 * π ^ 2 * t * ‖(2 * π)⁻¹ • ξ‖ ^ 2) = -(t * ‖ξ‖ ^ 2) := by
-    rw [norm_smul, mul_pow, Real.norm_eq_abs, abs_inv, abs_of_pos (by positivity)]
+    simp [norm_smul, mul_pow, abs_of_pos pi_pos]
     field_simp
     ring
   rw [hexp] at hF
@@ -358,8 +358,9 @@ theorem heatKernel_convolution_cexp_inner {t : ℝ} (ht : 0 < t) (ξ x : E) :
     field_simp
   simp only [hphase, Complex.real_smul, smul_eq_mul, inner_sub_right]
   push_cast
-  rw [sub_mul, Complex.exp_sub, neg_mul, Complex.exp_neg]
-  ring
+  rw [sub_mul, Complex.exp_sub]
+  field_simp
+  simp [mul_assoc, ← Complex.exp_add]
 
 /-- **The heat flow of a sine wave.** For `t > 0` and `ξ ∈ E`,
 `K_t ⋆ sin ⟪ξ, ·⟫ = exp (-t ‖ξ‖²) sin ⟪ξ, ·⟫`. -/

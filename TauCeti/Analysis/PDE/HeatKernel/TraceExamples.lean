@@ -188,9 +188,8 @@ theorem eLpNorm_heatKernel_convolution_sign_inner_sub (he : e ≠ 0) (ht : 0 < t
   -- along `s • e` tend to `u 0 - 1 = -1` as `s → 0⁺`.
   have hU : IsOpen {x : E | 0 < ⟪e, x⟫} := isOpen_lt continuous_const (by fun_prop)
   have hcont : ContinuousOn (fun x ↦ u x - Real.sign ⟪e, x⟫) {x : E | 0 < ⟪e, x⟫} :=
-    (hu.sub (continuous_const (y := (1 : ℝ)))).continuousOn.congr fun x (hx : 0 < ⟪e, x⟫) ↦ by
+    (by fun_prop : Continuous fun x ↦ u x - 1).continuousOn.congr fun x (hx : 0 < ⟪e, x⟫) ↦ by
       rw [Real.sign_of_pos hx]
-      rfl
   have hpos (s : ℝ) (hs : 0 < s) : 0 < ⟪e, s • e⟫ := by
     rw [inner_smul_right, real_inner_self_eq_norm_sq]
     exact mul_pos hs (pow_pos (norm_pos_iff.2 he) 2)
@@ -265,7 +264,11 @@ theorem tendsto_eLpNorm_heatKernel_convolution_sin_inner_smul_sub {e : E} (he : 
   have hpos : 0 < t * ‖e‖ ^ 2 := mul_pos ht (pow_pos (norm_pos_iff.2 he) 2)
   have hexp : Tendsto (fun k : ℝ ↦ Real.exp (-(t * ‖k • e‖ ^ 2))) atTop (𝓝 0) := by
     refine Real.tendsto_exp_atBot.comp (tendsto_neg_atTop_atBot.comp ?_)
-    simp_rw [norm_smul, mul_pow, Real.norm_eq_abs, sq_abs, ← mul_assoc, mul_comm t, mul_assoc]
+    have hk : (fun k : ℝ ↦ t * ‖k • e‖ ^ 2) = fun k ↦ k ^ 2 * (t * ‖e‖ ^ 2) := by
+      funext k
+      simp [norm_smul, mul_pow]
+      ring
+    rw [hk]
     exact (tendsto_pow_atTop two_ne_zero).atTop_mul_const hpos
   have h1 : Tendsto (fun k : ℝ ↦ ENNReal.ofReal (1 - Real.exp (-(t * ‖k • e‖ ^ 2)))) atTop
       (𝓝 1) := by
