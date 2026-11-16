@@ -25,9 +25,9 @@ A pair `(q, r)` is *wave-admissible* when `2 ≤ r`, `2 < q < ∞` and
 
 the non-endpoint, finite-`q` part of the region of Tao, Theorem 2.6 (the excluded pair
 `(2, ∞)` in dimension `3` has `q = 2`). Admissibility forces `n ≥ 2` and `r > 2`. The regularity
-exponent is the scaling-critical `s = n / 2 - n / r - 1 / q`. The main estimate is
+exponent is the scaling-critical `σ = n / 2 - n / r - 1 / q`. The main estimate is
 
-`‖W₊(t) Pⱼ f‖_{L^q_t L^r_x} ≤ C 2^{js} ‖f‖₂`,
+`‖W₊(t) Pⱼ f‖_{L^q_t L^r_x} ≤ C 2^{jσ} ‖f‖₂`,
 
 stated, like the Schrödinger estimates of `TauCeti.Analysis.PDE.Schrodinger.Strichartz`, in weak
 form against `G ∈ L^{q'}_t L^{r'}_x`, together with its dual form, the bilinear bound for the
@@ -42,9 +42,9 @@ origin. The dispersive estimate for dilated cutoffs
 by `C 2^{jn} (1 + 2^j |τ|)^(-(n - 1)/2)`, and it is bounded on `L²` uniformly in `j`. The
 Riesz–Thorin theorem interpolates the two to an `L^{r'} → L^r` bound with the factor
 `(1 + 2^j |τ|)^(-(n - 1)(1/2 - 1/r))`, and admissibility makes this at most `(2^j |τ|)^(-2/q)`.
-So the pairings decay like `A 2^{2js} |τ|^(-2/q)`, which is the hypothesis of the abstract `TT*`
+So the pairings decay like `A 2^{2jσ} |τ|^(-2/q)`, which is the hypothesis of the abstract `TT*`
 estimates of `TauCeti.Analysis.PDE.Strichartz.TTStar`; their constant is linear in `A` for the
-bilinear bound and in `A ^ (1/2)` for the others, which produces the factors `2^{2js}` and `2^{js}`.
+bilinear bound and in `A ^ (1/2)` for the others, which produces the factors `2^{2jσ}` and `2^{jσ}`.
 
 ## Main declarations
 
@@ -53,7 +53,7 @@ bilinear bound and in `A ^ (1/2)` for the others, which produces the factors `2^
 * `exists_enorm_integral_setIntegral_Iio_inner_halfWavePropagator_sub_fourierMultiplierCLM_le`:
   the retarded estimate, in weak form.
 * `TauCeti.exists_enorm_integral_fourierMultiplierCLM_halfWavePropagator_neg_le`: the dual
-  estimate `‖∫ Pⱼ* W₊(-s) F(s) ds‖₂ ≤ C 2^{js} ‖F‖_{L^{q'}_t L^{r'}_x}`.
+  estimate `‖∫ Pⱼ* W₊(-s) F(s) ds‖₂ ≤ C 2^{jσ} ‖F‖_{L^{q'}_t L^{r'}_x}`.
 * `TauCeti.exists_enorm_integral_inner_halfWavePropagator_fourierMultiplierCLM_le`: the
   homogeneous estimate, in weak form.
 
@@ -99,9 +99,9 @@ private theorem halfWavePropagator_comp_apply_adjoint (m : Lp ℂ ∞ (volume : 
 /-- The decay of the Riesz–Thorin bound: if `(q, r)` is wave-admissible, `a = 1 / r` and
 `c = 2^j`, then
 
-`(C₁ c^n (1 + c |τ|)^(-(n - 1)/2))^(1 - 2a) B₁^(2a) ≤ C₁^(1 - 2a) B₁^(2a) c^{2s} |τ|^(-2/q)`
+`(C₁ c^n (1 + c |τ|)^(-(n - 1)/2))^(1 - 2a) B₁^(2a) ≤ C₁^(1 - 2a) B₁^(2a) c^{2σ} |τ|^(-2/q)`
 
-with `s = n / 2 - n a - 1 / q`. -/
+with `σ = n / 2 - n a - 1 / q`. -/
 private theorem rpow_mul_rpow_le {n : ℕ} {a c C₁ B₁ τ : ℝ} {q : ℝ≥0} (hq : 2 < q)
     (hqr : 2 / (q : ℝ) + ((n : ℝ) - 1) * a ≤ ((n : ℝ) - 1) / 2) (hc : 0 < c)
     (hC₁ : 0 ≤ C₁) (hB₁ : 0 ≤ B₁) (hτ : 0 < |τ|) :
@@ -145,9 +145,9 @@ variable {ψ : E → ℂ} {q : ℝ≥0} {r r' : ℝ≥0∞} [r'.HolderConjugate 
 /-- **Interpolated dispersive decay.** Let `(q, r)` be wave-admissible in dimension `n`, and let
 `T` be bounded on `L²` with `‖T‖ ≤ B₁` and `‖T f‖_∞ ≤ C₁ c^n (1 + c |τ|)^(-(n - 1)/2) ‖f‖₁`. Then
 
-`‖T g‖_r ≤ C₁^(1 - 2/r) B₁^(2/r) c^{2s} |τ|^(-2/q) ‖g‖_{r'}`,
+`‖T g‖_r ≤ C₁^(1 - 2/r) B₁^(2/r) c^{2σ} |τ|^(-2/q) ‖g‖_{r'}`,
 
-with `s = n / 2 - n / r - 1 / q`: the Riesz–Thorin theorem followed by admissibility. -/
+with `σ = n / 2 - n / r - 1 / q`: the Riesz–Thorin theorem followed by admissibility. -/
 private theorem eLpNorm_apply_le_of_eLpNorm_top_le (hq : 2 < q) (hr : 2 ≤ r)
     (hqr : 2 / (q : ℝ) + ((Module.finrank ℝ E : ℝ) - 1) * (r⁻¹).toReal ≤
       ((Module.finrank ℝ E : ℝ) - 1) / 2)
@@ -182,7 +182,7 @@ private theorem eLpNorm_apply_le_of_eLpNorm_top_le (hq : 2 < q) (hr : 2 ≤ r)
     exact le_top
 
 /-- The time pairings `U(s) U(t)*` of the frequency-localized half-wave propagators
-`U(t) = W₊(t) Pⱼ` decay from `L^{r'}` to `L^r` like `A 2^{2js} |s - t| ^ (-2 / q)` along a
+`U(t) = W₊(t) Pⱼ` decay from `L^{r'}` to `L^r` like `A 2^{2jσ} |s - t| ^ (-2 / q)` along a
 wave-admissible pair, with `A` independent of `j`. -/
 private theorem exists_eLpNorm_halfWavePropagator_comp_apply_adjoint_le (hψ : ContDiff ℝ ∞ ψ)
     (hψc : HasCompactSupport ψ) (hψ0 : (0 : E) ∉ tsupport ψ) (hq : 2 < q) (hr : 2 ≤ r)
@@ -236,11 +236,11 @@ private theorem exists_eLpNorm_halfWavePropagator_comp_apply_adjoint_le (hψ : C
 /-- **The bilinear frequency-localized Strichartz estimate for the wave equation.** Let `E` have
 dimension `n`, let `ψ` be smooth, compactly supported and vanish near the origin, and let
 `(q, r)` be wave-admissible: `2 ≤ r`, `2 < q < ∞` and `2 / q + (n - 1) / r ≤ (n - 1) / 2`, with `p`
-and `r'` the Hölder conjugates of `q` and `r`. Put `s = n / 2 - n / r - 1 / q`. There is `C` such
+and `r'` the Hölder conjugates of `q` and `r`. Put `σ = n / 2 - n / r - 1 / q`. There is `C` such
 that for every `j ∈ ℤ`, every multiplier `Pⱼ` with symbol `ψ (2^{-j} ·)` and all almost
 everywhere strongly measurable `F, G : ℝ → L²(E)`,
 
-`∫∫ |⟪W₊(t - s) Pⱼ Pⱼ* F(s), G(t)⟫| ds dt ≤ C 2^{2js} ‖F‖_{L^p_t L^{r'}_x} ‖G‖_{L^p_t L^{r'}_x}`.
+`∫∫ |⟪W₊(t - s) Pⱼ Pⱼ* F(s), G(t)⟫| ds dt ≤ C 2^{2jσ} ‖F‖_{L^p_t L^{r'}_x} ‖G‖_{L^p_t L^{r'}_x}`.
 
 Since the integrand is the absolute value of the Duhamel pairing, the bound also controls the
 integral over any part of the `(s, t)` plane, such as the retarded region `s < t`
@@ -284,15 +284,15 @@ theorem exists_lintegral_lintegral_enorm_inner_halfWavePropagator_sub_fourierMul
 /-- **The retarded frequency-localized Strichartz estimate for the wave equation**, in weak form.
 Let `E` have dimension `n`, let `ψ` be smooth, compactly supported and vanish near the origin, and
 let `(q, r)` be wave-admissible: `2 ≤ r`, `2 < q < ∞` and `2 / q + (n - 1) / r ≤ (n - 1) / 2`, with
-`p` and `r'` the Hölder conjugates of `q` and `r`. Put `s = n / 2 - n / r - 1 / q`. There is `C`
+`p` and `r'` the Hölder conjugates of `q` and `r`. Put `σ = n / 2 - n / r - 1 / q`. There is `C`
 such that for every `j ∈ ℤ`, every multiplier `Pⱼ` with symbol `ψ (2^{-j} ·)` and all almost
 everywhere strongly measurable `F, G : ℝ → L²(E)`,
 
 `|∫ ∫_{s < t} ⟪W₊(t - s) Pⱼ Pⱼ* F(s), G(t)⟫ ds dt| ≤
-  C 2^{2js} ‖F‖_{L^p_t L^{r'}_x} ‖G‖_{L^p_t L^{r'}_x}`.
+  C 2^{2jσ} ‖F‖_{L^p_t L^{r'}_x} ‖G‖_{L^p_t L^{r'}_x}`.
 
 This is the Duhamel estimate
-`‖∫_{s < t} W₊(t - s) Pⱼ Pⱼ* F(s) ds‖_{L^q_t L^r_x} ≤ C 2^{2js} ‖F‖_{L^p_t L^{r'}_x}` tested
+`‖∫_{s < t} W₊(t - s) Pⱼ Pⱼ* F(s) ds‖_{L^q_t L^r_x} ≤ C 2^{2jσ} ‖F‖_{L^p_t L^{r'}_x}` tested
 against `G`. -/
 theorem exists_enorm_integral_setIntegral_Iio_inner_halfWavePropagator_sub_fourierMultiplierCLM_le
     (hψ : ContDiff ℝ ∞ ψ) (hψc : HasCompactSupport ψ) (hψ0 : (0 : E) ∉ tsupport ψ) {p : ℝ≥0}
@@ -324,11 +324,11 @@ theorem exists_enorm_integral_setIntegral_Iio_inner_halfWavePropagator_sub_fouri
 /-- **The dual frequency-localized Strichartz estimate for the wave equation.** Let `E` have
 dimension `n`, let `ψ` be smooth, compactly supported and vanish near the origin, and let
 `(q, r)` be wave-admissible: `2 ≤ r`, `2 < q < ∞` and `2 / q + (n - 1) / r ≤ (n - 1) / 2`, with `p`
-and `r'` the Hölder conjugates of `q` and `r`. Put `s = n / 2 - n / r - 1 / q`. There is `C` such
+and `r'` the Hölder conjugates of `q` and `r`. Put `σ = n / 2 - n / r - 1 / q`. There is `C` such
 that for every `j ∈ ℤ`, every multiplier `Pⱼ` with symbol `ψ (2^{-j} ·)` and every almost
 everywhere strongly measurable `F : ℝ → L²(E)` for which `s ↦ Pⱼ* W₊(-s) F(s)` is integrable,
 
-`‖∫ Pⱼ* W₊(-s) F(s) ds‖₂ ≤ C 2^{js} ‖F‖_{L^p_t L^{r'}_x}`. -/
+`‖∫ Pⱼ* W₊(-s) F(s) ds‖₂ ≤ C 2^{jσ} ‖F‖_{L^p_t L^{r'}_x}`. -/
 theorem exists_enorm_integral_fourierMultiplierCLM_halfWavePropagator_neg_le
     (hψ : ContDiff ℝ ∞ ψ) (hψc : HasCompactSupport ψ) (hψ0 : (0 : E) ∉ tsupport ψ) {p : ℝ≥0}
     (hq : 2 < q) (hpq : p.HolderConjugate q) (hr : 2 ≤ r)
@@ -359,14 +359,14 @@ theorem exists_enorm_integral_fourierMultiplierCLM_halfWavePropagator_neg_le
 /-- **The frequency-localized Strichartz estimate for the wave equation**, in weak form. Let `E`
 have dimension `n`, let `ψ` be smooth, compactly supported and vanish near the origin, and let
 `(q, r)` be wave-admissible: `2 ≤ r`, `2 < q < ∞` and `2 / q + (n - 1) / r ≤ (n - 1) / 2`, with `p`
-and `r'` the Hölder conjugates of `q` and `r`. Put `s = n / 2 - n / r - 1 / q`. There is `C` such
+and `r'` the Hölder conjugates of `q` and `r`. Put `σ = n / 2 - n / r - 1 / q`. There is `C` such
 that for every `j ∈ ℤ`, every multiplier `Pⱼ` with symbol `ψ (2^{-j} ·)`, every `f ∈ L²(E)` and
 every almost everywhere strongly measurable `G : ℝ → L²(E)` for which `t ↦ Pⱼ* W₊(-t) G(t)` is
 integrable,
 
-`|∫ ⟪W₊(t) Pⱼ f, G(t)⟫ dt| ≤ C 2^{js} ‖f‖₂ ‖G‖_{L^p_t L^{r'}_x}`.
+`|∫ ⟪W₊(t) Pⱼ f, G(t)⟫ dt| ≤ C 2^{jσ} ‖f‖₂ ‖G‖_{L^p_t L^{r'}_x}`.
 
-This is `‖W₊(t) Pⱼ f‖_{L^q_t L^r_x} ≤ C 2^{js} ‖f‖₂` tested against `G`. -/
+This is `‖W₊(t) Pⱼ f‖_{L^q_t L^r_x} ≤ C 2^{jσ} ‖f‖₂` tested against `G`. -/
 theorem exists_enorm_integral_inner_halfWavePropagator_fourierMultiplierCLM_le
     (hψ : ContDiff ℝ ∞ ψ) (hψc : HasCompactSupport ψ) (hψ0 : (0 : E) ∉ tsupport ψ) {p : ℝ≥0}
     (hq : 2 < q) (hpq : p.HolderConjugate q) (hr : 2 ≤ r)
@@ -381,22 +381,17 @@ theorem exists_enorm_integral_inner_halfWavePropagator_fourierMultiplierCLM_le
           C * ENNReal.ofReal (((2 : ℝ) ^ j) ^ ((Module.finrank ℝ E : ℝ) / 2 -
             Module.finrank ℝ E * (r⁻¹).toReal - 1 / q)) * ‖f‖ₑ *
             eLpNorm (fun t ↦ eLpNorm (G t) r' volume) p volume := by
-  obtain ⟨C, hC⟩ := exists_enorm_integral_fourierMultiplierCLM_halfWavePropagator_neg_le
-    (r' := r') hψ hψc hψ0 hq hpq hr hqr
-  refine ⟨C, fun j m hm f G hG hPG ↦ ?_⟩
-  have hpair (t : ℝ) : ⟪halfWavePropagator ℂ t (Lp.fourierMultiplierCLM ℂ m f), G t⟫_ℂ =
-      ⟪f, Lp.fourierMultiplierCLM ℂ (star m) (halfWavePropagator ℂ (-t) (G t))⟫_ℂ := by
-    rw [← adjoint_halfWavePropagator_comp_fourierMultiplierCLM_apply,
-      ContinuousLinearMap.adjoint_inner_right, ContinuousLinearMap.comp_apply]
-  simp_rw [hpair]
-  rw [integral_inner hPG]
-  calc _ ≤ ‖f‖ₑ * ‖∫ t, Lp.fourierMultiplierCLM ℂ (star m)
-        (halfWavePropagator ℂ (-t) (G t))‖ₑ := eNorm_inner_le_eNorm _ _
-    _ ≤ ‖f‖ₑ * (C * ENNReal.ofReal (((2 : ℝ) ^ j) ^ ((Module.finrank ℝ E : ℝ) / 2 -
-          Module.finrank ℝ E * (r⁻¹).toReal - 1 / q)) *
-          eLpNorm (fun t ↦ eLpNorm (G t) r' volume) p volume) := by
-        gcongr
-        exact hC j m hm G hG hPG
-    _ = _ := by ring
+  obtain ⟨A, hA0, hA⟩ :=
+    exists_eLpNorm_halfWavePropagator_comp_apply_adjoint_le (r' := r') hψ hψc hψ0 hq hr hqr
+  obtain ⟨C, hC⟩ := exists_enorm_integral_inner_apply_le (𝕜 := ℂ)
+    (H := Lp ℂ 2 (volume : Measure E)) (E := ℂ) (X := E) (μ := volume) (r := r) (r' := r') hq hpq
+  refine ⟨C * (√A).toNNReal, fun j m hm f G hG hPG ↦ ?_⟩
+  refine (hC (fun t ↦ halfWavePropagator ℂ t ∘L Lp.fourierMultiplierCLM ℂ m) _ (hA j m hm) f G hG
+    (by simpa only [adjoint_halfWavePropagator_comp_fourierMultiplierCLM_apply] using
+      hPG)).trans_eq ?_
+  rw [ENNReal.ofReal_rpow_of_nonneg (by positivity) (by norm_num),
+    ofReal_rpow_mul_rpow_two_mul hA0.le (zpow_pos two_pos j), ENNReal.coe_mul,
+    ENNReal.ofNNReal_toNNReal]
+  ring
 
 end TauCeti
