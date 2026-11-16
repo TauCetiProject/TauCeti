@@ -11,6 +11,7 @@ import Mathlib.Analysis.Complex.OperatorNorm
 import TauCeti.Analysis.Distribution.Order
 import TauCeti.Analysis.Distribution.Support
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
+import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
@@ -34,6 +35,8 @@ conjugation of the values, `mapCLM conjCLE`, is an involution on complex distrib
 * `Distribution.complexPairing`: the complex-linear extension of `T : 𝓓'^{n}(Ω, ℂ)` to complex
   test functions, as a continuous complex-linear map.
 * `Distribution.complexPairing_postcompCLM_ofRealCLM`: on real test functions it is `T`.
+* `Distribution.complexPairing_restrictScalars_comp_postcompCLM_ofRealCLM`: every continuous
+  complex-linear map on complex test functions is the extension of its restriction to real ones.
 * `Distribution.complexPairing_lineDerivOp`: it turns derivatives of `T` into derivatives of the
   test function, `(∂_{v} T) φ = - T (∂_{v} φ)`.
 * `Distribution.complexPairing_mapCLM_ofRealCLM_delta`: for the complex point mass at `x` it is
@@ -42,6 +45,8 @@ conjugation of the values, `mapCLM conjCLE`, is an involution on complex distrib
   integration against a locally integrable function, so is its extension.
 * `Distribution.complexPairing_eq_of_eventuallyEq`: it depends only on the germ of the test
   function along `dsupport T`.
+* `Distribution.eq_of_forall_mem_nhds_complexPairing_eq`: complex distributions whose extensions
+  agree locally are equal.
 * `Distribution.exists_norm_complexPairing_le`: it has finite order on each compact set.
 * `Distribution.mapCLM_conj_mapCLM_conj`: conjugating a complex distribution twice gives it
   back.
@@ -103,6 +108,21 @@ theorem complexPairing_postcompCLM_ofRealCLM (T : 𝓓'^{n}(Ω, ℂ)) (φ : 𝓓
     ext t
     simp
   simp [complexPairing_apply, hre, him]
+
+/-- A continuous complex-linear map `T` on complex test functions is the complex-linear extension of
+the distribution it induces on real test functions. -/
+@[simp]
+theorem complexPairing_restrictScalars_comp_postcompCLM_ofRealCLM (T : 𝓓^{n}(Ω, ℂ) →L[ℂ] ℂ) :
+    complexPairing ((T.restrictScalars ℝ).comp (postcompCLM (𝕜 := ℝ) ofRealCLM) :
+      𝓓'^{n}(Ω, ℂ)) = T := by
+  set K : 𝓓'^{n}(Ω, ℂ) := (T.restrictScalars ℝ).comp (postcompCLM (𝕜 := ℝ) ofRealCLM)
+  have hK (φ : 𝓓^{n}(Ω, ℝ)) : K φ = T (postcompCLM (𝕜 := ℝ) ofRealCLM φ) := rfl
+  ext φ
+  have hφ : postcompCLM (𝕜 := ℝ) ofRealCLM (postcompCLM (𝕜 := ℝ) reCLM φ) +
+      I • postcompCLM (𝕜 := ℝ) ofRealCLM (postcompCLM (𝕜 := ℝ) imCLM φ) = φ := by
+    ext x
+    simp [mul_comm I, re_add_im]
+  rw [complexPairing_apply, hK, hK, ← smul_eq_mul, ← map_smul, ← map_add, hφ]
 
 @[simp]
 theorem complexPairing_add (T S : 𝓓'^{n}(Ω, ℂ)) (φ : 𝓓^{n}(Ω, ℂ)) :
@@ -215,5 +235,20 @@ theorem complexPairing_eq_of_eventuallyEq (T : 𝓓'^{n}(Ω, ℂ)) {φ ψ : 𝓓
     map_eq_map_of_eventuallyEq T (φ := postcompCLM (𝕜 := ℝ) imCLM φ)
       (ψ := postcompCLM (𝕜 := ℝ) imCLM ψ)
       (by simpa only [postcompCLM_apply] using h.fun_comp imCLM)]
+
+/-- **Locality.** Two complex distributions are equal if every point of `Ω` has a neighbourhood
+on whose supported complex test functions their complex-linear extensions agree. -/
+theorem eq_of_forall_mem_nhds_complexPairing_eq {T S : 𝓓'^{n}(Ω, ℂ)}
+    (h : ∀ x ∈ Ω, ∃ U ∈ 𝓝 x, ∀ φ : 𝓓^{n}(Ω, ℂ), tsupport φ ⊆ U →
+      T.complexPairing φ = S.complexPairing φ) : T = S := by
+  have h0 := AddMonoidHom.eq_zero_of_locally_vanishing
+    ((T.complexPairing : 𝓓^{n}(Ω, ℂ) →+ ℂ) - (S.complexPairing : 𝓓^{n}(Ω, ℂ) →+ ℂ))
+    fun x hx ↦ by
+      obtain ⟨U, hU, hTS⟩ := h x hx
+      exact ⟨interior U, isOpen_interior, mem_interior_iff_mem_nhds.2 hU, fun φ hφ ↦ by
+        simpa [sub_eq_zero] using hTS φ (hφ.trans interior_subset)⟩
+  ext φ
+  rw [← complexPairing_postcompCLM_ofRealCLM, ← complexPairing_postcompCLM_ofRealCLM S]
+  simpa [sub_eq_zero] using DFunLike.congr_fun h0 (postcompCLM (𝕜 := ℝ) ofRealCLM φ)
 
 end Distribution

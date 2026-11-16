@@ -361,16 +361,8 @@ theorem existsUnique_schwartzKernel_distribution (B : 𝓓(Ω, ℂ) →ₗ[ℂ] 
   obtain ⟨T, hT, hTuniq⟩ := existsUnique_schwartzKernel_testFunction B hB hV
   -- The restriction of `T` to real test functions, whose complex-linear extension is `T`.
   let K : 𝓓'(V, ℂ) := T.restrictScalars ℝ ∘L postcompCLM (𝕜 := ℝ) Complex.ofRealCLM
-  have hK : K.complexPairing = T := by
-    ext Φ
-    have hΦ : postcompCLM (𝕜 := ℝ) Complex.ofRealCLM (postcompCLM (𝕜 := ℝ) Complex.reCLM Φ) +
-        Complex.I • postcompCLM (𝕜 := ℝ) Complex.ofRealCLM
-          (postcompCLM (𝕜 := ℝ) Complex.imCLM Φ) = Φ := by
-      ext p
-      simp [mul_comm Complex.I, Complex.re_add_im]
-    have hKapp (φ : 𝓓(V, ℝ)) : K φ = T (postcompCLM (𝕜 := ℝ) Complex.ofRealCLM φ) := rfl
-    rw [Distribution.complexPairing_apply, hKapp, hKapp, ← smul_eq_mul, ← map_smul, ← map_add,
-      hΦ]
+  have hK : K.complexPairing = T :=
+    Distribution.complexPairing_restrictScalars_comp_postcompCLM_ofRealCLM T
   refine ⟨K, fun φ ψ ↦ by rw [hK, hT], fun K' hK' ↦ ?_⟩
   have h := hTuniq K'.complexPairing hK'
   ext φ
