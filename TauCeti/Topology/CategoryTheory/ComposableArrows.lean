@@ -19,6 +19,15 @@ Thus the topology defined by recording all composite arrows introduces no extra 
 beyond that of composable strings. These identifications apply to topological groupoids
 without discarding any isotropy arrows.
 
+Recording every arrow `i ⟶ j` (`i ≤ j`) embeds `ComposableArrows C n` into a finite product of
+copies of `Quiver.Total C` (`CategoryTheory.ComposableArrows.isEmbedding_totalArrow`), so
+separation and countability properties (`T1Space`, `T2Space`, `RegularSpace`,
+`FirstCountableTopology`, `SecondCountableTopology`) pass directly from `Quiver.Total C` to every
+level of the nerve with no continuity hypotheses on `C`. When `Quiver.Total C` is compact
+Hausdorff and source, target, units and composition are continuous, `zeroHomeomorph` and
+`precompHomeomorph` show inductively that every level `ComposableArrows C n` is compact
+(`CategoryTheory.ComposableArrows.compactSpace`).
+
 Composition is required to be continuous on the subspace of pairs with matching endpoints.
 No topology on individual hom types and no new category or groupoid carrier is used.
 
@@ -187,5 +196,74 @@ theorem continuous_iff_first_tail {Y : Type*} [TopologicalSpace Y] {n : ℕ}
   rw [← (precompHomeomorph hs hu hc n).comp_continuous_iff]
   simp only [continuous_induced_rng, continuous_prodMk, Function.comp_def,
     precompHomeomorph_apply]
+
+end CategoryTheory.ComposableArrows
+
+namespace CategoryTheory.ComposableArrows
+
+variable {C : Type u} [Category.{v} C] [TopologicalSpace (Quiver.Total C)]
+
+/-- Recording every arrow `i ⟶ j` (`i ≤ j`) embeds the space of `n`-strings into a finite product
+of copies of the total arrow space `Quiver.Total C`. -/
+theorem isEmbedding_totalArrow (n : ℕ) :
+    IsEmbedding (fun (F : ComposableArrows C n)
+      (p : {p : Fin (n + 1) × Fin (n + 1) // p.1 ≤ p.2}) ↦ F.totalArrow p.1.1 p.1.2 p.2) := by
+  refine ⟨⟨?_⟩, fun F G h ↦ ext_of_totalArrow fun i j hij ↦ congrFun h ⟨(i, j), hij⟩⟩
+  rw [Pi.topologicalSpace, induced_iInf]
+  simp only [instTopologicalSpace, induced_compose]
+  refine le_antisymm ?_ ?_
+  · refine le_iInf fun ⟨⟨i, j⟩, hij⟩ ↦ ?_
+    exact (iInf_le _ i).trans <| (iInf_le _ j).trans <| iInf_le _ hij
+  · refine le_iInf fun i ↦ le_iInf fun j ↦ le_iInf fun hij ↦ ?_
+    exact iInf_le (fun p : {p : Fin (n + 1) × Fin (n + 1) // p.1 ≤ p.2} ↦
+      TopologicalSpace.induced (fun F : ComposableArrows C n ↦ F.totalArrow p.1.1 p.1.2 p.2)
+        inferInstance) ⟨(i, j), hij⟩
+
+instance instT1Space [T1Space (Quiver.Total C)] (n : ℕ) : T1Space (ComposableArrows C n) :=
+  t1Space_of_injective_of_continuous (isEmbedding_totalArrow n).injective
+    (isEmbedding_totalArrow n).continuous
+
+instance instT2Space [T2Space (Quiver.Total C)] (n : ℕ) : T2Space (ComposableArrows C n) :=
+  (isEmbedding_totalArrow n).t2Space
+
+instance instRegularSpace [RegularSpace (Quiver.Total C)] (n : ℕ) :
+    RegularSpace (ComposableArrows C n) :=
+  (isEmbedding_totalArrow n).isInducing.regularSpace
+
+instance instFirstCountableTopology [FirstCountableTopology (Quiver.Total C)] (n : ℕ) :
+    FirstCountableTopology (ComposableArrows C n) :=
+  (isEmbedding_totalArrow n).isInducing.firstCountableTopology
+
+instance instSecondCountableTopology [SecondCountableTopology (Quiver.Total C)] (n : ℕ) :
+    SecondCountableTopology (ComposableArrows C n) :=
+  (isEmbedding_totalArrow n).secondCountableTopology
+
+/-- In a topological category with compact Hausdorff total arrow space and continuous source,
+target, units and composition, every level of the topological nerve is compact. -/
+theorem compactSpace [TopologicalSpace C] [CompactSpace (Quiver.Total C)]
+    [T2Space (Quiver.Total C)]
+    (hs : Continuous (Quiver.Total.left : Quiver.Total C → C))
+    (ht : Continuous (Quiver.Total.right : Quiver.Total C → C))
+    (hu : Continuous fun x : C ↦ (⟨x, x, 𝟙 x⟩ : Quiver.Total C))
+    (hc : Continuous fun p : {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} ↦
+      (⟨p.1.1.left, p.1.2.right, p.1.1.hom ≫ eqToHom p.2 ≫ p.1.2.hom⟩ : Quiver.Total C))
+    (n : ℕ) : CompactSpace (ComposableArrows C n) := by
+  have hC : CompactSpace C := by
+    rw [← isCompact_univ_iff]
+    have hsurj : Set.range (Quiver.Total.left : Quiver.Total C → C) = Set.univ :=
+      Set.eq_univ_of_forall fun x ↦ ⟨⟨x, x, 𝟙 x⟩, rfl⟩
+    rw [← hsurj]
+    exact isCompact_range hs
+  have hT2 : T2Space C :=
+    .of_injective_continuous (f := fun x : C ↦ (⟨x, x, 𝟙 x⟩ : Quiver.Total C))
+      (fun x y h ↦ congrArg Quiver.Total.left h) hu
+  induction n with
+  | zero => exact (zeroHomeomorph hs hu).symm.compactSpace
+  | succ n ih =>
+    have hclosed : IsClosed {p : Quiver.Total C × ComposableArrows C n | p.1.right = p.2.left} :=
+      isClosed_eq (ht.comp continuous_fst) ((continuous_obj hs 0).comp continuous_snd)
+    have : CompactSpace {p : Quiver.Total C × ComposableArrows C n // p.1.right = p.2.left} :=
+      isCompact_iff_compactSpace.1 hclosed.isCompact
+    exact (precompHomeomorph hs hu hc n).symm.compactSpace
 
 end CategoryTheory.ComposableArrows
