@@ -13,6 +13,8 @@ public import Mathlib.Analysis.Normed.Module.Basic
 This file collects elementary facts about scalar actions on seminormed additive groups and real
 normed spaces:
 
+* `TauCeti.isOpen_exists_mem_norm_sum_lt`: existence of a small finite linear combination
+  with coefficients in a fixed set is an open condition on a family of vectors.
 * `RingHomIsometric.intCastRingHom`: in a seminormed ring in which `ℤ` acts isometrically and
   `‖1‖ = 1`, such as `ℝ` or `ℂ`, `Int.castRingHom R` preserves norms, making lemmas stated for a
   `RingHomIsometric` ring homomorphism (such as `Polynomial.supNorm_map`) apply to integer
@@ -40,6 +42,15 @@ instance RingHomIsometric.intCastRingHom {R : Type*} [SeminormedRing R]
   norm_map {n} := by simp [norm_intCast_eq_abs_mul_norm_one, Int.norm_eq_abs]
 
 namespace TauCeti
+
+/-- Having a small linear combination with coefficients in any fixed set is an open condition
+on a family of vectors, with a fixed finite set of indices. -/
+theorem isOpen_exists_mem_norm_sum_lt {𝕜 E ι : Type*} [SeminormedAddCommGroup E]
+    [SMul 𝕜 E] [ContinuousConstSMul 𝕜 E] (s : Finset ι) (S : Set (ι → 𝕜)) (t : ℝ) :
+    IsOpen {v : ι → E | ∃ c ∈ S, ‖∑ i ∈ s, c i • v i‖ < t} := by
+  simp only [← exists_prop, Set.ofPred_exists]
+  exact isOpen_biUnion fun c _ ↦ isOpen_lt (continuous_finsetSum _ fun i _ ↦
+    (continuous_apply i).const_smul (c i)).norm continuous_const
 
 /-- If scalar coefficients `a i` satisfy `‖a i‖ * r i ≤ b` against positive weights `r i`, then
 `‖∑ i ∈ s, a i • u i‖ ≤ (∑ i ∈ s, ‖u i‖ / r i) * b`. -/
