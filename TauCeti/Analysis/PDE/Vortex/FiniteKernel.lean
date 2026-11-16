@@ -73,14 +73,6 @@ open scoped ENNReal Topology
 
 variable {x : ℂ → EuclideanSpace ℝ (Fin 4)}
 
-private theorem memLp_of_mem_gaugeFixedKernel {y : ℂ → EuclideanSpace ℝ (Fin 4)}
-    (hy : y ∈ gaugeFixedKernel x) : MemLp y 2 :=
-  (mem_gaugeFixedKernel.1 hy).2.1
-
-private theorem continuous_of_mem_gaugeFixedKernel {y : ℂ → EuclideanSpace ℝ (Fin 4)}
-    (hy : y ∈ gaugeFixedKernel x) : Continuous y :=
-  (mem_gaugeFixedKernel.1 hy).1.continuous
-
 /-! ### The estimate at infinity -/
 
 /-- The exterior estimate extends from compactly supported variations to the product `χ y` of a
@@ -361,32 +353,6 @@ private theorem integral_norm_sq_le_abs_mul_integral_norm_sq_smul {ρ C : ℝ}
   exact (hC y hy).trans ((mul_le_mul_of_nonneg_right (le_abs_self C) hball0).trans
     (mul_le_mul_of_nonneg_left hball (abs_nonneg C)))
 
-/-- The `L²` class of a kernel element, as a linear map. -/
-private def gaugeFixedKernelToLp (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
-    gaugeFixedKernel x →ₗ[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ) where
-  toFun y := (memLp_of_mem_gaugeFixedKernel y.2).toLp y
-  map_add' y v :=
-    MemLp.toLp_add (memLp_of_mem_gaugeFixedKernel y.2) (memLp_of_mem_gaugeFixedKernel v.2)
-  map_smul' t y := MemLp.toLp_const_smul t (memLp_of_mem_gaugeFixedKernel y.2)
-
-private theorem gaugeFixedKernelToLp_apply (y : gaugeFixedKernel x) :
-    gaugeFixedKernelToLp x y = (memLp_of_mem_gaugeFixedKernel y.2).toLp y := (rfl)
-
-private theorem norm_gaugeFixedKernelToLp (y : gaugeFixedKernel x) :
-    ‖gaugeFixedKernelToLp x y‖ = √(∫ z, ‖(y : ℂ → EuclideanSpace ℝ (Fin 4)) z‖ ^ 2) := by
-  rw [gaugeFixedKernelToLp_apply, Lp.norm_toLp,
-    (memLp_of_mem_gaugeFixedKernel y.2).eLpNorm_two_eq_ofReal_sqrt_integral,
-    ENNReal.toReal_ofReal (Real.sqrt_nonneg _)]
-
-/-- Kernel elements are continuous, so they are determined by their `L²` classes. -/
-private theorem injective_gaugeFixedKernelToLp (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
-    Function.Injective (gaugeFixedKernelToLp x) := by
-  refine (injective_iff_map_eq_zero _).2 fun y hy ↦ Subtype.ext ?_
-  rw [gaugeFixedKernelToLp_apply] at hy
-  have h := (memLp_of_mem_gaugeFixedKernel y.2).coeFn_toLp.symm.trans
-    ((Lp.eq_zero_iff_ae_eq_zero).1 hy)
-  exact ((continuous_of_mem_gaugeFixedKernel y.2).ae_eq_iff_eq volume continuous_const).1 h
-
 /-- **The smooth `L²` kernel of the gauge-fixed vortex operator is finite-dimensional.** For a
 `C¹` plane vortex with `|α| → 1` and `∇₁ α → 0` at infinity, the `C²` square-integrable solutions
 of `L_x y = 0` form a finite-dimensional real vector space. -/
@@ -465,6 +431,6 @@ theorem finiteDimensional_gaugeFixedKernel_of_tendsto (hx : ContDiff ℝ 1 x)
       rw [h2ε, inv_pow, ← div_eq_mul_inv, div_lt_one (by positivity)]
       nlinarith [abs_nonneg C]
     nlinarith [mul_le_mul_of_nonneg_left hX.le (abs_nonneg C)]
-  exact (LinearEquiv.ofInjective T (injective_gaugeFixedKernelToLp x)).symm.finiteDimensional
+  exact (LinearEquiv.ofInjective T (gaugeFixedKernelToLp_injective x)).symm.finiteDimensional
 
 end TauCeti.Vortex

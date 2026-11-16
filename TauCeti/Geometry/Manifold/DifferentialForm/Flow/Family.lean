@@ -264,9 +264,7 @@ theorem mpullback_prodMk_mlieDerivForm_vertical (t : ℝ) (x : M)
         (mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t) α) x := by
     filter_upwards [hdom] with r hr
     have hφ : MDifferentiableAt I I (timeDependentFlowOf X t (t + r)) x :=
-      ((hflow.contMDiffAt (hD.mem_nhds hr)).comp x
-        ((contMDiff_const (c := (t, t + r))).prodMk contMDiff_id).contMDiffAt).mdifferentiableAt
-        (by norm_num)
+      mdifferentiableAt_timeDependentFlowOf hX₁ hr
     have hψr : MDifferentiableAt (𝓘(ℝ, ℝ).prod I) (𝓘(ℝ, ℝ).prod I) (ψ r) (t, x) :=
       ((hψsmooth r (t, x) hr).comp (t, x)
         ((contMDiff_const (c := r)).prodMk contMDiff_id).contMDiffAt).mdifferentiableAt
@@ -333,7 +331,6 @@ private theorem hasDerivAt_mpullback_timeDependentFlowOf_mpullback_prodMk_suspen
   have hX₁ := hX.of_le (m := 1) one_le_two
   have hZ := contMDiff_timeDependentSuspensionField hX
   have hD := isOpen_timeDependentFlowDomain hX₁
-  have hflow := contMDiffOn_timeDependentFlowOf (n := 2) (by norm_num) hX
   have hι (u : ℝ) : MDifferentiable I (𝓘(ℝ, ℝ).prod I) (Prod.mk u : M → ℝ × M) :=
     (contMDiff_const.prodMk contMDiff_id : ContMDiff I (𝓘(ℝ, ℝ).prod I) 1
       (Prod.mk u : M → ℝ × M)).mdifferentiable one_ne_zero
@@ -357,9 +354,7 @@ private theorem hasDerivAt_mpullback_timeDependentFlowOf_mpullback_prodMk_suspen
         (hD.mem_nhds hu)] with y hy
       exact (flowOf_timeDependentSuspensionField hy).symm
     have hφu : MDifferentiableAt I I (timeDependentFlowOf X s u) x :=
-      ((hflow.contMDiffAt (hD.mem_nhds hu)).comp x
-        ((contMDiff_const (c := (s, u))).prodMk contMDiff_id).contMDiffAt).mdifferentiableAt
-        (by norm_num)
+      mdifferentiableAt_timeDependentFlowOf hX₁ hu
     have hΨu : MDifferentiableAt (𝓘(ℝ, ℝ).prod I) (𝓘(ℝ, ℝ).prod I)
         (flowOf (timeDependentSuspensionField X) (u - s)) (s, x) :=
       (contMDiffAt_flowOf_comp (n := 2) one_le_two hZ contMDiffAt_const contMDiffAt_id
