@@ -63,18 +63,6 @@ namespace TauCeti
 
 variable {f : ℂ → ℂ}
 
-/-- An entire function nonzero at the origin is nonzero wherever its divisor vanishes. -/
-private theorem ne_zero_of_divisor_eq_zero (hf : Differentiable ℂ f) (hf0 : f 0 ≠ 0) {z : ℂ}
-    (hz : MeromorphicOn.divisor f Set.univ z = 0) : f z ≠ 0 := by
-  have hfa : AnalyticOnNhd ℂ f Set.univ := fun w _ ↦ hf.analyticAt w
-  have htop : analyticOrderAt f z ≠ ⊤ :=
-    hfa.analyticOrderAt_ne_top_of_isPreconnected isPreconnected_univ (Set.mem_univ 0)
-      (Set.mem_univ z) (by simp [(hf.analyticAt 0).analyticOrderAt_eq_zero.mpr hf0])
-  intro hfz
-  have := (hfa.meromorphicOn.zero_lt_divisor_iff_of_analyticAt (hf.analyticAt z)
-    (Set.mem_univ z) (by simp [(hf.analyticAt z).meromorphicOrderAt_eq, htop])).mpr hfz
-  omega
-
 /-- Reindexing the zeros by a reflection `ρ ↦ 1 - conj ρ` that preserves the divisor. -/
 private theorem tsum_divisor_mul_comp_one_sub_conj
     (hdiv : ∀ s, MeromorphicOn.divisor f Set.univ (1 - conj s) =
@@ -115,9 +103,10 @@ theorem OrderLE.summable_divisor_mul_re_one_div {A C : ℝ} (h : OrderLE f A)
   have hC := hre ρ hd
   rw [norm_mul, Real.norm_natCast, Real.norm_eq_abs, mul_left_comm]
   gcongr
-  rw [one_div, inv_re, abs_div, abs_of_nonneg (normSq_nonneg _), norm_inv, inv_pow,
-    Complex.sq_norm, div_eq_mul_inv]
-  exact mul_le_mul_of_nonneg_right hC (inv_nonneg.mpr (normSq_nonneg _))
+  -- `|Re (1 / ρ)| = |Re ρ| / normSq ρ` and `‖ρ⁻¹‖ ^ 2 = (normSq ρ)⁻¹`
+  simp only [one_div, inv_re, abs_div, abs_of_nonneg (normSq_nonneg _), norm_inv, inv_pow,
+    Complex.sq_norm, ← div_eq_mul_inv]
+  exact div_le_div_of_nonneg_right hC (normSq_nonneg _)
 
 /-- If the real parts of the zeros are bounded, the real parts `m_ρ Re (1 / (s - ρ))` form a
 summable family off the zeros. The complex terms `m_ρ / (s - ρ)` need not be absolutely
@@ -164,7 +153,9 @@ theorem OrderLE.re_logDeriv_zero_eq_neg_tsum (h : OrderLE f 1) (hf : Differentia
     (logDeriv f 0).re = -∑' ρ : (MeromorphicOn.divisor f Set.univ).support,
       ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (ρ : ℂ)).re := by
   have hre' := abs_re_le_one_of_divisor_pos hdiv hre
-  have h1 : f 1 ≠ 0 := ne_zero_of_divisor_eq_zero hf hf0 <| by
+  have hfa : AnalyticOnNhd ℂ f Set.univ := fun w _ ↦ hf.analyticAt w
+  have h1 : f 1 ≠ 0 := (hfa.divisor_apply_eq_zero_iff isPreconnected_univ (Set.mem_univ 0) hf0
+    (Set.mem_univ 1)).mp <| by
     simpa using (hdiv 0).trans (Function.notMem_support.mp
       ((hf.analyticAt 0).notMem_divisor_support_of_ne_zero hf0))
   have hFE := congrArg re (hlog 0)
