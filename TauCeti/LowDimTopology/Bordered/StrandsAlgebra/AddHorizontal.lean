@@ -20,7 +20,13 @@ moving a horizontal strand between matched points is treated in
 `TauCeti.StrandDiagram.addHorizontal φ U` is the diagram `φ` with a horizontal strand added at each
 point of the finite set `U`; strands of `φ` starting or ending in `U` are dropped, so that the
 operation is defined for every `U`. When `U` avoids the source and target of `φ` nothing is dropped,
-and the source and target of the result are those of `φ` together with `U`.
+and the source and target of the result are those of `φ` together with `U`. Conversely, every
+diagram `φ` is obtained in this way from the diagram `TauCeti.StrandDiagram.eraseHorizontal φ` of
+its strands that are not horizontal, by adding horizontal strands at the points
+`TauCeti.StrandDiagram.horizontals φ`
+(`TauCeti.StrandDiagram.addHorizontal_eraseHorizontal_horizontals`), and for a diagram without
+horizontal strands, removing the horizontal strands added along a set `U` that avoids its source
+and target gives it back (`TauCeti.StrandDiagram.eraseHorizontal_addHorizontal`).
 
 A horizontal strand at `w` crosses exactly the strands `i ↦ j` of `φ` with `i < w < j`. Such a
 strand of a composite `φ.trans ψ` passing through a point other than `w` crosses `w` in exactly one
@@ -32,6 +38,8 @@ whether two diagrams have a nonzero product in the strands algebra
 ## Main definitions
 
 * `TauCeti.StrandDiagram.addHorizontal`: add horizontal strands along a finite set.
+* `TauCeti.StrandDiagram.eraseHorizontal`: remove the horizontal strands.
+* `TauCeti.StrandDiagram.horizontals`: the points with a horizontal strand.
 
 ## Main results
 
@@ -41,6 +49,10 @@ whether two diagrams have a nonzero product in the strands algebra
   factors pass through the composite.
 * `TauCeti.StrandDiagram.composable_addHorizontal_iff`: adding common horizontal strands does not
   change composability.
+* `TauCeti.StrandDiagram.addHorizontal_eraseHorizontal_horizontals`,
+  `TauCeti.StrandDiagram.eraseHorizontal_addHorizontal`,
+  `TauCeti.StrandDiagram.horizontals_addHorizontal`: a diagram splits into its horizontal strands
+  and the others.
 
 ## References
 
@@ -135,6 +147,36 @@ theorem mem_addHorizontal_self {φ : StrandDiagram α} {U : Finset α} {i : α}
   rw [mem_addHorizontal]
   simp [hφ i]
 
+/-! ### Removing the horizontal strands -/
+
+/-- The diagram `φ` with its horizontal strands removed: it keeps the strands `i ↦ j` of `φ` with
+`i ≠ j`. Adding back the horizontal strands of `φ` recovers `φ`
+(`TauCeti.StrandDiagram.addHorizontal_eraseHorizontal_horizontals`). -/
+def eraseHorizontal (φ : StrandDiagram α) : StrandDiagram α where
+  toPEquiv := (PEquiv.ofSet {i | φ i ≠ some i}).trans φ.toPEquiv
+  le_of_mem' i j h := by
+    obtain ⟨k, hk, hkj⟩ := PEquiv.mem_trans _ _ _ _ |>.1 h
+    obtain ⟨rfl, -⟩ := PEquiv.mem_ofSet_iff.1 hk
+    exact φ.le_of_mem hkj
+
+theorem mem_eraseHorizontal {φ : StrandDiagram α} {i j : α} :
+    j ∈ φ.eraseHorizontal i ↔ j ∈ φ i ∧ i ≠ j := by
+  -- Unfold the coercion of `φ.eraseHorizontal` to the composite partial bijection defining it.
+  have h : j ∈ φ.eraseHorizontal i ↔ j ∈ ((PEquiv.ofSet {i | φ i ≠ some i}).trans φ.toPEquiv) i :=
+    Iff.rfl
+  rw [h, PEquiv.mem_trans]
+  constructor
+  · rintro ⟨k, hk, hkj⟩
+    obtain ⟨rfl, hks⟩ := PEquiv.mem_ofSet_iff.1 hk
+    exact ⟨hkj, fun hij ↦ hks (by subst hij; exact hkj)⟩
+  · rintro ⟨hij, hne⟩
+    exact ⟨i, PEquiv.mem_ofSet_iff.2 ⟨rfl, fun hi ↦ hne (Option.some.inj (hi.symm.trans hij))⟩,
+      hij⟩
+
+/-- A diagram with its horizontal strands removed has no horizontal strands. -/
+theorem notMem_eraseHorizontal_self (φ : StrandDiagram α) (i : α) : i ∉ φ.eraseHorizontal i :=
+  fun h ↦ (mem_eraseHorizontal.1 h).2 rfl
+
 section Finite
 
 variable [Fintype α]
@@ -208,7 +250,7 @@ private theorem inversionCount_addHorizontal {φ : StrandDiagram α} {W : Finset
     ext ⟨i, k⟩
     simp only [mem_union, mem_inversions, mem_horizontalCrossings, mem_addHorizontal]
     constructor
-    · rintro ⟨hik, a, (⟨hiW, rfl⟩ | ⟨hiW, haW, hia⟩), b, (⟨hkW, rfl⟩ | ⟨hkW, hbW, hkb⟩), hba⟩
+    · rintro ⟨hik, a, (⟨hiW, rfl⟩ | ⟨_, _, hia⟩), b, (⟨hkW, rfl⟩ | ⟨_, _, hkb⟩), hba⟩
       · exact absurd (hik.trans hba) (lt_irrefl _)
       · exact absurd (hik.trans_le (φ.le_of_mem hkb)) (not_lt.2 hba.le)
       · exact Or.inr ⟨hkW, hik, a, hia, hba⟩
@@ -296,7 +338,91 @@ theorem composable_addHorizontal_iff {φ ψ : StrandDiagram α} {W : Finset α}
       (by rwa [target_trans_of_target_eq hφψ]), card_horizontalCrossings_trans hφψ hφt]
   omega
 
+/-! ### Splitting a diagram into its horizontal and other strands -/
+
+/-- The points at which `φ` has a horizontal strand. -/
+def horizontals (φ : StrandDiagram α) : Finset α :=
+  {i | φ i = some i}
+
+@[simp]
+theorem mem_horizontals {φ : StrandDiagram α} {i : α} : i ∈ φ.horizontals ↔ i ∈ φ i := by
+  simp [horizontals, Option.mem_def]
+
+theorem horizontals_subset_source (φ : StrandDiagram α) : φ.horizontals ⊆ φ.source :=
+  fun i hi ↦ mem_source.2 ⟨i, mem_horizontals.1 hi⟩
+
+theorem horizontals_subset_target (φ : StrandDiagram α) : φ.horizontals ⊆ φ.target :=
+  fun i hi ↦ mem_target.2 ⟨i, mem_horizontals.1 hi⟩
+
+/-- The starting points of the strands of `φ` that are not horizontal. -/
+@[simp]
+theorem source_eraseHorizontal (φ : StrandDiagram α) :
+    φ.eraseHorizontal.source = φ.source \ φ.horizontals := by
+  ext i
+  simp only [mem_source, mem_eraseHorizontal, mem_sdiff, mem_horizontals]
+  constructor
+  · rintro ⟨j, hij, hne⟩
+    exact ⟨⟨j, hij⟩, fun hi ↦ hne (Option.mem_unique hi hij)⟩
+  · rintro ⟨⟨j, hij⟩, hi⟩
+    exact ⟨j, hij, fun h ↦ hi (by rwa [← h] at hij)⟩
+
+/-- The end points of the strands of `φ` that are not horizontal. -/
+@[simp]
+theorem target_eraseHorizontal (φ : StrandDiagram α) :
+    φ.eraseHorizontal.target = φ.target \ φ.horizontals := by
+  ext j
+  simp only [mem_target, mem_eraseHorizontal, mem_sdiff, mem_horizontals]
+  constructor
+  · rintro ⟨i, hij, hne⟩
+    exact ⟨⟨i, hij⟩, fun hj ↦ hne (φ.eq_of_mem_of_mem hij hj)⟩
+  · rintro ⟨⟨i, hij⟩, hj⟩
+    exact ⟨i, hij, fun h ↦ hj (by rwa [h] at hij)⟩
+
+/-- **Every diagram is a diagram without horizontal strands with horizontal strands added.**
+Adding back the horizontal strands of `φ` to `φ` with its horizontal strands removed gives `φ`. -/
+@[simp]
+theorem addHorizontal_eraseHorizontal_horizontals (φ : StrandDiagram α) :
+    φ.eraseHorizontal.addHorizontal φ.horizontals = φ := by
+  ext i j
+  simp only [← Option.mem_def, mem_addHorizontal, mem_horizontals, mem_eraseHorizontal]
+  constructor
+  · rintro (⟨hi, rfl⟩ | ⟨-, -, hij, -⟩)
+    exacts [hi, hij]
+  · intro hij
+    by_cases hi : i ∈ φ i
+    · exact Or.inl ⟨hi, Option.mem_unique hij hi⟩
+    · refine Or.inr ⟨hi, fun hj ↦ hi ?_, hij, fun h ↦ hi (by rwa [← h] at hij)⟩
+      rwa [φ.eq_of_mem_of_mem hij hj]
+
+variable {ρ : StrandDiagram α} {U : Finset α}
+
+/-- If `ρ` has no horizontal strands, the horizontal strands of `ρ.addHorizontal U` are those at
+the points of `U`. -/
+@[simp]
+theorem horizontals_addHorizontal (hρ : ∀ j, j ∉ ρ j) : (ρ.addHorizontal U).horizontals = U := by
+  ext i
+  rw [mem_horizontals, mem_addHorizontal_self hρ]
+
+/-- If `ρ` has no horizontal strands and `U` avoids its source and target, removing the horizontal
+strands of `ρ.addHorizontal U` gives back `ρ`. -/
+theorem eraseHorizontal_addHorizontal (hρ : ∀ j, j ∉ ρ j) (hs : Disjoint ρ.source U)
+    (ht : Disjoint ρ.target U) : (ρ.addHorizontal U).eraseHorizontal = ρ := by
+  ext i j
+  simp only [← Option.mem_def, mem_eraseHorizontal, mem_addHorizontal]
+  constructor
+  · rintro ⟨⟨-, rfl⟩ | ⟨-, -, hij⟩, hne⟩
+    exacts [absurd rfl hne, hij]
+  · intro hij
+    exact ⟨Or.inr ⟨notMem_of_mem_of_disjoint_source hs hij,
+      notMem_of_mem_of_disjoint_target ht hij, hij⟩, fun h ↦ hρ i (h ▸ hij)⟩
+
 end Finite
+
+/-- Adding horizontal strands to a diagram without horizontal strands is injective. -/
+theorem addHorizontal_injective [Finite α] {ρ : StrandDiagram α} (hρ : ∀ j, j ∉ ρ j) :
+    Function.Injective ρ.addHorizontal := fun U V h ↦ by
+  have := Fintype.ofFinite α
+  rw [← horizontals_addHorizontal (U := U) hρ, h, horizontals_addHorizontal hρ]
 
 end StrandDiagram
 

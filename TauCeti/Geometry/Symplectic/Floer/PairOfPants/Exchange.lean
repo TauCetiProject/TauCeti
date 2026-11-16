@@ -36,13 +36,13 @@ Hamiltonians on the ends at `0` and `1`) plus the negative plane datum of the ou
 Hamiltonian `H_∞` (`TauCeti.Floer.negativePlanePerturbation`) translated by `c`. Thus its output
 end has the end lift `z ↦ c + φ_∞(z)`, whose asymptotic marker points in the same direction for
 every `c`. The output Hamiltonian of the exchanged datum is rotated by half a period,
-`H'_∞(t) = H_∞(t + 1/2)` (`TauCeti.Floer.exchangeHamiltonians`), which matches the half-period
+`H'_∞(t) = H_∞(t + 1/2)` (`TauCeti.Floer.exchangeEndData`), which matches the half-period
 rotation of the end at `∞` under `σ`. The main results are:
 
 * `TauCeti.Floer.exchangePerturbation_zero`: at `c = 0` the family is the pair-of-pants datum.
 * `TauCeti.Floer.exchangePerturbation_one`: at `c = 1` it is the pullback along `σ` of the
   pair-of-pants datum with exchanged inputs, `σ^*K'(w) = -K'(1 - w)`, since `dσ = -1`;
-  `TauCeti.Floer.perturbationPullback_pairOfPantsPerturbation_exchangeHamiltonians` states this
+  `TauCeti.Floer.perturbationPullback_pairOfPantsPerturbation_exchangeEndData` states this
   for the components in real coordinates, the form used by
   `TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_perturbationPullback`.
 * `TauCeti.Floer.exchangePerturbation_cylindricalEndLift` and
@@ -90,39 +90,50 @@ namespace TauCeti.Floer
 
 variable {M : Type*} {H : Puncture → ℝ → M → ℝ}
 
-/-! ### The exchanged Hamiltonians -/
+/-! ### The exchanged end data -/
 
-/-- The end Hamiltonians of the pair of pants with exchanged inputs: the Hamiltonian of the end at
-`0` is `H₁`, that of the end at `1` is `H₀`, and the output Hamiltonian is rotated by half a
-period, `t ↦ H_∞(t + 1/2)`, matching the half-period rotation of the end at `∞` under
-`w ↦ 1 - w`. -/
-def exchangeHamiltonians (H : Puncture → ℝ → M → ℝ) : Puncture → ℝ → M → ℝ
+/-- The time-dependent end data of the pair of pants with exchanged inputs: the datum of the end
+at `0` is `H₁`, that of the end at `1` is `H₀`, and the output datum is rotated by half a period,
+`t ↦ H_∞(t + 1/2)`, matching the half-period rotation of the end at `∞` under `w ↦ 1 - w`. The
+end data are the Hamiltonians `H_q(t)` of the ends or their almost complex structures `J_q(t)`. -/
+def exchangeEndData {Y : Type*} (H : Puncture → ℝ → Y) : Puncture → ℝ → Y
   | .zero => H one
   | .one => H zero
   | .inf => fun t => H inf (t + 1 / 2)
 
 @[simp]
-theorem exchangeHamiltonians_zero (H : Puncture → ℝ → M → ℝ) :
-    exchangeHamiltonians H zero = H one :=
+theorem exchangeEndData_zero {Y : Type*} (H : Puncture → ℝ → Y) :
+    exchangeEndData H zero = H one :=
   (rfl)
 
 @[simp]
-theorem exchangeHamiltonians_one (H : Puncture → ℝ → M → ℝ) :
-    exchangeHamiltonians H one = H zero :=
+theorem exchangeEndData_one {Y : Type*} (H : Puncture → ℝ → Y) :
+    exchangeEndData H one = H zero :=
   (rfl)
 
 @[simp]
-theorem exchangeHamiltonians_inf (H : Puncture → ℝ → M → ℝ) :
-    exchangeHamiltonians H inf = fun t => H inf (t + 1 / 2) :=
+theorem exchangeEndData_inf {Y : Type*} (H : Puncture → ℝ → Y) :
+    exchangeEndData H inf = fun t => H inf (t + 1 / 2) :=
   (rfl)
 
-/-- The exchanged Hamiltonians of period-one Hamiltonians have period one. -/
-theorem periodic_exchangeHamiltonians (hH : ∀ q, Periodic (H q) 1) (q : Puncture) :
-    Periodic (exchangeHamiltonians H q) 1 := by
+/-- The exchanged data of period-one end data have period one. -/
+theorem periodic_exchangeEndData {Y : Type*} {G : Puncture → ℝ → Y}
+    (hG : ∀ q, Periodic (G q) 1) (q : Puncture) : Periodic (exchangeEndData G q) 1 := by
   cases q
-  · simpa using hH one
-  · simpa using hH zero
-  · simpa using (hH inf).add_const (1 / 2)
+  · simpa using hG one
+  · simpa using hG zero
+  · simpa using (hG inf).add_const (1 / 2)
+
+/-- The exchanged data of jointly `C^n` end data are jointly `C^n`. -/
+theorem contDiff_uncurry_exchangeEndData {E F : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] {n : WithTop ℕ∞}
+    {G : Puncture → ℝ → E → F} (hG : ∀ q, ContDiff ℝ n (uncurry (G q))) (q : Puncture) :
+    ContDiff ℝ n (uncurry (exchangeEndData G q)) := by
+  cases q
+  · simpa using hG one
+  · simpa using hG zero
+  · rw [exchangeEndData_inf]
+    exact (hG inf).comp ((contDiff_fst.add contDiff_const).prodMk contDiff_snd)
 
 /-! ### The family -/
 
@@ -151,23 +162,23 @@ theorem exchangePerturbation_zero (H : Puncture → ℝ → M → ℝ) :
 
 /-- The input part of the pair-of-pants datum is exchanged by `w ↦ 1 - w`: since `dσ = -1`, the
 pullback of the input part with exchanged Hamiltonians is the input part. -/
-private theorem pairOfPantsPerturbation_update_exchangeHamiltonians_one_sub (w : ℂ) (x : M) :
-    pairOfPantsPerturbation (update (exchangeHamiltonians H) inf 0) (1 - w) x =
+private theorem pairOfPantsPerturbation_update_exchangeEndData_one_sub (w : ℂ) (x : M) :
+    pairOfPantsPerturbation (update (exchangeEndData H) inf 0) (1 - w) x =
       -pairOfPantsPerturbation (update H inf 0) w x := by
   simp [pairOfPantsPerturbation_def, Puncture.sum_univ, endCoord_zero_one_sub,
     endCoord_one_one_sub, endAngularForm_zero_one_sub, endAngularForm_one_one_sub, add_comm]
 
 /-- **The end of the family is the exchanged pair-of-pants datum.** At `c = 1` the family is the
 pullback of the pair-of-pants datum `K'` with exchanged Hamiltonians
-(`TauCeti.Floer.exchangeHamiltonians`) along the exchange `σ(w) = 1 - w` of the two inputs. Since
+(`TauCeti.Floer.exchangeEndData`) along the exchange `σ(w) = 1 - w` of the two inputs. Since
 `dσ = -1`, this pullback is `w ↦ -K'(1 - w)`. -/
 theorem exchangePerturbation_one (hH : Periodic (H inf) 1) (w : ℂ) (x : M) :
     exchangePerturbation H 1 w x =
-      -pairOfPantsPerturbation (exchangeHamiltonians H) (1 - w) x := by
+      -pairOfPantsPerturbation (exchangeEndData H) (1 - w) x := by
   have hplane := negativePlanePerturbation_neg hH (w - 1) x
   rw [neg_sub] at hplane
   rw [pairOfPantsPerturbation_eq_update_inf_add_negativePlanePerturbation,
-    pairOfPantsPerturbation_update_exchangeHamiltonians_one_sub, exchangeHamiltonians_inf,
+    pairOfPantsPerturbation_update_exchangeEndData_one_sub, exchangeEndData_inf,
     hplane, exchangePerturbation_def, Complex.ofReal_one]
   abel
 
@@ -177,12 +188,12 @@ pair-of-pants datum with exchanged Hamiltonians (`TauCeti.Floer.perturbationPull
 `c = 1` of the family. Since `σ` is holomorphic,
 `TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_perturbationPullback` turns solutions of
 the Floer equation for the exchanged datum, composed with `σ`, into solutions for this end. -/
-theorem perturbationPullback_pairOfPantsPerturbation_exchangeHamiltonians
+theorem perturbationPullback_pairOfPantsPerturbation_exchangeEndData
     (hH : Periodic (H inf) 1) (v z : ℝ × ℝ) (x : M) :
     perturbationPullback (fun z => (1, 0) - z)
-        (fun z x => pairOfPantsPerturbation (exchangeHamiltonians H)
+        (fun z x => pairOfPantsPerturbation (exchangeEndData H)
           (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x => pairOfPantsPerturbation (exchangeHamiltonians H)
+        (fun z x => pairOfPantsPerturbation (exchangeEndData H)
           (Complex.equivRealProdCLM.symm z) x Complex.I) v z x =
       exchangePerturbation H 1 (Complex.equivRealProdCLM.symm z) x
         (Complex.equivRealProdCLM.symm v) := by
@@ -198,13 +209,6 @@ theorem perturbationPullback_pairOfPantsPerturbation_exchangeHamiltonians
 
 /-! ### The ends of the family -/
 
-/-- Every `c ∈ [0, 1]` lies within distance `1` of `1`. -/
-private theorem norm_ofReal_sub_one_le {c : ℝ} (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) :
-    ‖(c : ℂ) - 1‖ ≤ 1 := by
-  rw [← Complex.ofReal_one, ← Complex.ofReal_sub, Complex.norm_real,
-    Real.norm_of_nonpos (by linarith)]
-  linarith
-
 /-- The translated plane datum vanishes within distance `2` of `c`. -/
 theorem negativePlanePerturbation_sub_eq_zero {H : ℝ → M → ℝ} {c : ℝ} {w : ℂ}
     (hw : ‖w - c‖ ≤ 2) (x : M) : negativePlanePerturbation H (w - c) x = 0 :=
@@ -217,13 +221,10 @@ private theorem pairOfPantsPerturbation_update_inf_eq_zero {w : ℂ} (h₀ : 1 /
     (h₁ : 1 / 2 ≤ ‖w - 1‖) (x : M) : pairOfPantsPerturbation (update H inf 0) w x = 0 := by
   -- On each input end the longitudinal coordinate is nonpositive at such points.
   have hre {q : Puncture} (hq : q ≠ inf) : (q.endCoord w).re ≤ 0 := by
-    have hn : 1 ≤ ‖(w - q.endCenter) / q.endScale‖ := by
-      rw [norm_div, norm_endScale hq, le_div_iff₀ (by norm_num), one_mul]
-      rcases q.endCenter_eq_zero_or_eq_one with h | h <;> rw [h]
-      · rwa [sub_zero]
-      · exact h₁
-    rw [re_endCoord, neg_div, neg_nonpos]
-    exact div_nonneg (Real.log_nonneg hn) (by positivity)
+    refine re_endCoord_nonpos_of_le_norm_sub_endCenter hq ?_
+    rcases q.endCenter_eq_zero_or_eq_one with h | h <;> rw [h]
+    · rwa [sub_zero]
+    · exact h₁
   have hcut {q : Puncture} (hq : q ≠ inf) :
       smoothTransition ((q.endCoord w).re - 1) = 0 :=
     smoothTransition.zero_of_nonpos (by linarith [hre hq])
@@ -235,13 +236,9 @@ private theorem pairOfPantsPerturbation_update_inf_eq_zero {w : ℂ} (h₀ : 1 /
 theorem pairOfPantsPerturbation_update_inf_eq_zero_of_le_norm_sub {c : ℝ} (hc₀ : 0 ≤ c)
     (hc₁ : c ≤ 1) {w : ℂ} (hw : 3 / 2 ≤ ‖w - c‖) (x : M) :
     pairOfPantsPerturbation (update H inf 0) w x = 0 := by
-  refine pairOfPantsPerturbation_update_inf_eq_zero ?_ ?_ x
-  · have := norm_sub_le w (c : ℂ)
-    rw [Complex.norm_real, Real.norm_of_nonneg hc₀] at this
-    linarith
-  · have := norm_sub_le (w - 1) ((c : ℂ) - 1)
-    rw [sub_sub_sub_cancel_right] at this
-    linarith [norm_ofReal_sub_one_le hc₀ hc₁]
+  obtain ⟨h₀, h₁⟩ := half_le_norm_of_le_norm_sub (r := 1) (w := w) (abs_le.2 ⟨by linarith, hc₁⟩)
+    (abs_le.2 ⟨by linarith, by linarith⟩) (by linarith)
+  exact pairOfPantsPerturbation_update_inf_eq_zero h₀ h₁ x
 
 /-- **The family near the inputs.** For `0 ≤ c ≤ 1`, on the disc `|w| ≤ 3` every member of the
 family is the pair-of-pants datum. -/
@@ -321,7 +318,7 @@ theorem exchangePerturbation_add_cylindricalEndLift_inf_of_neg (hH : Periodic (H
     linarith
   rw [exchangePerturbation_def,
     pairOfPantsPerturbation_update_inf_eq_zero_of_le_norm_sub hc₀ hc₁ hw, zero_add,
-    add_sub_cancel_left, negativePlanePerturbation_cylindricalEndLift_of_neg hH hz]
+    add_sub_cancel_left, negativePlanePerturbation_cylindricalEndLift_apply hH]
 
 /-- **The family is `H_∞(t) dt` far out on the output end.** For `0 ≤ c ≤ 1`, on the part
 `s ≤ -2` of the output end recentred at `c`, the pullback of the member `c` of the family along the
@@ -346,6 +343,17 @@ private theorem forall_update_inf {P : (ℝ → M → ℝ) → Prop} (h₀ : P 0
 
 variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
+
+/-- The exchanged data of end data which are jointly `C^n` on `ℝ × M` are jointly `C^n`. -/
+theorem contMDiff_uncurry_exchangeEndData {n : WithTop ℕ∞} {G : Puncture → ℝ → M → ℝ}
+    (hG : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry (G q))) (q : Puncture) :
+    ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry (exchangeEndData G q)) := by
+  cases q
+  · simpa using hG one
+  · simpa using hG zero
+  · rw [exchangeEndData_inf]
+    exact (hG inf).comp
+      (((contDiff_id.add contDiff_const).contMDiff.comp contMDiff_fst).prodMk contMDiff_snd)
 
 /-- **The translated plane datum is smooth.** For a period-one Hamiltonian of class `C^n` on
 `ℝ × M`, the negative plane datum translated by the parameter, `(c, w, x) ↦ K(w - c)(x)`, is `C^n`

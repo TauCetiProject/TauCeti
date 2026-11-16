@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Curves.Degree
+public import TauCeti.AlgebraicGeometry.Curves.Degree.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.CoordinateRing
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Divisor.Class
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Finrank

@@ -43,6 +43,8 @@ them by open sets of almost the same measure.
 * `Distribution.massMeasure`: the mass measure `‖T‖`.
 * `Distribution.massMeasure_preimage_coe`, `Distribution.massMeasure_univ`: its values on open
   sets and its total mass.
+* `Distribution.lintegral_massMeasure_le_mul_mass`: a function bounded by `L` has integral at most
+  `L M(T)`.
 * `Distribution.enorm_apply_le_lintegral_massMeasure`: the domination `|T φ| ≤ ∫ ‖φ‖ d‖T‖`.
 * `Distribution.massMeasure_le_of_enorm_apply_le`: minimality among outer regular measures.
 
@@ -89,7 +91,7 @@ theorem enorm_apply_le_sum_localMass_mul {𝓖 : Type*} [FunLike 𝓖 𝓓^{n}(�
       rw [← ofReal_norm, ← ofReal_norm]
       exact ENNReal.ofReal_le_ofReal (hψφ i x)
     · simp [image_eq_zero_of_notMem_tsupport fun h => hx (hψW i h)]
-  calc ‖T (∑ i, ψ i)‖ₑ ≤ ∑ i, ‖T (ψ i)‖ₑ := by rw [map_sum]; exact enorm_sum_le _ _
+  calc ‖T (∑ i, ψ i)‖ₑ ≤ ∑ i, ‖T (ψ i)‖ₑ := by rw [map_sum]; exact eNorm_sum_le _ _
     _ ≤ ∑ i : s, localMass T (W i) * c i := Finset.sum_le_sum fun i _ =>
         enorm_apply_le_localMass_mul_of_forall_enorm_le T (hψW i) (hψc i)
     _ ≤ ∑ i, localMass T (W i) * c i := by
@@ -167,7 +169,7 @@ private theorem sum_measure_levelSet_mul_le (μ : Measure Ω) (φ : 𝓓^{n}(Ω,
         simp only [setLIntegral_const, mul_comm]
     _ ≤ ∑ j : Fin N, ∫⁻ x in levelSet φ ε j, (‖φ x‖ₑ + ENNReal.ofReal (2 * ε)) ∂μ := by
         refine Finset.sum_le_sum fun j _ => setLIntegral_mono
-          (hφc.enorm.measurable.add measurable_const) fun x hx => ?_
+          (hφc.eNorm.measurable.add measurable_const) fun x hx => ?_
         rw [← ofReal_norm, ← ENNReal.ofReal_add (norm_nonneg _) (by positivity)]
         exact ENNReal.ofReal_le_ofReal (by linarith [(mem_levelSet hε hx).1])
     _ = ∫⁻ x in ⋃ j : Fin N, levelSet φ ε j, (‖φ x‖ₑ + ENNReal.ofReal (2 * ε)) ∂μ := by
@@ -253,6 +255,12 @@ theorem massMeasure_preimage_coe (hT : HasLocallyFiniteMass T) {U : Set E} (hU :
 @[simp]
 theorem massMeasure_univ (hT : HasLocallyFiniteMass T) : massMeasure T univ = mass T := by
   simpa using massMeasure_preimage_coe hT isOpen_univ
+
+/-- A function bounded by `L` on `Ω` has integral at most `L M(T)` against the mass measure. -/
+theorem lintegral_massMeasure_le_mul_mass (hT : HasLocallyFiniteMass T) {f : Ω → ℝ≥0∞}
+    {L : ℝ≥0∞} (hf : ∀ x, f x ≤ L) : ∫⁻ x, f x ∂massMeasure T ≤ L * mass T := by
+  calc ∫⁻ x, f x ∂massMeasure T ≤ ∫⁻ _, L ∂massMeasure T := lintegral_mono hf
+    _ = L * mass T := by rw [lintegral_const, massMeasure_univ hT]
 
 /-- The level-set estimate behind the domination: if `W` is an open neighbourhood of the support
 of `φ` of finite mass `M`, then `‖T φ‖ ≤ ∫ ‖φ‖ d‖T‖ + ε * (3 * M + 1)` for every `ε > 0`. -/

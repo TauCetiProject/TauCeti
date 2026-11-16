@@ -252,7 +252,7 @@ class Boundary(unittest.TestCase):
     def test_main_saves_mathlib_before_root_build(self):
         steps = yaml.safe_load((ROOT / ".github/workflows/ci.yml").read_text())["jobs"]["build"]["steps"]
         save = next(i for i, s in enumerate(steps) if s.get("name") == "Save Mathlib's compressed download cache")
-        build = next(i for i, s in enumerate(steps) if s.get("run") == "lake build")
+        build = next(i for i, s in enumerate(steps) if s.get("name") == "Build")
         self.assertLess(save, build)
 
 

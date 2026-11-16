@@ -38,7 +38,9 @@ object used for spectral subspaces in the presence of eigenvalue multiplicity.
 *Intertwiners.* A rectangular matrix `V` with `A * V = V * B` for Hermitian `A` and `B` also
 satisfies `cfc f A * V = V * cfc f B`, since both functional calculi agree with one polynomial on
 the two finite spectra. Compressing `cfc f A` to an `A`-invariant subspace thus gives the
-functional calculus of the compression of `A`.
+functional calculus of the compression of `A`. For the same reason the functional calculus
+commutes with transposition, and, being a continuous unital ⋆-algebra isomorphism, reindexing
+rows and columns along one equivalence commutes with it too.
 
 *Traces.* The trace of `cfc f A` is `∑ᵢ f(aᵢ)` over the eigenvalues `aᵢ` of `A`. For a second
 Hermitian matrix `B` with eigenvalues `bⱼ`, the trace of `cfc f A * cfc g B` is
@@ -62,6 +64,8 @@ with a measurable random matrix `ω ↦ A ω` gives measurability of `ω ↦ cfc
 ## Main results
 
 * `Matrix.IsHermitian.cfc_mul_eq_mul_cfc` — `A * V = V * B` implies `cfc f A * V = V * cfc f B`;
+* `Matrix.cfc_transpose`, `Matrix.cfc_reindex` — the functional calculus commutes with
+  transposition and with reindexing;
 * `Matrix.IsHermitian.toEuclideanLin_cfc_apply_of_apply_eq_smul` — `cfc f A` acts by `f μ` on an
   eigenvector of `A` with eigenvalue `μ`;
 * `Matrix.IsHermitian.toEuclideanLin_cfc` — the Euclidean operator of `cfc f A` is the symmetric
@@ -131,6 +135,45 @@ theorem IsHermitian.cfc_mul_eq_mul_cfc {m : Type*} [Fintype m] [DecidableEq m]
     rw [aeval_map_algebraMap, ← cfc_polynomial q B hB.isSelfAdjoint]
     exact cfc_congr fun t ht ↦ (hq t (by simp [s, ht])).symm
   rw [hA', hB', aeval_mul_eq_mul_aeval h]
+
+/-- **The functional calculus commutes with transposition**: `cfc f Aᵀ = (cfc f A)ᵀ`. -/
+@[simp]
+theorem cfc_transpose (f : ℝ → ℝ) (A : Matrix n n 𝕜) : cfc f Aᵀ = (cfc f A)ᵀ := by
+  by_cases hA : A.IsHermitian
+  · -- Replace `f` by a polynomial `q` agreeing with it on the spectra of `A` and `Aᵀ`.
+    classical
+    set s : Finset ℝ := A.finite_real_spectrum.toFinset ∪ Aᵀ.finite_real_spectrum.toFinset
+    set q : ℝ[X] := Lagrange.interpolate s id f
+    have hq : ∀ t ∈ s, q.eval t = f t := fun t ht ↦
+      Lagrange.eval_interpolate_at_node f (Set.injOn_id _) ht
+    have h1 : cfc f A = aeval A q := by
+      rw [← cfc_polynomial q A hA.isSelfAdjoint]
+      exact cfc_congr fun t ht ↦ (hq t (by simp [s, ht])).symm
+    have h2 : cfc f Aᵀ = aeval Aᵀ q := by
+      rw [← cfc_polynomial q Aᵀ hA.transpose.isSelfAdjoint]
+      exact cfc_congr fun t ht ↦ (hq t (by simp [s, ht])).symm
+    rw [h1, h2, aeval_eq_sum_range, aeval_eq_sum_range, transpose_sum]
+    simp [transpose_smul, transpose_pow]
+  · have hA' : ¬IsSelfAdjoint Aᵀ := fun h ↦ hA (isHermitian_transpose_iff.1 h.isHermitian)
+    rw [cfc_apply_of_not_predicate A (fun h ↦ hA h.isHermitian),
+      cfc_apply_of_not_predicate _ hA', transpose_zero]
+
+/-- **The functional calculus commutes with reindexing** rows and columns along one equivalence:
+`cfc f (reindex e e A) = reindex e e (cfc f A)`. -/
+theorem cfc_reindex {m : Type*} [Fintype m] [DecidableEq m] (e : n ≃ m) (f : ℝ → ℝ)
+    (A : Matrix n n 𝕜) : cfc f (reindex e e A) = reindex e e (cfc f A) := by
+  let φ : Matrix n n 𝕜 →⋆ₐ[𝕜] Matrix m m 𝕜 :=
+    { (reindexAlgEquiv 𝕜 𝕜 e).toAlgHom with
+      map_star' := fun B ↦ by simp [star_eq_conjTranspose] }
+  have hφ : ∀ B, φ B = reindex e e B := fun _ ↦ rfl
+  by_cases hA : IsSelfAdjoint A
+  · simpa only [hφ] using (StarAlgHom.map_cfc φ f A (A.finite_real_spectrum.continuousOn _)
+      (continuous_id.matrix_reindex e e) hA (hA.map φ)).symm
+  · have hA' : ¬IsSelfAdjoint (reindex e e A) := fun h ↦ hA <| by
+      rw [IsSelfAdjoint, star_eq_conjTranspose, conjTranspose_reindex] at h
+      exact (reindex e e).injective h
+    rw [cfc_apply_of_not_predicate A hA, cfc_apply_of_not_predicate _ hA']
+    simp
 
 /-- For symmetric `C` and positive `ε`, `(C² + ε I)⁻¹ C` is the functional calculus of
 `x ↦ x / (x² + ε)` at `C`, including when `C` is singular. -/

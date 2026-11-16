@@ -21,9 +21,8 @@ no completeness statement for the braid relations, since in rank two there is on
 
 Reading the entry off the Cartan type —
 `TauCeti.coxeterMatrixOfBase_eq_six_of_hasCartanType_G2` and its two companions — turns this into
-the three rank-two cases. The Weyl groups of the types `A₂`, `B₂`
-and `G₂` are the dihedral groups of orders `6`, `8` and `12`, the last of these being the
-Weyl-group clause of the `G₂` worked example of the root-systems roadmap.
+the three rank-two cases. The Weyl groups of the types `A₂`, `B₂` and `G₂` are the dihedral groups
+of orders `6`, `8` and `12`.
 
 ## Main results
 
@@ -36,11 +35,8 @@ Weyl-group clause of the `G₂` worked example of the root-systems roadmap.
 
 ## References
 
-This file proves the Weyl-group clause of the `G₂` worked example of
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md` ("its Weyl group is the dihedral group
-of order 12, `P.weylGroup ≃* DihedralGroup 6`"), together with the two other rank-two types. The
-computation is the one in N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Ch. VI §1.3,
-and J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, §9.
+The computation is the one in N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Ch. VI
+§1.3, and J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, §9.
 -/
 
 public section
@@ -133,8 +129,7 @@ theorem nonempty_dihedralGroup_mulEquiv_weylGroup_of_hasCartanType_B_two
   exact coxeterMatrixOfBase_eq_four_of_hasCartanType_B_two P b h hij ▸
     nonempty_dihedralGroup_mulEquiv_weylGroup P b hb hij
 
-/-- **A root system of type `G₂` has Weyl group the dihedral group of order `12`.** This is the
-Weyl-group clause of the `G₂` worked example of the root-systems roadmap. -/
+/-- **A root system of type `G₂` has Weyl group the dihedral group of order `12`.** -/
 theorem nonempty_dihedralGroup_mulEquiv_weylGroup_of_hasCartanType_G2
     (h : HasCartanType P b .G2) : Nonempty (DihedralGroup 6 ≃* P.weylGroup) := by
   have hb : b.support.card = 2 := by simpa using h.card_support

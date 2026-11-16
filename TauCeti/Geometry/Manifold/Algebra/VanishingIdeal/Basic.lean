@@ -97,6 +97,14 @@ theorem mem_smoothVanishingIdeal_iff {x : M} {f : C^∞⟮I, M; ℝ⟯} :
     f ∈ smoothVanishingIdeal I x ↔ f x = 0 :=
   RingHom.mem_ker
 
+/-- The vanishing ideal at `x` is also the kernel of evaluation at `x` as an `ℝ`-algebra
+homomorphism. -/
+@[simp]
+theorem ker_evalAlgHom_eq_smoothVanishingIdeal (x : M) :
+    RingHom.ker (ContMDiffMap.evalAlgHom x : C^∞⟮I, M; ℝ⟯ →ₐ[ℝ] ℝ) = smoothVanishingIdeal I x :=
+  Ideal.ext fun f ↦ by
+    rw [RingHom.mem_ker, ContMDiffMap.evalAlgHom_apply, mem_smoothVanishingIdeal_iff]
+
 /-- A function in the square of the vanishing ideal at `x` vanishes at `x`. -/
 theorem apply_eq_zero_of_mem_smoothVanishingIdeal_sq {x : M} {f : C^∞⟮I, M; ℝ⟯}
     (hf : f ∈ smoothVanishingIdeal I x ^ 2) : f x = 0 :=
@@ -436,6 +444,7 @@ theorem exists_toCotangent_eq_smoothCotangentBasis {x : M} (hx : I.IsInteriorPoi
     simp [c, hy, hF.eq_of_nhds]
   exact ⟨c, hc, (smoothCotangentBasis_eq_toCotangent hx b i c hc).symm⟩
 
+omit [FiniteDimensional ℝ E] in
 /-- **Zero-dimensional manifolds.** When the model space is zero, the algebraic cotangent space
 at every point vanishes. -/
 theorem subsingleton_smoothCotangent [Subsingleton E] (x : M) :
@@ -449,6 +458,7 @@ theorem subsingleton_smoothCotangent [Subsingleton E] (x : M) :
   have : Subsingleton (TangentSpace I x) := ‹Subsingleton E›
   (smoothCotangentEquiv hx).toEquiv.subsingleton
 
+omit [FiniteDimensional ℝ E] in
 /-- When the model space is zero, the vanishing ideal at every point equals its square: every
 smooth function vanishing at `x` is a finite sum of products of such functions. -/
 theorem smoothVanishingIdeal_sq_eq_self [Subsingleton E] (x : M) :
@@ -481,12 +491,16 @@ theorem smoothCotangentEquiv_smoothCotangentMap (φ : C^∞⟮J, N; I, M⟯) {x 
 
 /-- If the differential of a smooth map `φ` at an interior point `y` is invertible, for instance
 for a local diffeomorphism, the pullback of cotangent classes `I_x / I_x² → I_y / I_y²` along `φ`,
-where `x = φ y` is interior, is bijective. -/
+where `x = φ y`, is bijective. -/
 theorem smoothCotangentMap_bijective (φ : C^∞⟮J, N; I, M⟯) {x : M} {y : N} (h : φ y = x)
-    (hx : I.IsInteriorPoint x) (hy : J.IsInteriorPoint y) (hφ : (mfderiv J I φ y).IsInvertible) :
+    (hy : J.IsInteriorPoint y) (hφ : (mfderiv J I φ y).IsInvertible) :
     Function.Bijective (smoothCotangentMap φ h) := by
   subst h
   obtain ⟨e, he⟩ := hφ
+  -- The image of an interior point under a map with surjective differential is interior.
+  have hx : I.IsInteriorPoint (φ y) :=
+    (φ.contMDiff.mdifferentiable (by simp) y).isInteriorPoint_of_surjective_mfderiv
+      (by rw [← he]; exact e.surjective) hy
   -- Under the cotangent identifications the pullback is precomposition with `e`, a bijection.
   have hmap : ⇑(smoothCotangentMap φ rfl) = (smoothCotangentEquiv hy).symm ∘
       e.symm.arrowCongr (ContinuousLinearEquiv.refl ℝ ℝ) ∘ smoothCotangentEquiv hx := by
@@ -509,7 +523,7 @@ def smoothCotangentRestrictEquiv (U : Opens M) {x : U} (hx : I.IsInteriorPoint (
   LinearEquiv.ofBijective
     (smoothCotangentMap (⟨Subtype.val, contMDiff_subtype_val⟩ : C^∞⟮I, U; I, M⟯) (y := x)
       (by simp))
-    (smoothCotangentMap_bijective _ _ hx (I.isInteriorPoint_iff_isInteriorPoint_val.mpr hx)
+    (smoothCotangentMap_bijective _ _ (I.isInteriorPoint_iff_isInteriorPoint_val.mpr hx)
       ⟨Manifold.tangentSpaceOpenEquiv x, (Manifold.mfderiv_subtype_val x).symm⟩)
 
 /-- Restriction to an open set is the pullback of cotangent classes along the inclusion of `U`. -/

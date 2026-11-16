@@ -46,6 +46,9 @@ space used to count it, it is finite for definite lattices, and it is `1` in ran
   in positive rank, where `a` counts the classes with an improper self-isometry.
 * `TauCeti.IntegralLattice.properClassNumber_eq_one_of_finrank_le_one`: in rank at most one the
   genus is a single proper class.
+* `TauCeti.IntegralLattice.genusProperClasses_smul` and
+  `TauCeti.IntegralLattice.properClassNumber_smul`: scaling the form by a nonzero integer scales
+  the proper classes of the genus and keeps the proper class number.
 
 ## References
 
@@ -249,6 +252,35 @@ theorem properClassNumber_le_two_mul_classNumber (L : IntegralLattice V) :
     exact Nat.zero_le _
 
 end ProperClassNumber
+
+section Scaling
+
+open scoped Pointwise
+
+/-- The proper classes in the genus of the scaling `n • L` by a nonzero integer are the scalings
+of the proper classes in the genus of `L`. -/
+theorem genusProperClasses_smul {n : ℤ} (hn : n ≠ 0) (L : IntegralLattice V) :
+    (n • L).genusProperClasses = n • L.genusProperClasses := by
+  ext d
+  obtain ⟨M, rfl⟩ := properIsometryClass_surjective d
+  rw [properIsometryClass_mem_genusProperClasses_iff, Set.mem_smul_set]
+  refine ⟨fun h ↦ ?_, fun ⟨c, hc, hcM⟩ ↦ ?_⟩
+  · obtain ⟨M', rfl, hM'⟩ := h.exists_eq_smul hn
+    exact ⟨M'.properIsometryClass, properIsometryClass_mem_genusProperClasses_iff.mpr hM',
+      smul_properIsometryClass n M'⟩
+  · obtain ⟨M', rfl⟩ := properIsometryClass_surjective c
+    rw [smul_properIsometryClass, properIsometryClass_eq_properIsometryClass_iff] at hcM
+    obtain ⟨e, -⟩ := hcM
+    exact ((properIsometryClass_mem_genusProperClasses_iff.mp hc).smul hn).trans e.sameGenus
+
+/-- Scaling the form by a nonzero integer does not change the proper class number. -/
+@[simp]
+theorem properClassNumber_smul {n : ℤ} (hn : n ≠ 0) (L : IntegralLattice V) :
+    (n • L).properClassNumber = L.properClassNumber := by
+  rw [properClassNumber_def, properClassNumber_def, genusProperClasses_smul hn, ← Set.image_smul]
+  exact Nat.card_image_of_injective (smul_properIsometryQuotient_injective hn) _
+
+end Scaling
 
 section RankLeOne
 

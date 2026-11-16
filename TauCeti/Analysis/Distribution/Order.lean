@@ -17,6 +17,9 @@ function up to some fixed order `N`.
 ## Main declarations
 
 * `Distribution.exists_norm_apply_le`: a distribution has finite order on each compact set.
+* `Distribution.isLittleO_apply_of_norm_iteratedFDeriv_le`: a map with such a finite-order bound
+  sends a family of test functions whose derivatives up to that order are `o(‖h‖)` to an `o(‖h‖)`
+  family.
 
 ## References
 
@@ -25,8 +28,8 @@ function up to some fixed order `N`.
 
 public section
 
-open TopologicalSpace TestFunction
-open scoped Distributions ContDiff
+open Filter TopologicalSpace TestFunction
+open scoped Distributions ContDiff Topology
 
 namespace Distribution
 
@@ -58,5 +61,28 @@ theorem exists_norm_apply_le (T : 𝓓'(Ω, F)) {K : Compacts E} (hK : (K : Set 
       refine Seminorm.finset_sup_apply_le hM fun i hi => ?_
       rw [ContDiffMapSupportedIn.seminorm_top_le_iff ℝ hM]
       exact fun x _ => hφM i (Finset.le_sup (f := id) hi) x
+
+/-- **Finite order turns `o(‖h‖)` derivative bounds into `o(‖h‖)` values.** Let `P` satisfy a
+finite-order bound of order `N` on `K`, as in `Distribution.exists_norm_apply_le`. If near `0` the
+test functions `R h` are supported in `K` and their derivatives of order at most `N` are
+eventually bounded by `ε * ‖h‖` for every `ε > 0`, then `P (R h) = o(‖h‖)`. This is the step
+that differentiates a pairing of a distribution with a smooth family of test functions. -/
+theorem isLittleO_apply_of_norm_iteratedFDeriv_le {X F' G : Type*} [NormedAddCommGroup X]
+    [NormedAddCommGroup F'] [NormedSpace ℝ F'] [NormedAddCommGroup G] {K : Set E} {N : ℕ}
+    {C : ℝ} {P : 𝓓(Ω, F') → G} (hC : 0 ≤ C)
+    (hP : ∀ φ : 𝓓(Ω, F'), tsupport φ ⊆ K → ∀ M, 0 ≤ M →
+      (∀ i ≤ N, ∀ x, ‖iteratedFDeriv ℝ i φ x‖ ≤ M) → ‖P φ‖ ≤ C * M)
+    {R : X → 𝓓(Ω, F')} (hRK : ∀ᶠ h in 𝓝 0, tsupport (R h) ⊆ K)
+    (hR : ∀ i ≤ N, ∀ ε > 0, ∀ᶠ h in 𝓝 0, ∀ x, ‖iteratedFDeriv ℝ i (R h) x‖ ≤ ε * ‖h‖) :
+    (fun h ↦ P (R h)) =o[𝓝 0] fun h ↦ h := by
+  rw [Asymptotics.isLittleO_iff]
+  intro c hc
+  have hε : 0 < c / (C + 1) := div_pos hc (by linarith)
+  have hRN := (Set.finite_Iic N).eventually_all.2 fun i hi ↦ hR i hi _ hε
+  filter_upwards [hRK, hRN] with h hhK hhR
+  calc ‖P (R h)‖ ≤ C * (c / (C + 1) * ‖h‖) := hP _ hhK _ (by positivity) hhR
+    _ = C / (C + 1) * (c * ‖h‖) := by ring
+    _ ≤ c * ‖h‖ :=
+      mul_le_of_le_one_left (by positivity) ((div_le_one (by linarith)).2 (by linarith))
 
 end Distribution

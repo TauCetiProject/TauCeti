@@ -86,7 +86,7 @@ theorem two_mul_genus_add_two_le_ncard_setOf_weierstrassWeight_ne_zero
     2 * genus k F + 2 ≤ {P : Place k F | P.weierstrassWeight ≠ 0}.ncard := by
   have hfin := Place.finite_setOf_weierstrassWeight_ne_zero hF hex hgaps
   have hle := Finset.sum_le_card_nsmul hfin.toFinset (fun P ↦ P.weierstrassWeight)
-    ((genus k F).choose 2) fun P _ ↦ P.weierstrassWeight_le_genus_choose_two hF hex
+    ((genus k F).choose 2) fun P _ ↦ P.weierstrassWeight_le_genus_choose_two hF
       (P.degree_eq_one_of_isAlgClosed_of_isFunctionField hF)
   rw [sum_toFinset_weierstrassWeight hF hex hgaps hfin, Nat.pow_three_sub_self_eq_mul_choose_two,
     smul_eq_mul] at hle
@@ -109,7 +109,7 @@ private theorem isHyperellipticFunctionField_of_ncard_setOf_weierstrassWeight_ne
   have hmax : ∃ P ∈ hfin.toFinset, P.weierstrassWeight = (genus k F).choose 2 := by
     by_contra! hlt
     have hsum := Finset.sum_lt_sum_of_nonempty hne fun P hP ↦ lt_of_le_of_ne
-      (P.weierstrassWeight_le_genus_choose_two hF hex
+      (P.weierstrassWeight_le_genus_choose_two hF
         (P.degree_eq_one_of_isAlgClosed_of_isFunctionField hF)) (hlt P hP)
     rw [sum_toFinset_weierstrassWeight hF hex hgaps hfin, Finset.sum_const, smul_eq_mul,
       Nat.pow_three_sub_self_eq_mul_choose_two] at hsum
@@ -117,7 +117,7 @@ private theorem isHyperellipticFunctionField_of_ncard_setOf_weierstrassWeight_ne
   obtain ⟨P, -, hP⟩ := hmax
   have hP₁ := P.degree_eq_one_of_isAlgClosed_of_isFunctionField hF
   exact isHyperellipticFunctionField_of_isPoleNumber_two_of_perfectField hF hex hg hP₁
-    ((P.weierstrassWeight_eq_genus_choose_two_iff hF hex hP₁).mp hP)
+    ((P.weierstrassWeight_eq_genus_choose_two_iff hF hP₁).mp hP)
 
 /-- **A function field of genus `g ≥ 2` is hyperelliptic exactly when it has `2g + 2` Weierstrass
 points**, over an algebraically closed field, if the gaps at every place are pairwise distinct

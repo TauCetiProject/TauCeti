@@ -5,11 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Finiteness.Defs
 public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 public import Mathlib.RingTheory.IntegralClosure.IsIntegral.Basic
 -- Proof-only: supplies integral-closure constructions and integrality transitivity.
 -- The statements only need the public imports above.
+import Mathlib.RingTheory.Adjoin.Basic
 import Mathlib.RingTheory.IntegralClosure.IsIntegralClosure.Basic
+import Mathlib.RingTheory.Polynomial.ScaleRoots
 import Mathlib.Tactic.ComputeDegree
 
 /-!
@@ -22,6 +25,11 @@ without either being an algebra over the other.
 
 ## Main results
 
+* `IsIntegral.exists_isIntegral_algebraMap_pow_mul`: if each element of `A` times a power of `r`
+  is integral over `P`, every element of an `A`-algebra integral over `A` becomes integral over
+  `P` after multiplication by a power of `r`.
+* `AlgHom.finite_of_adjoin_eq_top`: an `R`-algebra morphism `f : B →ₐ[R] A` is module-finite when
+  `A` is generated as an `R`-algebra by a finite set of elements integral over `B` via `f`.
 * `TauCeti.isIntegral_trans_common`: if every element of `P` becomes integral over `R` once
   mapped into `L`, then an element of `L` integral over `P` is integral over `R`.
 * `TauCeti.dvd_of_isIntegral_div`: an element of a field extension of `A` that is a quotient of
@@ -38,6 +46,75 @@ without either being an algebra over the other.
 -/
 
 public section
+
+section
+
+open Polynomial
+
+variable {P A B : Type*} [CommRing P] [CommRing A] [CommRing B] [Algebra P A] [Algebra A B]
+  [Algebra P B] [IsScalarTower P A B]
+
+/-- Let `r ∈ A` be such that every element of `A` times a power of `r` is integral over `P`. Then
+every element `c` of an `A`-algebra that is integral over `A` becomes integral over `P` after
+multiplication by a power of `r`. -/
+theorem IsIntegral.exists_isIntegral_algebraMap_pow_mul {c : B} (hc : IsIntegral A c) {r : A}
+    (H : ∀ a : A, ∃ m, IsIntegral P (r ^ m * a)) :
+    ∃ n, IsIntegral P (algebraMap A B r ^ n * c) := by
+  -- If `f` is a monic equation of `c` over `A` and `rᴺ` clears its coefficients, then `rᴺ c` is
+  -- a root of `f.scaleRoots rᴺ`, a monic polynomial with coefficients integral over `P`.
+  obtain ⟨f, hfm, hfc⟩ := hc
+  choose m hm using H
+  have hr : IsIntegral P r := .of_pow (Nat.succ_pos _) (by simpa [pow_succ] using hm r)
+  -- A common exponent `N` clearing all the coefficients of `f`.
+  set N := ∑ i ∈ Finset.range (f.natDegree + 1), m (f.coeff i)
+  have hcoeff (i : ℕ) : IsIntegral P (r ^ N * f.coeff i) := by
+    rcases le_or_gt i f.natDegree with hi | hi
+    · have : m (f.coeff i) ≤ N := Finset.single_le_sum (f := fun i ↦ m (f.coeff i))
+        (fun _ _ ↦ Nat.zero_le _) (Finset.mem_range.mpr (Nat.lt_succ_of_le hi))
+      rw [← Nat.sub_add_cancel this, pow_add, mul_assoc]
+      exact (hr.pow _).mul (hm _)
+    · rw [f.coeff_eq_zero_of_natDegree_lt hi, mul_zero]
+      exact isIntegral_zero
+  -- The coefficients of `f.scaleRoots rᴺ` lie in the integral closure `S` of `P` in `A`.
+  let S := integralClosure P A
+  have hg (i : ℕ) : (f.scaleRoots (r ^ N)).coeff i ∈ S := by
+    rw [coeff_scaleRoots, mem_integralClosure_iff]
+    rcases lt_or_ge i f.natDegree with hi | hi
+    · obtain ⟨k, hk⟩ : ∃ k, f.natDegree - i = k + 1 := ⟨f.natDegree - i - 1, by omega⟩
+      rw [hk, pow_succ, mul_comm, mul_assoc]
+      exact ((hr.pow N).pow k).mul (hcoeff i)
+    · rw [Nat.sub_eq_zero_of_le hi, pow_zero, mul_one]
+      rcases hi.eq_or_lt with h | h
+      · rw [← h, hfm.coeff_natDegree]
+        exact isIntegral_one
+      · rw [f.coeff_eq_zero_of_natDegree_lt h]
+        exact isIntegral_zero
+  obtain ⟨g, hgf, -, hgm⟩ := lifts_and_natDegree_eq_and_monic
+    ((lifts_iff_coeff_lifts (f := algebraMap S A) _).mpr fun i ↦ ⟨⟨_, hg i⟩, rfl⟩)
+    ((monic_scaleRoots_iff _).mpr hfm)
+  -- So `rᴺ c` is integral over `S`, which is integral over `P`.
+  have : IsIntegral S (algebraMap A B r ^ N * c) := ⟨g, hgm, by
+    rw [IsScalarTower.algebraMap_eq S A B, ← eval₂_map, hgf, ← map_pow, ← aeval_def]
+    exact scaleRoots_aeval_eq_zero hfc⟩
+  exact ⟨N, isIntegral_trans _ this⟩
+
+end
+
+/-- If a finite set `s ⊆ A` generates `A` as an `R`-algebra and every element of `s` is integral
+over `B` along `f : B →ₐ[R] A`, then `f` is module-finite. -/
+theorem AlgHom.finite_of_adjoin_eq_top {R B A : Type*} [CommRing R] [CommRing B] [CommRing A]
+    [Algebra R B] [Algebra R A] (f : B →ₐ[R] A) {s : Set A} (hs : s.Finite)
+    (hx : Algebra.adjoin R s = ⊤) (hint : ∀ a ∈ s, f.toRingHom.IsIntegralElem a) :
+    f.Finite := by
+  let := f.toRingHom.toAlgebra
+  have := IsScalarTower.of_algebraMap_eq' f.comp_algebraMap.symm
+  have htop : Algebra.adjoin B s = ⊤ :=
+    Subalgebra.restrictScalars_injective R (by simp [Algebra.Subalgebra.restrictScalars_adjoin, hx])
+  have hfg : (⊤ : Subalgebra B A).toSubmodule.FG := by
+    rw [← htop]
+    exact fg_adjoin_of_finite hs hint
+  rw [Algebra.top_toSubmodule] at hfg
+  exact Module.finite_def.mpr hfg
 
 namespace TauCeti
 

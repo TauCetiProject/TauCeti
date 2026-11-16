@@ -22,12 +22,12 @@ every state has period one.
 By Chapman–Kolmogorov the return lengths are closed under addition. Hence every sufficiently
 large multiple of the period is a return length, and a state of period one returns with positive
 probability at every sufficiently large time. Mutually reachable states have the same period, so
-the period is constant on each communicating class. For an irreducible aperiodic kernel on a
-space with measurable singletons, every transition mass `(κ ^ n) x {y}` is positive for all
-sufficiently large `n`; this is the input to the coupling proof of convergence to equilibrium.
+the period is constant on each communicating class. For an irreducible aperiodic kernel, every
+transition mass `(κ ^ n) x {y}` is positive for all sufficiently large `n`; this is the input to
+the coupling proof of convergence to equilibrium.
 
-Irreducibility is Mathlib's `Kernel.IsIrreducible` with respect to counting measure, which on a
-space with measurable singletons says that every state reaches every other state.
+Irreducibility is Mathlib's `Kernel.IsIrreducible` with respect to counting measure, which says
+that every state reaches every other state.
 
 As a check of the definition, the period of a state under the deterministic kernel of a map `f`
 is the minimal period `Function.minimalPeriod f x` of `x` under `f`.
@@ -147,10 +147,6 @@ theorem period_eq_period_of_pos {a b : ℕ} (hxy : 0 < (κ ^ a) x {y})
     (hyx : 0 < (κ ^ b) y {x}) : κ.period x = κ.period y :=
   Nat.dvd_antisymm (period_dvd_period_of_pos hxy hyx) (period_dvd_period_of_pos hyx hxy)
 
-section MeasurableSingletonClass
-
-variable [MeasurableSingletonClass α]
-
 /-- The chain returns to `x` with positive probability at every sufficiently large multiple of
 the period of `x`. For a state of period zero this only says `0 < (κ ^ 0) x {x}`. -/
 theorem eventually_pos_pow_period_mul_apply_singleton (κ : Kernel α α) (x : α) :
@@ -181,11 +177,6 @@ theorem eventually_pos_pow_apply_singleton_of_period_eq_one {a : ℕ} (hx : κ.p
   rw [show n = (n - a) + a by lia]
   exact pow_add_apply_pos (hN _ (by lia)) hxy
 
-/-- Under counting-measure irreducibility every state reaches every other state. -/
-theorem exists_pos_pow_apply_singleton [IsIrreducible Measure.count κ] (x y : α) :
-    ∃ n, 0 < (κ ^ n) x {y} :=
-  IsIrreducible.irreducible (φ := Measure.count) (measurableSet_singleton y) (by simp) x
-
 /-- All states of an irreducible kernel have the same period. -/
 theorem period_eq_period [IsIrreducible Measure.count κ] (x y : α) :
     κ.period x = κ.period y :=
@@ -204,6 +195,10 @@ theorem IsAperiodic.eventually_pos_pow_apply_singleton [IsIrreducible Measure.co
     (h : κ.IsAperiodic) (x y : α) : ∀ᶠ n in atTop, 0 < (κ ^ n) x {y} :=
   have ⟨_, hxy⟩ := exists_pos_pow_apply_singleton (κ := κ) x y
   eventually_pos_pow_apply_singleton_of_period_eq_one (h x) hxy
+
+section MeasurableSingletonClass
+
+variable [MeasurableSingletonClass α]
 
 /-- The return lengths of `x` under a deterministic kernel are the positive periods of `x`. -/
 @[simp]

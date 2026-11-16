@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.Conformal.Reflection.Infinity
 import TauCeti.Analysis.Complex.Conformal.Inverse.Function
 import TauCeti.Analysis.Complex.Conformal.LocalDegree
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
+import TauCeti.Logic.Function.Update
 import TauCeti.Topology.MetricSpace.CoboundedImage
 import Mathlib.Analysis.Real.Pi.Bounds
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
@@ -453,7 +454,7 @@ private theorem continuousOn_update_neg_inv_invFunOn {A : Set ℂ} {c b : ℂ} {
   · have hq : Tendsto (fun s => c + b * model (-s⁻¹))
         (𝓝[(ball 0 r ∩ {z : ℂ | 0 ≤ z.im}) \ {0}] 0) (cobounded ℂ ⊓ 𝓟 (f '' A)) := by
       refine tendsto_inf.mpr ⟨?_, tendsto_principal.mpr ?_⟩
-      · exact (tendsto_comp_neg_inv_cobounded ((tendsto_const_add_mul_model hb).mono_left
+      · exact (tendsto_comp_neg_inv_nhdsWithin_zero ((tendsto_const_add_mul_model hb).mono_left
           inf_le_left)).mono_left
             (nhdsWithin_mono _ (sdiff_subset_sdiff_left inter_subset_right))
       · exact eventually_nhdsWithin_of_forall fun s hs => hfAq s hs.1.1 hs.1.2 hs.2
@@ -492,26 +493,17 @@ private theorem injOn_update_neg_inv_invFunOn {A : Set ℂ} {c b : ℂ} {r : ℝ
     (hφ0 : ∀ s ∈ ball (0 : ℂ) r, 0 ≤ s.im → s ≠ 0 → invFunOn f A (c + b * model (-s⁻¹)) ≠ 0) :
     InjOn (update (fun s : ℂ => -(invFunOn f A (c + b * model (-s⁻¹)))⁻¹) 0 0)
       (ball 0 r ∩ {z : ℂ | 0 ≤ z.im}) := by
-  intro s₁ hs₁ s₂ hs₂ h
-  have hne : ∀ s ∈ ball (0 : ℂ) r ∩ {z : ℂ | 0 ≤ z.im}, s ≠ 0 →
-      update (fun s : ℂ => -(invFunOn f A (c + b * model (-s⁻¹)))⁻¹) 0 0 s ≠ 0 :=
-    fun s hs hs0 => by
-      rw [update_of_ne hs0]
-      exact neg_ne_zero.mpr (inv_ne_zero (hφ0 s hs.1 hs.2 hs0))
-  by_cases h₁ : s₁ = 0 <;> by_cases h₂ : s₂ = 0
-  · rw [h₁, h₂]
-  · rw [h₁, update_self] at h
-    exact absurd h.symm (hne s₂ hs₂ h₂)
-  · rw [h₂, update_self] at h
-    exact absurd h (hne s₁ hs₁ h₁)
-  · rw [update_of_ne h₁, update_of_ne h₂, neg_inj, inv_inj] at h
-    have hq : c + b * model (-s₁⁻¹) = c + b * model (-s₂⁻¹) := by
-      rw [← invFunOn_eq (hfAq s₁ hs₁.1 hs₁.2 h₁), h, invFunOn_eq (hfAq s₂ hs₂.1 hs₂.2 h₂)]
-    have hmem : ∀ s ∈ ball (0 : ℂ) r ∩ {z : ℂ | 0 ≤ z.im}, s ≠ 0 →
-        -s⁻¹ ∈ {ζ : ℂ | 0 ≤ ζ.im ∧ 8 ≤ ‖ζ‖} :=
-      fun s hs hs0 => ⟨im_neg_inv_nonneg.mpr hs.2, hfar s hs.1 hs0⟩
-    simpa using injOn_model (hmem s₁ hs₁ h₁) (hmem s₂ hs₂ h₂)
-      (mul_left_cancel₀ hb (add_left_cancel hq))
+  refine Set.injOn_update_of_injOn_diff (fun s₁ hs₁ s₂ hs₂ h => ?_) fun s hs hs0 =>
+    neg_ne_zero.mpr (inv_ne_zero (hφ0 s hs.1 hs.2 hs0))
+  rw [neg_inj, inv_inj] at h
+  have hq : c + b * model (-s₁⁻¹) = c + b * model (-s₂⁻¹) := by
+    rw [← invFunOn_eq (hfAq s₁ hs₁.1.1 hs₁.1.2 hs₁.2), h,
+      invFunOn_eq (hfAq s₂ hs₂.1.1 hs₂.1.2 hs₂.2)]
+  have hmem : ∀ s ∈ ball (0 : ℂ) r ∩ {z : ℂ | 0 ≤ z.im}, s ≠ 0 →
+      -s⁻¹ ∈ {ζ : ℂ | 0 ≤ ζ.im ∧ 8 ≤ ‖ζ‖} :=
+    fun s hs hs0 => ⟨im_neg_inv_nonneg.mpr hs.2, hfar s hs.1 hs0⟩
+  simpa using injOn_model (hmem s₁ hs₁.1 hs₁.2) (hmem s₂ hs₂.1 hs₂.2)
+    (mul_left_cancel₀ hb (add_left_cancel hq))
 
 /-- **The comparison map.**  Let `f` be holomorphic on the part of the upper half-plane outside
 the closed disc of radius `R ≥ 0`, continuous and injective on the closure of that part, and tend

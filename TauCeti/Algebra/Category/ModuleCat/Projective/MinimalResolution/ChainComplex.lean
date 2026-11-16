@@ -47,7 +47,7 @@ theorem IsMinimal.range_d_le {M : ModuleCat.{v} R} {r : FiniteResolution E P M}
     LinearMap.range (r.d n).hom ≤ maximalIdeal R • ⊤ := by
   induction hr generalizing n with
   | base hM => simp
-  | step hQ i p zero hp hi hr ih =>
+  | step hQ i p zero hp hi _ ih =>
     cases n with
     | zero =>
       simpa only [d_step_zero, ModuleCat.hom_comp] using

@@ -142,8 +142,9 @@ theorem eq_smul_of_absolutelyContinuous (G : Type*) [SMul G X] [MeasurableConstS
 same total mass, equals it.** The action-level analogue of
 `Ergodic.eq_of_absolutelyContinuous_measure_univ_eq`. -/
 theorem eq_of_absolutelyContinuous_measure_univ_eq (G : Type*) [SMul G X]
-    [MeasurableConstSMul G X] [IsFiniteMeasure μ] [IsFiniteMeasure ν] [ErgodicSMul G X μ]
+    [MeasurableConstSMul G X] [IsFiniteMeasure μ] [ErgodicSMul G X μ]
     [SMulInvariantMeasure G X ν] (hνμ : ν ≪ μ) (huniv : ν univ = μ univ) : ν = μ := by
+  have : IsFiniteMeasure ν := ⟨by rw [huniv]; exact measure_lt_top μ _⟩
   obtain ⟨c, rfl⟩ := eq_smul_of_absolutelyContinuous G hνμ
   rcases eq_or_ne μ 0 with rfl | hμ0
   · simp

@@ -266,6 +266,26 @@ theorem mem_primaryComponent_span_iff {N : Type*} [AddCommMonoid N] [Module R N]
       ⟨G, rfl⟩
     exact ⟨n, fun r hr ↦ (mem_torsionOf_iff _ _).mp (hn hr)⟩
 
+/-- An element is in the primary component of `(r)` exactly when a power of `r` kills it. -/
+@[simp] theorem mem_primaryComponent_span_singleton_iff {N : Type*} [AddCommMonoid N] [Module R N]
+    (r : R) {x : N} : x ∈ (span {r}).primaryComponent N ↔ ∃ n : ℕ, r ^ n • x = 0 := by
+  simpa only [Finset.coe_singleton, Finset.mem_singleton, forall_eq] using
+    (mem_primaryComponent_span_iff (N := N) {r} (y := x))
+
+/-- The primary component of `(r)` vanishes exactly when `r` acts regularly. -/
+theorem primaryComponent_span_singleton_eq_bot_iff {N : Type*} [AddCommGroup N] [Module R N]
+    (r : R) : (span {r}).primaryComponent N = ⊥ ↔ IsSMulRegular N r := by
+  constructor
+  · intro h
+    apply (isSMulRegular_iff_torsionBy_eq_bot N r).mpr
+    refine eq_bot_iff.mpr fun x hx ↦ h.le ?_
+    exact (mem_primaryComponent_span_singleton_iff r).mpr ⟨1, by simpa using hx⟩
+  · intro h
+    refine eq_bot_iff.mpr fun x hx ↦ ?_
+    obtain ⟨n, hn⟩ := (mem_primaryComponent_span_singleton_iff r).mp hx
+    rw [Submodule.mem_bot]
+    exact (h.pow n) (hn.trans (smul_zero _).symm)
+
 /-- For a finitely generated ideal `𝔞`, the quotient of a module by its `𝔞`-primary component has
 no `𝔞`-power torsion. -/
 theorem primaryComponent_quotient_primaryComponent {N : Type*} [AddCommGroup N] [Module R N]

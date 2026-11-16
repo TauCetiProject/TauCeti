@@ -113,8 +113,7 @@ private theorem exists_linearIndependent_padicCompletionUnitsOf_conj :
         Additive.ofMul (padicCompletionUnitsOf p L
           (o.elim ϖ fun j ↦ Units.map j.2.toRingEquiv.toMonoidHom (u j.1))) := by
   have hi : absoluteRamificationIndex L p < (p - 1) * (absoluteRamificationIndex L p + 1) :=
-    (Nat.lt_succ_self _).trans_le
-      (Nat.le_mul_of_pos_left _ (Nat.sub_pos_of_lt (Fact.out : p.Prime).one_lt))
+    absoluteRamificationIndex_lt_sub_one_mul_of_lt (Nat.lt_succ_self _)
   have hp0 : (p : L) ≠ 0 := by
     have := FinitePadicExtension.charZero L p
     exact Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
@@ -126,7 +125,8 @@ private theorem exists_linearIndependent_padicCompletionUnitsOf_conj :
   set nb := IsGalois.normalBasis K L
   -- Deep units `u k` whose logarithms are nonzero multiples of `b k • α` for the normal basis
   -- generator `α = nb 1`, and their conjugates `v (k, σ) = σ (u k)`.
-  choose u hu c hc hlog using fun k ↦ exists_mem_unitFiltration_log_eq_smul hi (b k • nb 1)
+  choose u hu c hc hlog using fun k ↦ exists_mem_unitFiltration_log_eq_smul p
+    (absoluteRamificationIndex L p + 1) (b k • nb 1)
   set v : Fin (Module.finrank ℚ_[p] K) × (L ≃ₐ[K] L) → Lˣ :=
     fun j ↦ Units.map j.2.toRingEquiv.toMonoidHom (u j.1)
   have hv (j) : v j ∈ unitFiltration L (absoluteRamificationIndex L p + 1) :=

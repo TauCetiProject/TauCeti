@@ -45,6 +45,8 @@ holomorphic section.
 ## Main results
 
 * `IsLocalFrameOn.contMDiffOn_coeff`: a Cᵐ section has Cᵐ coefficients in a Cⁿ frame, for m ≤ n.
+* `IsLocalFrameOn.continuousOn_coeff_totalSpace`: the coefficients of a vector in a frame depend
+  continuously on the vector, as a point of the total space.
 * `IsLocalFrameOn.trivialization_mem_maximalAtlas`: the trivialization of a `C^n` local frame lies
   in the maximal atlas of `C^n` trivializations.
 * `Bundle.Trivialization.isLocalFrameOn_symm_of_mem_maximalAtlas`: a member of the maximal atlas
@@ -201,7 +203,7 @@ private theorem continuousAt_inverse_frameOperator (hU : IsOpen U) (hx : x ∈ U
     (hx' : x ∈ e'.baseSet) :
     ContinuousAt (fun y ↦ (frameOperator s b e' y).inverse) x := by
   have : FiniteDimensional 𝕜 F := .of_basis b
-  have : CompleteSpace F := FiniteDimensional.complete 𝕜 F
+  have : CompleteSpace F := FiniteDimensional.completeSpace 𝕜 F
   exact ((isInvertible_frameOperator b e' hs hx hx').contDiffAt_map_inverse
     (n := 0)).continuousAt.comp ((continuousOn_frameOperator b e' hs).continuousAt
     ((hU.inter e'.open_baseSet).mem_nhds ⟨hx, hx'⟩))
@@ -327,7 +329,7 @@ theorem trivialization_mem_maximalAtlas [ContMDiffVectorBundle n F V IB] :
       (contMDiffFiberwiseLinear B F IB n).maximalAtlas (TotalSpace F V) := by
   let := Fintype.ofFinite ι
   have : FiniteDimensional 𝕜 F := .of_basis b
-  have : CompleteSpace F := FiniteDimensional.complete 𝕜 F
+  have : CompleteSpace F := FiniteDimensional.completeSpace 𝕜 F
   refine (Trivialization.mem_maximalAtlas_contMDiffFiberwiseLinear_iff IB n _).2 fun e' _ ↦ ?_
   -- Read in `e'`, the frame is a `C^n` family of operators, its coordinates in `e'` being `C^n`.
   have hframe : ContMDiffOn IB 𝓘(𝕜, F →L[𝕜] F) n (frameOperator s b e') (U ∩ e'.baseSet) := by
@@ -374,6 +376,27 @@ theorem contMDiffOn_coeff [VectorBundle 𝕜 F V] [FiniteDimensional 𝕜 F]
     -- Lowering the regularity leaves the pointwise basis unchanged.
     rfl
   exact hcoord.congr heq (heq x hx)
+
+/-- The coefficients of a vector in a local frame on an open set `U` depend continuously on the
+vector, as a point of the total space over `U`. -/
+theorem continuousOn_coeff_totalSpace [VectorBundle 𝕜 F V] [FiniteDimensional 𝕜 F]
+    (hs : IsLocalFrameOn IB F n s U) (hU : IsOpen U) (i : ι) :
+    ContinuousOn (fun p : TotalSpace F V ↦ hs.coeff i p.proj p.2) (π F V ⁻¹' U) := by
+  intro p hp
+  let := hs.fintypeOfFiniteDimensional hp
+  let b : Basis ι 𝕜 F := (hs.toBasisAt hp).map
+    ((trivializationAt F V p.proj).linearEquivAt 𝕜 p.proj
+      (FiberBundle.mem_baseSet_trivializationAt' p.proj))
+  have htriv : ContinuousOn (fun q : TotalSpace F V ↦ (hs.trivialization hU b q).2)
+      (π F V ⁻¹' U) :=
+    continuous_snd.comp_continuousOn (hs.trivialization hU b).continuousOn_toFun
+  have heq (q : TotalSpace F V) (hq : q ∈ π F V ⁻¹' U) :
+      hs.coeff i q.proj q.2 = b.coord i (hs.trivialization hU b q).2 := by
+    obtain ⟨x, v⟩ := q
+    rw [hs.trivialization_apply hU b hq]
+    simp [IsLocalFrameOn.coeff, mem_preimage.mp hq, Basis.coord_apply, Basis.equiv]
+  exact (((b.coord i).toContinuousLinearMap.continuous.comp_continuousOn htriv) p hp).congr
+    heq (heq p hp)
 
 end IsLocalFrameOn
 

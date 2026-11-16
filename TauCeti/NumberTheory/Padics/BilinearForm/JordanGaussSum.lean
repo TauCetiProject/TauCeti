@@ -96,7 +96,7 @@ private theorem IsJordanSplitting.sum_stdAddChar_dotProduct_two_pow_smul_toMatri
     mem_nonZeroDivisors_of_ne_zero (pow_ne_zero i two_ne_zero)
   have hCs : C.IsSymm := IsSymm.of_smul h2 (hC ▸ hB.restrict (N i))
   have hdet : IsUnit (C.toMatrix d).det :=
-    d.isUnit_det_of_isPerfPair C ((h.isModular i).isPerfPair_of_smul_eq h2 hC)
+    d.isUnit_det_of_isPerfPair d C ((h.isModular i).isPerfPair_of_smul_eq h2 hC)
   obtain ⟨m, rfl⟩ : ∃ m, k = i + m := ⟨k - i, by omega⟩
   have hscale := PadicInt.sum_stdAddChar_dotProduct_map_pow_smul_mulVec (p := 2) (C.toMatrix d)
     (rfl : i + m = i + m)

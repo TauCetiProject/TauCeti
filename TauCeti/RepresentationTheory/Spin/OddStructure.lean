@@ -74,6 +74,8 @@ only its even half is, the whole algebra being two copies of that half.
 * `TauCeti.SpinPolarizationData.finrank_exteriorAlgebra_W_of_finrank_eq_two_mul_add_one` and
   `TauCeti.SpinPolarizationData.finrank_even_eq_finrank_end_of_odd_finrank`: the dimension
   bookkeeping the operator form rests on.
+* `TauCeti.SpinPolarizationData.not_injective_spinAction_of_odd_finrank`: in odd dimension a single
+  Fock action is not faithful, over any field.
 
 ## References
 
@@ -128,6 +130,24 @@ theorem finrank_even_eq_finrank_end_of_odd_finrank
   rw [CliffordAlgebra.finrank_even Q, hEnd,
     P.finrank_exteriorAlgebra_W_of_finrank_eq_two_mul_add_one hV, hV, Nat.add_sub_cancel,
     two_mul, pow_add]
+
+omit [FiniteDimensional F V] in
+/-- **A single Fock action is not faithful in odd dimension**: the Clifford algebra has dimension
+`2 ^ (2 * l + 1)`, while the operator algebra of the spinor module has dimension `(2 ^ l) ^ 2`. -/
+theorem not_injective_spinAction_of_odd_finrank (hodd : Odd (finrank F V)) :
+    ¬ Function.Injective (spinAction Q P) := by
+  intro hinj
+  obtain ⟨l, hV⟩ := hodd
+  have : FiniteDimensional F V := Module.finite_of_finrank_pos (by omega)
+  have hS := P.finrank_exteriorAlgebra_W_of_finrank_eq_two_mul_add_one hV
+  have : Module.Finite F (ExteriorAlgebra F P.W) :=
+    Module.finite_of_finrank_pos (by rw [hS]; positivity)
+  have hle := LinearMap.finrank_le_finrank_of_injective (f := (spinAction Q P).toLinearMap) hinj
+  rw [CliffordAlgebra.finrank_eq_two_pow, Module.finrank_linearMap, hS, hV] at hle
+  have h2 : 2 ^ (2 * l + 1) = 2 * (2 ^ l * 2 ^ l) := by ring
+  have h0 : 0 < 2 ^ l * 2 ^ l := by positivity
+  rw [h2] at hle
+  omega
 
 end Dimension
 

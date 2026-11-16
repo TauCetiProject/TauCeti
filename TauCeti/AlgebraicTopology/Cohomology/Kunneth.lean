@@ -40,7 +40,7 @@ cohomology** (`TopCat.singularCohomologyKunnethIso`): the cross product induces 
 No hypothesis is placed on `Y`, and no `Tor` term appears: over `ℤ` this covers every `X` with
 free homology of finite rank, for instance spheres
 (`TopCat.singularCohomologyKunneth_sphere_bijective`, in
-`TauCeti.AlgebraicTopology.Cohomology.Sphere`), but not, say, real projective space. Over
+`TauCeti.AlgebraicTopology.Cohomology.Sphere.Basic`), but not, say, real projective space. Over
 a commutative semisimple ring, for instance a field, every module is projective
 (`Module.projective_of_isSemisimpleRing`), so there only the finite generation of `Hₚ(X; k)` for
 `p ≤ n` is needed, for instance when `X` has finite CW type

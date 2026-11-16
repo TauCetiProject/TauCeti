@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.RootSubgroup
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Subgroup
 public import TauCeti.Algebra.CharP.Frobenius.Basic
 public import TauCeti.LinearAlgebra.Basis.DiagonalTorus.CharacterMap
 import TauCeti.Algebra.Group.End

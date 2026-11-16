@@ -23,7 +23,7 @@ A **torus** of a topological group `G` is a compact connected commutative subgro
 finite-dimensional real Lie group `G`:
 
 * a torus is the exponential image of its Lie algebra, `T = lieExp '' Lie(T)`, since a closed
-  connected commutative subgroup is (`image_lieExp_lieSubalgebraOfSubgroup_of_isConnected`); so
+  connected commutative subgroup is (`image_lieExp_lieSubalgebraOfSubgroup_of_isPreconnected`); so
   a torus is determined by its Lie algebra, and a torus whose Lie algebra is maximal among those
   of the tori containing a given torus is a maximal torus: every torus lies in a maximal torus;
 * for a maximal torus `T` of a compact `G`, the centralizer of `T` has the same Lie algebra as `T`,
@@ -42,7 +42,7 @@ finite-dimensional real Lie group `G`:
   tori remain such in a subgroup containing them.
 * `TauCeti.Lie.IsMaximalTorus.map_conj`: conjugation preserves maximal tori in a topological group.
 * `TauCeti.Lie.IsTorus.image_lieExp_lieSubalgebraOfSubgroup`: a torus is the exponential image of
-  its Lie algebra (the case of `image_lieExp_lieSubalgebraOfSubgroup_of_isConnected`).
+  its Lie algebra (the case of `image_lieExp_lieSubalgebraOfSubgroup_of_isPreconnected`).
 * `TauCeti.Lie.IsTorus.eq_of_lieSubalgebraOfSubgroup_eq`: a torus is determined by its Lie
   algebra.
 * `TauCeti.Lie.IsTorus.exists_isMaximalTorus_le` and `TauCeti.Lie.exists_isMaximalTorus`: every
@@ -200,7 +200,7 @@ theorem IsTorus.image_lieExp_lieSubalgebraOfSubgroup {T : Subgroup G} (hT : IsTo
     lieExp (I := I) '' (lieSubalgebraOfSubgroup (I := I) T : Set (LeftInvariantDerivation I G)) =
       T :=
   have := hT.isMulCommutative
-  image_lieExp_lieSubalgebraOfSubgroup_of_isConnected hT.isClosed hT.isConnected
+  image_lieExp_lieSubalgebraOfSubgroup_of_isPreconnected hT.isClosed hT.isConnected.isPreconnected
 
 /-- **A torus is determined by its Lie algebra.** -/
 theorem IsTorus.eq_of_lieSubalgebraOfSubgroup_eq {T T' : Subgroup G} (hT : IsTorus T)
@@ -221,9 +221,11 @@ private noncomputable local instance : FiniteDimensional ℝ (LeftInvariantDeriv
   finiteDimensional_leftInvariantDerivation
     (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G))
 
+omit [T2Space G] in
 /-- **Every torus is contained in a maximal torus.** No compactness of `G` is needed. -/
 theorem IsTorus.exists_isMaximalTorus_le {T : Subgroup G} (hT : IsTorus T) :
     ∃ T', IsMaximalTorus T' ∧ T ≤ T' := by
+  have := I.t2Space_of_lieGroup (G := G) ∞
   -- The lattice of Lie subalgebras of `𝔤` is well-founded, so some torus containing `T` has a
   -- maximal Lie algebra; a torus containing it has the same Lie algebra, hence is equal to it.
   obtain ⟨T', ⟨hT', hle⟩, hmax⟩ := exists_maximalFor_of_wellFoundedGT
@@ -232,6 +234,7 @@ theorem IsTorus.exists_isMaximalTorus_le {T : Subgroup G} (hT : IsTorus T) :
   rw [hT'.eq_of_lieSubalgebraOfSubgroup_eq hT'' (le_antisymm (lieSubalgebraOfSubgroup_mono hle')
     (hmax ⟨hT'', hle.trans hle'⟩ (lieSubalgebraOfSubgroup_mono hle')))]
 
+omit [T2Space G] in
 /-- **Maximal tori exist.** -/
 theorem exists_isMaximalTorus : ∃ T : Subgroup G, IsMaximalTorus T :=
   ((isTorus_bot (G := G)).exists_isMaximalTorus_le I).imp fun _ h => h.1

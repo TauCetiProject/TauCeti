@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence
+public import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence.Basic
 import Mathlib.Analysis.Normed.Affine.AddTorsor
 import Mathlib.Geometry.Euclidean.Triangle
-import Mathlib.Topology.MetricSpace.HausdorffDistance
+import TauCeti.Analysis.Normed.Module.Ball.Touching
+import TauCeti.Topology.Connected.Basic
+import TauCeti.Topology.MetricSpace.Pseudo.Lemmas
 
 /-!
 # Hopf's boundary-point lemma and the strong maximum principle in non-divergence form
@@ -49,7 +51,9 @@ The strong maximum principle follows as for the Laplacian in
 `TauCeti.Analysis.InnerProductSpace.Laplacian.StrongMaximumPrinciple`: if a subsolution attained
 its maximum at a point near which it is not constant, a ball in the region where it is smaller
 would touch the level set of the maximum at an interior local maximum, where Hopf's lemma makes
-the derivative along the normal positive.
+the derivative along the normal positive. Both proofs share this touching-ball step,
+`TauCeti.eventually_eq_of_isLocalMax_of_forall_not_lt_ball`, and the spreading of local constancy
+over a preconnected set, `IsPreconnected.eqOn_const_of_eventually_eq`.
 
 ## Main declarations
 
@@ -261,22 +265,17 @@ private theorem exists_pos_mul_le_sub_of_mul_le_of_nonneg (hR : 0 < R) (hx₀ : 
       simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul]
       nlinarith [hsub x hxB, mul_le_mul_of_nonneg_left hbar hm₀pos.le]
     · intro x hx
-      have hxK : x ∈ K := hKc.isClosed.frontier_subset hx
       simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul]
-      rcases (mem_closedBall.mp hxK.1).eq_or_lt with hxr | hxr
+      rcases frontier_closedBall_sdiff_ball_subset y' ρ r hx with hxr | hxρ
       · -- On `∂B'` the barrier vanishes.
+        rw [mem_sphere] at hxr
         have hv0 : v x = 0 := by simp only [hv, ← dist_eq_norm, hxr, sub_self]
         rw [hv0, mul_zero, add_zero]
         by_cases hxx₀ : x = x₀
         · rw [hxx₀]
         · exact (hlt x (hball x hxr.le hxx₀)).le
       · -- Otherwise `x` lies on the inner sphere, where the margin absorbs the barrier.
-        have hxρ : dist x y' = ρ := by
-          refine le_antisymm (not_lt.mp fun hρx ↦ hx.2 ?_) (not_lt.mp hxK.2)
-          refine interior_maximal (t := ball y' r \ closedBall y' ρ) ?_
-            (isOpen_ball.sdiff isClosed_closedBall) ⟨hxr, by simpa using hρx⟩
-          exact sdiff_subset_sdiff ball_subset_closedBall ball_subset_closedBall
-        have huz : u x ≤ u z := hzmax (mem_sphere.mpr hxρ)
+        have huz : u x ≤ u z := hzmax hxρ
         nlinarith [mul_le_mul_of_nonneg_left (hvle x) hm₀pos.le]
   -- Along the inward normal, the barrier grows at least linearly.
   refine ⟨m₀ * (α * r * Real.exp (-α * r ^ 2)), by positivity, r - ρ, by linarith,
@@ -421,66 +420,20 @@ theorem eventually_eq_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_of_isLocalMax
         (EuclideanSpace.single j 1) + fderiv ℝ u z (b z))
     (hnonneg : 0 ≤ u x) (hmax : IsLocalMax u x) :
     ∀ᶠ z in 𝓝 x, u z = u x := by
-  -- Work on a ball `ball x (3 * r)` on which `u` is `C²`, bounded by `u x`, and a subsolution
-  -- with controlled coefficients.
-  obtain ⟨r₀, hr₀, hr₀sub⟩ := Metric.eventually_nhds_iff_ball.mp
-    ((hcd.eventually (by simp)).and (hmax.and (ha.and (htr.and (hb.and (hc.and
-      (hcγ.and hsub)))))))
-  set r := r₀ / 3 with hr_def
-  have hr : 0 < r := by positivity
-  have hball : ∀ ⦃z⦄, dist z x < 3 * r →
-      ContDiffAt ℝ 2 u z ∧ u z ≤ u x ∧
-        (∀ ξ : EuclideanSpace ℝ ι, lam * ‖ξ‖ ^ 2 ≤ (a z).toQuadraticForm' ξ) ∧
-        (a z).trace ≤ Λ ∧ ‖b z‖ ≤ β ∧ 0 ≤ c z ∧ c z ≤ γ ∧
-        c z * u z ≤ ∑ i, ∑ j, a z i j * fderiv ℝ (fderiv ℝ u) z (EuclideanSpace.single i 1)
-          (EuclideanSpace.single j 1) + fderiv ℝ u z (b z) := fun z hz ↦
-    hr₀sub z (by rw [mem_ball]; linarith)
-  by_contra hne
-  -- Some point `x₂` close to `x` has a different value.
-  obtain ⟨x₂, hx₂x, hx₂ne⟩ : ∃ x₂, dist x₂ x < r ∧ u x₂ ≠ u x := by
-    by_contra! h
-    exact hne (Metric.eventually_nhds_iff.mpr ⟨r, hr, fun z hz ↦ h z hz⟩)
-  -- The part `Z` of the level set `{u = u x}` in `closedBall x (2 * r)` is compact.
-  set Z := closedBall x (2 * r) ∩ u ⁻¹' {u x}
-  have hcont : ContinuousOn u (closedBall x (2 * r)) := fun z hz ↦
-    (hball (by rw [mem_closedBall] at hz; linarith)).1.continuousAt.continuousWithinAt
-  have hZclosed : IsClosed Z :=
-    hcont.preimage_isClosed_of_isClosed isClosed_closedBall isClosed_singleton
-  have hZcompact : IsCompact Z :=
-    (isCompact_closedBall x (2 * r)).of_isClosed_subset hZclosed inter_subset_left
-  have hxZ : x ∈ Z := ⟨mem_closedBall_self (by positivity), rfl⟩
-  have hx₂Z : x₂ ∉ Z := fun h ↦ hx₂ne h.2
-  -- `ρ` is the distance from `x₂` to `Z`, attained at `x₀ ∈ Z`.
-  set ρ := infDist x₂ Z
-  have hρ : 0 < ρ := (hZclosed.notMem_iff_infDist_pos ⟨x, hxZ⟩).mp hx₂Z
-  have hρr : ρ < r := (infDist_le_dist_of_mem hxZ).trans_lt hx₂x
-  obtain ⟨x₀, hx₀Z, hx₀dist⟩ := hZcompact.exists_infDist_eq_dist ⟨x, hxZ⟩ x₂
-  have hnear : ∀ ⦃z⦄, dist z x₂ ≤ ρ → dist z x < 2 * r := fun z hz ↦ by
-    linarith [dist_triangle z x₂ x]
-  have hin : ∀ z ∈ ball x₂ ρ, dist z x < 3 * r := fun z hz ↦ by
-    rw [mem_ball] at hz
-    linarith [hnear hz.le]
-  have hlt : ∀ z ∈ ball x₂ ρ, u z < u x₀ := fun z hz ↦ by
-    rw [mem_ball] at hz
-    have hzx := hnear hz.le
-    refine hx₀Z.2 ▸ lt_of_le_of_ne (hball (by linarith)).2.1 fun hzu ↦ ?_
-    have hzZ : z ∈ Z := ⟨mem_closedBall.mpr hzx.le, hzu⟩
-    have := infDist_le_dist_of_mem (x := x₂) hzZ
-    rw [dist_comm] at this
-    linarith
-  -- `x₀` is again a local maximum, on the sphere touching `Z`: this contradicts Hopf's lemma.
-  have hx₀x : dist x₀ x < 3 * r := by
-    linarith [hnear (z := x₀) (by rw [dist_comm, ← hx₀dist])]
-  refine not_isLocalMax_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv hρ
-    (by rw [mem_sphere, dist_comm, ← hx₀dist]) hlam
-    (fun z hz ↦ (hball (hin z hz)).2.2.1) (fun z hz ↦ (hball (hin z hz)).2.2.2.1)
-    (fun z hz ↦ (hball (hin z hz)).2.2.2.2.1) (fun z hz ↦ (hball (hin z hz)).2.2.2.2.2.1)
-    (fun z hz ↦ (hball (hin z hz)).2.2.2.2.2.2.1) (fun z hz ↦ (hball (hin z hz)).1)
-    ((hball hx₀x).1.differentiableAt (by simp)) (fun z hz ↦ (hball (hin z hz)).2.2.2.2.2.2.2)
-    hlt (hx₀Z.2 ▸ hnonneg) ?_
-  refine Metric.eventually_nhds_iff_ball.mpr ⟨3 * r - dist x₀ x, by linarith, fun z hz ↦ ?_⟩
-  rw [mem_ball] at hz
-  exact hx₀Z.2 ▸ (hball (by linarith [dist_triangle z x₀ x])).2.1
+  -- A ball inside the neighbourhood where the hypotheses hold, touching the level set
+  -- `{u = u x}` from inside at a local maximum `x₀`, would contradict Hopf's lemma at `x₀`.
+  refine eventually_eq_of_isLocalMax_of_forall_not_lt_ball
+    ((hcd.eventually (by simp)).and (ha.and (htr.and (hb.and (hc.and (hcγ.and hsub))))))
+    ((hcd.eventually (by simp)).mono fun z hz ↦ hz.continuousAt) hmax
+    fun y e R hR he hball hx₀max hx₀ hlt ↦ ?_
+  choose hcdB haB htrB hbB hcB hcγB hsubB using
+    fun z (hz : z ∈ ball y R) ↦ hball (ball_subset_closedBall hz)
+  have hx₀mem : y + R • e ∈ sphere y R := by
+    rw [mem_sphere, dist_eq_norm, add_sub_cancel_left, norm_smul, he, mul_one,
+      Real.norm_of_nonneg hR.le]
+  exact not_isLocalMax_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv hR hx₀mem hlam haB htrB hbB
+    hcB hcγB hcdB ((hball (sphere_subset_closedBall hx₀mem)).1.differentiableAt (by simp))
+    hsubB hlt (hx₀ ▸ hnonneg) hx₀max
 
 /-- **Strong maximum principle** for `L u = ∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu + bⁱ ∂ᵢu` with zeroth-order coefficient
 `c ≥ 0`. Let `U` be a preconnected open set on which `a` is locally uniformly elliptic with
@@ -500,30 +453,22 @@ theorem eqOn_const_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_of_isMaxOn
         (EuclideanSpace.single j 1) + fderiv ℝ u x (b x))
     (hnonneg : 0 ≤ u p) (hmax : IsMaxOn u U p) :
     EqOn u (const _ (u p)) U := by
-  -- The points near which `u` is identically `u p` form an open set, which is relatively closed
-  -- in `U` by continuity and the local principle, and contains `p`.
-  have hlocal : ∀ x ∈ U, u x = u p → ∀ᶠ z in 𝓝 x, u z = u p := fun x hx hxp ↦ by
-    have hxmax : IsMaxOn u U x := fun z hz ↦ hxp ▸ hmax hz
-    obtain ⟨lam, hlam, hlamx⟩ := ha x hx
-    obtain ⟨Λ, hΛ⟩ := htr x hx
-    obtain ⟨β, hβ⟩ := hb x hx
-    obtain ⟨γ, hγ⟩ := hcbdd x hx
-    have hxnonneg : 0 ≤ u x := hxp ▸ hnonneg
-    have h := eventually_eq_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_of_isLocalMax
-      (a := a) (b := b) (c := c) (Λ := Λ) (β := β) (γ := γ)
-      (hcd x hx) hlam hlamx (eventually_map.mp hΛ) (eventually_map.mp hβ)
-      (eventually_of_mem (hU.mem_nhds hx) hc) (eventually_map.mp hγ)
-      (eventually_of_mem (hU.mem_nhds hx) hsub) hxnonneg (hxmax.isLocalMax (hU.mem_nhds hx))
-    rwa [hxp] at h
-  have hsubset : U ⊆ {x | ∀ᶠ z in 𝓝 x, u z = u p} := by
-    refine hUconn.subset_of_closure_inter_subset isOpen_setOfPred_eventually_nhds
-      ⟨p, hp, hlocal p hp rfl⟩ ?_
-    rintro x ⟨hxcl, hxU⟩
-    refine hlocal x hxU (by_contra fun hxp ↦ ?_)
-    obtain ⟨z, hz, hzO⟩ := mem_closure_iff_nhds.mp hxcl _
-      ((hcd x hxU).continuousAt.eventually_ne hxp)
-    exact hz hzO.self_of_nhds
-  exact fun x hx ↦ (hsubset hx).self_of_nhds
+  -- By preconnectedness it suffices that `u` is identically `u p` near every point of `U` at which
+  -- it takes the value `u p`: this is the local principle.
+  refine hUconn.eqOn_const_of_eventually_eq hp (fun x hx ↦ (hcd x hx).continuousAt)
+    fun x hx hxp ↦ ?_
+  have hxmax : IsMaxOn u U x := fun z hz ↦ hxp ▸ hmax hz
+  obtain ⟨lam, hlam, hlamx⟩ := ha x hx
+  obtain ⟨Λ, hΛ⟩ := htr x hx
+  obtain ⟨β, hβ⟩ := hb x hx
+  obtain ⟨γ, hγ⟩ := hcbdd x hx
+  have hxnonneg : 0 ≤ u x := hxp ▸ hnonneg
+  have h := eventually_eq_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_of_isLocalMax
+    (a := a) (b := b) (c := c) (Λ := Λ) (β := β) (γ := γ)
+    (hcd x hx) hlam hlamx (eventually_map.mp hΛ) (eventually_map.mp hβ)
+    (eventually_of_mem (hU.mem_nhds hx) hc) (eventually_map.mp hγ)
+    (eventually_of_mem (hU.mem_nhds hx) hsub) hxnonneg (hxmax.isLocalMax (hU.mem_nhds hx))
+  rwa [hxp] at h
 
 /-- **Strong comparison principle** for `L u = ∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu + bⁱ ∂ᵢu - c u`. Let `U` be a
 preconnected open set on which `a` is locally uniformly elliptic with locally bounded trace, `b`

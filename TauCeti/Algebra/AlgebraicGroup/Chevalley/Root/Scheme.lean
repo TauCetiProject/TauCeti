@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.RootSubgroup
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Subgroup
 
 /-!
 # All-root morphisms into pinned Kostant toral group schemes
@@ -272,6 +272,30 @@ theorem rootSubgroup_reflectionPerm_simpleIndex_comp_groupSchemeι (i : Fin t.ra
   exact chevalleyRootSubgroupToToral_reflectionPerm_simpleIndex_comp_ι
     D.representation D.lattice D.representation_mem_lattice
     D.isNilpotent_representation_rootGenerator D.basis D.coordinateWeight i
+
+/-- At a positive simple root the datum's root morphism is the original Kostant morphism
+into the toral group scheme. -/
+theorem rootSubgroup_simpleIndex_eq_kostantRootSubgroupToToral (i : Fin t.rank) :
+    D.rootSubgroup (t.simpleIndex ht i) =
+      kostantRootSubgroupToToral (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
+        D.representation D.lattice D.representation_mem_lattice
+        D.isNilpotent_representation_rootGenerator D.basis D.coordinateWeight (.inl i) := by
+  apply (cancel_mono D.groupSchemeι).1
+  rw [rootSubgroup_simpleIndex_comp_groupSchemeι, groupSchemeι_def,
+    kostantRootSubgroupToToral_comp_ι]
+
+/-- At a negative simple root the datum's root morphism is the original Kostant morphism
+into the toral group scheme. -/
+theorem rootSubgroup_reflectionPerm_simpleIndex_eq_kostantRootSubgroupToToral
+    (i : Fin t.rank) :
+    D.rootSubgroup
+        ((t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i) (t.simpleIndex ht i)) =
+      kostantRootSubgroupToToral (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
+        D.representation D.lattice D.representation_mem_lattice
+        D.isNilpotent_representation_rootGenerator D.basis D.coordinateWeight (.inr i) := by
+  apply (cancel_mono D.groupSchemeι).1
+  rw [rootSubgroup_reflectionPerm_simpleIndex_comp_groupSchemeι, groupSchemeι_def,
+    kostantRootSubgroupToToral_comp_ι]
 
 /-- On scheme-valued points the integral root morphism is the datum's matrix-point root
 subgroup, with the same additive parameter. -/

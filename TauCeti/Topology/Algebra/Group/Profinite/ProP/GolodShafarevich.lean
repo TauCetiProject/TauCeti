@@ -57,9 +57,9 @@ generate its relation subgroup `R` as a closed normal subgroup, with `r = r(G)`.
 
 public section
 
-namespace TauCeti
+namespace IsPGroup
 
-open Subgroup ContCohomology Module _root_.MonoidAlgebra
+open TauCeti Subgroup ContCohomology Module _root_.MonoidAlgebra
 
 universe u
 
@@ -76,7 +76,7 @@ variable {p : ℕ} [Fact p.Prime] {X : Type u} [Fintype X] {G : Type u} [Group G
 topology, satisfies `d(G)² < 4 r(G)`, where `d(G)` is its generator rank and
 `r(G) = dim_{𝔽_p} H²(G, 𝔽_p)` is its relation rank. Finite generation follows from
 `TauCeti.isTopologicallyFinitelyGenerated_of_fg`. -/
-theorem _root_.IsPGroup.sq_topologicalGeneratorRankNat_lt_four_mul_finrank_cohomFp_two
+theorem sq_topologicalGeneratorRankNat_lt_four_mul_finrank_cohomFp_two
     {G : Type u} [Group G] [Finite G] [Nontrivial G] [TopologicalSpace G] [DiscreteTopology G]
     (hG : IsPGroup p G) :
     topologicalGeneratorRankNat G isTopologicallyFinitelyGenerated_of_fg ^ 2 <
@@ -136,4 +136,4 @@ theorem _root_.IsPGroup.sq_topologicalGeneratorRankNat_lt_four_mul_finrank_cohom
   rw [hcardX] at key
   omega
 
-end TauCeti
+end IsPGroup

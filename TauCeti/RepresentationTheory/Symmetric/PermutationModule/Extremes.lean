@@ -37,8 +37,6 @@ Both isomorphisms come with the lemmas reading them, and their inverses, on the 
 ## References
 
 * G. D. James, *The Representation Theory of the Symmetric Groups*, §4.
-* [Schur-Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 1, “the base cases `M^{(n)} = S^{(n)}` (trivial) and `M^{(1ⁿ)} = ℚ[Sₙ]` (regular)”.
 -/
 
 public section

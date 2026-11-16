@@ -7,7 +7,8 @@ module
 
 public import TauCeti.Probability.Independence.DisjointBlocks
 public import TauCeti.Probability.Renewal.Excess.Basic
-public import TauCeti.Probability.Renewal.Exponential
+public import TauCeti.Probability.Renewal.Exponential.Basic
+import TauCeti.MeasureTheory.Measure.Restrict
 
 /-!
 # Memorylessness at a deterministic time in an exponential renewal process
@@ -196,10 +197,10 @@ theorem hasLaw_renewalExcess_expMeasure
   have hslice (n : ℕ) : P ({ω | renewalCountNat T t ω = n} ∩
       (fun ω ↦ (renewalExcess T t ω : ℝ)) ⁻¹' B) =
       P {ω | renewalCountNat T t ω = n} * expMeasure r B := by
-    have h := congrArg (fun μ : Measure ℝ ↦ μ B)
-      (map_renewalExcess_restrict_prefix_count_of_expMeasure hT hindep hlaw n
-        MeasurableSet.univ t)
-    simpa [Measure.map_apply hE hB, Measure.restrict_apply (hE hB), inter_comm] using h
+    simpa only [mem_univ, true_and, inter_comm] using
+      measure_preimage_inter_eq_of_map_restrict_eq_smul hE hB
+        (map_renewalExcess_restrict_prefix_count_of_expMeasure hT hindep hlaw n
+          MeasurableSet.univ t)
   simp_rw [hslice]
   have htotal : (∑' n, P {ω | renewalCountNat T t ω = n}) = 1 := by
     rw [← (Equiv.Set.univ ℕ).tsum_eq]

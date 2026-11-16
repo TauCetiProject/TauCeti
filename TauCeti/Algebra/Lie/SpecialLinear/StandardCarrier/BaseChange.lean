@@ -41,10 +41,6 @@ its torus.
 * R. W. Carter, *Simple Groups of Lie Type*, §§4.4 and 7.1.
 * J. E. Humphreys, *Linear Algebraic Groups*, §§26--27.
 * R. Steinberg, *Lectures on Chevalley Groups*, §§3--4.
-
-This advances the base-change and pinning targets in Layer 9 of the ReductiveGroups roadmap. The
-specialized type `A` carrier is consumed by milestone L0, "pinned ambient groups", of the
-CFSGStatement roadmap.
 -/
 
 public section
@@ -123,19 +119,19 @@ theorem mkQuotient_comp_baseChangeCoordinateIso_hom :
 `i`, transported to the coordinate Hopf algebras constructed directly over `A`. -/
 noncomputable def rootSubgroupBaseChangeCoordinateMap (i : Fin r ⊕ Fin r) :
     GeneralLinear.coordinateHopfAlgebra A (r + 1) ⟶ AdditiveGroup.coordinateHopfAlgebra A :=
-  kostantRootSubgroupBaseChangePresentationCoordinateMap
+  kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap
     (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
     (rep_kostantForm_mem_lattice r)
-    (isNilpotent_rep_rootGenerator r) (latticeBasis r) A i
+    i (isNilpotent_rep_rootGenerator r i) (latticeBasis r) A
 
 /-- The ambient base-changed root-subgroup map is the specialization of the general transported
 Kostant root-subgroup map. -/
 theorem rootSubgroupBaseChangeCoordinateMap_def (i : Fin r ⊕ Fin r) :
     rootSubgroupBaseChangeCoordinateMap r A i =
-      kostantRootSubgroupBaseChangePresentationCoordinateMap
+      kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap
         (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
         (rep_kostantForm_mem_lattice r)
-        (isNilpotent_rep_rootGenerator r) (latticeBasis r) A i := by
+        i (isNilpotent_rep_rootGenerator r i) (latticeBasis r) A := by
   unfold rootSubgroupBaseChangeCoordinateMap
   rfl
 

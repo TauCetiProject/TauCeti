@@ -102,7 +102,6 @@ theorem cubicalChainModuleAugmentation_lof_succ (k : ℕ) (c : NormalizedCubical
 theorem cubicalChainModuleAugmentation_differential (m : cubicalChainModule Y G R) :
     cubicalChainModuleAugmentation Y G R (cubicalChainModuleDifferential Y G R m) = 0 := by
   induction m using cubicalChainModule.induction_on with
-  | zero => simp
   | add m m' hm hm' => rw [map_add, map_add, hm, hm', add_zero]
   | lof n c =>
     rcases n with _ | k
@@ -134,7 +133,6 @@ theorem cubicalChainModuleAugmentation_smul (a : normalizedCubicalChainAlgebra G
     cubicalChainModuleAugmentation Y H R (a • m) =
       cubicalChainAugmentation G R a * cubicalChainModuleAugmentation Y H R m := by
   induction m using cubicalChainModule.induction_on with
-  | zero => rw [smul_zero, map_zero, mul_zero]
   | add m m' hm hm' => rw [smul_add, map_add, hm, hm', map_add, mul_add]
   | lof q c =>
     induction a using DirectSum.induction_on with
@@ -185,7 +183,6 @@ theorem cubicalChainModuleDifferential_cone_add_cone_differential
       cubicalChainModuleAugmentation Y G R m •
           cubicalChainModuleLof Y G R 0 (ofCube Y R (SingularCube.point v)) - m := by
   induction m using cubicalChainModule.induction_on with
-  | zero => simp
   | add m m' hm hm' =>
     simp only [map_add, add_smul]
     rw [add_add_add_comm, hm, hm']

@@ -18,10 +18,8 @@ the unit laws `1 * f = f` and `f * 1 = f` of the convolution product of Hecke co
 (where the two identities live at the two different levels), and assembles the
 `NonAssocSemiring (𝕋 Δ H R)` instance.
 
-Vendored from the in-review mathlib4 PR
-[#41279](https://github.com/leanprover-community/mathlib4/pull/41279) (Chris Birkbeck), per the
-ModularForms roadmap's dependency policy; migrate to Mathlib and delete this file when that
-stack merges.
+Vendored from mathlib4 PR
+[#41279](https://github.com/leanprover-community/mathlib4/pull/41279) (Chris Birkbeck).
 
 ## Main results
 
@@ -40,30 +38,6 @@ namespace HeckeCosetModule
 
 variable {G : Type*} [Group G] {Δ : Submonoid G} {H₁ H₂ : Subgroup G} (R : Type*) [Semiring R]
 
-/-- The multiplicity for right convolution by the identity double coset vanishes off the
-diagonal. -/
-lemma multiplicity_one_right_eq_zero [IsHeckeTriple Δ H₁ H₂]
-    (g : Δ) {A : HeckeCoset Δ H₁ H₂} (hA : A ≠ HeckeCoset.mk H₁ H₂ g) :
-    multiplicity H₁ H₂ H₂ (g : G) ((1 : HeckeCoset Δ H₂ H₂).rep : G) (A.rep : G) = 0 := by
-  by_contra h0
-  rw [multiplicity_def] at h0
-  obtain ⟨⟨p, hp⟩⟩ := (Nat.card_ne_zero.mp h0).1
-  refine hA ?_
-  rw [← A.mk_rep, ← HeckeCoset.mulMap_eq_of_mk_eq hp]
-  exact HeckeCoset.mulMap_one_right g p
-
-/-- The multiplicity for left convolution by the identity double coset vanishes off the
-diagonal. -/
-lemma multiplicity_one_left_eq_zero [IsHeckeTriple Δ H₁ H₁]
-    (g : Δ) {A : HeckeCoset Δ H₁ H₂} (hA : A ≠ HeckeCoset.mk H₁ H₂ g) :
-    multiplicity H₁ H₁ H₂ ((1 : HeckeCoset Δ H₁ H₁).rep : G) (g : G) (A.rep : G) = 0 := by
-  by_contra h0
-  rw [multiplicity_def] at h0
-  obtain ⟨⟨p, hp⟩⟩ := (Nat.card_ne_zero.mp h0).1
-  refine hA ?_
-  rw [← A.mk_rep, ← HeckeCoset.mulMap_eq_of_mk_eq hp]
-  exact HeckeCoset.mulMap_one_left g p
-
 /-- The structure constants for right convolution by the identity double coset collapse to
 a single basis element. -/
 lemma structureConstants_one_right [IsHeckeTriple Δ H₁ H₂] [IsHeckeTriple Δ H₂ H₂]
@@ -71,7 +45,7 @@ lemma structureConstants_one_right [IsHeckeTriple Δ H₁ H₂] [IsHeckeTriple �
       single R (HeckeCoset.mk H₁ H₂ g) 1 := by
   refine structureConstants_eq_single R
     ((HeckeCoset.multiplicity_mul_one g _).mpr (HeckeCoset.mk H₁ H₂ g).mk_rep.symm)
-    fun A hA ↦ multiplicity_one_right_eq_zero g fun h ↦ hA h.symm
+    fun A hA ↦ HeckeCoset.multiplicity_one_right_eq_zero g fun h ↦ hA h.symm
 
 /-- The structure constants for left convolution by the identity double coset collapse to
 a single basis element. -/
@@ -80,7 +54,7 @@ lemma structureConstants_one_left [IsHeckeTriple Δ H₁ H₁] [IsHeckeTriple Δ
       single R (HeckeCoset.mk H₁ H₂ g) 1 := by
   refine structureConstants_eq_single R
     ((HeckeCoset.multiplicity_one_mul g _).mpr (HeckeCoset.mk H₁ H₂ g).mk_rep.symm)
-    fun A hA ↦ multiplicity_one_left_eq_zero g fun h ↦ hA h.symm
+    fun A hA ↦ HeckeCoset.multiplicity_one_left_eq_zero g fun h ↦ hA h.symm
 
 /-- The multiplicative identity of the Hecke ring is the basis element of the identity double
 coset. -/

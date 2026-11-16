@@ -183,9 +183,6 @@ private theorem measurable_sphereSection :
         (EuclideanSpace.single j (1 : ℝ)) /
         ‖EuclideanSpace.single (Fin.last n) (1 : ℝ) - u‖ ^ 2 :=
     (hw.inner continuous_const).measurable.div (hw.norm.pow 2).measurable
-  have hwi : Measurable fun u : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1 ↦
-      (EuclideanSpace.single (Fin.last n) (1 : ℝ) - u).ofLp i :=
-    ((PiLp.continuous_apply 2 _ i).comp hw).measurable
   simp only [sphereSection, LinearMap.toMatrix_apply, OrthonormalBasis.coe_toBasis,
     OrthonormalBasis.coe_toBasis_repr_apply, EuclideanSpace.basisFun_repr,
     EuclideanSpace.basisFun_apply, LinearEquiv.coe_coe, LinearIsometryEquiv.coe_toLinearEquiv,
@@ -520,8 +517,6 @@ theorem two_mul_pi_rpow_mul_prod_Gamma_eq_two_pow_div_orthogonalGroupVolume (n :
   induction n with
   | zero => norm_num
   | succ n ih =>
-    have hΓ : 0 < Real.Gamma (((n + 1 : ℕ) : ℝ) / 2) := Real.Gamma_pos_of_pos (by positivity)
-    have hπ : 0 < Real.pi ^ (((n + 1 : ℕ) : ℝ) / 2) := by positivity
     rw [Finset.prod_Icc_succ_top (by omega), Finset.prod_Icc_succ_top (by omega)]
     have hexp : -(((n + 1 : ℕ) : ℝ) * ((n + 1 : ℕ) + 1) / 4) =
         -((n : ℝ) * (n + 1) / 4) - ((n + 1 : ℕ) : ℝ) / 2 := by

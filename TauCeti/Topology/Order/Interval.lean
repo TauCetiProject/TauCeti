@@ -18,9 +18,12 @@ An unordered closed interval is a neighbourhood of each of its points other than
 Each point of the open interval between two endpoints that avoids a closed set is interior to a
 closed subinterval whose interior avoids that set.
 A nonempty compact subset of an open interval lies in the interior of a smaller closed interval.
+An open set containing a closed interval contains an open interval around it.
 Every nonempty closed unbounded order-connected set in a conditionally complete linear order is
 a left half-line, a right half-line, or the whole space.
 
+A continuous function on a half-infinite interval, above `v`, tending to `v` at infinity and to `+∞`
+at the finite endpoint, has image `Ioi v`.
 The image of a half-infinite interval under a continuous strictly monotone map is determined
 by its value at the finite endpoint and its limit at infinity.  The endpoint at infinity is omitted
 when the limit is finite.
@@ -39,6 +42,8 @@ A path that starts in an open set and leaves it has a first exit time.
   as `δ → 0⁺`.
 * `IsCompact.exists_Icc_between` — a nonempty compact subset of `Ioo a b` lies in the interior of
   a closed interval contained in `Ioo a b`.
+* `IsOpen.exists_Ioo_subset_of_uIcc_subset` — an open set containing `[[a, b]]` contains an open
+  interval around it.
 * `Set.OrdConnected.eq_Ici_or_eq_Iic_or_eq_univ` — classification of nonempty closed unbounded
   order-connected sets.
 * `ContinuousOn.apply_ne_apply_of_injOn_Ico` — a continuous function injective on `[a, b)` takes
@@ -46,6 +51,9 @@ A path that starts in an open set and leaves it has a first exit time.
 * `ContinuousOn.image_Ici_of_strictMonoOn_of_tendsto` — a continuous strictly increasing map on
   `Ici p` with a finite limit at `+∞` maps that interval to the half-open interval between its
   endpoint value and its limit.
+* `ContinuousOn.image_Ioi_eq_Ioi_of_tendsto`, `ContinuousOn.image_Iio_eq_Ioi_of_tendsto` — a
+  continuous function on a half-infinite interval that stays above `v`, tends to `v` at infinity
+  and to `+∞` at the finite endpoint has image `Ioi v`.
 * `TauCeti.exists_continuous_projIcc_inverse` — a continuous strictly increasing function on
   `[a, b]` has a continuous inverse on its range, clamped to be constant outside it.
 * `IsOpen.exists_first_exit` — a path continuous on `[a, b]` that starts in an open set and leaves
@@ -97,6 +105,23 @@ theorem _root_.IsCompact.exists_Icc_between {α : Type*} [LinearOrder α] [Topol
   obtain ⟨d, hMd, hdb⟩ := exists_between (hKs hMK).2
   exact ⟨c, d, fun x hx ↦ ⟨hcm.trans_le (hm hx), (hM hx).trans_lt hMd⟩,
     fun x hx ↦ ⟨hac.trans_le hx.1, hx.2.trans_lt hdb⟩⟩
+
+/-- An open set `s` containing the unordered closed interval `[[a, b]]` contains an open interval
+`Ioo c d` around `[[a, b]]`. -/
+theorem _root_.IsOpen.exists_Ioo_subset_of_uIcc_subset {α : Type*} [LinearOrder α]
+    [TopologicalSpace α] [OrderTopology α] [NoMinOrder α] [NoMaxOrder α] {s : Set α}
+    (hs : IsOpen s) {a b : α} (h : uIcc a b ⊆ s) :
+    ∃ c d, uIcc a b ⊆ Ioo c d ∧ Ioo c d ⊆ s := by
+  obtain ⟨c, hc, hcs⟩ := exists_Ioc_subset_of_mem_nhds
+    (hs.mem_nhds (h ⟨le_rfl, inf_le_sup⟩)) (exists_lt (a ⊓ b))
+  obtain ⟨d, hd, hds⟩ := exists_Ico_subset_of_mem_nhds
+    (hs.mem_nhds (h ⟨inf_le_sup, le_rfl⟩)) (exists_gt (a ⊔ b))
+  refine ⟨c, d, fun u hu ↦ ⟨hc.trans_le hu.1, hu.2.trans_lt hd⟩, fun u hu ↦ ?_⟩
+  rcases le_or_gt u (a ⊓ b) with hu₁ | hu₁
+  · exact hcs ⟨hu.1, hu₁⟩
+  rcases le_or_gt (a ⊔ b) u with hu₂ | hu₂
+  · exact hds ⟨hu₂, hu.2⟩
+  exact h ⟨hu₁.le, hu₂.le⟩
 
 /-- A nonempty closed order-connected set which is not bounded on both sides is a right
 half-line, a left half-line, or the whole space. -/
@@ -221,7 +246,6 @@ theorem _root_.ContinuousOn.apply_ne_apply_of_injOn_Ico {α δ : Type*}
   have ha : a ∈ Ico a b := ⟨le_rfl, hab⟩
   intro hab'
   obtain ⟨m, hm⟩ := exists_between hab
-  have hfm : f m ≠ f a := fun h ↦ hm.1.ne' (hinj ⟨hm.1.le, hm.2⟩ ha h)
   -- A value strictly between `f a` and `f m` would be attained on both `[a, m]` and `[m, b]`.
   obtain ⟨v, hv, hva, hvm⟩ : ∃ v ∈ uIcc (f a) (f m), v ≠ f a ∧ v ≠ f m := by
     obtain ⟨m', hm'⟩ := exists_between hm.1
@@ -246,5 +270,27 @@ theorem _root_.ContinuousOn.apply_ne_apply_of_injOn_Ico {α δ : Type*}
     (hsv.trans htv.symm)
   have hsm : s = m := le_antisymm hs.2 (hst ▸ ht.1)
   exact hvm (hsv.symm.trans (congrArg f hsm))
+
+/-- A continuous function on `Ioi p` that is above `v`, tends to `v` at `+∞` and to `+∞` at `p⁺`
+has image `Ioi v`. -/
+theorem _root_.ContinuousOn.image_Ioi_eq_Ioi_of_tendsto {α β : Type*}
+    [ConditionallyCompleteLinearOrder α]
+    [TopologicalSpace α] [OrderTopology α] [DenselyOrdered α] [NoMaxOrder α]
+    [LinearOrder β] [TopologicalSpace β] [OrderClosedTopology β] {d : α → β} {p : α} {v : β}
+    (hcont : ContinuousOn d (Ioi p)) (hpos : ∀ x ∈ Ioi p, v < d x)
+    (htop : Tendsto d atTop (𝓝 v)) (hp : Tendsto d (𝓝[>] p) atTop) : d '' Ioi p = Ioi v :=
+  Subset.antisymm (by rintro _ ⟨x, hx, rfl⟩; exact hpos x hx)
+    (isPreconnected_Ioi.intermediate_value_Ioi (le_principal_iff.mpr (Ioi_mem_atTop p))
+      (le_principal_iff.mpr self_mem_nhdsWithin) hcont htop hp)
+
+/-- A continuous function on `Iio p` that is above `v`, tends to `v` at `-∞` and to `+∞` at `p⁻`
+has image `Ioi v`. -/
+theorem _root_.ContinuousOn.image_Iio_eq_Ioi_of_tendsto {α β : Type*}
+    [ConditionallyCompleteLinearOrder α]
+    [TopologicalSpace α] [OrderTopology α] [DenselyOrdered α] [NoMinOrder α]
+    [LinearOrder β] [TopologicalSpace β] [OrderClosedTopology β] {d : α → β} {p : α} {v : β}
+    (hcont : ContinuousOn d (Iio p)) (hpos : ∀ x ∈ Iio p, v < d x)
+    (hbot : Tendsto d atBot (𝓝 v)) (hp : Tendsto d (𝓝[<] p) atTop) : d '' Iio p = Ioi v :=
+  ContinuousOn.image_Ioi_eq_Ioi_of_tendsto (α := αᵒᵈ) hcont hpos hbot hp
 
 end TauCeti

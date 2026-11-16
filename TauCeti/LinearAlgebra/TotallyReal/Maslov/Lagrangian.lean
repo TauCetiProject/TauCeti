@@ -87,7 +87,7 @@ theorem TotallyRealLoop.exists_unitary_maslovIndex_eq
       toFun_zero_eq_toFun_one := hFclosed 1 }
   refine ⟨fun t ↦ ⟨F (1, t), hF1 t⟩, (Units.continuous_val.comp hF1c).subtype_mk _,
     Λ', fun t ↦ rfl, ?_⟩
-  refine (Λ.maslovIndex_eq_of_homotopy Λ' isMaximalTotallyReal_realSubspace
+  refine (Λ.maslovIndex_eq_of_homotopy Λ' (L₀ := realSubspace n)
     (fun p ↦ (F p : Matrix n n ℂ).toEuclideanCLE (F p).det_ne_zero)
     (GeneralLinearGroup.continuous_toEuclideanCLE hFc) (fun t ↦ ?_) (fun t ↦ ?_)
     (fun s ↦ ?_)).symm

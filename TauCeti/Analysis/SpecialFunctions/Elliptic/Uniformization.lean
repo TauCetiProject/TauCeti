@@ -8,12 +8,14 @@ module
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Projective.Point
 public import TauCeti.Analysis.Complex.ModularForms.LevelOne.JInputs
 public import TauCeti.Analysis.Complex.UpperHalfPlane.PeriodPair
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.VariableChange
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Pointed
+public import TauCeti.AlgebraicGeometry.EllipticCurve.NormalForms
 import Mathlib.Analysis.Calculus.InverseFunctionTheorem.Deriv
 import Mathlib.Analysis.Complex.Liouville
 import Mathlib.NumberTheory.LSeries.HurwitzZetaValues
 import Mathlib.NumberTheory.ModularForms.LevelOne.GradedRing
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Basic
+import TauCeti.AlgebraicGeometry.EllipticCurve.Weierstrass
 
 /-!
 # The Weierstrass curve of a period lattice
@@ -67,6 +69,7 @@ while it vanishes on `Λ` and nowhere else. A point `(x, y)` of the curve with `
 
 ## Main results
 
+* `PeriodPair.isShortNF_weierstrassCurve`: the curve is in short normal form.
 * `PeriodPair.weierstrassCurve_smul`: rescaling the lattice by `c` changes the curve by the
   variable change with `u = c`.
 * `UpperHalfPlane.G_periodPair`: `G k (ℤ τ + ℤ) = 2 ζ(k) E_k(τ)` for `k ≥ 3`.
@@ -76,6 +79,8 @@ while it vanishes on `Λ` and nowhere else. A point `(x, y)` of the curve with `
   `g₂³ - 27 g₃²`, and it is nonzero.
 * `PeriodPair.weierstrassCurve_j`, `UpperHalfPlane.weierstrassCurve_j_periodPair`: the
   `j`-invariant, and its identification with the modular invariant `TauCeti.ModularForm.j`.
+* `PeriodPair.weierstrassCurve_j_eq_1728_iff`, `PeriodPair.weierstrassCurve_j_eq_zero_iff`: the
+  `j`-invariant is `1728` exactly when `g₃ = 0`, and `0` exactly when `g₂ = 0`.
 * `PeriodPair.weierstrassPoint_add_coe`, `PeriodPair.weierstrassPoint_neg`,
   `PeriodPair.weierstrassPoint_eq_zero_iff`: the point map is `Λ`-periodic, odd, and vanishes
   exactly on `Λ`.
@@ -101,6 +106,9 @@ while it vanishes on `Λ` and nowhere else. A point `(x, y)` of the curve with `
   `PeriodPair.pointAddEquivOfLatticeEq_symm_weierstrassPoint`: rescaling naturality of the point
   map, sending the point of `c z` on `E_{cΛ}` to the point of `z` on `E_Λ`. Since the curve only
   depends on the lattice, the same holds for any basis of `cΛ`.
+* `PeriodPair.smul_mk_weierstrassPoint`: the same rescaling as an isomorphism of pointed curves
+  (`TauCeti.PointedWeierstrassCurve`), carrying `E_Λ` with the point of `z` to `E_{cΛ}` with the
+  point of `c z`.
 
 ## References
 
@@ -165,9 +173,13 @@ def weierstrassCurve : WeierstrassCurve ℂ where
   a₄ := -(L.g₂ / 4)
   a₆ := -(L.g₃ / 4)
 
-@[simp] lemma weierstrassCurve_a₁ : L.weierstrassCurve.a₁ = 0 := by unfold weierstrassCurve; rfl
-@[simp] lemma weierstrassCurve_a₂ : L.weierstrassCurve.a₂ = 0 := by unfold weierstrassCurve; rfl
-@[simp] lemma weierstrassCurve_a₃ : L.weierstrassCurve.a₃ = 0 := by unfold weierstrassCurve; rfl
+lemma weierstrassCurve_a₁ : L.weierstrassCurve.a₁ = 0 := by unfold weierstrassCurve; rfl
+lemma weierstrassCurve_a₂ : L.weierstrassCurve.a₂ = 0 := by unfold weierstrassCurve; rfl
+lemma weierstrassCurve_a₃ : L.weierstrassCurve.a₃ = 0 := by unfold weierstrassCurve; rfl
+
+/-- The Weierstrass curve of a lattice is in short normal form. -/
+instance isShortNF_weierstrassCurve : L.weierstrassCurve.IsShortNF :=
+  ⟨L.weierstrassCurve_a₁, L.weierstrassCurve_a₂, L.weierstrassCurve_a₃⟩
 
 @[simp] lemma weierstrassCurve_a₄ : L.weierstrassCurve.a₄ = -(L.g₂ / 4) := by
   unfold weierstrassCurve; rfl
@@ -229,6 +241,18 @@ lemma weierstrassCurve_j :
   simp only [c₄, b₂, b₄, weierstrassCurve_a₁, weierstrassCurve_a₂, weierstrassCurve_a₃,
     weierstrassCurve_a₄]
   ring
+
+variable {L} in
+/-- The `j`-invariant of `E_Λ` is `1728` exactly when `g₃(Λ) = 0`. -/
+lemma weierstrassCurve_j_eq_1728_iff : L.weierstrassCurve.j = 1728 ↔ L.g₃ = 0 := by
+  rw [WeierstrassCurve.j_eq_1728_iff]
+  norm_num [c₆, b₂, b₄, b₆]
+
+variable {L} in
+/-- The `j`-invariant of `E_Λ` is `0` exactly when `g₂(Λ) = 0`. -/
+lemma weierstrassCurve_j_eq_zero_iff : L.weierstrassCurve.j = 0 ↔ L.g₂ = 0 := by
+  rw [WeierstrassCurve.j_eq_zero_iff]
+  norm_num [c₄, b₂, b₄]
 
 end PeriodPair
 
@@ -348,7 +372,6 @@ lemma weierstrassP_div_derivWeierstrassP_eq (hl₀ : l₀ ∈ L.lattice) (z : �
       ((z - l₀) ^ 3 * ℘'[L - l₀] z - 2)) := by
   rcases eq_or_ne z l₀ with rfl | hz
   · simp [L.weierstrassP_coe ⟨z, hl₀⟩]
-  have h2 : (z - l₀) ^ 2 ≠ 0 := pow_ne_zero _ (sub_ne_zero.mpr hz)
   rw [div_eq_mul_inv, L.inv_derivWeierstrassP_eq hl₀, L.weierstrassPExcept_def ⟨l₀, hl₀⟩]
   field_simp
   ring
@@ -481,7 +504,7 @@ lemma weierstrassP_div_derivWeierstrassP_eq_of_weierstrassPoint_eq {z w : ℂ}
       rwa [← L.weierstrassPoint_eq_zero_iff, ← h, L.weierstrassPoint_eq_zero_iff]
     rw [L.weierstrassPoint_of_notMem hz, L.weierstrassPoint_of_notMem hw,
       Affine.Point.some.injEq] at h
-    rw [h.1, (div_left_inj' two_ne_zero).mp h.2]
+    rw [h.1, (div_left_inj₀ two_ne_zero).mp h.2]
 
 /-- The point map is injective near every lattice point, since the local parameter `℘ / ℘'` at
 the point at infinity has nonzero derivative there. -/
@@ -621,5 +644,17 @@ theorem pointAddEquivOfLatticeEq_symm_weierstrassPoint (h : L'.lattice = (c • 
     (z : ℂ) : (pointAddEquivOfLatticeEq h).symm (L.weierstrassPoint z) =
       L'.weierstrassPoint (c * z) := by
   rw [AddEquiv.symm_apply_eq, pointAddEquivOfLatticeEq_weierstrassPoint]
+
+/-- **Rescaling lattices is an isomorphism of pointed curves.** If `Λ' = c Λ`, the change of
+variables with `u = c` and `r = s = t = 0` carries `E_Λ` with the point of `z` to `E_{Λ'}` with
+the point of `c z`. -/
+theorem smul_mk_weierstrassPoint (h : L'.lattice = (c • L).lattice) (z : ℂ) :
+    (⟨c, 0, 0, 0⟩ : VariableChange ℂ) •
+        (⟨L.weierstrassCurve, L.weierstrassPoint z⟩ : TauCeti.PointedWeierstrassCurve ℂ) =
+      ⟨L'.weierstrassCurve, L'.weierstrassPoint (c * z)⟩ := by
+  refine TauCeti.PointedWeierstrassCurve.ext_cast
+    (weierstrassCurve_eq_smul_of_lattice_eq h).symm ?_
+  rw [← pointAddEquivOfLatticeEq_symm_weierstrassPoint h z]
+  simp [pointAddEquivOfLatticeEq, TauCeti.PointedWeierstrassCurve.smul_point]
 
 end PeriodPair

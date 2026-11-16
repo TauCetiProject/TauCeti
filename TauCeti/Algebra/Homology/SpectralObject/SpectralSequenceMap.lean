@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.SpectralObject.Map
+public import Mathlib.Algebra.Homology.SpectralObject.FirstPage
 public import Mathlib.Algebra.Homology.SpectralObject.SpectralSequence
 public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 public import TauCeti.Algebra.Homology.ShortComplex.LeftHomology
@@ -38,6 +39,8 @@ which is functorial in `φ`.
   next page.
 * `CategoryTheory.Abelian.SpectralObject.spectralSequenceMap_id`,
   `CategoryTheory.Abelian.SpectralObject.spectralSequenceMap_comp`: functoriality.
+* `spectralSequencePageXMap_comp_spectralSequenceFirstPageXIso_hom`: on the first page, identified
+  with objects `H^n(f)`, the morphism is the component of `φ`.
 
 ## Implementation notes
 
@@ -114,10 +117,13 @@ end
 
 /-- The morphisms `spectralSequencePageXMap` commute with the differentials of the pages. -/
 @[reassoc]
-lemma spectralSequence_page_d_comp_spectralSequencePageXMap (r : ℤ) (hr : r₀ ≤ r) (pq pq' : κ)
-    (hpq : (c r).Rel pq pq') :
+lemma spectralSequence_page_d_comp_spectralSequencePageXMap (r : ℤ) (hr : r₀ ≤ r) (pq pq' : κ) :
     ((X.spectralSequence data).page r).d pq pq' ≫ spectralSequencePageXMap data φ r hr pq' =
       spectralSequencePageXMap data φ r hr pq ≫ ((Y.spectralSequence data).page r).d pq pq' := by
+  by_cases hpq : (c r).Rel pq pq'
+  swap
+  · rw [HomologicalComplex.shape _ _ _ hpq, HomologicalComplex.shape _ _ _ hpq]
+    simp
   have h₀₂ := data.hc₀₂ r pq pq' hpq
   have h₁₃ := data.hc₁₃ r pq pq' hpq
   have hdeg := data.hc r pq pq' hpq
@@ -140,8 +146,8 @@ morphism `φ : X ⟶ Y` of spectral objects. -/
 noncomputable def spectralSequencePageMap (r : ℤ) (hr : r₀ ≤ r) :
     (X.spectralSequence data).page r ⟶ (Y.spectralSequence data).page r where
   f := spectralSequencePageXMap data φ r hr
-  comm' pq pq' hpq :=
-    (spectralSequence_page_d_comp_spectralSequencePageXMap data φ r hr pq pq' hpq).symm
+  comm' pq pq' _ :=
+    (spectralSequence_page_d_comp_spectralSequencePageXMap data φ r hr pq pq').symm
 
 @[simp]
 lemma spectralSequencePageMap_f (r : ℤ) (hr : r₀ ≤ r) (pq : κ) :
@@ -271,5 +277,29 @@ lemma spectralSequenceMap_comp :
     spectralSequenceMap data (φ ≫ ψ) = spectralSequenceMap data φ ≫ spectralSequenceMap data ψ := by
   ext r hr : 2
   simp
+
+section FirstPage
+
+variable [data.HasFirstPageComputation]
+
+/-- **The morphism of spectral sequences on the first page.** On the first page, whose objects are
+identified with objects `H^n(f)` of the spectral objects by Mathlib's
+`spectralSequenceFirstPageXIso`, the morphism of spectral sequences induced by `φ` is the
+component of `φ` on `H^n(f)`. -/
+@[reassoc]
+lemma spectralSequencePageXMap_comp_spectralSequenceFirstPageXIso_hom (pq : κ) (i₁ i₂ : ι)
+    (hi₁ : i₁ = data.i₁ pq) (hi₂ : i₂ = data.i₂ pq) (n : ℤ) (hn : n = data.deg pq) :
+    spectralSequencePageXMap data φ r₀ le_rfl pq ≫
+        (Y.spectralSequenceFirstPageXIso data pq i₁ i₂ hi₁ hi₂ n hn).hom =
+      (X.spectralSequenceFirstPageXIso data pq i₁ i₂ hi₁ hi₂ n hn).hom ≫
+        (φ.hom n).app (mk₁ (homOfLE (data.le₁₂' pq hi₁ hi₂))) := by
+  rw [spectralSequenceFirstPageXIso_hom _ _ _ _ _ _ _ (n - 1) n (n + 1) hn,
+    spectralSequenceFirstPageXIso_hom _ _ _ _ _ _ _ (n - 1) n (n + 1) hn,
+    ← spectralSequencePageXIso_hom_comp_EMap_assoc, Category.assoc]
+  -- The outer indices of the first page are `i₁` and `i₂` themselves, and the morphisms
+  -- `homOfLE` between equal indices are the identities only up to definitional unfolding.
+  exact congrArg (_ ≫ ·) (EMap_comp_EIsoH_hom φ _ _ _ _ _ _)
+
+end FirstPage
 
 end CategoryTheory.Abelian.SpectralObject

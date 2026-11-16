@@ -16,8 +16,8 @@ Removing the sphere `sphere x ρ` from a set `s` leaves two pieces: the *near si
 `s ∩ ball x ρ`, of the points of `s` closer to `x` than `ρ`, and the *far side*
 `s \ closedBall x ρ`, of those further away. This file records that they cover `s \ sphere x ρ`,
 that they are disjoint, that the two sides together with the cut cover all of `s` (also after
-applying an arbitrary map), and — when `s` is open, so that both sides are open — that a
-preconnected subset of `s` missing the sphere lies entirely in one of them.
+applying an arbitrary map), and that a preconnected subset of `s` missing the sphere lies
+entirely in one of them.
 
 Nothing beyond the containments `ball x ρ ⊆ closedBall x ρ` and `sphere x ρ ⊆ closedBall x ρ`, and
 the openness of a ball against the closedness of a closed ball, is used, so `s` is an arbitrary set
@@ -48,7 +48,7 @@ use, and Mathlib has no form of the decomposition.
   cover the whole set, and
   `TauCeti.image_eq_image_inter_ball_union_image_sdiff_closedBall_union_image_inter_sphere` is its
   image under an arbitrary map.
-* `TauCeti.subset_inter_ball_or_subset_sdiff_closedBall` — a preconnected subset of an open cut set
+* `TauCeti.subset_inter_ball_or_subset_sdiff_closedBall` — a preconnected subset of a set
   missing the sphere lies on one side of it.
 * `TauCeti.exists_pos_forall_le_diam_image_sdiff_closedBall` — once the far side at radius `0` has
   a nontrivial image, the image of the far side stays at least as wide as a fixed positive number
@@ -102,15 +102,22 @@ theorem image_eq_image_inter_ball_union_image_sdiff_closedBall_union_image_inter
     f '' s = f '' (s ∩ ball x ρ) ∪ f '' (s \ closedBall x ρ) ∪ f '' (s ∩ sphere x ρ) := by
   rw [← image_union, ← image_union, ← eq_inter_ball_union_sdiff_closedBall_union_inter_sphere]
 
-/-- **A connected subset of an open set missing a circular cut lies on one side of it.** This is
-the separation statement the decomposition exists for: the two sides are open and disjoint, so a
-preconnected subset of their union cannot meet both. Only openness of the cut set is used. -/
-theorem subset_inter_ball_or_subset_sdiff_closedBall {s S : Set X} (hs : IsOpen s)
+/-- **A connected subset of a set missing a circular cut lies on one side of it.** This is
+the separation statement the decomposition exists for: the open ball and the complement of the
+closed ball are disjoint and cover the set minus the cut, so a preconnected subset of it cannot meet
+both. No hypothesis on the set is needed. -/
+theorem subset_inter_ball_or_subset_sdiff_closedBall {s S : Set X}
     (hS : IsPreconnected S) (hSsub : S ⊆ s \ sphere x ρ) :
-    S ⊆ s ∩ ball x ρ ∨ S ⊆ s \ closedBall x ρ :=
-  hS.subset_or_subset (hs.inter isOpen_ball) (hs.sdiff isClosed_closedBall)
-    disjoint_inter_ball_sdiff_closedBall
-    (hSsub.trans_eq sdiff_sphere_eq_inter_ball_union_sdiff_closedBall)
+    S ⊆ s ∩ ball x ρ ∨ S ⊆ s \ closedBall x ρ := by
+  have hcover : S ⊆ ball x ρ ∪ (closedBall x ρ)ᶜ := fun z hz ↦ by
+    have hz' : z ∈ s ∩ ball x ρ ∪ s \ closedBall x ρ := by
+      rw [← sdiff_sphere_eq_inter_ball_union_sdiff_closedBall]
+      exact hSsub hz
+    exact hz'.imp (·.2) (·.2)
+  have hSs : S ⊆ s := hSsub.trans sdiff_subset
+  exact (hS.subset_or_subset isOpen_ball isClosed_closedBall.isOpen_compl
+    (disjoint_compl_right.mono_left ball_subset_closedBall) hcover).imp
+    (fun h ↦ subset_inter hSs h) fun h z hz ↦ ⟨hSs hz, h hz⟩
 
 /-! ## The far side does not degenerate -/
 

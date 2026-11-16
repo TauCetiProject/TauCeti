@@ -288,7 +288,7 @@ theorem exists_mem_span_range_of_proj_eq (x : completedGroupAlgebra R Γ)
     exact MonoidAlgebra.sum_coeff_single _
 
 instance [Nontrivial R] : Nontrivial (completedGroupAlgebra R Γ) :=
-  (proj R Γ { toOpenSubgroup := ⟨⊤, isOpen_univ⟩ }).toRingHom.domain_nontrivial
+  (proj R Γ ⊤).toRingHom.domain_nontrivial
 
 /-- Over a coefficient ring without zero divisors, the completed group algebra has no scalar
 torsion: every nonzero scalar acts injectively, as it does on each coefficient of each level. -/

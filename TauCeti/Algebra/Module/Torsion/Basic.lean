@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Torsion.Basic
+public import Mathlib.RingTheory.PrincipalIdealDomain
 
 /-!
 # Torsion subgroups, products, and maps
@@ -30,9 +31,11 @@ nonzero multiple in a submodule `N`, then a single nonzero scalar carries all of
 the image of a finite family in the torsion of `M ⧸ N` has a common nonzero annihilator.
 
 Torsion also commutes with products and additive equivalences. When `a ∣ b`, the `a`-torsion
-inside the `b`-torsion subgroup is the ambient `a`-torsion subgroup. Linear maps send torsion
-elements to torsion elements, so submodules and linear images of torsion modules are torsion, and
-the torsion submodule of `M × N` is the product of the torsion submodules.
+inside the `b`-torsion subgroup is the ambient `a`-torsion subgroup, and for a scalar `a` of a
+commutative semiring the `a`-torsion submodule is the kernel of left scalar multiplication
+`LinearMap.lsmul R M a`. Linear maps send torsion elements to torsion elements, so submodules and
+linear images of torsion modules are torsion, and the torsion submodule of `M × N` is the product
+of the torsion submodules.
 
 ## Main definitions
 
@@ -56,10 +59,14 @@ the torsion submodule of `M × N` is the product of the torsion submodules.
 * `TauCeti.Submodule.prodMk_mem_torsion`: a pair of torsion elements is torsion.
 * `Module.IsTorsion.of_injective`, `Module.IsTorsion.of_surjective`, `Module.IsTorsion.prod`:
   submodules, linear images and products of torsion modules are torsion.
+* `Submodule.torsionBy_eq_ker_lsmul`: the `a`-torsion submodule is the kernel of
+  `LinearMap.lsmul R M a`.
 * `Submodule.exists_smul_mem_of_forall_exists_smul_mem`: finitely many elements with nonzero
   multiples in `N` have a common nonzero multiplier into `N`.
 * `Ideal.isTorsion_quotient_of_mem`: the quotient of a commutative ring by an ideal
   containing a nonzerodivisor is a torsion module.
+* `Ideal.torsionOf_eq_span_pow_of_prime`: over a principal ideal domain, if `p ^ m` kills `t` but
+  `p ^ (m - 1)` does not, for a prime `p`, the annihilator of `t` is `(p ^ m)`.
 -/
 
 public section
@@ -299,6 +306,15 @@ end Module.IsTorsion
 
 namespace Submodule
 
+/-- The `a`-torsion submodule of an `R`-module `M` is the kernel of left scalar multiplication by
+`a` (`LinearMap.lsmul R M a`). -/
+theorem torsionBy_eq_ker_lsmul {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+    (a : R) : torsionBy R M a = LinearMap.ker (LinearMap.lsmul R M a) := by
+  ext x
+  rw [mem_torsionBy_iff, LinearMap.mem_ker, LinearMap.lsmul_apply]
+
+section
+
 variable {R M : Type*} [CommSemiring R] [NoZeroDivisors R] [Nontrivial R] [AddCommMonoid M]
   [Module R M]
 
@@ -313,6 +329,8 @@ theorem exists_smul_mem_of_forall_exists_smul_mem (N : Submodule R M) {ι : Type
   rw [← Finset.prod_erase_mul _ _ hi, mul_smul]
   exact N.smul_mem _ (hr i hi)
 
+end
+
 end Submodule
 
 namespace Ideal
@@ -323,5 +341,20 @@ nonzerodivisor `a`. -/
 theorem isTorsion_quotient_of_mem {R : Type*} [CommRing R] {I : Ideal R} {a : R}
     (haI : a ∈ I) (ha : a ∈ R⁰) : Module.IsTorsion R (R ⧸ I) := fun x ↦
   ⟨⟨a, ha⟩, (Module.isTorsionBy_quotient_iff I a).2 (fun y ↦ I.mul_mem_right y haI) (x := x)⟩
+
+/-- Over a principal ideal domain, if `p ^ m` kills `t` but `p ^ (m - 1)` does not, for a prime
+`p`, the annihilator of `t` is `(p ^ m)`. -/
+theorem torsionOf_eq_span_pow_of_prime {R M : Type*} [CommRing R] [IsDomain R]
+    [IsPrincipalIdealRing R] [AddCommMonoid M] [Module R M] {p : R} (hp : Prime p) {m : ℕ} {t : M}
+    (hm : p ^ m • t = 0) (ht : p ^ (m - 1) • t ≠ 0) : torsionOf R M t = span {p ^ m} := by
+  obtain ⟨g, hg⟩ := (IsPrincipalIdealRing.principal (torsionOf R M t)).principal
+  have hmem (n : ℕ) : p ^ n ∈ torsionOf R M t ↔ g ∣ p ^ n := by
+    rw [hg, Ideal.submodule_span_eq, Ideal.mem_span_singleton]
+  obtain ⟨i, him, hgi⟩ := (dvd_prime_pow hp m).mp ((hmem m).mp ((mem_torsionOf_iff _ _).mpr hm))
+  have him' : i = m := by
+    by_contra hne
+    refine ht ((mem_torsionOf_iff _ _).mp ((hmem (m - 1)).mpr ?_))
+    exact hgi.dvd.trans (pow_dvd_pow p (by omega))
+  rw [hg, Ideal.submodule_span_eq, span_singleton_eq_span_singleton.mpr hgi, him']
 
 end Ideal

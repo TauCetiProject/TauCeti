@@ -75,7 +75,7 @@ theorem eq_zero_of_pow_three_eq_two_mul_sq_add_one {x y : ℤ} (h : x ^ 3 = 2 * 
     ⟨fun ⟨r, hr⟩ ↦ by rw [discr_def] at hr; nlinarith [mul_self_nonneg r]⟩
   have : IsPrincipalIdealRing (QuadraticAlgebra ℤ (-2) 0) :=
     (classNumber_eq_one_iff_isPrincipalIdealRing_of_mod_four_ne_one hsf (by decide)).1
-      (classNumber_eq_one_of_mod_four_ne_one_of_natAbs_le_two hsf (by decide) (by decide))
+      (classNumber_eq_one_of_natAbs_le_two (by decide))
   -- Factor `x³ = (1 + y √-2)(1 - y √-2)` in the principal ideal domain `ℤ[√-2]`.
   set α : QuadraticAlgebra ℤ (-2) 0 := ⟨1, y⟩ with hα
   -- `α * star α = 1 + 2 y² = x³`, and `α + star α = 2` is coprime to `x³`, so `α` and `star α`

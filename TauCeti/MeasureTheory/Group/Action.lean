@@ -34,13 +34,13 @@ variable {G X : Type*} [SMul G X] {m : MeasurableSpace X} {μ : Measure X}
 
 /-- The restriction of an invariant measure to an exactly invariant measurable set is
 invariant. -/
-theorem SMulInvariantMeasure.restrict [MeasurableConstSMul G X] [SMulInvariantMeasure G X μ]
+theorem SMulInvariantMeasure.restrict [SMulInvariantMeasure G X μ]
     {u : Set X} (hum : MeasurableSet u) (huinv : ∀ g : G, (g • ·) ⁻¹' u = u) :
     SMulInvariantMeasure G X (μ.restrict u) :=
   ⟨fun g v hv => by
-    have hmp := (measurePreserving_smul g μ).restrict_preimage hum
-    rw [huinv g] at hmp
-    exact hmp.measure_preimage hv.nullMeasurableSet⟩
+    have h : (g • ·) ⁻¹' v ∩ u = (g • ·) ⁻¹' (v ∩ u) := by rw [preimage_inter, huinv g]
+    rw [Measure.restrict_apply' hum, Measure.restrict_apply' hum, h,
+      SMulInvariantMeasure.measure_preimage_smul g (hv.inter hum)]⟩
 
 end Restrict
 

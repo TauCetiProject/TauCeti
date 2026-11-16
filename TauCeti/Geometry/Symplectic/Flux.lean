@@ -38,6 +38,14 @@ Conjugating a diffeotopy by a diffeomorphism `f` transports its flux along `f`
 (`TauCeti.Diffeotopy.flux_transDiffeomorph`); the corresponding naturality of the homotopy
 operator is `TauCeti.homotopyOperator_mpullback_prodMap_id`.
 
+The flux depends only on the homotopy class of the motion relative to both time ends: if a smooth
+map `G : (M × [0, 1]) × [0, 1] → M` joins the motions of two diffeotopies and satisfies
+`G (x, 0, s) = x` and `G (x, 1, s) = φ₁ x` for every `s`, their flux forms differ by an exact form
+(`TauCeti.Diffeotopy.fluxForm_sub_fluxForm_mem_exactForms`). This holds for every closed `σ`,
+without assuming that the maps of the homotopy are diffeomorphisms or preserve `σ`; it is the
+double-cylinder identity `TauCeti.mextDeriv_homotopyOperator_homotopyOperator` applied to `G^* σ`,
+whose terms at the time ends vanish because `G` is stationary in `s` there.
+
 ## Main definitions
 
 * `TauCeti.Diffeotopy.fluxForm`: the one-form `∫₀¹ φ_t^* (ι_{X_t} σ) dt` of a smooth diffeotopy.
@@ -46,6 +54,8 @@ operator is `TauCeti.homotopyOperator_mpullback_prodMap_id`.
 ## Main results
 
 * `TauCeti.Diffeotopy.fluxForm_apply`: the integral formula for the flux form.
+* `TauCeti.Diffeotopy.curryLeft_mfderiv_cylinderMap_apply`: its integrand, evaluated on tangent
+  vectors.
 * `TauCeti.Diffeotopy.mextDerivₗ_fluxForm`: `d (Flux φ) = φ₁^* σ - σ` for closed `σ`.
 * `TauCeti.Diffeotopy.flux_refl`: the constant diffeotopy has zero flux.
 * `TauCeti.Diffeotopy.flux_mextDerivₗ`: for `σ = dθ`, the flux is the class of `φ₁^* θ - θ`.
@@ -53,6 +63,14 @@ operator is `TauCeti.homotopyOperator_mpullback_prodMap_id`.
   diffeomorphism have the same flux.
 * `TauCeti.Diffeotopy.flux_transDiffeomorph`: naturality of the flux under conjugation by a
   diffeomorphism.
+* `TauCeti.Diffeotopy.flux_transDiffeomorph_of_mem_diffeomorphStabilizer`: its specialization
+  to a self-diffeomorphism preserving `σ`.
+* `TauCeti.Diffeotopy.fluxForm_sub_fluxForm_mem_exactForms`: homotopy invariance of the flux
+  form relative to both time ends.
+* `TauCeti.Diffeotopy.flux_eq_of_homotopy`: diffeotopies whose motions are homotopic relative to
+  both time ends have the same flux.
+* `TauCeti.Diffeotopy.flux_eq_zero_of_homotopy_refl`: a diffeotopy homotopic relative to both time
+  ends to the constant one has zero flux.
 
 ## References
 
@@ -140,6 +158,50 @@ theorem fluxForm_apply (σ : SmoothForm J M ℝ 2) (x : M) :
     (Fin.cons _ fun i ↦ ((v i : E), (0 : EuclideanSpace ℝ (Fin 1))))).trans ?_
   exact congrArg _ (funext fun i ↦ by cases i using Fin.cases <;> rfl)
 
+/-- **The integrand of the flux form, evaluated.** On spatial tangent vectors `v`, the integrand
+of `TauCeti.Diffeotopy.fluxForm_apply` at `p = (x, t)` is `σ` at the moving point applied to the
+time derivative `∂ₜ φ_t x` of the motion followed by the spatial derivatives `dφ_t (v i)`. -/
+theorem curryLeft_mfderiv_cylinderMap_apply (σ : SmoothForm J M ℝ 2) (p : M × unitInterval)
+    (v : Fin 1 → E) :
+    (ContinuousAlternatingMap.curryLeft (E := E)
+        (σ.1 (Φ.cylinderMap p) : E [⋀^Fin 2]→L[ℝ] ℝ)
+        (mfderiv (J.prod (𝓡∂ 1)) J Φ.cylinderMap p
+          ((0 : E), (1 : TangentSpace (𝓡∂ 1) p.2)))).compContinuousLinearMap
+        ((mfderiv (J.prod (𝓡∂ 1)) J Φ.cylinderMap p :
+          E × EuclideanSpace ℝ (Fin 1) →L[ℝ] E).comp (.inl ℝ E (EuclideanSpace ℝ (Fin 1)))) v =
+      σ.1 (Φ.cylinderMap p) (Matrix.vecCons
+        (mfderiv (J.prod (𝓡∂ 1)) J Φ.cylinderMap p ((0 : E), (1 : TangentSpace (𝓡∂ 1) p.2)))
+        fun i ↦ mfderiv (J.prod (𝓡∂ 1)) J Φ.cylinderMap p
+          ((v i : E), (0 : EuclideanSpace ℝ (Fin 1)))) :=
+  -- The tangent spaces of the cylinder are the model spaces by definition, so the currying and
+  -- composition operators unfold definitionally.
+  (rfl)
+
+/-- Pulling a form back to the cylinder along the motion and then restricting to the initial time
+`t = 0` gives the form itself. -/
+theorem mpullback_slice_zero_mpullback_cylinderMap {k : ℕ} (ψ : SmoothForm J M ℝ k) :
+    SmoothForm.mpullback (fun x ↦ (x, (0 : unitInterval))) (contMDiff_id.prodMk contMDiff_const)
+      (SmoothForm.mpullback Φ.cylinderMap Φ.contMDiff_cylinderMap ψ) = ψ := by
+  have hslice : MDifferentiable J (J.prod (𝓡∂ 1)) fun x : M ↦ (x, (0 : unitInterval)) :=
+    (contMDiff_id.prodMk contMDiff_const).mdifferentiable (n := 1) one_ne_zero
+  apply Subtype.ext
+  rw [SmoothForm.coe_mpullback, SmoothForm.coe_mpullback,
+    ← TauCeti.mpullback_comp hslice (Φ.contMDiff_cylinderMap.mdifferentiable (by simp)),
+    cylinderMap_comp_zero, TauCeti.mpullback_id]
+
+/-- Pulling a form back to the cylinder along the motion and then restricting to the final time
+`t = 1` gives the pullback of the form by the final diffeomorphism. -/
+theorem mpullback_slice_one_mpullback_cylinderMap {k : ℕ} (ψ : SmoothForm J M ℝ k) :
+    SmoothForm.mpullback (fun x ↦ (x, (1 : unitInterval))) (contMDiff_id.prodMk contMDiff_const)
+      (SmoothForm.mpullback Φ.cylinderMap Φ.contMDiff_cylinderMap ψ) =
+        SmoothForm.mpullback Φ.final Φ.final.contMDiff ψ := by
+  have hslice : MDifferentiable J (J.prod (𝓡∂ 1)) fun x : M ↦ (x, (1 : unitInterval)) :=
+    (contMDiff_id.prodMk contMDiff_const).mdifferentiable (n := 1) one_ne_zero
+  apply Subtype.ext
+  rw [SmoothForm.coe_mpullback, SmoothForm.coe_mpullback,
+    ← TauCeti.mpullback_comp hslice (Φ.contMDiff_cylinderMap.mdifferentiable (by simp)),
+    cylinderMap_comp_one, SmoothForm.coe_mpullback]
+
 /-- Pulling a form back to the cylinder along the motion and then restricting to the two ends
 gives the pullback by the final diffeomorphism and the form itself. -/
 private theorem mpullback_slice_one_sub_mpullback_slice_zero {k : ℕ} (ψ : SmoothForm J M ℝ k)
@@ -149,13 +211,9 @@ private theorem mpullback_slice_one_sub_mpullback_slice_zero {k : ℕ} (ψ : Smo
       mpullback J (J.prod (𝓡∂ 1)) (fun y ↦ (y, 0))
         (SmoothForm.mpullback Φ.cylinderMap Φ.contMDiff_cylinderMap ψ).1 x =
       (SmoothForm.mpullback Φ.final Φ.final.contMDiff ψ).1 x - ψ.1 x := by
-  have hcyl : MDifferentiable (J.prod (𝓡∂ 1)) J Φ.cylinderMap :=
-    Φ.contMDiff_cylinderMap.mdifferentiable (by simp)
-  have hslice (s : unitInterval) : MDifferentiable J (J.prod (𝓡∂ 1)) fun y : M ↦ (y, s) :=
-    (contMDiff_id.prodMk contMDiff_const).mdifferentiable (n := 1) one_ne_zero
-  rw [SmoothForm.coe_mpullback, ← TauCeti.mpullback_comp (hslice 1) hcyl,
-    ← TauCeti.mpullback_comp (hslice 0) hcyl, cylinderMap_comp_one, cylinderMap_comp_zero,
-    TauCeti.mpullback_id, SmoothForm.coe_mpullback]
+  rw [← SmoothForm.coe_mpullback (fun y ↦ (y, 1)) (contMDiff_id.prodMk contMDiff_const),
+    ← SmoothForm.coe_mpullback (fun y ↦ (y, 0)) (contMDiff_id.prodMk contMDiff_const),
+    mpullback_slice_one_mpullback_cylinderMap, mpullback_slice_zero_mpullback_cylinderMap]
 
 /-- **The exterior derivative of the flux form.** For a closed two-form `σ`, the flux form of a
 diffeotopy is a primitive of the difference between the pullback of `σ` by the final
@@ -202,19 +260,10 @@ theorem flux_def (σ : closedForms J M 2)
 @[simp]
 theorem fluxForm_refl (σ : SmoothForm J M ℝ 2) : (refl J ∞ M).fluxForm σ = 0 := by
   have hcyl : (refl J ∞ M).cylinderMap = Prod.fst := funext fun p ↦ by simp
-  apply Subtype.ext
-  funext x
-  rw [coe_fluxForm, SmoothForm.coe_mpullback, hcyl,
-    ← SmoothForm.coe_mpullback Prod.fst contMDiff_fst, homotopyOperator_apply, Submodule.coe_zero,
-    Pi.zero_apply]
-  refine (intervalIntegral.integral_congr (E := E [⋀^Fin 1]→L[ℝ] ℝ) (g := fun _ ↦ 0)
-    fun t _ ↦ ?_).trans intervalIntegral.integral_zero
-  ext v
   -- The motion of the constant diffeotopy is the projection to `M`, which kills the time vector.
-  refine (SmoothForm.mpullback_fst_apply (I' := 𝓡∂ 1) (M' := unitInterval) σ
-    (x, projIcc 0 1 zero_le_one t)
-    (Fin.cons _ fun i ↦ ((v i : E), (0 : EuclideanSpace ℝ (Fin 1))))).trans ?_
-  exact (σ.1 x).map_coord_zero 0 (by rw [Manifold.tangentSpaceProdEquiv_apply]; rfl)
+  apply Subtype.ext
+  rw [coe_fluxForm, SmoothForm.coe_mpullback, hcyl, homotopyOperator_mpullback_fst,
+    Submodule.coe_zero]
 
 /-- The constant diffeotopy has zero flux. -/
 @[simp]
@@ -336,7 +385,109 @@ theorem flux_transDiffeomorph (f : M ≃ₘ⟮J, J⟯ P) (σ : closedForms J P 2
   simp only [closedForms.coe_mpullback]
   exact Φ.fluxForm_transDiffeomorph f σ.1
 
+/-- **Naturality of the flux under diffeomorphisms preserving `σ`.** Conjugating a diffeotopy by
+a diffeomorphism `f` preserving `σ` transports its flux by the pullback along `f⁻¹`. -/
+theorem flux_transDiffeomorph_of_mem_diffeomorphStabilizer {σ : closedForms J M 2}
+    {f : M ≃ₘ⟮J, J⟯ M} (hf : f ∈ SmoothForm.diffeomorphStabilizer σ.1)
+    (hΦ : Φ.final ∈ SmoothForm.diffeomorphStabilizer σ.1)
+    (h : (Φ.transDiffeomorph f).final ∈ SmoothForm.diffeomorphStabilizer σ.1) :
+    (Φ.transDiffeomorph f).flux σ h =
+      deRhamCohomology.map f.symm f.symm.contMDiff 1 (Φ.flux σ hΦ) := by
+  have hpull : closedForms.mpullback f f.contMDiff 2 σ = σ :=
+    Subtype.ext ((closedForms.coe_mpullback f f.contMDiff 2 σ).trans
+      (SmoothForm.mem_diffeomorphStabilizer.1 hf))
+  -- The flux only depends on the form, not on the proof that `Φ.final` preserves it.
+  have key : ∀ (τ : closedForms J M 2) (h' : Φ.final ∈ SmoothForm.diffeomorphStabilizer τ.1),
+      τ = σ → Φ.flux τ h' = Φ.flux σ hΦ := by
+    rintro _ _ rfl
+    rfl
+  rw [Φ.flux_transDiffeomorph f σ (by rwa [hpull]), key _ _ hpull]
+
 end Naturality
+
+/-! ### Homotopy invariance -/
+
+section Homotopy
+
+variable {Ψ : Diffeotopy J ∞ M} {G : (M × unitInterval) × unitInterval → M}
+
+/-- **Homotopy invariance of the flux form.** Let `G` be a smooth homotopy from the motion of a
+diffeotopy `Φ` to the motion of a diffeotopy `Ψ` that fixes both time ends: `G (x, 0, s) = x` and
+`G (x, 1, s) = φ₁ x` for every `s`. Then for a closed two-form `σ` the flux forms of `Φ` and `Ψ`
+differ by an exact form. The intermediate maps of `G` need not be diffeomorphisms, and none of the
+maps involved needs to preserve `σ`. -/
+theorem fluxForm_sub_fluxForm_mem_exactForms {σ : SmoothForm J M ℝ 2}
+    (hσ : SmoothForm.IsClosed σ) (hG : ContMDiff ((J.prod (𝓡∂ 1)).prod (𝓡∂ 1)) J ∞ G)
+    (hG₀ : ∀ p, G (p, 0) = Φ.cylinderMap p) (hG₁ : ∀ p, G (p, 1) = Ψ.cylinderMap p)
+    (h₀ : ∀ x s, G ((x, 0), s) = x) (h₁ : ∀ x s, G ((x, 1), s) = Φ.final x) :
+    Ψ.fluxForm σ - Φ.fluxForm σ ∈ exactForms J M 1 := by
+  have : IsManifold J ((⊤ : ℕ∞) + 1 : WithTop ℕ∞) M := IsManifold.of_le (n := ∞) (by simp)
+  have : IsManifold (J.prod (𝓡∂ 1)) ((⊤ : ℕ∞) + 1 : WithTop ℕ∞) (M × unitInterval) :=
+    IsManifold.of_le (n := ∞) (by simp)
+  set τ := SmoothForm.mpullback G hG σ
+  -- The slices `s = 0` and `s = 1` of `τ = G^* σ` are the pullbacks of `σ` along the motions.
+  have hslice (s : unitInterval) : MDifferentiable (J.prod (𝓡∂ 1)) ((J.prod (𝓡∂ 1)).prod (𝓡∂ 1))
+      fun p : M × unitInterval ↦ (p, s) :=
+    (contMDiff_id.prodMk contMDiff_const).mdifferentiable (n := 1) one_ne_zero
+  have hG' : MDifferentiable ((J.prod (𝓡∂ 1)).prod (𝓡∂ 1)) J G := hG.mdifferentiable (by simp)
+  have hτ₀ : mpullback (J.prod (𝓡∂ 1)) ((J.prod (𝓡∂ 1)).prod (𝓡∂ 1)) (fun p ↦ (p, 0)) τ.1 =
+      (SmoothForm.mpullback Φ.cylinderMap Φ.contMDiff_cylinderMap σ).1 := by
+    rw [SmoothForm.coe_mpullback, ← TauCeti.mpullback_comp (hslice 0) hG',
+      show G ∘ (fun p ↦ (p, 0)) = Φ.cylinderMap from funext hG₀, SmoothForm.coe_mpullback]
+  have hτ₁ : mpullback (J.prod (𝓡∂ 1)) ((J.prod (𝓡∂ 1)).prod (𝓡∂ 1)) (fun p ↦ (p, 1)) τ.1 =
+      (SmoothForm.mpullback Ψ.cylinderMap Ψ.contMDiff_cylinderMap σ).1 := by
+    rw [SmoothForm.coe_mpullback, ← TauCeti.mpullback_comp (hslice 1) hG',
+      show G ∘ (fun p ↦ (p, 1)) = Ψ.cylinderMap from funext hG₁, SmoothForm.coe_mpullback]
+  -- Over both ends of the inner cylinder `G` is stationary in `s`, so `h_s τ` vanishes there.
+  have hend {c : unitInterval} {g : M → M} (hc : ∀ x s, G ((x, c), s) = g x) :
+      mpullback J (J.prod (𝓡∂ 1)) (fun x ↦ (x, c)) (homotopyOperator τ.1) = 0 :=
+    funext fun x ↦ mpullback_apply_eq_zero <| by
+      rw [SmoothForm.coe_mpullback]
+      exact homotopyOperator_mpullback_apply_eq_zero (hc x) σ.1
+  -- So the homotopy operators of the two slices of `τ` differ by `-d (h (h τ))`.
+  have key := mextDeriv_homotopyOperator_homotopyOperator (I := J) (k := 0)
+    (τ.isSmoothForm.of_le (by simp)) ((SmoothForm.isClosed_def _).mp (hσ.mpullback G hG))
+  rw [hτ₀, hτ₁, hend h₀, hend h₁, sub_self, zero_sub] at key
+  rw [exactForms_succ]
+  refine ⟨-⟨homotopyOperator (homotopyOperator τ.1), (IsSmoothForm.homotopyOperator
+    (IsSmoothForm.homotopyOperator τ.isSmoothForm)).mem_smoothBundleForms⟩,
+    Subtype.ext ?_⟩
+  -- The flux forms are `h (Ψ^* σ)` and `h (Φ^* σ)`.
+  rw [map_neg, Submodule.coe_neg, mextDerivₗ_apply, Submodule.coe_sub, coe_fluxForm, coe_fluxForm]
+  exact neg_eq_iff_eq_neg.mpr key
+
+/-- **Homotopy invariance of the flux.** Diffeotopies whose motions are joined by a smooth homotopy
+fixing both time ends have the same flux with respect to every closed two-form preserved by their
+common final diffeomorphism. -/
+theorem flux_eq_of_homotopy (σ : closedForms J M 2)
+    (hΦ : Φ.final ∈ SmoothForm.diffeomorphStabilizer σ.1)
+    (hG : ContMDiff ((J.prod (𝓡∂ 1)).prod (𝓡∂ 1)) J ∞ G)
+    (hG₀ : ∀ p, G (p, 0) = Φ.cylinderMap p) (hG₁ : ∀ p, G (p, 1) = Ψ.cylinderMap p)
+    (h₀ : ∀ x s, G ((x, 0), s) = x) (h₁ : ∀ x s, G ((x, 1), s) = Φ.final x) :
+    Ψ.flux σ (Φ.final_eq_of_homotopy hG₁ h₁ ▸ hΦ) = Φ.flux σ hΦ := by
+  rw [flux_def, flux_def, ← sub_eq_zero, ← map_sub, deRhamCohomology.mk_eq_zero_iff]
+  exact Φ.fluxForm_sub_fluxForm_mem_exactForms
+    ((SmoothForm.isClosed_def _).mpr ((mem_closedForms J σ.1).mp σ.2)) hG hG₀ hG₁ h₀ h₁
+
+/-- A diffeotopy whose motion is homotopic, through a smooth homotopy fixing both time ends, to the
+constant motion has zero flux with respect to every closed two-form. Its final diffeomorphism is
+then the identity, so this applies to the loops of diffeomorphisms that are contractible relative
+to their ends. -/
+theorem flux_eq_zero_of_homotopy_refl (σ : closedForms J M 2)
+    (hΦ : Φ.final ∈ SmoothForm.diffeomorphStabilizer σ.1)
+    (hG : ContMDiff ((J.prod (𝓡∂ 1)).prod (𝓡∂ 1)) J ∞ G)
+    (hG₀ : ∀ p, G (p, 0) = Φ.cylinderMap p) (hG₁ : ∀ p, G (p, 1) = p.1)
+    (h₀ : ∀ x s, G ((x, 0), s) = x) (h₁ : ∀ x s, G ((x, 1), s) = x) :
+    Φ.flux σ hΦ = 0 := by
+  -- Running `G` backwards in `s` joins the constant motion to the motion of `Φ`.
+  have hfinal : Φ.final = (refl J ∞ M).final :=
+    (refl J ∞ M).final_eq_of_homotopy (G := fun q ↦ G (q.1, unitInterval.symm q.2))
+      (fun p ↦ by rw [unitInterval.symm_one, hG₀]) fun x s ↦ by
+        rw [h₁, final_refl, Diffeomorph.coe_refl, id_eq]
+  rw [← Φ.flux_eq_of_homotopy σ hΦ hG hG₀ (fun p ↦ by rw [hG₁, cylinderMap_apply, refl_apply])
+    h₀ fun x s ↦ by rw [h₁, hfinal, final_refl, Diffeomorph.coe_refl, id_eq], flux_refl]
+
+end Homotopy
 
 end Diffeotopy
 

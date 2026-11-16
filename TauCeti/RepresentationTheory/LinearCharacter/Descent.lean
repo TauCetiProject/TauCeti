@@ -31,7 +31,7 @@ public section
 
 universe u v w
 
-namespace TauCeti
+namespace MonoidHom
 
 variable {K : Type u} {L : Type v} [CommSemiring K] [CommRing L] [IsDomain L]
   [Algebra K L] [FaithfulSMul K L]
@@ -39,7 +39,7 @@ variable {G : Type w} [Monoid G]
 
 /-- A primitive `n`-th root in a base semiring descends every linear character of a monoid whose
 exponent divides the nonzero integer `n`, along a faithful algebra into an integral domain. -/
-theorem _root_.MonoidHom.existsUnique_unitsMap_comp_eq_of_isPrimitiveRoot (χ : G →* Lˣ)
+theorem existsUnique_unitsMap_comp_eq_of_isPrimitiveRoot (χ : G →* Lˣ)
     {n : ℕ} [NeZero n] {ζ : K} (hζ : IsPrimitiveRoot ζ n) (hG : Monoid.exponent G ∣ n) :
     ∃! ψ : G →* Kˣ, (Units.map (algebraMap K L : K →* L)).comp ψ = χ := by
   have hf := FaithfulSMul.algebraMap_injective K L
@@ -51,4 +51,4 @@ theorem _root_.MonoidHom.existsUnique_unitsMap_comp_eq_of_isPrimitiveRoot (χ : 
   refine ⟨(hζ.isUnit (NeZero.ne n)).unit ^ i, ?_⟩
   simpa using hi
 
-end TauCeti
+end MonoidHom

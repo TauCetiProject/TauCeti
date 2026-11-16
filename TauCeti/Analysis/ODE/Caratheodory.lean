@@ -29,7 +29,9 @@ that is `x = ODE.picard (fun s y ↦ M s y + F s) a x₀ x` on `[a, b]`, for `x`
 (`TauCeti.exists_continuousOn_eq_forall_mem_Icc_eq_picard`) and that the solution is unique
 (`TauCeti.eqOn_of_forall_mem_Icc_eq_picard`). For continuous coefficients and classical
 solutions on the whole line, `Continuous.eq_of_hasDerivAt_clm_apply` deduces uniqueness for
-`v' = B(t) v` from Mathlib's `ODE_solution_unique_of_mem_Ioo`.
+`v' = B(t) v` from Mathlib's `ODE_solution_unique_of_mem_Ioo`, and
+`Continuous.eqOn_Ici_of_hasDerivAt_clm_apply` does the same in forward time on a half-line
+`[a, ∞)` from `ODE_solution_unique_of_mem_Icc_right`.
 
 Linear equations with merely measurable, bounded coefficients arise as the Galerkin
 approximations of linear parabolic equations, whose coefficients are only measurable in time.
@@ -249,3 +251,21 @@ theorem Continuous.eq_of_hasDerivAt_clm_apply {X : Type*} [NormedAddCommGroup X]
   exact ODE_solution_unique_of_mem_Ioo (v := fun s ↦ B s) (s := fun _ ↦ univ) hLip
     (t₀ := t₀) ⟨by grind, by grind⟩ (fun s _ ↦ ⟨hv s, mem_univ _⟩)
     (fun s _ ↦ ⟨hw s, mem_univ _⟩) h ⟨by grind, by grind⟩
+
+/-- **Forward uniqueness for time-dependent linear equations.** Two solutions of `v' = B(t) v` on
+the half-line `[a, ∞)`, for a continuous family `B` of bounded operators, that agree at time `a`
+agree on `[a, ∞)`. The equation is only required at times `t ≥ a` (with a two-sided derivative at
+`a`), so the two solutions may come from equations that only agree on `[a, ∞)`. -/
+theorem Continuous.eqOn_Ici_of_hasDerivAt_clm_apply {X : Type*} [NormedAddCommGroup X]
+    [NormedSpace ℝ X] {B : ℝ → X →L[ℝ] X} (hB : Continuous B) {v w : ℝ → X} {a : ℝ}
+    (hv : ∀ t, a ≤ t → HasDerivAt v (B t (v t)) t) (hw : ∀ t, a ≤ t → HasDerivAt w (B t (w t)) t)
+    (h : v a = w a) : EqOn v w (Ici a) := by
+  intro t (ht : a ≤ t)
+  obtain ⟨C, hC⟩ := isCompact_Icc.exists_bound_of_continuousOn (hB.continuousOn (s := Icc a t))
+  have hLip (s : ℝ) (hs : s ∈ Ico a t) : LipschitzOnWith (Real.toNNReal C) (B s) univ :=
+    ((B s).lipschitzWith.weaken (NNReal.le_toNNReal_of_coe_le (by
+      simpa using hC s (Ico_subset_Icc_self hs)))).lipschitzOnWith
+  exact ODE_solution_unique_of_mem_Icc_right (v := fun s ↦ B s) (s := fun _ ↦ univ) hLip
+    (HasDerivAt.continuousOn fun s hs ↦ hv s hs.1) (fun s hs ↦ (hv s hs.1).hasDerivWithinAt)
+    (fun _ _ ↦ mem_univ _) (HasDerivAt.continuousOn fun s hs ↦ hw s hs.1)
+    (fun s hs ↦ (hw s hs.1).hasDerivWithinAt) (fun _ _ ↦ mem_univ _) h ⟨ht, le_rfl⟩

@@ -186,8 +186,6 @@ theorem exists_norm_spatialOperatorL_sub_const_apply_le (hα₀ : 0 < α) (hα :
   have hK : (K : ℝ) * (3 * t ^ (α : ℝ)) ≤ η := by
     rw [htα, mul_div_assoc', mul_div_assoc', div_le_iff₀ (by positivity)]
     nlinarith [K.coe_nonneg]
-  have hu₀ := norm_nonneg u
-  have hv₀ := norm_nonneg (valueL u)
   have hA' := NNReal.coe_le_coe.2 hA
   calc
     _ ≤ (K : ℝ) * ((t ^ (α : ℝ) + 2 * t ^ (α : ℝ)) * ‖u‖ + 32 * ‖valueL u‖ / t ^ 2) := by

@@ -33,11 +33,11 @@ public section
 
 open Filter Set Topology Uniformity
 
-namespace TauCeti
+namespace Continuous
 
 /-- A jointly continuous family `Φ` converges uniformly on a compact set `k` to `Φ q` along any
 parameter family `p` tending to `q`. -/
-theorem _root_.Continuous.tendstoUniformlyOn_of_tendsto {α β γ ι : Type*} [TopologicalSpace α]
+theorem tendstoUniformlyOn_of_tendsto {α β γ ι : Type*} [TopologicalSpace α]
     [TopologicalSpace β] [UniformSpace γ] {Φ : α → β → γ} (hΦ : Continuous (Function.uncurry Φ))
     {k : Set β} (hk : IsCompact k) {L : Filter ι} {p : ι → α} {q : α} (hp : Tendsto p L (𝓝 q)) :
     TendstoUniformlyOn (fun i => Φ (p i)) (Φ q) L k := by
@@ -48,9 +48,13 @@ theorem _root_.Continuous.tendstoUniformlyOn_of_tendsto {α β γ ι : Type*} [T
   filter_upwards [hp hv] with i hi x hx
   exact hvu (p i) hi x hx
 
+end Continuous
+
+namespace IsCompact
+
 /-- A family `Φ` converges uniformly on a compact set `k` to `Φ q` as the parameter tends to `q`,
 as soon as it is jointly continuous at every point of `{q} × k`. -/
-theorem _root_.IsCompact.tendstoUniformlyOn_of_continuousAt {α β γ : Type*} [TopologicalSpace α]
+theorem tendstoUniformlyOn_of_continuousAt {α β γ : Type*} [TopologicalSpace α]
     [TopologicalSpace β] [UniformSpace γ] {Φ : α → β → γ} {k : Set β} (hk : IsCompact k) {q : α}
     (hΦ : ∀ x ∈ k, ContinuousAt (Function.uncurry Φ) (q, x)) :
     TendstoUniformlyOn Φ (Φ q) (𝓝 q) k := by
@@ -63,4 +67,4 @@ theorem _root_.IsCompact.tendstoUniformlyOn_of_continuousAt {α β γ : Type*} [
   filter_upwards [hq (mem_nhds_left _ hv), hΦ x hx (mem_nhds_left _ hv)] with z h₁ h₂
   exact hvu (SetRel.prodMk_mem_comp (hvsymm h₁) h₂)
 
-end TauCeti
+end IsCompact

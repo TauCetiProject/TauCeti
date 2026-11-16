@@ -184,32 +184,41 @@ theorem maslovIndex_map_polarUnitary {A : GLSymplectic n ℝ} (γ : Path A A) :
     maslovIndex (γ.map continuous_inclusion_polarUnitary) = maslovIndex γ :=
   Circle.degree_congr _ _ fun t ↦ maslovPhase_inclusion_polarUnitary (γ t)
 
+/-- **Deforming a loop to its orthogonal polar factors.** For every continuous map `g` from the
+symplectic group to the circle, the loop `g ∘ γ` has the degree of the loop of `g` on the
+orthogonal polar factors of `γ`: the polar deformation `P^{1-s} U` of `A = P U` stays symplectic. -/
+theorem degree_map_inclusion_polarUnitary {A : GLSymplectic n ℝ} (γ : Path A A)
+    {g : GLSymplectic n ℝ → Circle} (hg : Continuous g) :
+    Circle.degree ((γ.map continuous_inclusion_polarUnitary).map hg) =
+      Circle.degree (γ.map hg) := by
+  let F : C(I × I, Circle) :=
+    ⟨fun p ↦ g (polarHomotopy (p.1, γ p.2)),
+      hg.comp (polarHomotopy.continuous.comp
+        (continuous_fst.prodMk (γ.continuous.comp continuous_snd)))⟩
+  refine (Circle.degree_eq_of_homotopy (γ.map hg) _ F (fun t ↦ ?_) (fun t ↦ ?_)
+    (fun s ↦ ?_)).symm
+  · simp [F]
+  · simp [F]
+  · simp [F]
+
 /-- **The product axiom.** The pointwise product of two loops of symplectic matrices has the sum
 of their Maslov indices. -/
 theorem maslovIndex_mul {A B : GLSymplectic n ℝ} (γ₁ : Path A A) (γ₂ : Path B B) :
     maslovIndex (γ₁.mul γ₂) = maslovIndex γ₁ + maslovIndex γ₂ := by
   -- Contract the positive polar factors of both loops at once, through symplectic matrices.
-  let D : GLSymplectic n ℝ × I → GLSymplectic n ℝ := fun p ↦
-    ⟨polarDeformation (p.1 : GL (n ⊕ n) ℝ) p.2, polarDeformation_mem p.1.2 _⟩
-  have hD : Continuous D := by
-    refine Continuous.subtype_mk ?_ _
-    have h := (polarHomotopy (n ⊕ n) ℝ).continuous.comp
-      (continuous_snd.prodMk (continuous_subtype_val.comp continuous_fst) :
-        Continuous fun p : GLSymplectic n ℝ × I ↦ (p.2, (p.1 : GL (n ⊕ n) ℝ)))
-    simpa only [Function.comp_def, polarHomotopy_apply] using h
-  have hD0 (A : GLSymplectic n ℝ) : D (A, 0) = A := Subtype.ext (by simp [D])
-  have hD1 (A : GLSymplectic n ℝ) : D (A, 1) = Subgroup.inclusion inf_le_left (polarUnitary A) :=
-    Subtype.ext (Units.ext (by simp [D]))
+  let D := polarHomotopy (n := n)
   let F : C(I × I, Circle) :=
-    ⟨fun p ↦ maslovPhase (D (γ₁ p.2, p.1) * D (γ₂ p.2, p.1)),
+    ⟨fun p ↦ maslovPhase (D (p.1, γ₁ p.2) * D (p.1, γ₂ p.2)),
       continuous_maslovPhase.comp
-        ((hD.comp ((γ₁.continuous.comp continuous_snd).prodMk continuous_fst)).mul
-          (hD.comp ((γ₂.continuous.comp continuous_snd).prodMk continuous_fst)))⟩
+        ((D.continuous.comp (continuous_fst.prodMk (γ₁.continuous.comp continuous_snd))).mul
+          (D.continuous.comp (continuous_fst.prodMk (γ₂.continuous.comp continuous_snd))))⟩
   rw [maslovIndex, maslovIndex, maslovIndex, ← Circle.degree_mul]
   refine Circle.degree_eq_of_homotopy _ _ F (fun t ↦ ?_) (fun t ↦ ?_) (fun s ↦ ?_)
-  · simp only [F, ContinuousMap.coe_mk, hD0, Path.map_coe, Function.comp_apply, Path.mul_apply]
+  · simp only [F, D, ContinuousMap.coe_mk, ContinuousMap.Homotopy.apply_zero,
+      ContinuousMap.id_apply, Path.map_coe, Function.comp_apply, Path.mul_apply]
   · -- After the contraction both factors are orthogonal, where `ρ` is multiplicative.
-    simp only [F, ContinuousMap.coe_mk, hD1, Path.mul_apply, Path.map_coe, Function.comp_apply]
+    simp only [F, D, ContinuousMap.coe_mk, ContinuousMap.Homotopy.apply_one, Path.mul_apply,
+      Path.map_coe, Function.comp_apply]
     rw [maslovPhase_inclusion_mul, maslovPhase_inclusion_polarUnitary,
       maslovPhase_inclusion_polarUnitary]
   · simp only [F, ContinuousMap.coe_mk, Path.source, Path.target]

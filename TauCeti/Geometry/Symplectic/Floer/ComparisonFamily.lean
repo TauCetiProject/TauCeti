@@ -56,8 +56,9 @@ with three necks is `TauCeti.Floer.cappedComparisonPerturbation`.
 
 ## Main results
 
-* `TauCeti.Floer.contDiff_cutoffNeckFamily`: the family is smooth jointly in `R`, the domain
-  point and the target point.
+* `TauCeti.Floer.contMDiff_cutoffNeckFamily`: the family is smooth jointly in `R`, the domain
+  point and the point of a manifold target; `TauCeti.Floer.contDiff_cutoffNeckFamily` is the
+  vector-space case.
 * `TauCeti.Floer.cutoffNeckFamily_comparison_zero`,
   `TauCeti.Floer.cutoffNeckFamily_comparison_of_mem_Icc`,
   `TauCeti.Floer.cutoffNeckFamily_comparison_of_two_le`: for the chosen `ρ` and `L`, the family
@@ -200,6 +201,19 @@ theorem cutoffNeckFamily_of_cutoff_eq_one (K : ℝ × ℝ → X → ℝ) (h : ρ
     cutoffNeckFamily ρ L c K R = neckStretch c (L R) K := by
   funext z x
   simp [h]
+
+/-- **Smoothness of the family, for a manifold target.** For smooth `ρ` and `L ≥ 0`, and a
+smooth datum `K` on the product of the domain with a manifold `M` which is independent of `s` near
+the line `s = c`, the family is smooth jointly in the parameter `R`, the domain point and the
+point of `M`. -/
+theorem contMDiff_cutoffNeckFamily {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
+    {n : WithTop ℕ∞} (hρ : ContDiff ℝ n ρ) (hL : ContDiff ℝ n L) (hL₀ : ∀ R, 0 ≤ L R)
+    {K : ℝ × ℝ → M → ℝ} (hK : ∀ᶠ s in 𝓝 c, ∀ t, K (s, t) = K (c, t))
+    (hKd : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) n (uncurry K)) :
+    ContMDiff (𝓘(ℝ, ℝ).prod (𝓘(ℝ, ℝ × ℝ).prod I)) 𝓘(ℝ) n
+      fun q : ℝ × (ℝ × ℝ) × M ↦ cutoffNeckFamily ρ L c K q.1 q.2.1 q.2.2 :=
+  (hρ.contMDiff.comp contMDiff_fst).smul (contMDiff_neckStretch_family hL hL₀ hK hKd)
 
 /-- **Smoothness of the family.** For smooth `ρ` and `L ≥ 0`, and a smooth datum `K` which is
 independent of `s` near the line `s = c`, the family is smooth jointly in the parameter `R`, the

@@ -79,7 +79,7 @@ theorem IsUnramified.of_adjoin_range_eq_top [IsUnramified K L] (ι : L →ₐ[K]
   · -- `M = F(b)`, because `L = K(a)`.
     have hKa : IntermediateField.adjoin K {algebraMap 𝒪[L] L a} = ⊤ :=
       TauCeti.IntermediateField.adjoin_eq_top_of_algebra_adjoin_eq_top ha
-    rw [← h, TauCeti.IntermediateField.adjoin_range_eq_adjoin_image ι hKa, Set.image_singleton]
+    rw [← h, ι.adjoin_range_eq_adjoin_image hKa, Set.image_singleton]
     -- `algebraMap 𝒪[L] L` is the subring inclusion, and `b` is the image of `a`.
     rw [Algebra.algebraMap_ofSubsemiring_apply, Algebra.algebraMap_ofSubsemiring_apply,
       AlgHom.coe_integerRingHom_apply]

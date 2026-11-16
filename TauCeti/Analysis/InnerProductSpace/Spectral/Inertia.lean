@@ -36,6 +36,30 @@ Their dimensions do not depend on the inner product. This identifies, for
 instance, the ranks of the negative and positive spectral subbundles of a field of symmetric forms
 with the index and coindex of the form.
 
+For the Riesz operator `B♯` of a real bilinear form `B`, the form `B` itself is negative definite
+on the negative spectral subspace of `B♯` and positive definite on the positive one. Together with
+the smooth dependence of the spectral projections on an invertible self-adjoint operator
+(`TauCeti.Analysis.InnerProductSpace.Spectral.Projection`), this splits a smooth family of
+nondegenerate symmetric bilinear forms into smooth families of negative and positive definite
+subspaces of the dimensions prescribed by Sylvester's law of inertia.
+
+## Main results
+
+* `InnerProductSpace.finrank_pointSpectralSubspace_Iio_continuousLinearMapOfBilin`,
+  `InnerProductSpace.finrank_pointSpectralSubspace_Ioi_continuousLinearMapOfBilin`: the negative
+  and positive indices of inertia of a symmetric form are the dimensions of the negative and
+  positive spectral subspaces of its Riesz operator.
+* `InnerProductSpace.pointSpectralSubspace_Iio_continuousLinearMapOfBilin_neg`: negating the form
+  exchanges the negative and positive spectral subspaces.
+* `InnerProductSpace.pointSpectralSubspace_continuousLinearMapOfBilin_bilinearComp`,
+  `InnerProductSpace.pointSpectralSubspace_continuousLinearMapOfBilin_eq_map_synthesisMap`: the
+  spectral subspaces are natural for linear isometry equivalences, in particular for the
+  coordinates of an orthonormal basis.
+* `InnerProductSpace.apply_self_neg_of_mem_pointSpectralSubspace_Iio_continuousLinearMapOfBilin`,
+  `InnerProductSpace.apply_self_pos_of_mem_pointSpectralSubspace_Ioi_continuousLinearMapOfBilin`:
+  a real bilinear form with a self-adjoint Riesz operator is negative definite on the negative
+  spectral subspace of that operator and positive definite on the positive one.
+
 ## References
 
 * J. J. Sylvester, *A demonstration of the theorem that every homogeneous quadratic polynomial is
@@ -128,5 +152,22 @@ theorem finrank_pointSpectralSubspace_Ioi_continuousLinearMapOfBilin
     |>.sigPos_eq_finrank_pointSpectralSubspace
       (fun v ↦ by simp [continuousLinearMapOfBilin_apply]) |>.symm
 
-end InnerProductSpace
+/-- A real bilinear form with a self-adjoint Riesz operator is negative definite on the negative
+spectral subspace of that operator. -/
+theorem apply_self_neg_of_mem_pointSpectralSubspace_Iio_continuousLinearMapOfBilin
+    {B : W →L[ℝ] W →L[ℝ] ℝ} (hB : IsSelfAdjoint (continuousLinearMapOfBilin B)) {u : W}
+    (hu : u ∈ Module.End.pointSpectralSubspace (continuousLinearMapOfBilin B).toLinearMap (Iio 0))
+    (hu0 : u ≠ 0) : B u u < 0 := by
+  simpa [continuousLinearMapOfBilin_apply] using
+    hB.isSymmetric.re_inner_apply_self_lt_zero_of_mem_pointSpectralSubspace subset_rfl hu hu0
 
+/-- A real bilinear form with a self-adjoint Riesz operator is positive definite on the positive
+spectral subspace of that operator. -/
+theorem apply_self_pos_of_mem_pointSpectralSubspace_Ioi_continuousLinearMapOfBilin
+    {B : W →L[ℝ] W →L[ℝ] ℝ} (hB : IsSelfAdjoint (continuousLinearMapOfBilin B)) {u : W}
+    (hu : u ∈ Module.End.pointSpectralSubspace (continuousLinearMapOfBilin B).toLinearMap (Ioi 0))
+    (hu0 : u ≠ 0) : 0 < B u u := by
+  simpa [continuousLinearMapOfBilin_apply] using
+    hB.isSymmetric.re_inner_apply_self_pos_of_mem_pointSpectralSubspace subset_rfl hu hu0
+
+end InnerProductSpace

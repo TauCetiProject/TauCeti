@@ -49,14 +49,21 @@ the energy is nonnegative, so `∫ R_K(u) ≤ ∫ u^* ω`
 area is below its integrated curvature is not a solution. For closed `ω` and a solution extending
 to the sphere in the class `A`, the bound reads `∫ R_K(u) ≤ ω(A)`.
 
-For a symplectic vector space target the integrated curvature of `K_R`, `R ≥ 0`, is at most
+For a manifold target the integrated curvature of `K_R`, `R ≥ 0`, is at most
 `2 (B₀ + B₁ + B_∞)` for bounds `|H_q| ≤ B_q` of the end Hamiltonians
-(`SmoothTwoForm.abs_setIntegral_hamiltonianCurvature_cappedComparisonPerturbation_le` for the
-constant form `SymplecticForm.constSmooth`). So the energy differs from the symplectic area by at
-most `2 (B₀ + B₁ + B_∞)`, uniformly over the family
-(`SymplecticForm.abs_integral_floerEnergyDensity_cappedComparisonPerturbation_sub_le`). This is
-the energy bound, uniform in `R` for a fixed area, under which compactness of the comparison
-family is to be proved.
+(`SmoothTwoForm.abs_setIntegral_hamiltonianCurvature_cappedComparisonPerturbation_le`).
+So the energy differs from the symplectic area by at
+most `2 (B₀ + B₁ + B_∞)`, uniformly over the family; see
+`SmoothTwoForm.IsNondegenerate.abs_integral_floerEnergyDensity_cappedComparisonPerturbation_sub_le`.
+The same estimate holds over any measurable region containing the support of the datum, with
+regularity required only near that support. For a finite-energy solution with tame almost complex
+structures it gives the lower area bound `-2 (B₀ + B₁ + B_∞) ≤ ∫ u^* ω`
+(`SmoothTwoForm.IsNondegenerate.neg_two_mul_sum_le_integral_eval₂_of_cappedComparisonPerturbation`).
+These statements retain explicit integrability hypotheses on the energy and curvature. This is
+the energy bound, uniform in `R` for a fixed area, from which compactness of the comparison family
+over compact windows of `R` in the plane chart follows (in the namespace `SymplecticForm`,
+`exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_cappedComparison`).
+Compactness near the pole `∞` and along the long-neck end `R → ∞` is still to be proved.
 
 ## Main results
 
@@ -69,8 +76,12 @@ family is to be proved.
   energy identity along the comparison family.
 * `SmoothTwoForm.IsNondegenerate.integral_hamiltonianCurvature_cappedPerturbation_le`: the area of
   a solution bounds its integrated curvature.
-* `SymplecticForm.abs_integral_floerEnergyDensity_cappedComparisonPerturbation_sub_le`: the energy
-  bound uniform over the comparison family, for a vector space target.
+* [`SmoothTwoForm.IsNondegenerate.abs_setIntegral_floerEnergyDensity_cappedComparisonPerturbation_sub_le`](https://taucetiproject.org/docs/TauCeti/Geometry/Symplectic/Floer/PairOfPants/Energy/Capped.html#TauCeti.SmoothTwoForm.IsNondegenerate.abs_setIntegral_floerEnergyDensity_cappedComparisonPerturbation_sub_le):
+  the energy bound over a measurable region containing the support of the comparison datum.
+* [`SmoothTwoForm.IsNondegenerate.abs_integral_floerEnergyDensity_cappedComparisonPerturbation_sub_le`](https://taucetiproject.org/docs/TauCeti/Geometry/Symplectic/Floer/PairOfPants/Energy/Capped.html#TauCeti.SmoothTwoForm.IsNondegenerate.abs_integral_floerEnergyDensity_cappedComparisonPerturbation_sub_le):
+  the energy bound uniform over the comparison family on manifold targets.
+* `SmoothTwoForm.IsNondegenerate.neg_two_mul_sum_le_integral_eval₂_of_cappedComparisonPerturbation`:
+  the corresponding lower area bound for Floer solutions.
 
 ## References
 
@@ -144,7 +155,7 @@ theorem IsNondegenerate.integral_floerEnergyDensity_cappedPerturbation [FiniteDi
 `C¹` Hamiltonians `H_q` on a finite-dimensional manifold with a nondegenerate two-form, with
 components `K_s(z) = K(z)(1)` and `K_t(z) = K(z)(i)` in the global coordinate `z = s + i t` of `ℂ`.
 Let `u` be `C¹` over an open neighbourhood `U` of the truncation `S_{L + 3}`. Then for every
-measurable set `D ⊇ S_{L + 3}` over which the energy density and the curvature `R_K(u)` are
+set `D ⊇ S_{L + 3}` over which the energy density and the curvature `R_K(u)` are
 integrable,
 
 `∫_D E = ∫_D u^* ω - ∫_D R_K(u)`. -/
@@ -153,7 +164,7 @@ theorem IsNondegenerate.setIntegral_floerEnergyDensity_cappedPerturbation [Finit
     (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q))) (a L : ℝ)
     {U D : Set (ℝ × ℝ)} (hU : IsOpen U)
     (hTU : Complex.equivRealProdCLM.symm ⁻¹' truncation (L + 3) ⊆ U)
-    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u U) (hD : MeasurableSet D)
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u U)
     (hTD : Complex.equivRealProdCLM.symm ⁻¹' truncation (L + 3) ⊆ D)
     (hE : IntegrableOn (ω.floerEnergyDensity
       (fun z x ↦ cappedPerturbation a L H (Complex.equivRealProdCLM.symm z) x 1)
@@ -175,10 +186,10 @@ theorem IsNondegenerate.setIntegral_floerEnergyDensity_cappedPerturbation [Finit
   hω.setIntegral_floerEnergyDensity_of_forall_notMem_eq_zero hU hu
     (contMDiff_cappedPerturbation_apply hH hHs a L 1).contMDiffOn
     (contMDiff_cappedPerturbation_apply hH hHs a L Complex.I).contMDiffOn
-    (Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2 (isCompact_truncation _)) hTU
+    (isCompact_preimage_truncation _) hTU
     (fun _ hz ↦ cappedPerturbation_apply_eq_zero_of_notMem_preimage_truncation hz 1)
     (fun _ hz ↦ cappedPerturbation_apply_eq_zero_of_notMem_preimage_truncation hz Complex.I)
-    hD hTD hE hR
+    hTD hE hR
 
 /-- **The energy identity along the comparison family.** For every `R`, the energy of a map of the
 plane for the datum `K_R` of the comparison family is its symplectic area minus the integral of
@@ -252,6 +263,102 @@ theorem IsNondegenerate.integral_hamiltonianCurvature_cappedPerturbation_le
     fun z ↦ floerEnergyDensity_nonneg hω (hJ z) (hfloer z)
   linarith
 
+/-- The energy differs from area by at most `2 ∑ q, B q`, uniformly over the capped comparison
+family on a manifold target. The region `D` need only contain the support truncation, and `u`
+need only be `C¹` on an open neighbourhood of that truncation. No regularity outside this
+neighbourhood is required; integrability of energy and curvature over `D` is retained explicitly. -/
+theorem IsNondegenerate.abs_setIntegral_floerEnergyDensity_cappedComparisonPerturbation_sub_le
+    [FiniteDimensional ℝ E] (hω : ω.IsNondegenerate) (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q)))
+    {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q) {R : ℝ} (hR₀ : 0 ≤ R)
+    {U D : Set (ℝ × ℝ)} (hU : IsOpen U)
+    (hTU : Complex.equivRealProdCLM.symm ⁻¹' truncation (comparisonNeckLength R + 3) ⊆ U)
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u U)
+    (hTD : Complex.equivRealProdCLM.symm ⁻¹' truncation (comparisonNeckLength R + 3) ⊆ D)
+    (hE : IntegrableOn (ω.floerEnergyDensity
+      (fun z x ↦ cappedComparisonPerturbation H R (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ cappedComparisonPerturbation H R (Complex.equivRealProdCLM.symm z) x Complex.I)
+      u) D)
+    (hR : IntegrableOn (fun z ↦ ω.hamiltonianCurvature
+      (fun z x ↦ cappedComparisonPerturbation H R (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ cappedComparisonPerturbation H R (Complex.equivRealProdCLM.symm z) x Complex.I)
+      z (u z)) D) :
+    |(∫ z in D, ω.floerEnergyDensity
+        (fun z x ↦ cappedComparisonPerturbation H R (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ cappedComparisonPerturbation H R (Complex.equivRealProdCLM.symm z) x Complex.I)
+        u z) -
+      ∫ z in D, (SmoothBundleForm.eval₂ ω (u z)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)| ≤ 2 * ∑ q, B q := by
+  rw [cappedComparisonPerturbation_def] at hE hR
+  have hid := hω.setIntegral_floerEnergyDensity_cappedPerturbation hH hHs
+    (comparisonCutoff R) (comparisonNeckLength R) hU hTU hu hTD hE hR
+  rw [← cappedComparisonPerturbation_def] at hid
+  rw [hid, sub_sub_cancel_left, abs_neg]
+  exact ω.abs_setIntegral_hamiltonianCurvature_cappedComparisonPerturbation_le hH hHs hB hR₀ u D
+
+/-- For a `C¹` map into a manifold, with integrable energy and curvature, the energy of every
+member of the capped comparison family differs from its area by at most `2 ∑ q, B q`. The
+constant is independent of the neck lengths and remains valid at the zero-Hamiltonian endpoint. -/
+theorem IsNondegenerate.abs_integral_floerEnergyDensity_cappedComparisonPerturbation_sub_le
+    [FiniteDimensional ℝ E] (hω : ω.IsNondegenerate) (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q)))
+    {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q) {R : ℝ} (hR₀ : 0 ≤ R)
+    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u)
+    (hE : Integrable (ω.floerEnergyDensity
+      (fun z x ↦ cappedComparisonPerturbation H R (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ cappedComparisonPerturbation H R (Complex.equivRealProdCLM.symm z) x Complex.I)
+      u))
+    (hR : Integrable fun z ↦ ω.hamiltonianCurvature
+      (fun z x ↦ cappedComparisonPerturbation H R (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ cappedComparisonPerturbation H R (Complex.equivRealProdCLM.symm z) x Complex.I)
+      z (u z)) :
+    |(∫ z, ω.floerEnergyDensity
+        (fun z x ↦ cappedComparisonPerturbation H R (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ cappedComparisonPerturbation H R (Complex.equivRealProdCLM.symm z) x Complex.I)
+        u z) -
+      ∫ z, (SmoothBundleForm.eval₂ ω (u z)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)| ≤ 2 * ∑ q, B q := by
+  simpa only [Measure.restrict_univ] using
+    hω.abs_setIntegral_floerEnergyDensity_cappedComparisonPerturbation_sub_le hH hHs hB hR₀
+      isOpen_univ (subset_univ _) hu.contMDiffOn (subset_univ _)
+      hE.integrableOn hR.integrableOn
+
+/-- A finite-energy Floer solution of the capped comparison family, with tame almost complex
+structures, has area at least `-2 ∑ q, B q`, uniformly in the comparison parameter. In particular
+maps below this area threshold cannot be solutions, even along arbitrarily long necks. -/
+theorem IsNondegenerate.neg_two_mul_sum_le_integral_eval₂_of_cappedComparisonPerturbation
+    [FiniteDimensional ℝ E] (hω : ω.IsNondegenerate) (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q)))
+    {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q) {R : ℝ} (hR₀ : 0 ≤ R)
+    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u)
+    {J : ∀ z, AlmostComplexStructure (TangentSpace I (u z))}
+    (hJ : ∀ z, (hω.symplecticFormAt (u z)).Tames (J z))
+    (hfloer : ∀ z, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
+      (ω.perturbedMFDeriv
+        (fun z x ↦ cappedComparisonPerturbation H R (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ cappedComparisonPerturbation H R (Complex.equivRealProdCLM.symm z) x Complex.I)
+        u z).toLinearMap)
+    (hE : Integrable (ω.floerEnergyDensity
+      (fun z x ↦ cappedComparisonPerturbation H R (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ cappedComparisonPerturbation H R (Complex.equivRealProdCLM.symm z) x Complex.I)
+      u))
+    (hR : Integrable fun z ↦ ω.hamiltonianCurvature
+      (fun z x ↦ cappedComparisonPerturbation H R (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ cappedComparisonPerturbation H R (Complex.equivRealProdCLM.symm z) x Complex.I)
+      z (u z)) :
+    -(2 * ∑ q, B q) ≤ ∫ z, (SmoothBundleForm.eval₂ ω (u z)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ) := by
+  have hbound := hω.abs_integral_floerEnergyDensity_cappedComparisonPerturbation_sub_le
+    hH hHs hB hR₀ hu hE hR
+  have hnonneg := integral_nonneg (μ := volume) (f := ω.floerEnergyDensity
+    (fun z x ↦ cappedComparisonPerturbation H R (Complex.equivRealProdCLM.symm z) x 1)
+    (fun z x ↦ cappedComparisonPerturbation H R (Complex.equivRealProdCLM.symm z) x Complex.I) u)
+    fun z ↦ floerEnergyDensity_nonneg hω (hJ z) (hfloer z)
+  linarith [(abs_le.mp hbound).2]
+
 end TauCeti.SmoothTwoForm
 
 namespace TauCeti.SymplecticForm
@@ -288,7 +395,7 @@ theorem setIntegral_floerEnergyDensity_cappedPerturbation (ω : SymplecticForm V
   ω.setIntegral_floerEnergyDensity_of_forall_notMem_eq_zero hU hu
     (contDiff_cappedPerturbation_apply hH hHs a L 1).contDiffOn
     (contDiff_cappedPerturbation_apply hH hHs a L Complex.I).contDiffOn
-    (Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2 (isCompact_truncation _)) hTU
+    (isCompact_preimage_truncation _) hTU
     (fun _ hz ↦ cappedPerturbation_apply_eq_zero_of_notMem_preimage_truncation hz 1)
     (fun _ hz ↦ cappedPerturbation_apply_eq_zero_of_notMem_preimage_truncation hz Complex.I)
     hD hTD hE

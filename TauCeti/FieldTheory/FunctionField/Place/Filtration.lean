@@ -174,6 +174,13 @@ theorem filtration_antitone : Antitone P.filtration := fun a b hab z hz ↦
   P.mem_filtration_iff.mpr
     ((P.mem_filtration_iff.mp hz).trans (WithZero.exp_le_exp.mpr (by omega)))
 
+/-- A function congruent modulo the `m`-th filtration to a regular function is regular. -/
+theorem mem_integers_of_sub_mem_filtration {y w : F} (hy : y ∈ P.integers) {m : ℕ}
+    (hw : w - y ∈ P.filtration m) : w ∈ P.integers := by
+  have := add_mem (P.filtration_antitone (Nat.cast_nonneg m) hw)
+    (P.mem_filtration_zero_iff.mpr hy)
+  rwa [sub_add_cancel, mem_filtration_zero_iff] at this
+
 /-- A function of order at least `a` and one of order at least `b` have a product of order at
 least `a + b`. -/
 theorem mul_mem_filtration {a b : ℤ} {z w : F} (hz : z ∈ P.filtration a)

@@ -31,6 +31,8 @@ preimages of those of `f`, with the same nondegeneracy and indices.
   nondegenerate critical points.
 * `IsLocalDiffeomorphAt.manifoldMorseIndex_comp`: at a critical point the Morse index of `f ∘ π`
   at `x` is that of `f` at `π x`.
+* `TauCeti.IsMorse.comp_isLocalDiffeomorph`: a Morse function pulls back to a Morse function along
+  a smooth local diffeomorphism, for instance to every open submanifold.
 
 ## References
 
@@ -39,10 +41,10 @@ preimages of those of `f`, with the same nondegeneracy and indices.
 
 public section
 
-open Filter Function Set Topology
+open Filter Function Set Topology TauCeti
 open scoped ContDiff Manifold
 
-namespace TauCeti
+namespace IsLocalDiffeomorphAt
 
 variable {E H M M' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [I.Boundaryless] [TopologicalSpace M] [ChartedSpace H M]
@@ -52,7 +54,7 @@ variable {E H M M' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topologi
 /-- **Nondegeneracy under a local diffeomorphism.** If `π` is a `C^n` local diffeomorphism at `x`
 with `2 ≤ n`, then `x` is a nondegenerate critical point of `f ∘ π` exactly when `π x` is a
 nondegenerate critical point of `f`. -/
-theorem _root_.IsLocalDiffeomorphAt.isManifoldNondegenerateCriticalPoint_comp_iff
+theorem isManifoldNondegenerateCriticalPoint_comp_iff
     (hπ : IsLocalDiffeomorphAt I I n π x) (hn : 2 ≤ n) {f : M' → ℝ} :
     IsManifoldNondegenerateCriticalPoint I (f ∘ π) x ↔
       IsManifoldNondegenerateCriticalPoint I f (π x) := by
@@ -60,16 +62,18 @@ theorem _root_.IsLocalDiffeomorphAt.isManifoldNondegenerateCriticalPoint_comp_if
   have : IsManifold I 2 M' := IsManifold.of_le hn
   obtain ⟨e, he, hx, hpt, hcomp⟩ := hπ.exists_mem_maximalAtlas_extend_eventuallyEq
     (IsManifold.chart_mem_maximalAtlas (π x)) (mem_chart_source H (π x))
+  have hcomp' : (f ∘ π) ∘ (e.extend I).symm =ᶠ[𝓝 (e.extend I x)]
+      f ∘ ((chartAt H (π x)).extend I).symm := hcomp.fun_comp f
   rw [isManifoldNondegenerateCriticalPoint_iff_of_mem_maximalAtlas
       (IsManifold.maximalAtlas_subset_of_le hn he) hx,
     isManifoldNondegenerateCriticalPoint_iff_of_mem_maximalAtlas
       (IsManifold.chart_mem_maximalAtlas (π x)) (mem_chart_source H (π x)), ← hpt]
-  exact ⟨fun h ↦ h.congr_of_eventuallyEq (hcomp f), fun h ↦ h.congr_of_eventuallyEq (hcomp f).symm⟩
+  exact ⟨fun h ↦ h.congr_of_eventuallyEq hcomp', fun h ↦ h.congr_of_eventuallyEq hcomp'.symm⟩
 
 /-- **The Morse index under a local diffeomorphism.** If `π` is a `C^n` local diffeomorphism at
 `x` with `2 ≤ n`, and `π x` is a critical point of a function `f` which is `C²` there, then the
 Morse index of `f ∘ π` at `x` is the Morse index of `f` at `π x`. -/
-theorem _root_.IsLocalDiffeomorphAt.manifoldMorseIndex_comp
+theorem manifoldMorseIndex_comp
     (hπ : IsLocalDiffeomorphAt I I n π x) (hn : 2 ≤ n) {f : M' → ℝ}
     (hf : ContMDiffAt I 𝓘(ℝ) 2 f (π x)) (hcrit : π x ∈ criticalPoints I f) :
     manifoldMorseIndex I (f ∘ π) x = manifoldMorseIndex I f (π x) := by
@@ -79,11 +83,34 @@ theorem _root_.IsLocalDiffeomorphAt.manifoldMorseIndex_comp
     (hπ.mem_criticalPoints_comp_iff (one_le_two.trans hn)).2 hcrit
   obtain ⟨e, he, hx, hpt, hcomp⟩ := hπ.exists_mem_maximalAtlas_extend_eventuallyEq
     (IsManifold.chart_mem_maximalAtlas (π x)) (mem_chart_source H (π x))
+  have hcomp' : (f ∘ π) ∘ (e.extend I).symm =ᶠ[𝓝 (e.extend I x)]
+      f ∘ ((chartAt H (π x)).extend I).symm := hcomp.fun_comp f
   rw [manifoldMorseIndex_eq_morseIndex_of_mem_maximalAtlas
       (IsManifold.maximalAtlas_subset_of_le hn he) hx (hf.comp x (hπ.contMDiffAt.of_le hn))
       (mem_criticalPoints.1 hcrit'),
     manifoldMorseIndex_eq_morseIndex_of_mem_maximalAtlas (IsManifold.chart_mem_maximalAtlas (π x))
       (mem_chart_source H (π x)) hf (mem_criticalPoints.1 hcrit),
-    morseIndex_congr_of_eventuallyEq (hcomp f), hpt]
+    morseIndex_congr_of_eventuallyEq hcomp', hpt]
+
+end IsLocalDiffeomorphAt
+
+namespace TauCeti
+
+variable {E H M M' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [I.Boundaryless] [TopologicalSpace M] [ChartedSpace H M]
+  [TopologicalSpace M'] [ChartedSpace H M'] [IsManifold I ∞ M] [IsManifold I ∞ M']
+  {π : M → M'} {f : M' → ℝ}
+
+/-- **Morse functions pull back along local diffeomorphisms.** If `π` is a smooth local
+diffeomorphism between boundaryless manifolds with the same model and `f` is a Morse function, then
+`f ∘ π` is a Morse function. In particular the restriction of a Morse function to an open
+submanifold is a Morse function. -/
+theorem IsMorse.comp_isLocalDiffeomorph (hf : IsMorse I f) (hπ : IsLocalDiffeomorph I I ∞ π) :
+    IsMorse I (f ∘ π) := by
+  rw [← isMorseOn_univ, isMorseOn_iff_criticalPoints] at hf ⊢
+  refine ⟨((contMDiffOn_univ.1 hf.1).comp hπ.contMDiff).contMDiffOn, fun x _ hx ↦ ?_⟩
+  have hx' : π x ∈ criticalPoints I f := ((hπ x).mem_criticalPoints_comp_iff (by simp)).1 hx
+  exact ((hπ x).isManifoldNondegenerateCriticalPoint_comp_iff (by simp)).2
+    (hf.2 _ (mem_univ _) hx')
 
 end TauCeti

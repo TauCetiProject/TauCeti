@@ -35,6 +35,8 @@ induced on a finite product is injective as soon as each factor induces an injec
 For any localization, extension also preserves injectivity of a linear map into a module over
 the localized semiring, without requiring its image to span the target.
 
+The image of a base change map spans its target over the extended scalars.
+
 ## Main results
 
 * `IsBaseChange.tensorProduct`: a tensor product of base changes is a base change of the tensor
@@ -51,6 +53,7 @@ the localized semiring, without requiring its image to span the target.
 * `LinearMap.liftBaseChange_pi_injective`: injectivity of the induced map on finite products.
 * `LinearMap.liftBaseChange_injective`: extension to a localization preserves injectivity of a
   map into a module over the localized semiring, without a full-span hypothesis.
+* `IsBaseChange.span_range_eq_top`: the image of a base change map spans its target over `R'`.
 -/
 
 public section
@@ -170,3 +173,18 @@ theorem LinearMap.liftBaseChange_injective (f : M →ₗ[R] V) (S : Submonoid R)
   exact congrArg (fun m ↦ 1 ⊗ₜ[R] m) (hf (by simpa using h))
 
 end
+
+namespace IsBaseChange
+
+/-- The image of a base change map `f : M →ₗ[R] M'` spans `M'` over the extended scalars `R'`. -/
+theorem span_range_eq_top {R R' M M' : Type*} [CommSemiring R] [CommSemiring R'] [Algebra R R']
+    [AddCommMonoid M] [Module R M] [AddCommMonoid M'] [Module R M'] [Module R' M']
+    [IsScalarTower R R' M'] {f : M →ₗ[R] M'} (hf : IsBaseChange R' f) :
+    Submodule.span R' (Set.range f) = ⊤ := by
+  refine Submodule.eq_top_iff'.2 fun n ↦ ?_
+  induction n using hf.inductionOn with
+  | tmul a => exact Submodule.subset_span ⟨a, rfl⟩
+  | smul r n hn => exact Submodule.smul_mem _ r hn
+  | add n₁ n₂ h₁ h₂ => exact Submodule.add_mem _ h₁ h₂
+
+end IsBaseChange

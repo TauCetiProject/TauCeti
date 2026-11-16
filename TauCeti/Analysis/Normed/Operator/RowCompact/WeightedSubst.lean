@@ -112,9 +112,9 @@ theorem isCompletelyContinuous_restrictedWeightedSubstCLM [Finite τ] (hc : ∀ 
   classical
   -- Transport row compactness of the coefficient model back along the coefficient isometries.
   have hu := ((isRowCompact_weightedSubstCLM g h hh hc).isCompletelyContinuous.comp_clm_of_bound
-    restrictedCoeffLinearIsometryEquiv.toContinuousLinearEquiv.toContinuousLinearMap one_pos
+    restrictedCoeffLinearIsometryEquiv.toContinuousLinearEquiv.toContinuousLinearMap (C := 1)
       fun x ↦ by simp).clm_comp_of_bound
-    restrictedCoeffLinearIsometryEquiv.symm.toContinuousLinearEquiv.toContinuousLinearMap one_pos
+    restrictedCoeffLinearIsometryEquiv.symm.toContinuousLinearEquiv.toContinuousLinearMap (C := 1)
       fun x ↦ by simp
   convert hu using 1
   ext1 f
