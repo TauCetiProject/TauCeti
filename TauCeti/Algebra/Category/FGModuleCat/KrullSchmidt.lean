@@ -14,6 +14,7 @@ public import TauCeti.CategoryTheory.Preadditive.KrullSchmidt.Basic
 import TauCeti.Algebra.Category.ModuleCat.KrullSchmidt
 import TauCeti.CategoryTheory.Preadditive.KrullSchmidt.FullSubcategory
 import TauCeti.Algebra.Category.ModuleCat.Indecomposable
+import TauCeti.CategoryTheory.Functor.Indecomposable
 import TauCeti.CategoryTheory.Functor.RingEquivEnd
 
 /-!
@@ -80,22 +81,17 @@ theorem isLocalRing_end_of_indecomposable {X : FGModuleCat.{w} A} [IsNoetherian 
   exact ((ObjectProperty.fullyFaithfulι _).ringEquivEnd X).symm.isLocalRing
 
 /-- A finitely generated module is indecomposable in the category of all modules exactly when it
-is an indecomposable object of `mod A`, over any ring. Both categories are idempotent complete, and
-the inclusion is fully faithful, so both sides say that the module is nonzero and has no idempotent
-endomorphism other than `0` and the identity. -/
+is an indecomposable object of `mod A`, over any ring. The inclusion `mod A ⥤ Mod A` is additive
+and fully faithful: it reflects indecomposability because it reflects zero objects, and preserves
+it because it is bijective on endomorphisms and idempotents split in `mod A`. -/
 theorem indecomposable_obj_iff (P : FGModuleCat.{w} A) :
     Indecomposable P.obj ↔ Indecomposable P := by
-  have hz {Y : FGModuleCat.{w} A} : IsZero Y.obj ↔ IsZero Y := by
-    simp only [IsZero.iff_id_eq_zero]
-    exact ⟨fun h ↦ (ObjectProperty.fullyFaithfulι _).map_injective (by simpa using h),
-      fun h ↦ by simpa using congrArg (ObjectProperty.ι _).map h⟩
-  rw [TauCeti.indecomposable_iff_idempotent_eq_zero_or_id,
-    TauCeti.indecomposable_iff_idempotent_eq_zero_or_id, hz]
-  refine and_congr_right fun _ ↦ ⟨fun h e he ↦ ?_, fun h e he ↦ ?_⟩
-  · exact (h e.hom (by rw [← ObjectProperty.FullSubcategory.comp_hom, he])).imp
-      (ObjectProperty.hom_ext _) (ObjectProperty.hom_ext _)
-  · exact (h (ObjectProperty.homMk e) (ObjectProperty.hom_ext _ he)).imp
-      (congrArg InducedCategory.Hom.hom) (congrArg InducedCategory.Hom.hom)
+  let ι := ObjectProperty.ι (ModuleCat.isFG.{w} A)
+  have := preservesBinaryBiproducts_of_preservesBiproducts ι
+  exact ⟨fun h ↦ ι.indecomposable_of_indecomposable_obj_of_reflects_isZero_retract h
+      fun _ ↦ IsZero.of_full_of_faithful_of_isZero ι _,
+    fun h ↦ ι.indecomposable_obj_of_map_bijective h
+      ((ObjectProperty.fullyFaithfulι _).map_bijective P P)⟩
 
 open TauCeti in
 /-- **`mod A` is Krull-Schmidt over a left Artinian ring `A`**, for instance an Artin algebra: the
