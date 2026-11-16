@@ -112,9 +112,8 @@ private theorem term'_apply_zero_zero_one (n : ℕ) (p : ℂ × ℂ × ℂ) :
 /-- The `n`-th term of the `s`-derivative series is bounded by the norm of `term' n`. -/
 private theorem norm_deriv_exponent_term_le (n : ℕ) (p : ℂ × ℂ × ℂ) :
     ‖p.2.1 ^ n * log (n + p.2.2) * exp (-p.1 * log (n + p.2.2))‖ ≤ ‖term' n p‖ := by
-  have h := (term' n p).le_opNorm ((1 : ℂ), (0 : ℂ × ℂ))
-  rwa [term'_apply_one_zero, norm_neg, Prod.norm_def, norm_one, norm_zero,
-    max_eq_left zero_le_one, mul_one] at h
+  have hv : ‖((1 : ℂ), (0 : ℂ × ℂ))‖ = 1 := by simp
+  simpa [term'_apply_one_zero, hv] using (term' n p).le_opNorm ((1 : ℂ), (0 : ℂ × ℂ))
 
 private theorem hasFDerivAt_term (n : ℕ) {p : ℂ × ℂ × ℂ} (hp : (n + p.2.2) ∈ slitPlane) :
     HasFDerivAt (term n) (term' n p) p := by
@@ -126,7 +125,10 @@ private theorem hasFDerivAt_term (n : ℕ) {p : ℂ × ℂ × ℂ} (hp : (n + p.
   have hlog := (hasDerivAt_log hp).comp_hasFDerivAt p hc
   have hs : HasFDerivAt (fun q : ℂ × ℂ × ℂ => -q.1) (-ContinuousLinearMap.fst ℂ ℂ (ℂ × ℂ)) p :=
     hasFDerivAt_fst.neg
-  exact ((hasDerivAt_pow n p.2.1).comp_hasFDerivAt p hz).mul (hs.mul hlog).cexp
+  convert ((hasDerivAt_pow n p.2.1).comp_hasFDerivAt p hz).mul (hs.mul hlog).cexp using 1
+  · ext q
+    simp [term]
+  · ext <;> simp [term']
 
 private theorem norm_term'_le (n : ℕ) (p : ℂ × ℂ × ℂ) :
     ‖term' n p‖ ≤ ‖p.2.1‖ ^ n * (‖exp (-p.1 * log (n + p.2.2))‖ *
@@ -279,16 +281,35 @@ private theorem summable_norm_term {p : ℂ × ℂ × ℂ} (hz : ‖p.2.1‖ < 1
   let ⟨_, _, _, hpU, _, _, hu, hb⟩ := exists_nhds_summable_bound hz hc
   .of_nonneg_of_le (fun _ => norm_nonneg _) (fun n => (hb n p hpU).1) hu
 
+/-- A finite shift of the index moves `c` into the right half-plane. -/
+private theorem exists_re_natCast_add_pos (c : ℂ) : ∃ k : ℕ, 0 < ((k : ℂ) + c).re := by
+  obtain ⟨k, hk⟩ := exists_nat_gt (-c.re)
+  exact ⟨k, by simp; linarith⟩
+
+/-- Shifting the index of `zⁿ F (n + c)` by `k` shifts the parameter `c` to `k + c`. -/
+private theorem pow_add_mul_natCast_add (z c : ℂ) (F : ℂ → ℂ) (n k : ℕ) :
+    z ^ (n + k) * F ((n + k : ℕ) + c) = z ^ k * (z ^ n * F (n + (k + c))) := by
+  rw [Nat.cast_add, add_assoc, pow_add]
+  ring
+
+/-- Splitting off the first `k` terms of a summable series
+`∑ zⁿ F (n + c) = ∑_{i < k} zⁱ F (i + c) + zᵏ ∑ zⁿ F (n + (k + c))`. -/
+private theorem tsum_pow_mul_eq_sum_add {z c : ℂ} {F : ℂ → ℂ}
+    (h : Summable fun n : ℕ => z ^ n * F (n + c)) (k : ℕ) :
+    ∑' n : ℕ, z ^ n * F (n + c) = ∑ i ∈ Finset.range k, z ^ i * F (i + c) +
+      z ^ k * ∑' n : ℕ, z ^ n * F (n + (k + c)) := by
+  rw [← h.sum_add_tsum_nat_add k, ← tsum_mul_left]
+  exact congrArg _ (tsum_congr fun n => pow_add_mul_natCast_add z c F n k)
+
 /-- A series `∑ zⁿ F (n + c)` that converges absolutely whenever `0 < re c` converges absolutely
 for every `c`, since a finite shift of the index moves `c` into the right half-plane. -/
 private theorem summable_norm_pow_mul_of_re_pos {z : ℂ} (F : ℂ → ℂ)
     (h : ∀ c : ℂ, 0 < c.re → Summable fun n : ℕ => ‖z ^ n * F (n + c)‖) (c : ℂ) :
     Summable fun n : ℕ => ‖z ^ n * F (n + c)‖ := by
-  obtain ⟨k, hk⟩ := exists_nat_gt (-c.re)
+  obtain ⟨k, hk⟩ := exists_re_natCast_add_pos c
   rw [← summable_nat_add_iff k]
-  refine ((h (k + c) (by simp; linarith)).mul_left (‖z‖ ^ k)).congr fun n => ?_
-  simp only [norm_mul, norm_pow, pow_add, Nat.cast_add, add_assoc]
-  ring
+  refine ((h (k + c) hk).mul_left (‖z‖ ^ k)).congr fun n => ?_
+  simp only [pow_add_mul_natCast_add, norm_mul, norm_pow]
 
 /-- The Lerch series converges absolutely for `‖z‖ < 1`, for every `s` and `c`. -/
 theorem summable_norm_lerchSeries {z : ℂ} (hz : ‖z‖ < 1) (s c : ℂ) :
@@ -312,9 +333,8 @@ zᵏ Φ(z, s, k + c)`. -/
 theorem lerchSeries_eq_sum_add_pow_mul {z : ℂ} (hz : ‖z‖ < 1) (s c : ℂ) (k : ℕ) :
     lerchSeries z s c = ∑ i ∈ Finset.range k, z ^ i * exp (-s * log (i + c)) +
       z ^ k * lerchSeries z s (k + c) := by
-  rw [lerchSeries_def z s c, ← (hasSum_lerchSeries hz s c).summable.sum_add_tsum_nat_add k,
-    lerchSeries_def, ← tsum_mul_left]
-  exact congrArg _ (tsum_congr fun n => by rw [Nat.cast_add, add_assoc, pow_add]; ring)
+  rw [lerchSeries_def z s c, tsum_pow_mul_eq_sum_add (F := fun w => exp (-s * log w))
+    (hasSum_lerchSeries hz s c).summable k, lerchSeries_def]
 
 /-- The shift relation `Φ(z, s, c) = exp (-s log c) + z Φ(z, s, c + 1)`; for `0 < re c` the
 first term is `c ^ (-s)`. -/
@@ -418,19 +438,19 @@ private theorem hasDerivAt_lerchSeries_exponent_of_re_pos {z c : ℂ} (hz : ‖z
 theorem hasDerivAt_lerchSeries_exponent {z : ℂ} (hz : ‖z‖ < 1) (s c : ℂ) :
     HasDerivAt (fun s => lerchSeries z s c)
       (-∑' n : ℕ, z ^ n * log (n + c) * exp (-s * log (n + c))) s := by
-  obtain ⟨k, hk⟩ := exists_nat_gt (-c.re)
-  have hpos := hasDerivAt_lerchSeries_exponent_of_re_pos hz (c := k + c) (by simp; linarith) s
+  obtain ⟨k, hk⟩ := exists_re_natCast_add_pos c
+  have hpos := hasDerivAt_lerchSeries_exponent_of_re_pos hz hk s
   have hsum : HasDerivAt (fun s => ∑ i ∈ Finset.range k, z ^ i * exp (-s * log (i + c)))
       (∑ i ∈ Finset.range k, z ^ i * (exp (-s * log (i + c)) * (-1 * log (i + c)))) s :=
     .fun_sum fun i _ => (((hasDerivAt_id s).neg.mul_const _).cexp).const_mul _
   have h := hsum.add (hpos.const_mul (z ^ k))
   rw [funext fun s => lerchSeries_eq_sum_add_pow_mul hz s c k]
   convert h using 1
-  rw [← (summable_norm_lerchSeries_deriv_exponent hz s c).of_norm.sum_add_tsum_nat_add k,
-    neg_add, ← Finset.sum_neg_distrib, mul_neg, ← tsum_mul_left]
-  congr 1
-  · exact Finset.sum_congr rfl fun i _ => by ring
-  · exact congrArg _ (tsum_congr fun n => by rw [Nat.cast_add, add_assoc, pow_add]; ring)
+  have hsplit := tsum_pow_mul_eq_sum_add (F := fun w => log w * exp (-s * log w))
+    (by simpa only [mul_assoc] using (summable_norm_lerchSeries_deriv_exponent hz s c).of_norm) k
+  simp only [← mul_assoc] at hsplit
+  rw [hsplit, neg_add, ← Finset.sum_neg_distrib, mul_neg]
+  exact congrArg₂ _ (Finset.sum_congr rfl fun i _ => by ring) rfl
 
 /-- The derivative of the Lerch series in `z` is the termwise derivative
 `∂_z Φ(z, s, c) = ∑ n zⁿ⁻¹ exp (-s log (n + c))` on the initial domain `‖z‖ < 1`, `0 < re c`. -/
