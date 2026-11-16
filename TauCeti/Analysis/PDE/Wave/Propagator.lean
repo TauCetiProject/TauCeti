@@ -35,8 +35,8 @@ The time derivatives are computed at every frequency and passed to `L²` by domi
 (`MeasureTheory.Lp.hasDerivAt_fourierMultiplierCLM_toLp_apply`):
 
 * `∂ₜ (D⁻¹ sin(tD) g) = cos(tD) g` for every `g ∈ L²`
-  (`TauCeti.hasDerivAt_waveSinPropagator_apply`), since `∂ₜ (sin(tω) / ω) = cos(tω)` with a
-  difference quotient bounded by `1`;
+  (`TauCeti.hasDerivAt_waveSinPropagator_apply`), since `∂ₜ (sin(tω) / ω) = cos(tω)` and
+  `t ↦ sin(tω) / ω` is `1`-Lipschitz;
 * `∂ₜ (cos(tD) f) = D⁻¹ sin(tD) Δf` when the distributional Laplacian `Δf` lies in `L²`
   (`TauCeti.hasDerivAt_waveCosPropagator_apply`), since `∂ₜ cos(tω) = -ω² sin(tω) / ω`, and
   `-ω²` is the symbol of `Δ`.
@@ -313,12 +313,8 @@ theorem hasDerivAt_waveSinPropagator_apply (g : Lp F 2 (volume : Measure E)) (t 
   refine Lp.hasDerivAt_fourierMultiplierCLM_toLp_apply memLp_waveSinSymbol
     (memLp_waveCosSymbol t) (a := fun _ ↦ 1) (C := 1) (by simp)
     (Eventually.of_forall fun ξ ↦ by simpa using hasDerivAt_waveSinSymbol t ξ)
-    (Eventually.of_forall fun s ↦ Eventually.of_forall fun ξ ↦ ?_)
-  rcases eq_or_ne s t with rfl | hst
-  · simp
-  rw [norm_smul, norm_inv, Real.norm_eq_abs, norm_one, mul_one,
-    inv_mul_le_one₀ (abs_pos.2 (sub_ne_zero.2 hst))]
-  exact norm_waveSinSymbol_sub_le s t ξ
+    (Eventually.of_forall fun s ↦ Eventually.of_forall fun ξ ↦ by
+      simpa using norm_waveSinSymbol_sub_le s t ξ)
 
 /-- `t ↦ D⁻¹ sin(tD) g` is continuous for every `g ∈ L²`. -/
 theorem continuous_waveSinPropagator_apply (g : Lp F 2 (volume : Measure E)) :
@@ -336,16 +332,11 @@ theorem hasDerivAt_waveCosPropagator_apply {f h : Lp F 2 (volume : Measure E)}
     (Eventually.of_forall fun ξ ↦ hasDerivAt_waveCosSymbol t ξ) ?_
   filter_upwards [nhdsWithin_le_nhds (continuous_abs.continuousAt.eventually_lt
     continuousAt_const (lt_add_one |t|))] with s hs
-  refine Eventually.of_forall fun ξ ↦ ?_
-  rcases eq_or_ne s t with rfl | hst
-  · simp only [sub_self, smul_zero, norm_zero]
-    positivity
-  rw [norm_smul, norm_inv, Real.norm_eq_abs, inv_mul_le_iff₀ (abs_pos.2 (sub_ne_zero.2 hst))]
-  refine (norm_waveCosSymbol_sub_le s t ξ).trans ?_
+  refine Eventually.of_forall fun ξ ↦ (norm_waveCosSymbol_sub_le s t ξ).trans ?_
   have : |s| + |t| ≤ 2 * |t| + 1 := by linarith
   calc ‖(laplacianSymbol ξ : ℂ)‖ * (|s| + |t|) * |s - t|
       ≤ ‖(laplacianSymbol ξ : ℂ)‖ * (2 * |t| + 1) * |s - t| := by gcongr
-    _ = |s - t| * ((2 * |t| + 1) * ‖(laplacianSymbol ξ : ℂ)‖) := by ring
+    _ = (2 * |t| + 1) * ‖(laplacianSymbol ξ : ℂ)‖ * |s - t| := by ring
 
 /-- `cos(tD)` commutes with `Δ`: if `Δ f = h` with `h ∈ L²`, then `Δ (cos(tD) f) = cos(tD) h`. -/
 theorem laplacian_waveCosPropagator_apply {f h : Lp F 2 (volume : Measure E)}

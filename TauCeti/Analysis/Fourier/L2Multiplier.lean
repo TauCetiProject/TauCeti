@@ -68,7 +68,7 @@ defined, it agrees with Mathlib's multipliers.
   then `T_{m i} f → T_{m₀} f` in `L²`.
 * `MeasureTheory.Lp.hasDerivAt_fourierMultiplierCLM_toLp_apply`: if symbols `m s` depending on a
   real parameter are differentiable in `s` at almost every frequency, with derivative `a ξ m' ξ`
-  and difference quotients bounded by `C ‖a ξ‖`, then `s ↦ T_{m s} f` has derivative `T_{m'} h` in
+  and increments bounded by `C ‖a ξ‖ |s - t|`, then `s ↦ T_{m s} f` has derivative `T_{m'} h` in
   `L²` whenever `𝓕 h = a • 𝓕 f`. With `a = 1` this differentiates multiplier families
   applied to arbitrary `f ∈ L²`; with `a` the symbol of a differential operator `P`, it
   differentiates them applied to `f` with `P f = h ∈ L²`.
@@ -420,16 +420,16 @@ private theorem norm_slope_fourierMultiplierCLM_toLp_sub {m : ℝ → E → ℂ}
 
 /-- **Differentiating a family of Fourier multipliers.** Let `m s` be bounded symbols depending
 on a real parameter `s`, and let `f, h ∈ L²` with `𝓕 h = a • 𝓕 f`. If, at almost every
-frequency, the symbol `s ↦ m s ξ` has derivative `a ξ * m' ξ` at `t`, and its difference quotients
-near `t` are bounded by `C ‖a ξ‖` almost everywhere, then `s ↦ T_{m s} f` has derivative
-`T_{m'} h` at `t` in `L²`. -/
+frequency, the symbol `s ↦ m s ξ` has derivative `a ξ * m' ξ` at `t`, and its increments satisfy
+`‖m s ξ - m t ξ‖ ≤ C ‖a ξ‖ |s - t|` almost everywhere for `s` near `t`, then `s ↦ T_{m s} f` has
+derivative `T_{m'} h` at `t` in `L²`. -/
 theorem hasDerivAt_fourierMultiplierCLM_toLp_apply {m : ℝ → E → ℂ}
     (hm : ∀ s, MemLp (m s) ∞ volume) {m' : E → ℂ} (hm' : MemLp m' ∞ volume) {a : E → ℂ}
     {C : ℝ} {t : ℝ} {f h : Lp F 2 (volume : Measure E)}
     (hh : (𝓕 h : Lp F 2 (volume : Measure E)) =ᵐ[volume]
       fun ξ ↦ a ξ • (𝓕 f : Lp F 2 (volume : Measure E)) ξ)
     (hderiv : ∀ᵐ ξ ∂volume, HasDerivAt (fun s ↦ m s ξ) (a ξ * m' ξ) t)
-    (hbound : ∀ᶠ s in 𝓝[≠] t, ∀ᵐ ξ ∂volume, ‖(s - t)⁻¹ • (m s ξ - m t ξ)‖ ≤ C * ‖a ξ‖) :
+    (hbound : ∀ᶠ s in 𝓝[≠] t, ∀ᵐ ξ ∂volume, ‖m s ξ - m t ξ‖ ≤ C * ‖a ξ‖ * |s - t|) :
     HasDerivAt (fun s ↦ fourierMultiplierCLM F ((hm s).toLp (m s)) f)
       (fourierMultiplierCLM F (hm'.toLp m') h) t := by
   set Ff : E → F := ⇑(𝓕 f : Lp F 2 (volume : Measure E))
@@ -452,9 +452,14 @@ theorem hasDerivAt_fourierMultiplierCLM_toLp_apply {m : ℝ → E → ℂ}
     have h₂ := (hm t).aestronglyMeasurable
     simp only [q, Ff]
     fun_prop
-  · filter_upwards [hbound] with s hs
+  · filter_upwards [hbound, self_mem_nhdsWithin] with s hs hst
     filter_upwards [hh, hs, hm'.coeFn_toLp, Lp.ae_norm_le_norm_top (hm'.toLp m')]
       with ξ hξ hsξ hm'ξ hKξ
+    -- Turn the increment bound into a bound on the difference quotient.
+    have hslope : ‖(s - t)⁻¹ • (m s ξ - m t ξ)‖ ≤ C * ‖a ξ‖ := by
+      rw [norm_smul, norm_inv, Real.norm_eq_abs,
+        inv_mul_le_iff₀ (abs_pos.2 (sub_ne_zero.2 hst))]
+      exact hsξ.trans_eq (mul_comm _ _)
     have h₁ : ‖q s ξ‖ ≤ C * ‖Fh ξ‖ := calc
       ‖q s ξ‖ = ‖(s - t)⁻¹ • (m s ξ - m t ξ)‖ * ‖Ff ξ‖ := norm_smul _ _
       _ ≤ C * ‖a ξ‖ * ‖Ff ξ‖ := by gcongr
