@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
+public import Mathlib.Algebra.Homology.ShortComplex.SnakeLemma
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 public import Mathlib.LinearAlgebra.Dual.Defs
 public import TauCeti.LinearAlgebra.Exact
@@ -13,7 +15,7 @@ public import TauCeti.LinearAlgebra.Dual.FiniteProjective
 public import Mathlib.Algebra.Category.ModuleCat.Projective
 
 /-!
-# Homology of short complexes of modules
+# Homology and snake inputs of short complexes of modules
 
 For a short complex `X₁ ⟶ X₂ ⟶ X₃` of modules, its homology is the kernel of the second map
 modulo the range of the first.  The projection of Mathlib's explicit left homology data
@@ -32,6 +34,12 @@ It also defines the `A`-dual `X₃* ⟶ X₂* ⟶ X₁*` of a short complex of l
 complex of right `A`-modules (`CategoryTheory.ShortComplex.moduleCatOpDual`), and shows that the
 dual of a short exact sequence is short exact when every functional on `X₁` extends to `X₂`
 (`CategoryTheory.ShortComplex.ShortExact.moduleCatOpDual`).
+
+Finally, given a commuting morphism `(T₀, T₁, T₂)` between two exact sequences of `R`-modules
+`E₀ → E₁ → E₂ → 0` and `0 → F₀ → F₁ → F₂`, `CategoryTheory.ShortComplex.moduleCatSnakeInput`
+packages the diagram into Mathlib's `ShortComplex.SnakeInput (ModuleCat R)` with concrete kernel
+and cokernel rows, and characterizes the categorical connecting morphism `δ` elementwise via
+`SnakeInput.δ_eq` (`CategoryTheory.ShortComplex.moduleCatSnakeInput_δ_apply`).
 
 ## References
 
@@ -140,5 +148,139 @@ theorem ShortExact.moduleCatOpDual (hS : S.ShortExact)
     (LinearMap.lcomp_injective_of_surjective _ hS.moduleCat_surjective_g) hext
 
 end OpDual
+
+section Snake
+
+variable {R : Type u} [Ring R]
+  {E₀ E₁ E₂ F₀ F₁ F₂ : Type v}
+  [AddCommGroup E₀] [Module R E₀] [AddCommGroup E₁] [Module R E₁] [AddCommGroup E₂] [Module R E₂]
+  [AddCommGroup F₀] [Module R F₀] [AddCommGroup F₁] [Module R F₁] [AddCommGroup F₂] [Module R F₂]
+  {i : E₀ →ₗ[R] E₁} {p : E₁ →ₗ[R] E₂}
+  {j : F₀ →ₗ[R] F₁} {q : F₁ →ₗ[R] F₂}
+  {T₀ : E₀ →ₗ[R] F₀} {T₁ : E₁ →ₗ[R] F₁} {T₂ : E₂ →ₗ[R] F₂}
+
+/-- **Concrete `SnakeInput` in `ModuleCat R`.** Given exact sequences `E₀ --i--> E₁ --p--> E₂ → 0`
+and `0 → F₀ --j--> F₁ --q--> F₂` with commuting vertical linear maps `(T₀, T₁, T₂)`, packages the
+diagram into Mathlib's `ShortComplex.SnakeInput (ModuleCat R)` with concrete kernel row
+`ker T₀ → ker T₁ → ker T₂` and concrete cokernel row
+`F₀ ⧸ range T₀ → F₁ ⧸ range T₁ → F₂ ⧸ range T₂`. The body is exposed so that the categorical
+connecting map `δ` has concrete domain `ker T₂` and codomain `F₀ ⧸ range T₀`. -/
+@[expose, simps! L₀ L₁ L₂ L₃ v₀₁ v₁₂ v₂₃]
+noncomputable def moduleCatSnakeInput
+    (hip : Function.Exact i p) (hp : Function.Surjective p)
+    (hj : Function.Injective j) (hjq : Function.Exact j q)
+    (h₁ : j ∘ₗ T₀ = T₁ ∘ₗ i) (h₂ : q ∘ₗ T₁ = T₂ ∘ₗ p) :
+    ShortComplex.SnakeInput (ModuleCat.{v} R) where
+  L₀ := ShortComplex.moduleCatMk
+    (i.restrict fun x hx ↦ LinearMap.mem_ker.mpr <| by
+      rw [← LinearMap.comp_apply, ← h₁, LinearMap.comp_apply, LinearMap.mem_ker.mp hx, map_zero])
+    (p.restrict fun x hx ↦ LinearMap.mem_ker.mpr <| by
+      rw [← LinearMap.comp_apply, ← h₂, LinearMap.comp_apply, LinearMap.mem_ker.mp hx, map_zero])
+    (by ext x; exact hip.apply_apply_eq_zero x.1)
+  L₁ := ShortComplex.moduleCatMk i p hip.linearMap_comp_eq_zero
+  L₂ := ShortComplex.moduleCatMk j q hjq.linearMap_comp_eq_zero
+  L₃ := ShortComplex.moduleCatMk
+    ((LinearMap.range T₀).mapQ (LinearMap.range T₁) j fun _ ⟨x, hx⟩ ↦
+      ⟨i x, by rw [← hx, ← LinearMap.comp_apply, ← h₁, LinearMap.comp_apply]⟩)
+    ((LinearMap.range T₁).mapQ (LinearMap.range T₂) q fun _ ⟨x, hx⟩ ↦
+      ⟨p x, by rw [← hx, ← LinearMap.comp_apply, ← h₂, LinearMap.comp_apply]⟩)
+    (by apply Submodule.linearMap_qext; ext y; simp [hjq.apply_apply_eq_zero y])
+  v₀₁ :=
+    { τ₁ := ModuleCat.ofHom (LinearMap.ker T₀).subtype
+      τ₂ := ModuleCat.ofHom (LinearMap.ker T₁).subtype
+      τ₃ := ModuleCat.ofHom (LinearMap.ker T₂).subtype
+      comm₁₂ := by ext x; rfl
+      comm₂₃ := by ext x; rfl }
+  v₁₂ :=
+    { τ₁ := ModuleCat.ofHom T₀
+      τ₂ := ModuleCat.ofHom T₁
+      τ₃ := ModuleCat.ofHom T₂
+      comm₁₂ := ModuleCat.hom_ext h₁
+      comm₂₃ := ModuleCat.hom_ext h₂ }
+  v₂₃ :=
+    { τ₁ := ModuleCat.ofHom (LinearMap.range T₀).mkQ
+      τ₂ := ModuleCat.ofHom (LinearMap.range T₁).mkQ
+      τ₃ := ModuleCat.ofHom (LinearMap.range T₂).mkQ
+      comm₁₂ := by ext y; rfl
+      comm₂₃ := by ext y; rfl }
+  w₀₂ := by ext x <;> exact LinearMap.mem_ker.mp x.2
+  w₁₃ := by ext x <;> exact (Submodule.Quotient.mk_eq_zero _).mpr ⟨x, rfl⟩
+  h₀ := Fork.IsLimit.mk _
+    (fun s ↦
+      { τ₁ := ModuleCat.ofHom <| (Fork.ι s).τ₁.hom.codRestrict (LinearMap.ker T₀) fun x ↦
+          LinearMap.mem_ker.mpr <|
+            congrArg (fun f : s.pt ⟶ _ ↦ f.τ₁.hom x) (KernelFork.condition s)
+        τ₂ := ModuleCat.ofHom <| (Fork.ι s).τ₂.hom.codRestrict (LinearMap.ker T₁) fun x ↦
+          LinearMap.mem_ker.mpr <|
+            congrArg (fun f : s.pt ⟶ _ ↦ f.τ₂.hom x) (KernelFork.condition s)
+        τ₃ := ModuleCat.ofHom <| (Fork.ι s).τ₃.hom.codRestrict (LinearMap.ker T₂) fun x ↦
+          LinearMap.mem_ker.mpr <|
+            congrArg (fun f : s.pt ⟶ _ ↦ f.τ₃.hom x) (KernelFork.condition s)
+        comm₁₂ := by ext x; exact Subtype.ext (congrArg (fun f ↦ f.hom x) (Fork.ι s).comm₁₂)
+        comm₂₃ := by ext x; exact Subtype.ext (congrArg (fun f ↦ f.hom x) (Fork.ι s).comm₂₃) })
+    (fun s ↦ by ext x <;> rfl)
+    (fun s m hm ↦ by
+      apply ShortComplex.hom_ext
+      · ext x; exact Subtype.ext (congrArg (fun f : s.pt ⟶ _ ↦ f.τ₁.hom x) hm)
+      · ext x; exact Subtype.ext (congrArg (fun f : s.pt ⟶ _ ↦ f.τ₂.hom x) hm)
+      · ext x; exact Subtype.ext (congrArg (fun f : s.pt ⟶ _ ↦ f.τ₃.hom x) hm))
+  h₃ := Cofork.IsColimit.mk _
+    (fun s ↦
+      { τ₁ := ModuleCat.ofHom <| (LinearMap.range T₀).liftQ (Cofork.π s).τ₁.hom <|
+          LinearMap.range_le_ker_iff.mpr <| LinearMap.ext fun x ↦
+            congrArg (fun f : _ ⟶ s.pt ↦ f.τ₁.hom x) (CokernelCofork.condition s)
+        τ₂ := ModuleCat.ofHom <| (LinearMap.range T₁).liftQ (Cofork.π s).τ₂.hom <|
+          LinearMap.range_le_ker_iff.mpr <| LinearMap.ext fun x ↦
+            congrArg (fun f : _ ⟶ s.pt ↦ f.τ₂.hom x) (CokernelCofork.condition s)
+        τ₃ := ModuleCat.ofHom <| (LinearMap.range T₂).liftQ (Cofork.π s).τ₃.hom <|
+          LinearMap.range_le_ker_iff.mpr <| LinearMap.ext fun x ↦
+            congrArg (fun f : _ ⟶ s.pt ↦ f.τ₃.hom x) (CokernelCofork.condition s)
+        comm₁₂ := ModuleCat.hom_ext <| Submodule.linearMap_qext _ <| LinearMap.ext fun y ↦
+          congrArg (fun f ↦ f.hom y) (Cofork.π s).comm₁₂
+        comm₂₃ := ModuleCat.hom_ext <| Submodule.linearMap_qext _ <| LinearMap.ext fun y ↦
+          congrArg (fun f ↦ f.hom y) (Cofork.π s).comm₂₃ })
+    (fun s ↦ by ext y <;> rfl)
+    (fun s m hm ↦ by
+      apply ShortComplex.hom_ext
+      · exact ModuleCat.hom_ext <| Submodule.linearMap_qext _ <| LinearMap.ext fun y ↦
+          congrArg (fun f : _ ⟶ s.pt ↦ f.τ₁.hom y) hm
+      · exact ModuleCat.hom_ext <| Submodule.linearMap_qext _ <| LinearMap.ext fun y ↦
+          congrArg (fun f : _ ⟶ s.pt ↦ f.τ₂.hom y) hm
+      · exact ModuleCat.hom_ext <| Submodule.linearMap_qext _ <| LinearMap.ext fun y ↦
+          congrArg (fun f : _ ⟶ s.pt ↦ f.τ₃.hom y) hm)
+  L₁_exact := ModuleCat.shortComplex_exact _ hip
+  epi_L₁_g := (ModuleCat.epi_iff_surjective _).mpr hp
+  L₂_exact := ModuleCat.shortComplex_exact _ hjq
+  mono_L₂_f := (ModuleCat.mono_iff_injective _).mpr hj
+
+/-- **Elementwise characterization of the snake connecting map**: if `p x₁ = x₂` and
+`j y₀ = T₁ x₁`, then `(moduleCatSnakeInput ...).δ` sends `x₂` to `[y₀]` in `F₀ ⧸ range T₀`. -/
+theorem moduleCatSnakeInput_δ_apply
+    (hip : Function.Exact i p) (hp : Function.Surjective p)
+    (hj : Function.Injective j) (hjq : Function.Exact j q)
+    (h₁ : j ∘ₗ T₀ = T₁ ∘ₗ i) (h₂ : q ∘ₗ T₁ = T₂ ∘ₗ p)
+    (x₂ : LinearMap.ker T₂) {x₁ : E₁} (hx₁ : p x₁ = x₂)
+    {y₀ : F₀} (hy₀ : j y₀ = T₁ x₁) :
+    (moduleCatSnakeInput hip hp hj hjq h₁ h₂).δ.hom x₂ = Submodule.Quotient.mk y₀ := by
+  let S := moduleCatSnakeInput hip hp hj hjq h₁ h₂
+  -- Test `S.δ_eq` on the submodule `W` of all zigzag triples `(a₂, a₁, b₀)` with `p a₁ = a₂` and
+  -- `j b₀ = T₁ a₁`, staying in universe `v` with no constraint on `R`.
+  let W : Submodule R (LinearMap.ker T₂ × E₁ × F₀) :=
+    { carrier := {w | p w.2.1 = w.1.1 ∧ j w.2.2 = T₁ w.2.1}
+      add_mem' := fun {a b} ha hb ↦ ⟨by simp [ha.1, hb.1], by simp [ha.2, hb.2]⟩
+      zero_mem' := ⟨by simp, by simp⟩
+      smul_mem' := fun _ {_} ha ↦ ⟨by simp [ha.1], by simp [ha.2]⟩ }
+  let π₁ : ModuleCat.of R W ⟶ S.L₀.X₃ :=
+    ModuleCat.ofHom (LinearMap.fst R (LinearMap.ker T₂) (E₁ × F₀) ∘ₗ W.subtype)
+  let π₂ : ModuleCat.of R W ⟶ S.L₁.X₂ :=
+    ModuleCat.ofHom (LinearMap.fst R E₁ F₀ ∘ₗ
+      LinearMap.snd R (LinearMap.ker T₂) (E₁ × F₀) ∘ₗ W.subtype)
+  let π₃ : ModuleCat.of R W ⟶ S.L₂.X₁ :=
+    ModuleCat.ofHom (LinearMap.snd R E₁ F₀ ∘ₗ
+      LinearMap.snd R (LinearMap.ker T₂) (E₁ × F₀) ∘ₗ W.subtype)
+  have hδ := S.δ_eq π₁ π₂ π₃ (by ext w; exact w.2.1) (by ext w; exact w.2.2)
+  exact congrArg (fun f : ModuleCat.of R W ⟶ S.L₃.X₁ ↦ f.hom ⟨(x₂, x₁, y₀), hx₁, hy₀⟩) hδ
+
+end Snake
 
 end CategoryTheory.ShortComplex
