@@ -364,7 +364,7 @@ mean after composition with any map from a probability space. No independence, m
 or moment assumptions on the map or function are needed, nor measurable coordinate spaces. -/
 theorem eq_integral_of_bounded_differences_of_sum_sq_eq_zero
     {Ω ι : Type*} [MeasurableSpace Ω] [Fintype ι] {β : ι → Type*}
-    {μ : Measure Ω} [IsProbabilityMeasure μ]
+    (μ : Measure Ω) [IsProbabilityMeasure μ]
     (X : Ω → ∀ i, β i) (f : (∀ i, β i) → ℝ) (c : ι → ℝ)
     (hbd : ∀ (i : ι) (x x' : ∀ i, β i),
       (∀ l, l ≠ i → x l = x' l) → |f x - f x'| ≤ c i)
