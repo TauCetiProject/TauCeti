@@ -9,9 +9,10 @@ public import Mathlib.Analysis.Normed.Operator.Extend
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Constructions
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Inverse
 public import TauCeti.Analysis.InnerProductSpace.Variational.Spectrum
-public import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.Inverse
+public import TauCeti.Analysis.Semigroups.Generation.Form
 public import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.Shift
 public import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.Compact
+import TauCeti.LinearAlgebra.LinearPMap.Basic
 
 /-!
 # The operator of a form that is coercive after a shift
@@ -77,16 +78,18 @@ operator of `B` along `J`. When `B(u, v) = Q(u, v) + c ⟪J u, J v⟫`, this is 
 represented by `Q`: its graph consists of the pairs `(J u, f)` with `Q(u, v) = ⟪f, J v⟫` for
 every `v` (`IsCoercive.mem_graph_formOperator_iff`). -/
 def formOperator (hB : IsCoercive B) (J : V →L[ℝ] H) (c : ℝ) : H →ₗ.[ℝ] H :=
-  subScalar (((hB.formSolutionOperator J : H →ₗ[ℝ] H).toPMap ⊤).inverse) c
+  subScalar (-hB.formGenerator J) c
+
+/-- The form operator is the negative of the form semigroup generator, shifted by `c`. -/
+theorem formOperator_def (hB : IsCoercive B) (J : V →L[ℝ] H) (c : ℝ) :
+    hB.formOperator J c = subScalar (-hB.formGenerator J) c :=
+  (rfl)
 
 /-- The domain of the form operator is the range of its solution operator, for every shift. -/
 @[simp]
 theorem domain_formOperator (hB : IsCoercive B) (J : V →L[ℝ] H) (c : ℝ) :
     (hB.formOperator J c).domain = LinearMap.range (hB.formSolutionOperator J : H →ₗ[ℝ] H) := by
-  ext x
-  rw [formOperator, subScalar_domain,
-    ContinuousLinearMap.mem_domain_inverse_toPMap_top_iff, LinearMap.mem_range]
-  simp only [ContinuousLinearMap.coe_coe]
+  rw [formOperator_def, subScalar_domain, neg_domain, hB.formGenerator_domain]
 
 /-- On the image of the solution operator, the form operator sends `S f` to `f - c • S f`. -/
 theorem formOperator_apply_formSolutionOperator (hB : IsCoercive B) (hJ : DenseRange J) (f : H) :
@@ -95,8 +98,10 @@ theorem formOperator_apply_formSolutionOperator (hB : IsCoercive B) (hJ : DenseR
           rw [hB.domain_formOperator J c]
           exact LinearMap.mem_range_self _ f⟩ =
       f - c • hB.formSolutionOperator J f := by
-  simp only [formOperator, subScalar_apply,
-    ContinuousLinearMap.inverse_toPMap_top_apply _ (hB.formSolutionOperator_injective hJ)]
+  rw [LinearPMap.congr_fun (hB.formOperator_def J c) _ (by
+      simpa only [subScalar_domain, neg_domain] using
+        hB.formSolutionOperator_mem_formGenerator_domain (J := J) f),
+    subScalar_apply, LinearPMap.neg_apply, hB.formGenerator_apply_formSolutionOperator hJ, neg_neg]
 
 /-- The graph of the form operator through the solution operator: `(x, f)` lies on it exactly when
 `S (f + c x) = x`. -/
@@ -105,7 +110,7 @@ theorem mem_graph_formOperator_iff_formSolutionOperator (hB : IsCoercive B) (hJ 
     x ∈ (hB.formOperator J c).graph ↔ hB.formSolutionOperator J (x.2 + c • x.1) = x.1 := by
   rw [← ContinuousLinearMap.mem_graph_inverse_toPMap_top_iff _
     (hB.formSolutionOperator_injective hJ) (x := (x.1, x.2 + c • x.1))]
-  simp only [formOperator, mem_graph_iff]
+  simp only [formOperator_def, formGenerator_def, neg_neg, mem_graph_iff]
   constructor
   · rintro ⟨y, hy, hxy⟩
     refine ⟨⟨y, by simpa using y.2⟩, hy, ?_⟩
@@ -158,18 +163,19 @@ theorem neg_mul_norm_sq_le_inner_formOperator (hB : IsCoercive B) (hJ : DenseRan
 /-- **`-c` is a resolvent point of the form operator.** -/
 theorem neg_mem_resolventSet_formOperator (hB : IsCoercive B) (hJ : DenseRange J) :
     -c ∈ (hB.formOperator J c).resolventSet := by
-  rw [formOperator, TauCeti.LinearPMap.mem_resolventSet_subScalar_iff, neg_add_cancel]
-  exact ContinuousLinearMap.zero_mem_resolventSet_inverse_toPMap_top _
-    (hB.formSolutionOperator_injective hJ)
+  rw [formOperator_def, TauCeti.LinearPMap.mem_resolventSet_subScalar_iff, neg_add_cancel,
+    ← neg_zero, mem_resolventSet_neg_iff]
+  exact hB.zero_mem_resolventSet_formGenerator hJ
 
 /-- **`(A + c)⁻¹ = S`.** The resolvent of the form operator at `-c` is minus the solution
 operator `S` of the shifted form, that is `(A + c)⁻¹ = S`. -/
 theorem resolvent_formOperator_neg (hB : IsCoercive B) (hJ : DenseRange J) :
     (hB.formOperator J c).resolvent (-c) = -hB.formSolutionOperator J := by
-  rw [formOperator, TauCeti.LinearPMap.resolvent_subScalar
+  rw [formOperator_def, TauCeti.LinearPMap.resolvent_subScalar
       (TauCeti.LinearPMap.mem_resolventSet_subScalar_iff.1
         (hB.neg_mem_resolventSet_formOperator hJ)), neg_add_cancel,
-    ContinuousLinearMap.resolvent_inverse_toPMap_top_zero _ (hB.formSolutionOperator_injective hJ)]
+    ← neg_zero, resolvent_neg (hB.zero_mem_resolventSet_formGenerator hJ),
+    hB.resolvent_formGenerator_zero hJ]
 
 /-- **The form operator has compact resolvent** when `J` is compact. -/
 theorem hasCompactResolvent_formOperator (hB : IsCoercive B) (hJc : IsCompactOperator J)
@@ -260,8 +266,12 @@ theorem isSelfAdjoint_formOperator (hB : IsCoercive B) (hJ : DenseRange J)
         Module.End.one_eq_id]
     rw [hcoe]
     -- Use the public evaluation API: the imported scalar-shift definition is opaque.
-    refine LinearPMap.ext (by simp [formOperator]) fun x hf hg ↦ ?_
-    simp [formOperator, subScalar_apply, LinearPMap.vadd_apply, sub_eq_neg_add]
+    have hA : hB.formOperator J c =
+        subScalar ((hB.formSolutionOperator J : H →ₗ[ℝ] H).toPMap ⊤).inverse c := by
+      rw [formOperator_def, formGenerator_def, neg_neg]
+    refine LinearPMap.ext (by simp [hA]) fun x hf hg ↦ ?_
+    rw [LinearPMap.congr_fun hA hf (by simpa only [subScalar_domain, vadd_domain] using hg)]
+    simp [subScalar_apply, LinearPMap.vadd_apply, sub_eq_neg_add]
   rw [heq]
   exact LinearPMap.isSelfAdjoint_perturb_bounded hS hT
 
