@@ -25,7 +25,10 @@ with fixed-support inductive limits.
 The construction and universal-property proof generalize Mathlib's
 `TestFunction.topologicalSpace` and `TestFunction.continuous_iff_continuous_comp` from a particular
 family of fixed-support inclusions to an arbitrary family of linear maps. They use the same
-infimum of locally convex vector topologies, not the final topology of topological spaces.
+infimum of locally convex vector topologies, not the final topology of topological spaces. Any
+distributive scalar action commuting with `ℝ` that is intertwined by the generating maps with
+continuous constant actions on the sources acts continuously by constant scalars on the final
+locally convex topology (`FinalLocallyConvexTopology.continuousConstSMul`).
 -/
 
 public section
@@ -156,6 +159,19 @@ theorem eq_of_rightInverse [t : TopologicalSpace F] [IsTopologicalAddGroup F]
       s (f i) (continuous f i) s.continuous
     rwa [Function.comp_def, funext hs] at hc
   exact (@continuous_id_iff_le F t (finalLocallyConvexTopology f)).1 h
+
+/-- Constant multiplication by a scalar `a : M` that distributes over addition and commutes with
+the real scalar action is continuous for `finalLocallyConvexTopology f`, provided every generating
+map `f i` intertwines a continuous constant `M`-action on `E i` with the `M`-action on `F`. -/
+theorem continuousConstSMul {M : Type*} [∀ i, SMul M (E i)] [∀ i, ContinuousConstSMul M (E i)]
+    [DistribSMul M F] [SMulCommClass ℝ M F]
+    (hsmul : ∀ (i : ι) (a : M) (x : E i), f i (a • x) = a • f i x) :
+    letI := finalLocallyConvexTopology f
+    ContinuousConstSMul M F := by
+  let := finalLocallyConvexTopology f
+  have := SMulCommClass.symm ℝ M F
+  refine ⟨fun a ↦ (continuous_iff_continuous_comp f (DistribSMul.toLinearMap ℝ F a)).2 fun i ↦ ?_⟩
+  exact ((continuous f i).comp (continuous_const_smul a)).congr fun x ↦ hsmul i a x
 
 end FinalLocallyConvexTopology
 

@@ -29,8 +29,10 @@ and subordinate to any given neighbourhoods of its points
 `SmoothBumpCovering.embeddingPiTangent`.
 
 On a `C^n` manifold (`n : ℕ∞`), each `SmoothBumpFunction` is of class `C^n`
-(`SmoothBumpFunction.contMDiff_of_isManifold`), and any `BumpCovering` by `C^n` functions yields a
-`C^n` partition of unity (`BumpCovering.contMDiff_toPartitionOfUnity_of_le`). Combining these with
+(`SmoothBumpFunction.contMDiff_of_isManifold`, adapted from Mathlib's
+`SmoothBumpFunction.contMDiff`), and any `BumpCovering` by `C^n` functions yields a `C^n` partition
+of unity (`BumpCovering.contMDiff_toPartitionOfUnity_of_contMDiff`, adapted from Mathlib's
+`BumpCovering.contMDiff_toPartitionOfUnity`). Combining these with
 `IsCompact.exists_smoothBumpCovering_isSubordinate` gives a finite `C^n` partition of unity by
 compactly supported functions subordinate to any neighbourhood cover of `K`, without assuming
 σ-compactness (`IsCompact.exists_contMDiffMap_partitionOfUnity`).
@@ -112,9 +114,9 @@ section FiniteOrder
 
 omit [IsManifold I ∞ M]
 
-/-- On a `C^n` manifold (`n : ℕ∞`), every `SmoothBumpFunction` is of class `C^n`. Mathlib's
-`SmoothBumpFunction.contMDiff` assumes `C^∞` manifold structure, whereas the coordinate bump is
-`C^∞` and only requires the extended chart to be `C^n`. -/
+/-- On a `C^n` manifold (`n : ℕ∞`), every `SmoothBumpFunction` is of class `C^n`. The proof is
+adapted from Mathlib's `SmoothBumpFunction.contMDiff`, which assumes `C^∞` manifold structure,
+whereas the coordinate bump is `C^∞` and only requires the extended chart to be `C^n`. -/
 theorem SmoothBumpFunction.contMDiff_of_isManifold {n : ℕ∞} [IsManifold I n M] {c : M}
     (f : SmoothBumpFunction I c) : ContMDiff I 𝓘(ℝ) n f := by
   refine contMDiff_of_tsupport fun x hx ↦ ?_
@@ -126,8 +128,9 @@ theorem SmoothBumpFunction.contMDiff_of_isManifold {n : ℕ∞} [IsManifold I n 
 
 omit [FiniteDimensional ℝ E] [T2Space M] in
 /-- If every function in a `BumpCovering` is `C^n`, each weight of its associated partition of
-unity is `C^n`. -/
-theorem BumpCovering.contMDiff_toPartitionOfUnity_of_le {ι : Type*} {s : Set M} {n : ℕ∞ω}
+unity is `C^n`. Adapted from Mathlib's `BumpCovering.contMDiff_toPartitionOfUnity`, generalized
+from `C^∞` to `C^n`. -/
+theorem BumpCovering.contMDiff_toPartitionOfUnity_of_contMDiff {ι : Type*} {s : Set M} {n : ℕ∞ω}
     (f : BumpCovering ι M s) (hf : ∀ i, ContMDiff I 𝓘(ℝ) n (f i)) (i : ι) :
     ContMDiff I 𝓘(ℝ) n (f.toPartitionOfUnity i) :=
   (hf i).mul <| (contMDiff_finprod_cond fun j _ ↦ contMDiff_const.sub (hf j)) <| by
@@ -163,7 +166,7 @@ theorem IsCompact.exists_contMDiffMap_partitionOfUnity {n : ℕ∞} [IsManifold 
       eventuallyEq_one' := f.eventuallyEq_one' }
   let χ : ι → C^n⟮I, M; 𝓘(ℝ), ℝ⟯ := fun i ↦
     ⟨B.toPartitionOfUnity i,
-      B.contMDiff_toPartitionOfUnity_of_le (fun j ↦ (f j).contMDiff_of_isManifold) i⟩
+      B.contMDiff_toPartitionOfUnity_of_contMDiff (fun j ↦ (f j).contMDiff_of_isManifold) i⟩
   have hsupp (i : ι) : tsupport (χ i) ⊆ tsupport (f i) :=
     closure_mono (B.support_toPartitionOfUnity_subset i)
   refine ⟨ι, hfin, r, χ,

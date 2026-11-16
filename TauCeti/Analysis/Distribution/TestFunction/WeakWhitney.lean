@@ -97,27 +97,29 @@ theorem continuous_iff_toContMDiffMap {X : Type*} [TopologicalSpace X]
       _).uniformContinuous.continuous.comp
       ((ContinuousMap.continuous_restrict (K : Set E)).comp
         ((ContMDiffMap.continuous_iteratedFDerivContinuousMap i hi').comp hφ))
-  have hval (x : X) (z : E) :
-      structureMapCLM ℝ n i (φ x) z = iteratedFDeriv ℝ i (φ x) z := by
-    simp [structureMapCLM_apply, hi]
-  have hψval (x : X) (z : (K : Set E)) :
-      ψ x z = iteratedFDeriv ℝ i (φ x) z := by
-    simp [ψ, -SetLike.coe_sort_coe]
   have hdist (x y : X) :
       dist (structureMapCLM ℝ n i (φ x)) (structureMapCLM ℝ n i (φ y)) = dist (ψ x) (ψ y) := by
-    apply le_antisymm
-    · refine (BoundedContinuousFunction.dist_le dist_nonneg).2 fun z ↦ ?_
-      rw [hval, hval]
-      by_cases hz : z ∈ (K : Set E)
-      · simpa only [← hψval x ⟨z, hz⟩, ← hψval y ⟨z, hz⟩] using
-          BoundedContinuousFunction.dist_coe_le_dist (f := ψ x) (g := ψ y) ⟨z, hz⟩
-      · rw [(φ x).iteratedFDeriv_zero_on_compl hz, (φ y).iteratedFDeriv_zero_on_compl hz,
-          Pi.zero_apply, dist_self]
-        exact dist_nonneg
-    · refine (BoundedContinuousFunction.dist_le dist_nonneg).2 fun z ↦ ?_
-      simpa only [hψval, ← hval] using
-        BoundedContinuousFunction.dist_coe_le_dist (f := structureMapCLM ℝ n i (φ x))
-          (g := structureMapCLM ℝ n i (φ y)) (z : E)
+    have hsub :
+        (ContMDiffMap.iteratedFDerivContinuousMap (toContMDiffMap (φ x - φ y)) i hi').restrict
+            (K : Set E) =
+          (ψ x - ψ y).toContinuousMap := by
+      ext z : 1
+      simp only [ψ, ContinuousMap.restrict_apply, ContMDiffMap.iteratedFDerivContinuousMap_apply,
+        coe_toContMDiffMap, FunLike.coe_sub, BoundedContinuousFunction.coe_toContinuousMap,
+        sub_apply, ContinuousMap.equivBoundedOfCompact_apply,
+        BoundedContinuousFunction.mkOfCompact_apply]
+      exact iteratedFDeriv_sub_apply (((φ x).contDiff.of_le hi').contDiffAt)
+        (((φ y).contDiff.of_le hi').contDiffAt)
+    rw [dist_eq_norm (structureMapCLM ℝ n i (φ x)) (structureMapCLM ℝ n i (φ y)),
+      show structureMapCLM ℝ n i (φ x) - structureMapCLM ℝ n i (φ y) =
+          structureMapCLM ℝ n i (φ x - φ y) by
+        ext z : 1
+        simp only [structureMapCLM_apply, hi, ↓reduceIte, sub_apply, FunLike.coe_sub]
+        exact (iteratedFDeriv_sub_apply (((φ x).contDiff.of_le hi').contDiffAt)
+          (((φ y).contDiff.of_le hi').contDiffAt)).symm,
+      ← ContDiffMapSupportedIn.seminorm_apply,
+      seminorm_eq_norm_restrict hi, hsub, BoundedContinuousFunction.norm_toContinuousMap_eq,
+      ← dist_eq_norm (ψ x) (ψ y)]
   refine continuous_iff_continuousAt.2 fun x ↦ ?_
   rw [ContinuousAt, Metric.tendsto_nhds]
   intro ε hε
@@ -130,9 +132,11 @@ theorem isInducing_toContMDiffMap :
     Topology.IsInducing
       (toContMDiffMap : 𝓓^{n}_{K}(E, F) → C^n⟮𝓘(ℝ, E), E; 𝓘(ℝ, F), F⟯) := by
   refine ⟨le_antisymm (continuous_iff_le_induced.1 continuous_toContMDiffMap) ?_⟩
-  exact (@continuous_id_iff_le _ (TopologicalSpace.induced toContMDiffMap inferInstance) _).1
-    ((@continuous_iff_toContMDiffMap E F _ _ _ _ n K 𝓓^{n}_{K}(E, F)
-      (TopologicalSpace.induced toContMDiffMap inferInstance) id).2 continuous_induced_dom)
+  refine (continuous_id_iff_le (t := TopologicalSpace.induced toContMDiffMap inferInstance)
+    (t' := inferInstance)).1 ?_
+  let := TopologicalSpace.induced
+    (toContMDiffMap : 𝓓^{n}_{K}(E, F) → C^n⟮𝓘(ℝ, E), E; 𝓘(ℝ, F), F⟯) inferInstance
+  exact (continuous_iff_toContMDiffMap (X := 𝓓^{n}_{K}(E, F)) (φ := id)).2 continuous_induced_dom
 
 /-- The inclusion of `𝓓^{n}_{K}(E, F)` into `C^n(E, F)` with the weak Whitney topology is a
 topological embedding. -/

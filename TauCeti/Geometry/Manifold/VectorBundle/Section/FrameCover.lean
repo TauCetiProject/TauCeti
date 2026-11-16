@@ -18,6 +18,8 @@ import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 The compact derivative topology on native sections is independent of the covering smooth
 frame system. Changes of frame act by the actual smooth transition matrix, including its
 higher derivatives. Open-cover locality is taken in the existing weak Whitney topology.
+Multiplication by a fixed `C^n` scalar function is likewise continuous in any smooth frame
+topology (`ContMDiffSection.continuous_smulLinearMap`).
 -/
 
 public noncomputable section
@@ -196,5 +198,28 @@ theorem continuous_restrict_frameTopology (W : Opens M) :
   erw [Bundle.Trivialization.frameCoordinates_apply,
     Bundle.Trivialization.pullback_apply, ContMDiffSection.restrict_apply]
   rfl
+
+omit [LocallyCompactSpace E] in
+/-- Multiplication of sections by a fixed `C^n` scalar function is continuous for any smooth
+frame topology; neither local compactness nor a covering hypothesis on the frames is needed. -/
+theorem continuous_smulLinearMap (f : C^n⟮I, M; 𝕜⟯) :
+    letI := frameTopology (I := I) (n := n) e U hU
+    Continuous (smulLinearMap (F := F) (V := V) f) := by
+  let := frameTopology (I := I) (n := n) e U hU
+  refine (continuous_frameTopology_iff_frameCoordinates e U hU).2 fun i ↦ ?_
+  let A : C^n⟮I, U i; 𝓘(𝕜, F →L[𝕜] F), F →L[𝕜] F⟯ :=
+    ⟨fun x ↦ ContinuousLinearMap.lsmul 𝕜 𝕜 (f x),
+      (ContinuousLinearMap.lsmul 𝕜 𝕜 : 𝕜 →L[𝕜] F →L[𝕜] F).contMDiff.comp
+        (f.contMDiff.comp contMDiff_subtype_val)⟩
+  refine ((ContMDiffMap.continuous_clmApplyLinearMap A).comp
+    (continuous_frameCoordinates e U hU i)).congr fun s ↦ ?_
+  ext x
+  rw [Function.comp_apply, ContMDiffMap.clmApplyLinearMap_apply,
+    Bundle.Trivialization.frameCoordinates_apply,
+    ← (e i).continuousLinearMapAt_apply_of_mem (R := 𝕜) (hU i x.2),
+    Bundle.Trivialization.frameCoordinates_apply,
+    ← (e i).continuousLinearMapAt_apply_of_mem (R := 𝕜) (hU i x.2),
+    smulLinearMap_eq_smul, smul_apply, map_smul]
+  simp only [A, ContMDiffMap.coeFn_mk, ContinuousLinearMap.lsmul_apply]
 
 end ContMDiffSection

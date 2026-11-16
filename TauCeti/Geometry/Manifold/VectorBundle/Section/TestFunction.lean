@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.VectorBundle.Section.Support
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
 public import Mathlib.Analysis.Distribution.TestFunction
 
 /-!
@@ -16,7 +16,9 @@ on its target to a compactly supported smooth section. On the chart source the s
 obtained by applying the inverse frame to the test function's value in coordinates; elsewhere
 it is zero. Its closed support is exactly the inverse chart image of the test function's closed
 support. In particular this map is injective and sends support bounds `tsupport φ ⊆ K`
-to support bounds in `c.symm '' K`.
+to support bounds in `c.symm '' K`. When the vector bundle also carries a compatible structure over
+a normed `ℝ`-algebra `𝕜'`, chart extension commutes with `𝕜'`-scalars
+(`Bundle.Trivialization.chartTestSectionOfNormedAlgebra`).
 
 These are algebraic chart extension maps for constructing locally convex test-section spaces.
 No topology on compactly supported sections is installed here. The chart only needs to be
@@ -42,7 +44,10 @@ variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
   [FiberBundle F V] [VectorBundle ℝ F V]
   {n : ℕ∞} [ContMDiffVectorBundle n F V I]
-  (e : Trivialization F (π F V)) [MemTrivializationAtlas e]
+
+section
+
+variable (e : Trivialization F (π F V)) [MemTrivializationAtlas e]
   (c : OpenPartialHomeomorph M E)
   (hc : ContMDiffOn I 𝓘(ℝ, E) n c c.source) (hce : c.source ⊆ e.baseSet)
 
@@ -199,5 +204,54 @@ theorem continuousLinearMapAt_chartTestSection_eq_coordChangeL
   rw [chartTestSection_apply_of_mem e c hc hce φ hx,
     e.symmL_apply (hce hx), e'.continuousLinearMapAt_apply_of_mem (R := ℝ) hx',
     e.coordChangeL_apply e' ⟨hce hx, hx'⟩]
+
+end
+
+section ExtensionScalars
+
+variable {𝕜' : Type*} [NontriviallyNormedField 𝕜'] [NormedAlgebra ℝ 𝕜']
+  [NormedSpace 𝕜' F] [IsScalarTower ℝ 𝕜' F]
+  [∀ x, Module 𝕜' (V x)] [VectorBundle 𝕜' F V]
+
+omit [T2Space M] [VectorBundle ℝ F V] [NormedAlgebra ℝ 𝕜'] [IsScalarTower ℝ 𝕜' F]
+  [VectorBundle 𝕜' F V] in
+private theorem symmL_eq_of_isLinear (t : Trivialization F (π F V)) [t.IsLinear ℝ]
+    [t.IsLinear 𝕜'] (x : M) (v : F) :
+    t.symmL ℝ x v = t.symmL 𝕜' x v := by
+  by_cases hx : x ∈ t.baseSet
+  · rw [t.symmL_apply hx, t.symmL_apply hx]
+  · rw [t.symmL_apply_of_notMem hx, t.symmL_apply_of_notMem hx]
+
+variable (e : Trivialization F (π F V)) [MemTrivializationAtlas e]
+  (c : OpenPartialHomeomorph M E)
+  (hc : ContMDiffOn I 𝓘(ℝ, E) n c c.source) (hce : c.source ⊆ e.baseSet)
+
+/-- Extending native test functions through an extension-linear bundle frame commutes with
+extension scalars. -/
+theorem chartTestSection_smul_ofNormedAlgebra (a : 𝕜')
+    (φ : 𝓓^{n}(⟨c.target, c.open_target⟩, F)) :
+    e.chartTestSection c hc hce (a • φ) = a • e.chartTestSection c hc hce φ := by
+  apply Subtype.ext
+  ext x
+  by_cases hx : x ∈ c.source
+  · simp [e.chartTestSection_apply_of_mem c hc hce _ hx,
+      symmL_eq_of_isLinear (𝕜' := 𝕜') e x]
+  · simp [e.chartTestSection_apply_of_notMem c hc hce _ hx]
+
+variable (𝕜') in
+/-- Chart extension of native test functions regarded as a `𝕜'`-linear map into compactly
+supported sections. -/
+def chartTestSectionOfNormedAlgebra :
+    𝓓^{n}(⟨c.target, c.open_target⟩, F) →ₗ[𝕜'] ContMDiffSection.compactlySupported I F n V where
+  toFun := e.chartTestSection c hc hce
+  map_add' := (e.chartTestSection c hc hce).map_add
+  map_smul' := e.chartTestSection_smul_ofNormedAlgebra c hc hce
+
+@[simp]
+theorem coe_chartTestSectionOfNormedAlgebra :
+    ⇑(e.chartTestSectionOfNormedAlgebra 𝕜' c hc hce) = e.chartTestSection c hc hce :=
+  (rfl)
+
+end ExtensionScalars
 
 end Bundle.Trivialization

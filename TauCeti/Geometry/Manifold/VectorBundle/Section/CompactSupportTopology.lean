@@ -7,10 +7,10 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Support
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.FrameCover
-public import TauCeti.Geometry.Manifold.VectorBundle.Section.ScalarTopology
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.TestFunction
 public import TauCeti.Analysis.LocallyConvex.FinalTopology
-import Mathlib.Analysis.Normed.Module.FiniteDimension
+import TauCeti.Geometry.Manifold.VectorBundle.Section.ScalarTopology
+import TauCeti.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Analysis.Distribution.TestFunction.WeakWhitney
 
 /-!
@@ -198,18 +198,12 @@ theorem continuousConstSMul_compactlySupportedTopology_ofNormedAlgebra :
     letI := compactlySupportedTopology (I := I) (n := n) e U hU
     ContinuousConstSMul 𝕜' (compactlySupported I F n V) := by
   let := frameTopology (I := I) (n := n) e U hU
-  let := compactlySupportedTopology (I := I) (n := n) e U hU
-  refine ⟨fun c ↦ ?_⟩
-  let lc : compactlySupported I F n V →ₗ[ℝ] compactlySupported I F n V :=
-    { toFun s := c • s
-      map_add' := smul_add c
-      map_smul' r s := by
-        rw [RingHom.id_apply, ← algebraMap_smul 𝕜' r (c • s), ← algebraMap_smul 𝕜' r s,
-          smul_smul, mul_comm, mul_smul] }
-  refine (continuous_compactlySupportedTopology_iff e U hU lc).2 fun K ↦ ?_
-  let := continuousSMul_supportedIn_ofNormedAlgebra (𝕜' := 𝕜') (I := I) (n := n) e U hU (K := K)
-  exact ((continuous_ofSupportedIn e U hU K).comp (continuous_const_smul c)).congr fun _ ↦
-    Subtype.ext (by simp [lc])
+  let (K : Compacts M) :=
+    continuousSMul_supportedIn_ofNormedAlgebra (𝕜' := 𝕜') (I := I) (n := n) e U hU (K := K)
+  exact TauCeti.FinalLocallyConvexTopology.continuousConstSMul
+    (ofSupportedIn (I := I) (F := F) (V := V) (n := n)) fun K c s ↦ by
+      simpa only [← coe_ofSupportedInOfNormedAlgebra (𝕜' := 𝕜') (K := K)] using
+        (ofSupportedInOfNormedAlgebra (I := I) (F := F) (V := V) (n := n) 𝕜' K).map_smul c s
 
 /-- When the extension field `𝕜'` is finite-dimensional over `ℝ` (in particular `𝕜' = ℂ`), scalar
 multiplication by `𝕜'` is jointly continuous on compactly supported sections. -/
@@ -217,19 +211,11 @@ theorem continuousSMul_compactlySupportedTopology_ofNormedAlgebra [FiniteDimensi
     letI := compactlySupportedTopology (I := I) (n := n) e U hU
     ContinuousSMul 𝕜' (compactlySupported I F n V) := by
   let := compactlySupportedTopology (I := I) (n := n) e U hU
+  let := isTopologicalAddGroup_compactlySupportedTopology (I := I) (n := n) e U hU
+  let := continuousSMul_compactlySupportedTopology (I := I) (n := n) e U hU
   let := continuousConstSMul_compactlySupportedTopology_ofNormedAlgebra
     (𝕜' := 𝕜') (I := I) (n := n) e U hU
-  let b := Module.finBasis ℝ 𝕜'
-  have hb : Continuous b.equivFun :=
-    LinearMap.continuous_of_finiteDimensional b.equivFun.toLinearMap
-  refine ⟨(continuous_finsetSum Finset.univ fun i _ ↦
-    Continuous.smul (f := fun p : 𝕜' × compactlySupported I F n V ↦ b.equivFun p.1 i)
-      (g := fun p : 𝕜' × compactlySupported I F n V ↦ b i • p.2)
-      ((continuous_apply i).comp (hb.comp continuous_fst))
-      ((continuous_const_smul (b i)).comp continuous_snd)).congr fun p ↦ ?_⟩
-  conv_rhs => rw [← b.sum_equivFun p.1, Finset.sum_smul]
-  simp only [smul_assoc]
-  rfl
+  exact TauCeti.continuousSMul_of_continuousConstSMul_of_finiteDimensional ℝ
 
 end ExtensionScalars
 
@@ -270,56 +256,6 @@ namespace Bundle.Trivialization
 
 open ContMDiffSection
 open scoped Distributions TauCeti.ManifoldWeakWhitney
-
-section ExtensionScalars
-
-variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  [TopologicalSpace M] [ChartedSpace H M] [T2Space M]
-  [NormedAddCommGroup F] [NormedSpace ℝ F]
-  {𝕜' : Type*} [NontriviallyNormedField 𝕜'] [NormedAlgebra ℝ 𝕜']
-  [NormedSpace 𝕜' F] [IsScalarTower ℝ 𝕜' F]
-  {V : M → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
-  [∀ x, Module 𝕜' (V x)]
-  [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
-  [FiberBundle F V] [VectorBundle ℝ F V] [VectorBundle 𝕜' F V]
-  {n : ℕ∞} [ContMDiffVectorBundle n F V I]
-  (t : Trivialization F (π F V)) [MemTrivializationAtlas t]
-  (c : OpenPartialHomeomorph M E)
-  (hc : ContMDiffOn I 𝓘(ℝ, E) n c c.source) (hct : c.source ⊆ t.baseSet)
-
-/-- Extending native test functions through an extension-linear bundle frame commutes with
-extension scalars. -/
-theorem chartTestSection_smul_ofNormedAlgebra (a : 𝕜')
-    (φ : 𝓓^{n}(⟨c.target, c.open_target⟩, F)) :
-    t.chartTestSection c hc hct (a • φ) = a • t.chartTestSection c hc hct φ := by
-  apply Subtype.ext
-  ext x
-  by_cases hx : x ∈ c.source
-  · rw [t.chartTestSection_apply_of_mem c hc hct _ hx,
-      coe_smul_compactlySupported_of_normedAlgebra, coe_smul_of_normedAlgebra, Pi.smul_apply,
-      t.chartTestSection_apply_of_mem c hc hct _ hx, t.symmL_apply (hct hx),
-      t.symmL_apply (hct hx), ← t.symmL_apply (R := 𝕜') (hct hx),
-      ← t.symmL_apply (R := 𝕜') (hct hx), FunLike.coe_smul, Pi.smul_apply, map_smul]
-  · rw [t.chartTestSection_apply_of_notMem c hc hct _ hx,
-      coe_smul_compactlySupported_of_normedAlgebra, coe_smul_of_normedAlgebra, Pi.smul_apply,
-      t.chartTestSection_apply_of_notMem c hc hct _ hx, smul_zero]
-
-variable (𝕜') in
-/-- Chart extension of native test functions regarded as a `𝕜'`-linear map into compactly
-supported sections. -/
-def chartTestSectionOfNormedAlgebra :
-    𝓓^{n}(⟨c.target, c.open_target⟩, F) →ₗ[𝕜'] compactlySupported I F n V where
-  toFun := t.chartTestSection c hc hct
-  map_add' := (t.chartTestSection c hc hct).map_add
-  map_smul' := t.chartTestSection_smul_ofNormedAlgebra c hc hct
-
-@[simp]
-theorem coe_chartTestSectionOfNormedAlgebra :
-    ⇑(t.chartTestSectionOfNormedAlgebra 𝕜' c hc hct) = t.chartTestSection c hc hct :=
-  (rfl)
-
-end ExtensionScalars
 
 variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [LocallyCompactSpace E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
