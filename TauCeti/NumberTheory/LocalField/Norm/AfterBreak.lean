@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LocalField.Norm.Graded
 import TauCeti.NumberTheory.LocalField.Norm.PrimeDegree
+import TauCeti.NumberTheory.LocalField.UnitFiltration.Graded
 
 /-!
 # The graded norm above a prime-degree ramification break

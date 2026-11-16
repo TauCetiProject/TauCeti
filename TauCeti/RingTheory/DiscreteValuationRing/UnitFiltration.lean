@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.PGroup
 public import TauCeti.RingTheory.DiscreteValuationRing.Uniformizer
 public import TauCeti.RingTheory.LocalRing.UnitFiltration
 
@@ -15,13 +14,9 @@ public import TauCeti.RingTheory.LocalRing.UnitFiltration
 Let `S` be a discrete valuation ring with maximal ideal `𝔪` and residue field `k`. Fixing a
 uniformizer `π` identifies each positive graded piece `U_{n+1} / U_{n+2}` of
 `TauCeti.IsLocalRing.unitFiltration` with the additive group of `k`: the class of a principal unit
-`u` with `(u : S) - 1 = y * π ^ (n + 1)` is sent to `residue S y`. Replacing `π` by `π' = π * a`
-multiplies this coordinate by `(residue S a) ^ (n + 1)`.
-
-Without any finiteness assumption on `k`, this additive identification determines the torsion of
-the positive graded pieces: when `k` has characteristic `p`, every positive graded piece satisfies
-`x ^ p = 1` and is therefore a `p`-group; when `k` has characteristic zero, every positive graded
-piece is torsion-free.
+`u` with `(u : S) - 1 = y * π ^ (n + 1)` is sent to `residue S y`. If `π' = π * a` for a unit `a`,
+the coordinate relative to `π` equals `(residue S a) ^ (n + 1)` times the coordinate relative to
+`π'` (equivalently, replacing `π` by `π'` divides the coordinate by `(residue S a) ^ (n + 1)`).
 
 ## Main definitions
 
@@ -39,10 +34,6 @@ piece is torsion-free.
 * `TauCeti.IsDiscreteValuationRing.unitFiltrationGradedSuccEquivResidueField_eq_residue` and
   `TauCeti.IsDiscreteValuationRing.unitFiltrationGradedSuccEquivResidueField_change`: explicit
   representative evaluation and change-of-uniformizer scaling.
-* `TauCeti.IsDiscreteValuationRing.isPGroup_unitFiltrationGraded_succ`: for the residue
-  characteristic `p`, every positive graded piece `U_{n+1} / U_{n+2}` is a `p`-group.
-* `TauCeti.IsDiscreteValuationRing.eq_one_of_pow_eq_one_unitFiltrationGraded_succ_of_charZero`:
-  in residue characteristic zero, every positive graded piece `U_{n+1} / U_{n+2}` is torsion-free.
 
 ## References
 
@@ -114,8 +105,9 @@ theorem unitFiltrationGradedSuccEquivResidueField_eq_residue (n : ℕ) (π : S)
     residueFieldEquivMaximalIdealGradedOfUniformizer_mk]
   exact congrArg Submodule.Quotient.mk (Subtype.ext hy)
 
-/-- Replacing `π` by `π' = π * a` scales the positive-depth unit-filtration coordinate by the
-residue of `a ^ (n + 1)`. -/
+/-- If `π' = π * a`, the positive-depth unit-filtration coordinate relative to `π` equals
+`(residue S a) ^ (n + 1)` times the coordinate relative to `π'` (equivalently, replacing `π` by
+`π'` divides the coordinate by `(residue S a) ^ (n + 1)`). -/
 theorem unitFiltrationGradedSuccEquivResidueField_change (n : ℕ) (π π' : S)
     (hπ : Irreducible π) (hπ' : Irreducible π')
     (x : Additive (UnitFiltrationGraded S (n + 1))) :
@@ -123,38 +115,5 @@ theorem unitFiltrationGradedSuccEquivResidueField_change (n : ℕ) (π π' : S)
       residue S (uniformizerChangeUnit π π' hπ hπ' : S) ^ (n + 1) *
         unitFiltrationGradedSuccEquivResidueField n π' hπ' x :=
   residueFieldEquivMaximalIdealGradedOfUniformizer_symm_change π π' hπ hπ' (n + 1) _
-
-variable (S) in
-/-- When the residue field has characteristic `p`, every element of a positive graded piece
-`U_{n+1} / U_{n+2}` satisfies `x ^ p = 1`. -/
-theorem unitFiltrationGraded_succ_pow_eq_one_of_charP (p : ℕ) [CharP (ResidueField S) p] (n : ℕ)
-    (x : UnitFiltrationGraded S (n + 1)) :
-    x ^ p = 1 := by
-  obtain ⟨π, hπ⟩ := _root_.IsDiscreteValuationRing.exists_irreducible S
-  let e := unitFiltrationGradedSuccEquivResidueField n π hπ
-  apply Additive.ofMul.injective
-  apply e.injective
-  rw [ofMul_pow, map_nsmul, nsmul_eq_mul, CharP.cast_eq_zero, zero_mul, ofMul_one, map_zero]
-
-variable (S) in
-/-- For the residue characteristic `p`, every positive graded piece `U_{n+1} / U_{n+2}` of the
-unit filtration is a `p`-group. No finiteness assumption on the residue field is needed. -/
-theorem isPGroup_unitFiltrationGraded_succ (p : ℕ) [CharP (ResidueField S) p] (n : ℕ) :
-    IsPGroup p (UnitFiltrationGraded S (n + 1)) := by
-  rw [isPGroup_iff_pow_pow_eq_one]
-  exact fun x ↦ ⟨1, by rw [pow_one, unitFiltrationGraded_succ_pow_eq_one_of_charP S p n x]⟩
-
-/-- In residue characteristic zero, every positive graded piece `U_{n+1} / U_{n+2}` of the unit
-filtration is torsion-free. -/
-theorem eq_one_of_pow_eq_one_unitFiltrationGraded_succ_of_charZero [CharZero (ResidueField S)]
-    {n k : ℕ} (hk : k ≠ 0) {x : UnitFiltrationGraded S (n + 1)} (hx : x ^ k = 1) :
-    x = 1 := by
-  obtain ⟨π, hπ⟩ := _root_.IsDiscreteValuationRing.exists_irreducible S
-  let e := unitFiltrationGradedSuccEquivResidueField n π hπ
-  have he : (k : ResidueField S) * e (Additive.ofMul x) = 0 := by
-    rw [← nsmul_eq_mul, ← map_nsmul, ← ofMul_pow, hx, ofMul_one, map_zero]
-  have hx0 : e (Additive.ofMul x) = 0 :=
-    (mul_eq_zero.mp he).resolve_left (Nat.cast_ne_zero.mpr hk)
-  exact Additive.ofMul.injective (e.injective (hx0.trans (map_zero e).symm))
 
 end TauCeti.IsDiscreteValuationRing

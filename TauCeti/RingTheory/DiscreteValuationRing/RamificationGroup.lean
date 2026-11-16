@@ -27,8 +27,10 @@ trivial on `G_{i+1}`. It therefore descends to a canonical homomorphism
 At depth zero, composing with `U_0 / U_1 ≃* kˣ` gives the **tame character** `G_0 →* kˣ` and its
 graded form `G_0 / G_1 →* kˣ`, independent of `ϖ`. At positive depth `i = n + 1`, composing with
 the uniformizer coordinate `Additive (U_{n+1} / U_{n+2}) ≃+ k` gives an additive homomorphism
-sending `σ` with `σ • ϖ - ϖ = y * ϖ ^ (n + 2)` to `residue B y`; replacing `ϖ` by `ϖ' = ϖ * a`
-scales this coordinate by `(residue B a) ^ (n + 1)`.
+sending `σ` with `σ • ϖ - ϖ = y * ϖ ^ (n + 2)` to `residue B y`; if `ϖ' = ϖ * a` for a unit
+`a`, the coordinate relative to `ϖ` equals `(residue B a) ^ (n + 1)` times the coordinate relative
+to `ϖ'` (equivalently, replacing `ϖ` by `ϖ'` divides the coordinate by
+`(residue B a) ^ (n + 1)`).
 
 None of the constructions above requires a base ring or separability. Suppose now that `B` is a
 local algebra over a local ring `A` whose elements `G` fixes (`[SMulCommClass G A B]`), and that
@@ -38,7 +40,7 @@ element `σ ∈ G_0` in `G_n` is decided at a uniformizer alone (`σ • ϖ - ϖ
 `θ_i` is **injective**:
 
 * when `G_0 / G_1` is finite, it is cyclic, and in prime residue characteristic `p` its order is
-  not divisible by `p`;
+  not divisible by `p`; when `k` is finite, `#(G_0 / G_1)` divides `#k - 1`;
 * in prime residue characteristic `p`, every positive graded piece `G_{n+1} / G_{n+2}` has exponent
   dividing `p` and is a `p`-group; when the action is faithful and `G_0` is finite, every `G_i`
   with `i > 0` is a `p`-group, and `G_1` is the unique normal Sylow `p`-subgroup of `G_0`;
@@ -78,9 +80,11 @@ element `σ ∈ G_0` in `G_n` is decided at a uniformizer alone (`σ • ϖ - ϖ
   `TauCeti.IsDiscreteValuationRing.tameCharacterGraded_injective`, and
   `TauCeti.IsDiscreteValuationRing.ramificationGroupGradedToResidueField_injective`: exactness of
   the kernels and injectivity of the graded maps under separable residue extension.
-* `TauCeti.IsDiscreteValuationRing.isCyclic_ramificationGroupGraded_zero` and
-  `TauCeti.IsDiscreteValuationRing.not_dvd_index_ramificationGroup_one`: cyclicity of `G_0 / G_1`
-  and coprimality of `[G_0 : G_1]` to the residue characteristic.
+* `TauCeti.IsDiscreteValuationRing.isCyclic_ramificationGroupGraded_zero`,
+  `TauCeti.IsDiscreteValuationRing.card_ramificationGroupGraded_zero_dvd_card_residueField_sub_one`,
+  and `TauCeti.IsDiscreteValuationRing.not_dvd_index_ramificationGroup_one`: cyclicity of
+  `G_0 / G_1`, divisibility of `#k - 1` by `#(G_0 / G_1)`, and coprimality of `[G_0 : G_1]` to the
+  residue characteristic.
 * `TauCeti.IsDiscreteValuationRing.isPGroup_ramificationGroupGraded_natCast_succ`,
   `TauCeti.IsDiscreteValuationRing.isPGroup_ramificationGroup`,
   `TauCeti.IsDiscreteValuationRing.eq_ramificationGroupOneSylow`,
@@ -141,6 +145,11 @@ theorem coe_uniformizerRatio_mul (i : ℕ) {ϖ : B} (hϖ : Irreducible ϖ)
     ((uniformizerRatio i hϖ σ : Bˣ) : B) * ϖ = (σ : G) • ϖ := by
   rw [mul_comm, mul_coe_uniformizerRatio]
 
+omit [IsDomain B] [_root_.IsDiscreteValuationRing B] in
+private theorem coe_unitsMap_toRingHom (σ : G) (u : Bˣ) :
+    ((Units.map (MulSemiringAction.toRingHom G B σ).toMonoidHom u : Bˣ) : B) = σ • (u : B) := by
+  simp
+
 /-- The 1-cocycle identity `u_{στ} = u_σ * σ(u_τ)` in `Bˣ` for the uniformizer ratio. -/
 theorem coe_uniformizerRatio_mul_apply (i : ℕ) {ϖ : B} (hϖ : Irreducible ϖ)
     (σ τ : ramificationGroup G B (i : ℤ)) :
@@ -150,9 +159,19 @@ theorem coe_uniformizerRatio_mul_apply (i : ℕ) {ϖ : B} (hϖ : Irreducible ϖ)
           (uniformizerRatio i hϖ τ : Bˣ) := by
   apply Units.ext
   apply mul_left_cancel₀ hϖ.ne_zero
-  rw [mul_coe_uniformizerRatio, Subgroup.coe_mul, mul_smul, ← mul_coe_uniformizerRatio i hϖ τ,
-    smul_mul', ← mul_coe_uniformizerRatio i hϖ σ, Units.val_mul, Units.coe_map,
-    RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass, MulSemiringAction.toRingHom_apply, mul_assoc]
+  calc
+    ϖ * ((uniformizerRatio i hϖ (σ * τ) : Bˣ) : B)
+        = (σ : G) • ((τ : G) • ϖ) := by
+          rw [mul_coe_uniformizerRatio, Subgroup.coe_mul, mul_smul]
+    _ = (σ : G) • (ϖ * ((uniformizerRatio i hϖ τ : Bˣ) : B)) := by
+          rw [mul_coe_uniformizerRatio]
+    _ = (ϖ * ((uniformizerRatio i hϖ σ : Bˣ) : B)) *
+          (σ : G) • ((uniformizerRatio i hϖ τ : Bˣ) : B) := by
+          rw [smul_mul', mul_coe_uniformizerRatio]
+    _ = ϖ * (((uniformizerRatio i hϖ σ : Bˣ) *
+          Units.map (MulSemiringAction.toRingHom G B (σ : G)).toMonoidHom
+            (uniformizerRatio i hϖ τ : Bˣ) : Bˣ) : B) := by
+          rw [Units.val_mul, coe_unitsMap_toRingHom, mul_assoc]
 
 /-- The **quotient homomorphism** `G_i →* U_i / U_{i+1}` sending `σ` to the class of its
 uniformizer ratio `u_σ`. It does not depend on `ϖ`
@@ -192,11 +211,19 @@ private theorem coe_uniformizerRatio_change (i : ℕ) {ϖ ϖ' : B} (hϖ : Irredu
           (uniformizerChangeUnit ϖ ϖ' hϖ hϖ') := by
   apply Units.ext
   apply mul_left_cancel₀ hϖ.ne_zero
-  rw [Units.val_mul, ← mul_assoc, mul_uniformizerChangeUnit, mul_coe_uniformizerRatio]
-  conv_lhs => rw [← mul_uniformizerChangeUnit ϖ ϖ' hϖ hϖ']
-  rw [smul_mul', ← mul_coe_uniformizerRatio i hϖ σ, Units.val_mul, Units.coe_map,
-    RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass, MulSemiringAction.toRingHom_apply,
-    mul_assoc]
+  calc
+    ϖ * ((uniformizerChangeUnit ϖ ϖ' hϖ hϖ' * (uniformizerRatio i hϖ' σ : Bˣ) : Bˣ) : B)
+        = (σ : G) • ϖ' := by
+          rw [Units.val_mul, ← mul_assoc, mul_uniformizerChangeUnit, mul_coe_uniformizerRatio]
+    _ = (σ : G) • (ϖ * (uniformizerChangeUnit ϖ ϖ' hϖ hϖ' : B)) := by
+          rw [mul_uniformizerChangeUnit]
+    _ = (ϖ * ((uniformizerRatio i hϖ σ : Bˣ) : B)) *
+          (σ : G) • (uniformizerChangeUnit ϖ ϖ' hϖ hϖ' : B) := by
+          rw [smul_mul', mul_coe_uniformizerRatio]
+    _ = ϖ * (((uniformizerRatio i hϖ σ : Bˣ) *
+          Units.map (MulSemiringAction.toRingHom G B (σ : G)).toMonoidHom
+            (uniformizerChangeUnit ϖ ϖ' hϖ hϖ') : Bˣ) : B) := by
+          rw [Units.val_mul, coe_unitsMap_toRingHom, mul_assoc]
 
 /-- The quotient homomorphism `G_i →* U_i / U_{i+1}` does not depend on the choice of
 uniformizer. -/
@@ -278,7 +305,6 @@ noncomputable def tameCharacter {ϖ : B} (hϖ : Irreducible ϖ) :
     (ramificationGroupToUnitFiltrationGraded 0 hϖ)
 
 /-- The underlying residue-field value of `tameCharacter hϖ σ` is the residue of `u_σ`. -/
-@[simp]
 theorem coe_tameCharacter_apply {ϖ : B} (hϖ : Irreducible ϖ) (σ : ramificationGroup G B 0) :
     (tameCharacter hϖ σ : ResidueField B) = residue B ((uniformizerRatio 0 hϖ σ : Bˣ) : B) := by
   rw [tameCharacter, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
@@ -355,8 +381,9 @@ theorem ramificationGroupGradedToResidueField_of_smul_sub_eq (n : ℕ) (π : B) 
   apply mul_right_cancel₀ hπ.ne_zero
   rw [sub_mul, one_mul, coe_uniformizerRatio_mul, hmove, mul_assoc, ← pow_succ]
 
-/-- Replacing `π` by `π' = π * a` scales the positive-depth ramification coordinate by the residue
-of `a ^ (n + 1)`. -/
+/-- If `π' = π * a`, the positive-depth ramification coordinate relative to `π` equals
+`(residue B a) ^ (n + 1)` times the coordinate relative to `π'` (equivalently, replacing `π` by
+`π'` divides the coordinate by `(residue B a) ^ (n + 1)`). -/
 theorem ramificationGroupGradedToResidueField_change (n : ℕ) (π π' : B) (hπ : Irreducible π)
     (hπ' : Irreducible π') (τ : RamificationGroupGraded G B ((n : ℤ) + 1)) :
     ramificationGroupGradedToResidueField G B n π hπ (Additive.ofMul τ) =
@@ -552,6 +579,14 @@ theorem isCyclic_ramificationGroupGraded_zero [Finite (RamificationGroupGraded G
   exact isCyclic_of_injective_ringHom
     ((Units.coeHom (ResidueField B)).comp (tameCharacterGraded hϖ))
     (Units.val_injective.comp (tameCharacterGraded_injective A hϖ))
+
+/-- When the residue extension is separable, the order of the tame quotient `G_0 / G_1` divides
+`#(ResidueField B) - 1`. -/
+theorem card_ramificationGroupGraded_zero_dvd_card_residueField_sub_one :
+    Nat.card (RamificationGroupGraded G B 0) ∣ Nat.card (ResidueField B) - 1 := by
+  obtain ⟨ϖ, hϖ⟩ := _root_.IsDiscreteValuationRing.exists_irreducible B
+  rw [← Nat.card_units]
+  exact Subgroup.card_dvd_of_injective _ (tameCharacterGraded_injective A hϖ)
 
 /-- **The index `[G_0 : G_1]` is not divisible by the residue characteristic `p`** whenever
 `G_0 / G_1` is finite and the residue extension is separable. -/

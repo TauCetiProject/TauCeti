@@ -43,6 +43,7 @@ public section
 noncomputable section
 
 open ValuativeRel IntermediateField TauCeti.LocalFieldsRamification
+  TauCeti.IsDiscreteValuationRing
 
 namespace TauCeti
 

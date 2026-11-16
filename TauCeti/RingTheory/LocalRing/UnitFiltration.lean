@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.GroupTheory.PGroup
 public import TauCeti.RingTheory.Ideal.PrincipalUnitGroup
 public import TauCeti.RingTheory.LocalRing.RamificationGroup
-import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 
 /-!
 # The unit filtration of a local ring
@@ -23,7 +23,10 @@ while `unitFiltration S i = 1 + 𝔪 ^ i` for `i ≥ 1`. Since `𝔪` is the Jac
 reduction modulo `𝔪` identifies the zeroth successive quotient `U_0 / U_1` with `kˣ`, and
 subtracting `1` identifies each positive successive quotient `U_{n+1} / U_{n+2}` with the additive
 graded piece `𝔪 ^ (n + 1) / 𝔪 ^ (n + 2)` (written `𝔪 ^ (n + 1) ⧸ (𝔪 • ⊤)` to match
-`TauCeti.residueFieldEquivMaximalIdealGradedOfUniformizer`).
+`TauCeti.residueFieldEquivMaximalIdealGradedOfUniformizer`). Without any finiteness or DVR
+assumption, this additive identification determines the torsion of each positive graded piece: when
+`k` has characteristic `p`, every element satisfies `x ^ p = 1` and `U_{n+1} / U_{n+2}` is a
+`p`-group; when `k` has characteristic zero, `U_{n+1} / U_{n+2}` is torsion-free.
 
 When a group `G` acts on `S` by ring automorphisms, an element `σ` in the `i`-th ramification
 group moves every unit `u : Sˣ` by a factor `(σ • u) / u` lying in `U_{i+1}`. Over a discrete
@@ -46,6 +49,10 @@ uniformizer `ϖ` and multiplicative modulo `U_{i+1}`.
   `TauCeti.IsLocalRing.unitFiltration_antitone`: shallow steps and monotonicity.
 * `TauCeti.IsLocalRing.iInf_unitFiltration_eq_bot`: over a Noetherian local domain, the unit
   filtration separates points (`⨅ i, U_i = ⊥`).
+* `TauCeti.IsLocalRing.unitFiltrationGraded_succ_pow_eq_one_of_charP`,
+  `TauCeti.IsLocalRing.isPGroup_unitFiltrationGraded_succ`, and
+  `TauCeti.IsLocalRing.eq_one_of_pow_eq_one_unitFiltrationGraded_succ_of_charZero`: torsion of the
+  positive graded pieces determined by the residue characteristic.
 * `TauCeti.IsLocalRing.unitsMap_div_mem_unitFiltration_succ`: an element of the `i`-th ramification
   group moves every unit of `S` by a factor in `U_{i+1}`.
 
@@ -122,44 +129,30 @@ section Graded
 
 variable (S : Type*) [CommRing S] [IsLocalRing S]
 
-/-- Reduction of `U_0` to the units of the residue field. -/
-private noncomputable def unitFiltrationZeroToResidueFieldUnits :
-    unitFiltration S 0 →* (ResidueField S)ˣ :=
-  (Units.map (residue S).toMonoidHom).comp (unitFiltration S 0).subtype
-
-private theorem ker_unitFiltrationZeroToResidueFieldUnits :
-    (unitFiltrationZeroToResidueFieldUnits S).ker =
-      (unitFiltration S 1).subgroupOf (unitFiltration S 0) := by
-  ext u
-  rw [MonoidHom.mem_ker, Subgroup.mem_subgroupOf, mem_unitFiltration_one_iff_residue_eq_one,
-    unitFiltrationZeroToResidueFieldUnits, MonoidHom.comp_apply, Subgroup.coe_subtype,
-    Units.ext_iff, Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass, Units.val_one]
-
-private theorem unitFiltrationZeroToResidueFieldUnits_surjective :
-    Function.Surjective (unitFiltrationZeroToResidueFieldUnits S) := by
-  intro v
-  obtain ⟨u, hu⟩ :=
-    Ideal.unitsMap_quotientMk_surjective (maximalIdeal_le_jacobson (⊥ : Ideal S)) v
-  refine ⟨⟨u, unitFiltration_zero S ▸ Subgroup.mem_top u⟩, ?_⟩
-  exact hu
-
 /-- Reduction modulo the maximal ideal identifies the depth-zero graded piece `U_0 / U_1` of the
 unit filtration with the multiplicative group `(ResidueField S)ˣ`. -/
 noncomputable def unitFiltrationGradedZeroEquivResidueFieldUnits :
     UnitFiltrationGraded S 0 ≃* (ResidueField S)ˣ :=
-  (QuotientGroup.quotientMulEquivOfEq (ker_unitFiltrationZeroToResidueFieldUnits S).symm).trans
-    (QuotientGroup.quotientKerEquivOfSurjective _
-      (unitFiltrationZeroToResidueFieldUnits_surjective S))
+  (QuotientGroup.congr
+    ((unitFiltration S 1).subgroupOf (unitFiltration S 0))
+    (maximalIdeal S).principalUnitGroup
+    ((MulEquiv.subgroupCongr (unitFiltration_zero S)).trans Subgroup.topEquiv)
+    (by
+      ext v
+      simp [unitFiltration_one, Subgroup.mem_subgroupOf])).trans
+    (Ideal.unitsQuotientPrincipalUnitGroupEquiv (maximalIdeal_le_jacobson (⊥ : Ideal S)))
 
 /-- Evaluates `unitFiltrationGradedZeroEquivResidueFieldUnits` on the class of `u` via `Units.map`
 along `residue S`. -/
 @[simp]
 theorem unitFiltrationGradedZeroEquivResidueFieldUnits_mk (u : unitFiltration S 0) :
     unitFiltrationGradedZeroEquivResidueFieldUnits S (QuotientGroup.mk u) =
-      Units.map (residue S).toMonoidHom (u : Sˣ) :=
-  (MulEquiv.trans_apply ..).trans <|
-    (congrArg _ (QuotientGroup.quotientMulEquivOfEq_mk ..)).trans <|
-      TauCeti.QuotientGroup.quotientKerEquivOfSurjective_apply_mk ..
+      Units.map (residue S).toMonoidHom (u : Sˣ) := by
+  change Ideal.unitsQuotientPrincipalUnitGroupEquiv (maximalIdeal_le_jacobson (⊥ : Ideal S))
+      (QuotientGroup.congr _ _ _ _ (QuotientGroup.mk u)) = _
+  rw [QuotientGroup.congr_mk]
+  exact Ideal.unitsQuotientPrincipalUnitGroupEquiv_mk
+    (maximalIdeal_le_jacobson (⊥ : Ideal S)) (u : Sˣ)
 
 /-- The underlying residue-field value of `unitFiltrationGradedZeroEquivResidueFieldUnits` on the
 class of `u` is `residue S u`. -/
@@ -167,8 +160,7 @@ theorem coe_unitFiltrationGradedZeroEquivResidueFieldUnits_mk (u : unitFiltratio
     ((unitFiltrationGradedZeroEquivResidueFieldUnits S (QuotientGroup.mk u) :
         (ResidueField S)ˣ) : ResidueField S) =
       residue S ((u : Sˣ) : S) := by
-  rw [unitFiltrationGradedZeroEquivResidueFieldUnits_mk, Units.coe_map, RingHom.toMonoidHom_eq_coe,
-    MonoidHom.coe_ofClass]
+  simp [unitFiltrationGradedZeroEquivResidueFieldUnits_mk]
 
 private theorem comap_maximalIdeal_pow_succ_eq_smul_top (n : ℕ) :
     Submodule.comap (maximalIdeal S ^ (n + 1)).subtype (maximalIdeal S ^ (n + 2)) =
@@ -200,6 +192,48 @@ theorem unitFiltrationGradedSuccEquivMaximalIdealGraded_mk (n : ℕ)
       congrArg Multiplicative.ofAdd
         (Submodule.quotEquivOfEq_mk _ _ (comap_maximalIdeal_pow_succ_eq_smul_top S n) _)
 
+/-- When the residue field has characteristic `p`, every element of a positive graded piece
+`U_{n+1} / U_{n+2}` satisfies `x ^ p = 1`. -/
+theorem unitFiltrationGraded_succ_pow_eq_one_of_charP (p : ℕ) [CharP (ResidueField S) p]
+    (n : ℕ) (x : UnitFiltrationGraded S (n + 1)) :
+    x ^ p = 1 := by
+  let e := unitFiltrationGradedSuccEquivMaximalIdealGraded S n
+  apply e.injective
+  apply Multiplicative.toAdd.injective
+  rw [map_pow, map_one, toAdd_pow, toAdd_one]
+  have hp : (p : S) ∈ maximalIdeal S := by
+    rw [← residue_eq_zero_iff, map_natCast, CharP.cast_eq_zero]
+  induction (e x).toAdd using Submodule.Quotient.induction_on with
+  | _ a =>
+    rw [← Nat.cast_smul_eq_nsmul S, ← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero]
+    exact Submodule.smul_mem_smul hp Submodule.mem_top
+
+/-- For the residue characteristic `p`, every positive graded piece `U_{n+1} / U_{n+2}` of the
+unit filtration is a `p`-group. No finiteness or DVR assumption is needed. -/
+theorem isPGroup_unitFiltrationGraded_succ (p : ℕ) [CharP (ResidueField S) p] (n : ℕ) :
+    IsPGroup p (UnitFiltrationGraded S (n + 1)) := by
+  rw [isPGroup_iff_pow_pow_eq_one]
+  exact fun x ↦ ⟨1, by rw [pow_one, unitFiltrationGraded_succ_pow_eq_one_of_charP S p n x]⟩
+
+variable {S} in
+/-- In residue characteristic zero, every positive graded piece `U_{n+1} / U_{n+2}` of the unit
+filtration is torsion-free. -/
+theorem eq_one_of_pow_eq_one_unitFiltrationGraded_succ_of_charZero [CharZero (ResidueField S)]
+    {n k : ℕ} (hk : k ≠ 0) {x : UnitFiltrationGraded S (n + 1)} (hx : x ^ k = 1) :
+    x = 1 := by
+  let e := unitFiltrationGradedSuccEquivMaximalIdealGraded S n
+  have hkm : (k : S) • (e x).toAdd = 0 := by
+    rw [Nat.cast_smul_eq_nsmul, ← toAdd_pow, ← map_pow, hx, map_one, toAdd_one]
+  have hu : IsUnit (k : S) := by
+    rw [← notMem_maximalIdeal, ← residue_eq_zero_iff, map_natCast]
+    exact Nat.cast_ne_zero.mpr hk
+  obtain ⟨u, hu⟩ := hu
+  have h0 : (e x).toAdd = 0 := by
+    have hmul := congrArg (((u⁻¹ : Sˣ) : S) • ·) hkm
+    rw [smul_smul, ← hu, Units.inv_mul, one_smul, smul_zero] at hmul
+    exact hmul
+  exact e.injective (Multiplicative.toAdd.injective (by rw [h0, map_one, toAdd_one]))
+
 end Graded
 
 section Action
@@ -217,8 +251,7 @@ theorem unitsMap_div_mem_unitFiltration_succ {i : ℕ} {σ : G}
   have hsub :
       ((Units.map (MulSemiringAction.toRingHom G S σ).toMonoidHom u * u⁻¹ : Sˣ) : S) - 1 =
         (σ • (u : S) - (u : S)) * (u⁻¹ : Sˣ) := by
-    rw [Units.val_mul, Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass,
-      MulSemiringAction.toRingHom_apply, sub_mul, Units.mul_inv]
+    simp [sub_mul]
   rw [hsub]
   exact Ideal.mul_mem_right _ _ (mem_ramificationGroup_natCast_iff.mp hσ (u : S))
 
