@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Cohomology.DegreeZero
 public import TauCeti.Topology.VectorBundle.Thom.Homology
 import TauCeti.Algebra.Module.Equiv.SpanSingleton
+import TauCeti.Topology.FiberBundle.Trivialization
 
 /-!
 # The Thom isomorphism in rank zero
@@ -67,13 +68,6 @@ variable {B : Type w} [TopologicalSpace B] (F : Type*) [TopologicalSpace F] [Sub
   (E : B → Type w) [TopologicalSpace (TotalSpace F E)] [∀ b, Zero (E b)]
   [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
 
-include F in
-/-- The fibres of a fibre bundle whose model fibre is a point have a single point. -/
-theorem subsingleton_fiber_of_subsingleton (b : B) : Subsingleton (E b) :=
-  (Function.LeftInverse.injective (g := (trivializationAt F E b).symm b) fun y ↦
-    (trivializationAt F E b).symm_apply_apply_mk (mem_baseSet_trivializationAt F E b) y
-      ).subsingleton
-
 /-- A bundle whose model fibre is a point has no nonzero vectors. -/
 theorem zeroSectionCompl_eq_empty_of_subsingleton : zeroSectionCompl F E = ∅ :=
   Set.eq_empty_of_forall_notMem fun v hv ↦
@@ -83,22 +77,6 @@ theorem zeroSectionCompl_eq_empty_of_subsingleton : zeroSectionCompl F E = ∅ :
 /-- For a bundle whose model fibre is a point, the Thom pair `(E, E₀)` has empty subspace. -/
 theorem isEmpty_thomPair_snd_of_subsingleton : IsEmpty (thomPair F E).snd :=
   Set.isEmpty_coe_sort.2 (zeroSectionCompl_eq_empty_of_subsingleton F E)
-
-include F in
-/-- For a bundle whose model fibre is a point, each fibre pair `(E_b, E_b ∖ {0})` has empty
-subspace. -/
-theorem isEmpty_compl_zero_fiber_of_subsingleton (b : B) : IsEmpty ({0}ᶜ : Set (E b)) :=
-  have := subsingleton_fiber_of_subsingleton F E b
-  Set.isEmpty_coe_sort.2 (Set.eq_empty_of_forall_notMem fun _ hx ↦ hx (Subsingleton.elim _ _))
-
-/-- The projection of a bundle whose model fibre is a point is a bijection onto its base. -/
-theorem bijective_proj_of_subsingleton : Function.Bijective (π F E) := by
-  refine ⟨fun v w h ↦ ?_, fun b ↦ ⟨⟨b, 0⟩, rfl⟩⟩
-  obtain ⟨b, x⟩ := v
-  obtain ⟨b', y⟩ := w
-  obtain rfl : b = b' := h
-  have := subsingleton_fiber_of_subsingleton F E b
-  rw [Subsingleton.elim x y]
 
 /-- The projection of a bundle whose model fibre is a point is a homeomorphism onto its base: it
 is a continuous open bijection. -/
@@ -115,40 +93,49 @@ variable {B : Type w} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F] [N
 
 variable {K : Type w} [CommRing K]
 
+/-! The two helpers below take their classes with coefficients the monoidal unit
+`𝟙_ (ModuleCat K)`, the coefficients of `singularCohomologyZeroEval` and of the cup product, so that
+their proofs rewrite with plain `rw`. Mathlib defines this unit to be `ModuleCat.of K K`, the
+coefficients of `IsThomClass`, so a class with either coefficients is accepted for the other by
+definitional unfolding. The theorems below rely on this only where a class or a hypothesis passes
+between the two forms, never inside a rewrite. -/
+
 omit [NormedSpace ℝ F] in
-/-- In rank zero, a class `u ∈ H⁰(E, ∅; K)` restricting to a generator of `H⁰(E_b; K) ≅ K` on every
-fibre, as a Thom class does, has a unit value at every point of `E`. -/
-private theorem isUnit_singularCohomologyZeroEval_of_subsingleton [Subsingleton F]
-    {u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) 0}
-    (hgen : ∀ b, Submodule.span K
-      {TopPair.singularCohomologyMap (fiberThomPairMap F E b) 0 u} = ⊤) (v : TotalSpace F E) :
-    IsUnit (singularCohomologyZeroEval (k := K) v
-      ((thomPair F E).singularCohomologyπ (ModuleCat.of K K) K (ModuleCat.of K K) 0 u)) := by
-  obtain ⟨b, x⟩ := v
-  have := subsingleton_fiber_of_subsingleton F E b
+/-- In rank zero, the restriction of a class `u ∈ H⁰(E, ∅; K)` to a fibre pair `(E_b, ∅)` generates
+exactly when the restriction to `E_b` of its image in `H⁰(E; K)` generates, since
+`H⁰(E_b, ∅; K) ≅ H⁰(E_b; K)`. -/
+private theorem span_singularCohomologyMap_fiber_eq_top_iff [Subsingleton F]
+    (u : (thomPair F E).singularCohomology (𝟙_ (ModuleCat.{w} K)) K (𝟙_ (ModuleCat.{w} K)) 0)
+    (b : B) :
+    Submodule.span K {(TopCat.singularCohomologyMap (TopPair.Hom.fst (fiberThomPairMap F E b)) 0
+        ((thomPair F E).singularCohomologyπ _ K _ 0 u))} = ⊤ ↔
+      Submodule.span K {TopPair.singularCohomologyMap (fiberThomPairMap F E b) 0 u} = ⊤ := by
   set Q := TopPair.ofSubset (X := TopCat.of (E b)) ({0}ᶜ : Set (E b))
   have : IsEmpty Q.snd := isEmpty_compl_zero_fiber_of_subsingleton F E b
-  -- The image `y ∈ H⁰(E_b; K)` of the fibre restriction of `u` generates, since
-  -- `H⁰(E_b, ∅) ≅ H⁰(E_b)`.
-  set y := Q.singularCohomologyπ (ModuleCat.of K K) K (ModuleCat.of K K) 0
-    (TopPair.singularCohomologyMap (fiberThomPairMap F E b) 0 u)
-  have hspan : Submodule.span K {y} = ⊤ :=
-    (asIso (Q.singularCohomologyπ (ModuleCat.of K K) K (ModuleCat.of K K) 0)).toLinearEquiv
-      |>.span_singleton_apply_eq_top_iff.2 (hgen b)
-  -- So `c • y = 1` for some `c`; evaluating at the point `0` of `E_b`, its value is a unit.
+  rw [← ConcreteCategory.comp_apply, TopPair.singularCohomologyπ_naturality,
+    ConcreteCategory.comp_apply]
+  exact (asIso (Q.singularCohomologyπ _ K _ 0)).toLinearEquiv.span_singleton_apply_eq_top_iff
+
+omit [NormedSpace ℝ F] in
+/-- In rank zero, a class `u ∈ H⁰(E, ∅; K)` restricting to a generator of `H⁰(E_b, ∅; K) ≅ K` on
+every fibre, as a Thom class does, has a unit value at every point of `E`. -/
+private theorem isUnit_singularCohomologyZeroEval_of_subsingleton [Subsingleton F]
+    {u : (thomPair F E).singularCohomology (𝟙_ (ModuleCat.{w} K)) K (𝟙_ (ModuleCat.{w} K)) 0}
+    (hgen : ∀ b, Submodule.span K
+      {TopPair.singularCohomologyMap (fiberThomPairMap F E b) 0 u} = ⊤) (v : TotalSpace F E) :
+    IsUnit (singularCohomologyZeroEval v ((thomPair F E).singularCohomologyπ _ K _ 0 u)) := by
+  obtain ⟨b, x⟩ := v
+  set Q := TopPair.ofSubset (X := TopCat.of (E b)) ({0}ᶜ : Set (E b))
+  obtain ⟨y, hy⟩ : ∃ y : Q.fst, TopPair.Hom.fst (fiberThomPairMap F E b) y = ⟨b, x⟩ :=
+    ⟨x, fiberThomPairMap_fst_apply F E b x⟩
+  -- The restriction to `E_b` of the image of `u` generates, so `c` times it is `1` for some `c`;
+  -- evaluating at `y`, its value there is a unit.
   obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.1
-    (hspan ▸ Submodule.mem_top : (TopCat.of (E b)).singularCohomologyZeroOne (k := K) ∈ _)
-  have hy : y = TopCat.singularCohomologyMap (TopPair.Hom.fst (fiberThomPairMap F E b)) 0
-      ((thomPair F E).singularCohomologyπ (ModuleCat.of K K) K (ModuleCat.of K K) 0 u) :=
-    (ConcreteCategory.congr_hom (TopPair.singularCohomologyπ_naturality
-      (fiberThomPairMap F E b) 0) u).symm
-  have := congrArg (singularCohomologyZeroEval (k := K) (0 : E b)) hc
-  -- `singularCohomologyZeroEval` is stated for the coefficients `𝟙_ (ModuleCat K)`, which are
-  -- `ModuleCat.of K K` only up to definitional unfolding, so `rw` does not see these two lemmas.
-  erw [LinearMap.map_smul] at this
-  rw [singularCohomologyZeroEval_singularCohomologyZeroOne, hy] at this
-  erw [singularCohomologyZeroEval_naturality, fiberThomPairMap_fst_apply] at this
-  rw [smul_eq_mul, ← Subsingleton.elim x 0] at this
+    ((span_singularCohomologyMap_fiber_eq_top_iff u b).2 (hgen b) ▸ Submodule.mem_top :
+      Q.fst.singularCohomologyZeroOne (k := K) ∈ _)
+  have := congrArg (singularCohomologyZeroEval y) hc
+  rw [map_smul, singularCohomologyZeroEval_singularCohomologyZeroOne,
+    singularCohomologyZeroEval_naturality, hy, smul_eq_mul] at this
   exact IsUnit.of_mul_eq_one c (mul_comm c _ ▸ this)
 
 /-- **The Thom isomorphism in rank zero.** For a bundle of rank zero and a Thom class `u`, the Thom
@@ -168,42 +155,25 @@ theorem IsThomClass.bijective_thomMap_of_finrank_eq_zero (hF : finrank ℝ F = 0
   obtain rfl : r = 0 := hr ▸ hF
   obtain rfl : p = m := by omega
   -- After `Hᵖ(E, ∅) ≅ Hᵖ(E)`, the Thom map is the pull-back along the homeomorphism `π` followed
-  -- by the cup product with the image `ū` of `u`. Its values are units, so `ū` has an inverse `v`
-  -- for the cup product, and the cup products with `ū` and `v` are inverse to each other.
-  set X := TopCat.of (TotalSpace F E)
-  obtain ⟨v, h₁, h₂⟩ := exists_singularCup_eq_one (X := X)
-    ((thomPair F E).singularCohomologyπ (ModuleCat.of K K) K (ModuleCat.of K K) 0 u)
-    (isUnit_singularCohomologyZeroEval_of_subsingleton hgen)
-  have key (x y : X.singularCohomology (𝟙_ (ModuleCat.{w} K)) K (𝟙_ (ModuleCat.{w} K)) 0)
-      (hxy : X.singularCup K (λ_ _).inv (λ_ _).hom 0 0 0 rfl x y = X.singularCohomologyZeroOne) :
-      Function.LeftInverse
-        (fun a ↦ X.singularCup K (λ_ (𝟙_ (ModuleCat.{w} K))).inv (ρ_ M).hom p 0 p rfl a y)
-        (fun a ↦ X.singularCup K (λ_ (𝟙_ (ModuleCat.{w} K))).inv (ρ_ M).hom p 0 p rfl a x) := by
-    intro a
-    refine (X.singularCup_assoc K (u₁₂ := (λ_ (𝟙_ (ModuleCat.{w} K))).inv)
-      (u := (λ_ (𝟙_ (ModuleCat.{w} K))).inv) (u₂₃ := (λ_ (𝟙_ (ModuleCat.{w} K))).inv)
-      (u' := (λ_ (𝟙_ (ModuleCat.{w} K))).inv) (μ₁₂ := (ρ_ M).hom) (μ := (ρ_ M).hom)
-      (μ₂₃ := (λ_ (𝟙_ (ModuleCat.{w} K))).hom) (μ' := (ρ_ M).hom) (by monoidal) (by monoidal)
-      rfl rfl rfl rfl a x y).trans ?_
-    rw [hxy, TopCat.singularCohomologyZeroOne_def]
-    exact X.singularCup_constSingularCocycle_right K (η := 𝟙 _) (by simp [unitors_inv_equal])
-      (by simp) rfl a
-  have hcup : Function.Bijective fun a : X.singularCohomology (𝟙_ (ModuleCat.{w} K)) K M p ↦
-      X.singularCup K (λ_ (𝟙_ (ModuleCat.{w} K))).inv (ρ_ M).hom p 0 p rfl a
-        ((thomPair F E).singularCohomologyπ (ModuleCat.of K K) K (ModuleCat.of K K) 0 u) :=
-    ⟨(key _ v h₁).injective, (key v _ h₂).rightInverse.surjective⟩
+  -- by the cup product with the image `ū` of `u`, whose values are units.
+  have hcup := bijective_singularCup_left_of_forall_isUnit M
+    ((thomPair F E).singularCohomologyπ _ K _ 0 u)
+    (isUnit_singularCohomologyZeroEval_of_subsingleton (u := u) hgen) p
   have hπ := ConcreteCategory.bijective_of_isIso
     ((thomPair F E).singularCohomologyπ (ModuleCat.of K K) K M p)
   have hpull := ConcreteCategory.bijective_of_isIso
     ((singularCohomologyFunctor (ModuleCat.of K K) K M p).map (thomPairProj F E).op)
-  refine (Function.Bijective.of_comp_iff' hπ _).1 (cast (congrArg Function.Bijective ?_)
-    (hcup.comp hpull))
-  funext a
-  simp only [Function.comp_apply]
-  rw [thomMap_apply, TopPair.singularCohomologyπ_singularCup]
-  -- The two sides differ only in the proof of `p + 0 = p` and in writing the coefficients `K` as
-  -- `𝟙_ (ModuleCat K)` or as `ModuleCat.of K K`.
-  rfl
+  have e : ⇑((thomPair F E).singularCohomologyπ (ModuleCat.of K K) K M p) ∘
+      ⇑(thomMap F E M 0 p p h u) = (fun a ↦ (thomPair F E).fst.singularCup K
+        (λ_ (𝟙_ (ModuleCat.{w} K))).inv (ρ_ M).hom p 0 p rfl a
+          ((thomPair F E).singularCohomologyπ _ K _ 0 u)) ∘
+      ⇑(TopCat.singularCohomologyMap (thomPairProj F E) p) := by
+    funext a
+    rw [Function.comp_apply, thomMap_apply, TopPair.singularCohomologyπ_singularCup]
+    -- The two sides differ only in the proof of `p + 0 = p`.
+    rfl
+  rw [← Function.Bijective.of_comp_iff' hπ, e]
+  exact hcup.comp hpull
 
 /-- **The homology Thom isomorphism in rank zero.** For a bundle of rank zero and a Thom class `u`
 with coefficients in a field `K`, the homology Thom map `x ↦ π_*(x ⌢ u)` is a bijection
@@ -232,32 +202,18 @@ theorem exists_isThomClass_of_finrank_eq_zero [FiniteDimensional ℝ F] (hF : fi
     obtain ⟨u, hu⟩ := this _ hF
     exact ⟨u, isThomClass_iff.2 ⟨inferInstance, hu⟩⟩
   rintro r rfl
-  refine ⟨inv ((thomPair F E).singularCohomologyπ (ModuleCat.of K K) K (ModuleCat.of K K) 0)
-    (TopCat.of (TotalSpace F E)).singularCohomologyZeroOne, fun b ↦ ?_⟩
-  have := subsingleton_fiber_of_subsingleton F E b
-  set Q := TopPair.ofSubset (X := TopCat.of (E b)) ({0}ᶜ : Set (E b))
-  have : IsEmpty Q.snd := isEmpty_compl_zero_fiber_of_subsingleton F E b
-  rw [← (asIso (Q.singularCohomologyπ (ModuleCat.of K K) K (ModuleCat.of K K) 0)).toLinearEquiv
-    |>.span_singleton_apply_eq_top_iff]
+  refine ⟨inv ((thomPair F E).singularCohomologyπ (𝟙_ (ModuleCat.{w} K)) K
+      (𝟙_ (ModuleCat.{w} K)) 0) (thomPair F E).fst.singularCohomologyZeroOne,
+    fun b ↦ (span_singularCohomologyMap_fiber_eq_top_iff _ b).1 ?_⟩
   -- On the fibre, the class restricts to the unit `1 ∈ H⁰(E_b; K)`, which generates since `E_b` is
   -- a point.
-  have h1 : Q.singularCohomologyπ (ModuleCat.of K K) K (ModuleCat.of K K) 0
-      (TopPair.singularCohomologyMap (fiberThomPairMap F E b) 0
-        (inv ((thomPair F E).singularCohomologyπ (ModuleCat.of K K) K (ModuleCat.of K K) 0)
-          (TopCat.of (TotalSpace F E)).singularCohomologyZeroOne)) =
-        (TopCat.of (E b)).singularCohomologyZeroOne (k := K) := by
-    rw [← ConcreteCategory.comp_apply, ← TopPair.singularCohomologyπ_naturality,
-      ConcreteCategory.comp_apply]
-    -- `singularCohomologyZeroOne` lives in the cohomology with coefficients `𝟙_ (ModuleCat K)`,
-    -- which is `ModuleCat.of K K` only up to definitional unfolding.
-    erw [IsIso.inv_hom_id_apply]
-    exact singularCohomologyMap_singularCohomologyZeroOne _
+  rw [IsIso.inv_hom_id_apply, singularCohomologyMap_singularCohomologyZeroOne]
+  have := subsingleton_fiber_of_subsingleton F E b
   have : PathConnectedSpace (TopCat.of (E b)) :=
     ⟨⟨(0 : E b)⟩, fun x y ↦ Subsingleton.elim x y ▸ Joined.refl x⟩
   refine eq_top_iff.2 fun y _ ↦ ?_
-  rw [Iso.toLinearEquiv_apply, asIso_hom, h1,
-    eq_singularCohomologyZeroEval_smul_singularCohomologyZeroOne (X := TopCat.of (E b))
-      (0 : E b) y]
+  rw [eq_singularCohomologyZeroEval_smul_singularCohomologyZeroOne (X := TopCat.of (E b))
+    (0 : E b) y]
   exact Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self _)
 
 end TauCeti
