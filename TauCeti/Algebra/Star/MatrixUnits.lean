@@ -19,41 +19,26 @@ public import TauCeti.Algebra.Star.Projection.Family
 /-!
 # Systems of matrix units in a star ring
 
-Embedded finite-dimensional C⋆-subalgebras `⨁ᵣ M_{n(r)}(ℂ)` inside an ambient star ring or
-C⋆-algebra are described algebraically by multi-block **systems of matrix units**: families
-`e : ∀ r : κ, n r → n r → R` satisfying `star (e r i j) = e r j i`, `e r i j * e r j l = e r i l`,
-`e r i j * e r k l = 0` for `j ≠ k`, and `e r i j * e s k l = 0` for `r ≠ s`. Such systems govern
-Bratteli's local characterization of AF algebras and matrix-calculus constructions in operator
-K-theory.
+Multi-block **systems of matrix units** `e : ∀ r : κ, n r → n r → R` algebraically parameterize
+embeddings of `⨁ᵣ M_{n(r)}(ℂ)` into a C⋆-algebra, governing AF algebras and operator K-theory.
+Partial-isometry families with block-constant initial projections and pairwise-orthogonal final
+projections generate matrix units via `v r i * star (v r j)`, and over a characteristic-zero field
+`𝕜` the averaging intertwiner `matrixUnitIntertwiner 𝕜 e f` satisfies `f r i j * z = z * e r i j`
+with `z = 1` when `e = f`.
 
-Any family of partial isometries `v r i` with block-constant initial projections and
-pairwise-orthogonal final projections generates a system of matrix units via
-`e r i j = v r i * star (v r j)`. Over a characteristic-zero field `𝕜`, two finite systems `e, f`
-of the same shape admit an explicit averaging intertwiner `matrixUnitIntertwiner 𝕜 e f` that
-satisfies `f r i j * matrixUnitIntertwiner 𝕜 e f = matrixUnitIntertwiner 𝕜 e f * e r i j` and
-normalizes to `matrixUnitIntertwiner 𝕜 e e = 1`, providing the algebraic input for unitary
-conjugacy of nearby matrix-unit systems in C⋆-algebras.
+## Main results
 
-## Main definitions
-
-* `TauCeti.IsMatrixUnitSystem`, `TauCeti.IsUnitalMatrixUnitSystem`.
-* `TauCeti.matrixUnitBlockSupport`, `TauCeti.matrixUnitSupport`, `TauCeti.matrixUnitIntertwiner`.
-
-## Main statements
-
+* `TauCeti.IsMatrixUnitSystem`, `TauCeti.IsUnitalMatrixUnitSystem`,
+  `TauCeti.matrixUnitBlockSupport`, `TauCeti.matrixUnitSupport`, `TauCeti.matrixUnitIntertwiner`.
 * `TauCeti.IsMatrixUnitSystem.of_partialIsometry`,
-  `TauCeti.IsMatrixUnitSystem.isStarProjection_support`,
-  `TauCeti.IsUnitalMatrixUnitSystem.isCompleteOrthogonalProjectionFamily`,
-  `TauCeti.isUnitalMatrixUnitSystem_piSingle_matrixSingle`.
-* `TauCeti.IsMatrixUnitSystem.matrixUnitIntertwiner_self`,
-  `TauCeti.IsMatrixUnitSystem.mul_matrixUnitIntertwiner_eq_matrixUnitIntertwiner_mul`,
-  `TauCeti.IsMatrixUnitSystem.star_matrixUnitIntertwiner_mul_eq_mul_star_matrixUnitIntertwiner`.
+  `TauCeti.isUnitalMatrixUnitSystem_piSingle_matrixSingle`,
+  `TauCeti.IsMatrixUnitSystem.matrixUnitIntertwiner_self`,
+  `TauCeti.IsMatrixUnitSystem.mul_matrixUnitIntertwiner_eq_matrixUnitIntertwiner_mul`.
 
 ## References
 
 * B. Blackadar, *Operator Algebras*, Springer (2006), Proposition II.8.3.23.
-* B. Blackadar, *K-Theory for Operator Algebras*, 2nd ed., Cambridge Univ. Press (1998),
-  Chapter III, §7.
+* B. Blackadar, *K-Theory for Operator Algebras*, 2nd ed., Cambridge Univ. Press (1998), Ch. III.
 -/
 
 public section
@@ -61,8 +46,6 @@ public section
 open Function
 
 namespace TauCeti
-
-section MulZeroStar
 
 variable {κ : Type*} {n : κ → Type*} {R S : Type*}
 
@@ -79,9 +62,7 @@ structure IsMatrixUnitSystem [Mul R] [Zero R] [Star R] (e : ∀ r : κ, n r → 
   mul_block_ne {r s : κ} : r ≠ s → ∀ (i j : n r) (k l : n s), e r i j * e s k l = 0
 
 namespace IsMatrixUnitSystem
-
-section Basic
-
+section
 variable [Mul R] [Zero R] [Star R] {e : ∀ r : κ, n r → n r → R}
 
 /-- Kronecker-delta form of multiplication within a single block `r`. -/
@@ -89,17 +70,9 @@ theorem mul_eq_ite (he : IsMatrixUnitSystem e) (r : κ) [DecidableEq (n r)] (i j
     e r i j * e r k l = if j = k then e r i l else 0 := by
   split_ifs with h; exacts [h ▸ he.mul_same r i j l, he.mul_ne r i l h]
 
-/-- Every diagonal entry `e r i i` is idempotent. -/
-theorem isIdempotentElem_diag (he : IsMatrixUnitSystem e) (r : κ) (i : n r) :
-    IsIdempotentElem (e r i i) := he.mul_same r i i i
-
-/-- Every diagonal entry `e r i i` is self-adjoint. -/
-theorem isSelfAdjoint_diag (he : IsMatrixUnitSystem e) (r : κ) (i : n r) :
-    IsSelfAdjoint (e r i i) := he.star_eq r i i
-
 /-- Every diagonal entry `e r i i` is a star projection. -/
 theorem isStarProjection_diag (he : IsMatrixUnitSystem e) (r : κ) (i : n r) :
-    IsStarProjection (e r i i) := ⟨he.isIdempotentElem_diag r i, he.isSelfAdjoint_diag r i⟩
+    IsStarProjection (e r i i) := ⟨he.mul_same r i i i, he.star_eq r i i⟩
 
 /-- The final projection `e r i j * star (e r i j)` of `e r i j` is `e r i i`. -/
 theorem mul_star_self (he : IsMatrixUnitSystem e) (r : κ) (i j : n r) :
@@ -121,22 +94,18 @@ theorem map [Mul S] [Zero S] [Star S] {F : Type*} [FunLike F R S] [MulHomClass F
   mul_same r i j l := by rw [← map_mul, he.mul_same]
   mul_ne r i {_ _} l h := by rw [← map_mul, he.mul_ne r i l h, map_zero]
   mul_block_ne hrs i j k l := by rw [← map_mul, he.mul_block_ne hrs i j k l, map_zero]
-
-/-- Two diagonal entries `e r i i` and `e s k k` with `(r, i) ≠ (s, k)` multiply to `0`. -/
-theorem diag_mul_diag_of_ne (he : IsMatrixUnitSystem e) {x y : Σ r, n r} (hxy : x ≠ y) :
-    e x.1 x.2 x.2 * e y.1 y.2 y.2 = 0 := by
-  rcases x with ⟨r, i⟩; rcases y with ⟨s, k⟩; by_cases hrs : r = s
-  · subst hrs; exact he.mul_ne r i k fun hik ↦ hxy (congrArg (Sigma.mk r) hik)
-  · exact he.mul_block_ne hrs i i k k
-
-end Basic
+end
 
 /-- The diagonal projections `(r, i) ↦ e r i i` are pairwise star-orthogonal. -/
 theorem pairwise_isStarOrtho_diag [NonUnitalSemiring R] [StarRing R]
     {e : ∀ r : κ, n r → n r → R} (he : IsMatrixUnitSystem e) :
-    Pairwise (IsStarOrtho on fun x : Σ r, n r ↦ e x.1 x.2 x.2) := fun _ y hxy ↦ by
-  simp only [onFun, isStarOrtho_iff, (he.isSelfAdjoint_diag y.1 y.2).star_eq]
-  exact ⟨he.diag_mul_diag_of_ne hxy, he.diag_mul_diag_of_ne hxy.symm⟩
+    Pairwise (IsStarOrtho on fun x : Σ r, n r ↦ e x.1 x.2 x.2) := by
+  rintro ⟨r, i⟩ ⟨s, k⟩ hxy
+  rw [onFun, (he.isStarProjection_diag r i).isSelfAdjoint.isStarOrtho_iff_mul_eq_zero
+    (he.isStarProjection_diag s k).isSelfAdjoint]
+  by_cases hrs : r = s
+  · subst hrs; exact he.mul_ne r i k fun hik ↦ hxy (congrArg (Sigma.mk r) hik)
+  · exact he.mul_block_ne hrs i i k k
 
 /-- Construct `e r i j = v r i * star (v r j)` from partial isometries with block-constant initial
 projections and pairwise-orthogonal final projections. -/
@@ -144,360 +113,239 @@ theorem of_partialIsometry [NonUnitalSemiring R] [StarRing R] {v : ∀ r : κ, n
     (hv : ∀ r i, IsPartialIsometry (v r i))
     (hinit : ∀ r i j, star (v r i) * v r i = star (v r j) * v r j)
     (hortho : Pairwise ((fun a b : R ↦ a * b = 0) on fun x : Σ r, n r ↦
-      v x.1 x.2 * star (v x.1 x.2))) :
-    IsMatrixUnitSystem (fun r i j ↦ v r i * star (v r j)) := by
-  have hstar_mul {x y : Σ r, n r} (hxy : x ≠ y) : star (v x.1 x.2) * v y.1 y.2 = 0 := by
+      v x.1 x.2 * star (v x.1 x.2))) : IsMatrixUnitSystem (fun r i j ↦ v r i * star (v r j)) := by
+  have hsm {x y : Σ r, n r} (hxy : x ≠ y) : star (v x.1 x.2) * v y.1 y.2 = 0 := by
     rw [← (hv x.1 x.2).star.mul_star_mul_self, star_star, ← (hv y.1 y.2).mul_star_mul_self]
-    simpa only [mul_assoc, mul_zero, zero_mul] using
-      congrArg (star (v x.1 x.2) * · * v y.1 y.2) (hortho hxy)
-  refine ⟨fun r i j ↦ by simp [star_mul], fun r i j l ↦ ?_, fun r i {j k} l hjk ↦ ?_,
-    fun {r s} hrs i j k l ↦ ?_⟩
-  · rw [mul_assoc, ← mul_assoc (star (v r j)), hinit r j i, ← mul_assoc, ← mul_assoc,
-      (hv r i).mul_star_mul_self]
-  · rw [mul_assoc, ← mul_assoc (star (v r j)), hstar_mul (x := ⟨r, j⟩) (y := ⟨r, k⟩)
-      (fun h ↦ hjk (eq_of_heq (Sigma.mk.inj h).2)), zero_mul, mul_zero]
-  · rw [mul_assoc, ← mul_assoc (star (v r j)), hstar_mul (x := ⟨r, j⟩) (y := ⟨s, k⟩)
-      (fun h ↦ hrs (congrArg Sigma.fst h)), zero_mul, mul_zero]
-
+    simpa [mul_assoc] using congrArg (star (v x.1 x.2) * · * v y.1 y.2) (hortho hxy)
+  refine ⟨fun _ _ _ ↦ by simp [star_mul], fun r i j _ ↦ by
+      rw [mul_assoc, ← mul_assoc (star (v r j)), hinit r j i, ← mul_assoc, ← mul_assoc,
+        (hv r i).mul_star_mul_self],
+    fun r _ {j k} _ hjk ↦ by rw [mul_assoc, ← mul_assoc (star (v r j)),
+      hsm (x := ⟨r, j⟩) (y := ⟨r, k⟩) (by simpa using hjk), zero_mul, mul_zero],
+    fun {r s} hrs _ j k _ ↦ by rw [mul_assoc, ← mul_assoc (star (v r j)),
+      hsm (x := ⟨r, j⟩) (y := ⟨s, k⟩) fun h ↦ hrs (congrArg Sigma.fst h), zero_mul, mul_zero]⟩
 end IsMatrixUnitSystem
 
-/-- A single `1 × 1` block with entry `p` is a system of matrix units iff `IsStarProjection p`. -/
-@[simp] theorem isMatrixUnitSystem_single_iff [Mul R] [Zero R] [Star R] {p : R} :
-    IsMatrixUnitSystem (fun _ : Unit ↦ fun _ _ : Unit ↦ p) ↔ IsStarProjection p :=
-  ⟨fun h ↦ h.isStarProjection_diag () (), fun hp ↦
-    { star_eq := fun _ _ _ ↦ hp.isSelfAdjoint.star_eq
-      mul_same := fun _ _ _ _ ↦ hp.isIdempotentElem.eq
-      mul_ne := fun _ _ {_ _} _ h ↦ (h (Subsingleton.elim _ _)).elim
-      mul_block_ne := fun h _ _ _ _ ↦ (h (Subsingleton.elim _ _)).elim }⟩
+section
+variable [∀ r, Fintype (n r)]
+section
+variable [AddCommMonoid R]
 
-end MulZeroStar
+/-- The **block diagonal sum** `∑ i : n r, e r i i` (a star projection for matrix-unit systems). -/
+def matrixUnitBlockSupport (e : ∀ r : κ, n r → n r → R) (r : κ) : R := ∑ i : n r, e r i i
 
-section Support
-
-variable {κ : Type*} {n : κ → Type*} {R S : Type*}
-
-/-- The **block diagonal sum** `∑ i : n r, e r i i` of block `r` in a family `e`, which is the
-block support star projection when `IsMatrixUnitSystem e`. -/
-def matrixUnitBlockSupport [AddCommMonoid R] [∀ r, Fintype (n r)]
-    (e : ∀ r : κ, n r → n r → R) (r : κ) : R := ∑ i : n r, e r i i
-
-/-- The **total diagonal sum** `∑ r : κ, matrixUnitBlockSupport e r` of a finite family `e`, which
-is the total support star projection when `IsMatrixUnitSystem e`. -/
-def matrixUnitSupport [AddCommMonoid R] [Fintype κ] [∀ r, Fintype (n r)]
-    (e : ∀ r : κ, n r → n r → R) : R := ∑ r : κ, matrixUnitBlockSupport e r
+/-- The **total diagonal sum** `∑ r, matrixUnitBlockSupport e r` (a star projection for
+matrix-unit systems). -/
+def matrixUnitSupport [Fintype κ] (e : ∀ r : κ, n r → n r → R) : R :=
+  ∑ r : κ, matrixUnitBlockSupport e r
 
 /-- Unfold `TauCeti.matrixUnitBlockSupport`. -/
-theorem matrixUnitBlockSupport_def [AddCommMonoid R] [∀ r, Fintype (n r)]
-    (e : ∀ r : κ, n r → n r → R) (r : κ) : matrixUnitBlockSupport e r = ∑ i : n r, e r i i := (rfl)
+theorem matrixUnitBlockSupport_def (e : ∀ r : κ, n r → n r → R) (r : κ) :
+    matrixUnitBlockSupport e r = ∑ i : n r, e r i i := (rfl)
 
 /-- Express `TauCeti.matrixUnitSupport` as the sum of `TauCeti.matrixUnitBlockSupport`. -/
-theorem matrixUnitSupport_eq_sum_blockSupport [AddCommMonoid R] [Fintype κ] [∀ r, Fintype (n r)]
-    (e : ∀ r : κ, n r → n r → R) :
+theorem matrixUnitSupport_eq_sum_blockSupport [Fintype κ] (e : ∀ r : κ, n r → n r → R) :
     matrixUnitSupport e = ∑ r : κ, matrixUnitBlockSupport e r := (rfl)
 
 /-- Unfold `TauCeti.matrixUnitSupport` to the double diagonal sum `∑ r, ∑ i, e r i i`. -/
-theorem matrixUnitSupport_def [AddCommMonoid R] [Fintype κ] [∀ r, Fintype (n r)]
-    (e : ∀ r : κ, n r → n r → R) : matrixUnitSupport e = ∑ r : κ, ∑ i : n r, e r i i := (rfl)
+theorem matrixUnitSupport_def [Fintype κ] (e : ∀ r : κ, n r → n r → R) :
+    matrixUnitSupport e = ∑ r : κ, ∑ i : n r, e r i i := (rfl)
 
 /-- The block support of the zero family is `0`. -/
-@[simp] theorem matrixUnitBlockSupport_zero [AddCommMonoid R] [∀ r, Fintype (n r)] (r : κ) :
-    matrixUnitBlockSupport (0 : ∀ r : κ, n r → n r → R) r = 0 := by
-  simp [matrixUnitBlockSupport_def]
+@[simp] theorem matrixUnitBlockSupport_zero (r : κ) :
+    matrixUnitBlockSupport (0 : ∀ r, n r → n r → R) r = 0 := by simp [matrixUnitBlockSupport_def]
 
 /-- The total support of the zero family is `0`. -/
-@[simp] theorem matrixUnitSupport_zero [AddCommMonoid R] [Fintype κ] [∀ r, Fintype (n r)] :
-    matrixUnitSupport (0 : ∀ r : κ, n r → n r → R) = 0 := by
-  simp [matrixUnitSupport_def]
+@[simp] theorem matrixUnitSupport_zero [Fintype κ] :
+    matrixUnitSupport (0 : ∀ r : κ, n r → n r → R) = 0 := by simp [matrixUnitSupport_def]
 
-/-- `matrixUnitBlockSupport e r` belongs to any additive submonoid containing the diagonal of
-block `r`. -/
-theorem matrixUnitBlockSupport_mem [AddCommMonoid R] [∀ r, Fintype (n r)] {T : Type*}
-    [SetLike T R] [AddSubmonoidClass T R] {s : T} {e : ∀ r : κ, n r → n r → R} {r : κ}
-    (he : ∀ i, e r i i ∈ s) : matrixUnitBlockSupport e r ∈ s := by
-  rw [matrixUnitBlockSupport_def]; exact sum_mem fun i _ ↦ he i
+/-- `matrixUnitBlockSupport e r` lies in any additive submonoid containing block `r`'s diagonal. -/
+theorem matrixUnitBlockSupport_mem {T : Type*} [SetLike T R] [AddSubmonoidClass T R] {s : T}
+    {e : ∀ r : κ, n r → n r → R} {r : κ} (he : ∀ i, e r i i ∈ s) :
+    matrixUnitBlockSupport e r ∈ s := sum_mem fun i _ ↦ he i
 
-/-- `matrixUnitSupport e` belongs to any additive submonoid containing all diagonal entries of
-`e`. -/
-theorem matrixUnitSupport_mem [AddCommMonoid R] [Fintype κ] [∀ r, Fintype (n r)] {T : Type*}
-    [SetLike T R] [AddSubmonoidClass T R] {s : T} {e : ∀ r : κ, n r → n r → R}
-    (he : ∀ r i, e r i i ∈ s) : matrixUnitSupport e ∈ s := by
-  rw [matrixUnitSupport_eq_sum_blockSupport]
-  exact sum_mem fun r _ ↦ matrixUnitBlockSupport_mem (he r)
+/-- `matrixUnitSupport e` lies in any additive submonoid containing all diagonal entries of `e`. -/
+theorem matrixUnitSupport_mem [Fintype κ] {T : Type*} [SetLike T R] [AddSubmonoidClass T R] {s : T}
+    {e : ∀ r : κ, n r → n r → R} (he : ∀ r i, e r i i ∈ s) :
+    matrixUnitSupport e ∈ s := sum_mem fun r _ ↦ matrixUnitBlockSupport_mem (he r)
 
 /-- Additive monoid homomorphisms preserve `TauCeti.matrixUnitBlockSupport`. -/
-theorem map_matrixUnitBlockSupport [AddCommMonoid R] [AddCommMonoid S] [∀ r, Fintype (n r)]
-    {F : Type*} [FunLike F R S] [AddMonoidHomClass F R S] (φ : F)
-    (e : ∀ r : κ, n r → n r → R) (r : κ) :
+theorem map_matrixUnitBlockSupport [AddCommMonoid S] {F : Type*} [FunLike F R S]
+    [AddMonoidHomClass F R S] (φ : F) (e : ∀ r : κ, n r → n r → R) (r : κ) :
     φ (matrixUnitBlockSupport e r) = matrixUnitBlockSupport (fun r i j ↦ φ (e r i j)) r := by
   simp [matrixUnitBlockSupport_def]
 
 /-- Additive monoid homomorphisms preserve `TauCeti.matrixUnitSupport`. -/
-theorem map_matrixUnitSupport [AddCommMonoid R] [AddCommMonoid S] [Fintype κ] [∀ r, Fintype (n r)]
-    {F : Type*} [FunLike F R S] [AddMonoidHomClass F R S] (φ : F)
-    (e : ∀ r : κ, n r → n r → R) :
+theorem map_matrixUnitSupport [AddCommMonoid S] [Fintype κ] {F : Type*} [FunLike F R S]
+    [AddMonoidHomClass F R S] (φ : F) (e : ∀ r : κ, n r → n r → R) :
     φ (matrixUnitSupport e) = matrixUnitSupport (fun r i j ↦ φ (e r i j)) := by
   simp [matrixUnitSupport_def]
+end
 
 /-- A finite system of matrix units is **unital** if its total support projection equals `1`. -/
 @[mk_iff]
-structure IsUnitalMatrixUnitSystem [Semiring R] [Star R] [Fintype κ] [∀ r, Fintype (n r)]
+structure IsUnitalMatrixUnitSystem [Semiring R] [Star R] [Fintype κ]
     (e : ∀ r : κ, n r → n r → R) : Prop extends IsMatrixUnitSystem e where
   /-- The diagonal projections sum to `1`. -/
   support_eq_one : matrixUnitSupport e = 1
 
 namespace IsMatrixUnitSystem
-
-section NonUnitalSemiring
-
-variable [NonUnitalSemiring R] [StarRing R] [∀ r, Fintype (n r)] {e : ∀ r : κ, n r → n r → R}
+variable [NonUnitalSemiring R] [StarRing R] {e : ∀ r : κ, n r → n r → R}
 
 /-- Each block support `matrixUnitBlockSupport e r` is a star projection. -/
 theorem isStarProjection_blockSupport (he : IsMatrixUnitSystem e) (r : κ) :
     IsStarProjection (matrixUnitBlockSupport e r) :=
   IsStarProjection.sum (fun i _ ↦ he.isStarProjection_diag r i) fun i _ j _ hij ↦
-    he.pairwise_isStarOrtho_diag (i := ⟨r, i⟩) (j := ⟨r, j⟩)
-      fun h ↦ hij (eq_of_heq (Sigma.mk.inj h).2)
-
-/-- Right-multiplying `e r i j` by `matrixUnitBlockSupport e r` leaves `e r i j` fixed. -/
-theorem mul_blockSupport_same (he : IsMatrixUnitSystem e) (r : κ) (i j : n r) :
-    e r i j * matrixUnitBlockSupport e r = e r i j := by
-  classical simp [matrixUnitBlockSupport_def, Finset.mul_sum, he.mul_eq_ite]
-
-/-- Left-multiplying `e r i j` by `matrixUnitBlockSupport e r` leaves `e r i j` fixed. -/
-theorem blockSupport_mul_same (he : IsMatrixUnitSystem e) (r : κ) (i j : n r) :
-    matrixUnitBlockSupport e r * e r i j = e r i j := by
-  classical simp [matrixUnitBlockSupport_def, Finset.sum_mul, he.mul_eq_ite]
-
-/-- Right-multiplying `e r i j` by the support of a distinct block `s` gives `0`. -/
-theorem mul_blockSupport_ne (he : IsMatrixUnitSystem e) {r s : κ} (hrs : r ≠ s) (i j : n r) :
-    e r i j * matrixUnitBlockSupport e s = 0 := by
-  simp [matrixUnitBlockSupport_def, Finset.mul_sum, he.mul_block_ne hrs]
-
-/-- Left-multiplying `e s i j` by the support of a distinct block `r` gives `0`. -/
-theorem blockSupport_mul_ne (he : IsMatrixUnitSystem e) {r s : κ} (hrs : r ≠ s) (i j : n s) :
-    matrixUnitBlockSupport e r * e s i j = 0 := by
-  simp [matrixUnitBlockSupport_def, Finset.sum_mul, he.mul_block_ne hrs]
-
-/-- Distinct block supports `matrixUnitBlockSupport e r` and `matrixUnitBlockSupport e s` multiply
-to `0`. -/
-theorem blockSupport_mul_blockSupport_of_ne (he : IsMatrixUnitSystem e) {r s : κ} (hrs : r ≠ s) :
-    matrixUnitBlockSupport e r * matrixUnitBlockSupport e s = 0 := by
-  simp [matrixUnitBlockSupport_def, Finset.sum_mul, Finset.mul_sum, he.mul_block_ne hrs]
+    he.pairwise_isStarOrtho_diag (i := ⟨r, i⟩) (j := ⟨r, j⟩) (by simpa using hij)
 
 /-- The block support projections `matrixUnitBlockSupport e` are pairwise star-orthogonal. -/
 theorem pairwise_isStarOrtho_blockSupport (he : IsMatrixUnitSystem e) :
     Pairwise (IsStarOrtho on matrixUnitBlockSupport e) := fun r s hrs ↦ by
   rw [onFun, (he.isStarProjection_blockSupport r).isSelfAdjoint.isStarOrtho_iff_mul_eq_zero
     (he.isStarProjection_blockSupport s).isSelfAdjoint]
-  exact he.blockSupport_mul_blockSupport_of_ne hrs
+  simp [matrixUnitBlockSupport_def, Finset.sum_mul, Finset.mul_sum, he.mul_block_ne hrs]
 
 /-- For finite `κ`, the total support `matrixUnitSupport e` is a star projection. -/
 theorem isStarProjection_support [Fintype κ] (he : IsMatrixUnitSystem e) :
-    IsStarProjection (matrixUnitSupport e) := by
-  rw [matrixUnitSupport_eq_sum_blockSupport]
-  exact IsStarProjection.sum (fun r _ ↦ he.isStarProjection_blockSupport r)
+    IsStarProjection (matrixUnitSupport e) :=
+  IsStarProjection.sum (fun r _ ↦ he.isStarProjection_blockSupport r)
     (he.pairwise_isStarOrtho_blockSupport.set_pairwise _)
 
 /-- Right-multiplying `e r i j` by `matrixUnitSupport e` leaves `e r i j` fixed. -/
 theorem mul_support [Fintype κ] (he : IsMatrixUnitSystem e) (r : κ) (i j : n r) :
     e r i j * matrixUnitSupport e = e r i j := by
-  rw [matrixUnitSupport_eq_sum_blockSupport, Finset.mul_sum, Finset.sum_eq_single r
-    (fun s _ hsr ↦ he.mul_blockSupport_ne hsr.symm i j) (fun hr ↦ (hr (Finset.mem_univ r)).elim)]
-  exact he.mul_blockSupport_same r i j
+  classical
+  rw [matrixUnitSupport_def, Finset.mul_sum, Finset.sum_eq_single_of_mem r (Finset.mem_univ r)
+    fun s _ hsr ↦ by simp [Finset.mul_sum, he.mul_block_ne hsr.symm]]
+  simp [Finset.mul_sum, he.mul_eq_ite]
 
 /-- Left-multiplying `e r i j` by `matrixUnitSupport e` leaves `e r i j` fixed. -/
 theorem support_mul [Fintype κ] (he : IsMatrixUnitSystem e) (r : κ) (i j : n r) :
     matrixUnitSupport e * e r i j = e r i j := by
-  rw [matrixUnitSupport_eq_sum_blockSupport, Finset.sum_mul, Finset.sum_eq_single r
-    (fun s _ hsr ↦ he.blockSupport_mul_ne hsr i j) (fun hr ↦ (hr (Finset.mem_univ r)).elim)]
-  exact he.blockSupport_mul_same r i j
-
-end NonUnitalSemiring
-
-section Ring
-
-variable [Ring R] [StarRing R] [Fintype κ] [∀ r, Fintype (n r)] {e : ∀ r : κ, n r → n r → R}
-
-/-- Right-multiplying `e r i j` by `1 - matrixUnitSupport e` gives `0`. -/
-theorem mul_one_sub_support (he : IsMatrixUnitSystem e) (r : κ) (i j : n r) :
-    e r i j * (1 - matrixUnitSupport e) = 0 := by rw [mul_sub, mul_one, he.mul_support, sub_self]
-
-/-- Left-multiplying `e r i j` by `1 - matrixUnitSupport e` gives `0`. -/
-theorem one_sub_support_mul (he : IsMatrixUnitSystem e) (r : κ) (i j : n r) :
-    (1 - matrixUnitSupport e) * e r i j = 0 := by rw [sub_mul, one_mul, he.support_mul, sub_self]
-
-end Ring
-
+  classical
+  rw [matrixUnitSupport_def, Finset.sum_mul, Finset.sum_eq_single_of_mem r (Finset.mem_univ r)
+    fun s _ hsr ↦ by simp [Finset.sum_mul, he.mul_block_ne hsr]]
+  simp [Finset.sum_mul, he.mul_eq_ite]
 end IsMatrixUnitSystem
 
 namespace IsUnitalMatrixUnitSystem
+variable [Semiring R] [Fintype κ] {e : ∀ r : κ, n r → n r → R}
 
 /-- Any unital star-ring homomorphism preserves `TauCeti.IsUnitalMatrixUnitSystem`. -/
-theorem map [Semiring R] [Star R] [Semiring S] [Star S] [Fintype κ] [∀ r, Fintype (n r)]
-    {F : Type*} [FunLike F R S] [RingHomClass F R S] [StarHomClass F R S]
-    {e : ∀ r : κ, n r → n r → R} (he : IsUnitalMatrixUnitSystem e) (φ : F) :
-    IsUnitalMatrixUnitSystem (fun r i j ↦ φ (e r i j)) where
-  toIsMatrixUnitSystem := he.toIsMatrixUnitSystem.map φ
-  support_eq_one := by rw [← map_matrixUnitSupport, he.support_eq_one, map_one]
+theorem map [Star R] [Semiring S] [Star S] {F : Type*} [FunLike F R S] [RingHomClass F R S]
+    [StarHomClass F R S] (he : IsUnitalMatrixUnitSystem e) (φ : F) :
+    IsUnitalMatrixUnitSystem (fun r i j ↦ φ (e r i j)) :=
+  ⟨he.toIsMatrixUnitSystem.map φ, by rw [← map_matrixUnitSupport, he.support_eq_one, map_one]⟩
 
-/-- The block support projections of a unital system of matrix units form a complete orthogonal
-projection family. -/
-theorem isCompleteOrthogonalProjectionFamily [Semiring R] [StarRing R] [Fintype κ]
-    [∀ r, Fintype (n r)] {e : ∀ r : κ, n r → n r → R} (he : IsUnitalMatrixUnitSystem e) :
-    IsCompleteOrthogonalProjectionFamily (matrixUnitBlockSupport e) where
-  idem r := (he.isStarProjection_blockSupport r).isIdempotentElem
-  ortho _ _ hrs := he.blockSupport_mul_blockSupport_of_ne hrs
-  complete := he.support_eq_one
-  isSelfAdjoint r := (he.isStarProjection_blockSupport r).isSelfAdjoint
-
+/-- Block supports of a unital matrix-unit system form a complete orthogonal projection family. -/
+theorem isCompleteOrthogonalProjectionFamily [StarRing R] (he : IsUnitalMatrixUnitSystem e) :
+    IsCompleteOrthogonalProjectionFamily (matrixUnitBlockSupport e) :=
+  ⟨⟨⟨fun r ↦ (he.isStarProjection_blockSupport r).isIdempotentElem, fun _ s hrs ↦
+      (he.pairwise_isStarOrtho_blockSupport hrs).mul_eq_zero'
+        (he.isStarProjection_blockSupport s).isSelfAdjoint⟩, he.support_eq_one⟩,
+    fun r ↦ (he.isStarProjection_blockSupport r).isSelfAdjoint⟩
 end IsUnitalMatrixUnitSystem
 
-section StandardMatrixUnits
-
-/-- The standard multi-block matrix units `(r, i, j) ↦ Pi.single r (Matrix.single i j 1)` in the
-product `∀ r : κ, Matrix (n r) (n r) R` form a system of matrix units. -/
-theorem isMatrixUnitSystem_piSingle_matrixSingle (R : Type*) [Semiring R] [StarRing R]
-    [DecidableEq κ] [∀ r, DecidableEq (n r)] [∀ r, Fintype (n r)] :
-    IsMatrixUnitSystem
-      (fun r (i j : n r) ↦ Pi.single r (Matrix.single i j (1 : R)) :
-        ∀ r : κ, n r → n r → ∀ s : κ, Matrix (n s) (n s) R) where
-  star_eq r i j := by
-    rw [Pi.star_single, Matrix.star_eq_conjTranspose, Matrix.conjTranspose_single, star_one]
-  mul_same r i j l := by
-    rw [← Pi.single_mul, Matrix.single_mul_single_same, mul_one]
-  mul_ne r i {_ _} _ hjk := by
-    simp [← Pi.single_mul, hjk]
-  mul_block_ne hrs i j k l := by
-    rw [← Pi.single_mul_left, Pi.single_eq_of_ne hrs, mul_zero, Pi.single_zero]
-
-/-- For finite `κ`, the standard multi-block matrix units
-`(r, i, j) ↦ Pi.single r (Matrix.single i j 1)` form a unital system of matrix units in
-`∀ r : κ, Matrix (n r) (n r) R`. -/
+/-- Standard multi-block matrix units `(r, i, j) ↦ Pi.single r (Matrix.single i j 1)` in
+`∀ r : κ, Matrix (n r) (n r) R` form a unital system of matrix units. -/
 theorem isUnitalMatrixUnitSystem_piSingle_matrixSingle (R : Type*) [Semiring R] [StarRing R]
-    [DecidableEq κ] [∀ r, DecidableEq (n r)] [Fintype κ] [∀ r, Fintype (n r)] :
-    IsUnitalMatrixUnitSystem
-      (fun r (i j : n r) ↦ Pi.single r (Matrix.single i j (1 : R)) :
-        ∀ r : κ, n r → n r → ∀ s : κ, Matrix (n s) (n s) R) where
-  toIsMatrixUnitSystem := isMatrixUnitSystem_piSingle_matrixSingle R
+    [DecidableEq κ] [∀ r, DecidableEq (n r)] [Fintype κ] :
+    IsUnitalMatrixUnitSystem (fun r (i j : n r) ↦ Pi.single r (Matrix.single i j (1 : R)) :
+      ∀ r : κ, n r → n r → ∀ s : κ, Matrix (n s) (n s) R) where
+  star_eq _ _ _ := by simp [Pi.star_single, Matrix.star_eq_conjTranspose]
+  mul_same _ _ _ _ := by rw [← Pi.single_mul, Matrix.single_mul_single_same, mul_one]
+  mul_ne _ _ {_ _} _ hjk := by simp [← Pi.single_mul, hjk]
+  mul_block_ne hrs _ _ _ _ := by simp [← Pi.single_mul_left, Pi.single_eq_of_ne hrs]
   support_eq_one := by
-    ext s a b
-    simp only [matrixUnitSupport_def, Finset.sum_apply, Pi.one_apply, Matrix.one_apply]
-    rw [Finset.sum_eq_single s
-      (fun r _ hrs ↦ by simp [Pi.single_eq_of_ne' hrs])
-      (fun hs ↦ (hs (Finset.mem_univ s)).elim)]
+    ext s a b; simp only [matrixUnitSupport_def, Finset.sum_apply, Pi.one_apply, Matrix.one_apply]
+    rw [Finset.sum_eq_single_of_mem s (Finset.mem_univ s) fun r _ hrs ↦ by
+      simp [Pi.single_eq_of_ne' hrs]]
     simp only [Pi.single_eq_same, Matrix.sum_apply, Matrix.single_apply]
-    rw [Finset.sum_eq_single a
-      (fun i _ hia ↦ by simp [hia])
-      (fun ha ↦ (ha (Finset.mem_univ a)).elim)]
-    simp
+    rw [Finset.sum_eq_single_of_mem a (Finset.mem_univ a) fun i _ hia ↦ by simp [hia]]; simp
 
-end StandardMatrixUnits
-
-end Support
-
-section Intertwiner
-
-variable (𝕜 : Type*) {κ : Type*} {n : κ → Type*} {R S : Type*}
-  [Field 𝕜] [Ring R] [Algebra 𝕜 R] [Ring S] [Algebra 𝕜 S] [Fintype κ] [∀ r, Fintype (n r)]
+section
+variable (𝕜 : Type*) [Field 𝕜] [Ring R] [Algebra 𝕜 R] [Fintype κ]
 
 /-- The **canonical multi-block intertwiner**
-`(1 - matrixUnitSupport f) * (1 - matrixUnitSupport e)` plus
-`∑ r, (card (n r) : 𝕜)⁻¹ • ∑ a, ∑ b, f r a b * e r b a`
-between two finite families `e, f` of the same shape. When `e` and `f` are systems of matrix units,
-it satisfies `f r i j * matrixUnitIntertwiner 𝕜 e f = matrixUnitIntertwiner 𝕜 e f * e r i j` and,
-in characteristic zero, `matrixUnitIntertwiner 𝕜 e e = 1`. -/
+`z = (1 - matrixUnitSupport f) * (1 - matrixUnitSupport e) +`
+`∑ r, (card (n r) : 𝕜)⁻¹ • ∑ a, ∑ b, f r a b * e r b a`. For matrix-unit systems `e, f`,
+`f r i j * z = z * e r i j` and (in char 0) `z = 1` when `e = f`. -/
 def matrixUnitIntertwiner (e f : ∀ r : κ, n r → n r → R) : R :=
   (1 - matrixUnitSupport f) * (1 - matrixUnitSupport e) +
     ∑ r : κ, (Fintype.card (n r) : 𝕜)⁻¹ • ∑ a : n r, ∑ b : n r, f r a b * e r b a
 
 /-- Unfold `TauCeti.matrixUnitIntertwiner`. -/
 theorem matrixUnitIntertwiner_def (e f : ∀ r : κ, n r → n r → R) :
-    matrixUnitIntertwiner 𝕜 e f =
-      (1 - matrixUnitSupport f) * (1 - matrixUnitSupport e) +
-        ∑ r : κ, (Fintype.card (n r) : 𝕜)⁻¹ • ∑ a : n r, ∑ b : n r, f r a b * e r b a := (rfl)
+    matrixUnitIntertwiner 𝕜 e f = (1 - matrixUnitSupport f) * (1 - matrixUnitSupport e) +
+      ∑ r : κ, (Fintype.card (n r) : 𝕜)⁻¹ • ∑ a : n r, ∑ b : n r, f r a b * e r b a := (rfl)
 
-/-- With `0` on the left, `matrixUnitIntertwiner 𝕜 0 f` reduces to `1 - matrixUnitSupport f`. -/
+/-- With `0` on the left, `matrixUnitIntertwiner 𝕜 0 f = 1 - matrixUnitSupport f`. -/
 @[simp] theorem matrixUnitIntertwiner_zero_left (f : ∀ r : κ, n r → n r → R) :
-    matrixUnitIntertwiner 𝕜 0 f = 1 - matrixUnitSupport f := by
-  simp [matrixUnitIntertwiner_def]
+    matrixUnitIntertwiner 𝕜 0 f = 1 - matrixUnitSupport f := by simp [matrixUnitIntertwiner_def]
 
-/-- With `0` on the right, `matrixUnitIntertwiner 𝕜 e 0` reduces to `1 - matrixUnitSupport e`. -/
+/-- With `0` on the right, `matrixUnitIntertwiner 𝕜 e 0 = 1 - matrixUnitSupport e`. -/
 @[simp] theorem matrixUnitIntertwiner_zero_right (e : ∀ r : κ, n r → n r → R) :
-    matrixUnitIntertwiner 𝕜 e 0 = 1 - matrixUnitSupport e := by
-  simp [matrixUnitIntertwiner_def]
+    matrixUnitIntertwiner 𝕜 e 0 = 1 - matrixUnitSupport e := by simp [matrixUnitIntertwiner_def]
 
 /-- `matrixUnitIntertwiner 𝕜 e f` belongs to any unital `𝕜`-subring containing `e` and `f`. -/
-theorem matrixUnitIntertwiner_mem {T : Type*} [SetLike T R] [SubringClass T R]
-    [SMulMemClass T 𝕜 R] {s : T} {e f : ∀ r : κ, n r → n r → R}
-    (he : ∀ r i j, e r i j ∈ s) (hf : ∀ r i j, f r i j ∈ s) :
-    matrixUnitIntertwiner 𝕜 e f ∈ s := by
-  rw [matrixUnitIntertwiner_def]
-  exact add_mem
-    (mul_mem (sub_mem (one_mem s) (matrixUnitSupport_mem fun r i ↦ hf r i i))
+theorem matrixUnitIntertwiner_mem {T : Type*} [SetLike T R] [SubringClass T R] [SMulMemClass T 𝕜 R]
+    {s : T} {e f : ∀ r : κ, n r → n r → R} (he : ∀ r i j, e r i j ∈ s) (hf : ∀ r i j, f r i j ∈ s) :
+    matrixUnitIntertwiner 𝕜 e f ∈ s :=
+  add_mem (mul_mem (sub_mem (one_mem s) (matrixUnitSupport_mem fun r i ↦ hf r i i))
       (sub_mem (one_mem s) (matrixUnitSupport_mem fun r i ↦ he r i i)))
-    (sum_mem fun r _ ↦ SMulMemClass.smul_mem _ <|
-      sum_mem fun a _ ↦ sum_mem fun b _ ↦ mul_mem (hf r a b) (he r b a))
+    (sum_mem fun _ _ ↦ SMulMemClass.smul_mem _ <| sum_mem fun _ _ ↦
+      sum_mem fun _ _ ↦ mul_mem (hf _ _ _) (he _ _ _))
 
 /-- Unital `𝕜`-algebra homomorphisms preserve `TauCeti.matrixUnitIntertwiner`. -/
-theorem map_matrixUnitIntertwiner {F : Type*} [FunLike F R S] [AlgHomClass F 𝕜 R S] (φ : F)
-    (e f : ∀ r : κ, n r → n r → R) :
+theorem map_matrixUnitIntertwiner [Ring S] [Algebra 𝕜 S] {F : Type*} [FunLike F R S]
+    [AlgHomClass F 𝕜 R S] (φ : F) (e f : ∀ r : κ, n r → n r → R) :
     φ (matrixUnitIntertwiner 𝕜 e f) =
       matrixUnitIntertwiner 𝕜 (fun r i j ↦ φ (e r i j)) (fun r i j ↦ φ (f r i j)) := by
   simp [matrixUnitIntertwiner_def, map_matrixUnitSupport]
 
 namespace IsMatrixUnitSystem
-
-variable {e f : ∀ r : κ, n r → n r → R}
+variable [StarRing R] {e f : ∀ r : κ, n r → n r → R}
 
 /-- In characteristic zero, the canonical intertwiner of `e` with itself is `1`. -/
-theorem matrixUnitIntertwiner_self [StarRing R] [CharZero 𝕜] (he : IsMatrixUnitSystem e) :
+theorem matrixUnitIntertwiner_self [CharZero 𝕜] (he : IsMatrixUnitSystem e) :
     matrixUnitIntertwiner 𝕜 e e = 1 := by
   rw [matrixUnitIntertwiner_def, (he.isStarProjection_support.one_sub).isIdempotentElem.eq]
-  have hsum : (∑ r : κ, (Fintype.card (n r) : 𝕜)⁻¹ • ∑ a : n r, ∑ b : n r, e r a b * e r b a) =
-      matrixUnitSupport e := Finset.sum_congr rfl fun r _ ↦ by
-    by_cases hcard : Fintype.card (n r) = 0
-    · have := Fintype.card_eq_zero_iff.mp hcard; simp [matrixUnitBlockSupport_def]
-    · simp_rw [he.mul_same, Finset.sum_const, Finset.card_univ, ← Nat.cast_smul_eq_nsmul 𝕜,
-        ← Finset.smul_sum, ← matrixUnitBlockSupport_def, smul_smul,
-        inv_mul_cancel₀ (Nat.cast_ne_zero (R := 𝕜).mpr hcard), one_smul]
-  rw [hsum, sub_add_cancel]
+  suffices (∑ r : κ, (Fintype.card (n r) : 𝕜)⁻¹ • ∑ a : n r, ∑ b : n r, e r a b * e r b a) =
+      matrixUnitSupport e by rw [this, sub_add_cancel]
+  refine Finset.sum_congr rfl fun r _ ↦ ?_; by_cases hcard : Fintype.card (n r) = 0
+  · have := Fintype.card_eq_zero_iff.mp hcard; simp [matrixUnitBlockSupport_def]
+  · simp_rw [he.mul_same, Finset.sum_const, Finset.card_univ, ← Nat.cast_smul_eq_nsmul 𝕜,
+      ← Finset.smul_sum, ← matrixUnitBlockSupport_def, smul_smul,
+      inv_mul_cancel₀ (Nat.cast_ne_zero (R := 𝕜).mpr hcard), one_smul]
 
-/-- Left-multiplying `matrixUnitIntertwiner 𝕜 e f` by `f r i j` extracts
-`(card (n r) : 𝕜)⁻¹ • ∑ b, f r i b * e r b j`. -/
-theorem mul_matrixUnitIntertwiner [StarRing R] (hf : IsMatrixUnitSystem f)
-    (e : ∀ r : κ, n r → n r → R) (r : κ) (i j : n r) :
-    f r i j * matrixUnitIntertwiner 𝕜 e f =
+/-- Left-multiplying `matrixUnitIntertwiner 𝕜 e f` by `f r i j` extracts the `(r, i, j)` sum. -/
+theorem mul_matrixUnitIntertwiner (hf : IsMatrixUnitSystem f) (e : ∀ r : κ, n r → n r → R) (r : κ)
+    (i j : n r) : f r i j * matrixUnitIntertwiner 𝕜 e f =
       (Fintype.card (n r) : 𝕜)⁻¹ • ∑ b : n r, f r i b * e r b j := by
   classical
-  rw [matrixUnitIntertwiner_def, mul_add, ← mul_assoc, hf.mul_one_sub_support, zero_mul, zero_add,
-    Finset.mul_sum, Finset.sum_eq_single r]
-  · simp [Finset.mul_sum, ← mul_assoc, hf.mul_eq_ite]
-  · intro s _ hsr; simp [Finset.mul_sum, ← mul_assoc, hf.mul_block_ne hsr.symm]
-  · exact fun hr ↦ (hr (Finset.mem_univ r)).elim
+  rw [matrixUnitIntertwiner_def, mul_add, ← mul_assoc, mul_sub (f r i j), mul_one, hf.mul_support,
+    sub_self, zero_mul, zero_add, Finset.mul_sum, Finset.sum_eq_single_of_mem r (Finset.mem_univ r)
+      fun s _ hsr ↦ by simp [Finset.mul_sum, ← mul_assoc, hf.mul_block_ne hsr.symm]]
+  simp [Finset.mul_sum, ← mul_assoc, hf.mul_eq_ite]
 
-/-- Right-multiplying `matrixUnitIntertwiner 𝕜 e f` by `e r i j` extracts
-`(card (n r) : 𝕜)⁻¹ • ∑ b, f r i b * e r b j`. -/
-theorem matrixUnitIntertwiner_mul [StarRing R] (he : IsMatrixUnitSystem e)
-    (f : ∀ r : κ, n r → n r → R) (r : κ) (i j : n r) :
-    matrixUnitIntertwiner 𝕜 e f * e r i j =
+/-- Right-multiplying `matrixUnitIntertwiner 𝕜 e f` by `e r i j` extracts the `(r, i, j)` sum. -/
+theorem matrixUnitIntertwiner_mul (he : IsMatrixUnitSystem e) (f : ∀ r : κ, n r → n r → R) (r : κ)
+    (i j : n r) : matrixUnitIntertwiner 𝕜 e f * e r i j =
       (Fintype.card (n r) : 𝕜)⁻¹ • ∑ b : n r, f r i b * e r b j := by
   classical
-  rw [matrixUnitIntertwiner_def, add_mul, mul_assoc, he.one_sub_support_mul, mul_zero, zero_add,
-    Finset.sum_mul, Finset.sum_eq_single r]
-  · simp [Finset.sum_mul, mul_assoc, he.mul_eq_ite]
-  · intro s _ hsr; simp [Finset.sum_mul, mul_assoc, he.mul_block_ne hsr]
-  · exact fun hr ↦ (hr (Finset.mem_univ r)).elim
+  rw [matrixUnitIntertwiner_def, add_mul, mul_assoc, sub_mul _ _ (e r i j), one_mul, he.support_mul,
+    sub_self, mul_zero, zero_add, Finset.sum_mul, Finset.sum_eq_single_of_mem r (Finset.mem_univ r)
+      fun s _ hsr ↦ by simp [Finset.sum_mul, mul_assoc, he.mul_block_ne hsr]]
+  simp [Finset.sum_mul, mul_assoc, he.mul_eq_ite]
 
-/-- **Intertwining identity**:
-`f r i j * matrixUnitIntertwiner 𝕜 e f = matrixUnitIntertwiner 𝕜 e f * e r i j`. -/
-theorem mul_matrixUnitIntertwiner_eq_matrixUnitIntertwiner_mul [StarRing R]
-    (he : IsMatrixUnitSystem e) (hf : IsMatrixUnitSystem f) (r : κ) (i j : n r) :
+/-- **Intertwining**: `f r i j * z = z * e r i j` for `z = matrixUnitIntertwiner 𝕜 e f`. -/
+theorem mul_matrixUnitIntertwiner_eq_matrixUnitIntertwiner_mul (he : IsMatrixUnitSystem e)
+    (hf : IsMatrixUnitSystem f) (r : κ) (i j : n r) :
     f r i j * matrixUnitIntertwiner 𝕜 e f = matrixUnitIntertwiner 𝕜 e f * e r i j := by
   rw [hf.mul_matrixUnitIntertwiner 𝕜, he.matrixUnitIntertwiner_mul 𝕜]
 
 /-- Taking the star of `matrixUnitIntertwiner 𝕜 e f` swaps `e` and `f`. -/
-theorem star_matrixUnitIntertwiner [StarRing R]
-    (he : IsMatrixUnitSystem e) (hf : IsMatrixUnitSystem f) :
+theorem star_matrixUnitIntertwiner (he : IsMatrixUnitSystem e) (hf : IsMatrixUnitSystem f) :
     star (matrixUnitIntertwiner 𝕜 e f) = matrixUnitIntertwiner 𝕜 f e := by
   simp only [matrixUnitIntertwiner_def, star_add, star_mul, star_sum, star_inv_natCast_smul,
     (he.isStarProjection_support.one_sub).isSelfAdjoint.star_eq,
@@ -505,35 +353,28 @@ theorem star_matrixUnitIntertwiner [StarRing R]
 
 /-- Adjoint intertwining identity:
 `star (matrixUnitIntertwiner 𝕜 e f) * f r i j = e r i j * star (matrixUnitIntertwiner 𝕜 e f)`. -/
-theorem star_matrixUnitIntertwiner_mul_eq_mul_star_matrixUnitIntertwiner [StarRing R]
-    (he : IsMatrixUnitSystem e) (hf : IsMatrixUnitSystem f) (r : κ) (i j : n r) :
-    star (matrixUnitIntertwiner 𝕜 e f) * f r i j =
-      e r i j * star (matrixUnitIntertwiner 𝕜 e f) := by
-  rw [he.star_matrixUnitIntertwiner 𝕜 hf,
-    (hf.mul_matrixUnitIntertwiner_eq_matrixUnitIntertwiner_mul 𝕜 he r i j).symm]
-
+theorem star_matrixUnitIntertwiner_mul_eq_mul_star_matrixUnitIntertwiner (he : IsMatrixUnitSystem e)
+    (hf : IsMatrixUnitSystem f) (r : κ) (i j : n r) :
+    star (matrixUnitIntertwiner 𝕜 e f) * f r i j = e r i j * star (matrixUnitIntertwiner 𝕜 e f) :=
+  he.star_matrixUnitIntertwiner 𝕜 hf ▸
+    (hf.mul_matrixUnitIntertwiner_eq_matrixUnitIntertwiner_mul 𝕜 he r i j).symm
 end IsMatrixUnitSystem
 
 namespace IsUnitalMatrixUnitSystem
-
-variable {e f : ∀ r : κ, n r → n r → R}
+variable [Star R] {e f : ∀ r : κ, n r → n r → R}
 
 /-- When `e` is unital, the complementary-support term in `matrixUnitIntertwiner 𝕜 e f` vanishes. -/
-theorem matrixUnitIntertwiner_eq_of_left [Star R] (he : IsUnitalMatrixUnitSystem e)
-    (f : ∀ r : κ, n r → n r → R) :
-    matrixUnitIntertwiner 𝕜 e f =
-      ∑ r : κ, (Fintype.card (n r) : 𝕜)⁻¹ • ∑ a : n r, ∑ b : n r, f r a b * e r b a := by
+theorem matrixUnitIntertwiner_eq_of_left (he : IsUnitalMatrixUnitSystem e)
+    (f : ∀ r : κ, n r → n r → R) : matrixUnitIntertwiner 𝕜 e f =
+    ∑ r : κ, (Fintype.card (n r) : 𝕜)⁻¹ • ∑ a : n r, ∑ b : n r, f r a b * e r b a := by
   simp [matrixUnitIntertwiner_def, he.support_eq_one]
 
 /-- When `f` is unital, the complementary-support term in `matrixUnitIntertwiner 𝕜 e f` vanishes. -/
-theorem matrixUnitIntertwiner_eq_of_right [Star R] (hf : IsUnitalMatrixUnitSystem f)
-    (e : ∀ r : κ, n r → n r → R) :
-    matrixUnitIntertwiner 𝕜 e f =
-      ∑ r : κ, (Fintype.card (n r) : 𝕜)⁻¹ • ∑ a : n r, ∑ b : n r, f r a b * e r b a := by
+theorem matrixUnitIntertwiner_eq_of_right (hf : IsUnitalMatrixUnitSystem f)
+    (e : ∀ r : κ, n r → n r → R) : matrixUnitIntertwiner 𝕜 e f =
+    ∑ r : κ, (Fintype.card (n r) : 𝕜)⁻¹ • ∑ a : n r, ∑ b : n r, f r a b * e r b a := by
   simp [matrixUnitIntertwiner_def, hf.support_eq_one]
-
 end IsUnitalMatrixUnitSystem
-
-end Intertwiner
-
+end
+end
 end TauCeti

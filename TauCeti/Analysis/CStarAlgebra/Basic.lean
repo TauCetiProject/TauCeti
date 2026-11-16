@@ -22,21 +22,18 @@ finite-dimensional real or complex inner product space are compact.
 Any additive subgroup closed under the involution of a `NormedStarGroup` inherits the restricted
 `NormedStarGroup` structure.
 
-Because `‖star x * x‖ = ‖x‖ * ‖x‖` in any C⋆-ring, partial isometries have norm at most `1` and
-nonzero star projections have norm `1`. Consequently, comparable star projections (`p * q = p` or
-`q * p = p`) at distance strictly less than `1` are equal, and a star projection within distance
-`< 1` of `1` must equal `1`.
+Because `‖star x * x‖ = ‖x‖ * ‖x‖` in any C⋆-ring, partial isometries have norm `≤ 1`, nonzero star
+projections have norm `1`, and comparable star projections at distance `< 1` are equal.
 
 ## Main results
 
 * `StarMemClass.instNormedStarGroup`: `NormedStarGroup` instance on star-closed additive subgroups.
-* `CStarRing.isCompact_unitary`: the unitary elements of a proper C⋆-ring form a compact set.
-* `CStarRing.instCompactSpaceUnitary`: the unitary group of a proper C⋆-ring is compact.
-* `TauCeti.IsPartialIsometry.norm_le_one`: every partial isometry in a C⋆-ring has norm `≤ 1`.
-* `IsStarProjection.eq_zero_of_norm_lt_one`, `IsStarProjection.norm_eq_one_of_ne_zero`,
+* `CStarRing.isCompact_unitary`, `CStarRing.instCompactSpaceUnitary`: compactness of `unitary E`.
+* `TauCeti.IsPartialIsometry.norm_le_one`, `IsStarProjection.eq_zero_of_norm_lt_one`,
+  `IsStarProjection.norm_eq_one_of_ne_zero`,
   `IsStarProjection.eq_of_mul_eq_left_of_norm_sub_lt_one`,
   `IsStarProjection.eq_of_mul_eq_right_of_norm_sub_lt_one`,
-  `IsStarProjection.eq_one_of_norm_sub_one_lt_one`: C⋆-ring norm rigidity of star projections.
+  `IsStarProjection.eq_one_of_norm_sub_one_lt_one`: C⋆-ring norm rigidity.
 -/
 
 public section
@@ -65,30 +62,22 @@ instance instCompactSpaceUnitary : CompactSpace (unitary E) :=
 
 end CStarRing
 
-namespace TauCeti.IsPartialIsometry
-
 /-- Every partial isometry in a C⋆-ring has norm at most `1`. -/
-theorem norm_le_one {E : Type*} [NonUnitalNormedRing E] [StarRing E] [CStarRing E] {v : E}
-    (hv : IsPartialIsometry v) : ‖v‖ ≤ 1 := by
+theorem TauCeti.IsPartialIsometry.norm_le_one {E : Type*} [NonUnitalNormedRing E] [StarRing E]
+    [CStarRing E] {v : E} (hv : IsPartialIsometry v) : ‖v‖ ≤ 1 := by
   have hle : ‖star v * v‖ ≤ 1 := hv.isStarProjection_star_mul_self.norm_le _
-  rw [CStarRing.norm_star_mul_self] at hle
-  nlinarith [norm_nonneg v]
-
-end TauCeti.IsPartialIsometry
+  rw [CStarRing.norm_star_mul_self] at hle; nlinarith [norm_nonneg v]
 
 namespace IsStarProjection
-
-section NonUnital
 
 variable {E : Type*} [NonUnitalNormedRing E] [StarRing E] [CStarRing E]
 
 /-- A star projection of norm strictly less than `1` in a C⋆-ring must be `0`. -/
 theorem eq_zero_of_norm_lt_one {e : E} (he : IsStarProjection e) (h : ‖e‖ < 1) : e = 0 := by
   by_contra hne
-  have hpos : 0 < ‖e‖ := norm_pos_iff.mpr hne
   have hsq : ‖e‖ * ‖e‖ = ‖e‖ := by
     rw [← CStarRing.norm_star_mul_self, he.isSelfAdjoint.star_eq, he.isIdempotentElem.eq]
-  nlinarith
+  nlinarith [norm_pos_iff.mpr hne]
 
 /-- Every nonzero star projection in a C⋆-ring has norm `1`. -/
 theorem norm_eq_one_of_ne_zero {e : E} (he : IsStarProjection e) (hne : e ≠ 0) : ‖e‖ = 1 :=
@@ -105,8 +94,6 @@ theorem eq_of_mul_eq_right_of_norm_sub_lt_one {p q : E} (hp : IsStarProjection p
     (hq : IsStarProjection q) (hqp : q * p = p) (h : ‖p - q‖ < 1) : p = q :=
   (sub_eq_zero.mp ((hp.sub_of_mul_eq_right hq hqp).eq_zero_of_norm_lt_one
     (norm_sub_rev p q ▸ h))).symm
-
-end NonUnital
 
 /-- A star projection at distance `< 1` from `1` in a unital C⋆-ring equals `1`. -/
 theorem eq_one_of_norm_sub_one_lt_one {E : Type*} [NormedRing E] [StarRing E] [CStarRing E]
