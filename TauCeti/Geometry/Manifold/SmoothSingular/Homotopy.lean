@@ -43,13 +43,19 @@ restriction of the homotopy of singular simplicial sets
 
 Consequently a smoothly contractible manifold has the smooth singular homology of a point: if the
 identity of `M` is smoothly homotopic to a constant map, the positive-degree smooth singular
-homology of `M` vanishes (`TauCeti.isZero_homology_smoothSingularSubcomplex_of_contMDiff`). This
-applies to every star-convex open subset of a real normed space
-(`TauCeti.isZero_homology_smoothSingularSubcomplex_of_starConvex`), the contraction being
-`(t, x) ↦ c + (1 - ψ t) • (x - c)` for a smooth `ψ : ℝ → [0, 1]` with `ψ 0 = 0` and `ψ 1 = 1`. The
-homotopy is required to be smooth on all of `ℝ × M`, not merely on `[0, 1] × M`: a smooth simplex is
-locally the restriction of a smooth map on an open subset of `ℝⁿ`, and the affine coordinate `t_α`
-takes values outside `[0, 1]` off the simplex.
+homology of `M` vanishes (`TauCeti.isZero_homology_smoothSingularSubcomplex_of_contMDiff`). The
+homotopy is required to be smooth on all of `ℝ × M`, not merely on `[0, 1] × M`: a smooth simplex
+is locally the restriction of a smooth map on an open subset of `ℝⁿ`, and the affine coordinate
+`t_α` takes values outside `[0, 1]` off the simplex.
+
+Every nonempty *star-convex chart domain* is smoothly contractible: if an open `U` lies in the
+source of a chart `e` of the maximal smooth atlas and `e.extend I '' U` is star-convex about `c`,
+the straight-line contraction `(t, y) ↦ c + (1 - ψ t) • (e.extend I y - c)`, read back through the
+chart, is smooth (`TauCeti.exists_contMDiff_contraction_of_starConvex`). Here `ψ : ℝ → [0, 1]` is
+smooth with `ψ 0 = 0` and `ψ 1 = 1`. The contraction stays in `range I`, so boundary and corners
+are allowed. In particular every star-convex open subset of a real normed space has vanishing
+positive-degree smooth singular homology
+(`TauCeti.isZero_homology_smoothSingularSubcomplex_of_starConvex`).
 
 On such a manifold the inclusion of smooth singular chains into singular chains is a chain
 homotopy equivalence (`TauCeti.smoothSingularChainHomotopyEquivOfContMDiff`), hence a
@@ -58,13 +64,11 @@ Both complexes retract onto the chains of a point: a homotopy inverse sends ever
 to the constant simplex at `c`, and the two composites are joined to the identities by the smooth
 prism operator of `F` and by the singular prism operator of the continuous homotopy underlying `F`.
 The inclusion is also a quasi-isomorphism on the empty manifold, where both complexes vanish
-(`TauCeti.smoothSingularSubcomplex_eq_top`). Together these cover
-every *star-convex chart domain* of a manifold over a model with corners: for an open `s ⊆ E`
-with `s ∩ range I` star-convex and contained in the target of the extended chart at `x`, the chart
-identifies `(chartAt H x).source ∩ (extChartAt I x)⁻¹' s` with `s ∩ range I`, and the straight-line
-contraction of `s ∩ range I`, read through the chart, is smooth on the chart domain
+(`TauCeti.smoothSingularSubcomplex_eq_top`). Together these cover every star-convex chart domain
+(`TauCeti.smoothSingularChainHomotopyEquivOfStarConvex`) and, in particular, the domains
+`(chartAt H x).source ∩ (extChartAt I x)⁻¹' s` of the preferred charts, for an open `s ⊆ E` with
+`s ∩ range I` star-convex and contained in the target of the extended chart at `x`
 (`TauCeti.smoothSingularChainHomotopyEquivChartAtSourceInterPreimageOfStarConvex`).
-The contraction stays in `range I`, so boundary and corners are allowed.
 
 These are the inputs, homotopy invariance and the comparison on convex coordinate domains, of the
 comparison of smooth with continuous singular homology by a Mayer–Vietoris induction.
@@ -81,15 +85,20 @@ comparison of smooth with continuous singular homology by a Mayer–Vietoris ind
   on smooth singular homology.
 * `TauCeti.isZero_homology_smoothSingularSubcomplex_of_contMDiff`: a smoothly contractible manifold
   has no smooth singular homology in positive degrees.
-* `TauCeti.isZero_homology_smoothSingularSubcomplex_of_starConvex`: neither has a star-convex open
-  subset of a normed space.
+* `TauCeti.exists_contMDiff_contraction_of_starConvex`: a nonempty star-convex chart domain is
+  smoothly contractible.
+* `TauCeti.isZero_homology_smoothSingularSubcomplex_of_starConvex`: a star-convex open subset of a
+  normed space has no smooth singular homology in positive degrees.
 * `TauCeti.smoothSingularChainHomotopyEquivOfContMDiff`,
   `TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_contMDiff`: on a smoothly
   contractible manifold, smooth singular chains include into singular chains by a chain homotopy
   equivalence, hence by a quasi-isomorphism.
+* `TauCeti.smoothSingularChainHomotopyEquivOfStarConvex`,
+  `TauCeti.smoothSingularChainHomotopyEquivOfConvex`: chain homotopy equivalences on star-convex
+  and convex chart domains, respectively.
 * `TauCeti.smoothSingularChainHomotopyEquivChartAtSourceInterPreimageOfStarConvex`,
-  `TauCeti.smoothSingularChainHomotopyEquivChartAtSourceInterPreimageOfConvex`: chain homotopy
-  equivalences on star-convex and convex chart domains, respectively.
+  `TauCeti.smoothSingularChainHomotopyEquivChartAtSourceInterPreimageOfConvex`: their forms on the
+  domains `(chartAt H x).source ∩ (extChartAt I x)⁻¹' s`.
 
 ## References
 
@@ -318,19 +327,13 @@ def smoothSingularChainHomotopyEquivOfContMDiff {F : ℝ × M → M}
   homotopyInvHomId := by
     -- The composite on singular chains is induced by the constant map `c`, and the homotopy
     -- underlying `F` joins it to the identity.
-    let H : TopCat.Homotopy (TopCat.ofHom ⟨id, continuous_id⟩)
-        (TopCat.ofHom ⟨fun _ ↦ c, continuous_const⟩) :=
+    let H : TopCat.Homotopy (𝟙 (TopCat.of M)) (TopCat.const c) :=
       ContinuousMap.Homotopy.ofReal hF.continuous h₀ h₁
     refine (Homotopy.ofEq ?_).trans
       ((H.toSSet.chainComplexMap R).symm.trans (Homotopy.ofEq ?_))
-    · rw [← Functor.map_comp, SSet.const_comp, Subfunctor.ι_app, TypeCat.ofHom_apply,
-        SmoothSimplex.coe_equiv₀_symm]
-      -- The singular map of a constant map is `SSet.const` by definition
-      -- (`TopCat.toSSet_map_const`).
-      rfl
-    · -- `TopCat.ofHom_id` is stated for `ContinuousMap.id`, which is `⟨id, continuous_id⟩`.
-      rw [show (TopCat.ofHom ⟨id, continuous_id⟩ : TopCat.of M ⟶ TopCat.of M) = 𝟙 _ from
-        TopCat.ofHom_id, TopCat.toSSet.map_id]
+    · rw [← Functor.map_comp, SSet.const_comp, TopCat.toSSet_map_const]
+      simp
+    · rw [TopCat.toSSet.map_id]
       exact ((SSet.chainComplexFunctor C).obj R).map_id _
 
 /-- The chain homotopy equivalence of a smoothly contractible manifold is the inclusion of smooth
@@ -343,6 +346,16 @@ theorem smoothSingularChainHomotopyEquivOfContMDiff_hom {F : ℝ × M → M}
       SSet.chainComplexMap (smoothSingularSubcomplex I M).ι R :=
   (rfl)
 
+/-- The homotopy inverse of the chain homotopy equivalence of a smoothly contractible manifold
+sends every singular simplex to the constant simplex at the contraction point. -/
+@[simp]
+theorem smoothSingularChainHomotopyEquivOfContMDiff_inv {F : ℝ × M → M}
+    (hF : ContMDiff (𝓘(ℝ).prod I) I ∞ F) (c : M) (h₀ : ∀ x, F (0, x) = x)
+    (h₁ : ∀ x, F (1, x) = c) :
+    (smoothSingularChainHomotopyEquivOfContMDiff R hF c h₀ h₁).inv =
+      SSet.chainComplexMap (SSet.const ((SmoothSimplex.equiv₀ I M).symm c)) R :=
+  (rfl)
+
 /-- On a manifold whose identity is joined to a constant map by a smooth map `ℝ × M → M`, the
 inclusion of smooth singular chains into singular chains is a quasi-isomorphism. -/
 theorem quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_contMDiff [CategoryWithHomology C]
@@ -351,6 +364,46 @@ theorem quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_contMDiff [Categ
     QuasiIso (SSet.chainComplexMap (smoothSingularSubcomplex I M).ι R) := by
   rw [← smoothSingularChainHomotopyEquivOfContMDiff_hom R hF c h₀ h₁]
   infer_instance
+
+/-! ### Star-convex chart domains -/
+
+/-- **A star-convex chart domain is smoothly contractible.** Let `U` be a nonempty open subset of
+the source of a chart `e` in the maximal smooth atlas of `M`, whose image under the extended chart
+`e.extend I` is star-convex about `c`. The straight-line contraction
+`(t, y) ↦ c + (1 - ψ t) • (e.extend I y - c)` of that image, read back through the chart, is a
+smooth map `ℝ × U → U` from the identity to a constant map, where `ψ` is the smooth transition
+function from `0` to `1`. The contraction stays in the image of the extended chart, which lies in
+`range I`, so boundary and corners are allowed. -/
+theorem exists_contMDiff_contraction_of_starConvex {e : OpenPartialHomeomorph M H}
+    (he : e ∈ IsManifold.maximalAtlas I ∞ M) {U : TopologicalSpace.Opens M} [Nonempty U]
+    (hUe : (U : Set M) ⊆ e.source) {c : E} (hUc : StarConvex ℝ c (e.extend I '' U)) :
+    ∃ (F : ℝ × U → U) (c' : U), ContMDiff (𝓘(ℝ).prod I) I ∞ F ∧ (∀ y, F (0, y) = y) ∧
+      ∀ y, F (1, y) = c' := by
+  let G : ℝ × U → E := fun p ↦ c + (1 - Real.smoothTransition p.1) • (e.extend I p.2 - c)
+  have hG : ∀ p, ∃ u ∈ (U : Set M), e.extend I u = G p := fun p ↦
+    hUc.add_smul_sub_mem (mem_image_of_mem _ p.2.2) (by linarith [Real.smoothTransition.le_one p.1])
+      (by linarith [Real.smoothTransition.nonneg p.1])
+  have hGU : ∀ p, (e.extend I).symm (G p) ∈ (U : Set M) := fun p ↦ by
+    obtain ⟨u, hu, hGu⟩ := hG p
+    rwa [← hGu, e.extend_left_inv (I := I) (hUe hu)]
+  have hGt : ∀ p, G p ∈ I '' e.target := fun p ↦ by
+    obtain ⟨u, hu, hGu⟩ := hG p
+    rw [← hGu, ← e.extend_target' (I := I)]
+    exact (e.extend I).map_source (by rw [e.extend_source]; exact hUe hu)
+  refine ⟨fun p ↦ ⟨(e.extend I).symm (G p), hGU p⟩, ⟨(e.extend I).symm c, ?_⟩, ?_,
+    fun y ↦ Subtype.ext ?_, fun y ↦ Subtype.ext ?_⟩
+  · simpa [G, Real.smoothTransition.one] using hGU (1, Classical.arbitrary U)
+  · rw [← ContMDiff.subtypeVal_comp_iff]
+    have hφ : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ, E) ∞ fun p : ℝ × U ↦ e.extend I p.2 :=
+      (e.contMDiffOn_extend he).comp_contMDiff (contMDiff_subtype_val.comp contMDiff_snd)
+        fun p ↦ hUe p.2.2
+    have hψ : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) ∞ fun p : ℝ × U ↦ Real.smoothTransition p.1 :=
+      Real.smoothTransition.contDiff.contMDiff.comp contMDiff_fst
+    exact (contMDiffOn_extend_symm he).comp_contMDiff
+      (contMDiff_const.add ((contMDiff_const.sub hψ).smul (hφ.sub contMDiff_const))) hGt
+  · simp only [G, Real.smoothTransition.zero, sub_zero, one_smul, add_sub_cancel]
+    exact e.extend_left_inv (I := I) (hUe y.2)
+  · simp [G, Real.smoothTransition.one]
 
 /-- **A star-convex open subset has vanishing positive-degree smooth singular homology.**
 The smooth contraction `(t, x) ↦ c + (1 - ψ t) • (x - c)` towards the centre `c`, with `ψ` the
@@ -361,7 +414,7 @@ theorem isZero_homology_smoothSingularSubcomplex_of_starConvex
     {V : Type u} [NormedAddCommGroup V] [NormedSpace ℝ V] {U : TopologicalSpace.Opens V} {c : V}
     (hU : StarConvex ℝ c (U : Set V)) {n : ℕ} (hn : n ≠ 0) :
     IsZero ((smoothSingularSubcomplex 𝓘(ℝ, V) U : SSet).homology R n) := by
-  rcases (U : Set V).eq_empty_or_nonempty with hempty | hne
+  rcases (U : Set V).eq_empty_or_nonempty with hempty | ⟨y, hy⟩
   · -- An empty open set has no smooth simplices at all.
     have : IsEmpty U := Set.isEmpty_coe_sort.2 hempty
     let e := (SSet.homologyFunctor R n).mapIso
@@ -369,29 +422,106 @@ theorem isZero_homology_smoothSingularSubcomplex_of_starConvex
     exact IsZero.of_iso
       (AlgebraicTopology.isZero_singularHomologyFunctor_of_totallyDisconnectedSpace C n R
         (TopCat.of U) hn) e
-  have hmem : ∀ p : ℝ × U, c + (1 - Real.smoothTransition p.1) • ((p.2 : V) - c) ∈ U :=
-    fun p ↦ hU.add_smul_sub_mem p.2.2 (by linarith [Real.smoothTransition.le_one p.1])
-      (by linarith [Real.smoothTransition.nonneg p.1])
-  let F : ℝ × U → U := fun p ↦ ⟨_, hmem p⟩
-  have hF : ContMDiff (𝓘(ℝ).prod 𝓘(ℝ, V)) 𝓘(ℝ, V) ∞ F := by
-    rw [← ContMDiff.subtypeVal_comp_iff]
-    have hψ : ContMDiff (𝓘(ℝ).prod 𝓘(ℝ, V)) 𝓘(ℝ) ∞ fun p : ℝ × U ↦ Real.smoothTransition p.1 :=
-      Real.smoothTransition.contDiff.contMDiff.comp contMDiff_fst
-    have hx : ContMDiff (𝓘(ℝ).prod 𝓘(ℝ, V)) 𝓘(ℝ, V) ∞ fun p : ℝ × U ↦ (p.2 : V) :=
-      contMDiff_subtype_val.comp contMDiff_snd
-    exact ContMDiff.add contMDiff_const
-      (ContMDiff.smul (ContMDiff.sub contMDiff_const hψ) (hx.sub contMDiff_const))
-  exact isZero_homology_smoothSingularSubcomplex_of_contMDiff R hF ⟨c, hU.mem hne⟩
-    (fun x ↦ Subtype.ext (by simp [F, Real.smoothTransition.zero]))
-    (fun x ↦ Subtype.ext (by simp [F, Real.smoothTransition.one])) hn
+  have : Nonempty U := ⟨⟨y, hy⟩⟩
+  -- The model space is its own chart, and the extended chart is the identity.
+  obtain ⟨F, c', hF, h₀, h₁⟩ := exists_contMDiff_contraction_of_starConvex
+    (IsManifold.chart_mem_maximalAtlas (I := 𝓘(ℝ, V)) (0 : V)) (by simp) (by simpa using hU)
+  exact isZero_homology_smoothSingularSubcomplex_of_contMDiff R hF c' h₀ h₁ hn
 
-/-! ### Convex chart domains -/
+/-- **Smooth singular chains of a star-convex chart domain.** Let `U` be an open subset of the
+source of a chart `e` in the maximal smooth atlas of `M`, whose image under the extended chart
+`e.extend I` is star-convex. Then the inclusion of smooth singular chains of `U` into singular
+chains is a chain homotopy equivalence. -/
+def smoothSingularChainHomotopyEquivOfStarConvex {e : OpenPartialHomeomorph M H}
+    (he : e ∈ IsManifold.maximalAtlas I ∞ M) {U : TopologicalSpace.Opens M}
+    (hUe : (U : Set M) ⊆ e.source) {c : E} (hUc : StarConvex ℝ c (e.extend I '' U)) :
+    HomotopyEquiv ((smoothSingularSubcomplex I U : SSet).chainComplex R)
+      ((TopCat.toSSet.obj (TopCat.of U)).chainComplex R) := by
+  classical
+  exact if hU : IsEmpty U then
+    HomotopyEquiv.ofIso (asIso (SSet.chainComplexMap (smoothSingularSubcomplex I U).ι R))
+  else by
+    have : Nonempty U := not_isEmpty_iff.mp hU
+    choose F c' hF h₀ h₁ using exists_contMDiff_contraction_of_starConvex he hUe hUc
+    exact smoothSingularChainHomotopyEquivOfContMDiff R hF c' h₀ h₁
 
-section ChartDomain
+/-- The equivalence on a star-convex chart domain uses the inclusion of smooth chains. -/
+@[simp]
+theorem smoothSingularChainHomotopyEquivOfStarConvex_hom {e : OpenPartialHomeomorph M H}
+    (he : e ∈ IsManifold.maximalAtlas I ∞ M) {U : TopologicalSpace.Opens M}
+    (hUe : (U : Set M) ⊆ e.source) {c : E} (hUc : StarConvex ℝ c (e.extend I '' U)) :
+    (smoothSingularChainHomotopyEquivOfStarConvex R he hUe hUc).hom =
+      SSet.chainComplexMap (smoothSingularSubcomplex I U).ι R := by
+  unfold smoothSingularChainHomotopyEquivOfStarConvex
+  dsimp only
+  split <;> rfl
+
+/-- On a star-convex chart domain the inclusion of smooth chains is a quasi-isomorphism. -/
+theorem quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_starConvex [CategoryWithHomology C]
+    {e : OpenPartialHomeomorph M H} (he : e ∈ IsManifold.maximalAtlas I ∞ M)
+    {U : TopologicalSpace.Opens M} (hUe : (U : Set M) ⊆ e.source) {c : E}
+    (hUc : StarConvex ℝ c (e.extend I '' U)) :
+    QuasiIso (SSet.chainComplexMap (smoothSingularSubcomplex I U).ι R) := by
+  rw [← smoothSingularChainHomotopyEquivOfStarConvex_hom R he hUe hUc]
+  infer_instance
+
+/-- **Smooth singular chains of a convex chart domain.** Let `U` be an open subset of the source of
+a chart `e` in the maximal smooth atlas of `M`, whose image under the extended chart `e.extend I`
+is convex. Then the inclusion of smooth singular chains of `U` into singular chains is a chain
+homotopy equivalence. -/
+def smoothSingularChainHomotopyEquivOfConvex {e : OpenPartialHomeomorph M H}
+    (he : e ∈ IsManifold.maximalAtlas I ∞ M) {U : TopologicalSpace.Opens M}
+    (hUe : (U : Set M) ⊆ e.source) (hUc : Convex ℝ (e.extend I '' U)) :
+    HomotopyEquiv ((smoothSingularSubcomplex I U : SSet).chainComplex R)
+      ((TopCat.toSSet.obj (TopCat.of U)).chainComplex R) := by
+  classical
+  exact if h : (e.extend I '' U).Nonempty then
+    smoothSingularChainHomotopyEquivOfStarConvex R he hUe (hUc.starConvex h.choose_spec)
+  else
+    smoothSingularChainHomotopyEquivOfStarConvex R he hUe (c := 0)
+      (Set.not_nonempty_iff_eq_empty.mp h ▸ starConvex_empty 0)
+
+/-- The equivalence on a convex chart domain uses the inclusion of smooth chains. -/
+@[simp]
+theorem smoothSingularChainHomotopyEquivOfConvex_hom {e : OpenPartialHomeomorph M H}
+    (he : e ∈ IsManifold.maximalAtlas I ∞ M) {U : TopologicalSpace.Opens M}
+    (hUe : (U : Set M) ⊆ e.source) (hUc : Convex ℝ (e.extend I '' U)) :
+    (smoothSingularChainHomotopyEquivOfConvex R he hUe hUc).hom =
+      SSet.chainComplexMap (smoothSingularSubcomplex I U).ι R := by
+  unfold smoothSingularChainHomotopyEquivOfConvex
+  split <;> simp only [smoothSingularChainHomotopyEquivOfStarConvex_hom]
+
+/-- On a convex chart domain the inclusion of smooth chains is a quasi-isomorphism. -/
+theorem quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_convex [CategoryWithHomology C]
+    {e : OpenPartialHomeomorph M H} (he : e ∈ IsManifold.maximalAtlas I ∞ M)
+    {U : TopologicalSpace.Opens M} (hUe : (U : Set M) ⊆ e.source)
+    (hUc : Convex ℝ (e.extend I '' U)) :
+    QuasiIso (SSet.chainComplexMap (smoothSingularSubcomplex I U).ι R) := by
+  rw [← smoothSingularChainHomotopyEquivOfConvex_hom R he hUe hUc]
+  infer_instance
+
+/-! ### Chart domains of the preferred charts -/
+
+/-- If `s ∩ range I` lies in the target of the extended chart at `x`, the extended chart maps
+`(chartAt H x).source ∩ (extChartAt I x)⁻¹' s` onto `s ∩ range I`. -/
+private theorem extChartAt_image_chartAt_source_inter_preimage (x : M) {s : Set E}
+    (hst : s ∩ range I ⊆ (extChartAt I x).target) :
+    extChartAt I x '' ((chartAt H x).source ∩ extChartAt I x ⁻¹' s) = s ∩ range I := by
+  refine Subset.antisymm ?_ fun z hz ↦ ⟨(extChartAt I x).symm z, ⟨?_, ?_⟩,
+    (extChartAt I x).right_inv (hst hz)⟩
+  · rintro _ ⟨y, hy, rfl⟩
+    exact ⟨hy.2, extChartAt_target_subset_range x
+      ((extChartAt I x).map_source (by rw [extChartAt_source]; exact hy.1))⟩
+  · rw [← extChartAt_source I]
+    exact (extChartAt I x).map_target (hst hz)
+  · rw [mem_preimage, (extChartAt I x).right_inv (hst hz)]
+    exact hz.1
+
+section ChartAt
 
 variable [IsManifold I ∞ M]
 
-/-- **Smooth singular chains of a star-convex chart domain.** Let `s ⊆ E` be open, with
+/-- **Smooth singular chains of a star-convex chart domain at `x`.** Let `s ⊆ E` be open, with
 `s ∩ range I` star-convex and contained in the target of the extended chart at `x`. On the open
 set `(chartAt H x).source ∩ (extChartAt I x)⁻¹' s`, which the chart identifies with `s ∩ range I`,
 the inclusion of smooth singular chains into singular chains is a chain homotopy equivalence. -/
@@ -403,47 +533,11 @@ def smoothSingularChainHomotopyEquivChartAtSourceInterPreimageOfStarConvex
         TopologicalSpace.Opens M) : SSet).chainComplex R)
       ((TopCat.toSSet.obj (TopCat.of
         (⟨(chartAt H x).source ∩ extChartAt I x ⁻¹' s, isOpen_extChartAt_preimage x hs⟩ :
-          TopologicalSpace.Opens M))).chainComplex R) := by
-  classical
-  let D : TopologicalSpace.Opens M :=
-    ⟨(chartAt H x).source ∩ extChartAt I x ⁻¹' s, isOpen_extChartAt_preimage x hs⟩
-  let e := extChartAt I x
-  exact if hD : IsEmpty D then
-    HomotopyEquiv.ofIso (asIso (SSet.chainComplexMap (smoothSingularSubcomplex I D).ι R))
-  else by
-    let y₀ : D := Classical.choice (not_isEmpty_iff.mp hD)
-    -- The chart sends `D` into `s ∩ range I`.
-    have hmem : ∀ y : D, e y ∈ s ∩ range I := fun y ↦
-      ⟨y.2.2, extChartAt_target_subset_range x
-        (e.map_source (by rw [extChartAt_source]; exact y.2.1))⟩
-    -- The straight-line contraction of `s ∩ range I` onto `c`, read through the chart.
-    let G : ℝ × D → E := fun p ↦ c + (1 - Real.smoothTransition p.1) • (e p.2 - c)
-    have hG : ∀ p, G p ∈ s ∩ range I := fun p ↦
-      hsc.add_smul_sub_mem (hmem p.2) (by linarith [Real.smoothTransition.le_one p.1])
-        (by linarith [Real.smoothTransition.nonneg p.1])
-    have hGD : ∀ p, e.symm (G p) ∈ (D : Set M) := fun p ↦
-      ⟨by rw [← extChartAt_source I]; exact e.map_target (hst (hG p)),
-        by rw [mem_preimage, e.right_inv (hst (hG p))]; exact (hG p).1⟩
-    let F : ℝ × D → D := fun p ↦ ⟨e.symm (G p), hGD p⟩
-    have hF : ContMDiff (𝓘(ℝ).prod I) I ∞ F := by
-      rw [← ContMDiff.subtypeVal_comp_iff]
-      have he : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ, E) ∞ fun p : ℝ × D ↦ e p.2 :=
-        contMDiffOn_extChartAt.comp_contMDiff (contMDiff_subtype_val.comp contMDiff_snd)
-          fun p ↦ p.2.2.1
-      have hψ : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) ∞ fun p : ℝ × D ↦ Real.smoothTransition p.1 :=
-        Real.smoothTransition.contDiff.contMDiff.comp contMDiff_fst
-      exact (contMDiffOn_extChartAt_symm x).comp_contMDiff
-        (contMDiff_const.add ((contMDiff_const.sub hψ).smul (he.sub contMDiff_const)))
-        fun p ↦ hst (hG p)
-    have hc' : e.symm c ∈ (D : Set M) := by
-      simpa [G, Real.smoothTransition.one] using hGD (1, y₀)
-    refine smoothSingularChainHomotopyEquivOfContMDiff R hF ⟨e.symm c, hc'⟩
-      (fun y ↦ Subtype.ext ?_) (fun y ↦ Subtype.ext ?_)
-    · simp only [F, G, Real.smoothTransition.zero, sub_zero, one_smul, add_sub_cancel]
-      exact e.left_inv (by rw [extChartAt_source]; exact y.2.1)
-    · simp [F, G, Real.smoothTransition.one]
+          TopologicalSpace.Opens M))).chainComplex R) :=
+  smoothSingularChainHomotopyEquivOfStarConvex R (IsManifold.chart_mem_maximalAtlas x)
+    inter_subset_left (extChartAt_image_chartAt_source_inter_preimage x hst ▸ hsc)
 
-/-- The equivalence on a star-convex chart domain uses the inclusion of smooth chains. -/
+/-- The equivalence on a star-convex chart domain at `x` uses the inclusion of smooth chains. -/
 @[simp]
 theorem smoothSingularChainHomotopyEquivChartAtSourceInterPreimageOfStarConvex_hom
     (x : M) {s : Set E} (hs : IsOpen s) {c : E} (hsc : StarConvex ℝ c (s ∩ range I))
@@ -451,12 +545,10 @@ theorem smoothSingularChainHomotopyEquivChartAtSourceInterPreimageOfStarConvex_h
     (smoothSingularChainHomotopyEquivChartAtSourceInterPreimageOfStarConvex R x hs hsc hst).hom =
       SSet.chainComplexMap (smoothSingularSubcomplex I
         (⟨(chartAt H x).source ∩ extChartAt I x ⁻¹' s, isOpen_extChartAt_preimage x hs⟩ :
-          TopologicalSpace.Opens M)).ι R := by
-  unfold smoothSingularChainHomotopyEquivChartAtSourceInterPreimageOfStarConvex
-  dsimp only
-  split <;> rfl
+          TopologicalSpace.Opens M)).ι R :=
+  smoothSingularChainHomotopyEquivOfStarConvex_hom R _ _ _
 
-/-- On a star-convex chart domain the inclusion of smooth chains is a quasi-isomorphism. -/
+/-- On a star-convex chart domain at `x` the inclusion of smooth chains is a quasi-isomorphism. -/
 theorem
     quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_chartAt_source_inter_preimage_of_starConvex
     [CategoryWithHomology C]
@@ -464,12 +556,13 @@ theorem
     (hst : s ∩ range I ⊆ (extChartAt I x).target) :
     QuasiIso (SSet.chainComplexMap (smoothSingularSubcomplex I
       (⟨(chartAt H x).source ∩ extChartAt I x ⁻¹' s, isOpen_extChartAt_preimage x hs⟩ :
-        TopologicalSpace.Opens M)).ι R) := by
-  rw [← smoothSingularChainHomotopyEquivChartAtSourceInterPreimageOfStarConvex_hom R x hs hsc hst]
-  infer_instance
+        TopologicalSpace.Opens M)).ι R) :=
+  quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_starConvex R
+    (IsManifold.chart_mem_maximalAtlas x) inter_subset_left
+    (extChartAt_image_chartAt_source_inter_preimage x hst ▸ hsc)
 
-/-- **Smooth singular chains of a convex chart domain.** Let `s ⊆ E` be open, with `s ∩ range I`
-convex and contained in the target of the extended chart at `x`. On the open set
+/-- **Smooth singular chains of a convex chart domain at `x`.** Let `s ⊆ E` be open, with
+`s ∩ range I` convex and contained in the target of the extended chart at `x`. On the open set
 `(chartAt H x).source ∩ (extChartAt I x)⁻¹' s` the inclusion of smooth singular chains into
 singular chains is a chain homotopy equivalence. -/
 def smoothSingularChainHomotopyEquivChartAtSourceInterPreimageOfConvex
@@ -480,16 +573,11 @@ def smoothSingularChainHomotopyEquivChartAtSourceInterPreimageOfConvex
         TopologicalSpace.Opens M) : SSet).chainComplex R)
       ((TopCat.toSSet.obj (TopCat.of
         (⟨(chartAt H x).source ∩ extChartAt I x ⁻¹' s, isOpen_extChartAt_preimage x hs⟩ :
-          TopologicalSpace.Opens M))).chainComplex R) := by
-  classical
-  exact if h : (s ∩ range I).Nonempty then
-    smoothSingularChainHomotopyEquivChartAtSourceInterPreimageOfStarConvex R x hs
-      (hsc.starConvex h.choose_spec) hst
-  else
-    smoothSingularChainHomotopyEquivChartAtSourceInterPreimageOfStarConvex R x hs
-      (c := 0) (Set.not_nonempty_iff_eq_empty.mp h ▸ starConvex_empty 0) hst
+          TopologicalSpace.Opens M))).chainComplex R) :=
+  smoothSingularChainHomotopyEquivOfConvex R (IsManifold.chart_mem_maximalAtlas x)
+    inter_subset_left (extChartAt_image_chartAt_source_inter_preimage x hst ▸ hsc)
 
-/-- The equivalence on a convex chart domain uses the inclusion of smooth chains. -/
+/-- The equivalence on a convex chart domain at `x` uses the inclusion of smooth chains. -/
 @[simp]
 theorem smoothSingularChainHomotopyEquivChartAtSourceInterPreimageOfConvex_hom
     (x : M) {s : Set E} (hs : IsOpen s) (hsc : Convex ℝ (s ∩ range I))
@@ -497,21 +585,21 @@ theorem smoothSingularChainHomotopyEquivChartAtSourceInterPreimageOfConvex_hom
     (smoothSingularChainHomotopyEquivChartAtSourceInterPreimageOfConvex R x hs hsc hst).hom =
       SSet.chainComplexMap (smoothSingularSubcomplex I
         (⟨(chartAt H x).source ∩ extChartAt I x ⁻¹' s, isOpen_extChartAt_preimage x hs⟩ :
-          TopologicalSpace.Opens M)).ι R := by
-  unfold smoothSingularChainHomotopyEquivChartAtSourceInterPreimageOfConvex
-  split <;> simp only [smoothSingularChainHomotopyEquivChartAtSourceInterPreimageOfStarConvex_hom]
+          TopologicalSpace.Opens M)).ι R :=
+  smoothSingularChainHomotopyEquivOfConvex_hom R _ _ _
 
-/-- On a convex chart domain the inclusion of smooth chains is a quasi-isomorphism. -/
+/-- On a convex chart domain at `x` the inclusion of smooth chains is a quasi-isomorphism. -/
 theorem quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_chartAt_source_inter_preimage_of_convex
     [CategoryWithHomology C]
     (x : M) {s : Set E} (hs : IsOpen s) (hsc : Convex ℝ (s ∩ range I))
     (hst : s ∩ range I ⊆ (extChartAt I x).target) :
     QuasiIso (SSet.chainComplexMap (smoothSingularSubcomplex I
       (⟨(chartAt H x).source ∩ extChartAt I x ⁻¹' s, isOpen_extChartAt_preimage x hs⟩ :
-        TopologicalSpace.Opens M)).ι R) := by
-  rw [← smoothSingularChainHomotopyEquivChartAtSourceInterPreimageOfConvex_hom R x hs hsc hst]
-  infer_instance
+        TopologicalSpace.Opens M)).ι R) :=
+  quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_convex R
+    (IsManifold.chart_mem_maximalAtlas x) inter_subset_left
+    (extChartAt_image_chartAt_source_inter_preimage x hst ▸ hsc)
 
-end ChartDomain
+end ChartAt
 
 end TauCeti

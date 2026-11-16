@@ -426,9 +426,9 @@ theorem smoothSingularSubcomplexMap_comp {E'' H'' : Type*} [NormedAddCommGroup E
 theorem smoothSingularSubcomplexMap_const (y : N) (hφ : ContMDiff I J ∞ fun _ : M ↦ y) :
     smoothSingularSubcomplexMap (fun _ ↦ y) hφ =
       SSet.const ((SmoothSimplex.equiv₀ J N).symm y) := by
-  -- Both sides send every smooth simplex to the constant singular simplex at `y`.
-  ext k σ
-  rfl
+  rw [← cancel_mono (smoothSingularSubcomplex J N).ι, smoothSingularSubcomplexMap_ι,
+    show TopCat.ofHom ⟨fun _ : M ↦ y, hφ.continuous⟩ = TopCat.const y from rfl]
+  simp
 
 /-- The image of a smooth simplex under a smooth map, read on `Δᵖ`, is the composite. -/
 theorem SmoothSimplex.toContinuousMap_smoothSingularSubcomplexMap_app {p : ℕ}
