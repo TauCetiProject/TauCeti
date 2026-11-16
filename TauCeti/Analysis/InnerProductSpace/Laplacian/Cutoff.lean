@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
+public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 public import Mathlib.MeasureTheory.Integral.DominatedConvergence
+import Mathlib.MeasureTheory.Function.LpSpace.Complete
+import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import TauCeti.Analysis.Calculus.Gradient
@@ -34,7 +37,10 @@ function `u` with `u`, `Du` and `Δu` in `Lᵖ`
 (`TauCeti.tendsto_eLpNorm_laplacian_smul_sub`). By the Leibniz rule
 `Δ(χ_R u) = χ_R Δu + 2 Du(∇χ_R) + Δχ_R u`, the error is dominated by `|Δu| + |Du| + |u|` and
 vanishes near each point once `R` is large, so dominated convergence applies. No second
-derivatives of `u` other than its Laplacian enter.
+derivatives of `u` other than its Laplacian enter. Consequently, for a measure finite on compact
+sets, any set of pairs of `Lᵖ` classes containing `(φ, Δφ)` for every compactly supported `Cⁿ`
+function `φ`, `n ≥ 2`, has `(u, Δu)` in its closure for every such `Cⁿ` function `u`
+(`TauCeti.toLp_laplacian_mem_closure_of_contDiff`).
 -/
 
 public section
@@ -227,6 +233,41 @@ theorem tendsto_eLpNorm_laplacian_smul_sub [l.IsCountablyGenerated] {μ : Measur
     refine (laplacian_congr_nhds ?_).eq_of_nhds.symm
     filter_upwards [hχ1 i x hi] with y hy
     simp [hy]
+
+/-- **Compactly supported functions approximate in the graph norm of the Laplacian.** For a
+measure finite on compact sets and `1 ≤ p < ∞`, let `G` be a set of pairs of `Lᵖ` classes
+containing `(φ, Δφ)` for every compactly supported `φ` of class `Cⁿ`, `n ≥ 2`. Then the closure
+of `G` contains `(u, Δu)` for every `u` of class `Cⁿ` with `u`, `Du` and `Δu` in `Lᵖ`: the
+truncations `χ_R u` by the cutoffs of
+`TauCeti.exists_forall_contDiff_cutoff_ball_norm_laplacian_le` converge to `u` together with
+their Laplacians. -/
+theorem toLp_laplacian_mem_closure_of_contDiff {μ : Measure E} [IsFiniteMeasureOnCompacts μ]
+    [OpensMeasurableSpace E] {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : p ≠ ⊤) {n : ℕ∞} (hn : 2 ≤ n)
+    {G : Set (Lp F p μ × Lp F p μ)}
+    (hG : ∀ φ : E → F, ContDiff ℝ n φ → HasCompactSupport φ → ∀ (h₀ : MemLp φ p μ)
+      (h₂ : MemLp (Δ φ) p μ), (h₀.toLp φ, h₂.toLp (Δ φ)) ∈ G)
+    {u : E → F} (hu : ContDiff ℝ n u) (hu₀ : MemLp u p μ) (hu₁ : MemLp (fderiv ℝ u) p μ)
+    (hu₂ : MemLp (Δ u) p μ) :
+    (hu₀.toLp u, hu₂.toLp (Δ u)) ∈ closure G := by
+  obtain ⟨C, hC⟩ := exists_forall_contDiff_cutoff_ball_norm_laplacian_le (E := E)
+  choose χ hχs hχc hχ1 _ hχd hχΔ hχI using fun m : ℕ => hC (m + 1) (by positivity)
+  have hR : Tendsto (fun m : ℕ => (m : ℝ) + 1) atTop atTop :=
+    tendsto_natCast_atTop_atTop.atTop_add tendsto_const_nhds
+  have hn' : (2 : WithTop ℕ∞) ≤ n := WithTop.coe_le_coe.2 hn
+  have hu2 : ContDiff ℝ 2 u := hu.of_le hn'
+  have hφ (m : ℕ) : ContDiff ℝ n fun x => χ m x • u x :=
+    ((hχs m).of_le (WithTop.coe_le_coe.2 le_top)).smul hu
+  have hφ2 (m : ℕ) : ContDiff ℝ 2 fun x => χ m x • u x := (hφ m).of_le hn'
+  refine mem_closure_of_tendsto (b := atTop) (Tendsto.prodMk_nhds ?_ ?_)
+    (Eventually.of_forall fun m => hG _ (hφ m) (hχc m).smul_right
+      ((hφ2 m).continuous.memLp_of_hasCompactSupport (hχc m).smul_right)
+      ((hφ2 m).continuous_laplacian.memLp_of_hasCompactSupport (hχc m).smul_right.laplacian))
+  · rw [Lp.tendsto_Lp_iff_tendsto_eLpNorm'' _ _ _ hu₀]
+    exact tendsto_eLpNorm_smul_sub hp hR (fun m => (hχs m).continuous.aestronglyMeasurable) hχ1 hχI
+      hu₀
+  · rw [Lp.tendsto_Lp_iff_tendsto_eLpNorm'' _ _ _ hu₂]
+    exact tendsto_eLpNorm_laplacian_smul_sub hp hR (fun m => (hχs m).of_le (by simp)) hχ1 hχd
+      hχΔ hχI hu2 hu₀ hu₁ hu₂
 
 end Limits
 

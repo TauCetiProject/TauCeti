@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Distribution.TestFunction.Lp
 public import TauCeti.Analysis.PDE.HeatKernel.Generator.Basic
 public import TauCeti.Topology.Algebra.Module.LinearPMap.GraphCore
-import Mathlib.MeasureTheory.Function.Holder
 import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.Calculus.ContDiff.Convolution
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Convolution
@@ -17,8 +16,8 @@ import TauCeti.Analysis.PDE.HeatKernel.Smoothing
 import TauCeti.Analysis.Semigroups.Generator.Closed
 import TauCeti.Analysis.Semigroups.Generator.Invariance
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
+import TauCeti.MeasureTheory.Function.Holder
 import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
-import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 
 /-!
 # The domain of the heat generator on `Lᵖ`
@@ -44,7 +43,8 @@ the one that holds for every `p`.
   cutoffs `χ_R` equal to one on the ball of radius `R`, with `‖Dχ_R‖ = O(1/R)` and
   `|Δχ_R| = O(1/R²)`. By the Leibniz rule `Δ(χ_R u) = χ_R Δu + 2 Du(∇χ_R) + Δχ_R u`, so dominated
   convergence gives `(χ_R u, Δ(χ_R u)) → (u, Δu)` in `Lᵖ × Lᵖ`
-  (`TauCeti.tendsto_eLpNorm_laplacian_smul_sub`). On the test functions `χ_R u` the generator is
+  (`TauCeti.tendsto_eLpNorm_laplacian_smul_sub`,
+  `TauCeti.toLp_laplacian_mem_closure_of_contDiff`). On the test functions `χ_R u` the generator is
   the classical Laplacian (`TauCeti.generator_heatSemigroup`).
 * **Distributional Laplacian to the graph.** If `Δf = g` in the sense of distributions, the
   mollification `ρ ⋆ f` by a normalized bump `ρ` is smooth, and its Laplacian falls on the
@@ -116,51 +116,24 @@ private theorem closure_testGraph_subset (hp : p ≠ ∞) :
   closure_minimal (LinearPMap.le_graph_of_le LinearPMap.domRestrict_le)
     (heatSemigroup (E := E) (F := F) hp).isClosed_generator
 
+/-- The classes of test functions lie in the domain of the heat generator. -/
+private theorem testFunctionLp_le_domain (hp : p ≠ ∞) :
+    testFunctionLp E F p ≤ (heatSemigroup (E := E) (F := F) hp).generator.domain := by
+  rintro _ ⟨φ, rfl⟩
+  rw [StronglyContinuousSemigroup.generator_domain]
+  exact mem_domain_heatSemigroup hp (φ.contDiff.of_le (by simp)) φ.hasCompactSupport
+    (TestFunction.coeFn_ambientToLp φ)
+
 /-- A smooth compactly supported `φ` and its Laplacian give a point of the graph on test
 functions. -/
 private theorem mem_testGraph (hp : p ≠ ∞) {φ : E → F} (hφ : ContDiff ℝ (⊤ : ℕ∞) φ)
     (hc : HasCompactSupport φ) (h₀ : MemLp φ p volume) (h₂ : MemLp (Δ φ) p volume) :
     (h₀.toLp φ, h₂.toLp (Δ φ)) ∈ testGraph hp := by
-  have hφ2 : ContDiff ℝ 2 φ := hφ.of_le (by simp)
-  have hdom : h₀.toLp φ ∈ (heatSemigroup hp).generator.domain := by
-    rw [StronglyContinuousSemigroup.generator_domain]
-    exact mem_domain_heatSemigroup hp hφ2 hc h₀.coeFn_toLp
+  have hmem : h₀.toLp φ ∈ testFunctionLp E F p :=
+    ⟨⟨φ, hφ, hc, subset_univ _⟩, TestFunction.ambientToLp_apply _⟩
   refine (LinearPMap.mem_graph_iff _).2 ⟨⟨h₀.toLp φ, Submodule.mem_inf.2
-    ⟨⟨⟨φ, hφ, hc, subset_univ _⟩, TestFunction.ambientToLp_apply _⟩, hdom⟩⟩, rfl,
-    (LinearPMap.domRestrict_apply rfl).trans
-      (generator_heatSemigroup hp hφ2 hc h₀.coeFn_toLp h₂.coeFn_toLp)⟩
-
-omit [CompleteSpace F] in
-/-- **The cutoff step.** Let `G` be a set of pairs of `Lᵖ` classes containing `(φ, Δφ)` for every
-compactly supported `φ` of class `Cⁿ`, `n ≥ 2`. Then the closure of `G` contains `(u, Δu)` for
-every `u` of class `Cⁿ` with `u`, `Du` and `Δu` in `Lᵖ`: the truncations `χ_R u` converge to `u`
-together with their Laplacians. -/
-private theorem mem_closure_of_contDiff (hp : p ≠ ∞) {n : ℕ∞} (hn : 2 ≤ n)
-    {G : Set (Lp F p (volume : Measure E) × Lp F p (volume : Measure E))}
-    (hG : ∀ φ : E → F, ContDiff ℝ n φ → HasCompactSupport φ → ∀ (h₀ : MemLp φ p volume)
-      (h₂ : MemLp (Δ φ) p volume), (h₀.toLp φ, h₂.toLp (Δ φ)) ∈ G)
-    {u : E → F} (hu : ContDiff ℝ n u) (hu₀ : MemLp u p volume)
-    (hu₁ : MemLp (fderiv ℝ u) p volume) (hu₂ : MemLp (Δ u) p volume) :
-    (hu₀.toLp u, hu₂.toLp (Δ u)) ∈ closure G := by
-  obtain ⟨C, hC⟩ := exists_forall_contDiff_cutoff_ball_norm_laplacian_le (E := E)
-  choose χ hχs hχc hχ1 _ hχd hχΔ hχI using fun n : ℕ => hC (n + 1) (by positivity)
-  have hR : Tendsto (fun n : ℕ => (n : ℝ) + 1) atTop atTop :=
-    tendsto_natCast_atTop_atTop.atTop_add tendsto_const_nhds
-  have hn' : (2 : WithTop ℕ∞) ≤ n := WithTop.coe_le_coe.2 hn
-  have hu2 : ContDiff ℝ 2 u := hu.of_le hn'
-  have hφ (m : ℕ) : ContDiff ℝ n fun x => χ m x • u x :=
-    ((hχs m).of_le (WithTop.coe_le_coe.2 le_top)).smul hu
-  have hφ2 (m : ℕ) : ContDiff ℝ 2 fun x => χ m x • u x := (hφ m).of_le hn'
-  refine mem_closure_of_tendsto (b := atTop) (Tendsto.prodMk_nhds ?_ ?_)
-    (Eventually.of_forall fun m => hG _ (hφ m) (hχc m).smul_right
-      ((hφ2 m).continuous.memLp_of_hasCompactSupport (hχc m).smul_right)
-      ((hφ2 m).continuous_laplacian.memLp_of_hasCompactSupport (hχc m).smul_right.laplacian))
-  · rw [Lp.tendsto_Lp_iff_tendsto_eLpNorm'' _ _ _ hu₀]
-    exact tendsto_eLpNorm_smul_sub hp hR (fun m => (hχs m).continuous.aestronglyMeasurable) hχ1 hχI
-      hu₀
-  · rw [Lp.tendsto_Lp_iff_tendsto_eLpNorm'' _ _ _ hu₂]
-    exact tendsto_eLpNorm_laplacian_smul_sub hp hR (fun m => (hχs m).of_le (by simp)) hχ1 hχd
-      hχΔ hχI hu2 hu₀ hu₁ hu₂
+    ⟨hmem, testFunctionLp_le_domain hp hmem⟩⟩, rfl, (LinearPMap.domRestrict_apply rfl).trans
+      (generator_heatSemigroup hp (hφ.of_le (by simp)) hc h₀.coeFn_toLp h₂.coeFn_toLp)⟩
 
 /-- **The distributional Laplacian to the graph.** If `Δf = g` in the sense of distributions,
 then `(f, g)` is a limit of pairs `(φ, Δφ)` with `φ` a test function. -/
@@ -189,8 +162,9 @@ private theorem mem_closure_testGraph_of_forall (hp : p ≠ ∞) {f g : Lp F p (
   have e₂ : normedBumpLp hp (ψ n) volume g = hu₂.toLp (Δ u) :=
     Lp.ext (hgu.trans hu₂.coeFn_toLp.symm)
   rw [e₀, e₂]
-  exact mem_closure_of_contDiff hp (by simp) (fun φ hφ hc h₀ h₂ => mem_testGraph hp hφ hc h₀ h₂) hu
-    hu₀ (memLp_fderiv_convolution hp (ψ n).contDiff_normed (ψ n).hasCompactSupport_normed
+  exact toLp_laplacian_mem_closure_of_contDiff hp (by simp)
+    (fun φ hφ hc h₀ h₂ => mem_testGraph hp hφ hc h₀ h₂) hu hu₀
+    (memLp_fderiv_convolution hp (ψ n).contDiff_normed (ψ n).hasCompactSupport_normed
       (Lp.memLp f)) hu₂
 
 /-- **A `C²` function with `u` and `Δu` in `Lᵖ` lies in the domain of the heat generator**, which
@@ -248,21 +222,11 @@ private theorem integral_laplacian_smul_eq_of_mem_graph (hp : p ≠ ∞)
       simp [t]
     rw [← NNReal.tendsto_coe, NNReal.coe_zero, hcoe]
     exact tendsto_one_div_add_atTop_nhds_zero_nat
-  -- Integration against a continuous compactly supported `k` is continuous on `Lᵖ`, by the Hölder
-  -- pairing with the conjugate exponent.
-  have hcont {k : E → ℝ} (hk : Continuous k) (hkc : HasCompactSupport k) :
-      Continuous fun h : Lp F p (volume : Measure E) => ∫ x, k x • h x := by
-    have := ENNReal.HolderConjugate.inv_one_sub_inv' (Fact.out : 1 ≤ p)
-    have : Fact (1 ≤ (1 - p⁻¹)⁻¹) := by simp [fact_iff]
-    have hk' := hk.memLp_of_hasCompactSupport (μ := volume) (p := (1 - p⁻¹)⁻¹) hkc
-    refine (((lsmul ℝ ℝ (E := F)).flip.lpPairing volume p (1 - p⁻¹)⁻¹).flip
-      (hk'.toLp k)).continuous.congr fun h => ?_
-    rw [flip_apply, lpPairing_eq_integral]
-    exact integral_congr_ae (hk'.coeFn_toLp.mono fun x hx => by simp [hx])
-  have hlim₁ := ((hcont (hφ.of_le (by simp) : ContDiff ℝ 2 φ).continuous_laplacian
-    hc.laplacian).tendsto f).comp ((S.continuousAt_zero_tendsto f).comp ht)
-  have hlim₂ := ((hcont hφ.continuous hc).tendsto g).comp
-    ((S.continuousAt_zero_tendsto g).comp ht)
+  have hlim₁ := (((hφ.of_le (by simp) : ContDiff ℝ 2 φ).continuous_laplacian
+    |>.continuous_integral_smul_Lp_of_hasCompactSupport (F := F) hc.laplacian).tendsto f).comp
+      ((S.continuousAt_zero_tendsto f).comp ht)
+  have hlim₂ := ((hφ.continuous.continuous_integral_smul_Lp_of_hasCompactSupport (F := F)
+    hc).tendsto g).comp ((S.continuousAt_zero_tendsto g).comp ht)
   exact tendsto_nhds_unique (hlim₁.congr fun n =>
     integral_laplacian_smul_heatSemigroup_eq hp h (inv_ne_zero (by positivity)) hφ hc) hlim₂
 
@@ -293,12 +257,8 @@ theorem generator_heatSemigroup_hasCore_range_ambientToLp (hp : p ≠ ∞) :
     (heatSemigroup (E := E) (F := F) hp).generator.HasCore
       (LinearMap.range (TestFunction.ambientToLp (Ω := (⊤ : Opens E)) (n := ⊤) (F := F) p
         (volume : Measure E)).toLinearMap) := by
-  have hle : testFunctionLp E F p ≤ (heatSemigroup (E := E) (F := F) hp).generator.domain := by
-    rintro _ ⟨φ, rfl⟩
-    rw [StronglyContinuousSemigroup.generator_domain]
-    exact mem_domain_heatSemigroup hp (φ.contDiff.of_le (by simp)) φ.hasCompactSupport
-      (TestFunction.coeFn_ambientToLp φ)
-  refine ((heatSemigroup hp).isClosed_generator.hasCore_iff_graph_subset_closure hle).2
+  refine ((heatSemigroup hp).isClosed_generator.hasCore_iff_graph_subset_closure
+    (testFunctionLp_le_domain hp)).2
     fun x hx => ?_
   exact mem_closure_testGraph_of_forall hp
     ((mem_graph_generator_heatSemigroup_iff hp).1 (by simpa using hx))

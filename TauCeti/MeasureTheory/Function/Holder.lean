@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.Holder
+import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 
 /-!
 # Hölder estimates for pointwise pairings
@@ -25,6 +26,9 @@ integration-by-parts arguments:
   integral of the product.
 * `TauCeti.enorm_integral_smul_le`: Hölder's inequality `‖∫ a • f‖ ≤ ‖a‖_p ‖f‖_q` for the
   Bochner integral of a pointwise scalar multiple, for any boundedly acting scalars.
+* `Continuous.continuous_integral_smul_Lp_of_hasCompactSupport`: integration against a continuous
+  compactly supported function is continuous on `Lᵖ`, `1 ≤ p`, being the Hölder pairing with an
+  element of the conjugate space.
 * `MeasureTheory.Lp.sum_smul` and `MeasureTheory.Lp.smul_sum`: the heterogeneous scalar
   multiplication `Lᵖ × L^q → Lʳ` distributes over finite sums in each factor.
 -/
@@ -137,3 +141,25 @@ theorem enorm_integral_smul_le {α 𝕜 F : Type*} [MeasurableSpace α]
         (.of_forall fun _ => by simpa using eNorm_smul_le) zero_lt_one
 
 end TauCeti
+
+namespace Continuous
+
+open MeasureTheory
+
+/-- **Integration against a continuous compactly supported function is continuous on `Lᵖ`**,
+`1 ≤ p`, for a measure finite on compact sets: `h ↦ ∫ k • h` is the Hölder pairing of `h` with
+the class of `k` in `L^q` for the conjugate exponent `q`. -/
+theorem continuous_integral_smul_Lp_of_hasCompactSupport {X 𝕜 F : Type*} [TopologicalSpace X]
+    [MeasurableSpace X] [OpensMeasurableSpace X] {μ : Measure X} [IsFiniteMeasureOnCompacts μ]
+    [NontriviallyNormedField 𝕜] [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedSpace ℝ F]
+    [SMulCommClass ℝ 𝕜 F] [CompleteSpace F] {k : X → 𝕜} (hk : Continuous k)
+    (hkc : HasCompactSupport k) {p : ℝ≥0∞} [Fact (1 ≤ p)] :
+    Continuous fun h : Lp F p μ => ∫ x, k x • h x ∂μ := by
+  have : Fact (1 ≤ p.conjExponent) := ⟨le_self_add⟩
+  have hk' := hk.memLp_of_hasCompactSupport (μ := μ) (p := p.conjExponent) hkc
+  refine (((ContinuousLinearMap.lsmul 𝕜 𝕜 (E := F)).flip.lpPairing μ p p.conjExponent).flip
+    (hk'.toLp k)).continuous.congr fun h => ?_
+  rw [ContinuousLinearMap.flip_apply, ContinuousLinearMap.lpPairing_eq_integral]
+  exact integral_congr_ae (hk'.coeFn_toLp.mono fun x hx => by simp [hx])
+
+end Continuous
