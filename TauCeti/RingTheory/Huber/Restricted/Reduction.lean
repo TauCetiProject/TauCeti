@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Polynomial.Quotient
 public import TauCeti.RingTheory.AdicCompletion.UniformCompletion
 public import TauCeti.RingTheory.Huber.Adic
 public import TauCeti.RingTheory.Huber.Restricted.Adic
@@ -12,6 +13,7 @@ public import TauCeti.RingTheory.Huber.WeightedEval.Completion
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PairOfDefinition
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Kernel
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Complete
+import TauCeti.RingTheory.AdicCompletion.AlgHom
 import TauCeti.RingTheory.AdicCompletion.Algebra
 import TauCeti.Topology.Algebra.Nonarchimedean.Quotient
 import TauCeti.Topology.Algebra.Module.Quotient
@@ -24,15 +26,16 @@ Reduction of restricted power series modulo an open ideal is polynomial, both on
 series subring (`Ideal.restrictedReduction`) and on its separated completion
 (`Ideal.restrictedCompletionReduction`), without requiring completeness or separatedness of the
 coefficient ring. For a finitely generated ideal of definition `I`, the kernel is the extended
-ideal `I·A⟨T⟩`, which equals the set of series whose coefficients lie in `I`. Thus
-`A⟨T⟩/I·A⟨T⟩ ≃ₐ[A] (A/I)[T]`, also on the completed carrier when `A` is complete and Hausdorff.
-Every positive power `Iᵐ` is again a finitely generated ideal of definition (`IsAdic.pow`), giving
-`A⟨T⟩/(I·A⟨T⟩)ᵐ ≃ₐ[A] (A/Iᵐ)[T]` on both carriers and identifying the separated completion
-`A⟨T⟩` with the inverse-limit adic completion `AdicCompletion (I·A⟨T⟩) A⟨T⟩` whose `m`-th
-projection computes polynomial reduction modulo `Iᵐ`.
+ideal `I·A⟨T⟩`, giving `A⟨T⟩/I·A⟨T⟩ ≃ₐ[A] (A/I)[T]` on both the uncompleted and completed carriers.
+Since every positive power `Iᵐ` (`m ≠ 0`) is again a finitely generated ideal of definition
+(`is_ideal_adic_pow`), this yields `A⟨T⟩/(I·A⟨T⟩)ᵐ ≃ₐ[A] (A/Iᵐ)[T]` on both carriers and identifies
+the separated completion `A⟨T⟩` as a topological `A`-algebra with the `(I·A[T])`-adic inverse-limit
+completion `AdicCompletion (I.map MvPolynomial.C) (MvPolynomial (Fin k) A)`
+whose `m`-th projection (`m ≠ 0`) computes polynomial reduction modulo `Iᵐ`.
 
-Reduction is natural under continuous coefficient homomorphisms mapping an open ideal of the source
-into an open ideal of the target, and commutes with topological evaluation (`weightedEvalHom` and
+Reduction is continuous into any topology on `MvPolynomial (Fin k) (A ⧸ J)`, natural under
+continuous coefficient homomorphisms mapping an open ideal of the source into an open ideal of the
+target, and commutes with topological evaluation (`weightedEvalHom` and
 `weightedEvalHomCompletion`) modulo any open ideal of the target ring: ideal neighbourhoods
 annihilate higher-order terms regardless of the values substituted for the variables.
 
@@ -42,24 +45,27 @@ annihilate higher-order terms regardless of the values substituted for the varia
   uncompleted and completed restricted power series modulo an open ideal.
 * `TauCeti.Huber.quotientRestrictedEquivMvPolynomialQuotient` and
   `TauCeti.Huber.quotientRestrictedCompletionEquivMvPolynomialQuotient`: the `A`-algebra
-  equivalences modulo `I·A⟨T⟩`.
+  equivalences modulo `I·A⟨T⟩` on the uncompleted and completed carriers.
 * `TauCeti.Huber.quotientPowRestrictedEquivMvPolynomialQuotient` and
   `TauCeti.Huber.quotientPowRestrictedCompletionEquivMvPolynomialQuotient`: the `A`-algebra
   equivalences modulo `(I·A⟨T⟩)ᵐ` for `m ≠ 0`.
-* `TauCeti.Huber.restrictedMvPowerSeriesCompletionEquivAdicCompletion`: the ring isomorphism from
-  the completed restricted-series algebra to the inverse-limit adic completion.
+* `TauCeti.Huber.restrictedMvPowerSeriesCompletionEquivAdicCompletion`: the topological `A`-algebra
+  equivalence from the completed restricted-series algebra to the `(I·A[T])`-adic completion of
+  `MvPolynomial (Fin k) A`.
 
 ## Main results
 
-* `Ideal.restrictedReduction_weightedMap` and
-  `Ideal.restrictedCompletionReduction_weightedMapCompletion`: naturality of polynomial reduction
-  along continuous coefficient maps.
+* `Ideal.continuous_restrictedReduction` and `Ideal.continuous_restrictedCompletionReduction`:
+  continuity of uncompleted and completed polynomial reduction.
+* `TauCeti.Huber.restrictedReduction_weightedMap` and
+  `TauCeti.Huber.restrictedCompletionReduction_weightedMapCompletion`: naturality of polynomial
+  reduction along continuous coefficient maps.
 * `TauCeti.Huber.mk_weightedEvalHom_eq_eval₂_restrictedReduction` and
   `TauCeti.Huber.mk_weightedEvalHomCompletion_eq_eval₂_restrictedCompletionReduction`: reducing an
   evaluated restricted series modulo an open ideal agrees with polynomial evaluation of its
   reduction.
-* `TauCeti.Huber.quotientPowRestrictedEquiv_evalₐ_completionEquivAdicCompletion`: the `m`-th
-  projection of the adic completion computes polynomial reduction modulo `Iᵐ`.
+* `TauCeti.Huber.evalₐ_restrictedMvPowerSeriesCompletionEquivAdicCompletion`: for `m ≠ 0`, the
+  `m`-th inverse-limit projection computes polynomial reduction modulo `Iᵐ`.
 
 ## References
 
@@ -132,6 +138,17 @@ theorem coeff_restrictedReduction (J : Ideal A) (hJ : IsOpen (J : Set A))
   rw [coeff_weightedPolynomialEquivOfDiscrete_symm]
   simp
 
+/-- A restricted series reduces to `0` modulo an open ideal `J` if and only if all of its
+coefficients belong to `J`. -/
+theorem restrictedReduction_eq_zero_iff {J : Ideal A} (hJ : IsOpen (J : Set A))
+    {f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight} :
+    restrictedReduction J hJ f = 0 ↔
+      ∀ ν, MvPowerSeries.coeff ν (f : MvPowerSeries (Fin k) A) ∈ J := by
+  rw [MvPolynomial.ext_iff]
+  refine forall_congr' fun ν ↦ ?_
+  rw [coeff_restrictedReduction, AddMonoidAlgebra.coeff_zero, Finsupp.coe_zero, Pi.zero_apply,
+    Ideal.Quotient.eq_zero_iff_mem]
+
 /-- On polynomials, reduction of restricted series is the usual coefficient map. -/
 @[simp]
 theorem restrictedReduction_weightedPolynomialHom (J : Ideal A) (hJ : IsOpen (J : Set A))
@@ -162,18 +179,6 @@ theorem restrictedReduction_surjective (J : Ideal A) (hJ : IsOpen (J : Set A)) :
     Ideal.Quotient.mk_surjective p
   exact ⟨weightedPolynomialHom _ isWeightFamily_one_weight q, by simp⟩
 
-/-- Polynomial reduction is natural along a continuous coefficient homomorphism carrying an open
-ideal of the source into an open ideal of the target. -/
-theorem restrictedReduction_weightedMap {B : Type*} [CommRing B] [TopologicalSpace B]
-    [NonarchimedeanRing B] {φ : A →+* B} (hφ : Continuous φ) {I : Ideal A} {J : Ideal B}
-    (hI : IsOpen (I : Set A)) (hJ : IsOpen (J : Set B)) (hIJ : I ≤ J.comap φ)
-    (f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight) :
-    restrictedReduction J hJ
-        (weightedMap hφ isWeightFamily_one_weight isWeightFamily_one_weight (by simp) f) =
-      MvPolynomial.map (Ideal.quotientMap J φ hIJ) (restrictedReduction I hI f) := by
-  ext ν
-  simp [MvPolynomial.coeff_map]
-
 /-- Reduction of completed restricted series modulo an open ideal is polynomial. Because `A ⧸ J`
 is discrete, its restricted-series ring is already discrete, hence complete and separated; no
 completeness or separatedness assumption on `A` is needed. -/
@@ -193,7 +198,7 @@ noncomputable def restrictedCompletionReduction (J : Ideal A) (hJ : IsOpen (J : 
 
 /-- Any post-composition of `restrictedReduction` into a topological space is continuous, since it
 factors through the discrete ring of restricted series over `A ⧸ J`. -/
-private theorem continuous_comp_restrictedReduction {Z : Type*} [TopologicalSpace Z]
+theorem continuous_comp_restrictedReduction {Z : Type*} [TopologicalSpace Z]
     (J : Ideal A) (hJ : IsOpen (J : Set A)) (g : MvPolynomial (Fin k) (A ⧸ J) → Z) :
     Continuous (fun f ↦ g (restrictedReduction (k := k) J hJ f)) := by
   let : DiscreteTopology (A ⧸ J) := Submodule.Quotient.discreteTopology_of_isOpen J hJ
@@ -205,9 +210,15 @@ private theorem continuous_comp_restrictedReduction {Z : Type*} [TopologicalSpac
     g ((weightedPolynomialEquivOfDiscrete _ isWeightFamily_one_weight).symm y))).comp
       (continuous_weightedMap _ _ _ _)
 
+/-- `restrictedReduction` is continuous into any topology on `MvPolynomial (Fin k) (A ⧸ J)`. -/
+theorem continuous_restrictedReduction (J : Ideal A)
+    [TopologicalSpace (MvPolynomial (Fin k) (A ⧸ J))] (hJ : IsOpen (J : Set A)) :
+    Continuous (restrictedReduction (k := k) J hJ) :=
+  continuous_comp_restrictedReduction J hJ id
+
 /-- Any post-composition of `restrictedCompletionReduction` into a topological space is continuous,
 since it factors through the discrete ring of restricted series over `A ⧸ J`. -/
-private theorem continuous_comp_restrictedCompletionReduction {Z : Type*} [TopologicalSpace Z]
+theorem continuous_comp_restrictedCompletionReduction {Z : Type*} [TopologicalSpace Z]
     (J : Ideal A) (hJ : IsOpen (J : Set A)) (g : MvPolynomial (Fin k) (A ⧸ J) → Z) :
     Continuous (fun x ↦ g (restrictedCompletionReduction (k := k) J hJ x)) := by
   let : DiscreteTopology (A ⧸ J) := Submodule.Quotient.discreteTopology_of_isOpen J hJ
@@ -221,6 +232,13 @@ private theorem continuous_comp_restrictedCompletionReduction {Z : Type*} [Topol
     g ((weightedPolynomialEquivOfDiscrete _ isWeightFamily_one_weight).symm y))).comp
       (uniformContinuous_restrictedMvPowerSeriesCompletionEquiv.continuous.comp
         (continuous_weightedMapCompletion _ _ _ _))
+
+/-- `restrictedCompletionReduction` is continuous into any topology on
+`MvPolynomial (Fin k) (A ⧸ J)`. -/
+theorem continuous_restrictedCompletionReduction (J : Ideal A)
+    [TopologicalSpace (MvPolynomial (Fin k) (A ⧸ J))] (hJ : IsOpen (J : Set A)) :
+    Continuous (restrictedCompletionReduction (k := k) J hJ) :=
+  continuous_comp_restrictedCompletionReduction J hJ id
 
 /-- On the canonical image of a restricted series, completed reduction agrees with uncompleted
 reduction. -/
@@ -273,6 +291,24 @@ theorem restrictedCompletionReduction_surjective (J : Ideal A) (hJ : IsOpen (J :
   obtain ⟨f, rfl⟩ := restrictedReduction_surjective (k := k) J hJ p
   exact ⟨f, restrictedCompletionReduction_coe J hJ f⟩
 
+end Ideal
+
+namespace TauCeti.Huber
+
+open Ideal (restrictedReduction restrictedReduction_surjective restrictedCompletionReduction)
+
+/-- Polynomial reduction is natural along a continuous coefficient homomorphism carrying an open
+ideal of the source into an open ideal of the target. -/
+theorem restrictedReduction_weightedMap {B : Type*} [CommRing B] [TopologicalSpace B]
+    [NonarchimedeanRing B] {φ : A →+* B} (hφ : Continuous φ) {I : Ideal A} {J : Ideal B}
+    (hI : IsOpen (I : Set A)) (hJ : IsOpen (J : Set B)) (hIJ : I ≤ J.comap φ)
+    (f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight) :
+    restrictedReduction J hJ
+        (weightedMap hφ isWeightFamily_one_weight isWeightFamily_one_weight (by simp) f) =
+      MvPolynomial.map (Ideal.quotientMap J φ hIJ) (restrictedReduction I hI f) := by
+  ext ν
+  simp [MvPolynomial.coeff_map]
+
 /-- Completed polynomial reduction is natural along a continuous coefficient homomorphism carrying
 an open ideal of the source into an open ideal of the target. -/
 theorem restrictedCompletionReduction_weightedMapCompletion
@@ -297,28 +333,22 @@ theorem restrictedCompletionReduction_weightedMapCompletion
         eJ.toRingHom.comp ((MvPolynomial.map (Ideal.quotientMap J φ hIJ)).comp
           (restrictedCompletionReduction I hI)) :=
     UniformSpace.Completion.ringHom_ext_of_continuous
-      ((continuous_comp_restrictedCompletionReduction J hJ eJ).comp
+      ((Ideal.continuous_comp_restrictedCompletionReduction J hJ eJ).comp
         (continuous_weightedMapCompletion _ _ _ _))
-      (continuous_comp_restrictedCompletionReduction I hI
+      (Ideal.continuous_comp_restrictedCompletionReduction I hI
         (fun p ↦ eJ (MvPolynomial.map (Ideal.quotientMap J φ hIJ) p)))
       (RingHom.ext fun f ↦ by
         simp [restrictedReduction_weightedMap hφ hI hJ hIJ])
   exact congr($hcomp x)
 
-end Ideal
-
-namespace TauCeti.Huber
-
-open Ideal (restrictedReduction restrictedReduction_surjective restrictedCompletionReduction)
-
-/-- Reduction modulo a finitely generated ideal of definition has exactly the extended ideal
-as its kernel. -/
+/-- Reduction modulo a finitely generated ideal of definition has the extended ideal as its
+kernel. -/
 theorem ker_restrictedReduction (hI : IsAdic I) (hfg : I.FG) :
     RingHom.ker (restrictedReduction (k := k) I (by simpa only [pow_one] using hI.isOpen_pow 1)) =
       I.map (weightedC _ isWeightFamily_one_weight) := by
   ext f
-  rw [RingHom.mem_ker, mem_map_weightedC_iff_of_isAdic hI hfg, MvPolynomial.ext_iff]
-  simp [Ideal.Quotient.eq_zero_iff_mem]
+  rw [RingHom.mem_ker, Ideal.restrictedReduction_eq_zero_iff,
+    mem_map_weightedC_iff_of_isAdic hI hfg]
 
 /-- Reduction modulo the `m`-th power (`m ≠ 0`) of a finitely generated ideal of definition has
 kernel `(I · A⟨T⟩) ^ m`. -/
@@ -326,7 +356,7 @@ theorem ker_restrictedReduction_pow (hI : IsAdic I) (hfg : I.FG) {m : ℕ} (hm :
     RingHom.ker (restrictedReduction (k := k) (I ^ m) (hI.isOpen_pow m)) =
       I.map (weightedC _ isWeightFamily_one_weight) ^ m := by
   rw [← Ideal.map_pow]
-  exact ker_restrictedReduction (hI.pow hm) hfg.pow
+  exact ker_restrictedReduction (is_ideal_adic_pow hI (Nat.pos_of_ne_zero hm)) hfg.pow
 
 /-- The infinitesimal reduction of restricted power series is a polynomial algebra. -/
 noncomputable def quotientRestrictedEquivMvPolynomialQuotient (hI : IsAdic I) (hfg : I.FG) :
@@ -337,13 +367,8 @@ noncomputable def quotientRestrictedEquivMvPolynomialQuotient (hI : IsAdic I) (h
     ((restrictedReduction I (by simpa using hI.isOpen_pow 1)).quotientKerEquivOfSurjective
       (restrictedReduction_surjective I (by simpa only [pow_one] using hI.isOpen_pow 1)))
   refine AlgEquiv.ofRingEquiv (f := e) fun a ↦ ?_
-  have he : e (algebraMap A _ a) =
-      restrictedReduction I (by simpa only [pow_one] using hI.isOpen_pow 1) (algebraMap A _ a) := by
-    rw [← Ideal.Quotient.mk_algebraMap]
-    simp only [e, RingEquiv.trans_apply, Ideal.quotEquivOfEq_mk,
-      RingHom.quotientKerEquivOfSurjective_apply_mk]
-  rw [he]
-  simp [algebraMap_weightedRestrictedSubring]
+  rw [← Ideal.Quotient.mk_algebraMap]
+  simp [e, algebraMap_weightedRestrictedSubring]
 
 /-- On a represented series the quotient comparison computes its polynomial reduction. -/
 @[simp]
@@ -362,7 +387,8 @@ noncomputable def quotientPowRestrictedEquivMvPolynomialQuotient
       I.map (weightedC _ isWeightFamily_one_weight) ^ m) ≃ₐ[A]
       MvPolynomial (Fin k) (A ⧸ I ^ m) :=
   (Ideal.quotientEquivAlgOfEq A (Ideal.map_pow _ I m).symm).trans
-    (quotientRestrictedEquivMvPolynomialQuotient (hI.pow hm) hfg.pow)
+    (quotientRestrictedEquivMvPolynomialQuotient
+      (is_ideal_adic_pow hI (Nat.pos_of_ne_zero hm)) hfg.pow)
 
 /-- On a represented series, the order-`m` quotient comparison computes reduction modulo `I ^ m`. -/
 @[simp]
@@ -395,7 +421,7 @@ theorem map_restrictedCompletionReduction {J : Ideal A} (hJ : IsOpen (J : Set A)
   have hfac : Ideal.quotientMap I (RingHom.id A) hJI = Ideal.Quotient.factor hJI :=
     RingHom.ext fun q ↦ by obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective q; rfl
   simpa [hfac] using
-    (Ideal.restrictedCompletionReduction_weightedMapCompletion (φ := RingHom.id A)
+    (restrictedCompletionReduction_weightedMapCompletion (φ := RingHom.id A)
       continuous_id hJ hI hJI x).symm
 
 section EvalCompatibility
@@ -440,145 +466,87 @@ theorem mk_weightedEvalHomCompletion_eq_eval₂_restrictedCompletionReduction
       (restrictedCompletionReduction I hI x).eval₂ (Ideal.quotientMap J φ hIJ)
         (fun i ↦ Ideal.Quotient.mk J (b i)) := by
   let : DiscreteTopology (B ⧸ J) := Submodule.Quotient.discreteTopology_of_isOpen J hJ
-  have hcomp :
-      (Ideal.Quotient.mk J).comp (weightedEvalHomCompletion isWeightFamily_one_weight hφ hb) =
-        (MvPolynomial.eval₂Hom (Ideal.quotientMap J φ hIJ)
-          (fun i ↦ Ideal.Quotient.mk J (b i))).comp (restrictedCompletionReduction I hI) :=
-    completion_weightedRestrictedSubring_ringHom_ext_of_continuous isWeightFamily_one_weight
-      ((QuotientRing.isOpenQuotientMap_mk J).continuous.comp
-        (continuous_weightedEvalHomCompletion _ hφ hb))
-      (Ideal.continuous_comp_restrictedCompletionReduction I hI
-        (MvPolynomial.eval₂Hom (Ideal.quotientMap J φ hIJ) (fun i ↦ Ideal.Quotient.mk J (b i))))
-      (fun a ↦ by
-        rw [RingHom.comp_apply, RingHom.comp_apply, weightedEvalHomCompletion_coe,
-          weightedEvalHom_weightedC, Ideal.restrictedCompletionReduction_coe,
-          Ideal.restrictedReduction_weightedC, MvPolynomial.coe_eval₂Hom, MvPolynomial.eval₂_C,
-          Ideal.quotientMap_mk])
-      (fun i ↦ by simp)
-  exact congr($hcomp x)
+  refine UniformSpace.Completion.induction_on x (isClosed_eq
+    ((QuotientRing.isOpenQuotientMap_mk J).continuous.comp
+      (continuous_weightedEvalHomCompletion _ hφ hb))
+    (Ideal.continuous_comp_restrictedCompletionReduction I hI
+      (MvPolynomial.eval₂Hom (Ideal.quotientMap J φ hIJ)
+        (fun i ↦ Ideal.Quotient.mk J (b i))))) fun f ↦ ?_
+  rw [weightedEvalHomCompletion_coe, Ideal.restrictedCompletionReduction_coe]
+  exact mk_weightedEvalHom_eq_eval₂_restrictedReduction hφ hb hI hJ hIJ f
 
 end EvalCompatibility
 
-section AdicLimit
+section CompletedQuotient
 
-/-- **Inverse-limit description of completed restricted power series.** When `A` has a finitely
-generated ideal of definition `I`, the completed restricted-series algebra `A⟨T₁, …, Tₖ⟩` is
-isomorphic to the algebraic adic completion of the restricted-series subring with respect to the
-extended ideal `I · A⟨T⟩`. -/
-noncomputable def restrictedMvPowerSeriesCompletionEquivAdicCompletion
-    (hI : IsAdic I) (hfg : I.FG) :
-    restrictedMvPowerSeriesCompletion k A ≃+*
-      AdicCompletion
-        (I.map (algebraMap A (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
-          isWeightFamily_one_weight)))
-        (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight) :=
-  let hAdic := isAdic_map_algebraMap_weightedRestrictedSubring_one_weight k hI hfg
-  hAdic.completionEquivAdicCompletion (hfg.map _)
-
-/-- On a restricted series in the dense subring, the adic-completion isomorphism is `algebraMap`. -/
-@[simp]
-theorem restrictedMvPowerSeriesCompletionEquivAdicCompletion_coe
-    (hI : IsAdic I) (hfg : I.FG)
-    (f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight) :
-    restrictedMvPowerSeriesCompletionEquivAdicCompletion hI hfg
-        (f : restrictedMvPowerSeriesCompletion k A) =
-      algebraMap _ _ f :=
-  IsAdic.completionEquivAdicCompletion_coe _ _ f
-
-/-- The adic-completion comparison is a homeomorphism when `AdicCompletion` carries the adic
-topology of the extended ideal. -/
-theorem isHomeomorph_restrictedMvPowerSeriesCompletionEquivAdicCompletion
-    (hI : IsAdic I) (hfg : I.FG) :
-    @IsHomeomorph _ _ _
-      ((I.map (algebraMap A (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
-        isWeightFamily_one_weight))).map (algebraMap _ _)).adicTopology
-      (restrictedMvPowerSeriesCompletionEquivAdicCompletion (k := k) hI hfg) :=
-  IsAdic.isHomeomorph_completionEquivAdicCompletion _ _
-
-/-- The `m`-th inverse-limit projection (`m ≠ 0`) of the adic completion computes polynomial
-reduction modulo `I ^ m`. -/
-theorem quotientPowRestrictedEquiv_evalₐ_completionEquivAdicCompletion
-    (hI : IsAdic I) (hfg : I.FG) {m : ℕ} (hm : m ≠ 0)
-    (x : restrictedMvPowerSeriesCompletion k A) :
-    quotientPowRestrictedEquivMvPolynomialQuotient hI hfg hm
-        (AdicCompletion.evalₐ _ m
-          (restrictedMvPowerSeriesCompletionEquivAdicCompletion hI hfg x)) =
-      restrictedCompletionReduction (I ^ m) (hI.isOpen_pow m) x := by
-  let S := weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight
-  let K : Ideal S := I.map (weightedC _ isWeightFamily_one_weight)
-  let e := restrictedMvPowerSeriesCompletionEquivAdicCompletion (k := k) hI hfg
-  have hfgK : K.FG := hfg.map _
-  obtain ⟨f, hf⟩ := AdicCompletion.exists_sub_algebraMap_mem_map_pow hfgK m (e x)
-  have heval : AdicCompletion.evalₐ K m (e x) = Ideal.Quotient.mk (K ^ m) f := by
-    have hker :
-        e x - algebraMap S (AdicCompletion K S) f ∈ RingHom.ker (AdicCompletion.evalₐ K m) :=
-      (AdicCompletion.ker_evalₐ_eq_map_pow hfgK m).symm ▸ hf
-    rw [RingHom.mem_ker, map_sub, sub_eq_zero, AdicCompletion.algebraMap_apply,
-      AdicCompletion.evalₐ_of] at hker
-    exact hker
-  have hred : restrictedCompletionReduction (I ^ m) (hI.isOpen_pow m) x =
-      restrictedReduction (I ^ m) (hI.isOpen_pow m) f := by
-    have hzero : restrictedCompletionReduction (I ^ m) (hI.isOpen_pow m)
-        (e.symm (e x - algebraMap S (AdicCompletion K S) f)) = 0 := by
-      refine Submodule.span_induction (fun y hy ↦ ?_) (by simp)
-        (fun _ _ _ _ hx hy ↦ by simp [hx, hy])
-        (fun c y _ hy ↦ by
-          rw [Algebra.smul_def, map_mul, map_mul, hy, mul_zero]) hf
-      obtain ⟨s, hs, rfl⟩ := hy
-      have hsymm : e.symm (algebraMap S (AdicCompletion K S) s) =
-          (s : restrictedMvPowerSeriesCompletion k A) :=
-        IsAdic.completionEquivAdicCompletion_symm_algebraMap _ _ s
-      rw [hsymm, Ideal.restrictedCompletionReduction_coe]
-      exact RingHom.mem_ker.mp ((ker_restrictedReduction_pow hI hfg hm).symm ▸ hs)
-    have hsub : e.symm (e x - algebraMap S (AdicCompletion K S) f) =
-        x - (f : restrictedMvPowerSeriesCompletion k A) := by
-      rw [map_sub, e.symm_apply_apply]
-      congr 1
-      exact IsAdic.completionEquivAdicCompletion_symm_algebraMap _ _ f
-    rw [hsub, map_sub, Ideal.restrictedCompletionReduction_coe, sub_eq_zero] at hzero
-    exact hzero
-  change quotientPowRestrictedEquivMvPolynomialQuotient hI hfg hm (AdicCompletion.evalₐ K m (e x)) =
-    restrictedCompletionReduction (I ^ m) (hI.isOpen_pow m) x
-  rw [heval, hred]
-  exact quotientPowRestrictedEquivMvPolynomialQuotient_mk hI hfg hm f
+/-- Completed reduction modulo a finitely generated ideal of definition has kernel `I · A⟨T⟩`,
+without requiring completeness or separatedness of `A`. -/
+theorem ker_restrictedCompletionReduction (hI : IsAdic I) (hfg : I.FG) :
+    RingHom.ker (restrictedCompletionReduction (k := k) I
+        (by simpa only [pow_one] using hI.isOpen_pow 1)) =
+      I.map (algebraMap A (restrictedMvPowerSeriesCompletion k A)) := by
+  let K : Ideal (restrictedMvPowerSeriesCompletion k A) :=
+    I.map (algebraMap A (restrictedMvPowerSeriesCompletion k A))
+  have hIopen : IsOpen (I : Set A) := by simpa only [pow_one] using hI.isOpen_pow 1
+  have hKopen : IsOpen (K : Set (restrictedMvPowerSeriesCompletion k A)) := by
+    simpa only [pow_one] using
+      (isAdic_map_algebraMap_restrictedMvPowerSeriesCompletion k hI hfg).isOpen_pow 1
+  have hKle : K ≤ RingHom.ker (restrictedCompletionReduction (k := k) I hIopen) :=
+    Ideal.map_le_iff_le_comap.mpr fun a ha ↦ by
+      rw [Ideal.mem_comap, RingHom.mem_ker, Ideal.restrictedCompletionReduction_algebraMap,
+        Ideal.Quotient.eq_zero_iff_mem.mpr ha, map_zero]
+  refine le_antisymm (fun x hx ↦ ?_) hKle
+  -- Approximate `x` modulo the open ideal `K` by an uncompleted restricted series `f`.
+  have hUopen : IsOpen ((fun y ↦ y - x) ⁻¹' (K : Set _)) :=
+    hKopen.preimage (continuous_id.sub continuous_const)
+  obtain ⟨f, hfx⟩ := UniformSpace.Completion.denseRange_coe.exists_mem_open hUopen
+    ⟨x, by simp⟩
+  have hfker : f ∈ RingHom.ker (restrictedReduction (k := k) I hIopen) := by
+    have hsub : restrictedCompletionReduction I hIopen
+        ((f : restrictedMvPowerSeriesCompletion k A) - x) = 0 := hKle hfx
+    rw [map_sub, Ideal.restrictedCompletionReduction_coe, RingHom.mem_ker.mp hx, sub_zero] at hsub
+    exact hsub
+  rw [ker_restrictedReduction hI hfg] at hfker
+  have hfK : (f : restrictedMvPowerSeriesCompletion k A) ∈ K := by
+    have hmap : (I.map (weightedC (fun _ : Fin k ↦ ({1} : Set A))
+        isWeightFamily_one_weight)).map UniformSpace.Completion.coeRingHom = K := by
+      rw [Ideal.map_map]
+      exact congrArg (Ideal.map · I) (RingHom.ext fun a ↦ by simp)
+    exact hmap ▸ Ideal.mem_map_of_mem UniformSpace.Completion.coeRingHom hfker
+  simpa only [sub_sub_cancel] using K.sub_mem hfK hfx
 
 /-- Completed reduction modulo the `m`-th power (`m ≠ 0`) of a finitely generated ideal of
 definition has kernel `(I · A⟨T⟩) ^ m`, without requiring completeness or separatedness of `A`. -/
 theorem ker_restrictedCompletionReduction_pow (hI : IsAdic I) (hfg : I.FG) {m : ℕ} (hm : m ≠ 0) :
     RingHom.ker (restrictedCompletionReduction (k := k) (I ^ m) (hI.isOpen_pow m)) =
       I.map (algebraMap A (restrictedMvPowerSeriesCompletion k A)) ^ m := by
-  let S := weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight
-  let K : Ideal S := I.map (weightedC _ isWeightFamily_one_weight)
-  let e := restrictedMvPowerSeriesCompletionEquivAdicCompletion (k := k) hI hfg
-  ext x
-  rw [RingHom.mem_ker, ← quotientPowRestrictedEquiv_evalₐ_completionEquivAdicCompletion hI hfg hm,
-    map_eq_zero_iff _ (quotientPowRestrictedEquivMvPolynomialQuotient hI hfg hm).injective]
-  change e x ∈ RingHom.ker (AdicCompletion.evalₐ K m) ↔ _
-  rw [AdicCompletion.ker_evalₐ_eq_map_pow (hfg.map _) m]
-  have hmap : (K ^ m).map (algebraMap S (AdicCompletion K S)) =
-      (I.map (algebraMap A (restrictedMvPowerSeriesCompletion k A)) ^ m).map e.toRingHom := by
-    have halg : algebraMap S (AdicCompletion K S) =
-        e.toRingHom.comp UniformSpace.Completion.coeRingHom :=
-      RingHom.ext fun s ↦ (restrictedMvPowerSeriesCompletionEquivAdicCompletion_coe hI hfg s).symm
-    have hcoe : UniformSpace.Completion.coeRingHom.comp (weightedC _ isWeightFamily_one_weight) =
-        algebraMap A (restrictedMvPowerSeriesCompletion k A) :=
-      RingHom.ext fun a ↦ by simp
-    rw [halg, ← Ideal.map_map, Ideal.map_pow, Ideal.map_map, hcoe]
-  rw [hmap]
-  exact Ideal.mem_map_iff_of_surjective e.toRingHom e.surjective
-    |>.trans ⟨fun ⟨y, hy, hyx⟩ ↦ e.injective hyx ▸ hy, fun hx ↦ ⟨x, hx, rfl⟩⟩
+  rw [← Ideal.map_pow]
+  exact ker_restrictedCompletionReduction (is_ideal_adic_pow hI (Nat.pos_of_ne_zero hm)) hfg.pow
 
-/-- Completed reduction modulo a finitely generated ideal of definition has kernel `I · A⟨T⟩`. -/
-theorem ker_restrictedCompletionReduction (hI : IsAdic I) (hfg : I.FG) :
-    RingHom.ker (restrictedCompletionReduction (k := k) I
-        (by simpa only [pow_one] using hI.isOpen_pow 1)) =
-      I.map (algebraMap A (restrictedMvPowerSeriesCompletion k A)) := by
-  have h1 : ∀ (J : Ideal A) (_ : J = I) (hJ : IsOpen (J : Set A)) (hI' : IsOpen (I : Set A)),
-      RingHom.ker (restrictedCompletionReduction (k := k) I hI') =
-        RingHom.ker (restrictedCompletionReduction (k := k) J hJ) := by
-    rintro _ rfl _ _; rfl
-  rw [h1 (I ^ 1) (pow_one I) (hI.isOpen_pow 1),
-    ker_restrictedCompletionReduction_pow (k := k) hI hfg one_ne_zero, pow_one]
+/-- The reduction modulo a finitely generated ideal of definition of the completed
+restricted-series algebra is the polynomial algebra over the quotient of the coefficients, without
+requiring completeness or separatedness of `A`. -/
+noncomputable def quotientRestrictedCompletionEquivMvPolynomialQuotient
+    (hI : IsAdic I) (hfg : I.FG) :
+    (restrictedMvPowerSeriesCompletion k A ⧸
+      I.map (algebraMap A (restrictedMvPowerSeriesCompletion k A))) ≃ₐ[A]
+      MvPolynomial (Fin k) (A ⧸ I) := by
+  let hopen : IsOpen (I : Set A) := by simpa only [pow_one] using hI.isOpen_pow 1
+  let e := (Ideal.quotEquivOfEq (ker_restrictedCompletionReduction (k := k) hI hfg).symm).trans
+    ((restrictedCompletionReduction I hopen).quotientKerEquivOfSurjective
+      (Ideal.restrictedCompletionReduction_surjective I hopen))
+  refine AlgEquiv.ofRingEquiv (f := e) fun a ↦ ?_
+  rw [← Ideal.Quotient.mk_algebraMap]
+  simp [e]
+
+/-- On an arbitrary completion element, the quotient comparison computes completed polynomial
+reduction modulo `I`. -/
+@[simp]
+theorem quotientRestrictedCompletionEquivMvPolynomialQuotient_mk
+    (hI : IsAdic I) (hfg : I.FG) (x : restrictedMvPowerSeriesCompletion k A) :
+    quotientRestrictedCompletionEquivMvPolynomialQuotient hI hfg (Ideal.Quotient.mk _ x) =
+      restrictedCompletionReduction I (by simpa only [pow_one] using hI.isOpen_pow 1) x := by
+  simp [quotientRestrictedCompletionEquivMvPolynomialQuotient]
 
 /-- Infinitesimal thickening of order `m` (`m ≠ 0`) on the completed carrier: reducing modulo
 `(I · A⟨T⟩) ^ m` gives `(A ⧸ I ^ m)[T]`, without requiring completeness or separatedness of `A`. -/
@@ -586,14 +554,10 @@ noncomputable def quotientPowRestrictedCompletionEquivMvPolynomialQuotient
     (hI : IsAdic I) (hfg : I.FG) {m : ℕ} (hm : m ≠ 0) :
     (restrictedMvPowerSeriesCompletion k A ⧸
       I.map (algebraMap A (restrictedMvPowerSeriesCompletion k A)) ^ m) ≃ₐ[A]
-      MvPolynomial (Fin k) (A ⧸ I ^ m) := by
-  let hker := (ker_restrictedCompletionReduction_pow (k := k) hI hfg hm).symm
-  let e := (Ideal.quotEquivOfEq hker).trans
-    ((restrictedCompletionReduction (I ^ m) (hI.isOpen_pow m)).quotientKerEquivOfSurjective
-      (Ideal.restrictedCompletionReduction_surjective (I ^ m) (hI.isOpen_pow m)))
-  refine AlgEquiv.ofRingEquiv (f := e) fun a ↦ ?_
-  rw [← Ideal.Quotient.mk_algebraMap]
-  simp [e]
+      MvPolynomial (Fin k) (A ⧸ I ^ m) :=
+  (Ideal.quotientEquivAlgOfEq A (Ideal.map_pow _ I m).symm).trans
+    (quotientRestrictedCompletionEquivMvPolynomialQuotient
+      (is_ideal_adic_pow hI (Nat.pos_of_ne_zero hm)) hfg.pow)
 
 /-- On an element of the completed carrier, the order-`m` quotient comparison computes completed
 polynomial reduction modulo `I ^ m`. -/
@@ -604,6 +568,234 @@ theorem quotientPowRestrictedCompletionEquivMvPolynomialQuotient_mk
     quotientPowRestrictedCompletionEquivMvPolynomialQuotient hI hfg hm (Ideal.Quotient.mk _ x) =
       restrictedCompletionReduction (I ^ m) (hI.isOpen_pow m) x := by
   simp [quotientPowRestrictedCompletionEquivMvPolynomialQuotient]
+
+end CompletedQuotient
+
+section AdicLimit
+
+/-- `A`-algebra inclusion of polynomials into uncompleted restricted power series. -/
+private noncomputable def weightedPolynomialAlgHom :
+    MvPolynomial (Fin k) A →ₐ[A]
+      weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight :=
+  { weightedPolynomialHom _ isWeightFamily_one_weight with
+    commutes' a := by simp [algebraMap_weightedRestrictedSubring] }
+
+private theorem coe_weightedPolynomialAlgHom :
+    ⇑(weightedPolynomialAlgHom (k := k) (A := A)) =
+      ⇑(weightedPolynomialHom _ isWeightFamily_one_weight) :=
+  rfl
+
+private theorem toRingHom_weightedPolynomialAlgHom :
+    (weightedPolynomialAlgHom (k := k) (A := A)).toRingHom =
+      weightedPolynomialHom _ isWeightFamily_one_weight :=
+  rfl
+
+omit [TopologicalSpace A] [NonarchimedeanRing A] in
+private theorem quotientEquivQuotientMvPolynomial_symm_mk (J : Ideal A)
+    (p : MvPolynomial (Fin k) A) :
+    (MvPolynomial.quotientEquivQuotientMvPolynomial J).symm
+        (Ideal.Quotient.mk (Ideal.map MvPolynomial.C J) p) =
+      MvPolynomial.map (Ideal.Quotient.mk J) p := by
+  rw [MvPolynomial.map_eq_eval₂Hom_C_comp]
+  rfl
+
+private theorem map_weightedPolynomialAlgHom_le (I : Ideal A) :
+    I.map (MvPolynomial.C (σ := Fin k)) ≤
+      (I.map (algebraMap A (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
+        isWeightFamily_one_weight))).comap (weightedPolynomialAlgHom (k := k) (A := A)) :=
+  Ideal.map_le_iff_le_comap.mpr fun a ha ↦ by
+    rw [← MvPolynomial.algebraMap_eq]
+    simpa only [Ideal.mem_comap, AlgHom.coe_ofClass, AlgHom.commutes] using
+      Ideal.mem_map_of_mem _ ha
+
+private theorem bijective_mapₐ_weightedPolynomialAlgHom (hI : IsAdic I) (hfg : I.FG) :
+    Function.Bijective
+      (AdicCompletion.mapₐ (weightedPolynomialAlgHom (k := k) (A := A))
+        (map_weightedPolynomialAlgHom_le I)) := by
+  refine AdicCompletion.mapₐ_bijective _ _ fun n ↦ ?_
+  rcases eq_or_ne n 0 with rfl | hn
+  · have h1 : Subsingleton (MvPolynomial (Fin k) A ⧸
+        I.map (MvPolynomial.C (σ := Fin k)) ^ 0) :=
+      Submodule.Quotient.subsingleton_iff.mpr ((pow_zero _).trans Ideal.one_eq_top)
+    have h2 : Subsingleton (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
+        isWeightFamily_one_weight ⧸
+        I.map (algebraMap A (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
+          isWeightFamily_one_weight)) ^ 0) :=
+      Submodule.Quotient.subsingleton_iff.mpr ((pow_zero _).trans Ideal.one_eq_top)
+    exact ⟨fun _ _ _ ↦ h1.elim _ _, fun y ↦ ⟨0, h2.elim _ _⟩⟩
+  · let e₁ : MvPolynomial (Fin k) (A ⧸ I ^ n) ≃+*
+        (MvPolynomial (Fin k) A ⧸ I.map (MvPolynomial.C (σ := Fin k)) ^ n) :=
+      (MvPolynomial.quotientEquivQuotientMvPolynomial (I ^ n)).toRingEquiv.trans
+        (Ideal.quotEquivOfEq (Ideal.map_pow MvPolynomial.C I n))
+    let e₂ : (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
+        isWeightFamily_one_weight ⧸
+        I.map (algebraMap A (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
+          isWeightFamily_one_weight)) ^ n) ≃+* MvPolynomial (Fin k) (A ⧸ I ^ n) :=
+      (Ideal.quotEquivOfEq (by rw [algebraMap_weightedRestrictedSubring])).trans
+        (quotientPowRestrictedEquivMvPolynomialQuotient hI hfg hn).toRingEquiv
+    let qmap := Ideal.quotientMap
+      (I.map (algebraMap A (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
+        isWeightFamily_one_weight)) ^ n)
+      (weightedPolynomialAlgHom (k := k) (A := A)).toRingHom
+      ((Ideal.pow_right_mono (map_weightedPolynomialAlgHom_le I) n).trans (Ideal.le_comap_pow _ n))
+    have hcomp : (e₂ ∘ (qmap ∘ e₁)) = id := funext fun q ↦ by
+      simp only [Function.comp_apply, id_eq]
+      obtain ⟨p, rfl⟩ := MvPolynomial.map_surjective (Ideal.Quotient.mk (I ^ n))
+        Ideal.Quotient.mk_surjective q
+      have he₁ : e₁ (MvPolynomial.map (Ideal.Quotient.mk (I ^ n)) p) =
+          Ideal.Quotient.mk _ p := by
+        rw [← quotientEquivQuotientMvPolynomial_symm_mk]
+        simp only [e₁, RingEquiv.trans_apply, AlgEquiv.coe_toRingEquiv, AlgEquiv.apply_symm_apply,
+          Ideal.quotEquivOfEq_mk]
+      rw [he₁]
+      dsimp only [qmap, e₂, RingEquiv.trans_apply]
+      rw [Ideal.quotientMap_mk, toRingHom_weightedPolynomialAlgHom, Ideal.quotEquivOfEq_mk,
+        AlgEquiv.coe_toRingEquiv, quotientPowRestrictedEquivMvPolynomialQuotient_mk,
+        Ideal.restrictedReduction_weightedPolynomialHom]
+    have hbij : Function.Bijective (e₂ ∘ (qmap ∘ e₁)) := hcomp.symm ▸ Function.bijective_id
+    exact (e₁.bijective.of_comp_iff qmap).mp ((e₂.bijective.of_comp_iff' (qmap ∘ e₁)).mp hbij)
+
+/-- **Inverse-limit description of completed restricted power series** (EGA I, Ch. 0, §7.5.1).
+When `A` has a finitely generated ideal of definition `I`, the completed restricted-series algebra
+`A⟨T₁, …, Tₖ⟩` is isomorphic as an `A`-algebra to the `(I · A[T])`-adic completion of the
+polynomial algebra `MvPolynomial (Fin k) A`. -/
+noncomputable def restrictedMvPowerSeriesCompletionEquivAdicCompletion
+    (hI : IsAdic I) (hfg : I.FG) :
+    restrictedMvPowerSeriesCompletion k A ≃ₐ[A]
+      AdicCompletion (I.map (MvPolynomial.C (σ := Fin k))) (MvPolynomial (Fin k) A) :=
+  let hAdic := isAdic_map_algebraMap_weightedRestrictedSubring_one_weight k hI hfg
+  let eUnif : restrictedMvPowerSeriesCompletion k A ≃ₐ[A]
+      AdicCompletion
+        (I.map (algebraMap A (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
+          isWeightFamily_one_weight)))
+        (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight) :=
+    AlgEquiv.ofRingEquiv (f := hAdic.completionEquivAdicCompletion (hfg.map _)) fun a ↦ by
+      rw [algebraMap_completion_weightedRestrictedSubring_apply,
+        IsAdic.completionEquivAdicCompletion_coe, ← algebraMap_weightedRestrictedSubring,
+        ← IsScalarTower.algebraMap_apply]
+  eUnif.trans (AlgEquiv.ofBijective
+    (AdicCompletion.mapₐ (weightedPolynomialAlgHom (k := k) (A := A))
+      (map_weightedPolynomialAlgHom_le I))
+    (bijective_mapₐ_weightedPolynomialAlgHom hI hfg)).symm
+
+/-- On an embedded polynomial, `restrictedMvPowerSeriesCompletionEquivAdicCompletion` agrees with
+the canonical `algebraMap` from `MvPolynomial (Fin k) A` into its adic completion. -/
+@[simp]
+theorem restrictedMvPowerSeriesCompletionEquivAdicCompletion_weightedPolynomialHom
+    (hI : IsAdic I) (hfg : I.FG) (p : MvPolynomial (Fin k) A) :
+    restrictedMvPowerSeriesCompletionEquivAdicCompletion hI hfg
+        ((weightedPolynomialHom _ isWeightFamily_one_weight p :
+          weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight) :
+            restrictedMvPowerSeriesCompletion k A) =
+      algebraMap (MvPolynomial (Fin k) A) _ p := by
+  let ePoly := AlgEquiv.ofBijective
+    (AdicCompletion.mapₐ (weightedPolynomialAlgHom (k := k) (A := A))
+      (map_weightedPolynomialAlgHom_le I))
+    (bijective_mapₐ_weightedPolynomialAlgHom hI hfg)
+  apply ePoly.injective
+  dsimp only [restrictedMvPowerSeriesCompletionEquivAdicCompletion]
+  rw [AlgEquiv.trans_apply, ePoly.apply_symm_apply, AlgEquiv.ofRingEquiv_apply,
+    IsAdic.completionEquivAdicCompletion_coe]
+  dsimp only [ePoly]
+  rw [AlgEquiv.ofBijective_apply,
+    AdicCompletion.algebraMap_apply, Algebra.algebraMap_self_apply,
+    AdicCompletion.algebraMap_apply, Algebra.algebraMap_self_apply,
+    AdicCompletion.mapₐ_of, coe_weightedPolynomialAlgHom]
+
+/-- The inverse of `restrictedMvPowerSeriesCompletionEquivAdicCompletion` sends an embedded
+polynomial in `AdicCompletion` to its image in `restrictedMvPowerSeriesCompletion k A`. -/
+@[simp]
+theorem restrictedMvPowerSeriesCompletionEquivAdicCompletion_symm_algebraMap
+    (hI : IsAdic I) (hfg : I.FG) (p : MvPolynomial (Fin k) A) :
+    (restrictedMvPowerSeriesCompletionEquivAdicCompletion hI hfg).symm
+        (algebraMap (MvPolynomial (Fin k) A) _ p) =
+      ((weightedPolynomialHom _ isWeightFamily_one_weight p :
+        weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight) :
+          restrictedMvPowerSeriesCompletion k A) := by
+  rw [AlgEquiv.symm_apply_eq,
+    restrictedMvPowerSeriesCompletionEquivAdicCompletion_weightedPolynomialHom]
+
+/-- `restrictedMvPowerSeriesCompletionEquivAdicCompletion` is a homeomorphism when `AdicCompletion`
+carries the adic topology of the extended ideal. -/
+theorem isHomeomorph_restrictedMvPowerSeriesCompletionEquivAdicCompletion
+    (hI : IsAdic I) (hfg : I.FG) :
+    @IsHomeomorph _ _ _
+      ((I.map (MvPolynomial.C (σ := Fin k))).map (algebraMap _ _)).adicTopology
+      (restrictedMvPowerSeriesCompletionEquivAdicCompletion (k := k) hI hfg) := by
+  let P := MvPolynomial (Fin k) A
+  let IP : Ideal P := I.map MvPolynomial.C
+  let C := AdicCompletion IP P
+  let : WithIdeal C := ⟨IP.map (algebraMap P C)⟩
+  have hAdicB : IsAdic (I.map (algebraMap A (restrictedMvPowerSeriesCompletion k A))) :=
+    isAdic_map_algebraMap_restrictedMvPowerSeriesCompletion k hI hfg
+  have hAdicC : IsAdic (I.map (algebraMap A C)) := by
+    have hmap : IP.map (algebraMap P C) = I.map (algebraMap A C) := by
+      dsimp only [IP]
+      rw [← MvPolynomial.algebraMap_eq, Ideal.map_map, ← IsScalarTower.algebraMap_eq]
+    exact hmap ▸ (rfl : IsAdic (IP.map (algebraMap P C)))
+  let e := restrictedMvPowerSeriesCompletionEquivAdicCompletion (k := k) hI hfg
+  have he : (I.map (algebraMap A (restrictedMvPowerSeriesCompletion k A))).map e.toRingHom =
+      I.map (algebraMap A C) := by
+    rw [Ideal.map_map]
+    exact congrArg (Ideal.map · I) (RingHom.ext e.commutes)
+  have hesymm : (I.map (algebraMap A C)).map e.symm.toRingHom =
+      I.map (algebraMap A (restrictedMvPowerSeriesCompletion k A)) := by
+    rw [Ideal.map_map]
+    exact congrArg (Ideal.map · I) (RingHom.ext e.symm.commutes)
+  exact e.toEquiv.isHomeomorph_iff.mpr
+    ⟨hAdicB.continuous_of_map_le_radical hAdicC (hfg.map _) (he.le.trans Ideal.le_radical),
+     hAdicC.continuous_of_map_le_radical hAdicB (hfg.map _) (hesymm.le.trans Ideal.le_radical)⟩
+
+/-- Under `restrictedMvPowerSeriesCompletionEquivAdicCompletion`, the `m`-th inverse-limit
+projection (`m ≠ 0`) identifies with completed polynomial reduction modulo `I ^ m` via
+`MvPolynomial.quotientEquivQuotientMvPolynomial`. -/
+theorem evalₐ_restrictedMvPowerSeriesCompletionEquivAdicCompletion
+    (hI : IsAdic I) (hfg : I.FG) {m : ℕ} (hm : m ≠ 0)
+    (x : restrictedMvPowerSeriesCompletion k A) :
+    AdicCompletion.evalₐ _ m
+        (restrictedMvPowerSeriesCompletionEquivAdicCompletion hI hfg x) =
+      Ideal.quotEquivOfEq (Ideal.map_pow (MvPolynomial.C (σ := Fin k)) I m)
+        (MvPolynomial.quotientEquivQuotientMvPolynomial (I ^ m)
+          (restrictedCompletionReduction (I ^ m) (hI.isOpen_pow m) x)) := by
+  let P := MvPolynomial (Fin k) A
+  let IP : Ideal P := I.map MvPolynomial.C
+  let e := restrictedMvPowerSeriesCompletionEquivAdicCompletion (k := k) hI hfg
+  obtain ⟨p, hp⟩ := AdicCompletion.exists_sub_algebraMap_mem_map_pow (I := IP) (hfg.map _) m (e x)
+  have heval : AdicCompletion.evalₐ IP m (e x) = Ideal.Quotient.mk (IP ^ m) p := by
+    have hker : e x - algebraMap P (AdicCompletion IP P) p ∈
+        RingHom.ker (AdicCompletion.evalₐ IP m).toRingHom :=
+      (AdicCompletion.ker_evalₐ_eq_map_pow (R := P) (I := IP) (hfg.map _) m).symm ▸ hp
+    rw [RingHom.mem_ker, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, map_sub, sub_eq_zero,
+      AdicCompletion.algebraMap_apply, AdicCompletion.evalₐ_of] at hker
+    exact hker
+  have hmap : ((IP ^ m).map (algebraMap P (AdicCompletion IP P))).map e.symm.toRingHom =
+      I.map (algebraMap A (restrictedMvPowerSeriesCompletion k A)) ^ m := by
+    rw [show IP ^ m = (I ^ m).map (MvPolynomial.C (σ := Fin k)) from
+      (Ideal.map_pow _ I m).symm, Ideal.map_map, Ideal.map_map, ← Ideal.map_pow]
+    refine congrArg (Ideal.map · (I ^ m)) (RingHom.ext fun a ↦ ?_)
+    have ha : (MvPolynomial.C a : P) = algebraMap A P a := rfl
+    rw [RingHom.comp_apply, RingHom.comp_apply, ha,
+      ← IsScalarTower.algebraMap_apply A P (AdicCompletion IP P)]
+    exact e.symm.commutes a
+  have hxker : x - ((weightedPolynomialHom _ isWeightFamily_one_weight p :
+      weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight) :
+        restrictedMvPowerSeriesCompletion k A) ∈
+      RingHom.ker (restrictedCompletionReduction (I ^ m) (hI.isOpen_pow m)) := by
+    rw [ker_restrictedCompletionReduction_pow hI hfg hm, ← hmap]
+    have hsub : e.symm (e x - algebraMap P (AdicCompletion IP P) p) =
+        x - ((weightedPolynomialHom _ isWeightFamily_one_weight p :
+          weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight) :
+            restrictedMvPowerSeriesCompletion k A) := by
+      rw [map_sub, e.symm_apply_apply,
+        restrictedMvPowerSeriesCompletionEquivAdicCompletion_symm_algebraMap]
+    exact hsub ▸ Ideal.mem_map_of_mem e.symm.toRingHom hp
+  have hred : restrictedCompletionReduction (I ^ m) (hI.isOpen_pow m) x =
+      MvPolynomial.map (Ideal.Quotient.mk (I ^ m)) p := by
+    rw [RingHom.mem_ker, map_sub, sub_eq_zero,
+      Ideal.restrictedCompletionReduction_weightedPolynomialHom] at hxker
+    exact hxker
+  rw [heval, hred, ← quotientEquivQuotientMvPolynomial_symm_mk, AlgEquiv.apply_symm_apply,
+    Ideal.quotEquivOfEq_mk]
 
 end AdicLimit
 
@@ -620,30 +812,6 @@ theorem restrictedCompletionReduction_eq_restrictedReduction
       restrictedReduction J hJ (restrictedMvPowerSeriesCompletionEquiv k R x) := by
   conv_lhs => rw [← (restrictedMvPowerSeriesCompletionEquiv k R).symm_apply_apply x]
   rw [restrictedMvPowerSeriesCompletionEquiv_symm_apply, Ideal.restrictedCompletionReduction_coe]
-
-/-- The reduction modulo a finitely generated ideal of definition of the completed
-restricted-series algebra is the polynomial algebra over the quotient of the coefficients. -/
-noncomputable def quotientRestrictedCompletionEquivMvPolynomialQuotient
-    (hJ : IsAdic J) (hfg : J.FG) :
-    (restrictedMvPowerSeriesCompletion k R ⧸
-      J.map (algebraMap R (restrictedMvPowerSeriesCompletion k R))) ≃ₐ[R]
-      MvPolynomial (Fin k) (R ⧸ J) :=
-  (Ideal.quotientEquivAlg _ _ (restrictedMvPowerSeriesCompletionAlgEquiv k R) (by
-    rw [Ideal.map_map]
-    congr 1
-    rw [← algebraMap_weightedRestrictedSubring]
-    exact (restrictedMvPowerSeriesCompletionAlgEquiv k R).toAlgHom.comp_algebraMap.symm)).trans
-      (quotientRestrictedEquivMvPolynomialQuotient hJ hfg)
-
-/-- On an arbitrary completion element, the quotient comparison reduces its associated
-restricted series coefficientwise. -/
-@[simp]
-theorem quotientRestrictedCompletionEquivMvPolynomialQuotient_mk
-    (hJ : IsAdic J) (hfg : J.FG) (x : restrictedMvPowerSeriesCompletion k R) :
-    quotientRestrictedCompletionEquivMvPolynomialQuotient hJ hfg (Ideal.Quotient.mk _ x) =
-      restrictedReduction J (by simpa only [pow_one] using hJ.isOpen_pow 1)
-        (restrictedMvPowerSeriesCompletionAlgEquiv k R x) := by
-  simp [quotientRestrictedCompletionEquivMvPolynomialQuotient]
 
 end Completion
 

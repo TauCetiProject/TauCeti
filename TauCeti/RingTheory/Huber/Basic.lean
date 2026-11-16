@@ -63,6 +63,8 @@ Huber ring is nonarchimedean, which is exactly the hypothesis under which
   multiplies a given element into a given open subring.
 * `TauCeti.Huber.IsTateRing.of_continuous`: a continuous homomorphism out of a Tate ring makes a
   Huber target Tate.
+* `TauCeti.Huber.IsPowerBounded.map_of_isPseudoUniformizer`: out of a topological ring with a
+  pseudouniformiser, any ring homomorphism continuous at zero preserves power-boundedness.
 * `TauCeti.Huber.IsHuberRing.toNonarchimedeanRing`: a Huber ring is nonarchimedean.
 * `TauCeti.Huber.IsHuberRing.isCountablyGenerated_nhds_zero`: its neighbourhoods of zero are
   countably generated. With the previous bullet these are exactly the two hypotheses Henkel's open
@@ -212,6 +214,36 @@ theorem IsPseudoUniformizer.map {A B F : Type*} [MonoidWithZero A] [TopologicalS
     {φ : F} (hφ : Continuous φ) {a : A} (ha : IsPseudoUniformizer a) :
     IsPseudoUniformizer (φ a) :=
   isPseudoUniformizer_iff.mpr ⟨ha.isUnit.map φ, ha.isTopologicallyNilpotent.map hφ⟩
+
+/-- **Out of a topological ring with a pseudouniformiser, any ring homomorphism continuous at zero
+preserves power-boundedness.** -/
+theorem IsPowerBounded.map_of_isPseudoUniformizer {A B F : Type*} [Ring A] [TopologicalSpace A]
+    [Ring B] [TopologicalSpace B] [IsTopologicalRing B] [FunLike F A B] [RingHomClass F A B]
+    {ϖ : A} (hϖ : IsPseudoUniformizer ϖ) {φ : F} (hφ : ContinuousAt φ 0) {a : A}
+    (ha : IsPowerBounded a) : IsPowerBounded (φ a) := by
+  refine isPowerBounded_iff.mpr (isBounded_iff.mpr fun U hU ↦ ?_)
+  have hmul : Filter.Tendsto (fun p : B × B ↦ p.1 * p.2) (𝓝 0 ×ˢ 𝓝 0) (𝓝 0) := by
+    simpa [nhds_prod_eq] using (continuous_mul (M := B)).tendsto ((0 : B), (0 : B))
+  obtain ⟨W₁, hW₁, W₂, hW₂, hW⟩ := Filter.mem_prod_iff.mp (hmul hU)
+  have hφW₂ : φ ⁻¹' W₂ ∈ 𝓝 (0 : A) := hφ (map_zero φ ▸ hW₂)
+  obtain ⟨m, hm⟩ := (isPowerBounded_iff.mp ha).exists_pow_mul_subset hϖ.isTopologicallyNilpotent
+    hφW₂
+  obtain ⟨u, hu⟩ := hϖ.isUnit.pow m
+  let v : Bˣ := Units.map (φ : A →* B) u
+  have hv : (v : B) = φ (ϖ ^ m) := by simp [v, hu]
+  have hV : (fun s : B ↦ s * (↑v⁻¹ : B)) ⁻¹' W₁ ∈ 𝓝 (0 : B) := by
+    refine ContinuousAt.preimage_mem_nhds ?_ (by simpa using hW₁)
+    exact (continuous_id.mul continuous_const).continuousAt
+  refine ⟨(fun s : B ↦ s * (↑v⁻¹ : B)) ⁻¹' W₁, hV, ?_⟩
+  rintro _ ⟨s, hs, _, ⟨n, rfl⟩, rfl⟩
+  have hmem₂ : (v : B) * φ a ^ n ∈ W₂ := by
+    rw [hv, ← map_pow, ← map_mul]
+    exact hm (Set.mul_mem_mul (Set.mem_singleton _) ⟨n, rfl⟩)
+  have hident : (s * (↑v⁻¹ : B)) * ((v : B) * φ a ^ n) = s * φ a ^ n := by
+    rw [mul_assoc, ← mul_assoc (↑v⁻¹ : B), Units.inv_mul, one_mul]
+  dsimp only
+  rw [← hident]
+  exact hW (Set.mk_mem_prod hs hmem₂)
 
 /-- A *Tate ring* is a Huber ring containing a pseudouniformiser, that is, a topologically
 nilpotent unit. -/

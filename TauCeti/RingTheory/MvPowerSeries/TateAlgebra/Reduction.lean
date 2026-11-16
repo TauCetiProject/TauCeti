@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.BoundedEval
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.UnitBall
 import Mathlib.RingTheory.Ideal.Quotient.Operations
+import Mathlib.Topology.Algebra.Ring.Ideal
 
 /-!
 # Polynomial reduction of normed restricted power series modulo open ideals
@@ -19,8 +20,9 @@ Reducing each coefficient modulo `J` therefore defines a surjective ring homomor
 `TauCeti.MvPowerSeries.restrictedIdealReduction : R⟨X⟩ →+* MvPolynomial σ (R ⧸ J)` without any
 completeness, valuation-ring, or field hypothesis on `R`.
 
-Reduction is natural along bounded coefficient homomorphisms carrying an open ideal of the source
-into an open ideal of the target, and commutes with bounded evaluation
+Reduction has an open kernel, so it is locally constant and continuous into any topology on
+`MvPolynomial σ (R ⧸ J)`. It is natural along bounded coefficient homomorphisms carrying an open
+ideal of the source into an open ideal of the target, and commutes with bounded evaluation
 (`RingHom.restrictedEval₂OfBound`) and contractive evaluation (`MvPowerSeries.restrictedEval₂`)
 modulo any open ideal of a complete ultrametric target ring. Over the integer subring `𝒪[K]` of a
 nonarchimedean normed field `K`, reducing modulo the maximal ideal `𝓂[K]` recovers the Gauss unit
@@ -35,8 +37,12 @@ ball reduction `TauCeti.MvPowerSeries.restrictedReduction` under
 
 ## Main results
 
-* `TauCeti.MvPowerSeries.restrictedIdealReduction_eq_zero_iff`: the kernel consists of the
-  restricted series whose coefficients all lie in `J`.
+* `TauCeti.MvPowerSeries.restrictedIdealReduction_eq_zero_iff` and
+  `TauCeti.MvPowerSeries.isOpen_ker_restrictedIdealReduction`: the kernel consists of the
+  restricted series whose coefficients all lie in `J`, and is open in `R⟨X⟩`.
+* `TauCeti.MvPowerSeries.continuous_restrictedIdealReduction` and
+  `TauCeti.MvPowerSeries.continuous_comp_restrictedIdealReduction`: continuity of
+  `restrictedIdealReduction` into any topological space.
 * `TauCeti.MvPowerSeries.restrictedIdealReduction_surjective`: every polynomial over `R ⧸ J` lifts
   to a restricted series, already to an embedded polynomial.
 * `TauCeti.MvPowerSeries.restrictedIdealReduction_restrictedMap`: naturality along bounded
@@ -118,6 +124,44 @@ theorem restrictedIdealReduction_eq_zero_iff {J : Ideal R} (hJ : IsOpen (J : Set
   rw [coeff_restrictedIdealReduction, AddMonoidAlgebra.coeff_zero, Finsupp.coe_zero, Pi.zero_apply,
     Ideal.Quotient.eq_zero_iff_mem]
 
+/-- The kernel of `restrictedIdealReduction J hJ` is open in `R⟨X⟩`, since an open ball around `0`
+in `R` lies inside `J` and the Gauss norm bounds every coefficient norm. -/
+theorem isOpen_ker_restrictedIdealReduction (J : Ideal R) (hJ : IsOpen (J : Set R)) :
+    IsOpen (RingHom.ker (restrictedIdealReduction (σ := σ) J hJ) :
+      Set (IsRestricted.subring (R := R) (fun _ : σ ↦ 1))) := by
+  refine AddSubgroup.isOpen_of_mem_nhds (RingHom.ker (restrictedIdealReduction J hJ)).toAddSubgroup
+    (g := 0) ?_
+  obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.mp hJ 0 J.zero_mem
+  filter_upwards [Metric.ball_mem_nhds 0 hε] with f hf
+  rw [SetLike.mem_coe, Submodule.mem_toAddSubgroup, RingHom.mem_ker,
+    restrictedIdealReduction_eq_zero_iff hJ]
+  intro t
+  refine hball ?_
+  rw [Metric.mem_ball, dist_zero_right] at hf ⊢
+  exact (MvPowerSeries.norm_coeff_le_norm f t).trans_lt hf
+
+/-- Any post-composition of `restrictedIdealReduction J hJ` into a topological space is continuous,
+because `restrictedIdealReduction J hJ` has open kernel and is therefore locally constant. -/
+theorem continuous_comp_restrictedIdealReduction {Z : Type*} [TopologicalSpace Z]
+    (J : Ideal R) (hJ : IsOpen (J : Set R)) (g : MvPolynomial σ (R ⧸ J) → Z) :
+    Continuous (fun f ↦ g (restrictedIdealReduction J hJ f)) := by
+  refine continuous_iff_continuousAt.mpr fun f₀ ↦ Filter.tendsto_def.mpr fun W hW ↦ ?_
+  have hU : (fun f ↦ f - f₀) ⁻¹' (RingHom.ker (restrictedIdealReduction (σ := σ) J hJ) : Set _) ∈
+      𝓝 f₀ :=
+    ((isOpen_ker_restrictedIdealReduction J hJ).preimage
+      (continuous_id.sub continuous_const)).mem_nhds (by simp)
+  filter_upwards [hU] with f hf
+  have hfeq : restrictedIdealReduction J hJ f = restrictedIdealReduction J hJ f₀ :=
+    sub_eq_zero.mp (by simpa only [Set.mem_preimage, SetLike.mem_coe, RingHom.mem_ker,
+      map_sub] using hf)
+  simpa only [Set.mem_preimage, hfeq] using mem_of_mem_nhds hW
+
+/-- `restrictedIdealReduction J hJ` is continuous into any topology on `MvPolynomial σ (R ⧸ J)`. -/
+theorem continuous_restrictedIdealReduction (J : Ideal R)
+    [TopologicalSpace (MvPolynomial σ (R ⧸ J))] (hJ : IsOpen (J : Set R)) :
+    Continuous (restrictedIdealReduction (σ := σ) J hJ) :=
+  continuous_comp_restrictedIdealReduction J hJ id
+
 /-- On embedded polynomials, `restrictedIdealReduction` reduces coefficients modulo `J`. -/
 @[simp]
 theorem restrictedIdealReduction_polynomialToRestricted (J : Ideal R) (hJ : IsOpen (J : Set R))
@@ -189,50 +233,16 @@ theorem mk_restrictedEval₂OfBound_eq_eval₂_restrictedIdealReduction
     Ideal.Quotient.mk J (φ.restrictedEval₂OfBound a hφ ha f) =
       (restrictedIdealReduction I hI f).eval₂ (Ideal.quotientMap J φ hIJ)
         (fun i ↦ Ideal.Quotient.mk J (a i)) := by
-  obtain ⟨εI, hεI, hballI⟩ := Metric.isOpen_iff.mp hI 0 I.zero_mem
-  obtain ⟨εJ, hεJ, hballJ⟩ := Metric.isOpen_iff.mp hJ 0 J.zero_mem
-  let M : ℝ := max C 1
-  have hM : 0 < M := lt_of_lt_of_le one_pos (le_max_right C 1)
-  let η : ℝ := min (εI / 2) (εJ / (2 * M))
-  have hη : 0 < η := lt_min (half_pos hεI) (div_pos hεJ (mul_pos two_pos hM))
-  have hfin : {t : Fin k →₀ ℕ | η ≤ ‖coeff t (f : MvPowerSeries (Fin k) R)‖}.Finite := by
-    simpa [eventually_cofinite, not_lt] using f.2.eventually (gt_mem_nhds hη)
-  let p : MvPolynomial (Fin k) R := truncFinset R hfin.toFinset (f : MvPowerSeries (Fin k) R)
-  let P : IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1) :=
-    polynomialToRestricted (fun _ : Fin k ↦ 1) p
-  have hred : restrictedIdealReduction I hI P = restrictedIdealReduction I hI f := by
-    ext t
-    rw [coeff_restrictedIdealReduction, coeff_restrictedIdealReduction]
-    by_cases ht : t ∈ hfin.toFinset
-    · simp [P, p, polynomialToRestricted_apply, MvPolynomial.coeff_coe,
-        coeff_truncFinset_of_mem _ ht]
-    · have hlt : ‖coeff t (f : MvPowerSeries (Fin k) R)‖ < εI :=
-        (lt_of_not_ge fun hge ↦ ht (hfin.mem_toFinset.mpr hge)).trans_le
-          ((min_le_left _ _).trans (half_lt_self hεI).le)
-      have hmem : coeff t (f : MvPowerSeries (Fin k) R) ∈ I :=
-        hballI (by simpa [dist_zero_right] using hlt)
-      simp [P, p, polynomialToRestricted_apply, MvPolynomial.coeff_coe,
-        coeff_truncFinset_eq_zero _ ht, Ideal.Quotient.eq_zero_iff_mem.mpr hmem]
-  have hnorm_sub : ‖f - P‖ ≤ η := by
-    refine norm_sub_truncFinset_le f hfin.toFinset hη.le fun t ht ↦ ?_
-    simpa using (lt_of_not_ge fun hge ↦ ht (hfin.mem_toFinset.mpr hge)).le
-  have heval_eq :
-      Ideal.Quotient.mk J (φ.restrictedEval₂OfBound a hφ ha f) =
-        Ideal.Quotient.mk J (φ.restrictedEval₂OfBound a hφ ha P) := by
-    rw [Ideal.Quotient.eq, ← map_sub]
-    refine hballJ ?_
-    rw [Metric.mem_ball, dist_zero_right]
-    have hle1 : ‖φ.restrictedEval₂OfBound a hφ ha (f - P)‖ ≤ M * η :=
-      (φ.norm_restrictedEval₂OfBound_le a hφ ha (f - P)).trans <|
-        (mul_le_mul_of_nonneg_right (le_max_left C 1) (norm_nonneg _)).trans <|
-          mul_le_mul_of_nonneg_left hnorm_sub hM.le
-    have hle2 : M * η ≤ εJ / 2 := by
-      calc M * η ≤ M * (εJ / (2 * M)) := mul_le_mul_of_nonneg_left (min_le_right _ _) hM.le
-        _ = εJ / 2 := by field_simp [hM.ne']
-    exact (hle1.trans hle2).trans_lt (half_lt_self hεJ)
-  rw [heval_eq, ← hred]
-  simp only [P, RingHom.restrictedEval₂OfBound_polynomial,
-    restrictedIdealReduction_polynomialToRestricted, MvPolynomial.eval₂_map]
+  let : DiscreteTopology (S ⧸ J) := QuotientAddGroup.discreteTopology (N := J.toAddSubgroup) hJ
+  refine congrFun (denseRange_polynomialToRestricted.equalizer
+    ((QuotientRing.isOpenQuotientMap_mk J).continuous.comp
+      (φ.continuous_restrictedEval₂OfBound a hφ ha))
+    (continuous_comp_restrictedIdealReduction I hI
+      (MvPolynomial.eval₂Hom (Ideal.quotientMap J φ hIJ) (fun i ↦ Ideal.Quotient.mk J (a i))))
+    (funext fun p ↦ ?_)) f
+  simp only [Function.comp_apply, RingHom.restrictedEval₂OfBound_polynomial,
+    restrictedIdealReduction_polynomialToRestricted, MvPolynomial.coe_eval₂Hom,
+    MvPolynomial.eval₂_map]
   have hcomp : (Ideal.quotientMap J φ hIJ).comp (Ideal.Quotient.mk I) =
       (Ideal.Quotient.mk J).comp φ :=
     RingHom.ext fun r ↦ by simp
@@ -257,27 +267,18 @@ section UnitBallComparison
 
 variable {σ K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K]
 
-/-- The maximal ideal `𝓂[K]` of the valuation subring `𝒪[K]` is open, being the open unit ball
-around `0`. -/
-theorem isOpen_maximalIdeal_integer : IsOpen (𝓂[K] : Set 𝒪[K]) := by
-  have hball : (𝓂[K] : Set 𝒪[K]) = Metric.ball 0 1 := by
-    ext x
-    rw [SetLike.mem_coe, Valued.maximalIdeal, IsLocalRing.mem_maximalIdeal, mem_nonunits_iff,
-      Valued.integer.isUnit_iff_norm_eq_one, Metric.mem_ball, dist_zero_right]
-    exact ⟨fun h ↦ lt_of_le_of_ne (Valued.integer.norm_le_one x) h, ne_of_lt⟩
-  exact hball ▸ Metric.isOpen_ball
-
 /-- Over the integer subring `𝒪[K]` of a nonarchimedean normed field, open-ideal reduction modulo
 `𝓂[K]` agrees with Gauss unit-ball reduction under `restrictedIntegerEquiv`. -/
 theorem restrictedReduction_restrictedIntegerEquiv_eq_restrictedIdealReduction
     (f : IsRestricted.subring (R := 𝒪[K]) (fun _ : σ ↦ 1)) :
     restrictedReduction (restrictedIntegerEquiv f) =
-      restrictedIdealReduction 𝓂[K] isOpen_maximalIdeal_integer f := by
+      restrictedIdealReduction 𝓂[K] TauCeti.isOpen_maximalIdeal_integer f := by
   refine MvPolynomial.ext _ _ fun t ↦ ?_
   refine (coeff_restrictedReduction (restrictedIntegerEquiv f) t).trans ?_
   refine (congrArg (IsLocalRing.residue 𝒪[K])
     (Subtype.ext (coeff_restrictedIntegerEquiv f t))).trans ?_
-  exact (coeff_restrictedIdealReduction 𝓂[K] isOpen_maximalIdeal_integer f t).symm
+  exact (IsLocalRing.residue_def _).trans
+    (coeff_restrictedIdealReduction 𝓂[K] TauCeti.isOpen_maximalIdeal_integer f t).symm
 
 end UnitBallComparison
 

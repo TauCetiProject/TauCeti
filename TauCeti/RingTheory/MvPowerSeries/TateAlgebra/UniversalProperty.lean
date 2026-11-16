@@ -61,8 +61,8 @@ and reduces to `‖bᵢ‖ ≤ 1` when the target is a complete nonarchimedean n
   when `R` has a pseudouniformiser, power-boundedness of the images of `Xᵢ` is necessary and
   sufficient for a continuous extension.
 * `TauCeti.MvPowerSeries.exists_continuous_ringHom_isRestricted_subring_iff_forall_norm_le_one`:
-  between nonarchimedean normed fields with complete target, a continuous extension exists if and
-  only if `∀ i, ‖bᵢ‖ ≤ 1`.
+  from a nontrivially normed nonarchimedean field into a complete nonarchimedean normed field, a
+  continuous extension exists if and only if `∀ i, ‖bᵢ‖ ≤ 1`.
 * `TauCeti.MvPowerSeries.restrictedRename_id`, `TauCeti.MvPowerSeries.restrictedRename_comp`:
   renaming along the identity is the identity, and successive renamings compose.
 
@@ -122,6 +122,14 @@ noncomputable def restrictedLift : IsRestricted.subring (R := R) (fun _ : Fin k 
     ((isWeightBounded_one_weight_iff_forall_isPowerBounded φ b).mpr hb)).comp
     (restrictedMvPowerSeriesGaussEquiv (n := k) (R := R)).symm.toRingHom
 
+/-- `restrictedLift` evaluates through `weightedEvalHom` along the inverse Gauss comparison. -/
+theorem restrictedLift_apply (f : IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1)) :
+    restrictedLift hφ hb f =
+      weightedEvalHom isWeightFamily_one_weight hφ.continuousAt
+        ((isWeightBounded_one_weight_iff_forall_isPowerBounded φ b).mpr hb)
+        (restrictedMvPowerSeriesGaussEquiv.symm f) :=
+  (rfl)
+
 /-- `restrictedLift` is continuous. -/
 theorem continuous_restrictedLift : Continuous (restrictedLift hφ hb) :=
   (continuous_weightedEvalHom _ _ _).comp continuous_restrictedMvPowerSeriesGaussEquiv_symm
@@ -172,6 +180,12 @@ noncomputable def restrictedLiftLinear {φ : R →+* S} (hφ : Continuous φ) (b
   haveI := IsLinearTopology.isTopologicalRing (R := S)
   haveI := IsLinearTopology.nonarchimedeanRing S
   restrictedLift (b := b) hφ fun _ ↦ isPowerBounded_iff.mpr (isBounded_of_isLinearTopology _)
+
+/-- `restrictedLiftLinear` agrees with `restrictedLift` for any power-boundedness witness on `b`. -/
+theorem restrictedLiftLinear_eq_restrictedLift [NonarchimedeanRing S] {φ : R →+* S}
+    (hφ : Continuous φ) {b : Fin k → S} (hb : ∀ i, IsPowerBounded (b i)) :
+    restrictedLiftLinear hφ b = restrictedLift hφ hb :=
+  (rfl)
 
 /-- `restrictedLiftLinear` is continuous. -/
 theorem continuous_restrictedLiftLinear {φ : R →+* S} (hφ : Continuous φ) (b : Fin k → S) :
@@ -226,8 +240,23 @@ noncomputable def restrictedLiftLinearAlgHom [Algebra R S] (hφ : Continuous (al
   { restrictedLiftLinear hφ b with
     commutes' := restrictedLiftLinear_algebraMap hφ b }
 
-/-- `restrictedLiftLinearAlgHom` sends each `Xᵢ` to `bᵢ`. -/
+/-- `restrictedLiftLinearAlgHom` has the same underlying function as `restrictedLiftLinear`. -/
 @[simp]
+theorem coe_restrictedLiftLinearAlgHom [Algebra R S] (hφ : Continuous (algebraMap R S))
+    (b : Fin k → S) :
+    ⇑(restrictedLiftLinearAlgHom hφ b) = ⇑(restrictedLiftLinear hφ b) :=
+  (rfl)
+
+/-- As a ring homomorphism, `restrictedLiftLinearAlgHom` is `restrictedLiftLinear`. -/
+@[simp]
+theorem toRingHom_restrictedLiftLinearAlgHom [Algebra R S] (hφ : Continuous (algebraMap R S))
+    (b : Fin k → S) :
+    (restrictedLiftLinearAlgHom hφ b :
+        IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1) →+* S) =
+      restrictedLiftLinear hφ b :=
+  (rfl)
+
+/-- `restrictedLiftLinearAlgHom` sends each `Xᵢ` to `bᵢ`. -/
 theorem restrictedLiftLinearAlgHom_X [Algebra R S] (hφ : Continuous (algebraMap R S))
     (b : Fin k → S) (i : Fin k) :
     restrictedLiftLinearAlgHom hφ b ⟨X i, isRestricted_X _ i⟩ = b i :=
@@ -239,6 +268,15 @@ theorem continuous_restrictedLiftLinearAlgHom [Algebra R S] (hφ : Continuous (a
     Continuous (restrictedLiftLinearAlgHom hφ b) :=
   continuous_restrictedLiftLinear hφ b
 
+/-- `restrictedLiftLinearAlgHom` is the unique continuous `R`-algebra homomorphism sending each
+`Xᵢ` to `bᵢ`. -/
+theorem restrictedLiftLinearAlgHom_unique [Algebra R S] (hφ : Continuous (algebraMap R S))
+    (b : Fin k → S)
+    {ψ : IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1) →ₐ[R] S} (hψ : Continuous ψ)
+    (hX : ∀ i, ψ ⟨X i, isRestricted_X _ i⟩ = b i) :
+    ψ = restrictedLiftLinearAlgHom hφ b :=
+  AlgHom.toRingHom_injective (restrictedLiftLinear_unique hφ b hψ ψ.commutes hX)
+
 end LinearTopology
 
 section Characterization
@@ -247,44 +285,8 @@ section Characterization
 series embedding is isometric. -/
 theorem isPseudoUniformizer_algebraMap_isRestricted_subring {ϖ : R} (hϖ : IsPseudoUniformizer ϖ) :
     IsPseudoUniformizer
-      (algebraMap R (IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1)) ϖ) := by
-  rw [isPseudoUniformizer_iff] at hϖ ⊢
-  refine ⟨hϖ.1.map _, ?_⟩
-  let ι := algebraMap R (IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1))
-  have hcont : Filter.Tendsto ι (𝓝 0) (𝓝 0) :=
-    map_zero ι ▸ isometry_algebraMap_isRestrictedSubring.continuous.continuousAt.tendsto
-  rw [IsTopologicallyNilpotent]
-  simpa [ι, Function.comp_def, map_pow] using hcont.comp hϖ.2
-
-/-- If a topological ring `A` has a pseudouniformiser, any ring homomorphism `f : A →+* T` into a
-topological ring that is continuous at zero preserves power-boundedness. -/
-private theorem isPowerBounded_map_of_isPseudoUniformizer {A T : Type*} [Ring A]
-    [TopologicalSpace A] [Ring T] [TopologicalSpace T] [IsTopologicalRing T] {ϖ : A}
-    (hϖ : IsPseudoUniformizer ϖ) {f : A →+* T} (hf : ContinuousAt f 0) {a : A}
-    (ha : IsPowerBounded a) : IsPowerBounded (f a) := by
-  refine isPowerBounded_iff.mpr (isBounded_iff.mpr fun U hU ↦ ?_)
-  have hmul : Filter.Tendsto (fun p : T × T ↦ p.1 * p.2) (𝓝 0 ×ˢ 𝓝 0) (𝓝 0) := by
-    simpa [nhds_prod_eq] using (continuous_mul (M := T)).tendsto ((0 : T), (0 : T))
-  obtain ⟨W₁, hW₁, W₂, hW₂, hW⟩ := Filter.mem_prod_iff.mp (hmul hU)
-  have hfW₂ : f ⁻¹' W₂ ∈ 𝓝 (0 : A) := hf (map_zero f ▸ hW₂)
-  obtain ⟨m, hm⟩ := (isPowerBounded_iff.mp ha).exists_pow_mul_subset hϖ.isTopologicallyNilpotent
-    hfW₂
-  obtain ⟨u, hu⟩ := hϖ.isUnit.pow m
-  let v : Tˣ := Units.map f.toMonoidHom u
-  have hv : (v : T) = f (ϖ ^ m) := by simp [v, hu]
-  have hV : (fun s : T ↦ s * (↑v⁻¹ : T)) ⁻¹' W₁ ∈ 𝓝 (0 : T) := by
-    refine ContinuousAt.preimage_mem_nhds ?_ (by simpa using hW₁)
-    exact (continuous_id.mul continuous_const).continuousAt
-  refine ⟨(fun s : T ↦ s * (↑v⁻¹ : T)) ⁻¹' W₁, hV, ?_⟩
-  rintro _ ⟨s, hs, _, ⟨n, rfl⟩, rfl⟩
-  have hmem₂ : (v : T) * f a ^ n ∈ W₂ := by
-    rw [hv, ← map_pow, ← map_mul]
-    exact hm (Set.mul_mem_mul (Set.mem_singleton _) ⟨n, rfl⟩)
-  have hident : (s * (↑v⁻¹ : T)) * ((v : T) * f a ^ n) = s * f a ^ n := by
-    rw [mul_assoc, ← mul_assoc (↑v⁻¹ : T), Units.inv_mul, one_mul]
-  dsimp only
-  rw [← hident]
-  exact hW (Set.mk_mem_prod hs hmem₂)
+      (algebraMap R (IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1)) ϖ) :=
+  hϖ.map isometry_algebraMap_isRestrictedSubring.continuous
 
 /-- When `R` admits a pseudouniformiser `ϖ`, every ring homomorphism out of `R⟨X₁, …, Xₖ⟩` that is
 continuous at zero sends each coordinate variable `Xᵢ` to a power-bounded element. The
@@ -295,8 +297,8 @@ theorem isPowerBounded_apply_X_of_isPseudoUniformizer {T : Type*} [Ring T] [Topo
     {ψ : IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1) →+* T} (hψ : ContinuousAt ψ 0)
     (i : Fin k) :
     IsPowerBounded (ψ ⟨X i, isRestricted_X _ i⟩) :=
-  isPowerBounded_map_of_isPseudoUniformizer
-    (isPseudoUniformizer_algebraMap_isRestricted_subring hϖ) hψ (isPowerBounded_X i)
+  (isPowerBounded_X i).map_of_isPseudoUniformizer
+    (isPseudoUniformizer_algebraMap_isRestricted_subring hϖ) hψ
 
 /-- **Characterization of continuous extensions when `R` has a pseudouniformiser.** Given a
 continuous homomorphism `φ : R →+* S` into a complete Hausdorff nonarchimedean ring, a continuous
@@ -315,6 +317,18 @@ theorem exists_continuous_ringHom_isRestricted_subring_iff_forall_isPowerBounded
     fun hb ↦ ⟨restrictedLift hφ hb, continuous_restrictedLift hφ hb,
       restrictedLift_algebraMap hφ hb, restrictedLift_X hφ hb⟩⟩
 
+/-- Any continuous `φ : R →+* S` from an ultrametric normed commutative ring into a complete
+ultrametric normed commutative ring and tuple `b` with `∀ i, ‖b i‖ ≤ 1` extend uniquely to a
+continuous ring homomorphism `R⟨X₁, …, Xₖ⟩ →+* S` (without assuming `φ` is contractive). -/
+theorem existsUnique_continuous_ringHom_isRestricted_subring_of_norm_le_one
+    {S : Type*} [NormedCommRing S] [IsUltrametricDist S] [CompleteSpace S]
+    {φ : R →+* S} (hφ : Continuous φ) {b : Fin k → S} (hb : ∀ i, ‖b i‖ ≤ 1) :
+    ∃! ψ : IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1) →+* S,
+      Continuous ψ ∧ (∀ c, ψ (algebraMap R _ c) = φ c) ∧
+        ∀ i, ψ ⟨X i, isRestricted_X _ i⟩ = b i :=
+  existsUnique_continuous_ringHom_isRestricted_subring hφ
+    fun i ↦ IsPowerBounded.of_norm_le_one (hb i)
+
 section NormedField
 
 variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K]
@@ -325,9 +339,8 @@ theorem isPowerBounded_apply_X_of_continuous {T : Type*} [Ring T] [TopologicalSp
     [IsTopologicalRing T] {ψ : IsRestricted.subring (R := K) (fun _ : Fin k ↦ 1) →+* T}
     (hψ : Continuous ψ) (i : Fin k) :
     IsPowerBounded (ψ ⟨X i, isRestricted_X _ i⟩) := by
-  obtain ⟨ϖ, hϖ0, hϖ1⟩ := NormedField.exists_norm_lt K one_pos
-  exact isPowerBounded_apply_X_of_isPseudoUniformizer
-    (isPseudoUniformizer_iff_norm_lt_one.mpr ⟨norm_pos_iff.mp hϖ0, hϖ1⟩) hψ.continuousAt i
+  obtain ⟨ϖ, hϖ⟩ := IsTateRing.exists_isPseudoUniformizer (A := K)
+  exact isPowerBounded_apply_X_of_isPseudoUniformizer hϖ hψ.continuousAt i
 
 /-- **Norm criterion for continuous evaluation over a nonarchimedean field.** For a continuous ring
 homomorphism `φ : K →+* L` from a nontrivially normed nonarchimedean field into a complete
@@ -340,23 +353,9 @@ theorem exists_continuous_ringHom_isRestricted_subring_iff_forall_norm_le_one
       Continuous ψ ∧ (∀ c, ψ (algebraMap K _ c) = φ c) ∧
         ∀ i, ψ ⟨X i, isRestricted_X _ i⟩ = b i) ↔
       ∀ i, ‖b i‖ ≤ 1 := by
-  obtain ⟨ϖ, hϖ0, hϖ1⟩ := NormedField.exists_norm_lt K one_pos
-  have hϖ : IsPseudoUniformizer ϖ :=
-    isPseudoUniformizer_iff_norm_lt_one.mpr ⟨norm_pos_iff.mp hϖ0, hϖ1⟩
+  obtain ⟨ϖ, hϖ⟩ := IsTateRing.exists_isPseudoUniformizer (A := K)
   rw [exists_continuous_ringHom_isRestricted_subring_iff_forall_isPowerBounded hϖ hφ b]
   exact forall_congr' fun _ ↦ isPowerBounded_iff_norm_le_one
-
-/-- Over a nontrivially normed nonarchimedean field, any continuous `φ : K →+* L` into a complete
-nonarchimedean normed field and tuple `b` with `∀ i, ‖b i‖ ≤ 1` extend uniquely to a continuous
-ring homomorphism `K⟨X₁, …, Xₖ⟩ →+* L` (without assuming `φ` is contractive). -/
-theorem existsUnique_continuous_ringHom_isRestricted_subring_of_norm_le_one
-    {L : Type*} [NormedField L] [IsUltrametricDist L] [CompleteSpace L]
-    {φ : K →+* L} (hφ : Continuous φ) {b : Fin k → L} (hb : ∀ i, ‖b i‖ ≤ 1) :
-    ∃! ψ : IsRestricted.subring (R := K) (fun _ : Fin k ↦ 1) →+* L,
-      Continuous ψ ∧ (∀ c, ψ (algebraMap K _ c) = φ c) ∧
-        ∀ i, ψ ⟨X i, isRestricted_X _ i⟩ = b i :=
-  existsUnique_continuous_ringHom_isRestricted_subring hφ
-    fun i ↦ isPowerBounded_iff_norm_le_one.mpr (hb i)
 
 end NormedField
 
