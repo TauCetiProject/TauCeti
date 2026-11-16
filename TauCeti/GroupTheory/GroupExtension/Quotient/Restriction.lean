@@ -9,6 +9,7 @@ public import TauCeti.GroupTheory.Complement.Local
 public import TauCeti.GroupTheory.GroupExtension.Quotient.Cohomology
 public import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.Sylow
+import TauCeti.GroupTheory.PGroup
 import TauCeti.RepresentationTheory.Homological.GroupCohomology.Functoriality
 
 /-!
@@ -27,19 +28,21 @@ and of Sylow complement detection, without using crossed transfer:
 
 * If `N` has a local complement in `H`, then `[G : H]` kills the extension class
   (`Subgroup.IsLocalComplement.index_nsmul_cohomologyClass_eq_zero`), while `Monoid.exponent N`
-  (and hence `Nat.card N`) kills every factor-set class
-  (`TauCeti.FactorSet.exponent_nsmul_cohomologyClass_eq_zero`,
-  `TauCeti.FactorSet.natCard_nsmul_cohomologyClass_eq_zero`). When `[G : H]` is coprime to
-  `Monoid.exponent N` (or to `Nat.card N`), Bézout forces the class to vanish, and
-  `Subgroup.exists_complement_iff_cohomologyClass_eq_zero` produces a global complement of `N` in
-  `G`. Stated in terms of `Monoid.exponent N`, this covers infinite abelian normal subgroups of
-  finite exponent (such as infinite elementary abelian `p`-groups) where `Nat.card N = 0`.
+  (and hence `Nat.card N`) kills every cohomology class
+  (`TauCeti.groupCohomology.exponent_nsmul_eq_zero`,
+  `TauCeti.groupCohomology.natCard_V_nsmul_eq_zero`). When `[G : H]` is coprime to
+  `Monoid.exponent N` (or to `Nat.card N`), restriction `Hⁿ(G ⧸ N, N) ⟶ Hⁿ(H.map (mk' N), N)` is
+  injective (`Subgroup.map_subtype_quotientConjugation_injective_of_coprime_index_exponent`), so
+  the class vanishes and `Subgroup.exists_complement_iff_cohomologyClass_eq_zero` produces a global
+  complement of `N` in `G`. Stated in terms of `Monoid.exponent N`, this covers infinite abelian
+  normal subgroups of finite exponent (such as infinite elementary abelian `p`-groups) where
+  `Nat.card N = 0`.
 * When `N` is an abelian normal `p`-subgroup of finite index in `G` and `P` is a Sylow `p`-subgroup
   of `G`, the image of `P` in the finite group `G ⧸ N` is a Sylow `p`-subgroup and `N` is an
   additive `p`-group, so restriction `Hⁿ(G ⧸ N, N) ⟶ Hⁿ(P.map (mk' N), N)` is injective in every
-  degree (`IsPGroup.map_subtype_quotientConjugation_sylow_injective`). In degree `2` this detects
-  global complements of `N` from `P` (`IsPGroup.exists_isComplement'_iff_sylow_of_finiteIndex`),
-  without assuming `N` is finite.
+  degree (`IsPGroup.groupCohomology_map_subtype_quotientConjugation_sylow_injective`). In degree `2`
+  this detects global complements of `N` from `P`
+  (`IsPGroup.exists_isComplement'_iff_sylow_of_finiteIndex`), without assuming `N` is finite.
 
 ## Main definitions
 
@@ -62,7 +65,7 @@ and of Sylow complement detection, without using crossed transfer:
   `Subgroup.cohomologyClass_factorSet_quotientExtension_eq_zero_iff_of_coprime_index`,
   `Subgroup.exists_isComplement'_iff_exists_isLocalComplement_of_coprime_index_exponent`: the
   cohomological Gaschütz vanishing and splitting criteria.
-* `IsPGroup.map_subtype_quotientConjugation_sylow_injective`,
+* `IsPGroup.groupCohomology_map_subtype_quotientConjugation_sylow_injective`,
   `IsPGroup.cohomologyClass_factorSet_quotientExtension_eq_zero_iff_sylow`,
   `IsPGroup.exists_isComplement'_iff_sylow_of_finiteIndex`,
   `IsPGroup.exists_isComplement'_iff_sylow_subgroupOf_of_finiteIndex`: Sylow restriction
@@ -278,8 +281,9 @@ theorem IsLocalComplement.index_nsmul_cohomologyClass_eq_zero {K : Subgroup G}
       hK.left_le σ hσ).2 ⟨K, hK⟩)
 
 /-- Restriction `Hⁿ(G ⧸ N, N) ⟶ Hⁿ(H.map (mk' N), N)` is injective in every degree `n` when
-`N ≤ H` and `[G : H]` is coprime to the exponent of `N`. Neither `G`, `[G : H]`, nor `N` need be
-finite. -/
+`N ≤ H` and `[G : H]` is coprime to the exponent of `N`. Neither `G` nor `N` need be finite (when
+`[G : H]` is infinite, `H.index = 0` and coprimality forces `Monoid.exponent N = 1`, i.e. `N = ⊥`;
+when `Monoid.exponent N = 0`, coprimality forces `H = ⊤`). -/
 theorem map_subtype_quotientConjugation_injective_of_coprime_index_exponent (hNH : N ≤ H)
     (hcop : Nat.Coprime H.index (Monoid.exponent N)) (n : ℕ) :
     Function.Injective
@@ -287,13 +291,13 @@ theorem map_subtype_quotientConjugation_injective_of_coprime_index_exponent (hNH
         (𝟙 (Rep.res (H.map (QuotientGroup.mk' N)).subtype
           (Rep.ofMulDistribMulAction (G ⧸ N) N))) n) := by
   refine TauCeti.groupCohomology.map_subtype_injective_of_coprime_index_exponent _ ?_ n
-  rw [H.index_map_eq (QuotientGroup.mk'_surjective N) ((QuotientGroup.ker_mk' N).trans_le hNH)]
-  -- The carrier of `Rep.ofMulDistribMulAction (G ⧸ N) N` is `Additive N`, whose additive exponent
-  -- is `Monoid.exponent N` by `AddMonoid.exponent_additive`.
+  rw [H.index_map_eq (QuotientGroup.mk'_surjective N) ((QuotientGroup.ker_mk' N).trans_le hNH),
+    AddMonoid.exponent_eq_of_addEquiv Rep.toAdditive, AddMonoid.exponent_additive]
   exact hcop
 
 /-- Restriction `Hⁿ(G ⧸ N, N) ⟶ Hⁿ(H.map (mk' N), N)` is injective in every degree `n` when
-`N ≤ H` and `[G : H]` is coprime to `Nat.card N`. -/
+`N ≤ H` and `[G : H]` is coprime to `Nat.card N` (forcing `N = ⊥` when `[G : H]` is infinite and
+`H = ⊤` when `N` is infinite). -/
 theorem map_subtype_quotientConjugation_injective_of_coprime_index (hNH : N ≤ H)
     (hcop : Nat.Coprime H.index (Nat.card N)) (n : ℕ) :
     Function.Injective
@@ -305,9 +309,7 @@ theorem map_subtype_quotientConjugation_injective_of_coprime_index (hNH : N ≤ 
 
 /-- **Cohomological Gaschütz vanishing (exponent form).** If `N` has a local complement in `H` and
 `[G : H]` is coprime to `Monoid.exponent N`, then the class of the quotient extension of `G` by `N`
-vanishes: `[G : H]` kills the class by `IsLocalComplement.index_nsmul_cohomologyClass_eq_zero`,
-`Monoid.exponent N` kills it by `TauCeti.FactorSet.exponent_nsmul_cohomologyClass_eq_zero`, and
-Bézout forces it to be zero. -/
+vanishes. -/
 theorem
     IsLocalComplement.cohomologyClass_factorSet_quotientExtension_eq_zero_of_coprime_index_exponent
     {K : Subgroup G} (hK : N.IsLocalComplement K H)
@@ -315,10 +317,10 @@ theorem
     (σ : N.quotientExtension.Section) (hσ : σ 1 = 1) :
     (TauCeti.GroupExtension.factorSet σ hσ N.quotientExtension_inducesAction).cohomologyClass =
       0 :=
-  (nsmul_eq_zero_iff_of_coprime hcop).1
-    ⟨hK.index_nsmul_cohomologyClass_eq_zero σ hσ,
-      (TauCeti.GroupExtension.factorSet σ hσ
-        N.quotientExtension_inducesAction).exponent_nsmul_cohomologyClass_eq_zero⟩
+  (map_eq_zero_iff _
+    (map_subtype_quotientConjugation_injective_of_coprime_index_exponent hK.left_le hcop 2)).1
+    ((map_subtype_cohomologyClass_factorSet_quotientExtension_eq_zero_iff hK.left_le σ hσ).2
+      ⟨K, hK⟩)
 
 /-- **Cohomological Gaschütz vanishing (order form).** If `N` has a local complement in `H` and
 `[G : H]` is coprime to `Nat.card N`, then the class of the quotient extension of `G` by `N`
@@ -340,11 +342,10 @@ theorem cohomologyClass_factorSet_quotientExtension_eq_zero_iff_of_coprime_index
     (σ : N.quotientExtension.Section) (hσ : σ 1 = 1) :
     (TauCeti.GroupExtension.factorSet σ hσ N.quotientExtension_inducesAction).cohomologyClass =
         0 ↔
-      ∃ K : Subgroup G, N.IsLocalComplement K H :=
-  ⟨fun h0 ↦ (map_subtype_cohomologyClass_factorSet_quotientExtension_eq_zero_iff hNH σ hσ).1
-      (by rw [h0, map_zero]),
-    fun ⟨_, hK⟩ ↦
-      hK.cohomologyClass_factorSet_quotientExtension_eq_zero_of_coprime_index_exponent hcop σ hσ⟩
+      ∃ K : Subgroup G, N.IsLocalComplement K H := by
+  rw [← map_subtype_cohomologyClass_factorSet_quotientExtension_eq_zero_iff hNH σ hσ]
+  exact (map_eq_zero_iff _
+    (map_subtype_quotientConjugation_injective_of_coprime_index_exponent hNH hcop 2)).symm
 
 /-- **Cohomological Gaschütz criterion (order form).** When `N ≤ H` and `[G : H]` is coprime to
 `Nat.card N`, the class of the quotient extension of `G` by `N` vanishes if and only if `N` has a
@@ -398,8 +399,8 @@ normal `p`-subgroup of finite index in `G` (for instance, in any finite group `G
 `p`-subgroup such as a Prüfer `p`-group with finite quotient `G ⧸ N`), and let `P` be a Sylow
 `p`-subgroup of `G`. Then restriction from `G ⧸ N` to the image of `P` is injective on
 `Hⁿ(G ⧸ N, N)` in every degree `n`. -/
-theorem map_subtype_quotientConjugation_sylow_injective (hN : IsPGroup p N) (P : Sylow p G)
-    (n : ℕ) :
+theorem groupCohomology_map_subtype_quotientConjugation_sylow_injective (hN : IsPGroup p N)
+    (P : Sylow p G) (n : ℕ) :
     Function.Injective
       (groupCohomology.map ((P : Subgroup G).map (QuotientGroup.mk' N)).subtype
         (𝟙 (Rep.res ((P : Subgroup G).map (QuotientGroup.mk' N)).subtype
@@ -410,10 +411,9 @@ theorem map_subtype_quotientConjugation_sylow_injective (hN : IsPGroup p N) (P :
     (P.isPGroup.map (QuotientGroup.mk' N)).toSylow
       (P.not_dvd_index <| ·.trans <|
         (P : Subgroup G).index_map_dvd (QuotientGroup.mk'_surjective N))
-  -- `Additive N` has the same `ℕ`-action as `N` has powers, so `IsPGroup p N` is definitionally
-  -- `IsAddPGroup p` on the underlying module of `Rep.ofMulDistribMulAction (G ⧸ N) N`.
-  have hA : IsAddPGroup p (Rep.ofMulDistribMulAction (G ⧸ N) N) := hN
-  exact hA.map_sylow_injective Q n
+  have hA : IsAddPGroup p (Rep.ofMulDistribMulAction (G ⧸ N) N) :=
+    (TauCeti.isAddPGroup_additive_iff.2 hN).of_equiv Rep.toAdditive.symm
+  exact hA.groupCohomology_map_sylow_injective Q n
 
 /-- **Cohomological Sylow detection of complements.** For an abelian normal `p`-subgroup `N` of
 finite index in `G` and a Sylow `p`-subgroup `P` of `G`, the class of the quotient extension of `G`
@@ -426,7 +426,8 @@ theorem cohomologyClass_factorSet_quotientExtension_eq_zero_iff_sylow (hN : IsPG
       ∃ K : Subgroup G, N.IsLocalComplement K P := by
   rw [← map_subtype_cohomologyClass_factorSet_quotientExtension_eq_zero_iff
     (hN.le_sylow_of_normal P) σ hσ]
-  exact (map_eq_zero_iff _ (hN.map_subtype_quotientConjugation_sylow_injective P 2)).symm
+  exact (map_eq_zero_iff _
+    (hN.groupCohomology_map_subtype_quotientConjugation_sylow_injective P 2)).symm
 
 /-- **Sylow detection of complements for finite-index `p`-subgroups.** An abelian normal
 `p`-subgroup `N` of finite index in `G` has a complement in `G` if and only if it has a local

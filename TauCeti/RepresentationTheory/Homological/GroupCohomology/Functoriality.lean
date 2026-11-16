@@ -119,9 +119,8 @@ in every degree `n`, without finiteness assumptions on `G` or `A`. -/
 theorem nsmul_eq_zero_of_forall_nsmul_eq_zero {A : Rep k G} {m : ℕ} (hA : ∀ a : A, m • a = 0)
     {n : ℕ} (x : groupCohomology A n) : m • x = 0 := by
   have h0 : m • (𝟙 A : A ⟶ A) = 0 :=
-    Rep.hom_ext <| DFunLike.ext _ _ fun a ↦ by
-      rw [Rep.nsmul_hom, Representation.IntertwiningMap.coe_nsmul, Pi.smul_apply, Rep.hom_id]
-      exact hA a
+    (forget₂ (Rep k G) (ModuleCat k)).map_injective <| by
+      rw [Functor.map_nsmul]; ext a; simpa using hA a
   calc m • x = (m • map (MonoidHom.id G) (𝟙 A) n).hom x := by simp
     _ = (map (MonoidHom.id G) (m • 𝟙 A) n).hom x := by rw [map_id_nsmul]
     _ = 0 := by simp [h0]

@@ -31,6 +31,8 @@ that a homomorphism into a pro-`p` group kills their intersection.
 
 * `IsPGroup.exists_pow_pow_eq_one_map`: every element in the image of a `p`-group under a monoid
   homomorphism has `p`-power order.
+* `TauCeti.isAddPGroup_additive_iff`: `Additive G` is an additive `p`-group if and only if `G` is a
+  `p`-group.
 * `IsPGroup.prod`, `IsAddPGroup.prod`: a product of two (additive) `p`-groups is a `p`-group.
 * `IsPGroup.pi`, `IsAddPGroup.pi`: a finite product of (additive) `p`-groups is a `p`-group.
 * `IsPGroup.of_subgroup_of_quotient`: an extension of a `p`-group by a `p`-group is a
@@ -66,8 +68,14 @@ theorem _root_.IsPGroup.exists_pow_pow_eq_one_map {M : Type*} [Monoid M] (hG : I
     (f : G →* M) (g : G) : ∃ n : ℕ, f g ^ p ^ n = 1 :=
   (hG g).elim fun n hn => ⟨n, by rw [← map_pow, hn, map_one]⟩
 
+/-- `Additive G` is an additive `p`-group if and only if `G` is a `p`-group. -/
+@[simp]
+theorem isAddPGroup_additive_iff : IsAddPGroup p (Additive G) ↔ IsPGroup p G := by
+  simp [isAddPGroup_iff_pow_nsmul_eq_zero, isPGroup_iff_pow_pow_eq_one, ← ofMul_pow]
+
 /-- A product of two `p`-groups is a `p`-group. -/
-@[to_additive /-- A product of two additive `p`-groups is an additive `p`-group. -/]
+@[to_additive _root_.IsAddPGroup.prod
+  /-- A product of two additive `p`-groups is an additive `p`-group. -/]
 theorem _root_.IsPGroup.prod (hG : IsPGroup p G) (hH : IsPGroup p H) :
     IsPGroup p (G × H) := by
   rintro ⟨g, h⟩

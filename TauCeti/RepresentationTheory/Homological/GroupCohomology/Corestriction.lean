@@ -62,7 +62,7 @@ restrictions.
 * `TauCeti.groupCohomology.eq_zero_of_nsmul_eq_zero_of_coprime_index_of_map_eq_zero`,
   `TauCeti.groupCohomology.map_subtype_injective_of_nsmul_eq_zero`,
   `TauCeti.groupCohomology.map_subtype_injective_of_coprime_index_exponent`,
-  `TauCeti.groupCohomology.map_subtype_injective_of_coprime_index_natCard`: restriction to `S` is
+  `TauCeti.groupCohomology.map_subtype_injective_of_coprime_index`: restriction to `S` is
   injective on classes annihilated by an integer coprime to `[G : S]`, in particular when `[G : S]`
   is coprime to the exponent or `Nat.card` of `A`.
 * `groupCohomology.natCard_nsmul_eq_zero`: positive-degree cohomology of a group is killed by
@@ -211,7 +211,9 @@ theorem map_subtype_injective_of_nsmul_eq_zero {A : Rep.{u} k G} {n m : ℕ}
 
 omit [S.FiniteIndex] in
 /-- Restriction `Hⁿ(G, A) ⟶ Hⁿ(S, Res_S A)` is injective in every degree `n` when `[G : S]` is
-coprime to the additive exponent of `A`. Neither `G`, `[G : S]`, nor `A` need be finite. -/
+coprime to the additive exponent of `A`. Neither `G` nor `A` need be finite (when `[G : S]` is
+infinite, `S.index = 0` and coprimality forces `AddMonoid.exponent A = 1`, i.e. `Subsingleton A`;
+when `AddMonoid.exponent A = 0`, coprimality forces `S = ⊤`). -/
 theorem map_subtype_injective_of_coprime_index_exponent {A : Rep.{u} k G}
     (hcop : Nat.Coprime S.index (AddMonoid.exponent A)) (n : ℕ) :
     Function.Injective (map S.subtype (𝟙 (res S.subtype A)) n) :=
@@ -219,8 +221,10 @@ theorem map_subtype_injective_of_coprime_index_exponent {A : Rep.{u} k G}
 
 omit [S.FiniteIndex] in
 /-- Restriction `Hⁿ(G, A) ⟶ Hⁿ(S, Res_S A)` is injective in every degree `n` when `[G : S]` is
-coprime to `Nat.card A`. Neither `G`, `[G : S]`, nor `A` need be finite. -/
-theorem map_subtype_injective_of_coprime_index_natCard {A : Rep.{u} k G}
+coprime to `Nat.card A`. No finiteness of `G` is assumed; with the zero conventions of
+`Subgroup.index` and `Nat.card`, coprimality forces `Subsingleton A` when `[G : S]` is infinite
+and `S = ⊤` when `A` is infinite. -/
+theorem map_subtype_injective_of_coprime_index {A : Rep.{u} k G}
     (hcop : Nat.Coprime S.index (Nat.card A)) (n : ℕ) :
     Function.Injective (map S.subtype (𝟙 (res S.subtype A)) n) :=
   map_subtype_injective_of_coprime_index_exponent S

@@ -38,8 +38,8 @@ Consequently:
   dividing the order of `G`, `Hⁿ⁺¹(P, A) = 0` for some Sylow `p`-subgroup `P`.
 * `IsAddPGroup.groupCohomology`: for finite `G`, if `A` is an additive `p`-group, then so is
   `Hⁿ(G, A)` in every degree `n`.
-* `IsAddPGroup.map_sylow_injective`: for finite `G` and `A` an additive `p`-group, restriction to
-  a Sylow `p`-subgroup is injective on `Hⁿ(G, A)` in every degree `n`.
+* `IsAddPGroup.groupCohomology_map_sylow_injective`: for finite `G` and `A` an additive `p`-group,
+  restriction to a Sylow `p`-subgroup is injective on `Hⁿ(G, A)` in every degree `n`.
 
 ## References
 
@@ -125,10 +125,8 @@ namespace IsAddPGroup
 
 variable [Finite G]
 
-/-- **Cohomology of a finite group with `p`-primary torsion coefficients is `p`-primary torsion.**
-Neither finiteness nor bounded exponent of `A` is assumed: each inhomogeneous `n`-cochain has
-finite domain `Fin n → G`, so the `n`-cochains, `n`-cocycles, and `Hⁿ(G, A)` are additive
-`p`-groups in every degree `n`. -/
+/-- **Cohomology of a finite group with additive `p`-group coefficients is an additive `p`-group.**
+Neither finiteness nor bounded exponent of `A` is assumed, and every degree `n` is covered. -/
 theorem groupCohomology {p : ℕ} {A : Rep k G} (hA : IsAddPGroup p A) (n : ℕ) :
     IsAddPGroup p (_root_.groupCohomology A n) := by
   have hcochain : IsAddPGroup p ((_root_.groupCohomology.inhomogeneousCochains A).X n) :=
@@ -139,11 +137,11 @@ theorem groupCohomology {p : ℕ} {A : Rep k G} (hA : IsAddPGroup p A) (n : ℕ)
   exact hcycles.of_surjective (_root_.groupCohomology.π A n).hom.toAddMonoidHom
     ((ModuleCat.epi_iff_surjective (_root_.groupCohomology.π A n)).1 inferInstance)
 
-/-- **Restriction to a Sylow `p`-subgroup is injective when the coefficients are an additive
-`p`-group.** Neither finiteness nor bounded exponent of `A` is required, and every degree `n` is
-covered. -/
-theorem map_sylow_injective {p : ℕ} [Fact p.Prime] {A : Rep k G} (hA : IsAddPGroup p A)
-    (P : Sylow p G) (n : ℕ) :
+/-- **Restriction to a Sylow `p`-subgroup of a finite group is injective when the coefficients are
+an additive `p`-group.** Neither finiteness nor bounded exponent of `A` is required, and every
+degree `n` is covered. -/
+theorem groupCohomology_map_sylow_injective {p : ℕ} [Fact p.Prime] {A : Rep k G}
+    (hA : IsAddPGroup p A) (P : Sylow p G) (n : ℕ) :
     Function.Injective
       (_root_.groupCohomology.map (P : Subgroup G).subtype
         (𝟙 (res (P : Subgroup G).subtype A)) n) :=
