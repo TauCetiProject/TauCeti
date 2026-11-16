@@ -220,8 +220,8 @@ theorem signedMorseBoundary_comp_signedMorseBoundary_eq_zero_iff {R : Type*} [Ri
   · intro h0
     refine Finsupp.lhom_ext fun p a ↦ Finsupp.ext fun r ↦ ?_
     -- The boundary of `a • p` is `a` times the boundary of `p`.
-    rw [LinearMap.comp_apply, ← mul_one a, ← smul_eq_mul, ← Finsupp.smul_single, map_smul,
-      map_smul, Finsupp.smul_apply, h0, smul_zero, LinearMap.zero_apply, Finsupp.zero_apply]
+    rw [LinearMap.comp_apply, ← Finsupp.smul_single_one, map_smul, map_smul]
+    simp [h0]
 
 include h hf in
 /-- **The signed count of broken trajectories reduces to their number modulo two.** -/
