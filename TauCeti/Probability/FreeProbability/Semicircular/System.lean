@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Matrix.Order
 public import TauCeti.Combinatorics.NoncrossingPartition.Pairing
-public import TauCeti.LinearAlgebra.Matrix.PosSemidef
 public import TauCeti.Probability.FreeProbability.Distribution.Basic
 public import TauCeti.Probability.FreeProbability.Semicircular.Basic
+import TauCeti.LinearAlgebra.Matrix.PosSemidef
 
 /-!
 # Semicircular systems

@@ -17,8 +17,8 @@ Embedding a real inner product space `H` isometrically into its `L²` complexifi
 `FullFockSpace.realField h = field ℂ (WithLp.complexificationOfRealₗᵢ H h)` on the complex Hilbert
 space `FullFockSpace ℂ (WithLp 2 (Complexification H))`.
 
-Both `FullFockSpace.field ℂ` and `FullFockSpace.realField` are `ℝ`-linear (while `field ℂ` is only
-real-homogeneous because annihilation is conjugate-linear). Starting from a real inner product space
+Both `FullFockSpace.field ℂ` and `FullFockSpace.realField` are `ℝ`-linear (while `field ℂ` is not
+`ℂ`-linear because annihilation is conjugate-linear). Starting from a real inner product space
 `H`, `realField` bundles into the continuous `ℝ`-linear map `FullFockSpace.realFieldCLM H` of exact
 pointwise operator norm `‖realField h‖ = 2 * ‖h‖`, and its second vacuum moments reproduce the real
 inner product: `vacuumState ℂ _ (realField h * realField k) = (⟪h, k⟫_ℝ : ℂ)`. No completeness
@@ -107,6 +107,7 @@ theorem realField_smul (r : ℝ) (h : H) : realField (r • h) = r • realField
   simp only [smul_apply, lp.coeFn_smul, Pi.smul_apply]
   exact Complex.coe_smul r (realField h x n)
 
+/-- Each real field operator `realField h` has exact operator norm `2 * ‖h‖`. -/
 @[simp]
 theorem norm_realField (h : H) : ‖realField h‖ = 2 * ‖h‖ := by
   simp [realField_def]
@@ -162,15 +163,18 @@ theorem inner_vacuum_realField_sq (h : H) :
     ⟪vacuum, (realField h ^ 2) vacuum⟫_ℂ = (‖h‖ ^ 2 : ℂ) := by
   simp [realField_def]
 
+/-- Real field operators have zero vacuum expectation. -/
 theorem vacuumState_realField (h : H) :
     vacuumState ℂ (WithLp 2 (Complexification H)) (realField h) = 0 := by
   simp
 
+/-- Second vacuum moment of real field operators: `ω_Ω(realField h * realField k) = ⟪h, k⟫_ℝ`. -/
 theorem vacuumState_realField_mul_realField (h k : H) :
     vacuumState ℂ (WithLp 2 (Complexification H)) (realField h * realField k) =
       (⟪h, k⟫_ℝ : ℂ) := by
   simp
 
+/-- Vacuum variance of a real field operator `realField h`. -/
 theorem vacuumState_realField_sq (h : H) :
     vacuumState ℂ (WithLp 2 (Complexification H)) (realField h ^ 2) = (‖h‖ ^ 2 : ℂ) := by
   simp
