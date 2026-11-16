@@ -44,7 +44,7 @@ fillings, along the opposite.
 
 public section
 
-open CategoryTheory Opposite Simplicial
+open CategoryTheory Limits Opposite Simplicial
 
 universe u
 
@@ -126,6 +126,10 @@ lemma opIso_inv_comp_opFunctor_map_yonedaEquiv_symm {X : SSet.{u}} {n : SimplexC
     simp
   rw [opFunctor_map, h]
   simp
+
+/-- The opposite of the standard `0`-simplex is a terminal simplicial set. -/
+def isTerminalOpObj₀ : IsTerminal (Δ[0] : SSet.{u}).op :=
+  IsTerminal.ofIso isTerminalObj₀ (opIso ⦋0⦌).symm
 
 end stdSimplex
 
@@ -315,12 +319,13 @@ lemma opIsoLast_inv_app_edge (n : ℕ) (a b : Fin (n + 1)) (hab : a ≤ b)
     (H : Finset.card {Fin.last n, a, b} ≤ n) (H' : Finset.card {0, b.rev, a.rev} ≤ n) :
     (opIsoLast.{u} n).inv.app _ (edge n 0 b.rev a.rev (Fin.rev_anti hab) H') =
       opObjEquiv.symm (edge n (Fin.last n) a b hab H) := by
-  apply opObjEquiv.injective
-  apply Subtype.ext
-  ext j
-  fin_cases j <;>
-    simp [opIsoLast, opIso, opObjEquiv', Subcomplex.eqToIso, Subcomplex.homOfLE, edge,
-      stdSimplex.edge, stdSimplex.opObjEquiv_opObjEquiv_symm_apply]
+  have h : ((Subcomplex.eqToIso (by rw [Fin.rev_last] :
+      (Λ[n, (Fin.last n).rev] : (Δ[n] : SSet.{u}).Subcomplex) = Λ[n, 0])).inv.app _
+        (edge n 0 b.rev a.rev (Fin.rev_anti hab) H')) =
+      edge n (Fin.last n).rev b.rev a.rev (Fin.rev_anti hab)
+        (by simpa [Fin.rev_last] using H') :=
+    Subtype.ext rfl
+  rw [opIsoLast, Iso.trans_inv, NatTrans.comp_app_apply, h, opIso_inv_app_edge]
 
 /-- Inverse reversal of `Λ[n + 2, Fin.last (n + 2)]` sends the initial edge `0 ⟶ 1` of
 `Λ[n + 2, 0]` to the final edge `(n + 1) ⟶ (n + 2)` of `Λ[n + 2, Fin.last (n + 2)]`. -/
@@ -328,12 +333,10 @@ lemma opIsoLast_inv_app_edge_zero_one (n : ℕ) :
     (opIsoLast.{u} (n + 2)).inv.app _ (edge (n + 2) 0 0 1 (Fin.zero_le _) (by simp)) =
       opObjEquiv.symm (edge (n + 2) (Fin.last (n + 2)) (Fin.last (n + 1)).castSucc
         (Fin.last (n + 2)) (Fin.le_last _) (by simp)) := by
-  apply opObjEquiv.injective
-  apply Subtype.ext
-  ext j
-  fin_cases j <;>
-    simp [opIsoLast, opIso, opObjEquiv', Subcomplex.eqToIso, Subcomplex.homOfLE, edge,
-      stdSimplex.edge, stdSimplex.opObjEquiv_opObjEquiv_symm_apply]
+  convert opIsoLast_inv_app_edge (n + 2) (Fin.last (n + 1)).castSucc (Fin.last (n + 2))
+    (Fin.le_last _) (by simp) (by simp [Fin.rev_castSucc]) using 2
+  refine Subtype.ext (stdSimplex.ext _ _ fun j ↦ ?_)
+  fin_cases j <;> simp [Fin.rev_castSucc]
 
 /-- A map out of the last outer horn `Λ[n, Fin.last n]` extends to `Δ[n]` if and only if its
 reversal out of `Λ[n, 0]` extends to `Δ[n]` in `Xᵒᵖ`. -/
@@ -341,16 +344,12 @@ lemma exists_extension_last_iff_op {X : SSet.{u}} {n : ℕ}
     (σ₀ : (Λ[n, Fin.last n] : SSet) ⟶ X) :
     (∃ σ : Δ[n] ⟶ X, σ₀ = Λ[n, Fin.last n].ι ≫ σ) ↔
       ∃ τ : Δ[n] ⟶ X.op, (opIsoLast n).inv ≫ opFunctor.map σ₀ = Λ[n, 0].ι ≫ τ := by
-  constructor
-  · rintro ⟨σ, rfl⟩
-    exact ⟨(stdSimplex.opIso ⦋n⦌).inv ≫ opFunctor.map σ, by
-      simp [opFunctor.map_comp, ← Category.assoc]⟩
-  · rintro ⟨τ, hτ⟩
-    refine ⟨opFunctor.preimage ((stdSimplex.opIso ⦋n⦌).hom ≫ τ), ?_⟩
-    apply opFunctor.map_injective
-    rw [opFunctor.map_comp, Functor.map_preimage, ← Category.assoc,
-      ← opIsoLast_hom_ι, Category.assoc, ← hτ]
-    simp
+  let e : (Λ[n, (Fin.last n).rev] : SSet.{u}) ≅ (Λ[n, 0] : SSet.{u}) :=
+    Subcomplex.eqToIso (by rw [Fin.rev_last])
+  have he : e.inv ≫ Λ[n, (Fin.last n).rev].ι = Λ[n, 0].ι := by simp [e]
+  rw [exists_extension_iff_op σ₀]
+  exact exists_congr fun τ ↦ by
+    rw [opIsoLast, Iso.trans_inv, Category.assoc, ← he, Category.assoc, cancel_epi]
 
 end horn
 
@@ -362,9 +361,7 @@ variable {X : SSet.{u}} {x₀ x₁ x₂ : X _⦋0⦌}
 `1`-simplex, read with its vertices in the reverse order. -/
 def opEquiv : X.Edge x₀ x₁ ≃ X.op.Edge (X.opObjEquiv.symm x₁) (X.opObjEquiv.symm x₀) where
   toFun e := mk (X.opObjEquiv.symm e.edge) (by simp) (by simp)
-  invFun e := mk (X.opObjEquiv e.edge)
-    (X.opObjEquiv.symm.injective ((X.op_δ 0 e.edge).symm.trans e.tgt_eq))
-    (X.opObjEquiv.symm.injective ((X.op_δ 1 e.edge).symm.trans e.src_eq))
+  invFun e := mk (X.opObjEquiv e.edge) (by simp [δ_opObjEquiv]) (by simp [δ_opObjEquiv])
   left_inv _ := rfl
   right_inv _ := rfl
 
@@ -393,9 +390,7 @@ def opEquiv : CompStruct e₀₁ e₁₂ e₀₂ ≃
     CompStruct (Edge.opEquiv e₁₂) (Edge.opEquiv e₀₁) (Edge.opEquiv e₀₂) where
   toFun h := mk (X.opObjEquiv.symm h.simplex) (by simp) (by simp) (by simp)
   invFun h := mk (X.opObjEquiv h.simplex)
-    (X.opObjEquiv.symm.injective (((X.op_δ 0 h.simplex).symm.trans h.d₀).trans (opEquiv_edge _)))
-    (X.opObjEquiv.symm.injective (((X.op_δ 2 h.simplex).symm.trans h.d₂).trans (opEquiv_edge _)))
-    (X.opObjEquiv.symm.injective (((X.op_δ 1 h.simplex).symm.trans h.d₁).trans (opEquiv_edge _)))
+    (by simp [δ_opObjEquiv]) (by simp [δ_opObjEquiv]) (by simp [δ_opObjEquiv])
   left_inv _ := rfl
   right_inv _ := rfl
 
@@ -421,26 +416,12 @@ edge `Edge.opEquiv e` of `Xᵒᵖ`, with left and right inverse `2`-simplices ex
 def opEquiv : e.InvStruct ≃ (Edge.opEquiv e).InvStruct where
   toFun I :=
     { inv := Edge.opEquiv I.inv
-      homInvId := CompStruct.mk (X.opObjEquiv.symm I.invHomId.simplex)
-        (by simp) (by simp) (by simp)
-      invHomId := CompStruct.mk (X.opObjEquiv.symm I.homInvId.simplex)
-        (by simp) (by simp) (by simp) }
+      homInvId := (CompStruct.opEquiv I.invHomId).ofEq rfl rfl (by simp)
+      invHomId := (CompStruct.opEquiv I.homInvId).ofEq rfl rfl (by simp) }
   invFun I :=
     { inv := Edge.opEquiv.symm I.inv
-      homInvId := CompStruct.mk (X.opObjEquiv I.invHomId.simplex)
-        (X.opObjEquiv.symm.injective
-          (((X.op_δ 0 I.invHomId.simplex).symm.trans I.invHomId.d₀).trans (opEquiv_edge _)))
-        (X.opObjEquiv.symm.injective
-          ((X.op_δ 2 I.invHomId.simplex).symm.trans I.invHomId.d₂))
-        (X.opObjEquiv.symm.injective
-          (((X.op_δ 1 I.invHomId.simplex).symm.trans I.invHomId.d₁).trans (by simp)))
-      invHomId := CompStruct.mk (X.opObjEquiv I.homInvId.simplex)
-        (X.opObjEquiv.symm.injective
-          ((X.op_δ 0 I.homInvId.simplex).symm.trans I.homInvId.d₀))
-        (X.opObjEquiv.symm.injective
-          (((X.op_δ 2 I.homInvId.simplex).symm.trans I.homInvId.d₂).trans (opEquiv_edge _)))
-        (X.opObjEquiv.symm.injective
-          (((X.op_δ 1 I.homInvId.simplex).symm.trans I.homInvId.d₁).trans (by simp))) }
+      homInvId := CompStruct.opEquiv.symm (I.invHomId.ofEq (by simp) rfl (by simp))
+      invHomId := CompStruct.opEquiv.symm (I.homInvId.ofEq rfl (by simp) (by simp)) }
   left_inv _ := rfl
   right_inv _ := rfl
 

@@ -11,6 +11,7 @@ public import Mathlib.AlgebraicTopology.SimplicialSet.AnodyneExtensions.Inner.Pu
 public import Mathlib.AlgebraicTopology.SimplicialSet.AnodyneExtensions.PushoutProduct
 public import TauCeti.AlgebraicTopology.Quasicategory.OuterHorn
 public import TauCeti.AlgebraicTopology.SimplicialNerve.Quasicategory
+public import TauCeti.AlgebraicTopology.SimplicialSet.InternalHom
 
 /-!
 # The simplicial category of quasicategories and `Cat∞`
@@ -61,7 +62,7 @@ has `n + 2` connected components (`SSet.CatInftyΔ.π₀SHomObj₀StdSimplexEqui
 public section
 
 open CategoryTheory MonoidalCategory CartesianMonoidalCategory MonoidalClosed
-open EnrichedCategory SimplicialCategory Simplicial
+open EnrichedCategory Opposite SimplicialCategory Simplicial
 
 universe u
 
@@ -81,18 +82,6 @@ lemma core_sHom_eq_top (A B : SSet.{u}) [KanComplex B] : (sHom A B).core = ⊤ :
   have : KanComplex (sHom A B) := inferInstanceAs (KanComplex ((ihom A).obj B))
   core_eq_top
 
-/-- The function complex `Fun(Δ[0], X)` out of the point is isomorphic to `X`. -/
-noncomputable def sHomObj₀Iso (X : SSet.{u}) : sHom (Δ[0] : SSet.{u}) X ≅ X :=
-  ((sHomFunctor SSet.{u}).mapIso (Limits.IsTerminal.uniqueUpToIso isTerminalTensorUnit
-    stdSimplex.isTerminalObj₀).op).app X ≪≫
-    (unitIsoSelf (C := SSet.{u}) (X := X) : sHom (𝟙_ SSet.{u}) X ≅ X)
-
-/-- The function complex `Fun(Δ[0], Δ[n])` is connected, since `Δ[n]` is connected. -/
-instance isConnected_sHom_obj₀_stdSimplex (n : ℕ) : (sHom (Δ[0] : SSet.{u}) Δ[n]).IsConnected := by
-  rw [isConnected_iff_nonempty_unique]
-  exact ⟨(Equiv.uniqueCongr (π₀Functor.mapIso (sHomObj₀Iso Δ[n])).toEquiv).2
-    ((isConnected_iff_nonempty_unique (Δ[n] : SSet.{u})).1 inferInstance).some⟩
-
 /-- Simplicial sets, to be considered as a simplicial category whose mapping simplicial set from
 `A` to `B` is the core `Fun(A, B)^≃` of the function complex. Morphisms are maps of simplicial
 sets. -/
@@ -108,7 +97,7 @@ instance : Category CoreEnriched.{u} := inferInstanceAs (Category (InducedCatego
 
 noncomputable instance : EnrichedCategory SSet.{u} CoreEnriched.{u} where
   Hom A B := (sHom A.toSSet B.toSSet).core
-  id A := Subcomplex.lift (eId SSet A.toSSet) (range_le_core_of_unit _)
+  id A := Subcomplex.lift (eId SSet A.toSSet) (range_le_core_of_kanComplex _)
   comp A B C := Subcomplex.lift _ (range_sHomComp_le_core A.toSSet B.toSSet C.toSSet)
   id_comp A B := by
     rw [← cancel_mono (Subcomplex.ι _)]
@@ -141,17 +130,17 @@ lemma eComp_ι (A B C : CoreEnriched.{u}) :
 
 noncomputable instance : SimplicialCategory CoreEnriched.{u} where
   homEquiv {A B} := (InducedCategory.homEquiv (F := toSSet)).trans
-    ((eHomEquiv SSet).trans (sHom A.toSSet B.toSSet).coreUnitHomEquiv.symm)
+    ((eHomEquiv SSet).trans (coreHomEquiv (𝟙_ SSet.{u}) (sHom A.toSSet B.toSSet)).symm)
   homEquiv_id A := by
     rw [← cancel_mono (Subcomplex.ι _), eId_ι, Equiv.trans_apply, Equiv.trans_apply,
-      coreUnitHomEquiv_symm_apply_ι, InducedCategory.homEquiv_apply]
+      coreHomEquiv_symm_apply_ι, InducedCategory.homEquiv_apply]
     exact eHomEquiv_id SSet A.toSSet
   homEquiv_comp f g := by
     rw [← cancel_mono (Subcomplex.ι _), Category.assoc, Category.assoc, eComp_ι,
       tensorHom_comp_tensorHom_assoc]
     simp only [Equiv.trans_apply]
-    rw [coreUnitHomEquiv_symm_apply_ι, coreUnitHomEquiv_symm_apply_ι,
-      coreUnitHomEquiv_symm_apply_ι]
+    rw [coreHomEquiv_symm_apply_ι, coreHomEquiv_symm_apply_ι,
+      coreHomEquiv_symm_apply_ι]
     -- `InducedCategory.homEquiv` sends `f ≫ g` to `f.hom ≫ g.hom` by definition.
     exact eHomEquiv_comp SSet f.hom g.hom
 
@@ -164,12 +153,28 @@ underlying map of simplicial sets. -/
 @[reassoc (attr := simp)]
 lemma eHomEquiv_ι {A B : CoreEnriched.{u}} (f : A ⟶ B) :
     eHomEquiv SSet f ≫ (sHom A.toSSet B.toSSet).core.ι = eHomEquiv SSet f.hom :=
-  coreUnitHomEquiv_symm_apply_ι _
+  coreHomEquiv_symm_apply_ι _
 
 /-- The core functor space `Fun(Δ[0], X)^≃` is isomorphic to `X.core`. -/
 noncomputable def sHomObj₀Iso (X : SSet.{u}) :
     sHom (of Δ[0]) (of X) ≅ (X.core : SSet.{u}) :=
   core.mapIso (SSet.sHomObj₀Iso X)
+
+/-- The isomorphism `Fun(Δ[0], X)^≃ ≅ X.core` is the restriction of `SSet.sHomObj₀Iso X` to
+cores. -/
+@[reassoc (attr := simp)]
+lemma sHomObj₀Iso_hom_ι (X : SSet.{u}) :
+    (sHomObj₀Iso X).hom ≫ X.core.ι =
+      (sHom (Δ[0] : SSet.{u}) X).core.ι ≫ (SSet.sHomObj₀Iso X).hom := by
+  simp [sHomObj₀Iso]
+
+/-- The inverse of `CoreEnriched.sHomObj₀Iso X` is the restriction of `(SSet.sHomObj₀Iso X).inv`
+to cores. -/
+@[reassoc (attr := simp)]
+lemma sHomObj₀Iso_inv_ι (X : SSet.{u}) :
+    (sHomObj₀Iso X).inv ≫ (sHom (Δ[0] : SSet.{u}) X).core.ι =
+      X.core.ι ≫ (SSet.sHomObj₀Iso X).inv := by
+  simp [sHomObj₀Iso]
 
 end CoreEnriched
 
@@ -200,6 +205,31 @@ noncomputable def π₀SHomObj₀StdSimplexEquiv (n : ℕ) :
     π₀ (sHom (⟨.of Δ[0], inferInstance⟩ : CatInftyΔ.{u}) ⟨.of Δ[n], inferInstance⟩) ≃
       Fin (n + 1) :=
   (π₀Functor.mapIso (CoreEnriched.sHomObj₀Iso Δ[n])).toEquiv.trans (stdSimplex.π₀CoreEquiv n)
+
+/-- The equivalence `π₀SHomObj₀StdSimplexEquiv n` sends the component of a vertex `x` of
+`Fun(Δ[0], Δ[n])^≃` to the vertex of `Δ[n]` obtained by evaluating `x` at the point. -/
+@[simp]
+lemma π₀SHomObj₀StdSimplexEquiv_mk {n : ℕ}
+    (x : (sHom (⟨.of Δ[0], inferInstance⟩ : CatInftyΔ.{u}) ⟨.of Δ[n], inferInstance⟩) _⦋0⦌) :
+    π₀SHomObj₀StdSimplexEquiv n (π₀.mk x) =
+      stdSimplex.obj₀Equiv ((SSet.sHomObj₀Iso Δ[n]).hom.app (op ⦋0⦌) x.1) := by
+  change stdSimplex.π₀CoreEquiv n (mapπ₀ (CoreEnriched.sHomObj₀Iso Δ[n]).hom (π₀.mk x)) = _
+  rw [mapπ₀_mk, stdSimplex.π₀CoreEquiv_mk]
+  exact congrArg stdSimplex.obj₀Equiv congr($(CoreEnriched.sHomObj₀Iso_hom_ι Δ[n]).app (op ⦋0⦌) x)
+
+/-- The inverse of `π₀SHomObj₀StdSimplexEquiv n` sends `i : Fin (n + 1)` to the component of the
+constant map `Δ[0] ⟶ Δ[n]` at vertex `i`. -/
+@[simp]
+lemma π₀SHomObj₀StdSimplexEquiv_symm_apply {n : ℕ} (i : Fin (n + 1)) :
+    (π₀SHomObj₀StdSimplexEquiv.{u} n).symm i =
+      π₀.mk (X := sHom (⟨.of Δ[0], inferInstance⟩ : CatInftyΔ.{u}) ⟨.of Δ[n], inferInstance⟩)
+        ⟨(SSet.sHomObj₀Iso Δ[n]).inv.app (op ⦋0⦌) (stdSimplex.obj₀Equiv.symm i),
+          mem_core_obj_zero _⟩ := by
+  change mapπ₀ (CoreEnriched.sHomObj₀Iso Δ[n]).inv ((stdSimplex.π₀CoreEquiv n).symm i) = _
+  rw [stdSimplex.π₀CoreEquiv_symm_apply, mapπ₀_mk]
+  exact congrArg π₀.mk (Subtype.ext
+    congr($(CoreEnriched.sHomObj₀Iso_inv_ι Δ[n]).app (op ⦋0⦌)
+      ⟨stdSimplex.obj₀Equiv.symm i, mem_core_obj_zero _⟩))
 
 /-- Unlike `Fun(Δ[0], Δ[n + 1])`, the core functor space `Fun(Δ[0], Δ[n + 1])^≃` in `CatInftyΔ`
 has at least two connected components. -/

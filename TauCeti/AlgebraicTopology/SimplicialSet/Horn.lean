@@ -140,6 +140,10 @@ theorem kanComplex_iff_hornFilling (Z : SSet.{u}) :
       ∃ σ : Δ[n + 1] ⟶ Z, σ₀ = Λ[n + 1, i].ι ≫ σ :=
   ⟨fun _ _ _ σ₀ ↦ KanComplex.hornFilling σ₀, kanComplex_of_hornFilling Z⟩
 
+/-- The monoidal unit `𝟙_ SSet` is terminal, hence a Kan complex. -/
+instance : KanComplex (MonoidalCategory.tensorUnit SSet.{u}) :=
+  (isFibrant_iff_of_isTerminal (𝟙 _) CartesianMonoidalCategory.isTerminalTensorUnit).2 inferInstance
+
 /-- Every map out of a `1`-horn `Λ[1, i]` extends to a degenerate `1`-simplex. -/
 lemma horn.exists_extension_one (i : Fin 2) (σ₀ : (Λ[1, i] : SSet.{u}) ⟶ X) :
     ∃ σ : Δ[1] ⟶ X, σ₀ = Λ[1, i].ι ≫ σ := by
@@ -201,17 +205,13 @@ theorem innerFibration_opFunctor_map_iff (p : X ⟶ Y) :
 instance (p : X ⟶ Y) [InnerFibration p] : InnerFibration (opFunctor.map p) :=
   (innerFibration_opFunctor_map_iff p).2 inferInstance
 
-/-- The opposite of the standard `0`-simplex is a terminal simplicial set. -/
-def stdSimplex.isTerminalOpObj₀ : IsTerminal (Δ[0] : SSet.{u}).op :=
-  IsTerminal.ofIso stdSimplex.isTerminalObj₀ (stdSimplex.opIso ⦋0⦌).symm
-
 /-- The opposite functor preserves and reflects Kan complexes. -/
 theorem kanComplex_op_iff (X : SSet.{u}) :
-    KanComplex X.op ↔ KanComplex X := by
-  rw [KanComplex, KanComplex,
-    isFibrant_iff_of_isTerminal (opFunctor.map (stdSimplex.isTerminalObj₀.from X))
-      stdSimplex.isTerminalOpObj₀, fibration_opFunctor_map_iff,
-    ← isFibrant_iff_of_isTerminal _ stdSimplex.isTerminalObj₀]
+    KanComplex X.op ↔ KanComplex X :=
+  ⟨fun _ ↦
+    have : IsFibrant ((opFunctor ⋙ opFunctor).obj X) := inferInstanceAs (KanComplex X.op.op)
+    isFibrant_of_fibration (X := X) (opFunctorCompOpFunctorIso.inv.app X),
+    fun _ ↦ inferInstance⟩
 
 /-- The opposite functor preserves and reflects quasicategories. -/
 theorem quasicategory_op_iff (X : SSet.{u}) :

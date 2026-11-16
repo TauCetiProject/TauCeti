@@ -56,8 +56,6 @@ and is proved in `TauCeti.AlgebraicTopology.Quasicategory.OuterHorn` (`SSet.core
 * `SSet.Edge.isEquivalence_tensor_iff`, `SSet.core_tensor`: an edge of a product is an
   equivalence exactly when both of its projections are, so the core of a product is the product
   of the cores. This makes the cores of function complexes closed under composition.
-* `SSet.range_le_core_of_unit`: maps from `𝟙_ SSet` factor through the core, so the cores of
-  function complexes contain the identities.
 * `SSet.hasLiftingProperty_horn_ι_core_ι`: the inclusion of the core of a quasicategory is an
   inner fibration, so `SSet.core.quasicategory`: the core of a quasicategory is a quasicategory.
 * `CategoryTheory.nerve.mem_core_iff`: a simplex of the nerve of a category lies in the core
@@ -380,6 +378,7 @@ lemma core.mapIso_inv (e : X ≅ Y) : (core.mapIso e).inv = core.map e.inv :=
   (rfl)
 
 /-- Sending a simplicial set to its core is an endofunctor of `SSet`. -/
+-- Exposed so `coreFunctor.obj X` reduces to `X.core` in the generated `@[simps]` lemmas.
 @[expose, simps]
 def coreFunctor : SSet.{u} ⥤ SSet.{u} where
   obj X := X.core
@@ -395,18 +394,15 @@ lemma core_eq_top_iff : X.core = ⊤ ↔ ∀ s : X _⦋1⦌, (mk' s).IsEquivalen
 lemma core_eq_top [KanComplex X] : X.core = ⊤ :=
   core_eq_top_iff.2 fun _ ↦ isEquivalence_of_kanComplex _
 
-/-- Every Kan complex contained in `X` lies in the core of `X`. -/
-lemma le_core_of_kanComplex (A : X.Subcomplex) [KanComplex (A : SSet)] : A ≤ X.core := by
-  rw [le_core_iff]
-  intro s hs
-  exact (isEquivalence_iff_of_edge_eq (by simp)).1
-    ((isEquivalence_of_kanComplex (mk' (⟨s, hs⟩ : (A : SSet) _⦋1⦌))).map A.ι)
-
 /-- Every map from a Kan complex into `X` factors through `X.core`. -/
 lemma range_le_core_of_kanComplex [KanComplex Y] (f : Y ⟶ X) :
     Subcomplex.range f ≤ X.core :=
   (range_le_core_iff f).2 fun y ↦
     (isEquivalence_iff_of_edge_eq (by simp)).1 ((isEquivalence_of_kanComplex (mk' y)).map f)
+
+/-- Every Kan complex contained in `X` lies in the core of `X`. -/
+lemma le_core_of_kanComplex (A : X.Subcomplex) [KanComplex (A : SSet)] : A ≤ X.core := by
+  simpa using range_le_core_of_kanComplex A.ι
 
 /-- Maps from a Kan complex `Y` into the core of `X` are the same as maps from `Y` into `X`. -/
 def coreHomEquiv (Y X : SSet.{u}) [KanComplex Y] : (Y ⟶ X.core) ≃ (Y ⟶ X) where
@@ -449,33 +445,6 @@ lemma core.opIso_hom_ι (X : SSet.{u}) :
 lemma core.opIso_inv_opFunctor_map_ι (X : SSet.{u}) :
     (core.opIso X).inv ≫ opFunctor.map X.core.ι = X.op.core.ι := by
   simp [opIso]
-
-/-- Every map from the unit `𝟙_ SSet` factors through the core. -/
-lemma range_le_core_of_unit (f : 𝟙_ SSet.{u} ⟶ X) : Subcomplex.range f ≤ X.core := by
-  rw [range_le_core_iff]
-  intro y
-  -- The only `1`-simplex of `𝟙_ SSet` is degenerate, so its image is a degenerate edge.
-  have : f.app _ y = X.map (SimplexCategory.const ⦋1⦌ ⦋0⦌ 0).op (f.app _ PUnit.unit) :=
-    NatTrans.naturality_apply f (SimplexCategory.const ⦋1⦌ ⦋0⦌ 0).op PUnit.unit
-  rw [this]
-  exact isEquivalence_mk'_map_of_eq _ _ (Subsingleton.elim (α := Fin 1) _ _)
-
-variable (X) in
-/-- Maps from the unit `𝟙_ SSet` into the core of `X` are the same as maps into `X`. -/
-noncomputable def coreUnitHomEquiv : (𝟙_ SSet.{u} ⟶ X.core) ≃ (𝟙_ SSet.{u} ⟶ X) where
-  toFun f := f ≫ X.core.ι
-  invFun f := Subcomplex.lift f (range_le_core_of_unit f)
-  left_inv f := by rw [← cancel_mono X.core.ι, Subcomplex.lift_ι]
-  right_inv f := Subcomplex.lift_ι _ _
-
-@[simp]
-lemma coreUnitHomEquiv_apply (f : 𝟙_ SSet.{u} ⟶ X.core) : X.coreUnitHomEquiv f = f ≫ X.core.ι :=
-  (rfl)
-
-@[reassoc (attr := simp)]
-lemma coreUnitHomEquiv_symm_apply_ι (f : 𝟙_ SSet.{u} ⟶ X) :
-    X.coreUnitHomEquiv.symm f ≫ X.core.ι = f :=
-  (rfl)
 
 /-- An edge of a product `X ⊗ Y` is an equivalence exactly when both of its projections are. -/
 lemma Edge.isEquivalence_tensor_iff {p₀ p₁ : (X ⊗ Y) _⦋0⦌} (e : Edge p₀ p₁) :
@@ -568,13 +537,7 @@ lemma stdSimplex.mem_core_obj_one_iff {n : ℕ} (s : Δ[n] _⦋1⦌) :
   · have hs : s 0 ≤ s 1 := (stdSimplex.objEquiv s).toOrderHom.monotone (Fin.zero_le 1)
     have hg : I.inv.edge 0 ≤ I.inv.edge 1 :=
       (stdSimplex.objEquiv I.inv.edge).toOrderHom.monotone (Fin.zero_le 1)
-    have hsrc : I.inv.edge 0 = s 1 :=
-      (stdSimplex.δ_apply I.inv.edge 1 0).symm.trans
-        ((congrArg (fun v : Δ[n] _⦋0⦌ ↦ v 0) I.inv.src_eq).trans (stdSimplex.δ_apply s 0 0))
-    have htgt : I.inv.edge 1 = s 0 :=
-      (stdSimplex.δ_apply I.inv.edge 0 0).symm.trans
-        ((congrArg (fun v : Δ[n] _⦋0⦌ ↦ v 0) I.inv.tgt_eq).trans (stdSimplex.δ_apply s 1 0))
-    exact le_antisymm hs (htgt ▸ hsrc ▸ hg)
+    exact le_antisymm hs (by simpa [stdSimplex.δ_apply] using hg)
   · have hs : s = (Δ[n] : SSet.{u}).map (SimplexCategory.const ⦋1⦌ ⦋0⦌ 0).op
         (stdSimplex.obj₀Equiv.symm (s 0)) := by
       refine stdSimplex.ext _ _ fun k ↦ ?_
@@ -589,12 +552,8 @@ in `(Δ[n]).core` has equal endpoints. -/
 def stdSimplex.π₀CoreEquiv (n : ℕ) : π₀ ((Δ[n] : SSet.{u}).core : SSet.{u}) ≃ Fin (n + 1) where
   toFun := π₀.lift (fun x ↦ stdSimplex.obj₀Equiv x.1) fun x y e ↦ by
     have he : e.edge.1 0 = e.edge.1 1 := (stdSimplex.mem_core_obj_one_iff e.edge.1).1 e.edge.2
-    have hx : e.edge.1 0 = x.1 0 :=
-      (stdSimplex.δ_apply e.edge.1 1 0).symm.trans
-        (congrArg (fun v : ((Δ[n] : SSet.{u}).core : SSet.{u}) _⦋0⦌ ↦ v.1 0) e.src_eq)
-    have hy : e.edge.1 1 = y.1 0 :=
-      (stdSimplex.δ_apply e.edge.1 0 0).symm.trans
-        (congrArg (fun v : ((Δ[n] : SSet.{u}).core : SSet.{u}) _⦋0⦌ ↦ v.1 0) e.tgt_eq)
+    have hx : e.edge.1 0 = x.1 0 := stdSimplex.edge_edge_apply_zero (e.map (Δ[n]).core.ι)
+    have hy : e.edge.1 1 = y.1 0 := stdSimplex.edge_edge_apply_one (e.map (Δ[n]).core.ι)
     exact congrArg stdSimplex.obj₀Equiv
       (stdSimplex.ext _ _ fun k ↦ by fin_cases k; exact hx.symm.trans (he.trans hy))
   invFun i :=

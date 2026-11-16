@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicTopology.SimplicialCategory.SimplicialObject
 public import Mathlib.AlgebraicTopology.SimplicialSet.AnodyneExtensions.Inner.PushoutProduct
 public import Mathlib.AlgebraicTopology.SimplicialSet.AnodyneExtensions.PushoutProduct
 public import TauCeti.AlgebraicTopology.SimplicialSet.Fiber
@@ -16,8 +17,8 @@ public import TauCeti.CategoryTheory.Monoidal.Closed.Cartesian
 
 The `n`-simplices of the internal hom `K ⟶[SSet] X` of simplicial sets are the maps
 `K ⊗ Δ[n] ⟶ X` (`SSet.ihomObjEquiv`), and its vertices are the maps `K ⟶ X`
-(`SSet.ihomObj₀Equiv`). When `X` is a quasicategory, `K ⟶[SSet] X` is the quasicategory
-`Fun(K, X)` of functors from `K` to `X`.
+(`SSet.ihomObj₀Equiv`); in particular `Fun(Δ[0], X) ≅ X` (`SSet.sHomObj₀Iso`). When `X` is a
+quasicategory, `K ⟶[SSet] X` is the quasicategory `Fun(K, X)` of functors from `K` to `X`.
 
 For a map `p : E ⟶ B` and a map `f : K ⟶ B`, the simplicial set `SSet.ihomOver p f` of functors
 from `K` to `E` over `f` (written `Fun_B(K, E)`, or `Map_B(K, E)` by Lurie) is the fiber of
@@ -35,6 +36,7 @@ it is a Kan complex. For `p = 𝟙 B` there is exactly one functor over `f`, and
 
 * `SSet.ihomObjEquiv`: the `n`-simplices of `K ⟶[SSet] X` are the maps `K ⊗ Δ[n] ⟶ X`.
 * `SSet.ihomObj₀Equiv`: the vertices of `K ⟶[SSet] X` are the maps `K ⟶ X`.
+* `SSet.sHomObj₀Iso`: the function complex `Fun(Δ[0], X)` out of the point is isomorphic to `X`.
 * `SSet.ihomOver p f`: the simplicial set `Fun_B(K, E)` of functors over `f`.
 * `SSet.coherentSections p`: the simplicial set of sections of `p`.
 
@@ -65,7 +67,7 @@ public section
 universe u
 
 open CategoryTheory MonoidalCategory MonoidalClosed CartesianMonoidalCategory Limits
-  HomotopicalAlgebra Simplicial
+  HomotopicalAlgebra Opposite SimplicialCategory Simplicial
 
 namespace SSet
 
@@ -178,6 +180,68 @@ lemma yonedaEquiv_symm_δ_yonedaEquiv_curry (h : X ⊗ Δ[1] ⟶ Z) (i : Fin 2) 
     yonedaEquiv.symm (((ihom X).obj Z).δ i (yonedaEquiv (curry h))) =
       curry (X ◁ stdSimplex.δ i ≫ h) := by
   rw [← stdSimplex.δ_comp_yonedaEquiv_symm, Equiv.symm_apply_apply, curry_natural_left]
+
+/-- Auxiliary isomorphism `((ihom Δ[0]).obj X) ≅ X` used to build `SSet.sHomObj₀Iso`. -/
+private def ihomObj₀Iso (X : SSet.{u}) : ((ihom (Δ[0] : SSet.{u})).obj X) ≅ X where
+  hom := lift (stdSimplex.isTerminalObj₀.from _) (𝟙 _) ≫ (ihom.ev (Δ[0] : SSet.{u})).app X
+  inv := curry (snd (Δ[0] : SSet.{u}) X)
+  hom_inv_id := by
+    apply uncurry_injective
+    rw [uncurry_natural_left, uncurry_curry, uncurry_id_eq_ev, whiskerLeft_snd]
+    have h : snd (Δ[0] : SSet.{u}) ((ihom (Δ[0] : SSet.{u})).obj X) ≫
+        lift (stdSimplex.isTerminalObj₀.from _) (𝟙 _) = 𝟙 _ :=
+      CartesianMonoidalCategory.hom_ext _ _ stdSimplex.ext₀ (by simp)
+    rw [← Category.assoc, h, Category.id_comp]
+  inv_hom_id := by
+    rw [← Category.assoc, comp_lift, Category.comp_id,
+      ← Category.id_comp (curry (snd (Δ[0] : SSet.{u}) X)), lift_curry_ihom_ev_app, lift_snd]
+
+/-- The function complex `Fun(Δ[0], X)` out of the point is isomorphic to `X`, via evaluation at
+the unique simplex of `Δ[0]` and currying the second projection `Δ[0] ⊗ X ⟶ X`. -/
+def sHomObj₀Iso (X : SSet.{u}) : sHom (Δ[0] : SSet.{u}) X ≅ X :=
+  ihomObj₀Iso X
+
+/-- Evaluating `sHomObj₀Iso` on an `m`-simplex of `Fun(Δ[0], X)` evaluates it at the identity of
+`m` and the unique `m`-simplex of `Δ[0]`. -/
+@[simp]
+lemma sHomObj₀Iso_hom_app (X : SSet.{u}) (m : SimplexCategoryᵒᵖ)
+    (s : (sHom (Δ[0] : SSet.{u}) X).obj m) :
+    (sHomObj₀Iso X).hom.app m s = s.app m (𝟙 m) (stdSimplex.const 0 0 m) :=
+  congrArg (s.app m (𝟙 m)) (stdSimplex.objEquiv.injective (by ext; simp))
+
+/-- Evaluating the inverse of `sHomObj₀Iso` on an `m`-simplex `x` of `X` acts along `φ : m ⟶ k` by
+`X.map φ x`, ignoring the `Δ[0]` factor. -/
+@[simp]
+lemma sHomObj₀Iso_inv_app_app (X : SSet.{u}) {m k : SimplexCategoryᵒᵖ} (x : X.obj m) (φ : m ⟶ k)
+    (u₀ : (Δ[0] : SSet.{u}).obj k) :
+    ((sHomObj₀Iso X).inv.app m x).app k φ u₀ = X.map φ x :=
+  (rfl)
+
+/-- On vertices, `sHomObj₀Iso` evaluates a map `Δ[0] ⟶ X` at the unique vertex of `Δ[0]`. -/
+lemma sHomObj₀Iso_hom_app_zero (X : SSet.{u}) (v : (sHom (Δ[0] : SSet.{u}) X) _⦋0⦌) :
+    (sHomObj₀Iso X).hom.app (op ⦋0⦌) v = yonedaEquiv ((homEquiv' Δ[0] X).symm v) := by
+  obtain ⟨f, rfl⟩ := (homEquiv' (Δ[0] : SSet.{u}) X).surjective v
+  rw [Equiv.symm_apply_apply]
+  exact (sHomObj₀Iso_hom_app X (op ⦋0⦌) (homEquiv' Δ[0] X f)).trans
+    (congrArg (f.app (op ⦋0⦌)) (stdSimplex.objEquiv.injective (by ext; simp)))
+
+/-- On vertices, the inverse of `sHomObj₀Iso` sends a vertex `x` of `X` to the map `Δ[0] ⟶ X`
+picking out `x`. -/
+lemma sHomObj₀Iso_inv_app_zero (X : SSet.{u}) (x : X _⦋0⦌) :
+    (sHomObj₀Iso X).inv.app (op ⦋0⦌) x = homEquiv' Δ[0] X (yonedaEquiv.symm x) := by
+  refine Functor.functorHom_ext fun k φ ↦ ?_
+  ext u₀
+  change ((sHomObj₀Iso X).inv.app (op ⦋0⦌) x).app k φ u₀ = (yonedaEquiv.symm x).app k u₀
+  rw [sHomObj₀Iso_inv_app_app]
+  obtain ⟨⟨d⟩⟩ := k
+  rw [← stdSimplex.objEquiv.symm_apply_apply u₀, yonedaEquiv_symm_app_objEquiv_symm]
+  exact congrArg (fun ψ : ⦋d⦌ ⟶ ⦋0⦌ ↦ X.map ψ.op x) (Subsingleton.elim φ.unop _)
+
+/-- The function complex `Fun(Δ[0], X)` out of the point is connected when `X` is connected. -/
+instance (X : SSet.{u}) [X.IsConnected] : (sHom (Δ[0] : SSet.{u}) X).IsConnected := by
+  rw [isConnected_iff_nonempty_unique]
+  exact ⟨(Equiv.uniqueCongr (π₀Functor.mapIso (sHomObj₀Iso X)).toEquiv).2
+    ((isConnected_iff_nonempty_unique X).1 inferInstance).some⟩
 
 end MappingSpace
 
