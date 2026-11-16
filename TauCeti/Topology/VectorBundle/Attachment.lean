@@ -6,13 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.VectorBundle.SphereBundle.Basic
-public import TauCeti.AlgebraicTopology.Cohomology.Excision
+public import TauCeti.AlgebraicTopology.Cohomology.Additivity.Relative
+public import TauCeti.AlgebraicTopology.Cohomology.Attach
+import Mathlib.CategoryTheory.Abelian.GrothendieckAxioms.Basic
 import TauCeti.Analysis.Normed.Module.Ball.Radial.Push
-import TauCeti.Topology.ContinuousMap.GlueClosedEmbeddings
+import TauCeti.Topology.ContinuousMap.Sigma
 import TauCeti.Topology.VectorBundle.Smul
 
 /-!
-# Attaching a disc bundle
+# Attaching disc bundles
 
 Let `E → B` be a real vector bundle whose fibre norm is continuous on the total space, with unit
 disc bundle `D(E)` and unit sphere bundle `S(E)` (`TauCeti.discBundle`, `TauCeti.sphereBundle`).
@@ -26,24 +28,33 @@ the disc-sphere pair with the Thom pair (`TauCeti.isIso_singularHomologyMap_disc
 `TauCeti.isIso_singularCohomologyMap_discSpherePairMap`), the relative homology and cohomology of
 `(Z, X)` are those of the Thom pair `(E, E₀)`.
 
-This is how the attachment of a disc bundle is seen by homology. For instance, crossing a critical
-level of a Morse–Bott function attaches, up to homotopy, the negative disc bundle of each critical
-submanifold on the level to the sublevel below it; with `X` that lower sublevel and `Z` its union
-with the attached disc bundles, the relative homology of the attachment is that of the Thom pair
-of the negative normal bundle. The rank zero case is included: there `S(E)` is empty, `D(E)` is
-`E` and `Z` is the disjoint union of `X` and a copy of the base.
+The same holds for finitely many disc bundles attached at once, along closed embeddings with
+pairwise disjoint images, the bundles having possibly different bases and ranks: the relative
+homology of `(Z, X)` is the coproduct of the relative homologies of the disc-sphere pairs
+(`TauCeti.isColimitCofanSingularHomologyOfAttachDiscBundle`), and its relative cohomology is their
+product (`TauCeti.isLimitFanSingularCohomologyOfAttachDiscBundle`), the structure maps being
+induced by the attaching maps.
 
-The proof thickens `X` by an outer collar of the attached disc bundle, as in the proof that good
-pairs satisfy excision for quotients. Write `D½` for the vectors of `D(E)` of norm greater than
-`1/2` and `N = X ∪ f(D½)`. The radial push `TauCeti.radialPush 2⁻¹`, applied in every fibre of
-`D(E)`, deforms it so as to push every vector of norm at least `1/2` out to the unit sphere and to
-double the smaller ones; it fixes `S(E)` and keeps `D½` in place. Extended by the identity of `X`,
-it is a deformation of `Z` keeping `X` and `N` in place and pushing `N` into `X`. So the inclusions
-`(D(E), S(E)) ⟶ (D(E), D½)` and `(Z, X) ⟶ (Z, N)` induce isomorphisms
-(`TopPair.isIso_singularHomologyMap_ofSubsetMap_id_of_homotopy`). Finally the complement of `X` lies
-in the image of `f`, and `N` is open, its complement being the image of the closed disc bundle of
-radius `1/2`. So excision for the open cover of `Z` by `N` and the complement of `X`
-(`TopPair.isIso_singularHomologyMap_of_open_cover`) makes `(D(E), D½) ⟶ (Z, N)` an isomorphism.
+This is how attachments of disc bundles are seen by homology. For instance, crossing a critical
+level of a Morse–Bott function attaches, up to homotopy, the negative disc bundle of each critical
+submanifold on the level to the sublevel below it. The critical submanifolds on one level may have
+different dimensions and indices, so their negative normal bundles have different bases and
+ranks; with `X` the lower sublevel and `Z` its union with the attached disc bundles, the relative
+homology of the attachment is the sum over the critical submanifolds of the relative homologies of
+their disc-sphere pairs, which are those of the Thom pairs of the negative normal bundles. The rank
+zero case is included: there `S(E)` is empty, `D(E)` is `E` and `Z` is the disjoint union of `X`
+and a copy of the base.
+
+The proofs apply the comparison for attachments along a subspace with a deformation neighbourhood
+(`TopPair.isIso_singularHomologyMap_of_attach`, `TopPair.isIso_singularCohomologyMap_of_attach`).
+Its neighbourhood of `S(E)` in `D(E)` is the set `D½` of vectors of norm greater than `1/2`, and
+its deformation is the radial push `TauCeti.radialPush 2⁻¹`, applied in every fibre of `D(E)`: it
+pushes every vector of norm at least `1/2` out to the unit sphere and doubles the smaller ones, it
+fixes `S(E)` and keeps `D½` in place. For several disc bundles the attaching maps glue to a closed
+embedding of the disjoint union of the disc bundles (`ContinuousMap.isClosedEmbedding_sigma`), the
+radial push runs on every summand, and additivity of relative homology
+(`TopPair.isColimitCofanSingularHomology`) and cohomology
+(`TopPair.isLimitFanSingularCohomology`) splits the disjoint union of the disc-sphere pairs.
 
 ## Main results
 
@@ -51,27 +62,35 @@ radius `1/2`. So excision for the open cover of `Z` by `N` and the complement of
   sphere bundle induces isomorphisms `Hₙ(D(E), S(E)) ≅ Hₙ(Z, X)`.
 * `TauCeti.isIso_singularCohomologyMap_of_attach_discBundle`: the same in cohomology,
   `Hⁿ(Z, X) ≅ Hⁿ(D(E), S(E))`.
+* `TauCeti.isColimitCofanSingularHomologyOfAttachDiscBundle`: attaching finitely many disc bundles
+  `D(Eₐ)` along their sphere bundles with disjoint images gives `Hₙ(Z, X) ≅ ∐ₐ Hₙ(D(Eₐ), S(Eₐ))`.
+* `TauCeti.isLimitFanSingularCohomologyOfAttachDiscBundle`: the same in cohomology,
+  `Hⁿ(Z, X) ≅ ∏ₐ Hⁿ(D(Eₐ), S(Eₐ))`.
 
 ## References
 
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
   Section 2.1, Proposition 2.22 and its proof (good pairs and excision).
+* R. Bott, *Nondegenerate critical manifolds*, Annals of Mathematics 60 (1954), 248–261, for the
+  attachment of the negative disc bundles of several critical submanifolds on one level.
 -/
 
 public section
 
 noncomputable section
 
-open Bundle CategoryTheory Limits Set Topology
+open Bundle CategoryTheory Function Limits Set Topology
 open scoped unitInterval
 
 universe w v u
 
 namespace TauCeti
 
-variable {B : Type w} {F : Type*} {E : B → Type w} [∀ b, NormedAddCommGroup (E b)]
+/-! ### The radial push in the fibres of a disc bundle -/
 
-/-! ### The thickened subspace -/
+section Collar
+
+variable {B : Type w} {F : Type*} {E : B → Type w} [∀ b, NormedAddCommGroup (E b)]
 
 variable (F E) in
 /-- The vectors of the disc bundle of norm greater than `1/2`. -/
@@ -87,46 +106,19 @@ private lemma sphereBundle_subset_outerCollar :
   rw [mem_outerCollar, mem_sphereBundle.1 hv]
   norm_num
 
-section Thickening
+variable [TopologicalSpace (TotalSpace F E)]
 
-variable [TopologicalSpace (TotalSpace F E)] {Z : Type w} [TopologicalSpace Z] {X : Set Z}
+/-- The subspace of the disc-sphere pair, as the range of its embedding, consists of the vectors of
+the sphere bundle. -/
+private lemma mem_range_discSpherePair_map {v : discBundle F E} :
+    v ∈ range (discSpherePair F E).map ↔ (v : TotalSpace F E) ∈ sphereBundle F E := by
+  rw [show range (discSpherePair F E).map = range (inclusion (sphereBundle_subset_discBundle F E))
+    from rfl, range_inclusion]
+  rfl
 
-variable (φ : C(discBundle F E, Z)) in
-/-- The thickening `X ∪ φ(D½)` of `X` by the outer collar of the attached disc bundle. -/
-private def thickening : Set Z :=
-  X ∪ φ '' outerCollar F E
-
-variable {φ : C(discBundle F E, Z)}
-
-/-- The attached disc bundle meets the thickening exactly in its outer collar. -/
-private lemma mem_thickening_iff (hφ : IsClosedEmbedding φ)
-    (hφX : ∀ v : discBundle F E, φ v ∈ X → (v : TotalSpace F E) ∈ sphereBundle F E)
-    (v : discBundle F E) :
-    φ v ∈ thickening (X := X) φ ↔ v ∈ outerCollar F E := by
-  refine ⟨fun h ↦ h.elim (fun hX ↦ sphereBundle_subset_outerCollar (hφX v hX)) ?_,
-    fun h ↦ Or.inr ⟨v, h, rfl⟩⟩
-  rintro ⟨w, hw, hwv⟩
-  exact hφ.injective hwv ▸ hw
-
-/-- The complement of the thickening is the image of the closed disc bundle of radius `1/2`, so the
-thickening is open. -/
-private lemma isOpen_thickening (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖)
-    (hφ : IsClosedEmbedding φ)
-    (hφX : ∀ v : discBundle F E, φ v ∈ X → (v : TotalSpace F E) ∈ sphereBundle F E)
-    (hcover : X ∪ range φ = univ) : IsOpen (thickening (X := X) φ) := by
-  have hc : (thickening (X := X) φ)ᶜ = φ '' (outerCollar F E)ᶜ := by
-    ext z
-    refine ⟨fun hz ↦ ?_, ?_⟩
-    · obtain ⟨v, rfl⟩ : z ∈ range φ :=
-        (hcover.symm ▸ mem_univ z : z ∈ X ∪ _).resolve_left fun hzX ↦ hz (Or.inl hzX)
-      exact ⟨v, fun hv ↦ hz ((mem_thickening_iff hφ hφX v).2 hv), rfl⟩
-    · rintro ⟨v, hv, rfl⟩ hz
-      exact hv ((mem_thickening_iff hφ hφX v).1 hz)
-  rw [← isClosed_compl_iff, hc]
-  exact hφ.isClosedMap _
-    (isOpen_lt continuous_const (hnorm.comp continuous_subtype_val)).isClosed_compl
-
-/-! ### The collar deformations -/
+private lemma isOpen_outerCollar (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖) :
+    IsOpen (outerCollar F E) :=
+  isOpen_lt continuous_const (hnorm.comp continuous_subtype_val)
 
 variable [TopologicalSpace B] [NormedAddCommGroup F] [NormedSpace ℝ F] [∀ b, NormedSpace ℝ (E b)]
   [FiberBundle F E] [VectorBundle ℝ F E] (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖)
@@ -183,307 +175,17 @@ private lemma discCollar_zero (v : discBundle F E) : discCollar hnorm (0, v) = v
   apply Subtype.ext
   rw [coe_discCollar, radialPush_zero]
 
-/-- The collar deformation of the disc bundle as a homotopy from the identity. -/
-private def discCollarHomotopy :
-    (ContinuousMap.id (discBundle F E)).Homotopy ((discCollar hnorm).curry 1) where
-  toContinuousMap := discCollar hnorm
-  map_zero_left := discCollar_zero hnorm
-  map_one_left _ := rfl
-
-private lemma discCollarHomotopy_apply (p : I × discBundle F E) :
-    discCollarHomotopy hnorm p = discCollar hnorm p :=
-  rfl
-
-/-- The collar deformation of the disc bundle, transported to its image in `Z` and extended by the
-identity of `X`: the gluing of the projection `I × X → Z` and `φ ∘ discCollar` along the closed
-embeddings of `I × X` and `I × D(E)` into `I × Z`. -/
-private def attachCollar (hφ : IsClosedEmbedding φ) (hX : IsClosed X)
-    (hφX : ∀ v : discBundle F E, φ v ∈ X → (v : TotalSpace F E) ∈ sphereBundle F E)
-    (hcover : X ∪ range φ = univ) : C(I × Z, Z) :=
-  ContinuousMap.glueClosedEmbeddings (i := Prod.map id ((↑) : X → Z)) (j := Prod.map id φ)
-    ⟨fun p ↦ p.2, by fun_prop⟩ (φ.comp (discCollar hnorm))
-    (IsClosedEmbedding.id.prodMap hX.isClosedEmbedding_subtypeVal)
-    (IsClosedEmbedding.id.prodMap hφ)
-    (eq_univ_of_forall fun p ↦ by
-      obtain hz | ⟨v, hv⟩ := (hcover.symm ▸ mem_univ p.2 : p.2 ∈ X ∪ range φ)
-      · exact Or.inl ⟨(p.1, ⟨p.2, hz⟩), rfl⟩
-      · exact Or.inr ⟨(p.1, v), Prod.ext rfl hv⟩)
-    (by
-      rintro ⟨t, x⟩ ⟨s, v⟩ h
-      obtain ⟨rfl, hx⟩ : t = s ∧ (x : Z) = φ v := Prod.ext_iff.1 h
-      rw [ContinuousMap.coe_mk, ContinuousMap.comp_apply,
-        discCollar_of_mem_sphereBundle hnorm t (hφX v (hx ▸ x.2))]
-      exact hx)
-
-variable (hφ : IsClosedEmbedding φ) (hX : IsClosed X)
-  (hφX : ∀ v : discBundle F E, φ v ∈ X → (v : TotalSpace F E) ∈ sphereBundle F E)
-  (hcover : X ∪ range φ = univ)
-
-private lemma attachCollar_apply (t : I) (v : discBundle F E) :
-    attachCollar hnorm hφ hX hφX hcover (t, φ v) = φ (discCollar hnorm (t, v)) :=
-  ContinuousMap.glueClosedEmbeddings_apply_right _ _ _ _ _ _ (t, v)
-
-private lemma attachCollar_of_mem (t : I) {z : Z} (hz : z ∈ X) :
-    attachCollar hnorm hφ hX hφX hcover (t, z) = z :=
-  ContinuousMap.glueClosedEmbeddings_apply_left _ _ _ _ _ _ (t, (⟨z, hz⟩ : X))
-
-/-- The collar deformation of the attached space as a homotopy from the identity. -/
-private def attachCollarHomotopy :
-    (ContinuousMap.id Z).Homotopy ((attachCollar hnorm hφ hX hφX hcover).curry 1) where
-  toContinuousMap := attachCollar hnorm hφ hX hφX hcover
-  map_zero_left z := by
-    obtain hz | ⟨v, rfl⟩ := (hcover.symm ▸ mem_univ z : z ∈ X ∪ range φ)
-    · exact attachCollar_of_mem hnorm hφ hX hφX hcover 0 hz
-    · exact (attachCollar_apply hnorm hφ hX hφX hcover 0 v).trans
-        (congrArg φ (discCollar_zero hnorm v))
-  map_one_left _ := rfl
-
-private lemma attachCollarHomotopy_apply (p : I × Z) :
-    attachCollarHomotopy hnorm hφ hX hφX hcover p = attachCollar hnorm hφ hX hφX hcover p :=
-  rfl
-
-/-! ### The deformations as maps of pairs -/
-
-private lemma discCollarHomotopy_mem_sphereBundle (t : I) {v : discBundle F E}
-    (hv : (v : TotalSpace F E) ∈ sphereBundle F E) :
-    (discCollarHomotopy hnorm (t, v) : TotalSpace F E) ∈ sphereBundle F E := by
-  rwa [discCollarHomotopy_apply, discCollar_of_mem_sphereBundle hnorm t hv]
-
-private lemma discCollarHomotopy_mem_outerCollar (t : I) {v : discBundle F E}
-    (hv : v ∈ outerCollar F E) : discCollarHomotopy hnorm (t, v) ∈ outerCollar F E := by
-  rw [discCollarHomotopy_apply]
-  exact discCollar_mem_outerCollar hnorm t hv
-
-private lemma attachCollarHomotopy_mem (t : I) {z : Z} (hz : z ∈ X) :
-    attachCollarHomotopy hnorm hφ hX hφX hcover (t, z) ∈ X := by
-  rwa [attachCollarHomotopy_apply, attachCollar_of_mem hnorm hφ hX hφX hcover t hz]
-
-private lemma attachCollarHomotopy_mem_thickening (t : I) {z : Z}
-    (hz : z ∈ thickening (X := X) φ) :
-    attachCollarHomotopy hnorm hφ hX hφX hcover (t, z) ∈ thickening (X := X) φ := by
-  rw [attachCollarHomotopy_apply]
-  obtain hz | ⟨v, hv, rfl⟩ := hz
-  · rw [attachCollar_of_mem hnorm hφ hX hφX hcover t hz]
-    exact Or.inl hz
-  · rw [attachCollar_apply]
-    exact Or.inr ⟨_, discCollar_mem_outerCollar hnorm t hv, rfl⟩
-
-private lemma mapsTo_attachCollar_thickening
-    (hφS : ∀ v : discBundle F E, (v : TotalSpace F E) ∈ sphereBundle F E → φ v ∈ X) :
-    MapsTo ((attachCollar hnorm hφ hX hφX hcover).curry 1) (thickening (X := X) φ) X := by
-  rintro z (hz | ⟨v, hv, rfl⟩)
-  · rw [ContinuousMap.curry_apply, attachCollar_of_mem hnorm hφ hX hφX hcover 1 hz]
-    exact hz
-  · rw [ContinuousMap.curry_apply, attachCollar_apply]
-    exact hφS _ (discCollar_one_mem_sphereBundle hnorm hv)
-
-end Thickening
-
-/-! ### The comparison square -/
-
-section Square
-
-variable [TopologicalSpace (TotalSpace F E)] {Z : Type w} [TopologicalSpace Z] {X : Set Z}
-  (φ : C(discBundle F E, Z))
-
-variable (F E) in
-/-- The inclusion `(D(E), S(E)) ⟶ (D(E), D½)`. -/
-private def sphereToOuterCollar :
-    TopPair.ofSubset (X := TopCat.of (discBundle F E)) (Subtype.val ⁻¹' sphereBundle F E) ⟶
-      TopPair.ofSubset (X := TopCat.of (discBundle F E)) (outerCollar F E) :=
-  TopPair.ofSubsetMap (𝟙 _) fun _ hv ↦ sphereBundle_subset_outerCollar hv
-
-/-- The inclusion `(Z, X) ⟶ (Z, N)`. -/
-private def subsetToThickening :
-    TopPair.ofSubset (X := TopCat.of Z) X ⟶
-      TopPair.ofSubset (X := TopCat.of Z) (thickening (X := X) φ) :=
-  TopPair.ofSubsetMap (𝟙 _) fun _ hz ↦ Or.inl hz
-
-/-- The map `(D(E), D½) ⟶ (Z, N)` induced by the attachment. -/
-private def outerCollarToThickening :
-    TopPair.ofSubset (X := TopCat.of (discBundle F E)) (outerCollar F E) ⟶
-      TopPair.ofSubset (X := TopCat.of Z) (thickening (X := X) φ) :=
-  TopPair.ofSubsetMap (TopCat.ofHom φ) fun v hv ↦ Or.inr ⟨v, hv, rfl⟩
-
-private lemma fst_sphereToOuterCollar : TopPair.Hom.fst (sphereToOuterCollar F E) = 𝟙 _ :=
-  TopPair.ofSubsetMap_fst _ _
-
-private lemma fst_subsetToThickening :
-    TopPair.Hom.fst (subsetToThickening (X := X) φ) = 𝟙 _ :=
-  TopPair.ofSubsetMap_fst _ _
-
-private lemma fst_outerCollarToThickening :
-    TopPair.Hom.fst (outerCollarToThickening (X := X) φ) = TopCat.ofHom φ :=
-  TopPair.ofSubsetMap_fst _ _
-
-variable (F E) in
-/-- The isomorphism of the disc-sphere pair with the pair `(D(E), S(E))` presented as a subset of
-`D(E)`. -/
-private abbrev discSpherePairIso :
-    TopPair.ofSubset (X := TopCat.of (discBundle F E)) (Subtype.val ⁻¹' sphereBundle F E) ≅
-      discSpherePair F E :=
-  TopPair.ofSubsetPreimageValIso (X := TopCat.of (TotalSpace F E))
-    (sphereBundle_subset_discBundle F E)
-
-/-- The comparison square: `(D(E), S(E)) ⟶ (Z, X) ⟶ (Z, N)` agrees with
-`(D(E), S(E)) ⟶ (D(E), D½) ⟶ (Z, N)`. -/
-private lemma comp_subsetToThickening_eq
-    {f : discSpherePair F E ⟶ TopPair.ofSubset (X := TopCat.of Z) X}
-    (hfφ : TopPair.Hom.fst f = TopCat.ofHom φ) :
-    f ≫ subsetToThickening φ =
-      (discSpherePairIso F E).inv ≫ sphereToOuterCollar F E ≫ outerCollarToThickening φ := by
-  refine TopPair.hom_ext_of_fst _ ?_
-  have hinv : TopPair.Hom.fst (discSpherePairIso F E).inv = 𝟙 _ :=
-    TopCat.ext fun x ↦ TopPair.ofSubsetPreimageValIso_inv_fst_apply x
-  rw [TopPair.Hom.fst_comp, TopPair.Hom.fst_comp, TopPair.Hom.fst_comp, hfφ, hinv,
-    fst_outerCollarToThickening, fst_subsetToThickening, fst_sphereToOuterCollar]
-  -- The identities are those of `TopCat.of Z` and `TopCat.of D(E)`, which `Category.comp_id` does
-  -- not recognise through the ambient spaces of the pairs; both sides unfold to `TopCat.ofHom φ`.
-  rfl
-
-/-- The open cover of `Z` by the thickening `N` and the complement of `X`. -/
-private def thickeningCover : Bool → Set Z :=
-  fun b ↦ bif b then thickening (X := X) φ else Xᶜ
-
-private lemma iUnion_thickeningCover : ⋃ b, thickeningCover (X := X) φ b = univ :=
-  eq_univ_of_forall fun z ↦ mem_iUnion.2 <| by
-    by_cases hz : z ∈ X
-    · exact ⟨true, Or.inl hz⟩
-    · exact ⟨false, hz⟩
-
-variable {φ}
-
-private lemma isOpen_thickeningCover (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖)
-    (hφ : IsClosedEmbedding φ) (hX : IsClosed X)
-    (hφX : ∀ v : discBundle F E, φ v ∈ X → (v : TotalSpace F E) ∈ sphereBundle F E)
-    (hcover : X ∪ range φ = univ) (b : Bool) : IsOpen (thickeningCover (X := X) φ b) := by
-  cases b
-  · exact hX.isOpen_compl
-  · exact isOpen_thickening hnorm hφ hφX hcover
-
-private lemma thickeningCover_subset (hcover : X ∪ range φ = univ) (b : Bool) :
-    thickeningCover (X := X) φ b ⊆
-        Set.range (TopPair.ofSubset (X := TopCat.of Z) (thickening (X := X) φ)).map ∨
-      thickeningCover (X := X) φ b ⊆
-        Set.range (TopPair.Hom.fst (outerCollarToThickening (X := X) φ)) := by
-  rw [fst_outerCollarToThickening]
-  cases b
-  · exact Or.inr fun z hz ↦ (hcover.symm ▸ mem_univ z : z ∈ X ∪ _).resolve_left hz
-  · exact Or.inl (TopPair.range_ofSubset_map (X := TopCat.of Z) (B := thickening (X := X) φ)).ge
-
-private lemma isEmbedding_fst_outerCollarToThickening (hφ : IsClosedEmbedding φ) :
-    IsEmbedding (TopPair.Hom.fst (outerCollarToThickening (X := X) φ)) := by
-  rw [fst_outerCollarToThickening]
-  exact hφ.isEmbedding
-
-private lemma mem_range_of_fst_outerCollarToThickening_mem (hφ : IsClosedEmbedding φ)
-    (hφX : ∀ v : discBundle F E, φ v ∈ X → (v : TotalSpace F E) ∈ sphereBundle F E)
-    (v : discBundle F E)
-    (hv : TopPair.Hom.fst (outerCollarToThickening (X := X) φ) v ∈
-      Set.range (TopPair.ofSubset (X := TopCat.of Z) (thickening (X := X) φ)).map) :
-    v ∈ Set.range (TopPair.ofSubset (X := TopCat.of (discBundle F E)) (outerCollar F E)).map := by
-  rw [fst_outerCollarToThickening] at hv
-  refine (TopPair.range_ofSubset_map (X := TopCat.of (discBundle F E)) (B := outerCollar F E)).ge ?_
-  exact (mem_thickening_iff hφ hφX v).1
-    ((TopPair.range_ofSubset_map (X := TopCat.of Z) (B := thickening (X := X) φ)).le hv)
-
-variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C) (n : ℕ)
-  (k : Type*) [Ring k] [Linear k C] (M : C)
-
-private lemma isIso_singularHomologyMap_outerCollarToThickening
-    (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖)
-    (hφ : IsClosedEmbedding φ) (hX : IsClosed X)
-    (hφX : ∀ v : discBundle F E, φ v ∈ X → (v : TotalSpace F E) ∈ sphereBundle F E)
-    (hcover : X ∪ range φ = univ) :
-    IsIso (TopPair.singularHomologyMap (outerCollarToThickening (X := X) φ) R n) :=
-  TopPair.isIso_singularHomologyMap_of_open_cover R _ (isEmbedding_fst_outerCollarToThickening hφ)
-    (mem_range_of_fst_outerCollarToThickening_mem hφ hφX) _
-    (isOpen_thickeningCover hnorm hφ hX hφX hcover) (iUnion_thickeningCover φ)
-    (thickeningCover_subset hcover) n
-
-private lemma isIso_singularCohomologyMap_outerCollarToThickening
-    (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖)
-    (hφ : IsClosedEmbedding φ) (hX : IsClosed X)
-    (hφX : ∀ v : discBundle F E, φ v ∈ X → (v : TotalSpace F E) ∈ sphereBundle F E)
-    (hcover : X ∪ range φ = univ) :
-    IsIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := M)
-      (outerCollarToThickening (X := X) φ) n) :=
-  TopPair.isIso_singularCohomologyMap_of_open_cover _
-    (isEmbedding_fst_outerCollarToThickening hφ)
-    (mem_range_of_fst_outerCollarToThickening_mem hφ hφX) _
-    (isOpen_thickeningCover hnorm hφ hX hφX hcover) (iUnion_thickeningCover φ)
-    (thickeningCover_subset hcover) n
-
-end Square
+end Collar
 
 /-! ### Attaching a disc bundle -/
 
 section Attach
 
-variable [TopologicalSpace (TotalSpace F E)] {Z : Type w} [TopologicalSpace Z] {X : Set Z}
+variable {B : Type w} {F : Type*} {E : B → Type w} [∀ b, NormedAddCommGroup (E b)]
+  [TopologicalSpace (TotalSpace F E)] [TopologicalSpace B] [NormedAddCommGroup F]
+  [NormedSpace ℝ F] [∀ b, NormedSpace ℝ (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
+  {Z : Type w} [TopologicalSpace Z] {X : Set Z}
   {f : discSpherePair F E ⟶ TopPair.ofSubset (X := TopCat.of Z) X}
-
-/-- A map of pairs out of the disc-sphere pair carries the sphere bundle into the subspace. -/
-private lemma fst_mem_of_mem_sphereBundle {v : discBundle F E}
-    (hv : (v : TotalSpace F E) ∈ sphereBundle F E) : TopPair.Hom.fst f v ∈ X := by
-  have h : TopPair.Hom.fst f v =
-      (TopPair.ofSubset (X := TopCat.of Z) X).map (TopPair.Hom.snd f ⟨v.1, hv⟩) :=
-    (TopPair.Hom.w_apply f ⟨v.1, hv⟩).symm
-  rw [h]
-  exact (TopPair.Hom.snd f ⟨v.1, hv⟩).2
-
-variable [TopologicalSpace B] [NormedAddCommGroup F] [NormedSpace ℝ F] [∀ b, NormedSpace ℝ (E b)]
-  [FiberBundle F E] [VectorBundle ℝ F E]
-
-section HomotopyIso
-
-variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C) (n : ℕ)
-  (k : Type*) [Ring k] [Linear k C] (M : C)
-
-private lemma isIso_singularHomologyMap_sphereToOuterCollar
-    (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖) :
-    IsIso (TopPair.singularHomologyMap (sphereToOuterCollar F E) R n) :=
-  TopPair.isIso_singularHomologyMap_ofSubsetMap_id_of_homotopy _ (discCollarHomotopy hnorm)
-    (fun τ _ hv ↦ discCollarHomotopy_mem_sphereBundle hnorm τ hv)
-    (fun τ _ hv ↦ discCollarHomotopy_mem_outerCollar hnorm τ hv)
-    (fun _ hv ↦ discCollar_one_mem_sphereBundle hnorm hv) R n
-
-private lemma isIso_singularCohomologyMap_sphereToOuterCollar
-    (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖) :
-    IsIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := M) (sphereToOuterCollar F E) n) :=
-  TopPair.isIso_singularCohomologyMap_ofSubsetMap_id_of_homotopy _ (discCollarHomotopy hnorm)
-    (fun τ _ hv ↦ discCollarHomotopy_mem_sphereBundle hnorm τ hv)
-    (fun τ _ hv ↦ discCollarHomotopy_mem_outerCollar hnorm τ hv)
-    (fun _ hv ↦ discCollar_one_mem_sphereBundle hnorm hv) R k M n
-
-private lemma isIso_singularHomologyMap_subsetToThickening {φ : C(discBundle F E, Z)}
-    (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖)
-    (hφ : IsClosedEmbedding φ) (hX : IsClosed X)
-    (hφX : ∀ v : discBundle F E, φ v ∈ X → (v : TotalSpace F E) ∈ sphereBundle F E)
-    (hφS : ∀ v : discBundle F E, (v : TotalSpace F E) ∈ sphereBundle F E → φ v ∈ X)
-    (hcover : X ∪ range φ = univ) :
-    IsIso (TopPair.singularHomologyMap (subsetToThickening (X := X) φ) R n) :=
-  TopPair.isIso_singularHomologyMap_ofSubsetMap_id_of_homotopy _
-    (attachCollarHomotopy hnorm hφ hX hφX hcover)
-    (fun τ _ hz ↦ attachCollarHomotopy_mem hnorm hφ hX hφX hcover τ hz)
-    (fun τ _ hz ↦ attachCollarHomotopy_mem_thickening hnorm hφ hX hφX hcover τ hz)
-    (mapsTo_attachCollar_thickening hnorm hφ hX hφX hcover hφS) R n
-
-private lemma isIso_singularCohomologyMap_subsetToThickening {φ : C(discBundle F E, Z)}
-    (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖)
-    (hφ : IsClosedEmbedding φ) (hX : IsClosed X)
-    (hφX : ∀ v : discBundle F E, φ v ∈ X → (v : TotalSpace F E) ∈ sphereBundle F E)
-    (hφS : ∀ v : discBundle F E, (v : TotalSpace F E) ∈ sphereBundle F E → φ v ∈ X)
-    (hcover : X ∪ range φ = univ) :
-    IsIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := M)
-      (subsetToThickening (X := X) φ) n) :=
-  TopPair.isIso_singularCohomologyMap_ofSubsetMap_id_of_homotopy _
-    (attachCollarHomotopy hnorm hφ hX hφX hcover)
-    (fun τ _ hz ↦ attachCollarHomotopy_mem hnorm hφ hX hφX hcover τ hz)
-    (fun τ _ hz ↦ attachCollarHomotopy_mem_thickening hnorm hφ hX hφX hcover τ hz)
-    (mapsTo_attachCollar_thickening hnorm hφ hX hφX hcover hφS) R k M n
-
-end HomotopyIso
 
 /-- **Attaching a disc bundle induces isomorphisms on relative homology.** Let `E → B` be a real
 vector bundle whose fibre norm is continuous on the total space, and let
@@ -499,23 +201,14 @@ theorem isIso_singularHomologyMap_of_attach_discBundle
     (hfX : ∀ v : discBundle F E,
       TopPair.Hom.fst f v ∈ X → (v : TotalSpace F E) ∈ sphereBundle F E)
     (hfcover : X ∪ range (TopPair.Hom.fst f) = univ) :
-    IsIso (TopPair.singularHomologyMap f R n) := by
-  let φ : C(discBundle F E, Z) := (TopPair.Hom.fst f).hom
-  have := isIso_singularHomologyMap_sphereToOuterCollar R n hnorm
-  have := isIso_singularHomologyMap_outerCollarToThickening (φ := φ) R n hnorm hf hX hfX hfcover
-  have := isIso_singularHomologyMap_subsetToThickening (φ := φ) R n hnorm hf hX hfX
-    (fun _ hv ↦ fst_mem_of_mem_sphereBundle hv) hfcover
-  have := TopPair.isIso_singularHomologyMap (discSpherePairIso F E).inv (discSpherePairIso F E).hom
-    (by rw [Iso.inv_hom_id]; exact TopPair.Homotopy.refl _)
-    (by rw [Iso.hom_inv_id]; exact TopPair.Homotopy.refl _) R n
-  have hsq := congrArg (TopPair.singularHomologyMap · R n)
-    (comp_subsetToThickening_eq φ (TopCat.ofHom_hom _).symm)
-  simp only [TopPair.singularHomologyMap_comp] at hsq
-  have : IsIso (TopPair.singularHomologyMap f R n ≫
-      TopPair.singularHomologyMap (subsetToThickening (X := X) φ) R n) := by
-    rw [hsq]
-    infer_instance
-  exact IsIso.of_isIso_comp_right _ (TopPair.singularHomologyMap (subsetToThickening φ) R n)
+    IsIso (TopPair.singularHomologyMap f R n) :=
+  TopPair.isIso_singularHomologyMap_of_attach R n f hX hf
+    (fun v hv ↦ mem_range_discSpherePair_map.2 (hfX v hv)) hfcover (isOpen_outerCollar hnorm)
+    (fun _ hv ↦ sphereBundle_subset_outerCollar (mem_range_discSpherePair_map.1 hv))
+    (discCollar hnorm) (discCollar_zero hnorm)
+    (fun t _ hv ↦ discCollar_of_mem_sphereBundle hnorm t (mem_range_discSpherePair_map.1 hv))
+    (fun t _ hv ↦ discCollar_mem_outerCollar hnorm t hv)
+    (fun _ hv ↦ mem_range_discSpherePair_map.2 (discCollar_one_mem_sphereBundle hnorm hv))
 
 /-- **Attaching a disc bundle induces isomorphisms on relative cohomology.** Under the hypotheses
 of `TauCeti.isIso_singularHomologyMap_of_attach_discBundle`, the map of pairs
@@ -529,26 +222,172 @@ theorem isIso_singularCohomologyMap_of_attach_discBundle
     (hfX : ∀ v : discBundle F E,
       TopPair.Hom.fst f v ∈ X → (v : TotalSpace F E) ∈ sphereBundle F E)
     (hfcover : X ∪ range (TopPair.Hom.fst f) = univ) :
-    IsIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := M) f n) := by
-  let φ : C(discBundle F E, Z) := (TopPair.Hom.fst f).hom
-  have := isIso_singularCohomologyMap_sphereToOuterCollar R n k M hnorm
-  have := isIso_singularCohomologyMap_outerCollarToThickening (φ := φ) R n k M hnorm hf hX hfX
-    hfcover
-  have := isIso_singularCohomologyMap_subsetToThickening (φ := φ) R n k M hnorm hf hX hfX
-    (fun _ hv ↦ fst_mem_of_mem_sphereBundle hv) hfcover
-  have := TopPair.isIso_singularCohomologyMap (discSpherePairIso F E).inv
-    (discSpherePairIso F E).hom (by rw [Iso.inv_hom_id]; exact TopPair.Homotopy.refl _)
-    (by rw [Iso.hom_inv_id]; exact TopPair.Homotopy.refl _) R k M n
-  have hsq := congrArg (TopPair.singularCohomologyMap (R := R) (k := k) (M := M) · n)
-    (comp_subsetToThickening_eq φ (TopCat.ofHom_hom _).symm)
-  simp only [TopPair.singularCohomologyMap_comp] at hsq
-  have : IsIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := M)
-      (subsetToThickening (X := X) φ) n ≫ TopPair.singularCohomologyMap f n) := by
-    rw [hsq]
-    infer_instance
-  exact IsIso.of_isIso_comp_left
-    (TopPair.singularCohomologyMap (R := R) (k := k) (M := M) (subsetToThickening φ) n) _
+    IsIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := M) f n) :=
+  TopPair.isIso_singularCohomologyMap_of_attach R k M n f hX hf
+    (fun v hv ↦ mem_range_discSpherePair_map.2 (hfX v hv)) hfcover (isOpen_outerCollar hnorm)
+    (fun _ hv ↦ sphereBundle_subset_outerCollar (mem_range_discSpherePair_map.1 hv))
+    (discCollar hnorm) (discCollar_zero hnorm)
+    (fun t _ hv ↦ discCollar_of_mem_sphereBundle hnorm t (mem_range_discSpherePair_map.1 hv))
+    (fun t _ hv ↦ discCollar_mem_outerCollar hnorm t hv)
+    (fun _ hv ↦ mem_range_discSpherePair_map.2 (discCollar_one_mem_sphereBundle hnorm hv))
 
 end Attach
+
+/-! ### Attaching several disc bundles -/
+
+section Several
+
+variable {ι : Type w} {B : ι → Type w} {F : ι → Type*} {E : ∀ a, B a → Type w}
+  [∀ a b, NormedAddCommGroup (E a b)] [∀ a, TopologicalSpace (TotalSpace (F a) (E a))]
+  {Z : Type w} [TopologicalSpace Z] {X : Set Z}
+  (f : ∀ a, discSpherePair (F a) (E a) ⟶ TopPair.ofSubset (X := TopCat.of Z) X)
+
+/-- The map of pairs `∐ₐ (D(Eₐ), S(Eₐ)) ⟶ (Z, X)` out of the disjoint union of the disc-sphere
+pairs which is `f a` on the summand of `a`. -/
+private def sigmaDiscSpherePairDesc :
+    TopPair.sigma (fun a ↦ discSpherePair (F a) (E a)) ⟶ TopPair.ofSubset (X := TopCat.of Z) X :=
+  TopPair.ofHom (TopCat.ofHom (ContinuousMap.sigma fun a ↦ (TopPair.Hom.fst (f a)).hom))
+    (TopCat.ofHom (ContinuousMap.sigma fun a ↦ (TopPair.Hom.snd (f a)).hom))
+    (by
+      ext ⟨a, v⟩
+      exact TopPair.Hom.w_apply (f a) v)
+
+private lemma sigmaι_comp_sigmaDiscSpherePairDesc (a : ι) :
+    TopPair.sigmaι (fun a ↦ discSpherePair (F a) (E a)) a ≫ sigmaDiscSpherePairDesc f = f a :=
+  TopPair.hom_ext_of_fst _ (TopCat.ext fun _ ↦ rfl)
+
+/-- If `X` and the images of the `f a` cover `Z`, so do `X` and the image of the map out of the
+disjoint union of the disc-sphere pairs. -/
+private lemma union_range_sigmaDiscSpherePairDesc
+    (hfcover : X ∪ ⋃ a, range (TopPair.Hom.fst (f a)) = univ) :
+    X ∪ range (TopPair.Hom.fst (sigmaDiscSpherePairDesc f)) = univ := by
+  refine eq_univ_of_forall fun z ↦ ?_
+  obtain hz | hz := (hfcover.symm ▸ mem_univ z : z ∈ X ∪ ⋃ a, range (TopPair.Hom.fst (f a)))
+  · exact Or.inl hz
+  · obtain ⟨a, v, rfl⟩ := mem_iUnion.1 hz
+    exact Or.inr ⟨⟨a, v⟩, rfl⟩
+
+/-- The subspace of the disjoint union of the disc-sphere pairs consists of the vectors of the
+sphere bundles. -/
+private lemma mem_range_sigma_discSpherePair_map {x : Σ a, discBundle (F a) (E a)} :
+    x ∈ range (TopPair.sigma fun a ↦ discSpherePair (F a) (E a)).map ↔
+      (x.2 : TotalSpace (F x.1) (E x.1)) ∈ sphereBundle (F x.1) (E x.1) := by
+  rw [← mem_range_discSpherePair_map]
+  constructor
+  · rintro ⟨⟨a, s⟩, rfl⟩
+    exact ⟨s, rfl⟩
+  · rintro ⟨s, hs⟩
+    exact ⟨⟨x.1, s⟩, Sigma.ext rfl (heq_of_eq hs)⟩
+
+variable [∀ a, TopologicalSpace (B a)] [∀ a, NormedAddCommGroup (F a)] [∀ a, NormedSpace ℝ (F a)]
+  [∀ a b, NormedSpace ℝ (E a b)] [∀ a, FiberBundle (F a) (E a)] [∀ a, VectorBundle ℝ (F a) (E a)]
+
+/-- The radial push `TauCeti.radialPush 2⁻¹` in every fibre of every summand of the disjoint union
+of the disc bundles. -/
+private def sigmaDiscCollar (hnorm : ∀ a, Continuous fun v : TotalSpace (F a) (E a) ↦ ‖v.2‖) :
+    C(I × Σ a, discBundle (F a) (E a), Σ a, discBundle (F a) (E a)) where
+  toFun p := ⟨p.2.1, discCollar (hnorm p.2.1) (p.1, p.2.2)⟩
+  -- Through `I × Σ a, D(Eₐ) ≃ₜ Σ a, D(Eₐ) × I`, the map is `discCollar ∘ swap` on each summand.
+  continuous_toFun := by
+    have : Continuous fun q : Σ a, discBundle (F a) (E a) × I ↦
+        (⟨q.1, discCollar (hnorm q.1) (q.2.2, q.2.1)⟩ : Σ a, discBundle (F a) (E a)) :=
+      continuous_sigma fun a ↦ continuous_sigmaMk.comp
+        ((discCollar (hnorm a)).continuous.comp continuous_swap)
+    exact this.comp (Homeomorph.sigmaProdDistrib.continuous.comp continuous_swap)
+
+variable [Finite ι]
+
+/-- The hypotheses of an attachment of several disc bundles make the attachment of their disjoint
+union an attachment along a subspace with a deformation neighbourhood, so that its relative homology
+is that of the disjoint union of the disc-sphere pairs. -/
+private lemma isIso_singularHomologyMap_sigmaDiscSpherePairDesc
+    (hnorm : ∀ a, Continuous fun v : TotalSpace (F a) (E a) ↦ ‖v.2‖) (hX : IsClosed X)
+    {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C) (n : ℕ)
+    (hf : ∀ a, IsClosedEmbedding (TopPair.Hom.fst (f a)))
+    (hfX : ∀ a, ∀ v : discBundle (F a) (E a),
+      TopPair.Hom.fst (f a) v ∈ X → (v : TotalSpace (F a) (E a)) ∈ sphereBundle (F a) (E a))
+    (hdisj : Pairwise (Disjoint on fun a ↦ range (TopPair.Hom.fst (f a))))
+    (hfcover : X ∪ ⋃ a, range (TopPair.Hom.fst (f a)) = univ) :
+    IsIso (TopPair.singularHomologyMap (sigmaDiscSpherePairDesc f) R n) :=
+  TopPair.isIso_singularHomologyMap_of_attach R n _ hX
+    (ContinuousMap.isClosedEmbedding_sigma hf hdisj)
+    (fun x hx ↦ mem_range_sigma_discSpherePair_map.2 (hfX x.1 x.2 hx))
+    (union_range_sigmaDiscSpherePairDesc f hfcover)
+    (O := {x : Σ a, discBundle (F a) (E a) | x.2 ∈ outerCollar (F x.1) (E x.1)})
+    (isOpen_sigma_iff.2 fun a ↦ by exact isOpen_outerCollar (hnorm a))
+    (fun _ hx ↦ sphereBundle_subset_outerCollar (mem_range_sigma_discSpherePair_map.1 hx))
+    (sigmaDiscCollar hnorm) (fun x ↦ Sigma.ext rfl (heq_of_eq (discCollar_zero (hnorm x.1) x.2)))
+    (fun t x hx ↦ Sigma.ext rfl (heq_of_eq (discCollar_of_mem_sphereBundle (hnorm x.1) t
+      (mem_range_sigma_discSpherePair_map.1 hx))))
+    (fun t x hx ↦ discCollar_mem_outerCollar (hnorm x.1) t hx)
+    (fun x hx ↦ mem_range_sigma_discSpherePair_map.2
+      (discCollar_one_mem_sphereBundle (hnorm x.1) hx))
+
+/-- **Attaching several disc bundles: relative homology is the coproduct.** Let `Eₐ → Bₐ`, for `a`
+in a finite type, be real vector bundles whose fibre norms are continuous on the total spaces, with
+possibly different bases and ranks, and let `f a : (D(Eₐ), S(Eₐ)) ⟶ (Z, X)` be maps of pairs with
+`X` closed in `Z`. Suppose that each `f a` is a closed embedding of `D(Eₐ)` into `Z` sending a point
+into `X` only if it lies in `S(Eₐ)`, that the images of the `f a` are pairwise disjoint, and that
+`X` together with these images is all of `Z`: the space `Z` is obtained from `X` by attaching the
+disc bundles `D(Eₐ)` along their sphere bundles. Then, in every degree and with coefficients in any
+abelian category with coproducts, `Hₙ(Z, X)` is the coproduct of the `Hₙ(D(Eₐ), S(Eₐ))`, with the
+maps induced by the `f a` as the coproduct inclusions. -/
+def isColimitCofanSingularHomologyOfAttachDiscBundle
+    (hnorm : ∀ a, Continuous fun v : TotalSpace (F a) (E a) ↦ ‖v.2‖) (hX : IsClosed X)
+    {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C) (n : ℕ)
+    (hf : ∀ a, IsClosedEmbedding (TopPair.Hom.fst (f a)))
+    (hfX : ∀ a, ∀ v : discBundle (F a) (E a),
+      TopPair.Hom.fst (f a) v ∈ X → (v : TotalSpace (F a) (E a)) ∈ sphereBundle (F a) (E a))
+    (hdisj : Pairwise (Disjoint on fun a ↦ range (TopPair.Hom.fst (f a))))
+    (hfcover : X ∪ ⋃ a, range (TopPair.Hom.fst (f a)) = univ) :
+    IsColimit (Cofan.mk ((TopPair.ofSubset (X := TopCat.of Z) X).singularHomology R n)
+      fun a ↦ TopPair.singularHomologyMap (f a) R n) :=
+  have := isIso_singularHomologyMap_sigmaDiscSpherePairDesc f hnorm hX R n hf hfX hdisj hfcover
+  -- Finite coproducts are exact in an abelian category, which has finite biproducts.
+  have : HasFiniteBiproducts C := Abelian.hasFiniteBiproducts
+  IsColimit.ofIsoColimit
+    (TopPair.isColimitCofanSingularHomology (fun a ↦ discSpherePair (F a) (E a)) C R n)
+    (Cofan.ext (asIso (TopPair.singularHomologyMap (sigmaDiscSpherePairDesc f) R n)) fun a ↦ by
+      rw [cofan_mk_inj, cofan_mk_inj, asIso_hom, ← TopPair.singularHomologyMap_comp,
+        sigmaι_comp_sigmaDiscSpherePairDesc])
+
+/-- **Attaching several disc bundles: relative cohomology is the product.** Under the hypotheses of
+`TauCeti.isColimitCofanSingularHomologyOfAttachDiscBundle`, in every degree and with arbitrary
+coefficients, `Hⁿ(Z, X)` is the product of the `Hⁿ(D(Eₐ), S(Eₐ))`, with the maps induced by the
+`f a` as the product projections. -/
+def isLimitFanSingularCohomologyOfAttachDiscBundle
+    (hnorm : ∀ a, Continuous fun v : TotalSpace (F a) (E a) ↦ ‖v.2‖) (hX : IsClosed X)
+    {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
+    (k : Type*) [Ring k] [Linear k C] (M : C) (n : ℕ)
+    (hf : ∀ a, IsClosedEmbedding (TopPair.Hom.fst (f a)))
+    (hfX : ∀ a, ∀ v : discBundle (F a) (E a),
+      TopPair.Hom.fst (f a) v ∈ X → (v : TotalSpace (F a) (E a)) ∈ sphereBundle (F a) (E a))
+    (hdisj : Pairwise (Disjoint on fun a ↦ range (TopPair.Hom.fst (f a))))
+    (hfcover : X ∪ ⋃ a, range (TopPair.Hom.fst (f a)) = univ) :
+    IsLimit (Fan.mk ((TopPair.ofSubset (X := TopCat.of Z) X).singularCohomology R k M n)
+      fun a ↦ TopPair.singularCohomologyMap (f a) n) := by
+  have : IsIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := M)
+      (sigmaDiscSpherePairDesc f) n) :=
+    TopPair.isIso_singularCohomologyMap_of_attach R k M n _ hX
+      (ContinuousMap.isClosedEmbedding_sigma hf hdisj)
+      (fun x hx ↦ mem_range_sigma_discSpherePair_map.2 (hfX x.1 x.2 hx))
+      (union_range_sigmaDiscSpherePairDesc f hfcover)
+      (O := {x : Σ a, discBundle (F a) (E a) | x.2 ∈ outerCollar (F x.1) (E x.1)})
+      (isOpen_sigma_iff.2 fun a ↦ by exact isOpen_outerCollar (hnorm a))
+      (fun _ hx ↦ sphereBundle_subset_outerCollar (mem_range_sigma_discSpherePair_map.1 hx))
+      (sigmaDiscCollar hnorm) (fun x ↦ Sigma.ext rfl (heq_of_eq (discCollar_zero (hnorm x.1) x.2)))
+      (fun t x hx ↦ Sigma.ext rfl (heq_of_eq (discCollar_of_mem_sphereBundle (hnorm x.1) t
+        (mem_range_sigma_discSpherePair_map.1 hx))))
+      (fun t x hx ↦ discCollar_mem_outerCollar (hnorm x.1) t hx)
+      (fun x hx ↦ mem_range_sigma_discSpherePair_map.2
+        (discCollar_one_mem_sphereBundle (hnorm x.1) hx))
+  refine IsLimit.ofIsoLimit
+    (TopPair.isLimitFanSingularCohomology (fun a ↦ discSpherePair (F a) (E a)) C R k M n)
+    (Fan.ext (asIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := M)
+      (sigmaDiscSpherePairDesc f) n)).symm fun a ↦ ?_)
+  rw [fan_mk_proj, fan_mk_proj, Iso.symm_hom, asIso_inv, IsIso.eq_inv_comp,
+    ← TopPair.singularCohomologyMap_comp, sigmaι_comp_sigmaDiscSpherePairDesc]
+
+end Several
 
 end TauCeti
