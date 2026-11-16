@@ -104,28 +104,72 @@ theorem continuousOn_ratio (k j : Fin (n + 1)) : ContinuousOn (ratio k j) (affin
     (((PiLp.continuous_apply 2 (fun _ : Fin (n + 1) ↦ ℂ) k).comp
       continuous_subtype_val).continuousAt) hk
 
-private def affineVector (k : Fin (n + 1)) (z : Fin n → ℂ) :
+/-- The homogeneous coordinate vector `(z₀, …, 1, …, z_{n-1})` of the point with affine
+coordinates `z` in the chart `X_k ≠ 0`, with the entry `1` in position `k`. -/
+def affineVector (k : Fin (n + 1)) (z : Fin n → ℂ) :
     EuclideanSpace ℂ (Fin (n + 1)) :=
   WithLp.toLp 2 (Fin.insertNth (α := fun _ ↦ ℂ) k 1 z)
 
-private theorem affineVector_ne_zero (k : Fin (n + 1)) (z : Fin n → ℂ) :
+/-- The homogeneous coordinate vector of an affine point has the entry `1` in position `k`. -/
+@[simp]
+theorem affineVector_apply_self (k : Fin (n + 1)) (z : Fin n → ℂ) : affineVector k z k = 1 := by
+  simp [affineVector]
+
+/-- The homogeneous coordinate vector of an affine point has its affine coordinates away from
+position `k`. -/
+@[simp]
+theorem affineVector_apply_succAbove (k : Fin (n + 1)) (z : Fin n → ℂ) (j : Fin n) :
+    affineVector k z (k.succAbove j) = z j := by
+  simp [affineVector]
+
+/-- The homogeneous coordinate vector of an affine point is nonzero. -/
+theorem affineVector_ne_zero (k : Fin (n + 1)) (z : Fin n → ℂ) :
     affineVector k z ≠ 0 := by
   intro h
-  have := congrArg (fun v : EuclideanSpace ℂ (Fin (n + 1)) ↦ v k) h
-  simp [affineVector] at this
+  simpa [h] using affineVector_apply_self k z
 
-private theorem continuous_affineVector (k : Fin (n + 1)) : Continuous (affineVector k) :=
+/-- The homogeneous coordinate vector depends continuously on the affine coordinates. -/
+@[fun_prop]
+theorem continuous_affineVector (k : Fin (n + 1)) : Continuous (affineVector (n := n) k) :=
   (PiLp.continuous_toLp 2 (fun _ : Fin (n + 1) ↦ ℂ)).comp
     (continuous_const.finInsertNth k continuous_id)
 
-private def affineSphere (k : Fin (n + 1)) :
+/-- The unit representative `w / ‖w‖` of the point with affine coordinates `z` in the chart
+`X_k ≠ 0`, for its homogeneous coordinate vector `w = affineVector k z`. -/
+def affineUnitVector (k : Fin (n + 1)) :
     C((Fin n → ℂ), sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) :=
   normalizeToSphere (affineVector k) (continuous_affineVector k) (affineVector_ne_zero k)
+
+/-- The unit representative of an affine point is its homogeneous coordinate vector divided by
+its norm. -/
+theorem coe_affineUnitVector_apply (k : Fin (n + 1)) (z : Fin n → ℂ) :
+    (affineUnitVector k z : EuclideanSpace ℂ (Fin (n + 1))) =
+      ‖affineVector k z‖⁻¹ • affineVector k z := by
+  rw [affineUnitVector, coe_normalizeToSphere_apply, NormedSpace.normalize]
+
+/-- The coordinates of the unit representative `w / ‖w‖` of an affine point. -/
+theorem affineUnitVector_apply (k : Fin (n + 1)) (z : Fin n → ℂ) (i : Fin (n + 1)) :
+    (affineUnitVector k z : EuclideanSpace ℂ (Fin (n + 1))) i =
+      (‖affineVector k z‖⁻¹ : ℝ) * affineVector k z i := by
+  rw [coe_affineUnitVector_apply]
+  simp [Complex.real_smul]
+
+/-- The coordinate `k` of the unit representative of an affine point of the chart `X_k ≠ 0` is
+the positive real number `1 / ‖w‖`. -/
+@[simp]
+theorem affineUnitVector_apply_self (k : Fin (n + 1)) (z : Fin n → ℂ) :
+    (affineUnitVector k z : EuclideanSpace ℂ (Fin (n + 1))) k = (‖affineVector k z‖⁻¹ : ℝ) := by
+  rw [affineUnitVector_apply, affineVector_apply_self, mul_one]
 
 /-- The projective point whose `k`th coordinate is one and whose remaining coordinates are `z`.
 The representative is normalized only to meet the unit-sphere carrier. -/
 def affineParam (k : Fin (n + 1)) (z : Fin n → ℂ) : ComplexProjectiveSpace n :=
-  mk n (affineSphere k z)
+  mk n (affineUnitVector k z)
+
+/-- The standard affine parametrization is the class of the unit representative. -/
+theorem affineParam_def (k : Fin (n + 1)) (z : Fin n → ℂ) :
+    affineParam k z = mk n (affineUnitVector k z) :=
+  (rfl)
 
 /-- The homogeneous ratios of a standard affine parametrization are ratios of its inserted
 coordinates. -/
@@ -135,14 +179,14 @@ theorem ratio_affineParam (k l j : Fin (n + 1)) (z : Fin n → ℂ) :
       Fin.insertNth (α := fun _ ↦ ℂ) k 1 z j /
         Fin.insertNth (α := fun _ ↦ ℂ) k 1 z l := by
   have hn := norm_ne_zero_iff.2 (affineVector_ne_zero k z)
-  simp only [affineParam, ratio_mk, affineSphere, coe_normalizeToSphere_apply,
+  simp only [affineParam, ratio_mk, affineUnitVector, coe_normalizeToSphere_apply,
     NormedSpace.normalize, PiLp.smul_apply, affineVector, Complex.real_smul]
   exact mul_div_mul_left _ _ (Complex.ofReal_ne_zero.mpr (inv_ne_zero hn))
 
 /-- Standard affine parametrizations are continuous, including on all coordinate hyperplanes. -/
 @[fun_prop]
 theorem continuous_affineParam (k : Fin (n + 1)) : Continuous (affineParam k) := by
-  exact (continuous_mk n).comp (affineSphere k).continuous
+  exact (continuous_mk n).comp (affineUnitVector k).continuous
 
 /-- Homogeneous ratios recover a point on their affine domain. -/
 @[simp]
@@ -153,11 +197,11 @@ theorem affineParam_ratio (k : Fin (n + 1)) {p : ComplexProjectiveSpace n}
   have hk : v.1 k ≠ 0 := by simpa using hp
   simp only [ratio_mk]
   let z := fun j ↦ v.1 (k.succAbove j) / v.1 k
-  let w := affineSphere k z
+  let w := affineUnitVector k z
   have hw (j) : w.1 j = (‖affineVector k z‖⁻¹ : ℝ) • (v.1 j / v.1 k) := by
     induction j using k.succAboveCases with
-    | x => simp [w, affineSphere, NormedSpace.normalize, affineVector, hk]
-    | p j => simp [w, affineSphere, NormedSpace.normalize, affineVector, z]
+    | x => simp [w, affineUnitVector, NormedSpace.normalize, affineVector, hk]
+    | p j => simp [w, affineUnitVector, NormedSpace.normalize, affineVector, z]
   let c : ℂ := (‖affineVector k z‖⁻¹ : ℝ) / v.1 k
   have hsmul : c • v.1 = w.1 := by
     ext j

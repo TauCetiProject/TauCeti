@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.TensorAlgebra.Grading
-public import TauCeti.Algebra.RingQuot
-public import TauCeti.LinearAlgebra.SignedSymmetricAlgebra.Basic
-public import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Quotient
+public import TauCeti.LinearAlgebra.SignedSymmetricAlgebra.Grading
+import TauCeti.Algebra.Algebra.Operations
+import TauCeti.Algebra.DirectSum.Internal
 
 /-!
 # Word length in the signed symmetric algebra
@@ -18,7 +18,11 @@ The Koszul relations preserve word length, independently of the input degrees. C
 internal natural-number grading. Mathlib's `GradedAlgebra.proj` supplies its linear projections.
 The length-zero projection is the canonical augmentation followed by the coefficient inclusion;
 the length-one projection retains generators. These distinguish constant and linear terms in
-an orbit-algebra differential, which need not preserve word length.
+an orbit-algebra differential, which need not preserve word length. When `V` is concentrated in a
+single degree `d`, input degrees outside `{n * d | n : ℕ}` vanish
+(`TauCeti.SignedSym.signedSymPiece_eq_bot_of_piece_eq_bot_of_forall_mul_ne`), and when `d ≠ 0`,
+`signedSymPiece G (n * d)` coincides with `lengthPiece G n`
+(`TauCeti.SignedSym.signedSymPiece_eq_lengthPiece_of_piece_eq_bot`).
 
 This is the word decomposition of the free supercommutative algebra in J. Pardon,
 *Contact homology and virtual fundamental cycles*, equation (1.1). We use Mathlib's tensor
@@ -187,15 +191,14 @@ theorem isHomogeneous_map_length (f : V →ₗ[R] W)
     LinearMap.IsHomogeneous (map G H f hf).toLinearMap (lengthPiece G) (lengthPiece H) 0 := by
   refine LinearMap.isHomogeneous_def.2 fun n a ha => ?_
   simp only [add_zero, AlgHom.toLinearMap_apply]
-  have h : ((generator G).range).map (map G H f hf).toLinearMap ≤
-      (generator H).range := by
-    rintro _ ⟨_, ⟨x, rfl⟩, rfl⟩
-    rw [AlgHom.toLinearMap_apply, map_generator]
-    exact LinearMap.mem_range_self _ _
-  have hpow : (lengthPiece G n).map (map G H f hf).toLinearMap ≤ lengthPiece H n := by
-    rw [lengthPiece_def, lengthPiece_def, Submodule.map_pow]
-    exact pow_le_pow_left' h n
-  exact hpow (Submodule.mem_map_of_mem ha)
+  rw [lengthPiece_def] at ha
+  rw [lengthPiece_def]
+  exact (map G H f hf).apply_mem_pow_of_mem_pow
+    (by
+      rintro _ ⟨_, ⟨x, rfl⟩, rfl⟩
+      rw [AlgHom.toLinearMap_apply, map_generator]
+      exact LinearMap.mem_range_self _ _)
+    ha
 
 /-- Word-length projections commute with maps induced by graded linear maps. -/
 @[simp]
@@ -208,5 +211,51 @@ theorem decompose_lengthPiece_map (f : V →ₗ[R] W)
   simpa only [AlgHom.toLinearMap_apply] using h.symm
 
 end Map
+
+section SingleDegree
+
+/-- When `V` is concentrated in degree `d`, words of length `n` have input degree `n * d`. -/
+theorem lengthPiece_le_signedSymPiece_of_piece_eq_bot {d : ℤ}
+    (hG : ∀ p, p ≠ d → G.piece p = ⊥) (n : ℕ) :
+    lengthPiece G n ≤ signedSymPiece G (n * d) := by
+  intro a ha
+  refine length_induction G (P := fun m b => b ∈ signedSymPiece G (m * d))
+    (fun r => ?_) (fun _ _ _ hx hy => add_mem hx hy) (fun m x b hb => ?_) ha
+  · rw [Nat.cast_zero, zero_mul]
+    exact SetLike.algebraMap_mem_graded (signedSymPiece G) r
+  · have hdeg : (m + 1 : ℕ) * d = d + m * d := by push_cast; rw [add_mul, one_mul, add_comm]
+    rw [hdeg]
+    exact SetLike.mul_mem_graded
+      (generator_mem_signedSymPiece G (G.mem_piece_of_piece_eq_bot hG x)) hb
+
+/-- When `V` is concentrated in degree `d`, input degrees not of the form `n * d` (`n : ℕ`)
+vanish in `SignedSym G`. -/
+theorem signedSymPiece_eq_bot_of_piece_eq_bot_of_forall_mul_ne {d p : ℤ}
+    (hG : ∀ q, q ≠ d → G.piece q = ⊥) (hp : ∀ n : ℕ, (n : ℤ) * d ≠ p) :
+    signedSymPiece G p = ⊥ := by
+  rw [eq_bot_iff]
+  intro a ha
+  rw [Submodule.mem_bot, ← DirectSum.decompose_of_mem_same (signedSymPiece G) ha]
+  have hsum := DirectSum.decompose_map_eq_sum (lengthPiece G) (signedSymPiece G)
+    (AddMonoidHom.id (SignedSym G)) (fun n : ℕ => (n : ℤ) * d)
+    (fun n _ hx => lengthPiece_le_signedSymPiece_of_piece_eq_bot G hG n hx) a p
+  simpa only [AddMonoidHom.id_apply] using hsum.trans
+    (Finset.sum_eq_zero fun n hn => (hp n (Finset.mem_filter.mp hn).2).elim)
+
+/-- When `V` is concentrated in a nonzero degree `d`, the input-degree piece `n * d` coincides
+with the word-length piece `lengthPiece G n`. -/
+theorem signedSymPiece_eq_lengthPiece_of_piece_eq_bot {d : ℤ} (hd : d ≠ 0)
+    (hG : ∀ q, q ≠ d → G.piece q = ⊥) (n : ℕ) :
+    signedSymPiece G (n * d) = lengthPiece G n := by
+  refine le_antisymm (fun a ha => ?_) (lengthPiece_le_signedSymPiece_of_piece_eq_bot G hG n)
+  have hshift := DirectSum.map_decompose_shift (lengthPiece G) (signedSymPiece G)
+    (AddMonoidHom.id (SignedSym G)) (fun m : ℕ => (m : ℤ) * d)
+    (fun m₁ m₂ hm => Int.ofNat.inj (mul_right_cancel₀ hd hm))
+    (fun m _ hx => lengthPiece_le_signedSymPiece_of_piece_eq_bot G hG m hx) n a
+  simp only [AddMonoidHom.id_apply, DirectSum.decompose_of_mem_same (signedSymPiece G) ha] at hshift
+  rw [← hshift]
+  exact (DirectSum.decompose (lengthPiece G) a n).2
+
+end SingleDegree
 
 end TauCeti.SignedSym
