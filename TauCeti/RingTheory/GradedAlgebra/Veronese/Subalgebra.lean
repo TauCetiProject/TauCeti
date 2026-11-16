@@ -291,7 +291,7 @@ theorem irrelevant_le_map_veroneseMap [NeZero d] (f : 𝒜 →+*ᵍ ℬ)
   have key (b : B) (k : ℕ) (hk : 0 < k) :
       (⟨decompose ℬ b (d * k), mem_veronese_of_mem (SetLike.coe_mem _)⟩ : veronese ℬ d) ∈ J := by
     have hb : b ∈ Submodule.span (ℬ 0) (Set.range f) :=
-      span_range_eq_top_of_irrelevant_le_map f hf ▸ Submodule.mem_top
+      f.span_range_eq_top_of_irrelevant_le_map hf ▸ Submodule.mem_top
     induction hb using Submodule.span_induction with
     | mem _ h =>
       obtain ⟨a, rfl⟩ := h
