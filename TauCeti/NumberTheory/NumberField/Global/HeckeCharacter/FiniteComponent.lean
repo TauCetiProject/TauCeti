@@ -115,6 +115,12 @@ theorem finiteComponent_inv (χ : HeckeCharacter K) (v : HeightOneSpectrum (𝓞
     χ⁻¹.finiteComponent v = (χ.finiteComponent v)⁻¹ :=
   (rfl)
 
+/-- Evaluating the component of `χ⁻¹` at `v` gives the inverse of the component of `χ`. -/
+theorem finiteComponent_inv_apply (χ : HeckeCharacter K) (v : HeightOneSpectrum (𝓞 K))
+    (u : (v.adicCompletion K)ˣ) :
+    χ⁻¹.finiteComponent v u = (χ.finiteComponent v u)⁻¹ :=
+  (rfl)
+
 /-- Components of a power of a Hecke character are the powers of the components. -/
 @[simp]
 theorem finiteComponent_pow (χ : HeckeCharacter K) (n : ℕ) (v : HeightOneSpectrum (𝓞 K)) :
@@ -390,6 +396,24 @@ theorem finitePart_eq_one_of_forall_mem_unitFiltration (χ : HeckeCharacter K)
   rw [QuotientGroup.mk_mul, QuotientGroup.mk_inv, map_mul, map_inv, hzχ,
     inv_one, mul_one] at hyχ
   exact hyχ
+
+/-- **A Hecke character vanishes on purely finite congruence ideles modulo any multiple of its
+finite conductor**: if `y ∈ ideleCongruenceSubgroup 𝔫` has trivial archimedean coordinates and
+`χ.finiteConductor ∣ 𝔫.finitePart`, then `χ y = 1`. -/
+theorem eq_one_of_finiteConductor_dvd_finitePart (χ : HeckeCharacter K) {𝔫 : Modulus K}
+    {y : IdeleGroup (𝓞 K) K} (hy : y ∈ ideleCongruenceSubgroup 𝔫)
+    (hw : ∀ w : InfinitePlace K, w.ideleInfiniteCoord y = 1)
+    (hfin : χ.finiteConductor ∣ 𝔫.finitePart) :
+    χ (y : IdeleClassGroup (𝓞 K) K) = 1 := by
+  have hexp (v : HeightOneSpectrum (𝓞 K)) : χ.conductorExponent v ≤ 𝔫.exponent v := by
+    rw [← Modulus.pow_dvd_finitePart_iff_le_exponent]
+    exact ((χ.pow_dvd_finiteConductor_iff v _).mpr le_rfl).trans hfin
+  have hfinite := χ.finitePart_eq_one_of_forall_mem_unitFiltration y fun v ↦
+    TauCeti.unitFiltration_antitone (hexp v)
+      (ideleCongruenceSubgroup.ideleFiniteCoord_mem_unitFiltration hy v)
+  have hsplit := IdeleGroup.prod_ofCompletion_mul_ofFiniteIdele y
+  simp only [hw, map_one, Finset.prod_const_one, one_mul] at hsplit
+  rwa [hsplit] at hfinite
 
 /-! ### Agreement with the conductor of a finite-order character -/
 

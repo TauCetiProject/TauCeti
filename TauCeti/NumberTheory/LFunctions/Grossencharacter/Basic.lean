@@ -309,14 +309,20 @@ theorem meromorphicNFOn_lFunctionC (χ : Grossencharacter K 𝔪) :
     MeromorphicNFOn χ.lFunctionC univ :=
   meromorphicNFOn_meromorphicContinuation _ _
 
-/-- The presented L-function is holomorphic on `Re s > 1 + idealShift`. -/
-theorem analyticOnNhd_lFunctionC (χ : Grossencharacter K 𝔪) :
-    AnalyticOnNhd ℂ χ.lFunctionC {s | 1 + χ.idealShift < s.re} := by
-  refine analyticOnNhd_meromorphicContinuation
-    ((analyticOnNhd_LSeries_of_unitary χ.unitaryWeight).comp
-      (analyticOnNhd_id.sub analyticOnNhd_const) fun s hs ↦ ?_)
+/-- The shifted Dirichlet series of `χ` is holomorphic on `Re s > 1 + idealShift`. -/
+theorem analyticOnNhd_LSeries_sub_idealShift (χ : Grossencharacter K 𝔪) :
+    AnalyticOnNhd ℂ
+      (fun s ↦ LSeries (normCoeff K χ.unitaryWeight.toIdealArithmeticFunction) (s - χ.idealShift))
+      {s | 1 + χ.idealShift < s.re} := by
+  refine (analyticOnNhd_LSeries_of_unitary χ.unitaryWeight).comp
+    (analyticOnNhd_id.sub analyticOnNhd_const) fun s hs ↦ ?_
   simp only [mem_ofPred_eq, Complex.sub_re, Complex.ofReal_re] at hs ⊢
   linarith
+
+/-- The presented L-function is holomorphic on `Re s > 1 + idealShift`. -/
+theorem analyticOnNhd_lFunctionC (χ : Grossencharacter K 𝔪) :
+    AnalyticOnNhd ℂ χ.lFunctionC {s | 1 + χ.idealShift < s.re} :=
+  analyticOnNhd_meromorphicContinuation χ.analyticOnNhd_LSeries_sub_idealShift
 
 /-- **The presented L-function of a ray class character** is its presented Hecke L-function. -/
 theorem lFunctionC_ofRayClassCharacter (η : RayClassCharacter 𝔪) :
