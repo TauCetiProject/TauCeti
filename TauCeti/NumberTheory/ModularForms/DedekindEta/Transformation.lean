@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.ModularForms.Discriminant
 public import TauCeti.NumberTheory.DedekindSum
 import TauCeti.Analysis.Complex.Sqrt
 import TauCeti.Analysis.Complex.UpperHalfPlane.Sqrt
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ModularGroup
 
 /-!
 # The transformation of the Dedekind eta function under `SL(2, ℤ)`
@@ -70,7 +71,7 @@ matched by the reciprocity law of Dedekind sums.
 
 public section
 
-open Complex ModularGroup
+open Complex ModularGroup TauCeti.ModularGroup
 open scoped UpperHalfPlane
 open scoped Real ModularForm MatrixGroups
 
@@ -218,24 +219,6 @@ theorem etaMultiplier_S : etaMultiplier S = cexp (-(π * I / 4)) := by
   rw [hS, eta_neg_one_div (by simp), Complex.sqrt_neg_I_mul (by simp), Complex.sqrt_I_eq_exp,
     ← Complex.exp_neg]
   simp [coe_S]
-
-/-- The first column of `γ Tⁿ` is that of `γ`. -/
-private theorem mul_T_zpow_apply_zero (γ : SL(2, ℤ)) (n : ℤ) (i : Fin 2) :
-    (γ * T ^ n) i 0 = γ i 0 := by
-  simp [Matrix.SpecialLinearGroup.coe_mul, coe_T_zpow, Matrix.mul_apply, Fin.sum_univ_two]
-
-/-- The second column of `γ Tⁿ` is `n` times the first column of `γ` plus its second column. -/
-private theorem mul_T_zpow_apply_one (γ : SL(2, ℤ)) (n : ℤ) (i : Fin 2) :
-    (γ * T ^ n) i 1 = γ i 0 * n + γ i 1 := by
-  simp [Matrix.SpecialLinearGroup.coe_mul, coe_T_zpow, Matrix.mul_apply, Fin.sum_univ_two]
-
-/-- The first column of `γ S` is the second column of `γ`. -/
-private theorem mul_S_apply_zero (γ : SL(2, ℤ)) (i : Fin 2) : (γ * S) i 0 = γ i 1 := by
-  simp [Matrix.SpecialLinearGroup.coe_mul, coe_S, Matrix.mul_apply, Fin.sum_univ_two]
-
-/-- The second column of `γ S` is minus the first column of `γ`. -/
-private theorem mul_S_apply_one (γ : SL(2, ℤ)) (i : Fin 2) : (γ * S) i 1 = -γ i 0 := by
-  simp [Matrix.SpecialLinearGroup.coe_mul, coe_S, Matrix.mul_apply, Fin.sum_univ_two]
 
 /-- `ε(γ Tⁿ) = e^{π i n / 12} ε(γ)`: right translation by `Tⁿ` replaces `τ` by `τ + n`. -/
 theorem etaMultiplier_mul_T_zpow (γ : SL(2, ℤ)) (n : ℤ) :
