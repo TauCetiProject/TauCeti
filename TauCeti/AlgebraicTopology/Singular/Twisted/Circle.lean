@@ -8,7 +8,9 @@ module
 public import Mathlib.Data.ZMod.QuotientRing
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Circle
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.LocalCoefficients
+import TauCeti.AlgebraicTopology.ClassifyingSpace.Monodromy
 public import TauCeti.AlgebraicTopology.Singular.Twisted.HomotopyInvariance.Basic
+import TauCeti.GroupTheory.SpecificGroups.Cyclic.Basic
 public import TauCeti.RepresentationTheory.Homological.GroupHomology.InfiniteCyclic
 
 /-!
@@ -21,7 +23,8 @@ Milnor's classifying space of `ℤ`, pulled back along the homotopy equivalence
 `A.ρ` (`TauCeti.classifyingSpaceLocalSystem_map_comp_basepointIso`), and the map from the circle
 induces the identity of `ℤ` on fundamental groups
 (`TauCeti.classifyingSpaceFundamentalGroupMulEquiv_mapOfEq_circleToClassifyingSpace`), so the
-monodromy of the pulled back system around the circle is `T = A.ρ (Multiplicative.ofAdd 1)`.
+monodromy of the pulled back system around the circle is `T = A.ρ (Multiplicative.ofAdd 1)`
+(`TauCeti.circleLocalSystem_map_comp_basepointIso`).
 
 A homotopy equivalence induces isomorphisms on homology with local coefficients, and the homology
 of the classifying space with these coefficients is group homology, so
@@ -33,13 +36,14 @@ then computes it:
 * `H₁(S¹; A) ≅ ker (T - 𝟙)` (`TauCeti.circleTwistedHomologyIso₁`);
 * `Hₙ(S¹; A) = 0` for `n ≥ 2` (`TauCeti.isZero_circleTwistedHomology_add_two`).
 
-This is the homology of the cellular complex `A --(T - 𝟙)--> A` of the circle with one vertex and
-one edge, whose differential compares the coefficient transported once around the edge with the
-coefficient at its start.
+This agrees with the homology of the cellular complex `A --(T - 𝟙)--> A` of the circle with one
+vertex and one edge, whose differential compares the coefficient transported once around the edge
+with the coefficient at its start; that cellular comparison is motivation only and is not
+formalised here.
 
 For the rank-one integral system of monodromy `-1`, coming from the sign representation
 `TauCeti.intSignRep`, the differential is `-2`. Its homology is `H₀ = ℤ / 2`
-(`TauCeti.circleTwistedHomologyZeroIntSignIsoZMod`), `H₁ = 0`
+(`TauCeti.circleTwistedHomologyIntSignRepIso₀ZMod`), `H₁ = 0`
 (`TauCeti.isZero_circleTwistedHomology_one_intSignRep`) and zero above, although the circle with
 constant integral coefficients has `H₀ = H₁ = ℤ`: a cycle running twice around the circle has
 coefficient `a + (-1) a = 0`. This local system is the orientation system of the Möbius line
@@ -50,14 +54,17 @@ line.
 ## Main definitions
 
 * `TauCeti.circleLocalSystem`: the local system on the circle of a representation of `ℤ`.
+* `TauCeti.circleLocalSystemBasepointIso`: its fibre at the base point is `A`.
 * `TauCeti.circleTwistedHomologyIsoGroupHomology`: `Hₙ(S¹; A) ≅ Hₙ(ℤ, A)`.
 * `TauCeti.circleTwistedHomologyIso₀`, `TauCeti.circleTwistedHomologyIso₁`: the homology in
   degrees `0` and `1`.
 * `TauCeti.intSignRep`: the integral sign representation of `ℤ`.
-* `TauCeti.circleTwistedHomologyZeroIntSignIsoZMod`: `H₀(S¹; ℤ⁻) ≅ ℤ / 2`.
+* `TauCeti.circleTwistedHomologyIntSignRepIso₀ZMod`: `H₀(S¹; ℤ⁻) ≅ ℤ / 2`.
 
 ## Main results
 
+* `TauCeti.circleLocalSystem_map_comp_basepointIso`: transport around a loop acts through its
+  degree.
 * `TauCeti.isZero_circleTwistedHomology_add_two`: `Hₙ(S¹; A) = 0` for `n ≥ 2`.
 * `TauCeti.isZero_circleTwistedHomology_one_intSignRep`: `H₁(S¹; ℤ⁻) = 0`.
 
@@ -82,10 +89,57 @@ variable {k : Type} [CommRing k] (A : Rep k (Multiplicative ℤ))
 
 /-- The local coefficient system on the circle associated to a representation `A` of `ℤ`: the
 system of `A` on the classifying space of `ℤ`, pulled back to the circle. Its monodromy around the
-circle is `A.ρ (Multiplicative.ofAdd 1)`. -/
+circle is `A.ρ (Multiplicative.ofAdd 1)` (`TauCeti.circleLocalSystem_map_comp_basepointIso`). -/
 abbrev circleLocalSystem : LocalCoefficientSystem k (TopCat.of Circle) :=
   (pullback (TopCat.ofHom circleHomotopyEquivClassifyingSpace.toFun).hom).obj
     (classifyingSpaceLocalSystem k A)
+
+/-- Transport in a pulled back system along a loop at `x` is transport in the original system along
+the image loop at `y`, after identifying the fibres at `f x = y`. -/
+private theorem pullback_obj_map_comp_eqToHom {X Y : TopCat.{0}} (f : C(X, Y)) {x : X} {y : Y}
+    (h : f x = y) (L : LocalCoefficientSystem k Y) (γ : FundamentalGroup X x) {Z : ModuleCat k}
+    (φ : L.obj (FundamentalGroupoid.mk y) ⟶ Z) :
+    ((pullback f).obj L).map γ.asHom ≫
+        eqToHom (congrArg L.obj (congrArg FundamentalGroupoid.mk h)) ≫ φ =
+      eqToHom (congrArg L.obj (congrArg FundamentalGroupoid.mk h)) ≫
+        L.map (FundamentalGroup.mapOfEq f h γ).asHom ≫ φ := by
+  simp only [pullback_obj_obj, pullback_obj_map, FundamentalGroupoid.map_map,
+    FundamentalGroup.mapOfEq, MulEquiv.toMonoidHom_eq_coe, MonoidHom.coe_comp,
+    MonoidHom.coe_ofClass, Function.comp_apply, Iso.conj_apply_asHom, eqToIso.inv,
+    FundamentalGroup.map_apply_asHom, eqToIso.hom, Functor.map_comp, eqToHom_map, Category.assoc,
+    eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
+  -- The two remaining `eqToHom`s have the same source and target, written differently.
+  rfl
+
+/-- Identify the fibre of `circleLocalSystem A` at the base point `1` with `A`: the circle's base
+point goes to the base point of the classifying space, whose fibre is `A` by
+`TauCeti.classifyingSpaceLocalSystemBasepointIso`. -/
+def circleLocalSystemBasepointIso :
+    (circleLocalSystem A).obj (FundamentalGroupoid.mk 1) ≅ ModuleCat.of k A :=
+  eqToIso (show (circleLocalSystem A).obj (FundamentalGroupoid.mk 1) =
+      (classifyingSpaceLocalSystem k A).obj
+        (FundamentalGroupoid.mk (classifyingSpaceBasepoint (Multiplicative ℤ))) from
+    congrArg (classifyingSpaceLocalSystem k A).obj (congrArg FundamentalGroupoid.mk (by simp))) ≪≫
+    classifyingSpaceLocalSystemBasepointIso k A
+
+/-- **The monodromy of `circleLocalSystem A`**: under `circleLocalSystemBasepointIso`, transport
+around a loop at `1` is the action of its degree, so the loop going once around the circle acts
+by `A.ρ (Multiplicative.ofAdd 1)`. -/
+@[reassoc]
+theorem circleLocalSystem_map_comp_basepointIso (γ : FundamentalGroup Circle 1) :
+    (circleLocalSystem A).map γ.asHom ≫ (circleLocalSystemBasepointIso A).hom =
+      (circleLocalSystemBasepointIso A).hom ≫
+        ModuleCat.ofHom (A.ρ (Circle.fundamentalGroupMulEquiv 1 γ)) := by
+  have h : (TopCat.ofHom circleHomotopyEquivClassifyingSpace.toFun).hom 1 =
+      classifyingSpaceBasepoint (Multiplicative ℤ) := by
+    simp
+  rw [circleLocalSystemBasepointIso, Iso.trans_hom, eqToIso.hom,
+    pullback_obj_map_comp_eqToHom _ h, classifyingSpaceLocalSystem_map_comp_basepointIso,
+    Category.assoc]
+  simp only [TopCat.hom_ofHom, circleHomotopyEquivClassifyingSpace_toFun,
+    classifyingSpaceFundamentalGroupMulEquiv_mapOfEq_circleToClassifyingSpace]
+  -- The two `eqToHom`s are proofs of the same equality of fibres, written differently.
+  rfl
 
 /-- **The homology of the circle with local coefficients is the group homology of `ℤ`**: the map
 induced by the homotopy equivalence with the classifying space of `ℤ`, followed by
@@ -96,12 +150,6 @@ def circleTwistedHomologyIsoGroupHomology (n : ℕ) :
     (classifyingSpaceLocalSystem k A) n
   asIso (twistedHomologyMap (TopCat.ofHom circleHomotopyEquivClassifyingSpace.toFun)
     (classifyingSpaceLocalSystem k A) n) ≪≫ classifyingSpaceTwistedHomologyIsoGroupHomology k A n
-
-/-- `Multiplicative.ofAdd 1` generates `Multiplicative ℤ`, the multiplicative form of
-`Int.zmultiples_one`. -/
-theorem _root_.Int.mem_zpowers_ofAdd_one (x : Multiplicative ℤ) :
-    x ∈ Subgroup.zpowers (Multiplicative.ofAdd (1 : ℤ)) :=
-  Subgroup.mem_zpowers_iff.2 ⟨x.toAdd, by rw [← ofAdd_zsmul, smul_eq_mul, mul_one, ofAdd_toAdd]⟩
 
 /-- **The zeroth homology of the circle with local coefficients** in a representation `A` of `ℤ`
 is the module of coinvariants `A / (T - 𝟙) A` of the monodromy `T = ρ(1)`. -/
@@ -118,19 +166,24 @@ def circleTwistedHomologyIso₁ :
       ModuleCat.of k (LinearMap.ker (A.ρ (Multiplicative.ofAdd 1) - LinearMap.id)) :=
   circleTwistedHomologyIsoGroupHomology A 1 ≪≫
     Rep.InfiniteCyclicGroup.groupHomologyIso₁ A Int.mem_zpowers_ofAdd_one
-      (isOfFinOrder_ofAdd_iff.not.2 (not_isOfFinAddOrder_of_isAddTorsionFree one_ne_zero))
+      Int.not_isOfFinOrder_ofAdd_one
 
 /-- **The homology of the circle with local coefficients vanishes in degrees at least `2`.** -/
 theorem isZero_circleTwistedHomology_add_two (n : ℕ) :
     Limits.IsZero (twistedHomology (circleLocalSystem A) (n + 2)) :=
   (Rep.InfiniteCyclicGroup.isZero_groupHomology_add_two A Int.mem_zpowers_ofAdd_one
-    (isOfFinOrder_ofAdd_iff.not.2 (not_isOfFinAddOrder_of_isAddTorsionFree one_ne_zero)) n).of_iso
+    Int.not_isOfFinOrder_ofAdd_one n).of_iso
     (circleTwistedHomologyIsoGroupHomology A (n + 2))
 
 /-- The integral sign representation of `ℤ`, in which `n` acts on `ℤ` by `(-1) ^ n`. Its local
 system on the circle is the rank-one integral system of monodromy `-1`. -/
 abbrev intSignRep : Rep ℤ (Multiplicative ℤ) :=
   Rep.of ((Units.coeHom (Module.End ℤ ℤ)).comp (zpowersHom (Module.End ℤ ℤ)ˣ (-1)))
+
+/-- In the sign representation, `n` acts by `(-1) ^ n`. -/
+theorem intSignRep_ρ_apply (n : Multiplicative ℤ) :
+    intSignRep.ρ n = ↑((-1 : (Module.End ℤ ℤ)ˣ) ^ n.toAdd) :=
+  rfl
 
 /-- The generator of `ℤ` acts by `-1` in the sign representation. -/
 theorem intSignRep_ρ_ofAdd_one : intSignRep.ρ (Multiplicative.ofAdd 1) = -1 := by
@@ -139,18 +192,19 @@ theorem intSignRep_ρ_ofAdd_one : intSignRep.ρ (Multiplicative.ofAdd 1) = -1 :=
 /-- In the sign representation, `T - 𝟙 = -2` has range `2ℤ`. -/
 theorem range_intSignRep_ρ_ofAdd_one_sub_id :
     LinearMap.range (intSignRep.ρ (Multiplicative.ofAdd 1) - LinearMap.id) =
-      Ideal.span {((2 : ℕ) : ℤ)} := by
+      Ideal.span {2} := by
   ext x
   rw [intSignRep_ρ_ofAdd_one]
   simp only [LinearMap.mem_range, LinearMap.sub_apply, LinearMap.neg_apply, one_apply_eq_self,
-    LinearMap.id_apply, Nat.cast_ofNat, Ideal.mem_span_singleton]
+    LinearMap.id_apply, Ideal.mem_span_singleton]
   constructor <;> rintro ⟨y, rfl⟩ <;> exact ⟨-y, by ring⟩
 
 /-- **The circle with integral coefficients of monodromy `-1` has `H₀ = ℤ / 2`.** -/
-def circleTwistedHomologyZeroIntSignIsoZMod :
+def circleTwistedHomologyIntSignRepIso₀ZMod :
     twistedHomology (circleLocalSystem intSignRep) 0 ≅ ModuleCat.of ℤ (ZMod 2) :=
   circleTwistedHomologyIso₀ intSignRep ≪≫
-    (Submodule.quotEquivOfEq _ _ range_intSignRep_ρ_ofAdd_one_sub_id ≪≫ₗ
+    (Submodule.quotEquivOfEq _ _
+        (range_intSignRep_ρ_ofAdd_one_sub_id.trans (by rw [Nat.cast_ofNat])) ≪≫ₗ
       (Int.quotientSpanNatEquivZMod 2).toAddEquiv.toIntLinearEquiv).toModuleIso
 
 /-- **The circle with integral coefficients of monodromy `-1` has `H₁ = 0`**: no nonzero integer
