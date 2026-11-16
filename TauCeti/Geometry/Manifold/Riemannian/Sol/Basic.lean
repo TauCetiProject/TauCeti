@@ -86,8 +86,6 @@ instance : ChartedSpace (ℝ × ℝ × ℝ) Sol := inferInstanceAs (ChartedSpace
 instance : IsManifold 𝓘(ℝ, ℝ × ℝ × ℝ) ω Sol :=
   inferInstanceAs (IsManifold 𝓘(ℝ, ℝ × ℝ × ℝ) ω (ℝ × ℝ × ℝ))
 
-instance : T3Space Sol := inferInstanceAs (T3Space (ℝ × ℝ × ℝ))
-
 instance : LocallyCompactSpace Sol := inferInstanceAs (LocallyCompactSpace (ℝ × ℝ × ℝ))
 
 instance : SecondCountableTopology Sol := inferInstanceAs (SecondCountableTopology (ℝ × ℝ × ℝ))
@@ -132,12 +130,25 @@ theorem ext {p q : Sol} (hx : p.x = q.x) (hy : p.y = q.y) (hz : p.z = q.z) : p =
 @[simp]
 theorem mk_x_y_z (p : Sol) : mk p.x p.y p.z = p := (rfl)
 
+/- `Sol` carries the charts of `ℝ × ℝ × ℝ` and `toProd` is the identity map of the type synonym,
+so the global coordinates and their inverse are smooth to every order, analyticity included. -/
+
+/-- The global coordinates of `Sol` are `C^n` for every `n`, analyticity included. -/
+theorem contMDiff_toProd {n : ℕ∞ω} : ContMDiff 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) n toProd :=
+  contMDiff_id
+
+/-- The inverse of the global coordinates of `Sol` is `C^n` for every `n`, analyticity
+included. -/
+theorem contMDiff_toProd_symm {n : ℕ∞ω} :
+    ContMDiff 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) n toProd.symm :=
+  contMDiff_id
+
 /-- The global coordinate diffeomorphism of Sol with real three-space. -/
 def toProdDiffeomorph : Sol ≃ₘ⟮𝓘(ℝ, ℝ × ℝ × ℝ), 𝓘(ℝ, ℝ × ℝ × ℝ)⟯
     (ℝ × ℝ × ℝ) where
   toEquiv := toProd
-  contMDiff_toFun := contMDiff_id
-  contMDiff_invFun := contMDiff_id
+  contMDiff_toFun := contMDiff_toProd
+  contMDiff_invFun := contMDiff_toProd_symm
 
 @[simp] theorem coe_toProdDiffeomorph : ⇑toProdDiffeomorph = toProd := (rfl)
 
@@ -216,6 +227,34 @@ instance instGroup : Group Sol where
   mul_one p := by ext <;> simp
   inv_mul_cancel p := by
     ext <;> simp
+
+/-! ### The Lie group structure -/
+
+/-- `Sol` is a real-analytic Lie group: in the global coordinates, multiplication and inversion
+are given by analytic formulas. -/
+instance : LieGroup 𝓘(ℝ, ℝ × ℝ × ℝ) ω Sol where
+  contMDiff_mul := by
+    have hmul : (fun p : Sol × Sol ↦ p.1 * p.2) =
+        toProd.symm ∘ (fun r : (ℝ × ℝ × ℝ) × ℝ × ℝ × ℝ ↦
+          (exp (-r.1.2.2) * r.2.1 + r.1.1, exp r.1.2.2 * r.2.2.1 + r.1.2.1, r.1.2.2 + r.2.2.2)) ∘
+          Prod.map toProd toProd := by
+      funext p
+      ext <;> simp
+    rw [hmul]
+    refine contMDiff_toProd_symm.comp (.comp ?_ (contMDiff_toProd.prodMap contMDiff_toProd))
+    -- The model of `ℝ³ × ℝ³` is the product of the models of the two factors.
+    rw [← modelWithCornersSelf_prod, chartedSpaceSelf_prod]
+    exact ContDiff.contMDiff (by fun_prop)
+  contMDiff_inv := by
+    have hinv : (fun p : Sol ↦ p⁻¹) =
+        toProd.symm ∘ (fun r : ℝ × ℝ × ℝ ↦ (-(exp r.2.2 * r.1), -(exp (-r.2.2) * r.2.1), -r.2.2)) ∘
+          toProd := by
+      funext p
+      ext <;> simp
+    rw [hinv]
+    exact contMDiff_toProd_symm.comp ((ContDiff.contMDiff (by fun_prop)).comp contMDiff_toProd)
+
+instance : IsTopologicalGroup Sol := topologicalGroup_of_lieGroup 𝓘(ℝ, ℝ × ℝ × ℝ) ω
 
 /-! ### The metric -/
 
@@ -377,14 +416,8 @@ private theorem mul_left_eq (p : Sol) :
   funext q
   ext <;> simp [linearPart, xL, yL, zL, add_comm]
 
-/- `Sol` has the charts of `ℝ × ℝ × ℝ` and `toProd` is the identity, so the two results below
-are the corresponding statements about the affine map `r ↦ linearPart p r + toProd p` of
-`ℝ × ℝ × ℝ`. -/
-
-private theorem contMDiff_mul_left {n : ℕ∞ω} (p : Sol) :
-    ContMDiff 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) n (p * ·) := by
-  rw [mul_left_eq]
-  exact ((linearPart p).contDiff.add contDiff_const).contMDiff
+/- `Sol` has the charts of `ℝ × ℝ × ℝ` and `toProd` is the identity, so the result below is the
+corresponding statement about the affine map `r ↦ linearPart p r + toProd p` of `ℝ × ℝ × ℝ`. -/
 
 private theorem hasMFDerivAt_mul_left (p q : Sol) :
     HasMFDerivAt 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) (p * ·) q (linearPart p) := by
@@ -429,8 +462,8 @@ private def mulLeft (p : Sol) : Isom 𝓘(ℝ, ℝ × ℝ × ℝ) Sol where
   invFun := (p⁻¹ * ·)
   left_inv q := inv_mul_cancel_left p q
   right_inv q := mul_inv_cancel_left p q
-  contMDiff_toFun := contMDiff_mul_left p
-  contMDiff_invFun := contMDiff_mul_left p⁻¹
+  contMDiff_toFun := contMDiff_mul_left
+  contMDiff_invFun := contMDiff_mul_left
   inner_mfderiv' q v w := by
     -- The underlying map of the diffeomorphism under construction is `(p * ·)` by definition;
     -- `change` states the goal in terms of that function, so that its differential applies.
@@ -462,30 +495,6 @@ This is transferred along `toIsom` from the transitive action of `Sol` on itself
 multiplication. -/
 instance isPretransitive_isom : MulAction.IsPretransitive (Isom 𝓘(ℝ, ℝ × ℝ × ℝ) Sol) Sol :=
   .of_smul_eq toIsom fun {_ _} ↦ by rw [RiemannianIsometry.smul_def, toIsom_apply, smul_eq_mul]
-
-/-! ### The Lie group structure -/
-
-/-- `Sol` is a real-analytic Lie group: in the global coordinates, multiplication and inversion
-are given by analytic formulas. -/
-instance : LieGroup 𝓘(ℝ, ℝ × ℝ × ℝ) ω Sol where
-  contMDiff_mul := by
-    have h : ContMDiff (𝓘(ℝ, ℝ × ℝ × ℝ).prod 𝓘(ℝ, ℝ × ℝ × ℝ)) 𝓘(ℝ, ℝ × ℝ × ℝ) ω
-        fun r : (ℝ × ℝ × ℝ) × ℝ × ℝ × ℝ ↦
-          (exp (-r.1.2.2) * r.2.1 + r.1.1, exp r.1.2.2 * r.2.2.1 + r.1.2.1, r.1.2.2 + r.2.2.2) := by
-      rw [← modelWithCornersSelf_prod, chartedSpaceSelf_prod]
-      exact ContDiff.contMDiff (by fun_prop)
-    have hp : ContMDiff 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) ω toProd := contMDiff_id
-    have hs : ContMDiff 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) ω toProd.symm := contMDiff_id
-    have hf : ContMDiff (𝓘(ℝ, ℝ × ℝ × ℝ).prod 𝓘(ℝ, ℝ × ℝ × ℝ))
-        (𝓘(ℝ, ℝ × ℝ × ℝ).prod 𝓘(ℝ, ℝ × ℝ × ℝ)) ω fun p : Sol × Sol ↦ (toProd p.1, toProd p.2) :=
-      (hp.comp contMDiff_fst).prodMk (hp.comp contMDiff_snd)
-    exact hs.comp (h.comp hf)
-  contMDiff_inv := by
-    change ContMDiff 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) ω
-      (fun r : ℝ × ℝ × ℝ ↦ (-(exp r.2.2 * r.1), -(exp (-r.2.2) * r.2.1), -r.2.2))
-    exact ContDiff.contMDiff (by fun_prop)
-
-instance : IsTopologicalGroup Sol := topologicalGroup_of_lieGroup 𝓘(ℝ, ℝ × ℝ × ℝ) ω
 
 end Sol
 
