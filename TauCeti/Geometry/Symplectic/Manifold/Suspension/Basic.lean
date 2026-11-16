@@ -342,23 +342,13 @@ theorem mpullback_orbitTorus_wedge_timeForm :
           (SmoothForm.mpullback Prod.snd contMDiff_snd (timeForm φ))) =
       SmoothForm.wedge (SmoothForm.mpullback Prod.fst contMDiff_fst (AddCircle.timeForm 1))
         (SmoothForm.mpullback Prod.snd contMDiff_snd (AddCircle.timeForm (d : ℝ))) := by
-  have hfst : Prod.fst ∘ orbitTorus φ h = Prod.fst :=
-    funext fun p ↦ congrArg Prod.fst (orbitTorus_apply h p)
-  have hsnd : Prod.snd ∘ orbitTorus φ h = closedOrbit φ h ∘ Prod.snd :=
-    funext fun p ↦ congrArg Prod.snd (orbitTorus_apply h p)
-  have hds : SmoothForm.mpullback (orbitTorus φ h) (contMDiff_orbitTorus h)
-      (SmoothForm.mpullback Prod.fst contMDiff_fst (AddCircle.timeForm 1)) =
-        SmoothForm.mpullback Prod.fst contMDiff_fst (AddCircle.timeForm 1) := by
-    rw [← LinearMap.comp_apply, ← SmoothForm.mpullback_comp]
-    simp only [hfst]
-  have hdt : SmoothForm.mpullback (orbitTorus φ h) (contMDiff_orbitTorus h)
-      (SmoothForm.mpullback Prod.snd contMDiff_snd (timeForm φ)) =
-        SmoothForm.mpullback Prod.snd contMDiff_snd (AddCircle.timeForm (d : ℝ)) := by
-    rw [← LinearMap.comp_apply, ← SmoothForm.mpullback_comp]
-    simp only [hsnd]
-    rw [SmoothForm.mpullback_comp _ _ contMDiff_snd (contMDiff_closedOrbit h),
-      LinearMap.comp_apply, mpullback_closedOrbit_timeForm]
-  rw [SmoothForm.mpullback_wedge, hds, hdt]
+  have he : orbitTorus φ h = Prod.map id (closedOrbit φ h) := funext (orbitTorus_apply h)
+  simp only [he]
+  rw [SmoothForm.mpullback_wedge,
+    SmoothForm.mpullback_prodMap_mpullback_fst contMDiff_id (contMDiff_closedOrbit h),
+    SmoothForm.mpullback_id, LinearMap.id_apply,
+    SmoothForm.mpullback_prodMap_mpullback_snd contMDiff_id (contMDiff_closedOrbit h),
+    mpullback_closedOrbit_timeForm]
 
 /-- The orbit torus pulls the form `Ω = ds ∧ dt + σ_v` back to `ds ∧ dt_d`, the wedge of the time
 forms of the circles `ℝ / ℤ` and `ℝ / dℤ`: the fiber form `σ_v` vanishes on it. -/
