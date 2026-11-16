@@ -114,16 +114,17 @@ theorem starProjection_apply_eq_sum (hv : Orthonormal 𝕜 v) {U : Submodule �
 omit [Fintype ι] in
 /-- The orthogonal projection onto the spans `U x` of a continuous family of finite orthonormal
 families `f x` depends continuously on `x`. -/
-theorem continuous_starProjection [Finite ι] [FiniteDimensional 𝕜 E] {X : Type*}
-    [TopologicalSpace X]
+theorem continuous_starProjection [Finite ι] {X : Type*} [TopologicalSpace X]
     {f : X → ι → E} (hf : Continuous f) (ho : ∀ x, Orthonormal 𝕜 (f x))
     {U : X → Submodule 𝕜 E} [∀ x, (U x).HasOrthogonalProjection]
     (hU : ∀ x, Submodule.span 𝕜 (Set.range (f x)) = U x) :
     Continuous fun x ↦ (U x).starProjection := by
   have := Fintype.ofFinite ι
-  refine continuous_clm_apply.2 fun w ↦ ?_
-  simp only [fun x ↦ (ho x).starProjection_apply_eq_sum (hU x) w]
-  exact continuous_finsetSum _ fun i _ ↦ by fun_prop
+  have h x : (U x).starProjection = ∑ i, (innerSL 𝕜 (f x i)).smulRight (f x i) := by
+    ext w
+    simp [(ho x).starProjection_apply_eq_sum (hU x)]
+  simp only [h]
+  fun_prop
 
 /-- The orthogonal projection onto the span `U` of a finite orthonormal family is its frame
 operator, synthesis after analysis. -/
