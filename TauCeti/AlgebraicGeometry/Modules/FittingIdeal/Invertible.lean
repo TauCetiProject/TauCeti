@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicGeometry.LineBundle.Basic
 public import TauCeti.AlgebraicGeometry.Modules.FittingIdeal.Pullback
-public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.FiniteType
 import TauCeti.AlgebraicGeometry.IdealSheaf.Locality
 import TauCeti.AlgebraicGeometry.Modules.Pullback.Quasicoherent
 

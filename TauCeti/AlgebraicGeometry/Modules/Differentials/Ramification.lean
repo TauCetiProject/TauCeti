@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.Smooth.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.FiniteType
-public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Degree.EulerCharacteristic
+public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Invertible
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Image
 public import TauCeti.AlgebraicGeometry.LineBundle.Dual
 public import TauCeti.AlgebraicGeometry.LineBundle.Functoriality
@@ -18,14 +18,11 @@ public import TauCeti.AlgebraicGeometry.Modules.FittingIdeal.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Cokernels
 public import TauCeti.AlgebraicGeometry.Morphisms.Dominant
 import Mathlib.RingTheory.Etale.Field
-import TauCeti.AlgebraicGeometry.CartierDivisor.Effective.Degree
-import TauCeti.AlgebraicGeometry.Curves.Degree.Pullback
 import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.ZeroLocus
 import TauCeti.AlgebraicGeometry.Modules.FittingIdeal.Image
 import TauCeti.AlgebraicGeometry.Modules.FittingIdeal.Invertible
 import TauCeti.AlgebraicGeometry.Modules.FittingIdeal.Pullback
 import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Colimits
-import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.FiniteType
 import TauCeti.RingTheory.Kaehler.BaseChange
 
 /-!
@@ -57,13 +54,8 @@ function-field extension is formally smooth and whose target has nontrivial rati
 (`cotangentMap_ne_zero_of_isDominant_of_formallySmooth`, specializing to separable extensions when
 `Ω_{Y/R}` is invertible in `cotangentMap_ne_zero_of_isDominant_of_isSeparable`).
 
-On proper integral curves over a field `k` with invertible relative differential sheaves `Ω_{X/k}`
-and `Ω_{Y/k}`, finite-dimensional `H⁰` and `H¹` of `𝒪_X` (and of `𝒪_Y` in the second formula), and
-`cotangentMap k f ≠ 0`, this yields the Euler-characteristic degree formulas
-`deg Ω_{X/k} = deg (f^* Ω_{Y/k}) + dim_k Γ(R_f, 𝒪_{R_f})`
-(`eulerDegree_relativeDifferentials_eq_add_ramification_finrank`) and, for finite flat dominant
-morphisms, `deg Ω_{X/k} = [K(X) : f^* K(Y)] · deg Ω_{Y/k} + dim_k Γ(R_f, 𝒪_{R_f})`
-(`eulerDegree_relativeDifferentials_eq_finrank_mul_add_ramification`).
+The Euler-characteristic degree specialization for proper integral curves over a field lives in
+`TauCeti.AlgebraicGeometry.Curves.Degree.RiemannHurwitz`.
 
 ## References
 
@@ -72,7 +64,6 @@ morphisms, `deg Ω_{X/k} = [K(X) : f^* K(Y)] · deg Ω_{Y/k} + dim_k Γ(R_f, �
 * [The Stacks Project, Tag 0C3C](https://stacks.math.columbia.edu/tag/0C3C) (Fitting ideals of
   finite-type quasi-coherent modules)
 * R. Hartshorne, *Algebraic Geometry*, Proposition IV.2.1 and Theorem IV.2.3
-* H. Stichtenoth, *Algebraic Function Fields and Codes*, §3.4
 -/
 
 public section
@@ -475,63 +466,6 @@ theorem isEffectiveCartier_ramificationIdealSheaf_of_isSeparable [IsIntegral X] 
   isEffectiveCartier_ramificationIdealSheaf R f
 
 end OverCommRing
-
-section OverField
-
-variable (k : Type u) [Field k] {X Y : Scheme.{u}}
-  [X.Over (Spec (.of k))] [Y.Over (Spec (.of k))] [IsIntegral X]
-  [FiniteDimensional k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 0)]
-  [FiniteDimensional k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1)]
-  (f : X ⟶ Y) [f.IsOver (Spec (.of k))]
-  [SheafOfModules.isInvertible X (X.relativeDifferentials k)]
-  [SheafOfModules.isInvertible Y (Y.relativeDifferentials k)]
-
-/-- **The Euler-characteristic degree Riemann–Hurwitz relation** on a proper integral curve `X`
-over a field `k` with invertible `Ω_{X/k}` and `Ω_{Y/k}`, finite-dimensional `H⁰(X, 𝒪_X)` and
-`H¹(X, 𝒪_X)`, and `cotangentMap k f ≠ 0`:
-`deg Ω_{X/k} = deg (f^* Ω_{Y/k}) + dim_k Γ(R_f, 𝒪_{R_f})`. -/
-theorem eulerDegree_relativeDifferentials_eq_add_ramification_finrank
-    [IsProper (X ↘ Spec (.of k))] [RelativeDimensionLE 1 (X ↘ Spec (.of k))]
-    (hf : cotangentMap k f ≠ 0) :
-    InvertibleSheaf.eulerDegree k ⟨X.relativeDifferentials k, inferInstance⟩ =
-      InvertibleSheaf.eulerDegree k
-        ((InvertibleSheaf.pullback f).obj ⟨Y.relativeDifferentials k, inferInstance⟩) +
-        (((ramificationIdealSheaf k f).subschemeι ≫
-          X ↘ Spec (.of k)).finrank default : ℤ) := by
-  have := mono_cotangentMap_of_ne_zero k f hf
-  let hI := isEffectiveCartier_ramificationIdealSheaf k f
-  have := hI.isFinite_subschemeι_comp (f := X ↘ Spec (.of k))
-  rw [← LineBundleClass.eulerDegree_mk,
-    mk_relativeDifferentials_eq_pullback_mul_inv_ramification k f]
-  simp [-mk_toInvertibleSheaf_ramificationIdealSheaf, -LineBundleClass.inv_mk,
-    hI.eulerDegree_toInvertibleSheaf k (ramificationIdealSheaf k f) default]
-
-/-- **The Euler-characteristic degree Riemann–Hurwitz formula** for a finite flat dominant
-morphism `f : X ⟶ Y` from an integral scheme `X` onto a proper integral curve `Y` over a field `k`,
-assuming `Ω_{X/k}` and `Ω_{Y/k}` are invertible, `H⁰` and `H¹` of `𝒪_X` and `𝒪_Y` are
-finite-dimensional over `k`, and `cotangentMap k f ≠ 0`:
-`deg Ω_{X/k} = [K(X) : f^* K(Y)] · deg Ω_{Y/k} + dim_k Γ(R_f, 𝒪_{R_f})`. -/
-theorem eulerDegree_relativeDifferentials_eq_finrank_mul_add_ramification
-    [IsIntegral Y] [IsProper (Y ↘ Spec (.of k))] [RelativeDimensionLE 1 (Y ↘ Spec (.of k))]
-    [FiniteDimensional k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial Y).obj 0)]
-    [FiniteDimensional k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial Y).obj 1)]
-    [IsFinite f] [Flat f] [IsDominant f] (hf : cotangentMap k f ≠ 0) :
-    InvertibleSheaf.eulerDegree k ⟨X.relativeDifferentials k, inferInstance⟩ =
-      Module.finrank f.functionFieldMap.hom.fieldRange X.functionField *
-        InvertibleSheaf.eulerDegree k ⟨Y.relativeDifferentials k, inferInstance⟩ +
-        (((ramificationIdealSheaf k f).subschemeι ≫
-          X ↘ Spec (.of k)).finrank default : ℤ) := by
-  have : IsProper (X ↘ Spec (.of k)) :=
-    comp_over f (Spec (.of k)) ▸ inferInstanceAs (IsProper (f ≫ Y ↘ Spec (.of k)))
-  have : RelativeDimensionLE 1 (X ↘ Spec (.of k)) := by
-    rw [← comp_over f (Spec (.of k)), ← Nat.zero_add 1]
-    infer_instance
-  rw [eulerDegree_relativeDifferentials_eq_add_ramification_finrank k f hf,
-    ← LineBundleClass.eulerDegree_mk, ← LineBundleClass.pullback_mk,
-    LineBundleClass.eulerDegree_pullback_eq_finrank_functionField_mul k f,
-    LineBundleClass.eulerDegree_mk]
-
-end OverField
 
 end RiemannHurwitz
 
