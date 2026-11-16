@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Complex.Euclidean.Space
 public import TauCeti.Geometry.Manifold.DifferentialForm.Torus
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
 public import TauCeti.Geometry.Symplectic.Complex.CoordinateSpace
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
+import TauCeti.Algebra.AddCircle
 
 /-!
 # The standard symplectic torus
@@ -25,9 +27,9 @@ the imaginary parts of complex coordinates: the covering map
 `π : (ι → ℂ) → T`, `π z = ([Re z_j], [Im z_j])`
 
 (`TauCeti.complexPiTorusCover p`) is a smooth local diffeomorphism whose derivative at every point
-is `v ↦ (Re v_j, Im v_j)`, and it pulls `ω_T` back to the standard symplectic form
-`ω₀ = ∑ j, ds_j ∧ dt_j` of complex coordinate space (`TauCeti.stdComplexPiSymplecticForm`). Since
-`π` is onto, `ω_T` is a symplectic form.
+is `v ↦ (Re v_j, Im v_j)`, that is `TauCeti.complexToRealPi`, and it pulls `ω_T` back to the
+standard symplectic form `ω₀ = ∑ j, ds_j ∧ dt_j` of complex coordinate space
+(`TauCeti.stdComplexPiSymplecticForm`). Since `π` is onto, `ω_T` is a symplectic form.
 
 Two points of `ι → ℂ` have the same image under `π` exactly when, coordinatewise, their real parts
 differ by an integer multiple of the left period and their imaginary parts by an integer multiple
@@ -53,7 +55,8 @@ nonsqueezing theorem embeds a ball.
 * `TauCeti.eval₂_torusSymplecticForm`: on tangent vectors `v, w : ι ⊕ ι → ℝ`,
   `ω_T(v, w) = ∑ j, (v_(inl j) w_(inr j) - v_(inr j) w_(inl j))`.
 * `TauCeti.isLocalDiffeomorph_complexPiTorusCover`, `TauCeti.complexPiTorusCover_surjective`: the
-  covering map is a surjective smooth local diffeomorphism, with derivative given by
+  covering map is a surjective smooth local diffeomorphism, with derivative
+  `TauCeti.complexToRealPi` (`TauCeti.mfderiv_complexPiTorusCover`), whose coordinates are given by
   `TauCeti.mfderiv_complexPiTorusCover_apply_inl` and
   `TauCeti.mfderiv_complexPiTorusCover_apply_inr`.
 * `TauCeti.mpullback_complexPiTorusCover_torusSymplecticForm`: `π^* ω_T = ω₀`.
@@ -67,7 +70,7 @@ nonsqueezing theorem embeds a ball.
 ## References
 
 * A. Cannas da Silva, *Lectures on Symplectic Geometry*, Lecture Notes in Mathematics 1764,
-  Springer, 2001, Section 1.2 (symplectic manifolds) and Homework 1 (symplectic tori).
+  Springer, 2001, Section 1.3 (symplectic manifolds).
 * M. Gromov, *Pseudo holomorphic curves in symplectic manifolds*, Inventiones Mathematicae 82
   (1985), 307–347, §0.3.A (the nonsqueezing theorem, proved through `S² × T^(2n-2)`).
 -/
@@ -85,16 +88,11 @@ variable {ι : Type*} (p : ι ⊕ ι → ℝ)
 
 /-! ### The covering map by complex coordinate space -/
 
-/-- The real coordinates of `ι → ℂ`: `Re z_j` at `inl j` and `Im z_j` at `inr j`. -/
-private def realCoord : ι ⊕ ι → (ι → ℂ) →L[ℝ] ℝ :=
-  Sum.elim (fun j ↦ Complex.reCLM.comp (ContinuousLinearMap.proj j))
-    (fun j ↦ Complex.imCLM.comp (ContinuousLinearMap.proj j))
-
 /-- The **covering map** `π z = ([Re z_j], [Im z_j])` from complex coordinate space `ι → ℂ` onto
 the torus `∀ i : ι ⊕ ι, AddCircle (p i)`: the left coordinates of `π z` are the classes of the real
 parts of `z`, and the right coordinates those of its imaginary parts. -/
 def complexPiTorusCover (z : ι → ℂ) : ∀ i, AddCircle (p i) :=
-  fun i ↦ (realCoord i z : AddCircle (p i))
+  fun i ↦ (Sum.elim (fun j ↦ (z j).re) (fun j ↦ (z j).im) i : AddCircle (p i))
 
 /-- The left coordinates of the covering map are the classes of the real parts. -/
 @[simp]
@@ -107,6 +105,12 @@ theorem complexPiTorusCover_apply_inl (z : ι → ℂ) (j : ι) :
 theorem complexPiTorusCover_apply_inr (z : ι → ℂ) (j : ι) :
     complexPiTorusCover p z (.inr j) = ((z j).im : AddCircle (p (.inr j))) :=
   (rfl)
+
+/-- The coordinates of the covering map are the classes of the coordinates of
+`TauCeti.complexToRealPi`, `Re z_j` at `inl j` and `Im z_j` at `inr j`. -/
+theorem complexPiTorusCover_apply [Fintype ι] (z : ι → ℂ) (i : ι ⊕ ι) :
+    complexPiTorusCover p z i = (complexToRealPi ι z i : AddCircle (p i)) := by
+  cases i <;> simp
 
 /-- The covering map is onto. -/
 theorem complexPiTorusCover_surjective : Surjective (complexPiTorusCover p) := fun x ↦ by
@@ -123,10 +127,8 @@ theorem complexPiTorusCover_eq_complexPiTorusCover_iff {z w : ι → ℂ} :
     complexPiTorusCover p z = complexPiTorusCover p w ↔
       ∀ j, (∃ m : ℤ, m • p (.inl j) = (z j).re - (w j).re) ∧
         ∃ n : ℤ, n • p (.inr j) = (z j).im - (w j).im := by
-  have key (q a b : ℝ) : (a : AddCircle q) = b ↔ ∃ n : ℤ, n • q = a - b := by
-    rw [← sub_eq_zero, ← AddCircle.coe_sub, AddCircle.coe_eq_zero_iff]
   simp only [funext_iff, Sum.forall, complexPiTorusCover_apply_inl,
-    complexPiTorusCover_apply_inr, key]
+    complexPiTorusCover_apply_inr, AddCircle.coe_eq_coe_iff_exists_zsmul]
   exact ⟨fun h j ↦ ⟨h.1 j, h.2 j⟩, fun h ↦ ⟨fun j ↦ (h j).1, fun j ↦ (h j).2⟩⟩
 
 variable [Fintype ι] [∀ i, Fact (0 < p i)]
@@ -170,34 +172,44 @@ theorem eval₂_torusSymplecticForm (x : ∀ i, AddCircle (p i))
 /-- The covering map is smooth. -/
 theorem contMDiff_complexPiTorusCover {n : WithTop ℕ∞} :
     ContMDiff 𝓘(ℝ, ι → ℂ) (ModelWithCorners.pi fun _ : ι ⊕ ι ↦ 𝓘(ℝ)) n
-      (complexPiTorusCover p) :=
-  contMDiff_pi_iff.2 fun i ↦ (AddCircle.contMDiff_coe (p i) n).comp (realCoord i).contMDiff
+      (complexPiTorusCover p) := by
+  rw [funext₂ (complexPiTorusCover_apply p)]
+  exact contMDiff_pi_iff.2 fun i ↦ (AddCircle.contMDiff_coe (p i) n).comp
+    ((ContinuousLinearMap.proj i).comp (complexToRealPi ι : (ι → ℂ) →L[ℝ] ι ⊕ ι → ℝ)).contMDiff
 
-/-- The covering map has derivative `v ↦ (Re v_j, Im v_j)` at every point. -/
-private theorem hasMFDerivAt_complexPiTorusCover (z : ι → ℂ) :
+/-- The covering map has derivative `TauCeti.complexToRealPi`, `v ↦ (Re v_j, Im v_j)`, at every
+point. -/
+theorem hasMFDerivAt_complexPiTorusCover (z : ι → ℂ) :
     HasMFDerivAt 𝓘(ℝ, ι → ℂ) (ModelWithCorners.pi fun _ : ι ⊕ ι ↦ 𝓘(ℝ))
-      (complexPiTorusCover p) z (ContinuousLinearMap.pi realCoord) :=
-  hasMFDerivAt_pi fun i ↦ ((AddCircle.hasMFDerivAt_coe (p i) (realCoord i z)).comp z
-    (realCoord i).hasMFDerivAt).congr_mfderiv (ContinuousLinearMap.id_comp _)
+      (complexPiTorusCover p) z (complexToRealPi ι : (ι → ℂ) →L[ℝ] ι ⊕ ι → ℝ) := by
+  rw [funext₂ (complexPiTorusCover_apply p)]
+  exact hasMFDerivAt_pi fun i ↦ ((AddCircle.hasMFDerivAt_coe (p i) _).comp z
+    ((ContinuousLinearMap.proj i).comp
+      (complexToRealPi ι : (ι → ℂ) →L[ℝ] ι ⊕ ι → ℝ)).hasMFDerivAt).congr_mfderiv
+    (ContinuousLinearMap.id_comp _)
+
+/-- The derivative of the covering map at every point is `TauCeti.complexToRealPi`,
+`v ↦ (Re v_j, Im v_j)`. -/
+theorem mfderiv_complexPiTorusCover (z : ι → ℂ) :
+    mfderiv 𝓘(ℝ, ι → ℂ) (ModelWithCorners.pi fun _ : ι ⊕ ι ↦ 𝓘(ℝ)) (complexPiTorusCover p) z =
+      (complexToRealPi ι : (ι → ℂ) →L[ℝ] ι ⊕ ι → ℝ) :=
+  (hasMFDerivAt_complexPiTorusCover p z).mfderiv
 
 /-- The left coordinates of the derivative of the covering map are the real parts. -/
 @[simp]
 theorem mfderiv_complexPiTorusCover_apply_inl (z v : ι → ℂ) (j : ι) :
     mfderiv 𝓘(ℝ, ι → ℂ) (ModelWithCorners.pi fun _ : ι ⊕ ι ↦ 𝓘(ℝ)) (complexPiTorusCover p) z v
       (.inl j) = (v j).re := by
-  rw [(hasMFDerivAt_complexPiTorusCover p z).mfderiv]
-  -- The tangent space of the torus is `ι ⊕ ι → ℝ` only up to unfolding `TangentSpace`, so the
-  -- coordinate `realCoord (.inl j) v = (v j).re` of the derivative is read off definitionally.
-  rfl
+  rw [mfderiv_complexPiTorusCover]
+  exact complexToRealPi_apply ι v (.inl j)
 
 /-- The right coordinates of the derivative of the covering map are the imaginary parts. -/
 @[simp]
 theorem mfderiv_complexPiTorusCover_apply_inr (z v : ι → ℂ) (j : ι) :
     mfderiv 𝓘(ℝ, ι → ℂ) (ModelWithCorners.pi fun _ : ι ⊕ ι ↦ 𝓘(ℝ)) (complexPiTorusCover p) z v
       (.inr j) = (v j).im := by
-  rw [(hasMFDerivAt_complexPiTorusCover p z).mfderiv]
-  -- As for the left coordinates, `realCoord (.inr j) v = (v j).im` is read off definitionally.
-  rfl
+  rw [mfderiv_complexPiTorusCover]
+  exact complexToRealPi_apply ι v (.inr j)
 
 /-- The covering map is a smooth local diffeomorphism. -/
 theorem isLocalDiffeomorph_complexPiTorusCover :
@@ -248,24 +260,17 @@ theorem isSymplectic_torusSymplecticForm : (torusSymplecticForm p).IsSymplectic 
 
 /-! ### Injectivity on small sets -/
 
-omit [Fintype ι] in
+omit [Fintype ι] [∀ i, Fact (0 < p i)] in
 /-- The covering map is injective on every set in which the real and imaginary parts of each
 coordinate vary by less than the corresponding periods. -/
 theorem injOn_complexPiTorusCover {s : Set (ι → ℂ)}
     (hs : ∀ z ∈ s, ∀ w ∈ s, ∀ j,
       |(z j).re - (w j).re| < p (.inl j) ∧ |(z j).im - (w j).im| < p (.inr j)) :
-    InjOn (complexPiTorusCover p) s := fun z hz w hw h ↦ funext fun j ↦ by
-  -- Two reals closer than `q` both lie in the interval `[m, m + q)` starting at their minimum, on
-  -- which the projection to `AddCircle q` is injective.
-  have key {q : ℝ} [Fact (0 < q)] {a b : ℝ} (hab : (a : AddCircle q) = b) (hd : |a - b| < q) :
-      a = b := by
-    have := (max_sub_min_eq_abs a b).trans (abs_sub_comm b a)
-    exact AddCircle.injOn_coe_Ico q (min a b)
-      ⟨min_le_left a b, by linarith [le_max_left a b]⟩
-      ⟨min_le_right a b, by linarith [le_max_right a b]⟩ hab
-  exact Complex.ext (key (congrFun h (.inl j)) (hs z hz w hw j).1)
-    (key (congrFun h (.inr j)) (hs z hz w hw j).2)
+    InjOn (complexPiTorusCover p) s := fun z hz w hw h ↦ funext fun j ↦
+  Complex.ext (AddCircle.eq_of_coe_eq_of_abs_sub_lt (congrFun h (.inl j)) (hs z hz w hw j).1)
+    (AddCircle.eq_of_coe_eq_of_abs_sub_lt (congrFun h (.inr j)) (hs z hz w hw j).2)
 
+omit [∀ i, Fact (0 < p i)] in
 /-- The covering map is injective on every open ball of radius `r` such that `2 r` is at most every
 period. -/
 theorem injOn_complexPiTorusCover_ball (c : ι → ℂ) {r : ℝ} (hr : ∀ i, 2 * r ≤ p i) :
