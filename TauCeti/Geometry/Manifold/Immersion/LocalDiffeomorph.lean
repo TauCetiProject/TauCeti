@@ -366,14 +366,13 @@ theorem _root_.Manifold.IsSmoothEmbedding.comp_subtypeVal [IsManifold I n M]
 section InverseFunctionTheorem
 
 variable {𝕂 : Type*} [RCLike 𝕂] {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕂 F]
-  [FiniteDimensional 𝕂 F] {K : ModelWithCorners 𝕂 F H}
+  {K : ModelWithCorners 𝕂 F H}
   {F' : Type*} [NormedAddCommGroup F'] [NormedSpace 𝕂 F'] [FiniteDimensional 𝕂 F']
   {K' : ModelWithCorners 𝕂 F' G}
   {X : Type*} [TopologicalSpace X] [ChartedSpace H X]
   {Y : Type*} [TopologicalSpace Y] [ChartedSpace G Y]
   [IsManifold K n X] [IsManifold K' n Y] [BoundarylessManifold K X]
 
-omit [FiniteDimensional 𝕂 F] in
 /-- An immersion of a boundaryless manifold into a manifold modelled on a space of the same
 finite dimension is a local diffeomorphism. -/
 theorem _root_.Manifold.IsImmersion.isLocalDiffeomorph {g : X → Y} (hg : IsImmersion K K' n g)
