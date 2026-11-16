@@ -10,6 +10,7 @@ public import TauCeti.InformationTheory.KullbackLeibler.Variational
 public import TauCeti.MeasureTheory.OptimalTransport.Entropic.SchroedingerSystem
 
 import TauCeti.MeasureTheory.OptimalTransport.Entropic.Potentials
+import TauCeti.Probability.Density
 
 /-!
 # Duality for entropic optimal transport
@@ -523,6 +524,12 @@ theorem IsCoupling.exists_ae_eq_add_const_of_entropicDualValue_eq
 
 section FiniteCost
 
+private theorem integrable_exp_neg_toReal_div [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
+    (hc : AEMeasurable c (μ.prod ν)) (ε : ℝ≥0) :
+    Integrable (fun z ↦ Real.exp (-((c z).toReal / ε))) (μ.prod ν) :=
+  MeasureTheory.integrable_exp_neg_of_ae_nonneg (hc.ennreal_toReal.div_const _) <|
+    ae_of_all _ fun _ ↦ by positivity
+
 /-- Rescales Schrödinger potentials against the tilted Gibbs measure into entropic Kantorovich
 potentials against `μ ⊗ ν`. -/
 private theorem withDensity_tilted_exp_add_eq_withDensity_entropicGibbsFactor
@@ -535,9 +542,7 @@ private theorem withDensity_tilted_exp_add_eq_withDensity_entropicGibbsFactor
       (μ.prod ν).withDensity fun z ↦ ENNReal.ofReal
         (entropicGibbsFactor c ε (fun x ↦ ε * (φ₀ x - Real.log Z)) (fun y ↦ ε * ψ₀ y) z) := by
   intro Z
-  have hexp : Integrable (fun z ↦ Real.exp (-((c z).toReal / ε))) (μ.prod ν) :=
-    MeasureTheory.integrable_exp_neg_of_ae_nonneg (hc.ennreal_toReal.div_const _) <|
-      ae_of_all _ fun _ ↦ by positivity
+  have hexp := integrable_exp_neg_toReal_div hc ε
   have hZ : 0 < Z := integral_exp_pos hexp
   have hε' : (ε : ℝ) ≠ 0 := NNReal.coe_ne_zero.2 hε
   rw [Measure.tilted, ← withDensity_mul₀ (by fun_prop) (by fun_prop)]
@@ -551,6 +556,38 @@ private theorem withDensity_tilted_exp_add_eq_withDensity_entropicGibbsFactor
   rw [hexponent, Real.exp_sub, Real.exp_log hZ,
     Real.exp_add (-((c z).toReal / ε)) (φ₀ z.1 + ψ₀ z.2), div_mul_eq_mul_div]
 
+/-- Constructs the Schrödinger-optimal coupling against the tilted reference measure
+`(μ ⊗ ν).tilted (-(c.toReal / ε))`, its additive exponential potentials `(φ₀, ψ₀)` against that
+tilted measure, and its rescaled Gibbs density presentation against `μ ⊗ ν`. -/
+private theorem exists_isCoupling_tilted_and_entropicGibbsFactor [IsProbabilityMeasure μ]
+    (hc : AEMeasurable c (μ.prod ν)) (hc_top : ∀ᵐ z ∂μ.prod ν, c z ≠ ∞)
+    (hfin : entropicTransportCost c ε μ ν ≠ ∞) (hε : ε ≠ 0) :
+    ∃ π, IsCoupling π μ ν ∧
+      klDiv π ((μ.prod ν).tilted fun z ↦ -((c z).toReal / ε)) ≠ ∞ ∧
+      ∫⁻ z, c z ∂π + ε * klDiv π (μ.prod ν) = entropicTransportCost c ε μ ν ∧
+      ∃ (φ₀ : X → ℝ) (ψ₀ : Y → ℝ), Measurable φ₀ ∧ Measurable ψ₀ ∧
+        π = ((μ.prod ν).tilted fun z ↦ -((c z).toReal / ε)).withDensity
+          (fun z ↦ ENNReal.ofReal (Real.exp (φ₀ z.1 + ψ₀ z.2))) ∧
+        π = (μ.prod ν).withDensity fun z ↦ ENNReal.ofReal
+          (entropicGibbsFactor c ε
+            (fun x ↦ ε * (φ₀ x - Real.log (∫ z, Real.exp (-((c z).toReal / ε)) ∂μ.prod ν)))
+            (fun y ↦ ε * ψ₀ y) z) := by
+  obtain ⟨π₀, hπ₀, -⟩ := entropicTransportCost_lt_iff.1 hfin.lt_top
+  have := hπ₀.isProbabilityMeasure_right
+  have hexp := integrable_exp_neg_toReal_div hc ε
+  set R := (μ.prod ν).tilted fun z ↦ -((c z).toReal / ε)
+  have : IsProbabilityMeasure R := isProbabilityMeasure_tilted hexp
+  have hS_ne_top : schroedingerValue R μ ν ≠ ∞ := fun hS ↦ hfin <| by
+    rw [entropicTransportCost_eq_mul_schroedingerValue_add hc hc_top hε, hS,
+      ENNReal.mul_top (ENNReal.coe_ne_zero.2 hε), top_add]
+  obtain ⟨π, hπ, hπR, φ₀, ψ₀, hφ₀, hψ₀, hπ_wd⟩ :=
+    exists_isCoupling_eq_withDensity_exp_add_of_schroedingerValue_ne_top
+      (tilted_absolutelyContinuous _ _) (absolutelyContinuous_tilted hexp) hS_ne_top
+  exact ⟨π, hπ, hπR ▸ hS_ne_top,
+    (lintegral_add_mul_klDiv_eq_entropicTransportCost_iff hπ hc hc_top hε).2 hπR,
+    φ₀, ψ₀, hφ₀, hψ₀, hπ_wd, hπ_wd.trans
+      (withDensity_tilted_exp_add_eq_withDensity_entropicGibbsFactor hc hc_top hε hφ₀ hψ₀)⟩
+
 /-- **Gibbs density of the entropic optimal plan.** For a probability source measure `μ`, a
 positive temperature `ε`, and a `μ ⊗ ν`-almost everywhere measurable cost `c` that is finite
 `μ ⊗ ν`-almost everywhere with `entropicTransportCost c ε μ ν ≠ ∞`, there exist an optimal coupling
@@ -563,23 +600,9 @@ theorem exists_isCoupling_lintegral_add_mul_klDiv_eq_entropicTransportCost_of_ne
       ∫⁻ z, c z ∂π + ε * klDiv π (μ.prod ν) = entropicTransportCost c ε μ ν ∧
       ∃ (φ : X → ℝ) (ψ : Y → ℝ), Measurable φ ∧ Measurable ψ ∧
         π = (μ.prod ν).withDensity fun z ↦ ENNReal.ofReal (entropicGibbsFactor c ε φ ψ z) := by
-  obtain ⟨π₀, hπ₀, -⟩ := entropicTransportCost_lt_iff.1 hfin.lt_top
-  have := hπ₀.isProbabilityMeasure_right
-  have hexp : Integrable (fun z ↦ Real.exp (-((c z).toReal / ε))) (μ.prod ν) :=
-    MeasureTheory.integrable_exp_neg_of_ae_nonneg (hc.ennreal_toReal.div_const _) <|
-      ae_of_all _ fun _ ↦ by positivity
-  set R := (μ.prod ν).tilted fun z ↦ -((c z).toReal / ε)
-  have : IsProbabilityMeasure R := isProbabilityMeasure_tilted hexp
-  have hS_ne_top : schroedingerValue R μ ν ≠ ∞ := fun hS ↦ hfin <| by
-    rw [entropicTransportCost_eq_mul_schroedingerValue_add hc hc_top hε, hS,
-      ENNReal.mul_top (ENNReal.coe_ne_zero.2 hε), top_add]
-  obtain ⟨π, hπ, hπR, φ₀, ψ₀, hφ₀, hψ₀, hπ_wd⟩ :=
-    exists_isCoupling_eq_withDensity_exp_add_of_schroedingerValue_ne_top
-      (tilted_absolutelyContinuous _ _) (absolutelyContinuous_tilted hexp) hS_ne_top
-  refine ⟨π, hπ, (lintegral_add_mul_klDiv_eq_entropicTransportCost_iff hπ hc hc_top hε).2 hπR,
-    _, _, (hφ₀.sub_const _).const_mul _, hψ₀.const_mul _,
-    hπ_wd.trans (withDensity_tilted_exp_add_eq_withDensity_entropicGibbsFactor hc hc_top hε hφ₀
-      hψ₀)⟩
+  obtain ⟨π, hπ, -, hopt, φ₀, ψ₀, hφ₀, hψ₀, -, hπ_gibbs⟩ :=
+    exists_isCoupling_tilted_and_entropicGibbsFactor hc hc_top hfin hε
+  exact ⟨π, hπ, hopt, _, _, (hφ₀.sub_const _).const_mul _, hψ₀.const_mul _, hπ_gibbs⟩
 
 /-- **Strong entropic duality for an `L¹` cost, with attainment.** For probability measures, a
 positive temperature, and an almost everywhere measurable cost of finite integral against `μ ⊗ ν`,
@@ -595,17 +618,11 @@ theorem exists_entropicDualValue_eq_toReal_entropicTransportCost_of_lintegral_ne
   have hc_top : ∀ᵐ z ∂μ.prod ν, c z ≠ ∞ := (ae_lt_top' hc hc_int).mono fun _ hz ↦ hz.ne
   have hfin : entropicTransportCost c ε μ ν ≠ ∞ :=
     entropicTransportCost_ne_top_of_lintegral_ne_top hc_int ε
-  have hexp : Integrable (fun z ↦ Real.exp (-((c z).toReal / ε))) (μ.prod ν) :=
-    MeasureTheory.integrable_exp_neg_of_ae_nonneg (hc.ennreal_toReal.div_const _) <|
-      ae_of_all _ fun _ ↦ by positivity
+  obtain ⟨π, hπ, hKL_ne_top, hopt, φ₀, ψ₀, hφ₀, hψ₀, hπ_wd, hπ_gibbs⟩ :=
+    exists_isCoupling_tilted_and_entropicGibbsFactor hc hc_top hfin hε
+  have hexp := integrable_exp_neg_toReal_div hc ε
   set R := (μ.prod ν).tilted fun z ↦ -((c z).toReal / ε)
   have : IsProbabilityMeasure R := isProbabilityMeasure_tilted hexp
-  have hS_ne_top : schroedingerValue R μ ν ≠ ∞ := fun hS ↦ hfin <| by
-    rw [entropicTransportCost_eq_mul_schroedingerValue_add hc hc_top hε, hS,
-      ENNReal.mul_top (ENNReal.coe_ne_zero.2 hε), top_add]
-  obtain ⟨π, hπ, hπR, φ₀, ψ₀, hφ₀, hψ₀, hπ_wd⟩ :=
-    exists_isCoupling_eq_withDensity_exp_add_of_schroedingerValue_ne_top
-      (tilted_absolutelyContinuous _ _) (absolutelyContinuous_tilted hexp) hS_ne_top
   have hllr_int : Integrable (llr R (μ.prod ν)) (μ.prod ν) :=
     integrable_llr_tilted_left .rfl
       (((integrable_toReal_of_lintegral_ne_top hc hc_int).div_const _).neg)
@@ -613,7 +630,7 @@ theorem exists_entropicDualValue_eq_toReal_entropicTransportCost_of_lintegral_ne
       ((hc.ennreal_toReal.div_const _).neg)
   obtain ⟨hφ₀_int, hψ₀_int⟩ := hπ.integrable_of_eq_withDensity_exp_add
     (tilted_absolutelyContinuous _ _) (absolutelyContinuous_tilted hexp) hllr_int
-    (hπR ▸ hS_ne_top) hφ₀ hψ₀ hπ_wd
+    hKL_ne_top hφ₀ hψ₀ hπ_wd
   set Z := ∫ z, Real.exp (-((c z).toReal / ε)) ∂μ.prod ν
   set φ : X → ℝ := fun x ↦ ε * (φ₀ x - Real.log Z)
   set ψ : Y → ℝ := fun y ↦ ε * ψ₀ y
@@ -621,20 +638,11 @@ theorem exists_entropicDualValue_eq_toReal_entropicTransportCost_of_lintegral_ne
   have hψ_meas : Measurable ψ := hψ₀.const_mul _
   have hφ_int : Integrable φ μ := (hφ₀_int.sub (integrable_const _)).const_mul _
   have hψ_int : Integrable ψ ν := hψ₀_int.const_mul _
-  have hπ_gibbs : π = (μ.prod ν).withDensity fun z ↦
-      ENNReal.ofReal (entropicGibbsFactor c ε φ ψ z) :=
-    hπ_wd.trans
-      (withDensity_tilted_exp_add_eq_withDensity_entropicGibbsFactor hc hc_top hε hφ₀ hψ₀)
   have := hπ.isProbabilityMeasure
-  have hgibbs_int : Integrable (entropicGibbsFactor c ε φ ψ) (μ.prod ν) := by
-    refine (lintegral_ofReal_ne_top_iff_integrable
-      (aemeasurable_entropicGibbsFactor hc hφ_meas.aemeasurable
-        hψ_meas.aemeasurable).aestronglyMeasurable
-      (ae_of_all _ entropicGibbsFactor_nonneg)).1 ?_
-    rw [← setLIntegral_univ, ← withDensity_apply _ MeasurableSet.univ, ← hπ_gibbs]
-    exact measure_ne_top π Set.univ
-  have hopt : ∫⁻ z, c z ∂π + ε * klDiv π (μ.prod ν) = entropicTransportCost c ε μ ν :=
-    (lintegral_add_mul_klDiv_eq_entropicTransportCost_iff hπ hc hc_top hε).2 hπR
+  have hgibbs_int : Integrable (entropicGibbsFactor c ε φ ψ) (μ.prod ν) :=
+    Probability.integrable_of_eq_withDensity hπ_gibbs
+      (aemeasurable_entropicGibbsFactor hc hφ_meas.aemeasurable hψ_meas.aemeasurable)
+      (ae_of_all _ entropicGibbsFactor_nonneg)
   refine ⟨φ, ψ, hφ_meas, hψ_meas, hφ_int, hψ_int, hgibbs_int, ?_⟩
   rw [← hopt]
   exact (hπ.entropicDualValue_eq_toReal_lintegral_add_mul_klDiv_iff hc hε hφ_int hψ_int hgibbs_int
