@@ -58,6 +58,8 @@ fields on a product manifold.
 * `TauCeti.mfderiv_prodMap_comp_prodMkLeft` and `TauCeti.mfderiv_prodMap_comp_prodMkRight`:
   composing the differential of `Prod.map f g` with a slice inclusion commutes with the
   differential on the varied factor.
+* `TauCeti.mfderivWithin_extChartAt_symm_prod_apply`: the derivative of the inverse of a product
+  chart acts on each component through the derivative of the inverse chart of that factor.
 * `MDifferentiableAt.hasLeftInverse_mfderiv_fst_prod_iff`: the differential of a
   parameter-preserving map splits exactly when the differential of its slice splits.
 * `TauCeti.mfderiv_swap`: the derivative of the exchange of factors exchanges the components.
@@ -376,6 +378,65 @@ theorem mfderiv_prodMap_comp_prodMkRight {f : M → M''} {g : N → N''} {x : M}
       ContinuousLinearMap.zero_comp, ContinuousLinearMap.comp_zero]
 
 end ProdMap
+
+section ExtChartAt
+
+open Set
+
+/-- **The derivative of the inverse of a product chart.** On the target of the preferred chart of
+`M × N` at `p`, the derivative of its inverse sends `(v, w)` to the pair of the derivatives of the
+inverse charts of `M` at `p.1` and of `N` at `p.2`, applied to `v` and to `w`. -/
+theorem mfderivWithin_extChartAt_symm_prod_apply [IsManifold I 1 M] [IsManifold J 1 N]
+    {p : M × N} {z : E × E'} (hz : z ∈ (extChartAt (I.prod J) p).target) (v : E × E') :
+    mfderivWithin 𝓘(𝕜, E × E') (I.prod J) (extChartAt (I.prod J) p).symm (range (I.prod J)) z v =
+      (mfderivWithin 𝓘(𝕜, E) I (extChartAt I p.1).symm (range I) z.1 v.1,
+        mfderivWithin 𝓘(𝕜, E') J (extChartAt J p.2).symm (range J) z.2 v.2) := by
+  have hz' : z.1 ∈ (extChartAt I p.1).target ∧ z.2 ∈ (extChartAt J p.2).target := by
+    rwa [extChartAt_prod, PartialEquiv.prod_target, mem_prod] at hz
+  have huniq : UniqueDiffWithinAt 𝕜 (range (I.prod J)) z :=
+    (I.prod J).uniqueDiffOn z (extChartAt_target_subset_range p hz)
+  have hdiff := mdifferentiableWithinAt_extChartAt_symm hz
+  have hsymm : (extChartAt (I.prod J) p).symm =
+      Prod.map (extChartAt I p.1).symm (extChartAt J p.2).symm := by
+    rw [extChartAt_prod]
+    rfl
+  -- Read off the two components through the derivatives of the projections, using that each
+  -- projection of the inverse product chart is the inverse chart of a factor after a projection.
+  have hfst : mfderiv (I.prod J) I Prod.fst ((extChartAt (I.prod J) p).symm z) ∘L
+      mfderivWithin 𝓘(𝕜, E × E') (I.prod J) (extChartAt (I.prod J) p).symm (range (I.prod J)) z =
+      mfderivWithin 𝓘(𝕜, E) I (extChartAt I p.1).symm (range I) z.1 ∘L
+        ContinuousLinearMap.fst 𝕜 E E' := by
+    rw [← mfderiv_comp_mfderivWithin z mdifferentiableAt_fst hdiff huniq.uniqueMDiffWithinAt,
+      show Prod.fst ∘ (extChartAt (I.prod J) p).symm = (extChartAt I p.1).symm ∘ Prod.fst by
+        rw [hsymm]; rfl,
+      mfderivWithin_comp z (u := range I) (mdifferentiableWithinAt_extChartAt_symm hz'.1)
+        differentiableWithinAt_fst.mdifferentiableWithinAt
+        (fun y hy ↦ by rw [ModelWithCorners.range_prod] at hy; exact hy.1)
+        huniq.uniqueMDiffWithinAt,
+      mfderivWithin_eq_fderivWithin, fderivWithin_fst huniq]
+    -- The tangent spaces of the model spaces are the model spaces themselves.
+    rfl
+  have hsnd : mfderiv (I.prod J) J Prod.snd ((extChartAt (I.prod J) p).symm z) ∘L
+      mfderivWithin 𝓘(𝕜, E × E') (I.prod J) (extChartAt (I.prod J) p).symm (range (I.prod J)) z =
+      mfderivWithin 𝓘(𝕜, E') J (extChartAt J p.2).symm (range J) z.2 ∘L
+        ContinuousLinearMap.snd 𝕜 E E' := by
+    rw [← mfderiv_comp_mfderivWithin z mdifferentiableAt_snd hdiff huniq.uniqueMDiffWithinAt,
+      show Prod.snd ∘ (extChartAt (I.prod J) p).symm = (extChartAt J p.2).symm ∘ Prod.snd by
+        rw [hsymm]; rfl,
+      mfderivWithin_comp z (u := range J) (mdifferentiableWithinAt_extChartAt_symm hz'.2)
+        differentiableWithinAt_snd.mdifferentiableWithinAt
+        (fun y hy ↦ by rw [ModelWithCorners.range_prod] at hy; exact hy.2)
+        huniq.uniqueMDiffWithinAt,
+      mfderivWithin_eq_fderivWithin, fderivWithin_snd huniq]
+    -- The tangent spaces of the model spaces are the model spaces themselves.
+    rfl
+  have h₁ := congr($hfst v)
+  have h₂ := congr($hsnd v)
+  rw [mfderiv_fst] at h₁
+  rw [mfderiv_snd] at h₂
+  exact Prod.ext h₁ h₂
+
+end ExtChartAt
 
 end TauCeti
 
