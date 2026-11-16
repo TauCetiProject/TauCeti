@@ -142,6 +142,9 @@ instance {R : Type*} [Semiring R] [Module R F] [SMulCommClass ℝ R F] [Continuo
 instance : FunLike (NormedContDiffMapSupportedIn E F ℓ K) E F :=
   inferInstanceAs (FunLike 𝓓^{ℓ}_{K}(E, F) E F)
 
+instance : ContDiffMapSupportedInClass (NormedContDiffMapSupportedIn E F ℓ K) E F ℓ K :=
+  inferInstanceAs (ContDiffMapSupportedInClass 𝓓^{ℓ}_{K}(E, F) E F ℓ K)
+
 variable {E F ℓ K}
 
 /-- The underlying map of `f` in `𝓓^{ℓ}_{K}(E, F)`. -/
@@ -255,12 +258,12 @@ theorem ofContDiffMapSupportedIn_smul {R : Type*} [Semiring R] [Module R F] [SMu
 
 /-- Every map of the normed space is `C^ℓ`. -/
 protected theorem contDiff (f : NormedContDiffMapSupportedIn E F ℓ K) : ContDiff ℝ ℓ f :=
-  (toContDiffMapSupportedIn f).contDiff
+  ContDiffMapSupportedInClass.map_contDiff f
 
 /-- Every map of the normed space vanishes outside `K`. -/
 protected theorem zero_on_compl (f : NormedContDiffMapSupportedIn E F ℓ K) :
     EqOn f 0 (K : Set E)ᶜ :=
-  (toContDiffMapSupportedIn f).zero_on_compl
+  ContDiffMapSupportedInClass.map_zero_on_compl f
 
 /-- Every map of the normed space has compact support. -/
 protected theorem hasCompactSupport (f : NormedContDiffMapSupportedIn E F ℓ K) :
