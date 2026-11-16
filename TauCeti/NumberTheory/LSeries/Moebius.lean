@@ -8,7 +8,6 @@ module
 public import Mathlib.NumberTheory.LSeries.RiemannZeta
 public import Mathlib.NumberTheory.ArithmeticFunction.Moebius
 import Mathlib.NumberTheory.EulerProduct.DirichletLSeries
-import Mathlib.NumberTheory.LSeries.Dirichlet
 import TauCeti.NumberTheory.LSeries.EulerProduct
 
 /-!
@@ -31,24 +30,22 @@ public section
 open Nat Complex
 open scoped ArithmeticFunction.Moebius
 
-namespace ArithmeticFunction
+namespace TauCeti
 
 /-- The square of the Möbius function has an absolutely convergent Dirichlet series
 on `Re s > 1`. -/
 theorem LSeriesSummable_moebius_sq {s : ℂ} (hs : 1 < s.re) :
-    LSeriesSummable (fun n ↦ (moebius n : ℂ) ^ 2) s := by
-  have hnorm : (fun n ↦ ‖_root_.LSeries.term (fun n ↦ (moebius n : ℂ) ^ 2) s n‖) =
-      (fun n ↦ ‖_root_.LSeries.term (fun n ↦ (moebius n : ℂ)) s n‖) := by
+    LSeriesSummable (fun n ↦ (ArithmeticFunction.moebius n : ℂ) ^ 2) s := by
+  have hnorm :
+      (fun n ↦ ‖_root_.LSeries.term (fun n ↦ (ArithmeticFunction.moebius n : ℂ) ^ 2) s n‖) =
+      (fun n ↦ ‖_root_.LSeries.term (fun n ↦ (ArithmeticFunction.moebius n : ℂ)) s n‖) := by
     funext n
     simp only [_root_.LSeries.norm_term_eq]
-    rcases moebius_eq_or n with h | h | h <;> simp [h]
-  change Summable (_root_.LSeries.term (fun n ↦ (moebius n : ℂ) ^ 2) s)
+    rcases ArithmeticFunction.moebius_eq_or n with h | h | h <;> simp [h]
+  rw [LSeriesSummable]
   rw [← summable_norm_iff, hnorm]
-  exact (LSeriesSummable_moebius_iff.mpr hs).norm
+  exact (ArithmeticFunction.LSeriesSummable_moebius_iff.mpr hs).norm
 
-end ArithmeticFunction
-
-namespace TauCeti
 
 private theorem moebius_sq_prime_pow_sum (s : ℂ) (p : Nat.Primes) :
     (∑' e : ℕ, _root_.LSeries.term (fun n ↦ (ArithmeticFunction.moebius n : ℂ) ^ 2)
@@ -78,7 +75,7 @@ theorem LSeries_moebius_sq_eulerProduct_hasProd {s : ℂ} (hs : 1 < s.re) :
       (_root_.LSeries (fun n ↦ (ArithmeticFunction.moebius n : ℂ) ^ 2) s) :=
     EulerProduct.eulerProduct_hasProd (by simp)
     (TauCeti.LSeries.term_mul_of_coprime hmul)
-      (ArithmeticFunction.LSeriesSummable_moebius_sq hs).norm
+      (TauCeti.LSeriesSummable_moebius_sq hs).norm
     (_root_.LSeries.term_zero (fun n ↦ (ArithmeticFunction.moebius n : ℂ) ^ 2) s)
   simpa only [moebius_sq_prime_pow_sum] using hp
 
