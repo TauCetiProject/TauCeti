@@ -38,6 +38,8 @@ its Lie algebra `𝔰𝔬(2)` is abelian.
 * `TauCeti.Lie.Ad_apply_eq_self_of_mem_center` and
   `TauCeti.Lie.mem_center_iff_forall_Ad_apply_eq_self`: the adjoint action of a central element
   is trivial, and for connected `G` the centre is the kernel of the adjoint representation.
+* `MonoidHom.ker_le_center_of_injective_groupLieAlgebraMap`: a homomorphism with injective
+  differential out of a connected Lie group has central kernel.
 * `TauCeti.Lie.discreteTopology_center_of_center_eq_bot` and
   `TauCeti.Lie.discreteTopology_center_iff`: the centre is discrete when `𝔷(𝔤) = 0`, and for
   connected `G` exactly then.
@@ -88,6 +90,26 @@ theorem mem_center_iff_forall_Ad_apply_eq_self [PreconnectedSpace G] (g : G) :
     mem_centralizer_iff_forall_Ad_apply_eq_self (I := I)
     (by simp) (by simpa using isPreconnected_univ)]
   exact fun X _ => h X
+
+/-- **The kernel of a homomorphism with injective differential from a connected Lie group is
+central.** Its elements act trivially on the Lie algebra
+(`MonoidHom.adjointContinuousLinearMap_eq_id_of_mem_ker`), and the centre of a connected Lie
+group is the kernel of the adjoint representation. This applies to a covering homomorphism of
+connected Lie groups, whose kernel, a fibre of the covering, is therefore a discrete central
+subgroup. -/
+theorem _root_.MonoidHom.ker_le_center_of_injective_groupLieAlgebraMap [PreconnectedSpace G]
+    {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+    {I' : ModelWithCorners ℝ E' H'} {G' : Type*} [TopologicalSpace G'] [ChartedSpace H' G']
+    [Group G'] [LieGroup I' 1 G'] (φ : G →* G')
+    (hφ : Function.Injective (φ.groupLieAlgebraMap I I')) : φ.ker ≤ Subgroup.center G := by
+  intro k hk
+  rw [mem_center_iff_forall_Ad_apply_eq_self (I := I)]
+  intro X
+  apply (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
+    (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G))).injective
+  simp only [LieEquiv.coe_toLieHom, leftInvariantDerivationLieEquivGroupLieAlgebra_Ad,
+    tangentAd_apply, φ.adjointContinuousLinearMap_eq_id_of_mem_ker hφ hk,
+    ContinuousLinearMap.id_apply]
 
 /-- **The Lie algebra of the centre lies in the centre of the Lie algebra.** No connectedness is
 needed. -/
