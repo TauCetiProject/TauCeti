@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Chart
 import TauCeti.Analysis.Normed.Module.Alternating.Curry
 import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Geometry.Manifold.DifferentialForm.Continuity
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 
 /-!
@@ -347,38 +348,6 @@ private theorem floerEnergyDensity_comp_and_isComplexLinearMap (hω : ω.IsNonde
 variable {J : ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)}
   {J' : ℝ × ℝ → V → AlmostComplexStructure V}
 
-omit [FiniteDimensional ℝ E] [IsManifold I (⊤ : ℕ∞) M] [FiniteDimensional ℝ V] in
-/-- A limit `w` of coordinate maps `φ ∘ uₙ` of maps with values in `K ⊆ φ.source` is read in `M`
-through the inverse chart: `φ⁻¹ ∘ w` is continuous with values in `K`, the coordinate maps
-converge to `φ ∘ φ⁻¹ ∘ w`, and `uₙ → φ⁻¹ ∘ w` pointwise. -/
-private theorem tendsto_symm_of_tendstoLocallyUniformlyOn
-    (φ : PartialDiffeomorph I 𝓘(ℝ, V) M V (⊤ : ℕ∞)) {K : Set M} (hKφ : K ⊆ φ.source)
-    {S : Set (ℝ × ℝ)} {w : ℝ × ℝ → V} {u : ℕ → ℝ × ℝ → M} (hwc : ContinuousOn w S)
-    (hwK : MapsTo w S (φ '' K)) (huK : ∀ n, MapsTo (u n) S K)
-    (hlim : TendstoLocallyUniformlyOn (fun n ↦ φ ∘ u n) w atTop S) :
-    ContinuousOn (φ.symm ∘ w) S ∧ MapsTo (φ.symm ∘ w) S K ∧
-      TendstoLocallyUniformlyOn (fun n ↦ φ ∘ u n) (φ ∘ φ.symm ∘ w) atTop S ∧
-      ∀ y ∈ S, Tendsto (fun n ↦ u n y) atTop (𝓝 ((φ.symm ∘ w) y)) := by
-  have hwt : ∀ y ∈ S, φ (φ.symm (w y)) = w y ∧ φ.symm (w y) ∈ K := by
-    intro y hy
-    obtain ⟨x, hx, hxw⟩ := hwK hy
-    have h := φ.toPartialEquiv.left_inv (hKφ hx)
-    rw [← hxw]
-    exact ⟨congrArg φ h, (congrArg (· ∈ K) h).mpr hx⟩
-  refine ⟨?_, fun y hy ↦ (hwt y hy).2, hlim.congr_right fun y hy ↦ ((hwt y hy).1).symm,
-    fun y hy ↦ ?_⟩
-  · refine φ.symm.contMDiffOn.continuousOn.comp hwc fun y hy ↦ ?_
-    obtain ⟨x, hx, hxw⟩ := hwK hy
-    rw [← hxw]
-    exact φ.toPartialEquiv.map_source (hKφ hx)
-  · obtain ⟨x, hx, hxw⟩ := hwK hy
-    have hcont : ContinuousAt φ.symm (w y) := by
-      rw [← hxw]
-      exact φ.symm.contMDiffOn.continuousOn.continuousAt
-        (φ.open_target.mem_nhds (φ.toPartialEquiv.map_source (hKφ hx)))
-    refine ((hcont.tendsto.comp (hlim.tendsto_at hy)).congr fun n ↦ ?_)
-    exact φ.toPartialEquiv.left_inv (hKφ (huK n hy))
-
 /-- **Floer solutions in a symplectic chart over a compact parameter window converge off finitely
 many bubbling points.** Let `φ` be a smooth partial diffeomorphism from `M` onto an open subset of
 `V`, and let `D ⊆ ℝ × ℝ` and `K ⊆ φ.source` be compact. Let the perturbations `K_p` and the
@@ -465,7 +434,7 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset
     (fun k z hz ↦ (hpt k hz).2) (fun k z hz ↦ ⟨u k z, huK k hz, rfl⟩)
     (fun k ↦ (hint k).congr_fun (fun y hy ↦ ((hpt k hy).1).symm) hΩ.measurableSet)
     (fun k ↦ (hint_eq k hΩ.measurableSet subset_rfl).trans_le (hA k))
-  obtain ⟨hvc, hvK, hvlim, hvpt⟩ := tendsto_symm_of_tendstoLocallyUniformlyOn φ hKφ hwc hwK
+  obtain ⟨hvc, hvK, hvlim, hvpt⟩ := φ.tendsto_symm_of_tendstoLocallyUniformlyOn hKφ hwc hwK
     (fun n ↦ (huK (ψ n)).mono_left sdiff_subset) hlim
   refine ⟨ψ, p₀, Z, φ.symm ∘ w, hψ, hp₀, hplim, hZΩ, hcard, fun z hz ε hε ↦ ?_, hbd, hvc, hvK,
     hvlim, hvpt⟩

@@ -63,10 +63,10 @@ namespace,
 `exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_cappedComparison`). The
 Hamiltonians read in the chart, `K_R(z, φ⁻¹ y)`, are `C³` in `(R, z, y)` by the smoothness of the
 family; the structures read in the chart are supplied, as for fixed data, by any family `J'_R`
-with `dφ_x ∘ J_R(z, x) = J'_R(z, φ x) ∘ dφ_x` that is `C²` over the chart target. The limit is
-read in `M`: the coordinate maps converge locally uniformly off the bubbling points, and the maps
-themselves converge pointwise to a continuous limit with values in `K`. Covering `M` by several
-charts is not treated here.
+with `dφ_x ∘ J_R(z, x) = J'_R(z, φ x) ∘ dφ_x` that is `C²` in `(R, z, y)` on an open set
+containing `C × D × φ(K)`. The limit is read in `M`: the coordinate maps converge locally
+uniformly off the bubbling points, and the maps themselves converge pointwise to a continuous
+limit with values in `K`. Covering `M` by several charts is not treated here.
 
 ## References
 
@@ -193,8 +193,9 @@ period-one `C³` Hamiltonians with `|H_q| ≤ B_q`, let `J₀` be `ω`-compatibl
 of `V` pulling the symplectic form `ω₀` back to `ω` on a compact set `K ⊆ φ.source`, such as a
 Darboux chart, and let `J'_R(z, y)` be the structures `J_R` of the comparison family read in the
 chart, `dφ_x ∘ J_R(z, x) = J'_R(z, φ x) ∘ dφ_x` for `R ∈ C`, `z ∈ D` and `x ∈ K`, and `C²` jointly
-in `(R, z, y)` over the chart target. Fix a compact window `C ⊆ [0, ∞)` of parameters and a compact
-set `D ⊆ ℝ × ℝ`. There is a threshold `δ > 0` with the following property. Let `uₖ` be `C³` maps
+in `(R, z, y)` on an open set `W` containing `C × D × φ(K)`, where `C ⊆ [0, ∞)` is a compact
+window of parameters and `D ⊆ ℝ × ℝ` is compact. There is a threshold `δ > 0` with the following
+property. Let `uₖ` be `C³` maps
 of the plane chart `ℝ × ℝ ≅ ℂ` of the three-pole sphere into `M` solving the Floer equation
 `(du - X_{K_{Rₖ}})^{0,1} = 0` for the structures `J_{Rₖ}(z, u)` of the comparison family, with
 `Rₖ ∈ C`, integrable energy density and curvature term, symplectic area `∫ u^* ω ≤ A`, and
@@ -216,11 +217,11 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_ca
     (hJJ' : ∀ R ∈ C, ∀ z ∈ D, ∀ x ∈ K, IsComplexLinearMap
       ((h₀.cappedComparisonAlmostComplex J hJ R (equivRealProdCLM.symm z)).almostComplexStructureAt
         x) (J' R z (φ x)) (mvfderiv I φ x).toLinearMap)
+    {W : Set (ℝ × ((ℝ × ℝ) × V))} (hW : IsOpen W)
     (hJ' : ContDiffOn ℝ 2
-      (fun q : ℝ × ((ℝ × ℝ) × V) ↦ (J' q.1 q.2.1 q.2.2).toLinearMap.toContinuousLinearMap)
-      (univ ×ˢ (univ ×ˢ φ.target)))
+      (fun q : ℝ × ((ℝ × ℝ) × V) ↦ (J' q.1 q.2.1 q.2.2).toLinearMap.toContinuousLinearMap) W)
     (hC : IsCompact C) (hC₀ : C ⊆ Ici 0) (hD : IsCompact D) (hK : IsCompact K)
-    (hKφ : K ⊆ φ.source) :
+    (hKφ : K ⊆ φ.source) (hCDKW : C ×ˢ (D ×ˢ (φ '' K)) ⊆ W) :
     ∃ δ > 0, ∀ ⦃Ω : Set (ℝ × ℝ)⦄ ⦃R : ℕ → ℝ⦄ ⦃u : ℕ → ℝ × ℝ → M⦄ ⦃A : ℝ⦄, IsOpen Ω → Ω ⊆ D →
       (∀ k, R k ∈ C) → (∀ k, ContMDiff 𝓘(ℝ, ℝ × ℝ) I 3 (u k)) →
       (∀ k z, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
@@ -256,8 +257,6 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_ca
   -- The Hamiltonians of the family, read in the chart, are jointly `C³` in `(R, z, y)` over the
   -- chart target: they are the smooth data on `ℂ × (ℝ × M)` composed with
   -- `(R, z, y) ↦ (z, (R, φ⁻¹ y))`.
-  have hW : IsOpen (univ ×ˢ (univ ×ˢ φ.target) : Set (ℝ × ((ℝ × ℝ) × V))) :=
-    isOpen_univ.prod (isOpen_univ.prod φ.open_target)
   have hg : ContMDiffOn 𝓘(ℝ, ℝ × ((ℝ × ℝ) × V)) (𝓘(ℝ, ℂ).prod (𝓘(ℝ, ℝ).prod I)) 3
       (fun q : ℝ × ((ℝ × ℝ) × V) ↦ (equivRealProdCLM.symm q.2.1, (q.1, φ.symm q.2.2)))
       (univ ×ˢ (univ ×ˢ φ.target)) :=
@@ -274,16 +273,19 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_ca
       ((h₀.cappedComparisonAlmostComplex J hJ R w).almostComplexStructureAt x) := by
     rw [h₀.cappedComparisonAlmostComplex_def J hJ R]
     exact hω.tames_iff.1 (h₀.tames_cappedAlmostComplex J hJ _ _ w) x
-  have hDKW : C ×ˢ (D ×ˢ (φ '' K)) ⊆ univ ×ˢ (univ ×ˢ φ.target) := by
+  have hWt : IsOpen (W ∩ univ ×ˢ (univ ×ˢ φ.target)) :=
+    hW.inter (isOpen_univ.prod (isOpen_univ.prod φ.open_target))
+  have hDKW : C ×ˢ (D ×ˢ (φ '' K)) ⊆ W ∩ univ ×ˢ (univ ×ˢ φ.target) := by
     intro q hq
     obtain ⟨x, hx, hxq⟩ := hq.2.2
-    exact ⟨trivial, trivial, hxq ▸ φ.toPartialEquiv.map_source (hKφ hx)⟩
+    exact ⟨hCDKW hq, trivial, trivial, hxq ▸ φ.toPartialEquiv.map_source (hKφ hx)⟩
   obtain ⟨δ, hδ, hconv⟩ := hω.exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset
     φ (Ks := fun R z x ↦ cappedComparisonPerturbation H R (equivRealProdCLM.symm z) x 1)
     (Kt := fun R z x ↦ cappedComparisonPerturbation H R (equivRealProdCLM.symm z) x Complex.I)
     (J := fun R z x ↦
       (h₀.cappedComparisonAlmostComplex J hJ R (equivRealProdCLM.symm z)).almostComplexStructureAt
-        x) hφ hJJ' hW (hK' 1) (hK' Complex.I) hJ' hC hD hK hKφ hDKW fun R _ z _ x _ ↦ hJt R _ x
+        x) hφ hJJ' hWt ((hK' 1).mono inter_subset_right) ((hK' Complex.I).mono inter_subset_right)
+        (hJ'.mono inter_subset_left) hC hD hK hKφ hDKW fun R _ z _ x _ ↦ hJt R _ x
   refine ⟨δ, hδ, fun Ω R u A hΩ hΩD hRC hu hfl huK hint hcurv harea ↦ ?_⟩
   -- The Floer energy over `Ω` is at most the energy over the plane, which exceeds the area by at
   -- most `2 (B₀ + B₁ + B_∞)`.
