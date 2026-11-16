@@ -14,8 +14,8 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Fiber
 import TauCeti.FieldTheory.Separable.OfRootCount
 -- Proof-only: a nonzero even element keeps `2` nonzero.
 import TauCeti.Algebra.Ring.Parity
--- Proof-only: `ΨSqₙ` is nonzero on a nonsingular curve, and vanishes only at torsion. This also
--- carries the degree, evaluation-bridge and algebraic-closure material the count uses.
+-- Proof-only: `ΨSqₙ` is nonzero on a nonsingular curve. This also carries the degree,
+-- torsion-vanishing and algebraic-closure material the count uses.
 import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Coprimality
 
 /-!
@@ -60,44 +60,7 @@ variable {F : Type*} [Field F]
 
 section Torsion
 
-variable [DecidableEq F]
-
-/-- **At most two points share an abscissa**: a point is determined by its abscissa up to sign. -/
-private theorem card_filter_xRep_le_two {V : WeierstrassCurve.Affine F}
-    (s : Finset V.Point) (b : Fin 2 → F) : #{P ∈ s | P.xRep = b} ≤ 2 := by
-  rcases Finset.eq_empty_or_nonempty {P ∈ s | P.xRep = b} with h | ⟨Q, hQ⟩
-  · simp [h]
-  · have hsub : {P ∈ s | P.xRep = b} ⊆ {Q, -Q} := by
-      intro P hP
-      have hb : P.xRep = Q.xRep := by
-        rw [(Finset.mem_filter.mp hP).2, (Finset.mem_filter.mp hQ).2]
-      rcases Point.eq_or_eq_neg_of_xRep_eq_xRep hb with h | h <;> simp [h]
-    exact (Finset.card_le_card hsub).trans ((Finset.card_insert_le _ _).trans (by simp))
-
-variable (W : WeierstrassCurve.Affine F)
-
-/-- A nonzero point killed by an odd `n` has `preΨₙ` vanishing at its abscissa: at odd `n` the
-factor `Ψ₂Sq` is absent from `ΨSqₙ`, so `preΨₙ` carries the whole vanishing. -/
-private theorem eval_preΨ_eq_zero_of_odd {n : ℤ} (hodd : ¬ Even n) {x y : F}
-    (hns : (W⁄F).toAffine.Nonsingular x y) (h : n • (Affine.Point.some x y hns) = 0) :
-    ((W⁄F).preΨ n).eval x = 0 := by
-  have hsq := (eval_ΨSq_eq_zero_iff_zsmul_eq_zero (W⁄F) hns n).mpr
-    (zsmul_fromAffine_eq_zero_iff_zsmul_eq_zero.mpr h)
-  simp only [WeierstrassCurve.ΨSq, hodd, ite_false, mul_one, eval_pow] at hsq
-  exact pow_eq_zero_iff two_ne_zero |>.mp hsq
-
-/-- A point killed by an even `n` but not by `2` has `preΨₙ` vanishing at its abscissa: the other
-factor of `ΨSqₙ` is `Ψ₂Sq`, which vanishes only on the `2`-torsion. -/
-private theorem eval_preΨ_eq_zero_of_even {n : ℤ} (heven : Even n) {x y : F}
-    (hns : (W⁄F).toAffine.Nonsingular x y) (h : n • (Affine.Point.some x y hns) = 0)
-    (h2 : (2 : ℤ) • (Affine.Point.some x y hns) ≠ 0) :
-    ((W⁄F).preΨ n).eval x = 0 := by
-  have hsq := (eval_ΨSq_eq_zero_iff_zsmul_eq_zero (W⁄F) hns n).mpr
-    (zsmul_fromAffine_eq_zero_iff_zsmul_eq_zero.mpr h)
-  simp only [WeierstrassCurve.ΨSq, heven, ite_true, eval_mul, eval_pow, mul_eq_zero,
-    pow_eq_zero_iff (two_ne_zero)] at hsq
-  exact hsq.resolve_right fun hΨ₂ ↦ eval_ΨSq_ne_zero_of_zsmul_ne_zero (W⁄F) hns h2
-    (by simpa [WeierstrassCurve.ΨSq_two] using hΨ₂)
+variable [DecidableEq F] (W : WeierstrassCurve.Affine F)
 
 /-- The abscissae of a set of points, as a `Finset` of the roots of `p`. -/
 private theorem mem_image_xRep {p : F[X]} {T : Finset (W⁄F).toAffine.Point}
@@ -159,9 +122,10 @@ private theorem separable_preΨ_of_odd_of_isAlgClosed {n : ℤ} (hodd : ¬ Even 
     obtain ⟨hP0, hPT⟩ := Finset.mem_erase.mp hP
     rcases hQ : P with _ | ⟨x, y, hns⟩
     · exact absurd hQ hP0
-    · exact ⟨x, y, hns, rfl, eval_preΨ_eq_zero_of_odd W hodd hns (hQ ▸ (hTmem P).mp hPT)⟩
+    · exact ⟨x, y, hns, rfl, (eval_preΨ_eq_zero_iff_zsmul_eq_zero_of_odd (W⁄F) hodd hns).mpr
+        (zsmul_fromAffine_eq_zero_iff_zsmul_eq_zero.mpr (hQ ▸ (hTmem P).mp hPT))⟩
   have hcount : #(T.erase 0) ≤ 2 * #(S.image (fun x : F ↦ ![x, 1])) :=
-    Finset.card_le_mul_card_image_of_maps_to hmaps 2 fun b _ ↦ card_filter_xRep_le_two _ b
+    Finset.card_le_mul_card_image_of_maps_to hmaps 2 fun b _ ↦ Point.card_filter_xRep_le_two _ b
   have hEr : #(T.erase 0) = n.natAbs ^ 2 - 1 := by
     rw [Finset.card_erase_of_mem ((hTmem 0).mpr (by simp)), hTcard]
   have himg : #(S.image (fun x : F ↦ ![x, 1])) ≤ #S := Finset.card_image_le
@@ -192,10 +156,11 @@ private theorem separable_preΨ_of_even_of_isAlgClosed {n : ℤ} (heven : Even n
     obtain ⟨hPT, hP2⟩ := Finset.mem_filter.mp hP
     rcases hQ : P with _ | ⟨x, y, hns⟩
     · exact absurd (hQ ▸ (by simp : (2 : ℤ) • (0 : (W⁄F).toAffine.Point) = 0)) hP2
-    · exact ⟨x, y, hns, rfl, eval_preΨ_eq_zero_of_even W heven hns (hQ ▸ (hTmem P).mp hPT)
-        (hQ ▸ hP2)⟩
+    · exact ⟨x, y, hns, rfl, eval_preΨ_eq_zero_of_zsmul_eq_zero_of_even (W⁄F) heven hns
+        (zsmul_fromAffine_eq_zero_iff_zsmul_eq_zero.mpr (hQ ▸ (hTmem P).mp hPT))
+        (mt zsmul_fromAffine_eq_zero_iff_zsmul_eq_zero.mp (hQ ▸ hP2))⟩
   have hcount : #s ≤ 2 * #(S.image (fun x : F ↦ ![x, 1])) :=
-    Finset.card_le_mul_card_image_of_maps_to hmaps 2 fun b _ ↦ card_filter_xRep_le_two _ b
+    Finset.card_le_mul_card_image_of_maps_to hmaps 2 fun b _ ↦ Point.card_filter_xRep_le_two _ b
   have himg : #(S.image (fun x : F ↦ ![x, 1])) ≤ #S := Finset.card_image_le
   have hdeg : ((W⁄F).preΨ n).natDegree = (n.natAbs ^ 2 - 4) / 2 := by
     rw [natDegree_preΨ _ hchar]; simp [heven]

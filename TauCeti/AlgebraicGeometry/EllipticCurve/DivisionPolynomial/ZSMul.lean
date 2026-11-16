@@ -121,6 +121,10 @@ is the statement the Nagell–Lutz layer consumes.
 * `WeierstrassCurve.zsmul_eq_zero_of_evalEval_ψ_eq_zero`: **the converse** — a vanishing `ψₙ` at
   a nonsingular point forces `n • P = 0`. Unrestricted in `n`, and so an annihilation statement
   rather than a torsion one: at `n = 0` both sides hold of every point.
+* `WeierstrassCurve.eval_preΨ_eq_zero_iff_zsmul_eq_zero_of_odd` and
+  `WeierstrassCurve.eval_preΨ_eq_zero_of_zsmul_eq_zero_of_even`: the same criterion on `preΨₙ`,
+  the univariate factor of `ψₙ`. At odd `n` it is an equivalence; at even `n` the point must also
+  not be `2`-torsion, since there the other factor is `ψ₂`.
 * `WeierstrassCurve.addOrderOf_eq_two_iff_evalEval_ψ₂_eq_zero`: the characterisation of
   two-torsion, `addOrderOf P = 2 ↔ ψ₂(x, y) = 0`, read off from the doubling formula through
   `Affine.Point.some_add_self_eq_zero_iff`. Its contrapositive is what discharges the
@@ -1114,6 +1118,29 @@ theorem eval_ΨSq_eq_zero_iff_zsmul_eq_zero {x y : F} (hns : W.toAffine.Nonsingu
     pow_eq_zero_iff two_ne_zero]
   exact ⟨zsmul_eq_zero_of_evalEval_ψ_eq_zero W hns n,
     evalEval_ψ_eq_zero_of_zsmul_eq_zero W hns n⟩
+
+/-- **At odd `n`, a point is `n`-torsion exactly when `preΨₙ` vanishes at its abscissa.** At odd
+`n` the factor `Ψ₂Sq` is absent from `ΨSqₙ = preΨₙ ² * Ψ₂Sq`, so `preΨₙ` carries the whole
+criterion `eval_ΨSq_eq_zero_iff_zsmul_eq_zero`. -/
+-- Not `@[simp]`, for the same reason as `eval_ΨSq_eq_zero_iff_zsmul_eq_zero`.
+theorem eval_preΨ_eq_zero_iff_zsmul_eq_zero_of_odd {n : ℤ} (hodd : ¬Even n) {x y : F}
+    (hns : W.toAffine.Nonsingular x y) :
+    (W.preΨ n).eval x = 0 ↔ n • (Jacobian.Point.fromAffine (Affine.Point.some _ _ hns)) = 0 := by
+  rw [← eval_ΨSq_eq_zero_iff_zsmul_eq_zero W hns n, ΨSq, ite_eq_right hodd, mul_one, eval_pow,
+    pow_eq_zero_iff two_ne_zero]
+
+/-- **At even `n`, a point killed by `n` but not by `2` has `preΨₙ` vanishing at its abscissa.**
+At even `n`, `ψₙ = preΨₙ * ψ₂` on the curve, and `ψ₂` vanishes only on the `2`-torsion. -/
+theorem eval_preΨ_eq_zero_of_zsmul_eq_zero_of_even {n : ℤ} (heven : Even n) {x y : F}
+    (hns : W.toAffine.Nonsingular x y)
+    (htors : n • (Jacobian.Point.fromAffine (Affine.Point.some _ _ hns)) = 0)
+    (h2ne : (2 : ℤ) • Jacobian.Point.fromAffine (Affine.Point.some _ _ hns) ≠ 0) :
+    (W.preΨ n).eval x = 0 := by
+  have hψ := evalEval_ψ_eq_zero_of_zsmul_eq_zero W hns n htors
+  rw [evalEval_ψ_eq_evalEval_Ψ W hns.left n, _root_.WeierstrassCurve.Ψ,
+    ite_eq_left heven, evalEval_mul, evalEval_C] at hψ
+  exact (mul_eq_zero.mp hψ).resolve_right fun hψ₂ ↦
+    h2ne (zsmul_eq_zero_of_evalEval_ψ_eq_zero W hns 2 (by rwa [ψ_two]))
 
 /-- **Torsion transports between the affine and Jacobian point groups.** `n • P = 0` affinely,
 with `n : ℕ`, is the same statement as `(n : ℤ) • P = 0` on the Jacobian side.

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Degree
-public import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Eval
 public import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.ZSMul
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Integrality
 -- Not `public`: `evalEval_ψ₂_sq` is used only inside `den_dvd_four_of_order_two`'s proof,
@@ -24,13 +23,15 @@ factorisation domain `R` with fraction field `K` rather than only over `ℤ/ℚ`
 genuinely excluded: such a point need not be integral, and what is proved instead is the
 denominator bound `den(x) ∣ 4`.
 
-The bridge from the group law to polynomials is `ZSMul.lean`'s
-`evalEval_ψ_eq_zero_of_zsmul_eq_zero`: if
-`n • P = 0` then `ψₙ` vanishes at `P`. That turns a torsion hypothesis into a polynomial root,
-and the root feeds `isInteger_x_of_equation_of_is_root_of_squarefree_leadingCoeff` from
-`EllipticCurve/Integrality.lean`, whose squarefree-leading-coefficient hypothesis is supplied by
-Mathlib's `leadingCoeff_preΨ` (`= n` for odd `n` and `= n / 2` for even `n`) and
-`leadingCoeff_Ψ₂Sq` (`= 4`). Only the `x`-coordinate is stated: `y` is then integral by
+The bridge from the group law to polynomials is `ZSMul.lean`: if `n • P = 0` then `ψₙ` vanishes
+at `P`, and so does its univariate factor `preΨₙ` at the abscissa of `P` — for even `n` provided
+`P` is not two-torsion. That turns a torsion hypothesis into a root of a polynomial over `R`. The
+polynomial `preΨₙ` has leading coefficient `n` for odd `n` and `n / 2` for even `n` whenever that
+coefficient is nonzero in `R`, and the root feeds
+`isInteger_x_of_equation_of_is_root_of_squarefree_leadingCoeff` from
+`EllipticCurve/Integrality.lean`, which needs that leading coefficient squarefree. At order two the
+polynomial is instead `Ψ₂Sq`, with leading coefficient `4`, and the rational-root bound
+`den_dvd_of_is_root` gives `den(x) ∣ 4`. Only the `x`-coordinate is stated: `y` is then integral by
 `Integrality.lean`'s `isInteger_y_of_equation_of_isInteger_x`, which needs nothing about torsion.
 
 ## Main results
@@ -67,8 +68,9 @@ abbreviation for `W.map (algebraMap R K)`, and Mathlib defines `W.baseChange K` 
 — `rfl`-equal — so this file uses `baseChange`, matching `Integrality.lean` and `Denominator.lean`.
 Its companion `curveK_equation_iff` is then just `Affine.equation_iff` and is not needed at all.
 Two wrappers are likewise declined because this repository already carries both of their halves:
-`evalEval_ψ_odd` (`EvalBridge.lean:62`) is the one-line composite
-`(evalEval_ψ_eq_evalEval_Ψ …).trans (evalEval_Ψ_odd …)`, inlined here at its one call site; and
+`evalEval_ψ_odd` (`EvalBridge.lean:62`) is the composite
+`(evalEval_ψ_eq_evalEval_Ψ …).trans (evalEval_Ψ_odd …)`, which `ZSMul.lean`'s
+`eval_preΨ_eq_zero_iff_zsmul_eq_zero_of_odd` subsumes; and
 `prime_order_integrality_squarefree` (`:205`) is the conjunction of
 `x_isInteger_of_odd_prime_torsion_squarefree` with `y_isInteger_of_x_isInteger_on_curve`, so
 callers pair `isInteger_x_of_odd_torsion_of_squarefree` with
@@ -119,30 +121,25 @@ theorem isInteger_x_of_odd_torsion_of_squarefree {x y : K}
     (htors : n • (Jacobian.Point.fromAffine (Affine.Point.some _ _ hns)) = 0)
     (hsf : Squarefree (n : R)) : IsLocalization.IsInteger R x := by
   have := IsDomain.of_faithfulSMul R K
-  have hψ := evalEval_ψ_eq_zero_of_zsmul_eq_zero (W.baseChange K) hns n htors
-  -- The source's `evalEval_ψ_odd` is this composition; only its two halves are ported here.
-  rw [(evalEval_ψ_eq_evalEval_Ψ (W.baseChange K) hns.left n).trans
-    (evalEval_Ψ_odd (W.baseChange K) n hodd)] at hψ
+  have hpreΨ := (eval_preΨ_eq_zero_iff_zsmul_eq_zero_of_odd (W.baseChange K) hodd hns).mpr htors
   have hmap : (W.baseChange K).preΨ n = (W.preΨ n).map (algebraMap R K) :=
     WeierstrassCurve.map_preΨ ..
-  rw [hmap, eval_map, ← aeval_def] at hψ
+  rw [hmap, eval_map, ← aeval_def] at hpreΨ
   have hsf_lc : Squarefree (W.preΨ n).leadingCoeff := by
     rw [W.leadingCoeff_preΨ hsf.ne_zero, ite_eq_right hodd]
     exact hsf
-  exact isInteger_x_of_equation_of_is_root_of_squarefree_leadingCoeff W hns.left hψ hsf_lc
+  exact isInteger_x_of_equation_of_is_root_of_squarefree_leadingCoeff W hns.left hpreΨ hsf_lc
 
 /-- For an **even** `n` with `(n / 2 : R)` squarefree, a point killed by `n` but **not** by `2`
 has integral `x`-coordinate.
 
-`ψₙ` vanishes at the point, and for even `n` it is `preΨₙ * ψ₂`; the second factor vanishing
-would make the point two-torsion, which `h2ne` excludes, so the first vanishes, and `preΨₙ` has
-leading coefficient `n / 2`. Excluding order two is not a technicality — a two-torsion point need
-not be integral at all, and `den_dvd_four_of_order_two` is everything that survives there.
+The abscissa is a root of `preΨₙ`, whose leading coefficient is `n / 2`. Excluding order two is
+not a technicality — a two-torsion point need not be integral at all, and
+`den_dvd_four_of_order_two` is everything that survives there.
 
-No `(2 : R) ≠ 0` hypothesis is needed: `natDegree_preΨ_le` and `coeff_preΨ` pin the leading
-coefficient to `n / 2` directly from `(n / 2 : R) ≠ 0`, rather than via `leadingCoeff_preΨ`'s
-stronger `(n : R) ≠ 0` premise. The `y`-coordinate follows by
-`isInteger_y_of_equation_of_isInteger_x`. -/
+No hypothesis `(2 : R) ≠ 0` is needed: `(n / 2 : R) ≠ 0` alone already makes `n / 2` the leading
+coefficient of `preΨₙ`, so the statement also holds when `2 = 0` in `R`. The `y`-coordinate
+follows by `isInteger_y_of_equation_of_isInteger_x`. -/
 theorem isInteger_x_of_even_torsion_of_squarefree {x y : K}
     (hns : (W.baseChange K).toAffine.Nonsingular x y)
     {n : ℤ} (heven : Even n)
@@ -151,23 +148,20 @@ theorem isInteger_x_of_even_torsion_of_squarefree {x y : K}
     (hsf : Squarefree ((n / 2 : ℤ) : R)) :
     IsLocalization.IsInteger R x := by
   have := IsDomain.of_faithfulSMul R K
-  have hψ := evalEval_ψ_eq_zero_of_zsmul_eq_zero (W.baseChange K) hns n htors
-  rw [evalEval_ψ_eq_evalEval_Ψ (W.baseChange K) hns.left n, _root_.WeierstrassCurve.Ψ,
-    ite_eq_left heven, evalEval_mul, evalEval_C] at hψ
-  rcases mul_eq_zero.mp hψ with hpreΨ | hψ₂
-  · have hmap : (W.baseChange K).preΨ n = (W.preΨ n).map (algebraMap R K) :=
-      WeierstrassCurve.map_preΨ ..
-    rw [hmap, eval_map, ← aeval_def] at hpreΨ
-    have hcoeff : (W.preΨ n).coeff ((n.natAbs ^ 2 - if Even n then 4 else 1) / 2) =
-        ((n / 2 : ℤ) : R) := by
-      rw [W.coeff_preΨ, ite_eq_left heven]
-    have hlc : (W.preΨ n).leadingCoeff = ((n / 2 : ℤ) : R) := by
-      rw [leadingCoeff, natDegree_eq_of_le_of_coeff_ne_zero (W.natDegree_preΨ_le n)
-        (hcoeff ▸ hsf.ne_zero), hcoeff]
-    exact isInteger_x_of_equation_of_is_root_of_squarefree_leadingCoeff W hns.left hpreΨ
-      (hlc ▸ hsf)
-  · exact absurd (zsmul_eq_zero_of_evalEval_ψ_eq_zero (W.baseChange K) hns 2
-      (by rwa [WeierstrassCurve.ψ_two])) h2ne
+  have hpreΨ := eval_preΨ_eq_zero_of_zsmul_eq_zero_of_even (W.baseChange K) heven hns htors h2ne
+  have hmap : (W.baseChange K).preΨ n = (W.preΨ n).map (algebraMap R K) :=
+    WeierstrassCurve.map_preΨ ..
+  rw [hmap, eval_map, ← aeval_def] at hpreΨ
+  -- Read the leading coefficient off `natDegree_preΨ_le` and `coeff_preΨ`: Mathlib's
+  -- `leadingCoeff_preΨ` would ask for `(n : R) ≠ 0`, which fails when `2 = 0` in `R`.
+  have hcoeff : (W.preΨ n).coeff ((n.natAbs ^ 2 - if Even n then 4 else 1) / 2) =
+      ((n / 2 : ℤ) : R) := by
+    rw [W.coeff_preΨ, ite_eq_left heven]
+  have hlc : (W.preΨ n).leadingCoeff = ((n / 2 : ℤ) : R) := by
+    rw [leadingCoeff, natDegree_eq_of_le_of_coeff_ne_zero (W.natDegree_preΨ_le n)
+      (hcoeff ▸ hsf.ne_zero), hcoeff]
+  exact isInteger_x_of_equation_of_is_root_of_squarefree_leadingCoeff W hns.left hpreΨ
+    (hlc ▸ hsf)
 
 /-- **An order-four point is integral when `(2 : R)` is squarefree.** The index-four case of
 `isInteger_x_of_even_torsion_of_squarefree`, and the statement the Nagell–Lutz route quotes,
