@@ -33,7 +33,7 @@ for an orthonormal basis `(eᵢ)` of the finite-dimensional kernel and `c ≥ 0`
 `Π f = ∑ ⟪f, eᵢ⟫ eᵢ` satisfies `‖exp(c ρ) Π f‖₂ ≤ (∑ᵢ ‖exp(c ρ) eᵢ‖₂) ‖f‖₂`, and the bound here
 makes the right side finite. The projection itself is not constructed here.
 
-The proof is an Agmon-type estimate. The exterior coercivity of `L_x`
+The proof is an Agmon-type estimate (Agmon 1982). The exterior coercivity of `L_x`
 (`TauCeti.Vortex.exists_exterior_integral_norm_sq_gaugeFixedOperator_ge`) holds at every mass
 `c₁ < 1 / 2` outside a large disc of radius `R`, and since `L_x (χ y) = σ(dχ) y` for a kernel
 element `y`, it gives `c₁² ∫ |χ y|² ≤ ∫ |dχ|² |y|²` for every bounded weight `χ` vanishing on the
@@ -58,6 +58,9 @@ Nothing here is uniform over the noncompact moduli space of vortices.
 
 ## References
 
+* S. Agmon, *Lectures on Exponential Decay of Solutions of Second-Order Elliptic Equations:
+  Bounds on Eigenfunctions of N-Body Schrödinger Operators*, Mathematical Notes 29, Princeton
+  University Press, 1982.
 * A. Jaffe and C. H. Taubes, *Vortices and Monopoles*, Progress in Physics 2, Birkhäuser, 1980,
   Chapter III.
 * C. H. Taubes, *Gr ⇒ SW: from pseudo-holomorphic curves to Seiberg–Witten solutions*,
