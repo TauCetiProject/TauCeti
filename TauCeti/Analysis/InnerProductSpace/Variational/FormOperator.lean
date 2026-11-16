@@ -79,19 +79,13 @@ every `v` (`IsCoercive.mem_graph_formOperator_iff`). -/
 def formOperator (hB : IsCoercive B) (J : V →L[ℝ] H) (c : ℝ) : H →ₗ.[ℝ] H :=
   subScalar (((hB.formSolutionOperator J : H →ₗ[ℝ] H).toPMap ⊤).inverse) c
 
-/-- With `J` of dense range, the solution operator is injective. -/
-theorem injective_formSolutionOperator (hB : IsCoercive B) (hJ : DenseRange J) :
-    Function.Injective (hB.formSolutionOperator J) := by
-  rw [← ContinuousLinearMap.coe_coe, ← LinearMap.ker_eq_bot, ← eigenspace_zero]
-  exact hB.eigenspace_formSolutionOperator_zero_eq_bot hJ
-
 /-- The graph of the form operator through the solution operator: `(x, f)` lies on it exactly when
 `S (f + c x) = x`. -/
 theorem mem_graph_formOperator_iff_formSolutionOperator (hB : IsCoercive B) (hJ : DenseRange J)
     {x : H × H} :
     x ∈ (hB.formOperator J c).graph ↔ hB.formSolutionOperator J (x.2 + c • x.1) = x.1 := by
   rw [← ContinuousLinearMap.mem_graph_inverse_toPMap_top_iff _
-    (hB.injective_formSolutionOperator hJ) (x := (x.1, x.2 + c • x.1))]
+    (hB.formSolutionOperator_injective hJ) (x := (x.1, x.2 + c • x.1))]
   simp only [formOperator, mem_graph_iff]
   constructor
   · rintro ⟨y, hy, hxy⟩
@@ -147,7 +141,7 @@ theorem neg_mem_resolventSet_formOperator (hB : IsCoercive B) (hJ : DenseRange J
     -c ∈ (hB.formOperator J c).resolventSet := by
   rw [formOperator, TauCeti.LinearPMap.mem_resolventSet_subScalar_iff, neg_add_cancel]
   exact ContinuousLinearMap.zero_mem_resolventSet_inverse_toPMap_top _
-    (hB.injective_formSolutionOperator hJ)
+    (hB.formSolutionOperator_injective hJ)
 
 /-- **`(A + c)⁻¹ = S`.** The resolvent of the form operator at `-c` is minus the solution
 operator `S` of the shifted form, that is `(A + c)⁻¹ = S`. -/
@@ -156,8 +150,8 @@ theorem resolvent_formOperator_neg (hB : IsCoercive B) (hJ : DenseRange J) :
   rw [formOperator, TauCeti.LinearPMap.resolvent_subScalar (by
       rw [neg_add_cancel]
       exact ContinuousLinearMap.zero_mem_resolventSet_inverse_toPMap_top _
-        (hB.injective_formSolutionOperator hJ)), neg_add_cancel,
-    ContinuousLinearMap.resolvent_inverse_toPMap_top_zero _ (hB.injective_formSolutionOperator hJ)]
+        (hB.formSolutionOperator_injective hJ)), neg_add_cancel,
+    ContinuousLinearMap.resolvent_inverse_toPMap_top_zero _ (hB.formSolutionOperator_injective hJ)]
 
 /-- **The form operator has compact resolvent** when `J` is compact. -/
 theorem hasCompactResolvent_formOperator (hB : IsCoercive B) (hJc : IsCompactOperator J)
@@ -272,7 +266,7 @@ theorem isSelfAdjoint_formOperator (hB : IsCoercive B) (hJ : DenseRange J)
     rw [hBQ, hBQ, hsymmQ, real_inner_comm]
   have hS := ContinuousLinearMap.isSelfAdjoint_inverse_toPMap_top _
     (ContinuousLinearMap.isSelfAdjoint_iff_isSymmetric.2
-      (hB.isSymmetric_formSolutionOperator J hsymm)) (hB.injective_formSolutionOperator hJ)
+      (hB.isSymmetric_formSolutionOperator J hsymm)) (hB.formSolutionOperator_injective hJ)
   have hT : IsSelfAdjoint ((-c) • (1 : H →L[ℝ] H)) :=
     (IsSelfAdjoint.all (-c)).smul (IsSelfAdjoint.one _)
   have heq : hB.formOperator J c =
