@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Computability.RE
-import Mathlib.Data.Set.Finite.Basic
+import TauCeti.Computability.Primrec.FiniteSet
 
 /-!
 # Closure properties of computable and c.e. predicates
@@ -23,9 +23,8 @@ computable pieces:
 * `ComputablePred.rePred_exists`: an unbounded existential quantifier over a computable predicate
   is c.e., by unbounded search;
 * `Computable.rePred_mem_range`: the range of a total computable function is c.e.;
-* `Set.Finite.primrecPred`, `Set.Finite.computablePred`, `Set.Infinite.of_not_computablePred`:
-  membership in a finite set is primitive recursive (hence computable), so every noncomputable set
-  is infinite.
+* `Set.Finite.computablePred`, `Set.Infinite.of_not_computablePred`: membership in a finite set is
+  computable, so every noncomputable set is infinite.
 
 ## References
 
@@ -72,7 +71,7 @@ theorem exists_lt {p : α → ℕ → Prop} (hp : ComputablePred fun x : α × �
   obtain ⟨a, n⟩ := x
   induction n with
   | zero => simp
-  | succ n ih => simp [ih, Nat.lt_succ_iff_lt_or_eq, or_and_right, exists_or]
+  | succ n ih => simp [ih, Nat.le_iff_lt_or_eq, or_and_right, exists_or]
 
 /-- An unbounded existential quantifier over a computable predicate is c.e.: search for a
 witness. -/
@@ -110,12 +109,6 @@ theorem rePred_mem_range {β : Type*} [Primcodable β] {f : α → β} (hf : Com
 end Computable
 
 namespace Set
-
-/-- Membership in a finite subset of a primitive-codable type is primitive recursive. -/
-theorem Finite.primrecPred {A : Set α} (hA : A.Finite) : PrimrecPred (· ∈ A) := by
-  classical
-  exact (Primrec.eq.exists_mem_list.comp (Primrec.const (Set.Finite.toFinset hA).toList)
-    Primrec.id).of_eq fun x => by simp
 
 /-- Membership in a finite subset of a primitive-codable type is computable. -/
 theorem Finite.computablePred {A : Set α} (hA : A.Finite) : ComputablePred (· ∈ A) :=

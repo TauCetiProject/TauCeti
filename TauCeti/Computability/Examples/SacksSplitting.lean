@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Computability.SacksSplitting.Code
+public import TauCeti.Computability.SacksSplitting.Degree
 public import TauCeti.Computability.Simple.Lowness
 
 /-!
@@ -115,6 +116,19 @@ theorem exists_split_even_avoiding_jump_empty :
 
 /-! ### Splitting Soare's low simple set -/
 
+private theorem not_simple_splitHalf_self {B : ℕ → Finset ℕ} (hBm : Monotone B)
+    (hB : Computable fun s => Finset.equivBitIndices.symm (B s))
+    (hnc : ¬ComputablePred (· ∈ stageLimit B)) (b : Bool) :
+    ¬(splitHalf B B b).Simple := fun hS => by
+  have hinf : (splitHalf B B (!b)).Infinite :=
+    .of_not_computablePred (not_computablePred_mem_splitHalf_self hBm hB hnc (!b))
+  obtain ⟨x, hx', hx⟩ := hS.inter_nonempty (rePred_mem_splitHalf hB hB (!b)) hinf
+  have hd : Disjoint (splitHalf B B (!b)) (splitHalf B B b) := by
+    cases b
+    · exact (disjoint_splitHalf B B).symm
+    · exact disjoint_splitHalf B B
+  exact Set.disjoint_left.1 hd hx' hx
+
 /-- **Self-splitting `lowSimpleSet`:** Soare's low simple set is the disjoint union of two low,
 infinite, noncomputable, Turing incomparable c.e. sets `A₀` and `A₁` strictly between `0` and
 `deg(lowSimpleSet)` whose degrees join to `deg(lowSimpleSet)`, **neither of which is simple**. -/
@@ -141,18 +155,14 @@ theorem exists_split_lowSimpleSet_not_simple :
     exact simple_lowSimpleSet.not_computablePred
   have hinf (b : Bool) : (splitHalf bs bs b).Infinite :=
     .of_not_computablePred (not_computablePred_mem_splitHalf_self hbm hbs hnc b)
-  have hnotsimple₀ : ¬(splitHalf bs bs false).Simple := fun hS =>
-    let ⟨x, hx₁, hx₀⟩ := hS.inter_nonempty (rePred_mem_splitHalf hbs hbs true) (hinf true)
-    Set.disjoint_left.1 (disjoint_splitHalf bs bs) hx₀ hx₁
-  have hnotsimple₁ : ¬(splitHalf bs bs true).Simple := fun hS =>
-    let ⟨x, hx₀, hx₁⟩ := hS.inter_nonempty (rePred_mem_splitHalf hbs hbs false) (hinf false)
-    Set.disjoint_left.1 (disjoint_splitHalf bs bs) hx₀ hx₁
   rw [lowSimpleSet_eq_stageLimit]
   exact ⟨splitHalf bs bs false, splitHalf bs bs true,
     rePred_mem_splitHalf hbs hbs false, rePred_mem_splitHalf hbs hbs true,
     low_splitHalf hbs hbm hbs hnc false, low_splitHalf hbs hbm hbs hnc true,
     disjoint_splitHalf bs bs, splitHalf_false_union_splitHalf_true bs bs,
-    hinf false, hinf true, hnotsimple₀, hnotsimple₁,
+    hinf false, hinf true,
+    not_simple_splitHalf_self hbm hbs hnc false,
+    not_simple_splitHalf_self hbm hbs hnc true,
     incompRel_splitHalf_self hbm hbs hnc,
     degree_splitHalf_self_mem_Ioo hbm hbs hnc false,
     degree_splitHalf_self_mem_Ioo hbm hbs hnc true,

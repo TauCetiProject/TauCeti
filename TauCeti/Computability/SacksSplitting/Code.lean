@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Computability.SacksSplitting.Degree
+public import TauCeti.Computability.SacksSplitting.Low
 public import TauCeti.Computability.Split
+public import Mathlib.Order.Comparable
 
 /-!
 # Uniform c.e. codes for Sacks splitting
@@ -232,6 +233,11 @@ theorem not_low_join_dom_eval_splitCode {c₀ : Nat.Partrec.Code} (c₁ : Nat.Pa
 
 /-! ### Promised lowness and cone avoidance for noncomputable targets -/
 
+private theorem not_computablePred_mem_stageLimit_domStage {c : Nat.Partrec.Code}
+    (hnc : ¬ComputablePred fun x => (c.eval x).Dom) :
+    ¬ComputablePred (· ∈ stageLimit c.domStage) := by
+  rwa [Nat.Partrec.Code.stageLimit_domStage]
+
 section NoncomputableTarget
 
 variable {c₁ : Nat.Partrec.Code} (hnc : ¬ComputablePred fun x => (c₁.eval x).Dom)
@@ -241,9 +247,8 @@ include hnc
 theorem low_dom_eval_splitCode (b : Bool) (c₀ : Nat.Partrec.Code) :
     {x | ((splitCode b c₀ c₁).eval x).Dom}.Low := by
   rw [setOf_dom_eval_splitCode]
-  have hnc' : ¬ComputablePred (· ∈ stageLimit c₁.domStage) := by
-    rwa [Nat.Partrec.Code.stageLimit_domStage]
-  exact low_splitHalf c₀.computable_domStage c₁.monotone_domStage c₁.computable_domStage hnc' b
+  exact low_splitHalf c₀.computable_domStage c₁.monotone_domStage c₁.computable_domStage
+    (not_computablePred_mem_stageLimit_domStage hnc) b
 
 /-- When `W_{c₁}` is noncomputable, neither output domain `W_{splitCode b c₀ c₁}` computes
 `W_{c₁}`. -/
@@ -251,10 +256,8 @@ theorem not_turingReducible_dom_eval_splitCode (b : Bool) (c₀ : Nat.Partrec.Co
     ¬TuringReducible {x | (c₁.eval x).Dom}.oracle
       {x | ((splitCode b c₀ c₁).eval x).Dom}.oracle := by
   rw [setOf_dom_eval_splitCode, ← Nat.Partrec.Code.stageLimit_domStage]
-  have hnc' : ¬ComputablePred (· ∈ stageLimit c₁.domStage) := by
-    rwa [Nat.Partrec.Code.stageLimit_domStage]
   exact not_turingReducible_splitHalf c₀.computable_domStage c₁.monotone_domStage
-    c₁.computable_domStage hnc' b
+    c₁.computable_domStage (not_computablePred_mem_stageLimit_domStage hnc) b
 
 end NoncomputableTarget
 
@@ -264,10 +267,11 @@ theorem incompRel_dom_eval_splitCode_self {c : Nat.Partrec.Code}
     (hnc : ¬ComputablePred fun x => (c.eval x).Dom) :
     IncompRel TuringReducible {x | ((splitCode false c c).eval x).Dom}.oracle
       {x | ((splitCode true c c).eval x).Dom}.oracle := by
-  rw [setOf_dom_eval_splitCode, setOf_dom_eval_splitCode]
-  have hnclim : ¬ComputablePred (· ∈ stageLimit c.domStage) := by
-    rwa [Nat.Partrec.Code.stageLimit_domStage]
-  exact incompRel_splitHalf_self c.monotone_domStage c.computable_domStage hnclim
+  have hu := dom_eval_splitCode_false_union_true c c
+  exact ⟨fun h => not_turingReducible_dom_eval_splitCode hnc true c
+      (hu ▸ Set.union_turingReducible h (.refl _)),
+    fun h => not_turingReducible_dom_eval_splitCode hnc false c
+      (hu ▸ Set.union_turingReducible (.refl _) h)⟩
 
 /-- Given a code `k₀` for `(∅ : Set ℕ).jump` and a code `c` whose domain `W_c` is noncomputable
 and incomplete, at least one side `b` of `splitCode b k₀ c` has a low domain Turing incomparable

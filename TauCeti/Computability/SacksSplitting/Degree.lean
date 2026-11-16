@@ -223,9 +223,7 @@ theorem exists_low_degrees_sup_eq (hB : REPred (· ∈ B)) :
       toAntisymmetrization TuringReducible A₀.oracle ⊔
         toAntisymmetrization TuringReducible A₁.oracle =
           toAntisymmetrization TuringReducible B.oracle := by
-  obtain ⟨A₀, A₁, h₀, h₁, hd, rfl, hl₀, hl₁, -, -⟩ :=
-    exists_split_low_not_turingReducible hB Set.rePred_mem_jump_empty
-      (Set.not_computablePred_mem_jump ∅)
+  obtain ⟨A₀, A₁, h₀, h₁, hd, rfl, hl₀, hl₁, -⟩ := exists_split_low hB
   exact ⟨A₀, A₁, h₀, h₁, hl₀, hl₁, (hd.degree_union_eq_sup h₀ h₁).symm⟩
 
 /-- **No nonzero c.e. degree is minimal.** Below the degree of a noncomputable c.e. set `B` lies
