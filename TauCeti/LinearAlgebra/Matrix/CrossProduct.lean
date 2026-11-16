@@ -43,6 +43,7 @@ matrix of the cross product of their vectors: `[û, v̂] = (u ⨯₃ v)^`.
   determinant has determinant one.
 * `TauCeti.transpose_crossProductMatrix`: the matrix `û` is skew-symmetric.
 * `TauCeti.crossProductMatrix_cross`: `(u ⨯₃ v)^ = û v̂ - v̂ û`.
+* `TauCeti.mul_crossProductMatrix_mul_transpose`: a rotation `M` conjugates `û` to `(M u)^`.
 -/
 
 public section
@@ -150,5 +151,16 @@ theorem crossProductMatrix_cross (u v : Fin 3 → R) :
       crossProductMatrix R v * crossProductMatrix R u := by
   refine Matrix.toLin'.injective (LinearMap.ext fun w ↦ ?_)
   simp only [toLin'_apply, sub_mulVec, ← mulVec_mulVec, crossProductMatrix_mulVec, cross_cross]
+
+/-- **Rotations act on hat matrices by rotating the vector**: `M û Mᵀ = (M u)^` for `M ∈ SO(3)`.
+This is the adjoint action of `SO(3)` on `so(3)` in the coordinates of the hat map. -/
+theorem mul_crossProductMatrix_mul_transpose {M : Matrix (Fin 3) (Fin 3) R}
+    (hM : M ∈ specialOrthogonalGroup (Fin 3) R) (u : Fin 3 → R) :
+    M * crossProductMatrix R u * Mᵀ = crossProductMatrix R (M *ᵥ u) := by
+  refine ext_of_mulVec_single fun i ↦ ?_
+  have hMMt : M * Mᵀ = 1 := (mem_orthogonalGroup_iff _ _).1 hM.1
+  simp only [← mulVec_mulVec, crossProductMatrix_mulVec]
+  rw [← mulVec_cross_mulVec_of_mem_specialOrthogonalGroup hM]
+  simp only [mulVec_mulVec, hMMt, one_mulVec]
 
 end TauCeti
