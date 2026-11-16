@@ -176,6 +176,13 @@ theorem toDistr_apply_eq_besselPotentialPairing {s : ℝ} (u : H^{s, p}(E, F)) (
   rw [hx]
   simp
 
+/-- The action of `u ∈ H^s(E, F)` on a fixed scalar Schwartz function `ψ` is continuous in `u`. -/
+theorem continuous_toDistr_apply {s : ℝ} (ψ : 𝓢(E, ℂ)) :
+    Continuous fun u : H^{s}(E, F) ↦ u.toDistr ψ := by
+  simp_rw [toDistr_apply_eq_besselPotentialPairing (p := 2) 2]
+  exact (((ContinuousLinearMap.lsmul ℂ ℂ).flip.besselPotentialPairing s 2 2).flip
+    (SchwartzMap.toBesselPotentialSpaceCLM (-s) 2 ψ)).continuous
+
 end Distribution
 
 section Dual
