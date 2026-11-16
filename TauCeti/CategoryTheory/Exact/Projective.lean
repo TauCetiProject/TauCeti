@@ -393,7 +393,7 @@ noncomputable def abelian {A : Type u} [Category.{v} A] [Abelian A]
   exact (congrArg (· ≫ _) (eqToHom_refl _ _)).trans (Category.id_comp _)
 
 /-- After identifying the projective term, the presentation ends with Mathlib's chosen
-projective cover map. -/
+epimorphism from a projective object. -/
 @[simp] theorem abelian_p {A : Type u} [Category.{v} A] [Abelian A]
     [CategoryTheory.EnoughProjectives A] (X : A) :
     eqToHom (abelian_P X).symm ≫ (abelian X).p = Projective.π X := by

@@ -241,7 +241,7 @@ noncomputable def abelian {A : Type u} [Category.{v} A] [Abelian A]
     (abelian X).K = cokernel (Injective.ι X) := (rfl)
 
 /-- After identifying the injective term, the presentation starts with Mathlib's chosen
-injective envelope map. -/
+monomorphism into an injective object. -/
 @[simp] theorem abelian_i {A : Type u} [Category.{v} A] [Abelian A]
     [CategoryTheory.EnoughInjectives A] (X : A) :
     (abelian X).i ≫ eqToHom (abelian_I X) = Injective.ι X := by
