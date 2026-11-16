@@ -144,6 +144,33 @@ theorem comp_assoc {D : Type*} [NonUnitalCStarAlgebra D] {δ : CStarAction G D}
   ext
   rfl
 
+/-- The zero equivariant homomorphism between two C⋆-actions. -/
+instance : Zero (Hom α β) where
+  zero := ⟨0, fun _ _ => (map_zero _).symm⟩
+
+@[simp]
+theorem zero_toNonUnitalStarAlgHom :
+    (0 : Hom α β).toNonUnitalStarAlgHom = 0 :=
+  (rfl)
+
+@[simp]
+theorem coe_zero : ⇑(0 : Hom α β) = 0 :=
+  (rfl)
+
+@[simp]
+theorem zero_apply (a : A) : (0 : Hom α β) a = 0 :=
+  (rfl)
+
+@[simp]
+theorem comp_zero (g : Hom β γ) : g.comp (0 : Hom α β) = 0 := by
+  ext
+  exact map_zero g
+
+@[simp]
+theorem zero_comp (f : Hom α β) : (0 : Hom β γ).comp f = 0 := by
+  ext
+  rfl
+
 end Hom
 
 end TauCeti.CStarAction

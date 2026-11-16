@@ -37,9 +37,7 @@ open MeasureTheory
 
 namespace TauCeti.CStarAction
 
-universe u v
-
-variable {G : Type u} {A B : Type v} [Group G] [TopologicalSpace G]
+variable {G A B : Type*} [Group G] [TopologicalSpace G]
   [IsTopologicalGroup G] [LocallyCompactSpace G] [T2Space G]
   [MeasurableSpace G] [BorelSpace G]
   [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B]

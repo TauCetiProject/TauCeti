@@ -35,6 +35,12 @@ public section
 
 namespace TwoSidedIdeal
 
+/-- The zero two-sided ideal of a possibly nonunital, nonassociative ring has `0` as its unique
+element. -/
+instance uniqueBot {A : Type*} [NonUnitalNonAssocRing A] : Unique (⊥ : TwoSidedIdeal A) where
+  default := 0
+  uniq x := Subtype.ext ((TwoSidedIdeal.mem_bot A).mp x.2)
+
 section NonUnitalRing
 
 variable {A B C : Type*} [NonUnitalRing A]
@@ -119,6 +125,14 @@ protected theorem eq {I : TwoSidedIdeal A} {x y : A} :
 theorem ker_mk (I : TwoSidedIdeal A) : TwoSidedIdeal.ker (mk I) = I := by
   ext x
   rw [TwoSidedIdeal.mem_ker, eq_zero_iff_mem]
+
+instance subsingleton [Subsingleton A] (I : TwoSidedIdeal A) : Subsingleton (A ⧸ I) :=
+  (mk_surjective I).subsingleton
+
+/-- The quotient of a possibly nonunital ring by the top two-sided ideal `⊤` is trivial. -/
+instance uniqueTop : Unique (A ⧸ (⊤ : TwoSidedIdeal A)) where
+  default := 0
+  uniq := Quotient.forall.mpr fun _ => eq_zero_iff_mem.mpr (TwoSidedIdeal.mem_top A)
 
 /-- Two nonunital ring homomorphisms out of `A ⧸ I` agree when their compositions with `mk I`
 agree. -/

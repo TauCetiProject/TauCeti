@@ -176,6 +176,13 @@ instance isClosed_toNonUnitalStarSubalgebra :
     IsClosed (I.toNonUnitalStarSubalgebra : Set A) :=
   hI
 
+/-- The nonunital `⋆`-subalgebra attached to a closed two-sided ideal absorbs left multiplication
+in `A`. -/
+theorem mul_mem_toNonUnitalStarSubalgebra_left (a : A) {x : A}
+    (hx : x ∈ I.toNonUnitalStarSubalgebra) :
+    a * x ∈ I.toNonUnitalStarSubalgebra :=
+  I.mem_toNonUnitalStarSubalgebra.mpr (I.mul_mem_left a x (I.mem_toNonUnitalStarSubalgebra.mp hx))
+
 instance instStar : Star I where
   star x := ⟨star (x : A), I.star_mem_of_isClosed x.2⟩
 

@@ -14,7 +14,9 @@ public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.FullSeminorm
 
 A covariant pair for a coefficient algebra pulls back along an equivariant homomorphism.
 The group representation stays the same, and the coefficient representation is composed with
-the homomorphism. Vector integration identifies its integrated form with the original integrated
+the homomorphism. Pulling back along a dense-range (in particular, surjective) equivariant map is
+injective and preserves and reflects nondegeneracy of the coefficient representation. Vector
+integration identifies the integrated form of a pullback with the original integrated
 form applied to the induced map of compact-support convolution algebras. This is the
 representation-level compatibility needed to extend coefficient maps to full crossed products.
 The same compatibility holds on the twisted L¹ completions.
@@ -32,6 +34,7 @@ public section
 noncomputable section
 
 open MeasureTheory UniformSpace
+open scoped CStarAlgebra
 
 namespace TauCeti.CStarAction.CovariantRepresentation
 
@@ -76,6 +79,32 @@ theorem comap_comp (P : CovariantRepresentation γ H) (ψ : Hom β γ) (φ : Hom
   · ext a v
     simp
   · simp
+
+/-- Pulling back covariant representations along a dense-range equivariant homomorphism is
+injective. -/
+theorem comap_injective_of_denseRange {φ : Hom α β} (hφ : DenseRange φ) :
+    Function.Injective fun Q : CovariantRepresentation β H => Q.comap φ := by
+  intro Q₁ Q₂ h
+  have hcoeff : ⇑Q₁.coefficient = ⇑Q₂.coefficient :=
+    hφ.equalizer (map_continuous Q₁.coefficient) (map_continuous Q₂.coefficient) <|
+      funext fun a => by simpa using DFunLike.congr_fun (congrArg coefficient h) a
+  have hgroup : Q₁.group = Q₂.group := by
+    simpa using congrArg group h
+  exact ext (DFunLike.coe_injective hcoeff) hgroup
+
+/-- Pulling back covariant representations along a surjective equivariant homomorphism is
+injective. -/
+theorem comap_injective {q : Hom α β} (hq : Function.Surjective q) :
+    Function.Injective fun Q : CovariantRepresentation β H => Q.comap q :=
+  comap_injective_of_denseRange hq.denseRange
+
+/-- Pulling back a covariant representation along a dense-range equivariant homomorphism preserves
+and reflects nondegeneracy of the coefficient representation. -/
+theorem isNondegenerate_comap_coefficient_iff (Q : CovariantRepresentation β H) {φ : Hom α β}
+    (hφ : DenseRange φ) :
+    (Q.comap φ).coefficient.IsNondegenerate ↔ Q.coefficient.IsNondegenerate := by
+  rw [comap_coefficient]
+  exact Q.coefficient.isNondegenerate_comp_iff hφ
 
 variable [IsTopologicalGroup G] [LocallyCompactSpace G] [MeasurableSpace G]
   [OpensMeasurableSpace G]

@@ -6,24 +6,22 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Comap
-public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Nondegenerate
 public import TauCeti.Analysis.CStarAlgebra.Action.Ideal
+import TauCeti.Algebra.Star.StarAlgHom
 
 /-!
 # Descent of covariant representations to quotient actions
 
 Let `q : Hom α β` be a surjective equivariant `⋆`-homomorphism between C⋆-dynamical systems.
-Pulling back covariant representations along `q` via `CovariantRepresentation.comap` is injective,
-preserves and reflects nondegeneracy of the coefficient representation, and has range consisting
-precisely of those covariant pairs `P : CovariantRepresentation α H` whose coefficient
-representation vanishes on `ker q`.
-
-Conversely, any covariant representation `P : CovariantRepresentation α H` with
+Any covariant representation `P : CovariantRepresentation α H` with
 `∀ a, q a = 0 → P.coefficient a = 0` descends uniquely to `P.descend q hq hP :
 CovariantRepresentation β H` with the same group representation and with
-`(P.descend q hq hP).coefficient (q a) = P.coefficient a`. Specializing `q` to the canonical
-quotient projection `α.quotientMkHom I hI` onto `A ⧸ I` for a closed `α`-invariant two-sided ideal
-`I` yields `CovariantRepresentation.quotientLift`.
+`(P.descend q hq hP).coefficient (q a) = P.coefficient a`. Combined with injectivity and
+nondegeneracy invariance of `CovariantRepresentation.comap`, pulling back along `q` sets up a
+bijection onto those covariant pairs of `α` whose coefficient representation vanishes on `ker q`,
+preserving and reflecting coefficient nondegeneracy. Specializing `q` to the canonical quotient
+projection `α.quotientMkHom I hI` onto `A ⧸ I` for a closed `α`-invariant two-sided ideal `I`
+yields `CovariantRepresentation.quotientLift`.
 
 These results provide the quotient-side counterpart to
 `TauCeti.Analysis.CStarAlgebra.Action.Covariant.Ideal` and supply the covariant-representation
@@ -32,11 +30,6 @@ or global σ-finiteness is assumed.
 
 ## Main definitions and results
 
-* `TauCeti.CStarAction.CovariantRepresentation.comap_injective_of_denseRange` and
-  `TauCeti.CStarAction.CovariantRepresentation.comap_injective`: injectivity of `comap` along
-  dense-range or surjective equivariant maps.
-* `TauCeti.CStarAction.CovariantRepresentation.isNondegenerate_comap_coefficient_iff`: `comap`
-  along a dense-range equivariant map preserves and reflects coefficient nondegeneracy.
 * `TauCeti.CStarAction.CovariantRepresentation.descend`: descent of a covariant representation along
   a surjective equivariant map annihilated by its coefficient representation, with inverse laws
   `comap_descend`, `descend_comap`, and range characterization `mem_range_comap_iff`.
@@ -63,32 +56,6 @@ variable {G A B H : Type*} [Group G] [TopologicalSpace G]
   [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B]
   [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
   {α : CStarAction G A} {β : CStarAction G B}
-
-/-- Pulling back covariant representations along a dense-range equivariant homomorphism is
-injective. -/
-theorem comap_injective_of_denseRange {φ : Hom α β} (hφ : DenseRange φ) :
-    Function.Injective fun Q : CovariantRepresentation β H => Q.comap φ := by
-  intro Q₁ Q₂ h
-  have hcoeff : ⇑Q₁.coefficient = ⇑Q₂.coefficient :=
-    hφ.equalizer (map_continuous Q₁.coefficient) (map_continuous Q₂.coefficient) <|
-      funext fun a => by simpa using DFunLike.congr_fun (congrArg coefficient h) a
-  have hgroup : Q₁.group = Q₂.group := by
-    simpa using congrArg group h
-  exact ext (DFunLike.coe_injective hcoeff) hgroup
-
-/-- Pulling back covariant representations along a surjective equivariant homomorphism is
-injective. -/
-theorem comap_injective {q : Hom α β} (hq : Function.Surjective q) :
-    Function.Injective fun Q : CovariantRepresentation β H => Q.comap q :=
-  comap_injective_of_denseRange hq.denseRange
-
-/-- Pulling back a covariant representation along a dense-range equivariant homomorphism preserves
-and reflects nondegeneracy of the coefficient representation. -/
-theorem isNondegenerate_comap_coefficient_iff (Q : CovariantRepresentation β H) {φ : Hom α β}
-    (hφ : DenseRange φ) :
-    (Q.comap φ).coefficient.IsNondegenerate ↔ Q.coefficient.IsNondegenerate := by
-  rw [comap_coefficient]
-  exact Q.coefficient.isNondegenerate_comp_iff hφ
 
 /-- Descend a covariant representation `P` of `α` along a surjective equivariant homomorphism
 `q : Hom α β` when `P.coefficient` vanishes on `ker q`. -/

@@ -49,9 +49,13 @@ unitality, separability, or global σ-finiteness is assumed.
 * `IsInvariant.mul_mem_range_fullCrossedProductMap_subtypeHom_left` and
   `IsInvariant.mul_mem_range_fullCrossedProductMap_subtypeHom_right`: two-sided ideal absorption
   in `FullCrossedProduct α μ`.
-* `IsInvariant.fullCrossedProductIdeal` and
-  `IsInvariant.fullCrossedProductIdeal_eq_topologicalClosure_span`: the closed two-sided ideal of
-  `FullCrossedProduct α μ` attached to a closed invariant `I : TwoSidedIdeal A`.
+* `IsInvariant.fullCrossedProductRestrictIdealEquiv`, `IsInvariant.fullCrossedProductIdeal`, and
+  `IsInvariant.fullCrossedProductIdeal_eq_topologicalClosure_span`: canonical `⋆`-isomorphism
+  between `FullCrossedProduct hI.restrictIdeal μ` and
+  `FullCrossedProduct hI.toNonUnitalStarSubalgebra.restrict μ`, and the closed two-sided ideal of
+  `FullCrossedProduct α μ` attached to a closed invariant `I : TwoSidedIdeal A` (with boundary
+  identifications `TauCeti.CStarAction.fullCrossedProductIdeal_bot` and
+  `TauCeti.CStarAction.fullCrossedProductIdeal_top`).
 * `IsInvariant.forall_mem_range_fullCrossedProductMap_subtypeHom_integratedFull_eq_zero_iff`:
   characterization of covariant representations annihilating the embedded crossed product.
 
@@ -214,10 +218,20 @@ theorem mem_fullCrossedProductStarIdeal (hmul : ∀ a : A, ∀ x ∈ I, a * x �
       x ∈ Set.range (hI.subtypeHom.fullCrossedProductMap μ) := by
   rw [← SetLike.mem_coe, coe_fullCrossedProductStarIdeal]
 
-theorem isClosed_fullCrossedProductStarIdeal (hmul : ∀ a : A, ∀ x ∈ I, a * x ∈ I) :
+instance isClosed_fullCrossedProductStarIdeal (hmul : ∀ a : A, ∀ x ∈ I, a * x ∈ I) :
     IsClosed (hI.fullCrossedProductStarIdeal μ hmul : Set (FullCrossedProduct α μ)) := by
   rw [coe_fullCrossedProductStarIdeal]
   exact (hI.isClosedEmbedding_fullCrossedProductMap_subtypeHom μ hmul).isClosed_range
+
+@[simp]
+theorem toNonUnitalStarSubalgebra_fullCrossedProductStarIdeal
+    (hmul : ∀ a : A, ∀ x ∈ I, a * x ∈ I) :
+    (hI.fullCrossedProductStarIdeal μ hmul).toNonUnitalStarSubalgebra =
+      (hI.subtypeHom.fullCrossedProductMap μ).range := by
+  ext x
+  rw [TwoSidedIdeal.mem_toNonUnitalStarSubalgebra, mem_fullCrossedProductStarIdeal,
+    NonUnitalStarAlgHom.mem_range]
+  rfl
 
 end StarSubalgebra
 
@@ -226,56 +240,84 @@ section TwoSidedIdeal
 variable {G : Type u} {A : Type v} [Group G] [TopologicalSpace G] [NonUnitalCStarAlgebra A]
   {α : CStarAction G A} {I : TwoSidedIdeal A} [IsClosed (I : Set A)]
   (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A))
-
-private def idealToStarSubalgebraHom :
-    Hom hI.restrictIdeal hI.toNonUnitalStarSubalgebra.restrict where
-  toNonUnitalStarAlgHom := I.toNonUnitalStarSubalgebraEquiv.toNonUnitalStarAlgHom
-  map_action' _ _ := by
-    ext
-    simp
-
-private def starSubalgebraToIdealHom :
-    Hom hI.toNonUnitalStarSubalgebra.restrict hI.restrictIdeal where
-  toNonUnitalStarAlgHom := I.toNonUnitalStarSubalgebraEquiv.symm.toNonUnitalStarAlgHom
-  map_action' _ _ := by
-    ext
-    simp
-
-private theorem mul_mem_toNonUnitalStarSubalgebra_left (a : A) {x : A}
-    (hx : x ∈ I.toNonUnitalStarSubalgebra) :
-    a * x ∈ I.toNonUnitalStarSubalgebra :=
-  I.mem_toNonUnitalStarSubalgebra.mpr (I.mul_mem_left a x (I.mem_toNonUnitalStarSubalgebra.mp hx))
-
-private theorem idealSubtypeHom_eq_comp :
-    hI.idealSubtypeHom =
-      hI.toNonUnitalStarSubalgebra.subtypeHom.comp (idealToStarSubalgebraHom hI) := by
-  ext x
-  simp [idealToStarSubalgebraHom]
-
-variable [IsTopologicalGroup G] [LocallyCompactSpace G] [MeasurableSpace G] [BorelSpace G]
+  [IsTopologicalGroup G] [LocallyCompactSpace G] [MeasurableSpace G] [BorelSpace G]
   (μ : Measure G) [μ.IsHaarMeasure]
+
+/-- Canonical isometric `⋆`-isomorphism between the full crossed products of a closed invariant
+two-sided ideal `I` equipped with `hI.restrictIdeal` and with
+`hI.toNonUnitalStarSubalgebra.restrict`. -/
+def fullCrossedProductRestrictIdealEquiv :
+    FullCrossedProduct hI.restrictIdeal μ ≃⋆ₐ[ℂ]
+      FullCrossedProduct hI.toNonUnitalStarSubalgebra.restrict μ :=
+  StarAlgEquiv.ofNonUnitalStarAlgHom
+    (hI.idealToStarSubalgebraHom.fullCrossedProductMap μ)
+    (hI.starSubalgebraToIdealHom.fullCrossedProductMap μ)
+    (by
+      rw [← Hom.fullCrossedProductMap_comp,
+        hI.starSubalgebraToIdealHom_comp_idealToStarSubalgebraHom,
+        Hom.fullCrossedProductMap_id])
+    (by
+      rw [← Hom.fullCrossedProductMap_comp,
+        hI.idealToStarSubalgebraHom_comp_starSubalgebraToIdealHom,
+        Hom.fullCrossedProductMap_id])
+
+@[simp]
+theorem toNonUnitalStarAlgHom_fullCrossedProductRestrictIdealEquiv :
+    (hI.fullCrossedProductRestrictIdealEquiv μ).toNonUnitalStarAlgHom =
+      hI.idealToStarSubalgebraHom.fullCrossedProductMap μ :=
+  (rfl)
+
+@[simp]
+theorem toNonUnitalStarAlgHom_fullCrossedProductRestrictIdealEquiv_symm :
+    (hI.fullCrossedProductRestrictIdealEquiv μ).symm.toNonUnitalStarAlgHom =
+      hI.starSubalgebraToIdealHom.fullCrossedProductMap μ :=
+  (rfl)
+
+@[simp]
+theorem fullCrossedProductRestrictIdealEquiv_apply
+    (x : FullCrossedProduct hI.restrictIdeal μ) :
+    hI.fullCrossedProductRestrictIdealEquiv μ x =
+      hI.idealToStarSubalgebraHom.fullCrossedProductMap μ x :=
+  (rfl)
+
+@[simp]
+theorem coe_fullCrossedProductRestrictIdealEquiv :
+    ⇑(hI.fullCrossedProductRestrictIdealEquiv μ) =
+      hI.idealToStarSubalgebraHom.fullCrossedProductMap μ :=
+  (rfl)
+
+@[simp]
+theorem fullCrossedProductRestrictIdealEquiv_symm_apply
+    (x : FullCrossedProduct hI.restrictIdeal μ) :
+    (hI.fullCrossedProductRestrictIdealEquiv μ).symm
+      (hI.idealToStarSubalgebraHom.fullCrossedProductMap μ x) = x :=
+  (hI.fullCrossedProductRestrictIdealEquiv μ).symm_apply_apply x
+
+@[simp]
+theorem fullCrossedProductMap_fullCrossedProductRestrictIdealEquiv_symm
+    (y : FullCrossedProduct hI.toNonUnitalStarSubalgebra.restrict μ) :
+    hI.idealToStarSubalgebraHom.fullCrossedProductMap μ
+      ((hI.fullCrossedProductRestrictIdealEquiv μ).symm y) = y :=
+  (hI.fullCrossedProductRestrictIdealEquiv μ).apply_symm_apply y
 
 /-- The embedded range of `hI.idealSubtypeHom.fullCrossedProductMap μ` agrees with that of
 `hI.toNonUnitalStarSubalgebra.subtypeHom.fullCrossedProductMap μ`. -/
 theorem range_fullCrossedProductMap_idealSubtypeHom_eq :
     (hI.idealSubtypeHom.fullCrossedProductMap μ).range =
       (hI.toNonUnitalStarSubalgebra.subtypeHom.fullCrossedProductMap μ).range := by
-  rw [idealSubtypeHom_eq_comp hI, Hom.fullCrossedProductMap_comp]
+  rw [hI.idealSubtypeHom_eq_comp, Hom.fullCrossedProductMap_comp]
   ext y
   simp only [NonUnitalStarAlgHom.mem_range, NonUnitalStarAlgHom.comp_apply]
-  exact ⟨fun ⟨x, hx⟩ => ⟨_, hx⟩, fun ⟨z, hz⟩ => by
-    obtain ⟨x, rfl⟩ :=
-      ((idealToStarSubalgebraHom hI).bijective_fullCrossedProductMap μ
-        I.toNonUnitalStarSubalgebraEquiv.bijective).surjective z
-    exact ⟨x, hz⟩⟩
+  exact ⟨fun ⟨x, hx⟩ => ⟨_, hx⟩, fun ⟨z, hz⟩ =>
+    ⟨(hI.fullCrossedProductRestrictIdealEquiv μ).symm z, by simpa using hz⟩⟩
 
 /-- The induced full crossed-product map from a closed invariant two-sided ideal preserves norms. -/
 theorem norm_fullCrossedProductMap_idealSubtypeHom (x : FullCrossedProduct hI.restrictIdeal μ) :
     ‖hI.idealSubtypeHom.fullCrossedProductMap μ x‖ = ‖x‖ := by
-  rw [idealSubtypeHom_eq_comp hI, Hom.fullCrossedProductMap_comp, NonUnitalStarAlgHom.comp_apply,
+  rw [hI.idealSubtypeHom_eq_comp, Hom.fullCrossedProductMap_comp, NonUnitalStarAlgHom.comp_apply,
     hI.toNonUnitalStarSubalgebra.norm_fullCrossedProductMap_subtypeHom μ
-      (mul_mem_toNonUnitalStarSubalgebra_left (I := I)),
-    ← Hom.fullCrossedProductEquiv_apply μ _ I.toNonUnitalStarSubalgebraEquiv.bijective]
+      I.mul_mem_toNonUnitalStarSubalgebra_left,
+    ← hI.fullCrossedProductRestrictIdealEquiv_apply μ x]
   exact StarAlgEquiv.norm_map _ x
 
 /-- The induced full crossed-product map from a closed invariant two-sided ideal is an isometry. -/
@@ -308,7 +350,7 @@ theorem forall_mem_range_fullCrossedProductMap_idealSubtypeHom_integratedFull_eq
 `FullCrossedProduct hI.restrictIdeal μ` for a closed `α`-invariant two-sided ideal `I`. -/
 def fullCrossedProductIdeal : TwoSidedIdeal (FullCrossedProduct α μ) :=
   hI.toNonUnitalStarSubalgebra.fullCrossedProductStarIdeal μ
-    (mul_mem_toNonUnitalStarSubalgebra_left (I := I))
+    I.mul_mem_toNonUnitalStarSubalgebra_left
 
 @[simp]
 theorem coe_fullCrossedProductIdeal :
@@ -327,7 +369,7 @@ theorem mem_fullCrossedProductIdeal {x : FullCrossedProduct α μ} :
 instance isClosed_fullCrossedProductIdeal :
     IsClosed (hI.fullCrossedProductIdeal μ : Set (FullCrossedProduct α μ)) :=
   hI.toNonUnitalStarSubalgebra.isClosed_fullCrossedProductStarIdeal μ
-    (mul_mem_toNonUnitalStarSubalgebra_left (I := I))
+    I.mul_mem_toNonUnitalStarSubalgebra_left
 
 @[simp]
 theorem toNonUnitalStarSubalgebra_fullCrossedProductIdeal :
@@ -348,19 +390,16 @@ theorem fullCrossedProductIdeal_eq_topologicalClosure_span :
   · rw [coe_fullCrossedProductIdeal, ← NonUnitalStarAlgHom.coe_range,
       hI.range_fullCrossedProductMap_idealSubtypeHom_eq μ,
       hI.toNonUnitalStarSubalgebra.range_fullCrossedProductMap_subtypeHom_eq_topologicalClosure μ
-        (mul_mem_toNonUnitalStarSubalgebra_left (I := I)),
+        I.mul_mem_toNonUnitalStarSubalgebra_left,
       NonUnitalStarSubalgebra.topologicalClosure_coe, TwoSidedIdeal.coe_topologicalClosure]
     refine closure_mono ?_
     rintro _ ⟨f, rfl⟩
-    refine TwoSidedIdeal.subset_span ⟨(starSubalgebraToIdealHom hI).convolutionMap μ f, ?_⟩
-    have hsub : hI.idealSubtypeHom.comp (starSubalgebraToIdealHom hI) =
-        hI.toNonUnitalStarSubalgebra.subtypeHom := by
-      ext x
-      simp [starSubalgebraToIdealHom]
+    refine TwoSidedIdeal.subset_span ⟨hI.starSubalgebraToIdealHom.convolutionMap μ f, ?_⟩
     have hconv : hI.idealSubtypeHom.convolutionMap μ
-        ((starSubalgebraToIdealHom hI).convolutionMap μ f) =
+        (hI.starSubalgebraToIdealHom.convolutionMap μ f) =
         hI.toNonUnitalStarSubalgebra.subtypeHom.convolutionMap μ f := by
-      rw [← NonUnitalStarAlgHom.comp_apply, ← Hom.convolutionMap_comp, hsub]
+      rw [← NonUnitalStarAlgHom.comp_apply, ← Hom.convolutionMap_comp,
+        hI.idealSubtypeHom_comp_starSubalgebraToIdealHom]
     exact congrArg (of α μ) hconv
   · rw [TwoSidedIdeal.coe_topologicalClosure]
     refine (hI.isClosed_fullCrossedProductIdeal μ).closure_subset_iff.mpr ?_
@@ -372,3 +411,53 @@ theorem fullCrossedProductIdeal_eq_topologicalClosure_span :
 end TwoSidedIdeal
 
 end IsInvariant
+
+namespace TauCeti.CStarAction
+
+section BoundaryCases
+
+variable {G A : Type*} [Group G] [TopologicalSpace G]
+  [IsTopologicalGroup G] [LocallyCompactSpace G] [MeasurableSpace G] [BorelSpace G]
+  [NonUnitalCStarAlgebra A]
+  (α : CStarAction G A) (μ : Measure G) [μ.IsHaarMeasure]
+
+/-- At the zero ideal `⊥`, the embedded crossed-product ideal in `FullCrossedProduct α μ` is `⊥`. -/
+@[simp]
+theorem fullCrossedProductIdeal_bot :
+    (IsInvariant.bot_ideal α).fullCrossedProductIdeal μ = ⊥ := by
+  ext x
+  rw [IsInvariant.mem_fullCrossedProductIdeal, TwoSidedIdeal.mem_bot]
+  refine ⟨?_, fun hx => ⟨0, by rw [hx, map_zero]⟩⟩
+  rintro ⟨y, rfl⟩
+  rw [Subsingleton.elim y 0, map_zero]
+
+/-- At the zero ideal `⊥`, the quotient crossed-product homomorphism
+`FullCrossedProduct α μ →⋆ₙₐ[ℂ] FullCrossedProduct (α.quotient ⊥ _) μ` is bijective, without
+assuming `T2Space G`. -/
+theorem bijective_fullCrossedProductMap_quotientMkHom_bot :
+    Function.Bijective ((α.quotientMkHom ⊥ (IsInvariant.bot_ideal α)).fullCrossedProductMap μ) := by
+  refine (α.quotientMkHom ⊥ (IsInvariant.bot_ideal α)).bijective_fullCrossedProductMap μ
+    ⟨?_, α.quotientMkHom_surjective ⊥ (IsInvariant.bot_ideal α)⟩
+  rw [← Hom.coe_toNonUnitalStarAlgHom, ← TwoSidedIdeal.ker_eq_bot]
+  exact α.ker_quotientMkHom ⊥ (IsInvariant.bot_ideal α)
+
+/-- At the top ideal `⊤`, the ideal inclusion induces a bijective homomorphism of full crossed
+products. -/
+theorem bijective_fullCrossedProductMap_idealSubtypeHom_top :
+    Function.Bijective (((IsInvariant.top_ideal α).idealSubtypeHom).fullCrossedProductMap μ) :=
+  ((IsInvariant.top_ideal α).idealSubtypeHom).bijective_fullCrossedProductMap μ
+    ⟨(IsInvariant.top_ideal α).idealSubtypeHom_injective,
+      fun a => ⟨⟨a, TwoSidedIdeal.mem_top A⟩,
+        (IsInvariant.top_ideal α).idealSubtypeHom_apply ⟨a, TwoSidedIdeal.mem_top A⟩⟩⟩
+
+/-- At the top ideal `⊤`, the embedded crossed-product ideal in `FullCrossedProduct α μ` is `⊤`. -/
+@[simp]
+theorem fullCrossedProductIdeal_top :
+    (IsInvariant.top_ideal α).fullCrossedProductIdeal μ = ⊤ := by
+  ext x
+  simp only [IsInvariant.mem_fullCrossedProductIdeal, TwoSidedIdeal.mem_top, iff_true]
+  exact (bijective_fullCrossedProductMap_idealSubtypeHom_top α μ).surjective x
+
+end BoundaryCases
+
+end TauCeti.CStarAction

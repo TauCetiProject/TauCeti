@@ -348,8 +348,7 @@ theorem induction_on {p : FullCrossedProduct α μ → Prop} (x : FullCrossedPro
 instance [Subsingleton A] : Subsingleton (FullCrossedProduct α μ) :=
   subsingleton_of_forall_eq 0 fun x =>
     induction_on x (isClosed_eq continuous_id continuous_const) fun f => by
-      have hf : f = 0 := ConvolutionAlgebra.ext <| DFunLike.ext _ _ fun _ => Subsingleton.elim _ _
-      rw [hf, map_zero]
+      rw [toFull.injective (Subsingleton.elim (toFull f) (toFull 0)), map_zero]
 
 /-- If `A` has a faithful representation on a Hilbert space `H` and `μ` is inner regular for compact
 sets on sets of finite measure, the canonical map from the twisted convolution algebra into the full
