@@ -84,17 +84,11 @@ theorem conjAct_sl2zToPSL2R_smul_map_Gamma (γ : SL(2, ℤ)) :
 
 omit [NeZero N] in
 /-- The effective image of `Γ(N)` is normal in the level-one group, as `Γ(N)` is normal in
-`SL(2, ℤ)`. -/
+`SL(2, ℤ)` (`Subgroup.normal_subgroupOf_map_sl2zToPSL2R`). -/
 instance normal_subgroupOf_map_Gamma :
-    (((Gamma N).map sl2zToPSL2R).subgroupOf psl2zToPSL2R.range).Normal where
-  conj_mem x hx g := by
-    rw [Subgroup.mem_subgroupOf] at hx ⊢
-    obtain ⟨y, hy, hyx⟩ := Subgroup.mem_map.mp hx
-    obtain ⟨γ, hγ⟩ : (g : PSL(2, ℝ)) ∈ sl2zToPSL2R.range := by
-      rw [range_sl2zToPSL2R_eq_range_psl2zToPSL2R]
-      exact g.2
-    refine Subgroup.mem_map.mpr ⟨γ * y * γ⁻¹, (Gamma_normal N).conj_mem y hy γ, ?_⟩
-    simp [map_mul, map_inv, hγ, hyx]
+    (((Gamma N).map sl2zToPSL2R).subgroupOf psl2zToPSL2R.range).Normal :=
+  have := Gamma_normal N
+  inferInstance
 
 /-- The normalized cusp datum at `∞` of the effective image of `Γ(N)` in `PSL(2, ℝ)`: identity
 scaling, width `N`, and the image of `T ^ N` as generator of the stabilizer of `∞`. -/

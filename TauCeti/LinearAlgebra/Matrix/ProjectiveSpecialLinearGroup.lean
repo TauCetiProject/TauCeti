@@ -27,7 +27,8 @@ The algebraic maps connecting the matrix groups of the modular theory to `PSL(2,
   `SL(2, ℤ)` lies in that range (`Subgroup.map_sl2zToPSL2R_le_range_psl2zToPSL2R`).
 * The image of `H ≤ SL(2, ℤ)` has index `[SL(2, ℤ) : ±H]` in the level-one group
   (`Subgroup.relIndex_map_sl2zToPSL2R`). When `H` is normal, its image is normalized by the image
-  of `SL(2, ℤ)` (`Subgroup.conjAct_sl2zToPSL2R_smul_map`).
+  of `SL(2, ℤ)` (`Subgroup.conjAct_sl2zToPSL2R_smul_map`), so it is a normal subgroup of the
+  level-one group (`Subgroup.normal_subgroupOf_map_sl2zToPSL2R`).
 * `glPosToSL2R : GL(2, ℝ)⁺ →* SL(2, ℝ)` — the det-normalized representative
   `(√det g)⁻¹ • g`, a monoid homomorphism since positive scalars are central and `√` is
   multiplicative on them; `glPosToPSL2R` is its projectivization.
@@ -191,6 +192,15 @@ theorem conjAct_sl2zToPSL2R_smul_map [H.Normal] (γ : SL(2, ℤ)) :
     ConjAct.toConjAct (sl2zToPSL2R γ) • H.map sl2zToPSL2R = H.map sl2zToPSL2R :=
   conjAct_pointwise_smul_eq_self (le_normalizer_map sl2zToPSL2R
     (mem_map_of_mem _ (by rw [normalizer_eq_top]; trivial)))
+
+/-- The image in `PSL(2, ℝ)` of a normal subgroup of `SL(2, ℤ)` is normal in the level-one
+group, which is the image of `SL(2, ℤ)` and so lies in the normalizer of the image. -/
+instance normal_subgroupOf_map_sl2zToPSL2R [H.Normal] :
+    ((H.map sl2zToPSL2R).subgroupOf psl2zToPSL2R.range).Normal :=
+  normal_subgroupOf_of_le_normalizer <| by
+    rw [← TauCeti.range_sl2zToPSL2R_eq_range_psl2zToPSL2R, MonoidHom.range_eq_map,
+      ← normalizer_eq_top (H := H)]
+    exact le_normalizer_map sl2zToPSL2R
 
 /-- A finite-index subgroup of `SL(2, ℤ)` has finite-index image in the level-one group. -/
 instance isFiniteRelIndex_map_sl2zToPSL2R [H.FiniteIndex] :
