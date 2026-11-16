@@ -31,6 +31,8 @@ surjective, which removes the closure from Mathlib's general identity
   closed-range theorem for adjoints.
 * `ContinuousLinearMap.isClosed_range_adjoint_iff`: an operator has closed range if and
   only if its adjoint does.
+* `ContinuousLinearMap.isTopCompl_range_ker_adjoint_of_isClosed_range`: when `T` has closed range,
+  `range T` and `ker T†` are topological complements.
 * `ContinuousLinearMap.range_adjoint_comp_self_of_isClosed_range`,
   `ContinuousLinearMap.range_self_comp_adjoint_of_isClosed_range`: when `T` has closed range,
   `T† ∘L T` has the same range `(ker T)ᗮ` as `T†`, and `T ∘L T†` has the same range
@@ -186,16 +188,28 @@ theorem _root_.ContinuousLinearMap.range_eq_orthogonal_ker_adjoint_of_isClosed_r
   simpa using ContinuousLinearMap.range_adjoint_eq_orthogonal_ker_of_isClosed_range (T†)
     (ContinuousLinearMap.isClosed_range_adjoint_of_isClosed_range T hT)
 
+/-- For a closed-range operator `T` between Hilbert spaces, `range T` and `ker T†` are topological
+complements. -/
+theorem _root_.ContinuousLinearMap.isTopCompl_range_ker_adjoint_of_isClosed_range
+    (T : E →L[𝕜] F) (hT : IsClosed (T.range : Set F)) :
+    Submodule.IsTopCompl T.range (T†).ker := by
+  let : CompleteSpace T.range := hT.completeSpace_coe
+  simpa only [T.orthogonal_range] using T.range.isTopCompl_orthogonal
+
 /-- If a continuous linear map `T` between Hilbert spaces has closed range, then its Gram operator
 `T† ∘L T` has the same range in the source space as `T†`. -/
 theorem _root_.ContinuousLinearMap.range_adjoint_comp_self_of_isClosed_range (T : E →L[𝕜] F)
     (hT : IsClosed (LinearMap.range (T : E →ₗ[𝕜] F) : Set F)) :
     LinearMap.range ((T† ∘L T : E →L[𝕜] E) : E →ₗ[𝕜] E) = LinearMap.range (T† : F →ₗ[𝕜] E) := by
-  refine le_antisymm (LinearMap.range_comp_le_range _ _) fun x hx => ?_
-  rw [ContinuousLinearMap.range_adjoint_eq_orthogonal_ker_of_isClosed_range T hT] at hx
-  obtain ⟨⟨_, z, rfl⟩, hz⟩ :=
-    ContinuousLinearMap.codRestrict_domRestrict_adjoint_surjective T hT ⟨x, hx⟩
-  exact ⟨z, congr_arg Subtype.val hz⟩
+  refine le_antisymm ?_ fun x hx => ?_
+  · rw [ContinuousLinearMap.toLinearMap_comp]
+    exact LinearMap.range_comp_le_range _ _
+  · rw [ContinuousLinearMap.range_adjoint_eq_orthogonal_ker_of_isClosed_range T hT] at hx
+    obtain ⟨⟨_, z, rfl⟩, hz⟩ :=
+      ContinuousLinearMap.codRestrict_domRestrict_adjoint_surjective T hT ⟨x, hx⟩
+    exact ⟨z, ((ContinuousLinearMap.coe_codRestrict_apply _ _ _ _).trans
+      (congrFun (ContinuousLinearMap.coe_domRestrict (T†) _) _)).symm.trans
+      (congr_arg Subtype.val hz)⟩
 
 /-- If a continuous linear map `T` between Hilbert spaces has closed range, then the range of its
 Gram operator `T† ∘L T` is the orthogonal complement of `ker T`. -/
