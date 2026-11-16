@@ -107,13 +107,14 @@ theorem exists_cone_closedBall_subset {Γ : Set E} (hΓ : IsOpen Γ)
 /-- **Conic neighbourhoods of a kernel.** Let `Γ` be an open set, closed under multiplication by
 positive reals, in a proper real normed space, and containing every nonzero vector of the kernel
 of a continuous linear map `L`. Then for some `c > 0` it contains every `η` with
-`‖L η‖ < c ‖η‖`: on the compact set of unit vectors outside `Γ`, `‖L‖` has a positive minimum. -/
+`‖L η‖ < c ‖η‖`. -/
 theorem exists_pos_forall_mem_of_norm_lt_mul_norm [ProperSpace E] {F : Type*}
     [NormedAddCommGroup F] [NormedSpace ℝ F] {Γ : Set E} (hΓ : IsOpen Γ)
     (hcone : ∀ t : ℝ, 0 < t → ∀ η ∈ Γ, t • η ∈ Γ) (L : E →L[ℝ] F)
     (hker : ∀ η, η ≠ 0 → L η = 0 → η ∈ Γ) :
     ∃ c > 0, ∀ η, ‖L η‖ < c * ‖η‖ → η ∈ Γ := by
   set R := sphere (0 : E) 1 \ Γ
+  -- On the compact set `R` of unit vectors outside `Γ`, `u ↦ ‖L u‖` has a positive minimum.
   -- A positive `c` such that every unit vector `u` with `‖L u‖ < c` lies in `Γ`.
   obtain ⟨c, hc, hcΓ⟩ : ∃ c > 0, ∀ u ∈ sphere (0 : E) 1, ‖L u‖ < c → u ∈ Γ := by
     rcases R.eq_empty_or_nonempty with hR | hR

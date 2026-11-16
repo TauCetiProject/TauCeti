@@ -36,21 +36,30 @@ Indeed this condition makes `T (φ e_η)` rapidly decreasing on a conic neighbou
 `‖Aᵀ η‖`, so that the rapid decay of `𝓕 ψ` absorbs the polynomial growth of `T (φ e_η)`. The
 pullback `A^* (φ T)` (`Distribution.cutoffPullback`) is the distribution on `E` defined by the right
 side; it extends the pullback of smooth functions (`Distribution.cutoffPullback_apply_eq_integral`).
-This is the construction of Hörmander's pullback theorem for a linear map: the condition is
-`WF(T) ∩ N_A = ∅` over the support of `φ`, for the set of normals `N_A = {(A x, η) | Aᵀ η = 0}` of
-`A`. The wave front bound of that theorem is not proved here. For a surjective map `A` the transpose
-`Aᵀ` is injective and every distribution can be pulled back; for the inclusion of a linear subspace
-the condition says that `φ T` has no wave front set conormal to the subspace.
+This is the construction of Hörmander's pullback theorem for a linear map. The condition used here
+is `WF(T) ∩ (supp φ × ker Aᵀ) = ∅`. It implies Hörmander's condition `WF(T) ∩ N_A = ∅` over the
+support of `φ`, for the set of normals `N_A = {(A x, η) | Aᵀ η = 0}` of `A`, but is stronger: it
+constrains the wave front set at every point of the support of `φ`, not only at points of the range
+of `A`. The wave front bound of that theorem is not proved here. For a surjective map `A` the
+transpose `Aᵀ` is injective and every distribution can be pulled back; for the inclusion of a linear
+subspace the condition says that, over the support of `φ`, the wave front set of `T` contains no
+covector conormal to the subspace.
 
 ## Main declarations
 
 * `Distribution.adjoint_ne_zero_of_surjective`: the wave front condition holds for every
   distribution when `A` is surjective.
+* `Distribution.adjoint_ne_zero_add`, `Distribution.adjoint_ne_zero_smul`,
+  `Distribution.adjoint_ne_zero_add_cutoff`: the wave front condition is preserved by sums and
+  scalar multiples of distributions and by sums of cutoffs.
 * `Distribution.exists_pos_forall_decay_of_adjoint_ne_zero`: under the wave front condition,
   `T (φ e_η)` decays rapidly on `{η | ‖Aᵀ η‖ < c ‖η‖}` for some `c > 0`.
+* `Distribution.integrable_localFourier_mul_fourier`: under the wave front condition, the integrand
+  `T (φ e_η) 𝓕 ψ (-Aᵀ η)` is integrable.
 * `Distribution.cutoffPullback`: the pullback `A^* (φ T)`, a distribution on any open set of `E`,
   with its defining formula `Distribution.cutoffPullback_apply`.
 * `Distribution.cutoffPullback_add`, `Distribution.cutoffPullback_smul`: linearity in `T`.
+* `Distribution.cutoffPullback_add_cutoff`: additivity in the cutoff `φ`.
 * `Distribution.cutoffPullback_apply_eq_integral`: if `T` is a function `f` smooth near the
   support of `φ`, then `A^* (φ T)` is the function `x ↦ φ (A x) f (A x)`.
 
@@ -91,6 +100,33 @@ theorem adjoint_ne_zero_of_surjective [CompleteSpace E] [CompleteSpace E'] {A : 
   have : ⟪A x, A x⟫ = 0 := by
     rw [← ContinuousLinearMap.adjoint_inner_left, h0, inner_zero_left]
   exact (mem_waveFrontSet_iff.1 hη).2.1 (inner_self_eq_zero.1 this)
+
+omit [FiniteDimensional ℝ E] in
+/-- The wave front condition of the pullback holds for `T + S` when it holds for `T` and for `S`. -/
+theorem adjoint_ne_zero_add [CompleteSpace E] {A : E →L[ℝ] E'}
+    {T S : 𝓓'(Ω', ℂ)} {φ : 𝓓(Ω', ℂ)}
+    (h : ∀ y ∈ tsupport φ, ∀ η, (y, η) ∈ T.waveFrontSet → (A†) η ≠ 0)
+    (hS : ∀ y ∈ tsupport φ, ∀ η, (y, η) ∈ S.waveFrontSet → (A†) η ≠ 0) :
+    ∀ y ∈ tsupport φ, ∀ η, (y, η) ∈ (T + S).waveFrontSet → (A†) η ≠ 0 := fun y hy η hη ↦
+  (waveFrontSet_add_subset T S hη).elim (h y hy η) (hS y hy η)
+
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] in
+/-- The wave front condition of the pullback holds for `c • T` when it holds for `T`. -/
+theorem adjoint_ne_zero_smul [CompleteSpace E] [CompleteSpace E'] {A : E →L[ℝ] E'}
+    {T : 𝓓'(Ω', ℂ)} {φ : 𝓓(Ω', ℂ)} (c : ℂ)
+    (h : ∀ y ∈ tsupport φ, ∀ η, (y, η) ∈ T.waveFrontSet → (A†) η ≠ 0) :
+    ∀ y ∈ tsupport φ, ∀ η, (y, η) ∈ (c • T).waveFrontSet → (A†) η ≠ 0 := fun y hy η hη ↦
+  h y hy η (waveFrontSet_smul_subset c T hη)
+
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] in
+/-- The wave front condition of the pullback holds for the cutoff `φ + φ'` when it holds for `φ`
+and for `φ'`. -/
+theorem adjoint_ne_zero_add_cutoff [CompleteSpace E] [CompleteSpace E'] {A : E →L[ℝ] E'}
+    {T : 𝓓'(Ω', ℂ)} {φ φ' : 𝓓(Ω', ℂ)}
+    (h : ∀ y ∈ tsupport φ, ∀ η, (y, η) ∈ T.waveFrontSet → (A†) η ≠ 0)
+    (h' : ∀ y ∈ tsupport φ', ∀ η, (y, η) ∈ T.waveFrontSet → (A†) η ≠ 0) :
+    ∀ y ∈ tsupport (φ + φ'), ∀ η, (y, η) ∈ T.waveFrontSet → (A†) η ≠ 0 := fun y hy ↦
+  (tsupport_add φ φ' hy).elim (h y) (h' y)
 
 omit [FiniteDimensional ℝ E] in
 /-- **Decay near the conormal directions.** If no covector of the wave front set of `T` over the
@@ -134,6 +170,10 @@ theorem exists_pos_forall_decay_of_adjoint_ne_zero [CompleteSpace E] {A : E →L
 /-! ### The pullback -/
 
 variable [MeasurableSpace E] [BorelSpace E]
+
+/-- A real test function, viewed as a complex function, is integrable. -/
+private theorem integrable_ofReal_testFunction (ψ : 𝓓(Ω, ℝ)) : Integrable fun x ↦ (ψ x : ℂ) :=
+  (ψ.continuous.integrable_of_hasCompactSupport ψ.hasCompactSupport).ofReal
 
 /-- The arithmetic of the bound away from the kernel of `Aᵀ`: if `a ≤ C₀ (1 + t) ^ k`,
 `(1 + s) ^ (k + j) b ≤ D` and `1 + t ≤ K (1 + s)`, then `a b (1 + t) ^ j ≤ C₀ K ^ (k + j) D`. -/
@@ -204,8 +244,10 @@ private theorem exists_norm_mul_fourier_le {A : E →L[ℝ] E'} {T : 𝓓'(Ω', 
 
 variable [MeasurableSpace E'] [BorelSpace E']
 
-/-- The integrand `T (φ e_η) 𝓕 ψ (-Aᵀ η)` of the pullback is integrable. -/
-private theorem integrable_mul_fourier {A : E →L[ℝ] E'} {T : 𝓓'(Ω', ℂ)}
+/-- **The integrand of the pullback is integrable.** Under the wave front condition, the integrand
+`T (φ e_η) 𝓕 ψ (-Aᵀ η)` defining the pullback `Distribution.cutoffPullback` is integrable for
+every real test function `ψ`. -/
+theorem integrable_localFourier_mul_fourier {A : E →L[ℝ] E'} {T : 𝓓'(Ω', ℂ)}
     {φ : 𝓓(Ω', ℂ)} (h : ∀ y ∈ tsupport φ, ∀ η, (y, η) ∈ T.waveFrontSet → (A†) η ≠ 0)
     (ψ : 𝓓(Ω, ℝ)) :
     Integrable fun η ↦ T.localFourier φ η * 𝓕 (fun x ↦ (ψ x : ℂ)) (-(A†) η) := by
@@ -221,13 +263,11 @@ private theorem integrable_mul_fourier {A : E →L[ℝ] E'} {T : 𝓓'(Ω', ℂ)
     exact h1.trans ((le_max_left _ _).trans (Finset.single_le_sum (f := fun p ↦ max (C p) 0)
       (fun _ _ ↦ le_max_right _ _) (Finset.mem_univ _)))
   have hC0 : 0 ≤ C := (norm_nonneg _).trans (hC 0 (Nat.zero_le _) 0)
-  have hψi : Integrable fun x ↦ (ψ x : ℂ) :=
-    (ofRealCLM.continuous.comp ψ.continuous).integrable_of_hasCompactSupport
-      (ψ.hasCompactSupport.comp_left ofReal_zero)
   refine Integrable.mono' ((integrable_one_add_norm (by linarith)).const_mul (B * C)) ?_
     (Eventually.of_forall (hB ψ ψ.contDiff subset_rfl C hC0 hC))
   exact ((T.continuous_localFourier φ).mul
-    (hψi.continuous_fourier.comp (A†).continuous.neg)).aestronglyMeasurable
+    ((integrable_ofReal_testFunction ψ).continuous_fourier.comp
+      (A†).continuous.neg)).aestronglyMeasurable
 
 variable (A : E →L[ℝ] E') (T : 𝓓'(Ω', ℂ)) (φ : 𝓓(Ω', ℂ))
   (h : ∀ y ∈ tsupport φ, ∀ η, (y, η) ∈ T.waveFrontSet → (A†) η ≠ 0)
@@ -236,16 +276,15 @@ variable (A : E →L[ℝ] E') (T : 𝓓'(Ω', ℂ)) (φ : 𝓓(Ω', ℂ))
 private def pullbackLM : 𝓓(Ω, ℝ) →ₗ[ℝ] ℂ where
   toFun ψ := ∫ η, T.localFourier φ η * 𝓕 (fun x ↦ (ψ x : ℂ)) (-(A†) η)
   map_add' ψ ψ' := by
-    rw [← integral_add (integrable_mul_fourier h ψ) (integrable_mul_fourier h ψ')]
+    rw [← integral_add (integrable_localFourier_mul_fourier h ψ)
+      (integrable_localFourier_mul_fourier h ψ')]
     congr 1 with η
-    have hint (χ : 𝓓(Ω, ℝ)) : Integrable fun x ↦ (χ x : ℂ) :=
-      (ofRealCLM.continuous.comp χ.continuous).integrable_of_hasCompactSupport
-        (χ.hasCompactSupport.comp_left ofReal_zero)
     have hfun : (fun x ↦ ((ψ + ψ') x : ℂ)) = (fun x ↦ (ψ x : ℂ)) + fun x ↦ (ψ' x : ℂ) := by
       ext x
       simp
-    rw [← mul_add, hfun, (hint ψ).fourier_add (hint ψ')]
-    rfl
+    rw [← mul_add, hfun,
+      (integrable_ofReal_testFunction ψ).fourier_add (integrable_ofReal_testFunction ψ'),
+      Pi.add_apply]
   map_smul' c ψ := by
     simp only [RingHom.id_apply, ← integral_smul]
     congr 1 with η
@@ -295,21 +334,31 @@ variable {A T φ}
 
 /-- The pullback is additive in the distribution. -/
 theorem cutoffPullback_add {S : 𝓓'(Ω', ℂ)}
-    (hS : ∀ y ∈ tsupport φ, ∀ η, (y, η) ∈ S.waveFrontSet → (A†) η ≠ 0)
-    (hTS : ∀ y ∈ tsupport φ, ∀ η, (y, η) ∈ (T + S).waveFrontSet → (A†) η ≠ 0) :
-    (cutoffPullback A (T + S) φ hTS : 𝓓'(Ω, ℂ)) =
+    (hS : ∀ y ∈ tsupport φ, ∀ η, (y, η) ∈ S.waveFrontSet → (A†) η ≠ 0) :
+    (cutoffPullback A (T + S) φ (adjoint_ne_zero_add h hS) : 𝓓'(Ω, ℂ)) =
       cutoffPullback A T φ h + cutoffPullback A S φ hS := by
   ext ψ
   simp only [add_apply, cutoffPullback_apply, localFourier_add, add_mul]
-  exact integral_add (integrable_mul_fourier h ψ) (integrable_mul_fourier hS ψ)
+  exact integral_add (integrable_localFourier_mul_fourier h ψ)
+    (integrable_localFourier_mul_fourier hS ψ)
 
 /-- The pullback is complex-linear in the distribution. -/
-theorem cutoffPullback_smul (c : ℂ)
-    (hc : ∀ y ∈ tsupport φ, ∀ η, (y, η) ∈ (c • T).waveFrontSet → (A†) η ≠ 0) :
-    (cutoffPullback A (c • T) φ hc : 𝓓'(Ω, ℂ)) = c • cutoffPullback A T φ h := by
+theorem cutoffPullback_smul (c : ℂ) :
+    (cutoffPullback A (c • T) φ (adjoint_ne_zero_smul c h) : 𝓓'(Ω, ℂ)) =
+      c • cutoffPullback A T φ h := by
   ext ψ
   simp only [smul_apply, cutoffPullback_apply, localFourier_smul, mul_assoc,
     integral_const_mul, smul_eq_mul]
+
+/-- The pullback is additive in the cutoff. -/
+theorem cutoffPullback_add_cutoff {φ' : 𝓓(Ω', ℂ)}
+    (h' : ∀ y ∈ tsupport φ', ∀ η, (y, η) ∈ T.waveFrontSet → (A†) η ≠ 0) :
+    (cutoffPullback A T (φ + φ') (adjoint_ne_zero_add_cutoff h h') : 𝓓'(Ω, ℂ)) =
+      cutoffPullback A T φ h + cutoffPullback A T φ' h' := by
+  ext ψ
+  simp only [add_apply, cutoffPullback_apply, localFourier_add_cutoff, add_mul]
+  exact integral_add (integrable_localFourier_mul_fourier h ψ)
+    (integrable_localFourier_mul_fourier h' ψ)
 
 /-- **The pullback of a smooth function.** If `T` coincides on an open set `U` containing the
 support of `φ` with a function `f` smooth on `U`, then `A^* (φ T)` is the function
@@ -336,7 +385,6 @@ theorem cutoffPullback_apply_eq_integral {U : Set E'} (hU : IsOpen U) {f : E' �
   simp_rw [localFourier_eq_fourier (hf.continuousOn.locallyIntegrableOn hU.measurableSet) hT hφU,
     Complex.real_smul]
   exact (A.integral_mul_comp_eq_integral_fourier_mul_fourier hg.continuous (hGg ▸ G.integrable)
-    hFg ((ofRealCLM.continuous.comp ψ.continuous).integrable_of_hasCompactSupport
-      (ψ.hasCompactSupport.comp_left ofReal_zero))).symm
+    hFg (integrable_ofReal_testFunction ψ)).symm
 
 end Distribution
