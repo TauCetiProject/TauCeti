@@ -27,8 +27,9 @@ curvature:
   `⟪∑ i, ⟪b i, x⟫ • e i, ∑ i, ⟪b i, y⟫ • e i⟫ = ⟪x, y⟫`.
 * `Orthonormal.norm_sum_conj_smul`, `Orthonormal.norm_sum_apply_smul_le`,
   `Orthonormal.norm_sum_apply_mul_apply_le`, and `Orthonormal.norm_sum_mul_bilinForm_le`:
-  conjugate-coefficient norm invariance and Riesz-vector and Cauchy–Schwarz norm bounds for
-  contractions of bounded linear functionals and bilinear forms along orthonormal families.
+  conjugate-coefficient norm invariance and norm bounds for linear combinations and
+  Cauchy–Schwarz contractions of bounded linear functionals and bilinear forms along orthonormal
+  families.
 * `OrthonormalBasis.sum_inner_self`: `∑ i, ⟪b i, b i⟫ = card ι`, the trace of the identity.
 * `OrthonormalBasis.inner_eq_sum_repr`: the inner product in coordinates,
   `⟪x, y⟫ = ∑ i, conj (b.repr x i) * b.repr y i`.
@@ -140,7 +141,9 @@ theorem norm_sum_conj_smul {b : ι → E} (hb : Orthonormal 𝕜 b) (s : Finset 
   nlinarith [norm_nonneg (∑ q ∈ s, conj (c q) • b q), norm_nonneg (∑ q ∈ s, c q • b q)]
 
 /-- For an orthonormal family `b` and a linear functional `θ` satisfying `‖θ z‖ ≤ C * ‖z‖`
-(`0 ≤ C`), the partial Riesz sum `∑ q ∈ s, θ (b q) • b q` has norm at most `C`. -/
+(`0 ≤ C`), the linear combination `∑ q ∈ s, θ (b q) • b q` (which has the same norm as the
+partial Riesz vector `∑ q ∈ s, conj (θ (b q)) • b q` by `Orthonormal.norm_sum_conj_smul`) has norm
+at most `C`. -/
 theorem norm_sum_apply_smul_le {G : Type*} [FunLike G E 𝕜] [LinearMapClass G 𝕜 E 𝕜]
     {b : ι → E} (hb : Orthonormal 𝕜 b) (s : Finset ι) {θ : G} {C : ℝ}
     (hC : 0 ≤ C) (hθ : ∀ z, ‖θ z‖ ≤ C * ‖z‖) :

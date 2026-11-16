@@ -25,10 +25,11 @@ an *algebraic curvature tensor*, `TauCeti.FourTensor.IsAlgebraicCurvature`, and 
 the closed submodule `TauCeti.FourTensor.algebraicCurvatureSubmodule`. It is stable under pullback
 by every continuous linear map, in particular under the orthogonal group of `V`, and pullback along
 a continuous linear equivalence also reflects the curvature symmetries. By the first Bianchi
-identity, contracting an algebraic curvature tensor against itself across two slots satisfies
-`2 ∑ p, ∑ q, r(u, v, f p, f q) r(z, f p, w, f q) = ∑ p, ∑ q, r(u, v, f p, f q) r(z, w, f p, f q)`
-(`TauCeti.FourTensor.IsAlgebraicCurvature.two_mul_sum_mul_eq`). With this sign convention
-`r(u, v, u, v)` is positive on the round sphere.
+identity, contracting an algebraic curvature tensor against any skew-symmetric weight `a` satisfies
+`2 ∑ p, ∑ q, a p q * r(z, f p, w, f q) = ∑ p, ∑ q, a p q * r(z, w, f p, f q)`
+(`TauCeti.FourTensor.IsAlgebraicCurvature.two_mul_sum_mul_eq_of_skew`, with two-tensor
+specialization `TauCeti.FourTensor.IsAlgebraicCurvature.two_mul_sum_mul_eq`). With this sign
+convention `r(u, v, u, v)` is positive on the round sphere.
 
 On a real inner product space, `TauCeti.FourTensor.coordFourTensor` attaches to four vectors of a
 family `b` the rank-one four-tensor `(u, v, z, w) ↦ ⟪b i, u⟫ ⟪b j, v⟫ ⟪b k, z⟫ ⟪b l, w⟫`, in which
@@ -56,9 +57,9 @@ independent `u, v`, and it is invariant under linear isometries.
 Its Ricci contraction is `(n - 1) g`, its scalar contraction is `n (n - 1)`, contracting an
 algebraic curvature tensor against it in an orthonormal basis recovers the tensor and its Ricci
 contraction (`TauCeti.FourTensor.sum_mul_constantCurvature_last`,
-`TauCeti.FourTensor.sum_mul_constantCurvature_even`), and `κ` times it is the four-tensor of every
-curvature operator satisfying `R(w, u)v = κ (⟪u, v⟫ w - ⟪w, v⟫ u)`, the identity recorded by
-`Bundle.RiemannianMetric.IsConstantCurvatureTensor`.
+`TauCeti.FourTensor.sum_mul_constantCurvature_second_fourth`), and `κ` times it is the four-tensor
+of every curvature operator satisfying `R(w, u)v = κ (⟪u, v⟫ w - ⟪w, v⟫ u)`, the identity recorded
+by `Bundle.RiemannianMetric.IsConstantCurvatureTensor`.
 
 ## Main definitions
 
@@ -81,8 +82,9 @@ curvature operator satisfying `R(w, u)v = κ (⟪u, v⟫ w - ⟪w, v⟫ u)`, the
 
 ## Main statements
 
-* `TauCeti.FourTensor.IsAlgebraicCurvature.two_mul_sum_mul_eq`: the first-Bianchi quadratic
-  contraction identity.
+* `TauCeti.FourTensor.IsAlgebraicCurvature.two_mul_sum_mul_eq_of_skew` and
+  `TauCeti.FourTensor.IsAlgebraicCurvature.two_mul_sum_mul_eq`: the first-Bianchi contraction
+  identities against skew-symmetric weights and algebraic curvature tensors.
 * `TauCeti.FourTensor.isClosed_algebraicCurvatureSubmodule`: the submodule is closed.
 * `TauCeti.FourTensor.IsAlgebraicCurvature.compContinuousLinearMap`: pullback preserves algebraic
   curvature tensors.
@@ -102,7 +104,7 @@ curvature operator satisfying `R(w, u)v = κ (⟪u, v⟫ w - ⟪w, v⟫ u)`, the
   pull the constant-curvature tensor back to the constant-curvature tensor.
 * `TauCeti.FourTensor.ricci_constantCurvature`, `TauCeti.FourTensor.scalar_constantCurvature`,
   `TauCeti.FourTensor.sum_mul_constantCurvature_last`, and
-  `TauCeti.FourTensor.sum_mul_constantCurvature_even`.
+  `TauCeti.FourTensor.sum_mul_constantCurvature_second_fourth`.
 * `TauCeti.FourTensor.ricci_planeCurvature` and `TauCeti.FourTensor.scalar_planeCurvature`.
 * `TauCeti.FourTensor.inner_eq_mul_constantCurvature`: a curvature operator of constant curvature
   `κ` has four-tensor `κ` times the constant-curvature tensor.
@@ -258,41 +260,59 @@ structure IsAlgebraicCurvature (r : FourTensor V) : Prop where
   /-- The first Bianchi identity. -/
   cyclic_eq_zero : ∀ u v z w, r ![u, v, z, w] + r ![v, z, u, w] + r ![z, u, v, w] = 0
 
-/-- Bianchi contraction identity for an algebraic curvature tensor `r` and a family `f : ι → V`
-indexed by `s : Finset ι`:
-`2 ∑ p ∈ s, ∑ q ∈ s, r(u, v, f p, f q) r(z, f p, w, f q) =
-  ∑ p ∈ s, ∑ q ∈ s, r(u, v, f p, f q) r(z, w, f p, f q)`. -/
-theorem IsAlgebraicCurvature.two_mul_sum_mul_eq {ι : Type*} {r : FourTensor V}
-    (hr : IsAlgebraicCurvature r) (s : Finset ι) (f : ι → V) (u v z w : V) :
-    2 * (∑ p ∈ s, ∑ q ∈ s, r ![u, v, f p, f q] * r ![z, f p, w, f q]) =
-      ∑ p ∈ s, ∑ q ∈ s, r ![u, v, f p, f q] * r ![z, w, f p, f q] := by
-  have hswap : (∑ p ∈ s, ∑ q ∈ s, r ![u, v, f p, f q] * r ![z, f p, w, f q]) =
-      -∑ p ∈ s, ∑ q ∈ s, r ![u, v, f p, f q] * r ![z, f q, w, f p] := by
+/-- Simultaneously swapping the first pair and the last pair of arguments leaves an algebraic
+curvature tensor unchanged. -/
+theorem IsAlgebraicCurvature.swap_first_last {r : FourTensor V} (hr : IsAlgebraicCurvature r)
+    (u v z w : V) : r ![u, v, z, w] = r ![v, u, w, z] := by
+  rw [hr.antisymm_first, hr.antisymm_last, neg_neg]
+
+/-- Reversing all four arguments leaves an algebraic curvature tensor unchanged. -/
+theorem IsAlgebraicCurvature.reverse {r : FourTensor V} (hr : IsAlgebraicCurvature r)
+    (u v z w : V) : r ![u, v, z, w] = r ![w, z, v, u] := by
+  rw [hr.swap_first_last, hr.swap_pairs]
+
+/-- Difference form of the first Bianchi identity: subtracting the result of swapping the first and
+third arguments gives `r ![u, v, z, w] - r ![z, v, u, w] = r ![u, z, v, w]`. -/
+theorem IsAlgebraicCurvature.sub_swap_first_third {r : FourTensor V} (hr : IsAlgebraicCurvature r)
+    (u v z w : V) : r ![u, v, z, w] - r ![z, v, u, w] = r ![u, z, v, w] := by
+  have hcyc := hr.cyclic_eq_zero u v z w
+  have h1 := hr.antisymm_first v z u w
+  have h2 := hr.antisymm_first z u v w
+  linear_combination hcyc - h1 - h2
+
+/-- First-Bianchi contraction identity for an algebraic curvature tensor `r` against an arbitrary
+skew-symmetric weight `a` on `s : Finset ι`:
+`2 ∑ p ∈ s, ∑ q ∈ s, a p q * r(z, f p, w, f q) = ∑ p ∈ s, ∑ q ∈ s, a p q * r(z, w, f p, f q)`. -/
+theorem IsAlgebraicCurvature.two_mul_sum_mul_eq_of_skew {ι : Type*} {r : FourTensor V}
+    (hr : IsAlgebraicCurvature r) (s : Finset ι) {a : ι → ι → ℝ}
+    (ha : ∀ p ∈ s, ∀ q ∈ s, a q p = -a p q) (f : ι → V) (z w : V) :
+    2 * (∑ p ∈ s, ∑ q ∈ s, a p q * r ![z, f p, w, f q]) =
+      ∑ p ∈ s, ∑ q ∈ s, a p q * r ![z, w, f p, f q] := by
+  have hswap : (∑ p ∈ s, ∑ q ∈ s, a p q * r ![z, f p, w, f q]) =
+      -∑ p ∈ s, ∑ q ∈ s, a p q * r ![z, f q, w, f p] := by
     conv_lhs => rw [Finset.sum_comm]
-    rw [← Finset.sum_neg_distrib]
-    refine Finset.sum_congr rfl fun p _ ↦ ?_
-    rw [← Finset.sum_neg_distrib]
-    refine Finset.sum_congr rfl fun q _ ↦ ?_
-    rw [hr.antisymm_last u v (f q) (f p), neg_mul]
-  have hbianchi (p q : ι) :
-      r ![z, f p, w, f q] - r ![z, f q, w, f p] = r ![z, w, f p, f q] := by
-    have hcyc := hr.cyclic_eq_zero (f p) w (f q) z
-    have h1 : r ![f p, w, f q, z] = r ![z, f q, w, f p] := by
-      rw [hr.antisymm_first, hr.antisymm_last, neg_neg, hr.swap_pairs]
-    have h2 : r ![w, f q, f p, z] = -r ![z, f p, w, f q] := by
-      rw [hr.antisymm_last, hr.swap_pairs]
-    have h3 : r ![f q, f p, w, z] = r ![z, w, f p, f q] := by
-      rw [hr.antisymm_first, hr.antisymm_last, neg_neg, hr.swap_pairs]
-    linear_combination -hcyc + h1 + h2 + h3
-  have hsum : 2 * (∑ p ∈ s, ∑ q ∈ s, r ![u, v, f p, f q] * r ![z, f p, w, f q]) =
-      (∑ p ∈ s, ∑ q ∈ s, r ![u, v, f p, f q] * r ![z, f p, w, f q]) -
-        ∑ p ∈ s, ∑ q ∈ s, r ![u, v, f p, f q] * r ![z, f q, w, f p] := by
+    simp_rw [← Finset.sum_neg_distrib]
+    refine Finset.sum_congr rfl fun p hp ↦ Finset.sum_congr rfl fun q hq ↦ ?_
+    rw [ha p hp q hq, neg_mul]
+  have hsum : 2 * (∑ p ∈ s, ∑ q ∈ s, a p q * r ![z, f p, w, f q]) =
+      (∑ p ∈ s, ∑ q ∈ s, a p q * r ![z, f p, w, f q]) -
+        ∑ p ∈ s, ∑ q ∈ s, a p q * r ![z, f q, w, f p] := by
     linear_combination hswap
-  rw [hsum, ← Finset.sum_sub_distrib]
-  refine Finset.sum_congr rfl fun p _ ↦ ?_
-  rw [← Finset.sum_sub_distrib]
-  refine Finset.sum_congr rfl fun q _ ↦ ?_
-  rw [← mul_sub, hbianchi]
+  rw [hsum]
+  simp_rw [← Finset.sum_sub_distrib]
+  refine Finset.sum_congr rfl fun p _ ↦ Finset.sum_congr rfl fun q _ ↦ ?_
+  rw [← mul_sub, hr.reverse z (f p), hr.reverse z (f q), hr.sub_swap_first_third, ← hr.reverse]
+
+/-- First-Bianchi contraction identity for two algebraic curvature tensors `r₁, r₂` and a family
+`f : ι → V` indexed by `s : Finset ι`:
+`2 ∑ p ∈ s, ∑ q ∈ s, r₁(u, v, f p, f q) r₂(z, f p, w, f q) =
+  ∑ p ∈ s, ∑ q ∈ s, r₁(u, v, f p, f q) r₂(z, w, f p, f q)`. -/
+theorem IsAlgebraicCurvature.two_mul_sum_mul_eq {ι : Type*} {r₁ r₂ : FourTensor V}
+    (hr₁ : IsAlgebraicCurvature r₁) (hr₂ : IsAlgebraicCurvature r₂) (s : Finset ι)
+    (f : ι → V) (u v z w : V) :
+    2 * (∑ p ∈ s, ∑ q ∈ s, r₁ ![u, v, f p, f q] * r₂ ![z, f p, w, f q]) =
+      ∑ p ∈ s, ∑ q ∈ s, r₁ ![u, v, f p, f q] * r₂ ![z, w, f p, f q] :=
+  hr₂.two_mul_sum_mul_eq_of_skew s (fun p _ q _ ↦ hr₁.antisymm_last u v (f q) (f p)) f z w
 
 variable (V) in
 /-- The submodule of algebraic curvature tensors. -/
@@ -495,12 +515,29 @@ theorem coordFourTensor_apply {ι : Type*} (b : ι → V) (i j k l : ι) (u v z 
     List.prod_nil, mul_one, Matrix.cons_val_zero, Matrix.cons_val_succ, innerSL_apply_apply]
   ring
 
-/-- The operator norm of `coordFourTensor b i j k l` is at most `‖b i‖ * ‖b j‖ * ‖b k‖ * ‖b l‖`. -/
-theorem norm_coordFourTensor_le {ι : Type*} (b : ι → V) (i j k l : ι) :
-    ‖coordFourTensor b i j k l‖ ≤ ‖b i‖ * ‖b j‖ * ‖b k‖ * ‖b l‖ := by
-  simpa [coordFourTensor, Fin.prod_univ_four, innerSL_apply_norm, mul_assoc] using
-    (ContinuousMultilinearMap.mkPiAlgebraFin ℝ 4 ℝ).norm_compContinuousLinearMap_le
-      ![innerSL ℝ (b i), innerSL ℝ (b j), innerSL ℝ (b k), innerSL ℝ (b l)]
+/-- The operator norm of `coordFourTensor b i j k l` is `‖b i‖ * ‖b j‖ * ‖b k‖ * ‖b l‖`. -/
+@[simp]
+theorem norm_coordFourTensor {ι : Type*} (b : ι → V) (i j k l : ι) :
+    ‖coordFourTensor b i j k l‖ = ‖b i‖ * ‖b j‖ * ‖b k‖ * ‖b l‖ := by
+  refine le_antisymm ?_ ?_
+  · simpa [coordFourTensor, Fin.prod_univ_four, innerSL_apply_norm, mul_assoc] using
+      (ContinuousMultilinearMap.mkPiAlgebraFin ℝ 4 ℝ).norm_compContinuousLinearMap_le
+        ![innerSL ℝ (b i), innerSL ℝ (b j), innerSL ℝ (b k), innerSL ℝ (b l)]
+  · set p := ‖b i‖ * ‖b j‖ * ‖b k‖ * ‖b l‖
+    by_cases hp : p = 0
+    · rw [hp]; exact norm_nonneg _
+    · have hle := (coordFourTensor b i j k l).le_opNorm ![b i, b j, b k, b l]
+      simp only [coordFourTensor_apply, real_inner_self_eq_norm_sq, Real.norm_eq_abs,
+        Fin.prod_univ_four, Fin.isValue, Matrix.cons_val_zero, Matrix.cons_val_one,
+        Matrix.cons_val] at hle
+      have hsq : p * p ≤ ‖coordFourTensor b i j k l‖ * p := by
+        have habs : |‖b i‖ ^ 2 * ‖b j‖ ^ 2 * ‖b k‖ ^ 2 * ‖b l‖ ^ 2| = p * p := by
+          rw [abs_of_nonneg (by positivity)]
+          dsimp only [p]
+          ring
+        rw [habs] at hle
+        exact hle
+      exact le_of_mul_le_mul_right hsq (lt_of_le_of_ne (by positivity) (Ne.symm hp))
 
 /-- Every four-tensor expands in an orthonormal basis `b` as the linear combination of
 `coordFourTensor b i j k l` weighted by its entries `r ![b i, b j, b k, b l]`. -/
@@ -817,50 +854,48 @@ theorem sum_mul_constantCurvature_last {ι : Type*} [Fintype ι] (b : Orthonorma
         ∑ p, ∑ q, r ![a, c, b p, b q] * (⟪x, b q⟫_ℝ * ⟪y, b p⟫_ℝ) := by
     simp_rw [constantCurvature_apply, mul_sub, Finset.sum_sub_distrib]
   have h2 : (∑ p, ∑ q, r ![a, c, b p, b q] * (⟪x, b q⟫_ℝ * ⟪y, b p⟫_ℝ)) = r ![a, c, y, x] := by
-    convert heval y x using 2 with p
-    exact Finset.sum_congr rfl fun q _ ↦ by ring
+    rw [← heval y x]
+    exact Finset.sum_congr rfl fun p _ ↦ Finset.sum_congr rfl fun q _ ↦ by ring
   rw [hsub, heval, h2, hr.antisymm_last a c y x]
   ring
 
 /-- Contracting the second and fourth slots of an algebraic curvature tensor `r` against
 `constantCurvature V` in an orthonormal basis `b` yields
 `ricci r a c * ⟪x, y⟫ - r ![a, y, c, x]`. -/
-theorem sum_mul_constantCurvature_even {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ V)
-    {r : FourTensor V} (hr : IsAlgebraicCurvature r) (a c x y : V) :
+theorem sum_mul_constantCurvature_second_fourth {ι : Type*} [Fintype ι]
+    (b : OrthonormalBasis ι ℝ V) {r : FourTensor V} (hr : IsAlgebraicCurvature r)
+    (a c x y : V) :
     (∑ p, ∑ q, r ![a, b p, c, b q] * constantCurvature V ![x, b p, y, b q]) =
       ricci r a c * ⟪x, y⟫_ℝ - r ![a, y, c, x] := by
-  have heven (u v : V) : r ![a, u, c, v] = ricciSlice r a c u v := by
-    rw [ricciSlice_apply, hr.antisymm_first a u, hr.antisymm_last u a c v, neg_neg]
+  have hslot (u v : V) : r ![a, u, c, v] = ricciSlice r a c u v := by
+    rw [ricciSlice_apply, hr.swap_first_last]
   have heval (u v : V) :
       (∑ p, ∑ q, r ![a, b p, c, b q] * (⟪u, b p⟫_ℝ * ⟪v, b q⟫_ℝ)) = r ![a, u, c, v] := by
     calc (∑ p, ∑ q, r ![a, b p, c, b q] * (⟪u, b p⟫_ℝ * ⟪v, b q⟫_ℝ))
         = ∑ p, ∑ q, ricciSlice r a c (b p) (b q) * ⟪b p, u⟫_ℝ * ⟪b q, v⟫_ℝ :=
           Finset.sum_congr rfl fun p _ ↦ Finset.sum_congr rfl fun q _ ↦ by
-            rw [heven, real_inner_comm u, real_inner_comm v]
+            rw [hslot, real_inner_comm u, real_inner_comm v]
             ring
       _ = r ![a, u, c, v] := by
-          rw [b.sum_apply_mul_inner_mul_inner b, ← heven]
+          rw [b.sum_apply_mul_inner_mul_inner b, ← hslot]
   have hsub : (∑ p, ∑ q, r ![a, b p, c, b q] * constantCurvature V ![x, b p, y, b q]) =
       (∑ p, ∑ q, r ![a, b p, c, b q] * (⟪x, y⟫_ℝ * ⟪b p, b q⟫_ℝ)) -
         ∑ p, ∑ q, r ![a, b p, c, b q] * (⟪x, b q⟫_ℝ * ⟪b p, y⟫_ℝ) := by
     simp_rw [constantCurvature_apply, mul_sub, Finset.sum_sub_distrib]
   have h1 : (∑ p, ∑ q, r ![a, b p, c, b q] * (⟪x, y⟫_ℝ * ⟪b p, b q⟫_ℝ)) =
       ricci r a c * ⟪x, y⟫_ℝ := by
-    have hdiag (p : ι) :
-        (∑ q, r ![a, b p, c, b q] * (⟪x, y⟫_ℝ * ⟪b p, b q⟫_ℝ)) =
-          r ![b p, a, b p, c] * ⟪x, y⟫_ℝ := by
-      rw [Finset.sum_eq_single p]
-      · rw [real_inner_self_eq_norm_sq, b.norm_eq_one, one_pow, mul_one, heven, ricciSlice_apply]
-      · intro q _ hqp
-        rw [b.orthonormal.2 hqp.symm, mul_zero, mul_zero]
-      · intro hp
-        exact absurd (Finset.mem_univ p) hp
-    simp_rw [hdiag, ← Finset.sum_mul, ricci_apply_orthonormalBasis b]
+    calc (∑ p, ∑ q, r ![a, b p, c, b q] * (⟪x, y⟫_ℝ * ⟪b p, b q⟫_ℝ))
+        = ∑ p, ∑ q, (r ![a, b p, c, b q] * ⟪x, y⟫_ℝ) • ⟪b q, b p⟫_ℝ :=
+          Finset.sum_congr rfl fun p _ ↦ Finset.sum_congr rfl fun q _ ↦ by
+            rw [smul_eq_mul, real_inner_comm (b q) (b p), mul_assoc]
+      _ = ∑ p, r ![a, b p, c, b p] * ⟪x, y⟫_ℝ := b.orthonormal.inner_left_right_finset
+      _ = ricci r a c * ⟪x, y⟫_ℝ := by
+          simp_rw [hslot, ricciSlice_apply, ← Finset.sum_mul, ricci_apply_orthonormalBasis b]
   have h2 : (∑ p, ∑ q, r ![a, b p, c, b q] * (⟪x, b q⟫_ℝ * ⟪b p, y⟫_ℝ)) = r ![a, y, c, x] := by
-    convert heval y x using 2 with p
-    refine Finset.sum_congr rfl fun q _ ↦ ?_
-    rw [real_inner_comm y (b p)]
-    ring
+    rw [← heval y x]
+    exact Finset.sum_congr rfl fun p _ ↦ Finset.sum_congr rfl fun q _ ↦ by
+      rw [real_inner_comm y (b p)]
+      ring
   rw [hsub, h1, h2]
 
 /-- The Ricci contraction of `planeCurvature u v`. -/
