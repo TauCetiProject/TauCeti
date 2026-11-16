@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import Mathlib.GroupTheory.Perm.Fin
+import TauCeti.Analysis.Normed.Module.Multilinear.Curry
 
 /-!
 # Symmetry of higher iterated derivatives
@@ -47,13 +48,6 @@ open scoped ContDiff
 variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   {f : E → F} {x : E}
-
-/-- Evaluation of the isometric reindexing of continuous multilinear maps. -/
-@[simp]
-theorem ContinuousMultilinearMap.domDomCongrₗᵢ_apply {ι ι' : Type*} [Fintype ι] [Fintype ι']
-    (σ : ι ≃ ι') (g : ContinuousMultilinearMap 𝕜 (fun _ : ι ↦ E) F) :
-    ContinuousMultilinearMap.domDomCongrₗᵢ 𝕜 E F σ g = g.domDomCongr σ :=
-  rfl
 
 /-- The derivative of a family of multilinear maps which are invariant under one permutation of
 their arguments near a point is invariant under the same permutation at that point. -/
