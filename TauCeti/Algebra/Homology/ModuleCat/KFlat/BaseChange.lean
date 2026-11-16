@@ -299,18 +299,6 @@ lemma derivedExtendRestrictScalarsAdj_counit_fac_app
 
 end Adjunction
 
-/-- Propositional existence of the derived extension–restriction adjunction for any left derived
-functor `(G, α)` of degreewise scalar extension along `f : R →+* S`. -/
-theorem nonempty_derivedExtendRestrictScalarsAdj
-    (G : DerivedCategory (_root_.ModuleCat.{u} R) ⥤ DerivedCategory (_root_.ModuleCat.{u} S))
-    (α : DerivedCategory.Q ⋙ G ⟶
-      (_root_.ModuleCat.extendScalars.{u, u, u} f).mapHomologicalComplex (ComplexShape.up ℤ) ⋙
-        DerivedCategory.Q)
-    [G.IsLeftDerivedFunctor α
-      (HomologicalComplex.quasiIso (_root_.ModuleCat.{u} R) (ComplexShape.up ℤ))] :
-    Nonempty (G ⊣ (_root_.ModuleCat.restrictScalars.{u} f).mapDerivedCategory) :=
-  ⟨derivedExtendRestrictScalarsAdj α⟩
-
 end CanonicalAndAdjunction
 
 end TauCeti.ModuleCat
