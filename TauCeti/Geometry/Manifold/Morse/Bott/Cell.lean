@@ -173,8 +173,7 @@ theorem exists_sublevel_union_image_closedBall_deformation [T2Space M]
     exact fun x _ ↦ Subsingleton.elim x.proj s₀
   refine ⟨fun x ↦ Θ (φ x), ?_, ε₀, hε₀, fun ε hε hcomp hcrit ↦ ?_⟩
   · have h0 : φ 0 = zeroSection P (fun s ↦ i.NormalSpace s hn) s₀ := by
-      simp only [φ, map_zero]
-      rfl
+      simp [φ, zeroSection]
     exact (congrArg Θ h0).trans (hΘi s₀)
   obtain ⟨hsource, hdef⟩ := hmain ε hε hcomp (hcrit.trans (singleton_subset_iff.2 ⟨s₀, rfl⟩))
   have hmaps : MapsTo φ (closedBall 0 √ε) Θ.source :=
