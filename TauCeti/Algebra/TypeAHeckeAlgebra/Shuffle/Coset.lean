@@ -10,6 +10,7 @@ public import TauCeti.Algebra.TypeAHeckeAlgebra.Shuffle.Induced
 public import TauCeti.GroupTheory.Perm.Parabolic
 import Mathlib.LinearAlgebra.Pi
 import Mathlib.RingTheory.Nilpotent.Basic
+import TauCeti.Algebra.Ring.Parity
 
 /-!
 # Shuffle masks as minimal coset representatives, coset bases, and the sign gauge
@@ -63,10 +64,12 @@ of `S_k × S_l ≤ S_(k+l)` (`TauCeti.blockParabolicSet k l`):
   `TauCeti.TypeAHeckeAlgebra.ShuffleMask.length_toPerm`,
   `TauCeti.TypeAHeckeAlgebra.ShuffleMask.sign_toPerm`, and
   `TauCeti.TypeAHeckeAlgebra.ShuffleMask.IsShufflePath.isReduced`.
-* `TauCeti.TypeAHeckeAlgebra.ShuffleMask.toPerm_initial_perm`: the minimal coset representative of
+* `TauCeti.TypeAHeckeAlgebra.ShuffleMask.toPerm_perm_initial`: the minimal coset representative of
   any `π : Equiv.Perm (Fin (k + l))` is `(initial.perm π).toPerm`.
-* `TauCeti.TypeAHeckeAlgebra.shuffleCosetEquiv_single` and
-  `TauCeti.TypeAHeckeAlgebra.shuffleCosetBasis_apply`.
+* `TauCeti.TypeAHeckeAlgebra.shuffleCosetEquiv_single`,
+  `TauCeti.TypeAHeckeAlgebra.shuffleCosetEquiv_symm_Tw_toPerm_single_initial`,
+  `TauCeti.TypeAHeckeAlgebra.shuffleCosetBasis_apply`, and
+  `TauCeti.TypeAHeckeAlgebra.shuffleCosetBasis_repr_apply`.
 * `TauCeti.TypeAHeckeAlgebra.unsignedShuffleRep_T_apply_of_mem_of_notMem` and
   `TauCeti.TypeAHeckeAlgebra.unsignedShuffleRep_T_apply_of_notMem_of_mem`: the sign-free generator
   formulas on mixed pairs.
@@ -133,18 +136,18 @@ theorem perm_injective (π : Equiv.Perm (Fin (k + l))) :
 
 /-- **The stabilizer of the initial mask is `S_k × S_l`.** -/
 @[simp]
-theorem initial_perm_eq_initial_iff {π : Equiv.Perm (Fin (k + l))} :
+theorem perm_initial_eq_initial_iff {π : Equiv.Perm (Fin (k + l))} :
     (initial : ShuffleMask k l).perm π = initial ↔ π ∈ (Equiv.Perm.finSumPermHom k l).range := by
   rw [← inv_mem_iff, Equiv.Perm.mem_range_finSumPermHom_iff, Subtype.ext_iff, Finset.ext_iff]
   simp
 
 /-- Two permutations send the initial mask to the same mask exactly when they lie in the same left
 coset of `S_k × S_l`. -/
-theorem initial_perm_eq_initial_perm_iff {π₁ π₂ : Equiv.Perm (Fin (k + l))} :
+theorem perm_initial_eq_perm_initial_iff {π₁ π₂ : Equiv.Perm (Fin (k + l))} :
     (initial : ShuffleMask k l).perm π₁ = initial.perm π₂ ↔
       π₁⁻¹ * π₂ ∈ (Equiv.Perm.finSumPermHom k l).range := by
   rw [← (perm_injective π₁⁻¹).eq_iff, ← perm_mul, ← perm_mul, inv_mul_cancel, perm_one, eq_comm,
-    initial_perm_eq_initial_iff]
+    perm_initial_eq_initial_iff]
 
 /-! ### Minimal coset representatives from masks -/
 
@@ -179,7 +182,7 @@ theorem toPerm_swap {i : Fin (k + l - 1)} {S : ShuffleMask k l}
 
 /-- Applying `S.toPerm` to the initial mask recovers `S`. -/
 @[simp]
-theorem initial_perm_toPerm (S : ShuffleMask k l) :
+theorem perm_toPerm_initial (S : ShuffleMask k l) :
     (initial : ShuffleMask k l).perm S.toPerm = S := by
   obtain ⟨w, hw⟩ := exists_isShufflePath S
   rw [← hw.wordProd_eq_toPerm]
@@ -191,13 +194,13 @@ theorem initial_perm_toPerm (S : ShuffleMask k l) :
 /-- A position `x` is selected in `S` exactly when `S.toPerm⁻¹ x` lies in `{0, …, k - 1}`. -/
 theorem mem_iff_toPerm_inv_lt {S : ShuffleMask k l} {x : Fin (k + l)} :
     x ∈ S.1 ↔ (S.toPerm⁻¹ x : ℕ) < k := by
-  conv_lhs => rw [← S.initial_perm_toPerm]
+  conv_lhs => rw [← S.perm_toPerm_initial]
   rw [mem_perm, mem_initial]
 
 /-- `ShuffleMask.toPerm` is injective. -/
 theorem toPerm_injective :
     Function.Injective (toPerm : ShuffleMask k l → Equiv.Perm (Fin (k + l))) := fun S₁ S₂ h ↦ by
-  rw [← S₁.initial_perm_toPerm, ← S₂.initial_perm_toPerm, h]
+  rw [← S₁.perm_toPerm_initial, ← S₂.perm_toPerm_initial, h]
 
 /-- **Every mask's permutation is a minimal coset representative of `S_k × S_l` in `S_(k+l)`.** -/
 theorem isMinimalCosetRep_toPerm (S : ShuffleMask k l) :
@@ -208,32 +211,20 @@ theorem isMinimalCosetRep_toPerm (S : ShuffleMask k l) :
     rw [toPerm_initial]
     exact (permCoxeterSystem (k + l)).isMinimalCosetRep_one _
   | @cons _ S i _ ha hb ih =>
-    rw [toPerm_swap ha hb, isMinimalCosetRep_blockParabolicSet_iff]
-    obtain ⟨h₁, h₂⟩ := isMinimalCosetRep_blockParabolicSet_iff.mp ih
-    have ha' : (S.toPerm⁻¹ (BraidGroup.strand i) : ℕ) < k := mem_iff_toPerm_inv_lt.mp ha
-    have hb' : ¬ (S.toPerm⁻¹ (BraidGroup.strandSucc i) : ℕ) < k :=
-      mt mem_iff_toPerm_inv_lt.mpr hb
-    refine ⟨fun p₁ p₂ hp ↦ ?_, fun q₁ q₂ hq ↦ ?_⟩
-    · have hlt : (S.toPerm (Fin.castAdd l p₁) : ℕ) < S.toPerm (Fin.castAdd l p₂) :=
-        Fin.lt_def.mp (h₁ hp)
-      have hn₁ : (S.toPerm (Fin.castAdd l p₁) : ℕ) ≠ (i : ℕ) + 1 := fun h ↦ hb' <| by
-        have heq : S.toPerm (Fin.castAdd l p₁) = BraidGroup.strandSucc i := Fin.ext (by simp [h])
-        simp [← heq]
-      have hn₂ : (S.toPerm (Fin.castAdd l p₂) : ℕ) ≠ (i : ℕ) + 1 := fun h ↦ hb' <| by
-        have heq : S.toPerm (Fin.castAdd l p₂) = BraidGroup.strandSucc i := Fin.ext (by simp [h])
-        simp [← heq]
-      simp only [Fin.lt_def, Equiv.Perm.mul_apply, BraidGroup.val_transposition_apply]
-      split_ifs <;> omega
-    · have hlt : (S.toPerm (Fin.natAdd k q₁) : ℕ) < S.toPerm (Fin.natAdd k q₂) :=
-        Fin.lt_def.mp (h₂ hq)
-      have hn₁ : (S.toPerm (Fin.natAdd k q₁) : ℕ) ≠ i := fun h ↦ by
-        have heq : S.toPerm (Fin.natAdd k q₁) = BraidGroup.strand i := Fin.ext (by simp [h])
-        exact absurd ha' (by simp [← heq])
-      have hn₂ : (S.toPerm (Fin.natAdd k q₂) : ℕ) ≠ i := fun h ↦ by
-        have heq : S.toPerm (Fin.natAdd k q₂) = BraidGroup.strand i := Fin.ext (by simp [h])
-        exact absurd ha' (by simp [← heq])
-      simp only [Fin.lt_def, Equiv.Perm.mul_apply, BraidGroup.val_transposition_apply]
-      split_ifs <;> omega
+    rw [toPerm_swap ha hb, ← permCoxeterSystem_simple]
+    refine (ih.simple_mul_or_exists_eq_mul_simple (permCoxeterSystem (k + l)) i).resolve_right ?_
+    rintro ⟨j, hj, heq⟩
+    have hmem : (permCoxeterSystem (k + l)).simple j ∈ (Equiv.Perm.finSumPermHom k l).range := by
+      rw [← permCoxeterSystem_parabolic_blockParabolicSet]
+      exact (permCoxeterSystem (k + l)).simple_mem_parabolic hj
+    have hperm := congrArg (perm · (initial : ShuffleMask k l)) heq
+    rw [perm_mul, perm_mul, perm_toPerm_initial, perm_initial_eq_initial_iff.mpr hmem,
+      perm_toPerm_initial, permCoxeterSystem_simple, perm_transposition] at hperm
+    have hmem_s : BraidGroup.strandSucc i ∈
+        (S.swap (BraidGroup.strand i) (BraidGroup.strandSucc i)).1 := by
+      simp [ha]
+    rw [hperm] at hmem_s
+    exact hb hmem_s
 
 /-- **The Coxeter length of `S.toPerm` equals the mask length `S.length`.** -/
 @[simp]
@@ -267,13 +258,13 @@ theorem sign_toPerm (S : ShuffleMask k l) :
     S.length_toPerm]
 
 /-- **The minimal coset representative of `π` is `(initial.perm π).toPerm`.** -/
-theorem toPerm_initial_perm (π : Equiv.Perm (Fin (k + l))) :
+theorem toPerm_perm_initial (π : Equiv.Perm (Fin (k + l))) :
     ((initial : ShuffleMask k l).perm π).toPerm =
       (permCoxeterSystem (k + l)).minimalCosetRep (blockParabolicSet k l) π := by
   rw [(permCoxeterSystem (k + l)).eq_minimalCosetRep_iff]
   refine ⟨isMinimalCosetRep_toPerm _, ?_⟩
-  rw [permCoxeterSystem_parabolic_blockParabolicSet, ← initial_perm_eq_initial_perm_iff,
-    initial_perm_toPerm]
+  rw [permCoxeterSystem_parabolic_blockParabolicSet, ← perm_initial_eq_perm_initial_iff,
+    perm_toPerm_initial]
 
 /-- **Masks biject with minimal left coset representatives of `S_k × S_l` in `S_(k+l)`.** -/
 noncomputable def minimalCosetRepEquiv (k l : ℕ) :
@@ -282,9 +273,9 @@ noncomputable def minimalCosetRepEquiv (k l : ℕ) :
         (permCoxeterSystem (k + l)).IsMinimalCosetRep (blockParabolicSet k l) d} where
   toFun S := ⟨S.toPerm, S.isMinimalCosetRep_toPerm⟩
   invFun d := initial.perm d.1
-  left_inv S := S.initial_perm_toPerm
+  left_inv S := S.perm_toPerm_initial
   right_inv d := Subtype.ext <|
-    (toPerm_initial_perm d.1).trans (d.2.minimalCosetRep_eq (permCoxeterSystem (k + l)))
+    (toPerm_perm_initial d.1).trans (d.2.minimalCosetRep_eq (permCoxeterSystem (k + l)))
 
 /-- `ShuffleMask.minimalCosetRepEquiv` sends a mask `S` to `S.toPerm`. -/
 @[simp]
@@ -304,11 +295,6 @@ theorem minimalCosetRepEquiv_symm_apply
 end ShuffleMask
 
 /-! ### The PBW coset isomorphism and coset basis of `Sh_k(U)` -/
-
-@[simp]
-private theorem neg_one_pow_smul_neg_one_pow_smul {R M : Type*} [Monoid R] [HasDistribNeg R]
-    [MulAction R M] (m : ℕ) (x : M) : (-1 : R) ^ m • ((-1 : R) ^ m • x) = x := by
-  rw [smul_smul, ← pow_add, ← two_mul, pow_mul, neg_one_sq, one_pow, one_smul]
 
 section CosetBasis
 
@@ -473,6 +459,26 @@ theorem shuffleCosetEquiv_single
   rw [shuffleCosetEquiv, LinearEquiv.ofBijective_apply, shuffleCosetMap, LinearMap.lsum_piSingle,
     LinearMap.comp_apply, LinearMap.single_apply]
 
+/-- The inverse of `TauCeti.TypeAHeckeAlgebra.shuffleCosetEquiv` sends the coset vector
+`T_(S.toPerm) • Pi.single initial u` back to `Pi.single S u`. -/
+@[simp]
+theorem shuffleCosetEquiv_symm_Tw_toPerm_single_initial
+    (ρ : TypeAHeckeAlgebra R q l →ₐ[R] Module.End R U) (S : ShuffleMask k l) (u : U) :
+    (shuffleCosetEquiv k ρ).symm
+        (shuffleRep k ρ (Tw q (permCoxeterSystem (k + l)) S.toPerm)
+          (Pi.single ShuffleMask.initial u)) =
+      Pi.single S u := by
+  rw [← shuffleCosetEquiv_single, LinearEquiv.symm_apply_apply]
+
+/-- The inverse of `TauCeti.TypeAHeckeAlgebra.shuffleCosetEquiv` fixes vectors supported on the
+initial mask. -/
+@[simp]
+theorem shuffleCosetEquiv_symm_single_initial
+    (ρ : TypeAHeckeAlgebra R q l →ₐ[R] Module.End R U) (u : U) :
+    (shuffleCosetEquiv k ρ).symm (Pi.single ShuffleMask.initial u) =
+      Pi.single ShuffleMask.initial u := by
+  simpa using shuffleCosetEquiv_symm_Tw_toPerm_single_initial (k := k) ρ ShuffleMask.initial u
+
 variable (k) in
 /-- **The PBW coset basis of `Sh_k(U)`** associated to a basis `b` of `U`: the vectors
 `T_(S.toPerm) • Pi.single initial (b i)` for `(S, i) : ShuffleMask k l × ι` form an `R`-basis of
@@ -492,6 +498,15 @@ theorem shuffleCosetBasis_apply {ι : Type*}
     shuffleCosetBasis k ρ b p =
       shuffleRep k ρ (Tw q (permCoxeterSystem (k + l)) p.1.toPerm)
         (Pi.single ShuffleMask.initial (b p.2)) := by
+  simp [shuffleCosetBasis]
+
+/-- Coordinates in `TauCeti.TypeAHeckeAlgebra.shuffleCosetBasis` are the coordinates of the
+inverse coset image in `b`. -/
+@[simp]
+theorem shuffleCosetBasis_repr_apply {ι : Type*}
+    (ρ : TypeAHeckeAlgebra R q l →ₐ[R] Module.End R U) (b : Module.Basis ι R U)
+    (f : ShuffleMask k l → U) (p : ShuffleMask k l × ι) :
+    (shuffleCosetBasis k ρ b).repr f p = b.repr ((shuffleCosetEquiv k ρ).symm f p.1) p.2 := by
   simp [shuffleCosetBasis]
 
 end CosetBasis
@@ -525,6 +540,14 @@ theorem unsignedShuffleRep_apply
   refine LinearMap.ext fun f ↦ funext fun S ↦ ?_
   simp [unsignedShuffleRep, LinearEquiv.conjAlgEquiv_apply]
 
+/-- Pointwise evaluation of `TauCeti.TypeAHeckeAlgebra.unsignedShuffleRep` at a mask `S`. -/
+theorem unsignedShuffleRep_apply_apply
+    (ρ : TypeAHeckeAlgebra R q l →ₐ[R] Module.End R U)
+    (x : TypeAHeckeAlgebra R q (k + l)) (f : ShuffleMask k l → U) (S : ShuffleMask k l) :
+    unsignedShuffleRep k ρ x f S =
+      (-1 : R) ^ S.length • shuffleRep k ρ x (shuffleSignEquiv R k l U f) S := by
+  simp [unsignedShuffleRep_apply]
+
 /-- `TauCeti.TypeAHeckeAlgebra.shuffleSignEquiv` intertwines `shuffleRep` and
 `unsignedShuffleRep`. -/
 theorem shuffleSignEquiv_comp_shuffleRep
@@ -544,9 +567,7 @@ theorem unsignedShuffleRep_T_apply_of_mem_of_mem
     {S : ShuffleMask k l} (ha : BraidGroup.strand i ∈ S.1) (hb : BraidGroup.strandSucc i ∈ S.1)
     (f : ShuffleMask k l → U) :
     unsignedShuffleRep k ρ (T q i) f S = (q : R) • f S := by
-  rw [unsignedShuffleRep_apply, LinearMap.comp_apply, LinearMap.comp_apply,
-    LinearEquiv.coe_coe, shuffleSignEquiv_apply, shuffleRep_T_apply_of_mem_of_mem ρ ha hb,
-    shuffleSignEquiv_apply, smul_comm, neg_one_pow_smul_neg_one_pow_smul]
+  simp [unsignedShuffleRep_apply_apply, ha, hb, smul_comm ((-1 : R) ^ S.length) (q : R)]
 
 /-- When `i` is selected and `i + 1` is not, `T q i` acts at `S` in `unsignedShuffleRep` by
 `(q - q⁻¹) • f S + f (S.swap i (i + 1))`, with a `+` sign on the exchange term. -/
@@ -557,12 +578,9 @@ theorem unsignedShuffleRep_T_apply_of_mem_of_notMem
     (f : ShuffleMask k l → U) :
     unsignedShuffleRep k ρ (T q i) f S =
       ((q : R) - ↑q⁻¹) • f S + f (S.swap (BraidGroup.strand i) (BraidGroup.strandSucc i)) := by
-  have hlen := ShuffleMask.length_swap_of_mem_of_notMem (by simp) ha hb
-  rw [unsignedShuffleRep_apply, LinearMap.comp_apply, LinearMap.comp_apply,
-    LinearEquiv.coe_coe, shuffleSignEquiv_apply, shuffleRep_T_apply_of_mem_of_notMem ρ ha hb,
-    shuffleSignEquiv_apply, shuffleSignEquiv_apply, hlen, pow_succ,
-    mul_neg_one, neg_smul, sub_neg_eq_add, smul_add, smul_comm ((-1 : R) ^ S.length),
-    neg_one_pow_smul_neg_one_pow_smul, neg_one_pow_smul_neg_one_pow_smul]
+  simp [unsignedShuffleRep_apply_apply, ha, hb,
+    ShuffleMask.length_swap_of_mem_of_notMem (by simp) ha hb, pow_succ, smul_add,
+    smul_comm ((-1 : R) ^ S.length) ((q : R) - ↑q⁻¹)]
 
 /-- When `i` is not selected and `i + 1` is selected, `T q i` acts at `S` in `unsignedShuffleRep`
 by `f (S.swap i (i + 1))`, with no `-` sign. -/
@@ -573,11 +591,9 @@ theorem unsignedShuffleRep_T_apply_of_notMem_of_mem
     (f : ShuffleMask k l → U) :
     unsignedShuffleRep k ρ (T q i) f S =
       f (S.swap (BraidGroup.strand i) (BraidGroup.strandSucc i)) := by
-  have hlen := ShuffleMask.length_swap_add_one_of_notMem_of_mem (by simp) ha hb
-  rw [unsignedShuffleRep_apply, LinearMap.comp_apply, LinearMap.comp_apply,
-    LinearEquiv.coe_coe, shuffleSignEquiv_apply, shuffleRep_T_apply_of_notMem_of_mem ρ ha hb,
-    shuffleSignEquiv_apply, ← hlen, pow_succ, mul_neg_one, neg_smul,
-    smul_neg, neg_neg, neg_one_pow_smul_neg_one_pow_smul]
+  rw [unsignedShuffleRep_apply_apply, shuffleRep_T_apply_of_notMem_of_mem ρ ha hb,
+    ← ShuffleMask.length_swap_add_one_of_notMem_of_mem (by simp) ha hb]
+  simp [pow_succ]
 
 /-- When neither `i` nor `i + 1` is selected in `S`, `T q i` acts at `S` in `unsignedShuffleRep`
 by the compressed `H_l`-generator `T q (S.restIndex i)`. -/
@@ -589,9 +605,7 @@ theorem unsignedShuffleRep_T_apply_of_notMem_of_notMem
     unsignedShuffleRep k ρ (T q i) f S =
       ρ (T q ⟨S.restIndex (BraidGroup.strand i),
         ShuffleMask.restIndex_lt_sub_one (by simp [Fin.lt_def]) ha hb⟩) (f S) := by
-  rw [unsignedShuffleRep_apply, LinearMap.comp_apply, LinearMap.comp_apply,
-    LinearEquiv.coe_coe, shuffleSignEquiv_apply, shuffleRep_T_apply_of_notMem_of_notMem ρ ha hb,
-    shuffleSignEquiv_apply, map_smul, neg_one_pow_smul_neg_one_pow_smul]
+  simp [unsignedShuffleRep_apply_apply, ha, hb]
 
 /-- **Sign-free monomial action of inverse shuffle words**: in `unsignedShuffleRep`, the inverse
 shuffle word of `S` sends `Pi.single initial u` directly to `Pi.single S u`, with no `(-1)` sign. -/
@@ -599,9 +613,7 @@ theorem unsignedShuffleRep_shuffleInvWord_single_initial
     (ρ : TypeAHeckeAlgebra R q l →ₐ[R] Module.End R U) (S : ShuffleMask k l) (u : U) :
     unsignedShuffleRep k ρ (shuffleInvWord q S) (Pi.single ShuffleMask.initial u) =
       Pi.single S u := by
-  rw [unsignedShuffleRep_apply, LinearMap.comp_apply, LinearMap.comp_apply,
-    LinearEquiv.coe_coe, shuffleSignEquiv_single_initial, shuffleRep_shuffleInvWord_single_initial,
-    map_smul, shuffleSignEquiv_single, neg_one_pow_smul_neg_one_pow_smul]
+  simp [unsignedShuffleRep_apply, shuffleRep_shuffleInvWord_single_initial]
 
 /-- **Sign-free leading coefficient of `T_(S.toPerm)`**: in `unsignedShuffleRep`, `T_(S.toPerm)`
 sends `Pi.single initial u` to a function with value `u` at `S`. -/
@@ -609,10 +621,7 @@ theorem unsignedShuffleRep_Tw_toPerm_single_initial_apply_self
     (ρ : TypeAHeckeAlgebra R q l →ₐ[R] Module.End R U) (S : ShuffleMask k l) (u : U) :
     unsignedShuffleRep k ρ (Tw q (permCoxeterSystem (k + l)) S.toPerm)
         (Pi.single ShuffleMask.initial u) S = u := by
-  rw [unsignedShuffleRep_apply, LinearMap.comp_apply, LinearMap.comp_apply,
-    LinearEquiv.coe_coe, shuffleSignEquiv_single_initial,
-    shuffleSignEquiv_apply, shuffleRep_Tw_toPerm_single_initial_apply_self,
-    neg_one_pow_smul_neg_one_pow_smul]
+  simp [unsignedShuffleRep_apply_apply, shuffleRep_Tw_toPerm_single_initial_apply_self]
 
 end UnsignedShuffle
 

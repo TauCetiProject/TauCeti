@@ -40,6 +40,13 @@ namespace TauCeti.TypeAHeckeAlgebra
 open CoxeterSystem
 
 variable {R : Type*} [CommRing R] {q : Rˣ} {n : ℕ}
+
+/-- At a group-algebra parameter `q = q⁻¹`, the inverse Hecke generator `(unitT q i)⁻¹` equals
+`T q i`. -/
+theorem val_inv_unitT_of_eq_inv (hq : q = q⁻¹) (i : Fin (n - 1)) :
+    (↑(unitT q i)⁻¹ : TypeAHeckeAlgebra R q n) = T q i := by
+  rw [val_inv_unitT, ← hq, sub_self, map_zero, sub_zero]
+
 variable {W : Type*} [Group W] (cs : CoxeterSystem (CoxeterMatrix.A (n - 1)) W)
 
 private noncomputable def toGroupAlgebra (hq : q = q⁻¹) :
@@ -219,19 +226,9 @@ theorem forall_comp_groupRepresentationEquiv_iff {V V' : Type*}
         groupRepresentationEquiv cs hq ψ w ∘ₗ f) ↔
       ∀ x : TypeAHeckeAlgebra R q n, f ∘ₗ φ x = ψ x ∘ₗ f := by
   refine ⟨fun h x ↦ ?_, fun h w ↦ by simpa using h (Tw q cs w)⟩
-  have hx : x ∈ Algebra.adjoin R (Set.range (T (n := n) q)) := by
-    rw [adjoin_range_T]
-    trivial
-  induction hx using Algebra.adjoin_induction with
-  | mem x hx =>
-    obtain ⟨i, rfl⟩ := hx
-    simpa using h (cs.simple i)
-  | algebraMap r =>
-    ext v
-    simp
-  | add x y _ _ hx hy => rw [map_add, map_add, LinearMap.comp_add, LinearMap.add_comp, hx, hy]
-  | mul x y _ _ hx hy =>
-    rw [map_mul, map_mul, Module.End.mul_eq_comp, Module.End.mul_eq_comp, ← LinearMap.comp_assoc,
-      hx, LinearMap.comp_assoc, hy, LinearMap.comp_assoc]
+  exact LinearMap.congr_fun
+    ((basisTw q cs).ext (f₁ := (LinearMap.llcomp R V V V' f).comp φ.toLinearMap)
+      (f₂ := (LinearMap.lcomp R V' f).comp ψ.toLinearMap)
+      fun w ↦ by simpa [LinearMap.llcomp_apply', LinearMap.lcomp_apply'] using h w) x
 
 end TauCeti.TypeAHeckeAlgebra

@@ -5,16 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Action.Defs
 public import Mathlib.Algebra.Ring.Parity
 
 /-!
 # Parity of exponents of `-1`, of negated elements, and of nonzero elements
 
 This file records the identity `1 - (-x)^{2n+1} = 1 + x^{2n+1}` in a ring, which turns a product
-of factors `1 - (-q)^{2n+1}` into a product of factors `1 + q^{2n+1}`, and two sign cancellations
-for powers of `-1` in a monoid with a distributive negation: an even summand of the exponent can be
-dropped, and two equal powers of `-1` cancel. It also records that multiplying a sign `±1` by a
-power of `-1` gives a sign.
+of factors `1 - (-q)^{2n+1}` into a product of factors `1 + q^{2n+1}`, and sign cancellations for
+powers of `-1` in a monoid with a distributive negation: an even summand of the exponent can be
+dropped, and two equal powers of `-1` cancel under multiplication or a `MulAction`. It also records
+that multiplying a sign `±1` by a power of `-1` gives a sign.
 
 Finally, it records that a nonzero even element keeps `2` nonzero: `Even.two_ne_zero_of_ne_zero`.
 Combined with `Even.intCast`, a hypothesis `(n : R) ≠ 0` on an even integer `n` yields
@@ -44,6 +45,12 @@ theorem neg_one_pow_add_two_mul (a b : ℕ) : (-1 : α) ^ (a + 2 * b) = (-1) ^ a
 theorem neg_one_pow_mul_neg_one_pow_mul (a : ℕ) (x : α) :
     (-1 : α) ^ a * ((-1) ^ a * x) = x := by
   rw [← mul_assoc, ← pow_add, ← two_mul, (even_two_mul a).neg_one_pow, one_mul]
+
+/-- Two equal powers of `-1` cancel under scalar action: `(-1)^a • ((-1)^a • x) = x`. -/
+@[simp]
+theorem neg_one_pow_smul_neg_one_pow_smul {M : Type*} [MulAction α M] (a : ℕ) (x : M) :
+    (-1 : α) ^ a • ((-1 : α) ^ a • x) = x := by
+  rw [smul_smul, ← pow_add, ← two_mul, (even_two_mul a).neg_one_pow, one_smul]
 
 /-- Multiplying a sign `μ = ±1` by a power of `-1` gives a sign. -/
 theorem neg_one_pow_mul_eq_or {μ : α} (hμ : μ = 1 ∨ μ = -1) (n : ℕ) :

@@ -145,11 +145,8 @@ noncomputable def lengthPowHom {G : Type*} [Monoid G] (a : G) (ha : a ^ 2 = 1) :
   toFun w := a ^ cs.length w
   map_one' := by simp
   map_mul' u v := by
-    have hpow (n : ℕ) : a ^ n = a ^ (n % 2) := by
-      conv_lhs => rw [← Nat.div_add_mod n 2]
-      rw [pow_add, pow_mul, ha, one_pow, one_mul]
-    rw [hpow (cs.length (u * v)), cs.length_mul_mod_two, ← hpow (cs.length u + cs.length v),
-      pow_add]
+    rw [pow_eq_pow_mod (cs.length (u * v)) ha, cs.length_mul_mod_two,
+      ← pow_eq_pow_mod (cs.length u + cs.length v) ha, pow_add]
 
 /-- `CoxeterSystem.lengthPowHom` raises `a` to the Coxeter length. -/
 @[simp]

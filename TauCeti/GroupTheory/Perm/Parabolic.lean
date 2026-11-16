@@ -10,7 +10,6 @@ public import TauCeti.GroupTheory.Coxeter.Restriction
 public import TauCeti.GroupTheory.Perm.Coxeter
 public import TauCeti.GroupTheory.Perm.SumCongr
 import Mathlib.Order.Fin.Basic
-import Mathlib.Order.WellFounded
 
 /-!
 # The two-block standard parabolic subgroup of `S_(k+l)` and `(k, l)`-shuffles
@@ -28,8 +27,6 @@ representatives, uniformly for all `k, l : ℕ` (including `k = 0` and `l = 0`):
 * `TauCeti.permCoxeterSystem_parabolic_blockParabolicSet`: the standard parabolic subgroup attached
   to `TauCeti.blockParabolicSet k l` is the image of the block embedding
   `Equiv.Perm.finSumPermHom k l : S_k × S_l →* S_(k+l)`;
-* `Equiv.Perm.mem_range_finSumPermHom_iff`: a permutation lies in that subgroup exactly when it
-  preserves `{x | (x : ℕ) < k}`;
 * `Equiv.Perm.permCoxeterSystem_length_finSumPerm`: `Equiv.Perm.finSumPerm σ τ` adds the Coxeter
   lengths of `σ` and `τ`;
 * `TauCeti.isMinimalCosetRep_blockParabolicSet_iff`: a permutation `d` is a minimal left coset
@@ -53,8 +50,6 @@ representatives, uniformly for all `k, l : ℕ` (including `k = 0` and `l = 0`):
   `Equiv.Perm.finSumPerm`.
 * `TauCeti.permCoxeterSystem_parabolic_blockParabolicSet`: the standard parabolic subgroup of
   `TauCeti.blockParabolicSet k l` is `(Equiv.Perm.finSumPermHom k l).range`.
-* `Equiv.Perm.mem_range_finSumPermHom_iff`: membership in `(Equiv.Perm.finSumPermHom k l).range`
-  is preservation of the first `k` letters.
 * `TauCeti.isMinimalCosetRep_blockParabolicSet_iff` and
   `TauCeti.eq_of_isMinimalCosetRep_blockParabolicSet`: minimal coset representatives are the
   `(k, l)`-shuffles, determined by the image of the first `k` letters.
@@ -268,71 +263,9 @@ theorem eq_of_isMinimalCosetRep_blockParabolicSet {d₁ d₂ : Equiv.Perm (Fin (
     (hd₂ : (permCoxeterSystem (k + l)).IsMinimalCosetRep (blockParabolicSet k l) d₂)
     (h : ∀ x : Fin (k + l), (d₁.symm x : ℕ) < k ↔ (d₂.symm x : ℕ) < k) :
     d₁ = d₂ := by
-  obtain ⟨h₁l, h₁r⟩ := isMinimalCosetRep_blockParabolicSet_iff.mp hd₁
-  obtain ⟨h₂l, h₂r⟩ := isMinimalCosetRep_blockParabolicSet_iff.mp hd₂
-  have hrl {d : Equiv.Perm (Fin (k + l))} (x : Fin (k + l)) :
-      x ∈ Set.range (fun i : Fin k ↦ d (Fin.castAdd l i)) ↔ (d.symm x : ℕ) < k := by
-    refine ⟨?_, fun hx ↦ ⟨⟨d.symm x, hx⟩, ?_⟩⟩
-    · rintro ⟨i, rfl⟩
-      simp
-    · dsimp only
-      have hc : Fin.castAdd l ⟨(d.symm x : ℕ), hx⟩ = d.symm x := Fin.ext rfl
-      rw [hc, d.apply_symm_apply]
-  have hrr {d : Equiv.Perm (Fin (k + l))} (x : Fin (k + l)) :
-      x ∈ Set.range (fun j : Fin l ↦ d (Fin.natAdd k j)) ↔ ¬ (d.symm x : ℕ) < k := by
-    refine ⟨?_, fun hx ↦ ?_⟩
-    · rintro ⟨j, rfl⟩
-      simp
-    · have hge : k ≤ (d.symm x : ℕ) := Nat.le_of_not_lt hx
-      refine ⟨⟨(d.symm x : ℕ) - k, by have := (d.symm x).isLt; omega⟩, ?_⟩
-      dsimp only
-      have hc : Fin.natAdd k ⟨(d.symm x : ℕ) - k, by have := (d.symm x).isLt; omega⟩ = d.symm x :=
-        Fin.ext (by simp [Nat.add_sub_of_le hge])
-      rw [hc, d.apply_symm_apply]
-  have heql : (fun i : Fin k ↦ d₁ (Fin.castAdd l i)) = fun i : Fin k ↦ d₂ (Fin.castAdd l i) :=
-    (h₁l.range_inj_of_wellFoundedLT h₂l).mp (Set.ext fun x ↦ by rw [hrl, hrl, h])
-  have heqr : (fun j : Fin l ↦ d₁ (Fin.natAdd k j)) = fun j : Fin l ↦ d₂ (Fin.natAdd k j) :=
-    (h₁r.range_inj_of_wellFoundedLT h₂r).mp (Set.ext fun x ↦ by rw [hrr, hrr, h])
-  ext x
-  induction x using Fin.addCases with
-  | left i => exact congrArg Fin.val (congrFun heql i)
-  | right j => exact congrArg Fin.val (congrFun heqr j)
-
-/-- **A permutation lies in `S_k × S_l` exactly when it preserves the first `k` letters.** -/
-theorem _root_.Equiv.Perm.mem_range_finSumPermHom_iff {π : Equiv.Perm (Fin (k + l))} :
-    π ∈ (Equiv.Perm.finSumPermHom k l).range ↔ ∀ x : Fin (k + l), (π x : ℕ) < k ↔ (x : ℕ) < k := by
-  refine ⟨?_, fun h ↦ ?_⟩
-  · rintro ⟨⟨σ, τ⟩, rfl⟩ x
-    induction x using Fin.addCases with
-    | left i => simp [i.isLt]
-    | right j => simp
-  · rw [← permCoxeterSystem_parabolic_blockParabolicSet]
-    let cs := permCoxeterSystem (k + l)
-    let J := blockParabolicSet k l
-    have hmem : π⁻¹ * cs.minimalCosetRep J π ∈ cs.parabolic J := cs.inv_mul_minimalCosetRep_mem J π
-    have hv : ∀ x : Fin (k + l), ((π⁻¹ * cs.minimalCosetRep J π) x : ℕ) < k ↔ (x : ℕ) < k := by
-      have hmem' := hmem
-      rw [permCoxeterSystem_parabolic_blockParabolicSet] at hmem'
-      obtain ⟨⟨σ, τ⟩, hστ⟩ := hmem'
-      intro x
-      rw [← hστ]
-      induction x using Fin.addCases with
-      | left i => simp [i.isLt]
-      | right j => simp
-    have hd : ∀ x : Fin (k + l), ((cs.minimalCosetRep J π).symm x : ℕ) < k ↔
-        (((1 : Equiv.Perm (Fin (k + l))).symm x : ℕ) < k) := by
-      intro x
-      have hx := hv ((cs.minimalCosetRep J π).symm x)
-      rw [Equiv.Perm.mul_apply, Equiv.apply_symm_apply] at hx
-      have hπ := h (π.symm x)
-      rw [Equiv.apply_symm_apply] at hπ
-      have h1x : (1 : Equiv.Perm (Fin (k + l))).symm x = x := rfl
-      rw [h1x]
-      exact (hx.symm.trans (by simpa [Equiv.Perm.inv_def] using hπ.symm))
-    have h1 : cs.minimalCosetRep J π = 1 :=
-      eq_of_isMinimalCosetRep_blockParabolicSet (cs.isMinimalCosetRep_minimalCosetRep J π)
-        (cs.isMinimalCosetRep_one J) hd
-    rw [h1, mul_one] at hmem
-    simpa using inv_mem hmem
+  refine hd₁.eq_of_inv_mul_mem (permCoxeterSystem (k + l)) hd₂ ?_
+  rw [permCoxeterSystem_parabolic_blockParabolicSet, Equiv.Perm.mem_range_finSumPermHom_iff]
+  intro x
+  simpa [Equiv.Perm.inv_def] using h (d₂ x)
 
 end TauCeti
