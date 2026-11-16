@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.DG.Module.Right.Category
+public import TauCeti.Algebra.Homology.DG.Module.Right.QuasiIso
 public import TauCeti.Algebra.Homology.DG.Module.Right.Restriction.Basic
 
 /-!
@@ -20,7 +20,8 @@ of extension/restriction of scalars.
 
 The construction follows the change-of-rings interface of Mathlib's
 `ModuleCat.restrictScalarsId` and `ModuleCat.restrictScalarsComp`, with the additional grading and
-differential conditions of DG modules.
+differential conditions of DG modules. Restriction does not change the underlying complex, so it
+preserves quasi-isomorphisms (`TauCeti.DGRightModuleCat.isQuasiIso_restrictScalars_map`).
 
 ## References
 
@@ -95,6 +96,16 @@ theorem restrictScalarsEquiv_differential (f : DGAlgHom hA hB)
   exact (DGRightModule.RestrictScalars.linearEquiv_apply f M _).trans
     ((IsDGRightModule.val_restrictScalarsDifferential f x).trans
       (congrArg M.differential (DGRightModule.RestrictScalars.linearEquiv_apply f M x).symm))
+
+/-- The inverse of `restrictScalarsEquiv` preserves the differential. -/
+@[simp]
+theorem restrictScalarsEquiv_symm_differential (f : DGAlgHom hA hB)
+    (M : DGRightModuleCat.{uR, uB, uM} hB) (x : M) :
+    ((restrictScalars f).obj M).differential ((restrictScalarsEquiv f M).symm x) =
+      (restrictScalarsEquiv f M).symm (M.differential x) :=
+  (restrictScalarsEquiv f M).injective <| by
+    rw [restrictScalarsEquiv_differential, LinearEquiv.apply_symm_apply,
+      LinearEquiv.apply_symm_apply]
 
 /-- The bundled restricted object is the object obtained by bundling the unbundled restriction.
 This is the identity isomorphism; it is named because `restrictScalars` is not exposed, so the
@@ -346,6 +357,23 @@ noncomputable def restrictScalarsComp (f : DGAlgHom hA hB) (g : DGAlgHom hB hC) 
 theorem restrictScalarsComp_app (f : DGAlgHom hA hB) (g : DGAlgHom hB hC)
     (M : DGRightModuleCat.{uR, uC, uM} hC) :
     (restrictScalarsComp f g).app M = restrictScalarsCompApp f g M := (rfl)
+
+/-- **Restriction of scalars preserves quasi-isomorphisms**, since it does not change the
+underlying complexes. -/
+theorem isQuasiIso_restrictScalars_map (f : DGAlgHom hA hB)
+    {M N : DGRightModuleCat.{uR, uB, uM} hB} {g : M ⟶ N} (hg : IsQuasiIso g) :
+    IsQuasiIso ((restrictScalars f).map g) := by
+  rw [IsQuasiIso, DGRightModuleHom.isQuasiIso_iff_forall_exists] at hg ⊢
+  intro x y hx hgx
+  obtain ⟨u, v, hu, huv⟩ := hg (restrictScalarsEquiv f M x) (restrictScalarsEquiv f N y)
+    (by rw [← restrictScalarsEquiv_differential, hx, map_zero])
+    (by rw [← restrictScalars_map_apply, hgx, restrictScalarsEquiv_differential])
+  refine ⟨(restrictScalarsEquiv f M).symm u, (restrictScalarsEquiv f N).symm v, ?_, ?_⟩
+  · apply (restrictScalarsEquiv f M).injective
+    rw [restrictScalarsEquiv_differential, LinearEquiv.apply_symm_apply, hu]
+  · apply (restrictScalarsEquiv f N).injective
+    rw [map_add, restrictScalarsEquiv_differential, restrictScalars_map_apply,
+      LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply, huv]
 
 end DGRightModuleCat
 end TauCeti

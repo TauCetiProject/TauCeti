@@ -137,16 +137,24 @@ theorem boundary_leftAct_zero_left {q : ℕ} (a : NormalizedCubicalChain G R 0)
 
 variable {Y' : Type*} [TopologicalSpace Y'] [SMul G Y'] [ContinuousSMul G Y']
 
+omit [SMul G Y'] [ContinuousSMul G Y'] in
+/-- Pushing forward along a map `f` that intertwines the left actions of two spaces through a
+map `g` of the acting spaces commutes with the left action. -/
+theorem map_leftAct_map {G' : Type*} [TopologicalSpace G'] [SMul G' Y'] [ContinuousSMul G' Y']
+    (f : C(Y, Y')) (g : C(G, G')) (hf : ∀ (x : G) (y : Y), f (x • y) = g x • f y) {p q : ℕ}
+    (a : NormalizedCubicalChain G R p) (c : NormalizedCubicalChain Y R q) :
+    map R f (p + q) (leftAct G Y R p q a c) = leftAct G' Y' R p q (map R g p a) (map R f q c) := by
+  have key : f.comp (leftActMap G Y) = (leftActMap G' Y').comp (g.prodMap f) := by
+    ext x
+    simp [hf]
+  rw [leftAct_def, leftAct_def, ← LinearMap.comp_apply (map R f (p + q)), ← map_comp, key,
+    map_comp, LinearMap.comp_apply, map_crossProduct]
+
 /-- Pushing forward along an equivariant map commutes with the left action. -/
 theorem map_leftAct (f : C(Y, Y')) (hf : ∀ (g : G) (y : Y), f (g • y) = g • f y) {p q : ℕ}
     (a : NormalizedCubicalChain G R p) (c : NormalizedCubicalChain Y R q) :
     map R f (p + q) (leftAct G Y R p q a c) = leftAct G Y' R p q a (map R f q c) := by
-  have key : f.comp (leftActMap G Y) =
-      (leftActMap G Y').comp ((ContinuousMap.id G).prodMap f) := by
-    ext x
-    simp [hf]
-  rw [leftAct_def, leftAct_def, ← LinearMap.comp_apply (map R f (p + q)), ← map_comp, key,
-    map_comp, LinearMap.comp_apply, map_crossProduct, map_id, LinearMap.id_apply]
+  rw [map_leftAct_map f (ContinuousMap.id G) hf, map_id, LinearMap.id_apply]
 
 /-- **The left and right actions commute**, after the reindexing `(p + q) + r = p + (q + r)`:
 `(a · c) · b = a · (c · b)` for chains `a` on `G`, `c` on `Y` and `b` on `H`. -/
