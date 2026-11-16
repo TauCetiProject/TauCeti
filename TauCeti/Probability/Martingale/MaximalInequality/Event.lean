@@ -5,12 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Basic.ENNReal.Real
 public import TauCeti.Probability.Martingale.MaximalInequality.Basic
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.Topology.Order.IsLUB
 
 /-!
-# Closed-level event-refined maximal inequality
+# Closed-level event-refined maximal inequality and running-supremum finiteness
 
 For a nonnegative submartingale, Doob's maximal inequality retains the crossing event in the
 terminal expectation. This refinement, unlike the weak bound by the whole terminal expectation,
@@ -18,11 +19,23 @@ can be integrated over the threshold to obtain strong maximal estimates for stoc
 approximation.
 
 We extend the strict-crossing refinement from `MaximalInequality.Basic` to the closed event
-that the running supremum is at least the threshold. No usual-filtration assumption is needed.
+that the running supremum is at least the threshold, for both nonnegative and general signed real
+submartingales, and record almost sure finiteness of the running supremum for right-continuous
+submartingales and Banach-valued martingales. No usual-filtration assumption is needed.
 Uncountable crossing events are interpreted using outer measure and restricted integrals;
 right continuity identifies them almost everywhere with countable measurable crossing events.
 The finite-set input in `MaximalInequality.Basic` uses Mathlib's `maximal_ineq` without dropping
 its terminal event indicator.
+
+## Main declarations
+
+* `MeasureTheory.Submartingale.mul_measure_le_iSup_le_setIntegral`,
+  `MeasureTheory.Submartingale.mul_measure_le_iSup_le_setIntegral_posPart`,
+  `MeasureTheory.Submartingale.mul_measure_le_iSup_le_integral_posPart`: closed-level Doob
+  inequalities for nonnegative and general real submartingales.
+* `MeasureTheory.Submartingale.ae_iSup_ofReal_lt_top`,
+  `MeasureTheory.Martingale.ae_iSup_eNorm_lt_top`: almost sure finiteness of the running supremum
+  before `T` for right-continuous submartingales and Banach-valued martingales.
 
 ## References
 
@@ -57,8 +70,7 @@ theorem mul_measure_le_iSup_le_setIntegral
   obtain ⟨δ, hδmono, hδmem, hδlim⟩ := exists_seq_strictMono_tendsto' (pos_iff_ne_zero.2 hε)
   let Y : Ω → ℝ≥0∞ := fun ω ↦ ⨆ t ≤ T, ENNReal.ofReal (f t ω)
   let A : ℕ → Set Ω := fun n ↦ {ω | (δ n : ℝ≥0∞) < Y ω}
-  have hY : AEMeasurable Y μ := aemeasurable_iSup_le_ofReal
-    (fun t ↦ ((hf.stronglyAdapted t).measurable.mono (ℱ.le t) le_rfl).aemeasurable) hcont
+  have hY : AEMeasurable Y μ := hf.aemeasurable_iSup_ofReal hcont
   have hA (n : ℕ) : NullMeasurableSet (A n) μ := nullMeasurableSet_lt aemeasurable_const hY
   have hanti : Antitone A := by
     intro i j hij ω h
@@ -90,4 +102,63 @@ theorem mul_measure_le_iSup_le_setIntegral
       (Or.inr ENNReal.coe_ne_top)) (ENNReal.tendsto_ofReal hint) hbound
   simpa only [hInter] using h
 
+/-- **Closed-level event-refined positive-part Doob inequality.** Because `ENNReal.ofReal` vanishes
+on `(-∞, 0]`, `⨆ t ≤ T, ENNReal.ofReal (f t ω)` coincides pointwise with
+`⨆ t ≤ T, ENNReal.ofReal ((f⁺) t ω)`. -/
+theorem mul_measure_le_iSup_le_setIntegral_posPart
+    [TopologicalSpace ι] [OrderTopology ι] [SecondCountableTopology ι]
+    (hf : Submartingale f ℱ μ) {T : ι}
+    (hcont : ∀ᵐ ω ∂μ, ∀ t < T, ContinuousWithinAt (fun u ↦ f u ω) (Ioi t) t) (ε : ℝ≥0) :
+    ε * μ {ω | (ε : ℝ≥0∞) ≤ ⨆ t ≤ T, ENNReal.ofReal (f t ω)} ≤
+      ENNReal.ofReal (∫ ω in {ω | (ε : ℝ≥0∞) ≤ ⨆ t ≤ T, ENNReal.ofReal (f t ω)},
+        (f⁺) T ω ∂μ) := by
+  have hsup (ω : Ω) : (⨆ t ≤ T, ENNReal.ofReal ((f⁺) t ω)) = ⨆ t ≤ T, ENNReal.ofReal (f t ω) := by
+    simp_rw [Pi.posPart_apply, ENNReal.ofReal_posPart]
+  have hcont_pos : ∀ᵐ ω ∂μ, ∀ t < T, ContinuousWithinAt (fun u ↦ (f⁺) u ω) (Ioi t) t :=
+    hcont.mono fun _ hω t ht ↦ by
+      simpa only [Pi.posPart_apply, posPart_def] using (hω t ht).sup continuousWithinAt_const
+  simpa only [hsup] using
+    hf.pos.mul_measure_le_iSup_le_setIntegral (fun _ _ ↦ posPart_nonneg _) hcont_pos ε
+
+/-- **Closed-level positive-part Doob maximal inequality** (`ε P(sup_{t ≤ T} f_t ≥ ε) ≤ E[(f_T)⁺]`).
+Holds for every real submartingale `f` with right-continuous paths before `T` and `ε : ℝ≥0`. -/
+theorem mul_measure_le_iSup_le_integral_posPart
+    [TopologicalSpace ι] [OrderTopology ι] [SecondCountableTopology ι]
+    (hf : Submartingale f ℱ μ) {T : ι}
+    (hcont : ∀ᵐ ω ∂μ, ∀ t < T, ContinuousWithinAt (fun u ↦ f u ω) (Ioi t) t) (ε : ℝ≥0) :
+    ε * μ {ω | (ε : ℝ≥0∞) ≤ ⨆ t ≤ T, ENNReal.ofReal (f t ω)} ≤
+      ENNReal.ofReal (∫ ω, (f⁺) T ω ∂μ) :=
+  (hf.mul_measure_le_iSup_le_setIntegral_posPart hcont ε).trans
+    (ENNReal.ofReal_le_ofReal (setIntegral_le_integral (hf.pos.integrable T)
+      (Eventually.of_forall fun _ ↦ posPart_nonneg _)))
+
+/-- **Almost sure finiteness of the running supremum of a submartingale.** Any real submartingale
+with almost surely right-continuous paths before `T` on a finite measure space has almost everywhere
+finite running supremum `⨆ t ≤ T, ENNReal.ofReal (f t ω) < ∞` (no higher `Lᵖ` moment is needed). -/
+theorem ae_iSup_ofReal_lt_top
+    [TopologicalSpace ι] [OrderTopology ι] [SecondCountableTopology ι]
+    (hf : Submartingale f ℱ μ) {T : ι}
+    (hcont : ∀ᵐ ω ∂μ, ∀ t < T, ContinuousWithinAt (fun u ↦ f u ω) (Ioi t) t) :
+    ∀ᵐ ω ∂μ, (⨆ t ≤ T, ENNReal.ofReal (f t ω)) < ∞ := by
+  obtain ⟨S, hSc, hST, hae⟩ := exists_countable_subset_Iic_iSup_ofReal_ae_eq hcont
+  filter_upwards [hae, hf.ae_biSup_ofReal_lt_top hSc fun _ hs ↦ hST hs] with ω hω hlt
+  rwa [hω]
+
 end MeasureTheory.Submartingale
+
+namespace MeasureTheory.Martingale
+
+variable {Ω E ι : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
+  [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+  [LinearOrder ι] [TopologicalSpace ι] [OrderTopology ι] [SecondCountableTopology ι]
+  [IsFiniteMeasure μ] {ℱ : Filtration ι mΩ} {M : ι → Ω → E}
+
+/-- **Almost sure finiteness of the running norm supremum of a right-continuous martingale.** No
+`MemLp` assumption beyond martingale integrability is needed. -/
+theorem ae_iSup_eNorm_lt_top (hM : Martingale M ℱ μ) {T : ι}
+    (hcont : ∀ᵐ ω ∂μ, ∀ t < T, ContinuousWithinAt (fun u ↦ M u ω) (Ioi t) t) :
+    ∀ᵐ ω ∂μ, (⨆ t ≤ T, ‖M t ω‖ₑ) < ∞ := by
+  simp_rw [← ofReal_norm]
+  exact hM.submartingale_norm.ae_iSup_ofReal_lt_top (hcont.mono fun _ hω t ht ↦ (hω t ht).norm)
+
+end MeasureTheory.Martingale

@@ -53,7 +53,7 @@ the computations on sections use `erw` and explicit term chains rather than `sim
 ## References
 
 * [The Stacks Project, Lemma 27.11.5 (01N1)](https://stacks.math.columbia.edu/tag/01N1)
-* [The Stacks Project, Section 27.15, Relative Proj](https://stacks.math.columbia.edu/tag/01NS)
+* [The Stacks Project, Section 27.15, Relative Proj](https://stacks.math.columbia.edu/tag/01NM)
 -/
 
 public section

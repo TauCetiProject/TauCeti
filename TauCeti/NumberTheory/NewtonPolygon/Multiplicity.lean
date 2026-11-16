@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.NewtonPolygon.Entire
 public import TauCeti.NumberTheory.NewtonPolygon.Slopes
+import Mathlib.Data.Set.Card.Arithmetic
 import TauCeti.NumberTheory.NewtonPolygon.Roots
 
 /-!
@@ -21,7 +22,11 @@ multiplicity of `σ` in the finite slope multiset `Polynomial.newtonSlopes`
 (`Polynomial.newtonSlopeMultiplicity_coe`). The substitution `X ↦ c X` shifts every slope by
 the valuation of `c`, with the same multiplicities (`PowerSeries.newtonSlopeMultiplicity_rescale`).
 A power `(X - C x) ^ h` has the single slope `-v x`, with multiplicity `h`
-(`PowerSeries.newtonSlopeMultiplicity_X_sub_C_pow`).
+(`PowerSeries.newtonSlopeMultiplicity_X_sub_C_pow`). Mapping the coefficients along a ring
+homomorphism compatible with the valuations preserves the multiplicities
+(`PowerSeries.newtonSlopeMultiplicity_map`). When only finitely many finite unit edges have slope
+at most `c`, their number is the sum of the multiplicities of the slopes at most `c`
+(`PowerSeries.ncard_setOf_unitSlope_newtonPolygon_le`).
 
 Fix a real additive valuation `v` on a normed division ring and a base `b > 1` with
 `‖x‖ = b ^ (-(v x).untop₀)` for nonzero `x`. A nonzero entire series has a finite face of every
@@ -45,6 +50,10 @@ multiplicities are the slope multiplicities of their Newton polygons.
 * `Polynomial.newtonSlopeMultiplicity_coe`: comparison with the finite slope multiset of a
   polynomial.
 * `PowerSeries.newtonSlopeMultiplicity_rescale`: rescaling the variable shifts the slopes.
+* `PowerSeries.newtonSlopeMultiplicity_map`: valuation-compatible coefficient maps preserve the
+  multiplicities.
+* `PowerSeries.ncard_setOf_unitSlope_newtonPolygon_le`: the number of finite unit edges of slope
+  at most a cutoff is the sum of the multiplicities of the slopes below it.
 * `PowerSeries.newtonSlopeMultiplicity_X_sub_C_pow`: the power `(X - C x) ^ h` has the slope
   `-v x` with multiplicity `h`.
 * `PowerSeries.IsEntire.newtonSlopeMultiplicity_mul`: multiplicities add under multiplication.
@@ -85,6 +94,13 @@ theorem newtonSlopeMultiplicity_def (σ : ℝ) :
 theorem newtonSlopeMultiplicity_zero (σ : ℝ) : (0 : R⟦X⟧).newtonSlopeMultiplicity v σ = 0 := by
   simp [newtonSlopeMultiplicity_def]
 
+/-- Mapping the coefficients along a ring homomorphism compatible with the valuations preserves
+the slope multiplicities. -/
+theorem newtonSlopeMultiplicity_map {S : Type*} [Ring S] (φ : R →+* S)
+    {w : AddValuation S (WithTop ℝ)} (hφ : ∀ x, w (φ x) = v x) (σ : ℝ) :
+    (map φ f).newtonSlopeMultiplicity w σ = f.newtonSlopeMultiplicity v σ := by
+  rw [newtonSlopeMultiplicity_def, newtonSlopeMultiplicity_def, newtonPolygon_map f v φ hφ]
+
 variable {f v}
 
 /-- The multiplicity of the slope of a finite face is the width `u - l` of the face. -/
@@ -92,6 +108,37 @@ theorem newtonSlopeMultiplicity_eq_of_isFiniteFace {σ : ℝ} {l u : ℕ}
     (hface : IsFiniteFace (f.newtonPolygon v) σ l u) :
     f.newtonSlopeMultiplicity v σ = u - l :=
   hface.ncard_setOf_unitSlope_eq (f.isConvexSeq_newtonPolygon v)
+
+/-- **Cutoff counts.** If only finitely many finite unit edges of the Newton polygon of `f` have
+slope at most `c`, their number is the sum of the multiplicities of the slopes at most `c`. -/
+theorem ncard_setOf_unitSlope_newtonPolygon_le {c : ℝ}
+    (hc : {n | n ∈ finiteEdges (f.newtonPolygon v) ∧ unitSlope (f.newtonPolygon v) n ≤ c}.Finite) :
+    {n | n ∈ finiteEdges (f.newtonPolygon v) ∧ unitSlope (f.newtonPolygon v) n ≤ c}.ncard =
+      ∑ᶠ σ ∈ Set.Iic c, f.newtonSlopeMultiplicity v σ := by
+  set P := f.newtonPolygon v
+  have hfib {σ : ℝ} (hσ : σ ≤ c) :
+      {n | n ∈ finiteEdges P ∧ unitSlope P n = σ} ⊆
+        {n | n ∈ finiteEdges P ∧ unitSlope P n ≤ c} :=
+    fun n hn ↦ ⟨hn.1, hn.2.trans_le hσ⟩
+  -- Only the finitely many slopes of these edges have nonzero multiplicity.
+  have hT : (Set.Iic c ∩ Function.support (f.newtonSlopeMultiplicity v)).Finite := by
+    refine (hc.image (unitSlope P)).subset fun σ ⟨hσ, hm⟩ ↦ ?_
+    obtain ⟨n, hn⟩ := Set.nonempty_of_ncard_ne_zero hm
+    exact ⟨n, hfib hσ hn, hn.2⟩
+  -- The edges of slope at most `c` are the disjoint union of the edges of each such slope.
+  have hE : {n | n ∈ finiteEdges P ∧ unitSlope P n ≤ c} =
+      ⋃ σ ∈ Set.Iic c ∩ Function.support (f.newtonSlopeMultiplicity v),
+        {n | n ∈ finiteEdges P ∧ unitSlope P n = σ} := by
+    refine subset_antisymm (fun n hn ↦ ?_) (Set.iUnion₂_subset fun σ hσ ↦ hfib hσ.1)
+    have hm : f.newtonSlopeMultiplicity v (unitSlope P n) ≠ 0 :=
+      Set.ncard_ne_zero_of_mem (s := {m | m ∈ finiteEdges P ∧ unitSlope P m = unitSlope P n})
+        ⟨hn.1, rfl⟩ (hc.subset (hfib hn.2))
+    exact Set.mem_biUnion
+      (⟨hn.2, hm⟩ : unitSlope P n ∈ Set.Iic c ∩ Function.support (f.newtonSlopeMultiplicity v))
+      ⟨hn.1, rfl⟩
+  rw [← finsum_mem_inter_support, hE, Set.Finite.ncard_biUnion hT (fun σ hσ ↦ hc.subset (hfib hσ.1))
+    fun σ _ τ _ hστ ↦ Set.disjoint_left.2 fun n h₁ h₂ ↦ hστ (h₁.2.symm.trans h₂.2)]
+  exact finsum_mem_congr rfl fun σ _ ↦ (newtonSlopeMultiplicity_def f v σ).symm
 
 end Ring
 

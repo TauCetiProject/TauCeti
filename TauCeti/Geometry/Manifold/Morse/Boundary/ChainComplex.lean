@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Differential
 public import TauCeti.Algebra.Homology.EulerCharacteristic.ChainComplex
+public import TauCeti.Algebra.Homology.EulerCharacteristic.MorseInequalities
 public import TauCeti.Geometry.Manifold.Morse.EulerCharacteristic
 public import Mathlib.Algebra.Field.ZMod
 
@@ -29,6 +30,8 @@ boundary squares to zero because the total one does
 The terms are finite-dimensional, of dimension the number `cₙ` of critical points of index `n`
 (`IsMorseSmale.finrank_morseComplex_X`), and vanish above the dimension `m` of `M`. Hence the
 homology is finite-dimensional, bounded by the critical counts, and vanishes above `m`. Its
+dimensions satisfy the strong Morse inequalities
+(`IsMorseSmale.sum_range_neg_one_pow_mul_finrank_homology_morseComplex_le`). Its
 Euler characteristic is the signed critical count `∑ᵢ (-1)ⁱ cᵢ`, and so the Euler characteristic
 of `M` (`IsMorseSmale.sum_range_neg_one_pow_mul_finrank_homology_morseComplex_eq_eulerChar`).
 In terms of Mathlib's Euler characteristics of a complex, both `(h.morseComplex hf).eulerChar` and
@@ -51,6 +54,8 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale`:
   index `n`.
 * `finite_homology_morseComplex`: the Morse homology is finite-dimensional.
 * `isZero_homology_morseComplex_of_finrank_lt`: the Morse homology vanishes above the dimension.
+* `sum_range_neg_one_pow_mul_finrank_homology_morseComplex_le`: the strong Morse inequalities for
+  the Morse homology.
 * `sum_range_neg_one_pow_mul_finrank_homology_morseComplex`: the Euler characteristic of the Morse
   homology is the signed count of critical points.
 * `sum_range_neg_one_pow_mul_finrank_homology_morseComplex_eq_eulerChar`: it is the Euler
@@ -70,6 +75,8 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale`:
   Chapter 4 (the Morse complex and its homology).
 * M. Hutchings, *Lecture notes on Morse homology (with an eye towards Floer theory and
   pseudoholomorphic curves)*, 2002, §2.
+* J. Milnor, *Morse Theory*, Annals of Mathematics Studies 51, Princeton University Press, 1963,
+  Section 5 (the Morse inequalities).
 -/
 
 public section
@@ -232,6 +239,17 @@ dimension at most the number of critical points of index `n`. -/
 theorem finrank_homology_morseComplex_le (n : ℕ) :
     finrank (ZMod 2) ((h.morseComplex hf).homology n) ≤ (criticalCount 𝓘(ℝ, E) f n).toNat :=
   (h.morseComplex hf).finrank_homology_le_finrank_X n |>.trans_eq (h.finrank_morseComplex_X hf n)
+
+/-- **The strong Morse inequalities for Morse homology.** Writing `bᵢ` for the dimension of the
+`i`-th mod-two Morse homology and `cᵢ` for the number of critical points of index `i`,
+`bₙ - bₙ₋₁ + ⋯ ± b₀ ≤ cₙ - cₙ₋₁ + ⋯ ± c₀`. -/
+theorem sum_range_neg_one_pow_mul_finrank_homology_morseComplex_le (n : ℕ) :
+    ∑ i ∈ Finset.range (n + 1),
+        (-1 : ℤ) ^ (n - i) * finrank (ZMod 2) ((h.morseComplex hf).homology i) ≤
+      ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ (n - i) * (criticalCount 𝓘(ℝ, E) f i).toNat := by
+  simpa only [h.finrank_morseComplex_X hf] using
+    (h.morseComplex hf).sum_range_neg_one_pow_mul_finrank_homology_le n
+      fun i _ ↦ h.finite_morseComplex_X hf i
 
 /-- The mod-two Morse homology vanishes above the dimension of `M`. -/
 theorem isZero_homology_morseComplex_of_finrank_lt {n : ℕ} (hn : finrank ℝ E < n) :

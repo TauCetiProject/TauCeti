@@ -59,7 +59,7 @@ above the critical value; in dimension two this is the index-one saddle model
 ## References
 
 * J. Milnor, *Morse Theory*, Annals of Mathematics Studies 51, Princeton University Press, 1963,
-  Lemma 2.2 and Corollary 2.3.
+  Lemma 2.2.
 -/
 
 public section
