@@ -783,11 +783,8 @@ theorem contDiff_smul_coefficient (χ : FrequencyCutoff E) :
   intro p
   rcases eq_or_ne p.2 0 with h | h
   · -- Near the zero frequency the cutoff, hence the product, vanishes identically.
-    refine (contDiffAt_const (c := (0 : V →L[ℂ] W))).congr_of_eventuallyEq ?_
-    filter_upwards [(continuous_snd.tendsto p).eventually
-      (χ.eventuallyEq_zero_of_norm_lt_one (ξ := p.2) (by simp [h]))] with q hq
-    rw [Pi.zero_apply] at hq
-    simp [hq]
+    exact (contDiffAt_const (c := (0 : V →L[ℂ] W))).congr_of_eventuallyEq
+      (χ.comp_snd_smul_eventuallyEq_zero a.coefficient (by simp [h]))
   · exact ((χ.contDiff.comp contDiff_snd).contDiffAt).smul (a.contDiffAt_coefficient h)
 
 end Growth
