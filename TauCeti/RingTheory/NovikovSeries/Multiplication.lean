@@ -53,8 +53,8 @@ The arrangement of the instances follows Mathlib's `HahnSeries` in
   set of pairs containing the pairs of support exponents.
 * `TauCeti.NovikovSeries.support_mul_subset`: the support of a product lies in the sum of the
   supports.
-* `TauCeti.NovikovSeries.single_mul_single` and `TauCeti.NovikovSeries.single_pow`: monomials
-  multiply by adding exponents.
+* `TauCeti.NovikovSeries.convolution_single_single`, `TauCeti.NovikovSeries.single_mul_single`
+  and `TauCeti.NovikovSeries.single_pow`: monomials multiply by adding exponents.
 * `TauCeti.NovikovSeries.unitsSingle`, `TauCeti.NovikovSeries.isUnit_single`: over an additive
   group, a monomial `u e^g` with unit coefficient is a unit, with inverse `u⁻¹ e^(-g)`.
 * `TauCeti.NovikovSeries.ofAddMonoidAlgebra_injective`: the group ring embeds into Novikov series,
@@ -189,6 +189,25 @@ theorem convolution_add_right (B : V →+ W →+ U) (v : NovikovSeries V H N)
     · exact Or.inr ⟨hu, by rwa [hw, zero_add] at hu'⟩
     · exact Or.inl ⟨hu, hw⟩
 
+/-- The convolution of two monomials is the monomial of the sum of their exponents. -/
+@[simp]
+theorem convolution_single_single (B : V →+ W →+ U) (g g' : H) (x : V) (y : W) :
+    convolution B (single (N := N) g x) (single g' y) = single (g + g') (B x y) := by
+  classical
+  ext h
+  rw [coeff_convolution_eq_sum (s := ({(g, g')} : Finset (H × H)).filter fun p => p.1 + p.2 = h)
+    (fun p hp => (mem_filter.1 hp).2) fun u u' huu' hu hu' => ?_]
+  · by_cases hh : h = g + g'
+    · subst hh
+      rw [filter_true_of_mem fun p hp => by rw [mem_singleton.1 hp], sum_singleton,
+        coeff_single_same, coeff_single_same, coeff_single_same]
+    · rw [coeff_single_of_ne hh]
+      simp [filter_singleton, Ne.symm hh]
+  · have hu : u = g := by_contra fun hug => hu (coeff_single_of_ne hug x)
+    have hu' : u' = g' := by_contra fun hug' => hu' (coeff_single_of_ne hug' y)
+    subst hu hu'
+    exact mem_filter.2 ⟨mem_singleton_self _, huu'⟩
+
 end Convolution
 
 section Mul
@@ -254,21 +273,8 @@ private theorem coeff_mul_eq_sum_fibre {ι : Type*} [DecidableEq H] {a b : Novik
 /-- Monomials multiply by adding exponents. -/
 @[simp]
 theorem single_mul_single (g g' : H) (r r' : R) :
-    (single g r * single g' r' : NovikovSeries R H N) = single (g + g') (r * r') := by
-  classical
-  ext h
-  rw [coeff_mul_eq_sum (s := ({(g, g')} : Finset (H × H)).filter fun p => p.1 + p.2 = h)
-    (fun p hp => (mem_filter.1 hp).2) fun u v huv hu hv => ?_]
-  · by_cases hh : h = g + g'
-    · subst hh
-      rw [filter_true_of_mem fun p hp => by rw [mem_singleton.1 hp], sum_singleton,
-        coeff_single_same, coeff_single_same, coeff_single_same]
-    · rw [coeff_single_of_ne hh]
-      simp [filter_singleton, Ne.symm hh]
-  · have hu : u = g := by_contra fun hug => hu (coeff_single_of_ne hug r)
-    have hv : v = g' := by_contra fun hvg => hv (coeff_single_of_ne hvg r')
-    subst hu hv
-    exact mem_filter.2 ⟨mem_singleton_self _, huv⟩
+    (single g r * single g' r' : NovikovSeries R H N) = single (g + g') (r * r') :=
+  convolution_single_single _ g g' r r'
 
 /-- Multiplying by a constant series `single 0 r` multiplies each coefficient on the left. -/
 theorem coeff_single_zero_mul (r : R) (a : NovikovSeries R H N) (h : H) :

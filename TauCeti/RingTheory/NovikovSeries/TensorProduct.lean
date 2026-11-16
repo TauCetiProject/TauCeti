@@ -135,15 +135,8 @@ theorem coeff_cauchyProduct_eq_sum_of_injOn {ι : Type*} {v : NovikovSeries V H 
 @[simp]
 theorem cauchyProduct_single_single (A A' : H) (x : V) (y : W) :
     cauchyProduct R (single (N := N) A x) (single A' y) =
-      (single (A + A') (x ⊗ₜ[R] y) : NovikovSeries (V ⊗[R] W) H N) := by
-  classical
-  ext h
-  rw [coeff_cauchyProduct_eq_sum (s := ({(A, A')} : Finset (H × H)).filter fun p => p.1 + p.2 = h)
-    (fun p hp => (Finset.mem_filter.1 hp).2) fun u u' huu' hu hu' => ?_]
-  · simp [Finset.sum_filter, coeff_single, Pi.single_apply, eq_comm]
-  · refine Finset.mem_filter.2 ⟨Finset.mem_singleton.2 ?_, huu'⟩
-    rw [Prod.mk.injEq]
-    exact ⟨not_imp_comm.1 (coeff_single_of_ne · x) hu, not_imp_comm.1 (coeff_single_of_ne · y) hu'⟩
+      (single (A + A') (x ⊗ₜ[R] y) : NovikovSeries (V ⊗[R] W) H N) :=
+  convolution_single_single _ A A' x y
 
 end NovikovSeries
 
