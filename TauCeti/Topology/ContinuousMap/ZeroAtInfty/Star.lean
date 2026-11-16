@@ -66,13 +66,11 @@ def liftZeroAtInftyStarAlgEquiv : C(X, A) ≃⋆ₐ[𝕜] C₀(X, A) where
 @[simp]
 theorem liftZeroAtInftyStarAlgEquiv_apply (f : C(X, A)) :
     liftZeroAtInftyStarAlgEquiv 𝕜 X A f =
-      ZeroAtInftyContinuousMap.ContinuousMap.liftZeroAtInfty f :=
-  (rfl)
+      ZeroAtInftyContinuousMap.ContinuousMap.liftZeroAtInfty f := (rfl)
 
 @[simp]
 theorem liftZeroAtInftyStarAlgEquiv_symm_apply (f : C₀(X, A)) :
-    (liftZeroAtInftyStarAlgEquiv 𝕜 X A).symm f = (f : C(X, A)) :=
-  (rfl)
+    (liftZeroAtInftyStarAlgEquiv 𝕜 X A).symm f = (f : C(X, A)) := (rfl)
 
 end LiftZeroAtInfty
 
@@ -97,8 +95,7 @@ def compNonUnitalStarAlgHom (g : X →co Y) : C₀(Y, A) →⋆ₙₐ[𝕜] C₀
 
 @[simp]
 theorem compNonUnitalStarAlgHom_apply (g : X →co Y) (f : C₀(Y, A)) :
-    compNonUnitalStarAlgHom 𝕜 A g f = f.comp g :=
-  (rfl)
+    compNonUnitalStarAlgHom 𝕜 A g f = f.comp g := (rfl)
 
 @[simp]
 theorem compNonUnitalStarAlgHom_id :
@@ -107,8 +104,7 @@ theorem compNonUnitalStarAlgHom_id :
 
 theorem compNonUnitalStarAlgHom_comp (h : Y →co Z) (g : X →co Y) :
     compNonUnitalStarAlgHom 𝕜 A (h.comp g) =
-      (compNonUnitalStarAlgHom 𝕜 A g).comp (compNonUnitalStarAlgHom 𝕜 A h) :=
-  (rfl)
+      (compNonUnitalStarAlgHom 𝕜 A g).comp (compNonUnitalStarAlgHom 𝕜 A h) := (rfl)
 
 end Precomp
 
@@ -130,8 +126,7 @@ def evalNonUnitalStarAlgHom (x : X) : C₀(X, A) →⋆ₙₐ[𝕜] A where
 
 @[simp]
 theorem evalNonUnitalStarAlgHom_apply (x : X) (f : C₀(X, A)) :
-    evalNonUnitalStarAlgHom 𝕜 A x f = f x :=
-  (rfl)
+    evalNonUnitalStarAlgHom 𝕜 A x f = f x := (rfl)
 
 end Eval
 
@@ -161,8 +156,7 @@ def compLeftNonUnitalStarAlgHom (φ : A →⋆ₙₐ[𝕜] B) (hφ : Continuous 
 
 @[simp]
 theorem compLeftNonUnitalStarAlgHom_apply (φ : A →⋆ₙₐ[𝕜] B) (hφ : Continuous φ) (f : C₀(X, A))
-    (x : X) : compLeftNonUnitalStarAlgHom X φ hφ f x = φ (f x) :=
-  (rfl)
+    (x : X) : compLeftNonUnitalStarAlgHom X φ hφ f x = φ (f x) := (rfl)
 
 @[simp]
 theorem compLeftNonUnitalStarAlgHom_id :
@@ -200,23 +194,19 @@ def congrLeftStarAlgEquiv (e : X ≃ₜ Y) : C₀(X, A) ≃⋆ₐ[𝕜] C₀(Y, 
 
 @[simp]
 theorem congrLeftStarAlgEquiv_apply (e : X ≃ₜ Y) (f : C₀(X, A)) (y : Y) :
-    congrLeftStarAlgEquiv 𝕜 A e f y = f (e.symm y) :=
-  (rfl)
+    congrLeftStarAlgEquiv 𝕜 A e f y = f (e.symm y) := (rfl)
 
 @[simp]
 theorem congrLeftStarAlgEquiv_symm (e : X ≃ₜ Y) :
-    (congrLeftStarAlgEquiv 𝕜 A e).symm = congrLeftStarAlgEquiv 𝕜 A e.symm :=
-  (rfl)
+    (congrLeftStarAlgEquiv 𝕜 A e).symm = congrLeftStarAlgEquiv 𝕜 A e.symm := (rfl)
 
 @[simp]
 theorem congrLeftStarAlgEquiv_refl :
-    congrLeftStarAlgEquiv 𝕜 A (Homeomorph.refl X) = StarAlgEquiv.refl 𝕜 C₀(X, A) :=
-  (rfl)
+    congrLeftStarAlgEquiv 𝕜 A (Homeomorph.refl X) = StarAlgEquiv.refl 𝕜 C₀(X, A) := (rfl)
 
 theorem congrLeftStarAlgEquiv_trans {Z : Type*} [TopologicalSpace Z] (e : X ≃ₜ Y) (e' : Y ≃ₜ Z) :
     congrLeftStarAlgEquiv 𝕜 A (e.trans e') =
-      (congrLeftStarAlgEquiv 𝕜 A e).trans (congrLeftStarAlgEquiv 𝕜 A e') :=
-  (rfl)
+      (congrLeftStarAlgEquiv 𝕜 A e).trans (congrLeftStarAlgEquiv 𝕜 A e') := (rfl)
 
 end CongrLeft
 
@@ -240,8 +230,7 @@ noncomputable def extendByZeroNonUnitalStarAlgHom (he : IsOpenEmbedding e) :
 
 @[simp]
 theorem coe_extendByZeroNonUnitalStarAlgHom (he : IsOpenEmbedding e) :
-    ⇑(extendByZeroNonUnitalStarAlgHom 𝕜 A he) = extendByZero he :=
-  (rfl)
+    ⇑(extendByZeroNonUnitalStarAlgHom 𝕜 A he) = extendByZero he := (rfl)
 
 theorem extendByZeroNonUnitalStarAlgHom_apply_mem (he : IsOpenEmbedding e) (f : C₀(X, A))
     (x : X) : extendByZeroNonUnitalStarAlgHom 𝕜 A he f (e x) = f x :=

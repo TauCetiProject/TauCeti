@@ -37,14 +37,9 @@ public section
 
 namespace ContinuousMap
 
-section ContinuousStar
-
-variable {X A : Type*} [TopologicalSpace X] [TopologicalSpace A] [Star A] [ContinuousStar A]
-
-instance instContinuousStar : ContinuousStar C(X, A) :=
+instance instContinuousStar {X A : Type*} [TopologicalSpace X] [TopologicalSpace A] [Star A]
+    [ContinuousStar A] : ContinuousStar C(X, A) :=
   ⟨continuous_postcomp starContinuousMap⟩
-
-end ContinuousStar
 
 section Precomposition
 
@@ -65,8 +60,7 @@ def compNonUnitalStarAlgHom' (f : C(X, Y)) : C(Y, A) →⋆ₙₐ[𝕜] C(X, A) 
 
 @[simp]
 theorem compNonUnitalStarAlgHom'_apply (f : C(X, Y)) (g : C(Y, A)) :
-    compNonUnitalStarAlgHom' 𝕜 A f g = g.comp f :=
-  (rfl)
+    compNonUnitalStarAlgHom' 𝕜 A f g = g.comp f := (rfl)
 
 @[simp]
 theorem compNonUnitalStarAlgHom'_id :
@@ -101,21 +95,18 @@ def compNonUnitalStarAlgHom (φ : A →⋆ₙₐ[𝕜] B) (hφ : Continuous φ) 
 
 @[simp]
 theorem compNonUnitalStarAlgHom_apply (φ : A →⋆ₙₐ[𝕜] B) (hφ : Continuous φ) (f : C(X, A)) :
-    compNonUnitalStarAlgHom X φ hφ f = (⟨φ, hφ⟩ : C(A, B)).comp f :=
-  (rfl)
+    compNonUnitalStarAlgHom X φ hφ f = (⟨φ, hφ⟩ : C(A, B)).comp f := (rfl)
 
 @[simp]
 theorem compNonUnitalStarAlgHom_id :
-    compNonUnitalStarAlgHom X (.id 𝕜 A) continuous_id = .id 𝕜 C(X, A) :=
-  (rfl)
+    compNonUnitalStarAlgHom X (.id 𝕜 A) continuous_id = .id 𝕜 C(X, A) := (rfl)
 
 theorem compNonUnitalStarAlgHom_comp {C : Type*} [TopologicalSpace C]
     [NonUnitalNonAssocSemiring C] [IsTopologicalSemiring C] [DistribMulAction 𝕜 C]
     [ContinuousConstSMul 𝕜 C] [Star C] [ContinuousStar C]
     (φ : A →⋆ₙₐ[𝕜] B) (ψ : B →⋆ₙₐ[𝕜] C) (hφ : Continuous φ) (hψ : Continuous ψ) :
     compNonUnitalStarAlgHom X (ψ.comp φ) (hψ.comp hφ) =
-      (compNonUnitalStarAlgHom X ψ hψ).comp (compNonUnitalStarAlgHom X φ hφ) :=
-  (rfl)
+      (compNonUnitalStarAlgHom X ψ hψ).comp (compNonUnitalStarAlgHom X φ hφ) := (rfl)
 
 end Postcomposition
 
@@ -136,8 +127,7 @@ def evalNonUnitalStarAlgHom (x : X) : C(X, A) →⋆ₙₐ[𝕜] A where
 
 @[simp]
 theorem evalNonUnitalStarAlgHom_apply (x : X) (f : C(X, A)) :
-    evalNonUnitalStarAlgHom 𝕜 A x f = f x :=
-  (rfl)
+    evalNonUnitalStarAlgHom 𝕜 A x f = f x := (rfl)
 
 end Eval
 
@@ -158,20 +148,17 @@ def constNonUnitalStarAlgHom : A →⋆ₙₐ[𝕜] C(X, A) where
 
 @[simp]
 theorem constNonUnitalStarAlgHom_apply (a : A) :
-    constNonUnitalStarAlgHom 𝕜 X A a = const X a :=
-  (rfl)
+    constNonUnitalStarAlgHom 𝕜 X A a = const X a := (rfl)
 
 @[simp]
 theorem evalNonUnitalStarAlgHom_comp_constNonUnitalStarAlgHom (x : X) :
-    (evalNonUnitalStarAlgHom 𝕜 A x).comp (constNonUnitalStarAlgHom 𝕜 X A) = .id 𝕜 A :=
-  (rfl)
+    (evalNonUnitalStarAlgHom 𝕜 A x).comp (constNonUnitalStarAlgHom 𝕜 X A) = .id 𝕜 A := (rfl)
 
 @[simp]
 theorem compNonUnitalStarAlgHom'_comp_constNonUnitalStarAlgHom {Y : Type*} [TopologicalSpace Y]
     (f : C(X, Y)) :
     (compNonUnitalStarAlgHom' 𝕜 A f).comp (constNonUnitalStarAlgHom 𝕜 Y A) =
-      constNonUnitalStarAlgHom 𝕜 X A :=
-  (rfl)
+      constNonUnitalStarAlgHom 𝕜 X A := (rfl)
 
 end Const
 
@@ -195,13 +182,11 @@ def curryStarAlgEquiv : C(X × Y, A) ≃⋆ₐ[𝕜] C(X, C(Y, A)) where
 
 @[simp]
 theorem curryStarAlgEquiv_apply (f : C(X × Y, A)) :
-    curryStarAlgEquiv 𝕜 X Y A f = f.curry :=
-  (rfl)
+    curryStarAlgEquiv 𝕜 X Y A f = f.curry := (rfl)
 
 @[simp]
 theorem curryStarAlgEquiv_symm_apply (g : C(X, C(Y, A))) :
-    (curryStarAlgEquiv 𝕜 X Y A).symm g = g.uncurry :=
-  (rfl)
+    (curryStarAlgEquiv 𝕜 X Y A).symm g = g.uncurry := (rfl)
 
 end Curry
 
@@ -227,13 +212,11 @@ def compNonUnitalStarAlgEquiv' (f : X ≃ₜ Y) : C(Y, A) ≃⋆ₐ[𝕜] C(X, A
 
 @[simp]
 theorem compNonUnitalStarAlgEquiv'_apply (f : X ≃ₜ Y) (g : C(Y, A)) :
-    f.compNonUnitalStarAlgEquiv' 𝕜 A g = g.comp (f : C(X, Y)) :=
-  (rfl)
+    f.compNonUnitalStarAlgEquiv' 𝕜 A g = g.comp (f : C(X, Y)) := (rfl)
 
 @[simp]
 theorem compNonUnitalStarAlgEquiv'_symm_apply (f : X ≃ₜ Y) (g : C(X, A)) :
-    (f.compNonUnitalStarAlgEquiv' 𝕜 A).symm g = g.comp (f.symm : C(Y, X)) :=
-  (rfl)
+    (f.compNonUnitalStarAlgEquiv' 𝕜 A).symm g = g.comp (f.symm : C(Y, X)) := (rfl)
 
 @[simp]
 theorem compNonUnitalStarAlgEquiv'_refl :
@@ -241,13 +224,11 @@ theorem compNonUnitalStarAlgEquiv'_refl :
   StarAlgEquiv.ext fun _ => ContinuousMap.ext fun _ => rfl
 
 theorem compNonUnitalStarAlgEquiv'_symm (f : X ≃ₜ Y) :
-    (f.compNonUnitalStarAlgEquiv' 𝕜 A).symm = f.symm.compNonUnitalStarAlgEquiv' 𝕜 A :=
-  (rfl)
+    (f.compNonUnitalStarAlgEquiv' 𝕜 A).symm = f.symm.compNonUnitalStarAlgEquiv' 𝕜 A := (rfl)
 
 theorem compNonUnitalStarAlgEquiv'_trans {Z : Type*} [TopologicalSpace Z]
     (f : X ≃ₜ Y) (g : Y ≃ₜ Z) :
     (f.trans g).compNonUnitalStarAlgEquiv' 𝕜 A =
-      (g.compNonUnitalStarAlgEquiv' 𝕜 A).trans (f.compNonUnitalStarAlgEquiv' 𝕜 A) :=
-  (rfl)
+      (g.compNonUnitalStarAlgEquiv' 𝕜 A).trans (f.compNonUnitalStarAlgEquiv' 𝕜 A) := (rfl)
 
 end Homeomorph

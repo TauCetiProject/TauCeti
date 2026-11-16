@@ -66,54 +66,47 @@ noncomputable def pathRightHalf : C(I, I) where
     continuous_projIcc.comp ((continuous_const.mul continuous_subtype_val).sub continuous_const)
 
 @[simp]
-theorem pathLeftHalf_zero : pathLeftHalf 0 = 0 := by
-  ext
-  simp [pathLeftHalf]
+theorem pathLeftHalf_zero : pathLeftHalf 0 = 0 := by ext; simp [pathLeftHalf]
 
 @[simp]
 theorem pathLeftHalf_half {t : I} (ht : (t : ℝ) = 2⁻¹) : pathLeftHalf t = 1 := by
-  ext
-  simp [pathLeftHalf, ht]
+  ext; simp [pathLeftHalf, ht]
 
 @[simp]
 theorem pathRightHalf_half {t : I} (ht : (t : ℝ) = 2⁻¹) : pathRightHalf t = 0 := by
-  ext
-  simp [pathRightHalf, ht]
+  ext; simp [pathRightHalf, ht]
 
 @[simp]
-theorem pathRightHalf_one : pathRightHalf 1 = 1 := by
-  ext
-  simp [pathRightHalf]
-  norm_num
+theorem pathRightHalf_one : pathRightHalf 1 = 1 := by ext; simp [pathRightHalf]; norm_num
 
 /-- Concatenate two paths `f, g : C(unitInterval, X)` satisfying `f 1 = g 0`. -/
 noncomputable def concatPath {X : Type*} [TopologicalSpace X] (f g : C(I, X)) (h : f 1 = g 0) :
     C(I, X) :=
-  glueHalves (ContinuousMap.id I) (f.comp pathLeftHalf) (g.comp pathRightHalf) fun t ht => by
+  glueHalves (.id I) (f.comp pathLeftHalf) (g.comp pathRightHalf) fun t ht => by
     have ht' : (t : ℝ) = 2⁻¹ := ht
     simp [ht', h]
 
-theorem concatPath_of_le {X : Type*} [TopologicalSpace X] (f g : C(I, X)) (h : f 1 = g 0)
-    {t : I} (ht : (t : ℝ) ≤ 2⁻¹) :
+section ConcatPathLemmas
+
+variable {X : Type*} [TopologicalSpace X] (f g : C(I, X)) (h : f 1 = g 0)
+
+theorem concatPath_of_le {t : I} (ht : (t : ℝ) ≤ 2⁻¹) :
     concatPath f g h t = f (pathLeftHalf t) :=
-  glueHalves_of_le (ContinuousMap.id I) _ _ _ ht
+  glueHalves_of_le (.id I) _ _ _ ht
 
-theorem concatPath_of_not_le {X : Type*} [TopologicalSpace X] (f g : C(I, X)) (h : f 1 = g 0)
-    {t : I} (ht : ¬(t : ℝ) ≤ 2⁻¹) :
+theorem concatPath_of_not_le {t : I} (ht : ¬(t : ℝ) ≤ 2⁻¹) :
     concatPath f g h t = g (pathRightHalf t) :=
-  glueHalves_of_not_le (ContinuousMap.id I) _ _ _ ht
+  glueHalves_of_not_le (.id I) _ _ _ ht
 
 @[simp]
-theorem concatPath_zero {X : Type*} [TopologicalSpace X] (f g : C(I, X)) (h : f 1 = g 0) :
-    concatPath f g h 0 = f 0 := by
-  have hle : ((0 : I) : ℝ) ≤ 2⁻¹ := by norm_num
-  rw [concatPath_of_le f g h hle, pathLeftHalf_zero]
+theorem concatPath_zero : concatPath f g h 0 = f 0 := by
+  rw [concatPath_of_le f g h (by norm_num), pathLeftHalf_zero]
 
 @[simp]
-theorem concatPath_one {X : Type*} [TopologicalSpace X] (f g : C(I, X)) (h : f 1 = g 0) :
-    concatPath f g h 1 = g 1 := by
-  have hnle : ¬((1 : I) : ℝ) ≤ 2⁻¹ := by norm_num
-  rw [concatPath_of_not_le f g h hnle, pathRightHalf_one]
+theorem concatPath_one : concatPath f g h 1 = g 1 := by
+  rw [concatPath_of_not_le f g h (by norm_num), pathRightHalf_one]
+
+end ConcatPathLemmas
 
 end ConcatPath
 
