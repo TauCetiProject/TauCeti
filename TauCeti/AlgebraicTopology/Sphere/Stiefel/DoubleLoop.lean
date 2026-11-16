@@ -117,6 +117,7 @@ theorem _root_.Continuous.sphereMeridian {Y : Type*} [TopologicalSpace Y]
   fun_prop
 
 /-- The meridians depend continuously on the direction, as paths from `p` to `-p`. -/
+@[fun_prop]
 theorem continuous_sphereMeridian : Continuous (sphereMeridian p) :=
   Path.continuous_uncurry_iff.mp (continuous_fst.sphereMeridian p continuous_snd)
 
