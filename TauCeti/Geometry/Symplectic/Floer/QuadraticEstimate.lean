@@ -517,36 +517,30 @@ theorem exists_pos_forall_eLpNorm_floerRemainder_sub_le (hK : IsCompact K)
   set g₁ : α → ℝ := fun x ↦ a * (1 + A) * ‖e₁ x - e₂ x‖ with hg₁
   set g₂ : α → ℝ := fun x ↦ b * ‖d₁ x‖ with hg₂
   set g₃ : α → ℝ := fun x ↦ a * ‖d₁ x - d₂ x‖ with hg₃
+  -- The constants are nonnegative wherever the bounds hold.
+  have ha0 : ∀ᵐ _ ∂μ, 0 ≤ a := ha₁.mono fun _ h ↦ (norm_nonneg _).trans h
+  have hb0 : ∀ᵐ _ ∂μ, 0 ≤ b := hb.mono fun _ h ↦ (norm_nonneg _).trans h
+  have hA0 : ∀ᵐ _ ∂μ, 0 ≤ A := hA.mono fun _ h ↦ (norm_nonneg _).trans h
   -- The pointwise estimate, almost everywhere.
   have hpt : ∀ᵐ x ∂μ,
       ‖ω.floerRemainder (J (φ x)) (Ks (φ x)) (Kt (φ x)) (y x) (v x) (e₁ x) (d₁ x) -
         ω.floerRemainder (J (φ x)) (Ks (φ x)) (Kt (φ x)) (y x) (v x) (e₂ x) (d₂ x)‖ ≤
           (C.toNNReal : ℝ) * ‖(g₁ + g₂ + g₃) x‖ := by
-    filter_upwards [hK', ha₁, ha₂, hb, hA] with x hx h₁ h₂ hbx hAx
-    have ha0 : 0 ≤ a := (norm_nonneg _).trans h₁
-    have hb0 : 0 ≤ b := (norm_nonneg _).trans hbx
-    have hA0 : 0 ≤ A := (norm_nonneg _).trans hAx
+    filter_upwards [hK', ha₁, ha₂, hb, hA, ha0, hb0, hA0] with x hx h₁ h₂ hbx hAx ha0 hb0 hA0
     rw [Real.norm_of_nonneg (by simp only [hg₁, hg₂, hg₃, Pi.add_apply]; positivity),
       Real.coe_toNNReal']
     exact ω.norm_floerRemainder_sub_le_of_le (hC (φ x) (y x) hx (v x) (e₁ x) (e₂ x) (d₁ x) (d₂ x)
       (h₁.trans haδ) (h₂.trans haδ)) h₁ h₂ hbx hAx
-  -- Each term of the bound is controlled by the corresponding `Lᵖ` norm.
-  have h₁ : eLpNorm g₁ p μ ≤ ENNReal.ofReal (a * (1 + A)) * eLpNorm (e₁ - e₂) p μ := by
-    refine eLpNorm_le_mul_eLpNorm_of_ae_le_mul ((he₁.sub he₂).norm.const_mul _) ?_ p
-    filter_upwards [ha₁, hA] with x h₁ hAx
-    have ha0 : 0 ≤ a := (norm_nonneg _).trans h₁
-    have hA0 : 0 ≤ A := (norm_nonneg _).trans hAx
-    rw [Real.norm_of_nonneg (by positivity)]
-  have h₂ : eLpNorm g₂ p μ ≤ ENNReal.ofReal b * eLpNorm d₁ p μ := by
-    refine eLpNorm_le_mul_eLpNorm_of_ae_le_mul (hd₁.norm.const_mul _) ?_ p
-    filter_upwards [hb] with x hbx
-    have hb0 : 0 ≤ b := (norm_nonneg _).trans hbx
-    rw [Real.norm_of_nonneg (by positivity)]
-  have h₃ : eLpNorm g₃ p μ ≤ ENNReal.ofReal a * eLpNorm (d₁ - d₂) p μ := by
-    refine eLpNorm_le_mul_eLpNorm_of_ae_le_mul ((hd₁.sub hd₂).norm.const_mul _) ?_ p
-    filter_upwards [ha₁] with x h₁
-    have ha0 : 0 ≤ a := (norm_nonneg _).trans h₁
-    rw [Real.norm_of_nonneg (by positivity)]
+  -- Each term of the bound is controlled by the corresponding `Lᵖ` norm: scaling a norm by a
+  -- constant that is nonnegative almost everywhere scales its `Lᵖ` norm.
+  have hscale {c : ℝ} {f : α → V} (hf : AEStronglyMeasurable f μ) (hc : ∀ᵐ _ ∂μ, 0 ≤ c) :
+      eLpNorm (fun x ↦ c * ‖f x‖) p μ ≤ ENNReal.ofReal c * eLpNorm f p μ :=
+    eLpNorm_le_mul_eLpNorm_of_ae_le_mul (hf.norm.const_mul c)
+      (hc.mono fun _ hc ↦ (Real.norm_of_nonneg (by positivity)).le) p
+  have h₁ : eLpNorm g₁ p μ ≤ ENNReal.ofReal (a * (1 + A)) * eLpNorm (e₁ - e₂) p μ :=
+    hscale (he₁.sub he₂) (by filter_upwards [ha0, hA0] with _ ha0 hA0; positivity)
+  have h₂ : eLpNorm g₂ p μ ≤ ENNReal.ofReal b * eLpNorm d₁ p μ := hscale hd₁ hb0
+  have h₃ : eLpNorm g₃ p μ ≤ ENNReal.ofReal a * eLpNorm (d₁ - d₂) p μ := hscale (hd₁.sub hd₂) ha0
   calc _ ≤ ENNReal.ofReal (C.toNNReal : ℝ) * eLpNorm (g₁ + g₂ + g₃) p μ :=
         eLpNorm_le_mul_eLpNorm_of_ae_le_mul (hm₁.sub hm₂) hpt p
     _ ≤ C.toNNReal * (eLpNorm g₁ p μ + eLpNorm g₂ p μ + eLpNorm g₃ p μ) := by

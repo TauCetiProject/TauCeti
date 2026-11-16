@@ -237,6 +237,13 @@ theorem contDiff_preglue {n : ℕ∞} (hx : ContDiff ℝ n x) (hu : ContDiff ℝ
     ((contDiff_pregluingCutoff.comp contDiff_fst.neg).smul
       ((hv.comp (contDiff_id.sub contDiff_const)).sub hx'))
 
+/-- The pre-glued map of continuous maps is continuous. -/
+theorem continuous_preglue (hx : Continuous x) (hu : Continuous u) (hv : Continuous v) :
+    Continuous (preglue x u v R) := by
+  have hρ : Continuous pregluingCutoff := contDiff_pregluingCutoff.continuous (n := 0)
+  unfold preglue
+  fun_prop
+
 /-- The pre-glued map is within `‖u(s + R, t) - x(t)‖ + ‖v(s - R, t) - x(t)‖` of the loop `x`. -/
 theorem norm_preglue_sub_le :
     ‖preglue x u v R z - x z.2‖ ≤ ‖u (z + (R, 0)) - x z.2‖ + ‖v (z - (R, 0)) - x z.2‖ := by
@@ -566,13 +573,12 @@ theorem exists_eventually_eLpNorm_floerOperator_preglue_le_of_floerOperator_eq_z
   have hN : MeasurableSet N := measurableSet_Icc.prod measurableSet_Icc
   have hNS : N ⊆ S := prod_mono (subset_univ _) le_rfl
   have hFm : AEStronglyMeasurable F (volume.restrict N) := by
-    have hρ : Continuous pregluingCutoff := contDiff_pregluingCutoff.continuous (n := 0)
     have hxc : Continuous x := continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt
     have hpt : ContDiff ℝ ⊤ fun q : (ℝ × ℝ) × V ↦ (q.1.2, q.2) :=
       contDiff_fst.snd.prodMk contDiff_snd
     exact ω.aestronglyMeasurable_floerOperator (J := fun p ↦ J p.2) (Ks := fun _ _ ↦ 0)
       (Kt := fun p ↦ H p.2) (hJ.comp hpt.continuous) contDiff_const
-      ((hH.of_le (by norm_num)).comp (hpt.of_le le_top)) (by unfold preglue; fun_prop) _
+      ((hH.of_le (by norm_num)).comp (hpt.of_le le_top)) (continuous_preglue hxc huc hvc) _
   -- The error vanishes off the neck, so its `Lᵖ` norm on the strip is its `Lᵖ` norm on the
   -- neck, of area `2`.
   have hS : eLpNorm F p (volume.restrict S) = eLpNorm F p (volume.restrict N) := by

@@ -331,6 +331,7 @@ theorem aestronglyMeasurable_floerOperator (ω : SymplecticForm V)
       ((hJ.comp hpt).clm_apply (continuous_snd.snd.sub (hT.comp hpt)))
   have hd (e : ℝ × ℝ) : MeasureTheory.AEStronglyMeasurable (fun z ↦ fderiv ℝ u z e) μ :=
     (measurable_fderiv_apply_const ℝ _ e).aestronglyMeasurable
+  rw [funext (ω.floerOperator_def J Ks Kt u)]
   exact hG.comp_aestronglyMeasurable (aestronglyMeasurable_id.prodMk
     ((hd stdComplexLineReal).prodMk (hd stdComplexLineImag)))
 
