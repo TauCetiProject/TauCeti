@@ -170,14 +170,22 @@ noncomputable def morseCochainToNegChain (i k : ℕ) :
     map_add' a b := by
       ext q
       by_cases hq : manifoldMorseIndex 𝓘(ℝ, E) f q.1 = i
-      -- The sum of two morphisms of modules acts as the sum of the underlying functions.
-      · simp [hq]; rfl
+      -- The sum of two morphisms of modules acts as the sum of the underlying functions. The
+      -- chain `Finsupp.single _ 1` is a term of the Morse complex only after unfolding
+      -- `morseComplex`, so `simp` cannot apply `Pi.add_apply` to it and we apply it by hand.
+      · simp only [ModuleCat.hom_add, LinearMap.coe_add, Finsupp.equivFunOnFinite_symm_apply_apply,
+          Finsupp.coe_add, Finsupp.coe_equivFunOnFinite_symm, Pi.add_apply, hq, dite_true]
+        exact (congrArg ULift.down (Pi.add_apply (⇑a.hom) (⇑b.hom) _)).trans ULift.add_down
       · simp [hq]
     map_smul' c a := by
       ext q
       by_cases hq : manifoldMorseIndex 𝓘(ℝ, E) f q.1 = i
-      -- A scalar multiple of a morphism of modules acts as the multiple of the function.
-      · simp [hq]; rfl
+      -- A scalar multiple of a morphism of modules acts as the multiple of the function; as for
+      -- `map_add'`, `Pi.smul_apply` is applied by hand.
+      · simp only [ModuleCat.hom_smul, LinearMap.coe_smul,
+          Finsupp.equivFunOnFinite_symm_apply_apply, RingHom.id_apply, Finsupp.coe_smul,
+          Finsupp.coe_equivFunOnFinite_symm, Pi.smul_apply, smul_eq_mul, hq, dite_true]
+        exact (congrArg ULift.down (Pi.smul_apply c (⇑a.hom) _)).trans (ULift.smul_down _ c)
       · simp [hq] }
 
 /-- The coefficient at `q` of the chain of `-f` associated with a cochain `a` of `f` of index `i`
