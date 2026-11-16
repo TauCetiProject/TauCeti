@@ -599,6 +599,7 @@ theorem tameCharacterGraded_injective (hϖ : Irreducible ϖ) :
     (ramificationGroupGradedToUnitFiltrationGraded_injective (i := 0) hϖ)
 
 /-- **The kernel of the tame character is the wild inertia group `G_1`**, viewed inside `G_0`. -/
+@[simp]
 theorem ker_tameCharacter (hϖ : Irreducible ϖ) :
     (tameCharacter (G := G) hϖ).ker =
       (ramificationGroup G 𝒪[L] 1).subgroupOf (ramificationGroup G 𝒪[L] 0) := by
