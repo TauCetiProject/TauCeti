@@ -53,7 +53,8 @@ relative chains (`TauCeti/AlgebraicTopology/Singular/AlexanderWhitney/RelativeCu
   absolute and relative cochains is natural in maps of pairs.
 * `TopPair.singularCup`, with `TopPair.singularCup_homologyπ` computing it on classes of cocycles,
   `TopPair.singularCohomologyπ_singularCup` its compatibility with the absolute cup product,
-  `TopPair.singularCup_naturality`, the module laws `TopPair.singularCup_assoc` and
+  `TopPair.singularCup_naturality`, the module laws `TopPair.singularCup_assoc` (with its
+  unitor form `TopPair.singularCup_rightUnitor_assoc`) and
   `TopPair.singularCup_constSingularCocycle_left`, and graded commutativity
   `TopPair.singularCup_gradedComm`.
 * `TopCat.singularRelativeCup`, characterized by
@@ -289,6 +290,19 @@ lemma singularCup_assoc (P : TopPair.{w})
   apply HomologicalComplex.moduleCat_iCycles_injective
   simp only [TauCeti.ChainComplex.iCycles_cupCycles]
   exact cupCochain_rightAlexanderWhitneyDiagonal_assoc P hu hμ h₁₂ h h₂₃ h' _ _ _
+
+/-- **Associativity of the right action of unit-coefficient classes on relative cohomology**: the
+relative form of `TopCat.singularCup_rightUnitor_assoc`, for `a ∈ Hᵖ(X; M)` and `b ∈ H^q(X; 𝟙)`
+absolute and `c ∈ H^r(X, A; 𝟙)` relative. -/
+lemma singularCup_rightUnitor_assoc (P : TopPair.{w}) {p q r m m' n : ℕ} (h₁₂ : p + q = m)
+    (h : m + r = n) (h₂₃ : q + r = m') (h' : p + m' = n)
+    (a : P.fst.singularCohomology (𝟙_ C) k M p) (b : P.fst.singularCohomology (𝟙_ C) k (𝟙_ C) q)
+    (c : P.singularCohomology (𝟙_ C) k (𝟙_ C) r) :
+    P.singularCup k (λ_ _).inv (ρ_ M).hom m r n h
+        (P.fst.singularCup k (λ_ _).inv (ρ_ M).hom p q m h₁₂ a b) c =
+      P.singularCup k (λ_ _).inv (ρ_ M).hom p m' n h' a
+        (P.singularCup k (λ_ _).inv (ρ_ (𝟙_ C)).hom q r m' h₂₃ b c) :=
+  singularCup_assoc k P (by monoidal) (by monoidal) h₁₂ h h₂₃ h' a b c
 
 /-- **The unit law for the action of absolute cohomology on relative cohomology**: the class of
 the constant `0`-cocycle with value `e` acts as the identity, under the hypotheses of
