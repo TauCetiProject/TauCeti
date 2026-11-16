@@ -763,7 +763,9 @@ theorem Isometry.map_orthogonalComplement {B : FiniteBilinearModule} (f : Isomet
   rw [AddSubgroup.mem_map]
   constructor
   · rintro ⟨x, hx, rfl⟩
-    exact f.toHom.map_mem_orthogonalComplement_of_le_map (K := H.map f.toAddEquiv) le_rfl hx
+    have := f.toHom.map_mem_orthogonalComplement_of_le_map (K := H.map f.toAddEquiv)
+      (by rw [toHom_toAddMonoidHom]) hx
+    rwa [toHom_apply] at this
   · intro hy
     rw [B.mem_orthogonalComplement_iff] at hy
     refine ⟨f.symm y, ?_, f.apply_symm_apply y⟩
