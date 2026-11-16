@@ -22,11 +22,7 @@ inequality on `W`,
 (`TauCeti.integrable_smul_and_norm_integral_smul_le`). This is the estimate that makes
 `h ↦ ∫ k • h` continuous on `Lᵖ` functions supported in `W`, used to pass to the limit in kernel
 integrals `∫ K(x - y) h(y) dy` for `x` away from the support of `h`
-(`TauCeti.tendsto_integral_smul_of_tendsto_eLpNorm_sub`). When `k` itself vanishes off `W`, only
-the restriction of `h` to `W` enters, and `h ↦ ∫ k • h` is continuous on all of `Lᵖ`
-(`TauCeti.continuous_integral_smul_Lp`), in particular for a continuous compactly supported `k`
-(`Continuous.continuous_integral_smul_Lp_of_hasCompactSupport`); this is how integrals against
-test functions pass to limits in `Lᵖ`.
+(`TauCeti.tendsto_integral_smul_of_tendsto_eLpNorm_sub`).
 -/
 
 public section
@@ -103,45 +99,5 @@ theorem tendsto_integral_smul_of_tendsto_eLpNorm_sub {𝕜 : Type*} [NormedRing 
   rw [norm_norm, ← integral_sub hint₁ hint₂]
   simp_rw [← smul_sub]
   exact hle
-
-/-- **Continuity of integrals against a bounded multiplier on `Lᵖ`.** Let `k` vanish off a
-measurable set `W` of finite measure and be a.e. bounded on `W`. Then `h ↦ ∫ k • h` is continuous
-on `Lᵖ`, `1 ≤ p`. Unlike in `TauCeti.tendsto_integral_smul_of_tendsto_eLpNorm_sub`, the functions
-`h` need not vanish off `W`. -/
-theorem continuous_integral_smul_Lp {𝕜 : Type*} [NormedRing 𝕜] [Module 𝕜 F] [IsBoundedSMul 𝕜 F]
-    {k : α → 𝕜} {W : Set α} (hW : MeasurableSet W) (hμW : μ W ≠ ∞) {B : ℝ} (hB : 0 ≤ B)
-    (hk : AEStronglyMeasurable k (μ.restrict W)) (hkB : ∀ᵐ y ∂μ.restrict W, ‖k y‖ ≤ B)
-    (hk0 : ∀ y, y ∉ W → k y = 0) {p : ℝ≥0∞} [Fact (1 ≤ p)] :
-    Continuous fun h : Lp F p μ => ∫ y, k y • h y ∂μ := by
-  -- Only the restriction of `h` to `W` enters the integral.
-  have hind (h : Lp F p μ) : ∫ y, k y • h y ∂μ = ∫ y, k y • W.indicator h y ∂μ := by
-    congr 1 with y
-    by_cases hy : y ∈ W
-    · rw [Set.indicator_of_mem hy]
-    · rw [hk0 y hy, zero_smul, zero_smul]
-  refine continuous_iff_continuousAt.2 fun h₀ => ?_
-  simp_rw [ContinuousAt, hind]
-  refine tendsto_integral_smul_of_tendsto_eLpNorm_sub hμW hB hk hkB Fact.out
-    (Eventually.of_forall fun h => (Lp.memLp h).indicator hW.nullMeasurableSet)
-    ((Lp.memLp h₀).indicator hW.nullMeasurableSet)
-    (Eventually.of_forall fun h => ae_of_all _ fun y hy => Set.indicator_of_notMem hy _)
-    (ae_of_all _ fun y hy => Set.indicator_of_notMem hy _) ?_
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
-    ((Lp.tendsto_Lp_iff_tendsto_eLpNorm' _ h₀).1 tendsto_id) (fun _ => bot_le) fun h => ?_
-  rw [← Set.indicator_sub', id_eq]
-  exact eLpNorm_indicator_le _ hW.nullMeasurableSet
-
-/-- **Integration against a continuous compactly supported function is continuous on `Lᵖ`**,
-`1 ≤ p`, for a measure finite on compact sets. -/
-theorem _root_.Continuous.continuous_integral_smul_Lp_of_hasCompactSupport {X : Type*}
-    [TopologicalSpace X] [MeasurableSpace X] [OpensMeasurableSpace X] {ν : Measure X}
-    [IsFiniteMeasureOnCompacts ν] {k : X → ℝ} (hk : Continuous k) (hkc : HasCompactSupport k)
-    {p : ℝ≥0∞} [Fact (1 ≤ p)] :
-    Continuous fun h : Lp F p ν => ∫ y, k y • h y ∂ν := by
-  obtain ⟨B, hB⟩ := hk.bounded_above_of_compact_support hkc
-  exact continuous_integral_smul_Lp (isClosed_tsupport k).measurableSet hkc.measure_lt_top.ne
-    (le_max_right B 0) hk.aestronglyMeasurable.restrict
-    (ae_of_all _ fun y => (hB y).trans (le_max_left _ _))
-    fun y hy => image_eq_zero_of_notMem_tsupport hy
 
 end TauCeti

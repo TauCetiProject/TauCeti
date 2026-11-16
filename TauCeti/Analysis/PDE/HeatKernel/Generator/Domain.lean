@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Distribution.TestFunction.Lp
 public import TauCeti.Analysis.PDE.HeatKernel.Generator.Basic
 public import TauCeti.Topology.Algebra.Module.LinearPMap.GraphCore
+import Mathlib.MeasureTheory.Function.Holder
 import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.Calculus.ContDiff.Convolution
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Convolution
@@ -18,7 +19,6 @@ import TauCeti.Analysis.Semigroups.Generator.Invariance
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
 import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
-import TauCeti.MeasureTheory.Function.Lp.Integral.BoundedSmul
 
 /-!
 # The domain of the heat generator on `Lᵖ`
@@ -121,12 +121,14 @@ functions. -/
 private theorem mem_testGraph (hp : p ≠ ∞) {φ : E → F} (hφ : ContDiff ℝ (⊤ : ℕ∞) φ)
     (hc : HasCompactSupport φ) (h₀ : MemLp φ p volume) (h₂ : MemLp (Δ φ) p volume) :
     (h₀.toLp φ, h₂.toLp (Δ φ)) ∈ testGraph hp := by
-  obtain ⟨y, hy, hgy⟩ := (LinearPMap.mem_graph_iff _).1 <|
-    mem_graph_generator_heatSemigroup hp (hφ.of_le (by simp)) hc h₀.coeFn_toLp h₂.coeFn_toLp
-  refine (LinearPMap.mem_graph_iff _).2
-    ⟨⟨y, Submodule.mem_inf.2 ⟨?_, y.2⟩⟩, hy, (LinearPMap.domRestrict_apply rfl).trans hgy⟩
-  rw [hy]
-  exact ⟨⟨φ, hφ, hc, subset_univ _⟩, TestFunction.ambientToLp_apply _⟩
+  have hφ2 : ContDiff ℝ 2 φ := hφ.of_le (by simp)
+  have hdom : h₀.toLp φ ∈ (heatSemigroup hp).generator.domain := by
+    rw [StronglyContinuousSemigroup.generator_domain]
+    exact mem_domain_heatSemigroup hp hφ2 hc h₀.coeFn_toLp
+  refine (LinearPMap.mem_graph_iff _).2 ⟨⟨h₀.toLp φ, Submodule.mem_inf.2
+    ⟨⟨⟨φ, hφ, hc, subset_univ _⟩, TestFunction.ambientToLp_apply _⟩, hdom⟩⟩, rfl,
+    (LinearPMap.domRestrict_apply rfl).trans
+      (generator_heatSemigroup hp hφ2 hc h₀.coeFn_toLp h₂.coeFn_toLp)⟩
 
 omit [CompleteSpace F] in
 /-- **The cutoff step.** Let `G` be a set of pairs of `Lᵖ` classes containing `(φ, Δφ)` for every
@@ -191,29 +193,14 @@ private theorem mem_closure_testGraph_of_forall (hp : p ≠ ∞) {f g : Lp F p (
     hu₀ (memLp_fderiv_convolution hp (ψ n).contDiff_normed (ψ n).hasCompactSupport_normed
       (Lp.memLp f)) hu₂
 
-omit [CompleteSpace F] [Fact (1 ≤ p)] in
-/-- **Green's identity in `Lᵖ`.** For a `C²` function `u` with `u` and `Δu` in `Lᵖ`, the
-distributional Laplacian of the class of `u` is the class of `Δu`: `∫ Δφ • u = ∫ φ • Δu` for every
-smooth compactly supported `φ`. -/
-private theorem integral_laplacian_smul_toLp_eq {u : E → F} (hu : ContDiff ℝ 2 u)
-    (hu₀ : MemLp u p volume) (hu₂ : MemLp (Δ u) p volume) {φ : E → ℝ}
-    (hφ : ContDiff ℝ (⊤ : ℕ∞) φ) (hc : HasCompactSupport φ) :
-    ∫ x, Δ φ x • hu₀.toLp u x = ∫ x, φ x • hu₂.toLp (Δ u) x :=
-  calc ∫ x, Δ φ x • hu₀.toLp u x = ∫ x, Δ φ x • u x :=
-        integral_congr_ae (hu₀.coeFn_toLp.mono fun x hx => congrArg (Δ φ x • ·) hx)
-    _ = ∫ x, φ x • Δ u x :=
-        hu.contDiffOn (s := ((⊤ : Opens E) : Set E))
-          |>.integral_laplacian_smul_eq_integral_smul_laplacian
-            (⟨φ, hφ, hc, subset_univ _⟩ : 𝓓((⊤ : Opens E), ℝ))
-    _ = _ := integral_congr_ae (hu₂.coeFn_toLp.mono fun x hx => congrArg (φ x • ·) hx.symm)
-
 /-- **A `C²` function with `u` and `Δu` in `Lᵖ` lies in the domain of the heat generator**, which
 sends it to its classical Laplacian `Δu`. -/
 theorem mem_graph_generator_heatSemigroup_of_contDiff (hp : p ≠ ∞) {u : E → F}
     (hu : ContDiff ℝ 2 u) (hu₀ : MemLp u p volume) (hu₂ : MemLp (Δ u) p volume) :
     (hu₀.toLp u, hu₂.toLp (Δ u)) ∈ (heatSemigroup hp).generator.graph :=
   closure_testGraph_subset hp <| mem_closure_testGraph_of_forall hp fun _ hφ hc =>
-    integral_laplacian_smul_toLp_eq hu hu₀ hu₂ hφ hc
+    hu.contDiffOn.integral_laplacian_smul_eq_integral_smul_of_ae_eq hu₀.coeFn_toLp hu₂.coeFn_toLp
+      (⟨_, hφ, hc, subset_univ _⟩ : 𝓓((⊤ : Opens E), ℝ))
 
 /-- If the heat generator sends `f` to `g`, then `Δ(e^{tΔ} f) = e^{tΔ} g` in the sense of
 distributions at every time `t > 0`. -/
@@ -240,9 +227,11 @@ private theorem integral_laplacian_smul_heatSemigroup_eq (hp : p ≠ ∞)
   have e₁ : hw₀.toLp w = S t f' := Lp.ext (hw₀.coeFn_toLp.trans hfw.symm)
   have e₂ := S.generator.mem_graph_snd_inj h₁ h₂ e₁
   -- Green's identity for the smooth representative.
-  have h := integral_laplacian_smul_toLp_eq hw2 hw₀ hw₂ hφ hc
+  have h := hw2.contDiffOn.integral_laplacian_smul_eq_integral_smul_of_ae_eq hw₀.coeFn_toLp
+    hw₂.coeFn_toLp (⟨φ, hφ, hc, subset_univ _⟩ : 𝓓((⊤ : Opens E), ℝ))
   rw [e₁, e₂] at h
-  exact h
+  simpa only [S, ContractionSemigroup.toStronglyContinuousSemigroup_apply, TestFunction.coe_mk]
+    using h
 
 /-- **The graph to the distributional Laplacian.** If the heat generator sends `f` to `g`, then
 `Δf = g` in the sense of distributions: let `t → 0` in the same identity for `e^{tΔ} f` and
@@ -259,11 +248,21 @@ private theorem integral_laplacian_smul_eq_of_mem_graph (hp : p ≠ ∞)
       simp [t]
     rw [← NNReal.tendsto_coe, NNReal.coe_zero, hcoe]
     exact tendsto_one_div_add_atTop_nhds_zero_nat
-  have hlim₁ := (((hφ.of_le (by simp) : ContDiff ℝ 2 φ).continuous_laplacian
-    |>.continuous_integral_smul_Lp_of_hasCompactSupport hc.laplacian).tendsto f).comp
-    ((S.continuousAt_zero_tendsto f).comp ht)
-  have hlim₂ := ((hφ.continuous.continuous_integral_smul_Lp_of_hasCompactSupport hc).tendsto
-    g).comp ((S.continuousAt_zero_tendsto g).comp ht)
+  -- Integration against a continuous compactly supported `k` is continuous on `Lᵖ`, by the Hölder
+  -- pairing with the conjugate exponent.
+  have hcont {k : E → ℝ} (hk : Continuous k) (hkc : HasCompactSupport k) :
+      Continuous fun h : Lp F p (volume : Measure E) => ∫ x, k x • h x := by
+    have := ENNReal.HolderConjugate.inv_one_sub_inv' (Fact.out : 1 ≤ p)
+    have : Fact (1 ≤ (1 - p⁻¹)⁻¹) := by simp [fact_iff]
+    have hk' := hk.memLp_of_hasCompactSupport (μ := volume) (p := (1 - p⁻¹)⁻¹) hkc
+    refine (((lsmul ℝ ℝ (E := F)).flip.lpPairing volume p (1 - p⁻¹)⁻¹).flip
+      (hk'.toLp k)).continuous.congr fun h => ?_
+    rw [flip_apply, lpPairing_eq_integral]
+    exact integral_congr_ae (hk'.coeFn_toLp.mono fun x hx => by simp [hx])
+  have hlim₁ := ((hcont (hφ.of_le (by simp) : ContDiff ℝ 2 φ).continuous_laplacian
+    hc.laplacian).tendsto f).comp ((S.continuousAt_zero_tendsto f).comp ht)
+  have hlim₂ := ((hcont hφ.continuous hc).tendsto g).comp
+    ((S.continuousAt_zero_tendsto g).comp ht)
   exact tendsto_nhds_unique (hlim₁.congr fun n =>
     integral_laplacian_smul_heatSemigroup_eq hp h (inv_ne_zero (by positivity)) hφ hc) hlim₂
 
