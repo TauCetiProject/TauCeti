@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Calculus.FDeriv.ExpSmul
 public import TauCeti.Geometry.Symplectic.Floer.SemiFredholm
 
 /-!
@@ -59,27 +60,6 @@ namespace TauCeti.SymplecticForm
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
 
-omit [FiniteDimensional ℝ V] in
-/-- The derivative of the weighted map `e^{κ(s)} η` in a direction `v`. -/
-private theorem fderiv_exp_smul_apply {κ : ℝ → ℝ} {κ' : ℝ} {η : ℝ × ℝ → V} {z : ℝ × ℝ}
-    (hκ : HasDerivAt κ κ' z.1) (hη : DifferentiableAt ℝ η z) (v : ℝ × ℝ) :
-    fderiv ℝ (fun w ↦ Real.exp (κ w.1) • η w) z v =
-      Real.exp (κ z.1) • (fderiv ℝ η z v + (v.1 * κ') • η z) := by
-  have hd : HasFDerivAt (fun w : ℝ × ℝ ↦ Real.exp (κ w.1) • η w) _ z :=
-    ((hκ.hasFDerivAt.comp z hasFDerivAt_fst).exp).smul hη.hasFDerivAt
-  rw [hd.fderiv]
-  simp only [add_apply, smul_apply, Function.comp_apply, ContinuousLinearMap.smulRight_apply,
-    ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_fst',
-    ContinuousLinearMap.toSpanSingleton_apply, smul_eq_mul]
-  module
-
-omit [FiniteDimensional ℝ V] in
-/-- `‖e^x v‖² = e^{2x} ‖v‖²`. -/
-private theorem norm_exp_smul_sq (x : ℝ) (v : V) :
-    ‖Real.exp x • v‖ ^ 2 = Real.exp (2 * x) * ‖v‖ ^ 2 := by
-  rw [norm_smul, Real.norm_eq_abs, abs_of_pos (Real.exp_pos _), mul_pow, sq, ← Real.exp_add,
-    two_mul]
-
 /-- Since `D_u (e^{κ} η) = e^{κ} D_u η + κ' e^{κ} η`, the square of its norm is at most
 `2 e^{2κ} ‖D_u η‖² + 2 ε² ‖e^{κ} η‖²` when `|κ'| ≤ ε`. -/
 private theorem norm_floerLinearization_exp_smul_sq_le (ω : SymplecticForm V)
@@ -109,18 +89,20 @@ private theorem exp_mul_sobolev_le {κ : ℝ → ℝ} {κ' : ℝ} {η : ℝ × �
       2 * (‖fderiv ℝ (fun w ↦ Real.exp (κ w.1) • η w) z stdComplexLineReal‖ ^ 2 +
         ‖fderiv ℝ (fun w ↦ Real.exp (κ w.1) • η w) z stdComplexLineImag‖ ^ 2 +
           ‖Real.exp (κ z.1) • η z‖ ^ 2) := by
-  rw [fderiv_exp_smul_apply hκ hη, fderiv_exp_smul_apply hκ hη, stdComplexLineReal_fst,
-    stdComplexLineImag_fst, zero_mul, zero_smul, add_zero, one_mul, smul_add, smul_comm _ κ',
-    norm_exp_smul_sq, norm_exp_smul_sq]
-  have h := (pow_le_pow_left₀ (norm_nonneg _) (norm_sub_le
-    (Real.exp (κ z.1) • fderiv ℝ η z stdComplexLineReal + κ' • Real.exp (κ z.1) • η z)
-    (κ' • Real.exp (κ z.1) • η z)) 2).trans add_sq_le
-  rw [add_sub_cancel_right, norm_exp_smul_sq, norm_smul _ (Real.exp (κ z.1) • η z),
-    Real.norm_eq_abs, mul_pow, sq_abs, norm_exp_smul_sq] at h
-  have hκ4 : κ' ^ 2 ≤ 1 / 4 := by nlinarith [sq_abs κ', abs_nonneg κ']
-  have hc : 0 ≤ Real.exp (2 * κ z.1) * ‖η z‖ ^ 2 := by positivity
+  simp only [fderiv_exp_smul_apply (φ := fun w ↦ κ w.1) (hκ.hasFDerivAt.comp z hasFDerivAt_fst)
+      hη, ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_fst', stdComplexLineReal_fst,
+    stdComplexLineImag_fst, map_zero, zero_smul, add_zero, norm_exp_smul_sq,
+    ContinuousLinearMap.toSpanSingleton_apply, one_smul]
+  have h := norm_sub_le (fderiv ℝ η z stdComplexLineReal + κ' • η z) (κ' • η z)
+  rw [add_sub_cancel_right, norm_smul, Real.norm_eq_abs] at h
+  have hκη : |κ'| * ‖η z‖ ≤ ‖η z‖ / 2 := by nlinarith [norm_nonneg (η z)]
+  have h₂ : ‖fderiv ℝ η z stdComplexLineReal‖ ^ 2 ≤
+      2 * ‖fderiv ℝ η z stdComplexLineReal + κ' • η z‖ ^ 2 + ‖η z‖ ^ 2 := by
+    have := (pow_le_pow_left₀ (norm_nonneg _) h 2).trans add_sq_le
+    nlinarith [pow_le_pow_left₀ (by positivity) hκη 2]
+  have : 0 ≤ Real.exp (2 * κ z.1) * ‖η z‖ ^ 2 := by positivity
   have : 0 ≤ Real.exp (2 * κ z.1) * ‖fderiv ℝ η z stdComplexLineImag‖ ^ 2 := by positivity
-  nlinarith [mul_le_mul_of_nonneg_right hκ4 hc]
+  nlinarith [mul_le_mul_of_nonneg_left h₂ (Real.exp_pos (2 * κ z.1)).le]
 
 /-- **Absorption of the weight.** Under the hypotheses of
 `setIntegral_exp_mul_le_mul_setIntegral_floerLinearization_add`, the unweighted `W^{1,2}` energy
@@ -152,10 +134,8 @@ private theorem setIntegral_sobolev_exp_smul_le (ω : SymplecticForm V)
   set ε := (2 * (C₁ + 1))⁻¹
   have hεC : 2 * C₁ * ε ^ 2 ≤ 1 / 2 := by
     have hε : 2 * (C₁ + 1) * ε = 1 := mul_inv_cancel₀ (by positivity)
-    have : ε ≤ 1 / 2 := by
-      rw [inv_le_comm₀ (by positivity) (by norm_num)]
-      linarith
-    nlinarith [inv_nonneg.2 (by positivity : (0 : ℝ) ≤ 2 * (C₁ + 1))]
+    have : 0 ≤ ε := by positivity
+    nlinarith [mul_nonneg (mul_nonneg hC₁ this) this]
   have hξ : ContDiff ℝ 2 fun w : ℝ × ℝ ↦ Real.exp (κ w.1) • η w :=
     ((Real.contDiff_exp.comp hκ).comp contDiff_fst).smul hη
   have hI {f : ℝ × ℝ → ℝ} (hf : Continuous f) (p q : ℝ) :
@@ -273,10 +253,10 @@ theorem setIntegral_exp_mul_le_mul_setIntegral_floerLinearization_add (ω : Symp
 Hamiltonian whose suspended vector field is globally Lipschitz, and let `J_t(y)` be a `C¹` family
 of almost complex structures. Let `u : ℝ × ℝ → V` be a `C¹` map along which `J_t` is
 `ω`-compatible, whose loops converge uniformly to orbits `xm` at `-∞` and `xp` at `+∞` starting at
-nondegenerate fixed points of the time-one map, while its slice defect `∂t u - X_{H_t}(u)` tends
-uniformly to zero at both ends, as for a Floer trajectory from `xm` to `xp`. Then there are
-`ε > 0`, `C ≥ 0` and `T` such that for every `C²` weight `κ(s)` with `|κ'| ≤ ε`, every `C²` map `η`
-of period one in `t` that vanishes for `s ∉ (a, b)` satisfies
+nondegenerate fixed points of the time-one map, with `J_t` compatible along them, while its slice
+defect `∂t u - X_{H_t}(u)` tends uniformly to zero at both ends, as for a Floer trajectory from
+`xm` to `xp`. Then there are `ε > 0`, `C ≥ 0` and `T` such that for every `C²` weight `κ(s)` with
+`|κ'| ≤ ε`, every `C²` map `η` of period one in `t` that vanishes for `s ∉ (a, b)` satisfies
 
 `∫ e^{2κ} (‖∂s η‖² + ‖∂t η‖² + ‖η‖²) ≤ C (∫ e^{2κ} ‖D_u η‖² + ∫_{[-T, T] × [0, 1]} e^{2κ} ‖η‖²)`
 

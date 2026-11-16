@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.AsymptoticOperator
+import TauCeti.Analysis.Calculus.FDeriv.ExpSmul
 import TauCeti.Analysis.ODE.Periodic
 import TauCeti.Geometry.Symplectic.CompatibleMetric
 import TauCeti.MeasureTheory.Integral.Rectangle
@@ -422,28 +423,19 @@ theorem exp_mul_associatedBilinForm_le {J₀ : AlmostComplexStructure V} (hJ₀ 
               (T - δ • J₀.toLinearMap.toContinuousLinearMap) (Real.exp (δ * z.1) • η z))) +
           ω.associatedBilinForm J₀ (Real.exp (δ * z.1) • η z) (Real.exp (δ * z.1) • η z)) := by
   set e := Real.exp (δ * z.1)
-  have hc : HasFDerivAt (fun w : ℝ × ℝ ↦ Real.exp (δ * w.1))
-      (e • δ • ContinuousLinearMap.fst ℝ ℝ ℝ) z := by
-    simpa [e] using ((hasFDerivAt_fst (p := z)).const_smul δ).exp
-  have hd : fderiv ℝ (fun w ↦ Real.exp (δ * w.1) • η w) z =
-      e • fderiv ℝ η z + (e • δ • ContinuousLinearMap.fst ℝ ℝ ℝ).smulRight (η z) :=
-    (hc.smul hη.hasFDerivAt).fderiv
+  have hd := fderiv_exp_smul_apply (φ := fun w : ℝ × ℝ ↦ δ * w.1)
+    ((hasFDerivAt_fst (p := z)).const_smul δ) hη
   -- The derivatives of `ξ = e^{δ s} η` in terms of those of `η`.
   have hs : fderiv ℝ (fun w ↦ Real.exp (δ * w.1) • η w) z stdComplexLineReal =
       e • fderiv ℝ η z stdComplexLineReal + δ • (e • η z) := by
-    rw [hd]
-    simp only [add_apply, smul_apply,
-      ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.coe_fst', stdComplexLineReal_fst,
-      smul_eq_mul, mul_one, smul_smul]
-    ring_nf
+    simp only [hd, smul_apply, ContinuousLinearMap.coe_fst', stdComplexLineReal_fst, smul_eq_mul,
+      mul_one]
+    module
   have ht : fderiv ℝ (fun w ↦ Real.exp (δ * w.1) • η w) z stdComplexLineImag -
       (T - δ • J₀.toLinearMap.toContinuousLinearMap) (e • η z) =
       e • (fderiv ℝ η z stdComplexLineImag - T (η z)) + δ • J₀ (e • η z) := by
-    rw [hd]
-    simp only [add_apply, smul_apply,
-      ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.coe_fst', stdComplexLineImag_fst,
-      smul_eq_mul, mul_zero, zero_smul, add_zero, sub_apply,
-      LinearMap.coe_toContinuousLinearMap', map_smul]
+    simp only [hd, smul_apply, ContinuousLinearMap.coe_fst', stdComplexLineImag_fst, smul_eq_mul,
+      mul_zero, zero_smul, add_zero, sub_apply, LinearMap.coe_toContinuousLinearMap', map_smul]
     module
   have hexp : Real.exp (2 * δ * z.1) = e * e := by
     rw [← Real.exp_add]
