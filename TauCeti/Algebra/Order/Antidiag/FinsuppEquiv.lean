@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Order.Antidiag.FinsuppEquiv
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 public import Mathlib.Data.Set.Card
+import TauCeti.Data.Nat.Choose.Bounds
 
 /-!
 # Counting tuples of natural numbers with bounded sum
@@ -20,13 +21,28 @@ Mathlib counts as `Finset.card_finsuppAntidiag_nat_eq_choose`.
 For `0 < N`, these tuples label the cells of side `1 / N` of the unit cube that meet the standard
 simplex, which is how the count enters Mahler's reduction in Diophantine approximation.
 
+In addition, `Finset.card_finsuppAntidiag_le_pow` bounds `#(s.finsuppAntidiag n) ≤ (#s) ^ n` via
+`Nat.multichoose_le_pow`.
+
 ## Main results
 
+* `Finset.card_finsuppAntidiag_le_pow`: `#(s.finsuppAntidiag n) ≤ (#s) ^ n`.
 * `TauCeti.finite_setOf_sum_le`: the tuples with `∑ a, c a ≤ N` form a finite set.
 * `TauCeti.ncard_setOf_sum_le`: there are `(N + card A).choose (card A)` of them.
 -/
 
 public section
+
+namespace Finset
+
+/-- The number of finitely supported `ℕ`-valued functions supported in `s` with sum `n` is at most
+`(#s) ^ n`. -/
+theorem card_finsuppAntidiag_le_pow {σ : Type*} [DecidableEq σ] (s : Finset σ) (n : ℕ) :
+    #(s.finsuppAntidiag n) ≤ (#s) ^ n := by
+  rw [card_finsuppAntidiag_nat_eq_multichoose]
+  exact Nat.multichoose_le_pow (#s) n
+
+end Finset
 
 open Finset
 

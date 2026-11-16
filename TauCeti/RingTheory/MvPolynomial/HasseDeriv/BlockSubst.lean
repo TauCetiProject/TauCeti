@@ -50,9 +50,8 @@ weighted degree in a single form by at most the weighted order `∑ h, (∑ j, I
 * `MvPolynomial.eval_blockSubst`: evaluating `blockSubst A P` at `y` evaluates `P` at the point
   whose block `h` is `A` applied to block `h` of `y`.
 * `MvPolynomial.IsMultiHomogeneous.blockSubst`,
-  `MvPolynomial.IsMultiHomogeneous.blockSubst_smul`: block substitution preserves the multidegree,
-  and scaling `A` by `c` scales a multihomogeneous polynomial of multidegree `d` by
-  `c ^ ∑ h, d h`.
+  `MvPolynomial.IsHomogeneous.blockSubst_smul`: block substitution preserves the multidegree,
+  and scaling `A` by `c` scales a homogeneous polynomial of degree `n` by `c ^ n`.
 * `MvPolynomial.blockSubst_coeff_mem_of_row`,
   `MvPolynomial.coeff_blockSubst_inv_eq_zero_of_row_eq`: vanishing of `blockSubst A⁻¹ P` below a
   weighted-degree threshold along row `i'` of an invertible matrix `A` passes to row `i` of any
@@ -172,13 +171,15 @@ theorem IsMultiHomogeneous.blockSubst [DecidableEq κ] {d : κ → ℕ} {P : MvP
   isMultiHomogeneous_iff_forall_isWeightedHomogeneous.2 fun h ↦
     (hP.isWeightedHomogeneous h).aeval (isWeightedHomogeneous_blockLinearForm _ h)
 
-/-- Rescaling the matrix by `c` rescales a multihomogeneous polynomial of multidegree `d` by
-`c ^ ∑ h, d h`. -/
-theorem IsMultiHomogeneous.blockSubst_smul [Fintype κ] [DecidableEq κ] {d : κ → ℕ}
-    {P : MvPolynomial (κ × ι) R} (hP : IsMultiHomogeneous d P) (c : R) (A : Matrix ι ι R) :
-    MvPolynomial.blockSubst (c • A) P = c ^ (∑ h, d h) • MvPolynomial.blockSubst A P := by
-  rw [blockSubst_eq_linearSubst, blockSubst_eq_linearSubst, kronecker_smul,
-    hP.isHomogeneous.linearSubst_smul]
+/-- Rescaling the matrix by `c` rescales a homogeneous polynomial of degree `n` by `c ^ n`. -/
+theorem IsHomogeneous.blockSubst_smul {P : MvPolynomial (κ × ι) R} {n : ℕ}
+    (hp : P.IsHomogeneous n) (c : R) (A : Matrix ι ι R) :
+    MvPolynomial.blockSubst (c • A) P = c ^ n • MvPolynomial.blockSubst A P := by
+  have hlin : blockLinearForm (fun (_ : κ) j i ↦ (c • A) j i) =
+      c • blockLinearForm (fun (_ : κ) j i ↦ A j i) := by
+    funext ⟨h, j⟩
+    simp [blockLinearForm_apply, Finset.smul_sum, smul_eq_C_mul, mul_assoc]
+  rw [blockSubst_eq_aeval, blockSubst_eq_aeval, hlin, hp.aeval_smul_of_algebra]
 
 /-- If row `i'` of `M` is the standard basis vector `Pi.single i 1`, then `blockSubst M` sends
 `X (h, i')` to `X (h, i)`, so every monomial `N'` occurring in `blockSubst M (monomial N c)` has
@@ -302,14 +303,14 @@ theorem coeff_blockSubst_hasseDeriv_eq_zero_of_forall_coeff_add [Finite κ]
 /-- **Vanishing along a form passes to Hasse derivatives** (Bombieri–Gubler, §7.5.14). Fix a
 row `i` of the invertible matrix `A` and a multidegree `d`. If the coefficients of
 `blockSubst A⁻¹ P` vanish at every exponent vector `N` whose weighted degree
-`∑ h, N (h, i) / d h` in the variables `X (h, i)` is below `θ`, then the coefficients of
-`blockSubst A⁻¹ (hasseDeriv I P)` vanish at every `J` whose weighted degree is below `θ` minus the
-weighted order `∑ h, (∑ j, I (h, j)) / d h` of `I`. -/
-theorem coeff_blockSubst_hasseDeriv_eq_zero [Fintype κ] (hA : IsUnit A.det)
+`∑ h, N (h, i) / d h` in the variables `X (h, i)` is at most `θ`, then the coefficients of
+`blockSubst A⁻¹ (hasseDeriv I P)` vanish at every `J` whose weighted degree is at most `θ` minus
+the weighted order `∑ h, (∑ j, I (h, j)) / d h` of `I`. -/
+theorem coeff_blockSubst_hasseDeriv_eq_zero_of_le [Fintype κ] (hA : IsUnit A.det)
     {P : MvPolynomial (κ × ι) R} {d : κ → ℕ} {i : ι} {θ : ℝ}
-    (hP : ∀ N : κ × ι →₀ ℕ, ∑ h, (N (h, i) : ℝ) / d h < θ → (blockSubst A⁻¹ P).coeff N = 0)
+    (hP : ∀ N : κ × ι →₀ ℕ, ∑ h, (N (h, i) : ℝ) / d h ≤ θ → (blockSubst A⁻¹ P).coeff N = 0)
     {I J : κ × ι →₀ ℕ}
-    (hJ : ∑ h, (J (h, i) : ℝ) / d h < θ - ∑ h, ((∑ j, I (h, j) : ℕ) : ℝ) / d h) :
+    (hJ : ∑ h, (J (h, i) : ℝ) / d h ≤ θ - ∑ h, ((∑ j, I (h, j) : ℕ) : ℝ) / d h) :
     (blockSubst A⁻¹ (hasseDeriv I P)).coeff J = 0 := by
   refine coeff_blockSubst_hasseDeriv_eq_zero_of_forall_coeff_add hA fun e he ↦ hP _ ?_
   -- Shifting by `e` raises the weighted degree in row `i` by at most the weighted order of `I`.
@@ -320,23 +321,19 @@ theorem coeff_blockSubst_hasseDeriv_eq_zero [Fintype κ] (hA : IsUnit A.det)
   simp only [Finsupp.coe_add, Pi.add_apply, Nat.cast_add, add_div, sum_add_distrib]
   linarith
 
-/-- Non-strict form of `coeff_blockSubst_hasseDeriv_eq_zero`: if the coefficients of
-`blockSubst A⁻¹ P` vanish whenever `∑ h, N (h, i) / d h ≤ θ`, then those of
-`blockSubst A⁻¹ (hasseDeriv I P)` vanish whenever `∑ h, J (h, i) / d h` is at most `θ` minus the
-weighted order of `I`. -/
-theorem coeff_blockSubst_hasseDeriv_eq_zero_of_le [Fintype κ] (hA : IsUnit A.det)
+/-- Strict form of `coeff_blockSubst_hasseDeriv_eq_zero_of_le`: if the coefficients of
+`blockSubst A⁻¹ P` vanish whenever `∑ h, N (h, i) / d h < θ`, then those of
+`blockSubst A⁻¹ (hasseDeriv I P)` vanish whenever `∑ h, J (h, i) / d h` is strictly below `θ`
+minus the weighted order of `I`. -/
+theorem coeff_blockSubst_hasseDeriv_eq_zero [Fintype κ] (hA : IsUnit A.det)
     {P : MvPolynomial (κ × ι) R} {d : κ → ℕ} {i : ι} {θ : ℝ}
-    (hP : ∀ N : κ × ι →₀ ℕ, ∑ h, (N (h, i) : ℝ) / d h ≤ θ → (blockSubst A⁻¹ P).coeff N = 0)
+    (hP : ∀ N : κ × ι →₀ ℕ, ∑ h, (N (h, i) : ℝ) / d h < θ → (blockSubst A⁻¹ P).coeff N = 0)
     {I J : κ × ι →₀ ℕ}
-    (hJ : ∑ h, (J (h, i) : ℝ) / d h ≤ θ - ∑ h, ((∑ j, I (h, j) : ℕ) : ℝ) / d h) :
-    (blockSubst A⁻¹ (hasseDeriv I P)).coeff J = 0 := by
-  refine coeff_blockSubst_hasseDeriv_eq_zero_of_forall_coeff_add hA fun e he ↦ hP _ ?_
-  have hle : ∑ h, (e (h, i) : ℝ) / d h ≤ ∑ h, ((∑ j, I (h, j) : ℕ) : ℝ) / d h := by
-    refine sum_le_sum fun h _ ↦ div_le_div_of_nonneg_right ?_ (Nat.cast_nonneg _)
-    rw [← he h]
-    exact_mod_cast single_le_sum (f := fun j ↦ e (h, j)) (fun _ _ ↦ Nat.zero_le _) (mem_univ i)
-  simp only [Finsupp.coe_add, Pi.add_apply, Nat.cast_add, add_div, sum_add_distrib]
-  linarith
+    (hJ : ∑ h, (J (h, i) : ℝ) / d h < θ - ∑ h, ((∑ j, I (h, j) : ℕ) : ℝ) / d h) :
+    (blockSubst A⁻¹ (hasseDeriv I P)).coeff J = 0 :=
+  coeff_blockSubst_hasseDeriv_eq_zero_of_le hA
+    (θ := ∑ h, (J (h, i) : ℝ) / d h + ∑ h, ((∑ j, I (h, j) : ℕ) : ℝ) / d h)
+    (fun N hN ↦ hP N (hN.trans_lt (add_lt_of_lt_sub_right hJ))) (add_sub_cancel_right _ _).ge
 
 /-- **Two-sided concentration from lower-tail vanishing** (Bombieri–Gubler, Lemma 7.5.15). Suppose
 `ι` has at least two elements, `P` is multihomogeneous of multidegree `d`, and the coefficients of

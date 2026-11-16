@@ -25,7 +25,8 @@ renaming, and placement of a univariate polynomial in one coordinate preserve th
 These comparisons allow auxiliary polynomials to be handled in their natural variable types.
 
 The normalization is relative to the admissible family of absolute values of the field.
-In particular, constant polynomials and the zero polynomial have multiplicative height one.
+In particular, constant polynomials, the zero polynomial, and all polynomials in an empty variable
+type have multiplicative height one (`mulHeight_eq_one_of_isEmpty`, `logHeight_eq_zero_of_isEmpty`).
 For polynomials over number fields, `logHeight_eq_of_numberField` expresses the height
 as a sum of local logarithmic sup norms, with complex-place multiplicity two.
 
@@ -151,6 +152,16 @@ theorem mulHeight_C (c : K) : (C c : MvPolynomial σ K).mulHeight = 1 := by
 
 @[simp]
 theorem logHeight_C (c : K) : (C c : MvPolynomial σ K).logHeight = 0 := by
+  simp [logHeight_eq_log_mulHeight]
+
+/-- With no variables, every polynomial is constant, so its multiplicative height is one. -/
+@[simp]
+theorem mulHeight_eq_one_of_isEmpty [IsEmpty σ] (p : MvPolynomial σ K) : p.mulHeight = 1 := by
+  rw [eq_C_of_isEmpty p, mulHeight_C]
+
+/-- With no variables, every polynomial is constant, so its logarithmic height is zero. -/
+@[simp]
+theorem logHeight_eq_zero_of_isEmpty [IsEmpty σ] (p : MvPolynomial σ K) : p.logHeight = 0 := by
   simp [logHeight_eq_log_mulHeight]
 
 @[simp]

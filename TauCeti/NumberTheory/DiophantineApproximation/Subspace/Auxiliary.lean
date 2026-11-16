@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Height.BlockSubst
-import Mathlib.NumberTheory.NumberField.House
 import TauCeti.Combinatorics.Enumerative.AntidiagLargeDeviation
 import TauCeti.NumberTheory.Height.NumberField
+import TauCeti.NumberTheory.NumberField.SiegelsLemma
 import TauCeti.RingTheory.Algebraic.Denominator
 
 /-!
@@ -45,7 +45,7 @@ at derivative order zero:
 * By `Finset.exists_bound_card_filter_piFinset_finsuppAntidiag_sum_apply_div_le_div_sub_mul_le`,
   once every `d h` is large enough to absorb the `O(1 / d h)` Chernoff error, the lower-tail
   monomials for a single form number strictly less than `#(multiMons ι d) / (2 #F)`. Clearing the
-  denominators of each `A_f⁻¹` and applying `NumberField.house.exists_ne_zero_int_vec_house_le`
+  denominators of each `A_f⁻¹` and applying `NumberField.exists_ne_zero_mulVec_eq_zero_house_le`
   over `𝓞 K` produces algebraic integer coefficients of house `O(1) ^ ∑ h, d h`, bounded in
   projective height via `NumberField.mulHeight_le_pow_finrank_of_forall_le` and
   `MvPolynomial.logHeight_blockSubst_hasseDeriv_le`.
@@ -74,96 +74,6 @@ open Finset Height AdmissibleAbsValues Matrix NumberField
 
 section Helpers
 
-/-- When `2 * p ≤ q` and `1 ≤ A`, the Siegel exponent `(p : ℝ) / (q - p)` is at most `1`, so
-`C₀ * (C₀ * q * A) ^ ((p : ℝ) / (q - p)) ≤ max 1 C₀ ^ 2 * q * A`. -/
-private lemma mul_rpow_div_sub_le {C₀ A : ℝ} {p q : ℕ} (hC₀ : 0 < C₀) (hq : 0 < q)
-    (hpq : 2 * p ≤ q) (hA : 1 ≤ A) :
-    C₀ * (C₀ * q * A) ^ ((p : ℝ) / (q - p)) ≤ max 1 C₀ ^ 2 * q * A := by
-  have hsub : (0 : ℝ) < q - p := sub_pos.mpr (by exact_mod_cast (by omega : p < q))
-  have hpq' : (p : ℝ) / (q - p) ≤ 1 :=
-    (div_le_one hsub).mpr (by linarith [show (2 : ℝ) * p ≤ q by exact_mod_cast hpq])
-  have hbase1 : 1 ≤ max 1 C₀ * q * A := one_le_mul_of_one_le_of_one_le
-    (one_le_mul_of_one_le_of_one_le (le_max_left 1 C₀) (by exact_mod_cast hq)) hA
-  have hA0 : 0 ≤ A := zero_le_one.trans hA
-  refine le_trans ?_ ((mul_le_mul_of_nonneg_left (Real.rpow_le_rpow_of_exponent_le hbase1 hpq')
-    (zero_le_one.trans (le_max_left 1 C₀))).trans_eq (by rw [Real.rpow_one]; ring))
-  exact mul_le_mul (le_max_right 1 C₀)
-    (Real.rpow_le_rpow (by positivity) (mul_le_mul_of_nonneg_right
-      (mul_le_mul_of_nonneg_right (le_max_right 1 C₀) (Nat.cast_nonneg _)) hA0)
-      (div_nonneg (Nat.cast_nonneg _) hsub.le))
-    (Real.rpow_nonneg (by positivity) _) (zero_le_one.trans (le_max_left 1 C₀))
-
-/-- Siegel's lemma over `𝓞 K` for systems with at most half as many equations as unknowns: wrapping
-`NumberField.house.exists_ne_zero_int_vec_house_le` with exponent `(p : ℝ) / (q - p) ≤ 1` and
-covering the zero matrix with the all-ones vector. -/
-private lemma exists_ne_zero_mulVec_eq_zero_house_le (K : Type*) [Field K] [NumberField K] :
-    ∃ C : ℝ, 1 ≤ C ∧ ∀ {α β : Type*} [Fintype α] [Fintype β] (e : Matrix α β (𝓞 K)) {A : ℝ},
-      0 < Fintype.card β → 2 * Fintype.card α ≤ Fintype.card β → 1 ≤ A →
-      (∀ i j, house (e i j : K) ≤ A) →
-      ∃ ξ : β → 𝓞 K, ξ ≠ 0 ∧ e *ᵥ ξ = 0 ∧
-        ∀ j, house (ξ j : K) ≤ C * Fintype.card β * A := by
-  classical
-  obtain ⟨C₀, hC₀⟩ : ∃ C₀ : ℝ, ∀ (p q : ℕ) (e : Matrix (Fin p) (Fin q) (𝓞 K)) (A : ℝ),
-      e ≠ 0 → 0 < p → p < q → (∀ i j, house (algebraMap (𝓞 K) K (e i j)) ≤ A) →
-      ∃ ξ : Fin q → 𝓞 K, ξ ≠ 0 ∧ e *ᵥ ξ = 0 ∧
-        ∀ j, house (ξ j : K) ≤ C₀ * (C₀ * q * A) ^ ((p : ℝ) / (q - p)) :=
-    ⟨_, fun p q e A he hp hpq hA ↦ house.exists_ne_zero_int_vec_house_le K e he hp hpq
-      (Fintype.card_fin q) hA (Fintype.card_fin p)⟩
-  have hC₀_pos : 0 < C₀ := by
-    obtain ⟨ξ₁, hξ₁0, -, hξ₁le⟩ := hC₀ 1 3 !![1, 0, 0] 1
-      (fun h ↦ one_ne_zero (congrFun (congrFun h 0) 0)) zero_lt_one (by omega)
-      (fun i j ↦ by
-        fin_cases i; fin_cases j
-        · simpa using (house_intCast (K := K) 1).le
-        all_goals simpa using (house_intCast (K := K) 0).trans_le (by norm_num))
-    obtain ⟨j₁, hj₁⟩ := Function.ne_iff.mp hξ₁0
-    have hle := (one_le_house_of_isIntegral (ξ₁ j₁).2
-      (RingOfIntegers.coe_ne_zero_iff.mpr hj₁)).trans (hξ₁le j₁)
-    rw [show ((1 : ℕ) : ℝ) / ((3 : ℕ) - (1 : ℕ)) = 1 / 2 by norm_num, ← Real.sqrt_eq_rpow] at hle
-    nlinarith [Real.sqrt_nonneg (C₀ * (3 : ℕ) * 1)]
-  refine ⟨max 1 C₀ ^ 2, one_le_pow₀ (le_max_left 1 C₀), fun {α β} _ _ e {A} hq hpq hA1 heA ↦ ?_⟩
-  by_cases he : e = 0
-  · obtain ⟨j₀⟩ := Fintype.card_pos_iff.mp hq
-    refine ⟨fun _ ↦ 1, fun h ↦ one_ne_zero (congrFun h j₀), by simp [he], fun _ ↦ ?_⟩
-    exact (by simpa using house_intCast (K := K) 1 : house ((1 : 𝓞 K) : K) = 1).trans_le
-      (one_le_mul_of_one_le_of_one_le (one_le_mul_of_one_le_of_one_le
-        (one_le_pow₀ (le_max_left 1 C₀)) (by exact_mod_cast hq)) hA1)
-  · let eα := Fintype.equivFin α
-    let eβ := Fintype.equivFin β
-    let e' := e.submatrix eα.symm eβ.symm
-    have he' : e' ≠ 0 := fun h ↦ he (Matrix.ext fun i j ↦ by
-      simpa [e'] using congrFun (congrFun h (eα i)) (eβ j))
-    have hp0 : 0 < Fintype.card α := Nat.pos_of_ne_zero fun hp0 ↦
-      he' (Matrix.ext fun i ↦ Fin.elim0 (hp0 ▸ i))
-    obtain ⟨ξ', hξ'0, hξ'eq, hξ'le⟩ := hC₀ _ _ e' A he' hp0 (by omega) fun _ _ ↦ heA _ _
-    exact ⟨ξ' ∘ eβ, fun h ↦ hξ'0 (funext fun j ↦ by simpa using congrFun h (eβ.symm j)),
-      funext fun i ↦ by
-        simpa [mulVec, dotProduct, e', Function.comp_def, ← eβ.symm.sum_comp] using
-          congrFun hξ'eq (eα i),
-      fun j ↦ (hξ'le (eβ j)).trans (mul_rpow_div_sub_le hC₀_pos hq hpq hA1)⟩
-
-/-- Filtering `multiMons ι d` by a predicate on exponent functions has the same cardinality as
-filtering the product `piFinset` of block antidiagonals. -/
-private lemma card_filter_multiMons_eq {ι κ : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ]
-    [DecidableEq κ] (d : κ → ℕ) (p : (κ × ι → ℕ) → Prop) [DecidablePred p] :
-    #{N ∈ multiMons ι d | p fun q ↦ N q} =
-      #{f ∈ Fintype.piFinset (fun h ↦ (univ : Finset ι).finsuppAntidiag (d h)) |
-        p fun q ↦ f q.1 q.2} := by
-  let S := Fintype.piFinset fun h ↦ (univ : Finset ι).finsuppAntidiag (d h)
-  let eqv : (κ → ι →₀ ℕ) ≃ (κ × ι →₀ ℕ) :=
-    Finsupp.equivFunOnFinite.symm.trans Finsupp.curryEquiv.symm
-  have hSm : multiMons ι d = S.map eqv.toEmbedding := by
-    ext N
-    simp only [S, mem_multiMons, mem_map, Equiv.coe_toEmbedding, Fintype.mem_piFinset,
-      mem_finsuppAntidiag, subset_univ, and_true]
-    exact ⟨fun hN ↦ ⟨eqv.symm N, fun h ↦ by
-        change (∑ i, eqv.symm N h i) = d h
-        simpa [eqv, Finsupp.curry_apply] using hN h,
-      eqv.apply_symm_apply N⟩, fun ⟨f, hf, hN⟩ h ↦ by
-      simpa [← hN, eqv, Finsupp.uncurry_apply] using hf h⟩
-  rw [hSm, filter_map, card_map]
-  congr 1
-
 /-- Real-exponential slack bound: if `0 < k ≤ nForms`, `0 < m`, and `4 log (2 nForms) < a * m`,
 halving the gap into `ε = (a * m - 4 log (2 nForms)) / (8 * m)` gives
 `(2 * k) * exp ((-a / 4 + ε) * m) < 1`. -/
@@ -188,7 +98,6 @@ private lemma exists_D0_two_mul_card_filter_multiMons_le {ι κ : Type*} [Fintyp
     (hm : 4 * Real.log (2 * nForms) <
       Fintype.card ι * (Fintype.card ι + 1) * η ^ 2 * Fintype.card κ) :
     ∃ D₀ : ℕ, 0 < D₀ ∧ Nonempty κ ∧ ∀ d : κ → ℕ, (∀ h, D₀ ≤ d h) →
-      0 < #(multiMons ι d) ∧
       2 * (k * #{N ∈ multiMons ι d |
         ∑ h, (N (h, i₀) : ℝ) / d h ≤
           Fintype.card κ / Fintype.card ι - Fintype.card κ * |η|}) ≤ #(multiMons ι d) := by
@@ -209,14 +118,13 @@ private lemma exists_D0_two_mul_card_filter_multiMons_le {ι κ : Type*} [Fintyp
     exists_bound_card_filter_piFinset_finsuppAntidiag_sum_apply_div_le_div_sub_mul_le
       (univ : Finset ι) (abs_nonneg η) (div_pos (by linarith) (by positivity) : 0 < ε)
   refine ⟨D₀, hD₀, Fintype.card_pos_iff.mp (by exact_mod_cast hm_pos), fun d hd ↦ ?_⟩
+  rcases eq_or_ne k 0 with rfl | hk0
+  · simp
   let S := Fintype.piFinset fun h ↦ (univ : Finset ι).finsuppAntidiag (d h)
   have hS_pos : 0 < #S := card_pos.mpr ⟨fun h ↦ Finsupp.single i₀ (d h),
     Fintype.mem_piFinset.mpr fun h ↦ mem_finsuppAntidiag.mpr ⟨by simp, subset_univ _⟩⟩
   have hSm_card : #(multiMons ι d) = #S := by
-    simp [S, card_multiMons, Fintype.card_piFinset, card_finsuppAntidiag_nat_eq_choose]
-  refine ⟨hSm_card ▸ hS_pos, ?_⟩
-  rcases eq_or_ne k 0 with rfl | hk0
-  · simp
+    rw [multiMons_def, card_map]
   have hbad_eq := card_filter_multiMons_eq d fun g ↦
     ∑ h, (g (h, i₀) : ℝ) / d h ≤ Fintype.card κ / Fintype.card ι - Fintype.card κ * |η|
   have hexp_lt : (2 * k : ℝ) * Real.exp ((-#(univ : Finset ι) * (#(univ : Finset ι) + 1) *
@@ -276,17 +184,19 @@ private lemma exists_matrix_blockSubst_house_le {K ι : Type*} [Field K] [Number
       (mem_univ (f, i, j))).trans (le_add_of_nonneg_left zero_le_one)
   refine ⟨A_f, c_f, M_f, B_sys, hB1, fun f ↦ ⟨hA_det f, hA_row f, hc_ne f⟩,
     fun {κ} _ _ d f u N ↦ ?_⟩
-  have hmap : (M_f f).map (algebraMap (𝓞 K) K) = (c_f f : K) • (A_f f)⁻¹ := by ext i j; rfl
+  have hmap : (M_f f).map (algebraMap (𝓞 K) K) = (c_f f : K) • (A_f f)⁻¹ := by
+    ext i j
+    rw [Matrix.map_apply, Matrix.smul_apply, smul_eq_mul]
+    exact RingOfIntegers.map_mk _ _
   have hcoe : (((blockSubst (M_f f) (monomial u.1 (1 : 𝓞 K))).coeff N : 𝓞 K) : K) =
       (blockSubst ((M_f f).map (algebraMap (𝓞 K) K)) (monomial u.1 (1 : K))).coeff N := by
-    change algebraMap (𝓞 K) K _ = _
-    rw [← coeff_map, map_blockSubst, map_monomial, map_one]
+    rw [RingOfIntegers.coe_eq_algebraMap, ← coeff_map, map_blockSubst, map_monomial, map_one]
   have hu_hom : IsMultiHomogeneous d (monomial u.1 (1 : K)) :=
     isMultiHomogeneous_monomial (mem_multiMons.mp u.2) 1
   have hu_deg : u.1.degree = ∑ h, d h := by
     rw [Finsupp.degree_eq_weight_one (R := ℕ)]
     exact hu_hom.isHomogeneous (by simp)
-  refine ⟨by rw [hcoe, hmap, hu_hom.blockSubst_smul, coeff_smul, smul_eq_mul], ?_⟩
+  refine ⟨by rw [hcoe, hmap, hu_hom.isHomogeneous.blockSubst_smul, coeff_smul, smul_eq_mul], ?_⟩
   rw [house_eq_sup', ← NNReal.coe_mk ((Fintype.card ι * B_sys) ^ ∑ h, d h) (by positivity),
     NNReal.coe_le_coe]
   refine sup'_le univ_nonempty _ fun φ _ ↦ NNReal.coe_le_coe.mp ?_
@@ -301,7 +211,7 @@ private lemma exists_matrix_blockSubst_house_le {K ι : Type*} [Field K] [Number
 /-- Assembling a nonzero coefficient vector `ξ : multiMons ι d → 𝓞 K` of bounded house into a
 nonzero multihomogeneous polynomial `P` and bounding its projective logarithmic height. -/
 private lemma logHeight_sum_multiMons_le_of_house_le {K ι κ : Type*} [Field K] [NumberField K]
-    [Fintype ι] [Nonempty ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ] {d : κ → ℕ}
+    [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ] {d : κ → ℕ}
     (hD_pos : 0 < ∑ h, d h) {C_siegel B_sys : ℝ} (hCs1 : 1 ≤ C_siegel) (hB1 : 1 ≤ B_sys)
     {ξ : multiMons ι d → 𝓞 K} (hξ0 : ξ ≠ 0)
     (hξ_house : ∀ u,
@@ -345,7 +255,7 @@ private lemma logHeight_sum_multiMons_le_of_house_le {K ι κ : Type*} [Field K]
 /-- Solving the cleared-denominator linear system via Siegel's lemma over `𝓞 K` and bounding the
 projective logarithmic height of the resulting multihomogeneous polynomial `P`. -/
 private lemma exists_isMultiHomogeneous_coeff_blockSubst_eq_zero {K ι κ : Type*} [Field K]
-    [NumberField K] [Fintype ι] [Nonempty ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ] (i₀ : ι)
+    [NumberField K] [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ] (i₀ : ι)
     {F' : Finset (ι → K)} {A_f : F' → Matrix ι ι K} {c_f : F' → ℕ} {M_f : F' → Matrix ι ι (𝓞 K)}
     {B_sys : ℝ} (hB1 : 1 ≤ B_sys) (hc_ne : ∀ f, c_f f ≠ 0)
     (hM_sys : ∀ (d : κ → ℕ) (f : F') (u : multiMons ι d) (N : κ × ι →₀ ℕ),
@@ -353,21 +263,25 @@ private lemma exists_isMultiHomogeneous_coeff_blockSubst_eq_zero {K ι κ : Type
         (c_f f : K) ^ (∑ h, d h) * (blockSubst (A_f f)⁻¹ (monomial u.1 (1 : K))).coeff N ∧
       house (((blockSubst (M_f f) (monomial u.1 (1 : 𝓞 K))).coeff N : 𝓞 K) : K) ≤
         (Fintype.card ι * B_sys) ^ ∑ h, d h) :
-    ∃ C₂ : ℝ, 0 ≤ C₂ ∧ ∀ {d : κ → ℕ} {θ : ℝ}, 0 < ∑ h, d h → 0 < #(multiMons ι d) →
+    ∃ C₂ : ℝ, 0 ≤ C₂ ∧ ∀ {d : κ → ℕ} {θ : ℝ}, 0 < ∑ h, d h →
       2 * (#F' * #{N ∈ multiMons ι d | ∑ h, (N (h, i₀) : ℝ) / d h ≤ θ}) ≤ #(multiMons ι d) →
       ∃ P : MvPolynomial (κ × ι) K, P ≠ 0 ∧ IsMultiHomogeneous d P ∧
         P.logHeight ≤ C₂ * ∑ h, (d h : ℝ) ∧
         ∀ (f : F') (N : κ × ι →₀ ℕ),
           ∑ h, (N (h, i₀) : ℝ) / d h ≤ θ → (blockSubst (A_f f)⁻¹ P).coeff N = 0 := by
   classical
-  obtain ⟨C_siegel, hCs1, hsiegel⟩ := exists_ne_zero_mulVec_eq_zero_house_le K
+  have : Nonempty ι := ⟨i₀⟩
+  obtain ⟨C_siegel, hCs1, hsiegel⟩ := NumberField.exists_ne_zero_mulVec_eq_zero_house_le K
   let K_base : ℝ := C_siegel * Fintype.card ι ^ 2 * B_sys
   have hK1 : 1 ≤ K_base := one_le_mul_of_one_le_of_one_le
     (one_le_mul_of_one_le_of_one_le hCs1 (by exact_mod_cast Nat.pow_le_pow_left Fintype.card_pos 2))
     hB1
   let C₂ : ℝ := Module.finrank ℚ K * Real.log K_base
   refine ⟨C₂, mul_nonneg (Nat.cast_nonneg _) (Real.log_nonneg hK1),
-    fun {d θ} hD_pos hcard_pos hcount ↦ ?_⟩
+    fun {d θ} hD_pos hcount ↦ ?_⟩
+  have hcard_pos : 0 < #(multiMons ι d) :=
+    card_pos.mpr ⟨Finsupp.equivFunOnFinite.symm fun p ↦ if p.2 = i₀ then d p.1 else 0,
+      mem_multiMons.mpr fun h ↦ by simp⟩
   let bad : Finset (κ × ι →₀ ℕ) := {N ∈ multiMons ι d | ∑ h, (N (h, i₀) : ℝ) / d h ≤ θ}
   let sys : Matrix (F' × bad) (multiMons ι d) (𝓞 K) :=
     fun r u ↦ (blockSubst (M_f r.1) (monomial u.1 (1 : 𝓞 K))).coeff r.2.1
@@ -449,8 +363,7 @@ theorem exists_ne_zero_isMultiHomogeneous_forall_coeff_blockSubst_hasseDeriv_eq_
   refine ⟨C₂, C₃, D₀, hC₂0, hC₃0, hD₀, fun d hd ↦ ?_⟩
   have hD_pos : 0 < ∑ h, d h := lt_of_lt_of_le (hD₀.trans_le (hd h₀))
     (single_le_sum (fun _ _ ↦ Nat.zero_le _) (mem_univ h₀))
-  obtain ⟨P, hP0, hP_hom, hP_log, hAf_vanish⟩ :=
-    hP_ex hD_pos (hcount d hd).1 (hcount d hd).2
+  obtain ⟨P, hP0, hP_hom, hP_log, hAf_vanish⟩ := hP_ex hD_pos (hcount d hd)
   refine ⟨P, hP0, hP_hom, hP_log, fun A hA hAF I hI J ⟨i, hJ⟩ ↦ ?_, fun A hAF I ↦ ?_⟩
   · have hη0 : 0 ≤ η := nonneg_of_mul_nonneg_right
       ((by positivity : (0 : ℝ) ≤ ∑ h, (∑ j, I (h, j) : ℝ) / d h).trans hI)
