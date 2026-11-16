@@ -15,7 +15,8 @@ volumes can only decrease the volume of their one-sided difference. The inequali
 Mathlib's extended-radius balls and `Real.volume_eball`, and allows zero and infinite volumes.
 It supplies the sectionwise contraction inequality for Steiner symmetrization. The annulus
 between two concentric open intervals of radii `0 ≤ r ≤ R` has length `2 (R - r)`
-(`TauCeti.volume_ball_sdiff_ball`).
+(`TauCeti.volume_ball_sdiff_ball`), so that between radii `r` and `2r` has length `2r`
+(`TauCeti.volume_ball_two_mul_sdiff_ball`).
 
 An order-connected subset of the real line of positive finite volume agrees almost everywhere
 with a nonempty bounded open interval (`Set.OrdConnected.exists_ae_eq_Ioo`): finite volume
@@ -83,6 +84,15 @@ theorem volume_ball_sdiff_ball {r R : ℝ} (hr : 0 ≤ r) (hrR : r ≤ R) (x : �
   rw [measure_sdiff (Metric.ball_subset_ball hrR) measurableSet_ball.nullMeasurableSet
     measure_ball_lt_top.ne, Real.volume_ball, Real.volume_ball,
     ← ENNReal.ofReal_sub _ (by positivity), mul_sub]
+
+/-- The annulus between the open intervals of radii `r` and `2r` about a point has length `2r`. -/
+theorem volume_ball_two_mul_sdiff_ball (r x : ℝ) :
+    volume (Metric.ball x (2 * r) \ Metric.ball x r) = ENNReal.ofReal (2 * r) := by
+  rcases le_or_gt 0 r with hr | hr
+  · rw [volume_ball_sdiff_ball hr (by linarith)]
+    ring_nf
+  · rw [Metric.ball_eq_empty.2 (by linarith), empty_sdiff, measure_empty,
+      ENNReal.ofReal_of_nonpos (by linarith)]
 
 /-- A permutation of the coordinates combined with sign changes, `x ↦ fun i => c i * x (e i)`
 with `|c i| = 1`, preserves Lebesgue measure on `ι → ℝ`. -/

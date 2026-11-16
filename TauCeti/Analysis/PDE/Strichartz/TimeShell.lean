@@ -310,7 +310,7 @@ private theorem aemeasurable_eLpNorm_indicator_ball_diff (ρ : ℝ) {b : ℝ →
 
 /-- The `L²` norm in `s` of the `L²` norms of `b` on the sections `ρ ≤ |s - t| < 2ρ` is
 `(2ρ) ^ (1/2) ‖b‖₂`. -/
-private theorem eLpNorm_eLpNorm_indicator_ball_diff {ρ : ℝ} (hρ : 0 ≤ ρ) {b : ℝ → ℝ≥0∞}
+private theorem eLpNorm_eLpNorm_indicator_ball_diff (ρ : ℝ) {b : ℝ → ℝ≥0∞}
     (hb : AEMeasurable b) :
     eLpNorm (fun s ↦ eLpNorm ((ball s (2 * ρ) \ ball s ρ).indicator b) 2) 2 =
       ENNReal.ofReal (2 * ρ) ^ (2⁻¹ : ℝ) * eLpNorm b 2 := by
@@ -322,7 +322,7 @@ private theorem eLpNorm_eLpNorm_indicator_ball_diff {ρ : ℝ} (hρ : 0 ≤ ρ) 
       ext s
       exact indicator_timeShell_mk_left ρ s t _
     rw [this, lintegral_indicator_const (measurableSet_ball.diff measurableSet_ball),
-      volume_ball_sdiff_ball hρ (by linarith), show 2 * (2 * ρ - ρ) = 2 * ρ by ring]
+      volume_ball_two_mul_sdiff_ball]
   have hsq (x : ℝ≥0∞) : (x ^ (2⁻¹ : ℝ)) ^ (2 : ℝ) = x := by
     rw [← ENNReal.rpow_mul]
     norm_num
@@ -361,7 +361,7 @@ private theorem integral_indicator_timeShell_inner_eq {ρ : ℝ} {U : ℝ → H 
 /-- The dual estimate `‖∫ U(t)* G(t) dt‖ ≤ K ‖G‖_{L^p L^r}`, `p ≤ 2`, applied on the section
 `ρ ≤ |s - t| < 2ρ` of length `2ρ`, together with Hölder's inequality in time on the section. -/
 private theorem enorm_integral_adjoint_indicator_ball_diff_le {p r : ℝ≥0∞} (hp : p ≤ 2) {ρ : ℝ}
-    (hρ : 0 ≤ ρ) {U : ℝ → H →L[𝕜] Lp E 2 μ} {K : ℝ≥0∞}
+    {U : ℝ → H →L[𝕜] Lp E 2 μ} {K : ℝ≥0∞}
     (hK : ∀ G' : ℝ → Lp E 2 μ, AEStronglyMeasurable G' → Integrable (fun t ↦ ((U t)†) (G' t)) →
       ‖∫ t, ((U t)†) (G' t)‖ₑ ≤ K * eLpNorm (fun t ↦ eLpNorm (G' t) r μ) p)
     {G : ℝ → Lp E 2 μ} (hG : AEStronglyMeasurable G) (hUG : Integrable fun t ↦ ((U t)†) (G t))
@@ -384,8 +384,7 @@ private theorem enorm_integral_adjoint_indicator_ball_diff_le {p r : ℝ≥0∞}
   rw [hb', eLpNorm_indicator_eq_eLpNorm_restrict (μ := volume) hS.nullMeasurableSet,
     eLpNorm_indicator_eq_eLpNorm_restrict (μ := volume) hS.nullMeasurableSet]
   have h := eLpNorm_le_eLpNorm_mul_rpow_measure_univ hp (hb.restrict (s := S)).aestronglyMeasurable
-  rwa [Measure.restrict_apply_univ, volume_ball_sdiff_ball hρ (by linarith),
-    show 2 * (2 * ρ - ρ) = 2 * ρ by ring] at h
+  rwa [Measure.restrict_apply_univ, volume_ball_two_mul_sdiff_ball] at h
 
 /-- **The time pairings on a dyadic shell, with an energy factor.** Let `U(t) : H → L²(X, μ)` be
 bounded operators, `‖U(t)‖ ≤ M`, satisfying a dual estimate with a time exponent `p ≤ 2`,
@@ -430,7 +429,7 @@ theorem enorm_setIntegral_timeShell_inner_adjoint_le {p r : ℝ≥0∞} (hp : p 
       exact hM s
     calc _ ≤ M * a s * (K * (g s * c)) := by
           gcongr
-          exact enorm_integral_adjoint_indicator_ball_diff_le hp hρ.le hK hG hUG s
+          exact enorm_integral_adjoint_indicator_ball_diff_le hp hK hG hUG s
       _ = _ := by ring
   have hpow : c * ENNReal.ofReal (2 * ρ) ^ (2⁻¹ : ℝ) = ENNReal.ofReal (2 * ρ) ^ p.toReal⁻¹ := by
     rw [← ENNReal.rpow_add _ _ (ENNReal.ofReal_pos.2 (by positivity)).ne' ENNReal.ofReal_ne_top]
@@ -450,7 +449,7 @@ theorem enorm_setIntegral_timeShell_inner_adjoint_le {p r : ℝ≥0∞} (hp : p 
           ha.aestronglyMeasurable hg.aestronglyMeasurable
         rwa [eLpNorm_one_eq_lintegral_eNorm (ha.mul hg).aestronglyMeasurable] at h
     _ = _ := by
-        rw [eLpNorm_eLpNorm_indicator_ball_diff hρ.le hb, ← hpow]
+        rw [eLpNorm_eLpNorm_indicator_ball_diff ρ hb, ← hpow]
         ring
 
 /-- **The time pairings on a dyadic shell, with an energy factor on the second argument.** This
