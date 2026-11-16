@@ -38,6 +38,9 @@ A sum `z + a` with `‖a‖ < ‖z‖` is nonzero.
 A constant bound on `‖f x‖` over a ball of positive radius is nonnegative, since the ball
 contains `0`.
 
+A point off a finite set stays farther than `ε` from all of its points for every small enough
+`ε > 0`.
+
 ## Main declarations
 
 * `TauCeti.norm_sub_sq_le_two_mul` -- the squared triangle inequality through an intermediate
@@ -60,6 +63,8 @@ contains `0`.
 * `TauCeti.add_ne_zero_of_norm_lt` -- `z + a ≠ 0` when `‖a‖ < ‖z‖`.
 * `TauCeti.nonneg_of_forall_norm_lt` -- a constant bound on `‖f x‖` over a ball of positive radius
   is nonnegative.
+* `TauCeti.eventually_not_exists_norm_sub_le` -- a point off a finite set `S` is, for every small
+  enough `ε > 0`, farther than `ε` from each point of `S`.
 -/
 
 public section
@@ -168,5 +173,16 @@ theorem nonneg_of_forall_norm_lt {E F 𝓕 : Type*} [SeminormedAddGroup E] [Semi
     [FunLike 𝓕 E F] (f : 𝓕) {δ B : ℝ} (hδ : 0 < δ) (hf : ∀ x : E, ‖x‖ < δ → ‖f x‖ ≤ B) :
     0 ≤ B :=
   (norm_nonneg _).trans <| hf 0 (by simpa using hδ)
+
+/-- **A point off a finite set keeps a positive distance from it.** If `z` is not in the finite set
+`S`, then for every small enough `ε > 0` it is farther than `ε` from each point of `S`. -/
+theorem eventually_not_exists_norm_sub_le {E : Type*} [NormedAddGroup E] {z : E} {S : Finset E}
+    (hz : z ∉ S) : ∀ᶠ ε in 𝓝[>] (0 : ℝ), ¬ ∃ s ∈ S, ‖z - s‖ ≤ ε := by
+  -- Each of the finitely many distances `‖z - s‖` is positive.
+  have hlt : ∀ᶠ ε in 𝓝[>] (0 : ℝ), ∀ s ∈ S, ε < ‖z - s‖ :=
+    (eventually_all_finset S).mpr fun s hs => (eventually_lt_nhds <| norm_sub_pos_iff.mpr
+      fun h : z = s => hz (h ▸ hs)).filter_mono nhdsWithin_le_nhds
+  filter_upwards [hlt] with ε hε ⟨s, hs, hle⟩
+  exact (hε s hs).not_ge hle
 
 end TauCeti
