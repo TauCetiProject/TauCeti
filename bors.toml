@@ -1,8 +1,10 @@
 # Statuses on the exact PR head and on the combined staging commit.
 # TauCetiReview supplies the head-bound bors approval; trusted CI supplies
 # these statuses. A batch is tested once, then fast-forwarded to main.
+# `harness-runner-groups` (PR heads only) passes once the runner groups admit
+# the PR's TauCetiTools harness pin; see .github/workflows/harness-runner-groups.yml.
 status = ["build", "bump-guard", "scope"]
-pr_status = ["build", "bump-guard", "scope"]
+pr_status = ["build", "bump-guard", "scope", "harness-runner-groups"]
 
 use_squash_merge = true
 use_codeowners = false

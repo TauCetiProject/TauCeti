@@ -10,6 +10,7 @@ Run with: python3 scripts/test_harness_runner_groups.py
 import json
 import pathlib
 import re
+import tomllib
 import unittest
 
 import yaml
@@ -67,7 +68,10 @@ class OneHarnessPin(unittest.TestCase):
 
 
 class RunnerGroupReconciler(unittest.TestCase):
-    def test_status_context(self):
+    def test_bors_requires_the_status_on_pr_heads(self):
+        bors = tomllib.loads((ROOT / "bors.toml").read_text())
+        self.assertIn(CONTEXT, bors["pr_status"])
+        self.assertNotIn(CONTEXT, bors["status"])
         self.assertEqual(document()["env"]["CONTEXT"], CONTEXT)
 
     def test_triggers(self):
