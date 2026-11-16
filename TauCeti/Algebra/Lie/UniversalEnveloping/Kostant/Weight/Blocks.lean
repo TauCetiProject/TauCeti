@@ -45,7 +45,10 @@ section Blocks
 variable {κ η D : Type*} [Finite η]
 variable [AddCommGroup D] [LinearOrder D]
 
-private noncomputable def weightBlockEquiv (degree : (κ → ℤ) →+ D)
+/-- The distinct weights, numbered by decreasing degree, with arbitrary tie-breaking among
+weights of the same degree. Its value at a weight is the block number of every basis index
+carrying that weight. -/
+noncomputable def orderedWeightBlockEquiv (degree : (κ → ℤ) →+ D)
     (wt : η → κ → ℤ) : Set.range wt ≃ Fin (Nat.card (Set.range wt)) := by
   classical
   letI := Fintype.ofFinite (Set.range wt)
@@ -56,7 +59,32 @@ private noncomputable def weightBlockEquiv (degree : (κ → ℤ) →+ D)
 `degree`. Weights of equal degree are ordered by an arbitrary finite numbering. -/
 noncomputable def orderedWeightBlock (degree : (κ → ℤ) →+ D) (wt : η → κ → ℤ)
     (x : η) : Fin (Nat.card (Set.range wt)) :=
-  weightBlockEquiv degree wt ⟨wt x, ⟨x, rfl⟩⟩
+  orderedWeightBlockEquiv degree wt ⟨wt x, ⟨x, rfl⟩⟩
+
+/-- The block number of a basis index is the number assigned to its weight. -/
+theorem orderedWeightBlock_def (degree : (κ → ℤ) →+ D) (wt : η → κ → ℤ)
+    (x : η) :
+    orderedWeightBlock degree wt x =
+      orderedWeightBlockEquiv degree wt ⟨wt x, Set.mem_range_self x⟩ :=
+  (rfl)
+
+/-- Evaluating the block equivalence at a basis weight gives its block number. -/
+-- Rewrite before simp normalizes the cardinality in the equivalence's codomain.
+@[simp↓]
+theorem orderedWeightBlockEquiv_apply (degree : (κ → ℤ) →+ D) (wt : η → κ → ℤ)
+    (x : η) :
+    orderedWeightBlockEquiv degree wt ⟨wt x, Set.mem_range_self x⟩ =
+      orderedWeightBlock degree wt x :=
+  (orderedWeightBlock_def degree wt x).symm
+
+/-- The inverse block equivalence recovers the weight of a basis index. -/
+-- Rewrite before simp descends into the cardinality-indexed equivalence.
+@[simp↓]
+theorem orderedWeightBlockEquiv_symm_orderedWeightBlock (degree : (κ → ℤ) →+ D) (wt : η → κ → ℤ)
+    (x : η) :
+    (orderedWeightBlockEquiv degree wt).symm (orderedWeightBlock degree wt x) =
+      ⟨wt x, Set.mem_range_self x⟩ := by
+  rw [orderedWeightBlock_def, Equiv.symm_apply_apply]
 
 /-- Two basis indices belong to the same weight block exactly when their weights are equal. -/
 @[simp]
@@ -64,18 +92,18 @@ theorem orderedWeightBlock_eq_iff (degree : (κ → ℤ) →+ D) (wt : η → κ
     orderedWeightBlock degree wt r = orderedWeightBlock degree wt s ↔ wt r = wt s := by
   constructor
   · intro hrs
-    exact congrArg Subtype.val ((weightBlockEquiv degree wt).injective hrs)
+    exact congrArg Subtype.val ((orderedWeightBlockEquiv degree wt).injective hrs)
   · intro hrs
-    exact congrArg (weightBlockEquiv degree wt) (Subtype.ext hrs)
+    exact congrArg (orderedWeightBlockEquiv degree wt) (Subtype.ext hrs)
 
 /-- Every numbered weight block contains a basis index. This includes the empty-family case,
 where both the index type and the type of block numbers are empty. -/
 theorem orderedWeightBlock_surjective (degree : (κ → ℤ) →+ D) (wt : η → κ → ℤ) :
     Function.Surjective (orderedWeightBlock degree wt) := by
   intro k
-  obtain ⟨μ, hμ⟩ := (weightBlockEquiv degree wt).surjective k
+  obtain ⟨μ, hμ⟩ := (orderedWeightBlockEquiv degree wt).surjective k
   obtain ⟨x, hx⟩ := μ.property
-  exact ⟨x, (congrArg (weightBlockEquiv degree wt) (Subtype.ext hx)).trans hμ⟩
+  exact ⟨x, (congrArg (orderedWeightBlockEquiv degree wt) (Subtype.ext hx)).trans hμ⟩
 
 /-- The cardinality cast in the block numbering preserves the underlying natural number. -/
 private theorem orderedWeightBlock_val (degree : (κ → ℤ) →+ D) (wt : η → κ → ℤ)
@@ -84,7 +112,7 @@ private theorem orderedWeightBlock_val (degree : (κ → ℤ) →+ D) (wt : η �
       letI := Fintype.ofFinite (Set.range wt)
       (orderedWeightIndexEquiv degree (fun μ : Set.range wt => μ.val) ⟨wt x, x, rfl⟩).val := by
   classical
-  simp only [orderedWeightBlock, weightBlockEquiv, Equiv.trans_apply, finCongr_apply_coe]
+  simp only [orderedWeightBlock, orderedWeightBlockEquiv, Equiv.trans_apply, finCongr_apply_coe]
 
 /-- A strictly larger degree places a weight space strictly earlier in the block ranking. -/
 theorem orderedWeightBlock_lt_of_degree_lt (degree : (κ → ℤ) →+ D) (wt : η → κ → ℤ)
@@ -95,6 +123,15 @@ theorem orderedWeightBlock_lt_of_degree_lt (degree : (κ → ℤ) →+ D) (wt : 
   rw [Fin.lt_def, orderedWeightBlock_val, orderedWeightBlock_val]
   exact Fin.lt_def.mp (orderedWeightIndexEquiv_lt_of_degree_lt degree
     (fun μ : Set.range wt => μ.val) (r := ⟨wt r, r, rfl⟩) (s := ⟨wt s, s, rfl⟩) hrs)
+
+/-- A distinct weight of strictly larger degree receives a strictly smaller block number. -/
+theorem orderedWeightBlockEquiv_lt_of_degree_lt (degree : (κ → ℤ) →+ D)
+    (wt : η → κ → ℤ) {μ ν : Set.range wt} (hμν : degree ν.val < degree μ.val) :
+    orderedWeightBlockEquiv degree wt μ < orderedWeightBlockEquiv degree wt ν := by
+  rcases μ with ⟨_, r, rfl⟩
+  rcases ν with ⟨_, s, rfl⟩
+  simpa only [orderedWeightBlockEquiv_apply] using
+    orderedWeightBlock_lt_of_degree_lt degree wt (r := r) (s := s) hμν
 
 variable [IsOrderedAddMonoid D]
 
