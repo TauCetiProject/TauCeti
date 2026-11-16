@@ -60,7 +60,7 @@ namespace TauCeti.TemperleyLieb
 /-- Registers `IsSelfAdjoint (Real.sqrt 3 : ℂ)` as a `Fact` so that
 `TemperleyLieb ℂ (Real.sqrt 3 : ℂ) m` carries the analytic adjoint instances
 `TemperleyLieb.instStarRing` and `TemperleyLieb.instStarModule`. -/
-instance : Fact (IsSelfAdjoint (Real.sqrt 3 : ℂ)) :=
+instance instFactIsSelfAdjointSqrtThree : Fact (IsSelfAdjoint (Real.sqrt 3 : ℂ)) :=
   ⟨Complex.conj_ofReal _⟩
 
 /-! ### Site unitaries, cubic projections, and the comparison homomorphism -/
