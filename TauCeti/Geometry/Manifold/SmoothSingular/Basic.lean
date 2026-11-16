@@ -44,6 +44,8 @@ singular cohomology. Only a charted space is required for the definitions.
 * `TauCeti.smoothSingularSubcomplex_le_preimage`: smooth maps preserve smooth simplices.
 * `TauCeti.smoothSingularSubcomplex_preimage_inclusion`: a simplex of an open subset is smooth
   exactly when it is smooth in a larger open subset.
+* `TauCeti.range_smoothSingularSubcomplexMap_inclusion_ι`: the smooth simplices of an open subset
+  are the smooth simplices of a larger open subset lying in it.
 * `TauCeti.smoothSingularSubcomplexMap`: the induced map of smooth singular subcomplexes.
 * `TauCeti.coe_smoothSingularSubcomplexMap_app`: it acts on underlying singular simplices as the
   map of singular simplicial sets.
@@ -410,6 +412,27 @@ theorem smoothSingularSubcomplex_preimage_inclusion {U V : TopologicalSpace.Open
   convert contMDiff_subtype_val.comp_contMDiffOnSubset hσ using 1
   ext x
   simp
+
+/-- For open sets `U ≤ V` of `M`, the smooth singular simplices of `U`, viewed in `V`, are exactly
+the smooth singular simplices of `V` whose image lies in `U`. -/
+theorem range_smoothSingularSubcomplexMap_inclusion_ι {U V : TopologicalSpace.Opens M}
+    (h : U ≤ V) :
+    SSet.Subcomplex.range (smoothSingularSubcomplexMap (TopologicalSpace.Opens.inclusion h)
+        (contMDiff_inclusion h) ≫ (smoothSingularSubcomplex I V).ι) =
+      smoothSingularSubcomplex I V ⊓ SSet.Subcomplex.range
+        (TopCat.toSSet.map (TopCat.ofHom ⟨TopologicalSpace.Opens.inclusion h,
+          continuous_inclusion h⟩)) := by
+  rw [smoothSingularSubcomplexMap_ι]
+  ext k σ
+  simp only [Subfunctor.range_obj, Subfunctor.min_obj, Set.mem_inter_iff, Set.mem_range]
+  constructor
+  · rintro ⟨τ, rfl⟩
+    exact ⟨smoothSingularSubcomplex_le_preimage (contMDiff_inclusion h) k τ.2, τ.1, rfl⟩
+  · rintro ⟨hσ, τ, rfl⟩
+    have hτ : τ ∈ (smoothSingularSubcomplex I U).obj k := by
+      rw [← smoothSingularSubcomplex_preimage_inclusion h]
+      exact hσ
+    exact ⟨⟨τ, hτ⟩, rfl⟩
 
 /-- The identity of `M` induces the identity of its smooth singular subcomplex. -/
 @[simp]
