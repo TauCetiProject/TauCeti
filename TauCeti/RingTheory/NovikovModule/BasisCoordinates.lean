@@ -39,12 +39,12 @@ results on completed combinations apply to vector-valued series:
   theory), then `κ_b(v)` is homogeneous of degree `k` for the degree `⟨i, A⟩ ↦ deg i + δ A` exactly
   when `v_A ∈ 𝒱 (k - δ A)` for every `A`
   (`TauCeti.NovikovSeries.basisCoordinates_mem_gradeBy_iff`).
-* **Change of basis.** For a second basis `c`, the coordinates of `κ_c (κ_b⁻¹ a)` in the lifts
-  `⟨j, 0⟩` are those of `a` multiplied by the constant change-of-basis matrix
-  `c^*_j(b_i)` (`TauCeti.NovikovSeries.coordinates_basisCoordinates_basisCoordinates_symm`). So
-  `κ_c ∘ κ_b⁻¹` is linear for the Novikov module structures `TauCeti.NovikovModule.module` of both
-  sides (`TauCeti.NovikovSeries.basisCoordinates_basisCoordinates_symm_smul`): the Novikov module
-  structure transported along `κ_b` does not depend on `b`.
+* **Change of basis.** For a second basis `c`, the map `κ_c ∘ κ_b⁻¹` is the Novikov-linear map
+  `TauCeti.NovikovModule.novikovMapOfMatrix` of the constant change-of-basis matrix `c^*_j(b_i)`
+  relative to the lifts `⟨i, 0⟩` and `⟨j, 0⟩`
+  (`TauCeti.NovikovSeries.basisCoordinates_basisCoordinates_symm_eq_novikovMapOfMatrix`). So it
+  is linear for the Novikov module structures `TauCeti.NovikovModule.module` of both sides: the
+  Novikov module structure transported along `κ_b` does not depend on `b`.
 * **The Cauchy product.** The Cauchy product of series with coefficients in `V` and `W`
   (`TauCeti.NovikovSeries.cauchyProduct`, from `TauCeti.RingTheory.NovikovSeries.TensorProduct`)
   takes values in series with coefficients in `V ⊗[R] W`. In the coordinates of the bases
@@ -330,43 +330,29 @@ theorem coordinates_basisCoordinates_singleton (v : NovikovSeries R H N) :
 
 end Lifts
 
+end AddGroup
+
 section ChangeOfBasis
 
-variable [CommSemiring R] [AddCommMonoid V] [Module R V] [Fintype ι] [Fintype κ]
-  (b : Module.Basis ι R V) (c : Module.Basis κ R V)
+variable {R V H ι κ : Type*} [AddCommGroup H] {N : H →+ ℝ} [CommSemiring R] [AddCommMonoid V]
+  [Module R V] [Fintype ι] [Fintype κ] (b : Module.Basis ι R V) (c : Module.Basis κ R V)
 
-/-- **Change of basis.** In the lifts `⟨j, 0⟩`, the coordinates of `κ_c (κ_b⁻¹ a)` are those of
-`a` multiplied by the constant change-of-basis matrix with entries `c.repr (b i) j`. -/
-theorem coordinates_basisCoordinates_basisCoordinates_symm
-    (a : NovikovModule R (negPeriod ι N)) (j : κ) :
-    NovikovModule.coordinates negPeriod_vadd (fun _ => 0)
-        (basisCoordinates c ((basisCoordinates b).symm a)) j =
-      ∑ i, c.repr (b i) j • NovikovModule.coordinates negPeriod_vadd (fun _ => 0) a i := by
-  ext A
-  simp [coeff_sum, mul_comm]
-
-/-- **The change of basis is Novikov-linear.** `κ_c ∘ κ_b⁻¹` commutes with the Novikov scalar
-actions `TauCeti.NovikovModule.module` of both sides. So the Novikov module structure transported
-to vector-valued series along `κ_b` does not depend on the basis `b`. -/
-theorem basisCoordinates_basisCoordinates_symm_smul (β : NovikovSeries R H N)
+/-- **Change of basis.** `κ_c ∘ κ_b⁻¹` is the Novikov-linear map
+`TauCeti.NovikovModule.novikovMapOfMatrix` of the constant change-of-basis matrix with entries
+`c.repr (b i) j`, relative to the lifts `⟨i, 0⟩` and `⟨j, 0⟩`. So the Novikov module structure
+transported to vector-valued series along `κ_b` does not depend on the basis `b`. -/
+theorem basisCoordinates_basisCoordinates_symm_eq_novikovMapOfMatrix
     (a : NovikovModule R (negPeriod ι N)) :
-    letI := NovikovModule.module (R := R) (P := fun _ : ι => H) (negPeriod_vadd (N := N))
-    letI := NovikovModule.module (R := R) (P := fun _ : κ => H) (negPeriod_vadd (N := N))
-    basisCoordinates c ((basisCoordinates b).symm (β • a)) =
-      β • basisCoordinates c ((basisCoordinates b).symm a) := by
-  let := NovikovModule.module (R := R) (P := fun _ : ι => H) (negPeriod_vadd (N := N))
-  let := NovikovModule.module (R := R) (P := fun _ : κ => H) (negPeriod_vadd (N := N))
+    basisCoordinates c ((basisCoordinates b).symm a) =
+      NovikovModule.novikovMapOfMatrix negPeriod_vadd negPeriod_vadd (fun _ => 0) (fun _ => 0)
+        (Matrix.of fun i j => algebraMap R (NovikovSeries R H N) (c.repr (b i) j)) a := by
   apply (NovikovModule.coordinates (R := R) negPeriod_vadd (fun _ : κ => (0 : H))).injective
   ext1 j
-  rw [NovikovModule.coordinates_smul, Pi.smul_apply,
-    coordinates_basisCoordinates_basisCoordinates_symm,
-    coordinates_basisCoordinates_basisCoordinates_symm, Finset.smul_sum]
-  refine Finset.sum_congr rfl fun i _ => ?_
-  rw [NovikovModule.coordinates_smul, Pi.smul_apply, smul_eq_mul, smul_eq_mul, mul_smul_comm]
+  rw [NovikovModule.coordinates_novikovMapOfMatrix]
+  ext A
+  simp [coeff_sum, coeff_mul_single]
 
 end ChangeOfBasis
-
-end AddGroup
 
 section Invariance
 
