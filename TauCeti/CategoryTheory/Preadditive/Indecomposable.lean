@@ -11,7 +11,6 @@ public import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 public import Mathlib.RingTheory.LocalRing.Defs
 public import Mathlib.RingTheory.Artinian.Defs
 import Mathlib.CategoryTheory.Adjunction.Limits
-import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
 import TauCeti.RingTheory.KrullSchmidt.Indecomposable
 import Mathlib.RingTheory.HopkinsLevitzki
 
