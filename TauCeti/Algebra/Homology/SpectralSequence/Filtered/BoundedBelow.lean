@@ -22,9 +22,12 @@ the objects at `(p, q)` on the later pages
 (`CategoryTheory.Abelian.SpectralObject.spectralSequencePageXToPageX`). An element vanishes in the
 graded piece exactly when it vanishes on some later page
 (`CochainComplex.filtrationSpectralSequencePageXToGraded_eq_zero_iff`). So the graded piece is
-the direct limit of the objects at `(p, q)` on the pages `r' ≥ r` along these maps. This is the
-`E∞` part of Weibel's Classical Convergence Theorem 5.5.1(2), whose `E∞` is such a direct limit
-for a filtration bounded below, in the form needed when the filtration is not finite.
+the direct limit of the objects at `(p, q)` on the pages `r' ≥ r` along these maps, the canonical
+maps `E^n(⊥ ≤ q ≤ q + 1 ≤ q + r - 1) ⟶ E^n(⊥ ≤ q ≤ q + 1 ≤ q + r' - 1)` of the spectral object.
+This is an analogue of the `E∞` part of Weibel's Classical Convergence Theorem 5.5.1(2), whose
+`E∞` is the direct limit along the spectral sequence's own maps from page `r` to page `r + 1`
+(page `r + 1` being the homology of page `r`), in the form needed when the filtration is not
+finite. Identifying `spectralSequencePageXToPageX` with those maps is not done here.
 Convergence to `H^n(K)` needs in addition hypotheses in degree `n`, which this file does not
 assume: if every element of `K^n` lies in some `F_i`, the filtration of `H^n(K)` is exhaustive
 (`CochainComplex.exists_mem_range_filtrationAbutmentFiltrationι`), and if some stage vanishes in
@@ -56,9 +59,10 @@ filtrations.
   degree `n - 1`, an element of a page vanishing in `E∞` vanishes on some later page.
 * `CochainComplex.spectralSequencePageXToPageX_filtrationSpectralSequencePageXToGraded`: the maps
   onto the graded piece are compatible with the maps to the later pages.
-* `CochainComplex.filtrationSpectralSequencePageXToGraded_eq_zero_iff`: **the Classical
-  Convergence Theorem** for filtrations bounded below and exhaustive: the kernel of the map onto
-  the graded piece consists of the elements vanishing on some later page.
+* `CochainComplex.filtrationSpectralSequencePageXToGraded_eq_zero_iff`: an analogue of **the
+  Classical Convergence Theorem** for filtrations bounded below and exhaustive: the kernel of the
+  map onto the graded piece consists of the elements vanishing on some later page under
+  `spectralSequencePageXToPageX`.
 
 ## References
 
@@ -291,14 +295,16 @@ lemma spectralSequencePageXToPageX_filtrationSpectralSequencePageXToGraded (r r'
   rw [filtrationSpectralSequencePageXToGraded_def, filtrationSpectralSequencePageXToGraded_def,
     spectralSequencePageXToPageX_spectralSequencePageXToEInfty_assoc]
 
-/-- **Weibel's Classical Convergence Theorem for filtrations bounded below.** Let `pq = (p, q)` and
+/-- **An analogue of Weibel's Classical Convergence Theorem for filtrations bounded below**, for
+the canonical maps `spectralSequencePageXToPageX` between pages. Let `pq = (p, q)` and
 `n = p + q`. Suppose that the stage `F_s` vanishes in degree `n + 1` and that every element of
 `K^{n-1}` lies in some stage `F_i`; no upper bound on the filtration is assumed. On every page
 `r ≥ 2` with `q - r + 2 ≤ s`, an element of the object at `(p, q)` vanishes in the graded piece
 `F_{q+1} H^n / F_q H^n` exactly when it vanishes on some later page `r'` under the canonical map
 `spectralSequencePageXToPageX`. Together with the surjectivity of
 `filtrationSpectralSequencePageXToGraded`, this says that the graded piece is the direct limit of
-the objects at `(p, q)` on the pages `r' ≥ r`. -/
+the objects at `(p, q)` on the pages `r' ≥ r` along these maps. They are not yet identified with
+the spectral sequence's own maps from page `r` to page `r + 1`. -/
 theorem filtrationSpectralSequencePageXToGraded_eq_zero_iff (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ)
     {s : ℤ} (hs : IsZero ((F s : CochainComplex (ModuleCat.{v} R) ℤ).X (pq.1 + pq.2 + 1)))
     (hrs : pq.2 - r + 2 ≤ s)

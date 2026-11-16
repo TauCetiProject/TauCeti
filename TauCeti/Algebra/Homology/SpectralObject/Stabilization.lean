@@ -28,7 +28,8 @@ bound, the page-`r` object is `E^{p+q}(⊥ ≤ q ≤ q + 1 ≤ q + r - 1)`
 `E^n(i₀ ≤ i₁ ≤ i₂ ≤ i₃) ⟶ E^n(i₀ ≤ i₁ ≤ i₂ ≤ i₃')` for `i₃ ≤ i₃'`. These maps exhibit `X.EInfty`
 as a quotient of every page; for filtered complexes of modules,
 `TauCeti.Algebra.Homology.SpectralSequence.Filtered.BoundedBelow` shows that it is their direct
-limit.
+limit along these maps. The maps `spectralSequencePageXToPageX` are not yet identified with the
+spectral sequence's own maps from page `r` to page `r + 1`.
 
 ## Main definitions
 
