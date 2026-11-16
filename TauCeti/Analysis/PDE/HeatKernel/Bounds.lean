@@ -59,11 +59,10 @@ open scoped Nat
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
-/-- The normalizing constant of the heat kernel at time `t` is `2^(n/2)` times the one at time
-`2t`. -/
-private theorem rpow_heatKernel_const_eq {t : ℝ} :
-    (4 * π * t) ^ (-(finrank ℝ E : ℝ) / 2) =
-      2 ^ ((finrank ℝ E : ℝ) / 2) * (4 * π * (2 * t)) ^ (-(finrank ℝ E : ℝ) / 2) := by
+/-- The normalizing constant of the heat kernel in dimension `n` at time `t` is `2^(n/2)` times the
+one at time `2t`, for every real `t`. -/
+private theorem rpow_heatKernel_const_eq (n : ℕ) (t : ℝ) :
+    (4 * π * t) ^ (-(n : ℝ) / 2) = 2 ^ ((n : ℝ) / 2) * (4 * π * (2 * t)) ^ (-(n : ℝ) / 2) := by
   rw [show 4 * π * (2 * t) = 2 * (4 * π * t) by ring, mul_rpow_of_nonneg_left two_pos.le,
     ← mul_assoc, ← rpow_add two_pos]
   simp [neg_div]
@@ -86,11 +85,12 @@ theorem heatKernel_le_mul_heatKernel {s s' : ℝ} (hs : 0 < s) (hss' : s ≤ s')
     (by positivity)
 
 /-- The heat kernel at time `t` is the heat kernel at time `2t` times a Gaussian factor:
-`K_t(x) = 2^(n/2) exp(-‖x‖² / (8t)) K_{2t}(x)`. -/
+`K_t(x) = 2^(n/2) exp(-‖x‖² / (8t)) K_{2t}(x)`. This holds for every real `t`; for `t ≤ 0` both
+sides are junk values, by Mathlib's conventions for real powers and division by zero. -/
 theorem heatKernel_eq_mul_heatKernel_two_mul {t : ℝ} (x : E) :
     heatKernel t x =
       2 ^ ((finrank ℝ E : ℝ) / 2) * exp (-‖x‖ ^ 2 / (8 * t)) * heatKernel (2 * t) x := by
-  rw [heatKernel_apply, heatKernel_apply, rpow_heatKernel_const_eq (t := t),
+  rw [heatKernel_apply, heatKernel_apply, rpow_heatKernel_const_eq (finrank ℝ E) t,
     show -‖x‖ ^ 2 / (4 * t) = -‖x‖ ^ 2 / (8 * t) + -‖x‖ ^ 2 / (4 * (2 * t)) by field_simp; ring,
     exp_add]
   ring
@@ -109,7 +109,7 @@ theorem heatKernel_add_le {t : ℝ} (ht : 0 < t) (z h : E) :
       field_simp
       ring
     exact sub_nonneg.1 (this ▸ div_nonneg (by linarith) (by positivity))
-  rw [heatKernel_apply, heatKernel_apply, rpow_heatKernel_const_eq (t := t)]
+  rw [heatKernel_apply, heatKernel_apply, rpow_heatKernel_const_eq (finrank ℝ E) t]
   calc (2 : ℝ) ^ ((finrank ℝ E : ℝ) / 2) * (4 * π * (2 * t)) ^ (-(finrank ℝ E : ℝ) / 2) *
         exp (-‖z + h‖ ^ 2 / (4 * t))
       ≤ 2 ^ ((finrank ℝ E : ℝ) / 2) * (4 * π * (2 * t)) ^ (-(finrank ℝ E : ℝ) / 2) *
@@ -164,8 +164,8 @@ theorem exists_norm_rpow_mul_heatKernel_le {α : ℝ} (hα : 0 ≤ α) :
     calc ‖y‖ ^ α ≤ (1 + ‖y‖) ^ α := rpow_le_rpow hy (by linarith) hα
       _ ≤ (1 + ‖y‖) ^ (⌈α⌉₊ : ℝ) := rpow_le_rpow_of_exponent_le (by linarith) (Nat.le_ceil α)
       _ = (1 + ‖y‖) ^ ⌈α⌉₊ := rpow_natCast _ _
-  rw [heatKernel_eq_mul_heatKernel_one_smul ht, mul_comm 2 t,
-    heatKernel_mul_eq_mul_heatKernel_smul ht, hxα]
+  rw [heatKernel_eq_mul_heatKernel_one_smul ht.le, mul_comm 2 t,
+    heatKernel_mul_eq_mul_heatKernel_smul ht.le, hxα]
   calc t ^ (α / 2) * ‖y‖ ^ α * ((√t)⁻¹ ^ finrank ℝ E * heatKernel 1 y)
       = t ^ (α / 2) * (√t)⁻¹ ^ finrank ℝ E * (‖y‖ ^ α * heatKernel 1 y) := by ring
     _ ≤ t ^ (α / 2) * (√t)⁻¹ ^ finrank ℝ E * ((1 + ‖y‖) ^ ⌈α⌉₊ * heatKernel 1 y) := by
