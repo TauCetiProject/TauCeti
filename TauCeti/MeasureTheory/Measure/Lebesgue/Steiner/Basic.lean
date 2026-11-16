@@ -36,7 +36,12 @@ convexity: by the one-dimensional Brunn–Minkowski inequality, section lengths 
 set are concave along segments joining points with nonempty sections.
 
 The normalization uses `Real.volume_eball` and the measure-preserving orthogonal coordinates
-from `TauCeti.MeasureTheory.Measure.Lebesgue.OrthogonalSlices`.
+from `TauCeti.MeasureTheory.Measure.Lebesgue.OrthogonalSlices`. The same coordinates express the
+Bochner integral of any integrable function over a Steiner symmetral with a.e. finite section
+lengths as the iterated symmetric interval integral
+`∫ y, ∫ t in -(L y / 2)..(L y / 2), f (y + t • e)`
+(`TauCeti.integrable_intervalIntegral_of_integrableOn_steinerSymmetrization`,
+`TauCeti.setIntegral_steinerSymmetrization_eq_integral_intervalIntegral`).
 -/
 
 public noncomputable section
@@ -338,5 +343,72 @@ theorem eLpNorm_indicator_steinerSymmetrization_sub_le (e : E) (he : ‖e‖ = 1
     eLpNorm_indicator_const (hS.symmDiff hU) one_ne_zero ENNReal.one_ne_top,
     eLpNorm_indicator_const (hs.symmDiff hu) one_ne_zero ENNReal.one_ne_top]
   simpa using volume_steinerSymmetrization_symmDiff_le e he hs hu
+
+/-- Almost every parallel section integral of the indicator of `steinerSymmetrization e he s`
+agrees with the symmetric interval integral over `[-(L y / 2), L y / 2]`. -/
+private theorem ae_integral_indicator_steinerSymmetrization_eq_intervalIntegral
+    {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    (e : E) (he : ‖e‖ = 1) {s : Set E}
+    (hsec : ∀ᵐ y : (ℝ ∙ e)ᗮ ∂volume, volume {t : ℝ | (y : E) + t • e ∈ s} < ∞)
+    (f : E → G) :
+    (fun y : (ℝ ∙ e)ᗮ =>
+      ∫ t : ℝ, ((steinerSymmetrization e he s).indicator f ∘ orthogonalLineEquiv e he) (y, t))
+      =ᵐ[volume] fun y : (ℝ ∙ e)ᗮ =>
+        ∫ t in (-(volume.real {t : ℝ | (y : E) + t • e ∈ s} / 2))..
+          (volume.real {t : ℝ | (y : E) + t • e ∈ s} / 2), f ((y : E) + t • e) := by
+  filter_upwards [hsec] with y hy
+  set L_y := volume.real {t : ℝ | (y : E) + t • e ∈ s}
+  have hsec_eq : {t : ℝ | (y : E) + t • e ∈ steinerSymmetrization e he s} =
+      Ioo (-(L_y / 2)) (L_y / 2) := by
+    rw [lineSection_steinerSymmetrization, ← ofReal_measureReal hy.ne, ← ENNReal.ofReal_ofNat,
+      ← ENNReal.ofReal_div_of_pos two_pos, Metric.eball_ofReal, Real.ball_zero_eq_Ioo]
+  have hind : (fun t : ℝ =>
+        ((steinerSymmetrization e he s).indicator f ∘ orthogonalLineEquiv e he) (y, t)) =
+      (Ioo (-(L_y / 2)) (L_y / 2)).indicator fun t => f ((y : E) + t • e) := by
+    ext t
+    simp only [Function.comp_apply, orthogonalLineEquiv_apply, ← hsec_eq]
+    exact (indicator_comp_right (fun t : ℝ => (y : E) + t • e)
+      (s := steinerSymmetrization e he s) (g := f)).symm
+  have hL0 : 0 ≤ L_y := measureReal_nonneg
+  rw [hind, integral_indicator measurableSet_Ioo, ← integral_Ioc_eq_integral_Ioo,
+    intervalIntegral.integral_of_le (by linarith)]
+
+/-- If `f` is integrable on the Steiner symmetral of `s` and almost every parallel line section of
+`s` has finite length, then the symmetric interval integrals
+`y ↦ ∫ t in -(L y / 2)..(L y / 2), f (y + t • e)` form an integrable function on `(ℝ ∙ e)ᗮ`. -/
+theorem integrable_intervalIntegral_of_integrableOn_steinerSymmetrization
+    {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    (e : E) (he : ‖e‖ = 1) {s : Set E} (hs : NullMeasurableSet s volume)
+    (hsec : ∀ᵐ y : (ℝ ∙ e)ᗮ ∂volume, volume {t : ℝ | (y : E) + t • e ∈ s} < ∞)
+    {f : E → G} (hf : IntegrableOn f (steinerSymmetrization e he s) volume) :
+    Integrable (fun y : (ℝ ∙ e)ᗮ =>
+      ∫ t in (-(volume.real {t : ℝ | (y : E) + t • e ∈ s} / 2))..
+        (volume.real {t : ℝ | (y : E) + t • e ∈ s} / 2), f ((y : E) + t • e)) volume := by
+  have hi : Integrable ((steinerSymmetrization e he s).indicator f) volume :=
+    hf.integrable_indicator₀ (nullMeasurableSet_steinerSymmetrization e he hs)
+  exact (((measurePreserving_orthogonalLineEquiv e he).integrable_comp_of_integrable
+    hi).integral_prod_left).congr
+    (ae_integral_indicator_steinerSymmetrization_eq_intervalIntegral e he hsec f)
+
+/-- **Bochner slicing on a Steiner symmetral.** If `f` is integrable on the Steiner symmetral of
+`s` and almost every parallel line section of `s` has finite length, then
+`∫ x in S_e s, f x = ∫ y, ∫ t in -(L y / 2)..(L y / 2), f (y + t • e)`. -/
+theorem setIntegral_steinerSymmetrization_eq_integral_intervalIntegral
+    {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    (e : E) (he : ‖e‖ = 1) {s : Set E} (hs : NullMeasurableSet s volume)
+    (hsec : ∀ᵐ y : (ℝ ∙ e)ᗮ ∂volume, volume {t : ℝ | (y : E) + t • e ∈ s} < ∞)
+    {f : E → G} (hf : IntegrableOn f (steinerSymmetrization e he s) volume) :
+    ∫ x in steinerSymmetrization e he s, f x =
+      ∫ y : (ℝ ∙ e)ᗮ, ∫ t in (-(volume.real {t : ℝ | (y : E) + t • e ∈ s} / 2))..
+        (volume.real {t : ℝ | (y : E) + t • e ∈ s} / 2), f ((y : E) + t • e) := by
+  have hS := nullMeasurableSet_steinerSymmetrization e he hs
+  have hL := measurePreserving_orthogonalLineEquiv e he
+  have hLe := (orthogonalLineEquiv e he).toHomeomorph.measurableEmbedding
+  have hi : Integrable ((steinerSymmetrization e he s).indicator f) volume :=
+    hf.integrable_indicator₀ hS
+  rw [← integral_indicator₀ hS, ← hL.integral_comp hLe]
+  exact (integral_prod _ (hL.integrable_comp_of_integrable hi)).trans
+    (integral_congr_ae
+      (ae_integral_indicator_steinerSymmetrization_eq_intervalIntegral e he hsec f))
 
 end TauCeti

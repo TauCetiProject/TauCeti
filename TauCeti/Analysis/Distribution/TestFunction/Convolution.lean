@@ -108,40 +108,28 @@ theorem fderiv_mollify (φ : 𝓓(Ω, F)) (μ : Measure E) [μ.IsAddHaarMeasure]
     fderiv ℝ (mollify φ μ ρ h : E → F) =
       ρ.normed μ ⋆[lsmul ℝ ℝ, μ] fderiv ℝ (φ : E → F) := by
   ext x : 1
-  have hpre : (lsmul ℝ ℝ : ℝ →L[ℝ] F →L[ℝ] F).precompR E = lsmul ℝ ℝ := by ext; rfl
+  have hpre : (lsmul ℝ ℝ : ℝ →L[ℝ] F →L[ℝ] F).precompR E = lsmul ℝ ℝ := by ext; simp
   rw [coe_mollify, (φ.hasCompactSupport.hasFDerivAt_convolution_right (lsmul ℝ ℝ)
     (ρ.continuous_normed (μ := μ)).locallyIntegrable (φ.contDiff.of_le (by simp)) x).fderiv, hpre]
-
-/-- As functions, the divergence of a mollified test vector field is the normalized-bump
-convolution of its divergence. -/
-theorem coe_divergenceCLM_mollify (φ : 𝓓(Ω, E)) (μ : Measure E) [μ.IsAddHaarMeasure]
-    (ρ : ContDiffBump (0 : E))
-    (h : closedBall (0 : E) ρ.rOut + tsupport φ ⊆ (Ω : Set E)) :
-    (divergenceCLM (mollify φ μ ρ h) : E → ℝ) =
-      ρ.normed μ ⋆[lsmul ℝ ℝ, μ] (divergenceCLM φ : E → ℝ) := by
-  ext x
-  have hφ1 : ContDiff ℝ 1 (φ : E → E) := φ.contDiff.of_le (by simp)
-  have hex := (ρ.hasCompactSupport_normed (μ := μ)).convolutionExists_left_of_continuous_right
-    (lsmul ℝ ℝ) (ρ.integrable_normed (μ := μ)).locallyIntegrable
-    (hφ1.continuous_fderiv one_ne_zero) x
-  have hdiv : (divergenceCLM φ : E → ℝ) =
-      fun y => TauCeti.traceCLM ℝ E (fderiv ℝ (φ : E → E) y) := by
-    ext y
-    rw [divergenceCLM_apply, ← TauCeti.traceCLM_apply]
-  rw [divergenceCLM_apply, ← TauCeti.traceCLM_apply, fderiv_mollify, hdiv]
-  exact ((TauCeti.traceCLM ℝ E).convolution_lsmul_comp_comm hex).symm
 
 /-- Divergence commutes with mollification of test vector fields. -/
 theorem divergenceCLM_mollify (φ : 𝓓(Ω, E)) (μ : Measure E) [μ.IsAddHaarMeasure]
     (ρ : ContDiffBump (0 : E))
     (h : closedBall (0 : E) ρ.rOut + tsupport φ ⊆ (Ω : Set E))
-    (hdiv : closedBall (0 : E) ρ.rOut + tsupport (divergenceCLM φ) ⊆ (Ω : Set E) := by
-      exact (Set.add_subset_add_left (closure_minimal
-        (Function.support_subset_iff'.2 fun x hx => by simp [fderiv_of_notMem_tsupport ℝ hx])
-        (isClosed_tsupport _))).trans h) :
+    (hdiv : closedBall (0 : E) ρ.rOut + tsupport (divergenceCLM φ) ⊆ (Ω : Set E) :=
+      (Set.add_subset_add_left (tsupport_divergenceCLM_subset φ)).trans h) :
     divergenceCLM (mollify φ μ ρ h) = mollify (divergenceCLM φ) μ ρ hdiv := by
   ext x
-  exact congrFun (coe_divergenceCLM_mollify φ μ ρ h) x
+  have hφ1 : ContDiff ℝ 1 (φ : E → E) := φ.contDiff.of_le (by simp)
+  have hex := (ρ.hasCompactSupport_normed (μ := μ)).convolutionExists_left_of_continuous_right
+    (lsmul ℝ ℝ) (ρ.integrable_normed (μ := μ)).locallyIntegrable
+    (hφ1.continuous_fderiv one_ne_zero) x
+  have hdiv_coe : (divergenceCLM φ : E → ℝ) =
+      fun y => TauCeti.traceCLM ℝ E (fderiv ℝ (φ : E → E) y) := by
+    ext y
+    rw [divergenceCLM_apply, ← TauCeti.traceCLM_apply]
+  rw [mollify_apply, divergenceCLM_apply, ← TauCeti.traceCLM_apply, fderiv_mollify, hdiv_coe]
+  exact ((TauCeti.traceCLM ℝ E).convolution_lsmul_comp_comm hex).symm
 
 variable [CompleteSpace F]
 

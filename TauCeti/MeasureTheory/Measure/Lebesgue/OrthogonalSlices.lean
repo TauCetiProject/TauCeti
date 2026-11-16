@@ -227,14 +227,9 @@ set form an integrable function on the orthogonal subspace. -/
 theorem integrable_measureReal_lineSection (e : E) (he : ‖e‖ = 1) {s : Set E}
     (hs : NullMeasurableSet s volume) (hfinite : volume s ≠ ∞) :
     Integrable (fun y : (ℝ ∙ e)ᗮ => volume.real {t : ℝ | (y : E) + t • e ∈ s}) volume := by
-  refine ⟨(ENNReal.measurable_toReal.comp_aemeasurable
-    (aemeasurable_volume_lineSection e he hs)).aestronglyMeasurable, ?_⟩
-  have hae : (fun y : (ℝ ∙ e)ᗮ => ‖volume.real {t : ℝ | (y : E) + t • e ∈ s}‖ₑ) =ᵐ[volume]
-      fun y => volume {t : ℝ | (y : E) + t • e ∈ s} := by
-    filter_upwards [ae_volume_lineSection_lt_top e he hs hfinite] with y hy
-    rw [Real.eNorm_of_nonneg measureReal_nonneg, ofReal_measureReal hy.ne]
-  rw [HasFiniteIntegral, lintegral_congr_ae hae, ← volume_eq_lintegral_volume_lineSection e he hs]
-  exact hfinite.lt_top
+  simp_rw [measureReal_def]
+  exact integrable_toReal_of_lintegral_ne_top (aemeasurable_volume_lineSection e he hs)
+    (by rwa [← volume_eq_lintegral_volume_lineSection e he hs])
 
 /-- A Lebesgue-measurable set is null exactly when almost every parallel line section is null. -/
 theorem volume_eq_zero_iff_ae_volume_lineSection_eq_zero (e : E) (he : ‖e‖ = 1) {s : Set E}

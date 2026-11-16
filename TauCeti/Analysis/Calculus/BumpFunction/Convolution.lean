@@ -23,8 +23,10 @@ upgrades the pointwise convergence of Mathlib's
 `ContDiffBump.convolution_tendsto_right_of_continuous` to uniform convergence, and allows
 simultaneous approximation of the derivatives of a compactly supported smooth function.
 Normalized-bump convolution also preserves a uniform bound on a function
-(`ContDiffBump.norm_normed_convolution_le`) and its Lipschitz constant, since it averages the
-differences of translates (`ContDiffBump.dist_normed_convolution_le_of_dist_sub_le`).
+(`ContDiffBump.norm_normed_convolution_le`), a uniform `L²`-product bound on a pair of functions
+(`ContDiffBump.norm_normed_convolution_sq_add_norm_normed_convolution_sq_le`), and its Lipschitz
+constant, since it averages the differences of translates
+(`ContDiffBump.dist_normed_convolution_le_of_dist_sub_le`).
 
 Integrals against the mollifications of a uniformly continuous function converge, along any filter
 of bump indices with radii tending to zero, to the integral against the function
@@ -329,6 +331,86 @@ theorem ContDiffBump.norm_normed_convolution_le {G F : Type*} [NormedAddCommGrou
   simpa only [convolution_def, lsmul_apply, Real.norm_of_nonneg (ρ.nonneg_normed _),
     ρ.integral_normed, one_mul] using
     TauCeti.norm_integral_kernel_smul_sub_le (μ := μ) ρ.integrable_normed hM x
+
+/-- Convolution with a nonnegative normalized bump preserves a uniform `L²`-product bound
+`‖f₁ y‖² + ‖f₂ y‖² ≤ M`. -/
+theorem ContDiffBump.norm_normed_convolution_sq_add_norm_normed_convolution_sq_le
+    {G F₁ F₂ : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimensional ℝ G]
+    [MeasurableSpace G] [BorelSpace G] {μ : Measure G} [μ.IsAddHaarMeasure]
+    [NormedAddCommGroup F₁] [NormedSpace ℝ F₁] [NormedAddCommGroup F₂] [NormedSpace ℝ F₂]
+    {f₁ : G → F₁} {f₂ : G → F₂} (ρ : ContDiffBump (0 : G)) {M : ℝ}
+    (hM : ∀ y, ‖f₁ y‖ ^ 2 + ‖f₂ y‖ ^ 2 ≤ M) (x : G) :
+    ‖(ρ.normed μ ⋆[lsmul ℝ ℝ, μ] f₁) x‖ ^ 2 + ‖(ρ.normed μ ⋆[lsmul ℝ ℝ, μ] f₂) x‖ ^ 2 ≤ M := by
+  have hM0 : 0 ≤ M := (add_nonneg (sq_nonneg _) (sq_nonneg _)).trans (hM x)
+  set A := ‖(ρ.normed μ ⋆[lsmul ℝ ℝ, μ] f₁) x‖
+  set B := ‖(ρ.normed μ ⋆[lsmul ℝ ℝ, μ] f₂) x‖
+  have hA0 : 0 ≤ A := norm_nonneg _
+  have hB0 : 0 ≤ B := norm_nonneg _
+  have hf₁ (y : G) : ‖f₁ y‖ ≤ √M :=
+    Real.le_sqrt_of_sq_le (by linarith [hM y, sq_nonneg ‖f₂ y‖])
+  have hf₂ (y : G) : ‖f₂ y‖ ≤ √M :=
+    Real.le_sqrt_of_sq_le (by linarith [hM y, sq_nonneg ‖f₁ y‖])
+  by_cases h1 : Integrable (fun t => ρ.normed μ t • f₁ (x - t)) μ
+  · by_cases h2 : Integrable (fun t => ρ.normed μ t • f₂ (x - t)) μ
+    · set R := √(A ^ 2 + B ^ 2)
+      have hRsq : R ^ 2 = A ^ 2 + B ^ 2 := Real.sq_sqrt (by positivity)
+      rcases eq_or_lt_of_le (Real.sqrt_nonneg (A ^ 2 + B ^ 2)) with hR0 | hRpos
+      · nlinarith [hRsq, hR0]
+      set c := A / R
+      set s := B / R
+      have hc0 : 0 ≤ c := div_nonneg hA0 hRpos.le
+      have hs0 : 0 ≤ s := div_nonneg hB0 hRpos.le
+      have hcs : c ^ 2 + s ^ 2 = 1 := by
+        simp only [c, s, div_pow, ← add_div, ← hRsq]
+        exact div_self (pow_ne_zero 2 hRpos.ne')
+      have hcAsB : c * A + s * B = R := by
+        have h : c * A + s * B = (A ^ 2 + B ^ 2) / R := by simp only [c, s]; ring
+        rw [h, ← hRsq, sq, mul_div_cancel_right₀ R hRpos.ne']
+      have h1n : Integrable (fun t => ρ.normed μ t * ‖f₁ (x - t)‖) μ := by
+        simpa only [norm_smul, Real.norm_of_nonneg (ρ.nonneg_normed _)] using h1.norm
+      have h2n : Integrable (fun t => ρ.normed μ t * ‖f₂ (x - t)‖) μ := by
+        simpa only [norm_smul, Real.norm_of_nonneg (ρ.nonneg_normed _)] using h2.norm
+      have hA_le : A ≤ ∫ t, ρ.normed μ t * ‖f₁ (x - t)‖ ∂μ := by
+        simpa only [A, convolution_def, lsmul_apply, norm_smul,
+          Real.norm_of_nonneg (ρ.nonneg_normed _)] using
+          norm_integral_le_integral_norm (fun t => ρ.normed μ t • f₁ (x - t))
+      have hB_le : B ≤ ∫ t, ρ.normed μ t * ‖f₂ (x - t)‖ ∂μ := by
+        simpa only [B, convolution_def, lsmul_apply, norm_smul,
+          Real.norm_of_nonneg (ρ.nonneg_normed _)] using
+          norm_integral_le_integral_norm (fun t => ρ.normed μ t • f₂ (x - t))
+      have hR_le : R ≤ √M := calc
+        R = c * A + s * B := hcAsB.symm
+        _ ≤ c * (∫ t, ρ.normed μ t * ‖f₁ (x - t)‖ ∂μ) +
+              s * (∫ t, ρ.normed μ t * ‖f₂ (x - t)‖ ∂μ) :=
+            add_le_add (mul_le_mul_of_nonneg_left hA_le hc0)
+              (mul_le_mul_of_nonneg_left hB_le hs0)
+        _ = ∫ t, ρ.normed μ t * (c * ‖f₁ (x - t)‖ + s * ‖f₂ (x - t)‖) ∂μ := by
+            rw [← integral_const_mul, ← integral_const_mul,
+              ← integral_add (h1n.const_mul c) (h2n.const_mul s)]
+            exact integral_congr_ae (.of_forall fun t => by ring)
+        _ ≤ ∫ t, ρ.normed μ t * √M ∂μ := by
+            refine integral_mono (((h1n.const_mul c).add (h2n.const_mul s)).congr
+              (.of_forall fun t => by simp only [Pi.add_apply]; ring))
+              (ρ.integrable_normed.mul_const √M) fun t => ?_
+            refine mul_le_mul_of_nonneg_left (Real.le_sqrt_of_sq_le ?_) (ρ.nonneg_normed t)
+            have hcs_ineq : (c * ‖f₁ (x - t)‖ + s * ‖f₂ (x - t)‖) ^ 2 ≤
+                (c ^ 2 + s ^ 2) * (‖f₁ (x - t)‖ ^ 2 + ‖f₂ (x - t)‖ ^ 2) := by
+              nlinarith [sq_nonneg (c * ‖f₂ (x - t)‖ - s * ‖f₁ (x - t)‖)]
+            rw [hcs, one_mul] at hcs_ineq
+            exact hcs_ineq.trans (hM (x - t))
+        _ = √M := by rw [integral_mul_const, ρ.integral_normed, one_mul]
+      rw [← hRsq]
+      exact (pow_le_pow_left₀ hRpos.le hR_le 2).trans_eq (Real.sq_sqrt hM0)
+    · have hB : B = 0 := by
+        simp only [B, convolution_def, lsmul_apply, integral_undef h2, norm_zero]
+      rw [hB, zero_pow two_ne_zero, add_zero]
+      exact (pow_le_pow_left₀ hA0 (ρ.norm_normed_convolution_le hf₁ x) 2).trans_eq
+        (Real.sq_sqrt hM0)
+  · have hA : A = 0 := by
+      simp only [A, convolution_def, lsmul_apply, integral_undef h1, norm_zero]
+    rw [hA, zero_pow two_ne_zero, zero_add]
+    exact (pow_le_pow_left₀ hB0 (ρ.norm_normed_convolution_le hf₂ x) 2).trans_eq
+      (Real.sq_sqrt hM0)
 
 /-- Convolution with a nonnegative normalized bump preserves the Lipschitz constant,
 including for Banach-valued functions. -/

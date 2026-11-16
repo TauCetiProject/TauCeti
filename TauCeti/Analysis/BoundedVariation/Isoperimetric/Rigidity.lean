@@ -13,7 +13,6 @@ import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 import TauCeti.MeasureTheory.Measure.Lebesgue.BrunnMinkowski.Isoperimetric
 import TauCeti.MeasureTheory.Measure.Lebesgue.Steiner.Perimeter
 import TauCeti.MeasureTheory.Measure.Lebesgue.Steiner.Rigidity
-import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
 # Rigidity of equality in the sharp Euclidean isoperimetric inequality
@@ -44,11 +43,12 @@ Suppose `s` has finite positive volume and `P(s)^n = n^n ω_n |s|^(n - 1)` in po
 of `t ↦ t^n` forces `P(S_e s) = P(s)`
 (`MeasureTheory.NullMeasurableSet.perimeter_steinerSymmetrization_eq_of_perimeter_pow_eq`). By
 Steiner perimeter rigidity
-(`TauCeti.ae_exists_ordConnected_lineSection_of_perimeter_steinerSymmetrization_eq`), almost every
-line section of `s` in every unit direction agrees almost everywhere with an interval. Essential
-convexity (`TauCeti.exists_convex_ae_eq_of_ae_lineSection_ordConnected`) and Brunn–Minkowski
-equality rigidity (`TauCeti.perimeter_pow_eq_iff_exists_ae_eq_ball_of_ae_eq_convex`) then show that
-`s` agrees almost everywhere with an open ball of positive radius.
+(`TauCeti.ae_exists_ordConnected_lineSection_ae_eq_of_perimeter_steinerSymmetrization_eq`), almost
+every line section of `s` in every unit direction agrees almost everywhere with an interval.
+Essential convexity (`TauCeti.exists_convex_ae_eq_of_ae_lineSection_ordConnected`) and
+Brunn–Minkowski equality rigidity
+(`TauCeti.perimeter_pow_eq_iff_exists_ae_eq_ball_of_ae_eq_convex`) then show that `s` agrees almost
+everywhere with an open ball of positive radius.
 
 ## References
 
@@ -115,16 +115,6 @@ theorem perimeter_steinerSymmetrization_eq_of_perimeter_pow_eq
     (hSvol ▸ hμs) (hSvol ▸ hs0)
   rwa [hSvol, ← heq, (ENNReal.pow_right_strictMono hn).le_iff_le] at hle
 
-/-- In dimension zero, any set of nonzero measure and `ball 0 1` both equal `univ`, and
-`volume (ball 0 1) = 1`. -/
-private theorem eq_univ_and_ball_eq_univ_and_volume_ball_eq_one_of_finrank_eq_zero
-    {s : Set E} (hs0 : volume s ≠ 0) (hn : finrank ℝ E = 0) :
-    s = univ ∧ ball (0 : E) 1 = univ ∧ volume (ball (0 : E) 1) = 1 := by
-  have : Subsingleton E := Module.finrank_zero_iff.mp hn
-  have hb : (ball (0 : E) 1).Nonempty := nonempty_ball.2 one_pos
-  exact ⟨Subsingleton.eq_univ_of_nonempty (nonempty_of_measure_ne_zero hs0),
-    Subsingleton.eq_univ_of_nonempty hb, volume_eq_one_of_subsingleton hb⟩
-
 /-- **Euclidean ball rigidity in the sharp isoperimetric inequality.** Let `s` be a null-measurable
 subset of a finite-dimensional real inner product space `E` of dimension `n` with finite positive
 volume. Then `P(s)^n = n^n ω_n |s|^(n - 1)` if and only if `s` agrees almost everywhere with an
@@ -136,14 +126,16 @@ theorem perimeter_pow_eq_iff_exists_ae_eq_ball
           volume s ^ (finrank ℝ E - 1) ↔
       ∃ c : E, ∃ r : ℝ, 0 < r ∧ s =ᵐ[volume] ball c r := by
   rcases eq_or_ne (finrank ℝ E) 0 with hn | hn
-  · obtain ⟨hsu, hbu, hvol⟩ :=
-      eq_univ_and_ball_eq_univ_and_volume_ball_eq_one_of_finrank_eq_zero hs0 hn
-    exact iff_of_true (by simp [hn, hvol]) ⟨0, 1, one_pos, by rw [hsu, hbu]⟩
+  · have : Subsingleton E := Module.finrank_zero_iff.mp hn
+    have hb : (ball (0 : E) 1).Nonempty := nonempty_ball.2 one_pos
+    exact iff_of_true (by simp [hn, volume_eq_one_of_subsingleton hb])
+      ⟨0, 1, one_pos, by rw [Subsingleton.eq_univ_of_nonempty (nonempty_of_measure_ne_zero hs0),
+        Subsingleton.eq_univ_of_nonempty hb]⟩
   refine ⟨fun heq => ?_, ?_⟩
   · have hPfin := perimeter_ne_top_of_perimeter_pow_eq hn hμs heq
     have hsec (e : E) (he : ‖e‖ = 1) :=
-      ae_exists_ordConnected_lineSection_of_perimeter_steinerSymmetrization_eq e he hs hμs hPfin
-        (hs.perimeter_steinerSymmetrization_eq_of_perimeter_pow_eq hμs e he heq)
+      ae_exists_ordConnected_lineSection_ae_eq_of_perimeter_steinerSymmetrization_eq e he hs hμs
+        hPfin (hs.perimeter_steinerSymmetrization_eq_of_perimeter_pow_eq hμs e he heq)
     exact (hs.perimeter_pow_eq_iff_exists_ae_eq_ball_of_ae_lineSection_ordConnected hn
       (pos_iff_ne_zero.2 hs0) hμs hsec).mp heq
   · rintro ⟨c, r, hr, hsr⟩
@@ -175,37 +167,28 @@ theorem ofReal_mul_volume_real_rpow_mul_eq_perimeter_iff
     ENNReal.ofReal (finrank ℝ E * volume.real (ball (0 : E) 1) ^ (finrank ℝ E : ℝ)⁻¹ *
         volume.real s ^ (1 - (finrank ℝ E : ℝ)⁻¹)) = perimeter volume ⊤ s ↔
       ∃ c : E, ∃ r : ℝ, 0 < r ∧ s =ᵐ[volume] ball c r := by
+  rw [← hs.perimeter_pow_eq_iff_exists_ae_eq_ball hμs hs0]
   rcases eq_or_ne (finrank ℝ E) 0 with hn | hn
-  · obtain ⟨hsu, hbu, -⟩ :=
-      eq_univ_and_ball_eq_univ_and_volume_ball_eq_one_of_finrank_eq_zero hs0 hn
-    exact iff_of_true (by simp [hn, hsu]) ⟨0, 1, one_pos, by rw [hsu, hbu]⟩
-  rw [← hs.perimeter_pow_eq_iff_exists_ae_eq_ball hμs hs0,
-    finrank_pow_mul_volume_ball_mul_volume_pow_eq_ofReal hμs hn,
+  · have : Subsingleton E := Module.finrank_zero_iff.mp hn
+    have hsu : s = univ := Subsingleton.eq_univ_of_nonempty (nonempty_of_measure_ne_zero hs0)
+    have hb : (ball (0 : E) 1).Nonempty := nonempty_ball.2 one_pos
+    simp [hn, hsu, volume_eq_one_of_subsingleton hb]
+  rw [finrank_pow_mul_volume_ball_mul_volume_pow_eq_ofReal hμs hn,
     ENNReal.ofReal_pow (by positivity), eq_comm,
     (ENNReal.pow_right_strictMono hn).injective.eq_iff]
 
 /-- **Euclidean ball rigidity, real-valued fractional-power form.** For a null-measurable set `s`
-of finite positive volume, `n ω_n ^ (1 / n) |s| ^ (1 - 1 / n) = P(s).toReal` if and only if `s`
-agrees almost everywhere with an open ball of positive radius. No separate finiteness hypothesis on
-`P(s)` is needed: in positive dimension the left-hand side is strictly positive whereas
-`⊤.toReal = 0`. -/
+of finite positive volume and finite perimeter, `n ω_n ^ (1 / n) |s| ^ (1 - 1 / n) = P(s).toReal`
+if and only if `s` agrees almost everywhere with an open ball of positive radius. -/
 theorem mul_volume_real_rpow_mul_eq_perimeter_toReal_iff
-    {s : Set E} (hs : NullMeasurableSet s volume) (hμs : volume s ≠ ⊤) (hs0 : volume s ≠ 0) :
+    {s : Set E} (hs : NullMeasurableSet s volume) (hμs : volume s ≠ ⊤) (hs0 : volume s ≠ 0)
+    (hP : perimeter volume ⊤ s ≠ ⊤) :
     finrank ℝ E * volume.real (ball (0 : E) 1) ^ (finrank ℝ E : ℝ)⁻¹ *
         volume.real s ^ (1 - (finrank ℝ E : ℝ)⁻¹) = (perimeter volume ⊤ s).toReal ↔
       ∃ c : E, ∃ r : ℝ, 0 < r ∧ s =ᵐ[volume] ball c r := by
-  rcases eq_or_ne (finrank ℝ E) 0 with hn | hn
-  · obtain ⟨hsu, hbu, -⟩ :=
-      eq_univ_and_ball_eq_univ_and_volume_ball_eq_one_of_finrank_eq_zero hs0 hn
-    exact iff_of_true (by simp [hn, hsu]) ⟨0, 1, one_pos, by rw [hsu, hbu]⟩
   rw [← hs.ofReal_mul_volume_real_rpow_mul_eq_perimeter_iff hμs hs0]
   refine ⟨fun h => ?_, fun h => ?_⟩
-  · have : Nontrivial E := Module.nontrivial_of_finrank_pos (Nat.pos_of_ne_zero hn)
-    have hball : 0 < volume.real (ball (0 : E) 1) := measureReal_ball_pos volume (0 : E) one_pos
-    have hvol : 0 < volume.real s := ENNReal.toReal_pos hs0 hμs
-    have hpos : 0 < (perimeter volume ⊤ s).toReal := h ▸ by positivity
-    have hPfin : perimeter volume ⊤ s ≠ ⊤ := fun htop => by simp [htop] at hpos
-    rw [h, ENNReal.ofReal_toReal hPfin]
+  · rw [h, ENNReal.ofReal_toReal hP]
   · rw [← h, ENNReal.toReal_ofReal (by positivity)]
 
 end MeasureTheory.NullMeasurableSet
