@@ -227,7 +227,7 @@ theorem exists_retract_basis_kaehlerDifferential (R : Type u) (A : Type v) [Comm
     TensorProduct.prodRight A B B K Ω[A⁄R] ≪≫ₗ
       LinearEquiv.prodComm B (B ⊗[A] K) (B ⊗[A] Ω[A⁄R]) ≪≫ₗ
       LinearEquiv.prodCongr (LinearEquiv.refl B (B ⊗[A] Ω[A⁄R]))
-        (TauCeti.SymmetricAlgebra.kaehlerDifferentialEquiv A K).symm ≪≫ₗ
+        (SymmetricAlgebra.kaehlerDifferentialEquiv A K).symm ≪≫ₗ
       eB.symm
   refine ⟨n, B, inferInstance, inferInstance, inferInstance,
     IsScalarTower.toAlgHom R A B,

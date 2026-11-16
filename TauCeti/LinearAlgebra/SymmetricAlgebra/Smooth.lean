@@ -28,7 +28,7 @@ free module `F`, making `SymmetricAlgebra R M` an `R`-algebra retract of the pol
 presented (`Module.finitePresentation_of_projective`), giving finite presentation of
 `SymmetricAlgebra R M` (`TauCeti.SymmetricAlgebra.instFinitePresentation`).
 
-Necessity uses `TauCeti.SymmetricAlgebra.kaehlerDifferentialEquiv` (`Ω[Sym M ⁄ R] ≃ Sym M ⊗[R] M`)
+Necessity uses `SymmetricAlgebra.kaehlerDifferentialEquiv` (`Ω[Sym M ⁄ R] ≃ Sym M ⊗[R] M`)
 together with base change along the augmentation `SymmetricAlgebra.algebraMapInv : Sym M →ₐ[R] R` to
 descend projectivity (`Module.Projective.tensorProduct`) and finiteness
 (`Module.Finite.base_change`) of `Ω[Sym M ⁄ R]` over `Sym M` back to `M` over `R`.
@@ -86,7 +86,8 @@ private noncomputable def augKaehlerEquiv :
     (_root_.SymmetricAlgebra.algebraMapInv (R := R) (M := M)).toRingHom.toAlgebra
   haveI : IsScalarTower R (SymmetricAlgebra R M) R :=
     .of_algebraMap_eq fun r ↦ (_root_.SymmetricAlgebra.algebraMap_leftInverse M r).symm
-  LinearEquiv.baseChange (SymmetricAlgebra R M) R _ _ (kaehlerDifferentialEquiv R M) ≪≫ₗ
+  LinearEquiv.baseChange (SymmetricAlgebra R M) R _ _
+      (_root_.SymmetricAlgebra.kaehlerDifferentialEquiv R M) ≪≫ₗ
     TensorProduct.AlgebraTensorModule.cancelBaseChange R (SymmetricAlgebra R M) R R M ≪≫ₗ
     TensorProduct.lid R M
 

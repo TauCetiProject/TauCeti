@@ -16,9 +16,9 @@ import Mathlib.RingTheory.TensorProduct.Free
 
 For any commutative ring `R` and `R`-module `M`, the module of Kähler differentials of
 `SymmetricAlgebra R M` over `R` is canonically isomorphic as a `SymmetricAlgebra R M`-module to
-`SymmetricAlgebra R M ⊗[R] M` (`TauCeti.SymmetricAlgebra.kaehlerDifferentialEquiv`): the
-differential `d(ι m)` of a generator corresponds to `1 ⊗ₜ m`. No freeness, projectivity, or
-finiteness assumption on `M` is required.
+`SymmetricAlgebra R M ⊗[R] M` (`SymmetricAlgebra.kaehlerDifferentialEquiv`): the differential
+`d(ι m)` of a generator corresponds to `1 ⊗ₜ m`. No freeness, projectivity, or finiteness assumption
+on `M` is required.
 
 Both directions come from the two universal properties:
 * the derivation `SymmetricAlgebra.mkDerivation (TensorProduct.mk R _ M 1)` sends `ι m` to
@@ -33,12 +33,12 @@ When `M` carries an `R`-basis `b`, base change transports `b` along this equival
 
 ## Main definitions and results
 
-* `TauCeti.SymmetricAlgebra.kaehlerDifferentialEquiv`: the `SymmetricAlgebra R M`-linear
-  equivalence `Ω[SymmetricAlgebra R M ⁄ R] ≃ₗ[SymmetricAlgebra R M] SymmetricAlgebra R M ⊗[R] M`.
-* `TauCeti.SymmetricAlgebra.kaehlerDifferentialEquiv_D_ι` and
-  `TauCeti.SymmetricAlgebra.kaehlerDifferentialEquiv_symm_tmul`: action on differentials of
-  generators and on pure tensors.
-* `TauCeti.SymmetricAlgebra.kaehlerDifferentialEquiv_mapSemilinear_map`: naturality with respect to
+* `SymmetricAlgebra.kaehlerDifferentialEquiv`: the `SymmetricAlgebra R M`-linear equivalence
+  `Ω[SymmetricAlgebra R M ⁄ R] ≃ₗ[SymmetricAlgebra R M] SymmetricAlgebra R M ⊗[R] M`.
+* `SymmetricAlgebra.kaehlerDifferentialEquiv_D_ι` and
+  `SymmetricAlgebra.kaehlerDifferentialEquiv_symm_tmul`: action on differentials of generators and
+  on pure tensors.
+* `SymmetricAlgebra.kaehlerDifferentialEquiv_mapSemilinear_map`: naturality with respect to
   `SymmetricAlgebra.map` and `KaehlerDifferential.mapSemilinear`.
 * `Module.Basis.kaehlerDifferentialSymmetricAlgebra`: the basis of `Ω[SymmetricAlgebra R M ⁄ R]`
   induced by a basis of `M`.
@@ -52,7 +52,7 @@ open KaehlerDifferential TensorProduct
 
 universe u v w
 
-namespace TauCeti.SymmetricAlgebra
+namespace SymmetricAlgebra
 
 variable (R : Type u) (M : Type v) [CommRing R] [AddCommGroup M] [Module R M]
 
@@ -61,10 +61,8 @@ base change `SymmetricAlgebra R M ⊗[R] M`, identifying `d(ι m)` with `1 ⊗�
 def kaehlerDifferentialEquiv :
     Ω[SymmetricAlgebra R M ⁄ R] ≃ₗ[SymmetricAlgebra R M] SymmetricAlgebra R M ⊗[R] M :=
   LinearEquiv.ofLinearMap
-    (_root_.SymmetricAlgebra.mkDerivation
-      (TensorProduct.mk R (SymmetricAlgebra R M) M 1)).liftKaehlerDifferential
-    (((D R (SymmetricAlgebra R M)).toLinearMap ∘ₗ
-      _root_.SymmetricAlgebra.ι R M).liftBaseChange (SymmetricAlgebra R M))
+    (mkDerivation (TensorProduct.mk R (SymmetricAlgebra R M) M 1)).liftKaehlerDifferential
+    (((D R (SymmetricAlgebra R M)).toLinearMap ∘ₗ ι R M).liftBaseChange (SymmetricAlgebra R M))
     (LinearMap.ext fun x ↦ by
       -- Check `toFun ∘ invFun = id` on pure tensors `s ⊗ₜ m`.
       refine TensorProduct.inductionOn x (fun s m ↦ ?_)
@@ -72,13 +70,13 @@ def kaehlerDifferentialEquiv :
       simp [TensorProduct.smul_tmul'])
     (Derivation.liftKaehlerDifferential_unique _ _ <|
       -- Check `invFun ∘ toFun = id` on `Ω` by checking the induced derivations on generators `ι m`.
-      _root_.SymmetricAlgebra.derivation_ext fun m ↦ by simp)
+      derivation_ext fun m ↦ by simp)
 
 /-- Composing `kaehlerDifferentialEquiv` with the universal derivation `D` recovers
 `SymmetricAlgebra.mkDerivation (1 ⊗ₜ ·)`. -/
 theorem kaehlerDifferentialEquiv_comp_D :
     (kaehlerDifferentialEquiv R M).toLinearMap.compDer (D R (SymmetricAlgebra R M)) =
-      _root_.SymmetricAlgebra.mkDerivation (TensorProduct.mk R (SymmetricAlgebra R M) M 1) :=
+      mkDerivation (TensorProduct.mk R (SymmetricAlgebra R M) M 1) :=
   Derivation.liftKaehlerDifferential_comp _
 
 variable {R M}
@@ -87,7 +85,7 @@ variable {R M}
 `1 ⊗ₜ m`. -/
 @[simp]
 theorem kaehlerDifferentialEquiv_D_ι (m : M) :
-    kaehlerDifferentialEquiv R M (D R (SymmetricAlgebra R M) (_root_.SymmetricAlgebra.ι R M m)) =
+    kaehlerDifferentialEquiv R M (D R (SymmetricAlgebra R M) (ι R M m)) =
       1 ⊗ₜ[R] m := by
   simp [kaehlerDifferentialEquiv]
 
@@ -95,7 +93,7 @@ theorem kaehlerDifferentialEquiv_D_ι (m : M) :
 @[simp]
 theorem kaehlerDifferentialEquiv_symm_tmul (s : SymmetricAlgebra R M) (m : M) :
     (kaehlerDifferentialEquiv R M).symm (s ⊗ₜ[R] m) =
-      s • D R (SymmetricAlgebra R M) (_root_.SymmetricAlgebra.ι R M m) := by
+      s • D R (SymmetricAlgebra R M) (ι R M m) := by
   simp [kaehlerDifferentialEquiv]
 
 /-- Naturality of `kaehlerDifferentialEquiv` with respect to an `R`-linear map `f : M →ₗ[R] N`:
@@ -104,15 +102,14 @@ theorem kaehlerDifferentialEquiv_symm_tmul (s : SymmetricAlgebra R M) (m : M) :
 @[simp]
 theorem kaehlerDifferentialEquiv_mapSemilinear_map {N : Type w} [AddCommGroup N] [Module R N]
     (f : M →ₗ[R] N) (ω : Ω[SymmetricAlgebra R M ⁄ R]) :
-    kaehlerDifferentialEquiv R N
-        (mapSemilinear (_root_.SymmetricAlgebra.map R f) ω) =
-      TensorProduct.AlgebraTensorModule.map (_root_.SymmetricAlgebra.map R f).toLinearMap f
+    kaehlerDifferentialEquiv R N (mapSemilinear (SymmetricAlgebra.map R f) ω) =
+      TensorProduct.AlgebraTensorModule.map (SymmetricAlgebra.map R f).toLinearMap f
         (kaehlerDifferentialEquiv R M ω) := by
   let : Algebra (SymmetricAlgebra R M) (SymmetricAlgebra R N) :=
-    (_root_.SymmetricAlgebra.map R f).toRingHom.toAlgebra
+    (SymmetricAlgebra.map R f).toRingHom.toAlgebra
   have : IsScalarTower R (SymmetricAlgebra R M) (SymmetricAlgebra R N) :=
-    .of_algebraMap_eq' (_root_.SymmetricAlgebra.map R f).comp_algebraMap.symm
-  have hmap : _root_.SymmetricAlgebra.map R f =
+    .of_algebraMap_eq' (SymmetricAlgebra.map R f).comp_algebraMap.symm
+  have hmap : SymmetricAlgebra.map R f =
       IsScalarTower.toAlgHom R (SymmetricAlgebra R M) (SymmetricAlgebra R N) :=
     AlgHom.ext fun _ ↦ rfl
   let lhs : Ω[SymmetricAlgebra R M ⁄ R] →ₗ[SymmetricAlgebra R M] SymmetricAlgebra R N ⊗[R] N :=
@@ -123,13 +120,13 @@ theorem kaehlerDifferentialEquiv_mapSemilinear_map {N : Type w} [AddCommGroup N]
       (Algebra.linearMap (SymmetricAlgebra R M) (SymmetricAlgebra R N)) f ∘ₗ
       (kaehlerDifferentialEquiv R M).toLinearMap
   have heq : lhs = rhs := Derivation.liftKaehlerDifferential_unique _ _ <|
-    _root_.SymmetricAlgebra.derivation_ext fun m ↦ by
+    derivation_ext fun m ↦ by
       simp [lhs, rhs, RingHom.algebraMap_toAlgebra]
   have hω := congr($heq ω)
   have hrhs (x : SymmetricAlgebra R M ⊗[R] M) :
       TensorProduct.AlgebraTensorModule.map
           (Algebra.linearMap (SymmetricAlgebra R M) (SymmetricAlgebra R N)) f x =
-        TensorProduct.AlgebraTensorModule.map (_root_.SymmetricAlgebra.map R f).toLinearMap f x :=
+        TensorProduct.AlgebraTensorModule.map (SymmetricAlgebra.map R f).toLinearMap f x :=
     TensorProduct.inductionOn x (fun _ _ ↦ by simp [RingHom.algebraMap_toAlgebra])
       (fun _ _ hx hy ↦ by rw [map_add, map_add, hx, hy])
   dsimp only [lhs, rhs, LinearMap.comp_apply, LinearMap.restrictScalars_apply,
@@ -137,7 +134,7 @@ theorem kaehlerDifferentialEquiv_mapSemilinear_map {N : Type w} [AddCommGroup N]
   conv_lhs => rw [hmap, mapSemilinear_toAlgHom_apply]
   exact hω.trans (hrhs _)
 
-end TauCeti.SymmetricAlgebra
+end SymmetricAlgebra
 
 namespace Module.Basis
 
@@ -147,8 +144,9 @@ def kaehlerDifferentialSymmetricAlgebra {R : Type u} {M : Type v} {κ : Type*} [
     [AddCommGroup M] [Module R M] (b : Module.Basis κ R M) :
     Module.Basis κ (SymmetricAlgebra R M) Ω[SymmetricAlgebra R M ⁄ R] :=
   (Algebra.TensorProduct.basis (SymmetricAlgebra R M) b).map
-    (TauCeti.SymmetricAlgebra.kaehlerDifferentialEquiv R M).symm
+    (SymmetricAlgebra.kaehlerDifferentialEquiv R M).symm
 
+/-- The `i`-th vector of `b.kaehlerDifferentialSymmetricAlgebra` is `d(ι R M (b i))`. -/
 @[simp]
 theorem kaehlerDifferentialSymmetricAlgebra_apply {R : Type u} {M : Type v} {κ : Type*}
     [CommRing R] [AddCommGroup M] [Module R M] (b : Module.Basis κ R M) (i : κ) :
