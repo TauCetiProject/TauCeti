@@ -6,19 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Padics.PadicNumbers
-public import TauCeti.RingTheory.Huber.BanachModule.ProductSeminorm
+public import TauCeti.RingTheory.Huber.BanachModule.ProductNorm
 
 /-!
 # Checks for the nonarchimedean product seminorm and completed product norm
 
 This file tests `TauCeti.Huber.BanachModule.productSeminorm`,
-`TauCeti.Huber.hasBasis_banachTensorTopology`, and
+`TauCeti.Huber.hasBasis_banachTensorTopology`,
+`TauCeti.Huber.BanachModule.CompletedTensor.productSeminorm`, and
 `TauCeti.Huber.BanachModule.CompletedTensor.productNorm` on concrete and degenerate cases:
 
 * in `L ⊗[L] L`, `2 ⊗ₜ 3 - 7 ⊗ₜ 1` has product seminorm `1`, including on `ℚ_[2]` and `ℚ_[3]`
   where `2` and `3` respectively have strictly smaller norm than `1`;
-* tensoring the zero module `Fin 0 → K` produces zero `productSeminorm` and zero `productNorm`
-  everywhere;
+* tensoring the zero module `Fin 0 → K` produces zero `productSeminorm` and zero
+  `CompletedTensor.productSeminorm` everywhere;
 * in `K ⊗[K] K`, `1 ⊗ₜ c + d ⊗ₜ 1` has product seminorm `‖c + d‖`, vanishing for `d = -c` even
   when the displayed two-term presentation has positive maximum `‖c‖`;
 * on `V ⊗̂_L W`, scalar first factors satisfy `|a ⊗ w| = ‖a‖ * ‖w‖`, and in `ℚ_[2] ⊗̂_{ℚ_[2]} ℚ_[2]`
@@ -96,25 +97,25 @@ end Algebraic
 
 section Completed
 
-/-- Tensoring the zero-dimensional space `Fin 0 → K` on the left gives `productNorm = 0` for every
-completed tensor. -/
+/-- Tensoring the zero-dimensional space `Fin 0 → K` on the left gives
+`CompletedTensor.productSeminorm = 0` for every completed tensor. -/
 example {K W : Type*} [SeminormedCommRing K] [IsBoundedSMul K K]
     [SeminormedAddCommGroup W] [Module K W] (z : CompletedTensor K (Fin 0 → K) W) :
-    CompletedTensor.productNorm K (Fin 0 → K) W z = 0 :=
+    CompletedTensor.productSeminorm K (Fin 0 → K) W z = 0 :=
   (CompletedTensor.denseRange_toCompletion K (Fin 0 → K) W).induction_on z
-    (isClosed_eq CompletedTensor.continuous_productNorm continuous_const) fun u ↦ by
+    (isClosed_eq CompletedTensor.continuous_productSeminorm continuous_const) fun u ↦ by
       rw [Subsingleton.elim u 0, map_zero, map_zero]
 
-/-- Under a non-contractive bounded scalar action on `V`, `productNormOfUniformContinuous` extends
-`productSeminorm` across `toCompletion` as an ultrametric additive group seminorm. -/
+/-- Under a non-contractive bounded scalar action on `V`, `productSeminormOfUniformContinuous`
+extends `productSeminorm` across `toCompletion` as an ultrametric additive group seminorm. -/
 example {A V W : Type*} [SeminormedCommRing A]
     [SeminormedAddCommGroup V] [Module A V]
     [SeminormedAddCommGroup W] [Module A W]
     (hV : ∃ C : NNReal, ∀ (a : A) (v : V), ‖a • v‖ ≤ C * ‖a‖ * ‖v‖) (v : V) (w : W) :
-    CompletedTensor.productNormOfUniformContinuous
+    CompletedTensor.productSeminormOfUniformContinuous
         (uniformContinuous_productSeminorm_of_norm_smul_le hV)
         (CompletedTensor.tmul A V W v w) ≤ ‖v‖ * ‖w‖ :=
-  CompletedTensor.productNormOfUniformContinuous_tmul_le _ v w
+  CompletedTensor.productSeminormOfUniformContinuous_tmul_le _ v w
 
 /-- For a scalar first factor over a complete nontrivially normed ultrametric field `L` and an
 ultrametric normed `L`-space `W`, `|a ⊗ w| = ‖a‖ * ‖w‖` on the completion. -/
@@ -128,8 +129,8 @@ example {L : Type*} [NontriviallyNormedField L] [CompleteSpace L] [IsUltrametric
     (a b : L) :
     CompletedTensor.productNorm L L L
       (CompletedTensor.tmul L L L 1 a + CompletedTensor.tmul L L L b 1) = ‖a + b‖ := by
-  rw [CompletedTensor.productNorm_eq_norm_lid, map_add, CompletedTensor.lid_tmul,
-    CompletedTensor.lid_tmul]
+  rw [CompletedTensor.productNorm_apply, CompletedTensor.productSeminorm_eq_norm_lid, map_add,
+    CompletedTensor.lid_tmul, CompletedTensor.lid_tmul]
   simp
 
 /-- In `ℚ_[2] ⊗̂_{ℚ_[2]} ℚ_[2]`, `1 ⊗ 1 + 1 ⊗ 1` has norm `1 / 2`, strictly below
@@ -140,7 +141,8 @@ example :
         CompletedTensor.tmul ℚ_[2] ℚ_[2] ℚ_[2] 1 1) = 1 / 2 ∧
       (1 / 2 : ℝ) < max ‖(1 : ℚ_[2])‖ ‖(1 : ℚ_[2])‖ := by
   refine ⟨?_, by norm_num⟩
-  rw [CompletedTensor.productNorm_eq_norm_lid, map_add, CompletedTensor.lid_tmul]
+  rw [CompletedTensor.productNorm_apply, CompletedTensor.productSeminorm_eq_norm_lid, map_add,
+    CompletedTensor.lid_tmul]
   simpa [one_add_one_eq_two] using (Padic.norm_p (p := 2))
 
 end Completed
@@ -172,14 +174,26 @@ instance : AddCommGroup ScaledQ2 where
   zsmul_succ' _ _ := ScaledQ2.ext (SubNegMonoid.zsmul_succ' _ _)
   zsmul_neg' _ _ := ScaledQ2.ext (SubNegMonoid.zsmul_neg' _ _)
 
+/-- The underlying value of `0 : ScaledQ2` is `0`. -/
+@[simp]
+theorem ScaledQ2.val_zero : (0 : ScaledQ2).val = 0 := (rfl)
+
+/-- Addition on `ScaledQ2` acts on underlying values. -/
+@[simp]
+theorem ScaledQ2.val_add (x y : ScaledQ2) : (x + y).val = x.val + y.val := (rfl)
+
+/-- Negation on `ScaledQ2` acts on underlying values. -/
+@[simp]
+theorem ScaledQ2.val_neg (x : ScaledQ2) : (-x).val = -x.val := (rfl)
+
 /-- The rescaled `2`-adic additive group norm `x ↦ (3 / 4) * ‖x.val‖` on `ScaledQ2`. -/
 def scaledQ2Norm : AddGroupNorm ScaledQ2 where
   toFun x := (3 / 4 : ℝ) * ‖x.val‖
-  map_zero' := by change (3 / 4 : ℝ) * ‖(0 : ℚ_[2])‖ = 0; simp
+  map_zero' := by simp
   add_le' x y := by
-    change (3 / 4 : ℝ) * ‖x.val + y.val‖ ≤ (3 / 4 : ℝ) * ‖x.val‖ + (3 / 4 : ℝ) * ‖y.val‖
+    rw [ScaledQ2.val_add]
     linarith [norm_add_le x.val y.val]
-  neg' x := by change (3 / 4 : ℝ) * ‖-x.val‖ = (3 / 4 : ℝ) * ‖x.val‖; rw [norm_neg]
+  neg' x := by simp
   eq_zero_of_map_eq_zero' x hx := ScaledQ2.ext <| norm_eq_zero.mp <| by linarith
 
 instance : NormedAddCommGroup ScaledQ2 :=
@@ -191,7 +205,8 @@ theorem norm_scaledQ2 (x : ScaledQ2) : ‖x‖ = (3 / 4 : ℝ) * ‖x.val‖ := 
 
 instance : IsUltrametricDist ScaledQ2 :=
   IsUltrametricDist.isUltrametricDist_of_forall_norm_add_le_max_norm fun x y ↦ by
-    simp only [norm_scaledQ2, ← mul_max_of_nonneg _ _ (by positivity : (0 : ℝ) ≤ 3 / 4)]
+    simp only [norm_scaledQ2, ScaledQ2.val_add,
+      ← mul_max_of_nonneg _ _ (by positivity : (0 : ℝ) ≤ 3 / 4)]
     exact mul_le_mul_of_nonneg_left (IsUltrametricDist.norm_add_le_max x.val y.val) (by positivity)
 
 instance : Module ℚ_[2] ScaledQ2 where
@@ -203,10 +218,13 @@ instance : Module ℚ_[2] ScaledQ2 where
   add_smul a b x := ScaledQ2.ext (add_mul a b x.val)
   zero_smul x := ScaledQ2.ext (zero_mul x.val)
 
+/-- Scalar multiplication on `ScaledQ2` multiplies the underlying value. -/
+@[simp]
+theorem ScaledQ2.val_smul (a : ℚ_[2]) (x : ScaledQ2) : (a • x).val = a * x.val := (rfl)
+
 instance : NormedSpace ℚ_[2] ScaledQ2 where
   norm_smul_le a x := by
-    change (3 / 4 : ℝ) * ‖a * x.val‖ ≤ ‖a‖ * ((3 / 4 : ℝ) * ‖x.val‖)
-    rw [norm_mul]
+    simp only [norm_scaledQ2, ScaledQ2.val_smul, norm_mul]
     linarith
 
 /-- Every nonzero vector in `ScaledQ2` has norm in `(3 / 4) * 2 ^ ℤ`, which misses `[7 / 8, 1]`,
