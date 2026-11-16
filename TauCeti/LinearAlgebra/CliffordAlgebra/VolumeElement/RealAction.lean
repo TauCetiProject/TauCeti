@@ -8,8 +8,6 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Spectrum
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Hermitian.Geometric
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Complex
--- Private: the chirality decomposition of a complex representation is used only inside a proof.
-import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Eigenspace
 
 /-!
 # The chirality operator of a real Clifford action
@@ -29,8 +27,9 @@ algebra `Cℓ(ℂ ⊗ V, Q_ℂ)`, on which the vector `1 ⊗ v` acts by `c(v)`
 for the real volume element `vol` (`CliffordAlgebra.volumeElement`) and every positively oriented
 orthonormal basis `e` that is orthogonal for `Q`. In even dimension `n = 2ℓ` the factor is `i ^ ℓ`,
 and for `Q v = -‖v‖²` this operator is an involution anticommuting with every `c(v)`: its `±1`
-eigenspaces are the half-spinor spaces `S⁺` and `S⁻` of `S`, complementary and exchanged by
-Clifford multiplication.
+eigenspaces are the half-spinor spaces `S⁺` and `S⁻` of `S`, exchanged by Clifford multiplication.
+They are complementary by `AlgHom.isCompl_eigenspace_complexVolume` applied to `ρ_ℂ`, as
+`(liftBaseChange ℂ Q ρ).isCompl_eigenspace_complexVolume o hQ`.
 
 On a complex inner product space, `ρ_ℂ` is a `*`-representation for the conjugate-linear Clifford
 involution `CliffordAlgebra.conjStar` exactly when the real generators act skew-Hermitianly
@@ -50,8 +49,6 @@ carry real Clifford actions.
   anticommutes with every `c(v)`, and
   `CliffordAlgebra.map_ι_apply_mem_eigenspace_liftBaseChange_complexVolume_neg`: `c(v)` maps the
   `μ`-eigenspace of `ρ_ℂ(Γ)` into its `-μ`-eigenspace.
-* `CliffordAlgebra.isCompl_eigenspace_liftBaseChange_complexVolume`: for `Q v = -‖v‖²`, the
-  half-spinor spaces `S⁺` and `S⁻` are complementary.
 * `AlgHom.IsGeometricClifford.isSymmetric_liftBaseChange_complexVolume`: under the geometric
   convention `ρ_ℂ(Γ)` is self-adjoint, and
   `AlgHom.IsGeometricClifford.isOrtho_eigenspace_liftBaseChange_complexVolume`: `S⁺ ⟂ S⁻`.
@@ -118,13 +115,6 @@ theorem map_ι_apply_mem_eigenspace_liftBaseChange_complexVolume_neg (hn : Even 
   rw [mem_eigenspace_iff] at hψ ⊢
   rw [← mul_apply_eq_comp, liftBaseChange_complexVolume_mul_map_ι o ρ hn, LinearMap.neg_apply,
     mul_apply_eq_comp, hψ, map_smul, neg_smul]
-
-/-- **The half-spinor decomposition of a real Clifford action**: for `Q v = -‖v‖²`, the
-eigenspaces `S⁺` and `S⁻` of `ρ_ℂ(Γ)` for the eigenvalues `1` and `-1` are complementary. -/
-theorem isCompl_eigenspace_liftBaseChange_complexVolume (hQ : ∀ v, Q v = -‖v‖ ^ 2) :
-    IsCompl ((liftBaseChange ℂ Q ρ (complexVolume Q o)).eigenspace 1)
-      ((liftBaseChange ℂ Q ρ (complexVolume Q o)).eigenspace (-1)) :=
-  (liftBaseChange ℂ Q ρ).isCompl_eigenspace_complexVolume o hQ
 
 end Module
 
