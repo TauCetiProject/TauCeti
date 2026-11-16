@@ -58,11 +58,6 @@ open scoped NNReal BoundedContinuousFunction
 variable {α : ℝ≥0} {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {a b : ℝ} {hab : a < b}
 
-private theorem sub_mem_Icc_of_eq_sub {a' b' : ℝ} (T : ℝ) (ha : a' = T - b) (hb : b' = T - a)
-    {s : ℝ} (hs : s ∈ Icc a' b') : T - s ∈ Icc a b := by
-  subst ha hb
-  constructor <;> linarith [hs.1, hs.2]
-
 namespace ParabolicC2HolderSpace
 
 /-! ### Restriction to a smaller slab -/
@@ -201,18 +196,22 @@ private def reverse (f : ParabolicC2HolderSpace α E F hab) :
       (spatialSecondFDerivL f))
     (-HolderSpace.compLipschitzL _ (slabTimeReverse T ha hb).isometry.lipschitzWith (timeDerivL f))
     (fun t x ↦ by
-      simpa using f.hasSpatialFDerivAt ⟨T - t, sub_mem_Icc_of_eq_sub T ha hb t.2⟩ x)
+      simpa [iccTimeReverse_apply] using
+        f.hasSpatialFDerivAt ⟨T - t, sub_mem_Icc_of_eq_sub T ha hb t.2⟩ x)
     (fun t x ↦ by
-      simpa using f.hasSpatialSecondFDerivAt ⟨T - t, sub_mem_Icc_of_eq_sub T ha hb t.2⟩ x)
+      simpa [iccTimeReverse_apply] using
+        f.hasSpatialSecondFDerivAt ⟨T - t, sub_mem_Icc_of_eq_sub T ha hb t.2⟩ x)
     (fun x t ↦ by
       have h := HasDerivWithinAt.scomp (t : ℝ)
         (f.hasTimeDerivWithinAt x ⟨T - t, sub_mem_Icc_of_eq_sub T ha hb t.2⟩)
         ((hasDerivWithinAt_id (t : ℝ) (Icc a' b')).const_sub T)
         (fun s hs ↦ sub_mem_Icc_of_eq_sub T ha hb hs)
       rw [neg_one_smul] at h
-      rw [HolderSpace.neg_apply, HolderSpace.compLipschitzL_apply, slabTimeReverse_slabMk]
+      rw [HolderSpace.neg_apply, HolderSpace.compLipschitzL_apply, slabTimeReverse_slabMk,
+        iccTimeReverse_apply]
       refine h.congr_of_mem (fun s hs ↦ ?_) t.2
-      simp [timeExtension_def, projIcc_of_mem (ha ▸ hb ▸ sub_lt_sub_left hab T).le hs,
+      simp [timeExtension_def, iccTimeReverse_apply,
+        projIcc_of_mem (ha ▸ hb ▸ sub_lt_sub_left hab T).le hs,
         projIcc_of_mem hab.le (sub_mem_Icc_of_eq_sub T ha hb hs)])
 
 private theorem reverse_apply (f : ParabolicC2HolderSpace α E F hab)
@@ -427,23 +426,16 @@ section TimeReversal
 
 variable {a' b' : ℝ} (T : ℝ) (ha : a' = T - b) (hb : b' = T - a)
 
-/-- The reversal `t ↦ T - t` of the time interval `[a', b']` onto `[a, b]`. -/
-private def reverseIcc (t : Icc a' b') : Icc a b :=
-  ⟨T - t, sub_mem_Icc_of_eq_sub T ha hb t.2⟩
-
-private theorem lipschitzWith_reverseIcc : LipschitzWith 1 (reverseIcc T ha hb) :=
-  LipschitzWith.of_dist_le_mul fun t s ↦ by
-    simpa [reverseIcc, Subtype.dist_eq] using (dist_sub_left T (t : ℝ) s).le
-
 /-- The time reversal `u ∘ R` of an order-one parabolic Hölder map. -/
 private def reverse (f : ParabolicC1HolderSpace α E F a b) :
     ParabolicC1HolderSpace α E F a' b' :=
   mk ((valueL f).compContinuous ⟨_, (slabTimeReverse T ha hb).continuous⟩)
     (HolderSpace.compLipschitzL _ (slabTimeReverse T ha hb).isometry.lipschitzWith
       (spatialFDerivL f))
-    (fun t x ↦ by simpa [reverseIcc] using f.hasSpatialFDerivAt (reverseIcc T ha hb t) x)
-    ((timeEHolderNorm_le_of_lipschitzWith (lipschitzWith_reverseIcc T ha hb)
-      fun x t ↦ by simp [reverseIcc]).trans_lt f.timeEHolderNorm_lt_top)
+    (fun t x ↦ by
+      simpa [iccTimeReverse_apply] using f.hasSpatialFDerivAt (iccTimeReverse T ha hb t) x)
+    ((timeEHolderNorm_le_of_lipschitzWith (iccTimeReverse T ha hb).isometry.lipschitzWith
+      fun x t ↦ by simp [iccTimeReverse_apply]).trans_lt f.timeEHolderNorm_lt_top)
 
 private theorem reverse_apply (f : ParabolicC1HolderSpace α E F a b)
     (p : slab (E := E) a' b') : reverse T ha hb f p = f (slabTimeReverse T ha hb p) := by
@@ -452,11 +444,11 @@ private theorem reverse_apply (f : ParabolicC1HolderSpace α E F a b)
 /-- Each time slice of the reversal is the reversal of the time slice. -/
 private theorem timeSliceL_reverse (f : ParabolicC1HolderSpace α E F a b) (x : E) :
     timeSliceL (reverse T ha hb f) x =
-      HolderSpace.compLipschitzL _ (lipschitzWith_reverseIcc T ha hb) (timeSliceL f x) :=
+      HolderSpace.compLipschitzL _ (iccTimeReverse T ha hb).isometry.lipschitzWith
+        (timeSliceL f x) :=
   HolderSpace.ext fun t ↦ by
     rw [timeSliceL_apply, HolderSpace.compLipschitzL_apply, timeSliceL_apply, reverse_apply,
-      slabTimeReverse_slabMk]
-    rfl
+      slabTimeReverse_slabMk, iccTimeReverse_apply]
 
 private theorem norm_reverse_le (f : ParabolicC1HolderSpace α E F a b) :
     ‖reverse T ha hb f‖ ≤ ‖f‖ := by
@@ -464,7 +456,7 @@ private theorem norm_reverse_le (f : ParabolicC1HolderSpace α E F a b) :
     (X := slab (E := E) a b) (X' := slab (E := E) a' b')
     (slabTimeReverse T ha hb).isometry.lipschitzWith
   have hT := HolderSpace.norm_compLipschitzL_le_one (α := (1 + α) / 2) (Y := F)
-    (lipschitzWith_reverseIcc T ha hb)
+    (iccTimeReverse T ha hb).isometry.lipschitzWith
   rw [norm_eq, norm_eq f]
   gcongr
   · rw [reverse, valueL_mk]

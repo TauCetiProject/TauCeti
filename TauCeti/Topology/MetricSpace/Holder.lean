@@ -41,8 +41,8 @@ and a pointwise limit of Hölder functions with a common constant is Hölder wit
 For `0 < α < 1`, a series of pieces bounded by `a 2^{-jα}` and Lipschitz with constants
 `b 2^{j(1-α)}` is `α`-Hölder; this is the dyadic summation behind the Hölder regularity of
 Littlewood–Paley series.
-Postcomposition with an isometry keeps the constant and the exponent. A function bounded by `M` is
-Hölder of exponent zero with constant `2 M`.
+Postcomposition and precomposition with an isometry keep the constant and the exponent. A
+function bounded by `M` is Hölder of exponent zero with constant `2 M`.
 
 Finally, on a metric space the infimum defining Mathlib's extended Hölder seminorm `eHolderNorm r f`
 is attained, so the seminorm is the best constant in the Hölder inequality. Equivalently, it is the
@@ -80,6 +80,7 @@ seminorm of `g`.
   preserves Hölder bounds.
 * `Isometry.holderWith_comp_iff`: postcomposition with an isometry preserves global Hölder bounds
   in both directions.
+* `HolderWith.comp_isometry`: precomposition with an isometry preserves a global Hölder bound.
 * `HolderWith.sum`: a finite sum of Hölder functions is Hölder.
 * `HolderOnWith.add`: sums of Hölder functions on a set.
 * `HolderOnWith.of_tendsto`, `HolderWith.of_tendsto`: a pointwise limit of Hölder functions with
@@ -208,6 +209,13 @@ theorem Isometry.holderWith_comp_iff {X Y Z : Type*} [PseudoEMetricSpace X]
     [PseudoEMetricSpace Y] [PseudoEMetricSpace Z] {g : Y → Z} (hg : Isometry g) {C r : ℝ≥0}
     {f : X → Y} : HolderWith C r (g ∘ f) ↔ HolderWith C r f := by
   simp only [HolderWith, Function.comp_apply, hg.edist_eq]
+
+/-- Precomposition with an isometry preserves a global Hölder bound, with the same constant and
+exponent. -/
+theorem HolderWith.comp_isometry {X X' Y : Type*} [PseudoEMetricSpace X] [PseudoEMetricSpace X']
+    [PseudoEMetricSpace Y] {C r : ℝ≥0} {g : X → Y} (hg : HolderWith C r g) {φ : X' → X}
+    (hφ : Isometry φ) : HolderWith C r (g ∘ φ) := fun x y => by
+  simpa only [Function.comp_apply, hφ.edist_eq] using hg (φ x) (φ y)
 
 /-- A function that satisfies the Hölder bound with constant `K` and exponent `r` between points of
 `s` at distance less than `δ > 0`, and whose values on `s` lie within distance `D` of each other,
