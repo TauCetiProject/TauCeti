@@ -185,7 +185,10 @@ private theorem inner_truncate_eq {x y : Lp F 2 (volume : Measure E)}
   simp only [truncate, truncateSqrt]
   rw [h₂, h₃, h₄, h₅, h₁]
   by_cases h : ξ ∈ Metric.closedBall (0 : E) R
-  · simp [cutoff, cutoffSqrt, h, inner_smul_left, inner_smul_right, map_ofNat]
+  · simp only [cutoff, cutoffSqrt, h, indicator_of_mem, one_smul, laplacianSymbol_apply,
+      sqrtNegLaplacianSymbol_apply, Complex.ofReal_neg, Complex.ofReal_mul, Complex.ofReal_ofNat,
+      Complex.ofReal_pow, neg_smul, smul_neg, inner_neg_right, inner_smul_left, inner_smul_right,
+      map_mul, map_ofNat, Complex.conj_ofReal, neg_inj]
     ring
   · simp [cutoff, cutoffSqrt, Set.indicator_of_notMem h]
 
@@ -223,14 +226,15 @@ private theorem truncatedEnergy_eq [s.OrdConnected] (hu : IsWaveSolutionOn u u' 
         (⟪truncate F R (u' τ), truncate F R (u' τ)⟫).re)
       (2 * (⟪truncateSqrt F R (u τ), truncateSqrt F R (u' τ)⟫).re +
         2 * (⟪truncate F R (u' τ), truncate F R (u'' τ)⟫).re) s τ := fun τ hτ ↦ by
-    -- The derivative of `σ ↦ re ⟪v σ, v σ⟫ = ‖v σ‖²` along a curve `v`.
+    -- The derivative of `σ ↦ re ⟪v σ, v σ⟫ = ‖v σ‖²` along a curve `v`, from Mathlib's
+    -- `HasDerivWithinAt.norm_sq` for the underlying real inner product `re ⟪·, ·⟫`.
     have hre : ∀ {v : ℝ → Lp F 2 (volume : Measure E)} {v' : Lp F 2 (volume : Measure E)},
         HasDerivWithinAt v v' s τ →
           HasDerivWithinAt (fun σ ↦ (⟪v σ, v σ⟫).re) (2 * (⟪v τ, v'⟫).re) s τ :=
       fun {v v'} hv ↦ by
-        have := Complex.reCLM.hasFDerivAt.comp_hasDerivWithinAt τ (hv.inner ℂ hv)
-        rwa [Complex.reCLM_apply, Complex.add_re, ← inner_conj_symm v', Complex.conj_re,
-          ← two_mul] at this
+        let := InnerProductSpace.complexToReal (G := Lp F 2 (volume : Measure E))
+        simpa only [← RCLike.re_to_complex, inner_self_eq_norm_sq, real_inner_eq_re_inner ℂ]
+          using hv.norm_sq
     exact (hre (((truncateSqrt F R).restrictScalars ℝ).hasFDerivAt
       |>.comp_hasDerivWithinAt τ (hu.hasDerivWithinAt τ hτ))).add
       (hre (((truncate F R).restrictScalars ℝ).hasFDerivAt
