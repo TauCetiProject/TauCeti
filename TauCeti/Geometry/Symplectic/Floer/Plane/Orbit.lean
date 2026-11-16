@@ -7,55 +7,51 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.HalfCylinder.Basic
 public import TauCeti.Geometry.Symplectic.Floer.Plane.Action
-import TauCeti.Algebra.Ring.Periodic
+public import TauCeti.Geometry.Symplectic.Floer.SignedEnd.Orbit
 
 /-!
-# The asymptotic orbit at the end of a finite-energy PSS plane
+# Exterior Floer pullback, energy, and asymptotic orbits on a PSS plane
 
-Let `𝔎` be the perturbation `TauCeti.Floer.PSSPlane.perturbation` of a PSS plane `p`, built from
-a period-one `C¹` Hamiltonian `H` on a symplectic vector space `(V, ω)`, and let `ε = ±1` be the
-sign of the end of `p` at `∞`. Let `u` be a solution of the Floer equation
-`(du - X_𝔎)^{0,1} = 0` on a part `‖w‖ > r` of the end, for uniformly tame almost complex
-structures `J(z)`, with image in a compact set and with finite energy there. Far out on the end
-`𝔎` is `H(t) dt` in end coordinates.
-For `R ∈ ℝ` write `ℓ_R(t) = u(φ(ε R + i t))` for the loop of `u` along the circle
-`‖w‖ = exp (2πR)`, where `φ(z) = exp (2π ε z)` is the end lift. This file shows that `u` breaks
-off a one-periodic orbit at its end:
+Let `p` be a PSS plane (`TauCeti.Floer.PSSPlane`) with end sign `ε = p.endSign = ±1` at `∞`, and
+let `K : ℂ → V → ℂ →L[ℝ] ℝ` be a Hamiltonian perturbation on `ℂ` with values in a symplectic
+vector space `(V, ω)` that equals `H(t) dt` beyond some longitudinal height `T₀` on the end of `p`,
+for a period-one Hamiltonian `H : ℝ → V → ℝ` (for instance `K = p.perturbation H` with `T₀ = 2`).
+Adapting `TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Orbit` to the PSS planes, this file
+develops the positive-end-chart pullback, exact exterior energy change of variables, half-cylinder
+reduction, and subsequential asymptotic orbit and action convergence at `∞`.
 
-* if `u` is `C¹`, there are a one-periodic orbit `x` of the Hamiltonian vector field,
-  `x' = X_{H_t}(x)`, and radii `R_n → ∞` such that the loops `ℓ_{R_n}` converge uniformly to `x`
-  (`SymplecticForm.exists_periodic_hasDerivAt_tendstoUniformly_pssPlanePerturbation`);
-* if `u` is `C²`, the orbit can moreover be chosen so that the actions `A_H(ℓ_R)` tend to `A_H(x)`
-  as `R → ∞`
-  (`SymplecticForm.exists_periodic_hasDerivAt_tendsto_hamiltonianAction_pssPlanePerturbation`);
-* hence, for a `C²` solution on the whole plane with finite energy, the energy is
-  `E(u) = ε A_H(x) - ∫_ℂ R_𝔎(u)`
-  (`exists_periodic_hasDerivAt_lintegral_floerEnergyDensity_pssPlanePerturbation_eq` in
-  `TauCeti.SymplecticForm`).
+**Positive end chart and exterior energy.** In the positive end chart `φ_+ = positive.endChart`
+(`TauCeti.Floer.PSSPlane.endChart`), `K` pulls back on `{s ≥ T₀}` to `H'_p(t) dt` for the
+positive-end Hamiltonian `H'_p(t, x) = ε H(ε t, x)`
+(`TauCeti.Floer.PSSPlane.positiveEndHamiltonian`). Since `φ_+` is holomorphic,
+orientation-preserving, and maps `(a, ∞) × [0, 1)` and `[a, ∞) × [0, 1)` bijectively onto
+`{‖w‖ > exp (2πa)}` and `{‖w‖ ≥ exp (2πa)}`:
 
-So `x` is the generator at which a PSS plane meets the Floer complex: an input for the positive
-plane, an output for the negative plane. The energy identity of
-`TauCeti.Geometry.Symplectic.Floer.Plane.Action` assumed convergence of the end actions; here it
-follows from finite energy and compactness.
+* `u ∘ φ_+` solves the half-cylinder Floer equation for `H'_p` at every point with `s ≥ T₀`
+  (`TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_comp_pssPlane_endChart_positive`);
+* for `a ≥ T₀`, the half-cylinder energy of `u ∘ φ_+` over `(a, ∞) × [0, 1]` (resp.
+  `[a, ∞) × [0, 1]`) equals the Floer energy of `u` over `{‖w‖ > exp (2πa)}` (resp.
+  `{‖w‖ ≥ exp (2πa)}`)
+  (`TauCeti.SymplecticForm.setLIntegral_floerEnergyDensity_comp_pssPlane_endChart_positive_Ioi_eq`,
+  `TauCeti.SymplecticForm.setLIntegral_floerEnergyDensity_comp_pssPlane_endChart_positive_Ici_eq`);
+* `TauCeti.SymplecticForm.floer_comp_pssPlane_endChart_positive` and
+  `TauCeti.SymplecticForm.floer_comp_pssPlane_endChart_positive_of_cylindrical` package the
+  resulting finite-energy Floer half-cylinder hypotheses (including cylindrical almost complex
+  structures `J(φ_p(ε s, t)) = J₀(t, u(φ_p(ε s, t)))`) for downstream convergence and decay
+  arguments.
 
-On the positive plane `ε = 1`, the end in the coordinates `(s, t)` of the end lift is a Floer
-half-cylinder `s > a`, for any `a ≥ 2`, for the cylindrical datum `H(t) dt`, with the structures
-`J ∘ φ`. Since `φ` is holomorphic, the Floer equation and the energy pull back along it
-(`TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_comp_realChart_positive`), and `φ` is
-injective on the half-strip `s > a`, `0 ≤ t < 1`, so the energy of the half-cylinder is at most
-that of `u` on `‖w‖ > exp (2πa)`
-(`TauCeti.SymplecticForm.setLIntegral_floerEnergyDensity_comp_realChart_positive_le`). The
-results on finite-energy half-cylinders of
-`TauCeti.Geometry.Symplectic.Floer.HalfCylinder.Basic` then apply. The negative plane is the
-positive plane for the reversed Hamiltonian `-H(-t)`
-(`TauCeti.Floer.PSSPlane.perturbation_negative`), and its loops are the loops of the positive plane
-traversed backwards (`TauCeti.Floer.PSSPlane.cylindricalEndLift_negative_endSign_mul`). Reversing
-time turns an orbit `y` of `-H(-t)` into the orbit `t ↦ y(-t)` of `H`, since both the time and the
-derivative change sign
-(`TauCeti.SymplecticForm.hasDerivAt_comp_neg_of_hasDerivAt_hamiltonianVectorField_neg`). It also
-negates the action of a loop
-relative to `-H(-t)` (`TauCeti.SymplecticForm.hamiltonianAction_comp_neg`), which transfers the
-convergence of the end actions.
+**Asymptotic orbits and whole-plane energy.** Applying
+`TauCeti.Geometry.Symplectic.Floer.HalfCylinder.Basic` to `u ∘ φ_+` and transferring orbits and
+actions from `H'_p` back to `H` via `TauCeti.Geometry.Symplectic.Floer.SignedEnd.Orbit` shows that
+any finite-energy solution on an exterior `{‖w‖ > r}` with precompact image and uniformly tame
+almost complex structures breaks off a `1`-periodic orbit `x` of `H` along some `R_n → ∞`
+(`exists_periodic_hasDerivAt_tendstoUniformly_pssPlane_endChart_of_floer`, and
+`exists_periodic_hasDerivAt_tendstoUniformly_pssPlanePerturbation` for `p.perturbation H`), with
+`A_H(ℓ_R) → A_H(x)` as `R → ∞` when `u` is `C²`
+(`exists_periodic_hasDerivAt_tendsto_hamiltonianAction_pssPlane_endChart_of_floer`,
+`exists_periodic_hasDerivAt_tendsto_hamiltonianAction_pssPlanePerturbation`), yielding the
+whole-plane energy identity `E(u) = ε A_H(x) - ∫_ℂ R_𝔎(u)`
+(`exists_periodic_hasDerivAt_lintegral_floerEnergyDensity_pssPlanePerturbation_eq`).
 
 ## References
 
@@ -69,313 +65,446 @@ convergence of the end actions.
 public section
 
 open Set Real Function MeasureTheory Filter
-open TauCeti.Complex (realChart realChart_apply contDiff_realChart)
-open scoped Topology
+open scoped ENNReal Topology
 
 namespace TauCeti.SymplecticForm
 
 open Floer Floer.PSSPlane
 
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
-  {ω : SymplecticForm V} {H : ℝ → V → ℝ} {u : ℝ × ℝ → V} {J : ℝ × ℝ → AlmostComplexStructure V}
-  {c M : ℝ} {K : Set V}
+section OrbitsAndPullback
 
-/-- The end lift of the positive plane in real coordinates, at a point `(s, t)`, is the image of
-`s + i t`. -/
-private theorem realChart_positive_mk (s t : ℝ) :
-    realChart positive.cylindricalEndLift (s, t) =
-      Complex.equivRealProdCLM
-        (positive.cylindricalEndLift (↑(positive.endSign * s) + ↑t * Complex.I)) := by
-  rw [realChart_apply, Complex.equivRealProdCLM_symm_apply, endSign_positive, one_mul]
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {ω : SymplecticForm V}
+  {K : ℂ → V → ℂ →L[ℝ] ℝ} {H : ℝ → V → ℝ} {T₀ : ℝ} {p : PSSPlane}
 
-/-- The half-cylinder `s > a` of the positive plane lies in the part `‖w‖ > exp (2πa)` of the
-plane. -/
-private theorem exp_lt_norm_realChart_positive {a : ℝ} {z : ℝ × ℝ} (hz : a < z.1) :
-    Real.exp (2 * π * a) <
-      ‖Complex.equivRealProdCLM.symm (realChart positive.cylindricalEndLift z)‖ := by
-  rw [realChart_apply, ContinuousLinearEquiv.symm_apply_apply, norm_cylindricalEndLift,
-    endSign_positive, one_mul, Complex.equivRealProdCLM_symm_apply_re, Real.exp_lt_exp]
-  nlinarith [Real.pi_pos]
+/-- Beyond `T₀` in `positive.endChart`, the components of `K` are differentiable in the target
+point whenever each `H t` is differentiable. -/
+private theorem differentiableAt_perturbation_endChart_positive
+    (hKH : ∀ w x, w ≠ 0 → T₀ ≤ p.endSign * (p.endCoord w).re →
+      K w x = H (p.endCoord w).im x • p.endAngularForm w)
+    (hHd : ∀ t, Differentiable ℝ (H t)) {z : ℝ × ℝ} (hz : T₀ ≤ z.1) (v : ℂ) (y : V) :
+    DifferentiableAt ℝ (fun x ↦ K (Complex.equivRealProdCLM.symm (positive.endChart z)) x v) y := by
+  set w := Complex.equivRealProdCLM.symm (positive.endChart z)
+  have hw : w ≠ 0 := positive.equivRealProdCLM_symm_endChart_ne_zero z
+  have hre : T₀ ≤ p.endSign * (p.endCoord w).re := by
+    rw [endSign_mul_re_endCoord, ← positive.endSign_mul_re_endCoord, endSign_positive, one_mul,
+      re_endCoord_endChart]
+    exact hz
+  have h : (fun x ↦ K w x v) = fun x ↦ H (p.endCoord w).im x * p.endAngularForm w v := by
+    funext x
+    rw [hKH w x hw hre, smul_apply, smul_eq_mul]
+  rw [h]
+  exact ((hHd _) y).mul_const _
 
-omit [FiniteDimensional ℝ V] in
-/-- A map differentiable on the part `‖w‖ > exp (2πa)` of the plane is differentiable at the image
-under the end lift of the positive plane of every point of the half-cylinder `s > a`. -/
-private theorem differentiableAt_realChart_positive {a : ℝ}
-    (hu : DifferentiableOn ℝ u {z | Real.exp (2 * π * a) < ‖Complex.equivRealProdCLM.symm z‖})
-    {z : ℝ × ℝ} (hz : a < z.1) :
-    DifferentiableAt ℝ u (realChart positive.cylindricalEndLift z) :=
-  hu.differentiableAt <| (isOpen_lt continuous_const (by fun_prop)).mem_nhds
-    (exp_lt_norm_realChart_positive hz)
+/-- The action of a `1`-periodic loop for `p.positiveEndHamiltonian H` is `ε` times the action for
+`H` of the loop read at `t ↦ ε t`. -/
+theorem hamiltonianAction_pssPlane_positiveEndHamiltonian (p : PSSPlane) (hH : Periodic H 1)
+    {x : ℝ → V} (hx : Periodic x 1) :
+    ω.hamiltonianAction (p.positiveEndHamiltonian H) x =
+      p.endSign * ω.hamiltonianAction H (fun t ↦ x (p.endSign * t)) := by
+  rw [p.positiveEndHamiltonian_eq_signedHamiltonian]
+  exact ω.hamiltonianAction_signedHamiltonian p.endSign_mul_endSign hH hx
 
-/-- Every part `‖w‖ > r` of the plane contains a part `‖w‖ > exp (2πa)` with `a ≥ 2`. -/
-private theorem exists_two_le_exp_lt_norm_subset (r : ℝ) :
-    ∃ a : ℝ, 2 ≤ a ∧ {z : ℝ × ℝ | Real.exp (2 * π * a) < ‖Complex.equivRealProdCLM.symm z‖} ⊆
-      {z | r < ‖Complex.equivRealProdCLM.symm z‖} := by
-  refine ⟨max 2 r, le_max_left _ _, fun z (hz : Real.exp _ < _) ↦ lt_of_le_of_lt ?_ hz⟩
-  have h₁ := Real.add_one_le_exp (2 * π * max 2 r)
-  have h₂ : 0 ≤ (2 * π - 1) * max 2 r :=
-    mul_nonneg (by linarith [Real.two_le_pi]) (by linarith [le_max_left 2 r])
-  linarith [le_max_right 2 r]
+variable [FiniteDimensional ℝ V]
 
-/-- The end lift of the positive plane is injective on the half-strip `s > a`, `0 ≤ t < 1`. -/
-private theorem injOn_realChart_positive (a : ℝ) :
-    InjOn (realChart positive.cylindricalEndLift) (Ioi a ×ˢ Ico 0 1) := by
-  intro a ha b hb hab
-  rw [realChart_apply, realChart_apply] at hab
-  have ha' : Complex.equivRealProdCLM.symm a ∈ {z : ℂ | z.im ∈ Ico 0 (0 + 1)} := by
-    simpa using ha.2
-  have hb' : Complex.equivRealProdCLM.symm b ∈ {z : ℂ | z.im ∈ Ico 0 (0 + 1)} := by
-    simpa using hb.2
-  have h := positive.injOn_cylindricalEndLift 0 ha' hb' (Complex.equivRealProdCLM.injective hab)
-  exact Complex.equivRealProdCLM.symm.injective h
+/-! ### Orbits in the positive end chart -/
 
-/-- From `s = 2` on, the pullback of the datum of the positive plane along its end lift is the
-cylindrical datum `H(t) dt`, so the Floer operators of the two data agree there. -/
-private theorem perturbedFDeriv_comp_realChart_positive (ω : SymplecticForm V)
-    (hH : Periodic H 1) (u : ℝ × ℝ → V) {z : ℝ × ℝ} (hz : 2 ≤ z.1) :
-    ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z =
+/-- At the signed time `ε t`, the Hamiltonian vector field of `p.positiveEndHamiltonian H` is `ε`
+times that of `H` at `t`. -/
+theorem hamiltonianVectorField_pssPlane_positiveEndHamiltonian_endSign_mul (p : PSSPlane)
+    (t : ℝ) :
+    ω.hamiltonianVectorField (p.positiveEndHamiltonian H (p.endSign * t)) =
+      p.endSign • ω.hamiltonianVectorField (H t) := by
+  rw [p.positiveEndHamiltonian_eq_signedHamiltonian]
+  exact ω.hamiltonianVectorField_signedHamiltonian_mul p.endSign_mul_endSign H t
+
+/-- Reading an orbit of `p.positiveEndHamiltonian H` with the signed time `t ↦ ε t` gives an orbit
+of `H`. -/
+theorem hasDerivAt_comp_pssPlane_endSign_mul (p : PSSPlane) {x : ℝ → V}
+    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (p.positiveEndHamiltonian H t) (x t)) t)
+    (t : ℝ) :
+    HasDerivAt (fun t ↦ x (p.endSign * t)) (ω.hamiltonianVectorField (H t) (x (p.endSign * t))) t :=
+  by
+  rw [p.positiveEndHamiltonian_eq_signedHamiltonian] at hx
+  exact ω.hasDerivAt_comp_mul_of_signedHamiltonian p.endSign_mul_endSign hx t
+
+/-- Reading an orbit of `H` with the signed time `t ↦ ε t` gives an orbit of
+`p.positiveEndHamiltonian H`. -/
+theorem hasDerivAt_comp_pssPlane_endSign_mul_positiveEndHamiltonian (p : PSSPlane) {y : ℝ → V}
+    (hy : ∀ t, HasDerivAt y (ω.hamiltonianVectorField (H t) (y t)) t) (t : ℝ) :
+    HasDerivAt (fun t ↦ y (p.endSign * t))
+      (ω.hamiltonianVectorField (p.positiveEndHamiltonian H t) (y (p.endSign * t))) t := by
+  rw [p.positiveEndHamiltonian_eq_signedHamiltonian]
+  exact ω.hasDerivAt_comp_mul_signedHamiltonian p.endSign_mul_endSign hy t
+
+/-! ### Floer pullback and exterior energy in `positive.endChart` -/
+
+/-- On `{s ≥ T₀}`, the perturbed derivative of `u ∘ positive.endChart` for
+`p.positiveEndHamiltonian H` agrees with the perturbed derivative for the pulled-back perturbation
+`K`. -/
+private theorem perturbedFDeriv_comp_pssPlane_endChart_positive_eq
+    (hKH : ∀ w x, w ≠ 0 → T₀ ≤ p.endSign * (p.endCoord w).re →
+      K w x = H (p.endCoord w).im x • p.endAngularForm w)
+    (hH : Periodic H 1) {u : ℝ × ℝ → V} {z : ℝ × ℝ} (hz : T₀ ≤ z.1) :
+    ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ p.positiveEndHamiltonian H w.2)
+        (u ∘ positive.endChart) z =
       ω.perturbedFDeriv
-        (perturbationPullback (realChart positive.cylindricalEndLift)
-          (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
-          (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-          stdComplexLineReal)
-        (perturbationPullback (realChart positive.cylindricalEndLift)
-          (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
-          (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-          stdComplexLineImag) u z := by
-  rw [positive.perturbationPullback_realChart_cylindricalEndLift_stdComplexLineReal H,
-    positive.perturbationPullback_realChart_cylindricalEndLift_stdComplexLineImag hH]
-  refine ContinuousLinearMap.ext fun a ↦ ?_
-  simp only [perturbedFDeriv_apply, endSign_positive, one_mul,
-    smoothTransition.one_of_one_le (by linarith : (1 : ℝ) ≤ z.1 - 1)]
+        (perturbationPullback positive.endChart
+          (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) stdComplexLineReal)
+        (perturbationPullback positive.endChart
+          (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) stdComplexLineImag)
+        (u ∘ positive.endChart) z :=
+  ω.perturbedFDeriv_congr _
+    (funext fun x ↦
+      (perturbationPullback_endChart_positive_stdComplexLineReal_of_le hKH hz x).symm)
+    (funext fun x ↦
+      (perturbationPullback_endChart_positive_stdComplexLineImag_of_le hKH hH hz x).symm)
 
-/-- **The Floer equation on the end of the positive plane.** From `s = 2` on, if `u` solves the
-Floer equation for the datum of the positive plane and an almost complex structure `J` at the image
-of `(s, t)` under the end lift `φ`, then `u ∘ φ` solves the Floer equation at `(s, t)` for the
-cylindrical datum `H(t) dt` and the same structure `J`. -/
-theorem isComplexLinearMap_perturbedFDeriv_comp_realChart_positive (ω : SymplecticForm V)
-    (hH : Periodic H 1) (hHs : ContDiff ℝ 1 (uncurry H)) {J : AlmostComplexStructure V}
-    {z : ℝ × ℝ} (hz : 2 ≤ z.1) (hu : DifferentiableAt ℝ u (realChart positive.cylindricalEndLift z))
+/-- **The Floer equation on the end of a PSS plane in `positive.endChart`.** Where `K = H(t) dt`
+beyond `T₀` on the end of `p`, if `u` solves `(du - X_K)^{0,1} = 0` at `positive.endChart z` for
+`z.1 ≥ T₀`, then `u ∘ positive.endChart` solves the half-cylinder Floer equation at `z` for
+`p.positiveEndHamiltonian H`. -/
+theorem isComplexLinearMap_perturbedFDeriv_comp_pssPlane_endChart_positive
+    (hKH : ∀ w x, w ≠ 0 → T₀ ≤ p.endSign * (p.endCoord w).re →
+      K w x = H (p.endCoord w).im x • p.endAngularForm w)
+    (hH : Periodic H 1) (hHd : ∀ t, Differentiable ℝ (H t)) {u : ℝ × ℝ → V}
+    {J : AlmostComplexStructure V} {z : ℝ × ℝ} (hz : T₀ ≤ z.1)
+    (hu : DifferentiableAt ℝ u (positive.endChart z))
     (hfloer : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
       (ω.perturbedFDeriv
-        (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-        u (realChart positive.cylindricalEndLift z) : ℝ × ℝ →ₗ[ℝ] V)) :
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I)
+        u (positive.endChart z) : ℝ × ℝ →ₗ[ℝ] V)) :
     IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
-      (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2)
-        (u ∘ realChart positive.cylindricalEndLift) z : ℝ × ℝ →ₗ[ℝ] V) := by
-  rw [perturbedFDeriv_comp_realChart_positive ω hH _ hz]
+      (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ p.positiveEndHamiltonian H w.2)
+        (u ∘ positive.endChart) z : ℝ × ℝ →ₗ[ℝ] V) := by
+  rw [perturbedFDeriv_comp_pssPlane_endChart_positive_eq hKH hH hz]
   exact ω.isComplexLinearMap_perturbedFDeriv_perturbationPullback
-    ((contDiff_realChart positive.contDiff_cylindricalEndLift).differentiable one_ne_zero z) hu
-    (differentiableAt_perturbation_target hH hHs _ _ 1)
-    (differentiableAt_perturbation_target hH hHs _ _ Complex.I)
-    (Floer.isComplexLinearMap_fderiv_realChart (positive.hasDerivAt_cylindricalEndLift _)) hfloer
+    (Ks := fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+    (Kt := fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I)
+    (positive.contDiff_endChart.differentiable one_ne_zero z) hu
+    (differentiableAt_perturbation_endChart_positive hKH hHd hz 1 _)
+    (differentiableAt_perturbation_endChart_positive hKH hHd hz Complex.I _)
+    (positive.isComplexLinearMap_fderiv_endChart z) hfloer
 
-/-- From `s = 2` on, where `u` is differentiable at the image of `(s, t)` under the end lift `φ`
-of the positive plane, the energy density of `u ∘ φ` at `(s, t)` for the cylindrical datum
-`H(t) dt` is the Jacobian of `φ` times the energy density of `u` for the datum of the plane. -/
-private theorem floerEnergyDensity_comp_realChart_positive (ω : SymplecticForm V)
-    (hH : Periodic H 1) (hHs : ContDiff ℝ 1 (uncurry H)) {z : ℝ × ℝ} (hz : 2 ≤ z.1)
-    (hu : DifferentiableAt ℝ u (realChart positive.cylindricalEndLift z)) :
-    ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2)
-        (u ∘ realChart positive.cylindricalEndLift) z =
-      (fderiv ℝ (realChart positive.cylindricalEndLift) z).det *
+/-- Where `K = H(t) dt` beyond `T₀` on the end of `p`, for `z.1 ≥ T₀` the half-cylinder energy
+density of `u ∘ positive.endChart` for `p.positiveEndHamiltonian H` is the Jacobian determinant of
+`positive.endChart` times the Floer energy density of `u` for `K` at `positive.endChart z`. -/
+theorem floerEnergyDensity_comp_pssPlane_endChart_positive
+    (hKH : ∀ w x, w ≠ 0 → T₀ ≤ p.endSign * (p.endCoord w).re →
+      K w x = H (p.endCoord w).im x • p.endAngularForm w)
+    (hH : Periodic H 1) (hHd : ∀ t, Differentiable ℝ (H t)) {u : ℝ × ℝ → V} {z : ℝ × ℝ}
+    (hz : T₀ ≤ z.1) (hu : DifferentiableAt ℝ u (positive.endChart z)) :
+    ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ p.positiveEndHamiltonian H w.2)
+        (u ∘ positive.endChart) z =
+      (fderiv ℝ positive.endChart z).det *
         ω.floerEnergyDensity
-          (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
-          (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u
-          (realChart positive.cylindricalEndLift z) := by
-  rw [floerEnergyDensity_def, perturbedFDeriv_comp_realChart_positive ω hH _ hz,
+          (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u (positive.endChart z) := by
+  rw [floerEnergyDensity_def, perturbedFDeriv_comp_pssPlane_endChart_positive_eq hKH hH hz,
     ← floerEnergyDensity_def]
   exact ω.floerEnergyDensity_perturbationPullback
-    ((contDiff_realChart positive.contDiff_cylindricalEndLift).differentiable one_ne_zero z) hu
-    (differentiableAt_perturbation_target hH hHs _ _ 1)
-    (differentiableAt_perturbation_target hH hHs _ _ Complex.I)
+    (Ks := fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+    (Kt := fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I)
+    (positive.contDiff_endChart.differentiable one_ne_zero z) hu
+    (differentiableAt_perturbation_endChart_positive hKH hHd hz 1 _)
+    (differentiableAt_perturbation_endChart_positive hKH hHd hz Complex.I _)
 
-/-- **The energy on the end of the positive plane.** For `a ≥ 2`, if `u` is differentiable on the
-part `‖w‖ > exp (2πa)` of the positive plane, then the energy of `u ∘ φ` on the half-cylinder
-`s > a`, `0 ≤ t ≤ 1`, for the cylindrical datum `H(t) dt`, is at most the energy of `u` on that
-part of the plane: the end lift `φ` is injective on the half-strip `0 ≤ t < 1` and preserves
-orientation. -/
-theorem setLIntegral_floerEnergyDensity_comp_realChart_positive_le (ω : SymplecticForm V)
-    (hH : Periodic H 1) (hHs : ContDiff ℝ 1 (uncurry H)) {a : ℝ} (ha : 2 ≤ a)
-    (hu : DifferentiableOn ℝ u
-      {z | Real.exp (2 * π * a) < ‖Complex.equivRealProdCLM.symm z‖}) :
-    ∫⁻ z in Ioi a ×ˢ Icc 0 1, ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0)
-        (fun w ↦ H w.2) (u ∘ realChart positive.cylindricalEndLift) z) ≤
-      ∫⁻ z in {z | Real.exp (2 * π * a) < ‖Complex.equivRealProdCLM.symm z‖},
+/-- For any measurable set `P ⊆ [T₀, ∞)` of longitudinal coordinates, the half-cylinder energy of
+`u ∘ positive.endChart` over `P × [0, 1]` equals the Floer energy of `u` over
+`positive.endChart '' (P × [0, 1))`. -/
+theorem setLIntegral_floerEnergyDensity_comp_pssPlane_endChart_positive_prod_Icc_eq
+    (hKH : ∀ w x, w ≠ 0 → T₀ ≤ p.endSign * (p.endCoord w).re →
+      K w x = H (p.endCoord w).im x • p.endAngularForm w)
+    (hH : Periodic H 1) (hHd : ∀ t, Differentiable ℝ (H t)) {P : Set ℝ} (hP : MeasurableSet P)
+    (hPT : ∀ s ∈ P, T₀ ≤ s) {u : ℝ × ℝ → V}
+    (hu : ∀ z ∈ P ×ˢ Ico (0 : ℝ) 1, DifferentiableAt ℝ u (positive.endChart z)) :
+    ∫⁻ z in P ×ˢ Icc 0 1, ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0)
+        (fun w ↦ p.positiveEndHamiltonian H w.2) (u ∘ positive.endChart) z) =
+      ∫⁻ z in positive.endChart '' (P ×ˢ Ico 0 1),
         ENNReal.ofReal (ω.floerEnergyDensity
-          (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
-          (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-          u z) := by
-  have hS : MeasurableSet (Ioi a ×ˢ Ico (0 : ℝ) 1) :=
-    measurableSet_Ioi.prod measurableSet_Ico
-  have hae : (Ioi a ×ˢ Icc (0 : ℝ) 1 : Set (ℝ × ℝ)) =ᵐ[volume] Ioi a ×ˢ Ico 0 1 := by
+          (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z) := by
+  have hae : (P ×ˢ Icc (0 : ℝ) 1 : Set (ℝ × ℝ)) =ᵐ[volume] P ×ˢ Ico 0 1 := by
     rw [Measure.volume_eq_prod]
     exact Measure.set_prod_ae_eq Filter.EventuallyEqSet.rfl Ico_ae_eq_Icc.symm
-  rw [setLIntegral_congr hae, ← lintegral_ofReal_image_eq_lintegral_ofReal_of_eq_abs_det_mul hS
-    (injOn_realChart_positive a)
-    (fun z _ ↦ (contDiff_realChart positive.contDiff_cylindricalEndLift).differentiable
-      one_ne_zero z) fun z hz ↦ by
-      rw [floerEnergyDensity_comp_realChart_positive ω hH hHs (ha.trans hz.1.le)
-        (differentiableAt_realChart_positive hu hz.1),
-        abs_of_pos (positive.det_fderiv_realChart_cylindricalEndLift_pos z)]]
-  refine lintegral_mono_set ?_
-  rintro _ ⟨z, hz, rfl⟩
-  exact exp_lt_norm_realChart_positive hz.1
+  rw [setLIntegral_congr hae]
+  refine (lintegral_ofReal_image_eq_lintegral_ofReal_of_eq_abs_det_mul
+    (hP.prod measurableSet_Ico)
+    ((positive.injOn_endChart_univ_prod_Ico 0).mono
+      (prod_mono (subset_univ _) (by simp only [zero_add, subset_rfl])))
+    (fun z _ ↦ positive.contDiff_endChart.differentiable one_ne_zero z) fun z hz ↦ ?_).symm
+  rw [floerEnergyDensity_comp_pssPlane_endChart_positive hKH hH hHd (hPT z.1 hz.1) (hu z hz),
+    abs_of_pos (positive.det_fderiv_endChart_pos z)]
 
-omit [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
-/-- The loops of the positive plane along its end are periodic. -/
-private theorem periodic_comp_cylindricalEndLift_positive (u : ℝ × ℝ → V) (R : ℝ) :
-    Periodic (fun t : ℝ ↦ u (Complex.equivRealProdCLM
-      (positive.cylindricalEndLift (↑(positive.endSign * R) + ↑t * Complex.I)))) 1 := fun t ↦
-  congrArg (fun w ↦ u (Complex.equivRealProdCLM w))
-    (positive.periodic_cylindricalEndLift (positive.endSign * R) t)
+/-- **Exact exterior energy on `(a, ∞)`.** Where `K = H(t) dt` beyond `T₀` on the end of `p`, for
+`a ≥ T₀` the half-cylinder energy of `u ∘ positive.endChart` over `(a, ∞) × [0, 1]` equals the
+Floer energy of `u` over `{‖w‖ > exp (2πa)}`. -/
+theorem setLIntegral_floerEnergyDensity_comp_pssPlane_endChart_positive_Ioi_eq
+    (hKH : ∀ w x, w ≠ 0 → T₀ ≤ p.endSign * (p.endCoord w).re →
+      K w x = H (p.endCoord w).im x • p.endAngularForm w)
+    (hH : Periodic H 1) (hHd : ∀ t, Differentiable ℝ (H t)) {a : ℝ} (ha : T₀ ≤ a) {u : ℝ × ℝ → V}
+    (hu : DifferentiableOn ℝ u {z | Real.exp (2 * π * a) < ‖Complex.equivRealProdCLM.symm z‖}) :
+    ∫⁻ z in Ioi a ×ˢ Icc 0 1, ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0)
+        (fun w ↦ p.positiveEndHamiltonian H w.2) (u ∘ positive.endChart) z) =
+      ∫⁻ z in {z | Real.exp (2 * π * a) < ‖Complex.equivRealProdCLM.symm z‖},
+        ENNReal.ofReal (ω.floerEnergyDensity
+          (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z) := by
+  rw [← image_endChart_positive_Ioi_prod_Ico]
+  exact setLIntegral_floerEnergyDensity_comp_pssPlane_endChart_positive_prod_Icc_eq hKH hH hHd
+    measurableSet_Ioi (fun _ hs ↦ ha.trans hs.le) fun z hz ↦
+    differentiableAt_endChart_positive hu le_rfl hz.1
 
-/-- **The half-cylinder at the end of the positive plane.** If `u` is `Cⁿ`, `n ≠ 0`, on a part
-`‖w‖ > r` of the positive plane, with image in `K`, solving the Floer equation there for structures
-`J(z)` bounded by `c` and `M`, and with finite energy there, then on some half-cylinder `s > a` the
-map `u ∘ φ` and the structures `J ∘ φ` satisfy the hypotheses of the finite-energy half-cylinder
-theorems of `TauCeti.Geometry.Symplectic.Floer.HalfCylinder.Basic` for the cylindrical datum
-`H(t) dt`. -/
-private theorem exists_halfCylinder_comp_realChart_positive (ω : SymplecticForm V)
-    {n : WithTop ℕ∞} (hn : n ≠ 0) (hH : Periodic H 1) (hHs : ContDiff ℝ 1 (uncurry H)) {r : ℝ}
-    (hu : ContDiffOn ℝ n u {z | r < ‖Complex.equivRealProdCLM.symm z‖})
-    (huK : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ → u z ∈ K)
-    (hJc : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ → ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J z v))
-    (hJM : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ → ∀ v, ‖J z v‖ ≤ M * ‖v‖)
+/-- **Exact exterior energy on `[a, ∞)`.** Where `K = H(t) dt` beyond `T₀` on the end of `p`, for
+`a ≥ T₀` the half-cylinder energy of `u ∘ positive.endChart` over `[a, ∞) × [0, 1]` equals the
+Floer energy of `u` over `{‖w‖ ≥ exp (2πa)}`. -/
+theorem setLIntegral_floerEnergyDensity_comp_pssPlane_endChart_positive_Ici_eq
+    (hKH : ∀ w x, w ≠ 0 → T₀ ≤ p.endSign * (p.endCoord w).re →
+      K w x = H (p.endCoord w).im x • p.endAngularForm w)
+    (hH : Periodic H 1) (hHd : ∀ t, Differentiable ℝ (H t)) {a : ℝ} (ha : T₀ ≤ a) {u : ℝ × ℝ → V}
+    (hu : ∀ z, Real.exp (2 * π * a) ≤ ‖Complex.equivRealProdCLM.symm z‖ →
+      DifferentiableAt ℝ u z) :
+    ∫⁻ z in Ici a ×ˢ Icc 0 1, ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0)
+        (fun w ↦ p.positiveEndHamiltonian H w.2) (u ∘ positive.endChart) z) =
+      ∫⁻ z in {z | Real.exp (2 * π * a) ≤ ‖Complex.equivRealProdCLM.symm z‖},
+        ENNReal.ofReal (ω.floerEnergyDensity
+          (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z) := by
+  rw [← image_endChart_positive_Ici_prod_Ico]
+  refine setLIntegral_floerEnergyDensity_comp_pssPlane_endChart_positive_prod_Icc_eq hKH hH hHd
+    measurableSet_Ici (fun _ hs ↦ ha.trans hs) fun z hz ↦ hu _ ?_
+  rw [norm_equivRealProdCLM_symm_endChart, endSign_positive, one_mul]
+  exact Real.exp_le_exp.2 (mul_le_mul_of_nonneg_left hz.1 Real.two_pi_pos.le)
+
+/-- When `u` has finite Floer energy on `{‖w‖ > r}` and `a ≥ T₀` satisfies `r ≤ exp (2π a)`,
+`u ∘ positive.endChart` has finite half-cylinder energy on `(a, ∞) × [0, 1]`. -/
+theorem setLIntegral_floerEnergyDensity_comp_pssPlane_endChart_positive_Ioi_ne_top
+    (hKH : ∀ w x, w ≠ 0 → T₀ ≤ p.endSign * (p.endCoord w).re →
+      K w x = H (p.endCoord w).im x • p.endAngularForm w)
+    (hH : Periodic H 1) (hHd : ∀ t, Differentiable ℝ (H t)) {r a : ℝ} (ha : T₀ ≤ a)
+    (hr : r ≤ Real.exp (2 * π * a)) {u : ℝ × ℝ → V}
+    (hu : DifferentiableOn ℝ u {z | r < ‖Complex.equivRealProdCLM.symm z‖})
+    (hE : ∫⁻ z in {z | r < ‖Complex.equivRealProdCLM.symm z‖},
+      ENNReal.ofReal (ω.floerEnergyDensity
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z) ≠ ⊤) :
+    ∫⁻ z in Ioi a ×ˢ Icc 0 1, ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0)
+      (fun w ↦ p.positiveEndHamiltonian H w.2) (u ∘ positive.endChart) z) ≠ ⊤ := by
+  have hsub : {z : ℝ × ℝ | Real.exp (2 * π * a) < ‖Complex.equivRealProdCLM.symm z‖} ⊆
+      {z | r < ‖Complex.equivRealProdCLM.symm z‖} := fun _ hz ↦ hr.trans_lt hz
+  rw [setLIntegral_floerEnergyDensity_comp_pssPlane_endChart_positive_Ioi_eq hKH hH hHd ha
+    (hu.mono hsub)]
+  exact ne_top_of_le_ne_top hE (lintegral_mono_set hsub)
+
+/-! ### Half-cylinder reduction on the exterior of a PSS plane -/
+
+/-- **Half-cylinder reduction on the end of a PSS plane.** If `K = H(t) dt` beyond `T₀` on the end
+of `p` and `u` is `C^n` (`n ≠ 0`) with image in `B` and finite Floer energy on `{‖w‖ > r}`, solving
+`(du - X_K)^{0,1} = 0` there, then for any `a ≥ T₀` with `r ≤ exp (2π a)` the map
+`u ∘ positive.endChart` is `C^n` on `(a, ∞) × ℝ`, `1`-periodic in `t`, takes values in `B`, solves
+the half-cylinder Floer equation for `p.positiveEndHamiltonian H` and `J ∘ positive.endChart`, and
+has finite half-cylinder energy over `(a, ∞) × [0, 1]`. -/
+theorem floer_comp_pssPlane_endChart_positive
+    (hKH : ∀ w x, w ≠ 0 → T₀ ≤ p.endSign * (p.endCoord w).re →
+      K w x = H (p.endCoord w).im x • p.endAngularForm w)
+    (hH : Periodic H 1) (hHd : ∀ t, Differentiable ℝ (H t)) {n : WithTop ℕ∞} (hn : n ≠ 0)
+    {r a : ℝ} (ha : T₀ ≤ a) (hr : r ≤ Real.exp (2 * π * a)) {u : ℝ × ℝ → V}
+    (hu : ContDiffOn ℝ n u {z | r < ‖Complex.equivRealProdCLM.symm z‖}) {B : Set V}
+    (huB : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ → u z ∈ B)
+    {J : ℝ × ℝ → AlmostComplexStructure V}
     (hfloer : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ →
       IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
         (ω.perturbedFDeriv
-          (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
-          (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-          u z : ℝ × ℝ →ₗ[ℝ] V))
+          (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z : ℝ × ℝ →ₗ[ℝ] V))
     (hE : ∫⁻ z in {z | r < ‖Complex.equivRealProdCLM.symm z‖},
       ENNReal.ofReal (ω.floerEnergyDensity
-        (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-        u z) ≠ ⊤) :
-    ∃ a : ℝ, ContDiffOn ℝ n (u ∘ realChart positive.cylindricalEndLift) (Ioi a ×ˢ univ) ∧
-      (∀ s, a < s → Periodic (fun t ↦ (u ∘ realChart positive.cylindricalEndLift) (s, t)) 1) ∧
-      (∀ s, a < s → ∀ t, (u ∘ realChart positive.cylindricalEndLift) (s, t) ∈ K) ∧
-      (∀ z ∈ Ioi a ×ˢ Icc 0 1, ∀ v,
-        c * ‖v‖ ^ 2 ≤ ω v ((J ∘ realChart positive.cylindricalEndLift) z v)) ∧
-      (∀ z ∈ Ioi a ×ˢ Icc 0 1, ∀ v,
-        ‖(J ∘ realChart positive.cylindricalEndLift) z v‖ ≤ M * ‖v‖) ∧
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z) ≠ ⊤) :
+    ContDiffOn ℝ n (u ∘ positive.endChart) (Ioi a ×ˢ univ) ∧
+      (∀ s, a < s → Periodic (fun t ↦ (u ∘ positive.endChart) (s, t)) 1) ∧
+      (∀ s, a < s → ∀ t, (u ∘ positive.endChart) (s, t) ∈ B) ∧
       (∀ z ∈ Ioi a ×ˢ Icc 0 1, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
-        ((J ∘ realChart positive.cylindricalEndLift) z)
-        (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2)
-          (u ∘ realChart positive.cylindricalEndLift) z : ℝ × ℝ →ₗ[ℝ] V)) ∧
+        ((J ∘ positive.endChart) z)
+        (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ p.positiveEndHamiltonian H w.2)
+          (u ∘ positive.endChart) z : ℝ × ℝ →ₗ[ℝ] V)) ∧
       ∫⁻ z in Ioi a ×ˢ Icc 0 1, ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0)
-        (fun w ↦ H w.2) (u ∘ realChart positive.cylindricalEndLift) z) ≠ ⊤ := by
-  -- Shrink the end to a part `‖w‖ > exp (2πa)` with `a ≥ 2`, where the datum is cylindrical.
-  obtain ⟨a, ha, hsub⟩ := exists_two_le_exp_lt_norm_subset r
+        (fun w ↦ p.positiveEndHamiltonian H w.2) (u ∘ positive.endChart) z) ≠ ⊤ := by
   have hmem {z : ℝ × ℝ} (hz : a < z.1) :
-      r < ‖Complex.equivRealProdCLM.symm (realChart positive.cylindricalEndLift z)‖ :=
-    hsub (exp_lt_norm_realChart_positive hz)
-  have hud := (hu.mono hsub).differentiableOn hn
-  refine ⟨a, (hu.mono hsub).comp
-      (contDiff_realChart positive.contDiff_cylindricalEndLift).contDiffOn
-      fun z hz ↦ exp_lt_norm_realChart_positive hz.1,
-    fun s _ ↦ ?_, fun s hs t ↦ huK _ (hmem hs), fun z hz ↦ hJc _ (hmem hz.1),
-    fun z hz ↦ hJM _ (hmem hz.1),
-    fun z hz ↦ ω.isComplexLinearMap_perturbedFDeriv_comp_realChart_positive hH hHs
-      (ha.trans hz.1.le) (differentiableAt_realChart_positive hud hz.1) (hfloer _ (hmem hz.1)),
-    ((ω.setLIntegral_floerEnergyDensity_comp_realChart_positive_le hH hHs ha hud).trans_lt
-      ((lintegral_mono_set hsub).trans_lt hE.lt_top)).ne⟩
-  simpa only [comp_apply, realChart_positive_mk] using periodic_comp_cylindricalEndLift_positive u s
+      r < ‖Complex.equivRealProdCLM.symm (positive.endChart z)‖ :=
+    lt_norm_equivRealProdCLM_symm_endChart_positive hr hz
+  have hud := hu.differentiableOn hn
+  exact ⟨hu.comp positive.contDiff_endChart.contDiffOn fun _ hz ↦ hmem hz.1,
+    fun s _ t ↦ by simp only [comp_apply, positive.endChart_add_one],
+    fun s hs t ↦ huB _ (hmem hs),
+    fun z hz ↦ isComplexLinearMap_perturbedFDeriv_comp_pssPlane_endChart_positive hKH hH hHd
+      (ha.trans hz.1.le) (differentiableAt_endChart_positive hud hr hz.1) (hfloer _ (hmem hz.1)),
+    setLIntegral_floerEnergyDensity_comp_pssPlane_endChart_positive_Ioi_ne_top hKH hH hHd ha hr
+      hud hE⟩
 
-/-- **The asymptotic orbit at the end of the positive plane.** This is the case `p = positive` of
-`exists_periodic_hasDerivAt_tendstoUniformly_pssPlanePerturbation`, for an arbitrary Hamiltonian;
-the negative plane is reduced to it. -/
-private theorem exists_periodic_hasDerivAt_tendstoUniformly_positive
+/-- **Cylindrical-end half-cylinder reduction on a PSS plane.** Under the hypotheses of
+`floer_comp_pssPlane_endChart_positive`, if moreover `J` is cylindrical beyond `T₀` on the end of
+`p`, `J(φ_p(ε s, t)) = J₀(t, u(φ_p(ε s, t)))`, for a `1`-periodic `C^m` family `J₀` tamed by `ω`
+on `ℝ × B`, then `u ∘ positive.endChart` and the time-reflected family `(t, x) ↦ J₀(ε t, x)`
+satisfy all hypotheses of a finite-energy cylindrical Floer half-cylinder on `(a, ∞)`. -/
+theorem floer_comp_pssPlane_endChart_positive_of_cylindrical
+    (hKH : ∀ w x, w ≠ 0 → T₀ ≤ p.endSign * (p.endCoord w).re →
+      K w x = H (p.endCoord w).im x • p.endAngularForm w)
+    (hH : Periodic H 1) (hHd : ∀ t, Differentiable ℝ (H t)) {n : WithTop ℕ∞} (hn : n ≠ 0)
+    {r a : ℝ} (ha : T₀ ≤ a) (hr : r ≤ Real.exp (2 * π * a)) {u : ℝ × ℝ → V}
+    (hu : ContDiffOn ℝ n u {z | r < ‖Complex.equivRealProdCLM.symm z‖}) {B : Set V}
+    (huB : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ → u z ∈ B)
+    {J : ℝ × ℝ → AlmostComplexStructure V}
+    (hfloer : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ →
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
+        (ω.perturbedFDeriv
+          (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z : ℝ × ℝ →ₗ[ℝ] V))
+    (hE : ∫⁻ z in {z | r < ‖Complex.equivRealProdCLM.symm z‖},
+      ENNReal.ofReal (ω.floerEnergyDensity
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z) ≠ ⊤)
+    {W : Set (ℝ × V)} (hW : IsOpen W) {J₀ : ℝ → V → AlmostComplexStructure V} {m : WithTop ℕ∞}
+    (hJ₀ : ContDiffOn ℝ m (fun q : ℝ × V ↦ (J₀ q.1 q.2).toLinearMap.toContinuousLinearMap) W)
+    (hJ₀per : Periodic J₀ 1) (hBW : univ ×ˢ B ⊆ W) (hJ₀t : ∀ t, ∀ x ∈ B, ω.Tames (J₀ t x))
+    (hJ : ∀ s t, T₀ ≤ s →
+      J (p.endChart (p.endSign * s, t)) = J₀ t (u (p.endChart (p.endSign * s, t)))) :
+    IsOpen ((fun q : ℝ × V ↦ (p.endSign * q.1, q.2)) ⁻¹' W) ∧
+      ContDiffOn ℝ m
+        (fun q : ℝ × V ↦ (J₀ (p.endSign * q.1) q.2).toLinearMap.toContinuousLinearMap)
+        ((fun q : ℝ × V ↦ (p.endSign * q.1, q.2)) ⁻¹' W) ∧
+      Periodic (fun t ↦ J₀ (p.endSign * t)) 1 ∧
+      univ ×ˢ B ⊆ (fun q : ℝ × V ↦ (p.endSign * q.1, q.2)) ⁻¹' W ∧
+      (∀ t, ∀ x ∈ B, ω.Tames (J₀ (p.endSign * t) x)) ∧
+      ContDiffOn ℝ n (u ∘ positive.endChart) (Ioi a ×ˢ univ) ∧
+      (∀ s, a < s → Periodic (fun t ↦ (u ∘ positive.endChart) (s, t)) 1) ∧
+      (∀ s, a < s → ∀ t, (u ∘ positive.endChart) (s, t) ∈ B) ∧
+      (∀ z ∈ Ioi a ×ˢ Icc 0 1, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+        (J₀ (p.endSign * z.2) ((u ∘ positive.endChart) z))
+        (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ p.positiveEndHamiltonian H w.2)
+          (u ∘ positive.endChart) z : ℝ × ℝ →ₗ[ℝ] V)) ∧
+      ∫⁻ z in Ioi a ×ˢ Icc 0 1, ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0)
+        (fun w ↦ p.positiveEndHamiltonian H w.2) (u ∘ positive.endChart) z) ≠ ⊤ := by
+  obtain ⟨hu', hper', huB', hfloer', hE'⟩ :=
+    floer_comp_pssPlane_endChart_positive hKH hH hHd hn ha hr hu huB hfloer hE
+  set g : ℝ × V → ℝ × V := fun q ↦ (p.endSign * q.1, q.2)
+  have hg : ContDiff ℝ m g := (contDiff_const.mul contDiff_fst).prodMk contDiff_snd
+  exact ⟨hW.preimage hg.continuous, hJ₀.comp hg.contDiffOn (mapsTo_preimage g W),
+    p.periodic_comp_endSign_mul hJ₀per, fun q hq ↦ hBW ⟨mem_univ _, hq.2⟩, fun t ↦ hJ₀t _,
+    hu', hper', huB', fun z hz ↦ eq_comp_endChart_positive hJ (ha.trans hz.1.le) ▸ hfloer' z hz,
+    hE'⟩
+
+end OrbitsAndPullback
+
+/-! ### Asymptotic orbits, actions, and whole-plane energy -/
+
+section AsymptoticOrbits
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+  {ω : SymplecticForm V} {K : ℂ → V → ℂ →L[ℝ] ℝ} {H : ℝ → V → ℝ} {T₀ : ℝ}
+  {u : ℝ × ℝ → V} {J : ℝ × ℝ → AlmostComplexStructure V} {c M : ℝ} {B : Set V}
+
+/-- **Subsequential orbit convergence at the end of a finite-energy PSS plane (general tail).**
+Let `K = H(t) dt` beyond `T₀` on the end of `p` for a `1`-periodic `C¹` Hamiltonian `H`, and let
+`u` be a `C¹` finite-energy solution of `(du - X_K)^{0,1} = 0` on `{‖w‖ > r}` with image in a
+compact set `B` and uniformly tame structures `J(z)`. Then there exist a `1`-periodic orbit `x` of
+`H` and `R_n → ∞` along which `t ↦ u(p.endChart (ε R_n, t))` converges uniformly to `x`. -/
+theorem exists_periodic_hasDerivAt_tendstoUniformly_pssPlane_endChart_of_floer (p : PSSPlane)
+    (hKH : ∀ w x, w ≠ 0 → T₀ ≤ p.endSign * (p.endCoord w).re →
+      K w x = H (p.endCoord w).im x • p.endAngularForm w)
     (hH : Periodic H 1) (hHs : ContDiff ℝ 1 (uncurry H)) {r : ℝ}
-    (hu : ContDiffOn ℝ 1 u {z | r < ‖Complex.equivRealProdCLM.symm z‖}) (hK : IsCompact K)
-    (huK : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ → u z ∈ K) (hc : 0 < c)
+    (hu : ContDiffOn ℝ 1 u {z | r < ‖Complex.equivRealProdCLM.symm z‖}) (hB : IsCompact B)
+    (huB : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ → u z ∈ B) (hc : 0 < c)
     (hJc : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ → ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J z v))
     (hJM : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ → ∀ v, ‖J z v‖ ≤ M * ‖v‖)
     (hfloer : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ →
       IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
         (ω.perturbedFDeriv
-          (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
-          (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-          u z : ℝ × ℝ →ₗ[ℝ] V))
+          (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z : ℝ × ℝ →ₗ[ℝ] V))
     (hE : ∫⁻ z in {z | r < ‖Complex.equivRealProdCLM.symm z‖},
       ENNReal.ofReal (ω.floerEnergyDensity
-        (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-        u z) ≠ ⊤) :
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z) ≠ ⊤) :
     ∃ x : ℝ → V, Periodic x 1 ∧ (∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) ∧
       ∃ R : ℕ → ℝ, Tendsto R atTop atTop ∧
-        TendstoUniformly (fun n t ↦ u (Complex.equivRealProdCLM
-          (positive.cylindricalEndLift (↑(positive.endSign * R n) + ↑t * Complex.I)))) x atTop := by
-  obtain ⟨a, hu', hper, huK', hJc', hJM', hfloer', hE'⟩ :=
-    ω.exists_halfCylinder_comp_realChart_positive one_ne_zero hH hHs hu huK hJc hJM hfloer hE
-  obtain ⟨x, hxper, hx, φ, -, hφ, hux⟩ := exists_periodic_hasDerivAt_tendstoUniformly_of_floer
-    hHs hH hu' hper hK huK' hc hJc' hJM' hfloer' hE'
-  simp only [comp_apply, realChart_positive_mk] at hux
-  exact ⟨x, hxper, hx, φ, hφ, hux⟩
+        TendstoUniformly (fun n t ↦ u (p.endChart (p.endSign * R n, t))) x atTop := by
+  obtain ⟨a, ha, hr⟩ := exists_le_and_le_exp r T₀
+  have hHd : ∀ t, Differentiable ℝ (H t) := fun t ↦
+    (hHs.differentiable one_ne_zero).comp ((differentiable_const t).prodMk differentiable_id)
+  obtain ⟨hu', hper', huB', hfloer', hE'⟩ :=
+    floer_comp_pssPlane_endChart_positive hKH hH hHd one_ne_zero ha hr hu huB hfloer hE
+  obtain ⟨y, hyper, hy, R, -, hR, huy⟩ := exists_periodic_hasDerivAt_tendstoUniformly_of_floer
+    (p.contDiff_uncurry_positiveEndHamiltonian hHs) (p.periodic_positiveEndHamiltonian hH)
+    hu' hper' hB huB' hc
+    (fun z hz ↦ hJc _ (lt_norm_equivRealProdCLM_symm_endChart_positive hr hz.1))
+    (fun z hz ↦ hJM _ (lt_norm_equivRealProdCLM_symm_endChart_positive hr hz.1))
+    hfloer' hE'
+  refine ⟨fun t ↦ y (p.endSign * t), p.periodic_comp_endSign_mul hyper,
+    hasDerivAt_comp_pssPlane_endSign_mul p hy, R, hR, ?_⟩
+  rw [funext fun n ↦ p.comp_endChart_eq_comp_endChart_positive u (R n)]
+  exact huy.comp _
 
-/-- **The asymptotic action at the end of the positive plane.** This is the case `p = positive` of
-`exists_periodic_hasDerivAt_tendsto_hamiltonianAction_pssPlanePerturbation`, for an arbitrary
-Hamiltonian; the negative plane is reduced to it. -/
-private theorem exists_periodic_hasDerivAt_tendsto_hamiltonianAction_positive
+/-- **Asymptotic action convergence at the end of a finite-energy PSS plane (general tail).**
+Under the hypotheses of `exists_periodic_hasDerivAt_tendstoUniformly_pssPlane_endChart_of_floer`,
+if moreover `u` is `C²` on `{‖w‖ > r}`, then the orbit `x` can be chosen so that
+`A_H(t ↦ u(p.endChart (ε R, t))) → A_H(x)` as `R → ∞`. -/
+theorem exists_periodic_hasDerivAt_tendsto_hamiltonianAction_pssPlane_endChart_of_floer
+    (p : PSSPlane)
+    (hKH : ∀ w x, w ≠ 0 → T₀ ≤ p.endSign * (p.endCoord w).re →
+      K w x = H (p.endCoord w).im x • p.endAngularForm w)
     (hH : Periodic H 1) (hHs : ContDiff ℝ 1 (uncurry H)) {r : ℝ}
-    (hu : ContDiffOn ℝ 2 u {z | r < ‖Complex.equivRealProdCLM.symm z‖}) (hK : IsCompact K)
-    (huK : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ → u z ∈ K) (hc : 0 < c)
+    (hu : ContDiffOn ℝ 2 u {z | r < ‖Complex.equivRealProdCLM.symm z‖}) (hB : IsCompact B)
+    (huB : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ → u z ∈ B) (hc : 0 < c)
     (hJc : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ → ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J z v))
     (hJM : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ → ∀ v, ‖J z v‖ ≤ M * ‖v‖)
     (hfloer : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ →
       IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
         (ω.perturbedFDeriv
-          (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
-          (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-          u z : ℝ × ℝ →ₗ[ℝ] V))
+          (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z : ℝ × ℝ →ₗ[ℝ] V))
     (hE : ∫⁻ z in {z | r < ‖Complex.equivRealProdCLM.symm z‖},
       ENNReal.ofReal (ω.floerEnergyDensity
-        (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-        u z) ≠ ⊤) :
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z) ≠ ⊤) :
     ∃ x : ℝ → V, Periodic x 1 ∧ (∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) ∧
       (∃ R : ℕ → ℝ, Tendsto R atTop atTop ∧
-        TendstoUniformly (fun n t ↦ u (Complex.equivRealProdCLM
-          (positive.cylindricalEndLift (↑(positive.endSign * R n) + ↑t * Complex.I)))) x atTop) ∧
-      Tendsto (fun R ↦ ω.hamiltonianAction H (fun t ↦ u (Complex.equivRealProdCLM
-          (positive.cylindricalEndLift (↑(positive.endSign * R) + ↑t * Complex.I))))) atTop
+        TendstoUniformly (fun n t ↦ u (p.endChart (p.endSign * R n, t))) x atTop) ∧
+      Tendsto (fun R ↦ ω.hamiltonianAction H (fun t ↦ u (p.endChart (p.endSign * R, t)))) atTop
         (𝓝 (ω.hamiltonianAction H x)) := by
-  obtain ⟨a, hu', hper, huK', hJc', hJM', hfloer', hE'⟩ :=
-    ω.exists_halfCylinder_comp_realChart_positive two_ne_zero hH hHs hu huK hJc hJM hfloer hE
-  obtain ⟨x, hxper, hx, ⟨φ, -, hφ, hux⟩, hA⟩ :=
+  obtain ⟨a, ha, hr⟩ := exists_le_and_le_exp r T₀
+  have hHd : ∀ t, Differentiable ℝ (H t) := fun t ↦
+    (hHs.differentiable one_ne_zero).comp ((differentiable_const t).prodMk differentiable_id)
+  obtain ⟨hu', _, huB', hfloer', hE'⟩ :=
+    floer_comp_pssPlane_endChart_positive hKH hH hHd two_ne_zero ha hr hu huB hfloer hE
+  have hper (s : ℝ) : Periodic (fun t ↦ (u ∘ positive.endChart) (s, t)) 1 := fun t ↦ by
+    simp only [comp_apply, positive.endChart_add_one]
+  obtain ⟨y, hyper, hy, ⟨R, -, hR, huy⟩, hA⟩ :=
     exists_periodic_hasDerivAt_tendsto_hamiltonianAction_of_floer
-      hHs hH hu' hper hK huK' hc hJc' hJM' hfloer' hE'
-  simp only [comp_apply, realChart_positive_mk] at hux hA
-  exact ⟨x, hxper, hx, ⟨φ, hφ, hux⟩, hA⟩
-
-omit [FiniteDimensional ℝ V] in
-/-- The negative plane given by `H` is the positive plane given by the reversed Hamiltonian
-`-H(-t)` (`TauCeti.Floer.PSSPlane.perturbation_negative`), which is again period-one and `C¹`. -/
-private theorem periodic_contDiff_reverse (hH : Periodic H 1) (hHs : ContDiff ℝ 1 (uncurry H)) :
-    Periodic (fun t y ↦ -H (-t) y) 1 ∧ ContDiff ℝ 1 (uncurry fun t y ↦ -H (-t) y) :=
-  ⟨hH.comp_neg.comp Neg.neg, (hHs.comp (contDiff_fst.neg.prodMk contDiff_snd)).neg⟩
-
-/-- **The orbit at the end of the negative plane.** Reversing time turns a one-periodic orbit `y` of
-the reversed Hamiltonian `-H(-t)` into the one-periodic orbit `t ↦ y(-t)` of `H`; if the loops of
-`u` along the end of the positive plane converge uniformly to `y` along `R_n`, then the loops of `u`
-along the end of the negative plane converge uniformly to `t ↦ y(-t)` along `R_n`. -/
-private theorem periodic_hasDerivAt_tendstoUniformly_negative (ω : SymplecticForm V)
-    {y : ℝ → V} (hyper : Periodic y 1)
-    (hy : ∀ t, HasDerivAt y (ω.hamiltonianVectorField (fun x ↦ -H (-t) x) (y t)) t)
-    {R : ℕ → ℝ} (huy : TendstoUniformly (fun n t ↦ u (Complex.equivRealProdCLM
-      (positive.cylindricalEndLift (↑(positive.endSign * R n) + ↑t * Complex.I)))) y atTop) :
-    Periodic (fun t ↦ y (-t)) 1 ∧
-      (∀ t, HasDerivAt (fun t ↦ y (-t)) (ω.hamiltonianVectorField (H t) (y (-t))) t) ∧
-      TendstoUniformly (fun n (t : ℝ) ↦ u (Complex.equivRealProdCLM
-        (negative.cylindricalEndLift (↑(negative.endSign * R n) + ↑t * Complex.I))))
-        (fun t ↦ y (-t)) atTop := by
-  refine ⟨hyper.comp_neg, fun t ↦ ?_, ?_⟩
-  · exact ω.hasDerivAt_comp_neg_of_hasDerivAt_hamiltonianVectorField_neg
-      (by simpa only [neg_neg, Pi.neg_def] using hy (-t))
-  simp only [cylindricalEndLift_negative_endSign_mul]
-  exact huy.comp fun t ↦ -t
+      (p.contDiff_uncurry_positiveEndHamiltonian hHs) (p.periodic_positiveEndHamiltonian hH)
+      hu' (fun s _ ↦ hper s) hB huB' hc
+      (fun z hz ↦ hJc _ (lt_norm_equivRealProdCLM_symm_endChart_positive hr hz.1))
+      (fun z hz ↦ hJM _ (lt_norm_equivRealProdCLM_symm_endChart_positive hr hz.1))
+      hfloer' hE'
+  refine ⟨fun t ↦ y (p.endSign * t), p.periodic_comp_endSign_mul hyper,
+    hasDerivAt_comp_pssPlane_endSign_mul p hy, ⟨R, hR, ?_⟩, ?_⟩
+  · rw [funext fun n ↦ p.comp_endChart_eq_comp_endChart_positive u (R n)]
+    exact huy.comp _
+  · have hAp (z : ℝ → V) (hz : Periodic z 1) :
+        ω.hamiltonianAction H (fun t ↦ z (p.endSign * t)) =
+          p.endSign * ω.hamiltonianAction (p.positiveEndHamiltonian H) z := by
+      rw [ω.hamiltonianAction_pssPlane_positiveEndHamiltonian p hH hz, ← mul_assoc,
+        endSign_mul_endSign, one_mul]
+    have hAs : (fun R ↦ ω.hamiltonianAction H (fun t ↦ u (p.endChart (p.endSign * R, t)))) =
+        fun R ↦ p.endSign * ω.hamiltonianAction (p.positiveEndHamiltonian H)
+          (fun t ↦ (u ∘ positive.endChart) (R, t)) :=
+      funext fun R ↦ by
+        rw [p.comp_endChart_eq_comp_endChart_positive u R]
+        exact hAp _ (hper R)
+    rw [hAs, hAp _ hyper]
+    exact hA.const_mul _
 
 /-- **The asymptotic orbit at the end of a finite-energy PSS plane.** Let `𝔎` be the perturbation of
 a PSS plane `p` given by a period-one `C¹` Hamiltonian `H`. Let `u` be `C¹` on a part `‖w‖ > r` of
@@ -386,8 +515,8 @@ field such that the loops `ℓ_R(t) = u(φ(ε R + i t))`, where `φ` is the end 
 `p.cylindricalEndLift` and `ε = p.endSign`, converge uniformly to `x` along some `R_n → ∞`. -/
 theorem exists_periodic_hasDerivAt_tendstoUniformly_pssPlanePerturbation (p : PSSPlane)
     (hH : Periodic H 1) (hHs : ContDiff ℝ 1 (uncurry H)) {r : ℝ}
-    (hu : ContDiffOn ℝ 1 u {z | r < ‖Complex.equivRealProdCLM.symm z‖}) (hK : IsCompact K)
-    (huK : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ → u z ∈ K) (hc : 0 < c)
+    (hu : ContDiffOn ℝ 1 u {z | r < ‖Complex.equivRealProdCLM.symm z‖}) {K : Set V}
+    (hK : IsCompact K) (huK : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ → u z ∈ K) (hc : 0 < c)
     (hJc : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ → ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J z v))
     (hJM : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ → ∀ v, ‖J z v‖ ≤ M * ‖v‖)
     (hfloer : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ →
@@ -405,15 +534,10 @@ theorem exists_periodic_hasDerivAt_tendstoUniformly_pssPlanePerturbation (p : PS
       ∃ R : ℕ → ℝ, Tendsto R atTop atTop ∧
         TendstoUniformly (fun n t ↦ u (Complex.equivRealProdCLM
           (p.cylindricalEndLift (↑(p.endSign * R n) + ↑t * Complex.I)))) x atTop := by
-  cases p
-  · exact exists_periodic_hasDerivAt_tendstoUniformly_positive hH hHs hu hK huK hc hJc hJM hfloer hE
-  -- The negative plane is the positive plane for the reversed Hamiltonian `-H(-t)`.
-  rw [perturbation_negative] at hfloer hE
-  obtain ⟨hH', hHs'⟩ := periodic_contDiff_reverse hH hHs
-  obtain ⟨y, hyper, hy, R, hR, huy⟩ :=
-    exists_periodic_hasDerivAt_tendstoUniformly_positive hH' hHs' hu hK huK hc hJc hJM hfloer hE
-  obtain ⟨hxper, hx, hux⟩ := ω.periodic_hasDerivAt_tendstoUniformly_negative hyper hy huy
-  exact ⟨_, hxper, hx, R, hR, hux⟩
+  simpa only [endChart_mk] using
+    exists_periodic_hasDerivAt_tendstoUniformly_pssPlane_endChart_of_floer p
+      (K := p.perturbation H) (T₀ := 2) (fun _ x _ hw ↦ perturbation_eq_smul_endAngularForm hw x)
+      hH hHs hu hK huK hc hJc hJM hfloer hE
 
 /-- **The asymptotic action at the end of a finite-energy PSS plane.** Let `𝔎` be the perturbation
 of a PSS plane `p` given by a period-one `C¹` Hamiltonian `H`. Let `u` be `C²` on a part `‖w‖ > r`
@@ -425,8 +549,8 @@ vector field such that the loops `ℓ_R(t) = u(φ(ε R + i t))`, where `φ` is t
 their actions `A_H(ℓ_R)` tend to the action `A_H(x)` as `R → ∞`. -/
 theorem exists_periodic_hasDerivAt_tendsto_hamiltonianAction_pssPlanePerturbation (p : PSSPlane)
     (hH : Periodic H 1) (hHs : ContDiff ℝ 1 (uncurry H)) {r : ℝ}
-    (hu : ContDiffOn ℝ 2 u {z | r < ‖Complex.equivRealProdCLM.symm z‖}) (hK : IsCompact K)
-    (huK : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ → u z ∈ K) (hc : 0 < c)
+    (hu : ContDiffOn ℝ 2 u {z | r < ‖Complex.equivRealProdCLM.symm z‖}) {K : Set V}
+    (hK : IsCompact K) (huK : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ → u z ∈ K) (hc : 0 < c)
     (hJc : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ → ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J z v))
     (hJM : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ → ∀ v, ‖J z v‖ ≤ M * ‖v‖)
     (hfloer : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ →
@@ -447,25 +571,10 @@ theorem exists_periodic_hasDerivAt_tendsto_hamiltonianAction_pssPlanePerturbatio
       Tendsto (fun R ↦ ω.hamiltonianAction H (fun t ↦ u (Complex.equivRealProdCLM
           (p.cylindricalEndLift (↑(p.endSign * R) + ↑t * Complex.I))))) atTop
         (𝓝 (ω.hamiltonianAction H x)) := by
-  cases p
-  · exact exists_periodic_hasDerivAt_tendsto_hamiltonianAction_positive hH hHs hu hK huK hc hJc
-      hJM hfloer hE
-  -- The negative plane is the positive plane for the reversed Hamiltonian `-H(-t)`.
-  rw [perturbation_negative] at hfloer hE
-  obtain ⟨hH', hHs'⟩ := periodic_contDiff_reverse hH hHs
-  obtain ⟨y, hyper, hy, ⟨R, hR, huy⟩, hA⟩ :=
-    exists_periodic_hasDerivAt_tendsto_hamiltonianAction_positive hH' hHs' hu hK huK hc hJc hJM
-      hfloer hE
-  obtain ⟨hxper, hx, hux⟩ := ω.periodic_hasDerivAt_tendstoUniformly_negative hyper hy huy
-  refine ⟨_, hxper, hx, ⟨R, hR, hux⟩, ?_⟩
-  -- Reversing a loop negates its action relative to the reversed Hamiltonian.
-  have hrev {x : ℝ → V} (hx : Periodic x 1) : ω.hamiltonianAction H (fun t ↦ x (-t)) =
-      -ω.hamiltonianAction (fun t y ↦ -H (-t) y) x := by
-    simpa only [neg_neg] using ω.hamiltonianAction_comp_neg hH' hx
-  rw [hrev hyper]
-  refine hA.neg.congr fun R ↦ ?_
-  simp only [cylindricalEndLift_negative_endSign_mul]
-  exact (hrev (periodic_comp_cylindricalEndLift_positive u R)).symm
+  simpa only [endChart_mk] using
+    exists_periodic_hasDerivAt_tendsto_hamiltonianAction_pssPlane_endChart_of_floer p
+      (K := p.perturbation H) (T₀ := 2) (fun _ x _ hw ↦ perturbation_eq_smul_endAngularForm hw x)
+      hH hHs hu hK huK hc hJc hJM hfloer hE
 
 /-- **The energy of a finite-energy PSS plane.** Let `𝔎` be the perturbation of a PSS plane `p`
 given by a period-one `C¹` Hamiltonian `H`, and let `u` be a `C²` solution of the Floer equation
@@ -479,7 +588,7 @@ that the actions `A_H(ℓ_R)` tend to `A_H(x)` as `R → ∞` and
 `E(u) = ε A_H(x) - ∫_ℂ R_𝔎(u)`. -/
 theorem exists_periodic_hasDerivAt_lintegral_floerEnergyDensity_pssPlanePerturbation_eq
     (p : PSSPlane) (hH : Periodic H 1) (hHs : ContDiff ℝ 1 (uncurry H)) (hu : ContDiff ℝ 2 u)
-    (hK : IsCompact K) {r : ℝ}
+    {K : Set V} (hK : IsCompact K) {r : ℝ}
     (huK : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ → u z ∈ K) (hc : 0 < c)
     (hJc : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ → ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J z v))
     (hJM : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ → ∀ v, ‖J z v‖ ≤ M * ‖v‖)
@@ -511,5 +620,7 @@ theorem exists_periodic_hasDerivAt_lintegral_floerEnergyDensity_pssPlanePerturba
       ((setLIntegral_le_lintegral _ _).trans_lt hE.lt_top).ne
   exact ⟨x, hxper, hx, hux, hA, lintegral_floerEnergyDensity_pssPlanePerturbation_eq ω hH hHs hu hJ
     hfloer hA⟩
+
+end AsymptoticOrbits
 
 end TauCeti.SymplecticForm

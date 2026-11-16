@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.CylindricalEnd
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Orbit
-import TauCeti.Dynamics.Flow.Periodic.Basic
 
 /-!
 # Convergence of the ends of a Floer pair of pants to nondegenerate orbits
@@ -90,14 +89,9 @@ private theorem exists_pos_forall_eq_of_isNondegenerateFixedPt {q : Puncture} {L
     ∃ ε > 0, ∀ y : ℝ → V, Periodic y 1 →
       (∀ t, HasDerivAt y (ω.hamiltonianVectorField (positiveEndHamiltonian H q t) (y t)) t) →
       dist (y 0) (x 0) < ε → y = x := by
-  have hiso := hnd.eventually_not_isFixedPt
-  rw [timeDependentHamiltonianFlow_eq, ← zero_add (1 : ℝ)] at hiso
-  obtain ⟨ε, hε, h⟩ := exists_pos_forall_periodic_eq_of_eventually_not_isFixedPt _
-    (hasDerivAt_comp_endSign_mul hx) (s := 0) (by simpa only [mul_zero] using hiso)
-  refine ⟨ε, hε, fun y hyper hy hyx ↦ funext fun t ↦ ?_⟩
-  have hxy := congrFun (h _ (hasDerivAt_comp_endSign_mul hy) (periodic_comp_endSign_mul hyper)
-    (by simpa only [mul_zero] using hyx)) (q.endSign * t)
-  simpa only [← mul_assoc, endSign_mul_self, one_mul] using hxy
+  rw [positiveEndHamiltonian_eq_signedHamiltonian] at hx ⊢
+  exact ω.exists_pos_forall_periodic_eq_signedHamiltonian_of_isNondegenerateFixedPt
+    q.endSign_mul_self hL hx hnd
 
 /-- **The ends of a Floer pair of pants converge to nondegenerate orbits.** Let `K` be equal to
 `H_q(t) dt` beyond `T₀` on each end `q`, for `1`-periodic `C¹` Hamiltonians `H_q`, and let `u` be

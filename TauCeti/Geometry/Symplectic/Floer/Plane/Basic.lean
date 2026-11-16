@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.ThricePuncturedSphere.EndCoordinate
+public import TauCeti.Geometry.Symplectic.Floer.SignedEnd.Basic
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 public import Mathlib.Geometry.Manifold.MFDeriv.Defs
@@ -57,11 +58,13 @@ Given a period-one Hamiltonian `H`, the perturbation `TauCeti.Floer.PSSPlane.per
   it is `H(t) dt`, so it agrees there with the Floer datum of the end;
 * `TauCeti.Floer.PSSPlane.endComponent_one` and `TauCeti.Floer.PSSPlane.endComponent_I`: its
   components in end coordinates are `K_s = 0` and `K_t = β(ε s - 1) H(t)`.
-* `TauCeti.Floer.PSSPlane.perturbation_negative`: the perturbation of the negative plane given
-  by `H` is that of the positive plane given by the reversed Hamiltonian `-H(-t)`; correspondingly
-  the end lift of the negative plane is that of the positive plane composed with `z ↦ -z`
-  (`TauCeti.Floer.PSSPlane.cylindricalEndLift_negative`), so the loops of the negative plane are
-  those of the positive plane traversed backwards
+* `TauCeti.Floer.PSSPlane.positiveEndHamiltonian` and
+  `TauCeti.Floer.PSSPlane.perturbation_eq_positive_positiveEndHamiltonian`: for either plane,
+  `p.perturbation H = positive.perturbation (p.positiveEndHamiltonian H)` where
+  `H'_p(t, x) = ε H(ε t, x)` (`TauCeti.Floer.PSSPlane.perturbation_negative` is the case
+  `p = negative`); correspondingly the end lift of the negative plane is that of the positive plane
+  composed with `z ↦ -z` (`TauCeti.Floer.PSSPlane.cylindricalEndLift_negative`), so the loops of
+  the negative plane are those of the positive plane traversed backwards
   (`TauCeti.Floer.PSSPlane.cylindricalEndLift_negative_endSign_mul`).
 
 The angular coordinate is defined only modulo `1`, which is why `H` is required to have period
@@ -397,6 +400,66 @@ theorem perturbation_negative (H : ℝ → M → ℝ) :
   rw [perturbation_def, perturbation_def, hre, him, hform, smul_neg, ← neg_smul]
   congr 1
   ring
+
+/-- The Hamiltonian of a PSS plane in the positive end chart `positive.endChart`:
+`H'_p(t, x) = ε H(ε t, x)`. It is `H` on the positive plane and `(t, x) ↦ -H(-t, x)` on the
+negative plane. -/
+def positiveEndHamiltonian {X : Type*} (p : PSSPlane) (H : ℝ → X → ℝ) : ℝ → X → ℝ :=
+  signedHamiltonian p.endSign H
+
+theorem positiveEndHamiltonian_eq_signedHamiltonian {X : Type*} (p : PSSPlane) (H : ℝ → X → ℝ) :
+    p.positiveEndHamiltonian H = signedHamiltonian p.endSign H :=
+  (rfl)
+
+theorem positiveEndHamiltonian_def {X : Type*} (p : PSSPlane) (H : ℝ → X → ℝ) (t : ℝ) (x : X) :
+    p.positiveEndHamiltonian H t x = p.endSign * H (p.endSign * t) x :=
+  signedHamiltonian_apply p.endSign H t x
+
+@[simp]
+theorem positiveEndHamiltonian_positive {X : Type*} (H : ℝ → X → ℝ) :
+    positive.positiveEndHamiltonian H = H :=
+  signedHamiltonian_one H
+
+theorem positiveEndHamiltonian_negative {X : Type*} (H : ℝ → X → ℝ) :
+    negative.positiveEndHamiltonian H = fun t x ↦ -H (-t) x :=
+  signedHamiltonian_neg_one H
+
+@[simp]
+theorem positiveEndHamiltonian_positiveEndHamiltonian {X : Type*} (p : PSSPlane)
+    (H : ℝ → X → ℝ) :
+    p.positiveEndHamiltonian (p.positiveEndHamiltonian H) = H :=
+  signedHamiltonian_signedHamiltonian p.endSign_mul_endSign H
+
+/-- For either PSS plane, `p.perturbation H` equals `positive.perturbation` for
+`p.positiveEndHamiltonian H`. -/
+theorem perturbation_eq_positive_positiveEndHamiltonian (p : PSSPlane) (H : ℝ → M → ℝ) :
+    p.perturbation H = positive.perturbation (p.positiveEndHamiltonian H) := by
+  cases p
+  · simp
+  · rw [perturbation_negative, positiveEndHamiltonian_negative]
+
+/-- A `1`-periodic map read with the signed time `t ↦ ε t` of a PSS plane is `1`-periodic. -/
+theorem periodic_comp_endSign_mul {α : Type*} (p : PSSPlane) {x : ℝ → α}
+    (hx : Function.Periodic x 1) : Function.Periodic (fun t ↦ x (p.endSign * t)) 1 :=
+  periodic_comp_mul_of_mul_self_eq_one p.endSign_mul_endSign hx
+
+/-- For a `1`-periodic Hamiltonian `H`, `p.positiveEndHamiltonian H` is `1`-periodic. -/
+theorem periodic_positiveEndHamiltonian {X : Type*} (p : PSSPlane) {H : ℝ → X → ℝ}
+    (hH : Function.Periodic H 1) : Function.Periodic (p.positiveEndHamiltonian H) 1 :=
+  periodic_signedHamiltonian p.endSign_mul_endSign hH
+
+/-- For a `C^n` Hamiltonian `H`, `p.positiveEndHamiltonian H` is `C^n`. -/
+theorem contDiff_uncurry_positiveEndHamiltonian {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] (p : PSSPlane) {H : ℝ → E → ℝ} {n : WithTop ℕ∞}
+    (hH : ContDiff ℝ n (Function.uncurry H)) :
+    ContDiff ℝ n (Function.uncurry (p.positiveEndHamiltonian H)) :=
+  contDiff_uncurry_signedHamiltonian p.endSign hH
+
+/-- If each `H t` is differentiable, then each `p.positiveEndHamiltonian H t` is differentiable. -/
+theorem differentiable_positiveEndHamiltonian_apply {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] (p : PSSPlane) {H : ℝ → E → ℝ} (hHd : ∀ t, Differentiable ℝ (H t))
+    (t : ℝ) : Differentiable ℝ (p.positiveEndHamiltonian H t) :=
+  differentiable_signedHamiltonian_apply p.endSign hHd t
 
 variable {p : PSSPlane} {H : ℝ → M → ℝ}
 

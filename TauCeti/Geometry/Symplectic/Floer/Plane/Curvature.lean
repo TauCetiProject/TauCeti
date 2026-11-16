@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Floer.Plane.Basic
-public import TauCeti.Geometry.Symplectic.Floer.Pullback
+public import TauCeti.Geometry.Symplectic.Floer.Plane.Chart
 public import TauCeti.Geometry.Symplectic.Floer.Manifold
 import TauCeti.Analysis.Complex.HorizontalStrip
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
@@ -118,61 +117,9 @@ discs into the energy of a whole PSS plane.
 public section
 
 open Set Real Function MeasureTheory Filter Manifold
-open TauCeti.Complex (realChart realChart_apply contDiff_realChart)
 open scoped Topology
 
 namespace TauCeti
-
-namespace Floer.PSSPlane
-
-/-! ### The end lift in real coordinates -/
-
-/-- The pullback of the perturbation along the end lift in real coordinates, evaluated on a
-tangent vector `v`, is its component `TauCeti.Floer.PSSPlane.endComponent` along `v` in the end
-coordinates. -/
-theorem perturbationPullback_realChart_cylindricalEndLift {X : Type*} (p : PSSPlane)
-    (H : ℝ → X → ℝ) (v : ℝ × ℝ) :
-    perturbationPullback (realChart p.cylindricalEndLift)
-        (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) v =
-      p.endComponent H (Complex.equivRealProdCLM.symm v) := by
-  funext z x
-  have hz : Complex.equivRealProdCLM.symm z = ⟨z.1, z.2⟩ := Complex.ext (by simp) (by simp)
-  rw [perturbationPullback_realChart _
-    (p.hasDerivAt_cylindricalEndLift _).differentiableAt.hasDerivAt, endComponent_def, hz]
-
-/-- The pullback of the perturbation along the end lift in real coordinates has vanishing `ds`
-component. -/
-theorem perturbationPullback_realChart_cylindricalEndLift_stdComplexLineReal {X : Type*}
-    (p : PSSPlane) (H : ℝ → X → ℝ) :
-    perturbationPullback (realChart p.cylindricalEndLift)
-        (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-        stdComplexLineReal =
-      fun _ _ ↦ 0 := by
-  rw [perturbationPullback_realChart_cylindricalEndLift, equivRealProdCLM_symm_stdComplexLineReal,
-    endComponent_one]
-
-/-- The pullback of the perturbation along the end lift in real coordinates has `dt` component
-`β(ε s - 1) H(t)`. -/
-theorem perturbationPullback_realChart_cylindricalEndLift_stdComplexLineImag {X : Type*}
-    (p : PSSPlane) {H : ℝ → X → ℝ} (hH : Periodic H 1) :
-    perturbationPullback (realChart p.cylindricalEndLift)
-        (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-        stdComplexLineImag =
-      fun z x ↦ smoothTransition (p.endSign * z.1 - 1) * H z.2 x := by
-  rw [perturbationPullback_realChart_cylindricalEndLift, equivRealProdCLM_symm_stdComplexLineImag,
-    endComponent_I hH]
-
-/-- The end lift preserves orientation in real coordinates: its Jacobian determinant is
-positive. -/
-theorem det_fderiv_realChart_cylindricalEndLift_pos (p : PSSPlane) (z : ℝ × ℝ) :
-    0 < (fderiv ℝ (realChart p.cylindricalEndLift) z).det := by
-  rw [TauCeti.Complex.det_fderiv_realChart (p.hasDerivAt_cylindricalEndLift _)]
-  simp [Complex.normSq_pos, Real.pi_ne_zero, p.cylindricalEndLift_ne_zero]
-
-end Floer.PSSPlane
 
 namespace SmoothTwoForm
 
@@ -228,10 +175,10 @@ private noncomputable def endStrip (p : PSSPlane) : Set (ℝ × ℝ) :=
 
 /-- The end lift is injective on the band `endStrip p`, whose angular coordinate ranges over one
 period. -/
-private theorem injOn_realChart (p : PSSPlane) :
-    InjOn (realChart p.cylindricalEndLift) (endStrip p) := by
+private theorem injOn_endChart_endStrip (p : PSSPlane) :
+    InjOn p.endChart (endStrip p) := by
   intro a ha b hb hab
-  rw [realChart_apply, realChart_apply] at hab
+  rw [endChart_apply, endChart_apply] at hab
   refine Complex.equivRealProdCLM.symm.injective <|
     TauCeti.Complex.injOn_of_exists_eq_add_intCast_mul_I
       (s := Complex.equivRealProdCLM.symm '' endStrip p)
@@ -245,8 +192,8 @@ private theorem injOn_realChart (p : PSSPlane) :
     exact ⟨by linarith, by linarith⟩
 
 /-- Every point of the plane other than the pole is the image of a point of the band. -/
-private theorem mem_image_realChart {z : ℝ × ℝ} (hz : Complex.equivRealProdCLM.symm z ≠ 0) :
-    z ∈ realChart p.cylindricalEndLift '' endStrip p := by
+private theorem mem_image_endChart_endStrip {z : ℝ × ℝ} (hz : Complex.equivRealProdCLM.symm z ≠ 0) :
+    z ∈ p.endChart '' endStrip p := by
   have := Real.pi_pos
   refine ⟨Complex.equivRealProdCLM (p.endCoord (Complex.equivRealProdCLM.symm z)),
     ⟨mem_univ _, ?_⟩, ?_⟩
@@ -255,7 +202,7 @@ private theorem mem_image_realChart {z : ℝ × ℝ} (hz : Complex.equivRealProd
     simp only [mem_preimage, Complex.equivRealProdCLM_apply, mem_Ioc, endSign_mul_im_endCoord]
     rw [lt_div_iff₀ (by positivity), div_le_iff₀ (by positivity)]
     constructor <;> linarith
-  · rw [realChart_apply, ContinuousLinearEquiv.symm_apply_apply, p.cylindricalEndLift_endCoord hz,
+  · rw [endChart_apply, ContinuousLinearEquiv.symm_apply_apply, p.cylindricalEndLift_endCoord hz,
       ContinuousLinearEquiv.apply_symm_apply]
 
 /-- **The integrated curvature of the perturbation of a PSS plane.** Let `K` be the perturbation
@@ -270,7 +217,7 @@ theorem lintegral_enorm_hamiltonianCurvature_pssPlanePerturbation_le (ω : Smoot
         (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
         z (u z)‖ₑ ≤ ENNReal.ofReal B := by
-  set φ := realChart p.cylindricalEndLift
+  set φ := p.endChart
   set f : ℝ × ℝ → ENNReal := fun z ↦ ‖ω.hamiltonianCurvature
     (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
     (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z)‖ₑ
@@ -287,7 +234,7 @@ theorem lintegral_enorm_hamiltonianCurvature_pssPlanePerturbation_le (ω : Smoot
     intro z _
     by_cases h₀ : Complex.equivRealProdCLM.symm z = 0
     · exact Or.inr ((Complex.equivRealProdCLM.apply_symm_apply z).symm.trans (congrArg _ h₀))
-    · exact Or.inl (mem_image_realChart h₀)
+    · exact Or.inl (mem_image_endChart_endStrip h₀)
   calc ∫⁻ z, f z ≤ ∫⁻ z in φ '' endStrip p ∪ N, f z := by
         rw [← setLIntegral_univ]
         exact lintegral_mono_set hcover
@@ -297,14 +244,13 @@ theorem lintegral_enorm_hamiltonianCurvature_pssPlanePerturbation_le (ω : Smoot
         -- The curvature is a two-form, and pulled back along the end lift it is the curvature in
         -- end coordinates.
         rw [setLIntegral_measure_zero _ _ hN, add_zero,
-          ω.lintegral_enorm_hamiltonianCurvature_image hmeas (injOn_realChart p)
-            (fun z _ ↦ (contDiff_realChart (n := 2) p.contDiff_cylindricalEndLift).contDiffAt)
+          ω.lintegral_enorm_hamiltonianCurvature_image hmeas (injOn_endChart_endStrip p)
+            (fun z _ ↦ (p.contDiff_endChart (n := 2)).contDiffAt)
             (fun z _ ↦ differentiableAt_perturbation_domain hH hHs _ _ 1)
             (fun z _ ↦ differentiableAt_perturbation_domain hH hHs _ _ Complex.I)
             (fun z _ ↦ mdifferentiableAt_perturbation_target hH hHs _ _ 1)
             (fun z _ ↦ mdifferentiableAt_perturbation_target hH hHs _ _ Complex.I),
-          perturbationPullback_realChart_cylindricalEndLift,
-          perturbationPullback_realChart_cylindricalEndLift,
+          perturbationPullback_endChart, perturbationPullback_endChart,
           equivRealProdCLM_symm_stdComplexLineReal, equivRealProdCLM_symm_stdComplexLineImag]
     _ ≤ ∫⁻ z in endStrip p,
           ENNReal.ofReal (deriv smoothTransition (p.endSign * z.1 - 1)) * ENNReal.ofReal B := by
@@ -382,80 +328,73 @@ private theorem endPiece_subset_isCompact (p : PSSPlane) (R : ℝ) :
   exact ⟨_, (hK _ isCompact_Icc).prod (hK _ isCompact_Icc),
     prod_mono subset_rfl (preimage_mono Ioc_subset_Icc_self)⟩
 
-/-- The end lift sends a point with longitudinal coordinate `s` to a point of norm
-`exp (2π ε s)`. -/
-private theorem norm_symm_realChart (p : PSSPlane) (w : ℝ × ℝ) :
-    ‖Complex.equivRealProdCLM.symm (realChart p.cylindricalEndLift w)‖ =
-      Real.exp (2 * π * (p.endSign * w.1)) := by
-  rw [realChart_apply, ContinuousLinearEquiv.symm_apply_apply, norm_cylindricalEndLift,
-    Complex.equivRealProdCLM_symm_apply_re]
-
 /-- The image of the part `1 ≤ ε s ≤ R` of the end lies in the disc `‖w‖ ≤ exp (2πR)`. -/
 private theorem image_endPiece_subset_closedBall (p : PSSPlane) (R : ℝ) :
-    realChart p.cylindricalEndLift '' endPiece p R ⊆
+    p.endChart '' endPiece p R ⊆
       Complex.equivRealProdCLM.symm ⁻¹' Metric.closedBall 0 (Real.exp (2 * π * R)) := by
   rintro _ ⟨w, hw, rfl⟩
   have hw' : p.endSign * w.1 ≤ R := hw.1.2
-  simp only [mem_preimage, Metric.mem_closedBall, dist_zero_right, norm_symm_realChart]
+  simp only [mem_preimage, Metric.mem_closedBall, dist_zero_right,
+    norm_equivRealProdCLM_symm_endChart]
   exact Real.exp_le_exp.2 (by nlinarith [Real.pi_pos])
 
 /-- The points of the disc `‖w‖ ≤ exp (2πR)` off the image of the part `1 ≤ ε s ≤ R` of the end
 lie in the open pole disc `‖w‖ < exp (2π)`. -/
 private theorem norm_lt_of_mem_sdiff_image_endPiece {R : ℝ} {z : ℝ × ℝ}
     (hz : z ∈ Complex.equivRealProdCLM.symm ⁻¹' Metric.closedBall 0 (Real.exp (2 * π * R)) \
-      realChart p.cylindricalEndLift '' endPiece p R) :
+      p.endChart '' endPiece p R) :
     ‖Complex.equivRealProdCLM.symm z‖ < Real.exp (2 * π) := by
   by_contra! h
   have h₀ : Complex.equivRealProdCLM.symm z ≠ 0 := fun h₀ ↦ by
     rw [h₀, norm_zero] at h
     exact (Real.exp_pos _).not_ge h
-  obtain ⟨w, hw, rfl⟩ := mem_image_realChart (p := p) h₀
+  obtain ⟨w, hw, rfl⟩ := mem_image_endChart_endStrip (p := p) h₀
   have hD := hz.1
-  simp only [mem_preimage, Metric.mem_closedBall, dist_zero_right, norm_symm_realChart] at hD h
+  simp only [mem_preimage, Metric.mem_closedBall, dist_zero_right,
+    norm_equivRealProdCLM_symm_endChart] at hD h
   rw [Real.exp_le_exp] at hD h
   exact hz.2 ⟨w, ⟨⟨by nlinarith [Real.pi_pos], by nlinarith [Real.pi_pos]⟩, hw.2⟩, rfl⟩
 
 /-- The image of the part `1 ≤ ε s ≤ R` of the end is measurable. -/
 private theorem measurableSet_image_endPiece (p : PSSPlane) (R : ℝ) :
-    MeasurableSet (realChart p.cylindricalEndLift '' endPiece p R) :=
+    MeasurableSet (p.endChart '' endPiece p R) :=
   measurable_image_of_fderivWithin (measurableSet_endPiece p R)
-    (fun w _ ↦ ((contDiff_realChart (n := 1) p.contDiff_cylindricalEndLift).differentiable
+    (fun w _ ↦ ((p.contDiff_endChart (n := 1)).differentiable
       one_ne_zero w).hasFDerivAt.hasFDerivWithinAt)
-    ((injOn_realChart p).mono (prod_mono (subset_univ _) subset_rfl))
+    ((injOn_endChart_endStrip p).mono (prod_mono (subset_univ _) subset_rfl))
 
 /-- By periodicity, the integral of `H(t)` along the circle `s = c` of the end may be taken over
 `t ∈ [0, 1]` instead of `[-1/2, 1/2]`. -/
-private theorem intervalIntegral_realChart {X : Type*} {H : ℝ → X → ℝ} (hH : Periodic H 1)
+private theorem intervalIntegral_endChart {X : Type*} {H : ℝ → X → ℝ} (hH : Periodic H 1)
     (u : ℝ × ℝ → X) (c : ℝ) :
-    ∫ t in (-1 / 2 : ℝ)..1 / 2, H t (u (realChart p.cylindricalEndLift (c, t))) =
+    ∫ t in (-1 / 2 : ℝ)..1 / 2, H t (u (p.endChart (c, t))) =
       ∫ t in (0 : ℝ)..1, H t (u (Complex.equivRealProdCLM
         (p.cylindricalEndLift (↑c + ↑t * Complex.I)))) := by
   have hper : Periodic (fun t : ℝ ↦ H t (u (Complex.equivRealProdCLM
       (p.cylindricalEndLift (↑c + ↑t * Complex.I))))) 1 := fun t ↦ by
     simp only [p.periodic_cylindricalEndLift c t, hH t]
-  simp only [realChart_apply, Complex.equivRealProdCLM_symm_apply]
+  simp only [endChart_mk]
   exact hper.intervalIntegral_neg_div_two_eq
 
 /-- In end coordinates, the curvature of the perturbation along `u`, times the Jacobian of the end
 lift, is `ε β'(ε s - 1) H(t)`. -/
-private theorem det_mul_hamiltonianCurvature_realChart (ω : SmoothTwoForm I M) (hH : Periodic H 1)
+private theorem det_mul_hamiltonianCurvature_endChart (ω : SmoothTwoForm I M) (hH : Periodic H 1)
     (hHs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry H)) (w : ℝ × ℝ) (x : M) :
-    (fderiv ℝ (realChart p.cylindricalEndLift) w).det * ω.hamiltonianCurvature
+    (fderiv ℝ p.endChart w).det * ω.hamiltonianCurvature
         (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-        (realChart p.cylindricalEndLift w) x =
+        (p.endChart w) x =
       p.endSign * deriv smoothTransition (p.endSign * w.1 - 1) * H w.2 x := by
   have hHt : DifferentiableAt ℝ (fun t ↦ H t x) w.2 :=
     ((hHs.contMDiffAt.comp (f := fun t : ℝ ↦ (t, x)) w.2
       (contMDiffAt_id.prodMk contMDiffAt_const)).contDiffAt).differentiableAt one_ne_zero
   rw [← ω.hamiltonianCurvature_perturbationPullback
-      (contDiff_realChart (n := 2) p.contDiff_cylindricalEndLift).contDiffAt
+      (p.contDiff_endChart (n := 2)).contDiffAt
       (differentiableAt_perturbation_domain hH hHs _ _ 1)
       (differentiableAt_perturbation_domain hH hHs _ _ Complex.I)
       (mdifferentiableAt_perturbation_target hH hHs _ _ 1)
       (mdifferentiableAt_perturbation_target hH hHs _ _ Complex.I),
-    perturbationPullback_realChart_cylindricalEndLift,
-    perturbationPullback_realChart_cylindricalEndLift,
+    perturbationPullback_endChart, perturbationPullback_endChart,
     equivRealProdCLM_symm_stdComplexLineReal, equivRealProdCLM_symm_stdComplexLineImag,
     ω.hamiltonianCurvature_pssPlaneEndComponent hH w hHt]
 
@@ -468,23 +407,22 @@ private theorem integrableOn_image_endPiece_hamiltonianCurvature (ω : SmoothTwo
     IntegrableOn (fun z ↦ ω.hamiltonianCurvature
         (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z))
-      (realChart p.cylindricalEndLift '' endPiece p R) := by
+      (p.endChart '' endPiece p R) := by
   have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
-  have hφ : ContDiff ℝ 1 (realChart p.cylindricalEndLift) :=
-    contDiff_realChart p.contDiff_cylindricalEndLift
+  have hφ : ContDiff ℝ 1 p.endChart := p.contDiff_endChart
   rw [integrableOn_image_iff_integrableOn_abs_det_fderiv_smul volume
     (measurableSet_endPiece p R)
     (fun w _ ↦ (hφ.differentiable one_ne_zero w).hasFDerivAt.hasFDerivWithinAt)
-    ((injOn_realChart p).mono (prod_mono (subset_univ _) subset_rfl))]
+    ((injOn_endChart_endStrip p).mono (prod_mono (subset_univ _) subset_rfl))]
   obtain ⟨K, hK, hPK⟩ := endPiece_subset_isCompact p R
   have hc : Continuous fun w : ℝ × ℝ ↦ p.endSign * deriv smoothTransition (p.endSign * w.1 - 1) *
-      H w.2 (u (realChart p.cylindricalEndLift w)) :=
+      H w.2 (u (p.endChart w)) :=
     (continuous_const.mul (((smoothTransition.contDiff (n := 1)).continuous_deriv le_rfl).comp
       (by fun_prop))).mul (hHs.continuous.comp (continuous_snd.prodMk (hu.comp hφ.continuous)))
   refine ((hc.continuousOn.integrableOn_compact hK).mono_set hPK).congr_fun (fun w _ ↦ ?_)
     (measurableSet_endPiece p R)
-  simp only [smul_eq_mul, abs_of_pos (det_fderiv_realChart_cylindricalEndLift_pos p w),
-    det_mul_hamiltonianCurvature_realChart ω hH hHs]
+  simp only [smul_eq_mul, abs_of_pos (p.det_fderiv_endChart_pos w),
+    det_mul_hamiltonianCurvature_endChart ω hH hHs]
 
 /-- **The curvature vanishes far out on the end.** On the part `ε s > 2` of the end of a PSS
 plane, where its perturbation is `H(t) dt`, the curvature of the perturbation vanishes, for a
@@ -497,24 +435,22 @@ theorem hamiltonianCurvature_pssPlanePerturbation_eq_zero_of_two_lt (ω : Smooth
   have h₀ : Complex.equivRealProdCLM.symm z ≠ 0 := fun h ↦ by
     rw [h, endCoord_zero, Complex.zero_re, mul_zero] at hz
     norm_num at hz
-  obtain ⟨w, -, rfl⟩ := mem_image_realChart (p := p) h₀
+  obtain ⟨w, -, rfl⟩ := mem_image_endChart_endStrip (p := p) h₀
   have hw : 2 < p.endSign * w.1 := by
-    rwa [realChart_apply, ContinuousLinearEquiv.symm_apply_apply, re_endCoord_cylindricalEndLift,
-      Complex.equivRealProdCLM_symm_apply_re] at hz
+    rwa [re_endCoord_endChart] at hz
   -- In end coordinates the curvature vanishes, and the end lift is a local diffeomorphism.
-  have key := ω.hamiltonianCurvature_perturbationPullback (φ := realChart p.cylindricalEndLift)
+  have key := ω.hamiltonianCurvature_perturbationPullback (φ := p.endChart)
     (Ks := fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
     (Kt := fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-    (w := w) (x := x) (contDiff_realChart (n := 2) p.contDiff_cylindricalEndLift).contDiffAt
+    (w := w) (x := x) (p.contDiff_endChart (n := 2)).contDiffAt
     (differentiableAt_perturbation_domain hH hHs _ _ 1)
     (differentiableAt_perturbation_domain hH hHs _ _ Complex.I)
     (mdifferentiableAt_perturbation_target hH hHs _ _ 1)
     (mdifferentiableAt_perturbation_target hH hHs _ _ Complex.I)
-  rw [perturbationPullback_realChart_cylindricalEndLift,
-    perturbationPullback_realChart_cylindricalEndLift, equivRealProdCLM_symm_stdComplexLineReal,
-    equivRealProdCLM_symm_stdComplexLineImag,
+  rw [perturbationPullback_endChart, perturbationPullback_endChart,
+    equivRealProdCLM_symm_stdComplexLineReal, equivRealProdCLM_symm_stdComplexLineImag,
     ω.hamiltonianCurvature_pssPlaneEndComponent_eq_zero hH (Or.inr hw)] at key
-  exact (mul_eq_zero.1 key.symm).resolve_left (det_fderiv_realChart_cylindricalEndLift_pos p w).ne'
+  exact (mul_eq_zero.1 key.symm).resolve_left (p.det_fderiv_endChart_pos w).ne'
 
 /-- **The curvature is supported in the disc `‖w‖ ≤ exp (4π)`.** For `R ≥ 2`, the integral of the
 curvature `R_K(u)` of the perturbation of a PSS plane over the disc `‖w‖ ≤ exp (2πR)` is its
@@ -582,53 +518,50 @@ the plane of a rectangle `[a, b] × {t | ε t ∈ (-1/2, 1/2]}` of the cylinder,
 density and the curvature are integrable, the Floer energy is the symplectic area, plus the
 integrals of the Hamiltonian term `β(ε s - 1) H(t)` over the circle `s = b` minus the circle
 `s = a`, minus the integrated curvature. -/
-private theorem IsNondegenerate.integral_floerEnergyDensity_image_realChart
+private theorem IsNondegenerate.integral_floerEnergyDensity_image_endChart
     {ω : SmoothTwoForm I M} (hω : ω.IsNondegenerate) (hH : Periodic H 1)
     (hHs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry H)) {u : ℝ × ℝ → M}
     (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) {a b : ℝ} (hab : a ≤ b)
     (hE : IntegrableOn (ω.floerEnergyDensity
       (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u)
-      (realChart p.cylindricalEndLift '' (Icc a b ×ˢ ((p.endSign * ·) ⁻¹' Ioc (-1 / 2) (1 / 2)))))
+      (p.endChart '' (Icc a b ×ˢ ((p.endSign * ·) ⁻¹' Ioc (-1 / 2) (1 / 2)))))
     (hR : IntegrableOn (fun z ↦ ω.hamiltonianCurvature
       (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z))
-      (realChart p.cylindricalEndLift '' (Icc a b ×ˢ ((p.endSign * ·) ⁻¹' Ioc (-1 / 2) (1 / 2))))) :
-    ∫ z in realChart p.cylindricalEndLift ''
+      (p.endChart '' (Icc a b ×ˢ ((p.endSign * ·) ⁻¹' Ioc (-1 / 2) (1 / 2))))) :
+    ∫ z in p.endChart ''
         (Icc a b ×ˢ ((p.endSign * ·) ⁻¹' Ioc (-1 / 2) (1 / 2))), ω.floerEnergyDensity
         (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u z =
-      (∫ z in realChart p.cylindricalEndLift ''
+      (∫ z in p.endChart ''
           (Icc a b ×ˢ ((p.endSign * ·) ⁻¹' Ioc (-1 / 2) (1 / 2))),
           (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
             (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
         ((∫ t in (-1 / 2 : ℝ)..1 / 2, smoothTransition (p.endSign * b - 1) *
-            H t (u (realChart p.cylindricalEndLift (b, t)))) -
+            H t (u (p.endChart (b, t)))) -
           ∫ t in (-1 / 2 : ℝ)..1 / 2, smoothTransition (p.endSign * a - 1) *
-            H t (u (realChart p.cylindricalEndLift (a, t)))) -
-        ∫ z in realChart p.cylindricalEndLift ''
+            H t (u (p.endChart (a, t)))) -
+        ∫ z in p.endChart ''
           (Icc a b ×ˢ ((p.endSign * ·) ⁻¹' Ioc (-1 / 2) (1 / 2))), ω.hamiltonianCurvature
           (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z) := by
   have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
-  set φ := realChart p.cylindricalEndLift
+  set φ := p.endChart
   set s : Set (ℝ × ℝ) := Icc a b ×ˢ ((p.endSign * ·) ⁻¹' Ioc (-1 / 2 : ℝ) (1 / 2))
   have hmeas : MeasurableSet s :=
     measurableSet_Icc.prod (measurableSet_Ioc.preimage (measurable_const.mul measurable_id))
   have hinj : InjOn φ s :=
-    (injOn_realChart p).mono (prod_mono (subset_univ _) subset_rfl)
-  have hφ : ContDiff ℝ 2 φ := contDiff_realChart p.contDiff_cylindricalEndLift
+    (injOn_endChart_endStrip p).mono (prod_mono (subset_univ _) subset_rfl)
+  have hφ : ContDiff ℝ 2 φ := p.contDiff_endChart
   have hφd (w : ℝ × ℝ) : DifferentiableAt ℝ φ w := hφ.differentiable (by norm_num) w
-  have hdet (w : ℝ × ℝ) : 0 ≤ (fderiv ℝ φ w).det :=
-    (det_fderiv_realChart_cylindricalEndLift_pos p w).le
+  have hdet (w : ℝ × ℝ) : 0 ≤ (fderiv ℝ φ w).det := (p.det_fderiv_endChart_pos w).le
   have hud (w : ℝ × ℝ) : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u (φ w) :=
     (hu (φ w)).mdifferentiableAt one_ne_zero
   have htgt (w : ℝ × ℝ) (v : ℂ) := mdifferentiableAt_perturbation_target (p := p) hH hHs
     (Complex.equivRealProdCLM.symm (φ w)) (u (φ w)) v
-  have hds :=
-    perturbationPullback_realChart_cylindricalEndLift_stdComplexLineReal p H
-  have hdt :=
-    perturbationPullback_realChart_cylindricalEndLift_stdComplexLineImag p hH
+  have hds := perturbationPullback_endChart_stdComplexLineReal p H
+  have hdt := perturbationPullback_endChart_stdComplexLineImag p hH
   -- The band and the closed rectangle differ by a null set.
   have hae : s =ᵐ[volume] Icc ((a, -1 / 2) : ℝ × ℝ) (b, 1 / 2) := by
     rw [Icc_prod_eq, Measure.volume_eq_prod]
@@ -674,20 +607,20 @@ private theorem IsNondegenerate.integral_floerEnergyDensity_image_endPiece
     (hE : IntegrableOn (ω.floerEnergyDensity
       (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u)
-      (realChart p.cylindricalEndLift '' endPiece p R))
+      (p.endChart '' endPiece p R))
     (hRK : IntegrableOn (fun z ↦ ω.hamiltonianCurvature
       (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z))
-      (realChart p.cylindricalEndLift '' endPiece p R)) :
-    ∫ z in realChart p.cylindricalEndLift '' endPiece p R, ω.floerEnergyDensity
+      (p.endChart '' endPiece p R)) :
+    ∫ z in p.endChart '' endPiece p R, ω.floerEnergyDensity
         (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u z =
-      (∫ z in realChart p.cylindricalEndLift '' endPiece p R,
+      (∫ z in p.endChart '' endPiece p R,
           (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
             (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
         p.endSign * smoothTransition (R - 1) * (∫ t in (-1 / 2 : ℝ)..1 / 2,
-          H t (u (realChart p.cylindricalEndLift (p.endSign * R, t)))) -
-        ∫ z in realChart p.cylindricalEndLift '' endPiece p R, ω.hamiltonianCurvature
+          H t (u (p.endChart (p.endSign * R, t)))) -
+        ∫ z in p.endChart '' endPiece p R, ω.hamiltonianCurvature
           (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z) := by
   cases p
@@ -696,7 +629,7 @@ private theorem IsNondegenerate.integral_floerEnergyDensity_image_endPiece
       ext ⟨s, t⟩
       simp [endPiece]
     rw [hpiece] at hE hRK ⊢
-    rw [hω.integral_floerEnergyDensity_image_realChart hH hHs hu hR hE hRK]
+    rw [hω.integral_floerEnergyDensity_image_endChart hH hHs hu hR hE hRK]
     simp only [endSign_positive, one_mul, sub_self, smoothTransition.zero, zero_mul,
       intervalIntegral.integral_zero, sub_zero, intervalIntegral.integral_const_mul]
   · have hpiece : endPiece .negative R =
@@ -706,7 +639,7 @@ private theorem IsNondegenerate.integral_floerEnergyDensity_image_endPiece
         and_congr_left_iff]
       exact fun _ ↦ ⟨fun h ↦ ⟨by linarith, by linarith⟩, fun h ↦ ⟨by linarith, by linarith⟩⟩
     rw [hpiece] at hE hRK ⊢
-    rw [hω.integral_floerEnergyDensity_image_realChart hH hHs hu (by linarith) hE hRK]
+    rw [hω.integral_floerEnergyDensity_image_endChart hH hHs hu (by linarith) hE hRK]
     simp only [endSign_negative, neg_mul, one_mul, neg_neg, sub_self, smoothTransition.zero,
       zero_mul, intervalIntegral.integral_zero, zero_sub, intervalIntegral.integral_const_mul]
 
@@ -785,7 +718,7 @@ theorem IsNondegenerate.integral_floerEnergyDensity_pssPlanePerturbation_closedB
   -- The disc `D` is the image `A` of the part `1 ≤ ε s ≤ R` of the end, together with points of
   -- the pole disc, where the perturbation vanishes.
   set D := Complex.equivRealProdCLM.symm ⁻¹' Metric.closedBall (0 : ℂ) (Real.exp (2 * π * R))
-  set A := realChart p.cylindricalEndLift '' endPiece p R
+  set A := p.endChart '' endPiece p R
   have hDc : IsCompact D :=
     Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2 (isCompact_closedBall _ _)
   have hAD : A ⊆ D := image_endPiece_subset_closedBall p R
@@ -812,7 +745,7 @@ theorem IsNondegenerate.integral_floerEnergyDensity_pssPlanePerturbation_closedB
     setIntegral_congr_fun hDAm fun z hz ↦ (hpole hz).1,
     setIntegral_eq_zero_of_forall_eq_zero fun z hz ↦ (hpole hz).2,
     hω.integral_floerEnergyDensity_image_endPiece hH hHs hu hR (hED.mono_set hAD)
-      (hRD.mono_set hAD), intervalIntegral_realChart hH]
+      (hRD.mono_set hAD), intervalIntegral_endChart hH]
   ring
 
 /-- **The topological energy of a solution bounds its integrated curvature.** If `u` solves the
