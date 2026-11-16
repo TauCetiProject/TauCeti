@@ -28,7 +28,9 @@ For an element `x` of an associative `K`-algebra over a field and `q : K`, this 
 
 public section
 
-open Finset
+open Finset MulOpposite
+open Algebra.TensorProduct (tmul_mul_tmul tmul_pow)
+open TensorProduct (smul_tmul' tmul_smul)
 open scoped TensorProduct
 
 namespace TauCeti
@@ -95,8 +97,8 @@ theorem quantumDividedPower_mul_of_mul_eq_smul_mul (q : K) {u x : A} {c : K}
   rw [quantumDividedPower_def, smul_mul_assoc, ← (hsc.pow_right n).eq, smul_pow, mul_smul_comm,
     smul_comm, mul_smul_comm]
 @[simp] theorem quantumDividedPower_op (q : K) (x : A) (n : ℕ) :
-    quantumDividedPower q (MulOpposite.op x) n = MulOpposite.op (quantumDividedPower q x n) := by
-  rw [quantumDividedPower_def, quantumDividedPower_def, ← MulOpposite.op_pow, MulOpposite.op_smul]
+    quantumDividedPower q (op x) n = op (quantumDividedPower q x n) := by
+  rw [quantumDividedPower_def, quantumDividedPower_def, ← op_pow, op_smul]
 theorem quantumDividedPower_mul_left_of_mul_eq_smul_mul (q : K) {u x : A} {c : K}
     (h : x * u = c • (u * x)) (n : ℕ) :
     quantumDividedPower q (u * x) n = c ^ n.choose 2 • (u ^ n * quantumDividedPower q x n) := by
@@ -111,13 +113,11 @@ theorem quantumDividedPower_mul_left_of_mul_eq_sq_smul_mul (q : K) {u x : A} {c 
 theorem quantumDividedPower_tmul_left {B : Type*} [Semiring B] [Algebra K B] (q : K) (a : A)
     (b : B) (n : ℕ) :
     quantumDividedPower q (a ⊗ₜ[K] b) n = quantumDividedPower q a n ⊗ₜ[K] (b ^ n) := by
-  rw [quantumDividedPower_def, quantumDividedPower_def, Algebra.TensorProduct.tmul_pow,
-    TensorProduct.smul_tmul']
+  rw [quantumDividedPower_def, quantumDividedPower_def, tmul_pow, smul_tmul']
 theorem quantumDividedPower_tmul_right {B : Type*} [Semiring B] [Algebra K B] (q : K) (a : A)
     (b : B) (n : ℕ) :
     quantumDividedPower q (a ⊗ₜ[K] b) n = (a ^ n) ⊗ₜ[K] quantumDividedPower q b n := by
-  rw [quantumDividedPower_def, quantumDividedPower_def, Algebra.TensorProduct.tmul_pow,
-    TensorProduct.tmul_smul]
+  rw [quantumDividedPower_def, quantumDividedPower_def, tmul_pow, tmul_smul]
 
 end Semiring
 
@@ -169,13 +169,12 @@ theorem quantumSerre_smul (q : K) (m : ℕ) (c d : K) (x y : A) :
   rw [quantumSerre_def]
   exact sum_eq_zero fun r _ => if hr : r = 0 then by subst hr; simp [hq, hm] else by simp [hq, hr]
 theorem quantumSerre_op (q : K) (m : ℕ) (x y : A) :
-    quantumSerre q m (MulOpposite.op x) (MulOpposite.op y) =
-      MulOpposite.op ((-1 : K) ^ m • quantumSerre q m x y) := by
+    quantumSerre q m (op x) (op y) = op ((-1 : K) ^ m • quantumSerre q m x y) := by
   rw [quantumSerre_def, quantumSerre_def, ← sum_range_reflect, smul_sum, op_sum]
   refine sum_congr rfl fun r hr => ?_
   have hrm : r ≤ m := Nat.lt_succ_iff.mp (mem_range.mp hr)
-  simp only [Nat.add_sub_cancel, quantumDividedPower_op, ← MulOpposite.op_mul,
-    ← MulOpposite.op_smul, mul_assoc, smul_smul, Nat.sub_sub_self hrm]
+  simp only [Nat.add_sub_cancel, quantumDividedPower_op, ← op_mul, ← op_smul, mul_assoc,
+    smul_smul, Nat.sub_sub_self hrm]
   congr 2; nth_rw 2 [← Nat.sub_add_cancel hrm]
   rw [pow_add, mul_assoc, ← mul_pow, neg_one_mul, neg_neg, one_pow, mul_one]
 theorem quantumSerre_tmul_left {B : Type*} [Ring B] [Algebra K B] (q : K) (m : ℕ)
@@ -185,10 +184,9 @@ theorem quantumSerre_tmul_left {B : Type*} [Ring B] [Algebra K B] (q : K) (m : �
   rw [quantumSerre_def, quantumSerre_def, TensorProduct.sum_tmul]
   refine sum_congr rfl fun r hr => ?_
   have hrm : r ≤ m := Nat.lt_succ_iff.mp (mem_range.mp hr)
-  rw [quantumDividedPower_tmul_left, quantumDividedPower_tmul_left,
-    Algebra.TensorProduct.tmul_mul_tmul, Algebra.TensorProduct.tmul_mul_tmul, mul_assoc (k₁ ^ r),
-    (hk.symm.pow_right (m - r)).eq, ← mul_assoc (k₁ ^ r), ← pow_add, Nat.add_sub_of_le hrm,
-    ← TensorProduct.smul_tmul']
+  rw [quantumDividedPower_tmul_left, quantumDividedPower_tmul_left, tmul_mul_tmul, tmul_mul_tmul,
+    mul_assoc (k₁ ^ r), (hk.symm.pow_right (m - r)).eq, ← mul_assoc (k₁ ^ r), ← pow_add,
+    Nat.add_sub_of_le hrm, ← smul_tmul']
 theorem quantumSerre_tmul_right {B : Type*} [Ring B] [Algebra K B] (q : K) (m : ℕ)
     {k₁ k₂ : A} {x₁ x₂ : B} (hk : Commute k₁ k₂) :
     quantumSerre q m (k₁ ⊗ₜ[K] x₁) (k₂ ⊗ₜ[K] x₂) =
@@ -196,10 +194,9 @@ theorem quantumSerre_tmul_right {B : Type*} [Ring B] [Algebra K B] (q : K) (m : 
   rw [quantumSerre_def, quantumSerre_def, TensorProduct.tmul_sum]
   refine sum_congr rfl fun r hr => ?_
   have hrm : r ≤ m := Nat.lt_succ_iff.mp (mem_range.mp hr)
-  rw [quantumDividedPower_tmul_right, quantumDividedPower_tmul_right,
-    Algebra.TensorProduct.tmul_mul_tmul, Algebra.TensorProduct.tmul_mul_tmul, mul_assoc,
-    (hk.symm.pow_right (m - r)).eq, ← mul_assoc, ← pow_add, Nat.add_sub_of_le hrm,
-    TensorProduct.tmul_smul]
+  rw [quantumDividedPower_tmul_right, quantumDividedPower_tmul_right, tmul_mul_tmul, tmul_mul_tmul,
+    mul_assoc, (hk.symm.pow_right (m - r)).eq, ← mul_assoc, ← pow_add, Nat.add_sub_of_le hrm,
+    tmul_smul]
 /-- Multiplying `(x₁, x₂)` on the left by commuting elements `(u₁, u₂)` satisfying the Serre-degree
 `q`-commutation relations pulls `u₁^m * u₂` out of `quantumSerre q m` on the left. -/
 theorem quantumSerre_mul_left {q : K} (m : ℕ) {u₁ x₁ u₂ x₂ : A}
@@ -239,23 +236,20 @@ private theorem quantumSerre_add_left_inner {q : K} (hq : q ≠ 0) {m : ℕ}
     (hx : x₂ * x₁ = q ^ 2 • (x₁ * x₂)) (hxy : x₂ * y = q ^ (1 - (m : ℤ)) • (y * x₂))
     (a c : ℕ) (hac : a + c ≤ m) :
     (∑ u ∈ range (m - a - c + 1),
-      (-1 : K) ^ (a + u) • ((q ^ (a * (a + u - a)) •
-        (quantumDividedPower q x₁ a * quantumDividedPower q x₂ (a + u - a))) * y *
+      (-1 : K) ^ (a + u) • ((q ^ (a * u) •
+        (quantumDividedPower q x₁ a * quantumDividedPower q x₂ u)) * y *
         (q ^ (c * (m - (a + u) - c)) •
           (quantumDividedPower q x₁ c * quantumDividedPower q x₂ (m - (a + u) - c))))) =
     if m - a - c = 0 then
       (-1 : K) ^ a • (quantumDividedPower q x₁ a * y * quantumDividedPower q x₁ c)
     else 0 := by
   set n := m - a - c
-  have hterm : ∀ u ∈ range (n + 1),
-      (-1 : K) ^ (a + u) • ((q ^ (a * (a + u - a)) •
-        (quantumDividedPower q x₁ a * quantumDividedPower q x₂ (a + u - a))) * y *
-        (q ^ (c * (m - (a + u) - c)) •
-          (quantumDividedPower q x₁ c * quantumDividedPower q x₂ (m - (a + u) - c)))) =
+  trans ∑ u ∈ range (n + 1),
       ((-1 : K) ^ a * q ^ (c * n) *
         ((-1 : K) ^ u * q ^ (-((u : ℤ) * ((n : ℤ) - 1))) * quantumBinomial q n u)) •
         ((quantumDividedPower q x₁ a * y * quantumDividedPower q x₁ c) *
-          quantumDividedPower q x₂ n) := fun u hu => by
+          quantumDividedPower q x₂ n)
+  · refine sum_congr rfl fun u hu => ?_
     have hun : u ≤ n := Nat.lt_succ_iff.mp (mem_range.mp hu)
     have hsub : m - (a + u) - c = n - u := by omega
     have hcomm : quantumDividedPower q x₂ u * quantumDividedPower q x₁ c =
@@ -264,7 +258,7 @@ private theorem quantumSerre_add_left_inner {q : K} (hq : q ≠ 0) {m : ℕ}
         (mul_quantumDividedPower_of_mul_eq_smul_mul q hx c) u
     have hfn : quantumFactorial q (u + (n - u)) ≠ 0 :=
       (Nat.add_sub_of_le hun).symm ▸ quantumFactorial_ne_zero_of_le (by omega) hfac
-    simp only [Nat.add_sub_cancel_left, hsub, smul_mul_assoc, mul_smul_comm, smul_smul, mul_assoc]
+    simp only [hsub, smul_mul_assoc, mul_smul_comm, smul_smul, mul_assoc]
     rw [← mul_assoc (quantumDividedPower q x₂ u) y,
       quantumDividedPower_mul_of_mul_eq_smul_mul q hxy u]
     simp only [smul_mul_assoc, mul_smul_comm, smul_smul, mul_assoc]
@@ -280,25 +274,13 @@ private theorem quantumSerre_add_left_inner {q : K} (hq : q ≠ 0) {m : ℕ}
       exact congrArg (q ^ ·) (by ring)
     rw [pow_add]
     linear_combination ((-1 : K) ^ a * (-1 : K) ^ u * quantumBinomial q n u) * hqexp
-  rw [sum_congr rfl hterm, ← sum_smul, ← mul_sum,
-    sum_neg_one_pow_mul_zpow_neg_mul_quantumBinomial hq n]
-  split_ifs with hn <;> simp [hn, mul_assoc]
+  · rw [← sum_smul, ← mul_sum, sum_neg_one_pow_mul_zpow_neg_mul_quantumBinomial hq n]
+    split_ifs with hn <;> simp [hn, mul_assoc]
 
 private theorem quantumSerre_add_left {q : K} (hq : q ≠ 0) {m : ℕ}
     (hfac : quantumFactorial q m ≠ 0) {x₁ x₂ y : A}
     (hx : x₂ * x₁ = q ^ 2 • (x₁ * x₂)) (hxy : x₂ * y = q ^ (1 - (m : ℤ)) • (y * x₂)) :
     quantumSerre q m (x₁ + x₂) y = quantumSerre q m x₁ y := by
-  have expand : quantumSerre q m (x₁ + x₂) y = ∑ r ∈ range (m + 1), ∑ a ∈ range (r + 1),
-      ∑ c ∈ range (m - r + 1), (-1 : K) ^ r • ((q ^ (a * (r - a)) •
-        (quantumDividedPower q x₁ a * quantumDividedPower q x₂ (r - a))) * y *
-        (q ^ (c * (m - r - c)) •
-          (quantumDividedPower q x₁ c * quantumDividedPower q x₂ (m - r - c)))) := by
-    rw [quantumSerre_def]; refine sum_congr rfl fun r hr => ?_
-    have hrm : r ≤ m := Nat.lt_succ_iff.mp (mem_range.mp hr)
-    rw [quantumDividedPower_add hx (quantumFactorial_ne_zero_of_le hrm hfac),
-      quantumDividedPower_add hx (quantumFactorial_ne_zero_of_le (Nat.sub_le m r) hfac),
-      sum_mul, sum_mul, smul_sum]
-    exact sum_congr rfl fun _ _ => by rw [mul_sum, smul_sum]
   have hreindex (F : ℕ → ℕ → ℕ → A) :
       (∑ r ∈ range (m + 1), ∑ a ∈ range (r + 1), ∑ c ∈ range (m - r + 1), F r a c) =
       ∑ a ∈ range (m + 1), ∑ c ∈ range (m - a + 1), ∑ u ∈ range (m - a - c + 1),
@@ -314,13 +296,25 @@ private theorem quantumSerre_add_left {q : K} (hq : q ≠ 0) {m : ℕ}
       exact Sigma.ext rfl (heq_of_eq (Sigma.ext rfl (heq_of_eq (Nat.add_sub_cancel_left a u))))
     · rintro ⟨r, ⟨a, c⟩⟩ hx; simp only [mem_sigma, mem_range] at hx ⊢
       exact congrArg (F · a c) (by omega)
-  rw [expand, hreindex, quantumSerre_def]; refine sum_congr rfl fun a ha => ?_
-  have ham : a ≤ m := Nat.lt_succ_iff.mp (mem_range.mp ha)
-  rw [sum_range_succ, sum_eq_zero (fun c hc => by
-    have hne : m - a - c ≠ 0 := by have := mem_range.mp hc; omega
-    rw [quantumSerre_add_left_inner hq hfac hx hxy a c (by omega)]; simp [hne]),
-    zero_add, quantumSerre_add_left_inner hq hfac hx hxy a (m - a) (by omega)]
-  simp
+  trans ∑ r ∈ range (m + 1), ∑ a ∈ range (r + 1), ∑ c ∈ range (m - r + 1),
+      (-1 : K) ^ r • ((q ^ (a * (r - a)) •
+        (quantumDividedPower q x₁ a * quantumDividedPower q x₂ (r - a))) * y *
+        (q ^ (c * (m - r - c)) •
+          (quantumDividedPower q x₁ c * quantumDividedPower q x₂ (m - r - c))))
+  · rw [quantumSerre_def]; refine sum_congr rfl fun r hr => ?_
+    have hrm : r ≤ m := Nat.lt_succ_iff.mp (mem_range.mp hr)
+    rw [quantumDividedPower_add hx (quantumFactorial_ne_zero_of_le hrm hfac),
+      quantumDividedPower_add hx (quantumFactorial_ne_zero_of_le (Nat.sub_le m r) hfac),
+      sum_mul, sum_mul, smul_sum]
+    exact sum_congr rfl fun _ _ => by rw [mul_sum, smul_sum]
+  · rw [hreindex, quantumSerre_def]; refine sum_congr rfl fun a ha => ?_
+    have ham : a ≤ m := Nat.lt_succ_iff.mp (mem_range.mp ha)
+    simp only [Nat.add_sub_cancel_left]
+    rw [sum_range_succ, sum_eq_zero (fun c hc => by
+      have hne : m - a - c ≠ 0 := by have := mem_range.mp hc; omega
+      rw [quantumSerre_add_left_inner hq hfac hx hxy a c (by omega)]; simp [hne]),
+      zero_add, quantumSerre_add_left_inner hq hfac hx hxy a (m - a) (by omega)]
+    simp
 
 /-- **Additivity of the quantum Serre expression** on `q`-commuting summands when `[m]_q! ≠ 0`. -/
 theorem quantumSerre_add {q : K} {m : ℕ} (hfac : quantumFactorial q m ≠ 0)
@@ -331,17 +325,14 @@ theorem quantumSerre_add {q : K} {m : ℕ} (hfac : quantumFactorial q m ≠ 0)
   rcases eq_or_ne m 0 with rfl | hm; · simp
   have hq : q ≠ 0 :=
     ne_zero_of_sub_inv_ne_zero (sub_inv_ne_zero_of_quantumFactorial_ne_zero hm hfac)
-  have hop : quantumSerre q m (MulOpposite.op x₂ + MulOpposite.op x₁) (MulOpposite.op y₂) =
-      quantumSerre q m (MulOpposite.op x₂) (MulOpposite.op y₂) :=
+  have hop : quantumSerre q m (op x₂ + op x₁) (op y₂) = quantumSerre q m (op x₂) (op y₂) :=
     quantumSerre_add_left hq hfac
-      (by rw [← MulOpposite.op_mul, hx, MulOpposite.op_smul, MulOpposite.op_mul])
-      (by rw [← MulOpposite.op_mul, hy₂x₁, MulOpposite.op_smul, MulOpposite.op_mul])
-  rw [← MulOpposite.op_add, add_comm x₂ x₁, quantumSerre_op (A := A),
-    quantumSerre_op (A := A)] at hop
+      (by rw [← op_mul, hx, op_smul, op_mul]) (by rw [← op_mul, hy₂x₁, op_smul, op_mul])
+  rw [← op_add, add_comm x₂ x₁, quantumSerre_op (A := A), quantumSerre_op (A := A)] at hop
   have hsign : ∀ z : A, (-1 : K) ^ m • ((-1 : K) ^ m • z) = z := fun z => by
     rw [smul_smul, ← mul_pow, neg_one_mul, neg_neg, one_pow, one_smul]
   have hright : quantumSerre q m (x₁ + x₂) y₂ = quantumSerre q m x₂ y₂ := by
-    simpa only [hsign] using congrArg ((-1 : K) ^ m • ·) (MulOpposite.op_injective hop)
+    simpa only [hsign] using congrArg ((-1 : K) ^ m • ·) (op_injective hop)
   rw [quantumSerre_add_right, quantumSerre_add_left hq hfac hx hx₂y₁, hright]
 
 /-- **Coproduct stability of the quantum Serre relation** on `q`-commuting summands. -/

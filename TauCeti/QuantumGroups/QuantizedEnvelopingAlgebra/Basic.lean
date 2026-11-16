@@ -487,11 +487,9 @@ def map (φ : D.Hom D') (q : K) :
 @[simp] theorem map_k (φ : D.Hom D') {q : K} (y : Y) :
     map φ q (k D q y) = k D' q (φ.toLinearMap y) := lift_k _ y
 @[simp] theorem map_simpleK (φ : D.Hom D') {q : K} (i : ι) :
-    map φ q (simpleK D q i) = simpleK D' q i := by
-  rw [simpleK_def, map_k, φ.map_simpleTorus, ← simpleK_def]
+    map φ q (simpleK D q i) = simpleK D' q i := by simp [simpleK_def]
 @[simp] theorem map_simpleKInv (φ : D.Hom D') {q : K} (i : ι) :
-    map φ q (simpleKInv D q i) = simpleKInv D' q i := by
-  rw [simpleKInv_def, map_k, map_neg, φ.map_simpleTorus, ← simpleKInv_def]
+    map φ q (simpleKInv D q i) = simpleKInv D' q i := by simp [simpleKInv_def]
 @[simp] theorem map_id (D : CartanDatum ι X Y) (q : K) :
     map (CartanDatum.Hom.id D) q = AlgHom.id K (QuantizedEnvelopingAlgebra D q) := by ext <;> simp
 theorem map_comp {D'' : CartanDatum ι X'' Y''} (ψ : D'.Hom D'') (φ : D.Hom D') (q : K) :
@@ -510,10 +508,7 @@ private def rescaleAlgHom (D : CartanDatum ι X Y) (q : K) (c : ι → Kˣ) :
       k_zero := k_zero, k_add := k_add,
       k_mul_e i y := by rw [mul_smul_comm, k_mul_e, smul_comm, smul_mul_assoc]
       k_mul_f i y := by rw [mul_smul_comm, k_mul_f, smul_comm, smul_mul_assoc]
-      commutator_self i := by
-        rw [smul_mul_smul_comm, smul_mul_smul_comm, mul_inv_cancel₀ (c i).ne_zero,
-          inv_mul_cancel₀ (c i).ne_zero, one_smul, one_smul, e_mul_f_sub_f_mul_e_self,
-          simpleK_def, simpleKInv_def]
+      commutator_self i := by simp [e_mul_f_sub_f_mul_e_self, simpleK_def, simpleKInv_def]
       commutator_of_ne {i j} hij := by
         rw [smul_mul_smul_comm, smul_mul_smul_comm, mul_comm ((c j : K))⁻¹, ← smul_sub,
           e_mul_f_sub_f_mul_e_of_ne hij, smul_zero]

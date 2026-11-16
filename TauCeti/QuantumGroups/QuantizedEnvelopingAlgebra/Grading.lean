@@ -154,10 +154,8 @@ private theorem k_mul_word_mul_k_neg (y : Y) (l : List (Generator ι Y)) :
       | k z =>
         simp only [List.map_cons, List.prod_cons, generator_k, generatorDegree_k, List.sum_cons,
           zero_add]
-        have h : k D (0 : K) y * (k D 0 z * (l.map (generator D 0)).prod) * k D 0 (-y) =
-            k D 0 z * (k D 0 y * (l.map (generator D 0)).prod * k D 0 (-y)) := by
-          rw [← mul_assoc (k D 0 y), ← k_add, add_comm y z, k_add]; simp only [mul_assoc]
-        rw [h, ih, mul_smul_comm]
+        rw [← mul_assoc (k D (0 : K) y), ← k_add, add_comm y z, k_add,
+          mul_assoc (k D (0 : K) z), mul_assoc (k D (0 : K) z), ih, mul_smul_comm]
     · simp only [List.map_cons, List.prod_cons, List.sum_cons, map_add, LinearMap.add_apply]
       have h : k D q y * (generator D q g * (l.map (generator D q)).prod) * k D q (-y) =
           (k D q y * generator D q g * k D q (-y)) *
@@ -207,15 +205,15 @@ variable {ι X Y K : Type*} [DecidableEq ι] [AddCommGroup X] [AddCommGroup Y] [
 
 private noncomputable abbrev ofGradedPiece (c : ι →₀ ℤ) :
     gradedPiece D q c →ₗ[K] ⨁ c', gradedPiece D q c' :=
-  DirectSum.lof K (ι →₀ ℤ) (fun c' => gradedPiece D q c') c
+  lof K (ι →₀ ℤ) (fun c' => gradedPiece D q c') c
 private theorem ofGradedPiece_eq {c₁ c₂ : ι →₀ ℤ} {x : gradedPiece D q c₁} {y : gradedPiece D q c₂}
     (hc : c₁ = c₂) (hxy : (x : QuantizedEnvelopingAlgebra D q) = y) :
     ofGradedPiece c₁ x = ofGradedPiece c₂ y :=
-  DirectSum.of_eq_of_gradedMonoid_eq (Sigma.subtype_ext hc hxy)
+  of_eq_of_gradedMonoid_eq (Sigma.subtype_ext hc hxy)
 private theorem ofGradedPiece_mul {c d : ι →₀ ℤ} (x : gradedPiece D q c) (y : gradedPiece D q d) :
     ofGradedPiece c x * ofGradedPiece d y =
       ofGradedPiece (c + d) ⟨x.1 * y.1, mul_mem_gradedPiece x.2 y.2⟩ := by
-  simp only [DirectSum.lof_eq_of, DirectSum.of_mul_of]; rfl
+  simp only [lof_eq_of, of_mul_of]; rfl
 private theorem ofGradedPiece_mul_eq {c d m : ι →₀ ℤ}
     (x : gradedPiece D q c) (y : gradedPiece D q d) (h : c + d = m) :
     ofGradedPiece c x * ofGradedPiece d y =
@@ -232,8 +230,7 @@ private theorem quantumSerre_ofGradedPiece (u : K) (m : ℕ)
   have hdp (n : ℕ) : quantumDividedPower u (ofGradedPiece c x) n =
       ofGradedPiece (n • c)
         ⟨quantumDividedPower u x.1 n, quantumDividedPower_mem_gradedPiece u x.2 n⟩ := by
-    simp only [quantumDividedPower_def, DirectSum.lof_eq_of, DirectSum.ofPow, ← DirectSum.of_smul]
-    rfl
+    simp only [quantumDividedPower_def, lof_eq_of, ofPow, ← of_smul]; rfl
   have hterm (r : {r // r ∈ Finset.range (m + 1)}) :
       (-1 : K) ^ r.1 • (quantumDividedPower u (ofGradedPiece c x) r.1 * ofGradedPiece d y *
         quantumDividedPower u (ofGradedPiece c x) (m - r.1)) =
@@ -246,10 +243,9 @@ private theorem quantumSerre_ofGradedPiece (u : K) (m : ℕ)
       rfl
   rw [quantumSerre_def, ← Finset.sum_attach, Finset.sum_congr rfl fun r _ => hterm r, ← map_sum]
   exact ofGradedPiece_eq rfl (by
-    simp only [Submodule.coe_sum]
-    rw [Finset.sum_attach _ (fun r =>
-      (-1 : K) ^ r • (quantumDividedPower u x.1 r * y.1 * quantumDividedPower u x.1 (m - r))),
-      ← quantumSerre_def])
+    simp only [Submodule.coe_sum, quantumSerre_def]
+    exact Finset.sum_attach _ fun r =>
+      (-1 : K) ^ r • (quantumDividedPower u x.1 r * y.1 * quantumDividedPower u x.1 (m - r)))
 
 private noncomputable def decomposeAlgHom (D : CartanDatum ι X Y) (q : K) :
     QuantizedEnvelopingAlgebra D q →ₐ[K] ⨁ c, gradedPiece D q c :=
@@ -258,8 +254,8 @@ private noncomputable def decomposeAlgHom (D : CartanDatum ι X Y) (q : K) :
       f i := ofGradedPiece (-Finsupp.single i 1) ⟨f D q i, f_mem_gradedPiece i⟩
       k y := ofGradedPiece 0 ⟨k D q y, k_mem_gradedPiece y⟩
       k_zero := by
-        simp only [DirectSum.lof_eq_of, DirectSum.one_def]
-        exact DirectSum.of_eq_of_gradedMonoid_eq (Sigma.subtype_ext rfl k_zero)
+        simp only [lof_eq_of, one_def]
+        exact of_eq_of_gradedMonoid_eq (Sigma.subtype_ext rfl k_zero)
       k_add y z := by rw [ofGradedPiece_mul]; exact ofGradedPiece_eq (zero_add 0).symm (k_add y z)
       k_mul_e i y := by
         rw [ofGradedPiece_mul, ofGradedPiece_mul, ← map_smul (ofGradedPiece _)]
@@ -284,64 +280,57 @@ private noncomputable def decomposeAlgHom (D : CartanDatum ι X Y) (q : K) :
 
 private theorem decomposeAlgHom_word {D : CartanDatum ι X Y} {q : K} (l : List (Generator ι Y)) :
     decomposeAlgHom D q (l.map (generator D q)).prod =
-      DirectSum.of (fun c => gradedPiece D q c) (l.map generatorDegree).sum
+      of (fun c => gradedPiece D q c) (l.map generatorDegree).sum
         ⟨(l.map (generator D q)).prod, word_mem_gradedPiece rfl⟩ := by
   induction l with
-  | nil => simp only [List.map_nil, List.prod_nil, map_one, DirectSum.one_def]; rfl
+  | nil => simp only [List.map_nil, List.prod_nil, map_one, one_def]; rfl
   | cons g l ih =>
     have hg : decomposeAlgHom D q (generator D q g) =
-        DirectSum.of (fun c => gradedPiece D q c) (generatorDegree g)
+        of (fun c => gradedPiece D q c) (generatorDegree g)
           ⟨generator D q g, generator_mem_gradedPiece g⟩ := by
-      cases g <;> simp only [generator_e, generator_f, generator_k, decomposeAlgHom, lift_e,
-        lift_f, lift_k, DirectSum.lof_eq_of] <;>
-        exact DirectSum.of_eq_of_gradedMonoid_eq (Sigma.subtype_ext rfl rfl)
-    simp only [List.map_cons, List.prod_cons, map_mul, hg, ih, DirectSum.of_mul_of]; rfl
+      cases g <;> simp only [generator_e, generator_f, generator_k, decomposeAlgHom, lift_e, lift_f,
+        lift_k, lof_eq_of] <;> exact of_eq_of_gradedMonoid_eq (Sigma.subtype_ext rfl rfl)
+    simp only [List.map_cons, List.prod_cons, map_mul, hg, ih, of_mul_of]; rfl
 
 private theorem decomposeAlgHom_apply_of_mem {D : CartanDatum ι X Y} {q : K} {c : ι →₀ ℤ}
     {x : QuantizedEnvelopingAlgebra D q} (hx : x ∈ gradedPiece D q c) :
-    decomposeAlgHom D q x = DirectSum.of (fun c' => gradedPiece D q c') c ⟨x, hx⟩ := by
+    decomposeAlgHom D q x = of (fun c' => gradedPiece D q c') c ⟨x, hx⟩ := by
   induction hx using gradedPiece_induction with
   | word l hl =>
-    exact (decomposeAlgHom_word l).trans
-      (DirectSum.of_eq_of_gradedMonoid_eq (Sigma.subtype_ext hl rfl))
+    exact (decomposeAlgHom_word l).trans (of_eq_of_gradedMonoid_eq (Sigma.subtype_ext hl rfl))
   | zero => exact (map_zero _).trans (map_zero _).symm
   | add _ _ _ _ iha ihb => rw [map_add, iha, ihb, ← map_add]; rfl
-  | smul _ _ _ ih => rw [map_smul, ih, ← DirectSum.of_smul]; rfl
+  | smul _ _ _ ih => rw [map_smul, ih, ← of_smul]; rfl
 
-theorem isInternal_gradedPiece (D : CartanDatum ι X Y) (q : K) :
-    DirectSum.IsInternal (gradedPiece D q) := by
+theorem isInternal_gradedPiece (D : CartanDatum ι X Y) (q : K) : IsInternal (gradedPiece D q) := by
   let := GradedAlgebra.ofAlgHom (gradedPiece D q) (decomposeAlgHom D q)
-    (by ext <;> simp [decomposeAlgHom, DirectSum.lof_eq_of])
-    (fun _ x => decomposeAlgHom_apply_of_mem x.2)
-  exact DirectSum.Decomposition.isInternal (gradedPiece D q)
+    (by ext <;> simp [decomposeAlgHom, lof_eq_of]) (fun _ x => decomposeAlgHom_apply_of_mem x.2)
+  exact Decomposition.isInternal (gradedPiece D q)
 
 /-- `QuantizedEnvelopingAlgebra D q` is internally `(ι →₀ ℤ)`-graded by `gradedPiece D q`. -/
 noncomputable instance instGradedAlgebra (D : CartanDatum ι X Y) (q : K) :
     GradedAlgebra (gradedPiece D q) :=
   (isInternal_gradedPiece D q).gradedAlgebra
 @[simp] theorem decompose_e (i : ι) :
-    DirectSum.decompose (gradedPiece D q) (e D q i) =
-      DirectSum.of (fun c => gradedPiece D q c) (Finsupp.single i 1)
-        ⟨e D q i, e_mem_gradedPiece i⟩ :=
-  DirectSum.decompose_of_mem (gradedPiece D q) (e_mem_gradedPiece i)
+    decompose (gradedPiece D q) (e D q i) =
+      of (fun c => gradedPiece D q c) (Finsupp.single i 1) ⟨e D q i, e_mem_gradedPiece i⟩ :=
+  decompose_of_mem (gradedPiece D q) (e_mem_gradedPiece i)
 @[simp] theorem decompose_f (i : ι) :
-    DirectSum.decompose (gradedPiece D q) (f D q i) =
-      DirectSum.of (fun c => gradedPiece D q c) (-Finsupp.single i 1)
-        ⟨f D q i, f_mem_gradedPiece i⟩ :=
-  DirectSum.decompose_of_mem (gradedPiece D q) (f_mem_gradedPiece i)
+    decompose (gradedPiece D q) (f D q i) =
+      of (fun c => gradedPiece D q c) (-Finsupp.single i 1) ⟨f D q i, f_mem_gradedPiece i⟩ :=
+  decompose_of_mem (gradedPiece D q) (f_mem_gradedPiece i)
 @[simp] theorem decompose_k (y : Y) :
-    DirectSum.decompose (gradedPiece D q) (k D q y) =
-      DirectSum.of (fun c => gradedPiece D q c) 0 ⟨k D q y, k_mem_gradedPiece y⟩ :=
-  DirectSum.decompose_of_mem (gradedPiece D q) (k_mem_gradedPiece y)
+    decompose (gradedPiece D q) (k D q y) =
+      of (fun c => gradedPiece D q c) 0 ⟨k D q y, k_mem_gradedPiece y⟩ :=
+  decompose_of_mem (gradedPiece D q) (k_mem_gradedPiece y)
 @[simp] theorem decompose_simpleK (i : ι) :
-    DirectSum.decompose (gradedPiece D q) (simpleK D q i) =
-      DirectSum.of (fun c => gradedPiece D q c) 0 ⟨simpleK D q i, simpleK_mem_gradedPiece i⟩ :=
-  DirectSum.decompose_of_mem (gradedPiece D q) (simpleK_mem_gradedPiece i)
+    decompose (gradedPiece D q) (simpleK D q i) =
+      of (fun c => gradedPiece D q c) 0 ⟨simpleK D q i, simpleK_mem_gradedPiece i⟩ :=
+  decompose_of_mem (gradedPiece D q) (simpleK_mem_gradedPiece i)
 @[simp] theorem decompose_simpleKInv (i : ι) :
-    DirectSum.decompose (gradedPiece D q) (simpleKInv D q i) =
-      DirectSum.of (fun c => gradedPiece D q c) 0
-        ⟨simpleKInv D q i, simpleKInv_mem_gradedPiece i⟩ :=
-  DirectSum.decompose_of_mem (gradedPiece D q) (simpleKInv_mem_gradedPiece i)
+    decompose (gradedPiece D q) (simpleKInv D q i) =
+      of (fun c => gradedPiece D q c) 0 ⟨simpleKInv D q i, simpleKInv_mem_gradedPiece i⟩ :=
+  decompose_of_mem (gradedPiece D q) (simpleKInv_mem_gradedPiece i)
 
 end GradedAlgebra
 end TauCeti.QuantizedEnvelopingAlgebra
