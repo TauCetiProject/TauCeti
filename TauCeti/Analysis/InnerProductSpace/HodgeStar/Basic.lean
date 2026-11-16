@@ -22,10 +22,6 @@ import Mathlib.Analysis.InnerProductSpace.PiL2
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
 import TauCeti.LinearAlgebra.ExteriorPower.WedgePairing
--- The Gram-determinant formula `LinearMap.BilinForm.bilinForm_ιMulti_ιMulti` for the induced
--- bilinear form on an exterior power is private to its file, and the body of
--- `LinearMap.BilinForm.exteriorPower` is not exposed, so evaluating that form needs this import.
-import all Mathlib.LinearAlgebra.ExteriorPower.BilinForm
 
 /-!
 # The Hodge star of an oriented real inner product space
