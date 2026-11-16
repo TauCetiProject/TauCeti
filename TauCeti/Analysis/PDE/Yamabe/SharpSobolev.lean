@@ -9,15 +9,10 @@ public import Mathlib.Topology.EMetricSpace.Lipschitz
 public import TauCeti.Analysis.PDE.Yamabe.Bubble.Basic
 public import TauCeti.Analysis.PDE.Yamabe.SphereConstant
 public import TauCeti.Analysis.Sobolev.D1p0.Basic
-import Mathlib.Analysis.Calculus.FDeriv.Measurable
-import Mathlib.Analysis.Calculus.MeanValue
-import Mathlib.Analysis.InnerProductSpace.Calculus
-import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
-import Mathlib.MeasureTheory.Constructions.HaarToSphere
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.Calculus.FDeriv.Norm
 import TauCeti.Analysis.PDE.Yamabe.Bubble.Cutoff
 import TauCeti.Analysis.PDE.Yamabe.Bubble.Homogeneous
-import TauCeti.Analysis.PDE.Yamabe.Bubble.SobolevQuotient
 import TauCeti.Analysis.PDE.Yamabe.WeightedSobolev
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.SchwarzRearrangement.PolyaSzego
@@ -28,12 +23,16 @@ import TauCeti.MeasureTheory.Function.SchwarzRearrangement.PolyaSzego
 For a finite-dimensional real inner product space `E` of dimension `n > 2` with Lebesgue measure,
 let `aₙ = 4 (n - 1) / (n - 2)` (`TauCeti.Yamabe.conformalCoefficient`),
 `pₙ = 2 n / (n - 2)` (`TauCeti.Yamabe.criticalExponent`), and
-`Y(Sⁿ) = n (n - 1) |Sⁿ| ^ (2 / n)` (`TauCeti.Yamabe.sphereYamabeConstant`). Combining the Lipschitz
-Pólya–Szegő inequality (`TauCeti.integral_norm_fderiv_toReal_schwarzRearrangement_norm_rpow_le`)
-with the one-dimensional mass-transport Sobolev inequality
-(`TauCeti.Yamabe.mul_integral_bubbleRadialWeight_le_conformalCoefficient_mul_integral`) proves
-`Y(Sⁿ) (∫ |u| ^ pₙ) ^ (2 / pₙ) ≤ aₙ ∫ ‖du‖²` for compactly supported Lipschitz and `C¹` functions,
-and density of test functions extends it to `D1p0 volume ⊤ 2`, attained by Aubin–Talenti bubbles.
+`Y(Sⁿ) = n (n - 1) |Sⁿ| ^ (2 / n)` (`TauCeti.Yamabe.sphereYamabeConstant`).
+
+This file establishes the sharp Euclidean Sobolev inequality
+`Y(Sⁿ) (∫ |u| ^ pₙ) ^ (2 / pₙ) ≤ aₙ ∫ ‖du‖²` for:
+* compactly supported Lipschitz functions
+  (`sphereYamabeConstant_mul_rpow_le_conformalCoefficient_mul_integral_of_lipschitzWith`);
+* compactly supported `C¹` functions
+  (`sphereYamabeConstant_mul_rpow_le_conformalCoefficient_mul_integral`);
+* elements of `D1p0 volume ⊤ 2`, in both norm and integral form, together with sharpness on
+  `D1p0 volume ⊤ 2` and `C_c^∞(E)`.
 
 ## References
 
@@ -76,8 +75,7 @@ omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 private theorem deriv_radial_sq_le {v : E → ℝ} (hv_rad : ∀ x y, ‖x‖ = ‖y‖ → v x = v y)
     {e₀ : E} (he₀ : ‖e₀‖ = 1) {r : ℝ} (hr : 0 < r) :
     (deriv (fun s : ℝ ↦ v (s • e₀)) r) ^ 2 ≤ ‖fderiv ℝ v (r • e₀)‖ ^ 2 := by
-  let g : ℝ → ℝ := fun s ↦ v (s • e₀)
-  change (deriv g r) ^ 2 ≤ ‖fderiv ℝ v (r • e₀)‖ ^ 2
+  set g : ℝ → ℝ := fun s ↦ v (s • e₀)
   by_cases hg : DifferentiableAt ℝ g r
   · have hre₀_ne : r • e₀ ≠ 0 := fun h0 ↦ by
       have := congrArg norm h0; simp [norm_smul, abs_of_pos hr, he₀, hr.ne'] at this
@@ -93,14 +91,6 @@ private theorem deriv_radial_sq_le {v : E → ℝ} (hv_rad : ∀ x y, ‖x‖ = 
     rw [abs_of_nonneg (norm_nonneg _), ← Real.norm_eq_abs]
     simpa only [he₀, mul_one] using (fderiv ℝ v (r • e₀)).le_opNorm e₀
   · rw [deriv_zero_of_not_differentiableAt hg]; simp
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-private theorem norm_fderiv_eq_of_norm_eq {v : E → ℝ} (hv_rad : ∀ x y, ‖x‖ = ‖y‖ → v x = v y)
-    {x y : E} (hxy : ‖x‖ = ‖y‖) : ‖fderiv ℝ v x‖ = ‖fderiv ℝ v y‖ := by
-  let R := (ℝ ∙ (x - y))ᗮ.reflection
-  have hcomp : v ∘ R = v := funext fun z ↦ hv_rad (R z) z (R.norm_map z)
-  have h := R.norm_iteratedFDeriv_comp_right v x 1
-  rwa [hcomp, Submodule.reflection_sub hxy, norm_iteratedFDeriv_one, norm_iteratedFDeriv_one] at h
 
 private theorem integrable_norm_fderiv_sq_of_lipschitzWith {K : ℝ≥0} {u : E → ℝ}
     (hu : LipschitzWith K u) (hsupp : HasCompactSupport u) :
@@ -179,6 +169,7 @@ private theorem radial_sharp_sobolev (hn : 2 < finrank ℝ E) {K : ℝ≥0} {v :
   rcases hM_nn.eq_or_lt with hM0 | hM_pos
   · rw [← hM0, Real.zero_rpow (div_pos zero_lt_two hpₙ).ne', mul_zero]
     exact mul_nonneg (conformalCoefficient_pos hn).le (integral_nonneg fun _ ↦ sq_nonneg _)
+  -- Stage 1: Construct the normalized radial profile `f` and verify its regularity and support.
   obtain ⟨e₀, he₀⟩ := exists_norm_eq (E := E) zero_le_one
   have hv_rad (x y : E) (h : ‖x‖ = ‖y‖) : v x = v y :=
     le_antisymm (hv_anti y x h.ge) (hv_anti x y h.le)
@@ -206,6 +197,7 @@ private theorem radial_sharp_sobolev (hn : 2 < finrank ℝ E) {K : ℝ≥0} {v :
       rw [norm_smul, Real.norm_eq_abs, he₀, mul_one, max_eq_left (hR.le.trans hr),
         abs_of_nonneg (hR.le.trans hr)]; exact hr
     simp [f, hvR _ hge]
+  -- Stage 2: Express the critical mass `M` in polar coordinates and verify `f` is normalized.
   have hv_polar : M = (n : ℝ) * (volume.real (ball (0 : E) 1) *
       ∫ r in Ioi (0 : ℝ), r ^ (n - 1) * v (r • e₀) ^ pₙ) := by
     have hv_eq : (fun x : E ↦ v x ^ pₙ) = fun x ↦ (fun r ↦ v (max r 0 • e₀) ^ pₙ) ‖x‖ :=
@@ -228,8 +220,9 @@ private theorem radial_sharp_sobolev (hn : 2 < finrank ℝ E) {K : ℝ≥0} {v :
             ∫ r in Ioi (0 : ℝ), r ^ (n - 1) * v (r • e₀) ^ pₙ)) := by ring
       _ = roundSphereVolume n := by rw [← hv_polar, div_mul_cancel₀ _ hM_pos.ne']
       _ = (n : ℝ) * volume.real (ball (0 : E) 1) * I₀ := by rw [← hI₀_val, mul_assoc]
+  -- Stage 3: Apply the 1D weighted Sobolev inequality to `f` and rescale back to `v`.
   have h1d := mul_integral_bubbleRadialWeight_le_conformalCoefficient_mul_integral hn hf_lip
-    (fun r ↦ mul_nonneg hc.le (hv_nonneg _)) hf_anti hR hfR hnorm
+    (fun r _ ↦ mul_nonneg hc.le (hv_nonneg _)) hf_anti hR hfR hnorm
   have hrad := integral_radial_deriv_sq_le hv_lip hv_supp hv_rad he₀ c
   have hS_pos : 0 < roundSphereVolume n ^ (2 / pₙ) :=
     Real.rpow_pos_of_pos (roundSphereVolume_pos n) _
@@ -253,10 +246,12 @@ private theorem radial_sharp_sobolev (hn : 2 < finrank ℝ E) {K : ℝ≥0} {v :
           mul_le_mul_of_nonneg_left hrad (conformalCoefficient_pos hn).le
       _ = (conformalCoefficient n * ∫ x, ‖fderiv ℝ v x‖ ^ 2) *
             (roundSphereVolume n ^ (2 / pₙ) / M ^ (2 / pₙ)) := by rw [hc2]; ring
-  refine le_of_mul_le_mul_right ?_ (div_pos hS_pos hM_rpow)
-  rwa [show sphereYamabeConstant n * M ^ (2 / pₙ) *
+  have hcancel : sphereYamabeConstant n * M ^ (2 / pₙ) *
       (roundSphereVolume n ^ (2 / pₙ) / M ^ (2 / pₙ)) =
-    sphereYamabeConstant n * roundSphereVolume n ^ (2 / pₙ) by field_simp [hM_rpow.ne']]
+      sphereYamabeConstant n * roundSphereVolume n ^ (2 / pₙ) := by
+    field_simp [hM_rpow.ne']
+  refine le_of_mul_le_mul_right ?_ (div_pos hS_pos hM_rpow)
+  rwa [hcancel]
 
 private theorem exists_radius_schwarzRearrangement_eq_zero [Nontrivial E] {u : E → ENNReal}
     (hfin0 : volume {y | 0 < u y} ≠ ⊤) :
@@ -290,6 +285,7 @@ theorem sphereYamabeConstant_mul_rpow_le_conformalCoefficient_mul_integral_of_li
   have : Nontrivial E := Module.nontrivial_of_finrank_pos (R := ℝ) (by omega)
   set pₙ := criticalExponent (finrank ℝ E)
   have hpₙ : 0 < pₙ := criticalExponent_pos hn
+  -- Stage 1: Form the Schwarz rearrangement `v` and verify its regularity and support.
   let u_enn : E → ENNReal := fun y ↦ ENNReal.ofReal ‖u y‖
   let v_enn : E → ENNReal := schwarzRearrangement volume u_enn
   let v : E → ℝ := fun z ↦ (v_enn z).toReal
@@ -316,6 +312,7 @@ theorem sphereYamabeConstant_mul_rpow_le_conformalCoefficient_mul_integral_of_li
   have hv_supp : HasCompactSupport v :=
     HasCompactSupport.of_support_subset_isCompact (isCompact_closedBall (0 : E) R) fun x hx ↦
       mem_closedBall_zero_iff.2 (not_lt.1 fun hlt ↦ hx (hvR x hlt.le))
+  -- Stage 2: Equimeasurability of the critical mass and Pólya–Szegő gradient decay.
   have hmass_eq : (∫ x, v x ^ pₙ) = ∫ x, |u x| ^ pₙ := by
     rw [← ENNReal.toReal_ofReal (integral_nonneg fun _ ↦ Real.rpow_nonneg ENNReal.toReal_nonneg _),
       ← ENNReal.toReal_ofReal (integral_nonneg fun _ ↦ Real.rpow_nonneg (abs_nonneg _) _)]
@@ -333,8 +330,9 @@ theorem sphereYamabeConstant_mul_rpow_le_conformalCoefficient_mul_integral_of_li
     · rw [← Real.norm_eq_abs, ← ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) hpₙ.le]
   have hps : ∫ x, ‖fderiv ℝ v x‖ ^ 2 ≤ ∫ x, ‖fderiv ℝ u x‖ ^ 2 := by
     simpa only [Real.rpow_two] using
-      integral_norm_fderiv_toReal_schwarzRearrangement_norm_rpow_le hu hfin one_le_two
+      hu.integral_norm_fderiv_toReal_schwarzRearrangement_norm_rpow_le hfin one_le_two
         (by simpa only [Real.rpow_two] using integrable_norm_fderiv_sq_of_lipschitzWith hu hsupp)
+  -- Stage 3: Apply the radial sharp Sobolev inequality to `v`.
   rw [← hmass_eq]
   exact (radial_sharp_sobolev hn hv_lip (fun _ ↦ ENNReal.toReal_nonneg) hv_anti hR hvR).trans
     (mul_le_mul_of_nonneg_left hps (conformalCoefficient_pos hn).le)

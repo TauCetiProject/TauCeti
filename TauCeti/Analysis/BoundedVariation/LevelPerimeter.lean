@@ -8,8 +8,6 @@ module
 public import TauCeti.Analysis.BoundedVariation.Perimeter
 public import TauCeti.MeasureTheory.Function.Coarea.Lipschitz
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
-import TauCeti.Analysis.BoundedVariation.Coarea
-import TauCeti.Analysis.BoundedVariation.TotalVariation
 import TauCeti.Analysis.BoundedVariation.Truncation
 import TauCeti.Analysis.InnerProductSpace.NormDet
 import TauCeti.MeasureTheory.Function.Coarea.Measurability
@@ -70,9 +68,9 @@ private theorem setLIntegral_Ico_perimeter_eq_euclideanHausdorffMeasure {V : Ope
   have hVm : MeasurableSet (V : Set E) := V.isOpen.measurableSet
   have hu_cont : ContinuousOn u V := huV.continuousOn
   have hclamp : LocallyLipschitzOn V (fun x ↦ max a (min (u x) b)) := by
-    change LocallyLipschitzOn V ((fun t : ℝ ↦ max a (min t b)) ∘ u)
-    exact (((LipschitzWith.const a).max
+    have hcomp := (((LipschitzWith.const a).max
       (LipschitzWith.id.min (LipschitzWith.const b))).locallyLipschitz).comp_locallyLipschitzOn huV
+    simpa only [Function.comp_def, id_eq] using hcomp
   rw [← TauCeti.totalVariationOn_max_min_const_eq_lintegral_perimeter
       (hu_cont.locallyIntegrableOn hVm), hclamp.totalVariationOn_eq_setLIntegral_enorm_fderiv]
   have hband : MeasurableSet ((V : Set E) ∩ u ⁻¹' Ioo a b) :=
