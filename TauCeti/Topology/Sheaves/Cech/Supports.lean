@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Topology.Sets.Compacts
 public import TauCeti.Topology.Sheaves.Cech.Colimit
+public import TauCeti.Topology.Sheaves.InfFunctor
+public import TauCeti.Topology.Sheaves.SupportedCohomology
 
 /-!
 # Čech cohomology with supports
@@ -22,9 +24,10 @@ the category of functors of the presheaf, so `Γ_S P` is functorial in `P`, and 
 the kernel of the restriction (`TauCeti.Topology.isLimitSupportedSectionsObjObj`,
 `TauCeti.Topology.supportedSectionsObjObjIso`). Enlarging the support is a map
 `Γ_S P ⟶ Γ_S' P` for `S ≤ S'`, compatible with the inclusions into `P`, which makes `Γ_S` a
-functor of the closed subset `S` (`TauCeti.Topology.supportedSectionsFunctor`). The sections of
-a sheaf supported in `S` form a sheaf (`TauCeti.Topology.isSheaf_supportedSections_obj`): they are
-the kernel of a map from `F` to the sheaf `W ↦ F(W ∖ S)`.
+functor of the closed subset `S` (`TauCeti.Topology.supportedSectionsClosedsFunctor`). The
+sections of a sheaf supported in `S` form a sheaf
+(`TauCeti.Topology.isSheaf_supportedSections_obj`): they are the kernel of a map from `F` to the
+sheaf `W ↦ F(W ∖ S)` (`TopCat.Presheaf.isSheaf_infFunctor_op_comp`).
 
 The **Čech cohomology with supports in `S`** is the open-cover Čech cohomology
 (`TauCeti.Topology.cechCohomology`) of this presheaf,
@@ -43,18 +46,18 @@ cohomology.
 
 ## Main definitions
 
-* `TopologicalSpace.Opens.infFunctor U`: the functor `W ↦ W ⊓ U` on open subsets.
 * `TopologicalSpace.Compacts.toClosedsFunctor α`: compact subsets of a Hausdorff space as closed
   subsets.
 * `TauCeti.Topology.supportedSections A S`: the presheaf `Γ_S P` of sections supported in `S`, as
-  a functor of `P`, with its inclusion `TauCeti.Topology.supportedSectionsι A S` into `P`.
+  a functor of `P`, with its inclusion `TauCeti.Topology.supportedSectionsPresheafι A S` into `P`.
 * `TauCeti.Topology.supportedSectionsMap`: the enlargement of supports `Γ_S P ⟶ Γ_S' P`.
-* `TauCeti.Topology.supportedSectionsSheaf F S`: the sheaf `Γ_S F` of a sheaf `F`.
 * `TauCeti.Topology.supportedCechCohomology X A n`: `Hⁿ_S(X; P)`, as a functor of `S` and `P`.
 * `TauCeti.Topology.supportedCechCohomologyToCech X A n`: forgetting supports,
   `Hⁿ_S(X; P) ⟶ Hⁿ(X; P)`.
 * `TauCeti.Topology.compactSupportCechCohomology X A n`: `Hⁿ_c(X; P)`, with its structure maps
-  `TauCeti.Topology.compactSupportCechCohomologyι X A n K` from `Hⁿ_K(X; P)`.
+  `TauCeti.Topology.compactSupportCechCohomologyι X A n K` from `Hⁿ_K(X; P)`, and the map
+  `TauCeti.Topology.compactSupportCechCohomologyDesc X A n f hf` out of it induced by compatible
+  maps `f K` out of the `Hⁿ_K(X; P)`.
 * `TauCeti.Topology.compactSupportCechCohomologyToCech X A n`: forgetting compact supports,
   `Hⁿ_c(X; P) ⟶ Hⁿ(X; P)`.
 
@@ -64,9 +67,9 @@ cohomology.
   is supported in `S`; in particular `Γ_∅ P = 0`
   (`TauCeti.Topology.isZero_supportedSections_bot_obj`) and `Hⁿ_∅(X; P) = 0`
   (`TauCeti.Topology.isZero_supportedCechCohomology_obj_bot_obj`).
-* `TauCeti.Topology.isIso_supportedSectionsι_app_app`: over an open contained in `S`, every
-  section of a presheaf vanishing on the empty set is supported in `S`; in particular
-  `Γ_X P = P` (`TauCeti.Topology.isIso_supportedSectionsι_top_app`) and
+* `TauCeti.Topology.isIso_supportedSectionsPresheafι_app_app`: over an open contained in `S`,
+  every section of a presheaf vanishing on the empty set is supported in `S`; in particular
+  `Γ_X P = P` (`TauCeti.Topology.isIso_supportedSectionsPresheafι_top_app`) and
   `Hⁿ_X(X; P) = Hⁿ(X; P)`
   (`TauCeti.Topology.isIso_supportedCechCohomologyToCech_app_top_app`).
 * `TauCeti.Topology.supportedCechCohomologyZeroIso`: for a sheaf `F`, in degree `0`,
@@ -78,8 +81,11 @@ cohomology.
   so for every sheaf (`TauCeti.Topology.isIso_compactSupportCechCohomologyToCech_app_sheaf`):
   the whole space is the largest compact subset.
 
-The condition that `P` vanish on the empty set cannot be dropped from the last two statements:
-`Γ_X P` vanishes on the empty set even when `P` does not.
+The condition that `P` vanish on the empty set cannot be dropped from
+`TauCeti.Topology.isIso_supportedSectionsPresheafι_top_app`,
+`TauCeti.Topology.isIso_supportedCechCohomologyToCech_app_top_app` and
+`TauCeti.Topology.isIso_compactSupportCechCohomologyToCech_app`: `Γ_X P` vanishes on the empty set
+even when `P` does not.
 
 ## References
 
@@ -100,19 +106,19 @@ namespace TauCeti.Topology
 
 variable {X : TopCat.{u}} {A : Type u'} [Category.{v'} A]
 
-/-- A compact subset of a Hausdorff space as a closed subset, functorially for inclusions. -/
-@[expose, simps]
-def _root_.TopologicalSpace.Compacts.toClosedsFunctor (α : Type*) [TopologicalSpace α]
-    [T2Space α] : Compacts α ⥤ Closeds α where
-  obj := Compacts.toCloseds
-  map f := homOfLE (leOfHom f)
+theorem _root_.TopologicalSpace.Compacts.toCloseds_mono {α : Type*} [TopologicalSpace α]
+    [T2Space α] : Monotone (Compacts.toCloseds (α := α)) :=
+  fun _ _ h ↦ h
 
-/-- The functor `W ↦ W ⊓ U` on the open subsets of a topological space. -/
-@[expose, simps]
-def _root_.TopologicalSpace.Opens.infFunctor {α : Type*} [TopologicalSpace α] (U : Opens α) :
-    Opens α ⥤ Opens α where
-  obj W := W ⊓ U
-  map f := homOfLE (inf_le_inf_right U (leOfHom f))
+@[simp]
+theorem _root_.TopologicalSpace.Compacts.toCloseds_top {α : Type*} [TopologicalSpace α]
+    [T2Space α] [CompactSpace α] : (⊤ : Compacts α).toCloseds = ⊤ :=
+  Closeds.ext (by simp)
+
+/-- A compact subset of a Hausdorff space as a closed subset, functorially for inclusions. -/
+abbrev _root_.TopologicalSpace.Compacts.toClosedsFunctor (α : Type*) [TopologicalSpace α]
+    [T2Space α] : Compacts α ⥤ Closeds α :=
+  Compacts.toCloseds_mono.functor
 
 variable (A) in
 /-- Restriction from an open `W` to `W ∖ S`, natural in `W` and in the presheaf. -/
@@ -120,7 +126,7 @@ variable (A) in
 def complRestriction (S : Closeds X) :
     𝟭 ((Opens X)ᵒᵖ ⥤ A) ⟶ (Functor.whiskeringLeft _ _ A).obj (Opens.infFunctor S.compl).op where
   app P :=
-    { app W := P.map (homOfLE inf_le_left : (Opens.infFunctor S.compl).obj W.unop ⟶ W.unop).op
+    { app W := P.map (S.complInclusion W.unop).op
       naturality _ _ _ := by
         simp only [Functor.id_obj, Functor.whiskeringLeft_obj_obj, Functor.comp_map,
           Functor.op_map, ← P.map_comp]
@@ -156,40 +162,41 @@ def supportedSections (S : Closeds X) : ((Opens X)ᵒᵖ ⥤ A) ⥤ (Opens X)ᵒ
 
 variable (A) in
 /-- The inclusion of the sections supported in `S` into all sections. -/
-def supportedSectionsι (S : Closeds X) : supportedSections A S ⟶ 𝟭 _ :=
+def supportedSectionsPresheafι (S : Closeds X) : supportedSections A S ⟶ 𝟭 _ :=
   kernel.ι _
 
 @[reassoc (attr := simp)]
-theorem supportedSectionsι_comp_complRestriction (S : Closeds X) :
-    supportedSectionsι A S ≫ complRestriction A S = 0 :=
+theorem supportedSectionsPresheafι_comp_complRestriction (S : Closeds X) :
+    supportedSectionsPresheafι A S ≫ complRestriction A S = 0 :=
   kernel.condition _
 
 @[reassoc (attr := simp)]
-theorem supportedSectionsι_app_comp_complRestriction_app (S : Closeds X)
+theorem supportedSectionsPresheafι_app_comp_complRestriction_app (S : Closeds X)
     (P : (Opens X)ᵒᵖ ⥤ A) :
-    (supportedSectionsι A S).app P ≫ (complRestriction A S).app P = 0 := by
-  rw [← NatTrans.comp_app, supportedSectionsι_comp_complRestriction, NatTrans.app_zero]
+    (supportedSectionsPresheafι A S).app P ≫ (complRestriction A S).app P = 0 := by
+  rw [← NatTrans.comp_app, supportedSectionsPresheafι_comp_complRestriction, NatTrans.app_zero]
 
 @[reassoc (attr := simp)]
-theorem supportedSectionsι_app_app_comp_map (S : Closeds X) (P : (Opens X)ᵒᵖ ⥤ A)
+theorem supportedSectionsPresheafι_app_app_comp_map (S : Closeds X) (P : (Opens X)ᵒᵖ ⥤ A)
     (W : Opens X) :
-    ((supportedSectionsι A S).app P).app (op W) ≫
-      P.map (homOfLE (inf_le_left : W ⊓ S.compl ≤ W)).op = 0 := by
-  have := congr_app (congr_app (supportedSectionsι_comp_complRestriction (A := A) S) P) (op W)
+    ((supportedSectionsPresheafι A S).app P).app (op W) ≫
+      P.map (S.complInclusion W).op = 0 := by
+  have := congr_app
+    (congr_app (supportedSectionsPresheafι_comp_complRestriction (A := A) S) P) (op W)
   simp only [NatTrans.comp_app, complRestriction_app_app, NatTrans.app_zero] at this
   exact this
 
 /-- The presheaf of sections of `P` supported in `S` is the kernel of the restriction of `P` to
 the complements `W ∖ S`. -/
 def isLimitSupportedSectionsObj (S : Closeds X) (P : (Opens X)ᵒᵖ ⥤ A) :
-    IsLimit (KernelFork.ofι _ (supportedSectionsι_app_comp_complRestriction_app S P)) :=
+    IsLimit (KernelFork.ofι _ (supportedSectionsPresheafι_app_comp_complRestriction_app S P)) :=
   KernelFork.mapIsLimit _ (kernelIsKernel (complRestriction A S))
     ((evaluation _ ((Opens X)ᵒᵖ ⥤ A)).obj P)
 
 /-- The sections over `W` supported in `S` are the kernel of the restriction from `W` to
 `W ∖ S`. -/
 def isLimitSupportedSectionsObjObj (S : Closeds X) (P : (Opens X)ᵒᵖ ⥤ A) (W : Opens X) :
-    IsLimit (KernelFork.ofι _ (supportedSectionsι_app_app_comp_map S P W)) :=
+    IsLimit (KernelFork.ofι _ (supportedSectionsPresheafι_app_app_comp_map S P W)) :=
   KernelFork.mapIsLimit _ (kernelIsKernel (complRestriction A S))
     ((evaluation _ ((Opens X)ᵒᵖ ⥤ A)).obj P ⋙ (evaluation _ A).obj (op W))
 
@@ -199,20 +206,20 @@ variable (S : Closeds X) (P : (Opens X)ᵒᵖ ⥤ A) (W : Opens X)
 `W ∖ S`. -/
 def supportedSectionsObjObjIso :
     ((supportedSections A S).obj P).obj (op W) ≅
-      kernel (P.map (homOfLE (inf_le_left : W ⊓ S.compl ≤ W)).op) :=
+      kernel (P.map (S.complInclusion W).op) :=
   (isLimitSupportedSectionsObjObj S P W).conePointUniqueUpToIso (limit.isLimit _)
 
 @[reassoc (attr := simp)]
 theorem supportedSectionsObjObjIso_hom_ι :
     (supportedSectionsObjObjIso S P W).hom ≫ kernel.ι _ =
-      ((supportedSectionsι A S).app P).app (op W) :=
+      ((supportedSectionsPresheafι A S).app P).app (op W) :=
   (isLimitSupportedSectionsObjObj S P W).conePointUniqueUpToIso_hom_comp (limit.isLimit _)
     WalkingParallelPair.zero
 
-instance : Mono (supportedSectionsι A S) :=
+instance : Mono (supportedSectionsPresheafι A S) :=
   inferInstanceAs (Mono (kernel.ι _))
 
-instance : Mono (((supportedSectionsι A S).app P).app (op W)) := by
+instance : Mono (((supportedSectionsPresheafι A S).app P).app (op W)) := by
   rw [← supportedSectionsObjObjIso_hom_ι]
   infer_instance
 
@@ -220,15 +227,16 @@ instance : Mono (((supportedSectionsι A S).app P).app (op W)) := by
 theorem isZero_supportedSections_obj_obj (hW : Disjoint (W : Set X) S) :
     IsZero (((supportedSections A S).obj P).obj (op W)) := by
   have hle : W ≤ W ⊓ S.compl := le_inf le_rfl fun x hx hxS ↦ hW.ne_of_mem hx hxS rfl
-  have : IsIso (homOfLE (inf_le_left : W ⊓ S.compl ≤ W)) :=
+  have : IsIso (S.complInclusion W) :=
     (iso_of_both_ways _ (homOfLE hle)).isIso_hom
   exact (isZero_kernel_of_mono _).of_iso (supportedSectionsObjObjIso S P W)
 
 /-- **Sections over an open contained in the support are unrestricted**, when the presheaf
 vanishes on the empty set: the inclusion of the sections supported in `S` is then an isomorphism
 over every open `W ⊆ S`. -/
-theorem isIso_supportedSectionsι_app_app (hW : (W : Set X) ⊆ S) (hP : IsZero (P.obj (op ⊥))) :
-    IsIso (((supportedSectionsι A S).app P).app (op W)) := by
+theorem isIso_supportedSectionsPresheafι_app_app (hW : (W : Set X) ⊆ S)
+    (hP : IsZero (P.obj (op ⊥))) :
+    IsIso (((supportedSectionsPresheafι A S).app P).app (op W)) := by
   have hbot : W ⊓ S.compl = ⊥ :=
     le_bot_iff.1 fun x hx ↦ hx.2 (hW hx.1)
   have hz : IsZero (P.obj (op (W ⊓ S.compl))) :=
@@ -241,9 +249,9 @@ theorem isZero_supportedSections_bot_obj : IsZero ((supportedSections A ⊥).obj
 
 /-- Supports in the whole space: every section of a presheaf vanishing on the empty set is
 supported in `X`. -/
-theorem isIso_supportedSectionsι_top_app (hP : IsZero (P.obj (op ⊥))) :
-    IsIso ((supportedSectionsι A ⊤).app P) :=
-  have := fun W : (Opens X)ᵒᵖ ↦ isIso_supportedSectionsι_app_app ⊤ P W.unop (by simp) hP
+theorem isIso_supportedSectionsPresheafι_top_app (hP : IsZero (P.obj (op ⊥))) :
+    IsIso ((supportedSectionsPresheafι A ⊤).app P) :=
+  have := fun W : (Opens X)ᵒᵖ ↦ isIso_supportedSectionsPresheafι_app_app ⊤ P W.unop (by simp) hP
   NatIso.isIso_of_isIso_app _
 
 variable {S} in
@@ -252,42 +260,35 @@ variable (A) in
 in `S'`. -/
 def supportedSectionsMap {S' : Closeds X} (h : S ≤ S') :
     supportedSections A S ⟶ supportedSections A S' :=
-  kernel.lift _ (supportedSectionsι A S) (by
+  kernel.lift _ (supportedSectionsPresheafι A S) (by
     rw [← complRestriction_comp_complRestrictionMap h,
-      supportedSectionsι_comp_complRestriction_assoc, zero_comp])
+      supportedSectionsPresheafι_comp_complRestriction_assoc, zero_comp])
 
 @[reassoc (attr := simp)]
-theorem supportedSectionsMap_comp_supportedSectionsι {S S' : Closeds X} (h : S ≤ S') :
-    supportedSectionsMap A h ≫ supportedSectionsι A S' = supportedSectionsι A S :=
+theorem supportedSectionsMap_comp_supportedSectionsPresheafι {S S' : Closeds X} (h : S ≤ S') :
+    supportedSectionsMap A h ≫ supportedSectionsPresheafι A S' = supportedSectionsPresheafι A S :=
   kernel.lift_ι _ _ _
+
+@[reassoc (attr := simp)]
+theorem supportedSectionsMap_app_app_comp_supportedSectionsPresheafι_app_app {S S' : Closeds X}
+    (h : S ≤ S') (P : (Opens X)ᵒᵖ ⥤ A) (W : (Opens X)ᵒᵖ) :
+    ((supportedSectionsMap A h).app P).app W ≫ ((supportedSectionsPresheafι A S').app P).app W =
+      ((supportedSectionsPresheafι A S).app P).app W :=
+  congr_app (congr_app (supportedSectionsMap_comp_supportedSectionsPresheafι h) P) W
 
 variable (A) in
 /-- The presheaves of sections with supports, as a functor of the closed support, whose maps are
 the support enlargements. -/
 @[expose, simps]
-def supportedSectionsFunctor : Closeds X ⥤ ((Opens X)ᵒᵖ ⥤ A) ⥤ (Opens X)ᵒᵖ ⥤ A where
+def supportedSectionsClosedsFunctor : Closeds X ⥤ ((Opens X)ᵒᵖ ⥤ A) ⥤ (Opens X)ᵒᵖ ⥤ A where
   obj := supportedSections A
   map f := supportedSectionsMap A (leOfHom f)
-  map_id S := by simp [← cancel_mono (supportedSectionsι A S)]
-  map_comp {_ _ S''} _ _ := by simp [← cancel_mono (supportedSectionsι A S'')]
+  map_id S := by simp [← cancel_mono (supportedSectionsPresheafι A S)]
+  map_comp {_ _ S''} _ _ := by simp [← cancel_mono (supportedSectionsPresheafι A S'')]
 
 end Supported
 
 /-! ### Sheaves -/
-
-/-- For a sheaf `F` and an open `U`, the presheaf `W ↦ F(W ⊓ U)` is a sheaf: it is the
-pushforward along the inclusion `U ⟶ X` of the restriction of `F` to `U`. -/
-theorem isSheaf_infFunctor_op_comp {F : (Opens X)ᵒᵖ ⥤ A}
-    (hF : Presheaf.IsSheaf (Opens.grothendieckTopology X) F) (U : Opens X) :
-    Presheaf.IsSheaf (Opens.grothendieckTopology X) ((Opens.infFunctor U).op ⋙ F) := by
-  have h := U.isOpenEmbedding
-  refine (Presheaf.isSheaf_of_iso_iff (Functor.isoWhiskerRight (NatIso.op
-    (NatIso.ofComponents (F := Opens.map U.inclusion' ⋙ h.functor) (G := Opens.infFunctor U)
-      (fun W ↦ eqToIso (Opens.ext ?_)) (fun _ ↦ Subsingleton.elim _ _))) F)).2
-    (TopCat.Sheaf.pushforward_sheaf_of_sheaf (f := U.inclusion')
-      (TopCat.Presheaf.isSheaf_of_isOpenEmbedding h hF))
-  ext x
-  simp
 
 section
 
@@ -300,15 +301,10 @@ theorem isSheaf_supportedSections_obj {F : (Opens X)ᵒᵖ ⥤ A}
     (hF : Presheaf.IsSheaf (Opens.grothendieckTopology X) F) (S : Closeds X) :
     Presheaf.IsSheaf (Opens.grothendieckTopology X) ((supportedSections A S).obj F) := by
   let f : (⟨F, hF⟩ : Sheaf (Opens.grothendieckTopology X) A) ⟶
-      ⟨_, isSheaf_infFunctor_op_comp hF S.compl⟩ :=
+      ⟨_, TopCat.Presheaf.isSheaf_infFunctor_op_comp hF S.compl⟩ :=
     ⟨(complRestriction A S).app F⟩
   refine (Presheaf.isSheaf_of_iso_iff ((isLimitSupportedSectionsObj S F).conePointUniqueUpToIso
     (limit.isLimit _) ≪≫ (PreservesKernel.iso (sheafToPresheaf _ A) f).symm)).2 (kernel f).property
-
-/-- The sheaf `Γ_S F` of sections of a sheaf `F` supported in a closed subset `S`. -/
-abbrev supportedSectionsSheaf (F : Sheaf (Opens.grothendieckTopology X) A) (S : Closeds X) :
-    Sheaf (Opens.grothendieckTopology X) A :=
-  ⟨(supportedSections A S).obj F.obj, isSheaf_supportedSections_obj F.property S⟩
 
 end
 
@@ -324,15 +320,8 @@ variable (X A) in
 cohomology of the presheaf of sections supported in `S`, as a functor of `S` (by support
 enlargement) and of the presheaf. -/
 @[expose]
-def supportedCechCohomology : Closeds X ⥤ ((Opens X)ᵒᵖ ⥤ A) ⥤ A where
-  obj S := supportedSections A S ⋙ cechCohomology X A n
-  map f := Functor.whiskerRight (supportedSectionsMap A (leOfHom f)) (cechCohomology X A n)
-  map_id S := by
-    rw [← Functor.whiskerRight_id']
-    exact congrArg (Functor.whiskerRight · _) ((supportedSectionsFunctor A).map_id S)
-  map_comp f g := by
-    rw [← Functor.whiskerRight_comp]
-    exact congrArg (Functor.whiskerRight · _) ((supportedSectionsFunctor A).map_comp f g)
+def supportedCechCohomology : Closeds X ⥤ ((Opens X)ᵒᵖ ⥤ A) ⥤ A :=
+  supportedSectionsClosedsFunctor A ⋙ (Functor.whiskeringRight _ _ _).obj (cechCohomology X A n)
 
 @[simp]
 theorem supportedCechCohomology_obj (S : Closeds X) :
@@ -346,10 +335,10 @@ theorem supportedCechCohomology_map {S S' : Closeds X} (f : S ⟶ S') :
   (rfl)
 
 /-- There is no cohomology with supports in the empty set. -/
-theorem isZero_supportedCechCohomology_obj_bot_obj [HasZeroObject A] (P : (Opens X)ᵒᵖ ⥤ A) :
+theorem isZero_supportedCechCohomology_obj_bot_obj (P : (Opens X)ᵒᵖ ⥤ A) :
     IsZero (((supportedCechCohomology X A n).obj ⊥).obj P) :=
   isZero_cechCohomology_obj_of_isZero X A n _ fun W ↦
-    (isZero_supportedSections_bot_obj P).obj W
+    isZero_supportedSections_obj_obj ⊥ P W.unop (by simp)
 
 variable (X A) in
 /-- Forgetting supports: the map `Hⁿ_S(X; P) ⟶ Hⁿ(X; P)` induced by the inclusion of the
@@ -358,14 +347,14 @@ sections supported in `S`, compatible with support enlargement. -/
 def supportedCechCohomologyToCech :
     supportedCechCohomology X A n ⟶ (Functor.const _).obj (cechCohomology X A n) where
   app S :=
-    { app P := (cechCohomology X A n).map ((supportedSectionsι A S).app P)
+    { app P := (cechCohomology X A n).map ((supportedSectionsPresheafι A S).app P)
       naturality P Q α := by
-        have := congrArg (cechCohomology X A n).map ((supportedSectionsι A S).naturality α)
+        have := congrArg (cechCohomology X A n).map ((supportedSectionsPresheafι A S).naturality α)
         simp only [Functor.map_comp, Functor.id_map] at this
         exact this }
   naturality S S' f := NatTrans.ext <| funext fun P ↦
-    (((cechCohomology X A n).map_comp _ _).symm.trans
-      (congrArg _ (congr_app (supportedSectionsMap_comp_supportedSectionsι (leOfHom f)) P))).trans
+    (((cechCohomology X A n).map_comp _ _).symm.trans (congrArg _
+      (congr_app (supportedSectionsMap_comp_supportedSectionsPresheafι (leOfHom f)) P))).trans
         (Category.comp_id _).symm
 
 /-- Cohomology with supports in the whole space is ordinary Čech cohomology, for presheaves
@@ -373,7 +362,7 @@ vanishing on the empty set. -/
 theorem isIso_supportedCechCohomologyToCech_app_top_app (P : (Opens X)ᵒᵖ ⥤ A)
     (hP : IsZero (P.obj (op ⊥))) :
     IsIso (((supportedCechCohomologyToCech X A n).app ⊤).app P) := by
-  have := isIso_supportedSectionsι_top_app P hP
+  have := isIso_supportedSectionsPresheafι_top_app P hP
   rw [supportedCechCohomologyToCech_app_app]
   exact Functor.map_isIso _ _
 
@@ -385,9 +374,9 @@ variable [HasZeroObject A] (F : Sheaf (Opens.grothendieckTopology X) A) (S : Clo
 the group of global sections supported in `S`, `H⁰_S(X; F) ≅ ker (F(X) ⟶ F(X ∖ S))`. -/
 def supportedCechCohomologyZeroIso :
     ((supportedCechCohomology X A 0).obj S).obj F.obj ≅
-      kernel (F.obj.map (homOfLE (inf_le_left : ⊤ ⊓ S.compl ≤ ⊤)).op) :=
-  (cechCohomologyZeroIso (supportedSectionsSheaf F S)).symm ≪≫
-    supportedSectionsObjObjIso S F.obj ⊤
+      kernel (F.obj.map (S.complInclusion ⊤).op) :=
+  ((cechCohomologyZeroIso ⟨_, isSheaf_supportedSections_obj F.property S⟩).symm ≪≫
+    supportedSectionsObjObjIso S F.obj ⊤ :)
 
 /-- In degree `0`, forgetting supports is the inclusion of the global sections supported in `S`
 into all global sections. -/
@@ -396,12 +385,16 @@ theorem supportedCechCohomologyZeroIso_inv_comp_supportedCechCohomologyToCech_ap
     (supportedCechCohomologyZeroIso F S).inv ≫
         ((supportedCechCohomologyToCech X A 0).app S).app F.obj =
       kernel.ι _ ≫ (cechCohomologyZeroIso F).hom := by
-  have h := cechCohomologyZeroIso_hom_naturality (supportedSectionsSheaf F S) (G := F)
-    ⟨(supportedSectionsι A S).app F.obj⟩
+  have h := cechCohomologyZeroIso_hom_naturality
+    ⟨_, isSheaf_supportedSections_obj F.property S⟩ (G := F)
+    ⟨(supportedSectionsPresheafι A S).app F.obj⟩
   dsimp only at h
+  simp only [supportedCechCohomologyZeroIso, Iso.trans_inv, Iso.symm_inv,
+    supportedCechCohomologyToCech_app_app]
+  -- reassociate, writing the middle object `H⁰_S(X; F)` as `H⁰(X; Γ_S F)`, as `h` does
   calc _ = (supportedSectionsObjObjIso S F.obj ⊤).inv ≫
-        ((cechCohomologyZeroIso (supportedSectionsSheaf F S)).hom ≫
-          (cechCohomology X A 0).map ((supportedSectionsι A S).app F.obj)) :=
+        ((cechCohomologyZeroIso ⟨_, isSheaf_supportedSections_obj F.property S⟩).hom ≫
+          (cechCohomology X A 0).map ((supportedSectionsPresheafι A S).app F.obj)) :=
         Category.assoc _ _ _
     _ = _ := by rw [← h, ← supportedSectionsObjObjIso_hom_ι_assoc, Iso.inv_hom_id_assoc]
 
@@ -415,7 +408,6 @@ variable (X A) in
 /-- The degree `n` Čech cohomology `Hⁿ_c(X; P)` with compact supports: the colimit, over the
 compact subsets `K` of `X` ordered by inclusion, of the Čech cohomologies `Hⁿ_K(X; P)` with
 supports in `K`, along the support enlargements. -/
-@[expose]
 def compactSupportCechCohomology : ((Opens X)ᵒᵖ ⥤ A) ⥤ A :=
   (Compacts.toClosedsFunctor X ⋙ supportedCechCohomology X A n).flip ⋙ colim
 
@@ -435,6 +427,28 @@ theorem supportedCechCohomology_map_comp_compactSupportCechCohomologyι {K K' : 
       compactSupportCechCohomologyι X A n K := by
   ext P
   exact colimit.w ((Compacts.toClosedsFunctor X ⋙ supportedCechCohomology X A n).flip.obj P) f
+
+variable (X A) in
+/-- A map out of `Hⁿ_c(X; P)`, induced by maps out of the `Hⁿ_K(X; P)` for the compact subsets `K`
+that are compatible with the support enlargements. -/
+def compactSupportCechCohomologyDesc {P : (Opens X)ᵒᵖ ⥤ A} {Y : A}
+    (f : ∀ K : Compacts X, ((supportedCechCohomology X A n).obj K.toCloseds).obj P ⟶ Y)
+    (hf : ∀ ⦃K K' : Compacts X⦄ (h : K ⟶ K'),
+      ((supportedCechCohomology X A n).map ((Compacts.toClosedsFunctor X).map h)).app P ≫ f K' =
+        f K) :
+    (compactSupportCechCohomology X A n).obj P ⟶ Y :=
+  colimit.desc _ ⟨Y, { app := f, naturality _ _ h := (hf h).trans (Category.comp_id _).symm }⟩
+
+@[reassoc (attr := simp)]
+theorem compactSupportCechCohomologyι_app_comp_compactSupportCechCohomologyDesc
+    {P : (Opens X)ᵒᵖ ⥤ A} {Y : A}
+    (f : ∀ K : Compacts X, ((supportedCechCohomology X A n).obj K.toCloseds).obj P ⟶ Y)
+    (hf : ∀ ⦃K K' : Compacts X⦄ (h : K ⟶ K'),
+      ((supportedCechCohomology X A n).map ((Compacts.toClosedsFunctor X).map h)).app P ≫ f K' =
+        f K) (K : Compacts X) :
+    (compactSupportCechCohomologyι X A n K).app P ≫ compactSupportCechCohomologyDesc X A n f hf =
+      f K :=
+  colimit.ι_desc _ _
 
 /-- Two maps out of `Hⁿ_c(X; P)` agree as soon as they agree on `Hⁿ_K(X; P)` for every compact
 subset `K`. -/
@@ -482,13 +496,10 @@ theorem isIso_compactSupportCechCohomologyToCech_app [CompactSpace X] (P : (Open
     (hP : IsZero (P.obj (op ⊥))) : IsIso ((compactSupportCechCohomologyToCech X A n).app P) := by
   have : IsIso ((compactSupportCechCohomologyι X A n ⊤).app P) :=
     isIso_ι_of_isTerminal isTerminalTop _
-  have htop : (⊤ : Compacts X).toCloseds = ⊤ :=
-    SetLike.ext fun x ↦ by
-      rw [Compacts.mem_toCloseds, ← SetLike.mem_coe, ← SetLike.mem_coe, Compacts.coe_top,
-        Closeds.coe_top]
   have : IsIso ((compactSupportCechCohomologyι X A n ⊤).app P ≫
       (compactSupportCechCohomologyToCech X A n).app P) := by
-    rw [compactSupportCechCohomologyι_app_comp_compactSupportCechCohomologyToCech_app, htop]
+    rw [compactSupportCechCohomologyι_app_comp_compactSupportCechCohomologyToCech_app,
+      Compacts.toCloseds_top]
     exact isIso_supportedCechCohomologyToCech_app_top_app n P hP
   exact IsIso.of_isIso_comp_left ((compactSupportCechCohomologyι X A n ⊤).app P) _
 
