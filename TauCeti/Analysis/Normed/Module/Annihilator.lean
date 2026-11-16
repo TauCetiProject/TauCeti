@@ -220,7 +220,9 @@ theorem surjective_smul_add_apply_iff {H : E →L[𝕜] StrongDual 𝕜 E} (hH :
   · intro hker
     let L : 𝕜 × E →ₗ[𝕜] StrongDual 𝕜 E :=
       (LinearMap.fst 𝕜 𝕜 E).smulRight w + (H : E →ₗ[𝕜] StrongDual 𝕜 E) ∘ₗ LinearMap.snd 𝕜 𝕜 E
-    have hL : ⇑L = fun p : 𝕜 × E ↦ p.1 • w + H p.2 := rfl
+    have hL : ⇑L = fun p : 𝕜 × E ↦ p.1 • w + H p.2 := by
+      ext p : 1
+      simp [L]
     rw [← hL, ← LinearMap.range_eq_top]
     have hpre : (LinearMap.range L).orthogonalBilin (topDualPairing 𝕜 E) = ⊥ := by
       refine (Submodule.eq_bot_iff _).2 fun v hv ↦ hker v ?_ ?_

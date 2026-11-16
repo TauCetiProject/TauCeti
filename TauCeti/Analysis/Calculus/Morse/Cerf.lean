@@ -39,13 +39,12 @@ every transverse critical point:
 
 * the Hessian has corank at most one (`TauCeti.finrank_ker_fderiv_fderiv_le_one`);
 * along a nonzero vector `v` of its kernel, the parameter derivative of the differential does not
-  vanish, `∂ₜ (d(f t)_x) v ≠ 0`: a degenerate critical point moves with nonzero speed in the
-  parameter.
+  vanish, `∂ₜ (d(f t)_x) v ≠ 0`.
 
-These are the corank-one and speed conditions of a birth–death point. The model family
-`x³ / 3 - t x` of `TauCeti.Analysis.Calculus.Morse.BirthDeath` is transverse at its degenerate
-critical point (`TauCeti.surjective_fderiv_fderiv_birthDeathPotential`), whereas the constant
-family `x³ / 3` is not (`TauCeti.not_surjective_fderiv_fderiv_birthDeathPotential_zero`).
+These are the corank-one and parameter-transversality conditions of a birth–death point. The
+model family `x³ / 3 - t x` of `TauCeti.Analysis.Calculus.Morse.BirthDeath` is transverse at its
+degenerate critical point (`TauCeti.surjective_fderiv_fderiv_birthDeathPotential`), whereas the
+constant family `x³ / 3` is not (`TauCeti.not_surjective_fderiv_fderiv_birthDeathPotential_zero`).
 
 Genericity is proved as in `TauCeti.Analysis.Calculus.Morse.Generic`. Subtracting a linear
 functional `a` from every member of the family shifts `G` by the constant `a` and leaves its
@@ -102,6 +101,15 @@ private theorem contDiffAt_uncurry_sub {n : WithTop ℕ∞} {z : ℝ × E}
     ContDiffAt ℝ n (uncurry fun s y ↦ f s y - a y) z :=
   hf.sub (a.contDiff.contDiffAt.comp z contDiffAt_snd)
 
+/-- At a point where the family is jointly `C¹`, subtracting a functional `a` from `f s` shifts
+its differential by `a`. -/
+private theorem fderiv_sub_eq_of_contDiffAt {s : ℝ} {y : E}
+    (hf : ContDiffAt ℝ 1 (uncurry f) (s, y)) (a : StrongDual ℝ E) :
+    fderiv ℝ (fun y ↦ f s y - a y) y = fderiv ℝ (f s) y - a := by
+  have hd : DifferentiableAt ℝ (f s) y :=
+    (hf.comp y ((contDiffAt_const (c := s)).prodMk contDiffAt_id)).differentiableAt one_ne_zero
+  simpa using fderiv_fun_sub hd a.differentiableAt
+
 /-- **The derivative of the parametrized differential** `(t, x) ↦ d(f t)_x` at `(t, x)` sends
 `(τ, ξ)` to `τ • ∂ₜ (d(f t)_x) + Hess(f t)_x ξ`. -/
 theorem fderiv_fderiv_apply (hf : ContDiffAt ℝ 2 (uncurry f) (t, x)) (p : ℝ × E) :
@@ -121,10 +129,7 @@ theorem fderiv_fderiv_sub_eq {z : ℝ × E} (hf : ContDiffAt ℝ 1 (uncurry f) z
   have hev : (fun w : ℝ × E ↦ fderiv ℝ (fun y ↦ f w.1 y - a y) w.2) =ᶠ[𝓝 z]
       fun w ↦ fderiv ℝ (f w.1) w.2 - a := by
     filter_upwards [hf.eventually (by simp)] with w hw
-    have hd : DifferentiableAt ℝ (f w.1) w.2 :=
-      ((hw.comp w.2 ((contDiffAt_const (c := w.1)).prodMk contDiffAt_id)).differentiableAt
-        one_ne_zero)
-    simpa using fderiv_fun_sub hd a.differentiableAt
+    exact fderiv_sub_eq_of_contDiffAt hw a
   rw [hev.fderiv_eq, fderiv_sub_const]
 
 /-! ### Transversality at a point -/
@@ -189,14 +194,8 @@ theorem ae_forall_surjective_fderiv_fderiv_sub [MeasurableSpace (StrongDual ℝ 
       ¬ Surjective (fderiv ℝ (fun w : ℝ × E ↦ fderiv ℝ (fun y ↦ f w.1 y - a y) w.2) z) := by
     simpa using ha
   have hf1 : ContDiffAt ℝ 1 (uncurry f) z := (hf z hzW).of_le (by norm_num)
-  have hd : DifferentiableAt ℝ (f z.1) z.2 :=
-    (hf1.comp z.2 ((contDiffAt_const (c := z.1)).prodMk contDiffAt_id)).differentiableAt
-      one_ne_zero
   rw [fderiv_fderiv_sub_eq hf1 a] at hzs
-  refine ⟨z, ⟨hzW, hzs⟩, ?_⟩
-  have h := fderiv_fun_sub hd a.differentiableAt
-  rw [hz0, ContinuousLinearMap.fderiv] at h
-  exact (sub_eq_zero.1 h.symm)
+  exact ⟨z, ⟨hzW, hzs⟩, sub_eq_zero.1 ((fderiv_sub_eq_of_contDiffAt hf1 a).symm.trans hz0)⟩
 
 /-- **For almost every functional `a`, the Hessians of `f t - a` at its critical points have corank
 at most one.** This holds on every set `W ⊆ ℝ × E` at whose points the family is jointly `C³`. -/
@@ -210,10 +209,11 @@ theorem ae_forall_finrank_ker_fderiv_fderiv_sub_le_one [MeasurableSpace (StrongD
   exact finrank_ker_fderiv_fderiv_le_one (f := fun s y ↦ f s y - a y)
     (contDiffAt_uncurry_sub ((hf z hz).of_le (by norm_num)) a) (ha z hz hz0)
 
-/-- **For almost every functional `a`, the degenerate critical points of `f t - a` move with
-nonzero speed in the parameter.** At every critical point `(t, x) ∈ W` of `f t - a` and for every
-nonzero `v` in the kernel of the Hessian there, the parameter derivative `∂ₜ (d(f t - a)_x) v` is
-nonzero. This holds on every set `W ⊆ ℝ × E` at whose points the family is jointly `C³`. -/
+/-- **For almost every functional `a`, the parameter derivative of the differential of `f t - a`
+does not vanish on the kernel of the Hessian at its critical points.** At every critical point
+`(t, x) ∈ W` of `f t - a` and for every nonzero `v` in the kernel of the Hessian there, the
+parameter derivative `∂ₜ (d(f t - a)_x) v` is nonzero. This holds on every set `W ⊆ ℝ × E` at
+whose points the family is jointly `C³`. -/
 theorem ae_forall_deriv_fderiv_sub_apply_ne_zero [MeasurableSpace (StrongDual ℝ E)]
     [BorelSpace (StrongDual ℝ E)] (ν : Measure (StrongDual ℝ E)) [ν.IsAddHaarMeasure]
     {W : Set (ℝ × E)} (hf : ∀ z ∈ W, ContDiffAt ℝ 3 (uncurry f) z) :
@@ -243,14 +243,6 @@ end FiniteDimensional
 
 /-! ### The birth–death family -/
 
-/-- The differential of the birth–death potential `x ↦ x³ / 3 - s x` at `y` is multiplication by
-`y² - s`. -/
-private theorem fderiv_birthDeathPotential_eq (s : ℝ) :
-    fderiv ℝ (birthDeathPotential s) = fun y ↦ (y ^ 2 - s) • ContinuousLinearMap.id ℝ ℝ := by
-  funext y
-  ext
-  simp [← toSpanSingleton_deriv]
-
 /-- **The birth–death family is transverse at its degenerate critical point.** The family
 `x³ / 3 - t x` has a degenerate critical point at `(t, x) = (0, 0)`
 (`TauCeti.not_isNondegenerateCriticalPoint_birthDeathPotential_zero`), yet the derivative of its
@@ -263,9 +255,10 @@ theorem surjective_fderiv_fderiv_birthDeathPotential :
     fun v _ hv ↦ ?_
   have hd : HasDerivAt (fun s ↦ fderiv ℝ (birthDeathPotential s) 0)
       ((-1 : ℝ) • ContinuousLinearMap.id ℝ ℝ) 0 := by
-    simp_rw [fderiv_birthDeathPotential_eq]
+    simp_rw [fderiv_birthDeathPotential]
     exact ((hasDerivAt_id' (0 : ℝ)).const_sub _).smul_const (ContinuousLinearMap.id ℝ ℝ)
-  simpa [hd.deriv] using hv
+  rw [hd.deriv] at hv
+  simpa using hv
 
 /-- **The constant family `x³ / 3` is not transverse at its degenerate critical point.** Without
 the parameter, the vector `1` lies in the kernels of both the Hessian of `x ↦ x³ / 3` at `0` and
@@ -278,7 +271,7 @@ theorem not_surjective_fderiv_fderiv_birthDeathPotential_zero :
   refine one_ne_zero (h 1 ?_ (by simp))
   have hd : HasDerivAt (fderiv ℝ (birthDeathPotential 0)) ((2 * 0 : ℝ) • ContinuousLinearMap.id ℝ ℝ)
       0 := by
-    rw [fderiv_birthDeathPotential_eq]
+    rw [funext (fderiv_birthDeathPotential 0)]
     simpa using ((hasDerivAt_pow 2 (0 : ℝ)).sub_const 0).smul_const (ContinuousLinearMap.id ℝ ℝ)
   simp [← toSpanSingleton_deriv, hd.deriv]
 
