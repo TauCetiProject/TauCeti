@@ -24,8 +24,9 @@ where `ζ = exp (2 π i / d)` and `(z ^ d) ^ (1 / d)` is the principal `d`-th ro
 the power map is injective with image the whole slit plane, the sectors are pairwise disjoint and
 measurable, and together they contain every `z` with `z ^ d ∈ slitPlane`
 (`TauCeti.exists_pairwise_disjoint_injOn_pow_image_eq_slitPlane`). The remaining points, those with
-`z ^ d` a nonpositive real number, lie on the `d` real lines through `0` spanned by
-`exp (π i / d) * ζ ^ k`, so they form a null set (`TauCeti.volume_setOf_pow_notMem_slitPlane`).
+`z ^ d` a nonpositive real number, lie on the real lines through `0` spanned by
+`exp (π i / d) * ζ ^ k`, `k < d`, so they form a null set
+(`TauCeti.volume_setOf_pow_notMem_slitPlane`).
 
 This is the decomposition behind the change of variables formula for the branched cover
 `z ↦ z ^ d`: an integral over the preimage of a set `t` is `d` times an integral over `t`, one

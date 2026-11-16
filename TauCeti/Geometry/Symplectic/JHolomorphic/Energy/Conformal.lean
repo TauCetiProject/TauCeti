@@ -10,19 +10,22 @@ public import TauCeti.Analysis.Complex.RealChart
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import TauCeti.Analysis.Complex.RootsOfUnity.Sector
-import TauCeti.Geometry.Symplectic.Floer.Pullback
+import TauCeti.Geometry.Symplectic.JHolomorphic.RealChart
 import TauCeti.MeasureTheory.Function.Jacobian.Plane
 
 /-!
 # Conformal invariance and degree scaling of the energy
 
-The energy `(1 / 2) ∫ |du|²` of a map from a surface depends on a metric on the domain only
-through its conformal class. In a domain coordinate this is the following computation. A
-real-linear map `L` of the standard complex line `ℝ × ℝ` which is complex linear is
-multiplication by a complex number `a + b i`, so it rotates and scales by `√(a² + b²)`; its
-determinant is `a² + b²` (`TauCeti.IsComplexLinearMap.det_eq_sq_add_sq`). Precomposing a
-differential `F` by `L` therefore multiplies the energy density `|F ∂s|² + |F ∂t|²` by
-`a² + b² = det L`
+The energy of a map from a surface depends on a metric on the domain only through its conformal
+class. In a domain coordinate the energy density of a differential `F` is
+`ω(F ∂s, J F ∂s) + ω(F ∂t, J F ∂t)`; for a compatible pair this is `|F ∂s|² + |F ∂t|²` in the
+metric `g = ω(·, J ·)`, and the energy is the usual `(1 / 2) ∫ |du|²` measured in `g`. The
+energy `TauCeti.SymplecticForm.stdComplexLineEnergy` integrates the positive part of half the
+density, which is half the density itself once `ω` tames `J`. The invariance is the following
+computation. A real-linear map `L` of the standard complex line `ℝ × ℝ` which is complex linear
+is multiplication by a complex number `a + b i`, so it rotates and scales by `√(a² + b²)`; its
+determinant is `a² + b²` (`TauCeti.IsComplexLinearMap.det_eq_sq_add_sq`). Precomposing `F` by
+`L` therefore multiplies the energy density by `a² + b² = det L`
 (`TauCeti.SymplecticForm.stdComplexLineEnergyDensity_comp_of_isComplexLinearMap`), with no
 hypothesis relating the symplectic form and the almost complex structure.
 
@@ -79,9 +82,9 @@ section Pointwise
 variable {V : Type*} [AddCommGroup V] [Module ℝ V]
 variable {J : AlmostComplexStructure V} {ω : SymplecticForm V}
 
-/-- **Conformal invariance of the energy density.** Precomposing a differential `F` with a
-complex-linear endomorphism `L` of the standard complex line multiplies its energy density by
-`det L`. No relation between `ω` and `J` is needed. -/
+/-- **Transformation of the energy density under complex-linear maps.** Precomposing a
+differential `F` with a complex-linear endomorphism `L` of the standard complex line multiplies
+its energy density by `det L`. No relation between `ω` and `J` is needed. -/
 theorem stdComplexLineEnergyDensity_comp_of_isComplexLinearMap {L : (ℝ × ℝ) →ₗ[ℝ] ℝ × ℝ}
     (hL : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
       (AlmostComplexStructure.product ℝ) L)
@@ -197,7 +200,7 @@ theorem stdComplexLineEnergy_restrict_preimage_realChart_pow (d : ℕ) (ht : Mea
     refine measure_mono_null (fun z hz ↦ ?_) (hnull (volume_setOf_pow_notMem_slitPlane 1))
     simpa using hz
   · exact fun k z _ ↦ (Complex.hasFDerivAt_realChart (hderiv z)).differentiableAt
-  · exact fun k z _ ↦ Floer.isComplexLinearMap_fderiv_realChart (hderiv z)
+  · exact fun k z _ ↦ isComplexLinearMap_fderiv_realChart (hderiv z)
 
 end Integral
 
