@@ -120,40 +120,31 @@ def inverseComposablePairsDiffeomorph :
     ComposablePairs C ≃ₘ^∞⟮𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ),
       𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ)⟯ ComposablePairs C :=
   letI := composablePairsChartedSpace I J C
-  { toFun := fun p ↦
-      ⟨(inverseDiffeomorph I J C p.1.2, inverseDiffeomorph I J C p.1.1),
-        (inverseDiffeomorph_right I J C p.1.2).trans
-          (p.2.symm.trans (inverseDiffeomorph_left I J C p.1.1).symm)⟩
-    invFun := fun p ↦
-      ⟨(inverseDiffeomorph I J C p.1.2, inverseDiffeomorph I J C p.1.1),
-        (inverseDiffeomorph_right I J C p.1.2).trans
-          (p.2.symm.trans (inverseDiffeomorph_left I J C p.1.1).symm)⟩
-    left_inv := fun p ↦ Subtype.ext (by obtain ⟨⟨⟨_, _, _⟩, ⟨_, _, _⟩⟩, _⟩ := p; simp)
-    right_inv := fun p ↦ Subtype.ext (by obtain ⟨⟨⟨_, _, _⟩, ⟨_, _, _⟩⟩, _⟩ := p; simp)
-    contMDiff_toFun := by
-      have := isManifold_composablePairs I J C
-      have hι := isSmoothEmbedding_coe_composablePairs I J C
-      exact hι.contMDiff_iff_comp.mpr
-        (((inverseDiffeomorph I J C).contMDiff.comp hι.contMDiff.snd).prodMk
-          ((inverseDiffeomorph I J C).contMDiff.comp hι.contMDiff.fst))
-    contMDiff_invFun := by
-      have := isManifold_composablePairs I J C
-      have hι := isSmoothEmbedding_coe_composablePairs I J C
-      exact hι.contMDiff_iff_comp.mpr
-        (((inverseDiffeomorph I J C).contMDiff.comp hι.contMDiff.snd).prodMk
-          ((inverseDiffeomorph I J C).contMDiff.comp hι.contMDiff.fst)) }
+  let f : ComposablePairs C → ComposablePairs C := fun p ↦
+    ⟨(inverseDiffeomorph I J C p.1.2, inverseDiffeomorph I J C p.1.1),
+      (inverseDiffeomorph_right I J C p.1.2).trans
+        (p.2.symm.trans (inverseDiffeomorph_left I J C p.1.1).symm)⟩
+  have hinv : LeftInverse f f := fun p ↦
+    Subtype.ext (by obtain ⟨⟨⟨_, _, _⟩, ⟨_, _, _⟩⟩, _⟩ := p; simp [f])
+  have hf : ContMDiff 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ)
+      𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) ∞ f := by
+    have := isManifold_composablePairs I J C
+    have hι := isSmoothEmbedding_coe_composablePairs I J C
+    exact hι.contMDiff_iff_comp.mpr
+      (((inverseDiffeomorph I J C).contMDiff.comp hι.contMDiff.snd).prodMk
+        ((inverseDiffeomorph I J C).contMDiff.comp hι.contMDiff.fst))
+  { toFun := f, invFun := f, left_inv := hinv, right_inv := hinv
+    contMDiff_toFun := hf, contMDiff_invFun := hf }
 
 @[simp]
 theorem inverseComposablePairsDiffeomorph_fst (p : ComposablePairs C) :
     letI := composablePairsChartedSpace I J C
-    (inverseComposablePairsDiffeomorph I J C p).1.1 = inverseDiffeomorph I J C p.1.2 :=
-  (rfl)
+    (inverseComposablePairsDiffeomorph I J C p).1.1 = inverseDiffeomorph I J C p.1.2 := (rfl)
 
 @[simp]
 theorem inverseComposablePairsDiffeomorph_snd (p : ComposablePairs C) :
     letI := composablePairsChartedSpace I J C
-    (inverseComposablePairsDiffeomorph I J C p).1.2 = inverseDiffeomorph I J C p.1.1 :=
-  (rfl)
+    (inverseComposablePairsDiffeomorph I J C p).1.2 = inverseDiffeomorph I J C p.1.1 := (rfl)
 
 @[simp]
 theorem inverseComposablePairsDiffeomorph_symm :
@@ -220,83 +211,64 @@ theorem isSubmersion_snd_sameSourcePairs :
 is a smooth diffeomorphism from `ComposablePairs C` onto `SameSourcePairs C`, with smooth inverse
 `(a, c) ↦ (a, (inv a).comp c h)`. -/
 def shearDiffeomorph :
-    letI := composablePairsChartedSpace I J C
-    letI := sameSourcePairsChartedSpace I J C
+    letI := composablePairsChartedSpace I J C; letI := sameSourcePairsChartedSpace I J C
     ComposablePairs C ≃ₘ^∞⟮𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ),
       𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ)⟯ SameSourcePairs C :=
-  letI := composablePairsChartedSpace I J C
-  letI := sameSourcePairsChartedSpace I J C
+  letI := composablePairsChartedSpace I J C; letI := sameSourcePairsChartedSpace I J C
   { toFun := fun p ↦ ⟨(p.1.1, p.1.1.comp p.1.2 p.2), (p.1.1.comp_left p.1.2 p.2).symm⟩
     invFun := fun q ↦
       ⟨(q.1.1, (inverseDiffeomorph I J C q.1.1).comp q.1.2
           ((inverseDiffeomorph_right I J C q.1.1).trans q.2)),
         (inverseDiffeomorph_left I J C q.1.1).symm.trans
           ((inverseDiffeomorph I J C q.1.1).comp_left q.1.2 _).symm⟩
-    left_inv := fun p ↦
-      Subtype.ext (Prod.ext rfl
-        ((Quiver.Total.comp_congr (inverseDiffeomorph_apply I J C p.1.1) rfl _
-          (p.1.1.comp_left p.1.2 p.2).symm).trans
-          (Quiver.Total.inv_comp_comp p.1.1 p.1.2 p.2 _)))
-    right_inv := fun q ↦
-      Subtype.ext (Prod.ext rfl
-        ((Quiver.Total.comp_congr rfl
-          (Quiver.Total.comp_congr (inverseDiffeomorph_apply I J C q.1.1) rfl _ q.2) _
-          (Quiver.Total.comp_left ⟨q.1.1.right, q.1.1.left, inv q.1.1.hom⟩ q.1.2 q.2).symm).trans
-          (Quiver.Total.comp_inv_comp q.1.1 q.1.2 q.2 _)))
+    left_inv := fun p ↦ Subtype.ext (Prod.ext rfl
+      ((Quiver.Total.comp_congr (inverseDiffeomorph_apply I J C p.1.1) rfl _
+        (p.1.1.comp_left p.1.2 p.2).symm).trans (Quiver.Total.inv_comp_comp p.1.1 p.1.2 p.2 _)))
+    right_inv := fun q ↦ Subtype.ext (Prod.ext rfl
+      ((Quiver.Total.comp_congr rfl
+        (Quiver.Total.comp_congr (inverseDiffeomorph_apply I J C q.1.1) rfl _ q.2) _
+        (Quiver.Total.comp_left ⟨q.1.1.right, q.1.1.left, inv q.1.1.hom⟩ q.1.2 q.2).symm).trans
+        (Quiver.Total.comp_inv_comp q.1.1 q.1.2 q.2 _)))
     contMDiff_toFun := by
-      have := isManifold_composablePairs I J C
-      have := isManifold_sameSourcePairs I J C
-      have hι := isSmoothEmbedding_coe_composablePairs I J C
-      have hιS := isSmoothEmbedding_coe_sameSourcePairs I J C
-      exact hιS.contMDiff_iff_comp.mpr
-        (hι.contMDiff.fst.prodMk (contMDiff_composablePairs_comp I J C))
+      have := isManifold_composablePairs I J C; have := isManifold_sameSourcePairs I J C
+      exact (isSmoothEmbedding_coe_sameSourcePairs I J C).contMDiff_iff_comp.mpr
+        ((isSmoothEmbedding_coe_composablePairs I J C).contMDiff.fst.prodMk
+          (contMDiff_composablePairs_comp I J C))
     contMDiff_invFun := by
-      have := isManifold_composablePairs I J C
-      have := isManifold_sameSourcePairs I J C
+      have := isManifold_composablePairs I J C; have := isManifold_sameSourcePairs I J C
       have hι := isSmoothEmbedding_coe_composablePairs I J C
       have hιS := isSmoothEmbedding_coe_sameSourcePairs I J C
-      have hinvPair : ContMDiff
-          𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ)
+      have hinvPair : ContMDiff 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ)
           𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) ∞
           (fun q : SameSourcePairs C ↦
             (⟨(inverseDiffeomorph I J C q.1.1, q.1.2),
               (inverseDiffeomorph_right I J C q.1.1).trans q.2⟩ : ComposablePairs C)) :=
         hι.contMDiff_iff_comp.mpr
-          (((inverseDiffeomorph I J C).contMDiff.comp hιS.contMDiff.fst).prodMk
-            hιS.contMDiff.snd)
+          (((inverseDiffeomorph I J C).contMDiff.comp hιS.contMDiff.fst).prodMk hιS.contMDiff.snd)
       exact hι.contMDiff_iff_comp.mpr
-        (hιS.contMDiff.fst.prodMk
-          ((contMDiff_composablePairs_comp I J C).comp hinvPair)) }
+        (hιS.contMDiff.fst.prodMk ((contMDiff_composablePairs_comp I J C).comp hinvPair)) }
 
 @[simp]
 theorem shearDiffeomorph_fst (p : ComposablePairs C) :
-    letI := composablePairsChartedSpace I J C
-    letI := sameSourcePairsChartedSpace I J C
-    (shearDiffeomorph I J C p).1.1 = p.1.1 :=
-  (rfl)
+    letI := composablePairsChartedSpace I J C; letI := sameSourcePairsChartedSpace I J C
+    (shearDiffeomorph I J C p).1.1 = p.1.1 := (rfl)
 
 @[simp]
 theorem shearDiffeomorph_snd (p : ComposablePairs C) :
-    letI := composablePairsChartedSpace I J C
-    letI := sameSourcePairsChartedSpace I J C
-    (shearDiffeomorph I J C p).1.2 = p.1.1.comp p.1.2 p.2 :=
-  (rfl)
+    letI := composablePairsChartedSpace I J C; letI := sameSourcePairsChartedSpace I J C
+    (shearDiffeomorph I J C p).1.2 = p.1.1.comp p.1.2 p.2 := (rfl)
 
 @[simp]
 theorem shearDiffeomorph_symm_fst (q : SameSourcePairs C) :
-    letI := composablePairsChartedSpace I J C
-    letI := sameSourcePairsChartedSpace I J C
-    ((shearDiffeomorph I J C).symm q).1.1 = q.1.1 :=
-  (rfl)
+    letI := composablePairsChartedSpace I J C; letI := sameSourcePairsChartedSpace I J C
+    ((shearDiffeomorph I J C).symm q).1.1 = q.1.1 := (rfl)
 
 @[simp]
 theorem shearDiffeomorph_symm_snd (q : SameSourcePairs C) :
-    letI := composablePairsChartedSpace I J C
-    letI := sameSourcePairsChartedSpace I J C
+    letI := composablePairsChartedSpace I J C; letI := sameSourcePairsChartedSpace I J C
     ((shearDiffeomorph I J C).symm q).1.2 =
       (inverseDiffeomorph I J C q.1.1).comp q.1.2
-        ((inverseDiffeomorph_right I J C q.1.1).trans q.2) :=
-  (rfl)
+        ((inverseDiffeomorph_right I J C q.1.1).trans q.2) := (rfl)
 
 /-- **Composition in a Lie groupoid is a smooth submersion.** Composing the second projection of
 `SameSourcePairs C` (a submersion) with `shearDiffeomorph` recovers categorical composition. -/
@@ -305,17 +277,14 @@ theorem isSubmersion_comp :
     Manifold.IsSubmersion
       𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) J ∞
       (fun p : ComposablePairs C ↦ p.1.1.comp p.1.2 p.2) := by
-  let := composablePairsChartedSpace I J C
-  let := sameSourcePairsChartedSpace I J C
-  have := isManifold_composablePairs I J C
-  have := isManifold_sameSourcePairs I J C
+  let := composablePairsChartedSpace I J C; let := sameSourcePairsChartedSpace I J C
+  have := isManifold_composablePairs I J C; have := isManifold_sameSourcePairs I J C
   let e := shearDiffeomorph I J C
   have hπ₂ := isSubmersion_snd_sameSourcePairs I J C
   refine ((hπ₂.contMDiff.comp e.contMDiff).isSubmersionOfComplement_of_surjective_mfderiv
     (by simp) fun p ↦ ?_).isSubmersion
-  have hc := mfderiv_comp p ((hπ₂.contMDiff (e p)).mdifferentiableAt (by simp))
-    ((e.contMDiff p).mdifferentiableAt (by simp))
-  rw [hc]
+  rw [mfderiv_comp p ((hπ₂.contMDiff (e p)).mdifferentiableAt (by simp))
+    ((e.contMDiff p).mdifferentiableAt (by simp))]
   exact (hπ₂.surjective_mfderiv (by simp) (e p)).comp
     ((e.isLocalDiffeomorph p).mfderivToContinuousLinearEquiv (by simp)).surjective
 
@@ -347,8 +316,7 @@ abbrev ComposableTriplesRightModel (E E' : Type*) [AddCommGroup E] [Module ℝ E
 @[instance_reducible]
 def composableTriplesLeftChartedSpace :
     ChartedSpace (ComposableTriplesLeftModel E E') (ComposableTriplesLeft C) :=
-  letI := composablePairsChartedSpace I J C
-  haveI := isManifold_composablePairs I J C
+  letI := composablePairsChartedSpace I J C; haveI := isManifold_composablePairs I J C
   transverseFiberProductChartedSpace (by simp : (1 : ℕ∞ω) ≤ ∞)
     ((contMDiff_target I J C).comp
       (contMDiff_snd.comp (isSmoothEmbedding_coe_composablePairs I J C).contMDiff))
@@ -359,8 +327,7 @@ def composableTriplesLeftChartedSpace :
 theorem isManifold_composableTriplesLeft :
     letI := composableTriplesLeftChartedSpace I J C
     IsManifold 𝓘(ℝ, ComposableTriplesLeftModel E E') ∞ (ComposableTriplesLeft C) :=
-  letI := composablePairsChartedSpace I J C
-  haveI := isManifold_composablePairs I J C
+  letI := composablePairsChartedSpace I J C; haveI := isManifold_composablePairs I J C
   isManifold_transverseFiberProduct (by simp : (1 : ℕ∞ω) ≤ ∞)
     ((contMDiff_target I J C).comp
       (contMDiff_snd.comp (isSmoothEmbedding_coe_composablePairs I J C).contMDiff))
@@ -370,14 +337,11 @@ theorem isManifold_composableTriplesLeft :
 /-- Inclusion of left-parenthesized composable triples into `ComposablePairs C × Quiver.Total C` is
 a smooth embedding. -/
 theorem isSmoothEmbedding_coe_composableTriplesLeft :
-    letI := composablePairsChartedSpace I J C
-    letI := composableTriplesLeftChartedSpace I J C
-    Manifold.IsSmoothEmbedding
-      𝓘(ℝ, ComposableTriplesLeftModel E E')
+    letI := composablePairsChartedSpace I J C; letI := composableTriplesLeftChartedSpace I J C
+    Manifold.IsSmoothEmbedding 𝓘(ℝ, ComposableTriplesLeftModel E E')
       (𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ).prod J) ∞
       (Subtype.val : ComposableTriplesLeft C → ComposablePairs C × Quiver.Total C) :=
-  letI := composablePairsChartedSpace I J C
-  haveI := isManifold_composablePairs I J C
+  letI := composablePairsChartedSpace I J C; haveI := isManifold_composablePairs I J C
   isSmoothEmbedding_coe_transverseFiberProduct (by simp : (1 : ℕ∞ω) ≤ ∞)
     ((contMDiff_target I J C).comp
       (contMDiff_snd.comp (isSmoothEmbedding_coe_composablePairs I J C).contMDiff))
@@ -388,8 +352,7 @@ theorem isSmoothEmbedding_coe_composableTriplesLeft :
 @[instance_reducible]
 def composableTriplesRightChartedSpace :
     ChartedSpace (ComposableTriplesRightModel E E') (ComposableTriplesRight C) :=
-  letI := composablePairsChartedSpace I J C
-  haveI := isManifold_composablePairs I J C
+  letI := composablePairsChartedSpace I J C; haveI := isManifold_composablePairs I J C
   transverseFiberProductChartedSpace (by simp : (1 : ℕ∞ω) ≤ ∞)
     (contMDiff_target I J C)
     ((contMDiff_source I J C).comp
@@ -400,8 +363,7 @@ def composableTriplesRightChartedSpace :
 theorem isManifold_composableTriplesRight :
     letI := composableTriplesRightChartedSpace I J C
     IsManifold 𝓘(ℝ, ComposableTriplesRightModel E E') ∞ (ComposableTriplesRight C) :=
-  letI := composablePairsChartedSpace I J C
-  haveI := isManifold_composablePairs I J C
+  letI := composablePairsChartedSpace I J C; haveI := isManifold_composablePairs I J C
   isManifold_transverseFiberProduct (by simp : (1 : ℕ∞ω) ≤ ∞)
     (contMDiff_target I J C)
     ((contMDiff_source I J C).comp
@@ -411,14 +373,11 @@ theorem isManifold_composableTriplesRight :
 /-- Inclusion of right-parenthesized composable triples into `Quiver.Total C × ComposablePairs C` is
 a smooth embedding. -/
 theorem isSmoothEmbedding_coe_composableTriplesRight :
-    letI := composablePairsChartedSpace I J C
-    letI := composableTriplesRightChartedSpace I J C
-    Manifold.IsSmoothEmbedding
-      𝓘(ℝ, ComposableTriplesRightModel E E')
+    letI := composablePairsChartedSpace I J C; letI := composableTriplesRightChartedSpace I J C
+    Manifold.IsSmoothEmbedding 𝓘(ℝ, ComposableTriplesRightModel E E')
       (J.prod 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ)) ∞
       (Subtype.val : ComposableTriplesRight C → Quiver.Total C × ComposablePairs C) :=
-  letI := composablePairsChartedSpace I J C
-  haveI := isManifold_composablePairs I J C
+  letI := composablePairsChartedSpace I J C; haveI := isManifold_composablePairs I J C
   isSmoothEmbedding_coe_transverseFiberProduct (by simp : (1 : ℕ∞ω) ≤ ∞)
     (contMDiff_target I J C)
     ((contMDiff_source I J C).comp
@@ -430,15 +389,12 @@ smooth diffeomorphism between the two iterated transverse fibre products of comp
 def composableTriplesAssocDiffeomorph :
     letI := composableTriplesLeftChartedSpace I J C
     letI := composableTriplesRightChartedSpace I J C
-    ComposableTriplesLeft C ≃ₘ^∞⟮
-      𝓘(ℝ, ComposableTriplesLeftModel E E'),
-      𝓘(ℝ, ComposableTriplesRightModel E E')⟯
-      ComposableTriplesRight C :=
+    ComposableTriplesLeft C ≃ₘ^∞⟮𝓘(ℝ, ComposableTriplesLeftModel E E'),
+      𝓘(ℝ, ComposableTriplesRightModel E E')⟯ ComposableTriplesRight C :=
   letI := composablePairsChartedSpace I J C
   letI := composableTriplesLeftChartedSpace I J C
   letI := composableTriplesRightChartedSpace I J C
-  fiberProductAssocDiffeomorph
-    (isSmoothEmbedding_coe_composablePairs I J C)
+  fiberProductAssocDiffeomorph (isSmoothEmbedding_coe_composablePairs I J C)
     (isSmoothEmbedding_coe_composablePairs I J C)
     (isSmoothEmbedding_coe_composableTriplesLeft I J C)
     (isSmoothEmbedding_coe_composableTriplesRight I J C)
@@ -449,11 +405,9 @@ theorem composableTriplesAssocDiffeomorph_apply (p : ComposableTriplesLeft C) :
     letI := composableTriplesRightChartedSpace I J C
     composableTriplesAssocDiffeomorph I J C p =
       ⟨(p.1.1.1.1, ⟨(p.1.1.1.2, p.1.2), p.2⟩), p.1.1.2⟩ := by
-  let := composablePairsChartedSpace I J C
-  let := composableTriplesLeftChartedSpace I J C
+  let := composablePairsChartedSpace I J C; let := composableTriplesLeftChartedSpace I J C
   let := composableTriplesRightChartedSpace I J C
-  exact fiberProductAssocDiffeomorph_apply
-    (isSmoothEmbedding_coe_composablePairs I J C)
+  exact fiberProductAssocDiffeomorph_apply (isSmoothEmbedding_coe_composablePairs I J C)
     (isSmoothEmbedding_coe_composablePairs I J C)
     (isSmoothEmbedding_coe_composableTriplesLeft I J C)
     (isSmoothEmbedding_coe_composableTriplesRight I J C) p
@@ -464,11 +418,9 @@ theorem composableTriplesAssocDiffeomorph_symm_apply (p : ComposableTriplesRight
     letI := composableTriplesRightChartedSpace I J C
     (composableTriplesAssocDiffeomorph I J C).symm p =
       ⟨(⟨(p.1.1, p.1.2.1.1), p.2⟩, p.1.2.1.2), p.1.2.2⟩ := by
-  let := composablePairsChartedSpace I J C
-  let := composableTriplesLeftChartedSpace I J C
+  let := composablePairsChartedSpace I J C; let := composableTriplesLeftChartedSpace I J C
   let := composableTriplesRightChartedSpace I J C
-  exact fiberProductAssocDiffeomorph_symm_apply
-    (isSmoothEmbedding_coe_composablePairs I J C)
+  exact fiberProductAssocDiffeomorph_symm_apply (isSmoothEmbedding_coe_composablePairs I J C)
     (isSmoothEmbedding_coe_composablePairs I J C)
     (isSmoothEmbedding_coe_composableTriplesLeft I J C)
     (isSmoothEmbedding_coe_composableTriplesRight I J C) p
@@ -530,16 +482,12 @@ theorem comp_triplesFace₁_eq_comp_triplesFace₂ {C : Type*} [Category C]
 
 /-- The zeroth simplicial face map `((a, b), c) ↦ (b, c)` is smooth. -/
 theorem contMDiff_triplesFace₀ :
-    letI := composablePairsChartedSpace I J C
-    letI := composableTriplesLeftChartedSpace I J C
-    ContMDiff
-      𝓘(ℝ, ComposableTriplesLeftModel E E')
+    letI := composablePairsChartedSpace I J C; letI := composableTriplesLeftChartedSpace I J C
+    ContMDiff 𝓘(ℝ, ComposableTriplesLeftModel E E')
       𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) ∞
       (triplesFace₀ : ComposableTriplesLeft C → ComposablePairs C) := by
-  let := composablePairsChartedSpace I J C
-  let := composableTriplesLeftChartedSpace I J C
-  have := isManifold_composablePairs I J C
-  have := isManifold_composableTriplesLeft I J C
+  let := composablePairsChartedSpace I J C; let := composableTriplesLeftChartedSpace I J C
+  have := isManifold_composablePairs I J C; have := isManifold_composableTriplesLeft I J C
   have hι := isSmoothEmbedding_coe_composablePairs I J C
   have hL := isSmoothEmbedding_coe_composableTriplesLeft I J C
   exact hι.contMDiff_iff_comp.mpr
@@ -548,16 +496,12 @@ theorem contMDiff_triplesFace₀ :
 
 /-- The first simplicial face map `((a, b), c) ↦ (a.comp b, c)` is smooth. -/
 theorem contMDiff_triplesFace₁ :
-    letI := composablePairsChartedSpace I J C
-    letI := composableTriplesLeftChartedSpace I J C
-    ContMDiff
-      𝓘(ℝ, ComposableTriplesLeftModel E E')
+    letI := composablePairsChartedSpace I J C; letI := composableTriplesLeftChartedSpace I J C
+    ContMDiff 𝓘(ℝ, ComposableTriplesLeftModel E E')
       𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) ∞
       (triplesFace₁ : ComposableTriplesLeft C → ComposablePairs C) := by
-  let := composablePairsChartedSpace I J C
-  let := composableTriplesLeftChartedSpace I J C
-  have := isManifold_composablePairs I J C
-  have := isManifold_composableTriplesLeft I J C
+  let := composablePairsChartedSpace I J C; let := composableTriplesLeftChartedSpace I J C
+  have := isManifold_composablePairs I J C; have := isManifold_composableTriplesLeft I J C
   have hι := isSmoothEmbedding_coe_composablePairs I J C
   have hL := isSmoothEmbedding_coe_composableTriplesLeft I J C
   exact hι.contMDiff_iff_comp.mpr
@@ -566,16 +510,12 @@ theorem contMDiff_triplesFace₁ :
 
 /-- The second simplicial face map `((a, b), c) ↦ (a, b.comp c)` is smooth. -/
 theorem contMDiff_triplesFace₂ :
-    letI := composablePairsChartedSpace I J C
-    letI := composableTriplesLeftChartedSpace I J C
-    ContMDiff
-      𝓘(ℝ, ComposableTriplesLeftModel E E')
+    letI := composablePairsChartedSpace I J C; letI := composableTriplesLeftChartedSpace I J C
+    ContMDiff 𝓘(ℝ, ComposableTriplesLeftModel E E')
       𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) ∞
       (triplesFace₂ : ComposableTriplesLeft C → ComposablePairs C) := by
-  let := composablePairsChartedSpace I J C
-  let := composableTriplesLeftChartedSpace I J C
-  have := isManifold_composablePairs I J C
-  have := isManifold_composableTriplesLeft I J C
+  let := composablePairsChartedSpace I J C; let := composableTriplesLeftChartedSpace I J C
+  have := isManifold_composablePairs I J C; have := isManifold_composableTriplesLeft I J C
   have hι := isSmoothEmbedding_coe_composablePairs I J C
   have hL := isSmoothEmbedding_coe_composableTriplesLeft I J C
   exact hι.contMDiff_iff_comp.mpr
@@ -584,16 +524,12 @@ theorem contMDiff_triplesFace₂ :
 
 /-- The third simplicial face map `((a, b), c) ↦ (a, b)` is smooth. -/
 theorem contMDiff_triplesFace₃ :
-    letI := composablePairsChartedSpace I J C
-    letI := composableTriplesLeftChartedSpace I J C
-    ContMDiff
-      𝓘(ℝ, ComposableTriplesLeftModel E E')
+    letI := composablePairsChartedSpace I J C; letI := composableTriplesLeftChartedSpace I J C
+    ContMDiff 𝓘(ℝ, ComposableTriplesLeftModel E E')
       𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) ∞
       (triplesFace₃ : ComposableTriplesLeft C → ComposablePairs C) := by
-  let := composablePairsChartedSpace I J C
-  let := composableTriplesLeftChartedSpace I J C
-  have := isManifold_composablePairs I J C
-  have := isManifold_composableTriplesLeft I J C
+  let := composablePairsChartedSpace I J C; let := composableTriplesLeftChartedSpace I J C
+  have := isManifold_composablePairs I J C; have := isManifold_composableTriplesLeft I J C
   exact contMDiff_fst.comp (isSmoothEmbedding_coe_composableTriplesLeft I J C).contMDiff
 
 end TauCeti.IsLieGroupoid
