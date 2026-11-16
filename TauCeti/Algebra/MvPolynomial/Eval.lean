@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.MvPolynomial.Variables
 public import Mathlib.RingTheory.Ideal.Defs
 
+import Mathlib.RingTheory.Ideal.Span
 import Mathlib.Tactic.Ring
 
 /-!
@@ -29,10 +30,10 @@ in particular, coordinatewise divisibility by `d` implies `d ∣ p(x) - p(t)`.
 
 * `MvPolynomial.pow_mul_eval_mem`: `c ^ T p(x)` lies in a subsemiring containing `c`, the
   coefficients of `p` and the `c xᵢ`, when `p` has total degree at most `T`.
-* `MvPolynomial.dvd_eval_sub_eval`: values at points congruent modulo `d` are congruent modulo `d`.
-* `MvPolynomial.eval_sub_eval_mem_of_vars`, `MvPolynomial.eval_sub_eval_mem`: values at points
-  whose coordinates on the variables of `p` (or everywhere) are congruent modulo an ideal `I` are
+* `MvPolynomial.eval_sub_eval_mem`, `MvPolynomial.eval_sub_eval_mem_of_vars`: values at points
+  whose coordinates everywhere (or on the variables of `p`) are congruent modulo an ideal `I` are
   congruent modulo `I`.
+* `MvPolynomial.dvd_eval_sub_eval`: values at points congruent modulo `d` are congruent modulo `d`.
 -/
 
 public section
@@ -59,18 +60,6 @@ theorem pow_mul_eval_mem {s : subS} {p : MvPolynomial σ S} (hp : ∀ m, p.coeff
   rw [h]
   exact mul_mem (mul_mem (pow_mem hc _) (hp m)) (prod_mem fun i _ ↦ pow_mem (hx i) _)
 
-/-- The values of a polynomial at points that agree modulo `d` agree modulo `d`. -/
-theorem dvd_eval_sub_eval {R : Type*} [CommRing R] (p : MvPolynomial σ R) {d : R} {x t : σ → R}
-    (h : ∀ i, d ∣ x i - t i) : d ∣ eval x p - eval t p := by
-  induction p using MvPolynomial.induction_on with
-  | C a => simp
-  | add p q hp hq => simpa [add_sub_add_comm] using dvd_add hp hq
-  | mul_X p i hp =>
-    convert dvd_add (dvd_mul_of_dvd_left hp (x i)) (dvd_mul_of_dvd_right (h i) (eval t p))
-      using 1
-    simp only [map_mul, eval_X]
-    ring
-
 /-- The values of a polynomial at points that agree modulo an ideal `I` agree modulo `I`. -/
 theorem eval_sub_eval_mem {R : Type*} [CommRing R] (p : MvPolynomial σ R) {I : Ideal R}
     {x t : σ → R} (h : ∀ i, x i - t i ∈ I) : eval x p - eval t p ∈ I := by
@@ -92,5 +81,11 @@ theorem eval_sub_eval_mem_of_vars {R : Type*} [CommRing R] (p : MvPolynomial σ 
   obtain ⟨q, hq⟩ := exists_rename_coe_vars_eq p
   rw [← hq, eval_rename, eval_rename]
   exact eval_sub_eval_mem q fun i ↦ h i i.2
+
+/-- The values of a polynomial at points that agree modulo `d` agree modulo `d`. -/
+theorem dvd_eval_sub_eval {R : Type*} [CommRing R] (p : MvPolynomial σ R) {d : R} {x t : σ → R}
+    (h : ∀ i, d ∣ x i - t i) : d ∣ eval x p - eval t p := by
+  rw [← Ideal.mem_span_singleton]
+  exact eval_sub_eval_mem p fun i ↦ Ideal.mem_span_singleton.mpr (h i)
 
 end MvPolynomial

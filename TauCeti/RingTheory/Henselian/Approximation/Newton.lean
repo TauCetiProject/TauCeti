@@ -231,8 +231,7 @@ private theorem det_mul_colon_mem_newtonEliminatorIdeal [DecidableEq σ] (t : R)
     simpa only [Matrix.mulVec, dotProduct] using hmul
   let v : ι →₀ R := ∑ j : s, Finsupp.single (col j) (MvPolynomial.eval a g * u j)
   have hvK (k : ι) : v k ∈ K := by
-    rw [show v k = ∑ j : s, (Finsupp.single (col j) (MvPolynomial.eval a g * u j)) k from
-      map_sum (Finsupp.lapply (R := R) k) _ _]
+    simp only [v, Finset.sum_apply']
     refine K.sum_mem fun j _ ↦ ?_
     by_cases hkj : col j = k
     · subst hkj; simpa using K.mul_mem_left (MvPolynomial.eval a g) (huK j)
@@ -512,13 +511,6 @@ section Complete
 
 variable {R σ ι : Type*} [CommRing R] [DecidableEq σ]
 
-private theorem filtrationIdeal_pow_le_pow_span_singleton_mul (t : R) (I : Ideal R)
-    {k m n : ℕ} (hkm : k ≤ m) (hkn : k ≤ n) :
-    filtrationIdeal t (I ^ m) n ≤ (Ideal.span {t} * I) ^ k := by
-  rw [pow_span_singleton_mul]
-  exact (filtrationIdeal_mono_right t (Ideal.pow_le_pow_right hkm) n).trans
-    (filtrationIdeal_antitone t (I ^ k) hkn)
-
 private theorem sub_newtonIter_mem {t : R} {I : Ideal R} {u : ℕ → ι → R} {h n : ℕ}
     (hhn : 2 * h < n)
     (hstep : ∀ k i, u (k + 1) i - u k i ∈
@@ -695,9 +687,11 @@ private theorem completionMap_pow_mem_map_elkikJacobianIdeal {t : R} {I : Ideal 
     have hn_eq : n - h = h + (n - 2 * h) := by omega
     have htz0 : t ^ h * z 0 ∈ filtrationIdeal t I (n - h) :=
       hn_eq ▸ mem_filtrationIdeal_add_iff.mpr ⟨z 0, hz 0, rfl⟩
-    rw [← hn_eq, show t ^ h - MvPolynomial.eval (u m) (P 0) =
-      (t ^ h * z 0) - (MvPolynomial.eval (u m) (P 0) - MvPolynomial.eval (u 0) (P 0)) by
-      rw [← h0]; ring]
+    have hlin : t ^ h - MvPolynomial.eval (u m) (P 0) =
+        (t ^ h * z 0) - (MvPolynomial.eval (u m) (P 0) - MvPolynomial.eval (u 0) (P 0)) := by
+      rw [← h0]
+      ring
+    rw [← hn_eq, hlin]
     exact Ideal.sub_mem _ htz0 hm0
   choose w hw htw using fun m ↦ mem_filtrationIdeal_add_iff.mp (hdiff_m m)
   have hw_compat (m m' : ℕ) (hmm' : m ≤ m') :

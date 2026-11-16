@@ -114,6 +114,15 @@ theorem pow_span_singleton_mul (t : R) (I : Ideal R) (n : ℕ) :
     (Ideal.span {t} * I) ^ n = filtrationIdeal t (I ^ n) n := by
   rw [filtrationIdeal_def, mul_pow]
 
+/-- When both the ideal exponent `m` and the filtration level `n` are at least `k`,
+`filtrationIdeal t (I ^ m) n` is contained in `((t) * I) ^ k`. -/
+theorem filtrationIdeal_pow_le_pow_span_singleton_mul (t : R) (I : Ideal R)
+    {k m n : ℕ} (hkm : k ≤ m) (hkn : k ≤ n) :
+    filtrationIdeal t (I ^ m) n ≤ (Ideal.span {t} * I) ^ k := by
+  rw [pow_span_singleton_mul]
+  exact (filtrationIdeal_mono_right t (Ideal.pow_le_pow_right hkm) n).trans
+    (filtrationIdeal_antitone t (I ^ k) hkn)
+
 private theorem filtrationBasis (t : R) (I : Ideal R) :
     RingSubgroupsBasis (fun n ↦ (filtrationIdeal t I n).toAddSubgroup) where
   inter m n := ⟨max m n, le_inf

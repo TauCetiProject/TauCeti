@@ -263,42 +263,22 @@ theorem ker_eval (a : σ → R) :
 
 /-- A polynomial belongs to `ker (eval a) + I · R[X]` if and only if its value at `a` lies in
 `I`. -/
+@[simp]
 theorem mem_ker_eval_sup_map_C_iff (a : σ → R) (I : Ideal R) (p : MvPolynomial σ R) :
     p ∈ RingHom.ker (eval a) ⊔ I.map (C (σ := σ)) ↔ eval a p ∈ I := by
-  constructor
-  · intro hp
-    obtain ⟨u, hu, v, hv, rfl⟩ := Submodule.mem_sup.mp hp
-    have hvI : (I.map (C (σ := σ))).map (eval a) ≤ I := by
-      rw [Ideal.map_map, Ideal.map_le_iff_le_comap]
-      intro r hr
-      simpa using hr
-    rw [map_add, RingHom.mem_ker.mp hu, zero_add]
-    exact hvI (Ideal.mem_map_of_mem (eval a) hv)
-  · intro hp
-    have h1 : p - C (eval a p) ∈ RingHom.ker (eval a) := by
-      simp [RingHom.mem_ker]
-    have h2 : C (σ := σ) (eval a p) ∈ I.map (C (σ := σ)) :=
-      Ideal.mem_map_of_mem (C (σ := σ)) hp
-    simpa only [sub_add_cancel] using Submodule.add_mem_sup h1 h2
+  have hsurj : Function.Surjective (eval a) := fun r ↦ ⟨C r, eval_C r⟩
+  have hcomp : (eval a).comp (C (σ := σ)) = RingHom.id R := by ext; simp
+  rw [sup_comm, RingHom.ker_eq_comap_bot, ← Ideal.comap_map_of_surjective (eval a) hsurj,
+    Ideal.map_map, hcomp, Ideal.map_id, Ideal.mem_comap]
 
 /-- A constant `C r` belongs to `H + ker (eval a)` if and only if `r` belongs to the image of `H`
 under `eval a`. -/
+@[simp]
 theorem C_mem_sup_ker_eval_iff (a : σ → R) (H : Ideal (MvPolynomial σ R)) (r : R) :
     C r ∈ H ⊔ RingHom.ker (eval a) ↔ r ∈ H.map (eval a) := by
-  constructor
-  · intro hr
-    obtain ⟨u, hu, v, hv, huv⟩ := Submodule.mem_sup.mp hr
-    have hval := congrArg (eval a) huv
-    rw [map_add, RingHom.mem_ker.mp hv, add_zero, eval_C] at hval
-    exact hval ▸ Ideal.mem_map_of_mem (eval a) hu
-  · intro hr
-    have hle : H.map (eval a) ≤ (H ⊔ RingHom.ker (eval a)).comap (C (σ := σ)) := by
-      rw [Ideal.map_le_iff_le_comap]
-      intro h hh
-      rw [Ideal.mem_comap, Ideal.mem_comap]
-      have hk : C (eval a h) - h ∈ RingHom.ker (eval a) := by simp [RingHom.mem_ker]
-      simpa only [add_sub_cancel] using Submodule.add_mem_sup hh hk
-    exact Ideal.mem_comap.mp (hle hr)
+  have hsurj : Function.Surjective (eval a) := fun s ↦ ⟨C s, eval_C s⟩
+  rw [RingHom.ker_eq_comap_bot, ← Ideal.comap_map_of_surjective (eval a) hsurj,
+    Ideal.mem_comap, eval_C]
 
 end PointEvaluation
 

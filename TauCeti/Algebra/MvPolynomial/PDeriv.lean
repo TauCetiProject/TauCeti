@@ -49,12 +49,12 @@ Newton's method with an approximately invertible Jacobian.
   an additive submonoid.
 * `MvPolynomial.iterate_pderiv_prod_aeval_X`: on a separated product `∏ⱼ Qⱼ(Xⱼ)` of one-variable
   polynomials, the `k`-th iterated partial derivative along `Xᵢ` is `Qᵢ⁽ᵏ⁾(Xᵢ) ∏_{j ≠ i} Qⱼ(Xⱼ)`.
-* `MvPolynomial.mul_dvd_eval_sub_eval_sub_sum_pderiv`: Taylor's divisibility estimate
-  `d * e ∣ p(x') - p(x) - ∑ⱼ ∂ⱼp(t) (x'ⱼ - xⱼ)`.
 * `MvPolynomial.eval_sub_eval_sub_sum_pderiv_mem_mul`,
   `MvPolynomial.eval_sub_eval_sub_sum_pderiv_mem_sq`: Taylor's ideal-product estimate
   `p(x') - p(x) - ∑ⱼ ∂ⱼp(t) (x'ⱼ - xⱼ) ∈ I * J`, and its first-order specialisation modulo `I ^ 2`
   over an arbitrary variable type.
+* `MvPolynomial.mul_dvd_eval_sub_eval_sub_sum_pderiv`: Taylor's divisibility estimate
+  `d * e ∣ p(x') - p(x) - ∑ⱼ ∂ⱼp(t) (x'ⱼ - xⱼ)`.
 -/
 
 public section
@@ -196,38 +196,6 @@ section CommRing
 
 variable {R σ : Type*} [CommRing R]
 
-/-- **Taylor's estimate in several variables.** If `d ∣ xᵢ - tᵢ`, `d ∣ e` and `e ∣ x'ᵢ - xᵢ` for
-every `i`, then the gradient at `t` linearises `p` from `x` to `x'` up to an error divisible by
-`d * e`. -/
-theorem mul_dvd_eval_sub_eval_sub_sum_pderiv [Fintype σ] (p : MvPolynomial σ R) {d e : R}
-    {t x x' : σ → R} (hx : ∀ i, d ∣ x i - t i) (hde : d ∣ e) (hxx' : ∀ i, e ∣ x' i - x i) :
-    d * e ∣ eval x' p - eval x p - ∑ j, eval t (pderiv j p) * (x' j - x j) := by
-  induction p using MvPolynomial.induction_on with
-  | C a => simp
-  | add p q hp hq =>
-    convert dvd_add hp hq using 1
-    simp only [map_add, add_mul, Finset.sum_add_distrib]
-    ring
-  | mul_X p i hp =>
-    classical
-    set S := ∑ j, eval t (pderiv j p) * (x' j - x j)
-    have hS : e ∣ S := Finset.dvd_sum fun j _ ↦ dvd_mul_of_dvd_right (hxx' j) _
-    have hx'i : d ∣ x' i - t i := by
-      simpa using dvd_add (hde.trans (hxx' i)) (hx i)
-    -- By the Leibniz rule, the gradient term of `p * Xᵢ` is `tᵢ S + p(t) (x'ᵢ - xᵢ)`.
-    have hsum : ∑ j, eval t (pderiv j (p * X i)) * (x' j - x j) =
-        t i * S + eval t p * (x' i - x i) := by
-      simp only [Derivation.leibniz, pderiv_X, smul_eq_mul, map_add, map_mul, eval_X, add_mul,
-        Finset.sum_add_distrib, S, Finset.mul_sum, Pi.single_apply]
-      simp only [apply_ite (eval t), map_one, map_zero, mul_ite, ite_mul, mul_one, mul_zero,
-        zero_mul, Finset.sum_ite_eq, Finset.mem_univ, ↓reduceIte, mul_assoc]
-      ring
-    convert dvd_add (dvd_add (dvd_mul_of_dvd_left hp (x' i)) (mul_dvd_mul hx'i hS))
-      (mul_dvd_mul (dvd_eval_sub_eval p hx) (hxx' i)) using 1
-    rw [hsum]
-    simp only [map_mul, eval_X]
-    ring
-
 /-- **Ideal-product Taylor estimate in several variables.** If `xᵢ - tᵢ ∈ I`, `x'ᵢ - tᵢ ∈ I` and
 `x'ᵢ - xᵢ ∈ J` for every `i`, then the gradient at `t` linearises `p` from `x` to `x'` up to an
 error in `I * J`. -/
@@ -314,6 +282,17 @@ theorem eval_sub_eval_sub_sum_pderiv_mem_sq (p : MvPolynomial σ R) {I : Ideal R
   have heval_a : eval (a ∘ Subtype.val) q = eval a p := by
     rw [← hq, eval_rename]
   simpa only [Function.comp_apply, heval_b, heval_a, hsum] using hmem
+
+/-- **Taylor's estimate in several variables.** If `d ∣ xᵢ - tᵢ`, `d ∣ e` and `e ∣ x'ᵢ - xᵢ` for
+every `i`, then the gradient at `t` linearises `p` from `x` to `x'` up to an error divisible by
+`d * e`. -/
+theorem mul_dvd_eval_sub_eval_sub_sum_pderiv [Fintype σ] (p : MvPolynomial σ R) {d e : R}
+    {t x x' : σ → R} (hx : ∀ i, d ∣ x i - t i) (hde : d ∣ e) (hxx' : ∀ i, e ∣ x' i - x i) :
+    d * e ∣ eval x' p - eval x p - ∑ j, eval t (pderiv j p) * (x' j - x j) := by
+  rw [← Ideal.mem_span_singleton, ← Ideal.span_singleton_mul_span_singleton]
+  refine eval_sub_eval_sub_sum_pderiv_mem_mul p (fun i ↦ Ideal.mem_span_singleton.mpr (hx i))
+    (fun i ↦ Ideal.mem_span_singleton.mpr ?_) (fun i ↦ Ideal.mem_span_singleton.mpr (hxx' i))
+  simpa using dvd_add (hde.trans (hxx' i)) (hx i)
 
 end CommRing
 
