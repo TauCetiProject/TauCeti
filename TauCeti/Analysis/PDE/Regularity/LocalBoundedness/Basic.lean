@@ -416,6 +416,23 @@ theorem CaccioppoliAboveLinear.setIntegral_sq_mul_norm_gradient_sq_le {u : W1p m
           ψ x ^ 2 * W1p.value (W1p.posPartAboveOfMemLp (by norm_num) l u hl) x ∂mu :=
   h l hkl hl hψ hcpt hts
 
+/-- De Giorgi's class with a linear term grows with the constants `A`, `B` and `E`. Unlike
+`TauCeti.PDE.CaccioppoliAbove.mono`, the level `k` stays fixed, since raising it would change the
+linear term `E (l - k)`. -/
+theorem CaccioppoliAboveLinear.mono {u : W1p mu Omega 2} {k A A' B B' E E' : ℝ}
+    (h : CaccioppoliAboveLinear u k A B E) (hA : A ≤ A') (hB : B ≤ B') (hE : E ≤ E') :
+    CaccioppoliAboveLinear u k A' B' E' :=
+  .intro fun l hkl hl _ hψ hcpt hts =>
+    (h.setIntegral_sq_mul_norm_gradient_sq_le hkl hl hψ hcpt hts).trans <|
+      add_le_add (add_le_add
+        (mul_le_mul_of_nonneg_right hA (integral_nonneg fun _ => by positivity))
+        (mul_le_mul_of_nonneg_right hB (integral_nonneg fun _ => by positivity)))
+        (mul_le_mul_of_nonneg_right
+          (mul_le_mul_of_nonneg_right hE (sub_nonneg.2 hkl))
+          (integral_nonneg_of_ae
+            ((W1p.value_posPartAboveOfMemLp_ae (by norm_num) l u hl).mono fun x hx => by
+              simp only [Pi.zero_apply]; rw [hx]; positivity)))
+
 /-- De Giorgi's class is the case `E = 0` of the class with a linear term. -/
 theorem CaccioppoliAbove.caccioppoliAboveLinear {u : W1p mu Omega 2} {k A B : ℝ}
     (h : CaccioppoliAbove u k A B) : CaccioppoliAboveLinear u k A B 0 :=
@@ -1265,15 +1282,21 @@ section SubsolutionLp
 
 variable [mu.IsAddHaarMeasure]
 
-/-- Transfer of an `L²` local bound for `u` above the level `k` to every `Lᵖ` norm with
-`0 < p ≤ 2`, through `exists_ae_le_mul_rpow_mul_setIntegral_rpow_of_forall_ball` applied to
+/-- **Transfer of local `L²` bounds above a level to `Lᵖ` bounds.** Fix `e`, `D ≥ 0` and
+`0 < p ≤ 2`. There is `C > 0` such that for every `u ∈ H¹(Ω)`, every level `k` and every ball
+`B(x₀, R) ⊆ Ω`, if `u ≤ k + D sᵉ ‖(u - k)⁺‖_{L²(B(y, s))}` almost everywhere on `B(y, s/2)` for
+every ball `B(y, s) ⊆ B(x₀, R)`, then
+
+`u ≤ k + C R^{2e/p} (∫_{B(x₀, R)} ((u - k)⁺)ᵖ)^{1/p}` almost everywhere on `B(x₀, R/2)`.
+
+This is `TauCeti.PDE.exists_ae_le_mul_rpow_mul_setIntegral_rpow_of_forall_ball` applied to
 `(u - k)⁺`. -/
-private theorem exists_ae_value_le_add_mul_rpow_mul_setIntegral_rpow_of_forall_ball (e : ℝ)
+theorem exists_ae_value_le_add_mul_rpow_mul_setIntegral_rpow_of_forall_ball (e : ℝ)
     (D : ℝ) (hD : 0 ≤ D) {p : ℝ} (hp : 0 < p) (hp2 : p ≤ 2) :
     ∃ C : ℝ, 0 < C ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)} {u : W1p mu Omega 2} {k : ℝ}
       {x₀ : EuclideanSpace ℝ ι} {R : ℝ},
       Metric.ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
-      (∀ y s, 0 < s → Metric.ball y s ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
+      (∀ y s, 0 < s → Metric.ball y s ⊆ Metric.ball x₀ R →
         ∀ᵐ x ∂mu.restrict (Metric.ball y (s / 2)),
           W1p.value u x ≤ k + D * s ^ e *
             √(∫ x in Metric.ball y s, max (W1p.value u x - k) 0 ^ 2 ∂mu)) →
@@ -1289,7 +1312,7 @@ private theorem exists_ae_value_le_add_mul_rpow_mul_setIntegral_rpow_of_forall_b
     (((Lp.memLp (W1p.value u)).mono_measure (Measure.restrict_mono hball le_rfl)).sub
       (memLp_const k)).pos_part
   filter_upwards [hmain (fun x => le_max_right _ _) hw2 fun y s hs hsub =>
-    (hu y s hs (hsub.trans hball)).mono fun x hx =>
+    (hu y s hs hsub).mono fun x hx =>
       max_le (by linarith) (by positivity)] with x hx
   linarith [le_max_left (W1p.value u x - k) 0]
 
@@ -1334,8 +1357,8 @@ theorem exists_ae_value_le_add_mul_rpow_mul_setIntegral_rpow_of_forall_eLpNorm_l
       (by positivity) hp hp2
   refine ⟨C, hC, fun {Omega a u k x₀ R} h ha hS hu hball => ?_⟩
   have := hmain (u := u) (k := k) hball fun y s hs hsub =>
-    hbound (S := S + 1) (by positivity) h ha hu hs hsub fun v hv =>
-      (hS y s hsub v hv).trans (by gcongr; exact le_self_add)
+    hbound (S := S + 1) (by positivity) h ha hu hs (hsub.trans hball) fun v hv =>
+      (hS y s (hsub.trans hball) v hv).trans (by gcongr; exact le_self_add)
   rwa [mul_neg, neg_div] at this
 
 /-- **Local boundedness of weak subsolutions in `Lᵖ` (De Giorgi).** Let `0 < p ≤ 2`. In every
@@ -1368,7 +1391,7 @@ theorem exists_ae_value_le_add_mul_rpow_mul_setIntegral_rpow [Nonempty ι] {p : 
     exists_ae_value_le_add_mul_rpow_mul_setIntegral_rpow_of_forall_ball (mu := mu)
       (-(Fintype.card ι : ℝ) / 2) D hD.le hp hp2
   refine ⟨C, hC, fun {Omega a u k x₀ R} h ha hu hball => ?_⟩
-  have := hmain (u := u) (k := k) hball fun y s hs hsub => hbound h ha hu hs hsub
+  have := hmain (u := u) (k := k) hball fun y s hs hsub => hbound h ha hu hs (hsub.trans hball)
   rwa [show 2 * (-(Fintype.card ι : ℝ) / 2) / p = -(Fintype.card ι : ℝ) / p by ring] at this
 
 /-- **Local boundedness with hypotheses only on the ball.** For every `0 < p ≤ 2` and every

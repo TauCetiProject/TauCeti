@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.PDE.Caccioppoli.LowerOrder
 public import TauCeti.Analysis.PDE.Regularity.LocalBoundedness.Basic
 import TauCeti.Analysis.Normed.Module.Ball
-import TauCeti.Analysis.PDE.Regularity.LocalBoundedness.Interpolation
 
 /-!
 # Local boundedness of weak subsolutions with lower-order terms (De Giorgi)
@@ -426,21 +425,18 @@ theorem exists_ae_value_le_mul_rpow_mul_setIntegral_rpow_lowerOrder [Nonempty ι
   obtain ⟨D, hD, hbound⟩ :=
     exists_ae_value_le_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder (mu := mu) (lam := lam)
       (Lam := Lam)
-  obtain ⟨C, hC, hmain⟩ := exists_ae_le_mul_rpow_mul_setIntegral_rpow_of_forall_ball (mu := mu)
-    (-(Fintype.card ι : ℝ) / 2) (D * (1 + σ ^ 2 + |σ|) ^ Fintype.card ι) hp hp2
+  obtain ⟨C, hC, hmain⟩ :=
+    exists_ae_value_le_add_mul_rpow_mul_setIntegral_rpow_of_forall_ball (mu := mu)
+      (-(Fintype.card ι : ℝ) / 2) (D * (1 + σ ^ 2 + |σ|) ^ Fintype.card ι) (by positivity) hp hp2
   refine ⟨C, hC, ?_⟩
   intro Omega a b c beta gamma u x₀ R h ha hb hc hb_bound hc_bound hu hball hβ hγ
-  have : IsFiniteMeasure (mu.restrict (Metric.ball x₀ R)) :=
-    isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
   have hlam := h.pos
-  have hw2 : MemLp (fun x => max (W1p.value u x) 0) 2 (mu.restrict (Metric.ball x₀ R)) :=
-    ((Lp.memLp (W1p.value u)).mono_measure (Measure.restrict_mono hball le_rfl)).pos_part
   -- On every ball `B(y, s) ⊆ B(x₀, R)` the `L²` bound holds with the constant for `σ`.
   have H : ∀ y s, 0 < s → Metric.ball y s ⊆ Metric.ball x₀ R →
       ∀ᵐ x ∂mu.restrict (Metric.ball y (s / 2)),
-        max (W1p.value u x) 0 ≤ D * (1 + σ ^ 2 + |σ|) ^ Fintype.card ι *
+        W1p.value u x ≤ 0 + D * (1 + σ ^ 2 + |σ|) ^ Fintype.card ι *
           s ^ (-(Fintype.card ι : ℝ) / 2) *
-          √(∫ x in Metric.ball y s, max (W1p.value u x) 0 ^ 2 ∂mu) := fun y s hs hsub => by
+          √(∫ x in Metric.ball y s, max (W1p.value u x - 0) 0 ^ 2 ∂mu) := fun y s hs hsub => by
     have hsR : s ≤ R := by
       linarith [(ball_subset_ball_iff hs).1 hsub, dist_nonneg (x := y) (y := x₀)]
     have hy : y ∈ (Omega : Set (EuclideanSpace ℝ ι)) := hball (hsub (Metric.mem_ball_self hs))
@@ -462,11 +458,12 @@ theorem exists_ae_value_le_mul_rpow_mul_setIntegral_rpow_lowerOrder [Nonempty ι
         exact pow_le_pow_left₀ (by positivity) h1 2
       linarith
     filter_upwards [hbound h ha hb hc hb_bound hc_bound hu (hsub.trans hball)] with x hx
-    refine max_le (hx.trans ?_) (by positivity)
+    simp only [zero_add, sub_zero]
+    refine hx.trans ?_
     gcongr
-  filter_upwards [hmain (fun x => le_max_right _ _) hw2 H] with x hx
-  refine (le_max_left _ _).trans (hx.trans_eq ?_)
-  rw [show 2 * (-(Fintype.card ι : ℝ) / 2) / p = -(Fintype.card ι : ℝ) / p by ring]
+  filter_upwards [hmain (k := 0) hball H] with x hx
+  simpa only [zero_add, sub_zero,
+    show 2 * (-(Fintype.card ι : ℝ) / 2) / p = -(Fintype.card ι : ℝ) / p by ring] using hx
 
 end PDE
 
