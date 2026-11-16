@@ -5,9 +5,9 @@ Authors: Codex
 -/
 module
 
+import TauCeti.MeasureTheory.Function.ConditionalExpectation.MeasurePreserving
 public import TauCeti.Probability.MarkovChain.MarkovProperty
 public import TauCeti.Probability.Kernel.Composition.Power
-public import Mathlib.Probability.Kernel.CondDistrib
 
 /-!
 # Markov chains relative to a filtration
@@ -18,15 +18,17 @@ real functions. The initial distribution is separate from this property.
 
 The multi-step conditional law is expressed using powers of the same transition kernel.
 The property descends to a smaller filtration to which the process is still adapted;
-it makes no assertion about enlarging the filtration. On a countable state space the
-one-step property for the history filtration is equivalent to finite-prefix recursion.
-Together with an initial law, it characterizes the Markov-chain path law for Mathlib's
-natural filtration. The coordinate process supplies a canonical realization.
+it makes no assertion about enlarging the filtration. A chain forces its measure to be finite
+(`IsMarkovChain.isFiniteMeasure`). On any state space and for a finite measure, the one-step
+property for the history filtration is equivalent to finite-prefix recursion.
+Together with a finite initial law, it characterizes the Markov-chain path law for Mathlib's
+natural filtration. For a finite initial law, the coordinate process supplies a canonical
+realization.
 
-The general history-filtration characterization needs no topology. For the natural-filtration
-corollary, a countable state space with measurable singletons can carry the discrete topology:
-Mathlib supplies its Borel compatibility and turns measurable coordinates into strongly
-measurable ones.
+The history-filtration characterization needs neither a topology nor countability of the state
+space; its forward direction, `TauCeti.Probability.IsMarkovChain.map_prefix_succ_eq_compProd`,
+holds for any filtration. The natural-filtration corollary uses a metrizable Borel topology on
+the state space only to form Mathlib's natural filtration.
 
 ## References
 
@@ -54,7 +56,16 @@ structure IsMarkovChain (ℱ : Filtration ℕ mΩ) (X : ℕ → Ω → S)
 namespace IsMarkovChain
 
 variable {ℱ 𝒢 : Filtration ℕ mΩ} {X : ℕ → Ω → S} {κ : Kernel S S} {μ : Measure Ω}
-  [IsFiniteMeasure μ] [IsMarkovKernel κ]
+  [IsMarkovKernel κ]
+
+/-- The measure of a Markov chain is finite. This supplies the finite-measure hypothesis of the
+conditional-expectation results about `IsMarkovChain ℱ X κ μ`, which therefore do not assume it. -/
+theorem isFiniteMeasure (h : IsMarkovChain ℱ X κ μ) : IsFiniteMeasure μ := by
+  -- The conditional expectation of the constant `1` is integrable, and it is almost everywhere
+  -- the integral of `1` against the Markov kernel, that is, `1` itself.
+  have hc := h.condExp_eq 0 (fun _ => (1 : ℝ)) measurable_const ⟨1, by simp⟩
+  exact (integrable_const_iff_isFiniteMeasure (c := (1 : ℝ)) one_ne_zero).1
+    (by simpa using integrable_condExp.congr hc)
 
 /-- The multi-step conditional law of a chain relative to its given filtration. This includes
 zero steps, when adaptation makes the tested current state measurable for the conditioning. -/
@@ -62,6 +73,7 @@ theorem condExp_add (h : IsMarkovChain ℱ X κ μ) (n k : ℕ) {f : S → ℝ}
     (hf : Measurable f) (hb : ∃ C : ℝ, ∀ x, ‖f x‖ ≤ C) :
     μ[fun ω => f (X (n + k) ω) | ℱ n] =ᵐ[μ]
       fun ω => ∫ y, f y ∂(κ ^ k) (X n ω) := by
+  have := h.isFiniteMeasure
   obtain ⟨C, hC⟩ := hb
   induction k generalizing f with
   | zero =>
@@ -106,6 +118,7 @@ theorem condExp_indicator_add (h : IsMarkovChain ℱ X κ μ) (n k : ℕ)
 This direction does not require independence from any additional information. -/
 theorem mono (h : IsMarkovChain ℱ X κ μ) (hle : 𝒢 ≤ ℱ) (hX : Adapted 𝒢 X) :
     IsMarkovChain 𝒢 X κ μ := by
+  have := h.isFiniteMeasure
   refine ⟨hX, fun n f hf hb => ?_⟩
   obtain ⟨C, hC⟩ := hb
   have hg : StronglyMeasurable[𝒢 n] (fun ω => ∫ y, f y ∂κ (X n ω)) :=
@@ -121,8 +134,9 @@ theorem mono (h : IsMarkovChain ℱ X κ μ) (hle : 𝒢 ≤ ℱ) (hX : Adapted 
 
 end IsMarkovChain
 
-/-- The coordinate process under the Markov-chain path law is Markov relative to its history
-filtration. No topology or countability assumption on the state space is needed. -/
+/-- The coordinate process under the Markov-chain path law of a finite initial measure `ν` is
+Markov relative to its history filtration. No topology or countability assumption on the state
+space is needed. -/
 theorem isMarkovChain_markovChainLaw (ν : Measure S) [IsFiniteMeasure ν]
     (κ : Kernel S S) [IsMarkovKernel κ] :
     IsMarkovChain Filtration.piLE (fun n (x : ℕ → S) => x n) κ (markovChainLaw ν κ) := by
@@ -142,57 +156,50 @@ theorem isMarkovChain_markovChainLaw (ν : Measure S) [IsFiniteMeasure ν]
 
 section History
 
-variable [Countable S] [Nonempty S] [MeasurableSingletonClass S]
-  {ℱ : Filtration ℕ mΩ} {X : ℕ → Ω → S} {κ : Kernel S S} {μ : Measure Ω}
-  [IsFiniteMeasure μ] [IsMarkovKernel κ]
+variable {ℱ : Filtration ℕ mΩ} {X : ℕ → Ω → S} {κ : Kernel S S} {μ : Measure Ω}
+  [IsMarkovKernel κ]
 
-/-- The Markov property for the history filtration gives the finite-prefix recursion. -/
-private theorem prefix_recursion_of_isMarkovChain (h : IsMarkovChain ℱ X κ μ)
-    (hℱ : ∀ n, ℱ n = MeasurableSpace.comap
-      (fun ω (i : Fin (n + 1)) => X i ω) inferInstance)
-    (n : ℕ) :
+/-- **The Markov property gives the finite-prefix recursion.** For a chain relative to any
+filtration, the joint law of the prefix `(X 0, …, X n)` and the next state `X (n + 1)` is the
+prefix law followed by one `κ`-step out of the last coordinate. -/
+theorem IsMarkovChain.map_prefix_succ_eq_compProd (h : IsMarkovChain ℱ X κ μ) (n : ℕ) :
     μ.map (fun ω => ((fun i : Fin (n + 1) => X i ω), X (n + 1) ω)) =
-        prefixLaw μ X (n + 1) ⊗ₘ κ.comap
-          (fun w : Fin (n + 1) → S => w (Fin.last n)) (measurable_pi_apply _) := by
-  have hadapt := Filtration.adapted_of_eq_comap_prefix hℱ
-  have hX : ∀ n, Measurable (X n) := fun _ => hadapt.measurable
-  have hpre (n : ℕ) : Measurable (fun ω (i : Fin (n + 1)) => X i ω) :=
-    Measurable.of_eval fun i => hX i
-  -- Singleton indicators identify the conditional transition measure on the countable space.
-  let Y : Ω → (Fin (n + 1) → S) := fun ω i => X i ω
-  let K := κ.comap (fun w : Fin (n + 1) → S => w (Fin.last n)) (measurable_pi_apply _)
-  have heq : condDistrib (X (n + 1)) Y μ =ᵐ[μ.map Y] K := by
-    have heach (y : S) :
-        (fun w => (condDistrib (X (n + 1)) Y μ w).real {y}) =ᵐ[μ.map Y]
-          fun w => (K w).real {y} := by
-      have hb : ∃ C : ℝ, ∀ z : S, ‖({y} : Set S).indicator (fun _ => (1 : ℝ)) z‖ ≤ C :=
-        ⟨1, fun z => by by_cases hz : z ∈ ({y} : Set S) <;> simp [hz]⟩
-      have hc := h.condExp_eq n _ (measurable_const.indicator (measurableSet_singleton y)) hb
-      simp only [hℱ n, integral_indicator_const (1 : ℝ) (measurableSet_singleton y),
-        smul_eq_mul, mul_one] at hc
-      have hd := condExp_ae_eq_integral_condDistrib (hpre n) (hX (n + 1)).aemeasurable
-        (measurable_const.indicator (measurableSet_singleton y)).stronglyMeasurable
-        ((integrable_const (μ := μ) (1 : ℝ)).indicator ((hX (n + 1)) (measurableSet_singleton y)))
-      simp only [integral_indicator_const (1 : ℝ) (measurableSet_singleton y),
-        smul_eq_mul, mul_one] at hd
-      have hm : MeasurableSet {w | (condDistrib (X (n + 1)) Y μ w).real {y} =
-          (K w).real {y}} :=
-        measurableSet_eq_fun
-          ((Kernel.measurable_coe _ (measurableSet_singleton y)).ennreal_toReal)
-          ((Kernel.measurable_coe _ (measurableSet_singleton y)).ennreal_toReal)
-      apply (ae_map_iff (hpre n).aemeasurable hm).2
-      filter_upwards [hd, hc] with ω hdω hcω
-      simpa only [Y, K, Kernel.comap_apply, Fin.val_last] using hdω.symm.trans hcω
-    filter_upwards [ae_all_iff.2 heach] with w hw
-    apply Measure.ext_of_singleton
-    intro y
-    exact (ENNReal.toReal_eq_toReal_iff' (measure_ne_top _ _) (measure_ne_top _ _)).1 (hw y)
-  simpa only [prefixLaw_def, blockLaw_def] using
-    (condDistrib_ae_eq_iff_measure_eq_compProd (hpre n).aemeasurable
-      (hX (n + 1)).aemeasurable K).1 heq
+      prefixLaw μ X (n + 1) ⊗ₘ κ.comap
+        (fun w : Fin (n + 1) → S => w (Fin.last n)) (measurable_pi_apply _) := by
+  have := h.isFiniteMeasure
+  have hX : ∀ n, Measurable (X n) := fun _ => h.adapted.measurable
+  have hpre : Measurable fun ω (i : Fin (n + 1)) => X i ω := measurable_pi_iff.2 fun i => hX i
+  refine Measure.ext_prod fun {A C} hA hC => ?_
+  rw [prefixLaw_compProd_apply_prod (κ := κ) hX n hA hC,
+    Measure.map_apply (hpre.prodMk (hX (n + 1))) (hA.prod hC), Set.mk_preimage_prod]
+  set s := (fun ω (i : Fin (n + 1)) => X i ω) ⁻¹' A
+  -- The prefix event is known at time `n`.
+  have hs : MeasurableSet[ℱ n] s :=
+    (@Measurable.of_eval _ _ _ (ℱ n) _ _ fun i : Fin (n + 1) =>
+      (h.adapted i).mono (ℱ.mono (Fin.is_le i)) le_rfl) hA
+  have hfin : ∫⁻ ω in s, κ (X n ω) C ∂μ ≠ ⊤ := by
+    refine ne_top_of_le_ne_top (measure_ne_top μ s) ?_
+    calc ∫⁻ ω in s, κ (X n ω) C ∂μ ≤ ∫⁻ _ in s, 1 ∂μ := lintegral_mono fun _ => prob_le_one
+      _ = μ s := setLIntegral_one s
+  refine (ENNReal.toReal_eq_toReal_iff' (measure_ne_top _ _) hfin).1 ?_
+  -- Integrate the one-step conditional law of the event `X (n + 1) ∈ C` over the prefix event.
+  have hc := h.condExp_indicator_add n 1 hC
+  simp only [pow_one] at hc
+  calc (μ (s ∩ X (n + 1) ⁻¹' C)).toReal
+      = ∫ ω in s, (X (n + 1) ⁻¹' C).indicator (fun _ => (1 : ℝ)) ω ∂μ := by
+        rw [integral_indicator_const _ ((hX (n + 1)) hC), smul_eq_mul, mul_one,
+          measureReal_restrict_apply ((hX (n + 1)) hC), Set.inter_comm, measureReal_def]
+    _ = ∫ ω in s, μ[(X (n + 1) ⁻¹' C).indicator (fun _ => (1 : ℝ)) | ℱ n] ω ∂μ :=
+        (setIntegral_condExp (ℱ.le n)
+          ((integrable_const (1 : ℝ)).indicator ((hX (n + 1)) hC)) hs).symm
+    _ = ∫ ω in s, (κ (X n ω) C).toReal ∂μ :=
+        setIntegral_congr_ae (ℱ.le n s hs) (hc.mono fun _ hω _ => hω)
+    _ = (∫⁻ ω in s, κ (X n ω) C ∂μ).toReal :=
+        integral_toReal ((κ.measurable_coe hC).comp (hX n)).aemeasurable
+          (Eventually.of_forall fun _ => measure_lt_top _ _)
 
 /-- The finite-prefix recursion gives the Markov property for the history filtration. -/
-private theorem isMarkovChain_of_prefix_recursion
+private theorem isMarkovChain_of_prefix_recursion [IsFiniteMeasure μ]
     (hℱ : ∀ n, ℱ n = MeasurableSpace.comap
       (fun ω (i : Fin (n + 1)) => X i ω) inferInstance)
     (h : ∀ n, μ.map (fun ω => ((fun i : Fin (n + 1) => X i ω), X (n + 1) ω)) =
@@ -201,46 +208,47 @@ private theorem isMarkovChain_of_prefix_recursion
     IsMarkovChain ℱ X κ μ := by
   have hadapt := Filtration.adapted_of_eq_comap_prefix hℱ
   have hX : ∀ n, Measurable (X n) := fun _ => hadapt.measurable
-  have hpre (n : ℕ) : Measurable (fun ω (i : Fin (n + 1)) => X i ω) :=
-    Measurable.of_eval fun i => hX i
-  -- Prefix recursion identifies the conditional distribution, which integrates every test.
+  -- The path of `X` is measure preserving onto the path law, where the property is known.
+  have hg : MeasurePreserving (fun ω k => X k ω) μ (markovChainLaw (μ.map (X 0)) κ) :=
+    ((hasLaw_markovChainLaw_iff (μ := μ) (μ.map (X 0)) κ
+      fun n => (hX n).aemeasurable).2 ⟨rfl, h⟩).measurePreserving (measurable_pi_iff.2 hX)
   refine ⟨hadapt, fun n f hf hb => ?_⟩
-  obtain ⟨C, hC⟩ := hb
-  have hi : Integrable (fun ω => f (X (n + 1) ω)) μ :=
-    ⟨(hf.comp (hX (n + 1))).aestronglyMeasurable,
-      .of_bounded (Eventually.of_forall fun ω => hC (X (n + 1) ω))⟩
-  rw [hℱ n]
-  have hd := condExp_ae_eq_integral_condDistrib (hpre n) (hX (n + 1)).aemeasurable
-    hf.stronglyMeasurable hi
-  have heq := condDistrib_ae_eq_of_measure_eq_compProd (hpre n).aemeasurable
-    (hX (n + 1)).aemeasurable
-    (by simpa only [prefixLaw_def, blockLaw_def] using h n)
-  filter_upwards [hd, ae_of_ae_map (hpre n).aemeasurable heq] with ω hω hκ
-  simpa only [hκ, Kernel.comap_apply, Fin.val_last] using hω
+  have hcomap : ℱ n = (Filtration.piLE (X := fun _ : ℕ => S) n).comap fun ω k => X k ω := by
+    rw [hℱ n, Filtration.piLE_eq_comap_prefix, MeasurableSpace.comap_comp]
+    rfl
+  rw [hcomap]
+  exact (hg.condExp_comap ((Filtration.piLE (X := fun _ : ℕ => S)).le n)
+    (f := fun x : ℕ → S => f (x (n + 1)))
+    (hf.comp (measurable_pi_apply (n + 1))).aestronglyMeasurable).trans
+    (hg.quasiMeasurePreserving.ae_eq_comp
+      ((isMarkovChain_markovChainLaw (μ.map (X 0)) κ).condExp_eq n f hf hb))
 
-/-- On a countable state space, the filtration-relative test-function property for the
-history filtration is equivalent to the finite-prefix recursion. The hypothesis `hℱ`
-identifies the information through time `n` with that generated by `X 0, …, X n`. -/
-theorem isMarkovChain_iff_prefix_recursion
+/-- On any state space and for a finite measure `μ`, the filtration-relative test-function
+property for the history filtration is equivalent to the finite-prefix recursion. The hypothesis
+`hℱ` identifies the information through time `n` with that generated by `X 0, …, X n`. -/
+theorem isMarkovChain_iff_prefix_recursion [IsFiniteMeasure μ]
     (hℱ : ∀ n, ℱ n = MeasurableSpace.comap
       (fun ω (i : Fin (n + 1)) => X i ω) inferInstance) :
     IsMarkovChain ℱ X κ μ ↔
       ∀ n, μ.map (fun ω => ((fun i : Fin (n + 1) => X i ω), X (n + 1) ω)) =
         prefixLaw μ X (n + 1) ⊗ₘ κ.comap
           (fun w : Fin (n + 1) → S => w (Fin.last n)) (measurable_pi_apply _) :=
-  ⟨fun h n => prefix_recursion_of_isMarkovChain h hℱ n, isMarkovChain_of_prefix_recursion hℱ⟩
+  ⟨fun h n => h.map_prefix_succ_eq_compProd n, isMarkovChain_of_prefix_recursion hℱ⟩
 
-/-- A process has the Markov-chain path law exactly when it has the specified initial law
-and is a Markov chain relative to Mathlib's natural filtration. The state-space topology
-is used only to form that filtration; no topology on the sample space is required. -/
+/-- A process has the Markov-chain path law of a finite initial law `ν` exactly when it has the
+specified initial law and is a Markov chain relative to Mathlib's natural filtration. The
+state-space topology is used only to form that filtration; no topology on the sample space is
+required. -/
 theorem hasLaw_markovChainLaw_iff_isMarkovChain_natural
     [TopologicalSpace S] [TopologicalSpace.MetrizableSpace S] [BorelSpace S]
     (ν : Measure S) [IsFiniteMeasure ν] (hX : ∀ n, StronglyMeasurable (X n)) :
     HasLaw (fun ω n => X n ω) (markovChainLaw ν κ) μ ↔
       μ.map (X 0) = ν ∧ IsMarkovChain (Filtration.natural X hX) X κ μ := by
-  rw [hasLaw_markovChainLaw_iff ν κ (fun n => (hX n).measurable.aemeasurable),
-    isMarkovChain_iff_prefix_recursion
-      (Filtration.natural_eq_comap_prefix X hX)]
+  have hlaw := hasLaw_markovChainLaw_iff (μ := μ) ν κ (fun n => (hX n).measurable.aemeasurable)
+  refine ⟨fun h => ?_, fun h => hlaw.2 ⟨h.1, fun n => h.2.map_prefix_succ_eq_compProd n⟩⟩
+  have := h.isFiniteMeasure
+  exact ⟨(hlaw.1 h).1, isMarkovChain_of_prefix_recursion
+    (Filtration.natural_eq_comap_prefix X hX) (hlaw.1 h).2⟩
 
 end History
 
