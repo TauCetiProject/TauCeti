@@ -225,6 +225,15 @@ def totalToOuter : totalPair.{u} ⟶ outerPair.{u} where
 
 @[simp] lemma totalToOuter_app_snd : TopPair.Hom.snd (totalToOuter.app T) = T.innerMap := (rfl)
 
+/-- For nested subsets `s ⊆ t ⊆ u`, the map of pairs `(t, s) ⟶ (u, s)` of the triple is induced by
+the inclusion of `t` into `u`. -/
+lemma innerToTotal_app_ofInclusions {X : TopCat.{u}} {s t u : Set X} (hst : s ⊆ t) (htu : t ⊆ u) :
+    innerToTotal.app (ofInclusions hst htu) =
+      TopPair.ofInclusionMap hst (hst.trans htu) (ContinuousMap.inclusion htu) fun _ hx ↦ hx := by
+  ext x : 2
+  · exact Subtype.ext (TopPair.ofInclusionMap_snd_apply (g := ContinuousMap.inclusion htu) _ x).symm
+  · exact (TopPair.ofInclusionMap_fst_apply _ _ x).symm
+
 /-- For nested subsets `s ⊆ t ⊆ u`, the map of pairs `(u, s) ⟶ (u, t)` of the triple is induced by
 the identity of `u`. -/
 lemma totalToOuter_app_ofInclusions {X : TopCat.{u}} {s t u : Set X} (hst : s ⊆ t) (htu : t ⊆ u) :

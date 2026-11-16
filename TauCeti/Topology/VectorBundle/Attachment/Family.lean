@@ -301,7 +301,7 @@ private lemma eq_zero_of_forall_comp_singularHomologyMap_eq_zero [DecidableEq ι
     have hs := Finset.subset_insert a s
     let T₃ := TopTriple.ofInclusions (subset_attachUnion f s) (attachUnion_mono f hs)
     have hi : TopTriple.innerToTotal.app T₃ = inclMap f hs :=
-      TopPair.hom_ext_of_fst _ (by rw [TopPair.ofInclusionMap_fst]; rfl)
+      TopTriple.innerToTotal_app_ofInclusions _ _
     have hq : TopTriple.totalToOuter.app T₃ =
         quotMap (subset_attachUnion f s) (attachUnion_mono f hs) :=
       TopTriple.totalToOuter_app_ofInclusions _ _
