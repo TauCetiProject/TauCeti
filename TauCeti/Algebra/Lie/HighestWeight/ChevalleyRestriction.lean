@@ -45,6 +45,9 @@ it restricts to an isomorphism from the invariants `S(L)^L` onto the Weyl invari
 * `LieSubalgebra.map_lieInvariants_lieCartanRestriction`: the image of `S(L)^L` is `S(H)^W`.
 * `LieSubalgebra.lieChevalleyRestrictionIso_mem_homogeneousSubmodule_iff`: the isomorphism
   preserves degrees in both directions.
+* `TauCeti.forall_mem_lieInvariants_lift_eval_eq_iff_exists_coweightEquiv_eq`: over an
+  algebraically closed field, two elements of `H` have the same values on all Lie-invariant
+  polynomial functions in `S(L*)^L` if and only if they lie in the same Weyl orbit.
 
 ## References
 
@@ -60,6 +63,17 @@ open LieAlgebra LieAlgebra.IsKilling _root_.LieModule Module TauCeti.SymmetricAl
 
 variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
   [FiniteDimensional K L] [IsKilling K L] (H : LieSubalgebra K L) [H.IsCartanSubalgebra]
+
+omit [CharZero K] in
+/-- Evaluating `killingSymmetricEquiv K L p` at `h ∈ H` agrees with evaluating
+`lieCartanRestriction H p` at the Killing-dual weight `cartanEquivDual H h`. -/
+theorem lift_eval_killingSymmetricEquiv (h : H) (p : _root_.SymmetricAlgebra K L) :
+    _root_.SymmetricAlgebra.lift (Dual.eval K L (h : L)) (killingSymmetricEquiv K L p) =
+      _root_.SymmetricAlgebra.lift (cartanEquivDual H h) (lieCartanRestriction H p) := by
+  rw [lift_lieCartanRestriction, killingSymmetricEquiv_apply, ← AlgHom.comp_apply]
+  congr 1
+  refine _root_.SymmetricAlgebra.algHom_ext (LinearMap.ext fun x ↦ ?_)
+  simp [killingExtend_apply, traceForm_comm]
 
 /-! ### Weyl invariance of the restriction -/
 
@@ -187,3 +201,52 @@ theorem lieChevalleyRestrictionIso_mem_homogeneousSubmodule_iff {p : lieInvarian
 end Surjective
 
 end LieSubalgebra
+
+namespace TauCeti
+
+open LieAlgebra LieAlgebra.IsKilling _root_.LieModule Module TauCeti.SymmetricAlgebra
+
+variable {K L : Type*} [Field K] [CharZero K] [IsAlgClosed K] [LieRing L] [LieAlgebra K L]
+  [FiniteDimensional K L] [IsKilling K L] {H : LieSubalgebra K L} [H.IsCartanSubalgebra]
+
+/-- **Lie-invariant polynomials separate Weyl orbits in a Cartan subalgebra.** Over an
+algebraically closed field of characteristic zero, two elements of a Cartan subalgebra `H`
+take the same values under every Lie-invariant polynomial function in `S(L*)^L` if and only if
+they lie in the same orbit of the Weyl group of `H`. -/
+theorem forall_mem_lieInvariants_lift_eval_eq_iff_exists_coweightEquiv_eq {h₁ h₂ : H} :
+    (∀ p ∈ lieInvariants K L (Dual K L),
+        _root_.SymmetricAlgebra.lift (Dual.eval K L (h₁ : L)) p =
+          _root_.SymmetricAlgebra.lift (Dual.eval K L (h₂ : L)) p) ↔
+      ∃ w : (rootSystem H).weylGroup, (w : (rootSystem H).Aut).coweightEquiv h₁ = h₂ := by
+  have hdual (w : (rootSystem H).weylGroup) (h : H) :
+      cartanEquivDual H ((w : (rootSystem H).Aut).coweightEquiv h) =
+        w⁻¹ • cartanEquivDual H h := by
+    have hsymm := weylGroupCorootRep_cartanEquivDual_symm (H := H) w (cartanEquivDual H h)
+    rw [LinearEquiv.symm_apply_apply] at hsymm
+    exact (LinearEquiv.eq_symm_apply (cartanEquivDual H)).mp hsymm
+  have hlin :
+      (∀ p ∈ lieInvariants K L (Dual K L),
+          _root_.SymmetricAlgebra.lift (Dual.eval K L (h₁ : L)) p =
+            _root_.SymmetricAlgebra.lift (Dual.eval K L (h₂ : L)) p) ↔
+        ∀ q ∈ linearInvariants H,
+          _root_.SymmetricAlgebra.lift (cartanEquivDual H h₁) q =
+            _root_.SymmetricAlgebra.lift (cartanEquivDual H h₂) q := by
+    refine ⟨fun hp q hq ↦ ?_, fun hq p hp ↦ ?_⟩
+    · obtain ⟨p₀, hp₀, rfl⟩ :=
+        Subalgebra.mem_map.mp ((H.map_lieInvariants_lieCartanRestriction).ge hq)
+      rw [← lift_eval_killingSymmetricEquiv, ← lift_eval_killingSymmetricEquiv]
+      exact hp _ ((killingSymmetricEquiv_mem_lieInvariants_iff K L).mpr hp₀)
+    · have hp₀ : (killingSymmetricEquiv K L).symm p ∈ lieInvariants K L L := by
+        rw [← killingSymmetricEquiv_mem_lieInvariants_iff, AlgEquiv.apply_symm_apply]
+        exact hp
+      have hpeq := AlgEquiv.apply_symm_apply (killingSymmetricEquiv K L) p
+      rw [← hpeq, lift_eval_killingSymmetricEquiv, lift_eval_killingSymmetricEquiv]
+      exact hq _ (lieCartanRestriction_mem_linearInvariants hp₀)
+  rw [hlin, forall_mem_linearInvariants_lift_eq_iff]
+  refine ⟨fun ⟨w, hw⟩ ↦ ⟨w⁻¹, ?_⟩, fun ⟨w, hw⟩ ↦ ⟨w⁻¹, ?_⟩⟩
+  · refine (cartanEquivDual H).injective ?_
+    rw [hdual, inv_inv]
+    exact hw
+  · rw [← hw, hdual]
+
+end TauCeti

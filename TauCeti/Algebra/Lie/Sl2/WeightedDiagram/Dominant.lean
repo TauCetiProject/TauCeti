@@ -8,7 +8,9 @@ module
 public import TauCeti.Algebra.Lie.Sl2.Weyl.Cartan
 public import TauCeti.Algebra.Lie.Sl2.WeightedDiagram.Finite
 public import TauCeti.Algebra.Lie.AdjointAction.CartanConjugacy
+public import TauCeti.LinearAlgebra.SymmetricAlgebra.LieModule
 import TauCeti.Algebra.Lie.CartanExists
+import TauCeti.Algebra.Lie.HighestWeight.ChevalleyRestriction
 import TauCeti.Algebra.Lie.Sl2.JacobsonMorozov
 import TauCeti.Algebra.Lie.Sl2.Spectrum
 import TauCeti.LinearAlgebra.Eigenspace.Semisimple
@@ -40,10 +42,12 @@ that Cartan subalgebra onto `H` (`LieSubalgebra.exists_map_intLieAlgebraLieEquiv
 Jacobson–Morozov, every nonzero `ad`-nilpotent element is `Int(L)`-conjugate to the nilpositive
 element of a triple whose neutral element is dominant for `b`.
 
-Consequently every `Int(L)`-orbit of neutral elements of `sl₂` triples meets the finite set
-`RootPairing.Base.dominantNeutralElements b`, so there are only finitely many such orbits, at most
-`3 ^ rank`. This does not say that the dominant element in an orbit is unique, so it does not
-yet give a weighted Dynkin diagram attached to an orbit.
+By Chevalley's restriction theorem, Lie-invariant polynomial functions on `L` separate Weyl orbits
+in `H`, and a Weyl orbit meets the dominant chamber in at most one point
+(`RootPairing.Base.eq_of_coweightEquiv_eq_of_forall_exists_nat`). Consequently, every
+`Int(L)`-orbit of neutral elements of `sl₂` triples meets the finite set
+`RootPairing.Base.dominantNeutralElements b` in a **unique** point
+(`RootPairing.Base.bijOn_orbit_dominantNeutralElements`).
 
 ## Main results
 
@@ -53,10 +57,16 @@ yet give a weighted Dynkin diagram attached to an orbit.
 * `IsSl2Triple.exists_mem_intLieAlgebra_smul_mem_dominantNeutralElements_of_isAlgClosed`: over an
   algebraically closed field, every triple is conjugate under `Int(L)` to a triple whose neutral
   element is dominant for `b`.
+* `RootPairing.Base.eq_of_mem_dominantNeutralElements_of_forall_mem_lieInvariants_eq`: two dominant
+  neutral elements taking the same values on all Lie-invariant polynomials in `S(L*)^L` are equal.
+* `RootPairing.Base.eq_of_mem_dominantNeutralElements_of_mem_intLieAlgebra`: two dominant neutral
+  elements conjugate under `Int(L)` are equal.
+* `RootPairing.Base.bijOn_orbit_dominantNeutralElements` and
+  `IsSl2Triple.existsUnique_mem_dominantNeutralElements_of_isAlgClosed`: the dominant neutral
+  elements parametrize the `Int(L)`-orbits of neutral elements bijectively, so each `sl₂` triple's
+  neutral element is `Int(L)`-conjugate to a unique dominant neutral element.
 * `TauCeti.exists_mem_intLieAlgebra_isSl2Triple_smul_of_isNilpotent_ad`: every nonzero
   `ad`-nilpotent element is conjugate under `Int(L)` to the nilpositive element of such a triple.
-* `RootPairing.Base.image_orbit_dominantNeutralElements`: the `Int(L)`-orbits of neutral elements
-  are exactly the orbits of the dominant neutral elements.
 * `TauCeti.finite_image_orbit_setOf_exists_isSl2Triple` and
   `TauCeti.ncard_image_orbit_setOf_exists_isSl2Triple_le`: there are finitely many `Int(L)`-orbits
   of neutral elements, at most `3 ^ finrank K H` for a Cartan subalgebra `H`.
@@ -157,7 +167,81 @@ theorem image_orbit_dominantNeutralElements (b : (rootSystem H).Base) :
     rw [← hgh]
     exact MulAction.orbit_smul (⟨g, hg⟩ : intLieAlgebra K L) h
 
+omit [LieAlgebra ℚ L] in
+/-- **Uniqueness of dominant neutral elements by invariant polynomials.** Over an algebraically
+closed field of characteristic zero, two dominant neutral elements in `H` that take the same values
+on all Lie-invariant polynomial functions in `S(L*)^L` are equal. -/
+theorem eq_of_mem_dominantNeutralElements_of_forall_mem_lieInvariants_eq
+    (b : (rootSystem H).Base) {h₁ h₂ : H}
+    (hh₁ : h₁ ∈ b.dominantNeutralElements) (hh₂ : h₂ ∈ b.dominantNeutralElements)
+    (heq : ∀ p ∈ TauCeti.SymmetricAlgebra.lieInvariants K L (Dual K L),
+      _root_.SymmetricAlgebra.lift (Dual.eval K L (h₁ : L)) p =
+        _root_.SymmetricAlgebra.lift (Dual.eval K L (h₂ : L)) p) :
+    h₁ = h₂ := by
+  obtain ⟨w, hw⟩ := forall_mem_lieInvariants_lift_eval_eq_iff_exists_coweightEquiv_eq.mp heq
+  exact b.eq_of_coweightEquiv_eq_of_forall_exists_nat
+    (fun i hi ↦ by simpa using ((b.mem_dominantNeutralElements_iff h₁).mp hh₁).2 i hi)
+    (fun i hi ↦ by simpa using ((b.mem_dominantNeutralElements_iff h₂).mp hh₂).2 i hi)
+    hw
+
+/-- **Uniqueness of dominant neutral elements in an `Int(L)`-orbit.** Over an algebraically closed
+field of characteristic zero, two dominant neutral elements for `b` that are conjugate under
+`Int(L)` are equal. -/
+theorem eq_of_mem_dominantNeutralElements_of_mem_intLieAlgebra (b : (rootSystem H).Base)
+    {h₁ h₂ : H} (hh₁ : h₁ ∈ b.dominantNeutralElements) (hh₂ : h₂ ∈ b.dominantNeutralElements)
+    {g : LinearMap.GeneralLinearGroup K L} (hg : g ∈ intLieAlgebra K L)
+    (hgh : g • (h₁ : L) = h₂) : h₁ = h₂ :=
+  b.eq_of_mem_dominantNeutralElements_of_forall_mem_lieInvariants_eq hh₁ hh₂ fun p hp ↦ by
+    rw [← hgh, TauCeti.SymmetricAlgebra.lift_eval_smul_of_mem_intLieAlgebra hg hp]
+
+/-- Distinct dominant neutral elements lie in distinct `Int(L)`-orbits. -/
+theorem injOn_orbit_dominantNeutralElements (b : (rootSystem H).Base) :
+    Set.InjOn (fun h : H ↦ MulAction.orbit (intLieAlgebra K L) (h : L))
+      b.dominantNeutralElements := by
+  intro h₁ hh₁ h₂ hh₂ horb
+  dsimp only at horb
+  have hmem : (h₂ : L) ∈ MulAction.orbit (intLieAlgebra K L) (h₁ : L) := by
+    rw [horb]
+    exact MulAction.mem_orbit_self (h₂ : L)
+  obtain ⟨⟨g, hg⟩, hgh⟩ := hmem
+  exact b.eq_of_mem_dominantNeutralElements_of_mem_intLieAlgebra hh₁ hh₂ hg hgh
+
+/-- **Bijection with `Int(L)`-orbits of neutral elements.** Over an algebraically closed field,
+the dominant neutral elements for `b` map bijectively onto the `Int(L)`-orbits of neutral elements
+of `sl₂` triples. -/
+theorem bijOn_orbit_dominantNeutralElements (b : (rootSystem H).Base) :
+    Set.BijOn (fun h : H ↦ MulAction.orbit (intLieAlgebra K L) (h : L))
+      b.dominantNeutralElements
+      (MulAction.orbit (intLieAlgebra K L) '' {h : L | ∃ e f, IsSl2Triple h e f}) :=
+  ⟨b.image_orbit_dominantNeutralElements ▸ Set.mapsTo_image _ _,
+    b.injOn_orbit_dominantNeutralElements,
+    b.image_orbit_dominantNeutralElements.superset⟩
+
 end RootPairing.Base
+
+namespace IsSl2Triple
+
+open LieAlgebra LieAlgebra.IsKilling LieModule TauCeti
+
+variable {K L : Type*} [Field K] [CharZero K] [IsAlgClosed K] [LieRing L] [LieAlgebra K L]
+  [LieAlgebra ℚ L] [FiniteDimensional K L] [IsKilling K L] {H : LieSubalgebra K L}
+  [H.IsCartanSubalgebra]
+
+/-- **Existence and uniqueness of the dominant neutral element.** Over an algebraically closed
+field, the neutral element of an `sl₂` triple is `Int(L)`-conjugate to a unique dominant neutral
+element for `b`. -/
+theorem existsUnique_mem_dominantNeutralElements_of_isAlgClosed (b : (rootSystem H).Base)
+    {h e f : L} (t : IsSl2Triple h e f) :
+    ∃! h' : H, h' ∈ b.dominantNeutralElements ∧ ∃ g ∈ intLieAlgebra K L, g • h = h' := by
+  obtain ⟨g, hg, h', hh', hgh, -⟩ :=
+    t.exists_mem_intLieAlgebra_smul_mem_dominantNeutralElements_of_isAlgClosed b
+  refine ⟨h', ⟨hh', g, hg, hgh⟩, ?_⟩
+  rintro h'' ⟨hh'', g', hg', hg'h⟩
+  refine b.eq_of_mem_dominantNeutralElements_of_mem_intLieAlgebra hh'' hh'
+    (mul_mem hg (inv_mem hg')) ?_
+  rw [mul_smul, ← hg'h, inv_smul_smul, hgh]
+
+end IsSl2Triple
 
 namespace TauCeti
 
