@@ -73,6 +73,13 @@ theorem preimage_restrict_const_subset [Zero β] (u : SimpleFunc α β) (c : β)
   simp only [Set.mem_preimage, Set.mem_singleton_iff, coe_const, Function.const_apply] at hx hcy ⊢
   exact hx.trans hcy
 
+open scoped ENNReal in
+/-- If the nonzero fibres of `u` have finite measure, so do those of its fibre piece over `c`. -/
+theorem measure_preimage_restrict_const_lt_top [Zero β] {μ : Measure α} (u : SimpleFunc α β)
+    (c : β) (hu : ∀ y, y ≠ 0 → μ (u ⁻¹' {y}) < ∞) (y : β) (hy : y ≠ 0) :
+    μ ((const α c).restrict (u ⁻¹' {c}) ⁻¹' {y}) < ∞ :=
+  (measure_mono (u.preimage_restrict_const_subset c hy)).trans_lt (hu y hy)
+
 /-- The product of two simple functions constant on measurable sets `A` and `B` and zero
 elsewhere is constant on `A ∩ B` and zero elsewhere. -/
 theorem piecewise_const_mul_piecewise_const [MulZeroClass β] (c d : β) {A B : Set α}

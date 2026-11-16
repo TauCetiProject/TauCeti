@@ -8,9 +8,8 @@ module
 public import TauCeti.Analysis.Normed.Interpolation.ComplexMethod.Basic
 public import TauCeti.Analysis.Normed.Interpolation.Lebesgue
 import Mathlib.Analysis.Normed.Operator.Extend
-import TauCeti.Analysis.SpecialFunctions.Pow.PowSign
 import TauCeti.Data.ENNReal.InterpolatedExponent
-import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
+import TauCeti.MeasureTheory.Function.LpSeminorm.PowSign
 import TauCeti.MeasureTheory.Function.SimpleFunc.Basic
 
 /-!
@@ -30,16 +29,17 @@ is computed. The theorem holds for `p < ∞` and every `0 ≤ θ ≤ 1`; for `0 
 The proof is Thorin's analytic family. For a simple function `f` with `‖f‖_p ≤ 1` and `δ > 0`,
 the function
 
-`F z = exp (δ (z - θ)²) sgn(f) |f| ^ {w z}`, where `w z = p ((1 - z) / p₀ + z / p₁)`,
+`F z = exp (δ (z - θ)²) sgn(f) |f| ^ {w z}`, where `w z = p ((1 - z) / p₀ + z / p₁)`
+(`TauCeti.thorinExponent`),
 
 is admissible for the complex method: it is a finite combination of the fibre indicators of `f`,
 which lie in `L^{p₀} ∩ L^{p₁}`, with entire scalar coefficients that decay along the boundary
 lines of the strip (`TauCeti.CompatibleCouple.isStripFunction_smul_inter`). Since `w θ = 1`
 it takes the value `f` at `θ`. On the line `re z = j` the modulus `|f| ^ {re w z} = |f| ^ {p / pⱼ}`
 has `L^{pⱼ}` norm at most `‖f‖_p ^ {p / pⱼ} ≤ 1`
-(`TauCeti.eLpNorm_le_eLpNorm_rpow`), so `‖f‖_θ ≤ exp δ` for every `δ > 0`. Simple functions are
-dense in `Lᵖ` for `p < ∞`, and the bound passes to all of `Lᵖ` by continuity
-(`LinearMap.extendOfNorm`).
+(`MeasureTheory.SimpleFunc.eLpNorm_map_powSign_le_one`), so `‖f‖_θ ≤ exp δ` for every
+`δ > 0`. Simple functions are dense in `Lᵖ` for `p < ∞`, and the bound passes to all of `Lᵖ` by
+continuity (`LinearMap.extendOfNorm`).
 
 Bergh and Löfström also prove the reverse inclusion `[L^{p₀}, L^{p₁}]_θ ⊆ Lᵖ`, with
 `‖f‖_p ≤ ‖f‖_θ`, by duality against the same analytic families of test functions; this file
@@ -72,71 +72,47 @@ variable {E α : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {mα : Measur
 
 /-! ### The analytic family through a simple function -/
 
-/-- The exponent `w z = r ((1 - z) a₀ + z a₁)` of the analytic family; it is used with `r = p`,
-`a₀ = 1 / p₀` and `a₁ = 1 / p₁`. -/
-private noncomputable def expo (r a₀ a₁ : ℝ) (z : ℂ) : ℂ :=
-  r * ((1 - z) * a₀ + z * a₁)
-
-private theorem re_expo (r a₀ a₁ : ℝ) (z : ℂ) :
-    (expo r a₀ a₁ z).re = r * ((1 - z.re) * a₀ + z.re * a₁) := by
-  simp [expo]
-
-private theorem re_expo_mul_I (r a₀ a₁ t : ℝ) : (expo r a₀ a₁ (t * I)).re = r * a₀ := by
-  simp [re_expo]
-
-private theorem re_expo_one_add_mul_I (r a₀ a₁ t : ℝ) :
-    (expo r a₀ a₁ (1 + t * I)).re = r * a₁ := by
-  simp [re_expo]
-
 /-- The scalar coefficient `exp (δ (z - θ)²) s ^ (w z - 1)` of the fibre `f ⁻¹' {c}` in the
-analytic family, where `s = ‖c‖`. -/
-private noncomputable def coeff (δ θ r a₀ a₁ s : ℝ) (z : ℂ) : ℂ :=
-  gaussian δ θ z * exp ((expo r a₀ a₁ z - 1) * Real.log s)
+analytic family, where `s = ‖c‖` and `w = thorinExponent a₀ a₁ θ`. -/
+private noncomputable def coeff (δ θ a₀ a₁ s : ℝ) (z : ℂ) : ℂ :=
+  gaussian δ θ z * exp ((thorinExponent a₀ a₁ θ z - 1) * Real.log s)
 
-private theorem coeff_smul (δ θ r a₀ a₁ : ℝ) (c : E) (z : ℂ) :
-    coeff δ θ r a₀ a₁ ‖c‖ z • c = gaussian δ θ z • powSign (expo r a₀ a₁ z) c := by
+private theorem coeff_smul (δ θ a₀ a₁ : ℝ) (c : E) (z : ℂ) :
+    coeff δ θ a₀ a₁ ‖c‖ z • c = gaussian δ θ z • powSign (thorinExponent a₀ a₁ θ z) c := by
   rw [coeff, mul_smul, powSign_def]
 
-private theorem differentiable_coeff (δ θ r a₀ a₁ s : ℝ) :
-    Differentiable ℂ (coeff δ θ r a₀ a₁ s) :=
-  (differentiable_gaussian δ θ).mul (by unfold expo; fun_prop)
+private theorem differentiable_coeff (δ θ a₀ a₁ s : ℝ) :
+    Differentiable ℂ (coeff δ θ a₀ a₁ s) :=
+  (differentiable_gaussian δ θ).mul (by simp only [thorinExponent_def]; fun_prop)
 
 /-- The coefficients tend to zero along the vertical line `re z = a`. -/
-private theorem tendsto_coeff {δ : ℝ} (hδ : 0 < δ) (θ r a₀ a₁ s a : ℝ) :
-    Tendsto (fun t : ℝ => coeff δ θ r a₀ a₁ s (a + t * I)) (cocompact ℝ) (𝓝 0) := by
+private theorem tendsto_coeff {δ : ℝ} (hδ : 0 < δ) (θ a₀ a₁ s a : ℝ) :
+    Tendsto (fun t : ℝ => coeff δ θ a₀ a₁ s (a + t * I)) (cocompact ℝ) (𝓝 0) := by
   have h : Tendsto (fun t : ℝ => ‖gaussian δ θ (a + t * I)‖ *
-      Real.exp ((r * ((1 - a) * a₀ + a * a₁) - 1) * Real.log s)) (cocompact ℝ) (𝓝 0) := by
+      Real.exp ((a - θ) * thorinSlope a₀ a₁ θ * Real.log s)) (cocompact ℝ) (𝓝 0) := by
     simpa using (tendsto_gaussian hδ θ a).norm.mul_const
-      (Real.exp ((r * ((1 - a) * a₀ + a * a₁) - 1) * Real.log s))
+      (Real.exp ((a - θ) * thorinSlope a₀ a₁ θ * Real.log s))
   refine squeeze_zero_norm (fun t => le_of_eq ?_) h
   rw [coeff, norm_mul, norm_exp]
   congr 1
-  simp [expo]
+  simp [thorinExponent_def]
 
 /-- The coefficients are bounded on the closed strip. -/
-private theorem norm_coeff_le {δ : ℝ} (hδ : 0 ≤ δ) (hθ : θ ∈ Icc 0 1) {r a₀ a₁ : ℝ} (hr : 0 ≤ r)
-    (ha₀ : 0 ≤ a₀) (ha₁ : 0 ≤ a₁) (s : ℝ) {z : ℂ} (hz : z ∈ verticalClosedStrip 0 1) :
-    ‖coeff δ θ r a₀ a₁ s z‖ ≤ Real.exp δ * Real.exp ((r * (a₀ + a₁) + 1) * |Real.log s|) := by
-  rw [coeff, norm_mul]
-  refine mul_le_mul (norm_gaussian_le_exp hδ hθ hz) ?_ (norm_nonneg _) (Real.exp_pos _).le
-  rw [norm_exp, Real.exp_le_exp]
-  have hre : ((expo r a₀ a₁ z - 1) * (Real.log s : ℂ)).re =
-      (r * ((1 - z.re) * a₀ + z.re * a₁) - 1) * Real.log s := by
-    simp [← re_expo]
+private theorem norm_coeff_le {δ : ℝ} (hδ : 0 ≤ δ) (hθ : θ ∈ Icc 0 1) (a₀ a₁ s : ℝ) {z : ℂ}
+    (hz : z ∈ verticalClosedStrip 0 1) :
+    ‖coeff δ θ a₀ a₁ s z‖ ≤ Real.exp δ * Real.exp (|thorinSlope a₀ a₁ θ| * |Real.log s|) := by
+  rw [coeff, norm_mul, norm_exp]
+  refine mul_le_mul (norm_gaussian_le_exp hδ hθ hz) (Real.exp_le_exp.2 ?_) (Real.exp_pos _).le
+    (Real.exp_pos _).le
+  have hre : ((thorinExponent a₀ a₁ θ z - 1) * (Real.log s : ℂ)).re =
+      ((thorinExponent a₀ a₁ θ z).re - 1) * Real.log s := by
+    simp
   rw [hre]
-  obtain ⟨hz0, hz1⟩ := hz
-  have hw0 : 0 ≤ r * ((1 - z.re) * a₀ + z.re * a₁) := by
-    have : 0 ≤ 1 - z.re := by linarith
-    positivity
-  have hw1 : r * ((1 - z.re) * a₀ + z.re * a₁) ≤ r * (a₀ + a₁) :=
-    mul_le_mul_of_nonneg_left (by nlinarith) hr
-  calc (r * ((1 - z.re) * a₀ + z.re * a₁) - 1) * Real.log s
-      ≤ |r * ((1 - z.re) * a₀ + z.re * a₁) - 1| * |Real.log s| := by
-        rw [← abs_mul]
-        exact le_abs_self _
-    _ ≤ (r * (a₀ + a₁) + 1) * |Real.log s| := by
-        gcongr
-        exact abs_le.2 ⟨by linarith, by linarith⟩
+  calc ((thorinExponent a₀ a₁ θ z).re - 1) * Real.log s
+      ≤ |((thorinExponent a₀ a₁ θ z).re - 1) * Real.log s| := le_abs_self _
+    _ = |(thorinExponent a₀ a₁ θ z).re - 1| * |Real.log s| := abs_mul _ _
+    _ ≤ |thorinSlope a₀ a₁ θ| * |Real.log s| :=
+        mul_le_mul_of_nonneg_right (abs_re_thorinExponent_le a₀ a₁ hθ hz) (abs_nonneg _)
 
 /-! ### Simple functions in the intersection -/
 
@@ -180,61 +156,42 @@ private theorem coeFn_sum_smul_piece {q : ℝ≥0∞} (f : SimpleFunc α E) (a :
 private theorem sum_interFst_simpleInter_piece (f : SimpleFunc α E)
     (hf : ∀ y, y ≠ 0 → μ (f ⁻¹' {y}) < ∞) :
     ∑ c ∈ f.range, (lebesgue ℂ E μ p₀ p₁).interFst
-        (simpleInter p₀ p₁ ((SimpleFunc.const α c).restrict (f ⁻¹' {c})) fun y hy =>
-      (measure_mono (f.preimage_restrict_const_subset c hy)).trans_lt (hf y hy)) =
+        (simpleInter p₀ p₁ ((SimpleFunc.const α c).restrict (f ⁻¹' {c}))
+          (f.measure_preimage_restrict_const_lt_top c hf)) =
       (lebesgue ℂ E μ p₀ p₁).interFst (simpleInter p₀ p₁ f hf) := by
   refine Lp.ext ?_
   have h := coeFn_sum_smul_piece f (fun _ => (1 : ℂ)) _ fun c => coeFn_interFst_simpleInter
-    (p₀ := p₀) (p₁ := p₁) ((SimpleFunc.const α c).restrict (f ⁻¹' {c})) fun y hy =>
-      (measure_mono (f.preimage_restrict_const_subset c hy)).trans_lt (hf y hy)
+    (p₀ := p₀) (p₁ := p₁) _ (f.measure_preimage_restrict_const_lt_top c hf)
   simp only [one_smul] at h
   exact h.trans (coeFn_interFst_simpleInter f hf).symm
 
 /-! ### The bound on simple functions -/
 
-omit [Fact (1 ≤ p₀)] [Fact (1 ≤ p₁)] in
-private theorem expo_self_eq_one (hp₀ : p₀ ≠ 0) (hp₁ : p₁ ≠ 0) (hp0 : p ≠ 0) (hθ : θ ∈ Icc 0 1)
-    (hp : p⁻¹ = ENNReal.ofReal (1 - θ) * p₀⁻¹ + ENNReal.ofReal θ * p₁⁻¹) (hp_top : p ≠ ∞) :
-    expo p.toReal (p₀⁻¹).toReal (p₁⁻¹).toReal θ = 1 := by
-  have hinv : p⁻¹.toReal = (1 - θ) * (p₀⁻¹).toReal + θ * (p₁⁻¹).toReal := by
-    rw [inv_eq_ofReal_of_inv_eq hp₀ hp₁ hθ hp, ENNReal.toReal_ofReal]
-    have : 0 ≤ 1 - θ := sub_nonneg.2 hθ.2
-    have : 0 ≤ θ := hθ.1
-    positivity
-  have h : p.toReal * ((1 - θ) * (p₀⁻¹).toReal + θ * (p₁⁻¹).toReal) = 1 := by
-    rw [← hinv, ENNReal.toReal_inv, mul_inv_cancel₀ (ENNReal.toReal_pos hp0 hp_top).ne']
-  have h' : ((p.toReal * ((1 - θ) * (p₀⁻¹).toReal + θ * (p₁⁻¹).toReal) : ℝ) : ℂ) = 1 := by
-    rw [h, ofReal_one]
-  simpa [expo] using h'
-
-/-- The exponent `1 / q` is reached at the real part `p / q` of the family's exponent. -/
-private theorem inv_eq_ofReal_mul_inv {q : ℝ≥0∞} (hq : q ≠ 0) (hp0 : p ≠ 0) (hp_top : p ≠ ∞) :
-    q⁻¹ = ENNReal.ofReal (p.toReal * (q⁻¹).toReal) * p⁻¹ := by
-  rw [ENNReal.ofReal_mul ENNReal.toReal_nonneg, ENNReal.ofReal_toReal hp_top,
-    ENNReal.ofReal_toReal (ENNReal.inv_ne_top.2 hq), mul_right_comm,
-    ENNReal.mul_inv_cancel hp0 hp_top, one_mul]
-
-/-- On a vertical line where the exponent has real part `re w = p / q`, the member of the
-analytic family through `f` with `‖f‖_p ≤ 1` has `L^q` norm at most `exp δ`. -/
-private theorem norm_sum_coeff_smul_le {q : ℝ≥0∞} (hθ : θ ∈ Icc 0 1) {δ : ℝ}
-    (hδ : 0 ≤ δ) {r a₀ a₁ : ℝ} (f : SimpleFunc α E) (hf1 : eLpNorm f p μ ≤ 1) {z : ℂ}
-    (hz : z ∈ verticalClosedStrip 0 1) (hw : 0 ≤ (expo r a₀ a₁ z).re)
-    (hq : q⁻¹ = ENNReal.ofReal (expo r a₀ a₁ z).re * p⁻¹) (u : E → Lp E q μ)
+/-- On a vertical line of the closed strip where `1 / q = (1 - re z) / p₀ + re z / p₁`, the member
+of the analytic family through `f` with `‖f‖_p ≤ 1` has `L^q` norm at most `exp δ`. -/
+private theorem norm_sum_coeff_smul_le {q : ℝ≥0∞} (hθ : θ ∈ Icc 0 1)
+    (hp : p⁻¹ = ENNReal.ofReal (1 - θ) * p₀⁻¹ + ENNReal.ofReal θ * p₁⁻¹) (hp_top : p ≠ ∞)
+    {δ : ℝ} (hδ : 0 ≤ δ) (f : SimpleFunc α E) (hf1 : eLpNorm f p μ ≤ 1) {z : ℂ}
+    (hz : z ∈ verticalClosedStrip 0 1)
+    (hq : q⁻¹ = ENNReal.ofReal (1 - z.re) * p₀⁻¹ + ENNReal.ofReal z.re * p₁⁻¹) (u : E → Lp E q μ)
     (hu : ∀ c, ⇑(u c) =ᵐ[μ] (SimpleFunc.const α c).restrict (f ⁻¹' {c})) :
-    ‖∑ c ∈ f.range, coeff δ θ r a₀ a₁ ‖c‖ z • u c‖ ≤ Real.exp δ := by
+    ‖∑ c ∈ f.range, coeff δ θ (p₀⁻¹).toReal (p₁⁻¹).toReal ‖c‖ z • u c‖ ≤ Real.exp δ := by
+  have hw := re_thorinExponent_nonneg (z := z) (ENNReal.toReal_nonneg (a := p₀⁻¹))
+    (ENNReal.toReal_nonneg (a := p₁⁻¹)) hθ hz
+  have hq' : q⁻¹ = ENNReal.ofReal (thorinExponent (p₀⁻¹).toReal (p₁⁻¹).toReal θ z).re * p⁻¹ := by
+    rw [ofReal_re_thorinExponent_mul_inv (zero_lt_one.trans_le Fact.out).ne'
+      (zero_lt_one.trans_le Fact.out).ne' hθ hp (fun h => absurd h hp_top) hz, hq]
   rw [Lp.norm_def, eLpNorm_congr_ae (coeFn_sum_smul_piece f _ u hu)]
   refine ENNReal.toReal_le_of_le_ofReal (Real.exp_pos δ).le ?_
-  have heq : (fun x => coeff δ θ r a₀ a₁ ‖f x‖ z • f x) =
-      gaussian δ θ z • ⇑(f.map (powSign (expo r a₀ a₁ z))) := by
+  have heq : (fun x => coeff δ θ (p₀⁻¹).toReal (p₁⁻¹).toReal ‖f x‖ z • f x) =
+      gaussian δ θ z • ⇑(f.map (powSign (thorinExponent (p₀⁻¹).toReal (p₁⁻¹).toReal θ z))) := by
     funext x
     simp [coeff_smul]
   rw [heq, eLpNorm_const_smul, ← mul_one (ENNReal.ofReal (Real.exp δ))]
   gcongr
   · rw [← ofReal_norm]
     exact ENNReal.ofReal_le_ofReal (norm_gaussian_le_exp hδ hθ hz)
-  · exact (eLpNorm_le_eLpNorm_rpow hw (f.map _).aestronglyMeasurable hq
-      (ae_of_all _ fun x => by simpa using norm_powSign_le _ (f x))).trans
-      (ENNReal.rpow_le_one hf1 hw)
+  · exact f.eLpNorm_map_powSign_le_one hw hq' hf1
 
 /-- **The analytic family.** For a simple function `f` with finite-measure fibres and
 `‖f‖_p ≤ 1`, the admissible function `exp (δ (z - θ)²) sgn(f) |f| ^ {w z}` shows that the class of
@@ -245,49 +202,33 @@ private theorem norm_ofInter_simpleInter_le_exp (hθ : θ ∈ Icc 0 1)
     {δ : ℝ} (hδ : 0 < δ) :
     ‖ComplexMethodSpace.ofInter θ (simpleInter p₀ p₁ f hf)‖ ≤ Real.exp δ := by
   set C := lebesgue ℂ E μ p₀ p₁
-  have hp₀ : p₀ ≠ 0 := (zero_lt_one.trans_le (Fact.out : 1 ≤ p₀)).ne'
-  have hp₁ : p₁ ≠ 0 := (zero_lt_one.trans_le (Fact.out : 1 ≤ p₁)).ne'
-  have hp0 : p ≠ 0 := (zero_lt_one.trans_le (one_le_of_inv_eq Fact.out Fact.out hθ hp)).ne'
-  have hw := expo_self_eq_one hp₀ hp₁ hp0 hθ hp hp_top
-  set r := p.toReal
   set a₀ := (p₀⁻¹).toReal
   set a₁ := (p₁⁻¹).toReal
-  have hr : 0 ≤ r := ENNReal.toReal_nonneg
   -- The family is the combination of the pieces of `f` with the entire coefficients `coeff`.
-  set x := fun c => simpleInter p₀ p₁ ((SimpleFunc.const α c).restrict (f ⁻¹' {c})) fun y hy =>
-      (measure_mono (f.preimage_restrict_const_subset c hy)).trans_lt (hf y hy)
+  set x := fun c => simpleInter p₀ p₁ ((SimpleFunc.const α c).restrict (f ⁻¹' {c}))
+    (f.measure_preimage_restrict_const_lt_top c hf)
   have hF := IsStripFunction.sum f.range fun c _ =>
-    C.isStripFunction_smul_inter (differentiable_coeff δ θ r a₀ a₁ ‖c‖).diffContOnCl
-      (fun z hz => norm_coeff_le hδ.le hθ hr ENNReal.toReal_nonneg ENNReal.toReal_nonneg _ hz)
-      (by simpa only [ofReal_zero, zero_add] using tendsto_coeff hδ θ r a₀ a₁ ‖c‖ 0)
-      (by simpa only [ofReal_one] using tendsto_coeff hδ θ r a₀ a₁ ‖c‖ 1) (x c)
+    C.isStripFunction_smul_inter (differentiable_coeff δ θ a₀ a₁ ‖c‖).diffContOnCl
+      (fun z hz => norm_coeff_le hδ.le hθ a₀ a₁ _ hz)
+      (by simpa only [ofReal_zero, zero_add] using tendsto_coeff hδ θ a₀ a₁ ‖c‖ 0)
+      (by simpa only [ofReal_one] using tendsto_coeff hδ θ a₀ a₁ ‖c‖ 1) (x c)
   refine (ComplexMethodSpace.norm_le_of_toSum_eq hθ hF ?_).trans ?_
   · -- At `θ` every coefficient is `1`, and the pieces of `f` sum to `f`.
     rw [ComplexMethodSpace.toSum_ofInter hθ, Finset.sum_apply, ← sum_interFst_simpleInter_piece,
       map_sum]
     refine Finset.sum_congr rfl fun c _ => ?_
-    simp [coeff, hw, x]
+    simp [coeff, x]
   -- On the boundary lines the family has norm at most `exp δ`.
   refine norm_prod_le_iff.2 ⟨(ZeroAtInftyContinuousMap.norm_le (Real.exp_pos δ).le).2 fun t => ?_,
     (ZeroAtInftyContinuousMap.norm_le (Real.exp_pos δ).le).2 fun t => ?_⟩
-  · have h := hF.apply_mul_I t
-    rw [Finset.sum_apply] at h
-    simp only [← map_smul, ← map_sum] at h
-    rw [← C.fstToSum_injective h, map_sum]
-    simp only [map_smul]
-    refine norm_sum_coeff_smul_le (z := t * I) hθ hδ.le f hf1 (by simp)
-      (by rw [re_expo_mul_I]; exact mul_nonneg hr ENNReal.toReal_nonneg)
-      (by rw [re_expo_mul_I]; exact inv_eq_ofReal_mul_inv hp₀ hp0 hp_top)
-      (fun c => C.interFst (x c)) fun c => coeFn_interFst_simpleInter _ _
-  · have h := hF.apply_one_add_mul_I t
-    rw [Finset.sum_apply] at h
-    simp only [fstToSum_interFst, ← map_smul, ← map_sum] at h
-    rw [← C.sndToSum_injective h, map_sum]
-    simp only [map_smul]
-    refine norm_sum_coeff_smul_le (z := 1 + t * I) hθ hδ.le f hf1 (by simp)
-      (by rw [re_expo_one_add_mul_I]; exact mul_nonneg hr ENNReal.toReal_nonneg)
-      (by rw [re_expo_one_add_mul_I]; exact inv_eq_ofReal_mul_inv hp₁ hp0 hp_top)
-      (fun c => C.interSnd (x c)) fun c => coeFn_interSnd_simpleInter _ _
+  · rw [Prod.fst_sum, FunLike.coe_sum, Finset.sum_apply]
+    simp only [smulInterTrace_fst_apply]
+    exact norm_sum_coeff_smul_le hθ hp hp_top hδ.le f hf1 (by simp) (by simp) _
+      fun c => coeFn_interFst_simpleInter _ _
+  · rw [Prod.snd_sum, FunLike.coe_sum, Finset.sum_apply]
+    simp only [smulInterTrace_snd_apply]
+    exact norm_sum_coeff_smul_le hθ hp hp_top hδ.le f hf1 (by simp) (by simp) _
+      fun c => coeFn_interSnd_simpleInter _ _
 
 /-- For a simple function `f` with finite-measure fibres and `‖f‖_p ≤ 1`, the class of `f` in
 `[L^{p₀}, L^{p₁}]_θ` has norm at most `1`. -/
@@ -332,14 +273,15 @@ private noncomputable def ofSimpleFuncₗ (hp_top : p ≠ ∞) :
       Lp.coeFn_add ((lebesgue ℂ E μ p₀ p₁).interFst (ofSimpleFunc p₀ p₁ hp_top g))
         ((lebesgue ℂ E μ p₀ p₁).interFst (ofSimpleFunc p₀ p₁ hp_top h)),
       Lp.coeFn_add (g : Lp E p μ) h] with x h₁ h₂ h₃ h₄ h₅
-    rw [h₁, h₄, Pi.add_apply, h₂, h₃, AddSubgroup.coe_add, h₅, Pi.add_apply]
+    rw [h₁, h₄, Pi.add_apply, h₂, h₃]
+    exact h₅
   map_smul' c g := (lebesgue ℂ E μ p₀ p₁).interFst_injective <| Lp.ext <| by
     rw [map_smul, RingHom.id_apply]
     filter_upwards [coeFn_interFst_ofSimpleFunc (p₀ := p₀) (p₁ := p₁) hp_top (c • g),
       coeFn_interFst_ofSimpleFunc (p₀ := p₀) (p₁ := p₁) hp_top g,
       Lp.coeFn_smul c ((lebesgue ℂ E μ p₀ p₁).interFst (ofSimpleFunc p₀ p₁ hp_top g)),
       Lp.coeFn_smul c (g : Lp E p μ)] with x h₁ h₂ h₃ h₄
-    rw [h₁, h₃, Pi.smul_apply, h₂, Lp.simpleFunc.coe_smul, h₄, Pi.smul_apply]
+    simp only [h₁, h₂, h₃, h₄, Pi.smul_apply, Lp.simpleFunc.coe_smul]
 
 /-- On the simple functions of `Lᵖ`, `p < ∞`, the class in `[L^{p₀}, L^{p₁}]_θ` has norm at most
 the `Lᵖ` norm. -/
@@ -355,14 +297,15 @@ private theorem norm_ofInter_ofSimpleFuncₗ_le (hθ : θ ∈ Icc 0 1)
   set c : ℂ := ((‖(g : Lp E p μ)‖⁻¹ : ℝ) : ℂ)
   have hc : ‖c‖ = ‖(g : Lp E p μ)‖⁻¹ := by
     simp [c]
+  have hnorm : ‖c • (g : Lp E p μ)‖ = 1 := by
+    simp [norm_smul, hc, hpos.ne']
   have hcg : eLpNorm (Lp.simpleFunc.toSimpleFunc (c • g)) p μ ≤ 1 := by
-    rw [eLpNorm_congr_ae (Lp.simpleFunc.toSimpleFunc_eq_toFun _),
-      ← ENNReal.ofReal_toReal (Lp.eLpNorm_ne_top _), ← Lp.norm_def, Lp.simpleFunc.coe_smul,
-      norm_smul, hc, inv_mul_cancel₀ hpos.ne', ENNReal.ofReal_one]
+    simp [eLpNorm_congr_ae (Lp.simpleFunc.toSimpleFunc_eq_toFun _), ← Lp.eNorm_def,
+      ← ofReal_norm, hnorm]
   have h : ‖ComplexMethodSpace.ofInter θ (ofSimpleFuncₗ p₀ p₁ hp_top (c • g))‖ ≤ 1 := by
     simp only [ofSimpleFuncₗ, LinearMap.coe_mk, AddHom.coe_mk, ofSimpleFunc]
     exact norm_ofInter_simpleInter_le_one hθ hp hp_top _ _ hcg
-  rwa [map_smul, map_smul, norm_smul, hc, inv_mul_le_iff₀ hpos, mul_one] at h
+  simpa [norm_smul, hc, inv_mul_le_iff₀ hpos] using h
 
 /-- **`Lᵖ` lies in the complex interpolation space of the Lebesgue couple.** Let `0 ≤ θ ≤ 1`
 and `1 / p = (1 - θ) / p₀ + θ / p₁` with `p < ∞`. Every `f ∈ Lᵖ(μ; E)` is an element of
