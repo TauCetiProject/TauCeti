@@ -34,19 +34,14 @@ variable {Q : Type*} [CommRing Q] [IsArtinianRing Q]
 
 /-- For a ring homomorphism `g : Q →+* Q'` out of an Artinian ring and a maximal ideal `m'` of
 `Q'`, the preimage of `m'` is a maximal ideal `p` of `Q`, and `g` induces a homomorphism of residue
-fields `ψ : Q ⧸ p →+* Q' ⧸ m'`, also compatible with the compositions with `f : A →+* Q`. -/
-theorem exists_residueField_ringHom {A : Type*} [CommRing A] {Q' : Type*} [CommRing Q']
-    (g : Q →+* Q') (m' : MaximalSpectrum Q') (f : A →+* Q) :
+fields `ψ : Q ⧸ p →+* Q' ⧸ m'`. -/
+theorem exists_residueField_ringHom {Q' : Type*} [CommRing Q'] (g : Q →+* Q')
+    (m' : MaximalSpectrum Q') :
     ∃ (p : MaximalSpectrum Q) (ψ : Q ⧸ p.asIdeal →+* Q' ⧸ m'.asIdeal),
-      (∀ x, Ideal.Quotient.mk m'.asIdeal (g x) = ψ (Ideal.Quotient.mk p.asIdeal x)) ∧
-        (Ideal.Quotient.mk m'.asIdeal).comp (g.comp f) =
-          ψ.comp ((Ideal.Quotient.mk p.asIdeal).comp f) := by
+      ∀ x, Ideal.Quotient.mk m'.asIdeal (g x) = ψ (Ideal.Quotient.mk p.asIdeal x) :=
   -- The preimage of `m'` is prime, hence maximal in the Artinian ring `Q`.
-  let p : MaximalSpectrum Q := ⟨m'.asIdeal.comap g, isMaximal_of_isPrime _⟩
-  have hψ (x : Q) : Ideal.Quotient.mk m'.asIdeal (g x) =
-      Ideal.quotientMap m'.asIdeal g le_rfl (Ideal.Quotient.mk p.asIdeal x) :=
-    Ideal.quotientMap_mk.symm
-  exact ⟨p, _, hψ, RingHom.ext fun x ↦ hψ (f x)⟩
+  ⟨⟨m'.asIdeal.comap g, isMaximal_of_isPrime _⟩, Ideal.quotientMap m'.asIdeal g le_rfl,
+    fun _ ↦ Ideal.quotientMap_mk.symm⟩
 
 variable [IsReduced Q]
 
