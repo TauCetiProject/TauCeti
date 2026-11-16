@@ -300,8 +300,7 @@ theorem IsTopologicallyFinitelyGenerated.prod (hG : IsTopologicallyFinitelyGener
     exact ⟨fun g hg ↦ Subgroup.subset_closure (Or.inl ⟨g, hg, rfl⟩),
       fun h hh ↦ Subgroup.subset_closure (Or.inr ⟨h, hh, rfl⟩)⟩
   have htop : ((Subgroup.closure (s : Set G)).prod
-      (Subgroup.closure (t : Set H))).topologicalClosure = ⊤ := by
-    apply SetLike.coe_injective
+      (Subgroup.closure (t : Set H))).topologicalClosure = ⊤ := SetLike.coe_injective <| by
     rw [Subgroup.topologicalClosure_coe, Subgroup.coe_prod, closure_prod_eq,
       ← Subgroup.topologicalClosure_coe, ← Subgroup.topologicalClosure_coe, hs, ht,
       Subgroup.coe_top, Subgroup.coe_top, Subgroup.coe_top, Set.univ_prod_univ]
@@ -317,20 +316,16 @@ theorem IsTopologicallyFinitelyGenerated.pi {ι : Type*} [Finite ι] {M : ι →
   choose s hs using hM
   let u : Set (∀ i, M i) := ⋃ i, (MonoidHom.mulSingle M i) '' (s i : Set (M i))
   have hu : u.Finite := Set.finite_iUnion fun i ↦ (s i).finite_toSet.image _
-  refine hu.isTopologicallyFinitelyGenerated (eq_top_iff.mpr ?_)
-  refine topologicalClosure_iSup_range_mulSingle_eq_top.ge.trans
-    (Subgroup.topologicalClosure_minimal _ (iSup_le fun i ↦ ?_)
-      (Subgroup.isClosed_topologicalClosure _))
+  refine hu.isTopologicallyFinitelyGenerated
+    (eq_top_iff.mpr <| topologicalClosure_iSup_range_mulSingle_eq_top.ge.trans <|
+      Subgroup.topologicalClosure_minimal _ (iSup_le fun i ↦ ?_)
+        (Subgroup.isClosed_topologicalClosure _))
   rintro _ ⟨x, rfl⟩
-  have hx : x ∈ _root_.closure (Subgroup.closure (s i : Set (M i)) : Set (M i)) := by
-    rw [← Subgroup.topologicalClosure_coe, hs i]
-    exact Subgroup.mem_top x
-  refine map_mem_closure (continuous_mulSingle i) hx fun y hy ↦ ?_
-  have hle : Subgroup.closure (s i : Set (M i)) ≤
-      (Subgroup.closure u).comap (MonoidHom.mulSingle M i) :=
-    (Subgroup.closure_le _).mpr fun g hg ↦
-      Subgroup.subset_closure (Set.mem_iUnion.mpr ⟨i, g, hg, rfl⟩)
-  exact hle hy
+  refine map_mem_closure (continuous_mulSingle i)
+    (by rw [← Subgroup.topologicalClosure_coe, hs i]; exact Subgroup.mem_top x) fun y hy ↦ ?_
+  exact ((Subgroup.closure_le _).mpr fun g hg ↦
+    Subgroup.subset_closure (Set.mem_iUnion.mpr ⟨i, g, hg, rfl⟩) :
+      Subgroup.closure (s i : Set (M i)) ≤ (Subgroup.closure u).comap (MonoidHom.mulSingle M i)) hy
 
 section OpenKernel
 

@@ -21,66 +21,34 @@ A topological group `G` is **uniform** for `p` (`TauCeti.IsUniform p G`) when it
 topologically finitely generated, torsion-free, and powerful (with `[G, G] ≤ G⁴` at `p = 2`).
 Its **dimension** (`TauCeti.uniformDimension p G`) is `Nat.log p (closedPowerSubgroup G p).index`.
 
-The central characterization (Dixon–du Sautoy–Mann–Segal, Theorem 4.5) identifies the torsion-free
-definition of uniformity with constancy of the successive indices along the lower `p`-series: for a
-topologically finitely generated profinite pro-`p` group `G` and a prime `p`, `G` is uniform if and
-only if `G` is powerful and every graded piece `gr_k(G) = λ_k(G) ⧸ λ_{k+1}(G)` has the same
-cardinality as `gr_0(G) = G ⧸ λ_1(G)`. In a profinite pro-`p` group, having no nontrivial
-finite-order elements is equivalent to having no elements of order `p`
-(`TauCeti.IsProP.forall_eq_one_of_isOfFinOrder_iff`), and in a powerful pro-`p` group absence of
-`p`-torsion is equivalent to bijectivity of every graded `p`-power map
-`gr_k(G) → gr_{k+1}(G)` (`TauCeti.IsProP.forall_eq_one_of_pow_eq_one_iff_bijective_gradedPow`).
-Since these maps are already surjective between finite groups, bijectivity is equivalent to
-equality of cardinalities.
+This file proves the constant lower-`p`-series index characterization (DDMS Theorem 4.5): a
+topologically finitely generated profinite pro-`p` group is uniform iff it is powerful and all
+successive lower-`p`-series indices `[λ_k : λ_{k+1}]` equal `[G : λ_1]`. For a uniform pro-`p`
+group of dimension `d`, `d` equals its topological generator rank, `[λ_k : λ_{k+1}] = p ^ d`, and
+`[G : λ_k] = [G : G^{p^k}] = p ^ (k * d)`. Uniformity and dimension are preserved under topological
+isomorphisms, trivial groups, finite products, and canonical subgroups `λ_k(G) = G^{p^k}`.
 
-For a uniform pro-`p` group `G` of dimension `d`, its dimension coincides with its topological
-generator rank, `[G : G^p] = [G : λ_1(G)] = p ^ d`, every successive lower-`p`-series index
-`[λ_k(G) : λ_{k+1}(G)]` equals `p ^ d`, and `[G : λ_k(G)] = [G : G^{p^k}] = p ^ (k * d)`.
-Uniformity and dimension are preserved by topological group isomorphisms, trivial groups, finite
-products, and the canonical power subgroups `λ_k(G) = G^{p^k}`.
+## Main definitions and results
 
-## Main definitions
-
-* `TauCeti.IsUniform`: a pro-`p`, topologically finitely generated, torsion-free, powerful
-  topological group.
-* `TauCeti.uniformDimension`: `Nat.log p (closedPowerSubgroup G p).index`, the dimension of a
-  uniform pro-`p` group.
-
-## Main results
-
-* `TauCeti.IsProP.forall_eq_one_of_isOfFinOrder_iff`: in a profinite pro-`p` group, torsion-freeness
-  is equivalent to having no elements of order `p`.
+* `TauCeti.IsUniform`, `TauCeti.uniformDimension`: uniform pro-`p` groups and their dimension.
+* `TauCeti.IsProP.forall_eq_one_of_isOfFinOrder_iff`: torsion-freeness iff no `p`-torsion.
 * `TauCeti.IsProP.isUniform_iff_isPowerful_and_forall_natCard_gradedPiece_eq`,
-  `TauCeti.IsProP.isUniform_iff_isPowerful_and_forall_index_pLowerCentralSeries_eq`: a
-  topologically finitely generated profinite pro-`p` group is uniform if and only if it is powerful
-  and all successive lower-`p`-series indices are equal.
+  `TauCeti.IsProP.isUniform_iff_isPowerful_and_forall_index_pLowerCentralSeries_eq`: DDMS Thm. 4.5.
 * `TauCeti.IsUniform.uniformDimension_eq_topologicalGeneratorRankNat`,
-  `TauCeti.IsUniform.index_closedPowerSubgroup`, `TauCeti.IsUniform.index_pLowerCentralSeries_one`,
-  `TauCeti.IsUniform.existsUnique_index_pLowerCentralSeries_one_eq_pow`: the dimension equals the
-  topological generator rank and is the unique `d` with `[G : λ_1(G)] = p ^ d`.
-* `TauCeti.IsUniform.natCard_gradedPiece`, `TauCeti.IsUniform.index_pLowerCentralSeries_subgroupOf`,
-  `TauCeti.IsUniform.relIndex_pLowerCentralSeries`, `TauCeti.IsUniform.index_pLowerCentralSeries`,
-  `TauCeti.IsUniform.index_closedPowerSubgroup_pow`: every successive index is `p ^ d`, and
-  `[G : λ_k(G)] = [G : G^{p^k}] = p ^ (k * d)`.
-* `TauCeti.isUniform_congr`, `TauCeti.uniformDimension_congr`, `TauCeti.isUniform_of_subsingleton`,
-  `TauCeti.uniformDimension_of_subsingleton`, `TauCeti.IsUniform.prod`,
-  `TauCeti.IsUniform.uniformDimension_prod`, `TauCeti.IsUniform.pi`,
-  `TauCeti.IsUniform.uniformDimension_pi`, `TauCeti.IsUniform.pLowerCentralSeries`,
-  `TauCeti.IsUniform.uniformDimension_pLowerCentralSeries`,
-  `TauCeti.IsUniform.closedPowerSubgroup_pow`,
-  `TauCeti.IsUniform.uniformDimension_closedPowerSubgroup_pow`: invariance and closure properties.
-* Concrete witnesses: `Multiplicative ℤ_[p]` (uniform of dimension `1`),
-  `Multiplicative (ι → ℤ_[p])` (uniform of dimension `Fintype.card ι`),
-  `HeisenbergGroup.level p m` for `(if p = 2 then 2 else 1) ≤ m` (nonabelian uniform of dimension
-  `3`), `HeisenbergGroup.level 2 1` (not powerful at `p = 2`, illustrating the level-`4`
-  requirement), an open non-powerful subgroup of `HeisenbergGroup.level p (if p = 2 then 2 else 1)`
-  showing uniformity need not pass to arbitrary open subgroups, and `Multiplicative (ZMod p)`
-  (powerful, not uniform, with lower-`p`-series indices `p, 1, 1, …`).
+  `TauCeti.IsUniform.natCard_gradedPiece`, `TauCeti.IsUniform.index_pLowerCentralSeries`,
+  `TauCeti.IsUniform.index_closedPowerSubgroup_pow`: dimension and index formulas.
+* `TauCeti.isUniform_congr`, `TauCeti.IsUniform.prod`, `TauCeti.IsUniform.pi`,
+  `TauCeti.IsUniform.pLowerCentralSeries`, `TauCeti.IsUniform.closedPowerSubgroup_pow`: invariance
+  and closure properties with dimension formulas.
+* Witnesses: `Multiplicative ℤ_[p]` (dim `1`), `Multiplicative (ι → ℤ_[p])` (dim `card ι`),
+  `HeisenbergGroup.level p m` (nonabelian, dim `3` for `(if p = 2 then 2 else 1) ≤ m`, with
+  `level 2 1` non-powerful and an open non-powerful subgroup showing non-inheritance), and
+  `Multiplicative (ZMod p)` (powerful, non-uniform, indices `p, 1, 1, …`).
 
 ## References
 
 * J. D. Dixon, M. P. F. du Sautoy, A. Mann and D. Segal, *Analytic pro-`p` groups*, 2nd ed.,
-  Cambridge University Press, 1999, Chapter 4, especially Theorem 4.5.
+  Cambridge University Press, 1999, Chapter 4 (Theorem 4.5).
 * K. Ardakov and K. A. Brown, *Ring-theoretic properties of Iwasawa algebras: a survey*,
   Documenta Math. Extra Vol. Coates (2006), Section 2.3.
 -/
@@ -101,43 +69,32 @@ section Torsion
 variable {p : ℕ} [hp : Fact p.Prime] {G : Type u} [Group G] [TopologicalSpace G]
   [IsTopologicalGroup G] [CompactSpace G] [TotallyDisconnectedSpace G]
 
-/-- In a profinite pro-`p` group, every nontrivial element of finite order has a power of order `p`:
-some open normal quotient separates the element from `1`, and that quotient is a finite `p`-group,
-so `p` divides the element's order. -/
+/-- In a profinite pro-`p` group, every nontrivial element of finite order has a power of
+order `p`. -/
 theorem IsProP.exists_pow_eq_one_of_isOfFinOrder (hG : IsProP p G) {g : G} (hg : g ≠ 1)
     (hfin : IsOfFinOrder g) : ∃ h : G, h ≠ 1 ∧ h ^ p = 1 := by
   obtain ⟨U, hU⟩ := ProfiniteGrp.exist_openNormalSubgroup_sub_open_nhds_of_one
     (isOpen_compl_singleton (x := g)) hg.symm
-  have hgU : g ∉ U.toSubgroup := fun hmem ↦ hU hmem rfl
   let q := QuotientGroup.mk' U.toSubgroup
-  have hqg : q g ≠ 1 := fun h1 ↦ hgU ((QuotientGroup.eq_one_iff g).mp h1)
+  have hqg : q g ≠ 1 := fun h1 ↦ hU ((QuotientGroup.eq_one_iff g).mp h1) rfl
   obtain ⟨k, hk⟩ := (IsPGroup.iff_orderOf.mp (isProP_iff.mp hG U)) (q g)
-  have hk_ne : k ≠ 0 := by
-    rintro rfl
-    exact hqg (orderOf_eq_one_iff.mp (by simpa using hk))
-  have hp_dvd : p ∣ orderOf g :=
-    (dvd_pow_self p hk_ne).trans (hk ▸ orderOf_map_dvd q g)
-  have hord_pos : 0 < orderOf g := hfin.orderOf_pos
+  have hk_ne : k ≠ 0 := by rintro rfl; exact hqg (orderOf_eq_one_iff.mp (by simpa using hk))
+  have hp_dvd : p ∣ orderOf g := (dvd_pow_self p hk_ne).trans (hk ▸ orderOf_map_dvd q g)
   set m : ℕ := orderOf g / p
   have hmp : m * p = orderOf g := Nat.div_mul_cancel hp_dvd
-  have hm_pos : 0 < m := Nat.pos_of_mul_pos_right (hmp.symm ▸ hord_pos)
-  have hm_lt : m < orderOf g := by
-    calc
-      m = m * 1 := (mul_one m).symm
-      _ < m * p := Nat.mul_lt_mul_of_pos_left hp.out.one_lt hm_pos
-      _ = orderOf g := hmp
-  refine ⟨g ^ m, fun h1 ↦ ?_, by rw [← pow_mul, hmp, pow_orderOf_eq_one]⟩
-  exact hm_lt.not_ge (Nat.le_of_dvd hm_pos (orderOf_dvd_of_pow_eq_one h1))
+  have hm_pos : 0 < m := Nat.pos_of_mul_pos_right (hmp.symm ▸ hfin.orderOf_pos)
+  have hm_lt : m < orderOf g := hmp ▸ lt_mul_of_one_lt_right hm_pos hp.out.one_lt
+  exact ⟨g ^ m, fun h1 ↦ hm_lt.not_ge (Nat.le_of_dvd hm_pos (orderOf_dvd_of_pow_eq_one h1)),
+    by rw [← pow_mul, hmp, pow_orderOf_eq_one]⟩
 
 /-- **Torsion-freeness in a profinite pro-`p` group** is equivalent to having no elements of
 order `p`. -/
 theorem IsProP.forall_eq_one_of_isOfFinOrder_iff (hG : IsProP p G) :
-    (∀ g : G, IsOfFinOrder g → g = 1) ↔ (∀ g : G, g ^ p = 1 → g = 1) := by
-  refine ⟨fun h g hgp ↦ h g (isOfFinOrder_iff_pow_eq_one.mpr ⟨p, hp.out.pos, hgp⟩),
-    fun h g hfin ↦ ?_⟩
-  by_contra hg
-  obtain ⟨x, hxne, hxp⟩ := hG.exists_pow_eq_one_of_isOfFinOrder hg hfin
-  exact hxne (h x hxp)
+    (∀ g : G, IsOfFinOrder g → g = 1) ↔ (∀ g : G, g ^ p = 1 → g = 1) :=
+  ⟨fun h g hgp ↦ h g (isOfFinOrder_iff_pow_eq_one.mpr ⟨p, hp.out.pos, hgp⟩), fun h g hfin ↦ by
+    by_contra hg
+    obtain ⟨x, hxne, hxp⟩ := hG.exists_pow_eq_one_of_isOfFinOrder hg hfin
+    exact hxne (h x hxp)⟩
 
 end Torsion
 
@@ -154,8 +111,7 @@ def IsUniform : Prop :=
     (∀ g : G, IsOfFinOrder g → g = 1) ∧ IsPowerful p G
 
 /-- The **dimension** of a uniform pro-`p` group `G`, defined as
-`Nat.log p (closedPowerSubgroup G p).index`. For a uniform pro-`p` group this equals its
-topological generator rank and the common exponent of every successive lower-`p`-series index. -/
+`Nat.log p (closedPowerSubgroup G p).index`. -/
 noncomputable def uniformDimension : ℕ :=
   Nat.log p (closedPowerSubgroup G p).index
 
@@ -165,13 +121,11 @@ variable {p G}
 theorem isUniform_iff :
     IsUniform p G ↔
       IsProP p G ∧ IsTopologicallyFinitelyGenerated G ∧
-        (∀ g : G, IsOfFinOrder g → g = 1) ∧ IsPowerful p G :=
-  (Iff.rfl)
+        (∀ g : G, IsOfFinOrder g → g = 1) ∧ IsPowerful p G := (Iff.rfl)
 
 /-- Unfolding lemma for `TauCeti.uniformDimension`. -/
 theorem uniformDimension_def :
-    uniformDimension p G = Nat.log p (closedPowerSubgroup G p).index :=
-  (rfl)
+    uniformDimension p G = Nat.log p (closedPowerSubgroup G p).index := (rfl)
 
 /-- A uniform pro-`p` group is pro-`p`. -/
 theorem IsUniform.isProP (h : IsUniform p G) : IsProP p G := h.1
@@ -186,20 +140,17 @@ theorem IsUniform.eq_one_of_isOfFinOrder (h : IsUniform p G) {g : G} (hg : IsOfF
 
 /-- A uniform pro-`p` group has no nontrivial `p`-torsion. -/
 theorem IsUniform.eq_one_of_pow_eq_one (h : IsUniform p G) (hp : 0 < p) {g : G} (hg : g ^ p = 1) :
-    g = 1 :=
-  h.eq_one_of_isOfFinOrder (isOfFinOrder_iff_pow_eq_one.mpr ⟨p, hp, hg⟩)
+    g = 1 := h.eq_one_of_isOfFinOrder (isOfFinOrder_iff_pow_eq_one.mpr ⟨p, hp, hg⟩)
 
 /-- A uniform pro-`p` group is powerful. -/
 theorem IsUniform.isPowerful (h : IsUniform p G) : IsPowerful p G := h.2.2.2
 
-/-- The cardinality of the `k`-th graded piece `gr_k(G) = λ_k(G) ⧸ λ_{k+1}(G)` is the index of
-`λ_{k+1}(G)` inside `λ_k(G)`. -/
+/-- The cardinality of `gr_k(G) = λ_k(G) ⧸ λ_{k+1}(G)` is the index of `λ_{k+1}(G)` in `λ_k(G)`. -/
 theorem natCard_gradedPiece_eq_index (p : ℕ) (G : Type u) [Group G] [TopologicalSpace G]
     [IsTopologicalGroup G] (k : ℕ) :
     Nat.card (gradedPiece p G k) =
       ((pLowerCentralSeries p G (k + 1)).subgroupOf (pLowerCentralSeries p G k)).index := by
-  rw [Subgroup.index_eq_card]
-  exact Nat.card_congr Additive.toMul
+  rw [Subgroup.index_eq_card]; exact Nat.card_congr Additive.toMul
 
 /-- The cardinality of `gr_k(G)` is the relative index of `λ_{k+1}(G)` in `λ_k(G)`. -/
 theorem natCard_gradedPiece_eq_relIndex (p : ℕ) (G : Type u) [Group G] [TopologicalSpace G]
@@ -232,19 +183,14 @@ theorem IsProP.isUniform_iff_isPowerful_and_forall_natCard_gradedPiece_eq (hG : 
     IsUniform p G ↔
       IsPowerful p G ∧ ∀ k, Nat.card (gradedPiece p G k) = Nat.card (gradedPiece p G 0) := by
   rw [isUniform_iff, hG.forall_eq_one_of_isOfFinOrder_iff]
-  constructor
-  · rintro ⟨-, -, htors, hpow⟩
-    refine ⟨hpow, fun k ↦ ?_⟩
-    have hbij := (hG.forall_eq_one_of_pow_eq_one_iff_bijective_gradedPow hpow).mp htors
+  refine ⟨fun ⟨_, _, htors, hpow⟩ ↦ ⟨hpow, fun k ↦ ?_⟩, fun ⟨hpow, hcard⟩ ↦ ⟨hG, hfg, ?_, hpow⟩⟩
+  · have hbij := (hG.forall_eq_one_of_pow_eq_one_iff_bijective_gradedPow hpow).mp htors
     induction k with
     | zero => rfl
-    | succ k ih =>
-      exact (Nat.card_congr (Equiv.ofBijective _ (hbij k))).symm.trans ih
-  · rintro ⟨hpow, hcard⟩
-    refine ⟨hG, hfg, ?_, hpow⟩
-    rw [hG.forall_eq_one_of_pow_eq_one_iff_bijective_gradedPow hpow]
+    | succ k ih => exact (Nat.card_congr (Equiv.ofBijective _ (hbij k))).symm.trans ih
+  · rw [hG.forall_eq_one_of_pow_eq_one_iff_bijective_gradedPow hpow]
     intro k
-    have : Finite (gradedPiece p G k) := hfg.finite_gradedPiece hp.out k
+    have := hfg.finite_gradedPiece hp.out k
     exact (Nat.bijective_iff_surjective_and_card (gradedPow p G k)).mpr
       ⟨hG.gradedPow_surjective hpow k, (hcard k).trans (hcard (k + 1)).symm⟩
 
@@ -271,8 +217,6 @@ theorem IsProP.isUniform_iff_isPowerful_and_forall_relIndex_pLowerCentralSeries_
 
 namespace IsUniform
 
-/-- The index `[G : G^p]` of a uniform pro-`p` group equals `p ^ d(G)`, where `d(G)` is its
-topological generator rank. -/
 private theorem index_closedPowerSubgroup_eq_pow_rank (hU : IsUniform p G) :
     (closedPowerSubgroup G p).index =
       p ^ topologicalGeneratorRankNat G hU.isTopologicallyFinitelyGenerated := by
@@ -312,10 +256,9 @@ theorem existsUnique_index_pLowerCentralSeries_one_eq_pow (hU : IsUniform p G) :
 `p ^ uniformDimension p G`. -/
 theorem natCard_gradedPiece (hU : IsUniform p G) (k : ℕ) :
     Nat.card (gradedPiece p G k) = p ^ uniformDimension p G := by
-  have hconst :=
-    ((hU.isProP.isUniform_iff_isPowerful_and_forall_natCard_gradedPiece_eq
-      hU.isTopologicallyFinitelyGenerated).mp hU).2 k
-  rw [hconst, natCard_gradedPiece_zero_eq_index, hU.index_pLowerCentralSeries_one]
+  rw [((hU.isProP.isUniform_iff_isPowerful_and_forall_natCard_gradedPiece_eq
+    hU.isTopologicallyFinitelyGenerated).mp hU).2 k,
+    natCard_gradedPiece_zero_eq_index, hU.index_pLowerCentralSeries_one]
 
 /-- Every successive lower-`p`-series index `[λ_k(G) : λ_{k+1}(G)]` of a uniform pro-`p` group
 equals `p ^ uniformDimension p G`. -/
@@ -328,11 +271,9 @@ theorem index_pLowerCentralSeries_subgroupOf (hU : IsUniform p G) (k : ℕ) :
 `p ^ uniformDimension p G`. -/
 theorem relIndex_pLowerCentralSeries (hU : IsUniform p G) (k : ℕ) :
     (pLowerCentralSeries p G (k + 1)).relIndex (pLowerCentralSeries p G k) =
-      p ^ uniformDimension p G :=
-  hU.index_pLowerCentralSeries_subgroupOf k
+      p ^ uniformDimension p G := hU.index_pLowerCentralSeries_subgroupOf k
 
-/-- In a uniform pro-`p` group `G`, the `k`-th lower-`p`-series term has index
-`[G : λ_k(G)] = p ^ (k * uniformDimension p G)`. -/
+/-- In a uniform pro-`p` group `G`, `[G : λ_k(G)] = p ^ (k * uniformDimension p G)`. -/
 theorem index_pLowerCentralSeries (hU : IsUniform p G) (k : ℕ) :
     (pLowerCentralSeries p G k).index = p ^ (k * uniformDimension p G) := by
   induction k with
@@ -359,11 +300,12 @@ variable {p : ℕ} {G : Type u} {H : Type v} [Group G] [TopologicalSpace G] [IsT
   [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
 
 /-- Uniformity transfers across a topological group isomorphism. -/
-theorem IsUniform.of_equiv (hG : IsUniform p G) (e : G ≃ₜ* H) : IsUniform p H := by
-  refine ⟨hG.isProP.of_equiv e, (isTopologicallyFinitelyGenerated_congr e).mp
-    hG.isTopologicallyFinitelyGenerated, fun y hy ↦ ?_, hG.isPowerful.of_equiv e⟩
-  have h1 : e.symm y = 1 := hG.eq_one_of_isOfFinOrder (e.symm.toMonoidHom.isOfFinOrder hy)
-  simpa using congrArg e h1
+theorem IsUniform.of_equiv (hG : IsUniform p G) (e : G ≃ₜ* H) : IsUniform p H :=
+  ⟨hG.isProP.of_equiv e, (isTopologicallyFinitelyGenerated_congr e).mp
+    hG.isTopologicallyFinitelyGenerated,
+    fun y hy ↦ by simpa using congrArg e (hG.eq_one_of_isOfFinOrder
+      (e.symm.toMonoidHom.isOfFinOrder hy)),
+    hG.isPowerful.of_equiv e⟩
 
 /-- Uniformity is invariant under topological group isomorphism. -/
 theorem isUniform_congr (e : G ≃ₜ* H) : IsUniform p G ↔ IsUniform p H :=
@@ -375,11 +317,11 @@ theorem uniformDimension_congr (e : G ≃ₜ* H) : uniformDimension p G = unifor
   exact congrArg (Nat.log p) (Subgroup.index_map_equiv (closedPowerSubgroup G p) e.toMulEquiv).symm
 
 /-- Every trivial (subsingleton) topological group is uniform. -/
-theorem isUniform_of_subsingleton [Subsingleton G] : IsUniform p G := by
-  refine ⟨(IsPGroup.of_subsingleton p G).isProP, ?_, fun g _ ↦ Subsingleton.elim g 1,
-    isPowerful_of_subsingleton⟩
-  exact Set.finite_empty.isTopologicallyFinitelyGenerated (eq_top_iff.mpr fun g _ ↦ by
-    rw [Subsingleton.elim g 1]; exact one_mem _)
+theorem isUniform_of_subsingleton [Subsingleton G] : IsUniform p G :=
+  ⟨(IsPGroup.of_subsingleton p G).isProP,
+    Set.finite_empty.isTopologicallyFinitelyGenerated (eq_top_iff.mpr fun g _ ↦
+      Subsingleton.elim g 1 ▸ one_mem _),
+    fun g _ ↦ Subsingleton.elim g 1, isPowerful_of_subsingleton⟩
 
 /-- The dimension of a trivial (subsingleton) topological group is `0`. -/
 @[simp]
@@ -388,13 +330,12 @@ theorem uniformDimension_of_subsingleton [Subsingleton G] : uniformDimension p G
     Nat.log_one_right]
 
 /-- A binary product of uniform pro-`p` groups is uniform. -/
-theorem IsUniform.prod (hG : IsUniform p G) (hH : IsUniform p H) : IsUniform p (G × H) := by
-  refine ⟨hG.isProP.prod hH.isProP,
+theorem IsUniform.prod (hG : IsUniform p G) (hH : IsUniform p H) : IsUniform p (G × H) :=
+  ⟨hG.isProP.prod hH.isProP,
     hG.isTopologicallyFinitelyGenerated.prod hH.isTopologicallyFinitelyGenerated,
-    fun x hx ↦ ?_, hG.isPowerful.prod hH.isPowerful⟩
-  exact Prod.ext
-    (hG.eq_one_of_isOfFinOrder ((MonoidHom.fst G H).isOfFinOrder hx))
-    (hH.eq_one_of_isOfFinOrder ((MonoidHom.snd G H).isOfFinOrder hx))
+    fun _ hx ↦ Prod.ext (hG.eq_one_of_isOfFinOrder ((MonoidHom.fst G H).isOfFinOrder hx))
+      (hH.eq_one_of_isOfFinOrder ((MonoidHom.snd G H).isOfFinOrder hx)),
+    hG.isPowerful.prod hH.isPowerful⟩
 
 /-- The dimension of a binary product of uniform pro-`p` groups is the sum of their dimensions. -/
 theorem IsUniform.uniformDimension_prod [hp : Fact p.Prime] [CompactSpace G]
@@ -408,10 +349,10 @@ theorem IsUniform.uniformDimension_prod [hp : Fact p.Prime] [CompactSpace G]
 /-- A finite indexed product of uniform pro-`p` groups is uniform. -/
 theorem IsUniform.pi {ι : Type*} [Finite ι] {F : ι → Type*} [∀ i, Group (F i)]
     [∀ i, TopologicalSpace (F i)] [∀ i, IsTopologicalGroup (F i)]
-    (hF : ∀ i, IsUniform p (F i)) : IsUniform p (∀ i, F i) := by
-  refine ⟨IsProP.pi fun i ↦ (hF i).isProP,
+    (hF : ∀ i, IsUniform p (F i)) : IsUniform p (∀ i, F i) :=
+  ⟨IsProP.pi fun i ↦ (hF i).isProP,
     IsTopologicallyFinitelyGenerated.pi fun i ↦ (hF i).isTopologicallyFinitelyGenerated,
-    fun x hx ↦ funext fun i ↦
+    fun _ hx ↦ funext fun i ↦
       (hF i).eq_one_of_isOfFinOrder ((Pi.evalMonoidHom F i).isOfFinOrder hx),
     IsPowerful.pi fun i ↦ (hF i).isPowerful⟩
 
@@ -422,10 +363,9 @@ theorem IsUniform.uniformDimension_pi [hp : Fact p.Prime] {ι : Type*} [Fintype 
     [∀ i, IsTopologicalGroup (F i)] [∀ i, CompactSpace (F i)]
     [∀ i, TotallyDisconnectedSpace (F i)] (hF : ∀ i, IsUniform p (F i)) :
     uniformDimension p (∀ i, F i) = ∑ i, uniformDimension p (F i) := by
-  rw [uniformDimension_def, closedPowerSubgroup_pi, Subgroup.index_pi']
-  have hprod : ∏ i, (closedPowerSubgroup (F i) p).index = ∏ i, p ^ uniformDimension p (F i) :=
-    Finset.prod_congr rfl fun i _ ↦ (hF i).index_closedPowerSubgroup
-  rw [hprod, Finset.prod_pow_eq_pow_sum, Nat.log_pow hp.out.one_lt]
+  rw [uniformDimension_def, closedPowerSubgroup_pi, Subgroup.index_pi',
+    Finset.prod_congr rfl fun i _ ↦ (hF i).index_closedPowerSubgroup,
+    Finset.prod_pow_eq_pow_sum, Nat.log_pow hp.out.one_lt]
 
 section CanonicalSubgroups
 
@@ -433,12 +373,12 @@ variable [hp : Fact p.Prime] [CompactSpace G] [TotallyDisconnectedSpace G]
 
 /-- Every term `λ_k(G)` of the lower `p`-series of a uniform pro-`p` group `G` is uniform. -/
 theorem IsUniform.pLowerCentralSeries (hU : IsUniform p G) (k : ℕ) :
-    IsUniform p (TauCeti.pLowerCentralSeries p G k) := by
-  refine ⟨hU.isProP.subgroup _,
+    IsUniform p (TauCeti.pLowerCentralSeries p G k) :=
+  ⟨hU.isProP.subgroup _,
     hU.isTopologicallyFinitelyGenerated.of_openSubgroup
       ⟨TauCeti.pLowerCentralSeries p G k,
         hU.isTopologicallyFinitelyGenerated.isOpen_pLowerCentralSeries hp.out k⟩,
-    fun x hx ↦ Subtype.ext (hU.eq_one_of_isOfFinOrder
+    fun _ hx ↦ Subtype.ext (hU.eq_one_of_isOfFinOrder
       ((TauCeti.pLowerCentralSeries p G k).subtype.isOfFinOrder hx)),
     hU.isProP.isPowerful_pLowerCentralSeries hU.isPowerful k⟩
 
@@ -449,27 +389,26 @@ theorem IsUniform.uniformDimension_pLowerCentralSeries (hU : IsUniform p G) (k :
   set H := TauCeti.pLowerCentralSeries p G k
   have h1 : TauCeti.pLowerCentralSeries p H 1 =
       (TauCeti.pLowerCentralSeries p G (k + 1)).subgroupOf H := by
-    have hmap := hU.isProP.map_subtype_pLowerCentralSeries_pLowerCentralSeries hU.isPowerful k 1
     ext x
-    rw [mem_subgroupOf, ← hmap, mem_map]
+    rw [mem_subgroupOf, ← hU.isProP.map_subtype_pLowerCentralSeries_pLowerCentralSeries
+      hU.isPowerful k 1, mem_map]
     exact ⟨fun hx ↦ ⟨x, hx, rfl⟩, fun ⟨y, hy, hyx⟩ ↦ Subtype.ext hyx ▸ hy⟩
-  have hpow : p ^ uniformDimension p H = p ^ uniformDimension p G := by
+  exact Nat.pow_right_injective hp.out.two_le <| by
+    dsimp only
     rw [← (hU.pLowerCentralSeries k).index_pLowerCentralSeries_one, h1,
       hU.index_pLowerCentralSeries_subgroupOf k]
-  exact Nat.pow_right_injective hp.out.two_le hpow
 
 /-- Every canonical closed power subgroup `G^{p^k}` of a uniform pro-`p` group `G` is uniform. -/
 theorem IsUniform.closedPowerSubgroup_pow (hU : IsUniform p G) (k : ℕ) :
-    IsUniform p (closedPowerSubgroup G (p ^ k)) := by
-  rw [← hU.isProP.pLowerCentralSeries_eq_closedPowerSubgroup hU.isPowerful k]
-  exact hU.pLowerCentralSeries k
+    IsUniform p (closedPowerSubgroup G (p ^ k)) :=
+  hU.isProP.pLowerCentralSeries_eq_closedPowerSubgroup hU.isPowerful k ▸ hU.pLowerCentralSeries k
 
 /-- Every canonical closed power subgroup `G^{p^k}` of a uniform pro-`p` group `G` has the same
 dimension as `G`. -/
 theorem IsUniform.uniformDimension_closedPowerSubgroup_pow (hU : IsUniform p G) (k : ℕ) :
-    uniformDimension p (closedPowerSubgroup G (p ^ k)) = uniformDimension p G := by
-  rw [← hU.isProP.pLowerCentralSeries_eq_closedPowerSubgroup hU.isPowerful k]
-  exact hU.uniformDimension_pLowerCentralSeries k
+    uniformDimension p (closedPowerSubgroup G (p ^ k)) = uniformDimension p G :=
+  hU.isProP.pLowerCentralSeries_eq_closedPowerSubgroup hU.isPowerful k ▸
+    hU.uniformDimension_pLowerCentralSeries k
 
 end CanonicalSubgroups
 
@@ -488,10 +427,9 @@ theorem isUniform_multiplicative_padicInt : IsUniform p (Multiplicative ℤ_[p])
     fun g hg ↦ ?_, isPowerful_of_isMulCommutative⟩
   obtain ⟨n, hn, hgn⟩ := isOfFinOrder_iff_pow_eq_one.mp hg
   have hmul : (n : ℤ_[p]) * g.toAdd = 0 := by
-    have h := congrArg (fun x : Multiplicative ℤ_[p] ↦ x.toAdd) hgn
-    simpa [nsmul_eq_mul] using h
-  have h0 : g.toAdd = 0 := (mul_eq_zero.mp hmul).resolve_left (Nat.cast_ne_zero.mpr hn.ne')
-  exact Multiplicative.toAdd.injective (h0.trans toAdd_one.symm)
+    simpa [nsmul_eq_mul] using congrArg (fun x : Multiplicative ℤ_[p] ↦ x.toAdd) hgn
+  exact Multiplicative.toAdd.injective
+    (((mul_eq_zero.mp hmul).resolve_left (Nat.cast_ne_zero.mpr hn.ne')).trans toAdd_one.symm)
 
 /-- The additive group `ℤ_p` has uniform dimension `1`. -/
 @[simp]
@@ -520,11 +458,9 @@ theorem isPowerful_multiplicative_zmod : IsPowerful p (Multiplicative (ZMod p)) 
   isPowerful_of_isMulCommutative
 
 /-- The cyclic group `ℤ/p` is not uniform, as it has nontrivial `p`-torsion. -/
-theorem not_isUniform_multiplicative_zmod : ¬ IsUniform p (Multiplicative (ZMod p)) := by
-  intro hU
-  have hpow : (Multiplicative.ofAdd (1 : ZMod p)) ^ p = 1 := by
+theorem not_isUniform_multiplicative_zmod : ¬ IsUniform p (Multiplicative (ZMod p)) := fun hU ↦ by
+  have h1 : Multiplicative.ofAdd (1 : ZMod p) = 1 := hU.eq_one_of_pow_eq_one hp.out.pos <| by
     rw [← ofAdd_nsmul, nsmul_eq_mul, mul_one, ZMod.natCast_self, ofAdd_zero]
-  have h1 : Multiplicative.ofAdd (1 : ZMod p) = 1 := hU.eq_one_of_pow_eq_one hp.out.pos hpow
   exact one_ne_zero (congrArg (fun x : Multiplicative (ZMod p) ↦ x.toAdd) h1)
 
 /-- The first lower-`p`-series term of `ℤ/p` is trivial. -/
@@ -534,10 +470,9 @@ theorem pLowerCentralSeries_one_multiplicative_zmod :
     (IsPGroup.of_card (n := 1) (by rw [Nat.card_congr Multiplicative.toAdd, Nat.card_zmod,
       pow_one])).isProP
   rw [hproP.pLowerCentralSeries_one_eq_closedPowerSubgroup (isPowerful_multiplicative_zmod p)]
-  refine le_bot_iff.mp ((closedPowerSubgroup_le_iff (isClosed_discrete _)).mpr fun g ↦ ?_)
-  rw [mem_bot]
-  apply Multiplicative.toAdd.injective
-  rw [toAdd_pow, nsmul_eq_mul, ZMod.natCast_self, zero_mul, toAdd_one]
+  refine le_bot_iff.mp ((closedPowerSubgroup_le_iff (isClosed_discrete _)).mpr fun g ↦
+    mem_bot.mpr <| Multiplicative.toAdd.injective (by
+      rw [toAdd_pow, nsmul_eq_mul, ZMod.natCast_self, zero_mul, toAdd_one]))
 
 /-- The degree-zero lower-`p`-series index of `ℤ/p` is `p`. -/
 theorem index_pLowerCentralSeries_multiplicative_zmod_zero :
@@ -545,9 +480,8 @@ theorem index_pLowerCentralSeries_multiplicative_zmod_zero :
   rw [pLowerCentralSeries_one_multiplicative_zmod, Subgroup.index_bot,
     Nat.card_congr Multiplicative.toAdd, Nat.card_zmod]
 
-/-- Every higher successive lower-`p`-series index of `ℤ/p` is `1`. Together with
-`TauCeti.index_pLowerCentralSeries_multiplicative_zmod_zero`, the lower-`p`-series indices of `ℤ/p`
-are `p, 1, 1, …`. -/
+/-- Every higher successive lower-`p`-series index of `ℤ/p` is `1`, so the lower-`p`-series
+indices of `ℤ/p` are `p, 1, 1, …`. -/
 theorem index_pLowerCentralSeries_multiplicative_zmod_succ (k : ℕ) :
     ((pLowerCentralSeries p (Multiplicative (ZMod p)) (k + 2)).subgroupOf
       (pLowerCentralSeries p (Multiplicative (ZMod p)) (k + 1))).index = 1 := by
@@ -567,15 +501,9 @@ theorem eq_one_of_isOfFinOrder_padicInt {a : HeisenbergGroup ℤ_[p]} (ha : IsOf
   obtain ⟨n, hn, han⟩ := isOfFinOrder_iff_pow_eq_one.mp ha
   rw [pow_eq] at han
   have hn0 : (n : ℤ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr hn.ne'
-  have hx : a.x = 0 := by
-    have h := congrArg HeisenbergGroup.x han
-    simpa [nsmul_eq_mul, hn0] using h
-  have hy : a.y = 0 := by
-    have h := congrArg HeisenbergGroup.y han
-    simpa [nsmul_eq_mul, hn0] using h
-  have hz : a.z = 0 := by
-    have h := congrArg HeisenbergGroup.z han
-    simpa [hx, hy, nsmul_eq_mul, hn0] using h
+  have hx : a.x = 0 := by simpa [nsmul_eq_mul, hn0] using congrArg HeisenbergGroup.x han
+  have hy : a.y = 0 := by simpa [nsmul_eq_mul, hn0] using congrArg HeisenbergGroup.y han
+  have hz : a.z = 0 := by simpa [hx, hy, nsmul_eq_mul, hn0] using congrArg HeisenbergGroup.z han
   ext <;> simp [hx, hy, hz]
 
 /-- The Heisenberg group over `ℤ_[p]` is topologically finitely generated, by the three elementary
@@ -583,71 +511,51 @@ unipotent generators `(1, 0, 0)`, `(0, 1, 0)`, `(0, 0, 1)`. -/
 theorem isTopologicallyFinitelyGenerated_padicInt :
     IsTopologicallyFinitelyGenerated (HeisenbergGroup ℤ_[p]) := by
   let s : Set (HeisenbergGroup ℤ_[p]) := {⟨1, 0, 0⟩, ⟨0, 1, 0⟩, ⟨0, 0, 1⟩}
-  have hs : s.Finite := by simp [s]
-  refine hs.isTopologicallyFinitelyGenerated (eq_top_iff.mpr fun a _ ↦ ?_)
+  refine (by simp [s] : s.Finite).isTopologicallyFinitelyGenerated (eq_top_iff.mpr fun a _ ↦ ?_)
   have hpow : ∀ {g : HeisenbergGroup ℤ_[p]}, g ∈ s → ∀ (c : ℤ_[p]),
       (isProP_padicInt p).padicPow g c ∈ (Subgroup.closure s).topologicalClosure := fun hg c ↦
     Subgroup.topologicalClosure_mono (Subgroup.closure_mono (Set.singleton_subset_iff.mpr hg))
       (((isProP_padicInt p).mem_topologicalClosure_closure_singleton_iff).mpr ⟨c, rfl⟩)
-  have h1 : (⟨a.x, 0, 0⟩ : HeisenbergGroup ℤ_[p]) ∈ (Subgroup.closure s).topologicalClosure := by
-    simpa [padicPow_eq] using hpow (g := ⟨1, 0, 0⟩) (by simp [s]) a.x
-  have h2 : (⟨0, a.y, 0⟩ : HeisenbergGroup ℤ_[p]) ∈ (Subgroup.closure s).topologicalClosure := by
-    simpa [padicPow_eq] using hpow (g := ⟨0, 1, 0⟩) (by simp [s]) a.y
-  have h3 : (⟨0, 0, a.z - a.x * a.y⟩ : HeisenbergGroup ℤ_[p]) ∈
-      (Subgroup.closure s).topologicalClosure := by
-    simpa [padicPow_eq] using hpow (g := ⟨0, 0, 1⟩) (by simp [s]) (a.z - a.x * a.y)
-  have ha : a = ⟨0, 0, a.z - a.x * a.y⟩ * ⟨a.x, 0, 0⟩ * ⟨0, a.y, 0⟩ := by
-    ext <;> simp
-  rw [ha]
-  exact mul_mem (mul_mem h3 h1) h2
+  exact (by ext <;> simp : a = ⟨0, 0, a.z - a.x * a.y⟩ * ⟨a.x, 0, 0⟩ * ⟨0, a.y, 0⟩) ▸
+    mul_mem (mul_mem
+      (by simpa [padicPow_eq] using hpow (g := ⟨0, 0, 1⟩) (by simp [s]) (a.z - a.x * a.y))
+      (by simpa [padicPow_eq] using hpow (g := ⟨1, 0, 0⟩) (by simp [s]) a.x))
+      (by simpa [padicPow_eq] using hpow (g := ⟨0, 1, 0⟩) (by simp [s]) a.y)
 
 /-- Every congruence level `HeisenbergGroup.level p m` is nonabelian. -/
-theorem not_isMulCommutative_level (m : ℕ) :
-    ¬ IsMulCommutative (level p m).toSubgroup := by
+theorem not_isMulCommutative_level (m : ℕ) : ¬ IsMulCommutative (level p m).toSubgroup := by
   intro hcomm
   let a : (level p m).toSubgroup :=
     ⟨⟨(p : ℤ_[p]) ^ m, 0, 0⟩, (mem_level_iff p m).mpr ⟨dvd_rfl, dvd_zero _, dvd_zero _⟩⟩
   let b : (level p m).toSubgroup :=
     ⟨⟨0, (p : ℤ_[p]) ^ m, 0⟩, (mem_level_iff p m).mpr ⟨dvd_zero _, dvd_rfl, dvd_zero _⟩⟩
-  have hz : (a * b).val.z = (b * a).val.z := congrArg (fun g ↦ g.val.z) (hcomm.is_comm.comm a b)
+  have hz := congrArg (fun g : (level p m).toSubgroup ↦ g.val.z) (hcomm.is_comm.comm a b)
   simp only [Subgroup.coe_mul, mul_z, zero_add, add_zero, mul_zero, a, b] at hz
-  have hne : (p : ℤ_[p]) ^ (m + m) ≠ 0 :=
-    pow_ne_zero (m + m) (Nat.cast_ne_zero.mpr hp.out.ne_zero)
-  exact hne (by rw [pow_add]; exact hz)
+  exact pow_ne_zero (m + m) (Nat.cast_ne_zero.mpr hp.out.ne_zero)
+    (show (p : ℤ_[p]) ^ (m + m) = 0 by rw [pow_add]; exact hz)
 
 /-- For every prime `p` and every `m ≥ 1` (with `m ≥ 2` at `p = 2`), the congruence level
 `HeisenbergGroup.level p m` is powerful. -/
 theorem isPowerful_level {m : ℕ} (hm : (if p = 2 then 2 else 1) ≤ m) :
     IsPowerful p (level p m).toSubgroup := by
   set r : ℕ := if p = 2 then 2 else 1
-  have hr : p ^ r = if p = 2 then 4 else p := by
-    by_cases hp2 : p = 2 <;> simp [r, hp2]
-  rw [isPowerful_iff, commutator_le]
-  rintro a _ b _
+  have hr : p ^ r = if p = 2 then 4 else p := by by_cases hp2 : p = 2 <;> simp [r, hp2]
+  rw [isPowerful_iff, commutator_le]; rintro a _ b _
   obtain ⟨⟨xa, hxa⟩, ⟨ya, hya⟩, -⟩ := (mem_level_iff p m).mp a.2
   obtain ⟨⟨xb, hxb⟩, ⟨yb, hyb⟩, -⟩ := (mem_level_iff p m).mp b.2
-  have hle : m ≤ 2 * m - r := by omega
   let c : (level p m).toSubgroup :=
-    ⟨⟨0, 0, (p : ℤ_[p]) ^ (2 * m - r) * (xa * yb - xb * ya)⟩,
-      (mem_level_iff p m).mpr ⟨dvd_zero _, dvd_zero _,
-        (pow_dvd_pow (p : ℤ_[p]) hle).trans (dvd_mul_right _ _)⟩⟩
-  have hcomm : ⁅a, b⁆ = c ^ (if p = 2 then 4 else p) := by
-    apply Subtype.ext
+    ⟨⟨0, 0, (p : ℤ_[p]) ^ (2 * m - r) * (xa * yb - xb * ya)⟩, (mem_level_iff p m).mpr
+      ⟨dvd_zero _, dvd_zero _, (pow_dvd_pow (p : ℤ_[p]) (by omega)).trans (dvd_mul_right _ _)⟩⟩
+  have hcomm : ⁅a, b⁆ = c ^ (if p = 2 then 4 else p) := Subtype.ext <| by
     have hval : ((⁅a, b⁆ : (level p m).toSubgroup) : HeisenbergGroup ℤ_[p]) =
         ⁅(a : HeisenbergGroup ℤ_[p]), (b : HeisenbergGroup ℤ_[p])⁆ :=
       map_commutatorElement (level p m).toSubgroup.subtype a b
     rw [hval, commutatorElement_eq, Subgroup.coe_pow, ← hr, pow_eq]
     refine HeisenbergGroup.ext (by simp [c]) (by simp [c]) ?_
     simp only [c, nsmul_eq_mul, Nat.cast_pow, mul_zero, add_zero, hxa, hya, hxb, hyb]
-    have hexp : r + (2 * m - r) = m + m := by omega
-    calc
-      (p : ℤ_[p]) ^ m * xa * ((p : ℤ_[p]) ^ m * yb) -
-          (p : ℤ_[p]) ^ m * xb * ((p : ℤ_[p]) ^ m * ya)
-        = (p : ℤ_[p]) ^ (m + m) * (xa * yb - xb * ya) := by rw [pow_add]; ring
-      _ = (p : ℤ_[p]) ^ r * ((p : ℤ_[p]) ^ (2 * m - r) * (xa * yb - xb * ya)) := by
-        rw [← mul_assoc, ← pow_add, hexp]
-  rw [hcomm]
-  exact pow_mem_closedPowerSubgroup c _
+    rw [← mul_assoc ((p : ℤ_[p]) ^ r), ← pow_add, show r + (2 * m - r) = m + m by omega, pow_add]
+    ring
+  exact hcomm ▸ pow_mem_closedPowerSubgroup c _
 
 /-- **Nonabelian uniform pro-`p` group of dimension `3`**: for every prime `p` and
 `(if p = 2 then 2 else 1) ≤ m`, `HeisenbergGroup.level p m` is uniform. -/
@@ -664,92 +572,65 @@ theorem isUniform_level {m : ℕ} (hm : (if p = 2 then 2 else 1) ≤ m) :
 theorem closedPowerSubgroup_level {m : ℕ} (hm : 1 ≤ m) :
     closedPowerSubgroup (level p m).toSubgroup p =
       (level p (m + 1)).toSubgroup.subgroupOf (level p m).toSubgroup := by
-  refine le_antisymm ((closedPowerSubgroup_le_iff ?_).mpr fun a ↦ ?_) fun a ha ↦ ?_
-  · exact (level p (m + 1)).isClosed.preimage continuous_subtype_val
+  refine le_antisymm ((closedPowerSubgroup_le_iff
+    ((level p (m + 1)).isClosed.preimage continuous_subtype_val)).mpr fun a ↦ ?_) fun a ha ↦ ?_
   · rw [mem_subgroupOf, Subgroup.coe_pow, pow_eq]
     obtain ⟨hx, hy, hz⟩ := (mem_level_iff p m).mp a.2
-    have hmul : ∀ {w : ℤ_[p]}, (p : ℤ_[p]) ^ m ∣ w → (p : ℤ_[p]) ^ (m + 1) ∣ (p : ℤ_[p]) * w := by
-      rintro w ⟨c, rfl⟩
-      exact ⟨c, by rw [pow_succ', mul_assoc]⟩
-    have hxy : (p : ℤ_[p]) ^ (m + 1) ∣ (p.choose 2 : ℤ_[p]) * (a.1.x * a.1.y) := by
-      have h2m : (p : ℤ_[p]) ^ (m + 1) ∣ (p : ℤ_[p]) ^ (m + m) :=
-        pow_dvd_pow (p : ℤ_[p]) (by omega)
-      exact (h2m.trans (pow_add (p : ℤ_[p]) m m ▸ mul_dvd_mul hx hy)).trans (dvd_mul_left _ _)
-    refine (mem_level_iff p (m + 1)).mpr
-      ⟨by simpa [nsmul_eq_mul] using hmul hx, by simpa [nsmul_eq_mul] using hmul hy, ?_⟩
-    simpa [nsmul_eq_mul] using dvd_add (hmul hz) hxy
+    have hmul : ∀ {w : ℤ_[p]}, (p : ℤ_[p]) ^ m ∣ w → (p : ℤ_[p]) ^ (m + 1) ∣ (p : ℤ_[p]) * w :=
+      fun ⟨c, hc⟩ ↦ ⟨c, by rw [hc, pow_succ', mul_assoc]⟩
+    have hxy : (p : ℤ_[p]) ^ (m + 1) ∣ (p.choose 2 : ℤ_[p]) * (a.1.x * a.1.y) :=
+      ((pow_dvd_pow (p : ℤ_[p]) (by omega : m + 1 ≤ m + m)).trans
+        (pow_add (p : ℤ_[p]) m m ▸ mul_dvd_mul hx hy)).trans (dvd_mul_left _ _)
+    exact (mem_level_iff p (m + 1)).mpr ⟨by simpa [nsmul_eq_mul] using hmul hx,
+      by simpa [nsmul_eq_mul] using hmul hy,
+      by simpa [nsmul_eq_mul] using dvd_add (hmul hz) hxy⟩
   · obtain ⟨⟨x, hx⟩, ⟨y, hy⟩, ⟨z, hz⟩⟩ := (mem_level_iff p (m + 1)).mp (mem_subgroupOf.mp ha)
-    let u : (level p m).toSubgroup :=
-      ⟨⟨(p : ℤ_[p]) ^ m * x, 0, 0⟩,
-        (mem_level_iff p m).mpr ⟨dvd_mul_right _ _, dvd_zero _, dvd_zero _⟩⟩
-    let v : (level p m).toSubgroup :=
-      ⟨⟨0, (p : ℤ_[p]) ^ m * y, 0⟩,
-        (mem_level_iff p m).mpr ⟨dvd_zero _, dvd_mul_right _ _, dvd_zero _⟩⟩
+    let u : (level p m).toSubgroup := ⟨⟨(p : ℤ_[p]) ^ m * x, 0, 0⟩,
+      (mem_level_iff p m).mpr ⟨dvd_mul_right _ _, dvd_zero _, dvd_zero _⟩⟩
+    let v : (level p m).toSubgroup := ⟨⟨0, (p : ℤ_[p]) ^ m * y, 0⟩,
+      (mem_level_iff p m).mpr ⟨dvd_zero _, dvd_mul_right _ _, dvd_zero _⟩⟩
     let w : (level p m).toSubgroup :=
       ⟨⟨0, 0, (p : ℤ_[p]) ^ m * (z - (p : ℤ_[p]) ^ (m + 1) * (x * y))⟩,
         (mem_level_iff p m).mpr ⟨dvd_zero _, dvd_zero _, dvd_mul_right _ _⟩⟩
-    have hprod : w ^ p * u ^ p * v ^ p = a := by
-      apply Subtype.ext
+    have hprod : w ^ p * u ^ p * v ^ p = a := Subtype.ext <| by
       simp only [Subgroup.coe_mul, Subgroup.coe_pow, pow_eq, u, v, w]
-      ext
-      · simp [hx, nsmul_eq_mul, pow_succ', mul_assoc]
-      · simp [hy, nsmul_eq_mul, pow_succ', mul_assoc]
-      · simp [hz, nsmul_eq_mul, pow_succ']
-        ring
-    rw [← hprod]
-    exact mul_mem (mul_mem (pow_mem_closedPowerSubgroup w p) (pow_mem_closedPowerSubgroup u p))
-      (pow_mem_closedPowerSubgroup v p)
+      ext <;> simp [hx, hy, hz, nsmul_eq_mul, pow_succ', mul_assoc]; ring
+    exact hprod ▸ mul_mem (mul_mem (pow_mem_closedPowerSubgroup w p)
+      (pow_mem_closedPowerSubgroup u p)) (pow_mem_closedPowerSubgroup v p)
 
 /-- For every `1 ≤ m`, `HeisenbergGroup.level p m` has uniform dimension `3`. -/
 @[simp]
 theorem uniformDimension_level {m : ℕ} (hm : 1 ≤ m) :
     uniformDimension p (level p m).toSubgroup = 3 := by
-  have hrel :
-      ((level p (m + 1)).toSubgroup.subgroupOf (level p m).toSubgroup).index = p ^ 3 := by
-    have hmul :
-        (level p (m + 1)).toSubgroup.relIndex (level p m).toSubgroup *
-          (level p m).toSubgroup.index = (level p (m + 1)).toSubgroup.index :=
-      Subgroup.relIndex_mul_index (level_antitone p (Nat.le_succ m))
+  have hrel : ((level p (m + 1)).toSubgroup.subgroupOf (level p m).toSubgroup).index = p ^ 3 := by
+    have hmul := Subgroup.relIndex_mul_index (level_antitone p (Nat.le_succ m))
     rw [index_level, index_level] at hmul
     apply Nat.eq_of_mul_eq_mul_right (pow_pos hp.out.pos (3 * m))
-    rw [← Subgroup.relIndex, hmul, ← pow_add]
-    congr 1
-    omega
+    rw [← Subgroup.relIndex, hmul, ← pow_add]; congr 1; omega
   rw [uniformDimension_def, closedPowerSubgroup_level p hm, hrel, Nat.log_pow hp.out.one_lt]
 
-/-- At `p = 2`, the congruence level `HeisenbergGroup.level 2 1` is not powerful: every fourth
-power lies in `level 2 3`, whereas `⁅(2, 0, 0), (0, 2, 0)⁆ = (0, 0, 4) ∉ level 2 3`. Thus level `4`
-is genuinely required at `p = 2`. -/
-theorem not_isPowerful_level_two_one : ¬ IsPowerful 2 (level 2 1).toSubgroup := by
-  intro hpow
+/-- At `p = 2`, `HeisenbergGroup.level 2 1` is not powerful: every fourth power lies in `level 2 3`,
+whereas `⁅(2, 0, 0), (0, 2, 0)⁆ = (0, 0, 4) ∉ level 2 3`. -/
+theorem not_isPowerful_level_two_one : ¬ IsPowerful 2 (level 2 1).toSubgroup := fun hpow ↦ by
   have hle : closedPowerSubgroup (level 2 1).toSubgroup 4 ≤
-      (level 2 3).toSubgroup.subgroupOf (level 2 1).toSubgroup := by
-    refine (closedPowerSubgroup_le_iff
-      ((level 2 3).isClosed.preimage continuous_subtype_val)).mpr fun a ↦ ?_
-    rw [mem_subgroupOf, Subgroup.coe_pow, pow_eq]
-    obtain ⟨⟨x, hx⟩, ⟨y, hy⟩, ⟨z, hz⟩⟩ := (mem_level_iff 2 1).mp a.2
-    have h42 : Nat.choose 4 2 = 6 := by decide
-    refine (mem_level_iff 2 3).mpr
-      ⟨⟨x, by dsimp only; rw [nsmul_eq_mul, hx]; norm_num; ring⟩,
-      ⟨y, by dsimp only; rw [nsmul_eq_mul, hy]; norm_num; ring⟩,
-      ⟨z + 3 * (x * y), by
-        dsimp only
-        rw [h42, nsmul_eq_mul, nsmul_eq_mul, hx, hy, hz]
-        norm_num
-        ring⟩⟩
+      (level 2 3).toSubgroup.subgroupOf (level 2 1).toSubgroup :=
+    (closedPowerSubgroup_le_iff ((level 2 3).isClosed.preimage continuous_subtype_val)).mpr
+      fun a ↦ by
+        rw [mem_subgroupOf, Subgroup.coe_pow, pow_eq]
+        obtain ⟨⟨x, hx⟩, ⟨y, hy⟩, ⟨z, hz⟩⟩ := (mem_level_iff 2 1).mp a.2
+        refine (mem_level_iff 2 3).mpr ⟨⟨x, by simp [hx]; ring⟩, ⟨y, by simp [hy]; ring⟩,
+          ⟨z + 3 * (x * y), by simp [show Nat.choose 4 2 = 6 from rfl, hx, hy, hz]; ring⟩⟩
   let a : (level 2 1).toSubgroup :=
     ⟨⟨2, 0, 0⟩, (mem_level_iff 2 1).mpr ⟨by simp, dvd_zero _, dvd_zero _⟩⟩
   let b : (level 2 1).toSubgroup :=
     ⟨⟨0, 2, 0⟩, (mem_level_iff 2 1).mpr ⟨dvd_zero _, by simp, dvd_zero _⟩⟩
-  have hmem : ⁅a, b⁆ ∈ (level 2 3).toSubgroup.subgroupOf (level 2 1).toSubgroup :=
-    hle ((isPowerful_iff.mp hpow) (commutator_mem_commutator (mem_top a) (mem_top b)))
+  have hz := ((mem_level_iff 2 3).mp (mem_subgroupOf.mp <|
+    hle ((isPowerful_iff.mp hpow) (commutator_mem_commutator (mem_top a) (mem_top b))))).2.2
   have hval : ((⁅a, b⁆ : (level 2 1).toSubgroup) : HeisenbergGroup ℤ_[2]) =
       ⁅(a : HeisenbergGroup ℤ_[2]), (b : HeisenbergGroup ℤ_[2])⁆ :=
     map_commutatorElement (level 2 1).toSubgroup.subtype a b
-  have hdvd : (2 : ℤ_[2]) ^ 3 ∣ (2 : ℤ_[2]) ^ 2 := by
-    have hz := ((mem_level_iff 2 3).mp (mem_subgroupOf.mp hmem)).2.2
-    rw [hval, commutatorElement_eq] at hz
-    simpa [a, b, sq] using hz
+  rw [hval, commutatorElement_eq] at hz
+  have hdvd : (2 : ℤ_[2]) ^ 3 ∣ (2 : ℤ_[2]) ^ 2 := by simpa [a, b, sq] using hz
   exact absurd ((pow_dvd_pow_iff PadicInt.prime_p.ne_zero PadicInt.prime_p.not_isUnit).mp hdvd)
     (by omega)
 
@@ -757,33 +638,14 @@ theorem not_isPowerful_level_two_one : ¬ IsPowerful 2 (level 2 1).toSubgroup :=
 theorem not_isUniform_level_two_one : ¬ IsUniform 2 (level 2 1).toSubgroup :=
   fun hU ↦ not_isPowerful_level_two_one hU.isPowerful
 
-/-- Subgroup `{a ∈ level p r | p ^ (2r) ∣ a.z}` of `HeisenbergGroup.level p r`. -/
 private def deepCenterSubgroup (r : ℕ) : Subgroup (level p r).toSubgroup where
   carrier := {a | (p : ℤ_[p]) ^ (2 * r) ∣ a.val.z}
   one_mem' := dvd_zero _
-  mul_mem' := fun {a b} ha hb ↦ by
-    obtain ⟨hax, -, -⟩ := (mem_level_iff p r).mp a.2
-    obtain ⟨-, hby, -⟩ := (mem_level_iff p r).mp b.2
-    have hxy : (p : ℤ_[p]) ^ (2 * r) ∣ a.val.x * b.val.y := by
-      rw [two_mul, pow_add]; exact mul_dvd_mul hax hby
-    exact dvd_add (dvd_add ha hb) hxy
-  inv_mem' := fun {a} ha ↦ by
-    obtain ⟨hax, hay, -⟩ := (mem_level_iff p r).mp a.2
-    have hxy : (p : ℤ_[p]) ^ (2 * r) ∣ a.val.x * a.val.y := by
-      rw [two_mul, pow_add]; exact mul_dvd_mul hax hay
-    exact dvd_add (dvd_neg.mpr ha) hxy
+  mul_mem' := fun {a b} ha hb ↦ dvd_add (dvd_add ha hb) <| two_mul r ▸ pow_add (p : ℤ_[p]) r r ▸
+    mul_dvd_mul ((mem_level_iff p r).mp a.2).1 ((mem_level_iff p r).mp b.2).2.1
+  inv_mem' := fun {a} ha ↦ dvd_add (dvd_neg.mpr ha) <| two_mul r ▸ pow_add (p : ℤ_[p]) r r ▸
+    mul_dvd_mul ((mem_level_iff p r).mp a.2).1 ((mem_level_iff p r).mp a.2).2.1
 
-/-- `deepCenterSubgroup p r` is open in `HeisenbergGroup.level p r`. -/
-private theorem isOpen_deepCenterSubgroup (r : ℕ) :
-    IsOpen (deepCenterSubgroup p r : Set (level p r).toSubgroup) :=
-  Subgroup.isOpen_mono
-    (H₁ := (level p (2 * r)).toSubgroup.subgroupOf (level p r).toSubgroup)
-    (H₂ := deepCenterSubgroup p r)
-    (fun _ ha ↦ ((mem_level_iff p (2 * r)).mp (mem_subgroupOf.mp ha)).2.2)
-    ((level p (2 * r)).isOpen.preimage continuous_subtype_val)
-
-/-- Subgroup `{a | p ^ (2r) ∣ a.x ∧ p ^ (2r) ∣ a.y ∧ p ^ (2r + 1) ∣ a.z}` containing all
-`p ^ r`-th powers of `deepCenterSubgroup p r` when `1 ≤ r`. -/
 private def deepCenterPowerBound (r : ℕ) (hr1 : 1 ≤ r) : Subgroup (HeisenbergGroup ℤ_[p]) where
   carrier := {a | (p : ℤ_[p]) ^ (2 * r) ∣ a.x ∧ (p : ℤ_[p]) ^ (2 * r) ∣ a.y ∧
     (p : ℤ_[p]) ^ (2 * r + 1) ∣ a.z}
@@ -795,20 +657,6 @@ private def deepCenterPowerBound (r : ℕ) (hr1 : 1 ≤ r) : Subgroup (Heisenber
     dvd_add (dvd_neg.mpr ha.2.2) ((pow_dvd_pow (p : ℤ_[p]) (by omega : 2 * r + 1 ≤
       2 * r + 2 * r)).trans (pow_add (p : ℤ_[p]) (2 * r) (2 * r) ▸ mul_dvd_mul ha.1 ha.2.1))⟩
 
-/-- `deepCenterPowerBound p r hr1` is closed in `HeisenbergGroup ℤ_[p]`. -/
-private theorem isClosed_deepCenterPowerBound (r : ℕ) (hr1 : 1 ≤ r) :
-    IsClosed (deepCenterPowerBound p r hr1 : Set (HeisenbergGroup ℤ_[p])) :=
-  Subgroup.isClosed_of_isOpen (deepCenterPowerBound p r hr1)
-    (Subgroup.isOpen_mono (H₁ := (level p (2 * r + 1)).toSubgroup)
-      (H₂ := deepCenterPowerBound p r hr1)
-      (fun a ha ↦ by
-        obtain ⟨hx, hy, hz⟩ := (mem_level_iff p (2 * r + 1)).mp ha
-        exact ⟨(pow_dvd_pow (p : ℤ_[p]) (Nat.le_succ _)).trans hx,
-          (pow_dvd_pow (p : ℤ_[p]) (Nat.le_succ _)).trans hy, hz⟩)
-      (level p (2 * r + 1)).isOpen)
-
-/-- Every `(if p = 2 then 4 else p)`-th power in `deepCenterSubgroup p (if p = 2 then 2 else 1)`
-lies in `deepCenterPowerBound`. -/
 private theorem closedPowerSubgroup_deepCenterSubgroup_le :
     let r : ℕ := if p = 2 then 2 else 1
     let hr1 : 1 ≤ r := by by_cases hp2 : p = 2 <;> simp [r, hp2]
@@ -823,21 +671,25 @@ private theorem closedPowerSubgroup_deepCenterSubgroup_le :
     · subst hp2; decide
     · simpa [e, hp2] using
         hp.out.dvd_choose_self two_ne_zero (lt_of_le_of_ne hp.out.two_le (Ne.symm hp2))
-  refine (closedPowerSubgroup_le_iff (((isClosed_deepCenterPowerBound p r hr1).preimage
-    continuous_subtype_val).preimage continuous_subtype_val)).mpr fun a ↦ ?_
+  have hM_closed : IsClosed (deepCenterPowerBound p r hr1 : Set (HeisenbergGroup ℤ_[p])) :=
+    Subgroup.isClosed_of_isOpen _ <| Subgroup.isOpen_mono (H₁ := (level p (2 * r + 1)).toSubgroup)
+      (fun a ha ↦ let ⟨hx, hy, hz⟩ := (mem_level_iff p (2 * r + 1)).mp ha
+        ⟨(pow_dvd_pow _ (Nat.le_succ _)).trans hx, (pow_dvd_pow _ (Nat.le_succ _)).trans hy, hz⟩)
+      (level p (2 * r + 1)).isOpen
+  refine (closedPowerSubgroup_le_iff
+    ((hM_closed.preimage continuous_subtype_val).preimage continuous_subtype_val)).mpr fun a ↦ ?_
   rw [mem_subgroupOf, mem_subgroupOf, Subgroup.coe_pow, Subgroup.coe_pow, pow_eq]
   obtain ⟨hax, hay, -⟩ := (mem_level_iff p r).mp a.1.2
-  have haz : (p : ℤ_[p]) ^ (2 * r) ∣ a.1.1.z := a.2
   have he_eq : (e : ℤ_[p]) = (p : ℤ_[p]) ^ r := by rw [← hr, Nat.cast_pow]
-  have hxy : (p : ℤ_[p]) ^ (2 * r) ∣ a.1.1.x * a.1.1.y := by
-    rw [two_mul, pow_add]; exact mul_dvd_mul hax hay
+  have hxy : (p : ℤ_[p]) ^ (2 * r) ∣ a.1.1.x * a.1.1.y :=
+    two_mul r ▸ pow_add (p : ℤ_[p]) r r ▸ mul_dvd_mul hax hay
   obtain ⟨c, hc⟩ := hdvd_choose
   refine ⟨by simpa only [nsmul_eq_mul, he_eq, two_mul, pow_add] using mul_dvd_mul_left _ hax,
     by simpa only [nsmul_eq_mul, he_eq, two_mul, pow_add] using mul_dvd_mul_left _ hay,
     dvd_add ?_ ?_⟩
   · rw [nsmul_eq_mul, he_eq]
     exact (pow_dvd_pow (p : ℤ_[p]) (by omega : 2 * r + 1 ≤ r + 2 * r)).trans
-      (pow_add (p : ℤ_[p]) r (2 * r) ▸ mul_dvd_mul_left _ haz)
+      (pow_add (p : ℤ_[p]) r (2 * r) ▸ mul_dvd_mul_left _ a.2)
   · rw [nsmul_eq_mul, hc, Nat.cast_mul, mul_assoc, pow_succ']
     exact mul_dvd_mul_left _ (dvd_mul_of_dvd_right hxy _)
 
@@ -848,28 +700,23 @@ theorem exists_openSubgroup_not_isPowerful_and_not_isUniform_level :
     ∃ U : OpenSubgroup (level p (if p = 2 then 2 else 1)).toSubgroup,
       ¬ IsPowerful p U.toSubgroup ∧ ¬ IsUniform p U.toSubgroup := by
   set r : ℕ := if p = 2 then 2 else 1
-  have hr1 : 1 ≤ r := by by_cases hp2 : p = 2 <;> simp [r, hp2]
-  let U : OpenSubgroup (level p r).toSubgroup :=
-    ⟨deepCenterSubgroup p r, isOpen_deepCenterSubgroup p r⟩
-  let M : Subgroup (HeisenbergGroup ℤ_[p]) := deepCenterPowerBound p r hr1
-  have hnotpow : ¬ IsPowerful p U.toSubgroup := by
-    intro hpow
-    let a : U.toSubgroup :=
-      ⟨⟨⟨(p : ℤ_[p]) ^ r, 0, 0⟩,
-        (mem_level_iff p r).mpr ⟨dvd_rfl, dvd_zero _, dvd_zero _⟩⟩, dvd_zero _⟩
-    let b : U.toSubgroup :=
-      ⟨⟨⟨0, (p : ℤ_[p]) ^ r, 0⟩,
-        (mem_level_iff p r).mpr ⟨dvd_zero _, dvd_rfl, dvd_zero _⟩⟩, dvd_zero _⟩
-    have hmem : ⁅a, b⁆ ∈ (M.subgroupOf (level p r).toSubgroup).subgroupOf U.toSubgroup :=
-      (closedPowerSubgroup_deepCenterSubgroup_le p)
-        ((isPowerful_iff.mp hpow) (commutator_mem_commutator (mem_top a) (mem_top b)))
+  let U : OpenSubgroup (level p r).toSubgroup := ⟨deepCenterSubgroup p r, Subgroup.isOpen_mono
+    (H₁ := (level p (2 * r)).toSubgroup.subgroupOf (level p r).toSubgroup)
+    (fun _ ha ↦ ((mem_level_iff p (2 * r)).mp (mem_subgroupOf.mp ha)).2.2)
+    ((level p (2 * r)).isOpen.preimage continuous_subtype_val)⟩
+  have hnotpow : ¬ IsPowerful p U.toSubgroup := fun hpow ↦ by
+    let a : U.toSubgroup := ⟨⟨⟨(p : ℤ_[p]) ^ r, 0, 0⟩,
+      (mem_level_iff p r).mpr ⟨dvd_rfl, dvd_zero _, dvd_zero _⟩⟩, dvd_zero _⟩
+    let b : U.toSubgroup := ⟨⟨⟨0, (p : ℤ_[p]) ^ r, 0⟩,
+      (mem_level_iff p r).mpr ⟨dvd_zero _, dvd_rfl, dvd_zero _⟩⟩, dvd_zero _⟩
+    have hz := (mem_subgroupOf.mp (mem_subgroupOf.mp <|
+      closedPowerSubgroup_deepCenterSubgroup_le p
+        ((isPowerful_iff.mp hpow) (commutator_mem_commutator (mem_top a) (mem_top b))))).2.2
     have hval : ((⁅a, b⁆ : U.toSubgroup) : HeisenbergGroup ℤ_[p]) =
-        ⁅(a.1 : HeisenbergGroup ℤ_[p]), (b.1 : HeisenbergGroup ℤ_[p])⁆ := by
-      have h1 : ((⁅a, b⁆ : U.toSubgroup) : (level p r).toSubgroup) = ⁅a.1, b.1⁆ :=
-        map_commutatorElement U.toSubgroup.subtype a b
-      rw [h1]
-      exact map_commutatorElement (level p r).toSubgroup.subtype a.1 b.1
-    have hz := (mem_subgroupOf.mp (mem_subgroupOf.mp hmem)).2.2
+        ⁅(a.1 : HeisenbergGroup ℤ_[p]), (b.1 : HeisenbergGroup ℤ_[p])⁆ :=
+      (map_commutatorElement U.toSubgroup.subtype a b ▸ rfl :
+        ((⁅a, b⁆ : U.toSubgroup) : (level p r).toSubgroup).val = (⁅a.1, b.1⁆ : _).val).trans
+        (map_commutatorElement (level p r).toSubgroup.subtype a.1 b.1)
     rw [hval, commutatorElement_eq] at hz
     have hdvd : (p : ℤ_[p]) ^ (2 * r + 1) ∣ (p : ℤ_[p]) ^ (2 * r) := by
       simpa only [a, b, mul_zero, sub_zero, ← pow_add, ← two_mul] using hz
