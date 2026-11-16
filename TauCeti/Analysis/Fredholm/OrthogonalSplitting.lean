@@ -168,7 +168,7 @@ private theorem orthogonal_ker_projection_of_ker_parametrization {X : Type*} [To
   · obtain ⟨v, rfl⟩ := hk
     exact gramProjection_apply_apply hx.2 v
   · obtain ⟨v, rfl⟩ := hk
-    exact inner_sub_gramProjection_apply hx.2 e v
+    exact gramProjection_inner_eq_zero hx.2 e v
 
 variable {X : Type*} [TopologicalSpace X] {T : X → E →L[𝕜] F} {x₀ : X}
 

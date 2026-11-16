@@ -46,7 +46,7 @@ depends continuously, and over `ℝ` or `ℂ` real-smoothly, on `κ`.
 * `ContinuousLinearMap.gramProjection`: the projection `κ (A† A)⁻¹ A† ι`
   (`ContinuousLinearMap.gramProjection_def`) onto the range of `κ` along its `ι`-orthogonal
   complement (`ContinuousLinearMap.gramProjection_apply_apply`,
-  `ContinuousLinearMap.inner_sub_gramProjection_apply`), continuous and real `C^n` in `κ`
+  `ContinuousLinearMap.gramProjection_inner_eq_zero`), continuous and real `C^n` in `κ`
   (`ContinuousLinearMap.continuousAt_gramProjection`,
   `ContinuousLinearMap.contDiffAt_gramProjection`).
 * `LinearMap.finrank_orthogonal_range_of_injective`: the dimension of the orthogonal
@@ -161,7 +161,7 @@ variable [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F] [Co
 /-- The projection `κ (A† A)⁻¹ A† ι` with `A = ι κ`, for an operator `ι : E →L[𝕜] V` into a Hilbert
 space and `κ : F →L[𝕜] E`. Where `A† A` is invertible, it projects `E` onto the range of `κ` along
 the `ι`-orthogonal complement of that range (`ContinuousLinearMap.gramProjection_apply_apply`,
-`ContinuousLinearMap.inner_sub_gramProjection_apply`). -/
+`ContinuousLinearMap.gramProjection_inner_eq_zero`). -/
 noncomputable def gramProjection (ι : E →L[𝕜] V) (κ : F →L[𝕜] E) : E →L[𝕜] E :=
   κ ∘L gramLeftInverse (ι ∘L κ) ∘L ι
 
@@ -183,7 +183,7 @@ theorem gramProjection_apply_apply {ι : E →L[𝕜] V} {κ : F →L[𝕜] E}
 
 /-- When `A† A` is invertible, `ι (e - κ (A† A)⁻¹ A† ι e)` is orthogonal to the image under `ι` of
 the range of `κ`. -/
-theorem inner_sub_gramProjection_apply {ι : E →L[𝕜] V} {κ : F →L[𝕜] E}
+theorem gramProjection_inner_eq_zero {ι : E →L[𝕜] V} {κ : F →L[𝕜] E}
     (hG : IsUnit (adjoint (ι ∘L κ) ∘L (ι ∘L κ))) (e : E) (v : F) :
     ⟪ι (e - gramProjection ι κ e), ι (κ v)⟫_𝕜 = 0 := by
   have h := congr($(adjoint_comp_self_comp_gramLeftInverse hG) (ι e))
