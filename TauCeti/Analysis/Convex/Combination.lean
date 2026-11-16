@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Convex.Combination
 public import Mathlib.Analysis.Convex.Between
 public import Mathlib.Basic.Real.Basic
+import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.Linarith
@@ -26,7 +27,9 @@ simplices given in an affine chart.
 
 A convex set containing `0` also contains every combination `∑ i, w i • z i` of its points with
 nonnegative weights of total at most `1`, the missing weight being put on `0`
-(`Convex.sum_mem_of_zero_mem`). If the set is moreover symmetric, the coefficients may have any
+(`Convex.sum_mem_of_zero_mem`); for instance the combination with the weights
+`b i ∏_{j < i} (1 - b j)` of numbers `b i ∈ [0, 1]` (`Convex.sum_mul_prod_one_sub_smul_mem`). If
+the set is moreover symmetric, the coefficients may have any
 sign as long as their absolute values sum to at most `1` (`Convex.sum_mem_of_sum_abs_le_one`). In
 particular such a set contains the weighted cross-polytope `{x | ∑ i, a i * |b.repr x i| ≤ 1}` as
 soon as it contains each `(a i)⁻¹ • b i` for positive weights `a i`
@@ -133,6 +136,20 @@ theorem sum_mem_of_sum_abs_le_one (hs : Convex 𝕜 s) (h₀ : (0 : E) ∈ s)
   refine hs.sum_mem_of_zero_mem h₀ (fun i _ ↦ abs_nonneg _) hc fun i hi ↦ ?_
   split_ifs
   exacts [hz i hi, hneg _ (hz i hi)]
+
+/-- A convex set containing `0` contains the combination of its points `z i` with the weights
+`b i ∏_{j < i} (1 - b j)` of numbers `b i ∈ [0, 1]`. These weights, those of the partition of
+unity built from bump functions `b i`, are nonnegative with sum `1 - ∏ i, (1 - b i) ≤ 1`
+(`Finset.prod_one_sub_ordered`). -/
+theorem sum_mul_prod_one_sub_smul_mem [LinearOrder ι] (hs : Convex 𝕜 s) (h₀ : (0 : E) ∈ s)
+    {t : Finset ι} {b : ι → 𝕜} (hb : ∀ i ∈ t, b i ∈ Set.Icc 0 1) {z : ι → E}
+    (hz : ∀ i ∈ t, z i ∈ s) :
+    ∑ i ∈ t, (b i * ∏ j ∈ t with j < i, (1 - b j)) • z i ∈ s := by
+  have hp (u : Finset ι) (hu : u ⊆ t) : 0 ≤ ∏ j ∈ u, (1 - b j) :=
+    Finset.prod_nonneg fun j hj ↦ sub_nonneg.2 (hb j (hu hj)).2
+  refine hs.sum_mem_of_zero_mem h₀ (fun i hi ↦ mul_nonneg (hb i hi).1
+    (hp _ (Finset.filter_subset _ _))) ?_ hz
+  linarith [Finset.prod_one_sub_ordered t b, hp t subset_rfl]
 
 /-- **A weighted cross-polytope inside a symmetric convex set.** Let `s` be a convex set
 containing `0` and symmetric about it, `b` a basis and `a` positive weights with `b i ∈ a i • s`
