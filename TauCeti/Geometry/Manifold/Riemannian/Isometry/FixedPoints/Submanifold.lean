@@ -48,13 +48,17 @@ embedded submanifold structures induced by slice charts
 ## Main definitions
 
 * `TauCeti.fixedTangentSubspace K p`: the tangent vectors at `p` fixed by the differential of
-  every element of `K`; at a fixed point these are the invariant vectors of the tangent
-  representation (`TauCeti.invariants_tangentRepresentation_eq_fixedTangentSubspace`).
+  every element of the stabilizer of `p`, which is all of `K` at a fixed point; these are the
+  invariant vectors of the tangent representation
+  (`TauCeti.invariants_tangentRepresentation_eq_fixedTangentSubspace`).
 * `TauCeti.fixedPointsOfFinrank K M d`: the points of `M^K` at which this subspace has dimension
   `d`.
 
 ## Main results
 
+* `TauCeti.iUnion_fixedPointsOfFinrank`, `TauCeti.pairwise_disjoint_fixedPointsOfFinrank`,
+  `TauCeti.isOpen_preimage_val_fixedPointsOfFinrank`: the sets `M^K_d` partition the fixed set
+  into relatively open pieces.
 * `TauCeti.finrank_fixedTangentSubspace_eq_of_mem_source`,
   `TauCeti.isLocallyConstant_finrank_fixedTangentSubspace`: the dimension of the fixed tangent
   subspace is locally constant on the fixed set.
@@ -86,38 +90,44 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [MulAction K M]
 
 /-- The tangent vectors at `p` fixed by the differential at `p` of the action of every element
-of `K`. At a point of the fixed set `M^K` these are the invariant vectors of the tangent
-representation (`TauCeti.invariants_tangentRepresentation_eq_fixedTangentSubspace`). -/
+of the stabilizer of `p`; these are the invariant vectors of the tangent representation
+(`TauCeti.invariants_tangentRepresentation_eq_fixedTangentSubspace`). At a point of the fixed set
+`M^K` the stabilizer is all of `K` (`TauCeti.mem_fixedTangentSubspace_of_mem_fixedPoints`). -/
 def fixedTangentSubspace (p : M) : Submodule ℝ (TangentSpace I p) where
-  carrier := {v | ∀ k : K, mfderiv I I (k • ·) p v = v}
+  carrier := {v | ∀ k ∈ stabilizer K p, mfderiv I I (k • ·) p v = v}
   -- The differentials land in `T_(k • p) M`, which like `T_p M` is the model space `E`; `rfl`
   -- identifies the two copies of the remaining operation.
-  add_mem' hv hw k := by
-    simp only [map_add, hv k, hw k]
+  add_mem' hv hw k hk := by
+    simp only [map_add, hv k hk, hw k hk]
     rfl
-  zero_mem' k := by
+  zero_mem' k _ := by
     simp only [map_zero]
     rfl
-  smul_mem' c v hv k := by
-    simp only [map_smul, hv k]
+  smul_mem' c v hv k hk := by
+    simp only [map_smul, hv k hk]
     rfl
 
 variable {K} in
 @[simp]
 theorem mem_fixedTangentSubspace {p : M} {v : TangentSpace I p} :
-    v ∈ fixedTangentSubspace (I := I) K p ↔ ∀ k : K, mfderiv I I (k • ·) p v = v :=
+    v ∈ fixedTangentSubspace (I := I) K p ↔ ∀ k ∈ stabilizer K p, mfderiv I I (k • ·) p v = v :=
   Iff.rfl
 
 variable {K} in
-/-- At a point of the fixed set, the fixed tangent subspace is the space of invariant vectors of
-the tangent representation of the stabilizer, which is all of `K`. -/
+/-- At a point of the fixed set, the stabilizer is all of `K`, so the fixed tangent subspace
+consists of the tangent vectors fixed by the differential of every element of `K`. -/
+theorem mem_fixedTangentSubspace_of_mem_fixedPoints {p : M} (hp : p ∈ MulAction.fixedPoints K M)
+    {v : TangentSpace I p} :
+    v ∈ fixedTangentSubspace (I := I) K p ↔ ∀ k : K, mfderiv I I (k • ·) p v = v :=
+  ⟨fun h k ↦ h k (hp k), fun h k _ ↦ h k⟩
+
+variable {K} in
+/-- The fixed tangent subspace is the space of invariant vectors of the tangent representation of
+the stabilizer. -/
 theorem invariants_tangentRepresentation_eq_fixedTangentSubspace {p : M}
-    (hd : ∀ g ∈ stabilizer K p, MDifferentiableAt I I (fun y : M ↦ g • y) p)
-    (hp : p ∈ MulAction.fixedPoints K M) :
+    (hd : ∀ g ∈ stabilizer K p, MDifferentiableAt I I (fun y : M ↦ g • y) p) :
     (tangentRepresentation hd).toRepresentation.invariants = fixedTangentSubspace (I := I) K p :=
-  Submodule.ext fun _ ↦
-    (mem_invariants_tangentRepresentation_iff_of_mem_fixedPoints hd hp).trans
-      mem_fixedTangentSubspace.symm
+  Submodule.ext fun _ ↦ mem_invariants_tangentRepresentation_iff hd
 
 variable (M) in
 /-- The points of the fixed set `M^K` at which the tangent vectors fixed by the differentials of
@@ -131,6 +141,25 @@ theorem mem_fixedPointsOfFinrank {d : ℕ} {p : M} :
     p ∈ fixedPointsOfFinrank (I := I) K M d ↔
       p ∈ MulAction.fixedPoints K M ∧ Module.finrank ℝ (fixedTangentSubspace (I := I) K p) = d :=
   Iff.rfl
+
+variable {K} in
+/-- Each part of the fixed set of a given dimension lies in the fixed set. -/
+theorem fixedPointsOfFinrank_subset_fixedPoints (d : ℕ) :
+    fixedPointsOfFinrank (I := I) K M d ⊆ MulAction.fixedPoints K M :=
+  fun _ hp ↦ hp.1
+
+variable (M) in
+/-- The fixed set is the union of its parts of each dimension. -/
+theorem iUnion_fixedPointsOfFinrank :
+    ⋃ d, fixedPointsOfFinrank (I := I) K M d = MulAction.fixedPoints K M :=
+  Subset.antisymm (iUnion_subset fixedPointsOfFinrank_subset_fixedPoints) fun _ hp ↦
+    mem_iUnion.2 ⟨_, hp, rfl⟩
+
+variable (M) in
+/-- The parts of the fixed set of different dimensions are disjoint. -/
+theorem pairwise_disjoint_fixedPointsOfFinrank :
+    Pairwise (Function.onFun Disjoint (fixedPointsOfFinrank (I := I) K M)) :=
+  fun _ _ hde ↦ disjoint_left.2 fun _ hp hq ↦ hde (hp.2.symm.trans hq.2)
 
 end FixedTangentSubspace
 
@@ -160,7 +189,9 @@ private theorem exists_mem_maximalAtlas_isSliceChart {p : M}
   refine ⟨φ.toOpenPartialHomeomorph,
     OpenPartialHomeomorph.mem_maximalAtlas_of_contMDiffOn _
       (ι.contMDiff.comp_contMDiffOn φ.contMDiffOn_toFun)
-      (φ.contMDiffOn_invFun.comp ι'.contMDiff.contMDiffOn fun _ hz ↦ hz), hpφ, hφ⟩
+      (φ.contMDiffOn_invFun.comp ι'.contMDiff.contMDiffOn fun _ hz ↦ hz), hpφ,
+    isSliceChart_iff.2 fun z hz ↦ (isSliceChart_iff.1 hφ z hz).trans
+      (mem_fixedTangentSubspace_of_mem_fixedPoints hp).symm⟩
 
 /-- **The dimension of the fixed tangent subspace is constant near a fixed point.** If a chart of
 the maximal smooth atlas flattens the fixed set onto the fixed tangent subspace at `p`, then at
@@ -195,6 +226,14 @@ theorem isLocallyConstant_finrank_fixedTangentSubspace :
   filter_upwards [continuous_subtype_val.continuousAt.preimage_mem_nhds
     (q.open_source.mem_nhds hpq)] with z hz
   exact finrank_fixedTangentSubspace_eq_of_mem_source hK hq hs hz z.2
+
+/-- Each part of the fixed set of a given dimension is open in the fixed set. -/
+theorem isOpen_preimage_val_fixedPointsOfFinrank (d : ℕ) :
+    IsOpen ((↑) ⁻¹' fixedPointsOfFinrank (I := 𝓘(ℝ, E)) K M d :
+      Set (MulAction.fixedPoints K M)) := by
+  convert (isLocallyConstant_finrank_fixedTangentSubspace hK).isOpen_fiber d using 1
+  ext z
+  exact and_iff_right z.2
 
 /-- **A connected part of the fixed set has a single dimension.** A preconnected subset of the
 fixed set containing a point `p` lies in the part of the fixed set where the fixed tangent
@@ -238,7 +277,7 @@ theorem exists_isSmoothEmbedding_fixedPointsOfFinrank {d : ℕ} {L : Submodule �
   refine ⟨C, hman, hemb, fun y ↦ ?_⟩
   have hle : LinearMap.range (mfderiv 𝓘(ℝ, L) 𝓘(ℝ, E) Subtype.val y).toLinearMap ≤
       fixedTangentSubspace (I := 𝓘(ℝ, E)) K (y : M) := by
-    rintro _ ⟨u, rfl⟩ k
+    rintro _ ⟨u, rfl⟩ k -
     -- Every `k •` is the identity on the fixed set, so it fixes the tangent image of `val`.
     have hcomp : ((k • ·) ∘ Subtype.val : fixedPointsOfFinrank (I := 𝓘(ℝ, E)) K M d → M) =
         Subtype.val := funext fun z ↦ z.2.1 k
