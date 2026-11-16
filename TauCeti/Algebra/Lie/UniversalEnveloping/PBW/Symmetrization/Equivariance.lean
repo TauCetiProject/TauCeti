@@ -47,15 +47,12 @@ freeness, so its centre criterion holds for every Lie algebra over a commutative
 
 * J. Dixmier, *Enveloping Algebras*, §2.4.
 * P. Etingof, *Representations of Lie groups*, proof of Theorem 13.5.
-
-The word-level commutator computation behind `IsPBWSymmetrization.map_lie` follows the proof of
-`TauCeti.UniversalEnvelopingAlgebra.lie_ι_pbwSymmetrization_tprod` in
-`TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Symmetrization.Basic` (#33009), the degreewise
-version for the canonical symmetrization. The leading-symbol computation behind
-`IsPBWSymmetrization.mem_pbwFiltration_iff` follows the proof of
-`TauCeti.UniversalEnvelopingAlgebra.mk_pbwSymmetrization` in the same file, which is adapted from
-the closed Tau Ceti PR https://github.com/TauCetiProject/TauCeti/pull/18162 (feat: construct
-degreewise PBW symmetrization).
+* The degreewise symmetrization in
+  `TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Symmetrization.Basic`: the word-level commutator
+  computation for `IsPBWSymmetrization.map_lie` adapts
+  `TauCeti.UniversalEnvelopingAlgebra.lie_ι_pbwSymmetrization_tprod`, and the leading-symbol
+  computation for `IsPBWSymmetrization.mem_pbwFiltration_iff` adapts
+  `TauCeti.UniversalEnvelopingAlgebra.mk_pbwSymmetrization`.
 -/
 
 public section
