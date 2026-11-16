@@ -11,12 +11,15 @@ public import Mathlib.Topology.MetricSpace.CoveringNumbers
 import Mathlib.Algebra.Order.Floor.Extended
 
 /-!
-# Packing numbers and separated sets
+# Finite covers, packing numbers and separated sets
 
-Two metric facts about `ε`-separated sets, used to bound packing and covering numbers.
+Metric facts about finite `ε`-covers and `ε`-separated sets, used to bound packing and
+covering numbers.
 
 ## Main results
 
+* `Metric.externalCoveringNumber_ne_top_iff`: finiteness of the external covering number
+  is equivalent to existence of a finite cover.
 * `TauCeti.packingNumber_le_of_forall_finset_card_le`: a finite bound on the sizes of the finite
   `ε`-separated subsets of a set bounds its packing number.
 * `Metric.IsSeparated.pairwiseDisjoint_closedBall`: the closed balls of radius `ε / 2` around
@@ -51,6 +54,18 @@ theorem packingNumber_le_of_forall_finset_card_le {X : Type*} [PseudoEMetricSpac
 end TauCeti
 
 namespace Metric
+
+/-- The external covering number is finite exactly when a finite cover exists. -/
+theorem externalCoveringNumber_ne_top_iff {X : Type*} [PseudoEMetricSpace X]
+    {s : Set X} {r : ℝ≥0} :
+    externalCoveringNumber r s ≠ ⊤ ↔ ∃ N : Set X, N.Finite ∧ IsCover r s N := by
+  rw [← lt_top_iff_ne_top]
+  simp only [externalCoveringNumber, iInf_lt_iff]
+  constructor
+  · rintro ⟨N, hc, hN⟩
+    exact ⟨N, Set.encard_lt_top_iff.mp hN, hc⟩
+  · rintro ⟨N, hN, hc⟩
+    exact ⟨N, hc, Set.encard_lt_top_iff.mpr hN⟩
 
 /-- The closed balls of radius `ε / 2` around the points of an `ε`-separated set are pairwise
 disjoint. -/
