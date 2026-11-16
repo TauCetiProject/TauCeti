@@ -486,7 +486,7 @@ theorem exists_forall_contDiff_cutoff_closedBall [InnerProductSpace ℝ E] [Comp
   obtain ⟨L₂, hL₂⟩ := Real.smoothTransition.exists_forall_norm_deriv_deriv_le
   have hL₁0 : 0 ≤ L₁ := (norm_nonneg _).trans (hL₁ 0)
   have hL₂0 : 0 ≤ L₂ := (norm_nonneg _).trans (hL₂ 0)
-  have hS1neg : ∀ τ < 0, deriv S τ = 0 := fun τ hτ => Real.smoothTransition.deriv_of_neg hτ
+  have hS1neg : ∀ τ < 0, deriv S τ = 0 := fun τ hτ => Real.smoothTransition.deriv_of_nonpos hτ.le
   have hS2neg : ∀ τ < 0, deriv (deriv S) τ = 0 := fun τ hτ =>
     Real.smoothTransition.deriv_deriv_of_neg hτ
   refine ⟨2 * L₁ + 4 * L₂, by positivity, fun x₀ r R hr hrR => ?_⟩

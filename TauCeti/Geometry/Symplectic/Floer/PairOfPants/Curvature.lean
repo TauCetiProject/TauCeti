@@ -405,7 +405,7 @@ theorem hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt (ω : Smo
   have key := det_mul_hamiltonianCurvature_pairOfPantsPerturbation_endChart ω hH hHs
     (by linarith : 0 < q.endSign * w.1) x
   have hβ : deriv smoothTransition (q.endSign * w.1 - 1) = 0 :=
-    smoothTransition.deriv_of_one_lt (by linarith)
+    smoothTransition.deriv_of_one_le (by linarith)
   rw [hβ, mul_zero, zero_mul] at key
   exact (mul_eq_zero.1 key).resolve_left (det_fderiv_endChart_pos q w).ne'
 
@@ -462,8 +462,8 @@ theorem integrableOn_hamiltonianCurvature_pairOfPantsPerturbation (ω : SmoothTw
       exact hwC ⟨⟨by linarith [h.1], by linarith [h.2]⟩,
         Ico_subset_Icc_self (mem_endStrip_iff.1 hw).2⟩
     rcases hσ with hσ | hσ
-    · simp [smoothTransition.deriv_of_neg hσ]
-    · simp [smoothTransition.deriv_of_one_lt hσ]
+    · simp [smoothTransition.deriv_of_nonpos hσ.le]
+    · simp [smoothTransition.deriv_of_one_le hσ.le]
   · rw [hamiltonianCurvature_perturbationPullback_endChart ω hH hHs
       (endSign_mul_pos_of_mem_endStrip hw)]
 
@@ -1212,7 +1212,7 @@ end, which contains its support. -/
 private theorem setIntegral_deriv_smoothTransition_endSign (q : Puncture) :
     ∫ s in {s : ℝ | 1 / 2 < q.endSign * s}, deriv smoothTransition (q.endSign * s - 1) = 1 := by
   rw [setIntegral_eq_integral_of_forall_compl_eq_zero fun s hs ↦
-      smoothTransition.deriv_of_neg (by linarith [not_lt.1 (notMem_ofPred_iff.1 hs)]),
+      smoothTransition.deriv_of_nonpos (by linarith [not_lt.1 (notMem_ofPred_iff.1 hs)]),
     smoothTransition.integral_deriv_mul_sub, abs_endSign, inv_one]
 
 /-- **The one-sided curvature bound on one end.** If `h` is a function of time, integrable over

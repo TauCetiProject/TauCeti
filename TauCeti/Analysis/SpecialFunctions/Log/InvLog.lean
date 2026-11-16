@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: Giada Franz, The Tau Ceti contributors
 -/
 module
 
@@ -16,7 +16,12 @@ iterated logarithm `log log (1 / x)` near the origin:
 
 * `Real.continuousAt_inv_log_zero`: `(log x)⁻¹ → 0` as `x → 0`, so with Mathlib's conventions
   `log 0 = 0` and `0⁻¹ = 0` the function `x ↦ (log x)⁻¹` is continuous at the origin;
-* `Real.abs_log_log_inv_le`: for `0 ≤ x < e⁻¹`, `|log log (1 / x)| ≤ log (1 / x)`.
+* `Real.abs_log_log_inv_le`: for `0 ≤ x < e⁻¹`, `|log log (1 / x)| ≤ log (1 / x)`;
+* `Real.tendsto_log_div_nhdsGT_zero`: for `δ > 0`, `log (δ / ε) → ∞` as `ε → 0⁺`.
+
+The logarithmic quotient limit is adapted from Giada Franz’s formalization in
+[ColdingMinicozziTheory](https://github.com/riccardobrasca/ColdingMinicozziTheory),
+`ForTauCeti/Geometry/Manifold/Riemannian/Surface/LogCutoff/Tendsto.lean`.
 -/
 
 public section
@@ -41,5 +46,15 @@ theorem abs_log_log_inv_le {x : ℝ} (hx : 0 ≤ x) (hx1 : x < exp (-1)) :
   have := log_le_sub_one_of_pos (zero_lt_one.trans hx')
   rw [log_inv] at this ⊢
   linarith
+
+/-- For fixed `δ > 0`, the logarithmic scale `log (δ / ε)` tends to infinity as `ε → 0⁺`. -/
+theorem tendsto_log_div_nhdsGT_zero {δ : ℝ} (hδ : 0 < δ) :
+    Tendsto (fun ε ↦ Real.log (δ / ε)) (𝓝[>] 0) atTop := by
+  have h := tendsto_atTop_add_const_left _ (Real.log δ)
+    (tendsto_neg_atBot_atTop.comp Real.tendsto_log_nhdsGT_zero)
+  apply h.congr'
+  filter_upwards [self_mem_nhdsWithin] with ε hε
+  simp only [Function.comp_apply, Real.log_div hδ.ne' (ne_of_gt hε)]
+  ring
 
 end Real

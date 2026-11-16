@@ -613,9 +613,9 @@ private theorem norm_mul_deriv_cutoff_le {a : ℝ} {w : WithLp 2 (ℝ × E) → 
   · simpa [image_eq_zero_of_notMem_tsupport hxK] using hb0
   by_cases hxa : a < x.fst
   swap
-  · simpa [Real.smoothTransition.deriv_of_neg (cutoffArg_neg_of_not_lt n hxa)] using hb0
+  · simpa [Real.smoothTransition.deriv_of_nonpos (cutoffArg_neg_of_not_lt n hxa).le] using hb0
   by_cases hs : 1 < cutoffArg a n x
-  · simpa [Real.smoothTransition.deriv_of_one_lt hs] using hb0
+  · simpa [Real.smoothTransition.deriv_of_one_le hs.le] using hb0
   push Not at hs
   have hpos : (0 : ℝ) < (n : ℝ) + 1 := by positivity
   have hs' : -1 ≤ cutoffArg a n x := by
@@ -669,9 +669,9 @@ private theorem tendsto_integral_mul_deriv_cutoff {a : ℝ} {w : WithLp 2 (ℝ �
   -- derivative of `smoothTransition` vanishes; outside it the cutoff argument is negative.
   · by_cases hxa : a < x.fst
     · exact tendsto_const_nhds.congr' <| (eventually_lt_cutoffArg hxa 1).mono fun n hn => by
-        simp [Real.smoothTransition.deriv_of_one_lt hn]
+        simp [Real.smoothTransition.deriv_of_one_le hn.le]
     · exact tendsto_const_nhds.congr fun n => by
-        simp [Real.smoothTransition.deriv_of_neg (cutoffArg_neg_of_not_lt n hxa)]
+        simp [Real.smoothTransition.deriv_of_nonpos (cutoffArg_neg_of_not_lt n hxa).le]
 
 /-- **The boundary-layer error vanishes in the limit.** Let `G` be a locally integrable vector
 field, and let `χ` be smooth with compact support and vanishing on the
