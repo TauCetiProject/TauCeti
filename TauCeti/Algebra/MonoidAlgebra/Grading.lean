@@ -32,6 +32,10 @@ infinite fibre, as is the rank of a free module of infinite rank.
   `single m 1` with `f m = i`.
 * `AddMonoidAlgebra.finrank_gradeBy`: the rank of the piece of grade `i` is the number of
   elements of `M` of grade `i`.
+* `AddMonoidAlgebra.single_coeff_of_mem_grade`: an element of `grade R m` is recovered from its
+  `m`-th coefficient as `single m (x.coeff m) = x`.
+* `AddMonoidAlgebra.map_mem_gradeBy`, `AddMonoidAlgebra.mapAlgHom_mem_gradeBy`,
+  `AddMonoidAlgebra.mapAlgHom_mem_grade`: coefficient homomorphisms preserve graded pieces.
 * `TauCeti.homogeneousUnitDegrees_gradeBy`: for the group algebra `R[G]` graded by an additive
   homomorphism `f : G →+ ι`, the homogeneous unit degrees are the range of `f`.
 -/
@@ -39,6 +43,8 @@ infinite fibre, as is the rank of a free module of infinite rank.
 public section
 
 namespace AddMonoidAlgebra
+
+section GradeBy
 
 variable {M ι : Type*} (R : Type*) [CommSemiring R]
 
@@ -69,6 +75,41 @@ instance (f : M → ι) (i : ι) : Module.Free R (gradeBy R f i) :=
 theorem finrank_gradeBy [StrongRankCondition R] (f : M → ι) (i : ι) :
     Module.finrank R (gradeBy R f i) = Nat.card (f ⁻¹' {i}) :=
   Module.finrank_eq_nat_card_basis (basisGradeBy R f i)
+
+end GradeBy
+
+variable {M ι : Type*}
+
+/-- An element of the degree-`m` piece `grade R m` is uniquely recovered from its `m`-th
+coefficient: `single m (x.coeff m) = x`. -/
+theorem single_coeff_of_mem_grade {R : Type*} [CommSemiring R] {m : M} {x : R[M]}
+    (hx : x ∈ grade R m) : single m (x.coeff m) = x := by
+  obtain ⟨r, rfl⟩ := (mem_grade_iff' R m x).mp hx
+  simp [lsingle_apply]
+
+/-- Mapping coefficients along an additive monoid homomorphism preserves every graded piece of
+`gradeBy`. -/
+theorem map_mem_gradeBy {S S' : Type*} [CommSemiring S] [CommSemiring S']
+    (g : S →+ S') (f : M → ι) {i : ι} {x : S[M]} (hx : x ∈ gradeBy S f i) :
+    map g x ∈ gradeBy S' f i := by
+  intro m hm
+  rw [coeff_map] at hm
+  exact hx m (Finsupp.support_mapRange hm)
+
+/-- Mapping coefficients along an algebra homomorphism preserves every graded piece of `gradeBy`. -/
+theorem mapAlgHom_mem_gradeBy {R S S' : Type*} [CommSemiring R] [CommSemiring S]
+    [CommSemiring S'] [Algebra R S] [Algebra R S'] [AddMonoid M]
+    (φ : S →ₐ[R] S') (f : M → ι) {i : ι} {x : S[M]} (hx : x ∈ gradeBy S f i) :
+    mapAlgHom M φ x ∈ gradeBy S' f i := by
+  rw [← AlgHom.coe_toRingHom, toRingHom_mapAlgHom, coe_mapRingHom]
+  exact map_mem_gradeBy φ.toRingHom.toAddMonoidHom f hx
+
+/-- Mapping coefficients along an algebra homomorphism preserves every graded piece of `grade`. -/
+theorem mapAlgHom_mem_grade {R S S' : Type*} [CommSemiring R] [CommSemiring S]
+    [CommSemiring S'] [Algebra R S] [Algebra R S'] [AddMonoid M]
+    (φ : S →ₐ[R] S') {m : M} {x : S[M]} (hx : x ∈ grade S m) :
+    mapAlgHom M φ x ∈ grade S' m :=
+  mapAlgHom_mem_gradeBy φ id hx
 
 end AddMonoidAlgebra
 

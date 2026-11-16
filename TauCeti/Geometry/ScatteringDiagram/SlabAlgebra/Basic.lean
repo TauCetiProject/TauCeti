@@ -255,15 +255,15 @@ theorem X_pow_mul_Y_pow (q : B) (a b : ℕ) :
   | succ a ih =>
     cases b with
     | zero =>
-      rw [pow_zero, mul_one, Nat.min_zero, pow_zero, map_one, one_mul,
-        show ((0 : ℕ) : ℤ) - (a + 1 : ℕ) = -((a + 1 : ℕ) : ℤ) by omega, Z_neg_natCast]
+      rw [pow_zero, mul_one, Nat.min_zero, pow_zero, map_one, one_mul, Nat.cast_zero, zero_sub,
+        Z_neg_natCast]
     | succ b =>
       calc X q ^ (a + 1) * Y q ^ (b + 1)
           = (X q * Y q) * (X q ^ a * Y q ^ b) := by ring
         _ = algebraMap B (SlabAlgebra B q) (q ^ min (a + 1) (b + 1)) *
               Z q (((b + 1 : ℕ) : ℤ) - ((a + 1 : ℕ) : ℤ)) := by
             rw [X_mul_Y, ih b, Nat.succ_min_succ, pow_succ', map_mul, mul_assoc,
-              show ((b + 1 : ℕ) : ℤ) - ((a + 1 : ℕ) : ℤ) = (b : ℤ) - a by omega]
+              Nat.cast_succ, Nat.cast_succ, add_sub_add_right_eq_sub]
 
 /-- **Product formula for the normal-form basis of a slab algebra.** For all `n, m : ℤ` and
 `r = (|n| + |m| - |n + m|) / 2`, `Z q n * Z q m = q^r • Z q (n + m)`. -/
@@ -273,17 +273,19 @@ theorem Z_mul (q : B) (n m : ℤ) :
   dsimp only
   by_cases hn : n < 0 <;> by_cases hm : m < 0
   · rw [Z_of_lt_zero q hn, Z_of_lt_zero q hm, Z_of_lt_zero q (by omega),
-      show (n.natAbs + m.natAbs - (n + m).natAbs) / 2 = 0 by omega,
-      show (n + m).natAbs = n.natAbs + m.natAbs by omega, pow_zero, map_one, one_mul, pow_add]
-  · rw [Z_of_lt_zero q hn, Z_of_nonneg q (not_lt.mp hm), X_pow_mul_Y_pow,
-      show min n.natAbs m.natAbs = (n.natAbs + m.natAbs - (n + m).natAbs) / 2 by omega,
-      show (m.natAbs : ℤ) - n.natAbs = n + m by omega]
-  · rw [Z_of_nonneg q (not_lt.mp hn), Z_of_lt_zero q hm, mul_comm, X_pow_mul_Y_pow,
-      show min m.natAbs n.natAbs = (n.natAbs + m.natAbs - (n + m).natAbs) / 2 by omega,
-      show (n.natAbs : ℤ) - m.natAbs = n + m by omega]
-  · rw [Z_of_nonneg q (not_lt.mp hn), Z_of_nonneg q (not_lt.mp hm), Z_of_nonneg q (by omega),
-      show (n.natAbs + m.natAbs - (n + m).natAbs) / 2 = 0 by omega,
-      show (n + m).natAbs = n.natAbs + m.natAbs by omega, pow_zero, map_one, one_mul, pow_add]
+      Int.natAbs_add_of_nonpos hn.le hm.le, Nat.sub_self, Nat.zero_div,
+      pow_zero, map_one, one_mul, pow_add]
+  · rw [Z_of_lt_zero q hn, Z_of_nonneg q (not_lt.mp hm), X_pow_mul_Y_pow]
+    congr 1
+    · congr 2; omega
+    · congr 1; omega
+  · rw [Z_of_nonneg q (not_lt.mp hn), Z_of_lt_zero q hm, mul_comm, X_pow_mul_Y_pow]
+    congr 1
+    · congr 2; omega
+    · congr 1; omega
+  · rw [Z_of_nonneg q (not_lt.mp hn), Z_of_nonneg q (not_lt.mp hm),
+      Z_of_nonneg q (by omega), Int.natAbs_add_of_nonneg (not_lt.mp hn) (not_lt.mp hm),
+      Nat.sub_self, Nat.zero_div, pow_zero, map_one, one_mul, pow_add]
 
 /-! ### Normal-form basis and freeness -/
 
@@ -315,18 +317,14 @@ private theorem reducePoly_eq_zero_of_mem_slabIdeal (q : B) {p : MvPolynomial Sl
         SlabVar →₀ ℕ) SlabVar.X = d SlabVar.X + 1 := by simp [add_comm]
     have hY : (Finsupp.single SlabVar.X 1 + Finsupp.single SlabVar.Y 1 + d :
         SlabVar →₀ ℕ) SlabVar.Y = d SlabVar.Y + 1 := by simp [add_comm]
-    rw [hX, hY, show ((d SlabVar.Y + 1 : ℕ) : ℤ) - (d SlabVar.X + 1 : ℕ) =
-        (d SlabVar.Y : ℤ) - d SlabVar.X by omega,
+    rw [hX, hY, Nat.cast_succ, Nat.cast_succ, add_sub_add_right_eq_sub,
       Nat.succ_min_succ, pow_succ', one_mul, one_mul, ← mul_assoc, mul_comm b q, mul_assoc,
       sub_self]
   | add f g hf hg => rw [mul_add, map_add, hf, hg, add_zero]
 
-private def reduceQuot (q : B) : SlabAlgebra B q →ₗ[B] (ℤ →₀ B) where
-  toFun := Quotient.lift (reducePoly q) fun a b hab => sub_eq_zero.mp <| by
-    rw [← map_sub]
-    exact reducePoly_eq_zero_of_mem_slabIdeal q ((Submodule.quotientRel_def _).mp hab)
-  map_add' := Quotient.ind₂ (reducePoly q).map_add
-  map_smul' c := Quotient.ind ((reducePoly q).map_smul c)
+private def reduceQuot (q : B) : SlabAlgebra B q →ₗ[B] (ℤ →₀ B) :=
+  ((slabIdeal B q).restrictScalars B).liftQ (reducePoly q) fun _ hp =>
+    LinearMap.mem_ker.mpr (reducePoly_eq_zero_of_mem_slabIdeal q hp)
 
 private theorem reduceQuot_mk (q : B) (p : MvPolynomial SlabVar B) :
     reduceQuot q (Ideal.Quotient.mk (slabIdeal B q) p) = reducePoly q p := (rfl)

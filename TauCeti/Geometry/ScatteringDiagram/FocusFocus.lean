@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.AdjoinRoot
 public import Mathlib.RingTheory.AlgebraTower
 public import TauCeti.Geometry.ScatteringDiagram.SlabAlgebra.Chamber
+import TauCeti.Algebra.Polynomial.Laurent.Binomial
 
 /-!
 # The focus-focus model algebra and its theta multiplication law
@@ -401,18 +402,12 @@ theorem modelTheta_mul (k : ℕ) (n m b c : ℤ) :
   intro r
   apply (modelSlabEquiv K k).injective
   let A := SlabAlgebra (BaseRing K k)[T;T⁻¹] (slabParam K k)
-  have h1T : (1 + T 1 : (BaseRing K k)[T;T⁻¹]) ^ r * T (b + c) =
-      ∑ j ∈ Finset.range (r + 1),
-        (r.choose j : (BaseRing K k)[T;T⁻¹]) * T (b + c + j) := by
-    rw [add_comm (1 : (BaseRing K k)[T;T⁻¹]) (T 1), add_pow, Finset.sum_mul]
-    refine Finset.sum_congr rfl fun j _ => ?_
-    rw [one_pow, mul_one, T_pow, mul_one, mul_comm _ (r.choose j : (BaseRing K k)[T;T⁻¹]),
-      mul_assoc, ← T_add, add_comm (j : ℤ) (b + c)]
   have hparam : slabParam K k ^ r * (T b * T c) =
       C (AdjoinRoot.root (Polynomial.X ^ (k + 1) : Polynomial K)) ^ r *
         ∑ j ∈ Finset.range (r + 1),
           (r.choose j : (BaseRing K k)[T;T⁻¹]) * T (b + c + j) := by
-    rw [slabParam, mul_pow, ← T_add, mul_assoc, h1T]
+    rw [slabParam, mul_pow, ← T_add, mul_assoc, LaurentPolynomial.one_add_T_pow_mul_T]
+    simp_rw [mul_one]
   have hZmul : SlabAlgebra.Z (slabParam K k) n * SlabAlgebra.Z (slabParam K k) m =
       algebraMap (BaseRing K k)[T;T⁻¹] A (slabParam K k ^ r) *
         SlabAlgebra.Z (slabParam K k) (n + m) :=
@@ -556,8 +551,7 @@ def truncAlgHom (K : Type*) [CommRing K] {k' k : ℕ} (hk : k' ≤ k) :
       rcases hp with rfl | rfl | rfl
       · exact Ideal.subset_span (Set.mem_insert _ _)
       · obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le hk
-        rw [show (MvPolynomial.X t : Ambient K) ^ (k' + d + 1) =
-            MvPolynomial.X t ^ (k' + 1) * MvPolynomial.X t ^ d by rw [← pow_add]; congr 1; omega]
+        rw [Nat.add_right_comm, pow_add _ (k' + 1) d]
         exact Ideal.mul_mem_right _ _
           (Ideal.subset_span (Set.mem_insert_of_mem _ (Set.mem_insert _ _)))
       · exact Ideal.subset_span
