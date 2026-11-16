@@ -53,8 +53,8 @@ theorem val_groupLikeScalarTowerHom (x : _root_.GroupLike L (L ⊗[k] A)) :
 /-- Extending the coefficients of a character through a tower commutes with a bialgebra
 morphism. -/
 @[simp]
-theorem groupLikeScalarTowerHom_mapGroupLike {B : Type*} [Semiring B] [Bialgebra k B]
-    (f : A →ₐc[k] B) (x : _root_.GroupLike L (L ⊗[k] A)) :
+theorem _root_.BialgHom.groupLikeScalarTowerHom_mapGroupLike {B : Type*} [Semiring B]
+    [Bialgebra k B] (f : A →ₐc[k] B) (x : _root_.GroupLike L (L ⊗[k] A)) :
     groupLikeScalarTowerHom (K := K)
         ((Bialgebra.TensorProduct.map (BialgHom.id L L) f).mapGroupLike x) =
       (Bialgebra.TensorProduct.map (BialgHom.id K K) f).mapGroupLike
@@ -132,7 +132,7 @@ theorem groupLikeScalarTowerEquiv_mapGroupLike {B : Type*} [CommRing B] [Bialgeb
         (groupLikeScalarTowerEquiv (K := K) hA x) := by
   apply _root_.GroupLike.val_injective
   rw [val_groupLikeScalarTowerEquiv, ← val_groupLikeScalarTowerHom,
-    groupLikeScalarTowerHom_mapGroupLike, BialgHom.val_mapGroupLike, BialgHom.val_mapGroupLike,
-    val_groupLikeScalarTowerHom, val_groupLikeScalarTowerEquiv]
+    BialgHom.groupLikeScalarTowerHom_mapGroupLike, BialgHom.val_mapGroupLike,
+    BialgHom.val_mapGroupLike, val_groupLikeScalarTowerHom, val_groupLikeScalarTowerEquiv]
 
 end TauCeti

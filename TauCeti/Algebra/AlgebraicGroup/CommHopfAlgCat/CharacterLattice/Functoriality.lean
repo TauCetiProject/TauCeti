@@ -226,11 +226,19 @@ theorem geometricCharacterRepresentationMap_surjective_of_exists_geometricCharac
   -- Normalize the representation carrier to the additive character group for scalar inference.
   dsimp only [geometricCharacterRepresentation, Rep.ofMulDistribMulAction] at f
   let q : geometricCharacterGroup H →* geometricCharacterGroup K :=
-    f.hom.toLinearMap.toAddMonoidHom.toMultiplicative
+    MonoidHom.toAdditive.symm f.hom.toLinearMap.toAddMonoidHom
   have hq (sigma : Field.absoluteGaloisGroup k) x : q (sigma • x) = sigma • q x := by
-    have hx := Representation.IntertwiningMap.isIntertwining _ _ f.hom sigma (Additive.ofMul x)
-    -- The multiplicative-action representation acts on the same additive type tag.
-    exact congrArg (Additive.toMul (α := geometricCharacterGroup K)) hx
+    have hx := Representation.IntertwiningMap.isIntertwining _ _ f.hom sigma
+      (Additive.ofMul (α := geometricCharacterGroup H) x)
+    simpa only [q, MonoidHom.toAdditive_symm_apply_apply, LinearMap.toAddMonoidHom_coe,
+      Representation.IntertwiningMap.toLinearMap_apply,
+      Representation.ofMulDistribMulAction_apply_apply, toMul_ofMul] using
+        congrArg (Additive.toMul (α := geometricCharacterGroup K)) hx
+  -- Evaluate `q` through the type tags rather than by unfolding them.
+  have hq_apply (x : additiveCharacterGroup H) :
+      q x.toMul = Additive.toMul (α := geometricCharacterGroup K) (f.hom x) := by
+    simp only [q, MonoidHom.toAdditive_symm_apply_apply, LinearMap.toAddMonoidHom_coe,
+      Representation.IntertwiningMap.toLinearMap_apply, ofMul_toMul]
   obtain ⟨g, hg⟩ := h q hq
   refine ⟨g, ?_⟩
   apply Rep.hom_ext
@@ -241,7 +249,7 @@ theorem geometricCharacterRepresentationMap_surjective_of_exists_geometricCharac
   have hx := geometricCharacterRepresentationMap_hom_apply g x
   apply (Additive.toMul (α := geometricCharacterGroup K)).injective
   exact (congrArg Additive.toMul hx).trans
-    ((toMul_additiveCharacterMap g x).trans (DFunLike.congr_fun hg x.toMul))
+    ((toMul_additiveCharacterMap g x).trans ((DFunLike.congr_fun hg x.toMul).trans (hq_apply x)))
 
 /-- Geometric character groups and their absolute-Galois actions are functorial in the
 coordinate Hopf algebra. -/

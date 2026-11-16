@@ -83,7 +83,7 @@ private theorem exists_separableClosure_bialgHom
     rw [groupLikeScalarTowerEquiv_smul hHspan σ τ hστ,
       groupLikeScalarTowerEquiv_smul hKspan σ τ hστ]
     simpa only [eH, eK, MulEquiv.apply_symm_apply,
-      Field.absoluteGaloisGroup.toAlgEquiv_symm_smul] using
+      AlgEquiv.absoluteGaloisGroup_toAlgEquiv_symm_smul_groupLike] using
         hf (Field.absoluteGaloisGroup.toAlgEquiv.symm σ) (eH x)
   -- A split bialgebra is the group algebra of its characters, so `q` extends linearly.
   have hlinear := linearIndep_groupLikeVal (R := L) (A := L ⊗[k] H)
