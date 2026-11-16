@@ -13,6 +13,7 @@ import TauCeti.Analysis.InnerProductSpace.Gram.Hadamard
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
+import TauCeti.LinearAlgebra.ExteriorPower.Square
 import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
 
 /-!
@@ -27,7 +28,7 @@ act skew-adjointly on forms of every degree. It also records that the norm of a 
 inequality. For a real-linear `P : E → ℂ`, it names the two-vector `p₁ ∧ p₂` of the gradients of
 `Re P` and `Im P`, which represents the two-form `Im (conj (P u) P w)`. Finally, it packages the
 skew endomorphism `u ↦ u ⌟ F` of a two-vector `F`, the operator that represents the two-form
-`ω(u, w) = ⟪F, u ∧ w⟫` through the inner product.
+`ω(u, w) = ⟪F, u ∧ w⟫` through the inner product, together with the induced Lie bracket on `⋀² V`.
 
 ## Main definitions
 
@@ -35,6 +36,8 @@ skew endomorphism `u ↦ u ⌟ F` of a two-vector `F`, the operator that represe
   real and imaginary parts of a complex-valued covector `P`.
 * `TauCeti.twoVectorContraction F`: the skew endomorphism `u ↦ u ⌟ F` of a two-vector, with
   `⟪u ⌟ F, w⟫ = ⟪F, u ∧ w⟫`.
+* `TauCeti.twoVectorBracket`: the Lie bracket on `⋀² V` induced by `twoVectorContraction` and
+  `exteriorPower.lieMap 2`.
 
 ## Main results
 
@@ -66,6 +69,10 @@ skew endomorphism `u ↦ u ⌟ F` of a two-vector `F`, the operator that represe
   `F ∈ ⋀² V` by `⟪u, ·⟫` (`TauCeti.twoVectorContraction`) represents the two-form of `F`,
   `⟪u ⌟ F, w⟫ = ⟪F, u ∧ w⟫`: on two-forms, wedging with `u` is adjoint to contracting with
   `⟪u, ·⟫`. So `u ↦ u ⌟ F` is skew-adjoint (`TauCeti.inner_twoVectorContraction_apply_left`).
+* `TauCeti.twoVectorContraction_twoVectorBracket` and
+  `TauCeti.inner_twoVectorBracket_ιMulti_orthonormalBasis`: `twoVectorContraction` takes
+  `twoVectorBracket` to the commutator of skew-adjoint endomorphisms, with explicit pairing
+  formula in any orthonormal basis.
 -/
 
 public section
@@ -445,6 +452,168 @@ theorem inner_twoVectorContraction_apply_left (F : ⋀[ℝ]^2 V) (u w : V) :
     inner_twoVectorContraction_apply_self, inner_twoVectorContraction_apply_self] at h
   rw [real_inner_comm _ u]
   linarith
+
+omit [FiniteDimensional ℝ V] in
+/-- Contracting a pure two-vector `u ∧ v` against `x` yields `⟪x, u⟫ • v - ⟪x, v⟫ • u`. -/
+@[simp]
+theorem twoVectorContraction_ιMulti (u v x : V) :
+    twoVectorContraction (ιMulti ℝ 2 ![u, v]) x = ⟪x, u⟫ • v - ⟪x, v⟫ • u := by
+  simp [twoVectorContraction_apply, ExteriorAlgebra.ιMulti_apply, Matrix.vecTail,
+    contractLeft_ι_mul, ← Algebra.commutes, ← Algebra.smul_def, ExteriorAlgebra.ι_leftInverse _]
+
+omit [FiniteDimensional ℝ V] in
+/-- The Lie bracket on two-vectors induced by the inner product: `twoVectorBracket F G` is the
+infinitesimal action of the skew-adjoint endomorphism `twoVectorContraction F` on `G`. Under
+`twoVectorContraction`, it corresponds to the commutator of skew-adjoint endomorphisms
+(`TauCeti.twoVectorContraction_twoVectorBracket`). -/
+noncomputable def twoVectorBracket : ⋀[ℝ]^2 V →ₗ[ℝ] ⋀[ℝ]^2 V →ₗ[ℝ] ⋀[ℝ]^2 V where
+  toFun F := lieMap 2 (twoVectorContraction F)
+  map_add' F G := by
+    rw [twoVectorContraction_add, map_add]
+  map_smul' c F := by
+    rw [twoVectorContraction_smul, map_smul, RingHom.id_apply]
+
+omit [FiniteDimensional ℝ V] in
+/-- Evaluation of `twoVectorBracket` through `exteriorPower.lieMap`. -/
+theorem twoVectorBracket_apply (F G : ⋀[ℝ]^2 V) :
+    twoVectorBracket F G = lieMap 2 (twoVectorContraction F) G :=
+  (rfl)
+
+omit [FiniteDimensional ℝ V] in
+/-- Evaluation of `twoVectorBracket` on pure two-vectors. -/
+theorem twoVectorBracket_ιMulti (u v z w : V) :
+    twoVectorBracket (ιMulti ℝ 2 ![u, v]) (ιMulti ℝ 2 ![z, w]) =
+      ⟪z, u⟫ • ιMulti ℝ 2 ![v, w] - ⟪z, v⟫ • ιMulti ℝ 2 ![u, w] +
+        ⟪w, u⟫ • ιMulti ℝ 2 ![z, v] - ⟪w, v⟫ • ιMulti ℝ 2 ![z, u] := by
+  rw [twoVectorBracket_apply, lieMap_two_apply_ιMulti, twoVectorContraction_ιMulti,
+    twoVectorContraction_ιMulti]
+  have hsub_l (a b c : V) : ιMulti ℝ 2 ![a - b, c] = ιMulti ℝ 2 ![a, c] - ιMulti ℝ 2 ![b, c] := by
+    rw [sub_eq_add_neg, ιMulti_two_add_left, ← neg_one_smul ℝ b, ιMulti_two_smul_left]
+    module
+  have hsub_r (a b c : V) : ιMulti ℝ 2 ![a, b - c] = ιMulti ℝ 2 ![a, b] - ιMulti ℝ 2 ![a, c] := by
+    rw [sub_eq_add_neg, ιMulti_two_add_right, ← neg_one_smul ℝ c, ιMulti_two_smul_right]
+    module
+  rw [hsub_l, hsub_r, ιMulti_two_smul_left, ιMulti_two_smul_left, ιMulti_two_smul_right,
+    ιMulti_two_smul_right]
+  abel
+
+omit [FiniteDimensional ℝ V] in
+/-- Under `twoVectorContraction`, `twoVectorBracket` corresponds to the commutator of skew-adjoint
+endomorphisms. -/
+theorem twoVectorContraction_twoVectorBracket (F G : ⋀[ℝ]^2 V) :
+    twoVectorContraction (twoVectorBracket F G) =
+      twoVectorContraction F ∘ₗ twoVectorContraction G -
+        twoVectorContraction G ∘ₗ twoVectorContraction F := by
+  have hF : F ∈ Submodule.span ℝ (Set.range (ιMulti ℝ 2 (M := V))) := by
+    rw [exteriorPower.ιMulti_span]; trivial
+  induction hF using Submodule.span_induction with
+  | mem x hx =>
+    obtain ⟨u, rfl⟩ := hx
+    have hu : u = ![u 0, u 1] := by funext i; fin_cases i <;> rfl
+    have hG : G ∈ Submodule.span ℝ (Set.range (ιMulti ℝ 2 (M := V))) := by
+      rw [exteriorPower.ιMulti_span]; trivial
+    induction hG using Submodule.span_induction with
+    | mem y hy =>
+      obtain ⟨v, rfl⟩ := hy
+      have hv : v = ![v 0, v 1] := by funext i; fin_cases i <;> rfl
+      ext a
+      rw [hu, hv, twoVectorBracket_ιMulti]
+      simp only [map_add, map_smul, twoVectorContraction_add, twoVectorContraction_smul,
+        twoVectorContraction_neg, sub_eq_add_neg, LinearMap.add_apply, LinearMap.neg_apply,
+        LinearMap.smul_apply, LinearMap.comp_apply, twoVectorContraction_ιMulti,
+        inner_neg_left, real_inner_smul_left]
+      rw [real_inner_comm (v 0) (u 0), real_inner_comm (v 0) (u 1),
+        real_inner_comm (v 1) (u 0), real_inner_comm (v 1) (u 1)]
+      module
+    | zero => simp
+    | add y₁ y₂ _ _ hy₁ hy₂ =>
+      simp only [map_add, twoVectorContraction_add, LinearMap.comp_add, LinearMap.add_comp,
+        hy₁, hy₂]
+      abel
+    | smul c y _ hy =>
+      simp only [map_smul, twoVectorContraction_smul, LinearMap.comp_smul, LinearMap.smul_comp,
+        hy, smul_sub]
+  | zero => simp
+  | add x₁ x₂ _ _ hx₁ hx₂ =>
+    simp only [map_add, LinearMap.add_apply, twoVectorContraction_add, LinearMap.comp_add,
+      LinearMap.add_comp, hx₁, hx₂]
+    abel
+  | smul c x _ hx =>
+    simp only [map_smul, LinearMap.smul_apply, twoVectorContraction_smul, LinearMap.comp_smul,
+      LinearMap.smul_comp, hx, smul_sub]
+
+omit [FiniteDimensional ℝ V] in
+/-- The two-vector bracket is skew-symmetric. -/
+theorem twoVectorBracket_swap (F G : ⋀[ℝ]^2 V) :
+    twoVectorBracket G F = -twoVectorBracket F G := by
+  have hF : F ∈ Submodule.span ℝ (Set.range (ιMulti ℝ 2 (M := V))) := by
+    rw [exteriorPower.ιMulti_span]; trivial
+  induction hF using Submodule.span_induction with
+  | mem x hx =>
+    obtain ⟨u, rfl⟩ := hx
+    have hu : u = ![u 0, u 1] := by funext i; fin_cases i <;> rfl
+    have hG : G ∈ Submodule.span ℝ (Set.range (ιMulti ℝ 2 (M := V))) := by
+      rw [exteriorPower.ιMulti_span]; trivial
+    induction hG using Submodule.span_induction with
+    | mem y hy =>
+      obtain ⟨v, rfl⟩ := hy
+      have hv : v = ![v 0, v 1] := by funext i; fin_cases i <;> rfl
+      rw [hu, hv, twoVectorBracket_ιMulti, twoVectorBracket_ιMulti,
+        ιMulti_two_swap (v 1) (u 1), ιMulti_two_swap (v 0) (u 1),
+        ιMulti_two_swap (u 0) (v 1), ιMulti_two_swap (u 0) (v 0),
+        real_inner_comm (u 0) (v 0), real_inner_comm (u 0) (v 1),
+        real_inner_comm (u 1) (v 0), real_inner_comm (u 1) (v 1)]
+      module
+    | zero => simp
+    | add y₁ y₂ _ _ hy₁ hy₂ =>
+      simp only [map_add, LinearMap.add_apply, hy₁, hy₂, neg_add]
+    | smul c y _ hy =>
+      simp only [map_smul, LinearMap.smul_apply, hy, smul_neg]
+  | zero => simp
+  | add x₁ x₂ _ _ hx₁ hx₂ =>
+    simp only [map_add, LinearMap.add_apply, hx₁, hx₂, neg_add]
+  | smul c x _ hx =>
+    simp only [map_smul, LinearMap.smul_apply, hx, smul_neg]
+
+omit [FiniteDimensional ℝ V] in
+/-- Every two-vector commutes with itself under `twoVectorBracket`. -/
+@[simp]
+theorem twoVectorBracket_self (F : ⋀[ℝ]^2 V) : twoVectorBracket F F = 0 := by
+  have h : (2 : ℝ) • twoVectorBracket F F = 0 := by
+    rw [two_smul]
+    conv_rhs => rw [← add_neg_cancel (twoVectorBracket F F)]
+    rw [← twoVectorBracket_swap F F]
+  exact (smul_eq_zero.mp h).resolve_left two_ne_zero
+
+/-- Adjoint invariance of the inner product on `⋀² V`: `twoVectorBracket F` is skew-adjoint. -/
+theorem inner_twoVectorBracket_right (F G H : ⋀[ℝ]^2 V) :
+    ⟪twoVectorBracket F G, H⟫ = -⟪G, twoVectorBracket F H⟫ :=
+  inner_lieMap_left (inner_twoVectorContraction_apply_left F) G H
+
+/-- In any orthonormal basis `b`, the bracket of two two-vectors pairs with `u ∧ v` as
+`∑ q, (⟪F, v ∧ b q⟫ ⟪G, b q ∧ u⟫ - ⟪F, u ∧ b q⟫ ⟪G, b q ∧ v⟫)`. -/
+theorem inner_twoVectorBracket_ιMulti_orthonormalBasis {ι : Type*} [Fintype ι]
+    (b : OrthonormalBasis ι ℝ V) (F G : ⋀[ℝ]^2 V) (u v : V) :
+    ⟪twoVectorBracket F G, ιMulti ℝ 2 ![u, v]⟫ =
+      ∑ q, (⟪F, ιMulti ℝ 2 ![v, b q]⟫ * ⟪G, ιMulti ℝ 2 ![b q, u]⟫ -
+        ⟪F, ιMulti ℝ 2 ![u, b q]⟫ * ⟪G, ιMulti ℝ 2 ![b q, v]⟫) := by
+  rw [← inner_twoVectorContraction_apply, twoVectorContraction_twoVectorBracket,
+    LinearMap.sub_apply, LinearMap.comp_apply, LinearMap.comp_apply, inner_sub_left,
+    inner_twoVectorContraction_apply_left F (twoVectorContraction G u) v,
+    inner_twoVectorContraction_apply_left G (twoVectorContraction F u) v]
+  have hp (x y : V) : ⟪x, y⟫ = ∑ q, ⟪x, b q⟫ * ⟪y, b q⟫ := by
+    simpa only [real_inner_comm (b _)] using (b.sum_inner_mul_inner x y).symm
+  rw [hp (twoVectorContraction G u) (twoVectorContraction F v),
+    hp (twoVectorContraction F u) (twoVectorContraction G v)]
+  simp only [inner_twoVectorContraction_apply]
+  rw [neg_sub_neg, ← Finset.sum_sub_distrib]
+  refine Finset.sum_congr rfl fun q _ ↦ ?_
+  have h1 : ⟪G, ιMulti ℝ 2 ![u, b q]⟫ = -⟪G, ιMulti ℝ 2 ![b q, u]⟫ := by
+    rw [ιMulti_two_swap u (b q), inner_neg_right]
+  have h2 : ⟪G, ιMulti ℝ 2 ![v, b q]⟫ = -⟪G, ιMulti ℝ 2 ![b q, v]⟫ := by
+    rw [ιMulti_two_swap v (b q), inner_neg_right]
+  rw [h1, h2]
+  ring
 
 end TwoVectorContraction
 

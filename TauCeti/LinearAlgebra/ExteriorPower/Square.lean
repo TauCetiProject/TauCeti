@@ -30,9 +30,9 @@ comparing the index set `{(i, j) | i < j}` with Mathlib's index set of two-eleme
 * `LinearMap.IsAlt.exteriorSquareEquiv_ιMulti`: the isomorphism sends `x ∧ y` to `ω x y`.
 * `LinearMap.IsAlt.exteriorSquareEquiv_symm_apply`: its inverse sends the basis vector indexed by
   `i < j` to `b i ∧ b j`.
-* `exteriorPower.ιMulti_two_add_right` and `exteriorPower.ιMulti_two_smul_right`: the wedge
-  `u ∧ w` of two vectors is linear in `w`.
-* `exteriorPower.ιMulti_two_smul_left`: the wedge `u ∧ w` is homogeneous in `u`.
+* `exteriorPower.ιMulti_two_add_left`, `exteriorPower.ιMulti_two_add_right`,
+  `exteriorPower.ιMulti_two_smul_left`, `exteriorPower.ιMulti_two_smul_right`, and
+  `exteriorPower.ιMulti_two_swap`: bilinearity and antisymmetry of the wedge `u ∧ w` of two vectors.
 -/
 
 public section
@@ -40,6 +40,12 @@ public section
 namespace exteriorPower
 
 variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+
+/-- The wedge `u ∧ w` is additive in `u`. -/
+theorem ιMulti_two_add_left (u u' w : M) :
+    ιMulti R 2 ![u + u', w] = ιMulti R 2 ![u, w] + ιMulti R 2 ![u', w] := by
+  apply Subtype.ext
+  simp [ExteriorAlgebra.ιMulti_apply, Matrix.vecTail, add_mul]
 
 /-- The wedge `u ∧ w` is additive in `w`. -/
 theorem ιMulti_two_add_right (u w w' : M) :
@@ -58,6 +64,15 @@ theorem ιMulti_two_smul_left (u w : M) (c : R) :
     ιMulti R 2 ![c • u, w] = c • ιMulti R 2 ![u, w] := by
   apply Subtype.ext
   simp [ExteriorAlgebra.ιMulti_apply, Matrix.vecTail]
+
+/-- Swapping the two arguments of a wedge `u ∧ w` negates it. -/
+theorem ιMulti_two_swap (u w : M) :
+    ιMulti R 2 ![u, w] = -ιMulti R 2 ![w, u] := by
+  have h := (ιMulti R 2 (M := M)).map_swap ![u, w] (show (0 : Fin 2) ≠ 1 by decide)
+  have hswap : ![u, w] ∘ Equiv.swap (0 : Fin 2) 1 = ![w, u] := by
+    funext i; fin_cases i <;> rfl
+  rw [hswap] at h
+  rw [h, neg_neg]
 
 end exteriorPower
 

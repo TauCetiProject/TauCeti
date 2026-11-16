@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Basic
+public import TauCeti.Analysis.InnerProductSpace.Trace.Basic
 public import Mathlib.Analysis.InnerProductSpace.Trace
+import Mathlib.Analysis.InnerProductSpace.Dual
 
 /-!
 # Ordered-pair contractions on the exterior square
@@ -15,9 +17,10 @@ For an orthonormal basis `b`, the wedges `b i ∧ b j` indexed by all ordered pa
 redundant family: each increasing pair occurs twice, with opposite signs, and diagonal wedges
 vanish. Consequently their rank-one operators sum to twice the identity on `Λ² E`.
 
-This gives a trace formula using all ordered pairs instead of the increasing pairs indexing
-Mathlib's `OrthonormalBasis.exteriorPower`. It applies to arbitrary endomorphisms, without a
-self-adjointness assumption, and fixes the factor of two in curvature contractions.
+This gives trace formulas using all ordered pairs instead of the increasing pairs indexing
+Mathlib's `OrthonormalBasis.exteriorPower`, both for arbitrary endomorphisms (`LinearMap.trace`)
+and for bilinear forms (`TauCeti.bilinFormTrace`), fixing the factor of two in curvature
+contractions.
 -/
 
 public section
@@ -74,5 +77,22 @@ theorem sum_inner_ιMulti_two_eq_two_mul_trace (b : OrthonormalBasis ι ℝ E)
   simpa only [map_sum, InnerProductSpace.trace_rankOne,
     LinearMap.comp_smul, LinearMap.comp_id, map_smul, smul_eq_mul,
     real_inner_comm] using h
+
+/-- The sum of the diagonal values of a bilinear form on `⋀² E` against all ordered basis wedges
+is twice its metric trace. -/
+theorem sum_bilinForm_ιMulti_two (b : OrthonormalBasis ι ℝ E)
+    (B : LinearMap.BilinForm ℝ (⋀[ℝ]^2 E)) :
+    (∑ i, ∑ j, B (ιMulti ℝ 2 ![b i, b j]) (ιMulti ℝ 2 ![b i, b j])) =
+      2 * TauCeti.bilinFormTrace B := by
+  let T : Module.End ℝ (⋀[ℝ]^2 E) :=
+    (InnerProductSpace.toDual ℝ (⋀[ℝ]^2 E)).symm.toLinearEquiv.toLinearMap ∘ₗ
+      (LinearMap.toContinuousLinearMap.toLinearMap ∘ₗ B)
+  have hT (x y : ⋀[ℝ]^2 E) : ⟪T x, y⟫ = B x y := by
+    simp [T]
+  rw [TauCeti.bilinFormTrace_eq_sum B (stdOrthonormalBasis ℝ (⋀[ℝ]^2 E))]
+  simp_rw [← hT]
+  rw [b.sum_inner_ιMulti_two_eq_two_mul_trace T,
+    LinearMap.trace_eq_sum_inner T (stdOrthonormalBasis ℝ (⋀[ℝ]^2 E))]
+  simp only [real_inner_comm (T _)]
 
 end OrthonormalBasis
