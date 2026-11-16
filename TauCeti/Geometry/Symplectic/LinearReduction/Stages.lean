@@ -120,12 +120,9 @@ private theorem ker_toReducedSpaceStages (hLU : L ≤ U) :
     LinearMap.ker (toReducedSpaceStages ω hLU) = LinearMap.ker (ω.toBilinForm.restrict L) := by
   ext l
   rw [LinearMap.mem_ker, toReducedSpaceStages_apply, Submodule.Quotient.mk_eq_zero,
-    mem_ker_restrict_iff, mem_ker_restrict_iff, mem_orthogonal_iff', mem_orthogonal_iff']
-  constructor
-  · intro h v hv
-    simpa using h _ ⟨⟨v, hLU hv⟩, hv, rfl⟩
-  · rintro h _ ⟨u, hu, rfl⟩
-    simpa using h u hu
+    mem_ker_restrict_iff, reduction_orthogonal_map,
+    Submodule.Quotient.mk_mem_map_mkQ_iff (ker_restrict_le_comap_orthogonal L), inf_eq_left.2 hLU,
+    mem_ker_restrict_iff, Submodule.mem_comap, Submodule.subtype_apply, Submodule.coe_inclusion]
 
 variable (ω) in
 /-- **Linear symplectic reduction in stages.** For subspaces `L ≤ U`, reducing `V` along `L` is the

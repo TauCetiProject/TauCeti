@@ -20,8 +20,8 @@ by `μ` with values in the annihilator `𝔫⁰ ≅ (𝔤 / 𝔫)*`. This file c
 tangent spaces at one point `x`.
 
 Fix `x` at which the cocycle of `μ` vanishes and `μ(x)` vanishes on all brackets `⁅𝔫, 𝔤⁆`, that is
-`𝔫 ≤ 𝔤_{μ(x)}`; this holds on the zero level of an infinitesimally equivariant moment map, and at
-every point over a value fixed by the coadjoint action. Write `σ_x` for the symplectic form on
+`𝔫 ≤ 𝔤_{μ(x)}`; for an infinitesimally equivariant moment map this holds on the zero level and at
+every point over a coadjoint-fixed value. Write `σ_x` for the symplectic form on
 `T_x M`, `U = ker dμ_𝔫,x` for the tangent space of the first-stage level and
 `U_red = U ⧸ (U ∩ U^σ)` for its reduced space (`TauCeti.SymplecticForm.ReducedSpace`).
 
@@ -49,13 +49,18 @@ Since `ker dμ_x ≤ U`
 (`TauCeti.SmoothTwoForm.IsMomentMap.ker_differential_le_ker_differential_comp`), linear reduction
 in stages (`TauCeti.SymplecticForm.reducedSpaceStagesEquiv`) then identifies the reduced space of
 `ker dμ_x` with the reduction of `U_red` along the kernel of the residual differential,
-symplectically: the tangent space of the direct reduction is that of the two-stage reduction.
+symplectically (`TauCeti.SmoothTwoForm.IsMomentMap.reducedSpaceStagesEquiv`,
+`TauCeti.SmoothTwoForm.IsMomentMap.isSymplectomorphism_reducedSpaceStagesEquiv`): the tangent
+space of the direct reduction is that of the two-stage reduction.
 
 ## Main definitions
 
 * `TauCeti.SmoothTwoForm.IsMomentMap.residualOrbitMap`: the residual orbit map `Z ↦ [Z_M x]`.
 * `TauCeti.SmoothTwoForm.IsMomentMap.residualDifferential`: the residual differential
   `[v] ↦ dμ_x(v)`.
+* `TauCeti.SmoothTwoForm.IsMomentMap.reducedSpaceStagesEquiv`: reduction in stages at `x`, the
+  symplectic identification `[v] ↦ [[v]]` of the direct reduced tangent space with the two-stage
+  one.
 
 ## References
 
@@ -85,6 +90,14 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 
 /-! ### The two levels -/
 
+/-- A tangent vector lies in the level tangent space `ker dμ_𝔫,x` of the restricted moment map
+`μ|_𝔫` exactly when `dμ_x` maps it into the annihilator `𝔫⁰`. -/
+theorem mem_ker_differential_comp_iff {v : TangentSpace I x} :
+    v ∈ LinearMap.ker ((h.comp 𝔫.incl).differential x) ↔
+      h.differential x v ∈ 𝔫.toSubmodule.dualAnnihilator := by
+  rw [LinearMap.mem_ker, h.differential_comp_apply, Submodule.mem_dualAnnihilator]
+  exact ⟨fun hv W hW ↦ LinearMap.congr_fun hv ⟨W, hW⟩, fun hv ↦ LinearMap.ext fun W ↦ hv W W.2⟩
+
 /-- If `μ(x)` vanishes on the brackets `⁅𝔫, 𝔤⁆` and the cocycle of `μ` vanishes at `x`, the whole
 orbit tangent space `𝔤 · x` is tangent to the level of the restricted moment map `μ|_𝔫`. -/
 theorem orbitTangent_le_ker_differential_comp (hc : σ.momentCocycle a μ x = 0)
@@ -92,13 +105,12 @@ theorem orbitTangent_le_ker_differential_comp (hc : σ.momentCocycle a μ x = 0)
     a.orbitTangent x ≤ LinearMap.ker ((h.comp 𝔫.incl).differential x) := by
   intro v hv
   obtain ⟨Z, rfl⟩ := (a.mem_orbitTangent_iff x).1 hv
-  refine LinearMap.mem_ker.2 (LinearMap.ext fun W ↦ ?_)
-  have hW := LinearMap.congr_fun ((mem_lieAnnihilator ℝ 𝔤).1 (hμ W.2)) Z
-  rw [Module.Dual.lie_apply, LinearMap.zero_apply, neg_eq_zero] at hW
-  rw [h.differential_comp_apply, LinearMap.comp_apply,
-    h.differential_apply_of_momentCocycle_eq_zero hc, Module.Dual.lie_apply, LinearMap.zero_apply,
-    neg_eq_zero, ← lie_skew, map_neg, neg_eq_zero]
-  simpa using hW
+  rw [h.mem_ker_differential_comp_iff, h.differential_apply_of_momentCocycle_eq_zero hc,
+    Submodule.mem_dualAnnihilator]
+  intro W hW
+  have hW := LinearMap.congr_fun ((mem_lieAnnihilator ℝ 𝔤).1 (hμ hW)) Z
+  simp only [Module.Dual.lie_apply, LinearMap.zero_apply, neg_eq_zero] at hW ⊢
+  rw [← lie_skew, map_neg, hW, neg_zero]
 
 /-! ### The residual orbit map -/
 
@@ -110,9 +122,8 @@ noncomputable def residualOrbitMap (hc : σ.momentCocycle a μ x = 0)
     (hμ : 𝔫 ≤ lieAnnihilator ℝ 𝔤 (μ x)) :
     𝔤 →ₗ[ℝ] (hσ.symplecticFormAt x).ReducedSpace
       (LinearMap.ker ((h.comp 𝔫.incl).differential x)) :=
-  Submodule.mkQ _ ∘ₗ (a.eval x).codRestrict _ fun Z ↦ by
-    rw [InfinitesimalAction.eval_apply]
-    exact h.orbitTangent_le_ker_differential_comp 𝔫 hc hμ (a.mem_orbitTangent x Z)
+  Submodule.mkQ _ ∘ₗ (a.eval x).codRestrict _ fun Z ↦
+    h.orbitTangent_le_ker_differential_comp 𝔫 hc hμ (a.orbitTangent_eq_range x ▸ ⟨Z, rfl⟩)
 
 /-- The residual orbit map sends `Z` to the class of `Z_M x`. -/
 @[simp]
@@ -123,6 +134,17 @@ theorem residualOrbitMap_apply (hc : σ.momentCocycle a μ x = 0)
   rw [residualOrbitMap, LinearMap.comp_apply, Submodule.mkQ_apply]
   congr 1
   exact Subtype.ext (a.eval_apply x Z)
+
+/-- The range of the residual orbit map is the image of the orbit tangent space `𝔤 · x` in the
+first-stage reduced space. -/
+theorem range_residualOrbitMap (hc : σ.momentCocycle a μ x = 0)
+    (hμ : 𝔫 ≤ lieAnnihilator ℝ 𝔤 (μ x)) :
+    LinearMap.range (h.residualOrbitMap hσ 𝔫 hc hμ) =
+      ((a.orbitTangent x).comap (LinearMap.ker ((h.comp 𝔫.incl).differential x)).subtype).map
+        (LinearMap.ker ((hσ.symplecticFormAt x).toBilinForm.restrict
+          (LinearMap.ker ((h.comp 𝔫.incl).differential x)))).mkQ := by
+  rw [residualOrbitMap, LinearMap.range_comp, LinearMap.range_codRestrict,
+    InfinitesimalAction.orbitTangent_eq_range]
 
 variable [FiniteDimensional ℝ E]
 
@@ -148,9 +170,9 @@ theorem ker_differential_comp_inf_orthogonal (hc : σ.momentCocycle a μ x = 0)
         (hσ.symplecticFormAt x).orthogonal (LinearMap.ker ((h.comp 𝔫.incl).differential x)) =
       𝔫.toSubmodule.map (a.eval x) := by
   rw [h.symplecticFormAt_orthogonal_ker_differential_comp hσ, inf_eq_right]
-  rintro _ ⟨Z, -, rfl⟩
-  rw [InfinitesimalAction.eval_apply]
-  exact h.orbitTangent_le_ker_differential_comp 𝔫 hc hμ (a.mem_orbitTangent x Z)
+  refine le_trans ?_ (h.orbitTangent_le_ker_differential_comp 𝔫 hc hμ)
+  rw [InfinitesimalAction.orbitTangent_eq_range]
+  exact LinearMap.map_le_range
 
 include hσ in
 /-- If `μ(x)` vanishes on `⁅𝔫, 𝔤⁆` and the cocycle of `μ` vanishes at `x`, the null directions of
@@ -165,6 +187,18 @@ private theorem orthogonal_ker_differential_comp_le_ker_differential
     h.differential_apply_of_momentCocycle_eq_zero hc]
   exact (mem_lieAnnihilator ℝ 𝔤).1 (hμ hZ)
 
+include hσ in
+/-- If `μ(x)` vanishes on `⁅𝔫, 𝔤⁆` and the cocycle of `μ` vanishes at `x`, the null directions
+`U ∩ U^σ` of the first stage `U = ker dμ_𝔫,x` lie in the level of `μ`. -/
+private theorem ker_restrict_le_comap_ker_differential (hc : σ.momentCocycle a μ x = 0)
+    (hμ : 𝔫 ≤ lieAnnihilator ℝ 𝔤 (μ x)) :
+    LinearMap.ker ((hσ.symplecticFormAt x).toBilinForm.restrict
+        (LinearMap.ker ((h.comp 𝔫.incl).differential x))) ≤
+      (LinearMap.ker (h.differential x)).comap
+        (LinearMap.ker ((h.comp 𝔫.incl).differential x)).subtype := fun _ hu ↦
+  h.orthogonal_ker_differential_comp_le_ker_differential hσ 𝔫 hc hμ
+    ((SymplecticForm.mem_ker_restrict_iff _ _).1 hu)
+
 /-! ### The residual differential -/
 
 /-- The **residual differential** `[v] ↦ dμ_x(v)` on the reduced space `U ⧸ (U ∩ U^σ)` of the
@@ -175,10 +209,8 @@ noncomputable def residualDifferential (hc : σ.momentCocycle a μ x = 0)
     (hμ : 𝔫 ≤ lieAnnihilator ℝ 𝔤 (μ x)) :
     (hσ.symplecticFormAt x).ReducedSpace (LinearMap.ker ((h.comp 𝔫.incl).differential x)) →ₗ[ℝ]
       Module.Dual ℝ 𝔤 :=
-  Submodule.liftQ _ ((h.differential x).domRestrict _) fun _ hu ↦
-    LinearMap.mem_ker.2 (LinearMap.mem_ker.1
-      (h.orthogonal_ker_differential_comp_le_ker_differential hσ 𝔫 hc hμ
-        ((SymplecticForm.mem_ker_restrict_iff _ _).1 hu)))
+  Submodule.liftQ _ ((h.differential x).domRestrict _)
+    (h.ker_restrict_le_comap_ker_differential hσ 𝔫 hc hμ)
 
 /-- The residual differential sends the class of `u` to `dμ_x(u)`. -/
 @[simp]
@@ -210,10 +242,7 @@ theorem residualDifferential_mem_dualAnnihilator (hc : σ.momentCocycle a μ x =
     h.residualDifferential hσ 𝔫 hc hμ y ∈ 𝔫.toSubmodule.dualAnnihilator := by
   induction y using Submodule.Quotient.induction_on with
   | H u =>
-  rw [Submodule.mem_dualAnnihilator, residualDifferential_mk]
-  intro W hW
-  have hu := LinearMap.congr_fun (LinearMap.mem_ker.1 u.2) ⟨W, hW⟩
-  rwa [h.differential_comp_apply, LinearMap.comp_apply, LinearMap.zero_apply] at hu
+  exact (h.mem_ker_differential_comp_iff 𝔫).1 u.2
 
 /-- **The kernel of the residual orbit map** is `𝔫 + 𝔤_x`: the residual action of `𝔤 / 𝔫` has
 isotropy algebra `(𝔫 + 𝔤_x) / 𝔫` at the class of `x`. -/
@@ -222,10 +251,10 @@ theorem ker_residualOrbitMap (hc : σ.momentCocycle a μ x = 0)
     LinearMap.ker (h.residualOrbitMap hσ 𝔫 hc hμ) =
       𝔫.toSubmodule ⊔ (a.isotropy x).toSubmodule := by
   ext Z
-  rw [LinearMap.mem_ker, residualOrbitMap_apply, Submodule.Quotient.mk_eq_zero,
-    SymplecticForm.mem_ker_restrict_iff, h.symplecticFormAt_orthogonal_ker_differential_comp hσ,
-    InfinitesimalAction.isotropy_toSubmodule, ← Submodule.comap_map_eq, Submodule.mem_comap,
-    InfinitesimalAction.eval_apply]
+  simp [-LinearMap.mem_ker, LinearMap.mem_ker (f := h.residualOrbitMap hσ 𝔫 hc hμ),
+    Submodule.Quotient.mk_eq_zero, SymplecticForm.mem_ker_restrict_iff,
+    h.symplecticFormAt_orthogonal_ker_differential_comp hσ,
+    InfinitesimalAction.isotropy_toSubmodule, ← Submodule.comap_map_eq]
 
 /-- **The residual action is locally free where the action is.** If the action of `𝔤` is locally
 free at `x`, the residual orbit map has kernel exactly `𝔫`. -/
@@ -244,19 +273,14 @@ theorem ker_residualDifferential (hc : σ.momentCocycle a μ x = 0)
         (LinearMap.ker
           ((hσ.symplecticFormAt x).toBilinForm.restrict
             (LinearMap.ker ((h.comp 𝔫.incl).differential x)))).mkQ := by
-  have hK : LinearMap.ker ((hσ.symplecticFormAt x).toBilinForm.restrict
-        (LinearMap.ker ((h.comp 𝔫.incl).differential x))) ≤
-      (LinearMap.ker (h.differential x)).comap
-        (LinearMap.ker ((h.comp 𝔫.incl).differential x)).subtype := fun u hu ↦
-    h.orthogonal_ker_differential_comp_le_ker_differential hσ 𝔫 hc hμ
-      ((SymplecticForm.mem_ker_restrict_iff _ _).1 hu)
   ext y
   induction y using Submodule.Quotient.induction_on with
   | H u =>
-  rw [Submodule.Quotient.mk_mem_map_mkQ_iff hK, LinearMap.mem_ker, residualDifferential_mk,
+  rw [Submodule.Quotient.mk_mem_map_mkQ_iff (h.ker_restrict_le_comap_ker_differential hσ 𝔫 hc hμ),
+    LinearMap.mem_ker, residualDifferential_mk,
     Submodule.mem_comap, Submodule.subtype_apply, LinearMap.mem_ker]
 
-/-- **The residual level is the symplectic complement of the residual orbit.** The symplectic
+/-- **The residual orbit is the symplectic complement of the residual level.** The symplectic
 complement, in the first-stage reduced space, of the kernel of the residual differential is the
 range of the residual orbit map. -/
 theorem orthogonal_ker_residualDifferential (hc : σ.momentCocycle a μ x = 0)
@@ -266,8 +290,7 @@ theorem orthogonal_ker_residualDifferential (hc : σ.momentCocycle a μ x = 0)
       LinearMap.range (h.residualOrbitMap hσ 𝔫 hc hμ) := by
   rw [h.ker_residualDifferential hσ 𝔫 hc hμ, SymplecticForm.reduction_orthogonal_map,
     inf_eq_left.2 (h.ker_differential_le_ker_differential_comp 𝔫.incl x),
-    h.symplecticFormAt_orthogonal_ker_differential hσ, residualOrbitMap, LinearMap.range_comp,
-    LinearMap.range_codRestrict, InfinitesimalAction.orbitTangent_eq_range]
+    h.symplecticFormAt_orthogonal_ker_differential hσ, range_residualOrbitMap]
 
 /-- **The residual stage is regular where the level is.** If `dμ_x` is onto `𝔤*`, the residual
 differential is onto the annihilator `𝔫⁰ ≅ (𝔤 / 𝔫)*`. -/
@@ -278,11 +301,52 @@ theorem range_residualDifferential (hc : σ.momentCocycle a μ x = 0)
   · rintro _ ⟨y, rfl⟩
     exact h.residualDifferential_mem_dualAnnihilator hσ 𝔫 hc hμ y
   · obtain ⟨v, hv⟩ := hreg ν
-    have hvU : v ∈ LinearMap.ker ((h.comp 𝔫.incl).differential x) := by
-      refine LinearMap.mem_ker.2 (LinearMap.ext fun W ↦ ?_)
-      rw [h.differential_comp_apply, hv, LinearMap.comp_apply, LinearMap.zero_apply]
-      exact (Submodule.mem_dualAnnihilator ν).1 hν W W.2
-    exact ⟨Submodule.Quotient.mk ⟨v, hvU⟩, hv⟩
+    exact ⟨Submodule.Quotient.mk ⟨v, (h.mem_ker_differential_comp_iff 𝔫).2 (hv ▸ hν)⟩, hv⟩
+
+/-! ### Reduction in stages -/
+
+/-- **Reduction in stages at a point.** The reduced space of the level tangent space `ker dμ_x` is
+linearly equivalent, by `[v] ↦ [[v]]`, to the reduction of the first-stage reduced space
+`U ⧸ (U ∩ U^σ)`, `U = ker dμ_𝔫,x`, along the kernel of the residual differential. It is a
+symplectomorphism
+(`TauCeti.SmoothTwoForm.IsMomentMap.isSymplectomorphism_reducedSpaceStagesEquiv`): the tangent
+space of the direct reduction is that of the two-stage reduction. -/
+noncomputable def reducedSpaceStagesEquiv (hc : σ.momentCocycle a μ x = 0)
+    (hμ : 𝔫 ≤ lieAnnihilator ℝ 𝔤 (μ x)) :
+    (hσ.symplecticFormAt x).ReducedSpace (LinearMap.ker (h.differential x)) ≃ₗ[ℝ]
+      ((hσ.symplecticFormAt x).reduction
+          (LinearMap.ker ((h.comp 𝔫.incl).differential x))).ReducedSpace
+        (LinearMap.ker (h.residualDifferential hσ 𝔫 hc hμ)) :=
+  ((hσ.symplecticFormAt x).reducedSpaceStagesEquiv
+      (h.ker_differential_le_ker_differential_comp 𝔫.incl x)).trans
+    (SymplecticForm.reducedSpaceCongr _ _ (LinearEquiv.refl ℝ _)
+      (SymplecticForm.IsSymplectomorphism.refl _) (by
+        rw [LinearEquiv.refl_toLinearMap, Submodule.map_id, h.ker_residualDifferential hσ 𝔫 hc hμ]))
+
+/-- The reduction-in-stages equivalence at a point sends `[v]` to `[[v]]`. -/
+@[simp]
+theorem reducedSpaceStagesEquiv_mk (hc : σ.momentCocycle a μ x = 0)
+    (hμ : 𝔫 ≤ lieAnnihilator ℝ 𝔤 (μ x)) (v : LinearMap.ker (h.differential x)) :
+    h.reducedSpaceStagesEquiv hσ 𝔫 hc hμ (Submodule.Quotient.mk v) =
+      Submodule.Quotient.mk ⟨Submodule.Quotient.mk
+          (Submodule.inclusion (h.ker_differential_le_ker_differential_comp 𝔫.incl x) v),
+        (h.ker_residualDifferential hσ 𝔫 hc hμ).ge ⟨_, v.2, rfl⟩⟩ := by
+  simp only [reducedSpaceStagesEquiv, LinearEquiv.trans_apply,
+    SymplecticForm.reducedSpaceStagesEquiv_mk, SymplecticForm.reducedSpaceCongr_mk,
+    LinearEquiv.refl_apply]
+
+/-- **Reduction in stages at a point** is a symplectomorphism: the reduced form on the tangent
+space of the direct reduction agrees with the reduced form of the residual stage. -/
+theorem isSymplectomorphism_reducedSpaceStagesEquiv (hc : σ.momentCocycle a μ x = 0)
+    (hμ : 𝔫 ≤ lieAnnihilator ℝ 𝔤 (μ x)) :
+    SymplecticForm.IsSymplectomorphism
+      ((hσ.symplecticFormAt x).reduction (LinearMap.ker (h.differential x)))
+      (((hσ.symplecticFormAt x).reduction
+          (LinearMap.ker ((h.comp 𝔫.incl).differential x))).reduction
+        (LinearMap.ker (h.residualDifferential hσ 𝔫 hc hμ)))
+      (h.reducedSpaceStagesEquiv hσ 𝔫 hc hμ) :=
+  ((hσ.symplecticFormAt x).isSymplectomorphism_reducedSpaceStagesEquiv _).trans
+    (SymplecticForm.isSymplectomorphism_reducedSpaceCongr _ _ _)
 
 end IsMomentMap
 
