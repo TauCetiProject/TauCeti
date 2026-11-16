@@ -218,6 +218,16 @@ theorem criticalPoints_eq_univ_of_subsingleton [Subsingleton E] : criticalPoints
   -- The derivative at `x` is a linear form on the tangent space, which is the zero space `E`.
   eq_univ_of_forall fun _ ↦ Subsingleton.elim (α := E →L[ℝ] ℝ) _ _
 
+/-- **Every function is Morse in dimension zero.** A manifold modelled on a zero-dimensional space
+is discrete, so every function on it is smooth, and in each chart every point is a nondegenerate
+critical point of a function on the zero space. -/
+theorem isMorse_of_subsingleton [Subsingleton E] : IsMorse I f := by
+  have : Subsingleton H := I.injective.subsingleton
+  have : DiscreteTopology M := ChartedSpace.discreteTopology H M
+  exact isMorse_iff.2 ⟨contMDiff_of_discreteTopology, fun _ _ ↦
+    (isManifoldNondegenerateCriticalPoint_iff I).2
+      (isNondegenerateCriticalPoint_of_subsingleton _ _)⟩
+
 /-- A function and its negation have the same critical points. -/
 @[simp]
 theorem criticalPoints_neg : criticalPoints I (-f) = criticalPoints I f := by

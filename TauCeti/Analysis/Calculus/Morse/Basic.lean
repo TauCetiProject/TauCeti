@@ -196,6 +196,17 @@ theorem isNondegenerateCriticalPoint_iff_separatingLeft [FiniteDimensional ℝ E
     fun ⟨hd, h0, hnd⟩ ↦ ⟨hd, h0, ?_⟩⟩
   exact ContinuousLinearMap.isInvertible_iff_separatingLeft.2 hnd
 
+/-- **On a zero space every point is a nondegenerate critical point.** A function on a
+zero-dimensional space is constant, its differential vanishes and its second derivative is the
+unique map between two zero spaces, which is invertible. -/
+theorem isNondegenerateCriticalPoint_of_subsingleton [Subsingleton E] (f : E → ℝ) (x : E) :
+    IsNondegenerateCriticalPoint f x :=
+  ⟨(contDiffAt_const (c := f x)).congr_of_eventuallyEq
+      (Eventually.of_forall fun y ↦ congrArg f (Subsingleton.elim y x)),
+    Subsingleton.elim _ _,
+    by rw [Subsingleton.elim (fderiv ℝ (fderiv ℝ f) x) 0]
+       exact ContinuousLinearMap.isInvertible_zero_iff.2 ⟨inferInstance, inferInstance⟩⟩
+
 /-- Nondegeneracy at a point depends only on the germ of the function there. -/
 theorem IsNondegenerateCriticalPoint.congr_of_eventuallyEq {g : E → ℝ}
     (h : IsNondegenerateCriticalPoint f x) (hg : f =ᶠ[𝓝 x] g) :
