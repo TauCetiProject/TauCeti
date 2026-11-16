@@ -17,6 +17,7 @@ import Mathlib.Tactic.Ring
 import TauCeti.Algebra.BigOperators.Finset.Filter
 import TauCeti.Algebra.Group.Basic
 import TauCeti.Combinatorics.CoboundaryExpansion.CrossDegree
+import TauCeti.Combinatorics.SimpleGraph.OddTriple
 import TauCeti.Data.Fin.Basic
 import TauCeti.GroupTheory.Perm.DistErr.Invariance
 import TauCeti.GroupTheory.Perm.Fin
@@ -364,19 +365,6 @@ theorem ciInf_sum_filter_lt_distErr_ite_isSwap_eq_iff {n : ℕ} (G : SimpleGraph
   have hn_ne : (n : ℝ) ≠ 0 := by exact_mod_cast (by omega : n ≠ 0)
   rw [G.ciInf_sum_filter_lt_distErr_ite_isSwap hτ, div_left_inj₀ hn_ne,
     mul_right_inj' (by norm_num : (2 : ℝ) ≠ 0), G.ciInf_card_symmDiff_edgeFinset_eq_iff]
-
-/-- In `Perm (Fin 2)` at `Equiv.swap 0 1`, the `distErr` gauge-cost infimum equals `#G.edgeFinset`
-if and only if `G` is cut-minimal. -/
-theorem ciInf_sum_filter_lt_distErr_fin_two_ite_swap_eq_card_iff (G : SimpleGraph V)
-    [DecidableRel G.Adj] :
-    (⨅ β : V → Perm (Fin 2),
-        ∑ e ∈ ({p : V × V | p.1 < p.2} : Finset (V × V)),
-          distErr (if G.Adj e.1 e.2 then Equiv.swap (0 : Fin 2) 1 else 1) (β e.1 * (β e.2)⁻¹)) =
-      (#G.edgeFinset : ℝ) ↔ G.IsCutMinimal := by
-  have h := G.ciInf_sum_filter_lt_distErr_ite_isSwap_eq_iff
-    (swap_isSwap_iff.mpr (by decide : (0 : Fin 2) ≠ 1))
-  norm_num at h
-  exact h
 
 /-- If `G` is cut-minimal and `8 * #G.edgeFinset ≤ 3 * (Fintype.card V).choose 2`, then every gauge
 `β : V → Perm (Fin m)` of every degree `m : ℕ` has cross-degree cost at least

@@ -26,28 +26,28 @@ public section
 namespace TauCeti
 
 /-- When `t * t = 1` in a group, inverting `if p then t else 1` returns `if p then t else 1`. -/
-@[to_additive /-- When `t + t = 0` in an additive group, negating `if p then t else 0` returns
-`if p then t else 0`. -/]
+@[to_additive (attr := simp) /-- When `t + t = 0` in an additive group, negating
+`if p then t else 0` returns `if p then t else 0`. -/]
 theorem ite_inv_of_mul_self {G : Type*} [Group G] {t : G} (ht : t * t = 1) (p : Prop)
     [Decidable p] : (if p then t else 1)⁻¹ = if p then t else 1 := by
   split_ifs
   · exact inv_eq_of_mul_eq_one_right ht
   · exact inv_one
 
-/-- When `t * t = 1` in a monoid, the product of `if p then t else 1` and `if q then t else 1` is
+/-- When `t * t = 1`, the product of `if p then t else 1` and `if q then t else 1` is
 `if Xor p q then t else 1`. -/
-@[to_additive /-- When `t + t = 0` in an additive monoid, the sum of `if p then t else 0` and
-`if q then t else 0` is `if Xor p q then t else 0`. -/]
-theorem ite_mul_ite_of_mul_self {M : Type*} [Monoid M] {t : M} (ht : t * t = 1) (p q : Prop)
+@[to_additive /-- When `t + t = 0`, the sum of `if p then t else 0` and `if q then t else 0` is
+`if Xor p q then t else 0`. -/]
+theorem ite_mul_ite_of_mul_self {M : Type*} [MulOneClass M] {t : M} (ht : t * t = 1) (p q : Prop)
     [Decidable p] [Decidable q] :
     (if p then t else 1) * (if q then t else 1) = if Xor p q then t else 1 := by
   by_cases hp : p <;> by_cases hq : q <;> simp [hp, hq, Xor, ht]
 
-/-- When `t * t = 1` in a monoid, the product of three `{1, t}` indicators is `t` when an odd
-number of the conditions hold (`Xor p (Xor q r)`), and `1` otherwise. -/
-@[to_additive /-- When `t + t = 0` in an additive monoid, the sum of three `{0, t}` indicators is
-`t` when an odd number of the conditions hold (`Xor p (Xor q r)`), and `0` otherwise. -/]
-theorem ite_mul_ite_mul_ite_of_mul_self {M : Type*} [Monoid M] {t : M} (ht : t * t = 1)
+/-- When `t * t = 1`, the product of three `{1, t}` indicators is `t` when an odd number of the
+conditions hold (`Xor p (Xor q r)`), and `1` otherwise. -/
+@[to_additive /-- When `t + t = 0`, the sum of three `{0, t}` indicators is `t` when an odd number
+of the conditions hold (`Xor p (Xor q r)`), and `0` otherwise. -/]
+theorem ite_mul_ite_mul_ite_of_mul_self {M : Type*} [MulOneClass M] {t : M} (ht : t * t = 1)
     (p q r : Prop) [Decidable p] [Decidable q] [Decidable r] :
     (if p then t else 1) * (if q then t else 1) * (if r then t else 1) =
       if Xor p (Xor q r) then t else 1 := by
