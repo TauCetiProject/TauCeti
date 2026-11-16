@@ -53,15 +53,15 @@ instance DisjointUnionHom.instFintype [∀ x y, Fintype (Q x y)]
 
 instance DisjointUnionHom.instFinite [∀ x y, Finite (Q x y)]
     [∀ x y, Finite (R x y)] : ∀ x y, Finite (DisjointUnionHom Q R x y)
-  | .inl x, .inl y => inferInstanceAs (Finite (Q x y))
-  | .inr x, .inr y => inferInstanceAs (Finite (R x y))
+  | .inl x, .inl y => inferInstanceAs (Finite (ULift (Q x y)))
+  | .inr x, .inr y => inferInstanceAs (Finite (ULift (R x y)))
   | .inl _, .inr _ => inferInstanceAs (Finite PEmpty)
   | .inr _, .inl _ => inferInstanceAs (Finite PEmpty)
 
 instance DisjointUnionHom.instDecidableEq [∀ x y, DecidableEq (Q x y)]
     [∀ x y, DecidableEq (R x y)] : ∀ x y, DecidableEq (DisjointUnionHom Q R x y)
-  | .inl x, .inl y => inferInstanceAs (DecidableEq (Q x y))
-  | .inr x, .inr y => inferInstanceAs (DecidableEq (R x y))
+  | .inl x, .inl y => inferInstanceAs (DecidableEq (ULift (Q x y)))
+  | .inr x, .inr y => inferInstanceAs (DecidableEq (ULift (R x y)))
   | .inl _, .inr _ => inferInstanceAs (DecidableEq PEmpty)
   | .inr _, .inl _ => inferInstanceAs (DecidableEq PEmpty)
 
