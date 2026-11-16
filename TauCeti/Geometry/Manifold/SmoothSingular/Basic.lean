@@ -27,7 +27,9 @@ Applying Mathlib's simplicial chain functor gives the complex of smooth singular
 `(smoothSingularSubcomplex I M : SSet).chainComplex R`, with boundary the alternating sum of the
 faces, and `SSet.chainComplexMap (smoothSingularSubcomplex I M).ι R` is its inclusion into singular
 chains. A smooth map of manifolds carries smooth simplices to smooth simplices
-(`TauCeti.smoothSingularSubcomplexMap`).
+(`TauCeti.smoothSingularSubcomplexMap`). Constant simplices are smooth, so a constant map from any
+topological space induces a map into the smooth singular subcomplex
+(`TauCeti.smoothSingularSubcomplexConst`).
 
 The `p`-simplices of the subcomplex form the type `TauCeti.SmoothSimplex I M p`. A smooth simplex
 is determined by the continuous map it induces on `Δᵖ` (`TauCeti.SmoothSimplex.toContinuousMap`),
@@ -49,6 +51,8 @@ singular cohomology. Only a charted space is required for the definitions.
 * `TauCeti.smoothSingularSubcomplexMap`: the induced map of smooth singular subcomplexes.
 * `TauCeti.coe_smoothSingularSubcomplexMap_app`: it acts on underlying singular simplices as the
   map of singular simplicial sets.
+* `TauCeti.smoothSingularSubcomplexConst`: the map of a singular simplicial set to the smooth
+  singular subcomplex induced by a constant map.
 * `TauCeti.SmoothSimplex`: the smooth singular `p`-simplices, the `p`-simplices of
   `TauCeti.smoothSingularSubcomplex`.
 * `TauCeti.SmoothSimplex.toContinuousMap`, `TauCeti.SmoothSimplex.mk`: a smooth simplex as a
@@ -386,6 +390,33 @@ theorem smoothSingularSubcomplexMap_ι (hφ : ContMDiff I J ∞ φ) :
       (smoothSingularSubcomplex I M).ι ≫ TopCat.toSSet.map (TopCat.ofHom ⟨φ, hφ.continuous⟩) :=
   SSet.Subcomplex.lift_ι _ _
 
+variable (I) in
+/-- The map of singular simplicial sets induced by the constant map `X → M` with value `c`, which
+lands in the smooth singular subcomplex because constant simplices are smooth. -/
+def smoothSingularSubcomplexConst (X : TopCat.{u}) (c : M) :
+    TopCat.toSSet.obj X ⟶ (smoothSingularSubcomplex I M : SSet) :=
+  SSet.Subcomplex.lift (TopCat.toSSet.map (TopCat.ofHom ⟨fun _ ↦ c, continuous_const⟩)) (by
+    rintro k _ ⟨σ, rfl⟩
+    rw [mem_smoothSingularSubcomplex_iff]
+    exact contMDiffOnSubset_const I ∞ c)
+
+/-- Followed by the inclusion into singular simplices, the map of constant simplices is the map of
+singular simplicial sets induced by the constant map. -/
+@[reassoc (attr := simp)]
+theorem smoothSingularSubcomplexConst_comp_ι (X : TopCat.{u}) (c : M) :
+    smoothSingularSubcomplexConst I X c ≫ (smoothSingularSubcomplex I M).ι =
+      TopCat.toSSet.map (TopCat.ofHom ⟨fun _ ↦ c, continuous_const⟩) :=
+  SSet.Subcomplex.lift_ι _ _
+
+/-- Restricted to smooth simplices of `N`, the map of constant simplices is the map of smooth
+singular subcomplexes induced by the constant map. -/
+@[reassoc (attr := simp)]
+theorem ι_comp_smoothSingularSubcomplexConst (c : M) :
+    (smoothSingularSubcomplex J N).ι ≫ smoothSingularSubcomplexConst I (TopCat.of N) c =
+      smoothSingularSubcomplexMap (fun _ ↦ c) (contMDiff_const : ContMDiff J I ∞ _) := by
+  rw [← cancel_mono (smoothSingularSubcomplex I M).ι, Category.assoc,
+    smoothSingularSubcomplexConst_comp_ι, smoothSingularSubcomplexMap_ι]
+
 /-- A smooth map acts on the underlying singular simplex of a smooth simplex as on singular
 simplices. -/
 @[simp]
@@ -393,6 +424,14 @@ theorem coe_smoothSingularSubcomplexMap_app (hφ : ContMDiff I J ∞ φ) {k : Si
     (σ : (smoothSingularSubcomplex I M : SSet).obj k) :
     (dsimp% only [Subfunctor.toFunctor_obj] ((smoothSingularSubcomplexMap φ hφ).app k σ).1) =
       (TopCat.toSSet.map (TopCat.ofHom ⟨φ, hφ.continuous⟩)).app k σ.1 :=
+  (rfl)
+
+/-- The map of constant simplices sends a singular simplex to the constant singular simplex. -/
+@[simp]
+theorem coe_smoothSingularSubcomplexConst_app (X : TopCat.{u}) (c : M) {k : SimplexCategoryᵒᵖ}
+    (σ : (TopCat.toSSet.obj X).obj k) :
+    (dsimp% only [Subfunctor.toFunctor_obj] ((smoothSingularSubcomplexConst I X c).app k σ).1) =
+      (TopCat.toSSet.map (TopCat.ofHom ⟨fun _ ↦ c, continuous_const⟩)).app k σ :=
   (rfl)
 
 /-- For open sets `U ≤ V` of `M`, a singular simplex of `U` is smooth exactly when its image in
