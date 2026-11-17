@@ -56,6 +56,8 @@ preconnected base these are all of its orientations
 
 * `TauCeti.VectorBundleOrientation.eventually_mapOrientation_eq`: an orientation is locally
   constant when read in any trivialization of the atlas.
+* `TauCeti.VectorBundleOrientation.mapOrientation_eq_of_isPreconnected`: on a preconnected part of
+  the base set of such a trivialization, it reads as a single orientation of the model fibre.
 * `TauCeti.VectorBundleOrientation.eq_or_eq_neg`: over a preconnected base, two orientations of
   a bundle are equal or opposite.
 * `TauCeti.VectorBundleOrientation.eq_trivial`: over a preconnected base, every orientation of a
@@ -409,6 +411,22 @@ theorem eventually_mapOrientation_eq (hι : Fintype.card ι = finrank ℝ F)
     ∀ᶠ x in 𝓝 b, ∀ hx : x ∈ e.baseSet, e.mapOrientation ι hx (o x) = e.mapOrientation ι hb (o b) :=
   (trivializationAt F E b).eventually_mapOrientation_eq_of_eventually hι e
     (FiberBundle.mem_baseSet_trivializationAt' b) hb (o.eventually_mapOrientation_eq' b)
+
+omit [FiniteDimensional ℝ F] in
+/-- On a preconnected subset of the base set of a trivialization of the atlas, an orientation reads
+as a single orientation of the model fibre. -/
+theorem mapOrientation_eq_of_isPreconnected (hι : Fintype.card ι = finrank ℝ F)
+    (o : VectorBundleOrientation F E ι) (e : Trivialization F (π F E)) [MemTrivializationAtlas e]
+    {s : Set B} (hs : IsPreconnected s) (hse : s ⊆ e.baseSet) {x y : B} (hx : x ∈ s)
+    (hy : y ∈ s) :
+    e.mapOrientation ι (hse hx) (o x) = e.mapOrientation ι (hse hy) (o y) := by
+  have := Subtype.preconnectedSpace hs
+  -- Read on the subtype `s`, the orientation is locally constant.
+  have hlc : IsLocallyConstant fun z : s ↦ e.mapOrientation ι (hse z.2) (o z) :=
+    (IsLocallyConstant.iff_eventually_eq _).2 fun z ↦
+      ((continuous_subtype_val.tendsto z).eventually
+        (o.eventually_mapOrientation_eq hι e (hse z.2))).mono fun w hw ↦ hw (hse w.2)
+  exact hlc.apply_eq_of_preconnectedSpace ⟨x, hx⟩ ⟨y, hy⟩
 
 omit [FiniteDimensional ℝ F] in
 /-- An orientation of the bundle from fibre orientations that are locally constant near each
