@@ -11,6 +11,7 @@ public import TauCeti.LowDimTopology.Bordered.Generator
 public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.RefinedGrading
 public import TauCeti.LowDimTopology.Heegaard.Triple
 import Mathlib.Tactic.Abel
+import TauCeti.Algebra.BigOperators.Fin
 
 /-!
 # Domains and provincial admissibility of bordered Heegaard diagrams
@@ -99,11 +100,11 @@ separate.
 * `TauCeti.BorderedHeegaardRegionSystem.IsDomainBetween.sub_mem_periodicDomains_iff`,
   `TauCeti.BorderedHeegaardRegionSystem.IsDomainBetween.sub_mem_provincialPeriodicDomains_iff`:
   the coset descriptions of the domains from `x` to `y`.
-* `TauCeti.BorderedHeegaardRegionSystem.Admissible.finite_setOf_isDomainBetween_nonneg`,
-  `TauCeti.BorderedHeegaardRegionSystem.ProvinciallyAdmissible.finite_setOf_isDomainBetween_nonneg`:
+* In the namespace `TauCeti.BorderedHeegaardRegionSystem`,
+  `Admissible.finite_setOf_isDomainBetween_basepoint_eq_nonneg` and
+  `ProvinciallyAdmissible.finite_setOf_isDomainBetween_basepoint_eq_borderClass_eq_nonneg`:
   the finiteness of nonnegative domains, and
-  `TauCeti.BorderedHeegaardRegionSystem.provinciallyAdmissible_iff_finite_setOf_mem_nonneg`: the
-  converse.
+  `provinciallyAdmissible_iff_finite_setOf_mem_provincialPeriodicDomains_nonneg`: the converse.
 
 ## References
 
@@ -405,18 +406,7 @@ theorem pushBoundary_borderClass_apply [DecidableEq Arc] (D : Region → ℤ) (a
 two outer intervals agree, since both lie in the region of the basepoint. So it is the boundary of
 a class of `H₁(Z, a)`, as are the boundaries recorded in `TauCeti.StrandGradingGroup`. -/
 theorem sum_borderClass (D : Region → ℤ) : ∑ i, H.borderClass D i = 0 := by
-  have key : ∀ (m : ℕ) (f : Fin (m + 1) → ℤ),
-      ∑ i : Fin m, (f i.castSucc - f i.succ) = f 0 - f (Fin.last m) := by
-    intro m
-    induction m with
-    | zero => simp
-    | succ m ih =>
-      intro f
-      rw [Fin.sum_univ_castSucc]
-      simp only [Fin.succ_castSucc]
-      rw [ih (fun i => f i.castSucc)]
-      simp
-  simpa [H.borderRegion_last] using key n (D ∘ H.borderRegion)
+  simpa [H.borderRegion_last] using Fin.sum_univ_castSucc_sub_succ (D ∘ H.borderRegion)
 
 end Boundary
 
@@ -552,6 +542,7 @@ theorem alphaArcBoundary_eq_zero_iff_forall_inl [Finite Point] (c : Point ⊕ Ar
 def provincialPeriodicDomains : AddSubgroup (Region → ℤ) :=
   H.periodicDomains ⊓ H.borderClass.ker
 
+@[simp]
 theorem mem_provincialPeriodicDomains_iff {P : Region → ℤ} :
     P ∈ H.provincialPeriodicDomains ↔ P ∈ H.periodicDomains ∧ H.borderClass P = 0 := by
   rw [provincialPeriodicDomains, AddSubgroup.mem_inf, AddMonoidHom.mem_ker]
@@ -594,8 +585,9 @@ theorem alphaBoundary_eq_zero_of_mem_provincialPeriodicDomains {P : Region → �
     (hv : H.alphaCurve v = .inl a) : H.alphaBoundary P v = 0 := by
   obtain ⟨hb, hα, -⟩ := (H.mem_provincialPeriodicDomains_iff_forall_borderRegion).mp hP
   obtain ⟨c, hc⟩ := (H.alphaArcBoundary_eq_zero_iff _).mp hα
-  rw [hc, hv, ← alphaCurve_inr H a, ← hc, alphaBoundary_apply, H.alphaLeft_inr, H.alphaRight_inr,
-    hb, hb, sub_zero]
+  have h : H.alphaBoundary P v = H.alphaBoundary P (.inr a) := by
+    rw [hc, hc, hv, alphaCurve_inr]
+  simp [h, H.alphaLeft_inr, H.alphaRight_inr, hb]
 
 variable [DecidableEq Point] {H}
 
@@ -659,13 +651,13 @@ theorem Admissible.provinciallyAdmissible (h : H.Admissible) : H.ProvinciallyAdm
   fun P hP => h P (H.provincialPeriodicDomains_le_periodicDomains hP)
 
 /-- A diagram is admissible exactly when it has finitely many nonnegative periodic domains. -/
-theorem admissible_iff_finite_setOf_mem_nonneg :
+theorem admissible_iff_finite_setOf_mem_periodicDomains_nonneg :
     H.Admissible ↔ {P | P ∈ H.periodicDomains ∧ 0 ≤ P}.Finite :=
   H.admissible_iff.trans H.periodicDomains.finite_setOf_mem_nonneg_iff.symm
 
 /-- A diagram is provincially admissible exactly when it has finitely many nonnegative provincial
 periodic domains. -/
-theorem provinciallyAdmissible_iff_finite_setOf_mem_nonneg :
+theorem provinciallyAdmissible_iff_finite_setOf_mem_provincialPeriodicDomains_nonneg :
     H.ProvinciallyAdmissible ↔ {P | P ∈ H.provincialPeriodicDomains ∧ 0 ≤ P}.Finite :=
   H.provinciallyAdmissible_iff.trans H.provincialPeriodicDomains.finite_setOf_mem_nonneg_iff.symm
 
@@ -673,8 +665,8 @@ variable [DecidableEq Point] [Finite Point] [Finite Region] {H}
 
 /-- **Finiteness in an admissible diagram.** In an admissible diagram, there are only finitely
 many nonnegative domains connecting `x` to `y` with a given basepoint multiplicity. -/
-theorem Admissible.finite_setOf_isDomainBetween_nonneg (h : H.Admissible) (x y : H.Generator)
-    (m : ℤ) :
+theorem Admissible.finite_setOf_isDomainBetween_basepoint_eq_nonneg (h : H.Admissible)
+    (x y : H.Generator) (m : ℤ) :
     {D | 0 ≤ D ∧ H.IsDomainBetween x y D ∧ D (H.borderRegion 0) = m}.Finite :=
   AddSubgroup.finite_of_forall_sub_mem (H.admissible_iff.mp h) (fun _ hD => hD.1)
     fun _ hD _ hD' => hD.2.1.sub_mem_periodicDomains_iff.mpr ⟨hD'.2.1, hD'.2.2.trans hD.2.2.symm⟩
@@ -682,8 +674,8 @@ theorem Admissible.finite_setOf_isDomainBetween_nonneg (h : H.Admissible) (x y :
 /-- **Finiteness in a provincially admissible diagram.** In a provincially admissible diagram,
 there are only finitely many nonnegative domains connecting `x` to `y` with a given basepoint
 multiplicity and a given border class. -/
-theorem ProvinciallyAdmissible.finite_setOf_isDomainBetween_nonneg (h : H.ProvinciallyAdmissible)
-    (x y : H.Generator) (m : ℤ) (δ : Fin n → ℤ) :
+theorem ProvinciallyAdmissible.finite_setOf_isDomainBetween_basepoint_eq_borderClass_eq_nonneg
+    (h : H.ProvinciallyAdmissible) (x y : H.Generator) (m : ℤ) (δ : Fin n → ℤ) :
     {D | 0 ≤ D ∧ H.IsDomainBetween x y D ∧ D (H.borderRegion 0) = m ∧ H.borderClass D = δ}.Finite :=
   AddSubgroup.finite_of_forall_sub_mem (H.provinciallyAdmissible_iff.mp h) (fun _ hD => hD.1)
     fun _ hD _ hD' => hD.2.1.sub_mem_provincialPeriodicDomains_iff.mpr
