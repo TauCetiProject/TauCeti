@@ -12,7 +12,7 @@ public import TauCeti.RingTheory.Grassmannian.QuotientHopfAlgebra
 
 import Mathlib.AlgebraicGeometry.Pullbacks
 import Mathlib.Algebra.Category.Ring.Constructions
-import TauCeti.AlgebraicGeometry.AffineScheme
+import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 import TauCeti.AlgebraicGeometry.IdealSheaf.Affine
 import TauCeti.AlgebraicGeometry.IdealSheaf.OfIdealTop
 import TauCeti.AlgebraicGeometry.Scheme.Opens

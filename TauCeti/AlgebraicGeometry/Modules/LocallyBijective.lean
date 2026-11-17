@@ -10,7 +10,7 @@ public import Mathlib.CategoryTheory.Sites.LocallySurjective
 public import TauCeti.AlgebraicGeometry.Modules.Localization
 public import TauCeti.Algebra.Category.ModuleCat.Presheaf.Restriction
 import TauCeti.Algebra.Module.LocalizedModule.Away.Basic
-import TauCeti.AlgebraicGeometry.AffineScheme
+import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 
 /-!
 # Locally bijective maps from presheaves of modules with localized sections

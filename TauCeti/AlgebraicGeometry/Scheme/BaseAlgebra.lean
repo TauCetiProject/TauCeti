@@ -10,7 +10,7 @@ public import TauCeti.AlgebraicGeometry.Modules.RationalFunctions
 public import TauCeti.AlgebraicGeometry.Morphisms.Dominant
 public import Mathlib.AlgebraicGeometry.FunctionField
 public import Mathlib.AlgebraicGeometry.ResidueField
-import TauCeti.AlgebraicGeometry.AffineScheme
+import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 
 /-!
 # Algebra structures induced by a scheme over an affine base
