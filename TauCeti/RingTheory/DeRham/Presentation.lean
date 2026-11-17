@@ -321,25 +321,25 @@ private noncomputable def coeffModule : Module B (CoeffQuot A B n) :=
 
 attribute [local instance] coeffModule
 
+/-- The scalar action of `coeffModule` is `coeffAction`, by definition of `Module.compHom`. -/
+private lemma coeffModule_smul_def (b : B) (x : CoeffQuot A B n) :
+    b • x = coeffAction A B n b x :=
+  rfl
+
 private lemma smul_mkC_sym (b c : B) (v : Fin n → B) :
     b • mkC A B n (sym A c v) = mkC A B n (sym A (b * c) v) := by
-  rw [← coeffMul_sym, ← coeffAction_mkC]
-  rfl
+  rw [coeffModule_smul_def, coeffAction_mkC, coeffMul_sym]
 
 private lemma coeffAction_algebraMap (a : A) :
     coeffAction A B n (algebraMap A B a) = a • 1 :=
   coeffQuot_hom_ext fun c v => by
-    rw [coeffAction_mkC, coeffMul_sym, LinearMap.smul_apply, Module.End.one_eq_id,
-      LinearMap.id_apply, ← Algebra.smul_def, ← map_smul, ← sub_eq_zero, ← map_sub,
-      mkC_eq_zero_iff]
+    simp only [coeffAction_mkC, coeffMul_sym, LinearMap.smul_apply, one_apply_eq_self]
+    rw [← Algebra.smul_def, ← map_smul, ← sub_eq_zero, ← map_sub, mkC_eq_zero_iff]
     exact symbolRelations_coeff_smul a c v
 
 private lemma coeffQuot_isScalarTower : IsScalarTower A B (CoeffQuot A B n) :=
   IsScalarTower.of_algebraMap_smul fun a x => by
-    -- `algebraMap A B a • x` unfolds to `coeffAction A B n (algebraMap A B a) x`.
-    change coeffAction A B n (algebraMap A B a) x = a • x
-    rw [coeffAction_algebraMap]
-    rfl
+    rw [coeffModule_smul_def, coeffAction_algebraMap, LinearMap.smul_apply, one_apply_eq_self]
 
 attribute [local instance] coeffQuot_isScalarTower
 
@@ -374,28 +374,29 @@ private lemma symbolRelations_le_comap_consSlot (b : B) :
   · exact symbolRelations_of_eq c (i := i.succ) (j := j.succ) (by simpa using hv)
       (Fin.succ_injective _ |>.ne hij)
 
-private lemma mapQ_mkC (b : B) (s : Symbols A B n) :
-    (symbolRelations A B n).mapQ (symbolRelations A B (n + 1)) (consSlot b)
-      (symbolRelations_le_comap_consSlot b) (mkC A B n s) = mkC A B (n + 1) (consSlot b s) :=
-  rfl
+/-- Prepending the slot `b`, as an `A`-linear map `Sₙ ⧸ Rₙ → Sₙ₊₁ ⧸ Rₙ₊₁`. -/
+private noncomputable def consQ (b : B) : CoeffQuot A B n →ₗ[A] CoeffQuot A B (n + 1) :=
+  (symbolRelations A B n).mapQ (symbolRelations A B (n + 1)) (consSlot b)
+    (symbolRelations_le_comap_consSlot b)
+
+private lemma consQ_mkC_sym (b c : B) (v : Fin n → B) :
+    consQ b (mkC A B n (sym A c v)) = mkC A B (n + 1) (sym A c (Fin.cons b v)) := by
+  rw [consQ, mkC, Submodule.mkQ_apply, Submodule.mapQ_apply, consSlot_sym, mkC,
+    Submodule.mkQ_apply]
 
 /-- Prepending the slot `b`, as a `B`-linear map `Sₙ ⧸ Rₙ → Sₙ₊₁ ⧸ Rₙ₊₁`. -/
 private noncomputable def wedgeD (b : B) : CoeffQuot A B n →ₗ[B] CoeffQuot A B (n + 1) where
-  toFun := (symbolRelations A B n).mapQ (symbolRelations A B (n + 1)) (consSlot b)
-    (symbolRelations_le_comap_consSlot b)
+  toFun := consQ b
   map_add' := map_add _
   map_smul' b' x := by
-    refine LinearMap.congr_fun (f := ((symbolRelations A B n).mapQ (symbolRelations A B (n + 1))
-      (consSlot b) (symbolRelations_le_comap_consSlot b)).comp (coeffAction A B n b'))
-      (g := (coeffAction A B (n + 1) b').comp ((symbolRelations A B n).mapQ
-        (symbolRelations A B (n + 1)) (consSlot b) (symbolRelations_le_comap_consSlot b)))
-      (coeffQuot_hom_ext fun c v => ?_) x
-    simp only [LinearMap.comp_apply, coeffAction_mkC, coeffMul_sym, mapQ_mkC, consSlot_sym]
+    rw [RingHom.id_apply, coeffModule_smul_def, coeffModule_smul_def]
+    refine LinearMap.congr_fun (f := (consQ b).comp (coeffAction A B n b'))
+      (g := (coeffAction A B (n + 1) b').comp (consQ b)) (coeffQuot_hom_ext fun c v => ?_) x
+    simp only [LinearMap.comp_apply, coeffAction_mkC, coeffMul_sym, consQ_mkC_sym]
 
 private lemma wedgeD_mkC_sym (b c : B) (v : Fin n → B) :
     wedgeD b (mkC A B n (sym A c v)) = mkC A B (n + 1) (sym A c (Fin.cons b v)) := by
-  rw [← consSlot_sym]
-  rfl
+  rw [wedgeD, LinearMap.coe_mk, AddHom.coe_mk, consQ_mkC_sym]
 
 private lemma mkC_sym_cons_add (c x y : B) (w : Fin n → B) :
     mkC A B (n + 1) (sym A c (Fin.cons (x + y) w)) =
@@ -412,9 +413,9 @@ private lemma wedgeD_add (x y : B) :
 private lemma wedgeD_mul (x y : B) :
     wedgeD (A := A) (n := n) (x * y) = x • wedgeD y + y • wedgeD x :=
   coeffQuot_hom_ext_B fun c v => by
-    rw [LinearMap.add_apply, LinearMap.smul_apply, LinearMap.smul_apply, wedgeD_mkC_sym,
-      wedgeD_mkC_sym, wedgeD_mkC_sym, smul_mkC_sym, smul_mkC_sym, ← sub_eq_zero, ← map_add,
-      ← map_sub, mkC_eq_zero_iff, ← sub_sub, mul_comm x c, mul_comm y c]
+    simp only [LinearMap.add_apply, LinearMap.smul_apply, wedgeD_mkC_sym, smul_mkC_sym]
+    rw [← sub_eq_zero, ← map_add, ← map_sub, mkC_eq_zero_iff, ← sub_sub, mul_comm x c,
+      mul_comm y c]
     simpa only [Fin.update_cons_zero] using
       symbolRelations_slot_mul (A := A) c (Fin.cons 0 v) 0 x y
 
@@ -484,8 +485,7 @@ private noncomputable def wedgeDerivation : Derivation A B (Module.End B (Tot A 
 variable (A B) in
 /-- The `B`-linear map `Ω[B⁄A] → Module.End B (⨁ₙ Sₙ ⧸ Rₙ)`, `db ↦ (prepend the slot b)`. -/
 private noncomputable def wedgeOmega : Ω[B⁄A] →ₗ[B] Module.End B (Tot A B) :=
-  @Derivation.liftKaehlerDifferential A B _ _ _ (Module.End B (Tot A B)) _ _ _ _
-    (wedgeDerivation A B)
+  Derivation.liftKaehlerDifferential (M := Module.End B (Tot A B)) (wedgeDerivation A B)
 
 private lemma wedgeDerivation_apply (b : B) : wedgeDerivation A B b = wedgeTot A b :=
   rfl
@@ -525,6 +525,10 @@ variable (A B) in
 private noncomputable def wedgeAction : ExteriorAlgebra B Ω[B⁄A] →ₐ[B] Module.End B (Tot A B) :=
   ExteriorAlgebra.lift B ⟨wedgeOmega A B, wedgeOmega_mul_self⟩
 
+private lemma wedgeAction_ι (ω : Ω[B⁄A]) :
+    wedgeAction A B (ExteriorAlgebra.ι B ω) = wedgeOmega A B ω :=
+  ExteriorAlgebra.lift_ι_apply _ _ _ _
+
 variable (A B) in
 /-- The class of the unit symbol `[1; ()]` in degree zero. -/
 private noncomputable def unitSymbol : Tot A B :=
@@ -535,14 +539,12 @@ private lemma wedgeAction_ιMulti (v : Fin n → B) :
       DirectSum.lof B ℕ (CoeffQuot A B) n (mkC A B n (sym A 1 v)) := by
   induction n with
   | zero =>
-    rw [ExteriorAlgebra.ιMulti_zero_apply, map_one, Module.End.one_eq_id, LinearMap.id_apply,
-      Subsingleton.elim v ![]]
-    rfl
+    rw [ExteriorAlgebra.ιMulti_zero_apply, map_one, one_apply_eq_self,
+      Subsingleton.elim v ![], unitSymbol]
   | succ n ih =>
-    rw [ExteriorAlgebra.ιMulti_succ_apply, map_mul, Module.End.mul_eq_comp, LinearMap.comp_apply,
-      wedgeAction, ExteriorAlgebra.lift_ι_apply, ← wedgeAction]
-    erw [ih (Fin.tail v)]
-    rw [wedgeOmega_D, wedgeTot_lof, wedgeD_mkC_sym, Fin.cons_self_tail]
+    rw [ExteriorAlgebra.ιMulti_succ_apply, map_mul, mul_apply_eq_comp, Matrix.vecTail,
+      Function.comp_def, ih, wedgeAction_ι, wedgeOmega_D, wedgeTot_lof, wedgeD_mkC_sym,
+      ← Fin.tail_def, Fin.cons_self_tail]
 
 variable (A B n) in
 /-- The left inverse of `symbolMap` modulo `Rₙ`, as a `B`-linear map `Ωⁿ → Sₙ ⧸ Rₙ`. -/

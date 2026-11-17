@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.DeRham.Presentation
+import TauCeti.LinearAlgebra.Alternating.ConsUpdate
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
 
@@ -64,22 +65,6 @@ theorem freeDifferential_sym (c : B) (v : Fin n → B) :
   rw [← single_eq_sym]
   simp [freeDifferential]
 
-/-- Exchanging the first slot with slot `i + 1` changes the sign of an alternating map. -/
-private lemma map_cons_update_add {M N : Type*} [AddCommGroup M] [Module B M] [AddCommGroup N]
-    [Module B N] (f : M [⋀^Fin (n + 1)]→ₗ[B] N) (w : Fin n → M) (i : Fin n) (x y : M) :
-    f (Fin.cons x (update w i y)) + f (Fin.cons y (update w i x)) = 0 := by
-  have hv : (Fin.cons y (update w i x) : Fin (n + 1) → M) ∘ Equiv.swap 0 i.succ =
-      Fin.cons x (update w i y) := by
-    ext k
-    refine Fin.cases ?_ (fun j => ?_) k
-    · simp [-Fin.cons_update]
-    · rcases eq_or_ne j i with rfl | hj
-      · simp [-Fin.cons_update]
-      · rw [comp_apply, Equiv.swap_apply_of_ne_of_ne (Fin.succ_ne_zero j)
-          ((Fin.succ_injective _).ne hj)]
-        simp [update_of_ne hj]
-  simpa only [hv] using f.map_swap_add (v := Fin.cons y (update w i x)) (Fin.succ_ne_zero i).symm
-
 /-- The free differential kills every relation among differential symbols, so it depends only on
 the represented form. -/
 theorem freeDifferential_relations :
@@ -110,7 +95,8 @@ theorem freeDifferential_relations :
   · rw [Derivation.map_smul, ← algebraMap_smul B a (D A B c), cons_smul, algebraMap_smul,
       sub_self]
   · rw [slot_add, sub_sub, sub_self]
-  · have h := map_cons_update_add (ιMulti B (n + 1)) (fun k => D A B (v k)) i (D A B x) (D A B y)
+  · have h :=
+      (ιMulti B (n + 1)).map_cons_update_add (fun k => D A B (v k)) i (D A B x) (D A B y)
     simp only [slot_add, slot_smul, cons_add, cons_smul]
     linear_combination (norm := module) (-c) • h
   · rw [Derivation.map_algebraMap, Fin.cons_update, AlternatingMap.map_update_zero]
@@ -134,9 +120,9 @@ variable {A B n}
 theorem d_elementary (c : B) (v : Fin n → B) :
     d A B n (elementary A c v) =
       ιMulti B (n + 1) (Fin.cons (D A B c) fun i => D A B (v i)) := by
-  rw [← symbolMap_sym, ← symbolQuotientEquiv_mk, d, LinearMap.comp_apply,
-    LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply, Submodule.liftQ_apply,
-    freeDifferential_sym]
+  rw [← symbolMap_sym, ← symbolQuotientEquiv_mk]
+  simp only [d, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply,
+    Submodule.liftQ_apply, freeDifferential_sym]
 
 /-- `d` composed with the evaluation of symbols is the free differential. -/
 theorem d_comp_symbolMap : d A B n ∘ₗ symbolMap A B n = freeDifferential A B n :=
@@ -161,12 +147,9 @@ theorem d_comp_d : d A B (n + 1) ∘ₗ d A B n = 0 := by
   have h : (ιMulti B (n + 1) (Fin.cons (D A B c) fun i => D A B (v i)) :
       Forms A B (n + 1)) = elementary A 1 (Fin.cons c v) := by
     rw [elementary_def, one_smul]
-    congr 1
-    ext k
-    exact Fin.cases rfl (fun _ => rfl) k
-  rw [LinearMap.zero_comp, LinearMap.comp_apply, LinearMap.comp_apply, LinearMap.zero_apply,
-    symbolMap_sym,
-    d_elementary, h, d_elementary, Derivation.map_one_eq_zero]
+    exact congrArg _ (Fin.comp_cons (D A B) c v).symm
+  simp only [LinearMap.comp_apply, LinearMap.zero_apply, symbolMap_sym, d_elementary, h,
+    Derivation.map_one_eq_zero]
   exact AlternatingMap.map_coord_zero _ 0 (Fin.cons_zero _ _)
 
 /-- `d (d ω) = 0`. -/
