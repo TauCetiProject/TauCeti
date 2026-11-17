@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Relative.Dense
 public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.Relative
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Relative
-public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Dense
 
 /-!
 # Representing cycles glued from faces
@@ -39,9 +39,6 @@ corners, where several faces meet, need not be examined.
 
 ## Main results
 
-* `TauCeti.cubicalHomology_ext_of_dense_iUnion`: on a compact `m`-manifold, a class of the cubical
-  homology `Hₘ(A)` is determined by its images in `Hₘ(A, A ∖ Uᵢ)` for a family of sets `Uᵢ` with
-  dense union.
 * `TauCeti.isRepresentingCycle_of_forall_isCubicalRepresentative`: a cycle of `A` which, modulo
   `A ∖ Uᵢ`, agrees with a relative cycle representing the image of `ν` for each `i`, represents
   `ν`.
@@ -68,34 +65,6 @@ universe u
 namespace TauCeti
 
 variable {k : Type u} [CommRing k] {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
-
-/-- **Top-dimensional cubical classes of a compact manifold are determined along a dense union.**
-On a compact manifold `Y` of dimension `m`, let `(Uᵢ)` be a family of sets whose union is dense.
-Two classes of the normalized cubical homology `Hₘ(Y)` with the same images in the relative
-cubical homology `Hₘ(Y, Y ∖ Uᵢ)` for every `i` are equal. -/
-theorem cubicalHomology_ext_of_dense_iUnion {Y : TopCat.{u}} [T2Space Y] [CompactSpace Y]
-    [ChartedSpace E Y] [FiniteDimensional ℝ E] {m : ℕ} (hm : finrank ℝ E = m)
-    {ι : Type*} {U : ι → Set Y} (hU : Dense (⋃ i, U i))
-    {μ ν : ((normalizedCubicalChainComplex k).obj Y).homology m}
-    (h : ∀ i, (HomologicalComplex.homologyMap (cokernel.π
-          ((normalizedCubicalChainComplex k).map (TopPair.ofSubset (U i)ᶜ).map)) m).hom μ =
-      (HomologicalComplex.homologyMap (cokernel.π
-          ((normalizedCubicalChainComplex k).map (TopPair.ofSubset (U i)ᶜ).map)) m).hom ν) :
-    μ = ν := by
-  apply (ModuleCat.mono_iff_injective (singularCubicalHomologyIso k Y m).inv).1 inferInstance
-  refine singularHomology_ext_of_dense_iUnion (M := Y) (E := E) (ModuleCat.of k k) hm hU
-    fun i ↦ ?_
-  -- Through the comparison isomorphisms, the map to relative singular homology is the map to
-  -- relative cubical homology.
-  have e : ∀ x, ((TopPair.ofSubset (U i)ᶜ).singularHomologyπ (ModuleCat.of k k) m).hom
-      ((singularCubicalHomologyIso k Y m).inv.hom x) =
-        (TopPair.singularCubicalHomologyIso k (TopPair.ofSubset (U i)ᶜ) m).inv.hom
-          ((HomologicalComplex.homologyMap (cokernel.π
-            ((normalizedCubicalChainComplex k).map (TopPair.ofSubset (U i)ᶜ).map)) m).hom x) :=
-    fun x ↦ (congrArg (fun φ ↦ φ.hom x)
-      (TopPair.homologyMap_π_comp_singularCubicalHomologyIso_inv k
-        (TopPair.ofSubset (U i)ᶜ) m)).symm
-  rw [e, e, h i]
 
 variable {X : TopCat.{u}} {A : Set X}
 
