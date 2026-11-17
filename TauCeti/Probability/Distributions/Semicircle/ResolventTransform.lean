@@ -492,7 +492,6 @@ private theorem tendsto_standard_resolvent_im_of_mem_Icc {x : ℝ}
     let a : ℝ := (standardSemicircleResolventAt x ε).re
     let b : ℝ := (standardSemicircleResolventAt x ε).im
     let q : ℝ := standardSemicircleResolventNormSq x ε
-    have hids := standard_boundary_identities x ε hε
     have hb : 0 < b := by
       simpa [b, standardSemicircleResolventAt] using
         standardSemicircleResolvent_im_pos
