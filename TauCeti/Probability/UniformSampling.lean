@@ -7,8 +7,8 @@ module
 
 public import Mathlib.Probability.UniformOn
 public import Mathlib.Data.Fintype.CardEmbedding
+import TauCeti.Data.ENNReal.Inv
 import TauCeti.Data.Fintype.Card.Embedding
-import TauCeti.Probability.Distributions.Uniform.Finite
 
 /-!
 # Uniform sampling with and without replacement
@@ -43,7 +43,8 @@ estimate is the classical union bound over unordered coordinate pairs, using
 * `uniformOn_injective_apply_eq`, `uniformOn_not_injective_apply_eq`, and their `.real` forms
   compute the exact uniform-measure masses;
 * `uniformOn_injective_eq_zero_of_isEmpty`, `uniformOn_injective_of_subsingleton`, and
-  `pi_uniformOn_univ_of_subsingleton` treat the infeasible and subsingleton-sample regimes;
+  `uniformOn_not_injective_eq_zero_of_subsingleton` (with its `.real` companion) treat the
+  infeasible and subsingleton-sample regimes;
 * `uniformOn_inter_le_add_compl` and `uniformOn_le_inter_add_compl` give the general conditioning
   comparison;
 * `uniformOn_injective_le_add` and `uniformOn_univ_le_injective_add` compare arbitrary events
@@ -81,17 +82,6 @@ theorem uniformOn_toReal {Ω : Type*} [MeasurableSpace Ω] [MeasurableSingletonC
       Measure.count_apply_finite _ (hS.inter_of_left T), ← Set.ncard_eq_toFinset_card,
       div_eq_inv_mul]
   · simp [uniformOn_eq_zero.2 (.inl hS), hS.ncard]
-
-/-- Converting the exact finite-sampling collision expression from `ℝ≥0∞` to `ℝ` preserves
-subtraction, since `(n)_m ≤ n ^ m` for all `n` and `m` (including `n = 0`). -/
-theorem toReal_one_sub_descFactorial_div_pow (n m : ℕ) :
-    ((1 : ℝ≥0∞) - (n.descFactorial m : ℝ≥0∞) / (n : ℝ≥0∞) ^ m).toReal =
-      1 - (n.descFactorial m : ℝ) / (n : ℝ) ^ m := by
-  have hle : (n.descFactorial m : ℝ≥0∞) / (n : ℝ≥0∞) ^ m ≤ 1 :=
-    ENNReal.div_le_of_le_mul <| by
-      rw [one_mul]
-      exact_mod_cast Nat.descFactorial_le_pow n m
-  simp [ENNReal.toReal_sub_of_le hle ENNReal.one_ne_top]
 
 variable {ι κ : Type*}
 
@@ -138,7 +128,9 @@ theorem uniformOn_real_not_injective_apply_eq [MeasurableSpace κ] [MeasurableSi
     (uniformOn (Set.univ : Set (ι → κ))).real {f | ¬ Function.Injective f} =
       1 - (Fintype.card κ).descFactorial (Fintype.card ι) /
         (Fintype.card κ : ℝ) ^ Fintype.card ι := by
-  rw [measureReal_def, uniformOn_not_injective_apply_eq, toReal_one_sub_descFactorial_div_pow]
+  rw [measureReal_def, uniformOn_not_injective_apply_eq,
+    ENNReal.toReal_one_sub_div (by exact_mod_cast Nat.descFactorial_le_pow _ _)]
+  simp
 
 /-- Unconditional upper bound form of `uniformOn_not_injective_apply_eq`: when `ι → κ` is
 nonempty the two sides are equal, and when `ι → κ` is empty the uniform measure is zero while
@@ -158,11 +150,10 @@ theorem uniformOn_real_not_injective_le_one_sub_descFactorial_div_pow [Measurabl
     (uniformOn (Set.univ : Set (ι → κ))).real {f | ¬ Function.Injective f} ≤
       1 - (Fintype.card κ).descFactorial (Fintype.card ι) /
         (Fintype.card κ : ℝ) ^ Fintype.card ι := by
-  have hfin : (1 : ℝ≥0∞) - (Fintype.card κ).descFactorial (Fintype.card ι) /
-      (Fintype.card κ : ℝ≥0∞) ^ Fintype.card ι ≠ ∞ :=
-    ne_top_of_le_ne_top ENNReal.one_ne_top tsub_le_self
-  simpa [measureReal_def, toReal_one_sub_descFactorial_div_pow] using
-    ENNReal.toReal_mono hfin uniformOn_not_injective_le_one_sub_descFactorial_div_pow
+  have hle := ENNReal.toReal_mono (ENNReal.sub_ne_top ENNReal.one_ne_top)
+    (uniformOn_not_injective_le_one_sub_descFactorial_div_pow (ι := ι) (κ := κ))
+  rw [ENNReal.toReal_one_sub_div (by exact_mod_cast Nat.descFactorial_le_pow _ _)] at hle
+  simpa [measureReal_def] using hle
 
 end
 
@@ -200,29 +191,6 @@ theorem uniformOn_real_not_injective_eq_zero_of_subsingleton [Subsingleton ι] [
     (s : Set (ι → κ)) :
     (uniformOn s).real {f : ι → κ | ¬ Function.Injective f} = 0 := by
   simp [measureReal_def]
-
-/-- On a subsingleton sample index, the product of uniform laws on `κ` coincides with the uniform
-law on `ι → κ` without any finiteness or measurable-singleton assumption on `κ`. -/
-theorem pi_uniformOn_univ_of_subsingleton [Fintype ι] [Subsingleton ι] [MeasurableSpace κ] :
-    (Measure.pi fun _ : ι => uniformOn (Set.univ : Set κ)) =
-      uniformOn (Set.univ : Set (ι → κ)) := by
-  rcases isEmpty_or_nonempty ι with hι | ⟨⟨i₀⟩⟩
-  · rw [Measure.pi_of_empty, uniformOn, Subsingleton.count_eq_dirac isEmptyElim, cond_univ]
-  · let _ : Unique ι := uniqueOfSubsingleton i₀
-    -- `measurePreserving_funUnique` uses `Unique.fintype`; unify with the ambient `Fintype ι`.
-    obtain rfl : ‹Fintype ι› = Unique.fintype := Subsingleton.elim _ _
-    set e := MeasurableEquiv.funUnique ι κ
-    have hmap₁ : (Measure.pi fun _ : ι => uniformOn (Set.univ : Set κ)).map e =
-        uniformOn (Set.univ : Set κ) :=
-      (measurePreserving_funUnique (uniformOn (Set.univ : Set κ)) ι).map_eq
-    have hmap₂ : (uniformOn (Set.univ : Set (ι → κ))).map e = uniformOn (Set.univ : Set κ) := by
-      simpa [e.surjective.range_eq] using e.map_uniformOn Set.univ
-    calc
-      (Measure.pi fun _ : ι => uniformOn (Set.univ : Set κ))
-          = ((Measure.pi fun _ : ι => uniformOn (Set.univ : Set κ)).map e).map e.symm :=
-            e.map_symm_map.symm
-      _ = ((uniformOn (Set.univ : Set (ι → κ))).map e).map e.symm := by rw [hmap₁, hmap₂]
-      _ = uniformOn (Set.univ : Set (ι → κ)) := e.map_symm_map
 
 end Degenerate
 

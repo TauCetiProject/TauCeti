@@ -9,6 +9,7 @@ public import TauCeti.Probability.PopulationSampling.Basic
 public import TauCeti.Probability.Process.EmpiricalMeasure
 public import TauCeti.Probability.UniformSampling
 public import Mathlib.MeasureTheory.Measure.FiniteMeasurePi
+import TauCeti.Probability.Distributions.Uniform.Finite
 
 /-!
 # Sampling finite populations with and without replacement
@@ -118,7 +119,7 @@ without replacement is the zero measure. -/
 theorem sampleWithoutReplacement_eq_zero_of_card_lt {ι κ : Type*} [Fintype ι] [Fintype κ]
     [MeasurableSpace κ] (h : Fintype.card κ < Fintype.card ι) (ρ : Measure (κ → α)) :
     sampleWithoutReplacement (ι := ι) ρ = 0 := by
-  have : IsEmpty (ι ↪ κ) := ⟨fun e => h.not_ge (Fintype.card_le_of_embedding e)⟩
+  have := Function.Embedding.isEmpty_of_card_lt h
   exact sampleWithoutReplacement_eq_zero_of_isEmpty ρ
 
 /-- Sampling a deterministic population without replacement is the pushforward of uniform
