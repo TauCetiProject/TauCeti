@@ -75,10 +75,6 @@ private theorem hasDerivAt_diagPhase {x : ℝ} (hx : x < 1) :
 private theorem continuousOn_diagPhase : ContinuousOn diagPhase (Iio 1) := fun _ hx =>
   (hasDerivAt_diagPhase hx).continuousAt.continuousWithinAt
 
-private theorem diagPhase_nonneg {x : ℝ} (hx : x < 1) : 0 ≤ diagPhase x := by
-  linarith [Real.log_le_sub_one_of_pos (sub_pos.mpr hx), show diagPhase x = -x - Real.log (1 - x)
-    from rfl]
-
 private theorem nonneg_of_hasDerivAt_mul_nonneg {f g : ℝ → ℝ} (hf0 : f 0 = 0)
     (hd : ∀ y ∈ Icc (-(1 / 3 : ℝ)) (1 / 3), HasDerivAt f (y * g y) y)
     (hg : ∀ y ∈ Icc (-(1 / 3 : ℝ)) (1 / 3), 0 ≤ g y)
@@ -604,7 +600,7 @@ private theorem norm_main_integrand_sub_le {a s v : ℝ} (hs : |s| = 1)
   have hsv_mem := mem_Icc_third_of_abs_eq_one hs ⟨hv.1.le, hv.2⟩
   have hu_pos : 0 < diagCoord s v := diagCoord_pos hs hv
   have hu_sq : (diagCoord s v) ^ 2 = 2 * diagPhase (s * v) :=
-    Real.sq_sqrt (mul_nonneg zero_le_two (diagPhase_nonneg (by linarith [hsv_mem.2])))
+    Real.sq_sqrt (Real.sqrt_pos.mp hu_pos).le
   have h1 : 0 < 1 - s * v := by linarith [hsv_mem.2]
   have hexp_eq : Real.exp (-(a / 2) * (diagCoord s v) ^ 2) =
       Real.exp (-a * diagPhase (s * v)) := by rw [hu_sq]; congr 1; ring
