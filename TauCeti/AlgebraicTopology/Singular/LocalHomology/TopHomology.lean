@@ -60,8 +60,6 @@ coefficient theorem needs for the vanishing of the cohomology of `M` above its d
   `TauCeti.mem_range_localHomologySystemCone_π_app_iff`: for compact `M`, restriction to a point
   has image the classes invariant under transport along loops in degree `n`, and it is injective
   if `M` is connected.
-* `TauCeti.localHomologySingletonLinearEquiv`: with coefficients `N ≃ₗ[Λ] Λ`, the local homology
-  `Hₙ(M, M ∖ {x}; N)` of an `n`-manifold is a copy of `Λ`.
 * `TauCeti.singularHomologyToLocalHomology_injective`: for compact connected `M`, the map
   `Hₙ(M) → Hₙ(M, M ∖ {x})` is injective.
 * `TauCeti.singularHomologyToLocalHomology_surjective_of_ne_zero` and
@@ -132,25 +130,6 @@ def isLimitLocalHomologySystemCone [CompactSpace M] {n : ℕ} (hn : finrank ℝ 
 
 variable {M E}
 
-/-- With coefficients `N ≃ₗ[Λ] Λ`, the local homology `Hₙ(M, M ∖ {x}; N)` of a manifold of
-dimension `n` at a point `x` is a copy of `Λ`, through the computation of local homology in the
-chart at `x` (`TauCeti.singularHomologyComplSingletonFinrankIso`). -/
-def localHomologySingletonLinearEquiv {n : ℕ} (hn : finrank ℝ E = n) (eN : N ≃ₗ[Λ] Λ) (x : M) :
-    (localHomology N ({x} : Set M) n : ModuleCat.{w} Λ) ≃ₗ[Λ] Λ :=
-  ((hn ▸ singularHomologyComplSingletonFinrankIso N (chartAt E x) (mem_chart_source E x) :
-    localHomology N ({x} : Set M) n ≅ N).toLinearEquiv).trans eN
-
-variable (M) in
-omit [T2Space M] in
-/-- The quotient map `Hₖ(M) → Hₖ(M, M ∖ M)` is bijective, the subspace `M ∖ M` being empty. -/
-private theorem singularHomologyπ_compl_univ_bijective (k : ℕ) :
-    Function.Bijective ((TopPair.ofSubset ((univ : Set (TopCat.of M))ᶜ)).singularHomologyπ
-      (C := ModuleCat.{w} Λ) N k) := by
-  have : IsEmpty (TopPair.ofSubset ((univ : Set (TopCat.of M))ᶜ)).snd := by
-    simp only [compl_univ]
-    exact inferInstanceAs (IsEmpty (∅ : Set M))
-  exact (ConcreteCategory.isIso_iff_bijective _).1 inferInstance
-
 /-- **Restriction to a point is injective on the top homology of a compact connected manifold**:
 a class of `Hₙ(M, M ∖ M; N)` is determined by its image in the local homology
 `Hₙ(M, M ∖ {x}; N)` at any single point. -/
@@ -173,7 +152,7 @@ theorem singularHomologyToLocalHomology_injective [CompactSpace M] [ConnectedSpa
   intro γ δ h
   rw [singularHomologyToLocalHomology_apply, singularHomologyToLocalHomology_apply,
     ← localHomologySystemCone_π_app N M E n (FundamentalGroupoid.mk x)] at h
-  exact (singularHomologyπ_compl_univ_bijective N M n).1
+  exact (singularHomologyπ_compl_univ_bijective M N n).1
     (localHomologySystemCone_π_app_injective N hn (FundamentalGroupoid.mk x) h)
 
 /-- **The image of the top homology of a compact manifold in local homology.** A local
@@ -245,7 +224,7 @@ theorem singularHomologyToLocalHomology_surjective_of_ne_zero [IsDomain Λ] (eN 
     (FundamentalGroupoid.mk x) z).2 fun g ↦
       LinearMap.congr_fun (LinearMap.eq_id_of_apply_eq_self (localHomologyTransport N M E n g).hom
         (localHomologySingletonLinearEquiv N hn eN x) hμx (hfix g)) z
-  obtain ⟨γ', rfl⟩ := (singularHomologyπ_compl_univ_bijective N M n).2 γ
+  obtain ⟨γ', rfl⟩ := (singularHomologyπ_compl_univ_bijective M N n).2 γ
   exact ⟨γ', by
     rw [← hγ, localHomologySystemCone_π_app]
     exact singularHomologyToLocalHomology_apply N x γ'⟩
@@ -280,9 +259,6 @@ by restriction to the local homology at `x` and the chart computation of local h
 def singularHomologyIsoOfSimplyConnectedSpace [CompactSpace M] [SimplyConnectedSpace M] {n : ℕ}
     (hn : finrank ℝ E = n + 1) (x : M) :
     (TopCat.toSSet.obj (TopCat.of M)).homology N (n + 1) ≅ N := by
-  have : IsEmpty (TopPair.ofSubset ((univ : Set M)ᶜ : Set (TopCat.of M))).snd := by
-    simp only [compl_univ]
-    exact inferInstanceAs (IsEmpty (∅ : Set M))
   have := isIso_localHomologySystemCone_π_app N hn (FundamentalGroupoid.mk x)
   let e := asIso ((TopPair.ofSubset ((univ : Set M)ᶜ : Set (TopCat.of M))).singularHomologyπ N
     (n + 1))
@@ -358,10 +334,7 @@ theorem projective_singularHomology_of_compactSpace
     Projective (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} Λ) m).obj N).obj
       (TopCat.of M)) := by
   obtain rfl | hm := hm.eq_or_lt
-  · have : IsEmpty (TopPair.ofSubset ((univ : Set M)ᶜ : Set (TopCat.of M))).snd := by
-      simp only [compl_univ]
-      exact inferInstanceAs (IsEmpty (∅ : Set M))
-    exact Projective.of_iso
+  · exact Projective.of_iso
       (asIso ((TopPair.ofSubset ((univ : Set M)ᶜ : Set (TopCat.of M))).singularHomologyπ N n)).symm
       (projective_localHomology_univ N hn)
   · exact Projective.of_iso (isZero_singularHomology_of_compactSpace N hn hm).isoZero.symm
