@@ -64,6 +64,12 @@ bijective.
   `TauCeti.intervalBaseTimeCoordinate_intervalBaseOrbit`: the coordinate `U` with `U(q(s)) = C s`.
 * `TauCeti.bijOn_intervalBaseTimeCoordinate` and
   `TauCeti.intervalBaseOrbit_one_intervalBaseTimeCoordinate`: `U` identifies `(0, 1)` with `ℝ`.
+* `TauCeti.intervalBaseSourceGluing`, `TauCeti.intervalBaseTargetGluing`,
+  `TauCeti.intervalBaseOrbit_one_add_log`, `TauCeti.intervalBaseOrbit_one_sub_log`,
+  `TauCeti.hasDerivAt_intervalBaseSourceGluing_zero` and
+  `TauCeti.hasDerivAt_intervalBaseTargetGluing_zero`: the unit-rate trajectory `q` in the gluing
+  parameter `ρ = e^{-T}` at its two ends, smooth up to `ρ = 0` with rate `1` at `0` and rate `2`
+  at `1`.
 * `TauCeti.intervalBaseFlow`, `TauCeti.isIntegralCurve_intervalBaseFlow` and
   `TauCeti.intervalBaseFlow_add`: the flow.
 * `TauCeti.intervalBaseTimeCoordinate_intervalBaseFlow`, `TauCeti.strictMonoOn_intervalBaseFlow`,
@@ -330,6 +336,10 @@ theorem isIntegralCurve_intervalBaseFlow (C : ℝ) {t : ℝ} (ht : t ∈ Icc (-1
 theorem intervalBaseFlow_neg (C s t : ℝ) : intervalBaseFlow C s (-t) = -intervalBaseFlow C s t := by
   rw [intervalBaseFlow, intervalBaseFlow, neg_sq, neg_div]
 
+/-- The flow commutes with the absolute value. -/
+theorem abs_intervalBaseFlow (C s t : ℝ) : |intervalBaseFlow C s t| = intervalBaseFlow C s |t| := by
+  rw [intervalBaseFlow, intervalBaseFlow, abs_div, abs_of_nonneg (Real.sqrt_nonneg _), sq_abs]
+
 /-- The critical point `-1` is fixed by the flow. -/
 @[simp]
 theorem intervalBaseFlow_apply_neg_one (C s : ℝ) : intervalBaseFlow C s (-1) = -1 := by
@@ -588,6 +598,111 @@ theorem tendsto_nhds_one_of_tendsto_intervalBaseTimeCoordinate_atTop {α : Type*
     (h : Tendsto (fun i ↦ intervalBaseTimeCoordinate (x i)) l atTop) : Tendsto x l (𝓝 1) :=
   ((tendsto_intervalBaseOrbit_atTop one_pos).comp h).congr' <| hx.mono fun _ hi ↦
     intervalBaseOrbit_one_intervalBaseTimeCoordinate hi
+
+/-! ### The unit-rate trajectory in the gluing parameter -/
+
+section Gluing
+
+open Real
+
+/-- The unit-rate trajectory `q = TauCeti.intervalBaseOrbit 1` near its source `0`, read in the
+gluing parameter `ρ = e^{s - a}`: `q (a + log ρ) = ρ / √(ρ² + e^{-2a})` for `ρ > 0`
+(`TauCeti.intervalBaseOrbit_one_add_log`). The right side is defined and smooth for every real
+`ρ`, and vanishes at `ρ = 0`, the critical point `0`, to first order. -/
+noncomputable def intervalBaseSourceGluing (a ρ : ℝ) : ℝ := ρ / √(ρ ^ 2 + exp (-(2 * a)))
+
+theorem intervalBaseSourceGluing_apply (a ρ : ℝ) :
+    intervalBaseSourceGluing a ρ = ρ / √(ρ ^ 2 + exp (-(2 * a))) := (rfl)
+
+/-- The unit-rate trajectory `q = TauCeti.intervalBaseOrbit 1` near its target `1`, read in the
+gluing parameter `ρ = e^{a - s}`: `q (a - log ρ) = 1 / √(1 + e^{-2a} ρ²)` for `ρ > 0`
+(`TauCeti.intervalBaseOrbit_one_sub_log`). The right side is defined and smooth for every real
+`ρ`, and equals the critical point `1` at `ρ = 0`, which it approaches to second order. -/
+noncomputable def intervalBaseTargetGluing (a ρ : ℝ) : ℝ := (√(1 + exp (-(2 * a)) * ρ ^ 2))⁻¹
+
+theorem intervalBaseTargetGluing_apply (a ρ : ℝ) :
+    intervalBaseTargetGluing a ρ = (√(1 + exp (-(2 * a)) * ρ ^ 2))⁻¹ := (rfl)
+
+/-- **The source end in the gluing parameter**: `q (a + log ρ) = ρ / √(ρ² + e^{-2a})`. -/
+theorem intervalBaseOrbit_one_add_log (a : ℝ) {ρ : ℝ} (hρ : 0 < ρ) :
+    intervalBaseOrbit 1 (a + log ρ) = intervalBaseSourceGluing a ρ := by
+  have hρ2 : 0 < ρ ^ 2 := pow_pos hρ 2
+  -- Split the `log ρ` part off the exponent `-(2 * 1 * s)` of `intervalBaseOrbit 1`, so that
+  -- it becomes the factor `ρ⁻²`.
+  have hexp : -(2 * 1 * (a + log ρ)) = -(2 * a) - 2 * log ρ := by ring
+  have he : exp (-(2 * 1 * (a + log ρ))) = exp (-(2 * a)) / ρ ^ 2 := by
+    rw [hexp, exp_sub, two_mul (log ρ), exp_add, exp_log hρ, ← sq]
+  -- Put the radicand over the common denominator `ρ²`, whose square root is `ρ`.
+  have hsum : 1 + exp (-(2 * a)) / ρ ^ 2 = (ρ ^ 2 + exp (-(2 * a))) / ρ ^ 2 := by field_simp
+  rw [intervalBaseOrbit_apply, he, intervalBaseSourceGluing_apply, hsum,
+    sqrt_div' _ hρ2.le, sqrt_sq hρ.le, inv_div]
+
+/-- **The target end in the gluing parameter**: `q (a - log ρ) = 1 / √(1 + e^{-2a} ρ²)`. -/
+theorem intervalBaseOrbit_one_sub_log (a : ℝ) {ρ : ℝ} (hρ : 0 < ρ) :
+    intervalBaseOrbit 1 (a - log ρ) = intervalBaseTargetGluing a ρ := by
+  -- Split the `log ρ` part off the exponent `-(2 * 1 * s)` of `intervalBaseOrbit 1`, so that
+  -- it becomes the factor `ρ²`.
+  have hexp : -(2 * 1 * (a - log ρ)) = -(2 * a) + 2 * log ρ := by ring
+  rw [intervalBaseOrbit_apply, intervalBaseTargetGluing_apply, hexp, exp_add, two_mul (log ρ),
+    exp_add, exp_log hρ, ← sq]
+
+@[simp]
+theorem intervalBaseSourceGluing_zero (a : ℝ) : intervalBaseSourceGluing a 0 = 0 := by
+  simp [intervalBaseSourceGluing_apply]
+
+@[simp]
+theorem intervalBaseTargetGluing_zero (a : ℝ) : intervalBaseTargetGluing a 0 = 1 := by
+  simp [intervalBaseTargetGluing_apply]
+
+/-- The target end is an even function of the gluing parameter. -/
+@[simp]
+theorem intervalBaseTargetGluing_neg (a ρ : ℝ) :
+    intervalBaseTargetGluing a (-ρ) = intervalBaseTargetGluing a ρ := by
+  simp [intervalBaseTargetGluing_apply]
+
+/-- For fixed `a`, the source end is smooth in the gluing parameter on all of `ℝ`, including the
+broken-trajectory value `ρ = 0`. -/
+theorem contDiff_intervalBaseSourceGluing (a : ℝ) {n : WithTop ℕ∞} :
+    ContDiff ℝ n (intervalBaseSourceGluing a) := by
+  rw [funext (intervalBaseSourceGluing_apply a)]
+  exact contDiff_id.div (((contDiff_id.pow 2).add contDiff_const).sqrt fun _ ↦ by positivity)
+    fun _ ↦ by positivity
+
+/-- For fixed `a`, the target end is smooth in the gluing parameter on all of `ℝ`, including the
+broken-trajectory value `ρ = 0`. -/
+theorem contDiff_intervalBaseTargetGluing (a : ℝ) {n : WithTop ℕ∞} :
+    ContDiff ℝ n (intervalBaseTargetGluing a) := by
+  rw [funext (intervalBaseTargetGluing_apply a)]
+  exact (contDiff_const.add (contDiff_const.mul (contDiff_id.pow 2))).sqrt
+    (fun _ ↦ by positivity) |>.inv fun _ ↦ by positivity
+
+/-- **Rate `1` at the source**: the source end leaves `0` with derivative `e^a` in the gluing
+parameter. -/
+theorem hasDerivAt_intervalBaseSourceGluing_zero (a : ℝ) :
+    HasDerivAt (intervalBaseSourceGluing a) (exp a) 0 := by
+  have hD : HasDerivAt (fun ρ : ℝ ↦ ρ ^ 2 + exp (-(2 * a))) 0 0 := by
+    simpa using (hasDerivAt_pow 2 (0 : ℝ)).add_const (exp (-(2 * a)))
+  have hs : √(exp (-(2 * a))) = (exp a)⁻¹ := by
+    rw [← exp_neg, ← exp_half]
+    congr 1
+    ring
+  rw [funext (intervalBaseSourceGluing_apply a)]
+  -- The quotient rule at `ρ = 0`, where the numerator vanishes, leaves `√(e^{-2a}) / √(e^{-2a})²`.
+  refine ((hasDerivAt_id (0 : ℝ)).div (hD.sqrt (by positivity)) (by positivity)).congr_deriv ?_
+  simp [hs]
+  field_simp
+
+/-- **Rate `2` at the target**: the target end reaches `1` with vanishing derivative in the
+gluing parameter. -/
+theorem hasDerivAt_intervalBaseTargetGluing_zero (a : ℝ) :
+    HasDerivAt (intervalBaseTargetGluing a) 0 0 := by
+  have hD : HasDerivAt (fun ρ : ℝ ↦ 1 + exp (-(2 * a)) * ρ ^ 2) 0 0 := by
+    simpa using ((hasDerivAt_pow 2 (0 : ℝ)).const_mul (exp (-(2 * a)))).const_add 1
+  rw [funext (intervalBaseTargetGluing_apply a)]
+  refine ((hD.sqrt (by positivity)).inv (by positivity)).congr_deriv ?_
+  simp
+
+end Gluing
 
 /-! ### The flow and the time coordinate -/
 
