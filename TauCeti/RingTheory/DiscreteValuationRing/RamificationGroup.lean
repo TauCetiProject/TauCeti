@@ -30,8 +30,9 @@ homomorphism `G_i →* U(B, i) / U(B, i + 1)` that kills `G_{i+1}` and therefore
   by `G` and the induced action on `κ`;
 * at positive depth `n + 1`, composing with the uniformizer coordinate
   `Additive (U(B, n + 1) / U(B, n + 2)) ≃+ κ` gives a homomorphism
-  `Additive (G_{n+1} / G_{n+2}) →+ κ`, which scales by `residue B a ^ (n + 1)` when `ϖ` is replaced
-  by `ϖ * a` and satisfies Serre's conjugation formula
+  `θ_ϖ : Additive (G_{n+1} / G_{n+2}) →+ κ`, satisfying `θ_ϖ = residue B a ^ (n + 1) * θ_{ϖ'}` when
+  `ϖ' = ϖ * a` (so replacing `ϖ` by `ϖ * a` multiplies the coordinate by
+  `(residue B a ^ (n + 1))⁻¹`) and Serre's conjugation formula
   `θ_{n+1}(σ τ σ⁻¹) = θ_0(σ) ^ (n + 1) * θ_{n+1}(τ)` for `σ ∈ G_0`.
 
 When `B` is an algebra over a local ring `A` whose elements `G` fixes and the residue extension
@@ -125,13 +126,6 @@ variable {G : Type*} [Group G]
 variable {B : Type*} [CommRing B] [IsDomain B] [_root_.IsDiscreteValuationRing B]
 variable [MulSemiringAction G B]
 
-/-- Multiplying by a uniformizer `ϖ` shifts membership in powers of the maximal ideal by `1`. -/
-private theorem mul_mem_maximalIdeal_pow_succ_iff {ϖ c : B} (hϖ : Irreducible ϖ) (i : ℕ) :
-    ϖ * c ∈ maximalIdeal B ^ (i + 1) ↔ c ∈ maximalIdeal B ^ i := by
-  rw [hϖ.maximalIdeal_eq, Ideal.span_singleton_pow, Ideal.span_singleton_pow,
-    Ideal.mem_span_singleton, Ideal.mem_span_singleton, pow_succ',
-    mul_dvd_mul_iff_left hϖ.ne_zero]
-
 /-- An element `σ ∈ G_i` moves any unit `u : Bˣ` by a factor `u⁻¹ * σ(u)` in `U(B, i + 1)`. -/
 private theorem inv_mul_unitsMap_mem_principalUnitGroup_succ {i : ℕ} {σ : G}
     (hσ : σ ∈ ramificationGroup G B (i : ℤ)) (u : Bˣ) :
@@ -152,7 +146,7 @@ theorem uniformizerChangeUnit_smul_mem_principalUnitGroup (i : ℕ) {ϖ : B} (h�
     TauCeti.uniformizerChangeUnit ϖ (σ • ϖ) hϖ
         (by simpa using hϖ.map (MulSemiringAction.toRingAut G B σ)) ∈
       (maximalIdeal B ^ i).principalUnitGroup := by
-  rw [Ideal.mem_principalUnitGroup, ← mul_mem_maximalIdeal_pow_succ_iff hϖ i, mul_sub, mul_one,
+  rw [Ideal.mem_principalUnitGroup, ← hϖ.mul_mem_maximalIdeal_pow_succ_iff, mul_sub, mul_one,
     TauCeti.mul_uniformizerChangeUnit]
   exact mem_ramificationGroup_natCast_iff.mp hσ ϖ
 
@@ -251,7 +245,7 @@ theorem mem_ker_ramificationGroupToPrincipalUnitGroupGraded_iff (i : ℕ) {ϖ : 
       (σ : G) • ϖ - ϖ ∈ maximalIdeal B ^ (i + 2) := by
   rw [MonoidHom.mem_ker, ramificationGroupToPrincipalUnitGroupGraded_apply,
     QuotientGroup.eq_one_iff, Subgroup.mem_subgroupOf, Ideal.mem_principalUnitGroup,
-    ← mul_mem_maximalIdeal_pow_succ_iff hϖ (i + 1), mul_sub, mul_one, mul_coe_uniformizerRatio]
+    ← hϖ.mul_mem_maximalIdeal_pow_succ_iff, mul_sub, mul_one, mul_coe_uniformizerRatio]
 
 /-- The subgroup `G_{i+1}` is contained in the kernel of
 `ramificationGroupToPrincipalUnitGroupGraded i hϖ`. -/
@@ -416,8 +410,10 @@ theorem ramificationGroupGradedToResidueField_of_smul_sub_eq (n : ℕ) (π : B) 
     _ = y * π ^ (n + 2) := hmove
     _ = π * (y * π ^ (n + 1)) := by rw [pow_succ', ← mul_assoc, mul_comm y π, mul_assoc]
 
-/-- Replacing `π` by `π' = π * a` multiplies `ramificationGroupGradedToResidueField` by
-`residue B a ^ (n + 1)`. -/
+/-- When `π' = π * a` (with `a = TauCeti.uniformizerChangeUnit π π' hπ hπ'`), the coordinate
+`ramificationGroupGradedToResidueField` relative to `π` equals `residue B a ^ (n + 1)` times the
+coordinate relative to `π'`; equivalently, replacing `π` by `π * a` multiplies the coordinate by
+`(residue B a ^ (n + 1))⁻¹`. -/
 theorem ramificationGroupGradedToResidueField_change (n : ℕ) (π π' : B)
     (hπ : Irreducible π) (hπ' : Irreducible π')
     (τ : RamificationGroupGraded G B ((n : ℤ) + 1)) :

@@ -7,7 +7,6 @@ module
 
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 public import TauCeti.RingTheory.Ideal.PrincipalUnitGroup
-import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 import TauCeti.RingTheory.Ideal.Operations
 
 /-!
@@ -54,35 +53,21 @@ abbrev PrincipalUnitGroupGraded (R : Type*) [CommRing R] [IsLocalRing R] (i : �
     (maximalIdeal R ^ (i + 1)).principalUnitGroup.subgroupOf
       (maximalIdeal R ^ i).principalUnitGroup
 
-private def principalUnitGroupZeroToResidueFieldUnits :
-    (maximalIdeal R ^ 0).principalUnitGroup →* (ResidueField R)ˣ :=
-  (Units.map (residue R).toMonoidHom).comp (Subgroup.subtype _)
-
-private theorem ker_principalUnitGroupZeroToResidueFieldUnits :
-    (principalUnitGroupZeroToResidueFieldUnits (R := R)).ker =
-      (maximalIdeal R ^ 1).principalUnitGroup.subgroupOf
-        (maximalIdeal R ^ 0).principalUnitGroup := by
-  ext u
-  rw [principalUnitGroupZeroToResidueFieldUnits, MonoidHom.mem_ker, MonoidHom.comp_apply,
-    Subgroup.coe_subtype, ← MonoidHom.mem_ker, ← Ideal.principalUnitGroup_ker, ker_residue,
-    pow_one, Subgroup.mem_subgroupOf]
-
-private theorem principalUnitGroupZeroToResidueFieldUnits_surjective :
-    Function.Surjective (principalUnitGroupZeroToResidueFieldUnits (R := R)) := by
-  intro v
-  obtain ⟨u, rfl⟩ :=
-    surjective_units_map_of_local_ringHom (residue R) residue_surjective inferInstance v
-  exact ⟨⟨u, by simp⟩, rfl⟩
-
 /-- The depth-zero graded piece `U(R, 0) / U(R, 1)` of the principal unit filtration of a local
 ring `R` is canonically isomorphic to `(ResidueField R)ˣ`, via reduction of units modulo the
 maximal ideal. -/
 def principalUnitGroupGradedZeroEquivResidueFieldUnits :
     PrincipalUnitGroupGraded R 0 ≃* (ResidueField R)ˣ :=
-  (QuotientGroup.quotientMulEquivOfEq
-      (ker_principalUnitGroupZeroToResidueFieldUnits (R := R)).symm).trans
-    (QuotientGroup.quotientKerEquivOfSurjective _
-      (principalUnitGroupZeroToResidueFieldUnits_surjective (R := R)))
+  (QuotientGroup.congr
+    ((maximalIdeal R ^ 1).principalUnitGroup.subgroupOf (maximalIdeal R ^ 0).principalUnitGroup)
+    (maximalIdeal R).principalUnitGroup
+    ((MulEquiv.subgroupCongr
+        (by rw [pow_zero, Ideal.one_eq_top, Ideal.principalUnitGroup_top])).trans
+      Subgroup.topEquiv)
+    (by
+      ext u
+      simp [Subgroup.mem_map, Subgroup.mem_subgroupOf])).trans
+    (Ideal.unitsQuotientPrincipalUnitGroupEquiv (maximalIdeal_le_jacobson (⊥ : Ideal R)))
 
 /-- On the class of `u ∈ U(R, 0)`, `principalUnitGroupGradedZeroEquivResidueFieldUnits` reduces the
 underlying unit `u : Rˣ` modulo the maximal ideal. -/
@@ -92,13 +77,9 @@ theorem principalUnitGroupGradedZeroEquivResidueFieldUnits_mk
     principalUnitGroupGradedZeroEquivResidueFieldUnits (QuotientGroup.mk u) =
       Units.map (residue R).toMonoidHom (u : Rˣ) :=
   (MulEquiv.trans_apply ..).trans <|
-    (congrArg _ (QuotientGroup.quotientMulEquivOfEq_mk ..)).trans
-      (TauCeti.QuotientGroup.quotientKerEquivOfSurjective_apply_mk ..)
-
-private theorem comap_maximalIdeal_pow_succ_eq_smul_top (n : ℕ) :
-    Submodule.comap (maximalIdeal R ^ (n + 1)).subtype (maximalIdeal R ^ (n + 2)) =
-      maximalIdeal R • ⊤ := by
-  rw [Ideal.smul_top_eq_comap_mul, ← pow_succ]
+    (congrArg _ (QuotientGroup.congr_mk ..)).trans
+      (Ideal.unitsQuotientPrincipalUnitGroupEquiv_mk (maximalIdeal_le_jacobson (⊥ : Ideal R))
+        (u : Rˣ))
 
 /-- At positive depth `n + 1`, the graded piece `U(R, n + 1) / U(R, n + 2)` of the principal unit
 filtration of a local ring `R` is isomorphic via `1 + x ↦ x` to the additive group
@@ -109,7 +90,7 @@ def principalUnitGroupGradedSuccEquivMaximalIdealGraded (n : ℕ) :
         (maximalIdeal R • ⊤ : Submodule R (maximalIdeal R ^ (n + 1) : Ideal R))) :=
   (Ideal.principalUnitGroupPowQuotientEquiv (maximalIdeal_le_jacobson (⊥ : Ideal R)) n).trans
     (Submodule.quotEquivOfEq _ _
-      (comap_maximalIdeal_pow_succ_eq_smul_top n)).toAddEquiv.toMultiplicative
+      (by rw [Ideal.smul_top_eq_comap_mul, ← pow_succ])).toAddEquiv.toMultiplicative
 
 /-- On the class of `u ∈ U(R, n + 1)`, `principalUnitGroupGradedSuccEquivMaximalIdealGraded` sends
 `u` to the residue class of `u - 1` in `𝔪 ^ (n + 1) ⧸ (𝔪 • ⊤)`. -/

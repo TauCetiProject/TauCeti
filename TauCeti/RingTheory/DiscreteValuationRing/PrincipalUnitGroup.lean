@@ -16,8 +16,9 @@ uniformizer `π` identifies each positive-depth graded piece `U(R, n + 1) / U(R,
 principal unit filtration `U(R, i) = 1 + 𝔪 ^ i` with the additive group of `κ`, sending the class
 of `u` to the residue of `y` when `u - 1 = y * π ^ (n + 1)`.
 
-Replacing `π` by `π' = π * a` scales the coordinate relative to `π'` by the residue of
-`a ^ (n + 1)`. This is the pure discrete-valuation-ring counterpart of
+When `π' = π * a` for a unit `a`, the coordinate relative to `π` equals `residue R a ^ (n + 1)`
+times the coordinate relative to `π'` (equivalently, replacing `π` by `π * a` multiplies the
+coordinate by `(residue R a ^ (n + 1))⁻¹`). This is the pure discrete-valuation-ring counterpart of
 `TauCeti/NumberTheory/LocalField/UnitFiltration/Uniformizer.lean`, requiring neither a fraction
 field nor residue-field finiteness.
 
@@ -83,8 +84,10 @@ theorem principalUnitGroupGradedSuccEquivResidueField_of_sub_eq
     TauCeti.residueFieldEquivMaximalIdealGradedOfUniformizer_mk]
   exact congrArg Submodule.Quotient.mk (Subtype.ext hy)
 
-/-- Replacing `π` by `π' = π * a` scales the positive-depth principal-unit coordinate relative to
-`π'` by the residue of `a ^ (n + 1)`. -/
+/-- When `π' = π * a` (with `a = TauCeti.uniformizerChangeUnit π π' hπ hπ'`), the positive-depth
+principal-unit coordinate relative to `π` equals `residue R a ^ (n + 1)` times the coordinate
+relative to `π'`; equivalently, replacing `π` by `π * a` multiplies the coordinate by
+`(residue R a ^ (n + 1))⁻¹`. -/
 theorem principalUnitGroupGradedSuccEquivResidueField_change (n : ℕ)
     (π π' : R) (hπ : Irreducible π) (hπ' : Irreducible π')
     (x : Additive (PrincipalUnitGroupGraded R (n + 1))) :
