@@ -55,6 +55,8 @@ bilinear form of `dα(x)` (`TauCeti.isContactFormAt_modelSpace_iff_isContact`).
   and elementwise statements of the contact condition.
 * `TauCeti.SmoothForm.isContactForm_iff_of_eq_smul`,
   `TauCeti.SmoothForm.kerDistribution_of_eq_smul`: rescaling by a nowhere vanishing function.
+* `TauCeti.SmoothForm.apply_eq_smul_of_kerDistribution_eq`: one-forms with the same kernel at a
+  point are proportional there.
 * `TauCeti.SmoothForm.isContactForm_smul_iff`, `TauCeti.SmoothForm.isContactForm_neg_iff`:
   rescaling by a nonzero constant.
 * `TauCeti.SmoothForm.IsContactForm.odd_finrank`: contact manifolds are odd-dimensional.
@@ -162,6 +164,28 @@ theorem kerDistribution_of_eq_smul {α β : SmoothForm I M ℝ 1} {f : M → ℝ
   ext x v
   rw [mem_kerDistribution, mem_kerDistribution, hβ, ContinuousAlternatingMap.smul_apply,
     smul_eq_mul, mul_eq_zero, or_iff_right (hf₀ x)]
+
+/-- Conversely, two one-forms with the same kernel at `x` are proportional there: if `α_x(v) = 1`,
+then `β_x = β_x(v) α_x`. -/
+theorem apply_eq_smul_of_kerDistribution_eq {α β : SmoothForm I M ℝ 1} {x : M}
+    {v : TangentSpace I x} (hker : β.kerDistribution x = α.kerDistribution x)
+    (hv : α.1 x ![v] = 1) : β.1 x = β.1 x ![v] • α.1 x := by
+  have hlin : (degreeOneEquiv β x : TangentSpace I x →ₗ[ℝ] ℝ) =
+      β.1 x ![v] • (degreeOneEquiv α x : TangentSpace I x →ₗ[ℝ] ℝ) := by
+    ext w
+    -- `w - α(w) v` lies in `ker α = ker β`.
+    have hmem : w - α.1 x ![w] • v ∈ α.kerDistribution x := by
+      rw [kerDistribution_def, LinearMap.mem_ker, map_sub, map_smul, degreeOneEquiv_coe_apply,
+        degreeOneEquiv_coe_apply, hv, smul_eq_mul, mul_one, sub_self]
+    rw [← hker, kerDistribution_def, LinearMap.mem_ker, map_sub, map_smul,
+      degreeOneEquiv_coe_apply, degreeOneEquiv_coe_apply, smul_eq_mul, sub_eq_zero] at hmem
+    rw [LinearMap.smul_apply, degreeOneEquiv_coe_apply, degreeOneEquiv_coe_apply, hmem,
+      smul_eq_mul, mul_comm]
+  ext w
+  have h := congrArg (fun L : TangentSpace I x →ₗ[ℝ] ℝ ↦ L (w 0)) hlin
+  have hw : (fun _ : Fin 1 ↦ w 0) = w := funext fun i ↦ congrArg w (Subsingleton.elim _ _)
+  simpa only [LinearMap.smul_apply, smul_eq_mul, ContinuousLinearMap.coe_coe,
+    degreeOneEquiv_apply_apply, hw, ContinuousAlternatingMap.smul_apply] using h
 
 /-- **Rescaling of contact forms.** If `β = f α` for a nowhere vanishing `C¹` function `f`, then
 `β` is a contact form exactly when `α` is. -/
