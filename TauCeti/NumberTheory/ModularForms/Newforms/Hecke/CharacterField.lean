@@ -64,10 +64,10 @@ the Galois stability of the newforms, which this file does not prove.
   characters.
 * `TauCeti.heckeTCuspNewCharFieldAlgebra_finite`: the algebra is finite-dimensional over `ℚ(χ)`
   in weight at least two.
-* `TauCeti.heckeTCuspNewCharFieldAlgebra_isSemisimpleRing`: the algebra is semisimple in
+* `TauCeti.isSemisimpleRing_heckeTCuspNewCharFieldAlgebra`: the algebra is semisimple in
   weight at least two.
-* `TauCeti.heckeTCuspNewCharFieldAlgebra_etale`: the algebra is finite étale over `ℚ(χ)` in
-  weight at least two.
+* `TauCeti.heckeTCuspNewCharFieldAlgebra_etale`: the algebra is étale over `ℚ(χ)` in weight at
+  least two.
 * `TauCeti.conjHeckeTCuspNewCharFieldCharacter_apply_heckeTCuspNewCharEnd`: the conjugate
   character sends `Tₙ` to `σ(aₙ(f))`.
 * `TauCeti.conjHeckeTCuspNewCharFieldCharacter_injective`: distinct embeddings give distinct
@@ -237,8 +237,8 @@ instance instCommRingHeckeTCuspNewCharFieldAlgebra :
   mul_comm T S := eq_of_forall_heckeTCuspNewCharFieldCharacter_eq fun _ ↦
     (map_mul _ T S).trans ((mul_comm _ _).trans (map_mul _ S T).symm)
 
-/-- The Hecke algebra over `ℚ(χ)` has no nonzero nilpotent elements: the newform characters
-embed it into a product of copies of `ℂ`. -/
+/-- The Hecke algebra of `S_k(N, χ)ⁿᵉʷ` over `ℚ(χ)` is reduced: it has no nonzero nilpotent
+elements. -/
 instance instIsReducedHeckeTCuspNewCharFieldAlgebra :
     IsReduced (heckeTCuspNewCharFieldAlgebra k χ) :=
   isReduced_of_injective
@@ -260,6 +260,7 @@ theorem heckeTCuspNewCharFieldCharacter_mem_CoefficientField
       heckeTCuspNewCharEnd_mem_heckeTCuspNewCharFieldAlgebra k χ n⟩ := Subtype.ext hn.symm
   simp [F]
 
+variable (χ) in
 /-- The Hecke algebra of `S_k(N, χ)ⁿᵉʷ` over `ℚ(χ)` is finite-dimensional in weight at least
 two: it embeds into the product of the coefficient fields of the newforms of nebentypus `χ`,
 each a number field. -/
@@ -283,21 +284,21 @@ theorem heckeTCuspNewCharFieldAlgebra_finite (hk : 2 ≤ k) :
     eq_of_forall_heckeTCuspNewCharFieldCharacter_eq fun f ↦ ?_
   simpa [E] using congrArg Subtype.val (congrFun h f)
 
+variable (χ) in
 /-- The newspace Hecke algebra over `ℚ(χ)` is semisimple in weight at least two. -/
-theorem heckeTCuspNewCharFieldAlgebra_isSemisimpleRing (hk : 2 ≤ k) :
+theorem isSemisimpleRing_heckeTCuspNewCharFieldAlgebra (hk : 2 ≤ k) :
     IsSemisimpleRing (heckeTCuspNewCharFieldAlgebra k χ) := by
-  have := heckeTCuspNewCharFieldAlgebra_finite (χ := χ) hk
+  have := heckeTCuspNewCharFieldAlgebra_finite χ hk
   have : IsArtinianRing (heckeTCuspNewCharFieldAlgebra k χ) :=
     .of_finite (CharacterField χ) (heckeTCuspNewCharFieldAlgebra k χ)
   exact IsArtinianRing.isSemisimpleRing_of_isReduced _
 
-/-- The newspace Hecke algebra over `ℚ(χ)` is finite étale in weight at least two. Thus its
-scalar extension to a separably closed field is the algebra of functions on all its characters,
-by `Algebra.Etale.tensorProductEquivPi`. -/
+variable (χ) in
+/-- The newspace Hecke algebra over `ℚ(χ)` is étale in weight at least two. -/
 theorem heckeTCuspNewCharFieldAlgebra_etale (hk : 2 ≤ k) :
     Algebra.Etale (CharacterField χ) (heckeTCuspNewCharFieldAlgebra k χ) :=
   algebraEtale_iff_finite_and_isReduced.mpr
-    ⟨heckeTCuspNewCharFieldAlgebra_finite hk, inferInstance⟩
+    ⟨heckeTCuspNewCharFieldAlgebra_finite χ hk, inferInstance⟩
 
 /-- The character of a newform of nebentypus `χ`, valued in its coefficient field viewed as an
 extension of `ℚ(χ)`. -/
