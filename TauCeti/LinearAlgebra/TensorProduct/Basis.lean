@@ -33,9 +33,8 @@ consists of pure tensors.
   the left factor commute with maps of the right factor, so such a map kills an element exactly
   when it kills every coordinate.
 * `Module.Basis.baseChange_reindex`: scalar extension of a basis commutes with reindexing it.
-* `Module.Basis.map_baseChange_repr` and `Module.Basis.baseChange_repr_rTensor`: applying a scalar
-  map to a coordinate in a base-changed basis agrees with first mapping the tensor and then taking
-  its coordinate.
+* `Module.Basis.map_baseChange_repr`: applying a scalar map to a coordinate in a base-changed
+  basis agrees with first mapping the tensor and then taking its coordinate.
 * `Module.Basis.eq_baseChange_repr_tmul_of_subsingleton`: over a basis with at most one index,
   every element of a scalar extension is the pure tensor of its unique coordinate with the
   corresponding basis vector.
@@ -179,11 +178,6 @@ theorem baseChange_reindex {ι' : Type*} (b : Basis ι R M) (e : ι ≃ ι') :
   induction z using TensorProduct.inductionOn with
   | add x y hx hy => simp only [map_add, Finsupp.add_apply, hx, hy]
   | tmul s m => simp
-
-/-- Coordinates in a base-changed basis commute with `LinearMap.rTensor`. -/
-theorem baseChange_repr_rTensor (b : Basis ι R M) (φ : S →ₗ[R] T) (z : S ⊗[R] M) (i : ι) :
-    (b.baseChange T).repr (φ.rTensor M z) i = φ ((b.baseChange S).repr z i) := by
-  rw [LinearMap.rTensor_def, map_baseChange_repr]
 
 /-- Over a basis with at most one index, every element of a scalar extension is the pure tensor
 of its unique coordinate with the corresponding basis vector.  This isolates the tensor

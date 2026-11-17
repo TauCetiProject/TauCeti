@@ -183,8 +183,9 @@ private theorem map_grassmannianCongr_shearEquiv {u v : Fin n} (huv : u ≠ v) (
     Submodule.map_span, Submodule.map_coe, ← Set.image_comp, ← Set.image_comp]
   refine congrArg (Submodule.span B) <| Set.image_congr' fun x ↦
     (b.baseChange B).repr.injective (Finsupp.ext fun w ↦ ?_)
-  simp only [Function.comp_apply, shearEquiv_toLinearMap, b.baseChange_repr_rTensor,
-    repr_shearLin, AlgHom.toLinearMap_apply, map_add, apply_ite f, map_mul, map_zero]
+  simp only [Function.comp_apply, shearEquiv_toLinearMap, LinearMap.rTensor_def,
+    ← b.map_baseChange_repr, repr_shearLin, AlgHom.toLinearMap_apply, map_add, apply_ite f,
+    map_mul, map_zero]
 
 section Shear
 
@@ -197,15 +198,16 @@ private noncomputable def baseChangeEchelon (p' : Fin r → Fin n) (N : G(k, K �
 private theorem repr_baseChangeEchelon_eq_zero_of_lt {p' : Fin r → Fin n} (N : G(k, K ⊗[R] M; K))
     (m : Fin r) {q : Fin n} (hmq : p' m < q) :
     (b.baseChange L).repr (baseChangeEchelon b jKL p' N m) q = 0 := by
-  rw [baseChangeEchelon, b.baseChange_repr_rTensor, ((b.baseChange K).mem_flag_iff_repr_eq_zero.mp
-    ((b.baseChange K).flagEchelon_mem_flag N.toSubmodule (p' m))) q
-    (Fin.succ_le_castSucc_iff.mpr hmq), map_zero]
+  rw [baseChangeEchelon, LinearMap.rTensor_def, ← b.map_baseChange_repr,
+    ((b.baseChange K).mem_flag_iff_repr_eq_zero.mp
+      ((b.baseChange K).flagEchelon_mem_flag N.toSubmodule (p' m))) q
+      (Fin.succ_le_castSucc_iff.mpr hmq), map_zero]
 
 private theorem repr_baseChangeEchelon_pivot {p' : Fin r → Fin n} (hp' : StrictMono p')
     (N : G(k, K ⊗[R] M; K)) (hpiv : (b.baseChange K).flagPivots N.toSubmodule = univ.image p')
     (l m : Fin r) :
     (b.baseChange L).repr (baseChangeEchelon b jKL p' N l) (p' m) = if l = m then 1 else 0 := by
-  rw [baseChangeEchelon, b.baseChange_repr_rTensor,
+  rw [baseChangeEchelon, LinearMap.rTensor_def, ← b.map_baseChange_repr,
     (b.baseChange K).repr_flagEchelon (p' l) (hpiv ▸ mem_image_of_mem p' (mem_univ m))]
   simp [Finsupp.single_apply, hp'.injective.eq_iff]
 
