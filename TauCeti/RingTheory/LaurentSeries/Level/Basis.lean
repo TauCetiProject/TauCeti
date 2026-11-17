@@ -40,7 +40,10 @@ The contraction and decomposition API follows the design proposed in
 ## Main definitions
 
 * `LaurentSeries.contract`: the exponent-congruence component of a Laurent series.
-* `TauCeti.LaurentSeries.Level`: the level-`d` Laurent field with base map `X ↦ X ^ d`.
+* `TauCeti.LaurentSeries.Level`: the level-`d` Laurent field with base map `X ↦ X ^ d` and scalar
+  tower `K → K⸨X⸩ → Level K d`.
+* `TauCeti.LaurentSeries.Level.algEquivLaurentSeries`: the `K`-algebra equivalence
+  `Level K d ≃ₐ[K] K⸨X⸩` in the level parameter.
 * `TauCeti.LaurentSeries.Level.powerBasis`: the power basis `1, u, ..., u ^ (d - 1)`.
 * `TauCeti.puiseuxField.level`: the actual level-`d` intermediate field in the Puiseux field.
 * `TauCeti.puiseuxField.levelPowerBasis`: its transported power basis.
