@@ -182,9 +182,8 @@ private theorem exists_proper_retracing_boundary_homotopy (hA_closed : IsClosed 
     fun t x hx ↦ by simp [raw, hx, retracingTime_one_left]⟩
   · by_cases hx : x ∈ A
     · simpa [raw, hx] using apply_retracingTime_zero F G (fun s ↦ hretr s x hx) t
-    · rcases hb with ⟨ht | ht, -⟩ | ⟨-, hxA⟩
-      · simp [raw, hx, show t = 0 from ht]
-      · simp [raw, hx, show t = 1 from ht]
+    · rcases hb with ⟨ht, -⟩ | ⟨-, hxA⟩
+      · rcases (mem_insert_iff.1 ht).imp id mem_singleton_iff.1 with rfl | rfl <;> simp [raw, hx]
       · exact (hx hxA).elim
   · by_cases hx : x ∈ A <;> simp [raw, hx, retracingTime_zero_right]
   · by_cases hx : x ∈ A

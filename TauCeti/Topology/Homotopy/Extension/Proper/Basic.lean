@@ -269,14 +269,24 @@ theorem HasProperHomotopyExtensionProperty.image {X' : Type u} [TopologicalSpace
   let eA : A ≃ₜ (e '' A : Set X') := e.image A
   let eIA : I × A ≃ₜ I × (e '' A : Set X') := (Homeomorph.refl I).prodCongr eA
   let eIX : I × X' ≃ₜ I × X := (Homeomorph.refl I).prodCongr e.symm
+  have heIA (t : I) (a : A) :
+      (eIA : C(I × A, I × (e '' A : Set X'))) (t, a) = (t, eA a) := by
+    simp only [eIA, ContinuousMap.coe_apply, Homeomorph.coe_prodCongr, Prod.map_apply,
+      Homeomorph.refl_apply, id_eq]
+  have heIX (t : I) (x' : X') :
+      (eIX : C(I × X', I × X)) (t, x') = (t, e.symm x') := by
+    simp only [eIX, ContinuousMap.coe_apply, Homeomorph.coe_prodCongr, Prod.map_apply,
+      Homeomorph.refl_apply, id_eq]
   obtain ⟨G, hG, hG₀, hG₁⟩ := h.exists_extension (f.comp (e : C(X, X'))) (hf.comp e.isProperMap)
-    (H.comp (eIA : C(I × A, I × (e '' A : Set X')))) (hH.comp eIA.isProperMap) fun a ↦ hH₀ (eA a)
+    (H.comp (eIA : C(I × A, I × (e '' A : Set X')))) (hH.comp eIA.isProperMap) fun a ↦ by
+      rw [ContinuousMap.comp_apply, heIA, ContinuousMap.comp_apply, ContinuousMap.coe_apply]
+      simpa only [eA, Homeomorph.image_apply_coe] using hH₀ (eA a)
   refine ⟨G.comp (eIX : C(I × X', I × X)), hG.comp eIX.isProperMap, fun x' ↦ ?_, fun t b ↦ ?_⟩
-  · simpa [eIX] using hG₀ (e.symm x')
+  · rw [ContinuousMap.comp_apply, heIX, hG₀ (e.symm x'), ContinuousMap.comp_apply,
+      ContinuousMap.coe_apply, e.apply_symm_apply]
   · obtain ⟨a, ha, hae⟩ := b.2
     have hsymm : e.symm (b : X') = a := by rw [← hae, e.symm_apply_apply]
-    change G (t, e.symm b) = H (t, b)
-    rw [hsymm, hG₁ t ⟨a, ha⟩]
+    rw [ContinuousMap.comp_apply, heIX, hsymm, hG₁ t ⟨a, ha⟩, ContinuousMap.comp_apply, heIA]
     exact congrArg (fun c ↦ H (t, c)) (Subtype.ext hae)
 
 /-- For a closed subset, the proper homotopy extension property transports along a homeomorphism
@@ -288,10 +298,15 @@ theorem HasProperHomotopyExtensionProperty.image_of_isClosed {X' : Type u'} [Top
   let eIX : I × X ≃ₜ I × X' := (Homeomorph.refl I).prodCongr e
   let r' : C(I × X', I × X') :=
     ((eIX : C(I × X, I × X')).comp r).comp (eIX.symm : C(I × X', I × X))
+  have hr'_apply (q : I × X') :
+      r' q = ((r (q.1, e.symm q.2)).1, e (r (q.1, e.symm q.2)).2) := by
+    simp only [r', ContinuousMap.comp_apply, ContinuousMap.coe_apply, eIX,
+      Homeomorph.prodCongr_symm, Homeomorph.refl_symm, Homeomorph.coe_prodCongr, Prod.map_def,
+      Homeomorph.refl_apply, id_eq]
   rw [hasProperHomotopyExtensionProperty_iff_exists_retraction (e.isClosedMap A hA)]
   refine ⟨r', eIX.isProperMap.comp (hr_proper.comp eIX.symm.isProperMap), fun q ↦ ?_,
     fun q hq ↦ ?_⟩
-  · change ((r (q.1, e.symm q.2)).1, e (r (q.1, e.symm q.2)).2) ∈ cylinderExtensionDomain (e '' A)
+  · rw [hr'_apply]
     exact (mem_cylinderExtensionDomain_iff.1 (hr (q.1, e.symm q.2))).elim
       (fun h0 ↦ mem_cylinderExtensionDomain_iff.2 (.inl h0))
       (fun hm ↦ mem_cylinderExtensionDomain_iff.2 (.inr (mem_image_of_mem e hm)))
@@ -300,8 +315,7 @@ theorem HasProperHomotopyExtensionProperty.image_of_isClosed {X' : Type u'} [Top
         (fun h0 ↦ mem_cylinderExtensionDomain_iff.2 (.inl h0))
         fun ⟨a, ha, hae⟩ ↦ mem_cylinderExtensionDomain_iff.2
           (.inr (by rw [← hae, e.symm_apply_apply]; exact ha))
-    change ((r (q.1, e.symm q.2)).1, e (r (q.1, e.symm q.2)).2) = q
-    rw [hr' _ hq']
+    rw [hr'_apply, hr' _ hq']
     exact Prod.ext rfl (e.apply_symm_apply q.2)
 
 /-- **Proper cofibrations compose along closed embeddings.** If `j : X → X'` is a closed embedding
@@ -317,18 +331,31 @@ theorem HasProperHomotopyExtensionProperty.image_of_isClosedEmbedding
     (Homeomorph.refl I).prodCongr (hj.isEmbedding.homeomorphImage A)
   let eIR : I × (range j : Set X') ≃ₜ I × X :=
     (Homeomorph.refl I).prodCongr hj.isEmbedding.toHomeomorph.symm
+  have heia (t : I) (a : A) :
+      (eIA : C(I × A, I × (j '' A : Set X'))) (t, a) =
+        (t, ⟨j a, mem_image_of_mem j a.2⟩) := by
+    simp only [eIA, ContinuousMap.coe_apply, Homeomorph.coe_prodCongr, Prod.map_apply,
+      Homeomorph.refl_apply, id_eq]
+    -- `IsEmbedding.homeomorphImage` has no `apply` simp lemma in Mathlib.
+    rfl
   have heir (t : I) (x : X) :
-      (eIR : C(I × (range j : Set X'), I × X)) (t, ⟨j x, mem_range_self x⟩) = (t, x) :=
-    Prod.ext rfl (hj.isEmbedding.toHomeomorph_symm_apply x)
+      (eIR : C(I × (range j : Set X'), I × X)) (t, ⟨j x, mem_range_self x⟩) = (t, x) := by
+    simp only [eIR, ContinuousMap.coe_apply, Homeomorph.coe_prodCongr, Prod.map_apply,
+      Homeomorph.refl_apply, id_eq]
+    exact Prod.ext rfl (hj.isEmbedding.toHomeomorph_symm_apply x)
   obtain ⟨G, hG, hG₀, hG₁⟩ := h.exists_extension (f.comp ⟨j, hj.continuous⟩)
     (hf.comp hj.isProperMap) (H.comp (eIA : C(I × A, I × (j '' A : Set X'))))
-    (hH.comp eIA.isProperMap) fun a ↦ hH₀ ⟨j a, mem_image_of_mem j a.2⟩
+    (hH.comp eIA.isProperMap) fun a ↦ by
+      rw [ContinuousMap.comp_apply, heia, ContinuousMap.comp_apply,
+        ContinuousMap.coe_mk j hj.continuous]
+      exact hH₀ ⟨j a, mem_image_of_mem j a.2⟩
   obtain ⟨G', hG', hG'₀, hG'₁⟩ := hj'.exists_extension f hf
     (G.comp (eIR : C(I × (range j : Set X'), I × X))) (hG.comp eIR.isProperMap) fun ⟨_, x, rfl⟩ ↦ by
-      rw [ContinuousMap.comp_apply, heir, hG₀]; rfl
+      rw [ContinuousMap.comp_apply, heir, hG₀, ContinuousMap.comp_apply,
+        ContinuousMap.coe_mk j hj.continuous]
   refine ⟨G', hG', hG'₀, fun t ⟨_, a, ha, rfl⟩ ↦ ?_⟩
-  rw [hG'₁ t ⟨j a, mem_range_self a⟩, ContinuousMap.comp_apply, heir, hG₁ t ⟨a, ha⟩]
-  rfl
+  rw [hG'₁ t ⟨j a, mem_range_self a⟩, ContinuousMap.comp_apply, heir, hG₁ t ⟨a, ha⟩,
+    ContinuousMap.comp_apply, heia]
 
 end Basic
 

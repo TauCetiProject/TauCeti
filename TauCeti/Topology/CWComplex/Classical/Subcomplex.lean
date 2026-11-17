@@ -43,9 +43,16 @@ subcomplexes.
   subcomplexes form a distributive lattice, whose meet and join are intersection and union.
 * `Topology.RelCWComplex.Subcomplex.coe_bot`, `Topology.RelCWComplex.Subcomplex.coe_top`: it is
   bounded, by the base and the whole complex.
+* `Topology.RelCWComplex.Subcomplex.coe_finsetSup`: carrier of a `Finset.sup` of subcomplexes.
 * `Topology.RelCWComplex.Subcomplex.le_iff_I_subset`: one subcomplex lies in another exactly when
   its cells do.
 * `Topology.RelCWComplex.Subcomplex.ofLE`: a subcomplex `F ≤ E`, as a subcomplex of `E`.
+* `Topology.RelCWComplex.Subcomplex.finite_bot`, `Topology.RelCWComplex.Subcomplex.finite_sup`,
+  `Topology.RelCWComplex.Subcomplex.finite_finsetSup`: finiteness of the bottom subcomplex and
+  finite unions of finite subcomplexes.
+* `Topology.RelCWComplex.Subcomplex.adjoinCell`,
+  `Topology.RelCWComplex.Subcomplex.finite_adjoinCell`: adjoining a single cell whose frontier lies
+  in a subcomplex, preserving finiteness.
 * `Topology.RelCWComplex.coe_skeletonLT_skeletonLT`: the skeleta of a skeleton of `C` are skeleta
   of `C`.
 
@@ -279,6 +286,16 @@ lemma bot_I (n : ℕ) : (⊥ : Subcomplex C).I n = ∅ :=
 instance instOrderBot : OrderBot (Subcomplex C) where
   bot_le E := E.base_subset
 
+/-- The carrier of a `Finset.sup` of subcomplexes is the union of the base `D` with the carriers of
+the indexed subcomplexes. -/
+@[simp, norm_cast, alias_in CWComplex.Subcomplex]
+theorem coe_finsetSup {α : Type*} (s : Finset α) (f : α → Subcomplex C) :
+    ((s.sup f : Subcomplex C) : Set X) = D ∪ ⋃ a ∈ s, (f a : Set X) := by
+  classical
+  induction s using Finset.induction with
+  | empty => simp
+  | insert a s _ ih => simp [ih, union_left_comm]
+
 end
 
 section
@@ -358,6 +375,108 @@ lemma coe_ofLE {F E : Subcomplex C} (h : F ≤ E) : (ofLE h : Set X) = F :=
 lemma ofLE_I {F E : Subcomplex C} (h : F ≤ E) (n : ℕ) :
     (ofLE h).I n = (Subtype.val : E.I n → cell C n) ⁻¹' F.I n :=
   (rfl)
+
+/-! ### Finiteness and cell adjunction -/
+
+/-- The bottom subcomplex `⊥` of a relative CW complex is finite. -/
+@[alias_in CWComplex.Subcomplex]
+instance finite_bot : Finite (((⊥ : Subcomplex C) : Set X)) :=
+  have : FiniteDimensional (((⊥ : Subcomplex C) : Set X)) :=
+    ⟨Filter.Eventually.of_forall fun _ ↦ Subtype.isEmpty_false⟩
+  have : FiniteType (((⊥ : Subcomplex C) : Set X)) :=
+    ⟨fun n ↦ (finite_empty : ((⊥ : Subcomplex C).I n).Finite).to_subtype⟩
+  finite_of_finiteDimensional_finiteType _
+
+/-- The union `E₁ ⊔ E₂` of two finite subcomplexes is finite. -/
+@[alias_in CWComplex.Subcomplex]
+theorem finite_sup {E₁ E₂ : Subcomplex C}
+    (h₁ : Finite (E₁ : Set X)) (h₂ : Finite (E₂ : Set X)) :
+    Finite (((E₁ ⊔ E₂ : Subcomplex C) : Set X)) := by
+  have : FiniteDimensional (((E₁ ⊔ E₂ : Subcomplex C) : Set X)) := ⟨by
+    filter_upwards [h₁.eventually_isEmpty_cell, h₂.eventually_isEmpty_cell] with n hn₁ hn₂
+    exact ⟨fun ⟨i, hi⟩ ↦ hi.elim (fun h ↦ hn₁.false ⟨i, h⟩) (fun h ↦ hn₂.false ⟨i, h⟩)⟩⟩
+  have : FiniteType (((E₁ ⊔ E₂ : Subcomplex C) : Set X)) := ⟨fun n ↦ by
+    have := h₁.finite_cell n
+    have := h₂.finite_cell n
+    exact ((Set.toFinite (E₁.I n)).union (Set.toFinite (E₂.I n))).to_subtype⟩
+  exact finite_of_finiteDimensional_finiteType _
+
+/-- A `Finset.sup` of finite subcomplexes is finite. -/
+@[alias_in CWComplex.Subcomplex]
+theorem finite_finsetSup {α : Type*} (s : Finset α)
+    (f : α → Subcomplex C) (hf : ∀ a ∈ s, Finite (f a : Set X)) :
+    Finite (((s.sup f : Subcomplex C) : Set X)) := by
+  classical
+  induction s using Finset.induction with
+  | empty =>
+    rw [Finset.sup_empty]
+    exact finite_bot
+  | insert a s _ ih =>
+    rw [Finset.sup_insert]
+    exact finite_sup (hf a (Finset.mem_insert_self a s))
+      (ih fun b hb ↦ hf b (Finset.mem_insert_of_mem hb))
+
+/-- Adjoining a single `n`-cell `i` whose cell frontier already lies in `E` produces a subcomplex
+with carrier `(E : Set X) ∪ closedCell n i`. -/
+@[alias_in CWComplex.Subcomplex]
+def adjoinCell (E : Subcomplex C) (n : ℕ) (i : cell C n)
+    (hi : cellFrontier n i ⊆ E) : Subcomplex C where
+  carrier := (E : Set X) ∪ closedCell n i
+  I k := if h : k = n then E.I k ∪ {h ▸ i} else E.I k
+  closed' := E.closed.union isClosed_closedCell
+  union' := by
+    let J : ∀ k, Set (cell C k) := fun k ↦ if h : k = n then E.I k ∪ {h ▸ i} else E.I k
+    have hsubE : (E : Set X) ⊆ D ∪ ⋃ (k : ℕ) (j : ↥(J k)), openCell k j.1 := by
+      rw [← E.union]
+      refine union_subset_union_right D (iUnion₂_subset fun k ⟨l, hlE⟩ ↦ ?_)
+      exact subset_iUnion₂ (s := fun k (j : ↥(J k)) ↦ openCell k j.1) k
+        ⟨l, by dsimp only [J]; split_ifs <;> simp [hlE]⟩
+    refine Subset.antisymm
+      (union_subset (E.base_subset.trans subset_union_left) (iUnion₂_subset fun k ⟨l, hl⟩ ↦ ?_))
+      (union_subset hsubE ?_)
+    · by_cases hkn : k = n
+      · subst hkn
+        rcases (by simpa [J] using hl : l = i ∨ l ∈ E.I k) with rfl | hlE
+        · exact (openCell_subset_closedCell k l).trans subset_union_right
+        · exact (E.openCell_subset_of_mem hlE).trans subset_union_left
+      · exact (E.openCell_subset_of_mem (by simpa [J, hkn] using hl)).trans subset_union_left
+    · rw [← cellFrontier_union_openCell_eq_closedCell]
+      exact union_subset (hi.trans hsubE) (subset_union_of_subset_right
+        (subset_iUnion₂ (s := fun k (j : ↥(J k)) ↦ openCell k j.1) n ⟨i, by simp [J]⟩) D)
+
+/-- The carrier of `E.adjoinCell n i hi` is `(E : Set X) ∪ closedCell n i`. -/
+@[simp, norm_cast, alias_in CWComplex.Subcomplex]
+theorem coe_adjoinCell (E : Subcomplex C) (n : ℕ) (i : cell C n) (hi : cellFrontier n i ⊆ E) :
+    (E.adjoinCell n i hi : Set X) = (E : Set X) ∪ closedCell n i := (rfl)
+
+/-- Membership in `E.adjoinCell n i hi` is membership in `E` or in `closedCell n i`. -/
+@[simp, alias_in CWComplex.Subcomplex]
+theorem mem_adjoinCell {E : Subcomplex C} {n : ℕ} {i : cell C n} {hi : cellFrontier n i ⊆ E}
+    {x : X} : x ∈ E.adjoinCell n i hi ↔ x ∈ E ∨ x ∈ closedCell n i := .rfl
+
+/-- The `k`-cells of `E.adjoinCell n i hi` are those of `E` together with `i` when `k = n`. -/
+@[simp, alias_in CWComplex.Subcomplex]
+theorem adjoinCell_I (E : Subcomplex C) (n : ℕ) (i : cell C n) (hi : cellFrontier n i ⊆ E) (k : ℕ) :
+    (E.adjoinCell n i hi).I k = if h : k = n then E.I k ∪ {h ▸ i} else E.I k := (rfl)
+
+/-- Adjoining a single cell to a finite subcomplex yields a finite subcomplex. -/
+@[alias_in CWComplex.Subcomplex]
+theorem finite_adjoinCell {E : Subcomplex C} (hE : Finite (E : Set X))
+    (n : ℕ) (i : cell C n) (hi : cellFrontier n i ⊆ E) :
+    Finite (E.adjoinCell n i hi : Set X) := by
+  obtain ⟨N, hN⟩ := Filter.eventually_atTop.1 hE.eventually_isEmpty_cell
+  have : FiniteDimensional (E.adjoinCell n i hi : Set X) := ⟨Filter.eventually_atTop.2
+    ⟨max N (n + 1), fun m hm ↦ ⟨fun ⟨j, hj⟩ ↦ (hN m (le_of_max_le_left hm)).false
+      ⟨j, by simpa [adjoinCell_I, Nat.ne_of_gt (Nat.lt_of_succ_le (le_of_max_le_right hm))]
+        using hj⟩⟩⟩⟩
+  have : FiniteType (E.adjoinCell n i hi : Set X) := ⟨fun k ↦ by
+    have := hE.finite_cell k
+    refine Set.Finite.to_subtype ?_
+    rw [adjoinCell_I]
+    split_ifs
+    · exact (Set.toFinite (E.I k)).union (finite_singleton _)
+    · exact Set.toFinite (E.I k)⟩
+  exact finite_of_finiteDimensional_finiteType _
 
 end
 

@@ -8,6 +8,7 @@ module
 public import TauCeti.Topology.CWComplex.Classical.LocallyFinite
 public import TauCeti.Topology.Homotopy.Extension.Proper.DeformationRetract
 import Mathlib.Topology.Maps.Proper.CompactlyGenerated
+import TauCeti.Topology.CWComplex.Classical.Finite
 import TauCeti.Topology.CWComplex.Classical.Skeleton.Induction
 import TauCeti.Topology.Homotopy.Extension.Ball
 
