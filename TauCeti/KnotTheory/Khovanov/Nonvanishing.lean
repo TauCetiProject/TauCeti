@@ -11,7 +11,7 @@ public import TauCeti.KnotTheory.PDCode.VertexResolution
 import Mathlib.Algebra.Field.Rat
 import TauCeti.KnotTheory.Khovanov.Parity
 import TauCeti.KnotTheory.PDCode.Oriented.Component
-import TauCeti.Logic.Equiv.Basic
+import TauCeti.Logic.Function.Update
 
 /-!
 # The normalized enhanced-state Euler sum and nonvanishing of Khovanov homology
