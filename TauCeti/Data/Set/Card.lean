@@ -12,7 +12,7 @@ import Mathlib.Order.Interval.Finset.Fin
 import Mathlib.Order.Interval.Finset.Nat
 
 /-!
-# Cardinalities of images, complements, coverings, division preimages, sigma fibres and doubled sets
+# Cardinalities of images, complements, coverings, preimages, fibres, products and doubled sets
 
 Two maps on a common index type that identify the same pairs of indices take equally many values
 on every set of indices (`Set.encard_image_eq_encard_image_of_eq_iff`): the second map factors
@@ -30,7 +30,8 @@ The points of the range of an injective map `φ` into a sigma type that lie in t
 are counted by the arguments that `φ` maps into that fibre (`Set.ncard_preimage_sigmaMk_range`).
 
 A property read off the same function on both copies of `ι` in `ι ⊕ ι` holds on twice as many
-indices as on `ι` (`Set.ncard_setOf_sumElim`).
+indices as on `ι` (`Set.ncard_setOf_sumElim`). A property of the first coordinate of `α × β` holds
+on `Nat.card β` times as many pairs as elements of `α` (`Set.ncard_setOf_fst`).
 
 Reading a set of indices of `Fin (n + 1)` through `k.succAbove` counts its elements other than
 `k` (`Set.ncard_preimage_succAbove`).
@@ -192,6 +193,13 @@ theorem ncard_setOf_sumElim {ι β : Type*} (f : ι → β) (P : β → Prop) :
   rw [two_mul, ← ncard_sumEquiv_symm_apply]
   congr 1
   ext (i | i) <;> simp
+
+/-- A property of the first coordinate of `α × β` holds on `Nat.card β` times as many pairs as
+elements of `α`. Both sides are `0` when `β` or the set on `α` is infinite. -/
+theorem ncard_setOf_fst {α β : Type*} (P : α → Prop) :
+    {p : α × β | P p.1}.ncard = Nat.card β * {a | P a}.ncard := by
+  rw [show {p : α × β | P p.1} = {a | P a} ×ˢ (univ : Set β) by ext; simp, ncard_prod,
+    ncard_univ, mul_comm]
 
 /-- Reading a set of indices of `Fin (n + 1)` through `k.succAbove` counts its elements other
 than `k`. -/
