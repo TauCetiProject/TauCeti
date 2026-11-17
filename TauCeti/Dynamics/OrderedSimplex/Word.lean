@@ -375,29 +375,20 @@ theorem wordCount_mono {d : ℕ} {x : Fin d → ℝ} (hx : x ∈ orderedSimplex 
 theorem wordCount_eq_zero_of_neg {d : ℕ} {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d) {r : ℝ}
     (hr : r < 0) :
     wordCount d x r = 0 := by
-  rw [wordCount_def]
-  have hempty : {u : List (ℕ × Fin d) | wordDelay u x ≤ r} = ∅ := by
-    ext u
-    simp only [mem_ofPred_eq, mem_empty_iff_false, iff_false, not_le]
-    exact hr.trans_le (wordDelay_nonneg u hx)
-  rw [hempty, Set.ncard_empty]
+  rw [wordCount_def, show {u : List (ℕ × Fin d) | wordDelay u x ≤ r} = ∅ from
+    Set.eq_empty_of_forall_notMem fun u hu => not_le.2 (hr.trans_le (wordDelay_nonneg u hx)) hu,
+    Set.ncard_empty]
 
 /-- For `0 ≤ r < log (3 / 2)`, only the empty word contributes to `wordCount d x r`. -/
 theorem wordCount_eq_one_of_lt_log {d : ℕ} {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d) {r : ℝ}
     (hr0 : 0 ≤ r) (hr : r < Real.log (3 / 2)) :
     wordCount d x r = 1 := by
-  rw [wordCount_def]
   have hsing : {u : List (ℕ × Fin d) | wordDelay u x ≤ r} = {[]} := by
     ext u
     simp only [mem_ofPred_eq, mem_singleton_iff]
-    constructor
-    · intro hu
-      by_contra hne
-      have hge := log_three_div_two_le_wordDelay_of_ne_nil hne hx
-      linarith
-    · rintro rfl
-      simpa using hr0
-  rw [hsing, Set.ncard_singleton]
+    refine ⟨fun hu => by_contra fun hne => ?_, fun h => by simp [h, hr0]⟩
+    linarith [log_three_div_two_le_wordDelay_of_ne_nil hne hx]
+  rw [wordCount_def, hsing, Set.ncard_singleton]
 
 /-- At `r = 0`, `wordCount d x 0 = 1` on `orderedSimplex d`. -/
 theorem wordCount_zero {d : ℕ} {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d) :
@@ -410,10 +401,8 @@ theorem wordCount_eq_sum_indicator {d : ℕ} {x : Fin d → ℝ} (hx : x ∈ ord
     wordCount d x r =
       ∑ u ∈ (finite_wordDelay_le hx R).toFinset, if wordDelay u x ≤ r then 1 else 0 := by
   classical
-  rw [wordCount_def, Set.ncard_eq_toFinset_card _ (finite_wordDelay_le hx r),
-    ← Finset.card_filter]
-  congr 1
-  ext u
+  rw [wordCount_def, Set.ncard_eq_toFinset_card _ (finite_wordDelay_le hx r), ← Finset.card_filter]
+  congr 1; ext u
   simp only [Set.Finite.mem_toFinset, mem_ofPred_eq, Finset.mem_filter]
   exact ⟨fun h => ⟨h.trans hr, h⟩, fun h => h.2⟩
 
@@ -423,47 +412,39 @@ theorem eventually_wordCount_eq_of_Ici {d : ℕ} {x : Fin d → ℝ} (hx : x ∈
     ∃ δ > 0, ∀ r' ∈ Ico r (r + δ), wordCount d x r' = wordCount d x r := by
   let S : Set (List (ℕ × Fin d)) := {u | r < wordDelay u x ∧ wordDelay u x ≤ r + 1}
   have hSfin : S.Finite := (finite_wordDelay_le hx (r + 1)).subset fun _ hu => hu.2
-  by_cases hS : S.Nonempty
-  · classical
-    let T : Finset ℝ := hSfin.toFinset.image fun u => wordDelay u x
-    have hT : T.Nonempty := by
-      rcases hS with ⟨u, hu⟩
-      exact ⟨wordDelay u x, Finset.mem_image_of_mem _ (hSfin.mem_toFinset.2 hu)⟩
-    let m : ℝ := T.min' hT
-    have hm_gt : r < m := by
-      rcases Finset.mem_image.1 (Finset.min'_mem T hT) with ⟨u, hu, hmu⟩
-      dsimp only [m]
-      rw [← hmu]
-      exact (hSfin.mem_toFinset.1 hu).1
-    refine ⟨min 1 (m - r), lt_min zero_lt_one (sub_pos.2 hm_gt), fun r' hr' => ?_⟩
-    rw [wordCount_def, wordCount_def]
-    congr 1
-    ext u
-    simp only [mem_ofPred_eq]
-    refine ⟨fun hu => ?_, fun hu => hu.trans hr'.1⟩
-    by_contra hlt
-    have huS : u ∈ S := ⟨not_le.1 hlt, hu.trans (by linarith [hr'.2, min_le_left 1 (m - r)])⟩
-    have hm_le : m ≤ wordDelay u x :=
-      Finset.min'_le T _ (Finset.mem_image_of_mem _ (hSfin.mem_toFinset.2 huS))
-    linarith [hr'.2, min_le_right 1 (m - r)]
-  · rw [Set.not_nonempty_iff_eq_empty] at hS
-    refine ⟨1, zero_lt_one, fun r' hr' => ?_⟩
-    rw [wordCount_def, wordCount_def]
-    congr 1
-    ext u
-    simp only [mem_ofPred_eq]
-    refine ⟨fun hu => ?_, fun hu => hu.trans hr'.1⟩
-    by_contra hlt
-    have huS : u ∈ S := ⟨not_le.1 hlt, hu.trans hr'.2.le⟩
-    rw [hS] at huS
-    exact huS
+  have hgap : ∃ δ > 0, ∀ u, r < wordDelay u x → r + δ ≤ wordDelay u x := by
+    by_cases hS : S.Nonempty
+    · classical
+      let T : Finset ℝ := hSfin.toFinset.image fun u => wordDelay u x
+      have hT : T.Nonempty := by
+        rcases hS with ⟨u, hu⟩
+        exact ⟨_, Finset.mem_image_of_mem _ (hSfin.mem_toFinset.2 hu)⟩
+      have hm_gt : r < T.min' hT := by
+        rcases Finset.mem_image.1 (Finset.min'_mem T hT) with ⟨u, hu, hmu⟩
+        exact hmu ▸ (hSfin.mem_toFinset.1 hu).1
+      refine ⟨min 1 (T.min' hT - r), lt_min zero_lt_one (sub_pos.2 hm_gt), fun u hu => ?_⟩
+      by_cases h1 : wordDelay u x ≤ r + 1
+      · have := Finset.min'_le T _ (Finset.mem_image_of_mem _ (hSfin.mem_toFinset.2 ⟨hu, h1⟩))
+        linarith [min_le_right 1 (T.min' hT - r)]
+      · linarith [min_le_left 1 (T.min' hT - r)]
+    · rw [Set.not_nonempty_iff_eq_empty] at hS
+      refine ⟨1, zero_lt_one, fun u hu => by_contra fun h => ?_⟩
+      have hmem : u ∈ S := ⟨hu, le_of_not_ge h⟩
+      rw [hS] at hmem
+      exact hmem
+  rcases hgap with ⟨δ, hδ, hno⟩
+  refine ⟨δ, hδ, fun r' hr' => ?_⟩
+  rw [wordCount_def, wordCount_def]
+  congr 1; ext u
+  simp only [mem_ofPred_eq]
+  exact ⟨fun hu => by_contra fun hlt => by linarith [hno u (not_le.1 hlt), hr'.2],
+    fun hu => hu.trans hr'.1⟩
 
 /-- The renewal count `r ↦ (wordCount d x r : ℝ)` is right-continuous at every `r : ℝ`. -/
 theorem continuousWithinAt_wordCount_Ici {d : ℕ} {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d)
     (r : ℝ) :
     ContinuousWithinAt (fun t => (wordCount d x t : ℝ)) (Ici r) r := by
   rcases eventually_wordCount_eq_of_Ici hx r with ⟨δ, hδ, hconst⟩
-  rw [ContinuousWithinAt]
   refine tendsto_const_nhds.congr' ?_
   filter_upwards [Ico_mem_nhdsGE (lt_add_of_pos_right r hδ)] with t ht
   exact congrArg Nat.cast (hconst t ht).symm
@@ -486,12 +467,10 @@ theorem finite_support_wordCount_branch {d : ℕ} {x : Fin d → ℝ} (hx : x �
     (Function.support fun a : ℕ × Fin d =>
       wordCount d (branchMap a x) (r - branchDelay a x)).Finite := by
   have hpre : ((fun a : ℕ × Fin d => [a]) ⁻¹' {u | wordDelay u x ≤ r}).Finite :=
-    (finite_wordDelay_le hx r).preimage fun a _ b _ h => by simpa using h
-  refine hpre.subset fun a ha => ?_
-  simp only [Function.mem_support, ne_eq] at ha
-  simp only [Set.mem_preimage, mem_ofPred_eq, wordDelay_singleton]
-  by_contra hlt
-  exact ha (wordCount_eq_zero_of_neg (branchMap_mapsTo a hx) (sub_neg.2 (not_le.1 hlt)))
+    (finite_wordDelay_le hx r).preimage fun _ _ _ _ h => by simpa using h
+  refine hpre.subset fun a ha => by_contra fun hlt => ?_
+  simp only [Set.mem_preimage, mem_ofPred_eq, wordDelay_singleton, not_le] at hlt
+  exact ha (wordCount_eq_zero_of_neg (branchMap_mapsTo a hx) (sub_neg.2 hlt))
 
 private theorem ncard_nonempty_wordDelay_le {d : ℕ} {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d)
     (r : ℝ) :
@@ -505,32 +484,23 @@ private theorem ncard_nonempty_wordDelay_le {d : ℕ} {x : Fin d → ℝ} (hx : 
   have hS₁_eq : {u : List (ℕ × Fin d) | wordDelay u x ≤ r ∧ u ≠ []} = ⋃ a ∈ T, B a := by
     ext u
     simp only [B, T, f, mem_ofPred_eq, mem_iUnion, mem_image, Function.mem_support, ne_eq]
-    constructor
+    refine ⟨?_, ?_⟩
     · rintro ⟨hu, hne⟩
-      cases u with
-      | nil => exact absurd rfl hne
-      | cons a v =>
-        have hv : wordDelay v (branchMap a x) ≤ r - branchDelay a x := by
-          rw [wordDelay_cons] at hu
-          linarith
-        have hpos : wordCount d (branchMap a x) (r - branchDelay a x) ≠ 0 := by
-          rw [wordCount_def, ne_eq,
-            Set.ncard_eq_zero (finite_wordDelay_le (branchMap_mapsTo a hx) _)]
-          exact Set.Nonempty.ne_empty ⟨v, hv⟩
-        exact ⟨a, hpos, v, hv, rfl⟩
+      rcases u with _ | ⟨a, v⟩
+      · exact absurd rfl hne
+      · have hv : wordDelay v (branchMap a x) ≤ r - branchDelay a x := by
+          rw [wordDelay_cons] at hu; linarith
+        refine ⟨a, ?_, v, hv, rfl⟩
+        rw [wordCount_def, Set.ncard_eq_zero (finite_wordDelay_le (branchMap_mapsTo a hx) _)]
+        exact Set.Nonempty.ne_empty ⟨v, hv⟩
     · rintro ⟨a, _, v, hv, rfl⟩
-      refine ⟨?_, List.cons_ne_nil _ _⟩
-      rw [wordDelay_cons]
-      linarith
+      exact ⟨by rw [wordDelay_cons]; linarith, List.cons_ne_nil _ _⟩
+  have hBdisj : T.PairwiseDisjoint B := fun a₁ _ a₂ _ hne =>
+    Set.disjoint_left.2 fun _ ⟨_, _, h₁⟩ ⟨_, _, h₂⟩ => hne (List.cons.inj (h₁.trans h₂.symm)).1
   have hBfin : ∀ a ∈ T, (B a).Finite := fun a _ =>
     (finite_wordDelay_le (branchMap_mapsTo a hx) _).image _
-  have hBdisj : T.PairwiseDisjoint B := by
-    intro a₁ _ a₂ _ hne
-    rw [Function.onFun, Set.disjoint_left]
-    rintro _ ⟨v₁, _, rfl⟩ ⟨v₂, _, hEq⟩
-    exact hne (List.cons.inj hEq).1.symm
   have hBcard : ∀ a, (B a).ncard = f a := fun a =>
-    Set.ncard_image_of_injective _ (fun _ _ h => (List.cons.inj h).2)
+    Set.ncard_image_of_injective _ fun _ _ h => (List.cons.inj h).2
   rw [hS₁_eq, hTfin.ncard_biUnion hBfin hBdisj]
   simp_rw [hBcard]
   rw [finsum_mem_eq_finite_toFinset_sum f hTfin, finsum_eq_sum f hTfin]
@@ -545,28 +515,19 @@ theorem wordCount_renewal {d : ℕ} {x : Fin d → ℝ} (hx : x ∈ orderedSimpl
   have hSunion : {u : List (ℕ × Fin d) | wordDelay u x ≤ r} =
       {u : List (ℕ × Fin d) | wordDelay u x ≤ r ∧ u = []} ∪
         {u : List (ℕ × Fin d) | wordDelay u x ≤ r ∧ u ≠ []} := by
-    ext u
-    simp only [mem_union, mem_ofPred_eq]
-    tauto
-  have hSdisj : Disjoint {u : List (ℕ × Fin d) | wordDelay u x ≤ r ∧ u = []}
-      {u : List (ℕ × Fin d) | wordDelay u x ≤ r ∧ u ≠ []} := by
-    rw [Set.disjoint_left]
-    intro u h0 h1
-    exact h1.2 h0.2
+    ext u; simp only [mem_union, mem_ofPred_eq]; tauto
   have hS₀_card :
       {u : List (ℕ × Fin d) | wordDelay u x ≤ r ∧ u = []}.ncard = if 0 ≤ r then 1 else 0 := by
     split_ifs with hr
-    · have hEq : {u : List (ℕ × Fin d) | wordDelay u x ≤ r ∧ u = []} = {[]} := by
-        ext u
-        simp only [mem_ofPred_eq, mem_singleton_iff]
-        exact ⟨fun h => h.2, fun h => ⟨by simp [h, hr], h⟩⟩
-      rw [hEq, Set.ncard_singleton]
-    · have hEq : {u : List (ℕ × Fin d) | wordDelay u x ≤ r ∧ u = []} = ∅ := by
-        ext u
-        simp only [mem_ofPred_eq, mem_empty_iff_false, iff_false]
-        rintro ⟨hu, rfl⟩
-        exact hr (by simpa using hu)
-      rw [hEq, Set.ncard_empty]
+    · rw [show {u : List (ℕ × Fin d) | wordDelay u x ≤ r ∧ u = []} = {[]} from by
+        ext u; simp only [mem_ofPred_eq, mem_singleton_iff]
+        exact ⟨fun h => h.2, fun h => ⟨by simp [h, hr], h⟩⟩, Set.ncard_singleton]
+    · rw [show {u : List (ℕ × Fin d) | wordDelay u x ≤ r ∧ u = []} = ∅ from
+        Set.eq_empty_of_forall_notMem fun u ⟨hu, hnil⟩ => hr (by simpa [hnil] using hu),
+        Set.ncard_empty]
+  have hSdisj : Disjoint {u : List (ℕ × Fin d) | wordDelay u x ≤ r ∧ u = []}
+      {u : List (ℕ × Fin d) | wordDelay u x ≤ r ∧ u ≠ []} :=
+    Set.disjoint_left.2 fun _ h0 h1 => h1.2 h0.2
   rw [wordCount_def, hSunion,
     Set.ncard_union_eq hSdisj (hSfin.subset fun _ h => h.1) (hSfin.subset fun _ h => h.1),
     hS₀_card, ncard_nonempty_wordDelay_le hx r]
@@ -576,10 +537,7 @@ theorem summable_wordCount_branch {d : ℕ} {x : Fin d → ℝ} (hx : x ∈ orde
     Summable fun a : ℕ × Fin d => (wordCount d (branchMap a x) (r - branchDelay a x) : ℝ) := by
   have hfin := finite_support_wordCount_branch hx r
   refine summable_of_ne_finset_zero (s := hfin.toFinset) fun a ha => ?_
-  have h0 : wordCount d (branchMap a x) (r - branchDelay a x) = 0 := by
-    by_contra hne
-    exact ha (hfin.mem_toFinset.2 hne)
-  simp [h0]
+  simp [by_contra fun hne => ha (hfin.mem_toFinset.2 hne)]
 
 /-- Real-valued `tsum` form of the renewal equation:
 `(N(w, r) : ℝ) = 1{r ≥ 0} + ∑' a, (N(F_a w, r - τ_a(w)) : ℝ)`. -/
@@ -590,15 +548,9 @@ theorem wordCount_renewal_tsum {d : ℕ} {x : Fin d → ℝ} (hx : x ∈ ordered
   have hfin := finite_support_wordCount_branch hx r
   have hnat := wordCount_renewal hx r
   rw [finsum_eq_sum _ hfin] at hnat
-  have htsum :
-      (∑' a : ℕ × Fin d, (wordCount d (branchMap a x) (r - branchDelay a x) : ℝ)) =
-        ∑ a ∈ hfin.toFinset, (wordCount d (branchMap a x) (r - branchDelay a x) : ℝ) := by
-    refine tsum_eq_sum fun a ha => ?_
-    have h0 : wordCount d (branchMap a x) (r - branchDelay a x) = 0 := by
-      by_contra hne
-      exact ha (hfin.mem_toFinset.2 hne)
-    simp [h0]
-  rw [htsum, ← Nat.cast_sum, hnat]
+  rw [tsum_eq_sum (s := hfin.toFinset) fun a ha => by
+      simp [by_contra fun hne => ha (hfin.mem_toFinset.2 hne)],
+    ← Nat.cast_sum, hnat]
   split_ifs <;> simp
 
 /-! ### Freeness of the unaccelerated and accelerated semigroups -/
@@ -607,69 +559,44 @@ theorem wordCount_renewal_tsum {d : ℕ} {x : Fin d → ℝ} (hx : x ∈ ordered
 private def IsStrictOrderedCone {d : ℕ} (y : Fin (d + 2) → ℝ) : Prop :=
   (∀ k, 0 < y k) ∧ StrictMono y ∧ y ∈ coneSpan d
 
+private theorem isStrictOrderedCone_snoc_sum {d : ℕ} (hd : 1 ≤ d) {f : Fin (d + 1) → ℝ}
+    (hfpos : ∀ i, 0 < f i) (hfmono : StrictMono f) :
+    IsStrictOrderedCone (Fin.snoc (α := fun _ => ℝ) f (∑ i, f i)) := by
+  have : Nontrivial (Fin (d + 1)) := Fin.nontrivial_iff_two_le.2 (by omega)
+  refine ⟨Fin.lastCases (by simpa using Finset.sum_pos (fun i _ => hfpos i) Finset.univ_nonempty)
+      (fun i => by simpa using hfpos i),
+    fun k₁ k₂ => Fin.lastCases
+      (Fin.lastCases (fun h => absurd h (lt_irrefl _)) (fun i₁ _ => by
+        simp only [Fin.snoc_castSucc, Fin.snoc_last]
+        rcases exists_ne i₁ with ⟨i', hi'⟩
+        have hle := Finset.sum_le_sum_of_subset_of_nonneg (f := f)
+          (Finset.subset_univ ({i₁, i'} : Finset (Fin (d + 1)))) fun i _ _ => (hfpos i).le
+        rw [Finset.sum_pair hi'.symm] at hle
+        linarith [hfpos i']) k₁)
+      (fun i₂ => Fin.lastCases (fun h => absurd h (not_lt.2 (Fin.castSucc_lt_last i₂).le))
+        (fun i₁ h => by simpa using hfmono (Fin.castSucc_lt_castSucc_iff.1 h)) k₁) k₂,
+    by simp⟩
+
 /-- A canonical witness in `IsStrictOrderedCone` for `1 ≤ d`: `(1, 2, …, d + 1, ∑ (i + 1))`. -/
 private def strictOrderedConePoint (d : ℕ) : Fin (d + 2) → ℝ :=
   Fin.snoc (α := fun _ => ℝ) (fun i : Fin (d + 1) => (i.1 : ℝ) + 1)
     (∑ i : Fin (d + 1), ((i.1 : ℝ) + 1))
 
 private theorem strictOrderedConePoint_mem {d : ℕ} (hd : 1 ≤ d) :
-    IsStrictOrderedCone (strictOrderedConePoint d) := by
-  have : Nontrivial (Fin (d + 1)) := Fin.nontrivial_iff_two_le.2 (by omega)
-  refine ⟨?_, ?_, ?_⟩
-  · intro k
-    refine Fin.lastCases ?_ (fun i => ?_) k
-    · simp only [strictOrderedConePoint, Fin.snoc_last]
-      exact Finset.sum_pos (fun i _ => by positivity) Finset.univ_nonempty
-    · simp only [strictOrderedConePoint, Fin.snoc_castSucc]
-      positivity
-  · intro k₁ k₂ hlt
-    refine Fin.lastCases ?_ (fun i₂ => ?_) k₂ hlt
-    · refine Fin.lastCases (fun h => absurd h (lt_irrefl _)) (fun i₁ _ => ?_) k₁
-      simp only [strictOrderedConePoint, Fin.snoc_castSucc, Fin.snoc_last]
-      rcases exists_ne i₁ with ⟨i', hi'⟩
-      have hpair : ((i₁.1 : ℝ) + 1) + ((i'.1 : ℝ) + 1) ≤
-          ∑ i : Fin (d + 1), ((i.1 : ℝ) + 1) := by
-        have hsub : ({i₁, i'} : Finset (Fin (d + 1))) ⊆ Finset.univ := Finset.subset_univ _
-        have hle := Finset.sum_le_sum_of_subset_of_nonneg
-          (f := fun i : Fin (d + 1) => (i.1 : ℝ) + 1) hsub fun i _ _ => by positivity
-        rwa [Finset.sum_pair hi'.symm] at hle
-      linarith [Nat.cast_nonneg (α := ℝ) i'.1]
-    · refine Fin.lastCases (fun h => absurd h (not_lt.2 (Fin.castSucc_lt_last i₂).le))
-        (fun i₁ h => ?_) k₁
-      simp only [strictOrderedConePoint, Fin.snoc_castSucc]
-      have hi : i₁.1 < i₂.1 := Fin.castSucc_lt_castSucc_iff.1 h
-      have : (i₁.1 : ℝ) < (i₂.1 : ℝ) := Nat.cast_lt.2 hi
-      linarith
-  · rw [mem_coneSpan_iff]
-    simp [strictOrderedConePoint]
+    IsStrictOrderedCone (strictOrderedConePoint d) :=
+  isStrictOrderedCone_snoc_sum hd (fun _ => by positivity)
+    (fun _ _ h => by have : (_ : ℝ) < _ := Nat.cast_lt.2 h; linarith)
 
 private theorem unaccelMove_preserves_strict {d : ℕ} (hd : 1 ≤ d) (j : Fin (d + 1))
     {y : Fin (d + 2) → ℝ} (hy : IsStrictOrderedCone y) :
     IsStrictOrderedCone (unaccelMove j y) := by
-  have : Nontrivial (Fin (d + 1)) := Fin.nontrivial_iff_two_le.2 (by omega)
-  refine ⟨?_, ?_, unaccelMove_mem_coneSpan j y⟩
-  · intro k
-    refine Fin.lastCases ?_ (fun i => ?_) k
-    · rw [unaccelMove_last]
-      exact Finset.sum_pos (fun i _ => hy.1 _) Finset.univ_nonempty
-    · rw [unaccelMove_castSucc]
-      exact hy.1 _
-  · intro k₁ k₂ hlt
-    refine Fin.lastCases ?_ (fun i₂ => ?_) k₂ hlt
-    · refine Fin.lastCases (fun h => absurd h (lt_irrefl _)) (fun i₁ _ => ?_) k₁
-      rw [unaccelMove_castSucc, unaccelMove_last]
-      rcases exists_ne i₁ with ⟨i', hi'⟩
-      have hpair : y (j.castSucc.succAbove i₁) + y (j.castSucc.succAbove i') ≤
-          ∑ i : Fin (d + 1), y (j.castSucc.succAbove i) := by
-        have hsub : ({i₁, i'} : Finset (Fin (d + 1))) ⊆ Finset.univ := Finset.subset_univ _
-        have hle := Finset.sum_le_sum_of_subset_of_nonneg
-          (f := fun i : Fin (d + 1) => y (j.castSucc.succAbove i)) hsub fun i _ _ => (hy.1 _).le
-        rwa [Finset.sum_pair hi'.symm] at hle
-      linarith [hy.1 (j.castSucc.succAbove i')]
-    · refine Fin.lastCases (fun h => absurd h (not_lt.2 (Fin.castSucc_lt_last i₂).le))
-        (fun i₁ h => ?_) k₁
-      rw [unaccelMove_castSucc, unaccelMove_castSucc]
-      exact hy.2.1 ((Fin.strictMono_succAbove _) (Fin.castSucc_lt_castSucc_iff.1 h))
+  have hEq : unaccelMove j y =
+      Fin.snoc (α := fun _ => ℝ) (fun i => y (j.castSucc.succAbove i))
+        (∑ i, y (j.castSucc.succAbove i)) :=
+    funext (Fin.lastCases (by simp [unaccelMove_last]) (fun i => by simp [unaccelMove_castSucc]))
+  rw [hEq]
+  exact isStrictOrderedCone_snoc_sum hd (fun _ => hy.1 _)
+    (fun _ _ h => hy.2.1 ((Fin.strictMono_succAbove _) h))
 
 private theorem unaccelWordMove_preserves_strict {d : ℕ} (hd : 1 ≤ d) (js : List (Fin (d + 1)))
     {y : Fin (d + 2) → ℝ} (hy : IsStrictOrderedCone y) :
@@ -692,14 +619,21 @@ private theorem unaccelWordMove_last_ge {d : ℕ} (hd : 1 ≤ d) (js : List (Fin
   | cons j _ ih =>
     exact (unaccelMove_last_gt j hy).le.trans (ih (unaccelMove_preserves_strict hd j hy))
 
+private theorem unaccelWordMove_snoc_ne_self {d : ℕ} (hd : 1 ≤ d) (l : List (Fin (d + 1)))
+    (j : Fin (d + 1)) {y : Fin (d + 2) → ℝ} (hy : IsStrictOrderedCone y) :
+    unaccelWordMove (l ++ [j]) y ≠ y := fun hEq => by
+  rw [unaccelWordMove_append, LinearMap.comp_apply, unaccelWordMove_singleton] at hEq
+  have hlt := unaccelMove_last_gt j (unaccelWordMove_preserves_strict hd l hy)
+  have hge := unaccelWordMove_last_ge hd l hy
+  linarith [congrFun hEq (Fin.last (d + 1))]
+
 /-- On strictly ordered cone vectors, `unaccelMove j y` uniquely determines both `j` and `y`. -/
 private theorem unaccelMove_inj_strict {d : ℕ} {j₁ j₂ : Fin (d + 1)}
     {y₁ y₂ : Fin (d + 2) → ℝ} (hy₁ : IsStrictOrderedCone y₁) (hy₂ : IsStrictOrderedCone y₂)
     (heq : unaccelMove j₁ y₁ = unaccelMove j₂ y₂) :
     j₁ = j₂ ∧ y₁ = y₂ := by
   have hlast : y₁ (Fin.last (d + 1)) = y₂ (Fin.last (d + 1)) := by
-    have hpen := congrFun heq (Fin.last d).castSucc
-    simpa [unaccelMove_penultimate] using hpen
+    simpa [unaccelMove_penultimate] using congrFun heq (Fin.last d).castSucc
   have hdel : y₁ j₁.castSucc = y₂ j₂.castSucc := by
     have htop := congrFun heq (Fin.last (d + 1))
     rw [unaccelMove_last_of_mem_coneSpan j₁ hy₁.2.2,
@@ -710,26 +644,18 @@ private theorem unaccelMove_inj_strict {d : ℕ} {j₁ j₂ : Fin (d + 1)}
       unaccelMove a u = unaccelMove b v → u a.castSucc = v b.castSucc → ¬ a < b := by
     intro a b u v hu hv hab huv hlt
     have hcoord := congrFun hab a.castSucc
-    rw [unaccelMove_castSucc, unaccelMove_castSucc] at hcoord
-    have hs1 : a.castSucc.succAbove a = a.succ :=
-      Fin.succAbove_of_le_castSucc a.castSucc a le_rfl
-    have hs2 : b.castSucc.succAbove a = a.castSucc :=
-      Fin.succAbove_of_castSucc_lt b.castSucc a (Fin.castSucc_lt_castSucc_iff.2 hlt)
-    rw [hs1, hs2] at hcoord
-    have h1 : u a.castSucc < u a.succ := hu.2.1 (Fin.castSucc_lt_succ (i := a))
-    have h2 : v a.castSucc < v b.castSucc := hv.2.1 (Fin.castSucc_lt_castSucc_iff.2 hlt)
-    linarith
+    rw [unaccelMove_castSucc, unaccelMove_castSucc,
+      Fin.succAbove_of_le_castSucc a.castSucc a le_rfl,
+      Fin.succAbove_of_castSucc_lt b.castSucc a (Fin.castSucc_lt_castSucc_iff.2 hlt)] at hcoord
+    linarith [hu.2.1 (Fin.castSucc_lt_succ (i := a)), hv.2.1 (Fin.castSucc_lt_castSucc_iff.2 hlt)]
   have hj : j₁ = j₂ := le_antisymm
-    (not_lt.1 (hnotlt hy₂ hy₁ heq.symm hdel.symm))
-    (not_lt.1 (hnotlt hy₁ hy₂ heq hdel))
+    (not_lt.1 (hnotlt hy₂ hy₁ heq.symm hdel.symm)) (not_lt.1 (hnotlt hy₁ hy₂ heq hdel))
   subst hj
-  refine ⟨rfl, ?_⟩
-  ext k
+  refine ⟨rfl, funext fun k => ?_⟩
   by_cases hk : k = j₁.castSucc
   · rw [hk, hdel]
   · rcases Fin.exists_succAbove_eq hk with ⟨i, rfl⟩
-    have hi := congrFun heq i.castSucc
-    simpa [unaccelMove_castSucc] using hi
+    simpa [unaccelMove_castSucc] using congrFun heq i.castSucc
 
 private theorem unaccelWordMove_apply_injective {d : ℕ} (hd : 1 ≤ d) {y : Fin (d + 2) → ℝ}
     (hy : IsStrictOrderedCone y) :
@@ -738,35 +664,23 @@ private theorem unaccelWordMove_apply_injective {d : ℕ} (hd : 1 ≤ d) {y : Fi
   refine List.reverseRecOn js₁ ?_ ?_
   · intro js₂ hEq
     refine List.reverseRecOn js₂ (fun _ => rfl) (fun l₂ j₂ _ hEq => ?_) hEq
-    dsimp only at hEq
-    rw [unaccelWordMove_nil, LinearMap.id_apply, unaccelWordMove_append, LinearMap.comp_apply,
-      unaccelWordMove_singleton] at hEq
-    have hlt := unaccelMove_last_gt j₂ (unaccelWordMove_preserves_strict hd l₂ hy)
-    have hge := unaccelWordMove_last_ge hd l₂ hy
-    have htop := congrFun hEq (Fin.last (d + 1))
-    linarith
+    exact absurd hEq.symm (unaccelWordMove_snoc_ne_self hd l₂ j₂ hy)
   · intro l₁ j₁ ih js₂ hEq
-    refine List.reverseRecOn js₂ (fun hEq => ?_) (fun l₂ j₂ _ hEq => ?_) hEq
-    · dsimp only at hEq
-      rw [unaccelWordMove_nil, LinearMap.id_apply, unaccelWordMove_append, LinearMap.comp_apply,
-        unaccelWordMove_singleton] at hEq
-      have hlt := unaccelMove_last_gt j₁ (unaccelWordMove_preserves_strict hd l₁ hy)
-      have hge := unaccelWordMove_last_ge hd l₁ hy
-      have htop := congrFun hEq (Fin.last (d + 1))
-      linarith
-    · dsimp only at hEq
-      rw [unaccelWordMove_append, unaccelWordMove_append, LinearMap.comp_apply,
-        LinearMap.comp_apply, unaccelWordMove_singleton, unaccelWordMove_singleton] at hEq
-      rcases unaccelMove_inj_strict (unaccelWordMove_preserves_strict hd l₁ hy)
-        (unaccelWordMove_preserves_strict hd l₂ hy) hEq with ⟨hj, hl⟩
-      rw [ih hl, hj]
+    refine List.reverseRecOn js₂
+      (fun hEq => absurd hEq (unaccelWordMove_snoc_ne_self hd l₁ j₁ hy))
+      (fun l₂ j₂ _ hEq => ?_) hEq
+    dsimp only at hEq
+    rw [unaccelWordMove_append, unaccelWordMove_append, LinearMap.comp_apply,
+      LinearMap.comp_apply, unaccelWordMove_singleton, unaccelWordMove_singleton] at hEq
+    rcases unaccelMove_inj_strict (unaccelWordMove_preserves_strict hd l₁ hy)
+      (unaccelWordMove_preserves_strict hd l₂ hy) hEq with ⟨hj, hl⟩
+    rw [ih hl, hj]
 
 /-- For `1 ≤ d`, distinct unaccelerated words induce distinct linear maps on `Fin (d + 2) → ℝ`
 (freeness of the unaccelerated semigroup). -/
 theorem unaccelWordMove_injective {d : ℕ} (hd : 1 ≤ d) :
-    Function.Injective (unaccelWordMove (d := d)) := by
-  intro js₁ js₂ hEq
-  exact unaccelWordMove_apply_injective hd (strictOrderedConePoint_mem hd) (by dsimp only; rw [hEq])
+    Function.Injective (unaccelWordMove (d := d)) := fun _ _ hEq =>
+  unaccelWordMove_apply_injective hd (strictOrderedConePoint_mem hd) (by dsimp only; rw [hEq])
 
 /-- Expansion of an accelerated word into its underlying unaccelerated word in `Fin (d + 1)`. -/
 def expandWord {d : ℕ} : List (ℕ × Fin d) → List (Fin (d + 1))
@@ -783,17 +697,13 @@ theorem expandWord_cons {d : ℕ} (a : ℕ × Fin d) (u : List (ℕ × Fin d)) :
   (rfl)
 
 theorem expandWord_singleton {d : ℕ} (a : ℕ × Fin d) :
-    expandWord [a] = a.2.castSucc :: List.replicate a.1 (Fin.last d) := by
-  simp
+    expandWord [a] = a.2.castSucc :: List.replicate a.1 (Fin.last d) := by simp
 
 private theorem unaccelWordMove_replicate {d : ℕ} (A : ℕ) (j : Fin (d + 1)) :
     unaccelWordMove (List.replicate A j) = unaccelMove j ^ A := by
   induction A with
-  | zero =>
-    simp [Module.End.one_eq_id]
-  | succ A ih =>
-    rw [List.replicate_succ, unaccelWordMove_cons, ih, pow_succ]
-    rfl
+  | zero => simp [Module.End.one_eq_id]
+  | succ A ih => rw [List.replicate_succ, unaccelWordMove_cons, ih, pow_succ]; rfl
 
 /-- Expanding an accelerated word preserves its linear move. -/
 theorem unaccelWordMove_expandWord {d : ℕ} (u : List (ℕ × Fin d)) :
@@ -810,8 +720,7 @@ private theorem expandWord_ne_last_cons {d : ℕ} (u : List (ℕ × Fin d)) (t :
   | nil => simp
   | cons a u =>
     simp only [expandWord_cons, List.cons_append, ne_eq, List.cons.injEq, not_and]
-    intro h
-    exact absurd h (Fin.castSucc_ne_last a.2)
+    exact fun h => absurd h (Fin.castSucc_ne_last a.2)
 
 private theorem replicate_append_expandWord_inj {d : ℕ} {A₁ A₂ : ℕ} {v₁ v₂ : List (ℕ × Fin d)}
     (h : List.replicate A₁ (Fin.last d) ++ expandWord v₁ =
@@ -831,45 +740,33 @@ private theorem replicate_append_expandWord_inj {d : ℕ} {A₁ A₂ : ℕ} {v�
       exact absurd h.symm (expandWord_ne_last_cons v₂ _)
     | succ A₂ =>
       simp only [List.replicate_succ, List.cons_append, List.cons.injEq, true_and] at h
-      rcases ih h with ⟨hA, hv⟩
-      exact ⟨congrArg Nat.succ hA, hv⟩
+      exact (ih h).imp_left (congrArg Nat.succ)
 
 /-- The expansion from accelerated words to unaccelerated words is injective. -/
 theorem expandWord_injective {d : ℕ} : Function.Injective (expandWord (d := d)) := by
   intro u₁
   induction u₁ with
-  | nil =>
-    intro u₂ h
-    cases u₂ with
-    | nil => rfl
-    | cons a v => simp at h
+  | nil => rintro (_ | ⟨_, _⟩) h <;> simp at h ⊢
   | cons a₁ v₁ ih =>
-    intro u₂ h
-    cases u₂ with
-    | nil => simp at h
-    | cons a₂ v₂ =>
-      simp only [expandWord_cons, List.cons_append, List.cons.injEq] at h
-      rcases h with ⟨hj, htail⟩
-      rcases replicate_append_expandWord_inj htail with ⟨hA, hv⟩
-      have ha : a₁ = a₂ := Prod.ext hA (Fin.castSucc_injective d hj)
-      rw [ha, ih hv]
+    rintro (_ | ⟨a₂, v₂⟩) h
+    · simp at h
+    · simp only [expandWord_cons, List.cons_append, List.cons.injEq] at h
+      rcases replicate_append_expandWord_inj h.2 with ⟨hA, hv⟩
+      rw [Prod.ext hA (Fin.castSucc_injective d h.1), ih hv]
 
 /-- Distinct accelerated words induce distinct linear maps on `Fin (d + 2) → ℝ` for every `d : ℕ`
 (freeness of the accelerated semigroup). -/
 theorem wordMove_injective (d : ℕ) : Function.Injective (wordMove (d := d)) := by
   cases d with
   | zero =>
-    intro u₁ u₂ _
-    cases u₁ with
-    | nil =>
-      cases u₂ with
-      | nil => rfl
-      | cons a _ => exact Fin.elim0 a.2
-    | cons a _ => exact Fin.elim0 a.2
+    rintro (_ | ⟨a, _⟩) (_ | ⟨b, _⟩) _
+    · rfl
+    · exact Fin.elim0 b.2
+    · exact Fin.elim0 a.2
+    · exact Fin.elim0 a.2
   | succ d =>
     intro u₁ u₂ h
-    apply expandWord_injective
-    apply unaccelWordMove_injective (Nat.succ_pos d)
-    rw [unaccelWordMove_expandWord, unaccelWordMove_expandWord, h]
+    exact expandWord_injective <| unaccelWordMove_injective (Nat.succ_pos d) <| by
+      rw [unaccelWordMove_expandWord, unaccelWordMove_expandWord, h]
 
 end TauCeti.OrderedSimplex

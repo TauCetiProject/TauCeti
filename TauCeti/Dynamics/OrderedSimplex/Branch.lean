@@ -24,10 +24,9 @@ import Mathlib.Tactic.Ring
 # Unaccelerated and accelerated projective branches on the ordered simplex
 
 For `n = d + 2`, each index `j : Fin (d + 1)` defines a linear map `γ_j`
-(`TauCeti.OrderedSimplex.unaccelMove j`) on `ℝ^{d+2}` sending `y` to
-`(y₁, …, ŷ_j, …, y_n, ∑_{k ≠ j} y_k)`. It maps the hyperplane `coneSpan d` and the ordered cone
-`orderedCone d` into themselves; on `coneSpan d`, the last coordinate of `γ_j y` equals
-`2 y_n - y_j`.
+(`TauCeti.OrderedSimplex.unaccelMove j`) on `ℝ^{d+2}` deleting `y_j` from `(y₁, …, y_n)` and
+appending `∑_{k ≠ j} y_k`. It maps the hyperplane `coneSpan d` and the ordered cone `orderedCone d`
+into themselves; on `coneSpan d`, the last coordinate of `γ_j y` equals `2 y_n - y_j`.
 
 For a letter `a = (A, j) : ℕ × Fin d`, the **accelerated linear move** is
 `γ_{n-1}^A γ_j` (`TauCeti.OrderedSimplex.accelMove a`). On the projective chart `orderedSimplex d`,
@@ -65,29 +64,20 @@ namespace TauCeti.OrderedSimplex
 
 /-! ### Unaccelerated linear moves -/
 
-/-- The unaccelerated linear move `γ_j(y) = (y₁, …, ŷ_j, …, y_n, ∑_{k ≠ j} y_k)` on
-`Fin (d + 2) → ℝ` for `j : Fin (d + 1)`. -/
+/-- The unaccelerated linear move `γ_j` on `Fin (d + 2) → ℝ` for `j : Fin (d + 1)`, deleting `y_j`
+from `(y₁, …, y_n)` and appending `∑_{k ≠ j} y_k`. -/
 def unaccelMove {d : ℕ} (j : Fin (d + 1)) :
     (Fin (d + 2) → ℝ) →ₗ[ℝ] (Fin (d + 2) → ℝ) where
   toFun y :=
     Fin.snoc (α := fun _ => ℝ) (fun i : Fin (d + 1) => y (j.castSucc.succAbove i))
       (∑ i : Fin (d + 1), y (j.castSucc.succAbove i))
-  map_add' y z := by
-    ext k
-    refine Fin.lastCases ?_ (fun i => ?_) k
-    · simp [Finset.sum_add_distrib]
-    · simp
-  map_smul' c y := by
-    ext k
-    refine Fin.lastCases ?_ (fun i => ?_) k
-    · simp [Finset.mul_sum]
-    · simp
+  map_add' y z := funext <| Fin.lastCases (by simp [Finset.sum_add_distrib]) (fun _ => by simp)
+  map_smul' c y := funext <| Fin.lastCases (by simp [Finset.mul_sum]) (fun _ => by simp)
 
 @[simp]
 theorem unaccelMove_castSucc {d : ℕ} (j : Fin (d + 1)) (y : Fin (d + 2) → ℝ)
     (i : Fin (d + 1)) :
-    unaccelMove j y i.castSucc = y (j.castSucc.succAbove i) := by
-  simp [unaccelMove]
+    unaccelMove j y i.castSucc = y (j.castSucc.succAbove i) := by simp [unaccelMove]
 
 @[simp]
 theorem unaccelMove_last {d : ℕ} (j : Fin (d + 1)) (y : Fin (d + 2) → ℝ) :
@@ -96,64 +86,52 @@ theorem unaccelMove_last {d : ℕ} (j : Fin (d + 1)) (y : Fin (d + 2) → ℝ) :
 
 /-- Every image of `unaccelMove j` lies in the hyperplane `coneSpan d`. -/
 theorem unaccelMove_mem_coneSpan {d : ℕ} (j : Fin (d + 1)) (y : Fin (d + 2) → ℝ) :
-    unaccelMove j y ∈ coneSpan d := by
-  simp
+    unaccelMove j y ∈ coneSpan d := by simp
 
 /-- The penultimate coordinate of `γ_j y` is always the last coordinate `y_n`. -/
 theorem unaccelMove_penultimate {d : ℕ} (j : Fin (d + 1)) (y : Fin (d + 2) → ℝ) :
     unaccelMove j y (Fin.last d).castSucc = y (Fin.last (d + 1)) := by
   rw [unaccelMove_castSucc]
-  congr 1
-  exact Fin.succAbove_of_le_castSucc j.castSucc (Fin.last d)
-    (Fin.castSucc_le_castSucc_iff.2 (Fin.le_last j))
+  exact congrArg y (Fin.succAbove_of_le_castSucc j.castSucc (Fin.last d)
+    (Fin.castSucc_le_castSucc_iff.2 (Fin.le_last j)))
 
 /-- On `coneSpan d`, the last coordinate of `γ_j y` equals `2 y_n - y_j`. -/
 theorem unaccelMove_last_of_mem_coneSpan {d : ℕ} (j : Fin (d + 1)) {y : Fin (d + 2) → ℝ}
     (hy : y ∈ coneSpan d) :
     unaccelMove j y (Fin.last (d + 1)) = 2 * y (Fin.last (d + 1)) - y j.castSucc := by
   rw [unaccelMove_last]
-  have hsum : ∑ k : Fin (d + 2), y k =
-      y j.castSucc + ∑ i : Fin (d + 1), y (j.castSucc.succAbove i) :=
-    Fin.sum_univ_succAbove y j.castSucc
-  have hsum2 : ∑ k : Fin (d + 2), y k = 2 * y (Fin.last (d + 1)) := by
-    rw [Fin.sum_univ_castSucc, mem_coneSpan_iff.1 hy]
-    ring
+  have h1 := Fin.sum_univ_succAbove y j.castSucc
+  have h2 : ∑ k : Fin (d + 2), y k = 2 * y (Fin.last (d + 1)) := by
+    rw [Fin.sum_univ_castSucc, mem_coneSpan_iff.1 hy]; ring
   linarith
 
 /-- The last unaccelerated move `γ_{n-1}` leaves the first `d` coordinates unchanged. -/
 theorem unaccelMove_last_index_castSucc {d : ℕ} (y : Fin (d + 2) → ℝ) (i : Fin d) :
     unaccelMove (Fin.last d) y i.castSucc.castSucc = y i.castSucc.castSucc := by
   rw [unaccelMove_castSucc]
-  congr 1
-  exact Fin.succAbove_of_castSucc_lt (Fin.last d).castSucc i.castSucc
-    (Fin.castSucc_lt_castSucc_iff.2 (Fin.castSucc_lt_last i))
+  exact congrArg y (Fin.succAbove_of_castSucc_lt (Fin.last d).castSucc i.castSucc
+    (Fin.castSucc_lt_castSucc_iff.2 (Fin.castSucc_lt_last i)))
 
 /-- Each unaccelerated move maps `orderedCone d` into itself. -/
 theorem unaccelMove_mapsTo_orderedCone {d : ℕ} (j : Fin (d + 1)) :
-    MapsTo (unaccelMove j) (orderedCone d) (orderedCone d) := by
-  intro y hy
+    MapsTo (unaccelMove j) (orderedCone d) (orderedCone d) := fun y hy => by
   have hpos := last_pos_of_mem_orderedCone hy
   rw [mem_orderedCone_iff] at hy ⊢
-  refine ⟨?_, ?_, ?_, mem_coneSpan_iff.1 (unaccelMove_mem_coneSpan j y)⟩
-  · intro h0
-    have hpen := congrFun h0 (Fin.last d).castSucc
-    rw [unaccelMove_penultimate, Pi.zero_apply] at hpen
-    linarith
-  · intro k
-    refine Fin.lastCases ?_ (fun i => ?_) k
-    · rw [unaccelMove_last]
-      exact Finset.sum_nonneg fun i _ => hy.2.1 _
-    · rw [unaccelMove_castSucc]
-      exact hy.2.1 _
-  · intro k₁ k₂
-    refine Fin.lastCases ?_ (fun i₂ => ?_) k₂
-    · refine Fin.lastCases (fun _ => le_refl _) (fun i₁ _ => ?_) k₁
-      rw [unaccelMove_castSucc, unaccelMove_last]
-      exact Finset.single_le_sum (fun m _ => hy.2.1 _) (Finset.mem_univ i₁)
-    · refine Fin.lastCases (fun h => ?_) (fun i₁ h => ?_) k₁
-      · exact absurd h (not_le.2 (Fin.castSucc_lt_last i₂))
-      · rw [unaccelMove_castSucc, unaccelMove_castSucc]
-        exact hy.2.2.1 ((Fin.strictMono_succAbove _).monotone (Fin.castSucc_le_castSucc_iff.1 h))
+  refine ⟨fun h0 => by
+      have := congrFun h0 (Fin.last d).castSucc
+      rw [unaccelMove_penultimate, Pi.zero_apply] at this; linarith,
+    Fin.lastCases (by rw [unaccelMove_last]; exact Finset.sum_nonneg fun _ _ => hy.2.1 _)
+      (fun _ => by rw [unaccelMove_castSucc]; exact hy.2.1 _),
+    fun k₁ k₂ => Fin.lastCases
+      (Fin.lastCases (fun _ => le_rfl) (fun i₁ _ => by
+        rw [unaccelMove_castSucc, unaccelMove_last]
+        exact Finset.single_le_sum (fun _ _ => hy.2.1 _) (Finset.mem_univ i₁)) k₁)
+      (fun i₂ => Fin.lastCases (fun h => absurd h (not_le.2 (Fin.castSucc_lt_last i₂)))
+        (fun i₁ h => by
+          rw [unaccelMove_castSucc, unaccelMove_castSucc]
+          exact hy.2.2.1 ((Fin.strictMono_succAbove _).monotone
+            (Fin.castSucc_le_castSucc_iff.1 h))) k₁) k₂,
+    mem_coneSpan_iff.1 (unaccelMove_mem_coneSpan j y)⟩
 
 /-! ### Accelerated linear moves -/
 
@@ -168,25 +146,18 @@ theorem accelMove_def {d : ℕ} (a : ℕ × Fin d) :
 
 @[simp]
 theorem accelMove_zero {d : ℕ} (j : Fin d) :
-    accelMove (0, j) = unaccelMove j.castSucc := by
-  simp [accelMove, Module.End.one_eq_id]
+    accelMove (0, j) = unaccelMove j.castSucc := by simp [accelMove, Module.End.one_eq_id]
 
 theorem accelMove_succ {d : ℕ} (A : ℕ) (j : Fin d) :
     accelMove (A + 1, j) = (unaccelMove (Fin.last d)).comp (accelMove (A, j)) := by
-  ext y k
-  simp [accelMove, pow_succ']
+  ext y k; simp [accelMove, pow_succ']
 
 /-- Every image of `accelMove a` lies in `coneSpan d`. -/
 theorem accelMove_mem_coneSpan {d : ℕ} (a : ℕ × Fin d) (y : Fin (d + 2) → ℝ) :
     accelMove a y ∈ coneSpan d := by
-  rcases a with ⟨A, j⟩
-  induction A with
-  | zero =>
-    rw [accelMove_zero]
-    exact unaccelMove_mem_coneSpan j.castSucc y
-  | succ A _ =>
-    rw [accelMove_succ]
-    exact unaccelMove_mem_coneSpan (Fin.last d) _
+  rcases a with ⟨_ | A, j⟩
+  · simp
+  · rw [accelMove_succ]; exact unaccelMove_mem_coneSpan (Fin.last d) _
 
 /-- The first `d` coordinates of `γ_{n-1}^A γ_j y` delete `y_j` from `(y₁, …, y_{n-1})`. -/
 theorem accelMove_castSucc_castSucc {d : ℕ} (a : ℕ × Fin d) (y : Fin (d + 2) → ℝ) (i : Fin d) :
@@ -194,18 +165,14 @@ theorem accelMove_castSucc_castSucc {d : ℕ} (a : ℕ × Fin d) (y : Fin (d + 2
   rcases a with ⟨A, j⟩
   induction A with
   | zero =>
-    rw [accelMove_zero, unaccelMove_castSucc]
-    congr 1
+    rw [accelMove_zero, unaccelMove_castSucc]; congr 1
     by_cases h : i.castSucc < j.castSucc
-    · have h' : i.castSucc.castSucc < j.castSucc.castSucc := Fin.castSucc_lt_castSucc_iff.2 h
-      rw [Fin.succAbove_of_castSucc_lt _ _ h', Fin.succAbove_of_castSucc_lt _ _ h]
+    · rw [Fin.succAbove_of_castSucc_lt _ _ (Fin.castSucc_lt_castSucc_iff.2 h),
+        Fin.succAbove_of_castSucc_lt _ _ h]
     · have hge : j.castSucc ≤ i.castSucc := not_lt.1 h
-      have hge' : j.castSucc.castSucc ≤ i.castSucc.castSucc :=
-        Fin.castSucc_le_castSucc_iff.2 hge
-      rw [Fin.succAbove_of_le_castSucc _ _ hge', Fin.succAbove_of_le_castSucc _ _ hge]
-      rfl
-  | succ A ih =>
-    rw [accelMove_succ, LinearMap.comp_apply, unaccelMove_last_index_castSucc, ih]
+      rw [Fin.succAbove_of_le_castSucc _ _ (Fin.castSucc_le_castSucc_iff.2 hge),
+        Fin.succAbove_of_le_castSucc _ _ hge]; rfl
+  | succ A ih => rw [accelMove_succ, LinearMap.comp_apply, unaccelMove_last_index_castSucc, ih]
 
 /-- On `coneSpan d`, the penultimate and last coordinates of `γ_{n-1}^A γ_j y` are
 `y_n + A (y_n - y_j)` and `y_n + (A + 1) (y_n - y_j)`. -/
@@ -219,21 +186,15 @@ theorem accelMove_penultimate_and_last {d : ℕ} (a : ℕ × Fin d) {y : Fin (d 
   rcases a with ⟨A, j⟩
   induction A with
   | zero =>
-    refine ⟨?_, ?_⟩
-    · simp
-    · rw [accelMove_zero, unaccelMove_last_of_mem_coneSpan j.castSucc hy]
-      simp only [Nat.cast_zero, zero_add, one_mul]
-      ring
+    refine ⟨by simp, ?_⟩
+    rw [accelMove_zero, unaccelMove_last_of_mem_coneSpan j.castSucc hy]; push_cast; ring
   | succ A ih =>
     rcases ih with ⟨ih1, ih2⟩
     refine ⟨?_, ?_⟩
-    · rw [accelMove_succ, LinearMap.comp_apply, unaccelMove_penultimate, ih2]
-      push_cast
-      ring
+    · rw [accelMove_succ, LinearMap.comp_apply, unaccelMove_penultimate, ih2]; push_cast; ring
     · rw [accelMove_succ, LinearMap.comp_apply,
         unaccelMove_last_of_mem_coneSpan (Fin.last d) (accelMove_mem_coneSpan (A, j) y), ih1, ih2]
-      push_cast
-      ring
+      push_cast; ring
 
 /-- On `coneSpan d`, the penultimate coordinate of `γ_{n-1}^A γ_j y` is
 `y_n + A (y_n - y_j)`. -/
@@ -254,13 +215,9 @@ theorem accelMove_mapsTo_orderedCone {d : ℕ} (a : ℕ × Fin d) :
     MapsTo (accelMove a) (orderedCone d) (orderedCone d) := by
   rcases a with ⟨A, j⟩
   induction A with
-  | zero =>
-    intro y hy
-    rw [accelMove_zero]
-    exact unaccelMove_mapsTo_orderedCone j.castSucc hy
+  | zero => simpa using unaccelMove_mapsTo_orderedCone j.castSucc
   | succ A ih =>
-    intro y hy
-    rw [accelMove_succ, LinearMap.comp_apply]
+    intro y hy; rw [accelMove_succ, LinearMap.comp_apply]
     exact unaccelMove_mapsTo_orderedCone (Fin.last d) (ih hy)
 
 /-! ### Accelerated projective branches -/
@@ -281,8 +238,7 @@ def branchMap {d : ℕ} (a : ℕ × Fin d) (x : Fin d → ℝ) : Fin d → ℝ :
 
 theorem branchMap_def {d : ℕ} (a : ℕ × Fin d) (x : Fin d → ℝ) (i : Fin d) :
     branchMap a x i = toProjective x (a.2.castSucc.succAbove i) / branchDenom a x := by
-  unfold branchMap
-  congr 1
+  unfold branchMap; congr 1
   refine Fin.lastCases ?_ (fun k => ?_) (a.2.castSucc.succAbove i) <;> simp
 
 /-- The logarithmic delay `τ_a(w) = log (q_a(w))` of the accelerated branch `a`. -/
@@ -300,11 +256,9 @@ theorem one_sub_sum_branchMap {d : ℕ} (a : ℕ × Fin d) {x : Fin d → ℝ}
     1 - ∑ i : Fin d, branchMap a x i = (1 + (a.1 : ℝ) * (1 - x a.2)) / branchDenom a x := by
   have hsum : ∑ i : Fin d, toProjective x (a.2.castSucc.succAbove i) = 1 - x a.2 := by
     have h1 := Fin.sum_univ_succAbove (toProjective x) a.2.castSucc
-    rw [sum_toProjective, toProjective_castSucc] at h1
-    linarith
+    rw [sum_toProjective, toProjective_castSucc] at h1; linarith
   simp only [branchMap_def, ← Finset.sum_div]
-  rw [hsum, eq_div_iff hq, sub_mul, one_mul, div_mul_cancel₀ _ hq, branchDenom_def]
-  ring
+  rw [hsum, eq_div_iff hq, sub_mul, one_mul, div_mul_cancel₀ _ hq, branchDenom_def]; ring
 
 /-- The homogeneous intertwining identity on the lifted chart point:
 `γ_{n-1}^A γ_j (w, 1) = q_a(w) (F_a(w), 1)` whenever `q_a(w) ≠ 0`. -/
@@ -313,11 +267,10 @@ theorem accelMove_toHomogeneous {d : ℕ} (a : ℕ × Fin d) {x : Fin d → ℝ}
     accelMove a (toHomogeneous x) = branchDenom a x • toHomogeneous (branchMap a x) := by
   have hspan : toHomogeneous x ∈ coneSpan d := by simp
   ext k
-  refine Fin.lastCases ?_ (fun i => ?_) k
-  · simp [accelMove_last a hspan, branchDenom_def]
-  · refine Fin.lastCases ?_ (fun m => ?_) i
-    · simp [accelMove_penultimate a hspan, one_sub_sum_branchMap a hq, mul_div_cancel₀ _ hq]
-    · simp [accelMove_castSucc_castSucc, branchMap_def, mul_div_cancel₀ _ hq]
+  refine Fin.lastCases (by simp [accelMove_last a hspan, branchDenom_def])
+    (Fin.lastCases
+      (by simp [accelMove_penultimate a hspan, one_sub_sum_branchMap a hq, mul_div_cancel₀ _ hq])
+      (fun _ => by simp [accelMove_castSucc_castSucc, branchMap_def, mul_div_cancel₀ _ hq])) k
 
 /-! ### Bounds and invariance on the ordered simplex -/
 
@@ -325,17 +278,13 @@ theorem accelMove_toHomogeneous {d : ℕ} (a : ℕ × Fin d) {x : Fin d → ℝ}
 theorem branchDenom_ge {d : ℕ} (a : ℕ × Fin d) {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d) :
     ((a.1 : ℝ) + 3) / 2 ≤ branchDenom a x := by
   rw [branchDenom_def]
-  have hhalf := coord_le_half_of_mem_orderedSimplex hx a.2
-  have : (0 : ℝ) ≤ (a.1 : ℝ) + 1 := by positivity
-  nlinarith
+  nlinarith [coord_le_half_of_mem_orderedSimplex hx a.2, show (0 : ℝ) ≤ (a.1 : ℝ) + 1 by positivity]
 
 /-- Upper bound `q_a(w) ≤ A + 2` on `orderedSimplex d`. -/
 theorem branchDenom_le {d : ℕ} (a : ℕ × Fin d) {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d) :
     branchDenom a x ≤ (a.1 : ℝ) + 2 := by
   rw [branchDenom_def]
-  have h0 := coord_nonneg_of_mem_orderedSimplex hx a.2
-  have : (0 : ℝ) ≤ (a.1 : ℝ) + 1 := by positivity
-  nlinarith
+  nlinarith [coord_nonneg_of_mem_orderedSimplex hx a.2, show (0 : ℝ) ≤ (a.1 : ℝ) + 1 by positivity]
 
 /-- Uniform lower bound `3 / 2 ≤ q_a(w)` on `orderedSimplex d`. -/
 theorem three_div_two_le_branchDenom {d : ℕ} (a : ℕ × Fin d) {x : Fin d → ℝ}
@@ -374,33 +323,25 @@ theorem accelMove_eq_smul_toHomogeneous {d : ℕ} (a : ℕ × Fin d) {y : Fin (d
     accelMove a y =
       (y (Fin.last (d + 1)) * branchDenom a (normalizeCone y)) •
         toHomogeneous (branchMap a (normalizeCone y)) := by
-  have hq : branchDenom a (normalizeCone y) ≠ 0 :=
-    (branchDenom_pos a (normalizeCone_mem_orderedSimplex hy)).ne'
-  calc accelMove a y
-      = accelMove a (y (Fin.last (d + 1)) • toHomogeneous (normalizeCone y)) := by
-          rw [smul_toHomogeneous_normalizeCone (orderedCone_subset_coneSpan d hy)
-            (last_pos_of_mem_orderedCone hy).ne']
-    _ = y (Fin.last (d + 1)) • accelMove a (toHomogeneous (normalizeCone y)) := by
-          rw [map_smul]
-    _ = (y (Fin.last (d + 1)) * branchDenom a (normalizeCone y)) •
-          toHomogeneous (branchMap a (normalizeCone y)) := by
-          rw [accelMove_toHomogeneous a hq, smul_smul]
+  have hq := (branchDenom_pos a (normalizeCone_mem_orderedSimplex hy)).ne'
+  conv_lhs => rw [← smul_toHomogeneous_normalizeCone (orderedCone_subset_coneSpan d hy)
+    (last_pos_of_mem_orderedCone hy).ne']
+  rw [map_smul, accelMove_toHomogeneous a hq, smul_smul]
 
 /-- The last coordinate of `γ_{n-1}^A γ_j y` on `orderedCone d` is `y_n q_a(normalizeCone y)`. -/
 theorem accelMove_last_eq_mul_branchDenom {d : ℕ} (a : ℕ × Fin d) {y : Fin (d + 2) → ℝ}
     (hy : y ∈ orderedCone d) :
     accelMove a y (Fin.last (d + 1)) =
       y (Fin.last (d + 1)) * branchDenom a (normalizeCone y) := by
-  rw [accelMove_eq_smul_toHomogeneous a hy]
-  simp
+  rw [accelMove_eq_smul_toHomogeneous a hy]; simp
 
 /-- Projective normalisation intertwines `accelMove a` and `branchMap a` on `orderedCone d`. -/
 theorem normalizeCone_accelMove {d : ℕ} (a : ℕ × Fin d) {y : Fin (d + 2) → ℝ}
     (hy : y ∈ orderedCone d) :
     normalizeCone (accelMove a y) = branchMap a (normalizeCone y) := by
-  have hpos := last_pos_of_mem_orderedCone hy
-  have hq := branchDenom_pos a (normalizeCone_mem_orderedSimplex hy)
-  rw [accelMove_eq_smul_toHomogeneous a hy, normalizeCone_smul (mul_pos hpos hq).ne',
+  rw [accelMove_eq_smul_toHomogeneous a hy,
+    normalizeCone_smul (mul_pos (last_pos_of_mem_orderedCone hy)
+      (branchDenom_pos a (normalizeCone_mem_orderedSimplex hy))).ne',
     normalizeCone_toHomogeneous]
 
 /-- On `orderedCone d`, `branchDelay a (normalizeCone y) = log ((γ_a y)_n / y_n)`. -/
@@ -413,8 +354,7 @@ theorem branchDelay_normalizeCone {d : ℕ} (a : ℕ × Fin d) {y : Fin (d + 2) 
 
 /-- Every accelerated branch maps `orderedSimplex d` into itself. -/
 theorem branchMap_mapsTo {d : ℕ} (a : ℕ × Fin d) :
-    MapsTo (branchMap a) (orderedSimplex d) (orderedSimplex d) := by
-  intro x hx
+    MapsTo (branchMap a) (orderedSimplex d) (orderedSimplex d) := fun x hx => by
   have hq := branchDenom_pos a hx
   rw [mem_orderedSimplex_iff]
   refine ⟨fun i => by rw [branchMap_def]; exact div_nonneg (toProjective_nonneg hx _) hq.le,
@@ -425,20 +365,16 @@ theorem branchMap_mapsTo {d : ℕ} (a : ℕ × Fin d) :
     fun i => ?_⟩
   rw [one_sub_sum_branchMap a hq.ne', branchMap_def]
   refine div_le_div_of_nonneg_right ?_ hq.le
-  have hle1 : toProjective x (a.2.castSucc.succAbove i) ≤ 1 := toProjective_le_one hx _
-  have hnonneg : 0 ≤ (a.1 : ℝ) * (1 - x a.2) :=
+  have h0 : 0 ≤ (a.1 : ℝ) * (1 - x a.2) :=
     mul_nonneg (Nat.cast_nonneg a.1) (by linarith [coord_le_half_of_mem_orderedSimplex hx a.2])
-  linarith
+  linarith [toProjective_le_one hx (a.2.castSucc.succAbove i)]
 
 /-! ### Derivatives and smoothness of the branches -/
 
 /-- The open neighbourhood `{x | 0 < branchDenom a x}` of `orderedSimplex d`. -/
 theorem isOpen_branchDenom_pos {d : ℕ} (a : ℕ × Fin d) :
-    IsOpen {x : Fin d → ℝ | 0 < branchDenom a x} := by
-  have hcont : Continuous (branchDenom a) := by
-    unfold branchDenom
-    fun_prop
-  exact isOpen_lt continuous_const hcont
+    IsOpen {x : Fin d → ℝ | 0 < branchDenom a x} :=
+  isOpen_lt continuous_const (by unfold branchDenom; fun_prop)
 
 /-- The ordered simplex lies inside `{x | 0 < branchDenom a x}`. -/
 theorem orderedSimplex_subset_branchDenom_pos {d : ℕ} (a : ℕ × Fin d) :
@@ -449,11 +385,9 @@ theorem orderedSimplex_subset_branchDenom_pos {d : ℕ} (a : ℕ × Fin d) :
 theorem hasFDerivAt_branchDenom {d : ℕ} (a : ℕ × Fin d) (x : Fin d → ℝ) :
     HasFDerivAt (branchDenom a)
       ((-((a.1 : ℝ) + 1)) • ContinuousLinearMap.proj (R := ℝ) (φ := fun _ => ℝ) a.2) x := by
-  have h :=
-    ((((ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin d => ℝ) a.2).hasFDerivAt
-      (x := x)).const_sub (1 : ℝ)).const_mul ((a.1 : ℝ) + 1)).const_add (1 : ℝ)
-  rw [smul_neg, ← neg_smul] at h
-  exact h
+  have h := ((((ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin d => ℝ) a.2).hasFDerivAt
+    (x := x)).const_sub (1 : ℝ)).const_mul ((a.1 : ℝ) + 1)).const_add (1 : ℝ)
+  rwa [smul_neg, ← neg_smul] at h
 
 /-- The Fréchet derivative of `branchDelay a = log ∘ branchDenom a` wherever `q_a(x) ≠ 0`. -/
 theorem hasFDerivAt_branchDelay {d : ℕ} (a : ℕ × Fin d) {x : Fin d → ℝ}
@@ -462,10 +396,7 @@ theorem hasFDerivAt_branchDelay {d : ℕ} (a : ℕ × Fin d) {x : Fin d → ℝ}
       ((-((a.1 : ℝ) + 1) / branchDenom a x) •
         ContinuousLinearMap.proj (R := ℝ) (φ := fun _ => ℝ) a.2) x := by
   have h := (hasFDerivAt_branchDenom a x).log hq
-  have hmul : (branchDenom a x)⁻¹ * -((a.1 : ℝ) + 1) = -((a.1 : ℝ) + 1) / branchDenom a x := by
-    ring
-  rw [smul_smul, hmul] at h
-  exact h
+  rwa [smul_smul, inv_mul_eq_div] at h
 
 /-- Formula for `fderiv ℝ (branchDelay a) x` wherever `q_a(x) ≠ 0`. -/
 theorem fderiv_branchDelay {d : ℕ} (a : ℕ × Fin d) {x : Fin d → ℝ} (hq : branchDenom a x ≠ 0) :
@@ -479,31 +410,24 @@ theorem fderiv_branchDelay_single_self {d : ℕ} (a : ℕ × Fin d) {x : Fin d �
     (hq : branchDenom a x ≠ 0) :
     fderiv ℝ (branchDelay a) x (Pi.single a.2 (1 : ℝ)) =
       -((a.1 : ℝ) + 1) / branchDenom a x := by
-  rw [fderiv_branchDelay a hq]
-  simp
+  rw [fderiv_branchDelay a hq]; simp
 
 /-- All partial derivatives of `log q_a` in coordinates `k ≠ j` vanish. -/
 theorem fderiv_branchDelay_single_of_ne {d : ℕ} (a : ℕ × Fin d) {x : Fin d → ℝ}
     (hq : branchDenom a x ≠ 0) {k : Fin d} (hk : k ≠ a.2) :
     fderiv ℝ (branchDelay a) x (Pi.single k (1 : ℝ)) = 0 := by
-  rw [fderiv_branchDelay a hq]
-  simp [Pi.single_eq_of_ne hk.symm]
+  rw [fderiv_branchDelay a hq]; simp [Pi.single_eq_of_ne hk.symm]
 
 /-- Operator norm of `d (log q_a)` in the sup norm on `Fin d → ℝ`. -/
 theorem norm_fderiv_branchDelay {d : ℕ} (a : ℕ × Fin d) {x : Fin d → ℝ}
     (hq : 0 < branchDenom a x) :
     ‖fderiv ℝ (branchDelay a) x‖ = ((a.1 : ℝ) + 1) / branchDenom a x := by
-  have hproj_norm : ‖ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin d => ℝ) a.2‖ = 1 := by
-    refine le_antisymm ?_ ?_
-    · exact ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun v => by
-        simpa using norm_le_pi_norm v a.2
-    · have h1 := ContinuousLinearMap.le_opNorm
-        (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin d => ℝ) a.2)
-        (Pi.single a.2 (1 : ℝ))
-      have hsing : ‖(Pi.single a.2 (1 : ℝ) : Fin d → ℝ)‖ = 1 := by
-        simp [Pi.norm_single]
-      simpa [hsing] using h1
-  rw [fderiv_branchDelay a hq.ne', norm_smul, hproj_norm, mul_one, Real.norm_eq_abs,
+  have hproj : ‖ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin d => ℝ) a.2‖ = 1 := by
+    refine le_antisymm (ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun v => by
+      simpa using norm_le_pi_norm v a.2) ?_
+    simpa [Pi.norm_single] using ContinuousLinearMap.le_opNorm
+      (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin d => ℝ) a.2) (Pi.single a.2 (1 : ℝ))
+  rw [fderiv_branchDelay a hq.ne', norm_smul, hproj, mul_one, Real.norm_eq_abs,
     abs_of_nonpos (div_nonpos_of_nonpos_of_nonneg (neg_nonpos.2 (by positivity)) hq.le),
     neg_div, neg_neg]
 
@@ -512,19 +436,16 @@ theorem norm_fderiv_branchDelay {d : ℕ} (a : ℕ × Fin d) {x : Fin d → ℝ}
 theorem norm_fderiv_branchDelay_le {d : ℕ} (a : ℕ × Fin d) {x : Fin d → ℝ}
     (hx : x ∈ orderedSimplex d) :
     ‖fderiv ℝ (branchDelay a) x‖ ≤ 2 * ((a.1 : ℝ) + 1) / ((a.1 : ℝ) + 3) := by
-  rw [norm_fderiv_branchDelay a (branchDenom_pos a hx)]
-  have hge := branchDenom_ge a hx
-  rw [div_le_div_iff₀ (branchDenom_pos a hx) (by positivity)]
-  nlinarith
+  rw [norm_fderiv_branchDelay a (branchDenom_pos a hx),
+    div_le_div_iff₀ (branchDenom_pos a hx) (by positivity)]
+  nlinarith [branchDenom_ge a hx]
 
 /-- Uniform strict bound `‖d (log q_a)‖ < 2` on `orderedSimplex d`, independent of `A`, `j`, and
 `x`. -/
 theorem norm_fderiv_branchDelay_lt_two {d : ℕ} (a : ℕ × Fin d) {x : Fin d → ℝ}
     (hx : x ∈ orderedSimplex d) :
-    ‖fderiv ℝ (branchDelay a) x‖ < 2 := by
-  refine (norm_fderiv_branchDelay_le a hx).trans_lt ?_
-  rw [div_lt_iff₀ (by positivity)]
-  linarith
+    ‖fderiv ℝ (branchDelay a) x‖ < 2 :=
+  (norm_fderiv_branchDelay_le a hx).trans_lt (by rw [div_lt_iff₀ (by positivity)]; linarith)
 
 /-- On `orderedSimplex d`, `fderivWithin` of `branchDelay a` coincides with `fderiv`. -/
 theorem fderivWithin_branchDelay_eq {d : ℕ} (a : ℕ × Fin d) {x : Fin d → ℝ}
@@ -535,10 +456,8 @@ theorem fderivWithin_branchDelay_eq {d : ℕ} (a : ℕ × Fin d) {x : Fin d → 
 
 /-- `branchDenom a` is smooth (in fact analytic) on all of `Fin d → ℝ`. -/
 theorem contDiff_branchDenom {d : ℕ} (a : ℕ × Fin d) (n : WithTop ℕ∞) :
-    ContDiff ℝ n (branchDenom a) := by
-  unfold branchDenom
-  exact contDiff_const.add
-    (contDiff_const.mul (contDiff_const.sub (contDiff_apply ℝ (fun _ : Fin d => ℝ) a.2)))
+    ContDiff ℝ n (branchDenom a) :=
+  contDiff_const.add (contDiff_const.mul (contDiff_const.sub (contDiff_apply ℝ _ a.2)))
 
 /-- `branchDelay a` is smooth on the open neighbourhood `{x | 0 < branchDenom a x}`. -/
 theorem contDiffOn_branchDelay {d : ℕ} (a : ℕ × Fin d) (n : WithTop ℕ∞) :
@@ -559,9 +478,8 @@ theorem contDiffOn_branchMap {d : ℕ} (a : ℕ × Fin d) (n : WithTop ℕ∞) :
   have hnum : ContDiff ℝ n (fun x : Fin d → ℝ => toProjective x (a.2.castSucc.succAbove i)) := by
     refine Fin.lastCases ?_ (fun k => ?_) (a.2.castSucc.succAbove i)
     · simp only [toProjective_last]
-      exact contDiff_const.sub (ContDiff.sum fun m _ => contDiff_apply ℝ (fun _ : Fin d => ℝ) m)
-    · simp only [toProjective_castSucc]
-      exact contDiff_apply ℝ (fun _ : Fin d => ℝ) k
+      exact contDiff_const.sub (ContDiff.sum fun m _ => contDiff_apply ℝ _ m)
+    · simp only [toProjective_castSucc]; exact contDiff_apply ℝ _ k
   exact hnum.contDiffOn.div (contDiff_branchDenom a n).contDiffOn fun _ hx => hx.ne'
 
 /-- `branchMap a` is smooth on `orderedSimplex d`. -/

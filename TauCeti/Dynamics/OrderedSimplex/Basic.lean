@@ -89,10 +89,7 @@ theorem sum_le_one_of_mem_orderedSimplex {d : ℕ} {x : Fin d → ℝ}
     (hx : x ∈ orderedSimplex d) : ∑ k, x k ≤ 1 := by
   cases d with
   | zero => simp
-  | succ d =>
-    have h0 := hx.1 0
-    have h1 := hx.2.2 0
-    linarith
+  | succ d => linarith [hx.1 0, hx.2.2 0]
 
 /-- The last projective coordinate `1 - ∑ k, x k` is nonnegative on `orderedSimplex d`. -/
 theorem one_sub_sum_nonneg_of_mem_orderedSimplex {d : ℕ} {x : Fin d → ℝ}
@@ -107,29 +104,21 @@ theorem one_sub_sum_le_one_of_mem_orderedSimplex {d : ℕ} {x : Fin d → ℝ}
 /-- Every chart coordinate on `orderedSimplex d` satisfies `x i ≤ 1 / 2`. -/
 theorem coord_le_half_of_mem_orderedSimplex {d : ℕ} {x : Fin d → ℝ}
     (hx : x ∈ orderedSimplex d) (i : Fin d) : x i ≤ 1 / 2 := by
-  have hle : x i ≤ ∑ k, x k :=
-    Finset.single_le_sum (fun k _ => hx.1 k) (Finset.mem_univ i)
-  have hlast := hx.2.2 i
-  linarith
+  linarith [Finset.single_le_sum (fun k _ => hx.1 k) (Finset.mem_univ i), hx.2.2 i]
 
 /-- The last projective coordinate `w_{d+1} = 1 - ∑ k, x k` is at least `1 / (d + 1)`. -/
 theorem inv_le_one_sub_sum_of_mem_orderedSimplex {d : ℕ} {x : Fin d → ℝ}
     (hx : x ∈ orderedSimplex d) : ((d : ℝ) + 1)⁻¹ ≤ 1 - ∑ k, x k := by
-  have hsum : ∑ k, x k ≤ (d : ℝ) * (1 - ∑ k, x k) := by
-    calc ∑ k, x k ≤ ∑ _k : Fin d, (1 - ∑ j, x j) := Finset.sum_le_sum fun k _ => hx.2.2 k
-      _ = (d : ℝ) * (1 - ∑ j, x j) := by rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin,
-          nsmul_eq_mul]
+  have hsum : ∑ k, x k ≤ (d : ℝ) - (d : ℝ) * ∑ k, x k := by
+    simpa [nsmul_eq_mul] using Finset.sum_le_sum fun k (_ : k ∈ Finset.univ) => hx.2.2 k
   rw [inv_le_iff_one_le_mul₀ (by positivity)]
   linarith
 
 /-- The ordered simplex lies inside the closed ball of radius `1 / 2` around `0`. -/
 theorem orderedSimplex_subset_closedBall (d : ℕ) :
-    orderedSimplex d ⊆ closedBall (0 : Fin d → ℝ) (1 / 2) := by
-  intro x hx
+    orderedSimplex d ⊆ closedBall (0 : Fin d → ℝ) (1 / 2) := fun x hx => by
   rw [mem_closedBall_zero_iff, pi_norm_le_iff_of_nonneg (by positivity)]
-  intro i
-  rw [Real.norm_of_nonneg (hx.1 i)]
-  exact coord_le_half_of_mem_orderedSimplex hx i
+  exact fun i => (Real.norm_of_nonneg (hx.1 i)).trans_le (coord_le_half_of_mem_orderedSimplex hx i)
 
 /-- The ordered simplex is closed in `Fin d → ℝ`. -/
 theorem isClosed_orderedSimplex (d : ℕ) : IsClosed (orderedSimplex d) := by
@@ -137,12 +126,9 @@ theorem isClosed_orderedSimplex (d : ℕ) : IsClosed (orderedSimplex d) := by
     simpa [Set.ofPred_forall] using isClosed_iInter fun i : Fin d =>
       isClosed_le continuous_const (continuous_apply i)
   have h2 : IsClosed {x : Fin d → ℝ | Monotone x} := by
-    have heq : {x : Fin d → ℝ | Monotone x} =
-        ⋂ (i : Fin d) (j : Fin d) (_ : i ≤ j), {x | x i ≤ x j} := by
-      ext x; simp [Monotone]
-    rw [heq]
-    exact isClosed_iInter fun i => isClosed_iInter fun j => isClosed_iInter fun _ =>
-      isClosed_le (continuous_apply i) (continuous_apply j)
+    simpa [Set.ofPred_forall, Monotone] using isClosed_iInter fun i : Fin d =>
+      isClosed_iInter fun j => isClosed_iInter fun (_ : i ≤ j) =>
+        isClosed_le (continuous_apply i) (continuous_apply j)
   have h3 : IsClosed {x : Fin d → ℝ | ∀ i, x i ≤ 1 - ∑ k, x k} := by
     simpa [Set.ofPred_forall] using isClosed_iInter fun i : Fin d =>
       isClosed_le (continuous_apply i) (by fun_prop)
@@ -159,18 +145,21 @@ theorem isCompact_orderedSimplex (d : ℕ) : IsCompact (orderedSimplex d) :=
 /-- The ordered simplex is convex. -/
 theorem convex_orderedSimplex (d : ℕ) : Convex ℝ (orderedSimplex d) := by
   intro x hx y hy a b ha hb hab
-  refine ⟨fun i => ?_, fun i j hij => ?_, fun i => ?_⟩
-  · simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul]
-    exact add_nonneg (mul_nonneg ha (hx.1 i)) (mul_nonneg hb (hy.1 i))
-  · simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul]
-    exact add_le_add (mul_le_mul_of_nonneg_left (hx.2.1 hij) ha)
-      (mul_le_mul_of_nonneg_left (hy.2.1 hij) hb)
-  · simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul, Finset.sum_add_distrib, ← Finset.mul_sum]
-    have hx' := mul_le_mul_of_nonneg_left (hx.2.2 i) ha
-    have hy' := mul_le_mul_of_nonneg_left (hy.2.2 i) hb
-    nlinarith
+  refine ⟨fun i => add_nonneg (mul_nonneg ha (hx.1 i)) (mul_nonneg hb (hy.1 i)),
+    fun i j hij => add_le_add (mul_le_mul_of_nonneg_left (hx.2.1 hij) ha)
+      (mul_le_mul_of_nonneg_left (hy.2.1 hij) hb), fun i => ?_⟩
+  simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul, Finset.sum_add_distrib, ← Finset.mul_sum]
+  nlinarith [mul_le_mul_of_nonneg_left (hx.2.2 i) ha, mul_le_mul_of_nonneg_left (hy.2.2 i) hb]
 
 namespace OrderedSimplex
+
+private theorem monotone_snoc {n : ℕ} {f : Fin n → ℝ} {a : ℝ}
+    (hf : Monotone f) (ha : ∀ i, f i ≤ a) : Monotone (Fin.snoc (α := fun _ => ℝ) f a) := by
+  intro i j
+  refine Fin.lastCases ?_ (fun j' => ?_) j
+  · exact Fin.lastCases (fun _ => le_rfl) (fun i' _ => by simpa using ha i') i
+  · exact Fin.lastCases (fun h => absurd h (not_le.2 (Fin.castSucc_lt_last j')))
+      (fun i' h => by simpa using hf (Fin.castSucc_le_castSucc_iff.1 h)) i
 
 /-- The canonical interior point `w_i = 2 i / ((d + 2) (d + 1))` (`1 ≤ i ≤ d`) of
 `orderedSimplex d`. Its coordinates are strictly positive and strictly increasing, with remaining
@@ -189,21 +178,18 @@ theorem sum_interiorPoint (d : ℕ) :
     induction d with
     | zero => simp
     | succ k ih =>
-      rw [Fin.sum_univ_castSucc]
-      simp only [Fin.val_castSucc, Fin.val_last, Nat.cast_add, Nat.cast_one]
-      rw [ih]
-      ring
+      rw [Fin.sum_univ_castSucc]; simp only [Fin.val_castSucc, Fin.val_last, Nat.cast_add,
+        Nat.cast_one, ih]; ring
   simp only [interiorPoint, ← Finset.sum_div, hsum]
-  have h1 : (d : ℝ) + 1 ≠ 0 := by positivity
+  have : (d : ℝ) + 1 ≠ 0 := by positivity
   field_simp
 
 /-- The remaining mass at `interiorPoint d` is `2 / (d + 2)`. -/
 theorem one_sub_sum_interiorPoint (d : ℕ) :
     1 - ∑ i : Fin d, interiorPoint d i = 2 / ((d : ℝ) + 2) := by
   rw [sum_interiorPoint]
-  have h2 : (d : ℝ) + 2 ≠ 0 := by positivity
-  field_simp
-  ring
+  have : (d : ℝ) + 2 ≠ 0 := by positivity
+  field_simp; ring
 
 /-- The canonical interior point lies in `interior (orderedSimplex d)`. -/
 theorem interiorPoint_mem_interior (d : ℕ) :
@@ -215,35 +201,20 @@ theorem interiorPoint_mem_interior (d : ℕ) :
       simpa [Set.ofPred_forall] using isOpen_iInter_of_finite fun i : Fin d =>
         isOpen_lt continuous_const (continuous_apply i)
     have h2 : IsOpen {x : Fin d → ℝ | StrictMono x} := by
-      have heq : {x : Fin d → ℝ | StrictMono x} =
-          ⋂ (i : Fin d) (j : Fin d) (_ : i < j), {x | x i < x j} := by
-        ext x; simp [StrictMono]
-      rw [heq]
-      exact isOpen_iInter_of_finite fun i => isOpen_iInter_of_finite fun j =>
-        isOpen_iInter_of_finite fun _ => isOpen_lt (continuous_apply i) (continuous_apply j)
+      simpa [Set.ofPred_forall, StrictMono] using isOpen_iInter_of_finite fun i : Fin d =>
+        isOpen_iInter_of_finite fun j => isOpen_iInter_of_finite fun (_ : i < j) =>
+          isOpen_lt (continuous_apply i) (continuous_apply j)
     have h3 : IsOpen {x : Fin d → ℝ | ∀ i, x i < 1 - ∑ k, x k} := by
       simpa [Set.ofPred_forall] using isOpen_iInter_of_finite fun i : Fin d =>
         isOpen_lt (continuous_apply i) (by fun_prop)
     exact h1.inter (h2.inter h3)
-  have hU_sub : U ⊆ orderedSimplex d := fun x hx =>
-    ⟨fun i => (hx.1 i).le, hx.2.1.monotone, fun i => (hx.2.2 i).le⟩
-  refine mem_interior.2 ⟨U, hU_sub, hU_open, ?_, ?_, ?_⟩
-  · intro i
-    dsimp only [interiorPoint]
-    positivity
-  · intro i j hij
-    dsimp only [interiorPoint]
-    have hlt : (i : ℝ) < (j : ℝ) := Nat.cast_lt.2 hij
-    gcongr
-  · intro i
-    rw [one_sub_sum_interiorPoint]
-    dsimp only [interiorPoint]
-    have hden : (0 : ℝ) < ((d : ℝ) + 2) * ((d : ℝ) + 1) := by positivity
-    have hlt : (i : ℝ) + 1 < (d : ℝ) + 1 := by
-      have : (i : ℝ) < (d : ℝ) := Nat.cast_lt.2 i.isLt
-      linarith
-    rw [div_lt_div_iff₀ hden (by positivity)]
-    nlinarith
+  refine mem_interior.2 ⟨U, fun x hx => ⟨fun i => (hx.1 i).le, hx.2.1.monotone,
+    fun i => (hx.2.2 i).le⟩, hU_open, fun i => by dsimp [interiorPoint]; positivity,
+    fun i j hij => by dsimp [interiorPoint]; have : (i : ℝ) < (j : ℝ) := Nat.cast_lt.2 hij; gcongr,
+    fun i => ?_⟩
+  rw [one_sub_sum_interiorPoint, interiorPoint_def, div_lt_div_iff₀ (by positivity) (by positivity)]
+  have : (i : ℝ) < (d : ℝ) := Nat.cast_lt.2 i.isLt
+  nlinarith
 
 /-- The canonical interior point lies in `orderedSimplex d`. -/
 theorem interiorPoint_mem (d : ℕ) : interiorPoint d ∈ orderedSimplex d :=
@@ -284,12 +255,9 @@ theorem zero_not_mem_orderedCone (d : ℕ) : (0 : Fin (d + 2) → ℝ) ∉ order
 
 /-- Every vector in `orderedCone d` has strictly positive last coordinate. -/
 theorem last_pos_of_mem_orderedCone {d : ℕ} {y : Fin (d + 2) → ℝ}
-    (hy : y ∈ orderedCone d) : 0 < y (Fin.last (d + 1)) := by
-  refine lt_of_le_of_ne (hy.2.1 (Fin.last (d + 1))) ?_
-  intro h0
-  apply hy.1
-  ext i
-  exact le_antisymm ((hy.2.2.1 (Fin.le_last i)).trans_eq h0.symm) (hy.2.1 i)
+    (hy : y ∈ orderedCone d) : 0 < y (Fin.last (d + 1)) :=
+  lt_of_le_of_ne (hy.2.1 _) fun h0 => hy.1 <| funext fun i =>
+    le_antisymm ((hy.2.2.1 (Fin.le_last i)).trans_eq h0.symm) (hy.2.1 i)
 
 /-- The ordered cone is closed under positive scalar multiplication. -/
 theorem smul_mem_orderedCone {d : ℕ} {y : Fin (d + 2) → ℝ} {c : ℝ}
@@ -306,51 +274,34 @@ def toProjective {d : ℕ} (x : Fin d → ℝ) : Fin (d + 1) → ℝ :=
 
 @[simp]
 theorem toProjective_castSucc {d : ℕ} (x : Fin d → ℝ) (i : Fin d) :
-    toProjective x i.castSucc = x i := by
-  simp [toProjective]
+    toProjective x i.castSucc = x i := by simp [toProjective]
 
 @[simp]
 theorem toProjective_last {d : ℕ} (x : Fin d → ℝ) :
-    toProjective x (Fin.last d) = 1 - ∑ k, x k := by
-  simp [toProjective]
+    toProjective x (Fin.last d) = 1 - ∑ k, x k := by simp [toProjective]
 
 /-- The projective coordinates sum to `1`. -/
 @[simp]
 theorem sum_toProjective {d : ℕ} (x : Fin d → ℝ) :
     ∑ i : Fin (d + 1), toProjective x i = 1 := by
-  rw [Fin.sum_univ_castSucc]
-  simp
+  rw [Fin.sum_univ_castSucc]; simp
 
 /-- The projective coordinates of a point in `orderedSimplex d` are nonnegative. -/
 theorem toProjective_nonneg {d : ℕ} {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d)
-    (i : Fin (d + 1)) : 0 ≤ toProjective x i := by
-  refine Fin.lastCases ?_ (fun k => ?_) i
-  · rw [toProjective_last]
-    exact one_sub_sum_nonneg_of_mem_orderedSimplex hx
-  · rw [toProjective_castSucc]
-    exact hx.1 k
+    (i : Fin (d + 1)) : 0 ≤ toProjective x i :=
+  Fin.lastCases (by simpa using one_sub_sum_nonneg_of_mem_orderedSimplex hx)
+    (fun k => by simpa using hx.1 k) i
 
 /-- The projective coordinates of a point in `orderedSimplex d` are at most `1`. -/
 theorem toProjective_le_one {d : ℕ} {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d)
-    (i : Fin (d + 1)) : toProjective x i ≤ 1 := by
-  refine Fin.lastCases ?_ (fun k => ?_) i
-  · rw [toProjective_last]
-    exact one_sub_sum_le_one_of_mem_orderedSimplex hx
-  · rw [toProjective_castSucc]
-    linarith [coord_le_half_of_mem_orderedSimplex hx k]
+    (i : Fin (d + 1)) : toProjective x i ≤ 1 :=
+  Fin.lastCases (by simpa using one_sub_sum_le_one_of_mem_orderedSimplex hx)
+    (fun k => by rw [toProjective_castSucc]; linarith [coord_le_half_of_mem_orderedSimplex hx k]) i
 
 /-- The projective coordinates of a point in `orderedSimplex d` are nondecreasing. -/
 theorem monotone_toProjective {d : ℕ} {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d) :
-    Monotone (toProjective x) := by
-  intro i j
-  refine Fin.lastCases ?_ (fun j' => ?_) j
-  · refine Fin.lastCases (fun _ => le_refl _) (fun i' _ => ?_) i
-    rw [toProjective_castSucc, toProjective_last]
-    exact hx.2.2 i'
-  · refine Fin.lastCases (fun hij => ?_) (fun i' hij => ?_) i
-    · exact absurd hij (not_le.2 (Fin.castSucc_lt_last j'))
-    · rw [toProjective_castSucc, toProjective_castSucc]
-      exact hx.2.1 (Fin.castSucc_le_castSucc_iff.1 hij)
+    Monotone (toProjective x) :=
+  monotone_snoc hx.2.1 hx.2.2
 
 /-- The homogeneous lift `(w₁, …, w_{d+1}, 1) ∈ ℝ^{d+2}` of a chart point `x`. -/
 def toHomogeneous {d : ℕ} (x : Fin d → ℝ) : Fin (d + 2) → ℝ :=
@@ -358,45 +309,28 @@ def toHomogeneous {d : ℕ} (x : Fin d → ℝ) : Fin (d + 2) → ℝ :=
 
 @[simp]
 theorem toHomogeneous_castSucc {d : ℕ} (x : Fin d → ℝ) (i : Fin (d + 1)) :
-    toHomogeneous x i.castSucc = toProjective x i := by
-  simp [toHomogeneous]
+    toHomogeneous x i.castSucc = toProjective x i := by simp [toHomogeneous]
 
 @[simp]
 theorem toHomogeneous_last {d : ℕ} (x : Fin d → ℝ) :
-    toHomogeneous x (Fin.last (d + 1)) = 1 := by
-  simp [toHomogeneous]
+    toHomogeneous x (Fin.last (d + 1)) = 1 := by simp [toHomogeneous]
 
 /-- The homogeneous lift of a point in `orderedSimplex d` lies in `orderedCone d`. -/
 theorem toHomogeneous_mem_orderedCone {d : ℕ} {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d) :
-    toHomogeneous x ∈ orderedCone d := by
-  refine ⟨fun h => (one_ne_zero : (1 : ℝ) ≠ 0) (by simpa using congrFun h (Fin.last (d + 1))),
-    ?_, ?_, ?_⟩
-  · intro i
-    refine Fin.lastCases (by simp) (fun k => ?_) i
-    rw [toHomogeneous_castSucc]
-    exact toProjective_nonneg hx k
-  · intro i j
-    refine Fin.lastCases ?_ (fun j' => ?_) j
-    · refine Fin.lastCases (fun _ => le_refl _) (fun i' _ => ?_) i
-      rw [toHomogeneous_castSucc, toHomogeneous_last]
-      exact toProjective_le_one hx i'
-    · refine Fin.lastCases (fun hij => ?_) (fun i' hij => ?_) i
-      · exact absurd hij (not_le.2 (Fin.castSucc_lt_last j'))
-      · rw [toHomogeneous_castSucc, toHomogeneous_castSucc]
-        exact monotone_toProjective hx (Fin.castSucc_le_castSucc_iff.1 hij)
-  · simp
+    toHomogeneous x ∈ orderedCone d :=
+  ⟨fun h => (one_ne_zero : (1 : ℝ) ≠ 0) (by simpa using congrFun h (Fin.last (d + 1))),
+    Fin.lastCases (by simp) fun k => by simpa using toProjective_nonneg hx k,
+    monotone_snoc (monotone_toProjective hx) (toProjective_le_one hx), by simp⟩
 
 /-- The hyperplane `{y : Fin (d + 2) → ℝ | ∑ i : Fin (d + 1), y i.castSucc = y (Fin.last (d + 1))}`
 spanned by `orderedCone d`. -/
 def coneSpan (d : ℕ) : Submodule ℝ (Fin (d + 2) → ℝ) where
   carrier := {y | ∑ i : Fin (d + 1), y i.castSucc = y (Fin.last (d + 1))}
   add_mem' {x y} hx hy := by
-    simp only [Set.mem_ofPred_eq, Pi.add_apply, Finset.sum_add_distrib] at hx hy ⊢
-    linarith
+    simp only [Set.mem_ofPred_eq, Pi.add_apply, Finset.sum_add_distrib] at hx hy ⊢; linarith
   zero_mem' := by simp
   smul_mem' c {x} hx := by
-    simp only [Set.mem_ofPred_eq, Pi.smul_apply, smul_eq_mul, ← Finset.mul_sum] at hx ⊢
-    rw [hx]
+    simp only [Set.mem_ofPred_eq, Pi.smul_apply, smul_eq_mul, ← Finset.mul_sum] at hx ⊢; rw [hx]
 
 /-- Membership in `coneSpan d`. -/
 @[simp]
@@ -420,9 +354,8 @@ theorem normalizeProjective_def {d : ℕ} (y : Fin (d + 2) → ℝ) (i : Fin (d 
 
 /-- Full projective normalisation is invariant under nonzero scaling. -/
 theorem normalizeProjective_smul {d : ℕ} {c : ℝ} (hc : c ≠ 0) (y : Fin (d + 2) → ℝ) :
-    normalizeProjective (c • y) = normalizeProjective y := by
-  ext i
-  simp only [normalizeProjective, Pi.smul_apply, smul_eq_mul, mul_div_mul_left _ _ hc]
+    normalizeProjective (c • y) = normalizeProjective y :=
+  funext fun i => by simp [normalizeProjective, mul_div_mul_left _ _ hc]
 
 /-- Normalise a vector `y : Fin (d + 2) → ℝ` by its last coordinate to obtain chart coordinates
 `(y₁ / y_n, …, y_d / y_n)`. -/
@@ -435,16 +368,14 @@ theorem normalizeCone_def {d : ℕ} (y : Fin (d + 2) → ℝ) (i : Fin d) :
 
 /-- Normalisation is invariant under nonzero scaling. -/
 theorem normalizeCone_smul {d : ℕ} {c : ℝ} (hc : c ≠ 0) (y : Fin (d + 2) → ℝ) :
-    normalizeCone (c • y) = normalizeCone y := by
-  ext i
-  simp only [normalizeCone, Pi.smul_apply, smul_eq_mul, mul_div_mul_left _ _ hc]
+    normalizeCone (c • y) = normalizeCone y :=
+  funext fun i => by simp [normalizeCone, mul_div_mul_left _ _ hc]
 
 /-- Normalising the homogeneous lift recovers the original chart point. -/
 @[simp]
 theorem normalizeCone_toHomogeneous {d : ℕ} (x : Fin d → ℝ) :
-    normalizeCone (toHomogeneous x) = x := by
-  ext i
-  simp [normalizeCone]
+    normalizeCone (toHomogeneous x) = x :=
+  funext fun i => by simp [normalizeCone]
 
 /-- On `coneSpan d` with nonzero last coordinate, the chart normalisation recovers the full
 projective normalisation. -/
@@ -452,17 +383,13 @@ theorem toProjective_normalizeCone {d : ℕ} {y : Fin (d + 2) → ℝ}
     (hy : y ∈ coneSpan d) (hne : y (Fin.last (d + 1)) ≠ 0) :
     toProjective (normalizeCone y) = normalizeProjective y := by
   ext i
-  refine Fin.lastCases ?_ (fun k => ?_) i
-  · rw [toProjective_last, normalizeProjective]
-    have hsum : ∑ k : Fin d, y k.castSucc.castSucc =
-        y (Fin.last (d + 1)) - y (Fin.last d).castSucc := by
-      have hspan := mem_coneSpan_iff.1 hy
-      rw [Fin.sum_univ_castSucc] at hspan
-      linarith
-    simp only [normalizeCone, ← Finset.sum_div, hsum]
-    rw [eq_div_iff hne, sub_mul, one_mul, div_mul_cancel₀ _ hne]
-    ring
-  · simp [normalizeCone, normalizeProjective]
+  refine Fin.lastCases ?_ (fun k => by simp [normalizeCone, normalizeProjective]) i
+  have hsum : ∑ k : Fin d, y k.castSucc.castSucc =
+      y (Fin.last (d + 1)) - y (Fin.last d).castSucc := by
+    have hspan := mem_coneSpan_iff.1 hy; rw [Fin.sum_univ_castSucc] at hspan; linarith
+  rw [toProjective_last, normalizeProjective]
+  simp only [normalizeCone, ← Finset.sum_div, hsum]
+  rw [eq_div_iff hne, sub_mul, one_mul, div_mul_cancel₀ _ hne]; ring
 
 /-- Normalising a point of `orderedCone d` lands in `orderedSimplex d`. -/
 theorem normalizeCone_mem_orderedSimplex {d : ℕ} {y : Fin (d + 2) → ℝ}
@@ -472,10 +399,9 @@ theorem normalizeCone_mem_orderedSimplex {d : ℕ} {y : Fin (d + 2) → ℝ}
     fun i j hij => div_le_div_of_nonneg_right
       (hy.2.2.1 (Fin.castSucc_le_castSucc_iff.2 (Fin.castSucc_le_castSucc_iff.2 hij))) hpos.le,
     fun i => ?_⟩
-  have hlast : 1 - ∑ k, normalizeCone y k =
-      y (Fin.last d).castSucc / y (Fin.last (d + 1)) := by
-    have := congrFun (toProjective_normalizeCone hy.2.2.2 hpos.ne') (Fin.last d)
-    simpa [normalizeProjective] using this
+  have hlast : 1 - ∑ k, normalizeCone y k = y (Fin.last d).castSucc / y (Fin.last (d + 1)) := by
+    simpa [normalizeProjective] using
+      congrFun (toProjective_normalizeCone hy.2.2.2 hpos.ne') (Fin.last d)
   rw [hlast, normalizeCone_def]
   exact div_le_div_of_nonneg_right
     (hy.2.2.1 (Fin.castSucc_le_castSucc_iff.2 (Fin.le_last i.castSucc))) hpos.le
@@ -486,31 +412,24 @@ theorem smul_toHomogeneous_normalizeCone {d : ℕ} {y : Fin (d + 2) → ℝ}
     (hy : y ∈ coneSpan d) (hne : y (Fin.last (d + 1)) ≠ 0) :
     y (Fin.last (d + 1)) • toHomogeneous (normalizeCone y) = y := by
   ext i
-  refine Fin.lastCases ?_ (fun k => ?_) i
-  · simp
-  · simp only [Pi.smul_apply, smul_eq_mul, toHomogeneous_castSucc,
-      toProjective_normalizeCone hy hne, normalizeProjective]
-    exact mul_div_cancel₀ _ hne
+  refine Fin.lastCases (by simp) (fun k => ?_) i
+  simp only [Pi.smul_apply, smul_eq_mul, toHomogeneous_castSucc,
+    toProjective_normalizeCone hy hne, normalizeProjective]
+  exact mul_div_cancel₀ _ hne
 
 /-- Two points of `orderedCone d` have the same normalisation if and only if they lie on the
 same positive ray. -/
 theorem normalizeCone_eq_iff {d : ℕ} {y y' : Fin (d + 2) → ℝ}
     (hy : y ∈ orderedCone d) (hy' : y' ∈ orderedCone d) :
     normalizeCone y = normalizeCone y' ↔ ∃ c : ℝ, 0 < c ∧ y' = c • y := by
-  constructor
-  · intro h
-    refine ⟨y' (Fin.last (d + 1)) / y (Fin.last (d + 1)),
-      div_pos (last_pos_of_mem_orderedCone hy') (last_pos_of_mem_orderedCone hy), ?_⟩
-    have hy1 := smul_toHomogeneous_normalizeCone hy.2.2.2 (last_pos_of_mem_orderedCone hy).ne'
-    have hy2 := smul_toHomogeneous_normalizeCone hy'.2.2.2 (last_pos_of_mem_orderedCone hy').ne'
-    rw [← h] at hy2
-    calc y' = y' (Fin.last (d + 1)) • toHomogeneous (normalizeCone y) := hy2.symm
-      _ = (y' (Fin.last (d + 1)) / y (Fin.last (d + 1)) * y (Fin.last (d + 1))) •
-            toHomogeneous (normalizeCone y) := by
-          rw [div_mul_cancel₀ _ (last_pos_of_mem_orderedCone hy).ne']
-      _ = (y' (Fin.last (d + 1)) / y (Fin.last (d + 1))) • y := by rw [mul_smul, hy1]
-  · rintro ⟨c, hc, rfl⟩
-    exact (normalizeCone_smul hc.ne' y).symm
+  refine ⟨fun h => ?_, by rintro ⟨c, hc, rfl⟩; exact (normalizeCone_smul hc.ne' y).symm⟩
+  have hpos := last_pos_of_mem_orderedCone hy
+  refine ⟨y' (Fin.last (d + 1)) / y (Fin.last (d + 1)),
+    div_pos (last_pos_of_mem_orderedCone hy') hpos, ?_⟩
+  have hy1 := smul_toHomogeneous_normalizeCone hy.2.2.2 hpos.ne'
+  have hy2 := smul_toHomogeneous_normalizeCone hy'.2.2.2 (last_pos_of_mem_orderedCone hy').ne'
+  rw [← h, ← div_mul_cancel₀ (y' (Fin.last (d + 1))) hpos.ne', mul_smul, hy1] at hy2
+  exact hy2.symm
 
 /-! ### Basis and linear span of the ordered cone -/
 
@@ -518,28 +437,30 @@ theorem normalizeCone_eq_iff {d : ℕ} {y y' : Fin (d + 2) → ℝ}
 def coneSpanBasisVec (d : ℕ) (j : Fin (d + 1)) : coneSpan d :=
   ⟨Pi.single j.castSucc (1 : ℝ) + Pi.single (Fin.last (d + 1)) (1 : ℝ), by
     classical
-    simp only [mem_coneSpan_iff, Pi.add_apply, Finset.sum_add_distrib]
-    have h1 : ∑ i : Fin (d + 1), (Pi.single j.castSucc (1 : ℝ) : Fin (d + 2) → ℝ) i.castSucc =
-        1 := by
-      rw [Finset.sum_eq_single j]
-      · simp
-      · intro b _ hb
-        exact Pi.single_eq_of_ne (fun h => hb (Fin.castSucc_inj.1 h)) _
-      · simp
-    have h2 : ∑ i : Fin (d + 1),
-        (Pi.single (Fin.last (d + 1)) (1 : ℝ) : Fin (d + 2) → ℝ) i.castSucc = 0 :=
-      Finset.sum_eq_zero fun i _ => Pi.single_eq_of_ne (Fin.castSucc_lt_last i).ne _
-    have h3 : (Pi.single j.castSucc (1 : ℝ) : Fin (d + 2) → ℝ) (Fin.last (d + 1)) = 0 :=
-      Pi.single_eq_of_ne (Fin.castSucc_lt_last j).ne' _
-    have h4 : (Pi.single (Fin.last (d + 1)) (1 : ℝ) : Fin (d + 2) → ℝ) (Fin.last (d + 1)) = 1 := by
-      simp
-    linarith⟩
+    simp only [mem_coneSpan_iff, Pi.add_apply, Finset.sum_add_distrib, Pi.single_eq_same,
+      Pi.single_eq_of_ne (Fin.castSucc_lt_last j).ne', zero_add]
+    rw [Finset.sum_eq_single j (fun b _ hb =>
+        Pi.single_eq_of_ne (fun h => hb (Fin.castSucc_inj.1 h)) _) (by simp),
+      Finset.sum_eq_zero fun i _ => Pi.single_eq_of_ne (Fin.castSucc_lt_last i).ne _]
+    simp⟩
 
 @[simp]
 theorem coe_coneSpanBasisVec (d : ℕ) (j : Fin (d + 1)) :
     (coneSpanBasisVec d j : Fin (d + 2) → ℝ) =
       Pi.single j.castSucc 1 + Pi.single (Fin.last (d + 1)) 1 :=
   (rfl)
+
+private theorem coe_coneSpanBasisVec_eq_snoc (d : ℕ) (j : Fin (d + 1)) :
+    (coneSpanBasisVec d j : Fin (d + 2) → ℝ) =
+      Fin.snoc (α := fun _ => ℝ) (Pi.single j (1 : ℝ)) 1 := by
+  classical
+  ext i
+  refine Fin.lastCases (by simp) (fun k => ?_) i
+  simp only [coe_coneSpanBasisVec, Pi.add_apply, Fin.snoc_castSucc,
+    Pi.single_eq_of_ne (Fin.castSucc_lt_last k).ne, add_zero]
+  by_cases h : k = j
+  · subst h; simp
+  · rw [Pi.single_eq_of_ne h, Pi.single_eq_of_ne (fun h' => h (Fin.castSucc_inj.1 h'))]
 
 /-- The vectors `e_j + e_n` (`j : Fin (d + 1)`) form a basis of `coneSpan d`. -/
 def coneSpanBasis (d : ℕ) : Module.Basis (Fin (d + 1)) ℝ (coneSpan d) := by
@@ -549,33 +470,17 @@ def coneSpanBasis (d : ℕ) : Module.Basis (Fin (d + 1)) ℝ (coneSpan d) := by
       map_add' := fun _ _ => rfl
       map_smul' := fun _ _ => rfl
       invFun := fun c => ⟨Fin.snoc c (∑ i, c i), by simp⟩
-      left_inv := fun y => by
-        ext i
-        refine Fin.lastCases ?_ (fun k => ?_) i
-        · simp only [Fin.snoc_last]
-          exact y.2
-        · simp
-      right_inv := fun c => by ext i; simp }
+      left_inv := fun y => Subtype.ext <| funext <|
+        Fin.lastCases (by simp only [Fin.snoc_last]; exact y.2) (fun _ => by simp)
+      right_inv := fun c => funext fun _ => by simp }
 
 /-- The `j`-th basis vector of `coneSpanBasis d` is `e_j + e_n`. -/
 @[simp]
 theorem coneSpanBasis_apply (d : ℕ) (j : Fin (d + 1)) :
     coneSpanBasis d j = coneSpanBasisVec d j := by
   classical
-  ext i
-  have hcoe : (coneSpanBasis d j : Fin (d + 2) → ℝ) i =
-      (Fin.snoc (α := fun _ => ℝ) (Pi.single j (1 : ℝ))
-        (∑ k : Fin (d + 1), (Pi.single j (1 : ℝ) : Fin (d + 1) → ℝ) k)) i := by
-    simp [coneSpanBasis, Module.Basis.coe_ofEquivFun]
-  rw [hcoe, coe_coneSpanBasisVec, Pi.add_apply]
-  refine Fin.lastCases ?_ (fun k => ?_) i
-  · rw [Fin.snoc_last, Pi.single_eq_of_ne (Fin.castSucc_lt_last j).ne', Pi.single_eq_same,
-      zero_add]
-    simp
-  · rw [Fin.snoc_castSucc, Pi.single_eq_of_ne (Fin.castSucc_lt_last k).ne, add_zero]
-    by_cases hkj : k = j
-    · subst hkj; simp
-    · rw [Pi.single_eq_of_ne hkj, Pi.single_eq_of_ne (fun h => hkj (Fin.castSucc_inj.1 h))]
+  rw [Subtype.ext_iff, coe_coneSpanBasisVec_eq_snoc]
+  simp [coneSpanBasis, Module.Basis.coe_ofEquivFun]
 
 /-- The dimension of `coneSpan d` is `d + 1`. -/
 theorem finrank_coneSpan (d : ℕ) : Module.finrank ℝ (coneSpan d) = d + 1 := by
@@ -587,51 +492,30 @@ private def stepConeVec (d : ℕ) (k : Fin (d + 1)) : Fin (d + 2) → ℝ :=
 
 private theorem stepConeVec_mem_orderedCone (d : ℕ) (k : Fin (d + 1)) :
     stepConeVec d k ∈ orderedCone d := by
-  have hterm_nonneg : ∀ m : Fin (d + 1), 0 ≤ (if k ≤ m then (1 : ℝ) else 0) :=
+  have h0 : ∀ m : Fin (d + 1), 0 ≤ (if k ≤ m then (1 : ℝ) else 0) :=
     fun m => by split_ifs <;> norm_num
-  refine ⟨?_, ?_, ?_, by simp [stepConeVec]⟩
-  · intro h0
-    have hlast := congrFun h0 (Fin.last d).castSucc
-    simp [stepConeVec, Fin.le_last] at hlast
-  · intro i
-    refine Fin.lastCases ?_ (fun j => ?_) i
-    · simp only [stepConeVec, Fin.snoc_last]
-      exact Finset.sum_nonneg fun m _ => hterm_nonneg m
-    · simp only [stepConeVec, Fin.snoc_castSucc]
-      exact hterm_nonneg j
-  · intro i j
-    refine Fin.lastCases ?_ (fun j' => ?_) j
-    · refine Fin.lastCases (fun _ => le_refl _) (fun i' _ => ?_) i
-      simp only [stepConeVec, Fin.snoc_castSucc, Fin.snoc_last]
-      exact Finset.single_le_sum (fun m _ => hterm_nonneg m) (Finset.mem_univ i')
-    · refine Fin.lastCases (fun hij => ?_) (fun i' hij => ?_) i
-      · exact absurd hij (not_le.2 (Fin.castSucc_lt_last j'))
-      · simp only [stepConeVec, Fin.snoc_castSucc]
-        have h' : i' ≤ j' := Fin.castSucc_le_castSucc_iff.1 hij
-        split_ifs with h1 h2
-        · exact le_refl _
-        · exact absurd (h1.trans h') h2
-        · norm_num
-        · exact le_refl _
+  have hmono : Monotone (fun i : Fin (d + 1) => if k ≤ i then (1 : ℝ) else 0) := by
+    intro i j hij; dsimp only; split_ifs with h1 h2
+    · exact le_rfl
+    · exact absurd (h1.trans hij) h2
+    · norm_num
+    · exact le_rfl
+  refine ⟨fun h => by simpa [stepConeVec, Fin.le_last] using congrFun h (Fin.last d).castSucc,
+    Fin.lastCases (by simp [stepConeVec]) (fun j => by simpa [stepConeVec] using h0 j),
+    monotone_snoc hmono (fun i => Finset.single_le_sum (fun m _ => h0 m) (Finset.mem_univ i)),
+    by simp [stepConeVec]⟩
 
 private theorem stepConeVec_last_eq (d : ℕ) :
     (coneSpanBasisVec d (Fin.last d) : Fin (d + 2) → ℝ) = stepConeVec d (Fin.last d) := by
   classical
+  rw [coe_coneSpanBasisVec_eq_snoc]
   ext i
   refine Fin.lastCases ?_ (fun m => ?_) i
-  · simp only [coe_coneSpanBasisVec, Pi.add_apply, stepConeVec, Fin.snoc_last,
-      Pi.single_eq_of_ne (Fin.castSucc_lt_last (Fin.last d)).ne', Pi.single_eq_same, zero_add]
-    rw [Finset.sum_eq_single (Fin.last d)]
-    · simp
-    · intro b _ hb
-      simp [not_le.2 (lt_of_le_of_ne (Fin.le_last b) hb)]
-    · simp
-  · simp only [coe_coneSpanBasisVec, Pi.add_apply, stepConeVec, Fin.snoc_castSucc,
-      Pi.single_eq_of_ne (Fin.castSucc_lt_last m).ne, add_zero]
-    by_cases hm : m = Fin.last d
-    · subst hm; simp
-    · rw [Pi.single_eq_of_ne (fun h => hm (Fin.castSucc_inj.1 h)),
-        ite_eq_right_iff.2 (fun h => absurd (le_antisymm (Fin.le_last m) h) hm)]
+  · simp only [stepConeVec, Fin.snoc_last]
+    rw [Finset.sum_eq_single (Fin.last d) (fun b _ hb => by
+      simp [not_le.2 (lt_of_le_of_ne (Fin.le_last b) hb)]) (by simp)]
+    simp
+  · simp only [stepConeVec, Fin.snoc_castSucc, Pi.single_apply, Fin.last_le_iff]
 
 private theorem stepConeVec_sub_eq (d : ℕ) (k : Fin d) :
     (coneSpanBasisVec d k.castSucc : Fin (d + 2) → ℝ) =
@@ -639,52 +523,38 @@ private theorem stepConeVec_sub_eq (d : ℕ) (k : Fin d) :
   classical
   have hstep : ∀ m : Fin (d + 1),
       (if k.castSucc ≤ m then (1 : ℝ) else 0) - (if k.succ ≤ m then (1 : ℝ) else 0) =
-        if m = k.castSucc then 1 else 0 := fun m => by
+        (Pi.single k.castSucc (1 : ℝ) : Fin (d + 1) → ℝ) m := fun m => by
+    simp only [Pi.single_apply]
     by_cases hmk : m = k.castSucc
     · subst hmk; simp [not_le.2 k.castSucc_lt_succ]
     · by_cases hkb : k.castSucc ≤ m
       · have hsucc : k.succ ≤ m := by
           rw [Fin.le_iff_val_le_val] at hkb ⊢
-          have hne : m.val ≠ k.val := fun h => hmk (Fin.ext h)
-          simp only [Fin.val_succ, Fin.val_castSucc] at hkb ⊢
-          omega
+          have : m.val ≠ k.val := fun h => hmk (Fin.ext h)
+          simp only [Fin.val_succ, Fin.val_castSucc] at hkb ⊢; omega
         simp [hmk, hkb, hsucc]
-      · have hnsucc : ¬ k.succ ≤ m := fun h => hkb (k.castSucc_lt_succ.le.trans h)
-        simp [hmk, hkb, hnsucc]
+      · simp [hmk, hkb, show ¬ k.succ ≤ m from fun h => hkb (k.castSucc_lt_succ.le.trans h)]
+  rw [coe_coneSpanBasisVec_eq_snoc]
   ext i
-  refine Fin.lastCases ?_ (fun m => ?_) i
-  · simp only [coe_coneSpanBasisVec, Pi.add_apply, Pi.sub_apply, stepConeVec, Fin.snoc_last,
-      Pi.single_eq_of_ne (Fin.castSucc_lt_last k.castSucc).ne', Pi.single_eq_same, zero_add,
-      ← Finset.sum_sub_distrib, hstep]
-    simp
-  · simp only [coe_coneSpanBasisVec, Pi.add_apply, Pi.sub_apply, stepConeVec,
-      Fin.snoc_castSucc, Pi.single_eq_of_ne (Fin.castSucc_lt_last m).ne, add_zero, hstep]
-    by_cases hmk : m = k.castSucc
-    · subst hmk; simp
-    · rw [Pi.single_eq_of_ne (fun h => hmk (Fin.castSucc_inj.1 h)), ite_eq_right_iff.2 (by
-        intro h; exact absurd h hmk)]
+  refine Fin.lastCases ?_ (fun m => by simp [stepConeVec, hstep]) i
+  simp only [stepConeVec, Fin.snoc_last, Pi.sub_apply, ← Finset.sum_sub_distrib, hstep]
+  simp
 
 private theorem coneSpanBasisVec_mem_span_orderedCone (d : ℕ) (j : Fin (d + 1)) :
-    (coneSpanBasisVec d j : Fin (d + 2) → ℝ) ∈ Submodule.span ℝ (orderedCone d) := by
-  refine Fin.lastCases ?_ (fun k => ?_) j
-  · rw [stepConeVec_last_eq]
-    exact Submodule.subset_span (stepConeVec_mem_orderedCone d (Fin.last d))
-  · rw [stepConeVec_sub_eq]
-    exact Submodule.sub_mem _ (Submodule.subset_span (stepConeVec_mem_orderedCone d k.castSucc))
-      (Submodule.subset_span (stepConeVec_mem_orderedCone d k.succ))
+    (coneSpanBasisVec d j : Fin (d + 2) → ℝ) ∈ Submodule.span ℝ (orderedCone d) :=
+  Fin.lastCases (stepConeVec_last_eq d ▸ Submodule.subset_span (stepConeVec_mem_orderedCone d _))
+    (fun k => stepConeVec_sub_eq d k ▸ Submodule.sub_mem _
+      (Submodule.subset_span (stepConeVec_mem_orderedCone d k.castSucc))
+      (Submodule.subset_span (stepConeVec_mem_orderedCone d k.succ))) j
 
 /-- The linear span of `orderedCone d` equals the hyperplane `coneSpan d`. -/
 theorem span_orderedCone_eq_coneSpan (d : ℕ) :
     Submodule.span ℝ (orderedCone d) = coneSpan d := by
-  refine le_antisymm (Submodule.span_le.2 (orderedCone_subset_coneSpan d)) ?_
-  intro y hy
-  have hy_eq : (⟨y, hy⟩ : coneSpan d) =
-      ∑ j : Fin (d + 1), (coneSpanBasis d).repr ⟨y, hy⟩ j • coneSpanBasis d j :=
-    ((coneSpanBasis d).sum_repr ⟨y, hy⟩).symm
+  refine le_antisymm (Submodule.span_le.2 (orderedCone_subset_coneSpan d)) fun y hy => ?_
   have hval : y = ∑ j : Fin (d + 1),
       (coneSpanBasis d).repr ⟨y, hy⟩ j • (coneSpanBasisVec d j : Fin (d + 2) → ℝ) := by
-    have := congrArg Subtype.val hy_eq
-    simpa [coneSpanBasis_apply] using this
+    simpa [coneSpanBasis_apply] using
+      congrArg Subtype.val ((coneSpanBasis d).sum_repr ⟨y, hy⟩).symm
   rw [hval]
   exact Submodule.sum_mem _ fun j _ =>
     Submodule.smul_mem _ _ (coneSpanBasisVec_mem_span_orderedCone d j)
