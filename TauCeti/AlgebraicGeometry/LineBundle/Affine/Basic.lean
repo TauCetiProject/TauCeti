@@ -252,21 +252,6 @@ instance invertibleModuleEquiv_isMonoidal_of {R₀ : Type u} [CommRing R₀] :
 
 end Monoidal
 
-/-- Cancel adjacent inverse `eqToHom` transports on the right of a morphism. -/
-@[reassoc]
-private lemma comp_eqToHom_symm_comp {C : Type*} [Category C] {W X Y : C}
-    (g : W ⟶ X) (h : Y = X) :
-    (g ≫ eqToHom h.symm) ≫ eqToHom h = g := by
-  simp
-
-/-- Transport a commutative square `u ≫ αN = αM ≫ v` along object equalities on the left. -/
-private lemma eqToHom_comp_naturality {C : Type*} [Category C]
-    {X₁ X₂ Y₁ Y₂ Z₁ Z₂ : C} (hM : X₁ = X₂) (hN : Y₁ = Y₂)
-    {u : X₂ ⟶ Y₂} {αM : X₂ ⟶ Z₁} {αN : Y₂ ⟶ Z₂} {v : Z₁ ⟶ Z₂}
-    (hnat : u ≫ αN = αM ≫ v) :
-    (eqToHom hM ≫ u ≫ eqToHom hN.symm) ≫ (eqToHom hN ≫ αN) = (eqToHom hM ≫ αM) ≫ v := by
-  simp [Category.assoc, hnat]
-
 section Dual
 
 variable (R : CommRingCat.{u})
@@ -302,11 +287,19 @@ theorem invertibleModuleEquivDualIso_naturality
       (invertibleModuleEquivDualIso R N).hom.hom ≫
         eqToHom (dual_obj ((invertibleModuleEquiv R).functor.obj N)) ≫
         (pre ((tilde.functor R).map f.hom)).app (𝟙_ (Spec R).Modules) := by
+  -- `Scheme.Modules` is semireducible, so cancel `eqToHom` via `comp_eqToHom_iff` and
+  -- term-mode chaining instead of `rw`.
+  have hcancel (L : (invertibleModules R).FullSubcategory) :
+      (invertibleModuleEquivDualIso R L).hom.hom ≫
+          eqToHom (dual_obj ((invertibleModuleEquiv R).functor.obj L)) =
+        (FiniteLocallyFreeSheaf.finiteProjectiveEquivDualIso R
+          ((InvertibleModules.toFiniteProjective R).obj L)).hom.hom :=
+    (comp_eqToHom_iff _ _ _).mpr (invertibleModuleEquivDualIso_hom_hom R L)
   exact (congrArg ((tilde.functor R).map (ModuleCat.ofHom f.hom.hom.dualMap) ≫ ·)
-      (comp_eqToHom_symm_comp _ _)).trans
+      (hcancel M)).trans
     ((FiniteLocallyFreeSheaf.finiteProjectiveEquivDualIso_naturality R
       ((InvertibleModules.toFiniteProjective R).map f)).trans
-      (comp_eqToHom_symm_comp_assoc _ _ _).symm)
+      ((reassoc_of% (hcancel N)) _).symm)
 
 end Dual
 
@@ -364,10 +357,18 @@ def invertibleModuleEquivCompPullbackIso :
       apply ObjectProperty.hom_ext
       simp only [Functor.comp_obj, Functor.comp_map, ObjectProperty.FullSubcategory.comp_hom,
         ObjectProperty.isoMk_hom, ObjectProperty.homMk_hom, pullback_map]
-      exact eqToHom_comp_naturality
-        (pullback_obj_obj (Spec.map φ) ((invertibleModuleEquiv R).functor.obj M))
-        (pullback_obj_obj (Spec.map φ) ((invertibleModuleEquiv R).functor.obj N))
-        ((tildeFunctorCompPullbackIso φ).hom.naturality f.hom))
+      -- `invertibleModuleEquiv` is semireducible, so cancel `eqToHom` via `eqToHom_comp_iff`
+      -- rather than `rw` across `Iso.trans_hom`.
+      have hcancel :
+          eqToHom (pullback_obj_obj (Spec.map φ) ((invertibleModuleEquiv R).functor.obj N)).symm ≫
+              (eqToIso (pullback_obj_obj (Spec.map φ) ((invertibleModuleEquiv R).functor.obj N)) ≪≫
+                (tildeFunctorCompPullbackIso φ).app N.obj).hom =
+            (tildeFunctorCompPullbackIso φ).hom.app N.obj :=
+        (eqToHom_comp_iff _ _ _).mpr (Iso.trans_hom _ _)
+      rw [Category.assoc, Category.assoc]
+      exact (congrArg (eqToHom _ ≫ _ ≫ ·) hcancel).trans
+        ((congrArg (eqToHom _ ≫ ·) ((tildeFunctorCompPullbackIso φ).hom.naturality f.hom)).trans
+          (Category.assoc _ _ _).symm))
 
 /-- On underlying sheaves, `invertibleModuleEquivCompPullbackIso φ` is
 `tildeFunctorCompPullbackIso φ`. -/

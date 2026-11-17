@@ -65,7 +65,7 @@ local rings, semilocal rings, and GCD/factorial domains).
 
 public section
 
-open CategoryTheory MonoidalCategory
+open CategoryTheory
 
 namespace TauCeti.AlgebraicGeometry
 
@@ -84,46 +84,26 @@ variable (R : Type u) [CommRing R]
 /-- **The Picard group of `Spec R` is canonically isomorphic to `CommRing.Pic R`.** It sends the
 class of a line bundle `L` on `Spec R` to the Picard class of its invertible `R`-module of global
 sections, with inverse `P ↦ [P~]`. -/
-def specEquivPic : LineBundleClass (Spec (.of R)) ≃* CommRing.Pic R where
-  toFun := lift
-    (fun L ↦ CommRing.Pic.mk R ((moduleSpecΓFunctor (R := .of R)).obj L.obj))
-    (fun _ _ ⟨e⟩ ↦ CommRing.Pic.mk_eq_mk_iff.mpr
-      ⟨((moduleSpecΓFunctor (R := .of R)).mapIso e).toLinearEquiv⟩)
-  invFun P := mk ((InvertibleSheaf.invertibleModuleEquiv (.of R)).functor.obj
-    (InvertibleModules.ofPic R P))
-  left_inv a := by
-    obtain ⟨L, rfl⟩ := mk_surjective a
-    rw [lift_mk, mk_eq_mk_iff]
-    let e₁ := InvertibleModules.ofPicMkIso R
-      ((InvertibleSheaf.invertibleModuleEquiv (.of R)).inverse.obj L)
-    exact ⟨(SheafOfModules.isInvertible (Spec (.of R))).ι.mapIso
-      (((InvertibleSheaf.invertibleModuleEquiv (.of R)).functor.mapIso e₁) ≪≫
-        (InvertibleSheaf.invertibleModuleEquiv (.of R)).counitIso.app L)⟩
-  right_inv P := by
-    rw [lift_mk, CommRing.Pic.mk_eq_iff]
-    let M := InvertibleModules.ofPic R P
-    let u := (invertibleModules R).ι.mapIso
-      ((InvertibleSheaf.invertibleModuleEquiv (.of R)).unitIso.app M).symm
-    exact ⟨(u ≪≫ eqToIso (InvertibleModules.ofPic_obj R P)).toLinearEquiv⟩
-  map_mul' a b := by
-    obtain ⟨L, rfl⟩ := mk_surjective a
-    obtain ⟨K, rfl⟩ := mk_surjective b
-    rw [← mk_tensorObj, lift_mk, lift_mk, lift_mk]
-    let A := (InvertibleSheaf.invertibleModuleEquiv (.of R)).inverse.obj L
-    let B := (InvertibleSheaf.invertibleModuleEquiv (.of R)).inverse.obj K
-    let AB := (InvertibleSheaf.invertibleModuleEquiv (.of R)).inverse.obj (L ⊗ K)
-    have : Module.Invertible R (A ⊗ B).obj := InvertibleModules.invertible_obj (A ⊗ B)
-    let μIso : AB.obj ≅ (A ⊗ B).obj :=
-      (invertibleModules R).ι.mapIso
-        (Functor.Monoidal.μIso (InvertibleSheaf.invertibleModuleEquiv (.of R)).inverse L K).symm
-    exact (CommRing.Pic.mk_eq_mk_iff.mpr ⟨μIso.toLinearEquiv⟩).trans CommRing.Pic.mk_tensor
+def specEquivPic : LineBundleClass (Spec (.of R)) ≃* CommRing.Pic R :=
+  ((skeletonMulEquiv (Spec (.of R))).symm.trans
+    (Skeleton.mulEquiv (InvertibleSheaf.invertibleModuleEquiv (.of R))).symm).trans
+    (InvertibleModules.skeletonEquivPic R)
 
 /-- `specEquivPic R` sends the class of a line bundle `L` on `Spec R` to the Picard class of its
 module of global sections. -/
 @[simp]
 theorem specEquivPic_mk (L : InvertibleSheaf (Spec (.of R))) :
-    specEquivPic R (mk L) = CommRing.Pic.mk R ((moduleSpecΓFunctor (R := .of R)).obj L.obj) :=
-  lift_mk L
+    specEquivPic R (mk L) = CommRing.Pic.mk R ((moduleSpecΓFunctor (R := .of R)).obj L.obj) := by
+  -- `(Skeleton.mulEquiv e).symm` acts on objects as `e.inverse.mapSkeleton.obj`.
+  have hinv : (Skeleton.mulEquiv (InvertibleSheaf.invertibleModuleEquiv (.of R))).symm
+      (toSkeleton L) =
+      toSkeleton ((InvertibleSheaf.invertibleModuleEquiv (.of R)).inverse.obj L) :=
+    (InvertibleSheaf.invertibleModuleEquiv (.of R)).inverse.mapSkeleton_obj_toSkeleton L
+  simp only [specEquivPic, MulEquiv.trans_apply, skeletonMulEquiv_symm_mk, hinv,
+    InvertibleModules.skeletonEquivPic_toSkeleton]
+  -- `((invertibleModuleEquiv (.of R)).inverse.obj L).obj` reduces definitionally to
+  -- `moduleSpecΓFunctor.obj L.obj` (see `invertibleModuleEquiv_inverse_obj_obj`).
+  rfl
 
 /-- `specEquivPic R` sends the class of `M~` for an invertible `R`-module `M` to
 `CommRing.Pic.mk R M`. -/
@@ -142,8 +122,16 @@ theorem specEquivPic_tilde (M : ModuleCat.{u} R) [Module.Invertible R M] :
 theorem specEquivPic_symm_apply (P : CommRing.Pic R) :
     (specEquivPic R).symm P =
       mk ((InvertibleSheaf.invertibleModuleEquiv (.of R)).functor.obj
+        (InvertibleModules.ofPic R P)) := by
+  -- `Skeleton.mulEquiv e` acts on objects as `e.functor.mapSkeleton.obj`.
+  have hfwd : (Skeleton.mulEquiv (InvertibleSheaf.invertibleModuleEquiv (.of R)))
+      (toSkeleton (InvertibleModules.ofPic R P)) =
+      toSkeleton ((InvertibleSheaf.invertibleModuleEquiv (.of R)).functor.obj
         (InvertibleModules.ofPic R P)) :=
-  (rfl)
+    (InvertibleSheaf.invertibleModuleEquiv (.of R)).functor.mapSkeleton_obj_toSkeleton
+      (InvertibleModules.ofPic R P)
+  simp only [specEquivPic, MulEquiv.symm_trans_apply, MulEquiv.symm_symm,
+    InvertibleModules.skeletonEquivPic_symm_apply, hfwd, skeletonMulEquiv_toSkeleton]
 
 /-- The inverse of `specEquivPic R` sends `CommRing.Pic.mk R M` to the class of `M~`. -/
 @[simp]
@@ -177,16 +165,7 @@ theorem skeletonMulEquiv_trans_specEquivPic :
       (Skeleton.mulEquiv (InvertibleSheaf.invertibleModuleEquiv (.of R))).symm.trans
         (InvertibleModules.skeletonEquivPic R) := by
   ext x
-  obtain ⟨L, rfl⟩ : ∃ L, toSkeleton L = x := Quotient.inductionOn x fun L ↦ ⟨L, rfl⟩
-  simp only [MulEquiv.trans_apply, skeletonMulEquiv_toSkeleton, specEquivPic_mk]
-  have hsymm : (Skeleton.mulEquiv (InvertibleSheaf.invertibleModuleEquiv (.of R))).symm
-      (toSkeleton L) =
-      toSkeleton ((InvertibleSheaf.invertibleModuleEquiv (.of R)).inverse.obj L) :=
-    toSkeleton_eq_toSkeleton_iff.mpr
-      ⟨(InvertibleSheaf.invertibleModuleEquiv (.of R)).inverse.mapIso
-        ((skeletonEquivalence (InvertibleSheaf (Spec (.of R)))).symm.unitIso.app L).symm⟩
-  rw [hsymm, InvertibleModules.skeletonEquivPic_toSkeleton]
-  rfl
+  simp only [specEquivPic, MulEquiv.trans_apply, MulEquiv.symm_apply_apply]
 
 /-- Pullback of line-bundle classes along `Spec f` corresponds under `specEquivPic` to
 `CommRing.Pic.mapRingHom f`. -/
