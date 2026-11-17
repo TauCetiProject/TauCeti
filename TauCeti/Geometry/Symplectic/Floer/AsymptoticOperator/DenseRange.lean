@@ -109,12 +109,11 @@ private theorem slice_re_inner_ae_eq_zero_of_hasDerivAt {S : ℝ → F →L[ℝ]
       fun y ↦ by simpa using he y
   have hbd (t : ℝ) : ‖e t‖ ≤ ‖e‖ := e.norm_coe_le_norm _
   have he' : Continuous fun t : ℝ ↦ e t := e.continuous.comp (AddCircle.continuous_mk' 1)
-  refine ae_eq_zero_of_integral_deriv_add_mul_smul_eq_zero hlam
-    (locallyIntegrable_slice_re_inner hη e)
-    (M := (‖e‖ ^ 2 + ∫ z, ‖η z‖ ^ 2 ∂stripMeasure) / 2)
+  refine (locallyIntegrable_slice_re_inner hη e).ae_eq_zero_of_integral_deriv_add_mul_smul_eq_zero
+    hlam (M := (‖e‖ ^ 2 + ∫ z, ‖η z‖ ^ 2 ∂stripMeasure) / 2)
     (fun n ↦ by
-      simpa [Real.norm_eq_abs] using (integrableOn_slice_re_inner_and_integral_abs_le hη
-        he' hbd (a := n) (b := n + 1) (by linarith)).2)
+      simpa [Real.norm_eq_abs] using integral_abs_slice_re_inner_le hη he' hbd
+        (a := n) (b := n + 1) (by linarith))
     fun φ hφ hφc ↦ ?_
   -- Test the orthogonality against the product section `φ(s) e(t)`.
   obtain ⟨R, -, hR⟩ := hφc.exists_pos_le_norm

@@ -31,10 +31,11 @@ period one determine `η`.
   `φ(s) ψ(t)` is integrable on the strip.
 * `TauCeti.CylinderSobolev.integral_re_inner_smul_eq_integral_mul_slice`: Fubini's theorem for
   the pairing of `η` with a product section `φ(s) ψ(t)`.
-* `TauCeti.CylinderSobolev.integrableOn_slice_re_inner_and_integral_abs_le` and
+* `TauCeti.CylinderSobolev.integrableOn_slice_re_inner` and
   `TauCeti.CylinderSobolev.locallyIntegrable_slice_re_inner`: the slice pairing with a bounded loop
-  is locally integrable, with integrals of its absolute value over `[a, b]` bounded by
-  `((b - a) B² + ‖η‖²_{L²}) / 2`.
+  is locally integrable.
+* `TauCeti.CylinderSobolev.integral_abs_slice_re_inner_le`: the integral of the absolute value of
+  the slice pairing over `[a, b]` is bounded by `((b - a) B² + ‖η‖²_{L²}) / 2`.
 * `TauCeti.CylinderSobolev.abs_integral_re_inner_smul_le`: Cauchy–Schwarz for product sections,
   `|∫ Re ⟪φ ⊗ χ, η⟫| ≤ ‖φ‖_{L²} ‖η‖_{L²} ‖χ‖_{H⁰}`.
 * `TauCeti.CylinderSobolev.slice_re_inner_ae_eq_zero_of_hilbertBasis`: if the slice pairings of
@@ -75,15 +76,26 @@ theorem integral_re_inner_smul_eq_integral_mul_slice {η : ℝ × ℝ → F}
   simp only [inner_smul_left_eq_smul, Complex.smul_re, smul_eq_mul]
   exact integral_const_mul _ _
 
-/-- **Growth of the slice pairing.** If `‖ψ‖ ≤ B` and `‖η‖²` is integrable on the strip, the slice
-pairing `s ↦ ∫₀¹ Re ⟪ψ(t), η(s, t)⟫` is integrable on `[a, b]`, and the integral of its absolute
-value there is at most `((b - a) B² + ∫ ‖η‖²) / 2`. -/
-theorem integrableOn_slice_re_inner_and_integral_abs_le {η : ℝ × ℝ → F}
-    (hη : MemLp η 2 stripMeasure) {ψ : ℝ → F} (hψ : Continuous ψ) {B : ℝ}
-    (hB : ∀ t, ‖ψ t‖ ≤ B) {a b : ℝ} (hab : a ≤ b) :
-    IntegrableOn (fun s ↦ ∫ t in Icc (0 : ℝ) 1, (inner ℂ (ψ t) (η (s, t))).re) (Icc a b) ∧
-      ∫ s in Icc a b, |∫ t in Icc (0 : ℝ) 1, (inner ℂ (ψ t) (η (s, t))).re| ≤
-        ((b - a) * B ^ 2 + ∫ z, ‖η z‖ ^ 2 ∂stripMeasure) / 2 := by
+/-- The slice pairing `s ↦ ∫₀¹ Re ⟪ψ(t), η(s, t)⟫` of `η` with a bounded continuous `ψ` is
+integrable on every interval `[a, b]`. -/
+theorem integrableOn_slice_re_inner {η : ℝ × ℝ → F} (hη : MemLp η 2 stripMeasure) {ψ : ℝ → F}
+    (hψ : Continuous ψ) {B : ℝ} (hB : ∀ t, ‖ψ t‖ ≤ B) (a b : ℝ) :
+    IntegrableOn (fun s ↦ ∫ t in Icc (0 : ℝ) 1, (inner ℂ (ψ t) (η (s, t))).re) (Icc a b) := by
+  set μ : Measure (ℝ × ℝ) := (volume.restrict (Icc a b)).prod (volume.restrict (Icc (0 : ℝ) 1))
+  have hμ : μ ≤ stripMeasure := by
+    rw [stripMeasure_eq_prod]
+    exact Measure.prod_mono Measure.restrict_le_self le_rfl
+  have hψ2 : MemLp (fun z : ℝ × ℝ ↦ ψ z.2) 2 μ :=
+    MemLp.of_bound (hψ.comp continuous_snd).aestronglyMeasurable B (ae_of_all _ fun z ↦ hB z.2)
+  exact (hψ2.integrable_inner (𝕜 := ℂ) (hη.mono_measure hμ)).re.integral_prod_left
+
+/-- **Growth of the slice pairing.** If `‖ψ‖ ≤ B` and `‖η‖²` is integrable on the strip, the
+integral over `[a, b]` of the absolute value of the slice pairing `s ↦ ∫₀¹ Re ⟪ψ(t), η(s, t)⟫` is
+at most `((b - a) B² + ∫ ‖η‖²) / 2`. -/
+theorem integral_abs_slice_re_inner_le {η : ℝ × ℝ → F} (hη : MemLp η 2 stripMeasure) {ψ : ℝ → F}
+    (hψ : Continuous ψ) {B : ℝ} (hB : ∀ t, ‖ψ t‖ ≤ B) {a b : ℝ} (hab : a ≤ b) :
+    ∫ s in Icc a b, |∫ t in Icc (0 : ℝ) 1, (inner ℂ (ψ t) (η (s, t))).re| ≤
+      ((b - a) * B ^ 2 + ∫ z, ‖η z‖ ^ 2 ∂stripMeasure) / 2 := by
   set μ : Measure (ℝ × ℝ) := (volume.restrict (Icc a b)).prod (volume.restrict (Icc (0 : ℝ) 1))
   have hμ : μ ≤ stripMeasure := by
     rw [stripMeasure_eq_prod]
@@ -105,7 +117,6 @@ theorem integrableOn_slice_re_inner_and_integral_abs_le {η : ℝ × ℝ → F}
   have hg : Integrable (fun z : ℝ × ℝ ↦ (inner ℂ (ψ z.2) (η z)).re) μ :=
     hG.mono' ((hψ.comp continuous_snd).aestronglyMeasurable.inner (𝕜 := ℂ)
       (hη.aestronglyMeasurable.mono_measure hμ)).re (ae_of_all _ hgG)
-  refine ⟨hg.integral_prod_left, ?_⟩
   calc ∫ s in Icc a b, |∫ t in Icc (0 : ℝ) 1, (inner ℂ (ψ t) (η (s, t))).re|
       ≤ ∫ s in Icc a b, ∫ t in Icc (0 : ℝ) 1, ‖(inner ℂ (ψ t) (η (s, t))).re‖ :=
         integral_mono hg.integral_prod_left.abs hg.norm.integral_prod_left fun s ↦ by
@@ -128,9 +139,8 @@ theorem locallyIntegrable_slice_re_inner {η : ℝ × ℝ → F} (hη : MemLp η
     LocallyIntegrable fun s ↦ ∫ t in Icc (0 : ℝ) 1, (inner ℂ (χ t) (η (s, t))).re := by
   refine locallyIntegrable_iff.2 fun k hk ↦ ?_
   obtain ⟨R, hR⟩ := hk.isBounded.subset_closedBall 0
-  refine ((integrableOn_slice_re_inner_and_integral_abs_le hη
-    (χ.continuous.comp (AddCircle.continuous_mk' 1)) (fun t ↦ χ.norm_coe_le_norm _)
-    (a := -|R|) (b := |R|) (by linarith [abs_nonneg R])).1).mono_set fun x hx ↦ ?_
+  refine (integrableOn_slice_re_inner hη (χ.continuous.comp (AddCircle.continuous_mk' 1))
+    (fun t ↦ χ.norm_coe_le_norm _) (-|R|) |R|).mono_set fun x hx ↦ ?_
   have := hR hx
   rw [Metric.mem_closedBall, dist_zero_right, Real.norm_eq_abs] at this
   exact ⟨by linarith [neg_abs_le x, le_abs_self R], by linarith [le_abs_self x, le_abs_self R]⟩

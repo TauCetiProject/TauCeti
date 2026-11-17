@@ -55,9 +55,9 @@ which are close to `f x` and `f y` by continuity.
   `e^{c x} • v`.
 * `MeasureTheory.LocallyIntegrable.exists_ae_eq_exp_smul_of_integral_deriv_add_mul_smul_eq_zero`:
   distributional solutions of `A' = λ A` on the line are `e^{λ x} • v`.
-* `TauCeti.ae_eq_zero_of_integral_deriv_add_mul_smul_eq_zero`: a locally integrable
-  distributional solution of `A' = λ A` on the line, `λ ≠ 0`, with uniformly bounded integrals of
-  `‖A‖` over unit intervals vanishes.
+* `MeasureTheory.LocallyIntegrable.ae_eq_zero_of_integral_deriv_add_mul_smul_eq_zero`: a locally
+  integrable distributional solution of `A' = λ A` on the line, `λ ≠ 0`, with uniformly bounded
+  integrals of `‖A‖` over unit intervals vanishes.
 * `ContinuousOn.monotoneOn_of_integral_deriv_mul_nonpos`: a continuous function with nonnegative
   distributional derivative is monotone.
 -/
@@ -267,21 +267,12 @@ theorem exists_ae_eq_exp_smul_of_integral_deriv_add_mul_smul_eq_zero
   obtain ⟨N, hN⟩ := TauCeti.exists_Icc_subset_Ioo_natCast x
   exact hx N (hN ⟨le_rfl, by linarith⟩)
 
-end MeasureTheory.LocallyIntegrable
-
-namespace TauCeti
-
-open MeasureTheory Set Filter
-open scoped ContDiff
-
-variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
-
 /-- **Distributional solutions of `A' = λ A` with uniformly bounded local integrals vanish.**
 If `λ ≠ 0`, `A` is locally integrable with `∫_{[n, n + 1]} ‖A‖ ≤ M` for every `n`, and
 `∫ (φ' + λ φ) • A = 0` for every test function `φ`, then `A = 0` almost everywhere. Indeed
 `A = e^{λ s} • v`, and `∫_{[n, n + 1]} e^{λ s}` is unbounded in `n`. -/
-theorem ae_eq_zero_of_integral_deriv_add_mul_smul_eq_zero {lam : ℝ} (hlam : lam ≠ 0)
-    {A : ℝ → F} (hA : LocallyIntegrable A) {M : ℝ}
+theorem ae_eq_zero_of_integral_deriv_add_mul_smul_eq_zero {A : ℝ → F} (hA : LocallyIntegrable A)
+    {lam : ℝ} (hlam : lam ≠ 0) {M : ℝ}
     (hM : ∀ n : ℝ, ∫ s in Icc n (n + 1), ‖A s‖ ≤ M)
     (h : ∀ φ : ℝ → ℝ, ContDiff ℝ ∞ φ → HasCompactSupport φ →
       ∫ s, (deriv φ s + lam * φ s) • A s = 0) :
@@ -315,7 +306,7 @@ theorem ae_eq_zero_of_integral_deriv_add_mul_smul_eq_zero {lam : ℝ} (hlam : la
   filter_upwards [hc] with x hx
   rw [hx, hc0, smul_zero, Pi.zero_apply]
 
-end TauCeti
+end MeasureTheory.LocallyIntegrable
 
 namespace TauCeti
 
