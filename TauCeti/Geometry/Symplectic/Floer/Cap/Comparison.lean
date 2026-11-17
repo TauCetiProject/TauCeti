@@ -53,12 +53,13 @@ On cohomology, graded by the cochain degrees, the maps induced by the PSS counts
 intertwine the Morse quantum product with the pair-of-pants product,
 `Φ₀ ([a] ⋆_M [b]) = Φ₁ [a] ⋆ Φ₂ [b]`
 (`cohomologyMap_cohomologyProduct_kernelProduct_coefficientComparison`). A module inverse of the
-PSS maps, with the homotopies of
-`TauCeti.Floer.novikovMapOfMatrix_novikovMapOfMatrix_coefficientComparison_sub_mem_coboundaries`,
-makes them isomorphisms of cohomology (`LinearMap.cohomologyEquiv`), and the inverse maps are
-multiplicative too: `g₀ (x ⋆ y) = g₁ x ⋆_M g₂ y` for one-sided inverses `g₁`, `g₂` of the input
-maps and `g₀` of the output map
-(`cohomologyMap_cohomologyProduct_kernelProduct_coefficientComparison_of_inverse`). So the PSS maps
+PSS maps makes them isomorphisms of cohomology (`LinearMap.cohomologyEquiv`) once both composite
+homotopies `ΨΦ ≃ id` and `ΦΨ ≃ id` hold, each obtained from
+`TauCeti.Floer.novikovMapOfMatrix_novikovMapOfMatrix_coefficientComparison_sub_mem_coboundaries`.
+The inverse maps are multiplicative too: `g₀ (x ⋆ y) = g₁ x ⋆_M g₂ y` for one-sided inverses `g₁`,
+`g₂` of the input maps and `g₀` of the output map
+(`cohomologyMap_cohomologyProduct_kernelProduct_coefficientComparison_of_inverse`, an instance of
+`LinearMap.cohomologyMap_cohomologyProduct_of_leftInverse`). So the PSS maps
 are isomorphisms of the products on cohomology, in both directions, once the comparison identity
 and the module homotopies hold.
 
@@ -610,19 +611,18 @@ theorem cohomologyMap_cohomologyProduct_kernelProduct_coefficientComparison_of_i
         (LinearMap.cohomologyProduct (kernelProduct hnQ (kernelOfMatrix_mem hF₀ r₁ r₂ r₀ _)) hQdeg
           hQL hl x y) =
       LinearMap.cohomologyProduct (kernelProduct hnM (kernelOfMatrix_mem hG₀ s₁ s₂ s₀ _)) hMdeg hML
-        hl (LinearMap.cohomologyMap g₁ hg₁ hg₁D e x) (LinearMap.cohomologyMap g₂ hg₂ hg₂D f y) := by
-  -- Write `x = Φ₁ (g₁ x)` and `y = Φ₂ (g₂ y)`, move the product past `Φ₀`, and cancel `g₀ Φ₀`.
-  have hx := LinearMap.leftInverse_cohomologyMap g₁
-    (kernelMap hφ₁ (mapKernelOfMatrix_mem hF₁ s₁ r₁ _)) hg₁ hg₁D hφ₁deg hφ₁D hfg₁ x
-  have hy := LinearMap.leftInverse_cohomologyMap g₂
-    (kernelMap hφ₂ (mapKernelOfMatrix_mem hF₂ s₂ r₂ _)) hg₂ hg₂D hφ₂deg hφ₂D hfg₂ y
-  conv_lhs => rw [← hx, ← hy]
-  rw [← cohomologyMap_cohomologyProduct_kernelProduct_coefficientComparison r₁ r₂ r₀ s₁ s₂ s₀ q hq
-    hF₁ hF₂ hF₀ hG₁ hG₂ hG₀ hμ₁ hμ₂ hμ₀ hν₁ hν₂ hν₀ Q M Φ₁ Φ₂ Φ₀ Ψ₀ K E₁ E₂ E₀ D₁ D₂ D₀ Y₀ n hδ₁ hδ₂
-    hδ₀ hη₁ hη₂ hη₀ hφ₁ hφ₂ hφ₀ hnQ hnM (hφ₀deg := hφ₀deg) (hφ₀D := hφ₀D) hQ hΦ₁ hΦ₂ hΦ₀deg hY₀
-    hK hL hΦ₁D hΦ₂D hC hΦ₀ hinv hl]
-  exact LinearMap.leftInverse_cohomologyMap (kernelMap hφ₀ (mapKernelOfMatrix_mem hF₀ s₀ r₀ _)) g₀
-    hφ₀deg hφ₀D hg₀ hg₀D hgf₀ _
+        hl (LinearMap.cohomologyMap g₁ hg₁ hg₁D e x) (LinearMap.cohomologyMap g₂ hg₂ hg₂D f y) :=
+  LinearMap.cohomologyMap_cohomologyProduct_of_leftInverse hl
+    (LinearMap.leftInverse_cohomologyMap g₁ (kernelMap hφ₁ (mapKernelOfMatrix_mem hF₁ s₁ r₁ _)) hg₁
+      hg₁D hφ₁deg hφ₁D hfg₁)
+    (LinearMap.leftInverse_cohomologyMap g₂ (kernelMap hφ₂ (mapKernelOfMatrix_mem hF₂ s₂ r₂ _)) hg₂
+      hg₂D hφ₂deg hφ₂D hfg₂)
+    (LinearMap.leftInverse_cohomologyMap (kernelMap hφ₀ (mapKernelOfMatrix_mem hF₀ s₀ r₀ _)) g₀
+      hφ₀deg hφ₀D hg₀ hg₀D hgf₀)
+    (cohomologyMap_cohomologyProduct_kernelProduct_coefficientComparison r₁ r₂ r₀ s₁ s₂ s₀ q hq
+      hF₁ hF₂ hF₀ hG₁ hG₂ hG₀ hμ₁ hμ₂ hμ₀ hν₁ hν₂ hν₀ Q M Φ₁ Φ₂ Φ₀ Ψ₀ K E₁ E₂ E₀ D₁ D₂ D₀ Y₀ n hδ₁
+      hδ₂ hδ₀ hη₁ hη₂ hη₀ hφ₁ hφ₂ hφ₀ hnQ hnM hQ hΦ₁ hΦ₂ hΦ₀deg hY₀ hK hL hΦ₁D hΦ₂D hC hΦ₀ hinv hl)
+    x y
 
 end Cohomology
 

@@ -37,7 +37,9 @@ so a chain homotopy equivalence induces an isomorphism of cohomology in each deg
 (`LinearMap.cohomologyEquiv`); for this it suffices that the two composites are the identity up to
 coboundaries on cocycles (`LinearMap.leftInverse_cohomologyMap`).
 If three such maps intertwine two products up to coboundaries on cocycles, then the induced maps
-intertwine the products on cohomology (`LinearMap.cohomologyMap_cohomologyProduct`).
+intertwine the products on cohomology (`LinearMap.cohomologyMap_cohomologyProduct`), and so do
+one-sided inverses on cohomology of such maps, in the other direction
+(`LinearMap.cohomologyMap_cohomologyProduct_of_leftInverse`).
 Likewise, if the two composites `μ' (μ a b) c` and `ν' a (ν b c)` of products differ by a
 coboundary on cocycles, then the induced products on cohomology are associative
 (`LinearMap.cohomologyProduct_assoc`), and if `μ a b - (-1)^(i j) μ' b a` is a coboundary on
@@ -77,6 +79,8 @@ cocycles of degrees `i` and `j`, then they are graded commutative
   left inverse on cohomology.
 * `LinearMap.cohomologyMap_cohomologyProduct`: maps intertwining two products up to coboundaries
   intertwine the products on cohomology.
+* `LinearMap.cohomologyMap_cohomologyProduct_of_leftInverse`: one-sided inverses of maps
+  intertwining the products on cohomology intertwine them in the other direction.
 * `LinearMap.cohomologyProduct_assoc`: products whose two composites differ by coboundaries on
   cocycles induce associative products on cohomology.
 * `LinearMap.cohomologyProduct_eq_negOnePowCast_smul_cohomologyProduct`: products which commute
@@ -447,6 +451,37 @@ theorem cohomologyMap_cohomologyProduct {i j k : ℤ} (hk : i + j + ε = k)
   rw [cohomologyProduct_mk, cohomologyMap_mk, cohomologyMap_mk, cohomologyMap_mk,
     cohomologyProduct_mk, cohomology_mk_eq_mk_iff]
   exact hnat a.2 b.2
+
+variable {g₁ : N₁ →ₗ[R] M₁} {g₂ : N₂ →ₗ[R] M₂} {g₀ : N₀ →ₗ[R] M₀}
+  {hg₁ : ∀ {i : ℤ} {a : N₁}, a ∈ H₁ i → g₁ a ∈ G₁ i}
+  {hg₁D : ∀ {i : ℤ} {a : N₁}, a ∈ H₁ i → D₁ (g₁ a) = g₁ (E₁ a)}
+  {hg₂ : ∀ {i : ℤ} {a : N₂}, a ∈ H₂ i → g₂ a ∈ G₂ i}
+  {hg₂D : ∀ {i : ℤ} {a : N₂}, a ∈ H₂ i → D₂ (g₂ a) = g₂ (E₂ a)}
+  {hg₀ : ∀ {i : ℤ} {a : N₀}, a ∈ H₀ i → g₀ a ∈ G₀ i}
+  {hg₀D : ∀ {i : ℤ} {a : N₀}, a ∈ H₀ i → D₀ (g₀ a) = g₀ (E₀ a)}
+
+/-- **Naturality of the product on cohomology for one-sided inverses.** Let `f₁`, `f₂`, `f₀`
+induce maps on cohomology intertwining the products induced by `μ` and `ν`, and let `g₁`, `g₂`
+induce right inverses of the maps induced by `f₁`, `f₂` and `g₀` a left inverse of the map induced
+by `f₀`, as for homotopy inverses (`LinearMap.leftInverse_cohomologyMap`). Then the maps induced by
+`g₁`, `g₂`, `g₀` intertwine the products in the other direction. -/
+theorem cohomologyMap_cohomologyProduct_of_leftInverse {i j k : ℤ} (hk : i + j + ε = k)
+    (hfg₁ : Function.RightInverse (cohomologyMap (G₁ := H₁) (G₀ := G₁) g₁ hg₁ hg₁D i)
+      (cohomologyMap (G₁ := G₁) (G₀ := H₁) f₁ hf₁ hf₁D i))
+    (hfg₂ : Function.RightInverse (cohomologyMap (G₁ := H₂) (G₀ := G₂) g₂ hg₂ hg₂D j)
+      (cohomologyMap (G₁ := G₂) (G₀ := H₂) f₂ hf₂ hf₂D j))
+    (hgf₀ : Function.LeftInverse (cohomologyMap (G₁ := H₀) (G₀ := G₀) g₀ hg₀ hg₀D k)
+      (cohomologyMap (G₁ := G₀) (G₀ := H₀) f₀ hf₀ hf₀D k))
+    (hnat : ∀ (x : D₁.cohomology G₁ i) (y : D₂.cohomology G₂ j),
+      cohomologyMap f₀ hf₀ hf₀D k (cohomologyProduct μ hμdeg hμL hk x y) =
+        cohomologyProduct ν hνdeg hνL hk (cohomologyMap f₁ hf₁ hf₁D i x)
+          (cohomologyMap f₂ hf₂ hf₂D j y))
+    (x : E₁.cohomology H₁ i) (y : E₂.cohomology H₂ j) :
+    cohomologyMap g₀ hg₀ hg₀D k (cohomologyProduct ν hνdeg hνL hk x y) =
+      cohomologyProduct μ hμdeg hμL hk (cohomologyMap g₁ hg₁ hg₁D i x)
+        (cohomologyMap g₂ hg₂ hg₂D j y) := by
+  conv_lhs => rw [← hfg₁ x, ← hfg₂ y, ← hnat]
+  exact hgf₀ _
 
 end Naturality
 

@@ -41,9 +41,10 @@ a linear map of the completed capped modules. This file proves:
   (`TauCeti.Floer.novikovMapOfMatrix_coefficientComparison_sub_mem_coboundaries`), so `Φ` and `Φ'`
   induce the same map on cohomology. In particular, if `Ψ` is a module inverse of `Φ` up to such a
   homotopy, `Ψ (Φ a) - a` is a coboundary for every cocycle `a`
-  (`novikovMapOfMatrix_novikovMapOfMatrix_coefficientComparison_sub_mem_coboundaries`): this is
-  the hypothesis under which `LinearMap.cohomologyEquiv` makes a PSS map an isomorphism of
-  cohomology.
+  (`novikovMapOfMatrix_novikovMapOfMatrix_coefficientComparison_sub_mem_coboundaries`). Applied
+  once to `(Φ, Ψ)` and once to `(Ψ, Φ)`, each with its own homotopy, this supplies the two
+  hypotheses `hgf` and `hfg` under which `LinearMap.cohomologyEquiv` makes a PSS map an
+  isomorphism of cohomology.
 
 The index and boundary-count hypotheses are the ones the geometric moduli spaces are to supply; no
 moduli space, orientation or count is constructed here.
@@ -252,7 +253,7 @@ theorem novikovMapOfMatrix_coefficientComparison_sub_eq_add
     exact eq_add_of_sub_eq' h
   rw [sub_eq_iff_eq_add', hm, novikovMapOfMatrix_add, novikovMapOfMatrix_add,
     novikovMapOfMatrix_mul hF₁ hF₀ hF₀ r₁ r₀ r₀, novikovMapOfMatrix_mul hF₁ hF₀ hF₁ r₁ r₀ r₁]
-  rfl
+  simp only [LinearMap.add_apply, LinearMap.comp_apply]
 
 variable {μ₁ : (Σ i, P₁ i) → ℤ} {μ₀ : (Σ k, P₀ k) → ℤ}
   (hμ₁ : ∀ i γ (D : P₁ i), μ₁ ⟨i, γ +ᵥ D⟩ = degree ω c γ + μ₁ ⟨i, D⟩)
