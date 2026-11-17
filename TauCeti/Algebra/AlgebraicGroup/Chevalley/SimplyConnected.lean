@@ -144,6 +144,14 @@ theorem coe_scChevalleyDatum_weightLatticeBasis (i : Fin t.rank) :
     ((t.scChevalleyDatum ht).weightLatticeBasis i : Fin t.rank → ℤ) = Pi.single i 1 := by
   exact ChevalleyDatum.coe_fullWeightLatticeBasis (t.span_range_scWeight_eq_top ht) i
 
+/-- Reading the full-weight datum's character basis returns fundamental-weight coordinates. -/
+@[simp]
+theorem scChevalleyDatum_weightLatticeBasis_repr
+    (μ : (t.scChevalleyDatum ht).weightLattice) (i : Fin t.rank) :
+    (t.scChevalleyDatum ht).weightLatticeBasis.repr μ i = (μ : Fin t.rank → ℤ) i := by
+  exact (t.scChevalleyDatum ht).weightLatticeBasis_repr_of_coe_weightLatticeBasis
+    (t.coe_scChevalleyDatum_weightLatticeBasis ht) μ i
+
 /-- The torus coordinates of the full-weight datum are the original fundamental-weight
 coordinates: no lattice-index correction is needed. -/
 @[simp]

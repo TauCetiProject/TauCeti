@@ -8,7 +8,8 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Datum
 public import TauCeti.Algebra.Lie.E7.Minuscule.AdmissibleLattice
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.SerrePresentation
-import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Faithful
+import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Weight.Faithful
+import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Killing
 
 /-!
 # The full-weight E₇ minuscule Chevalley datum
@@ -91,12 +92,37 @@ def pinnedRep :
       Module.End ℚ (Fin 56 → ℚ) :=
   rep.comp (UniversalEnvelopingAlgebra.map ℚ toSerre)
 
+/-- The pinned Cartan action is the existing Serre Cartan action. -/
+-- This bridge is for rewriting; the matrix equation below remains the simp normal form.
+theorem pinnedRep_ι_h (i : Fin E7.rank) :
+    pinnedRep (_root_.UniversalEnvelopingAlgebra.ι ℚ ((E7.lieBasis valid_E7).h i)) =
+      rep (_root_.UniversalEnvelopingAlgebra.ι ℚ
+        (TauCeti.serreH ℚ weightTable.cartanMatrix i)) := by
+  rw [pinnedRep, AlgHom.comp_apply, UniversalEnvelopingAlgebra.map_ι, toSerre_h]
+
+/-- The pinned simple-root action is the existing Serre simple-root action. -/
+theorem pinnedRep_ι_rootGenerator (k : Fin E7.rank ⊕ Fin E7.rank) :
+    pinnedRep (_root_.UniversalEnvelopingAlgebra.ι ℚ
+      ((E7.lieBasis valid_E7).rootGenerator k)) =
+      rep (_root_.UniversalEnvelopingAlgebra.ι ℚ
+        (TauCeti.serreRootGenerator weightTable.cartanMatrix k)) := by
+  rw [pinnedRep, AlgHom.comp_apply, UniversalEnvelopingAlgebra.map_ι, toSerre_rootGenerator]
+
+/-- Simplifier normal form of the simple-root bridge to the Serre representation. -/
+@[simp] theorem pinnedRep_ι_rootGenerator' (k : Fin E7.rank ⊕ Fin E7.rank) :
+    (dsimp% only [rank] pinnedRep
+      (_root_.UniversalEnvelopingAlgebra.mkAlgHom ℚ (E7.lieAlgebra valid_E7)
+        (TensorAlgebra.ι ℚ ((E7.lieBasis valid_E7).rootGenerator k)))) =
+      rep (_root_.UniversalEnvelopingAlgebra.ι ℚ
+        (TauCeti.serreRootGenerator weightTable.cartanMatrix k)) := by
+  simpa only [rank, _root_.UniversalEnvelopingAlgebra.ι_apply] using pinnedRep_ι_rootGenerator k
+
 /-- The pinned Cartan generator acts diagonally with the numbered minuscule weights. -/
 theorem pinnedRep_h (i : Fin E7.rank) (v : Fin 56 → ℚ) (a : Fin 56) :
     pinnedRep (_root_.UniversalEnvelopingAlgebra.ι ℚ ((E7.lieBasis valid_E7).h i)) v a =
       (e7MinusculeWeight a i : ℚ) * v a := by
-  rw [pinnedRep, AlgHom.comp_apply, UniversalEnvelopingAlgebra.map_ι, toSerre_h,
-    rep_def, weightTable.rep_ι_apply, weightTable.rationalSerreRepresentation_serreH i]
+  rw [pinnedRep_ι_h, rep_def, weightTable.rep_ι_apply,
+    weightTable.rationalSerreRepresentation_serreH i]
   dsimp only [rank] at i
   simp [Matrix.mulVec, dotProduct, MinusculeWeightTable.cartanGeneratorMatrixQ_apply]
 
@@ -147,8 +173,7 @@ theorem pinnedRep_f (i : Fin E7.rank) (v : Fin 56 → ℚ) :
 theorem pinnedRep_rootGenerator_sq (k : Fin E7.rank ⊕ Fin E7.rank) :
     pinnedRep (_root_.UniversalEnvelopingAlgebra.ι ℚ
       ((E7.lieBasis valid_E7).rootGenerator k)) ^ 2 = 0 := by
-  rw [pinnedRep, AlgHom.comp_apply, UniversalEnvelopingAlgebra.map_ι, toSerre_rootGenerator,
-    rep_def]
+  rw [pinnedRep_ι_rootGenerator, rep_def]
   exact weightTable.rep_serreRootGenerator_pow_two k
 
 /-- Each minuscule lattice basis vector has its recorded weight for the pinned Cartan action. -/
@@ -157,7 +182,7 @@ theorem isCartanWeightVector_pinnedRep_latticeBasis (a : Fin 56) :
       (e7MinusculeWeight a) (latticeBasis a : Fin 56 → ℚ) := by
   apply (UniversalEnvelopingAlgebra.isCartanWeightVector_iff _ _).mpr
   intro i
-  rw [pinnedRep, AlgHom.comp_apply, UniversalEnvelopingAlgebra.map_ι, toSerre_h]
+  rw [pinnedRep_ι_h]
   exact (UniversalEnvelopingAlgebra.isCartanWeightVector_iff _ _).mp
     (isCartanWeightVector_latticeBasis a) i
 
@@ -165,7 +190,8 @@ theorem isCartanWeightVector_pinnedRep_latticeBasis (a : Fin 56) :
 theorem pinnedRep_ι_injective :
     Function.Injective fun x : E7.lieAlgebra valid_E7 =>
       pinnedRep (_root_.UniversalEnvelopingAlgebra.ι ℚ x) := by
-  apply representation_ι_injective_of_isCartanWeightVector_of_span_int valid_E7 pinnedRep
+  apply (E7.lieBasis valid_E7).representation_ι_injective_of_isCartanWeightVector_of_span_int
+    pinnedRep
     (v := fun a => (latticeBasis a : Fin 56 → ℚ))
     (hwt := isCartanWeightVector_pinnedRep_latticeBasis)
     (hspan := span_range_e7MinusculeWeight_eq_top)
@@ -205,8 +231,7 @@ standard coordinate lattice and fundamental-weight coordinates. -/
   basis := latticeBasis
   weight := e7MinusculeWeight
   isCartanWeightVector_basis := isCartanWeightVector_pinnedRep_latticeBasis
-  weightLatticeBasis := ChevalleyDatum.fullWeightLatticeBasis
-    (t := E7) span_range_e7MinusculeWeight_eq_top
+  weightLatticeBasis := ChevalleyDatum.fullWeightLatticeBasis span_range_e7MinusculeWeight_eq_top
 
 /-- The minuscule Chevalley datum has lattice rank fifty-six. -/
 @[simp] theorem chevalleyDatum_dim : chevalleyDatum.dim = 56 := (rfl)
@@ -234,8 +259,15 @@ standard coordinate lattice and fundamental-weight coordinates. -/
 @[simp] theorem coe_chevalleyDatum_weightLatticeBasis (i : Fin E7.rank) :
     (dsimp% only [rank] (chevalleyDatum.weightLatticeBasis i : Fin E7.rank → ℤ)) =
       Pi.single i 1 := by
-  exact ChevalleyDatum.coe_fullWeightLatticeBasis
-    (t := E7) span_range_e7MinusculeWeight_eq_top i
+  exact ChevalleyDatum.coe_fullWeightLatticeBasis span_range_e7MinusculeWeight_eq_top i
+
+/-- Reading the datum's character basis returns fundamental-weight coordinates. -/
+@[simp] theorem chevalleyDatum_weightLatticeBasis_repr
+    (μ : chevalleyDatum.weightLattice) (i : Fin E7.rank) :
+    (dsimp% only [rank] chevalleyDatum.weightLatticeBasis.repr μ i) =
+      (μ : Fin E7.rank → ℤ) i := by
+  exact chevalleyDatum.weightLatticeBasis_repr_of_coe_weightLatticeBasis
+    coe_chevalleyDatum_weightLatticeBasis μ i
 
 /-- Fundamental-weight torus coordinates are the original minuscule weights. -/
 @[simp] theorem chevalleyDatum_coordinateWeight :
