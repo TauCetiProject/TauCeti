@@ -53,6 +53,8 @@ to an idempotent lifting `x`.
 * `CompleteOrthogonalIdempotents.isSemisimpleRing_quotient_jacobson`: if `1` is a sum of
   orthogonal idempotents with local corners, the radical quotient is semisimple.
 * `TauCeti.IsSemiperfectRing.of_isLocalRing_corner`: **such a ring is semiperfect.**
+* `TauCeti.IsSemiperfectRing.of_linearEquiv_pi`: so is a ring that is a finite product of modules
+  with local endomorphism rings, as a left module over itself.
 * `TauCeti.isSemiperfectRing_iff_exists_completeOrthogonalIdempotents_isLocalRing_corner`: Lam's
   characterization.
 
@@ -267,6 +269,45 @@ theorem IsSemiperfectRing.of_isLocalRing_corner (he : CompleteOrthogonalIdempote
     simp [π]
 
 end Converse
+
+/-- **A decomposition of the ring into modules with local endomorphism rings makes it
+semiperfect.** If `A` is, as a left module over itself, isomorphic to a finite product of modules
+with local endomorphism rings, then `A` is semiperfect. -/
+theorem IsSemiperfectRing.of_linearEquiv_pi {n : ℕ} {P : Fin n → Type*}
+    [∀ i, AddCommGroup (P i)] [∀ i, Module A (P i)] [∀ i, IsLocalRing (Module.End A (P i))]
+    (φ : A ≃ₗ[A] ∀ i, P i) : IsSemiperfectRing A := by
+  classical
+  let e : Fin n → A := fun i ↦ φ.symm (Pi.single i (φ 1 i))
+  -- Right multiplication by `eᵢ` is the projection onto the `i`-th factor.
+  have hφ (x : A) (i : Fin n) : φ x i = x • φ 1 i := by
+    simpa using congrFun (φ.map_smul x 1) i
+  have hmul (x : A) (i : Fin n) : x * e i = φ.symm (Pi.single i (φ x i)) := by
+    rw [hφ x i, ← smul_eq_mul, ← map_smul, Pi.single_smul]
+  have hφe (i : Fin n) : φ (e i) = Pi.single i (φ 1 i) := φ.apply_symm_apply _
+  have he : CompleteOrthogonalIdempotents e := by
+    refine ⟨⟨fun i ↦ ?_, fun i j hij ↦ ?_⟩, ?_⟩
+    · rw [IsIdempotentElem, hmul, hφe, Pi.single_eq_same]
+    · beta_reduce
+      rw [hmul, hφe, Pi.single_eq_of_ne' hij, Pi.single_zero, map_zero]
+    · rw [← map_sum, Finset.univ_sum_single, φ.symm_apply_apply]
+  refine IsSemiperfectRing.of_isLocalRing_corner he fun i ↦ ?_
+  -- The left ideal `Aeᵢ` is the `i`-th factor.
+  let ψ : P i →ₗ[A] A := φ.symm.toLinearMap ∘ₗ LinearMap.single A P i
+  have hψ : Function.Injective ψ := fun a b hab ↦ Pi.single_injective i (φ.symm.injective hab)
+  have hrange : LinearMap.range ψ = (Ideal.span {e i} : Ideal A) := by
+    ext x
+    rw [LinearMap.mem_range, Ideal.mem_span_singleton']
+    constructor
+    · rintro ⟨y, rfl⟩
+      refine ⟨ψ y, ?_⟩
+      simp only [hmul, ψ, LinearMap.comp_apply, LinearEquiv.coe_coe, φ.apply_symm_apply,
+        LinearMap.coe_single, Pi.single_eq_same]
+    · rintro ⟨a, rfl⟩
+      exact ⟨φ a i, by rw [hmul]; rfl⟩
+  let iso : P i ≃ₗ[A] (Ideal.span {e i} : Ideal A) :=
+    (LinearEquiv.ofInjective ψ hψ).trans (LinearEquiv.ofEq _ _ hrange)
+  have : IsLocalRing (Module.End A (Ideal.span {e i} : Ideal A)) := iso.conjRingEquiv.isLocalRing
+  exact (he.idem i).isLocalRing_corner_of_isLocalRing_end
 
 /-- **Lam (23.6)**: a ring is semiperfect exactly when `1` is a sum of orthogonal idempotents with
 local corners, that is, when the ring is a finite direct sum of left ideals with local

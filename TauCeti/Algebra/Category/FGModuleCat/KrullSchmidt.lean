@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Category.FGModuleCat.Basic
 public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import Mathlib.RingTheory.Artinian.Defs
 public import TauCeti.Algebra.Category.FGModuleCat.Basic
-public import TauCeti.Algebra.Category.ModuleCat.FiniteLength
+public import TauCeti.Algebra.Category.ModuleCat.FiniteLength.Basic
 public import TauCeti.CategoryTheory.Preadditive.KrullSchmidt.Basic
 import TauCeti.Algebra.Category.ModuleCat.KrullSchmidt
 import TauCeti.CategoryTheory.Preadditive.KrullSchmidt.FullSubcategory
