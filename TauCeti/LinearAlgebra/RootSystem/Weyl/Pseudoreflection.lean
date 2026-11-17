@@ -269,10 +269,9 @@ private theorem weylGroupRootRep_mem_rootSpan (w : P.weylGroup) (x : M) (hx : x 
     hx
 
 /-- The restriction of `P.weylGroupRootRep` to the root span `P.rootSpan K`. -/
-private noncomputable def weylGroupRootSpanRep : Representation K P.weylGroup (P.rootSpan K) where
-  toFun w := (P.weylGroupRootRep w).restrict (P.weylGroupRootRep_mem_rootSpan w)
-  map_one' := by ext; simp
-  map_mul' u v := by ext; simp
+private noncomputable def weylGroupRootSpanRep : Representation K P.weylGroup (P.rootSpan K) :=
+  P.weylGroupRootRep.subrepresentation (P.rootSpan K) fun w x hx ↦
+    P.weylGroupRootRep_mem_rootSpan w x hx
 
 /-- Every Weyl-group element acts on `P.rootSpan K` with determinant `±1` (its square is `1`). -/
 private theorem det_weylGroupRootSpanRep_sq (w : P.weylGroup) :
