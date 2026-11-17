@@ -8,10 +8,10 @@ module
 public import Mathlib.Algebra.Homology.CochainComplexMinus
 public import Mathlib.Algebra.Homology.Double
 public import Mathlib.Algebra.Homology.HomotopyCategory.Plus
-public import Mathlib.CategoryTheory.Localization.OfQuotient
 public import TauCeti.Algebra.Homology.EssentiallySmall
 public import TauCeti.Algebra.Homology.Embedding.CochainComplex
 public import TauCeti.CategoryTheory.ObjectProperty
+import Mathlib.CategoryTheory.Localization.OfQuotient
 
 /-!
 # The homotopy category of bounded cochain complexes
