@@ -448,14 +448,6 @@ theorem relationSet_stabilizer_central {r : ℕ} {ζ : ℂ} (hζ : IsPrimitiveRo
   rw [hu_eq, Subgroup.mem_center_iff.mp hu'_center w⁻¹, inv_mul_cancel_right]
   exact hu'_center
 
-/-- Simultaneous conjugation of a family of pairs by a central element is trivial. -/
-private theorem toConjAct_smul_eq_self_of_mem_center {G ι : Type*} [Group G] {u : G}
-    (hu : u ∈ Subgroup.center G) (x : ι → G × G) :
-    ConjAct.toConjAct u • x = x :=
-  funext fun j => Prod.ext
-    (by rw [Pi.smul_apply, Prod.smul_fst, ConjAct.toConjAct_smul_eq_self_of_mem_center hu])
-    (by rw [Pi.smul_apply, Prod.smul_snd, ConjAct.toConjAct_smul_eq_self_of_mem_center hu])
-
 /-- **Exact conjugation stabilizers on `relationSet`.** When `IsPrimitiveRoot ζ r`, an element of
 `SU(r)` fixes `x ∈ relationSet r ζ g` under simultaneous conjugation if and only if it lies in the
 center of `SU(r)`. -/
@@ -466,7 +458,7 @@ theorem conjAct_toConjAct_smul_eq_self_iff_mem_center {r : ℕ} {ζ : ℂ}
     ConjAct.toConjAct u • x = x ↔
       u ∈ Subgroup.center (Matrix.specialUnitaryGroup (Fin r) ℂ) := by
   refine ⟨fun h => relationSet_stabilizer_central hζ hx fun j => ?_,
-    fun hu => toConjAct_smul_eq_self_of_mem_center hu x⟩
+    fun hu => ConjAct.toConjAct_smul_pi_prod_eq_self_of_mem_center hu x⟩
   have hj1 := congrArg Prod.fst (congrFun h j)
   have hj2 := congrArg Prod.snd (congrFun h j)
   simp only [Pi.smul_apply, Prod.smul_fst, Prod.smul_snd, ConjAct.toConjAct_smul,
@@ -486,7 +478,7 @@ noncomputable instance instMulActionQuotientCenterRelationSet (r : ℕ) (ζ : �
       ext x : 2
       simp only [φ, MonoidHom.comp_apply, MulAction.toPermHom_apply, MulAction.toPerm_apply,
         MulEquiv.coe_toMonoidHom, Equiv.Perm.coe_one, id_eq, conjAct_smul_relationSet_coe]
-      exact toConjAct_smul_eq_self_of_mem_center hu x.1
+      exact ConjAct.toConjAct_smul_pi_prod_eq_self_of_mem_center hu x.1
 
 /-- A coset `QuotientGroup.mk u` in `SU(r) ⧸ center(SU(r))` acts on `relationSet r ζ g` by
 simultaneous conjugation by `u`. -/

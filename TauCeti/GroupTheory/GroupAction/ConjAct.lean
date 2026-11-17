@@ -32,8 +32,9 @@ by conjugation on every transitive normal subgroup.
 ## Main statements
 
 * `ConjAct.mk_eq_mk_iff_isConj`: conjugation orbits are the classes of `IsConj`.
-* `ConjAct.toConjAct_smul_eq_self_of_mem_center`: conjugation by a central element fixes every
-  element of the group.
+* `ConjAct.toConjAct_smul_eq_self_of_mem_center`,
+  `ConjAct.toConjAct_smul_pi_prod_eq_self_of_mem_center`: conjugation by a central element fixes
+  every element of the group and every indexed family of pairs in the group.
 * `ConjAct.smul_eq_self_of_mem_center`, `ConjAct.smul_mul_of_mem_center`: conjugation fixes
   central elements and commutes with left multiplication by a central element.
 * `MonoidHom.map_conjNormal_val`: a homomorphism from a normal subgroup to a commutative monoid is
@@ -68,6 +69,15 @@ theorem ConjAct.mk_eq_mk_iff_isConj {G : Type*} [Group G] {x y : G} :
 theorem ConjAct.toConjAct_smul_eq_self_of_mem_center {G : Type*} [Group G] {u : G}
     (hu : u ∈ Subgroup.center G) (x : G) : ConjAct.toConjAct u • x = x := by
   rw [ConjAct.toConjAct_smul, ← Subgroup.mem_center_iff.mp hu x, mul_inv_cancel_right]
+
+/-- Simultaneous conjugation of an indexed family of pairs by a central element fixes every
+entry. -/
+theorem ConjAct.toConjAct_smul_pi_prod_eq_self_of_mem_center {G ι : Type*} [Group G] {u : G}
+    (hu : u ∈ Subgroup.center G) (x : ι → G × G) :
+    ConjAct.toConjAct u • x = x :=
+  funext fun j => Prod.ext
+    (by rw [Pi.smul_apply, Prod.smul_fst, ConjAct.toConjAct_smul_eq_self_of_mem_center hu])
+    (by rw [Pi.smul_apply, Prod.smul_snd, ConjAct.toConjAct_smul_eq_self_of_mem_center hu])
 
 /-- Every conjugation fixes a central element of the group. -/
 theorem ConjAct.smul_eq_self_of_mem_center {G : Type*} [Group G] (u : ConjAct G) {c : G}
