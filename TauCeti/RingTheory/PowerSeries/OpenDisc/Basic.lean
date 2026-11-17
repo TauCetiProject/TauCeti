@@ -53,7 +53,8 @@ on the open unit disc (`PowerSeries.onOpenDisc_log`).
 ## Main definitions
 
 * `PowerSeries.OnOpenDisc`: `f` is restricted at every radius `0 < r < R₀`.
-* `PowerSeries.OnOpenDisc.subring`: the subring of series on the open disc of radius `R₀`.
+* `PowerSeries.OnOpenDisc.subring`: the subring of series on the open disc of radius `R₀`, with
+  coefficient algebra structure `PowerSeries.OnOpenDisc.instAlgebraSubring`.
 
 ## Main results
 
@@ -328,6 +329,35 @@ noncomputable def OnOpenDisc.polynomialHom : Polynomial R →+* OnOpenDisc.subri
 theorem OnOpenDisc.coe_polynomialHom (p : Polynomial R) :
     (OnOpenDisc.polynomialHom (R₀ := R₀) p : R⟦X⟧) = p :=
   RingHom.codRestrict_apply _ _ _ p
+
+/-- An algebra structure on the coefficients induces one on open-disc power series through constant
+series. Scalars act as on the ambient formal series, and the coefficient ring need not be
+commutative. -/
+noncomputable instance OnOpenDisc.instAlgebraSubring {S : Type*} [CommSemiring S] [Algebra S R] :
+    Algebra S (OnOpenDisc.subring R R₀) :=
+  TauCeti.PowerSeries.algebraOfCMem _ fun a ↦ OnOpenDisc.mem_subring.mpr (onOpenDisc_C a)
+
+/-- A scalar maps to the constant open-disc series of its image in the coefficient ring. -/
+@[simp]
+theorem OnOpenDisc.coe_algebraMap_subring {S : Type*} [CommSemiring S] [Algebra S R] (s : S) :
+    (algebraMap S (OnOpenDisc.subring R R₀) s : R⟦X⟧) = C (algebraMap S R s) :=
+  TauCeti.PowerSeries.coe_algebraMap_algebraOfCMem _
+    (fun a ↦ OnOpenDisc.mem_subring.mpr (onOpenDisc_C a)) s
+
+/-- Scalars act on open-disc series as on their underlying formal power series. -/
+@[simp]
+theorem OnOpenDisc.coe_smul_subring {S : Type*} [CommSemiring S] [Algebra S R] (s : S)
+    (h : OnOpenDisc.subring R R₀) :
+    ((s • h : OnOpenDisc.subring R R₀) : R⟦X⟧) = s • (h : R⟦X⟧) :=
+  TauCeti.PowerSeries.coe_smul_algebraOfCMem _
+    (fun a ↦ OnOpenDisc.mem_subring.mpr (onOpenDisc_C a)) s h
+
+/-- Scalar towers on the coefficients induce scalar towers on open-disc power series. -/
+instance {S T : Type*} [CommSemiring S] [CommSemiring T] [Algebra S R] [Algebra T R]
+    [SMul S T] [IsScalarTower S T R] :
+    IsScalarTower S T (OnOpenDisc.subring R R₀) :=
+  TauCeti.PowerSeries.isScalarTower_algebraOfCMem _
+    fun a ↦ OnOpenDisc.mem_subring.mpr (onOpenDisc_C a)
 
 variable (R) in
 /-- The subring of series on the open disc of radius `R₀` shrinks as `R₀` grows. -/
