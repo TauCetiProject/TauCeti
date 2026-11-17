@@ -7,14 +7,16 @@ module
 
 public import Mathlib.NumberTheory.DirichletCharacter.Basic
 public import Mathlib.Data.Nat.GCD.BigOperators
+import TauCeti.NumberTheory.MulChar.Basic
 
 /-!
 # Dirichlet character conductors
 
 Inversion preserves primitivity, and a primitive character is trivial exactly at level one. An
 injective change of coefficient ring preserves factorization through a lower level, hence the
-conductor and primitivity of a Dirichlet character. The conductor of a product of Dirichlet
-characters with pairwise coprime conductors is the product of their conductors.
+conductor and primitivity of a Dirichlet character; for a quadratic character, any ring
+homomorphism into a commutative ring with `2 ≠ 0` suffices. The conductor of a product of
+Dirichlet characters with pairwise coprime conductors is the product of their conductors.
 -/
 
 public section
@@ -26,7 +28,7 @@ theorem IsPrimitive.eq_one_iff {R : Type*} [CommMonoidWithZero R] {n : ℕ} [NeZ
     {χ : DirichletCharacter R n} (hχ : χ.IsPrimitive) : χ = 1 ↔ n = 1 := by
   rw [eq_one_iff_conductor_eq_one, (isPrimitive_def _).mp hχ]
 
-/-! ### Injective changes of the coefficient ring -/
+/-! ### Injective and characteristic-≠ 2 changes of the coefficient ring -/
 
 /-- Factoring a Dirichlet character through a lower level is unchanged by an injective change of
 coefficient ring. -/
@@ -54,6 +56,43 @@ theorem isPrimitive_ringHomComp_iff {R R' : Type*} [CommRing R] [CommRing R']
     {n : ℕ} (χ : DirichletCharacter R n) (f : R →+* R')
     (hf : Function.Injective f) : IsPrimitive (χ.ringHomComp f) ↔ IsPrimitive χ := by
   rw [isPrimitive_def, isPrimitive_def, conductor_ringHomComp χ f hf]
+
+/-- Factoring a quadratic Dirichlet character through a lower level is unchanged by any ring
+homomorphism into a commutative ring with `2 ≠ 0`, since `1` and `-1` remain distinct there. -/
+theorem factorsThrough_ringHomComp_iff_of_isQuadratic {R R' : Type*} [CommRing R] [CommRing R']
+    [NeZero (2 : R')] {n d : ℕ} [NeZero n] {χ : DirichletCharacter R n} (hχ : χ.IsQuadratic)
+    (f : R →+* R') :
+    FactorsThrough (χ.ringHomComp f) d ↔ FactorsThrough χ d := by
+  by_cases hd : d ∣ n
+  · rw [factorsThrough_iff_ker_unitsMap hd, factorsThrough_iff_ker_unitsMap hd]
+    suffices (χ.ringHomComp f).toUnitHom.ker = χ.toUnitHom.ker by rw [this]
+    ext u
+    simp only [MonoidHom.mem_ker, Units.ext_iff, MulChar.coe_toUnitHom, MulChar.ringHomComp_apply,
+      Units.val_one]
+    refine ⟨fun hu ↦ ?_, fun hu ↦ by rw [hu, map_one]⟩
+    rcases hχ.apply_eq_one_or_eq_neg_one u.isUnit with h | h
+    · exact h
+    · rw [h, map_neg, map_one, neg_eq_iff_add_eq_zero, one_add_one_eq_two] at hu
+      exact absurd hu (NeZero.ne (2 : R'))
+  · exact iff_of_false (mt FactorsThrough.dvd hd) (mt FactorsThrough.dvd hd)
+
+/-- Any ring homomorphism into a commutative ring with `2 ≠ 0` preserves the conductor of a
+quadratic Dirichlet character. -/
+theorem conductor_ringHomComp_of_isQuadratic {R R' : Type*} [CommRing R] [CommRing R']
+    [NeZero (2 : R')] {n : ℕ} {χ : DirichletCharacter R n} (hχ : χ.IsQuadratic)
+    (f : R →+* R') :
+    conductor (χ.ringHomComp f) = conductor χ := by
+  obtain rfl | _ := eq_zero_or_neZero n
+  · simp only [conductor_eq_zero_iff_level_eq_zero.mpr]
+  exact congrArg sInf (Set.ext fun _ ↦ factorsThrough_ringHomComp_iff_of_isQuadratic hχ f)
+
+/-- Any ring homomorphism into a commutative ring with `2 ≠ 0` preserves primitivity of a
+quadratic Dirichlet character. -/
+theorem isPrimitive_ringHomComp_iff_of_isQuadratic {R R' : Type*} [CommRing R] [CommRing R']
+    [NeZero (2 : R')] {n : ℕ} {χ : DirichletCharacter R n} (hχ : χ.IsQuadratic)
+    (f : R →+* R') :
+    IsPrimitive (χ.ringHomComp f) ↔ IsPrimitive χ := by
+  rw [isPrimitive_def, isPrimitive_def, conductor_ringHomComp_of_isQuadratic hχ f]
 
 /-! ### Products with coprime conductors -/
 

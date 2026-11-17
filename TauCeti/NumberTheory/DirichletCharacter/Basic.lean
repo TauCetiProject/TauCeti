@@ -48,6 +48,8 @@ case the descent uses is `d = L N / p` with `p ∣ N` coprime to `L`, where the 
   character at an integer prime to the new level.
 * `DirichletCharacter.apply_intCast_eq_of_forall_isCoprime`: characters of equal levels agreeing
   at the integers prime to the level agree at every integer.
+* `DirichletCharacter.eq_changeLevel_iff_forall_isCoprime`: a character at level `N` is the lift
+  of a character at `d ∣ N` iff they agree at every integer prime to `N`.
 * `DirichletCharacter.one_natCast`: the trivial character modulo `N` is `1` at the natural numbers
   prime to `N` and `0` at the others.
 * `DirichletCharacter.apply_eq_one_of_conductor_dvd`: a character is `1` at every integer prime
@@ -313,6 +315,20 @@ theorem apply_intCast_eq_of_forall_isCoprime {R : Type*} [CommMonoidWithZero R] 
   · subst hNM
     rw [χ.map_nonunit (by rwa [ZMod.isUnit_intCast_iff_isCoprime, isCoprime_comm]),
       ψ.map_nonunit (by rwa [ZMod.isUnit_intCast_iff_isCoprime, isCoprime_comm])]
+
+/-- A Dirichlet character at level `N` is the lift of a character `ψ` at a divisor `d ∣ N`
+exactly when the two agree at every integer coprime to `N`. -/
+theorem eq_changeLevel_iff_forall_isCoprime {R : Type*} [CommMonoidWithZero R] {N d : ℕ}
+    (h : d ∣ N) {χ : DirichletCharacter R N} {ψ : DirichletCharacter R d} :
+    χ = changeLevel h ψ ↔ ∀ n : ℤ, IsCoprime n N → χ n = ψ n := by
+  refine ⟨fun hEq n hn ↦ ?_, fun hval ↦ ?_⟩
+  · rw [hEq, changeLevel_eq_cast_of_dvd' ψ h hn]
+  · refine MulChar.ext fun u ↦ ?_
+    obtain ⟨n, hn⟩ := ZMod.intCast_surjective (u : ZMod N)
+    have hcop : IsCoprime n N := by
+      rw [isCoprime_comm, ← ZMod.isUnit_intCast_iff_isCoprime, hn]
+      exact u.isUnit
+    rw [← hn, changeLevel_eq_cast_of_dvd' ψ h hcop, hval n hcop]
 
 /-- **The trivial character at a natural number.** The trivial character modulo `N` is `1` at the
 natural numbers prime to `N` and `0` at the others. -/
