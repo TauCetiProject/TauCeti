@@ -13,8 +13,8 @@ public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeGroup.WeilRestriction
 /-!
 # Restriction of scalars on adelic points
 
-Let `E / F` be an extension of number fields and `G = Spec H` an affine monoid or group scheme of
-finite presentation over `E`, with Weil restriction `Res_{E/F} G = Spec (WeilRestriction F E H)`
+Let `E / F` be an extension of number fields and `G = Spec H` an affine monoid or group scheme
+over `E`, with Weil restriction `Res_{E/F} G = Spec (WeilRestriction F E H)`
 over `F`. Combining the topological Weil restriction adjunction with the continuous scalar-extension
 isomorphisms `𝔸_F ⊗[F] E ≃A[𝔸_F] 𝔸_E`, `𝔸_F^f ⊗[F] E ≃A[𝔸_F^f] 𝔸_E^f`, and `F_∞ ⊗[F] E ≃A[F_∞] E_∞`
 identifies the adelic points of `Res_{E/F} G` over `F` with the adelic points of `G` over `E` as
@@ -139,10 +139,10 @@ end Lemmas
 section Adelic
 
 variable (F E H : Type*) [Field F] [NumberField F] [Field E] [NumberField E] [Algebra F E]
-  [CommRing H] [Bialgebra E H] [Algebra.FinitePresentation E H]
+  [CommRing H] [Bialgebra E H]
 
 /-- **Restriction of scalars on adelic points.** For an extension `E / F` of number fields and a
-finitely presented commutative `E`-bialgebra `H` (a coordinate Hopf algebra when `G = Spec H` is an
+commutative `E`-bialgebra `H` (a coordinate Hopf algebra when `G = Spec H` is an
 affine algebraic group over `E`), the Weil restriction point isomorphism followed by the adelic
 scalar-extension equivalence `E ⊗[F] 𝔸_F ≃ 𝔸_F ⊗[F] E ≃ 𝔸_E` is a topological multiplicative
 equivalence `(Res_{E/F} G)(𝔸_F) ≃ₜ* G(𝔸_E)` (an isomorphism of topological groups when `H` is a
@@ -314,7 +314,6 @@ variable {F E : Type*} [Field F] [NumberField F] [Field E] [NumberField E] [Alge
 with homomorphisms `φ : H₁ →ₐc[E] H₂` of affine monoid or group schemes over `E`. -/
 theorem adelicPointsContinuousMulEquiv_mapDomain_mapBialgHom
     {H₁ H₂ : Type*} [CommRing H₁] [CommRing H₂] [Bialgebra E H₁] [Bialgebra E H₂]
-    [Algebra.FinitePresentation E H₁] [Algebra.FinitePresentation E H₂]
     (φ : H₁ →ₐc[E] H₂)
     (x : WithConv (WeilRestriction F E H₂ →ₐ[F] AdeleRing (𝓞 F) F)) :
     adelicPointsContinuousMulEquiv F E H₁ (BialgHom.mapDomain (mapBialgHom F E φ) x) =
@@ -326,7 +325,6 @@ theorem adelicPointsContinuousMulEquiv_mapDomain_mapBialgHom
 /-- **Naturality of `finiteAdelicPointsContinuousMulEquiv`** in morphisms `φ : H₁ →ₐc[E] H₂`. -/
 theorem finiteAdelicPointsContinuousMulEquiv_mapDomain_mapBialgHom
     {H₁ H₂ : Type*} [CommRing H₁] [CommRing H₂] [Bialgebra E H₁] [Bialgebra E H₂]
-    [Algebra.FinitePresentation E H₁] [Algebra.FinitePresentation E H₂]
     (φ : H₁ →ₐc[E] H₂)
     (x : WithConv (WeilRestriction F E H₂ →ₐ[F] FiniteAdeleRing (𝓞 F) F)) :
     finiteAdelicPointsContinuousMulEquiv F E H₁ (BialgHom.mapDomain (mapBialgHom F E φ) x) =
@@ -338,7 +336,6 @@ theorem finiteAdelicPointsContinuousMulEquiv_mapDomain_mapBialgHom
 /-- **Naturality of `infiniteAdelicPointsContinuousMulEquiv`** in morphisms `φ : H₁ →ₐc[E] H₂`. -/
 theorem infiniteAdelicPointsContinuousMulEquiv_mapDomain_mapBialgHom
     {H₁ H₂ : Type*} [CommRing H₁] [CommRing H₂] [Bialgebra E H₁] [Bialgebra E H₂]
-    [Algebra.FinitePresentation E H₁] [Algebra.FinitePresentation E H₂]
     (φ : H₁ →ₐc[E] H₂)
     (x : WithConv (WeilRestriction F E H₂ →ₐ[F] InfiniteAdeleRing F)) :
     infiniteAdelicPointsContinuousMulEquiv F E H₁ (BialgHom.mapDomain (mapBialgHom F E φ) x) =
@@ -353,7 +350,7 @@ an `𝔸_F`-point of `Res_{L/F} G` with `WeilRestriction.compBialgEquiv` and app
 comparison. -/
 theorem adelicPointsContinuousMulEquiv_mapDomain_compBialgEquiv
     {L H : Type*} [Field L] [NumberField L] [Algebra E L] [Algebra F L] [IsScalarTower F E L]
-    [CommRing H] [Bialgebra L H] [Algebra.FinitePresentation L H]
+    [CommRing H] [Bialgebra L H]
     (x : WithConv (WeilRestriction F L H →ₐ[F] AdeleRing (𝓞 F) F)) :
     adelicPointsContinuousMulEquiv E L H
         (adelicPointsContinuousMulEquiv F E (WeilRestriction E L H)
@@ -372,7 +369,7 @@ theorem adelicPointsContinuousMulEquiv_mapDomain_compBialgEquiv
 /-- **Tower compatibility on finite adeles.** -/
 theorem finiteAdelicPointsContinuousMulEquiv_mapDomain_compBialgEquiv
     {L H : Type*} [Field L] [NumberField L] [Algebra E L] [Algebra F L] [IsScalarTower F E L]
-    [CommRing H] [Bialgebra L H] [Algebra.FinitePresentation L H]
+    [CommRing H] [Bialgebra L H]
     (x : WithConv (WeilRestriction F L H →ₐ[F] FiniteAdeleRing (𝓞 F) F)) :
     finiteAdelicPointsContinuousMulEquiv E L H
         (finiteAdelicPointsContinuousMulEquiv F E (WeilRestriction E L H)
@@ -391,7 +388,7 @@ theorem finiteAdelicPointsContinuousMulEquiv_mapDomain_compBialgEquiv
 /-- **Tower compatibility on infinite adeles.** -/
 theorem infiniteAdelicPointsContinuousMulEquiv_mapDomain_compBialgEquiv
     {L H : Type*} [Field L] [NumberField L] [Algebra E L] [Algebra F L] [IsScalarTower F E L]
-    [CommRing H] [Bialgebra L H] [Algebra.FinitePresentation L H]
+    [CommRing H] [Bialgebra L H]
     (x : WithConv (WeilRestriction F L H →ₐ[F] InfiniteAdeleRing F)) :
     infiniteAdelicPointsContinuousMulEquiv E L H
         (infiniteAdelicPointsContinuousMulEquiv F E (WeilRestriction E L H)
@@ -412,7 +409,7 @@ end NaturalityAndTower
 section LocalPlaces
 
 variable (F E H : Type*) [Field F] [NumberField F] [Field E] [NumberField E] [Algebra F E]
-  [CommRing H] [Bialgebra E H] [Algebra.FinitePresentation E H]
+  [CommRing H] [Bialgebra E H]
 
 /-- **Local decomposition at a finite place.** At a finite place `v` of `F`, the `F_v`-points of
 `Res_{E/F} G` decompose as the topological product over the finite places `w ∣ v` of `E` of the

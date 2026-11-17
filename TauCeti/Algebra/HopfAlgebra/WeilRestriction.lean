@@ -260,15 +260,6 @@ theorem pointsMulEquiv_naturality {T' : Type*} [CommRing T'] [Algebra A T'] (h :
   WithConv.ofConv_injective <| by
     rw [pointsMulEquiv_apply, ofConv_toConv, ofConv_toConv, homEquiv_comp, pointsMulEquiv_apply]
 
-/-- Naturality of `WeilRestriction.pointsMulEquiv` in the `A`-algebra `T`, stated through
-`AlgHom.mapValue`. -/
-theorem pointsMulEquiv_mapValue {T' : Type*} [CommRing T'] [Algebra A T'] (h : T →ₐ[A] T')
-    (f : WithConv (WeilRestriction A B H →ₐ[A] T)) :
-    pointsMulEquiv A B H T' (AlgHom.mapValue h f) =
-      AlgHom.mapValue (Algebra.TensorProduct.lTensor (S := B) B h)
-        (pointsMulEquiv A B H T f) := by
-  simpa only [AlgHom.mapValue_apply] using pointsMulEquiv_naturality h f
-
 end Points
 
 variable (A B H) in
@@ -508,7 +499,7 @@ section Composition
 variable (A B C H : Type*) [CommRing A] [CommRing B] [CommRing C] [CommRing H]
   [Algebra A B] [Algebra B C] [Algebra A C] [IsScalarTower A B C]
   [Module.Finite A B] [Module.Projective A B] [Module.Finite B C] [Module.Projective B C]
-  [Bialgebra C H] [Algebra.FinitePresentation C H]
+  [Bialgebra C H]
 
 /-- The two-step convolution point equivalence for an iterated Weil restriction, cancelling the
 intermediate scalar extension `B`. -/
@@ -623,8 +614,7 @@ theorem pointsMulEquiv_mapDomain_compBialgEquiv {T : Type*} [CommRing T] [Algebr
   exact compPointsMulEquiv_comp_compAlgEquiv (B := B) x
 
 /-- `WeilRestriction.compBialgEquiv` is natural in bialgebra morphisms `φ : H →ₐc[C] H'`. -/
-theorem compBialgEquiv_naturality {H' : Type*} [CommRing H'] [Bialgebra C H']
-    [Algebra.FinitePresentation C H'] (φ : H →ₐc[C] H') :
+theorem compBialgEquiv_naturality {H' : Type*} [CommRing H'] [Bialgebra C H'] (φ : H →ₐc[C] H') :
     (compBialgEquiv A B C H' :
         WeilRestriction A B (WeilRestriction B C H') →ₐc[A] WeilRestriction A C H').comp
         (mapBialgHom A B (mapBialgHom B C φ)) =
@@ -640,7 +630,7 @@ section BaseChange
 section Single
 
 variable (A B H : Type*) [CommRing A] [CommRing B] [CommRing H] [Algebra A B]
-  [Module.Finite A B] [Module.Projective A B] [Bialgebra B H] [Algebra.FinitePresentation B H]
+  [Module.Finite A B] [Module.Projective A B] [Bialgebra B H]
 variable {T S : Type*} [CommRing T] [CommRing S] [Algebra A T] [Algebra B S] [Algebra T S]
 
 /-- **Points of a Weil restriction along a scalar-extension equivalence.** Given
@@ -694,7 +684,8 @@ theorem pointsMulEquivOfBaseChange_mapValue_ofId (e : T ⊗[A] B ≃ₐ[T] S)
       Algebra.TensorProduct.lTensor (S := B) B (Algebra.ofId A T)
         ((pointsMulEquiv A B H A x).ofConv h) := by
     simpa only [AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_apply] using
-      DFunLike.congr_fun (congrArg WithConv.ofConv (pointsMulEquiv_mapValue (Algebra.ofId A T) x)) h
+      DFunLike.congr_fun
+        (congrArg WithConv.ofConv (pointsMulEquiv_naturality (Algebra.ofId A T) x)) h
   rw [pointsMulEquivOfBaseChange_apply, h1, AlgHom.mapValue_apply, ofConv_toConv,
     AlgHom.comp_apply, Algebra.ofId_apply, basePointsMulEquiv_apply]
   induction (pointsMulEquiv A B H A x).ofConv h using TensorProduct.inductionOn with
@@ -720,7 +711,7 @@ theorem pointsMulEquivOfBaseChange_mapValue {T' S' : Type*} [CommRing T'] [CommR
   have h1 : (pointsMulEquiv A B H T' (AlgHom.mapValue pT x)).ofConv h =
       Algebra.TensorProduct.lTensor (S := B) B pT ((pointsMulEquiv A B H T x).ofConv h) := by
     simpa only [AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_apply] using
-      DFunLike.congr_fun (congrArg WithConv.ofConv (pointsMulEquiv_mapValue pT x)) h
+      DFunLike.congr_fun (congrArg WithConv.ofConv (pointsMulEquiv_naturality pT x)) h
   rw [pointsMulEquivOfBaseChange_apply, h1, AlgHom.mapValue_apply, ofConv_toConv,
     AlgHom.comp_apply, pointsMulEquivOfBaseChange_apply]
   induction (pointsMulEquiv A B H T x).ofConv h using TensorProduct.inductionOn with
@@ -736,8 +727,7 @@ end Single
 theorem pointsMulEquivOfBaseChange_mapDomain_mapBialgHom {A B H₁ H₂ T S : Type*}
     [CommRing A] [CommRing B] [CommRing H₁] [CommRing H₂] [CommRing T] [CommRing S]
     [Algebra A B] [Module.Finite A B] [Module.Projective A B]
-    [Bialgebra B H₁] [Bialgebra B H₂] [Algebra.FinitePresentation B H₁]
-    [Algebra.FinitePresentation B H₂] [Algebra A T] [Algebra B S] [Algebra T S]
+    [Bialgebra B H₁] [Bialgebra B H₂] [Algebra A T] [Algebra B S] [Algebra T S]
     (e : T ⊗[A] B ≃ₐ[T] S) (he : ∀ b : B, e (1 ⊗ₜ[A] b) = algebraMap B S b)
     (φ : H₁ →ₐc[B] H₂) (x : WithConv (WeilRestriction A B H₂ →ₐ[A] T)) :
     pointsMulEquivOfBaseChange A B H₁ e he (BialgHom.mapDomain (mapBialgHom A B φ) x) =
@@ -757,8 +747,7 @@ theorem pointsMulEquivOfBaseChange_mapDomain_compBialgEquiv {A B C H T S₁ S₂
     [CommRing A] [CommRing B] [CommRing C] [CommRing H] [CommRing T] [CommRing S₁] [CommRing S₂]
     [Algebra A B] [Algebra B C] [Algebra A C] [IsScalarTower A B C]
     [Module.Finite A B] [Module.Projective A B] [Module.Finite B C] [Module.Projective B C]
-    [Module.Finite A C] [Module.Projective A C]
-    [Bialgebra C H] [Algebra.FinitePresentation C H]
+    [Module.Finite A C] [Module.Projective A C] [Bialgebra C H]
     [Algebra A T] [Algebra B S₁] [Algebra T S₁] [Algebra C S₂] [Algebra S₁ S₂] [Algebra T S₂]
     (e₁₂ : T ⊗[A] B ≃ₐ[T] S₁) (he₁₂ : ∀ b : B, e₁₂ (1 ⊗ₜ[A] b) = algebraMap B S₁ b)
     (e₂₃ : S₁ ⊗[B] C ≃ₐ[S₁] S₂) (he₂₃ : ∀ c : C, e₂₃ (1 ⊗ₜ[B] c) = algebraMap C S₂ c)
@@ -793,7 +782,8 @@ theorem pointsMulEquivOfBaseChange_mapDomain_compBialgEquiv {A B C H T S₁ S₂
       | add u v hu hv => simp only [TensorProduct.tmul_add, map_add, hu, hv]
     | add z₁ z₂ hz₁ hz₂ => simp only [map_add, hz₁, hz₂]
   simp only [pointsMulEquivOfBaseChange, MulEquiv.trans_apply, AlgEquiv.mapValueMulEquiv_apply]
-  rw [pointsMulEquiv_mapValue, ← MonoidHom.comp_apply, ← AlgHom.mapValue_comp, hcomp,
+  rw [AlgHom.mapValue_apply ψ₁₂, pointsMulEquiv_naturality, ← AlgHom.mapValue_apply,
+    ← MonoidHom.comp_apply, ← AlgHom.mapValue_comp, hcomp,
     AlgHom.mapValue_comp, MonoidHom.comp_apply,
     ← AlgEquiv.mapValueMulEquiv_apply (Algebra.TensorProduct.cancelBaseChange A B C C T),
     pointsMulEquiv_mapDomain_compBialgEquiv (B := B)]

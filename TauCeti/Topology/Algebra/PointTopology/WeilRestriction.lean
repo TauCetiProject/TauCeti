@@ -22,7 +22,7 @@ this to a homeomorphism between `A`-points of the Weil restriction and `B`-point
 This identifies rational point topologies under restriction of scalars, for example for finite
 extensions of local fields and for the real points of the Deligne torus.
 
-When `H` is a finitely presented commutative `B`-bialgebra (or Hopf algebra), these homeomorphisms
+When `H` is a commutative `B`-bialgebra (or Hopf algebra), these homeomorphisms
 upgrade to topological multiplicative equivalences of convolution monoids (or topological groups)
 `pointsContinuousMulEquiv` and `basePointsContinuousMulEquiv`. Given a continuous scalar-extension
 equivalence `T ⊗[A] B ≃A[T] S` sending `1 ⊗ b` to `algebraMap B S b`,
@@ -186,13 +186,12 @@ section General
 attribute [local instance] Algebra.TensorProduct.rightAlgebra
 
 variable (A B H T : Type*) [CommRing A] [CommRing B] [CommRing H] [CommRing T]
-  [Algebra A B] [Module.Finite A B] [Module.Projective A B]
-  [Bialgebra B H] [Algebra.FinitePresentation B H]
+  [Algebra A B] [Module.Finite A B] [Module.Projective A B] [Bialgebra B H]
   [Algebra A T] [TopologicalSpace T] [IsTopologicalRing T]
   [TopologicalSpace (B ⊗[A] T)] [IsModuleTopology T (B ⊗[A] T)]
 
 /-- **The Weil restriction adjunction as a topological multiplicative equivalence.** When `H` is a
-finitely presented commutative `B`-bialgebra and `B ⊗[A] T` carries its right `T`-module topology,
+commutative `B`-bialgebra and `B ⊗[A] T` carries its right `T`-module topology,
 `WeilRestriction.pointsMulEquiv` is a topological multiplicative equivalence (hence a topological
 group isomorphism when `H` is a Hopf algebra). -/
 def pointsContinuousMulEquiv :
@@ -235,8 +234,7 @@ end General
 section BasePoints
 
 variable (A B H : Type*) [CommRing A] [CommRing B] [CommRing H]
-  [Algebra A B] [Module.Finite A B] [Module.Projective A B]
-  [Bialgebra B H] [Algebra.FinitePresentation B H]
+  [Algebra A B] [Module.Finite A B] [Module.Projective A B] [Bialgebra B H]
   [TopologicalSpace A] [IsTopologicalRing A] [TopologicalSpace B] [IsModuleTopology A B]
 
 /-- **Rational points of the Weil restriction as a topological monoid or group.** When `B` carries
@@ -292,7 +290,7 @@ section BaseChange
 attribute [local instance] Algebra.TensorProduct.rightAlgebra
 
 variable (A B H : Type*) [CommRing A] [CommRing B] [CommRing H] [Algebra A B]
-  [Module.Finite A B] [Module.Projective A B] [Bialgebra B H] [Algebra.FinitePresentation B H]
+  [Module.Finite A B] [Module.Projective A B] [Bialgebra B H]
 variable {T S : Type*} [CommRing T] [CommRing S] [Algebra A T] [Algebra B S] [Algebra T S]
   [TopologicalSpace T] [IsTopologicalRing T] [TopologicalSpace S]
   [TopologicalSpace (T ⊗[A] B)] [IsModuleTopology T (T ⊗[A] B)]
