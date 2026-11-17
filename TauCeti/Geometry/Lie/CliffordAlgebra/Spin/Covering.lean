@@ -77,7 +77,8 @@ theorem exists_realCliffordSpinSmoothCoveringTrivialization (n : ℕ)
         ContMDiffOn 𝓘(ℝ, SpecialOrthogonalLieModel(n)) 𝓘(ℝ, SpinLieModel(n)) ∞
           (fun z ↦ t.toOpenPartialHomeomorph.symm (z, a)) t.baseSet := by
   have hmap : ⇑(realCliffordSpinToSpecialOrthogonalSmoothRange n) =
-      ⇑(realCliffordSpinToSpecialOrthogonalRange n) := by
+      ⇑(spinToSpecialOrthogonalUnitsRange
+        (show QuadraticForm ℝ (Fin n → ℝ) from realCliffordForm n 0)) := by
     funext x
     exact realCliffordSpinToSpecialOrthogonalSmoothRange_apply n x
   have hcover : IsCoveringMap (realCliffordSpinToSpecialOrthogonalSmoothRange n) := by

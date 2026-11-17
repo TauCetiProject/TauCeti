@@ -48,6 +48,8 @@ computation every matrix model of a Lie algebra performs on its root vectors.
   term by the block-diagonal sum of the idempotent matrices of its outer terms.
 * `LinearMap.toMatrix_mulVec_eq_repr`: the coordinate vector of `φ (∑ j, x j • v j)` is the
   matrix of `φ` applied to `x`.
+* `LinearMap.toMatrixAlgEquiv_eq_toMatrix`: `LinearMap.toMatrixAlgEquiv b f` agrees with
+  `LinearMap.toMatrix b b f`.
 * `Matrix.linearIndependent_row_one`: over any semiring, the rows of an identity matrix are
   linearly independent.
 * `Algebra.toLin_leftMulMatrix`: the linear map of the left multiplication matrix of `x` is left
@@ -210,6 +212,13 @@ theorem toMatrix_mulVec_eq_repr {R V M ι κ : Type*} [CommSemiring R] [AddCommM
     toMatrix v b φ *ᵥ x = b.repr (φ (∑ j, x j • v j)) := by
   rw [← v.equivFun_symm_apply, ← toMatrix_mulVec_repr v b, ← v.equivFun_apply,
     LinearEquiv.apply_symm_apply]
+
+/-- Evaluating `LinearMap.toMatrixAlgEquiv` on an endomorphism returns its `LinearMap.toMatrix`
+in the same basis. -/
+theorem toMatrixAlgEquiv_eq_toMatrix {R M n : Type*} [CommSemiring R] [AddCommMonoid M]
+    [Module R M] [Fintype n] [DecidableEq n] (b : Module.Basis n R M) (f : M →ₗ[R] M) :
+    LinearMap.toMatrixAlgEquiv b f = LinearMap.toMatrix b b f :=
+  rfl
 
 end LinearMap
 

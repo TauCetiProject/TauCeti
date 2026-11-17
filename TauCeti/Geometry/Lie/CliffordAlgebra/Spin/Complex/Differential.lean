@@ -8,6 +8,7 @@ module
 import TauCeti.Analysis.SpecialFunctions.Exponential
 import TauCeti.Geometry.Lie.Adjoint.Units.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Vectors
+import TauCeti.LinearAlgebra.Matrix.ToLin
 public import TauCeti.Geometry.Lie.CliffordAlgebra.Spin.Complex.Projection
 public import TauCeti.Geometry.Lie.CliffordAlgebra.Spin.Complex.Representation
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Quadratic.Realization
@@ -424,12 +425,6 @@ variable {n : ℕ} {Q : QuadraticForm ℂ (Fin n → ℂ)} (P : SpinPolarization
   {κ : Type*} [Fintype κ] [DecidableEq κ]
   (b : Module.Basis κ ℂ (ExteriorAlgebra ℂ P.W)) [Fact Q.Nondegenerate]
 
-omit [Fact Q.Nondegenerate] in
-private theorem toMatrixAlgEquiv_eq_toMatrix (f : Module.End ℂ (ExteriorAlgebra ℂ P.W)) :
-    LinearMap.toMatrixAlgEquiv b f = LinearMap.toMatrix b b f := by
-  ext i j
-  simp [LinearMap.toMatrixAlgEquiv_apply, LinearMap.toMatrix_apply]
-
 private theorem unitsLieAlgebraLieEquiv_lieMap_complexSpinSmoothMatrixHom_symm
     (x : quadraticLieSubalgebra Q) :
     TauCeti.Lie.unitsLieAlgebraLieEquiv
@@ -437,7 +432,7 @@ private theorem unitsLieAlgebraLieEquiv_lieMap_complexSpinSmoothMatrixHom_symm
           ((complexSpinLieEquivQuadratic (Q := Q)).symm
             ((RestrictScalars.addEquiv ℝ ℂ (quadraticLieSubalgebra Q)).symm x))) =
       ((LinearMap.toMatrixAlgEquiv b).toAlgHom.comp (spinAction Q P)) x := by
-  simp [toMatrixAlgEquiv_eq_toMatrix]
+  simp [LinearMap.toMatrixAlgEquiv_eq_toMatrix]
 
 /-- The real differential of the smooth Fock representation `P.complexSpinSmoothMatrixHom b`,
 upgraded to a `ℂ`-linear Lie algebra homomorphism on `quadraticLieSubalgebra Q`. -/
@@ -473,7 +468,7 @@ theorem complexSpinSmoothMatrixComplexLieHom_apply (x : quadraticLieSubalgebra Q
     P.complexSpinSmoothMatrixComplexLieHom b x = LinearMap.toMatrix b b (spinAction Q P x) := by
   rw [complexSpinSmoothMatrixComplexLieHom_apply',
     unitsLieAlgebraLieEquiv_lieMap_complexSpinSmoothMatrixHom_symm,
-    AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, toMatrixAlgEquiv_eq_toMatrix]
+    AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, LinearMap.toMatrixAlgEquiv_eq_toMatrix]
 
 /-- `P.complexSpinSmoothMatrixComplexLieHom b` equals the `ℂ`-linear matrix Fock algebra
 homomorphism restricted to `quadraticLieSubalgebra Q`. -/
@@ -482,7 +477,7 @@ theorem complexSpinSmoothMatrixComplexLieHom_eq :
       (((LinearMap.toMatrixAlgEquiv b).toAlgHom.comp (spinAction Q P)).toLieHom).comp
         (quadraticLieSubalgebra Q).incl := by
   ext x
-  simp [toMatrixAlgEquiv_eq_toMatrix]
+  simp [LinearMap.toMatrixAlgEquiv_eq_toMatrix]
 
 /-- **Spin–SO differential intertwining on Clifford generators.** Bracketing the differentiated Fock
 representation `d(spinRep)(x)` with the Fock operator of a vector `v` produces the Fock operator of
@@ -499,7 +494,7 @@ theorem lie_complexSpinSmoothMatrixComplexLieHom_ι_eq
   let φ : CliffordAlgebra Q →ₐ[ℂ] Matrix κ κ ℂ :=
     (LinearMap.toMatrixAlgEquiv b).toAlgHom.comp (spinAction Q P)
   have hφ (z : CliffordAlgebra Q) : LinearMap.toMatrix b b (spinAction Q P z) = φ z := by
-    simp [φ, toMatrixAlgEquiv_eq_toMatrix]
+    simp [φ, LinearMap.toMatrixAlgEquiv_eq_toMatrix]
   have hlie : ⁅φ x, φ (ι Q v)⁆ = φ ⁅(x : CliffordAlgebra Q), ι Q v⁆ :=
     (φ.toLieHom.map_lie (x : CliffordAlgebra Q) (ι Q v)).symm
   rw [complexSpinSmoothMatrixComplexLieHom_apply, hφ, hφ, hφ, hlie,

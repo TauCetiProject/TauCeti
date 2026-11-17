@@ -28,7 +28,7 @@ Clifford algebra or a Spin group.
 
 ## Main results
 
-* `TauCeti.QuadraticMap.isEmbedding_specialOrthogonalToGeneralLinear` and
+* `QuadraticMap.isEmbedding_specialOrthogonalToGeneralLinear` and
   `QuadraticMap.specialOrthogonalContinuousMulEquivRange`: the coordinate inclusion is a
   topological embedding for any `[DecidableEq n]` and identifies `SO(Q)` with its range in
   `GL(n, R)` as a topological group.
@@ -77,7 +77,7 @@ end ClassicalTopology
 
 /-- The coordinate inclusion of a special orthogonal group is a topological embedding for any
 decidable-equality instance on `n`. -/
-theorem _root_.TauCeti.QuadraticMap.isEmbedding_specialOrthogonalToGeneralLinear
+theorem _root_.QuadraticMap.isEmbedding_specialOrthogonalToGeneralLinear
     [inst : DecidableEq n] (Q : QuadraticMap R (n → R) N) :
     Topology.IsEmbedding (Q.specialOrthogonalToGeneralLinear) := by
   obtain rfl : inst = Classical.decEq n := Subsingleton.elim _ _
@@ -92,7 +92,7 @@ attribute [local instance] Classical.decEq
 instance _root_.TauCeti.QuadraticMap.instT2SpaceSpecialOrthogonalGroupPi [T2Space R]
     (Q : QuadraticMap R (n → R) N) :
     T2Space (specialOrthogonalGroup Q) :=
-  (isEmbedding_specialOrthogonalToGeneralLinear Q).t2Space
+  Q.isEmbedding_specialOrthogonalToGeneralLinear.t2Space
 
 /-- The inclusion of a special orthogonal group in coordinates into the linear automorphism
 group is continuous for the coordinate topology. So every subset of `SO(Q)` that is open for its
@@ -104,7 +104,7 @@ theorem _root_.TauCeti.QuadraticMap.continuous_coe_specialOrthogonalGroup_pi
       ((g : (n → R) ≃ₗ[R] (n → R)) : Module.End R (n → R)) := by
     refine ((Pi.basisFun R n).continuous_iff_apply _).mpr fun j ↦ continuous_pi fun i ↦ ?_
     simpa using (Units.continuous_val.comp
-      (isEmbedding_specialOrthogonalToGeneralLinear Q).continuous).matrix_elem i j
+      Q.isEmbedding_specialOrthogonalToGeneralLinear.continuous).matrix_elem i j
   refine continuous_linearEquiv_iff.mpr ⟨hcoe, ?_⟩
   exact (hcoe.comp continuous_inv).congr fun g ↦ by rw [Function.comp_apply, Subgroup.coe_inv]
 
@@ -118,7 +118,7 @@ end TauCeti
 
 namespace QuadraticMap
 
-open TauCeti.QuadraticMap (specialOrthogonalGroup isEmbedding_specialOrthogonalToGeneralLinear)
+open TauCeti.QuadraticMap (specialOrthogonalGroup)
 
 noncomputable section
 
@@ -135,9 +135,9 @@ variable {n : Type u} [Fintype n] [DecidableEq n]
 def specialOrthogonalContinuousMulEquivRange (Q : QuadraticMap R (n → R) N) :
     specialOrthogonalGroup Q ≃ₜ* MonoidHom.range Q.specialOrthogonalToGeneralLinear :=
   (⟨Q.specialOrthogonalToGeneralLinear,
-    (isEmbedding_specialOrthogonalToGeneralLinear Q).continuous⟩ :
+    Q.isEmbedding_specialOrthogonalToGeneralLinear.continuous⟩ :
       specialOrthogonalGroup Q →ₜ* Matrix.GeneralLinearGroup n R).equivRangeOfIsEmbedding
-    (isEmbedding_specialOrthogonalToGeneralLinear Q)
+    Q.isEmbedding_specialOrthogonalToGeneralLinear
 
 /-- The topological equivalence with the general-linear range sends an element of `SO(Q)` to its
 coordinate matrix unit. -/

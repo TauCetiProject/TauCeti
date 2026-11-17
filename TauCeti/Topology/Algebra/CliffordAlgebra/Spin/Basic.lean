@@ -237,8 +237,7 @@ theorem continuous_spinToSpecialOrthogonal_pi [Invertible (2 : R)]
     [IsModuleTopology R (n → R)] [ContinuousMul (CliffordAlgebra Q)] :
     Continuous (spinToSpecialOrthogonal Q) := by
   classical
-  apply (TauCeti.QuadraticMap.isEmbedding_specialOrthogonalToGeneralLinear
-    Q).isInducing.continuous_iff.mpr
+  apply Q.isEmbedding_specialOrthogonalToGeneralLinear.isInducing.continuous_iff.mpr
   have h : Continuous
       ((QuadraticMap.specialOrthogonalToGeneralLinear Q).comp
         (spinToSpecialOrthogonal Q)) := by

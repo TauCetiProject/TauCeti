@@ -14,6 +14,7 @@ public import TauCeti.Geometry.Lie.Exponential.OneParameter
 public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Basic
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Tactic.LinearCombination
+import TauCeti.Analysis.Normed.Algebra.MatrixExponential
 import TauCeti.Analysis.Normed.Ring.Idempotent
 import TauCeti.LinearAlgebra.QuadraticForm.Matrix
 import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Coordinate
@@ -68,23 +69,6 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 attribute [local instance] Matrix.linftyOpTopologicalSpace TauCeti.normedAlgebraRatOfReal
 attribute [local instance] NormedAlgebra.toNormedSpace
 
-private theorem hasDerivAt_exp_smul_transpose_mul_mul_exp_smul
-    (J A : Matrix n n 𝕜) (t : ℝ) :
-    HasDerivAt
-      (fun s : ℝ ↦ (exp (s • A))ᵀ * J * exp (s • A))
-      (exp (t • Aᵀ) * (Aᵀ * J + J * A) * exp (t • A)) t := by
-  have hexpT (B : Matrix n n 𝕜) : (exp B)ᵀ = exp Bᵀ := by
-    convert (exp_transpose B).symm <;> exact Matrix.linftyOpTopologicalSpace_eq n n 𝕜
-  have hfn : (fun s : ℝ ↦ (exp (s • A))ᵀ * J * exp (s • A)) =
-      fun s : ℝ ↦ exp (s • Aᵀ) * J * exp (s • A) := by
-    funext s
-    rw [hexpT, ← IsScalarTower.algebraMap_smul 𝕜 s A, Matrix.transpose_smul,
-      IsScalarTower.algebraMap_smul]
-  rw [hfn]
-  have hleft := (hasDerivAt_exp_smul_const Aᵀ t).mul_const J
-  have hright := hasDerivAt_exp_smul_const' A t
-  exact (hleft.fun_mul hright).congr_deriv (by noncomm_ring)
-
 /-- The matrix exponential of an element of `skewAdjointMatricesLieSubalgebra J` preserves `J`,
 without any invertibility or symmetry assumption on `J`. -/
 theorem exp_transpose_mul_mul_exp_of_mem_skewAdjointMatricesLieSubalgebra
@@ -96,8 +80,9 @@ theorem exp_transpose_mul_mul_exp_of_mem_skewAdjointMatricesLieSubalgebra
     rw [hA, mul_neg, neg_add_cancel]
   let f : ℝ → Matrix n n 𝕜 := fun s ↦ (exp (s • A))ᵀ * J * exp (s • A)
   have hf (t : ℝ) : HasDerivAt f 0 t := by
-    simpa only [f, hskew, mul_zero, zero_mul] using
-      hasDerivAt_exp_smul_transpose_mul_mul_exp_smul J A t
+    have h := hasDerivAt_exp_smul_transpose_mul_mul_exp_smul J A t
+    rw [hskew, mul_zero, zero_mul] at h
+    convert h <;> exact Matrix.linftyOpTopologicalSpace_eq n n 𝕜
   have hconst := _root_.is_const_of_deriv_eq_zero
     (fun t ↦ (hf t).differentiableAt) (fun t ↦ (hf t).deriv) 1 0
   simpa only [f, one_smul, zero_smul, exp_zero, transpose_one, one_mul, mul_one] using hconst
@@ -113,7 +98,11 @@ theorem forall_exp_smul_transpose_mul_mul_eq_iff_mem_skewAdjointMatricesLieSubal
   · intro h
     have hconst : HasDerivAt (fun s : ℝ ↦ (exp (s • A))ᵀ * J * exp (s • A)) 0 0 := by
       simpa only [funext h] using hasDerivAt_const (0 : ℝ) J
-    have h0 := (hasDerivAt_exp_smul_transpose_mul_mul_exp_smul J A 0).unique hconst
+    have hderiv : HasDerivAt (fun s : ℝ ↦ (exp (s • A))ᵀ * J * exp (s • A))
+        (exp ((0 : ℝ) • Aᵀ) * (Aᵀ * J + J * A) * exp ((0 : ℝ) • A)) 0 := by
+      convert hasDerivAt_exp_smul_transpose_mul_mul_exp_smul J A (0 : ℝ) <;>
+        exact Matrix.linftyOpTopologicalSpace_eq n n 𝕜
+    have h0 := hderiv.unique hconst
     simp only [zero_smul, exp_zero, one_mul, mul_one] at h0
     simp only [mem_skewAdjointMatricesLieSubalgebra, mem_skewAdjointMatricesSubmodule,
       Matrix.IsSkewAdjoint, Matrix.IsAdjointPair]

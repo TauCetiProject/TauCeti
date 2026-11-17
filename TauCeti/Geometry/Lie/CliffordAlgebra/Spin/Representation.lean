@@ -19,8 +19,8 @@ Spin-group representation with its algebraically constructed orthogonal Lie-alge
 We work with an algebra homomorphism into an arbitrary finite-dimensional normed real algebra,
 so the result applies to matrix actions as well as endomorphism actions. The group is represented
 by its closed range in Clifford units, with the established embedded Lie-group structure.
-Transport along `realCliffordSpinContinuousMulEquivUnitsRange` recovers the original Spin group.
-The final comparison uses the actual differential of the Spin-to-SO projection to identify
+Transport along `CliffordAlgebra.spinGroupContinuousMulEquivUnitsRange` recovers the original Spin
+group. The final comparison uses the actual differential of the Spin-to-SO projection to identify
 the quadratic source coordinate of a prescribed skew-symmetric matrix.
 
 ## Main results

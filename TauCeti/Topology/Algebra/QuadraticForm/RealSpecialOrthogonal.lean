@@ -62,8 +62,8 @@ determinant-one sum-of-squares isometries is continuous. -/
 theorem continuous_matrixSpecialOrthogonalEquivWeightedSumSquaresOne
     (ι : Type u) [Fintype ι] :
     Continuous (matrixSpecialOrthogonalEquivWeightedSumSquaresOne ι) := by
-  rw [(isEmbedding_specialOrthogonalToGeneralLinear
-    (_root_.QuadraticMap.weightedSumSquares ℝ (1 : ι → ℝ))).continuous_iff]
+  rw [(_root_.QuadraticMap.weightedSumSquares ℝ
+    (1 : ι → ℝ)).isEmbedding_specialOrthogonalToGeneralLinear.continuous_iff]
   have hc : Continuous (fun (A : Matrix.specialOrthogonalGroup ι ℝ) =>
       Unitary.toUnits (⟨A, A.prop.1⟩ : Matrix.orthogonalGroup ι ℝ)) := by
     exact Unitary.continuous_toUnits.comp (continuous_subtype_val.subtype_mk _)
