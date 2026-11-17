@@ -202,23 +202,14 @@ private theorem jetField_zero_ae :
 
 private theorem jetField_add_ae (u v : W1p mu Omega p) :
     jetField (u + v) =ᵐ[mu.restrict Omega] fun x => jetField u x + jetField v x := by
-  have hval : W1p.value (u + v) = W1p.value u + W1p.value v := by
-    simp only [← W1p.valueL_apply, map_add]
-  have hgrad : W1p.gradient (u + v) = W1p.gradient u + W1p.gradient v := by
-    simp only [← W1p.gradientL_apply, map_add]
-  filter_upwards [Lp.coeFn_add (W1p.value u) (W1p.value v),
-    Lp.coeFn_add (W1p.gradient u) (W1p.gradient v)] with x hx hy
-  simp only [jetField_apply, hval, hgrad]
+  filter_upwards [W1p.value_add_ae u v, W1p.gradient_add_ae u v] with x hx hy
+  simp only [jetField_apply]
   exact Prod.ext hx hy
 
 private theorem jetField_smul_ae (r : ℝ) (u : W1p mu Omega p) :
     jetField (r • u) =ᵐ[mu.restrict Omega] fun x => r • jetField u x := by
-  have hval : W1p.value (r • u) = r • W1p.value u := by
-    simp only [← W1p.valueL_apply, map_smul]
-  have hgrad : W1p.gradient (r • u) = r • W1p.gradient u := by
-    simp only [← W1p.gradientL_apply, map_smul]
-  filter_upwards [Lp.coeFn_smul r (W1p.value u), Lp.coeFn_smul r (W1p.gradient u)] with x hx hy
-  simp only [jetField_apply, hval, hgrad]
+  filter_upwards [W1p.value_smul_ae r u, W1p.gradient_smul_ae r u] with x hx hy
+  simp only [jetField_apply]
   exact Prod.ext hx hy
 
 /-- The jet field of a Sobolev function belongs to `Lᵖ(Ω)`: both of its components do, by the
