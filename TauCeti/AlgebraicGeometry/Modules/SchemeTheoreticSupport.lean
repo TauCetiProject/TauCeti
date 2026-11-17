@@ -9,7 +9,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.ClosedImmersion
 public import TauCeti.AlgebraicGeometry.Modules.Annihilator
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Stalk
-import TauCeti.AlgebraicGeometry.AffineScheme
+import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 import TauCeti.AlgebraicGeometry.Modules.AffineRestriction
 import TauCeti.AlgebraicGeometry.Modules.Pullback.BaseChange
 import TauCeti.AlgebraicGeometry.Modules.Pushforward.Basic

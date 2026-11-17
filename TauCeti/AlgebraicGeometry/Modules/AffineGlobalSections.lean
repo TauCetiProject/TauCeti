@@ -12,7 +12,7 @@ public import TauCeti.AlgebraicGeometry.Modules.Localization
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Colimits
 public import Mathlib.Algebra.Category.ModuleCat.EpiMono
 public import Mathlib.Algebra.Homology.ShortComplex.ExactFunctor
-import TauCeti.AlgebraicGeometry.AffineScheme
+import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 
 /-!
 # Global sections of quasicoherent modules on an affine scheme
