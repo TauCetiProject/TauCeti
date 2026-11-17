@@ -14,7 +14,8 @@ public import TauCeti.Algebra.Homology.LinearYoneda
 For a ring `k` and a `k`-module `M`, evaluation on the unit chain of each simplex identifies
 `Hom_k(C_n(K; k), M)` with functions from the `n`-simplices of `K` to `M`. This identification
 is integral-linear, including for noncommutative rings. The cochain differential becomes the
-alternating sum of values on faces, and pullback becomes precomposition on simplices.
+alternating sum of values on faces, pullback becomes precomposition on simplices, and a change
+of coefficients acts on the values.
 The simplicial set `K : SSet.{u}` may live in a different universe from `k`. The file assumes
 `HasCoproducts.{u} (ModuleCat k)`, that is, coproducts of `k`-modules indexed by every type in
 the universe `u` of `K`, as Mathlib's `SSet.chainComplex` requires. They exist, for example, when
@@ -109,6 +110,12 @@ lemma cochainValuesEquiv_chainComplexMap {L : SSet.{u}} (f : K ⟶ L) (n : ℕ)
       cochainValuesEquiv k M L n φ (f.app _ σ) := by
   rw [cochainValuesEquiv_apply, cochainValuesEquiv_apply, ← ModuleCat.comp_apply,
     ι_chainComplexMap_f_assoc, ModuleCat.comp_apply]
+
+/-- Changing the coefficients of a cochain along `g : M ⟶ N` applies `g` to each of its values. -/
+lemma cochainValuesEquiv_comp {N : ModuleCat.{w} k} (n : ℕ)
+    (φ : (K.chainComplex (ModuleCat.of k k)).X n ⟶ M) (g : M ⟶ N) (σ : K _⦋n⦌) :
+    cochainValuesEquiv k N K n (φ ≫ g) σ = g (cochainValuesEquiv k M K n φ σ) := by
+  rw [cochainValuesEquiv_apply, cochainValuesEquiv_apply, ModuleCat.comp_apply]
 
 end Ring
 
