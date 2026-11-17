@@ -36,8 +36,10 @@ The proof follows Bergh–Löfström, Theorems 6.4.3 and 6.4.5(1), by exhibiting
   `(2^{jsᵢ} Δⱼ u)ⱼ ∈ ℓ^{qᵢ}(ℕ, Lᵖ)` is a linear isometry on each endpoint, and on the ambient
   sequences both routes send `u` to its unweighted blocks `(Δⱼ u)ⱼ`.
 * **Synthesis** (`TauCeti.BesovSpace.ofWeightedBlocksCLM`,
-  `TauCeti.CompatibleCouple.weightedLpToBesovSum`): if `Δₘ Δⱼ = 0` for `|m - j| ≥ L`, the enlarged
-  multipliers `Δ'ⱼ = ∑_{j - L ≤ m < j + L} Δₘ` satisfy `Δ'ⱼ Δⱼ = Δⱼ` and `Δₖ Δ'ⱼ = 0` for
+  `TauCeti.CompatibleCouple.weightedLpToBesovSum`): with the explicit overlap width
+  `L = φ.littlewoodPaleyOverlap φ` (`ContDiffBump.littlewoodPaleyOverlap`), the enlarged
+  multipliers `Δ'ⱼ = ∑_{j + 1 - L ≤ m < j + L} Δₘ`
+  (`TemperedDistribution.enlargedLittlewoodPaleyBlock`) satisfy `Δ'ⱼ Δⱼ = Δⱼ` and `Δₖ Δ'ⱼ = 0` for
   `|k - j| ≥ 2 L`. For `b ∈ ℓ^q(ℕ, Lᵖ)`, the series `∑ⱼ Δ'ⱼ (2^{-js} bⱼ)` converges in `𝓢'(E, F)`
   because `J^{s-1} Δ'ⱼ (2^{-js} bⱼ)` has `Lᵖ` norm `O(2^{-j} ‖b‖)`, and bounded overlap controls
   its Besov norm by a constant multiple of `‖b‖` independent of `p` and `q`. On a distribution
@@ -49,12 +51,12 @@ The proof follows Bergh–Löfström, Theorems 6.4.3 and 6.4.5(1), by exhibiting
 
 ## Main declarations
 
-* `TauCeti.BesovSpace.toDistrCLM_injective`: injectivity of the tempered-distribution inclusion
-  `B^s_{p,q} →L[ℂ] 𝓢'(E, F)`.
 * `TauCeti.BesovSpace.ofWeightedBlocksCLM`: the Littlewood–Paley synthesis retraction
-  `ℓ^q(Lᵖ) →L[ℂ] B^s_{p,q}`, left inverse to `TauCeti.BesovSpace.weightedBlocksₗᵢ`
-  (`TauCeti.BesovSpace.ofWeightedBlocksCLM_weightedBlocks`), with operator norm bounded uniformly in
-  `p` and `q` (`TauCeti.BesovSpace.exists_norm_ofWeightedBlocksCLM_le`).
+  `ℓ^q(Lᵖ) →L[ℂ] B^s_{p,q}`, characterized on every sequence by the series
+  `TauCeti.BesovSpace.hasSum_enlargedLittlewoodPaleyBlock_ofWeightedBlocksCLM`, left inverse to
+  `TauCeti.BesovSpace.weightedBlocksₗᵢ` (`TauCeti.BesovSpace.ofWeightedBlocksCLM_weightedBlocks`),
+  with operator norm bounded uniformly in `p` and `q`
+  (`TauCeti.BesovSpace.exists_norm_ofWeightedBlocksCLM_le`).
 * `TauCeti.CompatibleCouple.besov`: the compatible couple `(B^{s₀}_{p,q₀}, B^{s₁}_{p,q₁})` inside
   `𝓢'(E, F)`.
 * `TauCeti.CompatibleCouple.besovToWeightedLpSum` and
@@ -95,130 +97,58 @@ section Retraction
 
 variable {φ : ContDiffBump (0 : E)} {s : ℝ} {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
 
-theorem toDistrCLM_injective : Function.Injective (toDistrCLM F φ s p q) :=
-  fun _ _ h ↦ ext <| by simpa only [toDistrCLM_apply] using h
-
 omit [Fact (1 ≤ q)] in
 private theorem inv_weight_smul_weightedBlocks_apply (u : BesovSpace F φ s p q) (j : ℕ) :
     (((2 : ℝ) ^ (s * j) : ℝ) : ℂ)⁻¹ • u.weightedBlocks j = u.block j := by
   rw [u.weightedBlocks_apply, inv_smul_smul₀ (Complex.ofReal_ne_zero.2 (by positivity))]
 
-/-- The index separation beyond which Littlewood–Paley blocks of `φ` annihilate one another. Kept
-private so that `Classical.choose` never enters public types. -/
-private def overlapWidth (F : Type*) [NormedAddCommGroup F] [NormedSpace ℂ F]
-    (φ : ContDiffBump (0 : E)) : ℕ :=
-  (exists_littlewoodPaleyBlock_compL_eq_zero (F := F) φ φ).choose
-
-omit [CompleteSpace F] in
-private theorem littlewoodPaleyBlock_littlewoodPaleyBlock_eq_zero
-    (φ : ContDiffBump (0 : E)) {j k : ℕ}
-    (hjk : j + overlapWidth F φ ≤ k ∨ k + overlapWidth F φ ≤ j) (u : 𝓢'(E, F)) :
-    littlewoodPaleyBlock F φ j (littlewoodPaleyBlock F φ k u) = 0 := by
-  have hL := (exists_littlewoodPaleyBlock_compL_eq_zero (F := F) φ φ).choose_spec
-  rcases hjk with hjk | hkj
-  · exact congr($((hL j k hjk).1) u)
-  · exact congr($((hL k j hkj).2) u)
-
-/-- The enlarged Littlewood–Paley multiplier `Δ'ⱼ = ∑_{j - L ≤ m < j + L} Δₘ`, corresponding to an
-enlarged cutoff `ContDiffBump.enlargedLittlewoodPaley` that equals `1` on the support of `ψⱼ`. -/
-private def enlargedBlock (F : Type*) [NormedAddCommGroup F] [NormedSpace ℂ F]
-    (φ : ContDiffBump (0 : E)) (j : ℕ) : 𝓢'(E, F) →L[ℂ] 𝓢'(E, F) :=
-  ∑ m ∈ Finset.Ico (j - overlapWidth F φ) (j + overlapWidth F φ), littlewoodPaleyBlock F φ m
-
-omit [CompleteSpace F] in
-/-- `Δ'ⱼ Δⱼ = Δⱼ`: every block outside `[j - L, j + L)` annihilates `Δⱼ u`, so the window sum
-reconstructs `Δⱼ u`. -/
-private theorem enlargedBlock_littlewoodPaleyBlock (φ : ContDiffBump (0 : E)) (j : ℕ)
-    (u : 𝓢'(E, F)) :
-    enlargedBlock F φ j (littlewoodPaleyBlock F φ j u) = littlewoodPaleyBlock F φ j u := by
-  rw [enlargedBlock, _root_.sum_apply]
-  refine sum_littlewoodPaleyBlock_eq_self φ _ fun m hm ↦ ?_
-  rw [Finset.mem_Ico, not_and_or, not_le, not_lt] at hm
-  refine littlewoodPaleyBlock_littlewoodPaleyBlock_eq_zero φ ?_ u
-  rcases hm with hm | hm
-  · exact Or.inl (by omega)
-  · exact Or.inr hm
-
-omit [CompleteSpace F] in
-/-- `Δₖ Δ'ⱼ = 0` when `|k - j| ≥ 2 L`. -/
-private theorem littlewoodPaleyBlock_enlargedBlock_eq_zero (φ : ContDiffBump (0 : E)) {j k : ℕ}
-    (hjk : k + 2 * overlapWidth F φ ≤ j ∨ j + 2 * overlapWidth F φ ≤ k) (u : 𝓢'(E, F)) :
-    littlewoodPaleyBlock F φ k (enlargedBlock F φ j u) = 0 := by
-  rw [enlargedBlock, _root_.sum_apply, map_sum]
-  refine Finset.sum_eq_zero fun m hm ↦ ?_
-  rw [Finset.mem_Ico] at hm
-  refine littlewoodPaleyBlock_littlewoodPaleyBlock_eq_zero φ ?_ u
-  rcases hjk with hjk | hjk
-  · exact Or.inl (by omega)
-  · exact Or.inr (by omega)
-
-/-- The enlarged multipliers `Δ'ⱼ` are bounded on `Lᵖ`, uniformly in `j` and `p`. -/
-private theorem exists_enlargedBlock_eq_and_norm_le (φ : ContDiffBump (0 : E)) :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] (j : ℕ) (f : Lp F p (volume : Measure E)),
-      ∃ g : Lp F p (volume : Measure E),
-        enlargedBlock F φ j (f : 𝓢'(E, F)) = g ∧ ‖g‖ ≤ C * ‖f‖ := by
-  obtain ⟨C₀, hC₀⟩ := exists_littlewoodPaleyBlock_eq_and_norm_le (F := F) φ
-  set L := overlapWidth F φ
-  refine ⟨2 * L * max C₀ 0, by positivity, fun {p} _ j f ↦ ?_⟩
-  choose g hg hgC using fun m ↦ hC₀ (p := p) m f
-  refine ⟨∑ m ∈ Finset.Ico (j - L) (j + L), g m, ?_, ?_⟩
-  · rw [enlargedBlock, _root_.sum_apply, Lp.toTemperedDistribution_sum]
-    exact Finset.sum_congr rfl fun m _ ↦ hg m
-  · calc ‖∑ m ∈ Finset.Ico (j - L) (j + L), g m‖
-        ≤ ∑ _ ∈ Finset.Ico (j - L) (j + L), max C₀ 0 * ‖f‖ :=
-          (norm_sum_le _ _).trans (Finset.sum_le_sum fun m _ ↦
-            (hgC m).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg f)))
-      _ = (Finset.Ico (j - L) (j + L)).card * (max C₀ 0 * ‖f‖) := by
-          rw [Finset.sum_const, nsmul_eq_mul]
-      _ ≤ 2 * L * (max C₀ 0 * ‖f‖) := by
-          gcongr
-          rw [Nat.card_Ico]
-          exact_mod_cast (by omega)
-      _ = 2 * L * max C₀ 0 * ‖f‖ := by ring
-
 /-- `J^t Δ'ⱼ` acts on `Lᵖ` with norm `O(2^{jt})`, uniformly in `j` and `p`. -/
-private theorem exists_besselPotential_enlargedBlock_eq_and_norm_le
-    (φ : ContDiffBump (0 : E)) (t : ℝ) :
+private theorem exists_besselPotential_enlargedLittlewoodPaleyBlock_eq_and_norm_le
+    (φ : ContDiffBump (0 : E)) (L : ℕ) (t : ℝ) :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] (j : ℕ) (f : Lp F p (volume : Measure E)),
       ∃ g : Lp F p (volume : Measure E),
-        besselPotential E F t (enlargedBlock F φ j (f : 𝓢'(E, F))) = g ∧
+        besselPotential E F t (enlargedLittlewoodPaleyBlock F φ L j (f : 𝓢'(E, F))) = g ∧
           ‖g‖ ≤ C * 2 ^ (t * j) * ‖f‖ := by
   obtain ⟨C₀, hC₀⟩ := exists_littlewoodPaleyBlock_eq_and_norm_le (F := F) φ
   obtain ⟨C₁, hC₁, hJ⟩ := exists_besselPotential_littlewoodPaleyBlock_eq_and_norm_le (F := F) φ t
-  set L := overlapWidth F φ
   set K : ℝ := C₁ * 2 ^ (|t| * L) * max C₀ 0
   refine ⟨2 * L * K, by positivity, fun {p} _ j f ↦ ?_⟩
   choose u hu huC using fun m ↦ hC₀ (p := p) m f
   choose g hg hgC using fun m ↦ hJ (p := p) m (f : 𝓢'(E, F)) (u m) (hu m)
-  refine ⟨∑ m ∈ Finset.Ico (j - L) (j + L), g m, ?_, ?_⟩
-  · rw [enlargedBlock, _root_.sum_apply, map_sum, Lp.toTemperedDistribution_sum]
+  refine ⟨∑ m ∈ Finset.Ico (j + 1 - L) (j + L), g m, ?_, ?_⟩
+  · rw [enlargedLittlewoodPaleyBlock_eq_sum_Ico, _root_.sum_apply, map_sum,
+      Lp.toTemperedDistribution_sum]
     exact Finset.sum_congr rfl fun m _ ↦ hg m
-  · have hgm (m : ℕ) (hm : m ∈ Finset.Ico (j - L) (j + L)) : ‖g m‖ ≤ K * 2 ^ (t * j) * ‖f‖ := by
+  · have hgm (m : ℕ) (hm : m ∈ Finset.Ico (j + 1 - L) (j + L)) :
+        ‖g m‖ ≤ K * 2 ^ (t * j) * ‖f‖ := by
+      have hm' : m ∈ Finset.Ico (j - L) (j + L) :=
+        Finset.mem_Ico.2 ⟨by have := (Finset.mem_Ico.1 hm).1; omega, (Finset.mem_Ico.1 hm).2⟩
       calc ‖g m‖ ≤ C₁ * 2 ^ (t * m) * ‖u m‖ := hgC m
         _ ≤ C₁ * (2 ^ (|t| * L) * 2 ^ (t * j)) * (max C₀ 0 * ‖f‖) := by
           gcongr
-          · exact Real.rpow_mul_natCast_le_of_mem_Ico one_le_two t hm
+          · exact Real.rpow_mul_natCast_le_of_mem_Ico one_le_two t hm'
           · exact (huC m).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg f))
         _ = K * 2 ^ (t * j) * ‖f‖ := by ring
-    calc ‖∑ m ∈ Finset.Ico (j - L) (j + L), g m‖
-        ≤ ∑ _ ∈ Finset.Ico (j - L) (j + L), K * 2 ^ (t * j) * ‖f‖ :=
+    calc ‖∑ m ∈ Finset.Ico (j + 1 - L) (j + L), g m‖
+        ≤ ∑ _ ∈ Finset.Ico (j + 1 - L) (j + L), K * 2 ^ (t * j) * ‖f‖ :=
           (norm_sum_le _ _).trans (Finset.sum_le_sum hgm)
-      _ = (Finset.Ico (j - L) (j + L)).card * (K * 2 ^ (t * j) * ‖f‖) := by
+      _ = (Finset.Ico (j + 1 - L) (j + L)).card * (K * 2 ^ (t * j) * ‖f‖) := by
           rw [Finset.sum_const, nsmul_eq_mul]
       _ ≤ 2 * L * (K * 2 ^ (t * j) * ‖f‖) := by
           gcongr
           rw [Nat.card_Ico]
-          exact_mod_cast (by omega)
+          exact_mod_cast (by omega : j + L - (j + 1 - L) ≤ 2 * L)
       _ = 2 * L * K * 2 ^ (t * j) * ‖f‖ := by ring
 
 /-- **Convergence of the Littlewood–Paley synthesis series in `𝓢'(E, F)`.** For every `b` in
 `ℓ^q(ℕ, Lᵖ)`, the terms `J^{s-1} Δ'ⱼ (2^{-js} bⱼ)` decay geometrically as `O(2^{-j} ‖b‖)` in `Lᵖ`,
 so `∑ⱼ Δ'ⱼ (2^{-js} bⱼ)` converges in `𝓢'(E, F)`. -/
-private theorem exists_hasSum_enlargedBlock (φ : ContDiffBump (0 : E)) (s : ℝ)
-    (b : lp (fun _ : ℕ ↦ Lp F p (volume : Measure E)) q) :
-    ∃ U : 𝓢'(E, F), HasSum (fun j ↦ enlargedBlock F φ j
+private theorem exists_hasSum_enlargedLittlewoodPaleyBlock (φ : ContDiffBump (0 : E)) (L : ℕ)
+    (s : ℝ) (b : lp (fun _ : ℕ ↦ Lp F p (volume : Measure E)) q) :
+    ∃ U : 𝓢'(E, F), HasSum (fun j ↦ enlargedLittlewoodPaleyBlock F φ L j
       (((((2 : ℝ) ^ (s * j) : ℝ) : ℂ)⁻¹ • b j : Lp F p (volume : Measure E)) : 𝓢'(E, F))) U := by
-  obtain ⟨C₂, hC₂0, hJ⟩ := exists_besselPotential_enlargedBlock_eq_and_norm_le (F := F) φ (s - 1)
+  obtain ⟨C₂, hC₂0, hJ⟩ :=
+    exists_besselPotential_enlargedLittlewoodPaleyBlock_eq_and_norm_le (F := F) φ L (s - 1)
   have hq0 : q ≠ 0 := (zero_lt_one.trans_le Fact.out).ne'
   set a : ℕ → Lp F p (volume : Measure E) := fun j ↦ (((2 : ℝ) ^ (s * j) : ℝ) : ℂ)⁻¹ • b j
   choose z hz hzn using fun j ↦ hJ (p := p) j (a j)
@@ -244,28 +174,30 @@ private theorem exists_hasSum_enlargedBlock (φ : ContDiffBump (0 : E)) (s : ℝ
 
 omit [Fact (1 ≤ p)] [Fact (1 ≤ q)] in
 /-- **Convergence and Besov bound for the Littlewood–Paley synthesis series.** For every `b` in
-`ℓ^q(ℕ, Lᵖ)`, the series `∑ⱼ Δ'ⱼ (2^{-js} bⱼ)` converges in `𝓢'(E, F)` to an element of `B^s_{p,q}`
-whose norm is bounded by `C ‖b‖`, with `C ≥ 0` depending only on `φ` and `s` (not on `p` or `q`). -/
-private theorem exists_hasSum_enlargedBlock_and_norm_le (φ : ContDiffBump (0 : E)) (s : ℝ) :
+`ℓ^q(ℕ, Lᵖ)`, the series `∑ⱼ Δ'ⱼ (2^{-js} bⱼ)` with width `φ.littlewoodPaleyOverlap φ` converges in
+`𝓢'(E, F)` to an element of `B^s_{p,q}` whose norm is bounded by `C ‖b‖`, with `C ≥ 0` depending
+only on `φ` and `s` (not on `p` or `q`). -/
+private theorem exists_hasSum_enlargedLittlewoodPaleyBlock_and_norm_le
+    (φ : ContDiffBump (0 : E)) (s : ℝ) :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
       (b : lp (fun _ : ℕ ↦ Lp F p (volume : Measure E)) q),
       ∃ v : BesovSpace F φ s p q,
-        HasSum (fun j ↦ enlargedBlock F φ j
+        HasSum (fun j ↦ enlargedLittlewoodPaleyBlock F φ (φ.littlewoodPaleyOverlap φ) j
           (((((2 : ℝ) ^ (s * j) : ℝ) : ℂ)⁻¹ • b j : Lp F p (volume : Measure E)) : 𝓢'(E, F)))
           v.toDistr ∧
         ‖v‖ ≤ C * ‖b‖ := by
+  set L := φ.littlewoodPaleyOverlap φ
   obtain ⟨C₀, hC₀⟩ := exists_littlewoodPaleyBlock_eq_and_norm_le (F := F) φ
-  obtain ⟨C₁, hC₁0, hC₁⟩ := exists_enlargedBlock_eq_and_norm_le (F := F) φ
-  set L := overlapWidth F φ
+  obtain ⟨C₁, hC₁0, hC₁⟩ := exists_enlargedLittlewoodPaleyBlock_eq_and_norm_le (F := F) φ L
   set K : ℝ := max C₀ 0 * C₁
-  set M : ℝ := K * 2 ^ (|s| * (2 * L : ℕ))
-  refine ⟨M * (2 * (2 * L : ℕ)), by positivity, fun {p q} _ _ b ↦ ?_⟩
+  set M : ℝ := K * 2 ^ (|s| * (L + L : ℕ))
+  refine ⟨M * (2 * (L + L : ℕ)), by positivity, fun {p q} _ _ b ↦ ?_⟩
   have hq0 : q ≠ 0 := (zero_lt_one.trans_le Fact.out).ne'
   set a : ℕ → Lp F p (volume : Measure E) := fun j ↦ (((2 : ℝ) ^ (s * j) : ℝ) : ℂ)⁻¹ • b j
   have ha_norm (j : ℕ) : (2 : ℝ) ^ (s * j) * ‖a j‖ = ‖b j‖ := by
     rw [norm_smul, norm_inv, Complex.norm_of_nonneg (by positivity),
       mul_inv_cancel_left₀ (by positivity)]
-  obtain ⟨U, hHasSum⟩ := exists_hasSum_enlargedBlock φ s b
+  obtain ⟨U, hHasSum⟩ := exists_hasSum_enlargedLittlewoodPaleyBlock φ L s b
   -- Each block `Δₖ U` is a finite window sum of `Lᵖ` pieces `Δₖ Δ'ⱼ (a j)` over `[k - 2L, k + 2L)`.
   choose h hh hhn using fun j ↦ hC₁ (p := p) j (a j)
   choose w hw hwn using fun k j ↦ hC₀ (p := p) k (h j)
@@ -275,42 +207,45 @@ private theorem exists_hasSum_enlargedBlock_and_norm_le (φ : ContDiffBump (0 : 
       _ ≤ max C₀ 0 * (C₁ * ‖a j‖) := by gcongr; exact hhn j
       _ = K * ‖a j‖ := by ring
   set g : ℕ → Lp F p (volume : Measure E) :=
-    fun k ↦ ∑ j ∈ Finset.Ico (k - 2 * L) (k + 2 * L), w k j
+    fun k ↦ ∑ j ∈ Finset.Ico (k - (L + L)) (k + (L + L)), w k j
   have hgU (k : ℕ) : littlewoodPaleyBlock F φ k U = g k := by
-    rw [littlewoodPaleyBlock_eq_sum_Ico_of_hasSum φ hHasSum
-      (fun j k' hjk ↦ littlewoodPaleyBlock_enlargedBlock_eq_zero (F := F) φ hjk (a j)) k,
+    rw [littlewoodPaleyBlock_eq_sum_Ico_of_hasSum φ hHasSum (L := L + L)
+      (fun j k' hjk ↦ littlewoodPaleyBlock_enlargedLittlewoodPaleyBlock_eq_zero (F := F) φ
+        (fun _ _ ↦ φ.inhomogeneousLittlewoodPaley_mul_eq_zero φ) hjk (a j)) k,
       Lp.toTemperedDistribution_sum]
     exact Finset.sum_congr rfl fun j _ ↦ by rw [hh j, hw k j]
   have hg_bound (k : ℕ) :
-      (2 : ℝ) ^ (s * k) * ‖g k‖ ≤ M * ∑ j ∈ Finset.Ico (k - 2 * L) (k + 2 * L), ‖b j‖ := by
-    have hwin := TauCeti.two_rpow_mul_norm_sum_Ico_le s (hwkj k) k (2 * L)
+      (2 : ℝ) ^ (s * k) * ‖g k‖ ≤ M * ∑ j ∈ Finset.Ico (k - (L + L)) (k + (L + L)), ‖b j‖ := by
+    have hwin := TauCeti.two_rpow_mul_norm_sum_Ico_le s (hwkj k) k (L + L)
     rw [max_eq_left (by positivity : 0 ≤ K)] at hwin
     exact hwin.trans_eq (by simp_rw [ha_norm]; rfl)
   -- Bound the `ℓ^q` norm of the window majorant by `M * 4 L * ‖b‖`.
   set bnorm : lp (fun _ : ℕ ↦ ℝ) q := ⟨fun j ↦ ‖b j‖, (lp.memℓp b).norm⟩
   set wsum : lp (fun _ : ℕ ↦ ℝ) q :=
-    ⟨fun k ↦ ∑ j ∈ Finset.Ico (k - 2 * L) (k + 2 * L), bnorm j,
-      (lp.memℓp bnorm).sum_Ico_sub_add (2 * L)⟩
+    ⟨fun k ↦ ∑ j ∈ Finset.Ico (k - (L + L)) (k + (L + L)), bnorm j,
+      (lp.memℓp bnorm).sum_Ico_sub_add (L + L)⟩
   obtain ⟨v, hvU, hvn⟩ := exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq g (M • wsum)
     hgU fun k ↦ hg_bound k
   refine ⟨v, hvU ▸ hHasSum, hvn.trans ?_⟩
   have hM0 : 0 ≤ M := by positivity
   have hbnorm : ‖bnorm‖ ≤ ‖b‖ := lp.norm_mono hq0 fun j ↦ (Real.norm_of_nonneg (norm_nonneg _)).le
-  have hwsum : ‖wsum‖ ≤ 2 * (2 * L : ℕ) * ‖bnorm‖ :=
-    lp.norm_le_of_forall_eq_sum_Ico_sub_add (2 * L) fun _ ↦ rfl
+  have hwsum : ‖wsum‖ ≤ 2 * (L + L : ℕ) * ‖bnorm‖ :=
+    lp.norm_le_of_forall_eq_sum_Ico_sub_add (L + L) fun _ ↦ rfl
   calc ‖M • wsum‖ = M * ‖wsum‖ := by rw [norm_smul, Real.norm_of_nonneg hM0]
-    _ ≤ M * (2 * (2 * L : ℕ) * ‖b‖) := by gcongr; exact hwsum.trans (by gcongr)
-    _ = M * (2 * (2 * L : ℕ)) * ‖b‖ := by ring
+    _ ≤ M * (2 * (L + L : ℕ) * ‖b‖) := by gcongr; exact hwsum.trans (by gcongr)
+    _ = M * (2 * (L + L : ℕ)) * ‖b‖ := by ring
 
 variable (F φ s p q) in
 /-- **The Littlewood–Paley synthesis retraction** (Bergh–Löfström, Theorem 6.4.3). Sends a sequence
-`b ∈ ℓ^q(ℕ, Lᵖ)` to the sum `∑ⱼ Δ'ⱼ (2^{-js} bⱼ)` in `B^s_{p,q}`, where `Δ'ⱼ` is an enlarged
-Littlewood–Paley multiplier equal to `1` on the support of `ψⱼ`. It is a continuous left inverse to
+`b ∈ ℓ^q(ℕ, Lᵖ)` to the sum `∑ⱼ Δ'ⱼ (2^{-js} bⱼ)` in `B^s_{p,q}`, where
+`Δ'ⱼ = TemperedDistribution.enlargedLittlewoodPaleyBlock F φ (φ.littlewoodPaleyOverlap φ) j` is the
+enlarged Littlewood–Paley multiplier of width `φ.littlewoodPaleyOverlap φ`
+(`hasSum_enlargedLittlewoodPaleyBlock_ofWeightedBlocksCLM`). It is a continuous left inverse to
 `weightedBlocksₗᵢ` (`ofWeightedBlocksCLM_weightedBlocks`), with operator norm bounded uniformly in
 `p` and `q` (`exists_norm_ofWeightedBlocksCLM_le`). -/
 def ofWeightedBlocksCLM :
     lp (fun _ : ℕ ↦ Lp F p (volume : Measure E)) q →L[ℂ] BesovSpace F φ s p q :=
-  let hS := (exists_hasSum_enlargedBlock_and_norm_le (F := F) φ s).choose_spec.2
+  let hS := (exists_hasSum_enlargedLittlewoodPaleyBlock_and_norm_le (F := F) φ s).choose_spec.2
   LinearMap.mkContinuous
     { toFun b := (hS b).choose
       map_add' b₁ b₂ := ext <| ((hS (b₁ + b₂)).choose_spec.1).unique <| by
@@ -323,15 +258,21 @@ def ofWeightedBlocksCLM :
         simp only [Function.comp_apply, smul_apply, ContinuousLinearMap.id_apply,
           lp.coeFn_smul, Pi.smul_apply]
         rw [smul_comm, Lp.toTemperedDistribution_smul, map_smul] }
-    (exists_hasSum_enlargedBlock_and_norm_le (F := F) φ s).choose
+    (exists_hasSum_enlargedLittlewoodPaleyBlock_and_norm_le (F := F) φ s).choose
     fun b ↦ (hS b).choose_spec.2
 
-private theorem hasSum_enlargedBlock_ofWeightedBlocksCLM
+/-- **Series characterization of `ofWeightedBlocksCLM`.** For every `b ∈ ℓ^q(ℕ, Lᵖ)`, the tempered
+distribution of `ofWeightedBlocksCLM F φ s p q b` is the sum in `𝓢'(E, F)` of the enlarged
+Littlewood–Paley blocks of width `φ.littlewoodPaleyOverlap φ` applied to the unweighted coordinates
+`2^{-js} bⱼ`. Since limits in `𝓢'(E, F)` are unique, this determines `ofWeightedBlocksCLM` on every
+sequence `b`. -/
+theorem hasSum_enlargedLittlewoodPaleyBlock_ofWeightedBlocksCLM
     (b : lp (fun _ : ℕ ↦ Lp F p (volume : Measure E)) q) :
-    HasSum (fun j ↦ enlargedBlock F φ j
+    HasSum (fun j ↦ enlargedLittlewoodPaleyBlock F φ (φ.littlewoodPaleyOverlap φ) j
       (((((2 : ℝ) ^ (s * j) : ℝ) : ℂ)⁻¹ • b j : Lp F p (volume : Measure E)) : 𝓢'(E, F)))
       (ofWeightedBlocksCLM F φ s p q b).toDistr :=
-  ((exists_hasSum_enlargedBlock_and_norm_le (F := F) φ s).choose_spec.2 b).choose_spec.1
+  ((exists_hasSum_enlargedLittlewoodPaleyBlock_and_norm_le (F := F) φ s).choose_spec.2
+    b).choose_spec.1
 
 /-- `ofWeightedBlocksCLM` reconstructs every element of `B^s_{p,q}` from its weighted blocks. -/
 @[simp]
@@ -340,8 +281,11 @@ theorem ofWeightedBlocksCLM_weightedBlocks (u : BesovSpace F φ s p q) :
   ext1
   have hsum : HasSum (fun j ↦ littlewoodPaleyBlock F φ j u.toDistr)
       (ofWeightedBlocksCLM F φ s p q u.weightedBlocks).toDistr := by
-    refine (hasSum_enlargedBlock_ofWeightedBlocksCLM u.weightedBlocks).congr_fun fun j ↦ ?_
-    rw [inv_weight_smul_weightedBlocks_apply, u.coe_block, enlargedBlock_littlewoodPaleyBlock]
+    refine (hasSum_enlargedLittlewoodPaleyBlock_ofWeightedBlocksCLM u.weightedBlocks).congr_fun
+      fun j ↦ ?_
+    rw [inv_weight_smul_weightedBlocks_apply, u.coe_block,
+      enlargedLittlewoodPaleyBlock_littlewoodPaleyBlock (F := F) φ
+        (fun _ _ ↦ φ.inhomogeneousLittlewoodPaley_mul_eq_zero φ)]
   exact tendsto_nhds_unique hsum.tendsto_sum_nat (tendsto_sum_littlewoodPaleyBlock φ u.toDistr)
 
 theorem leftInverse_ofWeightedBlocksCLM :
@@ -355,9 +299,10 @@ theorem exists_norm_ofWeightedBlocksCLM_le (φ : ContDiffBump (0 : E)) (s : ℝ)
     ∃ C : ℝ, 0 ≤ C ∧ ∀ {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
       (b : lp (fun _ : ℕ ↦ Lp F p (volume : Measure E)) q),
       ‖ofWeightedBlocksCLM F φ s p q b‖ ≤ C * ‖b‖ :=
-  ⟨(exists_hasSum_enlargedBlock_and_norm_le (F := F) φ s).choose,
-    (exists_hasSum_enlargedBlock_and_norm_le (F := F) φ s).choose_spec.1,
-    fun b ↦ ((exists_hasSum_enlargedBlock_and_norm_le (F := F) φ s).choose_spec.2 b).choose_spec.2⟩
+  ⟨(exists_hasSum_enlargedLittlewoodPaleyBlock_and_norm_le (F := F) φ s).choose,
+    (exists_hasSum_enlargedLittlewoodPaleyBlock_and_norm_le (F := F) φ s).choose_spec.1,
+    fun b ↦ ((exists_hasSum_enlargedLittlewoodPaleyBlock_and_norm_le (F := F) φ s).choose_spec.2
+      b).choose_spec.2⟩
 
 omit [Fact (1 ≤ q)] in
 /-- Two sequences with the same unweighted `Lᵖ` coordinates `(2^{-jsᵢ} bⱼ)ⱼ` synthesize to the
@@ -371,8 +316,8 @@ theorem toDistr_ofWeightedBlocksCLM_eq_of_forall {s₀ s₁ : ℝ} {q₀ q₁ : 
       (((2 : ℝ) ^ (s₁ * j) : ℝ) : ℂ)⁻¹ • b₁ j) :
     (ofWeightedBlocksCLM F φ s₀ p q₀ b₀).toDistr =
       (ofWeightedBlocksCLM F φ s₁ p q₁ b₁).toDistr :=
-  (hasSum_enlargedBlock_ofWeightedBlocksCLM b₀).unique <|
-    (hasSum_enlargedBlock_ofWeightedBlocksCLM b₁).congr_fun fun j ↦ by rw [← h j]
+  (hasSum_enlargedLittlewoodPaleyBlock_ofWeightedBlocksCLM b₀).unique <|
+    (hasSum_enlargedLittlewoodPaleyBlock_ofWeightedBlocksCLM b₁).congr_fun fun j ↦ by rw [← h j]
 
 end Retraction
 
@@ -557,8 +502,10 @@ private theorem sumSpaceEmbed_weightedLpToBesovSum_eq_toDistr {s' : ℝ} {q' : �
   obtain ⟨b₀, b₁, rfl⟩ :=
     (weightedLp ℂ (Lp F p (volume : Measure E)) q₀ q₁ s₀ s₁).exists_fstToSum_add_sndToSum_eq w
   have hsum :=
-    (BesovSpace.hasSum_enlargedBlock_ofWeightedBlocksCLM (F := F) (φ := φ) (s := s₀) b₀).add
-      (BesovSpace.hasSum_enlargedBlock_ofWeightedBlocksCLM (F := F) (φ := φ) (s := s₁) b₁)
+    (BesovSpace.hasSum_enlargedLittlewoodPaleyBlock_ofWeightedBlocksCLM
+      (F := F) (φ := φ) (s := s₀) b₀).add
+      (BesovSpace.hasSum_enlargedLittlewoodPaleyBlock_ofWeightedBlocksCLM
+        (F := F) (φ := φ) (s := s₁) b₁)
   have hsum' : HasSum (fun j ↦ littlewoodPaleyBlock F φ j v.toDistr)
       ((besov F φ s₀ s₁ p q₀ q₁).sumSpaceEmbed
         (weightedLpToBesovSum φ
@@ -575,7 +522,8 @@ private theorem sumSpaceEmbed_weightedLpToBesovSum_eq_toDistr {s' : ℝ} {q' : �
         weightedLp_embed₀_apply, weightedLp_embed₁_apply] at h
       exact h
     rw [← map_add, ← Lp.toTemperedDistribution_add, hj, v.coe_block,
-      BesovSpace.enlargedBlock_littlewoodPaleyBlock]
+      enlargedLittlewoodPaleyBlock_littlewoodPaleyBlock (F := F) φ
+        (fun _ _ ↦ φ.inhomogeneousLittlewoodPaley_mul_eq_zero φ)]
   exact tendsto_nhds_unique hsum'.tendsto_sum_nat (tendsto_sum_littlewoodPaleyBlock φ v.toDistr)
 
 end Couple
@@ -669,11 +617,10 @@ private def besovKMethodToBesov (hs : s₀ ≠ s₁) (hθ : θ ∈ Ioo 0 1) :
         { toDistr := (besov F φ s₀ s₁ p q₀ q₁).sumSpaceEmbed (toSumₗ u)
           weightedBlocks := W u
           coe_weightedBlocks_apply j := by
-            change (weightedLpKMethodEquiv hs hθ (besovToWeightedLpKMethod u) j : 𝓢'(E, F)) = _
-            rw [weightedLpKMethodEquiv_apply, besovToWeightedLpKMethod, toSumₗ_map,
+            simp only [W, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+              weightedLpKMethodEquiv_apply, besovToWeightedLpKMethod, toSumₗ_map,
               ContinuousLinearMap.coe_coe, Lp.toTemperedDistribution_smul,
-              coe_sumSpaceEmbed_besovToWeightedLpSum]
-            rfl }
+              coe_sumSpaceEmbed_besovToWeightedLpSum, RCLike.ofReal_eq_complex_ofReal] }
       map_add' u v := BesovSpace.ext (by simp)
       map_smul' c u := BesovSpace.ext (by simp) }
     ‖W‖ fun u ↦ by
@@ -787,8 +734,7 @@ theorem mul_norm_besovKMethodEquiv_le (hs : s₀ ≠ s₁) (hθ : θ ∈ Ioo 0 1
     congr 1
     ext j
     rw [weightedBlocks_besovKMethodEquiv, besovToWeightedLpKMethod, toSumₗ_map,
-      ContinuousLinearMap.coe_coe]
-    rfl
+      ContinuousLinearMap.coe_coe, RCLike.ofReal_eq_complex_ofReal]
   rw [heq, ← KMethodSpace.ofReal_norm (besovToWeightedLpKMethod u), ← _root_.ofReal_norm,
     BesovSpace.norm_weightedBlocks, ← ENNReal.ofReal_mul hc.le,
     ENNReal.ofReal_le_ofReal_iff (norm_nonneg _)] at hW
