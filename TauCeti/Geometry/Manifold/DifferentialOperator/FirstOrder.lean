@@ -32,8 +32,9 @@ splitting over `ℂ` with `complexDerivationEquivComplexifiedVectorField`, an en
 vanishing double commutators is `D = δ + c` for a unique complex derivation `δ`, corresponding to
 `1 ⊗ X + i ⊗ Y ∈ ℂ ⊗[ℝ] Γ(TM)`, and the smooth function `c = D 1`. On a real smooth function `u`
 it acts by `D u = X u + i Y u + u D 1`, and complex linearity determines it on `u + i v`. Its
-commutator with multiplication by a real `u` is multiplication by `X u + i Y u`, the complex-linear
-extension of `ξ ↦ ξ(X)` evaluated at `ξ = du`.
+commutator with multiplication by a real `u` is multiplication by `du(X) + i du(Y)`, which is the
+symbol `ξ ↦ ξ(X) + i ξ(Y)` (ξ applied to the complexified field `1 ⊗ X + i ⊗ Y`) evaluated at
+`ξ = du`.
 
 ## Main declarations
 
@@ -214,12 +215,25 @@ def complexFirstOrderOperatorsEquivComplexifiedVectorFieldProd :
     (complexDerivationEquivComplexifiedVectorField.prodCongr (LinearEquiv.refl ℂ _))
 
 /-- The complexified vector-field coordinate is the complexified field of the derivation part. -/
+@[simp]
 theorem complexFirstOrderOperatorsEquivComplexifiedVectorFieldProd_fst
     (D : firstOrderOperators ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) :
     (complexFirstOrderOperatorsEquivComplexifiedVectorFieldProd D).1 =
       complexDerivationEquivComplexifiedVectorField
         (firstOrderOperatorsEquivDerivationProd ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ D).1 :=
   (rfl)
+
+/-- The complexified vector field of a first-order complex scalar operator is `1 ⊗ X + i ⊗ Y`,
+where `X` and `Y` are the vector fields of the real and imaginary parts of its derivation part. -/
+theorem complexFirstOrderOperatorsEquivComplexifiedVectorFieldProd_fst_eq
+    (D : firstOrderOperators ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) :
+    (complexFirstOrderOperatorsEquivComplexifiedVectorFieldProd D).1 =
+      1 ⊗ₜ derivationEquivSmoothVectorField
+          (firstOrderOperatorsEquivDerivationProd ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ D).1.re +
+        Complex.I ⊗ₜ derivationEquivSmoothVectorField
+          (firstOrderOperatorsEquivDerivationProd ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ D).1.im := by
+  rw [complexFirstOrderOperatorsEquivComplexifiedVectorFieldProd_fst,
+    complexDerivationEquivComplexifiedVectorField_apply]
 
 /-- The multiplication coefficient of a first-order complex scalar operator is its value on one. -/
 @[simp]
@@ -306,13 +320,9 @@ theorem _root_.LinearMap.mem_firstOrderOperators_iff_existsUnique_complexifiedVe
   constructor
   · intro hD
     let d : firstOrderOperators ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ := ⟨D, hD⟩
-    obtain ⟨X, Y, hXY⟩ : ∃ X Y : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯,
-        (complexFirstOrderOperatorsEquivComplexifiedVectorFieldProd d).1 =
-          1 ⊗ₜ X + Complex.I ⊗ₜ Y :=
-      ⟨_, _, by rw [complexFirstOrderOperatorsEquivComplexifiedVectorFieldProd_fst,
-        complexDerivationEquivComplexifiedVectorField_apply]⟩
+    have hXY := complexFirstOrderOperatorsEquivComplexifiedVectorFieldProd_fst_eq d
     have hd := complexFirstOrderOperatorsEquivComplexifiedVectorFieldProd_fst_eq_iff.mp hXY
-    refine ⟨((X, Y), D 1), hd, fun p hp ↦ ?_⟩
+    refine ⟨((_, _), D 1), hd, fun p hp ↦ ?_⟩
     obtain ⟨⟨X', Y'⟩, c'⟩ := p
     obtain rfl : c' = D 1 := hc hp
     have hXY' :=
@@ -345,11 +355,7 @@ theorem apply_eq_of_apply_eq_of_mvfderiv_eq
     (D : firstOrderOperators ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) {f g : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯} {x : M}
     (hvalue : f x = g x) (hdifferential : mvfderiv I f x = mvfderiv I g x) :
     D.val f x = D.val g x := by
-  obtain ⟨X, Y, hXY⟩ : ∃ X Y : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯,
-      (complexFirstOrderOperatorsEquivComplexifiedVectorFieldProd D).1 =
-        1 ⊗ₜ X + Complex.I ⊗ₜ Y :=
-    ⟨_, _, by rw [complexFirstOrderOperatorsEquivComplexifiedVectorFieldProd_fst,
-      complexDerivationEquivComplexifiedVectorField_apply]⟩
+  have hXY := complexFirstOrderOperatorsEquivComplexifiedVectorFieldProd_fst_eq D
   have hre : mvfderiv I f.re x = mvfderiv I g.re x := by
     rw [ContMDiffMap.mvfderiv_re _ (by simp), ContMDiffMap.mvfderiv_re _ (by simp), hdifferential]
   have him : mvfderiv I f.im x = mvfderiv I g.im x := by
