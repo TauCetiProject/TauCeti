@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.DedekindDomain.LocallyFree.ClassGroup
+public import TauCeti.RingTheory.DedekindDomain.SteinitzClass
 public import TauCeti.RingTheory.FractionalIdeal.Projective
 import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.Invertible
 import TauCeti.RingTheory.DedekindDomain.ModuleDecomposition
@@ -24,13 +25,16 @@ For a Dedekind domain `A` that is not a field, its image lies in the locally fre
 every nonzero integral ideal is locally free of rank one. `TauCeti.LocallyFree.ofIdealClass` is the
 resulting homomorphism. Its computation on nonzero integral ideals identifies it with
 the assignment `[I] ↦ [I] - [A]`. The map is surjective: a pseudo-basis expresses every
-finite projective module as a product of nonzero ideals, so its reduced class comes from the
-product of their ideal classes. This includes the zero module, represented by the empty
-product. The map is injective: an invertible fractional ideal `I` with `[I] - [A] = 0` is stably
+finite projective module as a product of nonzero ideals, so its reduced class `[M] - n[A]` is the
+image of the product of their ideal classes, which is the Steinitz class of `M`
+(`TauCeti.FiniteProjectiveModules.idealClassHom_steinitzClass`). This includes the zero module,
+represented by the empty product. The map is injective: an invertible fractional ideal `I` with `[I] - [A] = 0` is stably
 free and invertible, hence free (`Module.free_of_isStablyFree_of_invertible`), hence principal.
 Together these give `TauCeti.LocallyFree.ofIdealClassEquiv`, identifying the locally free class
 group of `A` as an order over itself with the ideal class group of `A`. Over a field both
-groups are trivial, and the comparison remains an equivalence.
+groups are trivial, and the comparison remains an equivalence. The identification of projective
+`K₀(A)` with `ℤ × Additive (ClassGroup A)` by rank and Steinitz class is in
+`TauCeti.RingTheory.DedekindDomain.LocallyFree.K0`.
 
 ## References
 
@@ -167,17 +171,15 @@ theorem idealClassHom_mk0 (I : (Ideal A)⁰) [Module.Projective A (I : Ideal A)]
   rw [← ClassGroup.mk_mk0 (FractionRing A), idealClassHom_mk]
   exact classOf_congr (FractionalIdeal.coeIdealEquiv (I : Ideal A)) 1
 
-variable {K : Type*} [Field K] [Algebra A K] [IsFractionRing A K]
-
-variable (K) in
-/-- Every reduced class of a finite projective module over a Dedekind domain comes from an
-ideal class. The reduction uses the dimension over the fraction field. -/
-theorem exists_idealClassHom_eq_classOf (M : Type u) [AddCommGroup M] [Module A M]
+/-- The ideal-class homomorphism sends the Steinitz class of a finite projective module `M` to its
+reduced class `[M] - n[A]`, where `n` is the rank of `M`. -/
+theorem idealClassHom_steinitzClass (M : Type u) [AddCommGroup M] [Module A M]
     [Module.Finite A M] [Module.Projective A M] :
-    ∃ c : Additive (ClassGroup A), idealClassHom A c =
-      classOf A M (Module.finrank K (K ⊗[A] M)) := by
+    idealClassHom A (Additive.ofMul (Module.steinitzClass A M)) =
+      classOf A M (Module.finrank A M) := by
   classical
-  obtain ⟨J, hJ, ⟨e⟩⟩ := Module.exists_linearEquiv_pi_ideal A K M
+  obtain ⟨J, hJ, ⟨e⟩⟩ := Module.exists_linearEquiv_pi_ideal A (FractionRing A) M
+  let J' i : (Ideal A)⁰ := ⟨J i, mem_nonZeroDivisors_of_ne_zero (hJ i)⟩
   let I i : (FractionalIdeal A⁰ (FractionRing A))ˣ :=
     Units.mk0 (J i : FractionalIdeal A⁰ (FractionRing A))
       (FractionalIdeal.coeIdeal_ne_zero.mpr (hJ i))
@@ -191,16 +193,10 @@ theorem exists_idealClassHom_eq_classOf (M : Type u) [AddCommGroup M] [Module A 
     ⟨ModuleCat.of A (J i), finiteProjectiveModules_iff.mpr ⟨inferInstance, hP i⟩⟩
   have hsum := SplitK0.of_eq_sum_of_linearEquiv_pi
     (X := ⟨ModuleCat.of A M, finiteProjectiveModules_iff.mpr ⟨inferInstance, inferInstance⟩⟩) Q e
-  refine ⟨∑ i, Additive.ofMul (ClassGroup.mk (FractionRing A) (I i)), ?_⟩
-  rw [map_sum, classOf_def, hsum]
-  simp only [idealClassHom_mk, classOf_def, Finset.sum_sub_distrib, Finset.sum_const,
-    Finset.card_univ, Fintype.card_fin, one_smul]
-  congr 1
-  apply Finset.sum_congr rfl
-  intro i _
-  exact SplitK0.of_congr (CategoryTheory.ObjectProperty.isoMk _
-    (FractionalIdeal.coeIdealEquiv (J i) :
-      (I i : FractionalIdeal A⁰ (FractionRing A)) ≃ₗ[A] J i).toModuleIso)
+  rw [Module.steinitzClass_eq_of_linearEquiv_pi A M (J := J') e, map_prod, ofMul_prod, map_sum,
+    Module.finrank_eq_card_of_linearEquiv_pi hJ e, classOf_def, hsum]
+  simp only [J', Q, idealClassHom_mk0, classOf_def, Finset.sum_sub_distrib, Finset.sum_const,
+    Finset.card_univ, one_smul]
 
 end FiniteProjectiveModules
 
@@ -262,8 +258,8 @@ theorem ofIdealClass_surjective : Function.Surjective (ofIdealClass A K) := by
     have hn : Module.finrank K (K ⊗[A] M) = n := by
       simpa only [(TensorProduct.AlgebraTensorModule.rid A K K).finrank_eq,
         Module.finrank_self, mul_one] using h.finrank hA
-    obtain ⟨c, hc⟩ := exists_idealClassHom_eq_classOf (A := A) K M
-    exact ⟨c, hn ▸ hc⟩
+    refine ⟨Additive.ofMul (Module.steinitzClass A M), ?_⟩
+    rw [idealClassHom_steinitzClass, ← hn, (TensorProduct.isBaseChange A M K).finrank_eq]
   intro x
   obtain ⟨c, hc⟩ := hle x.property
   exact ⟨c, Subtype.ext hc⟩

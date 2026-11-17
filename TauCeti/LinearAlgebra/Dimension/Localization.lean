@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.TensorProduct.Tower
 public import Mathlib.RingTheory.Localization.BaseChange
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
+import Mathlib.LinearAlgebra.TensorProduct.Prod
 import Mathlib.RingTheory.Flat.Localization
 import TauCeti.Algebra.Module.LocalizedModule.Lift
 
@@ -56,6 +57,8 @@ latter read off `rank_quotient_add_rank_of_isDomain`.
   rationalizations of torsion-free modules gives an injective `A`-linear map of the modules.
 * `TauCeti.exists_linearIndependent_smul_mem_span`: a finitely generated module over a domain
   contains a free submodule of full rank with torsion quotient.
+* `TauCeti.finrank_prod_of_isDomain`: over a domain, rank is additive on products of finite
+  modules.
 -/
 
 public section
@@ -202,5 +205,16 @@ theorem exists_linearIndependent_smul_mem_span [Module.Finite A M] :
   have hrange : Set.range (fun i ↦ v (e i)) = Set.range fun i : s ↦ v i :=
     e.surjective.range_comp fun i : s ↦ v i
   exact hrange ▸ hcM m
+
+/-- Over a domain, rank is additive on products of finite modules: both sides are dimensions
+after extending scalars to the field of fractions. -/
+theorem finrank_prod_of_isDomain (N : Type*) [AddCommGroup N] [Module A N]
+    [Module.Finite A M] [Module.Finite A N] :
+    Module.finrank A (M × N) = Module.finrank A M + Module.finrank A N := by
+  let K := FractionRing A
+  rw [← (TensorProduct.isBaseChange A (M × N) K).finrank_eq,
+    ← (TensorProduct.isBaseChange A M K).finrank_eq,
+    ← (TensorProduct.isBaseChange A N K).finrank_eq,
+    (TensorProduct.prodRight A K K M N).finrank_eq, Module.finrank_prod]
 
 end TauCeti
