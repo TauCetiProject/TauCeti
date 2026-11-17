@@ -216,6 +216,12 @@ instance : ContinuousSMul (MooreLoopSpace X a) (MoorePathBetween X a b) :=
 instance : ContinuousSMul (MooreLoopSpace X b)ᵐᵒᵖ (MoorePathBetween X a b) :=
   ⟨continuous_rightAct.comp (continuous_snd.prodMk (continuous_unop.comp continuous_fst))⟩
 
+/-- Reading a Moore path from `b` to itself as a loop turns the right action of loops into
+multiplication. -/
+theorem loopHomeomorph_symm_op_smul (γ : MoorePathBetween X b b) (ω : MooreLoopSpace X b) :
+    (loopHomeomorph b).symm (op ω • γ) = (loopHomeomorph b).symm γ * ω :=
+  MooreLoopSpace.ext (by simp)
+
 end MoorePathBetween
 
 end TauCeti
