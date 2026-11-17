@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
 public import Mathlib.Data.Set.PowersetCard
+
+import TauCeti.Algebra.BigOperators.Finset.Powerset
 
 /-!
 # Maps, coercions and enumerations of fixed-cardinality subsets
@@ -19,6 +22,9 @@ equivalence. It lets computations with fixed-cardinality subsets use the usual s
 
 `Set.powersetCard.finChooseEquiv m j` enumerates the `j`-element subsets of `Fin m` by
 `Fin (m.choose j)`.
+
+`Set.powersetCard.prod_prod` and `Set.powersetCard.sum_sum` count over the `n`-element subsets of
+a finite type: each element lies in `(card α - 1).choose (n - 1)` of them.
 -/
 
 public section
@@ -54,5 +60,18 @@ noncomputable def finChooseEquiv (m j : ℕ) : powersetCard (Fin m) j ≃ Fin (m
   Fintype.equivFinOfCardEq <| by
     rw [← Nat.card_eq_fintype_card, powersetCard.card, Nat.card_eq_fintype_card,
       Fintype.card_fin]
+
+/-- **Double counting over the `n`-element subsets of a finite type**: for `0 < n`, the product
+over the `n`-element subsets of the products over their elements is
+`(∏ i, f i) ^ (card α - 1).choose (n - 1)`. -/
+@[to_additive /-- **Double counting over the `n`-element subsets of a finite type**: for `0 < n`,
+the sum over the `n`-element subsets of the sums over their elements is
+`(card α - 1).choose (n - 1) • ∑ i, f i`. -/]
+theorem prod_prod {α β : Type*} [CommMonoid β] [Fintype α] {n : ℕ} (hn : 0 < n) (f : α → β) :
+    ∏ t : powersetCard α n, ∏ i ∈ (t : Finset α), f i =
+      (∏ i, f i) ^ (Fintype.card α - 1).choose (n - 1) := by
+  rw [← Finset.card_univ, ← Finset.prod_powersetCard_prod hn]
+  exact (Finset.prod_subtype (Finset.univ.powersetCard n)
+    (fun _ ↦ Finset.mem_powersetCard_univ.trans mem_iff.symm) fun t ↦ ∏ i ∈ t, f i).symm
 
 end Set.powersetCard
