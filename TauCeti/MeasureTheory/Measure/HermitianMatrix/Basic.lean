@@ -5,16 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Matrix.Frobenius
-public import Mathlib.Analysis.InnerProductSpace.Subspace
-public import Mathlib.Analysis.Matrix.MeasurableSpace
-public import Mathlib.LinearAlgebra.Matrix.FiniteDimensional
-public import Mathlib.LinearAlgebra.Matrix.Hermitian
-public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
+public import TauCeti.MeasureTheory.Measure.SelfAdjointMatrix
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Complex
-public import Mathlib.MeasureTheory.Measure.Haar.OfBasis
-public import Mathlib.Topology.Algebra.Module.FiniteDimension
-public import Mathlib.Topology.UniformSpace.Matrix
 
 /-!
 # The carrier of complex Hermitian matrix distributions
@@ -24,32 +16,25 @@ subspace `selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ)`. By
 `Matrix.isHermitian_iff_isSelfAdjoint`, its elements are precisely the Hermitian `n × n` complex
 matrices.
 
-This file equips that real vector space with the real Frobenius norm and inner product
-`⟪A, B⟫_ℝ = Re tr(A * B)` while preserving the subtype uniformity and topology definitionally:
-the norm is induced from `Matrix.frobeniusNormedAddCommGroup`, whose uniformity and topology are
-definitionally the product ones, and `volume` is supplied by `measureSpaceOfInnerProductSpace`.
+The real Frobenius norm, inner product `⟪A, B⟫_ℝ = RCLike.re (A * B).trace`, Borel structure, and
+unitary conjugation `Matrix.UnitaryGroup.selfAdjointConj` are supplied uniformly for all
+`[RCLike 𝕜]` by `TauCeti.MeasureTheory.Measure.SelfAdjointMatrix`.
 
-It fixes the real coordinate system `TauCeti.hermitianCoordinates n`, reading off the `n` real
-diagonal entries, the `n(n - 1)/2` real parts of strictly upper-triangular entries, and the
+This file fixes the real coordinate system `TauCeti.hermitianCoordinates n`, reading off the `n`
+real diagonal entries, the `n(n - 1)/2` real parts of strictly upper-triangular entries, and the
 `n(n - 1)/2` imaginary parts of strictly upper-triangular entries (indexed uniformly by
-`Fin n × Fin n`), builds the corresponding coordinate basis `TauCeti.hermitianBasis n`, and
-packages unitary conjugation `A ↦ U * A * Uᴴ` as a real linear isometry equivalence
-`Matrix.UnitaryGroup.hermitianConj`.
+`Fin n × Fin n`), and builds the corresponding coordinate basis `TauCeti.hermitianBasis n`.
 
 ## Main declarations
 
-* `TauCeti.hermitianMatrixNormedAddCommGroup`, `TauCeti.hermitianMatrixInnerProductSpace` — the
-  real Frobenius structure on the complex Hermitian subspace.
-* `selfAdjoint.inner_eq_re_trace_mul` and `selfAdjoint.norm_sq_eq_re_trace_sq` — the Frobenius
-  pairing is `Re tr(A * B)` and the squared norm is `Re tr(A ^ 2)`.
+* `selfAdjoint.coe_apply_self_im`, `selfAdjoint.coe_apply_re_comm`,
+  `selfAdjoint.coe_apply_im_comm` — complex real/imaginary entry symmetries of a Hermitian matrix.
 * `TauCeti.hermitianCoordinates` — continuous linear equivalence with `Fin n × Fin n → ℝ`,
   reading diagonal real parts and strictly upper-triangular real and imaginary parts.
 * `TauCeti.hermitianCoordinatesMeasurableEquiv` — its measurable-equivalence form.
 * `TauCeti.finrank_hermitianMatrix` — the real dimension is `n ^ 2`.
 * `TauCeti.hermitianBasis` — basis dual to `TauCeti.hermitianCoordinates`.
 * `TauCeti.hermitianFinOneEquiv` — identification of `1 × 1` Hermitian matrices with `ℝ`.
-* `Matrix.UnitaryGroup.hermitianConj` — unitary conjugation `A ↦ U * A * Uᴴ` as a real linear
-  isometry equivalence of the Hermitian subspace.
 
 ## References
 
@@ -62,165 +47,30 @@ public section
 noncomputable section
 
 open MeasureTheory Module
-open scoped RealInnerProductSpace Matrix
 
-namespace TauCeti
-
-/-! ### The real Frobenius structure on the complex Hermitian subspace -/
-
-section instances
-
-variable (n : ℕ)
-
-/-- The complex Hermitian subspace carries the Frobenius norm induced from the ambient complex
-matrices, with its metric rebuilt on the subtype uniformity so that the uniform and topological
-structures agree definitionally with the subtype instances. -/
-instance hermitianMatrixNormedAddCommGroup :
-    NormedAddCommGroup (selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ)) :=
-  letI : NormedAddCommGroup (Matrix (Fin n) (Fin n) ℂ) := Matrix.frobeniusNormedAddCommGroup
-  letI base : NormedAddCommGroup (selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ)) :=
-    Submodule.normedAddCommGroup _
-  -- Forces the uniformity field of the metric to be the subtype uniformity itself, so that
-  -- downstream instance search unifies the two syntactically rather than only up to `rfl`.
-  { base with toMetricSpace := base.toMetricSpace.replaceUniformity rfl }
-
-/-- The complex Hermitian subspace carries the real Frobenius inner product
-`⟪A, B⟫_ℝ = ∑ i, ∑ j, ⟪A i j, B i j⟫_ℝ`, which equals `Re tr(A * B)`
-(`selfAdjoint.inner_eq_re_trace_mul`). -/
-instance hermitianMatrixInnerProductSpace :
-    InnerProductSpace ℝ (selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ)) :=
-  letI : NormedAddCommGroup (Matrix (Fin n) (Fin n) ℂ) := Matrix.frobeniusNormedAddCommGroup
-  letI : NormedSpace ℝ (Matrix (Fin n) (Fin n) ℂ) := Matrix.frobeniusNormedSpace
-  letI : InnerProductSpace ℝ (Matrix (Fin n) (Fin n) ℂ) := Matrix.frobeniusInnerProductSpace
-  { __ := (inferInstance : Module ℝ (selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ)))
-    norm_smul_le r A := norm_smul_le r (A : Matrix (Fin n) (Fin n) ℂ)
-    inner A B := ⟪(A : Matrix (Fin n) (Fin n) ℂ), (B : Matrix (Fin n) (Fin n) ℂ)⟫
-    norm_sq_eq_re_inner A :=
-      InnerProductSpace.norm_sq_eq_re_inner (𝕜 := ℝ) (A : Matrix (Fin n) (Fin n) ℂ)
-    conj_inner_symm A B :=
-      InnerProductSpace.conj_inner_symm (𝕜 := ℝ) (A : Matrix (Fin n) (Fin n) ℂ) ↑B
-    add_left A B C := by
-      rw [Submodule.coe_add]
-      exact InnerProductSpace.add_left (𝕜 := ℝ) (A : Matrix (Fin n) (Fin n) ℂ) ↑B ↑C
-    smul_left A B r := Matrix.frobenius_inner_smul_left r (A : Matrix (Fin n) (Fin n) ℂ) ↑B }
-
-instance hermitianMatrixIsUniformAddGroup :
-    IsUniformAddGroup (selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ)) :=
-  SeminormedAddCommGroup.to_isUniformAddGroup
-
-instance hermitianMatrixSecondCountableTopology :
-    SecondCountableTopology (selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ)) :=
-  secondCountable_of_proper
-
-instance hermitianMatrixCompleteSpace :
-    CompleteSpace (selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ)) :=
-  FiniteDimensional.completeSpace ℝ _
-
-instance hermitianMatrixContinuousENorm :
-    ContinuousENorm (selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ)) :=
-  ESeminormedAddMonoid.toContinuousENorm
-
-/-- The measurable structure is the Borel structure of the subtype topology. -/
-instance hermitianMatrixBorelSpace :
-    BorelSpace (selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ)) :=
-  Subtype.borelSpace _
-
-/-- The uniformity of the Frobenius structure is definitionally the subtype uniformity. -/
-example :
-    (hermitianMatrixNormedAddCommGroup n).toMetricSpace.toUniformSpace =
-      (instUniformSpaceSubtype :
-        UniformSpace (selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ))) := by
-  with_reducible_and_instances rfl
-
-/-- The uniformity of the Frobenius structure induces the subtype topology definitionally. -/
-example :
-    (hermitianMatrixNormedAddCommGroup n).toMetricSpace.toUniformSpace.toTopologicalSpace =
-      (instTopologicalSpaceSubtype :
-        TopologicalSpace (selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ))) := by
-  with_reducible_and_instances rfl
-
-/-- The selected topology is the subtype topology. -/
-example :
-    (inferInstance :
-        TopologicalSpace (selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ))) =
-      @instTopologicalSpaceSubtype _ _ inferInstance := by
-  with_reducible_and_instances rfl
-
-/-- `volume` is supplied by `measureSpaceOfInnerProductSpace`. -/
-example :
-    (inferInstance : MeasureSpace (selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ))) =
-      measureSpaceOfInnerProductSpace :=
-  rfl
-
-end instances
-
-end TauCeti
-
-/-! ### Entry symmetries and the trace pairing -/
+/-! ### Complex entry symmetries -/
 
 namespace selfAdjoint
 
 variable {n : ℕ}
-
-/-- An element of the complex Hermitian subspace is a Hermitian matrix. -/
-theorem isHermitian_coe_complex (A : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ)) :
-    (A : Matrix (Fin n) (Fin n) ℂ).IsHermitian :=
-  Matrix.isHermitian_iff_isSelfAdjoint.2 A.2
-
-/-- An element of the complex Hermitian subspace is fixed by conjugate transposition. -/
-@[simp]
-theorem conjTranspose_coe (A : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ)) :
-    (A : Matrix (Fin n) (Fin n) ℂ)ᴴ = (A : Matrix (Fin n) (Fin n) ℂ) :=
-  (isHermitian_coe_complex A).eq
-
-/-- Swapping indices of a Hermitian matrix conjugates the entry. -/
-theorem coe_apply_conj (A : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ)) (i j : Fin n) :
-    (A : Matrix (Fin n) (Fin n) ℂ) j i = starRingEnd ℂ ((A : Matrix (Fin n) (Fin n) ℂ) i j) :=
-  ((isHermitian_coe_complex A).apply j i).symm
 
 /-- Diagonal entries of a complex Hermitian matrix have zero imaginary part. -/
 @[simp]
 theorem coe_apply_self_im (A : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ)) (i : Fin n) :
     ((A : Matrix (Fin n) (Fin n) ℂ) i i).im = 0 := by
   have h := congrArg Complex.im (coe_apply_conj A i i)
-  simp only [Complex.conj_im] at h
+  simp only [Complex.star_def, Complex.conj_im] at h
   linarith
 
 /-- The real parts of entries of a Hermitian matrix are symmetric. -/
 theorem coe_apply_re_comm (A : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ)) (i j : Fin n) :
     ((A : Matrix (Fin n) (Fin n) ℂ) j i).re = ((A : Matrix (Fin n) (Fin n) ℂ) i j).re := by
-  rw [coe_apply_conj, Complex.conj_re]
+  rw [coe_apply_conj, Complex.star_def, Complex.conj_re]
 
 /-- The imaginary parts of entries of a Hermitian matrix are skew-symmetric. -/
 theorem coe_apply_im_comm (A : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ)) (i j : Fin n) :
     ((A : Matrix (Fin n) (Fin n) ℂ) j i).im = -((A : Matrix (Fin n) (Fin n) ℂ) i j).im := by
-  rw [coe_apply_conj, Complex.conj_im]
-
-open scoped Matrix.Norms.Frobenius in
-/-- The real inner product on the Hermitian subspace is the ambient real Frobenius inner product
-of the underlying complex matrices. -/
-@[simp]
-theorem coe_inner_complex (A B : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ)) :
-    ⟪A, B⟫ = ⟪(A : Matrix (Fin n) (Fin n) ℂ), (B : Matrix (Fin n) (Fin n) ℂ)⟫ :=
-  (rfl)
-
-/-- On the complex Hermitian subspace, the real Frobenius inner product is `Re tr(A * B)`. -/
-theorem inner_eq_re_trace_mul (A B : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ)) :
-    ⟪A, B⟫ = ((A : Matrix (Fin n) (Fin n) ℂ) * (B : Matrix (Fin n) (Fin n) ℂ)).trace.re := by
-  let _ : NormedAddCommGroup (Matrix (Fin n) (Fin n) ℂ) := Matrix.frobeniusNormedAddCommGroup
-  let _ : InnerProductSpace ℝ (Matrix (Fin n) (Fin n) ℂ) := Matrix.frobeniusInnerProductSpace
-  rw [coe_inner_complex, Matrix.frobenius_inner_def, Matrix.trace, Complex.re_sum]
-  refine Finset.sum_congr rfl fun i _ => ?_
-  rw [Matrix.diag_apply, Matrix.mul_apply, Complex.re_sum]
-  refine Finset.sum_congr rfl fun j _ => ?_
-  simp only [Complex.inner, Complex.mul_re, Complex.conj_re, Complex.conj_im,
-    coe_apply_re_comm B i j, coe_apply_im_comm B i j]
-  ring
-
-/-- The squared Frobenius norm of a complex Hermitian matrix is `Re tr(A ^ 2)`. -/
-theorem norm_sq_eq_re_trace_sq (A : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ)) :
-    ‖A‖ ^ 2 = ((A : Matrix (Fin n) (Fin n) ℂ) ^ 2).trace.re := by
-  rw [← real_inner_self_eq_norm_sq, inner_eq_re_trace_mul, sq]
+  rw [coe_apply_conj, Complex.star_def, Complex.conj_im]
 
 end selfAdjoint
 
@@ -464,79 +314,3 @@ theorem coe_hermitianFinOneEquiv_symm_apply (x : ℝ) (i j : Fin 1) :
     Function.const_apply]
 
 end TauCeti
-
-/-! ### Unitary conjugation on the complex Hermitian subspace -/
-
-namespace Matrix.UnitaryGroup
-
-variable {n : ℕ}
-
-/-- Unitary conjugation `A ↦ U * A * Uᴴ` as a real linear isometry equivalence of the complex
-Hermitian subspace. -/
-def hermitianConj (U : Matrix.unitaryGroup (Fin n) ℂ) :
-    selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ) ≃ₗᵢ[ℝ]
-      selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ) where
-  toFun A :=
-    ⟨(U : Matrix (Fin n) (Fin n) ℂ) * (A : Matrix (Fin n) (Fin n) ℂ) *
-        (U : Matrix (Fin n) (Fin n) ℂ)ᴴ,
-      Matrix.isHermitian_iff_isSelfAdjoint.1
-        (Matrix.isHermitian_mul_mul_conjTranspose _ (selfAdjoint.isHermitian_coe_complex A))⟩
-  invFun A :=
-    ⟨(U : Matrix (Fin n) (Fin n) ℂ)ᴴ * (A : Matrix (Fin n) (Fin n) ℂ) *
-        (U : Matrix (Fin n) (Fin n) ℂ),
-      Matrix.isHermitian_iff_isSelfAdjoint.1
-        (Matrix.isHermitian_conjTranspose_mul_mul _ (selfAdjoint.isHermitian_coe_complex A))⟩
-  map_add' A B := Subtype.ext (by simp [Matrix.mul_add, Matrix.add_mul])
-  map_smul' r A := Subtype.ext (by simp)
-  left_inv A := Subtype.ext (by
-    have hU : (U : Matrix (Fin n) (Fin n) ℂ)ᴴ * (U : Matrix (Fin n) (Fin n) ℂ) = 1 :=
-      Matrix.mem_unitaryGroup_iff'.1 U.2
-    simp only [Matrix.mul_assoc, ← Matrix.mul_assoc (U : Matrix (Fin n) (Fin n) ℂ)ᴴ,
-      hU, one_mul, mul_one])
-  right_inv A := Subtype.ext (by
-    have hU : (U : Matrix (Fin n) (Fin n) ℂ) * (U : Matrix (Fin n) (Fin n) ℂ)ᴴ = 1 :=
-      Matrix.mem_unitaryGroup_iff.1 U.2
-    simp only [Matrix.mul_assoc, ← Matrix.mul_assoc (U : Matrix (Fin n) (Fin n) ℂ),
-      hU, one_mul, mul_one])
-  norm_map' A := by
-    let _ : NormedAddCommGroup (Matrix (Fin n) (Fin n) ℂ) := Matrix.frobeniusNormedAddCommGroup
-    have hU' : (U : Matrix (Fin n) (Fin n) ℂ)ᴴ ∈ Matrix.unitaryGroup (Fin n) ℂ := by
-      simpa [Matrix.star_eq_conjTranspose] using U⁻¹.2
-    have hsq := Matrix.frobenius_norm_sq_conj_unitary
-      (U : Matrix (Fin n) (Fin n) ℂ)ᴴ (A : Matrix (Fin n) (Fin n) ℂ) hU'
-    rw [Matrix.conjTranspose_conjTranspose] at hsq
-    exact (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).1 hsq
-
-@[simp]
-theorem coe_hermitianConj_apply (U : Matrix.unitaryGroup (Fin n) ℂ)
-    (A : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ)) :
-    (hermitianConj U A : Matrix (Fin n) (Fin n) ℂ) =
-      (U : Matrix (Fin n) (Fin n) ℂ) * (A : Matrix (Fin n) (Fin n) ℂ) *
-        (U : Matrix (Fin n) (Fin n) ℂ)ᴴ :=
-  (rfl)
-
-theorem coe_hermitianConj_symm_apply (U : Matrix.unitaryGroup (Fin n) ℂ)
-    (A : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ)) :
-    ((hermitianConj U).symm A : Matrix (Fin n) (Fin n) ℂ) =
-      (U : Matrix (Fin n) (Fin n) ℂ)ᴴ * (A : Matrix (Fin n) (Fin n) ℂ) *
-        (U : Matrix (Fin n) (Fin n) ℂ) :=
-  (rfl)
-
-@[simp]
-theorem hermitianConj_one :
-    hermitianConj (1 : Matrix.unitaryGroup (Fin n) ℂ) = LinearIsometryEquiv.refl ℝ _ := by
-  refine LinearIsometryEquiv.ext fun A => Subtype.ext ?_
-  simp
-
-theorem hermitianConj_mul (U V : Matrix.unitaryGroup (Fin n) ℂ) :
-    hermitianConj (U * V) = (hermitianConj V).trans (hermitianConj U) := by
-  refine LinearIsometryEquiv.ext fun A => Subtype.ext ?_
-  simp [Matrix.conjTranspose_mul, Matrix.mul_assoc]
-
-@[simp]
-theorem hermitianConj_symm (U : Matrix.unitaryGroup (Fin n) ℂ) :
-    (hermitianConj U).symm = hermitianConj U⁻¹ := by
-  refine LinearIsometryEquiv.ext fun A => Subtype.ext ?_
-  simp [coe_hermitianConj_symm_apply, Matrix.star_eq_conjTranspose]
-
-end Matrix.UnitaryGroup

@@ -8,7 +8,7 @@ module
 public import Mathlib.Probability.Distributions.Gaussian.Real
 public import TauCeti.Analysis.Complex.NormSq
 public import TauCeti.MeasureTheory.Measure.HermitianMatrix.Lebesgue
-public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Congruence
+public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Lebesgue
 public import TauCeti.Probability.Density
 public import TauCeti.Probability.Distributions.Gaussian.Density
 public import TauCeti.Probability.RandomMatrix.Wigner
@@ -59,8 +59,10 @@ invariant-density characterizations of GOE and GUE.
 * `TauCeti.Probability.goeMeasure_eq_map_stdGaussian` and
   `TauCeti.Probability.gueMeasure_eq_map_stdGaussian` — `goeMeasure n` and `gueMeasure n` are
   scalar multiples of `stdGaussian` for the Frobenius inner product.
-* `Matrix.UnitaryGroup.map_symmetricConj_goeMeasure`,
-  `Matrix.UnitaryGroup.map_hermitianConj_gueMeasure`,
+* `TauCeti.Probability.map_selfAdjointConj_goeMeasure`,
+  `TauCeti.Probability.map_selfAdjointConj_gueMeasure`,
+  `TauCeti.Probability.goePDFReal_selfAdjointConj`,
+  `TauCeti.Probability.guePDFReal_selfAdjointConj`,
   `TauCeti.Probability.identDistrib_conj_gaussianEnsemble_one`, and
   `TauCeti.Probability.identDistrib_conj_gaussianEnsemble_of_ne_one` — orthogonal and unitary
   conjugation invariance.
@@ -71,9 +73,9 @@ invariant-density characterizations of GOE and GUE.
   densities against Frobenius volume and coordinate Lebesgue measures, together with `HasPDF`,
   `pdf`, and `rnDeriv` identifications.
 * `TauCeti.Probability.hasLaw_goeMeasure_iff_entries`,
-  `TauCeti.Probability.hasLaw_goe_withDensity_iff_entries`,
+  `TauCeti.Probability.hasLaw_withDensity_goePDF_iff_entries`,
   `TauCeti.Probability.hasLaw_gueMeasure_iff_entries`, and
-  `TauCeti.Probability.hasLaw_gue_withDensity_iff_entries` — equivalence of the independent-entry
+  `TauCeti.Probability.hasLaw_withDensity_guePDF_iff_entries` — equivalence of the independent-entry
   and invariant-density characterizations.
 * `TauCeti.Probability.gaussianEnsemble_one_zero_zero_hasLaw` and
   `TauCeti.Probability.gaussianEnsemble_two_zero_zero_hasLaw` — the laws of the `1 × 1` ensembles,
@@ -671,57 +673,28 @@ theorem hasLaw_gueMatrix {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
 private theorem goeMatrix_eq_smul_sum_orthonormalBasis (n : ℕ) (g : Fin n × Fin n → ℝ) :
     goeMatrix n g =
       Real.sqrt (2 / n) • ∑ ij : upperTriangle n, g ij.1 • symmetricOrthonormalBasis n ij := by
-  apply (symmetricCoordinates n).injective
-  funext kl
-  rcases eq_or_ne n 0 with rfl | hn
-  · exact kl.1.1.elim0
-  simp only [symmetricCoordinates_goeMatrix, map_smul, map_sum,
-    symmetricOrthonormalBasis_apply, Pi.smul_apply, Finset.sum_apply, smul_eq_mul]
-  have hterm : ∀ ij : upperTriangle n,
-      g ij.1 * symmetricCoordinates n
-          (if ij.1.1 = ij.1.2 then symmetricBasis n ij
-            else (Real.sqrt 2)⁻¹ • symmetricBasis n ij) kl =
-        if ij = kl then (if kl.1.1 = kl.1.2 then g kl.1 else (Real.sqrt 2)⁻¹ * g kl.1) else 0 := by
-    intro ij
-    have hcoord : symmetricCoordinates n (symmetricBasis n ij) kl = if ij = kl then 1 else 0 := by
-      rw [symmetricBasis_apply, ContinuousLinearEquiv.apply_symm_apply, Pi.single_apply]
-      exact if_congr eq_comm rfl rfl
-    by_cases heq : ij = kl
-    · subst heq
-      by_cases hd : ij.1.1 = ij.1.2 <;>
-        simp only [hd, ↓reduceIte, map_smul, Pi.smul_apply, smul_eq_mul, hcoord, mul_one, one_mul,
-          mul_comm]
-    · by_cases hd : ij.1.1 = ij.1.2 <;>
-        simp only [hd, heq, ↓reduceIte, map_smul, Pi.smul_apply, smul_eq_mul, hcoord, mul_zero]
-  simp only [hterm, Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte]
-  rw [Real.sqrt_div (by norm_num)]
-  have h2 : Real.sqrt 2 ≠ 0 := by positivity
-  by_cases hd : kl.1.1 = kl.1.2
-  · simp [hd, div_eq_mul_inv, mul_comm, mul_left_comm]
-  · simp only [hd, ↓reduceIte]
-    field_simp
+  rw [← (symmetricOrthonormalBasis n).sum_repr (goeMatrix n g), Finset.smul_sum]
+  refine Finset.sum_congr rfl fun ij _ ↦ ?_
+  have hcoord : (goeMatrix n g : Matrix (Fin n) (Fin n) ℝ) ij.1.1 ij.1.2 =
+      (Real.sqrt n)⁻¹ * if ij.1.1 = ij.1.2 then Real.sqrt 2 * g ij.1 else g ij.1 := by
+    simpa only [symmetricCoordinates_apply] using congrFun (symmetricCoordinates_goeMatrix g) ij
+  rw [smul_smul, symmetricOrthonormalBasis_repr_apply, hcoord, Real.sqrt_div (by norm_num),
+    div_eq_mul_inv]
+  congr 1
+  split_ifs <;> ring
 
 private theorem gueMatrix_eq_smul_sum_orthonormalBasis (n : ℕ) (g : Fin n × Fin n → ℝ) :
     gueMatrix n g =
       (Real.sqrt n)⁻¹ • ∑ p : Fin n × Fin n, g p • hermitianOrthonormalBasis n p := by
-  apply (hermitianCoordinates n).injective
-  funext q
-  simp only [hermitianCoordinates_gueMatrix, map_smul, map_sum,
-    hermitianOrthonormalBasis_apply, Pi.smul_apply, Finset.sum_apply, smul_eq_mul]
-  have hterm : ∀ p : Fin n × Fin n,
-      g p * hermitianCoordinates n
-          (if p.1 = p.2 then hermitianBasis n p
-            else (Real.sqrt 2)⁻¹ • hermitianBasis n p) q =
-        if p = q then (if q.1 = q.2 then g q else (Real.sqrt 2)⁻¹ * g q) else 0 := by
-    intro p
-    have hcoord : hermitianCoordinates n (hermitianBasis n p) q = if p = q then 1 else 0 := by
-      rw [hermitianBasis_apply, ContinuousLinearEquiv.apply_symm_apply, Pi.single_apply]
-      exact if_congr eq_comm rfl rfl
-    by_cases heq : p = q
-    · subst heq
-      by_cases hd : p.1 = p.2 <;> simp [hd, hcoord, mul_comm]
-    · by_cases hd : p.1 = p.2 <;> simp [hd, heq, hcoord]
-  simp only [hterm, Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte]
+  rw [← (hermitianOrthonormalBasis n).sum_repr (gueMatrix n g), Finset.smul_sum]
+  refine Finset.sum_congr rfl fun p _ ↦ ?_
+  rw [smul_smul, hermitianOrthonormalBasis_repr_apply, hermitianCoordinates_gueMatrix]
+  congr 1
+  by_cases hd : p.1 = p.2
+  · simp [hd]
+  · simp only [hd, ↓reduceIte]
+    have h2 : Real.sqrt 2 ≠ 0 := by positivity
+    field_simp
 
 /-- **Standard Gaussian representation of the GOE.** For the Frobenius inner product on the real
 symmetric subspace, `goeMeasure n` is the pushforward of `stdGaussian` by `√(2 / n)`. -/
@@ -789,18 +762,16 @@ variable {n : ℕ}
 
 /-- **Orthogonal conjugation invariance of the GOE.** For every `O ∈ O(n)`, conjugating a GOE
 matrix by `O` leaves `goeMeasure n` invariant. -/
-theorem _root_.Matrix.UnitaryGroup.map_symmetricConj_goeMeasure
-    (O : Matrix.orthogonalGroup (Fin n) ℝ) :
-    (goeMeasure n).map (Matrix.UnitaryGroup.symmetricConj O) = goeMeasure n := by
+theorem map_selfAdjointConj_goeMeasure (O : Matrix.orthogonalGroup (Fin n) ℝ) :
+    (goeMeasure n).map (Matrix.UnitaryGroup.selfAdjointConj O) = goeMeasure n := by
   rw [goeMeasure_eq_map_stdGaussian,
     Measure.map_map_const_smul _ (by fun_prop) _ (map_smul _ _),
     stdGaussian_map]
 
 /-- **Unitary conjugation invariance of the GUE.** For every `U ∈ U(n)`, conjugating a GUE matrix
 by `U` leaves `gueMeasure n` invariant. -/
-theorem _root_.Matrix.UnitaryGroup.map_hermitianConj_gueMeasure
-    (U : Matrix.unitaryGroup (Fin n) ℂ) :
-    (gueMeasure n).map (Matrix.UnitaryGroup.hermitianConj U) = gueMeasure n := by
+theorem map_selfAdjointConj_gueMeasure (U : Matrix.unitaryGroup (Fin n) ℂ) :
+    (gueMeasure n).map (Matrix.UnitaryGroup.selfAdjointConj U) = gueMeasure n := by
   rw [gueMeasure_eq_map_stdGaussian,
     Measure.map_map_const_smul _ (by fun_prop) _ (map_smul _ _),
     stdGaussian_map]
@@ -833,12 +804,13 @@ theorem identDistrib_conj_gaussianEnsemble_one {Ω : Type*} [MeasurableSpace Ω]
           gaussianEnsemble 1 n (fun ij ↦ g ij ω) *
           ((O : Matrix (Fin n) (Fin n) ℝ).map Complex.ofReal)ᵀ)
       (((goeMeasure n).map (Real.sqrt v • ·)).map lift) P := by
-    have hmap : ((goeMeasure n).map (Real.sqrt v • ·)).map (Matrix.UnitaryGroup.symmetricConj O) =
-        (goeMeasure n).map (Real.sqrt v • ·) := by
+    have hmap :
+        ((goeMeasure n).map (Real.sqrt v • ·)).map (Matrix.UnitaryGroup.selfAdjointConj O) =
+          (goeMeasure n).map (Real.sqrt v • ·) := by
       rw [Measure.map_map_const_smul _ (by fun_prop) _ (map_smul _ _),
-        Matrix.UnitaryGroup.map_symmetricConj_goeMeasure O]
+        map_selfAdjointConj_goeMeasure O]
     have hconjG := (⟨by fun_prop, hmap⟩ :
-      HasLaw (Matrix.UnitaryGroup.symmetricConj O) _ _).fun_comp hG
+      HasLaw (Matrix.UnitaryGroup.selfAdjointConj O) _ _).fun_comp hG
     have hcomp := (⟨hlift.aemeasurable, rfl⟩ : HasLaw lift _ _).fun_comp hconjG
     convert hcomp using 1
     funext ω
@@ -873,12 +845,13 @@ theorem identDistrib_conj_gaussianEnsemble_of_ne_one {Ω : Type*} [MeasurableSpa
           gaussianEnsemble β n (fun ij ↦ g ij ω) *
           (U : Matrix (Fin n) (Fin n) ℂ)ᴴ)
       (((gueMeasure n).map (Real.sqrt v • ·)).map coeM) P := by
-    have hmap : ((gueMeasure n).map (Real.sqrt v • ·)).map (Matrix.UnitaryGroup.hermitianConj U) =
-        (gueMeasure n).map (Real.sqrt v • ·) := by
+    have hmap :
+        ((gueMeasure n).map (Real.sqrt v • ·)).map (Matrix.UnitaryGroup.selfAdjointConj U) =
+          (gueMeasure n).map (Real.sqrt v • ·) := by
       rw [Measure.map_map_const_smul _ (by fun_prop) _ (map_smul _ _),
-        Matrix.UnitaryGroup.map_hermitianConj_gueMeasure U]
+        map_selfAdjointConj_gueMeasure U]
     have hconjG := (⟨by fun_prop, hmap⟩ :
-      HasLaw (Matrix.UnitaryGroup.hermitianConj U) _ _).fun_comp hG
+      HasLaw (Matrix.UnitaryGroup.selfAdjointConj U) _ _).fun_comp hG
     have hcomp := (⟨continuous_subtype_val.aemeasurable, rfl⟩ : HasLaw coeM _ _).fun_comp hconjG
     convert hcomp using 1
     funext ω
@@ -960,15 +933,10 @@ theorem measurable_goePDF (n : ℕ) : Measurable (goePDF n) :=
   (measurable_goePDFReal n).ennreal_ofReal
 
 /-- The GOE density is invariant under orthogonal conjugation. -/
-theorem _root_.Matrix.UnitaryGroup.goePDFReal_symmetricConj (O : Matrix.orthogonalGroup (Fin n) ℝ)
+theorem goePDFReal_selfAdjointConj (O : Matrix.orthogonalGroup (Fin n) ℝ)
     (H : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℝ)) :
-    goePDFReal n (Matrix.UnitaryGroup.symmetricConj O H) = goePDFReal n H := by
-  have htr : ((Matrix.UnitaryGroup.symmetricConj O H : Matrix (Fin n) (Fin n) ℝ) ^ 2).trace =
-      ((H : Matrix (Fin n) (Fin n) ℝ) ^ 2).trace := by
-    rw [sq, ← selfAdjoint.inner_eq_trace_mul, real_inner_self_eq_norm_sq,
-      LinearIsometryEquiv.norm_map, ← real_inner_self_eq_norm_sq, selfAdjoint.inner_eq_trace_mul,
-      sq]
-  simp only [goePDFReal, htr]
+    goePDFReal n (Matrix.UnitaryGroup.selfAdjointConj O H) = goePDFReal n H := by
+  simp only [goePDFReal, Matrix.UnitaryGroup.trace_selfAdjointConj_pow]
 
 /-- The real-valued **GUE density** against `TauCeti.hermitianLebesgue n`:
 `(n / (2π))^(n / 2) * (n / π)^(n(n - 1) / 2) * exp (-n / 2 * Re tr(H ^ 2))`. -/
@@ -1037,14 +1005,10 @@ theorem measurable_guePDF (n : ℕ) : Measurable (guePDF n) :=
   (measurable_guePDFReal n).ennreal_ofReal
 
 /-- The GUE density is invariant under unitary conjugation. -/
-theorem _root_.Matrix.UnitaryGroup.guePDFReal_hermitianConj (U : Matrix.unitaryGroup (Fin n) ℂ)
+theorem guePDFReal_selfAdjointConj (U : Matrix.unitaryGroup (Fin n) ℂ)
     (H : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ)) :
-    guePDFReal n (Matrix.UnitaryGroup.hermitianConj U H) = guePDFReal n H := by
-  have htr : ((Matrix.UnitaryGroup.hermitianConj U H : Matrix (Fin n) (Fin n) ℂ) ^ 2).trace.re =
-      ((H : Matrix (Fin n) (Fin n) ℂ) ^ 2).trace.re := by
-    rw [← selfAdjoint.norm_sq_eq_re_trace_sq, LinearIsometryEquiv.norm_map,
-      selfAdjoint.norm_sq_eq_re_trace_sq]
-  simp only [guePDFReal, htr]
+    guePDFReal n (Matrix.UnitaryGroup.selfAdjointConj U H) = guePDFReal n H := by
+  simp only [guePDFReal, Matrix.UnitaryGroup.trace_selfAdjointConj_pow]
 
 /-- **GOE density with respect to Frobenius volume.** -/
 theorem goeMeasure_eq_withDensity_volume (n : ℕ) :
@@ -1136,7 +1100,7 @@ theorem gueMeasure_eq_withDensity_volume (n : ℕ) :
   have hexp_arg : -((H : Matrix (Fin n) (Fin n) ℂ) ^ 2).trace.re / (2 * (n : ℝ)⁻¹) =
       -(n : ℝ) / 2 * ((H : Matrix (Fin n) (Fin n) ℂ) ^ 2).trace.re := by
     field_simp
-  rw [hdim, hsq, selfAdjoint.norm_sq_eq_re_trace_sq, hbase, hexp_arg]
+  rw [hdim, hsq, selfAdjoint.norm_sq_eq_re_trace_sq, RCLike.re_to_complex, hbase, hexp_arg]
 
 /-- **GUE invariant density with respect to `TauCeti.hermitianLebesgue n`.** -/
 theorem gueMeasure_eq_withDensity_hermitianLebesgue (n : ℕ) :
@@ -1267,7 +1231,7 @@ theorem hasLaw_goeMeasure_iff_entries {Ω : Type*} [MeasurableSpace Ω] {P : Mea
 
 /-- **Equivalence of the entry and invariant-density characterizations of the GOE** (AGZ (2.5.1)).
 -/
-theorem hasLaw_goe_withDensity_iff_entries {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+theorem hasLaw_withDensity_goePDF_iff_entries {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
     {H : Ω → selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℝ)} :
     HasLaw H ((symmetricLebesgue n).withDensity (goePDF n)) P ↔
       iIndepFun (fun ij : upperTriangle n ↦ fun ω ↦ (H ω : Matrix (Fin n) (Fin n) ℝ) ij.1.1 ij.1.2)
@@ -1295,7 +1259,7 @@ theorem hasLaw_gueMeasure_iff_entries {Ω : Type*} [MeasurableSpace Ω] {P : Mea
 
 /-- **Equivalence of the entry and invariant-density characterizations of the GUE** (AGZ (2.5.1)).
 -/
-theorem hasLaw_gue_withDensity_iff_entries {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+theorem hasLaw_withDensity_guePDF_iff_entries {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
     {H : Ω → selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ)} :
     HasLaw H ((hermitianLebesgue n).withDensity (guePDF n)) P ↔
       iIndepFun (fun p : Fin n × Fin n ↦ fun ω ↦ hermitianCoordinates n (H ω) p) P ∧
@@ -1315,20 +1279,20 @@ namespace ProbabilityTheory
 open MeasureTheory TauCeti.Probability
 
 /-- Orthogonal conjugation preserves the GOE law of a random real symmetric matrix. -/
-theorem HasLaw.symmetricConj_goeMeasure {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {n : ℕ}
+theorem HasLaw.selfAdjointConj_goeMeasure {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {n : ℕ}
     {H : Ω → selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℝ)}
     (hH : HasLaw H (goeMeasure n) P) (O : Matrix.orthogonalGroup (Fin n) ℝ) :
-    HasLaw (fun ω ↦ Matrix.UnitaryGroup.symmetricConj O (H ω)) (goeMeasure n) P :=
-  (⟨by fun_prop, Matrix.UnitaryGroup.map_symmetricConj_goeMeasure O⟩ :
-    HasLaw (Matrix.UnitaryGroup.symmetricConj O) (goeMeasure n) (goeMeasure n)).fun_comp hH
+    HasLaw (fun ω ↦ Matrix.UnitaryGroup.selfAdjointConj O (H ω)) (goeMeasure n) P :=
+  (⟨by fun_prop, map_selfAdjointConj_goeMeasure O⟩ :
+    HasLaw (Matrix.UnitaryGroup.selfAdjointConj O) (goeMeasure n) (goeMeasure n)).fun_comp hH
 
 /-- Unitary conjugation preserves the GUE law of a random complex Hermitian matrix. -/
-theorem HasLaw.hermitianConj_gueMeasure {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {n : ℕ}
+theorem HasLaw.selfAdjointConj_gueMeasure {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {n : ℕ}
     {H : Ω → selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ)}
     (hH : HasLaw H (gueMeasure n) P) (U : Matrix.unitaryGroup (Fin n) ℂ) :
-    HasLaw (fun ω ↦ Matrix.UnitaryGroup.hermitianConj U (H ω)) (gueMeasure n) P :=
-  (⟨by fun_prop, Matrix.UnitaryGroup.map_hermitianConj_gueMeasure U⟩ :
-    HasLaw (Matrix.UnitaryGroup.hermitianConj U) (gueMeasure n) (gueMeasure n)).fun_comp hH
+    HasLaw (fun ω ↦ Matrix.UnitaryGroup.selfAdjointConj U (H ω)) (gueMeasure n) P :=
+  (⟨by fun_prop, map_selfAdjointConj_gueMeasure U⟩ :
+    HasLaw (Matrix.UnitaryGroup.selfAdjointConj U) (gueMeasure n) (gueMeasure n)).fun_comp hH
 
 /-- A random symmetric matrix with the GOE law has a density against `TauCeti.symmetricLebesgue`. -/
 theorem HasLaw.hasPDF_goeMeasure {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {n : ℕ}

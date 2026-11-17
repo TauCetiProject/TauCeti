@@ -32,8 +32,11 @@ have Frobenius norm `√2`, so Frobenius volume is `2 ^ (p * (p - 1) / 4)` times
   measure preserving.
 * `TauCeti.symmetricLebesgueIsAddHaarMeasure` — `symmetricLebesgue p` is an additive Haar
   measure, as required by Mathlib's Jacobian API.
+* `TauCeti.pairwise_inner_symmetricBasis` and `TauCeti.norm_symmetricBasis` — orthogonality and
+  Frobenius norms of `TauCeti.symmetricBasis`.
 * `TauCeti.symmetricOrthonormalBasis` — the Frobenius-orthonormal basis obtained by rescaling
-  off-diagonal vectors of `TauCeti.symmetricBasis` by `(√2)⁻¹`.
+  off-diagonal vectors of `TauCeti.symmetricBasis` by `(√2)⁻¹`, with coordinate lemma
+  `TauCeti.symmetricOrthonormalBasis_repr_apply`.
 * `TauCeti.volume_symmetricMatrix_eq_smul_symmetricLebesgue` — comparison with the Frobenius
   volume.
 * `TauCeti.symmetricLebesgue_zero` — in dimension zero, `symmetricLebesgue` is the Dirac
@@ -118,12 +121,16 @@ private theorem inner_symmetricBasis (p : ℕ)
     rw [ite_eq_right h]
     ring
 
-private theorem pairwise_inner_symmetricBasis (p : ℕ) :
+/-- The coordinate basis vectors of `TauCeti.symmetricBasis` are pairwise orthogonal in the
+Frobenius inner product. -/
+theorem pairwise_inner_symmetricBasis (p : ℕ) :
     Pairwise fun ij kl ↦ ⟪symmetricBasis p ij, symmetricBasis p kl⟫ = 0 := by
   intro ij ⟨⟨k, l⟩, hkl⟩ hne
   rw [inner_symmetricBasis, coe_symmetricBasis_apply_of_le p ij hkl, ite_eq_right hne, mul_zero]
 
-private theorem norm_symmetricBasis (p : ℕ) (ij : upperTriangle p) :
+/-- Each vector of `TauCeti.symmetricBasis` has Frobenius norm `1` on the diagonal and `√2` off
+it. -/
+theorem norm_symmetricBasis (p : ℕ) (ij : upperTriangle p) :
     ‖symmetricBasis p ij‖ = if ij.1.1 = ij.1.2 then 1 else Real.sqrt 2 := by
   obtain ⟨⟨k, l⟩, hkl⟩ := ij
   rw [← Real.sqrt_sq (norm_nonneg _), ← real_inner_self_eq_norm_sq, inner_symmetricBasis,
@@ -144,6 +151,19 @@ theorem symmetricOrthonormalBasis_apply (p : ℕ) (ij : upperTriangle p) :
       else (Real.sqrt 2)⁻¹ • symmetricBasis p ij := by
   rw [symmetricOrthonormalBasis, Basis.toOrthonormalBasisOfOrthogonal_apply, norm_symmetricBasis]
   split_ifs <;> simp
+
+/-- The `ij`-th coordinate of `A` in `TauCeti.symmetricOrthonormalBasis` is `A ij.1.1 ij.1.2` on
+the diagonal and `√2 * A ij.1.1 ij.1.2` off it. -/
+-- Stated in terms of the matrix entry (matching `symmetricBasis_repr`) rather than
+-- `symmetricCoordinates p A ij`, because `symmetricCoordinates_apply` is `@[simp]`.
+@[simp]
+theorem symmetricOrthonormalBasis_repr_apply (p : ℕ)
+    (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) (ij : upperTriangle p) :
+    (symmetricOrthonormalBasis p).repr A ij =
+      (if ij.1.1 = ij.1.2 then 1 else Real.sqrt 2) *
+        (A : Matrix (Fin p) (Fin p) ℝ) ij.1.1 ij.1.2 := by
+  rw [symmetricOrthonormalBasis, Basis.toOrthonormalBasisOfOrthogonal_repr_apply,
+    norm_symmetricBasis, symmetricBasis_repr, RCLike.ofReal_real_eq_id, id_eq]
 
 /-- There are `∑ i < p, i = p * (p - 1) / 2` upper-triangular positions off the diagonal. -/
 private theorem card_offDiag (p : ℕ) :

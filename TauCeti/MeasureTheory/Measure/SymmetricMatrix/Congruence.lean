@@ -53,9 +53,6 @@ identities for rectangular congruence are in `TauCeti.LinearAlgebra.Matrix.Congr
 * `Matrix.GeneralLinearGroup.map_symmetricCongruence_restrict_posDef` — the same change of
   variables on the positive-definite cone, which congruence by an invertible matrix preserves,
   together with its lower- and Bochner-integral forms.
-* `Matrix.UnitaryGroup.symmetricConj` — orthogonal conjugation `A ↦ O * A * Oᵀ` as a linear
-  isometry equivalence of the symmetric subspace, together with its preservation of Frobenius
-  volume and `TauCeti.symmetricLebesgue`.
 
 ## References
 
@@ -570,87 +567,6 @@ theorem integral_posDef_symmetricCongruence {E : Type*} [NormedAddCommGroup E]
 end Cone
 
 end GeneralLinearGroup
-
-/-! ### Orthogonal conjugation on the symmetric subspace -/
-
-namespace UnitaryGroup
-
-/-- Orthogonal conjugation `A ↦ O * A * Oᵀ` as a linear isometry equivalence of the real symmetric
-subspace. -/
-def symmetricConj (O : Matrix.orthogonalGroup (Fin p) ℝ) :
-    selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ≃ₗᵢ[ℝ]
-      selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) where
-  toLinearEquiv :=
-    (GeneralLinearGroup.symmetricCongruence (Unitary.toUnits O)).toLinearEquiv
-  norm_map' A := by
-    have hO : (O : Matrix (Fin p) (Fin p) ℝ)ᵀ * (O : Matrix (Fin p) (Fin p) ℝ) = 1 :=
-      (Matrix.mem_orthogonalGroup_iff' (Fin p) ℝ).1 O.2
-    refine (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).1 ?_
-    change ‖symmetricCongruenceLinearMap (O : Matrix (Fin p) (Fin p) ℝ) A‖ ^ 2 = ‖A‖ ^ 2
-    rw [← real_inner_self_eq_norm_sq, ← real_inner_self_eq_norm_sq,
-      inner_symmetricCongruenceLinearMap, ← LinearMap.comp_apply,
-      ← symmetricCongruenceLinearMap_mul, hO, symmetricCongruenceLinearMap_one, LinearMap.id_apply]
-
-@[simp]
-theorem coe_symmetricConj_apply (O : Matrix.orthogonalGroup (Fin p) ℝ)
-    (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
-    (symmetricConj O A : Matrix (Fin p) (Fin p) ℝ) =
-      (O : Matrix (Fin p) (Fin p) ℝ) * (A : Matrix (Fin p) (Fin p) ℝ) *
-        (O : Matrix (Fin p) (Fin p) ℝ)ᵀ :=
-  (rfl)
-
-theorem coe_symmetricConj_symm_apply (O : Matrix.orthogonalGroup (Fin p) ℝ)
-    (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
-    ((symmetricConj O).symm A : Matrix (Fin p) (Fin p) ℝ) =
-      (O : Matrix (Fin p) (Fin p) ℝ)ᵀ * (A : Matrix (Fin p) (Fin p) ℝ) *
-        (O : Matrix (Fin p) (Fin p) ℝ) := by
-  change ((GeneralLinearGroup.symmetricCongruence (Unitary.toUnits O)).symm A :
-      Matrix (Fin p) (Fin p) ℝ) = _
-  simp [Matrix.star_eq_conjTranspose]
-
-@[simp]
-theorem symmetricConj_one :
-    symmetricConj (1 : Matrix.orthogonalGroup (Fin p) ℝ) = LinearIsometryEquiv.refl ℝ _ :=
-  LinearIsometryEquiv.ext fun A => by
-    change GeneralLinearGroup.symmetricCongruence (Unitary.toUnits 1) A = A
-    simp
-
-theorem symmetricConj_mul (O Q : Matrix.orthogonalGroup (Fin p) ℝ) :
-    symmetricConj (O * Q) = (symmetricConj Q).trans (symmetricConj O) :=
-  LinearIsometryEquiv.ext fun A => by
-    change GeneralLinearGroup.symmetricCongruence (Unitary.toUnits (O * Q)) A =
-      GeneralLinearGroup.symmetricCongruence (Unitary.toUnits O)
-        (GeneralLinearGroup.symmetricCongruence (Unitary.toUnits Q) A)
-    simp
-
-@[simp]
-theorem symmetricConj_symm (O : Matrix.orthogonalGroup (Fin p) ℝ) :
-    (symmetricConj O).symm = symmetricConj O⁻¹ :=
-  LinearIsometryEquiv.ext fun A => by
-    change (GeneralLinearGroup.symmetricCongruence (Unitary.toUnits O)).symm A =
-      GeneralLinearGroup.symmetricCongruence (Unitary.toUnits O⁻¹) A
-    simp
-
-/-- Orthogonal conjugation preserves Frobenius volume on the real symmetric subspace. -/
-theorem measurePreserving_symmetricConj_volume (O : Matrix.orthogonalGroup (Fin p) ℝ) :
-    MeasurePreserving (symmetricConj O) volume volume :=
-  (symmetricConj O).measurePreserving
-
-/-- Orthogonal conjugation preserves `TauCeti.symmetricLebesgue p` on the real symmetric
-subspace. -/
-theorem measurePreserving_symmetricConj_symmetricLebesgue (O : Matrix.orthogonalGroup (Fin p) ℝ) :
-    MeasurePreserving (symmetricConj O) (symmetricLebesgue p) (symmetricLebesgue p) := by
-  refine ⟨(symmetricConj O).continuous.measurable, ?_⟩
-  have hdet : |Matrix.det (O : Matrix (Fin p) (Fin p) ℝ)| = 1 := by
-    have h := (Matrix.det_of_mem_unitary O.2).1
-    rw [star_trivial, ← sq, sq_eq_one_iff] at h
-    rcases h with h | h <;> simp [h]
-  change (symmetricLebesgue p).map
-      (GeneralLinearGroup.symmetricCongruence (Unitary.toUnits O)) = _
-  rw [GeneralLinearGroup.map_symmetricCongruence_symmetricLebesgue, Unitary.val_toUnits_apply,
-    hdet, ENNReal.ofReal_one, one_pow, inv_one, one_smul]
-
-end UnitaryGroup
 
 end Matrix
 

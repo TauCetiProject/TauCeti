@@ -66,9 +66,7 @@ theorem toOrthonormalBasisOfOrthogonal_repr_apply (b : Basis ι 𝕜 E)
     (hb : Pairwise fun i j ↦ ⟪b i, b j⟫_𝕜 = 0) (x : E) (i : ι) :
     (b.toOrthonormalBasisOfOrthogonal hb).repr x i = (‖b i‖ : 𝕜) * b.repr x i := by
   rw [toOrthonormalBasisOfOrthogonal, coe_toOrthonormalBasis_repr]
-  change (b.isUnitSMul _).repr x i = _
-  rw [Basis.repr_isUnitSMul, Units.smul_def, smul_eq_mul, Units.val_inv_eq_inv_val,
-    IsUnit.unit_spec, inv_inv]
+  simp [Basis.repr_isUnitSMul, Units.smul_def, Units.val_inv_eq_inv_val]
 
 /-- When `b` is already orthonormal, normalizing it agrees with
 `Module.Basis.toOrthonormalBasis`. -/

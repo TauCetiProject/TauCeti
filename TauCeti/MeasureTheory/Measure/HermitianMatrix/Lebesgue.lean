@@ -21,8 +21,9 @@ coordinates (diagonal entries and strictly upper-triangular real and imaginary p
 The Frobenius volume of `measureSpaceOfInnerProductSpace` is a Haar measure for the same topology
 with a different normalization: each of the `n * (n - 1)` off-diagonal coordinate basis vectors
 has Frobenius norm `√2`, so Frobenius volume is `2 ^ (n * (n - 1) / 2)` times
-`TauCeti.hermitianLebesgue n`. Unitary conjugation `Matrix.UnitaryGroup.hermitianConj U` is a
-Frobenius isometry, so it preserves both Frobenius volume and `TauCeti.hermitianLebesgue n`.
+`TauCeti.hermitianLebesgue n`. Unitary conjugation `Matrix.UnitaryGroup.selfAdjointConj U` is a
+Frobenius isometry, so `Matrix.UnitaryGroup.measurePreserving_selfAdjointConj` directly gives
+invariance of both Frobenius volume and `TauCeti.hermitianLebesgue n`.
 
 ## Main declarations
 
@@ -32,15 +33,15 @@ Frobenius isometry, so it preserves both Frobenius volume and `TauCeti.hermitian
   `TauCeti.measurePreserving_hermitianCoordinates` — the coordinate equivalence preserves
   `hermitianLebesgue` and product Lebesgue measure.
 * `TauCeti.hermitianLebesgueIsAddHaarMeasure` — `hermitianLebesgue n` is an additive Haar measure.
+* `TauCeti.pairwise_inner_hermitianBasis` and `TauCeti.norm_hermitianBasis` — orthogonality and
+  Frobenius norms of `TauCeti.hermitianBasis`.
 * `TauCeti.hermitianOrthonormalBasis` — the Frobenius-orthonormal basis obtained by rescaling
-  off-diagonal vectors of `TauCeti.hermitianBasis` by `(√2)⁻¹`.
+  off-diagonal vectors of `TauCeti.hermitianBasis` by `(√2)⁻¹`, with coordinate lemma
+  `TauCeti.hermitianOrthonormalBasis_repr_apply`.
 * `TauCeti.volume_hermitianMatrix_eq_smul_hermitianLebesgue` — comparison with Frobenius volume.
 * `TauCeti.hermitianLebesgue_zero` — in dimension zero, `hermitianLebesgue` is the Dirac measure.
 * `TauCeti.measurePreserving_hermitianFinOneEquiv` — in dimension one, `hermitianFinOneEquiv`
   carries `hermitianLebesgue 1` to Lebesgue measure on `ℝ`.
-* `Matrix.UnitaryGroup.measurePreserving_hermitianConj_volume` and
-  `Matrix.UnitaryGroup.measurePreserving_hermitianConj_hermitianLebesgue` — unitary conjugation
-  preserves Frobenius volume and `hermitianLebesgue`.
 
 ## References
 
@@ -97,7 +98,7 @@ private theorem inner_hermitianBasis_eq (n : ℕ)
     (A : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ)) (p : Fin n × Fin n) :
     ⟪A, hermitianBasis n p⟫ = (if p.1 = p.2 then 1 else 2) * hermitianCoordinates n A p := by
   obtain ⟨i, j⟩ := p
-  rw [selfAdjoint.inner_eq_re_trace_mul]
+  rw [selfAdjoint.inner_eq_re_trace_mul, RCLike.re_to_complex]
   rcases lt_trichotomy i j with h | rfl | h
   · rw [coe_hermitianBasis_offDiag_lt n h, Matrix.mul_add, Matrix.trace_add,
       Matrix.trace_mul_single, Matrix.trace_mul_single]
@@ -114,13 +115,17 @@ private theorem inner_hermitianBasis_eq (n : ℕ)
       hermitianCoordinates_apply_of_gt n A h, ite_eq_right h.ne']
     ring
 
-private theorem pairwise_inner_hermitianBasis (n : ℕ) :
+/-- The coordinate basis vectors of `TauCeti.hermitianBasis` are pairwise orthogonal in the real
+Frobenius inner product. -/
+theorem pairwise_inner_hermitianBasis (n : ℕ) :
     Pairwise fun p q ↦ ⟪hermitianBasis n p, hermitianBasis n q⟫ = 0 := by
   intro p q hpq
   rw [inner_hermitianBasis_eq, hermitianBasis_apply, ContinuousLinearEquiv.apply_symm_apply,
     Pi.single_eq_of_ne hpq.symm, mul_zero]
 
-private theorem norm_hermitianBasis (n : ℕ) (p : Fin n × Fin n) :
+/-- Each vector of `TauCeti.hermitianBasis` has Frobenius norm `1` on the diagonal and `√2` off
+it. -/
+theorem norm_hermitianBasis (n : ℕ) (p : Fin n × Fin n) :
     ‖hermitianBasis n p‖ = if p.1 = p.2 then 1 else Real.sqrt 2 := by
   rw [← Real.sqrt_sq (norm_nonneg _), ← real_inner_self_eq_norm_sq, inner_hermitianBasis_eq,
     hermitianBasis_apply, ContinuousLinearEquiv.apply_symm_apply, Pi.single_eq_same, mul_one]
@@ -139,6 +144,16 @@ theorem hermitianOrthonormalBasis_apply (n : ℕ) (p : Fin n × Fin n) :
       if p.1 = p.2 then hermitianBasis n p else (Real.sqrt 2)⁻¹ • hermitianBasis n p := by
   rw [hermitianOrthonormalBasis, Basis.toOrthonormalBasisOfOrthogonal_apply, norm_hermitianBasis]
   split_ifs <;> simp
+
+/-- The `p`-th coordinate of `A` in `TauCeti.hermitianOrthonormalBasis` is
+`hermitianCoordinates n A p` on the diagonal and `√2 * hermitianCoordinates n A p` off it. -/
+@[simp]
+theorem hermitianOrthonormalBasis_repr_apply (n : ℕ)
+    (A : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ)) (p : Fin n × Fin n) :
+    (hermitianOrthonormalBasis n).repr A p =
+      (if p.1 = p.2 then 1 else Real.sqrt 2) * hermitianCoordinates n A p := by
+  rw [hermitianOrthonormalBasis, Basis.toOrthonormalBasisOfOrthogonal_repr_apply,
+    norm_hermitianBasis, hermitianBasis_repr, RCLike.ofReal_real_eq_id, id_eq]
 
 private theorem card_offDiag_fin_prod (n : ℕ) :
     (Finset.univ.filter fun p : Fin n × Fin n => p.1 ≠ p.2).card = n * (n - 1) := by
@@ -187,34 +202,3 @@ theorem measurePreserving_hermitianFinOneEquiv :
     (measurePreserving_hermitianCoordinates 1)
 
 end TauCeti
-
-/-! ### Unitary invariance of Frobenius volume and coordinate Lebesgue measure -/
-
-namespace Matrix.UnitaryGroup
-
-variable {n : ℕ}
-
-/-- Unitary conjugation preserves Frobenius volume on the complex Hermitian subspace. -/
-theorem measurePreserving_hermitianConj_volume (U : Matrix.unitaryGroup (Fin n) ℂ) :
-    MeasurePreserving (hermitianConj U) volume volume :=
-  (hermitianConj U).measurePreserving
-
-/-- Unitary conjugation preserves `TauCeti.hermitianLebesgue n` on the complex Hermitian
-subspace. -/
-theorem measurePreserving_hermitianConj_hermitianLebesgue (U : Matrix.unitaryGroup (Fin n) ℂ) :
-    MeasurePreserving (hermitianConj U) (TauCeti.hermitianLebesgue n)
-      (TauCeti.hermitianLebesgue n) := by
-  refine ⟨(hermitianConj U).continuous.measurable, ?_⟩
-  set c : ENNReal := ENNReal.ofReal ((2 : ℝ) ^ (n * (n - 1) / 2))
-  have hc0 : c ≠ 0 := (ENNReal.ofReal_pos.2 (by positivity)).ne'
-  have hcTop : c ≠ ⊤ := ENNReal.ofReal_ne_top
-  have hsmul : c • (TauCeti.hermitianLebesgue n).map (hermitianConj U) =
-      c • TauCeti.hermitianLebesgue n := by
-    rw [← Measure.map_smul, ← TauCeti.volume_hermitianMatrix_eq_smul_hermitianLebesgue n,
-      (measurePreserving_hermitianConj_volume U).map_eq]
-    exact (hermitianConj U).continuous.measurable.aemeasurable
-  refine Measure.ext fun s _ => (ENNReal.mul_right_inj hc0 hcTop).1 ?_
-  have h := congrArg (fun μ : Measure _ => μ s) hsmul
-  simpa only [_root_.smul_apply, smul_eq_mul] using h
-
-end Matrix.UnitaryGroup
