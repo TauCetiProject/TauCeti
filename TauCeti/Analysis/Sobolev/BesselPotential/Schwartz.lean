@@ -33,8 +33,9 @@ normed complex `F`.
 * `SchwartzMap.denseRange_toBesselPotentialSpaceCLM`: its range is dense for `p < ∞`.
 * `SchwartzMap.toLp_toBesselPotentialSpaceCLM_zero`,
   `BesselPotentialSpace.toDistr_toLpₗᵢ_zero_symm_apply`: the identification `H^{0,p} = Lᵖ`.
-* `SchwartzMap.norm_toBesselPotentialSpaceCLM_zero`: on `H^{0,p}` the inclusion is isometric for
-  the `Lᵖ` norm.
+* `SchwartzMap.norm_toBesselPotentialSpaceCLM_eq_eLpNorm`,
+  `SchwartzMap.norm_toBesselPotentialSpaceCLM_zero`: the `H^{s,p}` norm of a Schwartz function `u`
+  is the `Lᵖ` norm of `J^s u`, and on `H^{0,p}` the inclusion is isometric for the `Lᵖ` norm.
 * `BesselPotentialSpace.continuousLinearMap_ext`: continuous linear maps out of `H^{s,p}`,
   `p < ∞`, are determined by their values on Schwartz functions.
 * `BesselPotentialSpace.norm_eq_of_smulLeftCLM_fourier_eq`: for Hilbert-space values, the `H^s`
@@ -106,6 +107,13 @@ theorem toDistr_toBesselPotentialSpaceCLM (u : 𝓢(E, F)) :
 theorem toLp_toBesselPotentialSpaceCLM_zero (u : 𝓢(E, F)) :
     (toBesselPotentialSpaceCLM 0 p u).toLp = u.toLp p := by
   simp [fourierMultiplierCLM_const]
+
+/-- The `H^{s,p}` norm of a Schwartz function `u` is the `Lᵖ` norm of `J^s u`. -/
+theorem norm_toBesselPotentialSpaceCLM_eq_eLpNorm (u : 𝓢(E, F)) :
+    ‖toBesselPotentialSpaceCLM s p u‖ =
+      (eLpNorm (fourierMultiplierCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) u)
+        p volume).toReal := by
+  rw [← BesselPotentialSpace.norm_toLp_eq, toLp_toBesselPotentialSpaceCLM, norm_toLp]
 
 /-- The `H^{0,p}` norm of a Schwartz function is its `Lᵖ` norm. -/
 theorem norm_toBesselPotentialSpaceCLM_zero (u : 𝓢(E, F)) :

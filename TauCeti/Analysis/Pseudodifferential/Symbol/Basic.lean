@@ -32,7 +32,8 @@ space, and develop the first operations of the symbol calculus:
 * `TauCeti.Symbol.inclusion`: a symbol of order `m` is a symbol of every order `m' ≥ m`;
 * `TauCeti.Symbol.frequencyDeriv`: a frequency derivative `∂_{ξ_j}` lowers the order by one;
 * `TauCeti.Symbol.frequencyLaplacian`: the frequency Laplacian `Δ_ξ = ∑ⱼ ∂²_{ξ_j}` lowers the
-  order by two, and `TauCeti.Symbol.frequencyLaplacianPow` iterates it;
+  order by two, `TauCeti.Symbol.frequencyLaplacianPow` iterates it, and
+  `TauCeti.Symbol.oneSubFrequencyLaplacian` is the shifted frequency Laplacian `1 - Δ_ξ`;
 * `TauCeti.Symbol.spatialDeriv`: a spatial derivative `∂_{x_j}` preserves the order; spatial and
   frequency derivatives commute with each other (`TauCeti.Symbol.spatialDeriv_comm`,
   `TauCeti.Symbol.frequencyDeriv_comm`, `TauCeti.Symbol.spatialDeriv_frequencyDeriv_comm`);
@@ -66,7 +67,9 @@ The estimates are only required locally uniformly in `x`. The predicate
 `TauCeti.Symbol.IsUniform` asks for constants independent of `x`, and
 `TauCeti.Symbol.HasCompactSpatialSupport` asks that the symbol vanish for `x` outside a fixed
 compact set. Symbols with compact spatial support are uniform
-(`TauCeti.Symbol.HasCompactSpatialSupport.isUniform`). The symbol of multiplication by `f` is
+(`TauCeti.Symbol.HasCompactSpatialSupport.isUniform`), though a nonzero constant in positive
+dimension does not have compact spatial support
+(`TauCeti.Symbol.not_hasCompactSpatialSupport_const`). The symbol of multiplication by `f` is
 uniform exactly when all derivatives of `f` are bounded (`TauCeti.Symbol.isUniform_ofSpatial_iff`),
 so the local estimates alone do not give uniform ones: a coordinate function `x_j` is a symbol of
 order `0` that is not uniform (`TauCeti.Symbol.not_isUniform_ofSpatial_smul`).
@@ -825,6 +828,68 @@ theorem HasCompactSpatialSupport.spatialDeriv {a : Symbol n V W m}
   rw [coefficient_spatialDeriv, (h.coordinateDeriv [j]).eq_of_nhds, coordinateDeriv_zero,
     Pi.zero_apply]
 
+/-- The shifted frequency Laplacian `1 - Δ_ξ` on symbols of order `m`. -/
+def oneSubFrequencyLaplacian : Symbol n V W m →ₗ[ℂ] Symbol n V W m :=
+  LinearMap.id - inclusion (by linarith) ∘ₗ frequencyLaplacian (m := m)
+
+@[simp] theorem coefficient_oneSubFrequencyLaplacian (a : Symbol n V W m) (p) :
+    (oneSubFrequencyLaplacian a).coefficient p =
+      a.coefficient p - (frequencyLaplacian a).coefficient p := by simp [oneSubFrequencyLaplacian]
+
+theorem IsUniform.oneSubFrequencyLaplacian {a : Symbol n V W m} (ha : a.IsUniform) :
+    (oneSubFrequencyLaplacian a).IsUniform :=
+  ha.sub <| IsUniform.inclusion (by rw [frequencyLaplacian_eq_sum]; exact IsUniform.sum fun j _ =>
+    ((ha.frequencyDeriv j).frequencyDeriv j).inclusion (by linarith)) (by linarith)
+
+theorem IsUniform.iterate_oneSubFrequencyLaplacian {a : Symbol n V W m} (ha : a.IsUniform) :
+    ∀ N : ℕ, ((Symbol.oneSubFrequencyLaplacian (m := m))^[N] a).IsUniform
+  | 0 => ha
+  | N + 1 => ha.oneSubFrequencyLaplacian.iterate_oneSubFrequencyLaplacian N
+
+theorem HasCompactSpatialSupport.oneSubFrequencyLaplacian {a : Symbol n V W m}
+    (ha : a.HasCompactSpatialSupport) : (oneSubFrequencyLaplacian a).HasCompactSpatialSupport :=
+  ha.sub <| HasCompactSpatialSupport.inclusion (by
+    rw [frequencyLaplacian_eq_sum]; exact Finset.sum_induction _ HasCompactSpatialSupport
+      (fun _ _ => .add) hasCompactSpatialSupport_zero fun j _ =>
+        ((ha.frequencyDeriv j).frequencyDeriv j).inclusion (by linarith)) (by linarith)
+
+theorem HasCompactSpatialSupport.iterate_oneSubFrequencyLaplacian {a : Symbol n V W m}
+    (ha : a.HasCompactSpatialSupport) :
+    ∀ N : ℕ, ((Symbol.oneSubFrequencyLaplacian (m := m))^[N] a).HasCompactSpatialSupport
+  | 0 => ha
+  | N + 1 => ha.oneSubFrequencyLaplacian.iterate_oneSubFrequencyLaplacian N
+
+theorem spatialDeriv_oneSubFrequencyLaplacian (j : Fin n) (a : Symbol n V W m) :
+    spatialDeriv j (oneSubFrequencyLaplacian a) = oneSubFrequencyLaplacian (spatialDeriv j a) := by
+  simp [oneSubFrequencyLaplacian, frequencyLaplacian_eq_sum, spatialDeriv_frequencyDeriv_comm]
+
+theorem spatialDeriv_iterate_oneSubFrequencyLaplacian (N : ℕ) (j : Fin n) (a : Symbol n V W m) :
+    spatialDeriv j ((oneSubFrequencyLaplacian (m := m))^[N] a) =
+      (oneSubFrequencyLaplacian (m := m))^[N] (spatialDeriv j a) :=
+  Function.Semiconj.iterate_right (spatialDeriv_oneSubFrequencyLaplacian j) N a
+
+theorem frequencyDeriv_oneSubFrequencyLaplacian (j : Fin n) (a : Symbol n V W m) :
+    frequencyDeriv j (oneSubFrequencyLaplacian a) =
+      oneSubFrequencyLaplacian (frequencyDeriv j a) := by
+  simp only [oneSubFrequencyLaplacian, LinearMap.sub_apply, LinearMap.id_coe, id_eq,
+    LinearMap.comp_apply, map_sub, frequencyDeriv_inclusion, frequencyLaplacian_eq_sum, map_sum]
+  congr 1; exact Finset.sum_congr rfl fun l _ => by
+    rw [frequencyDeriv_comm j l, frequencyDeriv_comm j l]; ext1; rfl
+
+theorem frequencyDeriv_iterate_oneSubFrequencyLaplacian (N : ℕ) (j : Fin n) (a : Symbol n V W m) :
+    frequencyDeriv j ((oneSubFrequencyLaplacian (m := m))^[N] a) =
+      (oneSubFrequencyLaplacian (m := m - 1))^[N] (frequencyDeriv j a) :=
+  Function.Semiconj.iterate_right (frequencyDeriv_oneSubFrequencyLaplacian j) N a
+
+/-- The coefficient of `(1 - Δ_ξ) ^ N a` depends only on the coefficient of `a`, not its order. -/
+theorem coefficient_iterate_oneSubFrequencyLaplacian_congr {m₁ m₂ : ℝ} {a₁ : Symbol n V W m₁}
+    {a₂ : Symbol n V W m₂} (h : a₁.coefficient = a₂.coefficient) :
+    ∀ N : ℕ, ((oneSubFrequencyLaplacian (m := m₁))^[N] a₁).coefficient =
+      ((oneSubFrequencyLaplacian (m := m₂))^[N] a₂).coefficient
+  | 0 => h
+  | N + 1 => coefficient_iterate_oneSubFrequencyLaplacian_congr
+      (funext fun ⟨x, ξ⟩ => by simp [h]) N
+
 end Deriv
 
 section Spatial
@@ -905,6 +970,31 @@ theorem isUniform_const (T : V →L[ℂ] W) : (const T : Symbol n V W 0).IsUnifo
   rcases eq_or_ne α [] with rfl | hα
   · simp
   · simp [coordinateDeriv_const T hα]
+
+/-- In positive dimension, a nonzero constant symbol does not have compact spatial support. -/
+theorem not_hasCompactSpatialSupport_const [Nonempty (Fin n)] {T : V →L[ℂ] W} (hT : T ≠ 0) :
+    ¬ (const T : Symbol n V W 0).HasCompactSpatialSupport := by
+  rintro ⟨K, hK, hKT⟩; obtain ⟨j⟩ := ‹Nonempty (Fin n)›
+  obtain ⟨R, hR⟩ := hK.isBounded.subset_closedBall 0
+  set x : CoordinateSpace n := (max R 0 + 1) • EuclideanSpace.single j (1 : ℝ)
+  have hx : x ∈ K := by_contra fun hx => hT (by simpa using hKT x hx 0)
+  have hnorm : ‖x‖ = max R 0 + 1 := by
+    simp [x, norm_smul, abs_of_pos (by positivity : 0 < max R 0 + 1)]
+  linarith [mem_closedBall_zero_iff.mp (hR hx), le_max_left R 0]
+
+@[simp] theorem frequencyLaplacian_const (T : V →L[ℂ] W) :
+    frequencyLaplacian (const T : Symbol n V W 0) = 0 := by
+  ext1; funext ⟨x, ξ⟩; rw [coefficient_frequencyLaplacian, coefficient_zero, Pi.zero_apply]
+  exact Finset.sum_eq_zero fun j _ => by
+    simp [coordinateDeriv_const _ (by simp : ([j] : List (Fin n)) ≠ [])]
+
+@[simp] theorem oneSubFrequencyLaplacian_const (T : V →L[ℂ] W) :
+    oneSubFrequencyLaplacian (const T : Symbol n V W 0) = const T := by
+  simp [oneSubFrequencyLaplacian]
+
+@[simp] theorem iterate_oneSubFrequencyLaplacian_const (T : V →L[ℂ] W) (N : ℕ) :
+    (oneSubFrequencyLaplacian (m := 0))^[N] (const T : Symbol n V W 0) = const T :=
+  Function.IsFixedPt.iterate (oneSubFrequencyLaplacian_const T) N
 
 end Spatial
 

@@ -46,8 +46,9 @@ A measure of temperate growth is finite on compact sets.
   growth.
 * `Function.HasTemperateGrowth.of_norm_iteratedFDeriv_le_one_add_norm_sq_rpow`: symbol estimates
   give temperate growth.
-* `Function.hasTemperateGrowth_one_add_norm_smul_sq_rpow`: the rescaled Bessel potential has
-  temperate growth.
+* `Function.hasTemperateGrowth_one_add_norm_smul_sq_rpow`,
+  `Function.hasTemperateGrowth_one_add_norm_sub_sq_rpow`: rescaled and translated Bessel potentials
+  have temperate growth.
 * `Function.hasTemperateGrowth_log_one_add_norm_sq`: `x ↦ log (1 + ‖x‖ ^ 2)` has temperate growth.
 * `Function.hasTemperateGrowth_norm_sub_pow`: `y ↦ ‖x - y‖ ^ (2N)` has temperate growth.
 * `Function.HasTemperateGrowth.fderiv`: `Df` has temperate growth.
@@ -195,6 +196,11 @@ variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℝ H]
 @[fun_prop]
 theorem hasTemperateGrowth_one_add_norm_smul_sq_rpow (c r : ℝ) :
     (fun x : H ↦ (1 + ‖c • x‖ ^ 2) ^ r).HasTemperateGrowth :=
+  (hasTemperateGrowth_one_add_norm_sq_rpow H r).comp (by fun_prop)
+
+/-- The translated Bessel potential `y ↦ (1 + ‖x - y‖ ^ 2) ^ r` has temperate growth. -/
+theorem hasTemperateGrowth_one_add_norm_sub_sq_rpow (x : H) (r : ℝ) :
+    (fun y : H ↦ (1 + ‖x - y‖ ^ 2) ^ r).HasTemperateGrowth :=
   (hasTemperateGrowth_one_add_norm_sq_rpow H r).comp (by fun_prop)
 
 /-- On a real inner product space `H`, the logarithm `x ↦ log (1 + ‖x‖ ^ 2)` of the squared
