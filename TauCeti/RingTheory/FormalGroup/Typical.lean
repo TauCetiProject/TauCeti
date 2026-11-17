@@ -62,6 +62,10 @@ transport along homotheties `X ↦ u X` (which conjugate `F.pTypicalCoordinate`)
   characterization, and idempotence of canonical `p`-typicalization.
 * `FormalGroup.coeff_log_pTypicalFormalGroup` and `FormalGroup.coeff_pow_log_pTypicalFormalGroup`:
   Quillen's logarithm formula for `F.pTypicalFormalGroup`.
+* `FormalGroup.existsUnique_pTypicalFormalGroup_eq_hazewinkelFormalGroup` and
+  `TauCeti.hazewinkelLogCoeff_of_pTypicalFormalGroup_eq`: over a `ℚ`-algebra,
+  `F.pTypicalFormalGroup` is `TauCeti.hazewinkelFormalGroup p v` for a unique `v`, with
+  `m_n(v) = [X^(p^n)] log_F(X)`.
 * `FormalGroup.isPTypical_homothety_smul_iff`, `FormalGroup.pTypicalCoordinate_homothety_smul`,
   `FormalGroup.pTypicalFormalGroup_homothety_smul`,
   `FormalGroup.pTypicalCoordinate_mem_gradedSubgroup`, and
@@ -134,6 +138,30 @@ theorem isPTypical_smul_iff (F : FormalGroup R) [F.IsComm] (c : TauCeti.FormalCo
     simp
   rw [isPTypical_def, ← Curve.isPTypical_invHom_mapCurve_iff (smulIso c F) p, htaut]
 
+/-- Transporting `F` along the inverse `c⁻¹` of a formal coordinate produces a `p`-typical formal
+group law if and only if `c` is a `p`-typical curve on `F`. -/
+theorem isPTypical_inv_smul_iff (F : FormalGroup R) [F.IsComm] (c : TauCeti.FormalCoordinate R)
+    (p : ℕ) : (c⁻¹ • F).IsPTypical p ↔ (c.toCurve F).IsPTypical p := by
+  have hc : c.toCurve F = ⟨c.toPowerSeries, c.constantCoeff_toPowerSeries⟩ :=
+    Curve.ext (TauCeti.FormalCoordinate.toPowerSeries_toCurve c F)
+  rw [isPTypical_smul_iff, inv_inv, hc]
+
+/-- A commutative formal group law is `p`-typical if and only if `f_n T = 0` for every nonzero `n`
+not of the form `p^k`. -/
+theorem isPTypical_iff_forall_ne_pow (F : FormalGroup R) [F.IsComm] (p : ℕ) :
+    F.IsPTypical p ↔
+      ∀ n : ℕ, (hn : n ≠ 0) → (∀ k, n ≠ p ^ k) →
+        F.frobeniusCurve n hn F.tautologicalCurve = 0 :=
+  Curve.isPTypical_iff_forall_ne_pow p F.tautologicalCurve
+
+/-- For `p` prime, a commutative formal group law is `p`-typical if and only if `f_n T = 0` for
+every `n > 1` coprime to `p`. -/
+theorem isPTypical_iff_forall_coprime (F : FormalGroup R) [F.IsComm] {p : ℕ} (hp : p.Prime) :
+    F.IsPTypical p ↔
+      ∀ n : ℕ, (hn : 1 < n) → n.Coprime p →
+        F.frobeniusCurve n (Nat.ne_zero_of_lt hn) F.tautologicalCurve = 0 :=
+  Curve.isPTypical_iff_forall_coprime hp F.tautologicalCurve
+
 /-- The additive formal group law `𝔾ₐ` is `p`-typical over every commutative ring and for every
 `p : ℕ`. -/
 @[simp]
@@ -157,6 +185,13 @@ theorem isPTypical_iff_coeff_log_eq_zero_of_prime [Algebra ℚ R] (F : FormalGro
     F.IsPTypical p ↔ ∀ k : ℕ, (∀ n : ℕ, p ^ n ≠ k) → PowerSeries.coeff k F.log = 0 := by
   rw [isPTypical_def, Curve.isPTypical_iff_coeff_subst_log_eq_zero_of_prime hp,
     toPowerSeries_tautologicalCurve, PowerSeries.X_subst]
+
+/-- Over a `ℚ`-algebra, the logarithm of a `p`-typical formal group law vanishes outside the
+degrees `p^n`. -/
+theorem IsPTypical.coeff_log_eq_zero [Algebra ℚ R] {F : FormalGroup R} [F.IsComm] {p : ℕ}
+    (hF : F.IsPTypical p) {k : ℕ} (hk : ∀ n, p ^ n ≠ k) : PowerSeries.coeff k F.log = 0 := by
+  simpa only [toPowerSeries_tautologicalCurve, PowerSeries.X_subst] using
+    hF.tautologicalCurve.coeff_subst_log_eq_zero hk
 
 /-- Over a `ℚ`-algebra, Hazewinkel's formal group law `TauCeti.hazewinkelFormalGroup p v` is
 `p`-typical for every prime `p` and generator family `v`. -/
@@ -455,6 +490,31 @@ theorem coeff_pow_log_pTypicalFormalGroup [Algebra ℚ R] {p : ℕ} (hp : p.Prim
       PowerSeries.coeff (p ^ n) F.log := by
   rw [F.log_pTypicalFormalGroup p hunit, F.coeff_pow_subst_pTypicalProjectorCurve_log hp hunit n,
     toPowerSeries_tautologicalCurve, PowerSeries.X_subst]
+
+/-- Over a `ℚ`-algebra, the logarithm of `F.pTypicalFormalGroup` vanishes outside the degrees
+`p^n`. -/
+theorem coeff_log_pTypicalFormalGroup_eq_zero [Algebra ℚ R] (p : ℕ)
+    (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) {k : ℕ} (hk : ∀ n, p ^ n ≠ k) :
+    PowerSeries.coeff k (F.pTypicalFormalGroup p hunit).log = 0 :=
+  (F.isPTypical_pTypicalFormalGroup p hunit).coeff_log_eq_zero hk
+
+/-- Over a `ℚ`-algebra and for `p` prime, the canonical `p`-typicalization of `F` is Hazewinkel's
+formal group law `TauCeti.hazewinkelFormalGroup p v` for a unique generator family `v`. -/
+theorem existsUnique_pTypicalFormalGroup_eq_hazewinkelFormalGroup [Algebra ℚ R] {p : ℕ}
+    (hp : p.Prime) (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) :
+    ∃! v : ℕ+ → R, F.pTypicalFormalGroup p hunit = TauCeti.hazewinkelFormalGroup p v :=
+  (F.isPTypical_pTypicalFormalGroup p hunit).existsUnique_eq_hazewinkelFormalGroup hp
+
+variable {F} in
+/-- Over a `ℚ`-algebra and for `p` prime, if the canonical `p`-typicalization of `F` is
+`TauCeti.hazewinkelFormalGroup p v`, then the `n`-th Hazewinkel logarithm coefficient `m_n(v)` is
+the `X^(p^n)` coefficient of `F.log`. -/
+theorem _root_.TauCeti.hazewinkelLogCoeff_of_pTypicalFormalGroup_eq [Algebra ℚ R] {p : ℕ}
+    (hp : p.Prime) {hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)} {v : ℕ+ → R}
+    (hv : F.pTypicalFormalGroup p hunit = TauCeti.hazewinkelFormalGroup p v) (n : ℕ) :
+    TauCeti.hazewinkelLogCoeff p v n = PowerSeries.coeff (p ^ n) F.log := by
+  rw [← TauCeti.coeff_hazewinkelLog_pow v hp.one_lt n, ← TauCeti.log_hazewinkelFormalGroup, ← hv,
+    F.coeff_pow_log_pTypicalFormalGroup hp hunit n]
 
 end CanonicalTypicalization
 

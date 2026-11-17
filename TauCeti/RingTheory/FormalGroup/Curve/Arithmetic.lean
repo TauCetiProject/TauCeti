@@ -172,6 +172,17 @@ theorem map_nsmulCurveEquiv_symm {G : FormalGroup S} [G.IsComm]
   rw [nsmulCurveEquiv_apply, nsmulCurveEquiv_apply, ← map_nsmul,
     nsmul_nsmulCurveEquiv_symm, nsmul_nsmulCurveEquiv_symm]
 
+/-- The degree-`k` coefficient of `(F.nsmulCurveEquiv n hunit).symm γ` depends only on the
+coefficients of `γ` in degrees `≤ k`. -/
+theorem coeff_nsmulCurveEquiv_symm_congr {n k : ℕ} (hunit : IsUnit (n : R))
+    {γ₁ γ₂ : F.Curve}
+    (h : ∀ i ≤ k, PowerSeries.coeff i γ₁.toPowerSeries = PowerSeries.coeff i γ₂.toPowerSeries) :
+    PowerSeries.coeff k ((F.nsmulCurveEquiv n hunit).symm γ₁).toPowerSeries =
+      PowerSeries.coeff k ((F.nsmulCurveEquiv n hunit).symm γ₂).toPowerSeries := by
+  rw [nsmulCurveEquiv, TauCeti.FormalGroupIso.curveEquiv_symm_apply,
+    TauCeti.FormalGroupIso.curveEquiv_symm_apply]
+  exact TauCeti.FormalGroupHom.coeff_mapCurve_congr _ h
+
 end CurveDivision
 
 /-- Verschiebung of any nonzero index is injective on curves. -/

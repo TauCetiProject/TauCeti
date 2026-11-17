@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Data.Nat.Log
 public import TauCeti.RingTheory.FormalGroup.Curve.Projector
+import TauCeti.Algebra.Algebra.NatCast
 import TauCeti.Data.Nat.Factorization.Basic
+import TauCeti.Data.Nat.Pow
 import TauCeti.RingTheory.PowerSeries.Substitution
 
 /-!
@@ -55,6 +57,8 @@ Hazewinkel classification, and Cartier–Quillen's canonical strict `p`-typicali
 * `FormalGroup.Curve.IsPTypical.frobeniusCurve_eq_zero_of_coprime` and
   `FormalGroup.Curve.isPTypical_iff_forall_coprime`: vanishing at coprime indices `n > 1`, and
   equivalence when `p` is prime.
+* `FormalGroup.Curve.isPTypical_iff_forall_ne_pow`: `p`-typicality as vanishing of `f_n` at every
+  nonzero `n` that is not a power of `p`.
 * `FormalGroup.Curve.isPTypical_iff_coeff_subst_log_eq_zero_of_prime`: rational logarithm
   characterization of `p`-typical curves.
 * `FormalGroup.isPTypical_pTypicalProjectorCurve`, `FormalGroup.pTypicalProjectorCurve_eq_self_iff`,
@@ -135,6 +139,24 @@ theorem isPTypical_iff_forall_coprime {p : ℕ} (hp : p.Prime) (γ : F.Curve) :
   ⟨fun hγ _ hn hcop ↦ hγ.frobeniusCurve_eq_zero_of_coprime hn hcop,
     fun h q hq hqp ↦ h q hq.one_lt ((Nat.coprime_primes hq hp).mpr hqp)⟩
 
+/-- A `p`-typical curve is killed by `f_n` at every nonzero `n` that is not a power of `p`. -/
+theorem IsPTypical.frobeniusCurve_eq_zero_of_forall_ne_pow {p n : ℕ} {γ : F.Curve}
+    (hγ : γ.IsPTypical p) (hn : n ≠ 0) (hpow : ∀ k, n ≠ p ^ k) :
+    F.frobeniusCurve n hn γ = 0 := by
+  obtain ⟨q, hq, hqn, hqp⟩ := Nat.exists_prime_dvd_ne_of_forall_ne_pow hpow
+  exact hγ.frobeniusCurve_eq_zero_of_dvd hq hqp hqn hn
+
+/-- A curve is `p`-typical if and only if `f_n γ = 0` for all nonzero `n` not of the form `p^k`. -/
+theorem isPTypical_iff_forall_ne_pow (p : ℕ) (γ : F.Curve) :
+    γ.IsPTypical p ↔ ∀ n : ℕ, (hn : n ≠ 0) → (∀ k, n ≠ p ^ k) → F.frobeniusCurve n hn γ = 0 := by
+  refine ⟨fun hγ _ hn hpow ↦ hγ.frobeniusCurve_eq_zero_of_forall_ne_pow hn hpow, fun h q hq hqp ↦
+    h q hq.ne_zero fun k hqk ↦ ?_⟩
+  rcases eq_or_ne k 0 with rfl | hk
+  · exact hq.ne_one hqk
+  · rcases hq.eq_one_or_self_of_dvd p (hqk ▸ dvd_pow_self p hk) with rfl | rfl
+    · exact hq.ne_one (hqk.trans (one_pow k))
+    · exact hqp rfl
+
 /-- The zero curve is `p`-typical. -/
 @[simp]
 theorem IsPTypical.zero (p : ℕ) : (0 : F.Curve).IsPTypical p :=
@@ -208,6 +230,13 @@ theorem IsPTypical.verschiebungCurve_pow {p : ℕ} (hp : p.Prime) {γ : F.Curve}
     (hγ : γ.IsPTypical p) (k : ℕ) :
     (F.verschiebungCurve (p ^ k) (pow_ne_zero k hp.ne_zero) γ).IsPTypical p :=
   hγ.verschiebungCurve_of_forall_coprime (pow_ne_zero k hp.ne_zero) fun _ hq hqp ↦
+    ((Nat.coprime_primes hq hp).mpr hqp).pow_right k
+
+/-- When `p` is prime, Verschiebung `V_{p^k}` preserves and reflects `p`-typicality. -/
+@[simp]
+theorem isPTypical_verschiebungCurve_pow_iff {p : ℕ} (hp : p.Prime) (k : ℕ) (γ : F.Curve) :
+    (F.verschiebungCurve (p ^ k) (pow_ne_zero k hp.ne_zero) γ).IsPTypical p ↔ γ.IsPTypical p :=
+  isPTypical_verschiebungCurve_iff_of_forall_coprime (pow_ne_zero k hp.ne_zero) fun _ hq hqp ↦
     ((Nat.coprime_primes hq hp).mpr hqp).pow_right k
 
 /-- Every elementary Cartier projector preserves `p`-typicality of curves. -/
@@ -308,6 +337,26 @@ theorem isPTypical_𝔾ₐ_iff_of_forall_isRegular (p : ℕ)
       simpa only [mul_zero] using (isPTypical_𝔾ₐ_iff p γ).mp hγ q hq hqp k hk hqk),
     isPTypical_𝔾ₐ_of_coeff_eq_zero p⟩
 
+/-- When every prime `q ≠ p` is a unit in `R`, every `p`-typical curve on `𝔾ₐ` has zero
+coefficients outside the degrees `p^n`. -/
+theorem IsPTypical.coeff_𝔾ₐ_eq_zero {p : ℕ} (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R))
+    {γ : (𝔾ₐ (R := R)).Curve} (hγ : γ.IsPTypical p) {k : ℕ} (hk : ∀ n, p ^ n ≠ k) :
+    PowerSeries.coeff k γ.toPowerSeries = 0 := by
+  obtain ⟨q, hq, hqk, hqp⟩ := Nat.exists_prime_dvd_ne_of_forall_ne_pow fun n hkn ↦ hk n hkn.symm
+  rcases eq_or_ne k 0 with rfl | hk0
+  · exact γ.coeff_zero_toPowerSeries
+  · exact (hunit q hq hqp).isRegular.left <| by
+      simpa only [mul_zero] using (isPTypical_𝔾ₐ_iff p γ).mp hγ q hq hqp k hk0 hqk
+
+/-- For `p` prime and every prime `q ≠ p` a unit in `R`, a curve on `𝔾ₐ` is `p`-typical if and
+only if its coefficients vanish outside the degrees `p^n`. -/
+theorem isPTypical_𝔾ₐ_iff_of_prime {p : ℕ} (hp : p.Prime)
+    (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) (γ : (𝔾ₐ (R := R)).Curve) :
+    γ.IsPTypical p ↔ ∀ k, (∀ n, p ^ n ≠ k) → PowerSeries.coeff k γ.toPowerSeries = 0 :=
+  ⟨fun hγ _ hk ↦ hγ.coeff_𝔾ₐ_eq_zero hunit hk, fun h ↦
+    isPTypical_𝔾ₐ_of_coeff_eq_zero p fun q hq hqp k _ hqk ↦ h k fun n hn ↦
+      hp.forall_prime_ne_not_dvd_iff_exists_pow_eq.mpr ⟨n, hn⟩ q hq hqp hqk⟩
+
 /-- Over a `ℚ`-algebra, a curve `γ` on `F` is `p`-typical if and only if `log_F(γ(T))` has zero
 coefficient in every nonzero degree divisible by a prime `q ≠ p`. -/
 theorem isPTypical_iff_coeff_subst_log_eq_zero [Algebra ℚ R] (p : ℕ) (γ : F.Curve) :
@@ -344,6 +393,16 @@ theorem isPTypical_iff_coeff_subst_log_eq_zero_of_prime [Algebra ℚ R] {p : ℕ
   · intro h q hq hqp k _ hqk
     refine h k fun n hpn ↦ ?_
     exact hp.forall_prime_ne_not_dvd_iff_exists_pow_eq.mpr ⟨n, hpn⟩ q hq hqp hqk
+
+/-- Over a `ℚ`-algebra, the formal logarithm of a `p`-typical curve vanishes outside the degrees
+`p^n`. -/
+theorem IsPTypical.coeff_subst_log_eq_zero [Algebra ℚ R] {p : ℕ} {γ : F.Curve}
+    (hγ : γ.IsPTypical p) {k : ℕ} (hk : ∀ n, p ^ n ≠ k) :
+    PowerSeries.coeff k (PowerSeries.subst γ.toPowerSeries F.log) = 0 := by
+  simpa only [TauCeti.FormalGroupHom.toPowerSeries_mapCurve, logIso_toHom,
+    logHom_toPowerSeries] using
+    (hγ.mapCurve F.logIso.toHom).coeff_𝔾ₐ_eq_zero
+      (fun _ hq _ ↦ TauCeti.isUnit_natCast_of_ne_zero hq.ne_zero) hk
 
 end IsPTypical
 
@@ -564,6 +623,29 @@ theorem coeff_one_pTypicalProjectorCurve (p : ℕ)
       PowerSeries.coeff 1 γ.toPowerSeries :=
   F.coeff_pTypicalProjectorCurve_of_forall_prime_gt p hunit (fun _ hq _ ↦ hq.one_lt) γ
 
+/-- The degree-`k` coefficient of `F.pTypicalProjectorCurve p hunit γ` depends only on the
+coefficients of `γ` in degrees `≤ k`. -/
+theorem coeff_pTypicalProjectorCurve_congr (p : ℕ)
+    (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) {k : ℕ} {γ₁ γ₂ : F.Curve}
+    (h : ∀ i ≤ k, PowerSeries.coeff i γ₁.toPowerSeries = PowerSeries.coeff i γ₂.toPowerSeries) :
+    PowerSeries.coeff k (F.pTypicalProjectorCurve p hunit γ₁).toPowerSeries =
+      PowerSeries.coeff k (F.pTypicalProjectorCurve p hunit γ₂).toPowerSeries := by
+  have hstage : ∀ N, ∀ i ≤ k,
+      PowerSeries.coeff i (pTypicalProjectorStage F p hunit N γ₁).toPowerSeries =
+        PowerSeries.coeff i (pTypicalProjectorStage F p hunit N γ₂).toPowerSeries := fun N ↦ by
+    induction N with
+    | zero => exact h
+    | succ n ih =>
+      intro i hi
+      simp only [pTypicalProjectorStage]
+      split_ifs with hn
+      · exact F.coeff_cartierProjectorCurve_congr hn.1.ne_zero (hunit (n + 1) hn.1 hn.2)
+          fun j hj ↦ ih j (hj.trans hi)
+      · exact ih i hi
+  rw [coeff_pTypicalProjectorCurve_eq_stage F p hunit le_rfl,
+    coeff_pTypicalProjectorCurve_eq_stage F p hunit le_rfl]
+  exact hstage k k le_rfl
+
 /-- Base change along a ring homomorphism commutes with Cartier's `p`-typicalization projector. -/
 theorem map_pTypicalProjectorCurve (φ : R →+* S) (p : ℕ)
     (hR : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) (γ : F.Curve) :
@@ -630,6 +712,26 @@ theorem coeff_pTypicalProjectorCurve_𝔾ₐ (p : ℕ)
     exact if_congr ⟨fun ⟨q, _, hq, hqp, hqk⟩ ↦ ⟨q, hq, hqp, hqk⟩,
       fun ⟨q, hq, hqp, hqk⟩ ↦ ⟨q, Nat.le_of_dvd (Nat.pos_of_ne_zero hk0) hqk, hq, hqp, hqk⟩⟩
       rfl rfl
+
+/-- On the additive formal group law, Cartier's `p`-typicalization projector deletes every
+coefficient outside the degrees `p^n`. -/
+theorem coeff_pTypicalProjectorCurve_𝔾ₐ_eq_zero (p : ℕ)
+    (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) {k : ℕ} (hk : ∀ n, p ^ n ≠ k)
+    (γ : (𝔾ₐ (R := R)).Curve) :
+    PowerSeries.coeff k ((𝔾ₐ (R := R)).pTypicalProjectorCurve p hunit γ).toPowerSeries = 0 := by
+  obtain ⟨q, hq, hqk, hqp⟩ := Nat.exists_prime_dvd_ne_of_forall_ne_pow fun n hkn ↦ hk n hkn.symm
+  rw [coeff_pTypicalProjectorCurve_𝔾ₐ, ite_eq_left ⟨q, hq, hqp, hqk⟩]
+
+/-- On the additive formal group law and for `p` prime, Cartier's `p`-typicalization projector
+leaves every degree-`p^n` coefficient unchanged. -/
+@[simp]
+theorem coeff_pTypicalProjectorCurve_𝔾ₐ_pow {p : ℕ} (hp : p.Prime)
+    (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) (n : ℕ) (γ : (𝔾ₐ (R := R)).Curve) :
+    PowerSeries.coeff (p ^ n) ((𝔾ₐ (R := R)).pTypicalProjectorCurve p hunit γ).toPowerSeries =
+      PowerSeries.coeff (p ^ n) γ.toPowerSeries := by
+  refine (coeff_pTypicalProjectorCurve_𝔾ₐ p hunit (p ^ n) γ).trans (ite_eq_right ?_)
+  rintro ⟨q, hq, hqp, hqk⟩
+  exact hp.forall_prime_ne_not_dvd_iff_exists_pow_eq.mpr ⟨n, rfl⟩ q hq hqp hqk
 
 open scoped Classical in
 /-- Over a `ℚ`-algebra, Cartier's `p`-typicalization projector acts on the formal logarithm by
@@ -710,6 +812,15 @@ theorem isPTypical_pTypicalProjectorCurve (p : ℕ)
     (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) (γ : F.Curve) :
     (F.pTypicalProjectorCurve p hunit γ).IsPTypical p :=
   fun _ hq hqp ↦ F.frobeniusCurve_pTypicalProjectorCurve p hunit hq hqp γ
+
+/-- Over a `ℚ`-algebra, Cartier's `p`-typicalization projector deletes every formal-logarithm
+coefficient outside the degrees `p^n`. -/
+theorem coeff_subst_pTypicalProjectorCurve_log_eq_zero [Algebra ℚ R] (p : ℕ)
+    (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) {k : ℕ} (hk : ∀ n, p ^ n ≠ k)
+    (γ : F.Curve) :
+    PowerSeries.coeff k
+      (PowerSeries.subst (F.pTypicalProjectorCurve p hunit γ).toPowerSeries F.log) = 0 :=
+  (F.isPTypical_pTypicalProjectorCurve p hunit γ).coeff_subst_log_eq_zero hk
 
 /-- Cartier's `p`-typicalization projector fixes every `p`-typical curve. -/
 theorem pTypicalProjectorCurve_eq_self (p : ℕ)
@@ -799,6 +910,15 @@ theorem pTypicalProjectorCurve_verschiebungCurve (p : ℕ)
     (γ : F.Curve) :
     F.pTypicalProjectorCurve p hunit (F.verschiebungCurve q hq.ne_zero γ) = 0 :=
   F.pTypicalProjectorCurve_verschiebungCurve_of_dvd p hunit hq hqp dvd_rfl hq.ne_zero γ
+
+/-- Cartier's `p`-typicalization projector kills `V_n γ` for every nonzero `n` that is not a power
+of `p`. -/
+theorem pTypicalProjectorCurve_verschiebungCurve_eq_zero_of_forall_ne_pow (p : ℕ)
+    (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) {n : ℕ} (hn : n ≠ 0)
+    (hpow : ∀ k, n ≠ p ^ k) (γ : F.Curve) :
+    F.pTypicalProjectorCurve p hunit (F.verschiebungCurve n hn γ) = 0 := by
+  obtain ⟨q, hq, hqn, hqp⟩ := Nat.exists_prime_dvd_ne_of_forall_ne_pow hpow
+  exact F.pTypicalProjectorCurve_verschiebungCurve_of_dvd p hunit hq hqp hqn hn γ
 
 /-- Cartier's `p`-typicalization projector commutes with every elementary Cartier projector. -/
 theorem cartierProjectorCurve_pTypicalProjectorCurve (p : ℕ)

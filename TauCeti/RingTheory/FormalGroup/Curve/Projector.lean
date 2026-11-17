@@ -216,6 +216,30 @@ theorem coeff_cartierProjectorCurve_of_lt (n : ℕ) (hn : n ≠ 0)
   exact Curve.coeff_add_eq_left_of_forall_lt_coeff_eq_zero _ _ hk
     (fun i hi ↦ F.coeff_verschiebungCurve_eq_zero_of_lt hn hi _)
 
+/-- The degree-`k` coefficient of `F.cartierProjectorCurve n hn hunit γ` depends only on the
+coefficients of `γ` in degrees `≤ k`. -/
+theorem coeff_cartierProjectorCurve_congr {n k : ℕ} (hn : n ≠ 0) (hunit : IsUnit (n : R))
+    {γ₁ γ₂ : F.Curve}
+    (h : ∀ i ≤ k, PowerSeries.coeff i γ₁.toPowerSeries = PowerSeries.coeff i γ₂.toPowerSeries) :
+    PowerSeries.coeff k (F.cartierProjectorCurve n hn hunit γ₁).toPowerSeries =
+      PowerSeries.coeff k (F.cartierProjectorCurve n hn hunit γ₂).toPowerSeries := by
+  have hV : ∀ i ≤ k,
+      PowerSeries.coeff i (F.verschiebungCurve n hn
+          ((F.nsmulCurveEquiv n hunit).symm (F.frobeniusCurve n hn γ₁))).toPowerSeries =
+        PowerSeries.coeff i (F.verschiebungCurve n hn
+          ((F.nsmulCurveEquiv n hunit).symm (F.frobeniusCurve n hn γ₂))).toPowerSeries :=
+    fun i hi ↦ by
+      rw [toPowerSeries_verschiebungCurve, toPowerSeries_verschiebungCurve,
+        PowerSeries.coeff_expand, PowerSeries.coeff_expand]
+      split_ifs
+      · exact F.coeff_nsmulCurveEquiv_symm_congr hunit fun j hj ↦
+          F.coeff_frobeniusCurve_congr hn fun l hl ↦
+            h l (hl.trans ((Nat.mul_le_mul_right n hj).trans
+              ((Nat.div_mul_le_self i n).trans hi)))
+      · rfl
+  rw [cartierProjectorCurve_apply, cartierProjectorCurve_apply]
+  exact Curve.coeff_sub_congr h hV
+
 /-- At coprime indices, a Cartier projector commutes with Verschiebung. -/
 theorem cartierProjectorCurve_verschiebungCurve_of_coprime {m n : ℕ} (hm : m ≠ 0)
     (hn : n ≠ 0) (hunit : IsUnit (m : R)) (hcop : m.Coprime n) (γ : F.Curve) :
