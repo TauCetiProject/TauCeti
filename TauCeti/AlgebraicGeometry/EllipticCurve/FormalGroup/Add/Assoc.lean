@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Add.Series
+public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.ParamPoint
 public import TauCeti.RingTheory.MvPowerSeries.Substitution
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Add.PairSubst
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Add.Unit
@@ -36,8 +36,10 @@ supplies one; `map_specialize` carries the conclusion to every `W` over every co
   field of the series ring, whenever a substitution separates `q₁` from `q₂`. It is exported, with
   the parametrized point `WeierstrassCurve.thetaPoint`, its coordinates
   (`WeierstrassCurve.thetaPoint_eq_some`, `WeierstrassCurve.exists_thetaPoint_eq_some`), its
-  injectivity (`WeierstrassCurve.thetaPoint_inj`), and the tower comparison
-  `WeierstrassCurve.fracCurve_eq_baseChange`, because it is also how the
+  injectivity (`WeierstrassCurve.thetaPoint_inj`), the tower comparison
+  `WeierstrassCurve.fracCurve_eq_baseChange`, and its comparisons with `formalParamVec`
+  (`WeierstrassCurve.nonsingular_fracCurve_formalParamVec`,
+  `WeierstrassCurve.toAffine_fracCurve_formalParamVec_eq_thetaPoint`), because it is also how the
   addition series is compared with other descriptions of the group law of `W`, such as the
   projective addition laws.
 
@@ -126,6 +128,16 @@ theorem fracCurve_eq_baseChange (W : WeierstrassCurve O) (σ : Type*) (KK : Type
     [IsScalarTower O (MvPowerSeries σ O) KK] :
     fracCurve W σ KK = W⁄KK := by
   rw [fracCurve_def, ← IsScalarTower.algebraMap_eq, ← baseChange]
+
+/-- For any substitutable parameter series `q`, the projective point `[q : -1 : w(q)]` on
+`fracCurve W σ KK` is nonsingular in every nontrivial commutative algebra `KK` over
+`MvPowerSeries σ O` (with no discriminant hypothesis on `W`). -/
+theorem nonsingular_fracCurve_formalParamVec (W : WeierstrassCurve O) {σ : Type*}
+    {KK : Type*} [CommRing KK] [Nontrivial KK] [Algebra (MvPowerSeries σ O) KK]
+    {q : MvPowerSeries σ O} (hq : PowerSeries.HasSubst q) :
+    (fracCurve W σ KK).toProjective.Nonsingular (W.formalParamVec (KK := KK) q) := by
+  rw [fracCurve_def]
+  exact W.nonsingular_map_formalParamVec hq
 
 variable (W : WeierstrassCurve O) {σ : Type*} {KK : Type*} [Field KK]
   [Algebra (MvPowerSeries σ O) KK]
@@ -328,6 +340,22 @@ theorem exists_thetaPoint_eq_some (hΔ : (fracCurve W σ KK).Δ ≠ 0) {q : MvPo
         (-1 / algebraMap (MvPowerSeries σ O) KK (PowerSeries.subst q (formalW W))),
       W.thetaPoint hΔ hq hq0 = .some _ _ h :=
   ⟨_, rfl⟩
+
+/-- For a nonzero parameter `q` with zero constant coefficient, the affine point represented by
+`W.formalParamVec q` on `fracCurve W σ KK` is `W.thetaPoint`. -/
+theorem toAffine_fracCurve_formalParamVec_eq_thetaPoint (hΔ : (fracCurve W σ KK).Δ ≠ 0)
+    {q : MvPowerSeries σ O} (hq : constantCoeff q = 0) (hq0 : q ≠ 0) :
+    Projective.Point.toAffine (fracCurve W σ KK).toProjective
+      (W.formalParamVec (KK := KK) q) = W.thetaPoint hΔ hq hq0 := by
+  have hz : W.formalParamVec (KK := KK) q 2 ≠ 0 := by
+    rw [formalParamVec_apply_two]
+    exact W.algebraMap_subst_formalW_ne_zero hq hq0
+  have hN := W.nonsingular_fracCurve_formalParamVec (KK := KK)
+    (PowerSeries.HasSubst.of_constantCoeff_zero hq)
+  rw [Projective.Point.toAffine_of_Z_ne_zero hN hz, W.thetaPoint_eq_some hΔ hq hq0
+    (by simpa [formalParamVec_apply_zero, formalParamVec_apply_one, formalParamVec_apply_two] using
+      (Projective.nonsingular_of_Z_ne_zero hz).mp hN)]
+  simp
 
 variable [DecidableEq KK] in
 /-- The sum of the parametrized points `θ(q₁)` and `θ(q₂)` is the point with affine coordinates

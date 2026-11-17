@@ -50,8 +50,9 @@ uniformities are shadowed, so the evaluation the statement is about is never re-
 * `MvPowerSeries.pairSubstitution` : the substitution family `Unit ⊕ Unit → MvPowerSeries σ O`
   sending the left variable to `q₁` and the right one to `q₂`; substituting a pair of series into
   a two-variable one is `subst (pairSubstitution q₁ q₂) f`.
-* `MvPowerSeries.hasSubst_pair` : a pair of series with vanishing constant coefficient is a
-  legitimate substitution family for the two variables indexed by `Unit ⊕ Unit`.
+* `MvPowerSeries.hasSubst_pair` and `MvPowerSeries.hasSubst_pair_of_hasSubst` : a pair of series
+  with vanishing (or, more generally, nilpotent) constant coefficients is a legitimate substitution
+  family for the two variables indexed by `Unit ⊕ Unit`.
 * `MvPowerSeries.coordSpecialize`, `MvPowerSeries.hasSubst_coordSpecialize` and the two
   `subst_coordSpecialize_X_*` lemmas : the substitution sending one coordinate variable to `X` and
   every other to `0`, for an index type of any size.
@@ -208,15 +209,23 @@ variables; `hasSubst_pair` says it is substitutable as soon as both series vanis
 abbrev pairSubstitution (q₁ q₂ : MvPowerSeries σ O) : Unit ⊕ Unit → MvPowerSeries σ O :=
   Sum.elim (fun _ ↦ q₁) (fun _ ↦ q₂)
 
+/-- A pair of series with nilpotent constant coefficients (`PowerSeries.HasSubst`) is a legitimate
+substitution family for the two variables indexed by `Unit ⊕ Unit`.
+
+This generalizes `hasSubst_pair` from vanishing to nilpotent constant coefficients, mirroring
+`hasSubst_finTwo` for `Fin 2`. -/
+theorem hasSubst_pair_of_hasSubst (h₁ : PowerSeries.HasSubst q₁)
+    (h₂ : PowerSeries.HasSubst q₂) : HasSubst (pairSubstitution q₁ q₂) :=
+  h₁.const.sumElim h₂.const
+
 /-- A pair of series with vanishing constant coefficient is a legitimate substitution family for
 the two variables indexed by `Unit ⊕ Unit`.
 
-This packages the `rintro`-and-`simpa` discharge of `hasSubst_of_constantCoeff_zero`'s hypothesis
-for the two-variable case, which is otherwise repeated at every substitution into a two-variable
-series. -/
+This specializes `hasSubst_pair_of_hasSubst` to series with vanishing constant coefficient, avoiding
+repeating the discharge at every substitution into a two-variable series. -/
 theorem hasSubst_pair (h₁ : constantCoeff q₁ = 0) (h₂ : constantCoeff q₂ = 0) :
     HasSubst (pairSubstitution q₁ q₂) :=
-  hasSubst_of_constantCoeff_zero (by rintro (j | j) <;> simpa)
+  hasSubst_pair_of_hasSubst (.of_constantCoeff_zero h₁) (.of_constantCoeff_zero h₂)
 
 end HasSubstPair
 
