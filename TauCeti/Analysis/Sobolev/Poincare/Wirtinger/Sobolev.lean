@@ -10,7 +10,7 @@ import TauCeti.Analysis.Sobolev.Poincare.Potential
 import TauCeti.Analysis.Sobolev.W1p.Restriction
 import TauCeti.Analysis.Sobolev.Wkp.MeyersSerrin
 import TauCeti.MeasureTheory.Integral.Average
-import TauCeti.MeasureTheory.Integral.RieszPotential
+import TauCeti.MeasureTheory.Integral.RieszPotential.Basic
 import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
