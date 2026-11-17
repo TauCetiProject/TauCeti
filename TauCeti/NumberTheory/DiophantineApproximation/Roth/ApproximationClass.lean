@@ -71,8 +71,9 @@ is the number of places.
   (`mult v` at an infinite place, `1` at a finite one) of a place of `Sinf ⊕ Sfin`.
 * `NumberField.approxFactor`: the local factor `min 1 (w v (β - α v)) ^ weight` at a place, with
   `NumberField.prod_approxFactor`: their product is the left side of Roth's inequality.
-* `NumberField.approxClass`: the approximation class of `β` at side `1 / N`, a corner of the
-  simplex when `β` is a target (`NumberField.approxClass_of_exists_algebraMap_eq`).
+* `NumberField.approxClass`: the approximation class of `β` at side `1 / N`, the label of the
+  logarithmic profile when `β` is no target (`NumberField.approxClass_of_forall_algebraMap_ne`)
+  and a corner of the simplex when it is one (`NumberField.approxClass_of_exists_algebraMap_eq`).
 * `NumberField.ncard_image_approxClass_le`: at most `(N + |S|).choose |S|` classes occur.
 
 ## References
@@ -410,6 +411,14 @@ noncomputable def approxClass (N : ℕ) (β : K) : Sinf ⊕ Sfin → ℕ :=
 theorem approxClass_def (N : ℕ) (β : K) :
     approxClass Sinf Sfin w α N β = TauCeti.profileClass N (approxFactor Sinf Sfin w α β) :=
   (rfl)
+
+/-- When `β` is none of the targets, its approximation class is the label of the logarithmic
+profile of its local approximation factors. -/
+theorem approxClass_of_forall_algebraMap_ne (N : ℕ) {β : K}
+    (h : ∀ a, algebraMap K F β ≠ α (sPlaceAbsValue Sinf Sfin a)) :
+    approxClass Sinf Sfin w α N β =
+      TauCeti.cellIndex N (TauCeti.logProfile (approxFactor Sinf Sfin w α β)) :=
+  TauCeti.profileClass_of_forall_ne_zero fun a ↦ (approxFactor_eq_zero_iff w α β a).not.mpr (h a)
 
 /-- When `β` is the target at some place, its approximation class is the corner `N • e a` of the
 simplex at a place `a` where `β` is the target. -/
