@@ -28,7 +28,7 @@ interior or boundary reference point.
 * `ContDiffAt.ode_eventuallyEq_nhdsWithin`: C¹ local uniqueness.
 * `IsPreconnected.ode_eqOn`: locally Lipschitz uniqueness on a preconnected parameter set.
 * `IsPreconnected.ode_eqOn_of_contDiffAt`: the C¹ specialization.
-* `ODE.eqOn_Icc_of_lipschitzOnWith` and `ODE.eqOn_Icc_of_hasDerivAt`: closed-interval
+* `ODE.eqOn_Icc_of_lipschitzOnWith` and `ODE.eqOn_Icc_of_lipschitzWith`: closed-interval
   uniqueness from interior derivatives and a common value at any `c ∈ [a, b]`.
 
 ## References
@@ -170,9 +170,10 @@ theorem eqOn_Icc_of_lipschitzOnWith {a b c : ℝ} {v : ℝ → E → E} {s : ℝ
   rw [gronwallBound_ε0_δ0] at hle
   exact sub_eq_zero.1 (norm_le_zero_iff.1 hle)
 
-/-- Two curves continuous on `[a, b]` that solve `γ' t = v t (γ t)` on `(a, b)` and agree at an
-interior or boundary point `c ∈ [a, b]` agree throughout `[a, b]`. -/
-theorem eqOn_Icc_of_hasDerivAt {a b c : ℝ} {v : ℝ → E → E} {K : ℝ≥0} {f g : ℝ → E}
+/-- Two curves continuous on `[a, b]` that solve `γ' t = v t (γ t)` on `(a, b)` for a
+state-Lipschitz field `v` and agree at an interior or boundary point `c ∈ [a, b]` agree throughout
+`[a, b]`. -/
+theorem eqOn_Icc_of_lipschitzWith {a b c : ℝ} {v : ℝ → E → E} {K : ℝ≥0} {f g : ℝ → E}
     (hv : ∀ t ∈ Ioo a b, LipschitzWith K (v t)) (hc : c ∈ Icc a b)
     (hf : ContinuousOn f (Icc a b)) (hf' : ∀ t ∈ Ioo a b, HasDerivAt f (v t (f t)) t)
     (hg : ContinuousOn g (Icc a b)) (hg' : ∀ t ∈ Ioo a b, HasDerivAt g (v t (g t)) t)

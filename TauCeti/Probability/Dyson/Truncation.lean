@@ -25,7 +25,7 @@ dependence and state-uniform Lipschitz constant `2 / δ²`, solved globally on `
 
 Because `dysonDriftTrunc n δ` agrees with `dysonDrift n` on the `δ`-separated chamber
 `{z | ∀ i < j, δ ≤ z i - z j}`, local uniqueness of `dysonTruncPath` (`eqOn_dysonTruncPath`, via
-`ODE.eqOn_Icc_of_hasDerivAt`) yields:
+`ODE.eqOn_Icc_of_lipschitzWith`) yields:
 
 * **Consistency across thresholds** (`dysonTruncPath_eq_of_le_of_le_sub`): for `0 < δ₁ ≤ δ₂`,
   `dysonTruncPath` at threshold `δ₁` agrees with `dysonTruncPath` at threshold `δ₂` on `[0, T]`
@@ -42,7 +42,7 @@ Because `dysonDriftTrunc n δ` agrees with `dysonDrift n` on the `δ`-separated 
 
 * `TauCeti.Probability.dysonTruncPath`: unique global trajectory of the `δ`-truncated Dyson system
   driven by a continuous path `w`.
-* `TauCeti.Probability.dysonTruncPath_apply`, `TauCeti.Probability.eqOn_dysonTruncPath`, and
+* `TauCeti.Probability.dysonTruncPath_eq_integral`, `TauCeti.Probability.eqOn_dysonTruncPath`, and
   `TauCeti.Probability.eq_dysonTruncPath`: coordinatewise integral equation and uniqueness.
 * `TauCeti.Probability.dist_dysonTruncPath_le` and
   `TauCeti.Probability.eqOn_dysonTruncPath_of_eqOn`: Grönwall continuous dependence in `(x, w)` and
@@ -132,7 +132,7 @@ theorem continuous_dysonTruncPath (n : ℕ) {δ : ℝ} (hδ : 0 < δ) (x : Fin n
   ((continuous_dysonTruncSmooth n hδ x hw).comp NNReal.continuous_coe).add hw
 
 /-- **Coordinatewise integral equation** satisfied by `dysonTruncPath`. -/
-theorem dysonTruncPath_apply (n : ℕ) {δ : ℝ} (hδ : 0 < δ) (x : Fin n → ℝ)
+theorem dysonTruncPath_eq_integral (n : ℕ) {δ : ℝ} (hδ : 0 < δ) (x : Fin n → ℝ)
     {w : ℝ≥0 → Fin n → ℝ} (hw : Continuous w) (t : ℝ≥0) (i : Fin n) :
     dysonTruncPath n hδ x hw t i = x i + w t i +
       ∫ s in (0 : ℝ)..t, dysonDriftTrunc n δ (dysonTruncPath n hδ x hw s.toNNReal) i := by
@@ -178,7 +178,7 @@ theorem eqOn_dysonTruncPath {n : ℕ} {δ : ℝ} (hδ : 0 < δ) {x : Fin n → �
       (hw.comp continuous_real_toNNReal).continuousOn).congr fun s hs ↦ ?_
     simp only [Pi.sub_apply, Function.comp_apply, ← hgc s hs, add_sub_cancel_right]
   have hg_eq : EqOn g (dysonTruncSmooth n hδ x hw) (Icc 0 (T : ℝ)) := by
-    refine ODE.eqOn_Icc_of_hasDerivAt (a := 0) (b := T) (c := 0)
+    refine ODE.eqOn_Icc_of_lipschitzWith (a := 0) (b := T) (c := 0)
       (fun s _ ↦ lipschitzWith_dysonTruncField n hδ w s) ⟨le_rfl, NNReal.coe_nonneg T⟩
       hg_cont (fun s hs ↦ ?_) (continuous_dysonTruncSmooth n hδ x hw).continuousOn
       (fun s _ ↦ hasDerivAt_dysonTruncSmooth n hδ x hw s)
@@ -281,7 +281,7 @@ theorem sum_dysonTruncPath (n : ℕ) {δ : ℝ} (hδ : 0 < δ) (x : Fin n → �
       (continuous_dysonTruncPath n hδ x hw).comp continuous_real_toNNReal).intervalIntegrable 0 t
   have hsum : ∑ i, dysonTruncPath n hδ x hw t i = (∑ i, x i) + (∑ i, w t i) +
       ∑ i, ∫ s in (0 : ℝ)..t, dysonDriftTrunc n δ (dysonTruncPath n hδ x hw s.toNNReal) i := by
-    simp_rw [dysonTruncPath_apply n hδ x hw t]
+    simp_rw [dysonTruncPath_eq_integral n hδ x hw t]
     simp [sum_add_distrib, add_assoc]
   rw [hsum, ← _root_.intervalIntegral.integral_finsetSum fun i _ ↦ hcont i]
   simp [sum_dysonDriftTrunc]
@@ -302,7 +302,7 @@ theorem dysonTruncPath_eq_of_le_of_le_sub {n : ℕ} {δ₁ δ₂ : ℝ} (hδ₁ 
   have heq : EqOn (dysonTruncPath n hδ₂ x hw) (dysonTruncPath n hδ₁ x hw) (Icc 0 T) := by
     refine eqOn_dysonTruncPath hδ₁ hw (continuous_dysonTruncPath n hδ₂ x hw).continuousOn
       fun t ht i ↦ ?_
-    rw [dysonTruncPath_apply n hδ₂ x hw t i]
+    rw [dysonTruncPath_eq_integral n hδ₂ x hw t i]
     congr 1
     refine _root_.intervalIntegral.integral_congr_Ioo_of_le (NNReal.coe_nonneg t) fun s hs ↦ ?_
     have hs_nn : s.toNNReal ∈ Ioo (0 : ℝ≥0) T :=
@@ -363,7 +363,7 @@ theorem isDysonPath_of_forall_exists_eq_dysonTruncPath {n : ℕ} {x : Fin n → 
     · exact (sub_pos.1 (hδ.trans_le (hgap s.toNNReal (hs_mem hs) hij))).ne'
     · exact (sub_pos.1 (hδ.trans_le (hgap s.toNNReal (hs_mem hs) hji))).ne
   refine ⟨hsum_cont.intervalIntegrable_of_Icc (NNReal.coe_nonneg t), ?_⟩
-  rw [heq t ⟨zero_le, le_rfl⟩, dysonTruncPath_apply]
+  rw [heq t ⟨zero_le, le_rfl⟩, dysonTruncPath_eq_integral]
   congr 1
   refine _root_.intervalIntegral.integral_congr fun s hs ↦ ?_
   rw [uIcc_of_le (NNReal.coe_nonneg t)] at hs

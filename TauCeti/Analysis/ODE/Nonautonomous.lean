@@ -14,19 +14,19 @@ import TauCeti.Analysis.ODE.Gronwall.TwoSided
 # Global solutions of state-Lipschitz nonautonomous ODEs
 
 `ODE.globalSolution` solves autonomous initial value problems `γ' = v ∘ γ`, while
-`TauCeti.timeDependentFlow` solves `γ' t = v t (γ t)` when the suspended map
-`(t, x) ↦ (1, v t x)` is globally Lipschitz in both `t` and `x`. When `v` is driven by a sample
-path `w` that is continuous in `t` but not Lipschitz—for instance `v t x = F (x + w t)` with `w` a
-Brownian trajectory—the suspended field is not Lipschitz in time, yet global existence and
-uniqueness still hold whenever `v` is continuous in `t` at each point and `K`-Lipschitz in `x` with
-a constant `K` independent of `t`.
+`TauCeti.timeDependentFlow` specializes the nonautonomous construction below to vector fields
+whose suspended map `(t, x) ↦ (1, v t x)` is globally Lipschitz in both `t` and `x`. When `v` is
+driven by a sample path `w` that is continuous in `t` but not Lipschitz—for instance
+`v t x = F (x + w t)` with `w` a Brownian trajectory—the suspended field is not Lipschitz in time,
+yet global existence and uniqueness still hold whenever `v` is continuous in `t` at each point and
+`K`-Lipschitz in `x` with a constant `K` independent of `t`.
 
 The construction steps Mathlib's `IsPicardLindelof.exists_eq_forall_mem_Icc_hasDerivWithinAt₀`
 along overlapping intervals of fixed half-width `δ = (4 (K + 1))⁻¹`. On `[c - 2 δ, c + 2 δ]` the
 continuous curve `t ↦ ‖v t y‖` is bounded by some `a ≥ 0`, so on `closedBall y a` the field is
 bounded by `L = (K + 1) a`, which satisfies `L · (2 δ) = a / 2 ≤ a` independently of `(c, y)`. The
 local solution therefore has an unrestricted derivative on `[c - δ, c + δ]`, and overlapping steps
-glue uniquely by `ODE.eqOn_Icc_of_hasDerivAt`.
+glue uniquely by `ODE.eqOn_Icc_of_lipschitzWith`.
 
 ## Main declarations
 
@@ -118,14 +118,14 @@ private theorem exists_hasDerivAt_Icc_widen {v : ℝ → E → E} (hvc : ∀ x, 
   obtain ⟨αL, hαL₀, hαL⟩ := exists_hasDerivAt_Icc_step hvc hv tL (γ tL)
   obtain ⟨αR, hαR₀, hαR⟩ := exists_hasDerivAt_Icc_step hvc hv tR (γ tR)
   have hLeq : EqOn αL γ (Icc tL (tL + δ)) :=
-    eqOn_Icc_of_hasDerivAt (a := tL) (b := tL + δ) (c := tL) (fun t _ ↦ hv t)
+    eqOn_Icc_of_lipschitzWith (a := tL) (b := tL + δ) (c := tL) (fun t _ ↦ hv t)
       ⟨le_rfl, le_add_of_nonneg_right hδ.le⟩
       (HasDerivAt.continuousOn fun t ht ↦ hαL t ⟨by linarith [ht.1], ht.2⟩)
       (fun t ht ↦ hαL t ⟨by linarith [ht.1], ht.2.le⟩)
       (HasDerivAt.continuousOn fun t ht ↦ hγ t ⟨ht.1, by linarith [ht.2]⟩)
       (fun t ht ↦ hγ t ⟨ht.1.le, by linarith [ht.2]⟩) hαL₀
   have hReq : EqOn γ αR (Icc (tR - δ) tR) :=
-    eqOn_Icc_of_hasDerivAt (a := tR - δ) (b := tR) (c := tR) (fun t _ ↦ hv t)
+    eqOn_Icc_of_lipschitzWith (a := tR - δ) (b := tR) (c := tR) (fun t _ ↦ hv t)
       ⟨by linarith, le_rfl⟩
       (HasDerivAt.continuousOn fun t ht ↦ hγ t ⟨by linarith [ht.1], ht.2⟩)
       (fun t ht ↦ hγ t ⟨by linarith [ht.1], ht.2.le⟩)
@@ -226,7 +226,7 @@ private theorem nonautonomousGlobalSolution_eq_localSol (v : ℝ → E → E)
   have hn_sub : ∀ {u : ℝ}, u ∈ Icc (s - (min m n + 1 : ℝ) * δ) (s + (min m n + 1 : ℝ) * δ) →
       u ∈ Icc (s - (n + 1 : ℝ) * δ) (s + (n + 1 : ℝ) * δ) := fun hu ↦
     ⟨by dsimp only [δ] at hu; nlinarith [hu.1], by dsimp only [δ] at hu; nlinarith [hu.2]⟩
-  exact eqOn_Icc_of_hasDerivAt
+  exact eqOn_Icc_of_lipschitzWith
     (a := s - (min m n + 1 : ℝ) * δ) (b := s + (min m n + 1 : ℝ) * δ) (c := s)
     (fun u _ ↦ hv u) ⟨sub_le_self _ (by positivity), le_add_of_nonneg_right (by positivity)⟩
     (HasDerivAt.continuousOn fun u hu ↦ hasDerivAt_localSol hvc hv s x m (hm_sub hu))
