@@ -143,16 +143,13 @@ theorem universalGSpaceCellularRepIso_hom_naturality (φ : G →* H) (n : ℕ) :
     φ.universalGSpaceCellularRepresentationMap (k := k) n ≫
         (Rep.resFunctor φ).map (universalGSpaceCellularRepIso k H n).hom =
       (universalGSpaceCellularRepIso k G n).hom ≫ φ.universalGSpaceChainHom n := by
-  have h := HomologicalComplex.congr_hom
-    (φ.universalGSpaceCellularComplexIso_hom_naturality (k := k)) n
-  rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f,
-    universalGSpaceCellularComplexMap_f, Functor.mapHomologicalComplex_map_f,
-    universalGSpaceCellularComplexIso_hom_f, universalGSpaceCellularComplexIso_hom_f,
-    universalGSpaceChainMap_f] at h
-  dsimp only [Functor.mapHomologicalComplex_obj_X, universalGSpaceChainComplex_X] at h
-  rw [Category.assoc, Category.assoc, ← Rep.resMap_comp, eqToHom_trans_assoc, eqToHom_refl,
-    Category.id_comp, Category.assoc] at h
-  exact (cancel_epi (eqToHom (universalGSpaceCellularComplex_X k G n))).mp h
+  simpa only [HomologicalComplex.comp_f, universalGSpaceCellularComplexMap_f,
+    Functor.mapHomologicalComplex_map_f, universalGSpaceCellularComplexIso_hom_f,
+    universalGSpaceChainMap_f, Functor.mapHomologicalComplex_obj_X, universalGSpaceChainComplex_X,
+    Rep.resMap_comp, Rep.resMap_eqToHom, Category.assoc, eqToHom_trans_assoc, eqToHom_refl,
+    Category.id_comp, cancel_epi] using
+    HomologicalComplex.congr_hom
+      (φ.universalGSpaceCellularComplexIso_hom_naturality (k := k)) n
 
 /-- Inverse form of `universalGSpaceCellularRepIso_hom_naturality` in each degree. -/
 @[reassoc]
@@ -228,7 +225,7 @@ theorem universalGSpaceCellularStandardHomotopyEquiv_inv :
 /-- Forgetting the translation action intertwines the forward equivariant cellular-to-bar
 comparison with the underlying module-level comparison. -/
 @[reassoc]
-theorem universalGSpaceCellularComplexForget₂Iso_hom_comp_map_repStandardHomotopyEquiv_hom :
+theorem universalGSpaceCellularComplexForget₂Iso_hom_comp_map_cellularRepStandardHomotopyEquiv_hom :
     (universalGSpaceCellularComplexForget₂Iso k G).hom ≫
         ((forget₂ (Rep k G) (ModuleCat k)).mapHomologicalComplex _).map
           (universalGSpaceCellularRepStandardHomotopyEquiv k G).hom =
@@ -240,7 +237,7 @@ theorem universalGSpaceCellularComplexForget₂Iso_hom_comp_map_repStandardHomot
 /-- Forgetting the translation action intertwines the inverse equivariant bar-to-cellular
 comparison with the underlying module-level inverse comparison. -/
 @[reassoc]
-theorem map_universalGSpaceCellularRepStandardHomotopyEquiv_inv_comp_forget₂Iso_inv :
+theorem map_universalGSpaceCellularRepStandardHomotopyEquiv_inv_comp_cellularComplexForget₂Iso_inv :
     ((forget₂ (Rep k G) (ModuleCat k)).mapHomologicalComplex _).map
         (universalGSpaceCellularRepStandardHomotopyEquiv k G).inv ≫
       (universalGSpaceCellularComplexForget₂Iso k G).inv =
