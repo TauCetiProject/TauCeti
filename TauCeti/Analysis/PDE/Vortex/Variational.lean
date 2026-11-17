@@ -516,6 +516,16 @@ theorem contDiff_backgroundSource {n : WithTop ℕ∞} (hf : Differentiable ℂ 
     ((contDiff_const.mul (hd.norm_sq ℝ)).div ((contDiff_const.add (hf'.norm_sq ℝ)).pow 2)
       fun z ↦ by positivity)
 
+/-- For a polynomial `Q`, the source `k` is the coefficient
+`2 ‖Q'‖² / (1 + ‖Q‖²)² - (1 + ‖Q‖²)⁻¹ / 8` of the linear term of Taubes's functional
+(`TauCeti.Vortex.sobolevReducedFunctional`). -/
+theorem backgroundSource_eval (Q : Polynomial ℂ) (z : ℂ) :
+    backgroundSource Q.eval z =
+      2 * ‖Q.derivative.eval z‖ ^ 2 / (1 + ‖Q.eval z‖ ^ 2) ^ 2 - (1 + ‖Q.eval z‖ ^ 2)⁻¹ / 8 := by
+  rw [backgroundSource_def, Polynomial.deriv, backgroundWeight_def]
+  field_simp
+  ring
+
 /-- **The Euler–Lagrange equation for the background coefficients is the vortex equation.** For a
 holomorphic `f`, the function `w` solves `Δw = h (exp (2w) - 1) / 8 + k` at `z`, with the
 background coefficients `h` and `k`, exactly when the field reconstructed from the amplitude
