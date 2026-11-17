@@ -49,38 +49,6 @@ open scoped ENNReal InnerProductSpace NNReal Topology
 
 namespace TauCeti.Probability
 
-private theorem monotone_min_sub_min {a b : ℝ≥0} (hab : a ≤ b) :
-    Monotone (fun t : ℝ≥0 ↦ ↑(min b t) - (↑(min a t) : ℝ)) := fun s t hst ↦ by
-  rcases le_total t a with hta | hat
-  · simp [min_eq_right (hst.trans hta), min_eq_right ((hst.trans hta).trans hab),
-      min_eq_right hta, min_eq_right (hta.trans hab)]
-  · rcases le_total s a with hsa | has
-    · simp [min_eq_right hsa, min_eq_right (hsa.trans hab), hab, hat]
-    · simpa [min_eq_left has, min_eq_left hat] using min_le_min_left b hst
-
-private theorem continuous_simpleGains_time {Ω : Type*} (τ : ℕ → ℝ≥0) (n : ℕ) (c : ℕ → Ω → ℝ)
-    (ω : Ω) : Continuous (Finance.simpleGains τ n c (fun t _ ↦ (t : ℝ)) · ω) := by
-  rw [show (Finance.simpleGains τ n c (fun t _ ↦ (t : ℝ)) · ω) =
-      fun t ↦ ∑ i ∈ Finset.range n, c i ω * (↑(min (τ (i + 1)) t) - ↑(min (τ i) t)) from
-    funext fun t ↦ Finance.simpleGains_def τ n c (fun u _ ↦ (u : ℝ)) t ω]; fun_prop
-
-private theorem isStronglyProgressive_simpleGains_time {Ω : Type*} {mΩ : MeasurableSpace Ω}
-    {ℱ : Filtration ℝ≥0 mΩ} {τ : ℕ → ℝ≥0} {n : ℕ} {c : ℕ → Ω → ℝ}
-    (hτ : MonotoneOn τ (Set.Iic n)) (hc : ∀ i < n, StronglyMeasurable[ℱ (τ i)] (c i)) :
-    IsStronglyProgressive ℱ (Finance.simpleGains τ n c (fun t _ ↦ (t : ℝ))) :=
-  (Finance.stronglyAdapted_simpleGains hτ hc
-    fun _ ↦ stronglyMeasurable_const).isStronglyProgressive_of_continuous
-      (continuous_simpleGains_time τ n c)
-
-private theorem monotone_simpleGains_sq_time {Ω : Type*} {τ : ℕ → ℝ≥0} {n : ℕ}
-    (hτ : MonotoneOn τ (Set.Iic n)) (d : ℕ → Ω → ℝ) (ω : Ω) :
-    Monotone (Finance.simpleGains τ n (fun i ω ↦ d i ω ^ 2) (fun t _ ↦ (t : ℝ)) · ω) :=
-  fun _ _ hst ↦ by
-    simp only [Finance.simpleGains_def]
-    exact Finset.sum_le_sum fun i hi ↦ mul_le_mul_of_nonneg_left
-      (monotone_min_sub_min (hτ (Finset.mem_range.1 hi).le (Finset.mem_range.1 hi) i.le_succ) hst)
-      (sq_nonneg _)
-
 namespace IsFilteredPreBrownianReal
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
@@ -111,16 +79,17 @@ theorem isQuadraticVariation_simpleGains (hW : IsFilteredPreBrownianReal ℱ W P
     IsQuadraticVariation ℱ P (Finance.simpleGains τ n a W)
       (fun t ω ↦ ∑ i ∈ Finset.range n, a i ω ^ 2 * (↑(min (τ (i + 1)) t) - ↑(min (τ i) t))) := by
   have hadp := Finance.stronglyAdapted_simpleGains hτ ha fun u ↦ (hW.adapted u).stronglyMeasurable
-  convert IsQuadraticVariation.mk
-    (isStronglyProgressive_simpleGains_time hτ fun i hi ↦ (ha i hi).pow 2)
-    (ae_of_all P (continuous_simpleGains_time τ n _))
-    (ae_of_all P (monotone_simpleGains_sq_time hτ a))
+  have htime : IsStronglyProgressive ℱ (fun t (_ : Ω) ↦ (t : ℝ)) :=
+    NNReal.continuous_coe.stronglyMeasurable.isStronglyProgressive ℱ
+  have hprog := Finance.isStronglyProgressive_simpleGains hτ (fun i hi ↦ (ha i hi).pow 2) htime
+  convert IsQuadraticVariation.mk hprog
+    (ae_of_all P fun _ ↦ Finance.continuous_simpleGains τ n _ NNReal.continuous_coe)
+    (ae_of_all P fun _ ↦ Finance.monotone_simpleGains hτ (fun _ _ ↦ sq_nonneg _) NNReal.coe_mono)
     (ae_of_all P fun _ ↦ by simp [Finance.simpleGains_def])
     (Locally.of_prop (p := fun Y ↦ Martingale Y ℱ P)
       ((hW.martingale_sq_simpleGains_sub hτ ha ha₂).congr
         (fun t ↦ (((hadp t).pow 2).sub (((hadp 0).pow 2).mono (ℱ.mono bot_le))).sub
-          ((isStronglyProgressive_simpleGains_time hτ
-            fun i hi ↦ (ha i hi).pow 2).stronglyAdapted t))
+          (hprog.stronglyAdapted t))
         fun _ ↦ .of_forall fun _ ↦ by simp [Finance.simpleGains_def])) using 1
   ext t ω; exact (Finance.simpleGains_def τ n (fun i ω ↦ a i ω ^ 2) (fun u _ ↦ (u : ℝ)) t ω).symm
 
@@ -136,19 +105,25 @@ theorem isCovariation_simpleGains (hW : IsFilteredPreBrownianReal ℱ W P)
       (fun t ω ↦ ∑ i ∈ Finset.range n,
         a i ω * b i ω * (↑(min (τ (i + 1)) t) - ↑(min (τ i) t))) := by
   let C := Finance.simpleGains τ n (fun i ω ↦ a i ω * b i ω) (fun t _ ↦ (t : ℝ))
+  have htime : IsStronglyProgressive ℱ (fun t (_ : Ω) ↦ (t : ℝ)) :=
+    NNReal.continuous_coe.stronglyMeasurable.isStronglyProgressive ℱ
   rw [show (fun t ω ↦ ∑ i ∈ Finset.range n,
       a i ω * b i ω * (↑(min (τ (i + 1)) t) - ↑(min (τ i) t))) = C from
     funext₂ fun t ω ↦ (Finance.simpleGains_def τ n (fun i ω ↦ a i ω * b i ω)
       (fun u _ ↦ (u : ℝ)) t ω).symm]
   refine IsCovariation.mk
-    (isStronglyProgressive_simpleGains_time hτ fun i hi ↦ (ha i hi).mul (hb i hi))
-    (ae_of_all P (continuous_simpleGains_time τ n _)) (ae_of_all P fun ω ↦ ?_)
+    (Finance.isStronglyProgressive_simpleGains hτ (fun i hi ↦ (ha i hi).mul (hb i hi)) htime)
+    (ae_of_all P fun _ ↦ Finance.continuous_simpleGains τ n _ NNReal.continuous_coe)
+    (ae_of_all P fun ω ↦ ?_)
     (ae_of_all P fun _ ↦ by simp [C, Finance.simpleGains_def]) ?_
-  · refine (((lipschitzWith_smul (4⁻¹ : ℝ)).comp_locallyBoundedVariationOn
-      (((monotone_simpleGains_sq_time hτ (a + b) ω).monotoneOn
-        Set.univ).locallyBoundedVariationOn.sub
-        ((monotone_simpleGains_sq_time hτ (a - b) ω).monotoneOn
-          Set.univ).locallyBoundedVariationOn)).congr fun t _ ↦ ?_)
+  · have hmono (c : ℕ → Ω → ℝ) : LocallyBoundedVariationOn
+        (Finance.simpleGains τ n (fun i ω ↦ c i ω ^ 2) (fun u _ ↦ (u : ℝ)) · ω) Set.univ := by
+      have hm : Monotone
+          (Finance.simpleGains τ n (fun i ω ↦ c i ω ^ 2) (fun u _ ↦ (u : ℝ)) · ω) :=
+        Finance.monotone_simpleGains hτ (fun _ _ ↦ sq_nonneg _) NNReal.coe_mono
+      exact (hm.monotoneOn Set.univ).locallyBoundedVariationOn
+    refine ((lipschitzWith_smul (4⁻¹ : ℝ)).comp_locallyBoundedVariationOn
+      ((hmono (a + b)).sub (hmono (a - b)))).congr fun t _ ↦ ?_
     simp only [C, Finance.simpleGains_def, Function.comp_apply, Pi.sub_apply, Pi.add_apply,
       smul_eq_mul, ← Finset.sum_sub_distrib, Finset.mul_sum]
     exact Finset.sum_congr rfl fun _ _ ↦ by ring
@@ -298,9 +273,7 @@ theorem isCovariation_sum_mul_of_martingale_mul (s : Finset ι) (u v : ι → �
   rw [hmul t, hmul 0, show ∑ x ∈ s, ∑ y ∈ s, u x * v y * (if x = y then (t : ℝ) else 0) =
       c * (t : ℝ) by
     simp only [c, Finset.sum_mul]; refine Finset.sum_congr rfl fun x hx ↦ ?_
-    have hite (y : ι) : u x * v y * (if x = y then (t : ℝ) else 0) =
-        if x = y then u x * v y * (t : ℝ) else 0 := by split_ifs <;> simp
-    simp [hite, hx]]
+    simp [mul_ite, hx]]
 
 /-- **Quadratic variation of a linear combination of pairwise-orthogonal filtered Brownian
 motions.** Under the hypotheses of `isCovariation_sum_mul_of_martingale_mul`, the process

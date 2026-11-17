@@ -12,6 +12,7 @@ import TauCeti.Probability.Martingale.Local.Centering
 import TauCeti.Probability.Martingale.Local.Congruence
 import TauCeti.Probability.Martingale.Local.InitialMultiplier
 import TauCeti.Probability.Process.ContinuousAE
+import TauCeti.Probability.Process.Progressive
 import TauCeti.Probability.Process.Stopping
 import TauCeti.Topology.EMetricSpace.BoundedVariation
 
@@ -81,14 +82,6 @@ theorem IsQuadraticVariation.isCovariation_self {Ω : Type*} {mΩ : MeasurableSp
       with _ hc hbv h0 using ⟨hc, hbv, h0⟩
   · convert hA.locally_martingale using 1; ext; ring
 
-private theorem isStronglyProgressive_mul_sub {Ω : Type*} {mΩ : MeasurableSpace Ω}
-    {ℱ : Filtration ℝ≥0 mΩ} {M N C : ℝ≥0 → Ω → ℝ}
-    (hM : IsStronglyProgressive ℱ M) (hN : IsStronglyProgressive ℱ N)
-    (hC : IsStronglyProgressive ℱ C) :
-    IsStronglyProgressive ℱ (fun t ω ↦ M t ω * N t ω - M 0 ω * N 0 ω - C t ω) :=
-  ((hM.mul hN).sub fun _ ↦ (((hM.stronglyAdapted 0).mul (hN.stronglyAdapted 0)).mono
-    (ℱ.mono bot_le)).comp_measurable measurable_snd).sub hC
-
 private theorem ae_continuous_mul_sub {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
     {M N C : ℝ≥0 → Ω → ℝ} (hcM : ∀ᵐ ω ∂P, Continuous (M · ω))
     (hcN : ∀ᵐ ω ∂P, Continuous (N · ω)) (hcC : ∀ᵐ ω ∂P, Continuous (C · ω)) :
@@ -138,19 +131,14 @@ theorem locally_martingale (h : IsCovariation ℱ P M N C) :
 /-- **Uniqueness of continuous covariation.** Under a finite measure, any two covariations of
 almost-surely continuous processes `M` and `N` on `(ℱ, P)` are indistinguishable. -/
 theorem indist [IsFiniteMeasure P] (hC : IsCovariation ℱ P M N C) (hC' : IsCovariation ℱ P M N C')
-    (hcM : ∀ᵐ ω ∂P, Continuous (M · ω)) (hcN : ∀ᵐ ω ∂P, Continuous (N · ω)) : C ≡ᵐ[P] C' := by
-  have hdiff_loc : Locally (fun U ↦ Martingale U ℱ P) ℱ (C' - C) P :=
-    (hC'.isStronglyProgressive.sub hC.isStronglyProgressive).locally_martingale_of_indist_sub
-      hC.locally_martingale hC'.locally_martingale
-      (ae_continuous_mul_sub hcM hcN hC.ae_continuous)
-      (ae_continuous_mul_sub hcM hcN hC'.ae_continuous)
-      (.of_forall fun _ _ ↦ by dsimp only [Pi.sub_apply]; ring)
-  exact (hdiff_loc.indist_zero_of_locallyBoundedVariationOn
-    ((hC'.ae_continuous.and hC.ae_continuous).mono fun _ h ↦ h.1.sub h.2)
-    ((hC'.ae_locallyBoundedVariationOn.and hC.ae_locallyBoundedVariationOn).mono fun _ h ↦
-      h.1.sub h.2)
-    (by filter_upwards [hC'.ae_apply_zero, hC.ae_apply_zero] with _ h1 h2; simp [h1, h2])).mono
-    fun _ hω t ↦ (sub_eq_zero.1 (hω t)).symm
+    (hcM : ∀ᵐ ω ∂P, Continuous (M · ω)) (hcN : ∀ᵐ ω ∂P, Continuous (N · ω)) : C ≡ᵐ[P] C' :=
+  hC.locally_martingale.indist_sub_right_of_locallyBoundedVariationOn
+    (X := fun t ω ↦ M t ω * N t ω - M 0 ω * N 0 ω)
+    hC'.locally_martingale hC.isStronglyProgressive hC'.isStronglyProgressive
+    ((hcM.and hcN).mono fun _ h ↦ (h.1.mul h.2).sub continuous_const)
+    hC.ae_continuous hC'.ae_continuous
+    hC.ae_locallyBoundedVariationOn hC'.ae_locallyBoundedVariationOn
+    (hC.ae_apply_zero.trans hC'.ae_apply_zero.symm)
 
 /-- Covariation is symmetric in its two process arguments. -/
 theorem symm (h : IsCovariation ℱ P M N C) : IsCovariation ℱ P N M C := by
@@ -161,15 +149,13 @@ theorem symm (h : IsCovariation ℱ P M N C) : IsCovariation ℱ P N M C := by
 /-- Replacing the compensator by an indistinguishable strongly progressive process preserves
 `IsCovariation`, with no assumptions on `M`, `N`, or `P`. -/
 theorem congr_right (hC : IsCovariation ℱ P M N C) (hC' : IsStronglyProgressive ℱ C')
-    (hCC' : C ≡ᵐ[P] C') : IsCovariation ℱ P M N C' := by
-  refine mk hC'
-    (by filter_upwards [hC.ae_continuous, hCC'] with _ hc hω using hc.congr hω)
-    (by filter_upwards [hC.ae_locallyBoundedVariationOn, hCC'] with _ hbv hω
-        exact hbv.congr fun t _ ↦ hω t)
-    (by filter_upwards [hC.ae_apply_zero, hCC'] with _ h0 hω using (hω 0).symm.trans h0) ?_
-  convert hC.locally_martingale.martingale_add_of_indist_zero (hC.isStronglyProgressive.sub hC')
-    (hCC'.mono fun _ hω t ↦ sub_eq_zero.2 (hω t)) using 1
-  ext; simp only [Pi.add_apply]; ring
+    (hCC' : C ≡ᵐ[P] C') : IsCovariation ℱ P M N C' :=
+  mk hC'
+    ((hC.ae_continuous.and hCC').mono fun _ h ↦ h.1.congr h.2)
+    ((hC.ae_locallyBoundedVariationOn.and hCC').mono fun _ h ↦ h.1.congr fun t _ ↦ h.2 t)
+    ((hCC'.ae_eq_eval 0).symm.trans hC.ae_apply_zero)
+    (hC.locally_martingale.martingale_sub_of_indist_right
+      (X := fun t ω ↦ M t ω * N t ω - M 0 ω * N 0 ω) hC.isStronglyProgressive hC' hCC')
 
 /-- Replacing `M`, `N`, and `C` by indistinguishable strongly progressive processes preserves
 `IsCovariation`. -/
@@ -179,7 +165,7 @@ theorem congr (hC : IsCovariation ℱ P M N C)
     (hCC' : C ≡ᵐ[P] C') : IsCovariation ℱ P M' N' C' := by
   have hC₁ := hC.congr_right hC' hCC'
   refine mk hC' hC₁.ae_continuous hC₁.ae_locallyBoundedVariationOn hC₁.ae_apply_zero
-    ((isStronglyProgressive_mul_sub hM' hN' hC').locally_martingale_of_indist
+    (((hM'.mul hN').sub_initialValue.sub hC').locally_martingale_of_indist
       hC₁.locally_martingale ?_)
   filter_upwards [hMM', hNN'] with _ hm hn t using by simp [hm t, hm 0, hn t, hn 0]
 
@@ -231,11 +217,11 @@ theorem add_left [IsFiniteMeasure P] (h₁ : IsCovariation ℱ P M₁ N C₁)
     ((h₁.ae_locallyBoundedVariationOn.and h₂.ae_locallyBoundedVariationOn).mono fun _ h ↦
       h.1.add h.2)
     (by filter_upwards [h₁.ae_apply_zero, h₂.ae_apply_zero] with _ ha hb; simp [ha, hb]) ?_
-  convert (isStronglyProgressive_mul_sub hM₁ hN h₁.isStronglyProgressive).locally_martingale_add
-    (isStronglyProgressive_mul_sub hM₂ hN h₂.isStronglyProgressive)
+  convert ((hM₁.mul hN).sub_initialValue.sub h₁.isStronglyProgressive).locally_martingale_add
+    ((hM₂.mul hN).sub_initialValue.sub h₂.isStronglyProgressive)
     h₁.locally_martingale h₂.locally_martingale (ae_continuous_mul_sub hcM₁ hcN h₁.ae_continuous)
     (ae_continuous_mul_sub hcM₂ hcN h₂.ae_continuous) using 1
-  ext; dsimp only [Pi.add_apply]; ring
+  ext; simp only [Pi.add_apply, bot_eq_zero]; ring
 
 /-- Right additivity of covariation for strongly progressive, almost-surely continuous processes. -/
 theorem add_right [IsFiniteMeasure P] (h₁ : IsCovariation ℱ P M N₁ C₁)
@@ -274,7 +260,7 @@ theorem stoppedProcess [IsFiniteMeasure P] (hC : IsCovariation ℱ P M N C)
     (hC.ae_continuous.mono fun _ hc ↦ hc.stoppedProcess)
     (hC.ae_locallyBoundedVariationOn.mono fun _ hbv ↦ hbv.stoppedProcess_univ)
     (hC.ae_apply_zero.mono fun ω h0 ↦ (congr_fun (stoppedProcess_bot C τ) ω).trans h0) ?_
-  convert (isStronglyProgressive_mul_sub hMprog hNprog
+  convert ((hMprog.mul hNprog).sub_initialValue.sub
     hC.isStronglyProgressive).locally_martingale_stoppedProcess hC.locally_martingale
     ((ae_continuous_mul_sub hcM hcN hC.ae_continuous).mono fun _ h ↦ h.isRightContinuous)
     hτ using 1
@@ -335,7 +321,7 @@ theorem isCovariation_of_isQuadraticVariation_add_sub [IsFiniteMeasure P]
     ((hadd.ae_locallyBoundedVariationOn.and hsub.ae_locallyBoundedVariationOn).mono
       fun _ h ↦ (lipschitzWith_smul (4⁻¹ : ℝ)).comp_locallyBoundedVariationOn (h.1.sub h.2))
     (by filter_upwards [hadd.ae_apply_zero, hsub.ae_apply_zero] with _ ha hb; simp [ha, hb])
-    ((isStronglyProgressive_mul_sub hMprog hNprog hdiff_prog).locally_martingale_of_indist_sub
+    (((hMprog.mul hNprog).sub_initialValue.sub hdiff_prog).locally_martingale_of_indist_sub
       (hadd.locally_martingale.martingale_smul (4⁻¹ : ℝ))
       (hsub.locally_martingale.martingale_smul (4⁻¹ : ℝ))
       (by filter_upwards [hcM, hcN, hadd.ae_continuous] with _ hm hn ha
@@ -343,7 +329,7 @@ theorem isCovariation_of_isQuadraticVariation_add_sub [IsFiniteMeasure P]
       (by filter_upwards [hcM, hcN, hsub.ae_continuous] with _ hm hn ha
           exact continuous_const.mul ((((hm.sub hn).pow 2).sub continuous_const).sub ha))
       (.of_forall fun _ _ ↦ by
-        dsimp only [Pi.add_apply, Pi.sub_apply, Pi.smul_apply, smul_eq_mul]; ring))
+        simp only [Pi.add_apply, Pi.sub_apply, Pi.smul_apply, smul_eq_mul, bot_eq_zero]; ring))
 
 /-- **Polarization identity (`[M + N] - [M] - [N]`).** Quadratic variations `A`, `B`, and `D` of
 `M`, `N`, and `M + N` yield the covariation `2⁻¹ • (D - A - B)` of `M` and `N`. -/
@@ -359,9 +345,9 @@ theorem isCovariation_of_isQuadraticVariation_add [IsFiniteMeasure P]
       hB.isStronglyProgressive) t).const_smul (2⁻¹ : ℝ)
   have hcA := ae_continuous_mul_sub hcM hcM hA.ae_continuous
   have hcB := ae_continuous_mul_sub hcN hcN hB.ae_continuous
-  have hXAB := ((isStronglyProgressive_mul_sub hMprog hMprog
+  have hXAB := (((hMprog.mul hMprog).sub_initialValue.sub
       hA.isStronglyProgressive).locally_martingale_add
-    (isStronglyProgressive_mul_sub hNprog hNprog hB.isStronglyProgressive)
+    ((hNprog.mul hNprog).sub_initialValue.sub hB.isStronglyProgressive)
     hA.isCovariation_self.locally_martingale hB.isCovariation_self.locally_martingale
     hcA hcB).martingale_smul (2⁻¹ : ℝ)
   refine IsCovariation.mk hprog
@@ -372,13 +358,13 @@ theorem isCovariation_of_isQuadraticVariation_add [IsFiniteMeasure P]
         exact (lipschitzWith_smul (2⁻¹ : ℝ)).comp_locallyBoundedVariationOn ((hd.sub ha).sub hb))
     (by filter_upwards [hD.ae_apply_zero, hA.ae_apply_zero, hB.ae_apply_zero] with _ hd ha hb
         simp [hd, ha, hb])
-    ((isStronglyProgressive_mul_sub hMprog hNprog hprog).locally_martingale_of_indist_sub
+    (((hMprog.mul hNprog).sub_initialValue.sub hprog).locally_martingale_of_indist_sub
       (hD.locally_martingale.martingale_smul (2⁻¹ : ℝ)) hXAB
       (by filter_upwards [hcM, hcN, hD.ae_continuous] with _ hm hn hd
           exact continuous_const.mul ((((hm.add hn).pow 2).sub continuous_const).sub hd))
       ((hcA.and hcB).mono fun _ h ↦ continuous_const.mul (h.1.add h.2))
       (.of_forall fun _ _ ↦ by
-        dsimp only [Pi.add_apply, Pi.sub_apply, Pi.smul_apply, smul_eq_mul]; ring))
+        simp only [Pi.add_apply, Pi.sub_apply, Pi.smul_apply, smul_eq_mul, bot_eq_zero]; ring))
 
 /-- Finite left linearity of covariation. -/
 theorem isCovariation_sum_left [IsFiniteMeasure P] {ι : Type*} (s : Finset ι)
@@ -432,9 +418,7 @@ theorem isQuadraticVariation_sum_of_isCovariation_zero [IsFiniteMeasure P] {ι :
   rw [show (fun t ω ↦ ∑ i ∈ s, ∑ j ∈ s, (if i = j then A i else 0) t ω) =
       fun t ω ↦ ∑ i ∈ s, A i t ω by
     ext t ω; refine Finset.sum_congr rfl fun i hi ↦ ?_
-    have hite (j : ι) : (if i = j then A i else 0) t ω = if i = j then A i t ω else 0 := by
-      split_ifs <;> rfl
-    simp [hite, hi]] at hcov
+    simp [ite_apply, hi]] at hcov
   exact hcov.isQuadraticVariation_of_ae_monotone
     (((ae_ball_iff s.countable_toSet).2 fun i hi ↦ (hA i hi).ae_monotone).mono
       fun _ hω _ _ huv ↦ Finset.sum_le_sum fun i hi ↦ hω i hi huv)

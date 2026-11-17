@@ -9,8 +9,8 @@ public import TauCeti.Probability.Martingale.Local.FiniteVariation
 import TauCeti.Probability.Martingale.Local.Centering
 import TauCeti.Probability.Martingale.Local.Congruence
 import TauCeti.Probability.Martingale.Local.InitialMultiplier
+import TauCeti.Probability.Process.Progressive
 import TauCeti.Probability.Process.Stopping
-import TauCeti.Topology.EMetricSpace.BoundedVariation
 
 /-!
 # Quadratic variation of continuous real processes on raw filtrations
@@ -59,19 +59,6 @@ theorem isQuadraticVariation_def {ℱ : Filtration ℝ≥0 mΩ} {P : Measure Ω}
   Iff.rfl
 
 end Defs
-
-private theorem isStronglyProgressive_sq_sub {Ω : Type*} {mΩ : MeasurableSpace Ω}
-    {ℱ : Filtration ℝ≥0 mΩ} {M A : ℝ≥0 → Ω → ℝ}
-    (hM : IsStronglyProgressive ℱ M) (hA : IsStronglyProgressive ℱ A) :
-    IsStronglyProgressive ℱ (fun t ω ↦ (M t ω) ^ 2 - (M 0 ω) ^ 2 - A t ω) := by
-  have hMsq : IsStronglyProgressive ℱ (fun t ω ↦ (M t ω) ^ 2) := by simpa only [sq] using hM.mul hM
-  exact (hMsq.sub fun _ ↦ (((hM.stronglyAdapted 0).pow 2).mono
-    (ℱ.mono bot_le)).comp_measurable measurable_snd).sub hA
-
-private theorem ae_continuous_sq_sub {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
-    {M A : ℝ≥0 → Ω → ℝ} (hcM : ∀ᵐ ω ∂P, Continuous (M · ω)) (hcA : ∀ᵐ ω ∂P, Continuous (A · ω)) :
-    ∀ᵐ ω ∂P, Continuous (fun t ↦ (M t ω) ^ 2 - (M 0 ω) ^ 2 - A t ω) :=
-  (hcM.and hcA).mono fun _ ⟨hm, ha⟩ ↦ ((hm.pow 2).sub continuous_const).sub ha
 
 namespace IsQuadraticVariation
 
@@ -123,31 +110,26 @@ theorem locally_martingale (h : IsQuadraticVariation ℱ P M A) :
 /-- **Uniqueness of continuous quadratic variation.** Under a finite measure, any two quadratic
 variations of an almost-surely continuous process `M` on `(ℱ, P)` are indistinguishable. -/
 theorem indist [IsFiniteMeasure P] (hA : IsQuadraticVariation ℱ P M A)
-    (hA' : IsQuadraticVariation ℱ P M A') (hcM : ∀ᵐ ω ∂P, Continuous (M · ω)) : A ≡ᵐ[P] A' := by
-  have hdiff_loc : Locally (fun U ↦ Martingale U ℱ P) ℱ (A' - A) P :=
-    (hA'.isStronglyProgressive.sub hA.isStronglyProgressive).locally_martingale_of_indist_sub
-      hA.locally_martingale hA'.locally_martingale
-      (ae_continuous_sq_sub hcM hA.ae_continuous) (ae_continuous_sq_sub hcM hA'.ae_continuous)
-      (.of_forall fun _ _ ↦ by dsimp only [Pi.sub_apply]; ring)
-  exact (hdiff_loc.indist_zero_of_locallyBoundedVariationOn
-    ((hA'.ae_continuous.and hA.ae_continuous).mono fun _ h ↦ h.1.sub h.2)
-    ((hA'.ae_locallyBoundedVariationOn.and hA.ae_locallyBoundedVariationOn).mono fun _ h ↦
-      h.1.sub h.2)
-    (by filter_upwards [hA'.ae_apply_zero, hA.ae_apply_zero] with _ h1 h2; simp [h1, h2])).mono
-    fun _ hω t ↦ (sub_eq_zero.1 (hω t)).symm
+    (hA' : IsQuadraticVariation ℱ P M A') (hcM : ∀ᵐ ω ∂P, Continuous (M · ω)) : A ≡ᵐ[P] A' :=
+  hA.locally_martingale.indist_sub_right_of_locallyBoundedVariationOn
+    (X := fun t ω ↦ (M t ω) ^ 2 - (M 0 ω) ^ 2)
+    hA'.locally_martingale hA.isStronglyProgressive hA'.isStronglyProgressive
+    (hcM.mono fun _ hm ↦ (hm.pow 2).sub continuous_const)
+    hA.ae_continuous hA'.ae_continuous
+    hA.ae_locallyBoundedVariationOn hA'.ae_locallyBoundedVariationOn
+    (hA.ae_apply_zero.trans hA'.ae_apply_zero.symm)
 
 /-- Replacing the compensator by an indistinguishable strongly progressive process preserves
 `IsQuadraticVariation`, with no regularity or measure-finiteness hypothesis on `M` or `P`. -/
 theorem congr_right (hA : IsQuadraticVariation ℱ P M A) (hA' : IsStronglyProgressive ℱ A')
-    (hAA' : A ≡ᵐ[P] A') : IsQuadraticVariation ℱ P M A' := by
-  refine mk hA'
-    (by filter_upwards [hA.ae_continuous, hAA'] with _ hc hω using hc.congr hω)
+    (hAA' : A ≡ᵐ[P] A') : IsQuadraticVariation ℱ P M A' :=
+  mk hA'
+    ((hA.ae_continuous.and hAA').mono fun _ h ↦ h.1.congr h.2)
     (by filter_upwards [hA.ae_monotone, hAA'] with _ hm hω s t hst
         simpa only [← hω s, ← hω t] using hm hst)
-    (by filter_upwards [hA.ae_apply_zero, hAA'] with _ h0 hω using (hω 0).symm.trans h0) ?_
-  convert hA.locally_martingale.martingale_add_of_indist_zero (hA.isStronglyProgressive.sub hA')
-    (hAA'.mono fun _ hω t ↦ sub_eq_zero.2 (hω t)) using 1
-  ext; simp only [Pi.add_apply]; ring
+    ((hAA'.ae_eq_eval 0).symm.trans hA.ae_apply_zero)
+    (hA.locally_martingale.martingale_sub_of_indist_right
+      (X := fun t ω ↦ (M t ω) ^ 2 - (M 0 ω) ^ 2) hA.isStronglyProgressive hA' hAA')
 
 /-- Replacing both `M` and `A` by indistinguishable strongly progressive processes preserves
 `IsQuadraticVariation`. -/
@@ -156,7 +138,7 @@ theorem congr (hA : IsQuadraticVariation ℱ P M A) (hM' : IsStronglyProgressive
     IsQuadraticVariation ℱ P M' A' := by
   have hA₁ := hA.congr_right hA' hAA'
   exact mk hA' hA₁.ae_continuous hA₁.ae_monotone hA₁.ae_apply_zero
-    ((isStronglyProgressive_sq_sub hM' hA').locally_martingale_of_indist hA₁.locally_martingale
+    (((hM'.pow 2).sub_initialValue.sub hA').locally_martingale_of_indist hA₁.locally_martingale
       (hMM'.mono fun _ hω t ↦ by simp [hω t, hω 0]))
 
 /-- Deterministic scalar multiplication scales the quadratic variation by `c ^ 2`. -/
@@ -182,16 +164,13 @@ theorem add_initial [IsFiniteMeasure P] (hA : IsQuadraticVariation ℱ P M A)
     IsQuadraticVariation ℱ P (fun t ω ↦ M t ω + ξ ω) A := by
   refine mk hA.isStronglyProgressive hA.ae_continuous hA.ae_monotone hA.ae_apply_zero ?_
   have hYprog : IsStronglyProgressive ℱ (fun t ω ↦ (2 • ξ) ω • (M t ω - M 0 ω)) :=
-    IsStronglyProgressive.mul
-      (fun _ ↦ ((hξ.const_smul 2).mono (ℱ.mono bot_le)).comp_measurable measurable_snd)
-      (hMprog.sub fun _ ↦
-        ((hMprog.stronglyAdapted 0).mono (ℱ.mono bot_le)).comp_measurable measurable_snd)
-  convert (isStronglyProgressive_sq_sub hMprog hA.isStronglyProgressive).locally_martingale_add
+    ((hξ.const_smul 2).isStronglyProgressive_const).mul hMprog.sub_initialValue
+  convert ((hMprog.pow 2).sub_initialValue.sub hA.isStronglyProgressive).locally_martingale_add
     hYprog hA.locally_martingale
     (hM.martingale_sub_initialValue.martingale_smul_initial (hξ.const_smul 2))
-    (ae_continuous_sq_sub hcM hA.ae_continuous)
+    ((hcM.and hA.ae_continuous).mono fun _ h ↦ ((h.1.pow 2).sub continuous_const).sub h.2)
     (hcM.mono fun _ hm ↦ continuous_const.mul (hm.sub continuous_const)) using 1
-  ext; dsimp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul]; ring
+  ext; simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul, bot_eq_zero]; ring
 
 /-- Centering a strongly progressive, almost-surely continuous local martingale at its initial
 value leaves its quadratic variation unchanged. -/
@@ -232,9 +211,10 @@ theorem stoppedProcess [IsFiniteMeasure P] (hA : IsQuadraticVariation ℱ P M A)
     (hA.ae_continuous.mono fun _ hc ↦ hc.stoppedProcess)
     (hA.ae_monotone.mono fun _ hm ↦ hm.stoppedProcess)
     (hA.ae_apply_zero.mono fun ω h0 ↦ (congr_fun (stoppedProcess_bot A τ) ω).trans h0) ?_
-  convert (isStronglyProgressive_sq_sub hMprog
+  convert ((hMprog.pow 2).sub_initialValue.sub
     hA.isStronglyProgressive).locally_martingale_stoppedProcess hA.locally_martingale
-    ((ae_continuous_sq_sub hcM hA.ae_continuous).mono fun _ h ↦ h.isRightContinuous) hτ using 1
+    ((hcM.and hA.ae_continuous).mono fun _ h ↦
+      (((h.1.pow 2).sub continuous_const).sub h.2).isRightContinuous) hτ using 1
   ext; simp [MeasureTheory.stoppedProcess]
 
 end IsQuadraticVariation

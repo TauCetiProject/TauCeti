@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Order.Group.Abs
+public import Mathlib.Order.Interval.Set.Defs
 
 /-!
 # Clamping and medians in ordered additive groups
@@ -20,6 +21,10 @@ The median `max 0 (min a b) + min 0 (max a b)` of `0`, `a` and `b` is the common
 of `a` and `b`, viewed as segments from `0` on the line: it lies between `0` and each of them, and
 twice its absolute value is `|a| + |b| - |b - a|`.
 
+Moreover, for `a ≤ b` in a linear order and a function `f` monotone on `[a, b]` into an ordered
+additive group, the clipped increment `t ↦ f (min b t) - f (min a t)` is monotone
+(`MonotoneOn.min_sub_min`, `Monotone.min_sub_min`).
+
 ## Main results
 
 * `TauCeti.max_zero_min_add`: `max 0 (min t (a + b)) = max 0 (min t a) + max 0 (min (t - a) b)`.
@@ -31,9 +36,35 @@ twice its absolute value is `|a| + |b| - |b - a|`.
 * `TauCeti.abs_max_zero_min_add_min_zero_max_add_abs_sub`: the median `u` of `0`, `a` and `b`
   satisfies `|u| + |a - u| = |a|`.
 * `TauCeti.two_nsmul_abs_max_zero_min_add_min_zero_max`: `2 • |u| = |a| + |b| - |b - a|`.
+* `MonotoneOn.min_sub_min`, `Monotone.min_sub_min`: the clipped increment
+  `t ↦ f (min b t) - f (min a t)` of a monotone function is monotone.
 -/
 
 public section
+
+/-- For `a ≤ b` in a linear order and a function `f` monotone on `[a, b]` into an ordered additive
+group, the clipped increment `t ↦ f (min b t) - f (min a t)` is monotone. -/
+theorem MonotoneOn.min_sub_min {ι β : Type*} [LinearOrder ι] [AddGroup β] [Preorder β]
+    [AddRightMono β] {f : ι → β} {a b : ι} (hf : MonotoneOn f (Set.Icc a b)) (hab : a ≤ b) :
+    Monotone fun t ↦ f (min b t) - f (min a t) := fun s t hst ↦ by
+  rcases le_total t a with hta | hat
+  · simp [min_eq_right (hst.trans hta), min_eq_right ((hst.trans hta).trans hab),
+      min_eq_right hta, min_eq_right (hta.trans hab)]
+  · rcases le_total s a with hsa | has
+    · simp only [min_eq_right hsa, min_eq_right (hsa.trans hab), sub_self,
+        min_eq_left hat, sub_nonneg]
+      exact hf ⟨le_rfl, hab⟩ ⟨le_min hab hat, min_le_left _ _⟩ (le_min hab hat)
+    · simp only [min_eq_left has, min_eq_left hat]
+      exact sub_le_sub_right
+        (hf ⟨le_min hab has, min_le_left _ _⟩ ⟨le_min hab hat, min_le_left _ _⟩
+          (min_le_min_left b hst)) _
+
+/-- For `a ≤ b` in a linear order and a monotone function `f` into an ordered additive group, the
+clipped increment `t ↦ f (min b t) - f (min a t)` is monotone. -/
+theorem Monotone.min_sub_min {ι β : Type*} [LinearOrder ι] [AddGroup β] [Preorder β]
+    [AddRightMono β] {f : ι → β} (hf : Monotone f) {a b : ι} (hab : a ≤ b) :
+    Monotone fun t ↦ f (min b t) - f (min a t) :=
+  (hf.monotoneOn _).min_sub_min hab
 
 namespace TauCeti
 

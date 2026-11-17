@@ -30,7 +30,8 @@ integrability or measurability assumption is imposed on the initial value.
    increments by `(M + 2 C) · max_i |Δ_i W|`, whose expectation tends to `0` by uniform continuity
    and dominated convergence.
 2. Bounded native localization extends this to continuous real local martingales.
-3. Hahn–Banach separation lifts the result to any real Banach space `E`.
+3. Hahn–Banach separation lifts the result to any real Banach space `E`, yielding uniqueness of
+   continuous finite-variation compensators (`indist_sub_right_of_locallyBoundedVariationOn`).
 
 ## References
 
@@ -396,6 +397,30 @@ theorem indist_zero_of_locallyBoundedVariationOn
     M ≡ᵐ[P] 0 := by
   filter_upwards [hM.indist_const_of_locallyBoundedVariationOn hc hbv, h0] with _ hω h0ω t
   simpa [h0ω] using hω t
+
+/-- **Uniqueness of continuous finite-variation compensators.** If `A` and `A'` are strongly
+progressive, almost-surely continuous, locally bounded-variation processes agreeing almost surely at
+time `0`, such that `X - A` and `X - A'` are native local martingales for an almost-surely
+continuous process `X`, then `A` and `A'` are indistinguishable. -/
+theorem indist_sub_right_of_locallyBoundedVariationOn {X A A' : ℝ≥0 → Ω → E}
+    (hXA : Locally (fun Y ↦ Martingale Y ℱ P) ℱ (X - A) P)
+    (hXA' : Locally (fun Y ↦ Martingale Y ℱ P) ℱ (X - A') P)
+    (hAprog : IsStronglyProgressive ℱ A) (hA'prog : IsStronglyProgressive ℱ A')
+    (hcX : ∀ᵐ ω ∂P, Continuous (X · ω))
+    (hcA : ∀ᵐ ω ∂P, Continuous (A · ω)) (hcA' : ∀ᵐ ω ∂P, Continuous (A' · ω))
+    (hbvA : ∀ᵐ ω ∂P, LocallyBoundedVariationOn (A · ω) univ)
+    (hbvA' : ∀ᵐ ω ∂P, LocallyBoundedVariationOn (A' · ω) univ)
+    (h0 : A 0 =ᵐ[P] A' 0) : A ≡ᵐ[P] A' := by
+  have hdiff_loc : Locally (fun U ↦ Martingale U ℱ P) ℱ (A' - A) P :=
+    (hA'prog.sub hAprog).locally_martingale_of_indist_sub hXA hXA'
+      ((hcX.and hcA).mono fun _ h ↦ h.1.sub h.2)
+      ((hcX.and hcA').mono fun _ h ↦ h.1.sub h.2)
+      (.of_forall fun _ _ ↦ by dsimp only [Pi.sub_apply]; abel)
+  exact (hdiff_loc.indist_zero_of_locallyBoundedVariationOn
+    ((hcA'.and hcA).mono fun _ h ↦ h.1.sub h.2)
+    ((hbvA'.and hbvA).mono fun _ h ↦ h.1.sub h.2)
+    (h0.mono fun _ hω ↦ by simp [hω])).mono
+    fun _ hω t ↦ (sub_eq_zero.1 (hω t)).symm
 
 end BanachSpace
 

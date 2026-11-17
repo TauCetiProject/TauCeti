@@ -14,12 +14,13 @@ import TauCeti.Probability.Process.Stopping
 /-!
 # Linear combinations of local martingales on raw filtrations
 
-Continuous real-linear maps, deterministic scalar multiples, and negations preserve native local
-martingales (`ProbabilityTheory.Locally`) on linearly ordered time indices with a bottom element. On
-`ℝ≥0` under a finite measure, predictable versions and continuous-time stopping show that strongly
-progressive processes indistinguishable from sums, differences, finite sums, or stopped processes of
-almost-surely continuous native local martingales remain native local martingales on the same raw
-filtration.
+Continuous real-linear maps, deterministic scalar multiples, negations, and perturbations by
+strongly progressive processes indistinguishable from zero (`martingale_add_of_indist_zero`,
+`martingale_sub_of_indist_right`) preserve native local martingales (`ProbabilityTheory.Locally`)
+on linearly ordered time indices with a bottom element. On `ℝ≥0` under a finite measure,
+predictable versions and continuous-time stopping show that strongly progressive processes
+indistinguishable from sums, differences, finite sums, or stopped processes of almost-surely
+continuous native local martingales remain native local martingales on the same raw filtration.
 
 ## References
 
@@ -81,6 +82,20 @@ theorem martingale_add_of_indist_zero
     convert ((hX.stoppedProcess_localSeq n).stronglyAdapted t).add h2 using 1
     ext; simp only [Pi.add_apply, stoppedProcess_indicator_pos_apply]; split_ifs <;> simp
   · exact hD0.mono fun _ hω ↦ by simp [stoppedProcess_indicator_pos_apply, hω _]
+
+/-- Replacing the subtrahend `A` of a native local martingale `X - A` by an indistinguishable
+strongly progressive process `A'` preserves native locality, with no regularity or finiteness
+assumption on `X` or `P`. -/
+theorem martingale_sub_of_indist_right
+    [SecondCountableTopology ι] [TopologicalSpace.PseudoMetrizableSpace ι]
+    [MeasurableSpace ι] [BorelSpace ι] {A A' : ι → Ω → E}
+    (hXA : Locally (fun Y ↦ Martingale Y ℱ P) ℱ (X - A) P)
+    (hA : IsStronglyProgressive ℱ A) (hA' : IsStronglyProgressive ℱ A')
+    (hAA' : A ≡ᵐ[P] A') :
+    Locally (fun Y ↦ Martingale Y ℱ P) ℱ (X - A') P := by
+  convert hXA.martingale_add_of_indist_zero (hA.sub hA')
+    (hAA'.mono fun _ hω t ↦ sub_eq_zero.2 (hω t)) using 1
+  ext; simp only [Pi.add_apply, Pi.sub_apply]; abel
 
 end ProbabilityTheory.Locally
 

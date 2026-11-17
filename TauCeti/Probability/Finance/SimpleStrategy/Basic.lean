@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import Mathlib.Probability.Process.Predictable
 public import TauCeti.Probability.Martingale.Basic
 public import TauCeti.Order.Interval.Set.Subdivision
+import TauCeti.Algebra.Order.Group.MinMax
 
 /-!
 # Simple trading strategies and the self-financing formula
@@ -27,9 +28,14 @@ which is predictable when each `a j` is `ℱ (τ j)`-measurable
 
 `∫₀ᵗ a dX = ∑_{j < n} a j · (X (τ (j + 1) ⊓ t) - X (τ j ⊓ t))`  (`TauCeti.Finance.simpleGains`),
 
+which is continuous along continuous price paths (`TauCeti.Finance.continuous_simpleGains`),
+monotone along monotone price paths when holdings are nonnegative
+(`TauCeti.Finance.monotone_simpleGains_of_monotoneOn`, `TauCeti.Finance.monotone_simpleGains`),
 an adapted process when `X` is adapted and each `a j` is `ℱ (τ j)`-measurable
-(`TauCeti.Finance.stronglyAdapted_simpleGains`), and a martingale when moreover `X` is a
-martingale and each trade has integrable gains at every time
+(`TauCeti.Finance.stronglyAdapted_simpleGains`), strongly progressive when `X` is strongly
+progressive (`TauCeti.Finance.isStronglyProgressive_simpleGains`) or strongly adapted with
+continuous paths (`TauCeti.Finance.isStronglyProgressive_simpleGains_of_continuous`), and a
+martingale when moreover `X` is a martingale and each trade has integrable gains at every time
 (`MeasureTheory.Martingale.simpleGains`), in particular when the positions are bounded
 (`MeasureTheory.Martingale.simpleGains_of_bdd`). At a rebalancing date the gains are the discrete
 transform `∑_{i < j} a i · (X (τ (i + 1)) - X (τ i))`
@@ -90,7 +96,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory Finset
+open MeasureTheory Finset TopologicalSpace
 
 namespace TauCeti.Finance
 
@@ -238,6 +244,37 @@ theorem simpleHolding_smul (τ : ℕ → ι) (n : ℕ) (c : ℝ) (a : ℕ → Ω
   refine sum_congr rfl fun j _ ↦ ?_
   by_cases ht : t ∈ Set.Ioc (τ j) (τ (j + 1)) <;> simp [ht]
 
+/-- Elementary gains along a continuous price path are continuous. -/
+theorem continuous_simpleGains [TopologicalSpace ι] [ContinuousInf ι] (τ : ℕ → ι) (n : ℕ)
+    (a : ℕ → Ω → ℝ) {X : ι → Ω → ℝ} {ω : Ω} (hX : Continuous (X · ω)) :
+    Continuous (simpleGains τ n a X · ω) := by
+  rw [show (simpleGains τ n a X · ω) =
+      fun t ↦ ∑ j ∈ range n, a j ω * (X (min (τ (j + 1)) t) ω - X (min (τ j) t) ω) from
+    funext fun t ↦ simpleGains_def τ n a X t ω]
+  exact continuous_finsetSum _ fun j _ ↦ continuous_const.mul
+    ((hX.comp (continuous_const.inf continuous_id)).sub
+      (hX.comp (continuous_const.inf continuous_id)))
+
+/-- Elementary gains with nonnegative holdings along a price path monotone on `[τ 0, τ n]` are
+monotone. -/
+theorem monotone_simpleGains_of_monotoneOn (hτ : MonotoneOn τ (Set.Iic n)) {ω : Ω}
+    (ha : ∀ j < n, 0 ≤ a j ω) (hX : MonotoneOn (X · ω) (Set.Icc (τ 0) (τ n))) :
+    Monotone (simpleGains τ n a X · ω) := fun _ _ hst ↦ by
+  simp only [simpleGains_def]
+  refine sum_le_sum fun j hj ↦ ?_
+  have hj' : j < n := mem_range.1 hj
+  have hsub : Set.Icc (τ j) (τ (j + 1)) ⊆ Set.Icc (τ 0) (τ n) :=
+    Set.Icc_subset_Icc (hτ (Nat.zero_le n) hj'.le (Nat.zero_le j))
+      (hτ hj' Set.self_mem_Iic hj')
+  exact mul_le_mul_of_nonneg_left
+    ((hX.mono hsub).min_sub_min (hτ hj'.le hj' j.le_succ) hst) (ha j hj')
+
+/-- Elementary gains with nonnegative holdings along a monotone price path are monotone. -/
+theorem monotone_simpleGains (hτ : MonotoneOn τ (Set.Iic n)) {ω : Ω}
+    (ha : ∀ j < n, 0 ≤ a j ω) (hX : Monotone (X · ω)) :
+    Monotone (simpleGains τ n a X · ω) :=
+  monotone_simpleGains_of_monotoneOn hτ ha (hX.monotoneOn _)
+
 /-! ### Measurability -/
 
 section Measurability
@@ -285,6 +322,41 @@ theorem stronglyAdapted_simpleGains (hτ : MonotoneOn τ (Set.Iic n))
     ext ω
     rw [min_eq_right (ht.trans (hτ (mem_range.1 hj).le (mem_range.1 hj) (Nat.le_succ j))),
       min_eq_right ht, sub_self, mul_zero]
+
+/-- The gains of a simple strategy over a partition monotone up to `n`, with each position chosen
+at the start of its interval, are strongly progressive when the price process is. -/
+theorem isStronglyProgressive_simpleGains [MeasurableSpace ι] [MeasurableInf ι]
+    (hτ : MonotoneOn τ (Set.Iic n)) (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j))
+    (hX : IsStronglyProgressive ℱ X) :
+    IsStronglyProgressive ℱ (simpleGains τ n a X) := by
+  intro t
+  let : MeasurableSpace Ω := ℱ t
+  have hmin (c : ι) : StronglyMeasurable (fun p : Set.Iic t × Ω ↦ X (min c p.1) p.2) :=
+    (hX t).comp_measurable
+      ((Measurable.subtype_mk (measurable_subtype_coe.const_inf c) :
+          Measurable fun s : Set.Iic t ↦ (⟨min c s.1, min_le_of_right_le s.2⟩ : Set.Iic t)).prodMap
+        measurable_id)
+  refine Finset.stronglyMeasurable_fun_sum _ fun j hj ↦ ?_
+  by_cases hjt : τ j ≤ t
+  · exact (((ha j (mem_range.1 hj)).mono (ℱ.mono hjt)).comp_measurable measurable_snd).mul
+      ((hmin (τ (j + 1))).sub (hmin (τ j)))
+  · have ht : t ≤ τ j := (not_le.1 hjt).le
+    convert stronglyMeasurable_const (b := (0 : ℝ)) using 1
+    ext ⟨s, ω⟩
+    have hs : (s : ι) ≤ τ j := s.2.trans ht
+    rw [min_eq_right (hs.trans (hτ (mem_range.1 hj).le (mem_range.1 hj) (Nat.le_succ j))),
+      min_eq_right hs, sub_self, mul_zero]
+
+/-- The gains of a simple strategy over a partition monotone up to `n`, with each position chosen
+at the start of its interval, are strongly progressive when the price process is strongly adapted
+with continuous paths. -/
+theorem isStronglyProgressive_simpleGains_of_continuous [TopologicalSpace ι] [MetrizableSpace ι]
+    [SecondCountableTopology ι] [ContinuousInf ι] [MeasurableSpace ι] [OpensMeasurableSpace ι]
+    (hτ : MonotoneOn τ (Set.Iic n)) (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j))
+    (hX : StronglyAdapted ℱ X) (hXc : ∀ ω, Continuous (X · ω)) :
+    IsStronglyProgressive ℱ (simpleGains τ n a X) :=
+  (stronglyAdapted_simpleGains hτ ha hX).isStronglyProgressive_of_continuous fun _ ↦
+    continuous_simpleGains τ n a (hXc _)
 
 /-- The gains of a simple strategy up to a trading date `τ m` are known at `τ m` when the traded
 price is known at each trading date and the holdings `a j` are chosen at `τ j`. -/
