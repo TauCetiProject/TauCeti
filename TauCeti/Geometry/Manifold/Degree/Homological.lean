@@ -239,50 +239,7 @@ theorem integralTopForm_mpullback_eq_degree_toHomologicalOrientation_mul
 
 section AnyModel
 
-open CategoryTheory AlgebraicTopology
-
-/-- A homeomorphism `e : X ≃ₜ Y` followed by its inverse acts as the identity on integral
-homology. -/
-private theorem singularHomologyMap_homeomorph_symm_apply {X Y : Type} [TopologicalSpace X]
-    [TopologicalSpace Y] (e : X ≃ₜ Y) {k : ℕ}
-    (μ : ((singularHomologyFunctor (ModuleCat.{0} ℤ) k).obj (ModuleCat.of ℤ (ULift.{0} ℤ))).obj
-      (TopCat.of Y)) :
-    (((singularHomologyFunctor (ModuleCat.{0} ℤ) k).obj (ModuleCat.of ℤ (ULift.{0} ℤ))).map
-        (TopCat.ofHom (e : C(X, Y)))).hom
-      ((((singularHomologyFunctor (ModuleCat.{0} ℤ) k).obj (ModuleCat.of ℤ (ULift.{0} ℤ))).map
-        (TopCat.ofHom (e.symm : C(Y, X)))).hom μ) = μ := by
-  have he : (e : C(X, Y)).comp (e.symm : C(Y, X)) = ContinuousMap.id Y := by ext; simp
-  have h : ((singularHomologyFunctor (ModuleCat.{0} ℤ) k).obj (ModuleCat.of ℤ (ULift.{0} ℤ))).map
-        (TopCat.ofHom (e.symm : C(Y, X))) ≫
-      ((singularHomologyFunctor (ModuleCat.{0} ℤ) k).obj (ModuleCat.of ℤ (ULift.{0} ℤ))).map
-        (TopCat.ofHom (e : C(X, Y))) = 𝟙 _ := by
-    rw [← Functor.map_comp, ← TopCat.ofHom_comp, he, TopCat.ofHom_id,
-      CategoryTheory.Functor.map_id]
-  exact congrArg (fun φ ↦ φ.hom μ) h
-
-/-- On a compact connected manifold charted in a finite-dimensional real inner product space `F`
-of dimension `k + 1`, with an orientation `o`, every integral fundamental class of a space `X`
-homeomorphic to it through `e : M ≃ₜ X` is `±` the image of the fundamental class of `o`. -/
-private theorem eq_smul_mapFundamentalClass_of_isFundamentalClass {F M X : Type}
-    [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] {k : ℕ}
-    (hF : finrank ℝ F = k + 1) [TopologicalSpace M] [T2Space M] [ChartedSpace F M]
-    [IsManifold 𝓘(ℝ, F) 1 M] [CompactSpace M] [ConnectedSpace M] [TopologicalSpace X]
-    (o : Manifold.Orientation 𝓘(ℝ, F) M (Fin (k + 1))) (e : M ≃ₜ X)
-    {μ : ((TopCat.toSSet.obj (TopCat.of X)).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) (k + 1) :
-      ModuleCat.{0} ℤ)} (hμ : IsFundamentalClass μ) :
-    ∃ s : ℤ, (s = 1 ∨ s = -1) ∧
-      μ = s • (o.toHomologicalOrientation hF).mapFundamentalClass hF (e : C(M, X)) := by
-  -- Pull `μ` back to `M`, where it is `±[M]`, and push it forward again.
-  rcases ((o.toHomologicalOrientation hF).isFundamentalClass_iff_eq_or_eq_neg hF _).1
-      (hμ.map_homeomorph e.symm) with h | h
-  · refine ⟨1, Or.inl rfl, ?_⟩
-    rw [one_smul, HomologicalOrientation.mapFundamentalClass_def, ← h]
-    exact (singularHomologyMap_homeomorph_symm_apply e μ).symm
-  · refine ⟨-1, Or.inr rfl, ?_⟩
-    rw [neg_one_zsmul, ← HomologicalOrientation.mapFundamentalClass_neg,
-      HomologicalOrientation.mapFundamentalClass_def,
-      HomologicalOrientation.fundamentalClass_neg, ← h]
-    exact (singularHomologyMap_homeomorph_symm_apply e μ).symm
+open AlgebraicTopology
 
 variable {W W' H H' M N : Type} [NormedAddCommGroup W] [NormedSpace ℝ W] [FiniteDimensional ℝ W]
   [NormedAddCommGroup W'] [NormedSpace ℝ W'] [FiniteDimensional ℝ W'] [TopologicalSpace H]
@@ -330,24 +287,24 @@ private theorem exists_singularHomologyMap_eq_degreeAtRegularValue_smul_of_diffe
   have hg : MDifferentiable 𝓘(ℝ, V) 𝓘(ℝ, V) g :=
     (ιN.symm.contMDiff.comp (hf.comp ιM.contMDiff)).mdifferentiable one_ne_zero
   have hgdeg : degreeAtRegularValue oM oN g (ιN.symm y) = degreeAtRegularValue o o' f y := by
-    rw [← degreeAtRegularValue_comp_left_of_bijective (e := ιN) ιN.toHomeomorph.bijective
+    rw [← degreeAtRegularValue_comp_left_of_injective (e := ιN) ιN.toHomeomorph.injective
       (o'.isOrientationPreservingAt_pullback _ hιN _) hg, hιg, ιN.apply_symm_apply,
       degreeAtRegularValue_comp_of_bijective (e := ιM) ιM.toHomeomorph.bijective
         (o.isOrientationPreservingAt_pullback _ hιM _) (hf.mdifferentiable one_ne_zero)]
   have hreg : IsRegularValue 𝓘(ℝ, V) 𝓘(ℝ, V) g (ιN.symm y) := by
     refine isRegularValue_iff.2 fun x hx ↦ ?_
-    have hx' : f (ιM x) = y := by
-      rw [← ιN.apply_symm_apply (f (ιM x))]
-      exact ιN.symm.injective (by simpa [g] using hx) ▸ ιN.apply_symm_apply y
+    have hx' : f (ιM x) = y := by simpa [g] using congrArg ιN hx
     exact (isRegularPoint_iff.2 (ιN.symm.isInvertible_mfderiv one_ne_zero).surjective).comp
       ((hy.isRegularPoint hx').comp (isRegularPoint_iff.2 (hιM x).surjective))
   have key := mapFundamentalClass_eq_degreeAtRegularValue_smul hV oM oN hreg
   rw [hgdeg] at key
   -- Compare `μ` and `ν` with the images of the fundamental classes of the copies.
   obtain ⟨s₁, hs₁, rfl⟩ :=
-    eq_smul_mapFundamentalClass_of_isFundamentalClass hV oM ιM.toHomeomorph hμ
+    (oM.toHomologicalOrientation hV).exists_eq_smul_mapFundamentalClass_of_isFundamentalClass hV
+      ιM.toHomeomorph hμ
   obtain ⟨s₂, hs₂, rfl⟩ :=
-    eq_smul_mapFundamentalClass_of_isFundamentalClass hV oN ιN.toHomeomorph hν
+    (oN.toHomologicalOrientation hV).exists_eq_smul_mapFundamentalClass_of_isFundamentalClass hV
+      ιN.toHomeomorph hν
   refine ⟨s₁ * s₂, ?_, ?_⟩
   · rcases hs₁ with rfl | rfl <;> rcases hs₂ with rfl | rfl <;> simp
   -- `f ∘ ιM = ιN ∘ g` carries `±[M']` to `±deg • ιN_*[N']`.

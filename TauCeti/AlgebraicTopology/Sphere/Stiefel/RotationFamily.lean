@@ -115,9 +115,7 @@ theorem exists_singularHomologyMap_stiefelRotationFamily_eq_smul (hn : n ≠ 0)
     (isRegularValue_stiefelRotationFamily (y := (p, q)) hqp hqp') hμ hν
   refine ⟨s' * s, ?_, h.trans ?_⟩
   · rcases hs with rfl | rfl <;> rcases hs' with rfl | rfl <;> simp
-  · rw [show degreeAtRegularValue oP oN
-        (⟨stiefelRotationFamily, continuous_stiefelRotationFamily⟩ : C(_, _)) (p, q) =
-          s * (1 + (-1) ^ n) from hdeg, mul_assoc]
+  · rw [ContinuousMap.coe_mk, hdeg, mul_assoc]
 
 /-- **The Stiefel rotation family doubles fundamental classes** when the fibre sphere `Sⁿ` of the
 unit tangent bundle has even dimension `n ≥ 2`: `τ` sends any integral fundamental class `μ` of
