@@ -19,7 +19,8 @@ identified with the identity and with composites of base changes by `pullbackId`
 identifications are coherent: `pullbackComp x (𝟙 S)` is the base change of `pullbackId`
 (`pullbackComp_id_inv_app_comp_eqToHom`), and the two identifications of base change along a
 triple composite agree (`pullbackComp_comp_inv_app_comp_eqToHom`), up to the equalities
-`x ≫ 𝟙 S = x` and `x ≫ f ≫ g = (x ≫ f) ≫ g`.
+`x ≫ 𝟙 S = x` and `x ≫ f ≫ g = (x ≫ f) ≫ g`. In particular, base change along an isomorphism is
+an equivalence of categories (`isEquivalence_pullback_of_isIso`).
 
 For a geometric point `x : Spec Ω ⟶ S`, with `Ω` a separably closed field, the
 *geometric fibre functor* `FiniteEtaleScheme.fiber x` sends a finite étale `S`-scheme `X` to the
@@ -139,6 +140,16 @@ theorem pullbackComp_comp_inv_app_comp_eqToHom (x : V ⟶ T) (f : T ⟶ S) (g : 
         (pullbackComp x f).inv.app ((pullback g).obj X) ≫ (pullbackComp (x ≫ f) g).inv.app X :=
   -- As above, the identity is checked in `Over V`.
   ObjectProperty.hom_ext _ (Over.pullbackComp_comp_inv_app_comp_eqToHom x f g X.obj)
+
+/-- Base change of finite étale schemes along an isomorphism of bases is an equivalence of
+categories. -/
+instance isEquivalence_pullback_of_isIso {Y X : Scheme.{u}} (u : Y ⟶ X) [IsIso u] :
+    (pullback u).IsEquivalence :=
+  .mk' (pullback (inv u))
+    (pullbackId.symm ≪≫ eqToIso (congrArg pullback (IsIso.inv_hom_id u).symm) ≪≫
+      pullbackComp (inv u) u)
+    ((pullbackComp u (inv u)).symm ≪≫ eqToIso (congrArg pullback (IsIso.hom_inv_id u)) ≪≫
+      pullbackId)
 
 variable {Ω : Type u} [Field Ω] [IsSepClosed Ω]
 
