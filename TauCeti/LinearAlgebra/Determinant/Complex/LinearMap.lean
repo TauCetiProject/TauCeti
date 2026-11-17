@@ -125,10 +125,8 @@ theorem detLineRestrictScalarsEquiv_symm_eq_congr :
     f.detLineRestrictScalarsEquiv.symm = TensorProduct.congr
       (f.kerRestrictScalarsEquiv ℝ).detLineCongr
       (f.cokerRestrictScalarsEquiv ℝ).symm.detLineCongr.symm.dualMap := by
-  refine LinearEquiv.toLinearMap_injective (TensorProduct.ext' fun x φ ↦ ?_)
-  rw [LinearEquiv.coe_coe, LinearEquiv.coe_coe, detLineRestrictScalarsEquiv_symm_tmul,
-    TensorProduct.congr_tmul, LinearEquiv.detLineCongr_symm, LinearEquiv.symm_symm]
-  exact congrArg _ (LinearMap.ext fun _ ↦ (LinearEquiv.dualMap_apply _ _ _).symm)
+  rw [detLineRestrictScalarsEquiv_eq_congr, TensorProduct.congr_symm,
+    LinearEquiv.detLineCongr_symm, LinearEquiv.symm_symm, LinearEquiv.dualMap_symm]
 
 /-- An element of the real determinant line of a complex-linear map `f` is **complex positive** if
 it corresponds to a complex positive element of `det (ker f) ⊗ (det (coker f))^*`, that is, to

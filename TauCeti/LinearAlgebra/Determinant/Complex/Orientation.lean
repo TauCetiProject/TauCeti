@@ -793,7 +793,7 @@ private theorem isComplexPositive_detLineCongr_symm_ιMulti_append {m n a b : �
 /-- The exterior product of `g ∘ e ∘ u` is carried by `e'⁻¹` to a complex positive element when
 `f ∘ u` is a complex basis, for real isomorphisms `e` and `e'` intertwining the complex-linear `f`
 with the real-linear `g`. This is the case of `isComplexPositive_detLineCongr_symm_ιMulti_append`
-with an empty first family. -/
+with an empty second family `v`. -/
 private theorem isComplexPositive_detLineCongr_symm_ιMulti_comp {n : ℕ} {f : E →ₗ[ℂ] F}
     {g : E' →ₗ[ℝ] F'} (e : E ≃ₗ[ℝ] E') (e' : F ≃ₗ[ℝ] F')
     (h : g ∘ₗ e.toLinearMap = e'.toLinearMap ∘ₗ f.restrictScalars ℝ) {u : Fin n → E}
