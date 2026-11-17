@@ -15,6 +15,7 @@ public import TauCeti.Topology.Algebra.RestrictedProduct.Congr.Basic
 public import TauCeti.Topology.Algebra.RestrictedProduct.Principal
 public import TauCeti.Topology.Bases
 import TauCeti.MeasureTheory.Group.Arithmetic
+import TauCeti.Topology.Algebra.InfiniteSum.Group
 
 /-!
 # Convergent restricted products of local Haar measures
@@ -26,15 +27,16 @@ measures `μ i` on `G i`. We construct left Haar measures on `Πʳ i, [G i, B i]
 1. **Normalized restricted Haar product** (`TauCeti.restrictedHaar`,
    `TauCeti.exists_unique_restrictedHaar`): assuming `μ i (B i) = 1` cofinitely, there is a unique
    left Haar measure `ν` with `ν (box C) = ∏ᶠ i, μ i (C i)` on measurable boxes agreeing cofinitely
-   with `B i` (extended to arbitrary boxes in `TauCeti.restrictedHaar_box_eq_finprod` and
-   `TauCeti.restrictedHaar_box`).
+   with `B i` (extended to such boxes without measurability assumptions on their factors in
+   `TauCeti.restrictedHaar_box_eq_finprod` and `TauCeti.restrictedHaar_box`).
 2. **Convergent restricted Haar product** (`TauCeti.convergentHaarProduct`,
    `TauCeti.exists_unique_convergentHaarProduct`): assuming only
    `Summable fun i : {i // i ∉ S} ↦ |(μ i.1 (B i.1)).toReal - 1|` outside a finite set `S`, there
    is a unique left Haar measure `ν` assigning
    `(∏ i ∈ T, μ i (C i)) * ENNReal.ofReal (∏' i : {i // i ∉ T}, (μ i.1 (B i.1)).toReal)`
-   to every measurable box `box C` agreeing with `B i` outside `T ⊇ S` (extended to arbitrary boxes
-   in `TauCeti.convergentHaarProduct_box`, and expressed as a rescaled `restrictedHaar` in
+   to every measurable box `box C` agreeing with `B i` outside `T ⊇ S` (extended to such boxes
+   without measurability assumptions on their factors in `TauCeti.convergentHaarProduct_box`,
+   and expressed as a rescaled `restrictedHaar` in
    `TauCeti.convergentHaarProduct_eq_smul_restrictedHaar`).
 
 Every definition and theorem has an additive counterpart (`TauCeti.restrictedAddHaar`,

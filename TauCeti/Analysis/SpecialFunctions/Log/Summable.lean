@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Log.Summable
+import TauCeti.Topology.Algebra.InfiniteSum.Group
 
 /-!
 # Positivity and finite-level splitting of convergent real infinite products
@@ -15,8 +16,6 @@ For a positive real family `f` satisfying `Summable fun a ↦ |f a - 1|`, the lo
 
 ## Main results
 
-* `TauCeti.multipliable_notMem_of_subset`, `TauCeti.summable_notMem_of_subset`: restricting a
-  multipliable or summable family from `{i // i ∉ S}` to `{i // i ∉ T}` (`S ⊆ T`).
 * `TauCeti.summable_log_of_summable_abs_sub_one`,
   `TauCeti.tprod_eq_rexp_tsum_log_of_summable_abs_sub_one`,
   `TauCeti.tprod_pos_of_summable_abs_sub_one`: summability of `Real.log (f a)`, exponential
@@ -28,18 +27,6 @@ For a positive real family `f` satisfying `Summable fun a ↦ |f a - 1|`, the lo
 public section
 
 namespace TauCeti
-
-/-- Multipliability outside a finite set `S` implies multipliability outside any larger finite set
-`T ⊇ S`. -/
-@[to_additive /-- Summability outside a finite set `S` implies summability outside any larger
-finite set `T ⊇ S`. -/]
-theorem multipliable_notMem_of_subset {ι α : Type*} [CommGroup α] [UniformSpace α]
-    [IsUniformGroup α] [CompleteSpace α] {S T : Finset ι} (hST : S ⊆ T) (g : ι → α)
-    (hconv : Multipliable fun i : {i // i ∉ S} ↦ g i.1) :
-    Multipliable fun i : {i // i ∉ T} ↦ g i.1 :=
-  hconv.comp_injective
-    (show Function.Injective (fun i : {i // i ∉ T} ↦ (⟨i.1, fun h ↦ i.2 (hST h)⟩ : {i // i ∉ S}))
-      from fun _ _ h ↦ Subtype.ext <| by injection h)
 
 /-- If `∑' a, |f a - 1|` converges, then `∑' a, Real.log (f a)` converges. -/
 theorem summable_log_of_summable_abs_sub_one {α : Type*} {f : α → ℝ}
