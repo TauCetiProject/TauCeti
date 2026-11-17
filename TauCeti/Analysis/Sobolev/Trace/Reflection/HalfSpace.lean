@@ -128,7 +128,7 @@ end HalfSpaceSet
 
 section HalfSpaceClosed
 
-variable {E : Type*} [NormedAddCommGroup E]
+variable {E : Type*} [TopologicalSpace E]
 
 /-- The upper half-space is closed. -/
 theorem isClosed_upperHalfSpace : IsClosed (upperHalfSpace E) :=
