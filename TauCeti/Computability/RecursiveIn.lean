@@ -29,9 +29,11 @@ join of two oracles.
 Mathlib's `ComputableIn₂` expresses computability of binary total functions in terms of
 encodings; `ComputableIn₂.iff_nat` restates it for functions on `ℕ` as a `Nat.RecursiveIn`
 statement on codes `Nat.pair a b` of pairs. Total oracle-computable functions are closed under
-composition, pairing, primitive recursion, and forming finite initial segments of a sequence.
-These closure proofs adapt Mathlib's `Computable.comp`, `Computable.pair`, and
-`Computable.nat_rec` in `Mathlib.Computability.Partrec` to `Nat.RecursiveIn`.
+composition, pairing, primitive recursion, and forming finite initial segments of a sequence, and
+unbounded option search over a binary oracle-computable sequence (`RecursiveIn.rfindOpt`) is
+recursive in the same oracle. These closure proofs adapt Mathlib's `Computable.comp`,
+`Computable.pair`, `Computable.nat_rec`, and `Partrec.rfindOpt` in `Mathlib.Computability.Partrec`
+to `Nat.RecursiveIn`.
 -/
 
 public section
@@ -192,3 +194,46 @@ theorem list_range_map {f : α → ℕ → β} (hf : ComputableIn₂ O f) :
   | succ n ih => simp [List.range_succ, ih]
 
 end ComputableIn₂
+
+namespace RecursiveIn
+
+open Encodable
+
+variable {α σ : Type*} [Primcodable α] [Primcodable σ] {O : Set (ℕ →. ℕ)}
+
+/-- **Unbounded option search.** If `f : α → ℕ → Option σ` is binary computable in `O`, then
+`fun a => Nat.rfindOpt (f a)` is recursive in `O`. This is the oracle-relative form of
+`Partrec.rfindOpt`. -/
+theorem rfindOpt {f : α → ℕ → Option σ} (hf : ComputableIn₂ O f) :
+    RecursiveIn O fun a => Nat.rfindOpt (f a) := by
+  have htest : ComputableIn₂ O fun a k => cond (f a k).isSome 0 1 :=
+    (Primrec.cond Primrec.option_isSome (Primrec.const 0) (Primrec.const 1)).computableIn.comp hf
+  have hr := (Nat.RecursiveIn.map_primrec hf Nat.Primrec.pred).comp
+    (Nat.RecursiveIn.pair (Nat.Primrec.id.recursiveIn (O := O)) (Nat.RecursiveIn.rfind htest))
+  refine hr.of_eq fun n => ?_
+  cases hdec : decode (α := α) n with
+  | none =>
+    simp [Seq.seq, hdec, Nat.rfind_zero_none (fun _ => Part.none) rfl]
+  | some a =>
+    have hrfind :
+        (Nat.rfind fun k => Part.map (fun m => decide (m = 0))
+          ((decode (α := α × ℕ) (Nat.pair n k) : Part (α × ℕ)).bind
+            fun q => Part.some (encode (cond (f q.1 q.2).isSome 0 1)))) =
+        Nat.rfind fun k => Part.some (f a k).isSome := by
+      congr 1; funext k
+      cases h : f a k <;> simp [hdec, h]
+    simp only [Part.coe_some, Part.bind_some, Nat.rfindOpt, Seq.seq, id_eq,
+      Part.map_eq_map, Part.map_some, Part.bind_eq_bind]
+    rw [hrfind]
+    ext y
+    simp only [Part.mem_bind_iff, Part.mem_map_iff, Part.mem_some_iff, Part.mem_coe,
+      Option.mem_def]
+    constructor
+    · rintro ⟨_, ⟨k, hk, rfl⟩, hy⟩
+      have hisSome : (f a k).isSome = true := by simpa using Nat.rfind_spec hk
+      obtain ⟨b, hb⟩ := Option.isSome_iff_exists.1 hisSome
+      exact ⟨b, ⟨k, hk, hb⟩, by simpa [hdec, hb] using hy⟩
+    · rintro ⟨b, ⟨k, hk, hb⟩, rfl⟩
+      exact ⟨Nat.pair n k, ⟨k, hk, rfl⟩, by simp [hdec, hb]⟩
+
+end RecursiveIn
