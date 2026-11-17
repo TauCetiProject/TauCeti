@@ -311,16 +311,15 @@ theorem floerLinearization_perturbationPullback_eq_sub (ω : SymplecticForm V)
     (ω.perturbedFDeriv_perturbationPullback hφ hu hKs.self_of_nhds hKt.self_of_nhds)
   simp only [perturbedFDeriv_apply_stdComplexLineImag, ContinuousLinearMap.comp_apply,
     comp_apply] at hP
-  have hφ' := hφJ.apply_stdComplexLineImag_eq
-  have himag := (ω.perturbedFDeriv Ks Kt u (φ w)).apply_stdComplexLine
-    (fderiv ℝ φ w stdComplexLineImag)
-  rw [hφ'] at himag
-  simp only [Prod.fst, Prod.snd] at himag
-  -- The derivative of `ξ` on `(a, b)`, and the column `(-b, a)` of `dφ_w`.
+  -- The column `(-b, a)` in the standard real basis.
+  have hφ' : fderiv ℝ φ w stdComplexLineImag =
+      -(fderiv ℝ φ w stdComplexLineReal).2 • stdComplexLineReal +
+        (fderiv ℝ φ w stdComplexLineReal).1 • stdComplexLineImag := by
+    simpa [stdComplexLineReal, stdComplexLineImag] using hφJ.apply_stdComplexLineImag_eq
+  simp only [hφ', map_add, map_smul] at hP
   have hξ' := (fderiv ℝ ξ (φ w) : ℝ × ℝ →ₗ[ℝ] V).apply_stdComplexLine
     (fderiv ℝ φ w stdComplexLineReal)
-  simp only [ContinuousLinearMap.coe_coe] at himag hξ' hφ'
-  rw [himag] at hP
+  simp only [ContinuousLinearMap.coe_coe] at hξ'
   -- Expand both linearizations and the Floer operator in these coordinates.
   rw [floerLinearization_def]
   simp only [comp_apply]
@@ -331,7 +330,7 @@ theorem floerLinearization_perturbationPullback_eq_sub (ω : SymplecticForm V)
     perturbedFDeriv_apply_stdComplexLineImag, perturbedFDeriv_apply_stdComplexLineReal, map_add,
     map_sub, map_smul, hA, Prod.fst_add, Prod.snd_add, Prod.smul_fst, Prod.smul_snd, smul_eq_mul,
     stdComplexLineReal_fst, stdComplexLineReal_snd, stdComplexLineImag_fst,
-    stdComplexLineImag_snd, Prod.fst, Prod.snd]
+    stdComplexLineImag_snd]
   -- What remains is `b (J dJ + dJ J)` applied to the slice defect `∂t u - X_{K_t}(u)`.
   linear_combination (norm := module)
     (fderiv ℝ φ w stdComplexLineReal).2 • hanti (fderiv ℝ u (φ w) stdComplexLineImag) -
