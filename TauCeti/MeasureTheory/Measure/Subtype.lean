@@ -189,13 +189,6 @@ theorem measurePreserving_prodMap_subtype_coe {α β : Type*} [MeasurableSpace �
     (hs : MeasurableSet s) :
     MeasurePreserving (Prod.map id ((↑) : s → β)) (μ.prod (ν.comap (↑)))
       ((μ.prod ν).restrict (univ ×ˢ s)) := by
-  have : SFinite (ν.comap ((↑) : s → β)) := by
-    have e : ν.comap ((↑) : s → β) = Measure.sum fun n ↦ (sfiniteSeq ν n).comap (↑) := by
-      ext A hA
-      simp_rw [Measure.sum_apply _ hA, (MeasurableEmbedding.subtype_coe hs).comap_apply,
-        ← Measure.sum_apply_of_countable, sum_sfiniteSeq]
-    rw [e]
-    infer_instance
   have := (MeasurePreserving.id μ).prod (measurePreserving_subtype_coe (μa := ν) hs)
   rwa [← Measure.prod_restrict, Measure.restrict_univ]
 
