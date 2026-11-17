@@ -42,13 +42,13 @@ bijection sends a sequence to its base points, and a critical configuration to t
 symplecticity or smoothness of the maps `φ_i`.
 
 Shifting a configuration and the functions together, `q ↦ (i ↦ q (i + k))` and
-`S ↦ (i ↦ S (i + k))`, preserves the action (`TauCeti.cyclicAction_comp_add`) and its critical
-points (`TauCeti.mvfderiv_cyclicAction_comp_add_eq_zero_iff`). Iterates are the case of equal
-summands `S_i = S`. A periodic chain of a single map `φ` is the orbit of its first state, so the
-chain dictionary identifies the points `z` with `φ^[N] z = z` whose iterates `z, φ z, …,
-φ^[N-1] z` all lie in `D` with the critical points of `A_N(q) = Σ_i S(q_i, q_(i+1))`, by
-`z ↦ (i ↦ π (φ^[i] z))` (`TauCeti.CotangentBundle.exists_equiv_iterate_of_generating`). The least
-period of `z` need only divide `N`. Under this bijection the cyclic shift `i ↦ q (i + 1)` of a
+`S ↦ (i ↦ S (i + k))`, preserves the action (`TauCeti.cyclicAction_comp_add_right`) and its
+critical points (`TauCeti.mvfderiv_cyclicAction_comp_add_right_eq_zero_iff`). Iterates are the
+case of equal summands `S_i = S`. A periodic chain of a single map `φ` is the orbit of its first
+state, so the chain dictionary identifies the points `z` with `φ^[N] z = z` whose iterates
+`z, φ z, …, φ^[N-1] z` all lie in `D` with the critical points of `A_N(q) = Σ_i S(q_i, q_(i+1))`,
+by `z ↦ (i ↦ π (φ^[i] z))` (`TauCeti.CotangentBundle.exists_equiv_iterate_of_generating`). The
+least period of `z` need only divide `N`. Under this bijection the cyclic shift `i ↦ q (i + 1)` of a
 critical configuration is the same periodic orbit marked at `φ z`, so the critical configurations
 up to cyclic shifts correspond to the periodic orbits without a marked point
 (`TauCeti.CotangentBundle.exists_equiv_quot_iterate_of_generating`).
@@ -141,42 +141,23 @@ omit [TopologicalSpace Q] in
 /-- **The cyclic discrete action is invariant under cyclic shifts.** Shifting the configuration
 and the functions by the same `k` does not change the action:
 `Σ_i S_(i+k)(q_(i+k), q_(i+k+1)) = Σ_i S_i(q_i, q_(i+1))`. -/
-theorem cyclicAction_comp_add (S : ZMod N → Q × Q → ℝ) (q : ZMod N → Q) (k : ZMod N) :
+theorem cyclicAction_comp_add_right (S : ZMod N → Q × Q → ℝ) (q : ZMod N → Q) (k : ZMod N) :
     cyclicAction (fun i ↦ S (i + k)) (fun i ↦ q (i + k)) = cyclicAction S q := by
   simp only [cyclicAction_apply]
   exact Fintype.sum_equiv (Equiv.addRight k) _ _ fun i ↦ by simp [add_right_comm]
-
-/-- The cyclic shift `q ↦ (i ↦ q (i + k))` of configurations is differentiable. -/
-private theorem mdifferentiableAt_shift (k : ZMod N) (q : ZMod N → Q) :
-    MDifferentiableAt (ModelWithCorners.pi fun _ : ZMod N ↦ I)
-      (ModelWithCorners.pi fun _ : ZMod N ↦ I) (fun q : ZMod N → Q ↦ fun i ↦ q (i + k)) q :=
-  mdifferentiableAt_pi_iff.2 fun i ↦
-    (hasMFDerivAt_apply (M := fun _ : ZMod N ↦ Q) (i + k) q).mdifferentiableAt
-
-/-- The cyclic shift `q ↦ (i ↦ q (i + k))` of configurations has derivative the same shift of
-tangent vectors. -/
-private theorem mfderiv_shift_apply (k : ZMod N) (q : ZMod N → Q) (v : ZMod N → E) :
-    mfderiv (ModelWithCorners.pi fun _ : ZMod N ↦ I) (ModelWithCorners.pi fun _ : ZMod N ↦ I)
-      (fun q : ZMod N → Q ↦ fun i ↦ q (i + k)) q v = fun i ↦ v (i + k) := by
-  rw [mfderiv_pi fun i ↦
-    (hasMFDerivAt_apply (M := fun _ : ZMod N ↦ Q) (i + k) q).mdifferentiableAt]
-  simp only [mfderiv_apply]
-  -- The product of the projections `proj (i + k)` sends `v` to `i ↦ v (i + k)`; `simp` cannot
-  -- rewrite it across the tangent-space type synonyms.
-  rfl
 
 /-- **Cyclic shifts preserve critical configurations.** A configuration `q` is a critical point of
 the cyclic action `Σ_i S_i(q_i, q_(i+1))` exactly when its shift `i ↦ q (i + k)` is a critical
 point of the cyclic action of the shifted functions `i ↦ S (i + k)`. With equal summands
 `S_i = S`, the cyclic shifts act on the critical configurations of `Σ_i S(q_i, q_(i+1))`. -/
-theorem mvfderiv_cyclicAction_comp_add_eq_zero_iff (S : ZMod N → Q × Q → ℝ) (q : ZMod N → Q)
-    (k : ZMod N) :
+theorem mvfderiv_cyclicAction_comp_add_right_eq_zero_iff (S : ZMod N → Q × Q → ℝ)
+    (q : ZMod N → Q) (k : ZMod N) :
     mvfderiv (ModelWithCorners.pi fun _ : ZMod N ↦ I) (cyclicAction fun i ↦ S (i + k))
         (fun i ↦ q (i + k)) = 0 ↔
       mvfderiv (ModelWithCorners.pi fun _ : ZMod N ↦ I) (cyclicAction S) q = 0 := by
   have hcomp : (cyclicAction fun i ↦ S (i + k)) ∘ (fun q : ZMod N → Q ↦ fun i ↦ q (i + k)) =
       cyclicAction S :=
-    funext fun q ↦ cyclicAction_comp_add S q k
+    funext fun q ↦ cyclicAction_comp_add_right S q k
   by_cases hd : MDifferentiableAt (ModelWithCorners.pi fun _ : ZMod N ↦ I) 𝓘(ℝ)
       (cyclicAction fun i ↦ S (i + k)) (fun i ↦ q (i + k))
   · -- The differential of the action at `q` is the differential of the shifted action composed
@@ -185,8 +166,12 @@ theorem mvfderiv_cyclicAction_comp_add_eq_zero_iff (S : ZMod N → Q × Q → �
         mvfderiv (ModelWithCorners.pi fun _ : ZMod N ↦ I) (cyclicAction S) q v =
           mvfderiv (ModelWithCorners.pi fun _ : ZMod N ↦ I) (cyclicAction fun i ↦ S (i + k))
             (fun i ↦ q (i + k)) fun i ↦ v (i + k) := by
-      rw [← hcomp, mvfderiv_comp_apply q hd (mdifferentiableAt_shift k q) v,
-        mfderiv_shift_apply]
+      rw [← hcomp, mvfderiv_comp_apply q hd
+        (hasMFDerivAt_comp_right (M := fun _ : ZMod N ↦ Q) (· + k) q).mdifferentiableAt v,
+        mfderiv_comp_right]
+      -- `Pi.compRightL` sends `v` to `i ↦ v (i + k)`; `simp` cannot rewrite it across the
+      -- tangent-space type synonyms.
+      rfl
     -- In both directions the remaining step evaluates the zero map, which `simp` cannot do across
     -- the tangent-space type synonyms.
     constructor
@@ -204,10 +189,12 @@ theorem mvfderiv_cyclicAction_comp_add_eq_zero_iff (S : ZMod N → Q × Q → �
       have hinv : (cyclicAction fun i ↦ S (i + k)) =
           cyclicAction S ∘ fun q : ZMod N → Q ↦ fun i ↦ q (i + -k) := by
         funext q'
-        rw [Function.comp_apply, ← cyclicAction_comp_add S _ k]
+        rw [Function.comp_apply, ← cyclicAction_comp_add_right S _ k]
         simp only [add_neg_cancel_right]
       rw [hinv] at hd
-      exact hd (h.comp_of_eq _ (mdifferentiableAt_shift (-k) _) (by simp))
+      exact hd (h.comp_of_eq _
+        (hasMFDerivAt_comp_right (M := fun _ : ZMod N ↦ Q) (· + -k) _).mdifferentiableAt
+        (by simp))
     simp [mvfderiv, mfderiv_zero_of_not_mdifferentiableAt hd,
       mfderiv_zero_of_not_mdifferentiableAt hd']
 
