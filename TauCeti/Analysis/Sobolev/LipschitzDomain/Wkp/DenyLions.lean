@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.LipschitzDomain.Wkp.LinearIsometry
-public import TauCeti.Analysis.Sobolev.Wkp.DenyLions
+public import TauCeti.Analysis.Sobolev.LipschitzDomain.Basic
+public import TauCeti.Analysis.Sobolev.Wkp.Basic
+public import Mathlib.Analysis.Normed.Group.Quotient
+import TauCeti.Analysis.Sobolev.LipschitzDomain.Wkp.LinearIsometry
+import TauCeti.Analysis.Sobolev.Wkp.DenyLions
 
 /-!
 # The Deny–Lions lemma on bounded Lipschitz domains
@@ -35,7 +38,7 @@ explicit.
 
 * `TauCeti.Wkp.finiteDimensional_ker_iteratedGradientL_of_isLipschitzDomainWith_image`
 * `TauCeti.Wkp.exists_projection_norm_sub_le_of_isLipschitzDomainWith_image`
-* `TauCeti.Wkp.exists_norm_mk_le_of_isLipschitzDomainWith_image`
+* `TauCeti.Wkp.exists_norm_quotientMk_ker_le_of_isLipschitzDomainWith_image`
 
 ## References
 
@@ -86,16 +89,17 @@ theorem exists_projection_norm_sub_le_of_isLipschitzDomainWith_image
 /-- **The Deny–Lions lemma on Lipschitz domains.** Let `Ω` be a bounded open set whose isometric
 image in the model space is a Lipschitz domain, and `1 ≤ p ≤ ∞`. The quotient norm of
 `u ∈ W^{m+1,p}(Ω)` modulo the kernel of the highest weak derivative `D^{m+1}` is bounded by a
-constant multiple of `‖D^{m+1} u‖`; together with `TauCeti.Wkp.norm_iteratedGradient_le_norm_mk`,
-the quotient norm and the descended top seminorm are equivalent. -/
-theorem exists_norm_mk_le_of_isLipschitzDomainWith_image
+constant multiple of `‖D^{m+1} u‖`; together with
+`TauCeti.Wkp.norm_iteratedGradient_le_norm_quotientMk_of_le_ker`, the quotient norm and the
+descended top seminorm are equivalent. -/
+theorem exists_norm_quotientMk_ker_le_of_isLipschitzDomainWith_image
     (e : F ≃ₗᵢ[ℝ] WithLp 2 (ℝ × E)) {Ω : Opens F}
     (hΩ : (e '' (Ω : Set F)).IsLipschitzDomainWith L) (hb : IsBounded (Ω : Set F)) (m : ℕ) :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ u : Wkp volume Ω p (m + 1),
       ‖(Submodule.Quotient.mk u : Wkp volume Ω p (m + 1) ⧸
         (iteratedGradientL (mu := volume) (Omega := Ω) (p := p) m).ker)‖ ≤
         C * ‖iteratedGradient m u‖ :=
-  exists_norm_mk_le_of_isCompactOperator m
+  exists_norm_quotientMk_ker_le_of_isCompactOperator m
     (isCompactOperator_lowerOrderL_of_isLipschitzDomainWith_image e hΩ hb m)
 
 end Wkp

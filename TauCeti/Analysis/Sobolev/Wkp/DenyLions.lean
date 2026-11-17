@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
-public import TauCeti.Analysis.Normed.Operator.Compact.Estimate
+public import Mathlib.Analysis.Normed.Group.Quotient
+public import Mathlib.Analysis.Normed.Operator.Compact.Basic
+import TauCeti.Analysis.Normed.Operator.Compact.Estimate
 import TauCeti.Analysis.Normed.Module.Quotient
 
 /-!
@@ -21,14 +23,15 @@ equivalent to the top seminorm `‖D^{m+1} u‖_{Lᵖ}`, which descends to the q
 * `N` is finite-dimensional;
 * there is a continuous projection `P` of `W^{m+1,p}(Ω)` onto `N` with
   `‖u - P u‖ ≤ C * ‖D^{m+1} u‖` for every `u`;
-* `‖D^{m+1} u‖ ≤ ‖[u]‖ ≤ C * ‖D^{m+1} u‖`, where `[u]` is the class of `u` in the quotient.
+* `‖D^{m+1} u‖ ≤ ‖[u]‖ ≤ C * ‖D^{m+1} u‖`, where `[u]` is the class of `u` in the quotient. The
+  lower bound holds for the quotient by any subspace of `N`.
 
 Classically, on a bounded connected `Ω` the kernel `N` consists of the classes of polynomials of
 degree at most `m`, which gives the familiar form of the lemma. The statements here do not use that
 identification and need no connectedness.
 
 The argument is Peetre's compact-error estimate in its quotient form,
-`ContinuousLinearMap.exists_norm_mk_ker_le_of_compact_estimate`, and in its projection form,
+`ContinuousLinearMap.exists_norm_quotientMk_ker_le_of_compact_estimate`, and in its projection form,
 `ContinuousLinearMap.exists_projection_norm_sub_le_of_compact_estimate`, applied to the estimate
 `‖u‖_{m+1,p} ≤ ‖u‖_{m,p} + ‖D^{m+1} u‖_{Lᵖ}` of the graph norm. The first-order case with the
 constants as kernel is `TauCeti.W1p.exists_eLpNorm_value_sub_setAverage_le_of_isCompactOperator`.
@@ -41,9 +44,9 @@ The corresponding statements on bounded Lipschitz domains are in
   highest weak derivative is finite-dimensional.
 * `TauCeti.Wkp.exists_projection_norm_sub_le_of_isCompactOperator`: a continuous projection onto
   that kernel whose error is controlled by the highest weak derivative.
-* `TauCeti.Wkp.exists_norm_mk_le_of_isCompactOperator`,
-  `TauCeti.Wkp.norm_iteratedGradient_le_norm_mk`: the two halves of the equivalence between the
-  quotient norm and the top seminorm.
+* `TauCeti.Wkp.exists_norm_quotientMk_ker_le_of_isCompactOperator`,
+  `TauCeti.Wkp.norm_iteratedGradient_le_norm_quotientMk_of_le_ker`: the two halves of the
+  equivalence between the quotient norm and the top seminorm.
 
 ## References
 
@@ -109,38 +112,34 @@ theorem exists_projection_norm_sub_le_of_isCompactOperator (m : ℕ)
 /-- **The Deny–Lions lemma.** If forgetting the highest weak derivative is a compact operator
 `W^{m+1,p}(Ω) → W^{m,p}(Ω)`, the quotient norm of `u ∈ W^{m+1,p}(Ω)` modulo the kernel of the
 highest weak derivative `D^{m+1}` is bounded by a constant multiple of `‖D^{m+1} u‖`. With
-`TauCeti.Wkp.norm_iteratedGradient_le_norm_mk`, the quotient norm and the descended top seminorm
-are equivalent. -/
-theorem exists_norm_mk_le_of_isCompactOperator (m : ℕ)
+`TauCeti.Wkp.norm_iteratedGradient_le_norm_quotientMk_of_le_ker`, the quotient norm and the
+descended top seminorm are equivalent. -/
+theorem exists_norm_quotientMk_ker_le_of_isCompactOperator (m : ℕ)
     (hK : IsCompactOperator (lowerOrderL (mu := mu) (Omega := Omega) (p := p) m)) :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ u : Wkp mu Omega p (m + 1),
       ‖(Submodule.Quotient.mk u : Wkp mu Omega p (m + 1) ⧸
         (iteratedGradientL (mu := mu) (Omega := Omega) (p := p) m).ker)‖ ≤
         C * ‖iteratedGradient m u‖ := by
-  obtain ⟨C, hC, hbound⟩ := (iteratedGradientL m).exists_norm_mk_ker_le_of_compact_estimate hK
-    (norm_le_one_mul_norm_iteratedGradientL_add_norm_lowerOrderL m)
+  obtain ⟨C, hC, hbound⟩ :=
+    (iteratedGradientL m).exists_norm_quotientMk_ker_le_of_compact_estimate hK
+      (norm_le_one_mul_norm_iteratedGradientL_add_norm_lowerOrderL m)
   refine ⟨C, hC, fun u ↦ ?_⟩
   simpa [← iteratedGradientL_apply] using hbound u
 
-/-- The highest weak derivative descends to the quotient by its kernel without increasing norms:
-`‖D^{m+1} u‖` is at most the quotient norm of `u` modulo the kernel of `D^{m+1}`. This is the
-easy half of the Deny–Lions equivalence, and needs no compactness. -/
-theorem norm_iteratedGradient_le_norm_mk (m : ℕ) (u : Wkp mu Omega p (m + 1)) :
-    ‖iteratedGradient m u‖ ≤
-      ‖(Submodule.Quotient.mk u : Wkp mu Omega p (m + 1) ⧸
-        (iteratedGradientL (mu := mu) (Omega := Omega) (p := p) m).ker)‖ := by
-  set N := (iteratedGradientL (mu := mu) (Omega := Omega) (p := p) m).ker
-  have hnorm : ‖N.liftQL (iteratedGradientL m) le_rfl‖ ≤ 1 := by
-    rw [Submodule.norm_liftQL]
-    exact ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun v ↦ by
-      rw [one_mul, iteratedGradientL_apply]
-      exact norm_iteratedGradient_le m v
-  calc ‖iteratedGradient m u‖
-        = ‖N.liftQL (iteratedGradientL m) le_rfl (Submodule.Quotient.mk u)‖ := by
-        simp [← iteratedGradientL_apply]
-    _ ≤ ‖N.liftQL (iteratedGradientL m) le_rfl‖ * ‖(Submodule.Quotient.mk u : _ ⧸ N)‖ :=
-        ContinuousLinearMap.le_opNorm _ _
-    _ ≤ ‖(Submodule.Quotient.mk u : _ ⧸ N)‖ := mul_le_of_le_one_left (norm_nonneg _) hnorm
+/-- The highest weak derivative descends without increasing norms to the quotient by any subspace
+`S` of its kernel: `‖D^{m+1} u‖` is at most the quotient norm of `u` modulo `S`. For `S` the kernel
+of `D^{m+1}`, this is the easy half of the Deny–Lions equivalence, and needs no compactness. -/
+theorem norm_iteratedGradient_le_norm_quotientMk_of_le_ker {m : ℕ}
+    {S : Submodule ℝ (Wkp mu Omega p (m + 1))}
+    (hS : S ≤ (iteratedGradientL (mu := mu) (Omega := Omega) (p := p) m).ker)
+    (u : Wkp mu Omega p (m + 1)) :
+    ‖iteratedGradient m u‖ ≤ ‖(Submodule.Quotient.mk u : Wkp mu Omega p (m + 1) ⧸ S)‖ := by
+  have hnorm : ‖iteratedGradientL (mu := mu) (Omega := Omega) (p := p) m‖ ≤ 1 :=
+    ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun v ↦ by
+      simpa [← iteratedGradientL_apply] using norm_iteratedGradient_le m v
+  simpa [← iteratedGradientL_apply] using
+    (S.norm_apply_le_norm_mul_norm_quotientMk _ hS u).trans
+      (mul_le_of_le_one_left (norm_nonneg _) hnorm)
 
 end Wkp
 

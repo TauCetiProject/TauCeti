@@ -40,7 +40,7 @@ weak derivative of a Sobolev space with compact lower-order inclusion, it says t
 norm modulo the kernel of the top derivative is equivalent to the top seminorm.
 
 The argument uses Mathlib's Riesz lemma, uniform-inducing maps, the sequential closed-range
-criterion, and the compact-operator subsequence API in
+criterion and quotient estimate, and the compact-operator subsequence API in
 `TauCeti.Analysis.Normed.Operator.Compact.Basic`.
 The normalization argument extends the one for `1 - K` in
 `IsCompactOperator.exists_pos_mul_norm_le_of_disjoint_ker` to operators with distinct targets
@@ -167,45 +167,16 @@ theorem isClosed_range_of_compact_estimate
 
 /-- **Abstract Deny–Lions lemma.** A compact-error estimate `‖x‖ ≤ C * ‖T x‖ + ‖K x‖` on a
 complete space bounds the quotient norm of `x` modulo `ker T`, that is the distance from `x` to
-`ker T`, by a constant multiple of `‖T x‖`. No completeness of the target spaces is needed. -/
-theorem exists_norm_mk_ker_le_of_compact_estimate
+`ker T`, by a constant multiple of `‖T x‖`. No completeness of the target spaces is needed. This
+is the sequential quotient estimate
+`ContinuousLinearMap.exists_norm_quotientMk_ker_le_of_exists_subseq_tendsto`, fed by the
+subsequence form of the compact-error estimate. -/
+theorem exists_norm_quotientMk_ker_le_of_compact_estimate
     (hK : IsCompactOperator K) (hbound : ∀ x, ‖x‖ ≤ C * ‖T x‖ + ‖K x‖) :
-    ∃ C' : ℝ, 0 ≤ C' ∧ ∀ x, ‖(Submodule.Quotient.mk x : E ⧸ T.ker)‖ ≤ C' * ‖T x‖ := by
-  by_contra! hcon
-  obtain ⟨a, ha⟩ := NormedField.exists_one_lt_norm 𝕜
-  -- Counterexamples, normalized to quotient norm in a fixed shell, with bounded representatives.
-  have hshell : ∀ n : ℕ, ∃ x : E, ‖x‖ ≤ 2 ∧
-      ‖a‖⁻¹ ≤ ‖(Submodule.Quotient.mk x : E ⧸ T.ker)‖ ∧ ‖T x‖ ≤ 1 / (n + 1) := by
-    intro n
-    obtain ⟨y, hy⟩ := hcon (n + 1) (by positivity)
-    set q : E ⧸ T.ker := Submodule.Quotient.mk y
-    obtain ⟨d, -, hdlt, hdge, -⟩ :=
-      rescale_to_shell_semi_normed ha one_pos
-        ((by positivity : (0 : ℝ) ≤ (n + 1) * ‖T y‖).trans_lt hy).ne'
-    obtain ⟨x, hx, hxlt⟩ := Submodule.Quotient.norm_mk_lt (d • q) one_pos
-    have hmem : x - d • y ∈ T.ker :=
-      (Submodule.Quotient.eq _).1 (by rw [hx, Submodule.Quotient.mk_smul])
-    have hTx : T x = d • T y := by
-      rw [← map_smul, ← sub_eq_zero, ← map_sub]
-      exact LinearMap.mem_ker.1 hmem
-    refine ⟨x, by linarith, by simpa [hx] using hdge, ?_⟩
-    rw [hTx, norm_smul, le_div_iff₀ (by positivity)]
-    calc ‖d‖ * ‖T y‖ * (n + 1) = ‖d‖ * ((n + 1) * ‖T y‖) := by ring
-      _ ≤ ‖d‖ * ‖q‖ := by gcongr
-      _ = ‖d • q‖ := (norm_smul d q).symm
-      _ ≤ 1 := hdlt.le
-  choose v hvbound hvge hTv using hshell
-  obtain ⟨x, ψ, -, hx, hTx⟩ := T.exists_subseq_tendsto_of_compact_estimate hK hbound
-    hvbound (squeeze_zero_norm hTv tendsto_one_div_add_atTop_nhds_zero_nat)
-  -- The classes of the subsequence converge to the class of `x ∈ ker T`, which is zero.
-  have hmk : Tendsto (fun n ↦ (Submodule.Quotient.mk (v (ψ n)) : E ⧸ T.ker)) atTop (𝓝 0) := by
-    have hx0 : (Submodule.Quotient.mk x : E ⧸ T.ker) = 0 :=
-      (Submodule.Quotient.mk_eq_zero _).2 hTx
-    simpa only [Function.comp_def, Submodule.coe_mkQL, Submodule.mkQ_apply, hx0] using
-      (T.ker.mkQL.continuous.tendsto x).comp hx
-  have hge : ‖a‖⁻¹ ≤ 0 := by
-    simpa using ge_of_tendsto' hmk.norm fun n ↦ hvge (ψ n)
-  exact hge.not_gt (by positivity)
+    ∃ C' : ℝ, 0 ≤ C' ∧ ∀ x, ‖(Submodule.Quotient.mk x : E ⧸ T.ker)‖ ≤ C' * ‖T x‖ :=
+  T.exists_norm_quotientMk_ker_le_of_exists_subseq_tendsto fun hv hTv ↦
+    let ⟨x, ψ, hψ, hx, _⟩ := T.exists_subseq_tendsto_of_compact_estimate hK hbound hv hTv
+    ⟨x, ψ, hψ, hx⟩
 
 section Projection
 
