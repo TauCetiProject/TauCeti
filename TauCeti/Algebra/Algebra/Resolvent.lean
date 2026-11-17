@@ -71,8 +71,5 @@ theorem Commute.resolvent_right {a b : A} (h : Commute b a) (r : R) :
 theorem TauCeti.map_resolvent {F B : Type*} [Ring B] [Algebra R B] [FunLike F A B]
     [AlgHomClass F R A B] (φ : F) {a : A} {r : R} (hr : r ∈ resolventSet R a) :
     φ (resolvent a r) = resolvent (φ a) r := by
-  have h' : IsUnit (algebraMap R B r - φ a) := AlgHom.mem_resolventSet_apply φ hr
-  refine h'.mul_right_inj.mp ?_
-  rw [resolvent, resolvent, Ring.mul_inverse_cancel _ h', ← map_one φ,
-    ← Ring.mul_inverse_cancel _ (spectrum.mem_resolventSet_iff.mp hr), map_mul, map_sub,
+  rw [resolvent, resolvent, (spectrum.mem_resolventSet_iff.mp hr).map_ringInverse φ, map_sub,
     AlgHomClass.commutes]
