@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.Trajectory
+import TauCeti.Algebra.Order.BigOperators.Sum.SubSumBound
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Geometry.Symplectic.Floer.Breaking
@@ -53,9 +54,10 @@ orbit in `K`.
   the continuity of the action along the trajectory
   (`TauCeti.SymplecticForm.continuous_hamiltonianAction_slice`). The chosen values range over a
   finite set, so along a subsequence they converge to a regular action value, and the
-  Arzelà–Ascoli theorem (`TauCeti.exists_subseq_tendstoLocallyUniformly_of_lipschitzOnWith`)
-  gives a convergent subsequence of the translates. No energy bound is assumed: the actions of
-  loops in `K` of bounded speed are bounded
+  Arzelà–Ascoli theorem for translates
+  (`TauCeti.exists_subseq_tendstoLocallyUniformly_comp_add_of_lipschitzWith`) gives a convergent
+  subsequence of the translates. No energy bound is assumed: the actions of loops in `K` of
+  bounded speed are bounded
   (`TauCeti.SymplecticForm.exists_forall_abs_hamiltonianAction_le`), so each trajectory has finite
   energy and its ends have actions `a₀ < a₁`
   (`TauCeti.SymplecticForm.exists_lt_tendsto_hamiltonianAction_of_floer`).
@@ -67,12 +69,14 @@ orbit in `K`.
   to infinity in which the action stays in `[a, b]` would contain windows of vanishing energy, and
   the translates centred there would converge to a stationary cylinder over an orbit whose action
   lies in `[a, b]`.
-* **One level for each gap between orbit actions.** Consequently, if a sequence of trajectories
-  is normalized at two regular action values with no orbit action between them, the two limits of
-  the translates are translates of each other
-  (`SymplecticForm.exists_eq_comp_add_of_tendstoLocallyUniformly`). So the limits obtained by
-  normalizing at regular action values form, up to translation, at most one level for each gap
-  between consecutive orbit actions.
+* **Translates in a common regular action window have the same limit up to translation.**
+  Consequently, if the loops of a sequence of trajectories at shifts `σ k` and `σ' k` have
+  actions in a common interval `[a, b]` containing no orbit action, for every `k`, then the limits
+  of the translates at `σ k` and at `σ' k` are translates of each other
+  (`SymplecticForm.exists_eq_comp_add_of_tendstoLocallyUniformly`). When the orbit actions in `K`
+  form a finite set, every regular action value lies in such an interval, so after passing to a
+  tail of the sequence, normalizing at regular action values gives, up to translation, at most one
+  level for each gap between consecutive orbit actions; this consequence is not stated here.
 
 The uniform bound on the derivatives excludes bubbling; it is assumed, not proved. The limit `g`
 is only shown to be continuous here; its regularity is not treated. For smooth solutions with
@@ -90,8 +94,8 @@ bounded derivatives, read in the complex coordinate `z = s + i t`, it is the sub
   nonstationary limit.
 * `SymplecticForm.exists_forall_sub_le_of_floer`: Floer trajectories spend a uniformly bounded time
   in a regular action window.
-* `SymplecticForm.exists_eq_comp_add_of_tendstoLocallyUniformly`: limits normalized at regular
-  action values in a common gap between orbit actions are translates of each other.
+* `SymplecticForm.exists_eq_comp_add_of_tendstoLocallyUniformly`: limits of translates at shifts
+  whose loops have actions in a common regular action window are translates of each other.
 
 ## References
 
@@ -303,9 +307,8 @@ theorem exists_apply_ne_apply_zero_of_tendstoLocallyUniformly_comp_add
   · have h := ω.perturbedFDeriv_comp_add_right (fun _ _ ↦ 0) (fun w ↦ H w.2) (u k) (σ k, 0) z
     simp only [hzσ] at h
     simpa [hzσ, h] using hfloer k _ (hmem (σ k) hz)
-  · have h := (hL k).comp (IsometryEquiv.addRight ((σ k, 0) : ℝ × ℝ)).isometry.lipschitzWith
-    rw [mul_one] at h
-    exact h
+  · exact ((hL k).comp (IsometryEquiv.addRight ((σ k, 0) : ℝ × ℝ)).isometry.lipschitzWith).weaken
+      (mul_one L).le
 
 /-- **A sequence of nonstationary Floer trajectories has a nonstationary level.** Let `H` be a
 `C¹` Hamiltonian, `1`-periodic in time, and `K` a compact set such that the `1`-periodic orbits of
@@ -352,15 +355,8 @@ theorem exists_subseq_tendstoLocallyUniformly_comp_add_of_floer
       (((htop k).eventually (lt_mem_nhds (hm (a₀ k, a₁ k) (hlt k)).2)).exists.imp fun _ h ↦ h.le)
   choose σ hσ using hσ
   -- The translates are uniformly Lipschitz with values in `K`, so a subsequence converges.
-  set w : ℕ → ℝ × ℝ → V := fun n z ↦ u (φ₁ n) (z + (σ (φ₁ n), 0))
-  have hwL (n : ℕ) : LipschitzWith L (w n) := by
-    have h := (hL (φ₁ n)).comp
-      (IsometryEquiv.addRight ((σ (φ₁ n), 0) : ℝ × ℝ)).isometry.lipschitzWith
-    rw [mul_one] at h
-    exact h
-  obtain ⟨φ₂, hφ₂, g, hg⟩ := exists_subseq_tendstoLocallyUniformly_of_lipschitzOnWith hK
-    (R := fun n ↦ (n : ℝ)) tendsto_natCast_atTop_atTop
-    (fun n ↦ (hwL n).lipschitzOnWith) fun n z _ ↦ huK _ _
+  obtain ⟨φ₂, hφ₂, g, hg⟩ := exists_subseq_tendstoLocallyUniformly_comp_add_of_lipschitzWith hK
+    (u := fun n ↦ u (φ₁ n)) (fun _ ↦ hL _) (fun _ ↦ huK _) fun n ↦ σ (φ₁ n)
   refine ⟨φ₁ ∘ φ₂, hφ₁.comp hφ₂, fun n ↦ σ (φ₁ (φ₂ n)), g, hg, ?_⟩
   -- The actions of the loops of the translates at `s = 0` tend to the regular action value `m p`.
   exact exists_apply_ne_apply_zero_of_tendstoLocallyUniformly_comp_add
@@ -368,22 +364,6 @@ theorem exists_subseq_tendstoLocallyUniformly_comp_add_of_floer
     (fun _ ↦ hu _) (fun _ ↦ hper _) (fun _ ↦ huK _) hc (fun _ ↦ hJc _) (fun _ ↦ hJM _)
     (fun _ ↦ hfloer _) (fun _ ↦ hL _) (hmC p hp)
     ((hbb'.comp hφ₂.tendsto_atTop).congr fun n ↦ by simp [hσ]) hg
-
-/-- Among `n + 1` consecutive windows of length `ℓ` starting at `s₀`, the increment of a function
-`A` over one of them is at most its average increment. -/
-private theorem exists_sub_le_div (A : ℝ → ℝ) (s₀ ℓ : ℝ) (n : ℕ) :
-    ∃ j < n + 1, A (s₀ + (j + 1) * ℓ) - A (s₀ + j * ℓ) ≤
-      (A (s₀ + (n + 1) * ℓ) - A s₀) / (n + 1) := by
-  -- The increments telescope to the total increment, which is the sum of `n + 1` averages.
-  have hsum : ∑ j ∈ Finset.range (n + 1), (A (s₀ + (j + 1) * ℓ) - A (s₀ + j * ℓ)) ≤
-      ∑ _j ∈ Finset.range (n + 1), (A (s₀ + (n + 1) * ℓ) - A s₀) / (n + 1) := by
-    have htel := Finset.sum_range_sub (fun j : ℕ ↦ A (s₀ + j * ℓ)) (n + 1)
-    push_cast at htel
-    rw [htel, Finset.sum_const, Finset.card_range, nsmul_eq_mul]
-    push_cast
-    rw [mul_div_cancel₀ _ (by positivity), zero_mul, add_zero]
-  obtain ⟨j, hj, hjle⟩ := Finset.exists_le_of_sum_le Finset.nonempty_range_add_one hsum
-  exact ⟨j, Finset.mem_range.1 hj, hjle⟩
 
 /-- If a monotone function `A` runs from at least `a` at `s₀` to at most `b` at `s₁`, with
 `s₁ - s₀ > 2 (n + 1)²`, then there is a centre `σ` with `A σ ∈ [a, b]` around which `A` increases
@@ -393,7 +373,9 @@ private theorem exists_mem_Icc_sub_le_div {A : ℝ → ℝ} (hA : Monotone A) {s
     ∃ σ, A σ ∈ Icc a b ∧ A (σ + (n + 1)) - A (σ - (n + 1)) ≤ (b - a) / (n + 1) := by
   -- Cut `[s₀, s₀ + 2 (n + 1)²]` into `n + 1` windows of length `2 (n + 1)`, and take the centre
   -- of one whose increment is at most the average.
-  obtain ⟨j, hj, hjle⟩ := exists_sub_le_div A s₀ (2 * ((n : ℝ) + 1)) n
+  obtain ⟨j, hj, hjle⟩ := exists_sub_le_div (fun j : ℕ ↦ A (s₀ + j * (2 * ((n : ℝ) + 1))))
+    n.succ_ne_zero
+  push_cast [zero_mul, add_zero] at hjle
   have hj' : (j : ℝ) + 1 ≤ n + 1 := by exact_mod_cast hj
   have hend : s₀ + ((n : ℝ) + 1) * (2 * ((n : ℝ) + 1)) ≤ s₁ := by nlinarith
   have hleft : s₀ ≤ s₀ + j * (2 * ((n : ℝ) + 1)) := by
@@ -507,15 +489,8 @@ theorem exists_forall_sub_le_of_floer (hH : ContDiff ℝ 1 (uncurry H)) (hHper :
   -- Along a subsequence the actions at the centres converge to some `a' ∈ [a, b]`, and the
   -- translates centred at `σ n` converge locally uniformly.
   obtain ⟨a', ha', φ₁, hφ₁, hA'⟩ := isCompact_Icc.tendsto_subseq (x := fun n ↦ A n (σ n)) hAσ
-  set w : ℕ → ℝ × ℝ → V := fun n z ↦ u (φ₁ n) (z + (σ (φ₁ n), 0))
-  have hwL (n : ℕ) : LipschitzWith L (w n) := by
-    have h := (hL (φ₁ n)).comp
-      (IsometryEquiv.addRight ((σ (φ₁ n), 0) : ℝ × ℝ)).isometry.lipschitzWith
-    rw [mul_one] at h
-    exact h
-  obtain ⟨φ₂, hφ₂, g, hg⟩ := exists_subseq_tendstoLocallyUniformly_of_lipschitzOnWith hK
-    (R := fun n ↦ (n : ℝ)) tendsto_natCast_atTop_atTop
-    (fun n ↦ (hwL n).lipschitzOnWith) fun n z _ ↦ huK _ _
+  obtain ⟨φ₂, hφ₂, g, hg⟩ := exists_subseq_tendstoLocallyUniformly_comp_add_of_lipschitzWith hK
+    (u := fun n ↦ u (φ₁ n)) (fun _ ↦ hL _) (fun _ ↦ huK _) fun n ↦ σ (φ₁ n)
   set ψ : ℕ → ℕ := φ₁ ∘ φ₂
   have hψ : StrictMono ψ := hφ₁.comp hφ₂
   -- The limit is not stationary, since `a'` is a regular action value.
@@ -541,9 +516,7 @@ Under the hypotheses of `TauCeti.SymplecticForm.exists_forall_sub_le_of_floer`, 
 trajectories, and let `σ k` and `σ' k` be shifts at which the loops of `u k` have actions in an
 interval `[a, b]` containing no action of a `1`-periodic orbit in `K`. If the translates
 `(s, t) ↦ u k (s + σ k, t)` converge locally uniformly to `g` and the translates
-`(s, t) ↦ u k (s + σ' k, t)` to `g'`, then `g'` is a translate of `g` in `s`. So normalizing a
-breaking sequence at regular action values gives, up to translation, at most one level for each
-interval between consecutive orbit actions. -/
+`(s, t) ↦ u k (s + σ' k, t)` to `g'`, then `g'` is a translate of `g` in `s`. -/
 theorem exists_eq_comp_add_of_tendstoLocallyUniformly (hH : ContDiff ℝ 1 (uncurry H))
     (hHper : Periodic H 1) (hK : IsCompact K) {a b : ℝ}
     (hreg : Disjoint (Icc a b) (ω.hamiltonianAction H '' {x : ℝ → V | Periodic x 1 ∧
@@ -577,13 +550,10 @@ theorem exists_eq_comp_add_of_tendstoLocallyUniformly (hH : ContDiff ℝ 1 (uncu
   have hδ' : Tendsto (fun k ↦ (L : ℝ) * |σ' (φ k) - σ (φ k) - δ|) atTop (𝓝 0) := by
     simpa using (((continuous_sub_right δ).abs.tendsto δ).comp hδ).const_mul (L : ℝ)
   refine squeeze_zero (fun _ ↦ dist_nonneg) (fun k ↦ ?_) hδ'
-  have h := (hL (φ k)).dist_le_mul (z + (δ, 0) + (σ (φ k), 0)) (z + (σ' (φ k), 0))
-  refine h.trans_eq ?_
-  congr 1
-  rw [Prod.dist_eq]
-  simp only [Prod.fst_add, Prod.snd_add, add_zero, dist_self, Real.dist_eq]
-  rw [max_eq_left (abs_nonneg _), abs_sub_comm]
-  congr 1
-  ring
+  have hdist : dist (z + (δ, 0) + (σ (φ k), 0)) (z + (σ' (φ k), 0)) =
+      |σ' (φ k) - σ (φ k) - δ| := by
+    rw [dist_comm]
+    simp [Prod.dist_eq, Real.dist_eq, sub_add_eq_sub_sub, sub_right_comm _ δ]
+  exact hdist ▸ (hL (φ k)).dist_le_mul _ _
 
 end TauCeti.SymplecticForm
