@@ -37,6 +37,13 @@ def empiricalLogPotential [Nonempty (Fin n)] (A : Matrix (Fin n) (Fin n) ℂ)
     (z : ℂ) : ℝ :=
   ∫ w, Real.log ‖z - w‖ ∂(A.eigenvalueMeasure : Measure ℂ)
 
+/-- The empirical logarithmic potential is the integral of the logarithmic kernel against the
+empirical eigenvalue measure. -/
+theorem empiricalLogPotential_def [Nonempty (Fin n)] (A : Matrix (Fin n) (Fin n) ℂ)
+    (z : ℂ) :
+    A.empiricalLogPotential z =
+      ∫ w, Real.log ‖z - w‖ ∂(A.eigenvalueMeasure : Measure ℂ) := rfl
+
 /-- The norm of the determinant is the product of the singular values. -/
 theorem norm_det_eq_prod_singularValues (A : Matrix (Fin n) (Fin n) ℂ) :
     ‖A.det‖ = ∏ i : Fin n, (toEuclideanLin A).singularValues i := by
