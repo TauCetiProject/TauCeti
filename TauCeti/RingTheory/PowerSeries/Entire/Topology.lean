@@ -245,8 +245,8 @@ noncomputable def compatibleRingEquiv {ι : Type*} [Preorder ι] [IsDirectedOrde
     {ρ : ι → Set.Ioi (0 : ℝ)} (hmono : Monotone fun i ↦ (ρ i : ℝ))
     (hρ : Tendsto (fun i ↦ (ρ i : ℝ)) atTop atTop) :
     IsEntire.subring R ≃+* GaussFamily.compatibleSubring (R := R) hmono :=
-  GaussFamily.compatibleRingEquiv (fun _ ↦ mem_subring_iff_forall_isRestricted) hmono
-    (cofinal_of_tendsto_atTop hρ)
+  GaussFamily.compatibleRingEquiv (fun _ ↦ mem_subring_iff_forall_isRestricted) (fun r ↦ r.2.le)
+    hmono (cofinal_of_tendsto_atTop hρ)
 
 /-- Each component of `compatibleRingEquiv` is closed-disc restriction at that stage. -/
 @[simp]
@@ -255,7 +255,8 @@ theorem coe_compatibleRingEquiv_apply {ι : Type*} [Preorder ι] [IsDirectedOrde
     (hρ : Tendsto (fun i ↦ (ρ i : ℝ)) atTop atTop) (f : IsEntire.subring R) (i : ι) :
     (compatibleRingEquiv hmono hρ f : ∀ i, IsRestricted.subring (R := R) (ρ i : ℝ)) i =
       restrict (ρ i) f :=
-  GaussFamily.coe_compatibleRingEquiv_apply _ hmono (cofinal_of_tendsto_atTop hρ) f i
+  GaussFamily.coe_compatibleRingEquiv_apply _ (fun r ↦ r.2.le) hmono
+    (cofinal_of_tendsto_atTop hρ) f i
 
 /-- Restricting the entire series reconstructed from a compatible family `g` at stage `i`
 recovers `g i`. -/
@@ -265,7 +266,8 @@ theorem restrict_compatibleRingEquiv_symm {ι : Type*} [Preorder ι] [IsDirected
     (hρ : Tendsto (fun i ↦ (ρ i : ℝ)) atTop atTop)
     (g : GaussFamily.compatibleSubring (R := R) hmono) (i : ι) :
     restrict (ρ i) ((compatibleRingEquiv hmono hρ).symm g) = g.1 i :=
-  GaussFamily.restrict_compatibleRingEquiv_symm _ hmono (cofinal_of_tendsto_atTop hρ) g i
+  GaussFamily.restrict_compatibleRingEquiv_symm _ (fun r ↦ r.2.le) hmono
+    (cofinal_of_tendsto_atTop hρ) g i
 
 /-- The underlying formal power series of the entire series reconstructed from a compatible
 family `g` agrees with `g i` at every stage `i`. -/
@@ -275,7 +277,8 @@ theorem coe_compatibleRingEquiv_symm {ι : Type*} [Preorder ι] [IsDirectedOrder
     (g : GaussFamily.compatibleSubring (R := R) hmono) (i : ι) :
     (((compatibleRingEquiv hmono hρ).symm g : IsEntire.subring R) : R⟦X⟧) =
       (g.1 i : R⟦X⟧) :=
-  GaussFamily.coe_compatibleRingEquiv_symm _ hmono (cofinal_of_tendsto_atTop hρ) g i
+  GaussFamily.coe_compatibleRingEquiv_symm _ (fun r ↦ r.2.le) hmono
+    (cofinal_of_tendsto_atTop hρ) g i
 
 /-- **Family independence of the compatible-series description.** Compatible restricted-series
 families along any two monotone families (indexed by nonempty directed preorders) of positive radii
@@ -290,8 +293,8 @@ theorem compatibleRingEquiv_symm_eq_iff {ι₁ ι₂ : Type*} [Preorder ι₁] [
     (g₂ : GaussFamily.compatibleSubring (R := R) hmono₂) (i₁ : ι₁) (i₂ : ι₂) :
     (compatibleRingEquiv hmono₁ hρ₁).symm g₁ = (compatibleRingEquiv hmono₂ hρ₂).symm g₂ ↔
       (g₁.1 i₁ : R⟦X⟧) = (g₂.1 i₂ : R⟦X⟧) :=
-  GaussFamily.compatibleRingEquiv_symm_eq_iff _ hmono₁ (cofinal_of_tendsto_atTop hρ₁)
-    hmono₂ (cofinal_of_tendsto_atTop hρ₂) g₁ g₂ i₁ i₂
+  GaussFamily.compatibleRingEquiv_symm_eq_iff _ (fun r ↦ r.2.le) hmono₁
+    (cofinal_of_tendsto_atTop hρ₁) hmono₂ (cofinal_of_tendsto_atTop hρ₂) g₁ g₂ i₁ i₂
 
 /-- **Projective-limit uniform equivalence for entire series.** Along any monotone family indexed by
 a nonempty directed preorder (in particular, any monotone sequence) of positive radii tending to

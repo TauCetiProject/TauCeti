@@ -80,19 +80,6 @@ open scoped Topology Uniformity Pointwise
 
 namespace TauCeti.PowerSeries.GaussFamily
 
-private theorem hasBasis_nhds_zero_of_addGroupSeminorm {G : Type*} [AddCommGroup G]
-    [t : TopologicalSpace G] (p : AddGroupSeminorm G)
-    (htop : p.toSeminormedAddCommGroup.toUniformSpace.toTopologicalSpace = t) :
-    (𝓝 (0 : G)).HasBasis (0 < ·) fun r ↦ {x : G | p x < r} := by
-  subst htop
-  let : SeminormedAddCommGroup G := p.toSeminormedAddCommGroup
-  have hball : (fun r ↦ {x : G | p x < r}) = Metric.ball (0 : G) := by
-    ext r x
-    simp only [Set.mem_ofPred_eq, mem_ball_zero_iff]
-    rfl
-  rw [hball]
-  exact Metric.nhds_basis_ball
-
 section Family
 
 variable {R : Type*} [NormedRing R] [IsUltrametricDist R] {ι : Type*} {ρ : ι → ℝ}
@@ -504,7 +491,8 @@ theorem not_exists_addGroupSeminorm_toTopologicalSpace_eq_and_mul_le [Nontrivial
       p.toSeminormedAddCommGroup.toUniformSpace.toTopologicalSpace = t ∧
       ∀ (c : R) (f : T), p (φ c * f) ≤ C * ‖c‖ * p f := by
   rintro ⟨p, C, htop, hsmul⟩
-  have hbasis := hasBasis_nhds_zero_of_addGroupSeminorm p htop
+  have hbasis : (𝓝 (0 : T)).HasBasis (0 < ·) fun r ↦ {f : T | p f < r} :=
+    htop ▸ @NormedAddGroup.nhds_zero_basis_norm_lt T p.toSeminormedAddGroup
   refine not_exists_mem_nhds_zero_forall_exists_constHom_mul_mem ht hmax hu_unit
     ⟨{f : T | p f < 1}, hbasis.mem_of_mem one_pos, fun V hV ↦ ?_⟩
   obtain ⟨ε, hε, hεV⟩ := hbasis.mem_iff.mp hV
@@ -714,30 +702,30 @@ theorem range_restrictSubfamily_eq_compatibleSubring {κ : Type*} [Preorder κ]
   rw [range_restrictSubfamily hT hρ hσ, SetLike.mem_coe, mem_compatibleSubring_iff_coe_eq]
   simp only [Set.mem_ofPred_eq, PowerSeries.ext_iff]
 
-variable [∀ i, Fact (0 < ρ i)]
-
-/-- **Projective-limit ring isomorphism.** Along any monotone cofinal family of radii indexed by a
-nonempty directed preorder (in particular, along a monotone sequence of radii), `T` is isomorphic
-as a ring to the subring of compatible restricted series. -/
+/-- **Projective-limit ring isomorphism.** Along any monotone cofinal subfamily of positive radii
+dominating nonnegative radii `ρ`, indexed by a nonempty directed preorder (in particular, along a
+monotone sequence of radii), `T` is isomorphic as a ring to the subring of compatible restricted
+series. -/
 noncomputable def compatibleRingEquiv {κ : Type*} [Preorder κ] [IsDirectedOrder κ] [Nonempty κ]
-    {σ : κ → ι} (hr : Monotone fun k ↦ ρ (σ k)) (hσ : ∀ i, ∃ k, ρ i ≤ ρ (σ k)) :
+    {σ : κ → ι} [∀ k, Fact (0 < ρ (σ k))] (hρ : ∀ i, 0 ≤ ρ i)
+    (hr : Monotone fun k ↦ ρ (σ k)) (hσ : ∀ i, ∃ k, ρ i ≤ ρ (σ k)) :
     T ≃+* compatibleSubring (R := R) hr :=
   RingEquiv.ofBijective
     ((restrictSubfamily hT σ).codRestrict (compatibleSubring (R := R) hr)
       (restrictSubfamily_mem_compatibleSubring hT hr))
     ⟨RingHom.injective_codRestrict.mpr (restrictSubfamily_injective hT σ), fun ⟨g, hg⟩ ↦ by
       have hmem : g ∈ Set.range (restrictSubfamily hT σ) := by
-        rwa [range_restrictSubfamily_eq_compatibleSubring hT (fun i ↦ (Fact.out : 0 < ρ i).le)
-          hr hσ]
+        rwa [range_restrictSubfamily_eq_compatibleSubring hT hρ hr hσ]
       obtain ⟨f, rfl⟩ := hmem
       exact ⟨f, rfl⟩⟩
 
 /-- Each component of `compatibleRingEquiv` is closed-disc restriction at that stage. -/
 @[simp]
 theorem coe_compatibleRingEquiv_apply {κ : Type*} [Preorder κ] [IsDirectedOrder κ] [Nonempty κ]
-    {σ : κ → ι} (hr : Monotone fun k ↦ ρ (σ k)) (hσ : ∀ i, ∃ k, ρ i ≤ ρ (σ k))
+    {σ : κ → ι} [∀ k, Fact (0 < ρ (σ k))] (hρ : ∀ i, 0 ≤ ρ i)
+    (hr : Monotone fun k ↦ ρ (σ k)) (hσ : ∀ i, ∃ k, ρ i ≤ ρ (σ k))
     (f : T) (k : κ) :
-    (compatibleRingEquiv hT hr hσ f : ∀ k, IsRestricted.subring (R := R) (ρ (σ k))) k =
+    (compatibleRingEquiv hT hρ hr hσ f : ∀ k, IsRestricted.subring (R := R) (ρ (σ k))) k =
       restrict hT (σ k) f :=
   (rfl)
 
@@ -745,34 +733,40 @@ theorem coe_compatibleRingEquiv_apply {κ : Type*} [Preorder κ] [IsDirectedOrde
 `g k`. -/
 @[simp]
 theorem restrict_compatibleRingEquiv_symm {κ : Type*} [Preorder κ] [IsDirectedOrder κ]
-    [Nonempty κ] {σ : κ → ι} (hr : Monotone fun k ↦ ρ (σ k)) (hσ : ∀ i, ∃ k, ρ i ≤ ρ (σ k))
+    [Nonempty κ] {σ : κ → ι} [∀ k, Fact (0 < ρ (σ k))] (hρ : ∀ i, 0 ≤ ρ i)
+    (hr : Monotone fun k ↦ ρ (σ k)) (hσ : ∀ i, ∃ k, ρ i ≤ ρ (σ k))
     (g : compatibleSubring (R := R) hr) (k : κ) :
-    restrict hT (σ k) ((compatibleRingEquiv hT hr hσ).symm g) = g.1 k := by
+    restrict hT (σ k) ((compatibleRingEquiv hT hρ hr hσ).symm g) = g.1 k := by
   simpa only [coe_compatibleRingEquiv_apply] using
-    congrFun (congrArg Subtype.val ((compatibleRingEquiv hT hr hσ).apply_symm_apply g)) k
+    congrFun (congrArg Subtype.val ((compatibleRingEquiv hT hρ hr hσ).apply_symm_apply g)) k
 
 /-- The underlying formal power series of the element reconstructed from a compatible family `g`
 agrees with `g k` at every stage `k`. -/
 theorem coe_compatibleRingEquiv_symm {κ : Type*} [Preorder κ] [IsDirectedOrder κ] [Nonempty κ]
-    {σ : κ → ι} (hr : Monotone fun k ↦ ρ (σ k)) (hσ : ∀ i, ∃ k, ρ i ≤ ρ (σ k))
+    {σ : κ → ι} [∀ k, Fact (0 < ρ (σ k))] (hρ : ∀ i, 0 ≤ ρ i)
+    (hr : Monotone fun k ↦ ρ (σ k)) (hσ : ∀ i, ∃ k, ρ i ≤ ρ (σ k))
     (g : compatibleSubring (R := R) hr) (k : κ) :
-    (((compatibleRingEquiv hT hr hσ).symm g : T) : R⟦X⟧) = (g.1 k : R⟦X⟧) := by
+    (((compatibleRingEquiv hT hρ hr hσ).symm g : T) : R⟦X⟧) = (g.1 k : R⟦X⟧) := by
   rw [← coe_restrict hT (σ k), restrict_compatibleRingEquiv_symm]
 
 /-- **Independence of the monotone cofinal family.** Compatible restricted-series families along
-two monotone cofinal subfamilies (indexed by nonempty directed preorders) define the same element of
-`T` if and only if they have the same underlying formal power series. -/
+two monotone cofinal subfamilies of positive radii dominating nonnegative radii `ρ` (indexed by
+nonempty directed preorders) define the same element of `T` if and only if they have the same
+underlying formal power series. -/
 theorem compatibleRingEquiv_symm_eq_iff {κ₁ κ₂ : Type*} [Preorder κ₁] [IsDirectedOrder κ₁]
     [Nonempty κ₁] [Preorder κ₂] [IsDirectedOrder κ₂] [Nonempty κ₂]
-    {σ₁ : κ₁ → ι} {σ₂ : κ₂ → ι}
+    {σ₁ : κ₁ → ι} {σ₂ : κ₂ → ι} [∀ k, Fact (0 < ρ (σ₁ k))] [∀ k, Fact (0 < ρ (σ₂ k))]
+    (hρ : ∀ i, 0 ≤ ρ i)
     (hr₁ : Monotone fun k ↦ ρ (σ₁ k)) (hσ₁ : ∀ i, ∃ k, ρ i ≤ ρ (σ₁ k))
     (hr₂ : Monotone fun k ↦ ρ (σ₂ k)) (hσ₂ : ∀ i, ∃ k, ρ i ≤ ρ (σ₂ k))
     (g₁ : compatibleSubring (R := R) hr₁) (g₂ : compatibleSubring (R := R) hr₂)
     (k₁ : κ₁) (k₂ : κ₂) :
-    (compatibleRingEquiv hT hr₁ hσ₁).symm g₁ = (compatibleRingEquiv hT hr₂ hσ₂).symm g₂ ↔
+    (compatibleRingEquiv hT hρ hr₁ hσ₁).symm g₁ = (compatibleRingEquiv hT hρ hr₂ hσ₂).symm g₂ ↔
       (g₁.1 k₁ : R⟦X⟧) = (g₂.1 k₂ : R⟦X⟧) := by
-  rw [Subtype.ext_iff, coe_compatibleRingEquiv_symm hT hr₁ hσ₁ g₁ k₁,
-    coe_compatibleRingEquiv_symm hT hr₂ hσ₂ g₂ k₂]
+  rw [Subtype.ext_iff, coe_compatibleRingEquiv_symm hT hρ hr₁ hσ₁ g₁ k₁,
+    coe_compatibleRingEquiv_symm hT hρ hr₂ hσ₂ g₂ k₂]
+
+variable [∀ i, Fact (0 < ρ i)]
 
 /-- **Projective-limit uniform equivalence.** Along any monotone cofinal family of radii indexed by
 a nonempty directed preorder, `T` with its Gauss uniformity is uniformly equivalent to the closed
@@ -782,9 +776,11 @@ noncomputable def compatibleUniformEquiv {hT : ∀ f : R⟦X⟧, f ∈ T ↔ ∀
     [IsDirectedOrder κ] [Nonempty κ] {σ : κ → ι} (hr : Monotone fun k ↦ ρ (σ k))
     (hσ : ∀ i, ∃ k, ρ i ≤ ρ (σ k)) :
     T ≃ᵤ compatibleSubring (R := R) hr :=
-  (compatibleRingEquiv hT hr hσ).toEquiv.toUniformEquivOfIsUniformInducing <| by
+  (compatibleRingEquiv hT (fun i ↦ (Fact.out : 0 < ρ i).le) hr
+    hσ).toEquiv.toUniformEquivOfIsUniformInducing <| by
     rw [← isUniformEmbedding_subtype_val.isUniformInducing.of_comp_iff]
-    have hcomp : Subtype.val ∘ (compatibleRingEquiv hT hr hσ).toEquiv =
+    have hcomp : Subtype.val ∘
+        (compatibleRingEquiv hT (fun i ↦ (Fact.out : 0 < ρ i).le) hr hσ).toEquiv =
         restrictSubfamily hT σ := by
       funext f k
       simp only [Function.comp_apply, RingEquiv.toEquiv_eq_coe, EquivLike.coe_coe,
@@ -798,7 +794,8 @@ theorem compatibleUniformEquiv_apply {hT : ∀ f : R⟦X⟧, f ∈ T ↔ ∀ i, 
     [UniformSpace T] (hu : IsUniformInducing (restrictFamily hT)) {κ : Type*} [Preorder κ]
     [IsDirectedOrder κ] [Nonempty κ] {σ : κ → ι} (hr : Monotone fun k ↦ ρ (σ k))
     (hσ : ∀ i, ∃ k, ρ i ≤ ρ (σ k)) (f : T) :
-    compatibleUniformEquiv hu hr hσ f = compatibleRingEquiv hT hr hσ f :=
+    compatibleUniformEquiv hu hr hσ f =
+      compatibleRingEquiv hT (fun i ↦ (Fact.out : 0 < ρ i).le) hr hσ f :=
   (rfl)
 
 /-- The inverse of `compatibleUniformEquiv` applies on elements as the inverse of
@@ -808,7 +805,8 @@ theorem compatibleUniformEquiv_symm_apply {hT : ∀ f : R⟦X⟧, f ∈ T ↔ �
     [UniformSpace T] (hu : IsUniformInducing (restrictFamily hT)) {κ : Type*} [Preorder κ]
     [IsDirectedOrder κ] [Nonempty κ] {σ : κ → ι} (hr : Monotone fun k ↦ ρ (σ k))
     (hσ : ∀ i, ∃ k, ρ i ≤ ρ (σ k)) (g : compatibleSubring (R := R) hr) :
-    (compatibleUniformEquiv hu hr hσ).symm g = (compatibleRingEquiv hT hr hσ).symm g :=
+    (compatibleUniformEquiv hu hr hσ).symm g =
+      (compatibleRingEquiv hT (fun i ↦ (Fact.out : 0 < ρ i).le) hr hσ).symm g :=
   (rfl)
 
 end Compatible
