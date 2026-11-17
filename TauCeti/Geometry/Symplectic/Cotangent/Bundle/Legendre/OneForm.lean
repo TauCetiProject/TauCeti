@@ -40,7 +40,7 @@ The basic example is `L(q, v) = v` on `Q = ℝ`, the Lagrangian of the exact for
 (`TauCeti.snd_eq_oneFormLagrangian_mextDerivₗ_id`): its Cartan one-form is `dq`, its Cartan
 two-form and energy vanish (`TauCeti.cartanTwoForm_snd_eq_zero`), and the base component of the
 Hamiltonian vector field of its energy is `0`, which differs from `v` for `v ≠ 0`
-(`TauCeti.mfderiv_proj_hamiltonianVectorField_lagrangianEnergy_snd`). More generally the
+(`TauCeti.mfderiv_proj_hamiltonianVectorField_lagrangianEnergy_snd_eq_zero`). More generally the
 Lagrangian of an exact form `df` is `v ↦ df(v)`, the total time derivative of `f` along a curve
 (`TauCeti.oneFormLagrangian_mextDerivₗ_apply`).
 
@@ -257,7 +257,7 @@ theorem cartanTwoForm_snd_eq_zero :
 is zero, so for every two-form on the tangent bundle the Hamiltonian vector field of the energy
 vanishes and its base component is `0`, not `v`. Since the Cartan two-form also vanishes, the
 equation `ι_X ω_L = dE_L` does not force a second-order field: every vector field solves it. -/
-theorem mfderiv_proj_hamiltonianVectorField_lagrangianEnergy_snd
+theorem mfderiv_proj_hamiltonianVectorField_lagrangianEnergy_snd_eq_zero
     (σ : SmoothTwoForm 𝓘(ℝ, ℝ).tangent (TangentBundle 𝓘(ℝ, ℝ) ℝ)) (v : TangentBundle 𝓘(ℝ, ℝ) ℝ) :
     mfderiv 𝓘(ℝ, ℝ).tangent 𝓘(ℝ, ℝ) (π ℝ (TangentSpace 𝓘(ℝ, ℝ))) v
       (σ.hamiltonianVectorField (lagrangianEnergy fun v : TangentBundle 𝓘(ℝ, ℝ) ℝ ↦ v.2) v) =
