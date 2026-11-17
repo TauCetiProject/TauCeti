@@ -470,70 +470,99 @@ private theorem homMk_heq_of_heq {X₁ X₂ Y₁ Y₂ : S.FreeBraided}
   cases eq_of_heq hf
   rfl
 
+private theorem subst_heq_of {σ : BraidedSubstitution S U}
+    (φ : FreeMonoidalCategory S.Obj → FreeMonoidalCategory U.Obj)
+    (has : ∀ Z, (projectObj σ.obj Z).as = φ Z)
+    (F : ∀ {X Y}, FreeBraided.Hom X Y → FreeBraided.Hom (φ X) (φ Y))
+    (h_coupon : ∀ g, HEq (σ.coupon g) (F (.coupon g)))
+    {X Y : FreeMonoidalCategory S.Obj} (f : FreeBraided.Hom X Y)
+    (h_id : ∀ X, HEq (FreeBraided.Hom.id (φ X)) (F (.id X)) := by intros; rfl)
+    (h_α_hom : ∀ X Y Z,
+      HEq (FreeBraided.Hom.α_hom (φ X) (φ Y) (φ Z)) (F (.α_hom X Y Z)) := by intros; rfl)
+    (h_α_inv : ∀ X Y Z,
+      HEq (FreeBraided.Hom.α_inv (φ X) (φ Y) (φ Z)) (F (.α_inv X Y Z)) := by intros; rfl)
+    (h_l_hom : ∀ X, HEq (FreeBraided.Hom.l_hom (φ X)) (F (.l_hom X)) := by intros; rfl)
+    (h_l_inv : ∀ X, HEq (FreeBraided.Hom.l_inv (φ X)) (F (.l_inv X)) := by intros; rfl)
+    (h_ρ_hom : ∀ X, HEq (FreeBraided.Hom.ρ_hom (φ X)) (F (.ρ_hom X)) := by intros; rfl)
+    (h_ρ_inv : ∀ X, HEq (FreeBraided.Hom.ρ_inv (φ X)) (F (.ρ_inv X)) := by intros; rfl)
+    (h_β_hom : ∀ X Y, HEq (FreeBraided.Hom.β_hom (φ X) (φ Y)) (F (.β_hom X Y)) := by intros; rfl)
+    (h_β_inv : ∀ X Y, HEq (FreeBraided.Hom.β_inv (φ X) (φ Y)) (F (.β_inv X Y)) := by intros; rfl)
+    (h_comp : ∀ {X Y Z} (f : FreeBraided.Hom X Y) (g : FreeBraided.Hom Y Z),
+      HEq ((F f).comp (F g)) (F (f.comp g)) := by intros; rfl)
+    (h_whiskerLeft : ∀ X {Y Z} (f : FreeBraided.Hom Y Z),
+      HEq ((F f).whiskerLeft (φ X)) (F (f.whiskerLeft X)) := by intros; rfl)
+    (h_whiskerRight : ∀ {X Y} (f : FreeBraided.Hom X Y) Z,
+      HEq ((F f).whiskerRight (φ Z)) (F (f.whiskerRight Z)) := by intros; rfl)
+    (h_tensor : ∀ {W X Y Z} (f : FreeBraided.Hom W Y) (g : FreeBraided.Hom X Z),
+      HEq ((F f).tensor (F g)) (F (f.tensor g)) := by intros; rfl) :
+    HEq (f.subst σ) (F f) := by
+  induction f with
+  | id X =>
+    rw [Hom.subst_id]
+    exact (congr_arg_heq FreeBraided.Hom.id (has X)).trans (h_id X)
+  | α_hom X Y Z =>
+    rw [Hom.subst_α_hom]
+    exact (congr_arg_heq (fun p : _ × _ × _ ↦ FreeBraided.Hom.α_hom p.1 p.2.1 p.2.2)
+      (congrArg₂ Prod.mk (has X) (congrArg₂ Prod.mk (has Y) (has Z)))).trans (h_α_hom X Y Z)
+  | α_inv X Y Z =>
+    rw [Hom.subst_α_inv]
+    exact (congr_arg_heq (fun p : _ × _ × _ ↦ FreeBraided.Hom.α_inv p.1 p.2.1 p.2.2)
+      (congrArg₂ Prod.mk (has X) (congrArg₂ Prod.mk (has Y) (has Z)))).trans (h_α_inv X Y Z)
+  | l_hom X =>
+    rw [Hom.subst_l_hom]
+    exact (congr_arg_heq FreeBraided.Hom.l_hom (has X)).trans (h_l_hom X)
+  | l_inv X =>
+    rw [Hom.subst_l_inv]
+    exact (congr_arg_heq FreeBraided.Hom.l_inv (has X)).trans (h_l_inv X)
+  | ρ_hom X =>
+    rw [Hom.subst_ρ_hom]
+    exact (congr_arg_heq FreeBraided.Hom.ρ_hom (has X)).trans (h_ρ_hom X)
+  | ρ_inv X =>
+    rw [Hom.subst_ρ_inv]
+    exact (congr_arg_heq FreeBraided.Hom.ρ_inv (has X)).trans (h_ρ_inv X)
+  | β_hom X Y =>
+    rw [Hom.subst_β_hom]
+    exact (congr_arg_heq (fun p : _ × _ ↦ FreeBraided.Hom.β_hom p.1 p.2)
+      (congrArg₂ Prod.mk (has X) (has Y))).trans (h_β_hom X Y)
+  | β_inv X Y =>
+    rw [Hom.subst_β_inv]
+    exact (congr_arg_heq (fun p : _ × _ ↦ FreeBraided.Hom.β_inv p.1 p.2)
+      (congrArg₂ Prod.mk (has X) (has Y))).trans (h_β_inv X Y)
+  | coupon g =>
+    rw [Hom.subst_coupon]
+    exact h_coupon g
+  | comp f g hf hg =>
+    rw [Hom.subst_comp]
+    exact (hom_comp_heq (has _) (has _) (has _) hf hg).trans (h_comp f g)
+  | whiskerLeft X f hf =>
+    rw [Hom.subst_whiskerLeft]
+    exact (hom_whiskerLeft_heq (has X) (has _) (has _) hf).trans (h_whiskerLeft X f)
+  | whiskerRight f X hf =>
+    rw [Hom.subst_whiskerRight]
+    exact (hom_whiskerRight_heq (has _) (has _) (has X) hf).trans (h_whiskerRight f X)
+  | tensor f g hf hg =>
+    rw [Hom.subst_tensor]
+    exact (hom_tensor_heq (has _) (has _) (has _) (has _) hf hg).trans (h_tensor f g)
+
 /-- Substituting along the identity braided substitution leaves every raw braided expression
 heterogeneously unchanged. -/
 theorem id_subst_heq {X Y : FreeMonoidalCategory S.Obj} (f : FreeBraided.Hom X Y) :
-    HEq (f.subst (id S)) f := by
-  have hobj : (id S).obj = FreeBraided.of := funext id_obj
-  have has : ∀ Z : FreeMonoidalCategory S.Obj, (projectObj (id S).obj Z).as = Z := fun Z ↦ by
-    rw [hobj, projectObj_of]
-  induction f with
-  | id X => exact congr_arg_heq FreeBraided.Hom.id (has X)
-  | α_hom X Y Z =>
-    exact congr_arg_heq (fun p : _ × _ × _ ↦ FreeBraided.Hom.α_hom p.1 p.2.1 p.2.2)
-      (congrArg₂ Prod.mk (has X) (congrArg₂ Prod.mk (has Y) (has Z)))
-  | α_inv X Y Z =>
-    exact congr_arg_heq (fun p : _ × _ × _ ↦ FreeBraided.Hom.α_inv p.1 p.2.1 p.2.2)
-      (congrArg₂ Prod.mk (has X) (congrArg₂ Prod.mk (has Y) (has Z)))
-  | l_hom X => exact congr_arg_heq FreeBraided.Hom.l_hom (has X)
-  | l_inv X => exact congr_arg_heq FreeBraided.Hom.l_inv (has X)
-  | ρ_hom X => exact congr_arg_heq FreeBraided.Hom.ρ_hom (has X)
-  | ρ_inv X => exact congr_arg_heq FreeBraided.Hom.ρ_inv (has X)
-  | β_hom X Y =>
-    exact congr_arg_heq (fun p : _ × _ ↦ FreeBraided.Hom.β_hom p.1 p.2)
-      (congrArg₂ Prod.mk (has X) (has Y))
-  | β_inv X Y =>
-    exact congr_arg_heq (fun p : _ × _ ↦ FreeBraided.Hom.β_inv p.1 p.2)
-      (congrArg₂ Prod.mk (has X) (has Y))
-  | coupon g => exact id_coupon_heq g
-  | comp f g hf hg => exact hom_comp_heq (has _) (has _) (has _) hf hg
-  | whiskerLeft X f hf => exact hom_whiskerLeft_heq (has X) (has _) (has _) hf
-  | whiskerRight f X hf => exact hom_whiskerRight_heq (has _) (has _) (has X) hf
-  | tensor f g hf hg => exact hom_tensor_heq (has _) (has _) (has _) (has _) hf hg
+    HEq (f.subst (id S)) f :=
+  subst_heq_of _root_.id
+    (fun Z ↦ congrArg FreeBraided.as (projectObj_of Z))
+    (fun {_ _} f ↦ f) id_coupon_heq f
 
 /-- Substituting along a composite braided substitution `σ.comp τ` agrees heterogeneously with
 substituting along `σ` followed by `τ`. -/
 theorem comp_subst_heq (σ : BraidedSubstitution S T) (τ : BraidedSubstitution T U)
     {X Y : FreeMonoidalCategory S.Obj} (f : FreeBraided.Hom X Y) :
-    HEq (f.subst (σ.comp τ)) ((f.subst σ).subst τ) := by
-  have hobj : (σ.comp τ).obj = fun a ↦ projectObj τ.obj (σ.obj a).as :=
-    funext fun a ↦ (comp_obj σ τ a).trans (τ.toFunctor_obj (σ.obj a))
-  have has : ∀ Z : FreeMonoidalCategory S.Obj,
-      (projectObj (σ.comp τ).obj Z).as = (projectObj τ.obj (projectObj σ.obj Z).as).as :=
-    fun Z ↦ by rw [hobj, projectObj_comp]
-  induction f with
-  | id X => exact congr_arg_heq FreeBraided.Hom.id (has X)
-  | α_hom X Y Z =>
-    exact congr_arg_heq (fun p : _ × _ × _ ↦ FreeBraided.Hom.α_hom p.1 p.2.1 p.2.2)
-      (congrArg₂ Prod.mk (has X) (congrArg₂ Prod.mk (has Y) (has Z)))
-  | α_inv X Y Z =>
-    exact congr_arg_heq (fun p : _ × _ × _ ↦ FreeBraided.Hom.α_inv p.1 p.2.1 p.2.2)
-      (congrArg₂ Prod.mk (has X) (congrArg₂ Prod.mk (has Y) (has Z)))
-  | l_hom X => exact congr_arg_heq FreeBraided.Hom.l_hom (has X)
-  | l_inv X => exact congr_arg_heq FreeBraided.Hom.l_inv (has X)
-  | ρ_hom X => exact congr_arg_heq FreeBraided.Hom.ρ_hom (has X)
-  | ρ_inv X => exact congr_arg_heq FreeBraided.Hom.ρ_inv (has X)
-  | β_hom X Y =>
-    exact congr_arg_heq (fun p : _ × _ ↦ FreeBraided.Hom.β_hom p.1 p.2)
-      (congrArg₂ Prod.mk (has X) (has Y))
-  | β_inv X Y =>
-    exact congr_arg_heq (fun p : _ × _ ↦ FreeBraided.Hom.β_inv p.1 p.2)
-      (congrArg₂ Prod.mk (has X) (has Y))
-  | coupon g => exact comp_coupon_heq σ τ g
-  | comp f g hf hg => exact hom_comp_heq (has _) (has _) (has _) hf hg
-  | whiskerLeft X f hf => exact hom_whiskerLeft_heq (has X) (has _) (has _) hf
-  | whiskerRight f X hf => exact hom_whiskerRight_heq (has _) (has _) (has X) hf
-  | tensor f g hf hg => exact hom_tensor_heq (has _) (has _) (has _) (has _) hf hg
+    HEq (f.subst (σ.comp τ)) ((f.subst σ).subst τ) :=
+  subst_heq_of (fun Z ↦ (projectObj τ.obj (projectObj σ.obj Z).as).as)
+    (fun Z ↦ by
+      rw [show (σ.comp τ).obj = fun a ↦ projectObj τ.obj (σ.obj a).as from
+        funext fun a ↦ (comp_obj σ τ a).trans (τ.toFunctor_obj (σ.obj a))]
+      exact congrArg FreeBraided.as (projectObj_comp σ.obj τ.obj Z))
+    (fun {_ _} f ↦ (f.subst σ).subst τ) (comp_coupon_heq σ τ) f
 
 /-- The strong braided functor induced by the identity braided substitution is the identity functor
 on `S.FreeBraided`. -/

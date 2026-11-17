@@ -173,27 +173,58 @@ private noncomputable instance : MonoidalCategory WeightedObj where
   pentagon _ _ _ _ := rfl
   triangle _ _ := rfl
 
+@[simp]
+private theorem WeightedHom.exp_of {X Y : WeightedObj} (h : X.val = Y.val) (e : ℤ) :
+    (WeightedHom.of (X := X) (Y := Y) h e).exp = e := rfl
+
+@[simp]
 private theorem weightedObj_tensor_val (X Y : WeightedObj) : (X ⊗ Y).val = X.val + Y.val := rfl
 
+@[simp]
+private theorem weightedHom_id (X : WeightedObj) : (𝟙 X : X ⟶ X) = WeightedHom.of rfl 0 := rfl
+
+@[simp]
 private theorem weightedHom_comp_of {X Y Z : WeightedObj}
     (h₁ : X.val = Y.val) (e₁ : ℤ) (h₂ : Y.val = Z.val) (e₂ : ℤ) :
     (WeightedHom.of (X := X) (Y := Y) h₁ e₁ ≫
       WeightedHom.of (X := Y) (Y := Z) h₂ e₂ : X ⟶ Z) =
       WeightedHom.of (h₁.trans h₂) (e₁ + e₂) := rfl
 
+@[simp]
 private theorem weightedHom_whiskerLeft_of (X : WeightedObj) {Y Z : WeightedObj}
     (h : Y.val = Z.val) (e : ℤ) :
-    (X ◁ (WeightedHom.of h e : Y ⟶ Z)) = WeightedHom.of (congrArg (X.val + ·) h) e := rfl
+    (X ◁ (WeightedHom.of h e : Y ⟶ Z)) =
+      WeightedHom.of (X := X ⊗ Y) (Y := X ⊗ Z) (congrArg (X.val + ·) h) e := rfl
 
+@[simp]
 private theorem weightedHom_whiskerRight_of {X Y : WeightedObj}
     (h : X.val = Y.val) (e : ℤ) (Z : WeightedObj) :
-    ((WeightedHom.of h e : X ⟶ Y) ▷ Z) = WeightedHom.of (congrArg (· + Z.val) h) e := rfl
+    ((WeightedHom.of h e : X ⟶ Y) ▷ Z) =
+      WeightedHom.of (X := X ⊗ Z) (Y := Y ⊗ Z) (congrArg (· + Z.val) h) e := rfl
 
+@[simp]
 private theorem weightedHom_associator_hom (X Y Z : WeightedObj) :
     (α_ X Y Z).hom = WeightedHom.of (Int.add_assoc X.val Y.val Z.val) 0 := rfl
 
+@[simp]
 private theorem weightedHom_associator_inv (X Y Z : WeightedObj) :
     (α_ X Y Z).inv = WeightedHom.of (Int.add_assoc X.val Y.val Z.val).symm 0 := rfl
+
+@[simp]
+private theorem weightedHom_leftUnitor_hom (X : WeightedObj) :
+    (λ_ X).hom = WeightedHom.of (Int.zero_add X.val) 0 := rfl
+
+@[simp]
+private theorem weightedHom_leftUnitor_inv (X : WeightedObj) :
+    (λ_ X).inv = WeightedHom.of (Int.zero_add X.val).symm 0 := rfl
+
+@[simp]
+private theorem weightedHom_rightUnitor_hom (X : WeightedObj) :
+    (ρ_ X).hom = WeightedHom.of (Int.add_zero X.val) 0 := rfl
+
+@[simp]
+private theorem weightedHom_rightUnitor_inv (X : WeightedObj) :
+    (ρ_ X).inv = WeightedHom.of (Int.add_zero X.val).symm 0 := rfl
 
 private noncomputable instance : BraidedCategory WeightedObj where
   braiding X Y :=
@@ -218,6 +249,14 @@ private noncomputable instance : BraidedCategory WeightedObj where
       weightedHom_comp_of, weightedObj_tensor_val]
     exact congrArg (WeightedHom.of _) (by rw [Int.add_mul]; omega)
 
+@[simp]
+private theorem weightedHom_braiding_hom (X Y : WeightedObj) :
+    (β_ X Y).hom = WeightedHom.of (Int.add_comm X.val Y.val) (X.val * Y.val) := rfl
+
+@[simp]
+private theorem weightedHom_braiding_inv (X Y : WeightedObj) :
+    (β_ X Y).inv = WeightedHom.of (Int.add_comm Y.val X.val) (-(X.val * Y.val)) := rfl
+
 private theorem weightedObj_projectObj (w : S.Obj → ℤ) (X : FreeMonoidalCategory S.Obj) :
     (projectObj (fun a ↦ (⟨w a⟩ : WeightedObj)) X).val = wordWeight w ⟨X⟩ := by
   induction X with
@@ -235,6 +274,12 @@ private noncomputable def exponentFunctor (w : S.Obj → ℤ) (fc : S.Coupon →
       ((weightedObj_projectObj w (S.src g)).trans
         ((hw g).trans (weightedObj_projectObj w (S.tgt g)).symm))
       (fc g)
+
+private theorem exponentFunctor_obj_tensor (w : S.Obj → ℤ) (fc : S.Coupon → ℤ)
+    (hw : ∀ g : S.Coupon, wordWeight w ⟨S.src g⟩ = wordWeight w ⟨S.tgt g⟩)
+    (X Y : S.FreeBraided) :
+    (exponentFunctor w fc hw).obj (X ⊗ Y) =
+      (exponentFunctor w fc hw).obj X ⊗ (exponentFunctor w fc hw).obj Y := rfl
 
 private theorem exponentFunctor_map_whiskerLeft (w : S.Obj → ℤ) (fc : S.Coupon → ℤ)
     (hw : ∀ g : S.Coupon, wordWeight w ⟨S.src g⟩ = wordWeight w ⟨S.tgt g⟩)
@@ -259,50 +304,6 @@ noncomputable def exponentSum (w : S.Obj → ℤ) (fc : S.Coupon → ℤ)
     {X Y : S.FreeBraided} (f : X ⟶ Y) : ℤ :=
   ((exponentFunctor w fc hw).map f).exp
 
-private theorem exponentFunctor_map_eq_of (w : S.Obj → ℤ) (fc : S.Coupon → ℤ)
-    (hw : ∀ g : S.Coupon, wordWeight w ⟨S.src g⟩ = wordWeight w ⟨S.tgt g⟩)
-    {X Y : S.FreeBraided} (f : X ⟶ Y) :
-    ∃ h, (exponentFunctor w fc hw).map f = .of h (exponentSum w fc hw f) := by
-  induction f using Hom.inductionOn with
-  | id X => exact ⟨rfl, by simp only [exponentSum, Functor.map_id]; rfl⟩
-  | α_hom X Y Z =>
-    exact ⟨_, by simp only [exponentSum, exponentFunctor, lift_map_associator_hom]; rfl⟩
-  | α_inv X Y Z =>
-    exact ⟨_, by simp only [exponentSum, exponentFunctor, lift_map_associator_inv]; rfl⟩
-  | l_hom X =>
-    exact ⟨_, by simp only [exponentSum, exponentFunctor, lift_map_leftUnitor_hom]; rfl⟩
-  | l_inv X =>
-    exact ⟨_, by simp only [exponentSum, exponentFunctor, lift_map_leftUnitor_inv]; rfl⟩
-  | ρ_hom X =>
-    exact ⟨_, by simp only [exponentSum, exponentFunctor, lift_map_rightUnitor_hom]; rfl⟩
-  | ρ_inv X =>
-    exact ⟨_, by simp only [exponentSum, exponentFunctor, lift_map_rightUnitor_inv]; rfl⟩
-  | β_hom X Y =>
-    exact ⟨_, by simp only [exponentSum, exponentFunctor, lift_map_braiding_hom]; rfl⟩
-  | β_inv X Y =>
-    exact ⟨_, by simp only [exponentSum, exponentFunctor, lift_map_braiding_inv]; rfl⟩
-  | coupon g =>
-    exact ⟨_, by simp only [exponentSum, exponentFunctor, lift_map_coupon]; rfl⟩
-  | comp f g hf hg =>
-    obtain ⟨h₁, hf⟩ := hf
-    obtain ⟨h₂, hg⟩ := hg
-    refine ⟨h₁.trans h₂, ?_⟩
-    dsimp only [exponentSum]
-    rw [Functor.map_comp, hf, hg, weightedHom_comp_of]
-    rfl
-  | whiskerLeft X f hf =>
-    obtain ⟨h, hf⟩ := hf
-    refine ⟨congrArg (((exponentFunctor w fc hw).obj X).val + ·) h, ?_⟩
-    dsimp only [exponentSum]
-    rw [exponentFunctor_map_whiskerLeft, hf, weightedHom_whiskerLeft_of]
-    rfl
-  | whiskerRight f Z hf =>
-    obtain ⟨h, hf⟩ := hf
-    refine ⟨congrArg (· + ((exponentFunctor w fc hw).obj Z).val) h, ?_⟩
-    dsimp only [exponentSum]
-    rw [exponentFunctor_map_whiskerRight, hf, weightedHom_whiskerRight_of]
-    rfl
-
 section ExponentSumLemmas
 
 variable (w : S.Obj → ℤ) (fc : S.Coupon → ℤ)
@@ -311,103 +312,76 @@ variable (w : S.Obj → ℤ) (fc : S.Coupon → ℤ)
 /-- Identity morphisms have exponent sum `0`. -/
 @[simp]
 theorem exponentSum_id (X : S.FreeBraided) : exponentSum w fc hw (𝟙 X) = 0 := by
-  simp only [exponentSum, Functor.map_id]
-  rfl
-
-/-- Exponent sum is additive under composition. -/
-@[simp]
-theorem exponentSum_comp {X Y Z : S.FreeBraided} (f : X ⟶ Y) (g : Y ⟶ Z) :
-    exponentSum w fc hw (f ≫ g) = exponentSum w fc hw f + exponentSum w fc hw g := by
-  obtain ⟨_, hf⟩ := exponentFunctor_map_eq_of w fc hw f
-  obtain ⟨_, hg⟩ := exponentFunctor_map_eq_of w fc hw g
-  rw [exponentSum, Functor.map_comp, hf, hg, weightedHom_comp_of]
-  rfl
-
-/-- Left whiskering preserves the exponent sum. -/
-@[simp]
-theorem exponentSum_whiskerLeft (X : S.FreeBraided) {Y Z : S.FreeBraided} (f : Y ⟶ Z) :
-    exponentSum w fc hw (X ◁ f) = exponentSum w fc hw f := by
-  obtain ⟨_, hf⟩ := exponentFunctor_map_eq_of w fc hw f
-  rw [exponentSum, exponentFunctor_map_whiskerLeft, hf, weightedHom_whiskerLeft_of]
-  rfl
-
-/-- Right whiskering preserves the exponent sum. -/
-@[simp]
-theorem exponentSum_whiskerRight {X Y : S.FreeBraided} (f : X ⟶ Y) (Z : S.FreeBraided) :
-    exponentSum w fc hw (f ▷ Z) = exponentSum w fc hw f := by
-  obtain ⟨_, hf⟩ := exponentFunctor_map_eq_of w fc hw f
-  rw [exponentSum, exponentFunctor_map_whiskerRight, hf, weightedHom_whiskerRight_of]
-  rfl
-
-/-- Exponent sum is additive under tensor products of morphisms. -/
-@[simp]
-theorem exponentSum_tensorHom {W X Y Z : S.FreeBraided} (f : W ⟶ X) (g : Y ⟶ Z) :
-    exponentSum w fc hw (f ⊗ₘ g) = exponentSum w fc hw f + exponentSum w fc hw g := by
-  rw [tensorHom_def, exponentSum_comp, exponentSum_whiskerRight, exponentSum_whiskerLeft]
+  simp [exponentSum]
 
 /-- Forward associators have exponent sum `0`. -/
 @[simp]
 theorem exponentSum_associator_hom (X Y Z : S.FreeBraided) :
     exponentSum w fc hw (α_ X Y Z).hom = 0 := by
-  simp only [exponentSum, exponentFunctor, lift_map_associator_hom]
-  rfl
+  simp [exponentSum, exponentFunctor]
 
 /-- Inverse associators have exponent sum `0`. -/
 @[simp]
 theorem exponentSum_associator_inv (X Y Z : S.FreeBraided) :
     exponentSum w fc hw (α_ X Y Z).inv = 0 := by
-  simp only [exponentSum, exponentFunctor, lift_map_associator_inv]
-  rfl
+  simp [exponentSum, exponentFunctor]
 
 /-- Forward left unitors have exponent sum `0`. -/
 @[simp]
 theorem exponentSum_leftUnitor_hom (X : S.FreeBraided) :
     exponentSum w fc hw (λ_ X).hom = 0 := by
-  simp only [exponentSum, exponentFunctor, lift_map_leftUnitor_hom]
-  rfl
+  rw [exponentSum, exponentFunctor, lift_map_leftUnitor_hom]
+  dsimp only [lift_obj_tensor, lift_obj_tensorUnit]
+  rw [weightedHom_leftUnitor_hom, WeightedHom.exp_of]
 
 /-- Inverse left unitors have exponent sum `0`. -/
 @[simp]
 theorem exponentSum_leftUnitor_inv (X : S.FreeBraided) :
     exponentSum w fc hw (λ_ X).inv = 0 := by
-  simp only [exponentSum, exponentFunctor, lift_map_leftUnitor_inv]
-  rfl
+  rw [exponentSum, exponentFunctor, lift_map_leftUnitor_inv]
+  dsimp only [lift_obj_tensor, lift_obj_tensorUnit]
+  rw [weightedHom_leftUnitor_inv, WeightedHom.exp_of]
 
 /-- Forward right unitors have exponent sum `0`. -/
 @[simp]
 theorem exponentSum_rightUnitor_hom (X : S.FreeBraided) :
     exponentSum w fc hw (ρ_ X).hom = 0 := by
-  simp only [exponentSum, exponentFunctor, lift_map_rightUnitor_hom]
-  rfl
+  rw [exponentSum, exponentFunctor, lift_map_rightUnitor_hom]
+  dsimp only [lift_obj_tensor, lift_obj_tensorUnit]
+  rw [weightedHom_rightUnitor_hom, WeightedHom.exp_of]
 
 /-- Inverse right unitors have exponent sum `0`. -/
 @[simp]
 theorem exponentSum_rightUnitor_inv (X : S.FreeBraided) :
     exponentSum w fc hw (ρ_ X).inv = 0 := by
-  simp only [exponentSum, exponentFunctor, lift_map_rightUnitor_inv]
-  rfl
+  rw [exponentSum, exponentFunctor, lift_map_rightUnitor_inv]
+  dsimp only [lift_obj_tensor, lift_obj_tensorUnit]
+  rw [weightedHom_rightUnitor_inv, WeightedHom.exp_of]
 
 /-- A positive braiding `(β_ X Y).hom` has exponent sum `wordWeight w X * wordWeight w Y`. -/
 @[simp]
 theorem exponentSum_braiding_hom (X Y : S.FreeBraided) :
     exponentSum w fc hw (β_ X Y).hom = wordWeight w X * wordWeight w Y := by
-  simp only [exponentSum, exponentFunctor, lift_map_braiding_hom]
+  rw [exponentSum, exponentFunctor, lift_map_braiding_hom]
+  dsimp only [lift_obj_tensor]
+  rw [weightedHom_braiding_hom, WeightedHom.exp_of]
   exact congrArg₂ (· * ·) (weightedObj_projectObj w X.as) (weightedObj_projectObj w Y.as)
 
 /-- An inverse braiding `(β_ X Y).inv` has exponent sum `-(wordWeight w X * wordWeight w Y)`. -/
 @[simp]
 theorem exponentSum_braiding_inv (X Y : S.FreeBraided) :
     exponentSum w fc hw (β_ X Y).inv = -(wordWeight w X * wordWeight w Y) := by
-  simp only [exponentSum, exponentFunctor, lift_map_braiding_inv]
+  rw [exponentSum, exponentFunctor, lift_map_braiding_inv]
+  dsimp only [lift_obj_tensor]
+  rw [weightedHom_braiding_inv, WeightedHom.exp_of]
   exact congrArg Neg.neg
     (congrArg₂ (· * ·) (weightedObj_projectObj w X.as) (weightedObj_projectObj w Y.as))
 
 /-- A coupon `g` has exponent sum `fc g`. -/
 @[simp]
 theorem exponentSum_coupon (g : S.Coupon) :
-    exponentSum w fc hw (coupon g) = fc g := by
-  simp only [exponentSum, exponentFunctor, lift_map_coupon]
-  rfl
+    exponentSum w fc hw (coupon g) = fc g :=
+  (congrArg WeightedHom.exp (lift_map_coupon _ _ g)).trans (WeightedHom.exp_of _ _)
 
 /-- `eqToHom` morphisms have exponent sum `0`. -/
 @[simp]
@@ -415,6 +389,98 @@ theorem exponentSum_eqToHom {X Y : S.FreeBraided} (h : X = Y) :
     exponentSum w fc hw (eqToHom h) = 0 := by
   cases h
   simp
+
+private theorem exponentFunctor_map_eq_of {X Y : S.FreeBraided} (f : X ⟶ Y) :
+    ∃ h, (exponentFunctor w fc hw).map f = .of h (exponentSum w fc hw f) := by
+  induction f using Hom.inductionOn with
+  | id X => exact ⟨rfl, by simp⟩
+  | α_hom X Y Z =>
+    rw [exponentSum_associator_hom]
+    exact ⟨Int.add_assoc _ _ _,
+      (lift_map_associator_hom _ _ X Y Z).trans (weightedHom_associator_hom _ _ _)⟩
+  | α_inv X Y Z =>
+    rw [exponentSum_associator_inv]
+    exact ⟨(Int.add_assoc _ _ _).symm,
+      (lift_map_associator_inv _ _ X Y Z).trans (weightedHom_associator_inv _ _ _)⟩
+  | l_hom X =>
+    rw [exponentSum_leftUnitor_hom]
+    exact ⟨Int.zero_add _,
+      (lift_map_leftUnitor_hom _ _ X).trans (weightedHom_leftUnitor_hom _)⟩
+  | l_inv X =>
+    rw [exponentSum_leftUnitor_inv]
+    exact ⟨(Int.zero_add _).symm,
+      (lift_map_leftUnitor_inv _ _ X).trans (weightedHom_leftUnitor_inv _)⟩
+  | ρ_hom X =>
+    rw [exponentSum_rightUnitor_hom]
+    exact ⟨Int.add_zero _,
+      (lift_map_rightUnitor_hom _ _ X).trans (weightedHom_rightUnitor_hom _)⟩
+  | ρ_inv X =>
+    rw [exponentSum_rightUnitor_inv]
+    exact ⟨(Int.add_zero _).symm,
+      (lift_map_rightUnitor_inv _ _ X).trans (weightedHom_rightUnitor_inv _)⟩
+  | β_hom X Y =>
+    rw [exponentSum_braiding_hom]
+    refine ⟨Int.add_comm _ _, (lift_map_braiding_hom _ _ X Y).trans
+      ((weightedHom_braiding_hom _ _).trans (congrArg (WeightedHom.of _) ?_))⟩
+    exact congrArg₂ (· * ·) (weightedObj_projectObj w X.as) (weightedObj_projectObj w Y.as)
+  | β_inv X Y =>
+    rw [exponentSum_braiding_inv]
+    refine ⟨Int.add_comm _ _, (lift_map_braiding_inv _ _ X Y).trans
+      ((weightedHom_braiding_inv _ _).trans (congrArg (WeightedHom.of _) ?_))⟩
+    exact congrArg Neg.neg
+      (congrArg₂ (· * ·) (weightedObj_projectObj w X.as) (weightedObj_projectObj w Y.as))
+  | coupon g =>
+    rw [exponentSum_coupon]
+    exact ⟨_, lift_map_coupon _ _ g⟩
+  | comp f g hf hg =>
+    obtain ⟨h₁, hf⟩ := hf
+    obtain ⟨h₂, hg⟩ := hg
+    refine ⟨h₁.trans h₂, ?_⟩
+    rw [exponentSum, Functor.map_comp, hf, hg, weightedHom_comp_of, WeightedHom.exp_of]
+  | whiskerLeft X f hf =>
+    obtain ⟨h, hf⟩ := hf
+    refine ⟨congrArg (((exponentFunctor w fc hw).obj X).val + ·) h, ?_⟩
+    rw [exponentSum, exponentFunctor_map_whiskerLeft, hf, weightedHom_whiskerLeft_of]
+    dsimp only [exponentFunctor_obj_tensor]
+    rw [WeightedHom.exp_of]
+  | whiskerRight f Z hf =>
+    obtain ⟨h, hf⟩ := hf
+    refine ⟨congrArg (· + ((exponentFunctor w fc hw).obj Z).val) h, ?_⟩
+    rw [exponentSum, exponentFunctor_map_whiskerRight, hf, weightedHom_whiskerRight_of]
+    dsimp only [exponentFunctor_obj_tensor]
+    rw [WeightedHom.exp_of]
+
+/-- Exponent sum is additive under composition. -/
+@[simp]
+theorem exponentSum_comp {X Y Z : S.FreeBraided} (f : X ⟶ Y) (g : Y ⟶ Z) :
+    exponentSum w fc hw (f ≫ g) = exponentSum w fc hw f + exponentSum w fc hw g := by
+  obtain ⟨_, hf⟩ := exponentFunctor_map_eq_of w fc hw f
+  obtain ⟨_, hg⟩ := exponentFunctor_map_eq_of w fc hw g
+  rw [exponentSum, Functor.map_comp, hf, hg, weightedHom_comp_of, WeightedHom.exp_of]
+
+/-- Left whiskering preserves the exponent sum. -/
+@[simp]
+theorem exponentSum_whiskerLeft (X : S.FreeBraided) {Y Z : S.FreeBraided} (f : Y ⟶ Z) :
+    exponentSum w fc hw (X ◁ f) = exponentSum w fc hw f := by
+  obtain ⟨_, hf⟩ := exponentFunctor_map_eq_of w fc hw f
+  rw [exponentSum, exponentFunctor_map_whiskerLeft, hf, weightedHom_whiskerLeft_of]
+  dsimp only [exponentFunctor_obj_tensor]
+  rw [WeightedHom.exp_of]
+
+/-- Right whiskering preserves the exponent sum. -/
+@[simp]
+theorem exponentSum_whiskerRight {X Y : S.FreeBraided} (f : X ⟶ Y) (Z : S.FreeBraided) :
+    exponentSum w fc hw (f ▷ Z) = exponentSum w fc hw f := by
+  obtain ⟨_, hf⟩ := exponentFunctor_map_eq_of w fc hw f
+  rw [exponentSum, exponentFunctor_map_whiskerRight, hf, weightedHom_whiskerRight_of]
+  dsimp only [exponentFunctor_obj_tensor]
+  rw [WeightedHom.exp_of]
+
+/-- Exponent sum is additive under tensor products of morphisms. -/
+@[simp]
+theorem exponentSum_tensorHom {W X Y Z : S.FreeBraided} (f : W ⟶ X) (g : Y ⟶ Z) :
+    exponentSum w fc hw (f ⊗ₘ g) = exponentSum w fc hw f + exponentSum w fc hw g := by
+  rw [tensorHom_def, exponentSum_comp, exponentSum_whiskerRight, exponentSum_whiskerLeft]
 
 end ExponentSumLemmas
 
@@ -427,8 +493,9 @@ theorem braiding_comp_braiding_ne_id (a b : S.Obj) :
   have hexp := congrArg (fun f ↦
     ((lift (fun _ ↦ (⟨1⟩ : WeightedObj)) (fun _ ↦ WeightedHom.zero)).map f).exp) h
   simp only [Functor.map_comp, Functor.map_id, lift_map_braiding_hom, lift_obj_tensor,
-    lift_obj_of] at hexp
-  exact absurd hexp (by decide)
+    lift_obj_of, weightedHom_braiding_hom, weightedHom_comp_of, weightedHom_id,
+    WeightedHom.exp_of] at hexp
+  omega
 
 /-- On any tensor signature `S`, a self-crossing `(β_ (of a) (of a)).hom` is distinct from the
 identity. -/

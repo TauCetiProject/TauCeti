@@ -618,9 +618,203 @@ section Uniqueness
 
 open Functor.LaxMonoidal Functor.OplaxMonoidal
 
+section OfBraidedGen
+
+variable (S)
+
+/-- The tensor signature with the same generating objects as `S`, whose coupons are the coupons of
+`S` together with formal generators for all positive and negative braidings. The canonical
+identity-on-objects functor from its free monoidal category to `S.FreeBraided` is strict monoidal
+and full, transferring the uniqueness API of `FreeMonoidal`. -/
+private abbrev braidedGenSignature : TensorSignature.{u, max u v} where
+  Obj := S.Obj
+  Coupon := S.Coupon ⊕ (FreeMonoidalCategory S.Obj × FreeMonoidalCategory S.Obj) ⊕
+    (FreeMonoidalCategory S.Obj × FreeMonoidalCategory S.Obj)
+  src
+    | .inl g => S.src g
+    | .inr (.inl p) => p.1.tensor p.2
+    | .inr (.inr p) => p.2.tensor p.1
+  tgt
+    | .inl g => S.tgt g
+    | .inr (.inl p) => p.2.tensor p.1
+    | .inr (.inr p) => p.1.tensor p.2
+
+private theorem projectObj_of (X : FreeMonoidalCategory S.Obj) :
+    projectObj (D := S.FreeBraided) (fun a ↦ of a) X = ⟨X⟩ := by
+  induction X with
+  | of a => rfl
+  | unit => rfl
+  | tensor X Y hX hY => exact congrArg₂ (· ⊗ ·) hX hY
+
+private def braidedGenCoupon :
+    ∀ c : (braidedGenSignature S).Coupon,
+      (⟨(braidedGenSignature S).src c⟩ : S.FreeBraided) ⟶ ⟨(braidedGenSignature S).tgt c⟩
+  | .inl g => coupon g
+  | .inr (.inl p) => (β_ (⟨p.1⟩ : S.FreeBraided) ⟨p.2⟩).hom
+  | .inr (.inr p) => (β_ (⟨p.1⟩ : S.FreeBraided) ⟨p.2⟩).inv
+
+private abbrev ofBraidedGenLift :
+    (braidedGenSignature S).FreeMonoidal ⥤ S.FreeBraided :=
+  FreeMonoidal.lift (S := braidedGenSignature S) (D := S.FreeBraided) (fun a ↦ of a) fun c ↦
+    eqToHom (projectObj_of S ((braidedGenSignature S).src c)) ≫
+      braidedGenCoupon S c ≫
+      eqToHom (projectObj_of S ((braidedGenSignature S).tgt c)).symm
+
+private theorem ofBraidedGenLift_obj (X : (braidedGenSignature S).FreeMonoidal) :
+    (ofBraidedGenLift S).obj X = ⟨X.as⟩ :=
+  projectObj_of S X.as
+
+private def ofBraidedGen :
+    (braidedGenSignature S).FreeMonoidal ⥤ S.FreeBraided where
+  obj X := ⟨X.as⟩
+  map {X Y} f :=
+    eqToHom (ofBraidedGenLift_obj S X).symm ≫ (ofBraidedGenLift S).map f ≫
+      eqToHom (ofBraidedGenLift_obj S Y)
+  map_id X := by simp
+  map_comp f g := by simp
+
+private theorem ofBraidedGen_obj_tensorUnit :
+    (ofBraidedGen S).obj (𝟙_ (braidedGenSignature S).FreeMonoidal) = 𝟙_ S.FreeBraided := rfl
+
+private theorem ofBraidedGen_obj_tensor (X Y : (braidedGenSignature S).FreeMonoidal) :
+    (ofBraidedGen S).obj (X ⊗ Y) = (ofBraidedGen S).obj X ⊗ (ofBraidedGen S).obj Y := rfl
+
+private theorem ofBraidedGenLift_obj_eq (X : (braidedGenSignature S).FreeMonoidal) :
+    (ofBraidedGenLift S).obj X = (ofBraidedGen S).obj X :=
+  ofBraidedGenLift_obj S X
+
+private def ofBraidedGenIso :
+    ofBraidedGenLift S ≅ ofBraidedGen S :=
+  NatIso.ofComponents (fun X ↦ eqToIso (ofBraidedGenLift_obj_eq S X)) fun f ↦ by
+    change (ofBraidedGenLift S).map f ≫ eqToHom (ofBraidedGenLift_obj S _) =
+      eqToHom (ofBraidedGenLift_obj S _) ≫ eqToHom (ofBraidedGenLift_obj S _).symm ≫
+        (ofBraidedGenLift S).map f ≫ eqToHom (ofBraidedGenLift_obj S _)
+    simp
+
+private instance : (ofBraidedGen S).Monoidal :=
+  Functor.Monoidal.transport (ofBraidedGenIso S)
+
+private theorem ofBraidedGen_ε :
+    ε (ofBraidedGen S) = eqToHom (ofBraidedGen_obj_tensorUnit S).symm := by
+  rw [Functor.Monoidal.transport_ε (ofBraidedGenIso S)]
+  have h₁ : ε (ofBraidedGenLift S) = eqToHom (FreeMonoidal.lift_obj_tensorUnit _ _).symm := rfl
+  have h₂ : (ofBraidedGenIso S).hom.app (𝟙_ _) = eqToHom (ofBraidedGenLift_obj_eq S (𝟙_ _)) := rfl
+  rw [h₁, h₂, eqToHom_trans]
+
+private theorem ofBraidedGen_η :
+    η (ofBraidedGen S) = eqToHom (ofBraidedGen_obj_tensorUnit S) := by
+  rw [← cancel_epi (ε (ofBraidedGen S)), Functor.Monoidal.ε_η, ofBraidedGen_ε, eqToHom_trans,
+    eqToHom_refl]
+
+private theorem ofBraidedGen_μ (X Y : (braidedGenSignature S).FreeMonoidal) :
+    μ (ofBraidedGen S) X Y = eqToHom (ofBraidedGen_obj_tensor S X Y).symm := by
+  rw [Functor.Monoidal.transport_μ (ofBraidedGenIso S)]
+  have h₁ : μ (ofBraidedGenLift S) X Y =
+      eqToHom (rfl : (ofBraidedGenLift S).obj X ⊗ (ofBraidedGenLift S).obj Y =
+        (ofBraidedGenLift S).obj (X ⊗ Y)) := rfl
+  have hX : (ofBraidedGenIso S).inv.app X = eqToHom (ofBraidedGenLift_obj_eq S X).symm := rfl
+  have hY : (ofBraidedGenIso S).inv.app Y = eqToHom (ofBraidedGenLift_obj_eq S Y).symm := rfl
+  have hXY : (ofBraidedGenIso S).hom.app (X ⊗ Y) =
+      eqToHom (ofBraidedGenLift_obj_eq S (X ⊗ Y)) := rfl
+  rw [h₁, hX, hY, hXY, MonoidalCategory.tensorHom_def]
+  simp only [eqToHom_whiskerRight, whiskerLeft_eqToHom, eqToHom_trans,
+    FreeMonoidal.lift_obj_tensor, eqToHom_refl, Category.id_comp]
+  exact eqToHom_trans _ _
+
+private theorem ofBraidedGen_δ (X Y : (braidedGenSignature S).FreeMonoidal) :
+    δ (ofBraidedGen S) X Y = eqToHom (ofBraidedGen_obj_tensor S X Y) := by
+  rw [← cancel_epi (μ (ofBraidedGen S) X Y), Functor.Monoidal.μ_δ, ofBraidedGen_μ, eqToHom_trans,
+    eqToHom_refl]
+
+private theorem ofBraidedGen_map_coupon (c : (braidedGenSignature S).Coupon) :
+    (ofBraidedGen S).map (FreeMonoidal.coupon (S := braidedGenSignature S) c) =
+      braidedGenCoupon S c := by
+  dsimp only [ofBraidedGen]
+  rw [FreeMonoidal.lift_map_coupon]
+  change eqToHom (projectObj_of S _).symm ≫
+      (eqToHom (projectObj_of S _) ≫ braidedGenCoupon S c ≫ eqToHom (projectObj_of S _).symm) ≫
+      eqToHom (projectObj_of S _) = braidedGenCoupon S c
+  simp
+
+end OfBraidedGen
+
+private theorem ofBraidedGen_map_surjective {X Y : S.FreeBraided} (f : X ⟶ Y) :
+    ∃ f' : (⟨X.as⟩ : (braidedGenSignature S).FreeMonoidal) ⟶ ⟨Y.as⟩,
+      (ofBraidedGen S).map f' = f := by
+  let mk (Z : S.FreeBraided) : (braidedGenSignature S).FreeMonoidal := ⟨Z.as⟩
+  have map_inv {A B : S.FreeBraided} (i : mk A ≅ mk B)
+      (j : (ofBraidedGen S).obj (mk A) ≅ (ofBraidedGen S).obj (mk B))
+      (h : (ofBraidedGen S).map i.hom = j.hom) : (ofBraidedGen S).map i.inv = j.inv := by
+    rw [← cancel_epi j.hom, j.hom_inv_id, ← h, ← (ofBraidedGen S).map_comp, i.hom_inv_id,
+      (ofBraidedGen S).map_id]
+  have hα (X Y Z : S.FreeBraided) :
+      (ofBraidedGen S).map (α_ (mk X) (mk Y) (mk Z)).hom = (α_ X Y Z).hom := by
+    have h := Functor.LaxMonoidal.associativity (ofBraidedGen S) (mk X) (mk Y) (mk Z)
+    simp only [ofBraidedGen_μ, eqToHom_whiskerRight, whiskerLeft_eqToHom, eqToHom_trans_assoc,
+      eqToHom_trans] at h
+    exact (Category.id_comp _).symm.trans (h.trans (Category.comp_id _))
+  have hl (X : S.FreeBraided) : (ofBraidedGen S).map (λ_ (mk X)).hom = (λ_ X).hom := by
+    have h := (Functor.LaxMonoidal.left_unitality (ofBraidedGen S) (mk X)).symm
+    simp only [ofBraidedGen_ε, ofBraidedGen_μ, eqToHom_whiskerRight, eqToHom_trans_assoc] at h
+    exact (Category.id_comp _).symm.trans h
+  have hρ (X : S.FreeBraided) : (ofBraidedGen S).map (ρ_ (mk X)).hom = (ρ_ X).hom := by
+    have h := (Functor.LaxMonoidal.right_unitality (ofBraidedGen S) (mk X)).symm
+    simp only [ofBraidedGen_ε, ofBraidedGen_μ, whiskerLeft_eqToHom, eqToHom_trans_assoc] at h
+    exact (Category.id_comp _).symm.trans h
+  induction f using Hom.inductionOn with
+  | id X => exact ⟨𝟙 (mk X), (ofBraidedGen S).map_id (mk X)⟩
+  | α_hom X Y Z => exact ⟨(α_ (mk X) (mk Y) (mk Z)).hom, hα X Y Z⟩
+  | α_inv X Y Z => exact ⟨(α_ (mk X) (mk Y) (mk Z)).inv, map_inv _ (α_ X Y Z) (hα X Y Z)⟩
+  | l_hom X => exact ⟨(λ_ (mk X)).hom, hl X⟩
+  | l_inv X => exact ⟨(λ_ (mk X)).inv, map_inv _ (λ_ X) (hl X)⟩
+  | ρ_hom X => exact ⟨(ρ_ (mk X)).hom, hρ X⟩
+  | ρ_inv X => exact ⟨(ρ_ (mk X)).inv, map_inv _ (ρ_ X) (hρ X)⟩
+  | β_hom X Y =>
+    exact ⟨FreeMonoidal.coupon (S := braidedGenSignature S) (.inr (.inl (X.as, Y.as))),
+      ofBraidedGen_map_coupon S _⟩
+  | β_inv X Y =>
+    exact ⟨FreeMonoidal.coupon (S := braidedGenSignature S) (.inr (.inr (X.as, Y.as))),
+      ofBraidedGen_map_coupon S _⟩
+  | coupon g =>
+    exact ⟨FreeMonoidal.coupon (S := braidedGenSignature S) (.inl g),
+      ofBraidedGen_map_coupon S _⟩
+  | comp _ _ hf hg =>
+    rcases hf, hg with ⟨⟨f', rfl⟩, ⟨g', rfl⟩⟩
+    exact ⟨f' ≫ g', (ofBraidedGen S).map_comp f' g'⟩
+  | whiskerLeft X _ hf =>
+    obtain ⟨f', rfl⟩ := hf
+    refine ⟨mk X ◁ f', ?_⟩
+    have h := Functor.Monoidal.map_whiskerLeft (ofBraidedGen S) (mk X) f'
+    simp only [ofBraidedGen_δ, ofBraidedGen_μ] at h
+    exact h.trans ((Category.id_comp _).trans (Category.comp_id _))
+  | whiskerRight _ Z hf =>
+    obtain ⟨f', rfl⟩ := hf
+    refine ⟨f' ▷ mk Z, ?_⟩
+    have h := Functor.Monoidal.map_whiskerRight (ofBraidedGen S) f' (mk Z)
+    simp only [ofBraidedGen_δ, ofBraidedGen_μ] at h
+    exact h.trans ((Category.id_comp _).trans (Category.comp_id _))
+
 section Monoidal
 
 variable {D : Type u'} [Category.{v'} D] [MonoidalCategory D]
+
+private theorem ofBraidedGen_comp_ε (F : S.FreeBraided ⥤ D) [F.LaxMonoidal] :
+    ε (ofBraidedGen S ⋙ F) = ε F := by
+  rw [comp_ε, ofBraidedGen_ε, eqToHom_map]; exact Category.comp_id _
+
+private theorem ofBraidedGen_comp_η (F : S.FreeBraided ⥤ D) [F.OplaxMonoidal] :
+    η (ofBraidedGen S ⋙ F) = η F := by
+  rw [comp_η, ofBraidedGen_η, eqToHom_map]; exact Category.id_comp _
+
+private theorem ofBraidedGen_comp_μ (F : S.FreeBraided ⥤ D) [F.LaxMonoidal]
+    (X Y : (braidedGenSignature S).FreeMonoidal) :
+    μ (ofBraidedGen S ⋙ F) X Y = μ F ⟨X.as⟩ ⟨Y.as⟩ := by
+  rw [comp_μ, ofBraidedGen_μ, eqToHom_map]; exact Category.comp_id _
+
+private theorem ofBraidedGen_comp_δ (F : S.FreeBraided ⥤ D) [F.OplaxMonoidal]
+    (X Y : (braidedGenSignature S).FreeMonoidal) :
+    δ (ofBraidedGen S ⋙ F) X Y = δ F ⟨X.as⟩ ⟨Y.as⟩ := by
+  rw [comp_δ, ofBraidedGen_δ, eqToHom_map]; exact Category.id_comp _
 
 /-- A monoidal natural transformation from a strong monoidal functor out of the free braided
 monoidal category on `S` to a lax monoidal one is determined by its components at the generating
@@ -628,63 +822,61 @@ objects. -/
 theorem natTrans_ext {F G : S.FreeBraided ⥤ D} [F.Monoidal] [G.LaxMonoidal] {α β : F ⟶ G}
     [NatTrans.IsMonoidal α] [NatTrans.IsMonoidal β] (h : ∀ a, α.app (of a) = β.app (of a)) :
     α = β := by
+  have h' : Functor.whiskerLeft (ofBraidedGen S) α = Functor.whiskerLeft (ofBraidedGen S) β :=
+    FreeMonoidal.natTrans_ext (S := braidedGenSignature S) h
   ext ⟨X⟩
-  induction X with
-  | of a => exact h a
-  | unit =>
-    rw [← cancel_epi (ε F)]
-    exact (NatTrans.IsMonoidal.unit (τ := α)).trans (NatTrans.IsMonoidal.unit (τ := β)).symm
-  | tensor X Y hX hY =>
-    rw [← cancel_epi (μ F ⟨X⟩ ⟨Y⟩)]
-    refine (NatTrans.IsMonoidal.tensor (τ := α) ⟨X⟩ ⟨Y⟩).trans ?_
-    refine Eq.trans ?_ (NatTrans.IsMonoidal.tensor (τ := β) ⟨X⟩ ⟨Y⟩).symm
-    rw [hX, hY]
+  exact NatTrans.congr_app h' ⟨X⟩
 
 variable (F G : S.FreeBraided ⥤ D) [F.Monoidal] [G.Monoidal]
   (e : ∀ a, F.obj (of a) ≅ G.obj (of a))
-
-/-- Auxiliary recursion defining `FreeBraided.wordIso` on the underlying tensor word. -/
-private def wordIsoAux : ∀ X : FreeMonoidalCategory S.Obj, F.obj ⟨X⟩ ≅ G.obj ⟨X⟩
-  | .of a => e a
-  | .unit => (Functor.Monoidal.εIso F).symm ≪≫ Functor.Monoidal.εIso G
-  | .tensor X Y =>
-    (Functor.Monoidal.μIso F ⟨X⟩ ⟨Y⟩).symm ≪≫ (wordIsoAux X ⊗ᵢ wordIsoAux Y) ≪≫
-      Functor.Monoidal.μIso G ⟨X⟩ ⟨Y⟩
 
 /-- The isomorphism between the images of an object under two strong monoidal functors out of
 the free braided monoidal category, induced by isomorphisms `e` at the generating objects together
 with the tensorators and unit comparisons of the two functors. -/
 def wordIso (X : S.FreeBraided) : F.obj X ≅ G.obj X :=
-  wordIsoAux F G e X.as
+  FreeMonoidal.wordIso (S := braidedGenSignature S)
+    (ofBraidedGen S ⋙ F) (ofBraidedGen S ⋙ G) e X.as
 
 /-- On a generating object `of a`, `wordIso F G e` is `e a`. -/
 @[simp]
-theorem wordIso_of (a : S.Obj) : wordIso F G e (of a) = e a := (rfl)
+theorem wordIso_of (a : S.Obj) : wordIso F G e (of a) = e a :=
+  FreeMonoidal.wordIso_of (S := braidedGenSignature S)
+    (ofBraidedGen S ⋙ F) (ofBraidedGen S ⋙ G) e a
 
 /-- On the tensor unit, the forward morphism of `wordIso F G e` is `η F ≫ ε G`. -/
 @[simp]
 theorem wordIso_tensorUnit_hom :
-    (wordIso F G e (𝟙_ S.FreeBraided)).hom = η F ≫ ε G := (rfl)
+    (wordIso F G e (𝟙_ S.FreeBraided)).hom = η F ≫ ε G :=
+  (FreeMonoidal.wordIso_tensorUnit_hom (S := braidedGenSignature S)
+    (ofBraidedGen S ⋙ F) (ofBraidedGen S ⋙ G) e).trans
+    (congrArg₂ (· ≫ ·) (ofBraidedGen_comp_η F) (ofBraidedGen_comp_ε G))
 
 /-- On the tensor unit, the inverse morphism of `wordIso F G e` is `η G ≫ ε F`. -/
 @[simp]
 theorem wordIso_tensorUnit_inv :
-    (wordIso F G e (𝟙_ S.FreeBraided)).inv = η G ≫ ε F := (rfl)
+    (wordIso F G e (𝟙_ S.FreeBraided)).inv = η G ≫ ε F := by
+  rw [← cancel_epi (wordIso F G e (𝟙_ S.FreeBraided)).hom, Iso.hom_inv_id, wordIso_tensorUnit_hom]
+  simp
 
 /-- On a tensor product, the forward morphism of `wordIso F G e` conjugates the tensor product of
 components by `δ F` and `μ G`. -/
 @[simp]
 theorem wordIso_tensor_hom (X Y : S.FreeBraided) :
     (wordIso F G e (X ⊗ Y)).hom =
-      δ F X Y ≫ ((wordIso F G e X).hom ⊗ₘ (wordIso F G e Y).hom) ≫ μ G X Y := (rfl)
+      δ F X Y ≫ ((wordIso F G e X).hom ⊗ₘ (wordIso F G e Y).hom) ≫ μ G X Y :=
+  (FreeMonoidal.wordIso_tensor_hom (S := braidedGenSignature S)
+    (ofBraidedGen S ⋙ F) (ofBraidedGen S ⋙ G) e ⟨X.as⟩ ⟨Y.as⟩).trans
+    (congrArg₂ (· ≫ ·) (ofBraidedGen_comp_δ F ⟨X.as⟩ ⟨Y.as⟩)
+      (congrArg (_ ≫ ·) (ofBraidedGen_comp_μ G ⟨X.as⟩ ⟨Y.as⟩)))
 
 /-- On a tensor product, the inverse morphism of `wordIso F G e` conjugates the tensor product of
 inverse components by `δ G` and `μ F`. -/
 @[simp]
 theorem wordIso_tensor_inv (X Y : S.FreeBraided) :
     (wordIso F G e (X ⊗ Y)).inv =
-      δ G X Y ≫ ((wordIso F G e X).inv ⊗ₘ (wordIso F G e Y).inv) ≫ μ F X Y :=
-  Category.assoc _ _ _
+      δ G X Y ≫ ((wordIso F G e X).inv ⊗ₘ (wordIso F G e Y).inv) ≫ μ F X Y := by
+  rw [← cancel_epi (wordIso F G e (X ⊗ Y)).hom, Iso.hom_inv_id, wordIso_tensor_hom]
+  simp
 
 end Monoidal
 
@@ -692,38 +884,32 @@ variable {D : Type u'} [Category.{v'} D] [MonoidalCategory D] [BraidedCategory D
   {F G : S.FreeBraided ⥤ D} [F.Braided] [G.Braided]
   {e : ∀ a, F.obj (of a) ≅ G.obj (of a)}
 
-/- Fold composites with tensors of morphisms into a single tensor of composites so that the
-tensorators cancel inside each tensor factor; in the unitor lemmas below, the first `simp` cancels
-those tensorators and the second splits the remaining tensor product. -/
-attribute [local simp] whiskerLeft_comp_tensorHom whiskerLeft_comp_tensorHom_assoc
-  whiskerRight_comp_tensorHom whiskerRight_comp_tensorHom_assoc tensorHom_comp_whiskerLeft
-  tensorHom_comp_whiskerLeft_assoc tensorHom_comp_whiskerRight tensorHom_comp_whiskerRight_assoc
-
-private theorem map_α_hom_comp_wordIso_hom (X Y Z : S.FreeBraided) :
-    F.map (α_ X Y Z).hom ≫ (wordIso F G e (X ⊗ (Y ⊗ Z))).hom =
-      (wordIso F G e ((X ⊗ Y) ⊗ Z)).hom ≫ G.map (α_ X Y Z).hom := by
-  rw [← cancel_epi (μ F X Y ▷ F.obj Z ≫ μ F (X ⊗ Y) Z),
-    ← cancel_mono (δ G X (Y ⊗ Z) ≫ G.obj X ◁ δ G Y Z)]
-  simp [← Functor.OplaxMonoidal.associativity]
-
-private theorem map_l_hom_comp_wordIso_hom (X : S.FreeBraided) :
-    F.map (λ_ X).hom ≫ (wordIso F G e X).hom =
-      (wordIso F G e (𝟙_ _ ⊗ X)).hom ≫ G.map (λ_ X).hom := by
-  rw [← cancel_epi (ε F ▷ F.obj X ≫ μ F (𝟙_ _) X)]
-  simp
-  simp [tensorHom_def']
-
-private theorem map_ρ_hom_comp_wordIso_hom (X : S.FreeBraided) :
-    F.map (ρ_ X).hom ≫ (wordIso F G e X).hom =
-      (wordIso F G e (X ⊗ 𝟙_ _)).hom ≫ G.map (ρ_ X).hom := by
-  rw [← cancel_epi (F.obj X ◁ ε F ≫ μ F X (𝟙_ _))]
-  simp
-  simp [MonoidalCategory.tensorHom_def]
-
 private theorem map_β_hom_comp_wordIso_hom (X Y : S.FreeBraided) :
     F.map (β_ X Y).hom ≫ (wordIso F G e (Y ⊗ X)).hom =
       (wordIso F G e (X ⊗ Y)).hom ≫ G.map (β_ X Y).hom := by
   simp [BraidedCategory.braiding_naturality_assoc]
+
+private theorem map_braidedGenCoupon_comp_wordIso_hom
+    (he : ∀ g, F.map (coupon g) ≫ (wordIso F G e ⟨S.tgt g⟩).hom =
+      (wordIso F G e ⟨S.src g⟩).hom ≫ G.map (coupon g))
+    (c : (braidedGenSignature S).Coupon) :
+    (ofBraidedGen S ⋙ F).map (FreeMonoidal.coupon c) ≫
+        (FreeMonoidal.wordIso (S := braidedGenSignature S)
+          (ofBraidedGen S ⋙ F) (ofBraidedGen S ⋙ G) e
+          ((braidedGenSignature S).tgt c)).hom =
+      (FreeMonoidal.wordIso (S := braidedGenSignature S)
+          (ofBraidedGen S ⋙ F) (ofBraidedGen S ⋙ G) e
+          ((braidedGenSignature S).src c)).hom ≫
+        (ofBraidedGen S ⋙ G).map (FreeMonoidal.coupon c) := by
+  have hcou : F.map (braidedGenCoupon S c) ≫ (wordIso F G e ⟨(braidedGenSignature S).tgt c⟩).hom =
+      (wordIso F G e ⟨(braidedGenSignature S).src c⟩).hom ≫ G.map (braidedGenCoupon S c) := by
+    rcases c with g | p | p
+    · exact he g
+    · exact map_β_hom_comp_wordIso_hom ⟨p.1⟩ ⟨p.2⟩
+    · exact (CommSq.horiz_inv (f := F.mapIso (β_ ⟨p.1⟩ ⟨p.2⟩)) (i := G.mapIso (β_ ⟨p.1⟩ ⟨p.2⟩))
+        ⟨map_β_hom_comp_wordIso_hom ⟨p.1⟩ ⟨p.2⟩⟩).w
+  exact (congrArg (· ≫ _) (congrArg F.map (ofBraidedGen_map_coupon S c))).trans
+    (hcou.trans (congrArg (_ ≫ ·) (congrArg G.map (ofBraidedGen_map_coupon S c)).symm))
 
 /-- The isomorphisms `wordIso F G e` between two strong braided functors out of `S.FreeBraided` are
 natural as soon as they are natural with respect to the coupons. -/
@@ -732,35 +918,10 @@ theorem map_comp_wordIso_hom
       (wordIso F G e ⟨S.src g⟩).hom ≫ G.map (coupon g))
     {X Y : S.FreeBraided} (f : X ⟶ Y) :
     F.map f ≫ (wordIso F G e Y).hom = (wordIso F G e X).hom ≫ G.map f := by
-  induction f using Hom.inductionOn with
-  | id X => simp
-  | α_hom X Y Z => exact map_α_hom_comp_wordIso_hom X Y Z
-  | α_inv X Y Z =>
-    exact (CommSq.horiz_inv (f := F.mapIso (α_ X Y Z)) (i := G.mapIso (α_ X Y Z))
-      ⟨map_α_hom_comp_wordIso_hom X Y Z⟩).w
-  | l_hom X => exact map_l_hom_comp_wordIso_hom X
-  | l_inv X =>
-    exact (CommSq.horiz_inv (f := F.mapIso (λ_ X)) (i := G.mapIso (λ_ X))
-      ⟨map_l_hom_comp_wordIso_hom X⟩).w
-  | ρ_hom X => exact map_ρ_hom_comp_wordIso_hom X
-  | ρ_inv X =>
-    exact (CommSq.horiz_inv (f := F.mapIso (ρ_ X)) (i := G.mapIso (ρ_ X))
-      ⟨map_ρ_hom_comp_wordIso_hom X⟩).w
-  | β_hom X Y => exact map_β_hom_comp_wordIso_hom X Y
-  | β_inv X Y =>
-    exact (CommSq.horiz_inv (f := F.mapIso (β_ X Y)) (i := G.mapIso (β_ X Y))
-      ⟨map_β_hom_comp_wordIso_hom X Y⟩).w
-  | coupon g => exact he g
-  | comp f g hf hg =>
-    rw [Functor.map_comp, Functor.map_comp, Category.assoc, hg, reassoc_of% hf]
-  | whiskerLeft X f hf =>
-    simp only [wordIso_tensor_hom, Functor.Monoidal.map_whiskerLeft, Category.assoc,
-      Functor.Monoidal.μ_δ_assoc, whiskerLeft_comp_tensorHom_assoc,
-      tensorHom_comp_whiskerLeft_assoc, hf]
-  | whiskerRight f X hf =>
-    simp only [wordIso_tensor_hom, Functor.Monoidal.map_whiskerRight, Category.assoc,
-      Functor.Monoidal.μ_δ_assoc, whiskerRight_comp_tensorHom_assoc,
-      tensorHom_comp_whiskerRight_assoc, hf]
+  obtain ⟨f', rfl⟩ := ofBraidedGen_map_surjective f
+  exact FreeMonoidal.map_comp_wordIso_hom (S := braidedGenSignature S)
+    (F := ofBraidedGen S ⋙ F) (G := ofBraidedGen S ⋙ G)
+    (map_braidedGenCoupon_comp_wordIso_hom he) f'
 
 /-- Two strong braided functors out of the free braided monoidal category on `S` that agree up to
 isomorphisms `e` on the generating objects, compatibly with every coupon, are isomorphic by a
@@ -786,19 +947,37 @@ theorem monoidalNatIso_inv_app (X : S.FreeBraided) :
 
 /-- At a generating object `of a`, the forward component of `monoidalNatIso he` is `(e a).hom`. -/
 theorem monoidalNatIso_hom_app_of (a : S.Obj) :
-    (monoidalNatIso he).hom.app (of a) = (e a).hom := (rfl)
+    (monoidalNatIso he).hom.app (of a) = (e a).hom :=
+  congrArg Iso.hom (wordIso_of F G e a)
 
 /-- At a generating object `of a`, the inverse component of `monoidalNatIso he` is `(e a).inv`. -/
 theorem monoidalNatIso_inv_app_of (a : S.Obj) :
-    (monoidalNatIso he).inv.app (of a) = (e a).inv := (rfl)
+    (monoidalNatIso he).inv.app (of a) = (e a).inv :=
+  congrArg Iso.inv (wordIso_of F G e a)
 
 /-- The forward natural transformation of `monoidalNatIso he` is monoidal. -/
 instance : NatTrans.IsMonoidal (monoidalNatIso he).hom where
   unit := by
-    rw [monoidalNatIso_hom_app, wordIso_tensorUnit_hom, Functor.Monoidal.ε_η_assoc]
+    let e' : ∀ a : (braidedGenSignature S).Obj,
+        (ofBraidedGen S ⋙ F).obj (FreeMonoidal.of a) ≅
+          (ofBraidedGen S ⋙ G).obj (FreeMonoidal.of a) := e
+    have h := NatTrans.IsMonoidal.unit
+      (τ := (FreeMonoidal.monoidalNatIso (e := e')
+        (map_braidedGenCoupon_comp_wordIso_hom he)).hom)
+    rw [FreeMonoidal.monoidalNatIso_hom_app] at h
+    exact (congrArg (· ≫ _) (ofBraidedGen_comp_ε F).symm).trans
+      (h.trans (ofBraidedGen_comp_ε G))
   tensor X Y := by
-    rw [monoidalNatIso_hom_app, wordIso_tensor_hom, Functor.Monoidal.μ_δ_assoc,
-      monoidalNatIso_hom_app, monoidalNatIso_hom_app]
+    let e' : ∀ a : (braidedGenSignature S).Obj,
+        (ofBraidedGen S ⋙ F).obj (FreeMonoidal.of a) ≅
+          (ofBraidedGen S ⋙ G).obj (FreeMonoidal.of a) := e
+    have h := NatTrans.IsMonoidal.tensor
+      (τ := (FreeMonoidal.monoidalNatIso (e := e')
+        (map_braidedGenCoupon_comp_wordIso_hom he)).hom) ⟨X.as⟩ ⟨Y.as⟩
+    rw [FreeMonoidal.monoidalNatIso_hom_app, FreeMonoidal.monoidalNatIso_hom_app,
+      FreeMonoidal.monoidalNatIso_hom_app] at h
+    exact (congrArg (· ≫ _) (ofBraidedGen_comp_μ F ⟨X.as⟩ ⟨Y.as⟩).symm).trans
+      (h.trans (congrArg (_ ≫ ·) (ofBraidedGen_comp_μ G ⟨X.as⟩ ⟨Y.as⟩)))
 
 end Uniqueness
 
