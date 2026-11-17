@@ -138,22 +138,6 @@ theorem localHomologySystemCone_π_app_injective [CompactSpace M] [ConnectedSpac
   let f : x ⟶ y := Path.Homotopic.Quotient.mk (PathConnectedSpace.somePath x.as y.as)
   rw [← Cone.w _ f, ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, h]
 
-/-- **A top-dimensional class of a compact connected manifold is determined at one point**: the map
-`Hₙ(M; N) → Hₙ(M, M ∖ {x}; N)` to the local homology at any point `x` is injective. -/
-theorem singularHomologyToLocalHomology_injective [CompactSpace M] [ConnectedSpace M] {n : ℕ}
-    (hn : finrank ℝ E = n) (x : M) :
-    Function.Injective (singularHomologyToLocalHomology N x n) := by
-  have : IsEmpty (TopPair.ofSubset ((univ : Set (TopCat.of M))ᶜ)).snd := by
-    simp only [compl_univ]
-    exact inferInstanceAs (IsEmpty (∅ : Set M))
-  have hπ : IsIso ((TopPair.ofSubset ((univ : Set (TopCat.of M))ᶜ)).singularHomologyπ
-      (C := ModuleCat.{w} Λ) N n) := inferInstance
-  intro γ δ h
-  rw [singularHomologyToLocalHomology_apply, singularHomologyToLocalHomology_apply,
-    ← localHomologySystemCone_π_app N M E n (FundamentalGroupoid.mk x)] at h
-  exact ((ConcreteCategory.isIso_iff_bijective _).1 hπ).1
-    (localHomologySystemCone_π_app_injective N hn (FundamentalGroupoid.mk x) h)
-
 /-- **A top-dimensional class of a compact manifold is determined on a set meeting every path
 component**: two classes of `Hₙ(M; N)` are equal as soon as their images in the local homology
 `Hₙ(M, M ∖ {x}; N)` agree at every point `x` of a set `D` from which every point of `M` can be
@@ -179,6 +163,17 @@ theorem singularHomology_ext_of_singularHomologyToLocalHomology [CompactSpace M]
     ← localHomologySystemCone_π_app N M E n (FundamentalGroupoid.mk x)] at hx'
   rw [← Cone.w _ f]
   exact congrArg (ConcreteCategory.hom ((localHomologySystem N M E n).map f)) hx'
+
+/-- **A top-dimensional class of a compact connected manifold is determined at one point**: the map
+`Hₙ(M; N) → Hₙ(M, M ∖ {x}; N)` to the local homology at any point `x` is injective. -/
+theorem singularHomologyToLocalHomology_injective [CompactSpace M] [ConnectedSpace M] {n : ℕ}
+    (hn : finrank ℝ E = n) (x : M) :
+    Function.Injective (singularHomologyToLocalHomology N x n) := by
+  have := ChartedSpace.locallyPathConnectedSpace E M
+  have := PathConnectedSpace.of_locallyPathConnectedSpace (X := M)
+  intro γ δ h
+  exact singularHomology_ext_of_singularHomologyToLocalHomology N hn (D := {x})
+    (fun y ↦ ⟨x, rfl, PathConnectedSpace.joined x y⟩) (by rintro _ rfl; exact h)
 
 /-- **The image of the top homology of a compact manifold in local homology.** A local
 class at `x` is the restriction of a class of `Hₙ(M, M ∖ M; N)` exactly when it is fixed by the

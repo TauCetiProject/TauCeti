@@ -40,9 +40,9 @@ This is the **gluing condition** of the representing chain systems of Barraud an
 of a compactified trajectory space `M x y`, the faces are the products `M x z × M z y` of
 lower-dimensional trajectory spaces, the `cᵢ` are the cross products of their fundamental chains
 relative to the boundary, and `μ` is the image of the fundamental class `[M x y, ∂M x y]` under the
-connecting morphism. What remains to be checked for a concrete manifold with corners is that this
-image has, at a generic point of each face, the local image of the product of the fundamental
-classes of the factors, with the sign of the boundary orientation.
+connecting morphism. The gluing condition then follows by comparing, at an interior point of each
+face, the local image of this class with the image of the product of the fundamental classes of
+the factors, taken with the sign of the boundary orientation.
 
 ## Main results
 
@@ -185,18 +185,10 @@ theorem homologyπ_eq_of_iCycles_eq_sum (hn : finrank ℝ E = n)
         (HomologicalComplex.homologyMap
           (TopPair.cubicalChainComplexMap k (TopPair.ofSubsetMap (f i) hA)) n).hom (a i)) :
     (((normalizedCubicalChainComplex k).obj (TopCat.of Y)).homologyπ n).hom z = μ := by
-  refine cubicalHomology_ext_of_localHomology hn
-    (D := {x | ∃ i ∈ s, ∃ hA : MapsTo (f i) (A i) ({x}ᶜ : Set (TopCat.of Y)),
-      (∀ j ∈ s, j ≠ i → x ∉ range (f j)) ∧
-        (HomologicalComplex.homologyMap (cokernel.π ((normalizedCubicalChainComplex k).map
-          (TopPair.ofSubset ({x}ᶜ : Set (TopCat.of Y))).map)) n).hom μ =
-        (HomologicalComplex.homologyMap
-          (TopPair.cubicalChainComplexMap k (TopPair.ofSubsetMap (f i) hA)) n).hom (a i)})
-    (fun y ↦ ?_) ?_
-  · obtain ⟨x, hxy, hx⟩ := hμ y
-    exact ⟨x, hx, hxy⟩
-  · rintro x ⟨i, hi, hA, hj, hloc⟩
-    rw [homologyMap_cokernel_π_homologyπ_of_iCycles_eq_sum hc hz hi hA hj, hloc]
+  refine cubicalHomology_ext_of_localHomology hn (D := {x | _})
+    (fun y ↦ (hμ y).imp fun _ ⟨hxy, hx⟩ ↦ ⟨hx, hxy⟩) ?_
+  rintro x ⟨i, hi, hA, hj, hloc⟩
+  rw [homologyMap_cokernel_π_homologyπ_of_iCycles_eq_sum hc hz hi hA hj, hloc]
 
 end Detect
 
