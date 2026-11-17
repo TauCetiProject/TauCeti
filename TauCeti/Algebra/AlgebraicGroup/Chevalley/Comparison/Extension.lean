@@ -53,22 +53,14 @@ variable {t : DynkinType} {ht : t.Valid} (D E : ChevalleyDatum t ht)
 include hf
 
 /-- A root-preserving elementary comparison takes values in the target elementary subgroup. -/
-theorem range_elementaryHom_le : f.range ≤ E.elementarySubgroup A := by
-  let i := MulEquiv.subgroupCongr (D.elementarySubgroup_def A)
-  let F := f.comp i.symm.toMonoidHom
-  rintro _ ⟨a, rfl⟩
-  suffices ∀ x hx, F ⟨x, hx⟩ ∈ E.elementarySubgroup A by
-    exact this (i a) (i a).property
-  intro x hx
-  induction hx using Subgroup.closure_induction with
-  | mem x hx =>
-    obtain ⟨γ, u, rfl⟩ := Set.mem_iUnion.mp hx
-    -- subgroupCongr changes only membership proofs, so F agrees with f on root values.
-    exact (hf γ u) ▸ E.rootSubgroupPoints_mem_elementarySubgroup A γ u
-  | one => exact (map_one F).symm ▸ (E.elementarySubgroup A).one_mem
-  | mul x y hx hy ihx ihy =>
-    exact (map_mul F ⟨x, hx⟩ ⟨y, hy⟩).symm ▸ (E.elementarySubgroup A).mul_mem ihx ihy
-  | inv x hx ihx => exact (map_inv F ⟨x, hx⟩).symm ▸ (E.elementarySubgroup A).inv_mem ihx
+theorem range_le_elementarySubgroup : f.range ≤ E.elementarySubgroup A := by
+  rw [f.range_eq_map, Subgroup.map_le_iff_le_comap,
+    ← Subgroup.map_subtype_le_map_subtype, Subgroup.map_top, Subgroup.range_subtype,
+    D.elementarySubgroup_le_iff]
+  intro γ u
+  refine ⟨⟨_, D.rootSubgroupPoints_mem_elementarySubgroup A γ u⟩, ?_, rfl⟩
+  exact Subgroup.mem_comap.mpr ((hf γ u) ▸
+    E.rootSubgroupPoints_mem_elementarySubgroup A γ u)
 
 private theorem comp_normalizerMonoidHom_torusPoints (s : Fin t.rank → Aˣ) :
     f.comp (((D.elementarySubgroup A).normalizerMonoidHom.comp
@@ -234,7 +226,7 @@ theorem range_extendElementaryHom_le :
   rw [hx, D.extendElementaryHom_mul_torusPoints E h f hf hcompat ⟨a, ha⟩ s]
   apply (E.extendedElementarySubgroup A).mul_mem
   · exact E.elementarySubgroup_le_extendedElementarySubgroup A
-      (D.range_elementaryHom_le E f hf ⟨⟨a, ha⟩, rfl⟩)
+      (D.range_le_elementarySubgroup E f hf ⟨⟨a, ha⟩, rfl⟩)
   · exact E.torusPoints_mem_extendedElementarySubgroup A _
 
 end
