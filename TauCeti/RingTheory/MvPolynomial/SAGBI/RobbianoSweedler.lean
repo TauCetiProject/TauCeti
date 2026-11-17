@@ -124,77 +124,33 @@ theorem aeval_X_zero_eq_aeval_zero_X_of_mem_robbianoSweedlerSubalgebra
     fin_cases i <;> simp
   exact hle hf
 
-/-- A polynomial in `MvPolynomial (Fin 2) R` whose `lex`-leading exponent vanishes at `0` involves
-only the variable `X 1`. -/
-private theorem eq_single_one_of_mem_support_of_degree_zero_eq_zero
-    {f : MvPolynomial (Fin 2) R} (h0 : (lex.degree f) 0 = 0) {u : Fin 2 →₀ ℕ}
-    (hu : u ∈ f.support) : u = Finsupp.single 1 (u 1) := by
-  have hsupp : (u.support : Set (Fin 2)) ⊆ Set.Ici (1 : Fin 2) := by
-    refine coe_support_subset_of_lex_le (IsUpperSet.Ici (1 : Fin 2)) (lex.le_degree hu) ?_
+/-- No nonconstant pure polynomial in `X 1` belongs to `robbianoSweedlerSubalgebra R`: every
+element whose `lex`-leading exponent vanishes at `0` has `lex`-degree `0`. -/
+theorem degree_eq_zero_of_mem_robbianoSweedlerSubalgebra {f : MvPolynomial (Fin 2) R}
+    (hf : f ∈ robbianoSweedlerSubalgebra R) (h0 : (lex.degree f) 0 = 0) :
+    lex.degree f = 0 := by
+  have hrange : Set.range (fun _ : Unit ↦ (1 : Fin 2)) = Set.Ici (1 : Fin 2) := by
+    ext i
+    fin_cases i <;> simp
+  have hsupp : ↑(lex.degree f).support ⊆ Set.range (fun _ : Unit ↦ (1 : Fin 2)) := by
     intro i hi
     fin_cases i
     · exact absurd h0 (Finsupp.mem_support_iff.1 hi)
-    · exact Set.mem_Ici.2 le_rfl
-  ext i
-  fin_cases i
-  · rw [Fin.zero_eta, Finsupp.single_eq_of_ne Fin.zero_ne_one]
-    by_contra hu0
-    have hmem : (1 : Fin 2) ≤ 0 := hsupp (Finsupp.mem_support_iff.2 hu0)
-    omega
-  · simp
-
-/-- Evaluating `(X 0, X 1) ↦ (0, X 0)` turns `c X 1 ^ m` into `c X 0 ^ m`. -/
-private theorem aeval_zero_X_monomial_single_one (m : ℕ) (c : R) :
-    aeval ![(0 : MvPolynomial (Fin 2) R), X 0] (monomial (Finsupp.single 1 m) c) =
-      monomial (Finsupp.single 0 m) c := by
-  rw [aeval_monomial, algebraMap_eq, Finsupp.prod_single_index (by simp), Matrix.cons_val_one,
-    Matrix.cons_val_zero, X, monomial_pow, C_mul_monomial, one_pow, mul_one, Finsupp.smul_single,
-    smul_eq_mul, mul_one]
-
-/-- No nonconstant pure polynomial in `X 1` belongs to `robbianoSweedlerSubalgebra R`: every
-nonzero element whose `lex`-leading exponent vanishes at `0` has `lex`-degree `0`. -/
-theorem degree_eq_zero_of_mem_robbianoSweedlerSubalgebra {f : MvPolynomial (Fin 2) R}
-    (hf : f ∈ robbianoSweedlerSubalgebra R) (hf0 : f ≠ 0) (h0 : (lex.degree f) 0 = 0) :
-    lex.degree f = 0 := by
-  classical
-  set d := (lex.degree f) 1
-  by_contra hd0
-  have hd : Finsupp.single (0 : Fin 2) d ≠ 0 := fun h ↦ hd0 <| by
-    have hd' : d = 0 := by simpa using congrArg (fun u : Fin 2 →₀ ℕ ↦ u 0) h
-    ext i
-    fin_cases i
-    · exact h0
-    · exact hd'
-  have heval := congrArg (fun p : MvPolynomial (Fin 2) R ↦ p.coeff (Finsupp.single 0 d))
-    (aeval_X_zero_eq_aeval_zero_X_of_mem_robbianoSweedlerSubalgebra hf)
-  have hleft :
-      (aeval ![X 0, (0 : MvPolynomial (Fin 2) R)] f).coeff (Finsupp.single 0 d) = 0 := by
-    conv_lhs => rw [f.as_sum]
-    rw [map_sum, coeff_sum]
-    refine Finset.sum_eq_zero fun u hu ↦ ?_
-    rw [eq_single_one_of_mem_support_of_degree_zero_eq_zero h0 hu]
-    rcases eq_or_ne (u 1) 0 with hu1 | hu1
-    · simp [hu1, coeff_C, hd.symm]
-    · simp [aeval_monomial, Finsupp.prod_single_index, zero_pow hu1]
-  have hright : (aeval ![(0 : MvPolynomial (Fin 2) R), X 0] f).coeff (Finsupp.single 0 d) =
-      f.coeff (lex.degree f) := by
-    conv_lhs => rw [f.as_sum]
-    rw [map_sum, coeff_sum]
-    have hmem : lex.degree f ∈ f.support := lex.degree_mem_support hf0
-    rw [Finset.sum_eq_single (lex.degree f)]
-    · conv_lhs => rw [eq_single_one_of_mem_support_of_degree_zero_eq_zero h0 hmem]
-      rw [aeval_zero_X_monomial_single_one, coeff_monomial, ite_eq_left_iff.2 fun h ↦ absurd rfl h,
-        ← eq_single_one_of_mem_support_of_degree_zero_eq_zero h0 hmem]
-    · intro u hu hne
-      conv_lhs => rw [eq_single_one_of_mem_support_of_degree_zero_eq_zero h0 hu]
-      rw [aeval_zero_X_monomial_single_one, coeff_monomial, ite_eq_right_iff]
-      intro heq
-      have hu1 : u 1 = d := by simpa using congrArg (fun v : Fin 2 →₀ ℕ ↦ v 0) heq
-      exact absurd (by
-        rw [eq_single_one_of_mem_support_of_degree_zero_eq_zero h0 hu,
-          eq_single_one_of_mem_support_of_degree_zero_eq_zero h0 hmem, hu1]) hne
-    · exact fun h ↦ absurd hmem h
-  exact (lex.leadingCoeff_ne_zero_iff.2 hf0) (hright.symm.trans heval.symm |>.trans hleft)
+    · exact ⟨(), rfl⟩
+  obtain ⟨p, rfl⟩ := lex.exists_rename_eq_of_coe_support_degree_subset
+    (fun _ _ hab hb ↦ by
+      rw [hrange] at hb ⊢
+      exact coe_support_subset_of_lex_le (IsUpperSet.Ici 1) hab hb) hsupp
+  have heq := aeval_X_zero_eq_aeval_zero_X_of_mem_robbianoSweedlerSubalgebra hf
+  rw [aeval_rename, aeval_rename] at heq
+  have hleft : (![X 0, (0 : MvPolynomial (Fin 2) R)] ∘ fun _ : Unit ↦ (1 : Fin 2)) =
+      fun _ ↦ 0 := funext fun _ ↦ by simp
+  have hright : (![(0 : MvPolynomial (Fin 2) R), X 0] ∘ fun _ : Unit ↦ (1 : Fin 2)) =
+      X ∘ fun _ : Unit ↦ (0 : Fin 2) := funext fun _ ↦ by simp
+  rw [hleft, hright, aeval_zero', algebraMap_eq, ← rename_eq_aeval,
+    ← rename_C (fun _ : Unit ↦ (0 : Fin 2))] at heq
+  have hp : p = C (constantCoeff p) := (rename_injective _ (fun _ _ _ ↦ rfl) heq).symm
+  rw [hp, rename_C, degree_C]
 
 end CommSemiring
 
@@ -245,8 +201,7 @@ theorem single_add_single_mem_leadingExponents_robbianoSweedler (n : ℕ) :
   classical
   have hmon : (X 0 * X 1 ^ (n + 1) : MvPolynomial (Fin 2) R) =
       monomial (Finsupp.single 0 1 + Finsupp.single 1 (n + 1)) 1 := by
-    rw [X, X, monomial_pow, monomial_mul_monomial, one_pow, mul_one, Finsupp.smul_single,
-      smul_eq_mul, mul_one]
+    rw [monomial_add_single, ← X]
   refine mem_leadingExponents_iff.2
     ⟨X 0 * X 1 ^ (n + 1), mul_X_one_pow_mem_robbianoSweedlerSubalgebra n, ?_, ?_⟩
   · rw [hmon]
@@ -258,9 +213,9 @@ theorem single_add_single_mem_leadingExponents_robbianoSweedler (n : ℕ) :
 theorem pos_apply_zero_of_mem_leadingExponents_robbianoSweedler {a : Fin 2 →₀ ℕ}
     (ha : a ∈ lex.leadingExponents (robbianoSweedlerSubalgebra R)) (ha0 : a ≠ 0) :
     0 < a 0 := by
-  obtain ⟨f, hf, hf0, rfl⟩ := mem_leadingExponents_iff.1 ha
+  obtain ⟨f, hf, -, rfl⟩ := mem_leadingExponents_iff.1 ha
   exact Nat.pos_of_ne_zero fun h0 ↦
-    ha0 (degree_eq_zero_of_mem_robbianoSweedlerSubalgebra hf hf0 h0)
+    ha0 (degree_eq_zero_of_mem_robbianoSweedlerSubalgebra hf h0)
 
 /-- The monoid of `lex`-leading exponents of `robbianoSweedlerSubalgebra R` is not finitely
 generated, even though `robbianoSweedlerSubalgebra R` is generated as an `R`-algebra by three
@@ -330,42 +285,6 @@ end RobbianoSweedler
 
 section RobbianoSweedlerInfinite
 
-/-- For the lexicographic order on `Fin 2 →₀ ℕ`, `Finsupp.single 1 1 ≺[lex] Finsupp.single 0 1`
-(`X 1 ≺[lex] X 0`). -/
-private theorem single_one_lt_single_zero_lex :
-    Finsupp.single (1 : Fin 2) 1 ≺[lex] Finsupp.single 0 1 := by
-  rw [lex_lt_iff, Finsupp.Lex.lt_iff]
-  refine ⟨0, fun j hj ↦ (Fin.not_lt_zero j hj).elim, ?_⟩
-  simp
-
-private theorem degree_X_zero_add_X_one {R : Type*} [CommSemiring R] [Nontrivial R] :
-    lex.degree (X 0 + X 1 : MvPolynomial (Fin 2) R) = Finsupp.single 0 1 := by
-  rw [lex.degree_add_of_lt (by simpa [lex.degree_X] using single_one_lt_single_zero_lex),
-    lex.degree_X]
-
-private theorem monic_X_zero_add_X_one {R : Type*} [CommSemiring R] :
-    lex.Monic (X 0 + X 1 : MvPolynomial (Fin 2) R) := by
-  nontriviality R
-  exact lex.monic_X.add_of_lt (by simpa [lex.degree_X] using single_one_lt_single_zero_lex)
-
-private theorem X_zero_mul_X_one_pow_eq_monomial {R : Type*} [CommSemiring R] (m : ℕ) :
-    (X 0 * X 1 ^ m : MvPolynomial (Fin 2) R) =
-      monomial (Finsupp.single 0 1 + Finsupp.single 1 m) 1 := by
-  rw [X, X, monomial_pow, monomial_mul_monomial, one_pow, mul_one, Finsupp.smul_single,
-    smul_eq_mul, mul_one]
-
-private theorem degree_X_zero_mul_X_one_pow {R : Type*} [CommSemiring R] [Nontrivial R] (m : ℕ) :
-    lex.degree (X 0 * X 1 ^ m : MvPolynomial (Fin 2) R) =
-      Finsupp.single 0 1 + Finsupp.single 1 m := by
-  classical
-  rw [X_zero_mul_X_one_pow_eq_monomial, degree_monomial]
-  simp
-
-private theorem monic_X_zero_mul_X_one_pow {R : Type*} [CommSemiring R] (m : ℕ) :
-    lex.Monic (X 0 * X 1 ^ m : MvPolynomial (Fin 2) R) := by
-  rw [X_zero_mul_X_one_pow_eq_monomial]
-  exact lex.monic_monomial_one
-
 /-- The explicit polynomial family `Fin (n + 3) → MvPolynomial (Fin 2) R` whose index `0` entry is
 `X 0 + X 1` and whose index `i > 0` entry is `X 0 * X 1 ^ (i : ℕ)`. Over a nontrivial commutative
 ring (in particular, a field), this family lies in `robbianoSweedlerSubalgebra R` and realizes
@@ -387,8 +306,14 @@ theorem robbianoSweedlerStage_zero_eq (R : Type*) [CommSemiring R] :
 semiring. -/
 theorem monic_robbianoSweedlerStage {R : Type*} [CommSemiring R]
     (n : ℕ) (i : Fin (n + 3)) : lex.Monic (robbianoSweedlerStage R n i) := by
-  by_cases hi : (i : ℕ) = 0 <;>
-    simp [robbianoSweedlerStage, hi, monic_X_zero_add_X_one, monic_X_zero_mul_X_one_pow]
+  by_cases hi : (i : ℕ) = 0
+  · simp only [robbianoSweedlerStage, hi, ↓reduceIte]
+    nontriviality R
+    exact lex.monic_X.add_of_lt (by
+      rw [lex.degree_X, lex.degree_X, lex_lt_iff, Finsupp.Lex.single_lt_iff]
+      exact zero_lt_one)
+  · simp only [robbianoSweedlerStage, hi, ↓reduceIte]
+    exact lex.monic_X.mul lex.monic_X.pow
 
 /-- All three initial generators of `robbianoSweedlerGen R` are `lex`-monic over any commutative
 semiring. -/
@@ -403,8 +328,17 @@ theorem degree_robbianoSweedlerStage {R : Type*} [CommSemiring R] [Nontrivial R]
     (n : ℕ) (i : Fin (n + 3)) :
     lex.degree (robbianoSweedlerStage R n i) =
       Finsupp.single 0 1 + Finsupp.single 1 (i : ℕ) := by
-  by_cases hi : (i : ℕ) = 0 <;>
-    simp [robbianoSweedlerStage, hi, degree_X_zero_add_X_one, degree_X_zero_mul_X_one_pow]
+  classical
+  by_cases hi : (i : ℕ) = 0
+  · simp only [robbianoSweedlerStage, hi, ↓reduceIte, Finsupp.single_zero, add_zero]
+    rw [lex.degree_add_of_lt (by
+      rw [lex.degree_X, lex.degree_X, lex_lt_iff, Finsupp.Lex.single_lt_iff]
+      exact zero_lt_one), lex.degree_X]
+  · simp only [robbianoSweedlerStage, hi, ↓reduceIte]
+    have hmon : (X 0 * X 1 ^ (i : ℕ) : MvPolynomial (Fin 2) R) =
+        monomial (Finsupp.single 0 1 + Finsupp.single 1 (i : ℕ)) 1 := by
+      rw [monomial_add_single, ← X]
+    rw [hmon, degree_monomial, ite_eq_right one_ne_zero]
 
 /-- The toric binomial `Y 0 * Y (n + 2) - Y 1 * Y (n + 1)` at stage `n` of
 `robbianoSweedlerStage`. -/
@@ -432,11 +366,7 @@ theorem aeval_robbianoSweedlerStage_binomial {R : Type*} [CommRing R] (n : ℕ) 
       aeval (robbianoSweedlerStage R n)
         (monomial (Finsupp.single a 1 + Finsupp.single b 1) (1 : R)) =
         robbianoSweedlerStage R n a * robbianoSweedlerStage R n b := by
-    have hmon : (monomial (Finsupp.single a 1 + Finsupp.single b 1) (1 : R)) =
-        monomial (Finsupp.single a 1) 1 * monomial (Finsupp.single b 1) 1 := by
-      rw [monomial_mul_monomial, one_mul]
-    rw [hmon, map_mul, aeval_monomial, aeval_monomial, map_one, one_mul, one_mul,
-      Finsupp.prod_single_index (by simp), Finsupp.prod_single_index (by simp), pow_one, pow_one]
+    rw [monomial_add_single, ← X, pow_one, map_mul, aeval_X, aeval_X]
   rw [robbianoSweedlerBinomial, map_sub, hmul, hmul]
   have h0 : robbianoSweedlerStage R n 0 = X 0 + X 1 := by simp [robbianoSweedlerStage]
   have hlast : robbianoSweedlerStage R n ⟨n + 2, by omega⟩ = X 0 * X 1 ^ (n + 2) := by
@@ -471,7 +401,10 @@ theorem isSubduction_robbianoSweedlerStage {R : Type*} [CommRing R] [Nontrivial 
       omega
   refine ⟨by simp [aeval_robbianoSweedlerStage_binomial], by simp, fun a ha hmem ↦ ?_,
     by simp [aeval_robbianoSweedlerStage_binomial]⟩
-  rw [X_zero_mul_X_one_pow_eq_monomial] at ha
+  have hmon : (X 0 * X 1 ^ (n + 3) : MvPolynomial (Fin 2) R) =
+      monomial (Finsupp.single 0 1 + Finsupp.single 1 (n + 3)) 1 := by
+    rw [monomial_add_single, ← X]
+  rw [hmon] at ha
   have ha' := Finset.mem_singleton.1 (support_monomial_subset ha)
   have hle := hbound a hmem
   rw [ha'] at hle
@@ -499,7 +432,7 @@ theorem range_robbianoSweedlerStage_succ (n : ℕ) :
     Set.range (robbianoSweedlerStage k (n + 1)) =
       insert (lex.monicNormalize (X 0 * X 1 ^ (n + 3)))
         (Set.range (robbianoSweedlerStage k n)) := by
-  rw [(monic_X_zero_mul_X_one_pow (R := k) (n + 3)).monicNormalize_eq]
+  rw [(lex.monic_X.mul lex.monic_X.pow).monicNormalize_eq]
   ext f
   constructor
   · rintro ⟨i, rfl⟩
@@ -519,7 +452,7 @@ theorem adjoin_leadingTerm_robbianoSweedlerStage_lt (n : ℕ) :
       Algebra.adjoin k (lex.leadingTerm '' Set.range (robbianoSweedlerStage k (n + 1))) := by
   rw [range_robbianoSweedlerStage_succ]
   exact (isSubduction_robbianoSweedlerStage (R := k) n).adjoin_leadingTerm_lt
-    (monic_X_zero_mul_X_one_pow (R := k) (n + 3)).ne_zero
+    (lex.monic_X.mul lex.monic_X.pow).ne_zero
 
 end Field
 

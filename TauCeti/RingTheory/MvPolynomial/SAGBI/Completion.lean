@@ -812,9 +812,9 @@ theorem exists_sagbiCompletion_succ (c₀ : ι₀ → MvPolynomial σ k) (n : �
 @[simp]
 theorem range_sagbiCompletionFamily_zero (c₀ : ι₀ → MvPolynomial σ k) :
     Set.range (m.sagbiCompletionFamily c₀ 0) = Set.range c₀ := by
-  rw [show m.sagbiCompletionFamily c₀ 0 = c₀ ∘ m.sagbiCompletionIndexZeroEquiv c₀ from
-    funext fun i ↦ m.sagbiCompletionFamily_zero i]
-  exact (m.sagbiCompletionIndexZeroEquiv c₀).surjective.range_comp c₀
+  ext f
+  simp only [Set.mem_range, m.sagbiCompletionFamily_zero]
+  exact (m.sagbiCompletionIndexZeroEquiv c₀).surjective.exists
 
 /-- The stage-inclusion map `m.sagbiCompletionIndexInclusion c₀ n` is injective. -/
 theorem sagbiCompletionIndexInclusion_injective (c₀ : ι₀ → MvPolynomial σ k) (n : ℕ) :
@@ -829,8 +829,8 @@ theorem sagbiCompletionFamily_succ_inclusion (n : ℕ) (i : m.sagbiCompletionInd
     m.sagbiCompletionFamily c₀ (n + 1) (m.sagbiCompletionIndexInclusion c₀ n i) =
       m.sagbiCompletionFamily c₀ n i := by
   obtain ⟨_, _, _, e, -, -, he_inl, hfam, -⟩ := m.exists_sagbiCompletion_succ c₀ n
-  rw [← he_inl]
-  exact congrFun hfam (Sum.inl i)
+  rw [← he_inl, ← Function.comp_apply (f := m.sagbiCompletionFamily c₀ (n + 1)), hfam,
+    Sum.elim_inl]
 
 /-- Composing `m.sagbiCompletionRetract c₀ (n + 1)` with variable renaming along
 `m.sagbiCompletionIndexInclusion c₀ n` recovers `m.sagbiCompletionRetract c₀ n`. -/
@@ -866,10 +866,10 @@ theorem monic_sagbiCompletionFamily (hc₀ : ∀ i, m.Monic (c₀ i)) (n : ℕ)
   | succ n ih =>
     obtain ⟨_, _, r, e, -, -, -, hfam, -⟩ := m.exists_sagbiCompletion_succ c₀ n
     obtain ⟨x, rfl⟩ := e.surjective i
-    rw [show m.sagbiCompletionFamily c₀ (n + 1) (e x) = _ from congrFun hfam x]
+    rw [← Function.comp_apply (f := m.sagbiCompletionFamily c₀ (n + 1)), hfam]
     cases x with
-    | inl j => exact ih j
-    | inr l => exact m.monic_monicNormalize l.2
+    | inl j => rw [Sum.elim_inl]; exact ih j
+    | inr l => rw [Sum.elim_inr, Function.comp_apply]; exact m.monic_monicNormalize l.2
 
 /-- Every stage's presentation retraction `m.sagbiCompletionRetract c₀ n` is surjective. -/
 theorem sagbiCompletionRetract_surjective (c₀ : ι₀ → MvPolynomial σ k) (n : ℕ) :
@@ -881,8 +881,7 @@ theorem sagbiCompletionRetract_surjective (c₀ : ι₀ → MvPolynomial σ k) (
   | succ n ih =>
     obtain ⟨_, _, _, e, -, -, -, -, hret⟩ := m.exists_sagbiCompletion_succ c₀ n
     refine Function.Surjective.of_comp (g := rename e) ?_
-    change Function.Surjective ((m.sagbiCompletionRetract c₀ (n + 1)).comp (rename e))
-    rw [hret]
+    rw [← AlgHom.coe_comp, hret, AlgHom.coe_comp]
     exact ih.comp subductionRetract_surjective
 
 /-- Evaluating `c₀` after `m.sagbiCompletionRetract c₀ n` equals evaluating stage `n` of
@@ -925,7 +924,9 @@ theorem isFairSAGBISequence_sagbiCompletionFamily (hc₀ : ∀ i, m.Monic (c₀ 
     have hs := hsub fun i ↦ (m.monic_sagbiCompletionFamily hc₀ n i).ne_zero
     refine ⟨(B : Set _), hB, fun p hp ↦ ?_⟩
     refine ⟨n, le_rfl, n + 1, Nat.le_succ n, Q ⟨p, hp⟩, r ⟨p, hp⟩, hs ⟨p, hp⟩, fun hr ↦ ?_⟩
-    exact ⟨e (Sum.inr ⟨⟨p, hp⟩, hr⟩), congrFun hfam (Sum.inr ⟨⟨p, hp⟩, hr⟩)⟩
+    refine ⟨e (Sum.inr ⟨⟨p, hp⟩, hr⟩), ?_⟩
+    rw [← Function.comp_apply (f := m.sagbiCompletionFamily c₀ (n + 1)), hfam, Sum.elim_inr,
+      Function.comp_apply]
 
 /-- **Certified finite SAGBI completion of a finite nonzero family.** If
 `b : ι₀ → MvPolynomial σ k` is a finite family of nonzero polynomials whose generated subalgebra
