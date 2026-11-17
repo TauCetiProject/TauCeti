@@ -21,17 +21,17 @@ of `F`.
 
 This file proves the local edge form of Menger's theorem for directed networks with finitely many
 vertices and arrows: the largest number of arrow-disjoint `s`–`t` paths equals the least number of
-arrows separating `t` from `s`. Weak duality, that every finite arrow-disjoint family of `s`–`t`
-walks has at most as many members as every finite separating set of arrows, needs no finiteness of
-the vertex or arrow types: each member traverses an arrow of the separating set, and different
-members traverse different arrows.
+arrows separating `t` from `s`. Weak duality, that every arrow-disjoint family of `s`–`t` walks is
+finite and has at most as many members as every finite separating set of arrows, needs no
+finiteness of the vertex or arrow types, nor of the family: each member traverses an arrow of the
+separating set, and different members traverse different arrows.
 
 It also proves the set-to-set form for disjoint vertex sets `A` and `B`. An *`A`–`B` path* runs from
 a vertex of `A` to a vertex of `B` and has no other vertex in `A` or `B`; arrow-disjoint `A`–`B`
 paths may share their endpoints. A set of arrows *separates* `B` from `A` when after deleting it no
 vertex of `B` is reachable from a vertex of `A`. The largest number of arrow-disjoint `A`–`B` paths
-equals the least number of arrows separating `B` from `A`; weak duality for finite families and
-finite separating sets again needs no finiteness of the vertex or arrow types.
+equals the least number of arrows separating `B` from `A`; weak duality for families and finite
+separating sets again needs no finiteness of the vertex or arrow types, nor of the family.
 
 Attainment is reduced to the max-flow/min-cut theorem over `ℤ` with capacity one on every arrow,
 between the vertex sets `A` and `B` (`TauCeti.SetFlow.exists_val_eq_arrowSum`). A maximum flow has
@@ -48,13 +48,13 @@ singleton terminal sets `A = {s}` and `B = {t}`.
 * `TauCeti.natCard_sub_one_le_card_of_completeCut`: a finite set of arrows containing every
   arrow across a nontrivial complete directed cut has at least one fewer member than the number
   of vertices.
-* `TauCeti.card_le_card_of_not_reachableWithout`: **weak duality**, a finite arrow-disjoint family
-  of `s`–`t` walks has at most as many members as any finite set of arrows separating `t` from
-  `s`.
+* `TauCeti.card_le_card_of_not_reachableWithout`: **weak duality**, an arrow-disjoint family of
+  `s`–`t` walks is finite and has at most as many members as any finite set of arrows separating
+  `t` from `s`.
 * `TauCeti.SetFlow.exists_paths_card_eq_val`: an integer `A`–`B` flow carrying at most one unit on
   every arrow carries as many arrow-disjoint paths from `A` to `B` as its value.
-* `TauCeti.card_le_card_of_forall_not_reachableWithout`: weak duality for finite arrow-disjoint
-  families of walks from `A` to `B` and finite sets of arrows separating `B` from `A`.
+* `TauCeti.card_le_card_of_forall_not_reachableWithout`: weak duality for arrow-disjoint families
+  of walks from `A` to `B` and finite sets of arrows separating `B` from `A`.
 * `TauCeti.exists_paths_setArrowSeparator_card_eq`: **Menger's theorem** for arrow-disjoint
   directed paths between disjoint vertex sets, in witness form.
 * `TauCeti.forall_exists_reachableWithout_iff_exists_paths`: its predicate form.
@@ -108,29 +108,32 @@ theorem natCard_sub_one_le_card_of_completeCut {C : Set V} (hs : s ∈ C) (ht : 
   nlinarith
 
 /-- **Weak duality for arrow-disjoint set-to-set walks.** A family of walks, each from a vertex of
-`A` to a vertex of `B`, of which no two traverse a common arrow, has at most as many members as any
-set of arrows whose deletion leaves no vertex of `B` reachable from a vertex of `A`. -/
-theorem card_le_card_of_forall_not_reachableWithout {A B : Set V} {ι : Type*} [Fintype ι]
+`A` to a vertex of `B`, of which no two traverse a common arrow, is finite and has at most as many
+members as any finite set of arrows whose deletion leaves no vertex of `B` reachable from a vertex
+of `A`. -/
+theorem card_le_card_of_forall_not_reachableWithout {A B : Set V} {ι : Type*}
     {a b : ι → V} {P : ∀ i, ArrowWalk Q (a i) (b i)} (ha : ∀ i, a i ∈ A) (hb : ∀ i, b i ∈ B)
     (hP : Pairwise fun i j ↦ (P i).arrows.Disjoint (P j).arrows) {F : Finset (Σ x y, Q x y)}
     (hF : ∀ a ∈ A, ∀ b ∈ B, ¬ReachableWithout (F : Set (Σ x y, Q x y)) a b) :
-    Fintype.card ι ≤ #F := by
+    Finite ι ∧ Nat.card ι ≤ #F := by
   -- Each member traverses an arrow of `F`, and different members traverse different arrows.
   have h (i : ι) : ∃ e ∈ (P i).arrows, e ∈ F := by
     by_contra! h
     exact hF _ (ha i) _ (hb i) (reachableWithout_def.2 ⟨P i, fun e he heF ↦ h e he heF⟩)
   choose g hg hgF using h
-  rw [← card_univ]
-  refine card_le_card_of_injOn g (fun i _ ↦ hgF i) fun i _ j _ hij ↦ ?_
-  by_contra hne
-  exact hP hne (hg i) (hij ▸ hg j)
+  have hinj : Function.Injective fun i ↦ (⟨g i, hgF i⟩ : F) := fun i j hij ↦ by
+    by_contra hne
+    have hgij : g i = g j := congrArg Subtype.val hij
+    exact hP hne (hg i) (hgij ▸ hg j)
+  refine ⟨Finite.of_injective _ hinj, ?_⟩
+  simpa using Nat.card_le_card_of_injective _ hinj
 
 /-- **Weak duality for arrow-disjoint walks.** A family of `s`–`t` walks of which no two traverse a
-common arrow has at most as many members as any set of arrows whose deletion leaves `t`
-unreachable from `s`. -/
-theorem card_le_card_of_not_reachableWithout {ι : Type*} [Fintype ι] {P : ι → ArrowWalk Q s t}
+common arrow is finite and has at most as many members as any finite set of arrows whose deletion
+leaves `t` unreachable from `s`. -/
+theorem card_le_card_of_not_reachableWithout {ι : Type*} {P : ι → ArrowWalk Q s t}
     (hP : Pairwise fun i j ↦ (P i).arrows.Disjoint (P j).arrows) {F : Finset (Σ x y, Q x y)}
-    (hF : ¬ReachableWithout (F : Set (Σ x y, Q x y)) s t) : Fintype.card ι ≤ #F :=
+    (hF : ¬ReachableWithout (F : Set (Σ x y, Q x y)) s t) : Finite ι ∧ Nat.card ι ≤ #F :=
   card_le_card_of_forall_not_reachableWithout (A := {s}) (B := {t}) (a := fun _ ↦ s)
     (b := fun _ ↦ t) (P := P) (fun _ ↦ Set.mem_singleton s) (fun _ ↦ Set.mem_singleton t) hP
     (by simpa using hF)
@@ -254,7 +257,7 @@ theorem forall_exists_reachableWithout_iff_exists_paths [Finite V] [∀ x y, Fin
       fun i ↦ hint _, hdisj.comp_of_injective (Fin.castLE_injective hkm)⟩
   · by_contra h
     push Not at h
-    exact hF.not_ge (by simpa using card_le_card_of_forall_not_reachableWithout ha hb hP h)
+    exact hF.not_ge (by simpa using (card_le_card_of_forall_not_reachableWithout ha hb hP h).2)
 
 /-! ### Arrow-disjoint paths between two vertices -/
 
