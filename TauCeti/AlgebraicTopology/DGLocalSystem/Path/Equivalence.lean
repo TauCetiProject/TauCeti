@@ -9,6 +9,7 @@ public import Mathlib.CategoryTheory.Localization.Equivalence
 public import Mathlib.CategoryTheory.Localization.LocalizerMorphism
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Path.CompositeChange
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Path.Unit
+public import TauCeti.CategoryTheory.Localization.LocalizerMorphism
 
 /-!
 # Changing the basepoint is an equivalence of derived categories
@@ -49,8 +50,6 @@ model of the derived categories, for instance `MorphismProperty.Localization`.
 
 ## Main definitions
 
-* `TauCeti.tensorPathChainConcatNatTrans`: the composite change of basepoint, as a natural
-  transformation from changing along `a → b` and then `b → c` to changing along `a → c`.
 * `TauCeti.tensorPathChainLocalizerMorphism`: changing the basepoint, as a morphism of localizers
   for the quasi-isomorphisms.
 * `TauCeti.tensorPathChainLocalizedFunctorCompIso`: the derived changes of basepoint compose.
@@ -61,10 +60,12 @@ model of the derived categories, for instance `MorphismProperty.Localization`.
 
 ## Main results
 
-* `TauCeti.tensorPathChainConcat_naturality`: the composite change of basepoint is natural.
 * `TauCeti.tensorPathChainLocalizedFunctorCompIso_hom_app`,
   `TauCeti.tensorPathChainLocalizedFunctorSelfIso_hom_app`: on the image of a DG local system,
   these isomorphisms are the images of concatenation and of `M ⊗ C_*(P_{a→a} B) ≅ M`.
+* `TauCeti.tensorPathChainLocalizedEquivalence_counitIso_hom_app`: on the image of a DG local
+  system at `b`, the counit of the equivalence is the image of concatenation followed by
+  `M ⊗ C_*(P_{b→b} B) ≅ M`.
 * `TauCeti.isLocalizedEquivalence_tensorPathChainLocalizerMorphism`: changing the basepoint
   within a path component is a localized equivalence.
 
@@ -109,58 +110,13 @@ def tensorPathChainLocalizerMorphism (a b : B) :
     (isQuasiIso_tensorBimoduleMap_pathChainBimodule ((quasiIsos_iff _).1 hf))
 
 /-- The functor of `TauCeti.tensorPathChainLocalizerMorphism` is the change of basepoint. -/
+@[simp]
 theorem tensorPathChainLocalizerMorphism_functor (a b : B) :
     (tensorPathChainLocalizerMorphism.{u, w, v} B R a b).functor =
       tensorBimoduleFunctor.flip.obj (pathChainBimodule B a b R) :=
   (rfl)
 
 end LocalizerMorphism
-
-section Concatenation
-
-attribute [local instance 100] BalancedTensorProduct.rightModule
-  BalancedTensorProduct.rightIsScalarTower
-
-variable {a : B}
-
-/-- **The composite change of basepoint is natural**: for a morphism `f : M ⟶ N` of DG local
-systems at `a`, the map `(m ⊗ σ) ⊗ τ ↦ m ⊗ (σ ⋆ τ)` commutes with the maps induced by `f`. -/
-@[reassoc]
-theorem tensorPathChainConcat_naturality (b c : B)
-    {M N : DGRightModuleCat.{w, max u w, v} (loopChain_isDGAlgebra B a R)} (f : M ⟶ N) :
-    tensorBimoduleMap (tensorBimoduleMap f (𝟙 (pathChainBimodule B a b R)))
-        (𝟙 (pathChainBimodule B b c R)) ≫ tensorPathChainConcat N b c =
-      tensorPathChainConcat M b c ≫ tensorBimoduleMap f (𝟙 (pathChainBimodule B a c R)) := by
-  refine tensorBimoduleObj_hom_ext fun n y ↦ ?_
-  induction n using BalancedTensorProduct.induction_on with
-  | ha n n' hn hn' => simp only [add_tmul, map_add, hn, hn']
-  | ht m x =>
-    rw [DGRightModuleCat.comp_apply, DGRightModuleCat.comp_apply, tensorBimoduleMap_tmul,
-      tensorBimoduleMap_tmul, DGBimoduleCat.id_apply, DGBimoduleCat.id_apply,
-      tensorPathChainConcat_tmul, tensorPathChainConcat_tmul, tensorBimoduleMap_tmul,
-      DGBimoduleCat.id_apply]
-
-variable (B R)
-
-/-- **The composite change of basepoint as a natural transformation**: changing the basepoint of
-DG local systems along the paths from `a` to `b` and then along the paths from `b` to `c` maps to
-changing it along the paths from `a` to `c`, by `(m ⊗ σ) ⊗ τ ↦ m ⊗ (σ ⋆ τ)`. -/
-def tensorPathChainConcatNatTrans (a b c : B) :
-    (tensorPathChainLocalizerMorphism.{u, w, v} B R a b).functor ⋙
-        (tensorPathChainLocalizerMorphism.{u, w, v} B R b c).functor ⟶
-      (tensorPathChainLocalizerMorphism.{u, w, v} B R a c).functor where
-  app M := tensorPathChainConcat M b c
-  naturality _ _ f := tensorPathChainConcat_naturality b c f
-
-/-- The components of `TauCeti.tensorPathChainConcatNatTrans` are
-`TauCeti.tensorPathChainConcat`. -/
-@[simp]
-theorem tensorPathChainConcatNatTrans_app (a b c : B)
-    (M : DGRightModuleCat.{w, max u w, max u v w} (loopChain_isDGAlgebra B a R)) :
-    (tensorPathChainConcatNatTrans.{u, w, v} B R a b c).app M = tensorPathChainConcat M b c :=
-  (rfl)
-
-end Concatenation
 
 section Localization
 
@@ -178,18 +134,9 @@ are joined by a Moore path. -/
 theorem isIso_whiskerRight_tensorPathChainConcatNatTrans (h : Nonempty (MoorePathBetween B a b)) :
     IsIso (Functor.whiskerRight (tensorPathChainConcatNatTrans.{u, w, v} B R a b c) Lc) := by
   rw [NatTrans.isIso_iff_isIso_app]
-  exact fun M ↦ Localization.inverts Lc _ _
-    ((quasiIsos_iff _).2 (isQuasiIso_tensorPathChainConcat M h))
-
-/-- The changes of basepoint along `a → b` and then `b → c`, followed by `Lc`, lift to the
-composite of the induced functors on localizations. -/
-instance liftingCompTensorPathChainLocalizedFunctor :
-    Lifting La (quasiIsos _)
-      (((tensorPathChainLocalizerMorphism.{u, w, v} B R a b).functor ⋙
-          (tensorPathChainLocalizerMorphism.{u, w, v} B R b c).functor) ⋙ Lc)
-      ((tensorPathChainLocalizerMorphism.{u, w, v} B R a b).localizedFunctor La Lb ⋙
-        (tensorPathChainLocalizerMorphism.{u, w, v} B R b c).localizedFunctor Lb Lc) :=
-  ⟨(CatCommSq.hComp _ _ La Lb Lc _ _).iso.symm⟩
+  intro M
+  rw [Functor.whiskerRight_app, tensorPathChainConcatNatTrans_app]
+  exact Localization.inverts Lc _ _ ((quasiIsos_iff _).2 (isQuasiIso_tensorPathChainConcat M h))
 
 /-- **The derived changes of basepoint compose**: if `a` and `b` are joined by a Moore path, the
 functor induced on derived categories by changing the basepoint along the paths from `a` to `b`
@@ -205,7 +152,7 @@ def tensorPathChainLocalizedFunctorCompIso (h : Nonempty (MoorePathBetween B a b
     (((tensorPathChainLocalizerMorphism.{u, w, v} B R a b).functor ⋙
       (tensorPathChainLocalizerMorphism.{u, w, v} B R b c).functor) ⋙ Lc)
     ((tensorPathChainLocalizerMorphism.{u, w, v} B R a c).functor ⋙ Lc) _ _
-    (asIso (Functor.whiskerRight (tensorPathChainConcatNatTrans.{u, w, v} B R a b c) Lc))
+    (asIso (Functor.whiskerRight (tensorPathChainConcatNatTrans.{u, w, v} B R a b c) Lc) :)
 
 /-- On the image of a DG local system `M`, the isomorphism
 `TauCeti.tensorPathChainLocalizedFunctorCompIso` is the image under `Lc` of the composite change
@@ -225,7 +172,9 @@ theorem tensorPathChainLocalizedFunctorCompIso_hom_app (h : Nonempty (MoorePathB
           ((tensorPathChainLocalizerMorphism.{u, w, v} B R a c).functor ⋙ Lc)
           ((tensorPathChainLocalizerMorphism.{u, w, v} B R a c).localizedFunctor
             La Lc)).inv.app M := by
-  exact liftNatTrans_app _ _ _ _ _ _ _ _
+  refine (liftNatTrans_app _ _ _ _ _ _ _ M).trans ?_
+  rw [asIso_hom, Functor.whiskerRight_app, tensorPathChainConcatNatTrans_app]
+  rfl
 
 /-- The change of basepoint along the paths from `a` to itself, followed by `La`, is isomorphic
 to `La`, through `TauCeti.tensorPathChainOneNatIso`. -/
@@ -274,15 +223,32 @@ def tensorPathChainRoundTripIso (h : Nonempty (MoorePathBetween B a b)) :
         ((tensorPathChainLocalizerMorphism.{u, w, v} B R b a).functor ⋙ La) ≅ La :=
   haveI := isIso_whiskerRight_tensorPathChainConcatNatTrans.{u, w, v} (c := a) La h
   (Functor.associator _ _ _).symm ≪≫
-    asIso (Functor.whiskerRight (tensorPathChainConcatNatTrans.{u, w, v} B R a b a) La) ≪≫
+    (asIso (Functor.whiskerRight (tensorPathChainConcatNatTrans.{u, w, v} B R a b a) La) :) ≪≫
     tensorPathChainSelfCompIso.{u, w, v} La
 
+/-- The components of `TauCeti.tensorPathChainRoundTripIso` are the images under `La` of the
+composite change of basepoint `(M ⊗ C_*(P_{a→b} B)) ⊗ C_*(P_{b→a} B) ⟶ M ⊗ C_*(P_{a→a} B)`
+followed by `M ⊗ C_*(P_{a→a} B) ≅ M`. -/
+@[simp]
+theorem tensorPathChainRoundTripIso_hom_app (h : Nonempty (MoorePathBetween B a b))
+    (M : DGRightModuleCat.{w, max u w, max u v w} (loopChain_isDGAlgebra B a R)) :
+    (tensorPathChainRoundTripIso.{u, w, v} La h).hom.app M =
+      La.map (tensorPathChainConcat M b a) ≫
+        La.map (tensorPathChainOneIso.{u, w, v} B a R M).hom := by
+  change 𝟙 _ ≫ La.map ((tensorPathChainConcatNatTrans.{u, w, v} B R a b a).app M) ≫
+    (tensorPathChainSelfCompIso.{u, w, v} La).hom.app M = _
+  rw [Category.id_comp, tensorPathChainConcatNatTrans_app, tensorPathChainSelfCompIso_hom_app]
+  rfl
+
+-- The body is exposed so that the counit can be described on the images of DG local systems.
 /-- **Changing the basepoint is an equivalence of derived categories.** If `a` and `b` are joined
 by a Moore path, the functors induced on derived categories by tensoring with the path chain
-bimodules `C_*(P_{a→b} B)` and `C_*(P_{b→a} B)` are mutually inverse equivalences. The unit and
-counit come from concatenation of paths,
-`M ⊗ C_*(P_{a→b} B) ⊗ C_*(P_{b→a} B) → M ⊗ C_*(P_{a→a} B)`, followed by
-`M ⊗ C_*(P_{a→a} B) ≅ M`. -/
+bimodules `C_*(P_{a→b} B)` and `C_*(P_{b→a} B)` are mutually inverse equivalences. The counit
+comes from concatenation of paths, `M ⊗ C_*(P_{b→a} B) ⊗ C_*(P_{a→b} B) → M ⊗ C_*(P_{b→b} B)`,
+followed by `M ⊗ C_*(P_{b→b} B) ≅ M`
+(`TauCeti.tensorPathChainLocalizedEquivalence_counitIso_hom_app`). The unit is built from the
+same maps at `a`, adjusted so that the equivalence is adjoint. -/
+@[expose]
 def tensorPathChainLocalizedEquivalence (h : Nonempty (MoorePathBetween B a b)) : Da ≌ Db :=
   Localization.equivalence La (quasiIsos _) Lb (quasiIsos _)
     ((tensorPathChainLocalizerMorphism.{u, w, v} B R a b).functor ⋙ Lb)
@@ -320,6 +286,30 @@ theorem isLocalizedEquivalence_tensorPathChainLocalizerMorphism
     (h : Nonempty (MoorePathBetween B a b)) :
     (tensorPathChainLocalizerMorphism.{u, w, v} B R a b).IsLocalizedEquivalence :=
   ⟨(tensorPathChainLocalizedEquivalence.{u, w, v} _ _ h).isEquivalence_functor⟩
+
+/-- On the image of a DG local system `M` at `b`, the counit of
+`TauCeti.tensorPathChainLocalizedEquivalence` is the image under `Lb` of concatenation followed by
+`M ⊗ C_*(P_{b→b} B) ≅ M` (`TauCeti.tensorPathChainRoundTripIso`), up to the identifications of
+the induced functors on `Lb.obj M`. -/
+theorem tensorPathChainLocalizedEquivalence_counitIso_hom_app
+    (h : Nonempty (MoorePathBetween B a b))
+    (M : DGRightModuleCat.{w, max u w, max u v w} (loopChain_isDGAlgebra B b R)) :
+    (tensorPathChainLocalizedEquivalence.{u, w, v} La Lb h).counitIso.hom.app (Lb.obj M) =
+      (Lifting.iso Lb (quasiIsos _)
+          (((tensorPathChainLocalizerMorphism.{u, w, v} B R b a).functor ⋙ La) ⋙
+            (tensorPathChainLocalizerMorphism.{u, w, v} B R a b).localizedFunctor La Lb)
+          ((tensorPathChainLocalizerMorphism.{u, w, v} B R b a).localizedFunctor Lb La ⋙
+            (tensorPathChainLocalizerMorphism.{u, w, v} B R a b).localizedFunctor
+              La Lb)).hom.app M ≫
+        (CatCommSq.iso (tensorPathChainLocalizerMorphism.{u, w, v} B R a b).functor La Lb
+          ((tensorPathChainLocalizerMorphism.{u, w, v} B R a b).localizedFunctor La Lb)).inv.app
+            ((tensorPathChainLocalizerMorphism.{u, w, v} B R b a).functor.obj M) ≫
+        (tensorPathChainRoundTripIso.{u, w, v} Lb (h.map MoorePathBetween.symm)).hom.app M := by
+  dsimp only [tensorPathChainLocalizedEquivalence]
+  rw [← Iso.app_hom, equivalence_counitIso_app]
+  simp only [Iso.trans_hom, Iso.app_hom, NatTrans.comp_app, Functor.associator_hom_app,
+    Functor.isoWhiskerLeft_hom, Functor.whiskerLeft_app, Iso.symm_hom, Category.id_comp]
+  rfl
 
 end Localization
 
