@@ -319,20 +319,16 @@ private theorem initialPentagonRectangleInitialSelfPartner_isRecut
 private theorem initialPentagonRectangleInitialSelfPartner_injective :
     Function.Injective (G.initialPentagonRectangleInitialSelfPartner C (x := x) (z := z)) := by
   intro D F h
-  have hD := G.initialPentagonRectangleInitialSelfPartner_isRecut C D
   have hF := G.initialPentagonRectangleInitialSelfPartner_isRecut C F
   rw [← h] at hF
-  obtain ⟨_, _, hfirstD, hsecondD⟩ :=
+  obtain ⟨-, -, hfirstD, hsecondD⟩ :=
     G.initialPentagonRectangleInitialSelfSource_data C D.val D.property
-  obtain ⟨_, _, hfirstF, hsecondF⟩ :=
+  obtain ⟨-, -, hfirstF, hsecondF⟩ :=
     G.initialPentagonRectangleInitialSelfSource_data C F.val F.property
-  have hbackD := hD.symm hfirstD hsecondD
-  have hbackF := hF.symm hfirstF hsecondF
-  have hone := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hbackD
-  apply Subtype.ext
-  apply GridInitialPentagonRectangleDecomposition.toGridRectangleDecomposition_injective
-  exact (GridRectangleDecomposition.existsUnique_isRecut _ hone
-    hD.isEmpty_first hD.isEmpty_second).unique hbackD hbackF
+  exact Subtype.ext
+    (GridInitialPentagonRectangleDecomposition.toGridRectangleDecomposition_injective
+      ((G.initialPentagonRectangleInitialSelfPartner_isRecut C D).eq_of_isRecut hF
+        hfirstD hsecondD hfirstF hsecondF))
 
 private theorem initialPentagonRectangleInitialSelfPartner_mem
     (D : {D // D ∈ G.initialPentagonRectangleInitialSelfSources C x z}) :

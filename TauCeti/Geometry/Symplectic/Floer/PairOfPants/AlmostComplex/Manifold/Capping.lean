@@ -213,7 +213,8 @@ theorem contMDiff_negativePlaneAlmostComplex {F G N : Type*} [NormedAddCommGroup
   by_cases hq : q = inf
   · simp only [negativePlaneWeight, hq, ↓reduceIte]
     simpa only [endSign_inf, neg_one_mul] using
-      Floer.contMDiffAt_smoothTransition_endCoord_comp inf 1 (hf y₀) (ne_endCenter hS inf)
+      Floer.contMDiffAt_smoothTransition_endCoord_comp inf (hf y₀) contMDiffAt_const
+        (ne_endCenter hS inf)
   · simp only [negativePlaneWeight, hq, ↓reduceIte]
     exact contMDiffAt_const
 
