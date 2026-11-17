@@ -43,8 +43,10 @@ pairing with cyclic cohomology, descend to `K₁`.
 
 * `TauCeti.commutator_elementarySubgroup_self`: `⁅E n A, E n A⁆ = E n A` when `3 ≤ card n`.
 * `TauCeti.elementarySubgroup_le_commutator`: `E n A ≤ ⁅GL n A, GL n A⁆` when `3 ≤ card n`.
-* `Equiv.map_reindexGL_elementarySubgroup`: relabelling the indices preserves the elementary
-  subgroup.
+* `Equiv.map_reindexGL_elementarySubgroup`, `Equiv.reindexGL_mem_elementarySubgroup_iff`:
+  relabelling the indices preserves the elementary subgroup.
+* `Equiv.reindexGL_sumAssoc_fromBlocksGL`, `Equiv.reindexGL_sumCongr_fromBlocksGL`: reindexing
+  block diagonal matrices along `Equiv.sumAssoc` and `Equiv.sumCongr`.
 * `Matrix.upperBlockGL_mem_elementarySubgroup`, `Matrix.lowerBlockGL_mem_elementarySubgroup`:
   block unipotent matrices are elementary.
 * `TauCeti.eq_fromBlocksGL_mul_upperBlockGL`: block upper-triangular factorization of a matrix in
@@ -396,5 +398,34 @@ theorem map_reindexGL_elementarySubgroup (e : n ≃ m) :
     refine ⟨_, ⟨e.symm i, e.symm j, e.symm.injective.ne hij, a, rfl⟩, ?_⟩
     rw [reindexGL_transvectionUnit]
     simp_rw [Equiv.apply_symm_apply]
+
+/-- Relabelling the indices along an equivalence preserves membership in the elementary
+subgroup. -/
+@[simp]
+theorem reindexGL_mem_elementarySubgroup_iff (e : n ≃ m) {u : GL n A} :
+    e.reindexGL A u ∈ elementarySubgroup m A ↔ u ∈ elementarySubgroup n A := by
+  rw [← e.map_reindexGL_elementarySubgroup]
+  exact ⟨fun ⟨v, hv, hvu⟩ ↦ by rwa [← (e.reindexGL A).injective hvu], fun hu ↦ ⟨u, hu, rfl⟩⟩
+
+/-- Reindexing a nested block diagonal matrix along `Equiv.sumAssoc` reassociates the blocks. -/
+@[simp]
+theorem reindexGL_sumAssoc_fromBlocksGL {n₁ n₂ n₃ : Type*} [DecidableEq n₁] [Fintype n₁]
+    [DecidableEq n₂] [Fintype n₂] [DecidableEq n₃] [Fintype n₃]
+    (u₁ : GL n₁ A) (u₂ : GL n₂ A) (u₃ : GL n₃ A) :
+    (Equiv.sumAssoc n₁ n₂ n₃).reindexGL A (fromBlocksGL (fromBlocksGL (u₁, u₂), u₃)) =
+      fromBlocksGL (u₁, fromBlocksGL (u₂, u₃)) := by
+  refine Units.ext ?_
+  ext (i | (j | k)) (p | (q | r)) <;> simp
+
+/-- Reindexing a block diagonal matrix along `Equiv.sumCongr` reindexes each diagonal block
+independently. -/
+@[simp]
+theorem reindexGL_sumCongr_fromBlocksGL {m₁ m₂ k₁ k₂ : Type*} [DecidableEq m₁] [Fintype m₁]
+    [DecidableEq m₂] [Fintype m₂] [DecidableEq k₁] [Fintype k₁] [DecidableEq k₂] [Fintype k₂]
+    (e₁ : m₁ ≃ m₂) (e₂ : k₁ ≃ k₂) (u : GL m₁ A) (v : GL k₁ A) :
+    (Equiv.sumCongr e₁ e₂).reindexGL A (fromBlocksGL (u, v)) =
+      fromBlocksGL (e₁.reindexGL A u, e₂.reindexGL A v) := by
+  refine Units.ext ?_
+  ext (i | j) (p | q) <;> simp
 
 end Equiv

@@ -230,6 +230,26 @@ theorem HasStableRangeLE.exists_isUnimodular_add_mul {R ι : Type*} [Ring R] [Fi
     (by simpa using hι) ha
   exact ⟨c, hc⟩
 
+/-- Over a ring of stable range at most `s`, any unimodular vector `a : ι → R` with
+`s + 1 ≤ Fintype.card ι` can have a chosen coordinate `i₀ : ι` shortened into the remaining
+coordinates `{i : ι // i ≠ i₀}`. -/
+theorem HasStableRangeLE.exists_isUnimodular_add_mul_subtype_ne {R ι : Type*} [Ring R] [Fintype ι]
+    {s : ℕ} (hR : HasStableRangeLE R s) (hι : s + 1 ≤ Fintype.card ι) {a : ι → R}
+    (ha : Module.IsUnimodular R a) (i₀ : ι) :
+    ∃ c : {i : ι // i ≠ i₀} → R, Module.IsUnimodular R (fun i ↦ a i.1 + a i₀ * c i) := by
+  classical
+  have hcard : s ≤ Fintype.card {i : ι // i ≠ i₀} := by
+    rw [Fintype.card_subtype_compl, Fintype.card_subtype_eq]
+    omega
+  have ha' : Module.IsUnimodular R
+      (Sum.elim (fun i : {i : ι // i ≠ i₀} ↦ a i.1) (fun _ : Unit ↦ a i₀)) := by
+    have hcomp : Sum.elim (fun i : {i : ι // i ≠ i₀} ↦ a i.1) (fun _ : Unit ↦ a i₀) =
+        LinearEquiv.funCongrLeft R R (Equiv.subtypeNeSumPUnit.{0} i₀) a := by
+      ext (i | ⟨⟩) <;> rfl
+    rw [hcomp, LinearEquiv.isUnimodular_apply_iff]
+    exact ha
+  exact hR.exists_isUnimodular_add_mul hcard ha'
+
 /-- **Vaserstein's first theorem:** `HasStableRangeLE R s` holds if and only if every unimodular
 `(m + 1)`-row of length `m ≥ s` can be shortened to a unimodular `m`-row. -/
 theorem hasStableRangeLE_iff_forall_le {R : Type*} [Ring R] {s : ℕ} :

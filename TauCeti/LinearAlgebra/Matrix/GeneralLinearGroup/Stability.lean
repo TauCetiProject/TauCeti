@@ -66,11 +66,6 @@ open scoped commutatorElement
 
 namespace TauCeti
 
-private theorem reindexGL_mem_elementarySubgroup {R m n : Type*} [Ring R] [Fintype m]
-    [DecidableEq m] [Fintype n] [DecidableEq n] (φ : m ≃ n) {u : GL m R}
-    (hu : u ∈ elementarySubgroup m R) : φ.reindexGL R u ∈ elementarySubgroup n R := by
-  rw [← φ.map_reindexGL_elementarySubgroup]; exact ⟨u, hu, rfl⟩
-
 /-! ## Finite-rank descriptions of `K₁` and commutator subgroups -/
 
 namespace AlgebraicK1
@@ -94,7 +89,7 @@ theorem mk_surjective {R : Type*} [Ring R] {s n : ℕ} (hR : HasStableRangeLE R 
         _ = stabilizeGL R hnm h * φ.reindexGL R e := by rw [← stabilizeGL_apply]
     refine ⟨h, ?_⟩
     rw [hu, map_mul, mk_stabilizeGL hnm h,
-      elementarySubgroup_le_ker_mk m (reindexGL_mem_elementarySubgroup φ he), mul_one]
+      elementarySubgroup_le_ker_mk m ((φ.reindexGL_mem_elementarySubgroup_iff).mpr he), mul_one]
 
 /-- When `R` has Bass stable range at most `s` and `s ≤ n` (including at the boundary `n = s` where
 injective stability need not yet hold), `K₁(R)` is the quotient of `GL (Fin n) R` by the actual
@@ -126,7 +121,7 @@ theorem ker_mk_eq_elementarySubgroup {R : Type*} [Ring R] {s n : ℕ} (hR : HasS
     simp
   exact injective_stability s hR (Fin n) (Fin (k - n)) (by simpa using hn) u
     (φ.symm.reindexGL R (stabilizeGL R hnk u)) (by simp [hU])
-    (reindexGL_mem_elementarySubgroup φ.symm hu)
+    ((φ.symm.reindexGL_mem_elementarySubgroup_iff).mpr hu)
 
 /-- When `R` has Bass stable range at most `s` and `s + 1 ≤ n`, algebraic `K₁(R)` is canonically
 isomorphic to `GL (Fin n) R ⧸ elementarySubgroup (Fin n) R` (with normality provided by
