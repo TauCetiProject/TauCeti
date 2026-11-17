@@ -28,9 +28,11 @@ proves:
    `Metric.eball c R \ Metric.closedBall c r` (`0 ≤ r`, `ENNReal.ofReal r < R`, allowing `r = 0` and
    `R = ⊤`) and complex-differentiable outside a countable subset admits a convergent Laurent series
    with coefficients `circleLaurentCoeff f c ρ` for any `ρ ∈ (r, R)`.
-4. **Removable-singularity characterization** (for complete `E`): a convergent Laurent series on a
-   punctured disk `Metric.eball c R \ {c}` agrees near `c` with a function analytic at `c` if and
-   only if all negative-degree coefficients vanish.
+4. **Removable-singularity characterization and global singular representatives** (for complete
+   `E`): a convergent Laurent series on a punctured disk `Metric.eball c R \ {c}` agrees near `c`
+   with a function analytic at `c` if and only if all negative-degree coefficients vanish, and
+   every punctured-neighborhood holomorphic germ splits into a global representative analytic on
+   `{c}ᶜ` (vanishing along `Filter.cocompact ℂ`) plus a germ analytic at `c`.
 5. **Term-by-term differentiation** (for complete `E`): differentiating a convergent Laurent series
    shifts coefficients by `n ↦ (n + 1) • a (n + 1)`.
 
@@ -47,10 +49,11 @@ proves:
   `TauCeti.differentiableOn_iff_exists_hasLaurentSeriesOnAnnulus`: Laurent's theorem on concentric
   open annuli and punctured neighborhoods.
 * `TauCeti.HasLaurentSeriesOnAnnulus.exists_analyticAt_eventuallyEq_iff`,
-  `TauCeti.HasLaurentSeriesOnAnnulus.exists_analyticAt_sub_eventuallyEq_iff`, and
-  `TauCeti.HasLaurentSeriesOnAnnulus.laurentNegPart_eq_iff`: removable singularities and equality
-  of singular germs modulo analytic germs on punctured disks via negative Laurent coefficients and
-  `laurentNegPart`.
+  `TauCeti.HasLaurentSeriesOnAnnulus.exists_analyticAt_sub_eventuallyEq_iff`,
+  `TauCeti.HasLaurentSeriesOnAnnulus.laurentNegPart_eq_iff`, and
+  `TauCeti.exists_analyticOnNhd_compl_singleton_tendsto_cocompact_sub_analyticAt`: removable
+  singularities, equality of singular germs modulo analytic germs on punctured disks via negative
+  Laurent coefficients and `laurentNegPart`, and global `{c}ᶜ`-analytic singular representatives.
 * `TauCeti.HasLaurentSeriesOnAnnulus.deriv` and
   `TauCeti.HasLaurentSeriesOnAnnulus.hasSum_deriv`: term-by-term differentiation of Laurent series.
 
@@ -459,6 +462,21 @@ theorem laurentNegPart_eq_iff {f₁ f₂ : ℂ → E} {a₁ a₂ : ℤ → E} {c
     simp_rw [laurentNegPart_def, hk]
 
 end HasLaurentSeriesOnAnnulus
+
+/-- **Global singular representative of an isolated singularity.** If `f : ℂ → E` is
+complex-differentiable on a punctured neighborhood of `c : ℂ`, its negative Laurent part on a small
+punctured disk around `c` defines a function `q : ℂ → E` that is complex-analytic on the entire
+punctured plane `{c}ᶜ`, vanishes along `Filter.cocompact ℂ`, and differs from `f` on `𝓝[≠] c` by a
+function complex-analytic at `c`. -/
+theorem exists_analyticOnNhd_compl_singleton_tendsto_cocompact_sub_analyticAt
+    {f : ℂ → E} {c : ℂ} (hf : ∀ᶠ z in 𝓝[≠] c, DifferentiableAt ℂ f z) :
+    ∃ q : ℂ → E, AnalyticOnNhd ℂ q {c}ᶜ ∧ Tendsto q (cocompact ℂ) (𝓝 0) ∧
+      ∃ g : ℂ → E, AnalyticAt ℂ g c ∧ ∀ᶠ z in 𝓝[≠] c, f z - q z = g z := by
+  obtain ⟨a, R, hL⟩ := exists_hasLaurentSeriesOnAnnulus_of_eventually_differentiableAt hf
+  refine ⟨laurentNegPart a c, hL.analyticOnNhd_laurentNegPart_compl_singleton,
+    hL.tendsto_laurentNegPart_cocompact, laurentPosPart a c,
+    hL.analyticOnNhd_laurentPosPart c (mem_eball_self hL.outerRadius_pos), ?_⟩
+  exact hL.eventuallyEq_laurentPosPart_add_laurentNegPart.mono fun _ hz => sub_eq_of_eq_add hz
 
 /-! ### Term-by-term differentiation of Laurent series -/
 
