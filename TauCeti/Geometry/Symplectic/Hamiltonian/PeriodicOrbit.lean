@@ -48,6 +48,8 @@ the comparison of the Floer homology of a `C²`-small Morse function with its Mo
 
 ## Main results
 
+* `TauCeti.SmoothTwoForm.comp_neg_mem_periodicSolutions_hamiltonianVectorField_iff`: reversing
+  time turns the 1-periodic orbits of the reversed Hamiltonian `-H(-t)` into those of `H`.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.finite_periodicSolutions_hamiltonianVectorField`: a
   time-dependent Hamiltonian on a closed manifold whose 1-periodic orbits are all nondegenerate has
   finitely many 1-periodic orbits.
@@ -77,6 +79,26 @@ open Function
 open scoped ContDiff Manifold
 
 namespace TauCeti
+
+namespace SmoothTwoForm
+
+/-- **Reversing time in a Hamiltonian orbit.** For a time-dependent Hamiltonian `H`, the curve
+`t ↦ γ (-t)` is a `T`-periodic orbit of `H` exactly when `γ` is a `T`-periodic orbit of the
+reversed Hamiltonian `(t, x) ↦ -H (-t) x`: both the time and the Hamiltonian vector field change
+sign. -/
+theorem comp_neg_mem_periodicSolutions_hamiltonianVectorField_iff {E H' M : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H'] {I : ModelWithCorners ℝ E H'}
+    [TopologicalSpace M] [ChartedSpace H' M] [IsManifold I ∞ M] (σ : SmoothTwoForm I M)
+    (H : ℝ → M → ℝ) {T : ℝ} {γ : ℝ → M} :
+    (fun t ↦ γ (-t)) ∈ periodicSolutions (fun t ↦ σ.hamiltonianVectorField (H t)) T ↔
+      γ ∈ periodicSolutions (fun t ↦ σ.hamiltonianVectorField (fun x ↦ -H (-t) x)) T := by
+  rw [comp_neg_mem_periodicSolutions_iff]
+  have h : (fun t x ↦ -σ.hamiltonianVectorField (H (-t)) x) =
+      fun t ↦ σ.hamiltonianVectorField (fun x ↦ -H (-t) x) :=
+    funext fun t ↦ funext fun x ↦ (hamiltonianVectorField_neg (f := H (-t)) x).symm
+  rw [h]
+
+end SmoothTwoForm
 
 namespace SmoothTwoForm.IsNondegenerate
 
