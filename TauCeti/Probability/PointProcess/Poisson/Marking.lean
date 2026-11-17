@@ -60,17 +60,6 @@ section Enumeration
 variable {Ω X E ι : Type*} [MeasurableSpace Ω] [MeasurableSpace X] [MeasurableSpace E]
   [Countable ι] {P : Measure Ω} {N : Ω → Measure X} {Λ : Measure X}
 
-/-- Extending the sample space along a Markov kernel `η : Kernel Ω β` preserves the Poisson
-random-measure property of the ground realization `z ↦ N z.1` with the same intensity `Λ`. -/
-theorem IsPoissonRandomMeasure.compProd_fst {β : Type*} [MeasurableSpace β]
-    (hN : IsPoissonRandomMeasure P N Λ) (η : Kernel Ω β) [IsMarkovKernel η] :
-    IsPoissonRandomMeasure (P ⊗ₘ η) (fun z ↦ N z.1) Λ := by
-  let := hN.isProbabilityMeasure
-  refine hN.of_identDistrib (hN.measurable.comp measurable_fst)
-    ⟨hN.measurable.aemeasurable, (hN.measurable.comp measurable_fst).aemeasurable, ?_⟩
-  rw [← Function.comp_def N Prod.fst, ← Measure.map_map hN.measurable measurable_fst,
-    ← Measure.fst, Measure.fst_compProd]
-
 /-- **Enumeration-relative Poisson Marking Theorem.** Independently marking an almost-everywhere
 optional occurrence enumeration of a Poisson random measure with s-finite intensity `Λ` by a
 Markov kernel `κ` produces a Poisson random measure with intensity `Λ ⊗ₘ κ`. Neither standard
