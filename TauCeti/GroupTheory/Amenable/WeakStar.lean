@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Module.WeakDual
 public import TauCeti.GroupTheory.Amenable.Basic
+public import TauCeti.Topology.Algebra.Group.UCB.WeakDual
 
 import Mathlib.Topology.Homeomorph.Lemmas
 
@@ -20,10 +21,10 @@ theorem the means form a weak-* compact convex set. We give `TauCeti.Mean G` the
 induced from `WeakDual ℝ (UCB G)`, so that it becomes a compact Hausdorff space in which a net of
 means converges exactly when it converges at every function.
 
-Left translation induces the contragredient weak-* continuous linear action
-`TauCeti.UCB.leftTranslationWeakDual` on `WeakDual ℝ (UCB G)`, intertwined by `Mean.toWeakDual`
-with the left action of `G` on `Mean G`. Because every mean is `1`-Lipschitz and each orbit
-`g ↦ L_{g⁻¹} f` is norm-continuous, `(g, m) ↦ g • m` is jointly continuous on `G × Mean G`.
+`Mean.toWeakDual` intertwines the contragredient left action of `G` on `Mean G` with the weak-*
+continuous linear action `TauCeti.UCB.leftTranslationWeakDual` on `WeakDual ℝ (UCB G)`. Because
+every mean is `1`-Lipschitz and each orbit `g ↦ L_{g⁻¹} f` is norm-continuous, `(g, m) ↦ g • m` is
+jointly continuous on `G × Mean G`.
 
 Each invariance equation `m (L_g f) = m f` also defines a closed set of means, so the left-invariant
 means form a compact set. Compactness yields the two standard criteria for amenability:
@@ -39,8 +40,6 @@ Følner sets.
 
 ## Main definitions
 
-* `TauCeti.UCB.leftTranslationWeakDual`: the contragredient group action
-  `G →* (WeakDual ℝ (UCB G) ≃L[ℝ] WeakDual ℝ (UCB G))` sending `g` to `φ ↦ (f ↦ φ (L_{g⁻¹} f))`.
 * `TauCeti.Mean.toWeakDual`: a mean as an element of the weak-* dual of `UCB G`.
 * `TauCeti.Mean.instTopologicalSpace`: the weak-* topology on means.
 * `TauCeti.Mean.instContinuousSMul`: joint continuity of the contragredient `G`-action on `Mean G`.
@@ -77,67 +76,6 @@ open Filter Topology
 namespace TauCeti
 
 variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-
-namespace UCB
-
-/-- Auxiliary weak-* continuous linear map precomposing functionals in `WeakDual ℝ (UCB G)` with
-`leftTranslation g⁻¹`. -/
-private def leftTranslationWeakDualCLM (g : G) : WeakDual ℝ (UCB G) →L[ℝ] WeakDual ℝ (UCB G) where
-  toFun φ := StrongDual.toWeakDual
-    ((WeakDual.toStrongDual φ).comp
-      (leftTranslation g⁻¹).toContinuousLinearEquiv.toContinuousLinearMap)
-  map_add' _ _ := DFunLike.ext _ _ fun _ => by simp
-  map_smul' _ _ := DFunLike.ext _ _ fun _ => by simp
-  cont := WeakDual.continuous_of_continuous_eval fun f =>
-    WeakDual.eval_continuous (leftTranslation g⁻¹ f)
-
-@[simp]
-private theorem leftTranslationWeakDualCLM_apply (g : G) (φ : WeakDual ℝ (UCB G)) (f : UCB G) :
-    leftTranslationWeakDualCLM g φ f = φ (leftTranslation g⁻¹ f) := by
-  simp [leftTranslationWeakDualCLM, -map_inv]
-
-/-- Contragredient left action of `G` on `WeakDual ℝ (UCB G)`, sending `g` to the weak-* continuous
-linear equivalence `φ ↦ (f ↦ φ (L_{g⁻¹} f))`. -/
-def leftTranslationWeakDual : G →* (WeakDual ℝ (UCB G) ≃L[ℝ] WeakDual ℝ (UCB G)) where
-  toFun g := ContinuousLinearEquiv.equivOfInverse
-    (leftTranslationWeakDualCLM g) (leftTranslationWeakDualCLM g⁻¹)
-    (fun φ => DFunLike.ext _ _ fun f => by
-      rw [leftTranslationWeakDualCLM_apply, leftTranslationWeakDualCLM_apply]
-      exact congrArg φ (by ext x; rw [leftTranslation_apply, leftTranslation_apply]; simp))
-    (fun φ => DFunLike.ext _ _ fun f => by
-      rw [leftTranslationWeakDualCLM_apply, leftTranslationWeakDualCLM_apply]
-      exact congrArg φ (by ext x; rw [leftTranslation_apply, leftTranslation_apply]; simp))
-  map_one' := by
-    ext φ
-    rw [ContinuousLinearEquiv.equivOfInverse_apply,
-      ← ContinuousLinearEquiv.coe_coe (1 : WeakDual ℝ (UCB G) ≃L[ℝ] WeakDual ℝ (UCB G)),
-      ContinuousLinearEquiv.toContinuousLinearMap_one, one_apply_eq_self]
-    exact DFunLike.ext _ _ fun f => by
-      rw [leftTranslationWeakDualCLM_apply]
-      exact congrArg φ (by ext x; simp)
-  map_mul' g h := by
-    ext φ
-    rw [ContinuousLinearEquiv.equivOfInverse_apply,
-      ← ContinuousLinearEquiv.coe_coe (_ * _ : WeakDual ℝ (UCB G) ≃L[ℝ] WeakDual ℝ (UCB G)),
-      ContinuousLinearEquiv.toContinuousLinearMap_mul, mul_apply_eq_comp]
-    simp only [ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.equivOfInverse_apply]
-    exact DFunLike.ext _ _ fun f => by
-      rw [leftTranslationWeakDualCLM_apply, leftTranslationWeakDualCLM_apply,
-        leftTranslationWeakDualCLM_apply]
-      exact congrArg φ (by ext x; simp)
-
-@[simp]
-theorem leftTranslationWeakDual_apply (g : G) (φ : WeakDual ℝ (UCB G)) (f : UCB G) :
-    leftTranslationWeakDual g φ f = φ (leftTranslation g⁻¹ f) := by
-  simp [leftTranslationWeakDual, -map_inv]
-
-/-- The inverse of `leftTranslationWeakDual g` is `leftTranslationWeakDual g⁻¹`. -/
-theorem leftTranslationWeakDual_symm (g : G) :
-    (leftTranslationWeakDual g).symm = leftTranslationWeakDual g⁻¹ := by
-  ext φ
-  exact DFunLike.ext _ _ fun f => by simp [leftTranslationWeakDual]
-
-end UCB
 
 namespace Mean
 

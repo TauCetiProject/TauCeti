@@ -184,8 +184,10 @@ theorem orbitPositiveLinearMap_one (x : X) :
 theorem leftTranslation_orbitAlgHom (g : G) (x : X) (f : C(X, ℝ)) :
     leftTranslation g (orbitAlgHom G x f) =
       orbitAlgHom G x (f.comp (Homeomorph.smul g⁻¹ : X ≃ₜ X)) := by
-  ext h
-  simp [mul_smul]
+  rw [show leftTranslation g = ucbSubalgebra.leftTranslation ℝ G g by
+    ext f' y
+    exact (leftTranslation_apply g f' y).trans (ucbSubalgebra.leftTranslation_apply g f' y).symm]
+  exact ucbSubalgebra.leftTranslation_orbitAlgHom g x f
 
 /-- Left translation `L_g` on `UCB G` intertwines `orbitPositiveLinearMap` with precomposition by
 `Homeomorph.smul g⁻¹` on `C(X, ℝ)`. -/

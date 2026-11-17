@@ -102,11 +102,8 @@ def barycenter (K : Set E) {Φ : Type*} [FunLike Φ C(K, ℝ) ℝ] (φ : Φ) : E
 barycenter. -/
 theorem barycenter_congr {K : Set E} {Φ Ψ : Type*} [FunLike Φ C(K, ℝ) ℝ] [FunLike Ψ C(K, ℝ) ℝ]
     {φ : Φ} {ψ : Ψ} (h : ∀ f, φ f = ψ f) : barycenter K φ = barycenter K ψ := by
-  have hp : (fun b => b ∈ K ∧ ∀ ℓ : StrongDual ℝ E, ℓ b = φ ((ℓ : C(E, ℝ)).restrict K)) =
-      (fun b => b ∈ K ∧ ∀ ℓ : StrongDual ℝ E, ℓ b = ψ ((ℓ : C(E, ℝ)).restrict K)) :=
-    funext fun _ => propext (by simp [h])
-  exact congrArg
-    (fun P : E → Prop => open Classical in if hP : ∃ b, P b then hP.choose else 0) hp
+  unfold barycenter
+  rw [show (⇑φ : C(K, ℝ) → ℝ) = ⇑ψ from funext h]
 
 /-- **Existence of the Choquet–Rudin barycenter.** If `K` is a compact convex subset of a
 topological real vector space `E` and `φ` is a positive linear functional on `C(K, ℝ)` with
@@ -391,14 +388,10 @@ theorem affineMap_barycenter {F : Type*} [AddCommGroup F] [Module ℝ F] [Topolo
     A (barycenter K φ) =
       barycenter L ((PositiveLinearMap.ofClass φ).comp
         (ContinuousMap.compPositiveLinearMap ℝ ℝ
-          ⟨hAL.restrict A K L, hAc.mapsToRestrict hAL⟩)) := by
-  have hcomb (x y : K) (a b : ℝ) (_ : 0 ≤ a) (_ : 0 ≤ b) (hab : a + b = 1) :
-      A (a • (x : E) + b • (y : E)) = a • A x + b • A y := by
-    have ha' : a = 1 - b := eq_sub_of_add_eq hab
-    rw [ha', ← AffineMap.lineMap_apply_module, A.apply_lineMap, AffineMap.lineMap_apply_module]
-  exact map_barycenter_of_map_smul_add_smul hK hKc φ hφ₁
+          ⟨hAL.restrict A K L, hAc.mapsToRestrict hAL⟩)) :=
+  map_barycenter_of_map_smul_add_smul hK hKc φ hφ₁
     (T := ⟨hAL.restrict A K L, hAc.mapsToRestrict hAL⟩)
-    fun x y a b ha hb hab => hcomb x y a b ha hb hab
+    fun _ _ _ _ _ _ hab => Convex.combo_affine_apply hab
 
 end LocallyConvex
 

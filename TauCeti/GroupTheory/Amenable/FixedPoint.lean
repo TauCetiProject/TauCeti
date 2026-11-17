@@ -34,10 +34,11 @@ Both implications connect `TauCeti.Mean G` to affine `G`-actions on compact conv
 * **Action on the compact convex space of means (fixed point `→ Amenable G`).** Left translation
   induces the contragredient action `(g • m) f = m (L_{g⁻¹} f)` on `Mean G` and the weak-*
   continuous linear action `TauCeti.UCB.leftTranslationWeakDual` on `WeakDual ℝ (UCB G)` (developed
-  in `TauCeti.GroupTheory.Amenable.Basic` and `TauCeti.GroupTheory.Amenable.WeakStar`), whose fixed
-  points in `Mean G` are the left-invariant means and whose action on `G × Mean G` is jointly
-  continuous. Embedding `Mean G` as constant functions in `PUnit.{v + 1} → WeakDual ℝ (UCB G)`
-  yields a fixed point in `Type (max u v)`, hence a left-invariant mean on `UCB G`.
+  in `TauCeti.Topology.Algebra.Group.UCB.WeakDual`, `TauCeti.GroupTheory.Amenable.Basic`, and
+  `TauCeti.GroupTheory.Amenable.WeakStar`), whose fixed points in `Mean G` are the left-invariant
+  means and whose action on `G × Mean G` is jointly continuous. Embedding `Mean G` as constant
+  functions in `PUnit.{v + 1} → WeakDual ℝ (UCB G)` yields a fixed point in `Type (max u v)`, hence
+  a left-invariant mean on `UCB G`.
 
 ## Main definitions
 
@@ -168,10 +169,12 @@ theorem orbitBarycenter_mem (m : Mean G) {K : Set E} [MulAction G K] [Continuous
 
 /-- Every continuous linear functional `ℓ : StrongDual ℝ E` evaluates at `m.orbitBarycenter K hK x`
 to the mean `m` applied to the orbit function `g ↦ ℓ (g • x)`. -/
-theorem strongDual_orbitBarycenter (m : Mean G) {K : Set E} [CompactSpace K] [MulAction G K]
+theorem strongDual_orbitBarycenter (m : Mean G) {K : Set E} [MulAction G K]
     [ContinuousSMul G K] (hK : IsCompact K) (hKc : Convex ℝ K) (x : K) (ℓ : StrongDual ℝ E) :
+    letI : CompactSpace K := isCompact_iff_compactSpace.1 hK
     ℓ (m.orbitBarycenter K hK x) =
       m (UCB.orbitPositiveLinearMap G x ((ℓ : C(E, ℝ)).restrict K)) := by
+  have : CompactSpace K := isCompact_iff_compactSpace.1 hK
   rw [orbitBarycenter_eq_barycenter, strongDual_barycenter hK hKc _ (m.pullbackOrbit_one x),
     pullbackOrbit_apply]
 
@@ -225,8 +228,34 @@ end Mean
 
 section FixedPoint
 
-/-- Equip an invariant subset `K ⊆ E` with the `MulAction G K` induced by `π : G →* (E →ᵃ[ℝ] E)` and
-deduce a `π`-fixed point in `K` from a subtype fixed-point principle. -/
+/-- Equip an invariant subset `K ⊆ E` with the `MulAction G K` and `ContinuousSMul G K` induced by
+`ρ : G →* Function.End E`, and deduce a `ρ`-fixed point in `K` from a subtype fixed-point
+principle. -/
+private theorem exists_fixedPoint_of_subtype {G : Type u} [Monoid G] [TopologicalSpace G]
+    {E : Type v} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E] {K : Set E} (hKc : Convex ℝ K)
+    (ρ : G →* Function.End E) (hmaps : ∀ g : G, MapsTo (ρ g) K K)
+    (hcont : Continuous fun p : G × K => ρ p.1 (p.2 : E))
+    (hcomb : ∀ (g : G) {y : E}, y ∈ K → ∀ {z : E}, z ∈ K → ∀ {a b : ℝ},
+      0 ≤ a → 0 ≤ b → a + b = 1 → ρ g (a • y + b • z) = a • ρ g y + b • ρ g z)
+    (hfp : ∀ [MulAction G K] [ContinuousSMul G K],
+      (∀ (g : G) (y z : K) (a b : ℝ) (ha : 0 ≤ a) (hb : 0 ≤ b) (hab : a + b = 1),
+        ((g • (⟨a • (y : E) + b • (z : E), hKc y.2 z.2 ha hb hab⟩ : K) : K) : E) =
+          a • ((g • y : K) : E) + b • ((g • z : K) : E)) →
+      ∃ x : K, ∀ g : G, g • x = x) :
+    ∃ x ∈ K, ∀ g : G, ρ g x = x := by
+  let _ : SMul G K := ⟨fun g x => ⟨ρ g x, hmaps g x.2⟩⟩
+  have hcoe (g : G) (x : K) : ((g • x : K) : E) = ρ g x := rfl
+  let _ : MulAction G K :=
+    { one_smul x := Subtype.ext (congrFun (map_one ρ) x)
+      mul_smul g h x := Subtype.ext (congrFun (map_mul ρ g h) x) }
+  have : ContinuousSMul G K := ⟨hcont.subtype_mk fun p => hmaps p.1 p.2.2⟩
+  obtain ⟨x, hx⟩ := hfp fun g y z a b ha hb hab => by
+    rw [hcoe, hcoe, hcoe]
+    exact hcomb g y.2 z.2 ha hb hab
+  exact ⟨x, x.2, fun g => congrArg Subtype.val (hx g)⟩
+
+/-- Deduce a fixed point of `π : G →* (E →ᵃ[ℝ] E)` on an invariant convex subset `K ⊆ E` from a
+subtype fixed-point principle. -/
 private theorem exists_fixedPoint_affineMap_of_subtype {G : Type u} [Monoid G] [TopologicalSpace G]
     {E : Type v} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E] {K : Set E} (hKc : Convex ℝ K)
     (π : G →* (E →ᵃ[ℝ] E)) (hmaps : ∀ g : G, MapsTo (π g) K K)
@@ -236,18 +265,23 @@ private theorem exists_fixedPoint_affineMap_of_subtype {G : Type u} [Monoid G] [
         ((g • (⟨a • (y : E) + b • (z : E), hKc y.2 z.2 ha hb hab⟩ : K) : K) : E) =
           a • ((g • y : K) : E) + b • ((g • z : K) : E)) →
       ∃ x : K, ∀ g : G, g • x = x) :
-    ∃ x ∈ K, ∀ g : G, π g x = x := by
-  let _ : SMul G K := ⟨fun g x => ⟨π g x, hmaps g x.2⟩⟩
-  have hcoe (g : G) (x : K) : ((g • x : K) : E) = π g x := rfl
-  let _ : MulAction G K :=
-    { one_smul x := Subtype.ext (by simp [hcoe, map_one])
-      mul_smul g h x := Subtype.ext (by simp [hcoe, map_mul]) }
-  have : ContinuousSMul G K := ⟨hcont.subtype_mk fun p => hmaps p.1 p.2.2⟩
-  obtain ⟨x, hx⟩ := hfp fun g y z a b _ _ hab => by
-    have ha' : a = 1 - b := eq_sub_of_add_eq hab
-    rw [hcoe, hcoe, hcoe, Subtype.coe_mk, ha', ← AffineMap.lineMap_apply_module,
-      (π g).apply_lineMap, AffineMap.lineMap_apply_module]
-  exact ⟨x, x.2, fun g => congrArg Subtype.val (hx g)⟩
+    ∃ x ∈ K, ∀ g : G, π g x = x :=
+  exists_fixedPoint_of_subtype hKc
+    { toFun := fun g => (π g : E → E)
+      map_one' := funext fun x => DFunLike.congr_fun (map_one π) x
+      map_mul' := fun g h => funext fun x => DFunLike.congr_fun (map_mul π g h) x }
+    hmaps hcont (fun _ _ _ _ _ _ _ _ _ hab => Convex.combo_affine_apply hab) hfp
+
+/-- View a monoid homomorphism `G →* (E ≃ᵃ[ℝ] E)` as a homomorphism `G →* (E →ᵃ[ℝ] E)`. -/
+private def toAffineMapHom {G : Type u} [Monoid G] {E : Type v} [AddCommGroup E] [Module ℝ E]
+    (π : G →* (E ≃ᵃ[ℝ] E)) : G →* (E →ᵃ[ℝ] E) :=
+  ((Units.coeHom (E →ᵃ[ℝ] E)).comp AffineEquiv.equivUnitsAffineMap.toMonoidHom).comp π
+
+@[simp]
+private theorem toAffineMapHom_apply {G : Type u} [Monoid G] {E : Type v} [AddCommGroup E]
+    [Module ℝ E] (π : G →* (E ≃ᵃ[ℝ] E)) (g : G) (x : E) :
+    toAffineMapHom π g x = π g x := by
+  simp [toAffineMapHom, AffineEquiv.val_equivUnitsAffineMap_apply]
 
 variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
@@ -278,16 +312,9 @@ theorem Amenable.exists_fixedPoint_of_mapsTo [Amenable G] {E : Type v} [AddCommG
     (hcont : Continuous fun p : G × K => p.1 • (p.2 : E))
     (hcomb : ∀ (g : G) {y : E}, y ∈ K → ∀ {z : E}, z ∈ K → ∀ {a b : ℝ},
       0 ≤ a → 0 ≤ b → a + b = 1 → g • (a • y + b • z) = a • (g • y) + b • (g • z)) :
-    ∃ x ∈ K, ∀ g : G, g • x = x := by
-  let _ : SMul G K := ⟨fun g x => ⟨g • (x : E), hmaps g x.2⟩⟩
-  have hcoe (g : G) (x : K) : ((g • x : K) : E) = g • (x : E) := rfl
-  let _ : MulAction G K :=
-    { one_smul x := Subtype.ext (by simp [hcoe])
-      mul_smul g h x := Subtype.ext (by simp [hcoe, mul_smul]) }
-  have : ContinuousSMul G K := ⟨hcont.subtype_mk fun p => hmaps p.1 p.2.2⟩
-  obtain ⟨x, hx⟩ := Amenable.exists_fixedPoint_subtype (G := G) hKne hK hKc
-    fun g y z a b ha hb hab => hcomb g y.2 z.2 ha hb hab
-  exact ⟨x, x.2, fun g => congrArg Subtype.val (hx g)⟩
+    ∃ x ∈ K, ∀ g : G, g • x = x :=
+  exists_fixedPoint_of_subtype hKc MulAction.toEndHom hmaps hcont hcomb fun hcomb' =>
+    Amenable.exists_fixedPoint_subtype hKne hK hKc hcomb'
 
 /-- **Day–Rickert fixed-point theorem** (monoid homomorphism into `E →ᵃ[ℝ] E`). Every jointly
 continuous affine action of an amenable topological group `G` on a nonempty compact convex subset
@@ -310,12 +337,8 @@ theorem Amenable.exists_fixedPoint_affineEquiv [Amenable G] {E : Type v} [AddCom
     (hKc : Convex ℝ K) (π : G →* (E ≃ᵃ[ℝ] E)) (hmaps : ∀ g : G, MapsTo (π g) K K)
     (hcont : Continuous fun p : G × K => π p.1 (p.2 : E)) :
     ∃ x ∈ K, ∀ g : G, π g x = x := by
-  let π' : G →* (E →ᵃ[ℝ] E) :=
-    (((Units.coeHom (E →ᵃ[ℝ] E)).comp AffineEquiv.equivUnitsAffineMap.toMonoidHom).comp π)
-  simpa [π', AffineEquiv.val_equivUnitsAffineMap_apply] using
-    Amenable.exists_fixedPoint_affineMap hKne hK hKc π'
-      (fun g => by simpa [π', AffineEquiv.val_equivUnitsAffineMap_apply] using hmaps g)
-      (by simpa [π', AffineEquiv.val_equivUnitsAffineMap_apply] using hcont)
+  simpa using Amenable.exists_fixedPoint_affineMap hKne hK hKc (toAffineMapHom π)
+    (fun g x hx => by simpa using hmaps g hx) (by simpa using hcont)
 
 /-- Pointwise action of `UCB.leftTranslationWeakDual` on functions from an index type `ι` into
 `WeakDual ℝ (UCB G)`, as a group homomorphism into affine equivalences. -/
@@ -389,12 +412,8 @@ theorem Amenable.of_forall_exists_fixedPoint_affineMap
     Amenable G :=
   Amenable.of_forall_exists_fixedPoint_affineEquiv.{u, v} fun E _ _ _ _ _ _ _ K hKne hK hKc π
     hmaps hcont => by
-    let π' : G →* (E →ᵃ[ℝ] E) :=
-      (((Units.coeHom (E →ᵃ[ℝ] E)).comp AffineEquiv.equivUnitsAffineMap.toMonoidHom).comp π)
-    simpa [π', AffineEquiv.val_equivUnitsAffineMap_apply] using
-      hfp E K hKne hK hKc π'
-        (fun g => by simpa [π', AffineEquiv.val_equivUnitsAffineMap_apply] using hmaps g)
-        (by simpa [π', AffineEquiv.val_equivUnitsAffineMap_apply] using hcont)
+    simpa using hfp E K hKne hK hKc (toAffineMapHom π)
+      (fun g x hx => by simpa using hmaps g hx) (by simpa using hcont)
 
 /-- If every jointly continuous action of `G` on a nonempty compact convex subset `K` of a Hausdorff
 locally convex real space in `Type (max u v)` preserving binary convex combinations in `E` has a
