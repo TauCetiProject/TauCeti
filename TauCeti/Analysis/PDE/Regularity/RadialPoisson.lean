@@ -34,12 +34,11 @@ coefficient exponent, which for the Laplacian is arbitrary).
   `t`, so it is not Hölder at the origin with any exponent larger than `1 - γ`.
   Letting `γ ↑ d / q` shows that every exponent `β > 1 - d / q` fails for some datum in `Lᵠ`
   (`TauCeti.PDE.exists_memLp_forall_energyFormH1_eq_and_not_holderOnWith_gradient`).
-* **The endpoint `q = d` is excluded.** For `γ = 1` and `d ≥ 2`, the datum `‖x‖⁻¹` lies in `Lᵠ(Ω)`
-  for every `q < d` (`IsCompact.memLp_norm_inv_restrict`) but, when `Ω` contains the origin, not
-  for `q = d` (`TauCeti.not_memLp_norm_inv_closedBall`), and the gradient `-x / ((d - 1) ‖x‖)`
-  of the solution `-‖x‖ / (d - 1)` has no representative continuous at the origin
-  (`TauCeti.PDE.exists_forall_energyFormH1_eq_and_not_continuousAt_gradient`). So the `C¹`
-  conclusion is lost at `q = d`, not merely weakened.
+* **Integrability below `q = d` does not even give continuity.** For `γ = 1` and `d ≥ 2`, the
+  datum `‖x‖⁻¹` lies in `Lᵠ(Ω)` for every `q < d` (`IsCompact.memLp_norm_inv_restrict`), though,
+  when `Ω` contains the origin, not for `q = d` (`TauCeti.not_memLp_norm_inv_closedBall`), and the
+  gradient `-x / ((d - 1) ‖x‖)` of the solution `-‖x‖ / (d - 1)` has no representative continuous
+  at the origin (`TauCeti.PDE.exists_forall_energyFormH1_eq_and_not_continuousAt_gradient`).
 
 The weak equation is the divergence identity `∫ Δφ w = ∫ φ div ∇w` for the radial field
 `x ↦ ‖x‖ ^ (-γ) • x`, whose weak derivative is its classical one across the origin
@@ -86,9 +85,9 @@ private theorem radialSolution_continuous (hγ : γ < 2) :
 /-- Away from the origin, the radial gradient has length `‖x‖ ^ (1 - γ) / |d - γ|`. -/
 private theorem norm_radialGradient {x : EuclideanSpace ℝ ι} (hx : x ≠ 0) :
     ‖radialGradient γ x‖ = |Fintype.card ι - γ|⁻¹ * ‖x‖ ^ (1 - γ) := by
-  rw [radialGradient, norm_smul, norm_smul, norm_neg, norm_inv, Real.norm_eq_abs,
-    Real.norm_of_nonneg (by positivity), ← Real.rpow_add_one (norm_ne_zero_iff.2 hx),
-    neg_add_eq_sub]
+  have h : ‖x‖ ^ (-γ) * ‖x‖ = ‖x‖ ^ (1 - γ) := by
+    rw [← Real.rpow_add_one (norm_ne_zero_iff.2 hx), neg_add_eq_sub]
+  simp [radialGradient, norm_smul, abs_of_nonneg (Real.rpow_nonneg (norm_nonneg x) _), h]
 
 private theorem norm_radialGradient_le (x : EuclideanSpace ℝ ι) :
     ‖radialGradient γ x‖ ≤ |Fintype.card ι - γ|⁻¹ * ‖x‖ ^ (1 - γ) := by
@@ -131,7 +130,8 @@ private theorem energyFormH1_eq_of_value_ae_eq [DecidableEq ι] [Nonempty ι] (h
     energyFormH1 (fun _ ↦ 1) 0 0 u (W1p.ofTestFunctionₗ volume Ω 2 φ) =
       ∫ x in Ω, ‖x‖ ^ (-γ) * φ x := by
   have hg : HasWeakFDerivOn volume Ω (radialGradient (ι := ι) γ) _ :=
-    (hD.const_smul (-(Fintype.card ι - γ)⁻¹)).congr_ae (Eventually.of_forall fun _ ↦ rfl)
+    (hD.const_smul (-(Fintype.card ι - γ)⁻¹)).congr_ae
+      (Eventually.of_forall fun _ ↦ by simp only [radialGradient, Pi.smul_apply])
   rw [energyFormH1_one_zero_zero_ofTestFunctionₗ_eq_neg_integral_laplacian_smul hu,
     (hasWeakFDerivOn_radialSolution hγ Ω).integral_laplacian_smul_eq_integral_smul_trace hg φ,
     ← integral_neg, ← setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx ↦ by
@@ -215,8 +215,11 @@ private theorem not_holderOnWith_radialGradient [Nonempty ι] (hγ : γ < 1) {β
   have hgt : ‖radialGradient γ (t • e)‖ = c * t ^ (1 - γ) := by
     rw [norm_radialGradient (by rw [← norm_ne_zero_iff, hnorm]; exact ht0.ne'), abs_of_pos hdγ,
       hnorm]
-  rw [hg0, dist_zero_right, hgt, dist_zero_right, hnorm,
-    show (β : ℝ) = ε + (1 - γ) by rw [hε]; ring, Real.rpow_add ht0, ← mul_assoc] at hdist
+  have htβ : t ^ (β : ℝ) = t ^ ε * t ^ (1 - γ) := by
+    rw [← Real.rpow_add ht0, hε]
+    congr 1
+    ring
+  simp only [hg0, dist_zero_right, hgt, hnorm, htβ] at hdist
   have hpos : 0 < t ^ (1 - γ) := Real.rpow_pos_of_pos ht0 _
   nlinarith [mul_lt_mul_of_pos_right ht hpos]
 
@@ -383,17 +386,18 @@ private theorem not_continuousAt_of_ae_eq_radialGradient_one [Nonempty ι]
   rw [inner_sub_left] at hinner
   linarith
 
-/-- **The endpoint `q = d` of the divergence-form Schauder estimate is excluded.** Let `d ≥ 2`
+/-- **Integrability of the datum below `q = d` does not give a continuous gradient.** Let `d ≥ 2`
 and let `Ω ⊆ ℝᵈ` be a bounded open set containing the origin. There is a weak solution
 `u ∈ H¹(Ω)` of `-Δu = ‖x‖⁻¹`, that is `∫_Ω ∇φ · ∇u = ∫_Ω ‖x‖⁻¹ φ` for every test function `φ`,
 whose gradient has no representative continuous at the origin. The proof takes the radial solution
 `-‖x‖ / (d - 1)`, whose gradient is `-x / ((d - 1) ‖x‖)`.
 
-The datum `‖x‖⁻¹` lies in `Lᵠ(Ω)` for every `q < d` (`IsCompact.memLp_norm_inv_restrict`) but not
-in `Lᵈ(Ω)` (`TauCeti.not_memLp_norm_inv_closedBall`). So at `q = d` the `C¹` conclusion of the
+The datum `‖x‖⁻¹` lies in `Lᵠ(Ω)` for every `q < d` (`IsCompact.memLp_norm_inv_restrict`), though
+it just misses `Lᵈ(Ω)` (`TauCeti.not_memLp_norm_inv_closedBall`). So a datum in every `Lᵠ` with
+`q < d` can give a solution whose gradient is not even continuous, let alone Hölder as in the
 Schauder estimate
 `exists_holderOnWith_preciseRepresentative_gradient_of_holderOnWith_matrixBilinearForm_of_memLp`
-is lost, not merely weakened to a smaller Hölder exponent. -/
+for `q > d`. -/
 theorem exists_forall_energyFormH1_eq_and_not_continuousAt_gradient [DecidableEq ι]
     (hd : 1 < Fintype.card ι) {Ω : Opens (EuclideanSpace ℝ ι)}
     (hb : Bornology.IsBounded (Ω : Set (EuclideanSpace ℝ ι)))

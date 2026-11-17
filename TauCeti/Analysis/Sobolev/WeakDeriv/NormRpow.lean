@@ -481,8 +481,7 @@ theorem hasWeakFDerivOn_norm_rpow_neg_one_smul_self (hd : 1 < Module.finrank ℝ
   -- The coordinates are the components `‖x‖⁻¹ ⟪x, bᵢ⟫` of the unit radial field.
   convert hasWeakFDerivOn_norm_rpow_neg_one_mul_inner (μ := μ) hd (b i) Ω using 1
   · funext x
-    rw [Module.Basis.coord_apply, OrthonormalBasis.coe_toBasis_repr_apply,
-      OrthonormalBasis.repr_apply_apply, inner_smul_right, real_inner_comm]
+    simp [OrthonormalBasis.repr_apply_apply, real_inner_comm]
   · funext x
     ext v
     simp only [ContinuousLinearMap.comp_apply, LinearMap.coe_toContinuousLinearMap',
