@@ -42,8 +42,9 @@ Bessel weight `⟨ξ / 2π⟩^s` is uniformly elliptic of order `s`
 ## Main declarations
 
 * `TauCeti.Symbol.IsEllipticAbove`, `TauCeti.Symbol.IsUniformlyEllipticAbove`: ellipticity of a
-  symbol above a radius, with locally uniform and uniform constants; the first is defined as
-  ellipticity on the set of large frequencies (`TauCeti.Symbol.IsEllipticOn`).
+  symbol above a radius, with locally uniform and uniform constants;
+  `TauCeti.Symbol.isEllipticAbove_iff_isEllipticOn` identifies the first with ellipticity on the
+  set of large frequencies (`TauCeti.Symbol.IsEllipticOn`).
 * `TauCeti.Symbol.isSmoothing_cutoffInverse_comp_sub`,
   `TauCeti.Symbol.isSmoothing_comp_cutoffInverse_sub`: the cut-off inverse is a pointwise
   two-sided inverse of `a` modulo smoothing symbols, and
@@ -100,6 +101,12 @@ theorem isEllipticAbove_iff {a : Symbol n V W m} :
   isEllipticOn_iff.trans <| forall₂_congr fun _ _ => exists_congr fun _ =>
     ⟨fun h x hx ξ hξ => h (x, ξ) hξ hx, fun h p hp hpK => h p.1 hpK p.2 hp⟩
 
+/-- Ellipticity above the radius `R` is ellipticity on the set of points with frequency of norm at
+least `R`. -/
+theorem isEllipticAbove_iff_isEllipticOn {a : Symbol n V W m} :
+    a.IsEllipticAbove R ↔ a.IsEllipticOn {p | R ≤ ‖p.2‖} :=
+  Iff.rfl
+
 theorem isUniformlyEllipticAbove_iff {a : Symbol n V W m} :
     a.IsUniformlyEllipticAbove R ↔ ∃ C : ℝ, ∀ x ξ, R ≤ ‖ξ‖ →
       (a.coefficient (x, ξ)).IsInvertible ∧
@@ -111,12 +118,13 @@ theorem isUniformlyEllipticAbove_iff {a : Symbol n V W m} :
 theorem IsEllipticAbove.isInvertible {a : Symbol n V W m} (ha : a.IsEllipticAbove R)
     (x : CoordinateSpace n) {ξ : CoordinateSpace n} (hξ : R ≤ ‖ξ‖) :
     (a.coefficient (x, ξ)).IsInvertible :=
-  IsEllipticOn.isInvertible ha (p := (x, ξ)) hξ
+  (isEllipticAbove_iff_isEllipticOn.1 ha).isInvertible (p := (x, ξ)) hξ
 
 /-- Ellipticity above a radius implies ellipticity above every larger radius. -/
 theorem IsEllipticAbove.mono {a : Symbol n V W m} (ha : a.IsEllipticAbove R) (h : R ≤ R') :
     a.IsEllipticAbove R' :=
-  IsEllipticOn.mono ha fun _ hp => h.trans hp
+  isEllipticAbove_iff_isEllipticOn.2 <|
+    (isEllipticAbove_iff_isEllipticOn.1 ha).mono fun _ hp => h.trans hp
 
 /-- Uniform ellipticity above a radius implies uniform ellipticity above every larger radius. -/
 theorem IsUniformlyEllipticAbove.mono {a : Symbol n V W m} (ha : a.IsUniformlyEllipticAbove R)
