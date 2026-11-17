@@ -51,8 +51,8 @@ The brackets are written out as `(1 + ‖x‖ ^ 2) ^ (s / 2)`, the weight of Mat
   `⟨x⟩ ^ s` by at most the factor `c ^ |s|`.
 * `TauCeti.one_add_norm_smul_sq_rpow_le`: the same for the scalar multiple `c • x`,
   `⟨c • x⟩ ^ s ≤ c ^ |s| ⟨x⟩ ^ s`.
-* `TauCeti.one_add_norm_add_two_pi_smul_sq_rpow_le`: Peetre's inequality for the frequency shift
-  `ξ + 2πθ`, `⟨ξ + 2πθ⟩ ^ s ≤ 2 ^ (|s| / 2) (2π) ^ |s| ⟨ξ⟩ ^ s ⟨θ⟩ ^ |s|`.
+* `TauCeti.one_add_norm_add_smul_sq_rpow_le`: Peetre's inequality for the shift `ξ + c • θ`
+  with `c ≥ 1`, `⟨ξ + c • θ⟩ ^ s ≤ 2 ^ (|s| / 2) c ^ |s| ⟨ξ⟩ ^ s ⟨θ⟩ ^ |s|`.
 * `TauCeti.one_add_norm_add_sq_rpow_le`: the subadditive form
   `⟨x + y⟩ ^ s ≤ 2 ^ s (⟨x⟩ ^ s + ⟨y⟩ ^ s)` for `s ≥ 0`, which splits the weight of a convolution
   between its two factors.
@@ -224,22 +224,20 @@ theorem one_add_norm_smul_sq_rpow_le [SeminormedAddCommGroup E] [NormedSpace ℝ
   one_add_norm_sq_rpow_le_of_norm_eq_mul hc s
     (by rw [norm_smul, Real.norm_of_nonneg (zero_le_one.trans hc)])
 
-open Real in
 omit [SeminormedAddGroup E] in
-/-- Peetre's inequality for the frequency shift `ξ + 2πθ` by a frequency `θ` dual to the position,
-in the form used for the integrals over `θ` defining the composition symbol and the left symbol of
-a right quantization of pseudodifferential symbols. -/
-theorem one_add_norm_add_two_pi_smul_sq_rpow_le [SeminormedAddCommGroup E] [NormedSpace ℝ E]
-    (m : ℝ) (ξ θ : E) :
-    (1 + ‖ξ + (2 * π) • θ‖ ^ 2) ^ (m / 2) ≤
-      2 ^ (|m| / 2) * (2 * π) ^ |m| * (1 + ‖ξ‖ ^ 2) ^ (m / 2) * (1 + ‖θ‖ ^ 2) ^ (|m| / 2) := by
-  refine (one_add_norm_add_sq_rpow_le_mul m ξ ((2 * π) • θ)).trans ?_
-  have h2π : (1 : ℝ) ≤ 2 * π := by linarith [Real.two_le_pi]
-  have := one_add_norm_smul_sq_rpow_le h2π |m| θ
+/-- Peetre's inequality for the shift `ξ + c • θ` by a multiple of `θ` with `c ≥ 1`:
+`(1 + ‖ξ + c • θ‖ ^ 2) ^ (m / 2) ≤ 2 ^ (|m| / 2) c ^ |m| (1 + ‖ξ‖ ^ 2) ^ (m / 2)
+(1 + ‖θ‖ ^ 2) ^ (|m| / 2)` for every real `m`. -/
+theorem one_add_norm_add_smul_sq_rpow_le [SeminormedAddCommGroup E] [NormedSpace ℝ E] {c : ℝ}
+    (hc : 1 ≤ c) (m : ℝ) (ξ θ : E) :
+    (1 + ‖ξ + c • θ‖ ^ 2) ^ (m / 2) ≤
+      2 ^ (|m| / 2) * c ^ |m| * (1 + ‖ξ‖ ^ 2) ^ (m / 2) * (1 + ‖θ‖ ^ 2) ^ (|m| / 2) := by
+  refine (one_add_norm_add_sq_rpow_le_mul m ξ (c • θ)).trans ?_
+  have := one_add_norm_smul_sq_rpow_le hc |m| θ
   rw [abs_abs] at this
-  calc 2 ^ (|m| / 2) * (1 + ‖ξ‖ ^ 2) ^ (m / 2) * (1 + ‖(2 * π) • θ‖ ^ 2) ^ (|m| / 2)
-      ≤ 2 ^ (|m| / 2) * (1 + ‖ξ‖ ^ 2) ^ (m / 2) *
-          ((2 * π) ^ |m| * (1 + ‖θ‖ ^ 2) ^ (|m| / 2)) := by gcongr
+  calc 2 ^ (|m| / 2) * (1 + ‖ξ‖ ^ 2) ^ (m / 2) * (1 + ‖c • θ‖ ^ 2) ^ (|m| / 2)
+      ≤ 2 ^ (|m| / 2) * (1 + ‖ξ‖ ^ 2) ^ (m / 2) * (c ^ |m| * (1 + ‖θ‖ ^ 2) ^ (|m| / 2)) := by
+        gcongr
     _ = _ := by ring
 
 /-- **Peetre's inequality, subadditive form.** The Japanese bracket weight

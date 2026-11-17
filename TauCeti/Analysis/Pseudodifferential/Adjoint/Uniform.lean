@@ -100,16 +100,6 @@ section Commutator
 variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [CompleteSpace V]
   [NormedAddCommGroup W] [NormedSpace ℂ W] [CompleteSpace W] {c : Symbol n V W m}
 
-omit [CompleteSpace V] [CompleteSpace W] in
-/-- Two right quantizations agree when their integrands `c(y, ξ) (u y)` agree pointwise. -/
-private theorem quantizeRightUniformCLM_eq_of_coefficient_apply_eq {m' : ℝ}
-    {c' : Symbol n V W m'} (hc : c.IsUniform) (hc' : c'.IsUniform)
-    {u u' : 𝓢(CoordinateSpace n, V)}
-    (h : ∀ y ξ, c.coefficient (y, ξ) (u y) = c'.coefficient (y, ξ) (u' y)) :
-    quantizeRightUniformCLM c hc u = quantizeRightUniformCLM c' hc' u' := by
-  ext x
-  simp only [quantizeRightUniformCLM_apply, h]
-
 /-- Multiplying a symbol with compact spatial support by `(y - z)ⱼ` before passing to the left
 symbol of its right quantization multiplies the input of that quantization by `(y - z)ⱼ`. -/
 private theorem quantizeSchwartzValue_ofRight_coordSubSymbol_comp
@@ -214,7 +204,7 @@ private theorem IsBallFamily.exists_norm_ofRight_le {c : ι → Symbol n V W m}
       _ ≤ max D 0 * (2 ^ (|m| / 2) * (2 * π) ^ |m| * (1 + ‖ξ‖ ^ 2) ^ (m / 2) *
             (1 + ‖θ‖ ^ 2) ^ (|m| / 2)) * (1 + ‖θ‖ ^ 2) ^ (-(|m| + n + 1) / 2) := by
           gcongr
-          exact one_add_norm_add_two_pi_smul_sq_rpow_le m ξ θ
+          exact one_add_norm_add_smul_sq_rpow_le (by linarith [Real.two_le_pi]) m ξ θ
       _ = K * (1 + ‖ξ‖ ^ 2) ^ (m / 2) *
             ((1 + ‖θ‖ ^ 2) ^ (|m| / 2) * (1 + ‖θ‖ ^ 2) ^ (-(|m| + n + 1) / 2)) := by ring
       _ = _ := by rw [hθ]

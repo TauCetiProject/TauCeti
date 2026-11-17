@@ -110,7 +110,8 @@ private theorem IsBallFamily.exists_norm_sharp_le {p : Symbol n W U m'} (hp : p.
         K * (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2) * (1 + ‖η‖ ^ 2) ^ (-((n : ℝ) + 1) / 2) := by
     rw [norm_smul, Circle.norm_coe, one_mul]
     refine (ContinuousLinearMap.opNorm_comp_le _ _).trans ?_
-    have hshift := one_add_norm_add_two_pi_smul_sq_rpow_le m' ξ η
+    have hshift :=
+      one_add_norm_add_smul_sq_rpow_le (c := 2 * π) (by linarith [Real.two_le_pi]) m' ξ η
     have hξ : (1 + ‖ξ‖ ^ 2) ^ (m' / 2) * (1 + ‖ξ‖ ^ 2) ^ (m / 2) =
         (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2) := by
       rw [← Real.rpow_add (by positivity)]
