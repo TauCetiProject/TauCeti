@@ -71,8 +71,7 @@ theorem isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology_lo
     (n : ℕ) : IsUniquelyTwoDivisible (Additive (π_ (n + 3) X x)) :=
   -- The fundamental group of the loop space is `π₂(X, x)`.
   have : Subsingleton (FundamentalGroup (Ω X x) (Path.refl x)) :=
-    (HomotopyGroup.pi1MulEquivFundamentalGroup.symm.trans
-      (HomotopyGroup.pathLoopSpaceMulEquiv 0)).toEquiv.subsingleton_congr.2 ‹_›
+    HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv.toEquiv.subsingleton_congr.2 ‹_›
   (isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology_pathComponent
     (Path.refl x) hX n).of_addEquiv (HomotopyGroup.pathLoopSpaceMulEquiv (n + 1)).toAdditive
 
