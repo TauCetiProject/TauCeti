@@ -54,6 +54,7 @@ are the coefficient maps along which reductions modulo the maximal ideal are fun
   `K`-space is continuous.
 * `LinearEquiv.isBounded_image_iff_of_integer`: `𝒪[K]`-linear equivalences between finite
   products of `K` preserve and reflect bounded sets.
+* `TauCeti.isOpen_maximalIdeal_integer`: the maximal ideal of `𝒪[K]` is open for the norm topology.
 * `TauCeti.not_fg_maximalIdeal_integer`: for a densely normed field the maximal ideal of `𝒪[K]`
   is not finitely generated.
 -/
@@ -258,6 +259,15 @@ theorem Valued.integer.exists_seq_mem_maximalIdeal :
 end DenselyNormed
 
 namespace TauCeti
+
+/-- The maximal ideal of the valuation ring `𝒪[K]` of a nonarchimedean field is open for the
+subspace norm topology, being the open unit ball around `0`. -/
+theorem isOpen_maximalIdeal_integer {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] :
+    IsOpen ((maximalIdeal (Valued.integer K) : Ideal (Valued.integer K)) :
+      Set (Valued.integer K)) := by
+  convert Metric.isOpen_ball (x := (0 : Valued.integer K)) (ε := 1) using 1
+  ext x
+  rw [SetLike.mem_coe, Valued.integer.mem_maximalIdeal_iff, Metric.mem_ball, dist_zero_right]
 
 variable {K : Type*} [DenselyNormedField K] [IsUltrametricDist K]
 
