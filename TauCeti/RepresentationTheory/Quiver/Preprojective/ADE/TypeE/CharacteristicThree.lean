@@ -20,7 +20,8 @@ The branch-node word `y²x`, represented by the latest-vertex-first list
 A linear functional supported on ten necklaces of length six detects it.
 The necklace weights annihilate the local preprojective relations and are invariant under
 rotation, so the functional descends to the cyclic quotient. The obstruction transfers to the
-preprojective algebra of every orientation of the Bourbaki-labelled `E₆` diagram.
+preprojective algebra of every orientation of the Bourbaki-labelled `E₆` diagram, and lifts along
+the induced-subgraph quotient to `Eₙ` for every `n ≥ 6` (in particular `E₆`, `E₇` and `E₈`).
 
 The quotient-functional construction follows the kernel descent used for the `D₄` Frobenius
 functional in `TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.D4.SelfInjective`.
@@ -155,6 +156,8 @@ private theorem e6Weight_sum_neighborSet (v a b c : Fin 6) [Fintype ((G).neighbo
   rw [← Finset.sum_filter, Finset.sum_subtype _
     (p := (· ∈ (G).neighborSet v)) (fun w => by simp)] at h
   exact h
+
+section E6
 
 variable (k : Type*) [CommRing k] [CharP k 3]
 
@@ -425,5 +428,60 @@ theorem exists_mem_preprojectiveGrade_E6_six_notMem_commutatorSubmodule
     rintro C rfl
     exact exists_preprojective_E6_cyclicClass k
   exact @key _ DynkinType.cartanMatrix_E6 o instV instHom
+
+end E6
+
+section InducedE6
+
+attribute [local instance] SimpleGraph.neighborSetFintypeOfFinite
+
+private def e6Embedding {n : ℕ} (hn : 6 ≤ n) :
+    diagramGraph (CartanMatrix.E 6) ↪g diagramGraph (CartanMatrix.E n) where
+  toEmbedding := Fin.castLEEmb hn
+  map_rel_iff' := by
+    intro i j
+    rw [diagramGraph_E_adj, diagramGraph_E_adj]
+    simp
+
+variable (k : Type*) [CommRing k] [CharP k 3] {n : ℕ}
+
+/-- **An induced `E₆` subdiagram detects a nonzero degree-six signless cyclic class in
+characteristic three.** -/
+theorem exists_mem_signlessPreprojectiveGrade_six_notMem_commutatorSubmodule_of_e6_embedding
+    {V : Type*} [Finite V] {H : SimpleGraph V} [∀ i, Fintype (H.neighborSet i)]
+    (f : diagramGraph (CartanMatrix.E 6) ↪g H) :
+    ∃ z : signlessPreprojectiveAlgebra k (DoubledQuiver H),
+      z ∈ signlessPreprojectiveGrade k (DoubledQuiver H) 6 ∧
+        z ∉ commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver H)) :=
+  exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_embedding k f
+    ⟨_, signlessWord_E6_cyclicWord_mem_grade_six k inferInstance,
+      signlessWord_E6_cyclicWord_not_mem_commutatorSubmodule k inferInstance⟩
+
+/-- **In characteristic three, the signless preprojective algebra of the Bourbaki-labelled `Eₙ`
+graph, `n ≥ 6`, has a degree-six element which is not a sum of commutators.** -/
+theorem exists_mem_signlessPreprojectiveGrade_E_six_notMem_commutatorSubmodule (hn : 6 ≤ n) :
+    ∃ z : signlessPreprojectiveAlgebra k (DoubledQuiver (diagramGraph (CartanMatrix.E n))),
+      z ∈ signlessPreprojectiveGrade k (DoubledQuiver (diagramGraph (CartanMatrix.E n))) 6 ∧
+        z ∉ commutatorSubmodule k
+          (signlessPreprojectiveAlgebra k (DoubledQuiver (diagramGraph (CartanMatrix.E n)))) :=
+  exists_mem_signlessPreprojectiveGrade_six_notMem_commutatorSubmodule_of_e6_embedding k
+    (e6Embedding hn)
+
+/-- **In characteristic three, the additive preprojective algebra of every orientation of the
+Bourbaki-labelled `Eₙ` graph, `n ≥ 6`, has a degree-six element which is not a sum of
+commutators.** -/
+theorem exists_mem_preprojectiveGrade_E_six_notMem_commutatorSubmodule (hn : 6 ≤ n)
+    (o : Orientation (diagramGraph (CartanMatrix.E n))) :
+    ∃ z : preprojectiveAlgebra k (OrientedQuiver (diagramGraph (CartanMatrix.E n)) o),
+      z ∈ preprojectiveGrade k (OrientedQuiver (diagramGraph (CartanMatrix.E n)) o) 6 ∧
+        z ∉ commutatorSubmodule k
+          (preprojectiveAlgebra k (OrientedQuiver (diagramGraph (CartanMatrix.E n)) o)) := by
+  obtain ⟨z, hz, hz0⟩ :=
+    exists_mem_signlessPreprojectiveGrade_E_six_notMem_commutatorSubmodule k hn
+  by_contra! hall
+  let C := eColoring _ (diagramGraph_E_adj (n := n))
+  exact hz0 ((C.preprojectiveGrade_le_commutatorSubmodule_iff k o 6).mp hall hz)
+
+end InducedE6
 
 end TauCeti
