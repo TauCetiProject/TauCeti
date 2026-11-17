@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Distribution.Sobolev
 public import Mathlib.Analysis.FunctionalSpaces.BesselPotentialSpace
 import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
+import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.Fourier.MihlinHormander
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
@@ -83,6 +84,10 @@ the Bessel potential to the Laplacian, with the factor `2π` from Mathlib's Four
   `∂_m f ∈ H^{s,p}` for every direction `m`.
 * `TemperedDistribution.memSobolev_natCast_add_one_iff`: at a natural order `k`,
   `f ∈ H^{k+1,p}` exactly when `f ∈ H^{0,p}` and `∂_m f ∈ H^{k,p}` for every direction `m`.
+* `TemperedDistribution.memSobolev_zero_smulLeftCLM_of_ae_eq`: a Schwartz multiple of an `L²`
+  function with a bounded representative lies in `H^{0,p}`.
+* `TemperedDistribution.memSobolev_smulLeftCLM_lineDerivOp`: for `1 < p < ∞`, if every Schwartz
+  multiple of `f` lies in `H^{r,p}`, then every Schwartz multiple of `∂_w f` lies in `H^{r-1,p}`.
 
 ## References
 
@@ -449,6 +454,32 @@ theorem memSobolev_natCast_add_one_iff (hp : 1 < p) (hp_top : p ≠ ∞) {k : �
       rw [Nat.cast_succ, memSobolev_add_one_iff hp hp_top, ih]
       exact ⟨fun h => ⟨h.1.1, h.2⟩,
         fun h => ⟨⟨h.1, fun m => (h.2 m).mono_of_one_lt hp hp_top (by linarith)⟩, h.2⟩⟩
+
+/-- A Schwartz multiple of an `L²` function with a bounded representative lies in `Lᵖ`. -/
+theorem memSobolev_zero_smulLeftCLM_of_ae_eq {u : Lp F 2 (volume : Measure E)}
+    {g : E → F} (hg : MemLp g ∞ volume) (hug : u =ᵐ[volume] g) (ψ : 𝓢(E, ℂ)) :
+    MemSobolev 0 p (smulLeftCLM F (ψ : E → ℂ) (u : 𝓢'(E, F))) := by
+  have hmem : MemLp (fun x ↦ ψ x • g x) p volume := (ψ.memLp p).smul hg
+  refine memSobolev_zero_iff.2 ⟨hmem.toLp _, ?_⟩
+  ext φ
+  rw [Lp.smulLeftCLM_toTemperedDistribution_apply ψ.hasTemperateGrowth,
+    Lp.toTemperedDistribution_apply]
+  refine integral_congr_ae ?_
+  filter_upwards [hug, hmem.coeFn_toLp] with x hx hx'
+  rw [hx', hx]
+
+/-- For `1 < p < ∞`, if every Schwartz multiple of `f` lies in `H^{r,p}`, then every Schwartz
+multiple of `∂_w f` lies in `H^{r - 1,p}`, by the Leibniz rule `ψ ∂_w f = ∂_w (ψ f) - (∂_w ψ) f`. -/
+theorem memSobolev_smulLeftCLM_lineDerivOp (hp : 1 < p) (hp_top : p ≠ ∞) {r : ℝ}
+    {f : 𝓢'(E, F)} (hf : ∀ ψ : 𝓢(E, ℂ), MemSobolev r p (smulLeftCLM F (ψ : E → ℂ) f)) (w : E)
+    (ψ : 𝓢(E, ℂ)) : MemSobolev (r - 1) p (smulLeftCLM F (ψ : E → ℂ) (∂_{w} f)) := by
+  have h := lineDerivOp_smulLeftCLM ψ.hasTemperateGrowth f w
+  have hψ : (fun x ↦ fderiv ℝ (ψ : E → ℂ) x w) = ⇑(∂_{w} ψ : 𝓢(E, ℂ)) :=
+    funext fun x ↦ (SchwartzMap.lineDerivOp_apply_eq_fderiv w ψ x).symm
+  rw [hψ] at h
+  rw [eq_sub_of_add_eq' h.symm]
+  exact ((hf ψ).lineDerivOp_of_one_lt hp hp_top).sub
+    ((hf (∂_{w} ψ : 𝓢(E, ℂ))).mono_of_one_lt hp hp_top (by linarith))
 
 end inner
 

@@ -7,8 +7,6 @@ module
 
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Tempered
 import TauCeti.Analysis.Distribution.Sobolev
-import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
-import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Sobolev.BesselPotential.Besov
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
@@ -52,7 +50,7 @@ Then `f = J^{2k} v = (J²)^k v`, with `J² = 1 - (2π)⁻² Δ`
 (`TemperedDistribution.besselPotential_two_eq_sub_laplacian`). The Leibniz rule
 `ψ ∂_w g = ∂_w (ψ g) - (∂_w ψ) g` shows that if every Schwartz multiple of `g` lies in `H^{r,p}`,
 then every Schwartz multiple of `∂_w g` lies in `H^{r - 1,p}`, since `∂_w` maps `H^{r,p}` to
-`H^{r - 1,p}` for `1 < p < ∞` (`TemperedDistribution.MemSobolev.lineDerivOp_of_one_lt`). Each
+`H^{r - 1,p}` for `1 < p < ∞` (`TemperedDistribution.memSobolev_smulLeftCLM_lineDerivOp`). Each
 factor `J²` therefore costs two orders, and `k` of them give the order `-2k`.
 
 ## References
@@ -73,32 +71,6 @@ namespace TemperedDistribution
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [InnerProductSpace ℂ F]
   [CompleteSpace F] {p : ℝ≥0∞} [Fact (1 ≤ p)]
-
-/-- A Schwartz multiple of an `L²` function with a bounded representative lies in `Lᵖ`. -/
-private theorem memSobolev_zero_smulLeftCLM_of_ae_eq {u : Lp F 2 (volume : Measure E)}
-    {g : E → F} (hg : MemLp g ∞ volume) (hug : u =ᵐ[volume] g) (ψ : 𝓢(E, ℂ)) :
-    MemSobolev 0 p (smulLeftCLM F (ψ : E → ℂ) (u : 𝓢'(E, F))) := by
-  have hmem : MemLp (fun x ↦ ψ x • g x) p volume := (ψ.memLp p).smul hg
-  refine memSobolev_zero_iff.2 ⟨hmem.toLp _, ?_⟩
-  ext φ
-  rw [Lp.smulLeftCLM_toTemperedDistribution_apply ψ.hasTemperateGrowth,
-    Lp.toTemperedDistribution_apply]
-  refine integral_congr_ae ?_
-  filter_upwards [hug, hmem.coeFn_toLp] with x hx hx'
-  rw [hx', hx]
-
-/-- If every Schwartz multiple of `f` lies in `H^{r,p}`, then every Schwartz multiple of `∂_w f`
-lies in `H^{r - 1,p}`, by the Leibniz rule `ψ ∂_w f = ∂_w (ψ f) - (∂_w ψ) f`. -/
-private theorem memSobolev_smulLeftCLM_lineDerivOp (hp : 1 < p) (hp_top : p ≠ ∞) {r : ℝ}
-    {f : 𝓢'(E, F)} (hf : ∀ ψ : 𝓢(E, ℂ), MemSobolev r p (smulLeftCLM F (ψ : E → ℂ) f)) (w : E)
-    (ψ : 𝓢(E, ℂ)) : MemSobolev (r - 1) p (smulLeftCLM F (ψ : E → ℂ) (∂_{w} f)) := by
-  have h := lineDerivOp_smulLeftCLM ψ.hasTemperateGrowth f w
-  have hψ : (fun x ↦ fderiv ℝ (ψ : E → ℂ) x w) = ⇑(∂_{w} ψ : 𝓢(E, ℂ)) :=
-    funext fun x ↦ (SchwartzMap.lineDerivOp_apply_eq_fderiv w ψ x).symm
-  rw [hψ] at h
-  rw [eq_sub_of_add_eq' h.symm]
-  exact ((hf ψ).lineDerivOp_of_one_lt hp hp_top).sub
-    ((hf (∂_{w} ψ : 𝓢(E, ℂ))).mono_of_one_lt hp hp_top (by linarith))
 
 /-- If every Schwartz multiple of `f` lies in `H^{r,p}`, then every Schwartz multiple of
 `J² f = f - (2π)⁻² Δ f` lies in `H^{r - 2,p}`. -/
@@ -132,9 +104,7 @@ theorem MemSobolev.memSobolev_neg_two_mul_smulLeftCLM (hp : 1 < p) (hp_top : p �
     linarith
   obtain ⟨u, hu⟩ := memSobolev_zero_iff.1 (hv.mono hs)
   obtain ⟨g, hg⟩ := MemSobolev.exists_zeroAtInftyContinuousMap_ae_eq hk (hu ▸ hv)
-  have hgb : MemLp (g : E → F) ∞ volume :=
-    memLp_top_of_bound g.continuous.aestronglyMeasurable ‖g.toBCF‖
-      (ae_of_all _ fun x ↦ g.toBCF.norm_coe_le_norm x)
+  have hgb : MemLp (g : E → F) ∞ volume := g.toBCF.memLp_top
   -- Each factor `J²` of `f = (J²)^k v` costs two orders.
   have key (j : ℕ) (ψ : 𝓢(E, ℂ)) :
       MemSobolev (-(2 * j)) p (smulLeftCLM F (ψ : E → ℂ) (besselPotential E F (2 * j) v)) := by
@@ -189,6 +159,49 @@ theorem isOpen_setOf_isLocallyMemSobolevAt (s : ℝ) (p : ℝ≥0∞) [Fact (1 �
     IsOpen {x : E | T.IsLocallyMemSobolevAt s p x} := by
   refine isOpen_iff_mem_nhds.2 fun x ⟨U, hU, hUΩ, hT⟩ ↦ ?_
   filter_upwards [eventually_mem_nhds_iff.2 hU] with y hy using ⟨U, hy, hUΩ, hT⟩
+
+/-- The zero distribution is `H^{s,p}` near every point of its domain. -/
+@[simp]
+theorem isLocallyMemSobolevAt_zero_iff :
+    (0 : 𝓓'(Ω, ℂ)).IsLocallyMemSobolevAt s p x ↔ x ∈ Ω := by
+  refine ⟨IsLocallyMemSobolevAt.mem, fun hx ↦ ⟨Ω, Ω.isOpen.mem_nhds hx, subset_rfl, fun φ _ ↦ ?_⟩⟩
+  have h0 : (0 : 𝓓'(Ω, ℂ)).cutoffTempered φ = 0 := by
+    have h := cutoffTempered_add (0 : 𝓓'(Ω, ℂ)) 0 φ
+    rw [add_zero] at h
+    exact add_eq_left.1 h.symm
+  rw [h0]
+  exact TemperedDistribution.memSobolev_fun_zero E ℂ s p
+
+/-- A scalar multiple of a distribution `H^{s,p}` near `x` is `H^{s,p}` near `x`. -/
+theorem IsLocallyMemSobolevAt.smul (h : T.IsLocallyMemSobolevAt s p x) (c : ℂ) :
+    (c • T).IsLocallyMemSobolevAt s p x :=
+  let ⟨U, hU, hUΩ, hT⟩ := h
+  ⟨U, hU, hUΩ, fun φ hφ ↦ by simpa using (hT φ hφ).smul c⟩
+
+/-- A nonzero scalar multiple of `T` is `H^{s,p}` near `x` exactly when `T` is. -/
+theorem isLocallyMemSobolevAt_smul_iff {c : ℂ} (hc : c ≠ 0) :
+    (c • T).IsLocallyMemSobolevAt s p x ↔ T.IsLocallyMemSobolevAt s p x :=
+  ⟨fun h ↦ by simpa [smul_smul, inv_mul_cancel₀ hc] using h.smul c⁻¹, fun h ↦ h.smul c⟩
+
+/-- The negative of `T` is `H^{s,p}` near `x` exactly when `T` is. -/
+@[simp]
+theorem isLocallyMemSobolevAt_neg_iff :
+    (-T).IsLocallyMemSobolevAt s p x ↔ T.IsLocallyMemSobolevAt s p x := by
+  rw [← neg_one_smul ℂ T, isLocallyMemSobolevAt_smul_iff (neg_ne_zero.2 one_ne_zero)]
+
+/-- The sum of two distributions `H^{s,p}` near `x` is `H^{s,p}` near `x`. -/
+theorem IsLocallyMemSobolevAt.add {S : 𝓓'(Ω, ℂ)} (hS : S.IsLocallyMemSobolevAt s p x)
+    (hT : T.IsLocallyMemSobolevAt s p x) : (S + T).IsLocallyMemSobolevAt s p x :=
+  let ⟨U, hU, hUΩ, hSU⟩ := hS
+  let ⟨V, hV, _, hTV⟩ := hT
+  ⟨U ∩ V, inter_mem hU hV, inter_subset_left.trans hUΩ, fun φ hφ ↦ by
+    simpa using (hSU φ (hφ.trans inter_subset_left)).add (hTV φ (hφ.trans inter_subset_right))⟩
+
+/-- The difference of two distributions `H^{s,p}` near `x` is `H^{s,p}` near `x`. -/
+theorem IsLocallyMemSobolevAt.sub {S : 𝓓'(Ω, ℂ)} (hS : S.IsLocallyMemSobolevAt s p x)
+    (hT : T.IsLocallyMemSobolevAt s p x) : (S - T).IsLocallyMemSobolevAt s p x := by
+  rw [sub_eq_add_neg]
+  exact hS.add (isLocallyMemSobolevAt_neg_iff.2 hT)
 
 /-- For `p = 2`, being `H^{s,2}` near `x` is the Fourier description
 `Distribution.IsLocallySobolevAt` of being `H^s` near `x`. -/
