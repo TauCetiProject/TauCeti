@@ -50,6 +50,6 @@ theorem toLinearMapLieHom_apply (D : Derivation R A A) :
 
 /-- A derivation is determined by its underlying endomorphism. -/
 theorem toLinearMapLieHom_injective : Function.Injective (toLinearMapLieHom R A) :=
-  fun _ _ h ↦ ext fun a ↦ LinearMap.congr_fun h a
+  fun _ _ h ↦ ext fun a ↦ by simpa using LinearMap.congr_fun h a
 
 end Derivation

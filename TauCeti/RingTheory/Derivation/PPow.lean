@@ -153,6 +153,8 @@ end CommSemiring
 
 section CommRing
 
+attribute [local instance 100] LieRing.ofAssociativeRing
+
 variable {R A : Type*} [CommRing R] [CommRing A] [Algebra R A] (p : ℕ) [ExpChar A p]
 
 /-- **The `p`-th power and the adjoint action.** In the Lie algebra of derivations,
@@ -160,14 +162,11 @@ variable {R A : Type*} [CommRing R] [CommRing A] [Algebra R A] (p : ℕ) [ExpCha
 with `E`. -/
 theorem ad_pPow (D : Derivation R A A) :
     LieAlgebra.ad R (Derivation R A A) (D.pPow p) = LieAlgebra.ad R (Derivation R A A) D ^ p := by
-  let := LieRing.ofAssociativeRing (A := Module.End R A)
   ext E : 1
   apply toLinearMapLieHom_injective
-  rw [LieHom.map_ad_pow, LieAlgebra.ad_apply, LieHom.map_lie]
-  have h := TauCeti.LieAlgebra.ad_pow_expChar_pow (R := R) p (toLinearMapLieHom R A D) 1
-  rw [pow_one] at h
-  rw [← h, LieAlgebra.ad_apply]
-  simp only [toLinearMapLieHom_apply, toLinearMap_pPow]
+  simpa [LieHom.map_ad_pow] using
+    congr($(TauCeti.LieAlgebra.ad_pow_expChar_pow (R := R) p (toLinearMapLieHom R A D) 1)
+      (toLinearMapLieHom R A E))
 
 /-- **The `p`-th power commutes with localization.** If `T` is a localization of `A`, extending
 `D^[p]` from `A` to `T` gives the `p`-th power of the extension of `D`. -/
