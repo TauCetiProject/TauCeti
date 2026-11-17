@@ -23,7 +23,7 @@ reindexing the spectral measure of `U` along it.
 
 ## Main results
 
-* `LinearPMap.cayley_spectralPVM_proj_preimage_singleton_one_eq_zero`: the spectral projection
+* `LinearPMap.spectralPVM_cayley_proj_preimage_singleton_one_eq_zero`: the spectral projection
   of `U` at `1` is zero.
 * `LinearPMap.diagMeasure_cayley_preimage_singleton_one_eq_zero`: every diagonal measure of the
   spectral measure of `U` assigns mass zero to `{1}`.
@@ -46,7 +46,7 @@ variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteS
 its Cayley transform is normal, as for self-adjoint `A` (`IsSelfAdjoint.isStarNormal_cayley`),
 the spectral projection of the Cayley transform at the point `1` is zero. -/
 @[simp]
-theorem cayley_spectralPVM_proj_preimage_singleton_one_eq_zero (h : -I ∈ A.resolventSet) :
+theorem spectralPVM_cayley_proj_preimage_singleton_one_eq_zero (h : -I ∈ A.resolventSet) :
     A.cayley.spectralPVM.proj (Subtype.val ⁻¹' {1})
       (measurable_subtype_coe (measurableSet_singleton 1)) = 0 :=
   A.cayley.spectralPVM_proj_preimage_singleton_eq_zero (not_hasEigenvalue_cayley_one h)
