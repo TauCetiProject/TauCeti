@@ -93,6 +93,17 @@ theorem stabilizerChain_succ (i : ℕ) :
   simp only [mem_stabilizerChain_iff, mem_inf, mem_stabilizer_iff, Nat.lt_succ_iff_lt_or_eq]
   grind
 
+/-- The first stabilizer-chain subgroup and the point stabilizer inside `H` have the same
+orbits. This identifies their actions despite their different subgroup carrier types. -/
+theorem orbit_stabilizerChain_one (x : α) :
+    orbit (H.stabilizerChain b 1) x = orbit (stabilizer H (b 0)) x := by
+  have hrel := orbitRel_subgroupOf (α := α) (stabilizer G (b 0)) H
+  rw [stabilizer_subgroupOf, inf_comm] at hrel
+  rw [stabilizerChain_succ, stabilizerChain_zero]
+  ext y
+  simp only [← orbitRel_apply]
+  rw [hrel]
+
 theorem stabilizerChain_le (i : ℕ) : H.stabilizerChain b i ≤ H :=
   inf_le_left
 

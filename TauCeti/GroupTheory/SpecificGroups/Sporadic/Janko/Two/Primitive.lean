@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.SpecificGroups.Sporadic.Janko.Two.Orbits
-public import Mathlib.GroupTheory.GroupAction.Primitive
+public import TauCeti.GroupTheory.GroupAction.Primitive
 
 /-!
 # Primitivity of the second Janko group's canonical action
@@ -33,8 +33,7 @@ namespace TauCeti.Sporadic
 
 namespace J2
 
-open MulAction
-open scoped Pointwise
+open _root_.MulAction
 
 private def fourPoint (i : Fin 36) : Fin 100 :=
   (#[4, 5, 7, 10, 11, 16, 18, 20, 21, 26, 33, 36, 38, 44, 46, 48, 50, 51, 52, 53, 54, 55,
@@ -143,76 +142,29 @@ theorem ncard_orbit_stabilizer_zero_four :
   rw [orbit_stabilizer_zero_four, Set.ncard_coe_finset]
   decide +kernel
 
-private theorem orbit_subset_block {B : Set (Fin 100)} (hB : IsBlock J2 B)
-    (h0 : 0 ∈ B) {x : Fin 100} (hx : x ∈ B) :
-    orbit (J2.stabilizerChain basePoint 1) x ⊆ B := by
-  rintro y ⟨g, rfl⟩
-  have hg := mem_stabilizerChain_one_iff.mp g.2
-  let g' : J2 := ⟨g, hg.1⟩
-  have hfix : g' ∈ stabilizer J2 (0 : Fin 100) := by
-    simpa only [mem_stabilizer_iff, Subgroup.smul_def, Equiv.Perm.smul_def] using hg.2
-  have hset := hB.stabilizer_le h0 hfix
-  rw [mem_stabilizer_iff] at hset
-  simp only [Subgroup.smul_def]
-  rw [← Subgroup.mk_smul (g : Equiv.Perm (Fin 100)) hg.1 x, ← hset]
-  exact Set.smul_mem_smul_set hx
-
-private theorem block_ncard {B : Set (Fin 100)} (hB : IsBlock J2 B) (h0 : 0 ∈ B) :
-    B.ncard = 1 ∨ B.ncard = 37 ∨ B.ncard = 64 ∨ B.ncard = 100 := by
-  classical
-  let O₁ := orbit (J2.stabilizerChain basePoint 1) (basePoint 1)
-  let O₄ := orbit (J2.stabilizerChain basePoint 1) (4 : Fin 100)
-  have hpartition (x : Fin 100) : x = 0 ∨ x ∈ O₁ ∨ x ∈ O₄ := by
-    dsimp only [O₄]
-    rw [orbit_four_eq]
-    by_cases hx : x = 0
-    · exact Or.inl hx
-    · by_cases h : x ∈ O₁
-      · exact Or.inr (Or.inl h)
-      · exact Or.inr (Or.inr ((mem_fourPoints x).2 ⟨hx, h⟩))
-  have hsat {x y : Fin 100} (hx : x ∈ B)
-      (hy : y ∈ orbit (J2.stabilizerChain basePoint 1) x) : y ∈ B :=
-    orbit_subset_block hB h0 hx hy
-  have hset : B = {0} ∪ (if (basePoint 1) ∈ B then O₁ else ∅) ∪
-      (if (4 : Fin 100) ∈ B then O₄ else ∅) := by
-    ext x
-    constructor
-    · intro hx
-      rcases hpartition x with rfl | hx₁ | hx₄
-      · simp
-      · have h1 := hsat hx (mem_orbit_symm.mp hx₁)
-        simp [h1, hx₁]
-      · have h4 := hsat hx (mem_orbit_symm.mp hx₄)
-        simp [h4, hx₄]
-    · intro hx
-      simp only [Set.mem_union, Set.mem_singleton_iff] at hx
-      rcases hx with (rfl | hx₁) | hx₄
-      · exact h0
-      · split_ifs at hx₁ with h1
-        · exact hsat h1 hx₁
-        · exact hx₁.elim
-      · split_ifs at hx₄ with h4
-        · exact hsat h4 hx₄
-        · exact hx₄.elim
-  rw [hset]
-  dsimp only [O₁, O₄]
-  rw [orbit_stabilizer_zero_one, orbit_stabilizer_zero_four]
-  split_ifs <;>
-    simp only [← Finset.coe_singleton, ← Finset.coe_empty, ← Finset.coe_union,
-      Set.ncard_coe_finset] <;> decide +kernel
+private theorem orbit_stabilizer_zero_cover (x : Fin 100) :
+    x = 0 ∨ x ∈ orbit (J2.stabilizerChain basePoint 1) (basePoint 1) ∨
+      x ∈ orbit (J2.stabilizerChain basePoint 1) (4 : Fin 100) := by
+  rw [orbit_four_eq]
+  by_cases hx : x = 0
+  · exact Or.inl hx
+  · by_cases h : x ∈ orbit (J2.stabilizerChain basePoint 1) (basePoint 1)
+    · exact Or.inr (Or.inl h)
+    · exact Or.inr (Or.inr ((mem_fourPoints x).2 ⟨hx, h⟩))
 
 end J2
 
 /-- The canonical 100-point action of the second Janko group is primitive. -/
 instance isPreprimitive_J2 : MulAction.IsPreprimitive J2 (Fin 100) := by
-  apply MulAction.IsPreprimitive.of_isTrivialBlock_base (0 : Fin 100)
-  intro B h0 hB
-  have hdvd := hB.ncard_dvd_card ⟨0, h0⟩
-  simp only [Nat.card_eq_fintype_card, Fintype.card_fin] at hdvd
-  rcases J2.block_ncard hB h0 with h | h | h | h
-  · exact Or.inl (Set.ncard_le_one_iff_subsingleton.mp h.le)
-  · norm_num [h] at hdvd
-  · norm_num [h] at hdvd
-  · exact Or.inr ((Set.eq_univ_iff_ncard B).2 (by simpa using h))
+  apply MulAction.IsPreprimitive.of_two_orbit_stabilizer
+    (J2.basePoint 0) (J2.basePoint 1) (4 : Fin 100)
+  · intro x
+    have h0 : J2.basePoint 0 = 0 := by rw [J2.basePoint_def]; decide
+    simpa only [← Subgroup.orbit_stabilizerChain_one, h0] using
+      J2.orbit_stabilizer_zero_cover x
+  · rw [← Subgroup.orbit_stabilizerChain_one, J2.ncard_orbit_stabilizer_zero_one]
+    norm_num
+  · rw [← Subgroup.orbit_stabilizerChain_one, J2.ncard_orbit_stabilizer_zero_four]
+    norm_num
 
 end TauCeti.Sporadic
