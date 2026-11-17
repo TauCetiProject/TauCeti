@@ -12,9 +12,9 @@ public import Mathlib.NumberTheory.ZetaValues
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.Analysis.SpecialFunctions.Log.NegMulLog
 import Mathlib.Data.Nat.Cast.SetInterval
-import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Analysis.Asymptotics.Sum.EulerMaclaurin
+import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.NumberTheory.LSeries.RiemannZeta.EulerMaclaurin
 import TauCeti.NumberTheory.ZetaValues
 
@@ -87,27 +87,6 @@ private theorem continuousOn_mulLogIteratedDeriv (i : ℕ) (n : ℕ) :
   intro x hx
   have hx0 : 0 < x := zero_lt_one.trans_le (by simpa using hx.1)
   exact (hasDerivAt_mulLogIteratedDeriv i hx0).continuousAt.continuousWithinAt
-
-/-- Definite integral `∫_1^b x * log x dx = b^2 / 2 * log b - b^2 / 4 + 1 / 4` for `b ≥ 1`. -/
-private theorem integral_mul_log_one_to {b : ℝ} (hb : 1 ≤ b) :
-    ∫ x in (1 : ℝ)..b, x * Real.log x = b ^ 2 / 2 * Real.log b - b ^ 2 / 4 + 1 / 4 := by
-  set F : ℝ → ℝ := fun x => x ^ 2 / 2 * Real.log x - x ^ 2 / 4
-  have hderiv : ∀ x ∈ Set.uIcc (1 : ℝ) b, HasDerivAt F (x * Real.log x) x := fun x hx => by
-    rw [Set.uIcc_of_le hb] at hx
-    have hx0 : (0 : ℝ) < x := zero_lt_one.trans_le hx.1
-    have hd1 := (((hasDerivAt_id' x).pow 2).div_const 2).fun_mul (Real.hasDerivAt_log hx0.ne')
-    have hd2 := ((hasDerivAt_id' x).pow 2).div_const 4
-    refine (hd1.sub hd2).congr_deriv ?_
-    simp only [Pi.pow_apply]
-    have : x ≠ 0 := hx0.ne'
-    field_simp; ring
-  have hint : IntervalIntegrable (fun x : ℝ => x * Real.log x) volume 1 b := by
-    refine ContinuousOn.intervalIntegrable (fun x hx => ?_)
-    rw [Set.uIcc_of_le hb] at hx
-    exact (Real.hasDerivAt_mul_log (zero_lt_one.trans_le hx.1).ne').continuousAt.continuousWithinAt
-  rw [integral_eq_sub_of_hasDerivAt hderiv hint]
-  simp only [F, one_pow, Real.log_one, mul_zero, zero_sub]
-  ring
 
 /-- Integrability of `(B_{2m+2} - B_{2m+2}({x})) * x ^ (-(2m + 1 : ℤ))` on `(a, ∞)` for `a > 0`,
 `m ≥ 1`. -/
@@ -205,8 +184,7 @@ private theorem sum_Icc_mul_log_eq_finite_eulerMaclaurin {m n : ℕ} (hm : 1 ≤
     push_cast; field_simp
   rw [Int.cast_one, Int.cast_natCast] at hEM
   rw [hsum, hEM, mulLog_boundary_sum_eq hm, hrem]
-  simp only [mulLogIteratedDeriv, Real.log_one, mul_zero, smul_eq_mul]
-  rw [integral_mul_log_one_to (b := (n : ℝ)) (by exact_mod_cast hn)]
+  simp only [mulLogIteratedDeriv, integral_mul_log, one_pow, Real.log_one, mul_zero, smul_eq_mul]
   ring
 
 /-- For every `m ≥ 1`, the subtracted Euler–Maclaurin sequence of `∑_{j=1}^n j log j` converges to

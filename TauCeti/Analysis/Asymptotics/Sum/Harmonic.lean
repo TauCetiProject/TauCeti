@@ -10,6 +10,8 @@ public import Mathlib.NumberTheory.Harmonic.EulerMascheroni
 public import Mathlib.NumberTheory.ZetaValues
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
+import Mathlib.Data.Nat.Cast.SetInterval
+import Mathlib.NumberTheory.Harmonic.Bounds
 import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Analysis.Asymptotics.Sum.EulerMaclaurin
 import TauCeti.NumberTheory.ZetaValues
@@ -94,13 +96,11 @@ private theorem harmonic_eq_finite_eulerMaclaurin {m n : ℕ} (hm : 1 ≤ m) (hn
     (fun i _ x hx => hasDerivAt_inv_iterated i (zero_lt_one.trans (by simpa using hx.1)))
     ((hcont (2 * m)).intervalIntegrable_of_Icc (by exact_mod_cast hn))
   have hsum : (harmonic n : ℝ) = ∑ j ∈ Icc (1 : ℤ) n, g 0 j := by
-    have himg : (range n).image (fun i : ℕ => (i + 1 : ℤ)) = Icc (1 : ℤ) n := by
-      ext z; simp only [mem_image, mem_range, mem_Icc]
-      exact ⟨fun ⟨i, hi, hiz⟩ => ⟨by omega, by omega⟩,
-        fun hz => ⟨(z - 1).toNat, by omega, by omega⟩⟩
-    rw [harmonic, Rat.cast_sum, ← himg,
-      Finset.sum_image (f := fun j : ℤ => g 0 (j : ℝ)) (fun a _ b _ h => by omega)]
-    exact sum_congr rfl fun i _ => by simp [g]
+    have himg : (Icc 1 n).image (Nat.cast : ℕ → ℤ) = Icc (1 : ℤ) n :=
+      Finset.coe_injective (by simpa using Nat.image_cast_int_Icc 1 n)
+    rw [harmonic_eq_sum_Icc, Rat.cast_sum, ← himg,
+      Finset.sum_image (f := fun j : ℤ => g 0 (j : ℝ)) Nat.cast_injective.injOn]
+    exact sum_congr rfl fun j _ => by simp [g]
   have hint0 : ∫ x in (1 : ℝ)..n, g 0 x = Real.log n := by
     have h0 : (0 : ℝ) ∉ Set.uIcc (1 : ℝ) n := by
       rw [Set.uIcc_of_le (by exact_mod_cast hn), Set.mem_Icc]; intro h; linarith [h.1]
@@ -193,12 +193,8 @@ theorem sum_Ico_inv_eq_eulerMaclaurin {m n : ℕ} (hm : 1 ≤ m) (hn : 1 ≤ n) 
         ((bernoulli (2 * m) : ℝ) - bernoulliFun (2 * m) (Int.fract x)) *
           x ^ (-(2 * m + 1 : ℤ)) := by
   have hsum : (harmonic n : ℝ) = ∑ j ∈ Ico 1 n, (j : ℝ)⁻¹ + (n : ℝ)⁻¹ := by
-    obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by omega : n ≠ 0)
-    rw [harmonic_succ, Rat.cast_add, Rat.cast_inv, Nat.cast_succ]
-    congr 1
-    · rw [harmonic, Rat.cast_sum, Finset.sum_Ico_eq_sum_range, Nat.succ_sub_one]
-      exact sum_congr rfl fun i _ => by push_cast; ring_nf
-    · push_cast; rfl
+    simp only [harmonic_eq_sum_Icc, ← Finset.Ico_add_one_right_eq_Icc, sum_Ico_succ_top hn,
+      Rat.cast_add, Rat.cast_sum, Rat.cast_inv, Rat.cast_natCast]
   have hn0 : (n : ℝ) ≠ 0 := by positivity
   have hinv : (n : ℝ)⁻¹ = 1 / (2 * (n : ℝ)) + 1 / (2 * (n : ℝ)) := by field_simp; ring
   linarith [harmonic_eq_eulerMaclaurin hm hn, hsum, hinv]
