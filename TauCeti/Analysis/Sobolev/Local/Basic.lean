@@ -193,6 +193,15 @@ theorem _root_.MeasureTheory.MemLp.memLpLoc_of_ae_le {W : Set ℂ}
   memLpLoc_iff.2 fun _ hK _ => hf.mono_measure
     (Measure.restrict_mono_ae ((Filter.EventuallySubset.of_subset hK).trans hUW))
 
+/-- The half-disc `Ω ∩ {0 ≤ im}` and its interior `Ω ∩ {0 < im}` agree up to a null set: they
+differ by a subset of the real axis. So the half-disc and its interior carry the same restricted
+Lebesgue measure. -/
+theorem inter_setOf_im_nonneg_ae_eq_interior (Ω : Opens ℂ) :
+    ((Ω : Set ℂ) ∩ {z : ℂ | 0 ≤ z.im} : Set ℂ) =ᵐ[volume]
+      (Opens.interior ((Ω : Set ℂ) ∩ {z : ℂ | 0 ≤ z.im}) : Set ℂ) := by
+  rw [Opens.coe_interior, interior_inter_setOf_im_nonneg Ω.isOpen]
+  exact ae_eq_set_inter (by rfl) (Complex.setOf_le_im_ae_eq 0)
+
 /-- **Local `Lᵖ` on a half-disc through upper halves.** A function is locally `Lᵖ` on
 `Ω ∩ {0 ≤ im}`, up to the real axis, exactly when it is `Lᵖ` on the upper half `W ∩ {0 < im}` of
 every open `W` whose closure is compact and contained in `Ω`. The real axis is null, so the
