@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Probability.Distributions.Uniform.Finite.Basic
 public import TauCeti.Probability.GeneratingFunction
-public import Mathlib.Probability.HasLaw
 public import Mathlib.Probability.Moments.IntegrableExpMul
 public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 
@@ -59,7 +58,7 @@ namespace Finset
 variable {α : Type*} [MeasurableSpace α] [MeasurableSingletonClass α]
 
 /-- Every natural raw moment of a finitely labelled uniform law is the average label power.
-Its integrability follows from `Finset.integrable_map_uniformOn_finset`. -/
+Its integrability follows from `Set.integrable_map_uniformOn`. -/
 theorem integral_pow_map_uniformOn_finset (s : Finset α) (f : α → ℝ) (n : ℕ) :
     ∫ x : ℝ, x ^ n ∂(uniformOn (s : Set α)).map f =
       (s.card : ℝ)⁻¹ * ∑ i ∈ s, f i ^ n := by
@@ -81,18 +80,10 @@ theorem variance_id_map_uniformOn_finset (s : Finset α) (f : α → ℝ) :
   let _ := isProbabilityMeasure_uniformOn s.finite_toSet hs
   have hL : MemLp (id : ℝ → ℝ) 2 ((uniformOn (s : Set α)).map f) :=
     (memLp_two_iff_integrable_sq (by fun_prop)).2
-      (s.integrable_map_uniformOn_finset f (fun x : ℝ ↦ x ^ 2))
+      (Set.integrable_map_uniformOn (s : Set α) f (fun x : ℝ ↦ x ^ 2))
   rw [variance_eq_sub hL]
   simpa only [Pi.pow_apply, id_eq] using congrArg₂ (fun x y : ℝ ↦ x - y ^ 2)
     (s.integral_pow_map_uniformOn_finset f 2) (s.integral_id_map_uniformOn_finset f)
-
-/-- All real exponential moments of a finitely labelled uniform law exist, even when the
-sampling set is empty. -/
-theorem integrableExpSet_id_map_uniformOn_finset (s : Finset α) (f : α → ℝ) :
-    integrableExpSet id ((uniformOn (s : Set α)).map f) = Set.univ := by
-  ext t
-  simp only [integrableExpSet, Set.mem_ofPred_eq, Set.mem_univ, iff_true]
-  exact s.integrable_map_uniformOn_finset f _
 
 /-- The mgf of a finitely labelled uniform law is the average exponential label. -/
 theorem mgf_id_map_uniformOn_finset (s : Finset α) (f : α → ℝ) (t : ℝ) :
@@ -256,44 +247,6 @@ namespace ProbabilityTheory.HasLaw
 
 variable {Ω α : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
   [MeasurableSingletonClass α] {P : Measure Ω} {s : Finset α}
-
-/-- The expectation of any observable of a native finite uniform sample is its average over
-the sampling set, without a global measurability assumption on the observable. -/
-theorem integral_comp_uniformOn_finset {X : Ω → α} {E : Type*}
-    [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
-    (hX : HasLaw X (uniformOn (s : Set α)) P) (g : α → E) :
-    ∫ ω, g (X ω) ∂P = (s.card : ℝ)⁻¹ • ∑ i ∈ s, g i :=
-  (hX.integral_comp (s.integrable_uniformOn_finset g).aestronglyMeasurable).trans
-    (s.integral_uniformOn_finset g)
-
-/-- A native finite uniform random variable is integrable. -/
-theorem integrable_uniformOn_finset [SeminormedAddGroup α] {X : Ω → α}
-    (hX : HasLaw X (uniformOn (s : Set α)) P) : Integrable X P :=
-  hX.integrable (s.integrable_uniformOn_finset id)
-
-/-- Assigning arbitrary labels to a native finite uniform random variable gives the mapped
-uniform law, without requiring the labels to be globally measurable. -/
-theorem map_uniformOn_finset {β : Type*} [MeasurableSpace β] {X : Ω → α}
-    (hX : HasLaw X (uniformOn (s : Set α)) P) (f : α → β) :
-    HasLaw (fun ω ↦ f (X ω)) ((uniformOn (s : Set α)).map f) P :=
-  (hasLaw_map (s.aemeasurable_uniformOn_finset f)).fun_comp hX
-
-/-- Every observable of a random variable with a finitely labelled uniform law is integrable. -/
-theorem integrable_comp_map_uniformOn_finset {β E : Type*} [MeasurableSpace β]
-    [MeasurableSingletonClass β] [SeminormedAddGroup E] {X : Ω → β} {f : α → β}
-    (hX : HasLaw X ((uniformOn (s : Set α)).map f) P) (g : β → E) :
-    Integrable (fun ω ↦ g (X ω)) P :=
-  hX.integrable_comp (s.integrable_map_uniformOn_finset f g)
-
-/-- The expectation of any observable of a finitely labelled uniform random variable is its
-average over the sampling inputs, without global measurability assumptions. -/
-theorem integral_comp_map_uniformOn_finset {β E : Type*} [MeasurableSpace β]
-    [MeasurableSingletonClass β] [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
-    {X : Ω → β} {f : α → β}
-    (hX : HasLaw X ((uniformOn (s : Set α)).map f) P) (g : β → E) :
-    ∫ ω, g (X ω) ∂P = (s.card : ℝ)⁻¹ • ∑ i ∈ s, g (f i) :=
-  (hX.integral_comp (s.integrable_map_uniformOn_finset f g).aestronglyMeasurable).trans
-    (s.integral_map_uniformOn_finset f g)
 
 variable {X : Ω → ℝ} {f : α → ℝ}
 
