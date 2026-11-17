@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.UniformIntegrable
+public import Mathlib.MeasureTheory.Integral.Bochner.Set
 
 /-!
 # Uniform-integrability domination criteria and pseudometric Vitali convergence
@@ -13,7 +14,8 @@ public import Mathlib.MeasureTheory.Function.UniformIntegrable
 For normed-group-valued families over arbitrary measures, this file supplies norm-domination
 criteria for `MeasureTheory.UniformIntegrable`, including its uniform `Lᵖ` bound: domination by
 another such family, by one `Lᵖ` function, or in `p`-th power by an integrable extended-real
-majorant. A countable-supremum criterion follows from the last form.
+majorant. A countable-supremum criterion follows from the last form. For nonnegative real
+families over a finite measure, uniformly small upper-tail integrals also suffice.
 
 For the Vitali convergence results, let `μ` be a finite measure on `X` and let `T n, T₀ : X → Y`
 be almost-everywhere strongly measurable maps into a pseudometric space; no measurable structure
@@ -46,6 +48,9 @@ convergent sequence of their finite `Lᵖ` norms is bounded, and this bound upgr
 * `TauCeti.uniformIntegrable_of_lintegral_iSup_eNorm_rpow_lt_top` — a countable family with
   integrable supremum of its `p`-th powers of norms is uniformly integrable with a uniform
   `Lᵖ` bound;
+* `TauCeti.uniformIntegrable_of_setIntegral_le` — over a finite measure, a family of
+  nonnegative integrable real functions with uniformly small upper-tail integrals is uniformly
+  integrable;
 * `TauCeti.memLp_dist_of_memLp_dist` — two maps whose distances to a common reference map have
   finite `p`-th moment have a distance with finite `p`-th moment;
 * `TauCeti.eLpNorm_dist_le_eLpNorm_dist_add`, `MeasureTheory.UnifIntegrable.dist_of_memLp_dist`
@@ -98,6 +103,43 @@ theorem MeasureTheory.MemLp.uniformIntegrable_of_eNorm_le {α β γ ι : Type*}
   (uniformIntegrable_const hp hp_top hD).ae_mono hV hle
 
 namespace TauCeti
+
+/-- A family of almost everywhere nonnegative integrable real functions on a finite measure
+space is uniformly integrable when its integrals over the upper tails `{C ≤ f i}` are uniformly
+small for large `C`. This is the real-integral form of `MeasureTheory.uniformIntegrable_of`. -/
+theorem uniformIntegrable_of_setIntegral_le {α ι : Type*} [MeasurableSpace α] {μ : Measure α}
+    [IsFiniteMeasure μ] {f : ι → α → ℝ} (hf : ∀ i, Integrable (f i) μ)
+    (hnn : ∀ i, 0 ≤ᵐ[μ] f i)
+    (h : ∀ ε > 0, ∃ C : ℝ, ∀ i, ∫ x in {x | C ≤ f i x}, f i x ∂μ ≤ ε) :
+    UniformIntegrable f 1 μ := by
+  refine uniformIntegrable_of le_rfl ENNReal.one_ne_top (fun i ↦ (hf i).aestronglyMeasurable)
+    fun ε hε ↦ ?_
+  rcases eq_or_ne ε ∞ with rfl | hε_top
+  · exact ⟨0, fun _ ↦ le_top⟩
+  obtain ⟨C, hC⟩ := h ε.toReal (ENNReal.toReal_pos hε.ne' hε_top)
+  refine ⟨C.toNNReal, fun i ↦ ?_⟩
+  set T := {x | C ≤ f i x}
+  have hT : NullMeasurableSet T μ :=
+    nullMeasurableSet_le aemeasurable_const (hf i).aemeasurable
+  calc eLpNorm ({x | C.toNNReal ≤ ‖f i x‖₊}.indicator (f i)) 1 μ
+      = ∫⁻ x, ‖{x | C.toNNReal ≤ ‖f i x‖₊}.indicator (f i) x‖ₑ ∂μ :=
+        eLpNorm_one_eq_lintegral_eNorm ((hf i).aestronglyMeasurable.indicator₀
+          (nullMeasurableSet_le aemeasurable_const (hf i).aemeasurable.nnNorm))
+    _ ≤ ∫⁻ x, T.indicator (fun x ↦ ENNReal.ofReal (f i x)) x ∂μ := by
+        refine lintegral_mono_ae ((hnn i).mono fun x hx ↦ ?_)
+        by_cases hxS : x ∈ {x | C.toNNReal ≤ ‖f i x‖₊}
+        · have hxT : x ∈ T := by
+            have hle : (C.toNNReal : ℝ) ≤ ‖f i x‖ := hxS
+            rw [Real.norm_of_nonneg hx] at hle
+            exact (Real.le_coe_toNNReal C).trans hle
+          rw [indicator_of_mem hxS, indicator_of_mem hxT, Real.eNorm_eq_ofReal hx]
+        · rw [indicator_of_notMem hxS, eNorm_zero]
+          exact bot_le
+    _ = ∫⁻ x in T, ENNReal.ofReal (f i x) ∂μ := lintegral_indicator₀ hT _
+    _ = ENNReal.ofReal (∫ x in T, f i x ∂μ) :=
+        (ofReal_integral_eq_lintegral_ofReal (hf i).integrableOn
+          (ae_restrict_of_ae (hnn i))).symm
+    _ ≤ ε := (ENNReal.ofReal_le_ofReal (hC i)).trans (ENNReal.ofReal_toReal hε_top).le
 
 /-- A family whose `p`-th powers of norms are dominated almost everywhere by an integrable
 extended-real majorant is uniformly integrable with a uniform `Lᵖ` bound, for `1 ≤ p < ∞`.
