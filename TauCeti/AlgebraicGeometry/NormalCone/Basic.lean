@@ -123,8 +123,9 @@ theorem normalConeAlgebra_obj_X (n : ℕ) :
     IdealSheafData.reesAlgebra_obj_X]
 
 /-- The unit of the normal cone algebra is the pullback along `j = i.liftCoborder` of the unit of
-the Rees algebra of `I = ker j` (`IdealSheafData.one_reesAlgebra`), preceded by `𝒪_X ≅ j^* 𝒪_U`,
-up to the identification `normalConeAlgebra_obj_X`. -/
+the Rees algebra of `I = ker j` (`IdealSheafData.one_reesAlgebra`), preceded by `𝒪_X ≅ j^* 𝒪_U`.
+The final transport identifies `j^* ((⨁ₙ Iⁿ).X 0)` with the degree-zero component of the normal
+cone algebra, by `normalConeAlgebra_def` and `GradedQuasicoherentAlgebra.pullback_obj_obj_X`. -/
 @[simp]
 theorem one_normalConeAlgebra :
     i.normalConeAlgebra.obj.toMon.one =
@@ -139,8 +140,10 @@ theorem one_normalConeAlgebra :
 open MonoidalCategory Functor.OplaxMonoidal in
 /-- The homogeneous multiplication of the normal cone algebra is the pullback along
 `j = i.liftCoborder` of that of the Rees algebra of `I = ker j` (`IdealSheafData.mul_reesAlgebra`),
-preceded by the inverse of the tensor comparison `j^* (Iᵐ ⊗ Iⁿ) ≅ j^* Iᵐ ⊗ j^* Iⁿ`, up to the
-identifications `normalConeAlgebra_obj_X`. -/
+preceded by the inverse of the tensor comparison `δ` for `j^*` on the components `(⨁ₙ Iⁿ).X m`
+and `(⨁ₙ Iⁿ).X n`. The transports identify the components of the normal cone algebra with
+`j^* ((⨁ₙ Iⁿ).X _)`, by `normalConeAlgebra_def` and
+`GradedQuasicoherentAlgebra.pullback_obj_obj_X`. -/
 @[simp]
 theorem mul_normalConeAlgebra (m n : ℕ) :
     i.normalConeAlgebra.obj.toMon.mul m n =
@@ -301,12 +304,12 @@ end
 
 variable {X Y : Scheme.{u}} (i : X ⟶ Y)
 
-/-- For an open immersion `i`, for instance an isomorphism, the positive-degree components
-`j^* Iⁿ` of the normal cone algebra vanish: `j = i.liftCoborder` is then an open immersion as
-well, so `j^* Iⁿ` is the inverse image `(Iⁿ).comap j = (I.comap j)ⁿ`, and `I.comap j = ⊥` since
-`I = ker j`. -/
+/-- For an open immersion `i`, for instance an isomorphism, the positive-degree components of the
+normal cone algebra vanish. -/
 theorem isZero_normalConeAlgebra_obj_X [IsOpenImmersion i] {n : ℕ} (hn : n ≠ 0) :
     IsZero (i.normalConeAlgebra.obj.X n) := by
+  -- `j = i.liftCoborder` is an open immersion as well, so `j^* Iⁿ` is the inverse image
+  -- `(Iⁿ).comap j = (I.comap j)ⁿ`, and `I.comap j = ⊥` since `I = ker j`.
   rw [normalConeAlgebra_obj_X]
   set j := i.liftCoborder
   have : IsOpenImmersion (j ≫ i.coborderRange.ι) := by rw [i.liftCoborder_ι]; infer_instance
