@@ -530,8 +530,10 @@ quantization near the diagonal. -/
 def smulPositions (φ : CoordinateSpace n × CoordinateSpace n → ℂ) (hφ : ContDiff ℝ ∞ φ)
     (a : Amplitude n V W m) : Amplitude n V W m where
   coefficient p := φ (p.1, p.2.1) • a.coefficient p
-  contDiff_coefficient := smul_positions_contDiff hφ a.contDiff_coefficient
-  exists_bound K hK α γ β := exists_bound_smul_positions _ α γ β rfl a hφ K hK
+  contDiff_coefficient := by
+    simpa only [positions_apply] using smul_positions_contDiff hφ a.contDiff_coefficient
+  exists_bound K hK α γ β := by
+    simpa only [positions_apply] using exists_bound_smul_positions _ α γ β rfl a hφ K hK
 
 @[simp]
 theorem coefficient_smulPositions (φ : CoordinateSpace n × CoordinateSpace n → ℂ)
@@ -602,6 +604,16 @@ theorem HasProperInputSupport.exists_eventually_eq_zero {a : Amplitude n V W m}
       ∀ᶠ x in 𝓝ˢ K, ∀ y ∉ L, ∀ ξ, a.coefficient (x, y, ξ) = 0 := by
   obtain ⟨L, hL, hLa⟩ := ha _ (hK.cthickening (r := 1))
   exact ⟨L, hL, Filter.mem_of_superset (Metric.cthickening_mem_nhdsSet K one_pos) hLa⟩
+
+/-- Near an output position and frequency, an amplitude with proper input support vanishes for
+input positions outside a compact set. -/
+theorem HasProperInputSupport.exists_eventually_nhds_eq_zero {a : Amplitude n V W m}
+    (ha : a.HasProperInputSupport) (q : CoordinateSpace n × CoordinateSpace n) :
+    ∃ L : Set (CoordinateSpace n), IsCompact L ∧ ∀ᶠ q' in 𝓝 q, ∀ y ∉ L,
+      a.coefficient (q'.1, y, q'.2) = 0 := by
+  obtain ⟨L, hL, hLa⟩ := ha.exists_eventually_eq_zero (isCompact_singleton (x := q.1))
+  rw [nhdsSet_singleton] at hLa
+  exact ⟨L, hL, ((continuous_fst.tendsto q).eventually hLa).mono fun q' h y hy ↦ h y hy q'.2⟩
 
 /-- For output positions in a compact set, all derivatives of an amplitude with proper input
 support vanish at input positions outside a suitable compact set: there the amplitude vanishes
@@ -782,22 +794,11 @@ theorem HasProperInputSupport.continuous_fourier_slice {a : Amplitude n V W m}
     Continuous fun q : CoordinateSpace n × CoordinateSpace n × CoordinateSpace n ↦
       𝓕 (fun y ↦ a.coefficient (q.2.1, y, q.2.2)) q.1 := by
   refine continuous_iff_continuousAt.2 fun q₀ ↦ ?_
-  -- Near `q₀` the output position stays in an open set, over which the input support is
-  -- compact.
-  obtain ⟨L, hL, hLa⟩ := ha.exists_eventually_eq_zero (isCompact_singleton (x := q₀.2.1))
-  rw [nhdsSet_singleton] at hLa
-  obtain ⟨t, ht, htopen, hq₀⟩ := eventually_nhds_iff.1 hLa
-  set U := {q : CoordinateSpace n × CoordinateSpace n × CoordinateSpace n | q.2.1 ∈ t}
-  have hU : IsOpen U := htopen.preimage (continuous_fst.comp continuous_snd)
-  have h := continuousOn_integral_of_compact_support (μ := volume) (s := U) hL
-    (f := fun (q : CoordinateSpace n × CoordinateSpace n × CoordinateSpace n)
-      (y : CoordinateSpace n) ↦ (𝐞 (-⟪y, q.1⟫) : ℂ) • a.coefficient (q.2.1, y, q.2.2))
-    (Continuous.continuousOn (by
-      have := a.contDiff_coefficient.continuous
-      fun_prop))
-    fun q y hq hy ↦ by
-      simp [ht q.2.1 hq y hy]
-  simpa only [Real.fourier_eq, Circle.smul_def] using h.continuousAt (hU.mem_nhds hq₀)
+  obtain ⟨L, hL, hLa⟩ := ha.exists_eventually_nhds_eq_zero q₀.2
+  simpa only [Real.fourier_eq, Circle.smul_def] using continuousAt_integral_fourierChar_smul
+    (g := fun r : CoordinateSpace n × CoordinateSpace n × CoordinateSpace n ↦
+      a.coefficient (r.2.1, r.1, r.2.2))
+    (a.contDiff_coefficient.continuous.comp (by fun_prop)) hL hLa
 
 /-- The Fourier transform of the input slices of `∂_{y_j} a` is `2πi θⱼ â(x, θ, ξ)`. -/
 theorem HasProperInputSupport.fourier_spatialDerivSnd_slice {a : Amplitude n V W m}

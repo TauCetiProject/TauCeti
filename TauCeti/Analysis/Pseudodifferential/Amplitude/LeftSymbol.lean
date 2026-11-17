@@ -79,16 +79,6 @@ namespace Amplitude
 variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
   [NormedSpace ℂ W] {m : ℝ}
 
-/-- Near an output position and frequency, an amplitude with proper input support vanishes for
-input positions outside a compact set. -/
-private theorem HasProperInputSupport.exists_eventually_nhds_eq_zero {a : Amplitude n V W m}
-    (ha : a.HasProperInputSupport) (q : CoordinateSpace n × CoordinateSpace n) :
-    ∃ L : Set (CoordinateSpace n), IsCompact L ∧ ∀ᶠ q' in 𝓝 q, ∀ y ∉ L,
-      a.coefficient (q'.1, y, q'.2) = 0 := by
-  obtain ⟨L, hL, hLa⟩ := ha.exists_eventually_eq_zero (isCompact_singleton (x := q.1))
-  rw [nhdsSet_singleton] at hLa
-  exact ⟨L, hL, ((continuous_fst.tendsto q).eventually hLa).mono fun q' h y hy ↦ h y hy q'.2⟩
-
 /-- Differentiation of `â(x, θ, ξ)` in the output position and the frequency under the integral
 sign. -/
 theorem HasProperInputSupport.hasFDerivAt_fourier_slice {a : Amplitude n V W m}

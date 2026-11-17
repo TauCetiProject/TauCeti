@@ -20,8 +20,8 @@ finite-dimensional real inner-product space and `P` is a normed space. Its Fouri
 first variable, `(η, ξ) ↦ ∫ exp(-2πi ⟪y, η⟫) g(y, ξ) dy`, is jointly continuous in the dual
 variable `η` and the second variable `ξ` when `g` is continuous, and, when `g` is `C¹`, may be
 differentiated in `ξ` under the integral sign. Both facts reduce to Mathlib's results on parametric
-integrals of compactly supported functions. For the differentiation at `ξ₀`, `g` need only vanish
-outside `K` for second variables near `ξ₀`.
+integrals of compactly supported functions. For the continuity and the differentiation at `ξ₀`, `g`
+need only vanish outside `K` for second variables near `ξ₀`.
 
 These are the regularity properties of the Fourier transform `b̂(η, ξ)` of the position slices of a
 symbol with compact spatial support, used in the composition calculus of pseudodifferential
@@ -32,7 +32,8 @@ operators.
 * `TauCeti.hasFDerivAt_integral_fourierChar_smul`: differentiation in `ξ` under the Fourier
   integral, with `TauCeti.integral_fourierChar_smul_fderiv_apply` evaluating the derivative in a
   direction.
-* `TauCeti.continuous_integral_fourierChar_smul`: joint continuity of the Fourier integral.
+* `TauCeti.continuousAt_integral_fourierChar_smul`: joint continuity of the Fourier integral, with
+  `TauCeti.continuous_integral_fourierChar_smul` its global form.
 -/
 
 public section
@@ -107,11 +108,23 @@ theorem integral_fourierChar_smul_fderiv_apply [NormedSpace ℝ P] (hg : ContDif
   simp only [smul_apply]
 
 /-- The Fourier integral in the first variable of a continuous `g` vanishing for first variables
+outside a compact set, as long as the second variable is near `q₀.2`, is jointly continuous in the
+dual variable and the second variable at `q₀`. -/
+theorem continuousAt_integral_fourierChar_smul (hg : Continuous g) (hK : IsCompact K)
+    {q₀ : E × P} (hKg : ∀ᶠ ξ in 𝓝 q₀.2, ∀ y ∉ K, g (y, ξ) = 0) :
+    ContinuousAt (fun q : E × P ↦ ∫ y, (𝐞 (-⟪y, q.1⟫) : ℂ) • g (y, q.2)) q₀ := by
+  obtain ⟨t, ht, htopen, hq₀⟩ := eventually_nhds_iff.1 hKg
+  have h := continuousOn_integral_of_compact_support (μ := volume) (s := Prod.snd ⁻¹' t) hK
+    (f := fun (q : E × P) (y : E) ↦ (𝐞 (-⟪y, q.1⟫) : ℂ) • g (y, q.2))
+    (Continuous.continuousOn (by fun_prop)) fun q y hq hy ↦ by simp [ht q.2 hq y hy]
+  exact h.continuousAt ((htopen.preimage continuous_snd).mem_nhds hq₀)
+
+/-- The Fourier integral in the first variable of a continuous `g` vanishing for first variables
 outside a compact set is jointly continuous in the dual variable and the second variable. -/
 theorem continuous_integral_fourierChar_smul (hg : Continuous g) (hK : IsCompact K)
     (hKg : ∀ y ∉ K, ∀ ξ, g (y, ξ) = 0) :
     Continuous fun q : E × P ↦ ∫ y, (𝐞 (-⟪y, q.1⟫) : ℂ) • g (y, q.2) :=
-  continuousOn_univ.1 <| continuousOn_integral_of_compact_support hK
-    (Continuous.continuousOn (by fun_prop)) fun q y _ hy ↦ by simp [hKg y hy]
+  continuous_iff_continuousAt.2 fun _ ↦
+    continuousAt_integral_fourierChar_smul hg hK (.of_forall fun ξ y hy ↦ hKg y hy ξ)
 
 end TauCeti
