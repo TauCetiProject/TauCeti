@@ -52,6 +52,10 @@ instance contMDiffMul [Add M] [ContMDiffAdd I n M] : ContMDiffMul I n (Multiplic
 instance lieGroup [AddGroup M] [LieAddGroup I n M] : LieGroup I n (Multiplicative M) where
   contMDiff_inv := contMDiff_neg (I := I) (n := n) (G := M)
 
+/-- Forgetting the type tag is smooth, since the type tag retains the original charts. -/
+theorem contMDiff_toAdd : ContMDiff I I n (toAdd : Multiplicative M → M) :=
+  contMDiff_id
+
 end Multiplicative
 
 namespace Additive
