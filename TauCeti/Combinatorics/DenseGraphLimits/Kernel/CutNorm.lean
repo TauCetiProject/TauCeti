@@ -185,13 +185,15 @@ private theorem iSup_six_le (K : SymmKernel Ω μ) {P Q R : (Ω → ℝ) → Pro
       hf u v hu hu1 hv hv1) hC) hC) hC) hC) hC) hC
 
 omit [IsFiniteMeasure μ] in
-/-- A test integral is at most a six-fold supremum of uniformly bounded test integrals: each level
-of the iterated supremum is bounded, so each step down is a `le_ciSup`. -/
+/-- If the admissible absolute test integrals are uniformly bounded, then every admissible absolute
+test integral lies below their six-fold supremum. -/
 private theorem le_iSup_six (K : SymmKernel Ω μ) {P Q R : (Ω → ℝ) → Prop} {C : ℝ}
     (hf : ∀ u v, P u → Q u → P v → R v → |K.testIntegral μ u v| ≤ C) {u v : Ω → ℝ}
     (hu : P u) (hu1 : Q u) (hv : P v) (hv1 : R v) :
     |K.testIntegral μ u v| ≤
       ⨆ (u) (_ : P u) (_ : Q u) (v) (_ : P v) (_ : R v), |K.testIntegral μ u v| := by
+  -- Each level of the iterated supremum is bounded by `max C 0`, so each step down is a
+  -- `le_ciSup`.
   have h0 : 0 ≤ max C 0 := le_max_right _ _
   have h1 (u v) (hu : P u) (hu1 : Q u) (hv : P v) : (⨆ _ : R v, |K.testIntegral μ u v|) ≤ max C 0 :=
     Real.iSup_le (fun hv1 => (hf u v hu hu1 hv hv1).trans (le_max_left _ _)) h0
@@ -494,9 +496,10 @@ for the supremum, mirroring `abs_rectIntegral_le_cutNorm`. -/
 theorem abs_testIntegral_le_cutNormSigned (K : SymmKernel Ω μ) {u v : Ω → ℝ}
     (hu : Measurable u) (hv : Measurable v)
     (hu1 : ∀ x, u x ∈ Icc (-1 : ℝ) 1) (hv1 : ∀ y, v y ∈ Icc (-1 : ℝ) 1) :
-    |K.testIntegral μ u v| ≤ cutNormSigned μ K :=
-  le_iSup_six μ K (fun _ _ hu hu1 hv hv1 => K.abs_testIntegral_le_integral_abs μ hu hv hu1 hv1)
-    hu hu1 hv hv1
+    |K.testIntegral μ u v| ≤ cutNormSigned μ K := by
+  rw [cutNormSigned_def]
+  exact le_iSup_six μ K
+    (fun _ _ hu hu1 hv hv1 => K.abs_testIntegral_le_integral_abs μ hu hv hu1 hv1) hu hu1 hv hv1
 
 /-- To prove an upper bound on the signed cut norm, it suffices to prove it for every pair of
 measurable `[-1,1]`-valued test functions.  Nonnegativity of the bound is not a hypothesis: it
