@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.SpringSystem.Tetrahedron.Character
 public import TauCeti.Analysis.SpringSystem.Tetrahedron.MatchingStabilizer
-public import TauCeti.LinearAlgebra.Matrix.CrossProduct
 import TauCeti.Algebra.Lie.Orthogonal.CrossProduct
 
 /-!
