@@ -550,36 +550,22 @@ noncomputable def atlasCounitIso [Small.{w} 𝕜] :
 variable (𝕜 X) in
 /-- Explicit equivalence of categories `FiniteRankBundle.{w} 𝕜 X ≌ FiniteRankAtlas 𝕜 X` whenever
 `[Small.{w} 𝕜]` holds. -/
-@[expose] noncomputable def atlasEquivalence [Small.{w} 𝕜] :
+noncomputable def atlasEquivalence [Small.{w} 𝕜] :
     FiniteRankBundle.{w} 𝕜 X ≌ FiniteRankAtlas 𝕜 X where
   functor := toAtlasFunctor.{w} 𝕜 X
   inverse := fromAtlasFunctor.{w} 𝕜 X
   unitIso := atlasUnitIso.{w} 𝕜 X
   counitIso := atlasCounitIso.{w} 𝕜 X
-  functor_unitIso_comp E := FiniteRankAtlas.hom_ext fun x ↦ LinearMap.ext fun v ↦ by
-    let sE := Shrink.continuousLinearEquiv.{w} 𝕜 (E.toAtlas.Fiber x)
-    let u := (((toAtlasFunctor.{w} 𝕜 X).map ((atlasUnitIso.{w} 𝕜 X).hom.app E)).fiberMap x) v
-    have hcomp := DFunLike.congr_fun (FiniteRankAtlas.fiberMap_comp
-      ((toAtlasFunctor.{w} 𝕜 X).map ((atlasUnitIso.{w} 𝕜 X).hom.app E))
-      ((atlasCounitIso.{w} 𝕜 X).hom.app ((toAtlasFunctor.{w} 𝕜 X).obj E)) x) v
-    have hcounit : (((atlasCounitIso.{w} 𝕜 X).hom.app ((toAtlasFunctor.{w} 𝕜 X).obj E)).fiberMap x)
-        u = u :=
-      DFunLike.congr_fun ((congrArg (fun h : (fromAtlas.{w} E.toAtlas).toAtlas ⟶ E.toAtlas ↦
-        h.fiberMap x) (atlasCounitIso_hom_app.{w} E.toAtlas)).trans
-          (fiberMap_atlasCounitApp_hom.{w} E.toAtlas x)) u
-    have hfrom : ((fromAtlas.{w} E.toAtlas).reconstructionFiberEquiv x).symm
-        (((atlasUnitIso.{w} 𝕜 X).hom.app E).fiberMap x (E.reconstructionFiberEquiv x v)) =
-        sE (((atlasUnitIso.{w} 𝕜 X).hom.app E).fiberMap x (E.reconstructionFiberEquiv x v)) :=
-      DFunLike.congr_fun (congrArg ContinuousLinearEquiv.symm
-        (reconstructionFiberEquiv_fromAtlas.{w} E.toAtlas x)) _
-    have hunit : (((atlasUnitIso.{w} 𝕜 X).hom.app E).fiberMap x) (E.reconstructionFiberEquiv x v) =
-        sE.symm ((E.reconstructionFiberEquiv x).symm (E.reconstructionFiberEquiv x v)) :=
-      DFunLike.congr_fun ((congrArg (fun h : E ⟶ fromAtlas.{w} E.toAtlas ↦ h.fiberMap x)
-        (atlasUnitIso_hom_app.{w} E)).trans
-          (fiberMap_atlasUnitApp_hom.{w} E x)) (E.reconstructionFiberEquiv x v)
-    exact hcomp.trans <| hcounit.trans <| hfrom.trans <| (congrArg sE hunit).trans <|
-      (sE.apply_symm_apply _).trans <| ((E.reconstructionFiberEquiv x).symm_apply_apply v).trans
-        (DFunLike.congr_fun (FiniteRankAtlas.fiberMap_id E.toAtlas x) v).symm
+  functor_unitIso_comp E :=
+    FiniteRankAtlas.hom_ext (A := E.toAtlas) (D := E.toAtlas) fun x ↦ by
+      rw [FiniteRankAtlas.fiberMap_comp, FiniteRankAtlas.fiberMap_id,
+        atlasCounitIso_hom_app, fiberMap_atlasCounitApp_hom, atlasUnitIso_hom_app]
+      refine LinearMap.ext fun (v : E.toAtlas.Fiber x) ↦ ?_
+      change ((fromAtlas.{w} E.toAtlas).reconstructionFiberEquiv x).symm
+          ((atlasUnitApp.{w} E).hom.fiberMap x (E.reconstructionFiberEquiv x v)) = v
+      rw [reconstructionFiberEquiv_fromAtlas, fiberMap_atlasUnitApp_hom]
+      exact ((Shrink.continuousLinearEquiv 𝕜 (E.toAtlas.Fiber x)).apply_symm_apply _).trans
+        ((E.reconstructionFiberEquiv x).symm_apply_apply v)
 
 @[simp] theorem atlasEquivalence_functor [Small.{w} 𝕜] :
     (atlasEquivalence.{w} 𝕜 X).functor = toAtlasFunctor.{w} 𝕜 X := (rfl)
@@ -588,10 +574,21 @@ variable (𝕜 X) in
     (atlasEquivalence.{w} 𝕜 X).inverse = fromAtlasFunctor.{w} 𝕜 X := (rfl)
 
 @[simp] theorem atlasEquivalence_unitIso [Small.{w} 𝕜] :
-    (atlasEquivalence.{w} 𝕜 X).unitIso = atlasUnitIso.{w} 𝕜 X := (rfl)
+    (atlasEquivalence.{w} 𝕜 X).unitIso =
+      atlasUnitIso.{w} 𝕜 X ≪≫
+        eqToIso (by rw [atlasEquivalence_functor, atlasEquivalence_inverse]) :=
+  (Iso.trans_refl _).symm
 
 @[simp] theorem atlasEquivalence_counitIso [Small.{w} 𝕜] :
-    (atlasEquivalence.{w} 𝕜 X).counitIso = atlasCounitIso.{w} 𝕜 X := (rfl)
+    (atlasEquivalence.{w} 𝕜 X).counitIso =
+      eqToIso (by rw [atlasEquivalence_functor, atlasEquivalence_inverse]) ≪≫
+        atlasCounitIso.{w} 𝕜 X :=
+  (Iso.refl_trans _).symm
+
+/-- The forward functor of `atlasEquivalence` is additive. -/
+instance [Small.{w} 𝕜] : (atlasEquivalence.{w} 𝕜 X).functor.Additive := by
+  rw [atlasEquivalence_functor]
+  infer_instance
 
 /-- Under `[Small.{w} 𝕜]`, `toAtlasFunctor` is an equivalence of categories. -/
 instance [Small.{w} 𝕜] : (toAtlasFunctor.{w} 𝕜 X).IsEquivalence :=
@@ -767,7 +764,7 @@ instance [Small.{w} 𝕜] : (uliftFunctor.{w, w'} 𝕜 X).IsEquivalence := by
 variable (𝕜 X) in
 /-- Equivalence `FiniteRankBundle.{w₁} 𝕜 X ≌ FiniteRankBundle.{w₂} 𝕜 X` under `[Small.{w₁} 𝕜]` and
 `[Small.{w₂} 𝕜]`. -/
-@[expose] noncomputable def changeUniverseEquivalence [Small.{w₁} 𝕜] [Small.{w₂} 𝕜] :
+noncomputable def changeUniverseEquivalence [Small.{w₁} 𝕜] [Small.{w₂} 𝕜] :
     FiniteRankBundle.{w₁} 𝕜 X ≌ FiniteRankBundle.{w₂} 𝕜 X :=
   (atlasEquivalence.{w₁} 𝕜 X).trans (atlasEquivalence.{w₂} 𝕜 X).symm
 
@@ -780,6 +777,12 @@ variable (𝕜 X) in
     (changeUniverseEquivalence.{w₁, w₂} 𝕜 X).inverse =
       toAtlasFunctor.{w₂} 𝕜 X ⋙ fromAtlasFunctor.{w₁} 𝕜 X := by
   simp [changeUniverseEquivalence]
+
+/-- The forward functor of `changeUniverseEquivalence` is additive. -/
+instance [Small.{w₁} 𝕜] [Small.{w₂} 𝕜] :
+    (changeUniverseEquivalence.{w₁, w₂} 𝕜 X).functor.Additive := by
+  rw [changeUniverseEquivalence_functor]
+  infer_instance
 
 end UniversePolymorphism
 
