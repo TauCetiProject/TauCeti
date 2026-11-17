@@ -52,24 +52,40 @@ variable {X E F G : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
   [NormedAddCommGroup G] [NormedSpace ℝ G] {k : ℕ} {α : ℝ≥0}
 
-private theorem norm_iteratedFDeriv_ckHolderBilinear_le (B : E →L[ℝ] F →L[ℝ] G)
-    (f : CkHolderSpace k α X E) (g : CkHolderSpace k α X F) {j : ℕ} (hj : j ≤ k)
-    (x : X) :
-    ‖iteratedFDeriv ℝ j (fun y ↦ B (f y) (g y)) x‖ ≤ 2 ^ k * ‖B‖ * ‖f‖ * ‖g‖ := by
-  refine (B.norm_iteratedFDeriv_le_of_bilinear f.contDiff g.contDiff x
-    (by exact_mod_cast hj)).trans ?_
+/-- The binomial sum in the bilinear Leibniz bound at an order `j ≤ k` is at most
+`2 ^ k * ‖B‖ * M * N` when the derivative norms of the two factors are bounded by `M` and `N`
+through order `k`. -/
+private theorem norm_mul_sum_choose_le (B : E →L[ℝ] F →L[ℝ] G) {j : ℕ} (hj : j ≤ k)
+    {a b : ℕ → ℝ} {M N : ℝ} (ha0 : ∀ i, 0 ≤ a i) (hb0 : ∀ i, 0 ≤ b i)
+    (ha : ∀ i ≤ k, a i ≤ M) (hb : ∀ i ≤ k, b i ≤ N) :
+    ‖B‖ * ∑ i ∈ Finset.range (j + 1), (j.choose i : ℝ) * a i * b (j - i) ≤
+      2 ^ k * ‖B‖ * M * N := by
+  have hM : 0 ≤ M := (ha0 0).trans (ha 0 k.zero_le)
+  have hN : 0 ≤ N := (hb0 0).trans (hb 0 k.zero_le)
   calc
-    _ ≤ ‖B‖ * ∑ i ∈ Finset.range (j + 1), (j.choose i : ℝ) * ‖f‖ * ‖g‖ := by
+    _ ≤ ‖B‖ * ∑ i ∈ Finset.range (j + 1), (j.choose i : ℝ) * M * N := by
       gcongr with i hi
-      · exact f.norm_iteratedFDeriv_apply_le (by have := Finset.mem_range.mp hi; omega) x
-      · exact g.norm_iteratedFDeriv_apply_le ((Nat.sub_le j i).trans hj) x
-    _ = 2 ^ j * ‖B‖ * ‖f‖ * ‖g‖ := by
+      · exact hb0 _
+      · exact ha i (by have := Finset.mem_range.mp hi; omega)
+      · exact hb _ ((Nat.sub_le j i).trans hj)
+    _ = 2 ^ j * ‖B‖ * M * N := by
       rw [← Finset.sum_mul, ← Finset.sum_mul]
       have hsum : (∑ i ∈ Finset.range (j + 1), (j.choose i : ℝ)) = 2 ^ j := by
         exact_mod_cast Nat.sum_range_choose j
       rw [hsum]
       ring
     _ ≤ _ := by gcongr; norm_num
+
+private theorem norm_iteratedFDeriv_ckHolderBilinear_le (B : E →L[ℝ] F →L[ℝ] G)
+    (f : CkHolderSpace k α X E) (g : CkHolderSpace k α X F) {j : ℕ} (hj : j ≤ k)
+    (x : X) :
+    ‖iteratedFDeriv ℝ j (fun y ↦ B (f y) (g y)) x‖ ≤ 2 ^ k * ‖B‖ * ‖f‖ * ‖g‖ := by
+  refine (B.norm_iteratedFDeriv_le_of_bilinear f.contDiff g.contDiff x
+    (by exact_mod_cast hj)).trans ?_
+  exact norm_mul_sum_choose_le B hj (a := fun i ↦ ‖iteratedFDeriv ℝ i f x‖)
+    (b := fun i ↦ ‖iteratedFDeriv ℝ i g x‖) (fun _ ↦ norm_nonneg _) (fun _ ↦ norm_nonneg _)
+    (fun i hi ↦ f.norm_iteratedFDeriv_apply_le hi x)
+    (fun i hi ↦ g.norm_iteratedFDeriv_apply_le hi x)
 
 private theorem holderWith_iteratedFDeriv_ckHolderBilinear (B : E →L[ℝ] F →L[ℝ] G)
     (hα : α ≤ 1) (f : CkHolderSpace k α X E) (g : CkHolderSpace k α X F) :
@@ -167,20 +183,14 @@ private theorem norm_iteratedFDeriv_comp₂_le_of_ckHolderSpaceOn (B : E →L[�
   rw [← iteratedFDerivWithin_of_isOpen j hΩ x.2]
   refine (B.norm_iteratedFDerivWithin_le_of_bilinear (f.contDiffOn hf) (g.contDiffOn hg)
     hΩ.uniqueDiffOn x.2 (by exact_mod_cast hj)).trans ?_
-  calc
-    _ ≤ ‖B‖ * ∑ i ∈ Finset.range (j + 1), (j.choose i : ℝ) * ‖f‖ * ‖g‖ := by
-      gcongr with i hi
-      · rw [iteratedFDerivWithin_of_isOpen i hΩ x.2]
-        exact f.norm_iteratedFDeriv_apply_le hf (by have := Finset.mem_range.mp hi; omega) x
-      · rw [iteratedFDerivWithin_of_isOpen (j - i) hΩ x.2]
-        exact g.norm_iteratedFDeriv_apply_le hg ((Nat.sub_le j i).trans hj) x
-    _ = 2 ^ j * ‖B‖ * ‖f‖ * ‖g‖ := by
-      rw [← Finset.sum_mul, ← Finset.sum_mul]
-      have hsum : (∑ i ∈ Finset.range (j + 1), (j.choose i : ℝ)) = 2 ^ j := by
-        exact_mod_cast Nat.sum_range_choose j
-      rw [hsum]
-      ring
-    _ ≤ _ := by gcongr; norm_num
+  exact norm_mul_sum_choose_le B hj (a := fun i ↦ ‖iteratedFDerivWithin ℝ i f' Ω x‖)
+    (b := fun i ↦ ‖iteratedFDerivWithin ℝ i g' Ω x‖) (fun _ ↦ norm_nonneg _) (fun _ ↦ norm_nonneg _)
+    (fun i hi ↦ by
+      rw [iteratedFDerivWithin_of_isOpen i hΩ x.2]
+      exact f.norm_iteratedFDeriv_apply_le hf hi x)
+    (fun i hi ↦ by
+      rw [iteratedFDerivWithin_of_isOpen i hΩ x.2]
+      exact g.norm_iteratedFDeriv_apply_le hg hi x)
 
 /-- The Hölder bound on `Ω` for the top derivative of the pointwise product of two maps agreeing
 on `Ω` with elements of `C^{k,α}(Ω)`, for convex `Ω`. -/
@@ -198,51 +208,45 @@ private theorem holderOnWith_iteratedFDeriv_comp₂_of_ckHolderSpaceOn (B : E �
     (fun j hj ↦ g.holderOnWith_iteratedFDeriv_of_le hg hΩ hα hj)
   convert h using 1; ring
 
+omit [NormedSpace ℝ X] in
+/-- The extension by zero of a map on `Ω` agrees with it on `Ω`. -/
+private theorem extend_val_apply {Y : Type*} [Zero Y] (f : Ω → Y) (x : Ω) :
+    Function.extend Subtype.val f 0 (x : X) = f x :=
+  Subtype.val_injective.extend_apply _ _ x
+
 /-- The pointwise product of two elements of `C^{k,α}(Ω)`, as an element of `C^{k,α}(Ω)`. The
 product is computed from the extensions by zero, which agree with the factors on `Ω`. -/
 private def ckHolderOnBilinear (B : E →L[ℝ] F →L[ℝ] G) (hΩ : Convex ℝ (Ω : Set X))
     (hα : α ≤ 1) (f : CkHolderSpaceOn k α Ω E) (g : CkHolderSpaceOn k α Ω F) :
     CkHolderSpaceOn k α Ω G :=
-  have hf (x : Ω) : Function.extend Subtype.val f 0 (x : X) = f x :=
-    Subtype.val_injective.extend_apply _ _ x
-  have hg (x : Ω) : Function.extend Subtype.val g 0 (x : X) = g x :=
-    Subtype.val_injective.extend_apply _ _ x
   CkHolderSpaceOn.ofContDiffOn
     (fun x ↦ B (Function.extend Subtype.val f 0 x) (Function.extend Subtype.val g 0 x))
-    (B.isBoundedBilinearMap.contDiff.comp_contDiffOn ((f.contDiffOn hf).prodMk (g.contDiffOn hg)))
-    (fun _ hj ↦ ⟨2 ^ k * ‖B‖ * ‖f‖ * ‖g‖,
-      norm_iteratedFDeriv_comp₂_le_of_ckHolderSpaceOn B f g hf hg hj⟩)
-    (HolderWith.memHolder fun x y ↦
-      holderOnWith_iteratedFDeriv_comp₂_of_ckHolderSpaceOn B hΩ hα f g hf hg x x.2 y y.2)
+    (B.isBoundedBilinearMap.contDiff.comp_contDiffOn
+      ((f.contDiffOn (extend_val_apply f)).prodMk (g.contDiffOn (extend_val_apply g))))
+    (fun _ hj ↦ ⟨2 ^ k * ‖B‖ * ‖f‖ * ‖g‖, norm_iteratedFDeriv_comp₂_le_of_ckHolderSpaceOn B f g
+      (extend_val_apply f) (extend_val_apply g) hj⟩)
+    (HolderWith.memHolder fun x y ↦ holderOnWith_iteratedFDeriv_comp₂_of_ckHolderSpaceOn B hΩ hα
+      f g (extend_val_apply f) (extend_val_apply g) x x.2 y y.2)
 
 @[simp]
 private theorem ckHolderOnBilinear_apply (B : E →L[ℝ] F →L[ℝ] G) (hΩ : Convex ℝ (Ω : Set X))
     (hα : α ≤ 1) (f : CkHolderSpaceOn k α Ω E) (g : CkHolderSpaceOn k α Ω F) (x : Ω) :
     ckHolderOnBilinear B hΩ hα f g x = B (f x) (g x) := by
-  rw [ckHolderOnBilinear, CkHolderSpaceOn.ofContDiffOn_apply, Subtype.val_injective.extend_apply,
-    Subtype.val_injective.extend_apply]
+  rw [ckHolderOnBilinear, CkHolderSpaceOn.ofContDiffOn_apply, extend_val_apply, extend_val_apply]
 
 private theorem norm_ckHolderOnBilinear_le (B : E →L[ℝ] F →L[ℝ] G) (hΩ : Convex ℝ (Ω : Set X))
     (hα : α ≤ 1) (f : CkHolderSpaceOn k α Ω E) (g : CkHolderSpaceOn k α Ω F) :
     ‖ckHolderOnBilinear B hΩ hα f g‖ ≤ (k + 7) * 2 ^ k * ‖B‖ * ‖f‖ * ‖g‖ := by
-  set P := ckHolderOnBilinear B hΩ hα f g
-  set u : X → G := fun y ↦ B (Function.extend Subtype.val f 0 y) (Function.extend Subtype.val g 0 y)
-  have hf (x : Ω) : Function.extend Subtype.val f 0 (x : X) = f x :=
-    Subtype.val_injective.extend_apply _ _ x
-  have hg (x : Ω) : Function.extend Subtype.val g 0 (x : X) = g x :=
-    Subtype.val_injective.extend_apply _ _ x
-  have hu (x : Ω) : u x = P x := by
-    simp only [u, P, ckHolderOnBilinear_apply, hf, hg]
-  have htop : (Ω : Set X).domRestrict (iteratedFDeriv ℝ k u) =
-      (P.iteratedFDeriv (Fin.last k) : Ω → X [×k]→L[ℝ] G) :=
-    funext fun x ↦ P.iteratedFDeriv_eq hu (Fin.last k) x
   refine (CkHolderSpaceOn.norm_le_sum_add_of_norm_iteratedFDeriv_le_of_holderWith
     (M := fun _ ↦ 2 ^ k * ‖B‖ * ‖f‖ * ‖g‖) (fun _ ↦ by positivity) (fun i x ↦ ?_)
-    (K := 6 * 2 ^ k * ‖B‖₊ * ‖f‖₊ * ‖g‖₊) ?_).trans_eq ?_
-  · rw [← P.iteratedFDeriv_eq hu]
-    exact norm_iteratedFDeriv_comp₂_le_of_ckHolderSpaceOn B f g hf hg (by omega) x
-  · rw [← htop, HolderWith.restrict_iff]
-    exact holderOnWith_iteratedFDeriv_comp₂_of_ckHolderSpaceOn B hΩ hα f g hf hg
+    (K := 6 * 2 ^ k * ‖B‖₊ * ‖f‖₊ * ‖g‖₊) (fun x y ↦ ?_)).trans_eq ?_
+  · rw [ckHolderOnBilinear, CkHolderSpaceOn.iteratedFDeriv_ofContDiffOn]
+    exact norm_iteratedFDeriv_comp₂_le_of_ckHolderSpaceOn B f g (extend_val_apply f)
+      (extend_val_apply g) (by omega) x
+  · rw [ckHolderOnBilinear, CkHolderSpaceOn.iteratedFDeriv_ofContDiffOn,
+      CkHolderSpaceOn.iteratedFDeriv_ofContDiffOn]
+    exact holderOnWith_iteratedFDeriv_comp₂_of_ckHolderSpaceOn B hΩ hα f g (extend_val_apply f)
+      (extend_val_apply g) x x.2 y y.2
   · simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
     push_cast
     ring
