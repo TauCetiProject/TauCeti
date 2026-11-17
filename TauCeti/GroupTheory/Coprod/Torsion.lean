@@ -149,14 +149,6 @@ section Group
 
 variable {ι : Type*} {G : ι → Type*} [∀ i, Group (G i)]
 
-private theorem isChain_of_append_singleton {α : Type*} {R : α → α → Prop} {b : α} :
-    ∀ {mid : List α}, (mid ++ [b]).IsChain R → mid.IsChain R
-  | [], _ => List.isChain_nil
-  | [c], _ => List.isChain_singleton c
-  | c :: d :: rest', h => by
-      simp only [List.cons_append, List.isChain_cons_cons] at h ⊢
-      exact ⟨h.1, isChain_of_append_singleton h.2⟩
-
 private theorem word_prod_eq_one_or_exists_isConj_of :
     ∀ (n : ℕ) (w : Word G), w.toList.length = n → IsOfFinOrder w.prod →
       w.prod = 1 ∨ ∃ (i : ι) (x : G i), x ≠ 1 ∧ IsOfFinOrder x ∧ IsConj w.prod (of x) := by
@@ -194,7 +186,7 @@ private theorem word_prod_eq_one_or_exists_isConj_of :
             chain_ne := by
               have hc := w.chain_ne
               rw [hw'] at hc
-              exact isChain_of_append_singleton hc.tail }
+              exact hc.tail.left_of_append }
         have hfst : midWord.fstIdx ≠ some i := by
           rcases hmid_cons : mid with _ | ⟨c, midTail⟩
           · exact False.elim (hmid_ne hmid_cons)
