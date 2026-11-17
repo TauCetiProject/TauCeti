@@ -12,6 +12,7 @@ public import Mathlib.CategoryTheory.Limits.Preserves.Filtered
 import Mathlib.CategoryTheory.Limits.Types.Filtered
 import Mathlib.CategoryTheory.Limits.Types.Pullbacks
 import Mathlib.Topology.Sheaves.SheafCondition.UniqueGluing
+import TauCeti.Topology.Sets.Compacts
 
 /-!
 # The K-presheaf of a presheaf
@@ -178,11 +179,6 @@ noncomputable def isTerminalToKPresheafObjBot {P : Presheaf C X} (hP : P.IsSheaf
   (Sheaf.isTerminalOfEmpty ⟨P, hP⟩).ofIso <| ((P.isColimitKGermCocone ⊥).coconePointUniqueUpToIso
     (colimitOfDiagramTerminal Compacts.isInitialBotOpensOpenNhdsBot.op _)).symm
 
-/-- A compact set whose interior contains `K`, as a compact neighbourhood of `K`. -/
-private abbrev compactNhdsOfSubsetInterior {K : Compacts X} (L : Compacts X)
-    (h : (K : Set X) ⊆ interior L) : K.compactNhds :=
-  Compacts.compactNhdsMkOfOpens L ⟨interior L, isOpen_interior⟩ h interior_subset
-
 section Types
 
 variable (P : Presheaf (Type w) X)
@@ -215,7 +211,7 @@ noncomputable def isColimitToKPresheafCoconeOfCompacts [T2Space X] [LocallyCompa
   refine Types.FilteredColimit.isColimitOf' _ _ (fun x ↦ ?_) fun L x y hxy ↦ ?_
   · obtain ⟨U, hKU, s, rfl⟩ := P.exists_kGerm_apply_eq x
     obtain ⟨L, hL, hKL, hLU⟩ := exists_compact_between K.isCompact U.isOpen hKU
-    refine ⟨op (compactNhdsOfSubsetInterior ⟨L, hL⟩ hKL), P.kGerm ⟨L, hL⟩ U hLU s, ?_⟩
+    refine ⟨op (Compacts.compactNhdsOfSubsetInterior ⟨L, hL⟩ hKL), P.kGerm ⟨L, hL⟩ U hLU s, ?_⟩
     exact (P.kGerm_toKPresheaf_map_apply
       (opHomOfLE (show K ≤ ⟨L, hL⟩ from hKL.trans interior_subset)) U hLU s).symm
   · obtain ⟨U, hLU, s, rfl⟩ := P.exists_kGerm_apply_eq x
@@ -226,7 +222,7 @@ noncomputable def isColimitToKPresheafCoconeOfCompacts [T2Space X] [LocallyCompa
     obtain ⟨L', hL', hKL', hL'W⟩ := exists_compact_between K.isCompact (W ⊓ V').isOpen
       (subset_inter hKW hKV')
     have hL'L : (L' : Set X) ⊆ L.unop.1 := fun x hx ↦ hV'L (hL'W hx).2
-    refine ⟨op (compactNhdsOfSubsetInterior ⟨L', hL'⟩ hKL'),
+    refine ⟨op (Compacts.compactNhdsOfSubsetInterior ⟨L', hL'⟩ hKL'),
       (homOfLE (show _ ≤ L.unop from hL'L)).op, ?_⟩
     have hL'W' : (L' : Set X) ⊆ W := fun x hx ↦ (hL'W hx).1
     let f : op L.unop.1 ⟶ op ⟨L', hL'⟩ := (homOfLE (show _ ≤ L.unop.1 from hL'L)).op
@@ -235,14 +231,6 @@ noncomputable def isColimitToKPresheafCoconeOfCompacts [T2Space X] [LocallyCompa
       _ = P.kGerm ⟨L', hL'⟩ W hL'W' (P.map iV.op t) := by rw [hst]
       _ = P.kGerm ⟨L', hL'⟩ V (hL'L.trans hLV) t := P.kGerm_res_apply _ iV hL'W' t
       _ = _ := (P.kGerm_toKPresheaf_map_apply f V hLV t).symm
-
-omit [HasColimitsOfSize.{w, w} C] in
-/-- An open set containing `K₂` and an open set containing `K₃` together contain `K₂ ∪ K₃`. -/
-private theorem subset_sup_of_bicartSq [T2Space X] {K₁ K₂ K₃ K₄ : Compacts X}
-    (sq : Lattice.BicartSq K₁ K₂ K₃ K₄) {A B : Opens X} (h₂ : (K₂ : Set X) ⊆ A)
-    (h₃ : (K₃ : Set X) ⊆ B) : (K₄ : Set X) ⊆ A ⊔ B := by
-  rw [← sq.sup_eq, Compacts.coe_sup]
-  exact union_subset_union h₂ h₃
 
 /-- Locality for germs of a sheaf of types: two germs along `K₄ = K₂ ∪ K₃` agreeing along `K₂`
 and along `K₃` are equal. -/
@@ -259,7 +247,7 @@ private theorem eq_of_toKPresheaf_map_eq [T2Space X] {P : Presheaf (Type w) X} (
     kGerm_apply_eq_kGerm_apply_iff] at h₂ h₃
   obtain ⟨W₂, hW₂, iU₂, iV₂, e₂⟩ := h₂
   obtain ⟨W₃, hW₃, iU₃, iV₃, e₃⟩ := h₃
-  have hW : (K₄ : Set X) ⊆ W₂ ⊔ W₃ := subset_sup_of_bicartSq sq hW₂ hW₃
+  have hW : (K₄ : Set X) ⊆ W₂ ⊔ W₃ := sq.sup_eq ▸ Compacts.coe_sup_subset_coe_sup hW₂ hW₃
   let iU : W₂ ⊔ W₃ ⟶ U := homOfLE (sup_le iU₂.le iU₃.le)
   let iV : W₂ ⊔ W₃ ⟶ V := homOfLE (sup_le iV₂.le iV₃.le)
   -- By locality `s` and `t` agree on `W₂ ⊔ W₃`, an open neighbourhood of `K₄`.
@@ -313,7 +301,7 @@ private theorem exists_toKPresheaf_map_eq [T2Space X] {P : Presheaf (Type w) X}
     Types.exists_of_isPullback (IsPullback.of_isLimit
       (Sheaf.isLimitPullbackCone ⟨P, hP⟩ U₂' U₃')) _ _ <| by
         simpa only [← Functor.map_comp_apply, ← op_comp] using key _ _
-  have hK₄ : (K₄ : Set X) ⊆ U₂' ⊔ U₃' := subset_sup_of_bicartSq sq hK₂ hK₃
+  have hK₄ : (K₄ : Set X) ⊆ U₂' ⊔ U₃' := sq.sup_eq ▸ Compacts.coe_sup_subset_coe_sup hK₂ hK₃
   refine ⟨P.kGerm K₄ _ hK₄ s, ?_, ?_⟩
   · rw [kGerm_toKPresheaf_map_apply, ← P.kGerm_res_apply K₂ (homOfLE le_sup_left) hK₂, hs₂,
       P.kGerm_res_apply]
@@ -409,7 +397,7 @@ theorem IsSheaf.isKSheaf_toKPresheaf [T2Space X] [LocallyCompactSpace X]
       (h.isPullback sq)
   · have : Nonempty K.compactNhds := by
       obtain ⟨L, hL, hKL⟩ := exists_compact_superset K.isCompact
-      exact ⟨compactNhdsOfSubsetInterior ⟨L, hL⟩ hKL⟩
+      exact ⟨Compacts.compactNhdsOfSubsetInterior ⟨L, hL⟩ hKL⟩
     have : ReflectsColimitsOfShape (↥K.compactNhds)ᵒᵖ (forget C) :=
       reflectsColimitsOfShape_of_reflectsIsomorphisms
     exact ⟨isColimitOfReflects (forget C) (h.nonempty_isColimit_coconeOfCompacts K).some⟩
