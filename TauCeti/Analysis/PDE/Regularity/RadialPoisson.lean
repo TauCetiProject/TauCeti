@@ -25,9 +25,9 @@ for `γ = 1` when `d ≥ 2`. Its gradient `∇w(x) = -‖x‖ ^ (-γ) x / (d - �
 `‖x‖ ^ (1 - γ) / (d - γ)`. These solutions show that the interior Schauder estimate for
 divergence-form equations with a scalar datum,
 `exists_holderOnWith_preciseRepresentative_gradient_of_holderOnWith_matrixBilinearForm_of_memLp`,
-is sharp in its datum: for `f ∈ Lᵠ`, `q > d`, it makes `∇u` Hölder continuous with every exponent
-`β < 1` with `β ≤ 1 - d / q` (and `β ≤ α`, the coefficient exponent, which for the Laplacian is
-arbitrary).
+is sharp in its datum: for `f ∈ Lᵠ` with `q > d` and `q ≥ 2` (automatic from `q > d` when `d ≥ 2`),
+it makes `∇u` Hölder continuous with every exponent `β < 1` with `β ≤ 1 - d / q` (and `β ≤ α`, the
+coefficient exponent, which for the Laplacian is arbitrary).
 
 * **The exponent `1 - d / q` cannot be raised.** The datum `‖x‖ ^ (-γ)` lies in `Lᵠ(Ω)` when
   `γ q < d`, while `∇w` vanishes at the origin and has length `t ^ (1 - γ) / (d - γ)` at distance
@@ -35,7 +35,8 @@ arbitrary).
   Letting `γ ↑ d / q` shows that every exponent `β > 1 - d / q` fails for some datum in `Lᵠ`
   (`TauCeti.PDE.exists_memLp_forall_energyFormH1_eq_and_not_holderOnWith_gradient`).
 * **The endpoint `q = d` is excluded.** For `γ = 1` and `d ≥ 2`, the datum `‖x‖⁻¹` lies in `Lᵠ(Ω)`
-  for every `q < d` but not for `q = d`, and the gradient `-x / ((d - 1) ‖x‖)` of the solution
+  for every `q < d` (`IsCompact.memLp_norm_inv_restrict`) but not for `q = d`
+  (`TauCeti.not_memLp_norm_inv_closedBall`), and the gradient `-x / ((d - 1) ‖x‖)` of the solution
   `-‖x‖ / (d - 1)` has no representative continuous at the origin
   (`TauCeti.PDE.exists_forall_energyFormH1_eq_and_not_continuousAt_gradient`). So the `C¹`
   conclusion is lost at `q = d`, not merely weakened.
@@ -82,14 +83,19 @@ private theorem radialSolution_continuous (hγ : γ < 2) :
     Continuous (radialSolution (ι := ι) γ) :=
   ((continuous_norm.rpow_const fun _ ↦ Or.inr (by linarith)).neg).div_const _
 
+/-- Away from the origin, the radial gradient has length `‖x‖ ^ (1 - γ) / |d - γ|`. -/
+private theorem norm_radialGradient {x : EuclideanSpace ℝ ι} (hx : x ≠ 0) :
+    ‖radialGradient γ x‖ = |Fintype.card ι - γ|⁻¹ * ‖x‖ ^ (1 - γ) := by
+  rw [radialGradient, norm_smul, norm_smul, norm_neg, norm_inv, Real.norm_eq_abs,
+    Real.norm_of_nonneg (by positivity), ← Real.rpow_add_one (norm_ne_zero_iff.2 hx),
+    neg_add_eq_sub]
+
 private theorem norm_radialGradient_le (x : EuclideanSpace ℝ ι) :
     ‖radialGradient γ x‖ ≤ |Fintype.card ι - γ|⁻¹ * ‖x‖ ^ (1 - γ) := by
   rcases eq_or_ne x 0 with rfl | hx
   · simp only [radialGradient, smul_zero, norm_zero]
     positivity
-  rw [radialGradient, norm_smul, norm_smul, norm_neg, norm_inv, Real.norm_eq_abs,
-    Real.norm_of_nonneg (by positivity), ← Real.rpow_add_one (norm_ne_zero_iff.2 hx),
-    neg_add_eq_sub]
+  exact (norm_radialGradient hx).le
 
 /-- The radial solution has the radial gradient as weak gradient on every open set. -/
 private theorem hasWeakFDerivOn_radialSolution [Nonempty ι] (hγ : γ < 2)
@@ -207,9 +213,8 @@ private theorem not_holderOnWith_radialGradient [Nonempty ι] (hγ : γ < 1) {β
   have hdist := h.dist_le hmem (mem_ball_self hr)
   have hg0 : radialGradient (ι := ι) γ 0 = 0 := by simp [radialGradient]
   have hgt : ‖radialGradient γ (t • e)‖ = c * t ^ (1 - γ) := by
-    rw [radialGradient, norm_smul, norm_smul, norm_neg, norm_inv, Real.norm_eq_abs,
-      abs_of_pos hdγ, hnorm, Real.norm_of_nonneg (by positivity),
-      ← Real.rpow_add_one ht0.ne', neg_add_eq_sub]
+    rw [norm_radialGradient (by rw [← norm_ne_zero_iff, hnorm]; exact ht0.ne'), abs_of_pos hdγ,
+      hnorm]
   rw [hg0, dist_zero_right, hgt, dist_zero_right, hnorm,
     show (β : ℝ) = ε + (1 - γ) by rw [hε]; ring, Real.rpow_add ht0, ← mul_assoc] at hdist
   have hpos : 0 < t ^ (1 - γ) := Real.rpow_pos_of_pos ht0 _
@@ -221,12 +226,12 @@ Then there are a datum `f ∈ Lᵠ(Ω)` and a weak solution `u ∈ H¹(Ω)` of P
 `-Δu = f`, that is `∫_Ω ∇φ · ∇u = ∫_Ω f φ` for every test function `φ`, such that no
 representative of `∇u` is `β`-Hölder on any ball about the origin contained in `Ω`.
 
-For `q > d`, the Schauder estimate
+For `q > d` with `q ≥ 2`, the Schauder estimate
 `exists_holderOnWith_preciseRepresentative_gradient_of_holderOnWith_matrixBilinearForm_of_memLp`
 gives a `β`-Hölder representative of `∇u` for every `β < 1` with `β ≤ 1 - d / q` (the coefficient
 `a = 1` being `α`-Hölder for every `α`); this theorem shows that `1 - d / q` cannot be replaced by
-a larger exponent. The datum is `‖x‖ ^ (-γ)` and the solution `-‖x‖ ^ (2 - γ) / ((2 - γ) (d - γ))`,
-for a `γ < d / q` with `1 - γ < β`. -/
+a larger exponent. The proof takes the datum `‖x‖ ^ (-γ)` and the radial solution
+`-‖x‖ ^ (2 - γ) / ((2 - γ) (d - γ))`, for a `γ < d / q` with `1 - γ < β`. -/
 theorem exists_memLp_forall_energyFormH1_eq_and_not_holderOnWith_gradient [DecidableEq ι]
     [Nonempty ι] {q : ℝ≥0∞} (hq0 : q ≠ 0) (hq : q ≠ ∞) {β : ℝ≥0} (hβ0 : 0 < β)
     (hβ : 1 - Fintype.card ι / q.toReal < β) {Ω : Opens (EuclideanSpace ℝ ι)}
@@ -379,33 +384,26 @@ private theorem not_continuousAt_of_ae_eq_radialGradient_one [Nonempty ι]
   linarith
 
 /-- **The endpoint `q = d` of the divergence-form Schauder estimate is excluded.** Let `d ≥ 2`
-and let `Ω ⊆ ℝᵈ` be a bounded open set containing the origin. The datum `f = ‖x‖⁻¹` lies in
-`Lᵠ(Ω)` for every `q < d` but not in `Lᵈ(Ω)`, and the weak solution `u = -‖x‖ / (d - 1) ∈ H¹(Ω)` of
-`-Δu = f`, that is `∫_Ω ∇φ · ∇u = ∫_Ω f φ` for every test function `φ`, has a gradient
-`-x / ((d - 1) ‖x‖)` with no representative continuous at the origin. So at `q = d` the `C¹`
-conclusion of the Schauder estimate
+and let `Ω ⊆ ℝᵈ` be a bounded open set containing the origin. There is a weak solution
+`u ∈ H¹(Ω)` of `-Δu = ‖x‖⁻¹`, that is `∫_Ω ∇φ · ∇u = ∫_Ω ‖x‖⁻¹ φ` for every test function `φ`,
+whose gradient has no representative continuous at the origin. The proof takes the radial solution
+`-‖x‖ / (d - 1)`, whose gradient is `-x / ((d - 1) ‖x‖)`.
+
+The datum `‖x‖⁻¹` lies in `Lᵠ(Ω)` for every `q < d` (`IsCompact.memLp_norm_inv_restrict`) but not
+in `Lᵈ(Ω)` (`TauCeti.not_memLp_norm_inv_closedBall`). So at `q = d` the `C¹` conclusion of the
+Schauder estimate
 `exists_holderOnWith_preciseRepresentative_gradient_of_holderOnWith_matrixBilinearForm_of_memLp`
 is lost, not merely weakened to a smaller Hölder exponent. -/
 theorem exists_forall_energyFormH1_eq_and_not_continuousAt_gradient [DecidableEq ι]
     (hd : 1 < Fintype.card ι) {Ω : Opens (EuclideanSpace ℝ ι)}
     (hb : Bornology.IsBounded (Ω : Set (EuclideanSpace ℝ ι)))
     (h0 : (0 : EuclideanSpace ℝ ι) ∈ Ω) :
-    ((∀ q : ℝ≥0∞, q < Fintype.card ι →
-        MemLp (fun x : EuclideanSpace ℝ ι ↦ ‖x‖⁻¹) q (volume.restrict Ω)) ∧
-      ¬ MemLp (fun x : EuclideanSpace ℝ ι ↦ ‖x‖⁻¹) (Fintype.card ι) (volume.restrict Ω)) ∧
     ∃ u : W1p volume Ω 2,
       (∀ φ : 𝓓(Ω, ℝ), energyFormH1 (fun _ ↦ 1) 0 0 u (W1p.ofTestFunctionₗ volume Ω 2 φ) =
           ∫ x in Ω, ‖x‖⁻¹ * φ x) ∧
       ∀ g : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι,
         g =ᵐ[volume.restrict Ω] W1p.gradient u → ¬ ContinuousAt g 0 := by
   have : Nonempty ι := Fintype.card_pos_iff.1 (by omega)
-  refine ⟨⟨fun q hq ↦ ?_, fun hmem ↦ ?_⟩, ?_⟩
-  · exact (hb.isCompact_closure.memLp_norm_inv_restrict (mu := volume)
-      (by rwa [finrank_euclideanSpace])).mono_measure (Measure.restrict_mono subset_closure le_rfl)
-  · obtain ⟨ε, hε, hεΩ⟩ := Metric.isOpen_iff.1 Ω.isOpen 0 h0
-    exact not_memLp_norm_inv_closedBall (mu := volume) (half_pos hε)
-      (by rw [finrank_euclideanSpace]) (hmem.mono_measure (Measure.restrict_mono
-        ((closedBall_subset_ball (half_lt_self hε)).trans hεΩ) le_rfl))
   obtain ⟨u, hu, hgu⟩ := exists_w1p_radialSolution (ι := ι) (γ := 1) le_rfl hb
   have hγd : (1 : ℝ) ≠ Fintype.card ι := by
     have : (1 : ℝ) < Fintype.card ι := by exact_mod_cast hd

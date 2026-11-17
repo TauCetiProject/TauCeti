@@ -532,18 +532,17 @@ theorem trace_rpow_smul_id_add_smulRight (p : ℝ) (x : E) :
         (‖x‖ ^ p • ContinuousLinearMap.id ℝ E +
           ((p * ‖x‖ ^ (p - 2)) • innerSL ℝ x).smulRight x : E →L[ℝ] E) =
       Module.finrank ℝ E * ‖x‖ ^ p + p * ‖x‖ ^ (p - 2) * ‖x‖ ^ 2 := by
-    rw [ContinuousLinearMap.toLinearMap_add, ContinuousLinearMap.toLinearMap_smul,
-      ContinuousLinearMap.coe_id, map_add, map_smul, LinearMap.trace_id,
-      ContinuousLinearMap.coe_smulRight, LinearMap.trace_smulRight]
-    simp [mul_comm]
+    simp [LinearMap.trace_smulRight, mul_comm]
   rw [h]
   rcases eq_or_ne x 0 with rfl | hx
   · rcases eq_or_ne p 0 with rfl | hp
     · simp
     · simp [Real.zero_rpow hp]
-  · rw [mul_assoc p, ← Real.rpow_natCast, ← Real.rpow_add (norm_pos_iff.2 hx)]
-    push_cast
-    ring_nf
+  · have hp2 : ‖x‖ ^ (p - 2) * ‖x‖ ^ 2 = ‖x‖ ^ p := by
+      rw [← Real.rpow_natCast, ← Real.rpow_add (norm_pos_iff.2 hx)]
+      norm_num
+    rw [mul_assoc p, hp2]
+    ring
 
 /-- The Laplacian of a real power of the norm away from the origin is
 `p (p + dim E - 2) ‖x‖ ^ (p - 2)`. -/

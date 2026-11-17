@@ -427,21 +427,15 @@ theorem hasWeakFDerivOn_norm_rpow_neg_one_mul_inner (hd : 1 < Module.finrank ℝ
 
 section RadialField
 
-/-- For `p > -1` the classical derivative of the radial field `x ↦ ‖x‖ ^ p • x` away from the
+/-- For `p > -dim E` the classical derivative of the radial field `x ↦ ‖x‖ ^ p • x` away from the
 origin is locally integrable: it is `O(‖x‖ ^ p)`. -/
-theorem locallyIntegrable_rpow_smul_id_add_smulRight {p : ℝ} (hp : -1 < p) :
+theorem locallyIntegrable_rpow_smul_id_add_smulRight {p : ℝ}
+    (hp : -(Module.finrank ℝ E : ℝ) < p) :
     LocallyIntegrable (fun x : E ↦ ‖x‖ ^ p • ContinuousLinearMap.id ℝ E +
       ((p * ‖x‖ ^ (p - 2)) • innerSL ℝ x).smulRight x) μ := by
-  rcases Nat.eq_zero_or_pos (Module.finrank ℝ E) with hd | hd
-  · -- A space of dimension zero is a point, on which every function is constant.
-    have : Subsingleton E := Module.finrank_zero_iff.1 hd
-    have hconst : (fun x : E ↦ ‖x‖ ^ p • ContinuousLinearMap.id ℝ E +
-        ((p * ‖x‖ ^ (p - 2)) • innerSL ℝ x).smulRight x) = fun _ ↦
-        ‖(0 : E)‖ ^ p • ContinuousLinearMap.id ℝ E +
-          ((p * ‖(0 : E)‖ ^ (p - 2)) • innerSL ℝ (0 : E)).smulRight (0 : E) :=
-      funext fun x ↦ by rw [Subsingleton.elim x 0]
-    rw [hconst]
-    exact locallyIntegrable_const _
+  have hpow : LocallyIntegrable (fun x : E ↦ ‖x‖ ^ p) μ := by
+    simpa only [zero_sub, norm_neg] using locallyIntegrable_norm_sub_rpow (mu := μ) hp (0 : E)
+  have hbound : LocallyIntegrable (fun x : E ↦ (1 + |p|) * ‖x‖ ^ p) μ := hpow.smul (1 + |p|)
   -- The rank-one term is a continuous bilinear expression in `‖x‖`-weighted `innerSL ℝ x` and `x`.
   have hsr : Continuous fun q : StrongDual ℝ E × E ↦ q.1.smulRight q.2 := by
     convert (ContinuousLinearMap.smulRightL ℝ E E).continuous₂ using 1
@@ -452,10 +446,8 @@ theorem locallyIntegrable_rpow_smul_id_add_smulRight {p : ℝ} (hp : -1 < p) :
       ((p * ‖x‖ ^ (p - 2)) • innerSL ℝ x).smulRight x :=
     (by fun_prop : Measurable fun x : E ↦ ‖x‖ ^ p • ContinuousLinearMap.id ℝ E).add
       (hsr.measurable2 (by fun_prop) measurable_id)
-  refine locallyIntegrable_of_norm_le_rpow (C := 1 + |p|) (α := -p) hd
-    (by have : (1 : ℝ) ≤ Module.finrank ℝ E := by exact_mod_cast hd
-        linarith) (Eventually.of_forall fun x ↦ ?_) hmeas.aestronglyMeasurable
-  rw [neg_neg]
+  refine hbound.mono hmeas.aestronglyMeasurable (ae_of_all _ fun x ↦ ?_)
+  rw [Real.norm_of_nonneg (by positivity)]
   exact norm_rpow_smul_id_add_smulRight_le p x
 
 /-- **The weak derivative of the radial field.** For `p > -1`, the radial field
@@ -464,11 +456,16 @@ from the origin, as weak derivative on every open set. -/
 theorem hasWeakFDerivOn_norm_rpow_smul_self {p : ℝ} (hp : -1 < p) (Ω : Opens E) :
     HasWeakFDerivOn μ Ω (fun x : E ↦ ‖x‖ ^ p • x)
       (fun x ↦ ‖x‖ ^ p • ContinuousLinearMap.id ℝ E +
-        ((p * ‖x‖ ^ (p - 2)) • innerSL ℝ x).smulRight x) :=
-  hasWeakFDerivOn_of_hasFDerivAt_off_countable (countable_singleton 0)
-    (continuous_norm_rpow_smul_self hp).continuousOn
-    ((locallyIntegrable_rpow_smul_id_add_smulRight hp).locallyIntegrableOn _)
+        ((p * ‖x‖ ^ (p - 2)) • innerSL ℝ x).smulRight x) := by
+  refine hasWeakFDerivOn_of_hasFDerivAt_off_countable (countable_singleton 0)
+    (continuous_norm_rpow_smul_self hp).continuousOn (LocallyIntegrable.locallyIntegrableOn ?_ _)
     fun _ hx ↦ hasFDerivAt_norm_rpow_smul_self_of_ne p hx.2
+  rcases Nat.eq_zero_or_pos (Module.finrank ℝ E) with hd | hd
+  · -- A space of dimension zero is a point, on which every function is constant.
+    have : Subsingleton E := Module.finrank_zero_iff.1 hd
+    exact (continuous_of_const fun x y ↦ by rw [Subsingleton.elim x y]).locallyIntegrable
+  · have : (1 : ℝ) ≤ Module.finrank ℝ E := by exact_mod_cast hd
+    exact locallyIntegrable_rpow_smul_id_add_smulRight (by linarith)
 
 /-- **The weak derivative of the unit radial field.** If `dim E ≥ 2`, the unit radial field
 `x ↦ ‖x‖⁻¹ • x`, which is discontinuous at the origin, has its classical derivative
@@ -491,14 +488,8 @@ theorem hasWeakFDerivOn_norm_rpow_neg_one_smul_self (hd : 1 < Module.finrank ℝ
     simp only [ContinuousLinearMap.comp_apply, LinearMap.coe_toContinuousLinearMap',
       Module.Basis.coord_apply, OrthonormalBasis.coe_toBasis_repr_apply,
       OrthonormalBasis.repr_apply_apply]
-    simp only [neg_mul, one_mul, neg_smul, add_apply, smul_apply, ContinuousLinearMap.id_apply,
-      ContinuousLinearMap.smulRight_apply, neg_apply, coe_innerSL_apply, smul_eq_mul,
-      inner_add_right, inner_smul_right, inner_neg_right, Real.rpow_neg_ofNat, Int.reduceNeg,
-      zpow_neg, zpow_ofNat, sub_apply]
-    have h3 : ‖x‖ ^ (-3 : ℝ) = (‖x‖ ^ 3)⁻¹ := by
-      rw [Real.rpow_neg (norm_nonneg x)]
-      norm_cast
-    rw [show (-1 : ℝ) - 2 = -3 by norm_num, h3, real_inner_comm (b i) x]
+    rw [show (-1 : ℝ) - 2 = -3 by norm_num]
+    simp [inner_add_right, inner_smul_right, real_inner_comm]
     ring
 
 end RadialField
