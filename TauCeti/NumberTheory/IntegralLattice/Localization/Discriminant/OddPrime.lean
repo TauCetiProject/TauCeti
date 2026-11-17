@@ -136,38 +136,6 @@ private theorem isSquare_prod_mul_prod_iff_prod_legendreSym_eq {ι κ : Type*} (
       (∏ i ∈ s, legendreSym p (θ i)) * hsq,
     fun h ↦ by rw [h, ← sq, hsq]⟩
 
-/-- A unit whose underlying value is a square in a commutative monoid is a square in the units. -/
-private theorem isSquare_units_of_isSquare_val {R : Type*} [CommMonoid R] {w : Rˣ}
-    (h : IsSquare (w : R)) : IsSquare w := by
-  obtain ⟨r, hr⟩ := h
-  have hru : IsUnit r := isUnit_of_mul_isUnit_left (hr ▸ w.isUnit)
-  exact ⟨hru.unit, Units.ext (by simp [← hr])⟩
-
-/-- Cancelling an even power of `p` from a square in `ℤ_p`. -/
-private theorem isSquare_of_isSquare_pow_two_mul {a : ℤ_[p]} (s : ℕ)
-    (h : IsSquare (((p : ℤ_[p]) ^ s) ^ 2 * a)) : IsSquare a := by
-  induction s with
-  | zero => simpa using h
-  | succ s ih =>
-    obtain ⟨r, hr⟩ := h
-    have hp0 : (p : ℤ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
-    have hdvd : (p : ℤ_[p]) ∣ r := by
-      rw [← PadicInt.toZMod_eq_zero_iff_dvd, ← sq_eq_zero_iff, sq, ← map_mul, ← hr]
-      simp [pow_succ]
-    obtain ⟨r', rfl⟩ := hdvd
-    refine ih ⟨r', mul_left_cancel₀ (pow_ne_zero 2 hp0) ?_⟩
-    rw [pow_succ] at hr
-    linear_combination hr
-
-/-- Cancelling the square of a `p`-adic unit from a square in `ℤ_p`. -/
-private theorem isSquare_of_isSquare_unit_sq_mul {a : ℤ_[p]} (w : ℤ_[p]ˣ)
-    (h : IsSquare ((w : ℤ_[p]) ^ 2 * a)) : IsSquare a := by
-  obtain ⟨r, hr⟩ := h
-  refine ⟨↑w⁻¹ * r, ?_⟩
-  calc a = (↑w⁻¹ : ℤ_[p]) ^ 2 * ((w : ℤ_[p]) ^ 2 * a) := by
-        rw [← mul_assoc, ← mul_pow, Units.inv_mul, one_pow, one_mul]
-    _ = (↑w⁻¹ * r) * (↑w⁻¹ * r) := by rw [hr]; ring
-
 end Arithmetic
 
 section Combinatorics
@@ -299,10 +267,12 @@ private theorem isSquare_prod_mul_prod_of_determinant_isSquare
   obtain ⟨wL, hwL⟩ := L.exists_unit_sq_mul_determinant_eq hnL hb hbu
   obtain ⟨wM, hwM⟩ := M.exists_unit_sq_mul_determinant_eq hnM hb' hbv
   rw [hwL, hwM, ← hsum] at hdet
-  refine isSquare_of_isSquare_pow_two_mul (∑ i, k i)
-    (isSquare_of_isSquare_unit_sq_mul (wL * wM) ?_)
+  have hp0 : (p : ℤ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
+  refine IsSquare.of_mul_right
+    (y := ((wL : ℤ_[p]) * wM * (p : ℤ_[p]) ^ ∑ i, k i) ^ 2)
+    (pow_ne_zero 2 (mul_ne_zero (mul_ne_zero wL.ne_zero wM.ne_zero) (pow_ne_zero _ hp0)))
+    ?_ (IsSquare.sq _)
   convert hdet using 1
-  push_cast
   ring
 
 /-- Given diagonal Jordan bases of `L_p` and `M_p` with matching positive-level Legendre data and
@@ -341,8 +311,7 @@ private theorem localIntegralForm_equivalent_of_jordan_data (hp : p ≠ 2)
     exact Finset.prod_congr rfl fun i _ ↦ by simp [hσi i]
   have hfib (m : ℕ) :
       IsSquare ((∏ i with k i = m, u i) * ∏ i with k i = m, v (σ i)) := by
-    refine isSquare_units_of_isSquare_val ?_
-    rw [Units.val_mul, Units.coe_prod, Units.coe_prod]
+    rw [← Units.isSquare_coe_iff, Units.val_mul, Units.coe_prod, Units.coe_prod]
     exact (isSquare_prod_mul_prod_iff_prod_legendreSym_eq hp _ _
       (fun i _ ↦ hθ1 i) (fun i _ ↦ hη1 (σ i))).mpr (hall m)
   -- Reindex `b'` by `σ⁻¹` so its `i`-th basis vector is `b' (σ i)` with exponent `l (σ i) = k i`.
