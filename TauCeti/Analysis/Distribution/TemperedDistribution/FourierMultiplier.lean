@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.Distribution.FourierMultiplier
 public import Mathlib.Analysis.Distribution.Support
+import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
+import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 
 /-!
@@ -29,6 +31,10 @@ the starting point of Bernstein's inequalities.
 ## Main results
 
 * `TemperedDistribution.fourierMultiplierCLM_add`: Fourier multipliers are additive in the symbol.
+* `TemperedDistribution.fourierMultiplierCLM_apply_apply_transpose`: the transpose of a multiplier
+  is the multiplier on Schwartz functions with the reflected symbol, `(T_g u) f = u (T_{g(-·)} f)`.
+* `TemperedDistribution.fourierMultiplierCLM_apply_apply_of_even`: a multiplier with an even
+  symbol is the transpose of the multiplier on Schwartz functions, `(T_g u) f = u (T_g f)`.
 * `TemperedDistribution.lineDerivOp_fourierMultiplierCLM`: directional derivatives commute with
   Fourier multipliers.
 * `TemperedDistribution.fourierMultiplierCLM_eq_zero_of_not_hasTemperateGrowth`: the multiplier of
@@ -62,6 +68,28 @@ theorem fourierMultiplierCLM_eq_zero_of_not_hasTemperateGrowth {g : E → ℂ}
   refine ContinuousLinearMap.ext fun f => ?_
   rw [fourierMultiplierCLM_apply, smulLeftCLM_eq_zero_of_not_hasTemperateGrowth hg, zero_apply,
     FourierTransform.fourierInv_zero, zero_apply]
+
+/-- **The transpose of a Fourier multiplier.** The Fourier multiplier `T_g` on tempered
+distributions is the transpose of the multiplier on Schwartz functions with the reflected symbol:
+`(T_g u) f = u (T_{g(-·)} f)`. Multiplying `𝓕⁻ f`, the reflection of `𝓕 f`, by `g` gives the
+reflection of `g(-·) • 𝓕 f`, and the Fourier transform of a reflection is the inverse Fourier
+transform. Without temperate growth of `g`, neither does `g(-·)` have it, and both sides vanish. -/
+theorem fourierMultiplierCLM_apply_apply_transpose (g : E → ℂ) (u : 𝓢'(E, F)) (f : 𝓢(E, ℂ)) :
+    fourierMultiplierCLM F g u f = u (SchwartzMap.fourierMultiplierCLM ℂ (fun ξ ↦ g (-ξ)) f) := by
+  by_cases hgt : g.HasTemperateGrowth
+  · rw [fourierMultiplierCLM_apply_apply, SchwartzMap.fourier_smulLeftCLM_fourierInv_eq hgt]
+  have hgt' : ¬ (fun ξ ↦ g (-ξ)).HasTemperateGrowth := fun h ↦ hgt <| by
+    simpa [Function.comp_def] using h.comp (by fun_prop : (fun ξ : E ↦ -ξ).HasTemperateGrowth)
+  simp [hgt, SchwartzMap.fourierMultiplierCLM_apply,
+    SchwartzMap.smulLeftCLM_of_not_hasTemperateGrowth hgt']
+
+/-- **Multipliers with even symbols are symmetric.** If the symbol `g` is even, the Fourier
+multiplier `T_g` on tempered distributions is the transpose of the one on Schwartz functions:
+`(T_g u) f = u (T_g f)`. -/
+theorem fourierMultiplierCLM_apply_apply_of_even {g : E → ℂ} (hg : g.Even) (u : 𝓢'(E, F))
+    (f : 𝓢(E, ℂ)) :
+    fourierMultiplierCLM F g u f = u (SchwartzMap.fourierMultiplierCLM ℂ g f) := by
+  rw [fourierMultiplierCLM_apply_apply_transpose, show (fun ξ ↦ g (-ξ)) = g from funext hg]
 
 /-- Fourier multipliers on tempered distributions are additive in the symbol. -/
 theorem fourierMultiplierCLM_add {g₁ g₂ : E → ℂ} (hg₁ : g₁.HasTemperateGrowth)
@@ -114,8 +142,7 @@ theorem isVanishingOn_fourier_fourierMultiplierCLM {g : E → ℂ} {s : Set E}
       by_cases hξ : ξ ∈ s
       · rw [hgs ξ hξ, zero_smul]
       · rw [image_eq_zero_of_notMem_tsupport fun h ↦ hξ (hψ h), smul_zero]
-    · -- Without temperate growth, `SchwartzMap.smulLeftCLM` is zero by definition.
-      simp [SchwartzMap.smulLeftCLM, hg]
+    · simp [SchwartzMap.smulLeftCLM_of_not_hasTemperateGrowth hg]
   rw [fourierMultiplierCLM_apply, FourierTransform.fourier_fourierInv_eq, smulLeftCLM_apply_apply,
     h, map_zero]
 
