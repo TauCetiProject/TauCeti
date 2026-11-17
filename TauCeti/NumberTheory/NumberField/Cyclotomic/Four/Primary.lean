@@ -50,6 +50,11 @@ without a nonunit hypothesis.
 * `TauCeti.IsPrimaryGaussian.absNorm_span_singleton_coprime_four`: a primary element generates
   an ideal of norm prime to `4`, and `TauCeti.IsPrimaryGaussian.natCast_absNorm_sub_one_div_four`
   identifies `(N(λ 𝓞 K) - 1) / 4` with the integer `(N(λ) - 1) / 4`.
+* `TauCeti.IsPrimaryGaussian.absNorm_span_singleton_modEq_one_or_five`,
+  `TauCeti.IsPrimaryGaussian.absNorm_span_singleton_add_mul_modEq_one_iff`,
+  `TauCeti.IsPrimaryGaussian.absNorm_span_singleton_add_mul_modEq_five_iff`: a primary element
+  generates an ideal of norm `1` or `5` modulo `8`, distinguished for `a + b i` by `a ≡ 1` versus
+  `a ≡ 3` modulo `4`.
 * `TauCeti.IsPrimaryGaussian.exists_multiset_prod_eq`,
   `TauCeti.IsPrimaryGaussian.induction_on_prime`: a primary element is a product of primary
   primes, giving an induction principle on primary prime factorisations.
@@ -224,6 +229,42 @@ theorem IsPrimaryGaussian.natCast_absNorm_sub_one_div_four (hx : IsPrimaryGaussi
     intro h
     rw [h, Nat.coprime_zero_left] at hcop
     exact absurd hcop (by norm_num)
+  omega
+
+/-- Every primary element of `𝓞 K = ℤ[i]` generates an ideal of norm congruent to `1` or `5`
+modulo `8`. -/
+theorem IsPrimaryGaussian.absNorm_span_singleton_modEq_one_or_five (hx : IsPrimaryGaussian x) :
+    Ideal.absNorm (Ideal.span {x}) ≡ 1 [MOD 8] ∨
+      Ideal.absNorm (Ideal.span {x}) ≡ 5 [MOD 8] := by
+  have h := absNorm_modEq_one hx.absNorm_span_singleton_coprime_four
+  simp only [Nat.ModEq] at h ⊢
+  omega
+
+/-- A primary Gaussian integer `a + b i` generates an ideal of norm congruent to `1` modulo `8`
+if and only if `a ≡ 1 (mod 4)`. -/
+theorem IsPrimaryGaussian.absNorm_span_singleton_add_mul_modEq_one_iff
+    {ζ : K} {hζ : IsPrimitiveRoot ζ 4} {a b : ℤ}
+    (hx : IsPrimaryGaussian ((a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger)) :
+    Ideal.absNorm (Ideal.span {(a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger}) ≡ 1 [MOD 8] ↔
+      a ≡ 1 [ZMOD 4] := by
+  have h4 := absNorm_modEq_one hx.absNorm_span_singleton_coprime_four
+  have hdiv := hx.norm_sub_one_div_four
+  rw [← hx.natCast_absNorm_sub_one_div_four] at hdiv
+  have hprim := hζ.isPrimaryGaussian_add_mul_iff.mp hx
+  simp only [Nat.ModEq, Int.ModEq] at h4 hdiv hprim ⊢
+  omega
+
+/-- A primary Gaussian integer `a + b i` generates an ideal of norm congruent to `5` modulo `8`
+if and only if `a ≡ 3 (mod 4)`. -/
+theorem IsPrimaryGaussian.absNorm_span_singleton_add_mul_modEq_five_iff
+    {ζ : K} {hζ : IsPrimitiveRoot ζ 4} {a b : ℤ}
+    (hx : IsPrimaryGaussian ((a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger)) :
+    Ideal.absNorm (Ideal.span {(a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger}) ≡ 5 [MOD 8] ↔
+      a ≡ 3 [ZMOD 4] := by
+  have h8 := hx.absNorm_span_singleton_modEq_one_or_five
+  have h1 := hx.absNorm_span_singleton_add_mul_modEq_one_iff
+  have hprim := hζ.isPrimaryGaussian_add_mul_iff.mp hx
+  simp only [Nat.ModEq, Int.ModEq] at h8 h1 hprim ⊢
   omega
 
 /-- A rational integer is primary exactly when it is congruent to `1` modulo `4`. -/
