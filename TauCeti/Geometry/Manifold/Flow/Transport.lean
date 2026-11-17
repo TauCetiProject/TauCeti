@@ -24,8 +24,8 @@ less, to which `Z` is transverse: `Z (ι s)` never lies in the image of the diff
 **transport equation** `Z h = g`, that is `dh (Z) = g`, has a smooth solution `h` on an open
 neighbourhood of the image of `ι` which vanishes on that image
 (`TauCeti.exists_contMDiffOn_mvfderiv_eq_of_isTransverseAlong`). Neither `Z` nor `S` need be
-complete or compact. When the image of `ι` is closed, the solution extends to a smooth function on
-all of `N`, still solving the equation near the image of `ι`
+complete or compact. When `N` is σ-compact and the image of `ι` is closed, the solution extends
+to a smooth function on all of `N`, still solving the equation near the image of `ι`
 (`TauCeti.exists_contMDiff_mvfderiv_eq_of_isTransverseAlong`).
 
 The solution is given by the method of characteristics: along the trajectory `φ_t (ι s)` of `Z`,
@@ -47,8 +47,8 @@ in which `Z` is a Reeb vector field.
 
 * `TauCeti.exists_contMDiffOn_mvfderiv_eq_of_isTransverseAlong`: a smooth solution of `Z h = g`
   on an open neighbourhood of a transverse embedded hypersurface, vanishing on the hypersurface.
-* `TauCeti.exists_contMDiff_mvfderiv_eq_of_isTransverseAlong`: for a closed hypersurface, a
-  solution which is smooth on the whole manifold.
+* `TauCeti.exists_contMDiff_mvfderiv_eq_of_isTransverseAlong`: for a closed hypersurface in a
+  σ-compact manifold, a solution which is smooth on the whole manifold.
 
 ## References
 
@@ -172,42 +172,26 @@ variable [BoundarylessManifold J S]
 the spatial part of the trajectories of `(g, Z)` through the points `(0, ι s)` is a local
 diffeomorphism at `(0, s)`. -/
 private theorem isLocalDiffeomorphAt_snd_flowOf_integralField [IsManifold J ∞ S] {s : S}
-    (himm : Injective (mfderiv J I ι s)) (htr : Z (ι s) ∉ (mfderiv J I ι s).range)
+    (himm : Injective (mfderiv J I ι s)) (htr : IsTransverseAlong J Z ι)
     (hdim : finrank ℝ E' + 1 = finrank ℝ E) :
     IsLocalDiffeomorphAt (𝓘(ℝ).prod J) I ∞
       (fun q : ℝ × S ↦ (flowOf (integralField Z g) q.1 ((0 : ℝ), ι q.2)).2) ((0 : ℝ), s) := by
   have : FiniteDimensional ℝ E' := by
     have : FiniteDimensional ℝ (TangentSpace I (ι s)) := inferInstanceAs (FiniteDimensional ℝ E)
     exact FiniteDimensional.of_injective (mfderiv J I ι s).toLinearMap himm
-  set L := mfderiv (𝓘(ℝ).prod J) I
-    (fun q : ℝ × S ↦ (flowOf (integralField Z g) q.1 ((0 : ℝ), ι q.2)).2) ((0 : ℝ), s)
   -- Transversality makes the differential `(a, w) ↦ a Z (ι s) + dι w` injective.
-  have hinj : Injective L := by
-    refine (injective_iff_map_eq_zero L).2 fun v hv ↦ ?_
-    obtain ⟨a, w⟩ := v
-    have hv' : (a • Z (ι s) + mfderiv J I ι s w : E) = 0 :=
-      (mfderiv_snd_flowOf_integralField_zero_apply hZ hg hι s (a, w)).symm.trans hv
-    obtain rfl : a = 0 := by
-      by_contra ha
-      refine htr (LinearMap.mem_range.2 ⟨-a⁻¹ • w, ((mfderiv J I ι s).map_smul _ _).trans ?_⟩)
-      rw [eq_neg_of_add_eq_zero_right hv']
-      simp [smul_smul, ha]
-    rw [zero_smul, zero_add] at hv'
-    exact Prod.ext rfl (himm (hv'.trans (map_zero _).symm))
-  have hfin : finrank ℝ (TangentSpace (𝓘(ℝ).prod J) ((0 : ℝ), s)) = finrank ℝ
-      (TangentSpace I ((flowOf (integralField Z g) 0 ((0 : ℝ), ι s)).2)) := by
-    -- Both tangent spaces are their model vector spaces, `ℝ × E'` and `E`.
-    change finrank ℝ (ℝ × E') = finrank ℝ E
-    rw [Module.finrank_prod, finrank_self, ← hdim, add_comm]
-  have hsurj : Surjective L :=
-    (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hfin (f := L.toLinearMap)).1 hinj
-  exact isLocalDiffeomorphAt_of_mfderiv_eq
+  have hinj : Injective (mfderiv (𝓘(ℝ).prod J) I
+      (fun q : ℝ × S ↦ (flowOf (integralField Z g) q.1 ((0 : ℝ), ι q.2)).2) ((0 : ℝ), s)) :=
+    fun v v' hv ↦ htr.injective_smul_add himm
+      ((mfderiv_snd_flowOf_integralField_zero_apply hZ hg hι s v).symm.trans
+        (hv.trans (mfderiv_snd_flowOf_integralField_zero_apply hZ hg hι s v')))
+  exact isLocalDiffeomorphAt_of_injective_mfderiv
     ((contMDiff_snd.contMDiffOn (s := univ)).comp (contMDiffOn_flowOf_integralField hZ hg hι)
       fun _ _ ↦ mem_univ _)
     (isOpen_setOf_mem_flowDomain_integralField hZ hg hι)
     (mem_flowDomain_zero ((contMDiff_integralField hZ hg).of_le (by simp)) _)
-    BoundarylessManifold.isInteriorPoint (by simp)
-    (e := (LinearEquiv.ofBijective L.toLinearMap ⟨hinj, hsurj⟩).toContinuousLinearEquiv) rfl
+    BoundarylessManifold.isInteriorPoint (by simp) hinj
+    (by rw [Module.finrank_prod, finrank_self, ← hdim, add_comm])
 
 variable [IsManifold J ∞ S] [TopologicalSpace.PseudoMetrizableSpace N]
   [TopologicalSpace.PseudoMetrizableSpace S]
@@ -242,8 +226,7 @@ theorem exists_contMDiffOn_mvfderiv_eq_of_isTransverseAlong
     (by
       rintro _ ⟨y, rfl⟩
       exact ⟨mem_flowDomain_zero ((contMDiff_integralField hZ hg).of_le (by simp)) _,
-        isLocalDiffeomorphAt_snd_flowOf_integralField hZ hg hι (himm y)
-          (isTransverseAlong_iff.1 htr y) hdim⟩)
+        isLocalDiffeomorphAt_snd_flowOf_integralField hZ hg hι (himm y) htr hdim⟩)
     (continuous_const.prodMk continuous_id) Prod.snd continuous_snd (fun _ ↦ rfl)
     (by simpa only [Function.comp_def, hF0] using hind)
   -- The solution is the integral of `g`, the first component of `F`, read through `Ψ⁻¹`.

@@ -81,6 +81,27 @@ theorem IsTransverseAlong.ne_zero {Z : (x : M) → TangentSpace I x} {ι : S →
     (h : IsTransverseAlong J Z ι) (s : S) : Z (ι s) ≠ 0 :=
   fun h0 ↦ h s (h0 ▸ Submodule.zero_mem _)
 
+/-- If `Z` is transverse along `ι` and the differential `dι_s` is injective, then
+`(a, w) ↦ a Z (ι s) + dι_s w` is injective. This is the differential of a flow-out at time zero. -/
+theorem IsTransverseAlong.injective_smul_add {Z : (x : M) → TangentSpace I x} {ι : S → M}
+    (h : IsTransverseAlong J Z ι) {s : S} (himm : Function.Injective (mfderiv J I ι s)) :
+    Function.Injective fun v : ℝ × E' ↦ v.1 • Z (ι s) + mfderiv J I ι s v.2 := by
+  rintro ⟨a, w⟩ ⟨b, u⟩ hv
+  -- `w` and `u` are tangent vectors at `s`, that is vectors of the model space `E'`.
+  set d : TangentSpace J s := w - u
+  have h0 : (a - b) • Z (ι s) + mfderiv J I ι s d = 0 := by
+    have hd : mfderiv J I ι s d = mfderiv J I ι s w - mfderiv J I ι s u := map_sub _ _ _
+    simp only at hv
+    rw [sub_smul, hd, ← sub_eq_zero.2 hv]
+    abel
+  obtain hab : a - b = 0 := by
+    by_contra hab
+    refine h s (LinearMap.mem_range.2 ⟨-(a - b)⁻¹ • d, ((mfderiv J I ι s).map_smul _ _).trans ?_⟩)
+    rw [eq_neg_of_add_eq_zero_right h0, smul_neg, smul_smul, neg_mul, inv_mul_cancel₀ hab,
+      neg_smul, one_smul, neg_neg]
+  rw [hab, zero_smul, zero_add, ← map_zero (mfderiv J I ι s)] at h0
+  exact Prod.ext (sub_eq_zero.1 hab) (sub_eq_zero.1 (himm h0))
+
 /-! ### Vector fields crossing a level outwards -/
 
 section Crossing
