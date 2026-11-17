@@ -109,16 +109,23 @@ def subbundleTopology {F' : Type*} (V : Π x, Submodule 𝕜 (E x)) :
     TopologicalSpace (TotalSpace F' fun x ↦ V x) :=
   .induced (fun p ↦ (⟨p.proj, p.2⟩ : TotalSpace F E)) inferInstance
 
+omit [TopologicalSpace B] [TopologicalSpace (TotalSpace F E)] in
+/-- The inclusion of the total space of a family of subspaces of the fibres of `E` into the total
+space of `E` is injective. No topology is involved. -/
+theorem injective_totalSpace_subbundle (F' : Type*) (V : Π x, Submodule 𝕜 (E x)) :
+    Injective fun p : TotalSpace F' (fun x ↦ V x) ↦ (⟨p.proj, p.2⟩ : TotalSpace F E) := by
+  rintro ⟨x, v⟩ ⟨y, w⟩ h
+  obtain rfl : x = y := congrArg TotalSpace.proj h
+  exact congrArg (TotalSpace.mk x) (Subtype.ext (TotalSpace.mk_inj.mp h))
+
 omit [TopologicalSpace B] in
 /-- The total space of a family of subspaces of the fibres of `E` is embedded in the total space
 of `E`. -/
 theorem isEmbedding_totalSpace_subbundle (F' : Type*) (V : Π x, Submodule 𝕜 (E x)) :
     letI := subbundleTopology F (F' := F') V
-    IsEmbedding fun p : TotalSpace F' (fun x ↦ V x) ↦ (⟨p.proj, p.2⟩ : TotalSpace F E) := by
+    IsEmbedding fun p : TotalSpace F' (fun x ↦ V x) ↦ (⟨p.proj, p.2⟩ : TotalSpace F E) :=
   let := subbundleTopology F (F' := F') V
-  refine ⟨⟨rfl⟩, fun ⟨x, v⟩ ⟨y, w⟩ h ↦ ?_⟩
-  obtain rfl : x = y := congrArg TotalSpace.proj h
-  exact congrArg (TotalSpace.mk x) (Subtype.ext (TotalSpace.mk_inj.mp h))
+  ⟨⟨rfl⟩, injective_totalSpace_subbundle F F' V⟩
 
 variable [TopologicalSpace F] [∀ x, TopologicalSpace (E x)] [FiberBundle F E]
 

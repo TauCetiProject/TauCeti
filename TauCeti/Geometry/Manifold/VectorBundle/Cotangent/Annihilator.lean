@@ -177,11 +177,9 @@ theorem range_annihilatorInclusion :
   exact ⟨by rintro ⟨⟨y, q⟩, h⟩; cases h; exact q.2, fun hp ↦ ⟨⟨x, ⟨p, hp⟩⟩, rfl⟩⟩
 
 /-- The annihilator inclusion is injective. -/
-theorem annihilatorInclusion_injective : Injective (annihilatorInclusion I D P) := by
-  rintro ⟨x, p⟩ ⟨y, q⟩ h
-  obtain rfl : x = y := congrArg TotalSpace.proj h
-  exact congrArg (TotalSpace.mk x) (Subtype.ext
-    ((TotalSpace.mk_inj (F := E →L[𝕜] 𝕜) (E := fun y : M ↦ TangentSpace I y →L[𝕜] 𝕜)).mp h))
+theorem annihilatorInclusion_injective : Injective (annihilatorInclusion I D P) :=
+  injective_totalSpace_subbundle (E →L[𝕜] 𝕜) P (E := fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜)
+    (annihilatorSpace I D)
 
 variable [IsManifold I 1 M]
 
