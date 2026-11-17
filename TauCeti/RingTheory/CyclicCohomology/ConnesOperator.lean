@@ -56,6 +56,8 @@ The bicomplex identities hold for nonunital and nonassociative `A`; among the re
 * `TauCeti.hochschildCoboundary_comp_cyclicNorm`: `b N = N b'`.
 * `TauCeti.barCoboundary_comp_barContraction_add_barContraction_comp_barCoboundary`:
   `b' s + s b' = 1`.
+* `TauCeti.barCoboundary_barContraction_one_sub_cyclicOperator`: `b' s (1 - λ) φ = (1 - λ) φ`
+  for a Hochschild cocycle `φ`.
 * `TauCeti.connesB_comp_connesB`: `B ∘ B = 0`.
 * `TauCeti.hochschildCoboundary_comp_connesB_add_connesB_comp_hochschildCoboundary`:
   `b B + B b = 0`.
@@ -568,6 +570,19 @@ theorem barCoboundary_barContraction_add_barContraction_barCoboundary
     Fin.val_succ, pow_zero, one_smul, pow_succ, mul_neg_one, neg_smul, Finset.sum_neg_distrib]
   rw [Fin.castSucc_zero, hochschildFace_zero_cons_one]
   abel
+
+/-- For a Hochschild cocycle `φ`, the contraction `s (1 - λ) φ` has bar coboundary `(1 - λ) φ`. -/
+theorem barCoboundary_barContraction_one_sub_cyclicOperator
+    {φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1 + 1) ↦ A) M}
+    (hφ : hochschildCoboundary R A M (n + 1) φ = 0) :
+    barCoboundary R A M n (barContraction R A M n ((1 - cyclicOperator R A M (n + 1)) φ)) =
+      (1 - cyclicOperator R A M (n + 1)) φ := by
+  have hb := LinearMap.congr_fun
+    (one_sub_cyclicOperator_comp_hochschildCoboundary R A M (n + 1)) φ
+  simp only [LinearMap.comp_apply, hφ, map_zero] at hb
+  have h := barCoboundary_barContraction_add_barContraction_barCoboundary
+    ((1 - cyclicOperator R A M (n + 1)) φ)
+  rwa [← hb, map_zero, add_zero] at h
 
 /-- Connes' operator `B` anticommutes with the Hochschild coboundary: `b (B φ) + B (b φ) = 0`. -/
 theorem hochschildCoboundary_connesB_add_connesB_hochschildCoboundary

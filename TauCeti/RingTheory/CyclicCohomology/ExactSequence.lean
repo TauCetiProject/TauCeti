@@ -131,16 +131,6 @@ private theorem coe_cyclicTotalDifferential_cyclicTotalLift {m : ℕ}
     (hφ : hochschildCoboundary R A M (m + 1) φ = 0) :
     (cyclicTotalDifferential R A M (m + 1) (cyclicTotalLift φ)).1 =
       Pi.single m (connesB R A M m φ) := by
-  -- the column-one component `ψ = s (1 - λ) φ` satisfies `b' ψ = (1 - λ) φ`
-  have hψ : barCoboundary R A M m
-      (barContraction R A M m ((1 - cyclicOperator R A M (m + 1)) φ)) =
-        (1 - cyclicOperator R A M (m + 1)) φ := by
-    have hb := LinearMap.congr_fun
-      (one_sub_cyclicOperator_comp_hochschildCoboundary R A M (m + 1)) φ
-    simp only [LinearMap.comp_apply, hφ, map_zero] at hb
-    have h := barCoboundary_barContraction_add_barContraction_barCoboundary
-      ((1 - cyclicOperator R A M (m + 1)) φ)
-    rwa [← hb, map_zero, add_zero] at h
   funext q
   obtain hq | hq | hq | hq | hq : q < m ∨ q = m ∨ q = m + 1 ∨ q = m + 2 ∨ m + 2 < q := by omega
   · rw [Pi.single_eq_of_ne hq.ne]
@@ -166,7 +156,7 @@ private theorem coe_cyclicTotalDifferential_cyclicTotalLift {m : ℕ}
     have h₁ : m + 1 - m = 1 := by omega
     rw [h₁, Nat.sub_self, cyclicTotalLift_apply_column_zero, cyclicTotalLift_apply_column_one,
       cyclicBicomplexVertical_of_odd odd_one, cyclicBicomplexHorizontal_of_even Even.zero,
-      LinearMap.neg_apply, hψ, neg_add_cancel]
+      LinearMap.neg_apply, barCoboundary_barContraction_one_sub_cyclicOperator hφ, neg_add_cancel]
   · subst q
     rw [Pi.single_eq_of_ne (show m + 2 ≠ m by omega), cyclicTotalDifferential_apply_succ]
     simp [cyclicTotalLift, hφ]
