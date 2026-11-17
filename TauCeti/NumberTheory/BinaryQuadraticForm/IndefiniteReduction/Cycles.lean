@@ -48,8 +48,6 @@ Suppose `f` and `g` are Gauss reduced of nonsquare discriminant `D` and `γ • 
 
 ## Main definitions
 
-* `TauCeti.BinaryQuadraticForm.formsOfDiscrim D`: all integral forms of discriminant `D` as a
-  `SubMulAction` of `SL(2, ℤ)`.
 * `TauCeti.BinaryQuadraticForm.cycleEquivProperClass`: bijection between cycles of `reductionPerm D`
   and proper classes of forms of positive nonsquare discriminant `D`.
 * `TauCeti.BinaryQuadraticForm.primitiveGaussReducedForms D`: the finite set of primitive Gauss
@@ -447,17 +445,6 @@ theorem sameCycle_reductionPerm_iff {f g : gaussReducedForms D} :
 end Descent
 
 /-! ### Cycle classification of all forms of discriminant `D` -/
-
-/-- All integral binary quadratic forms of fixed discriminant `D`, as a `SubMulAction` of
-`SL(2, ℤ)`. -/
-def formsOfDiscrim (D : ℤ) : SubMulAction SL(2, ℤ) (BinaryQuadraticForm ℤ) where
-  carrier := {f | f.discrim = D}
-  smul_mem' γ f hf := (discrim_smul γ f).trans hf
-
-/-- Membership in `formsOfDiscrim D` is having discriminant `D`. -/
-@[simp] theorem mem_formsOfDiscrim {D : ℤ} {f : BinaryQuadraticForm ℤ} :
-    f ∈ formsOfDiscrim D ↔ f.discrim = D := by
-  rfl
 
 section AllClasses
 
