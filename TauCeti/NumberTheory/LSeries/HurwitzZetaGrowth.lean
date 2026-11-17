@@ -29,9 +29,12 @@ are David Loeffler's work in Mathlib.
 
 ## Main results
 
-* `HurwitzZeta.exists_norm_completedHurwitzZetaEven₀_le_exp_mul_log` and
-  `HurwitzZeta.exists_norm_completedHurwitzZetaOdd_le_exp_mul_log`: global logarithmic-exponential
-  bounds.
+* `HurwitzZeta.exists_norm_completedHurwitzZetaEven₀_le_exp_mul_log`,
+  `HurwitzZeta.exists_norm_completedHurwitzZetaOdd_le_exp_mul_log`,
+  `HurwitzZeta.orderLE_completedHurwitzZetaEven₀`,
+  `HurwitzZeta.orderLE_completedHurwitzZetaOdd`, and
+  `TauCeti.orderLE_completedRiemannZeta₀`: global logarithmic-exponential bounds and order at most
+  one for the even and odd completed Hurwitz zeta functions and `completedRiemannZeta₀`.
 * `HurwitzZeta.hasVerticalStripGrowth_completedHurwitzZetaEven₀` and
   `HurwitzZeta.hasVerticalStripGrowth_completedHurwitzZetaOdd`: vertical-strip growth.
 * `ZMod.exists_norm_completedLFunction₀_le_exp_mul_log`, `ZMod.orderLE_completedLFunction₀`
@@ -157,6 +160,18 @@ theorem hasVerticalStripGrowth_completedHurwitzZetaOdd (a : UnitAddCircle) :
   rw [Complex.div_ofNat_re, Complex.add_re, Complex.one_re]
   exact ⟨by linarith [hs.1], by linarith [hs.2]⟩
 
+/-- The entire completed even Hurwitz zeta function has order at most one. -/
+theorem orderLE_completedHurwitzZetaEven₀ (a : UnitAddCircle) :
+    OrderLE (completedHurwitzZetaEven₀ a) 1 := by
+  obtain ⟨C, -, hC⟩ := exists_norm_completedHurwitzZetaEven₀_le_exp_mul_log a
+  exact orderLE_one_of_norm_le_exp_mul_log hC
+
+/-- The entire completed odd Hurwitz zeta function has order at most one. -/
+theorem orderLE_completedHurwitzZetaOdd (a : UnitAddCircle) :
+    OrderLE (completedHurwitzZetaOdd a) 1 := by
+  obtain ⟨C, -, hC⟩ := exists_norm_completedHurwitzZetaOdd_le_exp_mul_log a
+  exact orderLE_one_of_norm_le_exp_mul_log hC
+
 end HurwitzZeta
 
 namespace ZMod
@@ -222,3 +237,12 @@ theorem hasVerticalStripGrowth_completedLFunction₀ (Φ : ZMod N → ℂ) :
       (hasVerticalStripGrowth_completedHurwitzZetaOdd (toAddCircle j)).const_mul (Φ j)))
 
 end ZMod
+
+namespace TauCeti
+
+/-- Mathlib's entire part `completedRiemannZeta₀` has growth order at most `1`. -/
+theorem orderLE_completedRiemannZeta₀ : OrderLE completedRiemannZeta₀ 1 := by
+  rw [← funext HurwitzZeta.completedHurwitzZetaEven₀_zero]
+  exact HurwitzZeta.orderLE_completedHurwitzZetaEven₀ 0
+
+end TauCeti
