@@ -34,7 +34,7 @@ diagonal entries, the `n(n - 1)/2` real parts of strictly upper-triangular entri
 `n(n - 1)/2` imaginary parts of strictly upper-triangular entries (indexed uniformly by
 `Fin n × Fin n`), builds the corresponding coordinate basis `TauCeti.hermitianBasis n`, and
 packages unitary conjugation `A ↦ U * A * Uᴴ` as a real linear isometry equivalence
-`Matrix.unitaryGroup.hermitianConj`.
+`Matrix.UnitaryGroup.hermitianConj`.
 
 ## Main declarations
 
@@ -48,7 +48,7 @@ packages unitary conjugation `A ↦ U * A * Uᴴ` as a real linear isometry equi
 * `TauCeti.finrank_hermitianMatrix` — the real dimension is `n ^ 2`.
 * `TauCeti.hermitianBasis` — basis dual to `TauCeti.hermitianCoordinates`.
 * `TauCeti.hermitianFinOneEquiv` — identification of `1 × 1` Hermitian matrices with `ℝ`.
-* `Matrix.unitaryGroup.hermitianConj` — unitary conjugation `A ↦ U * A * Uᴴ` as a real linear
+* `Matrix.UnitaryGroup.hermitianConj` — unitary conjugation `A ↦ U * A * Uᴴ` as a real linear
   isometry equivalence of the Hermitian subspace.
 
 ## References
@@ -200,7 +200,7 @@ open scoped Matrix.Norms.Frobenius in
 /-- The real inner product on the Hermitian subspace is the ambient real Frobenius inner product
 of the underlying complex matrices. -/
 @[simp]
-theorem coe_inner_hermitian (A B : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ)) :
+theorem coe_inner_complex (A B : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ)) :
     ⟪A, B⟫ = ⟪(A : Matrix (Fin n) (Fin n) ℂ), (B : Matrix (Fin n) (Fin n) ℂ)⟫ :=
   (rfl)
 
@@ -209,7 +209,7 @@ theorem inner_eq_re_trace_mul (A B : selfAdjoint.submodule ℝ (Matrix (Fin n) (
     ⟪A, B⟫ = ((A : Matrix (Fin n) (Fin n) ℂ) * (B : Matrix (Fin n) (Fin n) ℂ)).trace.re := by
   let _ : NormedAddCommGroup (Matrix (Fin n) (Fin n) ℂ) := Matrix.frobeniusNormedAddCommGroup
   let _ : InnerProductSpace ℝ (Matrix (Fin n) (Fin n) ℂ) := Matrix.frobeniusInnerProductSpace
-  rw [coe_inner_hermitian, Matrix.frobenius_inner_def, Matrix.trace, Complex.re_sum]
+  rw [coe_inner_complex, Matrix.frobenius_inner_def, Matrix.trace, Complex.re_sum]
   refine Finset.sum_congr rfl fun i _ => ?_
   rw [Matrix.diag_apply, Matrix.mul_apply, Complex.re_sum]
   refine Finset.sum_congr rfl fun j _ => ?_
@@ -467,7 +467,7 @@ end TauCeti
 
 /-! ### Unitary conjugation on the complex Hermitian subspace -/
 
-namespace Matrix.unitaryGroup
+namespace Matrix.UnitaryGroup
 
 variable {n : ℕ}
 
@@ -539,4 +539,4 @@ theorem hermitianConj_symm (U : Matrix.unitaryGroup (Fin n) ℂ) :
   refine LinearIsometryEquiv.ext fun A => Subtype.ext ?_
   simp [coe_hermitianConj_symm_apply, Matrix.star_eq_conjTranspose]
 
-end Matrix.unitaryGroup
+end Matrix.UnitaryGroup

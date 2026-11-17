@@ -19,7 +19,7 @@ coordinates (diagonal entries and strictly upper-triangular real and imaginary p
 The Frobenius volume of `measureSpaceOfInnerProductSpace` is a Haar measure for the same topology
 with a different normalization: each of the `n * (n - 1)` off-diagonal coordinate basis vectors
 has Frobenius norm `√2`, so Frobenius volume is `2 ^ (n * (n - 1) / 2)` times
-`TauCeti.hermitianLebesgue n`. Unitary conjugation `Matrix.unitaryGroup.hermitianConj U` is a
+`TauCeti.hermitianLebesgue n`. Unitary conjugation `Matrix.UnitaryGroup.hermitianConj U` is a
 Frobenius isometry, so it preserves both Frobenius volume and `TauCeti.hermitianLebesgue n`.
 
 ## Main declarations
@@ -36,8 +36,8 @@ Frobenius isometry, so it preserves both Frobenius volume and `TauCeti.hermitian
 * `TauCeti.hermitianLebesgue_zero` — in dimension zero, `hermitianLebesgue` is the Dirac measure.
 * `TauCeti.measurePreserving_hermitianFinOneEquiv` — in dimension one, `hermitianFinOneEquiv`
   carries `hermitianLebesgue 1` to Lebesgue measure on `ℝ`.
-* `Matrix.unitaryGroup.measurePreserving_hermitianConj_volume` and
-  `Matrix.unitaryGroup.measurePreserving_hermitianConj_hermitianLebesgue` — unitary conjugation
+* `Matrix.UnitaryGroup.measurePreserving_hermitianConj_volume` and
+  `Matrix.UnitaryGroup.measurePreserving_hermitianConj_hermitianLebesgue` — unitary conjugation
   preserves Frobenius volume and `hermitianLebesgue`.
 
 ## References
@@ -225,7 +225,7 @@ end TauCeti
 
 /-! ### Unitary invariance of Frobenius volume and coordinate Lebesgue measure -/
 
-namespace Matrix.unitaryGroup
+namespace Matrix.UnitaryGroup
 
 variable {n : ℕ}
 
@@ -252,4 +252,4 @@ theorem measurePreserving_hermitianConj_hermitianLebesgue (U : Matrix.unitaryGro
   have h := congrArg (fun μ : Measure _ => μ s) hsmul
   simpa only [_root_.smul_apply, smul_eq_mul] using h
 
-end Matrix.unitaryGroup
+end Matrix.UnitaryGroup
