@@ -34,7 +34,9 @@ basis vector `e_s` indexed by a finite set `s` of indices squares to the sign
 * `OrthonormalBasis.map_apply_mul_map_apply`: `Q (bᵢ) Q (bⱼ) = 1` for orthonormal basis vectors.
 * `OrthonormalBasis.prod_map_map_eq_neg_one_pow`: `Q` takes the value `-1` on orthonormal basis
   vectors.
-* `CliffordAlgebra.even_ι_bilin_add_swap_eq_neg_two_inner`: in the even subalgebra,
+* `QuadraticMap.polar_eq_neg_two_inner`: the polar form of `Q` is `-2 ⟪u, v⟫`.
+* `CliffordAlgebra.ι_mul_ι_add_swap_eq_neg_two_inner`, and in the even subalgebra
+  `CliffordAlgebra.even_ι_bilin_add_swap_eq_neg_two_inner`: the polarized Clifford relation
   `c(u) c(v) + c(v) c(u) = -2 ⟪u, v⟫`.
 * `CliffordAlgebra.basis_mul_self_of_orthonormal`: `e_s * e_s = (-1) ^ ((|s| + 1).choose 2)`.
 
@@ -90,13 +92,22 @@ end OrthonormalBasis
 
 namespace CliffordAlgebra
 
+/-- For `Q v = -‖v‖²`, the polar form of `Q` is `-2 ⟪u, v⟫`. -/
+theorem _root_.QuadraticMap.polar_eq_neg_two_inner (u v : V) :
+    QuadraticMap.polar Q u v = -2 * ⟪u, v⟫ := by
+  simp only [QuadraticMap.polar, hQ, norm_add_sq_real]
+  ring
+
+/-- **The polarized Clifford relation**: for `Q v = -‖v‖²`,
+`c(u) c(v) + c(v) c(u) = -2 ⟪u, v⟫`. -/
+theorem ι_mul_ι_add_swap_eq_neg_two_inner (u v : V) :
+    ι Q u * ι Q v + ι Q v * ι Q u = algebraMap ℝ (CliffordAlgebra Q) (-2 * ⟪u, v⟫) := by
+  rw [ι_mul_ι_add_swap, QuadraticMap.polar_eq_neg_two_inner hQ]
+
 /-- For `Q v = -‖v‖²`, the even Clifford relation is `c(u) c(v) + c(v) c(u) = -2 ⟪u, v⟫`. -/
 theorem even_ι_bilin_add_swap_eq_neg_two_inner (u v : V) :
     (even.ι Q).bilin u v + (even.ι Q).bilin v u = algebraMap ℝ (even Q) (-2 * ⟪u, v⟫) := by
-  rw [even_ι_bilin_add_swap]
-  congr 1
-  simp only [QuadraticMap.polar, hQ, norm_add_sq_real]
-  ring
+  rw [even_ι_bilin_add_swap, QuadraticMap.polar_eq_neg_two_inner hQ]
 
 /-- **The square of a Clifford basis vector of an orthonormal basis**: for `Q v = -‖v‖²`, the
 ordered product `e_s` of the generators indexed by `s` satisfies

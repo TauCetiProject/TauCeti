@@ -23,7 +23,9 @@ particular a sequence indexed by `ℕ` lies in `ℓᵖ` exactly when its tail `j
 
 Consequently the **window sums** `j ↦ ∑_{j - L ≤ k < j + L} f k` of a sequence indexed by `ℕ`,
 a sum of `2 L` shifts, lie in `ℓᵖ`, and for `1 ≤ p` their norm is at most `2 L ‖f‖`
-(`Memℓp.sum_Ico_sub_add`, `lp.norm_le_of_forall_eq_sum_Ico_sub_add`). Such sums arise when a
+(`Memℓp.sum_Ico_sub_add`, `lp.norm_le_of_forall_eq_sum_Ico_sub_add`); together, for `f ∈ ℓᵖ`
+they give an element of `ℓᵖ` with these entries and norm bound
+(`lp.exists_eq_sum_Ico_sub_add_and_norm_le`). Such sums arise when a
 sequence of dyadic pieces is replaced by another one in which each piece only interacts with the
 pieces of nearby index, as for two Littlewood–Paley decompositions of the same function.
 
@@ -138,6 +140,19 @@ theorem lp.norm_le_of_forall_eq_sum_Ico_sub_add [Fact (1 ≤ p)] {f f' : lp (fun
   calc ‖f'‖ ≤ ∑ d ∈ Finset.range (2 * L), ‖T d‖ := hf' ▸ norm_sum_le _ _
     _ ≤ ∑ _d ∈ Finset.range (2 * L), ‖f‖ := Finset.sum_le_sum fun d _ ↦ hT d
     _ = 2 * L * ‖f‖ := by simp
+
+/-- **Window sums as an element of `ℓᵖ`.** For `1 ≤ p` and `f ∈ ℓᵖ`, the window sums
+`j ↦ ∑_{j - L ≤ k < j + L} f k` are the entries of an element of `ℓᵖ` of norm at most
+`2 L ‖f‖`. -/
+theorem lp.exists_eq_sum_Ico_sub_add_and_norm_le [Fact (1 ≤ p)] (f : lp (fun _ : ℕ ↦ G) p)
+    (L : ℕ) : ∃ f' : lp (fun _ : ℕ ↦ G) p,
+      (∀ j, f' j = ∑ k ∈ Finset.Ico (j - L) (j + L), f k) ∧ ‖f'‖ ≤ 2 * L * ‖f‖ := by
+  set f' : lp (fun _ : ℕ ↦ G) p :=
+    ⟨fun j ↦ ∑ k ∈ Finset.Ico (j - L) (j + L), f k, (lp.memℓp f).sum_Ico_sub_add L⟩
+  -- The entries of the anonymous `lp` element `f'` are its defining sequence by definition: `lp`
+  -- coerces through `Subtype.val` and has no lemma evaluating an anonymous constructor.
+  have h (j : ℕ) : f' j = ∑ k ∈ Finset.Ico (j - L) (j + L), f k := rfl
+  exact ⟨f', h, lp.norm_le_of_forall_eq_sum_Ico_sub_add L h⟩
 
 /-- **Interactions dominated by a summable kernel in `ℓᵖ`.** Let `1 ≤ p`, `0 ≤ c`,
 `x ∈ ℓᵖ(ℕ, G)` with `G` complete, and `a : ℤ → ℝ` nonnegative and summable. If
