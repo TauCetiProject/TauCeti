@@ -187,6 +187,7 @@ def chartBallTrivialization {p : E ⟶ B} {Y : Type u} [TopologicalSpace Y]
   (T.preimageHomeomorph hT).trans ((e.chartBallHomeomorph hε).prodCongr (Homeomorph.refl Y))
 
 /-- The first coordinate of `chartBallTrivialization` is `chartBallProj`. -/
+@[simp]
 lemma chartBallTrivialization_apply_fst {p : E ⟶ B} {Y : Type u} [TopologicalSpace Y]
     (T : Bundle.Trivialization Y p) (hT : chartBall e b ε ⊆ T.baseSet)
     (z : p ⁻¹' chartBall e b ε) :
@@ -194,6 +195,24 @@ lemma chartBallTrivialization_apply_fst {p : E ⟶ B} {Y : Type u} [TopologicalS
   Subtype.ext (by
     rw [coe_chartBallProj_apply]
     simp [chartBallTrivialization, T.preimageHomeomorph_apply])
+
+/-- The second coordinate of `chartBallTrivialization` is the fibre coordinate of `T`. -/
+@[simp]
+lemma chartBallTrivialization_apply_snd {p : E ⟶ B} {Y : Type u} [TopologicalSpace Y]
+    (T : Bundle.Trivialization Y p) (hT : chartBall e b ε ⊆ T.baseSet)
+    (z : p ⁻¹' chartBall e b ε) :
+    (chartBallTrivialization e hε T hT z).2 = (T z.1).2 := by
+  simp [chartBallTrivialization]
+
+/-- The inverse of `chartBallTrivialization` is the inverse of `T` after reading the ball
+coordinate back in `B` through `OpenPartialHomeomorph.chartBallHomeomorph`. -/
+@[simp]
+lemma coe_chartBallTrivialization_symm_apply {p : E ⟶ B} {Y : Type u} [TopologicalSpace Y]
+    (T : Bundle.Trivialization Y p) (hT : chartBall e b ε ⊆ T.baseSet)
+    (x : ball (0 : V) ε × Y) :
+    ((chartBallTrivialization e hε T hT).symm x : E) =
+      T.toOpenPartialHomeomorph.symm (((e.chartBallHomeomorph hε).symm x.1 : B), x.2) := by
+  simp [chartBallTrivialization]
 
 end OpenPartialHomeomorph
 
