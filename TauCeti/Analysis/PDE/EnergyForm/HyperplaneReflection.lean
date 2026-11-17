@@ -70,8 +70,7 @@ the restriction of `φ - φ ∘ ρ`, which lies in `H¹₀(U ∩ H)`; so it equa
   lower-order coefficients keep the bounds of `b` and `c`.
 * `TauCeti.PDE.memLp_energyIntegrand_reflectPrincipal`: the reflected coefficients are essentially
   bounded, as the reflected weak formulation requires.
-* `TauCeti.PDE.energyIntegrand_reflectPrincipal_one` and
-  `TauCeti.PDE.energyFormH1_reflectPrincipal_one`: the reflected Laplacian is the Laplacian.
+* `TauCeti.PDE.reflectPrincipal_one`: the reflected Laplacian is the Laplacian.
 * `TauCeti.PDE.abs_energyFormH1_sub_compHyperplaneReflectionL_le`: if `u` vanishes off `H` and
   solves `-Δu = -div F` on `U ∩ H`, the Dirichlet form of its odd reflection against `φ ∈ H¹₀(U)`
   is at most `2 ‖F‖_{L²(U ∩ H)} ‖∇φ‖_{L²(U)}`.
@@ -218,29 +217,29 @@ theorem reflectDensity_zero : reflectDensity ν c₀ (0 : EuclideanSpace ℝ ι 
   · simp [reflectDensity_of_lt hx]
   · exact reflectDensity_of_le (not_lt.1 hx)
 
-/-- **The Laplacian is its own reflection.** The reflected coefficients of the Laplacian
-`-Δ` (`a = 1`, no lower-order terms) have the energy integrand of the identity matrix: below the
-hyperplane the principal part is `R R = 1`, where `R` is the linear part of the reflection. The
-reflected lower-order coefficients vanish (`TauCeti.PDE.reflectDrift_zero` and
-`TauCeti.PDE.reflectDensity_zero`). -/
+/-- **The Laplacian is its own reflection.** The reflected principal coefficient of the Laplacian
+`-Δ` (`a = 1`) is the identity matrix: below the hyperplane it is `R R = 1`, where `R` is the
+linear part of the reflection. The reflected lower-order coefficients of `-Δ` vanish
+(`TauCeti.PDE.reflectDrift_zero` and `TauCeti.PDE.reflectDensity_zero`). -/
 @[simp]
-theorem energyIntegrand_reflectPrincipal_one :
-    energyIntegrand (reflectPrincipal ν c₀ (fun _ => (1 : Matrix ι ι ℝ)) x) 0 0 =
-      energyIntegrand (1 : Matrix ι ι ℝ) 0 0 := by
+theorem reflectPrincipal_one :
+    reflectPrincipal ν c₀ (fun _ => (1 : Matrix ι ι ℝ)) = fun _ => 1 := by
+  ext1 x
   by_cases hx : ⟪x, ν⟫_ℝ < c₀
-  · refine ContinuousLinearMap.ext fun W => ContinuousLinearMap.ext fun W' => ?_
+  · -- Compare entries through the energy integrands on coordinate gradient slots.
+    ext i j
     have h := energyIntegrand_pullback_hyperplaneReflection (a := fun _ => (1 : Matrix ι ι ℝ))
       (b := (0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι)) (c := (0 : EuclideanSpace ℝ ι → ℝ))
-      (ν := ν) (c₀ := c₀) (x := x) W W'
-    simp only [pullbackDrift_apply, pullbackDensity_apply, Pi.zero_apply, map_zero, smul_zero,
-      mul_zero] at h
+      (ν := ν) (c₀ := c₀) (x := x) (0, EuclideanSpace.single j 1) (0, EuclideanSpace.single i 1)
     -- The linear part of the reflection preserves the inner product of the gradient slots.
-    have hR := LinearIsometryEquiv.inner_map_map (ℝ ∙ ν)ᗮ.reflection W.2 W'.2
+    have hR := LinearIsometryEquiv.inner_map_map (ℝ ∙ ν)ᗮ.reflection
+      (EuclideanSpace.single j (1 : ℝ)) (EuclideanSpace.single i 1)
     simp only [EuclideanSpace.inner_eq_star_dotProduct, star_trivial] at hR
-    rw [reflectPrincipal_of_lt hx, h, energyIntegrand_apply, energyIntegrand_apply,
-      matrixBilinearForm_one_apply, matrixBilinearForm_one_apply, hR]
-    simp [driftForm_apply, massForm_apply]
-  · rw [reflectPrincipal_of_le (not_lt.1 hx)]
+    rw [reflectPrincipal_of_lt hx]
+    simpa [energyIntegrand_apply, driftForm_apply, massForm_apply, pullbackDrift_apply,
+      pullbackDensity_apply, matrixBilinearForm_one_apply, hR, Matrix.one_apply, Pi.single_apply,
+      eq_comm] using h
+  · exact reflectPrincipal_of_le (not_lt.1 hx)
 
 /-- **The reflected principal coefficient is uniformly elliptic** with the constants of `a`: if
 `a` is uniformly elliptic and bounded with constants `λ, Λ` on the part of a set `s` in the closed
@@ -443,15 +442,6 @@ private theorem ae_jetField_eq_zero_of_ae_value_eq_zero (hν : ν ≠ 0)
     lt_of_le_of_ne (not_lt.1 fun h => hxH ((hH x).2 h)) hx
   rw [jetField_apply, hv hxH, hg (not_le.2 hlt), Prod.mk_zero_zero]
 
-/-- **The reflected Laplacian is the Laplacian.** The energy form of the reflected coefficients of
-`-Δ` is the Dirichlet form. -/
-@[simp]
-theorem energyFormH1_reflectPrincipal_one (u v : W1p mu U 2) :
-    energyFormH1 (reflectPrincipal ν c₀ (fun _ => (1 : Matrix ι ι ℝ))) 0 0 u v =
-      energyFormH1 (fun _ => (1 : Matrix ι ι ℝ)) 0 0 u v := by
-  rw [energyFormH1_def, energyFormH1_def]
-  simp only [energyIntegrand_reflectPrincipal_one, Pi.zero_apply]
-
 /-- For a Sobolev function `u` on `U` vanishing on `U ∖ H`, the energy form of the reflected
 coefficients on `U` is the energy form of the original coefficients on `U ∩ H`. -/
 theorem energyFormH1_reflectPrincipal_eq_restrictL (hν : ν ≠ 0)
@@ -560,12 +550,11 @@ theorem abs_energyFormH1_sub_compHyperplaneReflectionL_le (hν : ν ≠ 0)
   have hcoeff : MemLp (fun x => energyIntegrand
       (reflectPrincipal ν c₀ (fun _ => (1 : Matrix ι ι ℝ)) x)
       (reflectDrift ν c₀ 0 x) (reflectDensity ν c₀ 0 x)) ⊤ (mu.restrict V) := by
-    simp only [reflectDrift_zero, reflectDensity_zero, Pi.zero_apply,
-      energyIntegrand_reflectPrincipal_one]
+    simp only [reflectPrincipal_one, reflectDrift_zero, reflectDensity_zero, Pi.zero_apply]
     exact memLp_top_const (energyIntegrand (1 : Matrix ι ι ℝ) 0 0)
   have h := (energyFormH1_reflectPrincipal_sub_compHyperplaneReflectionL hν hH hV hcoeff hu0
     (fun v => (hu v).trans (hℓ v).symm) φ).trans (hℓ _)
-  rw [reflectDrift_zero, reflectDensity_zero, energyFormH1_reflectPrincipal_one] at h
+  rw [reflectPrincipal_one, reflectDrift_zero, reflectDensity_zero] at h
   -- The reflected test function `(φ - φ ∘ ρ)|_{V ∩ H}` has at most twice the gradient norm.
   have hψ : ‖W1p.gradient (W1p0.restrictSubCompHyperplaneReflectionL ENNReal.ofNat_ne_top hH hV φ :
       W1p mu (V ⊓ H) 2)‖ ≤ 2 * ‖W1p.gradient (φ : W1p mu V 2)‖ := by
