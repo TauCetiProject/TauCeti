@@ -17,6 +17,7 @@ import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
 import TauCeti.MeasureTheory.Function.Lp.CastMeasure
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Lp
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
 # Sobolev embeddings of `H^s(ℝⁿ)` into `C₀(ℝⁿ)` and `C^k(ℝⁿ)`
@@ -334,7 +335,7 @@ private theorem MemSobolev.integrable_norm_pow_mul_norm_and_integral_le {s : ℝ
     have heq : (fun ξ : E => (1 + ‖ξ‖ ^ 2) ^ ((s - j) / 2) • w ξ) =
         fun ξ => (1 + ‖ξ‖ ^ 2) ^ (s / 2) • v ξ := by
       funext ξ
-      simp only [w, smul_smul, ← Real.rpow_add (by positivity : (0 : ℝ) < 1 + ‖ξ‖ ^ 2)]
+      simp only [w, smul_smul, ← TauCeti.one_add_norm_sq_rpow_add]
       congr 2
       ring
     rwa [heq, hf.eLpNorm_one_add_norm_sq_rpow_smul_eq_enorm_toBesselPotentialSpace hv] at h

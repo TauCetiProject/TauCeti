@@ -150,7 +150,7 @@ private theorem isInvertible_comp_and_norm_inverse_le {b : W →L[ℂ] U} {a : V
     _ ≤ (D * (1 + ‖ξ‖ ^ 2) ^ (-m / 2)) * (C * (1 + ‖ξ‖ ^ 2) ^ (-m' / 2)) :=
         mul_le_mul ha.2 hb.2 (norm_nonneg _) ((norm_nonneg _).trans ha.2)
     _ = D * C * (1 + ‖ξ‖ ^ 2) ^ (-(m' + m) / 2) := by
-        rw [show -(m' + m) / 2 = -m / 2 + -m' / 2 by ring, Real.rpow_add (by positivity)]
+        rw [show -(m' + m) = -m + -m' by ring, one_add_norm_sq_rpow_add]
         ring
 
 /-- The pointwise composition of elliptic symbols is elliptic. -/

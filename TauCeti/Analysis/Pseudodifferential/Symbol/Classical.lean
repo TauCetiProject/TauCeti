@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Pseudodifferential.Elliptic
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Homogeneous
 import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 import TauCeti.Analysis.Pseudodifferential.Symbol.HighFrequency
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
 # Classical symbols
@@ -1096,7 +1097,7 @@ private theorem isInvertible_and_norm_inverse_le_of_norm_sub_le [CompleteSpace V
   -- `⟨ξ⟩^(-m) ⟨ξ⟩^(m - 1) = ⟨ξ⟩^(-1) ≤ R⁻¹`.
   have hw : (1 + ‖ξ‖ ^ 2) ^ (-m / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m - 1) / 2) ≤ R⁻¹ := by
     have h := rpow_weight_le_rpow_mul_rpow_weight (s := -1) (s' := 0) hR hξ (by norm_num)
-    rw [← Real.rpow_add (by positivity)]
+    rw [← one_add_norm_sq_rpow_add]
     convert h using 2
     · ring
     · simp [Real.rpow_neg_one]

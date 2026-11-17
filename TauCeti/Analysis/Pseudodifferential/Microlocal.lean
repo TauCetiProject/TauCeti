@@ -11,7 +11,6 @@ public import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Basic
 import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Localization
 import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Tempered
 import TauCeti.Analysis.Normed.Module.Cone
-import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz

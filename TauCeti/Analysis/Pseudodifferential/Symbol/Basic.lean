@@ -117,11 +117,9 @@ factor `t^(s - s')`. -/
 theorem rpow_weight_le_rpow_mul_rpow_weight {t s s' : ℝ} {ξ : CoordinateSpace n}
     (ht : 0 < t) (hξ : t ≤ ‖ξ‖) (hs : s ≤ s') :
     (1 + ‖ξ‖ ^ 2) ^ (s / 2) ≤ t ^ (s - s') * (1 + ‖ξ‖ ^ 2) ^ (s' / 2) := by
-  have hw : 0 < 1 + ‖ξ‖ ^ 2 := by positivity
   have hsplit : (1 + ‖ξ‖ ^ 2) ^ (s / 2) =
       (1 + ‖ξ‖ ^ 2) ^ ((s - s') / 2) * (1 + ‖ξ‖ ^ 2) ^ (s' / 2) := by
-    rw [← Real.rpow_add hw]
-    ring_nf
+    rw [← one_add_norm_sq_rpow_add, sub_add_cancel]
   have ht2 : t ^ (s - s') = (t ^ 2) ^ ((s - s') / 2) := by
     rw [← Real.rpow_natCast t 2, ← Real.rpow_mul ht.le]
     ring_nf
@@ -154,7 +152,7 @@ theorem norm_mixedDeriv_comp_snd_smul_le_mul_rpow_weight {A : Type*} [NormedAddC
   have hw (w : Fin (β.length - i) → Fin n) :
       (1 + ‖ξ‖ ^ 2) ^ ((m - (List.ofFn w).length) / 2) =
         (1 + ‖ξ‖ ^ 2) ^ ((i : ℝ) / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
-    rw [← Real.rpow_add (by positivity), List.length_ofFn, Nat.cast_sub hi']
+    rw [← one_add_norm_sq_rpow_add, List.length_ofFn, Nat.cast_sub hi']
     ring_nf
   have hsum : ∑ w : Fin (β.length - i) → Fin n, ‖mixedDeriv α (List.ofFn w) a x ξ‖ ≤
       (∑ w : Fin (β.length - i) → Fin n, D (List.ofFn w)) *

@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
 import Mathlib.Analysis.Normed.Operator.Banach
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Sobolev.BesselPotential.Besov
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
 # The inclusion `H^{s,p} ⊆ H^{r,p}` of Bessel-potential spaces
@@ -270,8 +271,7 @@ private theorem exists_smulLeftCLM_fourier_eq_and_norm_le (h : r ≤ s) (u : H^{
     have hweight : (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (r / 2) : ℝ) : ℂ)) =
         (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) * w := by
       ext x
-      simp only [w, Pi.mul_apply, ← Complex.ofReal_mul, ← Real.rpow_add (by positivity :
-        (0 : ℝ) < 1 + ‖x‖ ^ 2)]
+      simp only [w, Pi.mul_apply, ← Complex.ofReal_mul, ← TauCeti.one_add_norm_sq_rpow_add]
       congr 2
       ring
     rw [hweight, ← smulLeftCLM_smulLeftCLM_apply

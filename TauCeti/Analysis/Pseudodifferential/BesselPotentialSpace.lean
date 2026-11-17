@@ -145,7 +145,6 @@ private theorem HasCompactSpatialSupport.exists_norm_iteratedFDeriv_shiftedMulti
   rw [Finset.sum_mul, Finset.sum_mul]
   refine Finset.sum_le_sum fun i hi ↦ ?_
   have hik : i ≤ k := Nat.lt_succ_iff.1 (Finset.mem_range.1 hi)
-  have hζ : 0 < 1 + ‖ζ‖ ^ 2 := by positivity
   have hη : 1 ≤ 1 + ‖η‖ ^ 2 := by nlinarith [sq_nonneg ‖η‖]
   have hA0 := hA0 i
   have hB0 := hB0 (k - i)
@@ -162,7 +161,7 @@ private theorem HasCompactSpatialSupport.exists_norm_iteratedFDeriv_shiftedMulti
           ((1 + ‖η‖ ^ 2) ^ ((|-t| + i) / 2) * (1 + ‖η‖ ^ 2) ^ (-(r + |-t| + k) / 2)) := by ring
     _ = (k.choose i : ℝ) * A i * B (k - i) * (1 + ‖ζ‖ ^ 2) ^ (-(k : ℝ) / 2) *
           (1 + ‖η‖ ^ 2) ^ ((i - k - r) / 2) := by
-        rw [← Real.rpow_add hζ, ← Real.rpow_add (by positivity), Nat.cast_sub hik]
+        rw [← one_add_norm_sq_rpow_add, ← one_add_norm_sq_rpow_add, Nat.cast_sub hik]
         congr 2 <;> ring_nf
     _ ≤ (k.choose i : ℝ) * A i * B (k - i) * (1 + ‖ζ‖ ^ 2) ^ (-(k : ℝ) / 2) *
           (1 + ‖η‖ ^ 2) ^ (-r / 2) := by

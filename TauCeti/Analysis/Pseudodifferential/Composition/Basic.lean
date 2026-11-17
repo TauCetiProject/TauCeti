@@ -258,7 +258,7 @@ theorem HasCompactSpatialSupport.exists_norm_comp_fourier_slice_le
     (one_add_norm_sq_rpow_add ξ m' m).symm
   have hη : (1 + ‖η‖ ^ 2) ^ (|m'| / 2) * (1 + ‖η‖ ^ 2) ^ (-(r + |m'|) / 2) =
       (1 + ‖η‖ ^ 2) ^ (-r / 2) := by
-    rw [← Real.rpow_add (by positivity)]
+    rw [← one_add_norm_sq_rpow_add]
     ring_nf
   calc ‖(a.coefficient (x, ξ + y)).comp (𝓕 (fun y ↦ b.coefficient (y, ξ)) η)‖
       ≤ ‖a.coefficient (x, ξ + y)‖ * ‖𝓕 (fun y ↦ b.coefficient (y, ξ)) η‖ :=
