@@ -32,9 +32,9 @@ splitting over `ℂ` with `complexDerivationEquivComplexifiedVectorField`, an en
 vanishing double commutators is `D = δ + c` for a unique complex derivation `δ`, corresponding to
 `1 ⊗ X + i ⊗ Y ∈ ℂ ⊗[ℝ] Γ(TM)`, and the smooth function `c = D 1`. On a real smooth function `u`
 it acts by `D u = X u + i Y u + u D 1`, and complex linearity determines it on `u + i v`. Its
-commutator with multiplication by a real `u` is multiplication by `du(X) + i du(Y)`, which is the
-symbol `ξ ↦ ξ(X) + i ξ(Y)` (ξ applied to the complexified field `1 ⊗ X + i ⊗ Y`) evaluated at
-`ξ = du`.
+commutator with multiplication by a complex smooth `g` is multiplication by the derivative of `g`
+along `1 ⊗ X + i ⊗ Y`. For real `u` this is `du(X) + i du(Y)`, which is the symbol
+`ξ ↦ ξ(X) + i ξ(Y)` (ξ applied to the complexified field `1 ⊗ X + i ⊗ Y`) evaluated at `ξ = du`.
 
 ## Main declarations
 
@@ -49,9 +49,11 @@ symbol `ξ ↦ ξ(X) + i ξ(Y)` (ξ applied to the complexified field `1 ⊗ X +
   smooth `u`.
 * `LinearMap.mem_firstOrderOperators_iff_existsUnique_complexifiedVectorField_mul`: vanishing
   double commutators characterize the complex operators of this form.
-* `TauCeti.firstOrderOperators.lie_mulLeft_apply`,
+* `TauCeti.firstOrderOperators.lie_mulLeft_apply`: the commutator with multiplication by a real
+  smooth function.
+* `TauCeti.complexFirstOrderOperators.lie_mulLeft_apply`,
   `TauCeti.complexFirstOrderOperators.lie_mulLeft_ofReal_apply`: the commutators with
-  multiplication by a real smooth function.
+  multiplication by a complex, respectively real, smooth function.
 
 ## References
 
@@ -369,6 +371,25 @@ theorem apply_eq_of_eventuallyEq
     (h : (f : M → ℂ) =ᶠ[𝓝 x] g) : D.val f x = D.val g x :=
   apply_eq_of_apply_eq_of_mvfderiv_eq D h.eq_of_nhds h.mvfderiv_eq
 
+/-- The commutator of a first-order complex scalar operator with multiplication by a complex smooth
+function `g = u + i v` is multiplication by `X u - Y v + i (Y u + X v)`, its complexified field
+applied to `g`. -/
+theorem lie_mulLeft_apply
+    {D : firstOrderOperators ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯}
+    {X Y : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯}
+    (h : (complexFirstOrderOperatorsEquivComplexifiedVectorFieldProd D).1 =
+      1 ⊗ₜ X + Complex.I ⊗ₜ Y)
+    (g f : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (x : M) :
+    ⁅D.val, LinearMap.mulLeft ℂ g⁆ f x =
+      (((mvfderiv I g.re x (X x) - mvfderiv I g.im x (Y x) : ℝ) : ℂ) +
+        ((mvfderiv I g.re x (Y x) + mvfderiv I g.im x (X x) : ℝ) : ℂ) * Complex.I) * f x := by
+  rw [LinearMap.lie_mulLeft_eq_mulLeft_derivationOfDoubleCommutator _
+    ((LinearMap.mem_firstOrderOperators _).mp D.property)]
+  simp only [LinearMap.mulLeft_apply, ContMDiffMap.coe_mul, Pi.mul_apply,
+    LinearMap.derivationOfDoubleCommutator_apply, ContMDiffMap.coe_sub, Pi.sub_apply]
+  rw [apply_eq_mvfderiv_add_mul h g x]
+  ring
+
 /-- The commutator of a first-order complex scalar operator with multiplication by a real smooth
 function `u` is multiplication by the complexified derivative `X u + i Y u`. -/
 theorem lie_mulLeft_ofReal_apply
@@ -379,13 +400,8 @@ theorem lie_mulLeft_ofReal_apply
     (u : C^∞⟮I, M; ℝ⟯) (f : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (x : M) :
     ⁅D.val, LinearMap.mulLeft ℂ (ContMDiffMap.ofReal u)⁆ f x =
       ((mvfderiv I u x (X x) : ℂ) + (mvfderiv I u x (Y x) : ℂ) * Complex.I) * f x := by
-  rw [LinearMap.lie_mulLeft_eq_mulLeft_derivationOfDoubleCommutator _
-    ((LinearMap.mem_firstOrderOperators _).mp D.property)]
-  have hu := complexFirstOrderOperatorsEquivComplexifiedVectorFieldProd_fst_eq_iff.mp h u x
-  simp only [LinearMap.mulLeft_apply, ContMDiffMap.coe_mul, Pi.mul_apply,
-    LinearMap.derivationOfDoubleCommutator_apply, ContMDiffMap.coe_sub, Pi.sub_apply, hu,
-    ContMDiffMap.ofReal_apply]
-  ring
+  rw [lie_mulLeft_apply h, ContMDiffMap.ofReal_re, ContMDiffMap.ofReal_im, ContMDiffMap.coe_zero,
+    mvfderiv_zero, zero_apply, zero_apply, sub_zero, add_zero]
 
 end complexFirstOrderOperators
 
