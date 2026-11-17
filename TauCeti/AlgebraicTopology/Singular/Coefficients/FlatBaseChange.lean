@@ -35,7 +35,8 @@ of a space vanishes in a degree exactly when its integral homology is a torsion 
 ## Main declarations
 
 * `TauCeti.singularHomologyTensorIso`: `S ⊗[R] Hₙ(X; R) ≅ Hₙ(X; S)` for a flat `R`-algebra `S`,
-  natural in `X` (`TauCeti.singularHomologyTensorIso_hom_naturality`).
+  natural in `X` (`TauCeti.singularHomologyTensorIso_hom_naturality`), with components given by
+  `TauCeti.singularHomologyTensorIso_hom`.
 * `TauCeti.isTorsion'_singularChains_homology_iff`: `Hₙ(X; R)` is `M`-torsion exactly when
   `Hₙ(X; M⁻¹R)` vanishes; `TauCeti.isTorsion'_singularChains_int_homology_iff` is the case
   `R = ℤ`.
@@ -77,6 +78,23 @@ def singularHomologyTensorIso [Module.Flat R S] (X : TopCat.{u}) (n : ℕ) :
     (singularHomologyFunctor (ModuleCat.{u} S) n).mapIso
       (Functor.Monoidal.εIso (ModuleCat.extendScalars.{u, u, u} (algebraMap R S))).symm).app X
 
+/-- The identification `S ⊗[R] Hₙ(X; R) ≅ Hₙ(X; S)` identifies `S ⊗[R] Hₙ(X; R)` with the
+extension of scalars of `Hₙ(X; R)`, compares this with `Hₙ(X; S ⊗[R] R)`, and then identifies the
+coefficients `S ⊗[R] R` with `S`. -/
+theorem singularHomologyTensorIso_hom [Module.Flat R S] (X : TopCat.{u}) (n : ℕ) :
+    haveI : PreservesFiniteLimits (ModuleCat.extendScalars.{u, u, u} (algebraMap R S)) :=
+      ModuleCat.preservesFiniteLimits_extendScalars_of_flat
+        (RingHom.flat_algebraMap_iff.2 inferInstance)
+    haveI : (ModuleCat.extendScalars.{u, u, u} (algebraMap R S)).PreservesHomology := {}
+    (singularHomologyTensorIso R S X n).hom =
+      (ModuleCat.extendScalarsAlgebraMapIso _).inv ≫
+        (Functor.singularHomologyFunctorObjCompIso
+            (ModuleCat.extendScalars.{u, u, u} (algebraMap R S)) (ModuleCat.of R R) n ≪≫
+          (singularHomologyFunctor (ModuleCat.{u} S) n).mapIso
+            (Functor.Monoidal.εIso
+              (ModuleCat.extendScalars.{u, u, u} (algebraMap R S))).symm).hom.app X :=
+  (rfl)
+
 /-- The identification `S ⊗[R] Hₙ(X; R) ≅ Hₙ(X; S)` is natural in the space `X`. -/
 @[reassoc]
 theorem singularHomologyTensorIso_hom_naturality [Module.Flat R S] {X Y : TopCat.{u}} (f : X ⟶ Y)
@@ -109,10 +127,7 @@ theorem singularHomologyTensorIso_hom_naturality [Module.Flat R S] {X Y : TopCat
       (ModuleCat.extendScalars.{u, u, u} (algebraMap R S)) (ModuleCat.of R R) n ≪≫
     (singularHomologyFunctor (ModuleCat.{u} S) n).mapIso
       (Functor.Monoidal.εIso (ModuleCat.extendScalars.{u, u, u} (algebraMap R S))).symm
-  have e (Z : TopCat.{u}) : (singularHomologyTensorIso R S Z n).hom =
-      (ModuleCat.extendScalarsAlgebraMapIso _).inv ≫ η.hom.app Z :=
-    rfl
-  rw [e, e]
+  rw [singularHomologyTensorIso_hom, singularHomologyTensorIso_hom]
   -- The statement names homology of singular chains, while `η` is stated with the singular homology
   -- functors; these objects agree only up to unfolding, so `rw` and `simp` cannot reassociate the
   -- goal, and the steps are chained explicitly.
