@@ -177,9 +177,10 @@ theorem iterate_pderiv_monomial (i : σ) (k : ℕ) (m : σ →₀ ℕ) (a : R) :
   | succ k ih =>
     have hm : m - Finsupp.single i k - Finsupp.single i 1 = m - Finsupp.single i (k + 1) := by
       rw [tsub_tsub, ← Finsupp.single_add]
-    rw [Function.iterate_succ_apply', ih, pderiv_monomial, hm, Nat.descFactorial_succ,
-      Finsupp.tsub_apply, Finsupp.single_eq_same, Nat.cast_mul, mul_comm ((m i - k : ℕ) : R),
-      mul_assoc]
+    rw [Function.iterate_succ_apply', ih, pderiv_monomial, hm]
+    congr 1
+    simp [Nat.descFactorial_succ]
+    ring
 
 /-- Iterated partial differentiation along `Xᵢ` of a one-variable polynomial in `Xᵢ` is iterated
 differentiation of the polynomial. -/
