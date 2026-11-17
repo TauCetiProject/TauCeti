@@ -6,7 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.Deriv.Inv
+public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import TauCeti.Analysis.Analytic.Order
+import Mathlib.Analysis.Analytic.Polynomial
+import Mathlib.Analysis.Calculus.ContDiff.Polynomial
+import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
+import TauCeti.Analysis.Calculus.Deriv.Polynomial
+import TauCeti.RingTheory.Polynomial.HermiteInterpolation
 
 /-!
 # Dividing an analytic function by prescribed zeros
@@ -20,7 +26,9 @@ wherever `f` is. The quotient `g` is obtained by repeatedly taking divided diffe
 Over `ℂ` this is the factorization of an entire function with zeros of prescribed multiplicities
 used in transcendence proofs, where `g` is then estimated by the maximum modulus principle. The
 order hypotheses may be given as vanishing of derivatives through Mathlib's
-`natCast_le_analyticOrderAt_iff_iteratedDeriv_eq_zero`.
+`natCast_le_analyticOrderAt_iff_iteratedDeriv_eq_zero`, and in characteristic zero prescribed
+finite jets at a finite set of nodes can first be interpolated by an entire polynomial map
+(`TauCeti.exists_analyticOnNhd_iteratedDeriv_eq`) built from `TauCeti.hermiteBasis`.
 
 ## Main results
 
@@ -28,6 +36,8 @@ order hypotheses may be given as vanishing of derivatives through Mathlib's
   `a` take the Taylor coefficients of `f` at `a` as their values at `a`.
 * `TauCeti.iterate_dslope_apply_eq_zero_of_lt`: if `f` vanishes to order at least `n` at `a`,
   then the first `n` iterated divided differences of `f` at `a` vanish at `a`.
+* `TauCeti.exists_analyticOnNhd_iteratedDeriv_eq`: vector-valued Hermite interpolation by an
+  entire map matching prescribed iterated derivatives on a finite set of nodes.
 * `AnalyticOnNhd.exists_eq_prod_pow_smul`: an analytic function with zeros of orders at least
   `k x` at the points `x ∈ s` is `∏ x ∈ s, (z - x) ^ k x` times an analytic function.
 * `TauCeti.differentiableAt_of_eventuallyEq_div`: the removable singularity of a quotient `A / B`
@@ -42,6 +52,7 @@ order hypotheses may be given as vanishing of derivatives through Mathlib's
 public section
 
 open Function Topology
+open scoped Nat Polynomial
 
 variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {f : 𝕜 → E} {a : 𝕜}
@@ -101,6 +112,60 @@ theorem iterate_dslope_apply_eq_zero_of_lt {n k : ℕ} (hn : (n : ℕ∞) ≤ an
     have hn₁ : (n : ℕ∞) = ((n - 1 : ℕ) : ℕ∞) + 1 := by norm_cast; lia
     rw [← hfa.analyticOrderAt_dslope_add_one ha, hn₁] at hn
     exact (ENat.add_le_add_iff_right ENat.one_ne_top).mp hn
+
+/-- **Vector-valued Hermite interpolation.** Over a normed field `𝕜` of characteristic zero,
+for any finite set of nodes `s`, multiplicities `m : 𝕜 → ℕ`, and target values `c : 𝕜 → ℕ → E` in
+a normed `𝕜`-vector space `E`, there is an entire (polynomial-combination) map `P : 𝕜 → E` with
+`iteratedDeriv k P a = c a k` for all `a ∈ s` and `k < m a`. -/
+theorem exists_analyticOnNhd_iteratedDeriv_eq [CharZero 𝕜]
+    (s : Finset 𝕜) (m : 𝕜 → ℕ) (c : 𝕜 → ℕ → E) :
+    ∃ P : 𝕜 → E, AnalyticOnNhd 𝕜 P Set.univ ∧
+      ∀ a ∈ s, ∀ k < m a, iteratedDeriv k P a = c a k := by
+  classical
+  let m' : s → ℕ := fun i ↦ m i
+  let b := hermiteBasis m' Subtype.val_injective
+  let P : 𝕜 → E := fun z ↦
+    ∑ x : (i : s) × Fin (m' i),
+      ((b x : 𝕜[X]).eval z) • (((x.2 : ℕ)! : 𝕜)⁻¹ • c x.1 x.2)
+  refine ⟨P, Finset.analyticOnNhd_fun_sum _ fun x _ ↦
+      (AnalyticOnNhd.eval_polynomial _).smul analyticOnNhd_const, fun a ha k hk ↦ ?_⟩
+  have hpoly (p : 𝕜[X]) : ContDiffAt 𝕜 k (fun z ↦ p.eval z) a := by
+    simpa only [Polynomial.aeval_def, Algebra.algebraMap_self, Polynomial.eval₂_id] using
+      (p.contDiff_aeval (𝕜 := 𝕜) k).contDiffAt (x := a)
+  have hterm (x : (i : s) × Fin (m' i)) :
+      ContDiffAt 𝕜 k
+        (fun z ↦ ((b x : 𝕜[X]).eval z) • (((x.2 : ℕ)! : 𝕜)⁻¹ • c x.1 x.2)) a :=
+    (hpoly _).smul contDiffAt_const
+  dsimp only [P]
+  rw [iteratedDeriv_fun_sum fun x _ ↦ hterm x]
+  let x₀ : (i : s) × Fin (m' i) := ⟨⟨a, ha⟩, ⟨k, hk⟩⟩
+  rw [Finset.sum_eq_single x₀]
+  · rw [iteratedDeriv_smul_const (hpoly _),
+      Polynomial.iteratedDeriv_eq_factorial_mul_eval_hasseDeriv]
+    have hjet : (Polynomial.hasseDeriv k (b x₀ : 𝕜[X])).eval a = 1 := by
+      have h := congr_fun (congr_fun (hermiteJet_hermiteBasis m' Subtype.val_injective x₀) x₀.1)
+        x₀.2
+      simp only [hermiteJet_apply, Pi.single_eq_same, x₀, m'] at h
+      exact h
+    rw [hjet, mul_one, smul_smul,
+      mul_inv_cancel₀ (Nat.cast_ne_zero.2 (Nat.factorial_ne_zero k)), one_smul]
+  · intro x _ hne
+    rw [iteratedDeriv_smul_const (hpoly _),
+      Polynomial.iteratedDeriv_eq_factorial_mul_eval_hasseDeriv]
+    have hjet : (Polynomial.hasseDeriv k (b x : 𝕜[X])).eval a = 0 := by
+      have h := congr_fun (congr_fun (hermiteJet_hermiteBasis m' Subtype.val_injective x) x₀.1)
+        x₀.2
+      simp only [hermiteJet_apply, x₀, m'] at h
+      rw [h]
+      cases x with
+      | mk xi xk =>
+        by_cases h1 : xi = ⟨a, ha⟩
+        · subst h1
+          have h2 : xk ≠ ⟨k, hk⟩ := fun hEq ↦ hne (by subst hEq; rfl)
+          simp [Pi.single_eq_same, Pi.single_eq_of_ne' h2]
+        · simp [Pi.single_eq_of_ne' h1]
+    rw [hjet, mul_zero, zero_smul]
+  · simp
 
 end TauCeti
 
