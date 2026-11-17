@@ -37,9 +37,6 @@ twist-preserving functors:
 
 ## Main declarations
 
-* `TauCeti.PivotalCategory.smul_right_inj`, `TauCeti.PivotalCategory.smul_eq_self_iff`,
-  `TauCeti.balancedOfBraidedPivotal_inj`, and `TauCeti.pivotalOfBalanced_inj`: injectivity and
-  fixed-point lemmas for the torsor action and `TauCeti.pivotalBalancedEquiv`;
 * `TauCeti.balancedOfBraidedPivotal_smul_twist` and
   `TauCeti.balancedOfBraidedPivotal_smul_twist_hom_app`: twisting a pivotal structure by `u`
   precomposes the induced twist with `u`;
@@ -49,7 +46,7 @@ twist-preserving functors:
   `CategoryTheory.Functor.isBalanced_balancedOfBraidedPivotal_smul_iff`: criterion for a pivotal
   (or braided pivotal) functor `F` to remain pivotal or balanced after torsor modifications on
   source and target;
-* `CategoryTheory.Functor.isPivotal_id_iff_eq`, `CategoryTheory.Functor.isPivotal_id_smul_iff`, and
+* `CategoryTheory.Functor.isPivotal_id_smul_iff` and
   `CategoryTheory.Functor.isBalanced_id_balancedOfBraidedPivotal_smul_iff`: `𝟭 C` preserves pivotal
   structures or induced twists between torsor translates if and only if the translates coincide.
 
@@ -68,62 +65,9 @@ namespace TauCeti
 
 universe v u
 
-section Torsor
-
-variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [RigidCategory C]
-
-/-- Acting on a pivotal structure `P` by two monoidal automorphisms of `𝟭 C` produces equal pivotal
-structures if and only if the automorphisms are equal, without needing an ambient `Nonempty`
-typeclass assumption. -/
-@[simp]
-theorem PivotalCategory.smul_right_inj (P : PivotalCategory C)
-    {v u : Aut (LaxMonoidalFunctor.of (𝟭 C))} :
-    v • P = u • P ↔ v = u := by
-  have : Nonempty (PivotalCategory C) := ⟨P⟩
-  exact smul_right_cancel_iff P
-
-/-- A torsor modification `u • P` fixes `P` if and only if `u = 1`. -/
-@[simp]
-theorem PivotalCategory.smul_eq_self_iff (P : PivotalCategory C)
-    {u : Aut (LaxMonoidalFunctor.of (𝟭 C))} :
-    u • P = P ↔ u = 1 :=
-  ⟨fun h ↦ (PivotalCategory.smul_right_inj P).mp (h.trans (one_smul _ P).symm),
-    fun h ↦ by rw [h, one_smul]⟩
-
-/-- Symmetric form of `PivotalCategory.smul_eq_self_iff`. -/
-@[simp]
-theorem PivotalCategory.self_eq_smul_iff (P : PivotalCategory C)
-    {u : Aut (LaxMonoidalFunctor.of (𝟭 C))} :
-    P = u • P ↔ u = 1 :=
-  eq_comm.trans (PivotalCategory.smul_eq_self_iff P)
-
-end Torsor
-
 section Twist
 
 variable {C : Type u} [Category.{v} C] [MonoidalCategory C]
-
-/-- Passing from pivotal structures to induced balanced structures on a braided rigid category is
-injective. -/
-@[simp]
-theorem balancedOfBraidedPivotal_inj [BraidedCategory C] [RigidCategory C]
-    {P Q : PivotalCategory C} :
-    @balancedOfBraidedPivotal C _ _ _ _ P = @balancedOfBraidedPivotal C _ _ _ _ Q ↔ P = Q :=
-  ⟨fun h ↦ by
-    rw [← pivotalOfBalanced_balancedOfBraidedPivotal P,
-      ← pivotalOfBalanced_balancedOfBraidedPivotal Q, h],
-    fun h ↦ h ▸ rfl⟩
-
-/-- Passing from balanced structures to induced pivotal structures on a braided rigid category is
-injective. -/
-@[simp]
-theorem pivotalOfBalanced_inj [BraidedCategory C] [RigidCategory C]
-    {B₁ B₂ : BalancedCategory C} :
-    @pivotalOfBalanced C _ _ _ _ B₁ = @pivotalOfBalanced C _ _ _ _ B₂ ↔ B₁ = B₂ :=
-  ⟨fun h ↦ by
-    rw [← balancedOfBraidedPivotal_pivotalOfBalanced B₁,
-      ← balancedOfBraidedPivotal_pivotalOfBalanced B₂, h],
-    fun h ↦ h ▸ rfl⟩
 
 /-- Twisting a pivotal structure `P` on a braided rigid category by a monoidal natural automorphism
 `u` of `𝟭 C` precomposes the induced twist with `u`. -/
@@ -224,26 +168,6 @@ theorem isPivotal_smul_left_iff [P : PivotalCategory C] [Q : PivotalCategory D]
   rw [one_smul] at h
   simpa using h
 
-/-- The identity functor `𝟭 C` is pivotal from a pivotal structure `P` to a pivotal structure `Q`
-if and only if `P = Q`. -/
-@[simp]
-theorem isPivotal_id_iff_eq (P Q : PivotalCategory C) :
-    @IsPivotal C _ _ C _ _ _ P _ Q (𝟭 C) _ ↔ P = Q := by
-  constructor
-  · intro h
-    have hEq := (@isPivotal_iff_map_pivotalIsoApp_hom_comp_mapDoubleRightDualIso_hom
-      C _ _ C _ _ _ P _ Q (𝟭 C) _).mp h
-    apply PivotalCategory.ext
-    ext X
-    have hX := hEq X
-    simp only [Functor.id_obj, Functor.id_map, mapDoubleRightDualIso_id, Iso.refl_hom,
-      Category.comp_id] at hX
-    exact (@pivotalIso_hom_app C _ _ _ P X).trans
-      (hX.trans (@pivotalIso_hom_app C _ _ _ Q X).symm)
-  · rintro rfl
-    let := P
-    infer_instance
-
 /-- The identity functor `𝟭 C` is pivotal from `v • P` to `u • P` if and only if `v = u`. -/
 theorem isPivotal_id_smul_iff (P : PivotalCategory C)
     (v u : Aut (LaxMonoidalFunctor.of (𝟭 C))) :
@@ -274,20 +198,6 @@ theorem isBalanced_balancedOfBraidedPivotal_smul_iff [P : PivotalCategory C] [Q 
         (LaxMonoidalFunctor.forgetAut (𝟭 D) u).asIso.hom.app (F.obj X) :=
   (@isBalanced_iff_isPivotal C _ _ _ _ D _ _ _ _ (v • P) (u • Q) F _).trans
     (F.isPivotal_smul_iff v u)
-
-/-- The identity braided functor `𝟭 C` is balanced from `B₁` to `B₂` if and only if `B₁ = B₂`. -/
-@[simp]
-theorem isBalanced_id_iff_eq {C : Type u₁} [Category.{v₁} C] [MonoidalCategory C]
-    [BraidedCategory C] (B₁ B₂ : BalancedCategory C) :
-    @IsBalanced C _ _ _ B₁ C _ _ _ B₂ (𝟭 C) _ ↔ B₁ = B₂ := by
-  constructor
-  · intro h
-    apply BalancedCategory.ext
-    ext X
-    exact h.map_twist_hom_app X
-  · rintro rfl
-    let := B₁
-    infer_instance
 
 /-- The identity braided functor `𝟭 C` preserves the twists induced by `v • P` and `u • P` if and
 only if `v = u`. -/

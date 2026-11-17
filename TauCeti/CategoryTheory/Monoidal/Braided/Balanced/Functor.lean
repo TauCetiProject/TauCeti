@@ -30,7 +30,9 @@ groupoids as well.
 ## Main declarations
 
 * `CategoryTheory.Functor.IsBalanced`: twist-preservation class on an unbundled strong braided
-  functor, stable under identity, composition, and natural isomorphism;
+  functor, stable under identity (`CategoryTheory.Functor.isBalanced_id`, with
+  `CategoryTheory.Functor.isBalanced_id_iff_eq` characterizing identity preservation between two
+  balanced structures), composition, and natural isomorphism;
 * `TauCeti.BalancedFunctor`: bundled twist-preserving strong braided functors, with category
   structure induced from `TauCeti.BraidedFunctor C D` and extensionality
   `TauCeti.BalancedFunctor.ext`;
@@ -82,6 +84,20 @@ theorem map_twist_inv_app [F.IsBalanced] (X : C) :
 /-- The identity braided functor preserves the twist. -/
 instance isBalanced_id : (𝟭 C).IsBalanced where
   map_twist_hom_app _ := rfl
+
+/-- The identity braided functor `𝟭 C` is balanced from `B₁` to `B₂` if and only if `B₁ = B₂`. -/
+@[simp]
+theorem isBalanced_id_iff_eq {C : Type u₁} [Category.{v₁} C] [MonoidalCategory C]
+    [BraidedCategory C] (B₁ B₂ : BalancedCategory C) :
+    @IsBalanced C _ _ _ B₁ C _ _ _ B₂ (𝟭 C) _ ↔ B₁ = B₂ := by
+  constructor
+  · intro h
+    apply BalancedCategory.ext
+    ext X
+    exact h.map_twist_hom_app X
+  · rintro rfl
+    let := B₁
+    infer_instance
 
 /-- A composite of balanced functors is balanced. -/
 instance isBalanced_comp (G : D ⥤ E) [G.Braided] [F.IsBalanced] [G.IsBalanced] :
