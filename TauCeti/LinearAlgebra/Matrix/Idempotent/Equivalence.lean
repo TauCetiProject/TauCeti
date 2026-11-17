@@ -7,10 +7,10 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.InvariantBasisNumber
 public import TauCeti.Algebra.Module.StableEquivalent
-public import TauCeti.Data.Matrix.Block
 public import TauCeti.LinearAlgebra.Matrix.Idempotent.RightRange
-public import TauCeti.RingTheory.Idempotents.Matrix
 
+import Mathlib.Algebra.Module.Equiv.Opposite
+import TauCeti.Data.Matrix.Block
 import TauCeti.Data.Matrix.Mul
 
 /-!

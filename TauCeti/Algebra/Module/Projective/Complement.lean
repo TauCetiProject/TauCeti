@@ -13,7 +13,8 @@ public import Mathlib.LinearAlgebra.Projection
 
 A submodule with a complement in a projective module is projective: the inclusion is split by the
 projection onto it. More generally, over any semiring, the range of an idempotent endomorphism of a
-projective module is a direct summand and hence projective.
+projective module is a retract of it and hence projective (over a ring, the kernel provides a
+complement, so the range is a complemented direct summand).
 
 ## Main results
 
@@ -32,8 +33,8 @@ theorem Module.Projective.of_isCompl {R M : Type*} [Ring R] [AddCommGroup M]
     Module.Projective R T :=
   Module.Projective.of_split T.subtype (T.projectionOnto T' hcompl) (by ext x; simp)
 
-/-- The range of an idempotent endomorphism of a projective module is a direct summand, hence
-projective. -/
+/-- The range of an idempotent endomorphism of a projective module is a retract of the module,
+hence projective. -/
 theorem IsIdempotentElem.projective_range {R M : Type*} [Semiring R] [AddCommMonoid M]
     [Module R M] [Module.Projective R M] {f : M →ₗ[R] M} (hf : IsIdempotentElem f) :
     Module.Projective R (LinearMap.range f) :=

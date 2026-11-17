@@ -9,6 +9,8 @@ public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.ScalarChange
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.StableEquivalent
 public import TauCeti.LinearAlgebra.Matrix.Idempotent.Monoid
 
+import Mathlib.Algebra.Module.Equiv.Opposite
+
 /-!
 # Projective `K₀` as the group completion of the idempotent monoid
 

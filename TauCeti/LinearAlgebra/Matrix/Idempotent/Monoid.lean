@@ -7,7 +7,11 @@ module
 
 public import Mathlib.GroupTheory.MonoidLocalization.GrothendieckGroup
 public import Mathlib.LinearAlgebra.Dimension.DivisionRing
+public import TauCeti.Data.Matrix.Block
 public import TauCeti.LinearAlgebra.Matrix.Idempotent.Equivalence
+public import TauCeti.RingTheory.Idempotents.Matrix
+
+import Mathlib.Algebra.Module.Equiv.Opposite
 
 /-!
 # The commutative monoid of idempotent matrices up to rectangular equivalence
