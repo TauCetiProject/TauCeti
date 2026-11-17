@@ -10,7 +10,6 @@ public import TauCeti.Analysis.Sobolev.Circle.LinearODE.Eigenbasis
 public import TauCeti.Geometry.Symplectic.Floer.AsymptoticOperator
 public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
 import TauCeti.Analysis.Distribution.DuBoisReymond
-import Mathlib.Analysis.InnerProductSpace.Dual
 import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import Mathlib.Topology.ContinuousMap.SecondCountableSpace
@@ -98,15 +97,8 @@ private theorem stationaryCylinderOperator_smul_of_hasDerivAt {S : ℝ → F →
   have h2 := (he z.2).hasFDerivAt.comp z (hasFDerivAt_snd (p := z))
   have h : HasFDerivAt (fun w : ℝ × ℝ ↦ φ w.1 • e w.2) _ z := h1.smul h2
   rw [stationaryCylinderOperator_def, h.fderiv]
-  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.smulRight_apply,
-    ContinuousLinearMap.toSpanSingleton_apply, stdComplexLineReal, stdComplexLineImag, add_apply,
-    smul_apply, ContinuousLinearMap.smulRight_apply,
-    ContinuousLinearMap.coe_fst', ContinuousLinearMap.coe_snd', smul_eq_mul, mul_one, mul_zero,
-    zero_smul, one_smul, smul_zero, add_zero, zero_add,
-    AlmostComplexStructure.ofComplexModule_apply,
-    map_smul]
-  simp only [smul_sub, smul_comm I (φ z.1), smul_comm I lam, smul_smul I I, I_mul_I, neg_one_smul,
-    smul_neg]
+  simp [stdComplexLineReal, stdComplexLineImag, AlmostComplexStructure.ofComplexModule_apply,
+    smul_smul, I_mul_I]
   module
 
 omit [FiniteDimensional ℂ F] in
@@ -128,32 +120,16 @@ private theorem contDiff_two_of_hasDerivAt {S : ℝ → F →L[ℝ] F} (hS : Con
 open CylinderSobolev
 
 omit [FiniteDimensional ℂ F] in
-/-- The real part of the pointwise pairing of two square integrable sections is integrable, and
-it integrates to the real part of their `L²` inner product. -/
-private theorem integral_re_inner_eq_re_inner_toLp {u η : ℝ × ℝ → F}
-    (hu : MemLp u 2 stripMeasure) (hη : MemLp η 2 stripMeasure) :
-    Integrable (fun z ↦ (inner ℂ (u z) (η z)).re) stripMeasure ∧
-      ∫ z, (inner ℂ (u z) (η z)).re ∂stripMeasure =
-        RCLike.re (inner ℂ (hu.toLp u) (hη.toLp η)) := by
-  have hae : (fun z ↦ RCLike.re (inner ℂ ((hu.toLp u : ℝ × ℝ → F) z) ((hη.toLp η : _) z)))
-      =ᵐ[stripMeasure] fun z ↦ (inner ℂ (u z) (η z)).re := by
-    filter_upwards [hu.coeFn_toLp, hη.coeFn_toLp] with z h₁ h₂
-    rw [h₁, h₂, RCLike.re_to_complex]
-  refine ⟨(MemLp.integrable_inner (𝕜 := ℂ) hu hη).re, ?_⟩
-  rw [L2.inner_def, ← integral_re (L2.integrable_inner _ _)]
-  exact (integral_congr_ae hae).symm
+/-- `Re ⟪r • x, y⟫ = r Re ⟪x, y⟫` for a real scalar `r`. -/
+private theorem re_inner_real_smul_left (r : ℝ) (x y : F) :
+    (inner ℂ (r • x) y).re = r * (inner ℂ x y).re := by
+  rw [← Complex.coe_smul, inner_smul_left, conj_ofReal, re_ofReal_mul]
 
-/-- **Parseval's identity on `[0, 1]`.** The squared norm in `H⁰` of a continuous loop of period
-one is `∫₀¹ ‖ψ‖²`. -/
-private theorem integral_norm_sq_eq_norm_ofContinuousMap_sq (ψ : C(AddCircle (1 : ℝ), F)) :
-    ∫ t in Icc (0 : ℝ) 1, ‖ψ t‖ ^ 2 = ‖CircleSobolev.ofContinuousMap 1 ψ‖ ^ 2 := by
-  have hhaar : AddCircle.haarAddCircle = (volume : Measure (AddCircle (1 : ℝ))) := by
-    rw [AddCircle.volume_eq_smul_haarAddCircle, ENNReal.ofReal_one, one_smul]
-  have h := AddCircle.integral_preimage (T := 1) 0 fun x ↦ ‖ψ x‖ ^ 2
-  rw [zero_add] at h
-  rw [← real_inner_self_eq_norm_sq, CircleSobolev.real_inner_ofContinuousMap, hhaar,
-    integral_Icc_eq_integral_Ioc, h]
-  exact integral_congr_ae (ae_of_all _ fun x ↦ (inner_self_eq_norm_sq (𝕜 := ℂ) (ψ x)).symm)
+omit [InnerProductSpace ℂ F] [FiniteDimensional ℂ F] in
+/-- A continuous loop of period one, read on `ℝ`, is continuous. -/
+private theorem continuous_comp_coe (χ : C(AddCircle (1 : ℝ), F)) :
+    Continuous fun t : ℝ ↦ χ t :=
+  χ.continuous.comp (AddCircle.continuous_mk' 1)
 
 /-- The pairing `s ↦ ∫₀¹ ⟪ψ t, η (s, t)⟫` of a section `η` with a loop `ψ` on the slices
 `s = const`. -/
@@ -161,33 +137,18 @@ private def sliceInner (η : ℝ × ℝ → F) (ψ : ℝ → F) (s : ℝ) : ℝ 
   ∫ t in Icc (0 : ℝ) 1, (inner ℂ (ψ t) (η (s, t))).re
 
 omit [FiniteDimensional ℂ F] in
-/-- A product section `φ(s) ψ(t)` with `φ` continuous of compact support and `ψ` continuous and
-bounded is square integrable on the strip. -/
-private theorem memLp_smul_of_hasCompactSupport {φ : ℝ → ℝ} (hφ : Continuous φ)
-    (hφc : HasCompactSupport φ) {ψ : ℝ → F} (hψ : Continuous ψ) {B : ℝ} (hB : ∀ t, ‖ψ t‖ ≤ B) :
-    MemLp (fun z : ℝ × ℝ ↦ φ z.1 • ψ z.2) 2 stripMeasure := by
-  obtain ⟨Cφ, hCφ⟩ := hφ.bounded_above_of_compact_support hφc
-  obtain ⟨R, -, hR⟩ := hφc.exists_pos_le_norm
-  refine memLp_stripMeasure_of_continuous (u := fun z : ℝ × ℝ ↦ φ z.1 • ψ z.2)
-    ((hφ.comp continuous_fst).smul (hψ.comp continuous_snd)) (C := Cφ * B) (R := R)
-    (fun z ↦ ?_) (fun z hz ↦ ?_) 2
-  · rw [norm_smul]
-    exact mul_le_mul (hCφ _) (hB _) (norm_nonneg _) ((norm_nonneg _).trans (hCφ z.1))
-  · rw [hR z.1 (by rw [Real.norm_eq_abs]; exact hz.le), zero_smul]
-
-omit [FiniteDimensional ℂ F] in
 /-- **Fubini for product sections.** Pairing `η` with `φ(s) ψ(t)` over the strip integrates `φ`
 against the slice pairing of `η` with `ψ`. -/
 private theorem integral_inner_smul_eq_integral_mul_sliceInner {η : ℝ × ℝ → F}
     (hη : MemLp η 2 stripMeasure) {φ : ℝ → ℝ} (hφ : Continuous φ) (hφc : HasCompactSupport φ)
-    {ψ : ℝ → F} (hψ : Continuous ψ) {B : ℝ} (hB : ∀ t, ‖ψ t‖ ≤ B) :
+    {ψ : ℝ → F} (hψ : Continuous ψ) :
     ∫ z, (inner ℂ (φ z.1 • ψ z.2) (η z)).re ∂stripMeasure = ∫ s, φ s * sliceInner η ψ s := by
-  have hint := (integral_re_inner_eq_re_inner_toLp (memLp_smul_of_hasCompactSupport hφ hφc hψ hB)
-    hη).1
+  have hint : Integrable (fun z ↦ (inner ℂ (φ z.1 • ψ z.2) (η z)).re) stripMeasure :=
+    ((memLp_smul_of_hasCompactSupport hφ hφc hψ 2).integrable_inner (𝕜 := ℂ) hη).re
   rw [stripMeasure_eq_prod] at hint ⊢
   rw [integral_prod _ hint]
   refine integral_congr_ae (ae_of_all _ fun s ↦ ?_)
-  simp only [← Complex.coe_smul, inner_smul_left, conj_ofReal, re_ofReal_mul, sliceInner]
+  simp only [re_inner_real_smul_left, sliceInner]
   exact integral_const_mul _ _
 
 omit [FiniteDimensional ℂ F] in
@@ -204,6 +165,8 @@ private theorem integrableOn_sliceInner_and_integral_abs_le {η : ℝ × ℝ →
   have hμ : μ ≤ stripMeasure := by
     rw [stripMeasure_eq_prod]
     exact Measure.prod_mono Measure.restrict_le_self le_rfl
+  have hμuniv : μ.real univ = b - a := by
+    simp [μ, Measure.real, ← univ_prod_univ, Measure.prod_prod, Real.volume_Icc, hab]
   have hη2 : Integrable (fun z ↦ ‖η z‖ ^ 2) stripMeasure :=
     (memLp_two_iff_integrable_sq_norm hη.aestronglyMeasurable).1 hη
   set G : ℝ × ℝ → ℝ := fun z ↦ (B ^ 2 + ‖η z‖ ^ 2) / 2
@@ -230,10 +193,7 @@ private theorem integrableOn_sliceInner_and_integral_abs_le {η : ℝ × ℝ →
     _ = ((b - a) * B ^ 2 + ∫ z, ‖η z‖ ^ 2 ∂μ) / 2 := by
         simp only [G]
         rw [integral_div, integral_add (integrable_const _) (hη2.mono_measure hμ),
-          integral_const]
-        rw [Measure.real, ← univ_prod_univ, Measure.prod_prod, Measure.restrict_apply_univ,
-          Measure.restrict_apply_univ, Real.volume_Icc, Real.volume_Icc, sub_zero,
-          ENNReal.ofReal_one, mul_one, ENNReal.toReal_ofReal (sub_nonneg.2 hab), smul_eq_mul]
+          integral_const, hμuniv, smul_eq_mul]
     _ ≤ ((b - a) * B ^ 2 + ∫ z, ‖η z‖ ^ 2 ∂stripMeasure) / 2 := by
         have := integral_mono_measure hμ (ae_of_all _ fun z ↦ by positivity) hη2
         linarith
@@ -244,9 +204,9 @@ private theorem locallyIntegrable_sliceInner {η : ℝ × ℝ → F} (hη : MemL
     (χ : C(AddCircle (1 : ℝ), F)) : LocallyIntegrable (sliceInner η fun t ↦ χ t) := by
   refine locallyIntegrable_iff.2 fun k hk ↦ ?_
   obtain ⟨R, hR⟩ := hk.isBounded.subset_closedBall 0
-  refine ((integrableOn_sliceInner_and_integral_abs_le hη
-    (χ.continuous.comp (AddCircle.continuous_mk' 1)) (fun t ↦ χ.norm_coe_le_norm _)
-    (a := -|R|) (b := |R|) (by linarith [abs_nonneg R])).1).mono_set fun x hx ↦ ?_
+  refine ((integrableOn_sliceInner_and_integral_abs_le hη (continuous_comp_coe χ)
+    (fun t ↦ χ.norm_coe_le_norm _) (a := -|R|) (b := |R|)
+    (by linarith [abs_nonneg R])).1).mono_set fun x hx ↦ ?_
   have := hR hx
   rw [Metric.mem_closedBall, dist_zero_right, Real.norm_eq_abs] at this
   exact ⟨by linarith [neg_abs_le x, le_abs_self R], by linarith [le_abs_self x, le_abs_self R]⟩
@@ -257,17 +217,21 @@ private theorem abs_integral_re_inner_smul_le {η : ℝ × ℝ → F} (hη : Mem
     {φ : ℝ → ℝ} (hφ : Continuous φ) (hφc : HasCompactSupport φ) (χ : C(AddCircle (1 : ℝ), F)) :
     |∫ z, (inner ℂ (φ z.1 • χ z.2) (η z)).re ∂stripMeasure| ≤
       Real.sqrt (∫ s, φ s ^ 2) * ‖hη.toLp η‖ * ‖CircleSobolev.ofContinuousMap 1 χ‖ := by
-  have hu := memLp_smul_of_hasCompactSupport hφ hφc (ψ := fun t : ℝ ↦ χ t)
-    (χ.continuous.comp (AddCircle.continuous_mk' 1)) fun t ↦ χ.norm_coe_le_norm _
+  have hu := memLp_smul_of_hasCompactSupport hφ hφc (continuous_comp_coe χ) 2
+  -- `‖φ ⊗ χ‖² = ‖φ‖² ‖χ‖²`, by Fubini and Parseval's identity.
   have hnorm : ‖hu.toLp _‖ = Real.sqrt (∫ s, φ s ^ 2) * ‖CircleSobolev.ofContinuousMap 1 χ‖ := by
-    rw [← Real.sqrt_sq (norm_nonneg (hu.toLp _)), MemLp.norm_toLp_sq, stripMeasure_eq_prod,
-      ← Real.sqrt_sq (norm_nonneg (CircleSobolev.ofContinuousMap 1 χ)), ← Real.sqrt_mul
-        (integral_nonneg fun s ↦ sq_nonneg _), ← integral_norm_sq_eq_norm_ofContinuousMap_sq]
-    congr 1
+    refine (pow_left_inj₀ (norm_nonneg _) (by positivity) two_ne_zero).1 ?_
+    rw [mul_pow, Real.sq_sqrt (integral_nonneg fun s ↦ sq_nonneg _), MemLp.norm_toLp_sq,
+      stripMeasure_eq_prod]
     simp_rw [norm_smul, mul_pow, Real.norm_eq_abs, sq_abs]
-    exact integral_prod_mul (μ := volume) (ν := volume.restrict (Icc (0 : ℝ) 1))
-      (fun s ↦ φ s ^ 2) fun t : ℝ ↦ ‖χ t‖ ^ 2
-  rw [(integral_re_inner_eq_re_inner_toLp hu hη).2]
+    rw [integral_prod_mul (μ := volume) (ν := volume.restrict (Icc (0 : ℝ) 1))
+      (fun s ↦ φ s ^ 2) fun t : ℝ ↦ ‖χ t‖ ^ 2,
+      CircleSobolev.integral_norm_sq_eq_mul_norm_ofContinuousMap_sq, one_mul]
+  have hre : ∫ z, (inner ℂ (φ z.1 • χ z.2) (η z)).re ∂stripMeasure =
+      RCLike.re (inner ℂ (hu.toLp _) (hη.toLp η)) := by
+    rw [← hu.integral_inner_eq_inner_toLp (𝕜 := ℂ) hη]
+    exact integral_re (hu.integrable_inner (𝕜 := ℂ) hη)
+  rw [hre]
   refine ((abs_re_le_norm _).trans (norm_inner_le_norm _ _)).trans (le_of_eq ?_)
   rw [hnorm]
   ring
@@ -312,13 +276,12 @@ private theorem sliceInner_ae_eq_zero_of_hilbertBasis {η : ℝ × ℝ → F}
     (e : ι → C(AddCircle (1 : ℝ), F)) (hb : ∀ i, b i = CircleSobolev.ofContinuousMap 1 (e i))
     (he : ∀ i, sliceInner η (fun t ↦ e i t) =ᵐ[volume] 0) (ψ : C(AddCircle (1 : ℝ), F)) :
     sliceInner η (fun t ↦ ψ t) =ᵐ[volume] 0 := by
-  have hcont (χ : C(AddCircle (1 : ℝ), F)) : Continuous fun t : ℝ ↦ χ t :=
-    χ.continuous.comp (AddCircle.continuous_mk' 1)
   refine ae_eq_zero_of_integral_contDiff_smul_eq_zero (locallyIntegrable_sliceInner hη ψ)
     fun φ hφ hφc ↦ ?_
-  have hu (χ : C(AddCircle (1 : ℝ), F)) := memLp_smul_of_hasCompactSupport hφ.continuous hφc
-    (hcont χ) fun t ↦ χ.norm_coe_le_norm _
-  have hint (χ : C(AddCircle (1 : ℝ), F)) := (integral_re_inner_eq_re_inner_toLp (hu χ) hη).1
+  have hint (χ : C(AddCircle (1 : ℝ), F)) :
+      Integrable (fun z ↦ (inner ℂ (φ z.1 • χ z.2) (η z)).re) stripMeasure :=
+    ((memLp_smul_of_hasCompactSupport hφ.continuous hφc (continuous_comp_coe χ) 2).integrable_inner
+      (𝕜 := ℂ) hη).re
   -- The functional `Λ χ = ∫ ⟪φ ⊗ χ, η⟫` on continuous loops is real-linear.
   let Λ : C(AddCircle (1 : ℝ), F) →ₗ[ℝ] ℝ :=
     { toFun := fun χ ↦ ∫ z, (inner ℂ (φ z.1 • χ z.2) (η z)).re ∂stripMeasure
@@ -326,68 +289,16 @@ private theorem sliceInner_ae_eq_zero_of_hilbertBasis {η : ℝ × ℝ → F}
         simp only [ContinuousMap.add_apply, smul_add, inner_add_left, add_re]
         exact integral_add (hint χ) (hint χ')
       map_smul' := fun c χ ↦ by
-        simp only [ContinuousMap.smul_apply, RingHom.id_apply, smul_eq_mul]
-        rw [← integral_const_mul]
-        refine integral_congr_ae (ae_of_all _ fun z ↦ ?_)
-        dsimp only
-        rw [smul_comm, ← Complex.coe_smul c, inner_smul_left, conj_ofReal, re_ofReal_mul] }
+        simp only [ContinuousMap.smul_apply, RingHom.id_apply, smul_eq_mul, smul_comm (φ _) c,
+          re_inner_real_smul_left c]
+        exact integral_const_mul _ _ }
   have hΛ (χ : C(AddCircle (1 : ℝ), F)) : Λ χ = ∫ s, φ s * sliceInner η (fun t ↦ χ t) s :=
-    integral_inner_smul_eq_integral_mul_sliceInner hη hφ.continuous hφc (hcont χ)
-      (fun t ↦ χ.norm_coe_le_norm _)
+    integral_inner_smul_eq_integral_mul_sliceInner hη hφ.continuous hφc (continuous_comp_coe χ)
   have h0 := eq_zero_of_abs_le_of_hilbertBasis Λ (by positivity)
     (abs_integral_re_inner_smul_le hη hφ.continuous hφc) b e hb
     (fun i ↦ by rw [hΛ]; exact integral_eq_zero_of_ae ((he i).mono fun s hs ↦ by simp [hs])) ψ
   rw [hΛ] at h0
   simpa [smul_eq_mul] using h0
-
-/-- **A slice orthogonal to all loops vanishes.** A function on `[0, 1]`, integrable there, whose
-pairing with every continuous loop of period one vanishes, is zero almost everywhere on `[0, 1]`:
-test against the loops `g(t) v` with `g` supported in `(0, 1)` and `v` running over `b j` and
-`i b j` for a complex basis `b`. -/
-private theorem ae_eq_zero_of_forall_integral_re_inner_eq_zero {f : ℝ → F}
-    (hf : IntegrableOn f (Icc (0 : ℝ) 1))
-    (h : ∀ ψ : C(AddCircle (1 : ℝ), F), ∫ t in Icc (0 : ℝ) 1, (inner ℂ (ψ t) (f t)).re = 0) :
-    ∀ᵐ t ∂volume.restrict (Icc (0 : ℝ) 1), f t = 0 := by
-  have hv (v : F) : ∀ᵐ t, t ∈ Ioo (0 : ℝ) 1 → (inner ℂ v (f t)).re = 0 := by
-    refine isOpen_Ioo.ae_eq_zero_of_integral_contDiff_smul_eq_zero
-      (IntegrableOn.mono_set (t := Icc (0 : ℝ) 1) (hf.const_inner (𝕜 := ℂ) v).re
-        Ioo_subset_Icc_self).locallyIntegrableOn
-      fun g hg _ hgs ↦ ?_
-    have hg0 (t : ℝ) (ht : t ∉ Ioo (0 : ℝ) 1) : g t = 0 :=
-      image_eq_zero_of_notMem_tsupport fun h' ↦ ht (hgs h')
-    -- The loop `g(t) v`, continuous since `g` vanishes at `0` and `1`.
-    let ψ : C(AddCircle (1 : ℝ), F) :=
-      ⟨AddCircle.liftIco 1 0 fun t ↦ g t • v, AddCircle.liftIco_continuous
-        (by rw [hg0 0 (by simp), hg0 (0 + 1) (by simp)])
-        (hg.continuous.smul continuous_const).continuousOn⟩
-    have hψ (t : ℝ) (ht : t ∈ Icc (0 : ℝ) 1) : ψ t = g t • v := by
-      -- `ψ` is `AddCircle.liftIco` of `g(t) v`, which is `g(t) v` on `[0, 1)`.
-      change AddCircle.liftIco (1 : ℝ) 0 (fun t ↦ g t • v) (t : AddCircle (1 : ℝ)) = _
-      rcases eq_or_lt_of_le ht.2 with rfl | ht1
-      · rw [show ((1 : ℝ) : AddCircle (1 : ℝ)) = ((0 : ℝ) : AddCircle (1 : ℝ)) by
-          rw [AddCircle.coe_period, QuotientAddGroup.mk_zero], AddCircle.liftIco_coe_apply
-          (by simp), hg0 0 (by simp), hg0 1 (by simp)]
-      · exact AddCircle.liftIco_coe_apply ⟨ht.1, by simpa using ht1⟩
-    have h0 := h ψ
-    rw [setIntegral_congr_fun measurableSet_Icc fun t ht ↦ by rw [hψ t ht]] at h0
-    simp only [← Complex.coe_smul, inner_smul_left, conj_ofReal, re_ofReal_mul] at h0
-    rw [setIntegral_eq_integral_of_forall_compl_eq_zero fun t ht ↦ by
-      rw [hg0 t fun h' ↦ ht (Ioo_subset_Icc_self h'), zero_mul]] at h0
-    simpa [smul_eq_mul] using h0
-  -- Both the real and imaginary parts of `⟪b j, f t⟫` vanish, the latter as `Re ⟪i b j, f t⟫`.
-  set b := Module.finBasis ℂ F
-  have hall : ∀ᵐ t, ∀ j, t ∈ Ioo (0 : ℝ) 1 →
-      (inner ℂ (b j) (f t)).re = 0 ∧ (inner ℂ (I • b j) (f t)).re = 0 :=
-    ae_all_iff.2 fun j ↦ by
-      filter_upwards [hv (b j), hv (I • b j)] with t h₁ h₂ ht using ⟨h₁ ht, h₂ ht⟩
-  rw [← Measure.restrict_congr_set Ioo_ae_eq_Icc]
-  refine (ae_restrict_iff' measurableSet_Ioo).2 ?_
-  filter_upwards [hall] with t ht htI
-  refine InnerProductSpace.ext_inner_left_basis b fun j ↦ ?_
-  obtain ⟨h₁, h₂⟩ := ht j htI
-  rw [inner_smul_left, conj_I, neg_mul, neg_re, mul_re, I_re, I_im] at h₂
-  rw [inner_zero_right]
-  exact Complex.ext (by simpa using h₁) (by simp only [Complex.zero_im]; linarith)
 
 /-- **Vanishing for all loops on almost every slice.** If the slice pairing of `η` with every loop
 of a dense set vanishes at `s` and the slice `η(s, ·)` is integrable, then the slice pairing with
@@ -396,31 +307,24 @@ private theorem sliceInner_eq_zero_of_dense {η : ℝ × ℝ → F} {s : ℝ}
     (hs : IntegrableOn (fun t ↦ η (s, t)) (Icc (0 : ℝ) 1)) {D : Set C(AddCircle (1 : ℝ), F)}
     (hD : Dense D) (hsD : ∀ ψ ∈ D, sliceInner η (fun t ↦ ψ t) s = 0)
     (ψ : C(AddCircle (1 : ℝ), F)) : sliceInner η (fun t ↦ ψ t) s = 0 := by
+  have hle (χ : C(AddCircle (1 : ℝ), F)) (t : ℝ) :
+      ‖(inner ℂ (χ t) (η (s, t))).re‖ ≤ ‖χ‖ * ‖η (s, t)‖ :=
+    (abs_re_le_norm _).trans ((norm_inner_le_norm _ _).trans
+      (mul_le_mul_of_nonneg_right (χ.norm_coe_le_norm _) (norm_nonneg _)))
   have hint (χ : C(AddCircle (1 : ℝ), F)) :
       IntegrableOn (fun t : ℝ ↦ (inner ℂ (χ t) (η (s, t))).re) (Icc (0 : ℝ) 1) :=
-    (hs.norm.const_mul ‖χ‖).mono' ((χ.continuous.comp
-      (AddCircle.continuous_mk' 1)).aestronglyMeasurable.inner (𝕜 := ℂ)
-        hs.aestronglyMeasurable).re
-      (ae_of_all _ fun t ↦ (abs_re_le_norm _).trans ((norm_inner_le_norm _ _).trans
-        (mul_le_mul_of_nonneg_right (χ.norm_coe_le_norm _) (norm_nonneg _))))
-  set L : ℝ := ∫ t in Icc (0 : ℝ) 1, ‖η (s, t)‖
-  have hL : 0 ≤ L := integral_nonneg fun _ ↦ norm_nonneg _
-  -- `|∫₀¹ Re ⟪ψ, η(s, ·)⟫| ≤ ‖ψ - χ‖ L` for every `χ ∈ D`.
-  have key (ε : ℝ) (hε : 0 < ε) : |sliceInner η (fun t ↦ ψ t) s| ≤ ε * L := by
-    obtain ⟨χ, hχD, hχ⟩ := hD.exists_dist_lt ψ hε
-    rw [← sub_zero (sliceInner η _ s), ← hsD χ hχD, sliceInner, sliceInner,
-      ← integral_sub (hint ψ) (hint χ), ← Real.norm_eq_abs, ← integral_const_mul]
-    refine norm_integral_le_of_norm_le (hs.norm.const_mul ε) (ae_of_all _ fun t ↦ ?_)
-    rw [← sub_re, ← inner_sub_left, Real.norm_eq_abs]
-    refine (abs_re_le_norm _).trans ((norm_inner_le_norm _ _).trans
-      (mul_le_mul_of_nonneg_right ?_ (norm_nonneg _)))
-    rw [← ContinuousMap.sub_apply]
-    exact ((ψ - χ).norm_coe_le_norm _).trans (by rw [← dist_eq_norm]; exact hχ.le)
-  by_contra hne
-  have hpos : 0 < |sliceInner η (fun t ↦ ψ t) s| := abs_pos.2 hne
-  have := key (|sliceInner η (fun t ↦ ψ t) s| / (L + 1)) (div_pos hpos (by linarith))
-  rw [div_mul_eq_mul_div, le_div_iff₀ (by linarith)] at this
-  nlinarith
+    (hs.norm.const_mul ‖χ‖).mono' ((continuous_comp_coe χ).aestronglyMeasurable.inner (𝕜 := ℂ)
+      hs.aestronglyMeasurable).re (ae_of_all _ (hle χ))
+  -- The slice pairing at `s` is additive in the loop and bounded by `‖χ‖ ∫₀¹ ‖η(s, ·)‖`.
+  let Λ : C(AddCircle (1 : ℝ), F) →+ ℝ :=
+    AddMonoidHom.mk' (fun χ ↦ sliceInner η (fun t ↦ χ t) s) fun χ χ' ↦ by
+      simp only [sliceInner, ContinuousMap.add_apply, inner_add_left, add_re]
+      exact integral_add (hint χ) (hint χ')
+  have hΛ : Continuous Λ :=
+    AddMonoidHomClass.continuous_of_bound Λ (∫ t in Icc (0 : ℝ) 1, ‖η (s, t)‖) fun χ ↦ by
+      rw [mul_comm, ← integral_const_mul]
+      exact norm_integral_le_of_norm_le (hs.norm.const_mul _) (ae_of_all _ (hle χ))
+  exact congrFun (hΛ.ext_on hD continuous_const hsD) ψ
 
 /-- **Vanishing slice pairings force vanishing.** If the slice pairing of `η` with every
 continuous loop of period one vanishes almost everywhere, then `η` vanishes almost everywhere on
@@ -469,14 +373,12 @@ private theorem sliceInner_ae_eq_zero_of_hasDerivAt {S : ℝ → F →L[ℝ] F}
     (h : ∀ ξ ∈ testSection F, ∫ z, (inner ℂ (stationaryCylinderOperator
       (fun _ ↦ AlmostComplexStructure.ofComplexModule F) S ξ z) (η z)).re ∂stripMeasure = 0) :
     sliceInner η (fun t ↦ e t) =ᵐ[volume] 0 := by
-  have hcont : Continuous fun t : ℝ ↦ e t := e.continuous.comp (AddCircle.continuous_mk' 1)
   have hbd (t : ℝ) : ‖e t‖ ≤ ‖e‖ := e.norm_coe_le_norm _
-  refine ae_eq_zero_of_integral_deriv_add_mul_mul_eq_zero hlam
-    (fun a b hab ↦ (integrableOn_sliceInner_and_integral_abs_le hη hcont hbd hab).1)
+  refine ae_eq_zero_of_integral_deriv_add_mul_smul_eq_zero hlam (locallyIntegrable_sliceInner hη e)
     (M := (‖e‖ ^ 2 + ∫ z, ‖η z‖ ^ 2 ∂stripMeasure) / 2)
     (fun n ↦ by
-      simpa using (integrableOn_sliceInner_and_integral_abs_le hη hcont hbd
-        (a := n) (b := n + 1) (by linarith)).2)
+      simpa [Real.norm_eq_abs] using (integrableOn_sliceInner_and_integral_abs_le hη
+        (continuous_comp_coe e) hbd (a := n) (b := n + 1) (by linarith)).2)
     fun φ hφ hφc ↦ ?_
   -- Test the orthogonality against the product section `φ(s) e(t)`.
   obtain ⟨R, -, hR⟩ := hφc.exists_pos_le_norm
@@ -488,9 +390,10 @@ private theorem sliceInner_ae_eq_zero_of_hasDerivAt {S : ℝ → F →L[ℝ] F}
     · simp [hR s (by rwa [Real.norm_eq_abs])]
   have h0 := h _ hξ
   simp_rw [stationaryCylinderOperator_smul_of_hasDerivAt he (hφ.differentiable (by simp))] at h0
+  simp_rw [smul_eq_mul]
   rw [← integral_inner_smul_eq_integral_mul_sliceInner hη (φ := fun s ↦ deriv φ s + lam * φ s)
     ((hφ.continuous_deriv (by simp)).add (continuous_const.mul hφ.continuous))
-    (hφc.deriv.add (hφc.smul_left (f := fun _ ↦ lam))) hcont hbd]
+    (hφc.deriv.add (hφc.smul_left (f := fun _ ↦ lam))) (continuous_comp_coe e)]
   exact h0
 
 /-- **The stationary cylinder operator at a nondegenerate orbit has dense range.** Let `S` be a

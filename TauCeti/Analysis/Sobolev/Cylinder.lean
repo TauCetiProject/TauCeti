@@ -36,9 +36,12 @@ bounded coefficients on the cylinder into finite-dimensional kernel and closed r
 setting of the linearized operators of Floer theory along Floer cylinders.
 
 * The strip measure is the product of Lebesgue measure and Lebesgue measure on `[0, 1]`
-  (`TauCeti.CylinderSobolev.stripMeasure_eq_prod`), and a continuous bounded section vanishing
-  for `|s|` large lies in every `Lᵖ` of the strip
-  (`TauCeti.CylinderSobolev.memLp_stripMeasure_of_continuous`).
+  (`TauCeti.CylinderSobolev.stripMeasure_eq_prod`). A section that is bounded on a box
+  `[-R, R] × [0, 1]` and vanishes outside it lies in every `Lᵖ` of the strip
+  (`TauCeti.CylinderSobolev.memLp_stripMeasure_of_bound_of_eq_zero`), in particular a continuous
+  section vanishing for `|s|` large (`TauCeti.CylinderSobolev.memLp_stripMeasure_of_continuous`)
+  and a product section `φ(s) ψ(t)` with `φ` compactly supported
+  (`TauCeti.CylinderSobolev.memLp_smul_of_hasCompactSupport`).
 * **Test sections** (`TauCeti.CylinderSobolev.testSection`) are the `C²` maps of period one in
   `t` that vanish for `|s|` large.
 * The **jet** of a section is `jet ξ = (ξ, ∂s ξ, ∂t ξ)`. The jet of a test section is square
@@ -108,10 +111,12 @@ theorem stripMeasure_eq_prod :
   rw [stripMeasure, Measure.volume_eq_prod, ← Measure.prod_restrict, Measure.restrict_univ]
 
 omit [NormedSpace ℝ V] in
-/-- A continuous bounded section vanishing for `|s| > R` lies in every `Lᵖ` of the strip. -/
-theorem memLp_stripMeasure_of_continuous {u : ℝ × ℝ → V} (hu : Continuous u) {C R : ℝ}
-    (hC : ∀ z, ‖u z‖ ≤ C) (hR : ∀ z : ℝ × ℝ, R < |z.1| → u z = 0) (p : ℝ≥0∞) :
-    MemLp u p stripMeasure := by
+/-- A section bounded on `[-R, R] × [0, 1]` and vanishing for `|s| > R` lies in every `Lᵖ` of the
+strip. -/
+theorem memLp_stripMeasure_of_bound_of_eq_zero {u : ℝ × ℝ → V}
+    (hu : AEStronglyMeasurable u stripMeasure) {C R : ℝ}
+    (hC : ∀ z ∈ Icc (-R) R ×ˢ Icc 0 1, ‖u z‖ ≤ C) (hR : ∀ z : ℝ × ℝ, R < |z.1| → u z = 0)
+    (p : ℝ≥0∞) : MemLp u p stripMeasure := by
   set K : Set (ℝ × ℝ) := Icc (-R) R ×ˢ Icc 0 1
   have hK : MeasurableSet K := measurableSet_Icc.prod measurableSet_Icc
   have hae : u =ᵐ[stripMeasure] K.indicator u := by
@@ -124,7 +129,25 @@ theorem memLp_stripMeasure_of_continuous {u : ℝ × ℝ → V} (hu : Continuous
     rw [Measure.restrict_apply_univ, stripMeasure, Measure.restrict_apply hK]
     exact (measure_mono inter_subset_left).trans_lt
       ((isCompact_Icc.prod isCompact_Icc).measure_lt_top)⟩
-  exact MemLp.of_bound hu.aestronglyMeasurable C (ae_of_all _ hC)
+  exact MemLp.of_bound hu.restrict C ((ae_restrict_mem hK).mono hC)
+
+omit [NormedSpace ℝ V] in
+/-- A continuous section vanishing for `|s| > R` lies in every `Lᵖ` of the strip. -/
+theorem memLp_stripMeasure_of_continuous {u : ℝ × ℝ → V} (hu : Continuous u) {R : ℝ}
+    (hR : ∀ z : ℝ × ℝ, R < |z.1| → u z = 0) (p : ℝ≥0∞) : MemLp u p stripMeasure := by
+  obtain ⟨C, hC⟩ := (isCompact_Icc.prod isCompact_Icc).exists_bound_of_continuousOn
+    (s := Icc (-R) R ×ˢ Icc (0 : ℝ) 1) hu.continuousOn
+  exact memLp_stripMeasure_of_bound_of_eq_zero hu.aestronglyMeasurable hC hR p
+
+/-- A product section `φ(s) ψ(t)`, with `φ` continuous of compact support and `ψ` continuous,
+lies in every `Lᵖ` of the strip. -/
+theorem memLp_smul_of_hasCompactSupport {φ : ℝ → ℝ} (hφ : Continuous φ)
+    (hφc : HasCompactSupport φ) {ψ : ℝ → V} (hψ : Continuous ψ) (p : ℝ≥0∞) :
+    MemLp (fun z : ℝ × ℝ ↦ φ z.1 • ψ z.2) p stripMeasure := by
+  obtain ⟨R, -, hR⟩ := hφc.exists_pos_le_norm
+  exact memLp_stripMeasure_of_continuous (u := fun z : ℝ × ℝ ↦ φ z.1 • ψ z.2)
+    ((hφ.comp continuous_fst).smul (hψ.comp continuous_snd)) (R := R)
+    (fun z hz ↦ by rw [hR z.1 (by rw [Real.norm_eq_abs]; exact hz.le), zero_smul]) p
 
 variable (V) in
 /-- The test sections of the trivial bundle with fibre `V` over the cylinder: `C²` maps
@@ -212,24 +235,8 @@ private theorem integral_strip_eq_setIntegral_of_jet_eq_zero {E : Type*} [Normed
 /-- The jet of a test section is square integrable on the strip. -/
 theorem memLp_jet (hξ : ξ ∈ testSection V) : MemLp (jet ξ) 2 stripMeasure := by
   obtain ⟨-, -, R, hR⟩ := mem_testSection_iff.1 hξ
-  set K : Set (ℝ × ℝ) := Icc (-R) R ×ˢ Icc 0 1
-  have hK : IsCompact K := isCompact_Icc.prod isCompact_Icc
-  have hae : jet ξ =ᵐ[stripMeasure] K.indicator (jet ξ) := by
-    filter_upwards [ae_restrict_mem (MeasurableSet.univ.prod measurableSet_Icc)] with z hz
-    by_cases hzK : z ∈ K
-    · rw [indicator_of_mem hzK]
-    · rw [indicator_of_notMem hzK]
-      refine jet_eq_zero_of_lt_abs hR ?_
-      by_contra h
-      exact hzK ⟨abs_le.1 (not_lt.1 h), hz.2⟩
-  refine (memLp_congr_ae hae).2 ?_
-  rw [memLp_indicator_iff_restrict hK.measurableSet.nullMeasurableSet]
-  have : IsFiniteMeasure (stripMeasure.restrict K) :=
-    isFiniteMeasure_restrict.2 ((Measure.restrict_apply_le _ K).trans_lt
-      hK.measure_lt_top).ne
-  obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn (continuous_jet hξ).continuousOn
-  exact MemLp.of_bound (continuous_jet hξ).aestronglyMeasurable C
-    ((ae_restrict_mem hK.measurableSet).mono hC)
+  exact memLp_stripMeasure_of_continuous (continuous_jet hξ)
+    (fun _ hz ↦ jet_eq_zero_of_lt_abs hR hz) 2
 
 variable (V) in
 /-- The `L²` jet `(ξ, ∂s ξ, ∂t ξ)` of a test section, as a linear map into
