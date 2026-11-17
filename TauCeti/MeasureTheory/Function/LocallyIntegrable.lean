@@ -105,8 +105,6 @@ globally strongly measurable representative to `[0, 1]`. The set `s` needs no me
   null-measurable set is locally integrable.
 * `MeasureTheory.LocallyIntegrableOn.indicator_of_isClosed`: local integrability of relative
   zero extension when the support avoids the added boundary.
-* `MeasureTheory.LocallyIntegrableOn.integrable_indicator_of_isCompact`: integrability of the
-  extension by zero of a locally integrable function supported in a null-measurable compact subset.
 * `MeasureTheory.LocallyIntegrableOn.integrable_smul_right_of_hasCompactSupport`: a function
   locally integrable on `s`, scaling a continuous function with compact support in `s`, is
   integrable.
@@ -403,34 +401,6 @@ theorem integrableOn_Ioc_of_Ici (hf : LocallyIntegrableOn f (Ici a) μ) (b : X) 
 end OrderIntervals
 
 variable {X : Type*} [MeasurableSpace X] [TopologicalSpace X] {μ : Measure X}
-
-section ExtendByZero
-
-variable {ε : Type*} [TopologicalSpace ε] [ESeminormedAddMonoid ε] [PseudoMetrizableSpace ε]
-  {f : X → ε} {s K : Set X}
-
-/-- A function locally integrable on a set `s` and vanishing almost everywhere on
-`s` off a null-measurable compact `K ⊆ s` is, after extension by zero, integrable on the whole
-space.
-
-`K` carries its own null-measurability hypothesis rather than inheriting one from compactness:
-no assumption here relates the topology on `X` to its measurable space, so a compact -- or even
-closed -- set need not be measurable at all. -/
-theorem integrable_indicator_of_isCompact (hloc : LocallyIntegrableOn f s μ)
-    (hK : IsCompact K)
-    (hKmeas : NullMeasurableSet K μ) (hKs : K ⊆ s)
-    (hf : ∀ᵐ x ∂μ.restrict s, x ∉ K → f x = 0) :
-    Integrable (s.indicator f) μ := by
-  have hae : s.indicator f =ᵐ[μ] K.indicator f := by
-    filter_upwards [ae_imp_of_ae_restrict hf] with x hx
-    by_cases hxs : x ∈ s
-    · by_cases hxK : x ∈ K
-      · rw [Set.indicator_of_mem hxs, Set.indicator_of_mem hxK]
-      · rw [Set.indicator_of_mem hxs, Set.indicator_of_notMem hxK, hx hxs hxK]
-    · rw [Set.indicator_of_notMem hxs, Set.indicator_of_notMem fun hxK => hxs (hKs hxK)]
-  exact ((hloc.integrableOn_compact_subset hKs hK).integrable_indicator₀ hKmeas).congr hae.symm
-
-end ExtendByZero
 
 section RelativeExtension
 
