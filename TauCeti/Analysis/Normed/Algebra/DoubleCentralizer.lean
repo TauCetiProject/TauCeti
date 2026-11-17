@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Operator.Banach
 public import Mathlib.Analysis.CStarAlgebra.Multiplier
 public import TauCeti.Topology.ApproximateUnit
+import TauCeti.Analysis.Normed.Operator.Dense
 
 /-!
 # Double centralizers of nondegenerate Banach algebras
@@ -44,9 +45,14 @@ either side vanishes.
 
 * `DoubleCentralizer.ofCentral`: the double centralizer built from a pair of functions satisfying
   the centrality condition, for a complete algebra with zero annihilators.
+* `DoubleCentralizer.coeStarAlgEquiv`: a unital normed star algebra is star-isomorphic to its
+  multiplier algebra, every multiplier being the image of its left centralizer at `1`
+  (`DoubleCentralizer.coe_fst_one`).
 
 ## Main results
 
+* `DoubleCentralizer.continuous_toProd`: projection to left and right centralizers is norm
+  continuous.
 * `DoubleCentralizer.fst_mul`, `DoubleCentralizer.snd_mul`: with zero annihilators, the
   centralizers are module maps for right and left multiplication.
 * `DoubleCentralizer.coe_injective`, `DoubleCentralizer.ext_fst`: with zero annihilators, the
@@ -63,6 +69,9 @@ either side vanishes.
   `DoubleCentralizer.isometry_coe_of_tendsto_mul_right`,
   `DoubleCentralizer.norm_coe_fst_of_tendsto_mul_left`,
   `DoubleCentralizer.norm_coe_snd_of_tendsto_mul_right`: the contractive case.
+* `DoubleCentralizer.exists_clm_tendsto_fst`: along a bounded left approximate unit, a norm-bounded
+  multiplicative action of `A` on a Banach space with dense essential subspace converges at
+  `m.fst e` to a bounded operator extending `m`.
 * `DoubleCentralizer.eq_zero_of_forall_mul_coe_eq_zero`,
   `DoubleCentralizer.eq_zero_of_forall_coe_mul_eq_zero`: the image of `A` is an essential ideal.
 
@@ -96,6 +105,13 @@ theorem ext_fst_snd {m n : 𝓜(𝕜, A)} (h₁ : ∀ a, m.fst a = n.fst a)
     (h₂ : ∀ a, m.snd a = n.snd a) : m = n :=
   DoubleCentralizer.ext _ _ _ _ <|
     Prod.ext (ContinuousLinearMap.ext h₁) (ContinuousLinearMap.ext h₂)
+
+/-- Projection from a multiplier to its pair of left and right centralizers is norm continuous. -/
+@[fun_prop]
+theorem continuous_toProd :
+    Continuous (DoubleCentralizer.toProd : 𝓜(𝕜, A) → (A →L[𝕜] A) × (A →L[𝕜] A)) :=
+  AddMonoidHomClass.continuous_of_bound toProdHom 1 fun m => by
+    rw [one_mul, norm_def]
 
 /-- The inclusion of `A` into its multiplier algebra sends `0` to `0`. -/
 @[simp, norm_cast]
@@ -172,6 +188,51 @@ theorem coe_inj {a b : A} : (a : 𝓜(𝕜, A)) = b ↔ a = b :=
   coe_injective.eq_iff
 
 end FaithfulMulOpposite
+
+section UnitalEquiv
+
+variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [NormedRing A] [NormedAlgebra 𝕜 A]
+
+/-- In a unital algebra, every multiplier is the image of its left centralizer evaluated at
+`1`. -/
+@[simp]
+theorem coe_fst_one (m : 𝓜(𝕜, A)) : ((m.fst 1 : A) : 𝓜(𝕜, A)) = m := by
+  rw [← mul_coe_eq_coe_fst, coe_one, mul_one]
+
+variable [StarRing 𝕜] [StarRing A] [StarModule 𝕜 A] [NormedStarGroup A]
+
+variable (𝕜 A) in
+/-- A unital normed star algebra is star-isomorphic to its multiplier algebra through the
+canonical inclusion; the inverse evaluates the left centralizer at `1`. -/
+noncomputable def coeStarAlgEquiv : A ≃⋆ₐ[𝕜] 𝓜(𝕜, A) where
+  __ := (coeHom : A →⋆ₙₐ[𝕜] 𝓜(𝕜, A))
+  invFun m := m.fst 1
+  left_inv a := by simp
+  right_inv := coe_fst_one
+
+@[simp]
+theorem coeStarAlgEquiv_apply (a : A) : coeStarAlgEquiv 𝕜 A a = (a : 𝓜(𝕜, A)) :=
+  (rfl)
+
+@[simp]
+theorem coeStarAlgEquiv_symm_apply (m : 𝓜(𝕜, A)) : (coeStarAlgEquiv 𝕜 A).symm m = m.fst 1 :=
+  (rfl)
+
+/-- The star isomorphism `coeStarAlgEquiv`, as a nonunital star homomorphism, is the canonical
+inclusion `coeHom`. -/
+@[simp]
+theorem coeStarAlgEquiv_toNonUnitalStarAlgHom :
+    (coeStarAlgEquiv 𝕜 A).toNonUnitalStarAlgHom = coeHom :=
+  NonUnitalStarAlgHom.ext fun _ ↦ rfl
+
+/-- The inverse of `coeStarAlgEquiv` undoes the canonical inclusion `coeHom`. -/
+@[simp]
+theorem coeStarAlgEquiv_symm_comp_coeHom :
+    (coeStarAlgEquiv 𝕜 A).symm.toNonUnitalStarAlgHom.comp coeHom =
+      NonUnitalStarAlgHom.id 𝕜 A :=
+  NonUnitalStarAlgHom.ext fun a ↦ by simp
+
+end UnitalEquiv
 
 section Faithful
 
@@ -397,6 +458,34 @@ theorem norm_coe_snd_of_tendsto_mul_right [l.NeBot] (h1 : ∀ᶠ e in l, ‖e‖
       calc ‖e * a‖ = ‖(a : 𝓜(𝕜, A)).snd e‖ := by simp
         _ ≤ ‖(a : 𝓜(𝕜, A)).snd‖ * ‖e‖ := (a : 𝓜(𝕜, A)).snd.le_opNorm e
         _ ≤ ‖(a : 𝓜(𝕜, A)).snd‖ := mul_le_of_le_one_right (norm_nonneg _) he
+
+/-- If `A` has a left approximate unit bounded by `C` and `L : A → E →L[𝕜] E` is a norm-bounded
+multiplicative map with point-continuous orbits and dense essential subspace in a complete normed
+space `E`, then for every multiplier `m : 𝓜(𝕜, A)` the operators `L (m.fst e)` converge strongly
+along `l` to a bounded operator `T` satisfying `T * L a = L (m.fst a)` for all `a : A`. -/
+theorem exists_clm_tendsto_fst {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [CompleteSpace E] [l.NeBot] {K : ℝ} (hC : ∀ᶠ e in l, ‖e‖ ≤ C)
+    (hl : ∀ a, Tendsto (· * a) l (𝓝 a)) {L : A → E →L[𝕜] E}
+    (hL_cont : ∀ x, Continuous fun a => L a x) (hL_mul : ∀ a b, L (a * b) = L a * L b)
+    (hL_norm : ∀ a, ‖L a‖ ≤ K * ‖a‖)
+    (hL_dense : Dense (Submodule.span 𝕜 (⋃ a, Set.range (L a)) : Set E)) (m : 𝓜(𝕜, A)) :
+    ∃ T : E →L[𝕜] E, (∀ a, T * L a = L (m.fst a)) ∧
+      ∀ x, Tendsto (fun e => L (m.fst e) x) l (𝓝 (T x)) := by
+  have := TauCeti.faithfulSMul_mulOpposite_of_tendsto_mul_right hl
+  have happ (a : A) (x : E) :
+      Tendsto (fun e => L (m.fst e) (L a x)) l (𝓝 (L (m.fst a) x)) :=
+    (((hL_cont x).comp m.fst.continuous).tendsto a |>.comp (hl a)).congr fun e => by
+      simp [Function.comp_apply, fst_mul, hL_mul, mul_apply_eq_comp]
+  have hbound : ∀ᶠ e in l, ‖L (m.fst e)‖ ≤ max K 0 * (‖m‖ * C) :=
+    hC.mono fun e he => (hL_norm _).trans <| (mul_le_mul_of_nonneg_right (le_max_left K 0)
+      (norm_nonneg _)).trans <| mul_le_mul_of_nonneg_left
+        ((m.fst.le_opNorm e).trans (mul_le_mul (norm_fst_le m) he (norm_nonneg e) (norm_nonneg m)))
+        (le_max_right K 0)
+  obtain ⟨T, hT⟩ := ContinuousLinearMap.exists_tendsto_apply_of_dense_span hL_dense hbound
+    fun _ hx => let ⟨a, x, hax⟩ := Set.mem_iUnion.1 hx
+      hax ▸ ⟨L (m.fst a) x, happ a x⟩
+  exact ⟨T, fun a => ContinuousLinearMap.ext fun x =>
+    tendsto_nhds_unique (hT (L a x)) (happ a x), hT⟩
 
 end Norm
 

@@ -92,32 +92,19 @@ private theorem exists_continuous_eqOn_preciseRepresentative (hp : 2 < p) {s : �
     (hs i).continuousOn_preciseRepresentative hp
   have hg_ae (i : Fin A.n) : A.coord i s =ᵐ[volume.restrict (A.image i)] g i :=
     (hs i).memLpLoc.ae_eq_preciseRepresentative Fact.out
-  -- The chart transitions and the base points of the overlaps.
-  have hsymm (i i' : Fin A.n) {y : ℂ} (hy : y ∈ A.overlap i i') :
-      (A.chart i').symm y ∈ A.dom i ∩ A.dom i' := by
-    obtain ⟨x, hx, rfl⟩ := A.mem_overlap.1 hy
-    rwa [(A.chart i').left_inv (A.dom_subset_chart_source i' hx.2)]
-  have htrans (i i' : Fin A.n) : ContinuousOn (A.transition i i') (A.overlap i i') :=
-    (A.differentiableOn_transition i i').continuousOn
   -- The representatives satisfy the cocycle relation at every point of every overlap.
   have hcompat (i i' : Fin A.n) : EqOn (g i')
       (fun y ↦ (A.triv i).coordChangeL ℝ (A.triv i') ((A.chart i').symm y)
         (g i (A.transition i i' y))) (A.overlap i i') := by
     refine Measure.eqOn_open_of_ae_eq (μ := volume) ?_ (A.isOpen_overlap i i')
-      ((hg_cont i').mono (A.overlap_subset_image i i')) ?_
-    · filter_upwards [ae_restrict_of_ae_restrict_of_subset (A.overlap_subset_image i i')
+      ((hg_cont i').mono (A.overlap_subset_image i i'))
+      (A.continuousOn_coordChange_transition (hg_cont i))
+    filter_upwards [ae_restrict_of_ae_restrict_of_subset (A.overlap_subset_image i i')
         (hg_ae i'), A.sectionChartData.aeTransition_iff.1 (A.aeTransition_sectionChartData volume)
           (i' := i') (hg_ae i),
         ae_restrict_mem (A.isOpen_overlap i i').measurableSet] with y h' h hy
-      rw [A.sectionChartData_transition_of_mem hy] at h
-      rw [← h', ← h, A.coord_eq_coordChange s hy]
-    · have hbase : MapsTo (A.chart i').symm (A.overlap i i')
-          ((A.triv i).baseSet ∩ (A.triv i').baseSet) := fun y hy ↦
-        ⟨A.dom_subset_baseSet i (hsymm i i' hy).1, A.dom_subset_baseSet i' (hsymm i i' hy).2⟩
-      exact ((continuousOn_coordChange ℝ (A.triv i) (A.triv i')).comp
-        ((A.continuousOn_chart_symm i').mono (A.overlap_subset_image i i')) hbase).clm_apply
-        ((hg_cont i).comp (htrans i i') fun y hy ↦
-          A.overlap_subset_image i' i (A.transition_mem_overlap hy))
+    rw [A.sectionChartData_transition_of_mem hy] at h
+    rw [← h', ← h, A.coord_eq_coordChange s hy]
   exact A.exists_continuous_coord_eqOn hg_cont hcompat
 
 /-- **Morrey's embedding for Sobolev sections: continuous representatives.** For `2 < p ≤ ∞`,

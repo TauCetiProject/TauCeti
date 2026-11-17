@@ -19,7 +19,8 @@ smooth `f` is a smooth function on the torus (`UnitAddTorus.periodize_mem_smooth
 
 When the support of `f` lies in a set `S` that meets none of its translates by nonzero integer
 vectors, for instance a set of diameter less than one
-(`UnitAddTorus.eq_zero_of_add_mem_of_diam_lt_one`), at most one translate is nonzero at
+(`UnitAddTorus.eq_zero_of_add_mem_of_diam_lt_one`) such as a closed ball of radius less than
+`1 / 2` (`UnitAddTorus.eq_zero_of_add_mem_closedBall`), at most one translate is nonzero at
 each point. Then the periodization agrees with `f` on `S`
 (`UnitAddTorus.periodize_coe_of_mem`), and its `C^N` norms are bounded by those of `f`
 (`UnitAddTorus.derivBound_periodize`). Periodization takes tensor products
@@ -162,6 +163,15 @@ theorem eq_zero_of_add_mem_of_diam_lt_one {S : Set (d → ℝ)} (hb : Bornology.
   rw [Pi.zero_apply, ← Int.abs_lt_one_iff, ← Int.cast_lt (R := ℝ), Int.cast_abs, Int.cast_one]
   exact ((Real.norm_eq_abs _).symm.trans_le (norm_le_pi_norm (fun i ↦ (ℓ i : ℝ)) i)).trans_lt
     (h.trans_lt hS)
+
+/-- A closed ball of radius less than `1 / 2`, in the sup norm of `d → ℝ`, meets none of its
+translates by nonzero integer vectors. -/
+theorem eq_zero_of_add_mem_closedBall {c : d → ℝ} {r : ℝ} (hr : r < 1 / 2) {x : d → ℝ}
+    (hx : x ∈ Metric.closedBall c r) {ℓ : d → ℤ}
+    (hxℓ : x + (fun i ↦ (ℓ i : ℝ)) ∈ Metric.closedBall c r) : ℓ = 0 :=
+  eq_zero_of_add_mem_of_diam_lt_one Metric.isBounded_closedBall
+    ((Metric.diam_closedBall (Metric.nonempty_closedBall.1 ⟨x, hx⟩)).trans_lt (by linarith))
+    hx hxℓ
 
 /-- If the support of a smooth compactly supported `f` lies in a set meeting none of its nonzero
 integer translates, the derivatives of the periodization of `f` are bounded by those of `f`. -/
