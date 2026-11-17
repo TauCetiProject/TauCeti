@@ -167,6 +167,13 @@ theorem cycleOccupation_def (κ : Kernel α α) [IsMarkovKernel κ] (x : α) :
         ((markovChainLaw (Measure.dirac x) κ).restrict
           {w | (n : WithTop ℕ) < hittingAfter (fun k w => w k) {x} 1 w}).map fun w => w n := (rfl)
 
+/-- The cycle occupation measure at any state of a Markov kernel is s-finite, as a countable sum
+of pushforwards of restricted probability laws. -/
+instance instSFiniteCycleOccupation (κ : Kernel α α) [IsMarkovKernel κ] (x : α) :
+    SFinite (κ.cycleOccupation x) := by
+  rw [cycleOccupation_def]
+  infer_instance
+
 /-- Congruence in the kernel argument of `Kernel.cycleOccupation`. -/
 theorem cycleOccupation_congr {κ η : Kernel α α} [IsMarkovKernel κ] [IsMarkovKernel η]
     (h : κ = η) (x : α) :
