@@ -50,6 +50,8 @@ the total differential and its compatibility with cyclic cochains uses bilinear 
   cochains into column zero, and the resulting cochain map.
 * `TauCeti.cyclicTotalHomologyMk`: the class of a total cocycle in the cohomology of the total
   complex.
+* `TauCeti.cyclicTotalCochainsMapRows`, `TauCeti.cyclicTotalHomologyMapRows`: rowwise maps on
+  total cochains and on `H^m(Tot)`.
 
 ## Main results
 
@@ -933,5 +935,85 @@ theorem homologyMap_cyclicCochainComplexToTotal_mk {m : ℕ} (φ : cyclicCocycle
     (by simp [cyclicCochainComplexToTotal_f_apply])).symm
 
 end CohomologyClasses
+
+/-! ### Rowwise maps on the total cyclic bicomplex -/
+
+section MapRows
+section Additive
+variable {R A B M N : Type*} [CommSemiring R] [AddCommMonoid A] [Module R A] [AddCommMonoid B]
+  [Module R B] [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+  (g : ∀ q : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin (q + 1) ↦ A) M →ₗ[R]
+    MultilinearMap (RingHom.id R) (fun _ : Fin (q + 1) ↦ B) N)
+
+/-- Apply a rowwise family of `R`-linear maps to total cochains of the cyclic bicomplex. -/
+def cyclicTotalCochainsMapRows (m : ℕ) :
+    cyclicTotalCochains R A M m →ₗ[R] cyclicTotalCochains R B N m :=
+  (LinearMap.pi fun q : ℕ ↦ g q ∘ₗ LinearMap.proj q).restrict fun _ hx ↦
+    mem_cyclicTotalCochains_iff.2 fun q hq ↦ by simp [mem_cyclicTotalCochains_iff.1 hx q hq]
+/-- Row `q` of `cyclicTotalCochainsMapRows g m x` is `g q (x.1 q)`. -/
+@[simp] theorem coe_cyclicTotalCochainsMapRows_apply {m : ℕ} (x : cyclicTotalCochains R A M m)
+    (q : ℕ) : (cyclicTotalCochainsMapRows g m x).1 q = g q (x.1 q) := (rfl)
+end Additive
+
+section Differential
+variable {R A B M N : Type*} [CommSemiring R] [NonUnitalNonAssocSemiring A] [Module R A]
+  [IsScalarTower R A A] [SMulCommClass R A A] [NonUnitalNonAssocSemiring B] [Module R B]
+  [IsScalarTower R B B] [SMulCommClass R B B] [AddCommGroup M] [Module R M] [AddCommGroup N]
+  [Module R N] (g : ∀ q : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin (q + 1) ↦ A) M →ₗ[R]
+    MultilinearMap (RingHom.id R) (fun _ : Fin (q + 1) ↦ B) N)
+  (hh : ∀ p q φ, g q (cyclicBicomplexHorizontal R A M p q φ) =
+    cyclicBicomplexHorizontal R B N p q (g q φ))
+  (hv : ∀ p q φ, g (q + 1) (cyclicBicomplexVertical R A M p q φ) =
+    cyclicBicomplexVertical R B N p q (g q φ))
+include hh hv
+
+/-- A rowwise family commuting with horizontal and vertical differentials commutes with `D`. -/
+theorem cyclicTotalDifferential_cyclicTotalCochainsMapRows {m : ℕ}
+    (x : cyclicTotalCochains R A M m) :
+    cyclicTotalDifferential R B N m (cyclicTotalCochainsMapRows g m x) =
+      cyclicTotalCochainsMapRows g (m + 1) (cyclicTotalDifferential R A M m x) := by
+  refine Subtype.ext (funext fun q ↦ ?_); cases q <;> simp [map_add, hh, hv]
+/-- A rowwise cochain map maps total cocycles to total cocycles. -/
+theorem cyclicTotalCochainsMapRows_mem_ker {m : ℕ} {x : cyclicTotalCochains R A M m}
+    (hx : x ∈ LinearMap.ker (cyclicTotalDifferential R A M m)) :
+    cyclicTotalCochainsMapRows g m x ∈ LinearMap.ker (cyclicTotalDifferential R B N m) := by
+  rw [LinearMap.mem_ker] at hx ⊢
+  rw [cyclicTotalDifferential_cyclicTotalCochainsMapRows g hh hv, hx, map_zero]
+end Differential
+
+section Homology
+variable {R A B M N : Type*} [CommRing R] [NonUnitalSemiring A] [Module R A]
+  [IsScalarTower R A A] [SMulCommClass R A A] [NonUnitalSemiring B] [Module R B]
+  [IsScalarTower R B B] [SMulCommClass R B B] [AddCommGroup M] [Module R M] [AddCommGroup N]
+  [Module R N] (g : ∀ q : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin (q + 1) ↦ A) M →ₗ[R]
+    MultilinearMap (RingHom.id R) (fun _ : Fin (q + 1) ↦ B) N)
+  (hh : ∀ p q φ, g q (cyclicBicomplexHorizontal R A M p q φ) =
+    cyclicBicomplexHorizontal R B N p q (g q φ))
+  (hv : ∀ p q φ, g (q + 1) (cyclicBicomplexVertical R A M p q φ) =
+    cyclicBicomplexVertical R B N p q (g q φ))
+include g hh hv
+
+/-- Induced `R`-linear map on `Hᵐ(Tot)` from a rowwise family commuting with both differentials. -/
+def cyclicTotalHomologyMapRows (m : ℕ) :
+    (cyclicTotalComplex R A M).homology m →ₗ[R] (cyclicTotalComplex R B N).homology m :=
+  LinearMap.liftOfSurjective (M := LinearMap.ker (cyclicTotalDifferential R A M m))
+    (cyclicTotalHomologyMk_surjective (R := R) (A := A) (M := M) m)
+    ⟨cyclicTotalHomologyMk R B N m ∘ₗ (cyclicTotalCochainsMapRows g m).restrict
+        (fun _ ↦ cyclicTotalCochainsMapRows_mem_ker g hh hv), fun x hx ↦ LinearMap.mem_ker.2 <| by
+      cases m with
+      | zero => obtain rfl := (cyclicTotalHomologyMk_zero_eq_zero_iff x).1 hx; simp
+      | succ n =>
+        obtain ⟨w, hw⟩ := (cyclicTotalHomologyMk_succ_eq_zero_iff x).1 hx
+        exact (cyclicTotalHomologyMk_succ_eq_zero_iff _).2 ⟨cyclicTotalCochainsMapRows g n w,
+          by rw [cyclicTotalDifferential_cyclicTotalCochainsMapRows g hh hv, hw]; rfl⟩⟩
+/-- `cyclicTotalHomologyMapRows` sends `[x]` to the class of `cyclicTotalCochainsMapRows g m x`. -/
+@[simp] theorem cyclicTotalHomologyMapRows_cyclicTotalHomologyMk {m : ℕ}
+    (x : LinearMap.ker (cyclicTotalDifferential R A M m)) :
+    cyclicTotalHomologyMapRows g hh hv m (cyclicTotalHomologyMk R A M m x) =
+      cyclicTotalHomologyMk R B N m
+        ⟨cyclicTotalCochainsMapRows g m x.1, cyclicTotalCochainsMapRows_mem_ker g hh hv x.2⟩ :=
+  LinearMap.equivOfSurjective_apply _ _
+end Homology
+end MapRows
 
 end TauCeti
