@@ -123,16 +123,16 @@ theorem isSmoothEmbedding_subtypeVal [FiniteDimensional ℝ E] [LieGroup I ∞ G
   exact ⟨d.contMDiff_subtypeVal.isImmersion_of_injective_mfderiv (by simp)
     d.injective_mfderiv_subtypeVal, Topology.IsEmbedding.subtypeVal⟩
 
-/-- An embedded Lie subgroup acts smoothly on the ambient Lie group by left multiplication. -/
-theorem contMDiffSMul [LieGroup I ∞ G] (d : EmbeddedLieSubgroupData I K E') :
+/-- An embedded Lie subgroup acts smoothly on the ambient group by left multiplication. -/
+theorem contMDiffSMul [ContMDiffMul I ∞ G] (d : EmbeddedLieSubgroupData I K E') :
     let _ := d.chartedSpace
     ContMDiffSMul 𝓘(ℝ, E') I ∞ K G := by
   let _ := d.chartedSpace
   exact MulAction.contMDiffSMul_compHom (f := K.subtype) d.contMDiff_subtypeVal
 
-/-- On an embedded Lie subgroup, the map `k ↦ g k` into the ambient Lie group is
+/-- On an embedded Lie subgroup, the map `k ↦ g k` into the ambient group is
 differentiable. -/
-theorem mdifferentiableAt_mul_left_subtypeVal [LieGroup I ∞ G]
+theorem mdifferentiableAt_mul_left_subtypeVal [ContMDiffMul I ∞ G]
     (d : EmbeddedLieSubgroupData I K E') (g : G) (k : K) :
     let _ := d.chartedSpace
     MDifferentiableAt 𝓘(ℝ, E') I (fun x : K ↦ g * x) k := by
@@ -142,7 +142,7 @@ theorem mdifferentiableAt_mul_left_subtypeVal [LieGroup I ∞ G]
 
 /-- On an embedded Lie subgroup, the differential of `k ↦ g k` is injective: left translation by
 `g⁻¹` turns it into the differential of the inclusion. -/
-theorem injective_mfderiv_mul_left_subtypeVal [LieGroup I ∞ G]
+theorem injective_mfderiv_mul_left_subtypeVal [ContMDiffMul I ∞ G]
     (d : EmbeddedLieSubgroupData I K E') (g : G) (k : K) :
     let _ := d.chartedSpace
     Function.Injective (mfderiv 𝓘(ℝ, E') I (fun x : K ↦ g * x) k) := by
