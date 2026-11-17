@@ -242,6 +242,18 @@ theorem realImage_graphUnitaryFrame (A : GLSymplectic n ℝ) :
   rw [graphUnitaryFrame, realImage_mul, realImage_mul, realImage_realOrthonormalize,
     coe_graphFrameUnit]
 
+open scoped MatrixOrder Matrix.Norms.L2Operator in
+/-- The unitary graph frame is the straightened graph frame `T Γ(A)` followed by the real
+change of basis `Re (Γ(A)ᴴ Γ(A)) ^ (-1/2)`. -/
+theorem coe_graphUnitaryFrame (A : GLSymplectic n ℝ) :
+    (graphUnitaryFrame A : Matrix (n ⊕ n) (n ⊕ n) ℂ) =
+      diagonalStraightening n * graphFrame ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) *
+        (((graphFrame ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ))ᴴ *
+          graphFrame ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)).map Complex.re ^
+            (-(1 / 2) : ℝ)).map ((↑) : ℝ → ℂ) := by
+  change diagonalStraightening n * (realOrthonormalize (graphFrameUnit A) : Matrix _ _ ℂ) = _
+  rw [coe_realOrthonormalize, coe_graphFrameUnit, Matrix.mul_assoc]
+
 /-- The unitary graph frame depends continuously on the symplectic matrix. -/
 theorem continuous_graphUnitaryFrame : Continuous (graphUnitaryFrame (n := n)) :=
   Continuous.subtype_mk (continuous_const.mul (Units.continuous_val.comp

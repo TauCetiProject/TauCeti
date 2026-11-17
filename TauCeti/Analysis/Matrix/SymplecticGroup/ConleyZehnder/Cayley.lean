@@ -9,15 +9,16 @@ public import TauCeti.Analysis.Matrix.SymplecticGroup.ConleyZehnder
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Maslov.Localization
 public import TauCeti.Analysis.Matrix.HermitianSignature.Continuity
 public import TauCeti.Analysis.Normed.Algebra.OneSubExpNegDivSelf.Integral
+public import TauCeti.LinearAlgebra.SymplecticGroup.Cayley
 import TauCeti.Analysis.Normed.Algebra.Basic
 import TauCeti.Topology.Instances.Matrix
 
 /-!
 # The Conley–Zehnder index through the symplectic Cayley transform
 
-For a real `2n × 2n` matrix `A` with `1 + A` invertible, the **symplectic Cayley transform** is
-`C(A) = J (1 - A) (1 + A)⁻¹` (`Matrix.symplecticCayley`). When `A` is symplectic, `C(A)` is
-symmetric (`Matrix.isHermitian_symplecticCayley`), and it describes the graph of `A` relative to
+For a symplectic matrix `A` with `1 + A` invertible, the symmetric **symplectic Cayley
+transform** `C(A) = J (1 - A) (1 + A)⁻¹` (`Matrix.symplecticCayley`, in
+`TauCeti.LinearAlgebra.SymplecticGroup.Cayley`) describes the graph of `A` relative to
 the diagonal: in the coordinates of `TauCeti.Analysis.Matrix.SymplecticGroup.ConleyZehnder`, the
 diagonal straightening `T` carries the graph `Γ(A)` to the graph `{x + i C(A) x}` of `C(A)`
 (`TauCeti.diagonalStraightening_mul_graphFrame`). Hence the Souriau map of the unitary graph
@@ -47,14 +48,8 @@ equals `1` at `a = 0`. Along `Y = t J S` this gives
 symmetric matrices `b(t)`, `t ∈ [0, 1]`, are nonsingular, so their signature is constant, and
 `b(0) = S / 2`. The neighbourhood of `0` is not made explicit.
 
-## Main definitions
-
-* `Matrix.symplecticCayley`: the symplectic Cayley transform `J (1 - A) (1 + A)⁻¹`.
-
 ## Main results
 
-* `Matrix.isHermitian_symplecticCayley`: the symplectic Cayley transform of a symplectic matrix
-  is symmetric.
 * `TauCeti.GLSymplectic.coe_souriau_graphUnitaryFrame_eq_cayley`: the straightened graph of a
   symplectic matrix away from `-1` is the graph of its symplectic Cayley transform.
 * `TauCeti.GLSymplectic.conleyZehnderIndex_eq_neg_signature_symplecticCayley_sub_div_two`: the
@@ -76,53 +71,6 @@ public section
 
 open Matrix Matrix.GeneralLinearGroup Matrix.UnitaryGroup Complex
 open scoped unitInterval
-
-namespace Matrix
-
-variable {n : Type*} [Fintype n] [DecidableEq n]
-
-/-- The **symplectic Cayley transform** `J (1 - A) (1 + A)⁻¹` of a real matrix `A`. -/
-noncomputable def symplecticCayley (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ :=
-  J n ℝ * (1 - A) * (1 + A)⁻¹
-
-/-- The definition of the symplectic Cayley transform. -/
-theorem symplecticCayley_def (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
-    symplecticCayley A = J n ℝ * (1 - A) * (1 + A)⁻¹ :=
-  (rfl)
-
-/-- The symplectic Cayley transform of the identity vanishes. -/
-@[simp]
-theorem symplecticCayley_one : symplecticCayley (1 : Matrix (n ⊕ n) (n ⊕ n) ℝ) = 0 := by
-  simp [symplecticCayley]
-
-/-- The characterization `C(A) (1 + A) = J (1 - A)` of the symplectic Cayley transform, when
-`1 + A` is invertible. -/
-theorem symplecticCayley_mul_one_add {A : Matrix (n ⊕ n) (n ⊕ n) ℝ} (h : IsUnit (1 + A).det) :
-    symplecticCayley A * (1 + A) = J n ℝ * (1 - A) := by
-  rw [symplecticCayley, Matrix.nonsing_inv_mul_cancel_right _ _ h]
-
-/-- **The symplectic Cayley transform of a symplectic matrix is symmetric.** If `Aᵀ J A = J` and
-`1 + A` is invertible, then `J (1 - A) (1 + A)⁻¹` is symmetric: both `-(1 - A)ᵀ J (1 + A)` and
-`(1 + A)ᵀ J (1 - A)` equal `Aᵀ J - J A`. -/
-theorem isHermitian_symplecticCayley {A : Matrix (n ⊕ n) (n ⊕ n) ℝ}
-    (hA : A ∈ symplecticGroup n ℝ) (h : IsUnit (1 + A).det) :
-    (symplecticCayley A).IsHermitian := by
-  have hP : IsUnit (1 + A)ᵀ.det := by rwa [det_transpose]
-  have hkey : -((1 - A)ᵀ * J n ℝ) * (1 + A) = (1 + A)ᵀ * (J n ℝ * (1 - A)) := by
-    have hJ := SymplecticGroup.mem_iff'.1 hA
-    simp only [transpose_sub, transpose_add, transpose_one, Matrix.sub_mul, Matrix.add_mul,
-      Matrix.mul_sub, Matrix.mul_add, Matrix.one_mul, Matrix.mul_one, Matrix.neg_mul,
-      ← Matrix.mul_assoc, hJ]
-    abel
-  rw [IsHermitian, conjTranspose_eq_transpose_of_trivial, symplecticCayley, transpose_mul,
-    transpose_mul, J_transpose, transpose_nonsing_inv, Matrix.mul_neg]
-  calc ((1 + A)ᵀ)⁻¹ * -((1 - A)ᵀ * J n ℝ)
-      = ((1 + A)ᵀ)⁻¹ * (-((1 - A)ᵀ * J n ℝ) * (1 + A)) * (1 + A)⁻¹ := by
-        rw [Matrix.mul_assoc _ _ (1 + A)⁻¹, Matrix.mul_nonsing_inv_cancel_right _ _ h]
-    _ = J n ℝ * (1 - A) * (1 + A)⁻¹ := by
-        rw [hkey, ← Matrix.mul_assoc, Matrix.nonsing_inv_mul _ hP, Matrix.one_mul]
-
-end Matrix
 
 namespace TauCeti
 
@@ -148,6 +96,7 @@ private theorem diagonalStraightening_mul_graphFrame_eq_mul {A : Matrix (n ⊕ n
 
 namespace GLSymplectic
 
+open scoped MatrixOrder Matrix.Norms.L2Operator in
 /-- **The straightened graph of a symplectic matrix away from `-1`.** If `1 + A` is invertible,
 the straightened graph `T Γ(A)` is the graph `{x + i C x}` of the symplectic Cayley transform
 `C = J (1 - A) (1 + A)⁻¹`, so the Souriau map of its unitary frames is the Cayley transform
@@ -159,42 +108,12 @@ theorem coe_souriau_graphUnitaryFrame_eq_cayley {A : GLSymplectic n ℝ}
   set M : Matrix (n ⊕ n) (n ⊕ n) ℝ := ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)
   have hC : (symplecticCayley M).IsHermitian :=
     isHermitian_symplecticCayley (mem_iff_mem_symplecticGroup.1 A.2) h
-  have hCc := hC.map_ofReal
-  set X : GL (n ⊕ n) ℂ :=
-    ((Matrix.isUnit_iff_isUnit_det _).2 hCc.isUnit_det_one_add_I_smul).unit with hXdef
-  have hX : (X : Matrix (n ⊕ n) (n ⊕ n) ℂ) =
-      1 + Complex.I • (symplecticCayley M).map ((↑) : ℝ → ℂ) := by
-    rw [hXdef, IsUnit.unit_spec]
-  have hXim : ((X : Matrix (n ⊕ n) (n ⊕ n) ℂ)ᴴ * X).map Complex.im = 0 := by
-    have hXH : (1 + Complex.I • (symplecticCayley M).map ((↑) : ℝ → ℂ))ᴴ =
-        1 - Complex.I • (symplecticCayley M).map ((↑) : ℝ → ℂ) := by
-      rw [conjTranspose_add, conjTranspose_one, conjTranspose_smul, hCc.eq, star_def, conj_I,
-        neg_smul, sub_eq_add_neg]
-    have hsq : (symplecticCayley M * symplecticCayley M).map ((↑) : ℝ → ℂ) =
-        (symplecticCayley M).map (↑) * (symplecticCayley M).map (↑) :=
-      Matrix.map_mul (f := Complex.ofRealHom)
-    have hprod : (1 - Complex.I • (symplecticCayley M).map ((↑) : ℝ → ℂ)) *
-        (1 + Complex.I • (symplecticCayley M).map ((↑) : ℝ → ℂ)) =
-        (1 + symplecticCayley M * symplecticCayley M).map ((↑) : ℝ → ℂ) := by
-      rw [Matrix.map_add _ ofReal_add, hsq, Matrix.map_one _ ofReal_zero ofReal_one]
-      simp only [Matrix.sub_mul, Matrix.mul_add, Matrix.one_mul, Matrix.mul_one, Matrix.smul_mul,
-        Matrix.mul_smul, smul_sub, smul_smul, I_mul_I, neg_one_smul]
-      abel
-    rw [hX, hXH, hprod]
-    ext i j
-    simp
-  -- The real orthonormalization of `1 + i C` is a unitary frame `(1 + i C) N` with `N` real.
-  let V : unitaryGroup (n ⊕ n) ℂ :=
-    ⟨realOrthonormalize X, realOrthonormalize_mem_unitaryGroup hXim⟩
-  have hunit : IsUnit ((√2 : ℝ)⁻¹ • (1 + M)) := by
-    rw [Matrix.isUnit_iff_isUnit_det, det_smul]
-    exact ((IsUnit.mk0 _ (inv_ne_zero (Real.sqrt_pos.2 two_pos).ne')).pow _).mul h
-  have hreal : (graphUnitaryFrame A : Matrix (n ⊕ n) (n ⊕ n) ℂ).realImage =
-      (V : Matrix (n ⊕ n) (n ⊕ n) ℂ).realImage := by
-    rw [realImage_graphUnitaryFrame, diagonalStraightening_mul_graphFrame_eq_mul h,
-      realImage_mul_map_ofReal _ hunit, realImage_realOrthonormalize, hX]
-  rw [souriau_eq_of_realImage_eq hreal]
-  exact souriau_eq_cayley_of_coe_eq_mul hC ((coe_realOrthonormalize X).trans (by rw [hX]))
+  set N : Matrix (n ⊕ n) (n ⊕ n) ℝ :=
+    ((graphFrame M)ᴴ * graphFrame M).map Complex.re ^ (-(1 / 2) : ℝ)
+  refine souriau_eq_cayley_of_coe_eq_mul hC (M := (√2 : ℝ)⁻¹ • (1 + M) * N) ?_
+  rw [coe_graphUnitaryFrame, diagonalStraightening_mul_graphFrame_eq_mul h, Matrix.mul_assoc]
+  exact congrArg ((1 + Complex.I • (symplecticCayley M).map ((↑) : ℝ → ℂ)) * ·)
+    (Matrix.map_mul (f := Complex.ofRealHom)).symm
 
 /-- **The Conley–Zehnder index away from `-1`.** For a path `γ` of symplectic matrices none of
 which has the eigenvalue `-1`, the Conley–Zehnder index is minus half the change of the signature
@@ -209,6 +128,7 @@ theorem conleyZehnderIndex_eq_neg_signature_symplecticCayley_sub_div_two {A B : 
   set m : I → Matrix (n ⊕ n) (n ⊕ n) ℝ := fun t => ((γ t : GL (n ⊕ n) ℝ) : _)
   have hmc : Continuous m := Units.continuous_val.comp (continuous_subtype_val.comp γ.continuous)
   have hc : Continuous fun t => symplecticCayley (m t) := by
+    simp only [symplecticCayley_def]
     refine continuous_iff_continuousAt.2 fun t => ?_
     have hinv : ContinuousAt (fun t => (1 + m t)⁻¹) t :=
       ((continuous_const.add hmc).continuousAt).matrix_inv (hγ t).ne_zero
@@ -265,7 +185,7 @@ private theorem symplecticCayley_exp_smul (S : Matrix (n ⊕ n) (n ⊕ n) ℝ) (
     rw [neg_neg] at h
     rw [← h, ← Matrix.mul_assoc, Matrix.mul_neg, Matrix.mul_smul, ← Matrix.mul_assoc, J_squared]
     simp
-  rw [symplecticCayley, hJ, smul_mul_assoc]
+  rw [symplecticCayley_def, hJ, smul_mul_assoc]
 
 /-- If `S` is symmetric and nonsingular, and `1 + exp (t J S)` and `Φ(-t J S)` are invertible for
 `t ∈ [0, 1]`, then the symplectic Cayley transform of `exp (J S)` has the signature of `S`. Along
@@ -282,9 +202,10 @@ private theorem signature_symplecticCayley_exp {S : Matrix (n ⊕ n) (n ⊕ n) �
     S * oneSubExpNegDivSelf ℝ (-((t : ℝ) • (J n ℝ * S))) *
       (1 + NormedSpace.exp ((t : ℝ) • (J n ℝ * S)))⁻¹ with hb
   have hb₀ : b 0 = (2 : ℝ)⁻¹ • S := by
-    have hinv : ((2 : ℝ) • (1 : Matrix (n ⊕ n) (n ⊕ n) ℝ))⁻¹ = (2 : ℝ)⁻¹ • 1 :=
-      Matrix.inv_eq_left_inv (by rw [smul_mul_smul, Matrix.mul_one, inv_mul_cancel₀ two_ne_zero,
-        one_smul])
+    have hinv : ((2 : ℝ) • (1 : Matrix (n ⊕ n) (n ⊕ n) ℝ))⁻¹ = (2 : ℝ)⁻¹ • 1 := by
+      have := invertibleOfNonzero (two_ne_zero' ℝ)
+      rw [Matrix.inv_smul (A := (1 : Matrix (n ⊕ n) (n ⊕ n) ℝ)) _ (by simp), inv_one,
+        invOf_eq_inv]
     simp only [hb, Set.Icc.coe_zero, zero_smul, neg_zero, oneSubExpNegDivSelf_zero,
       NormedSpace.exp_zero,
       Matrix.mul_one, ← two_smul ℝ (1 : Matrix (n ⊕ n) (n ⊕ n) ℝ), hinv, Matrix.mul_smul]
