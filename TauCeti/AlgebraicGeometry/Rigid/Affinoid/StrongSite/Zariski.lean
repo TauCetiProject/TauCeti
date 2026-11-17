@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicGeometry.Rigid.Affinoid.StrongSite.Basic
 public import TauCeti.AlgebraicGeometry.Rigid.Affinoid.Subdomain
-public import TauCeti.RingTheory.Spectrum.Maximal.Topology
 
 import TauCeti.RingTheory.Affinoid.Subdomain.Cover
 
@@ -22,10 +21,9 @@ Following [BGR, §9.1.4, Corollaries 7 and 8], the strong classical affinoid G-t
   `D(f)` strong-admissible open (`StrongAdmissibleOpen.basicOpen`).
 * Every Zariski open and Zariski open cover of `Sp A` is strong-admissible
   (`StrongAdmissibleOpen.zariskiContinuousMap`).
-* Every idempotent `e ∈ A` defines a clopen affinoid subdomain `D(e)` represented by
-  `A ⧸ Ideal.span {1 - e}` (`IsAffinoidSubdomainMap.quotient_one_sub_of_isIdempotentElem`), and
-  `Sp A` is Zariski connected iff `A` is nontrivial with only trivial idempotents
-  (`IsAffinoidAlgebra.connectedSpace_maximalSpectrum_iff_idempotent`).
+* Every idempotent `e ∈ A` yields a strong-admissible clopen cover `{D(e), D(1 - e)}` of `Sp A` by
+  the disjoint affinoid subdomains `AffinoidSubdomain.ofIsIdempotentElem`
+  (`StrongAdmissibleOpen.covers_ofIsIdempotentElem`).
 
 ## References
 
@@ -40,73 +38,6 @@ open TopologicalSpace
 namespace TauCeti
 
 universe u
-
-section Idempotent
-
-variable {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
-  {A : Type u} [CommRing A] [Algebra K A]
-
-/-- For an idempotent `e ∈ A`, the quotient map `A →ₐ[K] A ⧸ Ideal.span {1 - e}` represents the
-clopen Zariski subset `MaximalSpectrum.basicOpen e` as an affinoid subdomain. -/
-theorem IsAffinoidSubdomainMap.quotient_one_sub_of_isIdempotentElem
-    (hA : IsAffinoidAlgebra K A) {e : A} (he : IsIdempotentElem e) :
-    IsAffinoidSubdomainMap (Ideal.Quotient.mkₐ K (Ideal.span {1 - e}))
-      (MaximalSpectrum.basicOpen e : Set (MaximalSpectrum A)) where
-  isAffinoidAlgebra := hA.quotient _
-  range_maximalSpectrumComap_subset := by
-    rintro _ ⟨y, rfl⟩
-    rw [SetLike.mem_coe, MaximalSpectrum.mem_basicOpen,
-      IsAffinoidAlgebra.maximalSpectrumComap_asIdeal]
-    intro he_mem
-    have h1_sub : 1 - e ∈ Ideal.comap (Ideal.Quotient.mkₐ K (Ideal.span {1 - e})) y.asIdeal := by
-      rw [Ideal.mem_comap, Ideal.Quotient.mkₐ_eq_mk,
-        Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.subset_span (Set.mem_singleton _))]
-      exact y.asIdeal.zero_mem
-    exact ((hA.quotient _).comap_isMaximal _ y.asIdeal).ne_top
-      ((Ideal.eq_top_iff_one _).mpr (by simpa only [add_sub_cancel] using add_mem he_mem h1_sub))
-  existsUnique_algHom {C} _ _ hC ψ hψ := by
-    have hunit : IsUnit (ψ e) := by
-      by_contra hne
-      obtain ⟨m, hm, hle⟩ := Ideal.exists_le_maximal _ (mt Ideal.span_singleton_eq_top.mp hne)
-      have hx : hC.maximalSpectrumComap ψ ⟨m, hm⟩ ∈ MaximalSpectrum.basicOpen e :=
-        hψ ⟨⟨m, hm⟩, rfl⟩
-      rw [MaximalSpectrum.mem_basicOpen, IsAffinoidAlgebra.maximalSpectrumComap_asIdeal,
-        Ideal.mem_comap] at hx
-      exact hx (hle (Ideal.subset_span (Set.mem_singleton _)))
-    have hzero : ψ (1 - e) = 0 := hunit.mul_right_eq_zero.mp <| by
-      rw [← map_mul, mul_sub, mul_one, he.eq, sub_self, map_zero]
-    have hker : ∀ a ∈ Ideal.span ({1 - e} : Set A), ψ a = 0 := by
-      rintro a ha; obtain ⟨b, rfl⟩ := Ideal.mem_span_singleton.mp ha; simp [hzero]
-    exact ⟨Ideal.Quotient.liftₐ _ ψ hker, Ideal.Quotient.liftₐ_comp _ ψ hker,
-      fun χ hχ ↦ Ideal.Quotient.algHom_ext K (hχ.trans (Ideal.Quotient.liftₐ_comp _ ψ hker).symm)⟩
-
-/-- The clopen affinoid subdomain `D(e)` associated to an idempotent `e ∈ A`. -/
-def AffinoidSubdomain.ofIsIdempotentElem (hA : IsAffinoidAlgebra K A) {e : A}
-    (he : IsIdempotentElem e) : AffinoidSubdomain K A :=
-  AffinoidSubdomain.ofMap (IsAffinoidSubdomainMap.quotient_one_sub_of_isIdempotentElem hA he)
-
-@[simp]
-theorem AffinoidSubdomain.coe_ofIsIdempotentElem (hA : IsAffinoidAlgebra K A) {e : A}
-    (he : IsIdempotentElem e) :
-    (AffinoidSubdomain.ofIsIdempotentElem hA he : Set (MaximalSpectrum A)) =
-      MaximalSpectrum.basicOpen e :=
-  AffinoidSubdomain.coe_ofMap _
-
-/-- **Zariski connectedness criterion for affinoid spectra.** The classical spectrum `Sp A` of an
-affinoid algebra is connected in the Zariski topology if and only if `A` is nontrivial and its only
-idempotents are `0` and `1`. -/
-theorem IsAffinoidAlgebra.connectedSpace_maximalSpectrum_iff_idempotent
-    (hA : IsAffinoidAlgebra K A) :
-    ConnectedSpace (MaximalSpectrum A) ↔
-      Nontrivial A ∧ ∀ e : A, IsIdempotentElem e → e = 0 ∨ e = 1 := by
-  have := hA.isJacobsonRing
-  rcases subsingleton_or_nontrivial A with hsub | hnt
-  · have : IsEmpty (MaximalSpectrum A) := ⟨fun x ↦ x.isMaximal.ne_top (Subsingleton.elim _ _)⟩
-    exact ⟨fun h ↦ False.elim (IsEmpty.false h.toNonempty.some),
-      fun ⟨hnt, _⟩ ↦ False.elim ((not_nontrivial_iff_subsingleton.mpr hsub) hnt)⟩
-  · simp [hnt, MaximalSpectrum.connectedSpace_iff_idempotent (R := A)]
-
-end Idempotent
 
 section Zariski
 

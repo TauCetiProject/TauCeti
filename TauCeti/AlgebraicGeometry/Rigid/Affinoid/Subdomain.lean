@@ -12,12 +12,14 @@ public import TauCeti.RingTheory.Affinoid.Subdomain.Rational.Basic
 import TauCeti.RingTheory.Affinoid.QuotientNorm
 
 /-!
-# Rational and Laurent affinoid subdomains
+# Idempotent, rational, and Laurent affinoid subdomains
 
-This file wraps the algebraic rational-domain and Laurent-domain representation theorems as
-constructors of `TauCeti.AffinoidSubdomain`, requiring only algebraic affinoidness (with no chosen
-norm on the ambient algebra):
+This file wraps the algebraic idempotent, rational-domain, and Laurent-domain representation
+theorems as constructors of `TauCeti.AffinoidSubdomain`, requiring only algebraic affinoidness
+(with no chosen norm on the ambient algebra):
 
+* `TauCeti.AffinoidSubdomain.ofIsIdempotentElem`: clopen Zariski domains `D(e)` for idempotents
+  `e ∈ A` (over any complete ultrametric field `K`).
 * `TauCeti.AffinoidSubdomain.rational`: rational domains `R(f/g)` when `(g, f₁, …, fₘ) = ⊤`.
 * `TauCeti.AffinoidSubdomain.laurent`: Laurent domains `L(f, g⁻¹)`.
 * `TauCeti.AffinoidSubdomain.eqOne`: unit-sphere loci `{x ∈ Sp A : |f(x)| = 1}`.
@@ -35,6 +37,27 @@ public section
 namespace TauCeti.AffinoidSubdomain
 
 universe u
+
+section Idempotent
+
+variable {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
+  {A : Type u} [CommRing A] [Algebra K A]
+
+/-- The clopen affinoid subdomain `D(e)` associated to an idempotent `e ∈ A`. -/
+def ofIsIdempotentElem (hA : IsAffinoidAlgebra K A) {e : A}
+    (he : IsIdempotentElem e) : AffinoidSubdomain K A :=
+  ofMap (IsAffinoidSubdomainMap.quotient_one_sub_of_isIdempotentElem hA he)
+
+@[simp]
+theorem coe_ofIsIdempotentElem (hA : IsAffinoidAlgebra K A) {e : A}
+    (he : IsIdempotentElem e) :
+    (ofIsIdempotentElem hA he : Set (MaximalSpectrum A)) =
+      MaximalSpectrum.basicOpen e :=
+  coe_ofMap _
+
+end Idempotent
+
+section RationalLaurent
 
 variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
   {A : Type u} [CommRing A] [Algebra K A]
@@ -91,5 +114,7 @@ theorem coe_closedSublevelPow (hA : IsAffinoidAlgebra K A) (f : A) {ϖ : K} (hϖ
     (closedSublevelPow hA f hϖ n : Set (MaximalSpectrum A)) =
       {x | pointNorm K x f ^ n ≤ ‖ϖ‖} := by
   ext x; simp [closedSublevelPow, hϖ, x.pointNorm_pow]
+
+end RationalLaurent
 
 end TauCeti.AffinoidSubdomain
