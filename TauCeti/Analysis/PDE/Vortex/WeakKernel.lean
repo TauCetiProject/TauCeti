@@ -125,6 +125,12 @@ theorem isClosed_weakGaugeFixedKernel (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
       (weakGaugeFixedKernel x : Set (Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ))) :=
   Submodule.isClosed_orthogonal _
 
+-- `weakGaugeFixedKernel` is an unexposed semireducible `def` in a `module`, so downstream
+-- modules cannot unfold it and typeclass synthesis cannot reach
+-- `Submodule.instOrthogonalCompleteSpace`. Because `CompleteSpace` is `Prop`-valued, this
+-- instance is definitionally equal to `Submodule.instOrthogonalCompleteSpace` once unfolded
+-- (no diamond) and makes `HasOrthogonalProjection` / `orthogonalProjectionOnto` available.
+/-- The weak kernel of `L_x` is a complete subspace of `L²(ℂ; ℝ⁴)`. -/
 instance (x : ℂ → EuclideanSpace ℝ (Fin 4)) : CompleteSpace (weakGaugeFixedKernel x) :=
   (isClosed_weakGaugeFixedKernel x).completeSpace_coe
 
@@ -264,8 +270,7 @@ private theorem norm_integral_inner_gaugeFixedAdjoint_sub_le (hx : Continuous x)
   refine norm_integral_inner_gaugeFixedAdjoint_le hx hu hK hM (hη₁.sub hη₂) hsupp
     (fun z hz ↦ by simpa [dist_eq_norm] using (hdist z hz).1)
     (fun z hz ↦ ?_)
-  rw [show fderiv ℝ (η₁ - η₂) z = fderiv ℝ η₁ z - fderiv ℝ η₂ z from
-    fderiv_sub (hη₁.differentiable one_ne_zero z) (hη₂.differentiable one_ne_zero z)]
+  rw [fderiv_sub (hη₁.differentiable one_ne_zero z) (hη₂.differentiable one_ne_zero z)]
   simpa [dist_eq_norm] using (hdist z hz).2
 
 /-- **Testing against `C¹` fields.** At a continuous field `x`, a square-integrable field `u`
