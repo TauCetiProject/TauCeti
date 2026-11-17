@@ -68,6 +68,14 @@ theorem floerOperator_def (ω : SymplecticForm V)
         J z (u z) (fderiv ℝ u z stdComplexLineImag - ω.hamiltonianVectorField (Kt z) (u z)) :=
   (rfl)
 
+/-- When the data at `z + w` are those at `z`, the Floer operator of the translate
+`y ↦ u(y + w)` at `z` is the Floer operator of `u` at `z + w`. -/
+theorem floerOperator_comp_add_right (ω : SymplecticForm V)
+    {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ} (u : ℝ × ℝ → V) {w z : ℝ × ℝ}
+    (hJ : J (z + w) = J z) (hKs : Ks (z + w) = Ks z) (hKt : Kt (z + w) = Kt z) :
+    ω.floerOperator J Ks Kt (fun y ↦ u (y + w)) z = ω.floerOperator J Ks Kt u (z + w) := by
+  simp only [floerOperator_def, fderiv_comp_add_right, hJ, hKs, hKt]
+
 /-- For almost complex coefficients, vanishing is complex linearity of `du - X_K`. -/
 theorem floerOperator_eq_zero_iff (ω : SymplecticForm V)
     (J : ℝ × ℝ → V → AlmostComplexStructure V) (Ks Kt : ℝ × ℝ → V → ℝ)

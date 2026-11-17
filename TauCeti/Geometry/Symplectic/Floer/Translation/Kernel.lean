@@ -65,14 +65,6 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
   {ω : SymplecticForm V} {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ}
   {u : ℝ × ℝ → V} {v : ℝ × ℝ}
 
-/-- When the data at `z + c v` are those at `z`, the Floer operator of the translate
-`y ↦ u(y + c v)` at `z` is the Floer operator of `u` at `z + c v`. -/
-private theorem floerOperator_comp_add_smul {z : ℝ × ℝ} {c : ℝ} (hJv : J (z + c • v) = J z)
-    (hKsv : Ks (z + c • v) = Ks z) (hKtv : Kt (z + c • v) = Kt z) :
-    ω.floerOperator J Ks Kt (fun y ↦ u (y + c • v)) z =
-      ω.floerOperator J Ks Kt u (z + c • v) := by
-  simp only [floerOperator_def, fderiv_comp_add_right, hJv, hKsv, hKtv]
-
 /-- **Infinitesimal translations solve the linearized Floer equation.** Let `u` be `C²` at `z`
 and solve the Floer equation `∂ₛu - X_{K_s}(u) + J(u)(∂ₜu - X_{K_t}(u)) = 0` near `z`, where `J`
 and the Hamiltonians `K_s`, `K_t` are invariant under the translations of `z` by small multiples
@@ -104,7 +96,7 @@ theorem floerLinearization_fderiv_apply_eq_zero {z : ℝ × ℝ}
     have ht : Tendsto (fun c : ℝ ↦ z + c • v) (𝓝 0) (𝓝 z) := by
       simpa using ((continuous_id.smul continuous_const).const_add z).tendsto (0 : ℝ)
     filter_upwards [ht.eventually hF, hJv, hKsv, hKtv] with c hc hJc hKsc hKtc
-    rw [floerOperator_comp_add_smul hJc hKsc hKtc, hc, Pi.zero_apply]
+    rw [ω.floerOperator_comp_add_right u hJc hKsc hKtc, hc, Pi.zero_apply]
   -- The direction field of the family is `du(v)` near `z`: at each point it is the derivative
   -- of `c ↦ u(y + c v)` at `0`, which is by definition the line derivative `lineDeriv ℝ u y v`.
   have hdir : (fun y ↦ fderiv ℝ (fun c : ℝ ↦ u (y + c • v)) 0 1) =ᶠ[𝓝 z]
