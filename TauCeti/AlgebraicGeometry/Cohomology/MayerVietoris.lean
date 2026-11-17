@@ -86,8 +86,8 @@ noncomputable abbrev mayerVietorisδ (n₀ n₁ : ℕ) (h : n₀ + 1 = n₁) :
 variable {M} in
 /-- The maps on cohomology induced by a morphism of sheaves commute with the Mayer-Vietoris
 connecting maps. -/
-lemma cohomologyOnMap_mayerVietorisδ {N : X.Modules} (f : M ⟶ N) (n₀ n₁ : ℕ)
-    (h : n₀ + 1 = n₁) (x : cohomologyOn M n₀ (U ⊓ V)) :
+lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnMap_mayerVietorisδ {N : X.Modules}
+    (f : M ⟶ N) (n₀ n₁ : ℕ) (h : n₀ + 1 = n₁) (x : cohomologyOn M n₀ (U ⊓ V)) :
     Scheme.Modules.cohomologyOnMap f n₁ (U ⊔ V) (mayerVietorisδ M U V n₀ n₁ h x) =
       mayerVietorisδ N U V n₀ n₁ h (Scheme.Modules.cohomologyOnMap f n₀ (U ⊓ V) x) :=
   ConcreteCategory.congr_hom ((Opens.mayerVietorisSquare U V).δ_naturality_right _
