@@ -24,7 +24,8 @@ on symbols of order `m` by
 
 (`TauCeti.Symbol.act`): positions transform by `ρ g` and frequencies, being covectors, by the
 inverse transpose of `ρ g`. The two actions are compatible with quantization: `Op(g • a)` is the
-conjugate `g ∘ Op(a) ∘ g⁻¹` (`TauCeti.Symbol.quantizeSchwartzValue_act`). A symbol is *invariant*
+conjugate `g ∘ Op(a) ∘ g⁻¹` (`TauCeti.Symbol.quantizeSchwartzValue_act`), and each `g` acts
+`ℂ`-linearly (`TauCeti.Symbol.act_add`, `TauCeti.Symbol.act_smul`). A symbol is *invariant*
 if `g • a = a` for every `g` (`TauCeti.Symbol.IsInvariant`); its quantization then commutes with
 the action of `G` (`TauCeti.Symbol.IsInvariant.quantizeSchwartzValue_schwartzRep`).
 
@@ -33,8 +34,9 @@ finite measure `μ` on `G`, `TauCeti.Symbol.average` integrates the orbit `g ↦
 It is again a symbol of order `m`: the jets of the orbit are jointly continuous
 (`TauCeti.Symbol.continuous_iteratedFDeriv_coefficient_act`), and the symbol estimates of `g • a`
 on a compact set of positions hold with constants independent of `g`
-(`TauCeti.Symbol.exists_norm_mixedDeriv_coefficient_act_le`). For a left-invariant probability
-measure, such as the normalized Haar measure,
+(`TauCeti.Symbol.exists_norm_mixedDeriv_coefficient_act_le`). The average depends `ℂ`-linearly
+on `a` (`TauCeti.Symbol.average_add`, `TauCeti.Symbol.average_smul`). For a left-invariant
+probability measure, such as the normalized Haar measure,
 
 * the average is invariant (`TauCeti.Symbol.isInvariant_average`);
 * an invariant symbol is its own average, so averaging is a projection onto the invariant symbols
@@ -130,6 +132,23 @@ theorem act_mul (g h : G) (a : Symbol n V W m) :
   simp only [coefficient_act, ContinuousLinearEquiv.adjointEquiv_apply, hadj]
   simp [ContinuousLinearEquiv.mul_eq_trans]
 
+@[simp]
+theorem act_zero (g : G) : act ρ σV σW g (0 : Symbol n V W m) = 0 := by
+  ext p v
+  simp
+
+@[simp]
+theorem act_add (g : G) (a b : Symbol n V W m) :
+    act ρ σV σW g (a + b) = act ρ σV σW g a + act ρ σV σW g b := by
+  ext p v
+  simp [coefficient_add]
+
+@[simp]
+theorem act_smul (g : G) (c : ℂ) (a : Symbol n V W m) :
+    act ρ σV σW g (c • a) = c • act ρ σV σW g a := by
+  ext p v
+  simp [coefficient_smul]
+
 /-- A symbol is invariant under `G` if `g • a = a` for every `g`. Its quantization then commutes
 with the action of `G` on Schwartz functions
 (`TauCeti.Symbol.IsInvariant.quantizeSchwartzValue_schwartzRep`). -/
@@ -188,22 +207,6 @@ variable [TopologicalSpace G] {ρ σV σW}
   (hρ : Continuous fun g ↦ (ρ g : CoordinateSpace n →L[ℝ] CoordinateSpace n))
   (hσV : Continuous fun g ↦ (σV g : V →L[ℂ] V)) (hσW : Continuous fun g ↦ (σW g : W →L[ℂ] W))
 
-/-- The inverses of a representation continuous in the operator norm depend continuously on the
-group element. -/
-private theorem continuous_symm [IsTopologicalGroup G] {𝕜 M : Type*} [NontriviallyNormedField 𝕜]
-    [NormedAddCommGroup M] [NormedSpace 𝕜 M] {π : G →* (M ≃L[𝕜] M)}
-    (hπ : Continuous fun g ↦ (π g : M →L[𝕜] M)) :
-    Continuous fun g ↦ ((π g).symm : M →L[𝕜] M) := by
-  simp_rw [← ContinuousLinearEquiv.inv_def, ← map_inv]
-  exact hπ.comp continuous_inv
-
-include hρ in
-/-- The frequency maps `(ρ g)ᵀ` depend continuously on `g`. -/
-private theorem continuous_adjointEquiv :
-    Continuous fun g ↦ ((ρ g).adjointEquiv : CoordinateSpace n →L[ℝ] CoordinateSpace n) := by
-  simp_rw [ContinuousLinearEquiv.coe_adjointEquiv]
-  exact ContinuousLinearMap.adjoint.continuous.comp hρ
-
 include hρ hσV hσW in
 /-- The jets of the orbit `g ↦ g • a` of a symbol are jointly continuous in `g` and in the
 position and frequency. -/
@@ -235,9 +238,10 @@ theorem continuous_iteratedFDeriv_coefficient_act [IsTopologicalGroup G] (a : Sy
     simp [F, c₃]
   simp_rw [hcoef]
   exact (hF.continuous_iteratedFDeriv_prod_right k (mod_cast le_top)).comp
-    ((((hσW.prodMk (continuous_symm hσV)).prodMk
+    ((((hσW.prodMk (MonoidHom.continuous_symm hσV)).prodMk
       ((ContinuousLinearMap.prodMapL ℝ _ _ _ _).continuous.comp
-        ((continuous_symm hρ).prodMk (continuous_adjointEquiv hρ)))).comp
+        ((MonoidHom.continuous_symm hρ).prodMk
+          (ContinuousLinearEquiv.continuous_adjointEquiv hρ)))).comp
       continuous_fst).prodMk continuous_snd)
 
 variable [IsTopologicalGroup G] [CompactSpace G]
@@ -254,11 +258,12 @@ theorem exists_norm_mixedDeriv_coefficient_act_le (a : Symbol n V W m)
   -- Bound the representations uniformly over the compact group.
   obtain ⟨c, hc⟩ := isCompact_univ.exists_bound_of_continuousOn hρ.continuousOn
   obtain ⟨bW, hbW⟩ := isCompact_univ.exists_bound_of_continuousOn hσW.continuousOn
-  obtain ⟨bV, hbV⟩ := isCompact_univ.exists_bound_of_continuousOn (continuous_symm hσV).continuousOn
+  obtain ⟨bV, hbV⟩ :=
+    isCompact_univ.exists_bound_of_continuousOn (MonoidHom.continuous_symm hσV).continuousOn
   -- The positions `(ρ g)⁻¹ x`, `x ∈ K`, lie in a compact set `K'`.
   set K' := (fun q : G × CoordinateSpace n ↦ (ρ q.1).symm q.2) '' (Set.univ ×ˢ K)
   have hK' : IsCompact K' := (isCompact_univ.prod hK).image
-    (((continuous_symm hρ).comp continuous_fst).clm_apply continuous_snd)
+    (((MonoidHom.continuous_symm hρ).comp continuous_fst).clm_apply continuous_snd)
   choose C _ hC using fun α' β' ↦ a.exists_bound K' hK' α' β'
   obtain ⟨B, hB0, hB⟩ := exists_norm_mixedDeriv_comp_prodMap_le a.contDiff_coefficient c C α β
   refine ⟨max bW 0 * max bV 0 * B, by positivity, fun g x hx ξ ↦ ?_⟩
@@ -319,6 +324,40 @@ def average (a : Symbol n V W m) : Symbol n V W m :=
 theorem coefficient_average (a : Symbol n V W m) (p : CoordinateSpace n × CoordinateSpace n) :
     (average μ hρ hσV hσW a).coefficient p = ∫ g, (act ρ σV σW g a).coefficient p ∂μ := by
   simp [average]
+
+include hρ hσV hσW in
+private theorem integrable_coefficient_act (a : Symbol n V W m)
+    (p : CoordinateSpace n × CoordinateSpace n) :
+    Integrable (fun g ↦ (act ρ σV σW g a).coefficient p) μ := by
+  -- The coefficient at `p` is the zeroth jet at `p`, which is continuous in `g`.
+  have h := ((continuous_iteratedFDeriv_coefficient_act hρ hσV hσW a 0).comp
+    (continuous_id.prodMk (continuous_const (y := p)))).eval
+      (continuous_const (y := (0 : Fin 0 → CoordinateSpace n × CoordinateSpace n)))
+  simp only [Function.comp_def, iteratedFDeriv_zero_apply] at h
+  exact h.integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace _)
+
+@[simp]
+theorem average_zero : average μ hρ hσV hσW (0 : Symbol n V W m) = 0 := by
+  ext1
+  funext p
+  simp
+
+@[simp]
+theorem average_add (a b : Symbol n V W m) :
+    average μ hρ hσV hσW (a + b) = average μ hρ hσV hσW a + average μ hρ hσV hσW b := by
+  ext1
+  funext p
+  simp only [coefficient_average, act_add, coefficient_add, Pi.add_apply]
+  exact MeasureTheory.integral_add (integrable_coefficient_act μ hρ hσV hσW a p)
+    (integrable_coefficient_act μ hρ hσV hσW b p)
+
+@[simp]
+theorem average_smul (c : ℂ) (a : Symbol n V W m) :
+    average μ hρ hσV hσW (c • a) = c • average μ hρ hσV hσW a := by
+  ext1
+  funext p
+  simp only [coefficient_average, act_smul, coefficient_smul, Pi.smul_apply,
+    MeasureTheory.integral_smul]
 
 /-- **The average of the conjugates.** The quantization of the average of `a` is the average
 `∫ g ∘ Op(a) ∘ g⁻¹ dμ(g)` of the conjugates of `Op(a)`. -/
