@@ -8,8 +8,9 @@ module
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Cubical.Basic
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Based.HomotopyClass
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Based.Retraction
-public import TauCeti.AlgebraicTopology.Singular.Cubical.Coefficients
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Basic
+
+import TauCeti.AlgebraicTopology.Singular.Cubical.Coefficients
 
 /-!
 # The cubical Hurewicz isomorphism

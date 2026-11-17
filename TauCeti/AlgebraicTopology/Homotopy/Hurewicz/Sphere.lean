@@ -82,29 +82,6 @@ universe w
 
 namespace TauCeti
 
-/-- The north pole of the universe-lifted sphere `TopCat.diskBoundary.{w} (n + 1)`. -/
-def diskBoundaryNorthPole (n : ℕ) : TopCat.diskBoundary.{w} (n + 1) :=
-  ULift.up (sphereNorthPole n)
-
-/-- Projecting `TauCeti.diskBoundaryNorthPole` down to `Type 0` gives `TauCeti.sphereNorthPole`. -/
-@[simp]
-theorem diskBoundaryNorthPole_down (n : ℕ) :
-    (diskBoundaryNorthPole.{w} n).down = sphereNorthPole n :=
-  (rfl)
-
-/-- **The tautological generalized loop of the universe-lifted sphere**
-`TopCat.diskBoundary.{w} (n + 1)`, obtained by lifting `TauCeti.sphereGenLoop n`. -/
-def diskBoundaryGenLoop (n : ℕ) :
-    Ω^ (Fin n) (TopCat.diskBoundary.{w} (n + 1)) (diskBoundaryNorthPole.{w} n) :=
-  GenLoop.map ⟨ULift.up, continuous_uliftUp⟩ rfl (sphereGenLoop n)
-
-/-- Evaluating `TauCeti.diskBoundaryGenLoop` and projecting down recovers `sphereGenLoop`. -/
-@[simp]
-theorem diskBoundaryGenLoop_apply_down (n : ℕ) (y : Fin n → I) :
-    (diskBoundaryGenLoop.{w} n y).down = sphereGenLoop n y := by
-  rw [diskBoundaryGenLoop]
-  exact congrArg ULift.down (DFunLike.congr_fun (GenLoop.coe_map _ _ _) y)
-
 private lemma diskBoundary_ext_iff {m : ℕ} {x y : TopCat.diskBoundary.{w} m} :
     x = y ↔ x.down = y.down :=
   ULift.ext_iff
@@ -430,33 +407,6 @@ namespace GenLoop
 
 open TauCeti
 
-section DiskBoundary
-
-variable {n : ℕ} [NeZero n] {X : Type w} [TopologicalSpace X] {x : X}
-
-/-- The attaching map `GenLoop.diskBoundaryMap p` sends the north pole of `∂𝔻 (n + 1)` to the base
-point `x`. -/
-@[simp]
-theorem diskBoundaryMap_diskBoundaryNorthPole (p : Ω^ (Fin n) X x) :
-    diskBoundaryMap (X := TopCat.of X) p (diskBoundaryNorthPole.{w} n) = x := by
-  rw [diskBoundaryMap_apply, diskBoundaryNorthPole_down, toSphere_sphereNorthPole]
-
-/-- Every generalized loop factors through `TauCeti.diskBoundaryGenLoop` via
-`GenLoop.diskBoundaryMap`. -/
-@[simp]
-theorem map_diskBoundaryMap_diskBoundaryGenLoop (p : Ω^ (Fin n) X x) :
-    GenLoop.map (diskBoundaryMap (X := TopCat.of X) p).hom
-        (diskBoundaryMap_diskBoundaryNorthPole p) (diskBoundaryGenLoop.{w} n) = p := by
-  apply Subtype.ext
-  refine ContinuousMap.ext fun y ↦ ?_
-  rw [DFunLike.congr_fun (GenLoop.coe_map _ _ _) y, ContinuousMap.comp_apply, GenLoop.coe_coe]
-  exact (diskBoundaryMap_apply (X := TopCat.of X) p (diskBoundaryGenLoop.{w} n y)).trans
-    ((congrArg (toSphere p)
-      ((diskBoundaryGenLoop_apply_down.{w} n y).trans (sphereGenLoop_apply y))).trans
-      (toSphere_cubeToSphere p y))
-
-end DiskBoundary
-
 section Small
 
 variable {C : Type*} [Category C] [HasCoproducts.{0} C] [Abelian C] (R : C) {n : ℕ}
@@ -482,11 +432,11 @@ Hurewicz class of `p` is the image of `GenLoop.hurewicz R (diskBoundaryGenLoop (
 `(GenLoop.diskBoundaryMap p)_* : Hₙ₊₁(∂𝔻 (n + 2); R) ⟶ Hₙ₊₁(X; R)`. -/
 theorem hurewicz_eq_hurewicz_diskBoundaryGenLoop_comp (p : Ω^ (Fin (n + 1)) X x) :
     hurewicz R p = hurewicz R (diskBoundaryGenLoop.{w} (n + 1)) ≫
-      ((singularHomologyFunctor C (n + 1)).obj R).map (diskBoundaryMap (X := TopCat.of X) p) := by
-  have h := hurewicz_map R (diskBoundaryMap (X := TopCat.of X) p).hom
-    (diskBoundaryMap_diskBoundaryNorthPole p) (diskBoundaryGenLoop.{w} (n + 1))
-  rw [map_diskBoundaryMap_diskBoundaryGenLoop] at h
-  exact h
+      ((singularHomologyFunctor C (n + 1)).obj R).map (diskBoundaryMap (X := TopCat.of X) p) :=
+  (congrArg (hurewicz R) (map_diskBoundaryMap_diskBoundaryGenLoop (X := TopCat.of X) p)).symm.trans
+    (hurewicz_map R (diskBoundaryMap (X := TopCat.of X) p).hom
+      (diskBoundaryMap_diskBoundaryNorthPole (X := TopCat.of X) p)
+      (diskBoundaryGenLoop.{w} (n + 1)))
 
 /-- **A generalized loop that is a homeomorphism off the boundary has a generating Hurewicz class.**
 If the pointed map `GenLoop.toSphere p : Sⁿ⁺¹ → X` is bijective onto a Hausdorff space `X`, it is a
@@ -495,15 +445,9 @@ tautological loop. By `GenLoop.injective_toSphere_iff` and `GenLoop.surjective_t
 hypothesis says that `p` is surjective and identifies only points of the boundary of the cube. -/
 theorem isIso_hurewicz_of_bijective_toSphere [T2Space X] {p : Ω^ (Fin (n + 1)) X x}
     (hp : Function.Bijective (toSphere p)) : IsIso (hurewicz R p) := by
-  have : CompactSpace (TopCat.diskBoundary.{w} (n + 2)) :=
-    inferInstanceAs (CompactSpace (ULift.{w} (sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1)))
-  have hbij : Function.Bijective (diskBoundaryMap (X := TopCat.of X) p) :=
-    ⟨fun s t h ↦ ULift.ext (hp.1 ((diskBoundaryMap_apply (X := TopCat.of X) p s).symm.trans
-        (h.trans (diskBoundaryMap_apply (X := TopCat.of X) p t)))),
-      fun y ↦ let ⟨s, hs⟩ := hp.2 y; ⟨ULift.up s, (diskBoundaryMap_apply (X := TopCat.of X) p
-        (ULift.up s)).trans hs⟩⟩
   have : IsIso (diskBoundaryMap (X := TopCat.of X) p) :=
-    TopCat.isIso_of_bijective_of_isClosedMap _ hbij
+    TopCat.isIso_of_bijective_of_isClosedMap _
+      ((funext (diskBoundaryMap_apply (X := TopCat.of X) p)).symm ▸ hp.comp Equiv.ulift.bijective)
       (diskBoundaryMap (X := TopCat.of X) p).hom.continuous.isClosedMap
   rw [hurewicz_eq_hurewicz_diskBoundaryGenLoop_comp]
   infer_instance

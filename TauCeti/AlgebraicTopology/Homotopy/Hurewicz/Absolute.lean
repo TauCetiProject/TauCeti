@@ -253,11 +253,13 @@ private lemma singularHomologyUliftAddEquiv_symm_cubicalHurewicz_mk
   let ι : HomotopyGroup (Fin (n + 2)) (TopCat.diskBoundary.{u} (n + 3))
       (diskBoundaryNorthPole.{u} (n + 2)) := ⟦diskBoundaryGenLoop.{u} (n + 2)⟧
   have h := singularCubicalHomologyIso_inv_cubicalHurewiczHom_naturality (ULift.{u} ℤ) f₀
-    (GenLoop.diskBoundaryMap_diskBoundaryNorthPole p) (Additive.ofMul ι)
+    (GenLoop.diskBoundaryMap_diskBoundaryNorthPole (X := TopCat.of X) p) (Additive.ofMul ι)
   rw [cubicalHurewiczHom_apply, cubicalHurewiczHom_apply] at h
   have hp : (⟦p⟧ : HomotopyGroup (Fin (n + 2)) X x) =
-      HomotopyGroup.map f₀ (GenLoop.diskBoundaryMap_diskBoundaryNorthPole p) ι := by
-    rw [HomotopyGroup.map_mk, GenLoop.map_diskBoundaryMap_diskBoundaryGenLoop]
+      HomotopyGroup.map f₀ (GenLoop.diskBoundaryMap_diskBoundaryNorthPole (X := TopCat.of X) p) ι :=
+    (HomotopyGroup.map_mk f₀ _ _).symm ▸
+      (congrArg Quotient.mk''
+        (GenLoop.map_diskBoundaryMap_diskBoundaryGenLoop (X := TopCat.of X) p)).symm
   rw [hp]
   -- `TopCat.ofHom f₀` and `f` coincide by definition in `TopCat`.
   exact (congrArg ((TopCat.of X).singularHomologyUliftAddEquiv.{u, 0} ℤ (n + 2)).symm h.symm).trans
@@ -292,11 +294,7 @@ private lemma exists_hurewicz_diskBoundaryGenLoop_eq_units_smul (n : ℕ) :
   let h := hurewiczUliftIntHom (TopCat.diskBoundary.{u} (n + 3))
     (diskBoundaryNorthPole.{u} (n + 2)) (n + 1)
   obtain ⟨ε, hε⟩ := (h.comp c.symm.toAddMonoidHom).exists_eq_units_smul_of_map_eq
-    (he ▸ e.bijective) (x := c (Additive.ofMul ⟦ι⟧)) <| by
-    rw [AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom, AddEquiv.symm_apply_apply,
-      hurewiczUliftIntHom_apply]
-    exact congrArg (fun f ↦ ModuleCat.Hom.hom f (1 : ULift.{u} ℤ))
-      (hurewicz_mk (ModuleCat.of ℤ (ULift.{u} ℤ)) (n + 1) ι)
+    (he ▸ e.bijective) (x := c (Additive.ofMul ⟦ι⟧)) (by simp [h, g])
   exact ⟨ε, hε.trans (congrArg _ ((cubicalHurewiczSingularHomologyUliftAddEquiv_apply hS _).trans
     (congrArg _ (congrArg _ (cubicalHurewiczHom_apply (ULift.{u} ℤ) (n + 1) _)))))⟩
 
@@ -368,10 +366,8 @@ class `GenLoop.hurewicz`, evaluated at `1 : ULift.{u} ℤ`. -/
 theorem hurewiczUliftAddEquiv_ofMul_mk (hX : ∀ k < n + 2, Subsingleton (HomotopyGroup (Fin k) X x))
     (p : Ω^ (Fin (n + 2)) X x) :
     hurewiczUliftAddEquiv hX (Additive.ofMul ⟦p⟧) =
-      (GenLoop.hurewicz (ModuleCat.of ℤ (ULift.{u} ℤ)) p).hom 1 := by
-  rw [hurewiczUliftAddEquiv_apply, hurewiczHom_apply]
-  exact congrArg (fun f ↦ ModuleCat.Hom.hom f (1 : ULift.{u} ℤ))
-    (hurewicz_mk (ModuleCat.of ℤ (ULift.{u} ℤ)) (n + 1) p)
+      (GenLoop.hurewicz (ModuleCat.of ℤ (ULift.{u} ℤ)) p).hom 1 :=
+  (AddEquiv.ofBijective_apply _ _ _).trans (hurewiczUliftIntHom_mk p)
 
 /-- `HomotopyGroup.hurewiczUliftAddEquiv` is natural in based maps between `(n + 1)`-connected
 spaces in universe `u`. -/

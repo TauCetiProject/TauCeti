@@ -34,25 +34,10 @@ variable {R : Type v} [Ring R]
 `ULift.module`, along `ULift.up : R →+* ULift.{u} R` recovers `M` as an `R`-module. -/
 def restrictScalarsUliftIso (M : Type w) [AddCommGroup M] [Module R M] :
     (restrictScalars.{w} ((ULift.ringEquiv : ULift.{u} R ≃+* R).symm : R →+* ULift.{u} R)).obj
-      (of (ULift.{u} R) M) ≅ of R M where
-  -- Both objects have carrier `M` by definition, and the restricted `R`-action on `M` is
-  -- `(ULift.up r).down • m = r • m`. The `show` annotations select which `ModuleCat` carrier Lean
-  -- sees when elaborating `map_smul'`.
-  hom := ConcreteCategory.ofHom
-    { toFun := fun m ↦ (show M from m)
-      map_add' := fun _ _ ↦ rfl
-      map_smul' := fun r m ↦ by
-        rw [restrictScalars.smul_def]
-        rfl }
-  inv := ConcreteCategory.ofHom
-    { toFun := fun m ↦
-        (show (restrictScalars.{w}
-          ((ULift.ringEquiv : ULift.{u} R ≃+* R).symm : R →+* ULift.{u} R)).obj
-            (of (ULift.{u} R) M) from m)
-      map_add' := fun _ _ ↦ rfl
-      map_smul' := fun r m ↦ by
-        rw [RingHom.id_apply, restrictScalars.smul_def]
-        rfl }
+      (of (ULift.{u} R) M) ≅ of R M :=
+  LinearEquiv.toModuleIso
+    { __ := AddEquiv.refl M
+      map_smul' := fun _ _ ↦ rfl }
 
 /-- Evaluating the forward map of `ModuleCat.restrictScalarsUliftIso` is the identity on `M`. -/
 @[simp]

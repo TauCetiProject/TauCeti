@@ -301,6 +301,11 @@ instance t2Space_diskBoundary (n : ℕ) : T2Space (TopCat.diskBoundary.{u} n) :=
   -- Expose the carrier once here, so consumers need not unfold the `TopCat` wrapper.
   inferInstanceAs (T2Space (ULift.{u} (Metric.sphere (0 : EuclideanSpace ℝ (Fin n)) 1)))
 
+/-- A disk boundary is compact, as a lifted sphere in Euclidean space. -/
+instance compactSpace_diskBoundary (n : ℕ) : CompactSpace (TopCat.diskBoundary.{u} n) :=
+  -- Expose the carrier once here, so consumers need not unfold the `TopCat` wrapper.
+  inferInstanceAs (CompactSpace (ULift.{u} (Metric.sphere (0 : EuclideanSpace ℝ (Fin n)) 1)))
+
 /-- **A punctured boundary sphere is contractible**: removing a single point from
 `TopCat.diskBoundary n` leaves a contractible subspace, in every universe and every dimension. -/
 theorem contractibleSpace_diskBoundary_compl_singleton {n : ℕ}
