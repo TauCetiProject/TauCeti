@@ -7,14 +7,10 @@ module
 
 public import TauCeti.Analysis.Holder.Iterated
 public import Mathlib.Topology.Sets.Opens
-import Mathlib.Algebra.Group.Action.Pi
-import Mathlib.Algebra.Group.Pi.Basic
-import Mathlib.Analysis.Calculus.ContDiff.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Comp
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Calculus.UniformLimitsDeriv
 import TauCeti.Analysis.Holder.JetBounds
-import TauCeti.Topology.MetricSpace.Holder
 
 /-!
 # Bounded `C^{k,α}` spaces on open sets
@@ -295,6 +291,14 @@ instance instFunLike : FunLike (CkHolderOnSpace k α Ω F) Ω F where
 @[simp] theorem extendByZero_coe (f : CkHolderOnSpace k α Ω F) (x : Ω) : f.extendByZero x = f x :=
   Subtype.val_injective.extend_apply f.toFun (0 : E → F) x
 
+/-- The order-zero derivative field of `f` evaluates at any empty tuple to `f x`. -/
+theorem iteratedFDeriv_zero_apply (f : CkHolderOnSpace k α Ω F) (x : Ω) (m : Fin 0 → E) :
+    f.iteratedFDeriv 0 x m = f x := by
+  calc f.iteratedFDeriv 0 x m
+      = _root_.iteratedFDeriv ℝ 0 f.extendByZero x m :=
+        DFunLike.congr_fun (f.iteratedFDeriv_extendByZero 0 x).symm m
+    _ = f x := by rw [_root_.iteratedFDeriv_zero_apply, f.extendByZero_coe x]
+
 /-- Outside `Ω`, `f.extendByZero` vanishes. -/
 theorem extendByZero_of_notMem (f : CkHolderOnSpace k α Ω F) {x : E} (hx : x ∉ Ω) :
     f.extendByZero x = 0 :=
@@ -398,6 +402,19 @@ theorem nnHolderNorm_iteratedFDeriv_le (f : CkHolderOnSpace k α Ω F) :
   rw [norm_eq]
   exact le_add_of_nonneg_left (Finset.sum_nonneg fun _ _ ↦ norm_nonneg _)
 
+/-- If an ambient map `g : E → F` agrees with `f` on `Ω` and its `k`-th iterated derivative is
+`α`-Hölder on `Ω` with constant `K`, then the `α`-Hölder seminorm of `f.iteratedFDeriv (Fin.last k)`
+is at most `K`. -/
+theorem nnHolderNorm_iteratedFDeriv_le_of_holderOnWith {f : CkHolderOnSpace k α Ω F}
+    {g : E → F} (hg : ∀ x : Ω, g x = f x) {K : ℝ≥0}
+    (hK : HolderOnWith K α (_root_.iteratedFDeriv ℝ k g) (Ω : Set E)) :
+    nnHolderNorm α (f.iteratedFDeriv (Fin.last k) : Ω → E [×k]→L[ℝ] F) ≤ K := by
+  have hdom : (f.iteratedFDeriv (Fin.last k) : Ω → E [×k]→L[ℝ] F) =
+      (Ω : Set E).domRestrict (_root_.iteratedFDeriv ℝ k g) :=
+    funext fun x ↦ (f.iteratedFDeriv_of_eq hg (Fin.last k) x).symm
+  rw [hdom]
+  exact hK.holderWith.nnholderNorm_le
+
 /-- Upper bound `‖f‖ ≤ (k + 1) M + K` from uniform bounds `0 ≤ M` on all iterated derivatives up to
 order `k` on `Ω` and a `K`-Hölder bound on the `k`-th derivative on `Ω` of an ambient representative
 `g` agreeing with `f` on `Ω`. The hypothesis `0 ≤ M` handles the case `Ω = ⊥`. -/
@@ -413,11 +430,7 @@ theorem norm_le_of_norm_iteratedFDeriv_le_of_holderOnWith {f : CkHolderOnSpace k
             rw [← f.iteratedFDeriv_of_eq hg i x]
             exact hM i (Nat.lt_succ_iff.1 i.2) x x.2
       _ = (k + 1) * M := by simp
-  · have hdom : (f.iteratedFDeriv (Fin.last k) : Ω → E [×k]→L[ℝ] F) =
-        (Ω : Set E).domRestrict (_root_.iteratedFDeriv ℝ k g) :=
-      funext fun x ↦ (f.iteratedFDeriv_of_eq hg (Fin.last k) x).symm
-    rw [hdom]
-    exact_mod_cast hK.holderWith.nnholderNorm_le
+  · exact_mod_cast f.nnHolderNorm_iteratedFDeriv_le_of_holderOnWith hg hK
 
 /-- The `i`-th derivative field on `Ω` as a continuous linear map (bounded via
 `CkHolderOnSpace.norm_iteratedFDeriv_le`). -/
@@ -505,32 +518,43 @@ theorem norm_iteratedFDerivHolderL_le_one :
 
 /-- Coercion of `0` is the zero function on `Ω`. -/
 @[simp] theorem coe_zero : ⇑(0 : CkHolderOnSpace k α Ω F) = 0 := by
-  ext x; simp only [← toFun_eq_coe, toFun, iteratedFDeriv_zero, Pi.zero_apply, _root_.zero_apply]
-  rfl
+  ext x
+  simp only [← toFun_eq_coe, toFun, ContinuousMultilinearMap.curry0_apply, iteratedFDeriv_zero,
+    Pi.zero_apply, zero_apply]
 
 /-- Addition in `CkHolderOnSpace k α Ω F` is computed pointwise on `Ω`. -/
 @[simp] theorem coe_add (f g : CkHolderOnSpace k α Ω F) : ⇑(f + g) = f + g := by
-  ext x; simp only [← toFun_eq_coe, toFun, iteratedFDeriv_add, Pi.add_apply, _root_.add_apply]; rfl
+  ext x
+  simp only [← toFun_eq_coe, toFun, ContinuousMultilinearMap.curry0_apply, iteratedFDeriv_add,
+    Pi.add_apply, add_apply]
 
 /-- Negation in `CkHolderOnSpace k α Ω F` is computed pointwise on `Ω`. -/
 @[simp] theorem coe_neg (f : CkHolderOnSpace k α Ω F) : ⇑(-f) = -⇑f := by
-  ext x; simp only [← toFun_eq_coe, toFun, iteratedFDeriv_neg, Pi.neg_apply, _root_.neg_apply]; rfl
+  ext x
+  simp only [← toFun_eq_coe, toFun, ContinuousMultilinearMap.curry0_apply, iteratedFDeriv_neg,
+    Pi.neg_apply, neg_apply]
 
 /-- Subtraction in `CkHolderOnSpace k α Ω F` is computed pointwise on `Ω`. -/
 @[simp] theorem coe_sub (f g : CkHolderOnSpace k α Ω F) : ⇑(f - g) = f - g := by
-  ext x; simp only [← toFun_eq_coe, toFun, iteratedFDeriv_sub, Pi.sub_apply, _root_.sub_apply]; rfl
+  ext x
+  simp only [← toFun_eq_coe, toFun, ContinuousMultilinearMap.curry0_apply, iteratedFDeriv_sub,
+    Pi.sub_apply, sub_apply]
 
 /-- Scalar multiplication in `CkHolderOnSpace k α Ω F` is computed pointwise on `Ω`. -/
 @[simp] theorem coe_smul (c : ℝ) (f : CkHolderOnSpace k α Ω F) : ⇑(c • f) = c • ⇑f := by
-  ext x; simp only [← toFun_eq_coe, toFun, iteratedFDeriv_smul, Pi.smul_apply, _root_.smul_apply]
-  rfl
+  ext x
+  simp only [← toFun_eq_coe, toFun, ContinuousMultilinearMap.curry0_apply, iteratedFDeriv_smul,
+    Pi.smul_apply, smul_apply]
 
 /-- Every element of `CkHolderOnSpace k α Ω F` is continuous on `Ω`. -/
 theorem continuous (f : CkHolderOnSpace k α Ω F) : Continuous (f : Ω → F) := by
-  have heq : (f : Ω → F) = fun x ↦ (f.iteratedFDeriv ⟨0, k.succ_pos⟩ x).curry0 := (rfl)
+  have heq : (f : Ω → F) =
+      fun x ↦ continuousMultilinearCurryFin0 ℝ E F (f.iteratedFDeriv 0 x) :=
+    funext fun x ↦
+      ((continuousMultilinearCurryFin0_apply (f.iteratedFDeriv 0 x : E [×0]→L[ℝ] F)).trans
+        (f.iteratedFDeriv_zero_apply x 0)).symm
   rw [heq]
-  exact (continuousMultilinearCurryFin0 ℝ E F).continuous.comp
-    (f.iteratedFDeriv ⟨0, k.succ_pos⟩).continuous
+  exact (continuousMultilinearCurryFin0 ℝ E F).continuous.comp (f.iteratedFDeriv 0).continuous
 
 /-- Underlying bounded continuous function on `Ω` of an element of `CkHolderOnSpace k α Ω F`. -/
 def toBoundedContinuousFunction (f : CkHolderOnSpace k α Ω F) : Ω →ᵇ F :=
@@ -682,8 +706,7 @@ theorem ofContDiffOn_apply (g : E → F) (hg : ContDiffOn ℝ k g (Ω : Set E))
     (hbdd : ∀ i ≤ k, ∃ C, ∀ x ∈ Ω, ‖_root_.iteratedFDeriv ℝ i g x‖ ≤ C)
     (hholder : ∃ C, HolderOnWith C α (_root_.iteratedFDeriv ℝ k g) (Ω : Set E)) (x : Ω) :
     ofContDiffOn g hg hbdd hholder x = g x := by
-  have hcoe : ofContDiffOn g hg hbdd hholder x = (ofContDiffOn g hg hbdd hholder).toFun x := rfl
-  rw [hcoe, toFun, iteratedFDeriv, ofContDiffOn, toJet_mk, fieldL_jetOnOf,
+  rw [← toFun_eq_coe, toFun, iteratedFDeriv, ofContDiffOn, toJet_mk, fieldL_jetOnOf,
     iteratedFDeriv_zero_eq_comp]
   simp
 
@@ -745,15 +768,10 @@ theorem norm_const_le (y : F) : ‖const (k := k) (α := α) (Ω := Ω) y‖ ≤
     refine le_antisymm ((BoundedContinuousFunction.norm_le le_rfl).2 fun x ↦ ?_) (norm_nonneg _)
     rw [hc i x, iteratedFDeriv_const_of_ne (Fin.val_ne_of_ne hi), Pi.zero_apply, norm_zero]
   have hH : nnHolderNorm α ((const (k := k) (α := α) (Ω := Ω) y).iteratedFDeriv (Fin.last k) :
-      Ω → E [×k]→L[ℝ] F) = 0 := by
-    have hdom : ((const (k := k) (α := α) (Ω := Ω) y).iteratedFDeriv (Fin.last k) :
-          Ω → E [×k]→L[ℝ] F) =
-        (Ω : Set E).domRestrict (_root_.iteratedFDeriv ℝ k (fun _ : E ↦ y)) :=
-      funext fun x ↦ hc (Fin.last k) x
-    rw [hdom]
-    exact le_antisymm
-      (holderOnWith_iteratedFDeriv_const (C := 0) (α := α) (s := (Ω : Set E)) k
-        y).holderWith.nnholderNorm_le
+      Ω → E [×k]→L[ℝ] F) = 0 :=
+    le_antisymm
+      (nnHolderNorm_iteratedFDeriv_le_of_holderOnWith (fun x ↦ (const_apply y x).symm)
+        (holderOnWith_iteratedFDeriv_const k y))
       zero_le
   rw [Finset.sum_eq_single 0 (fun i _ hi ↦ hpos i hi) (by simp), hH, NNReal.coe_zero, add_zero]
   exact h0
@@ -845,22 +863,27 @@ private def ofHolderSpace (g : HolderSpace α Ω F) : CkHolderOnSpace 0 α Ω F 
 
 private theorem toHolderSpace_apply (f : CkHolderOnSpace 0 α Ω F) (x : Ω) :
     toHolderSpace f x = f x := by
-  simp only [toHolderSpace, HolderSpace.compLeftL_apply, iteratedFDerivHolder_apply]; rfl
+  simp only [toHolderSpace, HolderSpace.compLeftL_apply, LinearIsometry.coe_toContinuousLinearMap,
+    LinearIsometryEquiv.coe_toLinearIsometry, iteratedFDerivHolder_apply,
+    continuousMultilinearCurryFin0_apply]
+  exact f.iteratedFDeriv_zero_apply x 0
 
 private theorem ofHolderSpace_apply (g : HolderSpace α Ω F) (x : Ω) :
     ofHolderSpace g x = g x := by
-  have hcoe : ofHolderSpace g x = (ofHolderSpace g).toFun x := rfl
-  have hlast : fieldL ⟨0, Nat.succ_pos 0⟩ (toJet (ofHolderSpace g)) =
-      (toJet (ofHolderSpace g)).ofLp.2.toBoundedContinuousFunction :=
-    fieldL_last (toJet (ofHolderSpace g))
   have hjet : toJet (ofHolderSpace g) = WithLp.toLp 1 (0, HolderSpace.compLeftL
       (continuousMultilinearCurryFin0 ℝ E F).symm.toLinearIsometry.toContinuousLinearMap g) :=
     toJet_mk _ _
-  rw [hcoe, toFun, iteratedFDeriv, hlast, hjet]; simp
+  have h0 : (ofHolderSpace g).iteratedFDeriv (Fin.last 0) x =
+      (continuousMultilinearCurryFin0 ℝ E F).symm (g x) := by
+    rw [iteratedFDeriv, fieldL_last, hjet]
+    simp
+  simpa [← toFun_eq_coe, toFun, ContinuousMultilinearMap.curry0_apply] using
+    congrArg ContinuousMultilinearMap.curry0 h0
 
 private theorem norm_toHolderSpace (f : CkHolderOnSpace 0 α Ω F) : ‖toHolderSpace f‖ = ‖f‖ := by
   rw [toHolderSpace, HolderSpace.norm_compLeftL_linearIsometry, HolderSpace.norm_def,
-    toBoundedContinuousFunction_iteratedFDerivHolder, norm_eq, Fin.sum_univ_one]; rfl
+    toBoundedContinuousFunction_iteratedFDerivHolder, norm_eq, Fin.sum_univ_one]
+  exact congrArg (· + _) (congrArg (fun i : Fin 1 ↦ ‖f.iteratedFDeriv i‖) (Fin.eq_zero _))
 
 /-- At order `k = 0`, `CkHolderOnSpace 0 α Ω F` is linearly isometric to `HolderSpace α Ω F`. -/
 def equivHolderSpace : CkHolderOnSpace 0 α Ω F ≃ₗᵢ[ℝ] HolderSpace α Ω F where
@@ -918,17 +941,10 @@ private theorem norm_toTop (f : CkHolderOnSpace k α (⊤ : TopologicalSpace.Ope
   have htop : nnHolderNorm α (_root_.iteratedFDeriv ℝ k (toTop f)) =
       nnHolderNorm α (f.iteratedFDeriv (Fin.last k) : (⊤ : TopologicalSpace.Opens E) →
         E [×k]→L[ℝ] F) := by
-    apply le_antisymm
-    · rw [hcoe]
-      exact (holderOnWith_univ.mp f.holderOnWith_iteratedFDeriv_extendByZero).nnholderNorm_le
-    · have hdom : (f.iteratedFDeriv (Fin.last k) : (⊤ : TopologicalSpace.Opens E) →
-          E [×k]→L[ℝ] F) = (Set.univ : Set E).domRestrict (_root_.iteratedFDeriv ℝ k (toTop f)) :=
-        funext fun x ↦ by
-          rw [Set.domRestrict_apply, hcoe]
-          exact (f.iteratedFDeriv_extendByZero (Fin.last k) x).symm
-      rw [hdom]
-      exact ((toTop f).memHolder_iteratedFDeriv.holderWith.holderOnWith
-        Set.univ).holderWith.nnholderNorm_le
+    refine le_antisymm ?_ (f.nnHolderNorm_iteratedFDeriv_le_of_holderOnWith
+      (fun x ↦ toTop_apply f x.1) ((toTop f).memHolder_iteratedFDeriv.holderWith.holderOnWith _))
+    rw [hcoe]
+    exact (holderOnWith_univ.mp f.holderOnWith_iteratedFDeriv_extendByZero).nnholderNorm_le
   rw [CkHolderSpace.norm_eq, norm_eq]; simp only [hfield, htop]
 
 /-- On `⊤ : TopologicalSpace.Opens E`, `CkHolderOnSpace k α ⊤ F ≃ₗᵢ[ℝ] CkHolderSpace k α E F`. -/

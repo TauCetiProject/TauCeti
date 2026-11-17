@@ -13,7 +13,7 @@ import TauCeti.Analysis.Holder.Leibniz
 import TauCeti.Analysis.Holder.Open.Inclusion
 
 /-!
-# Bilinear products, scalar action, and algebra multiplication on `C^{k,α}(Ω, F)`
+# Bilinear products, scalar multiplication, and algebra multiplication on `C^{k,α}(Ω)`
 
 On a convex open set `Ω` and for `α ≤ 1`, a continuous bilinear map `B : E₁ →L[ℝ] E₂ →L[ℝ] G` acts
 pointwise on `CkHolderOnSpace k α Ω` as a continuous bilinear map
@@ -25,10 +25,10 @@ multiplication `TauCeti.CkHolderOnSpace.smulL` and bounded pointwise algebra mul
 
 Both hypotheses `Convex ℝ (Ω : Set X)` and `α ≤ 1` enter through the lower-order Hölder estimate
 `TauCeti.CkHolderOnSpace.holderOnWith_iteratedFDeriv_extendByZero_of_le`, needed for the cross
-terms in the `k`-th order Leibniz rule `ContinuousLinearMap.holderOnWith_iteratedFDeriv`. Neither
-hypothesis can be omitted in general: on the disconnected open set `(-1, 0) ∪ (0, 1)`, the locally
-constant sign function and `x ↦ x` both lie in `C^{1,1}`, whereas their product `x ↦ |x|` has
-derivative jumping across `0` and leaves `C^{1,1}`; on `(-1, 1)` with `α = 2`, `x ↦ x` lies in
+terms in the `k`-th order Leibniz rule `ContinuousLinearMap.holderOnWith_iteratedFDeriv_comp₂`.
+Neither hypothesis can be omitted in general: on the disconnected open set `(-1, 0) ∪ (0, 1)`, the
+locally constant sign function and `x ↦ x` both lie in `C^{1,1}`, whereas their product `x ↦ |x|`
+has derivative jumping across `0` and leaves `C^{1,1}`; on `(-1, 1)` with `α = 2`, `x ↦ x` lies in
 `C^{1,2}`, whereas its square `x ↦ x ^ 2` has nonconstant derivative `2 x` and leaves `C^{1,2}`.
 
 ## References
@@ -71,14 +71,14 @@ private theorem holderOnWith_iteratedFDeriv_ckHolderOnBilinear (B : E₁ →L[�
     (f : CkHolderOnSpace k α Ω E₁) (g : CkHolderOnSpace k α Ω E₂) :
     HolderOnWith (6 * 2 ^ k * ‖B‖₊ * ‖f‖₊ * ‖g‖₊) α
       (iteratedFDeriv ℝ k (fun y ↦ B (f.extendByZero y) (g.extendByZero y))) (Ω : Set X) := by
-  have h := B.holderOnWith_iteratedFDeriv f.contDiffOn_extendByZero g.contDiffOn_extendByZero
+  have h := B.holderOnWith_iteratedFDeriv_comp₂ f.contDiffOn_extendByZero g.contDiffOn_extendByZero
     Ω.isOpen
     (M := ‖f‖₊) (N := ‖g‖₊) (H := 3 * ‖f‖₊) (K := 3 * ‖g‖₊)
     (fun _ hj x hx ↦ f.norm_iteratedFDeriv_extendByZero_le hj ⟨x, hx⟩)
     (fun _ hj x hx ↦ g.norm_iteratedFDeriv_extendByZero_le hj ⟨x, hx⟩)
     (fun _ hj ↦ f.holderOnWith_iteratedFDeriv_extendByZero_of_le hΩ hα hj)
     (fun _ hj ↦ g.holderOnWith_iteratedFDeriv_extendByZero_of_le hΩ hα hj)
-  convert h using 1; ring
+  exact h.mono_const (le_of_eq (by ring))
 
 private def ckHolderOnBilinear (B : E₁ →L[ℝ] E₂ →L[ℝ] G) (hΩ : Convex ℝ (Ω : Set X))
     (hα : α ≤ 1) (f : CkHolderOnSpace k α Ω E₁) (g : CkHolderOnSpace k α Ω E₂) :

@@ -76,18 +76,13 @@ private theorem restrict_apply (h : Ω' ≤ Ω) (f : CkHolderOnSpace k α Ω F) 
 
 private theorem norm_restrict_le (h : Ω' ≤ Ω) (f : CkHolderOnSpace k α Ω F) :
     ‖restrict h f‖ ≤ ‖f‖ := by
-  have heq : ∀ x : Ω', f.extendByZero x = restrict h f x := fun x ↦ (ofContDiffOn_apply ..).symm
   rw [norm_eq, f.norm_eq]
   gcongr with i
   · refine (BoundedContinuousFunction.norm_le (norm_nonneg (f.iteratedFDeriv i))).2 fun x ↦ ?_
-    rw [← (restrict h f).iteratedFDeriv_of_eq heq i x,
-      f.iteratedFDeriv_extendByZero i ⟨x.1, h x.2⟩]
+    rw [restrict, iteratedFDeriv_ofContDiffOn_apply, f.iteratedFDeriv_extendByZero i ⟨x.1, h x.2⟩]
     exact (f.iteratedFDeriv i).norm_coe_le_norm ⟨x.1, h x.2⟩
-  · have hdom : ((restrict h f).iteratedFDeriv (Fin.last k) : Ω' → E [×k]→L[ℝ] F) =
-        (Ω' : Set E).domRestrict (_root_.iteratedFDeriv ℝ k f.extendByZero) :=
-      funext fun x ↦ ((restrict h f).iteratedFDeriv_of_eq heq (Fin.last k) x).symm
-    rw [hdom]
-    exact_mod_cast (f.holderOnWith_iteratedFDeriv_extendByZero.mono h).holderWith.nnholderNorm_le
+  · exact_mod_cast (restrict h f).nnHolderNorm_iteratedFDeriv_le_of_holderOnWith
+      (fun x ↦ (ofContDiffOn_apply ..).symm) (f.holderOnWith_iteratedFDeriv_extendByZero.mono h)
 
 /-- Restriction from `Ω` to an open subset `Ω' ≤ Ω` as a contraction (`‖·‖ ≤ 1`). -/
 def restrictL (h : Ω' ≤ Ω) : CkHolderOnSpace k α Ω F →L[ℝ] CkHolderOnSpace k α Ω' F :=
@@ -115,13 +110,6 @@ theorem norm_restrictL_le_one (h : Ω' ≤ Ω) : ‖restrictL (k := k) (α := α
   ext f x; simp
 
 /-! ### Decreasing the Hölder exponent -/
-
-private theorem domRestrict_iteratedFDeriv_extendByZero (f : CkHolderOnSpace k α Ω F) :
-    (f.iteratedFDeriv (Fin.last k) : Ω → E [×k]→L[ℝ] F) =
-      (Ω : Set E).domRestrict (_root_.iteratedFDeriv ℝ k f.extendByZero) :=
-  funext fun x ↦ by
-    simpa only [Set.domRestrict_apply, Fin.val_last] using
-      (f.iteratedFDeriv_extendByZero (Fin.last k) x).symm
 
 private theorem holderOnWith_of_exponent_le {β : ℝ≥0} (hβα : β ≤ α)
     (f : CkHolderOnSpace k α Ω F) :
@@ -166,23 +154,22 @@ private theorem ofExponentLE_apply {β : ℝ≥0} (hβα : β ≤ α)
 
 private theorem iteratedFDeriv_ofExponentLE {β : ℝ≥0} (hβα : β ≤ α)
     (f : CkHolderOnSpace k α Ω F) (i : Fin (k + 1)) :
-    (ofExponentLE hβα f).iteratedFDeriv i = f.iteratedFDeriv i := by
-  have heq : ∀ x : Ω, f.extendByZero x = ofExponentLE hβα f x :=
-    fun x ↦ (ofContDiffOn_apply ..).symm
-  exact BoundedContinuousFunction.ext fun x ↦
-    ((ofExponentLE hβα f).iteratedFDeriv_of_eq heq i x).symm.trans
-      (f.iteratedFDeriv_extendByZero i x)
+    (ofExponentLE hβα f).iteratedFDeriv i = f.iteratedFDeriv i :=
+  BoundedContinuousFunction.ext fun x ↦ by
+    rw [ofExponentLE, iteratedFDeriv_ofContDiffOn_apply, f.iteratedFDeriv_extendByZero i x]
 
 private theorem norm_ofExponentLE_le {β : ℝ≥0} (hβα : β ≤ α) (f : CkHolderOnSpace k α Ω F) :
     ‖ofExponentLE hβα f‖ ≤ 3 * ‖f‖ := by
-  have htop : (nnHolderNorm β (f.iteratedFDeriv (Fin.last k) : Ω → E [×k]→L[ℝ] F) : ℝ) ≤
+  have htop : (nnHolderNorm β ((ofExponentLE hβα f).iteratedFDeriv (Fin.last k) :
+        Ω → E [×k]→L[ℝ] F) : ℝ) ≤
       nnHolderNorm α (f.iteratedFDeriv (Fin.last k) : Ω → E [×k]→L[ℝ] F) +
         2 * ‖f.iteratedFDeriv (Fin.last k)‖ := by
-    conv_lhs => rw [domRestrict_iteratedFDeriv_extendByZero]
-    exact_mod_cast (holderOnWith_of_exponent_le hβα f).holderWith.nnholderNorm_le
+    exact_mod_cast (ofExponentLE hβα f).nnHolderNorm_iteratedFDeriv_le_of_holderOnWith
+      (fun x ↦ (ofContDiffOn_apply ..).symm) (holderOnWith_of_exponent_le hβα f)
   have hlast : ‖f.iteratedFDeriv (Fin.last k)‖ ≤ ‖f‖ := f.norm_iteratedFDeriv_le (Fin.last k)
   rw [norm_eq]
-  simp_rw [iteratedFDeriv_ofExponentLE]
+  have hsum : ∑ i : Fin (k + 1), ‖(ofExponentLE hβα f).iteratedFDeriv i‖ =
+      ∑ i : Fin (k + 1), ‖f.iteratedFDeriv i‖ := by simp_rw [iteratedFDeriv_ofExponentLE]
   linarith [f.norm_eq]
 
 private theorem norm_ofExponentLE_le_of_isBounded (hΩ : Bornology.IsBounded (Ω : Set E))
@@ -190,19 +177,22 @@ private theorem norm_ofExponentLE_le_of_isBounded (hΩ : Bornology.IsBounded (Ω
     ‖ofExponentLE hβα f‖ ≤
       max 1 (Metric.diam (Ω : Set E) ^ ((α : ℝ) - β)) * ‖f‖ := by
   set C : ℝ := max 1 (Metric.diam (Ω : Set E) ^ ((α : ℝ) - β))
-  have htop : (nnHolderNorm β (f.iteratedFDeriv (Fin.last k) : Ω → E [×k]→L[ℝ] F) : ℝ) ≤
+  have htop : (nnHolderNorm β ((ofExponentLE hβα f).iteratedFDeriv (Fin.last k) :
+        Ω → E [×k]→L[ℝ] F) : ℝ) ≤
       C * nnHolderNorm α (f.iteratedFDeriv (Fin.last k) : Ω → E [×k]→L[ℝ] F) := by
-    conv_lhs => rw [domRestrict_iteratedFDeriv_extendByZero]
-    have hle : (nnHolderNorm β
-        ((Ω : Set E).domRestrict (_root_.iteratedFDeriv ℝ k f.extendByZero)) : ℝ) ≤
+    have hle : (nnHolderNorm β ((ofExponentLE hβα f).iteratedFDeriv (Fin.last k) :
+          Ω → E [×k]→L[ℝ] F) : ℝ) ≤
         nnHolderNorm α (f.iteratedFDeriv (Fin.last k) : Ω → E [×k]→L[ℝ] F) *
           Metric.diam (Ω : Set E) ^ ((α : ℝ) - β) :=
-      (NNReal.coe_le_coe.mpr (holderOnWith_of_bounded hΩ hβα f).holderWith.nnholderNorm_le).trans_eq
+      (NNReal.coe_le_coe.mpr ((ofExponentLE hβα f).nnHolderNorm_iteratedFDeriv_le_of_holderOnWith
+        (fun x ↦ (ofContDiffOn_apply ..).symm) (holderOnWith_of_bounded hΩ hβα f))).trans_eq
         (by rw [NNReal.coe_mul, NNReal.coe_rpow, Real.coe_toNNReal _ Metric.diam_nonneg])
     exact hle.trans ((mul_comm _ _).trans_le
       (mul_le_mul_of_nonneg_right (le_max_right _ _) (NNReal.coe_nonneg _)))
   rw [norm_eq, f.norm_eq, mul_add]
-  simp_rw [iteratedFDeriv_ofExponentLE]
+  have hsum : ∑ i : Fin (k + 1), ‖(ofExponentLE hβα f).iteratedFDeriv i‖ =
+      ∑ i : Fin (k + 1), ‖f.iteratedFDeriv i‖ := by simp_rw [iteratedFDeriv_ofExponentLE]
+  rw [hsum]
   exact add_le_add ((one_mul _).symm.trans_le
     (mul_le_mul_of_nonneg_right (le_max_left _ _) (Finset.sum_nonneg fun _ _ ↦ norm_nonneg _))) htop
 
@@ -265,7 +255,7 @@ theorem holderOnWith_iteratedFDeriv_extendByZero_of_le (hΩ : Convex ℝ (Ω : S
       (M := ‖f‖₊) (L := ‖f‖₊) hj hα
       (fun x hx ↦ f.norm_iteratedFDeriv_extendByZero_le hj.le ⟨x, hx⟩)
       (fun x hx ↦ f.norm_iteratedFDeriv_extendByZero_le hj ⟨x, hx⟩)
-    convert h using 1; ring
+    exact h.mono_const (le_of_eq (by ring))
 
 private theorem holderOnWith_iteratedFDeriv_of_succ (hΩ : Convex ℝ (Ω : Set E)) (hα : α ≤ 1)
     (f : CkHolderOnSpace (k + 1) α Ω F) :
@@ -298,20 +288,16 @@ private theorem ofSucc_apply (hΩ : Convex ℝ (Ω : Set E)) (hα : α ≤ 1)
 private theorem norm_ofSucc_le (hΩ : Convex ℝ (Ω : Set E)) (hα : α ≤ 1)
     (f : CkHolderOnSpace (k + 1) α Ω F) :
     ‖ofSucc hΩ hα f‖ ≤ 3 * ‖f‖ := by
-  have heq : ∀ x : Ω, f.extendByZero x = ofSucc hΩ hα f x := fun x ↦ (ofContDiffOn_apply ..).symm
   have hfield (i : Fin (k + 1)) :
       (ofSucc hΩ hα f).iteratedFDeriv i = f.iteratedFDeriv i.castSucc :=
-    BoundedContinuousFunction.ext fun x ↦
-      ((ofSucc hΩ hα f).iteratedFDeriv_of_eq heq i x).symm.trans
-        (f.iteratedFDeriv_extendByZero i.castSucc x)
+    BoundedContinuousFunction.ext fun x ↦ by
+      rw [ofSucc, iteratedFDeriv_ofContDiffOn_apply]
+      exact f.iteratedFDeriv_extendByZero i.castSucc x
   have htop : (nnHolderNorm α ((ofSucc hΩ hα f).iteratedFDeriv (Fin.last k) :
         Ω → E [×k]→L[ℝ] F) : ℝ) ≤
       ‖f.iteratedFDeriv (Fin.last (k + 1))‖ + 2 * ‖f.iteratedFDeriv (Fin.last k).castSucc‖ := by
-    have hdom : ((ofSucc hΩ hα f).iteratedFDeriv (Fin.last k) : Ω → E [×k]→L[ℝ] F) =
-        (Ω : Set E).domRestrict (_root_.iteratedFDeriv ℝ k f.extendByZero) :=
-      funext fun x ↦ ((ofSucc hΩ hα f).iteratedFDeriv_of_eq heq (Fin.last k) x).symm
-    rw [hdom]
-    exact_mod_cast (holderOnWith_iteratedFDeriv_of_succ hΩ hα f).holderWith.nnholderNorm_le
+    exact_mod_cast (ofSucc hΩ hα f).nnHolderNorm_iteratedFDeriv_le_of_holderOnWith
+      (fun x ↦ (ofContDiffOn_apply ..).symm) (holderOnWith_iteratedFDeriv_of_succ hΩ hα f)
   have hsum : (∑ i : Fin (k + 1), ‖f.iteratedFDeriv i.castSucc‖) +
       ‖f.iteratedFDeriv (Fin.last (k + 1))‖ ≤ ‖f‖ := by
     rw [← Fin.sum_univ_castSucc (f := fun i : Fin (k + 2) ↦ ‖f.iteratedFDeriv i‖), f.norm_eq]
@@ -358,21 +344,11 @@ namespace CkHolderSpace
 variable {k : ℕ} {α : ℝ≥0} {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {Ω Ω' : TopologicalSpace.Opens E} {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
-private theorem norm_conj_equivTop_le {k₁ k₂ : ℕ} {α₁ α₂ : ℝ≥0} {C : ℝ}
-    (L : CkHolderOnSpace k₁ α₁ (⊤ : TopologicalSpace.Opens E) F →L[ℝ]
-      CkHolderOnSpace k₂ α₂ (⊤ : TopologicalSpace.Opens E) F) (hL : ‖L‖ ≤ C) :
-    ‖CkHolderOnSpace.equivTop.toLinearIsometry.toContinuousLinearMap.comp
-      (L.comp CkHolderOnSpace.equivTop.symm.toLinearIsometry.toContinuousLinearMap)‖ ≤ C :=
-  ContinuousLinearMap.opNorm_le_bound _ ((norm_nonneg L).trans hL) fun g ↦ by
-    simp only [ContinuousLinearMap.comp_apply, LinearIsometry.coe_toContinuousLinearMap,
-      LinearIsometryEquiv.coe_toLinearIsometry, LinearIsometryEquiv.norm_map]
-    exact (L.le_opNorm _).trans (by rw [LinearIsometryEquiv.norm_map]; gcongr)
-
 /-- Restriction from `CkHolderSpace k α E F` to an open set `Ω`, of operator norm at most `1`. -/
 def restrictOpenL (Ω : TopologicalSpace.Opens E) :
     CkHolderSpace k α E F →L[ℝ] CkHolderOnSpace k α Ω F :=
   (CkHolderOnSpace.restrictL (le_top : Ω ≤ ⊤)).comp
-    CkHolderOnSpace.equivTop.symm.toLinearIsometry.toContinuousLinearMap
+    ((CkHolderOnSpace.equivTop (k := k) (α := α) (E := E) (F := F)).symm : _ →L[ℝ] _)
 
 /-- Pointwise evaluation of restriction from `CkHolderSpace` to an open set `Ω`. -/
 @[simp] theorem restrictOpenL_apply (Ω : TopologicalSpace.Opens E)
@@ -380,10 +356,9 @@ def restrictOpenL (Ω : TopologicalSpace.Opens E) :
 
 /-- Restriction from `CkHolderSpace k α E F` to `CkHolderOnSpace k α Ω F` has norm at most `1`. -/
 theorem norm_restrictOpenL_le_one (Ω : TopologicalSpace.Opens E) :
-    ‖restrictOpenL (k := k) (α := α) (F := F) Ω‖ ≤ 1 :=
-  (ContinuousLinearMap.opNorm_comp_le _ _).trans <| by
-    simpa using mul_le_mul (CkHolderOnSpace.norm_restrictL_le_one (le_top : Ω ≤ ⊤))
-      (LinearIsometry.norm_toContinuousLinearMap_le _) (norm_nonneg _) zero_le_one
+    ‖restrictOpenL (k := k) (α := α) (F := F) Ω‖ ≤ 1 := by
+  rw [restrictOpenL, ContinuousLinearMap.opNorm_comp_linearIsometryEquiv]
+  exact CkHolderOnSpace.norm_restrictL_le_one (le_top : Ω ≤ ⊤)
 
 /-- Restricting from `E` to `Ω` and then to `Ω' ≤ Ω` agrees with restricting directly to `Ω'`. -/
 @[simp] theorem restrictL_comp_restrictOpenL (h : Ω' ≤ Ω) :
@@ -394,9 +369,10 @@ theorem norm_restrictOpenL_le_one (Ω : TopologicalSpace.Opens E) :
 space for `β ≤ α`, of operator norm at most `3`. -/
 def ofExponentLEL {β : ℝ≥0} (hβα : β ≤ α) :
     CkHolderSpace k α E F →L[ℝ] CkHolderSpace k β E F :=
-  CkHolderOnSpace.equivTop.toLinearIsometry.toContinuousLinearMap.comp
-    ((CkHolderOnSpace.ofExponentLEL (Ω := (⊤ : TopologicalSpace.Opens E)) hβα).comp
-      CkHolderOnSpace.equivTop.symm.toLinearIsometry.toContinuousLinearMap)
+  ((CkHolderOnSpace.equivTop (k := k) (α := β) (E := E) (F := F)) : _ →L[ℝ] _).comp
+    ((CkHolderOnSpace.ofExponentLEL (k := k) (Ω := (⊤ : TopologicalSpace.Opens E)) (F := F)
+        hβα).comp
+      ((CkHolderOnSpace.equivTop (k := k) (α := α) (E := E) (F := F)).symm : _ →L[ℝ] _))
 
 /-- Pointwise evaluation of the whole-space exponent-lowering inclusion `ofExponentLEL`. -/
 @[simp] theorem ofExponentLEL_apply {β : ℝ≥0} (hβα : β ≤ α)
@@ -404,8 +380,10 @@ def ofExponentLEL {β : ℝ≥0} (hβα : β ≤ α) :
 
 /-- On the whole space, lowering the Hölder exponent from `α` to `β ≤ α` has norm at most `3`. -/
 theorem norm_ofExponentLEL_le {β : ℝ≥0} (hβα : β ≤ α) :
-    ‖ofExponentLEL (k := k) (E := E) (F := F) hβα‖ ≤ 3 :=
-  norm_conj_equivTop_le _ (CkHolderOnSpace.norm_ofExponentLEL_le hβα)
+    ‖ofExponentLEL (k := k) (E := E) (F := F) hβα‖ ≤ 3 := by
+  rw [ofExponentLEL, ContinuousLinearMap.opNorm_linearIsometryEquiv_comp,
+    ContinuousLinearMap.opNorm_comp_linearIsometryEquiv]
+  exact CkHolderOnSpace.norm_ofExponentLEL_le hβα
 
 /-- The whole-space exponent-lowering inclusion `ofExponentLEL` is injective. -/
 theorem ofExponentLEL_injective {β : ℝ≥0} (hβα : β ≤ α) :
@@ -426,17 +404,20 @@ theorem ofExponentLEL_injective {β : ℝ≥0} (hβα : β ≤ α) :
 whole space for `α ≤ 1`, of operator norm at most `3`. -/
 def ofSuccL (hα : α ≤ 1) :
     CkHolderSpace (k + 1) α E F →L[ℝ] CkHolderSpace k α E F :=
-  CkHolderOnSpace.equivTop.toLinearIsometry.toContinuousLinearMap.comp
-    ((CkHolderOnSpace.ofSuccL (Ω := (⊤ : TopologicalSpace.Opens E)) convex_univ hα).comp
-      CkHolderOnSpace.equivTop.symm.toLinearIsometry.toContinuousLinearMap)
+  ((CkHolderOnSpace.equivTop (k := k) (α := α) (E := E) (F := F)) : _ →L[ℝ] _).comp
+    ((CkHolderOnSpace.ofSuccL (k := k) (Ω := (⊤ : TopologicalSpace.Opens E)) (F := F)
+        convex_univ hα).comp
+      ((CkHolderOnSpace.equivTop (k := k + 1) (α := α) (E := E) (F := F)).symm : _ →L[ℝ] _))
 
 /-- Pointwise evaluation of the whole-space order-lowering inclusion `ofSuccL`. -/
 @[simp] theorem ofSuccL_apply (hα : α ≤ 1) (g : CkHolderSpace (k + 1) α E F) (x : E) :
     ofSuccL hα g x = g x := by simp [ofSuccL]
 
 /-- On the whole space, lowering the order from `k + 1` to `k` has operator norm at most `3`. -/
-theorem norm_ofSuccL_le (hα : α ≤ 1) : ‖ofSuccL (k := k) (E := E) (F := F) hα‖ ≤ 3 :=
-  norm_conj_equivTop_le _ (CkHolderOnSpace.norm_ofSuccL_le convex_univ hα)
+theorem norm_ofSuccL_le (hα : α ≤ 1) : ‖ofSuccL (k := k) (E := E) (F := F) hα‖ ≤ 3 := by
+  rw [ofSuccL, ContinuousLinearMap.opNorm_linearIsometryEquiv_comp,
+    ContinuousLinearMap.opNorm_comp_linearIsometryEquiv]
+  exact CkHolderOnSpace.norm_ofSuccL_le convex_univ hα
 
 /-- The ambient order-lowering inclusion `CkHolderSpace.ofSuccL` is injective. -/
 theorem ofSuccL_injective (hα : α ≤ 1) :
@@ -450,6 +431,14 @@ end CkHolderSpace
 /-- The punctured interval `(-1, 0) ∪ (0, 1)`, a bounded disconnected open subset of `ℝ`. -/
 def slitUnitInterval : TopologicalSpace.Opens ℝ :=
   ⟨Set.Ioo (-1) 0 ∪ Set.Ioo 0 1, isOpen_Ioo.union isOpen_Ioo⟩
+
+/-- The underlying set of `slitUnitInterval` is `(-1, 0) ∪ (0, 1)`. -/
+@[simp, norm_cast] theorem coe_slitUnitInterval :
+    (slitUnitInterval : Set ℝ) = Set.Ioo (-1) 0 ∪ Set.Ioo 0 1 := (rfl)
+
+/-- Membership in `slitUnitInterval` means lying in `(-1, 0)` or `(0, 1)`. -/
+@[simp] theorem mem_slitUnitInterval {x : ℝ} :
+    x ∈ slitUnitInterval ↔ x ∈ Set.Ioo (-1) 0 ∪ Set.Ioo 0 1 := Iff.rfl
 
 private def signFn (x : ℝ) : ℝ := if 0 < x then 1 else -1
 
@@ -529,9 +518,7 @@ theorem not_exists_ckHolderOnSpace_zero_eq_slitSign (k : ℕ) {α : ℝ≥0} (h�
       dsimp only [t]
       ring
     have h11 : |(1 : ℝ) - -1| = 2 := by norm_num
-    rw [hxp, hxm, Real.dist_eq, h11, hxy,
-      ← Real.rpow_natCast (2⁻¹ : ℝ) n, ← Real.rpow_mul (by norm_num),
-      mul_comm _ (α : ℝ), Real.rpow_mul (by norm_num), Real.rpow_natCast] at hdist
+    rw [hxp, hxm, Real.dist_eq, h11, hxy, ← Real.rpow_pow_comm (by norm_num)] at hdist
     exact hdist
   have hq : (2⁻¹ : ℝ) ^ (α : ℝ) < 1 :=
     Real.rpow_lt_one (by norm_num) (by norm_num) (NNReal.coe_pos.mpr hα)
