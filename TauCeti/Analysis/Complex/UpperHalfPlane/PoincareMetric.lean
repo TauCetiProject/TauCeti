@@ -30,7 +30,8 @@ Manifolds*, 2nd ed., Springer GTM 176 (2018), Chapter 3.
 ## Main results
 
 * `TauCeti.UpperHalfPlane.poincareRiemannianMetric`: the Poincaré metric, with tangent-coordinate
-  formula `UpperHalfPlane.poincareRiemannianMetric_inner`.
+  formula `UpperHalfPlane.poincareRiemannianMetric_inner`; `UpperHalfPlane.inner_def` reads the
+  inner product of the installed Riemannian structure in the same coordinates.
 * `UpperHalfPlane.riemannianVolume_eq_volume`: the Riemannian volume of the Poincaré metric is
   Mathlib's invariant measure `volume`.
 -/
@@ -143,6 +144,17 @@ theorem _root_.UpperHalfPlane.poincareRiemannianMetric_inner (z : ℍ)
 /-- The tangent bundle of the upper half-plane carries the Poincaré tensor. -/
 instance instRiemannianBundle : RiemannianBundle (fun z : ℍ ↦ TangentSpace 𝓘(ℝ, ℂ) z) :=
   ⟨poincareRiemannianMetric.toRiemannianMetric⟩
+
+/-- The inner product of two tangent vectors at a point of the upper half-plane is their
+Euclidean inner product divided by the square of the imaginary part. -/
+@[simp]
+theorem _root_.UpperHalfPlane.inner_def (z : ℍ) (v w : TangentSpace 𝓘(ℝ, ℂ) z) :
+    inner ℝ v w =
+      inner ℝ (tangentSpaceCastModel 𝓘(ℝ, ℂ) z v)
+        (tangentSpaceCastModel 𝓘(ℝ, ℂ) z w) / z.im ^ 2 :=
+  -- The `RiemannianBundle` instance is `poincareRiemannianMetric`, so the inner product of the
+  -- instance is `poincareRiemannianMetric.inner` by definition.
+  _root_.UpperHalfPlane.poincareRiemannianMetric_inner z v w
 
 /-- The Poincaré tensor is smooth as a real Riemannian bundle. -/
 instance instIsContMDiffRiemannianBundle : IsContMDiffRiemannianBundle 𝓘(ℝ, ℂ) ∞ ℂ
