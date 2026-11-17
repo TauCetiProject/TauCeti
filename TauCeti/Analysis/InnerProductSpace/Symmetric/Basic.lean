@@ -8,12 +8,14 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Symmetric
 
 /-!
-# Symmetric operators: negation and limits
+# Symmetric operators: negation, scalar shifts and limits
 
-Two facts about symmetric operators complementing Mathlib's
+Facts about symmetric operators complementing Mathlib's
 `Mathlib.Analysis.InnerProductSpace.Symmetric`:
 
 * the negative of a symmetric linear map is symmetric (`LinearMap.IsSymmetric.neg`);
+* shifting a symmetric linear map by a self-conjugate multiple of the identity keeps it symmetric
+  (`LinearMap.IsSymmetric.sub_smul_id`);
 * the symmetric bounded operators form a closed subset of `E →L[𝕜] E`
   (`ContinuousLinearMap.isClosed_setOf_isSymmetric`), so a limit of symmetric bounded operators
   is symmetric. No completeness of `E` is needed: the condition `⟪T x, y⟫ = ⟪x, T y⟫` is closed
@@ -29,6 +31,12 @@ namespace LinearMap
 /-- The negative of a symmetric linear map is symmetric. -/
 theorem IsSymmetric.neg {T : E →ₗ[𝕜] E} (hT : T.IsSymmetric) : (-T).IsSymmetric := by
   simpa using IsSymmetric.zero.sub hT
+
+/-- Shifting a symmetric linear map by a self-conjugate multiple of the identity, such as a real
+scalar, keeps it symmetric. -/
+theorem IsSymmetric.sub_smul_id {T : E →ₗ[𝕜] E} (hT : T.IsSymmetric) {c : 𝕜}
+    (hc : starRingEnd 𝕜 c = c) : (T - c • LinearMap.id).IsSymmetric :=
+  hT.sub (IsSymmetric.id.smul hc)
 
 end LinearMap
 
