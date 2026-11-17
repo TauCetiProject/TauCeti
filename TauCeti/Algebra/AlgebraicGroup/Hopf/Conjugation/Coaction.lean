@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Hopf.Conjugation
+public import TauCeti.Algebra.AlgebraicGroup.Hopf.Conjugation.Basic
 public import TauCeti.Algebra.Bialgebra.ComoduleAlgebra
 
 import TauCeti.Algebra.TensorProduct.MapLinear
@@ -124,12 +124,6 @@ theorem map_counitAlgHom_comp_conjugationCoactAlgHom :
   rw [comp_conjugationCoactAlgHom, hone, inv_one, one_mul, mul_one,
     Algebra.TensorProduct.map_comp_includeLeft, AlgHom.comp_id, ofConv_toConv]
 
-/-- Conjugating by `g₁` and then by `g₂` is conjugating by `g₁ * g₂`, in any group. -/
-private theorem inv_mul_mul_mul_eq_mul_inv_mul_mul {G : Type*} [Group G] (x g₁ g₂ : G) :
-    g₂⁻¹ * (g₁⁻¹ * x * g₁) * g₂ = (g₁ * g₂)⁻¹ * x * (g₁ * g₂) := by
-  rw [mul_inv_rev]
-  simp only [mul_assoc]
-
 /-- The action-associativity law of the conjugation coaction: conjugating by `g₁` and then by `g₂`
 is conjugating by `g₁ * g₂`. -/
 theorem assoc_comp_map_conjugationCoactAlgHom :
@@ -176,7 +170,11 @@ theorem assoc_comp_map_conjugationCoactAlgHom :
     hcomul, hmapLeft]
   apply congrArg ofConv
   rw [toConv_ofConv]
-  exact inv_mul_mul_mul_eq_mul_inv_mul_mul x g₁ g₂
+  -- Conjugating by `g₁` and then by `g₂` is conjugating by `g₁ * g₂`, in any group.
+  have conj_conj {G : Type _} [Group G] (x a b : G) :
+      b⁻¹ * (a⁻¹ * x * a) * b = (a * b)⁻¹ * x * (a * b) := by
+    group
+  exact conj_conj x g₁ g₂
 
 /-- **The conjugation action of an affine group on itself, as a comodule algebra structure on
 `H` over itself.** Its coaction is `TauCeti.HopfAlgebra.conjugationCoactAlgHom`. It is not an

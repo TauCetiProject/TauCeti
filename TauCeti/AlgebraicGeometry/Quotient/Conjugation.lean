@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Hopf.ConjugationCoaction
+public import TauCeti.Algebra.AlgebraicGroup.Hopf.Conjugation.Coaction
 public import TauCeti.AlgebraicGeometry.Quotient.ComoduleAlgebra
 
 /-!

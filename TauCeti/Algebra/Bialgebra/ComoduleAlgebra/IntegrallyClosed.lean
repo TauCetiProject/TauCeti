@@ -8,14 +8,16 @@ module
 public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 public import TauCeti.Algebra.Bialgebra.ComoduleAlgebra
+public import TauCeti.RingTheory.TensorProduct.MulRight
 
 /-!
 # Invariants of a normal affine scheme are normal
 
-Let `H` be a bialgebra over a commutative ring `R`, flat as an `R`-module, and let `A` be a
+Let `H` be a bialgebra over a commutative semiring `R`, flat as an `R`-module, and let `A` be a
 commutative `H`-comodule algebra: an action of the affine monoid scheme
 `G = Spec H` on the affine scheme `X = Spec A`. A quotient of invariant functions which
-lies in `A` is itself invariant (`TauCeti.ComoduleAlgebra.mem_coinvariants_of_mul_mem`): if `b`
+lies in `A` is itself invariant (`TauCeti.ComoduleAlgebra.mem_coinvariants_of_mul_mem`, stated for
+any comodule algebra `A` that is a ring): if `b`
 and `a * b` are invariant and `b` is a non-zero-divisor, then `a` is invariant, because
 multiplication by `b ⊗ 1` is injective on `A ⊗[R] H` by flatness of `H`.
 
@@ -45,19 +47,10 @@ open scoped TensorProduct
 
 namespace TauCeti.ComoduleAlgebra
 
-variable {R : Type*} {H : Type*} {A : Type*} [CommRing R] [Semiring H] [Bialgebra R H]
-  [CommRing A] [Algebra R A]
+section Ring
 
-
-/-- Multiplying on the right by `b ⊗ 1` in `A ⊗[R] H` is tensoring multiplication by `b` with the
-identity of `H`. -/
-private theorem rTensor_mulRight_apply (b : A) (x : A ⊗[R] H) :
-    (LinearMap.mulRight R b).rTensor H x = x * (b ⊗ₜ[R] 1) := by
-  induction x using TensorProduct.inductionOn with
-  | tmul a h => simp [Algebra.TensorProduct.tmul_mul_tmul]
-  | add x y hx hy => rw [map_add, hx, hy, add_mul]
-
-variable [Module.Flat R H] [ComoduleAlgebra R H A]
+variable {R : Type*} {H : Type*} {A : Type*} [CommSemiring R] [Semiring H] [Bialgebra R H]
+  [Module.Flat R H] [Ring A] [Algebra R A] [ComoduleAlgebra R H A]
 
 /-- **Invariants are closed under division inside `A`**: if a non-zero-divisor `b` and `a * b` are
 invariant, then so is `a`. -/
@@ -69,8 +62,13 @@ theorem mem_coinvariants_of_mul_mem {a b : A} (hb : b ∈ coinvariants R H A)
     Module.Flat.rTensor_preserves_injective_linearMap _ fun x y h ↦ sub_eq_zero.1 <|
       (mul_right_mem_nonZeroDivisors_eq_zero_iff hb0).1 (by simpa [sub_mul, sub_eq_zero] using h)
   apply hinj
-  rw [rTensor_mulRight_apply, rTensor_mulRight_apply, Algebra.TensorProduct.tmul_mul_tmul,
-    mul_one, ← hab, coact_mul, hb]
+  rw [LinearMap.rTensor_mulRight_apply, LinearMap.rTensor_mulRight_apply,
+    Algebra.TensorProduct.tmul_mul_tmul, mul_one, ← hab, coact_mul, hb]
+
+end Ring
+
+variable {R : Type*} {H : Type*} {A : Type*} [CommRing R] [Semiring H] [Bialgebra R H]
+  [Module.Flat R H] [CommRing A] [Algebra R A] [ComoduleAlgebra R H A]
 
 /-- **The invariants of an integrally closed domain are integrally closed**: the affine quotient
 of a normal integral affine scheme by a flat affine monoid scheme is normal. -/

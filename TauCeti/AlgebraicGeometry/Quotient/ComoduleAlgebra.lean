@@ -24,11 +24,17 @@ an affine scheme factors uniquely through it
 (`TauCeti.ComoduleAlgebra.AffineQuotient.existsUnique_desc`): `X // G` is a categorical quotient
 in affine schemes. No hypothesis on `G` is needed for this.
 
-For a reductive group over a field, `X // G` is the geometric-invariant-theory quotient of
-Seshadri. Its finite generation, the description of its geometric points by closed orbits, and the
-universal property for non-affine targets use reductivity and are not proved here. For linearly
-reductive `H`, finite generation of `A^{co H}` is
-`TauCeti.ComoduleAlgebra.finiteType_coinvariants`.
+For a reductive group over a field `k` and `A` finitely generated over `k`, `X // G` is the
+geometric-invariant-theory quotient of Seshadri. Its finite generation over `k` (which needs `A`
+finitely generated over `k`), the description of its geometric points by closed orbits, and the
+universal property for non-affine targets use reductivity and are not proved here. For `H`
+linearly reductive over a field `k` and `A` finitely generated over `k`, finite generation of
+`A^{co H}` over `k` is `TauCeti.ComoduleAlgebra.finiteType_coinvariants`.
+
+The construction and the proof of the universal property follow the affine invariant quotient of
+a ring by a monoid action, `TauCeti.AffineInvariantQuotient` in
+`TauCeti.AlgebraicGeometry.Quotient.Affine` (its `quotient`, `projection`, `desc` and
+`existsUnique_desc`), with the fixed subring replaced by the coinvariants of a coaction.
 
 ## Main declarations
 
