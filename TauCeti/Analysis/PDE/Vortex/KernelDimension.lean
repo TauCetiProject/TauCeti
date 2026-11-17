@@ -57,8 +57,8 @@ degree-`m` end framing `α(z) (z / |z|)⁻ᵐ → 1`
   `TauCeti.Vortex.gaugeFixedKernelPrincipalPartEquiv` onto `Multiset.ToType D → ℂ`. This holds in
   every degree, collisions of zeros included.
 
-The comparison with the weak `L²` kernel, and membership of kernel elements in every `H^s`, are
-proved in `TauCeti.Analysis.PDE.Vortex.SobolevScale`.
+The comparison with the weak `L²` kernel is proved in `TauCeti.Analysis.PDE.Vortex.WeakKernel`,
+and membership of kernel elements in every `H^s` in `TauCeti.Analysis.PDE.Vortex.SobolevScale`.
 
 ## Main results
 
@@ -166,6 +166,12 @@ theorem finiteDimensional_of_gaugeFixedOperator_eq_zero (hx : ContDiff ℝ 2 x)
   let ⟨Φ, hΦ⟩ := exists_injective_linearMap hx hhol hlim hD hV
   FiniteDimensional.of_injective Φ hΦ
 
+/-- The real dimension of the space of principal-part data at an effective divisor `D` is
+`2 |D|`. -/
+private theorem finrank_toType_fun_complex (D : Multiset ℂ) :
+    Module.finrank ℝ (Multiset.ToType D → ℂ) = 2 * Multiset.card D := by
+  simp [Module.finrank_pi_fintype, Complex.finrank_real_complex, mul_comm]
+
 /-- **The kernel of the gauge-fixed operator at a vortex has dimension at most `2 |D|`.** Let `x`
 be a `C²` field with vanishing holomorphicity rows and `|α|² → 1` at infinity, whose section has
 zero divisor `D`. Then every real vector space of `C²` square-integrable solutions of `L_x y = 0`
@@ -177,9 +183,7 @@ theorem finrank_le_two_mul_card_of_gaugeFixedOperator_eq_zero (hx : ContDiff ℝ
     (hV : ∀ y ∈ V, ContDiff ℝ 2 y ∧ MemLp y 2 μ ∧ ∀ w, gaugeFixedOperator x y w = 0) :
     Module.finrank ℝ V ≤ 2 * Multiset.card D := by
   obtain ⟨Φ, hΦ⟩ := exists_injective_linearMap hx hhol hlim hD hV
-  refine (LinearMap.finrank_le_finrank_of_injective hΦ).trans_eq ?_
-  rw [Module.finrank_pi_fintype, Finset.sum_const, Complex.finrank_real_complex, smul_eq_mul,
-    Finset.card_univ, Multiset.card_coe, mul_comm]
+  exact (LinearMap.finrank_le_finrank_of_injective hΦ).trans_eq (finrank_toType_fun_complex D)
 
 /-- **Kernel elements at a framed vortex form a finite-dimensional space.** At a `C²` field with
 vanishing holomorphicity rows and the degree-`m` end framing `α(z) (z / |z|)⁻ᵐ → 1`, every real
@@ -566,6 +570,19 @@ theorem principalPartMap_bijective (hx : ContDiff ℝ ∞ x)
     principalPartMap_surjective hx hhol hlim hD (hν.differentiable (by norm_num)) hνeq hdec
       hVsmooth⟩
 
+/-- Adapting `exists_sectionValue_eq_mul_add_exp_mul_of_mem_gaugeFixedKernel` to the `Continuous`
+hypothesis expected by `principalPartMap`. -/
+private theorem gaugeFixedKernel_exists_decomposition (hx : ContDiff ℝ ∞ x)
+    (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0) {ν : ℂ → ℂ} (hν : ContDiff ℝ 2 ν)
+    (hνeq : ∀ w, conjWirtingerDeriv ν w 1 = ((x w 1 : ℂ) - I * x w 0) / 2)
+    {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : y ∈ gaugeFixedKernel x) :
+    ∃ G : ℂ → ℂ, Continuous G ∧ ∃ H : ℂ → ℂ, Differentiable ℂ H ∧
+      ∀ w, sectionValue y w = sectionValue x w * G w + exp (ν w) * H w :=
+  (exists_sectionValue_eq_mul_add_exp_mul_of_mem_gaugeFixedKernel
+    ((contDiff_euclidean.1 hx 2).differentiable (by simp))
+    ((contDiff_euclidean.1 hx 3).differentiable (by simp))
+    hhol (hν.differentiable (by norm_num)) hνeq hy).imp fun _ ↦ And.imp_left ContDiff.continuous
+
 /-- **The principal-part isomorphism on the gauge-fixed kernel.** At a smooth field `x` with
 `∂bar_a α = 0`, `|α|² → 1` at infinity, zero divisor `D`, and a `C²` integrating factor `ν`, the
 principal-part map identifies `gaugeFixedKernel x` linearly over `ℝ` with the space
@@ -579,11 +596,7 @@ noncomputable def gaugeFixedKernelPrincipalPartEquiv (hx : ContDiff ℝ ∞ x)
     gaugeFixedKernel x ≃ₗ[ℝ] Multiset.ToType D → ℂ :=
   LinearEquiv.ofBijective
     (principalPartMap hD hν.continuous fun _ hy ↦
-      (exists_sectionValue_eq_mul_add_exp_mul_of_mem_gaugeFixedKernel
-        ((contDiff_euclidean.1 hx 2).differentiable (by simp))
-        ((contDiff_euclidean.1 hx 3).differentiable (by simp))
-        hhol (hν.differentiable (by norm_num)) hνeq hy).imp fun _ ↦
-          And.imp_left ContDiff.continuous)
+      gaugeFixedKernel_exists_decomposition hx hhol hν hνeq hy)
     (principalPartMap_bijective hx hhol hlim hD hν hνeq _
       (fun _ hy ↦ mem_gaugeFixedKernel.1 hy)
       fun _ hy hy₂ hker ↦ mem_gaugeFixedKernel.2 ⟨hy.of_le (by simp), hy₂, hker⟩)
@@ -645,11 +658,9 @@ theorem contDiff_of_mem_gaugeFixedKernel (hx : ContDiff ℝ ∞ x)
       zero_mem' := (contDiff_zero_fun : ContDiff ℝ ∞ _)
       smul_mem' := fun t _ hu ↦ (hu.const_smul t : ContDiff ℝ ∞ _) }
   let W : Submodule ℝ (ℂ → EuclideanSpace ℝ (Fin 4)) := gaugeFixedKernel x ⊓ S
-  have hdecW (u) (hu : u ∈ W) :=
-    (exists_sectionValue_eq_mul_add_exp_mul_of_mem_gaugeFixedKernel hp hq hhol
-      (hν.differentiable (by norm_num)) hνeq hu.1).imp fun _ ↦ And.imp_left ContDiff.continuous
-  obtain ⟨u, hu_eq⟩ := principalPartMap_surjective hx hhol hlim hmult
-    (hν.differentiable (by norm_num)) hνeq hdecW
+  obtain ⟨u, hu_eq⟩ := principalPartMap_surjective (V := W) hx hhol hlim hmult
+    (hν.differentiable (by norm_num)) hνeq
+    (fun _ hu ↦ gaugeFixedKernel_exists_decomposition hx hhol hν hνeq hu.1)
     (fun _ hu hu₂ huk ↦ ⟨mem_gaugeFixedKernel.2 ⟨hu.of_le (by simp), hu₂, huk⟩, hu⟩)
     (gaugeFixedKernelPrincipalPartEquiv hx hhol hlim hmult hν hνeq ⟨y, hy⟩)
   have h_inj : (⟨u.1, u.2.1⟩ : gaugeFixedKernel x) = ⟨y, hy⟩ := by
@@ -674,8 +685,7 @@ theorem finrank_gaugeFixedKernel_eq_two_mul_card (hx : ContDiff ℝ ∞ x)
   obtain ⟨ν, hν, hνeq⟩ := exists_contDiff_conjWirtingerDeriv_apply_one_eq (n := 2) (by norm_num)
     (contDiff_connectionCoeff (hi 0) (hi 1))
   rw [(gaugeFixedKernelPrincipalPartEquiv hx hhol hlim hD hν hνeq).finrank_eq,
-    Module.finrank_pi_fintype, Finset.sum_const, Complex.finrank_real_complex, smul_eq_mul,
-    Finset.card_univ, Multiset.card_coe, mul_comm]
+    finrank_toType_fun_complex]
 
 /-- **The kernel of `L_x` at a framed vortex has real dimension `2m`.** At a smooth field with
 vanishing holomorphicity rows and the degree-`m` end framing `α(z) (z / |z|)⁻ᵐ → 1`, in

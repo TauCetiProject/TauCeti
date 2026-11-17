@@ -18,7 +18,8 @@ Laplacian of a tempered distribution is then `∂₁² f + ∂₂² f`, with `�
 along `1` and `I`, as for Schwartz functions (`SchwartzMap.laplacian_eq_lineDerivOp_one_I`). These
 are the identities needed to compute compositions of constant-coefficient first-order operators
 on tempered distributions. Directional differentiation of the tempered distribution given by a
-Schwartz function also commutes with a continuous real-linear map applied to its values.
+Schwartz function also commutes with a continuous real-linear map applied to its values, and its
+iterated directional derivatives are those of the Schwartz function.
 
 ## Main results
 
@@ -26,6 +27,8 @@ Schwartz function also commutes with a continuous real-linear map applied to its
 * `TemperedDistribution.laplacian_eq_lineDerivOp_one_I`: `Δ f = ∂₁² f + ∂₂² f` on `ℂ`.
 * `TemperedDistribution.lineDerivOp_toTemperedDistributionCLM_postcompCLM`:
   `∂_v (L ∘ f) = L ∘ ∂_v f` for a Schwartz function `f` viewed as a tempered distribution.
+* `TemperedDistribution.iteratedLineDerivOp_toTemperedDistributionCLM_eq`: iterated directional
+  derivatives of a Schwartz function viewed as a tempered distribution.
 -/
 
 public section
@@ -58,5 +61,15 @@ theorem lineDerivOp_toTemperedDistributionCLM_postcompCLM (L : G →L[ℝ] F) (f
     ∂_{m} (toTemperedDistributionCLM E F μ (f.postcompCLM L)) =
       toTemperedDistributionCLM E F μ ((∂_{m} f).postcompCLM L) := by
   rw [lineDerivOp_toTemperedDistributionCLM_eq, TauCeti.lineDerivOp_postcompCLM]
+
+/-- Iterated directional derivatives of the tempered distribution given by a Schwartz function are
+the tempered distributions of its iterated directional derivatives. -/
+theorem iteratedLineDerivOp_toTemperedDistributionCLM_eq (f : 𝓢(E, F)) {k : ℕ} (m : Fin k → E) :
+    ∂^{m} (toTemperedDistributionCLM E F μ f) = toTemperedDistributionCLM E F μ (∂^{m} f) := by
+  induction k with
+  | zero => rfl
+  | succ k ih =>
+    rw [LineDeriv.iteratedLineDerivOp_succ_left, LineDeriv.iteratedLineDerivOp_succ_left, ih,
+      lineDerivOp_toTemperedDistributionCLM_eq]
 
 end TemperedDistribution

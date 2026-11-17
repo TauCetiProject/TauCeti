@@ -112,7 +112,7 @@ theorem exists_isZeroMultiplicity_sectionValue_of_eventually_ne
     ∃ D : Multiset ℂ, IsZeroMultiplicity (sectionValue x) fun z ↦ D.count z := by
   obtain ⟨D, hD⟩ := exists_sectionValue_eq_pow_count_mul_of_eventually_ne hn hb₁ hb₂ hp hq hhol
     htail
-  exact ⟨D, isZeroMultiplicity_iff.2 fun z ↦ (hD z).imp fun _ hv ↦ ⟨hv.1.continuousAt, hv.2⟩⟩
+  exact ⟨D, isZeroMultiplicity_of_forall_contDiffAt hD⟩
 
 /-- **The zero divisor of a framed degree-`m` vortex lies in `Sym ℂ m`.** If the section of a
 field with `Cᵏ` connection coefficients, `k ≥ 1`, satisfying the holomorphicity rows has the
@@ -129,7 +129,7 @@ theorem exists_sym_sectionValue_eq_pow_count_mul {m : ℕ}
   obtain ⟨D, hD⟩ := exists_sectionValue_eq_pow_count_mul_of_eventually_ne hn hb₁ hb₂ hp hq hhol
     htail
   have hmult : IsZeroMultiplicity (sectionValue x) fun z ↦ D.count z :=
-    isZeroMultiplicity_iff.2 fun z ↦ (hD z).imp fun _ hv ↦ ⟨hv.1.continuousAt, hv.2⟩
+    isZeroMultiplicity_of_forall_contDiffAt hD
   exact ⟨⟨D, hmult.card_eq_of_tendsto_mul_inv_pow hframe⟩, hD⟩
 
 /-- The zero multiplicities of a framed degree-`m` field satisfying the holomorphicity rows are
@@ -139,7 +139,7 @@ theorem exists_sym_isZeroMultiplicity_sectionValue {m : ℕ}
     (hframe : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1)) :
     ∃ D : Sym ℂ m, IsZeroMultiplicity (sectionValue x) fun z ↦ (D : Multiset ℂ).count z := by
   obtain ⟨D, hD⟩ := exists_sym_sectionValue_eq_pow_count_mul hn hb₁ hb₂ hp hq hhol hframe
-  exact ⟨D, isZeroMultiplicity_iff.2 fun z ↦ (hD z).imp fun _ hv ↦ ⟨hv.1.continuousAt, hv.2⟩⟩
+  exact ⟨D, isZeroMultiplicity_of_forall_contDiffAt hD⟩
 
 omit hn hb₁ hb₂ hp hq hhol
 

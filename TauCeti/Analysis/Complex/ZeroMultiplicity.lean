@@ -86,6 +86,13 @@ theorem isZeroMultiplicity_iff :
       ∀ z, ∃ v : ℂ → ℂ, ContinuousAt v z ∧ v z ≠ 0 ∧ ∀ᶠ w in 𝓝 z, f w = (w - z) ^ n z * v w :=
   Iff.rfl
 
+/-- Local `Cᵏ` power factorizations witness `IsZeroMultiplicity`. -/
+theorem isZeroMultiplicity_of_forall_contDiffAt {k : WithTop ℕ∞}
+    (h : ∀ z, ∃ v : ℂ → ℂ, ContDiffAt ℝ k v z ∧ v z ≠ 0 ∧
+      ∀ᶠ w in 𝓝 z, f w = (w - z) ^ n z * v w) :
+    IsZeroMultiplicity f n :=
+  isZeroMultiplicity_iff.2 fun z ↦ (h z).imp fun _ hv ↦ ⟨hv.1.continuousAt, hv.2⟩
+
 namespace IsZeroMultiplicity
 
 /-- **Uniqueness of zero multiplicities.** A function has at most one zero multiplicity

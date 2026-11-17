@@ -7,13 +7,13 @@ module
 
 public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
-public import Mathlib.MeasureTheory.Function.LpSpace.Basic
+public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 public import TauCeti.Analysis.PDE.Vortex.Deformation
-import Mathlib.Analysis.InnerProductSpace.Dual
 import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
 import TauCeti.Analysis.Distribution.TestFunction.Inner
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import Mathlib.Analysis.InnerProductSpace.Dual
 
 /-!
 # The gauge-fixed vortex operator at a general field
@@ -60,8 +60,9 @@ front of the three rows of `linearizedEquation`, and `gaugeFixedAdjoint` is its 
   `3 |φ|² / 2 - 1 / 8` and `K` is multiplication by `i conj (∇₁ α)`. Unlike `L_x L_x*`, this
   operator is not a sum of nonnegative Schrödinger operators, since the coupling `K` has no
   sign; small `|∇₁ α|` and `|α|` close to one suffice for it to be coercive.
-* `gaugeFixedKernel x` and `gaugeFixedKernelToLp x`: the kernel of `L_x` on `C²`
-  square-integrable variations and its injective embedding into `L²`.
+* `gaugeFixedKernel x`: the kernel of `L_x` on `C²` square-integrable variations, a real
+  subspace. Its elements are continuous, so taking `L²` classes embeds it in `L²(ℂ; ℝ⁴)`
+  (`gaugeFixedKernelToLp`, `gaugeFixedKernelToLp_injective`, `norm_gaugeFixedKernelToLp`).
 * `integral_mul_gaugeAdjoint` and `integral_inner_gaugeFixedOperator`: the integration-by-parts
   identities `∫ f d₀* y = ∫ ⟪d₀ f, y⟫` and `∫ ⟪L_x y, η⟫ = ∫ ⟪y, L_x* η⟫`, for `C¹` data with one
   factor compactly supported and any additive Haar measure.
@@ -982,35 +983,46 @@ theorem mem_gaugeFixedKernel :
       ContDiff ℝ 2 y ∧ MemLp y 2 volume ∧ ∀ z, gaugeFixedOperator x y z = 0 :=
   Iff.rfl
 
-/-- The `L²` class of a kernel element, as a linear map. -/
+/-- Elements of `gaugeFixedKernel x` are square integrable. -/
+theorem memLp_of_mem_gaugeFixedKernel (hy : y ∈ gaugeFixedKernel x) : MemLp y 2 :=
+  (mem_gaugeFixedKernel.1 hy).2.1
+
+/-- Elements of `gaugeFixedKernel x` are continuous. -/
+theorem continuous_of_mem_gaugeFixedKernel (hy : y ∈ gaugeFixedKernel x) : Continuous y :=
+  (mem_gaugeFixedKernel.1 hy).1.continuous
+
+/-- The `L²` class of an element of `gaugeFixedKernel x`, as a real-linear map into
+`L²(ℂ; ℝ⁴)`. -/
 def gaugeFixedKernelToLp (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
     gaugeFixedKernel x →ₗ[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ) where
-  toFun y := (mem_gaugeFixedKernel.1 y.2).2.1.toLp y
-  map_add' y v := MemLp.toLp_add (mem_gaugeFixedKernel.1 y.2).2.1 (mem_gaugeFixedKernel.1 v.2).2.1
-  map_smul' t y := MemLp.toLp_const_smul t (mem_gaugeFixedKernel.1 y.2).2.1
+  toFun y := (memLp_of_mem_gaugeFixedKernel y.2).toLp y
+  map_add' y v :=
+    MemLp.toLp_add (memLp_of_mem_gaugeFixedKernel y.2) (memLp_of_mem_gaugeFixedKernel v.2)
+  map_smul' t y := MemLp.toLp_const_smul t (memLp_of_mem_gaugeFixedKernel y.2)
 
-/-- `gaugeFixedKernelToLp` sends a kernel element to its `L²` equivalence class. -/
 theorem gaugeFixedKernelToLp_apply (y : gaugeFixedKernel x) :
-    gaugeFixedKernelToLp x y = (mem_gaugeFixedKernel.1 y.2).2.1.toLp y := (rfl)
+    gaugeFixedKernelToLp x y = (memLp_of_mem_gaugeFixedKernel y.2).toLp y := (rfl)
 
-/-- The `L²` class of a kernel element agrees almost everywhere with the underlying field. -/
+/-- The `L²` class of a kernel element agrees almost everywhere with the element. -/
 theorem coeFn_gaugeFixedKernelToLp (y : gaugeFixedKernel x) :
-    ⇑(gaugeFixedKernelToLp x y) =ᵐ[volume] (y : ℂ → EuclideanSpace ℝ (Fin 4)) :=
-  (mem_gaugeFixedKernel.1 y.2).2.1.coeFn_toLp
+    gaugeFixedKernelToLp x y =ᵐ[volume] y :=
+  (memLp_of_mem_gaugeFixedKernel y.2).coeFn_toLp
 
-/-- The `L²` norm of a kernel element is `√(∫ ‖y z‖²)`. -/
+/-- The `L²` norm of the class of a kernel element is the square root of the integral of its
+squared pointwise norm. -/
 theorem norm_gaugeFixedKernelToLp (y : gaugeFixedKernel x) :
     ‖gaugeFixedKernelToLp x y‖ = √(∫ z, ‖(y : ℂ → EuclideanSpace ℝ (Fin 4)) z‖ ^ 2) := by
   rw [gaugeFixedKernelToLp_apply, Lp.norm_toLp,
-    (mem_gaugeFixedKernel.1 y.2).2.1.eLpNorm_two_eq_ofReal_sqrt_integral,
+    (memLp_of_mem_gaugeFixedKernel y.2).eLpNorm_two_eq_ofReal_sqrt_integral,
     ENNReal.toReal_ofReal (Real.sqrt_nonneg _)]
 
-/-- Kernel elements are continuous, so they are determined by their `L²` classes. -/
+/-- Elements of `gaugeFixedKernel x` are continuous, so they are determined by their `L²`
+classes. -/
 theorem gaugeFixedKernelToLp_injective (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
     Function.Injective (gaugeFixedKernelToLp x) := by
   refine (injective_iff_map_eq_zero _).2 fun y hy ↦ Subtype.ext ?_
-  have h := (coeFn_gaugeFixedKernelToLp y).symm.trans (Lp.eq_zero_iff_ae_eq_zero.1 hy)
-  exact ((mem_gaugeFixedKernel.1 y.2).1.continuous.ae_eq_iff_eq volume continuous_const).1 h
+  have h := (coeFn_gaugeFixedKernelToLp y).symm.trans ((Lp.eq_zero_iff_ae_eq_zero).1 hy)
+  exact ((continuous_of_mem_gaugeFixedKernel y.2).ae_eq_iff_eq volume continuous_const).1 h
 
 end Kernel
 

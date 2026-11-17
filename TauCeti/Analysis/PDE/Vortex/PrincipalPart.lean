@@ -64,8 +64,8 @@ dimensional, of real dimension at most `2 m`
 At a framed vortex, `2 m` is the real dimension of the tangent space of the divisor space
 `Sym^m ℂ`; this is the upper bound in the identification of the kernel with that tangent space.
 Surjectivity of the principal-part map and the resulting dimension `2 m` are proved in
-`TauCeti.Analysis.PDE.Vortex.KernelDimension`, and the comparison with the weak `L²` kernel, and
-membership of kernel elements in every `H^s`, are proved in
+`TauCeti.Analysis.PDE.Vortex.KernelDimension`, the comparison with the weak `L²` kernel in
+`TauCeti.Analysis.PDE.Vortex.WeakKernel`, and membership of kernel elements in every `H^s` in
 `TauCeti.Analysis.PDE.Vortex.SobolevScale`.
 
 ## References
@@ -356,11 +356,7 @@ private theorem exists_injective_linearMap {k : ℕ∞} (hk : 1 ≤ k) {m : ℕ}
   have hk0 : (k : WithTop ℕ∞) ≠ 0 := by
     exact_mod_cast (ne_of_gt (lt_of_lt_of_le zero_lt_one hk))
   -- The zero divisor `D` of `α` and an integrating factor `ν`.
-  obtain ⟨D, hD⟩ := exists_sym_sectionValue_eq_pow_count_mul hk hb₁ hb₂ hp hq hhol hframe
-  have hα : IsZeroMultiplicity (sectionValue x) fun z ↦ Multiset.count z (D : Multiset ℂ) :=
-    isZeroMultiplicity_iff.2 fun z ↦ by
-      obtain ⟨v, hv, hv₀, hvf⟩ := hD z
-      exact ⟨v, hv.continuousAt, hv₀, hvf⟩
+  obtain ⟨D, hα⟩ := exists_sym_isZeroMultiplicity_sectionValue hk hb₁ hb₂ hp hq hhol hframe
   obtain ⟨ν, hν, hνeq⟩ :=
     exists_contDiff_conjWirtingerDeriv_apply_one_eq hk (contDiff_connectionCoeff hb₁ hb₂)
   have hdec (y) (hy : y ∈ V) : ∃ G : ℂ → ℂ, Continuous G ∧ ∃ H : ℂ → ℂ, Differentiable ℂ H ∧
@@ -413,8 +409,7 @@ theorem finrank_le_two_mul_of_forall_sectionValue_eq_mul_eq_zero {k : ℕ∞} (h
   calc Module.finrank ℝ V ≤ Module.finrank ℝ (ι → ℂ) :=
         LinearMap.finrank_le_finrank_of_injective hΦ
     _ = 2 * m := by
-      rw [Module.finrank_pi_fintype, Finset.sum_const, Complex.finrank_real_complex, smul_eq_mul,
-        Finset.card_univ, hcard, mul_comm]
+      simp [Module.finrank_pi_fintype, Complex.finrank_real_complex, hcard, mul_comm]
 
 /-! ### The kernel of the gauge-fixed operator -/
 

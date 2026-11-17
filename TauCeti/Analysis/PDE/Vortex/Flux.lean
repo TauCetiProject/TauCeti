@@ -391,13 +391,11 @@ theorem integral_one_sub_normSq_eq_of_tendsto_sectionValue_mul_inv_pow
     (hframe : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1)) :
     ∫ z, (1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) = 16 * π * m := by
   -- The zero divisor `D` of the section has degree `m`.
-  obtain ⟨D, hD⟩ := exists_sym_sectionValue_eq_pow_count_mul (k := 2) (by norm_num) hb₁ hb₂
+  obtain ⟨D, hD⟩ := exists_sym_isZeroMultiplicity_sectionValue (k := 2) (by norm_num) hb₁ hb₂
     (hp.differentiable (by norm_num)) (hq.differentiable (by norm_num))
     (fun w ↦ ⟨by simp [hsol w], by simp [hsol w]⟩) hframe
   rw [integral_one_sub_normSq_eq_mul_card hb₁ hb₂ hp hq hsol
-    (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe)
-    (isZeroMultiplicity_iff.2 fun z ↦ (hD z).imp fun _ hv ↦ ⟨hv.1.continuousAt, hv.2⟩),
-    Sym.card_coe]
+    (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe) hD, Sym.card_coe]
 
 /-- **The flux of a framed plane vortex is its degree.** Let `x` be a `C²` vortex on the whole
 plane whose section has the degree-`m` end framing `α(z) (z / |z|)⁻ᵐ → 1`. Then the curvature
