@@ -475,9 +475,9 @@ the Morse–Bott normal form `f (Θ a v) = c + ½ Hessₛ (v, v)`, and an `ε₀
 property. Let `0 < ε < ε₀` be such that the band `f⁻¹[c - ε, c + ε]` is compact and all its
 critical points lie on the submanifolds. Then each negative disc bundle `D a ε` relative to `g a`
 (`TauCeti.SmoothEmbedding.IsCriticalSubmanifold.negativeDiscBundle`) lies in the source of `Θ a`,
-and `{f ≤ c - ε} ∪ ⋃ a, Θ a (D a ε)` is a strong deformation retract of `{f ≤ c + ε}`: there is a
-retraction of `{f ≤ c + ε}` onto it, and a homotopy in `{f ≤ c + ε}` from this retraction to the
-identity which fixes it pointwise.
+the images `Θ a (D a ε)` are pairwise disjoint, and `{f ≤ c - ε} ∪ ⋃ a, Θ a (D a ε)` is a strong
+deformation retract of `{f ≤ c + ε}`: there is a retraction of `{f ≤ c + ε}` onto it, and a
+homotopy in `{f ≤ c + ε}` from this retraction to the identity which fixes it pointwise.
 
 The critical components of a Morse–Bott function on one level may have different dimensions, which
 is why each submanifold has its own model. -/
@@ -504,6 +504,8 @@ theorem exists_sublevel_union_iUnion_negativeDiscBundle_deformation [T2Space M]
       ∃ ε₀ > 0, ∀ ε ∈ Ioo 0 ε₀, IsCompact (f ⁻¹' Icc (c - ε) (c + ε)) →
         criticalPoints I f ∩ f ⁻¹' Icc (c - ε) (c + ε) ⊆ ⋃ a, range (i a) →
         (∀ a, (h a).negativeDiscBundle hn (P a) (g a).toRiemannianMetric ε ⊆ (Θ a).source) ∧
+        Pairwise (Disjoint on fun a ↦
+          Θ a '' (h a).negativeDiscBundle hn (P a) (g a).toRiemannianMetric ε) ∧
         ∃ r : C({y | f y ≤ c + ε}, ↥({y | f y ≤ c + ε} ∩ ({y | f y ≤ c - ε} ∪
             ⋃ a, Θ a '' (h a).negativeDiscBundle hn (P a) (g a).toRiemannianMetric ε))),
           (∀ y, r (ContinuousMap.inclusion inter_subset_left y) = y) ∧
@@ -556,8 +558,9 @@ theorem exists_sublevel_union_iUnion_negativeDiscBundle_deformation [T2Space M]
   refine ⟨ε₀, hε₀, fun ε hε hcomp hcrit ↦ ?_⟩
   have hD (a : ι) :=
     (h a).setOf_posSq_eq_zero_and_negSq_le hn (P := P a) (g a).toRiemannianMetric ε
-  obtain ⟨hsrc, hr⟩ := hmain ε hε hcomp (by simpa only [hZ] using hcrit)
-  refine ⟨fun a ↦ hD a ▸ hsrc a, ?_⟩
+  obtain ⟨hsrc, hdisj, hr⟩ := hmain ε hε hcomp (by simpa only [hZ] using hcrit)
+  refine ⟨fun a ↦ hD a ▸ hsrc a,
+    fun a b hab ↦ by simpa only [Function.onFun, hD] using hdisj hab, ?_⟩
   rwa [iUnion_congr fun a ↦ congrArg (Θ a '' ·) (hD a).symm]
 
 end FamilyAttachment
@@ -615,7 +618,7 @@ theorem exists_sublevel_union_negativeDiscBundle_deformation [T2Space M]
       (P := fun _ ↦ P) (J := fun _ ↦ J) (i := fun _ ↦ i) hn (fun _ ↦ h) hfs (fun _ ↦ hc)
       Subsingleton.pairwise (fun _ ↦ hdim) (fun _ ↦ g)
   refine ⟨Θ (), hΘz (), hΘi (), hΘf (), ε₀, hε₀, fun ε hε hcomp hcrit ↦ ?_⟩
-  obtain ⟨hsrc, hr⟩ := hmain ε hε hcomp (by rwa [iUnion_const])
+  obtain ⟨hsrc, -, hr⟩ := hmain ε hε hcomp (by rwa [iUnion_const])
   let := i.normalSpaceFiberBundle hn hdim
   let := i.normalSpaceVectorBundle hn hdim
   rw [show (⋃ a, Θ a '' h.negativeDiscBundle hn P g.toRiemannianMetric ε) =
@@ -740,7 +743,8 @@ Then there are smooth partial diffeomorphisms `Θ a` from the total spaces of th
 these pieces to `M`, each defined on a neighbourhood of the zero section and sending it to `i a`,
 which put `f` in the Morse–Bott normal form `f (Θ a v) = c + ½ Hessₛ (v, v)`, and an `ε₀ > 0` such
 that for `0 < ε < ε₀` each negative disc bundle `D a ε` relative to `g a` lies in the source of
-`Θ a` and `{f ≤ c - ε} ∪ ⋃ a, Θ a (D a ε)` is a strong deformation retract of `{f ≤ c + ε}`. If
+`Θ a`, the images `Θ a (D a ε)` are pairwise disjoint, and `{f ≤ c - ε} ∪ ⋃ a, Θ a (D a ε)` is a
+strong deformation retract of `{f ≤ c + ε}`. If
 `c` is not a critical value there are no such pieces, and `{f ≤ c - ε}` is a strong deformation
 retract of `{f ≤ c + ε}`. -/
 theorem exists_sublevel_union_iUnion_negativeDiscBundle_deformation_of_isCompact [T2Space M]
@@ -768,6 +772,9 @@ theorem exists_sublevel_union_iUnion_negativeDiscBundle_deformation_of_isCompact
         (∀ a : {a // ∀ s, f (i a s) = c},
           (h.isNondegenerateCriticalSubmanifold a).negativeDiscBundle hn (P a)
             (g a).toRiemannianMetric ε ⊆ (Θ a).source) ∧
+        Pairwise (Disjoint on fun a : {a // ∀ s, f (i a s) = c} ↦
+          Θ a '' (h.isNondegenerateCriticalSubmanifold a).negativeDiscBundle hn (P a)
+            (g a).toRiemannianMetric ε) ∧
         ∃ r : C({y | f y ≤ c + ε}, ↥({y | f y ≤ c + ε} ∩ ({y | f y ≤ c - ε} ∪
             ⋃ a, Θ a '' (h.isNondegenerateCriticalSubmanifold a).negativeDiscBundle hn (P a)
               (g a).toRiemannianMetric ε))),
@@ -827,7 +834,8 @@ Then there are smooth partial diffeomorphisms `Θ a` from the total spaces of th
 these pieces to `M`, each defined on a neighbourhood of the zero section and sending it to `i a`,
 which put `f` in the Morse–Bott normal form `f (Θ a v) = c + ½ Hessₛ (v, v)`, and an `ε₀ > 0` such
 that for `0 < ε < ε₀` each negative disc bundle `D a ε` relative to `g a` lies in the source of
-`Θ a` and `{f ≤ c - ε} ∪ ⋃ a, Θ a (D a ε)` is a strong deformation retract of `{f ≤ c + ε}`. If
+`Θ a`, the images `Θ a (D a ε)` are pairwise disjoint, and `{f ≤ c - ε} ∪ ⋃ a, Θ a (D a ε)` is a
+strong deformation retract of `{f ≤ c + ε}`. If
 `c` is not a critical value there are no such pieces, and `{f ≤ c - ε}` is a strong deformation
 retract of `{f ≤ c + ε}`. -/
 theorem exists_sublevel_union_iUnion_negativeDiscBundle_deformation [T2Space M]
@@ -855,6 +863,9 @@ theorem exists_sublevel_union_iUnion_negativeDiscBundle_deformation [T2Space M]
         (∀ a : {a // ∀ s, f (i a s) = c},
           (h.isNondegenerateCriticalSubmanifold a).negativeDiscBundle hn (P a)
             (g a).toRiemannianMetric ε ⊆ (Θ a).source) ∧
+        Pairwise (Disjoint on fun a : {a // ∀ s, f (i a s) = c} ↦
+          Θ a '' (h.isNondegenerateCriticalSubmanifold a).negativeDiscBundle hn (P a)
+            (g a).toRiemannianMetric ε) ∧
         ∃ r : C({y | f y ≤ c + ε}, ↥({y | f y ≤ c + ε} ∩ ({y | f y ≤ c - ε} ∪
             ⋃ a, Θ a '' (h.isNondegenerateCriticalSubmanifold a).negativeDiscBundle hn (P a)
               (g a).toRiemannianMetric ε))),

@@ -811,9 +811,10 @@ submanifolds of `f` on the level `c`.
 
 Then there is an `ε₀ > 0` such that for `0 < ε < ε₀`, if the band `f⁻¹[c - ε, c + ε]` is compact
 and its critical points lie in the union of the `Θ a '' Z a`, each disc bundle
-`D a ε = {t a = 0, s a ≤ ε}` lies in the source of `Θ a` and `{f ≤ c - ε} ∪ ⋃ a, Θ a (D a ε)` is a
-strong deformation retract of `{f ≤ c + ε}`: there is a retraction of `{f ≤ c + ε}` onto it, and a
-homotopy in `{f ≤ c + ε}` from this retraction to the identity which fixes it pointwise. This is
+`D a ε = {t a = 0, s a ≤ ε}` lies in the source of `Θ a`, the images `Θ a (D a ε)` are pairwise
+disjoint, and `{f ≤ c - ε} ∪ ⋃ a, Θ a (D a ε)` is a strong deformation retract of
+`{f ≤ c + ε}`: there is a retraction of `{f ≤ c + ε}` onto it, and a homotopy in `{f ≤ c + ε}`
+from this retraction to the identity which fixes it pointwise. This is
 `TauCeti.exists_sublevel_union_negativeDiscBundle_deformation` for the tube
 `⋃ a, Θ a '' {s a + 2 t a < m}` with `m > 0` so small that these pieces are disjoint. -/
 theorem exists_sublevel_union_iUnion_image_deformation [∀ a, LocallyCompactSpace (X a)]
@@ -833,6 +834,7 @@ theorem exists_sublevel_union_iUnion_image_deformation [∀ a, LocallyCompactSpa
     ∃ ε₀ > 0, ∀ ε ∈ Ioo 0 ε₀, IsCompact (f ⁻¹' Icc (c - ε) (c + ε)) →
       criticalPoints I f ∩ f ⁻¹' Icc (c - ε) (c + ε) ⊆ ⋃ a, Θ a '' Z a →
       (∀ a, {x | t a x = 0 ∧ s a x ≤ ε} ⊆ (Θ a).source) ∧
+      Pairwise (Disjoint on fun a ↦ Θ a '' {x | t a x = 0 ∧ s a x ≤ ε}) ∧
       ∃ r : C({y | f y ≤ c + ε}, ↥({y | f y ≤ c + ε} ∩
           ({y | f y ≤ c - ε} ∪ ⋃ a, Θ a '' {x | t a x = 0 ∧ s a x ≤ ε}))),
         (∀ y, r (ContinuousMap.inclusion inter_subset_left y) = y) ∧
@@ -861,6 +863,8 @@ theorem exists_sublevel_union_iUnion_image_deformation [∀ a, LocallyCompactSpa
     simp only [hq_def, ht, mul_zero, add_zero]
     linarith [hε.1]
   refine ⟨fun a x hx ↦ hmΘ a (hD a x hx.1 hx.2),
+    fun a b hab ↦ (hmd hab).mono (image_mono fun x hx ↦ hD a x hx.1 hx.2)
+      (image_mono fun x hx ↦ hD b x hx.1 hx.2),
     exists_sublevel_union_iUnion_image_deformation_of_tube hfs Θ hs ht hs₀ ht₀ hf
     (fun a ↦ σ a 1) (fun a ↦ (hσ a).comp ((continuous_const.prodMk continuous_fst).prodMk
       continuous_snd)) hσd (fun a b x ↦ by rw [hσs, one_pow, one_mul])
