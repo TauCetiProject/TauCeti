@@ -55,6 +55,8 @@ The proof has two steps.
 
 In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 
+* `unstableOrientation`: the orientation of the tangent space at a critical point of top index
+  carried by the unstable frame from the orientation of its coordinates of negative weight.
 * `fundamentalSign`: the sign comparing the orientation of the unstable manifold of a critical
   point of top index with the orientation of `M`, and `0` at the other critical points.
 * `signedMorseFundamentalChain`: the sum of the critical points of top index, weighted by their
@@ -115,25 +117,6 @@ theorem isOrientationPreservingAt_flow {ι : Type*} [Fintype ι]
 
 variable {hX}
 
-variable (hX) in
-open scoped Classical in
-/-- The **fundamental sign** of a critical point `p` for an orientation `oM` of `M`. When `p` has
-Morse index `n = dim M`, the orientation `𝔬.orientation p` of the coordinates of negative weight is
-carried by the unstable frame at `p` to an orientation of the tangent space `T_p M`; the sign is
-`1` if this is the orientation `oM` of `M` at `p`, and `-1` otherwise. At the critical points of
-index less than `n` the sign is `0`. -/
-noncomputable def fundamentalSign (𝔬 : MorseOrientation f X)
-    (oM : Manifold.Orientation 𝓘(ℝ, E) M (Fin (finrank ℝ E))) (p : criticalPoints 𝓘(ℝ, E) f) :
-    ℤ :=
-  if h : manifoldMorseIndex 𝓘(ℝ, E) f p = finrank ℝ E ∧
-      Bijective (hX.unstableFrame (𝔬.chart p) p) then
-    if Orientation.map _
-        (LinearEquiv.ofBijective (hX.unstableFrame (𝔬.chart p) p).toLinearMap h.2)
-        ((𝔬.orientation p).reindex ℝ _ (finCongr h.1)) = oM.orientationAt p then 1 else -1
-  else 0
-
-variable {𝔬 : MorseOrientation f X} {oM : Manifold.Orientation 𝓘(ℝ, E) M (Fin (finrank ℝ E))}
-
 /-- The unstable frame at a critical point of top index is bijective. -/
 theorem bijective_unstableFrame_self (𝔬 : MorseOrientation f X) {p : criticalPoints 𝓘(ℝ, E) f}
     (hp : manifoldMorseIndex 𝓘(ℝ, E) f p = finrank ℝ E) :
@@ -141,22 +124,59 @@ theorem bijective_unstableFrame_self (𝔬 : MorseOrientation f X) {p : critical
   bijective_unstableFrame (𝔬.coord_mfderiv_chart p) hp
     (mem_linearBackwardTimes_self (mem_criticalPoints_iff_mfderiv_eq_zero.1 p.2) 0)
 
+variable (hX) in
+/-- The **unstable orientation** of a critical point `p` of Morse index `n = dim M`: the
+orientation `𝔬.orientation p` of the coordinates of negative weight, carried by the unstable frame
+at `p` to an orientation of the tangent space `T_p M`. -/
+noncomputable def unstableOrientation (𝔬 : MorseOrientation f X) {p : criticalPoints 𝓘(ℝ, E) f}
+    (hp : manifoldMorseIndex 𝓘(ℝ, E) f p = finrank ℝ E) :
+    Orientation ℝ (TangentSpace 𝓘(ℝ, E) (p : M)) (Fin (finrank ℝ E)) :=
+  Orientation.map _ (LinearEquiv.ofBijective (hX.unstableFrame (𝔬.chart p) p).toLinearMap
+    (bijective_unstableFrame_self 𝔬 hp)) ((𝔬.orientation p).reindex ℝ _ (finCongr hp))
+
+/-- **Reversing orientations reverses the unstable orientations** at the critical points of the
+reversed set. -/
+theorem unstableOrientation_reverse (𝔬 : MorseOrientation f X)
+    (S : Set (criticalPoints 𝓘(ℝ, E) f)) [DecidablePred (· ∈ S)] {p : criticalPoints 𝓘(ℝ, E) f}
+    (hp : manifoldMorseIndex 𝓘(ℝ, E) f p = finrank ℝ E) :
+    hX.unstableOrientation (𝔬.reverse S) hp =
+      if p ∈ S then -hX.unstableOrientation 𝔬 hp else hX.unstableOrientation 𝔬 hp := by
+  rw [unstableOrientation, unstableOrientation, MorseOrientation.reverse_orientation]
+  split_ifs
+  · exact (congrArg _ (Orientation.reindex_neg _ _)).trans (Orientation.map_neg _ _)
+  -- The reversed data has the same charts by definition (`reverse_chart`), so the two unstable
+  -- frames agree.
+  · rfl
+
+variable (hX) in
 open scoped Classical in
-/-- At a critical point of top index, the fundamental sign compares the orientation of the
-unstable manifold carried by the unstable frame with the orientation of `M`. -/
+/-- The **fundamental sign** of a critical point `p` for an orientation `oM` of `M`. When `p` has
+Morse index `n = dim M`, the sign is `1` if the unstable orientation of `p` is the orientation `oM`
+of `M` at `p`, and `-1` otherwise. At the critical points of index less than `n` the sign is
+`0`. -/
+noncomputable def fundamentalSign (𝔬 : MorseOrientation f X)
+    (oM : Manifold.Orientation 𝓘(ℝ, E) M (Fin (finrank ℝ E))) (p : criticalPoints 𝓘(ℝ, E) f) :
+    ℤ :=
+  if h : manifoldMorseIndex 𝓘(ℝ, E) f p = finrank ℝ E then
+    if hX.unstableOrientation 𝔬 h = oM.orientationAt p then 1 else -1
+  else 0
+
+variable {𝔬 : MorseOrientation f X} {oM : Manifold.Orientation 𝓘(ℝ, E) M (Fin (finrank ℝ E))}
+
+open scoped Classical in
+/-- At a critical point of top index, the fundamental sign compares the unstable orientation with
+the orientation of `M`. -/
 theorem fundamentalSign_of_morseIndex_eq {p : criticalPoints 𝓘(ℝ, E) f}
     (hp : manifoldMorseIndex 𝓘(ℝ, E) f p = finrank ℝ E) :
     hX.fundamentalSign 𝔬 oM p =
-      if Orientation.map _ (LinearEquiv.ofBijective (hX.unstableFrame (𝔬.chart p) p).toLinearMap
-          (bijective_unstableFrame_self 𝔬 hp))
-          ((𝔬.orientation p).reindex ℝ _ (finCongr hp)) = oM.orientationAt p then 1 else -1 := by
-  rw [fundamentalSign, dite_eq_left ⟨hp, bijective_unstableFrame_self 𝔬 hp⟩]
+      if hX.unstableOrientation 𝔬 hp = oM.orientationAt p then 1 else -1 :=
+  dite_eq_left hp
 
 /-- The fundamental sign vanishes at the critical points of index less than `dim M`. -/
 @[simp]
 theorem fundamentalSign_of_morseIndex_ne {p : criticalPoints 𝓘(ℝ, E) f}
     (hp : manifoldMorseIndex 𝓘(ℝ, E) f p ≠ finrank ℝ E) : hX.fundamentalSign 𝔬 oM p = 0 :=
-  dite_eq_right fun h ↦ hp h.1
+  dite_eq_right hp
 
 /-- At a critical point of top index the fundamental sign is `±1`. -/
 theorem fundamentalSign_eq_one_or_eq_neg_one {p : criticalPoints 𝓘(ℝ, E) f}
@@ -193,27 +213,8 @@ theorem fundamentalSign_reverse (S : Set (criticalPoints 𝓘(ℝ, E) f)) [Decid
     hX.fundamentalSign (𝔬.reverse S) oM p =
       (if p ∈ S then -1 else 1) * hX.fundamentalSign 𝔬 oM p := by
   by_cases hp : manifoldMorseIndex 𝓘(ℝ, E) f p = finrank ℝ E
-  · rw [fundamentalSign_of_morseIndex_eq hp, fundamentalSign_of_morseIndex_eq hp]
-    -- The reversed data has the same charts, so both signs use the same unstable frame. The
-    -- transported orientations are compared first, since `simp` cannot rewrite `reverse_chart`
-    -- inside the dependent types of the frame and the orientation.
-    have hmap : Orientation.map _ (LinearEquiv.ofBijective
-          (hX.unstableFrame ((𝔬.reverse S).chart p) p).toLinearMap
-          (bijective_unstableFrame_self (hX := hX) (𝔬.reverse S) hp))
-          (((𝔬.reverse S).orientation p).reindex ℝ _ (finCongr hp)) =
-        if p ∈ S then -Orientation.map _ (LinearEquiv.ofBijective
-          (hX.unstableFrame (𝔬.chart p) p).toLinearMap
-          (bijective_unstableFrame_self (hX := hX) 𝔬 hp))
-          ((𝔬.orientation p).reindex ℝ _ (finCongr hp))
-        else Orientation.map _ (LinearEquiv.ofBijective
-          (hX.unstableFrame (𝔬.chart p) p).toLinearMap
-          (bijective_unstableFrame_self (hX := hX) 𝔬 hp))
-          ((𝔬.orientation p).reindex ℝ _ (finCongr hp)) := by
-      rw [MorseOrientation.reverse_orientation]
-      split_ifs
-      · exact (congrArg _ (Orientation.reindex_neg _ _)).trans (Orientation.map_neg _ _)
-      · rfl
-    rw [hmap]
+  · rw [fundamentalSign_of_morseIndex_eq hp, fundamentalSign_of_morseIndex_eq hp,
+      unstableOrientation_reverse]
     by_cases hS : p ∈ S
     · rw [ite_eq_left hS, ite_eq_left hS, neg_one_mul]
       exact Orientation.ite_neg_eq_eq_neg_ite (Fintype.card_fin _)
@@ -545,6 +546,7 @@ private theorem fundamentalSign_mul_trajectorySign (hMS : hX.IsMorseSmale)
         ((Module.Basis.singleton (Fin 1) ℝ).orientation.prod (𝔬.orientation q)
           (Module.finrank_self ℝ) (𝔬.chart q).finrank_negativeWeight_fun).reindex ℝ _
           (finCongr (by omega)) then 1 else -1 := by
+  rw [fundamentalSign_of_morseIndex_eq hp, unstableOrientation]
   obtain ⟨T, hT⟩ := (hX.eventually_mem_linearBackwardTimes (𝔬.coord_mfderiv_chart p) hf hz.1).exists
   have hF := bijective_unstableFrame (𝔬.coord_mfderiv_chart p) hp hT
   have hC := bijective_trajectoryComparison (𝔬.coord_mfderiv_chart p) (𝔬.coord_mfderiv_chart q)
@@ -571,7 +573,7 @@ private theorem fundamentalSign_mul_trajectorySign (hMS : hX.IsMorseSmale)
       rw [MorseChart.trajectoryTargetOrientation_def, Orientation.reindex_finCongr_reindex_finCongr]
     rw [← hC𝓕, Orientation.map_reindex, hτp]
     exact (Orientation.reindex ℝ _ (finCongr hp)).injective.eq_iff.symm
-  rw [fundamentalSign_of_morseIndex_eq hp, trajectorySign_of_bijective hC,
+  rw [trajectorySign_of_bijective hC,
     ← map_unstableFrame_eq_orientationAt_iff hf (𝔬.coord_mfderiv_chart p)
       (mem_criticalPoints_iff_mfderiv_eq_zero.1 p.2) oM op hz.1 hF, if_congr hτ rfl rfl]
   refine Orientation.ite_map_mul_ite_map_trans 𝓕 𝒜 op (Fintype.card_fin _) ?_
