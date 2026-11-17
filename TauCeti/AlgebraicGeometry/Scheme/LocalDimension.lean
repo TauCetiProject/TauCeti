@@ -30,7 +30,7 @@ The first two statements are local on `X`. On an affine chart `Spec A ⟶ X` thr
 finitely generated `k`-algebra and `x` corresponding to a prime `p`, they are the affine statements
 `dim (A ⧸ p) = trdeg_k κ(p)` (`Ideal.ringKrullDim_quotient_eq_toNat_trdeg_residueField`) and
 `dim_p Spec A = ht p + dim (A ⧸ p)`
-(`TauCeti.topologicalKrullDimAt_eq_height_add_ringKrullDim_quotient`). The chart is an open
+(`PrimeSpectrum.topologicalKrullDimAt_eq_height_add_ringKrullDim_quotient`). The chart is an open
 embedding, so it preserves local dimension; it identifies the stalk `O_{X,x}` with `A_p`, whose
 dimension is `ht p`; and it identifies `κ(x)` with `κ(p)` as `k`-algebras. The closure of `x`
 meets the chart in a nonempty open part of an irreducible closed set, which has the dimension of
@@ -123,7 +123,7 @@ theorem topologicalKrullDimAt_eq_ringKrullDim_stalk_add_toNat_trdeg_residueField
     coheight_eq_of_isOpenImmersion, ← idealHeight_eq_coheight,
     (g.residueFieldAlgEquivOfIsOpenImmersion φ hφ y).trdeg_eq]
   rw [← Ideal.ringKrullDim_quotient_eq_toNat_trdeg_residueField k]
-  exact topologicalKrullDimAt_eq_height_add_ringKrullDim_quotient k y
+  exact y.topologicalKrullDimAt_eq_height_add_ringKrullDim_quotient k
 
 include k in
 /-- **Local dimension via the stalk and the point closure.** On a scheme `X` locally of finite
