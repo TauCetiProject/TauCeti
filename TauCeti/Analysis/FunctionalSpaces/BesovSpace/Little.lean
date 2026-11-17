@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.BesselPotential.Besov
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
-import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Paraproduct
+import TauCeti.Analysis.FunctionalSpaces.BesovSpace.LowPass
 
 /-!
 # The little Besov spaces

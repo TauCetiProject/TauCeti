@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Little
-public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Paraproduct
+public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.LowPass
 
 /-!
 # Density of the Schwartz functions in the Besov spaces `B^s_{p,q}`, `q < ∞`
