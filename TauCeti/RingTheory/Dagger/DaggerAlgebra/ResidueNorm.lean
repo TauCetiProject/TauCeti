@@ -42,6 +42,8 @@ the isometry and dense range used for that comparison, but does not construct th
 * `TauCeti.Dagger.residueNormedCommRing` and `TauCeti.Dagger.residueNormedAlgebra`: the
   transported ultrametric algebra norm on `A`. Not instances, since they depend on the chosen
   presentation.
+* `TauCeti.Dagger.residueContinuousAlgEquiv`: promotes `TauCeti.Dagger.residueAlgEquiv` to a
+  topological `K`-algebra isomorphism for `TauCeti.Dagger.residueNormedCommRing`.
 
 ## Main results
 
@@ -115,6 +117,56 @@ noncomputable abbrev residueNormedAlgebra :
     letI := residueNormedCommRing K A
     ‖residueAlgEquiv K A x‖ = ‖x‖ :=
   rfl
+
+/-- The residue isomorphism `residueAlgEquiv K A : A ≃ₐ[K] W_n ⧸ ker (presentation K A)` as a
+topological `K`-algebra isomorphism for `residueNormedCommRing K A`. -/
+noncomputable def residueContinuousAlgEquiv :
+    letI := residueNormedCommRing K A
+    A ≃A[K] W ⧸ I :=
+  letI := residueNormedCommRing K A
+  have hiso : Isometry (residueAlgEquiv K A) :=
+    (AddMonoidHomClass.isometry_iff_norm (residueAlgEquiv K A)).mpr (norm_residueAlgEquiv K A)
+  have hiso_symm : Isometry (residueAlgEquiv K A).symm :=
+    (AddMonoidHomClass.isometry_iff_norm (residueAlgEquiv K A).symm).mpr fun x ↦
+      (norm_residueAlgEquiv K A ((residueAlgEquiv K A).symm x)).symm.trans
+        (congrArg norm ((residueAlgEquiv K A).apply_symm_apply x))
+  { residueAlgEquiv K A with
+    continuous_toFun := hiso.continuous
+    continuous_invFun := hiso_symm.continuous }
+
+/-- `residueContinuousAlgEquiv` has the same underlying function as `residueAlgEquiv`. -/
+@[simp↓]
+theorem coe_residueContinuousAlgEquiv :
+    letI := residueNormedCommRing K A
+    ⇑(residueContinuousAlgEquiv K A) = ⇑(residueAlgEquiv K A) :=
+  letI := residueNormedCommRing K A
+  (rfl)
+
+/-- The underlying `AlgEquiv` of `residueContinuousAlgEquiv` is `residueAlgEquiv`. -/
+@[simp↓]
+theorem toAlgEquiv_residueContinuousAlgEquiv :
+    letI := residueNormedCommRing K A
+    (residueContinuousAlgEquiv K A).toAlgEquiv = residueAlgEquiv K A :=
+  letI := residueNormedCommRing K A
+  (rfl)
+
+/-- `residueContinuousAlgEquiv` sends `presentation K A f` to the quotient class of `f`. -/
+@[simp↓]
+theorem residueContinuousAlgEquiv_presentation (f : W) :
+    letI := residueNormedCommRing K A
+    residueContinuousAlgEquiv K A (presentation K A f) = Ideal.Quotient.mk _ f :=
+  letI := residueNormedCommRing K A
+  residueAlgEquiv_presentation K A f
+
+/-- The inverse of `residueContinuousAlgEquiv` sends the quotient class of `f` to
+`presentation K A f`. -/
+@[simp↓]
+theorem residueContinuousAlgEquiv_symm_mk (f : W) :
+    letI := residueNormedCommRing K A
+    (residueContinuousAlgEquiv K A).symm (Ideal.Quotient.mk _ f) = presentation K A f :=
+  letI := residueNormedCommRing K A
+  (residueContinuousAlgEquiv K A).symm_apply_eq.mpr
+    (residueContinuousAlgEquiv_presentation K A f).symm
 
 /-- The residue norm on a dagger algebra is ultrametric. -/
 theorem isUltrametricDist_residueNormedCommRing :
