@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: Riccardo Brasca, The Tau Ceti contributors
 -/
 module
 
@@ -29,6 +29,8 @@ hence every class is `(p / 2π) • [dθ]`, where `p` is its period: `H¹_dR(S¹
   `(2π)⁻¹ p • [dθ]`, `p` its period on `Circle.expLoop`.
 
 ## References
+
+This file is adapted from Riccardo Brasca's Codex-assisted formalization.
 
 * R. Bott and L. W. Tu, *Differential Forms in Algebraic Topology*, Springer, 1982, Chapter I.
 -/
