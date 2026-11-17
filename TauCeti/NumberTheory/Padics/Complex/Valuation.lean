@@ -7,7 +7,6 @@ module
 
 public import Mathlib.NumberTheory.Padics.Complex
 public import TauCeti.Analysis.Normed.Ring.LogGauge.Rational
-import TauCeti.Analysis.Normed.Field.Basic
 import TauCeti.Analysis.Normed.Ring.Commensurable
 import TauCeti.Analysis.Normed.Unbundled.SpectralNorm.Commensurable
 import TauCeti.NumberTheory.Padics.Complex.Basic
@@ -27,15 +26,13 @@ field a sufficiently close approximation of a nonzero element has the same norm.
 On `ℚ_[p]` it restricts to Mathlib's `Padic.addValuation`. Since `ℂ_[p]` is algebraically closed,
 every rational number is a value: a root `x` of `x ^ n = p ^ m` with `n > 0` has `v(x) = m / n`.
 For example a cube root of `p` has valuation `1 / 3`. Consequently the nonzero norms of `ℂ_[p]` are
-precisely the rational powers `p ^ q` (`q : ℚ`), which are dense in `(0, ∞)`, making `ℂ_[p]` a
-`DenselyNormedField`.
+precisely the rational powers `p ^ q` (`q : ℚ`).
 
 ## Main definitions
 
 * `PadicComplex.pseudoUniformizer`: the multiplicative pseudo-uniformiser `p` of `ℂ_[p]`.
 * `PadicComplex.addValuation`: the additive valuation on `ℂ_[p]` with values in `WithTop ℚ`,
   normalised by `v(p) = 1`.
-* `PadicComplex.denselyNormedField`: `ℂ_[p]` is a densely normed field.
 
 ## Main results
 
@@ -193,16 +190,5 @@ theorem range_norm :
   · rintro (rfl | ⟨x, _, rfl⟩)
     · exact ⟨0, norm_zero⟩
     · exact ⟨x, rfl⟩
-
-/-- **Norm density of `ℂ_[p]`**: since `ℂ_[p]` is an algebraically closed nontrivially normed field,
-it is a densely normed field. -/
-noncomputable instance denselyNormedField : DenselyNormedField ℂ_[p] where
-  lt_norm_lt _ _ := by exact NormedField.exists_lt_norm_lt_of_isAlgClosed ℂ_[p]
-
--- Ensure that the induced `NontriviallyNormedField` agrees definitionally with Mathlib's.
-example :
-    (DenselyNormedField.toNontriviallyNormedField : NontriviallyNormedField ℂ_[p]) =
-      PadicComplex.nontriviallyNormedField p :=
-  rfl
 
 end PadicComplex

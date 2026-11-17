@@ -5,12 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.NumberTheory.Padics.Complex
 public import TauCeti.NumberTheory.NewtonPolygon.Radius
-public import TauCeti.NumberTheory.Padics.Complex.Valuation
 public import TauCeti.NumberTheory.Padics.LogGauge
 public import TauCeti.RingTheory.PowerSeries.Convergence
 import TauCeti.Algebra.Order.Floor.Semifield
 import TauCeti.NumberTheory.Padics.Basic
+import TauCeti.NumberTheory.Padics.Complex.Basic
 
 /-!
 # Intrinsic radius vs convergence-point radius for `∑ p^⌈n/2⌉ Xⁿ` over `ℚ_[p]` and `ℂ_[p]`

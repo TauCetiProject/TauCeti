@@ -12,6 +12,7 @@ public import TauCeti.Topology.Algebra.Valued.Integer
 
 import Mathlib.Algebra.AlgebraicCard
 import TauCeti.Analysis.Normed.Field.Approximation
+import TauCeti.Analysis.Normed.Field.Basic
 
 /-!
 # `ℂ_p` is separable
@@ -25,9 +26,9 @@ over `ℚ` and take a nearby root (`IsAlgebraic.mem_closure_setOf_isAlgebraic`).
 Separability is what makes `ℂ_p` fail to be spherically complete, so that the closed unit disc
 over `ℂ_p` has points of type (4).
 
-The file also compares the valuation with the norm, records `‖p‖ = p⁻¹ < 1` and the
-residue characteristic, and provides the integral coefficient inclusion and topological
-nilpotence of `ζ - 1` for `p`-th roots of unity.
+The file also compares the valuation with the norm, records `‖p‖ = p⁻¹ < 1`, norm density
+(`PadicComplex.denselyNormedField`), and the residue characteristic, and provides the integral
+coefficient inclusion and topological nilpotence of `ζ - 1` for `p`-th roots of unity.
 
 ## Main results
 
@@ -42,6 +43,7 @@ nilpotence of `ζ - 1` for `p`-th roots of unity.
 * `PadicComplex.norm_p_lt_one`: `‖p‖ < 1` in `ℂ_[p]`.
 * `PadicComplex.dense_setOf_isAlgebraic`: the algebraic numbers are dense in `ℂ_[p]`.
 * `PadicComplex.separableSpace`: `ℂ_[p]` is a separable space.
+* `PadicComplex.denselyNormedField`: `ℂ_[p]` is a densely normed field.
 
 ## References
 
@@ -138,5 +140,16 @@ theorem dense_setOf_isAlgebraic : Dense {x : ℂ_[p] | IsAlgebraic ℚ x} := by
 /-- **`ℂ_[p]` is separable**: the countable set of algebraic numbers is dense. -/
 instance separableSpace : TopologicalSpace.SeparableSpace ℂ_[p] :=
   ⟨⟨_, Algebraic.countable ℚ ℂ_[p], dense_setOf_isAlgebraic p⟩⟩
+
+/-- **Norm density of `ℂ_[p]`**: since `ℂ_[p]` is an algebraically closed nontrivially normed field,
+it is a densely normed field. -/
+noncomputable instance denselyNormedField : DenselyNormedField ℂ_[p] where
+  lt_norm_lt _ _ := by exact NormedField.exists_lt_norm_lt_of_isAlgClosed ℂ_[p]
+
+-- Ensure that the induced `NontriviallyNormedField` agrees definitionally with Mathlib's.
+example :
+    (DenselyNormedField.toNontriviallyNormedField : NontriviallyNormedField ℂ_[p]) =
+      PadicComplex.nontriviallyNormedField p :=
+  rfl
 
 end PadicComplex
