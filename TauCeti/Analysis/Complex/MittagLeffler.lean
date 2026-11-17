@@ -13,6 +13,7 @@ import Mathlib.Analysis.Analytic.Composition
 import Mathlib.Analysis.Analytic.IsolatedZeros
 import TauCeti.Analysis.Calculus.Deriv.Const
 import TauCeti.Analysis.Complex.Laurent.Expansion
+import TauCeti.Analysis.Complex.RemovableSingularity
 import TauCeti.Analysis.Complex.Runge.SimpleFraction
 import TauCeti.Analysis.Complex.UniformLimit
 import TauCeti.Analysis.Normed.Module.Exhaustion
@@ -40,11 +41,10 @@ avoids the closed derived set `derivedSet E` (`Ω ⊆ (derivedSet E)ᶜ`), so th
 on `(derivedSet E)ᶜ` restricts to `Ω`.
 
 The file also establishes:
-* removable-singularity patching across `Ω ∩ E`
-  (`TauCeti.exists_differentiableOn_eqOn_of_analyticAt_nhdsNE`), uniqueness of solutions modulo
-  functions complex-differentiable on `Ω`
+* uniqueness of solutions modulo functions complex-differentiable on `Ω`
   (`TauCeti.exists_differentiableOn_eqOn_sub_of_prescribed_isolated_singularities` and
-  `TauCeti.exists_differentiableOn_eqOn_sub_of_principalPart_mk_eq`), and the full affine-coset
+  `TauCeti.exists_differentiableOn_eqOn_sub_of_principalPart_mk_eq`, via removable-singularity
+  patching `TauCeti.exists_differentiableOn_eqOn_of_analyticAt_nhdsNE`), and the full affine-coset
   characterization on open sets
   (`TauCeti.prescribed_isolated_singularities_iff_exists_differentiableOn_eqOn_add`);
 * functoriality of prescribed isolated singularities under pullback along non-locally-constant
@@ -80,11 +80,10 @@ remainder, yielding holomorphy on `Ω \ E` and analyticity of each local remaind
   germs.
 * `TauCeti.exists_meromorphicOn_principalPart_mk_eq`: Mittag-Leffler realization of prescribed
   constant-free polynomials via `TauCeti.meromorphicGerms.principalPart`.
-* `TauCeti.exists_differentiableOn_eqOn_of_analyticAt_nhdsNE`,
-  `TauCeti.exists_differentiableOn_eqOn_sub_of_prescribed_isolated_singularities`,
+* `TauCeti.exists_differentiableOn_eqOn_sub_of_prescribed_isolated_singularities`,
   `TauCeti.prescribed_isolated_singularities_iff_exists_differentiableOn_eqOn_add`, and
-  `TauCeti.exists_differentiableOn_eqOn_sub_of_principalPart_mk_eq`: removable extension across
-  `Ω ∩ E` and uniqueness modulo functions complex-differentiable on `Ω`.
+  `TauCeti.exists_differentiableOn_eqOn_sub_of_principalPart_mk_eq`: uniqueness modulo functions
+  complex-differentiable on `Ω` and the affine-coset characterization of all solutions on open sets.
 * `TauCeti.prescribed_isolated_singularities_comp`,
   `TauCeti.prescribed_isolated_singularities_mono`,
   `TauCeti.prescribed_isolated_singularities_comp_add_right`, and
@@ -110,49 +109,6 @@ section NormedSpace
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
 
 /-! ### Uniqueness modulo complex-differentiable functions and functoriality -/
-
-/-- **Removable-singularity patching across a relatively closed discrete subset.** If `f : ℂ → F` is
-complex-differentiable on `Ω \ E` with `Eᶜ ∈ codiscreteWithin Ω` and agrees on `𝓝[≠] a` with a
-function analytic at `a` for each `a ∈ Ω ∩ E`, then `f` agrees on `Ω \ E` with a function
-complex-differentiable on all of `Ω`. Neither openness of `Ω`, completeness of `F`, nor `E ⊆ Ω` is
-required. -/
-theorem exists_differentiableOn_eqOn_of_analyticAt_nhdsNE
-    {Ω E : Set ℂ} (hE : Eᶜ ∈ codiscreteWithin Ω) {f : ℂ → F}
-    (hf : DifferentiableOn ℂ f (Ω \ E))
-    (hg : ∀ a ∈ Ω ∩ E, ∃ g : ℂ → F, AnalyticAt ℂ g a ∧ f =ᶠ[𝓝[≠] a] g) :
-    ∃ h : ℂ → F, DifferentiableOn ℂ h Ω ∧ EqOn f h (Ω \ E) := by
-  classical
-  let h : ℂ → F := fun z ↦ if hz : z ∈ Ω ∩ E then (hg z hz).choose z else f z
-  have hfh : EqOn f h (Ω \ E) := fun z hz ↦ by simp [h, hz.2]
-  refine ⟨h, fun z₀ hz₀ ↦ ?_, hfh⟩
-  have hcod : ∀ᶠ z in 𝓝[Ω \ {z₀}] z₀, z ∉ E :=
-    mem_codiscreteWithin_iff_forall_mem_nhdsWithin.mp hE z₀ hz₀
-  by_cases hz₀E : z₀ ∈ E
-  · have hz₀' : z₀ ∈ Ω ∩ E := ⟨hz₀, hz₀E⟩
-    obtain ⟨hgan, hfg⟩ := (hg z₀ hz₀').choose_spec
-    have hev : h =ᶠ[𝓝[Ω] z₀] (hg z₀ hz₀').choose := by
-      have hcod' := eventually_nhdsWithin_iff.mp hcod
-      have hfg' := eventuallyEq_nhdsWithin_iff.mp hfg
-      refine eventuallyEq_nhdsWithin_iff.mpr ?_
-      filter_upwards [hcod', hfg'] with z hzE hzf hzΩ
-      rcases eq_or_ne z z₀ with rfl | hne
-      · simp [h, hz₀, hz₀E]
-      · have hzE' : z ∉ E := hzE ⟨hzΩ, hne⟩
-        simp [h, hzE', hzf hne]
-    exact hgan.differentiableAt.differentiableWithinAt.congr_of_eventuallyEq hev
-      (by simp [h, hz₀, hz₀E])
-  · have hE_nhds : Eᶜ ∈ 𝓝[Ω] z₀ := by
-      obtain ⟨V, hVopen, hz₀V, hVsub⟩ := mem_nhdsWithin.mp hcod
-      refine mem_nhdsWithin.mpr ⟨V, hVopen, hz₀V, fun z hz ↦ ?_⟩
-      rcases eq_or_ne z z₀ with rfl | hne
-      · exact hz₀E
-      · exact hVsub ⟨hz.1, hz.2, hne⟩
-    have hev : h =ᶠ[𝓝[Ω] z₀] f := by
-      filter_upwards [self_mem_nhdsWithin, hE_nhds] with z hzΩ hzE using (hfh ⟨hzΩ, hzE⟩).symm
-    have hdiff : DifferentiableWithinAt ℂ f Ω z₀ :=
-      (hf z₀ ⟨hz₀, hz₀E⟩).mono_of_mem_nhdsWithin
-        (by rw [Set.sdiff_eq]; exact inter_mem self_mem_nhdsWithin hE_nhds)
-    exact hdiff.congr_of_eventuallyEq hev (hfh ⟨hz₀, hz₀E⟩).symm
 
 /-- **Uniqueness for prescribed isolated singularities modulo functions complex-differentiable on
 `Ω`.** Two solutions `f₁, f₂` on `Ω \ E` sharing the same singular germs `P` at all points of
