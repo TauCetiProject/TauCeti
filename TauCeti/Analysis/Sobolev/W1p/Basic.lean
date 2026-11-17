@@ -514,6 +514,16 @@ theorem W1p.value_neg_ae (u : W1p mu Omega p) :
     ⇑(W1p.value (-u)) =ᵐ[mu.restrict Omega] -⇑(W1p.value u) := by
   simpa only [← W1p.valueL_apply, map_neg] using Lp.coeFn_neg (W1p.value u)
 
+/-- On a set `s ⊆ Ω`, a Sobolev function is bounded by `B` in absolute value almost everywhere
+exactly when both it and its negation are bounded above by `B` almost everywhere. -/
+theorem W1p.ae_abs_value_le_iff {u : W1p mu Omega p} {s : Set E} (hs : s ⊆ Omega) {B : ℝ} :
+    (∀ᵐ x ∂mu.restrict s, |W1p.value u x| ≤ B) ↔
+      (∀ᵐ x ∂mu.restrict s, W1p.value u x ≤ B) ∧ ∀ᵐ x ∂mu.restrict s, W1p.value (-u) x ≤ B := by
+  rw [← Filter.eventually_and]
+  refine Filter.eventually_congr ?_
+  filter_upwards [ae_restrict_of_ae_restrict_of_subset hs (W1p.value_neg_ae u)] with x hx
+  rw [hx, Pi.neg_apply, abs_le, neg_le, and_comm]
+
 /-- The value of a sum of two Sobolev functions is almost everywhere the sum of their values. -/
 theorem W1p.value_add_ae (u v : W1p mu Omega p) :
     ⇑(W1p.value (u + v)) =ᵐ[mu.restrict Omega] ⇑(W1p.value u) + ⇑(W1p.value v) := by
@@ -649,6 +659,11 @@ theorem W1p.integral_value_sq_eq_norm_value_sq (u : W1p mu Omega 2) :
   rw [← Lp.integral_norm_sq_eq_norm_sq (W1p.value u)]
   exact integral_congr_ae (Filter.Eventually.of_forall fun x => by
     simp [Real.norm_eq_abs, sq_abs])
+
+/-- On the whole space, the integral of the squared Sobolev value is its squared `L²` norm. -/
+theorem W1p.integral_value_sq_eq_norm_value_sq_top (u : W1p mu ⊤ 2) :
+    ∫ x, (W1p.value u x) ^ 2 ∂mu = ‖W1p.value u‖ ^ 2 := by
+  simpa using W1p.integral_value_sq_eq_norm_value_sq u
 
 /-- The `L²` pairing of the value components of two Sobolev functions, as an integral over `Ω`. -/
 theorem W1p.inner_value_eq_setIntegral (u v : W1p mu Omega 2) :
