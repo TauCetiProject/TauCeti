@@ -113,16 +113,17 @@ theorem eq_zero_of_adjoin_range_eq_top_of_leibniz
     (hD : ∀ {i : ι} {a : B}, a ∈ ℬ i → ∀ b : B, D (a * b) = D a * f b + s i • (f a * D b))
     (hgen : ∀ {k : κ} {x : V}, x ∈ 𝒱 k → D (gen x) = 0) : D = 0 := by
   have htop' : Algebra.adjoin R (⋃ k : κ, gen '' (𝒱 k : Set V)) = ⊤ := by
-    rw [← htop]
-    refine le_antisymm
-      (Algebra.adjoin_mono (Set.iUnion_subset fun _ ↦ Set.image_subset_range _ _)) ?_
-    rw [Algebra.adjoin_le_iff]
+    rw [eq_top_iff, ← htop, Algebra.adjoin_le_iff]
     rintro _ ⟨x, rfl⟩
-    change gen x ∈ Algebra.adjoin R (⋃ k : κ, gen '' (𝒱 k : Set V))
+    rw [SetLike.mem_coe]
     induction x using DirectSum.Decomposition.inductionOn 𝒱 with
-    | zero => simp
+    | zero =>
+      rw [map_zero]
+      exact zero_mem _
     | @homogeneous k x => exact Algebra.subset_adjoin (Set.mem_iUnion.2 ⟨k, x, x.2, rfl⟩)
-    | add x y hx hy => simpa only [map_add] using add_mem hx hy
+    | add x y hx hy =>
+      rw [map_add]
+      exact add_mem hx hy
   refine eq_zero_of_adjoin_eq_top_of_leibniz (ℬ := ℬ) s f hf1 hD htop' ?_ ?_
   · rintro _ ⟨_, ⟨k, rfl⟩, x, hx, rfl⟩
     exact hgen_mem hx
