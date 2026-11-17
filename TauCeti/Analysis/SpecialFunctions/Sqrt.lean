@@ -28,6 +28,8 @@ to `0` as
 
 * `Real.abs_sqrt_sub_one_le_abs_sub_one`: for every real `μ`,
   `|√μ - 1| ≤ |μ - 1|`.
+* `Real.abs_sqrt_one_add_sub_le`: for `-1 / 2 ≤ u`,
+  `|√(1 + u) - 1 - u / 2| ≤ u ^ 2 / 2`.
 * `Real.abs_one_sub_inv_sqrt_le`: if `|μ - 1| ≤ δ ≤ 1/2`,
   `|1 - (√μ)⁻¹| ≤ δ`.
 * `Real.abs_sqrt_sub_sqrt_le`: for all reals `t` and `s`, `|√t - √s| ≤ √|t - s|`.
@@ -86,6 +88,21 @@ theorem abs_sqrt_sub_one_le_abs_sub_one {μ : ℝ} :
       _ ≤ |μ - 1| := by
         rw [abs_of_nonpos (by linarith : μ - 1 ≤ 0)]
         linarith
+
+/-- Second-order Taylor remainder bound for `√(1 + u)` near `0`: if `-1 / 2 ≤ u`, then
+`|√(1 + u) - 1 - u / 2| ≤ u ^ 2 / 2`. -/
+theorem abs_sqrt_one_add_sub_le {u : ℝ} (hu : -(1 / 2) ≤ u) :
+    |sqrt (1 + u) - 1 - u / 2| ≤ u ^ 2 / 2 := by
+  have h1u : 0 ≤ 1 + u := by linarith
+  have hden : 1 / 2 ≤ sqrt (1 + u) + (1 + u / 2) := by
+    have := sqrt_nonneg (1 + u); linarith
+  have hprod : (sqrt (1 + u) - 1 - u / 2) * (sqrt (1 + u) + (1 + u / 2)) = -(u ^ 2 / 4) := by
+    have hsq : sqrt (1 + u) * sqrt (1 + u) = 1 + u := mul_self_sqrt h1u
+    nlinarith
+  have habs := congr_arg abs hprod
+  rw [abs_mul, abs_of_nonneg (by linarith : 0 ≤ sqrt (1 + u) + (1 + u / 2)), abs_neg,
+    abs_of_nonneg (by positivity : 0 ≤ u ^ 2 / 4)] at habs
+  nlinarith [abs_nonneg (sqrt (1 + u) - 1 - u / 2)]
 
 /-- If `|μ - 1| ≤ δ ≤ 1 / 2`, then `|1 - (√μ)⁻¹| ≤ δ`.
 

@@ -33,7 +33,7 @@ pulled back along `Prod.map p q`, gives a measure that still has marginals `μ` 
 We also show that mutual singularity on either factor passes to product measures
 (`MeasureTheory.Measure.MutuallySingular.prod_left` and
 `MeasureTheory.Measure.MutuallySingular.prod_right`) and deduce that the Radon–Nikodym derivative
-of a product of σ-finite measures against a product of σ-finite measures factors almost everywhere
+of a product of s-finite measures against a product of σ-finite measures factors almost everywhere
 as the product of the factor Radon–Nikodym derivatives (`MeasureTheory.Measure.rnDeriv_prod`).
 -/
 
@@ -97,55 +97,57 @@ theorem ae_lintegral_rnDeriv_prod_left_eq_one (hm : m.snd = ν) (hac : m ≪ μ.
   filter_upwards [lintegral_rnDeriv_prod_left_ae_eq_rnDeriv_snd hac, m.snd.rnDeriv_self]
     with y h h1 using h.trans h1
 
-/-- If `μ₁ ⟂ₘ ν₁`, then `μ₁ ⊗ μ₂ ⟂ₘ ν₁ ⊗ ν₂` for any s-finite second factors `μ₂` and `ν₂`. -/
-theorem MutuallySingular.prod_left {μ₁ ν₁ : Measure α} (μ₂ ν₂ : Measure β)
-    [SFinite μ₂] [SFinite ν₂] (h : μ₁ ⟂ₘ ν₁) :
+/-- If `μ₁ ⟂ₘ ν₁`, then `μ₁ ⊗ μ₂ ⟂ₘ ν₁ ⊗ ν₂` for any measures `μ₂` and `ν₂`. -/
+theorem MutuallySingular.prod_left {μ₁ ν₁ : Measure α} (μ₂ ν₂ : Measure β) (h : μ₁ ⟂ₘ ν₁) :
     μ₁.prod μ₂ ⟂ₘ ν₁.prod ν₂ := by
-  refine ⟨h.nullSet ×ˢ univ, h.measurableSet_nullSet.prod .univ, ?_, ?_⟩
-  · rw [prod_prod, h.measure_nullSet, zero_mul]
-  · have hcompl : (h.nullSet ×ˢ (univ : Set β))ᶜ = h.nullSetᶜ ×ˢ univ := by ext ⟨_, _⟩; simp
-    rw [hcompl, prod_prod, h.measure_compl_nullSet, zero_mul]
+  by_cases hμ₂ : SFinite μ₂
+  · by_cases hν₂ : SFinite ν₂
+    · refine ⟨h.nullSet ×ˢ univ, h.measurableSet_nullSet.prod .univ, ?_, ?_⟩
+      · rw [prod_prod, h.measure_nullSet, zero_mul]
+      · rw [compl_prod_eq_union, compl_univ, prod_empty, union_empty, prod_prod,
+          h.measure_compl_nullSet, zero_mul]
+    · simp [prod_eq_zero_of_not_sfinite hν₂]
+  · simp [prod_eq_zero_of_not_sfinite hμ₂]
 
-/-- If `μ₂ ⟂ₘ ν₂`, then `μ₁ ⊗ μ₂ ⟂ₘ ν₁ ⊗ ν₂` for any measures `μ₁` and `ν₁` and s-finite `μ₂`,
-`ν₂`. -/
-theorem MutuallySingular.prod_right (μ₁ ν₁ : Measure α) {μ₂ ν₂ : Measure β}
-    [SFinite μ₂] [SFinite ν₂] (h : μ₂ ⟂ₘ ν₂) :
+/-- If `μ₂ ⟂ₘ ν₂`, then `μ₁ ⊗ μ₂ ⟂ₘ ν₁ ⊗ ν₂` for any measures `μ₁` and `ν₁`. -/
+theorem MutuallySingular.prod_right (μ₁ ν₁ : Measure α) {μ₂ ν₂ : Measure β} (h : μ₂ ⟂ₘ ν₂) :
     μ₁.prod μ₂ ⟂ₘ ν₁.prod ν₂ := by
-  refine ⟨univ ×ˢ h.nullSet, MeasurableSet.univ.prod h.measurableSet_nullSet, ?_, ?_⟩
-  · rw [prod_prod, h.measure_nullSet, mul_zero]
-  · have hcompl : ((univ : Set α) ×ˢ h.nullSet)ᶜ = univ ×ˢ h.nullSetᶜ := by ext ⟨_, _⟩; simp
-    rw [hcompl, prod_prod, h.measure_compl_nullSet, mul_zero]
+  by_cases hμ₂ : SFinite μ₂
+  · by_cases hν₂ : SFinite ν₂
+    · refine ⟨univ ×ˢ h.nullSet, MeasurableSet.univ.prod h.measurableSet_nullSet, ?_, ?_⟩
+      · rw [prod_prod, h.measure_nullSet, mul_zero]
+      · rw [compl_prod_eq_union, compl_univ, empty_prod, empty_union, prod_prod,
+          h.measure_compl_nullSet, mul_zero]
+    · simp [prod_eq_zero_of_not_sfinite hν₂]
+  · simp [prod_eq_zero_of_not_sfinite hμ₂]
 
-/-- For σ-finite measures `μ₁`, `ν₁` on `α` and `μ₂`, `ν₂` on `β`, the Radon–Nikodym derivative of
-`μ₁ ⊗ μ₂` against `ν₁ ⊗ ν₂` factors `ν₁ ⊗ ν₂`-almost everywhere as the product of the factor
+/-- For s-finite measures `μ₁`, `μ₂` and σ-finite measures `ν₁`, `ν₂`, the Radon–Nikodym derivative
+of `μ₁ ⊗ μ₂` against `ν₁ ⊗ ν₂` factors `ν₁ ⊗ ν₂`-almost everywhere as the product of the factor
 Radon–Nikodym derivatives. No absolute continuity hypothesis is needed: singular parts on either
 factor yield product terms mutually singular with `ν₁ ⊗ ν₂`. -/
 theorem rnDeriv_prod (μ₁ ν₁ : Measure α) (μ₂ ν₂ : Measure β)
-    [SigmaFinite μ₁] [SigmaFinite ν₁] [SigmaFinite μ₂] [SigmaFinite ν₂] :
+    [SFinite μ₁] [SigmaFinite ν₁] [SFinite μ₂] [SigmaFinite ν₂] :
     (μ₁.prod μ₂).rnDeriv (ν₁.prod ν₂) =ᵐ[ν₁.prod ν₂]
       fun z ↦ μ₁.rnDeriv ν₁ z.1 * μ₂.rnDeriv ν₂ z.2 := by
-  set ac₁ := ν₁.withDensity (μ₁.rnDeriv ν₁)
-  set ac₂ := ν₂.withDensity (μ₂.rnDeriv ν₂)
-  have : SigmaFinite ac₁ := sigmaFinite_of_le μ₁ (withDensity_rnDeriv_le μ₁ ν₁)
-  have : SigmaFinite ac₂ := sigmaFinite_of_le μ₂ (withDensity_rnDeriv_le μ₂ ν₂)
-  have hdecomp : μ₁.prod μ₂ =
-      ac₁.prod ac₂ + ((μ₁.singularPart ν₁).prod μ₂ + ac₁.prod (μ₂.singularPart ν₂)) := by
-    conv_lhs => rw [μ₁.haveLebesgueDecomposition_add ν₁]
-    rw [add_prod, add_comm ((μ₁.singularPart ν₁).prod μ₂)]
-    conv in ac₁.prod μ₂ => rw [μ₂.haveLebesgueDecomposition_add ν₂]
-    rw [prod_add, add_comm (ac₁.prod (μ₂.singularPart ν₂)), add_assoc,
-      add_comm (ac₁.prod (μ₂.singularPart ν₂))]
-  have hsing : (μ₁.singularPart ν₁).prod μ₂ + ac₁.prod (μ₂.singularPart ν₂) ⟂ₘ ν₁.prod ν₂ :=
+  have : SFinite (μ₁.singularPart ν₁) :=
+    sfinite_of_absolutelyContinuous (absolutelyContinuous_of_le (singularPart_le _ _))
+  have : SFinite (μ₂.singularPart ν₂) :=
+    sfinite_of_absolutelyContinuous (absolutelyContinuous_of_le (singularPart_le _ _))
+  have hsing : (μ₁.singularPart ν₁).prod μ₂ +
+      (ν₁.withDensity (μ₁.rnDeriv ν₁)).prod (μ₂.singularPart ν₂) ⟂ₘ ν₁.prod ν₂ :=
     ((mutuallySingular_singularPart μ₁ ν₁).prod_left μ₂ ν₂).add_left
-      ((mutuallySingular_singularPart μ₂ ν₂).prod_right ac₁ ν₁)
-  have hac : ac₁.prod ac₂ =
-      (ν₁.prod ν₂).withDensity (fun z ↦ μ₁.rnDeriv ν₁ z.1 * μ₂.rnDeriv ν₂ z.2) :=
-    prod_withDensity (measurable_rnDeriv _ _) (measurable_rnDeriv _ _)
-  rw [hdecomp]
-  refine (rnDeriv_add_of_mutuallySingular _ _ _ hsing).trans ?_
-  rw [hac]
-  exact rnDeriv_withDensity (ν₁.prod ν₂)
-    (((measurable_rnDeriv _ _).comp measurable_fst).mul
-      ((measurable_rnDeriv _ _).comp measurable_snd))
+      ((mutuallySingular_singularPart μ₂ ν₂).prod_right _ ν₁)
+  refine (eq_rnDeriv (by fun_prop) hsing ?_).symm
+  calc μ₁.prod μ₂
+      = (μ₁.singularPart ν₁ + ν₁.withDensity (μ₁.rnDeriv ν₁)).prod μ₂ := by
+          rw [← μ₁.haveLebesgueDecomposition_add ν₁]
+    _ = (μ₁.singularPart ν₁).prod μ₂ + (ν₁.withDensity (μ₁.rnDeriv ν₁)).prod
+          (μ₂.singularPart ν₂ + ν₂.withDensity (μ₂.rnDeriv ν₂)) := by
+          rw [add_prod, ← μ₂.haveLebesgueDecomposition_add ν₂]
+    _ = ((μ₁.singularPart ν₁).prod μ₂ +
+          (ν₁.withDensity (μ₁.rnDeriv ν₁)).prod (μ₂.singularPart ν₂)) +
+        (ν₁.prod ν₂).withDensity (fun z ↦ μ₁.rnDeriv ν₁ z.1 * μ₂.rnDeriv ν₂ z.2) := by
+          rw [prod_add, prod_withDensity (measurable_rnDeriv _ _) (measurable_rnDeriv _ _),
+            add_assoc]
 
 end MeasureTheory.Measure

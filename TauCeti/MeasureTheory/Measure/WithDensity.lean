@@ -75,6 +75,10 @@ measure that is positive on nonempty open sets are equal.
   sets are equal pointwise.
 * `MeasureTheory.isFiniteMeasure_withDensity_ofReal_exp`: a finite measure weighted by `exp ∘ g`,
   with `g` bounded above almost everywhere, is finite.
+* `MeasureTheory.isProbabilityMeasure_withDensity_ofReal` and
+  `MeasureTheory.isProbabilityMeasure_withDensity_ofReal_comp_sub_right`: weighting a measure by an
+  almost-everywhere nonnegative real density with integral `1` (or a right-translated copy against a
+  right-invariant measure) yields a probability measure.
 * `TauCeti.MeasureTheory.map_withDensity_abs_deriv_mul`: the change of variables on the real line
   along a map injective and differentiable on a measurable set.
 * `TauCeti.MeasureTheory.map_sq_withDensity_restrict_Ioi`: its instance for squaring on the
@@ -349,6 +353,26 @@ theorem isFiniteMeasure_withDensity_ofReal_exp {α : Type*} [MeasurableSpace α]
     (hgM.mono fun x hx ↦ ENNReal.ofReal_le_ofReal (Real.exp_le_exp.2 hx))) ?_
   rw [lintegral_const]
   exact ENNReal.mul_lt_top ENNReal.ofReal_lt_top (measure_lt_top _ _)
+
+/-- A measure weighted by an almost-everywhere nonnegative real density with integral `1` is a
+probability measure. -/
+theorem isProbabilityMeasure_withDensity_ofReal {α : Type*} [MeasurableSpace α] {μ : Measure α}
+    {f : α → ℝ} (hf : 0 ≤ᵐ[μ] f) (hf1 : ∫ x, f x ∂μ = 1) :
+    IsProbabilityMeasure (μ.withDensity fun x ↦ ENNReal.ofReal (f x)) := ⟨by
+  rw [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ,
+    ← ofReal_integral_eq_lintegral_ofReal (integrable_of_integral_eq_one hf1) hf,
+    hf1, ENNReal.ofReal_one]⟩
+
+/-- Shifting an almost-everywhere nonnegative real density with unit integral against a
+right-invariant measure produces a probability measure. -/
+theorem isProbabilityMeasure_withDensity_ofReal_comp_sub_right {G : Type*} [MeasurableSpace G]
+    [AddGroup G] [MeasurableAdd G] {μ : Measure G} [μ.IsAddRightInvariant] {η : G → ℝ}
+    (hη : 0 ≤ᵐ[μ] η) (hη1 : ∫ x, η x ∂μ = 1) (c : G) :
+    IsProbabilityMeasure (μ.withDensity fun x ↦ ENNReal.ofReal (η (x - c))) := by
+  have := isProbabilityMeasure_withDensity_ofReal hη hη1
+  rw [← Measure.map_add_right_withDensity μ (fun x ↦ ENNReal.ofReal (η x)) c]
+  exact ⟨by rw [Measure.map_apply (measurable_add_const c) MeasurableSet.univ, Set.preimage_univ,
+    measure_univ]⟩
 
 end MeasureTheory
 
