@@ -48,7 +48,7 @@ derivative bounds; it localizes operators to the frequencies of a single block.
 * `ContDiffBump.sum_littlewoodPaley_Ioc`: the telescoping partial sums.
 * `ContDiffBump.hasSum_littlewoodPaley`: `∑ⱼ ψⱼ ξ = 1` for `ξ ≠ 0`.
 * `ContDiffBump.exists_littlewoodPaley_pos`: on a nontrivial space each cutoff `ψⱼ` takes a
-  positive value.
+  positive value, and `ContDiffBump.abs_littlewoodPaley_le_one`: its values lie in `[-1, 1]`.
 * `ContDiffBump.exists_norm_iteratedFDeriv_littlewoodPaley_le`: `‖D^k ψⱼ‖ ≤ B 2^{-jk}`.
 * `ContDiffBump.inhomogeneousLittlewoodPaley`: the inhomogeneous partition `ψ₀ = φ, ψ₁, ψ₂, …`.
 * `ContDiffBump.hasSum_inhomogeneousLittlewoodPaley`: `∑ⱼ ψⱼ ξ = 1` for every `ξ`.
@@ -195,6 +195,15 @@ theorem zero_notMem_tsupport_littlewoodPaley (j : ℤ) : (0 : E) ∉ tsupport (�
     have := (φ.tsupport_littlewoodPaley_subset j h).1
     rw [norm_zero] at this
     exact not_le.2 (mul_pos (zpow_pos two_pos _) φ.rIn_pos) this
+
+/-- Every cutoff `ψⱼ` takes values in `[-1, 1]`. -/
+theorem abs_littlewoodPaley_le_one (j : ℤ) (ξ : E) : |φ.littlewoodPaley j ξ| ≤ 1 := by
+  rw [littlewoodPaley_apply]
+  have := φ.nonneg (x := ((2 : ℝ) ^ j)⁻¹ • ξ)
+  have := φ.le_one (x := ((2 : ℝ) ^ j)⁻¹ • ξ)
+  have := φ.nonneg (x := ((2 : ℝ) ^ (j - 1))⁻¹ • ξ)
+  have := φ.le_one (x := ((2 : ℝ) ^ (j - 1))⁻¹ • ξ)
+  exact abs_sub_le_iff.2 ⟨by linarith, by linarith⟩
 
 /-- **Scaling of the dyadic cutoffs.** Each `ψⱼ` is `ψ₀` rescaled to frequency `2^j`:
 `ψⱼ ξ = ψ₀ (2^{-j} ξ)`. -/
@@ -576,12 +585,8 @@ theorem abs_inhomogeneousLittlewoodPaley_le_one (j : ℕ) (ξ : E) :
   rcases j with _ | j
   · rw [inhomogeneousLittlewoodPaley_zero, abs_of_nonneg φ.nonneg]
     exact φ.le_one
-  · rw [inhomogeneousLittlewoodPaley_succ_apply]
-    have := φ.nonneg (x := ((2 : ℝ) ^ (j + 1))⁻¹ • ξ)
-    have := φ.le_one (x := ((2 : ℝ) ^ (j + 1))⁻¹ • ξ)
-    have := φ.nonneg (x := ((2 : ℝ) ^ j)⁻¹ • ξ)
-    have := φ.le_one (x := ((2 : ℝ) ^ j)⁻¹ • ξ)
-    exact abs_sub_le_iff.2 ⟨by linarith, by linarith⟩
+  · rw [inhomogeneousLittlewoodPaley_succ]
+    exact φ.abs_littlewoodPaley_le_one _ ξ
 
 /-- **Bounded overlap.** There is `L`, depending only on `φ`, such that at every `ξ` at most `L`
 pieces of the partition are nonzero, over any finite set of indices. -/

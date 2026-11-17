@@ -12,6 +12,7 @@ import TauCeti.Analysis.MeanInequalities
 import TauCeti.Analysis.Normed.Lp.Basic
 import TauCeti.Analysis.Distribution.SchwartzSpace.BandLimited
 import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
+import TauCeti.Analysis.Fourier.ChangeOfVariables
 import TauCeti.Analysis.Distribution.SchwartzSpace.LittlewoodPaley
 import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Function.Lp.Duality
@@ -81,6 +82,13 @@ which Cauchy–Schwarz for the banded double sum (`ENNReal.tsum_sum_Ico_mul_le`)
 (`MeasureTheory.Lp.tendsto_sum_fourierMultiplierCLM_inhomogeneousLittlewoodPaley`), and Hölder's
 inequality and the first inequality at the exponent `q` give
 `|⟪f, g⟫| ≤ 2 L C_q ‖S f‖_p ‖g‖_q`.
+
+## The dyadic blocks on `Lᵖ`
+
+For the homogeneous cutoffs `ψⱼ`, `j ∈ ℤ` (`ContDiffBump.littlewoodPaley`), the blocks `Pⱼ` are
+bounded on every `Lᵖ`, `1 ≤ p ≤ ∞`, uniformly in `j`
+(`ContDiffBump.exists_eLpNorm_fourierMultiplierCLM_littlewoodPaley_le`): the kernel of `Pⱼ` is
+`2^{jn} (𝓕⁻ ψ₀)(2^j ·)`, whose `L¹` norm does not depend on `j`.
 
 ## References
 
@@ -807,3 +815,49 @@ theorem exists_eLpNorm_le_mul_eLpNorm_tsum_enorm_fourierMultiplierCLM_sq_rpow [N
         ring
 
 end TauCeti
+
+/-! ### The dyadic blocks on `Lᵖ` -/
+
+namespace ContDiffBump
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+  [MeasurableSpace V] [BorelSpace V] (φ : ContDiffBump (0 : V))
+
+/-- **The dyadic blocks are bounded on every `Lᵖ`, uniformly in the scale.** Let `ψⱼ` be the
+Littlewood–Paley cutoffs built from `φ` and `Pⱼ` the `L²` Fourier multiplier with symbol `ψⱼ`.
+There is `K` such that for every `j ∈ ℤ`, every `1 ≤ p ≤ ∞` and every `f ∈ L²`,
+
+`‖Pⱼ f‖_p ≤ K ‖f‖_p`.
+
+The kernel of `Pⱼ` is `𝓕⁻ ψⱼ = 2^{jn} (𝓕⁻ ψ₀)(2^j ·)`, whose `L¹` norm does not depend on `j`. -/
+theorem exists_eLpNorm_fourierMultiplierCLM_littlewoodPaley_le
+    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F] :
+    ∃ K : ℝ≥0, ∀ (j : ℤ) (m : Lp ℂ ∞ (volume : Measure V)),
+      m =ᵐ[volume] (fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) → ∀ {p : ℝ≥0∞}, 1 ≤ p →
+      ∀ f : Lp F 2 (volume : Measure V),
+        eLpNorm (Lp.fourierMultiplierCLM F m f) p volume ≤ K * eLpNorm f p volume := by
+  -- The cutoffs `ψⱼ`, as complex Schwartz functions.
+  set σ : ℤ → 𝓢(V, ℂ) := fun j ↦
+    φ.littlewoodPaleyPiece (m := fun _ : V ↦ (1 : ℂ)) contDiffOn_const j with hσdef
+  have hσ (j : ℤ) : ⇑(σ j) = fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ) := by
+    funext ξ
+    simp [hσdef, Complex.real_smul]
+  -- The `L¹` norm of the kernel `𝓕⁻ ψⱼ` does not depend on `j`.
+  have hK (j : ℤ) : eLpNorm (𝓕⁻ (σ j) : 𝓢(V, ℂ)) 1 volume =
+      eLpNorm (𝓕⁻ (σ 0) : 𝓢(V, ℂ)) 1 volume := by
+    have hscale : ⇑(σ j) = fun ξ ↦ σ 0 (((2 : ℝ) ^ j)⁻¹ • ξ) := by
+      rw [hσ, hσ]
+      funext ξ
+      rw [littlewoodPaley_apply_eq_littlewoodPaley_zero_apply]
+    rw [SchwartzMap.fourierInv_coe, SchwartzMap.fourierInv_coe, hscale,
+      TauCeti.eLpNorm_fourierInv_comp_inv_smul _ (zpow_pos two_pos j) 1]
+    simp
+  refine ⟨(eLpNorm (𝓕⁻ (σ 0) : 𝓢(V, ℂ)) 1 volume).toNNReal, fun j m hm p hp f ↦ ?_⟩
+  have hm' : m = (σ j).toLp ∞ := by
+    apply Lp.ext
+    filter_upwards [hm, (σ j).coeFn_toLp ∞] with ξ h₁ h₂
+    rw [h₁, h₂, hσ]
+  rw [hm', ENNReal.coe_toNNReal ((𝓕⁻ (σ 0)).memLp 1 volume).eLpNorm_ne_top, ← hK j]
+  exact SchwartzMap.eLpNorm_fourierMultiplierCLM_toLp_le (σ j) f hp
+
+end ContDiffBump
