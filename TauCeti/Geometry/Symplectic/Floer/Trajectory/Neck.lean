@@ -267,11 +267,13 @@ theorem exists_hamiltonianAction_mem_Icc_of_tendsto_sub_atTop
   · filter_upwards [hσ'τ.eventually_ge_atTop 0] with n hn
     exact hmono (φ n) (by linarith)
 
-/-- **Loops normalized at actions with no orbit between them lie on the same level.** Under the
-hypotheses of `TauCeti.SymplecticForm.exists_hamiltonianAction_mem_Icc_of_tendsto_sub_atTop`
-without `σ' k - σ k → ∞`, let the actions of the loops `u k (σ k, ·)` and `u k (σ' k, ·)` tend to
-`b` and `b'`. If no `1`-periodic orbit of the Hamiltonian vector field with values in `K` has its
-action in `[b, b']`, then the shifts `σ' k - σ k` are bounded above. -/
+/-- **Loops normalized at actions with no orbit between them are boundedly far apart in one
+direction.** Under the hypotheses of
+`TauCeti.SymplecticForm.exists_hamiltonianAction_mem_Icc_of_tendsto_sub_atTop` without
+`σ' k - σ k → ∞`, let the actions of the loops `u k (σ k, ·)` and `u k (σ' k, ·)` tend to `b` and
+`b'`. If no `1`-periodic orbit of the Hamiltonian vector field with values in `K` has its action
+in `[b, b']`, then the shifts `σ' k - σ k` are bounded above. When `b ≤ b'`, applying this theorem
+with `σ` and `σ'` exchanged also bounds them below. -/
 theorem isBoundedUnder_le_sub_of_forall_hamiltonianAction_notMem_Icc
     (hH : ContDiff ℝ 1 (uncurry H)) (hHper : Periodic H 1) (hK : IsCompact K)
     {u : ℕ → ℝ × ℝ → V} (hu : ∀ k, ContDiff ℝ 2 (u k))
