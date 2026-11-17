@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Trajectory
 import TauCeti.Geometry.Symplectic.Floer.Breaking
-import TauCeti.Geometry.Symplectic.Floer.Trajectory.Neck
 import TauCeti.Topology.ContinuousMap.Ascoli
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 

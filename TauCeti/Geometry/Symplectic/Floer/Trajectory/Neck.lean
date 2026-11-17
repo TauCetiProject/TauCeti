@@ -6,11 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.Action
-import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.SpecificLimits.Monotone
 import TauCeti.Geometry.Symplectic.Floer.Breaking
 import TauCeti.Topology.ContinuousMap.Ascoli
-import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
 /-!
 # Necks in breaking sequences of Floer trajectories
@@ -28,10 +26,10 @@ this is the step that separates levels. Assembling the levels themselves is not 
 * **Necks are stationary cylinders.** If the translates `(s, t) ↦ u_k(s + σ_k, t)` converge
   locally uniformly to `g` along windows `[a + σ_k, b + σ_k] × [0, 1]` whose energy tends to zero,
   then `g(s, t) = x(t)` for a `1`-periodic orbit `x` of the Hamiltonian vector field with values in
-  `K` (`SymplecticForm.exists_periodic_hasDerivAt_of_tendsto_setLIntegral_comp_add`, in
-  `TauCeti.Geometry.Symplectic.Floer.Breaking`), and the
+  `K` (`SymplecticForm.exists_periodic_hasDerivAt_of_tendsto_setLIntegral_comp_add`), and the
   actions of the loops `u_k(σ_k, ·)` are asymptotic to the action of `x`
-  (`SymplecticForm.tendsto_hamiltonianAction_sub_hamiltonianAction_of_tendstoLocallyUniformly`).
+  (`SymplecticForm.tendsto_hamiltonianAction_sub_hamiltonianAction_of_tendstoLocallyUniformly`);
+  both are in `TauCeti.Geometry.Symplectic.Floer.Breaking`.
 * **Far apart loops are joined by a neck.** If `σ'_k - σ_k → ∞`, then along a subsequence there
   are shifts `τ_k` with `τ_k - σ_k → ∞` and `σ'_k - τ_k → ∞` such that the translates by `τ_k`
   converge to the stationary cylinder over an orbit `x` in `K`, and the actions of the loops
@@ -80,57 +78,17 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
   {ω : SymplecticForm V} {H : ℝ → V → ℝ} {K : Set V} {J : ℕ → ℝ × ℝ → AlmostComplexStructure V}
   {c M : ℝ} {L : ℝ≥0}
 
-/-- **Loops converging to an orbit have asymptotically equal actions.** Let `H` be a `C¹`
-Hamiltonian and `x` a `1`-periodic orbit of its Hamiltonian vector field. Let `f k` be `C¹` maps
-with `1`-periodic loops and a common Lipschitz constant, converging locally uniformly to the
-stationary cylinder `(s, t) ↦ x(t)`. Then the actions of the loops `f k (0, ·)` are asymptotic to
-the action of `x`. No convergence of the derivatives is needed. -/
-theorem tendsto_hamiltonianAction_sub_hamiltonianAction_of_tendstoLocallyUniformly
-    (hH : ContDiff ℝ 1 (uncurry H)) {f : ℕ → ℝ × ℝ → V} (hf : ∀ k, ContDiff ℝ 1 (f k))
-    (hper : ∀ k s, Periodic (fun t ↦ f k (s, t)) 1) (hL : ∀ k, LipschitzWith L (f k))
-    {x : ℝ → V} (hxper : Periodic x 1)
-    (hxd : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t)
-    (hg : TendstoLocallyUniformly f (fun z ↦ x z.2) atTop) :
-    Tendsto (fun k ↦ ω.hamiltonianAction H (fun t ↦ f k (0, t)) - ω.hamiltonianAction H x)
-      atTop (𝓝 0) := by
-  have hdf (k : ℕ) (z : ℝ × ℝ) : DifferentiableAt ℝ (f k) z := (hf k).differentiable one_ne_zero z
-  -- The orbit has a continuous, hence bounded, derivative on `[0, 1]`.
-  have hderiv : deriv x = fun t ↦ ω.hamiltonianVectorField (H t) (x t) :=
-    funext fun t ↦ (hxd t).deriv
-  have hY : Continuous (deriv x) := hderiv ▸
-    (ω.continuous_uncurry_hamiltonianVectorField hH).comp
-      (continuous_id.prodMk (continuous_iff_continuousAt.2 fun t ↦ (hxd t).continuousAt))
-  obtain ⟨B, hB⟩ := isCompact_Icc.exists_bound_of_continuousOn (s := Icc (0 : ℝ) 1)
-    hY.continuousOn
-  -- The loops `f k (0, ·)` and the orbit `x` have speed at most `max L B` and the same uniform
-  -- limit.
-  exact ω.tendsto_hamiltonianAction_sub_hamiltonianAction (H := H) hH.continuous
-    (y := fun _ ↦ x) (L := max L B)
-    (Eventually.of_forall fun k t _ ↦ (hasDerivAt_slice_right (hdf k (0, t))).differentiableAt)
-    (Eventually.of_forall fun _ t _ ↦ (hxd t).differentiableAt)
-    (Eventually.of_forall fun k ↦
-      (hf k).contDiffOn.continuousOn_deriv_slice_right isOpen_univ fun _ _ ↦ mem_univ _)
-    (Eventually.of_forall fun _ ↦ hY.continuousOn)
-    (Eventually.of_forall fun k ↦ by simpa using hper k 0 0)
-    (Eventually.of_forall fun _ ↦ by simpa using hxper 0)
-    (Eventually.of_forall fun k t _ ↦ (norm_deriv_slice_right_le (hdf k (0, t))).trans
-      ((norm_fderiv_le_of_lipschitz ℝ (hL k)).trans (le_max_left _ _)))
-    (Eventually.of_forall fun _ t ht ↦ (hB t ht).trans (le_max_right _ _))
-    ((hg.tendstoLocallyUniformlyOn (s := univ)).tendstoUniformlyOn_slice_right isCompact_Icc
-      fun _ _ ↦ mem_univ _)
-    fun _ hu ↦ Eventually.of_forall fun _ _ _ ↦ refl_mem_uniformity hu
-
 /-- **Windows of vanishing energy.** Let `u k` be `C²` solutions of the Floer equation
-`∂_s u + J_k (∂_t u - X_{H_t}(u)) = 0` on `ℝ × [0, 1]`, with `1`-periodic loops and uniformly tame
-almost complex structures, `c ‖v‖² ≤ ω(v, J_k z v)` with `c > 0`. If `ℓ k → ∞` and the action
+`∂_s u + J_k (∂_t u - X_{H_t}(u)) = 0` on `ℝ × [0, 1]`, with `1`-periodic loops and almost
+complex structures tamed by `ω`. If `ℓ k → ∞` and the action
 increases by an amount tending to zero from the loop at `τ k - ℓ k` to the loop at `τ k + ℓ k`, then
 for every window `[a, b]` the energy of `u k` over `[a + τ k, b + τ k] × [0, 1]` tends to zero: for
 large `k` the window lies in `[τ k - ℓ k, τ k + ℓ k]`, over which the energy is the increase of the
 action. -/
 theorem tendsto_setLIntegral_floerEnergyDensity_of_tendsto_hamiltonianAction_sub
     (hH : ContDiff ℝ 1 (uncurry H)) {u : ℕ → ℝ × ℝ → V} (hu : ∀ k, ContDiff ℝ 2 (u k))
-    (hper : ∀ k s, Periodic (fun t ↦ u k (s, t)) 1) (hc : 0 < c)
-    (hJc : ∀ k, ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J k z v))
+    (hper : ∀ k s, Periodic (fun t ↦ u k (s, t)) 1)
+    (hJ : ∀ k, ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, ω.Tames (J k z))
     (hfloer : ∀ k, ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1,
       IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J k z)
         (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) (u k) z : ℝ × ℝ →ₗ[ℝ] V))
@@ -150,8 +108,7 @@ theorem tendsto_setLIntegral_floerEnergyDensity_of_tendsto_hamiltonianAction_sub
       (by linarith [le_abs_self b, le_max_right |a| |b|])
   refine (lintegral_mono_set (prod_mono hsub le_rfl)).trans_eq ?_
   refine ω.setLIntegral_floerEnergyDensity_eq_ofReal_hamiltonianAction_sub
-    (J := J k) (fun z hz v hv ↦ (mul_pos hc (pow_pos (norm_pos_iff.2 hv) 2)).trans_le
-      (hJc k z ⟨mem_univ _, hz.2⟩ v)) hH isOpen_univ (hu k).contDiffOn
+    (J := J k) (fun z hz ↦ hJ k z ⟨mem_univ _, hz.2⟩) hH isOpen_univ (hu k).contDiffOn
     (by linarith [(abs_nonneg a).trans (le_max_left |a| |b|)]) (subset_univ _)
     (fun s _ ↦ by simpa using hper k s 0) fun z hz ↦ ?_
   simpa using (ω.isComplexLinearMap_perturbedFDeriv_iff _ _ _ (u k) z).1
@@ -187,8 +144,9 @@ theorem exists_subseq_tendstoLocallyUniformly_comp_add_of_tendsto_sub_atTop
   -- The actions of the loops increase along each trajectory by a bounded amount, so `[σ k, σ' k]`
   -- contains windows `[τ k - ℓ k, τ k + ℓ k]` with `ℓ k → ∞` across which the action increases by
   -- an amount tending to zero.
-  have hmono (k : ℕ) := ω.monotone_hamiltonianAction_of_floer hH (hu k) (hper k)
-    (fun z hz v hv ↦ (mul_pos hc (pow_pos (norm_pos_iff.2 hv) 2)).trans_le (hJc k z hz v))
+  have hJ (k : ℕ) (z : ℝ × ℝ) (hz : z ∈ (univ : Set ℝ) ×ˢ Icc 0 1) : ω.Tames (J k z) :=
+    fun v hv ↦ (mul_pos hc (pow_pos (norm_pos_iff.2 hv) 2)).trans_le (hJc k z hz v)
+  have hmono (k : ℕ) := ω.monotone_hamiltonianAction_of_floer hH (hu k) (hper k) (hJ k)
     (hfloer k)
   obtain ⟨B, hB⟩ := ω.exists_forall_abs_hamiltonianAction_le hH.continuous hK L
   have hC (k : ℕ) : ω.hamiltonianAction H (fun t ↦ u k (σ' k, t)) -
@@ -200,7 +158,7 @@ theorem exists_subseq_tendstoLocallyUniformly_comp_add_of_tendsto_sub_atTop
     exists_tendsto_sub_nhds_zero_of_monotone_of_tendsto_sub_atTop hmono hC hσ
   -- The energy over every window `[a + τ k, b + τ k] × [0, 1]` therefore tends to zero.
   have hen := tendsto_setLIntegral_floerEnergyDensity_of_tendsto_hamiltonianAction_sub hH hu hper
-    hc hJc hfloer hℓ hinc
+    hJ hfloer hℓ hinc
   -- The translates by `τ k` are uniformly Lipschitz with values in `K`, so a subsequence
   -- converges, and its limit is the stationary cylinder over an orbit.
   have hwL (k : ℕ) : LipschitzWith L fun z ↦ u k (z + (τ k, 0)) := by
@@ -224,7 +182,7 @@ theorem exists_subseq_tendstoLocallyUniformly_comp_add_of_tendsto_sub_atTop
   refine ⟨φ, hφ, fun n ↦ τ (φ n), x, hxper, hxd, hxK, hτσ.comp hφ.tendsto_atTop,
     hσ'τ.comp hφ.tendsto_atTop, hg, ?_⟩
   -- The loops of the translates at `s = 0` are the loops of the trajectories at `s = τ`.
-  simpa using tendsto_hamiltonianAction_sub_hamiltonianAction_of_tendstoLocallyUniformly hH
+  simpa using ω.tendsto_hamiltonianAction_sub_hamiltonianAction_of_tendstoLocallyUniformly hH
     (f := fun n z ↦ u (φ n) (z + (τ (φ n), 0)))
     (fun n ↦ ((hu (φ n)).of_le one_le_two).comp (contDiff_id.add contDiff_const))
     (fun n s t ↦ by simpa [add_comm] using hper (φ n) (s + τ (φ n)) t) (fun n ↦ hwL (φ n))

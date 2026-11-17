@@ -96,6 +96,9 @@ boundary loops (`SymplecticForm.tendsto_integral_floerEnergyDensity_of_tendstoUn
   `K`.
 * `SymplecticForm.tendsto_hamiltonianAction_of_tendstoLocallyUniformlyOn_comp_add`: the actions of
   the end loops converge to the action of the limit loop.
+* `SymplecticForm.tendsto_hamiltonianAction_sub_hamiltonianAction_of_tendstoLocallyUniformly`:
+  uniformly Lipschitz maps converging to the stationary cylinder over an orbit have loop actions
+  asymptotic to the action of the orbit, without convergence of the derivatives.
 * `SymplecticForm.exists_apply_ne_apply_of_tendstoLocallyUniformlyOn`: windows that keep a fixed
   amount of energy have limits whose boundary loops differ.
 
@@ -640,6 +643,46 @@ theorem tendsto_hamiltonianAction_of_tendstoLocallyUniformlyOn_comp_add
     refine (h.congr (hdiff.mono fun k hk t ht ↦ ?_)).congr_right fun t ht ↦ ?_
     · simp [(hasDerivAt_slice_right (hk t ht)).deriv]
     · simp [(hasDerivAt_slice_right (hv t ht)).deriv]
+
+/-- **Loops converging to an orbit have asymptotically equal actions.** Let `H` be a `C¹`
+Hamiltonian and `x` a `1`-periodic orbit of its Hamiltonian vector field. Let `f k` be `C¹` maps
+with `1`-periodic loops and a common Lipschitz constant, converging locally uniformly to the
+stationary cylinder `(s, t) ↦ x(t)`. Then the actions of the loops `f k (0, ·)` are asymptotic to
+the action of `x`. No convergence of the derivatives is needed. -/
+theorem tendsto_hamiltonianAction_sub_hamiltonianAction_of_tendstoLocallyUniformly
+    (hH : ContDiff ℝ 1 (uncurry H)) {f : ℕ → ℝ × ℝ → V} (hf : ∀ k, ContDiff ℝ 1 (f k))
+    (hper : ∀ k s, Periodic (fun t ↦ f k (s, t)) 1) {L : ℝ≥0} (hL : ∀ k, LipschitzWith L (f k))
+    {x : ℝ → V} (hxper : Periodic x 1)
+    (hxd : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t)
+    (hg : TendstoLocallyUniformly f (fun z ↦ x z.2) atTop) :
+    Tendsto (fun k ↦ ω.hamiltonianAction H (fun t ↦ f k (0, t)) - ω.hamiltonianAction H x)
+      atTop (𝓝 0) := by
+  have hdf (k : ℕ) (z : ℝ × ℝ) : DifferentiableAt ℝ (f k) z := (hf k).differentiable one_ne_zero z
+  -- The orbit has a continuous, hence bounded, derivative on `[0, 1]`.
+  have hderiv : deriv x = fun t ↦ ω.hamiltonianVectorField (H t) (x t) :=
+    funext fun t ↦ (hxd t).deriv
+  have hY : Continuous (deriv x) := hderiv ▸
+    (ω.continuous_uncurry_hamiltonianVectorField hH).comp
+      (continuous_id.prodMk (continuous_iff_continuousAt.2 fun t ↦ (hxd t).continuousAt))
+  obtain ⟨B, hB⟩ := isCompact_Icc.exists_bound_of_continuousOn (s := Icc (0 : ℝ) 1)
+    hY.continuousOn
+  -- The loops `f k (0, ·)` and the orbit `x` have speed at most `max L B` and the same uniform
+  -- limit.
+  exact ω.tendsto_hamiltonianAction_sub_hamiltonianAction (H := H) hH.continuous
+    (y := fun _ ↦ x) (L := max L B)
+    (Eventually.of_forall fun k t _ ↦ (hasDerivAt_slice_right (hdf k (0, t))).differentiableAt)
+    (Eventually.of_forall fun _ t _ ↦ (hxd t).differentiableAt)
+    (Eventually.of_forall fun k ↦
+      (hf k).contDiffOn.continuousOn_deriv_slice_right isOpen_univ fun _ _ ↦ mem_univ _)
+    (Eventually.of_forall fun _ ↦ hY.continuousOn)
+    (Eventually.of_forall fun k ↦ by simpa using hper k 0 0)
+    (Eventually.of_forall fun _ ↦ by simpa using hxper 0)
+    (Eventually.of_forall fun k t _ ↦ (norm_deriv_slice_right_le (hdf k (0, t))).trans
+      ((norm_fderiv_le_of_lipschitz ℝ (hL k)).trans (le_max_left _ _)))
+    (Eventually.of_forall fun _ t ht ↦ (hB t ht).trans (le_max_right _ _))
+    ((hg.tendstoLocallyUniformlyOn (s := univ)).tendstoUniformlyOn_slice_right isCompact_Icc
+      fun _ _ ↦ mem_univ _)
+    fun _ hu ↦ Eventually.of_forall fun _ _ _ ↦ refl_mem_uniformity hu
 
 end Action
 
