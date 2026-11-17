@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
 import Mathlib.Geometry.Manifold.PartitionOfUnity
 import TauCeti.Analysis.Calculus.FDeriv.Integral
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Divergence
-import TauCeti.Geometry.Manifold.VectorField.ChartFlux
+import TauCeti.Geometry.Manifold.VectorField.Chart.Flux
 
 /-!
 # The divergence theorem on a manifold without boundary
