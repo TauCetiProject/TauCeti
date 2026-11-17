@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.ArithmeticFunction.Liouville
 public import Mathlib.NumberTheory.ArithmeticFunction.Moebius
 public import Mathlib.NumberTheory.EulerProduct.Basic
 public import Mathlib.NumberTheory.LSeries.Dirichlet
+public import TauCeti.NumberTheory.LSeries.EulerProduct
 
 /-!
 # Completely multiplicative arithmetic functions
@@ -74,6 +75,24 @@ theorem map_mul (hf : f.IsCompletelyMultiplicative) (m n : ℕ) : f (m * n) = f 
 theorem isMultiplicative (hf : f.IsCompletelyMultiplicative) : f.IsMultiplicative :=
   ⟨hf.1, fun {m n} _ ↦ hf.2 m n⟩
 
+/-- Since arithmetic functions vanish at `0`, complete multiplicativity only needs to be checked
+at nonzero arguments. -/
+theorem iff_ne_zero :
+    f.IsCompletelyMultiplicative ↔
+      f 1 = 1 ∧ ∀ {m n : ℕ}, m ≠ 0 → n ≠ 0 → f (m * n) = f m * f n := by
+  refine and_congr_right' ⟨fun h m n _ _ ↦ h m n, fun h m n ↦ ?_⟩
+  rcases eq_or_ne m 0 with rfl | hm
+  · simp
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp
+  exact h hm hn
+
+/-- Constructor for complete multiplicativity from its values at nonzero arguments. -/
+theorem of_ne_zero (h₁ : f 1 = 1)
+    (h : ∀ {m n : ℕ}, m ≠ 0 → n ≠ 0 → f (m * n) = f m * f n) :
+    f.IsCompletelyMultiplicative :=
+  iff_ne_zero.mpr ⟨h₁, h⟩
+
 /-- A completely multiplicative arithmetic function as a monoid-with-zero homomorphism. -/
 def toMonoidWithZeroHom (hf : f.IsCompletelyMultiplicative) : ℕ →*₀ R where
   toFun := f
@@ -128,13 +147,14 @@ theorem completelyMultiplicativeEquiv_symm_apply_apply (g : ℕ →*₀ R) (n : 
   rfl
 
 /-- The constant function `ζ` (equal to `1` away from `0`) is completely multiplicative. -/
-theorem isCompletelyMultiplicative_zeta : IsCompletelyMultiplicative ζ := by
-  refine ⟨rfl, fun m n ↦ ?_⟩
-  rcases eq_or_ne m 0 with rfl | hm
-  · simp
-  rcases eq_or_ne n 0 with rfl | hn
-  · simp
-  simp [hm, hn]
+theorem isCompletelyMultiplicative_zeta : IsCompletelyMultiplicative ζ :=
+  .of_ne_zero rfl fun hm hn ↦ by simp [hm, hn]
+
+/-- The Dirichlet unit `1` (the indicator of `1`) is completely multiplicative. -/
+theorem isCompletelyMultiplicative_one : IsCompletelyMultiplicative (1 : ArithmeticFunction R) :=
+  ⟨one_one, fun m n ↦ by
+    by_cases hm : m = 1 <;> by_cases hn : n = 1 <;>
+      simp [hm, hn, mul_eq_one]⟩
 
 end MonoidWithZero
 
@@ -180,8 +200,8 @@ theorem moebius_pmul_mul_self [Ring R] {f : ArithmeticFunction R}
       ((μ : ArithmeticFunction R) * ζ) n * f n := by
     simp only [ArithmeticFunction.mul_apply, pmul_apply, Finset.sum_mul]
     refine Finset.sum_congr rfl fun x hx ↦ ?_
-    rw [← (mem_divisorsAntidiagonal.mp hx).1, hf.map_mul, natCoe_apply,
-      zeta_apply_ne (right_ne_zero_of_mem_divisorsAntidiagonal hx), cast_one, mul_one, mul_assoc]
+    simp [← (mem_divisorsAntidiagonal.mp hx).1, hf.map_mul, mul_assoc,
+      right_ne_zero_of_mem_divisorsAntidiagonal hx]
   rw [key, coe_moebius_mul_coe_zeta, ArithmeticFunction.one_apply]
   split_ifs with h <;> simp [h, hf.map_one]
 
@@ -194,9 +214,9 @@ theorem mul_moebius_pmul [Ring R] {f : ArithmeticFunction R}
       (ζ * (μ : ArithmeticFunction R)) n * f n := by
     simp only [ArithmeticFunction.mul_apply, pmul_apply, Finset.sum_mul]
     refine Finset.sum_congr rfl fun x hx ↦ ?_
-    rw [← (mem_divisorsAntidiagonal.mp hx).1, hf.map_mul, natCoe_apply,
-      zeta_apply_ne (left_ne_zero_of_mem_divisorsAntidiagonal hx), cast_one, one_mul,
-      intCoe_apply, ← mul_assoc, ← (Int.cast_commute _ _).eq, mul_assoc]
+    simp only [← (mem_divisorsAntidiagonal.mp hx).1, hf.map_mul, intCoe_apply, natCoe_apply,
+      zeta_apply_ne (left_ne_zero_of_mem_divisorsAntidiagonal hx), cast_one, one_mul]
+    rw [← mul_assoc, ← mul_assoc, (Int.cast_commute _ _).eq]
   rw [key, coe_zeta_mul_coe_moebius, ArithmeticFunction.one_apply]
   split_ifs with h <;> simp [h, hf.map_one]
 
@@ -229,23 +249,9 @@ of `HasProd`. -/
 theorem LSeries_eulerProduct_hasProd (hf : f.IsCompletelyMultiplicative) {s : ℂ}
     (hs : LSeriesSummable f s) :
     HasProd (fun p : Primes ↦ (1 - f p * (p : ℂ) ^ (-s))⁻¹) (LSeries f s) := by
-  let t : ℕ →*₀ ℂ :=
-    { toFun := LSeries.term f s
-      map_zero' := LSeries.term_zero _ _
-      map_one' := by simp [LSeries.term_of_ne_zero, hf.map_one]
-      map_mul' m n := by
-        rcases eq_or_ne m 0 with rfl | hm
-        · simp
-        rcases eq_or_ne n 0 with rfl | hn
-        · simp
-        rw [LSeries.term_of_ne_zero (mul_ne_zero hm hn), LSeries.term_of_ne_zero hm,
-          LSeries.term_of_ne_zero hn, hf.map_mul, cast_mul, natCast_mul_natCast_cpow,
-          mul_div_mul_comm] }
-  have hp (p : Primes) : f p * (p : ℂ) ^ (-s) = t p := by
-    rw [MonoidWithZeroHom.coe_mk, ZeroHom.coe_mk, LSeries.term_of_ne_zero p.prop.ne_zero,
-      cpow_neg, div_eq_mul_inv]
-  simp_rw [hp]
-  exact EulerProduct.eulerProduct_completely_multiplicative_hasProd (summable_norm_iff.mpr hs)
+  simpa using TauCeti.LSeries.LSeries_eulerProduct_hasProd_of_recurrence (c := 0) hf.map_one
+    (fun _ _ _ ↦ hf.map_mul _ _) (fun p _ r ↦ by
+      rw [show r + 2 = r + 1 + 1 from rfl, pow_succ, hf.map_mul, mul_comm]; simp) hs
 
 /-- The Euler product `∏ₚ (1 - f p p⁻ˢ)⁻¹ = L(f, s)` of the L-series of a completely
 multiplicative function at a point of absolute convergence. -/
@@ -269,10 +275,8 @@ theorem isCompletelyMultiplicative_pow (k : ℕ) : (pow k).IsCompletelyMultiplic
 multiplicative. -/
 theorem isCompletelyMultiplicative_cpow (ν : ℂ) :
     (toArithmeticFunction fun n : ℕ ↦ (n : ℂ) ^ ν).IsCompletelyMultiplicative := by
-  refine ⟨by simp [toArithmeticFunction], fun m n ↦ ?_⟩
-  simp only [toArithmeticFunction, coe_mk, mul_eq_zero, cast_mul,
-    Complex.natCast_mul_natCast_cpow]
-  split_ifs <;> simp_all
+  refine .of_ne_zero (by simp [toArithmeticFunction]) fun hm hn ↦ ?_
+  simp [toArithmeticFunction, hm, hn, Complex.natCast_mul_natCast_cpow]
 
 /-- The Liouville function is completely multiplicative. -/
 theorem isCompletelyMultiplicative_liouville : liouville.IsCompletelyMultiplicative :=
@@ -288,11 +292,7 @@ open ArithmeticFunction
 theorem isCompletelyMultiplicative_toArithmeticFunction {R : Type*} [CommMonoidWithZero R]
     {N : ℕ} (χ : DirichletCharacter R N) :
     (toArithmeticFunction (χ ·)).IsCompletelyMultiplicative := by
-  refine ⟨(isMultiplicative_toArithmeticFunction χ).map_one, fun m n ↦ ?_⟩
-  rcases eq_or_ne m 0 with rfl | hm
-  · simp
-  rcases eq_or_ne n 0 with rfl | hn
-  · simp
+  refine .of_ne_zero (isMultiplicative_toArithmeticFunction χ).map_one fun hm hn ↦ ?_
   simp only [← χ.apply_eq_toArithmeticFunction_apply (mul_ne_zero hm hn),
     ← χ.apply_eq_toArithmeticFunction_apply hm, ← χ.apply_eq_toArithmeticFunction_apply hn,
     cast_mul, map_mul]
@@ -351,12 +351,9 @@ example :
     let f : ArithmeticFunction ℤ :=
       ⟨fun n ↦ if n ≠ 0 ∧ ∀ p ∈ n.primeFactors, p % 4 = 1 then 1 else 0, by simp⟩
     f.IsCompletelyMultiplicative ∧ f 2 = 0 ∧ ∀ p, p.Prime → p % 4 = 3 → f p = 0 := by
-  refine ⟨⟨by simp, fun m n ↦ ?_⟩, by simp [prime_two.primeFactors], fun p hp hp3 ↦ ?_⟩
-  · rcases eq_or_ne m 0 with rfl | hm
-    · simp
-    rcases eq_or_ne n 0 with rfl | hn
-    · simp
-    simp only [coe_mk, primeFactors_mul hm hn, Finset.mem_union, or_imp, forall_and]
+  refine ⟨.of_ne_zero (by simp) fun hm hn ↦ ?_, by simp [prime_two.primeFactors],
+    fun p hp hp3 ↦ ?_⟩
+  · simp only [coe_mk, primeFactors_mul hm hn, Finset.mem_union, or_imp, forall_and]
     split_ifs <;> simp_all
   · simp [hp.primeFactors, hp3]
 
@@ -365,18 +362,11 @@ multiplicative: `2 ^ ω(4) = 2 ≠ 4 = (2 ^ ω(2)) ^ 2`. -/
 example : (toArithmeticFunction fun n ↦ 2 ^ Ω n : ArithmeticFunction ℕ).IsCompletelyMultiplicative ∧
     (toArithmeticFunction fun n ↦ 2 ^ ω n : ArithmeticFunction ℕ).IsMultiplicative ∧
     ¬ (toArithmeticFunction fun n ↦ 2 ^ ω n : ArithmeticFunction ℕ).IsCompletelyMultiplicative := by
-  refine ⟨⟨by simp [toArithmeticFunction], fun m n ↦ ?_⟩,
-    ⟨by simp [toArithmeticFunction], fun {m n} hmn ↦ ?_⟩, fun h ↦ ?_⟩
-  · rcases eq_or_ne m 0 with rfl | hm
-    · simp [toArithmeticFunction]
-    rcases eq_or_ne n 0 with rfl | hn
-    · simp [toArithmeticFunction]
-    simp [toArithmeticFunction, hm, hn, cardFactors_mul hm hn, pow_add]
-  · rcases eq_or_ne m 0 with rfl | hm
-    · simp [toArithmeticFunction]
-    rcases eq_or_ne n 0 with rfl | hn
-    · simp [toArithmeticFunction]
-    simp [toArithmeticFunction, hm, hn, cardDistinctFactors_mul hmn, pow_add]
+  refine ⟨.of_ne_zero (by simp [toArithmeticFunction]) fun hm hn ↦ ?_,
+    IsMultiplicative.iff_ne_zero.mpr ⟨by simp [toArithmeticFunction], fun hm hn hmn ↦ ?_⟩,
+    fun h ↦ ?_⟩
+  · simp [toArithmeticFunction, hm, hn, cardFactors_mul hm hn, pow_add]
+  · simp [toArithmeticFunction, hm, hn, cardDistinctFactors_mul hmn, pow_add]
   · have h4 := h.map_pow 2 2
     have hω : ω (2 ^ 2) = 1 := cardDistinctFactors_apply_prime_pow prime_two two_ne_zero
     norm_num at hω
