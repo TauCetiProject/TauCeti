@@ -82,7 +82,8 @@ both its tempered distribution and this `Lᵖ` data.
   normed spaces between the Besov spaces built from two bump functions.
 * `TauCeti.BesovSpace.continuous_block`: each block depends continuously on the element.
 * `TauCeti.BesovSpace.tendsto_rpow_mul_norm_block`: for `q < ∞` the weighted blocks vanish at high
-  frequency.
+  frequency, and `TauCeti.BesovSpace.isClosed_setOf_tendsto_rpow_mul_norm_block`: the set of
+  elements with vanishing high-frequency weighted blocks is closed in `B^s_{p,q}`.
 * `TauCeti.BesovSpace.exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq_zero`: an `Lᵖ`
   function whose blocks vanish from some index on lies in `B^s_{p,∞}`.
 * `TauCeti.BesovSpace.inclusionOfExponentLE`: the Bernstein embedding
@@ -651,6 +652,28 @@ theorem tendsto_rpow_mul_norm_block (hq : q ≠ ∞) (u : BesovSpace F φ s p q)
     (p := q.toReal⁻¹) (Or.inr (inv_nonneg.2 hq0.le))
   rw [Real.zero_rpow (inv_ne_zero hq0.ne')] at h
   exact h.congr fun j ↦ Real.rpow_rpow_inv (by positivity) hq0.ne'
+
+open Filter Topology in
+/-- The set of `u ∈ B^s_{p,q}` whose weighted block norms `2^{js} ‖Δⱼ u‖_p` vanish at high
+frequency is closed in `B^s_{p,q}` (nontrivial at `q = ∞`; for `q < ∞` it is the whole space by
+`tendsto_rpow_mul_norm_block`). -/
+theorem isClosed_setOf_tendsto_rpow_mul_norm_block :
+    IsClosed {u : BesovSpace F φ s p q |
+      Tendsto (fun j : ℕ ↦ (2 : ℝ) ^ (s * j) * ‖u.block j‖) atTop (𝓝 0)} := by
+  refine closure_subset_iff_isClosed.mp fun u hu ↦ Metric.tendsto_atTop.2 fun ε hε ↦ ?_
+  obtain ⟨v, hv, hvu⟩ := Metric.mem_closure_iff.1 hu (ε / 2) (half_pos hε)
+  rw [dist_eq_norm] at hvu
+  obtain ⟨J, hJ⟩ := Metric.tendsto_atTop.1 hv (ε / 2) (half_pos hε)
+  refine ⟨J, fun j hj ↦ ?_⟩
+  have hvj := hJ j hj
+  rw [Real.dist_0_eq_abs, abs_of_nonneg (by positivity)] at hvj ⊢
+  have hsub := rpow_mul_norm_block_le (u - v) j
+  rw [block_sub] at hsub
+  calc (2 : ℝ) ^ (s * j) * ‖u.block j‖
+      ≤ 2 ^ (s * j) * ‖u.block j - v.block j‖ + 2 ^ (s * j) * ‖v.block j‖ := by
+        rw [← mul_add]; gcongr; exact norm_le_norm_sub_add _ _
+    _ < ε / 2 + ε / 2 := add_lt_add_of_le_of_lt (hsub.trans hvu.le) hvj
+    _ = ε := add_halves ε
 
 /-- For `q = 2` the squared Besov norm is the sum `∑ⱼ (2^{js} ‖Δⱼ u‖_p)²`. -/
 theorem hasSum_norm_sq (u : BesovSpace F φ s p 2) :
