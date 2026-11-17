@@ -17,7 +17,6 @@ public import Mathlib.Algebra.Category.ModuleCat.Products
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.DirectSum.Basis
 public import Mathlib.RingTheory.Finiteness.Prod
-import TauCeti.AlgebraicTopology.Singular.Basic
 
 /-!
 # Reduced singular homology
@@ -303,18 +302,27 @@ lemma isZero_reducedSingularHomologyFunctor_zero (X : TopCat.{w}) [PathConnected
     IsZero ((reducedSingularHomologyFunctor R 0).obj X) :=
   isZero_kernel_of_mono (X.singularHomology₀ε R)
 
+omit [HasKernels C] in
+/-- The zeroth singular homology of the empty space vanishes. -/
+lemma isZero_singularHomologyFunctor_zero_of_isEmpty (X : TopCat.{w}) [IsEmpty X] :
+    IsZero (((singularHomologyFunctor C 0).obj R).obj X) := by
+  have hπ : IsEmpty (ZerothHomotopy X) :=
+    ⟨fun c ↦ ZerothHomotopy.rec (motive := fun _ ↦ False) (fun x ↦ isEmptyElim x) c⟩
+  exact ((IsZero.iff_id_eq_zero _).2 (Sigma.hom_ext _ _ fun c ↦ isEmptyElim c)).of_iso
+    (X.singularHomology₀Iso R)
+
 /-- The reduced singular homology of the empty space vanishes in every degree. -/
 lemma isZero_reducedSingularHomologyFunctor_of_isEmpty (X : TopCat.{w}) [IsEmpty X] (n : ℕ) :
     IsZero ((reducedSingularHomologyFunctor R n).obj X) := by
   cases n with
   | zero =>
-    have h₀ := isZero_singularHomologyFunctor_of_isEmpty R X 0
+    have h₀ := isZero_singularHomologyFunctor_zero_of_isEmpty R X
     rw [reducedSingularHomologyFunctor_zero_obj, IsZero.iff_id_eq_zero,
       ← cancel_mono (kernel.ι (X.singularHomology₀ε R))]
     exact h₀.eq_of_tgt _ _
   | succ n =>
-    exact (isZero_singularHomologyFunctor_of_isEmpty R X (n + 1)).of_iso
-      ((reducedSingularHomologySuccIso R n).app X)
+    exact (isZero_singularHomologyFunctor_of_totallyDisconnectedSpace C (n + 1) R X
+      n.succ_ne_zero).of_iso ((reducedSingularHomologySuccIso R n).app X)
 
 /-- **Reduced homology in degree zero is free on the path components other than that of a
 basepoint.**  A point `x` identifies the reduced zeroth singular homology of `X` with the
@@ -533,7 +541,7 @@ theorem finite_singularHomology_of_finite_reducedSingularHomology (q : ℕ)
   | zero =>
     rcases isEmpty_or_nonempty X with hX | hX
     · have : Subsingleton (((singularHomologyFunctor (ModuleCat.{w} k) 0).obj M).obj X) :=
-        ModuleCat.isZero_iff_subsingleton.mp (isZero_singularHomologyFunctor_of_isEmpty M X 0)
+        ModuleCat.isZero_iff_subsingleton.mp (isZero_singularHomologyFunctor_zero_of_isEmpty M X)
       infer_instance
     · exact .equiv (singularHomology₀LinearEquiv M (Classical.arbitrary X)).symm
   | succ q => exact .equiv ((reducedSingularHomologySuccIso M q).app X).toLinearEquiv

@@ -222,15 +222,10 @@ namespace ModuleCat
 
 /-- Restriction of scalars preserves colimits of any shape that exist in `AddCommGrpCat.{v}`,
 with no constraint between the ring universes and the module universe `v`. -/
-noncomputable instance preservesColimitsOfShape_restrictScalars
+instance preservesColimitsOfShape_restrictScalars
     {J : Type*} [Category* J] [Limits.HasColimitsOfShape J AddCommGrpCat.{v}] (f : R →+* S) :
-    Limits.PreservesColimitsOfShape J (restrictScalars.{v} f) := by
-  let e : forget₂ (ModuleCat.{v} S) AddCommGrpCat.{v} ≅
-      restrictScalars.{v} f ⋙ forget₂ (ModuleCat.{v} R) AddCommGrpCat.{v} :=
-    NatIso.ofComponents (fun _ ↦ Iso.refl _) (fun _ ↦ rfl)
-  have := Limits.preservesColimitsOfShape_of_natIso (J := J) e
-  exact Limits.preservesColimitsOfShape_of_reflects_of_preserves
-    (restrictScalars.{v} f) (forget₂ (ModuleCat.{v} R) AddCommGrpCat.{v})
+    Limits.PreservesColimitsOfShape J (restrictScalars.{v} f) :=
+  ⟨fun {_} ↦ inferInstance⟩
 
 section Algebra
 

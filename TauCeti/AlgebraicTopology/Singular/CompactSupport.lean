@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Sets.Compacts
 public import TauCeti.AlgebraicTopology.Singular.DirectedUnion
+import TauCeti.Algebra.Category.ModuleCat.FilteredColimits
 
 /-!
 # Compact supports of singular homology
@@ -28,11 +29,6 @@ With coefficients in a module `N`, the colimit statement gives two concrete cons
   vanishes in some compact superset `L ⊇ K`
   (`TauCeti.exists_isCompact_singularHomologyMap_inclusion_eq_zero`).
 
-From these compact-support properties follow the corresponding representation and vanishing results
-(`TauCeti.exists_singularHomologyMap_subtypeVal_eq` and
-`TauCeti.exists_singularHomologyMap_inclusion_eq_zero_of_subset`) for any family of subsets whose
-members absorb compact sets, with no universe restriction on the indexing type.
-
 ## Main definitions and results
 
 * `TauCeti.subsetDiagram` and `TauCeti.subsetCocone`: the diagram of subspaces of a monotone family
@@ -50,9 +46,6 @@ members absorb compact sets, with no universe restriction on the indexing type.
   of homological relations in `Hₖ(X; N)`.
 * `TauCeti.exists_isOpen_isCompact_singularHomologyMap_subtypeVal_eq`: in a weakly locally compact
   space, every class of `Hₖ(X; N)` comes from an open set contained in a compact set.
-* `TauCeti.exists_singularHomologyMap_subtypeVal_eq` and
-  `TauCeti.exists_singularHomologyMap_inclusion_eq_zero_of_subset`: compact support of classes and
-  of homological relations for a family absorbing compact sets.
 
 ## References
 
@@ -75,6 +68,7 @@ section SubsetDiagram
 variable {X : TopCat.{w}} {J : Type*} [Preorder J] {U : J → Set X}
 
 /-- The subspaces `U j` of a monotone family in `X`, as a functor on the index preorder. -/
+-- Exposed so `obj` computes definitionally in morphism types and `@[simps]` elaborates.
 @[expose, simps]
 def subsetDiagram (hU : Monotone U) : J ⥤ TopCat.{w} where
   obj j := of ↥(U j)
@@ -83,6 +77,7 @@ def subsetDiagram (hU : Monotone U) : J ⥤ TopCat.{w} where
   map_comp _ _ := by ext; rfl
 
 /-- The cocone of inclusions `U j ⟶ X` over `TauCeti.subsetDiagram`. -/
+-- Exposed so `pt` computes definitionally in leg types and `@[simps]` elaborates.
 @[expose, simps]
 def subsetCocone (hU : Monotone U) : Cocone (subsetDiagram hU) where
   pt := X
@@ -127,6 +122,7 @@ end TauCeti
 namespace TopCat
 
 /-- The diagram of compact subsets `Compacts X` of `X`, ordered by inclusion. -/
+-- Exposed so `obj K` computes to `of K` in the types of `compactsDiagram_map` and cocone legs.
 @[expose]
 def compactsDiagram (X : TopCat.{w}) : Compacts X ⥤ TopCat.{w} :=
   TauCeti.subsetDiagram (U := SetLike.coe) fun _ _ h ↦ h
@@ -143,6 +139,7 @@ theorem compactsDiagram_map (X : TopCat.{w}) {K L : Compacts X} (f : K ⟶ L) :
 
 /-- The cocone of inclusions `K ⟶ X` over the diagram `TopCat.compactsDiagram` of compact subsets
 of `X`. -/
+-- Exposed so `pt` computes to `X` in the type of `compactsCocone_ι_app` and colimit consumers.
 @[expose]
 def compactsCocone (X : TopCat.{w}) : Cocone X.compactsDiagram :=
   TauCeti.subsetCocone (U := SetLike.coe) fun _ _ h ↦ h
@@ -191,9 +188,6 @@ theorem exists_isCompact_singularHomologyMap_subtypeVal_eq
       (y : ((singularHomologyFunctor (ModuleCat.{w} Λ) k).obj N).obj (of ↥K)),
       ((singularHomologyFunctor (ModuleCat.{w} Λ) k).obj N).map
         (ofHom (ContinuousMap.subtypeVal K)) y = x := by
-  have : PreservesColimitsOfShape (Compacts (of Y)) (forget (ModuleCat.{w} Λ)) :=
-    Limits.comp_preservesColimitsOfShape (forget₂ (ModuleCat.{w} Λ) AddCommGrpCat.{w})
-      (forget AddCommGrpCat.{w})
   obtain ⟨K, y, hy⟩ :=
     Concrete.isColimit_exists_rep _ (isColimitMapCoconeSingularHomologyCompacts N k (of Y)) x
   exact ⟨K.1, K.2, y, hy⟩
@@ -208,9 +202,6 @@ theorem exists_isCompact_singularHomologyMap_inclusion_eq_zero {K : Set Y} (hK :
     ∃ (L : Set Y) (_ : IsCompact L) (hKL : K ⊆ L),
       ((singularHomologyFunctor (ModuleCat.{w} Λ) k).obj N).map
         (ofHom (ContinuousMap.inclusion hKL)) y = 0 := by
-  have : PreservesColimitsOfShape (Compacts (of Y)) (forget (ModuleCat.{w} Λ)) :=
-    Limits.comp_preservesColimitsOfShape (forget₂ (ModuleCat.{w} Λ) AddCommGrpCat.{w})
-      (forget AddCommGrpCat.{w})
   let K₀ : Compacts (of Y) := ⟨K, hK⟩
   obtain ⟨L, f, g, hfg⟩ := Concrete.isColimit_exists_of_rep_eq (i := K₀) (j := K₀) _
     (isColimitMapCoconeSingularHomologyCompacts N k (of Y)) y 0 (by rw [map_zero]; exact hy)
@@ -236,64 +227,5 @@ theorem exists_isOpen_isCompact_singularHomologyMap_subtypeVal_eq [WeaklyLocally
     TopCat.ofHom_inclusion_comp_ofHom_subtypeVal]
 
 end CompactSubsets
-
-section SubsetFamilyModule
-
-variable {X : TopCat.{w}} {J : Type*} {U : J → Set X} {Λ : Type*} [Ring Λ]
-  (N : ModuleCat.{w} Λ) (k : ℕ)
-
-/-- **Every singular homology class comes from a member of a family absorbing compact sets.** With
-coefficients in a module `N`, if every compact subset of `X` lies in some `U j`, every class of
-`Hₖ(X; N)` lies in the image of `Hₖ(U j; N)` for some `j`. -/
-theorem exists_singularHomologyMap_subtypeVal_eq
-    (hK : ∀ K : Set X, IsCompact K → ∃ j, K ⊆ U j)
-    (x : ((singularHomologyFunctor (ModuleCat.{w} Λ) k).obj N).obj X) :
-    ∃ (j : J) (y : ((singularHomologyFunctor (ModuleCat.{w} Λ) k).obj N).obj (of ↥(U j))),
-      ((singularHomologyFunctor (ModuleCat.{w} Λ) k).obj N).map
-        (ofHom (ContinuousMap.subtypeVal (U j))) y = x := by
-  obtain ⟨K, hKc, z, rfl⟩ := exists_isCompact_singularHomologyMap_subtypeVal_eq N k (Y := X) x
-  obtain ⟨j, hj⟩ := hK K hKc
-  refine ⟨j, ((singularHomologyFunctor (ModuleCat.{w} Λ) k).obj N).map
-    (ofHom (ContinuousMap.inclusion hj)) z, ?_⟩
-  rw [← ConcreteCategory.comp_apply, ← Functor.map_comp,
-    TopCat.ofHom_inclusion_comp_ofHom_subtypeVal]
-
-/-- **Vanishing in the space is detected in a member of a family absorbing compact sets.** With
-coefficients in a module `N`, if `U` is a monotone family indexed by a directed preorder whose
-members absorb compact subsets of `X`, a class of `Hₖ(U i; N)` whose image in `Hₖ(X; N)` vanishes
-already vanishes in `Hₖ(U j; N)` for some `j ≥ i`. -/
-theorem exists_singularHomologyMap_inclusion_eq_zero_of_subset [Preorder J] [IsDirected J (· ≤ ·)]
-    (hU : Monotone U) (hK : ∀ K : Set X, IsCompact K → ∃ j, K ⊆ U j) {i : J}
-    (y : ((singularHomologyFunctor (ModuleCat.{w} Λ) k).obj N).obj (of ↥(U i)))
-    (hy : ((singularHomologyFunctor (ModuleCat.{w} Λ) k).obj N).map
-      (ofHom (ContinuousMap.subtypeVal (U i))) y = 0) :
-    ∃ (j : J) (hij : i ≤ j),
-      ((singularHomologyFunctor (ModuleCat.{w} Λ) k).obj N).map
-        (ofHom (ContinuousMap.inclusion (hU hij))) y = 0 := by
-  obtain ⟨K, hKc, z, rfl⟩ := exists_isCompact_singularHomologyMap_subtypeVal_eq N k (Y := ↥(U i)) y
-  let imgK : Set X := Subtype.val '' K
-  let q : of ↥K ⟶ of ↥imgK :=
-    ofHom ⟨fun x ↦ ⟨x.1.1, Set.mem_image_of_mem _ x.2⟩, by fun_prop⟩
-  have hfac₀ : q ≫ ofHom (ContinuousMap.subtypeVal imgK) =
-      ofHom (ContinuousMap.subtypeVal K) ≫ ofHom (ContinuousMap.subtypeVal (U i)) := by
-    ext; rfl
-  have hKz : ((singularHomologyFunctor (ModuleCat.{w} Λ) k).obj N).map
-      (ofHom (ContinuousMap.subtypeVal imgK))
-      (((singularHomologyFunctor (ModuleCat.{w} Λ) k).obj N).map q z) = 0 := by
-    rw [← ConcreteCategory.comp_apply, ← Functor.map_comp, hfac₀, Functor.map_comp,
-      ConcreteCategory.comp_apply, hy]
-  obtain ⟨L, hLc, hKL, hLz⟩ := exists_isCompact_singularHomologyMap_inclusion_eq_zero N k
-    (hKc.image continuous_subtype_val) _ hKz
-  obtain ⟨j₀, hj₀⟩ := hK L hLc
-  obtain ⟨j, hij, hj₀j⟩ := directed_of (· ≤ ·) i j₀
-  refine ⟨j, hij, ?_⟩
-  have hfac₁ : ofHom (ContinuousMap.subtypeVal K) ≫ ofHom (ContinuousMap.inclusion (hU hij)) =
-      q ≫ ofHom (ContinuousMap.inclusion hKL) ≫
-        ofHom (ContinuousMap.inclusion (hj₀.trans (hU hj₀j))) := by
-    ext; rfl
-  rw [← ConcreteCategory.comp_apply, ← Functor.map_comp, hfac₁, Functor.map_comp, Functor.map_comp,
-    ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, hLz, map_zero]
-
-end SubsetFamilyModule
 
 end TauCeti

@@ -38,14 +38,11 @@ charted space, second countability.
 * `ChartedSpace.nontrivial`: a nonempty such charted space has two distinct points.
 * `ChartedSpace.secondCountable_of_lindelof`: a Lindelöf charted space over a second-countable
   model space is second countable.
-* `Homeomorph.chartedSpaceModel`: transport of `ChartedSpace H M` along a homeomorphism `H ≃ₜ H'`
-  of model spaces.
 -/
 
 public section
 
 open Filter Topology
-open scoped Manifold
 
 namespace TauCeti
 
@@ -140,29 +137,3 @@ theorem ChartedSpace.secondCountable_of_lindelof (H X : Type*) [TopologicalSpace
   obtain ⟨s, hsc, hsU⟩ := LindelofSpace.elim_nhds_subcover (fun x : X ↦ (chartAt H x).source)
     fun x ↦ chart_source_mem_nhds H x
   exact ChartedSpace.secondCountable_of_countable_cover H hsU hsc
-
-namespace Homeomorph
-
-variable {H H' : Type*} [TopologicalSpace H] [TopologicalSpace H'] (e : H ≃ₜ H')
-
-/-- Transport a `ChartedSpace H M` structure along a homeomorphism `e : H ≃ₜ H'` of model spaces
-by postcomposing every chart with `e`. -/
-@[instance_reducible]
-def chartedSpaceModel (M : Type*) [TopologicalSpace M] [ChartedSpace H M] : ChartedSpace H' M where
-  atlas := (· ≫ₕ e.toOpenPartialHomeomorph) '' atlas H M
-  chartAt x := chartAt H x ≫ₕ e.toOpenPartialHomeomorph
-  mem_chart_source x := by simp
-  chart_mem_atlas x := ⟨chartAt H x, chart_mem_atlas H x, rfl⟩
-
-/-- The preferred chart at `x` in `e.chartedSpaceModel M` is `chartAt H x` followed by `e`. -/
-theorem chartAt_chartedSpaceModel {M : Type*} [TopologicalSpace M] [ChartedSpace H M] (x : M) :
-    (letI := e.chartedSpaceModel M; chartAt H' x) = chartAt H x ≫ₕ e.toOpenPartialHomeomorph :=
-  (rfl)
-
-/-- The atlas of `e.chartedSpaceModel M` consists of the charts of `M` postcomposed with `e`. -/
-theorem atlas_chartedSpaceModel (M : Type*) [TopologicalSpace M] [ChartedSpace H M] :
-    (letI := e.chartedSpaceModel M; atlas H' M) =
-      (· ≫ₕ e.toOpenPartialHomeomorph) '' atlas H M :=
-  (rfl)
-
-end Homeomorph

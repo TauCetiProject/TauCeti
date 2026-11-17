@@ -17,9 +17,7 @@ It records restriction along subspace inclusions (`TopCat.chainComplexMap_f_comp
 without requiring the small-chain subdivision theory.
 It also records the degree-zero component of Mathlib's identification of the singular chains of
 a totally disconnected space with an alternating constant complex
-(`TauCeti.ιChainComplex_singularChainComplexFunctorIsoOfTotallyDisconnectedSpace_hom_f_zero`),
-and the vanishing of singular homology of an empty space in every degree
-(`TauCeti.isZero_singularHomologyFunctor_of_isEmpty`).
+(`TauCeti.ιChainComplex_singularChainComplexFunctorIsoOfTotallyDisconnectedSpace_hom_f_zero`).
 -/
 
 public section
@@ -56,18 +54,6 @@ lemma singularHomologyFunctor_obj_map [CategoryWithHomology C] (n : ℕ) {X Y : 
     (f : X ⟶ Y) :
     ((AlgebraicTopology.singularHomologyFunctor C n).obj R).map f =
       SSet.homologyMap (TopCat.toSSet.map f) R n := rfl
-
-/-- Singular homology of an empty space vanishes in every degree. -/
-theorem isZero_singularHomologyFunctor_of_isEmpty [CategoryWithHomology C] (X : TopCat.{w})
-    [IsEmpty X] (n : ℕ) :
-    IsZero (((AlgebraicTopology.singularHomologyFunctor C n).obj R).obj X) := by
-  cases n with
-  | zero =>
-    exact ((IsZero.iff_id_eq_zero _).2 (Sigma.hom_ext _ _ fun x ↦ isEmptyElim x)).of_iso
-      (AlgebraicTopology.singularHomologyFunctorZeroOfTotallyDisconnectedSpace C R X)
-  | succ d =>
-    exact AlgebraicTopology.isZero_singularHomologyFunctor_of_totallyDisconnectedSpace C (d + 1)
-      R X d.succ_ne_zero
 
 /-- Mathlib's identification of the singular chains of a totally disconnected space with the
 alternating constant complex sends the summand of a singular vertex to the summand of the point

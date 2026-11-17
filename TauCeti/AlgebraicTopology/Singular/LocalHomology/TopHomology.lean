@@ -100,15 +100,6 @@ def localHomologySystemCone (k : ℕ) : Cone (localHomologySystem R M E k) where
         exact (Category.id_comp _).trans
           (localHomologyRestriction_univ_comp_localHomologyTransport R (E := E) k f).symm }
 
-/-- Projecting from `Hₖ(M; R)` to the cone point `Hₖ(M, M ∖ M; R)` and applying the leg at `x`
-is the local quotient map `Hₖ(M; R) ⟶ Hₖ(M, M ∖ {x.as}; R)`. -/
-@[reassoc, elementwise]
-lemma singularHomologyπ_localHomologySystemCone_π_app (k : ℕ) (x : FundamentalGroupoid M) :
-    (TopPair.ofSubset ((univ : Set M)ᶜ : Set (TopCat.of M))).singularHomologyπ R k ≫
-        (localHomologySystemCone R M E k).π.app x =
-      (TopPair.ofSubset ({x.as}ᶜ : Set (TopCat.of M))).singularHomologyπ R k :=
-  singularHomologyπ_localHomologyRestriction R (subset_univ {x.as}) k
-
 end Cone
 
 variable {Λ : Type w} [Ring Λ] (N : ModuleCat.{w} Λ)

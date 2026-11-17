@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.ChartedSpace
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
-public import TauCeti.Geometry.Manifold.ChartedSpace
+import Mathlib.Geometry.Manifold.HasGroupoid
 
 /-!
 # Recharting a topological manifold between finite-dimensional model spaces of equal dimension
@@ -44,15 +45,22 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
 @[instance_reducible]
 def ofFinrankEq (M : Type*) [TopologicalSpace M] [ChartedSpace E M]
     (h : Module.finrank 𝕜 E = Module.finrank 𝕜 E') : ChartedSpace E' M :=
-  (ContinuousLinearEquiv.ofFinrankEq h).toHomeomorph.chartedSpaceModel M
+  letI : ChartedSpace E' E :=
+    (ContinuousLinearEquiv.ofFinrankEq h).toHomeomorph.toOpenPartialHomeomorph.singletonChartedSpace
+      (by simp)
+  ChartedSpace.comp E' E M
 
 /-- The preferred chart at `x` in `ChartedSpace.ofFinrankEq M h` is `chartAt E x` postcomposed with
 `ContinuousLinearEquiv.ofFinrankEq h`. -/
 theorem chartAt_ofFinrankEq {M : Type*} [TopologicalSpace M] [ChartedSpace E M]
     (h : Module.finrank 𝕜 E = Module.finrank 𝕜 E') (x : M) :
     (letI := ofFinrankEq M h; chartAt E' x) =
-      chartAt E x ≫ₕ (ContinuousLinearEquiv.ofFinrankEq h).toHomeomorph.toOpenPartialHomeomorph :=
-  (ContinuousLinearEquiv.ofFinrankEq h).toHomeomorph.chartAt_chartedSpaceModel x
+      chartAt E x ≫ₕ
+        (ContinuousLinearEquiv.ofFinrankEq h).toHomeomorph.toOpenPartialHomeomorph := by
+  let e := (ContinuousLinearEquiv.ofFinrankEq h).toHomeomorph.toOpenPartialHomeomorph
+  let _ : ChartedSpace E' E := e.singletonChartedSpace (by simp [e])
+  exact (chartAt_comp E' E x).trans
+    (congrArg (chartAt E x ≫ₕ ·) (e.singletonChartedSpace_chartAt_eq (by simp [e])))
 
 /-- The atlas of `ChartedSpace.ofFinrankEq M h` consists of the charts of `M` postcomposed with
 `ContinuousLinearEquiv.ofFinrankEq h`. -/
@@ -61,6 +69,6 @@ theorem atlas_ofFinrankEq (M : Type*) [TopologicalSpace M] [ChartedSpace E M]
     (letI := ofFinrankEq M h; atlas E' M) =
       (· ≫ₕ (ContinuousLinearEquiv.ofFinrankEq h).toHomeomorph.toOpenPartialHomeomorph) ''
         atlas E M :=
-  (ContinuousLinearEquiv.ofFinrankEq h).toHomeomorph.atlas_chartedSpaceModel M
+  Set.image2_singleton_right
 
 end ChartedSpace

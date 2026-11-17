@@ -31,9 +31,8 @@ Combined with the sphere homotopy-equivalence connectivity results in
 of an `(n + 1)`-dimensional real normed space automatically forces the closed-manifold hypotheses:
 
 * **Dimension zero:** both `M` and `S⁰` are discrete, so `e` upgrades to a homeomorphism onto the
-  two-point sphere (`ContinuousMap.HomotopyEquiv.toHomeomorphOfSphereZero`), settling the
-  `0`-dimensional smooth Poincaré statement unconditionally
-  (`ContinuousMap.HomotopyEquiv.nonemptyDiffeomorphSphere_zero`).
+  two-point sphere (`ContinuousMap.HomotopyEquiv.toHomeomorphOfSphereZero`), which supplies the
+  `n = 0` case of compactness.
 * **Compactness and second countability (all `n : ℕ`):** for `n = d + 1`, `M` is path connected and
   `H_{d+1}(M; ℤ) ≅ H_{d+1}(S^{d+1}; ℤ) ≅ ℤ` is nontrivial, whereas Hatcher's Proposition 3.29
   (`TauCeti.compactSpace_of_nontrivial_singularHomology`) forces any preconnected Hausdorff
@@ -60,9 +59,8 @@ and sphere dimensions.
 
 ## Main definitions and results
 
-* `ContinuousMap.HomotopyEquiv.toHomeomorphOfSphereZero` and
-  `ContinuousMap.HomotopyEquiv.nonemptyDiffeomorphSphere_zero`: the `0`-dimensional topological and
-  smooth Poincaré theorems.
+* `ContinuousMap.HomotopyEquiv.toHomeomorphOfSphereZero`: upgrades a homotopy equivalence from a
+  `0`-manifold to `S⁰` to a homeomorphism.
 * `ContinuousMap.HomotopyEquiv.compactSpace_of_topCatSphere`,
   `ContinuousMap.HomotopyEquiv.compactSpace_of_sphere`, and
   `ContinuousMap.HomotopyEquiv.secondCountableTopology_of_sphere`: compactness and second
@@ -133,20 +131,6 @@ theorem _root_.Homeomorph.toHomotopyEquiv_toHomeomorphOfSphereZero
     (h : M ≃ₜ sphere (0 : F) 1) (hE : finrank ℝ E = 0) (hF : finrank ℝ F = 1) :
     h.toHomotopyEquiv.toHomeomorphOfSphereZero hE hF = h := by
   simp [toHomeomorphOfSphereZero]
-
-/-- **Zero-dimensional smooth Poincaré theorem.** Every Hausdorff smooth `0`-manifold homotopy
-equivalent to `𝕊⁰` is diffeomorphic to `𝕊⁰`. -/
-theorem nonemptyDiffeomorphSphere_zero {M : Type*} [TopologicalSpace M] [T2Space M] :
-    NonemptyDiffeomorphSphere M 0 := by
-  intro _ _ e
-  have := ChartedSpace.discreteTopology (EuclideanSpace ℝ (Fin 0)) M
-  have := TauCeti.discreteTopology_sphere_of_finrank_eq_one
-    (finrank_euclideanSpace_fin (𝕜 := ℝ) (n := 1)) 0 1
-  let φ := e.toHomeomorphOfSphereZero finrank_euclideanSpace_fin finrank_euclideanSpace_fin
-  exact ⟨{
-    toEquiv := φ.toEquiv
-    contMDiff_toFun := contMDiff_of_discreteTopology
-    contMDiff_invFun := contMDiff_of_discreteTopology }⟩
 
 end DimensionZero
 

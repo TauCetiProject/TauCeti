@@ -19,7 +19,7 @@ only if they are equal (`ContinuousMap.homotopic_iff_eq_of_totallyDisconnectedSp
 Consequently, a homotopy equivalence `X ≃ₕ Y` between totally disconnected spaces has genuine
 two-sided inverses, hence upgrades to a homeomorphism `X ≃ₜ Y` with the same underlying maps
 (`ContinuousMap.HomotopyEquiv.toHomeomorphOfTotallyDisconnectedSpace`), inverse to
-`Homeomorph.toHomotopyEquiv` (`Homeomorph.equivHomotopyEquivOfTotallyDisconnectedSpace`).
+`Homeomorph.toHomotopyEquiv`.
 
 ## Main definitions and results
 
@@ -28,8 +28,6 @@ two-sided inverses, hence upgrades to a homeomorphism `X ≃ₜ Y` with the same
   totally disconnected space are equal.
 * `ContinuousMap.HomotopyEquiv.toHomeomorphOfTotallyDisconnectedSpace`: a homotopy equivalence
   between totally disconnected spaces as a homeomorphism.
-* `Homeomorph.equivHomotopyEquivOfTotallyDisconnectedSpace`: the canonical bijection
-  `(X ≃ₜ Y) ≃ (X ≃ₕ Y)` for totally disconnected spaces `X` and `Y`.
 -/
 
 public section
@@ -115,25 +113,5 @@ variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
 theorem toHomotopyEquiv_toHomeomorphOfTotallyDisconnectedSpace (h : X ≃ₜ Y) :
     h.toHomotopyEquiv.toHomeomorphOfTotallyDisconnectedSpace = h :=
   Homeomorph.ext fun _ ↦ rfl
-
-variable (X Y) in
-/-- For totally disconnected spaces `X` and `Y`, homeomorphisms `X ≃ₜ Y` are in canonical bijection
-with homotopy equivalences `X ≃ₕ Y`. -/
-def equivHomotopyEquivOfTotallyDisconnectedSpace : (X ≃ₜ Y) ≃ (X ≃ₕ Y) where
-  toFun := Homeomorph.toHomotopyEquiv
-  invFun := ContinuousMap.HomotopyEquiv.toHomeomorphOfTotallyDisconnectedSpace
-  left_inv := toHomotopyEquiv_toHomeomorphOfTotallyDisconnectedSpace
-  right_inv := ContinuousMap.HomotopyEquiv.toHomeomorphOfTotallyDisconnectedSpace_toHomotopyEquiv
-
-@[simp]
-theorem equivHomotopyEquivOfTotallyDisconnectedSpace_apply (h : X ≃ₜ Y) :
-    equivHomotopyEquivOfTotallyDisconnectedSpace X Y h = h.toHomotopyEquiv :=
-  (rfl)
-
-@[simp]
-theorem equivHomotopyEquivOfTotallyDisconnectedSpace_symm_apply (e : X ≃ₕ Y) :
-    (equivHomotopyEquivOfTotallyDisconnectedSpace X Y).symm e =
-      e.toHomeomorphOfTotallyDisconnectedSpace :=
-  (rfl)
 
 end Homeomorph

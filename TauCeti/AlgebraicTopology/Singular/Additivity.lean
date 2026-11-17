@@ -325,8 +325,9 @@ private lemma exists_singularHomologyFunctor_map_inclusion_comp_eq_id_of_disjoin
     · exact Opens.coe_disjoint.1 hUW.symm
     · exact Opens.coe_disjoint.1 hUW
     · exact (hab rfl).elim
-  have : HasExactColimitsOfShape (Discrete (ULift.{w} Bool)) C :=
-    @hasExactColimitsOfShape_discrete_finite C _ _ Abelian.hasFiniteBiproducts (ULift.{w} Bool) _
+  -- `Abelian.hasFiniteBiproducts` is a local instance in Mathlib, so bring it into scope for
+  -- `hasExactColimitsOfShape_discrete_finite`.
+  have : HasFiniteBiproducts C := Abelian.hasFiniteBiproducts
   let hc := isColimitCofanSingularHomologyOpens s C R k hs
   let πU : ((AlgebraicTopology.singularHomologyFunctor C k).obj R).obj (of ↥(⨆ b, s b)) ⟶
       ((AlgebraicTopology.singularHomologyFunctor C k).obj R).obj (of ↥U) :=

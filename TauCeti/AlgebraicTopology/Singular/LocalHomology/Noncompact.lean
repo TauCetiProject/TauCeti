@@ -23,15 +23,17 @@ import TauCeti.Topology.Compactness.Compact
 # Vanishing of top singular homology on noncompact manifolds
 
 Let `M` be a Hausdorff space modelled on a real normed space `E` of finite dimension `n`, that is,
-a topological `n`-manifold without boundary, and let `N` be a module over a ring `Λ`. This file
-proves Hatcher's Proposition 3.29:
+a topological `n`-manifold without boundary, and let `N` be a module over a ring `Λ`. Combining
+compact supports (Hatcher, Proposition 3.33) with local homology vanishing on compact sets
+(Hatcher, Lemma 3.27(b)), this file proves:
 
 * `Hₖ(M; N) = 0` for every `k > n`, with no compactness or connectedness assumption on `M`
   (`TauCeti.isZero_singularHomology_of_lt`), extending
   `TauCeti.isZero_singularHomology_of_compactSpace` by removing compactness;
-* `Hₖ(M; N) = 0` for every `k ≥ n` whenever no connected component of `M` is compact
-  (`TauCeti.isZero_singularHomology_of_forall_not_isCompact_connectedComponent`), and in particular
-  when `M` is preconnected and noncompact (`TauCeti.isZero_singularHomology_of_noncompactSpace`).
+* Hatcher's Proposition 3.29: `Hₖ(M; N) = 0` for every `k ≥ n` whenever no connected component of
+  `M` is compact (`TauCeti.isZero_singularHomology_of_forall_not_isCompact_connectedComponent`),
+  and in particular when `M` is preconnected and noncompact
+  (`TauCeti.isZero_singularHomology_of_noncompactSpace`).
 
 Contrapositively, if `M` is preconnected and `Hₖ(M; N)` is nonzero (or nontrivial) in some degree
 `k ≥ n`, then `M` is compact (`TauCeti.compactSpace_of_not_isZero_singularHomology` and
@@ -59,7 +61,7 @@ connected with nontrivial top integral homology `Hₙ(M; ℤ) ≅ ℤ`.
 ## References
 
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
-  Section 3.3, Proposition 3.29, p. 239.
+  Section 3.3, Lemma 3.27(b) (p. 236), Proposition 3.29 (p. 239), and Proposition 3.33 (p. 244).
 -/
 
 public section
@@ -95,7 +97,7 @@ and therefore `z` maps to zero in `Hₙ(M, M ∖ K; N)`
 
 Finally, `ChartedSpace.ofFinrankEq` replaces an arbitrary finite-dimensional model space `E` by
 `ULift.{w} (Fin n) → ℝ` in the universe `w` of `M`, and restriction of scalars along
-`ULift.{w} ℤ →+* Λ` (`CategoryTheory.Functor.singularHomologyFunctorObjCompIso`) unties the
+`ULift.{w} ℤ →+* Λ` (`CategoryTheory.Functor.isZero_singularHomologyFunctor_iff`) unties the
 coefficient ring universe from `w`.
 -/
 
@@ -162,8 +164,9 @@ private lemma singularHomologyπ_compl_eq_zero_of_forall_not_isCompact_connected
     (TopPair.ofSubset ((univ : Set M)ᶜ : Set (of M))).singularHomologyπ N n z
   have hcone_app (y : M) :
       ((localHomologySystemCone N M E n).π.app (.mk y)) γ =
-        (TopPair.ofSubset ({y}ᶜ : Set (of M))).singularHomologyπ N n z :=
-    singularHomologyπ_localHomologySystemCone_π_app_apply N M E n (.mk y) z
+        (TopPair.ofSubset ({y}ᶜ : Set (of M))).singularHomologyπ N n z := by
+    rw [localHomologySystemCone_π_app]
+    exact singularHomologyπ_localHomologyRestriction_apply N (subset_univ {y}) n z
   refine eq_zero_of_forall_localHomologyRestriction_eq_zero N hn hK _ fun x hx ↦ ?_
   have hnot_sub : ¬ connectedComponent x ⊆ K :=
     fun hsub ↦ hnc x (hK.of_isClosed_subset isClosed_connectedComponent hsub)
@@ -182,11 +185,8 @@ private lemma singularHomologyπ_compl_eq_zero_of_forall_not_isCompact_connected
         TopCat.ofHom_inclusion_comp_ofHom_subtypeVal]
     have h0 := (TopPair.ofSubset ({x₀}ᶜ : Set (of M))).homologyMap_comp_singularHomologyπ N n
     rw [TopPair.ofSubset_map] at h0
-    let w := SSet.homologyMap (toSSet.map (ofHom (ContinuousMap.inclusion hUx₀))) N n u
-    exact (congrArg _ hz').trans
-      ((ConcreteCategory.comp_apply _ _ w).symm.trans
-        ((LinearMap.congr_fun ((congrArg ModuleCat.Hom.hom h0).trans ModuleCat.hom_zero) w).trans
-          (LinearMap.zero_apply w)))
+    rw [hz']
+    exact (ShortComplex.mk _ _ h0).zero_apply _
   have hγx₀ : ((localHomologySystemCone N M E n).π.app (.mk x₀)) γ = 0 :=
     (hcone_app x₀).trans hx₀_zero
   have hγx : ((localHomologySystemCone N M E n).π.app (.mk x)) γ = 0 := by
@@ -230,51 +230,37 @@ private lemma isZero_singularHomology_of_forall_not_isCompact_connectedComponent
 
 end SameUniverse
 
-/-- Deduce vanishing of `Hₖ(X; N)` over an arbitrary ring `Λ` from vanishing after restricting
-scalars to `ULift.{w} ℤ`. -/
-private lemma isZero_singularHomology_of_isZero_uliftInt {Λ : Type*} [Ring Λ]
-    (N : ModuleCat.{w} Λ) {X : TopCat.{w}} {k : ℕ}
-    (h : IsZero (((singularHomologyFunctor (ModuleCat.{w} (ULift.{w} ℤ)) k).obj
-      ((ModuleCat.restrictScalars.{w}
-        ((Int.castRingHom Λ).comp ULift.ringEquiv.toRingHom)).obj N)).obj X)) :
-    IsZero (((singularHomologyFunctor (ModuleCat.{w} Λ) k).obj N).obj X) := by
-  let φ : ULift.{w} ℤ →+* Λ := (Int.castRingHom Λ).comp ULift.ringEquiv.toRingHom
-  rw [ModuleCat.isZero_iff_subsingleton]
-  -- Restriction of scalars along `φ` preserves the underlying carrier type.
-  change Subsingleton ((ModuleCat.restrictScalars.{w} φ).obj _)
-  rw [← ModuleCat.isZero_iff_subsingleton]
-  exact h.of_iso ((Functor.singularHomologyFunctorObjCompIso
-    (ModuleCat.restrictScalars.{w} φ) N k).app X)
-
 section General
 
 variable {Λ : Type*} [Ring Λ] (N : ModuleCat.{w} Λ) {n : ℕ}
   {M : Type w} [TopologicalSpace M] [T2Space M]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [ChartedSpace E M]
 
-/-- **The singular homology of a manifold vanishes above the dimension** (Hatcher,
-Proposition 3.29(a)). For any Hausdorff space `M` modelled on a real normed space of dimension
+/-- **The singular homology of a manifold vanishes above the dimension** (Hatcher, Lemma 3.27(b)
+and Proposition 3.33). For any Hausdorff space `M` modelled on a real normed space of dimension
 `n`, `Hₖ(M; N) = 0` for `k > n`, without assuming compactness or connectedness. -/
 theorem isZero_singularHomology_of_lt (hn : finrank ℝ E = n) {k : ℕ} (hk : n < k) :
     IsZero (((singularHomologyFunctor (ModuleCat.{w} Λ) k).obj N).obj (of M)) := by
   let _ : ChartedSpace (ULift.{w} (Fin n) → ℝ) M :=
     ChartedSpace.ofFinrankEq (𝕜 := ℝ) (E := E) M (by simp [hn])
-  exact isZero_singularHomology_of_isZero_uliftInt N
+  let φ : ULift.{w} ℤ →+* Λ := (Int.castRingHom Λ).comp ULift.ringEquiv.toRingHom
+  exact ((ModuleCat.restrictScalars.{w} φ).isZero_singularHomologyFunctor_iff N k (of M)).1
     (isZero_singularHomology_of_lt_aux (E := ULift.{w} (Fin n) → ℝ) _ (by simp) hk)
 
-/-- **Singular homology from the dimension on vanishes when no connected component is compact.**
-For a Hausdorff space `M` modelled on a real normed space of dimension `n`, if no connected
-component of `M` is compact, then `Hₖ(M; N) = 0` for all `k ≥ n`. -/
+/-- **Singular homology from the dimension on vanishes when no connected component is compact**
+(Hatcher, Proposition 3.29). For a Hausdorff space `M` modelled on a real normed space of dimension
+`n`, if no connected component of `M` is compact, then `Hₖ(M; N) = 0` for all `k ≥ n`. -/
 theorem isZero_singularHomology_of_forall_not_isCompact_connectedComponent (hn : finrank ℝ E = n)
     (hnc : ∀ x : M, ¬ IsCompact (connectedComponent x)) {k : ℕ} (hk : n ≤ k) :
     IsZero (((singularHomologyFunctor (ModuleCat.{w} Λ) k).obj N).obj (of M)) := by
   let _ : ChartedSpace (ULift.{w} (Fin n) → ℝ) M :=
     ChartedSpace.ofFinrankEq (𝕜 := ℝ) (E := E) M (by simp [hn])
-  exact isZero_singularHomology_of_isZero_uliftInt N
+  let φ : ULift.{w} ℤ →+* Λ := (Int.castRingHom Λ).comp ULift.ringEquiv.toRingHom
+  exact ((ModuleCat.restrictScalars.{w} φ).isZero_singularHomologyFunctor_iff N k (of M)).1
     (isZero_singularHomology_of_forall_not_isCompact_connectedComponent_aux
       (E := ULift.{w} (Fin n) → ℝ) _ (by simp) hnc hk)
 
-/-- **Top singular homology of a noncompact manifold vanishes** (Hatcher, Proposition 3.29(b)).
+/-- **Top singular homology of a noncompact manifold vanishes** (Hatcher, Proposition 3.29).
 For a preconnected noncompact Hausdorff space `M` modelled on a real normed space of dimension
 `n`, `Hₖ(M; N) = 0` for every `k ≥ n`. -/
 theorem isZero_singularHomology_of_noncompactSpace [PreconnectedSpace M] [NoncompactSpace M]
