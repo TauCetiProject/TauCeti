@@ -5,11 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.SemilocallySimplyConnected.On
+public import TauCeti.AlgebraicTopology.SemilocallySimplyConnected.PeriodicLoop
 public import TauCeti.Geometry.Manifold.Flow.TimeDependent
 public import TauCeti.Geometry.Manifold.MFDeriv.FixedPoint
 public import TauCeti.Geometry.Manifold.Topology
-public import TauCeti.Topology.Homotopy.AddCircle
 public import Mathlib.Algebra.Ring.Periodic
 
 /-!
@@ -74,6 +73,12 @@ isolated, fixed points is finite.
   field whose periodic solutions are all nondegenerate has finitely many of them.
 * `TauCeti.finite_contractiblePeriodicSolutions`: the same for the contractible periodic solutions,
   assuming only that they are nondegenerate.
+* `TauCeti.mem_contractiblePeriodicSolutions_iff_of_tendstoUniformly_comp`: uniform convergence
+  through an injective map on a compact set characterizes contractibility of a limit periodic
+  solution.
+* `TauCeti.exists_pos_forall_mem_periodicSolutions_eq_of_isNondegenerateFixedPt`: a periodic
+  solution whose point at time `s` is a nondegenerate fixed point of the return map is isolated
+  among periodic solutions meeting a compact set `K` at time `s`.
 
 ## References
 
@@ -410,5 +415,68 @@ theorem finite_contractiblePeriodicSolutions [CompactSpace M] [T2Space M]
     exact (hP _).2 hγ
   · exact congrArg Subtype.val
       (e.injective (a₁ := ⟨γ₁, hγ₁.1⟩) (a₂ := ⟨γ₂, hγ₂.1⟩) (Subtype.ext (by simpa [e] using hs)))
+
+section NullhomotopyAndIsolation
+
+open Filter Topology
+
+/-- **Uniform convergence of periodic loops characterizes contractibility of a limit orbit.** If
+`γ₀ ∈ periodicSolutions X T` (`0 < T`) lies in a compact `K ⊆ M` and eventually continuous
+`T`-periodic `γ_i` in `K` satisfy `e ∘ γ_i → e ∘ γ₀` uniformly along a nontrivial `l` for
+`e : M → F` continuous and injective on `K` into a Hausdorff uniform space, then
+`γ₀ ∈ contractiblePeriodicSolutions X T` iff `γ_i` is eventually null-homotopic on `AddCircle T`. -/
+theorem mem_contractiblePeriodicSolutions_iff_of_tendstoUniformly_comp {F : Type*}
+    [UniformSpace F] [T2Space F] {e : M → F} {K : Set M} (hK : IsCompact K)
+    (he : ContinuousOn e K) (he_inj : InjOn e K) (hT : 0 < T) {γ₀ : ℝ → M}
+    (hγ₀ : γ₀ ∈ periodicSolutions X T) (hγ₀K : ∀ t, γ₀ t ∈ K) {ι : Type*} {l : Filter ι}
+    [NeBot l] {γ : ι → ℝ → M} (hγc : ∀ᶠ i in l, Continuous (γ i))
+    (hγp : ∀ᶠ i in l, Periodic (γ i) T) (hγK : ∀ᶠ i in l, ∀ t, γ i t ∈ K)
+    (hconv : TendstoUniformly (fun i t ↦ e (γ i t)) (e ∘ γ₀) l) :
+    γ₀ ∈ contractiblePeriodicSolutions X T ↔
+      ∀ᶠ i in l, ∃ g : C(AddCircle T, M), g.Nullhomotopic ∧ ∀ t : ℝ, g t = γ i t := by
+  have := I.locallyPathConnectedSpace_of_chartedSpace M
+  have := I.semilocallySimplyConnectedSpace M
+  have hev := eventually_exists_nullhomotopic_iff_of_tendstoUniformly_comp hK he he_inj hT
+    (continuous_of_mem_periodicSolutions hγ₀) (mem_periodicSolutions.1 hγ₀).2 hγ₀K hγc hγp hγK hconv
+  exact ⟨fun hx ↦ hev.mono fun _ hi ↦ hi.2 (mem_contractiblePeriodicSolutions.1 hx).2, fun h ↦
+    mem_contractiblePeriodicSolutions.2 ⟨hγ₀, let ⟨_, hi, hn⟩ := (hev.and h).exists; hi.1 hn⟩⟩
+
+/-- **Nondegenerate periodic solutions are isolated at initial points in `K`.** For a jointly `C¹`
+field `X` on a Hausdorff boundaryless finite-dimensional manifold `M` and `e : M → F` continuous and
+injective on a compact `K ⊆ M`, if `γ₀ ∈ periodicSolutions X T` has `γ₀ s ∈ K` and `γ₀ s` is a
+nondegenerate fixed point of `timeDependentFlowOf X s (s + T)`, some `ε > 0` separates `e (γ₀ s)`
+from `e (γ s)` for all other `γ ∈ periodicSolutions X T` with `γ s ∈ K`. -/
+theorem exists_pos_forall_mem_periodicSolutions_eq_of_isNondegenerateFixedPt
+    [FiniteDimensional ℝ E] [T2Space M] [IsManifold I 1 M] [BoundarylessManifold I M]
+    {F : Type*} [MetricSpace F] {e : M → F} (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
+      (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
+    {K : Set M} (hK : IsCompact K) (he : ContinuousOn e K) (he_inj : InjOn e K) {γ₀ : ℝ → M}
+    (hγ₀ : γ₀ ∈ periodicSolutions X T) (hγ₀K : γ₀ s ∈ K)
+    (hnd : IsNondegenerateFixedPt I (timeDependentFlowOf X s (s + T)) (γ₀ s)) :
+    ∃ ε > 0, ∀ γ ∈ periodicSolutions X T, γ s ∈ K → dist (e (γ s)) (e (γ₀ s)) < ε → γ = γ₀ := by
+  have := isCompact_iff_compactSpace.1 hK
+  have hemb : IsClosedEmbedding fun p : K ↦ e p :=
+    (he.comp_continuous continuous_subtype_val Subtype.prop).isClosedEmbedding fun p q h ↦
+      Subtype.ext (he_inj p.2 q.2 h)
+  have hisoK : ∀ᶠ p : K in 𝓝 ⟨γ₀ s, hγ₀K⟩,
+      IsFixedPt (timeDependentFlowOf X s (s + T)) p.1 → p.1 = γ₀ s :=
+    (continuous_subtype_val.tendsto ⟨γ₀ s, hγ₀K⟩).eventually <|
+      (eventually_nhdsWithin_iff.1 hnd.eventually_not_isFixedPt).mono fun _ hp hfix ↦
+        Classical.byContradiction fun hne ↦ hp hne hfix
+  rw [hemb.isEmbedding.nhds_eq_comap] at hisoK
+  obtain ⟨V, hV, hVK⟩ := hisoK
+  obtain ⟨ε, hε, hball⟩ := Metric.mem_nhds_iff.1 hV
+  have hflow {γ : ℝ → M} (hγ : γ ∈ periodicSolutions X T) (t : ℝ) :
+      timeDependentFlowOf X s t (γ s) = γ t :=
+    timeDependentFlowOf_eq_of_hasMFDerivAt hX
+      (fun u (_ : u ∈ Ioo (min s t - 1) (max s t + 1)) ↦ hγ.1 u)
+      ⟨by linarith [min_le_left s t], by linarith [le_max_left s t]⟩
+      ⟨by linarith [min_le_right s t], by linarith [le_max_right s t]⟩
+  refine ⟨ε, hε, fun γ hγ hγK hγx ↦ funext fun t ↦ ?_⟩
+  have hγs : γ s = γ₀ s := @hVK ⟨γ s, hγK⟩ (hball (Metric.mem_ball.2 hγx))
+    ((hflow hγ (s + T)).trans (hγ.2 s))
+  exact (hflow hγ t).symm.trans (hγs ▸ hflow hγ₀ t)
+
+end NullhomotopyAndIsolation
 
 end TauCeti
