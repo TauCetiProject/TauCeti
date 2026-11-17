@@ -8,8 +8,8 @@ module
 public import TauCeti.Geometry.Manifold.Flow.TimeDependent
 public import TauCeti.Geometry.Symplectic.Manifold.Flat
 public import TauCeti.Geometry.Manifold.TubularNeighborhood.RelativePoincare
-import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 import TauCeti.Analysis.Calculus.FDeriv.Basic
+import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 import TauCeti.Geometry.Manifold.DifferentialForm.Flow.Family
 import TauCeti.Geometry.Manifold.DifferentialForm.LieDeriv
@@ -287,7 +287,6 @@ private theorem inChartAt_apply_mpullbackWithin_moserField {σ₀ σ₁ : Smooth
     rfl
   rw [hl, hr, hAV, ← h, flat_apply, SmoothBundleForm.eval₂_apply]
 
-omit [FiniteDimensional ℝ E] in
 /-- **The Moser field has zero first jet where the primitive does.** Let `x` be a point near which
 `ρ = 1`, at which `β` vanishes and its coordinate expression in the preferred chart has zero
 derivative. Then the Moser field `X_t`, read in the preferred chart at `x`, has zero derivative at
@@ -322,8 +321,6 @@ private theorem fderiv_mpullbackWithin_moserField_eq_zero {σ₀ σ₁ : SmoothT
   have hB₀ : B z₀ = e' := by
     rw [show (e' : E →L[ℝ] E →L[ℝ] ℝ) = σ.flat x from he]
     simp only [B, z₀, RoughForm.inChartAt_extChartAt_self, flat_def]
-  -- So near the chart point `‖v‖ ≤ C ‖B z v‖`.
-  have hlower := hBc.eventually_forall_norm_le_mul_norm_apply e' hB₀
   -- Near the chart point, `σ_t (V' z, w) = c β(w)` in coordinates, by Moser's equation.
   have hsym : Tendsto (extChartAt I x).symm (𝓝 z₀) (𝓝 x) := by
     simpa only [z₀, extChartAt_to_inv] using (continuousAt_extChartAt_symm (I := I) x).tendsto
@@ -331,7 +328,7 @@ private theorem fderiv_mpullbackWithin_moserField_eq_zero {σ₀ σ₁ : SmoothT
     filter_upwards [extChartAt_target_mem_nhds (I := I) x, hsym.eventually hρ] with z hz hρz w
     rw [ContinuousAlternatingMap.flatL_apply_apply]
     exact inChartAt_apply_mpullbackWithin_moserField hinv t hz hρz w
-  -- Hence `‖X_t‖ ≤ C |c| ‖β‖` near the chart point, in coordinates.
+  -- Hence `‖σ_t (X_t, ·)‖ ≤ |c| ‖β‖` near the chart point, in coordinates.
   have hfun : ∀ᶠ z in 𝓝 z₀, ‖B z (V' z)‖ ≤ |c| * ‖RoughForm.inChartAt β.1 x z‖ := by
     filter_upwards [hkey] with z hz
     refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun w ↦ ?_
@@ -340,14 +337,20 @@ private theorem fderiv_mpullbackWithin_moserField_eq_zero {σ₀ σ₁ : SmoothT
     simpa using (RoughForm.inChartAt β.1 x z).le_opNorm ![w]
   have hb₀ : RoughForm.inChartAt β.1 x z₀ = 0 := by
     rw [RoughForm.inChartAt_extChartAt_self, hβ]
+    -- `TangentSpace I x` is the model space `E` by definition.
     rfl
   refine (Asymptotics.IsBigO.hasFDerivAt_zero ?_ hβ' hb₀).fderiv
-  refine Asymptotics.IsBigO.of_bound (2 * ‖(e'.symm : (E →L[ℝ] ℝ) →L[ℝ] E)‖ * |c|) ?_
-  filter_upwards [hlower, hfun] with z h1 h2
-  calc ‖V' z‖ ≤ 2 * ‖(e'.symm : (E →L[ℝ] ℝ) →L[ℝ] E)‖ * ‖B z (V' z)‖ := h1 _
-    _ ≤ 2 * ‖(e'.symm : (E →L[ℝ] ℝ) →L[ℝ] E)‖ * (|c| * ‖RoughForm.inChartAt β.1 x z‖) := by
-      gcongr
-    _ = _ := by ring
+  -- Near the chart point `e⁻¹ ∘ B z` is invertible, so `V' = O(B (V'))`, which is `O(β)`.
+  set Ψ : E → E →L[ℝ] E := fun z ↦ (e'.symm : (E →L[ℝ] ℝ) →L[ℝ] E).comp (B z)
+  have hΨ : ContinuousAt Ψ z₀ :=
+    (ContinuousLinearMap.compL ℝ E (E →L[ℝ] ℝ) E e'.symm).continuous.continuousAt.comp hBc
+  have hΨ₀ : Ψ z₀ = 1 := by
+    ext v
+    simp [Ψ, hB₀]
+  calc V' =O[𝓝 z₀] fun z ↦ Ψ z (V' z) :=
+        (TauCeti.isTheta_clm_apply_of_isUnit hΨ (hΨ₀ ▸ isUnit_one)).isBigO_symm
+    _ =O[𝓝 z₀] fun z ↦ B z (V' z) := (e'.symm : (E →L[ℝ] ℝ) →L[ℝ] E).isBigO_comp _ _
+    _ =O[𝓝 z₀] RoughForm.inChartAt β.1 x := .of_bound |c| hfun
 
 /-- **Moser's equation for the cut-off Moser field.** Near a point around which `ρ = 1`, the rate
 `∂_t σ_t + L_{X_t} σ_t` of the Moser family vanishes: `∂_t σ_t = c'(t) dβ`, while Cartan's formula
@@ -536,12 +539,9 @@ theorem exists_diffeomorph_fix_embedding_eventually_mpullback_eq [SecondCountabl
   · -- The point `g q` of `W` lies over `f q`.
     exact (hΦW (g q)).trans (congrArg Subtype.val (hΨK _ (mem_range_self q)))
   · -- On `W`, `Φ` is `Ψ`, whose differential at `g q` is the identity.
-    have h (v : TangentSpace I (g q)) : mfderiv I I Ψ (g q) v = mfderiv I I Φ (g q) v := by
-      have h := Manifold.tangentSpaceOpenEquiv_mfderiv_apply (I' := I) hcomp.symm v
-      rw [Manifold.tangentSpaceOpenEquiv_apply, Manifold.tangentSpaceOpenEquiv_apply] at h
-      exact h
     exact ContinuousLinearMap.ext fun v ↦
-      (h v).symm.trans (DFunLike.congr_fun (hΨ1 (g q) (mem_range_self q) (hβW1 q (hη q))) v)
+      (Manifold.mfderiv_apply_of_subtype_val_comp_eq (I' := I) hcomp.symm v).symm.trans
+        (DFunLike.congr_fun (hΨ1 (g q) (mem_range_self q) (hβW1 q (hη q))) v)
   -- On `W`, the pullback by `Φ` is the pullback by `Ψ` of the restricted forms.
   obtain ⟨U, ⟨hU, hKU⟩, hUΨ⟩ := (hasBasis_nhdsSet (range g)).mem_iff.1 hΨ
   refine mem_of_superset ((W.isOpen.isOpenEmbedding_subtypeVal.isOpenMap U hU).mem_nhdsSet.2 ?_)
@@ -586,13 +586,9 @@ theorem exists_diffeomorph_opens_of_eq_along [SecondCountableTopology M]
   refine ⟨U₀, U₁, Φ.subtype hU₀₁, fun q ↦
     ⟨hfU (mem_range_self q), (Φ.subtype_apply_coe hU₀₁ _).trans (hΦf q), ?_⟩, ?_⟩
   · -- The restriction `φ` of `Φ` has the differential of `Φ`, the identity along `f(Q)`.
-    have h (v : TangentSpace I (⟨f q, hfU (mem_range_self q)⟩ : U₀)) :
-        mfderiv I I (Φ.subtype hU₀₁) _ v = mfderiv I I Φ (f q) v := by
-      have h := Manifold.tangentSpaceOpenEquiv_mfderiv_apply (I' := I)
-        (funext fun x ↦ Φ.subtype_apply_coe hU₀₁ x) v
-      rw [Manifold.tangentSpaceOpenEquiv_apply, Manifold.tangentSpaceOpenEquiv_apply] at h
-      exact h
-    exact ContinuousLinearMap.ext fun v ↦ (h v).trans (DFunLike.congr_fun (hΦ1 q) v)
+    exact ContinuousLinearMap.ext fun v ↦
+      (Manifold.mfderiv_apply_of_subtype_val_comp_eq (I' := I)
+        (funext fun x ↦ Φ.subtype_apply_coe hU₀₁ x) v).trans (DFunLike.congr_fun (hΦ1 q) v)
   apply Subtype.ext
   funext z
   rw [SmoothForm.mpullback_mpullback_of_comp_eq _ _ contMDiff_subtype_val Φ.contMDiff

@@ -40,12 +40,15 @@ need only a `C²` bundle.
 Everything transports along a diffeomorphism `Φ` from the total space onto a manifold `M`, such as
 a tubular neighbourhood of an embedded submanifold
 (`TauCeti.SmoothEmbedding.exists_isSmoothForm_relative_primitive`). With the zero-section inclusion
-`i = Φ ∘ 0` and the retraction `ρ = Φ ∘ 0 ∘ π ∘ Φ⁻¹`, every closed `C^r` form `η` of positive
-degree on `M`, with `r ≥ 1`, has a `C^r` form `β` with `d β = η - ρ^* η` that vanishes along
-`i` as a full ambient tensor (`Diffeomorph.exists_isSmoothForm_mextDeriv_eq_sub_mpullback`), and
-`d β = η` when `i^* η = 0` (`Diffeomorph.exists_isSmoothForm_relative_primitive`). This needs `Φ`
-and the bundle to be `C^(r + 1)`. This is the primitive used to compare two symplectic forms
-relative to a submanifold.
+`i = Φ ∘ 0` and the retraction `ρ = Φ ∘ 0 ∘ π ∘ Φ⁻¹`, for every closed `C^r` form `η` of
+positive degree on `M`, with `r ≥ 1`, the transported primitive `β = (Φ⁻¹)^* P (Φ^* η)` is a `C^r`
+form (`Diffeomorph.isSmoothForm_mpullback_symm_vectorBundlePoincareHomotopy`) with
+`d β = η - ρ^* η` (`Diffeomorph.mextDeriv_mpullback_symm_vectorBundlePoincareHomotopy`) that
+vanishes along `i` as a full ambient tensor
+(`Diffeomorph.mpullback_symm_vectorBundlePoincareHomotopy_zeroSection`), and `d β = η` when
+`i^* η = 0` (`Diffeomorph.mextDeriv_mpullback_symm_vectorBundlePoincareHomotopy_of_eq_zero`). This
+needs `Φ` and the bundle to be `C^(r + 1)`. This is the primitive used to compare two symplectic
+forms relative to a submanifold.
 
 The flat counterpart on an open set stable under scaling the normal coordinate is
 `IsOpen.exists_contDiffOn_relative_primitive`. The base may have boundary or corners and the
@@ -64,7 +67,6 @@ coefficient space is any Banach space.
   `i^* η = 0`; it is `C^r` for `C^r` data
   (`Diffeomorph.isSmoothForm_mpullback_symm_vectorBundlePoincareHomotopy`) and vanishes along the
   core (`Diffeomorph.mpullback_symm_vectorBundlePoincareHomotopy_zeroSection`).
-* `Diffeomorph.exists_isSmoothForm_relative_primitive`: the relative Poincaré lemma on a tube.
 
 ## References
 
@@ -307,39 +309,5 @@ theorem _root_.Diffeomorph.mextDeriv_mpullback_symm_vectorBundlePoincareHomotopy
   rw [Φ.mextDeriv_mpullback_symm_vectorBundlePoincareHomotopy hn hη hclosed,
     ← Function.comp_assoc (Φ : TotalSpace FV V → M) (zeroSection FV V),
     mpullback_comp (hp.comp (Φ.symm.mdifferentiable hn0)) hiΦ, hi, mpullback_zero, sub_zero]
-
-/-- **The relative Poincaré lemma on a tube.** Let `Φ` be a `C^n` diffeomorphism from the total
-space of a `C^n` vector bundle onto `M`, such as a tubular neighbourhood, with zero-section
-inclusion `i = Φ ∘ 0` and retraction `ρ = Φ ∘ 0 ∘ π ∘ Φ⁻¹` onto its image. Every closed `C^r`
-form `η` of positive degree on `M`, with `1 ≤ r` and `r + 1 ≤ n`, has a `C^r` form `β` with
-`d β = η - ρ^* η` that vanishes along `i` as a full ambient tensor. -/
-theorem _root_.Diffeomorph.exists_isSmoothForm_mextDeriv_eq_sub_mpullback
-    (Φ : TotalSpace FV V ≃ₘ^n⟮IB.prod 𝓘(ℝ, FV), I⟯ M) {r : ℕ∞} (hr : 1 ≤ r) (hn : r + 1 ≤ n)
-    {η : RoughForm I M F (k + 1)} (hη : IsSmoothForm I r η) (hclosed : mextDeriv η = 0) :
-    ∃ β : RoughForm I M F k, IsSmoothForm I r β ∧
-      mextDeriv β = η - mpullback I I (Φ ∘ zeroSection FV V ∘ π FV V ∘ Φ.symm) η ∧
-      ∀ b, β (Φ (zeroSection FV V b)) = 0 :=
-  ⟨_, Φ.isSmoothForm_mpullback_symm_vectorBundlePoincareHomotopy hn hη,
-    Φ.mextDeriv_mpullback_symm_vectorBundlePoincareHomotopy
-      (le_trans (by rw [← one_add_one_eq_two]; gcongr; exact_mod_cast hr) hn)
-      (hη.of_le (by exact_mod_cast hr)) hclosed,
-    Φ.mpullback_symm_vectorBundlePoincareHomotopy_zeroSection η⟩
-
-/-- **The relative Poincaré lemma on a tube**, for forms restricting to zero on the core. Let `Φ`
-be a `C^n` diffeomorphism from the total space of a `C^n` vector bundle onto `M`, such as a
-tubular neighbourhood, with zero-section inclusion `i = Φ ∘ 0`. Every closed `C^r` form `η` of
-positive degree on `M` with `i^* η = 0`, where `1 ≤ r` and `r + 1 ≤ n`, is the exterior
-derivative of a `C^r` form `β` that vanishes along `i` as a full ambient tensor. -/
-theorem _root_.Diffeomorph.exists_isSmoothForm_relative_primitive
-    (Φ : TotalSpace FV V ≃ₘ^n⟮IB.prod 𝓘(ℝ, FV), I⟯ M) {r : ℕ∞} (hr : 1 ≤ r) (hn : r + 1 ≤ n)
-    {η : RoughForm I M F (k + 1)} (hη : IsSmoothForm I r η) (hclosed : mextDeriv η = 0)
-    (hi : mpullback IB I (Φ ∘ zeroSection FV V) η = 0) :
-    ∃ β : RoughForm I M F k, IsSmoothForm I r β ∧ mextDeriv β = η ∧
-      ∀ b, β (Φ (zeroSection FV V b)) = 0 :=
-  ⟨_, Φ.isSmoothForm_mpullback_symm_vectorBundlePoincareHomotopy hn hη,
-    Φ.mextDeriv_mpullback_symm_vectorBundlePoincareHomotopy_of_eq_zero
-      (le_trans (by rw [← one_add_one_eq_two]; gcongr; exact_mod_cast hr) hn)
-      (hη.of_le (by exact_mod_cast hr)) hclosed hi,
-    Φ.mpullback_symm_vectorBundlePoincareHomotopy_zeroSection η⟩
 
 end TauCeti

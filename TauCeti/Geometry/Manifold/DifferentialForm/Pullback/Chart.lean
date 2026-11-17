@@ -220,6 +220,7 @@ theorem hasFDerivAt_inChartAt_mpullback [I.Boundaryless] [IsManifold I' 1 M']
     rwa [ContinuousLinearMap.zero_comp] at h
   have hωψx : ω.inChartAt (f x) (ψ (extChartAt I x x)) = 0 := by
     rw [hψx, inChartAt_extChartAt_self, hωx]
+    -- `TangentSpace I' (f x)` is the model space `E'` by definition.
     rfl
   have hbound : ∀ᶠ z in 𝓝 (extChartAt I x x),
       ‖fderiv ℝ ψ z‖ ≤ ‖fderiv ℝ ψ (extChartAt I x x)‖ + 1 :=
