@@ -57,27 +57,6 @@ namespace Projectivization
 
 variable {n : ℕ} {ι : Type*} [Fintype ι]
 
-/-- The coordinate change of `𝒪(k)` from the chart `i` to the chart `j` has determinant the
-transition function. -/
-private theorem det_coordChange_twistCore (k : ℤ) (i j : Fin (n + 1))
-    (x : ℙ ℝ (Fin (n + 1) → ℝ)) :
-    ((twistCore (𝕜 := ℝ) k).coordChange i j x).det = twistTransition k i j x := by
-  have h : (twistCore (𝕜 := ℝ) k).coordChange i j x =
-      ContinuousLinearMap.toSpanSingleton ℝ (twistTransition k i j x) := by
-    ext
-    simp [mul_comm]
-  rw [h, ContinuousLinearMap.det_toSpanSingleton]
-
-/-- The coordinate change between two trivializations of `𝒪(k)`, as a linear equivalence of the
-model fibre, has determinant the transition function. -/
-private theorem det_coordChangeL_localTriv_twistCore (k : ℤ) {i j : Fin (n + 1)}
-    {x : ℙ ℝ (Fin (n + 1) → ℝ)} (hi : x ∈ affineOpen i) (hj : x ∈ affineOpen j) :
-    LinearMap.det ((((twistCore (𝕜 := ℝ) k).localTriv i).coordChangeL ℝ
-      ((twistCore k).localTriv j) x).toLinearEquiv : ℝ →ₗ[ℝ] ℝ) = twistTransition k i j x := by
-  rw [← det_coordChange_twistCore k i j x, ← (twistCore k).localTriv_coordChangeL
-    ⟨(twistCore_localTriv_baseSet k i).ge hi, (twistCore_localTriv_baseSet k j).ge hj⟩,
-    ContinuousLinearMap.det, ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap]
-
 /-- Where the transition function of `𝒪(k)` from the chart `i` to the chart `j` is positive, the
 two charts read an orientation of the fibre as the same orientation of `ℝ`. -/
 private theorem mapOrientation_localTriv_twistCore_of_pos (hι : Fintype.card ι = 1) (k : ℤ)
@@ -137,9 +116,9 @@ theorem isEmpty_vectorBundleOrientation_twistCore (hι : Fintype.card ι = 1) (h
     (hp1 (neg_ne_zero.2 one_ne_zero))
   -- The two readings agree at `[1 : 1 : 0 : ⋯ : 0]` and are opposite at `[1 : -1 : 0 : ⋯ : 0]`.
   rw [mapOrientation_localTriv_twistCore_of_pos hι k (hp0 1) (hp1 one_ne_zero)
-      (by rw [htr, div_one, one_zpow]; exact one_pos),
+      (by simp [htr]),
     mapOrientation_localTriv_twistCore_of_neg hι k (hp0 (-1)) (hp1 (neg_ne_zero.2 one_ne_zero))
-      (by rw [htr, one_div, inv_neg, inv_one, hk.neg_one_zpow]; exact neg_one_lt_zero),
+      (by simp [htr, hk.neg_one_zpow]),
     hc0] at hc1
   exact Module.Ray.ne_neg_self _ hc1
 
