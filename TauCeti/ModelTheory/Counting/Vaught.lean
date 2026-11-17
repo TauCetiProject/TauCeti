@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.ModelTheory.Basic
+public import TauCeti.ModelTheory.Counting.LanguageEquiv
 public import TauCeti.ModelTheory.Counting.Morley
 public import TauCeti.ModelTheory.Counting.Infinite
+import TauCeti.ModelTheory.LanguageMap
 
 /-!
 # Vaught's conjecture and its cardinal form
@@ -16,7 +18,12 @@ public import TauCeti.ModelTheory.Counting.Infinite
 finite models included, or a perfect set of pairwise non-isomorphic countable models.
 `HasVaughtCount φ` replaces the perfect-set alternative by a count of continuum many models.
 The universally quantified statements for countable relational languages in universe zero are
-`VaughtConjecture` and `CardinalVaughtConjecture`.
+`VaughtConjecture` and `CardinalVaughtConjecture`. By transport along language equivalences
+(`FirstOrder.Language.LEquiv.hasVaughtDichotomy_onBoundedFormulaInf_iff`,
+`FirstOrder.Language.LEquiv.hasVaughtCount_onBoundedFormulaInf_iff`,
+`vaughtConjecture_iff_forall_universe`, `cardinalVaughtConjecture_iff_forall_universe`),
+quantifying over `Language.{0, 0}` is equivalent to quantifying over countable relational
+languages in any universe.
 
 Morley's theorem characterizes a counterexample to the witnessed dichotomy as a sentence with
 exactly `ℵ₁` countable models and no perfect set. A counterexample to the cardinal dichotomy
@@ -42,7 +49,7 @@ models. The reduction does not silently omit the finite tiers of an arbitrary se
 
 public section
 
-universe u v uι
+universe u v u' v' uι
 
 open FirstOrder FirstOrder.Language Cardinal
 
@@ -205,5 +212,67 @@ theorem vaughtConjecture_iff_nat :
     exact (hasVaughtDichotomy_inf_infiniteSentence_iff φ).1 (h L (φ ⊓ L.infiniteSentence))
   · intro h L _ _ φ
     exact hasVaughtDichotomy_of_nat (h L φ)
+
+end TauCeti
+
+namespace FirstOrder.Language.LEquiv
+
+open TauCeti
+
+variable {L : Language.{u, v}} {L' : Language.{u', v'}} [L.IsRelational] [L'.IsRelational]
+  (e : L ≃ᴸ L') {ι : Type uι}
+
+/-- The witnessed Vaught dichotomy is invariant under language equivalences of relational
+languages. -/
+@[simp]
+theorem hasVaughtDichotomy_onBoundedFormulaInf_iff (φ : L.SentenceInf ι) :
+    HasVaughtDichotomy (e.toLHom.onBoundedFormulaInf φ) ↔ HasVaughtDichotomy φ := by
+  rw [hasVaughtDichotomy_iff, hasVaughtDichotomy_iff,
+    e.countableModelCount_onBoundedFormulaInf_le_aleph0_iff,
+    e.hasPerfectlyManyCountableModels_onBoundedFormulaInf_iff]
+
+/-- The cardinal Vaught dichotomy is invariant under language equivalences of relational
+languages. -/
+@[simp]
+theorem hasVaughtCount_onBoundedFormulaInf_iff (φ : L.SentenceInf ι) :
+    HasVaughtCount (e.toLHom.onBoundedFormulaInf φ) ↔ HasVaughtCount φ := by
+  rw [hasVaughtCount_iff, hasVaughtCount_iff,
+    e.countableModelCount_onBoundedFormulaInf_le_aleph0_iff,
+    e.countableModelCount_onBoundedFormulaInf_eq_continuum_iff]
+
+end FirstOrder.Language.LEquiv
+
+namespace TauCeti
+
+/-- **Universe independence of Vaught's conjecture.** Vaught's conjecture over `Language.{0, 0}`
+is equivalent to the witnessed dichotomy for all countable relational languages in arbitrary
+universes `{u, v}`: countable languages shrink to `Language.{0, 0}` via `smallPresentationEquiv`
+and languages in `Language.{0, 0}` lift to `Language.{u, v}` via `uliftEquiv`. -/
+theorem vaughtConjecture_iff_forall_universe :
+    VaughtConjecture ↔
+      ∀ (L : Language.{u, v}) [L.IsRelational] [Countable (Σ n, L.Relations n)]
+        (φ : L.Sentenceω), HasVaughtDichotomy φ := by
+  constructor
+  · intro h L _ _ φ
+    exact (L.smallPresentationEquiv.hasVaughtDichotomy_onBoundedFormulaInf_iff φ).1
+      (h L.smallPresentation _)
+  · intro h L₀ _ _ φ₀
+    exact ((Language.uliftEquiv.{0, 0, u, v} L₀).hasVaughtDichotomy_onBoundedFormulaInf_iff
+      φ₀).1 (h (Language.ulift.{0, 0, u, v} L₀) _)
+
+/-- **Universe independence of the cardinal Vaught conjecture.** The cardinal conjecture over
+`Language.{0, 0}` is equivalent to its statement over countable relational languages in arbitrary
+universes `{u, v}`. -/
+theorem cardinalVaughtConjecture_iff_forall_universe :
+    CardinalVaughtConjecture ↔
+      ∀ (L : Language.{u, v}) [L.IsRelational] [Countable (Σ n, L.Relations n)]
+        (φ : L.Sentenceω), HasVaughtCount φ := by
+  constructor
+  · intro h L _ _ φ
+    exact (L.smallPresentationEquiv.hasVaughtCount_onBoundedFormulaInf_iff φ).1
+      (h L.smallPresentation _)
+  · intro h L₀ _ _ φ₀
+    exact ((Language.uliftEquiv.{0, 0, u, v} L₀).hasVaughtCount_onBoundedFormulaInf_iff φ₀).1
+      (h (Language.ulift.{0, 0, u, v} L₀) _)
 
 end TauCeti
