@@ -277,6 +277,27 @@ theorem discrim_eq_content_sq_mul (f : BinaryQuadraticForm ℤ) :
     f.discrim = (f.content : ℤ) ^ 2 * f.primPart.discrim := by
   rw [← discrim_smul', natCast_zsmul, content_smul_primPart]
 
+/-- The primitive part of an integral form has positive leading coefficient if and only if the form
+itself has positive leading coefficient. -/
+theorem a_primPart_pos_iff (f : BinaryQuadraticForm ℤ) : 0 < f.primPart.a ↔ 0 < f.a := by
+  by_cases hf : f = 0
+  · simp [hf]
+  · have hc : (0 : ℤ) < f.content := Nat.cast_pos.mpr ((f.content_pos_iff).mpr hf)
+    have ha : (f.content : ℤ) * f.primPart.a = f.a := by
+      simpa only [smul_a', nsmul_eq_mul] using congrArg a f.content_smul_primPart
+    rw [← ha, mul_pos_iff_of_pos_left hc]
+
+/-- The primitive part of an integral form has strictly negative discriminant if and only if the
+form itself has strictly negative discriminant. -/
+@[simp] theorem discrim_primPart_lt_zero_iff (f : BinaryQuadraticForm ℤ) :
+    f.primPart.discrim < 0 ↔ f.discrim < 0 := by
+  by_cases hf : f = 0
+  · simp [hf]
+  · have hc2 : 0 < (f.content : ℤ) ^ 2 :=
+      sq_pos_of_pos (Nat.cast_pos.mpr (f.content_pos_iff.mpr hf))
+    rw [f.discrim_eq_content_sq_mul]
+    exact ⟨fun h ↦ by nlinarith, fun h ↦ by nlinarith⟩
+
 /-- Divisibility of every represented value is equivalent to divisibility of the content. -/
 theorem dvd_content_iff_forall_eval (f : BinaryQuadraticForm ℤ) (n : ℕ) :
     n ∣ f.content ↔ ∀ x y : ℤ, (n : ℤ) ∣ f.eval x y := by
@@ -332,6 +353,12 @@ def primitiveForms (D : ℤ) :
     f ∈ posDef n ⊓ primitiveForms (-n) ↔ f.discrim = -n ∧ 0 < f.a ∧ f.IsPrimitive :=
   calc f ∈ posDef n ⊓ primitiveForms (-n) ↔ f ∈ posDef n ∧ f ∈ primitiveForms (-n) := Iff.rfl
     _ ↔ _ := by rw [mem_posDef, mem_primitiveForms]; tauto
+
+/-- The primitive part of any positive definite form has strictly negative discriminant. -/
+theorem discrim_primPart_neg_of_posDef {n : ℕ} [NeZero n] (f : posDef n) :
+    f.1.primPart.discrim < 0 :=
+  (discrim_primPart_lt_zero_iff f.1).mpr
+    ((mem_posDef.mp f.2).1 ▸ Int.neg_neg_of_pos (Nat.cast_pos.mpr (NeZero.pos n)))
 
 /-- The proper equivalence classes of primitive positive definite forms of discriminant `-n`. -/
 abbrev PosDefProperClass (n : ℕ) [NeZero n] :=
