@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.W1p.Interval.Representative
 import TauCeti.Analysis.Convex.SchauderFixedPoint
 import TauCeti.Analysis.PDE.DirichletProblem.Interval
+import TauCeti.Analysis.PDE.Regularity.Interval
 import TauCeti.MeasureTheory.Function.StronglyMeasurable.Caratheodory
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
 
@@ -31,6 +32,11 @@ none holds for general `A(x, u)`. Since the solution solves the linear equation 
 coefficient `a = A(·, ū)`, with `λ ≤ a ≤ M`, the global Hölder estimate
 `TauCeti.PDE.exists_norm_intervalRepresentativeL_le_and_holderWith` applies to it, with a constant
 that does not depend on `A` beyond `λ` and `M`.
+
+When both boundary values equal `g`, every solution stays close to `g`: if `∫_{x₀}^t f + F t`
+lies in an interval of length `N` for almost every `t`, then
+`|ū y - g| ≤ min (y - x₀) (x₁ - y) * N / λ`
+(`TauCeti.PDE.abs_intervalRepresentativeL_sub_le_min_mul_div_of_forall_setIntegral_eq`).
 
 ## The argument
 
@@ -149,5 +155,35 @@ theorem exists_intervalTraceL_eq_and_forall_setIntegral_eq (hx : x₀ < x₁) (h
     ext y
     rw [hrep, ← DFunLike.congr_fun hū y, intervalDirichletSolution_apply]
   exact ⟨u, htr, by rwa [hū']⟩
+
+/-- **Decay towards equal boundary values for the quasilinear problem.** Let `A` be a Carathéodory
+function with `λ ≤ A t y ≤ M`, as in `exists_intervalTraceL_eq_and_forall_setIntegral_eq`, let `f`
+and `F` be integrable on `(x₀, x₁)`, and let `G t = ∫_{x₀}^t f + F t` lie in `[m, m + N]` for
+almost every `t ∈ (x₀, x₁)`. Then every solution `u ∈ W^{1,p}(x₀, x₁)` of `-(A(x, u) u')' = f + F'`
+with the value `g` at both endpoints satisfies `|ū y - g| ≤ min (y - x₀) (x₁ - y) * N / λ`. The
+bound holds for every solution, not only for the one constructed by Schauder's theorem, and
+depends on `A` only through `λ`. -/
+theorem abs_intervalRepresentativeL_sub_le_min_mul_div_of_forall_setIntegral_eq (hx : x₀ < x₁)
+    (hlam : 0 < lam)
+    (hAm : ∀ y, AEStronglyMeasurable (fun t => A t y) (volume.restrict (Ioo x₀ x₁)))
+    (hAc : ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), Continuous (A t))
+    (hA : ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), ∀ y, lam ≤ A t y ∧ A t y ≤ M)
+    (hf : IntegrableOn f (Ioo x₀ x₁)) (hF : IntegrableOn F (Ioo x₀ x₁))
+    {u : W1p volume ⟨Ioo x₀ x₁, isOpen_Ioo⟩ p}
+    (hu : ∀ φ : 𝓓(⟨Ioo x₀ x₁, isOpen_Ioo⟩, ℝ),
+      ∫ t in Ioo x₀ x₁, A t (W1p.intervalRepresentativeL hx u (projIcc x₀ x₁ hx.le t)) *
+          W1p.gradient u t * deriv φ t =
+        (∫ t in Ioo x₀ x₁, f t * φ t) - ∫ t in Ioo x₀ x₁, F t * deriv φ t)
+    {g : ℝ} (htr : W1p.intervalTraceL hx u = (g, g)) {m N : ℝ}
+    (hG : ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁),
+      m ≤ (∫ s in x₀..t, f s) + F t ∧ (∫ s in x₀..t, f s) + F t ≤ m + N)
+    (y : Icc x₀ x₁) :
+    |W1p.intervalRepresentativeL hx u y - g| ≤ min ((y : ℝ) - x₀) (x₁ - y) * N / lam :=
+  -- `u` solves the linear problem with the frozen coefficient `A(·, ū)`.
+  abs_intervalRepresentativeL_sub_le_min_mul_div hx hlam
+    (((W1p.intervalRepresentativeL hx u).continuous.comp
+      continuous_projIcc).aestronglyMeasurable.apply_of_forall_of_continuousAt hAm
+        (hAc.mono fun _ ht => ht.continuousAt))
+    (hA.mono fun _ ht => ht _) hf hF hu htr hG y
 
 end TauCeti.PDE
