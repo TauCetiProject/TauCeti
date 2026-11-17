@@ -57,7 +57,7 @@ submanifold at a time, along a sequence of regular levels separating its critica
 
 In the namespace `TauCeti.SmoothEmbedding`:
 
-* `IsNondegenerateCriticalSubmanifold.hasHomotopyExtensionProperty_negativeSphereBundle`: the
+* `IsCriticalSubmanifold.hasHomotopyExtensionProperty_negativeSphereBundle`: the
   negative sphere bundle has the homotopy extension property in the negative disc bundle.
 * `IsNondegenerateCriticalSubmanifold.exists_homotopyEquiv_pushout_negativeDiscBundle`: if
   `a < c < b`, the band `f⁻¹[a, b]` is compact and its critical points lie on the critical
@@ -96,17 +96,17 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
   [NormedAddCommGroup P] [NormedSpace ℝ P] [FiniteDimensional ℝ P] {f : M → ℝ}
   {i : SmoothEmbedding J I ∞ S M} (hn : (∞ : ℕ∞ω) ≠ 0)
 
-namespace IsNondegenerateCriticalSubmanifold
+namespace IsCriticalSubmanifold
 
 /-- **The negative sphere bundle is a cofibration in the negative disc bundle.** Let `i : S → M` be
-a nondegenerate critical submanifold of a smooth function `f`, and let `g` be a smooth fibre metric
+a critical submanifold of a smooth function `f`, and let `g` be a smooth fibre metric
 on its normal bundle. Then the negative sphere bundle `S_ε`
 (`TauCeti.SmoothEmbedding.IsCriticalSubmanifold.negativeSphereBundle`) has the homotopy extension
 property inside the negative disc bundle `D_ε`
 (`TauCeti.SmoothEmbedding.IsCriticalSubmanifold.negativeDiscBundle`). For `ε ≤ 0` the two are
 equal, the zero section or empty. -/
 theorem hasHomotopyExtensionProperty_negativeSphereBundle
-    (h : i.IsNondegenerateCriticalSubmanifold f) (hfs : ContMDiff I 𝓘(ℝ) ∞ f)
+    (h : i.IsCriticalSubmanifold f) (hfs : ContMDiff I 𝓘(ℝ) ∞ f)
     (hdim : Module.finrank ℝ P = Module.finrank ℝ E - Module.finrank ℝ E')
     (g : letI := i.normalSpaceFiberBundle hn hdim
       letI := i.normalSpaceVectorBundle hn hdim
@@ -126,7 +126,7 @@ theorem hasHomotopyExtensionProperty_negativeSphereBundle
   set q : TotalSpace P (fun s ↦ i.NormalSpace s hn) → ℝ :=
     fun x ↦ -(2⁻¹ * h.normalHessian hn x.proj x.2 x.2) with hq
   have hqc : Continuous q :=
-    (continuous_const.mul (h.toIsCriticalSubmanifold.contMDiff_normalHessian_apply_self hn
+    (continuous_const.mul (h.contMDiff_normalHessian_apply_self hn
       (k := ∞) (by simp) (fun s ↦ (hfs (i s)).of_le (by simp)) hdim).continuous).neg
   have hqsmul (c : ℝ) (x : TotalSpace P (fun s ↦ i.NormalSpace s hn)) :
       q (TotalSpace.mk' P x.proj (c • x.2)) = c ^ 2 * q x := by
@@ -162,7 +162,7 @@ theorem hasHomotopyExtensionProperty_negativeSphereBundle
   rw [← hρ, Real.sqrt_le_one, div_le_one hε] at hcx
   exact hcx
 
-end IsNondegenerateCriticalSubmanifold
+end IsCriticalSubmanifold
 
 end Adjunction
 
