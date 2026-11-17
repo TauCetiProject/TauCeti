@@ -350,26 +350,6 @@ end Abelian
 
 variable {X : TopCat.{u}}
 
-/-- If `π ≫ ζ = φ ≫ π` for morphisms of abelian sheaves, `U ⊔ V = ⊤`, both `φ` and `ζ` vanish on
-`V`, and a global section `g` of `G` lifts `z|_U` along `π` after restriction to `U`, then
-`π(φ(g)) = ζ(z)` globally. -/
-private theorem app_top_apply_eq_of_sup_eq_top {G Z : X.Sheaf AddCommGrpCat.{u}}
-    (π : G ⟶ Z) (φ : G ⟶ G) (ζ : Z ⟶ Z) (hcomm : π ≫ ζ = φ ≫ π)
-    {U V : Opens X} (htop : U ⊔ V = ⊤)
-    (hφ : φ.hom.app (op V) = 0) (hζ : ζ.hom.app (op V) = 0)
-    (g : G.obj.obj (op ⊤)) (g₀ : G.obj.obj (op U)) (z : Z.obj.obj (op ⊤))
-    (hg : G.obj.map (homOfLE (le_top : U ≤ ⊤)).op g = g₀)
-    (hg₀ : π.hom.app (op U) g₀ = Z.obj.map (homOfLE (le_top : U ≤ ⊤)).op z) :
-    π.hom.app (op ⊤) (φ.hom.app (op ⊤) g) = ζ.hom.app (op ⊤) z := by
-  refine Z.eq_of_locally_eq₂ (homOfLE (le_top : U ≤ ⊤)) (homOfLE (le_top : V ≤ ⊤))
-    htop.ge _ _ ?_ ?_
-  · rw [← NatTrans.naturality_apply π.hom, ← NatTrans.naturality_apply φ.hom, hg,
-      ← ConcreteCategory.comp_apply, ← TopCat.Sheaf.comp_app, ← hcomm,
-      TopCat.Sheaf.comp_app, ConcreteCategory.comp_apply, hg₀,
-      NatTrans.naturality_apply ζ.hom]
-  · simp [← NatTrans.naturality_apply π.hom, ← NatTrans.naturality_apply φ.hom,
-      ← NatTrans.naturality_apply ζ.hom, hφ, hζ]
-
 /-- When `F` is a fine abelian sheaf, global sections of `G⁰(F)` map onto global sections of
 `Z¹(F) = cokernel ((toGodement AddCommGrpCat X).app F)`. -/
 theorem surjective_cokernel_π_toGodement_top (F : X.Sheaf AddCommGrpCat.{u}) [F.IsFine] :
@@ -396,8 +376,9 @@ theorem surjective_cokernel_π_toGodement_top (F : X.Sheaf AddCommGrpCat.{u}) [F
   let η' : X → (G ⟶ G) := fun x ↦ (godement AddCommGrpCat.{u} X).map (η x)
   let a : X → G.obj.obj (op ⊤) := fun x ↦ (η' x).hom.app (op ⊤) (g x)
   have hπa (x : X) : π.hom.app (op ⊤) (a x) = (ζ x).hom.app (op ⊤) z :=
-    app_top_apply_eq_of_sup_eq_top π (η' x) (ζ x) (hcomm x) (htop x)
-      (hzeroG x le_rfl) (hzeroZ x le_rfl) (g x) (g₀ x) z (hg x) (hg₀ x)
+    TopCat.Sheaf.app_apply_eq_of_le_sup π π (η' x) (ζ x) (hcomm x)
+      (le_top : U x ≤ ⊤) (le_top : V x ≤ ⊤) (htop x).ge
+      (hzeroG x le_rfl) (hzeroZ x le_rfl) (g x) z (by rw [hg x, hg₀ x])
   choose N hyN S hSV _ hsumZ using hloc
   have hN_top : ⨆ y : X, N y = ⊤ := eq_top_iff.2 fun y _ ↦ Opens.mem_iSup.2 ⟨y, hyN y⟩
   obtain ⟨b, hb⟩ := TopCat.Sheaf.exists_gluing_finset_sum G V a
