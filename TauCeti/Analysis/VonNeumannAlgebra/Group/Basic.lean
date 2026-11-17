@@ -102,7 +102,7 @@ theorem groupVonNeumannAlgebra_le_iff
     {M : VonNeumannAlgebra (Lp ℂ 2 (Measure.count : Measure Γ))} :
     groupVonNeumannAlgebra Γ ≤ M ↔
       ∀ g : Γ, (Measure.count : Measure Γ).leftRegular ℂ ℂ 2 g ∈ M := by
-  rw [groupVonNeumannAlgebra_def, adjoin_le_iff, Set.range_subset_iff]; rfl
+  simp only [groupVonNeumannAlgebra_def, adjoin_le_iff, Set.range_subset_iff, SetLike.mem_coe]
 
 /-- `rightGroupVonNeumannAlgebra Γ` is contained in `M` if and only if `M` contains every right
 regular unitary. -/
@@ -111,7 +111,7 @@ theorem rightGroupVonNeumannAlgebra_le_iff
     {M : VonNeumannAlgebra (Lp ℂ 2 (Measure.count : Measure Γ))} :
     rightGroupVonNeumannAlgebra Γ ≤ M ↔
       ∀ g : Γ, (Measure.count : Measure Γ).rightRegular ℂ ℂ 2 g ∈ M := by
-  rw [rightGroupVonNeumannAlgebra_def, adjoin_le_iff, Set.range_subset_iff]; rfl
+  simp only [rightGroupVonNeumannAlgebra_def, adjoin_le_iff, Set.range_subset_iff, SetLike.mem_coe]
 
 /-- An operator lies in `L(Γ)'` if and only if it commutes with every left regular unitary. -/
 theorem mem_commutant_groupVonNeumannAlgebra_iff_leftRegular
@@ -278,24 +278,24 @@ private theorem apply_countHilbertBasis_one_comm
   have h1 : HasSum (fun h : Γ => (S (δ 1)) h * (T (δ 1)) (x * h⁻¹)) ⟪δ x, T (S (δ 1))⟫_ℂ := by
     refine ((L2.hasSum_countHilbertBasis (S (δ 1))).mapL ((innerSL ℂ (δ x)).comp T)).congr_fun
       fun h => ?_
-    have hcomm := DFunLike.congr_fun
-      (mem_commutant_rightGroupVonNeumannAlgebra_iff_rightRegular.1 hT h⁻¹) (δ 1)
+    have hTh : T (δ h) = (Measure.count : Measure Γ).rightRegular ℂ ℂ 2 h⁻¹ (T (δ 1)) := by
+      have hcomm := DFunLike.congr_fun
+        (mem_commutant_rightGroupVonNeumannAlgebra_iff_rightRegular.1 hT h⁻¹) (δ 1)
+      simpa [δ, mul_apply_eq_comp] using hcomm.symm
     simp only [ContinuousLinearMap.comp_apply, innerSL_apply_apply, map_smul, smul_eq_mul]
     congr 1
-    rw [show δ h = (Measure.count : Measure Γ).rightRegular ℂ ℂ 2 h⁻¹ (δ 1) by simp [δ],
-      ← mul_apply_eq_comp, ← hcomm, mul_apply_eq_comp,
-      (Measure.isUnitary_rightRegular Measure.count).inner_map_right]
+    rw [hTh, (Measure.isUnitary_rightRegular Measure.count).inner_map_right]
     simp [δ]
   have h2 : HasSum (fun g : Γ => (T (δ 1)) g * (S (δ 1)) (g⁻¹ * x)) ⟪δ x, S (T (δ 1))⟫_ℂ := by
     refine ((L2.hasSum_countHilbertBasis (T (δ 1))).mapL ((innerSL ℂ (δ x)).comp S)).congr_fun
       fun g => ?_
-    have hcomm := DFunLike.congr_fun
-      (mem_commutant_groupVonNeumannAlgebra_iff_leftRegular.1 hS g) (δ 1)
+    have hSg : S (δ g) = (Measure.count : Measure Γ).leftRegular ℂ ℂ 2 g (S (δ 1)) := by
+      have hcomm := DFunLike.congr_fun
+        (mem_commutant_groupVonNeumannAlgebra_iff_leftRegular.1 hS g) (δ 1)
+      simpa [δ, mul_apply_eq_comp] using hcomm.symm
     simp only [ContinuousLinearMap.comp_apply, innerSL_apply_apply, map_smul, smul_eq_mul]
     congr 1
-    rw [show δ g = (Measure.count : Measure Γ).leftRegular ℂ ℂ 2 g (δ 1) by simp [δ],
-      ← mul_apply_eq_comp, ← hcomm, mul_apply_eq_comp,
-      (Measure.isUnitary_leftRegular Measure.count).inner_map_right]
+    rw [hSg, (Measure.isUnitary_leftRegular Measure.count).inner_map_right]
     simp [δ]
   exact h1.unique <|
     (((Equiv.inv Γ).trans (Equiv.mulLeft x)).hasSum_iff.2 h2).congr_fun fun h => by

@@ -33,9 +33,10 @@ sum `∫ a, f a ∂Measure.count`. No countability or `MeasurableSingletonClass`
 required. -/
 theorem hasSum_integral_count (hf : Integrable f (Measure.count : Measure α)) :
     HasSum f (∫ a, f a ∂(Measure.count : Measure α)) := by
+  have hmk : f = hf.aestronglyMeasurable.mk f :=
+    funext (Measure.ae_count_iff.1 hf.aestronglyMeasurable.ae_eq_mk)
   have hsm : StronglyMeasurable f := by
-    rw [show f = hf.aestronglyMeasurable.mk f from
-      funext (Measure.ae_count_iff.1 hf.aestronglyMeasurable.ae_eq_mk)]
+    rw [hmk]
     exact hf.aestronglyMeasurable.stronglyMeasurable_mk
   rw [Measure.count] at hf ⊢
   exact (hasSum_integral_measure hf).congr_fun fun a => (integral_dirac' _ a hsm).symm

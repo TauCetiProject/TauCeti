@@ -51,7 +51,7 @@ theorem orthonormal_indicatorConstLp_singleton :
     (measurableSet_singleton b) (by simp) (by simp)]
   by_cases hab : a = b
   · subst hab; simp
-  · simp [Set.singleton_inter_eq_empty.2 (show a ∉ ({b} : Set α) from hab), hab]
+  · simp [Set.singleton_inter_eq_empty.2 (Set.notMem_singleton_iff.2 hab), hab]
 
 private theorem orthogonal_span_indicatorConstLp_singleton_eq_bot :
     (Submodule.span 𝕜 (Set.range fun a : α =>

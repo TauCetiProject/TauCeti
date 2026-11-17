@@ -100,7 +100,7 @@ theorem isCyclic_iff_isSeparating_commutant (M : VonNeumannAlgebra H) (ξ : H) :
   · refine ContinuousLinearMap.ext (congrFun
       (DenseRange.equalizer hcyc y.continuous continuous_zero ?_))
     funext ⟨x, hx⟩
-    calc y (x ξ) = (y * x) ξ := rfl
+    calc y (x ξ) = (y * x) ξ := (mul_apply_eq_comp y x ξ).symm
       _ = (x * y) ξ := by rw [mem_commutant_iff.1 hy x hx]
       _ = 0 := by rw [mul_apply_eq_comp, hy0, map_zero]
   · set K : Submodule ℂ H :=

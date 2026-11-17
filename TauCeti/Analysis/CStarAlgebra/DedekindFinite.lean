@@ -71,10 +71,14 @@ private theorem exists_isStarProjection_mul_eq_unital {A : Type*} [CStarAlgebra 
       _ = s * p * s := by rw [hss]; noncomm_ring
   have hpu : (↑u⁻¹ : A) * p = p * ↑u⁻¹ := u.inv_mul_eq_iff_eq_mul.2
     (by rw [← mul_assoc (u : A) p, hzp, ← hpz, mul_assoc, u.mul_inv, mul_one])
-  have hpsu : (↑u⁻¹ : A) * (p * s) = p * s * ↑u⁻¹ := u.inv_mul_eq_iff_eq_mul.2 <| by
-    rw [← mul_assoc (u : A), ← mul_assoc (u : A) p, hzp, show p * s * p * s = p * (s * p * s) by
-      simp [mul_assoc], ← hspz]
-    simp [mul_assoc]
+  have hzps : (u : A) * (p * s) = p * s * (u : A) := by
+    calc (u : A) * (p * s) = (u : A) * p * s := (mul_assoc _ _ _).symm
+      _ = p * s * p * s := by rw [hzp]
+      _ = p * (s * p * s) := by simp only [mul_assoc]
+      _ = p * (s * (u : A)) := by rw [← hspz]
+      _ = p * s * (u : A) := (mul_assoc _ _ _).symm
+  have hpsu : (↑u⁻¹ : A) * (p * s) = p * s * ↑u⁻¹ := u.inv_mul_eq_iff_eq_mul.2
+    (by rw [← mul_assoc (u : A), hzps, mul_assoc, u.mul_inv, mul_one])
   have huinv_sa : Star.star (↑u⁻¹ : A) = ↑u⁻¹ :=
     (u.mul_eq_one_iff_inv_eq.1 <| by simpa [hu] using congr_arg Star.star u.inv_mul).symm
   have hqp : p * s * ↑u⁻¹ * p = p := by

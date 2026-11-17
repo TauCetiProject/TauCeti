@@ -76,13 +76,12 @@ theorem mem_commutant_groupVonNeumannAlgebra_iff_of_mem
   refine ⟨fun hx' g h hgh => ?_, fun hconj => ?_⟩
   · obtain ⟨k, rfl⟩ := isConj_iff.1 hgh
     have hconj_eq :
-        (Measure.count : Measure Γ).leftRegular ℂ ℂ 2 k * x *
-          (Measure.count : Measure Γ).leftRegular ℂ ℂ 2 k⁻¹ = x := by
-      rw [mem_commutant_groupVonNeumannAlgebra_iff_leftRegular.1 hx' k, mul_assoc, ← map_mul,
-        mul_inv_cancel, map_one, mul_one]
-    have hcoeff := groupVonNeumannCoeff_leftRegular_conj hx k (k * g * k⁻¹)
-    rw [hconj_eq, show k⁻¹ * (k * g * k⁻¹) * k = g by group] at hcoeff
-    exact hcoeff.symm
+        (Measure.count : Measure Γ).leftRegular ℂ ℂ 2 k⁻¹ * x *
+          (Measure.count : Measure Γ).leftRegular ℂ ℂ 2 k = x := by
+      rw [mem_commutant_groupVonNeumannAlgebra_iff_leftRegular.1 hx' k⁻¹, mul_assoc, ← map_mul,
+        inv_mul_cancel, map_one, mul_one]
+    have hcoeff := groupVonNeumannCoeff_leftRegular_conj hx k⁻¹ g
+    simpa only [inv_inv, hconj_eq] using hcoeff
   · refine mem_commutant_groupVonNeumannAlgebra_iff_leftRegular.2 fun k => ?_
     let lk := (Measure.count : Measure Γ).leftRegular ℂ ℂ 2 k
     let lki := (Measure.count : Measure Γ).leftRegular ℂ ℂ 2 k⁻¹
@@ -115,8 +114,8 @@ theorem isFactor_groupVonNeumannAlgebra_iff :
         groupVonNeumannCoeff_sum_leftRegular hfin.toFinset x
     have hz' : z ∈ (groupVonNeumannAlgebra Γ).commutant :=
       (mem_commutant_groupVonNeumannAlgebra_iff_of_mem hz).2 fun x y hxy => by
-        simp only [hz_coeff, show IsConj g x ↔ IsConj g y from
-          ⟨fun h => h.trans hxy, fun h => h.trans hxy.symm⟩]
+        have hiff : IsConj g x ↔ IsConj g y := ⟨(·.trans hxy), (·.trans hxy.symm)⟩
+        simp only [hz_coeff, hiff]
     obtain ⟨c, hzc⟩ := hcenter z hz hz'
     have hc0 : c = 0 := by
       simpa [hz_coeff, hg] using (congr_arg (groupVonNeumannCoeff · 1) hzc).symm
