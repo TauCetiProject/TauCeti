@@ -139,9 +139,6 @@ section TerminalDataCLE
 
 open ContinuousLinearMap
 
-private local instance : NormedAddCommGroup (ℝ →L[ℝ] ℝ →L[ℝ] ℝ) := inferInstance
-private local instance : NormedSpace ℝ (ℝ →L[ℝ] ℝ →L[ℝ] ℝ) := inferInstance
-
 /-- **The terminal-data isomorphism of the weighted log-spot pricing operator.** For `0 < α < 1`,
 `t₀ < t₁`, and `a, r ∈ C_b^{α,α/2}(ℝ × [t₀, t₁])` with `a` uniformly positive, `u ↦ (P u, u(·, t₁))`
 as a Banach-space isomorphism onto `C_b^{α,α/2}(ℝ × [t₀, t₁]) × C_b^{2,α}(ℝ)`. -/
@@ -185,6 +182,15 @@ variable {hα₀ : 0 < α} {hα₁ : α < 1} {a r : HolderSpace α (slab (E := �
       (slabMk x ⟨t₁, right_mem_Icc.2 ht.le⟩) = d.2 x := by
   rw [← spatialTrace_apply, spatialTrace_weightedLogSpotTerminalDataCLE_symm_apply]
 
+private theorem weightedLogSpotTerminalDataCLE_symm_eq
+    {ha' : ∃ lam : ℝ, 0 < lam ∧
+      ∀ p, lam ≤ weightedLogSpotSecondOrderCoeff a p (ContinuousLinearMap.mul ℝ ℝ)} :
+    (weightedLogSpotTerminalDataCLE hα₀ hα₁ ht a r ha).symm.toContinuousLinearMap =
+      (realTerminalDataCLE hα₀ hα₁ ht (weightedLogSpotSecondOrderCoeff a)
+        (weightedLogSpotFirstOrderCoeff hα₁.le a r)
+        (weightedLogSpotZerothOrderCoeff hα₁.le r) ha').symm.toContinuousLinearMap :=
+  rfl
+
 end TerminalDataEval
 
 private theorem weightedCoeff_norm_le {hα₁ : α < 1} {K : ℝ≥0}
@@ -210,7 +216,10 @@ theorem exists_norm_weightedLogSpotTerminalDataCLE_symm_le (hα₀ : 0 < α) (h�
   obtain ⟨C, hC, hest⟩ := exists_norm_realTerminalDataCLE_symm_le hα₀ hα₁ hlam (6 * K) T₀
   refine ⟨C, hC, fun {t₀ t₁} ht hT₀ a r ha haK hrK ↦ ?_⟩
   obtain ⟨hA, hB, hC'⟩ := weightedCoeff_norm_le (hα₁ := hα₁) haK hrK
-  exact hest ht hT₀ _ _ _ (fun p ↦ by simpa using ha p) hA hB hC'
+  have ha₀ : ∀ p, lam ≤ weightedLogSpotSecondOrderCoeff a p (ContinuousLinearMap.mul ℝ ℝ) :=
+    fun p ↦ by simpa using ha p
+  rw [weightedLogSpotTerminalDataCLE_symm_eq (ha' := ⟨lam, hlam, ha₀⟩)]
+  exact hest ht hT₀ _ _ _ ha₀ hA hB hC'
 
 /-- **Lipschitz dependence of the weighted terminal-data inverse on `(a, r)`.** Under the uniform
 ellipticity, norm, and horizon bounds of `exists_norm_weightedLogSpotTerminalDataCLE_symm_le`, the
@@ -228,20 +237,33 @@ theorem exists_norm_weightedLogSpotTerminalDataCLE_symm_sub_le (hα₀ : 0 < α)
   refine ⟨6 * C, by positivity, fun {t₀ t₁} ht hT₀ a a' r r' ha ha' haK hrK haK' hrK' ↦ ?_⟩
   obtain ⟨hA₁, hB₁, hC₁⟩ := weightedCoeff_norm_le (hα₁ := hα₁) haK hrK
   obtain ⟨hA₂, hB₂, hC₂⟩ := weightedCoeff_norm_le (hα₁ := hα₁) haK' hrK'
+  have ha₀ : ∀ p, lam ≤ weightedLogSpotSecondOrderCoeff a p (ContinuousLinearMap.mul ℝ ℝ) :=
+    fun p ↦ by simpa using ha p
+  have ha₀' : ∀ p, lam ≤ weightedLogSpotSecondOrderCoeff a' p (ContinuousLinearMap.mul ℝ ℝ) :=
+    fun p ↦ by simpa using ha' p
   have h0 := hest ht hT₀ (weightedLogSpotSecondOrderCoeff a) (weightedLogSpotSecondOrderCoeff a')
     (weightedLogSpotFirstOrderCoeff hα₁.le a r) (weightedLogSpotFirstOrderCoeff hα₁.le a' r')
     (weightedLogSpotZerothOrderCoeff hα₁.le r) (weightedLogSpotZerothOrderCoeff hα₁.le r')
-    (fun p ↦ by simpa using ha p) (fun p ↦ by simpa using ha' p) hA₁ hB₁ hC₁ hA₂ hB₂ hC₂
+    ha₀ ha₀' hA₁ hB₁ hC₁ hA₂ hB₂ hC₂
   rw [weightedLogSpotSecondOrderCoeff_sub, weightedLogSpotFirstOrderCoeff_sub,
     weightedLogSpotZerothOrderCoeff_sub] at h0
-  refine opNorm_le_bound _ (by positivity) fun d ↦
-    (congrArg norm ?_).trans_le ((ContinuousLinearMap.le_of_opNorm_le _ h0 d).trans
-      (mul_le_mul_of_nonneg_right ?_ (norm_nonneg d)))
-  · ext p; simp [weightedLogSpotTerminalDataCLE]
-  · nlinarith [norm_weightedLogSpotSecondOrderCoeff_le (a - a'),
-      norm_weightedLogSpotFirstOrderCoeff_le hα₁.le (a - a') (r - r'),
-      norm_weightedLogSpotZerothOrderCoeff_le hα₁.le (r - r'),
-      norm_nonneg (a - a'), norm_nonneg (r - r')]
+  have hEq :
+      (weightedLogSpotTerminalDataCLE hα₀ hα₁ ht a r ⟨lam, hlam, ha⟩).symm.toContinuousLinearMap -
+        (weightedLogSpotTerminalDataCLE hα₀ hα₁ ht a' r'
+          ⟨lam, hlam, ha'⟩).symm.toContinuousLinearMap =
+      (realTerminalDataCLE hα₀ hα₁ ht (weightedLogSpotSecondOrderCoeff a)
+        (weightedLogSpotFirstOrderCoeff hα₁.le a r) (weightedLogSpotZerothOrderCoeff hα₁.le r)
+        ⟨lam, hlam, ha₀⟩).symm.toContinuousLinearMap -
+      (realTerminalDataCLE hα₀ hα₁ ht (weightedLogSpotSecondOrderCoeff a')
+        (weightedLogSpotFirstOrderCoeff hα₁.le a' r') (weightedLogSpotZerothOrderCoeff hα₁.le r')
+        ⟨lam, hlam, ha₀'⟩).symm.toContinuousLinearMap := by
+    rw [weightedLogSpotTerminalDataCLE_symm_eq (ha' := ⟨lam, hlam, ha₀⟩),
+      weightedLogSpotTerminalDataCLE_symm_eq (ha' := ⟨lam, hlam, ha₀'⟩)]
+  refine (congrArg norm hEq).trans_le (h0.trans ?_)
+  nlinarith [norm_weightedLogSpotSecondOrderCoeff_le (a - a'),
+    norm_weightedLogSpotFirstOrderCoeff_le hα₁.le (a - a') (r - r'),
+    norm_weightedLogSpotZerothOrderCoeff_le hα₁.le (r - r'),
+    norm_nonneg (a - a'), norm_nonneg (r - r')]
 
 /-! ### The homogeneous terminal-value solution operator -/
 
@@ -354,9 +376,10 @@ theorem norm_halfSqVolatility_le (σ : HolderSpace α X ℝ) : ‖halfSqVolatili
 
 theorem norm_halfSqVolatility_sub_le (σ σ' : HolderSpace α X ℝ) :
     ‖halfSqVolatility σ - halfSqVolatility σ'‖ ≤ (‖σ‖ + ‖σ'‖) / 2 * ‖σ - σ'‖ := by
-  rw [show halfSqVolatility σ - halfSqVolatility σ' = (1 / 2 : ℝ) • ((σ + σ') * (σ - σ')) by
-    ext x; simp [halfSqVolatility_def]; ring, norm_smul,
-    Real.norm_of_nonneg (by positivity : (0 : ℝ) ≤ 1 / 2)]
+  have hdiff : halfSqVolatility σ - halfSqVolatility σ' =
+      (1 / 2 : ℝ) • ((σ + σ') * (σ - σ')) := by
+    ext x; simp [halfSqVolatility_def]; ring
+  rw [hdiff, norm_smul, Real.norm_of_nonneg (by positivity : (0 : ℝ) ≤ 1 / 2)]
   linarith [(norm_mul_le (σ + σ') (σ - σ')).trans
     (mul_le_mul_of_nonneg_right (norm_add_le σ σ') (norm_nonneg _))]
 

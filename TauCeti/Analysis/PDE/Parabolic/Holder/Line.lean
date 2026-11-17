@@ -149,9 +149,9 @@ private theorem euclideanParabolicOperatorL_compSpatialL_coord (hα : α ≤ 1)
     timeDerivL_compSpatialL, spatialSecondFDerivL_compSpatialL, spatialFDerivL_compSpatialL,
     compSpatialL_apply, ContinuousLinearMap.bilinearComp_apply, ContinuousLinearMap.comp_apply,
     ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
-    coordLIE_single, Finset.univ_unique, Finset.sum_singleton]
-  rw [show slabSpaceMap (coordLIE : _ → ℝ) p = slabSpaceMap coordLIE.toIsometryEquiv p from rfl,
-    apply_hess_eq _ (spatialSecondFDerivL u _), apply_grad_eq _ (spatialFDerivL u _),
+    LinearIsometryEquiv.coe_toIsometryEquiv, coordLIE_single, Finset.univ_unique,
+    Finset.sum_singleton]
+  rw [apply_hess_eq _ (spatialSecondFDerivL u _), apply_grad_eq _ (spatialFDerivL u _),
     apply_val_eq _ (u _)]
   ring
 
@@ -208,10 +208,12 @@ private theorem norm_comp_coord_bridges_le (hab : a < b)
         (dataCoordBridgeCLE a b).toContinuousLinearMap‖ ≤ ‖T‖ := by
   have hsp : ‖(compSpatialCLE α ℝ hab
       coordLIE.toContinuousLinearEquiv).symm.toContinuousLinearMap‖ ≤ 1 := by
-    rw [show (compSpatialCLE α ℝ hab coordLIE.toContinuousLinearEquiv).symm.toContinuousLinearMap =
-        compSpatialL α ℝ hab coordLIE.symm.toLinearIsometry.toContinuousLinearMap from
+    have hsp_eq :
+        (compSpatialCLE α ℝ hab coordLIE.toContinuousLinearEquiv).symm.toContinuousLinearMap =
+          compSpatialL α ℝ hab coordLIE.symm.toLinearIsometry.toContinuousLinearMap :=
       ContinuousLinearMap.ext fun v ↦ by
-        ext p; simp [compSpatialCLE_symm_apply, compSpatialL_apply]]
+        ext p; simp [compSpatialCLE_symm_apply, compSpatialL_apply]
+    rw [hsp_eq]
     exact (norm_compSpatialL_le_of_norm_le α ℝ hab le_rfl
       coordLIE.symm.toLinearIsometry.norm_toContinuousLinearMap_le).trans_eq (by simp)
   exact (ContinuousLinearMap.opNorm_comp_le _ _).trans <|
@@ -341,11 +343,13 @@ variable {hα₀ : 0 < α} {hα₁ : α < 1} {ht : t₀ < t₁}
       (slabMk x ⟨t₁, right_mem_Icc.2 ht.le⟩) = d.2 x := by
   rw [← spatialTrace_apply, spatialTrace_realTerminalDataCLE_symm_apply]
 
-private theorem realTerminalDataCLE_symm_eq :
+private theorem realTerminalDataCLE_symm_eq
+    {hA' : ∃ lam : ℝ, 0 < lam ∧ ∀ p (ξ : EuclideanSpace ℝ (Fin 1)),
+      lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ evalA A i j p).toQuadraticForm' ξ} :
     (realTerminalDataCLE hα₀ hα₁ ht A B C hA).symm.toContinuousLinearMap =
       (compSpatialCLE α ℝ ht coordLIE.toContinuousLinearEquiv).symm.toContinuousLinearMap ∘L
         (euclideanTerminalDataCLE hα₀ hα₁ ht (evalA A) (evalB B) (evalCoord C 1)
-          (hA.elim fun lam h ↦ ⟨lam, h.1, ellipticity_evalCoord h.2⟩)).symm.toContinuousLinearMap
+          hA').symm.toContinuousLinearMap
         ∘L (dataCoordBridgeCLE t₀ t₁).toContinuousLinearMap :=
   ContinuousLinearMap.ext fun d ↦ by
     simp only [realTerminalDataCLE, ContinuousLinearEquiv.coe_coe, ContinuousLinearMap.comp_apply,
@@ -370,7 +374,7 @@ theorem exists_norm_realTerminalDataCLE_symm_le (hα₀ : 0 < α) (hα₁ : α <
   obtain ⟨M, hM, hest⟩ :=
     exists_norm_euclideanTerminalDataCLE_symm_le (ι := Fin 1) hα₀ hα₁ hlam K T₀
   refine ⟨M, hM, fun {t₀ t₁} ht hT₀ A B C hA hAK hBK hCK ↦ ?_⟩
-  rw [realTerminalDataCLE_symm_eq]
+  rw [realTerminalDataCLE_symm_eq (hA' := ⟨lam, hlam, ellipticity_evalCoord hA⟩)]
   exact (norm_comp_coord_bridges_le ht _).trans <| hest ht hT₀ (evalA A) (evalB B) (evalCoord C 1)
     (ellipticity_evalCoord hA) (norm_evalA_le hAK) (norm_evalB_le hBK) (norm_evalC_le hCK)
 
@@ -396,25 +400,10 @@ theorem exists_norm_realTerminalDataCLE_symm_sub_le (hα₀ : 0 < α) (hα₁ : 
   have h0 := hest ht hT₀ (evalA A) (evalA A') (evalB B) (evalB B') (evalCoord C 1) (evalCoord C' 1)
     (ellipticity_evalCoord hA) (ellipticity_evalCoord hA') (norm_evalA_le hAK) (norm_evalB_le hBK)
     (norm_evalC_le hCK) (norm_evalA_le hAK') (norm_evalB_le hBK') (norm_evalC_le hCK')
-  set e := (euclideanTerminalDataCLE hα₀ hα₁ ht (evalA A) (evalB B) (evalCoord C 1)
-    ⟨lam, hlam, ellipticity_evalCoord hA⟩).symm.toContinuousLinearMap
-  set e' := (euclideanTerminalDataCLE hα₀ hα₁ ht (evalA A') (evalB B') (evalCoord C' 1)
-    ⟨lam, hlam, ellipticity_evalCoord hA'⟩).symm.toContinuousLinearMap
-  have hsub :
-      (realTerminalDataCLE hα₀ hα₁ ht A B C ⟨lam, hlam, hA⟩).symm.toContinuousLinearMap -
-        (realTerminalDataCLE hα₀ hα₁ ht A' B' C' ⟨lam, hlam, hA'⟩).symm.toContinuousLinearMap =
-      (compSpatialCLE α ℝ ht coordLIE.toContinuousLinearEquiv).symm.toContinuousLinearMap ∘L
-        (e - e') ∘L (dataCoordBridgeCLE t₀ t₁).toContinuousLinearMap :=
-    ContinuousLinearMap.ext fun d ↦ by
-      rw [_root_.sub_apply, ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
-        _root_.sub_apply, map_sub]
-      exact congrArg₂ HSub.hSub
-        (congrArg (· d) (realTerminalDataCLE_symm_eq (hα₀ := hα₀) (hα₁ := hα₁) (ht := ht)
-          (A := A) (B := B) (C := C) (hA := ⟨lam, hlam, hA⟩)))
-        (congrArg (· d) (realTerminalDataCLE_symm_eq (hα₀ := hα₀) (hα₁ := hα₁) (ht := ht)
-          (A := A') (B := B') (C := C') (hA := ⟨lam, hlam, hA'⟩)))
-  rw [hsub]
-  refine (norm_comp_coord_bridges_le ht (e - e')).trans (h0.trans (mul_le_mul_of_nonneg_left ?_ hM))
+  rw [realTerminalDataCLE_symm_eq (hA' := ⟨lam, hlam, ellipticity_evalCoord hA⟩),
+    realTerminalDataCLE_symm_eq (hA' := ⟨lam, hlam, ellipticity_evalCoord hA'⟩),
+    ← ContinuousLinearMap.comp_sub, ← ContinuousLinearMap.sub_comp]
+  refine (norm_comp_coord_bridges_le ht _).trans (h0.trans (mul_le_mul_of_nonneg_left ?_ hM))
   simp only [Finset.univ_unique, Finset.sum_singleton, evalA, evalB, evalCoord_sub]
   exact add_le_add (add_le_add (norm_evalA_le le_rfl default default)
     (norm_evalB_le le_rfl default)) (norm_evalC_le le_rfl)

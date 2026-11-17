@@ -379,13 +379,14 @@ terminal trace `g`. -/
       (slabMk x ⟨t₁, right_mem_Icc.2 ht.le⟩) = d.2 x := by
   rw [← spatialTrace_apply, spatialTrace_euclideanTerminalDataCLE_symm_apply]
 
-private theorem euclideanTerminalDataCLE_symm_eq :
+private theorem euclideanTerminalDataCLE_symm_eq
+    {ha' : ∃ lam : ℝ, 0 < lam ∧ ∀ p (ξ : EuclideanSpace ℝ ι),
+      lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ revHolderLIE ht (a i j) p).toQuadraticForm' ξ} :
     (euclideanTerminalDataCLE hα₀ hα₁ ht a b c ha).symm.toContinuousLinearMap =
       (revC2LIE ht).symm.toContinuousLinearEquiv.toContinuousLinearMap ∘L
         (euclideanInitialDataCLE hα₀ hα₁ (slabDuration_pos ht)
           (fun i j ↦ revHolderLIE ht (a i j)) (fun i ↦ revHolderLIE ht (b i)) (revHolderLIE ht c)
-          (ha.elim fun lam h ↦
-            ⟨lam, h.1, ellipticity_revHolder ht h.2⟩)).symm.toContinuousLinearMap ∘L
+          ha').symm.toContinuousLinearMap ∘L
         (terminalDataBridgeCLE ht).toContinuousLinearMap :=
   ContinuousLinearMap.ext fun d ↦ by
     simp only [euclideanTerminalDataCLE, ContinuousLinearEquiv.coe_coe,
@@ -411,7 +412,7 @@ theorem exists_norm_euclideanTerminalDataCLE_symm_le (hα₀ : 0 < α) (hα₁ :
           C := by
   obtain ⟨C, hC, hest⟩ := exists_norm_euclideanInitialDataCLE_symm_le (ι := ι) hα₀ hα₁ hlam K T₀
   refine ⟨C, hC, fun {t₀ t₁} ht hT₀ a b c ha hak hbk hck ↦ ?_⟩
-  rw [euclideanTerminalDataCLE_symm_eq]
+  rw [euclideanTerminalDataCLE_symm_eq (ha' := ⟨lam, hlam, ellipticity_revHolder ht ha⟩)]
   exact (norm_comp_timeReverse_bridges_le ht _).trans <|
     hest (slabDuration ht) (slabDuration_pos ht) (by exact_mod_cast hT₀)
       (fun i j ↦ revHolderLIE ht (a i j)) (fun i ↦ revHolderLIE ht (b i)) (revHolderLIE ht c)
@@ -448,27 +449,10 @@ theorem exists_norm_euclideanTerminalDataCLE_symm_sub_le (hα₀ : 0 < α) (hα�
     (ellipticity_revHolder ht ha) (ellipticity_revHolder ht ha')
     (fun i j ↦ by simpa using hak i j) (fun i ↦ by simpa using hbk i) (by simpa using hck)
     (fun i j ↦ by simpa using hak' i j) (fun i ↦ by simpa using hbk' i) (by simpa using hck')
-  set e := (euclideanInitialDataCLE hα₀ hα₁ (slabDuration_pos ht)
-    (fun i j ↦ revHolderLIE ht (a i j)) (fun i ↦ revHolderLIE ht (b i)) (revHolderLIE ht c)
-    ⟨lam, hlam, ellipticity_revHolder ht ha⟩).symm.toContinuousLinearMap
-  set e' := (euclideanInitialDataCLE hα₀ hα₁ (slabDuration_pos ht)
-    (fun i j ↦ revHolderLIE ht (a' i j)) (fun i ↦ revHolderLIE ht (b' i)) (revHolderLIE ht c')
-    ⟨lam, hlam, ellipticity_revHolder ht ha'⟩).symm.toContinuousLinearMap
-  have hsub :
-      (euclideanTerminalDataCLE hα₀ hα₁ ht a b c ⟨lam, hlam, ha⟩).symm.toContinuousLinearMap -
-        (euclideanTerminalDataCLE hα₀ hα₁ ht a' b' c' ⟨lam, hlam, ha'⟩).symm.toContinuousLinearMap =
-      (revC2LIE ht).symm.toContinuousLinearEquiv.toContinuousLinearMap ∘L (e - e') ∘L
-        (terminalDataBridgeCLE ht).toContinuousLinearMap :=
-    ContinuousLinearMap.ext fun d ↦ by
-      rw [_root_.sub_apply, ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
-        _root_.sub_apply, map_sub]
-      exact congrArg₂ HSub.hSub
-        (congrArg (· d) (euclideanTerminalDataCLE_symm_eq (hα₀ := hα₀) (hα₁ := hα₁) (ht := ht)
-          (a := a) (b := b) (c := c) (ha := ⟨lam, hlam, ha⟩)))
-        (congrArg (· d) (euclideanTerminalDataCLE_symm_eq (hα₀ := hα₀) (hα₁ := hα₁) (ht := ht)
-          (a := a') (b := b') (c := c') (ha := ⟨lam, hlam, ha'⟩)))
-  rw [hsub]
-  exact (norm_comp_timeReverse_bridges_le ht (e - e')).trans <|
+  rw [euclideanTerminalDataCLE_symm_eq (ha' := ⟨lam, hlam, ellipticity_revHolder ht ha⟩),
+    euclideanTerminalDataCLE_symm_eq (ha' := ⟨lam, hlam, ellipticity_revHolder ht ha'⟩),
+    ← ContinuousLinearMap.comp_sub, ← ContinuousLinearMap.sub_comp]
+  exact (norm_comp_timeReverse_bridges_le ht _).trans <|
     h0.trans_eq (by simp only [← map_sub, LinearIsometryEquiv.norm_map])
 
 end TerminalData
