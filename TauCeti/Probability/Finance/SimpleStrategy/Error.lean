@@ -23,8 +23,9 @@ integrable. All results work for an arbitrary time measure, so they apply pathwi
 finite horizon without any expected-energy or expected-variation assumption. Signed and
 vanishing coefficients are allowed. These are error estimates, not constructions of
 stochastic integrals. The drift and diffusion error bounds and convergence results are
-independent; their measurability hypotheses concern only the respective gain or square energy,
-not each factor separately.
+independent. The integral bounds and convergence results need no gain measurability;
+the error-integrability results require measurability only of the respective gain or square
+energy, not each factor separately.
 
 ## References
 
@@ -114,10 +115,9 @@ theorem integrable_abs_mul_one_add_abs (hD : Integrable D μ)
 -- Share the stock-specific square-root domination and Hölder argument between the two
 -- independent public drift results.
 private theorem drift_error_estimate
-    (heD : AEStronglyMeasurable (fun x ↦ e x * D x) μ)
     (hA : Integrable (fun x ↦ |D x| * (1 + |a x|)) μ)
     (hE : Integrable (fun x ↦ (|D x| / (1 + |a x|) + V x ^ 2) * e x ^ 2) μ) :
-    Integrable (fun x ↦ e x * D x) μ ∧
+    (AEStronglyMeasurable (fun x ↦ e x * D x) μ → Integrable (fun x ↦ e x * D x) μ) ∧
     (∫ x, |e x * D x| ∂μ) ≤
       √(∫ x, |D x| * (1 + |a x|) ∂μ) *
         √(∫ x, (|D x| / (1 + |a x|) + V x ^ 2) * e x ^ 2 ∂μ) := by
@@ -153,12 +153,11 @@ private theorem drift_error_estimate
         dsimp only [E]
         nlinarith [mul_nonneg (sq_nonneg (V x)) (sq_nonneg (e x))]
       _ = √(A x) * √(E x) := sqrt_mul (hA0 x) _
-  have hDi : Integrable (fun x ↦ e x * D x) μ :=
-    hprod.mono' heD (ae_of_all _ fun x ↦ by simpa only [Real.norm_eq_abs] using hpoint x)
-  refine ⟨hDi, ?_⟩
+  refine ⟨fun heD ↦ hprod.mono' heD
+    (ae_of_all _ fun x ↦ by simpa only [Real.norm_eq_abs] using hpoint x), ?_⟩
   calc
     (∫ x, |e x * D x| ∂μ) ≤ ∫ x, √(A x) * √(E x) ∂μ :=
-      integral_mono_ae hDi.abs hprod (ae_of_all _ hpoint)
+      integral_mono_of_nonneg (ae_of_all _ fun _ ↦ abs_nonneg _) hprod (ae_of_all _ hpoint)
     _ ≤ √(∫ x, A x ∂μ) * √(∫ x, E x ∂μ) := by
       have h := integral_mul_le_Lp_mul_Lq_of_nonneg Real.HolderConjugate.two_two
         (ae_of_all μ fun x ↦ sqrt_nonneg (A x))
@@ -173,18 +172,17 @@ theorem integrable_mul_of_integrable_abs_div_one_add_abs_add_sq_mul_sq
     (hA : Integrable (fun x ↦ |D x| * (1 + |a x|)) μ)
     (hE : Integrable (fun x ↦ (|D x| / (1 + |a x|) + V x ^ 2) * e x ^ 2) μ) :
     Integrable (fun x ↦ e x * D x) μ :=
-  (drift_error_estimate heD hA hE).1
+  (drift_error_estimate hA hE).1 heD
 
-/-- The drift L¹ error is bounded by the square roots of complementary drift mass and
-mixed weighted square error. -/
+/-- The drift L¹ error integral is bounded by the square roots of complementary drift mass and
+mixed weighted square error. No drift-gain measurability is needed for this integral bound. -/
 theorem integral_abs_mul_le_sqrt_mul_sqrt
-    (heD : AEStronglyMeasurable (fun x ↦ e x * D x) μ)
     (hA : Integrable (fun x ↦ |D x| * (1 + |a x|)) μ)
     (hE : Integrable (fun x ↦ (|D x| / (1 + |a x|) + V x ^ 2) * e x ^ 2) μ) :
     (∫ x, |e x * D x| ∂μ) ≤
       √(∫ x, |D x| * (1 + |a x|) ∂μ) *
         √(∫ x, (|D x| / (1 + |a x|) + V x ^ 2) * e x ^ 2 ∂μ) :=
-  (drift_error_estimate heD hA hE).2
+  (drift_error_estimate hA hE).2
 
 /-- Finite mixed weighted square error implies integrability of measurable diffusion
 square energy; no drift-mass hypothesis is needed. -/
@@ -196,25 +194,23 @@ theorem integrable_mul_sq_of_integrable_abs_div_one_add_abs_add_sq_mul_sq
   have : 0 ≤ |D x| / (1 + |a x|) := by positivity
   nlinarith [mul_nonneg this (sq_nonneg (e x))]
 
-/-- Diffusion square energy is bounded by the mixed weighted square error. -/
+/-- Diffusion square energy is bounded by the mixed weighted square error, without requiring
+measurability of the diffusion square energy. -/
 theorem integral_mul_sq_le
-    (heV : AEStronglyMeasurable (fun x ↦ (e x * V x) ^ 2) μ)
     (hE : Integrable (fun x ↦ (|D x| / (1 + |a x|) + V x ^ 2) * e x ^ 2) μ) :
     (∫ x, (e x * V x) ^ 2 ∂μ) ≤
       ∫ x, (|D x| / (1 + |a x|) + V x ^ 2) * e x ^ 2 ∂μ := by
-  refine integral_mono_ae
-    (integrable_mul_sq_of_integrable_abs_div_one_add_abs_add_sq_mul_sq heV hE) hE
+  refine integral_mono_of_nonneg (ae_of_all _ fun _ ↦ sq_nonneg _) hE
     (ae_of_all _ fun x ↦ ?_)
   have : 0 ≤ |D x| / (1 + |a x|) := by positivity
   nlinarith [mul_nonneg this (sq_nonneg (e x))]
 
 /-- Under integrable complementary drift mass, mixed weighted square-error convergence implies
-drift L¹ convergence. Weighted-error integrability and drift-gain measurability are required only
-eventually along the index filter. -/
+convergence of the drift L¹ error integrals. Weighted-error integrability is required only
+eventually along the index filter; drift-gain measurability is not required. -/
 theorem tendsto_integral_abs_mul_of_tendsto_integral {ι : Type*} {l : Filter ι}
     {e : ι → α → ℝ}
     (hA : Integrable (fun x ↦ |D x| * (1 + |a x|)) μ)
-    (heD : ∀ᶠ i in l, AEStronglyMeasurable (fun x ↦ e i x * D x) μ)
     (hE : ∀ᶠ i in l, Integrable
       (fun x ↦ (|D x| / (1 + |a x|) + V x ^ 2) * e i x ^ 2) μ)
     (hlim : Tendsto
@@ -224,21 +220,21 @@ theorem tendsto_integral_abs_mul_of_tendsto_integral {ι : Type*} {l : Filter ι
     (Real.continuous_sqrt.continuousAt.tendsto.comp hlim)
   simp only [sqrt_zero, mul_zero] at hs
   refine squeeze_zero' (Eventually.of_forall fun i ↦ integral_nonneg fun x ↦ abs_nonneg _) ?_ hs
-  filter_upwards [heD, hE] with i hiD hiE
-  exact integral_abs_mul_le_sqrt_mul_sqrt hiD hA hiE
+  filter_upwards [hE] with i hiE
+  exact integral_abs_mul_le_sqrt_mul_sqrt hA hiE
 
 /-- Mixed weighted square-error convergence implies diffusion square-energy convergence,
-independently of drift integrability, with only eventual measurability and integrability. -/
+independently of drift integrability, with only eventual weighted-error integrability and no
+diffusion-energy measurability assumption. -/
 theorem tendsto_integral_mul_sq_of_tendsto_integral {ι : Type*} {l : Filter ι}
     {e : ι → α → ℝ}
-    (heV : ∀ᶠ i in l, AEStronglyMeasurable (fun x ↦ (e i x * V x) ^ 2) μ)
     (hE : ∀ᶠ i in l, Integrable
       (fun x ↦ (|D x| / (1 + |a x|) + V x ^ 2) * e i x ^ 2) μ)
     (hlim : Tendsto
       (fun i ↦ ∫ x, (|D x| / (1 + |a x|) + V x ^ 2) * e i x ^ 2 ∂μ) l (nhds 0)) :
     Tendsto (fun i ↦ ∫ x, (e i x * V x) ^ 2 ∂μ) l (nhds 0) := by
   refine squeeze_zero' (Eventually.of_forall fun i ↦ integral_nonneg fun x ↦ sq_nonneg _) ?_ hlim
-  filter_upwards [heV, hE] with i hiV hiE
-  exact integral_mul_sq_le hiV hiE
+  filter_upwards [hE] with i hiE
+  exact integral_mul_sq_le hiE
 
 end TauCeti.Finance
