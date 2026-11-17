@@ -209,8 +209,9 @@ theorem homologyMap_homologyπ_eq_of_isCubicalRepresentative (P : TopPair.{u}) {
   -- The images of `z` and `c` in the relative chains differ by the image of a chain of `A`.
   have h₀ : ((cokernel.π ((normalizedCubicalChainComplex k).map P.map)).f n).hom
       ((normalizedCubicalChainComplexXEquiv P.fst n).symm
-        (NormalizedCubicalChain.map k P.map.hom n a)) = 0 :=
-    congrArg (fun f ↦ f.hom a) (cubicalChainComplex_condition_f k P n)
+        (NormalizedCubicalChain.map k P.map.hom n a)) = 0 := by
+    rw [normalizedCubicalChainComplexXEquiv_symm_apply, ← normalizedCubicalChainComplex_map_f_apply]
+    exact congr(ModuleCat.Hom.hom $(cubicalChainComplex_condition_f k P n) _)
   rw [ha, map_sub, LinearEquiv.symm_apply_apply, map_sub,
     normalizedCubicalChainComplexXEquiv_symm_apply, sub_eq_zero] at h₀
   refine (P.cubicalChainComplex k).moduleCat_iCycles_injective n ?_
