@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Geometry.RealAlgebraic.Stack.Sectors
 import TauCeti.Analysis.Analytic.Submanifold.Dimension
+import TauCeti.Order.Fin.Basic
+import TauCeti.Topology.Constructions.Basic
 
 /-!
 # Boundary closures and frontier condition for stacks
@@ -35,18 +37,19 @@ approach regions, root matching for polynomial delineations, and inductive parti
 * `TauCeti.tail_mem_closure_of_mem_closure_stackCells`: base-closure projection of stack cells.
 * `TauCeti.closure_image_cylinder_sectionSet_inter_eq`,
   `TauCeti.eq_image_cylinder_sectionSet_of_nonempty_inter_closure`,
+  `TauCeti.mem_closure_image_cylinder_sectorSet_iff`,
   `TauCeti.closure_image_cylinder_sectorSet_inter_eq`,
-  `TauCeti.mem_closure_sectorSet_iff_of_mem_sectionSet`,
-  `TauCeti.mem_closure_sectorSet_iff_of_mem_sectorSet`,
+  `TauCeti.mem_closure_image_cylinder_sectorSet_iff_of_mem_image_cylinder_sectionSet`,
+  `TauCeti.mem_closure_image_cylinder_sectorSet_iff_of_mem_image_cylinder_sectorSet`,
   `TauCeti.closure_image_cylinder_sectorSet_inter_eq_union`: exact trace of section and sector
   closures over `B ⊆ closure C`.
 * `TauCeti.subset_closure_of_mem_stackCells_of_nonempty_inter`,
   `TauCeti.subset_closure_of_mem_stackCells_self_of_nonempty_inter`: first part of the frontier
   condition (`E' ∩ closure E ≠ ∅ → E' ⊆ closure E`).
-* `TauCeti.image_cylinder_sectionSet_subset_closure_sectorSet_iff`,
-  `TauCeti.image_cylinder_sectorSet_subset_closure_sectorSet_iff`,
-  `TauCeti.eq_sectionSet_and_eq_sectorSet_of_subset_closure_of_ne`: same-base closure incidence
-  characterization between sections and sectors.
+* `TauCeti.image_cylinder_sectionSet_subset_closure_image_cylinder_sectorSet_iff`,
+  `TauCeti.image_cylinder_sectorSet_subset_closure_image_cylinder_sectorSet_iff`,
+  `exists_eq_image_cylinder_sectionSet_and_eq_image_cylinder_sectorSet_of_subset_closure_of_ne`:
+  same-base closure incidence characterization between sections and sectors.
 * `TauCeti.dim_lt_of_mem_stackCells_of_subset_closure`,
   `TauCeti.dim_lt_of_mem_stackCells_self_of_subset_closure`: second part of the frontier
   condition (`E' ⊆ closure E, E' ≠ E → dim E' < dim E`) for analytic submanifold cells.
@@ -238,58 +241,55 @@ private lemma mem_closure_sectorSet_castSucc_succ_of_le {k : ℕ} {C : Set (Fin 
       exact hline c hc
     exact (isClosed_closure.preimage hcont_cons).closure_subset_iff.mpr hsub htIcc
 
-private lemma mem_closure_image_cylinder_sectorSet_of_le (hBC : B ⊆ closure C)
-    (hθ : ∀ y : C, StrictMono fun i ↦ θ i y)
-    (hlim : ∀ i (x : B), Tendsto (θ i) (comap Subtype.val (𝓝 x.1)) (𝓝 (η (σ i) x)))
-    {j : Fin (k + 1)} {v : Fin (n + 1) → ℝ} (hxB : Fin.tail v ∈ B)
-    (hlow : ∀ i : Fin k, i.castSucc < j → η (σ i) ⟨Fin.tail v, hxB⟩ ≤ v 0)
-    (hhigh : ∀ i : Fin k, j ≤ i.castSucc → v 0 ≤ η (σ i) ⟨Fin.tail v, hxB⟩) :
+private lemma mem_closure_image_cylinder_sectorSet_of_le {L : Fin k → ℝ}
+    (hθ : ∀ y : C, StrictMono fun i ↦ θ i y) {j : Fin (k + 1)} {v : Fin (n + 1) → ℝ}
+    (hx : Fin.tail v ∈ closure C)
+    (hlim : ∀ i, Tendsto (θ i) (comap Subtype.val (𝓝 (Fin.tail v))) (𝓝 (L i)))
+    (hlow : ∀ i : Fin k, i.castSucc < j → L i ≤ v 0)
+    (hhigh : ∀ i : Fin k, j ≤ i.castSucc → v 0 ≤ L i) :
     v ∈ closure (cylinder C '' sectorSet θ j) := by
-  let x : B := ⟨Fin.tail v, hxB⟩
-  have hx_cl : Fin.tail v ∈ closure C := hBC hxB
   rw [← Fin.cons_self_tail v]
   cases k with
   | zero =>
     -- With no sections, the single sector is the full cylinder over `C`.
-    exact mem_closure_image_cylinder_sectorSet_of_tendsto hx_cl
+    exact mem_closure_image_cylinder_sectorSet_of_tendsto hx
       (h := fun _ ↦ v 0) (fun _ ↦ by simp) tendsto_const_nhds
   | succ k =>
     -- Dispatch to the lower unbounded, upper unbounded, or interior bounded sector lemma.
     have hm : ∀ y : C, Monotone fun i ↦ θ i y := fun y ↦ (hθ y).monotone
     cases j using Fin.cases with
     | zero =>
-      exact mem_closure_sectorSet_zero_of_le hm hx_cl (hhigh 0 (Fin.zero_le _)) (hlim 0 x)
+      exact mem_closure_sectorSet_zero_of_le hm hx (hhigh 0 (Fin.zero_le _)) (hlim 0)
     | succ j =>
       cases j using Fin.lastCases with
       | last =>
         rw [Fin.succ_last]
-        exact mem_closure_sectorSet_last_of_le hm hx_cl
-          (hlow (Fin.last k) (Fin.castSucc_lt_last _)) (hlim (Fin.last k) x)
+        exact mem_closure_sectorSet_last_of_le hm hx
+          (hlow (Fin.last k) (Fin.castSucc_lt_last _)) (hlim (Fin.last k))
       | cast i₀ =>
-        exact mem_closure_sectorSet_castSucc_succ_of_le hθ hx_cl
+        exact mem_closure_sectorSet_castSucc_succ_of_le hθ hx
           (hlow i₀.castSucc Fin.castSucc_lt_succ) (hhigh i₀.succ le_rfl)
-          (hlim i₀.castSucc x) (hlim i₀.succ x)
+          (hlim i₀.castSucc) (hlim i₀.succ)
 
-/-- The closure of the `j`-th ambient sector over `C`, intersected with the cylinder over
-`B ⊆ closure C`, consists of the points over `B` lying weakly above `η (σ i)` for `i < j` and
-weakly below `η (σ i)` for `j ≤ i`. -/
-theorem closure_image_cylinder_sectorSet_inter_eq (hBC : B ⊆ closure C)
-    (hθ : ∀ y : C, StrictMono fun i ↦ θ i y)
-    (hlim : ∀ i (x : B), Tendsto (θ i) (comap Subtype.val (𝓝 x.1)) (𝓝 (η (σ i) x)))
-    (j : Fin (k + 1)) :
-    closure (cylinder C '' sectorSet θ j) ∩ {v | Fin.tail v ∈ B} =
-      {v : Fin (n + 1) → ℝ | ∃ hx : Fin.tail v ∈ B,
-        (∀ i : Fin k, i.castSucc < j → η (σ i) ⟨Fin.tail v, hx⟩ ≤ v 0) ∧
-        ∀ i : Fin k, j ≤ i.castSucc → v 0 ≤ η (σ i) ⟨Fin.tail v, hx⟩} := by
+/-- When every section `θ i` converges along `C` at `Fin.tail v` to `L i`, the point `v` belongs
+to the closure of the `j`-th ambient sector over `C` if and only if `Fin.tail v ∈ closure C` and
+`v 0` lies weakly above `L i` for `i < j` and weakly below `L i` for `j ≤ i`. -/
+theorem mem_closure_image_cylinder_sectorSet_iff {L : Fin k → ℝ}
+    (hθ : ∀ y : C, StrictMono fun i ↦ θ i y) {j : Fin (k + 1)} {v : Fin (n + 1) → ℝ}
+    (hlim : ∀ i, Tendsto (θ i) (comap Subtype.val (𝓝 (Fin.tail v))) (𝓝 (L i))) :
+    v ∈ closure (cylinder C '' sectorSet θ j) ↔
+      Fin.tail v ∈ closure C ∧
+        (∀ i : Fin k, i.castSucc < j → L i ≤ v 0) ∧
+        ∀ i : Fin k, j ≤ i.castSucc → v 0 ≤ L i := by
   let S := sectorSet θ j
   let q : S → Fin (n + 1) → ℝ := cylinder C ∘ Subtype.val
   have hrange : range q = cylinder C '' sectorSet θ j := by
     rw [range_comp, Subtype.range_val]
-  ext v
-  simp only [mem_inter_iff, mem_ofPred_eq]
   constructor
   · -- Strict sector inequalities pass to weak inequalities in the limit along `comap q (𝓝 v)`.
-    rintro ⟨hv_cl, hxB⟩
+    intro hv_cl
+    have hx_cl : Fin.tail v ∈ closure C :=
+      tail_mem_closure_of_mem_closure_stackCells (image_cylinder_sectorSet_mem_stackCells j) hv_cl
     have : (comap q (𝓝 v)).NeBot := by
       rw [← Filter.map_neBot_iff q, Filter.map_comap, hrange]
       exact mem_closure_iff_nhdsWithin_neBot.mp hv_cl
@@ -302,19 +302,38 @@ theorem closure_image_cylinder_sectorSet_inter_eq (hBC : B ⊆ closure C)
     have hzero : Tendsto (fun w : S ↦ w.1.2) (comap q (𝓝 v)) (𝓝 (v 0)) := by
       simpa only [Function.comp_def, q, cylinder_apply_zero] using
         ((continuous_apply 0).tendsto v).comp (tendsto_comap (f := q))
-    refine ⟨hxB, fun i hi ↦ ?_, fun i hi ↦ ?_⟩
-    · exact le_of_tendsto_of_tendsto ((hlim i ⟨Fin.tail v, hxB⟩).comp hbase) hzero
+    refine ⟨hx_cl, fun i hi ↦ ?_, fun i hi ↦ ?_⟩
+    · exact le_of_tendsto_of_tendsto ((hlim i).comp hbase) hzero
         (Eventually.of_forall fun w ↦ ((mem_sectorSet.mp w.2).1 i hi).le)
-    · exact le_of_tendsto_of_tendsto hzero ((hlim i ⟨Fin.tail v, hxB⟩).comp hbase)
+    · exact le_of_tendsto_of_tendsto hzero ((hlim i).comp hbase)
         (Eventually.of_forall fun w ↦ ((mem_sectorSet.mp w.2).2 i hi).le)
-  · rintro ⟨hxB, hlow, hhigh⟩
-    exact ⟨mem_closure_image_cylinder_sectorSet_of_le hBC hθ hlim hxB hlow hhigh, hxB⟩
+  · rintro ⟨hx_cl, hlow, hhigh⟩
+    exact mem_closure_image_cylinder_sectorSet_of_le hθ hx_cl hlim hlow hhigh
 
-/-- A point on the `l`-th boundary section over `B` belongs to the closure of the `j`-th sector
-over `C` if and only if the index `l` lies weakly between `σ i` for `i < j` and `σ i` for
-`j ≤ i`, a condition independent of the base point in `B`. -/
-theorem mem_closure_sectorSet_iff_of_mem_sectionSet (hBC : B ⊆ closure C)
-    (hθ : ∀ y : C, StrictMono fun i ↦ θ i y) (hη : ∀ x : B, StrictMono fun l ↦ η l x)
+/-- The closure of the `j`-th ambient sector over `C`, intersected with the cylinder over
+`B ⊆ closure C`, consists of the points over `B` lying weakly above `η (σ i)` for `i < j` and
+weakly below `η (σ i)` for `j ≤ i`. -/
+theorem closure_image_cylinder_sectorSet_inter_eq (hBC : B ⊆ closure C)
+    (hθ : ∀ y : C, StrictMono fun i ↦ θ i y)
+    (hlim : ∀ i (x : B), Tendsto (θ i) (comap Subtype.val (𝓝 x.1)) (𝓝 (η (σ i) x)))
+    (j : Fin (k + 1)) :
+    closure (cylinder C '' sectorSet θ j) ∩ {v | Fin.tail v ∈ B} =
+      {v : Fin (n + 1) → ℝ | ∃ hx : Fin.tail v ∈ B,
+        (∀ i : Fin k, i.castSucc < j → η (σ i) ⟨Fin.tail v, hx⟩ ≤ v 0) ∧
+        ∀ i : Fin k, j ≤ i.castSucc → v 0 ≤ η (σ i) ⟨Fin.tail v, hx⟩} := by
+  ext v
+  simp only [mem_inter_iff, mem_ofPred_eq]
+  exact ⟨fun ⟨hv, hx⟩ ↦ ⟨hx, ((mem_closure_image_cylinder_sectorSet_iff hθ
+      fun i ↦ hlim i ⟨Fin.tail v, hx⟩).mp hv).2⟩,
+    fun ⟨hx, h⟩ ↦ ⟨(mem_closure_image_cylinder_sectorSet_iff hθ
+      fun i ↦ hlim i ⟨Fin.tail v, hx⟩).mpr ⟨hBC hx, h⟩, hx⟩⟩
+
+/-- A point on the `l`-th ambient boundary section over `B` belongs to the closure of the `j`-th
+ambient sector over `C` if and only if the index `l` lies weakly between `σ i` for `i < j` and
+`σ i` for `j ≤ i`, a condition independent of the base point in `B`. -/
+theorem mem_closure_image_cylinder_sectorSet_iff_of_mem_image_cylinder_sectionSet
+    (hBC : B ⊆ closure C) (hθ : ∀ y : C, StrictMono fun i ↦ θ i y)
+    (hη : ∀ x : B, StrictMono fun l ↦ η l x)
     (hlim : ∀ i (x : B), Tendsto (θ i) (comap Subtype.val (𝓝 x.1)) (𝓝 (η (σ i) x)))
     {j : Fin (k + 1)} {l : Fin m} {v : Fin (n + 1) → ℝ}
     (hv : v ∈ cylinder B '' sectionSet η l) :
@@ -323,17 +342,14 @@ theorem mem_closure_sectorSet_iff_of_mem_sectionSet (hBC : B ⊆ closure C)
         ∀ i : Fin k, j ≤ i.castSucc → l ≤ σ i := by
   obtain ⟨hxB, hvl⟩ := mem_image_cylinder.mp hv
   simp only [mem_sectionSet] at hvl
-  have hmem : v ∈ closure (cylinder C '' sectorSet θ j) ↔
-      v ∈ closure (cylinder C '' sectorSet θ j) ∩ {w | Fin.tail w ∈ B} :=
-    ⟨fun h ↦ ⟨h, hxB⟩, fun h ↦ h.1⟩
-  rw [hmem, closure_image_cylinder_sectorSet_inter_eq hBC hθ hlim j]
-  simp only [mem_ofPred_eq, hxB, exists_true_left, ← hvl, (hη ⟨Fin.tail v, hxB⟩).le_iff_le]
+  rw [mem_closure_image_cylinder_sectorSet_iff hθ fun i ↦ hlim i ⟨Fin.tail v, hxB⟩]
+  simp only [hBC hxB, true_and, ← hvl, (hη ⟨Fin.tail v, hxB⟩).le_iff_le]
 
-/-- A point in the `r`-th boundary sector over `B` belongs to the closure of the `j`-th sector
-over `C` if and only if `(σ i).castSucc < r` for `i < j` and `r ≤ (σ i).castSucc` for `j ≤ i`,
-a condition independent of the point in the boundary sector. -/
-theorem mem_closure_sectorSet_iff_of_mem_sectorSet (hBC : B ⊆ closure C)
-    (hθ : ∀ y : C, StrictMono fun i ↦ θ i y)
+/-- A point in the `r`-th ambient boundary sector over `B` belongs to the closure of the `j`-th
+ambient sector over `C` if and only if `(σ i).castSucc < r` for `i < j` and `r ≤ (σ i).castSucc`
+for `j ≤ i`, a condition independent of the point in the boundary sector. -/
+theorem mem_closure_image_cylinder_sectorSet_iff_of_mem_image_cylinder_sectorSet
+    (hBC : B ⊆ closure C) (hθ : ∀ y : C, StrictMono fun i ↦ θ i y)
     (hlim : ∀ i (x : B), Tendsto (θ i) (comap Subtype.val (𝓝 x.1)) (𝓝 (η (σ i) x)))
     {j : Fin (k + 1)} {r : Fin (m + 1)} {v : Fin (n + 1) → ℝ}
     (hv : v ∈ cylinder B '' sectorSet η r) :
@@ -342,11 +358,8 @@ theorem mem_closure_sectorSet_iff_of_mem_sectorSet (hBC : B ⊆ closure C)
         ∀ i : Fin k, j ≤ i.castSucc → r ≤ (σ i).castSucc := by
   obtain ⟨hxB, hvr⟩ := mem_image_cylinder.mp hv
   simp only [mem_sectorSet] at hvr
-  have hmem : v ∈ closure (cylinder C '' sectorSet θ j) ↔
-      v ∈ closure (cylinder C '' sectorSet θ j) ∩ {w | Fin.tail w ∈ B} :=
-    ⟨fun h ↦ ⟨h, hxB⟩, fun h ↦ h.1⟩
-  rw [hmem, closure_image_cylinder_sectorSet_inter_eq (η := η) (σ := σ) hBC hθ hlim j]
-  simp only [mem_ofPred_eq, hxB, exists_true_left]
+  rw [mem_closure_image_cylinder_sectorSet_iff hθ fun i ↦ hlim i ⟨Fin.tail v, hxB⟩]
+  simp only [hBC hxB, true_and]
   refine and_congr (forall₂_congr fun i _ ↦ ?_) (forall₂_congr fun i _ ↦ ?_)
   · exact ⟨fun hle ↦ not_le.mp fun hge ↦ (hvr.2 (σ i) hge).not_ge hle,
       fun hlt ↦ (hvr.1 (σ i) hlt).le⟩
@@ -374,16 +387,18 @@ theorem closure_image_cylinder_sectorSet_inter_eq_union (hBC : B ⊆ closure C)
     obtain ⟨E', hE', hvE'⟩ := hcover
     rcases mem_stackCells.mp hE' with ⟨l, rfl⟩ | ⟨r, rfl⟩
     · exact Or.inl <| mem_iUnion₂.mpr
-        ⟨l, (mem_closure_sectorSet_iff_of_mem_sectionSet hBC hθ hη hlim hvE').mp hv_cl, hvE'⟩
+        ⟨l, (mem_closure_image_cylinder_sectorSet_iff_of_mem_image_cylinder_sectionSet
+          hBC hθ hη hlim hvE').mp hv_cl, hvE'⟩
     · exact Or.inr <| mem_iUnion₂.mpr
-        ⟨r, (mem_closure_sectorSet_iff_of_mem_sectorSet hBC hθ hlim hvE').mp hv_cl, hvE'⟩
+        ⟨r, (mem_closure_image_cylinder_sectorSet_iff_of_mem_image_cylinder_sectorSet
+          hBC hθ hlim hvE').mp hv_cl, hvE'⟩
   · rintro (hv | hv)
     · obtain ⟨l, hl, hv⟩ := mem_iUnion₂.mp hv
-      exact ⟨(mem_closure_sectorSet_iff_of_mem_sectionSet hBC hθ hη hlim hv).mpr hl,
-        (mem_image_cylinder.mp hv).1⟩
+      exact ⟨(mem_closure_image_cylinder_sectorSet_iff_of_mem_image_cylinder_sectionSet
+        hBC hθ hη hlim hv).mpr hl, (mem_image_cylinder.mp hv).1⟩
     · obtain ⟨r, hr, hv⟩ := mem_iUnion₂.mp hv
-      exact ⟨(mem_closure_sectorSet_iff_of_mem_sectorSet hBC hθ hlim hv).mpr hr,
-        (mem_image_cylinder.mp hv).1⟩
+      exact ⟨(mem_closure_image_cylinder_sectorSet_iff_of_mem_image_cylinder_sectorSet
+        hBC hθ hlim hv).mpr hr, (mem_image_cylinder.mp hv).1⟩
 
 end Real
 
@@ -410,10 +425,14 @@ theorem subset_closure_of_mem_stackCells_of_nonempty_inter (hBC : B ⊆ closure 
     exact inter_subset_left
   · obtain ⟨v, hvE', hvcl⟩ := hne
     rcases mem_stackCells.mp hE' with ⟨l, rfl⟩ | ⟨r, rfl⟩
-    · have hl := (mem_closure_sectorSet_iff_of_mem_sectionSet hBC hθ hη hlim hvE').mp hvcl
-      exact fun w hw ↦ (mem_closure_sectorSet_iff_of_mem_sectionSet hBC hθ hη hlim hw).mpr hl
-    · have hr := (mem_closure_sectorSet_iff_of_mem_sectorSet hBC hθ hlim hvE').mp hvcl
-      exact fun w hw ↦ (mem_closure_sectorSet_iff_of_mem_sectorSet hBC hθ hlim hw).mpr hr
+    · have hl := (mem_closure_image_cylinder_sectorSet_iff_of_mem_image_cylinder_sectionSet
+        hBC hθ hη hlim hvE').mp hvcl
+      exact fun w hw ↦ (mem_closure_image_cylinder_sectorSet_iff_of_mem_image_cylinder_sectionSet
+        hBC hθ hη hlim hw).mpr hl
+    · have hr := (mem_closure_image_cylinder_sectorSet_iff_of_mem_image_cylinder_sectorSet
+        hBC hθ hlim hvE').mp hvcl
+      exact fun w hw ↦ (mem_closure_image_cylinder_sectorSet_iff_of_mem_image_cylinder_sectorSet
+        hBC hθ hlim hw).mpr hr
 
 /-- **Frontier condition, part 1 (same base).** Over a single base `C`, any cell `E'` of a
 continuous strictly ordered stack meeting `closure E` for another cell `E` of the same stack is
@@ -423,86 +442,44 @@ theorem subset_closure_of_mem_stackCells_self_of_nonempty_inter
     {E E' : Set (Fin (n + 1) → ℝ)} (hE : E ∈ stackCells C θ) (hE' : E' ∈ stackCells C θ)
     (hne : (E' ∩ closure E).Nonempty) : E' ⊆ closure E :=
   subset_closure_of_mem_stackCells_of_nonempty_inter (σ := id) subset_closure hθ hθ
-    (fun i x ↦ by rw [← nhds_subtype]; exact (hc i).tendsto x) hE hE' hne
-
-private lemma succ_eq_or_castSucc_eq_iff_forall_le {i : Fin k} {j : Fin (k + 1)} :
-    (i.succ = j ∨ i.castSucc = j) ↔
-      (∀ i' : Fin k, i'.castSucc < j → i' ≤ i) ∧
-        ∀ i' : Fin k, j ≤ i'.castSucc → i ≤ i' := by
-  constructor
-  · rintro (rfl | rfl)
-    · exact ⟨fun i' hi' ↦ Fin.castSucc_lt_succ_iff.mp hi',
-        fun i' hi' ↦ Fin.castSucc_le_castSucc_iff.mp (i.castSucc_lt_succ.le.trans hi')⟩
-    · exact ⟨fun i' hi' ↦ (Fin.castSucc_lt_castSucc_iff.mp hi').le,
-        fun i' hi' ↦ Fin.castSucc_le_castSucc_iff.mp hi'⟩
-  · rintro ⟨hlow, hhigh⟩
-    rcases lt_trichotomy i.castSucc j with hij | hij | hij
-    · have hij_val : i.val + 1 ≤ j.val := Nat.succ_le_of_lt (by simpa using Fin.lt_def.mp hij)
-      rcases eq_or_lt_of_le hij_val with heq | hlt
-      · exact Or.inl (Fin.ext heq)
-      · exfalso
-        let i' : Fin k := ⟨i.val + 1, by omega⟩
-        exact Nat.not_succ_le_self i.val (Fin.le_def.mp (hlow i' (Fin.lt_def.mpr hlt)))
-    · exact Or.inr hij
-    · exfalso
-      let i' : Fin k := ⟨j.val, by omega⟩
-      exact (not_le_of_gt hij) (Fin.castSucc_le_castSucc_iff.mpr (hhigh i' le_rfl))
-
-private lemma eq_iff_forall_castSucc_lt_and_le {r j : Fin (k + 1)} :
-    r = j ↔
-      (∀ i' : Fin k, i'.castSucc < j → i'.castSucc < r) ∧
-        ∀ i' : Fin k, j ≤ i'.castSucc → r ≤ i'.castSucc := by
-  constructor
-  · rintro rfl
-    exact ⟨fun _ h ↦ h, fun _ h ↦ h⟩
-  · rintro ⟨hlow, hhigh⟩
-    refine le_antisymm ?_ ?_
-    · by_contra hlt
-      replace hlt := lt_of_not_ge hlt
-      let i' : Fin k := ⟨j.val, by omega⟩
-      exact (not_le_of_gt hlt) (hhigh i' le_rfl)
-    · by_contra hlt
-      replace hlt := lt_of_not_ge hlt
-      let i' : Fin k := ⟨r.val, by omega⟩
-      exact (lt_irrefl r) (hlow i' hlt)
+    (fun i ↦ (hc i).tendsto_comap_val) hE hE' hne
 
 /-- Over a nonempty base `C`, the `i`-th ambient section of a continuous strictly ordered stack lies
 in the closure of the `j`-th ambient sector if and only if it is the lower (`i.succ = j`) or upper
 (`i.castSucc = j`) bounding section of that sector. -/
-theorem image_cylinder_sectionSet_subset_closure_sectorSet_iff (hC : C.Nonempty)
+theorem image_cylinder_sectionSet_subset_closure_image_cylinder_sectorSet_iff (hC : C.Nonempty)
     (hc : ∀ i, Continuous (θ i)) (hθ : ∀ y : C, StrictMono fun i ↦ θ i y)
     {i : Fin k} {j : Fin (k + 1)} :
     cylinder C '' sectionSet θ i ⊆ closure (cylinder C '' sectorSet θ j) ↔
       i.succ = j ∨ i.castSucc = j := by
-  have hlim : ∀ i' (x : C), Tendsto (θ i') (comap Subtype.val (𝓝 x.1)) (𝓝 (θ (id i') x)) :=
-    fun i' x ↦ by rw [← nhds_subtype]; exact (hc i').tendsto x
   have : Nonempty C := hC.to_subtype
   obtain ⟨v, hv⟩ := (sectionSet_nonempty θ i).image (cylinder C)
-  rw [succ_eq_or_castSucc_eq_iff_forall_le]
+  rw [Fin.succ_eq_or_castSucc_eq_iff_forall_le]
   exact ⟨fun hsub ↦
-      (mem_closure_sectorSet_iff_of_mem_sectionSet subset_closure hθ hθ hlim hv).mp (hsub hv),
+      (mem_closure_image_cylinder_sectorSet_iff_of_mem_image_cylinder_sectionSet (σ := id)
+        subset_closure hθ hθ (fun i' ↦ (hc i').tendsto_comap_val) hv).mp (hsub hv),
     fun h w hw ↦
-      (mem_closure_sectorSet_iff_of_mem_sectionSet subset_closure hθ hθ hlim hw).mpr h⟩
+      (mem_closure_image_cylinder_sectorSet_iff_of_mem_image_cylinder_sectionSet (σ := id)
+        subset_closure hθ hθ (fun i' ↦ (hc i').tendsto_comap_val) hw).mpr h⟩
 
 /-- Over a nonempty base `C`, one ambient sector of a continuous strictly ordered stack lies in the
 closure of another if and only if the two sectors are equal. -/
-theorem image_cylinder_sectorSet_subset_closure_sectorSet_iff (hC : C.Nonempty)
+theorem image_cylinder_sectorSet_subset_closure_image_cylinder_sectorSet_iff (hC : C.Nonempty)
     (hc : ∀ i, Continuous (θ i)) (hθ : ∀ y : C, StrictMono fun i ↦ θ i y)
     {r j : Fin (k + 1)} :
     cylinder C '' sectorSet θ r ⊆ closure (cylinder C '' sectorSet θ j) ↔ r = j := by
-  have hlim : ∀ i' (x : C), Tendsto (θ i') (comap Subtype.val (𝓝 x.1)) (𝓝 (θ (id i') x)) :=
-    fun i' x ↦ by rw [← nhds_subtype]; exact (hc i').tendsto x
   have : Nonempty C := hC.to_subtype
   obtain ⟨v, hv⟩ := (sectorSet_nonempty hθ r).image (cylinder C)
-  refine ⟨fun hsub ↦ eq_iff_forall_castSucc_lt_and_le.mpr
-      ((mem_closure_sectorSet_iff_of_mem_sectorSet subset_closure hθ hlim hv).mp (hsub hv)),
+  refine ⟨fun hsub ↦ Fin.eq_iff_forall_castSucc_lt_and_le.mpr
+      ((mem_closure_image_cylinder_sectorSet_iff_of_mem_image_cylinder_sectorSet (σ := id)
+        subset_closure hθ (fun i' ↦ (hc i').tendsto_comap_val) hv).mp (hsub hv)),
     by rintro rfl; exact subset_closure⟩
 
 /-- Over a nonempty base `C`, if two distinct cells `E' ≠ E` of a continuous strictly ordered
 stack satisfy `E' ⊆ closure E`, then `E` is a sector and `E'` is either its lower or its upper
 bounding section. -/
-theorem eq_sectionSet_and_eq_sectorSet_of_subset_closure_of_ne (hC : C.Nonempty)
-    (hc : ∀ i, Continuous (θ i)) (hθ : ∀ y : C, StrictMono fun i ↦ θ i y)
+theorem exists_eq_image_cylinder_sectionSet_and_eq_image_cylinder_sectorSet_of_subset_closure_of_ne
+    (hC : C.Nonempty) (hc : ∀ i, Continuous (θ i)) (hθ : ∀ y : C, StrictMono fun i ↦ θ i y)
     {E E' : Set (Fin (n + 1) → ℝ)} (hE : E ∈ stackCells C θ) (hE' : E' ∈ stackCells C θ)
     (hsub : E' ⊆ closure E) (hne : E' ≠ E) :
     ∃ (i : Fin k) (j : Fin (k + 1)),
@@ -511,16 +488,22 @@ theorem eq_sectionSet_and_eq_sectorSet_of_subset_closure_of_ne (hC : C.Nonempty)
   obtain ⟨v, hvE'⟩ := image_nonempty.mp ((image_tail_of_mem_stackCells hθ hE').symm ▸ hC)
   rcases mem_stackCells.mp hE with ⟨i, rfl⟩ | ⟨j, rfl⟩
   · -- No distinct stack cell can lie in the closure of a section.
-    have hlim : ∀ i' (x : C), Tendsto (θ i') (comap Subtype.val (𝓝 x.1)) (𝓝 (θ (id i') x)) :=
-      fun i' x ↦ by rw [← nhds_subtype]; exact (hc i').tendsto x
-    exact absurd (eq_image_cylinder_sectionSet_of_nonempty_inter_closure subset_closure
-      (fun y ↦ (hθ y).injective) hlim hE' i ⟨v, hvE', hsub hvE'⟩) hne
+    exact absurd (eq_image_cylinder_sectionSet_of_nonempty_inter_closure (σ := id) subset_closure
+      (fun y ↦ (hθ y).injective) (fun i' ↦ (hc i').tendsto_comap_val) hE' i
+      ⟨v, hvE', hsub hvE'⟩) hne
   · -- Inside a sector closure, a distinct stack cell must be an adjacent bounding section.
     rcases mem_stackCells.mp hE' with ⟨i, rfl⟩ | ⟨r, rfl⟩
     · exact ⟨i, j,
-        (image_cylinder_sectionSet_subset_closure_sectorSet_iff hC hc hθ).mp hsub, rfl, rfl⟩
+        (image_cylinder_sectionSet_subset_closure_image_cylinder_sectorSet_iff hC hc hθ).mp hsub,
+        rfl, rfl⟩
     · exact absurd (congrArg (cylinder C '' sectorSet θ ·)
-        ((image_cylinder_sectorSet_subset_closure_sectorSet_iff hC hc hθ).mp hsub)) hne
+        ((image_cylinder_sectorSet_subset_closure_image_cylinder_sectorSet_iff hC hc hθ).mp hsub))
+        hne
+
+private lemma continuous_of_exists_analyticOnSubmanifold {d : ℕ} {S : Set (Fin n → ℝ)} {f : S → ℝ}
+    (hf : ∃ r, (∀ y : S, r y = f y) ∧ AnalyticOnSubmanifold d r S) : Continuous f := by
+  obtain ⟨r, hr, har⟩ := hf
+  exact (continuousOn_iff_continuous_domRestrict.mp har.continuousOn).congr hr
 
 /-- **Frontier condition, part 2 (across lower-dimensional strata).** Let `C` and `B` be analytic
 submanifolds with `B ⊆ closure C` and `dB < dC`, carrying strictly ordered stacks whose sections
@@ -536,12 +519,8 @@ theorem dim_lt_of_mem_stackCells_of_subset_closure {dC dB e e' : ℕ}
     {E E' : Set (Fin (n + 1) → ℝ)} (hE : E ∈ stackCells C θ) (hE' : E' ∈ stackCells B η)
     (hE_sub : IsAnalyticSubmanifold e E) (hE'_sub : IsAnalyticSubmanifold e' E')
     (hsub : E' ⊆ closure E) : e' < e := by
-  have hcC (i : Fin k) : Continuous (θ i) := by
-    obtain ⟨r, hr, har⟩ := haC i
-    exact (continuousOn_iff_continuous_domRestrict.mp har.continuousOn).congr hr
-  have hcB (l : Fin m) : Continuous (η l) := by
-    obtain ⟨r, hr, har⟩ := haB l
-    exact (continuousOn_iff_continuous_domRestrict.mp har.continuousOn).congr hr
+  have hcC (i : Fin k) : Continuous (θ i) := continuous_of_exists_analyticOnSubmanifold (haC i)
+  have hcB (l : Fin m) : Continuous (η l) := continuous_of_exists_analyticOnSubmanifold (haB l)
   have he' : e' = dB ∨ e' = dB + 1 := by
     rcases mem_stackCells.mp hE' with ⟨l, rfl⟩ | ⟨r, rfl⟩
     · obtain ⟨fn, hfn, hafn⟩ := haB l
@@ -573,11 +552,10 @@ theorem dim_lt_of_mem_stackCells_self_of_subset_closure {dC e e' : ℕ}
     {E E' : Set (Fin (n + 1) → ℝ)} (hE : E ∈ stackCells C θ) (hE' : E' ∈ stackCells C θ)
     (hE_sub : IsAnalyticSubmanifold e E) (hE'_sub : IsAnalyticSubmanifold e' E')
     (hsub : E' ⊆ closure E) (hne : E' ≠ E) : e' < e := by
-  have hcC (i : Fin k) : Continuous (θ i) := by
-    obtain ⟨r, hr, har⟩ := haC i
-    exact (continuousOn_iff_continuous_domRestrict.mp har.continuousOn).congr hr
+  have hcC (i : Fin k) : Continuous (θ i) := continuous_of_exists_analyticOnSubmanifold (haC i)
   obtain ⟨i, j, -, rfl, rfl⟩ :=
-    eq_sectionSet_and_eq_sectorSet_of_subset_closure_of_ne hC.nonempty hcC hθ hE hE' hsub hne
+    exists_eq_image_cylinder_sectionSet_and_eq_image_cylinder_sectorSet_of_subset_closure_of_ne
+      hC.nonempty hcC hθ hE hE' hsub hne
   obtain ⟨fn, hfn, hafn⟩ := haC i
   have he' : e' = dC :=
     hE'_sub.dim_eq (isAnalyticSubmanifold_image_cylinder_sectionSet hC i hfn hafn)

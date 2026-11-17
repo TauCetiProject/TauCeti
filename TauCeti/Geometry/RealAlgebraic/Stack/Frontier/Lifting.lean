@@ -9,6 +9,8 @@ public import TauCeti.Geometry.RealAlgebraic.Stack.Frontier.Basic
 public import TauCeti.Geometry.RealAlgebraic.Stack.Selection
 public import TauCeti.Topology.ClusterSet
 import TauCeti.Topology.Algebra.Polynomial.Root.Extension
+import TauCeti.Topology.Constructions.Basic
+import TauCeti.Topology.ContinuousOn.Extension
 import TauCeti.Topology.Order.OrderClosed
 
 /-!
@@ -28,8 +30,9 @@ preconnected approach regions across inductive stack constructions:
   each root section of `C` is witnessed by a family member that remains nonzero and of
   non-increasing degree at `B`;
 * together with approach-region lifting, this propagates both parts of the frontier condition and
-  the frontier local-connectedness invariant across inductive coordinate liftings on cylinders and
-  bounded open boxes.
+  the frontier local-connectedness invariant across inductive coordinate liftings on cylinders;
+* when all section values of a stack over a connected base lie in `Ioo a b`, intersecting any cell
+  with the open slab `{v | v 0 ∈ Ioo a b}` preserves connectedness.
 
 ## Main declarations
 
@@ -46,9 +49,10 @@ preconnected approach regions across inductive stack constructions:
 * `TauCeti.subset_closure_of_mem_biUnion_stackCells`,
   `TauCeti.inter_closure_eq_biUnion_of_mem_biUnion_stackCells`,
   `TauCeti.dim_lt_of_mem_biUnion_stackCells`,
-  `TauCeti.isPreconnectedApproachAt_of_mem_biUnion_stackCells`,
-  `TauCeti.isConnected_inter_Ioo_of_mem_stackCells`: lifting of frontier-compatible partitions
-  and approach-region invariants to cylinders and bounded open boxes.
+  `TauCeti.isPreconnectedApproachAt_of_mem_biUnion_stackCells`: lifting of frontier-compatible
+  partitions and approach-region invariants to cylinders.
+* `TauCeti.isConnected_inter_Ioo_of_mem_stackCells`: connectedness of a stack cell intersected
+  with the open slab `{v | v 0 ∈ Ioo a b}` when all section values lie in `Ioo a b`.
 
 ## References
 
@@ -244,13 +248,7 @@ theorem isPreconnectedApproachAt_image_cylinder_sectorSet (hc : ∀ i, Continuou
   by_cases hv₀ : v₀ ∈ closure (cylinder C '' sectorSet θ j)
   · -- Bound `v₀ 0` between the section limits, then parameterize the slice over `C × Ioo 0 1`.
     choose L hL using hlim
-    have hx_cl : Fin.tail v₀ ∈ closure C :=
-      tail_mem_closure_of_mem_closure_stackCells (image_cylinder_sectorSet_mem_stackCells j) hv₀
-    have htr := closure_image_cylinder_sectorSet_inter_eq
-      (B := {Fin.tail v₀}) (θ := θ) (η := fun i _ ↦ L i) (σ := id)
-      (singleton_subset_iff.mpr hx_cl) hθ
-      (fun i x ↦ by simpa [mem_singleton_iff.mp x.2] using hL i) j
-    obtain ⟨_, hlow₀, hhigh₀⟩ := Set.ext_iff.mp htr v₀ |>.mp ⟨hv₀, rfl⟩
+    obtain ⟨_, hlow₀, hhigh₀⟩ := (mem_closure_image_cylinder_sectorSet_iff hθ hL).mp hv₀
     refine isPreconnectedApproachAt_of_forall_pos_exists_image (β := ℝ) hconn fun δ hδ ↦ ?_
     obtain ⟨low, high, G₁, hG₁, hlow_c, hhigh_c, hlt_G₁, hIoo_eq⟩ :=
       exists_continuous_Ioo_eq_sectorSet_inter hc hθ j hδ hL hlow₀ hhigh₀
@@ -284,7 +282,7 @@ theorem isPreconnectedApproachAt_of_mem_stackCells_of_tail_mem (hc : ∀ i, Cont
     IsPreconnectedApproachAt E v₀ :=
   let x : C := ⟨Fin.tail v₀, hx⟩
   isPreconnectedApproachAt_of_mem_stackCells hc hθ hE hconn fun i ↦
-    ⟨θ i x, by rw [← nhds_subtype C x]; exact (hc i).tendsto x⟩
+    ⟨θ i x, (hc i).tendsto_comap_val x⟩
 
 end ApproachRegions
 
@@ -318,11 +316,7 @@ theorem exists_root_tendsto_of_subset_closure
       ∃ l : Fin D_B.count, ∀ x : B,
         Tendsto (D_C.root i) (comap Subtype.val (𝓝 x.1)) (𝓝 (D_B.root l x)) := by
     obtain ⟨k, hmult, hne, hcoeff, hdeg⟩ := hwit i
-    let f : (Fin n → ℝ) → ℝ := Function.extend Subtype.val (D_C.root i) 0
-    have hf_apply (y : C) : f y.1 = D_C.root i y := Subtype.val_injective.extend_apply _ _ y
-    have hf_cont : ContinuousOn f C :=
-      continuousOn_iff_continuous_domRestrict.mpr <| (D_C.continuous_root i).congr fun y ↦
-        (hf_apply y).symm
+    obtain ⟨f, hf_cont, hf_apply⟩ := (D_C.continuous_root i).exists_continuousOn_eq
     have hf_root (y : Fin n → ℝ) (hy : y ∈ C) : (P k y).eval (f y) = 0 := by
       rw [hf_apply ⟨y, hy⟩]
       exact ((D_C.multiplicity_pos_iff ⟨y, hy⟩).mp hmult).2
@@ -339,8 +333,7 @@ theorem exists_root_tendsto_of_subset_closure
       tendsto_extendFrom_of_isRoot (hBC x.2) (hconn x.1 x.2) hf_cont
         (eventually_nhdsWithin_of_forall hf_root) (hcoeff x.1 x.2) (hdeg x.1 x.2) (hne x.1 x.2)
     have hmap : map (Subtype.val : C → Fin n → ℝ) (comap Subtype.val (𝓝 x.1)) = 𝓝[C] x.1 := by
-      rw [Filter.map_comap, Subtype.range_val]
-      rfl
+      rw [nhdsWithin, Filter.map_comap_setCoe_val]
     have hlim_sub : Tendsto (f ∘ Subtype.val) (comap Subtype.val (𝓝 x.1))
         (𝓝 (extendFrom C f x.1)) := tendsto_map'_iff.mp (hmap.symm ▸ hF_lim)
     have hfeq : f ∘ Subtype.val = D_C.root i := funext hf_apply
@@ -392,16 +385,14 @@ theorem dim_lt_of_mem_stackCells_of_subset_closure {dC dB e e' : ℕ}
   obtain ⟨σ, -, hσ⟩ := D_C.exists_root_tendsto_of_subset_closure D_B hBC hB_conn hconn hwit
   refine TauCeti.dim_lt_of_mem_stackCells_of_subset_closure hC hB hBC hd (fun i ↦ ?_) (fun l ↦ ?_)
     D_C.strictMono_root D_B.strictMono_root hσ hE hE' hE_sub hE'_sub hsub
-  · let r := Function.extend Subtype.val (D_C.root i) 0
-    have hr (y : C) : r y = D_C.root i y := Subtype.val_injective.extend_apply _ _ y
+  · obtain ⟨r, -, hr⟩ := (D_C.continuous_root i).exists_continuousOn_eq
     exact ⟨r, hr, D_C.analyticOnSubmanifold_root hC haC i hr⟩
-  · let r := Function.extend Subtype.val (D_B.root l) 0
-    have hr (x : B) : r x = D_B.root l x := Subtype.val_injective.extend_apply _ _ x
+  · obtain ⟨r, -, hr⟩ := (D_B.continuous_root l).exists_continuousOn_eq
     exact ⟨r, hr, D_B.analyticOnSubmanifold_root hB haB l hr⟩
 
 end Delineation
 
-/-! ### Lifting frontier-compatible partitions and open-box restrictions -/
+/-! ### Lifting frontier-compatible partitions and open-slab intersections -/
 
 section PartitionLifting
 
@@ -425,9 +416,7 @@ theorem subset_closure_of_mem_biUnion_stackCells
   obtain ⟨B, hB, hE'B⟩ := mem_iUnion₂.mp hE'
   obtain ⟨C, hC, hEC⟩ := mem_iUnion₂.mp hE
   obtain ⟨v, hvE', hvcl⟩ := hne
-  have hvB : Fin.tail v ∈ B := by
-    rw [← image_tail_of_mem_stackCells (hθ B hB) hE'B]
-    exact mem_image_of_mem Fin.tail hvE'
+  have hvB : Fin.tail v ∈ B := tail_mem_of_mem_stackCells hE'B hvE'
   have hvC_cl : Fin.tail v ∈ closure C :=
     tail_mem_closure_of_mem_closure_stackCells hEC hvcl
   have hBC : B ⊆ closure C := hfront₁ B hB C hC ⟨Fin.tail v, hvB, hvC_cl⟩
@@ -487,9 +476,7 @@ theorem dim_lt_of_mem_biUnion_stackCells {d : Set (Fin n → ℝ) → ℕ} {e' e
   obtain ⟨B, hB, hE'B⟩ := mem_iUnion₂.mp hE'
   obtain ⟨C, hC, hEC⟩ := mem_iUnion₂.mp hE
   obtain ⟨v, hvE'⟩ := hE'_sub.nonempty
-  have hvB : Fin.tail v ∈ B := by
-    rw [← image_tail_of_mem_stackCells (hθ B hB) hE'B]
-    exact mem_image_of_mem Fin.tail hvE'
+  have hvB : Fin.tail v ∈ B := tail_mem_of_mem_stackCells hE'B hvE'
   have hvC_cl : Fin.tail v ∈ closure C :=
     tail_mem_closure_of_mem_closure_stackCells hEC (hsub hvE')
   have hBC : B ⊆ closure C := hfront₁ B hB C hC ⟨Fin.tail v, hvB, hvC_cl⟩
