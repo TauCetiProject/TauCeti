@@ -319,8 +319,12 @@ variable (hρ : ∀ a, IsFiberGauge (ρ a))
 
 /-- On the summand of `a`, the collar deformation of the disjoint union is that of `D_ρₐ(Eₐ)`. -/
 private lemma sigmaDiscCollar_apply (t : I) (x : Σ a, gaugeDiscBundle (ρ a)) :
-    sigmaDiscCollar hρ (t, x) = ⟨x.1, discCollar (hρ x.1) (t, x.2)⟩ :=
-  ContinuousMap.Homotopy.sigma_apply (X := fun a ↦ gaugeDiscBundle (ρ a)) _ t x.1 x.2
+    sigmaDiscCollar hρ (t, x) = ⟨x.1, discCollar (hρ x.1) (t, x.2)⟩ := by
+  obtain ⟨a, v⟩ := x
+  simp only [sigmaDiscCollar, ContinuousMap.Homotopy.coe_toContinuousMap,
+    ContinuousMap.Homotopy.sigma_apply, ContinuousMap.Homotopy.comp_apply,
+    ContinuousMap.Homotopy.refl_apply, ContinuousMap.coe_mk]
+  exact congrArg (Sigma.mk a) (ContinuousMap.Homotopy.ofApplyZero_apply (f := .id _) _ _ _)
 
 private lemma sigmaDiscCollar_zero (x : Σ a, gaugeDiscBundle (ρ a)) :
     sigmaDiscCollar hρ (0, x) = x := by

@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Singular.Excision
 public import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 public import TauCeti.Topology.Homotopy.Attach
+public import TauCeti.Topology.Homotopy.OfApplyZero
 public import TauCeti.Topology.Maps.IsClosedEmbedding
 
 /-!
@@ -41,6 +42,11 @@ lies in the image of `φ`, so excision for the open cover of `Z` by `N` and the 
   `TopPair.cond_union_image_compl_subset_range_or_subset_range_fst`: the open cover of `Z` by
   `X ∪ φ(O)` and the complement of `X` to which excision is applied, in homology and in
   cohomology.
+* `TopPair.exists_homotopy_id_of_deformation` and `TopPair.exists_homotopy_id_attach`: the
+  deformation `H` and its extension to `Z` as homotopies enlarging `S` to `O` and `X` to
+  `X ∪ φ(O)`, in homology and in cohomology.
+* `TopPair.comp_ofSubsetMap_id_eq`: the comparison square of maps of pairs relating `f` to the map
+  of the enlarged pairs, in homology and in cohomology.
 * `TopPair.isIso_singularHomologyMap_ofSubsetMap_union_image`: excision of the complement of the
   attached space from the thickened pair `(Z, X ∪ φ(O))`.
 * `TopPair.isIso_singularHomologyMap_of_attach`: attaching along a subspace with a deformation
@@ -57,7 +63,7 @@ public section
 noncomputable section
 
 open CategoryTheory Limits Set Topology TauCeti
-open ContinuousMap.Homotopy (ofApplyZero)
+open ContinuousMap.Homotopy (ofApplyZero ofApplyZero_apply)
 open scoped unitInterval
 
 universe w v u
@@ -106,7 +112,58 @@ lemma cond_union_image_compl_subset_range_or_subset_range_fst (hcover : X ∪ ra
 
 end Cover
 
+section Deformation
+
+/-- **A deformation as a homotopy from the identity.** A deformation `H` of `Y` which starts at the
+identity, keeps `B` and `N` inside themselves and pushes `N` into `B` at time one is a homotopy from
+the identity of `Y` to a map carrying `N` into `B`, keeping `B` and `N` inside themselves. These are
+the hypotheses of `TopPair.isIso_singularHomologyMap_ofSubsetMap_id_of_homotopy` and of its
+cohomology form. -/
+lemma exists_homotopy_id_of_deformation {Y : TopCat.{w}} {B N : Set Y} (H : C(I × Y, Y))
+    (hH₀ : ∀ y, H (0, y) = y) (hHB : ∀ t, ∀ y ∈ B, H (t, y) ∈ B)
+    (hHN : ∀ t, ∀ y ∈ N, H (t, y) ∈ N) (hH₁ : ∀ y ∈ N, H (1, y) ∈ B) :
+    ∃ (ρ : Y ⟶ Y) (G : (TopCat.Hom.hom (𝟙 Y)).Homotopy ρ.hom),
+      (∀ (τ : I) (y : Y), y ∈ B → G (τ, y) ∈ B) ∧ (∀ (τ : I) (y : Y), y ∈ N → G (τ, y) ∈ N) ∧
+        MapsTo ρ N B :=
+  ⟨TopCat.ofHom (H.curry 1), ofApplyZero H hH₀,
+    fun τ y hy ↦ (ofApplyZero_apply (f := TopCat.Hom.hom (𝟙 Y)) H hH₀ (τ, y)).symm ▸ hHB τ y hy,
+    fun τ y hy ↦ (ofApplyZero_apply (f := TopCat.Hom.hom (𝟙 Y)) H hH₀ (τ, y)).symm ▸ hHN τ y hy,
+    hH₁⟩
+
+/-- **The deformation of an attachment.** In the setting of `TauCeti.attachHomotopy`, let `H` start
+at the identity, keep `O` inside `O` and push `O` into `S` at time one, and let `φ` send `S` into
+`X`. Then the identity of `Z` is homotopic, keeping `X` and the thickening `X ∪ φ(O)` inside
+themselves, to a map pushing `X ∪ φ(O)` into `X`: the extension of `H` to `Z`. -/
+lemma exists_homotopy_id_attach {A Z : TopCat.{w}} {S O : Set A} {X : Set Z} {φ : A ⟶ Z}
+    (hφ : IsClosedEmbedding φ) (hX : IsClosed X) (hφX : ∀ a, φ a ∈ X → a ∈ S)
+    (hcover : X ∪ range φ = univ) (hφS : MapsTo φ S X) (H : C(I × A, A))
+    (hH₀ : ∀ a, H (0, a) = a) (hHS : ∀ t, ∀ a ∈ S, H (t, a) = a)
+    (hHO : ∀ t, ∀ a ∈ O, H (t, a) ∈ O) (hH₁ : ∀ a ∈ O, H (1, a) ∈ S) :
+    ∃ (ρ : Z ⟶ Z) (G : (TopCat.Hom.hom (𝟙 Z)).Homotopy ρ.hom),
+      (∀ (τ : I) (z : Z), z ∈ X → G (τ, z) ∈ X) ∧
+        (∀ (τ : I) (z : Z), z ∈ X ∪ φ '' O → G (τ, z) ∈ X ∪ φ '' O) ∧ MapsTo ρ (X ∪ φ '' O) X :=
+  exists_homotopy_id_of_deformation (attachHomotopy hφ hX hφX hcover H hHS)
+    (attachHomotopy_zero hφ hX hφX hcover H hHS hH₀)
+    (fun t _ hz ↦ (attachHomotopy_apply_of_mem hφ hX hφX hcover H hHS t hz).symm ▸ hz)
+    (fun t _ hz ↦ attachHomotopy_mem_union_image hφ hX hφX hcover H hHS hHO t hz)
+    (fun _ hz ↦ attachHomotopy_one_mem hφ hX hφX hcover H hHS hφS hH₁ hz)
+
+end Deformation
+
 variable {P : TopPair.{w}} {Z : TopCat.{w}} {X : Set Z} {O : Set P.fst}
+
+/-- **The comparison square of an attachment.** A map of pairs `f : (A, S) ⟶ (Z, X)` followed by an
+enlargement `(Z, X) ⟶ (Z, N)` is the isomorphism of `(A, S)` with the pair of `A` and the range of
+the embedding of `S`, followed by an enlargement `(A, S) ⟶ (A, O)` and the map `(A, O) ⟶ (Z, N)`
+induced by the map `φ` underlying `f`: on the ambient spaces both composites are `φ`. -/
+lemma comp_ofSubsetMap_id_eq {N : Set Z} (f : P ⟶ ofSubset X) (hXN : MapsTo (𝟙 Z) X N)
+    (hSO : MapsTo (𝟙 P.fst) (range P.map) O) (hφO : MapsTo (Hom.fst f) O N) :
+    f ≫ ofSubsetMap (𝟙 Z) hXN =
+      (isoOfSubsetRange P).hom ≫ ofSubsetMap (𝟙 P.fst) hSO ≫
+        ofSubsetMap (Y := Z) (Hom.fst f) hφO :=
+  (congrArg (· ≫ ofSubsetMap (𝟙 Z) hXN) (isoOfSubsetRange_hom_comp_ofSubsetMap f)).symm.trans <|
+    (Category.assoc _ _ _).trans <| congrArg ((isoOfSubsetRange P).hom ≫ ·) <|
+      ofSubsetMap_comp_ofSubsetMap_eq _ _ _ _ ((Category.comp_id _).trans (Category.id_comp _).symm)
 
 variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C) (n : ℕ)
 
@@ -143,45 +200,30 @@ theorem isIso_singularHomologyMap_of_attach (f : P ⟶ ofSubset X) (hX : IsClose
     IsIso (TopPair.singularHomologyMap f R n) := by
   -- The map `φ` with its codomain read as `Z` rather than as the ambient space of `(Z, X)`.
   let g : P.fst ⟶ Z := Hom.fst f
-  have hφS : MapsTo g (range P.map) X := mapsTo_range_map_of_hom f
-  -- The deformation of `A` and its extension to `Z` enlarge both subspaces.
+  -- Both subspaces are enlarged: `S` to `O`, and `X` to the open thickening `X ∪ φ(O)`.
   have hSO' : MapsTo (𝟙 P.fst) (range P.map) O :=
     ConcreteCategory.coe_id (X := P.fst) ▸ (mapsTo_id _).mono_right hSO
   have hXN : MapsTo (𝟙 Z) X (X ∪ g '' O) := fun _ hz ↦ Or.inl hz
-  let G := attachHomotopy hf hX hfX hcover H hHS
-  have hA : IsIso (TopPair.singularHomologyMap (ofSubsetMap (𝟙 P.fst) hSO') R n) :=
-    isIso_singularHomologyMap_ofSubsetMap_id_of_homotopy hSO'
-      (ρ := TopCat.ofHom (H.curry 1))
-      (ofApplyZero H hH₀)
-      (fun t a ha ↦ (hHS t a ha).symm ▸ ha) hHO (fun a ha ↦ hH₁ a ha) R n
-  have hZ : IsIso (TopPair.singularHomologyMap (ofSubsetMap (𝟙 Z) hXN) R n) :=
-    isIso_singularHomologyMap_ofSubsetMap_id_of_homotopy hXN (ρ := TopCat.ofHom (G.curry 1))
-      (ofApplyZero G (attachHomotopy_zero hf hX hfX hcover H hHS hH₀))
-      (fun t _ hz ↦ (attachHomotopy_apply_of_mem hf hX hfX hcover H hHS t hz).symm ▸ hz)
-      (fun t _ hz ↦ attachHomotopy_mem_union_image hf hX hfX hcover H hHS hHO t hz)
-      (fun _ hz ↦ attachHomotopy_one_mem hf hX hfX hcover H hHS hφS hH₁ hz) R n
-  -- Excision for the open cover of `Z` by the thickening and the complement of `X`.
   have hφO : MapsTo g O (X ∪ g '' O) := fun a ha ↦ Or.inr ⟨a, ha, rfl⟩
-  have hexc := isIso_singularHomologyMap_ofSubsetMap_union_image R n g hX hf hO
+  -- The deformation `H` and its extension to `Z` make both enlargements isomorphisms, and excision
+  -- for the open cover of `Z` by the thickening and the complement of `X` makes the map of the
+  -- enlarged pairs one.
+  obtain ⟨_, HA, hA₁, hA₂, hA₃⟩ := exists_homotopy_id_of_deformation H hH₀
+    (fun t a ha ↦ (hHS t a ha).symm ▸ ha) hHO hH₁
+  obtain ⟨_, HZ, hZ₁, hZ₂, hZ₃⟩ := exists_homotopy_id_attach hf hX hfX hcover
+    (mapsTo_range_map_of_hom f) H hH₀ hHS hHO hH₁
+  have := isIso_singularHomologyMap_ofSubsetMap_id_of_homotopy hSO' HA hA₁ hA₂ hA₃ R n
+  have := isIso_singularHomologyMap_ofSubsetMap_id_of_homotopy hXN HZ hZ₁ hZ₂ hZ₃ R n
+  have := isIso_singularHomologyMap_ofSubsetMap_union_image R n g hX hf hO
     (fun a ha ↦ hSO (hfX a ha)) hcover hφO
-  -- The comparison square: both composites are `φ` on the ambient spaces.
-  have hsq : ofSubsetMap g hφS ≫ ofSubsetMap (𝟙 Z) hXN =
-      ofSubsetMap (𝟙 P.fst) hSO' ≫ ofSubsetMap g hφO :=
-    ofSubsetMap_comp_ofSubsetMap_eq _ _ _ _ ((Category.comp_id g).trans (Category.id_comp g).symm)
-  have : IsIso (TopPair.singularHomologyMap (ofSubsetMap g hφS) R n ≫
-      TopPair.singularHomologyMap (ofSubsetMap (𝟙 Z) hXN) R n) := by
-    rw [← singularHomologyMap_comp, hsq, singularHomologyMap_comp]
-    infer_instance
-  have := IsIso.of_isIso_comp_right (TopPair.singularHomologyMap (ofSubsetMap g hφS) R n)
-    (TopPair.singularHomologyMap (ofSubsetMap (𝟙 Z) hXN) R n)
-  -- Finally `f` factors through the isomorphism of `P` with the pair of `A` and the range of its
-  -- embedding.
-  have hfe : f = (isoOfSubsetRange P).hom ≫ ofSubsetMap g hφS :=
-    (isoOfSubsetRange_hom_comp_ofSubsetMap f).symm
-  rw [hfe, singularHomologyMap_comp]
   have : IsIso (TopPair.singularHomologyMap (isoOfSubsetRange P).hom R n) := by
     rw [← singularHomologyMapIso_hom]
     infer_instance
-  infer_instance
+  have : IsIso (TopPair.singularHomologyMap f R n ≫
+      TopPair.singularHomologyMap (ofSubsetMap (𝟙 Z) hXN) R n) := by
+    rw [← singularHomologyMap_comp, comp_ofSubsetMap_id_eq f hXN hSO' hφO,
+      singularHomologyMap_comp, singularHomologyMap_comp]
+    infer_instance
+  exact IsIso.of_isIso_comp_right _ (TopPair.singularHomologyMap (ofSubsetMap (𝟙 Z) hXN) R n)
 
 end TopPair
