@@ -48,6 +48,9 @@ decays rapidly, and the remaining terms are controlled by the rapid decay of `a_
 * `Distribution.exists_norm_localFourier_le`: the localized Fourier transform of a distribution
   grows at most polynomially, with a degree that is uniform over the cutoffs supported in a fixed
   compact set (`Distribution.exists_forall_norm_localFourier_le`).
+* `Distribution.hasSum_fourier_mul_localFourier`: the pairing of `T` with a test function supported
+  in a compact set that meets none of its nonzero translates by a lattice `L` is a Fourier series
+  over `L^∨` in the localized Fourier transforms of `T`.
 * `Distribution.exists_hasSum_localFourier_of_eq_mul`: the localized Fourier transform with
   cutoff `φ g` is a rapidly decreasing superposition of translates of the one with cutoff `φ`.
 * `Distribution.exists_one_add_norm_pow_mul_norm_localFourier_le_of_eq_mul`: decay of each order
@@ -159,6 +162,41 @@ theorem exists_norm_localFourier_le (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) :
     (K := ⟨tsupport φ, φ.hasCompactSupport⟩) φ.tsupport_subset
   obtain ⟨C, hC⟩ := hk φ subset_rfl
   exact ⟨C, k, hC⟩
+
+/-- **Fourier series of a pairing.** Let `K ⊆ Ω` be a compact set meeting none of its translates by
+the nonzero vectors of a lattice `L`, and let `χ` and `f` be test functions supported in `K`, with
+`χ` equal to one on the support of `f`. Then
+
+`T f = ∑ m : L^∨, (covolume L)⁻¹ 𝓕 f (m) T (χ e_(-m))`,
+
+where `T (χ e_(-m))` is the localized Fourier transform of `T` with cutoff `χ` at `-m`. -/
+theorem hasSum_fourier_mul_localFourier [MeasurableSpace E] [BorelSpace E] (T : 𝓓'(Ω, ℂ))
+    {K : Compacts E} (hKΩ : (K : Set E) ⊆ Ω) (L : Submodule ℤ E)
+    [DiscreteTopology L] [IsZLattice ℝ L] (hL : ∀ x ∈ K, ∀ ℓ : L, x + ℓ ∈ K → ℓ = 0)
+    {χ f : 𝓓(Ω, ℂ)} (hχ : tsupport χ ⊆ K) (hf : tsupport f ⊆ K) (hχf : EqOn χ 1 (support f)) :
+    HasSum (fun m : ZLattice.dual L ↦
+      (ZLattice.covolume L : ℂ)⁻¹ * 𝓕 (f : E → ℂ) m * T.localFourier χ (-m))
+      (T.complexPairing f) := by
+  let fK : 𝓓_{K}(E, ℂ) :=
+    ContDiffMapSupportedIn.of_support_subset f.contDiff ((subset_tsupport _).trans hf)
+  let χK : 𝓓_{K}(E, ℂ) :=
+    ContDiffMapSupportedIn.of_support_subset χ.contDiff ((subset_tsupport _).trans hχ)
+  have hexp := ContDiffMapSupportedIn.hasSum_fourier_smul_modulate L fK χK hL
+    (fun x hx ↦ by simpa [fK, χK, ContDiffMapSupportedIn.coe_of_support_subset] using hχf hx)
+  let Λ : 𝓓_{K}(E, ℂ) →L[ℂ] ℂ := T.complexPairing ∘L ofSupportedInCLM ℂ hKΩ
+  have hf' : Λ fK = T.complexPairing f := by
+    simp only [Λ, ContinuousLinearMap.comp_apply, coe_ofSupportedInCLM]
+    congr 1
+  have hfK : (fK : E → ℂ) = f := by
+    ext x
+    simp [fK, ContDiffMapSupportedIn.coe_of_support_subset]
+  have hmap := hexp.map Λ Λ.continuous
+  rw [hf'] at hmap
+  convert hmap using 2 with m
+  simp only [Function.comp_apply, map_smul, smul_eq_mul, Λ, ContinuousLinearMap.comp_apply,
+    coe_ofSupportedInCLM, hfK]
+  rw [localFourier_eq_complexPairing_modulate T hKΩ (f := χK)
+    (fun x ↦ by simp [χK, ContDiffMapSupportedIn.coe_of_support_subset]), neg_neg]
 
 /-- **The localized Fourier transform of a smooth multiple.** If the cutoff `ψ` is `φ g` with `g`
 smooth on `Ω`, then there are a subgroup `L` of `E` and rapidly decreasing coefficients `a : L → ℂ`
