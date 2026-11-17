@@ -71,6 +71,8 @@ space, and the product law computes the orientation of a product such as
   positive for the symplectic orientation.
 * `TauCeti.SymplecticForm.Tames.orientation_eq`: symplectic forms taming a common almost complex
   structure have the same symplectic orientation.
+* `Module.Basis.orientation_eq_finTwoProd_of_apply_one_eq`: on the plane `ℝ × ℝ`, every complex
+  frame `(e, (-e₂, e₁))` is positive for the orientation of the standard basis.
 
 ## References
 
@@ -360,3 +362,20 @@ theorem Tames.orientation_eq (hJ : ω.Tames J) {ω' : SymplecticForm V} (hJ' : �
 end SymplecticForm
 
 end TauCeti
+
+/-- **Complex frames of the plane are positive.** A basis `(e, (-e₂, e₁))` of `ℝ × ℝ`, whose second
+vector is the image of the first under the standard complex structure `(a, b) ↦ (-b, a)`, has the
+orientation of the standard basis `((1, 0), (0, 1))`: the standard symplectic form `ds ∧ dt` tames
+this structure (`TauCeti.SymplecticForm.Tames.orientation_reindex`) and induces that orientation
+(`TauCeti.SymplecticForm.orientation_stdSymplecticForm_real`). -/
+theorem Module.Basis.orientation_eq_finTwoProd_of_apply_one_eq (b : Basis (Fin 2) ℝ (ℝ × ℝ))
+    (hb : b 1 = (-(b 0).2, (b 0).1)) :
+    b.orientation = (Basis.finTwoProd ℝ).orientation := by
+  have h : 1 * 2 = 2 := rfl
+  let e : Fin 1 × Fin 2 ≃ Fin 2 := finProdFinEquiv.trans (finCongr h)
+  have he : (b.reindex e.symm).reindex e = b := Basis.eq_of_apply_eq fun i ↦ by simp
+  rw [← he, (TauCeti.stdSymplecticForm_tames_product (V := ℝ)).orientation_reindex (fun i ↦ ?_)
+    (by simp) h, TauCeti.SymplecticForm.orientation_stdSymplecticForm_real]
+  fin_cases i
+  simp only [Basis.reindex_apply, Equiv.symm_symm]
+  exact hb

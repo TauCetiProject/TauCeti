@@ -136,25 +136,13 @@ complex structure of `AddCircle p × AddCircle q` is positive for the product of
 orientations of the two circles: if `e = (a, b)` in the real coordinates of the circles, then
 `J e = (-b, a)`, and the standard symplectic form `ds ∧ dt` of the plane, which induces the
 orientation of the standard frame `((1, 0), (0, 1))`, tames this structure
-(`TauCeti.SymplecticForm.Tames.orientation_reindex`). -/
+(`Module.Basis.orientation_eq_finTwoProd_of_apply_one_eq`). -/
 theorem orientation_eq_orientationAt_of_apply_one_eq_addCircleProd (x : AddCircle p × AddCircle q)
     (b : Module.Basis (Fin 2) ℝ (TangentSpace (𝓘(ℝ).prod 𝓘(ℝ)) x))
     (hb : b 1 = addCircleProd p q x (b 0)) :
     b.orientation = ((AddCircle.orientation p).prod (AddCircle.orientation q)).orientationAt x := by
   rw [AddCircle.orientationAt_orientation_prod_orientation]
-  -- On the plane `ℝ × ℝ`, `ds ∧ dt` tames the structure `(a, b) ↦ (-b, a)`, so its adapted frames
-  -- `(e, (-e₂, e₁))` are positive.
-  have key (b' : Module.Basis (Fin 2) ℝ (ℝ × ℝ)) (hb' : b' 1 = (-(b' 0).2, (b' 0).1)) :
-      b'.orientation = (Module.Basis.finTwoProd ℝ).orientation := by
-    have h : 1 * 2 = 2 := rfl
-    let e : Fin 1 × Fin 2 ≃ Fin 2 := finProdFinEquiv.trans (finCongr h)
-    have he : (b'.reindex e.symm).reindex e = b' := Module.Basis.eq_of_apply_eq fun i ↦ by simp
-    rw [← he, (stdSymplecticForm_tames_product (V := ℝ)).orientation_reindex (fun i ↦ ?_)
-      (by simp) h, SymplecticForm.orientation_stdSymplecticForm_real]
-    fin_cases i
-    simp only [Module.Basis.reindex_apply, Equiv.symm_symm]
-    exact hb'
   -- The tangent planes of the torus are `ℝ × ℝ`.
-  exact key b (hb.trans (addCircleProd_apply p q x _))
+  exact b.orientation_eq_finTwoProd_of_apply_one_eq (hb.trans (addCircleProd_apply p q x _))
 
 end TauCeti.SmoothAlmostComplexStructure
