@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.SignedSymmetricAlgebra.Parity.Grading
 public import TauCeti.RingTheory.GradedAlgebra.GradeInvolution
 import Mathlib.GroupTheory.GroupAction.Ring
 import TauCeti.Algebra.Homology.DG.Algebra.Parity
+import TauCeti.LinearAlgebra.Matrix.Triangular.Derivation
 
 /-!
 # Odd derivations of the parity signed algebra
@@ -23,7 +24,8 @@ For an internal `ZMod 2`-grading `G` of an `R`-module `V`, an odd linear map
 No lift of `G` to an integer grading is used. Instead, the grade involution
 `σ = TauCeti.gradeInvolution (paritySignedSymPiece G)` acts by `(-1 : ℤˣ) ^ i` on each homogeneous
 piece, and instantiating the shared lower-triangular matrix construction
-(`TauCeti.triangularDerivationMap`, `TauCeti.triangularDerivation`) with `σ` lifts
+(`TauCeti.triangularDerivationMap`, `TauCeti.triangularDerivation` in
+`TauCeti.LinearAlgebra.Matrix.Triangular.Derivation`) with `σ` lifts
 `x ↦ [[x, 0], [δ x, σ x]]` via `ParitySignedSym.lift` to an algebra map whose lower-left entry
 satisfies `d (a * b) = d a * b + σ a * d b` on arbitrary elements.
 
@@ -61,8 +63,8 @@ When `V` carries an internal integer grading `H`, the presentation equivalence
   where the contact homology differential is defined as an odd derivation of the free
   supercommutative algebra even when no canonical integer grading is fixed.
 * This file instantiates the shared lower-triangular `2 × 2` matrix derivation construction from
-  `TauCeti.LinearAlgebra.SignedSymmetricAlgebra.Derivation` with `TauCeti.gradeInvolution`, and
-  adapts the uniqueness and square-zero proof architecture of `TauCeti.SignedSym.liftDerivation`.
+  `TauCeti.LinearAlgebra.Matrix.Triangular.Derivation` with `TauCeti.gradeInvolution`, and adapts
+  the uniqueness and square-zero proof architecture of `TauCeti.SignedSym.liftDerivation`.
 -/
 
 public section
