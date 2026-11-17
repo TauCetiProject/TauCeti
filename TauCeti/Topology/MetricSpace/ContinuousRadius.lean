@@ -170,9 +170,9 @@ theorem exists_continuous_pos_forall_dist_lt {M : Type*} [PseudoMetricSpace M] {
   · split_ifs with hne
     · exact (hU.isClosed_compl.notMem_iff_infDist_pos hne).mp fun h ↦ h hx
     · exact one_pos
-  · by_contra hyU
-    have hlt : dist y (G x) < infDist (G x) Uᶜ := by
-      simpa [show Uᶜ.Nonempty from ⟨y, hyU⟩] using hy
-    exact (infDist_le_dist_of_mem (show y ∈ Uᶜ from hyU)).not_gt (by rwa [dist_comm] at hlt)
+  · split_ifs at hy with hne
+    · exact ball_infDist_compl_subset (mem_ball.2 hy)
+    · by_contra hyU
+      exact hne ⟨y, hyU⟩
 
 end IsOpen
