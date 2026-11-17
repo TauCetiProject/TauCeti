@@ -158,18 +158,13 @@ private theorem exists_chart_of_norm_lt {α : ℝ≥0} (hα0 : 0 < α) (hα1 : �
           IsComplexLinear J.toLinearMap (AlmostComplexStructure.ofComplexModule ℂ).toLinearMap
             (fderiv ℝ φ w).toLinearMap := by
   obtain ⟨δ, hδ, C₁, hchart⟩ := exists_isComplexLinear_chart hα0 hα1 (0 : ℂ) two_pos
-  refine ⟨min δ (min 1 ((C₁ : ℝ) + 1)⁻¹), lt_min hδ (lt_min one_pos (by positivity)),
-    fun f hf hfδ ↦ ?_⟩
+  refine ⟨min δ 1, lt_min hδ one_pos, fun f hf hfδ ↦ ?_⟩
   have hf1 (w : ℂ) : ‖f w‖ < 1 :=
-    (f.norm_apply_le w).trans_lt (hfδ.trans_le ((min_le_right _ _).trans (min_le_left _ _)))
-  have hC₁f : (C₁ : ℝ) * ‖f‖ < 1 := by
-    have h := hfδ.trans_le ((min_le_right _ _).trans (min_le_right _ _))
-    rw [← one_div, lt_div_iff₀' (by positivity)] at h
-    nlinarith [norm_nonneg f, C₁.coe_nonneg]
+    (f.norm_apply_le w).trans_lt (hfδ.trans_le (min_le_right _ _))
   -- The structure with coefficient `f`, standard in the chart of the Beltrami solution.
   set Jf : ℂ → AlmostComplexStructure ℂ := fun w ↦ (coefficientEquiv.symm ⟨f w, hf1 w⟩).val
   have hJf (w : ℂ) : stdComplexSymplecticForm.Tames (Jf w) := (coefficientEquiv.symm _).property
-  obtain ⟨h, -, -, -, -, hnear, hhol, -, hψ0, hφC1, -, -, hlin, e, he, he0, -⟩ :=
+  obtain ⟨h, -, -, -, -, -, hhol, hinv, -, hψ0, hφC1, -, -, hlin, e, he, he0, -⟩ :=
     hchart Jf (fun w _ ↦ hJf w) f hf (fun w _ ↦ by simp [Jf]) (hfδ.trans_le (min_le_left _ _))
   have hφ (w : ℂ) := fderiv_normalizedChart (ψ := cauchySolution h) (c := 0) (z := w)
   refine ⟨_, e, he, he0, by convert hφC1 using 2; norm_num,
@@ -178,13 +173,9 @@ private theorem exists_chart_of_norm_lt {α : ℝ≥0} (hα0 : 0 < α) (hα1 : �
   · intro w hw w' hw'
     rw [hφ, hφ, dist_eq_norm, ← smul_sub, norm_smul, ← dist_eq_norm, NNReal.coe_mul, mul_assoc]
     exact mul_le_mul_of_nonneg_left (hhol.dist_le hw hw') (norm_nonneg _)
-  · -- `dψ(w)` is within distance less than one of the identity, so it is a unit.
-    have hunit := (Units.oneSub (1 - fderiv ℝ (cauchySolution h) w)
-      (by rw [norm_sub_rev, ContinuousLinearMap.one_def]; exact (hnear w hw).trans_lt hC₁f)).isUnit
-    rw [Units.val_oneSub, sub_sub_cancel] at hunit
-    obtain ⟨D, hD⟩ := ContinuousLinearMap.isInvertible_iff_isUnit.mpr hunit
-    rw [hφ, ← hD]
-    exact (smul_right_injective ℂ (inv_ne_zero hψ0)).comp D.injective
+  · obtain ⟨L, hL⟩ := hinv w hw
+    rw [hφ, hL.hasFDerivAt.fderiv]
+    exact (smul_right_injective ℂ (inv_ne_zero hψ0)).comp L.injective
   · obtain rfl : J = Jf w := congrArg Subtype.val (coefficientEquiv.injective
       (Subtype.ext (hJw.trans (by simp [Jf]))) : (⟨J, hJ⟩ : {J // _}) = ⟨Jf w, hJf w⟩)
     exact hlin w hw
