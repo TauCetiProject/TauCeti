@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Module.Primitive
 public import TauCeti.LinearAlgebra.IntegralLattice.Neighbor.SignedUnitLattice
 public import TauCeti.LinearAlgebra.IntegralLattice.Orthogonal.UnitNorm
 public import TauCeti.LinearAlgebra.IntegralLattice.Restriction
@@ -14,10 +13,10 @@ public import TauCeti.LinearAlgebra.IntegralLattice.Restriction
 # Hyperbolic splitting, parity-preserving unit-norm splitting, and the even-to-odd reduction
 
 Rationally isotropic unimodular integral lattices split off `hyperbolicPlane` (when even) or
-`rankOne 1` and `rankOne (-1)` with odd complements (when odd). Unimodular lattices of signature
-`(1, 0, 1)` are automatically isotropic and isometric to `hyperbolicPlane` or
-`signedUnitLattice 1 1`, reducing rationally isotropic even unimodular classification to even
-Kneser two-neighbors of odd unimodular lattices.
+split off either `rankOne 1` or `rankOne (-1)` with an odd unimodular complement (when odd).
+Unimodular lattices of signature `(1, 0, 1)` are automatically isotropic and isometric to
+`hyperbolicPlane` or `signedUnitLattice 1 1`, reducing rationally isotropic even unimodular
+classification to even Kneser two-neighbors of odd unimodular lattices.
 
 ## References
 
@@ -31,40 +30,8 @@ open Module TensorProduct
 
 namespace TauCeti.IntegralLattice
 
-universe u v
-variable {V : Type u} {W : Type v} [AddCommGroup V] [Module ℚ V] [AddCommGroup W] [Module ℚ W]
-
-/-- An orthogonal direct sum is unimodular if and only if both summands are unimodular. -/
-theorem isUnimodular_orthogonalSum_iff (A : IntegralLattice V) (B : IntegralLattice W) :
-    (A.orthogonalSum B).IsUnimodular ↔ A.IsUnimodular ∧ B.IsUnimodular := by
-  simp only [isUnimodular_iff_discriminant_eq_one, discriminant_orthogonalSum, mul_eq_one]
-
-/-- Every ambient rational vector has a positive integer multiple lying in the lattice carrier. -/
-theorem exists_pos_nsmul_mem_carrier (L : IntegralLattice V) (x : V) :
-    ∃ n : ℕ, 0 < n ∧ n • x ∈ L.carrier := by
-  obtain ⟨r, hr, hrx⟩ := Submodule.IsLattice.exists_ne_zero_smul_mem ℚ L.carrier
-    Submodule.IsLattice.span_eq_top x
-  refine ⟨r.natAbs, Int.natAbs_pos.mpr hr, ?_⟩
-  have hsign := L.carrier.smul_mem (Int.sign r) hrx
-  rwa [smul_smul, Int.sign_mul_self, natCast_zsmul] at hsign
-
-/-- **Rational isotropy ↔ primitive carrier isotropic vector.** -/
-theorem not_anisotropic_norm_iff_exists_isPrimitive (L : IntegralLattice V) :
-    ¬ L.norm.Anisotropic ↔ ∃ v : L, IsPrimitive v ∧ L.integralNorm v = 0 := by
-  rw [QuadraticMap.not_anisotropic_iff_exists]
-  refine ⟨fun ⟨x, hx0, hxn⟩ ↦ ?_, fun ⟨v, hv, hvn⟩ ↦
-    ⟨v, fun hv0 ↦ hv.ne_zero (Subtype.ext hv0), by rw [← L.integralNorm_cast, hvn, Int.cast_zero]⟩⟩
-  obtain ⟨n, hn, hnx⟩ := L.exists_pos_nsmul_mem_carrier x
-  let y : L := ⟨n • x, hnx⟩
-  have hy0 : y ≠ 0 := fun hy ↦ hx0 ((smul_eq_zero.mp
-    ((Nat.cast_smul_eq_nsmul ℚ n x).trans (congrArg Subtype.val hy))).resolve_left
-    (Nat.cast_ne_zero.mpr hn.ne'))
-  have hyn : L.integralNorm y = 0 := Int.cast_injective (α := ℚ) (by
-    rw [L.integralNorm_cast, Int.cast_zero]
-    dsimp only [y]; rw [← Nat.cast_smul_eq_nsmul ℚ, QuadraticMap.map_smul, hxn, smul_zero])
-  obtain ⟨d, v, hd, hv, hyv⟩ := exists_eq_zsmul_isPrimitive hy0
-  rw [hyv, QuadraticMap.map_smul, smul_eq_mul] at hyn
-  exact ⟨v, hv, (mul_eq_zero.mp hyn).resolve_left (mul_ne_zero hd.ne' hd.ne')⟩
+universe u
+variable {V : Type u} [AddCommGroup V] [Module ℚ V]
 
 /-- In a rationally isotropic unimodular lattice, there exist `v, u ∈ L` with `v² = 0` and
 `B(v, u) = 1`. -/
@@ -80,6 +47,11 @@ theorem exists_integralNorm_eq_zero_integralForm_eq_one {L : IntegralLattice V}
   rw [L.integralPairingEquiv_toLinearMap] at h
   exact ⟨v, u, hvn, (L.isSymm_integralForm.eq v u).trans ((LinearMap.congr_fun h v).trans hf)⟩
 
+private theorem isotropicPair_form_facts {L : IntegralLattice V} {v u : L}
+    (hv : L.integralNorm v = 0) (hvu : L.integralForm v u = 1) :
+    L.integralForm v v = 0 ∧ L.integralForm u v = 1 :=
+  ⟨L.integralNorm_apply v ▸ hv, (L.isSymm_integralForm.eq u v).trans hvu⟩
+
 private def isotropicPairSpan (L : IntegralLattice V) (v u : L) : Submodule ℤ L := ℤ ∙ v ⊔ ℤ ∙ u
 
 private noncomputable def isotropicPairSpanEquiv {L : IntegralLattice V} {v u : L}
@@ -91,8 +63,7 @@ private noncomputable def isotropicPairSpanEquiv {L : IntegralLattice V} {v u : 
   let g : isotropicPairSpan L v u → (Fin 2 → ℤ) := fun p ↦
     ![L.integralForm p.1 u - L.integralNorm u * L.integralForm p.1 v, L.integralForm p.1 v]
   have hleft : Function.LeftInverse g f := fun c ↦ by
-    have hvv : L.integralForm v v = 0 := by rwa [← L.integralNorm_apply]
-    have huv : L.integralForm u v = 1 := (L.isSymm_integralForm.eq u v).trans hvu
+    obtain ⟨hvv, huv⟩ := isotropicPair_form_facts hv hvu
     refine funext (Fin.forall_fin_two.mpr ?_)
     simp only [f, g, Matrix.cons_val_zero, Matrix.cons_val_one, map_add, map_smul,
       LinearMap.add_apply, LinearMap.smul_apply, hvv, hvu, huv, L.integralNorm_apply, smul_eq_mul]
@@ -125,7 +96,7 @@ private theorem gramMatrix_isotropicPairBasis {L : IntegralLattice V} {v u : L}
   let e := L.restrictCarrierEquiv P
   have hb (i : Fin 2) : (e.symm (isotropicPairBasis hv hvu i)).1 = ![v, u] i := by
     fin_cases i <;> simp [isotropicPairBasis, e, P, isotropicPairSpanEquiv, Pi.basisFun_apply]
-  have huv : L.integralForm u v = 1 := (L.isSymm_integralForm.eq u v).trans hvu
+  obtain ⟨_, huv⟩ := isotropicPair_form_facts hv hvu
   ext i j; rw [gramMatrix_apply]
   have hcell := (L.integralForm_restrictCarrierEquiv P
     (e.symm (isotropicPairBasis hv hvu i)) (e.symm (isotropicPairBasis hv hvu j))).symm
@@ -149,11 +120,6 @@ private theorem bijective_restrict_isotropicPairSpan {L : IntegralLattice V} {v 
   exact (e.arrowCongr (LinearEquiv.refl ℤ ℤ)).symm.bijective.comp
     (((L.restrict P).isUnimodular_iff_integralForm_bijective.mp hU).comp e.bijective)
 
-private theorem restrict_eq_ofIntegralForm (L : IntegralLattice V) (S : Submodule ℤ L) :
-    L.restrict S = ofIntegralForm (L.integralForm.restrict S) (L.isSymm_integralForm.restrict S) :=
-  IntegralLattice.ext ((L.restrict_carrier S).trans (ofIntegralForm_carrier _ _).symm)
-    ((L.restrict_form S).trans (ofIntegralForm_form _ _).symm)
-
 /-- **Even hyperbolic splitting.** -/
 theorem exists_isometry_hyperbolicPlane_orthogonalSum {L : IntegralLattice V}
     (hLu : L.IsUnimodular) (hLe : L.IsEven) (hiso : ¬ L.norm.Anisotropic) :
@@ -161,10 +127,9 @@ theorem exists_isometry_hyperbolicPlane_orthogonalSum {L : IntegralLattice V}
       (L.restrict S).IsUnimodular ∧ (L.restrict S).IsEven ∧
         Nonempty (Isometry (hyperbolicPlane.orthogonalSum (L.restrict S)) L) := by
   obtain ⟨v, u₀, hv, hvu₀⟩ := exists_integralNorm_eq_zero_integralForm_eq_one hLu hiso
+  obtain ⟨hvv, huv₀⟩ := isotropicPair_form_facts hv hvu₀
   obtain ⟨k, hk⟩ := (L.even_integralNorm_iff u₀).mpr (L.isEven_iff_forall_norm.mp hLe u₀)
   let u : L := u₀ - k • v
-  have hvv : L.integralForm v v = 0 := by rwa [← L.integralNorm_apply]
-  have huv₀ : L.integralForm u₀ v = 1 := (L.isSymm_integralForm.eq u₀ v).trans hvu₀
   have hvu : L.integralForm v u = 1 := by simp [u, hvu₀, hvv]
   have hu : L.integralNorm u = 0 := by
     have hk' : L.integralForm u₀ u₀ = k + k := by rwa [← L.integralNorm_apply]
@@ -175,8 +140,8 @@ theorem exists_isometry_hyperbolicPlane_orthogonalSum {L : IntegralLattice V}
   let eU : Isometry hyperbolicPlane (L.restrict P) :=
     Isometry.ofGramMatrixEq hyperbolicPlaneBasis (isotropicPairBasis hv hvu)
       (gramMatrix_hyperbolicPlaneBasis.trans (by rw [gramMatrix_isotropicPairBasis, hu]))
-  let e := ((eU.trans (Isometry.ofEq (restrict_eq_ofIntegralForm L P))).orthogonalSum
-      (Isometry.ofEq (restrict_eq_ofIntegralForm L S))).trans
+  let e := ((eU.trans (Isometry.ofEq (L.restrict_eq_ofIntegralForm P))).orthogonalSum
+      (Isometry.ofEq (L.restrict_eq_ofIntegralForm S))).trans
     (L.orthogonalSplittingIsometry P (bijective_restrict_isotropicPairSpan hv hvu))
   exact ⟨S, ((isUnimodular_orthogonalSum_iff _ _).mp (e.isUnimodular_iff.mpr hLu)).2,
     ((isEven_orthogonalSum_iff _ _).mp (e.isEven_iff.mpr hLe)).2, ⟨e⟩⟩
@@ -197,8 +162,7 @@ private theorem exists_odd_integralNorm_integralForm_eq_one {L : IntegralLattice
     obtain ⟨a, ha, b, hb, rfl⟩ := Submodule.mem_sup.mp hpP
     obtain ⟨c₀, rfl⟩ := Submodule.mem_span_singleton.mp ha
     obtain ⟨c₁, rfl⟩ := Submodule.mem_span_singleton.mp hb
-    have hvv : L.integralForm v v = 0 := by rwa [← L.integralNorm_apply]
-    have huv₀ : L.integralForm u₀ v = 1 := (L.isSymm_integralForm.eq u₀ v).trans hvu₀
+    obtain ⟨hvv, huv₀⟩ := isotropicPair_form_facts hv hvu₀
     have hm' : L.integralForm u₀ u₀ = m + m := by rwa [← L.integralNorm_apply]
     obtain ⟨k₁, hk₁⟩ : Even (L.integralNorm (c₀ • v + c₁ • u₀)) := ⟨c₀ * c₁ + c₁ ^ 2 * m, by
       rw [L.integralNorm_apply]; simp only [map_add, map_smul, LinearMap.add_apply,
@@ -216,8 +180,7 @@ private theorem exists_orthogonal_unit_pm_vectors {L : IntegralLattice V}
     ∃ xp xm : L, L.integralForm xp xp = 1 ∧ L.integralForm xm xm = -1 ∧
       L.integralForm xp xm = 0 := by
   obtain ⟨v, u, hv, hvu, m, hm⟩ := exists_odd_integralNorm_integralForm_eq_one hLu hLo hiso
-  have hvv : L.integralForm v v = 0 := by rwa [← L.integralNorm_apply]
-  have huv : L.integralForm u v = 1 := (L.isSymm_integralForm.eq u v).trans hvu
+  obtain ⟨hvv, huv⟩ := isotropicPair_form_facts hv hvu
   have huu : L.integralForm u u = 2 * m + 1 := by rwa [← L.integralNorm_apply]
   refine ⟨u - m • v, u - (m + 1) • v, ?_, ?_, ?_⟩ <;>
     simp only [map_sub, map_smul, LinearMap.sub_apply, LinearMap.smul_apply, huu, hvu, huv, hvv,
@@ -232,7 +195,7 @@ private theorem exists_odd_isUnimodular_rankOne_orthogonalSum_of_pm {L : Integra
   let S := L.integralForm.orthogonal (ℤ ∙ x)
   have hr1 := (ofGramMatrix_singleton_eq_rankOne a hx (by ext; rfl)).symm
   let e := ((Isometry.ofEq hr1).orthogonalSum
-      (Isometry.ofEq (restrict_eq_ofIntegralForm L S))).trans
+      (Isometry.ofEq (L.restrict_eq_ofIntegralForm S))).trans
     (L.unitNormSplittingIsometry x (hx ▸ ha))
   have hyS : y ∈ S := LinearMap.BilinForm.mem_orthogonal_iff.mpr fun z hz ↦ by
     obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp hz; simp [hxy]
@@ -288,18 +251,6 @@ theorem not_anisotropic_norm_of_isUnimodular_of_signature_one_one {L : IntegralL
       linear_combination G 0 0 * hGdet + ((-G 0 1 + 1) * G 0 0) * hGsymm
     exact ⟨w, fun h ↦ hw_ne (Subtype.ext h), by rw [← L.integralNorm_cast, hw_norm, Int.cast_zero]⟩
 
-private noncomputable def orthogonalSumSubsingletonRightIsometry [Subsingleton W]
-    (A : IntegralLattice V) (B : IntegralLattice W) : Isometry A (A.orthogonalSum B) := by
-  letI : Unique W := uniqueOfSubsingleton 0
-  refine { toLinearEquiv := (LinearEquiv.prodUnique (R := ℚ) (M := V) (M₂ := W)).symm
-           map_app' := fun x y ↦ by
-             simp [orthogonalSum_form, LinearMap.BilinForm.prod_apply,
-               Subsingleton.elim (default : W) 0]
-           map_carrier := Submodule.ext fun p ↦ ?_ }
-  rw [Submodule.mem_map_equiv, LinearEquiv.restrictScalars_symm_apply, LinearEquiv.symm_symm,
-    LinearEquiv.prodUnique_apply, orthogonalSum_carrier, Submodule.mem_prod]
-  exact ⟨fun h ↦ ⟨h, Subsingleton.elim p.2 0 ▸ B.carrier.zero_mem⟩, fun h ↦ h.1⟩
-
 /-- **Classification of even unimodular lattices of signature `(1, 0, 1)`.** -/
 theorem nonempty_isometry_hyperbolicPlane_of_isUnimodular_of_signature_one_one
     {L : IntegralLattice V} (hLu : L.IsUnimodular) (hLe : L.IsEven)
@@ -313,7 +264,7 @@ theorem nonempty_isometry_hyperbolicPlane_of_isUnimodular_of_signature_one_one
     have := Y.signature_sum_eq_finrank; omega
   have : FiniteDimensional ℚ (ℚ ⊗[ℤ] S) := Y.finiteDimensional
   have : Subsingleton (ℚ ⊗[ℤ] S) := Module.finrank_zero_iff.mp hYrank
-  exact ⟨(orthogonalSumSubsingletonRightIsometry hyperbolicPlane Y).trans e⟩
+  exact ⟨(Isometry.orthogonalSumSubsingletonRight hyperbolicPlane Y).trans e⟩
 
 /-- **Classification of odd unimodular lattices of signature `(1, 0, 1)`.** -/
 theorem nonempty_isometry_signedUnitLattice_one_one_of_isUnimodular_of_signature_one_one

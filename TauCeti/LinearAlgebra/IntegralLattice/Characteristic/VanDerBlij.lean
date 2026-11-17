@@ -9,7 +9,7 @@ public import TauCeti.LinearAlgebra.IntegralLattice.Characteristic.Unimodular
 public import TauCeti.LinearAlgebra.IntegralLattice.Characteristic.EvenSublattice
 public import TauCeti.LinearAlgebra.IntegralLattice.Milgram
 import TauCeti.LinearAlgebra.FiniteBilinearModule.GaussSum.AffineLagrangian
-import TauCeti.LinearAlgebra.IntegralLattice.Characteristic.ParityKernel
+import TauCeti.LinearAlgebra.IntegralLattice.Characteristic.HalfCharacteristic
 import TauCeti.LinearAlgebra.IntegralLattice.Overlattice.Metabolic
 
 /-!
@@ -25,6 +25,8 @@ For the canonical even sublattice `N`, the original lattice determines a bilinea
 averaging therefore evaluates the normalized Gauss sum as `expCircle (w²/8)`. Milgram's
 theorem identifies the same phase with the signature of `N`, which is the signature of `L`.
 When `L` is even and `w = 0`, the congruence gives divisibility of the signature by eight.
+Reducing modulo two shows that `w² ≡ rank(L) (mod 2)` and hence that unimodular lattices of odd
+rank cannot be even.
 
 ## References
 
@@ -87,5 +89,29 @@ theorem vanDerBlij (hL : L.IsUnimodular) {w : L}
   rw [hs.1, hs.2.2] at hm
   apply (ZMod.intCast_eq_intCast_iff _ _ 8).mp
   simpa only [Int.cast_sub, Int.cast_natCast] using hm.symm.trans hg
+
+omit L in
+/-- **Characteristic-norm parity modulo two:** for any unimodular lattice, `w² ≡ rank(L) (mod 2)`,
+derived directly from van der Blij's congruence modulo `8`. -/
+theorem IsUnimodular.integralNorm_characteristicVector_modEq_finrank {L : IntegralLattice V}
+    (hLu : L.IsUnimodular) {w : L} (hw : L.IsCharacteristicVector w) :
+    L.integralNorm w ≡ Module.finrank ℤ L [ZMOD 2] := by
+  have hnull : L.sigNull = 0 := L.radical_eq_bot_iff_sigNull_eq_zero.mp
+    ((Submodule.eq_bot_iff _).mpr fun x hx ↦ hLu.nondegenerate.1 x ((L.mem_radical_iff x).mp hx))
+  have hsum : L.sigPos + L.sigNeg = Module.finrank ℤ L := by
+    rw [L.finrank_carrier, ← L.signature_sum_eq_finrank, hnull, add_zero]
+  have h2 : ((L.sigPos : ℤ) - L.sigNeg) ≡ L.integralNorm w [ZMOD 2] :=
+    (L.vanDerBlij hLu hw).of_dvd (by decide)
+  exact h2.symm.trans (Int.modEq_iff_dvd.mpr ⟨L.sigNeg, by omega⟩)
+
+omit L in
+/-- A unimodular lattice of odd rank cannot be even. -/
+theorem IsUnimodular.not_isEven_of_odd_finrank {L : IntegralLattice V} (hLu : L.IsUnimodular)
+    (hodd : Odd (Module.finrank ℤ L)) : ¬ L.IsEven := fun hLe ↦ by
+  have hmod := hLu.integralNorm_characteristicVector_modEq_finrank
+    (L.isEven_iff_isCharacteristicVector_zero.mp hLe)
+  rw [L.integralNorm_zero] at hmod
+  exact Int.not_even_iff_odd.mpr hodd.natCast
+    (even_iff_two_dvd.mpr (Int.modEq_zero_iff_dvd.mp hmod.symm))
 
 end TauCeti.IntegralLattice
