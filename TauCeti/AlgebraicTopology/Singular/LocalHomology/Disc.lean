@@ -109,6 +109,23 @@ private theorem isCompact_radialExtension_preimage_zero {h : ℂ → ℂ} (hr : 
     (isClosed_singleton.preimage (radialExtension hr hh).continuous)
     ((radialExtension_preimage_zero_subset hr hh hne).trans ball_subset_closedBall)
 
+/-- On an open set `B` equal to the open disc, the radial extension restricts to the restriction
+`g` of `h`. -/
+private theorem radialExtension_comp_val {h : ℂ → ℂ} (hr : 0 < r)
+    (hh : ContinuousOn h (closedBall z₀ r)) {B : TopologicalSpace.Opens ℂ}
+    (hB : (B : Set ℂ) = ball z₀ r) {g : C(B, ℂ)} (hg : ∀ z : B, g z = h z) :
+    (radialExtension hr hh).comp ⟨Subtype.val, continuous_subtype_val⟩ = g :=
+  ContinuousMap.ext fun z ↦ (radialExtension_apply hr hh
+    (ball_subset_closedBall (hB ▸ z.2 : (z : ℂ) ∈ ball z₀ r))).trans (hg z).symm
+
+/-- Without zeros of `h` on the boundary circle, the zeros of the radial extension lie in an open
+set `B` equal to the open disc. -/
+private theorem radialExtension_preimage_zero_subset_range {h : ℂ → ℂ} (hr : 0 < r)
+    (hh : ContinuousOn h (closedBall z₀ r)) (hne : ∀ z ∈ sphere z₀ r, h z ≠ 0)
+    {B : TopologicalSpace.Opens ℂ} (hB : (B : Set ℂ) = ball z₀ r) :
+    radialExtension hr hh ⁻¹' {0} ⊆ range (Subtype.val : B → ℂ) := fun w hw ↦
+  ⟨⟨w, (hB ▸ radialExtension_preimage_zero_subset hr hh hne hw : w ∈ (B : Set ℂ))⟩, rfl⟩
+
 /-- The local degree at `0` of the radial extension is the boundary degree of `h`. -/
 private theorem localDegree_radialExtension {h : ℂ → ℂ} (hr : 0 < r)
     (hh : ContinuousOn h (closedBall z₀ r)) (hne : ∀ z ∈ sphere z₀ r, h z ≠ 0)
@@ -144,14 +161,10 @@ theorem localDegree_comap_ball_eq_degree_toBasedLoop (hr : 0 < r)
     (hu : ∀ ζ : Circle, (u ζ : ℂ) = h (z₀ + r * ζ) / ‖h (z₀ + r * ζ)‖) :
     (o.comap B.isOpenEmbedding').localDegree o finrank_real_complex g 0 =
       Circle.degree u.toBasedLoop := by
-  have hmem (w : ℂ) : w ∈ B ↔ w ∈ ball z₀ r := by rw [← SetLike.mem_coe, hB]
-  have hcomp : (radialExtension hr hh).comp ⟨Subtype.val, continuous_subtype_val⟩ = g :=
-    ContinuousMap.ext fun z ↦ (radialExtension_apply hr hh
-      (ball_subset_closedBall ((hmem z).1 z.2))).trans (hg z).symm
-  rw [← hcomp, o.localDegree_comap o finrank_real_complex finrank_real_complex
-      (j := ⟨Subtype.val, continuous_subtype_val⟩) B.isOpenEmbedding' _
+  rw [← radialExtension_comp_val hr hh hB hg, o.localDegree_comap o finrank_real_complex
+      finrank_real_complex (j := ⟨Subtype.val, continuous_subtype_val⟩) B.isOpenEmbedding' _
       (isCompact_radialExtension_preimage_zero hr hh hne)
-      fun w hw ↦ ⟨⟨w, (hmem w).2 (radialExtension_preimage_zero_subset hr hh hne hw)⟩, rfl⟩,
+      (radialExtension_preimage_zero_subset_range hr hh hne hB),
     o.localDegree_radialExtension hr hh hne hu]
 
 /-- **The local degree of a map on an open set is the boundary degree of an enclosing disc.** Let
@@ -216,25 +229,14 @@ theorem degree_toBasedLoop_comp_eq_degree_mul (hr : 0 < r) {B U' : TopologicalSp
     Circle.degree u'.toBasedLoop =
       (o.comap U'.isOpenEmbedding').degree (o.comap B.isOpenEmbedding') finrank_real_complex θ *
         Circle.degree u.toBasedLoop := by
-  have hmem (w : ℂ) : w ∈ B ↔ w ∈ ball z₀ r := by rw [← SetLike.mem_coe, hB]
   have : PreconnectedSpace B :=
     isPreconnected_iff_preconnectedSpace.1 (hB ▸ isPreconnected_ball)
-  -- The zeros of `g` form a compact subset of the open disc: in the plane they are the zeros of
-  -- `h` in the closed disc.
-  have himage : (Subtype.val : B → ℂ) '' (g ⁻¹' {0}) = closedBall z₀ r ∩ h ⁻¹' {0} := by
-    ext w
-    constructor
-    · rintro ⟨z, hz, rfl⟩
-      exact ⟨ball_subset_closedBall ((hmem z).1 z.2), (hg z).symm.trans hz⟩
-    · rintro ⟨hw, hw0⟩
-      have hwb : w ∈ ball z₀ r :=
-        mem_ball.2 (lt_of_le_of_ne (mem_closedBall.1 hw) fun hd ↦ hne w (mem_sphere.2 hd) hw0)
-      exact ⟨⟨w, (hmem w).2 hwb⟩, (hg _).trans hw0, rfl⟩
+  -- The zeros of `g` are those of the radial extension, a compact subset of the open disc.
   have hgc : IsCompact (g ⁻¹' {0}) := by
-    refine B.isOpenEmbedding'.isInducing.isCompact_iff.2 ?_
-    rw [himage]
-    exact (isCompact_closedBall z₀ r).of_isClosed_subset
-      (hh.preimage_isClosed_of_isClosed isClosed_closedBall isClosed_singleton) inter_subset_left
+    rw [← radialExtension_comp_val hr hh hB hg]
+    exact B.isOpenEmbedding'.isInducing.isCompact_preimage'
+      (isCompact_radialExtension_preimage_zero hr hh hne)
+      (radialExtension_preimage_zero_subset_range hr hh hne hB)
   rw [← o.localDegree_comap_eq_degree_toBasedLoop hr' hU' hgθ (g := g.comp θ) hu',
     (o.comap U'.isOpenEmbedding').localDegree_comp (o.comap B.isOpenEmbedding') o
       finrank_real_complex finrank_real_complex finrank_real_complex hgc hθ,

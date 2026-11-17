@@ -56,8 +56,9 @@ that are not surjective and is invariant under proper homotopies, that is homoto
 * `TauCeti.HomologicalOrientation.degree_id`, `TauCeti.HomologicalOrientation.degree_neg_left`,
   `TauCeti.HomologicalOrientation.degree_neg_right`, `TauCeti.HomologicalOrientation.degree_comp`:
   normalization, orientation reversal and multiplicativity. Local degrees are multiplicative
-  as well, `localDegree (g ∘ f) z = deg f * localDegree g z`, as soon as `f` is proper and the
-  fibre of `g` over `z` is compact (`TauCeti.HomologicalOrientation.localDegree_comp`).
+  as well, `localDegree (g ∘ f) z = deg f * localDegree g z`, as soon as `f` is proper onto a
+  preconnected `N` and the fibre of `g` over `z` is compact
+  (`TauCeti.HomologicalOrientation.localDegree_comp`).
 * `TauCeti.HomologicalOrientation.localDegree_comap`: the local degree is natural under open
   embeddings of the source whose range contains the fibre, and so only depends on the map near
   the fibre (`TauCeti.HomologicalOrientation.localDegree_congr`).

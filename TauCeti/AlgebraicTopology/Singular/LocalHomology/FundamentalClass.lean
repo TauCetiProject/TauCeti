@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicTopology.Singular.LocalHomology.OpenEmbedding
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.OpenEmbedding
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.TopHomology
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Coefficients
+public import TauCeti.Topology.Sets.Opens
 
 /-!
 # Integral and rational fundamental classes of an oriented manifold
@@ -305,33 +306,6 @@ end OpenEmbedding
 section DisjointOpens
 
 variable {ι : Type*} {U : ι → TopologicalSpace.Opens M}
-
-/-- A compact set covered by pairwise disjoint open sets meets each of them in a compact set, so
-its preimage in each of them is compact. -/
-theorem _root_.IsCompact.preimage_val_of_pairwise_disjoint {X ι : Type*} [TopologicalSpace X]
-    {U : ι → TopologicalSpace.Opens X} {A : Set X} (hA : IsCompact A)
-    (hU : Pairwise fun i k ↦ Disjoint (U i : Set X) (U k)) (hAU : A ⊆ ⋃ i, (U i : Set X))
-    (i : ι) : IsCompact ((Subtype.val : U i → X) ⁻¹' A) := by
-  -- `A ∩ U i` is the closed subset of `A` missing the other open sets.
-  have hAi : A ∩ U i = A ∩ (⋃ (k : ι) (_ : k ≠ i), (U k : Set X))ᶜ := by
-    ext x
-    simp only [mem_inter_iff, mem_compl_iff, mem_iUnion, not_exists, SetLike.mem_coe]
-    refine and_congr_right fun hx ↦ ⟨fun hxi k hki hxk ↦ disjoint_left.1 (hU hki) hxk hxi,
-      fun h ↦ ?_⟩
-    obtain ⟨k, hxk⟩ := mem_iUnion.1 (hAU hx)
-    by_cases hki : k = i
-    · exact hki ▸ hxk
-    · exact (h k hki hxk).elim
-  have hc : IsCompact (A ∩ U i) := by
-    rw [hAi]
-    exact hA.inter_right
-      (isOpen_iUnion fun k ↦ isOpen_iUnion fun _ ↦ (U k).isOpen).isClosed_compl
-  have hpre : (Subtype.val : U i → X) ⁻¹' A = Subtype.val ⁻¹' (A ∩ U i) := by
-    ext x
-    simp
-  rw [hpre]
-  exact ((U i).isOpenEmbedding'.isInducing.isCompact_preimage_iff
-    fun x (hx : x ∈ A ∩ U i) ↦ ⟨⟨x, hx.2⟩, rfl⟩).2 hc
 
 /-- **The fundamental class along a compact set split by disjoint open sets.** Let the compact set
 `A` be covered by finitely many pairwise disjoint open sets `U i`. Then the fundamental class along
