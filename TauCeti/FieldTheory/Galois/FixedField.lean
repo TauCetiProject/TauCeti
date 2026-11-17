@@ -73,10 +73,8 @@ inseparable extension can only be indexed by the intermediate fields of the sepa
 * `IntermediateField.fixedField_fixingSubgroup`: the correspondence over an intermediate field
   with Galois extension above it, without a Galois assumption on the original base
 * `IntermediateField.fixingSubgroup_fixedField_of_finite`
-* `IntermediateField.finiteDimensional_fixedField`, `IntermediateField.isGalois_fixedField`, and
-  `IntermediateField.isGalois_fixedField_of_isAlgebraic`: Artin's theorem on the fixed field of a
-  finite subgroup (with no hypothesis on `M / K`), and Galoisness over the fixed field of any
-  subgroup when `M / K` is algebraic
+* `IntermediateField.finiteDimensional_fixedField` and `IntermediateField.isGalois_fixedField`:
+  Artin's theorem on the fixed field of a finite subgroup, with no hypothesis on `M / K`
 * `IntermediateField.finite_of_finiteDimensional_fixedField`
 * `IntermediateField.card_fixingSubgroup_le`
 * `IntermediateField.fixingSubgroup_adjoin_simple`, with
@@ -184,65 +182,6 @@ Mathlib's `IsGalois.of_fixed_field` on the fixed field of the Galois corresponde
 instance isGalois_fixedField (H : Subgroup (M ≃ₐ[K] M)) [Finite H] :
     IsGalois (fixedField H) M :=
   IsGalois.of_fixed_field M H
-
-/-- **Infinite Artin's theorem**: an algebraic extension `M / K` is Galois over the field fixed by
-any subgroup `H` of `Aut_K(M)`, finite or infinite. Every `x ∈ M` has a finite `H`-orbit inside the
-roots of `minpoly K x`, so `minpoly (M ^ H) x` divides the separable polynomial splitting over that
-orbit in `M`. -/
-instance (priority := low) isGalois_fixedField_of_isAlgebraic [Algebra.IsAlgebraic K M]
-    (H : Subgroup (M ≃ₐ[K] M)) : IsGalois (fixedField H) M := by
-  classical
-  have hdvd (x : M) : ∃ (s : Finset M) (q : Polynomial (fixedField H)),
-      q.map (algebraMap (fixedField H) M) = (∏ y ∈ s, (Polynomial.X - Polynomial.C y)) ∧
-        minpoly (fixedField H) x ∣ q := by
-    have horb : (MulAction.orbit H x).Finite := by
-      refine ((minpoly K x).rootSet_finite M).subset ?_
-      intro y hy
-      obtain ⟨g, rfl⟩ := MulAction.mem_orbit_iff.mp hy
-      refine (Polynomial.mem_rootSet_of_ne
-        (minpoly.ne_zero (Algebra.IsIntegral.isIntegral x))).mpr ?_
-      rw [Subgroup.smul_def, AlgEquiv.smul_def, ← AlgEquiv.coe_toAlgHom,
-        Polynomial.aeval_algHom_apply, minpoly.aeval, map_zero]
-    let s := horb.toFinset
-    let P : Polynomial M := ∏ y ∈ s, (Polynomial.X - Polynomial.C y)
-    have hP_map (g : M ≃ₐ[K] M) (hg : g ∈ H) : P.map (g : M →+* M) = P := by
-      rw [Polynomial.map_prod]
-      refine Finset.prod_bij (fun y _ ↦ g y) ?_ ?_ ?_ fun y _ ↦ by simp
-      · intro y hy
-        obtain ⟨h, rfl⟩ := MulAction.mem_orbit_iff.mp (horb.mem_toFinset.mp hy)
-        exact horb.mem_toFinset.mpr ⟨⟨g, hg⟩ * h, mul_smul ⟨g, hg⟩ h x⟩
-      · intro _ _ _ _ h
-        exact g.injective h
-      · intro y hy
-        obtain ⟨h, rfl⟩ := MulAction.mem_orbit_iff.mp (horb.mem_toFinset.mp hy)
-        exact ⟨(⟨g⁻¹, H.inv_mem hg⟩ * h) • x, horb.mem_toFinset.mpr ⟨_, rfl⟩, by
-          simp [mul_smul, Subgroup.smul_def, AlgEquiv.smul_def]⟩
-    have hP_coeffs : (P.coeffs : Set M) ⊆ (fixedField H).toSubring := fun c hc ↦ by
-      rcases Polynomial.mem_coeffs_iff.mp hc with ⟨n, _, rfl⟩
-      exact (mem_fixedField_iff H _).mpr fun g hg ↦ by
-        simpa using congrArg (fun f ↦ f.coeff n) (hP_map g hg)
-    let q : Polynomial (fixedField H) := P.toSubring (fixedField H).toSubring hP_coeffs
-    have hq_map : q.map (algebraMap (fixedField H) M) = P :=
-      P.map_toSubring (fixedField H).toSubring hP_coeffs
-    refine ⟨s, q, hq_map, minpoly.dvd (fixedField H) x ?_⟩
-    rw [Polynomial.aeval_def, ← Polynomial.eval_map, hq_map, Polynomial.eval_prod]
-    exact Finset.prod_eq_zero (horb.mem_toFinset.mpr (MulAction.mem_orbit_self x)) (by simp)
-  have : Normal (fixedField H) M :=
-    { isAlgebraic := (Algebra.IsAlgebraic.tower_top (K := K) (fixedField H)).isAlgebraic
-      splits' x := by
-        obtain ⟨s, q, hq_map, hmin⟩ := hdvd x
-        have hP_ne : (∏ y ∈ s, (Polynomial.X - Polynomial.C y)) ≠ 0 :=
-          (Polynomial.monic_prod_of_monic _ _ fun _ _ ↦ Polynomial.monic_X_sub_C _).ne_zero
-        exact Polynomial.Splits.of_dvd
-          (hq_map ▸ Polynomial.Splits.prod fun y _ ↦ Polynomial.Splits.X_sub_C y)
-          (hq_map ▸ hP_ne) (Polynomial.map_dvd (algebraMap (fixedField H) M) hmin) }
-  have : Algebra.IsSeparable (fixedField H) M :=
-    ⟨fun x ↦ by
-      obtain ⟨s, q, hq_map, hmin⟩ := hdvd x
-      have hq_sep : q.Separable := (Polynomial.separable_map (algebraMap (fixedField H) M)).mp
-        (hq_map ▸ Polynomial.separable_prod_X_sub_C_iff'.mpr fun _ _ _ _ h ↦ h)
-      exact hq_sep.of_dvd hmin⟩
-  exact ⟨⟩
 
 end IntermediateField
 

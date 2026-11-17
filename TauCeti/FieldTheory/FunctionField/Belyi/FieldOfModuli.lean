@@ -9,6 +9,7 @@ public import Mathlib.FieldTheory.Galois.Infinite
 public import TauCeti.FieldTheory.FunctionField.Belyi.GaloisAction
 public import TauCeti.FieldTheory.Galois.FixedField
 import TauCeti.Algebra.Algebra.Equiv
+import TauCeti.FieldTheory.Galois.FiniteIndex
 
 /-!
 # Fields of moduli of algebraic Belyi pairs
@@ -55,8 +56,9 @@ field of moduli of the pair.
 ## Main results
 
 * `TauCeti.AlgebraicBelyiPair.IsoClass.fieldOfModuli_smul`: `M(σ • c) = σ(M(c))`.
-* `TauCeti.AlgebraicBelyiPair.IsoClass.isGalois_fieldOfModuli`: an algebraic extension of `ℚ` is
-  Galois over the field of moduli of every class.
+* `TauCeti.AlgebraicBelyiPair.IsoClass.isGalois_fieldOfModuli`: `k` is Galois over the field of
+  moduli of a class whenever `k` is algebraic over it (in particular whenever `k / ℚ` is
+  algebraic).
 * `TauCeti.AlgebraicBelyiPair.IsoClass.fieldOfModuli_le_of_fixingSubgroup_le`: the field of
   moduli lies in every subfield `K` with `k / K` Galois whose automorphisms fix the class.
 * `TauCeti.AlgebraicBelyiPair.curveStabilizer_eq_of_algEquiv`: the stabilizer of the curve depends
@@ -110,11 +112,12 @@ theorem fieldOfModuli_smul (g : k ≃ₐ[ℚ] k) (c : IsoClass k) :
   rw [fieldOfModuli_def, MulAction.stabilizer_smul_eq_stabilizer_map_conj,
     MulEquiv.toMonoidHom_eq_coe, Subgroup.fixedField_map_conj, fieldOfModuli_def]
 
-/-- An algebraic extension `k` of `ℚ` is Galois over the field of moduli of every class, as over
-the fixed field of any group of automorphisms. -/
-instance isGalois_fieldOfModuli [Algebra.IsAlgebraic ℚ k] (c : IsoClass k) :
-    IsGalois c.fieldOfModuli k := by
-  rw [fieldOfModuli_def]
+/-- If `k` is algebraic over the field of moduli of a class `c` — in particular whenever `k` is
+algebraic over `ℚ` — then `k` is Galois over that field of moduli, as over the fixed field of any
+group of automorphisms. -/
+instance (priority := low) isGalois_fieldOfModuli (c : IsoClass k)
+    [h : Algebra.IsAlgebraic c.fieldOfModuli k] : IsGalois c.fieldOfModuli k := by
+  rw [fieldOfModuli_def] at h ⊢
   infer_instance
 
 /-- The field of moduli of a class `c` is contained in every subfield `K` of `k` over which `k`
