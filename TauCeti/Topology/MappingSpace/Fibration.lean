@@ -38,7 +38,9 @@ inclusion is a closed cofibration is a Hurewicz fibration
 sphere is one, so evaluation `Map(Sᵏ, X) → X` at any point of the unit sphere `Sᵏ ⊆ ℝᵏ⁺¹` is a
 Hurewicz fibration for every space `X` (`TauCeti.isHurewiczFibration_mappingSpaceEval_sphere`). Its
 fibre over `x` is the based mapping space `Map_*(Sᵏ, X)`, a copy of the `k`-fold loop space of `X`
-at `x`, and the constant maps are a section.
+at `x`, and the constant maps are a section. Restricted to the maps sending the base point into
+a subset `Y ⊆ X`, evaluation is a Serre fibration over `Y`
+(`TauCeti.mem_serreFibrations_restrictPreimage_mappingSpaceEval_sphere`).
 
 ## References
 
@@ -108,6 +110,16 @@ theorem isHurewiczFibration_mappingSpaceEval_sphere (k : ℕ)
     IsHurewiczFibration.{w} (mappingSpaceEval (X := X) s₀) :=
   (hasHomotopyExtensionProperty_singleton_sphere k s₀).isHurewiczFibration_mappingSpaceEval
     isClosed_singleton
+
+/-- Evaluation `Map(Sᵏ, X) → X` at a point `s₀` of the unit sphere, restricted to the maps sending
+`s₀` into a subset `Y ⊆ X`, is a Serre fibration over `Y`. -/
+theorem mem_serreFibrations_restrictPreimage_mappingSpaceEval_sphere {k : ℕ}
+    (s₀ : sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1) (Y : Set X) :
+    TopCat.serreFibrations
+      (_root_.TopCat.ofHom ((mappingSpaceEval (X := X) s₀).restrictPreimage Y)) :=
+  TopCat.mem_serreFibrations_restrictPreimage
+    (p := _root_.TopCat.ofHom (mappingSpaceEval (X := X) s₀))
+    (isHurewiczFibration_mappingSpaceEval_sphere.{0} k s₀).mem_serreFibrations Y
 
 /-! ### Evaluation of free loops -/
 

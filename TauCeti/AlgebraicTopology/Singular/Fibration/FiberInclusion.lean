@@ -89,20 +89,22 @@ theorem epi_singularHomologyMap_fiberι (hp : serreFibrations p)
       (p.fiberι b)) :=
   (isNConnected_fiberι_of_mem_serreFibrations hp hB).epi_singularHomologyMap R hm
 
+end TauCeti.TopCat
+
 /-! ### The part of a fibration over a subspace -/
 
-section Preimage
+namespace ContinuousMap
 
 variable {E' B' : Type u} [TopologicalSpace E'] [TopologicalSpace B'] {Y : Set B'} {y : B'}
 
 /-- The inclusion `p⁻¹(y) → p⁻¹(Y)` of the fibre over a point `y ∈ Y` into the preimage of `Y`. -/
 abbrev preimageInclusion (p : C(E', B')) (hy : y ∈ Y) :
-    _root_.TopCat.of (p ⁻¹' {y}) ⟶ _root_.TopCat.of (p ⁻¹' Y) :=
-  _root_.TopCat.ofHom (ContinuousMap.inclusion (Set.preimage_mono (Set.singleton_subset_iff.2 hy)))
+    TopCat.of (p ⁻¹' {y}) ⟶ TopCat.of (p ⁻¹' Y) :=
+  TopCat.ofHom (ContinuousMap.inclusion (Set.preimage_mono (Set.singleton_subset_iff.2 hy)))
 
 /-- The fibre `p⁻¹(y)` is the fibre over `y` of the restriction `p⁻¹(Y) → Y`. -/
 def preimageSingletonHomeomorphFiber (p : C(E', B')) (hy : y ∈ Y) :
-    (p ⁻¹' {y}) ≃ₜ (_root_.TopCat.ofHom (p.restrictPreimage Y)).fiber ⟨y, hy⟩ where
+    (p ⁻¹' {y}) ≃ₜ (p.restrictPreimage Y ⁻¹' {⟨y, hy⟩}) where
   toFun e := ⟨⟨e.1, Set.mem_preimage.2 ((Set.mem_singleton_iff.1 e.2).symm ▸ hy)⟩,
     Subtype.ext e.2⟩
   invFun e := ⟨e.1.1, congrArg Subtype.val e.2⟩
@@ -111,15 +113,35 @@ def preimageSingletonHomeomorphFiber (p : C(E', B')) (hy : y ∈ Y) :
   continuous_toFun := by fun_prop
   continuous_invFun := by fun_prop
 
+@[simp]
+theorem coe_coe_preimageSingletonHomeomorphFiber_apply (p : C(E', B')) (hy : y ∈ Y)
+    (e : p ⁻¹' {y}) : ((p.preimageSingletonHomeomorphFiber hy e).1 : E') = e :=
+  (rfl)
+
+@[simp]
+theorem coe_preimageSingletonHomeomorphFiber_symm_apply (p : C(E', B')) (hy : y ∈ Y)
+    (e : p.restrictPreimage Y ⁻¹' {⟨y, hy⟩}) :
+    ((p.preimageSingletonHomeomorphFiber hy).symm e : E') = e.1.1 :=
+  (rfl)
+
 /-- The inclusion `p⁻¹(y) → p⁻¹(Y)` is the fibre inclusion of the restriction `p⁻¹(Y) → Y`, up to
-`TauCeti.TopCat.preimageSingletonHomeomorphFiber`. -/
+`ContinuousMap.preimageSingletonHomeomorphFiber`. -/
 theorem preimageInclusion_eq (p : C(E', B')) (hy : y ∈ Y) :
-    preimageInclusion p hy =
-      (_root_.TopCat.isoOfHomeo (preimageSingletonHomeomorphFiber p hy)).hom ≫
-        (_root_.TopCat.ofHom (p.restrictPreimage Y)).fiberι ⟨y, hy⟩ :=
-  _root_.TopCat.ext fun x ↦ by
-    rw [ConcreteCategory.comp_apply, _root_.TopCat.Hom.fiberι_apply]
-    rfl
+    p.preimageInclusion hy =
+      (TopCat.isoOfHomeo (p.preimageSingletonHomeomorphFiber hy)).hom ≫
+        (TopCat.ofHom (p.restrictPreimage Y)).fiberι ⟨y, hy⟩ :=
+  TopCat.ext fun x ↦ by
+    rw [ConcreteCategory.comp_apply, TopCat.Hom.fiberι_apply]
+    exact Subtype.ext (p.coe_coe_preimageSingletonHomeomorphFiber_apply hy x).symm
+
+end ContinuousMap
+
+namespace TauCeti.TopCat
+
+section Preimage
+
+variable {n : ℕ} (R : Type u) [Ring R] {E' B' : Type u} [TopologicalSpace E'] [TopologicalSpace B']
+  {Y : Set B'} {y : B'}
 
 /-- **The fibre in the part over a highly connected subspace.** Let `p : E → B` be a map whose
 restriction `p⁻¹(Y) → Y` to a subspace `Y` is a Serre fibration, and let `y ∈ Y` be a point at which
@@ -129,9 +151,9 @@ theorem isIso_singularHomologyMap_preimageInclusion {p : C(E', B')}
     (hp : serreFibrations (_root_.TopCat.ofHom (p.restrictPreimage Y))) (hy : y ∈ Y)
     (hY : ∀ k ≤ n, Subsingleton (π_ k Y ⟨y, hy⟩)) {m : ℕ} (hm : m < n) :
     IsIso (((singularHomologyFunctor (ModuleCat.{u} R) m).obj (ModuleCat.of R R)).map
-      (preimageInclusion p hy)) := by
+      (p.preimageInclusion hy)) := by
   have := isIso_singularHomologyMap_fiberι R hp hY hm
-  rw [preimageInclusion_eq, Functor.map_comp]
+  rw [ContinuousMap.preimageInclusion_eq, Functor.map_comp]
   infer_instance
 
 /-- **The fibre in the part over a highly connected subspace, in the top degree.** Let `p : E → B`
@@ -142,9 +164,9 @@ theorem epi_singularHomologyMap_preimageInclusion {p : C(E', B')}
     (hp : serreFibrations (_root_.TopCat.ofHom (p.restrictPreimage Y))) (hy : y ∈ Y)
     (hY : ∀ k ≤ n, Subsingleton (π_ k Y ⟨y, hy⟩)) {m : ℕ} (hm : m ≤ n) :
     Epi (((singularHomologyFunctor (ModuleCat.{u} R) m).obj (ModuleCat.of R R)).map
-      (preimageInclusion p hy)) := by
+      (p.preimageInclusion hy)) := by
   have := epi_singularHomologyMap_fiberι R hp hY hm
-  rw [preimageInclusion_eq, Functor.map_comp]
+  rw [ContinuousMap.preimageInclusion_eq, Functor.map_comp]
   infer_instance
 
 end Preimage
@@ -163,20 +185,20 @@ include Φ
 /-- A fibre homotopy equivalence carries the inclusion `p⁻¹(y) → p⁻¹(Y)` to the inclusion
 `q⁻¹(y) → q⁻¹(Y)`. -/
 private theorem preimageInclusion_comp :
-    preimageInclusion p hy ≫ _root_.TopCat.ofHom (Φ.restrictPreimage Y).toHomotopyEquiv.toFun =
+    p.preimageInclusion hy ≫ _root_.TopCat.ofHom (Φ.restrictPreimage Y).toHomotopyEquiv.toFun =
       _root_.TopCat.ofHom (Φ.restrictPreimage {y}).toHomotopyEquiv.toFun ≫
-        preimageInclusion q hy :=
+        q.preimageInclusion hy :=
   _root_.TopCat.ext fun x ↦ Subtype.ext <| by simp [toHomotopyEquiv_apply]
 
 /-- On homology, the commutative square of `preimageInclusion_comp`. Its horizontal maps, induced
 by the restrictions of `Φ`, are isomorphisms. -/
 private theorem singularHomologyMap_preimageInclusion_comp :
     ((singularHomologyFunctor (ModuleCat.{u} R) m).obj (ModuleCat.of R R)).map
-        (preimageInclusion p hy) ≫
+        (p.preimageInclusion hy) ≫
       ((Φ.restrictPreimage Y).toHomotopyEquiv.singularHomologyIso (ModuleCat.of R R) m).hom =
     ((Φ.restrictPreimage {y}).toHomotopyEquiv.singularHomologyIso (ModuleCat.of R R) m).hom ≫
       ((singularHomologyFunctor (ModuleCat.{u} R) m).obj (ModuleCat.of R R)).map
-        (preimageInclusion q hy) := by
+        (q.preimageInclusion hy) := by
   simp only [ContinuousMap.HomotopyEquiv.singularHomologyIso_hom, ← Functor.map_comp]
   exact congrArg _ (preimageInclusion_comp Φ hy)
 
@@ -185,9 +207,9 @@ private theorem singularHomologyMap_preimageInclusion_comp :
 `q⁻¹(y) → q⁻¹(Y)` is. -/
 theorem isIso_singularHomologyMap_preimageInclusion_iff :
     IsIso (((singularHomologyFunctor (ModuleCat.{u} R) m).obj (ModuleCat.of R R)).map
-        (preimageInclusion p hy)) ↔
+        (p.preimageInclusion hy)) ↔
       IsIso (((singularHomologyFunctor (ModuleCat.{u} R) m).obj (ModuleCat.of R R)).map
-        (preimageInclusion q hy)) := by
+        (q.preimageInclusion hy)) := by
   rw [← isIso_comp_right_iff _
       ((Φ.restrictPreimage Y).toHomotopyEquiv.singularHomologyIso (ModuleCat.of R R) m).hom,
     singularHomologyMap_preimageInclusion_comp, isIso_comp_left_iff]
@@ -197,9 +219,9 @@ equivalence between `p` and `q` over `B`, the inclusion `p⁻¹(y) → p⁻¹(Y)
 when `q⁻¹(y) → q⁻¹(Y)` is. -/
 theorem epi_singularHomologyMap_preimageInclusion_iff :
     Epi (((singularHomologyFunctor (ModuleCat.{u} R) m).obj (ModuleCat.of R R)).map
-        (preimageInclusion p hy)) ↔
+        (p.preimageInclusion hy)) ↔
       Epi (((singularHomologyFunctor (ModuleCat.{u} R) m).obj (ModuleCat.of R R)).map
-        (preimageInclusion q hy)) := by
+        (q.preimageInclusion hy)) := by
   rw [← epi_comp_iff_of_isIso _
       ((Φ.restrictPreimage Y).toHomotopyEquiv.singularHomologyIso (ModuleCat.of R R) m).hom,
     singularHomologyMap_preimageInclusion_comp, epi_comp_iff_of_epi]

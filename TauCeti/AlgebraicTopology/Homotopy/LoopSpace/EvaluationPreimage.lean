@@ -77,15 +77,6 @@ section Sphere
 
 variable {k : ℕ} (s₀ : sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1)
 
-/-- Evaluation at a point of the sphere, restricted to the maps sending it into a subset `Y`, is a
-Serre fibration over `Y`. -/
-private theorem mem_serreFibrations_restrictPreimage_mappingSpaceEval_sphere :
-    TopCat.serreFibrations
-      (_root_.TopCat.ofHom ((mappingSpaceEval (X := Q) s₀).restrictPreimage Y)) :=
-  TopCat.mem_serreFibrations_restrictPreimage
-    (p := _root_.TopCat.ofHom (mappingSpaceEval (X := Q) s₀))
-    (isHurewiczFibration_mappingSpaceEval_sphere.{0} k s₀).mem_serreFibrations Y
-
 /-- **Based maps of a sphere among the maps sending the base point into a highly connected
 subspace.** If `π_j(Y, y)` is trivial for every `j ≤ n`, the inclusion of the based maps
 `Map_*(Sᵏ, Q) = ev⁻¹(y)` into the maps `ev⁻¹(Y)` sending the base point `s₀` into `Y` induces
@@ -93,9 +84,9 @@ isomorphisms `H_m(Map_*(Sᵏ, Q); R) → H_m(ev⁻¹(Y); R)` for every `m < n`. 
 theorem isIso_singularHomologyMap_preimageInclusion_mappingSpaceEval_sphere (hy : y ∈ Y)
     (hY : ∀ j ≤ n, Subsingleton (π_ j Y ⟨y, hy⟩)) {m : ℕ} (hm : m < n) :
     IsIso (((singularHomologyFunctor (ModuleCat.{u} R) m).obj (ModuleCat.of R R)).map
-      (TopCat.preimageInclusion (mappingSpaceEval (X := Q) s₀) hy)) :=
+      ((mappingSpaceEval (X := Q) s₀).preimageInclusion hy)) :=
   TopCat.isIso_singularHomologyMap_preimageInclusion R
-    (mem_serreFibrations_restrictPreimage_mappingSpaceEval_sphere s₀) hy hY hm
+    (mem_serreFibrations_restrictPreimage_mappingSpaceEval_sphere s₀ Y) hy hY hm
 
 /-- **Based maps of a sphere among the maps sending the base point into a highly connected
 subspace, in the top degree.** If `π_j(Y, y)` is trivial for every `j ≤ n`, the inclusion of the
@@ -104,9 +95,9 @@ induces surjections `H_m(Map_*(Sᵏ, Q); R) → H_m(ev⁻¹(Y); R)` for every `m
 theorem epi_singularHomologyMap_preimageInclusion_mappingSpaceEval_sphere (hy : y ∈ Y)
     (hY : ∀ j ≤ n, Subsingleton (π_ j Y ⟨y, hy⟩)) {m : ℕ} (hm : m ≤ n) :
     Epi (((singularHomologyFunctor (ModuleCat.{u} R) m).obj (ModuleCat.of R R)).map
-      (TopCat.preimageInclusion (mappingSpaceEval (X := Q) s₀) hy)) :=
+      ((mappingSpaceEval (X := Q) s₀).preimageInclusion hy)) :=
   TopCat.epi_singularHomologyMap_preimageInclusion R
-    (mem_serreFibrations_restrictPreimage_mappingSpaceEval_sphere s₀) hy hY hm
+    (mem_serreFibrations_restrictPreimage_mappingSpaceEval_sphere s₀ Y) hy hY hm
 
 end Sphere
 
@@ -122,7 +113,7 @@ paths ending at the constant loop at `y` induces isomorphisms
 theorem isIso_singularHomologyMap_preimageInclusion_constContractibleMoorePaths (hy : y ∈ Y)
     (hY : ∀ j ≤ n, Subsingleton (π_ j Y ⟨y, hy⟩)) {m : ℕ} (hm : m < n) :
     IsIso (((singularHomologyFunctor (ModuleCat.{u} R) m).obj (ModuleCat.of R R)).map
-      (TopCat.preimageInclusion (ContinuousMap.snd.comp (constContractibleMooreEndpoints Q)) hy)) :=
+      ((ContinuousMap.snd.comp (constContractibleMooreEndpoints Q)).preimageInclusion hy)) :=
   ((sphere2SouthFiberHomotopyEquivMoorePaths Q).isIso_singularHomologyMap_preimageInclusion_iff
     R hy m).2
     (isIso_singularHomologyMap_preimageInclusion_mappingSpaceEval_sphere R Sphere2.south hy hY hm)
@@ -134,7 +125,7 @@ point of `Y` induces surjections `H_m(P_{Q→y} 𝓛₀Q; R) → H_m(P_{Q→Y} �
 theorem epi_singularHomologyMap_preimageInclusion_constContractibleMoorePaths (hy : y ∈ Y)
     (hY : ∀ j ≤ n, Subsingleton (π_ j Y ⟨y, hy⟩)) {m : ℕ} (hm : m ≤ n) :
     Epi (((singularHomologyFunctor (ModuleCat.{u} R) m).obj (ModuleCat.of R R)).map
-      (TopCat.preimageInclusion (ContinuousMap.snd.comp (constContractibleMooreEndpoints Q)) hy)) :=
+      ((ContinuousMap.snd.comp (constContractibleMooreEndpoints Q)).preimageInclusion hy)) :=
   ((sphere2SouthFiberHomotopyEquivMoorePaths Q).epi_singularHomologyMap_preimageInclusion_iff
     R hy m).2
     (epi_singularHomologyMap_preimageInclusion_mappingSpaceEval_sphere R Sphere2.south hy hY hm)
