@@ -138,8 +138,8 @@ theorem index_trajectoryOperator_eq_finsum_sigPos_sub_sigNeg_crossingForm
       ∑ᶠ t, ((sigPos (crossingForm ((innerSL ℝ).comp (A t)) ((innerSL ℝ).comp (deriv A t))) : ℤ) -
         sigNeg (crossingForm ((innerSL ℝ).comp (A t)) ((innerSL ℝ).comp (deriv A t)))) := by
   obtain ⟨a, b, hab, hout, ha, hb⟩ := exists_le_forall_ker_eq_bot_and_sigNeg_eq_of_tendsto hsym
-    (LinearMap.ker_eq_bot.2 (injective_of_forall_norm_le fun v ↦ (le_inv_mul_iff₀ hα).2 (hminus v)))
-    (LinearMap.ker_eq_bot.2 (injective_of_forall_norm_le fun v ↦ (le_inv_mul_iff₀ hα).2 (hplus v)))
+    (ker_eq_bot_of_forall_mul_norm_le hα hminus)
+    (ker_eq_bot_of_forall_mul_norm_le hα hplus)
     hbot htop
   have hnd {s : ℝ} (hs : s ∉ Ioo a b) : ((innerSL ℝ).comp (A s)).toBilinForm.Nondegenerate :=
     nondegenerate_toBilinForm_innerSL_comp_iff.2 (hout s hs)
@@ -174,12 +174,12 @@ theorem eventually_index_trajectoryOperator_eq_spectralFlow [CompleteSpace E]
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A) :
     ∀ᶠ ab in atBot ×ˢ atTop,
       (trajectoryOperator (p := 2) AL).index = spectralFlow A ab.1 ab.2 := by
-  have hker {L : E →L[ℝ] E} (hL : ∀ v, α * ‖v‖ ≤ ‖L v‖) : LinearMap.ker (L : E →ₗ[ℝ] E) = ⊥ :=
-    LinearMap.ker_eq_bot.2 (injective_of_forall_norm_le fun v ↦ (le_inv_mul_iff₀ hα).2 (hL v))
   filter_upwards [((eventually_le_atBot 0).and
-      (eventually_ker_eq_bot_and_sigNeg_eq_of_tendsto hsym (hker hminus) hbot)).prod_mk
+      (eventually_ker_eq_bot_and_sigNeg_eq_of_tendsto hsym
+        (ker_eq_bot_of_forall_mul_norm_le hα hminus) hbot)).prod_mk
     ((eventually_ge_atTop 0).and
-      (eventually_ker_eq_bot_and_sigNeg_eq_of_tendsto hsym (hker hplus) htop))]
+      (eventually_ker_eq_bot_and_sigNeg_eq_of_tendsto hsym
+        (ker_eq_bot_of_forall_mul_norm_le hα hplus) htop))]
     with ⟨a, b⟩ hab
   obtain ⟨⟨ha0, -, ha⟩, hb0, -, hb⟩ := hab
   rw [index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank hA
