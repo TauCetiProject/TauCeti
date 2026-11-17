@@ -112,6 +112,8 @@ estimates do not see the boundary.
   `f - ⟪b, ∇u⟫ - c u`.
 * `TauCeti.PDE.UniformlyEllipticOn.integrable_energyIntegrand_jetField`: the energy density of
   two Sobolev functions is integrable.
+* `TauCeti.PDE.UniformlyEllipticOn.integrable_matrixBilinearForm_gradient`: the principal
+  density `⟨a ∇u, ∇w⟩` of two Sobolev functions is integrable.
 * `TauCeti.PDE.UniformlyEllipticOn.norm_energyFormH1_le`: boundedness of the energy form, with
   explicit constant `Λ + β + γ`.
 * `TauCeti.PDE.UniformlyEllipticOn.garding_energyFormH1_self`: Gårding's inequality on `H¹(Ω)`.
@@ -1002,6 +1004,17 @@ theorem integrable_energyIntegrand_jetField
   PDE.integrable_energyIntegrand_jetField
     (memLp_energyIntegrand_of_bounds h.upper_nonneg ha hb hc
       (fun _x hx eta xi => h.upper_bound hx eta xi) hb_bound hc_bound) u v
+
+/-- The density `⟨a ∇u, ∇w⟩` of the principal energy form is integrable on `Ω` for a measurable
+uniformly elliptic `a` and `u, w ∈ H¹(Ω)`. -/
+theorem integrable_matrixBilinearForm_gradient
+    (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (ha : AEStronglyMeasurable a (mu.restrict Omega)) (u w : W1p mu Omega 2) :
+    Integrable (fun x => matrixBilinearForm (a x) (W1p.gradient w x) (W1p.gradient u x))
+      (mu.restrict Omega) := by
+  simpa using h.integrable_energyIntegrand_jetField ha (b := 0) (c := 0) (beta := 0)
+    (gamma := 0) aestronglyMeasurable_const aestronglyMeasurable_const (fun _ _ => by simp)
+    (fun _ _ => by simp) u w
 
 /-- **Boundedness of the energy form on `H¹(Ω)`.** For a uniformly elliptic principal
 coefficient with upper constant `Λ`, a drift bounded by `β` and a mass coefficient bounded by
