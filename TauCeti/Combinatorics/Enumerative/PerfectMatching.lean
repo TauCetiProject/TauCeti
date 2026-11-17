@@ -424,6 +424,11 @@ theorem congr_trans (e : α ≃ β) (e' : β ≃ γ) (D : PerfectMatching α) :
     rw [congr_val_apply, congr_val_apply, congr_val_apply, Equiv.symm_trans_apply,
       Equiv.trans_apply]
 
+/-- Transporting along a product of permutations applies the right factor and then the left. -/
+theorem congr_mul (σ τ : Equiv.Perm α) (D : PerfectMatching α) :
+    congr (σ * τ) D = congr σ (congr τ D) := by
+  rw [Equiv.Perm.mul_def, congr_trans]
+
 /-- Transporting back along `e` is transporting along `e.symm`, since transports compose. -/
 @[simp]
 theorem congr_symm (e : α ≃ β) : (congr e).symm = congr e.symm :=
@@ -442,6 +447,19 @@ transposition of `D.val a` with `b`. The arcs at `a` and `b` are distinct when `
 `b ≠ D.val a`; when `b = D.val a` the transposition is trivial and the result is `D` itself. -/
 def reconnect (D : PerfectMatching α) (a b : α) : PerfectMatching α :=
   congr (Equiv.swap (D.val a) b) D
+
+/-- Reconnecting two arcs is transporting the perfect matching along `Equiv.swap (D.val a) b`. -/
+theorem reconnect_def (D : PerfectMatching α) (a b : α) :
+    D.reconnect a b = congr (Equiv.swap (D.val a) b) D :=
+  (rfl)
+
+/-- Transporting a perfect matching along an equivalence commutes with reconnecting two arcs. -/
+@[simp]
+theorem congr_reconnect [DecidableEq β] (e : α ≃ β) (D : PerfectMatching α) (a b : α) :
+    congr e (D.reconnect a b) = (congr e D).reconnect (e a) (e b) := by
+  have he : (Equiv.swap (D.val a) b).trans e = e.trans (Equiv.swap (e (D.val a)) (e b)) :=
+    Equiv.ext (e.injective.map_swap (D.val a) b)
+  rw [reconnect_def, reconnect_def, congr_val_apply_apply, congr_trans, congr_trans, he]
 
 /-- The involution underlying a reconnected matching is the old one conjugated by the
 transposition of `D.val a` with `b`. -/
