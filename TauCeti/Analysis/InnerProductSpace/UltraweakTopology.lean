@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Dual
 public import Mathlib.Analysis.InnerProductSpace.WeakOperatorTopology
+public import Mathlib.Analysis.LocallyConvex.WeakSpace
 public import TauCeti.Analysis.InnerProductSpace.HilbertSum
 public import TauCeti.Analysis.LocallyConvex.UltrastrongTopology
+import TauCeti.Analysis.InnerProductSpace.WeakOperatorTopology.Compact
 
 /-!
 # The ultraweak operator topology
@@ -23,13 +26,23 @@ transported along the ampliation. A net `Tᵢ` converges ultraweakly to `T` exac
 The topology lives on the type copy `TauCeti.ContinuousLinearMapUltraweak 𝕜 E F`, in the manner of
 Mathlib's `E →WOT[𝕜] F`. The copy is a Hausdorff locally convex topological vector space, with the
 seminorms `‖⟪η, (⊕ T) ξ⟫‖` (`withSeminorms`). On operators of a Hilbert space the adjoint is
-ultraweakly continuous and multiplication is separately continuous.
+ultraweakly continuous and multiplication is separately continuous, so commutants are ultraweakly
+closed (`isClosed_image_ofCLM_centralizer`).
 
 The ultraweak topology sits between the others: it is coarser than the ultrastrong topology of
 `TauCeti.ContinuousLinearMapUltrastrong` and finer than the weak operator topology
 (`continuous_ofUltrastrong`, `continuous_toWOT`). On norm-bounded sets it agrees with the weak
 operator topology (`isInducing_restrict_toWOT`): for a uniformly bounded net, weak operator and
-ultraweak convergence are equivalent.
+ultraweak convergence are equivalent, and every closed norm ball of operators into a Hilbert space
+is ultraweakly compact (`isCompact_image_ofCLM_closedBall`).
+
+When `F` is complete, Riesz representation on `ℓ²(ℕ, F)` turns the ultrastrong dual factorization
+into a single matrix coefficient `A ↦ ⟪η, (⊕ₙ A) ξ⟫ = ∑ₙ ⟪ηₙ, A ξₙ⟫`
+(`ContinuousLinearMapUltrastrong.exists_tsum_inner_apply_eq`). Every ultrastrongly continuous
+linear functional is therefore ultraweakly continuous, the two topologies have the same continuous
+linear functionals (`ContinuousLinearMapUltraweak.exists_tsum_inner_apply_eq`), and any convex set
+of operators has the same ultrastrong and ultraweak closures
+(`Convex.ultrastrong_ofCLM_mem_closure_image_iff`).
 
 ## Implementation notes
 
@@ -40,7 +53,7 @@ The seminorms are not exposed; they are used through `seminorm_apply` and `semin
 
 ## References
 
-* J. Dixmier, *Von Neumann Algebras*, North-Holland, 1981, Part I, Chapter 3, §1.
+* J. Dixmier, *Von Neumann Algebras*, North-Holland, 1981, Part I, Chapter 3, §§1, 3.
 * M. Takesaki, *Theory of Operator Algebras I*, Springer, 1979, Chapter II, §2.
 -/
 
@@ -83,6 +96,14 @@ def equiv : ContinuousLinearMapUltraweak 𝕜 E F ≃ (E →L[𝕜] F) where
 theorem toCLM_injective :
     Function.Injective (toCLM : ContinuousLinearMapUltraweak 𝕜 E F → E →L[𝕜] F) :=
   equiv.injective
+
+theorem ofCLM_injective :
+    Function.Injective (ofCLM : (E →L[𝕜] F) → ContinuousLinearMapUltraweak 𝕜 E F) :=
+  equiv.symm.injective
+
+theorem ofCLM_surjective :
+    Function.Surjective (ofCLM : (E →L[𝕜] F) → ContinuousLinearMapUltraweak 𝕜 E F) :=
+  equiv.symm.surjective
 
 instance instAddCommGroup : AddCommGroup (ContinuousLinearMapUltraweak 𝕜 E F) :=
   equiv.addCommGroup
@@ -129,6 +150,9 @@ instance instRing : Ring (ContinuousLinearMapUltraweak 𝕜 E E) :=
 @[simp] theorem toCLM_mul (A B : ContinuousLinearMapUltraweak 𝕜 E E) :
     (A * B).toCLM = A.toCLM * B.toCLM := rfl
 
+@[simp] theorem ofCLM_mul (A B : E →L[𝕜] E) :
+    ofCLM (A * B) = (ofCLM A : ContinuousLinearMapUltraweak 𝕜 E E) * ofCLM B := rfl
+
 /-- The linear equivalence between the ultraweak copy and `E →L[𝕜] F`. -/
 @[simps!]
 def linearEquiv (S : Type*) [Semiring S] [Module S F] [SMulCommClass 𝕜 S F]
@@ -145,6 +169,9 @@ instance instStarModule : StarModule 𝕜 (ContinuousLinearMapUltraweak 𝕜 E E
 
 @[simp] theorem toCLM_star (A : ContinuousLinearMapUltraweak 𝕜 E E) :
     (star A).toCLM = star A.toCLM := rfl
+
+@[simp] theorem ofCLM_star (A : E →L[𝕜] E) :
+    ofCLM (star A) = star (ofCLM A : ContinuousLinearMapUltraweak 𝕜 E E) := rfl
 
 end Algebra
 
@@ -297,6 +324,19 @@ instance instIsSemitopologicalRing : IsSemitopologicalRing (ContinuousLinearMapU
   continuous_mul_const {A} := continuous_of_continuous_inner_ampliation_apply fun ξ η ↦ by
     simpa using continuous_inner_ampliation_apply (lp.ampliation ℕ 2 A.toCLM ξ) η
 
+/-- The commutant of any set of operators on a Hilbert space is closed in the ultraweak operator
+topology. -/
+theorem isClosed_image_ofCLM_centralizer (s : Set (E →L[𝕜] E)) :
+    IsClosed (ofCLM '' s.centralizer : Set (ContinuousLinearMapUltraweak 𝕜 E E)) := by
+  have h : (ofCLM '' s.centralizer : Set (ContinuousLinearMapUltraweak 𝕜 E E)) =
+      (ofCLM '' s).centralizer := by
+    ext T
+    obtain ⟨T, rfl⟩ := ofCLM_surjective T
+    rw [ofCLM_injective.mem_set_image]
+    simp only [Set.mem_centralizer_iff, Set.forall_mem_image, ← ofCLM_mul, ofCLM_injective.eq_iff]
+  rw [h]
+  exact Set.isClosed_centralizer _
+
 end Hilbert
 
 /-! ### Comparison with the norm, ultrastrong and weak operator topologies -/
@@ -364,7 +404,121 @@ theorem isInducing_restrict_toWOT {s : Set (ContinuousLinearMapUltraweak 𝕜 E 
   exact (tendsto_iff_tendsto_toWOT_of_eventually_norm_le
     (Eventually.of_forall fun B : s ↦ hs B B.2)).2 tendsto_comap
 
+/-- **Ultraweak compactness of operator balls.** Every closed norm ball of bounded operators from
+an inner product space to a Hilbert space is compact in the ultraweak operator topology. -/
+theorem isCompact_image_ofCLM_closedBall (A : E →L[𝕜] F) (r : ℝ) :
+    IsCompact (ofCLM '' Metric.closedBall A r : Set (ContinuousLinearMapUltraweak 𝕜 E F)) := by
+  set s : Set (ContinuousLinearMapUltraweak 𝕜 E F) := ofCLM '' Metric.closedBall A r
+  have hs : ∀ B ∈ s, ‖B.toCLM‖ ≤ r + ‖A‖ := by
+    rintro _ ⟨T, hT, rfl⟩
+    rw [Metric.mem_closedBall, dist_eq_norm] at hT
+    calc ‖T‖ = ‖T - A + A‖ := by rw [sub_add_cancel]
+      _ ≤ ‖T - A‖ + ‖A‖ := norm_add_le _ _
+      _ ≤ r + ‖A‖ := by gcongr
+  rw [isCompact_iff_compactSpace, ← isCompact_univ_iff,
+    (isInducing_restrict_toWOT hs).isCompact_iff, Set.image_univ, Set.range_domRestrict]
+  simpa only [s, Set.image_image] using ContinuousLinearMapWOT.isCompact_image_ofCLM_closedBall A r
+
+/-- A norm-bounded set of operators from an inner product space to a Hilbert space has compact
+closure in the ultraweak operator topology. -/
+theorem isCompact_closure_image_ofCLM_of_isBounded {s : Set (E →L[𝕜] F)}
+    (hs : Bornology.IsBounded s) :
+    IsCompact (closure (ofCLM '' s : Set (ContinuousLinearMapUltraweak 𝕜 E F))) := by
+  obtain ⟨r, hr⟩ := hs.subset_closedBall 0
+  exact (isCompact_image_ofCLM_closedBall (0 : E →L[𝕜] F) r).closure_of_subset (Set.image_mono hr)
+
 end Comparison
+
+end ContinuousLinearMapUltraweak
+
+namespace ContinuousLinearMapUltrastrong
+
+variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
+
+/-- **Ultrastrongly continuous functionals into a Hilbert space.** Every ultrastrongly continuous
+linear functional on `E →L[𝕜] F` is a single ampliation matrix coefficient
+`A ↦ ⟪η, (⊕ₙ A) ξ⟫`. -/
+theorem exists_inner_ampliation_apply_eq
+    (φ : StrongDual 𝕜 (ContinuousLinearMapUltrastrong 𝕜 E F)) :
+    ∃ (ξ : ℓ²(ℕ, E)) (η : ℓ²(ℕ, F)),
+      ∀ A : ContinuousLinearMapUltrastrong 𝕜 E F, φ A = ⟪η, lp.ampliation ℕ 2 A.toCLM ξ⟫_𝕜 := by
+  obtain ⟨ξ, G, hG⟩ := exists_strongDual_ampliation_apply_eq φ
+  exact ⟨ξ, (InnerProductSpace.toDual 𝕜 ℓ²(ℕ, F)).symm G, fun A ↦ by simp [hG A]⟩
+
+/-- **Series form of ultrastrongly continuous functionals.** Every ultrastrongly continuous linear
+functional on `E →L[𝕜] F` has the form `A ↦ ∑ₙ ⟪ηₙ, A ξₙ⟫` for square-summable sequences
+`ξ ∈ ℓ²(ℕ, E)` and `η ∈ ℓ²(ℕ, F)`. -/
+theorem exists_tsum_inner_apply_eq (φ : StrongDual 𝕜 (ContinuousLinearMapUltrastrong 𝕜 E F)) :
+    ∃ (ξ : ℓ²(ℕ, E)) (η : ℓ²(ℕ, F)),
+      ∀ A : ContinuousLinearMapUltrastrong 𝕜 E F, φ A = ∑' n, ⟪η n, A.toCLM (ξ n)⟫_𝕜 := by
+  obtain ⟨ξ, η, h⟩ := exists_inner_ampliation_apply_eq φ
+  exact ⟨ξ, η, fun A ↦ by simp [h A, lp.inner_eq_tsum]⟩
+
+end ContinuousLinearMapUltrastrong
+
+namespace ContinuousLinearMapUltraweak
+
+variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
+
+/-! ### Continuous linear functionals and convex closures -/
+
+/-- Every linear functional on operators which is continuous for the ultrastrong topology is
+continuous for the ultraweak topology. -/
+theorem continuous_strongDual_apply_ultrastrong_ofCLM
+    (φ : StrongDual 𝕜 (ContinuousLinearMapUltrastrong 𝕜 E F)) :
+    Continuous fun A : ContinuousLinearMapUltraweak 𝕜 E F ↦
+      φ (ContinuousLinearMapUltrastrong.ofCLM A.toCLM) := by
+  obtain ⟨ξ, η, h⟩ := ContinuousLinearMapUltrastrong.exists_inner_ampliation_apply_eq φ
+  simpa only [h] using continuous_inner_ampliation_apply ξ η
+
+/-- **Continuous functionals in the ultraweak operator topology.** Every ultraweakly continuous
+linear functional on `E →L[𝕜] F` is a single ampliation matrix coefficient
+`A ↦ ⟪η, (⊕ₙ A) ξ⟫`. -/
+theorem exists_inner_ampliation_apply_eq (φ : StrongDual 𝕜 (ContinuousLinearMapUltraweak 𝕜 E F)) :
+    ∃ (ξ : ℓ²(ℕ, E)) (η : ℓ²(ℕ, F)),
+      ∀ A : ContinuousLinearMapUltraweak 𝕜 E F, φ A = ⟪η, lp.ampliation ℕ 2 A.toCLM ξ⟫_𝕜 := by
+  -- Precompose `φ` with the continuous identity map from the ultrastrong to the ultraweak copy.
+  let ι : ContinuousLinearMapUltrastrong 𝕜 E F →L[𝕜] ContinuousLinearMapUltraweak 𝕜 E F :=
+    ⟨(linearEquiv 𝕜).symm.toLinearMap ∘ₗ
+      (ContinuousLinearMapUltrastrong.linearEquiv 𝕜).toLinearMap, continuous_ofUltrastrong⟩
+  obtain ⟨ξ, η, h⟩ := ContinuousLinearMapUltrastrong.exists_inner_ampliation_apply_eq (φ.comp ι)
+  exact ⟨ξ, η, fun A ↦ h (ContinuousLinearMapUltrastrong.ofCLM A.toCLM)⟩
+
+/-- **Series form of ultraweakly continuous functionals.** Every ultraweakly continuous linear
+functional on `E →L[𝕜] F` has the form `A ↦ ∑ₙ ⟪ηₙ, A ξₙ⟫` for square-summable sequences
+`ξ ∈ ℓ²(ℕ, E)` and `η ∈ ℓ²(ℕ, F)`. -/
+theorem exists_tsum_inner_apply_eq (φ : StrongDual 𝕜 (ContinuousLinearMapUltraweak 𝕜 E F)) :
+    ∃ (ξ : ℓ²(ℕ, E)) (η : ℓ²(ℕ, F)),
+      ∀ A : ContinuousLinearMapUltraweak 𝕜 E F, φ A = ∑' n, ⟪η n, A.toCLM (ξ n)⟫_𝕜 := by
+  obtain ⟨ξ, η, h⟩ := exists_inner_ampliation_apply_eq φ
+  exact ⟨ξ, η, fun A ↦ by simp [h A, lp.inner_eq_tsum]⟩
+
+variable [NormedSpace ℝ F] [IsScalarTower ℝ 𝕜 F]
+
+/-- For a convex set of operators into a Hilbert space, the ultrastrong and ultraweak closures
+contain the same operators. -/
+theorem _root_.Convex.ultrastrong_ofCLM_mem_closure_image_iff {s : Set (E →L[𝕜] F)}
+    (hs : Convex ℝ s) {T : E →L[𝕜] F} :
+    ContinuousLinearMapUltrastrong.ofCLM T ∈
+        closure (ContinuousLinearMapUltrastrong.ofCLM '' s) ↔
+      ofCLM T ∈ closure (ofCLM '' s) := by
+  refine ⟨fun h ↦ map_mem_closure
+    (f := fun A : ContinuousLinearMapUltrastrong 𝕜 E F ↦ ofCLM A.toCLM)
+    continuous_ofUltrastrong h ?_, fun h ↦ ?_⟩
+  · rintro _ ⟨a, ha, rfl⟩
+    exact ⟨a, ha, rfl⟩
+  · -- `e` is the identity on underlying operators, from the ultraweak to the ultrastrong copy.
+    let e : ContinuousLinearMapUltraweak 𝕜 E F →ₗ[𝕜] ContinuousLinearMapUltrastrong 𝕜 E F :=
+      (ContinuousLinearMapUltrastrong.linearEquiv 𝕜).symm.toLinearMap ∘ₗ
+        (linearEquiv 𝕜).toLinearMap
+    have he (a : E →L[𝕜] F) : e (ofCLM a) = ContinuousLinearMapUltrastrong.ofCLM a := rfl
+    have hconv : Convex ℝ (ofCLM '' s) := hs.linear_image (linearEquiv ℝ).symm.toLinearMap
+    have himage : e '' (ofCLM '' s) = ContinuousLinearMapUltrastrong.ofCLM '' s := by
+      simp only [Set.image_image, he]
+    exact himage ▸ he T ▸ e.image_closure_of_convex hconv
+      (fun f ↦ continuous_strongDual_apply_ultrastrong_ofCLM f) ⟨_, h, rfl⟩
 
 end ContinuousLinearMapUltraweak
 
