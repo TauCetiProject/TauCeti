@@ -19,6 +19,8 @@ point `e` of the unit sphere.
 ## Main results
 
 * `Filter.Tendsto.normalize`: normalization preserves limits with a nonzero limit.
+* `NormedSpace.isClosed_setOf_eq_zero_or_normalize_mem`: the cone `{0} ∪ {x ≠ 0 | x / ‖x‖ ∈ S}`
+  over a closed set `S` of directions is closed.
 * `TauCeti.norm_div_norm_smul_eq_of_inv_norm_smul_eq_normalize`: rescaling a vector with the
   direction of `w` by the ratio of the norms recovers `w`.
 * `TauCeti.norm_div_norm_smul_le`, `Continuous.div_norm_smul`: rescaling `y` to length
@@ -48,6 +50,18 @@ theorem _root_.Filter.Tendsto.normalize {α : Type*} {l : Filter α} {f : α →
     Tendsto (fun a => NormedSpace.normalize (f a)) l (𝓝 (NormedSpace.normalize x)) := by
   simp only [NormedSpace.normalize]
   exact (hf.norm.inv₀ (norm_ne_zero_iff.mpr hx)).smul hf
+
+/-- The cone over a closed set `S` of directions, the set of vectors that are zero or whose
+normalization lies in `S`, is closed. -/
+theorem _root_.NormedSpace.isClosed_setOf_eq_zero_or_normalize_mem {S : Set E} (hS : IsClosed S) :
+    IsClosed {x : E | x = 0 ∨ normalize x ∈ S} := by
+  have : {x : E | x = 0 ∨ normalize x ∈ S}ᶜ = {x | x ≠ 0} ∩ normalize ⁻¹' Sᶜ := by
+    ext x
+    simp [not_or]
+  rw [← isOpen_compl_iff, this]
+  exact ContinuousOn.isOpen_inter_preimage
+    (fun x hx ↦ ContinuousAt.continuousWithinAt (tendsto_id.normalize hx)) isOpen_ne
+    hS.isOpen_compl
 
 /-- Radial projection sends a continuous nowhere-zero map into a real normed space continuously
 to its unit sphere. -/
