@@ -18,7 +18,8 @@ inclusions and derivatives, and they form a two-sided ideal under composition wi
 (`TauCeti.Symbol.IsUniformlySmoothing.comp_right`, `TauCeti.Symbol.IsUniformlySmoothing.comp_left`).
 A uniform symbol vanishing at all large frequencies is uniformly smoothing
 (`TauCeti.Symbol.IsUniform.isUniformlySmoothing_of_coefficient_eq_zero`), as is a smoothing symbol
-with compact spatial support (`TauCeti.Symbol.IsSmoothing.isUniformlySmoothing`).
+with compact spatial support
+(`TauCeti.Symbol.IsSmoothing.isUniformlySmoothing_of_hasCompactSpatialSupport`).
 -/
 
 public section
@@ -73,8 +74,8 @@ theorem IsUniformlySmoothing.isUniform {a : Symbol n V W m} (ha : a.IsUniformlyS
   exact isUniform_iff.1 hb
 
 /-- A smoothing symbol with compact spatial support is uniformly smoothing. -/
-theorem IsSmoothing.isUniformlySmoothing {a : Symbol n V W m} (ha : a.IsSmoothing)
-    (hsupp : a.HasCompactSpatialSupport) : a.IsUniformlySmoothing := fun m' =>
+theorem IsSmoothing.isUniformlySmoothing_of_hasCompactSpatialSupport {a : Symbol n V W m}
+    (ha : a.IsSmoothing) (hsupp : a.HasCompactSpatialSupport) : a.IsUniformlySmoothing := fun m' =>
   (isSmoothing_iff.1 ha m').imp fun _ hba => ⟨(hsupp.of_coefficient_eq hba).isUniform, hba⟩
 
 @[simp]

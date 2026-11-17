@@ -23,37 +23,25 @@ import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 /-!
 # Composition of symbols with a uniform right factor
 
-`TauCeti.Analysis.Pseudodifferential.Composition.Basic` constructs `a # b` when `b` has compact
-spatial support, excluding constant symbols, Bessel multipliers `⟨ξ / 2π⟩ ^ s`, and general uniform
-symbols (`TauCeti.Symbol.IsUniform`). This file constructs `a.uniformSharp b hb : Symbol n V U
-(m' + m)` for every symbol `a` of order `m'` and uniform symbol `b` of order `m` by integrating by
-parts `2(n + 1)` times in frequency via `TauCeti.Symbol.oneSubFrequencyLaplacian` and
-`TauCeti.Symbol.weightedSlice`:
-
+Constructs `a.uniformSharp b hb : Symbol n V U (m' + m)` for every symbol `a` of order `m'` and
+uniform symbol `b` (`IsUniform`) of order `m`, dropping the compact spatial support hypothesis of
+`Composition.Basic`. Integrating by parts `2(n + 1)` times in frequency via
+`oneSubFrequencyLaplacian` and `weightedSlice` yields
 `(a # b)(x, ξ) = ∫ ((1 - Δ_ξ) ^ (n + 1) a)(x, ξ + 2πη) ∘ 𝓕 (weightedSlice b x ξ) η dη`.
 
 ## Main results
 
-* `TauCeti.Symbol.uniformSharp`, `TauCeti.Symbol.IsUniform.uniformSharp`,
-  `TauCeti.Symbol.coefficient_uniformSharp_congr`,
-  `TauCeti.Symbol.spatialDeriv_uniformSharp`, `TauCeti.Symbol.frequencyDeriv_uniformSharp`: the
-  composition symbol, preservation of `IsUniform`, order independence, and position/frequency
-  Leibniz rules.
-* `TauCeti.Symbol.IsUniformlySmoothing.uniformSharp_right`,
-  `TauCeti.Symbol.IsUniformlySmoothing.uniformSharp_left`,
-  `TauCeti.Symbol.IsUniformlySmoothing.isSmoothing_uniformSharp_left`: two-sided ideal closure of
-  uniformly smoothing symbols under `uniformSharp`.
-* `TauCeti.Symbol.quantizeSchwartzValue_eq_iterate_oneSubFrequencyLaplacian`,
-  `TauCeti.Symbol.quantizeSchwartzValue_uniformSharp`,
-  `TauCeti.Symbol.quantizeUniformCLM_uniformSharp`, `TauCeti.Symbol.uniformSharp_eq_sharp`:
-  trading `(1 - Δ_ξ) ^ N` against `(1 + ‖x - y‖²) ^ (-N)` on Schwartz space, `Op(a # b) =
-  Op(a) ∘ Op(b)`, and agreement with `sharp` for compactly supported right factors.
-* `TauCeti.Symbol.const_uniformSharp`, `TauCeti.Symbol.const_id_uniformSharp`,
-  `TauCeti.Symbol.uniformSharp_eq_comp_of_coefficient_eq`, `TauCeti.Symbol.uniformSharp_const`,
-  `TauCeti.Symbol.uniformSharp_const_id`, `TauCeti.Symbol.uniformSharp_assoc`,
-  `TauCeti.Symbol.uniformSharp_ofFrequency`, `TauCeti.Symbol.uniformSharp_besselPotential`,
-  `TauCeti.Symbol.quantizeUniformCLM_besselPotential_uniformSharp`: unit laws, associativity, and
-  composition with frequency multipliers and Bessel potentials.
+* `uniformSharp`, `IsUniform.uniformSharp`, `coefficient_uniformSharp_congr`,
+  `spatialDeriv_uniformSharp`, `frequencyDeriv_uniformSharp`: composition symbol, preservation of
+  `IsUniform`, order independence, and Leibniz rules.
+* `IsUniformlySmoothing.uniformSharp_right`, `IsUniformlySmoothing.uniformSharp_left`,
+  `IsUniformlySmoothing.isSmoothing_uniformSharp_left`: ideal closure under `uniformSharp`.
+* `quantizeSchwartzValue_uniformSharp`, `quantizeUniformCLM_uniformSharp`, `uniformSharp_eq_sharp`:
+  `Op(a # b) = Op(a) ∘ Op(b)` on Schwartz space and agreement with `sharp`.
+* `const_uniformSharp`, `const_id_uniformSharp`, `uniformSharp_eq_comp_of_coefficient_eq`,
+  `uniformSharp_const`, `uniformSharp_const_id`, `uniformSharp_assoc`, `uniformSharp_ofFrequency`,
+  `uniformSharp_besselPotential`, `quantizeUniformCLM_besselPotential_uniformSharp`: unit laws,
+  associativity, and composition with frequency multipliers and Bessel potentials.
 
 ## References
 
@@ -63,14 +51,14 @@ parts `2(n + 1)` times in frequency via `TauCeti.Symbol.oneSubFrequencyLaplacian
 -/
 
 public section
-
 noncomputable section
 
 open MeasureTheory Real FourierTransform
+open ContinuousLinearMap (compL bilinearRestrictScalars_apply_apply compL_apply comp_apply
+  precompR_apply precompL_apply opNorm_comp_le le_opNorm integral_apply)
 open scoped ContDiff RealInnerProductSpace SchwartzMap Topology
 
 namespace TauCeti
-
 namespace Symbol
 
 variable {n : ℕ} {m m' : ℝ} {V W U : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
@@ -101,37 +89,24 @@ private theorem IsUniform.exists_norm_uniformCompIntegrand_le (hb : b.IsUniform)
       C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2) * (1 + ‖η‖ ^ 2) ^ (-r / 2) := by
   obtain ⟨Ca, hCa0, hCa⟩ := ha
   obtain ⟨Cb, hCb0, hCb⟩ := hb.exists_norm_fourier_weightedSlice_le (r + |m'|)
-  have h2pi : 1 ≤ 2 * π := by linarith [Real.two_le_pi]
   refine ⟨Ca * 2 ^ (|m'| / 2) * (2 * π) ^ |m'| * Cb, by positivity, fun x hx ξ η ↦ ?_⟩
-  have hshift : (1 + ‖(2 * π) • η‖ ^ 2) ^ (|m'| / 2) ≤
-      (2 * π) ^ |m'| * (1 + ‖η‖ ^ 2) ^ (|m'| / 2) := by
-    simpa only [abs_abs] using one_add_norm_smul_sq_rpow_le h2pi |m'| η
-  have hpeetre : (1 + ‖ξ + (2 * π) • η‖ ^ 2) ^ (m' / 2) ≤
-      2 ^ (|m'| / 2) * (1 + ‖ξ‖ ^ 2) ^ (m' / 2) * ((2 * π) ^ |m'| * (1 + ‖η‖ ^ 2) ^ (|m'| / 2)) :=
-    (one_add_norm_add_sq_rpow_le_mul m' ξ ((2 * π) • η)).trans (by gcongr)
+  have hshift := one_add_norm_smul_sq_rpow_le (c := 2 * π) (by linarith [Real.two_le_pi]) |m'| η
+  rw [abs_abs] at hshift
+  have hpeetre := (one_add_norm_add_sq_rpow_le_mul m' ξ ((2 * π) • η)).trans
+    (mul_le_mul_of_nonneg_left hshift (by positivity))
   have hξ : (1 + ‖ξ‖ ^ 2) ^ (m' / 2) * (1 + ‖ξ‖ ^ 2) ^ (m / 2) =
       (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2) := by rw [← Real.rpow_add (by positivity)]; ring_nf
   have hη : (1 + ‖η‖ ^ 2) ^ (|m'| / 2) * (1 + ‖η‖ ^ 2) ^ (-(r + |m'|) / 2) =
       (1 + ‖η‖ ^ 2) ^ (-r / 2) := by rw [← Real.rpow_add (by positivity)]; ring_nf
-  calc ‖uniformCompIntegrand a b (x, ξ) η‖
-      ≤ ‖((Symbol.oneSubFrequencyLaplacian (m := m'))^[n + 1] a).coefficient (x, ξ + (2 * π) • η)‖ *
-          ‖𝓕 (weightedSlice b x ξ) η‖ := ContinuousLinearMap.opNorm_comp_le _ _
-    _ ≤ (Ca * (2 ^ (|m'| / 2) * (1 + ‖ξ‖ ^ 2) ^ (m' / 2) *
-          ((2 * π) ^ |m'| * (1 + ‖η‖ ^ 2) ^ (|m'| / 2)))) *
-          (Cb * (1 + ‖ξ‖ ^ 2) ^ (m / 2) * (1 + ‖η‖ ^ 2) ^ (-(r + |m'|) / 2)) :=
-        mul_le_mul ((hCa x hx _).trans (by gcongr)) (hCb x ξ η) (norm_nonneg _) (by positivity)
-    _ = Ca * 2 ^ (|m'| / 2) * (2 * π) ^ |m'| * Cb *
-          ((1 + ‖ξ‖ ^ 2) ^ (m' / 2) * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) *
-          ((1 + ‖η‖ ^ 2) ^ (|m'| / 2) * (1 + ‖η‖ ^ 2) ^ (-(r + |m'|) / 2)) := by ring
-    _ = _ := by rw [hξ, hη]
+  exact (opNorm_comp_le _ _).trans ((mul_le_mul ((hCa x hx _).trans
+    (mul_le_mul_of_nonneg_left hpeetre hCa0)) (hCb x ξ η) (norm_nonneg _)
+    (by positivity)).trans_eq (by rw [← hξ, ← hη]; ring))
 
 private theorem IsUniform.continuous_uniformCompIntegrand (hb : b.IsUniform) :
     Continuous fun q : (CoordinateSpace n × CoordinateSpace n) × CoordinateSpace n ↦
-      uniformCompIntegrand a b q.1 q.2 := by
-  dsimp only [uniformCompIntegrand]
-  have hca := ((Symbol.oneSubFrequencyLaplacian (m := m'))^[n + 1] a).contDiff_coefficient
-  exact (hca.continuous.comp ((continuous_fst.comp continuous_fst).prodMk
-    ((continuous_snd.comp continuous_fst).add
+      uniformCompIntegrand a b q.1 q.2 :=
+  (((Symbol.oneSubFrequencyLaplacian (m := m'))^[n + 1] a).contDiff_coefficient.continuous.comp
+    ((continuous_fst.comp continuous_fst).prodMk ((continuous_snd.comp continuous_fst).add
       ((continuous_const_smul (2 * π)).comp continuous_snd)))).clm_comp
     hb.continuous_fourier_weightedSlice
 
@@ -155,10 +130,8 @@ private theorem IsUniform.exists_norm_uniformCompIntegrand_le_weight (hb : b.IsU
       (Metric.closedBall p₀.1 1) (isCompact_closedBall p₀.1 1)) ((n : ℝ) + 1)
   set M := (2 : ℝ) ^ |m' + m| * (1 + ‖p₀.2‖ ^ 2) ^ ((m' + m) / 2)
   refine ⟨C * M, by positivity, fun p hp₁ hp₂ η ↦ (hC p.1 hp₁ p.2 η).trans ?_⟩
-  have hMp : (1 + ‖p.2‖ ^ 2) ^ ((m' + m) / 2) ≤ M :=
-    one_add_norm_sq_rpow_le_of_norm_sub_le_one
-      (by simpa only [Metric.mem_closedBall, dist_eq_norm] using hp₂) (m' + m)
-  gcongr
+  have hMp := one_add_norm_sq_rpow_le_of_norm_sub_le_one
+    (by simpa only [Metric.mem_closedBall, dist_eq_norm] using hp₂) (m' + m); gcongr
 
 private theorem IsUniform.continuous_uniformCompCoeff (hb : b.IsUniform) :
     Continuous (uniformCompCoeff a b) := by
@@ -173,8 +146,7 @@ private theorem IsUniform.continuous_uniformCompCoeff (hb : b.IsUniform) :
   filter_upwards [continuous_fst.continuousAt.preimage_mem_nhds
       (Metric.closedBall_mem_nhds p₀.1 one_pos),
     continuous_snd.continuousAt.preimage_mem_nhds (Metric.closedBall_mem_nhds p₀.2 one_pos)]
-    with p hp₁ hp₂
-  exact .of_forall (hC p hp₁ hp₂)
+    with p hp₁ hp₂ using .of_forall (hC p hp₁ hp₂)
 
 private theorem IsUniform.exists_norm_uniformCompCoeff_le (hb : b.IsUniform)
     {K : Set (CoordinateSpace n)}
@@ -184,57 +156,55 @@ private theorem IsUniform.exists_norm_uniformCompCoeff_le (hb : b.IsUniform)
     ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ,
       ‖uniformCompCoeff a b (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2) := by
   obtain ⟨C, hC0, hC⟩ := hb.exists_norm_uniformCompIntegrand_le ha ((n : ℝ) + 1)
-  set I := ∫ η : CoordinateSpace n, (1 + ‖η‖ ^ 2) ^ (-((n : ℝ) + 1) / 2)
-  refine ⟨C * I, mul_nonneg hC0 (integral_nonneg fun _ ↦ by positivity), fun x hx ξ ↦ ?_⟩
-  refine (norm_integral_le_of_norm_le (integrable_one_add_norm_sq_rpow_neg_succ_div_two.const_mul
-    (C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2))) (.of_forall fun η ↦ hC x hx ξ η)).trans_eq ?_
-  rw [integral_const_mul]; ring
+  exact ⟨C * ∫ η : CoordinateSpace n, (1 + ‖η‖ ^ 2) ^ (-((n : ℝ) + 1) / 2),
+    mul_nonneg hC0 (integral_nonneg fun _ ↦ by positivity), fun x hx ξ ↦
+    (norm_integral_le_of_norm_le (integrable_one_add_norm_sq_rpow_neg_succ_div_two.const_mul
+      (C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2))) (.of_forall fun η ↦ hC x hx ξ η)).trans_eq
+      (by rw [integral_const_mul]; ring)⟩
 
 private theorem uniformCompIntegrand_eq_bilinear (a : Symbol n W U m') (b : Symbol n V W m)
     (p : CoordinateSpace n × CoordinateSpace n) (η : CoordinateSpace n) :
-    uniformCompIntegrand a b p η =
-      (ContinuousLinearMap.compL ℂ V W U).bilinearRestrictScalars ℝ
-        (((oneSubFrequencyLaplacian (m := m'))^[n + 1] a).coefficient (p.1, p.2 + (2 * π) • η))
-        (𝓕 (weightedSlice b p.1 p.2) η) := by
-  simp only [uniformCompIntegrand, ContinuousLinearMap.bilinearRestrictScalars_apply_apply,
-    ContinuousLinearMap.compL_apply]
+    uniformCompIntegrand a b p η = (compL ℂ V W U).bilinearRestrictScalars ℝ
+      (((oneSubFrequencyLaplacian (m := m'))^[n + 1] a).coefficient (p.1, p.2 + (2 * π) • η))
+      (𝓕 (weightedSlice b p.1 p.2) η) := by
+  simp only [uniformCompIntegrand, bilinearRestrictScalars_apply_apply, compL_apply]
+
+private lemma coordinateDeriv_comp_eq {f : CoordinateSpace n → W →L[ℂ] U}
+    {g : CoordinateSpace n → V →L[ℂ] W} {x₀ : CoordinateSpace n}
+    {f' : CoordinateSpace n →L[ℝ] W →L[ℂ] U} {g' : CoordinateSpace n →L[ℝ] V →L[ℂ] W}
+    (hf : HasFDerivAt f f' x₀) (hg : HasFDerivAt g g' x₀) (j : Fin n) :
+    coordinateDeriv [j] (fun t ↦ (f t).comp (g t)) x₀ =
+      (f' (EuclideanSpace.single j 1)).comp (g x₀) +
+        (f x₀).comp (g' (EuclideanSpace.single j 1)) := by
+  set Φ := (compL ℂ V W U).bilinearRestrictScalars ℝ
+  have hcomp : (fun t ↦ (f t).comp (g t)) = fun t ↦ Φ (f t) (g t) := funext fun _ ↦ by
+    simp only [Φ, bilinearRestrictScalars_apply_apply, compL_apply]
+  rw [hcomp, coordinateDeriv_cons, coordinateDeriv_nil, (Φ.hasFDerivAt_of_bilinear hf hg).fderiv]
+  simp only [add_apply, comp_apply, precompR_apply, precompL_apply, Φ,
+    bilinearRestrictScalars_apply_apply, compL_apply, add_comm]
 
 private lemma coordinateDeriv_fst_uniformCompIntegrand (hb : b.IsUniform) (j : Fin n)
     (x ξ η : CoordinateSpace n) :
     coordinateDeriv [j] (fun x' ↦ uniformCompIntegrand a b (x', ξ) η) x =
       uniformCompIntegrand (spatialDeriv j a) b (x, ξ) η +
         uniformCompIntegrand a (spatialDeriv j b) (x, ξ) η := by
-  set aN := (oneSubFrequencyLaplacian (m := m'))^[n + 1] a
-  set ζ := ξ + (2 * π) • η
-  set Φ := (ContinuousLinearMap.compL ℂ V W U).bilinearRestrictScalars ℝ
+  set aN := (oneSubFrequencyLaplacian (m := m'))^[n + 1] a; set ζ := ξ + (2 * π) • η
   have hA := ((aN.contDiff_coefficient_slice ζ).differentiable (by simp) x).hasFDerivAt
   have hBfull := hb.differentiableAt_fourier_weightedSlice_and_fderiv η (x, ξ)
   have hB : HasFDerivAt (fun x' ↦ 𝓕 (weightedSlice b x' ξ) η)
       ((fderiv ℝ (fun p ↦ 𝓕 (weightedSlice b p.1 p.2) η) (x, ξ)).comp
         (.inl ℝ (CoordinateSpace n) (CoordinateSpace n))) x := by
     simpa only [Function.comp_def] using
-      HasFDerivAt.comp x hBfull.1.hasFDerivAt (hasFDerivAt_prodMk_left (𝕜 := ℝ) x ξ)
-  have hBj : fderiv ℝ (fun p ↦ 𝓕 (weightedSlice b p.1 p.2) η) (x, ξ)
-      (EuclideanSpace.single j 1, 0) = 𝓕 (weightedSlice (spatialDeriv j b) x ξ) η := by
-    rw [hBfull.2]; simp
-  have hAj : fderiv ℝ (fun x' ↦ aN.coefficient (x', ζ)) x (EuclideanSpace.single j 1) =
-      ((oneSubFrequencyLaplacian (m := m'))^[n + 1] (spatialDeriv j a)).coefficient (x, ζ) := by
-    rw [fderiv_coefficient_single, ← spatialDeriv_iterate_oneSubFrequencyLaplacian]
-  simp_rw [uniformCompIntegrand_eq_bilinear a b]
-  rw [coordinateDeriv_cons, coordinateDeriv_nil, (Φ.hasFDerivAt_of_bilinear hA hB).fderiv]
-  simp only [add_apply, ContinuousLinearMap.precompR_apply, ContinuousLinearMap.precompL_apply,
-    ContinuousLinearMap.comp_apply, ContinuousLinearMap.inl_apply, hAj, hBj, Φ,
-    ContinuousLinearMap.bilinearRestrictScalars_apply_apply, ContinuousLinearMap.compL_apply,
-    uniformCompIntegrand, ζ, aN, add_comm]
+      hBfull.1.hasFDerivAt.comp x (hasFDerivAt_prodMk_left (𝕜 := ℝ) x ξ)
+  dsimp only [uniformCompIntegrand]; rw [coordinateDeriv_comp_eq hA hB j]
+  simp [aN, ζ, fderiv_coefficient_single, ← spatialDeriv_iterate_oneSubFrequencyLaplacian, hBfull.2]
 
 private lemma coordinateDeriv_snd_uniformCompIntegrand (hb : b.IsUniform) (j : Fin n)
     (x ξ η : CoordinateSpace n) :
     coordinateDeriv [j] (fun ξ' ↦ uniformCompIntegrand a b (x, ξ') η) ξ =
       uniformCompIntegrand (frequencyDeriv j a) b (x, ξ) η +
         uniformCompIntegrand a (frequencyDeriv j b) (x, ξ) η := by
-  set aN := (oneSubFrequencyLaplacian (m := m'))^[n + 1] a
-  set c := (2 * π) • η
-  set Φ := (ContinuousLinearMap.compL ℂ V W U).bilinearRestrictScalars ℝ
+  set aN := (oneSubFrequencyLaplacian (m := m'))^[n + 1] a; set c := (2 * π) • η
   have hA : HasFDerivAt (fun ξ' ↦ aN.coefficient (x, ξ' + c))
       (fderiv ℝ (fun ζ ↦ aN.coefficient (x, ζ)) (ξ + c)) ξ :=
     (hasFDerivAt_comp_add_right c).2 (((aN.contDiff_coefficient.comp
@@ -244,31 +214,18 @@ private lemma coordinateDeriv_snd_uniformCompIntegrand (hb : b.IsUniform) (j : F
       ((fderiv ℝ (fun p ↦ 𝓕 (weightedSlice b p.1 p.2) η) (x, ξ)).comp
         (.inr ℝ (CoordinateSpace n) (CoordinateSpace n))) ξ :=
     hBfull.1.hasFDerivAt.comp ξ (hasFDerivAt_prodMk_right (𝕜 := ℝ) x ξ)
-  have hBj : fderiv ℝ (fun p ↦ 𝓕 (weightedSlice b p.1 p.2) η) (x, ξ)
-      (0, EuclideanSpace.single j 1) = 𝓕 (weightedSlice (frequencyDeriv j b) x ξ) η := by
-    rw [hBfull.2]; simp
-  have hAj : fderiv ℝ (fun ζ ↦ aN.coefficient (x, ζ)) (ξ + c) (EuclideanSpace.single j 1) =
-      ((oneSubFrequencyLaplacian (m := m' - 1))^[n + 1] (frequencyDeriv j a)).coefficient
-        (x, ξ + c) := by
-    rw [fderiv_coefficient_slice_single, ← frequencyDeriv_iterate_oneSubFrequencyLaplacian]
-  simp_rw [uniformCompIntegrand_eq_bilinear a b]
-  rw [coordinateDeriv_cons, coordinateDeriv_nil, (Φ.hasFDerivAt_of_bilinear hA hB).fderiv]
-  simp only [add_apply, ContinuousLinearMap.precompR_apply, ContinuousLinearMap.precompL_apply,
-    ContinuousLinearMap.comp_apply, ContinuousLinearMap.inr_apply, hAj, hBj, Φ,
-    ContinuousLinearMap.bilinearRestrictScalars_apply_apply, ContinuousLinearMap.compL_apply,
-    uniformCompIntegrand, c, aN, add_comm]
+  dsimp only [uniformCompIntegrand]; rw [coordinateDeriv_comp_eq hA hB j]
+  simp [aN, c, fderiv_coefficient_slice_single, ← frequencyDeriv_iterate_oneSubFrequencyLaplacian,
+    hBfull.2]
 
 private lemma differentiableAt_uniformCompIntegrand (hb : b.IsUniform) (η : CoordinateSpace n)
     (p : CoordinateSpace n × CoordinateSpace n) :
     DifferentiableAt ℝ (fun p ↦ uniformCompIntegrand a b p η) p := by
   set aN := (oneSubFrequencyLaplacian (m := m'))^[n + 1] a
-  set Φ := (ContinuousLinearMap.compL ℂ V W U).bilinearRestrictScalars ℝ
-  have hA : DifferentiableAt ℝ (fun p : CoordinateSpace n × CoordinateSpace n ↦
-      aN.coefficient (p.1, p.2 + (2 * π) • η)) p :=
-    (aN.contDiff_coefficient.differentiable (by simp) _).comp p
-      (differentiableAt_fst.prodMk (differentiableAt_snd.add_const _))
   simp_rw [uniformCompIntegrand_eq_bilinear a b]
-  exact (Φ.differentiableAt.comp p hA).clm_apply
+  exact (((compL ℂ V W U).bilinearRestrictScalars ℝ).differentiableAt.comp p
+    ((aN.contDiff_coefficient.differentiable (by simp) _).comp p
+      (differentiableAt_fst.prodMk (differentiableAt_snd.add_const _)))).clm_apply
     (hb.differentiableAt_fourier_weightedSlice_and_fderiv η p).1
 
 private lemma fderiv_uniformCompIntegrand (hb : b.IsUniform) (η : CoordinateSpace n)
@@ -290,15 +247,12 @@ private theorem IsUniform.differentiableAt_uniformCompCoeff_and_fderiv (hb : b.I
           uniformCompCoeff a (Symbol.spatialDeriv j b) p₀) +
         ∑ j, v.2 j • (uniformCompCoeff (Symbol.frequencyDeriv j a) b p₀ +
           uniformCompCoeff a (Symbol.frequencyDeriv j b) p₀) := by
-  choose C₁ _ hC₁ using fun j ↦
-    hb.exists_norm_uniformCompIntegrand_le_weight (a := Symbol.spatialDeriv j a) p₀
-  choose C₂ _ hC₂ using fun j ↦
-    (hb.spatialDeriv j).exists_norm_uniformCompIntegrand_le_weight (a := a) p₀
-  choose C₃ _ hC₃ using fun j ↦
-    hb.exists_norm_uniformCompIntegrand_le_weight (a := Symbol.frequencyDeriv j a) p₀
-  choose C₄ _ hC₄ using fun j ↦
-    (hb.frequencyDeriv j).exists_norm_uniformCompIntegrand_le_weight (a := a) p₀
-  set D := ∑ j, (C₁ j + C₂ j) + ∑ j, (C₃ j + C₄ j)
+  let w {m₁ m₂ : ℝ} (a' : Symbol n W U m₁) {b' : Symbol n V W m₂} (hb' : b'.IsUniform) :=
+    hb'.exists_norm_uniformCompIntegrand_le_weight (a := a') p₀
+  choose C₁ _ hC₁ using fun j ↦ w (Symbol.spatialDeriv j a) hb
+  choose C₂ _ hC₂ using fun j ↦ w a (hb.spatialDeriv j)
+  choose C₃ _ hC₃ using fun j ↦ w (Symbol.frequencyDeriv j a) hb
+  choose C₄ _ hC₄ using fun j ↦ w a (hb.frequencyDeriv j)
   have hc {m₁ m₂ : ℝ} (a' : Symbol n W U m₁) {b' : Symbol n V W m₂} (hb' : b'.IsUniform)
       (p : CoordinateSpace n × CoordinateSpace n) : Continuous (uniformCompIntegrand a' b' p) :=
     hb'.continuous_uniformCompIntegrand.comp (continuous_const.prodMk continuous_id)
@@ -307,43 +261,36 @@ private theorem IsUniform.differentiableAt_uniformCompCoeff_and_fderiv (hb : b.I
     hb.integrable_uniformCompIntegrand
     (fun j p ↦ (hc (Symbol.spatialDeriv j a) hb p).add (hc a (hb.spatialDeriv j) p))
     (fun j p ↦ (hc (Symbol.frequencyDeriv j a) hb p).add (hc a (hb.frequencyDeriv j) p))
-    (integrable_one_add_norm_sq_rpow_neg_succ_div_two.const_mul D) p₀ fun η p hp ↦ by
-      have hp₁ : p.1 ∈ Metric.closedBall p₀.1 1 := Metric.mem_closedBall.2
+    (integrable_one_add_norm_sq_rpow_neg_succ_div_two.const_mul
+      (∑ j, (C₁ j + C₂ j) + ∑ j, (C₃ j + C₄ j))) p₀ fun η p hp ↦ by
+      have h1 : p.1 ∈ Metric.closedBall p₀.1 1 := Metric.mem_closedBall.2
         (((le_max_left _ _).trans Prod.dist_eq.ge).trans (Metric.mem_ball.1 hp).le)
-      have hp₂ : p.2 ∈ Metric.closedBall p₀.2 1 := Metric.mem_closedBall.2
+      have h2 : p.2 ∈ Metric.closedBall p₀.2 1 := Metric.mem_closedBall.2
         (((le_max_right _ _).trans Prod.dist_eq.ge).trans (Metric.mem_ball.1 hp).le)
-      rw [add_mul, Finset.sum_mul, Finset.sum_mul]
-      gcongr with j _ j _
-      · exact (norm_add_le _ _).trans
-          ((add_le_add (hC₁ j p hp₁ hp₂ η) (hC₂ j p hp₁ hp₂ η)).trans_eq (by ring))
-      · exact (norm_add_le _ _).trans
-          ((add_le_add (hC₃ j p hp₁ hp₂ η) (hC₄ j p hp₁ hp₂ η)).trans_eq (by ring))
+      rw [add_mul, Finset.sum_mul, Finset.sum_mul]; gcongr with j _ j _
+      · rw [add_mul]; exact (norm_add_le _ _).trans (add_le_add (hC₁ _ _ h1 h2 _) (hC₂ _ _ h1 h2 _))
+      · rw [add_mul]; exact (norm_add_le _ _).trans (add_le_add (hC₃ _ _ h1 h2 _) (hC₄ _ _ h1 h2 _))
   refine ⟨key.1, fun v ↦ (key.2 v).trans ?_⟩
-  congr 1 <;> refine Finset.sum_congr rfl fun j _ ↦ congrArg _ ?_
-  · exact integral_add (hb.integrable_uniformCompIntegrand p₀)
-      ((hb.spatialDeriv j).integrable_uniformCompIntegrand p₀)
-  · exact integral_add (hb.integrable_uniformCompIntegrand p₀)
-      ((hb.frequencyDeriv j).integrable_uniformCompIntegrand p₀)
+  congr 1 <;> refine Finset.sum_congr rfl fun j _ ↦ congrArg _ (integral_add
+    (hb.integrable_uniformCompIntegrand p₀) ?_)
+  · exact (hb.spatialDeriv j).integrable_uniformCompIntegrand p₀
+  · exact (hb.frequencyDeriv j).integrable_uniformCompIntegrand p₀
 
 private theorem coordinateDeriv_fst_uniformCompCoeff (hb : b.IsUniform) (j : Fin n)
     (x ξ : CoordinateSpace n) :
     coordinateDeriv [j] (fun x' ↦ uniformCompCoeff a b (x', ξ)) x =
       uniformCompCoeff (spatialDeriv j a) b (x, ξ) +
         uniformCompCoeff a (spatialDeriv j b) (x, ξ) := by
-  rw [coordinateDeriv_fst_eq_fderiv (p := (x, ξ))
-    (hb.differentiableAt_uniformCompCoeff_and_fderiv (x, ξ)).1,
-    (hb.differentiableAt_uniformCompCoeff_and_fderiv (x, ξ)).2]
-  simp [Finset.sum_add_distrib]
+  have hd := hb.differentiableAt_uniformCompCoeff_and_fderiv (a := a) (x, ξ)
+  rw [coordinateDeriv_fst_eq_fderiv (p := (x, ξ)) hd.1, hd.2]; simp [Finset.sum_add_distrib]
 
 private theorem coordinateDeriv_snd_uniformCompCoeff (hb : b.IsUniform) (j : Fin n)
     (x ξ : CoordinateSpace n) :
     coordinateDeriv [j] (fun ξ' ↦ uniformCompCoeff a b (x, ξ')) ξ =
       uniformCompCoeff (frequencyDeriv j a) b (x, ξ) +
         uniformCompCoeff a (frequencyDeriv j b) (x, ξ) := by
-  rw [coordinateDeriv_snd_eq_fderiv (p := (x, ξ))
-    (hb.differentiableAt_uniformCompCoeff_and_fderiv (x, ξ)).1,
-    (hb.differentiableAt_uniformCompCoeff_and_fderiv (x, ξ)).2]
-  simp [Finset.sum_add_distrib]
+  have hd := hb.differentiableAt_uniformCompCoeff_and_fderiv (a := a) (x, ξ)
+  rw [coordinateDeriv_snd_eq_fderiv (p := (x, ξ)) hd.1, hd.2]; simp [Finset.sum_add_distrib]
 
 private theorem contDiff_uniformCompCoeff (hb : b.IsUniform) :
     ContDiff ℝ ∞ (uniformCompCoeff a b) := by
@@ -351,8 +298,7 @@ private theorem contDiff_uniformCompCoeff (hb : b.IsUniform) :
   induction k generalizing m m' with
   | zero => exact contDiff_zero.2 hb.continuous_uniformCompCoeff
   | succ k ih =>
-    rw [Nat.cast_succ]
-    refine contDiff_succ_iff_fderiv_apply.2
+    rw [Nat.cast_succ]; refine contDiff_succ_iff_fderiv_apply.2
       ⟨fun p ↦ (hb.differentiableAt_uniformCompCoeff_and_fderiv p).1, by simp, fun v ↦ ?_⟩
     rw [funext fun p ↦ (hb.differentiableAt_uniformCompCoeff_and_fderiv p).2 v]
     exact (ContDiff.sum fun j _ ↦ ((ih (a := spatialDeriv j a) hb).add
@@ -368,13 +314,11 @@ private theorem exists_bound_uniformCompCoeff (P : ∀ {m' : ℝ}, Symbol n W U 
       ‖((oneSubFrequencyLaplacian (m := m'))^[n + 1] a).coefficient (x, ξ)‖ ≤
         C * (1 + ‖ξ‖ ^ 2) ^ (m' / 2))
     (ha : P a) (hb : b.IsUniform) (α β : List (Fin n)) :
-    ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ,
-      ‖mixedDeriv α β (uniformCompCoeff a b) x ξ‖ ≤
-        C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m - β.length) / 2) := by
+    ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ‖mixedDeriv α β (uniformCompCoeff a b) x ξ‖ ≤
+      C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m - β.length) / 2) := by
   simpa only [sub_zero] using exists_norm_mixedDeriv_le_of_leibniz 0 P hPspatial hPfrequency
     IsUniform (fun hb j ↦ hb.spatialDeriv j) (fun hb j ↦ hb.frequencyDeriv j)
-    (fun a b _ ↦ uniformCompCoeff a b)
-    (fun _ _ hb ↦ contDiff_uniformCompCoeff hb)
+    (fun a b _ ↦ uniformCompCoeff a b) (fun _ _ hb ↦ contDiff_uniformCompCoeff hb)
     (fun _ _ hb ↦ coordinateDeriv_fst_uniformCompCoeff hb)
     (fun _ _ hb ↦ coordinateDeriv_snd_uniformCompCoeff hb)
     (fun _ ha _ hb ↦ by simpa only [sub_zero] using hb.exists_norm_uniformCompCoeff_le (hP ha))
@@ -395,26 +339,17 @@ functions to `Op(a) ∘ Op(b)`. -/
 def uniformSharp (hb : b.IsUniform) : Symbol n V U (m' + m) where
   coefficient := uniformCompCoeff a b
   contDiff_coefficient := contDiff_uniformCompCoeff hb
-  exists_bound K hK α β := exists_bound_uniformCompCoeff (fun _ ↦ True) (fun _ _ ↦ trivial)
+  exists_bound K hK := exists_bound_uniformCompCoeff (fun _ ↦ True) (fun _ _ ↦ trivial)
     (fun _ _ ↦ trivial)
-    (fun {_} a' _ ↦ ((oneSubFrequencyLaplacian)^[n + 1] a').exists_bound_coefficient K hK)
-    trivial hb α β
+    (fun {_} a' _ ↦ (oneSubFrequencyLaplacian^[n + 1] a').exists_bound_coefficient K hK) trivial hb
 
 theorem coefficient_uniformSharp (hb : b.IsUniform) (x ξ : CoordinateSpace n) :
     (a.uniformSharp b hb).coefficient (x, ξ) =
       ∫ η, (((oneSubFrequencyLaplacian (m := m'))^[n + 1] a).coefficient (x, ξ + (2 * π) • η)).comp
-        (𝓕 (weightedSlice b x ξ) η) :=
-  (rfl)
+        (𝓕 (weightedSlice b x ξ) η) := (rfl)
 
 private lemma coefficient_uniformSharp_eq_uniformCompCoeff (hb : b.IsUniform) :
     (a.uniformSharp b hb).coefficient = uniformCompCoeff a b := (rfl)
-
-private lemma uniformCompCoeff_congr {m₁ m₂ k₁ k₂ : ℝ} {a₁ : Symbol n W U m₁}
-    {a₂ : Symbol n W U m₂} {b₁ : Symbol n V W k₁} {b₂ : Symbol n V W k₂}
-    (ha : a₁.coefficient = a₂.coefficient) (hb : b₁.coefficient = b₂.coefficient) :
-    uniformCompCoeff a₁ b₁ = uniformCompCoeff a₂ b₂ := by
-  funext p; have ha' := coefficient_iterate_oneSubFrequencyLaplacian_congr ha (n + 1)
-  simp only [uniformCompCoeff, uniformCompIntegrand, ha', weightedSlice_congr hb]
 
 /-- The coefficient of `a.uniformSharp b hb` depends only on the coefficients of `a` and `b`, not on
 their symbol orders. -/
@@ -422,8 +357,10 @@ theorem coefficient_uniformSharp_congr {m₁ m₂ k₁ k₂ : ℝ} {a₁ : Symbo
     {a₂ : Symbol n W U m₂} {b₁ : Symbol n V W k₁} {b₂ : Symbol n V W k₂}
     (hb₁ : b₁.IsUniform) (hb₂ : b₂.IsUniform)
     (ha : a₁.coefficient = a₂.coefficient) (hb : b₁.coefficient = b₂.coefficient) :
-    (a₁.uniformSharp b₁ hb₁).coefficient = (a₂.uniformSharp b₂ hb₂).coefficient :=
-  uniformCompCoeff_congr ha hb
+    (a₁.uniformSharp b₁ hb₁).coefficient = (a₂.uniformSharp b₂ hb₂).coefficient := by
+  funext p; have ha' := coefficient_iterate_oneSubFrequencyLaplacian_congr ha (n + 1)
+  simp only [coefficient_uniformSharp_eq_uniformCompCoeff, uniformCompCoeff, uniformCompIntegrand,
+    ha', weightedSlice_congr hb]
 
 /-- **Leibniz rule in the position** for `uniformSharp`. -/
 theorem spatialDeriv_uniformSharp (hb : b.IsUniform) (j : Fin n) :
@@ -446,9 +383,8 @@ theorem frequencyDeriv_uniformSharp (hb : b.IsUniform) (j : Fin n) :
     frequencyDeriv j (a.uniformSharp b hb) =
       inclusion (by linarith) ((frequencyDeriv j a).uniformSharp b hb) +
         inclusion (by linarith) (a.uniformSharp (frequencyDeriv j b) (hb.frequencyDeriv j)) := by
-  ext1; funext ⟨x, ξ⟩
-  rw [coefficient_add, Pi.add_apply, coefficient_inclusion, coefficient_inclusion,
-    coefficient_frequencyDeriv_uniformSharp]
+  ext1; funext ⟨x, ξ⟩; rw [coefficient_add, Pi.add_apply, coefficient_inclusion,
+    coefficient_inclusion, coefficient_frequencyDeriv_uniformSharp]
 
 /-- **Composition preserves uniform symbol estimates.** -/
 theorem IsUniform.uniformSharp (ha : a.IsUniform) (hb : b.IsUniform) :
@@ -460,80 +396,62 @@ theorem IsUniform.uniformSharp (ha : a.IsUniform) (hb : b.IsUniform) :
   exact ⟨C, hC0, fun x ξ ↦ hC x (Set.mem_univ x) ξ⟩
 
 theorem HasCompactSpatialSupport.uniformSharp (ha : a.HasCompactSpatialSupport) (hb : b.IsUniform) :
-    (a.uniformSharp b hb).HasCompactSpatialSupport := by
-  obtain ⟨K, hK, hKa⟩ := hasCompactSpatialSupport_iff.mp
-    (ha.iterate_oneSubFrequencyLaplacian (n + 1))
-  refine hasCompactSpatialSupport_iff.mpr ⟨K, hK, fun x hx ξ ↦ ?_⟩
-  rw [coefficient_uniformSharp]
-  exact integral_eq_zero_of_ae (.of_forall fun η ↦ by
-    dsimp only
-    rw [hKa x hx _, ContinuousLinearMap.zero_comp, Pi.zero_apply])
+    (a.uniformSharp b hb).HasCompactSpatialSupport :=
+  let ⟨K, hK, hKa⟩ := hasCompactSpatialSupport_iff.mp (ha.iterate_oneSubFrequencyLaplacian (n + 1))
+  hasCompactSpatialSupport_iff.mpr ⟨K, hK, fun x hx ξ ↦ by
+    rw [coefficient_uniformSharp]
+    exact integral_eq_zero_of_ae (.of_forall fun _ ↦ by
+      dsimp only; rw [hKa x hx _, ContinuousLinearMap.zero_comp, Pi.zero_apply])⟩
 
 theorem add_uniformSharp (a₁ a₂ : Symbol n W U m') (hb : b.IsUniform) :
     (a₁ + a₂).uniformSharp b hb = a₁.uniformSharp b hb + a₂.uniformSharp b hb := by
-  ext1; funext p
-  simp only [coefficient_add, Pi.add_apply, coefficient_uniformSharp_eq_uniformCompCoeff,
-    uniformCompCoeff, ← integral_add (hb.integrable_uniformCompIntegrand p)
-      (hb.integrable_uniformCompIntegrand p)]
-  exact integral_congr_ae (.of_forall fun η ↦ by
+  ext1; funext p; simp only [coefficient_add, Pi.add_apply,
+    coefficient_uniformSharp_eq_uniformCompCoeff, uniformCompCoeff,
+    ← integral_add (hb.integrable_uniformCompIntegrand p) (hb.integrable_uniformCompIntegrand p)]
+  exact integral_congr_ae (.of_forall fun _ ↦ by
     simp only [uniformCompIntegrand, iterate_map_add, coefficient_add, Pi.add_apply,
       ContinuousLinearMap.add_comp])
 
 theorem uniformSharp_add (a : Symbol n W U m') {b₁ b₂ : Symbol n V W m}
     (hb₁ : b₁.IsUniform) (hb₂ : b₂.IsUniform) :
     a.uniformSharp (b₁ + b₂) (hb₁.add hb₂) = a.uniformSharp b₁ hb₁ + a.uniformSharp b₂ hb₂ := by
-  ext1; funext p
-  simp only [coefficient_add, Pi.add_apply, coefficient_uniformSharp_eq_uniformCompCoeff,
-    uniformCompCoeff, ← integral_add (hb₁.integrable_uniformCompIntegrand p)
-      (hb₂.integrable_uniformCompIntegrand p)]
-  refine integral_congr_ae (.of_forall fun η ↦ ?_)
-  have hF : 𝓕 (weightedSlice (b₁ + b₂) p.1 p.2) η =
-      𝓕 (weightedSlice b₁ p.1 p.2) η + 𝓕 (weightedSlice b₂ p.1 p.2) η := by
-    rw [weightedSlice_add,
-      (hb₁.integrable_weightedSlice p.1 p.2).fourier_add (hb₂.integrable_weightedSlice p.1 p.2)]
-    rfl
-  simp only [uniformCompIntegrand, hF, ContinuousLinearMap.comp_add]
+  ext1; funext p; simp only [coefficient_add, Pi.add_apply,
+    coefficient_uniformSharp_eq_uniformCompCoeff, uniformCompCoeff,
+    ← integral_add (hb₁.integrable_uniformCompIntegrand p) (hb₂.integrable_uniformCompIntegrand p)]
+  exact integral_congr_ae (.of_forall fun _ ↦ by
+    simp only [uniformCompIntegrand, weightedSlice_add,
+      (hb₁.integrable_weightedSlice p.1 p.2).fourier_add (hb₂.integrable_weightedSlice p.1 p.2),
+      Pi.add_apply, ContinuousLinearMap.comp_add])
 
-@[simp]
-theorem smul_uniformSharp (c : ℂ) (a : Symbol n W U m') (hb : b.IsUniform) :
+@[simp] theorem smul_uniformSharp (c : ℂ) (a : Symbol n W U m') (hb : b.IsUniform) :
     (c • a).uniformSharp b hb = c • a.uniformSharp b hb := by
-  ext1; funext p
-  simp only [coefficient_smul, Pi.smul_apply, coefficient_uniformSharp_eq_uniformCompCoeff,
-    uniformCompCoeff, ← integral_smul]
-  exact integral_congr_ae (.of_forall fun η ↦ by
+  ext1; funext p; simp only [coefficient_smul, Pi.smul_apply,
+    coefficient_uniformSharp_eq_uniformCompCoeff, uniformCompCoeff, ← integral_smul]
+  exact integral_congr_ae (.of_forall fun _ ↦ by
     simp only [uniformCompIntegrand, TauCeti.iterate_map_smul, coefficient_smul, Pi.smul_apply,
       ContinuousLinearMap.smul_comp])
 
-@[simp]
-theorem uniformSharp_smul (a : Symbol n W U m') (hb : b.IsUniform) (c : ℂ) :
+@[simp] theorem uniformSharp_smul (a : Symbol n W U m') (hb : b.IsUniform) (c : ℂ) :
     a.uniformSharp (c • b) (hb.smul c) = c • a.uniformSharp b hb := by
-  ext1; funext p
-  simp only [coefficient_smul, Pi.smul_apply, coefficient_uniformSharp_eq_uniformCompCoeff,
-    uniformCompCoeff, ← integral_smul]
-  refine integral_congr_ae (.of_forall fun η ↦ ?_)
-  have hF : 𝓕 (weightedSlice (c • b) p.1 p.2) η = c • 𝓕 (weightedSlice b p.1 p.2) η := by
-    rw [weightedSlice_smul]
-    exact congrFun (Real.fourier_const_smul c (weightedSlice b p.1 p.2)) η
-  simp only [uniformCompIntegrand, hF, ContinuousLinearMap.comp_smul]
+  ext1; funext p; simp only [coefficient_smul, Pi.smul_apply,
+    coefficient_uniformSharp_eq_uniformCompCoeff, uniformCompCoeff, ← integral_smul]
+  exact integral_congr_ae (.of_forall fun η ↦ by
+    simp only [uniformCompIntegrand, weightedSlice_smul,
+      congrFun (Real.fourier_const_smul c (weightedSlice b p.1 p.2)) η, Pi.smul_apply,
+      ContinuousLinearMap.comp_smul])
 
-@[simp]
-theorem zero_uniformSharp (hb : b.IsUniform) : (0 : Symbol n W U m').uniformSharp b hb = 0 := by
-  simpa using smul_uniformSharp (0 : ℂ) (0 : Symbol n W U m') hb
+@[simp] theorem zero_uniformSharp (hb : b.IsUniform) :
+    (0 : Symbol n W U m').uniformSharp b hb = 0 := by simpa using smul_uniformSharp (0 : ℂ) 0 hb
 
-@[simp]
-theorem uniformSharp_zero (a : Symbol n W U m') :
+@[simp] theorem uniformSharp_zero (a : Symbol n W U m') :
     a.uniformSharp (0 : Symbol n V W m) isUniform_zero = 0 := by
-  simpa using uniformSharp_smul a (isUniform_zero (m := m) (V := V) (W := W)) 0
+  simpa using uniformSharp_smul a (isUniform_zero (m := m)) 0
 
-@[simp]
-theorem neg_uniformSharp (a : Symbol n W U m') (hb : b.IsUniform) :
-    (-a).uniformSharp b hb = -a.uniformSharp b hb := by
-  simpa using smul_uniformSharp (-1 : ℂ) a hb
+@[simp] theorem neg_uniformSharp (a : Symbol n W U m') (hb : b.IsUniform) :
+    (-a).uniformSharp b hb = -a.uniformSharp b hb := by simpa using smul_uniformSharp (-1 : ℂ) a hb
 
-@[simp]
-theorem uniformSharp_neg (a : Symbol n W U m') (hb : b.IsUniform) :
-    a.uniformSharp (-b) hb.neg = -a.uniformSharp b hb := by
-  simpa using uniformSharp_smul a hb (-1)
+@[simp] theorem uniformSharp_neg (a : Symbol n W U m') (hb : b.IsUniform) :
+    a.uniformSharp (-b) hb.neg = -a.uniformSharp b hb := by simpa using uniformSharp_smul a hb (-1)
 
 theorem sub_uniformSharp (a₁ a₂ : Symbol n W U m') (hb : b.IsUniform) :
     (a₁ - a₂).uniformSharp b hb = a₁.uniformSharp b hb - a₂.uniformSharp b hb := by
@@ -542,57 +460,48 @@ theorem sub_uniformSharp (a₁ a₂ : Symbol n W U m') (hb : b.IsUniform) :
 theorem uniformSharp_sub (a : Symbol n W U m') {b₁ b₂ : Symbol n V W m}
     (hb₁ : b₁.IsUniform) (hb₂ : b₂.IsUniform) :
     a.uniformSharp (b₁ - b₂) (hb₁.sub hb₂) = a.uniformSharp b₁ hb₁ - a.uniformSharp b₂ hb₂ := by
-  calc a.uniformSharp (b₁ - b₂) (hb₁.sub hb₂)
-      = a.uniformSharp (b₁ + -b₂) (hb₁.add hb₂.neg) := by simp only [sub_eq_add_neg]
-    _ = a.uniformSharp b₁ hb₁ - a.uniformSharp b₂ hb₂ := by
-        rw [uniformSharp_add a hb₁ hb₂.neg, uniformSharp_neg, ← sub_eq_add_neg]
+  rw [eq_sub_iff_add_eq, ← uniformSharp_add a (hb₁.sub hb₂) hb₂]; ext1
+  exact coefficient_uniformSharp_congr _ _ rfl (congrArg Symbol.coefficient (sub_add_cancel b₁ b₂))
 
 theorem inclusion_uniformSharp {m'' : ℝ} (h : m' ≤ m'') (a : Symbol n W U m') (hb : b.IsUniform) :
     (inclusion h a).uniformSharp b hb = inclusion (by linarith) (a.uniformSharp b hb) := by
-  ext1; rw [coefficient_inclusion]
-  exact coefficient_uniformSharp_congr hb hb (coefficient_inclusion h a) rfl
+  ext1; rw [coefficient_inclusion]; exact coefficient_uniformSharp_congr hb hb (by simp) rfl
 
 theorem uniformSharp_inclusion {m'' : ℝ} (h : m ≤ m'') (a : Symbol n W U m') (hb : b.IsUniform) :
     a.uniformSharp (inclusion h b) (hb.inclusion h) =
       inclusion (by linarith) (a.uniformSharp b hb) := by
-  ext1; rw [coefficient_inclusion]
-  exact coefficient_uniformSharp_congr (hb.inclusion h) hb rfl (coefficient_inclusion h b)
+  ext1; rw [coefficient_inclusion]; exact coefficient_uniformSharp_congr _ hb rfl (by simp)
 
 /-- Composing a smoothing symbol on the right with any uniform symbol yields a smoothing symbol. -/
 theorem IsSmoothing.uniformSharp_right (ha : a.IsSmoothing) (b : Symbol n V W m)
-    (hb : b.IsUniform) : (a.uniformSharp b hb).IsSmoothing := isSmoothing_iff.2 fun m'' ↦ by
-  obtain ⟨a', ha'⟩ := isSmoothing_iff.1 ha (m'' - m)
-  refine ⟨Symbol.inclusion (by linarith) (a'.uniformSharp b hb), ?_⟩
-  rw [coefficient_inclusion]; exact coefficient_uniformSharp_congr hb hb ha' rfl
+    (hb : b.IsUniform) : (a.uniformSharp b hb).IsSmoothing := isSmoothing_iff.2 fun m'' ↦
+  let ⟨a', ha'⟩ := isSmoothing_iff.1 ha (m'' - m)
+  ⟨Symbol.inclusion (by linarith) (a'.uniformSharp b hb),
+    by rw [coefficient_inclusion]; exact coefficient_uniformSharp_congr hb hb ha' rfl⟩
 
-/-- Composing any symbol on the right with a uniformly smoothing symbol yields a smoothing
-symbol. -/
+/-- Composing on the right with a uniformly smoothing symbol yields a smoothing symbol. -/
 theorem IsUniformlySmoothing.isSmoothing_uniformSharp_left {b : Symbol n V W m}
     (hb : b.IsUniformlySmoothing) (a : Symbol n W U m') :
-    (a.uniformSharp b hb.isUniform).IsSmoothing := isSmoothing_iff.2 fun m'' ↦ by
-  obtain ⟨b', hb'u, hb'⟩ := isUniformlySmoothing_iff.mp hb (m'' - m')
-  refine ⟨Symbol.inclusion (by linarith) (a.uniformSharp b' hb'u), ?_⟩
-  rw [coefficient_inclusion]; exact coefficient_uniformSharp_congr hb'u hb.isUniform rfl hb'
+    (a.uniformSharp b hb.isUniform).IsSmoothing := isSmoothing_iff.2 fun m'' ↦
+  let ⟨b', hb'u, hb'⟩ := isUniformlySmoothing_iff.mp hb (m'' - m')
+  ⟨Symbol.inclusion (by linarith) (a.uniformSharp b' hb'u),
+    by rw [coefficient_inclusion]; exact coefficient_uniformSharp_congr hb'u hb.isUniform rfl hb'⟩
 
-/-- Uniformly smoothing symbols form a right ideal under `uniformSharp` with uniform right
-factors. -/
+/-- Uniformly smoothing symbols form a right ideal under `uniformSharp`. -/
 theorem IsUniformlySmoothing.uniformSharp_right (ha : a.IsUniformlySmoothing)
     {b : Symbol n V W m} (hb : b.IsUniform) :
-    (a.uniformSharp b hb).IsUniformlySmoothing := isUniformlySmoothing_iff.mpr fun m'' ↦ by
-  obtain ⟨a', ha'u, ha'⟩ := isUniformlySmoothing_iff.mp ha (m'' - m)
-  refine ⟨Symbol.inclusion (by linarith) (a'.uniformSharp b hb),
-    (ha'u.uniformSharp hb).inclusion _, ?_⟩
-  rw [coefficient_inclusion]; exact coefficient_uniformSharp_congr hb hb ha' rfl
+    (a.uniformSharp b hb).IsUniformlySmoothing := isUniformlySmoothing_iff.mpr fun m'' ↦
+  let ⟨a', ha'u, ha'⟩ := isUniformlySmoothing_iff.mp ha (m'' - m)
+  ⟨Symbol.inclusion (by linarith) (a'.uniformSharp b hb), (ha'u.uniformSharp hb).inclusion _,
+    by rw [coefficient_inclusion]; exact coefficient_uniformSharp_congr hb hb ha' rfl⟩
 
-/-- Uniformly smoothing symbols form a left ideal under `uniformSharp` with uniform left factors. -/
+/-- Uniformly smoothing symbols form a left ideal under `uniformSharp`. -/
 theorem IsUniformlySmoothing.uniformSharp_left {b : Symbol n V W m}
-    (hb : b.IsUniformlySmoothing) {a : Symbol n W U m'}
-    (ha : a.IsUniform) : (a.uniformSharp b hb.isUniform).IsUniformlySmoothing :=
-  isUniformlySmoothing_iff.mpr fun m'' ↦ by
-    obtain ⟨b', hb'u, hb'⟩ := isUniformlySmoothing_iff.mp hb (m'' - m')
-    refine ⟨Symbol.inclusion (by linarith) (a.uniformSharp b' hb'u),
-      (ha.uniformSharp hb'u).inclusion _, ?_⟩
-    rw [coefficient_inclusion]; exact coefficient_uniformSharp_congr hb'u hb.isUniform rfl hb'
+    (hb : b.IsUniformlySmoothing) {a : Symbol n W U m'} (ha : a.IsUniform) :
+    (a.uniformSharp b hb.isUniform).IsUniformlySmoothing := isUniformlySmoothing_iff.mpr fun m'' ↦
+  let ⟨b', hb'u, hb'⟩ := isUniformlySmoothing_iff.mp hb (m'' - m')
+  ⟨Symbol.inclusion (by linarith) (a.uniformSharp b' hb'u), (ha.uniformSharp hb'u).inclusion _,
+    by rw [coefficient_inclusion]; exact coefficient_uniformSharp_congr hb'u hb.isUniform rfl hb'⟩
 
 end UniformSharp
 
@@ -600,141 +509,61 @@ end UniformSharp
 
 section Operator
 
-/-- Multiplying the input by `1 + ‖x - y‖²` and evaluating `Op(a)` at `x` replaces `a` by
-`(1 - Δ_ξ) a`. -/
-theorem quantizeSchwartzValue_smulLeftCLM_one_add_norm_sub_sq (a : Symbol n V W m)
-    (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
-    quantizeSchwartzValue a.coefficient
-        (SchwartzMap.smulLeftCLM V (fun y ↦ 1 + ‖x - y‖ ^ 2) u) x =
-      quantizeSchwartzValue (oneSubFrequencyLaplacian a).coefficient u x := by
-  have h12 : (fun y : CoordinateSpace n ↦ 1 + ‖x - y‖ ^ 2).HasTemperateGrowth := by
-    simpa using Function.hasTemperateGrowth_one_add_norm_sub_sq_rpow x 1
-  have h2 : (fun y : CoordinateSpace n ↦ ‖x - y‖ ^ 2).HasTemperateGrowth := by
-    simpa using Function.hasTemperateGrowth_norm_sub_pow x 1
-  have hu : SchwartzMap.smulLeftCLM V (fun y ↦ 1 + ‖x - y‖ ^ 2) u =
-      u + SchwartzMap.smulLeftCLM V (fun y ↦ ‖x - y‖ ^ 2) u := by
-    ext y; simp [SchwartzMap.smulLeftCLM_apply_apply h12, SchwartzMap.smulLeftCLM_apply_apply h2,
-      add_smul]
-  obtain ⟨C, -, hC⟩ := a.exists_bound_coefficient_slice x
-  have hsub : (oneSubFrequencyLaplacian a).coefficient =
-      a.coefficient + (-frequencyLaplacian a).coefficient :=
-    funext fun _ ↦ by simp [sub_eq_add_neg]
-  rw [hu, quantizeSchwartzValue_add_right (a.continuous_coefficient_slice x).aestronglyMeasurable
-    hC, quantizeSchwartzValue_smulLeftCLM_norm_sub_sq, hsub,
-    Symbol.quantizeSchwartzValue_coefficient_add a (-frequencyLaplacian a) u x, coefficient_neg,
-    ← neg_one_smul ℂ (frequencyLaplacian a).coefficient, quantizeSchwartzValue_smul_left,
-    neg_one_smul]
-
-/-- **Trading `(1 - Δ_ξ) ^ N` against `(1 + ‖x - y‖²) ^ (-N)`.** At `x`, `Op(a) u (x)` equals
-`Op((1 - Δ_ξ) ^ N a)` applied to `y ↦ (1 + ‖x - y‖²) ^ (-N) u(y)`. -/
-theorem quantizeSchwartzValue_eq_iterate_oneSubFrequencyLaplacian (N : ℕ) (a : Symbol n V W m)
-    (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
-    quantizeSchwartzValue a.coefficient u x =
-      quantizeSchwartzValue ((oneSubFrequencyLaplacian (m := m))^[N] a).coefficient
-        (SchwartzMap.smulLeftCLM V (fun y ↦ (1 + ‖x - y‖ ^ 2) ^ (-(N : ℝ))) u) x := by
-  induction N generalizing u with
-  | zero =>
-    have h0 : SchwartzMap.smulLeftCLM V
-        (fun y : CoordinateSpace n ↦ (1 + ‖x - y‖ ^ 2) ^ (-(0 : ℕ) : ℝ)) u = u := by ext y; simp
-    rw [h0, Function.iterate_zero_apply]
-  | succ N ih =>
-    have h12 : (fun y : CoordinateSpace n ↦ 1 + ‖x - y‖ ^ 2).HasTemperateGrowth := by
-      simpa using Function.hasTemperateGrowth_one_add_norm_sub_sq_rpow x 1
-    have hweight : (fun y : CoordinateSpace n ↦ (1 + ‖x - y‖ ^ 2) ^ (-(N : ℝ))) =
-        (fun y ↦ 1 + ‖x - y‖ ^ 2) * fun y ↦ (1 + ‖x - y‖ ^ 2) ^ (-((N + 1 : ℕ) : ℝ)) := by
-      funext y; simp only [Pi.mul_apply]
-      rw [show -(N : ℝ) = (1 : ℝ) + -((N + 1 : ℕ) : ℝ) by push_cast; ring,
-        Real.rpow_add (by positivity), Real.rpow_one]
-    rw [ih u, hweight,
-      ← SchwartzMap.smulLeftCLM_smulLeftCLM_apply h12
-        (Function.hasTemperateGrowth_one_add_norm_sub_sq_rpow x _),
-      quantizeSchwartzValue_smulLeftCLM_one_add_norm_sub_sq, Function.iterate_succ_apply']
-
 variable {a : Symbol n W U m'} {b : Symbol n V W m}
 
 private lemma IsUniform.integrable_fourier_smulLeftCLM_prod (hb : b.IsUniform)
     (u : 𝓢(CoordinateSpace n, V)) (x ζ' : CoordinateSpace n) :
     Integrable (fun q : CoordinateSpace n × CoordinateSpace n ↦
-      𝐞 (-⟪q.1, ζ' - q.2⟫) •
-        (((1 + ‖x - q.1‖ ^ 2) ^ (-((n + 1 : ℕ) : ℝ))) •
-          b.coefficient (q.1, (2 * π) • q.2) (𝓕 u q.2)))
-      (volume.prod volume) := by
+      𝐞 (-⟪q.1, ζ' - q.2⟫) • (((1 + ‖x - q.1‖ ^ 2) ^ (-((n + 1 : ℕ) : ℝ))) •
+        b.coefficient (q.1, (2 * π) • q.2) (𝓕 u q.2))) (volume.prod volume) := by
   obtain ⟨Cb, _, hCb⟩ := hb.exists_bound_coefficient
-  have hw_int : Integrable fun y : CoordinateSpace n ↦
-      (1 + ‖x - y‖ ^ 2) ^ (-((n + 1 : ℕ) : ℝ)) := by
-    have hle (y : CoordinateSpace n) :
-        (1 + ‖x - y‖ ^ 2) ^ (-((n + 1 : ℕ) : ℝ)) ≤
-          (1 + ‖x - y‖ ^ 2) ^ (-((n : ℝ) + 1) / 2) := by
-      refine Real.rpow_le_rpow_of_exponent_le (by nlinarith [sq_nonneg ‖x - y‖]) ?_
-      push_cast; linarith [Nat.cast_nonneg (α := ℝ) n]
-    have hint_sub : Integrable fun y : CoordinateSpace n ↦
-        (1 + ‖x - y‖ ^ 2) ^ (-((n : ℝ) + 1) / 2) := by
-      simpa using integrable_one_add_norm_sq_rpow_neg_succ_div_two.comp_sub_left x
-    exact hint_sub.mono'
+  have hw_int : Integrable fun y : CoordinateSpace n ↦ (1 + ‖x - y‖ ^ 2) ^ (-((n + 1 : ℕ) : ℝ)) :=
+    (integrable_one_add_norm_sq_rpow_neg_succ_div_two.comp_sub_left x).mono'
       (Function.hasTemperateGrowth_one_add_norm_sub_sq_rpow x _).1.continuous.aestronglyMeasurable
-      (.of_forall fun y ↦ by rw [Real.norm_of_nonneg (by positivity)]; exact hle y)
-  have hgu := (𝓕 u).integrable_one_add_norm_smul_sq_rpow_mul_norm (μ := volume) (2 * π) m
-  have hGcont : Continuous fun q : CoordinateSpace n × CoordinateSpace n ↦
-      𝐞 (-⟪q.1, ζ' - q.2⟫) •
-        (((1 + ‖x - q.1‖ ^ 2) ^ (-((n + 1 : ℕ) : ℝ))) •
-          b.coefficient (q.1, (2 * π) • q.2) (𝓕 u q.2)) :=
-    (Real.continuous_fourierChar.comp (by fun_prop)).smul
+      (.of_forall fun y ↦ by
+        rw [Real.norm_of_nonneg (by positivity)]
+        exact Real.rpow_le_rpow_of_exponent_le (by nlinarith [sq_nonneg ‖x - y‖])
+          (by push_cast; linarith [Nat.cast_nonneg (α := ℝ) n]))
+  refine (hw_int.mul_prod (((𝓕 u).integrable_one_add_norm_smul_sq_rpow_mul_norm
+      (μ := volume) (2 * π) m).const_mul Cb)).mono'
+    ((Real.continuous_fourierChar.comp (by fun_prop)).smul
       (((Function.hasTemperateGrowth_one_add_norm_sub_sq_rpow x _).1.continuous.comp
-        continuous_fst).smul
-        ((b.contDiff_coefficient.continuous.comp (by fun_prop)).clm_apply
-          ((𝓕 u).continuous.comp continuous_snd)))
-  refine (hw_int.mul_prod (hgu.const_mul Cb)).mono' hGcont.aestronglyMeasurable
-    (.of_forall fun q ↦ ?_)
-  rw [Circle.norm_smul, norm_smul, Real.norm_of_nonneg (by positivity)]
-  calc (1 + ‖x - q.1‖ ^ 2) ^ (-((n + 1 : ℕ) : ℝ)) * ‖b.coefficient (q.1, (2 * π) • q.2) (𝓕 u q.2)‖
-      ≤ (1 + ‖x - q.1‖ ^ 2) ^ (-((n + 1 : ℕ) : ℝ)) *
-          (Cb * (1 + ‖(2 * π) • q.2‖ ^ 2) ^ (m / 2) * ‖𝓕 u q.2‖) := by
-        gcongr
-        exact ((b.coefficient _).le_opNorm _).trans
-          (mul_le_mul_of_nonneg_right (hCb q.1 _) (norm_nonneg _))
-    _ = _ := by ring
+        continuous_fst).smul ((b.contDiff_coefficient.continuous.comp (by fun_prop)).clm_apply
+          ((𝓕 u).continuous.comp continuous_snd)))).aestronglyMeasurable
+    (.of_forall fun q ↦ by
+      rw [Circle.norm_smul, norm_smul, Real.norm_of_nonneg (by positivity)]
+      exact (mul_le_mul_of_nonneg_left (((b.coefficient _).le_opNorm _).trans
+        (mul_le_mul_of_nonneg_right (hCb q.1 _) (norm_nonneg _))) (by positivity)).trans_eq
+        (by ring))
 
 private theorem IsUniform.fourier_smulLeftCLM_quantizeUniformCLM (hb : b.IsUniform)
     (u : 𝓢(CoordinateSpace n, V)) (x ζ' : CoordinateSpace n) :
     𝓕 (SchwartzMap.smulLeftCLM W (fun y ↦ (1 + ‖x - y‖ ^ 2) ^ (-((n + 1 : ℕ) : ℝ)))
         (quantizeUniformCLM b hb u)) ζ' =
       ∫ ζ, 𝐞 (-⟪x, ζ' - ζ⟫) • 𝓕 (weightedSlice b x ((2 * π) • ζ)) (ζ' - ζ) (𝓕 u ζ) := by
-  set G : CoordinateSpace n × CoordinateSpace n → W := fun q ↦
-    𝐞 (-⟪q.1, ζ' - q.2⟫) •
-      (((1 + ‖x - q.1‖ ^ 2) ^ (-((n + 1 : ℕ) : ℝ))) • b.coefficient (q.1, (2 * π) • q.2) (𝓕 u q.2))
-  calc 𝓕 (SchwartzMap.smulLeftCLM W (fun y ↦ (1 + ‖x - y‖ ^ 2) ^ (-((n + 1 : ℕ) : ℝ)))
-          (quantizeUniformCLM b hb u)) ζ'
-      = ∫ y, ∫ ζ, G (y, ζ) := by
-        rw [SchwartzMap.fourier_coe, Real.fourier_eq]
-        refine integral_congr_ae (.of_forall fun y ↦ ?_)
-        dsimp only
-        rw [SchwartzMap.smulLeftCLM_apply_apply
-            (Function.hasTemperateGrowth_one_add_norm_sub_sq_rpow x _),
-          quantizeUniformCLM_apply, quantizeSchwartzValue_def, ← integral_smul, Circle.smul_def,
-          ← integral_smul]
-        refine integral_congr_ae (.of_forall fun ζ ↦ ?_)
-        dsimp only [G]
-        rw [Circle.smul_def, Circle.smul_def,
-          smul_comm ((1 + ‖x - y‖ ^ 2) ^ (-((n + 1 : ℕ) : ℝ))),
-          smul_smul, ← Circle.coe_mul, ← AddChar.map_add_eq_mul]
-        congr 3; rw [inner_sub_right, real_inner_comm ζ y]; ring
-    _ = ∫ ζ, ∫ y, G (y, ζ) :=
-        integral_integral_swap (hb.integrable_fourier_smulLeftCLM_prod u x ζ')
-    _ = _ := by
-        refine integral_congr_ae (.of_forall fun ζ ↦ ?_)
-        dsimp only
-        rw [← integral_add_left_eq_self (fun y ↦ G (y, ζ)) x]
-        have hint : Integrable fun z ↦
-            𝐞 (-⟪z, ζ' - ζ⟫) • weightedSlice b x ((2 * π) • ζ) z :=
-          (Real.fourierIntegral_convergent_iff (ζ' - ζ)).2
-            (hb.integrable_weightedSlice x ((2 * π) • ζ))
-        rw [Real.fourier_eq, ContinuousLinearMap.integral_apply hint, Circle.smul_def,
-          ← integral_smul]
-        refine integral_congr_ae (.of_forall fun z ↦ ?_)
-        have hnorm : ‖x - (x + z)‖ = ‖z‖ := by simp
-        dsimp only [G]
-        simp only [weightedSlice_apply, hnorm, inner_add_left, neg_add, AddChar.map_add_eq_mul,
-          Circle.smul_def, Circle.coe_mul, smul_apply, smul_smul]
+  set G : CoordinateSpace n × CoordinateSpace n → W := fun q ↦ 𝐞 (-⟪q.1, ζ' - q.2⟫) •
+    (((1 + ‖x - q.1‖ ^ 2) ^ (-((n + 1 : ℕ) : ℝ))) • b.coefficient (q.1, (2 * π) • q.2) (𝓕 u q.2))
+  have hL : 𝓕 (SchwartzMap.smulLeftCLM W (fun y ↦ (1 + ‖x - y‖ ^ 2) ^ (-((n + 1 : ℕ) : ℝ)))
+      (quantizeUniformCLM b hb u)) ζ' = ∫ y, ∫ ζ, G (y, ζ) := by
+    rw [SchwartzMap.fourier_coe, Real.fourier_eq]
+    refine integral_congr_ae (.of_forall fun y ↦ ?_); dsimp only
+    rw [SchwartzMap.smulLeftCLM_apply_apply
+        (Function.hasTemperateGrowth_one_add_norm_sub_sq_rpow x _),
+      quantizeUniformCLM_apply, quantizeSchwartzValue_def, ← integral_smul, Circle.smul_def,
+      ← integral_smul]
+    refine integral_congr_ae (.of_forall fun ζ ↦ ?_); dsimp only [G]
+    rw [Circle.smul_def, Circle.smul_def, smul_comm ((1 + ‖x - y‖ ^ 2) ^ (-((n + 1 : ℕ) : ℝ))),
+      smul_smul, ← Circle.coe_mul, ← AddChar.map_add_eq_mul]
+    congr 3; rw [inner_sub_right, real_inner_comm ζ y]; ring
+  rw [hL, integral_integral_swap (hb.integrable_fourier_smulLeftCLM_prod u x ζ')]
+  refine integral_congr_ae (.of_forall fun ζ ↦ ?_); dsimp only
+  rw [← integral_add_left_eq_self (fun y ↦ G (y, ζ)) x, Real.fourier_eq,
+    integral_apply ((Real.fourierIntegral_convergent_iff (ζ' - ζ)).2
+      (hb.integrable_weightedSlice x ((2 * π) • ζ))), Circle.smul_def, ← integral_smul]
+  exact integral_congr_ae (.of_forall fun z ↦ by
+    have hnorm : ‖x - (x + z)‖ = ‖z‖ := by simp
+    simp only [G, weightedSlice_apply, hnorm, inner_add_left, neg_add, AddChar.map_add_eq_mul,
+      Circle.smul_def, Circle.coe_mul, smul_apply, smul_smul])
 
 private theorem IsUniform.integrable_uniformComposeIntegrand (hb : b.IsUniform)
     (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
@@ -745,26 +574,22 @@ private theorem IsUniform.integrable_uniformComposeIntegrand (hb : b.IsUniform)
   obtain ⟨C, -, hC⟩ := hb.exists_norm_uniformCompIntegrand_le
     (((Symbol.oneSubFrequencyLaplacian (m := m'))^[n + 1] a).exists_bound_coefficient {x}
       isCompact_singleton) ((n : ℝ) + 1)
-  have hh := (𝓕 u).integrable_one_add_norm_smul_sq_rpow_mul_norm (μ := volume) (2 * π) (m' + m)
   have hB : Continuous fun q : CoordinateSpace n × CoordinateSpace n ↦
       𝓕 (weightedSlice b x ((2 * π) • q.2)) (q.1 - q.2) := by
     simpa only [Function.comp_def] using hb.continuous_fourier_weightedSlice.comp (by fun_prop :
       Continuous fun q : CoordinateSpace n × CoordinateSpace n ↦ ((x, (2 * π) • q.2), q.1 - q.2))
-  have hcont : Continuous fun q : CoordinateSpace n × CoordinateSpace n ↦ 𝐞 ⟪q.2, x⟫ •
-      ((Symbol.oneSubFrequencyLaplacian (m := m'))^[n + 1] a).coefficient (x, (2 * π) • q.1)
-        (𝓕 (weightedSlice b x ((2 * π) • q.2)) (q.1 - q.2) (𝓕 u q.2)) :=
-    (Real.continuous_fourierChar.comp (by fun_prop)).smul
-      ((((Symbol.oneSubFrequencyLaplacian (m := m'))^[n + 1] a).contDiff_coefficient.continuous.comp
-        (by fun_prop)).clm_apply (hB.clm_apply ((𝓕 u).continuous.comp continuous_snd)))
-  refine ((hh.convolution_integrand (ContinuousLinearMap.mul ℝ ℝ)
+  refine ((((𝓕 u).integrable_one_add_norm_smul_sq_rpow_mul_norm (μ := volume) (2 * π)
+      (m' + m)).convolution_integrand (ContinuousLinearMap.mul ℝ ℝ)
     integrable_one_add_norm_sq_rpow_neg_succ_div_two).const_mul C).mono'
-    hcont.aestronglyMeasurable (.of_forall fun q ↦ ?_)
-  have hξ : (2 * π) • q.2 + (2 * π) • (q.1 - q.2) = (2 * π) • q.1 := by
-    rw [← smul_add, add_sub_cancel]
+    ((Real.continuous_fourierChar.comp (by fun_prop)).smul
+      ((((Symbol.oneSubFrequencyLaplacian (m := m'))^[n + 1] a).contDiff_coefficient.continuous.comp
+        (by fun_prop)).clm_apply (hB.clm_apply
+          ((𝓕 u).continuous.comp continuous_snd)))).aestronglyMeasurable
+    (.of_forall fun q ↦ ?_)
   have h := hC x rfl ((2 * π) • q.2) (q.1 - q.2)
-  rw [uniformCompIntegrand, hξ] at h
-  rw [Circle.norm_smul, ContinuousLinearMap.mul_apply', ← ContinuousLinearMap.comp_apply]
-  exact ((ContinuousLinearMap.le_opNorm _ (𝓕 u q.2)).trans
+  rw [uniformCompIntegrand, ← smul_add, add_sub_cancel] at h
+  rw [Circle.norm_smul, ContinuousLinearMap.mul_apply', ← comp_apply]
+  exact ((le_opNorm _ (𝓕 u q.2)).trans
     (mul_le_mul_of_nonneg_right h (norm_nonneg _))).trans_eq (by ring)
 
 private theorem IsUniform.integrable_fourier_weightedSlice_apply (hb : b.IsUniform)
@@ -777,14 +602,11 @@ private theorem IsUniform.integrable_fourier_weightedSlice_apply (hb : b.IsUnifo
     simpa only [Function.comp_def] using hb.continuous_fourier_weightedSlice.comp (by fun_prop :
       Continuous fun ζ : CoordinateSpace n ↦ ((x, (2 * π) • ζ), ζ' - ζ))
   refine (((𝓕 u).integrable_one_add_norm_smul_sq_rpow_mul_norm (μ := volume) (2 * π) m).const_mul
-      Cb).mono'
-    ((Real.continuous_fourierChar.comp (by fun_prop)).smul
-      (hB.clm_apply (𝓕 u).continuous)).aestronglyMeasurable (.of_forall fun ζ ↦ ?_)
-  rw [Circle.norm_smul]
+      Cb).mono' ((Real.continuous_fourierChar.comp (by fun_prop)).smul
+        (hB.clm_apply (𝓕 u).continuous)).aestronglyMeasurable (.of_forall fun ζ ↦ ?_)
   have h := hCb x ((2 * π) • ζ) (ζ' - ζ)
-  simp only [neg_zero, zero_div, Real.rpow_zero, mul_one] at h
-  exact ((ContinuousLinearMap.le_opNorm _ _).trans
-    (mul_le_mul_of_nonneg_right h (norm_nonneg _))).trans_eq (by ring)
+  simp only [neg_zero, zero_div, Real.rpow_zero, mul_one] at h; rw [Circle.norm_smul]
+  exact ((le_opNorm _ _).trans (mul_le_mul_of_nonneg_right h (norm_nonneg _))).trans_eq (by ring)
 
 /-- **Composition of quantizations.** For any symbol `a` of order `m'` and any uniform symbol `b`
 of order `m`, `Op(a # b) u = Op(a) (Op(b) u)` on Schwartz functions. -/
@@ -797,40 +619,33 @@ theorem quantizeSchwartzValue_uniformSharp [CompleteSpace W] [CompleteSpace U] (
   set aN := (oneSubFrequencyLaplacian (m := m'))^[n + 1] a
   set F : CoordinateSpace n → CoordinateSpace n → U := fun ζ' ζ ↦ 𝐞 ⟪ζ, x⟫ •
     aN.coefficient (x, (2 * π) • ζ') (𝓕 (weightedSlice b x ((2 * π) • ζ)) (ζ' - ζ) (𝓕 u ζ))
-  have hF : Integrable (fun q : CoordinateSpace n × CoordinateSpace n ↦ F q.1 q.2)
-      (volume.prod volume) := hb.integrable_uniformComposeIntegrand u x
   have hR : quantizeSchwartzValue aN.coefficient
       (SchwartzMap.smulLeftCLM W (fun y ↦ (1 + ‖x - y‖ ^ 2) ^ (-((n + 1 : ℕ) : ℝ)))
         (quantizeUniformCLM b hb u)) x = ∫ ζ', ∫ ζ, F ζ' ζ := by
-    rw [quantizeSchwartzValue_def]
-    refine integral_congr_ae (.of_forall fun ζ' ↦ ?_)
-    dsimp only
+    rw [quantizeSchwartzValue_def]; refine integral_congr_ae (.of_forall fun ζ' ↦ ?_); dsimp only
     rw [hb.fourier_smulLeftCLM_quantizeUniformCLM u x ζ',
       ← (aN.coefficient (x, (2 * π) • ζ')).integral_comp_comm
         (hb.integrable_fourier_weightedSlice_apply u x ζ'), Circle.smul_def, ← integral_smul]
-    refine integral_congr_ae (.of_forall fun ζ ↦ ?_)
-    dsimp only [F]
+    refine integral_congr_ae (.of_forall fun ζ ↦ ?_); dsimp only [F]
     rw [Circle.smul_def, Circle.smul_def, map_smul, smul_smul, ← Circle.coe_mul,
       ← AddChar.map_add_eq_mul]
     congr 3; rw [real_inner_comm (ζ' - ζ) x, inner_sub_left]; ring
-  rw [hR, integral_integral_swap hF, quantizeSchwartzValue_def]
-  refine integral_congr_ae (.of_forall fun ζ ↦ ?_)
-  dsimp only
+  rw [hR, integral_integral_swap (hb.integrable_uniformComposeIntegrand u x),
+    quantizeSchwartzValue_def]
+  refine integral_congr_ae (.of_forall fun ζ ↦ ?_); dsimp only
   rw [← integral_add_right_eq_self (fun ζ' ↦ F ζ' ζ) ζ,
     coefficient_uniformSharp_eq_uniformCompCoeff, uniformCompCoeff,
-    ContinuousLinearMap.integral_apply (hb.integrable_uniformCompIntegrand _), Circle.smul_def,
-    ← integral_smul]
-  refine integral_congr_ae (.of_forall fun η ↦ ?_)
-  dsimp only [F, uniformCompIntegrand, aN]
-  rw [add_sub_cancel_right, smul_add, add_comm ((2 * π) • η), Circle.smul_def,
-    ContinuousLinearMap.comp_apply]
+    integral_apply (hb.integrable_uniformCompIntegrand _), Circle.smul_def, ← integral_smul]
+  exact integral_congr_ae (.of_forall fun η ↦ by
+    simp only [F, uniformCompIntegrand, aN, add_sub_cancel_right, smul_add,
+      add_comm ((2 * π) • η), Circle.smul_def, comp_apply])
 
 /-- **Composition of uniform quantizations on Schwartz space**: `Op(a # b) = Op(a) ∘ Op(b)`. -/
 theorem quantizeUniformCLM_uniformSharp [CompleteSpace W] [CompleteSpace U]
     (ha : a.IsUniform) (hb : b.IsUniform) :
     quantizeUniformCLM (a.uniformSharp b hb) (ha.uniformSharp hb) =
       (quantizeUniformCLM a ha).comp (quantizeUniformCLM b hb) := by
-  ext u x; simp only [quantizeUniformCLM_apply, ContinuousLinearMap.comp_apply]
+  ext u x; simp only [quantizeUniformCLM_apply, comp_apply]
   exact quantizeSchwartzValue_uniformSharp hb u x
 
 /-- **Uniqueness of the uniform composition symbol.** Any symbol whose quantization on compactly
@@ -855,39 +670,21 @@ theorem uniformSharp_eq_sharp [CompleteSpace V] [CompleteSpace W] [CompleteSpace
 /-- Left composition with a constant symbol is exact: `T # b = T ∘ b`. -/
 theorem const_uniformSharp [CompleteSpace W] [CompleteSpace U] (T : W →L[ℂ] U)
     (hb : b.IsUniform) : (const T).uniformSharp b hb = (const T).comp b := by
-  have hfl : (frequencyLaplacian (const T : Symbol n W U 0)).coefficient = 0 := by
-    funext ⟨x, ξ⟩; rw [coefficient_frequencyLaplacian, Pi.zero_apply]
-    exact Finset.sum_eq_zero fun j _ ↦ by
-      simp only [coefficient_const, coordinateDeriv_const T (by simp : ([j] : List (Fin n)) ≠ []),
-        ← Pi.zero_def, coordinateDeriv_zero, Pi.zero_apply]
-  have hone : oneSubFrequencyLaplacian (const T : Symbol n W U 0) = const T := by
-    ext1; funext p; rw [coefficient_oneSubFrequencyLaplacian, hfl, Pi.zero_apply, sub_zero]
-  have hiter (k : ℕ) : (oneSubFrequencyLaplacian (m := 0))^[k] (const T : Symbol n W U 0) =
-      const T := by
-    induction k with
-    | zero => rfl
-    | succ k ih => rw [Function.iterate_succ_apply', ih, hone]
   ext1; funext ⟨x, ξ⟩
   obtain ⟨C, -, hC⟩ := hb.exists_norm_fourier_weightedSlice_le ((n : ℝ) + 1)
-  have hf_cont : Continuous (weightedSlice b x ξ) := (contDiff_weightedSlice b x ξ).continuous
-  have hf_int : Integrable (weightedSlice b x ξ) := hb.integrable_weightedSlice x ξ
+  have hf_int := hb.integrable_weightedSlice x ξ
   have hFf_int : Integrable (𝓕 (weightedSlice b x ξ)) :=
     (integrable_one_add_norm_sq_rpow_neg_succ_div_two.const_mul
       (C * (1 + ‖ξ‖ ^ 2) ^ (m / 2))).mono' hf_int.continuous_fourier.aestronglyMeasurable
       (.of_forall (hC x ξ))
   have hinv : ∫ η, 𝓕 (weightedSlice b x ξ) η = b.coefficient (x, ξ) := by
-    simpa [Real.fourierInv_eq] using congrFun (hf_cont.fourierInv_fourier_eq hf_int hFf_int) 0
-  set L : (V →L[ℂ] W) →L[ℂ] (V →L[ℂ] U) := ContinuousLinearMap.compL ℂ V W U T
-  calc ((const T).uniformSharp b hb).coefficient (x, ξ)
-      = ∫ η, L (𝓕 (weightedSlice b x ξ) η) := by
-        rw [coefficient_uniformSharp, hiter]
-        exact integral_congr_ae (.of_forall fun η ↦ by simp [L])
-    _ = ((const T).comp b).coefficient (x, ξ) := by
-        rw [L.integral_comp_comm hFf_int, hinv]; simp [L]
+    simpa [Real.fourierInv_eq] using
+      congrFun ((contDiff_weightedSlice b x ξ).continuous.fourierInv_fourier_eq hf_int hFf_int) 0
+  rw [coefficient_uniformSharp, iterate_oneSubFrequencyLaplacian_const, coefficient_comp]
+  simpa [compL_apply] using ((compL ℂ V W U T).integral_comp_comm hFf_int).trans (congrArg _ hinv)
 
 /-- The constant identity symbol `1` is a left identity for `uniformSharp`. -/
-@[simp]
-theorem const_id_uniformSharp [CompleteSpace W] (hb : b.IsUniform) :
+@[simp] theorem const_id_uniformSharp [CompleteSpace W] (hb : b.IsUniform) :
     (const (ContinuousLinearMap.id ℂ W)).uniformSharp b hb = inclusion (by simp) b := by
   rw [const_uniformSharp, const_id_comp]
 
@@ -900,10 +697,9 @@ theorem uniformSharp_assoc {U' : Type*} [NormedAddCommGroup U'] [NormedSpace ℂ
       inclusion (add_assoc m'' m' m).ge
         (a.uniformSharp (b.uniformSharp c hc) (hb.uniformSharp hc)) := by
   ext1; rw [coefficient_inclusion]
-  refine coefficient_eq_uniformSharp_of_forall_quantizeSchwartzValue_eq (hb.uniformSharp hc)
-    fun u _ x ↦ ?_
-  rw [quantizeSchwartzValue_uniformSharp hc, quantizeSchwartzValue_uniformSharp hb,
-    quantizeUniformCLM_uniformSharp hb hc, ContinuousLinearMap.comp_apply]
+  exact coefficient_eq_uniformSharp_of_forall_quantizeSchwartzValue_eq (hb.uniformSharp hc)
+    fun u _ x ↦ by rw [quantizeSchwartzValue_uniformSharp hc, quantizeSchwartzValue_uniformSharp hb,
+      quantizeUniformCLM_uniformSharp hb hc, comp_apply]
 
 /-! ### Frequency multipliers and Bessel potentials in the uniform calculus -/
 
@@ -912,15 +708,13 @@ theorem uniformSharp_assoc {U' : Type*} [NormedAddCommGroup U'] [NormedSpace ℂ
 theorem uniformSharp_eq_comp_of_coefficient_eq [CompleteSpace V] [CompleteSpace W] [CompleteSpace U]
     (a : Symbol n W U m') {b : Symbol n V W m} (hb : b.IsUniform)
     {c : CoordinateSpace n → V →L[ℂ] W} (hc : c.HasTemperateGrowth)
-    (hbc : ∀ p, b.coefficient p = c p.2) :
-    a.uniformSharp b hb = a.comp b := by
+    (hbc : ∀ p, b.coefficient p = c p.2) : a.uniformSharp b hb = a.comp b := by
   ext1; symm
   refine coefficient_eq_uniformSharp_of_forall_quantizeSchwartzValue_eq hb fun u _ x ↦ ?_
   have hq : quantizeUniformCLM b hb u = quantizeFrequencyCLM c u := by
     ext y; rw [quantizeUniformCLM_apply, funext hbc, quantizeSchwartzValue_comp_snd hc]
   rw [hq, quantizeSchwartzValue_quantizeFrequencyCLM hc]
-  exact congrFun (congrArg (fun f ↦ quantizeSchwartzValue f u)
-    (funext fun p ↦ by simp [hbc p])) x
+  exact congrFun (congrArg (fun f ↦ quantizeSchwartzValue f u) (funext fun p ↦ by simp [hbc p])) x
 
 /-- Right composition with a constant symbol is exact: `a # T = a ∘ T`. -/
 theorem uniformSharp_const [CompleteSpace V] [CompleteSpace W] [CompleteSpace U]
@@ -929,11 +723,9 @@ theorem uniformSharp_const [CompleteSpace V] [CompleteSpace W] [CompleteSpace U]
   uniformSharp_eq_comp_of_coefficient_eq a (isUniform_const T) (.const T) (coefficient_const T)
 
 /-- The constant identity symbol `1` is a right identity for `uniformSharp`. -/
-@[simp]
-theorem uniformSharp_const_id [CompleteSpace V] [CompleteSpace W] (a : Symbol n V W m) :
+@[simp] theorem uniformSharp_const_id [CompleteSpace V] [CompleteSpace W] (a : Symbol n V W m) :
     a.uniformSharp (const (ContinuousLinearMap.id ℂ V)) (isUniform_const _) =
-      inclusion (by simp) a := by
-  rw [uniformSharp_const, comp_const_id]
+      inclusion (by simp) a := by rw [uniformSharp_const, comp_const_id]
 
 /-- **Right composition with a frequency-only symbol is exact**: `a # c(ξ) = a ∘ c(ξ)`. -/
 theorem uniformSharp_ofFrequency [CompleteSpace V] [CompleteSpace W] [CompleteSpace U]
@@ -948,17 +740,14 @@ theorem uniformSharp_ofFrequency [CompleteSpace V] [CompleteSpace W] [CompleteSp
 
 /-- **Right composition with the Bessel potential symbol is exact**:
 `a # ⟨ξ / 2π⟩ ^ s = a ∘ ⟨ξ / 2π⟩ ^ s`. -/
-@[simp]
-theorem uniformSharp_besselPotential [CompleteSpace V] [CompleteSpace W] (a : Symbol n V W m)
-    (s : ℝ) :
-    a.uniformSharp (besselPotential s) (isUniform_besselPotential s) =
-      a.comp (besselPotential s) :=
+@[simp] theorem uniformSharp_besselPotential [CompleteSpace V] [CompleteSpace W]
+    (a : Symbol n V W m) (s : ℝ) :
+    a.uniformSharp (besselPotential s) (isUniform_besselPotential s) = a.comp (besselPotential s) :=
   uniformSharp_eq_comp_of_coefficient_eq a (isUniform_besselPotential s)
     (c := fun ξ ↦ (((1 + ‖(2 * π)⁻¹ • ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • ContinuousLinearMap.id ℂ V)
     (by fun_prop) (coefficient_besselPotential s)
 
-/-- **Left composition with a frequency-only symbol on Schwartz space**: `c(D) ∘ Op(b) = Op(c # b)`.
--/
+/-- **Left composition with a frequency-only symbol**: `c(D) ∘ Op(b) = Op(c # b)`. -/
 theorem quantizeUniformCLM_ofFrequency_uniformSharp [CompleteSpace W] [CompleteSpace U]
     {c : CoordinateSpace n → W →L[ℂ] U} (hc : ContDiff ℝ ∞ c)
     (hcbound : ∀ k : ℕ, ∃ C, ∀ ξ,
@@ -966,9 +755,8 @@ theorem quantizeUniformCLM_ofFrequency_uniformSharp [CompleteSpace W] [CompleteS
     quantizeUniformCLM ((ofFrequency c hc hcbound).uniformSharp b hb)
         ((isUniform_ofFrequency hc hcbound).uniformSharp hb) =
       (quantizeFrequencyCLM c).comp (quantizeUniformCLM b hb) := by
-  rw [quantizeUniformCLM_uniformSharp (isUniform_ofFrequency hc hcbound) hb]
-  congr 1; ext u x; rw [quantizeUniformCLM_apply]
-  exact quantizeSchwartzValue_ofFrequency hc hcbound u x
+  rw [quantizeUniformCLM_uniformSharp (isUniform_ofFrequency hc hcbound) hb]; congr 1; ext u x
+  rw [quantizeUniformCLM_apply]; exact quantizeSchwartzValue_ofFrequency hc hcbound u x
 
 /-- **Left composition with the Bessel multiplier**: `J^s ∘ Op(b) = Op(⟨ξ / 2π⟩ ^ s # b)`. -/
 theorem quantizeUniformCLM_besselPotential_uniformSharp [CompleteSpace W]
@@ -982,7 +770,5 @@ theorem quantizeUniformCLM_besselPotential_uniformSharp [CompleteSpace W]
   congr 1; ext u x; rw [quantizeUniformCLM_apply]; exact quantizeSchwartzValue_besselPotential s u x
 
 end Operator
-
 end Symbol
-
 end TauCeti
