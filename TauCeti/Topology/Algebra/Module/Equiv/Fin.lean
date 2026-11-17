@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.Module.Equiv.Pi
 public import Mathlib.Topology.Algebra.Module.Equiv.Prod
-import Mathlib.Logic.Equiv.Fin.Basic
+public import TauCeti.LinearAlgebra.Pi
 
 /-!
 # Splitting and regrouping finite coordinates
@@ -55,6 +55,13 @@ this before `splitCoords_apply`: with equal block sizes, `simp` would otherwise 
 theorem splitCoords_append (a : Fin n → M) (b : Fin m → M) :
     splitCoords (𝕜 := 𝕜) n m (Fin.append a b) = (a, b) :=
   Prod.ext (funext <| Fin.append_left a b) (funext <| Fin.append_right a b)
+
+/-- `splitCoords` has underlying linear equivalence `LinearEquiv.piFinAppend`. -/
+@[simp]
+theorem toLinearEquiv_splitCoords :
+    (splitCoords (𝕜 := 𝕜) (M := M) n m : (Fin (n + m) → M) ≃ₗ[𝕜] (Fin n → M) × (Fin m → M)) =
+      LinearEquiv.piFinAppend 𝕜 M n m :=
+  LinearEquiv.ext fun _ ↦ by simp
 
 /-- Split a vector into its first `d` coordinates and its remaining coordinates. -/
 def splitAt (h : d ≤ n) :

@@ -55,8 +55,8 @@ noncomputable section
 universe u
 
 open CategoryTheory MonoidalCategory HomologicalComplex CliffordAlgebra
-open TauCeti.exteriorPower (wedgeTensor coe_wedgeTensor_tmul proj coe_proj_of_mem proj_coe
-  sum_coe_wedgeTensor_map_proj)
+open TauCeti.exteriorPower (wedgeTensor coe_wedgeTensor_tmul prodProj prodProj_wedgeTensor_self
+  prodProj_wedgeTensor_of_ne sum_wedgeTensor_prodProj)
 open scoped TensorProduct
 
 namespace TauCeti
@@ -106,9 +106,7 @@ private def fromKoszulLinear (n : ℕ) :
     ⋀[R]^n (M × N) →ₗ[R] (koszulComplex φ ⊗ koszulComplex ψ).X n :=
   ∑ i : Fin (n + 1),
     (ιTensorObj (koszulComplex φ) (koszulComplex ψ) i (n - i) n (by omega)).hom ∘ₗ
-      TensorProduct.map (proj R M i) (proj R N (n - i)) ∘ₗ
-        (GradedTensorProduct.of R _ _).symm.toLinearMap ∘ₗ
-          (ExteriorAlgebra.prodEquivTensor R M N).toLinearMap ∘ₗ (⋀[R]^n (M × N)).subtype
+      prodProj R M N i (n - i) n
 
 /-- The inverse comparison map in degree `n`. -/
 private def fromKoszul (n : ℕ) :
@@ -118,13 +116,11 @@ private def fromKoszul (n : ℕ) :
 private theorem fromKoszul_apply (n : ℕ) (x : ⋀[R]^n (M × N)) :
     (fromKoszul φ ψ n).hom x = ∑ i : Fin (n + 1),
       (ιTensorObj (koszulComplex φ) (koszulComplex ψ) i (n - i) n (by omega)).hom
-        (TensorProduct.map (proj R M i) (proj R N (n - i))
-          ((GradedTensorProduct.of R _ _).symm (ExteriorAlgebra.prodEquivTensor R M N x))) :=
-  by
+        (prodProj R M N i (n - i) n x) := by
   -- `fromKoszul` is `ModuleCat.ofHom` of `fromKoszulLinear`, whose source is only definitionally
   -- the term `(koszulComplex (φ.coprod ψ)).X n`, so `ModuleCat.hom_ofHom` does not rewrite.
   change fromKoszulLinear φ ψ n x = _
-  simp only [fromKoszulLinear, LinearMap.coe_sum, Finset.sum_apply, LinearMap.comp_apply]
+  simp only [fromKoszulLinear, LinearMap.sum_apply]
   rfl
 
 private theorem fromKoszul_wedgeTensor_tmul (p q n : ℕ) (h : p + q = n) (a : ⋀[R]^p M)
@@ -133,20 +129,15 @@ private theorem fromKoszul_wedgeTensor_tmul (p q n : ℕ) (h : p + q = n) (a : �
       (ιTensorObj (koszulComplex φ) (koszulComplex ψ) p q n h).hom (a ⊗ₜ b) := by
   have key : ∀ (q' : ℕ) (_ : q' = q) (h' : p + q' = n),
       (ιTensorObj (koszulComplex φ) (koszulComplex ψ) p q' n h').hom
-          (proj R M p a ⊗ₜ proj R N q' b) =
+          (prodProj R M N p q' n (wedgeTensor R M N p q n h (a ⊗ₜ b))) =
         (ιTensorObj (koszulComplex φ) (koszulComplex ψ) p q n h).hom (a ⊗ₜ b) := by
     rintro q' rfl h'
-    rw [proj_coe, proj_coe]
-  rw [fromKoszul_apply, coe_wedgeTensor_tmul, ← ExteriorAlgebra.prodEquivTensor_symm_tmul,
-    AlgEquiv.apply_symm_apply, GradedTensorProduct.of_symm_of]
-  simp only [TensorProduct.map_tmul]
-  rw [Finset.sum_eq_single ⟨p, by omega⟩]
+    rw [prodProj_wedgeTensor_self]
+    rfl
+  rw [fromKoszul_apply, Finset.sum_eq_single ⟨p, by omega⟩]
   · exact key _ (by simp; omega) _
   · rintro i - hi
-    have : proj R M i a = 0 := Subtype.ext <| by
-      rw [coe_proj_of_mem a.2, ite_eq_right fun h ↦ hi (Fin.ext h.symm)]
-      rfl
-    rw [this, TensorProduct.zero_tmul]
+    rw [prodProj_wedgeTensor_of_ne h (.inl fun hp ↦ hi (Fin.ext hp.symm))]
     exact map_zero _
   · simp
 
@@ -156,11 +147,9 @@ private theorem toKoszul_fromKoszul (n : ℕ) (x : ⋀[R]^n (M × N)) :
   simp only [toKoszul_ιTensorObj_apply]
   -- The sum is taken in the term `(koszulComplex (φ.coprod ψ)).X n` of the Koszul complex, which
   -- is only definitionally the exterior power `⋀ⁿ (M × N)`.
-  change (∑ i : Fin (n + 1), wedgeTensor R M N i (n - i) n (by omega) _ : ⋀[R]^n (M × N)) = x
-  refine Subtype.ext ?_
-  rw [Submodule.coe_sum, sum_coe_wedgeTensor_map_proj]
-  simp [proj_coe]
-
+  change (∑ i : Fin (n + 1),
+    wedgeTensor R M N i (n - i) n (by omega) (prodProj R M N i (n - i) n x) : ⋀[R]^n (M × N)) = x
+  exact sum_wedgeTensor_prodProj n x
 
 /-- Morphisms out of a summand `⋀ᵖ M ⊗ ⋀^q N` of `K(φ) ⊗ K(ψ)` agree once they agree on pure
 tensors. -/
