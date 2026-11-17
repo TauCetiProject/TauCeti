@@ -69,7 +69,11 @@ The file develops:
   changes it by a smoothing term, whose derivatives are bounded by every power of `⟨ξ⟩`
   (`HomogeneousSymbol.exists_norm_iteratedFDeriv_sub_smul_coefficient_le`);
 * on an inner product space, the symbol `HomogeneousSymbol.normRpow`, which is `‖ξ‖ ^ m` times
-  the identity and is homogeneous of every real degree `m`.
+  the identity and is homogeneous of every real degree `m`, and the homogeneous extension
+  `HomogeneousSymbol.ofSphere m g`, equal to `‖ξ‖ ^ m • g (x, ‖ξ‖⁻¹ • ξ)` at `ξ ≠ 0`, of a map `g`
+  smooth off the zero frequency; only the values of `g` on the unit sphere matter
+  (`HomogeneousSymbol.ofSphere_congr`), and every homogeneous symbol is the extension of its own
+  coefficient (`HomogeneousSymbol.ofSphere_coefficient`).
 * between Hilbert spaces, the pointwise adjoint `HomogeneousSymbol.adjoint`,
   `(x, ξ) ↦ a (x, ξ)†`, of the same degree; it reverses composition
   (`HomogeneousSymbol.adjoint_comp`).
@@ -1037,6 +1041,79 @@ theorem normRpow_comp_normRpow (m m' : ℝ) :
   ext_of_ne_zero fun x ξ hξ ↦ by
     ext v
     simp [hξ, Real.rpow_add (norm_pos_iff.mpr hξ), mul_smul, smul_comm (‖ξ‖ ^ m)]
+
+end HomogeneousSymbol
+
+/-! ### Homogeneous extension from the unit sphere -/
+
+namespace HomogeneousSymbol
+
+variable {X E V W : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [NormedAddCommGroup E]
+  [InnerProductSpace ℝ E] [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
+  [NormedSpace ℂ W] {m : ℝ}
+
+/-- The formula `(y, ξ) ↦ ‖ξ‖ ^ m • g (y, ‖ξ‖⁻¹ • ξ)` of the homogeneous extension of degree `m`
+from the unit sphere of frequencies is smooth off the zero frequency when `g` is. -/
+theorem contDiffOn_norm_rpow_smul_comp_normalize {Y F : Type*} [NormedAddCommGroup Y]
+    [NormedSpace ℝ Y] [NormedAddCommGroup F] [NormedSpace ℝ F] {g : Y × E → F}
+    (hg : ContDiffOn ℝ ∞ g {q | q.2 ≠ 0}) (m : ℝ) :
+    ContDiffOn ℝ ∞ (fun q : Y × E ↦ ‖q.2‖ ^ m • g (q.1, ‖q.2‖⁻¹ • q.2)) {q | q.2 ≠ 0} := by
+  intro q hq
+  have hq' : q.2 ≠ 0 := hq
+  have hn : ‖q.2‖ ≠ 0 := norm_ne_zero_iff.mpr hq'
+  have hnorm : ContDiffAt ℝ ∞ (fun q : Y × E ↦ ‖q.2‖) q :=
+    (contDiffAt_norm ℝ hq').comp q contDiffAt_snd
+  -- The radial projection stays off the zero frequency, where `g` is smooth.
+  have hmem : (q.1, ‖q.2‖⁻¹ • q.2) ∈ {q : Y × E | q.2 ≠ 0} := smul_ne_zero (inv_ne_zero hn) hq'
+  have hg' := (hg.contDiffAt ((isOpen_ne_fun continuous_snd continuous_const).mem_nhds hmem)).comp
+    q (contDiffAt_fst.prodMk ((hnorm.inv hn).smul contDiffAt_snd))
+  exact ((hnorm.rpow_const_of_ne (p := m) hn).smul hg').contDiffWithinAt
+
+variable (m) in
+/-- The homogeneous symbol of degree `m` that agrees with `g` on the unit sphere of frequencies:
+its value at `ξ ≠ 0` is `‖ξ‖ ^ m • g (x, ‖ξ‖⁻¹ • ξ)`. Only the values of `g` on the unit sphere
+matter (`HomogeneousSymbol.ofSphere_congr`); smoothness off the zero frequency is assumed so that
+the extension is smooth. -/
+noncomputable def ofSphere (g : X × E → V →L[ℂ] W) (hg : ContDiffOn ℝ ∞ g {p | p.2 ≠ 0}) :
+    HomogeneousSymbol X E V W m :=
+  mk' (fun p ↦ ‖p.2‖ ^ m • g (p.1, ‖p.2‖⁻¹ • p.2)) (contDiffOn_norm_rpow_smul_comp_normalize hg m)
+    fun x ξ _ t ht ↦ by
+      have hdir : (t * ‖ξ‖)⁻¹ • (t • ξ) = ‖ξ‖⁻¹ • ξ := by
+        rw [smul_smul]
+        simp [ht.ne']
+      simp only [norm_smul, Real.norm_of_nonneg ht.le, hdir, Real.mul_rpow ht.le (norm_nonneg ξ),
+        mul_smul]
+
+@[simp]
+theorem coefficient_ofSphere (g : X × E → V →L[ℂ] W) (hg : ContDiffOn ℝ ∞ g {p | p.2 ≠ 0})
+    {x : X} {ξ : E} (hξ : ξ ≠ 0) :
+    (ofSphere m g hg).coefficient (x, ξ) = ‖ξ‖ ^ m • g (x, ‖ξ‖⁻¹ • ξ) :=
+  coefficient_mk'_of_ne_zero _ _ _ hξ
+
+/-- On the unit sphere of frequencies the homogeneous extension of `g` is `g`. -/
+theorem coefficient_ofSphere_of_norm_eq_one (g : X × E → V →L[ℂ] W)
+    (hg : ContDiffOn ℝ ∞ g {p | p.2 ≠ 0}) {x : X} {ξ : E} (hξ : ‖ξ‖ = 1) :
+    (ofSphere m g hg).coefficient (x, ξ) = g (x, ξ) := by
+  rw [coefficient_ofSphere g hg (norm_ne_zero_iff.mp (hξ ▸ one_ne_zero)), hξ]
+  simp
+
+/-- The homogeneous extension only depends on the values on the unit sphere. -/
+theorem ofSphere_congr {g g' : X × E → V →L[ℂ] W} (hg : ContDiffOn ℝ ∞ g {p | p.2 ≠ 0})
+    (hg' : ContDiffOn ℝ ∞ g' {p | p.2 ≠ 0}) (h : ∀ x ξ, ‖ξ‖ = 1 → g (x, ξ) = g' (x, ξ)) :
+    ofSphere m g hg = ofSphere m g' hg' :=
+  ext_of_ne_zero fun x ξ hξ ↦ by
+    rw [coefficient_ofSphere g hg hξ, coefficient_ofSphere g' hg' hξ,
+      h x _ (by simpa using norm_smul_inv_norm (𝕜 := ℝ) hξ)]
+
+/-- A homogeneous symbol is the homogeneous extension of its values on the unit sphere. -/
+@[simp]
+theorem ofSphere_coefficient (a : HomogeneousSymbol X E V W m) :
+    ofSphere m a.coefficient a.contDiffOn_coefficient = a :=
+  ext_of_ne_zero fun x ξ hξ ↦ by
+    have hn : 0 < ‖ξ‖ := norm_pos_iff.mpr hξ
+    rw [coefficient_ofSphere _ _ hξ, a.homogeneous x ξ _ (inv_pos.mpr hn), smul_smul,
+      ← Real.mul_rpow hn.le (by positivity)]
+    simp [hn.ne']
 
 end HomogeneousSymbol
 

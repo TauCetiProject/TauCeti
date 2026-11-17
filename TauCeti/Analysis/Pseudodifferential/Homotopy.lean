@@ -8,18 +8,12 @@ module
 public import TauCeti.Analysis.Pseudodifferential.Elliptic
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.Geometry.Manifold.SmoothApprox
+import TauCeti.Analysis.Normed.Operator.BoundedLinearMaps
 
 /-!
 # Smooth homotopies of elliptic homogeneous symbols
 
-A homogeneous symbol of degree `m` is determined by its values on the unit sphere of
-frequencies. Conversely, every map `g` smooth off the zero frequency extends from the sphere to
-the homogeneous symbol `HomogeneousSymbol.ofSphere m g`, equal to `‖ξ‖ ^ m • g (x, ‖ξ‖⁻¹ • ξ)` at
-`ξ ≠ 0`. It is elliptic exactly when `g` is invertible on the sphere
-(`HomogeneousSymbol.isElliptic_ofSphere_iff`), and every homogeneous symbol is the extension of
-its own coefficient (`HomogeneousSymbol.ofSphere_coefficient`).
-
-The main result smooths homotopies of elliptic symbols. Index arguments produce homotopies
+This file smooths homotopies of elliptic symbols. Index arguments produce homotopies
 `t ↦ a t` of principal symbols that are only continuous, for instance straight lines through
 merely continuous symbols, or the coefficient homotopies of cut-off external products. If such a
 homotopy is invertible on the unit sphere for `t ∈ [0, 1]` and joins two smooth homogeneous
@@ -36,20 +30,14 @@ reparametrization `σ` that is constant near `t = 0` and `t = 1`, the map
 and equal to `1` on the unit sphere, is continuous on the whole space and smooth for `t` near the
 ends. Mathlib's `Continuous.exists_contDiff_approx_and_eqOn` (A. Dedecker and P. Massot)
 approximates it by a smooth map `g` that is unchanged near the ends, within a continuous positive
-precision that keeps `g` invertible on the unit sphere: the distance from the value to the closed
-set of non-invertible operators. The homogeneous extensions `b t = ofSphere m (g t)` are the
-required symbols. No compactness of the positions is needed, since the precision is allowed to
-vary from point to point.
+precision that keeps `g` invertible on the unit sphere: the margin of invertibility of
+`Continuous.exists_continuous_isInvertible_of_dist_lt`, plus the distance to the unit sphere. The
+homogeneous extensions `b t = HomogeneousSymbol.ofSphere m (g t)` are the required symbols, and
+they are elliptic by `HomogeneousSymbol.isElliptic_ofSphere_iff`. No compactness of the positions
+is needed, since the precision is allowed to vary from point to point.
 
-## Main declarations
+## Main declaration
 
-* `TauCeti.HomogeneousSymbol.contDiffOn_norm_rpow_smul_comp_normalize`: the formula of the
-  homogeneous extension is smooth off the zero frequency.
-* `TauCeti.HomogeneousSymbol.ofSphere`: the homogeneous symbol of degree `m` extending a map from
-  the unit sphere of frequencies, with `coefficient_ofSphere`,
-  `coefficient_ofSphere_of_norm_eq_one`, `ofSphere_congr` and `ofSphere_coefficient`.
-* `TauCeti.HomogeneousSymbol.isElliptic_ofSphere_iff`: the extension is elliptic exactly when the
-  map is invertible on the unit sphere.
 * `TauCeti.HomogeneousSymbol.exists_contDiffOn_isElliptic_homotopy`: a continuous homotopy
   through invertible maps between two smooth homogeneous symbols can be replaced by a jointly
   smooth homotopy of elliptic homogeneous symbols with the same endpoints.
@@ -76,92 +64,6 @@ namespace HomogeneousSymbol
 variable {X E V W : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [NormedAddCommGroup E]
   [InnerProductSpace ℝ E] [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
   [NormedSpace ℂ W] {m : ℝ}
-
-/-! ### Homogeneous extension from the unit sphere -/
-
-section Extension
-
-variable {Y F : Type*} [NormedAddCommGroup Y] [NormedSpace ℝ Y] [NormedAddCommGroup F]
-  [NormedSpace ℝ F]
-
-/-- The formula `(y, ξ) ↦ ‖ξ‖ ^ m • g (y, ‖ξ‖⁻¹ • ξ)` of the homogeneous extension of degree `m`
-from the unit sphere of frequencies is smooth off the zero frequency when `g` is. -/
-theorem contDiffOn_norm_rpow_smul_comp_normalize {g : Y × E → F}
-    (hg : ContDiffOn ℝ ∞ g {q | q.2 ≠ 0}) (m : ℝ) :
-    ContDiffOn ℝ ∞ (fun q : Y × E ↦ ‖q.2‖ ^ m • g (q.1, ‖q.2‖⁻¹ • q.2)) {q | q.2 ≠ 0} := by
-  intro q hq
-  have hq' : q.2 ≠ 0 := hq
-  have hn : ‖q.2‖ ≠ 0 := norm_ne_zero_iff.mpr hq'
-  have hnorm : ContDiffAt ℝ ∞ (fun q : Y × E ↦ ‖q.2‖) q :=
-    (contDiffAt_norm ℝ hq').comp q contDiffAt_snd
-  -- The radial projection stays off the zero frequency, where `g` is smooth.
-  have hmem : (q.1, ‖q.2‖⁻¹ • q.2) ∈ {q : Y × E | q.2 ≠ 0} := smul_ne_zero (inv_ne_zero hn) hq'
-  have hg' := (hg.contDiffAt ((isOpen_ne_fun continuous_snd continuous_const).mem_nhds hmem)).comp
-    q (contDiffAt_fst.prodMk ((hnorm.inv hn).smul contDiffAt_snd))
-  exact ((hnorm.rpow_const_of_ne (p := m) hn).smul hg').contDiffWithinAt
-
-end Extension
-
-variable (m) in
-/-- The homogeneous symbol of degree `m` that agrees with `g` on the unit sphere of frequencies:
-its value at `ξ ≠ 0` is `‖ξ‖ ^ m • g (x, ‖ξ‖⁻¹ • ξ)`. Only the values of `g` on the unit sphere
-matter (`HomogeneousSymbol.ofSphere_congr`); smoothness off the zero frequency is assumed so that
-the extension is smooth. -/
-def ofSphere (g : X × E → V →L[ℂ] W) (hg : ContDiffOn ℝ ∞ g {p | p.2 ≠ 0}) :
-    HomogeneousSymbol X E V W m :=
-  mk' (fun p ↦ ‖p.2‖ ^ m • g (p.1, ‖p.2‖⁻¹ • p.2)) (contDiffOn_norm_rpow_smul_comp_normalize hg m)
-    fun x ξ _ t ht ↦ by
-      have hdir : (t * ‖ξ‖)⁻¹ • (t • ξ) = ‖ξ‖⁻¹ • ξ := by
-        rw [smul_smul, mul_inv, mul_comm t⁻¹, mul_assoc, inv_mul_cancel₀ ht.ne', mul_one]
-      simp only [norm_smul, Real.norm_of_nonneg ht.le, hdir, Real.mul_rpow ht.le (norm_nonneg ξ),
-        mul_smul]
-
-@[simp]
-theorem coefficient_ofSphere (g : X × E → V →L[ℂ] W) (hg : ContDiffOn ℝ ∞ g {p | p.2 ≠ 0})
-    {x : X} {ξ : E} (hξ : ξ ≠ 0) :
-    (ofSphere m g hg).coefficient (x, ξ) = ‖ξ‖ ^ m • g (x, ‖ξ‖⁻¹ • ξ) :=
-  coefficient_mk'_of_ne_zero _ _ _ hξ
-
-/-- On the unit sphere of frequencies the homogeneous extension of `g` is `g`. -/
-theorem coefficient_ofSphere_of_norm_eq_one (g : X × E → V →L[ℂ] W)
-    (hg : ContDiffOn ℝ ∞ g {p | p.2 ≠ 0}) {x : X} {ξ : E} (hξ : ‖ξ‖ = 1) :
-    (ofSphere m g hg).coefficient (x, ξ) = g (x, ξ) := by
-  rw [coefficient_ofSphere g hg (norm_ne_zero_iff.mp (hξ ▸ one_ne_zero)), hξ]
-  simp
-
-/-- The homogeneous extension only depends on the values on the unit sphere. -/
-theorem ofSphere_congr {g g' : X × E → V →L[ℂ] W} (hg : ContDiffOn ℝ ∞ g {p | p.2 ≠ 0})
-    (hg' : ContDiffOn ℝ ∞ g' {p | p.2 ≠ 0}) (h : ∀ x ξ, ‖ξ‖ = 1 → g (x, ξ) = g' (x, ξ)) :
-    ofSphere m g hg = ofSphere m g' hg' :=
-  ext_of_ne_zero fun x ξ hξ ↦ by
-    rw [coefficient_ofSphere g hg hξ, coefficient_ofSphere g' hg' hξ,
-      h x _ (by simpa using norm_smul_inv_norm (𝕜 := ℝ) hξ)]
-
-/-- A homogeneous symbol is the homogeneous extension of its values on the unit sphere. -/
-@[simp]
-theorem ofSphere_coefficient (a : HomogeneousSymbol X E V W m) :
-    ofSphere m a.coefficient a.contDiffOn_coefficient = a :=
-  ext_of_ne_zero fun x ξ hξ ↦ by
-    have hn : 0 < ‖ξ‖ := norm_pos_iff.mpr hξ
-    rw [coefficient_ofSphere _ _ hξ, a.homogeneous x ξ _ (inv_pos.mpr hn), smul_smul,
-      ← Real.mul_rpow hn.le (inv_pos.mpr hn).le, mul_inv_cancel₀ hn.ne', Real.one_rpow, one_smul]
-
-/-- The homogeneous extension of `g` is elliptic exactly when `g` is invertible on the unit sphere
-of frequencies. -/
-theorem isElliptic_ofSphere_iff {g : X × E → V →L[ℂ] W} (hg : ContDiffOn ℝ ∞ g {p | p.2 ≠ 0}) :
-    (ofSphere m g hg).IsElliptic ↔ ∀ x ξ, ‖ξ‖ = 1 → (g (x, ξ)).IsInvertible := by
-  rw [isElliptic_iff]
-  refine ⟨fun h x ξ hξ ↦ ?_, fun h x ξ hξ ↦ ?_⟩
-  · simpa [coefficient_ofSphere_of_norm_eq_one g hg hξ] using
-      h x ξ (norm_ne_zero_iff.mp (hξ ▸ one_ne_zero))
-  · have hn : 0 < ‖ξ‖ := norm_pos_iff.mpr hξ
-    rw [coefficient_ofSphere g hg hξ, ← Complex.coe_smul,
-      ContinuousLinearMap.isInvertible_smul_iff (by exact_mod_cast (Real.rpow_pos_of_pos hn m).ne')]
-    exact h x _ (by simpa using norm_smul_inv_norm (𝕜 := ℝ) hξ)
-
-/-! ### Smoothing homotopies of elliptic symbols -/
-
-section Homotopy
 
 /-- The continuous map approximated in `exists_contDiffOn_isElliptic_homotopy`: the homotopy `a`,
 read on the unit sphere after a time change `σ`, extended to all frequencies by the cutoff
@@ -236,41 +138,6 @@ private theorem contDiffOn_cutoff_smul_comp_normalize (χ : FrequencyCutoff E) {
   · exact key a₁ 1 ha₁ (fun q hq ↦ hσ₁ _ hq)
       (isOpen_lt continuous_const (continuous_fst.comp continuous_fst)) hq
 
-omit [InnerProductSpace ℝ E] in
-/-- A continuous map into the operators that is invertible on the unit sphere of frequencies has a
-continuous positive precision `ε`: every operator within `ε` of it at a point of the unit sphere
-is invertible. -/
-private theorem exists_continuous_pos_isInvertible_of_dist_lt [CompleteSpace V] {Z : Type*}
-    [TopologicalSpace Z] {G : Z × E → V →L[ℂ] W} (hG : Continuous G)
-    (hinv : ∀ q : Z × E, ‖q.2‖ = 1 → (G q).IsInvertible) :
-    ∃ ε : Z × E → ℝ, Continuous ε ∧ (∀ q, 0 < ε q) ∧
-      ∀ q : Z × E, ‖q.2‖ = 1 → ∀ T : V →L[ℂ] W, dist T (G q) < ε q → T.IsInvertible := by
-  classical
-  -- The distance to the closed set of non-invertible operators, plus the distance to the sphere.
-  set N : Set (V →L[ℂ] W) := {T | ¬T.IsInvertible}
-  have hN : IsClosed N := ContinuousLinearMap.isOpen_setOfPred_isInvertible.isClosed_compl
-  refine ⟨fun q ↦ (if N.Nonempty then infDist (G q) N else 1) + |‖q.2‖ - 1|, ?_, fun q ↦ ?_,
-    fun q hq T hT ↦ ?_⟩
-  · refine Continuous.add ?_ (continuous_snd.norm.sub continuous_const).abs
-    split_ifs
-    · exact (continuous_infDist_pt N).comp hG
-    · exact continuous_const
-  · rcases eq_or_ne ‖q.2‖ 1 with hq | hq
-    · have h1 : 0 < if N.Nonempty then infDist (G q) N else 1 := by
-        split_ifs with hne
-        · exact (hN.notMem_iff_infDist_pos hne).mp fun h ↦ h (hinv q hq)
-        · exact one_pos
-      simpa [hq] using h1
-    · have h1 : 0 ≤ if N.Nonempty then infDist (G q) N else 1 := by
-        split_ifs
-        · exact infDist_nonneg
-        · exact zero_le_one
-      exact add_pos_of_nonneg_of_pos h1 (abs_pos.mpr (sub_ne_zero.mpr hq))
-  · by_contra hTN
-    have hne : N.Nonempty := ⟨T, hTN⟩
-    have hlt : dist T (G q) < infDist (G q) N := by simpa [hne, hq] using hT
-    exact (infDist_le_dist_of_mem hTN).not_gt (by rwa [dist_comm] at hlt)
-
 /-- **Smoothing a homotopy of elliptic symbols.** Let `a t`, `t ∈ [0, 1]`, be maps that depend
 continuously on `(t, x, ξ)` and are invertible on the unit sphere of frequencies, joining two
 homogeneous symbols `a₀` and `a₁` of degree `m` there. Then there are elliptic homogeneous symbols
@@ -309,35 +176,34 @@ theorem exists_contDiffOn_isElliptic_homotopy [FiniteDimensional ℝ X] [FiniteD
       (isOpen_lt continuous_const (continuous_fst.comp continuous_fst))).mem_nhdsSet.mpr
       (union_subset_union (fun q (hq : q.1.1 ≤ 1 / 4) ↦ (show q.1.1 < 1 / 3 by linarith))
         fun q (hq : 3 / 4 ≤ q.1.1) ↦ (show 2 / 3 < q.1.1 by linarith))
-  -- Approximate `G`, unchanged on `S`, within a precision keeping it invertible on the sphere.
-  obtain ⟨ε, hε_cont, hε_pos, hε_inv⟩ := exists_continuous_pos_isInvertible_of_dist_lt hG_cont
-    fun q hq ↦ by simpa only [hG_sphere hq] using ha_inv _ (hσ_mem _) _ _ hq
-  obtain ⟨g, hg, hgG, hgS, -⟩ := hG_cont.exists_contDiff_approx_and_eqOn ⊤ hε_cont hε_pos hS hSU
-    (contDiffOn_cutoff_smul_comp_normalize χ hσ₀ hσ₁ a₀ a₁ ha₀ ha₁)
+  -- Approximate `G`, unchanged on `S`, within a precision keeping it invertible on the sphere:
+  -- the margin of invertibility of `G`, plus the distance to the sphere to make it positive.
+  obtain ⟨ε, hε_cont, hε₀, hε_pos, hε_inv⟩ := hG_cont.exists_continuous_isInvertible_of_dist_lt
+  obtain ⟨g, hg, hgG, hgS, -⟩ := hG_cont.exists_contDiff_approx_and_eqOn ⊤
+    (hε_cont.add (continuous_snd.norm.sub continuous_const).abs) (fun q ↦ by
+      rcases eq_or_ne ‖q.2‖ 1 with hq | hq
+      · exact add_pos_of_pos_of_nonneg (hε_pos q (by
+          simpa only [hG_sphere hq] using ha_inv _ (hσ_mem _) _ _ hq)) (abs_nonneg _)
+      · exact add_pos_of_nonneg_of_pos (hε₀ q) (abs_pos.mpr (sub_ne_zero.mpr hq)))
+    hS hSU (contDiffOn_cutoff_smul_comp_normalize χ hσ₀ hσ₁ a₀ a₁ ha₀ ha₁)
   -- The homogeneous extensions of the time slices of `g`.
   have hg_slice (t : ℝ) : ContDiffOn ℝ ∞ (fun p : X × E ↦ g ((t, p.1), p.2)) {p | p.2 ≠ 0} :=
     (hg.comp (by fun_prop : ContDiff ℝ ∞ fun p : X × E ↦ ((t, p.1), p.2))).contDiffOn
   refine ⟨fun t ↦ ofSphere m (fun p ↦ g ((t, p.1), p.2)) (hg_slice t), ?_, fun t ↦ ?_,
     fun t ht ↦ ?_, fun t ht ↦ ?_⟩
   · -- Joint smoothness, transported from `(ℝ × X) × E` along the reassociation.
-    have h := (contDiffOn_norm_rpow_smul_comp_normalize hg.contDiffOn m).comp_continuousLinearMap
-      (ContinuousLinearEquiv.prodAssoc ℝ ℝ X E).symm.toContinuousLinearMap
-    refine h.congr fun p (hp : p.2.2 ≠ 0) ↦ ?_
-    simp only [coefficient_ofSphere _ _ hp]
-    rfl
-  · rw [isElliptic_ofSphere_iff]
-    intro x ξ hξ
-    exact hε_inv ((t, x), ξ) hξ _ (hgG _)
-  · rw [← ofSphere_coefficient a₀]
-    refine ofSphere_congr _ _ fun x ξ hξ ↦ ?_
+    refine ((contDiffOn_norm_rpow_smul_comp_normalize hg.contDiffOn m).comp_continuousLinearMap
+      (ContinuousLinearEquiv.prodAssoc ℝ ℝ X E).symm.toContinuousLinearMap).congr ?_
+    rintro ⟨t, x, ξ⟩ (hξ : ξ ≠ 0)
+    simp [coefficient_ofSphere _ _ hξ, ContinuousLinearEquiv.prodAssoc_symm_apply]
+  · exact (isElliptic_ofSphere_iff _).mpr fun x ξ hξ ↦
+      hε_inv ((t, x), ξ) _ (by simpa [hξ] using hgG ((t, x), ξ))
+  · refine (ofSphere_congr _ _ fun x ξ hξ ↦ ?_).trans (ofSphere_coefficient a₀)
     rw [hgS (Or.inl (show t ≤ 1 / 4 by linarith)), hG_sphere (q := ((t, x), ξ)) hξ,
       hσ₀ _ (by linarith), ha₀ x ξ hξ]
-  · rw [← ofSphere_coefficient a₁]
-    refine ofSphere_congr _ _ fun x ξ hξ ↦ ?_
+  · refine (ofSphere_congr _ _ fun x ξ hξ ↦ ?_).trans (ofSphere_coefficient a₁)
     rw [hgS (Or.inr (show 3 / 4 ≤ t by linarith)), hG_sphere (q := ((t, x), ξ)) hξ,
       hσ₁ _ (by linarith), ha₁ x ξ hξ]
-
-end Homotopy
 
 end HomogeneousSymbol
 
