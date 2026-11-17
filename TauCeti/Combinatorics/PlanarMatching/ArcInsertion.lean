@@ -199,8 +199,7 @@ theorem reflect_insertArc (x : PlanarMatching k) (a : Fin (k + 1)) :
     have hu : unskipN (k - a) q < k := by simp only [unskipN]; split_ifs <;> omega
     have _ := pv_lt x (q := k - 1 - unskipN (k - a) q) (by omega)
     rw [ite_eq_right h₁, ite_eq_right h₂, ite_eq_right (by omega), ite_eq_right (by omega),
-      show unskipN (a : ℕ) (k + 2 - 1 - q) = k - 1 - unskipN (k - a) q by
-        simp only [unskipN]; split_ifs <;> omega, pv_reflect _ hu]
+      unskipN_reflect (a := k - a) (b := a) (by omega) hq (by omega) (by omega), pv_reflect _ hu]
     simp only [skipN]; split_ifs <;> omega
 
 /-- Transport commutes with `insertArc`. -/
@@ -223,11 +222,12 @@ theorem append_insertArc {k l : ℕ} (x : PlanarMatching k) (y : PlanarMatching 
       by_cases h₁ : q = k + b
       · simp [h₁]; omega
       by_cases h₂ : q = k + b + 1
-      · simp [h₂, show k + (b : ℕ) + 1 - k = (b : ℕ) + 1 by omega]
+      · have hsub : k + (b : ℕ) + 1 - k = (b : ℕ) + 1 := by omega
+        simp [h₂, hsub]
+      have hun : unskipN (⟨k + b, by omega⟩ : Fin (k + l + 1)) q = k + unskipN b (q - k) := by
+        simp only [unskipN]; split_ifs <;> omega
       rw [ite_eq_right (by omega), ite_eq_right (by omega), ite_eq_right (by dsimp; exact h₁),
-        ite_eq_right (by dsimp; exact h₂),
-        show unskipN (⟨k + b, by omega⟩ : Fin (k + l + 1)) q = k + unskipN b (q - k) by
-          simp only [unskipN]; split_ifs <;> omega,
+        ite_eq_right (by dsimp; exact h₂), hun,
         pv_append_right _ _ (by omega) (by simp only [unskipN]; split_ifs <;> omega),
         Nat.add_sub_cancel_left]
       simp only [skipN]; split_ifs <;> omega
@@ -237,8 +237,8 @@ private theorem glueFn_of_adj_right {n d : ℕ} :
       glueFn n m φ (n + d) = n + d + 1
   | 0, _, h => by simpa [glueFn] using h
   | m + 1, φ, h => glueFn_of_adj_right m (φ := contractFn (n + m) φ) <| by
-      rw [contractFn, erasePair_apply, skipN_of_le (by omega),
-        show n + 2 * m + d + 2 = n + 2 * (m + 1) + d by omega,
+      have hidx : n + 2 * m + d + 2 = n + 2 * (m + 1) + d := by omega
+      rw [contractFn, erasePair_apply, skipN_of_le (by omega), hidx,
         splice_of_ne _ (by omega) (by omega), h, rejoin_of_ne _ (by omega) (by omega),
         unskipN_of_le (by omega)]
       omega
@@ -454,14 +454,13 @@ theorem capAt_comp (c : Fin (q + 1)) (g : TLDiagram q m) :
 /-- The bottom half-diagram of `D.insertBottomArc c` joins `c.castSucc` to `c.succ`. -/
 @[simp] theorem bottomHalf_insertBottomArc_val_castSucc (D : TLDiagram q m) (c : Fin (q + 1)) :
     (D.insertBottomArc c).bottomHalf.val c.castSucc = c.succ := by
-  have _ := c.isLt
   have hpv :
       ((D.insertBottomArc c).matching.1.val (c.castSucc.castAdd m) : ℕ) = (c : ℕ) + 1 := by
     rw [← PlanarMatching.pv_coe, Fin.val_castAdd, Fin.val_castSucc, matching_insertBottomArc,
       PlanarMatching.pv_cast, PlanarMatching.pv_insertArc_self]
   apply Fin.ext
   rw [bottomHalf_apply]
-  simp only [hpv, show (c : ℕ) + 1 < q + 2 by omega, dite_true, Fin.val_succ]
+  simp only [hpv, Nat.succ_lt_succ c.isLt, dite_true, Fin.val_succ]
 
 /-- The bottom half-diagram of `D.insertBottomArc c` joins `c.succ` to `c.castSucc`. -/
 @[simp] theorem bottomHalf_insertBottomArc_val_succ (D : TLDiagram q m) (c : Fin (q + 1)) :
@@ -493,8 +492,8 @@ theorem capAt_comp (c : Fin (q + 1)) (g : TLDiagram q m) :
   simp only [hpv₁, hpv₂]
   by_cases hlt : pv D.matching i < q
   · simp only [hlt, (skipN_lt_and_ne (a := c) hlt).1, dite_true]
-  · simp only [hlt, show ¬ skipN c (pv D.matching i) < q + 2 by
-      rw [skipN_of_le (by omega)]; omega, dite_false, hs i]
+  · have hge : ¬ skipN c (pv D.matching i) < q + 2 := by rw [skipN_of_le (by omega)]; omega
+    simp only [hlt, hge, dite_false, hs i]
 
 /-- The top half-diagram of `D.insertTopArc c` joins `c.castSucc` to `c.succ`. -/
 @[simp] theorem topHalf_insertTopArc_val_castSucc (D : TLDiagram n q) (c : Fin (q + 1)) :
@@ -694,37 +693,39 @@ is the identity matching on `q` strands carrying one closed circle. -/
   let z := (cupAt c).matching.append (capAt c).matching
   let z₁ := (cupAt c).matching.append (nested q)
   let z₀ := (nested q).append (nested q)
+  have hpos : 2 * q - (c : ℕ) = q + (q - c) := by omega
+  have hcap_pos : 2 * q + 2 + (c : ℕ) = q + (q + 2) + c := by omega
   have hcup_pv : pv (cupAt c).matching (2 * q - c) = 2 * q - c + 1 := by
-    rw [matching_cupAt, pv_cast, show 2 * q - (c : ℕ) = q + (q - c) by omega]
+    rw [matching_cupAt, pv_cast, hpos]
     exact pv_insertArc_self (nested q) ⟨q + (q - c), by omega⟩
   have hcap_pv : pv (capAt c).matching c = (c : ℕ) + 1 := by
     rw [matching_capAt, pv_cast]; exact pv_insertArc_self (nested q) ⟨c, by omega⟩
   have hz_cup : pv z (2 * q - c) = 2 * q - c + 1 := by rw [pv_append_left _ _ (by omega), hcup_pv]
   have hz_cap : pv z (2 * q + 2 + c) = 2 * q + 2 + c + 1 := by
-    rw [pv_append_right _ _ (by omega) (by omega),
-      show 2 * q + 2 + (c : ℕ) - (q + (q + 2)) = c by omega, hcap_pv]; omega
+    rw [pv_append_right _ _ (by omega) (by omega), hcap_pos, Nat.add_sub_cancel_left, hcap_pv]
+    omega
   have hcup_c : contractFn (2 * q - c) (pv (cupAt c).matching) = pv (nested q) := by
-    rw [matching_cupAt, pv_cast_eq, show 2 * q - (c : ℕ) = q + (q - c) by omega]
+    rw [matching_cupAt, pv_cast_eq, hpos]
     exact contractFn_pv_insertArc (nested q) ⟨q + (q - c), by omega⟩
   have hcap_c : contractFn c (pv (capAt c).matching) = pv (nested q) := by
     rw [matching_capAt, pv_cast_eq]; exact contractFn_pv_insertArc (nested q) ⟨c, by omega⟩
   have hz_c : contractFn (2 * q + 2 + c) (pv z) = pv z₁ := by
-    rw [pv_append_eq, show 2 * q + 2 + (c : ℕ) = q + (q + 2) + c by omega,
-      contractFn_appendFn_right _ _ (by omega), hcap_c,
-      show q + 2 + q - 2 = q + q by omega, pv_append_eq]
+    have hsz : q + 2 + q - 2 = q + q := by omega
+    rw [pv_append_eq, hcap_pos, contractFn_appendFn_right _ _ (by omega), hcap_c, hsz,
+      pv_append_eq]
   have hz₁_c : contractFn (2 * q - c) (pv z₁) = pv z₀ := by
-    rw [pv_append_eq, contractFn_appendFn_left _ _ (by omega), hcup_c,
-      show q + (q + 2) - 2 = q + q by omega, pv_append_eq]
+    have hsz : q + (q + 2) - 2 = q + q := by omega
+    rw [pv_append_eq, contractFn_appendFn_left _ _ (by omega), hcup_c, hsz, pv_append_eq]
   have hidx : 2 * q - (c : ℕ) + 2 + 2 * c = 2 * q + 2 + c := by omega
   obtain ⟨hmid_fn, hmid_c⟩ := glueFn_two_add_of_flanking_adj (a := 2 * q - c) (c := c)
     (by omega) (by omega) hz_cup (by rwa [hidx])
     (by rw [pv_append_left _ _ (by omega), hcup_pv]) (by rwa [hidx]) hz₁_c
   obtain ⟨hs₁, hs₁c⟩ := glueFn_add q (q - c) (2 + c) (pv z)
   obtain ⟨hs₀, hs₀c⟩ := glueFn_add q (q - c) c (pv z₀)
-  rw [show q - (c : ℕ) + (2 + c) = q + 2 by omega,
-    show q + (q - (c : ℕ)) = 2 * q - c by omega] at hs₁ hs₁c
-  rw [show q - (c : ℕ) + c = q by omega,
-    show q + (q - (c : ℕ)) = 2 * q - c by omega] at hs₀ hs₀c
+  have hq₂ : q - (c : ℕ) + (2 + c) = q + 2 := by omega
+  have hq₀ : q - (c : ℕ) + c = q := by omega
+  rw [hq₂, ← hpos] at hs₁ hs₁c
+  rw [hq₀, ← hpos] at hs₀ hs₀c
   exact TLDiagram.ext
     (eq_of_pv_eq <| by
       rw [matching_comp, pv_glueMiddle, hs₁, hmid_fn, ← hs₀, ← pv_glueMiddle,

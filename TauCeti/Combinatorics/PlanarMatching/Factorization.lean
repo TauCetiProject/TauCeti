@@ -710,9 +710,10 @@ theorem eq_id_of_comp_eq_id {f g : TLDiagram n n} (h : f.comp g = id n) : f = id
   have hth : f.through = n := le_antisymm f.through_le_bottom <|
     (through_id n).symm.trans_le ((congrArg TLDiagram.through h).symm.trans_le
       (through_comp_le_left f g))
-  have hc := congrArg TLDiagram.circles h
-  rw [circles_comp, circles_id] at hc
-  rw [eq_mk_nested_of_through_eq hth, show f.circles = 0 by omega]
+  have hc : f.circles = 0 := by
+    have h' := congrArg TLDiagram.circles h
+    rw [circles_comp, circles_id] at h'; omega
+  rw [eq_mk_nested_of_through_eq hth, hc]
   ext <;> simp
 
 /-- The Temperley–Lieb generator `e₁ = cap ≫ cup : 2 → 2` has `0` through strands, canonical

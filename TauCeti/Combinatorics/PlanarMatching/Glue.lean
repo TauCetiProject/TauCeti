@@ -739,6 +739,11 @@ private theorem skipN_unskipN {a q : ℕ} (h₁ : q ≠ a) (h₂ : q ≠ a + 1) 
     skipN a (unskipN a q) = q := by
   simp only [skipN, unskipN]; split_ifs <;> omega
 
+private theorem unskipN_reflect {k a b q : ℕ} (hab : a + b = k) (hq : q < k + 2)
+    (h₁ : q ≠ a) (h₂ : q ≠ a + 1) :
+    unskipN b (k + 2 - 1 - q) = k - 1 - unskipN a q := by
+  simp only [unskipN]; split_ifs <;> omega
+
 private theorem val_mk_eq_mk_iff (x : PlanarMatching K) {q r : ℕ} (hq : q < K) (hr : r < K) :
     x.1.val ⟨q, hq⟩ = ⟨r, hr⟩ ↔ pv x q = r := by
   rw [pv_of_lt x hq, Fin.ext_iff]
@@ -788,38 +793,38 @@ theorem reflect_append {k l : ℕ} (x : PlanarMatching k) (y : PlanarMatching l)
     rw [pv_reflect _ hq, pv_cast]
     by_cases hql : q < l
     · have _ := pv_lt y (q := l - 1 - q) (by omega)
-      rw [pv_append_right _ _ (by omega) (by omega), pv_append_left _ _ hql,
-        pv_reflect _ hql, show k + l - 1 - q - k = l - 1 - q by omega]; omega
+      have hidx : k + l - 1 - q - k = l - 1 - q := by omega
+      rw [pv_append_right _ _ (by omega) (by omega), pv_append_left _ _ hql, pv_reflect _ hql, hidx]
+      omega
     · have _ := pv_lt x (q := k + l - 1 - q) (by omega)
+      have hidx : k - 1 - (q - l) = k + l - 1 - q := by omega
       rw [pv_append_left _ _ (by omega), pv_append_right _ _ (by omega) (by omega),
-        pv_reflect _ (by omega), show k - 1 - (q - l) = k + l - 1 - q by omega]; omega
+        pv_reflect _ (by omega), hidx]; omega
 
 /-- Reflecting a contraction at `a` is contracting the reflected matching at `Fin.rev a`. -/
 theorem reflect_contract {k : ℕ} (x : PlanarMatching (k + 2)) (a : Fin (k + 1)) :
     reflect k (x.contract a) = (reflect (k + 2) x).contract (Fin.rev a) :=
   ext_pv fun q hq => by
     have _ := a.isLt
+    have hrev : (Fin.rev a : ℕ) = k - a := by simp [Fin.val_rev]
     have hskip : k + 2 - 1 - skipN (Fin.rev a) q = skipN a (k - 1 - q) := by
-      simp only [skipN, Fin.val_rev]; split_ifs <;> omega
+      simp only [skipN, hrev]; split_ifs <;> omega
     set s := skipN a (k - 1 - q)
     have hs : s < k + 2 ∧ s ≠ a ∧ s ≠ (a : ℕ) + 1 := skipN_lt_and_ne (by omega)
     have _ := pv_lt x hs.1; have _ := pv_lt x (q := a) (by omega)
     have _ := pv_lt x (q := (a : ℕ) + 1) (by omega)
     have hjoin : joinN (reflect (k + 2) x) (Fin.rev a) (k + 2 - 1 - pv x s) =
         k + 2 - 1 - joinN x a (pv x s) := by
-      simp only [joinN, Fin.val_rev]
-      rw [pv_reflect _ (by omega), pv_reflect _ (by omega),
-        show k + 2 - 1 - (k + 1 - ((a : ℕ) + 1) + 1) = a by omega,
-        show k + 2 - 1 - (k + 1 - ((a : ℕ) + 1)) = (a : ℕ) + 1 by omega]
+      have hrev₀ : k + 2 - 1 - (k - a + 1) = a := by omega
+      have hrev₁ : k + 2 - 1 - (k - a) = (a : ℕ) + 1 := by omega
+      simp only [joinN, hrev]
+      rw [pv_reflect _ (by omega), pv_reflect _ (by omega), hrev₀, hrev₁]
       split_ifs <;> omega
     obtain ⟨hne₁, hne₂⟩ := joinN_pv_ne x a hs.2.1 hs.2.2
     have hlt_j : joinN x a (pv x s) < k + 2 := by simp only [joinN]; split_ifs <;> omega
     rw [pv_reflect _ hq, pv_contract _ _ (by omega), pv_contract _ _ hq,
       pv_reflect _ (skipN_lt_and_ne hq).1, hskip, hjoin]
-    suffices ∀ w < k + 2, w ≠ a → w ≠ (a : ℕ) + 1 →
-        k - 1 - unskipN a w = unskipN (Fin.rev a) (k + 2 - 1 - w) from
-      this _ hlt_j hne₁ hne₂
-    intro w _ _ _; simp only [unskipN, Fin.val_rev]; split_ifs <;> omega
+    exact (unskipN_reflect (by omega) hlt_j hne₁ hne₂).symm
 
 private theorem reflect_glueMiddle_aux {n p : ℕ} :
     ∀ (m : ℕ) (x : PlanarMatching (n + m + (m + p))),
@@ -845,12 +850,12 @@ private theorem reflect_glueMiddle_aux {n p : ℕ} :
     have hind : ((cast (k' := p + m + (m + n) + 2) (by omega)
         (reflect (n + m + (m + p) + 2) y)).1.val ⟨p + m, by omega⟩ = ⟨p + m + 1, by omega⟩) ↔
         y.1.val ⟨n + m, by omega⟩ = ⟨n + m + 1, by omega⟩ := by
-      rw [val_mk_eq_mk_iff, val_mk_eq_mk_iff, pv_cast, pv_reflect _ (by omega),
-        show n + m + (m + p) + 2 - 1 - (p + m) = n + m + 1 by omega]
+      have hidx : n + m + (m + p) + 2 - 1 - (p + m) = n + m + 1 := by omega
+      rw [val_mk_eq_mk_iff, val_mk_eq_mk_iff, pv_cast, pv_reflect _ (by omega), hidx]
       have _ := pv_lt y (q := n + m + 1) (by omega)
       refine ⟨fun h => ?_, fun h => ?_⟩
-      · have hp := pv_pv y (q := n + m + 1) (by omega)
-        rwa [show pv y (n + m + 1) = n + m by omega] at hp
+      · have hp : pv y (n + m + 1) = n + m := by omega
+        exact (congrArg (pv y) hp.symm).trans (pv_pv y (by omega))
       · have hp := pv_pv y (q := n + m) (by omega)
         rw [h] at hp; omega
     obtain ⟨ih₁, ih₂⟩ := reflect_glueMiddle_aux m (y.contract a)
