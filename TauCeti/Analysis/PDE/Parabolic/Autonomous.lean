@@ -32,8 +32,9 @@ whose image in `V*` has weak time derivative `u' = -B u ∈ L²(a, b; V*)`, and 
 
 `w t = e^{-(t - a)𝒜} (w a)` for `t ∈ [a, b]`
 
-(`TauCeti.HasWeakLineDerivOn.eqOn_realOperator_formSemigroup_of_gelfandDual`), and for every
-`u₀ ∈ H` the orbit is the continuous representative of a weak solution with initial value `u₀`
+(`TauCeti.HasWeakLineDerivOn.eqOn_realOperator_formSemigroup_of_gelfandDual`), and, when `V` is
+separable, for every `u₀ ∈ H` the orbit is the continuous representative of a weak solution with
+initial value `u₀`
 (`IsCoercive.exists_hasWeakLineDerivOn_gelfandDual_ae_eq_realOperator_formSemigroup`).
 
 For the parabolic Dirichlet problem
