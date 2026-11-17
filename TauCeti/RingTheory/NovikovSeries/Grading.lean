@@ -35,6 +35,8 @@ of `R[H]` (as in capped Hamiltonian Floer theory on a spherically monotone sympl
 
 * `TauCeti.NovikovSeries.supported R N s`, `TauCeti.NovikovSeries.gradeBy R N f i`: Novikov series
   supported in `s` or homogeneous of degree `i`.
+* `TauCeti.NovikovSeries.supportedSubalgebra S R N s`: the subalgebra of series supported in an
+  additive submonoid or subgroup `s`.
 * `TauCeti.NovikovSeries.nonnegSupported S R N s`, `TauCeti.NovikovSeries.nonnegGradeBy S R N f i`:
   the corresponding `S`-submodules of `nonnegSubring R N`.
 
@@ -104,6 +106,46 @@ def supported (s : Set H) : Submodule R (NovikovSeries R H N) where
 theorem mem_supported {s : Set H} {a : NovikovSeries R H N} :
     a ∈ supported R N s ↔ a.support ⊆ s :=
   Iff.rfl
+
+end AddZeroClass
+
+section AddMonoid
+
+variable [CommSemiring S] [Algebra S R] [AddMonoid H] {N : H →+ ℝ}
+    {M : Type*} [SetLike M H] [AddSubmonoidClass M H]
+
+variable (S R N) in
+/-- The subalgebra of Novikov series supported in the additive submonoid or subgroup `s`. -/
+def supportedSubalgebra (s : M) : Subalgebra S (NovikovSeries R H N) where
+  carrier := {a | a.support ⊆ s}
+  add_mem' ha hb := (support_add_subset _ _).trans (Set.union_subset ha hb)
+  mul_mem' ha hb h hh := by
+    obtain ⟨a, ha', b, hb', rfl⟩ := support_mul_subset _ _ hh
+    exact add_mem (ha ha') (hb hb')
+  algebraMap_mem' r h hh := by
+    rw [algebraMap_apply] at hh
+    exact (Set.mem_singleton_iff.1 (support_single_subset 0 (algebraMap S R r) hh)) ▸
+      zero_mem s
+
+variable (S R N) in
+/-- The carrier of `supportedSubalgebra S R N s` consists of series supported in `s`. -/
+@[simp]
+theorem coe_supportedSubalgebra (s : M) :
+    (supportedSubalgebra S R N s : Set (NovikovSeries R H N)) = {a | a.support ⊆ (s : Set H)} := by
+  rfl
+
+variable (S R N) in
+/-- A series lies in `supportedSubalgebra S R N s` exactly when its support lies in `s`. -/
+@[simp]
+theorem mem_supportedSubalgebra {s : M} {a : NovikovSeries R H N} :
+    a ∈ supportedSubalgebra S R N s ↔ a.support ⊆ s :=
+  Iff.rfl
+
+end AddMonoid
+
+section AddZeroClass
+
+variable [AddZeroClass H] {N : H →+ ℝ}
 
 variable (R N) in
 /-- The Novikov series of degree `i` for the degree function `f`: those whose support lies in
@@ -218,10 +260,8 @@ variable [AddZeroClass H] {N : H →+ ℝ} [Ring R]
 /-- The Novikov series supported in a given set of exponents form a closed subset for the period
 topology. -/
 theorem isClosed_supported (s : Set H) :
-    IsClosed (supported R N s : Set (NovikovSeries R H N)) := by
-  have hset : (supported R N s : Set (NovikovSeries R H N)) = ⋂ h ∈ sᶜ, {a | a.coeff h = 0} := by
-    ext a; simp [mem_supported, subset_def, mem_support, not_imp_comm]
-  exact hset ▸ isClosed_biInter fun h _ => (isLocallyConstant_coeff h).isClosed_fiber 0
+    IsClosed (supported R N s : Set (NovikovSeries R H N)) :=
+  isClosed_setOf_support_subset s
 
 /-- Every homogeneous piece of `NovikovSeries` is closed in the period topology. -/
 theorem isClosed_gradeBy (f : H → ι) (i : ι) :
