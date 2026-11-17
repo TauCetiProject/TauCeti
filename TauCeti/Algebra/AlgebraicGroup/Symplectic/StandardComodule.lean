@@ -186,9 +186,9 @@ private theorem transvectionUnit_mulVec_sub (i j : Fin (m + m)) (hij : i ≠ j) 
     ((transvectionUnit hij c : GL (Fin (m + m)) k) :
         Matrix (Fin (m + m)) (Fin (m + m)) k) *ᵥ w - w =
       Pi.single i (c * w j) := by
+  rw [transvectionUnit_mulVec]
   ext a
-  simp [coe_transvectionUnit, Matrix.transvection, Matrix.add_mulVec,
-    Matrix.single_mulVec_eq, Pi.single_apply]
+  rcases eq_or_ne a i with rfl | ha <;> simp [*]
 
 /-- A transvection extracts a standard basis vector from a nonzero coordinate of an invariant
 subspace element. -/
