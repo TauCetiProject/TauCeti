@@ -199,11 +199,11 @@ private theorem exists_dual_lift (hσ : IsInvariantForm σ B) :
       congrArg Subtype.val this
     rw [LinearEquiv.symm_apply_eq]
     ext k
-    rw [LinearMap.linearEquivOfInjective_apply, hΦ, _root_.Representation.dual_apply,
-      Dual.transpose_apply, LinearMap.comp_apply, ← he]
-    -- Beta-reduce the coercion of `ω` to a function and the value of `⟨_, hx⟩`.
-    simp only
-    rw [← inv_inv g, ← hρ.apply_left, inv_inv, ← hισ, IsInvariantForm.coe_kerRepresentation_apply]
+    rw [LinearMap.linearEquivOfInjective_apply, hΦ]
+    simp only [Representation.dual_apply, Dual.transpose_apply, LinearMap.comp_apply]
+    rw [← he a, IsInvariantForm.coe_kerRepresentation_apply, hισ]
+    beta_reduce
+    rw [hρ.apply_left, inv_inv]
 
 /-- An equivariant linear map `q : K* → V` with `ω(ι w, q a) = a(P w)` and isotropic image. It
 corrects the lift of `exists_dual_lift` by `ι ∘ c`, where `a' (c a) = -½ ω(q₁ a, q₁ a')`. -/
@@ -211,9 +211,8 @@ private theorem exists_isotropic_dual_lift (hB : B.IsAlt) (hσ : IsInvariantForm
     ∃ q : Dual ℝ (LinearMap.ker B) →ₗ[ℝ] V, (∀ w a, ω (ι w) (q a) = a (P w)) ∧
       (∀ a a', ω (q a) (q a') = 0) ∧ ∀ g a, q (hσ.kerRepresentation.dual g a) = ρ g (q a) := by
   obtain ⟨q₁, hq₁, hq₁ρ⟩ := exists_dual_lift hρ hι hω hC hισ hP hPσ hσ
-  have hω' (w w' : W) : ω.toBilinForm (ι w) (ι w') = B w w' := hω w w'
-  have hq₁' (w : W) (a : Dual ℝ (LinearMap.ker B)) : ω.toBilinForm (ι w) (q₁ a) = a (P w) :=
-    hq₁ w a
+  -- Unfold the coercion of `ω` to a function, so that this rewrites `ω.toBilinForm`.
+  beta_reduce at hq₁
   have : FiniteDimensional ℝ W := .of_injective ι hι
   let c : Dual ℝ (LinearMap.ker B) →ₗ[ℝ] LinearMap.ker B :=
     (-(2 : ℝ)⁻¹) • ((evalEquiv ℝ (LinearMap.ker B)).symm.toLinearMap ∘ₗ
@@ -225,22 +224,21 @@ private theorem exists_isotropic_dual_lift (hB : B.IsAlt) (hσ : IsInvariantForm
     simp only [evalEquiv_apply, Dual.eval_apply] at h
     simp [c, h]
   -- `ι (c a)` pairs to zero with `ι w`, since `c a` lies in the kernel of `B`.
-  have hιc (w : W) (a : Dual ℝ (LinearMap.ker B)) : ω.toBilinForm (ι w) (ι (c a)) = 0 := by
-    rw [hω']
-    exact hB.isRefl.apply_eq_zero_of_mem_ker w (c a).2
+  have hιc (w : W) (a : Dual ℝ (LinearMap.ker B)) : ω.toBilinForm (ι w) (ι (c a)) = 0 :=
+    (hω w (c a)).trans (hB.isRefl.apply_eq_zero_of_mem_ker w (c a).2)
   have hcρ (g : G) (a : Dual ℝ (LinearMap.ker B)) :
       c (hσ.kerRepresentation.dual g a) = hσ.kerRepresentation g (c a) := by
     refine (evalEquiv ℝ (LinearMap.ker B)).injective (LinearMap.ext fun a' ↦ ?_)
     simp only [evalEquiv_apply, Dual.eval_apply]
-    rw [hc, hq₁ρ, hρ.apply_left, ← hq₁ρ, ← hc, _root_.Representation.dual_apply,
-      Dual.transpose_apply, LinearMap.comp_apply, inv_inv]
+    rw [hc, hq₁ρ, hρ.apply_left, ← hq₁ρ, ← hc]
+    simp [Dual.transpose_apply]
   refine ⟨q₁ + ι ∘ₗ (LinearMap.ker B).subtype ∘ₗ c, fun w a ↦ ?_, fun a a' ↦ ?_, fun g a ↦ ?_⟩
   · simp only [LinearMap.add_apply, LinearMap.comp_apply, Submodule.subtype_apply, map_add,
-      hq₁', hιc, add_zero]
+      hq₁, hιc, add_zero]
   · simp only [LinearMap.add_apply, LinearMap.comp_apply, Submodule.subtype_apply, map_add]
-    have h₁ : ω.toBilinForm (ι (c a)) (q₁ a') = a' (c a) := by rw [hq₁', hP]
+    have h₁ : ω.toBilinForm (ι (c a)) (q₁ a') = a' (c a) := by rw [hq₁, hP]
     have h₂ : ω.toBilinForm (q₁ a) (ι (c a')) = -a (c a') := by
-      rw [← ω.isAlt.neg_eq, hq₁', hP]
+      rw [← ω.isAlt.neg_eq, hq₁, hP]
     have h₃ : ω.toBilinForm (q₁ a') (q₁ a) = -ω.toBilinForm (q₁ a) (q₁ a') :=
       (ω.isAlt.neg_eq _ _).symm
     rw [h₁, h₂, hιc, hc, hc, h₃]
@@ -269,17 +267,15 @@ theorem exists_equivariant_isSymplectomorphism_coisotropicModel [FiniteDimension
         (∀ w, e (w, 0) = ι w) ∧ ∀ g x, e (σ.prod hσ.kerRepresentation.dual g x) = ρ g (e x) := by
   obtain ⟨q, hq, hqq, hqρ⟩ := exists_isotropic_dual_lift hρ hι hω hC hισ hP hPσ hB hσ
   have : FiniteDimensional ℝ W := .of_injective ι hι
+  -- Unfold the coercion of `ω` to a function, so that these rewrite `ω.toBilinForm`.
+  beta_reduce at hω hq hqq
   have hF (x y : W × Dual ℝ (LinearMap.ker B)) :
       ω (ι.coprod q x) (ι.coprod q y) = hB.coisotropicModel P hP x y := by
     obtain ⟨w, a⟩ := x
     obtain ⟨w', a'⟩ := y
-    have hω' (w w' : W) : ω.toBilinForm (ι w) (ι w') = B w w' := hω w w'
-    have hq' (w : W) (a : Dual ℝ (LinearMap.ker B)) : ω.toBilinForm (ι w) (q a) = a (P w) :=
-      hq w a
-    have hqq' : ω.toBilinForm (q a) (q a') = 0 := hqq a a'
-    have h : ω.toBilinForm (q a) (ι w') = -a (P w') := by rw [← ω.isAlt.neg_eq, hq']
+    have h : ω.toBilinForm (q a) (ι w') = -a (P w') := by rw [← ω.isAlt.neg_eq, hq]
     simp only [LinearMap.coprod_apply, map_add, LinearMap.add_apply, coisotropicModel_apply]
-    rw [hω', hq', h, hqq']
+    rw [hω, hq, h, hqq]
     ring
   have hinj : Function.Injective (ι.coprod q) := by
     rw [← LinearMap.ker_eq_bot, Submodule.eq_bot_iff]
