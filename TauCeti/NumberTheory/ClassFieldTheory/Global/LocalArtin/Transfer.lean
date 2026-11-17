@@ -81,39 +81,6 @@ variable {K : Type} [Field K] [NumberField K] {E : Type} [Field E] [NumberField 
   {L : Type} [Field L] [NumberField L] [Algebra K L] [Algebra E L] [IsScalarTower K E L]
   [IsGalois K L] [IsGalois E L]
 
-omit [IsGalois K L] [IsGalois E L] in
-/-- Under an unramified extension of finite places `w | v`, `adicCompletionExtension` preserves
-unit valuation `Multiplicative.ofAdd 1` of a uniformizer `π ∈ K_vˣ`. -/
-private lemma normalizedValuation_adicCompletionExtension_of_isUniformizer
-    (v : HeightOneSpectrum (𝓞 K)) (w : HeightOneSpectrum (𝓞 E))
-    [w.asIdeal.LiesOver v.asIdeal] [Algebra.IsUnramifiedAt (𝓞 K) w.asIdeal]
-    {π : (v.adicCompletion K)ˣ} (hπ : IsUniformizer (v.adicCompletion K) π) :
-    normalizedValuation (w.adicCompletion E)
-        (Units.map (HeightOneSpectrum.adicCompletionExtension K E v w).toMonoidHom π) =
-      Multiplicative.ofAdd 1 := by
-  have : TauCeti.IsUnramified (v.adicCompletion K) (w.adicCompletion E) :=
-    HeightOneSpectrum.isUnramified_adicCompletion_of_isUnramifiedAt v w
-  have halg : (HeightOneSpectrum.adicCompletionExtension K E v w).toMonoidHom =
-      (algebraMap (v.adicCompletion K) (w.adicCompletion E) :
-        v.adicCompletion K →* w.adicCompletion E) :=
-    congrArg RingHom.toMonoidHom
-      (HeightOneSpectrum.algebraMap_adicCompletionExtensionAlgebra K E v w).symm
-  rw [halg, IsUnramified.normalizedValuation_algebraMap, (isUniformizer_def π).1 hπ]
-
-omit [NumberField K] [NumberField L] [IsGalois K L] in
-private lemma isGaloisGroup_range_restrictScalarsHom_ringOfIntegers :
-    IsGaloisGroup (AlgEquiv.restrictScalarsHom K : Gal(L/E) →* Gal(L/K)).range (𝓞 E) (𝓞 L) := by
-  have hf : Function.Injective (AlgEquiv.restrictScalarsHom K : Gal(L/E) →* Gal(L/K)) :=
-    AlgEquiv.restrictScalarsHom_injective K
-  let H : Subgroup Gal(L/K) := (AlgEquiv.restrictScalarsHom K : Gal(L/E) →* Gal(L/K)).range
-  have : SMulCommClass H E L := ⟨fun ⟨_, τ, rfl⟩ e x ↦ by
-    simp [Subgroup.mk_smul, AlgEquiv.smul_def, Algebra.smul_def]⟩
-  have : IsGaloisGroup H E L :=
-    IsGaloisGroup.of_mulEquiv_algEquiv (MonoidHom.ofInjective hf).symm fun h x ↦ by
-      rw [Subgroup.smul_def, AlgEquiv.smul_def, ← MonoidHom.apply_ofInjective_symm hf h,
-        AlgEquiv.restrictScalarsHom_apply, AlgEquiv.restrictScalars_apply]
-  exact IsGaloisGroup.of_isIntegralClosure H (𝓞 E) (𝓞 L) E L
-
 /-- At a finite place `v` of `K` unramified in `L`, with a prime `Q₀` of `𝓞 L` above `v` and an
 arithmetic Frobenius `σ ∈ Gal(L/K)` at `Q₀`, the minimal period of `σ • ·` on a coset
 `c ∈ Gal(L/K) ⧸ Gal(L/E)` equals the inertia degree over `𝓞 K` of the prime of `𝓞 E` below
@@ -126,7 +93,8 @@ private lemma minimalPeriod_smul_coset_eq_inertiaDeg
     Function.minimalPeriod (σ • ·) c = ((c.out⁻¹ • Q₀).under (𝓞 E)).inertiaDeg (𝓞 K) := by
   classical
   let H : Subgroup Gal(L/K) := (AlgEquiv.restrictScalarsHom K : Gal(L/E) →* Gal(L/K)).range
-  have : IsGaloisGroup H (𝓞 E) (𝓞 L) := isGaloisGroup_range_restrictScalarsHom_ringOfIntegers
+  have : IsGaloisGroup H (𝓞 E) (𝓞 L) :=
+    IsGaloisGroup.of_isIntegralClosure_range_restrictScalarsHom K E L (𝓞 E) (𝓞 L)
   obtain ⟨_, _, _, _⟩ :=
     TauCeti.IsIntegralClosure.isDomain_and_finite_and_flat_and_isGaloisGroup
       (A := 𝓞 K) (K := K) (M := L) (B := 𝓞 L)
@@ -196,7 +164,8 @@ private lemma globalArtinMap_ideleClassExtension_ofAdicCompletion_of_isUniformiz
   let f : Gal(L/E) →* Gal(L/K) := AlgEquiv.restrictScalarsHom K
   have hf : Function.Injective f := AlgEquiv.restrictScalarsHom_injective K
   let H : Subgroup Gal(L/K) := f.range
-  have : IsGaloisGroup H (𝓞 E) (𝓞 L) := isGaloisGroup_range_restrictScalarsHom_ringOfIntegers
+  have : IsGaloisGroup H (𝓞 E) (𝓞 L) :=
+    IsGaloisGroup.of_isIntegralClosure_range_restrictScalarsHom K E L (𝓞 E) (𝓞 L)
   obtain ⟨_, _, _, _⟩ :=
     TauCeti.IsIntegralClosure.isDomain_and_finite_and_flat_and_isGaloisGroup
       (A := 𝓞 K) (K := K) (M := L) (B := 𝓞 L)
@@ -263,8 +232,8 @@ private lemma globalArtinMap_ideleClassExtension_ofAdicCompletion_of_isUniformiz
       (minimalPeriod_smul_coset_eq_inertiaDeg hv_unram Q₀ hσ q.out)
   simp only [φ, MonoidHom.toAdditive_symm_apply_apply]
   rw [globalArtinMap_ofAdicCompletion_eq_of_isArithFrobAt L ι' (e q).1 Q_q hτ_q,
-    normalizedValuation_adicCompletionExtension_of_isUniformizer v (e q).1 hπ,
-    toAdd_ofAdd, zpow_one, toMul_ofMul]
+    HeightOneSpectrum.normalizedValuation_adicCompletionExtension_of_isUnramifiedAt v (e q).1,
+    (isUniformizer_def π).1 hπ, toAdd_ofAdd, zpow_one, toMul_ofMul]
 
 /-- **Transfer functoriality of the global Artin map in the ground field.** Let `K ⊆ E ⊆ L` be
 number fields with `L/K` finite Galois, embedded in separable closures of `K` and of `E` by `ι` and

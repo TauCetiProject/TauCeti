@@ -8,17 +8,11 @@ module
 public import Mathlib.NumberTheory.LegendreSymbol.Basic
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.Cyclotomic.Prime
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.Tower.Basic
-import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.NormNum.Prime
 import TauCeti.FieldTheory.Galois.Restriction
-import TauCeti.FieldTheory.IntermediateField.Adjoin.Defs
-import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
-import TauCeti.FieldTheory.IntermediateField.Quadratic
 import TauCeti.NumberTheory.ClassFieldTheory.Global.Cyclotomic.Sqrt5
-import TauCeti.NumberTheory.Multiquadratic.Galois.Basic
-import TauCeti.NumberTheory.Multiquadratic.Prime.Radicands
-import TauCeti.NumberTheory.Multiquadratic.ResidueDegree
-import TauCeti.NumberTheory.Multiquadratic.Subfield.Classification
+import TauCeti.NumberTheory.ClassFieldTheory.Global.Quadratic
+import TauCeti.NumberTheory.Multiquadratic.FiveThirteen
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Subfields
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
 
@@ -49,20 +43,19 @@ file works out both cases explicitly over `ℚ`:
      `N(v) ≡ ±1 (mod 5)` and sends `ζ` to `ζ⁻¹` when `N(v) ≡ ±2 (mod 5)`.
 
 2. **Klein four-group (`ℚ(√5, √13)/ℚ` across all three quadratic subfields):** let `L` be generated
-   over `ℚ` by `s` and `t` with `s² = 5` and `t² = 13`.
-   * **Quadratic subfields:** an intermediate field `E` of `L/ℚ` has `[E : ℚ] = 2` if and only if
-     `E = ℚ⟮s⟯`, `E = ℚ⟮t⟯`, or `E = ℚ⟮s * t⟯`, and these three subfields are pairwise distinct.
+   over `ℚ` by `s` and `t` with `s² = 5` and `t² = 13`. By
+   `TauCeti.NumberTheory.Multiquadratic.FiveThirteen`, `L/ℚ` is abelian Galois of exponent dividing
+   `2` with three pairwise distinct quadratic subfields `ℚ⟮s⟯`, `ℚ⟮t⟯`, and `ℚ⟮s * t⟯`.
    * **Transfer square:** because `Gal(L/ℚ)` has exponent dividing `2`, the transferred Artin map
      `(ideleClassArtinMap E L).comp (ideleClassExtension ℚ E) : C_ℚ →* Gal(L/E)` is **identically
      trivial** on every quadratic subfield `E`, and every rational idele class becomes a norm from
      `L` over each of `ℚ⟮s⟯`, `ℚ⟮t⟯`, and `ℚ⟮s * t⟯`.
    * **Norm images and quadratic prime evaluations:** the norm-Artin images for `ℚ⟮s⟯`, `ℚ⟮t⟯`, and
-     `ℚ⟮s * t⟯` are pairwise distinct subgroups of `Gal(L/ℚ)`. Evaluating the quadratic Artin maps
-     `ideleClassArtinMap ℚ E (primeIdeleClass ℚ v)` (which agree with the restrictions of
-     `ideleClassArtinMap ℚ L (primeIdeleClass ℚ v)` when `ℚ⟮s, t⟯ = ⊤`) gives Legendre-symbol
-     criteria `(5/p) = 1`, `(13/p) = 1`, and `(65/p) = 1` at odd primes `p ∉ {5, 13}`, while at
-     `p = 2` the quadratic symbols on `ℚ⟮s⟯` and `ℚ⟮t⟯` are nontrivial and the symbol on `ℚ⟮s * t⟯`
-     is trivial.
+     `ℚ⟮s * t⟯` are pairwise distinct subgroups of `Gal(L/ℚ)`. Specializing the general quadratic
+     prime evaluations of `TauCeti.NumberTheory.ClassFieldTheory.Global.Quadratic` gives
+     Legendre-symbol criteria `(5/p) = 1`, `(13/p) = 1`, and `(65/p) = 1` at odd primes
+     `p ∉ {5, 13}`, while at `p = 2` the quadratic symbols on `ℚ⟮s⟯` and `ℚ⟮t⟯` are nontrivial and
+     the symbol on `ℚ⟮s * t⟯` is trivial.
 
 ## Main results
 
@@ -75,21 +68,15 @@ file works out both cases explicitly over `ℚ`:
   `TauCeti.ClassFieldTheory.ideleClassArtinMap_ideleClassExtension_zeta5_prime_eq_one_iff`,
   `TauCeti.ClassFieldTheory.ideleClassArtinMap_ideleClassExtension_zeta5_prime_apply`:
   prime-by-prime evaluation of the quadratic and transferred Artin symbols in `ℚ ⊆ ℚ(√5) ⊆ ℚ(ζ₅)`.
-* `TauCeti.ClassFieldTheory.isAbelianGalois_five_thirteen`,
-  `TauCeti.ClassFieldTheory.finrank_eq_two_iff_five_thirteen`,
-  `TauCeti.ClassFieldTheory.adjoin_five_thirteen_ne`: abelianity and classification of the three
-  distinct quadratic subfields of `ℚ(√5, √13)`.
 * `TauCeti.ClassFieldTheory.ideleClassArtinMap_ideleClassExtension_five_thirteen_eq_one`,
   `TauCeti.ClassFieldTheory.ideleClassExtension_mem_range_ideleClassNormMap_five_thirteen`:
   identically trivial transfer Artin map and norm principalization over every quadratic subfield of
   `ℚ(√5, √13)`.
 * `TauCeti.ClassFieldTheory.range_ideleClassArtinMap_comp_ideleClassNormMap_five_thirteen_ne`:
   pairwise distinctness of the three norm-Artin images in `Gal(L/ℚ)`.
-* `TauCeti.ClassFieldTheory.ideleClassArtinMap_adjoin_sqrt_prime_odd_eq_one_iff`,
-  `TauCeti.ClassFieldTheory.ideleClassArtinMap_adjoin_sqrt_prime_two_eq_one_iff`,
-  `TauCeti.ClassFieldTheory.ideleClassArtinMap_five_thirteen_prime_odd`,
-  `TauCeti.ClassFieldTheory.ideleClassArtinMap_five_thirteen_prime_two`: prime evaluations of
-  quadratic Artin symbols on `ℚ⟮r⟯` and their specializations to `ℚ⟮s⟯`, `ℚ⟮t⟯`, and `ℚ⟮s * t⟯`.
+* `TauCeti.ClassFieldTheory.ideleClassArtinMap_five_thirteen_prime_odd`,
+  `TauCeti.ClassFieldTheory.ideleClassArtinMap_five_thirteen_prime_two`: prime evaluations of the
+  quadratic Artin symbols on `ℚ⟮s⟯`, `ℚ⟮t⟯`, and `ℚ⟮s * t⟯`.
 
 ## References
 
@@ -224,118 +211,21 @@ end Zeta5
 
 /-! ### Klein four-group: `ℚ(√5, √13)/ℚ` across all three quadratic subfields -/
 
-/-- Evaluating the product of `![s, t]` over `{0, 1}`. -/
-private lemma prod_pair_five_thirteen {M : Type*} [CommMonoid M] (s t : M) :
-    ∏ i ∈ ({0, 1} : Finset (Fin 2)), (![s, t] : Fin 2 → M) i = s * t := by
-  rw [Finset.prod_pair (by decide : (0 : Fin 2) ≠ 1)]
-  simp
-
-section KleinFourSubfields
-
-variable {L : Type*} [Field L] [CharZero L] {s t : L}
-
-omit [CharZero L] in
-/-- The pair `![s, t]` satisfies the integer radicand equations for `![5, 13]`. -/
-private lemma sq_int_five_thirteen (hs : s ^ 2 = 5) (ht : t ^ 2 = 13) :
-    ∀ i, (![s, t] : Fin 2 → L) i ^ 2 = algebraMap ℤ L ((![5, 13] : Fin 2 → ℤ) i) := by
-  intro i
-  fin_cases i <;> simp [hs, ht]
-
-omit [CharZero L] in
-/-- The product `s * t` satisfies `(s * t)² = 65` in `L`. -/
-private lemma mul_sq_int_five_thirteen (hs : s ^ 2 = 5) (ht : t ^ 2 = 13) :
-    (s * t) ^ 2 = algebraMap ℤ L 65 := by
-  rw [mul_pow, hs, ht]
-  norm_num
-
-/-- The pair `![s, t]` satisfies the rational radicand equations for `![5, 13]`. -/
-private lemma sq_five_thirteen (hs : s ^ 2 = 5) (ht : t ^ 2 = 13) :
-    ∀ i, (![s, t] : Fin 2 → L) i ^ 2 = algebraMap ℚ L ((![5, 13] : Fin 2 → ℕ) i : ℚ) := by
-  intro i
-  fin_cases i
-  · simpa [IsScalarTower.algebraMap_apply ℤ ℚ L] using sq_int_five_thirteen hs ht 0
-  · simpa [IsScalarTower.algebraMap_apply ℤ ℚ L] using sq_int_five_thirteen hs ht 1
-
-/-- Square-class independence of the prime radicands `![5, 13]`. -/
-private lemma indep_five_thirteen :
-    ∀ S : Finset (Fin 2), S.Nonempty → ¬ IsSquare (∏ i ∈ S, ((![5, 13] : Fin 2 → ℕ) i : ℚ)) :=
-  Multiquadratic.not_isSquare_prod_primes_of_injective ![5, 13] (by decide) (by decide)
-
-/-- A field generated over `ℚ` by square roots of `5` and `13` is abelian Galois over `ℚ`. -/
-theorem isAbelianGalois_five_thirteen (hs : s ^ 2 = 5) (ht : t ^ 2 = 13) (hst : ℚ⟮s, t⟯ = ⊤) :
-    IsAbelianGalois ℚ L :=
-  have hadj : IntermediateField.adjoin ℚ (Set.range (![s, t] : Fin 2 → L)) = ⊤ :=
-    Matrix.range_cons_cons_empty s t ![] ▸ hst
-  have := Multiquadratic.isGalois_of_adjoin_eq_top (sq_five_thirteen hs ht) hadj
-  have := Multiquadratic.isMulCommutative_of_adjoin_eq_top (sq_five_thirteen hs ht) hadj
-  {}
-
-/-- **Classification of the quadratic subfields of `ℚ(√5, √13)`.** If `L` is generated over `ℚ` by
-square roots `s` of `5` and `t` of `13`, then an intermediate field `E` of `L/ℚ` has degree `2` over
-`ℚ` if and only if `E = ℚ⟮s⟯`, `E = ℚ⟮t⟯`, or `E = ℚ⟮s * t⟯`. -/
-theorem finrank_eq_two_iff_five_thirteen (hs : s ^ 2 = 5) (ht : t ^ 2 = 13) (hst : ℚ⟮s, t⟯ = ⊤)
-    (E : IntermediateField ℚ L) :
-    Module.finrank ℚ E = 2 ↔ E = ℚ⟮s⟯ ∨ E = ℚ⟮t⟯ ∨ E = ℚ⟮s * t⟯ := by
-  have hroot := sq_five_thirteen hs ht
-  constructor
-  · intro hE
-    obtain ⟨S, hS, rfl⟩ := Multiquadratic.exists_finset_of_finrank_two_of_adjoin_eq_top
-      hroot indep_five_thirteen (Matrix.range_cons_cons_empty s t ![] ▸ hst) E hE
-    rcases (by decide : ∀ S : Finset (Fin 2), S.Nonempty →
-        S = {0} ∨ S = {1} ∨ S = {0, 1}) S hS with rfl | rfl | rfl
-    · exact Or.inl (by simp)
-    · exact Or.inr (Or.inl (by simp))
-    · exact Or.inr (Or.inr (by rw [prod_pair_five_thirteen]))
-  · have hfin {r : L} (S : Finset (Fin 2)) (hS : S.Nonempty)
-        (hr : ∏ i ∈ S, (![s, t] : Fin 2 → L) i = r) :
-        Module.finrank ℚ ℚ⟮r⟯ = 2 :=
-      hr ▸ IntermediateField.finrank_adjoin_simple_eq_two_of_not_isSquare
-        (Multiquadratic.prod_root_sq hroot S) (indep_five_thirteen S hS)
-    rintro (rfl | rfl | rfl)
-    · exact hfin {0} (Finset.singleton_nonempty 0) (by simp)
-    · exact hfin {1} (Finset.singleton_nonempty 1) (by simp)
-    · exact hfin {0, 1} ⟨0, by simp⟩ (prod_pair_five_thirteen s t)
-
-/-- **Distinctness of the three quadratic subfields of `ℚ(√5, √13)`.** The subfields `ℚ⟮s⟯`, `ℚ⟮t⟯`,
-and `ℚ⟮s * t⟯` are pairwise distinct. -/
-theorem adjoin_five_thirteen_ne (hs : s ^ 2 = 5) (ht : t ^ 2 = 13) :
-    ℚ⟮s⟯ ≠ ℚ⟮t⟯ ∧ ℚ⟮s⟯ ≠ ℚ⟮s * t⟯ ∧ ℚ⟮t⟯ ≠ ℚ⟮s * t⟯ := by
-  have hinj := Multiquadratic.adjoin_prod_root_injective (sq_five_thirteen hs ht)
-    indep_five_thirteen
-  refine ⟨fun h ↦ ?_, fun h ↦ ?_, fun h ↦ ?_⟩
-  · exact (by decide : ({0} : Finset (Fin 2)) ≠ {1}) (hinj (by simpa using h))
-  · exact (by decide : ({0} : Finset (Fin 2)) ≠ {0, 1})
-      (hinj (by simpa [prod_pair_five_thirteen] using h))
-  · exact (by decide : ({1} : Finset (Fin 2)) ≠ {0, 1})
-      (hinj (by simpa [prod_pair_five_thirteen] using h))
-
-end KleinFourSubfields
-
 section KleinFourArtin
 
 variable {L : Type} [Field L] [NumberField L] [IsAbelianGalois ℚ L] {s t : L}
 
-omit [IsAbelianGalois ℚ L] in
-/-- In `L = ℚ(√5, √13)`, the exponent of `Gal(L/ℚ)` divides the degree `2` of any quadratic
-subfield `E`. -/
-private lemma exponent_gal_dvd_five_thirteen (hs : s ^ 2 = 5) (ht : t ^ 2 = 13) (hst : ℚ⟮s, t⟯ = ⊤)
-    {E : IntermediateField ℚ L} (hE : Module.finrank ℚ E = 2) :
-    Monoid.exponent Gal(L/ℚ) ∣ Module.finrank ℚ E := by
-  rw [hE]
-  exact Monoid.exponent_dvd_of_forall_pow_eq_one
-    (Multiquadratic.aut_pow_two_eq_one_of_adjoin_eq_top
-      (sq_five_thirteen hs ht) (Matrix.range_cons_cons_empty s t ![] ▸ hst))
-
 /-- **Transfer square in `ℚ(√5, √13)/ℚ`: universal vanishing across all quadratic subfields.**
 For every quadratic subfield `E` of `L = ℚ(√5, √13)` — that is, `ℚ⟮s⟯`, `ℚ⟮t⟯`, and `ℚ⟮s * t⟯` by
-`finrank_eq_two_iff_five_thirteen` — the transferred Artin map `C_ℚ →* Gal(L/E)` is identically
-trivial. The instance `IsAbelianGalois ℚ L` is supplied by `isAbelianGalois_five_thirteen`. -/
+`Multiquadratic.finrank_eq_two_iff_five_thirteen` — the transferred Artin map `C_ℚ →* Gal(L/E)` is
+identically trivial. The instance `IsAbelianGalois ℚ L` is supplied by
+`Multiquadratic.isAbelianGalois_five_thirteen`. -/
 theorem ideleClassArtinMap_ideleClassExtension_five_thirteen_eq_one
     (hs : s ^ 2 = 5) (ht : t ^ 2 = 13) (hst : ℚ⟮s, t⟯ = ⊤)
     {E : IntermediateField ℚ L} (hE : Module.finrank ℚ E = 2) (c : IdeleClassGroup (𝓞 ℚ) ℚ) :
     ideleClassArtinMap E L (ideleClassExtension ℚ E c) = 1 :=
   ideleClassArtinMap_ideleClassExtension_eq_one_of_exponent_dvd
-    (exponent_gal_dvd_five_thirteen hs ht hst hE) c
+    (hE.symm ▸ Multiquadratic.aut_exponent_dvd_two_five_thirteen hs ht hst) c
 
 omit [IsAbelianGalois ℚ L] in
 /-- **Norm principalization over every quadratic subfield of `ℚ(√5, √13)`.** Extending any rational
@@ -346,9 +236,9 @@ theorem ideleClassExtension_mem_range_ideleClassNormMap_five_thirteen
     {E : IntermediateField ℚ L} (hE : Module.finrank ℚ E = 2) (c : IdeleClassGroup (𝓞 ℚ) ℚ) :
     ideleClassExtension ℚ E c ∈
       (ideleClassNormMap E L : IdeleClassGroup (𝓞 L) L →* IdeleClassGroup (𝓞 E) E).range := by
-  have := isAbelianGalois_five_thirteen hs ht hst
+  have := Multiquadratic.isAbelianGalois_five_thirteen hs ht hst
   exact ideleClassExtension_mem_range_ideleClassNormMap_of_exponent_dvd
-    (exponent_gal_dvd_five_thirteen hs ht hst hE) c
+    (hE.symm ▸ Multiquadratic.aut_exponent_dvd_two_five_thirteen hs ht hst) c
 
 /-- **Distinctness of the norm-Artin images in `ℚ(√5, √13)/ℚ`.** The images of `N_{E/ℚ}(C_E)` under
 `ideleClassArtinMap ℚ L` for the three quadratic subfields `ℚ⟮s⟯`, `ℚ⟮t⟯`, and `ℚ⟮s * t⟯` are
@@ -377,72 +267,15 @@ theorem range_ideleClassArtinMap_comp_ideleClassNormMap_five_thirteen_ne
   have hinj : Function.Injective
       (IntermediateField.fixingSubgroup : IntermediateField ℚ L → Subgroup Gal(L/ℚ)) :=
     Function.LeftInverse.injective fun K ↦ IsGalois.fixedField_fixingSubgroup K
-  obtain ⟨h1, h2, h3⟩ := adjoin_five_thirteen_ne hs ht
+  obtain ⟨h1, h2, h3⟩ := Multiquadratic.adjoin_five_thirteen_ne hs ht
   exact ⟨hinj.ne h1, hinj.ne h2, hinj.ne h3⟩
 
-omit [IsAbelianGalois ℚ L] in
-private lemma ideleClassArtinMap_adjoin_simple_eq_one_iff_gen {r : L} [IsAbelianGalois ℚ ℚ⟮r⟯]
-    (c : IdeleClassGroup (𝓞 ℚ) ℚ) :
-    ideleClassArtinMap ℚ ℚ⟮r⟯ c = 1 ↔
-      ideleClassArtinMap ℚ ℚ⟮r⟯ c (AdjoinSimple.gen ℚ r) = AdjoinSimple.gen ℚ r := by
-  refine ⟨fun h ↦ by rw [h, AlgEquiv.one_apply], fun h ↦ ?_⟩
-  exact TauCeti.IntermediateField.algEquiv_eq_one_of_adjoin_eq_top
-    (IntermediateField.adjoin_adjoinSimple_gen_eq_top r) fun x hx ↦
-      Set.mem_singleton_iff.mp hx ▸ h
-
-omit [IsAbelianGalois ℚ L] in
-private lemma isArithFrobAt_ideleClassArtinMap_prime {r : L} [IsAbelianGalois ℚ ℚ⟮r⟯]
-    (v : HeightOneSpectrum (𝓞 ℚ)) (Q : Ideal (𝓞 ℚ⟮r⟯)) [Q.IsPrime] [Q.LiesOver v.asIdeal]
-    [Algebra.IsUnramifiedAt (𝓞 ℚ) Q] :
-    IsArithFrobAt ℤ (ideleClassArtinMap ℚ ℚ⟮r⟯ (primeIdeleClass ℚ v)) Q :=
-  (Ideal.isArithFrobAt_ringOfIntegers_rat_iff _ Q).mp
-    (globalArtinMap_isArithFrobAt ℚ⟮r⟯ (IsSepClosed.lift : ℚ⟮r⟯ →ₐ[ℚ] SeparableClosure ℚ) v Q
-      (globalArtinMap_eq_ofMul_ideleClassArtinMap ℚ ℚ⟮r⟯ _ _))
-
-omit [IsAbelianGalois ℚ L] in
-/-- For `r ∈ L` with `r² = d` (`d : ℤ`) and an odd rational prime `p ∤ d` represented by `v`
-(`N(v) = p`), the quadratic Artin symbol `ideleClassArtinMap ℚ ℚ⟮r⟯ (primeIdeleClass ℚ v)` is
-trivial if and only if `legendreSym p d = 1`. -/
-theorem ideleClassArtinMap_adjoin_sqrt_prime_odd_eq_one_iff {r : L} [IsAbelianGalois ℚ ℚ⟮r⟯]
-    {d : ℤ} (hr : r ^ 2 = algebraMap ℤ L d) (v : HeightOneSpectrum (𝓞 ℚ)) {p : ℕ} [Fact p.Prime]
-    (hpv : Ideal.absNorm v.asIdeal = p) (hodd : p ≠ 2) (hpd : ¬ (p : ℤ) ∣ d) :
-    ideleClassArtinMap ℚ ℚ⟮r⟯ (primeIdeleClass ℚ v) = 1 ↔ legendreSym p d = 1 := by
-  let γ : ℚ⟮r⟯ := AdjoinSimple.gen ℚ r
-  have hγ : ∀ _ : Unit, γ ^ 2 = algebraMap ℤ ℚ⟮r⟯ d :=
-    fun _ ↦ Subtype.ext (by simpa [γ] using hr)
-  have htop : IntermediateField.adjoin ℚ (Set.range fun _ : Unit ↦ γ) = ⊤ := by
-    rw [Set.range_const]
-    exact IntermediateField.adjoin_adjoinSimple_gen_eq_top r
-  obtain ⟨Q, _, _⟩ := (inferInstance : Nonempty (v.asIdeal.primesOver (𝓞 ℚ⟮r⟯)))
-  have : Q.LiesOver (Ideal.span {(p : ℤ)}) :=
-    hpv ▸ _root_.Rat.HeightOneSpectrum.liesOver_span_absNorm v Q
-  have := Multiquadratic.isUnramifiedAt_of_forall_not_dvd hγ htop hodd (fun _ ↦ hpd) Q
-  rw [ideleClassArtinMap_adjoin_simple_eq_one_iff_gen,
-    NumberField.isArithFrobAt_apply_sqrt_eq_self_iff hodd hpd (hγ ()) Q
-      (isArithFrobAt_ideleClassArtinMap_prime v Q)]
-
-omit [IsAbelianGalois ℚ L] in
-/-- For `r ∈ L` with `r² = d` (`d : ℤ`, `d % 4 = 1`) and the dyadic prime `v` of `ℚ` (`N(v) = 2`),
-the quadratic Artin symbol `ideleClassArtinMap ℚ ℚ⟮r⟯ (primeIdeleClass ℚ v)` is trivial if and only
-if `d % 8 = 1`. -/
-theorem ideleClassArtinMap_adjoin_sqrt_prime_two_eq_one_iff {r : L} [IsAbelianGalois ℚ ℚ⟮r⟯]
-    {d : ℤ} (hr : r ^ 2 = algebraMap ℤ L d) (hd4 : d % 4 = 1)
-    (v : HeightOneSpectrum (𝓞 ℚ)) (hv : Ideal.absNorm v.asIdeal = 2) :
-    ideleClassArtinMap ℚ ℚ⟮r⟯ (primeIdeleClass ℚ v) = 1 ↔ d % 8 = 1 := by
-  let γ : ℚ⟮r⟯ := AdjoinSimple.gen ℚ r
-  have hγ : ∀ _ : Unit, γ ^ 2 = algebraMap ℤ ℚ⟮r⟯ d :=
-    fun _ ↦ Subtype.ext (by simpa [γ] using hr)
-  have htop : IntermediateField.adjoin ℚ (Set.range fun _ : Unit ↦ γ) = ⊤ := by
-    rw [Set.range_const]
-    exact IntermediateField.adjoin_adjoinSimple_gen_eq_top r
-  obtain ⟨Q, _, _⟩ := (inferInstance : Nonempty (v.asIdeal.primesOver (𝓞 ℚ⟮r⟯)))
-  have : Q.LiesOver (Ideal.span {(2 : ℤ)}) := by
-    have h := _root_.Rat.HeightOneSpectrum.liesOver_span_absNorm v Q
-    rwa [hv, Nat.cast_ofNat] at h
-  have := Multiquadratic.isUnramifiedAt_of_forall_mod_four_eq_one hγ htop (fun _ ↦ hd4) Q
-  rw [ideleClassArtinMap_adjoin_simple_eq_one_iff_gen,
-    isArithFrobAt_apply_sqrt_eq_self_iff_mod_eight (hγ ()) hd4 Q
-      (isArithFrobAt_ideleClassArtinMap_prime v Q)]
+omit [NumberField L] [IsAbelianGalois ℚ L] in
+/-- The product `s * t` satisfies `(s * t)² = 65` in `L`. -/
+private lemma mul_sq_int_five_thirteen (hs : s ^ 2 = 5) (ht : t ^ 2 = 13) :
+    (s * t) ^ 2 = algebraMap ℤ L 65 := by
+  rw [mul_pow, hs, ht]
+  norm_num
 
 /-- **Quadratic Artin symbols at odd primes in `ℚ(√5, √13)/ℚ`.** At an odd rational prime
 `p ∉ {5, 13}` represented by `v` (`N(v) = p`), the quadratic Artin symbols
@@ -463,10 +296,8 @@ theorem ideleClassArtinMap_five_thirteen_prime_odd
   have hp65' : ¬ (p : ℤ) ∣ 65 := fun hdvd ↦ by
     have hd : (p : ℤ) ∣ 5 * 13 := by simpa using hdvd
     exact ((Nat.prime_iff_prime_int.mp hp_prime).dvd_mul.mp hd).elim hp5' hp13'
-  have hs_int : s ^ 2 = algebraMap ℤ L 5 := by simpa using sq_int_five_thirteen hs ht 0
-  have ht_int : t ^ 2 = algebraMap ℤ L 13 := by simpa using sq_int_five_thirteen hs ht 1
-  exact ⟨ideleClassArtinMap_adjoin_sqrt_prime_odd_eq_one_iff hs_int v hpv hodd hp5',
-    ideleClassArtinMap_adjoin_sqrt_prime_odd_eq_one_iff ht_int v hpv hodd hp13',
+  exact ⟨ideleClassArtinMap_adjoin_sqrt_prime_odd_eq_one_iff (by simpa using hs) v hpv hodd hp5',
+    ideleClassArtinMap_adjoin_sqrt_prime_odd_eq_one_iff (by simpa using ht) v hpv hodd hp13',
     ideleClassArtinMap_adjoin_sqrt_prime_odd_eq_one_iff (mul_sq_int_five_thirteen hs ht)
       v hpv hodd hp65'⟩
 
@@ -479,12 +310,12 @@ theorem ideleClassArtinMap_five_thirteen_prime_two
     ideleClassArtinMap ℚ ℚ⟮s⟯ (primeIdeleClass ℚ v) ≠ 1 ∧
       ideleClassArtinMap ℚ ℚ⟮t⟯ (primeIdeleClass ℚ v) ≠ 1 ∧
       ideleClassArtinMap ℚ ℚ⟮s * t⟯ (primeIdeleClass ℚ v) = 1 := by
-  have hs_int : s ^ 2 = algebraMap ℤ L 5 := by simpa using sq_int_five_thirteen hs ht 0
-  have ht_int : t ^ 2 = algebraMap ℤ L 13 := by simpa using sq_int_five_thirteen hs ht 1
   refine ⟨?_, ?_, ?_⟩
-  · rw [ne_eq, ideleClassArtinMap_adjoin_sqrt_prime_two_eq_one_iff hs_int (by decide) v hv]
+  · rw [ne_eq, ideleClassArtinMap_adjoin_sqrt_prime_two_eq_one_iff (d := 5) (by simpa using hs)
+      (by decide) v hv]
     decide
-  · rw [ne_eq, ideleClassArtinMap_adjoin_sqrt_prime_two_eq_one_iff ht_int (by decide) v hv]
+  · rw [ne_eq, ideleClassArtinMap_adjoin_sqrt_prime_two_eq_one_iff (d := 13) (by simpa using ht)
+      (by decide) v hv]
     decide
   · rw [ideleClassArtinMap_adjoin_sqrt_prime_two_eq_one_iff (mul_sq_int_five_thirteen hs ht)
       (by decide) v hv]
