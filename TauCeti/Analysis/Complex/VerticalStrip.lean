@@ -5,15 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.TangentCone.Defs
 public import Mathlib.Analysis.Complex.Hadamard
+import Mathlib.Analysis.RCLike.TangentCone
 
 /-!
 # Vertical strips
 
 Mathlib's three-lines theorem is stated on the open strip `verticalStrip a b` and the closed
 strip `verticalClosedStrip a b`, the preimages of `Ioo a b` and `Icc a b` under `Complex.re`.
-This file records their membership criteria, behavior under reflection, and the topological
-facts used when applying `DiffContOnCl` on the strip.
+This file records their membership criteria, behavior under reflection, unique differentiability
+(`uniqueDiffOn_verticalClosedStrip`), and the topological facts used when applying `DiffContOnCl`
+on the strip.
 -/
 
 public section
@@ -67,5 +70,17 @@ theorem closure_verticalStrip_subset (a b : ℝ) :
     closure (verticalStrip a b) ⊆ verticalClosedStrip a b := by
   rw [verticalStrip, closure_preimage_re]
   exact preimage_mono (closure_minimal Ioo_subset_Icc_self isClosed_Icc)
+
+/-- A closed vertical strip `verticalClosedStrip a b` with `a < b` has unique complex derivatives
+at every point, including on both vertical boundary lines `Re z = a` and `Re z = b`. -/
+theorem uniqueDiffOn_verticalClosedStrip (hab : a < b) :
+    UniqueDiffOn ℂ (verticalClosedStrip a b) := by
+  have hconv : Convex ℝ (verticalClosedStrip a b) :=
+    (convex_Icc a b).linear_preimage reLm
+  have hsub : verticalStrip a b ⊆ interior (verticalClosedStrip a b) :=
+    interior_maximal (verticalStrip_subset_verticalClosedStrip a b) (isOpen_verticalStrip a b)
+  refine uniqueDiffOn_convex_of_isRCLikeNormedField hconv ⟨(((a + b) / 2 : ℝ) : ℂ), hsub ?_⟩
+  simp only [mem_verticalStrip_iff, mem_Ioo, ofReal_re]
+  constructor <;> linarith
 
 end TauCeti.Complex.HadamardThreeLines

@@ -54,6 +54,8 @@ A window sum `∑_{j - L ≤ k < j + L} f k` is the sum over `d < 2 L` of the sh
   `k (k - 1)` for every `k : ℤ`.
 * `Finset.sum_Ico_sub_add_eq_sum_range_indicator`: a window sum `∑_{j - L ≤ k < j + L} f k` as the
   sum of `2 L` shifts of `f`.
+* `Finset.prod_Ico_mul_mul_endpoints`, `Finset.sum_Ico_add_add_endpoints`: trapezoidal pairing of
+  adjacent products or sums over `Ico a n` (`a ≤ n` in `ℤ`) with the two endpoints.
 -/
 
 public section
@@ -239,5 +241,29 @@ theorem sum_Ico_sub_add_eq_sum_range_indicator {M : Type*} [AddCommMonoid M] (f 
     (fun k hk ↦ ?_) (fun d hd ↦ ?_) fun k hk ↦ ?_
   all_goals simp only [mem_Ico, mem_filter, mem_range] at *
   all_goals first | omega | (congr 1; omega)
+
+/-- Trapezoidal pairing on an integer interval `a ≤ n`: multiplying `g j * g (j + 1)` over
+`j ∈ Ico a n` together with the two endpoint values `g a` and `g n` yields the square of
+`∏ j ∈ Icc a n, g j`. -/
+@[to_additive /-- Trapezoidal pairing on an integer interval `a ≤ n`: summing `g j + g (j + 1)`
+over `j ∈ Ico a n` together with the two endpoint values `g a` and `g n` yields
+`2 • ∑ j ∈ Icc a n, g j`. -/]
+theorem prod_Ico_mul_mul_endpoints {M : Type*} [CommMonoid M] (g : ℤ → M) {a n : ℤ}
+    (han : a ≤ n) :
+    (∏ j ∈ Ico a n, (g j * g (j + 1))) * g a * g n = (∏ j ∈ Icc a n, g j) ^ 2 := by
+  have hright : (∏ j ∈ Ico a n, g j) * g n = ∏ j ∈ Icc a n, g j := by
+    rw [mul_comm, ← prod_insert (by simp : n ∉ Ico a n), insert_right_Ico han]
+  have hshift : ∏ j ∈ Ico a n, g (j + 1) = ∏ j ∈ Ioc a n, g j := by
+    refine prod_nbij' (· + 1) (· - 1) (fun j hj => ?_) (fun j hj => ?_) (fun _ _ => by omega)
+      (fun _ _ => by omega) (fun _ _ => rfl)
+    · simp only [mem_Ico, mem_Ioc] at hj ⊢; omega
+    · simp only [mem_Ico, mem_Ioc] at hj ⊢; omega
+  have hleft : g a * ∏ j ∈ Ico a n, g (j + 1) = ∏ j ∈ Icc a n, g j := by
+    rw [hshift, ← prod_insert (by simp : a ∉ Ioc a n), insert_left_Ioc han]
+  calc (∏ j ∈ Ico a n, (g j * g (j + 1))) * g a * g n
+      = ((∏ j ∈ Ico a n, g j) * g n) * (g a * ∏ j ∈ Ico a n, g (j + 1)) := by
+          rw [prod_mul_distrib]; ac_rfl
+    _ = (∏ j ∈ Icc a n, g j) * ∏ j ∈ Icc a n, g j := by rw [hright, hleft]
+    _ = (∏ j ∈ Icc a n, g j) ^ 2 := (pow_two _).symm
 
 end Finset
