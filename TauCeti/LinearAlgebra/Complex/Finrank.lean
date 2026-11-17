@@ -18,7 +18,9 @@ results, but has no symplectic hypotheses. Consequently a real-linear isomorphis
 modules preserves the complex dimension (`LinearEquiv.finrank_complex_eq`) and finite
 dimensionality (`LinearEquiv.finiteDimensional_complex`), and one anticommuting with `I`, that is,
 a conjugate-linear isomorphism, maps complex bases to complex bases
-(`LinearEquiv.exists_basis_coe_eq_comp_of_map_I_smul`). Likewise the range of a complex-linear
+(`LinearEquiv.exists_basis_coe_eq_comp_of_map_I_smul`). A real space isomorphic to a complex
+space with a complex basis of size `k` has real dimension `2 * k`
+(`LinearEquiv.finrank_eq_two_mul_of_basis`). Likewise the range of a complex-linear
 map has real dimension twice its complex dimension
 (`LinearMap.finrank_range_restrictScalars_eq_two_mul`), also when transported to a real-linear
 map along real isomorphisms (`LinearMap.finrank_range_eq_two_mul_of_comp_eq`).
@@ -76,6 +78,14 @@ theorem LinearEquiv.exists_basis_coe_eq_comp_of_map_I_smul {V W : Type*} [AddCom
   have hn : Fintype.card (Fin n) = Module.finrank ℂ W := by
     rw [← g.finrank_complex_eq, Module.finrank_eq_card_basis b]
   exact ⟨basisOfLinearIndependentOfCardEqFinrank' _ hli hn, by simp⟩
+
+/-- A real vector space isomorphic to a complex vector space with a complex basis of size `k` has
+real dimension `2 * k`. -/
+theorem LinearEquiv.finrank_eq_two_mul_of_basis {V W : Type*} [AddCommGroup V] [Module ℝ V]
+    [Module ℂ V] [IsScalarTower ℝ ℂ V] [AddCommGroup W] [Module ℝ W] (e : V ≃ₗ[ℝ] W) {k : ℕ}
+    (b : Module.Basis (Fin k) ℂ V) : Module.finrank ℝ W = 2 * k := by
+  rw [← e.finrank_eq, TauCeti.finrank_real_eq_two_mul_finrank_complex,
+    Module.finrank_eq_card_basis b, Fintype.card_fin]
 
 namespace LinearMap
 

@@ -769,13 +769,6 @@ section SixTerm
 
 variable {E' F' : Type*} [AddCommGroup E'] [Module ℝ E'] [AddCommGroup F'] [Module ℝ F']
 
-/-- A real vector space isomorphic to a complex vector space with a complex basis of size `k` has
-real dimension `2 k`. -/
-private theorem finrank_eq_two_mul_of_basis (e : E ≃ₗ[ℝ] E') {k : ℕ} (c : Basis (Fin k) ℂ E) :
-    finrank ℝ E' = 2 * k := by
-  rw [← e.finrank_eq, finrank_real_eq_two_mul_finrank_complex, finrank_eq_card_basis c,
-    Fintype.card_fin]
-
 /-- The exterior product of the image under `g` of `e ∘ u`, followed by `e' ∘ v`, is carried by
 `e'⁻¹` to a complex positive element when `(f ∘ u, v)` is a complex basis, for real isomorphisms
 `e` and `e'` intertwining the complex-linear `f` with the real-linear `g`. This is a complex
@@ -906,10 +899,10 @@ theorem exists_detLineSixTermEquiv_congr_eq_tmul (hg₁ : Function.Injective g�
   have hR₂ := LinearMap.finrank_range_eq_two_mul_of_comp_eq e₂ e₃ he₂
   have hR₃ := LinearMap.finrank_range_eq_two_mul_of_comp_eq e₃ e₄ he₃
   have hR₄ := LinearMap.finrank_range_eq_two_mul_of_comp_eq e₄ e₅ he₄
-  have hB₂ := finrank_eq_two_mul_of_basis e₂ c₂
-  have hB₃ := finrank_eq_two_mul_of_basis e₃ c₃
-  have hB₄ := finrank_eq_two_mul_of_basis e₄ c₄
-  have hB₅ := finrank_eq_two_mul_of_basis e₅ c₅
+  have hB₂ := e₂.finrank_eq_two_mul_of_basis c₂
+  have hB₃ := e₃.finrank_eq_two_mul_of_basis c₃
+  have hB₄ := e₄.finrank_eq_two_mul_of_basis c₄
+  have hB₅ := e₅.finrank_eq_two_mul_of_basis c₅
   -- The real families and exterior products entering `TauCeti.detLineSixTermEquiv_tmul`.
   set u' := e₁ ∘ complexToRealFamily b₁ ∘ Fin.cast hB₁
   set v' := e₂ ∘ complexToRealFamily v ∘ Fin.cast hR₂
