@@ -69,6 +69,7 @@ isogeny, which is what makes `f.comp f = smulId P p` the root-datum form of the 
   morphism.
 * `TauCeti.RootPairingIsogeny.ofEquiv`: an equivalence of root pairings is an isogeny with all
   exponents `1`.
+* `TauCeti.RootPairingIsogeny.ofEq`: transport an endo-isogeny along an equality of root pairings.
 
 ## Main results
 
@@ -455,6 +456,43 @@ def id (P : RootPairing ι R M N) : RootPairingIsogeny P P :=
 @[simp] theorem id_exponent (P : RootPairing ι R M N) (i : ι) :
     (id P).exponent i = 1 := by
   rw [id, ofEquiv]
+
+/-- Transport an endo-isogeny along an equality `P = Q` of root pairings, keeping the weight map,
+coweight map, index bijection, and exponents unchanged. -/
+def ofEq {P Q : RootPairing ι R M N} (h : P = Q) (f : RootPairingIsogeny Q Q) :
+    RootPairingIsogeny P P where
+  weightMap := f.weightMap
+  coweightMap := f.coweightMap
+  indexEquiv := f.indexEquiv
+  exponent := f.exponent
+  exponent_pos := f.exponent_pos
+  weightMap_injective := f.weightMap_injective
+  coweightMap_injective := f.coweightMap_injective
+  weightMap_finiteIndex := f.weightMap_finiteIndex
+  coweightMap_finiteIndex := f.coweightMap_finiteIndex
+  weight_coweight_transpose := h ▸ f.weight_coweight_transpose
+  root_weightMap := h ▸ f.root_weightMap
+  coroot_coweightMap := h ▸ f.coroot_coweightMap
+
+@[simp] theorem ofEq_weightMap {P Q : RootPairing ι R M N} (h : P = Q)
+    (f : RootPairingIsogeny Q Q) : (ofEq h f).weightMap = f.weightMap := by
+  rw [ofEq]
+
+@[simp] theorem ofEq_coweightMap {P Q : RootPairing ι R M N} (h : P = Q)
+    (f : RootPairingIsogeny Q Q) : (ofEq h f).coweightMap = f.coweightMap := by
+  rw [ofEq]
+
+@[simp] theorem ofEq_indexEquiv {P Q : RootPairing ι R M N} (h : P = Q)
+    (f : RootPairingIsogeny Q Q) : (ofEq h f).indexEquiv = f.indexEquiv := by
+  rw [ofEq]
+
+@[simp] theorem ofEq_exponent {P Q : RootPairing ι R M N} (h : P = Q)
+    (f : RootPairingIsogeny Q Q) (i : ι) : (ofEq h f).exponent i = f.exponent i := by
+  rw [ofEq]
+
+/-- Transporting an endo-isogeny along reflexivity returns the original isogeny. -/
+@[simp] theorem ofEq_rfl (f : RootPairingIsogeny P P) : ofEq rfl f = f := by
+  ext <;> simp
 
 /-- **The identity automorphism becomes the identity isogeny.** -/
 @[simp] theorem ofEquiv_one : ofEquiv (1 : RootPairing.Equiv P P) = id P := by

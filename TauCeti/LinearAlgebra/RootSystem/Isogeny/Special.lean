@@ -212,6 +212,12 @@ theorem b2SpecialIsogeny_exponent_typeBSimpleIndex_eq_one_iff (i : Fin 2) :
   rw [b2SpecialIsogeny_exponent]
   exact b2SpecialIsogenyExponent_typeBSimpleIndex_eq_one_iff i
 
+/-- Every exponent of `b2SpecialIsogeny` is either `1` or `2`. -/
+theorem b2SpecialIsogeny_exponent_eq_one_or_eq_two (i : Fin (2 * 2 ^ 2)) :
+    b2SpecialIsogeny.exponent i = 1 ∨ b2SpecialIsogeny.exponent i = 2 := by
+  rw [b2SpecialIsogeny_exponent]
+  exact b2SpecialIsogenyExponent_eq_one_or_eq_two i
+
 /-! ## `G₂` in characteristic three -/
 
 /-- The square of the transposed character-lattice special matrix of `G₂` is three times the
@@ -319,6 +325,12 @@ theorem g2SpecialIsogeny_exponent_castLE_eq_one_iff (i : Fin 2) :
   rw [g2SpecialIsogeny_exponent]
   exact g2Length_castLE_eq_one_iff i
 
+/-- Every exponent of `g2SpecialIsogeny` is either `1` or `3`. -/
+theorem g2SpecialIsogeny_exponent_eq_one_or_eq_three (i : Fin 12) :
+    g2SpecialIsogeny.exponent i = 1 ∨ g2SpecialIsogeny.exponent i = 3 := by
+  rw [g2SpecialIsogeny_exponent]
+  exact g2Length_eq_one_or_eq_three i
+
 /-! ## `F₄` in characteristic two -/
 
 /-- **The special isogeny of the pinned `F₄` root datum**, belonging to characteristic two. Its
@@ -404,5 +416,11 @@ theorem f4SpecialIsogeny_exponent_castAdd_eq_one_iff (i : Fin 4) :
     f4SpecialIsogeny.exponent (Fin.castAdd 44 i) = 1 ↔ ¬ F4.IsLongSimpleRoot i := by
   rw [f4SpecialIsogeny_exponent]
   exact f4Length_castAdd_eq_one_iff i
+
+/-- Every exponent of `f4SpecialIsogeny` is either `1` or `2`. -/
+theorem f4SpecialIsogeny_exponent_eq_one_or_eq_two (i : Fin 48) :
+    f4SpecialIsogeny.exponent i = 1 ∨ f4SpecialIsogeny.exponent i = 2 := by
+  rw [f4SpecialIsogeny_exponent]
+  exact f4Length_eq_one_or_eq_two i
 
 end TauCeti.DynkinType

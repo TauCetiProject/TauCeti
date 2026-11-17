@@ -77,6 +77,12 @@ come from.
   `TauCeti.RootPairingIsogeny.weightMap_pow_two_mul_add_one` and
   `TauCeti.RootPairingIsogeny.coweightMap_pow_two_mul_add_one`: an odd power permutes the roots as
   the isogeny does and multiplies its exponents and its two lattice maps by `c ^ m`.
+* `TauCeti.RootPairingIsogeny.ofEq_mul_self`, `TauCeti.RootPairingIsogeny.indexEquiv_apply_apply`,
+  `TauCeti.RootPairingIsogeny.indexEquiv_symm`,
+  `TauCeti.RootPairingIsogeny.exponent_mul_exponent_indexEquiv`,
+  `TauCeti.RootPairingIsogeny.weightMap_root_indexEquiv` and
+  `TauCeti.RootPairingIsogeny.coweightMap_coroot`: consequences of `f * f = smulId P c` on the
+  index permutation, complementary exponents, roots, and coroots.
 
 ## References
 
@@ -306,6 +312,37 @@ theorem coweightMap_pow_two_mul_add_one (h : f * f = smulId P c) (m : ℕ) :
   ext x
   simp only [LinearMap.comp_apply, LinearMap.smul_apply, LinearMap.id_apply, map_nsmul,
     PNat.pow_coe]
+
+/-- Transporting `g * g = smulId Q c` along `P = Q` yields `ofEq h g * ofEq h g = smulId P c`. -/
+theorem ofEq_mul_self {Q : RootPairing ι ℤ M N} (h : P = Q) {g : RootPairingIsogeny Q Q}
+    (hg : g * g = smulId Q c) : ofEq h g * ofEq h g = smulId P c := by
+  subst h; simpa using hg
+
+/-- **An endo-isogeny whose square is a scaling induces an involution on root indices.** -/
+theorem indexEquiv_apply_apply (h : f * f = smulId P c) (i : ι) :
+    f.indexEquiv (f.indexEquiv i) = i := by
+  simpa using congrArg (fun g => g.indexEquiv i) h
+
+/-- The inverse of the index permutation of an endo-isogeny whose square is a scaling is itself. -/
+theorem indexEquiv_symm (h : f * f = smulId P c) : f.indexEquiv.symm = f.indexEquiv :=
+  Equiv.ext fun i => f.indexEquiv.symm_apply_eq.2 (indexEquiv_apply_apply P h i).symm
+
+/-- **Complementary exponents multiply to the scaling factor.** -/
+theorem exponent_mul_exponent_indexEquiv (h : f * f = smulId P c) (i : ι) :
+    f.exponent i * f.exponent (f.indexEquiv i) = c := by
+  simpa using congrArg (fun g => g.exponent i) h
+
+/-- Evaluating `weightMap` at `P.root (f.indexEquiv i)` rescales `P.root i` by
+`f.exponent (f.indexEquiv i)`. -/
+theorem weightMap_root_indexEquiv (h : f * f = smulId P c) (i : ι) :
+    f.weightMap (P.root (f.indexEquiv i)) = f.exponent (f.indexEquiv i) • P.root i := by
+  rw [f.root_weightMap, indexEquiv_apply_apply P h, Int.cast_id]
+
+/-- Evaluating `coweightMap` at `P.coroot i` rescales `P.coroot (f.indexEquiv i)` by
+`f.exponent (f.indexEquiv i)`. -/
+theorem coweightMap_coroot (h : f * f = smulId P c) (i : ι) :
+    f.coweightMap (P.coroot i) = f.exponent (f.indexEquiv i) • P.coroot (f.indexEquiv i) := by
+  simpa only [indexEquiv_apply_apply P h, Int.cast_id] using f.coroot_coweightMap (f.indexEquiv i)
 
 end Scaling
 

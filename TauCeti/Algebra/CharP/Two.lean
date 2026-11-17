@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Algebra.Hom
 public import Mathlib.Algebra.CharP.Two
 public import Mathlib.Algebra.Module.Defs
+import Mathlib.Algebra.Ring.Int.Units
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -27,6 +28,8 @@ divisors, two roots of `X ^ 2 + t X - s` are equal or differ by `t`
 (`TauCeti.eq_or_eq_add_of_sq_add_mul_eq_of_charTwo`). An algebra endomorphism over a ring of
 characteristic two that translates an element by a scalar is an involution on that element
 (`AlgHom.apply_apply_of_apply_eq_add_algebraMap`), as for the translations permuting these roots.
+Finally, every unit of `ℤ` casts to `1` in any additive group with one of characteristic two
+(`TauCeti.intCast_units_eq_one_of_charTwo`).
 
 -/
 
@@ -74,6 +77,11 @@ theorem add_eq_map_add_add_of_charTwo (R : Type*) {V W F : Type*} [Semiring R] [
     a + b = D (k + t) + (k' + t') := by
   rw [map_add, add_add_add_comm, ← h₁, ← h₂, add_assoc, ← add_assoc p,
     add_self_eq_zero_of_charTwo R, zero_add]
+
+/-- In an additive group with one of characteristic two, every unit of `ℤ` casts to `1`. -/
+theorem intCast_units_eq_one_of_charTwo {R : Type*} [AddGroupWithOne R] [CharP R 2] (ε : ℤˣ) :
+    ((ε : ℤ) : R) = 1 := by
+  rcases Int.units_eq_one_or ε with rfl | rfl <;> simp [CharTwo.neg_one_eq_one]
 
 end TauCeti
 

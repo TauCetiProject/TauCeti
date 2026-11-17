@@ -17,8 +17,8 @@ Over `[ExpChar A 3]`, `g2SpecialIsogenyRootSubgroup` satisfies all Chevalley com
 of the pinned `G₂` Chevalley system (`commute_g2SpecialIsogenyRootSubgroup` and
 `commutatorElement_g2SpecialIsogenyRootSubgroup_of_*`), is determined on all twelve roots by the
 four signed simple roots (`map_rootSubgroupPoints_of_g2SpecialIsogeny_simple`), and squares to
-`D.frobenius 3 1 A` on `D.elementarySubgroup A` (`comp_self_eq_frobenius_of_g2SpecialIsogeny_simple`
-above).
+`D.frobenius 3 1 A` on `D.elementarySubgroup A`
+(`comp_self_eq_frobenius_of_g2SpecialIsogeny_simple`).
 
 ## References
 
@@ -40,14 +40,12 @@ local notation "fI" => g2SpecialIsogenyIndex
 local notation "fS" => g2SpecialIsogenySign
 local notation "g2SC" => g2StructureConstant
 
+private theorem charP_three (A : Type v) [CommRing A] [ExpChar A 3] : CharP A 3 :=
+  (expChar_prime_iff (R := A) Nat.prime_three).mp ‹_›
+
 private abbrev g2ModThreeComm (i j : Fin 12) : Prop :=
   (g2Root i + g2Root j ∉ Set.range g2Root ∧ g2Root i + g2Root j ≠ 0) ∨
     ∃ k : Fin 12, g2Length k = 3 ∧ g2Root k = g2Root i + g2Root j ∧ (3 : ℤ) ∣ g2SC i j
-
-private theorem cast_eq_of_three_dvd (A : Type*) [CommRing A] [CharP A 3] {a b : ℤ}
-    (h : (3 : ℤ) ∣ a - b) : (a : A) = (b : A) := by
-  obtain ⟨m, hm⟩ := h; have h3 : (3 : A) = 0 := CharP.cast_eq_zero A 3
-  rw [← sub_eq_zero, ← Int.cast_sub, hm, Int.cast_mul, Int.cast_ofNat, h3, zero_mul]
 
 private theorem g2_commute_partner_cases {α β : Fin 12}
     (h : g2Root α + g2Root β ∉ Set.range g2Root) (h0 : g2Root α + g2Root β ≠ 0) :
@@ -109,31 +107,6 @@ private theorem mem_g2ShortLongTuples {α β γ δ ε ζ : Fin 12}
   obtain rfl := g2Root.injective (hε.trans eε.symm)
   obtain rfl := g2Root.injective (hζ.trans eζ.symm); exact hmem
 
-private theorem permute_four_comm {G : Type*} [Group G] {e z g d : G}
-    (heg : Commute e g) (hed : Commute e d) (hzg : Commute z g) (hzd : Commute z d) :
-    e * z * g * d = g * d * e * z := by
-  rw [mul_assoc (e * z) g d, ((heg.mul_left hzg).mul_right (hed.mul_left hzd)).eq, ← mul_assoc]
-
-private theorem mul_four_inv_of_commute {G : Type*} [Group G] {a b c d : G}
-    (hab : Commute a b) (hac : Commute a c) (had : Commute a d)
-    (hbc : Commute b c) (hbd : Commute b d) (hcd : Commute c d) :
-    (a * b * c * d)⁻¹ = a⁻¹ * b⁻¹ * c⁻¹ * d⁻¹ := by
-  have inv2 {x y : G} (h : Commute x y) : (x * y)⁻¹ = x⁻¹ * y⁻¹ := by rw [mul_inv_rev, h.inv_inv.eq]
-  rw [inv2 ((had.mul_left hbd).mul_left hcd), inv2 (hac.mul_left hbc), inv2 hab]
-
-private theorem collect_four_comm {G : Type*} [Group G] {g₁ d₁ e₁ z₁ g₂ d₂ e₂ z₂ : G}
-    (hgd : Commute d₁ g₂) (hge : Commute e₁ g₂) (hde : Commute e₁ d₂)
-    (hgz : Commute z₁ g₂) (hdz : Commute z₁ d₂) (hez : Commute z₁ e₂) :
-    g₁ * d₁ * e₁ * z₁ * (g₂ * d₂ * e₂ * z₂) = (g₁ * g₂) * (d₁ * d₂) * (e₁ * e₂) * (z₁ * z₂) := by
-  have c1 : Commute (g₂ * d₂) e₁ := hge.symm.mul_left hde.symm
-  have c2 : Commute (g₂ * d₂ * e₂) z₁ := (hgz.symm.mul_left hdz.symm).mul_left hez.symm
-  calc g₁ * d₁ * e₁ * z₁ * (g₂ * d₂ * e₂ * z₂)
-      = g₁ * d₁ * e₁ * (g₂ * d₂ * e₂ * z₁) * z₂ := by rw [← c2.symm.eq]; group
-    _ = g₁ * d₁ * (g₂ * d₂ * e₁) * (e₂ * (z₁ * z₂)) := by rw [← c1.symm.eq]; group
-    _ = (g₁ * g₂) * (d₁ * d₂) * (e₁ * e₂) * (z₁ * z₂) := by
-        rw [show g₁ * d₁ * (g₂ * d₂ * e₁) * (e₂ * (z₁ * z₂)) =
-          g₁ * (d₁ * g₂) * d₂ * (e₁ * e₂) * (z₁ * z₂) by group, hgd.eq]; group
-
 private theorem g2_short_long_partner : ∀ q ∈ g2ShortLongTuples,
     let (α, β, γ, δ, ε, ζ) := q
     let fa := fI α; let fb := fI β; let fe := fI ε; let fz := fI ζ
@@ -194,9 +167,8 @@ private theorem sc_eq (i j : Fin 12) : NG2 i j = g2SC i j := structureConstant_G
 
 private theorem g2_sum_excluded_iff (α β : Fin G2.numRoots) :
     ((ΦG2).root α + (ΦG2).root β ∉ Set.range (ΦG2).root ∧ (ΦG2).root α + (ΦG2).root β ≠ 0) ↔
-      (g2Root α + g2Root β ∉ Set.range g2Root ∧ g2Root α + g2Root β ≠ 0) := by
-  simp +instances only [simplyConnectedRootDatum_G2, g2SimplyConnectedRootDatum_root,
-    rank, numRoots, Pi.zero_def]
+      (g2Root α + g2Root β ∉ Set.range g2Root ∧ g2Root α + g2Root β ≠ 0) :=
+  and_congr (g2_add_mem_range_iff α β).not (g2_add_eq_zero_iff α β).not
 
 private theorem commute_of_g2ModThreeComm {A H : Type*} [CommRing A] [CharP A 3] [Group H]
     (x : Fin G2.numRoots → Multiplicative A →* H)
@@ -211,8 +183,7 @@ private theorem commute_of_g2ModThreeComm {A H : Type*} [CommRing A] [CharP A 3]
   · obtain ⟨hr, h0⟩ := (g2_sum_excluded_iff (ht := ht) i j).mpr he; exact hexcl hr h0 _ _
   · rw [commute_iff_eq, ← commutatorElement_eq_one_iff_mul_comm,
       hlong hk ((g2_root_add_iff i j k).mpr hadd), structureConstant_G2,
-      cast_eq_of_three_dvd A (a := g2SC i j) (b := 0) (by simpa using hdvd),
-      Int.cast_zero, zero_mul, ofAdd_zero, map_one]
+      (CharP.intCast_eq_zero_iff A 3 _).mpr hdvd, zero_mul, ofAdd_zero, map_one]
 
 private theorem commute_rootSubgroup_of_g2ModThreeComm (D : ChevalleyDatum G2 ht) (A : Type v)
     [CommRing A] [CharP A 3] {i j : Fin G2.numRoots} (h : g2ModThreeComm i j)
@@ -239,7 +210,7 @@ private theorem g2SpecialIsogenyRootSubgroup_eq (α : Fin G2.numRoots) (u : A) :
 theorem commute_g2SpecialIsogenyRootSubgroup {α β : Fin G2.numRoots}
     (h : (ΦG2).root α + (ΦG2).root β ∉ Set.range (ΦG2).root) (h0 : (ΦG2).root α + (ΦG2).root β ≠ 0)
     (u v : A) : Commute (xG2 α (ofAdd u)) (xG2 β (ofAdd v)) := by
-  have : CharP A 3 := (expChar_prime_iff (R := A) Nat.prime_three).mp ‹_›
+  have := charP_three A
   rw [g2SpecialIsogenyRootSubgroup_eq, g2SpecialIsogenyRootSubgroup_eq]
   obtain ⟨hr, hne⟩ := (g2_sum_excluded_iff α β).mp ⟨h, h0⟩
   exact commute_rootSubgroup_of_g2ModThreeComm D A (g2_commute_partner_cases hr hne) _ _
@@ -248,24 +219,24 @@ theorem commute_g2SpecialIsogenyRootSubgroup {α β : Fin G2.numRoots}
 theorem commutatorElement_g2SpecialIsogenyRootSubgroup_of_long_sum {α β γ : Fin G2.numRoots}
     (hγ : g2Length γ = 3) (hadd : (ΦG2).root γ = (ΦG2).root α + (ΦG2).root β) (u v : A) :
     ⁅xG2 α (ofAdd u), xG2 β (ofAdd v)⁆ = xG2 γ (ofAdd ((NG2 α β : A) * (u * v))) := by
-  have : CharP A 3 := (expChar_prime_iff (R := A) Nat.prime_three).mp ‹_›
+  have := charP_three A
   have h3 : (3 : A) = 0 := CharP.cast_eq_zero A 3
   simp only [g2SpecialIsogenyRootSubgroup_eq]
   rcases g2_long_sum_partner_cases hγ ((g2_root_add_iff α β γ).mp hadd) with
     ⟨hr, hne, hdvd⟩ | ⟨hfa, hfb, hfg, hadd', ⟨l, m, hl, hm⟩, hdvd⟩
   · obtain ⟨hr', hne'⟩ := (g2_sum_excluded_iff _ _).mpr ⟨hr, hne⟩
     rw [commutatorElement_eq_one_iff_mul_comm.mpr ((D.commute_rootSubgroup hr' hne' A _ _).eq),
-      structureConstant_G2,
-      cast_eq_of_three_dvd A (a := g2SC α β) (b := 0) (by simpa using hdvd),
-      Int.cast_zero, zero_mul, (g2Length_g2SpecialIsogenyIndex_eq_one_iff γ).mpr hγ]; simp
+      structureConstant_G2, (CharP.intCast_eq_zero_iff A 3 _).mpr hdvd, zero_mul,
+      (g2Length_g2SpecialIsogenyIndex_eq_one_iff γ).mpr hγ]; simp
   · rw [hfa, hfb, hfg,
       D.commutatorElement_rootSubgroup_of_g2_short_pair hfa hfb hfg
         ((g2_root_add_iff _ _ _).mpr hadd') ((g2_root_add_iff _ _ l).mpr hl)
         ((g2_root_add_iff _ _ m).mpr hm) A]
     simp only [Int.toNat_one, pow_one, h3, zero_mul, mul_zero, ofAdd_zero, map_one, mul_one,
       structureConstant_G2, sc_eq]
-    congr 2; have hc := cast_eq_of_three_dvd A hdvd; push_cast at hc ⊢
-    linear_combination u * v * hc
+    congr 2
+    have hc := (CharP.intCast_eq_intCast A 3).mpr (Int.modEq_iff_dvd.mpr hdvd).symm
+    push_cast at hc ⊢; linear_combination u * v * hc
 
 /-- **One-factor Chevalley commutator relation under the `G₂` exceptional isogeny.** -/
 theorem commutatorElement_g2SpecialIsogenyRootSubgroup_of_root_eq_add {α β γ : Fin G2.numRoots}
@@ -273,8 +244,7 @@ theorem commutatorElement_g2SpecialIsogenyRootSubgroup_of_root_eq_add {α β γ 
     (hα : 2 • (ΦG2).root α + (ΦG2).root β ∉ Set.range (ΦG2).root)
     (hβ : (ΦG2).root α + 2 • (ΦG2).root β ∉ Set.range (ΦG2).root) (u v : A) :
     ⁅xG2 α (ofAdd u), xG2 β (ofAdd v)⁆ = xG2 γ (ofAdd ((NG2 α β : A) * (u * v))) := by
-  simp +instances only [simplyConnectedRootDatum_G2, g2SimplyConnectedRootDatum_root,
-    rank, numRoots] at hα hβ
+  rw [root_simplyConnectedRootDatum_G2] at hα hβ
   exact D.commutatorElement_g2SpecialIsogenyRootSubgroup_of_long_sum A
     (g2_length_eq_three_of_no_two_nsmul ((g2_root_add_iff α β γ).mp hγ) hα hβ) hγ u v
 
@@ -287,7 +257,7 @@ theorem commutatorElement_g2SpecialIsogenyRootSubgroup_of_short_pair {i j k l m 
       xG2 k (ofAdd (((NG2 i j / 2 : ℤ) : A) * (2 * u * v))) *
         xG2 l (ofAdd (((NG2 i j / 2 * (NG2 i k / 3) : ℤ) : A) * (3 * u ^ 2 * v))) *
         xG2 m (ofAdd (-((NG2 i j / 2 * (NG2 k j / 3) : ℤ) : A) * (3 * u * v ^ 2))) := by
-  have : CharP A 3 := (expChar_prime_iff (R := A) Nat.prime_three).mp ‹_›
+  have := charP_three A
   have h3 : (3 : A) = 0 := CharP.cast_eq_zero A 3
   obtain ⟨hfi, hfj, hfk, hadd', hdvd⟩ :=
     g2_short_pair_partner i j k hi hj hk ((g2_root_add_iff i j k).mp hij)
@@ -295,7 +265,8 @@ theorem commutatorElement_g2SpecialIsogenyRootSubgroup_of_short_pair {i j k l m 
     g2SpecialIsogenyRootSubgroup_eq, hfi, hfj, hfk]
   rw [D.commutatorElement_rootSubgroup_G2_of_long_sum hfk ((g2_root_add_iff _ _ _).mpr hadd') A]
   congr 2; simp only [structureConstant_G2, sc_eq]
-  have hc := cast_eq_of_three_dvd A hdvd; push_cast at hc ⊢; linear_combination u ^ 3 * v ^ 3 * hc
+  have hc := (CharP.intCast_eq_intCast A 3).mpr (Int.modEq_iff_dvd.mpr hdvd).symm
+  push_cast at hc ⊢; linear_combination u ^ 3 * v ^ 3 * hc
 
 /-- **Four-factor short-first Chevalley commutator relation under the `G₂` exceptional isogeny.** -/
 theorem commutatorElement_g2SpecialIsogenyRootSubgroup_of_short_long
@@ -309,7 +280,7 @@ theorem commutatorElement_g2SpecialIsogenyRootSubgroup_of_short_long
         xG2 ε (ofAdd (((NG2 α β * (NG2 α γ / 2) * (NG2 α δ / 3) : ℤ) : A) * (u ^ 3 * v))) *
         xG2 ζ (ofAdd (((2 * (NG2 α β * (NG2 α γ / 2) * NG2 α β *
           (NG2 δ γ / 3)) : ℤ) : A) * (u ^ 3 * v ^ 2))) := by
-  have : CharP A 3 := (expChar_prime_iff (R := A) Nat.prime_three).mp ‹_›
+  have := charP_three A
   have hmem := mem_g2ShortLongTuples ((g2_root_add_iff α β γ).mp hγ)
     ((g2_root_add_iff α γ δ).mp hδ) ((g2_root_add_iff α δ ε).mp hε) ((g2_root_add_iff δ γ ζ).mp hζ)
   obtain ⟨⟨r₁, r₂, r₃, r₄, qa, qb, qg, qd, qe, qz⟩, d₁, d₂, d₃, d₄⟩ :=
@@ -321,10 +292,14 @@ theorem commutatorElement_g2SpecialIsogenyRootSubgroup_of_short_long
   rw [D.commutatorElement_rootSubgroup_of_g2_long_short ((g2_root_add_iff _ _ _).mpr r₁)
       ((g2_root_add_iff _ _ _).mpr r₂) ((g2_root_add_iff _ _ _).mpr r₃)
       ((g2_root_add_iff _ _ _).mpr r₄) A,
-    permute_four_comm (mc ceg _ _) (mc ced _ _) (mc czg _ _) (mc czd _ _)]
+    mul_assoc (_ * _),
+    (((mc ceg _ _).mul_left (mc czg _ _)).mul_right ((mc ced _ _).mul_left (mc czd _ _))).eq,
+    ← mul_assoc]
   simp only [structureConstant_G2, sc_eq]
-  have e₁ := cast_eq_of_three_dvd A d₁; have e₂ := cast_eq_of_three_dvd A d₂
-  have e₃ := cast_eq_of_three_dvd A d₃; have e₄ := cast_eq_of_three_dvd A d₄
+  have e₁ := (CharP.intCast_eq_intCast A 3).mpr (Int.modEq_iff_dvd.mpr d₁).symm
+  have e₂ := (CharP.intCast_eq_intCast A 3).mpr (Int.modEq_iff_dvd.mpr d₂).symm
+  have e₃ := (CharP.intCast_eq_intCast A 3).mpr (Int.modEq_iff_dvd.mpr d₃).symm
+  have e₄ := (CharP.intCast_eq_intCast A 3).mpr (Int.modEq_iff_dvd.mpr d₄).symm
   push_cast at e₁ e₂ e₃ e₄ ⊢
   refine congrArg₂ _ (congrArg₂ _ (congrArg₂ _ ?_ ?_) ?_) ?_ <;> congr 2
   · linear_combination u ^ 3 * v ^ 3 * e₃
@@ -335,7 +310,7 @@ theorem commutatorElement_g2SpecialIsogenyRootSubgroup_of_short_long
 private theorem commute_g2SpecialIsogeny_of_g2ModThreeComm
     {i j : Fin G2.numRoots} (hc : g2ModThreeComm i j) (w₁ w₂ : Multiplicative A) :
     Commute (xG2 i w₁) (xG2 j w₂) := by
-  have : CharP A 3 := (expChar_prime_iff (R := A) Nat.prime_three).mp ‹_›
+  have := charP_three A
   exact commute_of_g2ModThreeComm (ht := ht) xG2
     (fun hr h0 => D.commute_g2SpecialIsogenyRootSubgroup A hr h0)
     (fun hk hadd => D.commutatorElement_g2SpecialIsogenyRootSubgroup_of_long_sum A hk hadd) hc w₁ w₂
@@ -352,15 +327,15 @@ theorem commutatorElement_g2SpecialIsogenyRootSubgroup_of_long_short
         xG2 ε (ofAdd (-((NG2 α β * (NG2 α γ / 2) * (NG2 α δ / 3) : ℤ) : A) * (u ^ 3 * v))) *
         xG2 ζ (ofAdd (((NG2 α β * (NG2 α γ / 2) * NG2 α β *
           (NG2 δ γ / 3) : ℤ) : A) * (u ^ 3 * v ^ 2))) := by
-  have : CharP A 3 := (expChar_prime_iff (R := A) Nat.prime_three).mp ‹_›
+  have := charP_three A
   obtain ⟨cgd, cge, cgz, cde, cdz, cez, _⟩ := g2_short_long_factors_comm (α, β, γ, δ, ε, ζ)
     (mem_g2ShortLongTuples ((g2_root_add_iff α β γ).mp hγ) ((g2_root_add_iff α γ δ).mp hδ)
       ((g2_root_add_iff α δ ε).mp hε) ((g2_root_add_iff δ γ ζ).mp hζ))
   have mc {i j} (c : g2ModThreeComm i j) := commute_g2SpecialIsogeny_of_g2ModThreeComm D A c
   rw [← commutatorElement_inv,
     D.commutatorElement_g2SpecialIsogenyRootSubgroup_of_short_long A hγ hδ hε hζ u v,
-    mul_four_inv_of_commute (mc cgd _ _) (mc cge _ _) (mc cgz _ _)
-      (mc cde _ _) (mc cdz _ _) (mc cez _ _)]
+    (((mc cgz _ _).mul_left (mc cdz _ _)).mul_left (mc cez _ _)).mul_inv,
+    ((mc cge _ _).mul_left (mc cde _ _)).mul_inv, (mc cgd _ _).mul_inv]
   simp only [← map_inv, ← ofAdd_neg]
   refine congrArg₂ _ (congrArg₂ _ (congrArg₂ _ ?_ ?_) ?_) ?_ <;> congr 2
   · ring
@@ -385,7 +360,7 @@ private theorem g2_words_of_halfTuple {H : Type*} [Group H]
         x m (ofAdd (-((NG2 d a' / 2 * (NG2 g a' / 3) : ℤ) : A) * (3 * u * 1 ^ 2))))
     (hls : ∀ u : A, ⁅x b (ofAdd 1), x e (ofAdd u)⁆ = x z (ofAdd ((NG2 b e : A) * (1 * u))))
     (u : A) : g2QuadWords x a b g d e z a' s u := by
-  have : CharP A 3 := (expChar_prime_iff (R := A) Nat.prime_three).mp ‹_›
+  have := charP_three A
   have h3 : (3 : A) = 0 := CharP.cast_eq_zero A 3
   obtain ⟨hs, _, _, _, _, hγ, hδ, hε, hζ, _, _, _, _, hc1, hc2, hc3, hc4, hcsp, hcls⟩ := htup
   have hsA : (s : A) ^ 2 = 1 := by rw [← Int.cast_pow, hs, Int.cast_one]
@@ -400,24 +375,29 @@ private theorem g2_words_of_halfTuple {H : Type*} [Group H]
       x r (ofAdd w₁) * x r (ofAdd w₂) = x r (ofAdd (w₁ + w₂)) := by rw [← map_mul, ofAdd_add]
   refine ⟨?_, ?_, ?_, by
     rw [hls, sc_eq, hcls, one_mul]; congr 2; linear_combination -u * hsA⟩
-  · rw [hsl' 1 (-u), hsl' (-1) (-u),
-      collect_four_comm (hcomm cgd _ _).symm (hcomm cge _ _).symm (hcomm cde _ _).symm
-        (hcomm cgz _ _).symm (hcomm cdz _ _).symm (hcomm cez _ _).symm,
-      hadd, hadd, hadd, hadd, show (s : A) * 1 * -u + (s : A) * -1 * -u = 0 by ring,
-      show 1 ^ 2 * -u + (-1 : A) ^ 2 * -u = u by linear_combination -u * h3,
-      show (s : A) * 1 ^ 3 * -u + (s : A) * (-1) ^ 3 * -u = 0 by ring,
-      show 2 * 1 ^ 3 * (-u) ^ 2 + 2 * (-1 : A) ^ 3 * (-u) ^ 2 = 0 by ring]; simp
+  · have hcg : (s : A) * 1 * -u + (s : A) * -1 * -u = 0 := by ring
+    have hcd : (1 : A) ^ 2 * -u + (-1 : A) ^ 2 * -u = u := by linear_combination -u * h3
+    have hce : (s : A) * 1 ^ 3 * -u + (s : A) * (-1 : A) ^ 3 * -u = 0 := by ring
+    have hcz : 2 * (1 : A) ^ 3 * (-u) ^ 2 + 2 * (-1 : A) ^ 3 * (-u) ^ 2 = 0 := by ring
+    rw [hsl' 1 (-u), hsl' (-1) (-u),
+      (((hcomm cgz _ _).symm.mul_right (hcomm cdz _ _).symm).mul_right
+        (hcomm cez _ _).symm).mul_mul_mul_comm _ _,
+      ((hcomm cge _ _).symm.mul_right (hcomm cde _ _).symm).mul_mul_mul_comm _ _,
+      (hcomm cgd _ _).symm.mul_mul_mul_comm _ _,
+      hadd, hadd, hadd, hadd, hcg, hcd, hce, hcz]; simp
   · rw [hsp]; simp only [h3, zero_mul, mul_zero, ofAdd_zero, map_one, mul_one, sc_eq]
-    congr 2; have hcs := cast_eq_of_three_dvd A hcsp; push_cast at hcs
-    linear_combination -(s : A) * u * hcs - u * hsA
+    congr 2
+    have hcs := (CharP.intCast_eq_intCast A 3).mpr (Int.modEq_iff_dvd.mpr hcsp).symm
+    push_cast at hcs; linear_combination -(s : A) * u * hcs - u * hsA
   · have q (w : A) : (x g (ofAdd ((s : A) * w)) * x d (ofAdd w))⁻¹ *
         ⁅x a (ofAdd 1), x b (ofAdd w)⁆ = x e (ofAdd ((s : A) * w)) * x z (ofAdd (2 * w ^ 2)) := by
       rw [hsl' 1 w]; simp only [mul_one, one_pow, one_mul]; group
+    have hsu₁ : (s : A) * (-(s : A) * u) = -u := by linear_combination -u * hsA
+    have hsu₂ : (s : A) * ((s : A) * u) = u := by linear_combination u * hsA
+    have hsq : 2 * (-(s : A) * u) ^ 2 = 2 * ((s : A) * u) ^ 2 := by ring
     have hq₁ := q (-(s : A) * u); have hq₂ := q ((s : A) * u)
-    rw [show (s : A) * (-(s : A) * u) = -u by linear_combination -u * hsA] at hq₁
-    rw [show (s : A) * ((s : A) * u) = u by linear_combination u * hsA] at hq₂
-    rw [hq₁, hq₂, show 2 * (-(s : A) * u) ^ 2 = 2 * ((s : A) * u) ^ 2 by ring,
-      mul_inv_rev, mul_assoc, mul_inv_cancel_left, ← map_inv, ← ofAdd_neg, hadd]
+    rw [hsu₁] at hq₁; rw [hsu₂] at hq₂
+    rw [hq₁, hq₂, hsq, mul_inv_rev, mul_assoc, mul_inv_cancel_left, ← map_inv, ← ofAdd_neg, hadd]
     congr 2; linear_combination u * h3
 
 private theorem eq_quadruple_of_g2_half (φ : D.points A →* E.points A)
@@ -429,7 +409,7 @@ private theorem eq_quadruple_of_g2_half (φ : D.points A →* E.points A)
       (∀ w, φ (D.rootSubgroupPoints d A w) = xE d w) ∧
       (∀ w, φ (D.rootSubgroupPoints e A w) = xE e w) ∧
       (∀ w, φ (D.rootSubgroupPoints z A w) = xE z w) := by
-  have : CharP A 3 := (expChar_prime_iff (R := A) Nat.prime_three).mp ‹_›
+  have := charP_three A
   have ⟨_, hd1, ha'1, hg1, hz3, hγ, hδ, hε, hζ, hij, hik, hkj, hbe, _⟩ := htup
   have ra {i j k} (h : g2Root k = g2Root i + g2Root j) := (g2_root_add_iff (ht := ht) i j k).mpr h
   have wD := g2_words_of_halfTuple (ht := ht) A (fun r : Fin 12 => D.rootSubgroupPoints r A) htup
@@ -469,20 +449,18 @@ theorem map_rootSubgroupPoints_of_g2SpecialIsogeny_simple (φ : D.points A →* 
     (α : Fin G2.numRoots) (u : Multiplicative A) :
     φ (D.rootSubgroupPoints α A u) = xE α u := by
   let Q (r : Fin G2.numRoots) : Prop := ∀ w, φ (D.rootSubgroupPoints r A w) = xE r w
-  let refSelf (x : Fin G2.numRoots) : Fin G2.numRoots := (ΦG2).reflectionPerm x x
   have hs0 : G2.simpleIndex ht (0 : Fin 2) = (0 : Fin 12) := simpleIndex_G2 ht (0 : Fin 2)
   have hs1 : G2.simpleIndex ht (1 : Fin 2) = (1 : Fin 12) := simpleIndex_G2 ht (1 : Fin 2)
   have h0 : Q (0 : Fin 12) := hs0 ▸ hpos (0 : Fin 2)
   have h1 : Q (1 : Fin 12) := hs1 ▸ hpos (1 : Fin 2)
-  have href (i r : Fin 12) (hr : g2Root r = -g2Root i) : refSelf i = r :=
-    (ΦG2).root.injective <|
-      (((ΦG2).root_reflectionPerm i i).trans ((ΦG2).reflection_apply_self i)).trans
-        (by simpa +instances only [simplyConnectedRootDatum_G2, g2SimplyConnectedRootDatum_root,
-          rank, numRoots] using hr.symm)
-  have h6 : Q (6 : Fin 12) := ((congrArg refSelf hs0).trans
-    (href 0 6 (by simp only [g2Root_apply]; decide))) ▸ hneg (0 : Fin 2)
-  have h7 : Q (7 : Fin 12) := ((congrArg refSelf hs1).trans
-    (href 1 7 (by simp only [g2Root_apply]; decide))) ▸ hneg (1 : Fin 2)
+  have h6 : Q (6 : Fin 12) := by
+    have hr := hneg (0 : Fin 2)
+    rw [hs0, reflectionPerm_self_G2 ht (0 : Fin 12)] at hr
+    exact hr
+  have h7 : Q (7 : Fin 12) := by
+    have hr := hneg (1 : Fin 2)
+    rw [hs1, reflectionPerm_self_G2 ht (1 : Fin 12)] at hr
+    exact hr
   obtain ⟨h2, h3, h4, h5⟩ := eq_quadruple_of_g2_half D E A φ (g := 2) (d := 3) (e := 4) (z := 5)
     (l := 5) (m := 1) (s := 1)
     (by simp only [g2HalfTuple, g2Length_apply, g2Root_apply, g2StructureConstant_def]; decide)

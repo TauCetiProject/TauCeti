@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Commutator.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.SpecialIsogeny.Basic
+import TauCeti.Algebra.CharP.Two
 import TauCeti.LinearAlgebra.RootSystem.InvariantForm.RootString
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.B.RankTwo
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.F4.RootString
@@ -39,6 +40,9 @@ universe v
 
 section DoublyLacedAux
 
+private theorem charP_two (A : Type v) [CommRing A] [ExpChar A 2] : CharP A 2 :=
+  (expChar_prime_iff (R := A) Nat.prime_two).mp ‹_›
+
 private noncomputable abbrev scD (t : DynkinType) (ht : t.Valid) := t.simplyConnectedRootDatum ht
 
 private structure DoublyLacedIso (t : DynkinType) (ht : t.Valid) where
@@ -53,11 +57,6 @@ private noncomputable abbrev partnerPt {t : DynkinType} {ht : t.Valid} (D : Chev
   D.rootSubgroupPoints (F.iso.indexEquiv α) A
     (ofAdd (u ^ (F.iso.exponent (F.iso.indexEquiv α)).toNat))
 
-private theorem intUnits_cast_eq_one {A : Type*} [CommRing A] [CharP A 2] (ε : ℤˣ) :
-    ((ε : ℤ) : A) = 1 := by
-  rcases Int.units_eq_one_or ε with rfl | rfl <;> push_cast
-  exacts [rfl, by linear_combination -(CharP.cast_eq_zero A 2)]
-
 section WithDatum
 
 variable {t : DynkinType} {ht : t.Valid}
@@ -69,14 +68,13 @@ private theorem cast_sc_eq_one {α β : Fin t.numRoots}
     (hsum : (Φ).root α + (Φ).root β ∈ Set.range (Φ).root) (hbot : (Φ).chainBotCoeff α β = 0)
     (A : Type*) [CommRing A] [CharP A 2] : (N α β : A) = 1 := by
   rcases structureConstant_eq_natCast_or_eq_neg_natCast hsum with h | h <;> rw [h, hbot] <;>
-    push_cast; exacts [rfl, by linear_combination -(CharP.cast_eq_zero A 2)]
+    simp [CharTwo.neg_one_eq_one]
 
 private theorem cast_sc_eq_zero {α β : Fin t.numRoots}
     (hsum : (Φ).root α + (Φ).root β ∈ Set.range (Φ).root) (hbot : (Φ).chainBotCoeff α β = 1)
     (A : Type*) [CommRing A] [CharP A 2] : (N α β : A) = 0 := by
-  have h2 : (2 : A) = 0 := CharP.cast_eq_zero A 2
   rcases structureConstant_eq_natCast_or_eq_neg_natCast hsum with h | h <;> rw [h, hbot] <;>
-    push_cast; exacts [h2, by linear_combination -h2]
+    simp [CharTwo.two_eq_zero]
 
 private theorem cast_div_two_eq_one {α β γ : Fin t.numRoots}
     (hαβ : (Φ).root α + (Φ).root β ∈ Set.range (Φ).root)
@@ -85,7 +83,7 @@ private theorem cast_div_two_eq_one {α β γ : Fin t.numRoots}
     (A : Type*) [CommRing A] [CharP A 2] : ((N α β * N α γ / 2 : ℤ) : A) = 1 := by
   rcases structureConstant_eq_natCast_or_eq_neg_natCast hαβ with h1 | h1 <;>
     rcases structureConstant_eq_natCast_or_eq_neg_natCast hαγ with h3 | h3 <;>
-    rw [h1, h3, hbot₁, hbot₂] <;> norm_num <;> linear_combination -(CharP.cast_eq_zero A 2)
+    rw [h1, h3, hbot₁, hbot₂] <;> norm_num <;> exact CharTwo.neg_one_eq_one
 
 private theorem abs_pairing_le_two (F : DoublyLacedIso t ht) (α β : Fin t.numRoots) :
     |(Φ).pairing α β| ≤ 2 := by
@@ -162,10 +160,9 @@ private theorem partner_exponents_of_notMem (F : DoublyLacedIso t ht) {α β γ'
 
 private theorem commute_doublyLaced (D : ChevalleyDatum t ht) (F : DoublyLacedIso t ht)
     {α β : Fin t.numRoots} (h : (Φ).root α + (Φ).root β ∉ Set.range (Φ).root)
-    (h0 : (Φ).root α + (Φ).root β ≠ 0) (A : Type v) [CommRing A] [ExpChar A 2] (u v : A) :
+    (h0 : (Φ).root α + (Φ).root β ≠ 0) (A : Type v) [CommRing A] [CharP A 2] (u v : A) :
     Commute (partnerPt D F A α u) (partnerPt D F A β v) := by
   have := t.isReduced_simplyConnectedRootDatum ht
-  have : CharP A 2 := (expChar_prime_iff (R := A) Nat.prime_two).mp ‹_›
   set α' := F.iso.indexEquiv α; set β' := F.iso.indexEquiv β
   have h0' : (Φ).root α' + (Φ).root β' ≠ 0 := (F.iso.root_indexEquiv_add_eq_zero_iff α β).not.mpr h0
   by_cases hrange : (Φ).root α' + (Φ).root β' ∈ Set.range (Φ).root
@@ -187,10 +184,9 @@ private theorem commute_doublyLaced (D : ChevalleyDatum t ht) (F : DoublyLacedIs
 private theorem commutatorElement_doublyLaced_of_eq_len (D : ChevalleyDatum t ht)
     (F : DoublyLacedIso t ht) {α β γ : Fin t.numRoots} (hγ : (Φ).root γ = (Φ).root α + (Φ).root β)
     (hαβ : F.iso.exponent α = F.iso.exponent β) (hβγ : F.iso.exponent β = F.iso.exponent γ)
-    (A : Type v) [CommRing A] [ExpChar A 2] (u v : A) :
+    (A : Type v) [CommRing A] [CharP A 2] (u v : A) :
     ⁅partnerPt D F A α u, partnerPt D F A β v⁆ = partnerPt D F A γ ((N α β : A) * (u * v)) := by
   have := t.isReduced_simplyConnectedRootDatum ht
-  have : CharP A 2 := (expChar_prime_iff (R := A) Nat.prime_two).mp ‹_›
   set α' := F.iso.indexEquiv α; set β' := F.iso.indexEquiv β; set γ' := F.iso.indexEquiv γ
   have hγ' : (Φ).root γ' = (Φ).root α' + (Φ).root β' := by
     apply smul_right_injective _ (F.iso.exponent_pos γ).ne'
@@ -221,10 +217,9 @@ private theorem commutatorElement_doublyLaced_of_eq_len (D : ChevalleyDatum t ht
 private theorem commutatorElement_doublyLaced_of_short_short_long (D : ChevalleyDatum t ht)
     (F : DoublyLacedIso t ht) {α β γ : Fin t.numRoots} (hγ : (Φ).root γ = (Φ).root α + (Φ).root β)
     (hαlen : F.iso.exponent α = 1) (hβlen : F.iso.exponent β = 1) (hγlen : F.iso.exponent γ = 2)
-    (A : Type v) [CommRing A] [ExpChar A 2] (u v : A) :
+    (A : Type v) [CommRing A] [CharP A 2] (u v : A) :
     ⁅partnerPt D F A α u, partnerPt D F A β v⁆ = partnerPt D F A γ ((N α β : A) * (u * v)) := by
   have := t.isReduced_simplyConnectedRootDatum ht
-  have : CharP A 2 := (expChar_prime_iff (R := A) Nat.prime_two).mp ‹_›
   have hbot := (Φ).chainBotCoeff_eq_one_of_short_add_short_eq_long F.iso.exponent F.sym α β γ
     hαlen hβlen hγlen (hγ.trans (add_comm _ _))
   have hp0 := (Φ).pairing_eq_zero_of_short_add_short_eq_long F.iso.exponent F.sym α β γ
@@ -248,7 +243,7 @@ private theorem commutatorElement_doublyLaced_of_root_eq_add (D : ChevalleyDatum
     (F : DoublyLacedIso t ht) {α β γ : Fin t.numRoots} (hγ : (Φ).root γ = (Φ).root α + (Φ).root β)
     (hα : 2 • (Φ).root α + (Φ).root β ∉ Set.range (Φ).root)
     (hβ : (Φ).root α + 2 • (Φ).root β ∉ Set.range (Φ).root)
-    (A : Type v) [CommRing A] [ExpChar A 2] (u v : A) :
+    (A : Type v) [CommRing A] [CharP A 2] (u v : A) :
     ⁅partnerPt D F A α u, partnerPt D F A β v⁆ = partnerPt D F A γ ((N α β : A) * (u * v)) := by
   have no_mix {x y : Fin t.numRoots} (hx : F.iso.exponent x = 1) (hy : F.iso.exponent y = 2)
       (hxy : (Φ).root γ = (Φ).root x + (Φ).root y)
@@ -331,11 +326,10 @@ private theorem partner_roots_of_two_nsmul_add (F : DoublyLacedIso t ht) {α β 
 private theorem commutatorElement_doublyLaced_of_two_nsmul_add (D : ChevalleyDatum t ht)
     (F : DoublyLacedIso t ht) {α β γ δ : Fin t.numRoots}
     (hγ : (Φ).root γ = (Φ).root α + (Φ).root β) (hδ : (Φ).root δ = 2 • (Φ).root α + (Φ).root β)
-    (A : Type v) [CommRing A] [ExpChar A 2] (u v : A) :
+    (A : Type v) [CommRing A] [CharP A 2] (u v : A) :
     ⁅partnerPt D F A α u, partnerPt D F A β v⁆ = partnerPt D F A γ ((N α β : A) * (u * v)) *
       partnerPt D F A δ (((N α β * N α γ / 2 : ℤ) : A) * (u ^ 2 * v)) := by
   have := t.isReduced_simplyConnectedRootDatum ht
-  have : CharP A 2 := (expChar_prime_iff (R := A) Nat.prime_two).mp ‹_›
   have hδ'z : (Φ).root δ = (Φ).root β + (2 : ℤ) • (Φ).root α := by rw [hδ]; module
   obtain ⟨hα1, hβ2⟩ := short_long_of_two_nsmul_add F hγ hδ
   obtain ⟨_, _, hδ2⟩ := (Φ).pairings_of_long_add_two_short F.iso.exponent F.sym α β δ hα1 hβ2
@@ -363,8 +357,7 @@ private theorem commutatorElement_doublyLaced_of_two_nsmul_add (D : ChevalleyDat
     rcases F.exp_or ρ with h1 | h1 <;> rw [hα', hβ', hpα'β', h1] at hρlen <;> omega
   have hc2' : ((-(N β' α' * N β' δ' / 2) : ℤ) : A) = 1 := by
     rw [Int.cast_neg, cast_div_two_eq_one ⟨δ', hδ'eq.trans (add_comm _ _)⟩
-      ⟨γ', by rw [hγ'eq, hδ'eq]; module⟩ hbot'₁ hbot'₂ A]
-    linear_combination -(CharP.cast_eq_zero A 2)
+      ⟨γ', by rw [hγ'eq, hδ'eq]; module⟩ hbot'₁ hbot'₂ A, CharTwo.neg_one_eq_one]
   dsimp only [partnerPt]; rw [hα', hβ', hγ', hδ']; dsimp
   rw [D.commutatorElement_rootSubgroup_of_root_eq_add_two_nsmul hδ'eq hγ'eq h2α' h3β',
     cast_sc_eq_one ⟨γ, hγ⟩ hbot₁ A,
@@ -375,7 +368,7 @@ private theorem commutatorElement_doublyLaced_of_two_nsmul_add (D : ChevalleyDat
 
 private theorem commute_long_with_add_two_nsmul (D : ChevalleyDatum t ht) (F : DoublyLacedIso t ht)
     {α β γ δ : Fin t.numRoots} (hγ : (Φ).root γ = (Φ).root α + (Φ).root β)
-    (hδ : (Φ).root δ = (Φ).root α + 2 • (Φ).root β) (A : Type v) [CommRing A] [ExpChar A 2]
+    (hδ : (Φ).root δ = (Φ).root α + 2 • (Φ).root β) (A : Type v) [CommRing A] [CharP A 2]
     (s w₁ w₂ : A) :
     Commute (partnerPt D F A α s) (partnerPt D F A γ w₁ * partnerPt D F A δ w₂) := by
   have := t.isReduced_simplyConnectedRootDatum ht
@@ -399,31 +392,30 @@ private theorem commute_long_with_add_two_nsmul (D : ChevalleyDatum t ht) (F : D
 private theorem commutatorElement_doublyLaced_of_add_two_nsmul (D : ChevalleyDatum t ht)
     (F : DoublyLacedIso t ht) {α β γ δ : Fin t.numRoots}
     (hγ : (Φ).root γ = (Φ).root α + (Φ).root β) (hδ : (Φ).root δ = (Φ).root α + 2 • (Φ).root β)
-    (A : Type v) [CommRing A] [ExpChar A 2] (u v : A) :
+    (A : Type v) [CommRing A] [CharP A 2] (u v : A) :
     ⁅partnerPt D F A α u, partnerPt D F A β v⁆ = partnerPt D F A γ ((N α β : A) * (u * v)) *
       partnerPt D F A δ (((-(N β α * N β γ / 2) : ℤ) : A) * (u * v ^ 2)) := by
-  have : CharP A 2 := (expChar_prime_iff (R := A) Nat.prime_two).mp ‹_›
   have hneg (s : A) (ξ : Fin t.numRoots) : (-s) ^ (F.iso.exponent (F.iso.indexEquiv ξ)).toNat =
       -(s ^ (F.iso.exponent (F.iso.indexEquiv ξ)).toNat) := by
-    rcases F.exp_or (F.iso.indexEquiv ξ) with h | h <;> simp [h]
-    linear_combination s ^ 2 * CharP.cast_eq_zero A 2
+    simp only [CharTwo.neg_eq]
   have hconj : ⁅partnerPt D F A α u, partnerPt D F A β v⁆ =
       partnerPt D F A α u * ⁅partnerPt D F A β v, partnerPt D F A α (-u)⁆ *
         (partnerPt D F A α u)⁻¹ := by
     dsimp only [partnerPt]; rw [hneg u α, ofAdd_neg, map_inv]
     simp only [commutatorElement_def, inv_inv]; group
+  have hc₁ : (N β α : A) * (v * -u) = (N α β : A) * (u * v) := by
+    rw [structureConstant_skew (ht := ht) α β, Int.cast_neg]; ring
+  have hc₂ : ((N β α * N β γ / 2 : ℤ) : A) * (v ^ 2 * -u) =
+      ((-(N β α * N β γ / 2) : ℤ) : A) * (u * v ^ 2) := by
+    push_cast; ring
   rw [hconj, commutatorElement_doublyLaced_of_two_nsmul_add D F
       (hγ.trans (add_comm _ _)) (hδ.trans (add_comm _ _)) A v (-u),
-    (commute_long_with_add_two_nsmul D F hγ hδ A u _ _).eq, mul_inv_cancel_right,
-    show (N β α : A) * (v * -u) = (N α β : A) * (u * v) by
-      rw [structureConstant_skew (ht := ht) α β, Int.cast_neg]; ring,
-    show ((N β α * N β γ / 2 : ℤ) : A) * (v ^ 2 * -u) =
-      ((-(N β α * N β γ / 2) : ℤ) : A) * (u * v ^ 2) by push_cast; ring]
+    (commute_long_with_add_two_nsmul D F hγ hδ A u _ _).eq, mul_inv_cancel_right, hc₁, hc₂]
 
 private theorem map_rootSubgroupPoints_doublyLaced (D E : ChevalleyDatum t ht)
     (F : DoublyLacedIso t ht) (σ : Equiv.Perm (Fin t.rank))
     (hσ : ∀ i, F.iso.indexEquiv (t.simpleIndex ht i) = t.simpleIndex ht (σ i))
-    (A : Type v) [CommRing A] [ExpChar A 2] (φ : D.points A →* E.points A)
+    (A : Type v) [CommRing A] [CharP A 2] (φ : D.points A →* E.points A)
     (hpos : ∀ i (u : A), φ (D.rootSubgroupPoints (t.simpleIndex ht i) A (ofAdd u)) =
       partnerPt E F A (t.simpleIndex ht i) u)
     (hneg : ∀ i (u : A), φ (D.rootSubgroupPoints
@@ -432,9 +424,8 @@ private theorem map_rootSubgroupPoints_doublyLaced (D E : ChevalleyDatum t ht)
     (α : Fin t.numRoots) (u : Multiplicative A) :
     φ (D.rootSubgroupPoints α A u) = partnerPt E F A α (toAdd u) := by
   have := t.isReduced_simplyConnectedRootDatum ht
-  have : CharP A 2 := (expChar_prime_iff (R := A) Nat.prime_two).mp ‹_›
   have hneg_one_pow (ξ : Fin t.numRoots) : (-1 : A) ^ (F.iso.exponent ξ).toNat = -1 := by
-    rcases F.exp_or ξ with h | h <;> simp [h]; linear_combination CharP.cast_eq_zero A 2
+    simp only [CharTwo.neg_one_eq_one, one_pow]
   have hweyl (i : Fin t.rank) :
       φ (D.weylElement (t.simpleIndex ht i) A 1) = E.weylElement (t.simpleIndex ht (σ i)) A 1 := by
     rw [D.weylElement_def, map_mul, map_mul, Units.val_one, inv_one, Units.val_one, hpos, hneg]
@@ -448,10 +439,10 @@ private theorem map_rootSubgroupPoints_doublyLaced (D E : ChevalleyDatum t ht)
   · obtain ⟨i, rfl⟩ := exists_simpleIndex_eq_of_mem_support hj
     rw [reflectionPerm_rationalRootSystem]
     have hconjD := D.weylElement_conj_rootSubgroupPoints i γ A w
-    rw [intUnits_cast_eq_one, one_mul] at hconjD
+    rw [TauCeti.intCast_units_eq_one_of_charTwo, one_mul] at hconjD
     have hconjE := E.weylElement_conj_rootSubgroupPoints (σ i) (F.iso.indexEquiv γ) A
       (w ^ (F.iso.exponent (F.iso.indexEquiv γ)).toNat)
-    rw [intUnits_cast_eq_one, one_mul] at hconjE
+    rw [TauCeti.intCast_units_eq_one_of_charTwo, one_mul] at hconjE
     rw [← hconjD, map_mul, map_mul, map_inv, hweyl, ih]; dsimp only [partnerPt]
     rw [hconjE, ← hσ, F.iso.indexEquiv_reflectionPerm, F.iso.exponent_reflectionPerm]
 
@@ -487,11 +478,9 @@ private noncomputable def b2DL (ht : (B 2).Valid) : DoublyLacedIso (B 2) ht wher
   iso := b2SpecialIsogeny.ofEq (simplyConnectedRootDatum_B 2 ht)
   mul_self := RootPairingIsogeny.ofEq_mul_self _ (simplyConnectedRootDatum_B 2 ht)
     b2SpecialIsogeny_mul_self
-  exp_or α := by
-    have h (i : Fin (2 * 2 ^ 2)) : b2SpecialIsogeny.exponent i = 1 ∨
-        b2SpecialIsogeny.exponent i = 2 := by
-      rw [b2SpecialIsogeny_exponent]; exact b2SpecialIsogenyExponent_eq_one_or_eq_two i
-    dsimp only [RootPairingIsogeny.ofEq]; exact h α
+  exp_or α :=
+    (RootPairingIsogeny.ofEq_exponent (simplyConnectedRootDatum_B 2 ht) b2SpecialIsogeny α).symm ▸
+      b2SpecialIsogeny_exponent_eq_one_or_eq_two α
   sym α β := by
     have h (i j : Fin (2 * 2 ^ 2)) :
         b2SpecialIsogeny.exponent i * (typeBSimplyConnectedRootDatum 2).pairing j i =
@@ -503,15 +492,37 @@ private noncomputable def b2DL (ht : (B 2).Valid) : DoublyLacedIso (B 2) ht wher
         ← RootPairing.root_coroot_eq_pairing, toLinearMap_typeBSimplyConnectedRootDatum,
         toLinearMap_typeBSimplyConnectedRootDatum, root_b2Index, root_b2Index,
         coroot_b2Index, coroot_b2Index]; revert a b; decide
-    dsimp only [RootPairingIsogeny.ofEq, scD]
-    rw [simplyConnectedRootDatum_B 2 ht]; exact h α β
+    have hp (i j : Fin (B 2).numRoots) :
+        (scD (B 2) ht).pairing i j = (typeBSimplyConnectedRootDatum 2).pairing i j := by
+      rw [scD, simplyConnectedRootDatum_B 2 ht]; rfl
+    rw [hp β α, hp α β]
+    exact (congrArg (· * _) (RootPairingIsogeny.ofEq_exponent (simplyConnectedRootDatum_B 2 ht)
+        b2SpecialIsogeny α)).trans <|
+      (h α β).trans <|
+      (congrArg (· * _) (RootPairingIsogeny.ofEq_exponent (simplyConnectedRootDatum_B 2 ht)
+        b2SpecialIsogeny β)).symm
+
+private theorem b2DL_indexEquiv (ht : (B 2).Valid) (α : Fin (B 2).numRoots) :
+    (b2DL ht).iso.indexEquiv α = b2SpecialIsogeny.indexEquiv α :=
+  congrArg (· α) (RootPairingIsogeny.ofEq_indexEquiv (simplyConnectedRootDatum_B 2 ht)
+    b2SpecialIsogeny)
+
+private theorem b2DL_exponent (ht : (B 2).Valid) (α : Fin (B 2).numRoots) :
+    (b2DL ht).iso.exponent α = b2SpecialIsogeny.exponent α :=
+  RootPairingIsogeny.ofEq_exponent (simplyConnectedRootDatum_B 2 ht) b2SpecialIsogeny α
+
+private theorem b2SpecialIsogenyRootSubgroup_eq_partnerPt (α : Fin (B 2).numRoots) (u : A) :
+    xB2 α (ofAdd u) = partnerPt D (b2DL ht) A α u := by
+  rw [b2SpecialIsogenyRootSubgroup_ofAdd, partnerPt, b2DL_exponent, b2DL_indexEquiv]
 
 /-- **Commuting root subgroups under the `B₂` exceptional isogeny.** -/
 theorem commute_b2SpecialIsogenyRootSubgroup {α β : Fin (B 2).numRoots}
     (h : (ΦB2).root α + (ΦB2).root β ∉ Set.range (ΦB2).root)
     (h0 : (ΦB2).root α + (ΦB2).root β ≠ 0) (u v : A) :
     Commute (xB2 α (ofAdd u)) (xB2 β (ofAdd v)) := by
-  simp only [b2SpecialIsogenyRootSubgroup_ofAdd]; exact commute_doublyLaced D (b2DL ht) h h0 A u v
+  have := charP_two A
+  simp only [b2SpecialIsogenyRootSubgroup_eq_partnerPt]
+  exact commute_doublyLaced D (b2DL ht) h h0 A u v
 
 /-- **One-factor Chevalley commutator relation under the `B₂` exceptional isogeny.** -/
 theorem commutatorElement_b2SpecialIsogenyRootSubgroup_of_root_eq_add {α β γ : Fin (B 2).numRoots}
@@ -519,7 +530,8 @@ theorem commutatorElement_b2SpecialIsogenyRootSubgroup_of_root_eq_add {α β γ 
     (hα : 2 • (ΦB2).root α + (ΦB2).root β ∉ Set.range (ΦB2).root)
     (hβ : (ΦB2).root α + 2 • (ΦB2).root β ∉ Set.range (ΦB2).root) (u v : A) :
     ⁅xB2 α (ofAdd u), xB2 β (ofAdd v)⁆ = xB2 γ (ofAdd ((NB2 α β : A) * (u * v))) := by
-  simp only [b2SpecialIsogenyRootSubgroup_ofAdd]
+  have := charP_two A
+  simp only [b2SpecialIsogenyRootSubgroup_eq_partnerPt]
   exact commutatorElement_doublyLaced_of_root_eq_add D (b2DL ht) hγ hα hβ A u v
 
 /-- **Two-factor short-first Chevalley commutator relation under the `B₂` exceptional isogeny.** -/
@@ -528,7 +540,8 @@ theorem commutatorElement_b2SpecialIsogenyRootSubgroup_of_root_eq_two_nsmul_add
     (hδ : (ΦB2).root δ = 2 • (ΦB2).root α + (ΦB2).root β) (u v : A) :
     ⁅xB2 α (ofAdd u), xB2 β (ofAdd v)⁆ = xB2 γ (ofAdd ((NB2 α β : A) * (u * v))) *
       xB2 δ (ofAdd (((NB2 α β * NB2 α γ / 2 : ℤ) : A) * (u ^ 2 * v))) := by
-  simp only [b2SpecialIsogenyRootSubgroup_ofAdd]
+  have := charP_two A
+  simp only [b2SpecialIsogenyRootSubgroup_eq_partnerPt]
   exact commutatorElement_doublyLaced_of_two_nsmul_add D (b2DL ht) hγ hδ A u v
 
 /-- **Two-factor long-first Chevalley commutator relation under the `B₂` exceptional isogeny.** -/
@@ -537,7 +550,8 @@ theorem commutatorElement_b2SpecialIsogenyRootSubgroup_of_root_eq_add_two_nsmul
     (hδ : (ΦB2).root δ = (ΦB2).root α + 2 • (ΦB2).root β) (u v : A) :
     ⁅xB2 α (ofAdd u), xB2 β (ofAdd v)⁆ = xB2 γ (ofAdd ((NB2 α β : A) * (u * v))) *
       xB2 δ (ofAdd (((-(NB2 β α * NB2 β γ / 2) : ℤ) : A) * (u * v ^ 2))) := by
-  simp only [b2SpecialIsogenyRootSubgroup_ofAdd]
+  have := charP_two A
+  simp only [b2SpecialIsogenyRootSubgroup_eq_partnerPt]
   exact commutatorElement_doublyLaced_of_add_two_nsmul D (b2DL ht) hγ hδ A u v
 
 /-- **Simple-root determination for the `B₂` exceptional isogeny.** -/
@@ -549,14 +563,12 @@ theorem map_rootSubgroupPoints_of_b2SpecialIsogeny_simple (φ : D.points A →* 
       xEB2 ((ΦB2).reflectionPerm ((B 2).simpleIndex ht i) ((B 2).simpleIndex ht i)) u)
     (α : Fin (B 2).numRoots) (u : Multiplicative A) :
     φ (D.rootSubgroupPoints α A u) = xEB2 α u := by
-  rw [← ofAdd_toAdd u, b2SpecialIsogenyRootSubgroup_ofAdd, ofAdd_toAdd]
+  have := charP_two A
+  rw [← ofAdd_toAdd u, b2SpecialIsogenyRootSubgroup_eq_partnerPt, ofAdd_toAdd]
   exact map_rootSubgroupPoints_doublyLaced D E (b2DL ht) lengthPermRankTwo
-    (fun i => (congrArg (⇑b2SpecialIsogeny.indexEquiv) (simpleIndex_B 2 ht i)).trans
-      (((b2SpecialIsogeny_indexEquiv_apply _).trans
-          (b2SpecialIsogenyIndexEquiv_typeBSimpleIndex i)).trans
-        (simpleIndex_B 2 ht (lengthPermRankTwo i)).symm))
-    A φ (fun i w => (hpos i (ofAdd w)).trans (E.b2SpecialIsogenyRootSubgroup_ofAdd A _ w))
-    (fun i w => (hneg i (ofAdd w)).trans (E.b2SpecialIsogenyRootSubgroup_ofAdd A _ w)) α u
+    (fun i => (b2DL_indexEquiv ht _).trans (b2SpecialIsogeny_indexEquiv_simpleIndex ht i))
+    A φ (fun i w => (hpos i (ofAdd w)).trans (b2SpecialIsogenyRootSubgroup_eq_partnerPt E A _ w))
+    (fun i w => (hneg i (ofAdd w)).trans (b2SpecialIsogenyRootSubgroup_eq_partnerPt E A _ w)) α u
 
 /-- Any endomorphism matching `b2SpecialIsogenyRootSubgroup` on the signed simple roots squares to
 `D.frobenius 2 1 A` on `D.elementarySubgroup A`. -/
@@ -569,7 +581,7 @@ theorem comp_self_eq_frobenius_of_b2SpecialIsogeny_simple (φ : D.points A →* 
     {g : D.points A} (hg : g ∈ D.elementarySubgroup A) : φ (φ g) = D.frobenius 2 1 A g :=
   comp_self_eq_frobenius_doublyLaced D (b2DL ht) A φ (fun α u =>
     (map_rootSubgroupPoints_of_b2SpecialIsogeny_simple D D A φ hpos hneg α u).trans
-      (by rw [← ofAdd_toAdd u, b2SpecialIsogenyRootSubgroup_ofAdd]; rfl)) hg
+      (by rw [← ofAdd_toAdd u, b2SpecialIsogenyRootSubgroup_eq_partnerPt, toAdd_ofAdd])) hg
 
 end B2
 
@@ -588,23 +600,42 @@ private noncomputable def f4DL (ht : F4.Valid) : DoublyLacedIso F4 ht where
   iso := f4SpecialIsogeny.ofEq (simplyConnectedRootDatum_F4 ht)
   mul_self := RootPairingIsogeny.ofEq_mul_self _ (simplyConnectedRootDatum_F4 ht)
     f4SpecialIsogeny_mul_self
-  exp_or α := by
-    have h (i : Fin 48) : f4SpecialIsogeny.exponent i = 1 ∨ f4SpecialIsogeny.exponent i = 2 := by
-      rw [f4SpecialIsogeny_exponent]; exact f4Length_eq_one_or_eq_two i
-    dsimp only [RootPairingIsogeny.ofEq]; exact h α
+  exp_or α :=
+    (RootPairingIsogeny.ofEq_exponent (simplyConnectedRootDatum_F4 ht) f4SpecialIsogeny α).symm ▸
+      f4SpecialIsogeny_exponent_eq_one_or_eq_two α
   sym α β := by
-    have h (i j : Fin 48) :
-        f4SpecialIsogeny.exponent i * f4SimplyConnectedRootDatum.pairing j i =
-          f4SpecialIsogeny.exponent j * f4SimplyConnectedRootDatum.pairing i j := by
-      rw [f4SpecialIsogeny_exponent, f4SpecialIsogeny_exponent]; exact f4Length_mul_pairing_comm i j
-    dsimp only [RootPairingIsogeny.ofEq, scD]
-    rw [simplyConnectedRootDatum_F4 ht]; exact h α β
+    have hp (i j : Fin F4.numRoots) :
+        (scD F4 ht).pairing i j = f4SimplyConnectedRootDatum.pairing i j := by
+      rw [scD, simplyConnectedRootDatum_F4 ht]; rfl
+    rw [hp β α, hp α β]
+    exact (congrArg (· * _) (RootPairingIsogeny.ofEq_exponent (simplyConnectedRootDatum_F4 ht)
+        f4SpecialIsogeny α)).trans <|
+      ((congrArg (· * _) (f4SpecialIsogeny_exponent α)).trans <|
+        (f4Length_mul_pairing_comm α β).trans <|
+        (congrArg (· * _) (f4SpecialIsogeny_exponent β)).symm).trans <|
+      (congrArg (· * _) (RootPairingIsogeny.ofEq_exponent (simplyConnectedRootDatum_F4 ht)
+        f4SpecialIsogeny β)).symm
+
+private theorem f4DL_indexEquiv (ht : F4.Valid) (α : Fin F4.numRoots) :
+    (f4DL ht).iso.indexEquiv α = f4SpecialIsogeny.indexEquiv α :=
+  congrArg (· α) (RootPairingIsogeny.ofEq_indexEquiv (simplyConnectedRootDatum_F4 ht)
+    f4SpecialIsogeny)
+
+private theorem f4DL_exponent (ht : F4.Valid) (α : Fin F4.numRoots) :
+    (f4DL ht).iso.exponent α = f4SpecialIsogeny.exponent α :=
+  RootPairingIsogeny.ofEq_exponent (simplyConnectedRootDatum_F4 ht) f4SpecialIsogeny α
+
+private theorem f4SpecialIsogenyRootSubgroup_eq_partnerPt (α : Fin F4.numRoots) (u : A) :
+    xF4 α (ofAdd u) = partnerPt D (f4DL ht) A α u := by
+  rw [f4SpecialIsogenyRootSubgroup_ofAdd, partnerPt, f4DL_exponent, f4DL_indexEquiv]
 
 /-- **Commuting root subgroups under the `F₄` exceptional isogeny.** -/
 theorem commute_f4SpecialIsogenyRootSubgroup {α β : Fin F4.numRoots}
     (h : (ΦF4).root α + (ΦF4).root β ∉ Set.range (ΦF4).root) (h0 : (ΦF4).root α + (ΦF4).root β ≠ 0)
     (u v : A) : Commute (xF4 α (ofAdd u)) (xF4 β (ofAdd v)) := by
-  simp only [f4SpecialIsogenyRootSubgroup_ofAdd]; exact commute_doublyLaced D (f4DL ht) h h0 A u v
+  have := charP_two A
+  simp only [f4SpecialIsogenyRootSubgroup_eq_partnerPt]
+  exact commute_doublyLaced D (f4DL ht) h h0 A u v
 
 /-- **One-factor Chevalley commutator relation under the `F₄` exceptional isogeny.** -/
 theorem commutatorElement_f4SpecialIsogenyRootSubgroup_of_root_eq_add {α β γ : Fin F4.numRoots}
@@ -612,7 +643,8 @@ theorem commutatorElement_f4SpecialIsogenyRootSubgroup_of_root_eq_add {α β γ 
     (hα : 2 • (ΦF4).root α + (ΦF4).root β ∉ Set.range (ΦF4).root)
     (hβ : (ΦF4).root α + 2 • (ΦF4).root β ∉ Set.range (ΦF4).root) (u v : A) :
     ⁅xF4 α (ofAdd u), xF4 β (ofAdd v)⁆ = xF4 γ (ofAdd ((NF4 α β : A) * (u * v))) := by
-  simp only [f4SpecialIsogenyRootSubgroup_ofAdd]
+  have := charP_two A
+  simp only [f4SpecialIsogenyRootSubgroup_eq_partnerPt]
   exact commutatorElement_doublyLaced_of_root_eq_add D (f4DL ht) hγ hα hβ A u v
 
 /-- **Two-factor short-first Chevalley commutator relation under the `F₄` exceptional isogeny.** -/
@@ -621,7 +653,8 @@ theorem commutatorElement_f4SpecialIsogenyRootSubgroup_of_root_eq_two_nsmul_add
     (hδ : (ΦF4).root δ = 2 • (ΦF4).root α + (ΦF4).root β) (u v : A) :
     ⁅xF4 α (ofAdd u), xF4 β (ofAdd v)⁆ = xF4 γ (ofAdd ((NF4 α β : A) * (u * v))) *
       xF4 δ (ofAdd (((NF4 α β * NF4 α γ / 2 : ℤ) : A) * (u ^ 2 * v))) := by
-  simp only [f4SpecialIsogenyRootSubgroup_ofAdd]
+  have := charP_two A
+  simp only [f4SpecialIsogenyRootSubgroup_eq_partnerPt]
   exact commutatorElement_doublyLaced_of_two_nsmul_add D (f4DL ht) hγ hδ A u v
 
 /-- **Two-factor long-first Chevalley commutator relation under the `F₄` exceptional isogeny.** -/
@@ -630,7 +663,8 @@ theorem commutatorElement_f4SpecialIsogenyRootSubgroup_of_root_eq_add_two_nsmul
     (hδ : (ΦF4).root δ = (ΦF4).root α + 2 • (ΦF4).root β) (u v : A) :
     ⁅xF4 α (ofAdd u), xF4 β (ofAdd v)⁆ = xF4 γ (ofAdd ((NF4 α β : A) * (u * v))) *
       xF4 δ (ofAdd (((-(NF4 β α * NF4 β γ / 2) : ℤ) : A) * (u * v ^ 2))) := by
-  simp only [f4SpecialIsogenyRootSubgroup_ofAdd]
+  have := charP_two A
+  simp only [f4SpecialIsogenyRootSubgroup_eq_partnerPt]
   exact commutatorElement_doublyLaced_of_add_two_nsmul D (f4DL ht) hγ hδ A u v
 
 /-- **Simple-root determination for the `F₄` exceptional isogeny.** -/
@@ -642,13 +676,12 @@ theorem map_rootSubgroupPoints_of_f4SpecialIsogeny_simple (φ : D.points A →* 
       xEF4 ((ΦF4).reflectionPerm (F4.simpleIndex ht i) (F4.simpleIndex ht i)) u)
     (α : Fin F4.numRoots) (u : Multiplicative A) :
     φ (D.rootSubgroupPoints α A u) = xEF4 α u := by
-  rw [← ofAdd_toAdd u, f4SpecialIsogenyRootSubgroup_ofAdd, ofAdd_toAdd]
+  have := charP_two A
+  rw [← ofAdd_toAdd u, f4SpecialIsogenyRootSubgroup_eq_partnerPt, ofAdd_toAdd]
   exact map_rootSubgroupPoints_doublyLaced D E (f4DL ht) lengthPermF4
-    (fun i => (congrArg (⇑f4SpecialIsogeny.indexEquiv) (simpleIndex_F4 ht i)).trans
-      (((f4SpecialIsogeny_indexEquiv_apply _).trans (f4SpecialIsogenyIndex_castAdd i)).trans
-        (simpleIndex_F4 ht (lengthPermF4 i)).symm))
-    A φ (fun i w => (hpos i (ofAdd w)).trans (E.f4SpecialIsogenyRootSubgroup_ofAdd A _ w))
-    (fun i w => (hneg i (ofAdd w)).trans (E.f4SpecialIsogenyRootSubgroup_ofAdd A _ w)) α u
+    (fun i => (f4DL_indexEquiv ht _).trans (f4SpecialIsogeny_indexEquiv_simpleIndex ht i))
+    A φ (fun i w => (hpos i (ofAdd w)).trans (f4SpecialIsogenyRootSubgroup_eq_partnerPt E A _ w))
+    (fun i w => (hneg i (ofAdd w)).trans (f4SpecialIsogenyRootSubgroup_eq_partnerPt E A _ w)) α u
 
 /-- Any endomorphism matching `f4SpecialIsogenyRootSubgroup` on the signed simple roots squares to
 `D.frobenius 2 1 A` on `D.elementarySubgroup A`. -/
@@ -661,7 +694,7 @@ theorem comp_self_eq_frobenius_of_f4SpecialIsogeny_simple (φ : D.points A →* 
     {g : D.points A} (hg : g ∈ D.elementarySubgroup A) : φ (φ g) = D.frobenius 2 1 A g :=
   comp_self_eq_frobenius_doublyLaced D (f4DL ht) A φ (fun α u =>
     (map_rootSubgroupPoints_of_f4SpecialIsogeny_simple D D A φ hpos hneg α u).trans
-      (by rw [← ofAdd_toAdd u, f4SpecialIsogenyRootSubgroup_ofAdd]; rfl)) hg
+      (by rw [← ofAdd_toAdd u, f4SpecialIsogenyRootSubgroup_eq_partnerPt, toAdd_ofAdd])) hg
 
 end F4
 

@@ -50,21 +50,36 @@ theorem g2SpecialIsogenySign_def :
 @[simp] theorem g2SpecialIsogenySign_castLE (i : Fin 2) :
     g2SpecialIsogenySign (Fin.castLE (by omega) i) = 1 := by fin_cases i <;> decide
 
+/-- The `B₂` special isogeny permutes the assembled simple-root indices by `lengthPermRankTwo`. -/
+theorem b2SpecialIsogeny_indexEquiv_simpleIndex (ht : (B 2).Valid) (i : Fin (B 2).rank) :
+    b2SpecialIsogeny.indexEquiv ((B 2).simpleIndex ht i) =
+      (B 2).simpleIndex ht (lengthPermRankTwo i) :=
+  (congrArg (⇑b2SpecialIsogeny.indexEquiv) (simpleIndex_B 2 ht i)).trans
+    (((b2SpecialIsogeny_indexEquiv_apply _).trans
+      (b2SpecialIsogenyIndexEquiv_typeBSimpleIndex i)).trans
+      (simpleIndex_B 2 ht (lengthPermRankTwo i)).symm)
+
+/-- The `F₄` special isogeny permutes the assembled simple-root indices by `lengthPermF4`. -/
+theorem f4SpecialIsogeny_indexEquiv_simpleIndex (ht : F4.Valid) (i : Fin F4.rank) :
+    f4SpecialIsogeny.indexEquiv (F4.simpleIndex ht i) = F4.simpleIndex ht (lengthPermF4 i) :=
+  (congrArg (⇑f4SpecialIsogeny.indexEquiv) (simpleIndex_F4 ht i)).trans
+    (((f4SpecialIsogeny_indexEquiv_apply _).trans (f4SpecialIsogenyIndex_castAdd i)).trans
+      (simpleIndex_F4 ht (lengthPermF4 i)).symm)
+
+/-- The `G₂` special isogeny permutes the assembled simple-root indices by `lengthPermRankTwo`. -/
+theorem g2SpecialIsogeny_indexEquiv_simpleIndex (ht : G2.Valid) (i : Fin G2.rank) :
+    g2SpecialIsogeny.indexEquiv (G2.simpleIndex ht i) =
+      G2.simpleIndex ht (lengthPermRankTwo i) :=
+  let hcast (j : Fin 2) : (Fin.castAdd 10 j : Fin 12) = Fin.castLE (by omega) j := rfl
+  (congrArg (⇑g2SpecialIsogeny.indexEquiv) ((simpleIndex_G2 ht i).trans (hcast i))).trans
+    (((g2SpecialIsogeny_indexEquiv_apply _).trans (g2SpecialIsogenyIndex_castLE i)).trans
+      ((hcast (lengthPermRankTwo i)).symm.trans (simpleIndex_G2 ht (lengthPermRankTwo i)).symm))
+
 namespace ChevalleyDatum
 
 open Multiplicative
 
 universe v
-
-private def specialExpRingHom (p : ℕ) (A : Type v) [CommRing A] [ExpChar A p] (q : ℕ)
-    (hq : q = 1 ∨ q = p) : A →+* A :=
-  (if q = 1 then RingHom.id A else _root_.frobenius A p).copy (fun u => u ^ q) (by
-    ext u; rcases hq with rfl | rfl
-    · simp
-    · by_cases h1 : q = 1 <;> simp [h1, _root_.frobenius_def])
-
-private theorem specialExpRingHom_apply {p : ℕ} {A : Type v} [CommRing A] [ExpChar A p] {q : ℕ}
-    (hq : q = 1 ∨ q = p) (u : A) : u ^ q = specialExpRingHom p A q hq u := rfl
 
 private structure SpecialPkg (t : DynkinType) (ht : t.Valid) (p : ℕ) where
   iso : RootPairingIsogeny (t.simplyConnectedRootDatum ht) (t.simplyConnectedRootDatum ht)
@@ -92,10 +107,15 @@ private noncomputable def SpecialPkg.hom (S : SpecialPkg t ht p) (α : Fin t.num
   toFun u := D.rootSubgroupPoints (S.iso.indexEquiv α) A
     (ofAdd (((S.ε α : ℤ) : A) * toAdd u ^ (S.iso.exponent (S.iso.indexEquiv α)).toNat))
   map_one' := by
-    rw [toAdd_one, specialExpRingHom_apply (S.hq _), map_zero, mul_zero, ofAdd_zero, map_one]
+    have hpos : (S.iso.exponent (S.iso.indexEquiv α)).toNat ≠ 0 := by
+      have := S.iso.exponent_pos (S.iso.indexEquiv α); omega
+    rw [toAdd_one, zero_pow hpos, mul_zero, ofAdd_zero, map_one]
   map_mul' u v := by
     simp only [toAdd_mul, ← map_mul, ← ofAdd_add]
-    rw [specialExpRingHom_apply (S.hq _), map_add, mul_add]; rfl
+    congr 2
+    rcases S.hq (S.iso.indexEquiv α) with h | h <;> rw [h]
+    · rw [pow_one, pow_one, pow_one, mul_add]
+    · rw [← _root_.frobenius_def, map_add, _root_.frobenius_def, _root_.frobenius_def, mul_add]
 
 private theorem SpecialPkg.simpleIndex (S : SpecialPkg t ht p) (i : Fin t.rank) (u : A) :
     S.hom D A (t.simpleIndex ht i) (ofAdd u) =
@@ -125,7 +145,10 @@ private theorem SpecialPkg.weylElement (S : SpecialPkg t ht p) (α : Fin t.numRo
     S.iso.indexEquiv_reflectionPerm, S.iso.exponent_reflectionPerm, weylElement_def,
     mul_inv_rev, ← inv_pow, ← map_inv, Int.units_inv_eq_self, Units.val_mul,
     Units.val_pow_eq_pow_val, hε]
-  congr 4; rw [specialExpRingHom_apply (S.hq _), map_neg, ← specialExpRingHom_apply]; ring
+  congr 4
+  rcases S.hq (S.iso.indexEquiv α) with h | h <;> rw [h]
+  · ring
+  · rw [← _root_.frobenius_def, map_neg, _root_.frobenius_def]; ring
 
 private theorem SpecialPkg.comp_self (S : SpecialPkg t ht p) (α : Fin t.numRoots) (u : A) :
     S.hom D A (S.iso.indexEquiv α)
@@ -139,8 +162,10 @@ private theorem SpecialPkg.comp_self (S : SpecialPkg t ht p) (α : Fin t.numRoot
         RootPairingIsogeny.exponent_mul_exponent_indexEquiv _ S.mul_self α, S.scale_eq]
   have hcast : (((S.ε α : ℤ) : A) * u ^ (S.iso.exponent (S.iso.indexEquiv α)).toNat) ^
       (S.iso.exponent α).toNat = ((S.ε α : ℤ) : A) * u ^ p := by
-    rw [specialExpRingHom_apply (S.hq α), map_mul, map_intCast, ← specialExpRingHom_apply,
-      ← pow_mul, hprod]
+    rcases S.hq α with h | h
+    · rw [h, pow_one]; rw [h, mul_one] at hprod; rw [hprod]
+    · rw [h] at hprod ⊢
+      rw [← _root_.frobenius_def, map_mul, map_intCast, _root_.frobenius_def, ← pow_mul, hprod]
   have hsq : ((S.ε α : ℤ) : A) * ((S.ε α : ℤ) : A) = 1 := by
     rw [← Int.cast_mul, ← Units.val_mul, Int.units_mul_self, Units.val_one, Int.cast_one]
   simp only [SpecialPkg.hom, MonoidHom.coe_mk, OneHom.coe_mk, toAdd_ofAdd, hinv, S.ε_idx,
@@ -162,36 +187,49 @@ private noncomputable def b2Pkg (ht : (B 2).Valid) : SpecialPkg (B 2) ht 2 where
   scale := 2; scale_eq := rfl
   mul_self := RootPairingIsogeny.ofEq_mul_self _ (simplyConnectedRootDatum_B 2 ht)
     b2SpecialIsogeny_mul_self
-  hq α := by
-    dsimp only [RootPairingIsogeny.ofEq]
-    -- Expose `Fin (2 * 2 ^ 2)` on `α` so `b2SpecialIsogeny_exponent` applies.
-    change Fin (2 * 2 ^ 2) at α
-    rcases b2SpecialIsogenyExponent_eq_one_or_eq_two α with hk | hk <;>
-      simp [b2SpecialIsogeny_exponent, hk]
+  hq α :=
+    (RootPairingIsogeny.ofEq_exponent (simplyConnectedRootDatum_B 2 ht) b2SpecialIsogeny α).symm ▸
+      by rcases b2SpecialIsogeny_exponent_eq_one_or_eq_two α with hk | hk <;> simp [hk]
   ε _ := 1; ε_refl _ := rfl; ε_idx _ := rfl; σ := lengthPermRankTwo; ε_simple _ := rfl
-  idx_simple i := (congrArg (⇑b2SpecialIsogeny.indexEquiv) (simpleIndex_B 2 ht i)).trans
-    (((b2SpecialIsogeny_indexEquiv_apply _).trans
-      (b2SpecialIsogenyIndexEquiv_typeBSimpleIndex i)).trans
-      (simpleIndex_B 2 ht (lengthPermRankTwo i)).symm)
-  exp_simple i := (congrArg b2SpecialIsogeny.exponent (simpleIndex_B 2 ht i)).trans
-    ((b2SpecialIsogeny_exponent _).trans (b2SpecialIsogenyExponent_typeBSimpleIndex i))
+  idx_simple i :=
+    (congrArg (· ((B 2).simpleIndex ht i))
+      (RootPairingIsogeny.ofEq_indexEquiv (simplyConnectedRootDatum_B 2 ht)
+        b2SpecialIsogeny)).trans (b2SpecialIsogeny_indexEquiv_simpleIndex ht i)
+  exp_simple i :=
+    (RootPairingIsogeny.ofEq_exponent (simplyConnectedRootDatum_B 2 ht) b2SpecialIsogeny _).trans
+      ((congrArg b2SpecialIsogeny.exponent (simpleIndex_B 2 ht i)).trans
+        ((b2SpecialIsogeny_exponent _).trans (b2SpecialIsogenyExponent_typeBSimpleIndex i)))
+
+private theorem b2Pkg_indexEquiv (ht : (B 2).Valid) (α : Fin (B 2).numRoots) :
+    (b2Pkg ht).iso.indexEquiv α = b2SpecialIsogeny.indexEquiv α :=
+  congrArg (· α) (RootPairingIsogeny.ofEq_indexEquiv (simplyConnectedRootDatum_B 2 ht)
+    b2SpecialIsogeny)
+
+private theorem b2Pkg_exponent (ht : (B 2).Valid) (α : Fin (B 2).numRoots) :
+    (b2Pkg ht).iso.exponent α = b2SpecialIsogeny.exponent α :=
+  RootPairingIsogeny.ofEq_exponent (simplyConnectedRootDatum_B 2 ht) b2SpecialIsogeny α
+
+private theorem b2Pkg_ε (ht : (B 2).Valid) (α : Fin (B 2).numRoots) : (b2Pkg ht).ε α = 1 := rfl
 
 variable {ht : (B 2).Valid} (D : ChevalleyDatum (B 2) ht) (A : Type v) [CommRing A] [ExpChar A 2]
 
 local notation "ΦB2" => DynkinType.simplyConnectedRootDatum (B 2) ht
 
-/-- **The exceptional-isogeny root-subgroup map on a Chevalley datum of type `B₂`.** -/
+/-- **The exceptional-isogeny root-subgroup map on a Chevalley datum of type `B₂`**, sending
+`α ↦ (u ↦ x_{indexEquiv α}(u ^ exponent (indexEquiv α)))` (with sign `ε = 1`). -/
 noncomputable def b2SpecialIsogenyRootSubgroup (α : Fin (B 2).numRoots) :
     Multiplicative A →* D.points A := (b2Pkg ht).hom D A α
 
 local notation "xB2" => D.b2SpecialIsogenyRootSubgroup A
 
+/-- Explicit root-subgroup formula for `b2SpecialIsogenyRootSubgroup` on additive parameters. -/
 @[simp] theorem b2SpecialIsogenyRootSubgroup_ofAdd (α : Fin (B 2).numRoots) (u : A) :
     xB2 α (ofAdd u) = D.rootSubgroupPoints (b2SpecialIsogeny.indexEquiv α) A
-      (ofAdd (u ^ (b2SpecialIsogeny.exponent (b2SpecialIsogeny.indexEquiv α)).toNat)) :=
-  congrArg (fun w => D.rootSubgroupPoints _ A (ofAdd w))
-    ((congrArg (· * _) Int.cast_one).trans (one_mul _))
+      (ofAdd (u ^ (b2SpecialIsogeny.exponent (b2SpecialIsogeny.indexEquiv α)).toNat)) := by
+  dsimp only [b2SpecialIsogenyRootSubgroup, SpecialPkg.hom, MonoidHom.coe_mk, OneHom.coe_mk]
+  rw [toAdd_ofAdd, b2Pkg_exponent, b2Pkg_indexEquiv, b2Pkg_ε, Units.val_one, Int.cast_one, one_mul]
 
+/-- Every image of `b2SpecialIsogenyRootSubgroup` lies in the elementary subgroup. -/
 @[simp] theorem b2SpecialIsogenyRootSubgroup_mem_elementarySubgroup
     (α : Fin (B 2).numRoots) (u : Multiplicative A) : xB2 α u ∈ D.elementarySubgroup A :=
   (b2Pkg ht).mem_elementarySubgroup D A α u
@@ -216,18 +254,19 @@ theorem b2SpecialIsogenyRootSubgroup_weylElement (α : Fin (B 2).numRoots) (s : 
     xB2 α (ofAdd (s : A)) * xB2 ((ΦB2).reflectionPerm α α) (ofAdd (-((s⁻¹ : Aˣ) : A))) *
         xB2 α (ofAdd (s : A)) =
       D.weylElement (b2SpecialIsogeny.indexEquiv α) A
-        (s ^ (b2SpecialIsogeny.exponent (b2SpecialIsogeny.indexEquiv α)).toNat) :=
-  ((b2Pkg ht).weylElement D A α s).trans
-    (congrArg _ ((congrArg (· * _) (map_one _)).trans (one_mul _)))
+        (s ^ (b2SpecialIsogeny.exponent (b2SpecialIsogeny.indexEquiv α)).toNat) := by
+  have h := (b2Pkg ht).weylElement D A α s
+  rw [b2Pkg_exponent, b2Pkg_indexEquiv, b2Pkg_ε, map_one, one_mul] at h
+  exact h
 
 /-- Applying `b2SpecialIsogenyRootSubgroup` twice gives `D.frobenius 2 1 A` on root subgroups. -/
 theorem b2SpecialIsogenyRootSubgroup_comp_self (α : Fin (B 2).numRoots) (u : A) :
     xB2 (b2SpecialIsogeny.indexEquiv α)
         (ofAdd (u ^ (b2SpecialIsogeny.exponent (b2SpecialIsogeny.indexEquiv α)).toNat)) =
-      D.frobenius 2 1 A (D.rootSubgroupPoints α A (ofAdd u)) :=
-  (congrArg (fun w => xB2 _ (ofAdd w))
-    ((congrArg (· * _) Int.cast_one).trans (one_mul _)).symm).trans
-    ((b2Pkg ht).comp_self D A α u)
+      D.frobenius 2 1 A (D.rootSubgroupPoints α A (ofAdd u)) := by
+  have h := (b2Pkg ht).comp_self D A α u
+  rw [b2Pkg_exponent, b2Pkg_indexEquiv, b2Pkg_ε, Units.val_one, Int.cast_one, one_mul] at h
+  exact h
 
 end B2
 
@@ -240,34 +279,49 @@ private noncomputable def f4Pkg (ht : F4.Valid) : SpecialPkg F4 ht 2 where
   scale := 2; scale_eq := rfl
   mul_self := RootPairingIsogeny.ofEq_mul_self _ (simplyConnectedRootDatum_F4 ht)
     f4SpecialIsogeny_mul_self
-  hq α := by
-    dsimp only [RootPairingIsogeny.ofEq]
-    -- Expose `Fin 48` on `α` so `f4SpecialIsogeny_exponent` applies.
-    change Fin 48 at α
-    rcases f4Length_eq_one_or_eq_two α with hk | hk <;> simp [f4SpecialIsogeny_exponent, hk]
+  hq α :=
+    (RootPairingIsogeny.ofEq_exponent (simplyConnectedRootDatum_F4 ht) f4SpecialIsogeny α).symm ▸
+      by rcases f4SpecialIsogeny_exponent_eq_one_or_eq_two α with hk | hk <;> simp [hk]
   ε _ := 1; ε_refl _ := rfl; ε_idx _ := rfl; σ := lengthPermF4; ε_simple _ := rfl
-  idx_simple i := (congrArg (⇑f4SpecialIsogeny.indexEquiv) (simpleIndex_F4 ht i)).trans
-    (((f4SpecialIsogeny_indexEquiv_apply _).trans (f4SpecialIsogenyIndex_castAdd i)).trans
-      (simpleIndex_F4 ht (lengthPermF4 i)).symm)
-  exp_simple i := (congrArg f4SpecialIsogeny.exponent (simpleIndex_F4 ht i)).trans
-    ((f4SpecialIsogeny_exponent _).trans (f4Length_castAdd i))
+  idx_simple i :=
+    (congrArg (· (F4.simpleIndex ht i))
+      (RootPairingIsogeny.ofEq_indexEquiv (simplyConnectedRootDatum_F4 ht)
+        f4SpecialIsogeny)).trans (f4SpecialIsogeny_indexEquiv_simpleIndex ht i)
+  exp_simple i :=
+    (RootPairingIsogeny.ofEq_exponent (simplyConnectedRootDatum_F4 ht) f4SpecialIsogeny _).trans
+      ((congrArg f4SpecialIsogeny.exponent (simpleIndex_F4 ht i)).trans
+        ((f4SpecialIsogeny_exponent _).trans (f4Length_castAdd i)))
+
+private theorem f4Pkg_indexEquiv (ht : F4.Valid) (α : Fin F4.numRoots) :
+    (f4Pkg ht).iso.indexEquiv α = f4SpecialIsogeny.indexEquiv α :=
+  congrArg (· α) (RootPairingIsogeny.ofEq_indexEquiv (simplyConnectedRootDatum_F4 ht)
+    f4SpecialIsogeny)
+
+private theorem f4Pkg_exponent (ht : F4.Valid) (α : Fin F4.numRoots) :
+    (f4Pkg ht).iso.exponent α = f4SpecialIsogeny.exponent α :=
+  RootPairingIsogeny.ofEq_exponent (simplyConnectedRootDatum_F4 ht) f4SpecialIsogeny α
+
+private theorem f4Pkg_ε (ht : F4.Valid) (α : Fin F4.numRoots) : (f4Pkg ht).ε α = 1 := rfl
 
 variable {ht : F4.Valid} (D : ChevalleyDatum F4 ht) (A : Type v) [CommRing A] [ExpChar A 2]
 
 local notation "ΦF4" => F4.simplyConnectedRootDatum ht
 
-/-- **The exceptional-isogeny root-subgroup map on a Chevalley datum of type `F₄`.** -/
+/-- **The exceptional-isogeny root-subgroup map on a Chevalley datum of type `F₄`**, sending
+`α ↦ (u ↦ x_{indexEquiv α}(u ^ exponent (indexEquiv α)))` (with sign `ε = 1`). -/
 noncomputable def f4SpecialIsogenyRootSubgroup (α : Fin F4.numRoots) :
     Multiplicative A →* D.points A := (f4Pkg ht).hom D A α
 
 local notation "xF4" => D.f4SpecialIsogenyRootSubgroup A
 
+/-- Explicit root-subgroup formula for `f4SpecialIsogenyRootSubgroup` on additive parameters. -/
 @[simp] theorem f4SpecialIsogenyRootSubgroup_ofAdd (α : Fin F4.numRoots) (u : A) :
     xF4 α (ofAdd u) = D.rootSubgroupPoints (f4SpecialIsogeny.indexEquiv α) A
-      (ofAdd (u ^ (f4SpecialIsogeny.exponent (f4SpecialIsogeny.indexEquiv α)).toNat)) :=
-  congrArg (fun w => D.rootSubgroupPoints _ A (ofAdd w))
-    ((congrArg (· * _) Int.cast_one).trans (one_mul _))
+      (ofAdd (u ^ (f4SpecialIsogeny.exponent (f4SpecialIsogeny.indexEquiv α)).toNat)) := by
+  dsimp only [f4SpecialIsogenyRootSubgroup, SpecialPkg.hom, MonoidHom.coe_mk, OneHom.coe_mk]
+  rw [toAdd_ofAdd, f4Pkg_exponent, f4Pkg_indexEquiv, f4Pkg_ε, Units.val_one, Int.cast_one, one_mul]
 
+/-- Every image of `f4SpecialIsogenyRootSubgroup` lies in the elementary subgroup. -/
 @[simp] theorem f4SpecialIsogenyRootSubgroup_mem_elementarySubgroup
     (α : Fin F4.numRoots) (u : Multiplicative A) : xF4 α u ∈ D.elementarySubgroup A :=
   (f4Pkg ht).mem_elementarySubgroup D A α u
@@ -292,18 +346,19 @@ theorem f4SpecialIsogenyRootSubgroup_weylElement (α : Fin F4.numRoots) (s : Aˣ
     xF4 α (ofAdd (s : A)) * xF4 ((ΦF4).reflectionPerm α α) (ofAdd (-((s⁻¹ : Aˣ) : A))) *
         xF4 α (ofAdd (s : A)) =
       D.weylElement (f4SpecialIsogeny.indexEquiv α) A
-        (s ^ (f4SpecialIsogeny.exponent (f4SpecialIsogeny.indexEquiv α)).toNat) :=
-  ((f4Pkg ht).weylElement D A α s).trans
-    (congrArg _ ((congrArg (· * _) (map_one _)).trans (one_mul _)))
+        (s ^ (f4SpecialIsogeny.exponent (f4SpecialIsogeny.indexEquiv α)).toNat) := by
+  have h := (f4Pkg ht).weylElement D A α s
+  rw [f4Pkg_exponent, f4Pkg_indexEquiv, f4Pkg_ε, map_one, one_mul] at h
+  exact h
 
 /-- Applying `f4SpecialIsogenyRootSubgroup` twice gives `D.frobenius 2 1 A` on root subgroups. -/
 theorem f4SpecialIsogenyRootSubgroup_comp_self (α : Fin F4.numRoots) (u : A) :
     xF4 (f4SpecialIsogeny.indexEquiv α)
         (ofAdd (u ^ (f4SpecialIsogeny.exponent (f4SpecialIsogeny.indexEquiv α)).toNat)) =
-      D.frobenius 2 1 A (D.rootSubgroupPoints α A (ofAdd u)) :=
-  (congrArg (fun w => xF4 _ (ofAdd w))
-    ((congrArg (· * _) Int.cast_one).trans (one_mul _)).symm).trans
-    ((f4Pkg ht).comp_self D A α u)
+      D.frobenius 2 1 A (D.rootSubgroupPoints α A (ofAdd u)) := by
+  have h := (f4Pkg ht).comp_self D A α u
+  rw [f4Pkg_exponent, f4Pkg_indexEquiv, f4Pkg_ε, Units.val_one, Int.cast_one, one_mul] at h
+  exact h
 
 end F4
 
@@ -316,49 +371,61 @@ private noncomputable def g2Pkg (ht : G2.Valid) : SpecialPkg G2 ht 3 where
   scale := 3; scale_eq := rfl
   mul_self := RootPairingIsogeny.ofEq_mul_self _ (simplyConnectedRootDatum_G2 ht)
     g2SpecialIsogeny_mul_self
-  hq α := by
-    dsimp only [RootPairingIsogeny.ofEq]
-    -- Expose `Fin 12` on `α` so `g2SpecialIsogeny_exponent` applies.
-    change Fin 12 at α
-    rcases g2Length_eq_one_or_eq_three α with hk | hk <;> simp [g2SpecialIsogeny_exponent, hk]
+  hq α :=
+    (RootPairingIsogeny.ofEq_exponent (simplyConnectedRootDatum_G2 ht) g2SpecialIsogeny α).symm ▸
+      by rcases g2SpecialIsogeny_exponent_eq_one_or_eq_three α with hk | hk <;> simp [hk]
   ε := g2SpecialIsogenySign; σ := lengthPermRankTwo
-  ε_refl α := by
-    have h (β : Fin 12) : g2SimplyConnectedRootDatum.reflectionPerm β β = β + 6 :=
-      g2SimplyConnectedRootDatum.root.injective <|
-        (g2SimplyConnectedRootDatum.root_reflectionPerm β β).trans
-          ((g2SimplyConnectedRootDatum.reflection_apply_self β).trans
-            (by rw [g2SimplyConnectedRootDatum_root]; revert β; simp only [g2Root_apply]; decide))
-    rw [simplyConnectedRootDatum_G2]
-    exact (congrArg g2SpecialIsogenySign (h α)).trans (g2SpecialIsogenySign_add_six α)
-  ε_idx α := (fun i : Fin 12 => (congrArg g2SpecialIsogenySign
-    (g2SpecialIsogeny_indexEquiv_apply i)).trans (g2SpecialIsogenySign_g2SpecialIsogenyIndex i)) α
-  idx_simple i := by
-    have hcast (j : Fin 2) : (Fin.castAdd 10 j : Fin 12) = Fin.castLE (by omega) j := rfl
-    exact (congrArg (⇑g2SpecialIsogeny.indexEquiv) ((simpleIndex_G2 ht i).trans (hcast i))).trans
-      (((g2SpecialIsogeny_indexEquiv_apply _).trans (g2SpecialIsogenyIndex_castLE i)).trans
-        ((hcast (lengthPermRankTwo i)).symm.trans (simpleIndex_G2 ht (lengthPermRankTwo i)).symm))
-  exp_simple i := (congrArg g2SpecialIsogeny.exponent (simpleIndex_G2 ht i)).trans
-    ((g2SpecialIsogeny_exponent _).trans (g2Length_castLE i))
+  ε_refl α := (congrArg g2SpecialIsogenySign (reflectionPerm_self_G2 ht α)).trans
+    (g2SpecialIsogenySign_add_six α)
+  ε_idx α :=
+    (congrArg g2SpecialIsogenySign
+      ((congrArg (· α) (RootPairingIsogeny.ofEq_indexEquiv (simplyConnectedRootDatum_G2 ht)
+        g2SpecialIsogeny)).trans (g2SpecialIsogeny_indexEquiv_apply α))).trans
+      (g2SpecialIsogenySign_g2SpecialIsogenyIndex α)
+  idx_simple i :=
+    (congrArg (· (G2.simpleIndex ht i))
+      (RootPairingIsogeny.ofEq_indexEquiv (simplyConnectedRootDatum_G2 ht)
+        g2SpecialIsogeny)).trans (g2SpecialIsogeny_indexEquiv_simpleIndex ht i)
+  exp_simple i :=
+    (RootPairingIsogeny.ofEq_exponent (simplyConnectedRootDatum_G2 ht) g2SpecialIsogeny _).trans
+      ((congrArg g2SpecialIsogeny.exponent (simpleIndex_G2 ht i)).trans
+        ((g2SpecialIsogeny_exponent _).trans (g2Length_castLE i)))
   ε_simple i := (congrArg g2SpecialIsogenySign (simpleIndex_G2 ht i)).trans
     (g2SpecialIsogenySign_castLE i)
+
+private theorem g2Pkg_indexEquiv (ht : G2.Valid) (α : Fin G2.numRoots) :
+    (g2Pkg ht).iso.indexEquiv α = g2SpecialIsogeny.indexEquiv α :=
+  congrArg (· α) (RootPairingIsogeny.ofEq_indexEquiv (simplyConnectedRootDatum_G2 ht)
+    g2SpecialIsogeny)
+
+private theorem g2Pkg_exponent (ht : G2.Valid) (α : Fin G2.numRoots) :
+    (g2Pkg ht).iso.exponent α = g2SpecialIsogeny.exponent α :=
+  RootPairingIsogeny.ofEq_exponent (simplyConnectedRootDatum_G2 ht) g2SpecialIsogeny α
+
+private theorem g2Pkg_ε (ht : G2.Valid) (α : Fin G2.numRoots) :
+    (g2Pkg ht).ε α = g2SpecialIsogenySign α := rfl
 
 variable {ht : G2.Valid} (D : ChevalleyDatum G2 ht) (A : Type v) [CommRing A] [ExpChar A 3]
 
 local notation "ΦG2" => G2.simplyConnectedRootDatum ht
 
-/-- **The exceptional-isogeny root-subgroup map on a Chevalley datum of type `G₂`.** -/
+/-- **The exceptional-isogeny root-subgroup map on a Chevalley datum of type `G₂`**, sending
+`α ↦ (u ↦ x_{indexEquiv α}(g2SpecialIsogenySign α · u ^ exponent (indexEquiv α)))`. -/
 noncomputable def g2SpecialIsogenyRootSubgroup (α : Fin G2.numRoots) :
     Multiplicative A →* D.points A := (g2Pkg ht).hom D A α
 
 local notation "xG2" => D.g2SpecialIsogenyRootSubgroup A
 
+/-- Explicit signed root-subgroup formula for `g2SpecialIsogenyRootSubgroup` on additive
+parameters. -/
 @[simp] theorem g2SpecialIsogenyRootSubgroup_ofAdd (α : Fin G2.numRoots) (u : A) :
     xG2 α (ofAdd u) = D.rootSubgroupPoints (g2SpecialIsogeny.indexEquiv α) A
       (ofAdd (((g2SpecialIsogenySign α : ℤ) : A) *
         u ^ (g2SpecialIsogeny.exponent (g2SpecialIsogeny.indexEquiv α)).toNat)) := by
-  dsimp only [g2SpecialIsogenyRootSubgroup, SpecialPkg.hom, g2Pkg, RootPairingIsogeny.ofEq]
-  rfl
+  dsimp only [g2SpecialIsogenyRootSubgroup, SpecialPkg.hom, MonoidHom.coe_mk, OneHom.coe_mk]
+  rw [toAdd_ofAdd, g2Pkg_exponent, g2Pkg_indexEquiv, g2Pkg_ε]
 
+/-- Every image of `g2SpecialIsogenyRootSubgroup` lies in the elementary subgroup. -/
 @[simp] theorem g2SpecialIsogenyRootSubgroup_mem_elementarySubgroup
     (α : Fin G2.numRoots) (u : Multiplicative A) : xG2 α u ∈ D.elementarySubgroup A :=
   (g2Pkg ht).mem_elementarySubgroup D A α u
@@ -386,7 +453,7 @@ theorem g2SpecialIsogenyRootSubgroup_weylElement (α : Fin G2.numRoots) (s : Aˣ
         (Units.map (Int.castRingHom A).toMonoidHom (g2SpecialIsogenySign α) *
           s ^ (g2SpecialIsogeny.exponent (g2SpecialIsogeny.indexEquiv α)).toNat) := by
   have h := (g2Pkg ht).weylElement D A α s
-  dsimp only [g2SpecialIsogenyRootSubgroup, g2Pkg, RootPairingIsogeny.ofEq] at h ⊢
+  rw [g2Pkg_exponent, g2Pkg_indexEquiv, g2Pkg_ε] at h
   exact h
 
 /-- Applying `g2SpecialIsogenyRootSubgroup` twice gives `D.frobenius 3 1 A` on root subgroups. -/
@@ -395,7 +462,7 @@ theorem g2SpecialIsogenyRootSubgroup_comp_self (α : Fin G2.numRoots) (u : A) :
         u ^ (g2SpecialIsogeny.exponent (g2SpecialIsogeny.indexEquiv α)).toNat)) =
       D.frobenius 3 1 A (D.rootSubgroupPoints α A (ofAdd u)) := by
   have h := (g2Pkg ht).comp_self D A α u
-  dsimp only [g2SpecialIsogenyRootSubgroup, g2Pkg, RootPairingIsogeny.ofEq] at h ⊢
+  rw [g2Pkg_exponent, g2Pkg_indexEquiv, g2Pkg_ε] at h
   exact h
 
 end G2
