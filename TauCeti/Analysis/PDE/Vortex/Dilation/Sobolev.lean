@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Vortex.Dilation
+public import TauCeti.Analysis.PDE.Vortex.Dilation.Basic
 public import TauCeti.Analysis.PDE.Vortex.FieldSpace
 import TauCeti.Analysis.Sobolev.BesselPotential.ChangeOfVariables
+import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 
 /-!
 # Dilations on the affine Sobolev field space
@@ -65,21 +66,13 @@ theorem hasCompactSupport_dilateField_referenceField_sub (f : ContDiffBump (0 : 
     (√f.rOut + √f.rOut / t + 1)] with z hz
   have hsq {s : ℝ} (hs : √f.rOut ≤ s) : f.rOut ≤ s ^ 2 :=
     (Real.sq_sqrt hr.le).symm.le.trans (pow_le_pow_left₀ (Real.sqrt_nonneg _) hs 2)
-  have hnorm : ‖(t : ℂ) * z‖ = t * ‖z‖ := by
-    rw [norm_mul, Complex.norm_real, Real.norm_eq_abs, abs_of_pos ht]
   have h₁ : f.rOut ≤ ‖z‖ ^ 2 := hsq (by linarith [Real.sqrt_nonneg f.rOut])
-  have h₂ : f.rOut ≤ ‖(t : ℂ) * z‖ ^ 2 := hsq (by
-    rw [hnorm, ← div_le_iff₀' ht]
+  have h₂ : f.rOut ≤ ‖t • z‖ ^ 2 := hsq (by
+    rw [norm_smul, Real.norm_of_nonneg ht.le, ← div_le_iff₀' ht]
     linarith [Real.sqrt_nonneg f.rOut])
   have hz0 : z ≠ 0 := norm_pos_iff.1 (by linarith [Real.sqrt_nonneg f.rOut])
-  have hn : (‖z‖ : ℂ) ≠ 0 := by simpa using hz0
-  have ht' : (t : ℂ) ≠ 0 := Complex.ofReal_ne_zero.2 ht.ne'
-  have hphase : (t : ℂ) * z / ((‖(t : ℂ) * z‖ : ℝ) : ℂ) = z / (‖z‖ : ℂ) := by
-    rw [hnorm, Complex.ofReal_mul]
-    field_simp
-  simp only [Pi.sub_apply, Pi.zero_apply, dilateField_apply, Complex.real_smul,
-    referenceField_eq_of_rOut_le f m h₁, referenceField_eq_of_rOut_le f m h₂, hphase,
-    sub_eq_zero]
+  simp only [Pi.sub_apply, Pi.zero_apply, dilateField_apply, referenceField_eq_of_rOut_le f m h₁,
+    referenceField_eq_of_rOut_le f m h₂, smul_div_norm_smul ht, sub_eq_zero]
   ext i
   fin_cases i <;> simp [abs_of_pos ht] <;> field_simp
 

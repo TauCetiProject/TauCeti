@@ -181,6 +181,12 @@ theorem exp_arg_mul_I {z : ℂ} (hz : z ≠ 0) : exp (arg z * I) = z / (‖z‖ 
   rw [eq_div_iff (ofReal_ne_zero.2 (norm_ne_zero_iff.2 hz)), mul_comm]
   exact norm_mul_exp_arg_mul_I z
 
+/-- The unit direction `z / |z|` is homogeneous of degree `0` under positive dilations. -/
+theorem smul_div_norm_smul {t : ℝ} (ht : 0 < t) (z : ℂ) :
+    t • z / (‖t • z‖ : ℂ) = z / (‖z‖ : ℂ) := by
+  rw [norm_smul, Real.norm_of_nonneg ht.le, real_smul, ofReal_mul,
+    mul_div_mul_left _ _ (ofReal_ne_zero.2 ht.ne')]
+
 /-- The power `(z / |z|)^m` of the unit direction is smooth away from the origin. -/
 theorem contDiffOn_div_norm_pow (m : ℕ) {N : WithTop ℕ∞} :
     ContDiffOn ℝ N (fun z : ℂ ↦ (z / (‖z‖ : ℂ)) ^ m) {0}ᶜ := by

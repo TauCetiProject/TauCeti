@@ -13,6 +13,7 @@ import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.Topology.Algebra.ConstMulAction
 import TauCeti.Analysis.Complex.Circle
+import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 
 /-!
 # Dilation of the plane vortex equation
@@ -37,7 +38,10 @@ Pullback commutes with the charge-one action of circle-valued gauges, the gauge 
 back as well (`dilateField_gaugeTransform`), and the coupled equation is gauge covariant at every
 coupling (`coupledEquation_gaugeTransform`). The section of the pulled-back field is the section
 composed with the dilation (`sectionValue_dilateField`), so a positive dilation preserves the end
-framing `α(z) (z / |z|)⁻ᵐ → c` of degree `m` (`tendsto_sectionValue_dilateField`).
+framing `α(z) (z / |z|)⁻ᵐ → a` of degree `m` (`tendsto_sectionValue_dilateField`). Pulling a smooth
+framed gauge back by a nonzero dilation is an automorphism `dilateGauge` of the smooth framed gauge
+group, through which dilation intertwines the framed gauge actions
+(`dilateField_framedGaugeGroup_smul`).
 
 ## References
 
@@ -383,20 +387,57 @@ theorem coupledEquation_gaugeTransform_eq_zero_iff (c : ℝ) {u : ℂ → Circle
     coupledEquation c (gaugeTransform u x) z = 0 ↔ coupledEquation c x z = 0 := by
   rw [coupledEquation_gaugeTransform c hu hx, circle_rotate_tail_eq_zero_iff]
 
-/-- A positive dilation preserves the limit `c` of the end framing `α(z) (z / |z|)^(-m)` of
+/-- A positive dilation preserves the limit `a` of the end framing `α(z) (z / |z|)^(-m)` of
 degree `m`. -/
-theorem tendsto_sectionValue_dilateField {x : ℂ → EuclideanSpace ℝ (Fin 4)} {m : ℕ} {c : ℂ}
-    (hx : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 c))
+theorem tendsto_sectionValue_dilateField {x : ℂ → EuclideanSpace ℝ (Fin 4)} {m : ℕ} {a : ℂ}
+    (hx : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 a))
     {t : ℝ} (ht : 0 < t) :
     Tendsto (fun z ↦ sectionValue (dilateField t x) z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹)
-      (cocompact ℂ) (𝓝 c) := by
+      (cocompact ℂ) (𝓝 a) := by
   have hdil : Tendsto (fun z : ℂ ↦ t • z) (cocompact ℂ) (cocompact ℂ) :=
     (Homeomorph.smulOfNeZero t ht.ne').map_cocompact.le
   refine (hx.comp hdil).congr fun z ↦ ?_
-  -- The winding phase is homogeneous of degree `0`.
-  have hphase : (t : ℂ) * z / ((t : ℂ) * (‖z‖ : ℂ)) = z / (‖z‖ : ℂ) :=
-    mul_div_mul_left z _ (Complex.ofReal_ne_zero.2 ht.ne')
-  simp only [Function.comp_apply, sectionValue_dilateField, Complex.real_smul, norm_mul,
-    Complex.norm_real, Real.norm_eq_abs, abs_of_pos ht, Complex.ofReal_mul, hphase]
+  simp only [Function.comp_apply, sectionValue_dilateField, smul_div_norm_smul ht]
+
+/-! ### Dilation of framed gauges -/
+
+/-- Pulling a smooth framed gauge back by a nonzero dilation gives a smooth framed gauge. -/
+theorem comp_smul_mem_framedGaugeGroup {u : ℂ → Circle} (hu : u ∈ framedGaugeGroup) {t : ℝ}
+    (ht : t ≠ 0) : (fun w ↦ u (t • w)) ∈ framedGaugeGroup := by
+  obtain ⟨hs, hlim⟩ := (mem_framedGaugeGroup u).1 hu
+  exact (mem_framedGaugeGroup _).2 ⟨hs.comp (contDiff_id.const_smul t),
+    hlim.comp (Homeomorph.smulOfNeZero t ht).map_cocompact.le⟩
+
+/-- **Dilation of framed gauges**: the automorphism `u ↦ u (t • ·)` of the smooth framed gauge
+group, for `t ≠ 0`. -/
+def dilateGauge {t : ℝ} (ht : t ≠ 0) : framedGaugeGroup ≃* framedGaugeGroup where
+  toFun u := ⟨fun w ↦ u.1 (t • w), comp_smul_mem_framedGaugeGroup u.2 ht⟩
+  invFun u := ⟨fun w ↦ u.1 (t⁻¹ • w), comp_smul_mem_framedGaugeGroup u.2 (inv_ne_zero ht)⟩
+  left_inv u := by
+    ext w
+    simp [mul_inv_cancel_left₀ (Complex.ofReal_ne_zero.2 ht)]
+  right_inv u := by
+    ext w
+    simp [inv_mul_cancel_left₀ (Complex.ofReal_ne_zero.2 ht)]
+  map_mul' _ _ := rfl
+
+@[simp]
+theorem coe_dilateGauge_apply {t : ℝ} (ht : t ≠ 0) (u : framedGaugeGroup) (w : ℂ) :
+    (dilateGauge ht u : ℂ → Circle) w = (u : ℂ → Circle) (t • w) :=
+  (rfl)
+
+@[simp]
+theorem coe_dilateGauge_symm_apply {t : ℝ} (ht : t ≠ 0) (u : framedGaugeGroup) (w : ℂ) :
+    ((dilateGauge ht).symm u : ℂ → Circle) w = (u : ℂ → Circle) (t⁻¹ • w) :=
+  (rfl)
+
+/-- Dilation intertwines the actions of the smooth framed gauge group. -/
+theorem dilateField_framedGaugeGroup_smul {t : ℝ} (ht : t ≠ 0) (u : framedGaugeGroup)
+    (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
+    dilateField t (u • x) = dilateGauge ht u • dilateField t x := by
+  have hu : ((dilateGauge ht u : framedGaugeGroup) : ℂ → Circle) = fun w ↦ u.1 (t • w) :=
+    funext (coe_dilateGauge_apply ht u)
+  rw [framedGaugeGroup_smul, framedGaugeGroup_smul, hu]
+  exact dilateField_gaugeTransform t u x
 
 end TauCeti.Vortex

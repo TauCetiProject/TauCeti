@@ -28,7 +28,9 @@ dilation to every positive coupling.
   vortices of coupling `c` to those of coupling `c'`. It intertwines the gauge actions through
   the dilation of framed gauges `dilateGauge`, and divides divisors by `t`
   (`framedVortexDivisor_framedVortexDilate`). The case `t = c^(-1/2)` is the normalization
-  `framedVortexNormalize` to coupling one.
+  `framedVortexNormalize` to coupling one. Its inverse, the dilation by `c^(1/2)`, carries
+  vortices of coupling one to coupling `c` and divides divisors by `c^(1/2)`
+  (`framedVortexDivisor_framedVortexNormalize_symm`).
 * For `c > 0`, two framed vortices of coupling `c` differ by a smooth framed gauge exactly when
   their zero divisors agree (`framedVortexDivisor_eq_framedVortexDivisor_iff`, Taubes's uniqueness
   theorem at `c = 1`), and every effective divisor of degree `m` is the zero divisor of one
@@ -53,45 +55,6 @@ open Complex Filter Topology
 
 namespace TauCeti.Vortex
 
-/-! ### Dilation of framed gauges -/
-
-/-- Pulling a smooth framed gauge back by a nonzero dilation gives a smooth framed gauge. -/
-theorem comp_smul_mem_framedGaugeGroup {u : ℂ → Circle} (hu : u ∈ framedGaugeGroup) {t : ℝ}
-    (ht : t ≠ 0) : (fun w ↦ u (t • w)) ∈ framedGaugeGroup := by
-  obtain ⟨hs, hlim⟩ := (mem_framedGaugeGroup u).1 hu
-  exact (mem_framedGaugeGroup _).2 ⟨hs.comp (contDiff_id.const_smul t),
-    hlim.comp (Homeomorph.smulOfNeZero t ht).map_cocompact.le⟩
-
-/-- **Dilation of framed gauges**: the automorphism `u ↦ u (t • ·)` of the smooth framed gauge
-group, for `t ≠ 0`. -/
-def dilateGauge {t : ℝ} (ht : t ≠ 0) : framedGaugeGroup ≃* framedGaugeGroup where
-  toFun u := ⟨fun w ↦ u.1 (t • w), comp_smul_mem_framedGaugeGroup u.2 ht⟩
-  invFun u := ⟨fun w ↦ u.1 (t⁻¹ • w), comp_smul_mem_framedGaugeGroup u.2 (inv_ne_zero ht)⟩
-  left_inv u := by
-    ext w
-    simp [mul_inv_cancel_left₀ (Complex.ofReal_ne_zero.2 ht)]
-  right_inv u := by
-    ext w
-    simp [inv_mul_cancel_left₀ (Complex.ofReal_ne_zero.2 ht)]
-  map_mul' _ _ := rfl
-
-@[simp]
-theorem coe_dilateGauge_apply {t : ℝ} (ht : t ≠ 0) (u : framedGaugeGroup) (w : ℂ) :
-    (dilateGauge ht u : ℂ → Circle) w = (u : ℂ → Circle) (t • w) :=
-  (rfl)
-
-@[simp]
-theorem coe_dilateGauge_symm_apply {t : ℝ} (ht : t ≠ 0) (u : framedGaugeGroup) (w : ℂ) :
-    ((dilateGauge ht).symm u : ℂ → Circle) w = (u : ℂ → Circle) (t⁻¹ • w) :=
-  (rfl)
-
-/-- Dilation intertwines the actions of the smooth framed gauge group. -/
-theorem dilateField_framedGaugeGroup_smul {t : ℝ} (ht : t ≠ 0) (u : framedGaugeGroup)
-    (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
-    dilateField t (u • x) = dilateGauge ht u • dilateField t x := by
-  simp only [framedGaugeGroup_smul]
-  exact dilateField_gaugeTransform t u x
-
 /-! ### Dilation between couplings -/
 
 variable {c c' t : ℝ} {m : ℕ}
@@ -113,9 +76,8 @@ theorem dilateField_mem_framedVortexSubMulAction_iff (ht : 0 < t)
     dilateField t x ∈ framedVortexSubMulAction (t ^ 2 * c) m ↔
       x ∈ framedVortexSubMulAction c m := by
   refine ⟨fun h ↦ ?_, dilateField_mem_framedVortexSubMulAction ht⟩
-  have h' := dilateField_mem_framedVortexSubMulAction (inv_pos.2 ht) h
-  rwa [dilateField_dilateField, inv_mul_cancel₀ ht.ne', dilateField_one, ← mul_assoc,
-    ← mul_pow, inv_mul_cancel₀ ht.ne', one_pow, one_mul] at h'
+  have hc : t⁻¹ ^ 2 * (t ^ 2 * c) = c := by field_simp
+  simpa [hc, ht.ne'] using dilateField_mem_framedVortexSubMulAction (inv_pos.2 ht) h
 
 /-- **Dilation between couplings.** For `t > 0` with `t² c = c'`, pulling back by
 `z ↦ t • z` is a bijection from the framed degree-`m` vortices of coupling `c` onto those of
@@ -123,9 +85,10 @@ coupling `c'`, with inverse the pullback by `z ↦ t⁻¹ • z`. -/
 def framedVortexDilate (ht : 0 < t) (h : t ^ 2 * c = c') (m : ℕ) :
     framedVortexSubMulAction c m ≃ framedVortexSubMulAction c' m where
   toFun x := ⟨dilateField t x, h ▸ dilateField_mem_framedVortexSubMulAction ht x.2⟩
-  invFun y := ⟨dilateField t⁻¹ y, (dilateField_mem_framedVortexSubMulAction_iff ht).1 <| by
-    rw [dilateField_dilateField, mul_inv_cancel₀ ht.ne', dilateField_one, h]
-    exact y.2⟩
+  invFun y := ⟨dilateField t⁻¹ y, by
+    convert dilateField_mem_framedVortexSubMulAction (inv_pos.2 ht) y.2 using 2
+    rw [← h]
+    field_simp⟩
   left_inv x := by
     ext1
     simp [inv_mul_cancel₀ ht.ne']
@@ -176,6 +139,11 @@ theorem coe_framedVortexNormalize (hc : 0 < c) (x : framedVortexSubMulAction c m
     (framedVortexNormalize hc m x : ℂ → EuclideanSpace ℝ (Fin 4)) = dilateField (√c)⁻¹ x :=
   (rfl)
 
+@[simp]
+theorem coe_framedVortexNormalize_symm (hc : 0 < c) (y : framedVortexSubMulAction 1 m) :
+    ((framedVortexNormalize hc m).symm y : ℂ → EuclideanSpace ℝ (Fin 4)) = dilateField √c y := by
+  rw [framedVortexNormalize, coe_framedVortexDilate_symm, inv_inv]
+
 /-- The normalization intertwines the framed gauge actions through `dilateGauge`. -/
 theorem framedVortexNormalize_smul (hc : 0 < c) (u : framedGaugeGroup)
     (x : framedVortexSubMulAction c m) :
@@ -189,6 +157,15 @@ theorem framedVortexDivisor_framedVortexNormalize (hc : 0 < c)
     framedVortexDivisor (framedVortexNormalize hc m x) =
       (framedVortexDivisor x).map ((√c : ℂ) * ·) := by
   rw [framedVortexNormalize, framedVortexDivisor_framedVortexDilate, Complex.ofReal_inv, inv_inv]
+
+/-- The inverse of the normalization to coupling one divides the divisor by `c^(1/2)`. -/
+theorem framedVortexDivisor_framedVortexNormalize_symm (hc : 0 < c)
+    (y : framedVortexSubMulAction 1 m) :
+    framedVortexDivisor ((framedVortexNormalize hc m).symm y) =
+      (framedVortexDivisor y).map ((√c : ℂ)⁻¹ * ·) := by
+  rw [framedVortexDivisor_eq_iff, Sym.coe_map, coe_framedVortexNormalize_symm]
+  exact isZeroMultiplicity_sectionValue_dilateField
+    (isZeroMultiplicity_sectionValue_framedVortexDivisor y) (Real.sqrt_pos.2 hc).ne'
 
 /-- Multiplication of divisors by `c^(1/2)`, `c > 0`, is injective. -/
 private theorem sym_map_sqrt_mul_injective (hc : 0 < c) :
