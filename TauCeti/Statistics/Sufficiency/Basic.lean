@@ -9,10 +9,10 @@ public import Mathlib.MeasureTheory.Constructions.Polish.Basic
 public import Mathlib.MeasureTheory.Function.ConditionalExpectation.Basic
 public import Mathlib.Probability.Kernel.Composition.MeasureCompProd
 
-import Mathlib.MeasureTheory.Function.AEEqOfIntegral
-import Mathlib.Probability.Kernel.Disintegration.StandardBorel
 import Mathlib.Probability.Kernel.MeasurableIntegral
+import TauCeti.Probability.Kernel.Disintegration.CDFToKernel
 import TauCeti.Probability.Kernel.Disintegration.Map
+import TauCeti.Probability.Kernel.Disintegration.StandardBorel
 
 /-!
 # Sufficient and minimal sufficient statistics
@@ -31,8 +31,10 @@ and develops the conditional-expectation characterization of sufficiency:
   every bounded measurable `φ : X → ℝ` admits a single measurable `ψ : S → ℝ` with
   `(P θ)[φ | comap T _] =ᵐ[P θ] ψ ∘ T` for all `θ`.
 
-The generic measure- and kernel-theoretic disintegration identities used here live in
-`TauCeti.Probability.Kernel.Disintegration.Map`. The converse direction
+The generic disintegration infrastructure used here lives in
+`TauCeti.Probability.Kernel.Disintegration.Map`,
+`TauCeti.Probability.Kernel.Disintegration.CDFToKernel`, and
+`TauCeti.Probability.Kernel.Disintegration.StandardBorel`. The converse direction
 (`TauCeti.isSufficientStatistic_of_exists_condExp_ae_eq`) adapts Mathlib's `condKernelReal`
 construction (`stieltjesOfMeasurableRat`, `isRatCondKernelCDF_preCDF`,
 `isCondKernelCDF_stieltjesOfMeasurableRat`, `compProd_toKernel`, and `Kernel.borelMarkovFromReal`
@@ -226,24 +228,17 @@ theorem IsSufficientStatistic.exists_condExp_ae_eq [NormedAddCommGroup F] [Norme
 `1_{e ≤ q}`: integrating `ψ` over `A` under the first marginal of `ρ = P.map (T, e)` gives the
 real joint mass `ρ.real (A ×ˢ Iic q)`. -/
 private theorem setIntegral_eq_measureReal_prod_Iic_of_condExp_ae_eq {P : Measure X}
-    [IsProbabilityMeasure P] {T : X → S} (hT : Measurable T) {e : X → ℝ} (he : Measurable e)
+    [IsFiniteMeasure P] {T : X → S} (hT : Measurable T) {e : X → ℝ} (he : Measurable e)
     {q : ℚ} {ψ : S → ℝ} (hψ : Measurable ψ)
     (hce : P[(e ⁻¹' Iic (q : ℝ)).indicator (fun _ ↦ (1 : ℝ)) |
       MeasurableSpace.comap T inferInstance] =ᵐ[P] ψ ∘ T)
     {A : Set S} (hA : MeasurableSet A) :
     ∫ s in A, ψ s ∂(P.map (fun x ↦ (T x, e x))).fst =
       (P.map (fun x ↦ (T x, e x))).real (A ×ˢ Iic (q : ℝ)) := by
-  have hρfst : (P.map (fun x ↦ (T x, e x))).fst = P.map T := by
-    rw [Measure.fst, Measure.map_map measurable_fst (hT.prodMk he)]
-    simp only [Function.comp_def]
   have hφint : Integrable ((e ⁻¹' Iic (q : ℝ)).indicator (fun _ ↦ (1 : ℝ))) P :=
-    Integrable.of_bound
-      (measurable_const.indicator (he measurableSet_Iic)).aestronglyMeasurable 1
-      (ae_of_all _ fun x ↦
-        (norm_indicator_le_norm_self (s := e ⁻¹' Iic (q : ℝ))
-          (f := fun _ ↦ (1 : ℝ)) (a := x)).trans_eq norm_one)
+    (integrable_const (1 : ℝ)).indicator (he measurableSet_Iic)
   calc ∫ s in A, ψ s ∂(P.map (fun x ↦ (T x, e x))).fst
-    _ = ∫ s in A, ψ s ∂P.map T := by rw [hρfst]
+    _ = ∫ s in A, ψ s ∂P.map T := by rw [Measure.fst_map_prodMk hT he]
     _ = ∫ x in T ⁻¹' A, ψ (T x) ∂P :=
         setIntegral_map hA hψ.aestronglyMeasurable hT.aemeasurable
     _ = ∫ x in T ⁻¹' A,
@@ -258,122 +253,17 @@ private theorem setIntegral_eq_measureReal_prod_Iic_of_condExp_ae_eq {P : Measur
         rw [Measure.real, Measure.real,
           Measure.map_apply (hT.prodMk he) (hA.prod measurableSet_Iic), Set.mk_preimage_prod]
 
-/-- A measurable rational family `ψ : ℚ → S → ℝ` matching the set integrals of `ρ.real (· ×ˢ Iic q)`
-agrees `ρ.fst`-almost everywhere with `preCDF ρ` and therefore defines an `IsRatCondKernelCDF` for
-`Kernel.const Unit ρ`. -/
-private theorem isRatCondKernelCDF_of_forall_setIntegral_eq (ρ : Measure (S × ℝ))
-    [IsFiniteMeasure ρ] {ψ : ℚ → S → ℝ} (hψm : ∀ q, Measurable (ψ q))
-    (hint : ∀ q, Integrable (ψ q) ρ.fst)
-    (hsetInt : ∀ (q : ℚ) {A : Set S}, MeasurableSet A →
-      ∫ s in A, ψ q s ∂ρ.fst = ρ.real (A ×ˢ Iic (q : ℝ))) :
-    IsRatCondKernelCDF (fun (p : Unit × S) q ↦ ψ q p.2)
-      (Kernel.const Unit ρ) (Kernel.const Unit ρ.fst) := by
-  have hfm : Measurable fun (p : Unit × S) q ↦ ψ q p.2 :=
-    measurable_pi_iff.mpr fun q ↦ (hψm q).comp measurable_snd
-  have hpre : IsRatCondKernelCDF (fun p r ↦ (preCDF ρ r p.2).toReal)
-      (Kernel.const Unit ρ) (Kernel.const Unit ρ.fst) :=
-    isRatCondKernelCDF_preCDF ρ
-  have hae_eq_pre : ∀ᵐ s ∂ρ.fst, ∀ q : ℚ, ψ q s = (preCDF ρ q s).toReal := by
-    rw [ae_all_iff]
-    intro q
-    refine ae_eq_of_forall_setIntegral_eq_of_sigmaFinite (μ := ρ.fst)
-      (fun _ _ _ ↦ (hint q).integrableOn)
-      (fun _ _ _ ↦ (hpre.integrable () q).integrableOn) (fun A hA _ ↦ ?_)
-    rw [hsetInt q hA]
-    simpa [Kernel.const_apply] using (hpre.setIntegral () hA q).symm
-  exact
-    { measurable := hfm
-      isRatStieltjesPoint_ae := fun u ↦ by
-        cases u
-        filter_upwards [hae_eq_pre, hpre.isRatStieltjesPoint_ae ()] with s hseq hsp
-        have hf_eq : (fun q ↦ ψ q s) = fun q ↦ (preCDF ρ q s).toReal := funext hseq
-        refine ⟨hf_eq ▸ hsp.mono, hf_eq ▸ hsp.tendsto_atTop_one,
-          hf_eq ▸ hsp.tendsto_atBot_zero, fun t ↦ ?_⟩
-        simpa only [hseq] using hsp.iInf_rat_gt_eq t
-      integrable := fun _ q ↦ hint q
-      setIntegral := fun _ _ hA q ↦ hsetInt q hA }
-
-/-- Markov kernel into `ℝ` built from a measurable rational CDF family via Mathlib's
-`stieltjesOfMeasurableRat`, independent of any particular law in the statistical family. -/
-private def kernelOfMeasurableRat (f : Unit × S → ℚ → ℝ) (hfm : Measurable f) :
-    Kernel (Unit × S) ℝ where
-  toFun p := (stieltjesOfMeasurableRat f hfm p).measure
-  measurable' := StieltjesFunction.measurable_measure (measurable_stieltjesOfMeasurableRat hfm)
-    (tendsto_stieltjesOfMeasurableRat_atBot hfm)
-    (tendsto_stieltjesOfMeasurableRat_atTop hfm)
-
-/-- Defining evaluation lemma for `kernelOfMeasurableRat`. -/
-private theorem kernelOfMeasurableRat_apply (f : Unit × S → ℚ → ℝ) (hfm : Measurable f)
-    (p : Unit × S) :
-    kernelOfMeasurableRat f hfm p = (stieltjesOfMeasurableRat f hfm p).measure :=
-  (rfl)
-
-private instance isMarkovKernel_kernelOfMeasurableRat (f : Unit × S → ℚ → ℝ) (hfm : Measurable f) :
-    IsMarkovKernel (kernelOfMeasurableRat f hfm) :=
-  ⟨fun p ↦ (stieltjesOfMeasurableRat f hfm p).isProbabilityMeasure
-    (tendsto_stieltjesOfMeasurableRat_atBot hfm p)
-    (tendsto_stieltjesOfMeasurableRat_atTop hfm p)⟩
-
-/-- Transporting an `IsRatCondKernelCDF` verification for `P.map (T, embeddingReal X)` to a
-disintegration of `P.map (T, id)` via `Kernel.borelMarkovFromReal`. -/
-private theorem map_prodMk_eq_compProd_of_isRatCondKernelCDF [StandardBorelSpace X] [Nonempty X]
-    {P : Measure X} [IsProbabilityMeasure P] {T : X → S} (hT : Measurable T)
-    {f : Unit × S → ℚ → ℝ} (hfm : Measurable f)
-    (hRat : IsRatCondKernelCDF f
-      (Kernel.const Unit (P.map (fun x ↦ (T x, embeddingReal X x))))
-      (Kernel.const Unit (P.map (fun x ↦ (T x, embeddingReal X x))).fst)) :
-    P.map (fun x ↦ (T x, x)) =
-      P.map T ⊗ₘ (Kernel.borelMarkovFromReal X (kernelOfMeasurableRat f hfm)).comap
-        (fun s ↦ ((), s)) (measurable_const.prodMk measurable_id) := by
-  let e : X → ℝ := embeddingReal X
-  have he : MeasurableEmbedding e := measurableEmbedding_embeddingReal X
-  have hpair : Measurable fun x ↦ (T x, x) := hT.prodMk measurable_id
-  let η : Kernel (Unit × S) ℝ := kernelOfMeasurableRat f hfm
-  let Kunit : Kernel (Unit × S) X := Kernel.borelMarkovFromReal X η
-  let κ : Kernel Unit (S × X) := Kernel.const Unit (P.map (fun x ↦ (T x, x)))
-  let ρ : Measure (S × ℝ) := P.map (fun x ↦ (T x, e x))
-  have hκ' : Kernel.map κ (Prod.map (id : S → S) e) = Kernel.const Unit ρ := by
-    ext u A _
-    rw [Kernel.map_apply _ (measurable_id.prodMap he.measurable), Kernel.const_apply,
-      Kernel.const_apply, Measure.map_map (measurable_id.prodMap he.measurable) hpair]
-    dsimp only [ρ]
-    simp only [Function.comp_def, Prod.map_apply, id_eq]
-  have hCond : IsCondKernelCDF (stieltjesOfMeasurableRat f hfm)
-      (Kernel.const Unit ρ) (Kernel.const Unit ρ.fst) :=
-    isCondKernelCDF_stieltjesOfMeasurableRat hRat
-  have htoK : hCond.toKernel (stieltjesOfMeasurableRat f hfm) = η := by
-    ext p
-    rw [IsCondKernelCDF.toKernel_apply, kernelOfMeasurableRat_apply]
-  have hfst_const : Kernel.fst (Kernel.const Unit ρ) = Kernel.const Unit ρ.fst := by
-    ext u A hA
-    rw [Kernel.fst_apply, Kernel.const_apply, Kernel.const_apply, Measure.fst_apply hA,
-      Measure.map_apply measurable_fst hA]
-  have hη_dis : Kernel.fst (Kernel.map κ (Prod.map (id : S → S) e)) ⊗ₖ η =
-      Kernel.map κ (Prod.map (id : S → S) e) := by
-    rw [hκ', hfst_const, ← htoK]
-    exact compProd_toKernel hCond
-  have hKunit_dis : Kernel.fst κ ⊗ₖ Kunit = κ :=
-    Kernel.compProd_fst_borelMarkovFromReal κ η hη_dis
-  have heval := congrArg (fun k : Kernel Unit (S × X) ↦ k ()) hKunit_dis
-  rw [Kernel.const_apply] at heval
-  rw [← heval]
-  ext A hA
-  rw [Kernel.compProd_apply hA, Measure.compProd_apply hA, Kernel.fst_apply, Kernel.const_apply]
-  have hfst : Measure.map Prod.fst (P.map (fun x ↦ (T x, x))) = P.map T := by
-    rw [Measure.map_map measurable_fst hpair]
-    simp only [Function.comp_def]
-  rw [hfst]
-  refine lintegral_congr fun s ↦ ?_
-  rw [Kernel.comap_apply]
-
 /-- On a nonempty standard Borel space `X`, if every bounded measurable `φ : X → ℝ` has a
 parameter-free measurable version `ψ ∘ T` of the conditional expectation `(P θ)[φ | σ(T)]`,
 then `T` is sufficient for the family of probability laws `P`.
 
 Adapts Mathlib's `condKernelReal` construction (`stieltjesOfMeasurableRat`,
 `isRatCondKernelCDF_preCDF`, `isCondKernelCDF_stieltjesOfMeasurableRat`, `compProd_toKernel`,
-and `Kernel.borelMarkovFromReal`), replacing `preCDF` with the parameter-free conditional
-expectations of the rational half-line indicators `1_{embeddingReal X ≤ q}`. -/
+and `Kernel.borelMarkovFromReal`), via `ProbabilityTheory.kernelOfMeasurableRat`,
+`ProbabilityTheory.compProd_fst_kernelOfMeasurableRat_of_forall_setIntegral_eq`, and
+`MeasureTheory.Measure.compProd_fst_borelMarkovFromReal`, replacing `preCDF` with the
+parameter-free conditional expectations of the rational half-line indicators
+`1_{embeddingReal X ≤ q}`. -/
 theorem isSufficientStatistic_of_exists_condExp_ae_eq [StandardBorelSpace X] [Nonempty X]
     {P : Θ → Measure X} [∀ θ, IsProbabilityMeasure (P θ)] {T : X → S} (hT : Measurable T)
     (hce : ∀ φ : X → ℝ, Measurable φ → (∃ C, ∀ x, |φ x| ≤ C) →
@@ -393,26 +283,30 @@ theorem isSufficientStatistic_of_exists_condExp_ae_eq [StandardBorelSpace X] [No
         (f := fun _ ↦ (1 : ℝ)) (a := x)).trans_eq norm_one⟩
   choose ψ hψm hψce using hchoice
   -- Phase 2: build a single parameter-free Markov kernel `K` from `ψ` via
-  -- `stieltjesOfMeasurableRat` and `Kernel.borelMarkovFromReal`.
-  let f : Unit × S → ℚ → ℝ := fun p q ↦ ψ q p.2
-  have hfm : Measurable f := measurable_pi_iff.mpr fun q ↦ (hψm q).comp measurable_snd
-  let K : Kernel S X :=
-    (Kernel.borelMarkovFromReal X (kernelOfMeasurableRat f hfm)).comap
-      (fun s ↦ ((), s)) (measurable_const.prodMk measurable_id)
-  -- Phase 3: for each `θ`, verify `IsRatCondKernelCDF` via the set-integral identity and
-  -- transport the resulting real disintegration back to `X`.
+  -- `kernelOfMeasurableRat` and `Kernel.borelMarkovFromReal`.
+  let f : S → ℚ → ℝ := fun s q ↦ ψ q s
+  have hfm : Measurable f := measurable_pi_iff.mpr hψm
+  let η : Kernel S ℝ := kernelOfMeasurableRat f hfm
+  let K : Kernel S X := Kernel.borelMarkovFromReal X η
+  -- Phase 3: for each `θ`, verify that `η` disintegrates `(P θ).map (T, e)` via the set-integral
+  -- identity, then transport the disintegration back to `(P θ).map (T, id)`.
   refine ⟨hT, K, inferInstance, fun θ ↦ ?_⟩
+  let ρX : Measure (S × X) := (P θ).map (fun x ↦ (T x, x))
   let ρ : Measure (S × ℝ) := (P θ).map (fun x ↦ (T x, e x))
-  have hρfst : ρ.fst = (P θ).map T := by
-    rw [Measure.fst, Measure.map_map measurable_fst (hT.prodMk he.measurable)]
-    simp only [Function.comp_def]
-  have hint : ∀ q : ℚ, Integrable (ψ q) ρ.fst := fun q ↦ by
+  have hρXfst : ρX.fst = (P θ).map T := Measure.fst_map_prodMk hT measurable_id'
+  have hρfst : ρ.fst = (P θ).map T := Measure.fst_map_prodMk hT he.measurable
+  have hρeq : ρX.map (Prod.map (id : S → S) e) = ρ := by
+    rw [Measure.map_map (measurable_id.prodMap he.measurable) (hT.prodMk measurable_id')]
+    simp only [ρ, Function.comp_def, Prod.map_apply, id_eq]
+  have hint : ∀ q : ℚ, Integrable (fun s ↦ f s q) ρ.fst := fun q ↦ by
     rw [hρfst, integrable_map_measure (hψm q).aestronglyMeasurable hT.aemeasurable]
     exact integrable_condExp.congr (hψce q θ)
-  have hRat : IsRatCondKernelCDF f (Kernel.const Unit ρ) (Kernel.const Unit ρ.fst) :=
-    isRatCondKernelCDF_of_forall_setIntegral_eq ρ hψm hint fun q _ hA ↦
+  have hreal : ρ.fst ⊗ₘ η = ρ :=
+    compProd_fst_kernelOfMeasurableRat_of_forall_setIntegral_eq hfm hint fun hA q ↦
       setIntegral_eq_measureReal_prod_Iic_of_condExp_ae_eq hT he.measurable (hψm q) (hψce q θ) hA
-  exact map_prodMk_eq_compProd_of_isRatCondKernelCDF hT hfm hRat
+  have hX : ρX.fst ⊗ₘ K = ρX :=
+    Measure.compProd_fst_borelMarkovFromReal ρX η (by rw [hρXfst, ← hρfst, hreal, hρeq])
+  rw [← hρXfst, hX]
 
 /-- **Conditional-expectation characterization of sufficiency** (Pfanzagl, Corollary 1.3.11):
 on a nonempty standard Borel space `X`, a measurable statistic `T` is sufficient for a family of

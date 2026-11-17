@@ -10,10 +10,10 @@ public import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
 public import Mathlib.Probability.Kernel.Composition.MeasureComp
 public import Mathlib.Probability.Kernel.Composition.MeasureCompProd
 
-import Mathlib.Probability.Kernel.Composition.IntegralCompProd
 import Mathlib.Probability.Kernel.Composition.WithDensity
 import Mathlib.Probability.Kernel.MeasurableIntegral
 import TauCeti.MeasureTheory.Measure.WithDensity
+import TauCeti.Probability.Kernel.Composition.IntegralCompProd
 
 /-!
 # Disintegration along a measurable map
@@ -25,7 +25,8 @@ kernel `K : Kernel S X`.
 
 It builds directly on Mathlib's `MeasureTheory.Measure.compProd`,
 `MeasureTheory.Measure.integral_compProd`, and `MeasureTheory.Measure.withDensity_compProd`,
-together with Tau Ceti's `MeasureTheory.Measure.map_withDensity_comp`.
+together with Tau Ceti's `MeasureTheory.Measure.map_withDensity_comp` and
+`MeasureTheory.Measure.integrable_integral_compProd`.
 
 ## Main statements
 
@@ -64,9 +65,7 @@ with the marginal law `μ.map T` recovers `μ`. -/
 theorem comp_map_eq_self_of_map_prodMk_eq_compProd (hT : Measurable T)
     (h : μ.map (fun x ↦ (T x, x)) = μ.map T ⊗ₘ K) :
     K ∘ₘ μ.map T = μ := by
-  have hpair : Measurable fun x ↦ (T x, x) := hT.prodMk measurable_id
-  rw [← Measure.snd_compProd, ← h, Measure.snd, Measure.map_map measurable_snd hpair]
-  exact Measure.map_id
+  rw [← Measure.snd_compProd, ← h, Measure.snd_map_prodMk hT measurable_id', Measure.map_id']
 
 /-- Lebesgue integral disintegration identity for `μ.map (T, id) = μ.map T ⊗ₘ K`. -/
 theorem lintegral_eq_lintegral_lintegral_of_map_prodMk_eq_compProd (hT : Measurable T)
@@ -80,16 +79,6 @@ theorem lintegral_eq_lintegral_lintegral_of_map_prodMk_eq_compProd (hT : Measura
 section Bochner
 
 variable [NormedAddCommGroup F] [NormedSpace ℝ F]
-
-/-- If `f` is integrable with respect to `ν ⊗ₘ K`, then the fiberwise integral
-`s ↦ ∫ y, f (s, y) ∂K s` is integrable with respect to `ν`. -/
-private theorem integrable_integral_compProd {ν : Measure S} [SFinite ν]
-    {f : S × X → F} (hf : Integrable f (ν ⊗ₘ K)) :
-    Integrable (fun s ↦ ∫ y, f (s, y) ∂K s) ν := by
-  -- `Measure.compProd` is `(Kernel.const Unit ν ⊗ₖ K.prodMkLeft Unit) ()`, so Mathlib's
-  -- kernel-level `Integrable.integral_compProd` specializes directly.
-  simpa [Measure.compProd, Kernel.prodMkLeft_apply, Kernel.const_apply] using
-    hf.integral_compProd
 
 omit [MeasurableSpace X] [MeasurableSpace S] in
 /-- Expressing `(T ⁻¹' B).indicator u` as the scalar product with `B.indicator 1 ∘ T`. -/
@@ -117,7 +106,7 @@ theorem integral_eq_integral_integral_of_map_prodMk_eq_compProd (hT : Measurable
     (integrable_map_measure hfm hpair.aemeasurable).mpr hf
   have hf_cp : Integrable f (μ.map T ⊗ₘ K) := h ▸ hf_map
   have hinner : AEStronglyMeasurable (fun s ↦ ∫ y, f (s, y) ∂K s) (μ.map T) :=
-    (integrable_integral_compProd hf_cp).aestronglyMeasurable
+    (Measure.integrable_integral_compProd hf_cp).aestronglyMeasurable
   rw [← MeasureTheory.integral_map hpair.aemeasurable hfm, h, Measure.integral_compProd hf_cp,
     MeasureTheory.integral_map hT.aemeasurable hinner]
 
@@ -176,7 +165,7 @@ theorem condExp_ae_eq_integral_of_map_prodMk_eq_compProd [CompleteSpace F]
       rw [Measure.integrable_compProd_snd_iff (hcomp.symm ▸ hφ'int.aestronglyMeasurable)]
       rwa [hcomp]
     exact (integrable_map_measure hφ'm.integral_kernel.aestronglyMeasurable hT.aemeasurable).mp
-      (integrable_integral_compProd hφ'cp)
+      (Measure.integrable_integral_compProd hφ'cp)
   refine (ae_eq_condExp_of_forall_setIntegral_eq hT.comap_le hφ
     (fun _ _ _ ↦ hg_int.integrableOn) (fun A hA _ ↦ ?_)
     hgm.aestronglyMeasurable).symm.trans hinner_ae
@@ -229,9 +218,9 @@ theorem eq_withDensity_rnDeriv_map_of_map_prodMk_eq_compProd {P L : Measure X} [
       _ = (L.map (fun x ↦ (T x, x))).withDensity (fun p ↦ q p.1) := by rw [hL]
       _ = (L.withDensity (q ∘ T)).map (fun x ↦ (T x, x)) :=
           (Measure.map_withDensity_comp hpair (hq.comp measurable_fst)).symm
-  have hsnd := congrArg (Measure.map Prod.snd) hjoint
-  rw [Measure.map_map measurable_snd hpair, Measure.map_map measurable_snd hpair] at hsnd
-  simpa [Function.comp_def] using hsnd
+  have hsnd := congrArg Measure.snd hjoint
+  rwa [Measure.snd_map_prodMk hT measurable_id', Measure.snd_map_prodMk hT measurable_id',
+    Measure.map_id', Measure.map_id'] at hsnd
 
 /-- Reweighting a measure `L` by a measurable density `q ∘ T` factoring through `T` preserves any
 disintegrating kernel `K` given `T`. -/
