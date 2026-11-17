@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.JapaneseBracket
 public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import Mathlib.MeasureTheory.Integral.IntegrableOn
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
 # The Japanese bracket in `L²` and the `L¹` bound by a weighted `L²` norm
@@ -84,7 +85,7 @@ theorem memLp_two_one_add_norm_sq_rpow_smul_of_norm_le [NormedSpace ℝ V] [Fini
         gcongr
         exact hx.trans (by gcongr)
     _ = C * 2 ^ k * (1 + ‖x‖ ^ 2) ^ (-(-(s + k)) / 2) := by
-        rw [neg_neg, add_div, Real.rpow_add (by positivity)]
+        rw [neg_neg, one_add_norm_sq_rpow_add]
         ring
 
 /-- **The `L¹` norm is bounded by a weighted `L²` norm.** For every `s` and every function `v`,
@@ -97,8 +98,7 @@ theorem eLpNorm_one_le_eLpNorm_rpow_neg_one_add_norm_sq_mul_eLpNorm_one_add_norm
   have h : v = (fun x : V => (1 + ‖x‖ ^ 2) ^ (-s / 2)) •
       fun x => (1 + ‖x‖ ^ 2) ^ (s / 2) • v x := by
     funext x
-    rw [Pi.smul_apply', smul_smul, ← Real.rpow_add (by positivity), neg_div, neg_add_cancel,
-      Real.rpow_zero, one_smul]
+    rw [Pi.smul_apply', smul_smul, one_add_norm_sq_rpow_neg_mul_rpow, one_smul]
   conv_lhs => rw [h]
   exact eLpNorm_smul_le_mul_eLpNorm_of_pos one_pos
 

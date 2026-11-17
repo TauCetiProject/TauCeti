@@ -171,7 +171,7 @@ theorem HasCompactInputSupport.exists_norm_leftIntegrand_le {a : Amplitude n V W
     gcongr
   have hθ : (1 + ‖θ‖ ^ 2) ^ (|m| / 2) * (1 + ‖θ‖ ^ 2) ^ (-(|m| + (n + 1)) / 2) =
       (1 + ‖θ‖ ^ 2) ^ (-((n : ℝ) + 1) / 2) := by
-    rw [← Real.rpow_add (by positivity)]
+    rw [← one_add_norm_sq_rpow_add]
     ring_nf
   rw [leftIntegrand, norm_smul, Circle.norm_coe, one_mul]
   calc ‖𝓕 (fun y ↦ a.coefficient (x, y, ξ + s • θ)) θ‖

@@ -59,8 +59,10 @@ elliptic regularity argument provides it, assembles into membership of a Bessel-
 
 * `Distribution.fourier_cutoffTempered_apply`: the Fourier transform of `φ T` is the localized
   Fourier transform of `T`.
-* `Distribution.memSobolev_cutoffTempered_iff`: `φ T ∈ H^s` exactly when the weighted localized
-  Fourier transform is square integrable.
+* `Distribution.smulLeftCLM_fourier_cutoffTempered_eq`,
+  `Distribution.memSobolev_cutoffTempered_iff`: `φ T ∈ H^s` exactly when the weighted localized
+  Fourier transform is square integrable, and it then represents the weighted Fourier transform of
+  `φ T`.
 * `Distribution.isLocallySobolevAt_iff_exists_memSobolev_cutoffTempered`,
   `Distribution.IsLocallySobolevAt.exists_nhds_forall_memSobolev_cutoffTempered`: being `H^s` near
   a point in terms of Mathlib's Bessel-potential spaces.
@@ -186,6 +188,17 @@ private theorem smulLeftCLM_fourier_cutoffTempered_apply (s : ℝ) (T : 𝓓'(Ω
   simp only [smul_eq_mul, Complex.real_smul]
   ring
 
+/-- **The weighted Fourier transform of `φ T`.** If the weighted localized Fourier transform
+`η ↦ ⟨η⟩ ^ s T (φ e_η)` is square integrable, then it represents `⟨η⟩ ^ s 𝓕 (φ T)`. -/
+theorem smulLeftCLM_fourier_cutoffTempered_eq
+    (hG : MemLp (fun η ↦ (1 + ‖η‖ ^ 2) ^ (s / 2) • T.localFourier φ η) 2 volume) :
+    TemperedDistribution.smulLeftCLM ℂ (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ))
+      (𝓕 (T.cutoffTempered φ)) = hG.toLp _ :=
+  TemperedDistribution.ext_real fun ψ hψ ↦ by
+    rw [smulLeftCLM_fourier_cutoffTempered_apply s T φ (hψ.comp_left ofReal_zero),
+      Lp.toTemperedDistribution_apply]
+    exact integral_congr_ae (hG.coeFn_toLp.mono fun η hη ↦ by simp only [hη])
+
 /-- **`φ T ∈ H^s` in Fourier terms.** The tempered distribution `φ T` lies in Mathlib's
 Bessel-potential space `H^s` exactly when the weighted localized Fourier transform
 `η ↦ ⟨η⟩ ^ s T (φ e_η)` is square integrable. -/
@@ -210,11 +223,7 @@ theorem memSobolev_cutoffTempered_iff :
     have h := smulLeftCLM_fourier_cutoffTempered_apply s T φ (ψ := ψ) hgc'
     rw [hf', Lp.toTemperedDistribution_apply] at h
     simpa [hψ, G, Complex.real_smul] using h
-  · intro hG
-    refine ⟨hG.toLp G, TemperedDistribution.ext_real fun ψ hψ ↦ ?_⟩
-    rw [smulLeftCLM_fourier_cutoffTempered_apply s T φ (hψ.comp_left ofReal_zero),
-      Lp.toTemperedDistribution_apply]
-    exact integral_congr_ae (hG.coeFn_toLp.mono fun η hη ↦ by simp only [hη, G])
+  · exact fun hG ↦ ⟨hG.toLp G, smulLeftCLM_fourier_cutoffTempered_eq hG⟩
 
 /-- **Local Sobolev regularity on Bessel-potential spaces.** A distribution is `H^s` near `x`
 exactly when `φ T ∈ H^s` for some test function `φ` with `φ x ≠ 0`. -/

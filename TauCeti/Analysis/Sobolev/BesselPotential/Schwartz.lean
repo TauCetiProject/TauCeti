@@ -37,6 +37,11 @@ normed complex `F`.
   the `Lᵖ` norm.
 * `BesselPotentialSpace.continuousLinearMap_ext`: continuous linear maps out of `H^{s,p}`,
   `p < ∞`, are determined by their values on Schwartz functions.
+* `BesselPotentialSpace.toTemperedDistribution_fourier_toLp`,
+  `BesselPotentialSpace.fourier_toLp_eq_of_smulLeftCLM_fourier_eq`: for Hilbert-space values, the
+  `L²` Fourier transform of the `L²` part of `u ∈ H^s` is the weighted Fourier transform
+  `⟨ξ⟩ ^ s 𝓕 u`; `SchwartzMap.fourier_toLp_toBesselPotentialSpaceCLM` computes it for a Schwartz
+  function.
 * `BesselPotentialSpace.norm_eq_of_smulLeftCLM_fourier_eq`: for Hilbert-space values, the `H^s`
   norm is the `L²` norm of the weighted Fourier transform.
 * `SchwartzMap.norm_toBesselPotentialSpaceCLM`: for Hilbert-space values, the `H^s` norm of a
@@ -132,6 +137,15 @@ theorem memLp_one_add_norm_sq_rpow_smul_fourier (s : ℝ) (u : 𝓢(E, F)) (q : 
   exact ((smulLeftCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) (𝓕 u)).memLp q
     volume).ae_eq (.of_forall fun ξ ↦ smulLeftCLM_apply_apply hw _ ξ)
 
+/-- The `L²` Fourier transform of the `L²` part of a Schwartz function `u` in `H^s` is the weighted
+Fourier transform `⟨ξ⟩ ^ s 𝓕 u`. -/
+theorem fourier_toLp_toBesselPotentialSpaceCLM {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace ℂ F] [CompleteSpace F] (s : ℝ) (u : 𝓢(E, F)) :
+    𝓕 (toBesselPotentialSpaceCLM s 2 u).toLp =
+      (smulLeftCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) (𝓕 u)).toLp 2 := by
+  rw [toLp_toBesselPotentialSpaceCLM, toLp_fourier_eq, fourierMultiplierCLM_apply,
+    FourierTransform.fourier_fourierInv_eq]
+
 /-- The `H^s` norm of a Schwartz function `u` is the `L²` norm of `⟨ξ⟩ ^ s 𝓕 u`. -/
 theorem norm_toBesselPotentialSpaceCLM {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F]
     [CompleteSpace F] (s : ℝ) (u : 𝓢(E, F)) :
@@ -223,19 +237,36 @@ theorem toDistr_toLpₗᵢ_zero_symm_apply {p : ℝ≥0∞} [Fact (1 ≤ p)]
     ((toLpₗᵢ E F 0 p).symm f).toDistr = (f : 𝓢'(E, F)) := by
   rw [toLpₗᵢ_symm_apply, neg_zero, besselPotential_zero, ContinuousLinearMap.id_apply]
 
-/-- The `H^s` norm is the `L²` norm of the weighted Fourier transform: if `⟨ξ⟩ ^ s 𝓕 u` is the
-tempered distribution of `G ∈ L²`, then `‖u‖ = ‖G‖`. -/
-theorem norm_eq_of_smulLeftCLM_fourier_eq {F : Type*} [NormedAddCommGroup F]
-    [InnerProductSpace ℂ F] [CompleteSpace F] {s : ℝ} {u : H^{s}(E, F)}
+section Fourier
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F] {s : ℝ}
+
+/-- The `L²` Fourier transform of the `L²` part of `u ∈ H^s` is the weighted Fourier transform
+`⟨ξ⟩ ^ s 𝓕 u` of the tempered distribution `u`. -/
+theorem toTemperedDistribution_fourier_toLp (u : H^{s}(E, F)) :
+    ((𝓕 u.toLp : Lp F 2 (volume : Measure E)) : 𝓢'(E, F)) =
+      smulLeftCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) (𝓕 u.toDistr) := by
+  rw [← Lp.fourier_toTemperedDistribution_eq, ← u.bessel_toDistr_eq_toLp,
+    fourier_besselPotential_eq_smulLeftCLM_fourier_apply]
+
+/-- If the weighted Fourier transform `⟨ξ⟩ ^ s 𝓕 u` of `u ∈ H^s` is the tempered distribution of
+`G ∈ L²`, then `G` is the `L²` Fourier transform of the `L²` part of `u`. -/
+theorem fourier_toLp_eq_of_smulLeftCLM_fourier_eq {u : H^{s}(E, F)}
     {G : Lp F 2 (volume : Measure E)}
     (h : smulLeftCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) (𝓕 u.toDistr) = G) :
+    𝓕 u.toLp = G :=
+  LinearMap.ker_eq_bot.mp (Lp.ker_toTemperedDistributionCLM_eq_bot (F := F)
+    (μ := (volume : Measure E)) (p := 2)) (by
+      simp only [ContinuousLinearMap.coe_coe, Lp.toTemperedDistributionCLM_apply]
+      rw [toTemperedDistribution_fourier_toLp, h])
+
+/-- The `H^s` norm is the `L²` norm of the weighted Fourier transform: if `⟨ξ⟩ ^ s 𝓕 u` is the
+tempered distribution of `G ∈ L²`, then `‖u‖ = ‖G‖`. -/
+theorem norm_eq_of_smulLeftCLM_fourier_eq {u : H^{s}(E, F)} {G : Lp F 2 (volume : Measure E)}
+    (h : smulLeftCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) (𝓕 u.toDistr) = G) :
     ‖u‖ = ‖G‖ := by
-  rw [← norm_fourier_toLp_eq]
-  congr 1
-  refine LinearMap.ker_eq_bot.mp (Lp.ker_toTemperedDistributionCLM_eq_bot (F := F)
-    (μ := (volume : Measure E)) (p := 2)) ?_
-  simp only [ContinuousLinearMap.coe_coe, Lp.toTemperedDistributionCLM_apply]
-  rw [← Lp.fourier_toTemperedDistribution_eq, ← u.bessel_toDistr_eq_toLp,
-    fourier_besselPotential_eq_smulLeftCLM_fourier_apply, h]
+  rw [← norm_fourier_toLp_eq, fourier_toLp_eq_of_smulLeftCLM_fourier_eq h]
+
+end Fourier
 
 end BesselPotentialSpace

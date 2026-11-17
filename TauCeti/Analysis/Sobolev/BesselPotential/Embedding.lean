@@ -14,8 +14,10 @@ import Mathlib.Analysis.Normed.Operator.Banach
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
+import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
 import TauCeti.MeasureTheory.Function.Lp.CastMeasure
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Lp
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
 # Sobolev embeddings of `H^s(ℝⁿ)` into `C₀(ℝⁿ)` and `C^k(ℝⁿ)`
@@ -166,8 +168,6 @@ theorem MemSobolev.eLpNorm_one_add_norm_sq_rpow_smul_eq_enorm_toBesselPotentialS
     eLpNorm (fun ξ => (1 + ‖ξ‖ ^ 2) ^ (s / 2) • v ξ) 2 volume =
       ‖hf.toBesselPotentialSpace‖ₑ := by
   set U := hf.toBesselPotentialSpace.toLp
-  have hU : besselPotential E F s f = U := by
-    simpa using hf.toBesselPotentialSpace.bessel_toDistr_eq_toLp
   have hwg : (fun ξ : E => (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)).HasTemperateGrowth := by
     fun_prop
   have hwc : Continuous fun ξ : E => (1 + ‖ξ‖ ^ 2) ^ (s / 2) :=
@@ -179,8 +179,8 @@ theorem MemSobolev.eLpNorm_one_add_norm_sq_rpow_smul_eq_enorm_toBesselPotentialS
     refine Lp.ae_eq_of_toTemperedDistribution_apply_eq (𝓕 U) ?_ fun φ => ?_
     · refine locallyIntegrable_iff.2 fun K hK => ?_
       exact (L1.integrable_coeFn v).integrableOn.continuousOn_smul hwc.continuousOn hK
-    · rw [← Lp.fourier_toTemperedDistribution_eq U, ← hU,
-        fourier_besselPotential_eq_smulLeftCLM_fourier_apply, hv,
+    · rw [BesselPotentialSpace.toTemperedDistribution_fourier_toLp,
+        MemSobolev.toBesselPotentialSpace_toDistr, hv,
         Lp.smulLeftCLM_toTemperedDistribution_apply hwg]
       simp only [Complex.coe_smul]
   rw [eLpNorm_congr_ae hae.symm, ← Lp.eNorm_def, ← ofReal_norm, ← ofReal_norm,
@@ -335,7 +335,7 @@ private theorem MemSobolev.integrable_norm_pow_mul_norm_and_integral_le {s : ℝ
     have heq : (fun ξ : E => (1 + ‖ξ‖ ^ 2) ^ ((s - j) / 2) • w ξ) =
         fun ξ => (1 + ‖ξ‖ ^ 2) ^ (s / 2) • v ξ := by
       funext ξ
-      simp only [w, smul_smul, ← Real.rpow_add (by positivity : (0 : ℝ) < 1 + ‖ξ‖ ^ 2)]
+      simp only [w, smul_smul, ← TauCeti.one_add_norm_sq_rpow_add]
       congr 2
       ring
     rwa [heq, hf.eLpNorm_one_add_norm_sq_rpow_smul_eq_enorm_toBesselPotentialSpace hv] at h
