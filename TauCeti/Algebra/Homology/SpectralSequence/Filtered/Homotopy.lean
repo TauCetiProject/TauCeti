@@ -68,11 +68,18 @@ variable {K L : CochainComplex C ℤ} {f g : K ⟶ L}
 
 /-- A homotopy `h` between morphisms `K ⟶ L` of cochain complexes is **filtered** with respect to
 families `F` of subcomplexes of `K` and `G` of subcomplexes of `L` when each of its components
-`Kᵖ ⟶ L^q` sends `(F n)ᵖ` into `(G n)^q`. -/
-@[expose]
+`Kᵖ ⟶ L^q` sends `(F n)ᵖ` into `(G n)^q`; see `Homotopy.isFiltered_iff`. -/
 def IsFiltered (h : Homotopy f g) (F : ℤ → Subobject K) (G : ℤ → Subobject L) : Prop :=
   ∀ n p q, ∃ k : (F n : CochainComplex C ℤ).X p ⟶ (G n : CochainComplex C ℤ).X q,
     k ≫ (G n).arrow.f q = (F n).arrow.f p ≫ h.hom p q
+
+/-- A homotopy `h` is filtered exactly when, for all `n`, `p` and `q`, the restriction of its
+component `Kᵖ ⟶ L^q` to `(F n)ᵖ` factors through `(G n)^q`. -/
+lemma isFiltered_iff {h : Homotopy f g} {F : ℤ → Subobject K} {G : ℤ → Subobject L} :
+    h.IsFiltered F G ↔
+      ∀ n p q, ∃ k : (F n : CochainComplex C ℤ).X p ⟶ (G n : CochainComplex C ℤ).X q,
+        k ≫ (G n).arrow.f q = (F n).arrow.f p ≫ h.hom p q :=
+  Iff.rfl
 
 end Homotopy
 
@@ -98,7 +105,7 @@ private lemma exists_comp_filtrationFunctorArrow_eq (h : Homotopy f g) (hh : h.I
     exact ⟨0, ((HomologicalComplex.eval C _ p).map_isZero
       (isZero_filtrationFunctor_obj_bot F hF)).eq_of_src _ _⟩
   | coe n =>
-    obtain ⟨k, hk⟩ := hh n p q
+    obtain ⟨k, hk⟩ := Homotopy.isFiltered_iff.1 hh n p q
     refine ⟨(eqToHom (filtrationFunctor_obj_coe F hF n)).f p ≫ k ≫
       (eqToHom (filtrationFunctor_obj_coe G hG n).symm).f q, ?_⟩
     simp [filtrationFunctorArrow_coe, hk]
