@@ -10,9 +10,13 @@ public import Mathlib.NumberTheory.LegendreSymbol.JacobiSymbol
 import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.Data.Nat.Choose.Dvd
 import Mathlib.NumberTheory.Zsqrtd.Basic
+import TauCeti.Algebra.Polynomial.Bivariate
 import TauCeti.Algebra.Polynomial.Taylor
+import TauCeti.Analysis.Complex.Sqrt
 import TauCeti.Analysis.InnerProductSpace.Gram.ChangeOfFamily
 import TauCeti.Analysis.InnerProductSpace.Gram.Hadamard
+import TauCeti.Data.Nat.Choose.Sum
+import TauCeti.Data.Nat.Factorial.Basic
 import TauCeti.LinearAlgebra.Matrix.Triangular
 import TauCeti.RingTheory.Polynomial.Resultant.Multiplicity
 
@@ -59,44 +63,18 @@ namespace InertPrimeSum
 
 /-! ### Complex embeddings and Euclidean geometry of `ℤ√d` -/
 
-/-- Choice of a complex square root of an integer `d`. -/
-private noncomputable def csqrt (d : ℤ) : ℂ :=
-  if 0 ≤ d then (Real.sqrt d : ℂ) else Complex.I * (Real.sqrt (-d : ℝ) : ℂ)
-
-private theorem csqrt_mul_self (d : ℤ) : csqrt d * csqrt d = d := by
-  dsimp [csqrt]
-  split_ifs with hd
-  · rw [← Complex.ofReal_mul, Real.mul_self_sqrt (by exact_mod_cast hd), Complex.ofReal_intCast]
-  · have hdR : (0 : ℝ) ≤ -d := by exact_mod_cast (by omega : (0 : ℤ) ≤ -d)
-    calc (Complex.I * Real.sqrt (-d : ℝ)) * (Complex.I * Real.sqrt (-d : ℝ))
-        = (Complex.I * Complex.I) * ((Real.sqrt (-d : ℝ) * Real.sqrt (-d : ℝ) : ℝ) : ℂ) := by
-          push_cast; ring
-      _ = d := by rw [Complex.I_mul_I, Real.mul_self_sqrt hdR]; push_cast; ring
-
-private theorem norm_csqrt (d : ℤ) : ‖csqrt d‖ = Real.sqrt d.natAbs := by
-  dsimp [csqrt]
-  split_ifs with hd
-  · rw [Complex.norm_real, Real.norm_of_nonneg (Real.sqrt_nonneg _), Nat.cast_natAbs, Int.cast_abs,
-      abs_of_nonneg (by exact_mod_cast hd)]
-  · rw [norm_mul, Complex.norm_I, one_mul, Complex.norm_real,
-      Real.norm_of_nonneg (Real.sqrt_nonneg _), Nat.cast_natAbs, Int.cast_abs,
-      abs_of_neg (by exact_mod_cast not_le.mp hd)]
-
-private theorem csqrt_ne_zero {d : ℤ} (hd : d ≠ 0) : csqrt d ≠ 0 := fun h0 ↦
-  hd (by simpa [h0] using (csqrt_mul_self d).symm)
-
-/-- The two complex embeddings `a + b√d ↦ a ± b csqrt(d)` of `ℤ√d`. -/
+/-- The two complex embeddings `a + b√d ↦ a ± b * Complex.sqrt d` of `ℤ√d`. -/
 private noncomputable def embPos (d : ℤ) : ℤ√d →+* ℂ :=
-  Zsqrtd.lift ⟨csqrt d, csqrt_mul_self d⟩
+  Zsqrtd.lift ⟨Complex.sqrt d, by rw [← sq, Complex.sq_sqrt]⟩
 
 private noncomputable def embNeg (d : ℤ) : ℤ√d →+* ℂ :=
-  Zsqrtd.lift ⟨-csqrt d, by simp [csqrt_mul_self]⟩
+  Zsqrtd.lift ⟨-Complex.sqrt d, by rw [neg_mul_neg, ← sq, Complex.sq_sqrt]⟩
 
 private theorem embPos_apply (d : ℤ) (u : ℤ√d) :
-    embPos d u = (u.re : ℂ) + (u.im : ℂ) * csqrt d := rfl
+    embPos d u = (u.re : ℂ) + (u.im : ℂ) * Complex.sqrt d := rfl
 
 private theorem embNeg_apply (d : ℤ) (u : ℤ√d) :
-    embNeg d u = (u.re : ℂ) + (u.im : ℂ) * (-csqrt d) := rfl
+    embNeg d u = (u.re : ℂ) + (u.im : ℂ) * (-Complex.sqrt d) := rfl
 
 private theorem embPos_injective {d : ℤ} (hd : Squarefree d) (hd1 : d ≠ 1) :
     Function.Injective (embPos d) := by
@@ -108,13 +86,11 @@ embeddings, uniformly in the sign of `d`. -/
 private theorem two_mul_re_sq_add_im_sq_eq (d : ℤ) (u : ℤ√d) :
     2 * ((u.re : ℝ) ^ 2 + (d.natAbs : ℝ) * (u.im : ℝ) ^ 2) =
       ‖embPos d u‖ ^ 2 + ‖embNeg d u‖ ^ 2 := by
-  have hpar (z w : ℂ) : ‖z + w‖ ^ 2 + ‖z - w‖ ^ 2 = 2 * (‖z‖ ^ 2 + ‖w‖ ^ 2) := by
-    simp only [← Complex.normSq_eq_norm_sq, Complex.normSq_apply, Complex.add_re, Complex.add_im,
-      Complex.sub_re, Complex.sub_im]
-    ring
+  have hpar := parallelogram_law_with_norm ℂ (u.re : ℂ) ((u.im : ℂ) * Complex.sqrt d)
+  have hsq : ‖Complex.sqrt (d : ℂ)‖ ^ 2 = (d.natAbs : ℝ) := by
+    rw [← norm_pow, Complex.sq_sqrt, Complex.norm_intCast, Nat.cast_natAbs, Int.cast_abs]
   rw [embPos_apply, embNeg_apply, mul_neg, ← sub_eq_add_neg, hpar, Complex.norm_intCast,
-    norm_mul, Complex.norm_intCast, norm_csqrt, mul_pow, sq_abs, sq_abs,
-    Real.sq_sqrt (Nat.cast_nonneg _)]
+    norm_mul, Complex.norm_intCast, mul_pow, sq_abs, sq_abs, hsq]
   ring
 
 /-- Euclidean realization of a finite tuple in `(ℤ√d) ^ κ` whose real inner products match the
@@ -215,43 +191,6 @@ private theorem jetEval_basePoly_eq (d : ℤ) (N : ℕ) {R S : ℕ} (i : Fin R �
     iterate_derivative_X_pow_eq_C_mul, eval_mul, eval_C, C_eq_natCast, eval_natCast]
   ring
 
-/-- Injectivity of the linear coordinate change `(z', z) ↦ (X₀ - δ X₁, X₀ + δ X₁)` when `δ ≠ 0`. -/
-private theorem aevalAeval_conj_injective {δ : ℂ} (hδ : δ ≠ 0) :
-    Function.Injective
-      (aevalAeval (MvPolynomial.X 0 - MvPolynomial.C δ * MvPolynomial.X 1)
-        (MvPolynomial.X 0 + MvPolynomial.C δ * MvPolynomial.X 1) :
-        ℂ[X][X] →ₐ[ℂ] MvPolynomial (Fin 2) ℂ) := by
-  let L₁ : MvPolynomial (Fin 2) ℂ := MvPolynomial.X 0 + MvPolynomial.C δ * MvPolynomial.X 1
-  let L₂ : MvPolynomial (Fin 2) ℂ := MvPolynomial.X 0 - MvPolynomial.C δ * MvPolynomial.X 1
-  let U₀ : ℂ[X][X] := (2⁻¹ : ℂ) • (C X + X)
-  let U₁ : ℂ[X][X] := (2 * δ)⁻¹ • (X - C X)
-  let invHom : MvPolynomial (Fin 2) ℂ →ₐ[ℂ] ℂ[X][X] := MvPolynomial.aeval ![U₀, U₁]
-  have h1 : (2⁻¹ : ℂ) + δ * (2 * δ)⁻¹ = 1 := by field_simp [hδ]; norm_num
-  have h2 : (2⁻¹ : ℂ) - δ * (2 * δ)⁻¹ = 0 := by field_simp [hδ]; ring
-  have hcomp : invHom.comp (aevalAeval L₂ L₁) = AlgHom.id ℂ ℂ[X][X] := by
-    refine (aevalAevalEquiv ℂ ℂ[X][X]).symm.injective (Prod.ext ?_ ?_)
-    · simp only [aevalAevalEquiv_symm_apply, AlgHom.comp_apply, AlgHom.id_apply, aevalAeval_X,
-        invHom, L₂, U₀, U₁, map_sub, map_mul, MvPolynomial.aeval_X, MvPolynomial.aeval_C,
-        Matrix.cons_val_zero, Matrix.cons_val_one, Algebra.algebraMap_eq_smul_one,
-        smul_mul_assoc, one_mul]
-      calc (2⁻¹ : ℂ) • (C X + X : ℂ[X][X]) - δ • ((2 * δ)⁻¹ • (X - C X))
-          = ((2⁻¹ + δ * (2 * δ)⁻¹ : ℂ)) • (C X : ℂ[X][X]) +
-              ((2⁻¹ - δ * (2 * δ)⁻¹ : ℂ)) • (X : ℂ[X][X]) := by
-            rw [smul_add, smul_smul, smul_sub, add_smul, sub_smul]
-            abel
-        _ = C X := by rw [h1, h2, one_smul, zero_smul, add_zero]
-    · simp only [aevalAevalEquiv_symm_apply, AlgHom.comp_apply, AlgHom.id_apply, aevalAeval_Y,
-        invHom, L₁, U₀, U₁, map_add, map_mul, MvPolynomial.aeval_X, MvPolynomial.aeval_C,
-        Matrix.cons_val_zero, Matrix.cons_val_one, Algebra.algebraMap_eq_smul_one,
-        smul_mul_assoc, one_mul]
-      calc (2⁻¹ : ℂ) • (C X + X : ℂ[X][X]) + δ • ((2 * δ)⁻¹ • (X - C X))
-          = ((2⁻¹ - δ * (2 * δ)⁻¹ : ℂ)) • (C X : ℂ[X][X]) +
-              ((2⁻¹ + δ * (2 * δ)⁻¹ : ℂ)) • (X : ℂ[X][X]) := by
-            rw [smul_add, smul_smul, smul_sub, add_smul, sub_smul]
-            abel
-        _ = X := by rw [h2, h1, zero_smul, one_smul, zero_add]
-  exact Function.LeftInverse.injective (g := invHom) fun P ↦ DFunLike.congr_fun hcomp P
-
 /-- Extracting the complex jet relation from a real linear dependence among `baseVec`. -/
 private theorem sum_embPos_baseFam_eq_zero_of_sum_smul_eq_zero {d : ℤ} (hd0 : d ≠ 0)
     {N R S : ℕ} {c : Fin R × Fin S → ℝ}
@@ -280,7 +219,7 @@ private theorem sum_embPos_baseFam_eq_zero_of_sum_smul_eq_zero {d : ℤ} (hd0 : 
     exact_mod_cast him
   calc ∑ i : Fin R × Fin S, (c i : ℂ) * embPos d (baseFam d N R S i k)
       = (∑ i, (c i : ℂ) * ((baseFam d N R S i k).re : ℂ)) +
-          csqrt d * ∑ i, (c i : ℂ) * ((baseFam d N R S i k).im : ℂ) := by
+          Complex.sqrt d * ∑ i, (c i : ℂ) * ((baseFam d N R S i k).im : ℂ) := by
         simp only [embPos_apply, Finset.mul_sum]
         rw [← Finset.sum_add_distrib]
         exact Finset.sum_congr rfl fun i _ ↦ by ring
@@ -292,14 +231,14 @@ private noncomputable def relationPoly {R S : ℕ} (c : Fin R × Fin S → ℝ) 
 private theorem dvd_map_evalRingHom_relationPoly {d : ℤ} (hd0 : d ≠ 0) {N R S : ℕ}
     {c : Fin R × Fin S → ℝ} (hc : ∑ i : Fin R × Fin S, c i • baseVec d N R S i = 0)
     {nx ny : ℕ} (hnx : nx < N) (hny : ny < N) :
-    (X - C ((nx : ℂ) + (ny : ℂ) * csqrt d)) ^ N ∣
-      (relationPoly c).map (evalRingHom ((nx : ℂ) - (ny : ℂ) * csqrt d)) := by
+    (X - C ((nx : ℂ) + (ny : ℂ) * Complex.sqrt d)) ^ N ∣
+      (relationPoly c).map (evalRingHom ((nx : ℂ) - (ny : ℂ) * Complex.sqrt d)) := by
   rw [X_sub_C_pow_dvd_iff_forall_eval_hasseDeriv_eq_zero]
   intro j hj
   have hjet := sum_embPos_baseFam_eq_zero_of_sum_smul_eq_zero hd0 hc (⟨nx, hnx⟩, ⟨ny, hny⟩, ⟨j, hj⟩)
   have hderiv : (derivative^[j]
-      ((relationPoly c).map (evalRingHom ((nx : ℂ) - (ny : ℂ) * csqrt d)))).eval
-        ((nx : ℂ) + (ny : ℂ) * csqrt d) =
+      ((relationPoly c).map (evalRingHom ((nx : ℂ) - (ny : ℂ) * Complex.sqrt d)))).eval
+        ((nx : ℂ) + (ny : ℂ) * Complex.sqrt d) =
       ∑ i : Fin R × Fin S,
         (c i : ℂ) * embPos d (baseFam d N R S i (⟨nx, hnx⟩, ⟨ny, hny⟩, ⟨j, hj⟩)) := by
     rw [Fintype.sum_prod_type]
@@ -340,12 +279,21 @@ private theorem linearIndependent_baseVec {d : ℤ} (hd : Squarefree d) (hd1 : d
   let grid : Finset ℂ := (Finset.range N).image Nat.cast
   have hgrid_card : grid.card = N := by
     rw [Finset.card_image_of_injective _ Nat.cast_injective, Finset.card_range]
-  let L₁ : MvPolynomial (Fin 2) ℂ := MvPolynomial.X 0 + MvPolynomial.C (csqrt d) * MvPolynomial.X 1
-  let L₂ : MvPolynomial (Fin 2) ℂ := MvPolynomial.X 0 - MvPolynomial.C (csqrt d) * MvPolynomial.X 1
+  let L₁ : MvPolynomial (Fin 2) ℂ :=
+    MvPolynomial.X 0 + MvPolynomial.C (Complex.sqrt d) * MvPolynomial.X 1
+  let L₂ : MvPolynomial (Fin 2) ℂ :=
+    MvPolynomial.X 0 - MvPolynomial.C (Complex.sqrt d) * MvPolynomial.X 1
   have hL₁ : L₁.totalDegree ≤ 1 := (MvPolynomial.totalDegree_add _ _).trans
     (max_le (by simp) ((MvPolynomial.totalDegree_mul _ _).trans (by simp)))
   have hL₂ : L₂.totalDegree ≤ 1 := (MvPolynomial.totalDegree_sub _ _).trans
     (max_le (by simp) ((MvPolynomial.totalDegree_mul _ _).trans (by simp)))
+  have hinj_hom :
+      Function.Injective (aevalAeval L₂ L₁ : ℂ[X][X] →ₐ[ℂ] MvPolynomial (Fin 2) ℂ) := by
+    have hsqrt : Complex.sqrt (d : ℂ) ≠ 0 :=
+      Complex.sqrt_eq_zero_iff.not.mpr (Int.cast_ne_zero.mpr hd.ne_zero)
+    simpa [L₁, L₂, sub_eq_add_neg] using aevalAeval_linear_injective
+      (IsUnit.mk0 ((1 : ℂ) * Complex.sqrt d - (-Complex.sqrt d) * 1)
+        (by ring_nf; exact mul_ne_zero hsqrt two_ne_zero))
   have hinj_β (x₁ : ℂ) (hx₁ : x₁ ∈ grid) (y₁ : ℂ) (hy₁ : y₁ ∈ grid)
       (x₂ : ℂ) (hx₂ : x₂ ∈ grid) (y₂ : ℂ) (hy₂ : y₂ ∈ grid)
       (heq : MvPolynomial.eval ![x₁, y₁] L₂ = MvPolynomial.eval ![x₂, y₂] L₂) :
@@ -355,18 +303,16 @@ private theorem linearIndependent_baseVec {d : ℤ} (hd : Squarefree d) (hd1 : d
     rcases Finset.mem_image.mp hx₂ with ⟨nx₂, -, rfl⟩
     rcases Finset.mem_image.mp hy₂ with ⟨ny₂, -, rfl⟩
     have hemb : embPos d ⟨nx₁, -(ny₁ : ℤ)⟩ = embPos d ⟨nx₂, -(ny₂ : ℤ)⟩ := by
-      simpa [L₂, embPos_apply, sub_eq_add_neg, mul_comm (csqrt d)] using heq
+      simpa [L₂, embPos_apply, sub_eq_add_neg, mul_comm (Complex.sqrt d)] using heq
     obtain ⟨hre, him⟩ := Zsqrtd.ext_iff.mp (embPos_injective hd hd1 hemb)
     dsimp at hre him
-    have hnx : nx₁ = nx₂ := by omega
-    have hny : ny₁ = ny₂ := by omega
-    exact ⟨by simp [hnx], by simp [hny]⟩
+    exact ⟨by exact_mod_cast (by omega : nx₁ = nx₂), by exact_mod_cast (by omega : ny₁ = ny₂)⟩
   have hmult (x : ℂ) (hx : x ∈ grid) (y : ℂ) (hy : y ∈ grid) :
       (X - C (MvPolynomial.eval ![x, y] L₁)) ^ grid.card ∣
         F.map (evalRingHom (MvPolynomial.eval ![x, y] L₂)) := by
     rcases Finset.mem_image.mp hx with ⟨nx, hnx, rfl⟩
     rcases Finset.mem_image.mp hy with ⟨ny, hny, rfl⟩
-    simpa [hgrid_card, L₁, L₂, mul_comm (csqrt d)] using
+    simpa [hgrid_card, L₁, L₂, mul_comm (Complex.sqrt d)] using
       dvd_map_evalRingHom_relationPoly hd.ne_zero hc (Finset.mem_range.mp hnx)
         (Finset.mem_range.mp hny)
   have hdeg_lt : grid.card * (F.natDegree + (Bivariate.swap F).natDegree) +
@@ -375,30 +321,21 @@ private theorem linearIndependent_baseVec {d : ℤ} (hd : Squarefree d) (hd1 : d
     refine lt_of_le_of_lt (add_le_add (Nat.mul_le_mul_left N (add_le_add hF_deg hF_swap))
       (Nat.mul_le_mul (Nat.mul_le_mul_left 2 hF_deg) hF_swap)) hdeg
   have hF0 : F = 0 := eq_zero_of_pow_dvd_map_evalRingHom_of_lt_card_cube grid hL₁ hL₂
-    (aevalAeval_conj_injective (csqrt_ne_zero hd.ne_zero)) hinj_β hmult hdeg_lt
+    hinj_hom hinj_β hmult hdeg_lt
   intro i
-  have hcoeff : (F.coeff i.1.1).coeff i.2.1 = 0 := by simp [hF0]
   have hval : (F.coeff i.1.1).coeff i.2.1 = (c i : ℂ) := by
-    rw [show F = relationPoly c from rfl, relationPoly, finsetSum_coeff,
-      Finset.sum_eq_single i.1
-        (fun r _ hr ↦ coeff_monomial_of_ne _ (Fin.ext_iff.not.mp hr.symm))
-        (fun h ↦ absurd (Finset.mem_univ _) h),
-      coeff_monomial_same, finsetSum_coeff,
-      Finset.sum_eq_single i.2
-        (fun s _ hs ↦ coeff_monomial_of_ne _ (Fin.ext_iff.not.mp hs.symm))
-        (fun h ↦ absurd (Finset.mem_univ _) h),
-      coeff_monomial_same]
-  exact Complex.ofReal_eq_zero.mp (hval.symm.trans hcoeff)
+    simp only [F, relationPoly, finsetSum_coeff, coeff_monomial_apply, ← Fin.ext_iff,
+      Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte]
+  exact Complex.ofReal_eq_zero.mp (hval.symm.trans (by simp [hF0]))
 
 private theorem one_le_det_intGram {d : ℤ} (hd : Squarefree d) (hd1 : d ≠ 1)
     {N R S : ℕ} (hR : 0 < R) (hS : 0 < S)
     (hdeg : N * ((R - 1) + (S - 1)) + 2 * (R - 1) * (S - 1) < N ^ 3) :
     1 ≤ (intGram d (baseFam d N R S)).det := by
-  have hpos : (0 : ℝ) < ((intGram d (baseFam d N R S)).det : ℝ) := by
-    rw [cast_det_intGram]
-    exact Matrix.det_gram_pos_iff.mpr (linearIndependent_baseVec hd hd1 hR hS hdeg)
-  have hposZ : 0 < (intGram d (baseFam d N R S)).det := by exact_mod_cast hpos
-  omega
+  have hpos : (0 : ℝ) < ((intGram d (baseFam d N R S)).det : ℝ) :=
+    cast_det_intGram d (baseFam d N R S) ▸
+      Matrix.det_gram_pos_iff.mpr (linearIndependent_baseVec hd hd1 hR hS hdeg)
+  exact Int.add_one_le_of_lt (by exact_mod_cast hpos)
 
 /-! ### Archimedean upper bound on `log G.det` -/
 
@@ -408,13 +345,14 @@ private theorem norm_emb_baseFam_le {d : ℤ} (hd0 : d ≠ 0) {N R S : ℕ}
         (R : ℝ) ^ N * (2 * N * Real.sqrt d.natAbs) ^ (i.1.1 + i.2.1) ∧
       ‖embNeg d (baseFam d N R S i k)‖ ≤
         (R : ℝ) ^ N * (2 * N * Real.sqrt d.natAbs) ^ (i.1.1 + i.2.1) := by
+  have hnorm : ‖Complex.sqrt (d : ℂ)‖ = Real.sqrt d.natAbs := by
+    rw [← Real.sqrt_sq (norm_nonneg _), ← norm_pow, Complex.sq_sqrt, Complex.norm_intCast,
+      Nat.cast_natAbs, Int.cast_abs]
   have hsq1 : (1 : ℝ) ≤ Real.sqrt d.natAbs := by
-    rw [← Real.sqrt_one]
-    exact Real.sqrt_le_sqrt (by exact_mod_cast Int.natAbs_pos.mpr hd0)
+    rw [← Real.sqrt_one]; exact Real.sqrt_le_sqrt (by exact_mod_cast Int.natAbs_pos.mpr hd0)
   have h2Nd_ge : (1 : ℝ) ≤ 2 * N * Real.sqrt d.natAbs := by
-    have hN1 : (1 : ℝ) ≤ N := by exact_mod_cast hN
-    nlinarith
-  have hpt (sgn : ℤ) (hsgn : |sgn| ≤ 1) (ε : ℂ) (hε : ‖ε‖ = ‖csqrt d‖) :
+    nlinarith [show (1 : ℝ) ≤ N by exact_mod_cast hN]
+  have hpt (sgn : ℤ) (hsgn : |sgn| ≤ 1) (ε : ℂ) (hε : ‖ε‖ = ‖Complex.sqrt (d : ℂ)‖) :
       ‖((k.1.1 : ℂ) + ((sgn * (k.2.1.1 : ℤ) : ℤ) : ℂ) * ε)‖ ≤ 2 * N * Real.sqrt d.natAbs := by
     have hx : (k.1.1 : ℝ) ≤ N := by exact_mod_cast k.1.2.le
     have hy : ‖((sgn * (k.2.1.1 : ℤ) : ℤ) : ℂ)‖ ≤ N := by
@@ -426,15 +364,13 @@ private theorem norm_emb_baseFam_le {d : ℤ} (hd0 : d ≠ 0) {N R S : ℕ}
         ≤ ‖(k.1.1 : ℂ)‖ + ‖((sgn * (k.2.1.1 : ℤ) : ℤ) : ℂ)‖ * ‖ε‖ :=
           (norm_add_le _ _).trans (by rw [norm_mul])
       _ ≤ N + N * Real.sqrt d.natAbs := by
-          rw [Complex.norm_natCast, hε, norm_csqrt]
+          rw [Complex.norm_natCast, hε, hnorm]
           exact add_le_add hx (mul_le_mul_of_nonneg_right hy (Real.sqrt_nonneg _))
       _ ≤ 2 * N * Real.sqrt d.natAbs := by nlinarith
   have hdesc : (i.1.1.descFactorial k.2.2.1 : ℝ) ≤ (R : ℝ) ^ N := by
-    have h1 : i.1.1.descFactorial k.2.2.1 ≤ R ^ N :=
-      (Nat.descFactorial_le_pow _ _).trans
-        ((Nat.pow_le_pow_left i.1.2.le _).trans (Nat.pow_le_pow_right hR k.2.2.2.le))
-    exact_mod_cast h1
-  have hbound (φ : ℤ√d →+* ℂ) (ε : ℂ) (hε : ‖ε‖ = ‖csqrt d‖)
+    exact_mod_cast (Nat.descFactorial_le_pow _ _).trans
+      ((Nat.pow_le_pow_left i.1.2.le _).trans (Nat.pow_le_pow_right hR k.2.2.2.le))
+  have hbound (φ : ℤ√d →+* ℂ) (ε : ℂ) (hε : ‖ε‖ = ‖Complex.sqrt (d : ℂ)‖)
       (hφ : ∀ a b : ℤ, φ ⟨a, b⟩ = (a : ℂ) + (b : ℂ) * ε) :
       ‖φ (baseFam d N R S i k)‖ ≤ (R : ℝ) ^ N * (2 * N * Real.sqrt d.natAbs) ^ (i.1.1 + i.2.1) := by
     rw [jetEval_basePoly_eq, map_mul, map_mul, map_pow, map_pow, map_natCast, norm_mul, norm_mul,
@@ -452,8 +388,8 @@ private theorem norm_emb_baseFam_le {d : ℤ} (hd0 : d ≠ 0) {N R S : ℕ}
           rw [pow_add]; ring
       _ ≤ (R : ℝ) ^ N * (2 * N * Real.sqrt d.natAbs) ^ (i.1.1 + i.2.1) :=
           mul_le_mul_of_nonneg_left (pow_le_pow_right₀ h2Nd_ge (by omega)) (by positivity)
-  exact ⟨hbound (embPos d) (csqrt d) rfl (fun _ _ ↦ rfl),
-    hbound (embNeg d) (-csqrt d) (norm_neg _) (fun _ _ ↦ rfl)⟩
+  exact ⟨hbound (embPos d) (Complex.sqrt d) rfl (fun _ _ ↦ rfl),
+    hbound (embNeg d) (-Complex.sqrt d) (norm_neg _) (fun _ _ ↦ rfl)⟩
 
 private theorem two_mul_log_norm_baseVec_le {d : ℤ} (hd0 : d ≠ 0) {N R S : ℕ}
     (hN : 0 < N) (hR : 0 < R) {i : Fin R × Fin S} (hi : baseVec d N R S i ≠ 0) :
@@ -535,38 +471,13 @@ private theorem log_det_intGram_le {d : ℤ} (hd : Squarefree d) (hd1 : d ≠ 1)
 
 /-! ### `p`-adic divisibility of `G.det` at inert primes -/
 
-/-- Elementary factorial divisibility: `p ^ m` divides `j!` whenever `p * m ≤ j` and `0 < p`. -/
-private theorem pow_dvd_factorial_of_mul_le {p m j : ℕ} (hp : 0 < p) (h : p * m ≤ j) :
-    p ^ m ∣ j.factorial := by
-  suffices hpm : p ^ m ∣ (p * m).factorial from hpm.trans (Nat.factorial_dvd_factorial h)
-  clear h
-  induction m with
-  | zero => simp
-  | succ m ih =>
-    have hstep : p * (m + 1) = (p * m + (p - 1)) + 1 := by
-      rw [Nat.mul_succ]; omega
-    rw [pow_succ', hstep, Nat.factorial_succ, ← hstep]
-    exact mul_dvd_mul (dvd_mul_right p (m + 1))
-      (ih.trans (Nat.factorial_dvd_factorial (Nat.le_add_right _ _)))
-
-/-- Split `(a + b) ^ p` in a commutative ring at `i = 0`, `1 ≤ i ≤ p - 1`, and `i = p`. -/
-private theorem add_pow_prime_split {R : Type*} [CommRing R] (a b : R) {p : ℕ} (hp : 0 < p) :
-    (a + b) ^ p = b ^ p + (∑ i ∈ Finset.range (p - 1),
-      a ^ (i + 1) * b ^ (p - (i + 1)) * (p.choose (i + 1) : R)) + a ^ p := by
-  rw [(Commute.all a b).add_pow p, Finset.sum_range_succ, Nat.sub_self, pow_zero, mul_one,
-    Nat.choose_self, Nat.cast_one, mul_one]
-  congr 1
-  conv_lhs => rw [(Nat.sub_add_cancel hp).symm]
-  rw [Finset.sum_range_succ']
-  simp [Nat.sub_add_cancel hp, add_comm]
-
 /-- Frobenius at an odd prime `p` with `jacobiSym d p = -1` sends `x + y√d` to `x - y√d` mod `p`. -/
 private theorem inert_frobenius_sub_conj {d : ℤ} {p : ℕ} (hp : p.Prime) (hodd : Odd p)
     (hjac : jacobiSym d p = -1) (x y : ℤ) :
     (p : ℤ√d) ∣ (⟨x, y⟩ : ℤ√d) ^ p - ⟨x, -y⟩ := by
   have : Fact p.Prime := ⟨hp⟩
   have hdec : (⟨x, y⟩ : ℤ√d) = (x : ℤ√d) + (y : ℤ√d) * Zsqrtd.sqrtd := by ext <;> simp
-  rw [hdec, add_pow_prime_split _ _ hp.pos]
+  rw [hdec, (Commute.all _ _).add_pow_eq_pow_add_sum_add_pow hp.pos]
   set S := ∑ i ∈ Finset.range (p - 1),
       (x : ℤ√d) ^ (i + 1) * ((y : ℤ√d) * Zsqrtd.sqrtd) ^ (p - (i + 1)) * (p.choose (i + 1) : ℤ√d)
   have hmid : (p : ℤ√d) ∣ S := by
@@ -659,17 +570,11 @@ private theorem shiftPoly_eq_sum_basePoly (d : ℤ) {p R S : ℕ} (hp : 0 < p) (
         hj (Prod.ext (Fin.ext h1) (Fin.ext h2))
       simp [j₀, hcond])
     (fun h ↦ absurd (Finset.mem_univ j₀) h)]
-  have hneg_pow : (-(C (X : (ℤ√d)[X])) : (ℤ√d)[X][X]) ^ (shiftExp p S i - m) =
-      (-1 : (ℤ√d)[X][X]) ^ (shiftExp p S i - m) * (C (X : (ℤ√d)[X])) ^ (shiftExp p S i - m) := by
-    have hneg : (-(C (X : (ℤ√d)[X])) : (ℤ√d)[X][X]) =
-        (-1 : (ℤ√d)[X][X]) * C (X : (ℤ√d)[X]) := by ring
-    rw [hneg, mul_pow]
   have hbase : basePoly d j₀ =
       C (X ^ i.2.1) * C (X ^ (shiftExp p S i - m)) *
         (X ^ (i.1.1 - p * shiftExp p S i) * (X ^ p) ^ m) := by
-    dsimp [basePoly, j₀]
-    rw [pow_add, C_mul, pow_add, pow_mul]
-  rw [ite_eq_left ⟨rfl, rfl⟩, hbase, hneg_pow, ← C_pow, zsmul_eq_mul]
+    dsimp [basePoly, j₀]; rw [pow_add, C_mul, pow_add, pow_mul]
+  rw [ite_eq_left ⟨rfl, rfl⟩, hbase, neg_pow (C (X : (ℤ√d)[X])), ← C_pow, zsmul_eq_mul]
   push_cast
   ring
 
@@ -691,8 +596,7 @@ private theorem det_intGram_shiftFam_eq (d : ℤ) {p N R S : ℕ} (hp : 0 < p) :
       ¬ (j.1.1 = i.1.1 - p * shiftExp p S i + p * m ∧
         j.2.1 = i.2.1 + (shiftExp p S i - m)) := by
     intro ⟨h1, _⟩
-    have hm_lt : m < shiftExp p S i := Finset.mem_range.mp hm
-    have hpm : p * m < p * shiftExp p S i := Nat.mul_lt_mul_of_pos_left hm_lt hp
+    have hpm : p * m < p * shiftExp p S i := Nat.mul_lt_mul_of_pos_left (Finset.mem_range.mp hm) hp
     have h_le : p * shiftExp p S i ≤ i.1.1 :=
       (Nat.mul_le_mul_left p (min_le_left _ _)).trans (Nat.mul_div_le i.1.1 p)
     omega
@@ -729,7 +633,7 @@ private theorem exists_taylor_X_pow_sub_C_conj {d : ℤ} {p : ℕ} (hp : p.Prime
   set α_bar : ℤ√d := ⟨x, -y⟩
   obtain ⟨γ, hγ⟩ := inert_frobenius_sub_conj hp hodd hjac x y
   have hexp : taylor α (X ^ p - C α_bar) = (X + C α) ^ p - C α_bar := by simp [taylor_apply]
-  rw [hexp, add_pow_prime_split _ _ hp.pos]
+  rw [hexp, (Commute.all _ _).add_pow_eq_pow_add_sum_add_pow hp.pos]
   let c : ℕ → ℤ√d := fun m ↦ ((p.choose (m + 1) / p : ℕ) : ℤ√d)
   refine ⟨C γ + ∑ m ∈ Finset.range (p - 1),
       C (c m) * X ^ (m + 1) * (C α) ^ (p - (m + 1)), ?_⟩
@@ -753,12 +657,12 @@ private theorem pow_dvd_shiftFam {d : ℤ} {p : ℕ} (hp : p.Prime) (hodd : Odd 
     (hjac : jacobiSym d p = -1) (N R S : ℕ) (i : Fin R × Fin S)
     (k : Fin N × Fin N × Fin N) :
     (p : ℤ√d) ^ shiftExp p S i ∣ shiftFam d p N R S i k := by
+  rw [shiftFam, jetEval]
   set h := shiftExp p S i
   set α : ℤ√d := ⟨k.1.1, (k.2.1.1 : ℤ)⟩
   set α_bar : ℤ√d := ⟨k.1.1, -(k.2.1.1 : ℤ)⟩
   set j := k.2.2.1
   set f : (ℤ√d)[X] := (shiftPoly d p i).map (evalRingHom α_bar)
-  change (p : ℤ√d) ^ h ∣ (derivative^[j] f).eval α
   rw [← factorial_smul_hasseDeriv, LinearMap.smul_apply, eval_smul, ← taylor_coeff, nsmul_eq_mul]
   have hf : f = C (α_bar ^ i.2.1) * X ^ (i.1.1 - p * h) * (X ^ p - C α_bar) ^ h := by
     simp [f, shiftPoly, h, mul_assoc]
@@ -776,22 +680,18 @@ private theorem pow_dvd_shiftFam {d : ℤ} {p : ℕ} (hp : p.Prime) (hodd : Odd 
       C ((p : ℤ√d) ^ (h - m)) *
         (C (α_bar ^ i.2.1) * (X + C α) ^ (i.1.1 - p * h) * A ^ (h - m) *
           (h.choose m : (ℤ√d)[X])) * X ^ (p * m) := by
-    rw [mul_pow, ← C_pow, ← pow_mul]
-    ring
+    rw [mul_pow, ← C_pow, ← pow_mul]; ring
   rw [hterm, mul_assoc, coeff_C_mul]
   set B := C (α_bar ^ i.2.1) * (X + C α) ^ (i.1.1 - p * h) * A ^ (h - m) *
     (h.choose m : (ℤ√d)[X])
   rcases lt_or_ge j (p * m) with hlt | hge
   · simp only [coeff_mul_X_pow', not_le.mpr hlt, ↓reduceIte, mul_zero, dvd_zero]
-  · obtain ⟨q_fac, hq_fac⟩ := pow_dvd_factorial_of_mul_le hp.pos hge
+  · obtain ⟨q_fac, hq_fac⟩ := Nat.pow_dvd_factorial_of_mul_le hp.pos hge
     have hcast : (j.factorial : ℤ√d) = (p : ℤ√d) ^ m * (q_fac : ℤ√d) := by exact_mod_cast hq_fac
-    rw [hcast]
     refine ⟨(q_fac : ℤ√d) * (B * X ^ (p * m)).coeff j, ?_⟩
-    calc (p : ℤ√d) ^ m * (q_fac : ℤ√d) * ((p : ℤ√d) ^ (h - m) * (B * X ^ (p * m)).coeff j)
-        = (p : ℤ√d) ^ (m + (h - m)) * ((q_fac : ℤ√d) * (B * X ^ (p * m)).coeff j) := by
-          rw [pow_add]; ring
-      _ = (p : ℤ√d) ^ h * ((q_fac : ℤ√d) * (B * X ^ (p * m)).coeff j) := by
-          rw [Nat.add_sub_of_le hm_le]
+    rw [hcast]
+    conv_rhs => rw [← Nat.add_sub_of_le hm_le, pow_add]
+    ring
 
 /-- **Fact 3: `p`-adic divisibility of `G.det`** at odd inert primes. -/
 private theorem pow_dvd_det_intGram {d : ℤ} {p : ℕ} (hp : p.Prime) (hodd : Odd p)

@@ -17,10 +17,12 @@ scalars, so constructions requiring an invertible factorial apply automatically 
 
 The file also records `Nat.sq_eq_descFactorial_two_add`, the expansion `n ^ 2 = (n)₂ + n` of a
 square into falling factorials, which converts second factorial moments into second moments,
-and `Nat.six_pow_mul_factorial_le_factorial_two_mul_add_one`, `6 ^ n * n ! ≤ (2 * n + 1)!`, the
-termwise comparison of the power series of `x * exp (x ^ 2 / 6)` and `sinh x`, and
+`Nat.six_pow_mul_factorial_le_factorial_two_mul_add_one`, `6 ^ n * n ! ≤ (2 * n + 1)!`, the
+termwise comparison of the power series of `x * exp (x ^ 2 / 6)` and `sinh x`,
 `Nat.factorial_succ_sq_le_four_pow_mul_factorial_two_mul`, `((n + 1)!)² ≤ 4 ^ n * (2 * n)!`, the
-termwise comparison that sums moment bounds `((n + 1)!)² aⁿ` against the series of `cosh`.
+termwise comparison that sums moment bounds `((n + 1)!)² aⁿ` against the series of `cosh`, and
+`Nat.pow_dvd_factorial_of_mul_le`, the elementary divisibility `p ^ m ∣ j!` whenever `p * m ≤ j`
+and `0 < p`.
 -/
 
 public section
@@ -74,5 +76,19 @@ theorem factorial_succ_sq_le_four_pow_mul_factorial_two_mul (n : ℕ) :
     exact le_of_dvd (factorial_pos _) (factorial_mul_factorial_dvd_factorial_add n n)
   rw [factorial_succ, Nat.mul_pow, Nat.pow_two n !]
   exact Nat.mul_le_mul hn hc
+
+/-- Elementary factorial divisibility: `p ^ m` divides `j!` whenever `p * m ≤ j` and `0 < p`. -/
+theorem pow_dvd_factorial_of_mul_le {p m j : ℕ} (hp : 0 < p) (h : p * m ≤ j) :
+    p ^ m ∣ j.factorial := by
+  suffices hpm : p ^ m ∣ (p * m).factorial from Nat.dvd_trans hpm (Nat.factorial_dvd_factorial h)
+  clear h
+  induction m with
+  | zero => simp
+  | succ m ih =>
+    have hstep : p * (m + 1) = (p * m + (p - 1)) + 1 := by
+      rw [Nat.mul_succ]; omega
+    rw [Nat.pow_succ', hstep, Nat.factorial_succ, ← hstep]
+    exact Nat.mul_dvd_mul (Nat.dvd_mul_right p (m + 1))
+      (Nat.dvd_trans ih (Nat.factorial_dvd_factorial (Nat.le_add_right _ _)))
 
 end Nat

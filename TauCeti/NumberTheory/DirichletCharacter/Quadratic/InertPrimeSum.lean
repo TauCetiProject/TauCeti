@@ -7,7 +7,7 @@ module
 
 public import Mathlib.NumberTheory.Chebyshev
 public import TauCeti.NumberTheory.DirichletCharacter.Quadratic.FundamentalDiscriminant
-import TauCeti.Algebra.BigOperators.Field
+import TauCeti.Algebra.Order.BigOperators.Sum.Min
 import TauCeti.NumberTheory.Chebyshev.PrimeTail
 import TauCeti.NumberTheory.DirichletCharacter.Quadratic.InertPrimeSum.Determinant
 
@@ -55,93 +55,7 @@ namespace TauCeti
 
 namespace InertPrimeSum
 
-/-! ### Summing the `p`-adic exponents and assembling the Mertens bound -/
-
-private theorem sum_range_min_ge (S k : ℕ) :
-    2 * (S : ℝ) * k - (k : ℝ) ^ 2 - k ≤ 2 * ∑ s ∈ Finset.range S, (min k s : ℝ) := by
-  rcases le_or_gt k S with hkS | hSk
-  · conv_rhs => rw [(Nat.add_sub_of_le hkS).symm, Finset.sum_range_add]
-    have h1 : ∑ s ∈ Finset.range k, (min k s : ℝ) = (k : ℝ) * (k - 1) / 2 := by
-      rw [Finset.sum_congr rfl fun s hs ↦
-        min_eq_right (by exact_mod_cast Nat.le_of_lt (Finset.mem_range.mp hs))]
-      exact Finset.sum_range_natCast k
-    have h2 : ∑ x ∈ Finset.range (S - k), min (k : ℝ) ((k + x : ℕ) : ℝ) =
-        ((S - k : ℕ) : ℝ) * k := by
-      rw [Finset.sum_congr rfl fun x _ ↦
-          min_eq_left (by exact_mod_cast Nat.le_add_right k x),
-        Finset.sum_const, Finset.card_range, nsmul_eq_mul]
-    rw [h1, h2, Nat.cast_sub hkS]
-    exact le_of_eq (by ring)
-  · have h1 : ∑ s ∈ Finset.range S, (min k s : ℝ) = (S : ℝ) * (S - 1) / 2 := by
-      rw [Finset.sum_congr rfl fun s hs ↦ by
-        have := Finset.mem_range.mp hs
-        exact min_eq_right (by exact_mod_cast (by omega : s ≤ k))]
-      exact Finset.sum_range_natCast S
-    rw [h1]
-    have hle : (S : ℝ) ≤ k := by exact_mod_cast hSk.le
-    nlinarith [sq_nonneg ((k : ℝ) - S)]
-
-private theorem two_mul_sum_min_ge {p R S : ℕ} (hp : 0 < p) (hSR : S ≤ R) :
-    (R : ℝ) ^ 2 * S / p - 2 * (R : ℝ) ^ 2 / p - 2 * R * S - (R : ℝ) ^ 3 / p ^ 2 ≤
-      2 * (∑ i : Fin R × Fin S, ((min (i.1.1 / p) (S - 1 - i.2.1) : ℕ) : ℝ)) := by
-  have hpR : (0 : ℝ) < p := by exact_mod_cast hp
-  have hrev (r : Fin R) :
-      (∑ s : Fin S, ((min (r.1 / p) (S - 1 - s.1) : ℕ) : ℝ)) =
-        ∑ s ∈ Finset.range S, min ((r.1 / p : ℕ) : ℝ) (s : ℝ) := by
-    rw [← Equiv.sum_comp Fin.revPerm (fun s : Fin S ↦ ((min (r.1 / p) (S - 1 - s.1) : ℕ) : ℝ)),
-      ← Fin.sum_univ_eq_sum_range (fun s : ℕ ↦ min ((r.1 / p : ℕ) : ℝ) (s : ℝ)) S]
-    refine Finset.sum_congr rfl fun s _ ↦ ?_
-    have hval : S - 1 - (Fin.revPerm s).1 = s.1 := by
-      simp only [Fin.revPerm_apply, Fin.val_rev]
-      have := s.2
-      omega
-    rw [hval, Nat.cast_min]
-  have hr_term (r : Fin R) :
-      2 * (S : ℝ) * r.1 / p - 2 * S - (R : ℝ) ^ 2 / p ^ 2 - (R : ℝ) / p ≤
-        2 * ∑ s : Fin S, ((min (r.1 / p) (S - 1 - s.1) : ℕ) : ℝ) := by
-    rw [hrev r]
-    set k := r.1 / p
-    have hk_le : (k : ℝ) ≤ (r.1 : ℝ) / p :=
-      (le_div_iff₀ hpR).mpr (by exact_mod_cast Nat.div_mul_le_self r.1 p)
-    have hk_ge : (r.1 : ℝ) / p - 1 ≤ k := by
-      rw [sub_le_iff_le_add, div_le_iff₀ hpR]
-      have hdiv : p * k + r.1 % p = r.1 := Nat.div_add_mod r.1 p
-      have hmod : r.1 % p < p := Nat.mod_lt r.1 hp
-      have hk1 : (k + 1) * p = p * k + p := by ring
-      exact_mod_cast (by omega : r.1 ≤ (k + 1) * p)
-    have hrR : (r.1 : ℝ) / p ≤ (R : ℝ) / p := by gcongr; exact_mod_cast r.2.le
-    have hksq : (k : ℝ) ^ 2 ≤ (R : ℝ) ^ 2 / p ^ 2 := by
-      calc (k : ℝ) ^ 2 ≤ ((R : ℝ) / p) ^ 2 :=
-            sq_le_sq₀ (by positivity) (by positivity) |>.mpr (hk_le.trans hrR)
-        _ = (R : ℝ) ^ 2 / p ^ 2 := div_pow _ _ 2
-    have h2Sk : 2 * (S : ℝ) * r.1 / p - 2 * S ≤ 2 * (S : ℝ) * k := by
-      calc 2 * (S : ℝ) * r.1 / p - 2 * S
-          = (2 * (S : ℝ)) * ((r.1 : ℝ) / p - 1) := by ring
-        _ ≤ (2 * (S : ℝ)) * k := mul_le_mul_of_nonneg_left hk_ge (by positivity)
-    linarith [sum_range_min_ge S k, h2Sk, hksq, hk_le.trans hrR]
-  have hsum_r : (∑ r : Fin R, (2 * (S : ℝ) * r.1 / p)) =
-      (S : ℝ) * ((R : ℝ) * (R - 1)) / p := by
-    calc (∑ r : Fin R, (2 * (S : ℝ) * r.1 / p))
-        = (2 * (S : ℝ) / p) * ∑ r ∈ Finset.range R, (r : ℝ) := by
-          rw [← Fin.sum_univ_eq_sum_range (fun r : ℕ ↦ (r : ℝ)) R, Finset.mul_sum]
-          exact Finset.sum_congr rfl fun r _ ↦ by ring
-      _ = (S : ℝ) * ((R : ℝ) * (R - 1)) / p := by rw [Finset.sum_range_natCast]; ring
-  rw [Fintype.sum_prod_type, Finset.mul_sum]
-  calc (R : ℝ) ^ 2 * S / p - 2 * (R : ℝ) ^ 2 / p - 2 * R * S - (R : ℝ) ^ 3 / p ^ 2
-      ≤ (S : ℝ) * ((R : ℝ) * (R - 1)) / p - (R : ℝ) * (2 * S) -
-          (R : ℝ) * ((R : ℝ) ^ 2 / p ^ 2) - (R : ℝ) * ((R : ℝ) / p) := by
-        have hSR_R : (S : ℝ) ≤ R := by exact_mod_cast hSR
-        have hnn : 0 ≤ (R : ℝ) * (R - S) / p :=
-          div_nonneg (mul_nonneg (by positivity) (sub_nonneg.mpr hSR_R)) hpR.le
-        linarith [show ((S : ℝ) * ((R : ℝ) * (R - 1)) / p - (R : ℝ) * ((R : ℝ) / p)) -
-            ((R : ℝ) ^ 2 * S / p - 2 * (R : ℝ) ^ 2 / p) = (R : ℝ) * (R - S) / p by ring,
-          show (R : ℝ) * ((R : ℝ) ^ 2 / p ^ 2) = (R : ℝ) ^ 3 / p ^ 2 by ring]
-    _ = ∑ r : Fin R,
-          (2 * (S : ℝ) * r.1 / p - 2 * S - (R : ℝ) ^ 2 / p ^ 2 - (R : ℝ) / p) := by
-        simp only [sub_eq_add_neg, Finset.sum_add_distrib, Finset.sum_neg_distrib,
-          Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, hsum_r]
-    _ ≤ ∑ r : Fin R, 2 * ∑ s : Fin S, ((min (r.1 / p) (S - 1 - s.1) : ℕ) : ℝ) :=
-        Finset.sum_le_sum fun r _ ↦ hr_term r
+/-! ### Parameter arithmetic and assembling the Mertens bound -/
 
 /-- Parameter arithmetic for `X = q ^ C`, `S = X / C`, `N = q ^ (2 * (C / 3))` when `6 ≤ C` and
 `3 ∣ C`. -/
@@ -388,7 +302,22 @@ theorem sum_primesLE_jacobiSym_eq_neg_one_le {d : ℤ} (hd : Squarefree d) (hd1 
     refine Finset.sum_le_sum fun p hp ↦ ?_
     have hp_pr := (Nat.mem_primesLE.mp (Finset.mem_filter.mp hp).1).2
     have hlog_nn : 0 ≤ Real.log p := Real.log_nonneg (by exact_mod_cast hp_pr.one_le)
-    have hexp := mul_le_mul_of_nonneg_right (two_mul_sum_min_ge hp_pr.pos hSX) hlog_nn
+    have hsum_eq : (∑ i : Fin X × Fin S, ((min (i.1.1 / p) (S - 1 - i.2.1) : ℕ) : ℝ)) =
+        ∑ r ∈ Finset.range X, ∑ s ∈ Finset.range S, ((min (r / p) s : ℕ) : ℝ) := by
+      rw [Fintype.sum_prod_type, ← Fin.sum_univ_eq_sum_range (n := X)]
+      refine Finset.sum_congr rfl fun r _ ↦ ?_
+      rw [← Equiv.sum_comp Fin.revPerm (fun s : Fin S ↦ ((min (r.1 / p) (S - 1 - s.1) : ℕ) : ℝ)),
+        ← Fin.sum_univ_eq_sum_range (n := S)]
+      exact Finset.sum_congr rfl fun s _ ↦ by
+        congr 2; simp only [Fin.revPerm_apply, Fin.val_rev]; omega
+    have hSX_R : (S : ℝ) ≤ X := by exact_mod_cast hSX
+    have hexp := mul_le_mul_of_nonneg_right (show
+        (X : ℝ) ^ 2 * S / p - 2 * (X : ℝ) ^ 2 / p - 2 * X * S - (X : ℝ) ^ 3 / p ^ 2 ≤
+          2 * ∑ i : Fin X × Fin S, ((min (i.1.1 / p) (S - 1 - i.2.1) : ℕ) : ℝ) by
+      rw [hsum_eq]
+      linarith [Finset.le_two_mul_sum_range_min_div (K := ℝ) p X S,
+        show (X : ℝ) * S / p ≤ (X : ℝ) ^ 2 / p by rw [sq]; gcongr,
+        show 2 * (X : ℝ) ^ 2 / p = (X : ℝ) ^ 2 / p + (X : ℝ) ^ 2 / p by ring]) hlog_nn
     linarith [show ((X : ℝ) ^ 2 * S / p - 2 * (X : ℝ) ^ 2 / p - 2 * X * S - (X : ℝ) ^ 3 / p ^ 2) *
         Real.log p =
       (X : ℝ) ^ 2 * S * (Real.log p / p) - 2 * (X : ℝ) ^ 2 * (Real.log p / p) -

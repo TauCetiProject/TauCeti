@@ -12,6 +12,7 @@ import Mathlib.Algebra.MvPolynomial.SchwartzZippel
 import Mathlib.Algebra.Polynomial.FieldDivision
 import Mathlib.RingTheory.Polynomial.Content
 import Mathlib.RingTheory.Polynomial.UniqueFactorization
+import TauCeti.Algebra.Polynomial.Bivariate
 import TauCeti.Algebra.Polynomial.Roots
 import TauCeti.LinearAlgebra.Matrix.Determinant.IdealDivisibility
 import TauCeti.LinearAlgebra.Matrix.Polynomial
@@ -26,13 +27,14 @@ degrees at most `df` and `dg`, the resultant `f.resultant g m n` has degree at m
 `m * dg + n * df`. In particular, for `Q : R[X][X]` of outer degree `d₁` and inner degree `d₂`,
 `Q.resultant Q.derivative` has degree at most `2 * d₁ * d₂`.
 
-Over an integral domain `R`, if `Q : R[X][X]` has positive outer degree and its formal derivative
-resultant `Q.resultant Q.derivative Q.natDegree (Q.natDegree - 1)` is nonzero, then at every point
-`(α, β) ∈ R × R` the fiber multiplicity `(Q.map (evalRingHom β)).rootMultiplicity α` is bounded by
+Over an integral domain `R`, if `Q : R[X][X]` has nonzero formal derivative resultant
+`Q.resultant Q.derivative Q.natDegree (Q.natDegree - 1)`, then at every point `(α, β) ∈ R × R`
+the fiber multiplicity `(Q.map (evalRingHom β)).rootMultiplicity α` is bounded by
 `1 + (Q.resultant Q.derivative Q.natDegree (Q.natDegree - 1)).rootMultiplicity β`. After shifting
 the outer coordinate by `C α`, a fiber root of multiplicity `m ≥ 2` makes `X - C β` divide the
 first `m` coefficients of the shifted polynomial and hence the first `m - 1` coefficients of its
-derivative, so `(X - C β) ^ (m - 1)` divides the first `m - 1` rows of the Sylvester matrix.
+derivative, so `X - C β` divides each of the first `m - 1` rows of the Sylvester matrix, and hence
+`(X - C β) ^ (m - 1)` divides its determinant.
 
 Over a characteristic-zero field `K`, unique factorization in `K[X][X]` combines this resultant
 bound with a point-set zero bound to estimate high-order vanishing along fibers with distinct
@@ -42,9 +44,6 @@ specialization to planar grids via the Schwartz–Zippel lemma
 
 ## Main results
 
-* `Polynomial.Bivariate.coeff_coeff_swap`, `Polynomial.Bivariate.natDegree_swap_le_iff`:
-  `Bivariate.swap` transposes bivariate coefficients, so `(Bivariate.swap Q).natDegree` is the
-  least upper bound on the degrees of the coefficients of `Q`.
 * `Polynomial.natDegree_resultant_le`, `Polynomial.natDegree_resultant_deriv_le`: degree bounds
   for resultants of bivariate polynomials.
 * `Polynomial.rootMultiplicity_map_evalRingHom_le_of_resultant_ne_zero`: the Sylvester-row
@@ -69,40 +68,7 @@ open scoped Finset
 
 namespace Polynomial
 
-section SwapAndDegree
-
-namespace Bivariate
-
-/-- Swapping the two indeterminates of `R[X][X]` transposes the coefficient table. -/
-@[simp]
-theorem coeff_coeff_swap {R : Type*} [CommSemiring R] (Q : R[X][X]) (m n : ℕ) :
-    ((swap Q).coeff m).coeff n = (Q.coeff n).coeff m := by
-  induction Q using Polynomial.induction_on' with
-  | add p q hp hq => simp [hp, hq]
-  | monomial k a =>
-    induction a using Polynomial.induction_on' with
-    | add a b ha hb =>
-      rw [(monomial k).map_add, map_add, coeff_add, coeff_add, coeff_add, ha, hb]
-      simp [coeff_monomial]
-    | monomial l r =>
-      rw [swap_monomial_monomial, coeff_monomial, coeff_monomial]
-      by_cases hlm : l = m <;> by_cases hkn : k = n <;> simp [hlm, hkn]
-
-/-- The outer degree of `Bivariate.swap Q` bounds the degree of every coefficient of `Q`. -/
-theorem natDegree_swap_le_iff {R : Type*} [CommSemiring R] {Q : R[X][X]} {d : ℕ} :
-    (swap Q).natDegree ≤ d ↔ ∀ n, (Q.coeff n).natDegree ≤ d := by
-  refine ⟨fun h n ↦ natDegree_le_iff_coeff_eq_zero.mpr fun m hm ↦ ?_,
-    fun h ↦ natDegree_le_iff_coeff_eq_zero.mpr fun m hm ↦ ?_⟩
-  · rw [← coeff_coeff_swap, natDegree_le_iff_coeff_eq_zero.mp h m hm, coeff_zero]
-  · ext n
-    rw [coeff_zero, coeff_coeff_swap, natDegree_le_iff_coeff_eq_zero.mp (h n) m hm]
-
-/-- Every coefficient of `Q : R[X][X]` has degree at most `(Bivariate.swap Q).natDegree`. -/
-theorem natDegree_coeff_le_natDegree_swap {R : Type*} [CommSemiring R] (Q : R[X][X]) (n : ℕ) :
-    (Q.coeff n).natDegree ≤ (swap Q).natDegree :=
-  natDegree_swap_le_iff.mp le_rfl n
-
-end Bivariate
+section DegreeBounds
 
 /-- **Degree bound for bivariate resultants.** If the coefficients of `f, g : R[X][X]` have
 degrees at most `df` and `dg`, then `f.resultant g m n` has degree at most `m * dg + n * df`. -/
@@ -139,17 +105,16 @@ theorem natDegree_resultant_deriv_le {R : Type*} [CommRing R] (Q : R[X][X]) :
         exact (natDegree_derivative_le Q).trans (Nat.sub_le _ _)
     _ = 2 * Q.natDegree * d := by ring
 
-end SwapAndDegree
+end DegreeBounds
 
 section ResultantMultiplicity
 
 /-- **Resultant bound on fiber root multiplicities.** Over an integral domain `R`, if `Q : R[X][X]`
-has positive outer degree and nonzero formal derivative resultant
-`Q.resultant Q.derivative Q.natDegree (Q.natDegree - 1)`, then the multiplicity of `α` as a root of
-the specialized polynomial `Q.map (evalRingHom β)` is at most one more than the multiplicity of `β`
-as a root of that resultant. -/
+has nonzero formal derivative resultant `Q.resultant Q.derivative Q.natDegree (Q.natDegree - 1)`,
+then the multiplicity of `α` as a root of the specialized polynomial `Q.map (evalRingHom β)` is at
+most one more than the multiplicity of `β` as a root of that resultant. -/
 theorem rootMultiplicity_map_evalRingHom_le_of_resultant_ne_zero {R : Type*} [CommRing R]
-    [IsDomain R] {Q : R[X][X]} (hQ : 0 < Q.natDegree)
+    [IsDomain R] {Q : R[X][X]}
     (hres : Q.resultant Q.derivative Q.natDegree (Q.natDegree - 1) ≠ 0) (α β : R) :
     (Q.map (evalRingHom β)).rootMultiplicity α ≤
       1 + (Q.resultant Q.derivative Q.natDegree (Q.natDegree - 1)).rootMultiplicity β := by
@@ -210,40 +175,41 @@ theorem rootMultiplicity_map_evalRingHom_le_of_resultant_ne_zero {R : Type*} [Co
   have hle := (le_rootMultiplicity_iff hres).mpr hdvd_res
   omega
 
-/-- A squarefree polynomial of positive degree over a GCD domain of characteristic zero has
-nonzero resultant with its derivative. -/
+/-- A squarefree polynomial over a GCD domain of characteristic zero has nonzero resultant with its
+derivative. -/
 theorem _root_.Squarefree.resultant_deriv_ne_zero {D : Type*} [CommRing D] [IsDomain D]
-    [IsGCDMonoid D] [CharZero D] {p : D[X]} (hp : Squarefree p) (hdeg : 0 < p.natDegree) :
+    [IsGCDMonoid D] [CharZero D] {p : D[X]} (hp : Squarefree p) :
     p.resultant p.derivative ≠ 0 := by
-  rw [resultant, natDegree_derivative, ← resultant,
-    resultant_deriv (natDegree_pos_iff_degree_pos.mp hdeg)]
-  exact mul_ne_zero
-    (mul_ne_zero (pow_ne_zero _ (by norm_num)) (leadingCoeff_ne_zero.mpr hp.ne_zero))
-    hp.discr_ne_zero
+  rcases Nat.eq_zero_or_pos p.natDegree with h0 | hdeg
+  · rw [eq_C_of_natDegree_eq_zero h0]
+    simp [resultant]
+  · rw [resultant, natDegree_derivative, ← resultant,
+      resultant_deriv (natDegree_pos_iff_degree_pos.mp hdeg)]
+    exact mul_ne_zero
+      (mul_ne_zero (pow_ne_zero _ (by norm_num)) (leadingCoeff_ne_zero.mpr hp.ne_zero))
+      hp.discr_ne_zero
 
 /-- **Resultant multiplicity bound for squarefree bivariate polynomials.** Over a GCD domain `R`
-of characteristic zero, if `Q : R[X][X]` is squarefree of positive outer degree, then
+of characteristic zero, if `Q : R[X][X]` is squarefree, then
 `(Q.map (evalRingHom β)).rootMultiplicity α ≤ 1 + (Q.resultant Q.derivative).rootMultiplicity β`
 for all `α, β : R`. -/
 theorem _root_.Squarefree.rootMultiplicity_map_evalRingHom_le {R : Type*} [CommRing R]
-    [IsDomain R] [IsGCDMonoid R] [CharZero R] {Q : R[X][X]} (hQ : Squarefree Q)
-    (hdeg : 0 < Q.natDegree) (α β : R) :
+    [IsDomain R] [IsGCDMonoid R] [CharZero R] {Q : R[X][X]} (hQ : Squarefree Q) (α β : R) :
     (Q.map (evalRingHom β)).rootMultiplicity α ≤
       1 + (Q.resultant Q.derivative).rootMultiplicity β := by
   have hres :
       Q.resultant Q.derivative Q.natDegree (Q.natDegree - 1) = Q.resultant Q.derivative := by
     rw [← natDegree_derivative]
   rw [← hres]
-  exact rootMultiplicity_map_evalRingHom_le_of_resultant_ne_zero hdeg
-    (hres ▸ hQ.resultant_deriv_ne_zero hdeg) α β
+  exact rootMultiplicity_map_evalRingHom_le_of_resultant_ne_zero
+    (hres ▸ hQ.resultant_deriv_ne_zero) α β
 
 /-- **Resultant multiplicity bound for irreducible bivariate polynomials** (Green, Appendix A). -/
 theorem _root_.Irreducible.rootMultiplicity_map_evalRingHom_le {R : Type*} [CommRing R]
-    [IsDomain R] [IsGCDMonoid R] [CharZero R] {Q : R[X][X]} (hQ : Irreducible Q)
-    (hdeg : 0 < Q.natDegree) (α β : R) :
+    [IsDomain R] [IsGCDMonoid R] [CharZero R] {Q : R[X][X]} (hQ : Irreducible Q) (α β : R) :
     (Q.map (evalRingHom β)).rootMultiplicity α ≤
       1 + (Q.resultant Q.derivative).rootMultiplicity β :=
-  hQ.squarefree.rootMultiplicity_map_evalRingHom_le hdeg α β
+  hQ.squarefree.rootMultiplicity_map_evalRingHom_le α β
 
 end ResultantMultiplicity
 
@@ -276,27 +242,6 @@ private theorem cappedFiberMult_mul_le {K : Type*} [Field K] (α β : K) (N : �
   have hAB : A.map (evalRingHom β) * B.map (evalRingHom β) ≠ 0 := mul_ne_zero hA hB
   simp only [hA, hB, hAB, ↓reduceIte, rootMultiplicity_mul hAB]
   omega
-
-/-- An irreducible bivariate polynomial of positive outer degree cannot vanish identically on any
-vertical fiber `X = β`. -/
-private theorem map_evalRingHom_ne_zero_of_irreducible {K : Type*} [Field K] {Q : K[X][X]}
-    (hQ : Irreducible Q) (hdeg : 0 < Q.natDegree) (β : K) :
-    Q.map (evalRingHom β) ≠ 0 := by
-  intro h0
-  have hdvd : C (X - C β) ∣ Q := by
-    rw [C_dvd_iff_dvd_coeff]
-    intro k
-    rw [dvd_iff_isRoot, IsRoot.def]
-    have hk0 : (Q.map (evalRingHom β)).coeff k = 0 := by simp [h0]
-    rwa [coeff_map] at hk0
-  obtain ⟨R₀, hQR⟩ := hdvd
-  rcases hQ.isUnit_or_isUnit hQR with hu | hu
-  · exact not_isUnit_X_sub_C β (isUnit_C.mp hu)
-  · have hR₀ : R₀.natDegree = 0 := natDegree_eq_zero_of_isUnit hu
-    have hQ0 : Q.natDegree ≤ 0 := by
-      rw [hQR]
-      exact natDegree_mul_le.trans (by simp [hR₀])
-    omega
 
 /-- The bivariate multiplicity bound on a single irreducible factor `Q : K[X][X]`. -/
 private theorem sum_cappedFiberMult_le_of_irreducible {K ι : Type*} [Field K] [CharZero K]
@@ -331,15 +276,15 @@ private theorem sum_cappedFiberMult_le_of_irreducible {K ι : Type*} [Field K] [
     exact Nat.mul_le_mul_left N hZ
   · let Z := Finset.univ.filter fun i : ι ↦ (Q.map (evalRingHom (β i))).eval (α i) = 0
     have hout (i : ι) (hi : i ∉ Z) : cappedFiberMult (α i) (β i) N Q = 0 := by
-      have hne : Q.map (evalRingHom (β i)) ≠ 0 := map_evalRingHom_ne_zero_of_irreducible hQ hdeg _
+      have hne : Q.map (evalRingHom (β i)) ≠ 0 := hQ.map_evalRingHom_ne_zero hdeg _
       have hnroot : ¬ (Q.map (evalRingHom (β i))).IsRoot (α i) := by
         simpa [Z, IsRoot.def] using hi
       simp [cappedFiberMult, hne, rootMultiplicity_eq_zero hnroot]
     have hin (i : ι) : cappedFiberMult (α i) (β i) N Q ≤
         1 + (Q.resultant Q.derivative).rootMultiplicity (β i) := by
-      have hne : Q.map (evalRingHom (β i)) ≠ 0 := map_evalRingHom_ne_zero_of_irreducible hQ hdeg _
+      have hne : Q.map (evalRingHom (β i)) ≠ 0 := hQ.map_evalRingHom_ne_zero hdeg _
       simp only [cappedFiberMult, hne, ↓reduceIte]
-      exact (min_le_right _ _).trans (hQ.rootMultiplicity_map_evalRingHom_le hdeg (α i) (β i))
+      exact (min_le_right _ _).trans (hQ.rootMultiplicity_map_evalRingHom_le (α i) (β i))
     calc ∑ i : ι, cappedFiberMult (α i) (β i) N Q
         = ∑ i ∈ Z, cappedFiberMult (α i) (β i) N Q :=
           (Finset.sum_subset (Finset.subset_univ Z) fun i _ hi ↦ hout i hi).symm
@@ -409,45 +354,6 @@ theorem card_mul_le_of_pow_dvd_map_evalRingHom {K ι : Type*} [Field K] [CharZer
           rw [hdeg_z, hdeg_y]
           nlinarith
 
-/-- Substituting two polynomials of total degree at most `1` into `H : R[X][X]` produces a
-multivariate polynomial of total degree at most `H.natDegree + (Bivariate.swap H).natDegree`. -/
-private theorem totalDegree_aevalAeval_le {R σ : Type*} [CommSemiring R]
-    {L₁ L₂ : MvPolynomial σ R} (hL₁ : L₁.totalDegree ≤ 1) (hL₂ : L₂.totalDegree ≤ 1)
-    (H : R[X][X]) :
-    (aevalAeval L₂ L₁ H).totalDegree ≤ H.natDegree + (Bivariate.swap H).natDegree := by
-  conv_lhs => rw [H.as_sum_range_C_mul_X_pow]
-  rw [map_sum]
-  refine MvPolynomial.totalDegree_finsetSum_le fun k hk ↦ ?_
-  have hk_le : k ≤ H.natDegree := Nat.lt_succ_iff.mp (Finset.mem_range.mp hk)
-  rw [map_mul, map_pow, aevalAeval_C, aevalAeval_Y]
-  refine (MvPolynomial.totalDegree_mul _ _).trans ?_
-  have hpow₁ : (L₁ ^ k).totalDegree ≤ H.natDegree :=
-    (MvPolynomial.totalDegree_pow L₁ k).trans ((Nat.mul_le_mul_left k hL₁).trans (by simpa))
-  have hcoeff : (aeval L₂ (H.coeff k)).totalDegree ≤ (Bivariate.swap H).natDegree := by
-    conv_lhs => rw [(H.coeff k).as_sum_range_C_mul_X_pow]
-    rw [map_sum]
-    refine MvPolynomial.totalDegree_finsetSum_le fun j hj ↦ ?_
-    have hj_le : j ≤ (Bivariate.swap H).natDegree :=
-      (Nat.lt_succ_iff.mp (Finset.mem_range.mp hj)).trans
-        (Bivariate.natDegree_coeff_le_natDegree_swap H k)
-    rw [map_mul, map_pow, aeval_C, aeval_X, Algebra.algebraMap_eq_smul_one, smul_mul_assoc,
-      one_mul]
-    exact (MvPolynomial.totalDegree_smul_le _ _).trans
-      ((MvPolynomial.totalDegree_pow L₂ j).trans ((Nat.mul_le_mul_left j hL₂).trans (by simpa)))
-  exact (add_le_add hcoeff hpow₁).trans (by omega)
-
-/-- Evaluating `aevalAeval L₂ L₁ H` at `f : σ → R` agrees with specializing `H` at
-`MvPolynomial.eval f L₂` and `MvPolynomial.eval f L₁`. -/
-private theorem eval_aevalAeval {R σ : Type*} [CommSemiring R] (f : σ → R)
-    (L₁ L₂ : MvPolynomial σ R) (H : R[X][X]) :
-    MvPolynomial.eval f (aevalAeval L₂ L₁ H) =
-      (H.map (evalRingHom (MvPolynomial.eval f L₂))).eval (MvPolynomial.eval f L₁) := by
-  rw [map_evalRingHom_eval, ← coe_aevalAeval_eq_evalEval]
-  have hhom : (MvPolynomial.aeval f).comp (aevalAeval L₂ L₁) =
-      aevalAeval (MvPolynomial.eval f L₂) (MvPolynomial.eval f L₁) :=
-    (aevalAevalEquiv R R).symm.injective (by simp)
-  simpa using AlgHom.congr_fun hhom H
-
 /-- Schwartz–Zippel zero-count bound for `aevalAeval L₂ L₁ H` over `S × S`. -/
 private theorem card_grid_eval_eq_zero_le {K : Type*} [Field K] [DecidableEq K]
     {S : Finset K} (hS0 : 0 < S.card) {L₁ L₂ : MvPolynomial (Fin 2) K}
@@ -471,7 +377,7 @@ private theorem card_grid_eval_eq_zero_le {K : Type*} [Field K] [DecidableEq K]
     rcases Finset.mem_image.mp hf with ⟨p, hp, rfl⟩
     rw [Finset.mem_filter] at hp ⊢
     refine ⟨Fintype.mem_piFinset.mpr fun i ↦ by fin_cases i <;> simp [emb, p.1.2, p.2.2], ?_⟩
-    rw [eval_aevalAeval]
+    rw [eval_aevalAeval, ← map_evalRingHom_eval]
     exact hp.2
   have hsz := MvPolynomial.schwartz_zippel_totalDegree hP0 S
   have hcard_le : #{f ∈ Fintype.piFinset fun _ : Fin 2 ↦ S | MvPolynomial.eval f P = 0} ≤
@@ -493,8 +399,11 @@ private theorem card_grid_eval_eq_zero_le {K : Type*} [Field K] [DecidableEq K]
     _ ≤ #{f ∈ Fintype.piFinset fun _ : Fin 2 ↦ S | MvPolynomial.eval f P = 0} :=
         Finset.card_le_card hsub
     _ ≤ S.card * P.totalDegree := hcard_le
-    _ ≤ S.card * (H.natDegree + (Bivariate.swap H).natDegree) :=
-        Nat.mul_le_mul_left _ (totalDegree_aevalAeval_le hL₁ hL₂ H)
+    _ ≤ S.card * (H.natDegree + (Bivariate.swap H).natDegree) := by
+        refine Nat.mul_le_mul_left _ ((totalDegree_aevalAeval_le L₂ L₁ H).trans ?_)
+        have h1 := Nat.mul_le_mul_left (Bivariate.swap H).natDegree hL₂
+        have h2 := Nat.mul_le_mul_left H.natDegree hL₁
+        omega
 
 /-- **Planar grid vanishing criterion.** Let `S` be a finite subset of a characteristic-zero field
 `K`, and let `L₁, L₂ : MvPolynomial (Fin 2) K` have total degree at most `1` such that substitution
