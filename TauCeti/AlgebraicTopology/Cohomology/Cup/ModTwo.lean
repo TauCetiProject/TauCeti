@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cohomology.Cup.Basic
-public import TauCeti.AlgebraicTopology.SimplicialSet.Cochains.Basic
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.ReduceModChar
 import TauCeti.Algebra.Homology.ModuleCat.Basic
+import TauCeti.AlgebraicTopology.Cohomology.Cup.Values
 import TauCeti.AlgebraicTopology.Cohomology.UniversalCoefficient
 import TauCeti.AlgebraicTopology.Singular.Reduced
 import TauCeti.Data.ZMod.Four
@@ -39,13 +39,11 @@ Combining the two, on such a space a class `w ∈ H¹(X; 𝔽₂)` with `w ⌣ w
 The mod `2` cohomology here is that of `TauCeti.lsCupLength`: chain and cochain coefficients
 `𝟙_ (ModuleCat (ZMod 2))`, with the unitors as diagonal and multiplication. The `ℤ/4` and the
 integral computations use integral chains. The two are compared through the values of cochains on
-singular simplices (`TauCeti.cochainValuesEquiv`), which both describe.
+singular simplices (`TauCeti.cochainValuesEquiv`), which both describe; on values, the mod `2` cup
+square is computed by `TopCat.cochainValuesEquiv_cupCochain_one_one`.
 
 ## Main results
 
-* `TopCat.cochainValuesEquiv_cupCochain`: the cup product of two cochains with values in a
-  commutative ring takes a singular simplex to the product of the values on its front and back
-  faces.
 * `TopCat.eq_zero_of_singularCup_self_eq_zero`: if every class of `H₁(X; ℤ)` is killed by `2`, a
   class of `H¹(X; 𝔽₂)` with zero square is zero.
 
@@ -70,47 +68,6 @@ namespace TopCat
 `ModuleCat ℤ`, the one the universal coefficient theorem is stated with for a general ring, rather
 than the structure `Linear.preadditiveIntLinear` of an arbitrary preadditive category. -/
 attribute [local instance high] ModuleCat.instLinear
-
-/-- **The cup product of two cochains on a simplex**: with values in a commutative ring `k`, the
-cup product of a `p`-cochain `φ` and a `q`-cochain `ψ` takes a singular `(p + q)`-simplex `σ` to
-`φ` of the front `p`-face of `σ` times `ψ` of its back `q`-face. -/
-lemma cochainValuesEquiv_cupCochain {k : Type w} [CommRing k] (X : TopCat.{w})
-    (p q n : ℕ) (h : p + q = n)
-    (φ : ((toSSet.obj X).chainComplex (𝟙_ (ModuleCat.{w} k))).X p ⟶ 𝟙_ (ModuleCat.{w} k))
-    (ψ : ((toSSet.obj X).chainComplex (𝟙_ (ModuleCat.{w} k))).X q ⟶ 𝟙_ (ModuleCat.{w} k))
-    (σ : (toSSet.obj X) _⦋n⦌) :
-    cochainValuesEquiv k (ModuleCat.of k k) (toSSet.obj X) n
-        (TauCeti.ChainComplex.cupCochain k (X.alexanderWhitneyDiagonal (λ_ _).inv) (λ_ _).hom
-          p q n h φ ψ) σ =
-      cochainValuesEquiv k (ModuleCat.of k k) (toSSet.obj X) p φ
-          ((toSSet.obj X).map (SimplexCategory.subinterval 0 p (by omega)).op σ) *
-        cochainValuesEquiv k (ModuleCat.of k k) (toSSet.obj X) q ψ
-          ((toSSet.obj X).map (SimplexCategory.subinterval p q (by omega)).op σ) := by
-  rw [cochainValuesEquiv_apply, ← ModuleCat.comp_apply,
-    ιChainComplex_cupCochain_alexanderWhitneyDiagonal]
-  simp only [cochainValuesEquiv_apply]
-  -- The unitors of `ModuleCat k` are `r ↦ 1 ⊗ r` and `r ⊗ s ↦ r • s` by definition, so both sides
-  -- are the product of the values of `φ` and `ψ` on the unit chains of the two faces.
-  rfl
-
-/-- The cup product of two `1`-cochains with values in a commutative ring takes a `2`-simplex `σ`
-to the product of the values on its edges `δ₂ σ` (from vertex `0` to `1`) and `δ₀ σ` (from `1`
-to `2`). -/
-private lemma cochainValuesEquiv_cupCochain_one_one {k : Type} [CommRing k] (X : TopCat.{0})
-    (φ ψ : ((toSSet.obj X).chainComplex (𝟙_ (ModuleCat.{0} k))).X 1 ⟶ 𝟙_ (ModuleCat.{0} k))
-    (σ : (toSSet.obj X) _⦋2⦌) :
-    cochainValuesEquiv k (ModuleCat.of k k) (toSSet.obj X) 2
-        (TauCeti.ChainComplex.cupCochain k (X.alexanderWhitneyDiagonal (λ_ _).inv) (λ_ _).hom
-          1 1 2 rfl φ ψ) σ =
-      cochainValuesEquiv k (ModuleCat.of k k) (toSSet.obj X) 1 φ ((toSSet.obj X).δ 2 σ) *
-        cochainValuesEquiv k (ModuleCat.of k k) (toSSet.obj X) 1 ψ ((toSSet.obj X).δ 0 σ) := by
-  have h₀ : SimplexCategory.subinterval (n := 2) 0 1 (by omega) = SimplexCategory.δ 2 := by
-    ext i; fin_cases i <;> rfl
-  have h₁ : SimplexCategory.subinterval (n := 2) 1 1 (by omega) = SimplexCategory.δ 0 := by
-    ext i; fin_cases i <;> rfl
-  rw [cochainValuesEquiv_cupCochain, h₀, h₁]
-  -- The face map `K.δ i` is `K.map (δ i).op` by definition.
-  rfl
 
 /-- The lifts `ι a + 2 ι x` to `ℤ/4` of the values of a mod `2` cocycle `a` and of a mod `2`
 cochain `x` with `δx = a ⌣ a` form a `ℤ/4`-cocycle, where `ι : ℤ/2 → ℤ/4` is `ZMod.cast`: on a
@@ -153,6 +110,27 @@ private lemma homologyMap_zmodFourToTwo_eq_zero (X : TopCat.{0})
   revert y
   decide
 
+/-- The values of the coboundary of an integral `0`-cochain with values in `M` on a `1`-simplex. -/
+private lemma integralValues_d_zero_one (X : TopCat.{0}) (M : ModuleCat.{0} ℤ)
+    (η : (X.singularCochainComplex (ModuleCat.of ℤ ℤ) ℤ M).X 0) (τ : (toSSet.obj X) _⦋1⦌) :
+    cochainValuesEquiv ℤ M (toSSet.obj X) 1
+        ((X.singularCochainComplex (ModuleCat.of ℤ ℤ) ℤ M).d 0 1 η) τ =
+      cochainValuesEquiv ℤ M (toSSet.obj X) 0 η ((toSSet.obj X).δ 0 τ) -
+        cochainValuesEquiv ℤ M (toSSet.obj X) 0 η ((toSSet.obj X).δ 1 τ) := by
+  refine (cochainValuesEquiv_linearYonedaObj_d ℤ M (toSSet.obj X) 0 η τ).trans ?_
+  simp [Fin.sum_univ_two, sub_eq_add_neg]
+
+/-- The values of the coboundary of an integral `1`-cochain with values in `M` on a `2`-simplex. -/
+private lemma integralValues_d_one_two (X : TopCat.{0}) (M : ModuleCat.{0} ℤ)
+    (θ : (X.singularCochainComplex (ModuleCat.of ℤ ℤ) ℤ M).X 1) (σ : (toSSet.obj X) _⦋2⦌) :
+    cochainValuesEquiv ℤ M (toSSet.obj X) 2
+        ((X.singularCochainComplex (ModuleCat.of ℤ ℤ) ℤ M).d 1 2 θ) σ =
+      cochainValuesEquiv ℤ M (toSSet.obj X) 1 θ ((toSSet.obj X).δ 0 σ) -
+        cochainValuesEquiv ℤ M (toSSet.obj X) 1 θ ((toSSet.obj X).δ 1 σ) +
+        cochainValuesEquiv ℤ M (toSSet.obj X) 1 θ ((toSSet.obj X).δ 2 σ) := by
+  refine (cochainValuesEquiv_linearYonedaObj_d ℤ M (toSSet.obj X) 1 θ σ).trans ?_
+  simp [Fin.sum_univ_three, sub_eq_add_neg]
+
 /-- The mod `2` cochain complex of `X`, with chain and cochain coefficients
 `𝟙_ (ModuleCat (ZMod 2))`. -/
 private abbrev modTwoCochains (X : TopCat.{0}) : CochainComplex (ModuleCat (ZMod 2)) ℕ :=
@@ -162,20 +140,38 @@ private abbrev modTwoCochains (X : TopCat.{0}) : CochainComplex (ModuleCat (ZMod
 private abbrev modTwoValues (X : TopCat.{0}) (n : ℕ) :=
   cochainValuesEquiv (ZMod 2) (ModuleCat.of (ZMod 2) (ZMod 2)) (toSSet.obj X) n
 
+/-- The values of the coboundary of a mod `2` `0`-cochain on a `1`-simplex. The complex
+`modTwoCochains X` is the complex of cochains with values in `ModuleCat.of (ZMod 2) (ZMod 2)` up to
+unfolding `𝟙_ (ModuleCat (ZMod 2))`, so `cochainValuesEquiv_linearYonedaObj_d` applies to it. -/
+private lemma modTwoValues_d_zero_one (X : TopCat.{0}) (η : (modTwoCochains X).X 0)
+    (τ : (toSSet.obj X) _⦋1⦌) :
+    modTwoValues X 1 ((modTwoCochains X).d 0 1 η) τ =
+      modTwoValues X 0 η ((toSSet.obj X).δ 0 τ) - modTwoValues X 0 η ((toSSet.obj X).δ 1 τ) := by
+  refine (cochainValuesEquiv_linearYonedaObj_d (ZMod 2) (ModuleCat.of (ZMod 2) (ZMod 2))
+    (toSSet.obj X) 0 η τ).trans ?_
+  simp [Fin.sum_univ_two, sub_eq_add_neg]
+
+/-- The values of the coboundary of a mod `2` `1`-cochain on a `2`-simplex, as in
+`modTwoValues_d_zero_one`. -/
+private lemma modTwoValues_d_one_two (X : TopCat.{0}) (θ : (modTwoCochains X).X 1)
+    (σ : (toSSet.obj X) _⦋2⦌) :
+    modTwoValues X 2 ((modTwoCochains X).d 1 2 θ) σ =
+      modTwoValues X 1 θ ((toSSet.obj X).δ 0 σ) - modTwoValues X 1 θ ((toSSet.obj X).δ 1 σ) +
+        modTwoValues X 1 θ ((toSSet.obj X).δ 2 σ) := by
+  refine (cochainValuesEquiv_linearYonedaObj_d (ZMod 2) (ModuleCat.of (ZMod 2) (ZMod 2))
+    (toSSet.obj X) 1 θ σ).trans ?_
+  simp [Fin.sum_univ_three, sub_eq_add_neg]
+
 /-- A mod `2` cocycle has values summing to `0` over the faces of every `2`-simplex. -/
 private lemma modTwoValues_cocycle (X : TopCat.{0}) (φ : (modTwoCochains X).cycles 1)
     (σ : (toSSet.obj X) _⦋2⦌) :
     modTwoValues X 1 ((modTwoCochains X).iCycles 1 φ) ((toSSet.obj X).δ 0 σ) +
         modTwoValues X 1 ((modTwoCochains X).iCycles 1 φ) ((toSSet.obj X).δ 1 σ) +
       modTwoValues X 1 ((modTwoCochains X).iCycles 1 φ) ((toSSet.obj X).δ 2 σ) = 0 := by
-  have := cochainValuesEquiv_linearYonedaObj_d (ZMod 2) (ModuleCat.of (ZMod 2) (ZMod 2))
-    (toSSet.obj X) 1 ((modTwoCochains X).iCycles 1 φ) σ
-  simp only [Nat.reduceAdd] at this
-  -- `modTwoCochains X` is the complex of cochains with values in `ModuleCat.of (ZMod 2) (ZMod 2)`
-  -- up to the unfolding of `𝟙_ (ModuleCat (ZMod 2))`, so `erw` is needed to match its differential.
-  erw [(modTwoCochains X).moduleCat_d_iCycles_apply] at this
-  have h0 := congrFun (map_zero (modTwoValues X 2)) σ
-  simpa [Fin.sum_univ_three] using this.symm.trans h0
+  have h := modTwoValues_d_one_two X ((modTwoCochains X).iCycles 1 φ) σ
+  rw [(modTwoCochains X).moduleCat_d_iCycles_apply, CharTwo.sub_eq_add] at h
+  rw [← h]
+  exact congrFun (map_zero (modTwoValues X 2)) σ
 
 /-- If `δψ = φ ⌣ φ` for mod `2` cochains, the values of `ψ` on the faces of a `2`-simplex sum to
 the product of the values of `φ` on its edges from vertex `0` to `1` and from `1` to `2`. -/
@@ -192,12 +188,10 @@ private lemma modTwoValues_cup_self (X : TopCat.{0}) (φ : (modTwoCochains X).cy
   have h := congrArg ((modTwoCochains X).iCycles 2) hψ
   rw [(modTwoCochains X).moduleCat_iCycles_toCycles_apply,
     TauCeti.ChainComplex.iCycles_cupCycles] at h
-  have := cochainValuesEquiv_linearYonedaObj_d (ZMod 2) (ModuleCat.of (ZMod 2) (ZMod 2))
-    (toSSet.obj X) 1 ψ σ
-  simp only [Nat.reduceAdd] at this
-  -- As in `modTwoValues_cocycle`, the differential is matched up to unfolding `𝟙_`.
-  erw [h, cochainValuesEquiv_cupCochain_one_one] at this
-  simpa [Fin.sum_univ_three] using this
+  calc _ = modTwoValues X 2 ((modTwoCochains X).d 1 2 ψ) σ := by
+        rw [h]
+        exact (cochainValuesEquiv_cupCochain_one_one X _ _ σ).symm
+    _ = _ := by rw [modTwoValues_d_one_two, CharTwo.sub_eq_add]
 
 /-- **The `ℤ/4` lift.** If every class of `H₁(X; ℤ)` is killed by `2`, and the values `f` of a mod
 `2` cocycle satisfy `f ⌣ f = δg` on every `2`-simplex, then `f` is the coboundary of a function `e`
@@ -218,17 +212,11 @@ private lemma exists_sub_eq_of_mul_eq (X : TopCat.{0})
   let Z := X.singularCochainComplex (ModuleCat.of ℤ ℤ) ℤ (ModuleCat.of ℤ (ZMod 4))
   let Θ : Z.X 1 := (cochainValuesEquiv ℤ (ModuleCat.of ℤ (ZMod 4)) K 1).symm v
   have hΘ : Z.d 1 2 Θ = 0 := by
-    apply (cochainValuesEquiv ℤ (ModuleCat.of ℤ (ZMod 4)) K 2).injective
-    funext σ
-    have := cochainValuesEquiv_linearYonedaObj_d ℤ (ModuleCat.of ℤ (ZMod 4)) K 1 Θ σ
-    simp only [Nat.reduceAdd] at this
-    -- `Z.d 1 2` is the differential `cochainValuesEquiv_linearYonedaObj_d` computes, up to
-    -- unfolding the abbreviation `singularCochainComplex`.
-    erw [this, map_zero]
-    simp only [Fin.sum_univ_three, Θ, LinearEquiv.apply_symm_apply, v, Pi.zero_apply]
-    have h := zmod_four_cocycle _ _ _ _ _ _ (hf σ) (hg σ)
-    simp
-    linear_combination h
+    refine (cochainValuesEquiv ℤ (ModuleCat.of ℤ (ZMod 4)) K 2).map_eq_zero_iff.1
+      (funext fun σ ↦ ?_)
+    rw [integralValues_d_one_two]
+    simp only [Θ, K, LinearEquiv.apply_symm_apply, Pi.zero_apply]
+    exact zmod_four_cocycle _ _ _ _ _ _ (hf σ) (hg σ)
   -- The reduction of `Θ` modulo `2` is the coboundary of a `0`-cochain `η`.
   have hβ := homologyMap_zmodFourToTwo_eq_zero X h2
     (Z.homologyπ 1 (Z.moduleCatCyclesMk Θ 2 (by simp) hΘ))
@@ -241,16 +229,11 @@ private lemma exists_sub_eq_of_mul_eq (X : TopCat.{0})
   rw [HomologicalComplex.moduleCat_iCycles_toCycles_apply,
     HomologicalComplex.iCycles_moduleCatCyclesMk] at hη'
   refine ⟨cochainValuesEquiv ℤ (ModuleCat.of ℤ (ZMod 2)) K 0 η, fun τ ↦ ?_⟩
-  have := cochainValuesEquiv_linearYonedaObj_d ℤ (ModuleCat.of ℤ (ZMod 2)) K 0 η τ
-  simp only [Nat.reduceAdd] at this
-  -- `hη'` is stated for the same differential, up to unfolding `Nat` literals.
-  erw [hη', ChainComplex.linearYonedaObjMap_f_hom_apply] at this
   have hv : cochainValuesEquiv ℤ (ModuleCat.of ℤ (ZMod 2)) K 1 (Θ ≫ zmodFourToTwo) τ = f τ := by
     rw [cochainValuesEquiv_apply, ModuleCat.comp_apply, ← cochainValuesEquiv_apply,
       LinearEquiv.apply_symm_apply]
     exact ZMod.cast_cast_add_two_mul_cast _ _
-  rw [hv] at this
-  simpa [Fin.sum_univ_two, sub_eq_add_neg] using this.symm
+  rw [← integralValues_d_zero_one, hη', ChainComplex.linearYonedaObjMap_f_hom_apply, hv]
 
 /-- A mod `2` cocycle whose values are the coboundary of a function `e` on the vertices has zero
 class. -/
@@ -265,15 +248,11 @@ private lemma homologyπ_eq_zero_of_sub_eq (X : TopCat.{0}) (φ : (modTwoCochain
     rw [(modTwoCochains X).moduleCat_iCycles_toCycles_apply]
     apply (modTwoValues X 1).injective
     funext τ
-    have := cochainValuesEquiv_linearYonedaObj_d (ZMod 2) (ModuleCat.of (ZMod 2) (ZMod 2))
-      (toSSet.obj X) 0 η τ
-    simp only [Nat.reduceAdd] at this
-    -- As in `modTwoValues_cocycle`, the differential is matched up to unfolding `𝟙_`.
-    erw [this]
-    simp only [Fin.sum_univ_two, η, LinearEquiv.apply_symm_apply]
-    simpa [sub_eq_add_neg] using he τ
+    rw [modTwoValues_d_zero_one]
+    simp only [η, LinearEquiv.apply_symm_apply]
+    exact he τ
   rw [← hφ, ← ModuleCat.comp_apply, HomologicalComplex.toCycles_comp_homologyπ]
-  rfl
+  simp
 
 /-- **A mod `2` class of degree one with zero square vanishes when `H₁(X; ℤ)` is `2`-torsion.**
 If every class of `H₁(X; ℤ)` is killed by `2`, then every class `w ∈ H¹(X; 𝔽₂)` with

@@ -13,8 +13,9 @@ public import TauCeti.AlgebraicTopology.Cohomology.Cup.ModTwo
 
 For `N ≥ 2` the integral homology `H₁(RPᴺ; ℤ)` is `ℤ/2`
 (`TauCeti.RealProjectiveSpace.singularHomologyIntLinearEquivOfOdd`), so every class of it is
-killed by `2`. By `TopCat.eq_zero_of_singularCup_self_eq_zero`, a class `w ∈ H¹(RPᴺ; 𝔽₂)` with
-`w ⌣ w = 0` therefore vanishes: the nonzero class of `H¹(RPᴺ; 𝔽₂)` has nonzero square
+killed by `2` (`TauCeti.RealProjectiveSpace.two_nsmul_singularHomology_one_eq_zero`). By
+`TopCat.eq_zero_of_singularCup_self_eq_zero`, a class `w ∈ H¹(RPᴺ; 𝔽₂)` with `w ⌣ w = 0`
+therefore vanishes: the nonzero class of `H¹(RPᴺ; 𝔽₂)` has nonzero square
 (`TauCeti.RealProjectiveSpace.singularCup_self_ne_zero`). This is the first step of the
 computation `H*(RPᴺ; 𝔽₂) = 𝔽₂[w] / (w ^ (N + 1))` of Hatcher, Theorem 3.12, and it separates the
 mod `2` cup product from the zero pairing: odd-degree classes can have nonzero squares in
@@ -24,8 +25,6 @@ For `N = 1` the conclusion fails, as it must: `H₁(RP¹; ℤ) = ℤ` and `H²(R
 
 ## Main results
 
-* `TauCeti.RealProjectiveSpace.two_nsmul_singularHomology_one_eq_zero`: every class of
-  `H₁(RPᴺ; ℤ)` is killed by `2`, for `N ≠ 1`.
 * `TauCeti.RealProjectiveSpace.singularCup_self_ne_zero`: a nonzero class of `H¹(RPᴺ; 𝔽₂)` has
   nonzero cup square, for `N ≠ 1`.
 
@@ -44,21 +43,6 @@ open CategoryTheory MonoidalCategory AlgebraicTopology
 namespace TauCeti.RealProjectiveSpace
 
 variable {N : ℕ}
-
-/-- For `N ≠ 1`, every class of `H₁(RPᴺ; ℤ)` is killed by `2`: the group is `ℤ/2` for `N ≥ 2`
-and `0` for `N = 0`. -/
-theorem two_nsmul_singularHomology_one_eq_zero (hN : N ≠ 1)
-    (x : ((singularHomologyFunctor (ModuleCat.{0} ℤ) 1).obj (ModuleCat.of ℤ ℤ)).obj
-      (TopCat.of (RealProjectiveSpace N))) :
-    2 • x = 0 := by
-  rcases Nat.lt_or_gt_of_ne hN with hN | hN
-  · exact ModuleCat.subsingleton_of_isZero (isZero_singularHomology_of_lt ℤ hN) |>.elim _ _
-  let e := singularHomologyIntLinearEquivOfOdd (N := N) odd_one hN
-  apply e.injective
-  rw [map_nsmul, map_zero]
-  generalize e x = y
-  revert y
-  decide
 
 /-- **The mod `2` cup square in real projective space.** For `N ≠ 1`, a nonzero class
 `w ∈ H¹(RPᴺ; 𝔽₂)` has nonzero cup square `w ⌣ w ∈ H²(RPᴺ; 𝔽₂)`. Such a class exists for `N ≥ 2`
