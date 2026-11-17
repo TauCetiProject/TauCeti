@@ -12,11 +12,11 @@ public import TauCeti.Topology.Grassmannian.Tautological
 # The Grassmannian of a Euclidean space in projection form
 
 For a real inner product space `E` and `k : ℕ`, `Euclidean.grassmannian E k` is the set of
-continuous linear maps `P : E → E` that are self-adjoint idempotents (`IsStarProjection`) with
-`k`-dimensional range, with the topology and the operator-norm metric of `E →L[ℝ] E`. Each
-`k`-plane of `E` is recorded by its orthogonal projection: when `E` is finite-dimensional,
-`S ↦ S.starProjection` is a bijection from the `k`-dimensional subspaces of `E` onto
-`Euclidean.grassmannian E k`, with inverse `P ↦ P.range`
+continuous linear maps `P : E → E` that are self-adjoint idempotents (`IsStarProjection`)
+whose range has rank `k` (`Module.rank`, so the range is finite-dimensional), with the topology
+and the operator-norm metric of `E →L[ℝ] E`. Each `k`-plane of `E` is recorded by its orthogonal
+projection: when `E` is finite-dimensional, `S ↦ S.starProjection` is a bijection from the
+`k`-dimensional subspaces of `E` onto `Euclidean.grassmannian E k`, with inverse `P ↦ P.range`
 (`Euclidean.grassmannian.submoduleEquiv`), by Mathlib's
 `isStarProjection_iff_eq_starProjection_range`.
 
@@ -34,7 +34,7 @@ This is the Grassmannian `G(E, k)` that carries the varifolds of a Euclidean spa
 
 ## Main definitions
 
-* `Euclidean.grassmannian E k`: the orthogonal projections of `E` with `k`-dimensional range.
+* `Euclidean.grassmannian E k`: the orthogonal projections of `E` with range of rank `k`.
 * `Euclidean.grassmannian.submoduleEquiv`: the bijection with the `k`-dimensional subspaces.
 * `Euclidean.grassmannian.finiteGrassmannianHomeomorph`: the homeomorphism from
   `TauCeti.finiteGrassmannian ℝ k N` induced by a linear isometry
@@ -59,15 +59,16 @@ variable [CompleteSpace E]
 
 variable (E) in
 /-- The **Grassmannian** `G(E, k)` of a real inner product space in projection form: the
-self-adjoint idempotent continuous linear maps of `E` with `k`-dimensional range, that is, the
+self-adjoint idempotent continuous linear maps of `E` whose range has rank `k`, that is, the
 orthogonal projections onto the `k`-dimensional subspaces of `E` (L. Simon, *Lectures on
-Geometric Measure Theory*, §38). -/
+Geometric Measure Theory*, §38). The rank is the cardinal `Module.rank`, so that an
+infinite-rank projection of an infinite-dimensional `E` is not a point of `G(E, 0)`. -/
 def grassmannian (k : ℕ) : Set (E →L[ℝ] E) :=
-  {P | IsStarProjection P ∧ finrank ℝ P.range = k}
+  {P | IsStarProjection P ∧ Module.rank ℝ P.range = k}
 
 /-- Membership in the Grassmannian unfolds to its defining conditions. -/
 theorem mem_grassmannian {P : E →L[ℝ] E} :
-    P ∈ grassmannian E k ↔ IsStarProjection P ∧ finrank ℝ P.range = k :=
+    P ∈ grassmannian E k ↔ IsStarProjection P ∧ Module.rank ℝ P.range = k :=
   Iff.rfl
 
 namespace grassmannian
@@ -76,9 +77,14 @@ namespace grassmannian
 theorem isStarProjection {P : E →L[ℝ] E} (hP : P ∈ grassmannian E k) : IsStarProjection P :=
   hP.1
 
+/-- The range of a point of `G(E, k)` is finite-dimensional. -/
+theorem finiteDimensional_range {P : E →L[ℝ] E} (hP : P ∈ grassmannian E k) :
+    FiniteDimensional ℝ P.range :=
+  Module.finite_of_rank_eq_nat hP.2
+
 /-- The range of a point of `G(E, k)` has dimension `k`. -/
 theorem finrank_range {P : E →L[ℝ] E} (hP : P ∈ grassmannian E k) : finrank ℝ P.range = k :=
-  hP.2
+  finrank_eq_of_rank_eq hP.2
 
 /-- A point of the Grassmannian has operator norm at most `1`. -/
 theorem norm_le_one {P : E →L[ℝ] E} (hP : P ∈ grassmannian E k) :
@@ -86,9 +92,10 @@ theorem norm_le_one {P : E →L[ℝ] E} (hP : P ∈ grassmannian E k) :
   hP.1.norm_le
 
 /-- The orthogonal projection onto a `k`-dimensional subspace is a point of `G(E, k)`. -/
-theorem starProjection_mem {S : Submodule ℝ E} [S.HasOrthogonalProjection]
+theorem starProjection_mem {S : Submodule ℝ E} [FiniteDimensional ℝ S]
     (hS : finrank ℝ S = k) : S.starProjection ∈ grassmannian E k :=
-  ⟨isStarProjection_starProjection, by rw [Submodule.range_starProjection, hS]⟩
+  ⟨isStarProjection_starProjection, by
+    rw [Submodule.range_starProjection, ← Module.finrank_eq_rank, hS]⟩
 
 /-- A point of the Grassmannian is the orthogonal projection onto its range. -/
 theorem eq_starProjection_range {P : E →L[ℝ] E}
@@ -196,7 +203,7 @@ Grassmannian `G(E, k)`, with inverse `P ↦ P.range`. -/
 noncomputable def submoduleEquiv :
     {S : Submodule ℝ E // finrank ℝ S = k} ≃ grassmannian E k where
   toFun S := ⟨S.1.starProjection, starProjection_mem S.2⟩
-  invFun P := ⟨P.1.range, P.2.2⟩
+  invFun P := ⟨P.1.range, finrank_range P.2⟩
   left_inv S := Subtype.ext S.1.range_starProjection
   right_inv P := Subtype.ext (eq_starProjection_range P.2).2.symm
 
