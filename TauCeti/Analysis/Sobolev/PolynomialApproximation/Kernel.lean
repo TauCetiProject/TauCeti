@@ -16,13 +16,13 @@ import TauCeti.MeasureTheory.Integral.NormRpow
 /-!
 # The Taylor-remainder operator kernel and its potential bounds
 
-Averaging Taylor's integral remainder of order `m` at `x` against a weight function `φ` expresses
-the remainder integral in terms of a double integral over `y` and the segment parameter
-`s ∈ (0, 1)` evaluated at `z = x + s • (y - x)`. Passing from `(y, s)` to `(z, s)` via the
-homothety of ratio `s` centred at `x` introduces the Haar Jacobian `s ^ (-n)` (`n = finrank ℝ E`),
-while scaling the direction `x - y = s⁻¹ • (x - z)` inside the `(m + 1)`-homogeneous contraction
-`IteratedGradient.fullContractL m` contributes `(s⁻¹) ^ (m + 1)`. Against the Taylor factor `s ^ m`,
-the order `m` cancels out of the scalar ray weight:
+Averaging the integral remainder of the degree-`m` Taylor polynomial (order `m + 1` in
+Brenner–Scott) at `x` against a weight function `φ` expresses the remainder integral in terms of a
+double integral over `y` and the segment parameter `s ∈ (0, 1)` evaluated at `z = x + s • (y - x)`.
+Passing from `(y, s)` to `(z, s)` via the homothety of ratio `s` centred at `x` introduces the Haar
+Jacobian `s ^ (-n)` (`n = finrank ℝ E`), while scaling the direction `x - y = s⁻¹ • (x - z)` inside
+the `(m + 1)`-homogeneous contraction `IteratedGradient.fullContractL m` contributes
+`(s⁻¹) ^ (m + 1)`. Against the Taylor factor `s ^ m`, `m` cancels out of the scalar ray weight:
 
 `w(x, z) = ∫_{s ∈ (0, 1)} φ(x + s⁻¹ • (z - x)) s ^ (-n - 1) ds`.
 
@@ -30,15 +30,16 @@ Multiplying `(m !)⁻¹ * w(x, z)` by `IteratedGradient.fullContractL m (x - z)`
 operator-valued kernel `taylorRemainderKernel φ m x z : IteratedGradient E m →L[ℝ] ℝ` that
 depends neither on the target function nor on the normalization of the additive Haar measure:
 
-* its support in `z` lies in the star-cone of segments between `x` and `support φ`, hence in
-  `convexHull ℝ (insert x B)` whenever `support φ ⊆ B`, and in `Ω` whenever `Ω` is star-convex
-  with respect to every point of `support φ`;
-* when `support φ ⊆ closedBall x D` and `‖φ‖_∞ ≤ M`, it satisfies the Riesz-potential domination
+* its support in `z` lies in the star-cone of open segments between `x` and `support φ`, hence in
+  `convexHull ℝ (insert x B)` whenever `support φ ⊆ B`, and in `Ω` whenever `x ∈ Ω` and `Ω` is
+  star-convex with respect to every point of `support φ`;
+* when `support φ ⊆ closedBall x D` (`0 ≤ D`) and `∀ y, ‖φ y‖ ≤ M`, it satisfies the
+  Riesz-potential domination
   `‖taylorRemainderKernel φ m x z‖ ≤ (M * D ^ n / (n * m !)) * ‖x - z‖ ^ (m + 1 - n)` at every
   pair `(x, z)` without any measurability hypothesis on `φ`;
-* on any bounded set `Ω` with `support φ ⊆ closure Ω`, integrating against
-  `taylorRemainderKernel φ m` defines a bounded integral operator from
-  `L¹(Ω; IteratedGradient E m)` into `L¹(Ω)`.
+* on any bounded set `Ω`, for a measurable cutoff `φ` with `support φ ⊆ closure Ω` and
+  `∀ y, ‖φ y‖ ≤ M`, integrating against `taylorRemainderKernel φ m` defines a bounded integral
+  operator from `L¹(Ω; IteratedGradient E m)` into `L¹(Ω)`.
 
 ## Main declarations
 
@@ -158,9 +159,9 @@ private theorem taylorRemainderWeight_eq_intervalIntegral {φ : E → ℝ} {x z 
     setIntegral_indicator measurableSet_Ico, hinter, integral_Ico_eq_integral_Ioo,
     ← integral_Ioc_eq_integral_Ioo, intervalIntegral.integral_of_le hr1.le]
 
-/-- Off the diagonal `z ≠ x`, if `support φ ⊆ closedBall x D` and `‖φ y‖ ≤ M` everywhere, then
-`‖taylorRemainderWeight φ x z‖ ≤ (M * D ^ n / n) * ‖x - z‖ ^ (-n)` where `n = finrank ℝ E`. No
-measurability assumption on `φ` is needed. -/
+/-- Off the diagonal `z ≠ x`, if `support φ ⊆ closedBall x D` (`0 ≤ D`) and `‖φ y‖ ≤ M`
+everywhere, then `‖taylorRemainderWeight φ x z‖ ≤ (M * D ^ n / n) * ‖x - z‖ ^ (-n)` where
+`n = finrank ℝ E`. No measurability assumption on `φ` is needed. -/
 theorem norm_taylorRemainderWeight_le [FiniteDimensional ℝ E] {φ : E → ℝ} {x z : E} {D M : ℝ}
     (hzx : z ≠ x) (hD : 0 ≤ D) (hsupp : Function.support φ ⊆ closedBall x D)
     (hM : ∀ y, ‖φ y‖ ≤ M) :
@@ -241,9 +242,9 @@ theorem norm_mul_fullContractL_le_of_support_subset_closedBall {φ : E → ℝ} 
   · rw [Function.notMem_support.1 hy, zero_mul, norm_zero]
     positivity
 
-/-- The operator-valued Taylor-remainder kernel of order `m` associated with a cutoff `φ`: at
-`(x, z)` it scales the full contraction `IteratedGradient.fullContractL m (x - z)` by
-`(m.factorial)⁻¹ * taylorRemainderWeight φ x z`. -/
+/-- The operator-valued kernel for the degree-`m` Taylor remainder (order `m + 1` in Brenner–Scott)
+associated with a cutoff `φ`: at `(x, z)` it scales the full contraction
+`IteratedGradient.fullContractL m (x - z)` by `(m.factorial)⁻¹ * taylorRemainderWeight φ x z`. -/
 def taylorRemainderKernel (φ : E → ℝ) (m : ℕ) (x z : E) : IteratedGradient E m →L[ℝ] ℝ :=
   ((m.factorial : ℝ)⁻¹ * taylorRemainderWeight φ x z) • IteratedGradient.fullContractL m (x - z)
 
@@ -286,14 +287,14 @@ theorem taylorRemainderKernel_const_mul (c : ℝ) (φ : E → ℝ) (m : ℕ) (x 
 segment from `x` to some point `y ∈ support φ`. -/
 theorem support_taylorRemainderKernel_subset_image (φ : E → ℝ) (m : ℕ) (x : E) :
     Function.support (taylorRemainderKernel φ m x) ⊆
-      (fun p : ℝ × E ↦ x + p.1 • (p.2 - x)) '' (Icc (0 : ℝ) 1 ×ˢ Function.support φ) := by
+      (fun p : ℝ × E ↦ x + p.1 • (p.2 - x)) '' (Ioo (0 : ℝ) 1 ×ˢ Function.support φ) := by
   intro z hz
   rw [Function.mem_support] at hz
   have hw : taylorRemainderWeight φ x z ≠ 0 := fun hw0 ↦ by
     simp [taylorRemainderKernel, hw0] at hz
   by_contra hnot
   refine hw (taylorRemainderWeight_eq_zero_of_forall_notMem_support fun s hs hmem ↦ hnot ?_)
-  refine ⟨(s, x + s⁻¹ • (z - x)), ⟨Ioo_subset_Icc_self hs, hmem⟩, ?_⟩
+  refine ⟨(s, x + s⁻¹ • (z - x)), ⟨hs, hmem⟩, ?_⟩
   simp only [add_sub_cancel_left, smul_smul, mul_inv_cancel₀ hs.1.ne', one_smul, add_sub_cancel]
 
 /-- Whenever `support φ ⊆ B`, the kernel `z ↦ taylorRemainderKernel φ m x z` is supported in the
@@ -304,7 +305,7 @@ theorem support_taylorRemainderKernel_subset_convexHull {φ : E → ℝ} {B : Se
   refine (support_taylorRemainderKernel_subset_image φ m x).trans ?_
   rintro _ ⟨⟨s, y⟩, ⟨hs, hy⟩, rfl⟩
   have hseg : x + s • (y - x) ∈ segment ℝ x y :=
-    ⟨1 - s, s, sub_nonneg.2 hs.2, hs.1, sub_add_cancel 1 s, by module⟩
+    ⟨1 - s, s, sub_nonneg.2 hs.2.le, hs.1.le, sub_add_cancel 1 s, by module⟩
   exact segment_subset_convexHull (mem_insert x B) (mem_insert_of_mem x (hB hy)) hseg
 
 /-- If `Ω` is star-convex with respect to every point of `support φ`, then for each `x ∈ Ω` the
@@ -315,7 +316,7 @@ theorem support_taylorRemainderKernel_subset_of_starConvex {φ : E → ℝ} {Ω 
   refine (support_taylorRemainderKernel_subset_image φ m x).trans ?_
   rintro _ ⟨⟨s, y⟩, ⟨hs, hy⟩, rfl⟩
   have hcomb : s • y + (1 - s) • x = x + s • (y - x) := by module
-  simpa only [hcomb] using hstar y hy hx hs.1 (sub_nonneg.2 hs.2) (add_sub_cancel s 1)
+  simpa only [hcomb] using hstar y hy hx hs.1.le (sub_nonneg.2 hs.2.le) (add_sub_cancel s 1)
 
 /-- When `φ` has compact support, the topological support of `z ↦ taylorRemainderKernel φ m x z`
 lies in the compact star-cone over `tsupport φ` with vertex `x`. -/
@@ -326,7 +327,7 @@ theorem tsupport_taylorRemainderKernel_subset_image {φ : E → ℝ} (hcpt : Has
   have hK : IsCompact ((fun p : ℝ × E ↦ x + p.1 • (p.2 - x)) '' (Icc (0 : ℝ) 1 ×ˢ tsupport φ)) :=
     (isCompact_Icc.prod hcpt).image (by fun_prop)
   refine closure_minimal ((support_taylorRemainderKernel_subset_image φ m x).trans ?_) hK.isClosed
-  exact image_mono (prod_mono_right (subset_tsupport φ))
+  exact image_mono (prod_mono Ioo_subset_Icc_self (subset_tsupport φ))
 
 theorem hasCompactSupport_taylorRemainderKernel {φ : E → ℝ} (hcpt : HasCompactSupport φ)
     (m : ℕ) (x : E) :
@@ -415,9 +416,10 @@ section PotentialL1
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
 
-/-- Integrating `x ↦ ‖taylorRemainderKernel φ m x z‖ₑ` over a bounded set `Ω` for `z ∈ closure Ω`
-is bounded by `M * μ(B(0, 1)) / (m + 1)! * (diam Ω) ^ (n + m + 1)`, with no measurability
-hypothesis on `Ω` or `φ`. -/
+/-- On a bounded set `Ω`, if `support φ ⊆ closure Ω` and `‖φ y‖ ≤ M` for all `y`, then for
+`z ∈ closure Ω` integrating `x ↦ ‖taylorRemainderKernel φ m x z‖ₑ` over `Ω` is bounded by
+`M * μ(B(0, 1)) / (m + 1)! * (diam Ω) ^ (n + m + 1)`, where `n = finrank ℝ E`, with no
+measurability hypothesis on `Ω` or `φ`. -/
 theorem setLIntegral_eNorm_taylorRemainderKernel_le {Ω : Set E} (hb : Bornology.IsBounded Ω)
     {φ : E → ℝ} (hsupp : Function.support φ ⊆ closure Ω) {M : ℝ} (hM : ∀ y, ‖φ y‖ ≤ M)
     (m : ℕ) {z : E} (hz : z ∈ closure Ω) :
@@ -518,7 +520,8 @@ private theorem integrable_taylorRemainderKernel_prod {Ω : Set E} (hb : Bornolo
   exact hbound.trans_lt (ENNReal.mul_lt_top ENNReal.ofReal_lt_top
     (memLp_one_iff_integrable.2 hG).eLpNorm_lt_top)
 
-/-- On a bounded set `Ω`, if `G` is integrable on `Ω`, then for almost every `x ∈ Ω` the slice
+/-- On a bounded set `Ω`, for a measurable cutoff `φ` with `support φ ⊆ closure Ω` and
+`∀ y, ‖φ y‖ ≤ M`, if `G` is integrable on `Ω`, then for almost every `x ∈ Ω` the slice
 `z ↦ taylorRemainderKernel φ m x z (G z)` is integrable on `Ω`. -/
 theorem ae_integrableOn_taylorRemainderKernel_apply {Ω : Set E} (hb : Bornology.IsBounded Ω)
     {φ : E → ℝ} (hφ_meas : Measurable φ) (hsupp : Function.support φ ⊆ closure Ω)
@@ -528,8 +531,9 @@ theorem ae_integrableOn_taylorRemainderKernel_apply {Ω : Set E} (hb : Bornology
   have : IsFiniteMeasure (μ.restrict Ω) := isFiniteMeasure_restrict.2 hb.measure_lt_top.ne
   exact (integrable_taylorRemainderKernel_prod hb hφ_meas hsupp hM hG).1.prod_right_ae
 
-/-- On a bounded set `Ω`, the integral operator `x ↦ ∫ z in Ω, taylorRemainderKernel φ m x z (G z)`
-maps `L¹(Ω; IteratedGradient E m)` into `L¹(Ω)`. -/
+/-- On a bounded set `Ω`, for a measurable cutoff `φ` with `support φ ⊆ closure Ω` and
+`∀ y, ‖φ y‖ ≤ M`, the integral operator `x ↦ ∫ z in Ω, taylorRemainderKernel φ m x z (G z)` maps
+`L¹(Ω; IteratedGradient E m)` into `L¹(Ω)`. -/
 theorem integrableOn_setIntegral_taylorRemainderKernel_apply {Ω : Set E}
     (hb : Bornology.IsBounded Ω) {φ : E → ℝ} (hφ_meas : Measurable φ)
     (hsupp : Function.support φ ⊆ closure Ω) {M : ℝ} (hM : ∀ y, ‖φ y‖ ≤ M) {m : ℕ}
@@ -538,7 +542,8 @@ theorem integrableOn_setIntegral_taylorRemainderKernel_apply {Ω : Set E}
   (integrable_taylorRemainderKernel_prod hb hφ_meas hsupp hM hG).1.integral_prod_left
 
 /-- **`L¹(Ω) → L¹(Ω)` norm bound for the Taylor-remainder integral operator** on a bounded set
-`Ω`, stated in terms of `eLpNorm · 1 (μ.restrict Ω)`. -/
+`Ω`, for a measurable cutoff `φ` with `support φ ⊆ closure Ω` and `∀ y, ‖φ y‖ ≤ M`, stated in
+terms of `eLpNorm · 1 (μ.restrict Ω)`. -/
 theorem eLpNorm_one_setIntegral_taylorRemainderKernel_le {Ω : Set E} (hb : Bornology.IsBounded Ω)
     {φ : E → ℝ} (hφ_meas : Measurable φ) (hsupp : Function.support φ ⊆ closure Ω)
     {M : ℝ} (hM : ∀ y, ‖φ y‖ ≤ M) {m : ℕ} {G : E → IteratedGradient E m}
@@ -565,7 +570,7 @@ end PotentialL1
 section Examples
 
 /-- Dimension-zero boundary check: on `EuclideanSpace ℝ (Fin 0)`, `taylorRemainderKernel` vanishes
-identically for every cutoff `φ` and order `m`. -/
+identically for every cutoff `φ` and degree `m`. -/
 example (φ : EuclideanSpace ℝ (Fin 0) → ℝ) (m : ℕ) (x z : EuclideanSpace ℝ (Fin 0)) :
     taylorRemainderKernel φ m x z = 0 :=
   taylorRemainderKernel_of_subsingleton φ m x z

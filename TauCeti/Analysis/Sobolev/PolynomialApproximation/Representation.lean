@@ -18,11 +18,13 @@ import TauCeti.MeasureTheory.Integral.Dilation
 /-!
 # Smooth and Sobolev Taylor-remainder representation formulas
 
-Averaging Taylor's integral remainder of order `m` at `x` against a weight function `φ` with unit
-integral expresses the error `u x - ∫ φ(y) T^m_y u(x) dy` as a double integral over `y` and the
-segment parameter `s ∈ (0, 1)` evaluated at `z = x + s • (y - x)`. Applying Fubini's theorem and
-the Haar homothety change of variables `y ↦ x + s • (y - x)` (`Measure.lintegral_comp_homothety`)
-rewrites this remainder as a spatial integral against `TauCeti.taylorRemainderKernel φ m x z`:
+Averaging the integral remainder of the degree-`m` Taylor polynomial (order `m + 1` in
+Brenner–Scott) at `x` against a bounded measurable weight function `φ` with compact support in `Ω`
+and unit integral expresses the error `u x - ∫ φ(y) T^m_y u(x) dy` as a double integral over `y`
+and the segment parameter `s ∈ (0, 1)` evaluated at `z = x + s • (y - x)`. Applying Fubini's
+theorem and the Haar homothety change of variables `y ↦ x + s • (y - x)`
+(`Measure.lintegral_comp_homothety`) rewrites this remainder as a spatial integral against
+`TauCeti.taylorRemainderKernel φ m x z`:
 
 * for `u ∈ C^{m+1}(Ω)` on any open set `Ω` star-convex with respect to `tsupport φ`, the identity
   `u x - ∫ φ(y) T^m_y u(x) dμ = ∫_{z ∈ Ω} taylorRemainderKernel φ m x z (D^{m+1} u(z)) dμ` holds
@@ -373,8 +375,9 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {Omega : Opens E} {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
 
-/-- The derivative-form averaged Taylor polynomial of order `m` of a Sobolev function
-`u ∈ W^{m,p}(Ω)` with respect to a weight `φ : E → ℝ`, evaluated at `x : E`:
+/-- The derivative-form averaged Taylor polynomial of degree at most `m` (order `m + 1` in
+Brenner–Scott) of a Sobolev function `u ∈ W^{m,p}(Ω)` with respect to a weight `φ : E → ℝ`,
+evaluated at `x : E`:
 `∑_{j ≤ m} (j!)⁻¹ ∫_{y ∈ Ω} φ y * ⟨D^j u(y), (x - y)^{⊗ j}⟩ dμ`. -/
 def averagedTaylorEval (φ : E → ℝ) : (m : ℕ) → Wkp mu Omega p m → E → ℝ
   | 0, u, _ => ∫ y in Omega, φ y * u y ∂mu
@@ -515,8 +518,9 @@ theorem averagedTaylorEval_ofExponentLEL [IsFiniteMeasure (mu.restrict (Omega : 
     filter_upwards [iteratedGradient_ofExponentLEL_ae hpq m u] with y hy
     rw [hy]
 
-/-- On a `C^m` representative `f` of `u ∈ W^{m,p}(Ω)`, `averagedTaylorEval φ m u x` agrees with the
-classical averaged Taylor integral `∫_{y ∈ Ω} φ y * T^m_y f(x) dμ`. -/
+/-- On a `C^m` representative `f` of `u ∈ W^{m,p}(Ω)`, for a measurable, bounded cutoff `φ` with
+compact support in `Ω` (`tsupport φ ⊆ Ω`), `averagedTaylorEval φ m u x` agrees with the classical
+averaged Taylor integral `∫_{y ∈ Ω} φ y * T^m_y f(x) dμ`. -/
 theorem averagedTaylorEval_eq_setIntegral_sum_iteratedFDeriv {φ : E → ℝ} (hφ_meas : Measurable φ)
     (hcpt : HasCompactSupport φ) (hφ_supp : tsupport φ ⊆ Omega) {M : ℝ}
     (hφ_bound : ∀ y, ‖φ y‖ ≤ M) (m : ℕ) (u : Wkp mu Omega p m) {f : E → ℝ}
