@@ -83,36 +83,12 @@ private theorem bracketRemainder_eq_sub_sum (c : ℝ) (ψ : E → ℝ) (r : ℝ)
   congr 1
   exact Finset.sum_congr rfl fun k _ ↦ by ring
 
-/-- A homogeneous power `(‖c ξ‖ ^ 2) ^ μ` times a smooth function vanishing near `0` is smooth. -/
-private theorem contDiff_rpow_smul {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    (hc : c ≠ 0) {g : E → F} (hg : ContDiff ℝ ∞ g) (hg0 : g =ᶠ[𝓝 0] 0) (μ : ℝ) :
-    ContDiff ℝ ∞ fun ξ ↦ (‖c • ξ‖ ^ 2) ^ μ • g ξ := by
-  refine contDiff_iff_contDiffAt.2 fun ξ ↦ ?_
-  rcases eq_or_ne ξ 0 with rfl | hξ
-  · refine contDiffAt_const (c := (0 : F)).congr_of_eventuallyEq ?_
-    filter_upwards [hg0] with η hη
-    simp [hη]
-  · have hne : ‖c • ξ‖ ^ 2 ≠ 0 := pow_ne_zero 2 (norm_ne_zero_iff.2 (smul_ne_zero hc hξ))
-    exact ((((contDiff_norm_sq ℝ).comp (contDiff_const_smul c)).contDiffAt.rpow_const_of_ne
-      hne).smul hg.contDiffAt)
-
 private theorem contDiff_bracketRemainder (hc : c ≠ 0) (hψ : ContDiff ℝ ∞ ψ)
     (hψ0 : ψ =ᶠ[𝓝 0] 0) (r : ℝ) (K : ℕ) : ContDiff ℝ ∞ (bracketRemainder c ψ r K) := by
   rw [bracketRemainder_eq_sub_sum]
   exact ((contDiff_one_add_norm_sq_rpow r).comp (contDiff_const_smul c)).sub
     (ContDiff.sum fun k _ ↦ contDiff_const.mul <| by
-      simpa only [smul_eq_mul, mul_comm] using contDiff_rpow_smul hc hψ hψ0 (r - k))
-
-/-- The derivative of the expanded bracket power `(1 + ‖c ξ‖ ^ 2) ^ r`. -/
-private theorem hasFDerivAt_one_add_norm_smul_sq_rpow (r : ℝ) (ξ : E) :
-    HasFDerivAt (fun ξ : E ↦ (1 + ‖c • ξ‖ ^ 2) ^ r)
-      ((1 + ‖c • ξ‖ ^ 2) ^ (r - 1) • ((2 * r * c ^ 2) • innerSL ℝ ξ)) ξ := by
-  have h := (hasFDerivAt_one_add_norm_sq_rpow r (c • ξ)).comp ξ
-    ((hasFDerivAt_id ξ).const_smul c)
-  refine h.congr_fderiv ?_
-  ext v
-  simp
-  ring
+      simpa only [smul_eq_mul, mul_comm] using contDiff_norm_smul_sq_rpow_smul hc hψ hψ0 (r - k))
 
 /-- The derivative of a cut-off term `ψ(ξ) (‖c ξ‖ ^ 2) ^ μ`, for a cutoff `ψ` vanishing
 near `0`. -/
@@ -184,7 +160,7 @@ private theorem contDiff_bracketRemainderError (hc : c ≠ 0) (hψ : ContDiff �
     funext ξ
     simp only [bracketRemainderError, smul_smul]
   rw [hfun]
-  exact ContDiff.sum fun k _ ↦ (contDiff_rpow_smul hc hdψ hdψ0 _).const_smul _
+  exact ContDiff.sum fun k _ ↦ (contDiff_norm_smul_sq_rpow_smul hc hdψ hdψ0 _).const_smul _
 
 /-- The error term vanishes where `ψ` is locally constant equal to `1`. -/
 private theorem bracketRemainderError_eq_zero {R : ℝ} (hψ1 : ∀ ξ, R ≤ ‖ξ‖ → ψ ξ = 1) (r : ℝ)
@@ -241,7 +217,8 @@ private theorem exists_abs_bracketRemainder_le [ProperSpace E] (hc : c ≠ 0)
           hξ.le))) hG, abs_mul, abs_of_pos (Real.rpow_pos_of_pos hG r)]
     _ ≤ (‖c • ξ‖ ^ 2) ^ r * (A * ((‖c • ξ‖ ^ 2)⁻¹) ^ K) := by
         gcongr
-        exact hA _ (inv_pos.2 hG) huε
+        have hu := abs_of_pos (inv_pos.2 hG)
+        exact (hA _ (by rwa [hu])).trans_eq (by rw [hu])
     _ = A * (‖c • ξ‖ ^ 2) ^ (r - K) := by
         rw [Real.rpow_sub hG, Real.rpow_natCast, inv_pow]
         ring
