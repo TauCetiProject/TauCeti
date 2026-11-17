@@ -23,7 +23,8 @@ divisible by a prime `q ≠ p`, and in particular for every `n > 1` coprime to `
 
 `p`-typical curves form an additive subgroup `FormalGroup.pTypicalCurveSubgroup F p` of `F.Curve`,
 stable under all Frobenius operators `f_n`, under Verschiebung `V_{p^k}` when `p` is prime, under
-every elementary Cartier projector, and under base change and homomorphisms of formal group laws.
+every elementary Cartier projector, under Cartier's homothety operators `[r]`, and under base change
+and homomorphisms of formal group laws.
 Over a `ℚ`-algebra, `γ` is `p`-typical precisely when `log_F(γ(T))` has zero coefficients in every
 nonzero degree divisible by a prime `q ≠ p` (equivalently, when `p` is prime, in every degree
 outside the powers `p^n`).
@@ -35,7 +36,8 @@ below degree `q`. Taking the stabilized coefficient in each degree constructs **
 `p`-typicalization projector** `FormalGroup.pTypicalProjectorCurve`: an idempotent additive
 endomorphism `F.Curve →+ F.Curve` with image `F.pTypicalCurveSubgroup p` that preserves linear
 coefficients, annihilates `V_n` whenever a prime `q ≠ p` divides `n`, and commutes with base change,
-homomorphisms of formal group laws, elementary Cartier projectors, and `f_m`, `V_m` for every
+homomorphisms of formal group laws, elementary Cartier projectors, homotheties `[r]`, and `f_m`,
+`V_m` for every
 nonzero `m` coprime to all primes `q ≠ p` (in particular `f_{p^r}` and `V_{p^r}` when `p` is
 prime). See `TauCeti.RingTheory.FormalGroup.Typical` for `p`-typical formal group laws, the
 Hazewinkel classification, and Cartier–Quillen's canonical strict `p`-typicalization.
@@ -191,6 +193,16 @@ theorem IsPTypical.verschiebungCurve_of_forall_coprime {p m : ℕ} {γ : F.Curve
     rw [F.frobeniusCurve_verschiebungCurve_of_coprime hq.ne_zero hm (hcop q hq hqp),
       hγ q hq hqp, map_zero]
 
+/-- Verschiebung `V_m` preserves and reflects `p`-typicality whenever `m` is coprime to every prime
+`q ≠ p`. -/
+theorem isPTypical_verschiebungCurve_iff_of_forall_coprime {p m : ℕ} {γ : F.Curve} (hm : m ≠ 0)
+    (hcop : ∀ q : ℕ, q.Prime → q ≠ p → q.Coprime m) :
+    (F.verschiebungCurve m hm γ).IsPTypical p ↔ γ.IsPTypical p := by
+  refine ⟨fun h q hq hqp ↦ F.verschiebungCurve_injective m hm ?_,
+    fun h ↦ h.verschiebungCurve_of_forall_coprime hm hcop⟩
+  rw [← F.frobeniusCurve_verschiebungCurve_of_coprime hq.ne_zero hm (hcop q hq hqp), h q hq hqp,
+    map_zero]
+
 /-- When `p` is prime, Verschiebung `V_{p^k}` of any `p`-power index preserves `p`-typicality. -/
 theorem IsPTypical.verschiebungCurve_pow {p : ℕ} (hp : p.Prime) {γ : F.Curve}
     (hγ : γ.IsPTypical p) (k : ℕ) :
@@ -208,6 +220,11 @@ theorem IsPTypical.cartierProjectorCurve {p : ℕ} {γ : F.Curve} (hγ : γ.IsPT
         (hγ.frobeniusCurve_eq_zero_of_dvd hq hqp hqn hn), hγ q hq hqp]
     · rw [F.frobeniusCurve_cartierProjectorCurve_of_coprime hq.ne_zero hn hunit
         (hq.coprime_iff_not_dvd.mpr hqn), hγ q hq hqp, map_zero]
+
+/-- Cartier's homothety operator `[r]` preserves `p`-typicality of curves. -/
+theorem IsPTypical.homothetyCurve {p : ℕ} {γ : F.Curve} (hγ : γ.IsPTypical p) (r : R) :
+    (F.homothetyCurve r γ).IsPTypical p :=
+  fun q hq hqp ↦ by rw [F.frobeniusCurve_homothetyCurve, hγ q hq hqp, map_zero]
 
 /-- Base change along a ring homomorphism preserves `p`-typicality of curves. -/
 theorem IsPTypical.map {p : ℕ} {γ : F.Curve} (hγ : γ.IsPTypical p) (φ : R →+* S) :
@@ -446,6 +463,19 @@ private theorem pTypicalProjectorStage_verschiebungCurve_of_forall_coprime (p : 
         F.cartierProjectorCurve_verschiebungCurve_of_coprime h.1.ne_zero hm _ (hcop _ h.1 h.2)]
     · exact ih
 
+private theorem pTypicalProjectorStage_homothetyCurve (p : ℕ)
+    (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) (r : R) (N : ℕ) (γ : F.Curve) :
+    pTypicalProjectorStage F p hunit N (F.homothetyCurve r γ) =
+      F.homothetyCurve r (pTypicalProjectorStage F p hunit N γ) := by
+  induction N with
+  | zero => rfl
+  | succ n ih =>
+    simp only [pTypicalProjectorStage]
+    split_ifs with h
+    · rw [AddMonoidHom.comp_apply, AddMonoidHom.comp_apply, ih,
+        F.cartierProjectorCurve_homothetyCurve]
+    · exact ih
+
 open scoped Classical in
 private theorem coeff_pTypicalProjectorStage_𝔾ₐ (p : ℕ)
     (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) (N k : ℕ) (γ : (𝔾ₐ (R := R)).Curve) :
@@ -573,6 +603,17 @@ theorem _root_.TauCeti.FormalGroupHom.mapCurve_pTypicalProjectorCurve
     ← TauCeti.FormalGroupHom.toPowerSeries_mapCurve,
     mapCurve_pTypicalProjectorStage F f p hunit k γ,
     coeff_pTypicalProjectorCurve_eq_stage G p hunit le_rfl]
+
+/-- Cartier's `p`-typicalization projector commutes with Cartier's homothety operator `[r]`. -/
+theorem pTypicalProjectorCurve_homothetyCurve (p : ℕ)
+    (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) (r : R) (γ : F.Curve) :
+    F.pTypicalProjectorCurve p hunit (F.homothetyCurve r γ) =
+      F.homothetyCurve r (F.pTypicalProjectorCurve p hunit γ) := by
+  ext k
+  rw [coeff_pTypicalProjectorCurve_eq_stage F p hunit le_rfl,
+    pTypicalProjectorStage_homothetyCurve, toPowerSeries_homothetyCurve,
+    toPowerSeries_homothetyCurve, PowerSeries.coeff_rescale, PowerSeries.coeff_rescale,
+    coeff_pTypicalProjectorCurve_eq_stage F p hunit le_rfl]
 
 open scoped Classical in
 /-- On the additive formal group law, Cartier's `p`-typicalization projector deletes precisely the
@@ -711,6 +752,17 @@ theorem range_pTypicalProjectorCurve (p : ℕ)
   simp only [AddMonoidHom.mem_range, mem_pTypicalCurveSubgroup]
   exact ⟨fun ⟨δ, hδ⟩ ↦ hδ ▸ F.isPTypical_pTypicalProjectorCurve p hunit δ,
     fun hγ ↦ ⟨γ, F.pTypicalProjectorCurve_eq_self p hunit hγ⟩⟩
+
+/-- A curve `δ` is the `p`-typical projection of `γ` if and only if `δ` is `p`-typical and `γ - δ`
+lies in the kernel of Cartier's `p`-typicalization projector. -/
+theorem pTypicalProjectorCurve_eq_iff (p : ℕ)
+    (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) {γ δ : F.Curve} :
+    F.pTypicalProjectorCurve p hunit γ = δ ↔
+      δ.IsPTypical p ∧ γ - δ ∈ (F.pTypicalProjectorCurve p hunit).ker := by
+  rw [AddMonoidHom.mem_ker, map_sub]
+  exact ⟨by rintro rfl; exact ⟨F.isPTypical_pTypicalProjectorCurve p hunit γ,
+      by rw [F.pTypicalProjectorCurve_pTypicalProjectorCurve, sub_self]⟩,
+    fun ⟨hδ, hker⟩ ↦ sub_eq_zero.mp (F.pTypicalProjectorCurve_eq_self p hunit hδ ▸ hker)⟩
 
 /-- Cartier's `p`-typicalization projector kills `V_n γ` whenever `n ≠ 0` is divisible by a prime
 `q ≠ p`. -/

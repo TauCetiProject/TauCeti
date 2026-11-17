@@ -742,6 +742,29 @@ theorem coeff_subst_frobeniusCurve_log [Algebra ℚ R] (F : FormalGroup R) [F.Is
 
 end FrobeniusSetup
 
+/-- Over a `ℚ`-algebra, two curves on `F` coincide if the positive-degree coefficients of their
+compositions with `F.log` agree. -/
+theorem Curve.eq_of_coeff_subst_log_eq [Algebra ℚ R] {F : FormalGroup R} {γ δ : F.Curve}
+    (h : ∀ {k : ℕ}, k ≠ 0 →
+      PowerSeries.coeff k (PowerSeries.subst γ.toPowerSeries F.log) =
+        PowerSeries.coeff k (PowerSeries.subst δ.toPowerSeries F.log)) : γ = δ := by
+  apply F.logIso.curveEquiv.injective
+  ext k
+  rcases eq_or_ne k 0 with rfl | hk0
+  · simp only [TauCeti.FormalGroupIso.curveEquiv_apply, Curve.coeff_zero_toPowerSeries]
+  · simpa only [TauCeti.FormalGroupIso.curveEquiv_apply, logIso_toHom,
+      TauCeti.FormalGroupHom.toPowerSeries_mapCurve, logHom_toPowerSeries] using h hk0
+
+/-- Over a `ℚ`-algebra, a curve on `F` vanishes if all positive-degree coefficients of its
+composition with `F.log` vanish. -/
+theorem Curve.eq_zero_of_coeff_subst_log_eq_zero [Algebra ℚ R] {F : FormalGroup R} {γ : F.Curve}
+    (h : ∀ {k : ℕ}, k ≠ 0 →
+      PowerSeries.coeff k (PowerSeries.subst γ.toPowerSeries F.log) = 0) : γ = 0 :=
+  Curve.eq_of_coeff_subst_log_eq fun hk0 ↦ by
+    rw [Curve.toPowerSeries_zero, PowerSeries.subst_zero_of_constantCoeff_zero F.constantCoeff_log,
+      map_zero]
+    exact h hk0
+
 /-! ### Lifting of curves and Cartier's operator identities -/
 
 /-- **Lifting of curves**: for any commutative formal group law `F` over `R`, any curve `γ` on `F`,
