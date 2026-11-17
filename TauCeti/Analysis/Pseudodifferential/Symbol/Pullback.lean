@@ -34,8 +34,8 @@ that the pullback preserves each class of symbols in the calculus:
   commutes with the inclusions of orders and with pointwise composition, and is functorial
   (`TauCeti.Symbol.pullback_refl`, `TauCeti.Symbol.pullback_trans`).
 * `TauCeti.HomogeneousSymbol.pullback`: a homogeneous symbol of degree `m` pulls back to one of
-  the same degree, on any complete real inner product space; it is elliptic exactly when
-  the original one is (`TauCeti.HomogeneousSymbol.isElliptic_pullback_iff`).
+  the same degree, along any diffeomorphism between complete real inner product spaces; it is
+  elliptic exactly when the original one is (`TauCeti.HomogeneousSymbol.isElliptic_pullback_iff`).
 * `TauCeti.ClassicalSymbol.pullback`: a classical symbol pulls back to a classical symbol whose
   homogeneous terms are the pullbacks of its terms. In particular **the principal symbol transforms
   by the cotangent map** (`TauCeti.ClassicalSymbol.principal_pullback`), and ellipticity is
@@ -307,15 +307,17 @@ end Symbol
 
 namespace HomogeneousSymbol
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
+variable {E F G : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
+  [NormedAddCommGroup F] [InnerProductSpace ℝ F] [CompleteSpace F]
+  [NormedAddCommGroup G] [InnerProductSpace ℝ G] [CompleteSpace G]
   {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W] [NormedSpace ℂ W]
-  {m : ℝ} (κ : E ≃ₘ⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ E)
+  {m : ℝ} (κ : E ≃ₘ⟮𝓘(ℝ, E), 𝓘(ℝ, F)⟯ F)
 
 /-- **The pullback of a homogeneous symbol along a diffeomorphism** `κ`: the homogeneous symbol
 `(x, ξ) ↦ a(κ x, (Dκ(x)ᵀ)⁻¹ ξ)` of the same degree, the composition of `a` with the map of the
 cotangent bundle induced by `κ`. Since this map is linear and injective on each fibre, it
 preserves homogeneity and the smoothness away from the zero covector. -/
-def pullback : HomogeneousSymbol E E V W m →ₗ[ℂ] HomogeneousSymbol E E V W m where
+def pullback : HomogeneousSymbol F F V W m →ₗ[ℂ] HomogeneousSymbol E E V W m where
   toFun a :=
     { coefficient p :=
         a.coefficient (κ p.1, ContinuousLinearMap.adjoint (fderiv ℝ κ.symm (κ p.1)) p.2)
@@ -331,19 +333,19 @@ def pullback : HomogeneousSymbol E E V W m →ₗ[ℂ] HomogeneousSymbol E E V W
 variable {κ}
 
 @[simp]
-theorem coefficient_pullback (a : HomogeneousSymbol E E V W m) (p : E × E) :
+theorem coefficient_pullback (a : HomogeneousSymbol F F V W m) (p : E × E) :
     (pullback κ a).coefficient p =
       a.coefficient (κ p.1, ContinuousLinearMap.adjoint (fderiv ℝ κ.symm (κ p.1)) p.2) :=
   (rfl)
 
 @[simp]
-theorem pullback_castDegree {m' : ℝ} (h : m = m') (a : HomogeneousSymbol E E V W m) :
+theorem pullback_castDegree {m' : ℝ} (h : m = m') (a : HomogeneousSymbol F F V W m) :
     pullback κ (a.castDegree h) = (pullback κ a).castDegree h :=
   HomogeneousSymbol.ext (funext fun _ ↦ by simp)
 
 @[simp]
 theorem pullback_comp {U : Type*} [NormedAddCommGroup U] [NormedSpace ℂ U] {m' : ℝ}
-    (b : HomogeneousSymbol E E W U m') (a : HomogeneousSymbol E E V W m) :
+    (b : HomogeneousSymbol F F W U m') (a : HomogeneousSymbol F F V W m) :
     pullback κ (b.comp a) = (pullback κ b).comp (pullback κ a) :=
   HomogeneousSymbol.ext (funext fun _ ↦ by simp)
 
@@ -354,7 +356,8 @@ theorem pullback_refl (a : HomogeneousSymbol E E V W m) :
     (funext fun _ ↦ by simp [Diffeomorph.coe_refl, ContinuousLinearMap.adjoint_id])
 
 @[simp]
-theorem pullback_trans (κ₁ κ₂ : E ≃ₘ⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ E) (a : HomogeneousSymbol E E V W m) :
+theorem pullback_trans (κ₁ : E ≃ₘ⟮𝓘(ℝ, E), 𝓘(ℝ, F)⟯ F) (κ₂ : F ≃ₘ⟮𝓘(ℝ, F), 𝓘(ℝ, G)⟯ G)
+    (a : HomogeneousSymbol G G V W m) :
     pullback (κ₁.trans κ₂) a = pullback κ₁ (pullback κ₂ a) :=
   HomogeneousSymbol.ext (funext fun p ↦ by
     rw [coefficient_pullback, Diffeomorph.adjoint_fderiv_trans_symm _ _ (by simp)]
@@ -363,7 +366,7 @@ theorem pullback_trans (κ₁ κ₂ : E ≃ₘ⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ E
 /-- A homogeneous symbol is elliptic exactly when its pullback along a diffeomorphism is: the
 cotangent map of `κ` is a bijection of the nonzero covectors over each point. -/
 @[simp]
-theorem isElliptic_pullback_iff {a : HomogeneousSymbol E E V W m} :
+theorem isElliptic_pullback_iff {a : HomogeneousSymbol F F V W m} :
     (pullback κ a).IsElliptic ↔ a.IsElliptic := by
   simp only [isElliptic_iff, coefficient_pullback]
   refine ⟨fun h y η hη ↦ ?_, fun h x ξ hξ ↦
