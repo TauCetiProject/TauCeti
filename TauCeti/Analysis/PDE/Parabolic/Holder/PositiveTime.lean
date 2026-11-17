@@ -118,7 +118,7 @@ private theorem norm_restrictL_le_of_temporal_cutoff (hα : α ≤ 1) {C_S : ℝ
   have h₂ := (ContinuousLinearMap.mul ℝ ℝ).norm_compHolder₂_valueHolderL_le_of_eq_zero hα hs.le
     (hsδ.trans_lt hδT) hχt u
   rw [hres]
-  refine (norm_restrictL_apply_le _ _ _ v).trans ((hS v).trans ?_)
+  refine (norm_restrictL_le _ _ _ v).trans ((hS v).trans ?_)
   rw [htr, norm_zero, add_zero, euclideanParabolicOperatorL_def,
     parabolicOperatorL_mul_eq_of_spatialFDerivL_eq_zero hα _ _ _ χ u hχx,
     ← euclideanParabolicOperatorL_def]
@@ -272,15 +272,6 @@ private theorem exists_absorbing_scale {C M : ℝ} (hC : 0 ≤ C) (hM : 0 ≤ M)
   · rw [mul_assoc 16, ← mul_assoc, ← div_eq_mul_inv, div_le_iff₀ (by positivity)]
     linarith
 
-/-- **Absorption of a supremum.** If `Φ ≥ 0` is bounded above and every value of `Φ` is at most
-`X` plus `c ≤ 1 / 2` times another value, then the supremum of `Φ` is at most `2 X`. -/
-private theorem ciSup_le_two_mul_of_le_add_mul {I : Sort*} [Nonempty I] {Φ : I → ℝ} {X c : ℝ}
-    (hΦ : BddAbove (range Φ)) (hΦ₀ : ∀ i, 0 ≤ Φ i) (hc : c ≤ 1 / 2) (f : I → I)
-    (h : ∀ i, Φ i ≤ X + c * Φ (f i)) : ⨆ i, Φ i ≤ 2 * X := by
-  have : ⨆ i, Φ i ≤ X + 1 / 2 * ⨆ i, Φ i := ciSup_le fun i ↦ (h i).trans <| by
-    nlinarith [le_ciSup hΦ (f i), mul_nonneg (sub_nonneg.2 hc) (hΦ₀ (f i))]
-  exact TauCeti.le_two_mul_of_le_add_mul (Real.iSup_nonneg hΦ₀) le_rfl this
-
 /-- **The positive-time Schauder estimate.** Let `0 < α < 1`, `0 < λ`, and let `K` and `T₀` bound
 the Hölder norms of the coefficients and the horizon. There is a constant `C`, depending only on
 these, on `Λ` and on the dimension, with the following property. Let
@@ -329,7 +320,7 @@ theorem exists_rpow_mul_norm_restrictL_le (hα₀ : 0 < α) (hα₁ : α < 1) (h
   have hΦ : BddAbove (range Φ) := ⟨(T₀ : ℝ) ^ (1 + (α : ℝ) / 2) * ‖u‖, by
     rintro _ ⟨d, rfl⟩
     exact mul_le_mul (Real.rpow_le_rpow d.2.1.le (d.2.2.le.trans (by exact_mod_cast hTT₀))
-      (by positivity)) (norm_restrictL_apply_le _ _ _ u) (norm_nonneg _) (by positivity)⟩
+      (by positivity)) (norm_restrictL_le _ _ _ u) (norm_nonneg _) (by positivity)⟩
   have hstep (d : Ioo (0 : ℝ) T) : Φ d ≤ C_S * (A * P + B * V) +
       16 * C_S * Mχ * κ * Φ ⟨d / 2, half_pos d.2.1, (half_lt_self d.2.1).trans d.2.2⟩ := by
     -- The cutoff rises from `0` to `1` on `[d / 2, d]`.
@@ -345,7 +336,7 @@ theorem exists_rpow_mul_norm_restrictL_le (hα₀ : 0 < α) (hα₁ : α < 1) (h
   calc δ ^ (1 + (α : ℝ) / 2) * ‖restrictL hδ.le le_rfl hδT u‖ ≤ ⨆ d, Φ d := by
         convert le_ciSup hΦ ⟨δ, hδ, hδT⟩ using 1
     _ ≤ 2 * (C_S * (A * (M + P) + B * (E₀ * (M + P)))) :=
-        (ciSup_le_two_mul_of_le_add_mul hΦ
+        (TauCeti.ciSup_le_two_mul_of_le_add_mul hΦ
           (fun d ↦ mul_nonneg (Real.rpow_nonneg d.2.1.le _) (norm_nonneg _)) hκ₂ _ hstep).trans
           (by gcongr; linarith [(abs_nonneg _).trans (hM 0)])
     _ = 2 * C_S * (A + B * E₀) * (M + P) := by ring
