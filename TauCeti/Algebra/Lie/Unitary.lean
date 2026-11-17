@@ -218,16 +218,13 @@ variable (ι) in
 linear equivalence. -/
 def unitaryTracePairingEquiv :
     selfAdjoint.submodule ℝ (Matrix ι ι ℂ) ≃ₗ[ℝ] Dual ℝ (unitaryLieAlgebra ι) :=
-  LinearEquiv.ofBijective (unitaryTracePairing ι)
-    ⟨unitaryTracePairing_injective,
-      (LinearMap.injective_iff_surjective_of_finrank_eq_finrank (by
-        rw [Subspace.dual_finrank_eq, (unitaryLieAlgebraEquivSelfAdjoint ι).finrank_eq])).mp
-        unitaryTracePairing_injective⟩
+  (unitaryTracePairing ι).linearEquivOfInjective unitaryTracePairing_injective (by
+    rw [Subspace.dual_finrank_eq, (unitaryLieAlgebraEquivSelfAdjoint ι).finrank_eq])
 
 @[simp]
 theorem unitaryTracePairingEquiv_apply (H : selfAdjoint.submodule ℝ (Matrix ι ι ℂ)) :
     unitaryTracePairingEquiv ι H = unitaryTracePairing ι H :=
-  LinearEquiv.ofBijective_apply _ _
+  LinearMap.linearEquivOfInjective_apply _ _ _
 
 /-! ### The coadjoint action through the trace pairing -/
 
