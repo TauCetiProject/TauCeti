@@ -43,12 +43,10 @@ Hausdorff boundaryless one, is proved in `TauCeti.Geometry.Manifold.Degree.Globa
 * `TauCeti.degreeAtRegularValue_of_notMem_range`: the degree vanishes at a value outside the range.
 * `TauCeti.degreeAtRegularValue_id`, `TauCeti.degreeAtRegularValue_const`: the identity has degree
   `1` and a constant map into a manifold of positive dimension has degree `0`.
-* `TauCeti.degreeAtRegularValue_comp_of_bijective`: precomposing with an orientation-preserving
-  bijection does not change the degree.
+* `TauCeti.degreeAtRegularValue_comp_of_bijective`: precomposing with a bijection that preserves
+  orientation on the fibre does not change the degree.
 * `TauCeti.degreeAtRegularValue_modEq_ncard`: over a regular value the degree has the parity of
   the number of preimages.
-* `TauCeti.degreeAtRegularValue_comp_of_isOrientationPreservingAt`: precomposing with a
-  bijection that is differentiable and orientation-preserving on the fibre preserves the degree.
 * `TauCeti.degree_id`, `TauCeti.degree_const`: the identity of a nonempty manifold has degree `1`
   and a constant map into a manifold of positive dimension has degree `0`.
 * `TauCeti.degree_of_isEmpty`: a map to an empty manifold has degree `0`.
@@ -145,18 +143,18 @@ variable {E₀ H₀ M₀ : Type*} [NormedAddCommGroup E₀] [NormedSpace ℝ E�
   [ChartedSpace H₀ M₀] [IsManifold I₀ 1 M₀] {o₀ : Manifold.Orientation I₀ M₀ ι}
 
 /-- **Precomposing with an orientation-preserving bijection preserves the degree.** If
-`e : M₀ → M` is a bijection preserving the orientations `o₀` and `o` at every point and `f` is
-differentiable, then `f ∘ e` has the same degree as `f` at every value: `e` matches the fibres of
-`f ∘ e` and `f`, and the orientation signs at matched points agree. -/
+`e : M₀ → M` is a bijection preserving the orientations `o₀` and `o` on the fibre over `y` and `f`
+is differentiable at the image points of that fibre, then `f ∘ e` has the same degree as `f` at
+`y`: `e` matches the fibres of `f ∘ e` and `f`, and the orientation signs at matched points
+agree. -/
 theorem degreeAtRegularValue_comp_of_bijective {e : M₀ → M} (he : Bijective e)
-    (hpres : ∀ x, IsOrientationPreservingAt o₀ o e x) (hf : MDifferentiable I J f) (y : N) :
+    (hpres : ∀ x, f (e x) = y → IsOrientationPreservingAt o₀ o e x)
+    (hf : ∀ x, f (e x) = y → MDifferentiableAt I J f (e x)) :
     degreeAtRegularValue o₀ o' (f ∘ e) y = degreeAtRegularValue o o' f y := by
-  refine finsum_mem_eq_of_bijOn e ⟨fun x hx ↦ hx, he.injective.injOn, fun z hz ↦ ?_⟩ fun x _ ↦ ?_
-  · obtain ⟨x, rfl⟩ := he.surjective z
-    exact ⟨x, hz, rfl⟩
-  · rw [orientationSign_comp (hf (e x))
-      (mdifferentiableAt_of_isInvertible_mfderiv (hpres x).isInvertible_mfderiv),
-      orientationSign_of_isOrientationPreservingAt (hpres x), mul_one]
+  refine finsum_mem_eq_of_bijOn e (he.bijOn_preimage (t := f ⁻¹' {y})) fun x hx ↦ ?_
+  rw [orientationSign_comp (hf x hx)
+    (mdifferentiableAt_of_isInvertible_mfderiv (hpres x hx).isInvertible_mfderiv),
+    orientationSign_of_isOrientationPreservingAt (hpres x hx), mul_one]
 
 end Comp
 
@@ -190,25 +188,6 @@ theorem degreeAtRegularValue_modEq_ncard (hy : IsRegularValue I J f y) :
           (hy.isRegularPoint hx) with h' | h' <;> simp [h']
     rw [h0, Set.Infinite.ncard h]
     rfl
-
-/-- Precomposing with a bijection that is differentiable and orientation-preserving on the fibre
-over `y` preserves the degree at `y`. -/
-theorem degreeAtRegularValue_comp_of_isOrientationPreservingAt
-    {E'' H'' P : Type*} [NormedAddCommGroup E''] [NormedSpace ℝ E''] [FiniteDimensional ℝ E'']
-    [TopologicalSpace H''] {K : ModelWithCorners ℝ E'' H''} [TopologicalSpace P]
-    [ChartedSpace H'' P] [IsManifold K 1 P] (o'' : Manifold.Orientation K P ι)
-    {g : P → M} (hg_bij : Bijective g)
-    (hfd : ∀ p, f (g p) = y → MDifferentiableAt I J f (g p))
-    (hgd : ∀ p, f (g p) = y → MDifferentiableAt K I g p)
-    (hg : ∀ p, f (g p) = y → IsOrientationPreservingAt o'' o g p) :
-    degreeAtRegularValue o'' o' (f ∘ g) y = degreeAtRegularValue o o' f y := by
-  have hbij : ((f ∘ g) ⁻¹' {y}).BijOn g (f ⁻¹' {y}) :=
-    ⟨fun _ hp ↦ hp, hg_bij.injective.injOn, fun x hx ↦ by
-      obtain ⟨p, rfl⟩ := hg_bij.surjective x
-      exact ⟨p, hx, rfl⟩⟩
-  refine finsum_mem_eq_of_bijOn g hbij fun p hp ↦ ?_
-  rw [orientationSign_comp (hfd p hp) (hgd p hp),
-    orientationSign_of_isOrientationPreservingAt (hg p hp), mul_one]
 
 open Classical in
 /-- The *mapping degree* of `f : M → N` with respect to orientations `o` of `M` and `o'` of `N`:
