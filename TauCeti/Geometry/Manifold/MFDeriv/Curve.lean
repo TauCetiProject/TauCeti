@@ -122,6 +122,10 @@ curve need not carry a `HasMFDerivWithinAt` witness for it.
   zero manifold derivative in the interior of that half-line.
 * `TauCeti.Manifold.curveVelocityLift_eq_of_mdifferentiableAt_if_le`: two real curves meeting at
   `c`, whose concatenation at `c` is differentiable there, have the same velocity at `c`.
+* `TauCeti.Manifold.hasMFDerivWithinAt_extChartAt_symm_comp`: the chain rule for the inverse
+  extended chart along a curve in the model space, with
+  `TauCeti.Manifold.hasMFDerivAt_extChartAt_symm_add_smul` its unrestricted case for a straight
+  segment.
 -/
 
 public section
@@ -1067,5 +1071,49 @@ theorem isMIntegralCurve_iff_curveVelocity_eq {γ : ℝ → M} {v : (x : M) → 
         uniqueDiffWithinAt_univ
   · rw [← (h t).2]
     exact hasMFDerivAt_curveVelocity (h t).1
+
+section ExtChartAtSymm
+
+variable [IsManifold I 1 M] {x : M}
+
+/-- **The chain rule for the inverse extended chart along a curve.** A curve `γ` in the model space
+which has derivative `d` at `t` within `J`, passes through the target of the extended chart at `x`
+at time `t` and lies in the range of the model eventually within `J`, is carried by the inverse
+chart to a curve in `M` whose velocity at `t` within `J` is the image of `d` under the derivative
+of the inverse chart. -/
+theorem hasMFDerivWithinAt_extChartAt_symm_comp {γ : ℝ → E} {d : E} {J : Set ℝ} {t : ℝ}
+    (ht : γ t ∈ (extChartAt I x).target) (hrange : ∀ᶠ s in 𝓝[J] t, γ s ∈ Set.range I)
+    (hγ : HasDerivWithinAt γ d J t) :
+    HasMFDerivWithinAt 𝓘(ℝ, ℝ) I (fun s ↦ (extChartAt I x).symm (γ s)) J t
+      ((1 : ℝ →L[ℝ] ℝ).smulRight
+        (mfderivWithin 𝓘(ℝ, E) I (extChartAt I x).symm (Set.range I) (γ t) d)) := by
+  refine (hasMFDerivWithinAt_inter' hrange).1 ?_
+  have hγ' : HasMFDerivWithinAt 𝓘(ℝ, ℝ) 𝓘(ℝ, E) γ (J ∩ {s | γ s ∈ Set.range I}) t
+      ((1 : ℝ →L[ℝ] ℝ).smulRight d) :=
+    hasMFDerivWithinAt_iff_hasFDerivWithinAt.2
+      (hγ.hasFDerivWithinAt.mono Set.inter_subset_left)
+  exact ((mdifferentiableWithinAt_extChartAt_symm ht).hasMFDerivWithinAt.comp t hγ'
+    fun _ hs ↦ hs.2).congr_mfderiv
+    (ContinuousLinearMap.comp_toSpanSingleton
+      (mfderivWithin 𝓘(ℝ, E) I (extChartAt I x).symm (Set.range I) (γ t)) d)
+
+/-- A straight segment `s ↦ c + s • d` in the chart, at a time `t` at which it is in the interior
+of the chart target, is differentiable in the manifold with derivative the image of `d` under the
+derivative of the inverse chart. This is the unrestricted case of
+`TauCeti.Manifold.hasMFDerivWithinAt_extChartAt_symm_comp` for the segment. -/
+theorem hasMFDerivAt_extChartAt_symm_add_smul {c d : E} {t : ℝ}
+    (ht : (extChartAt I x).target ∈ 𝓝 (c + t • d)) :
+    HasMFDerivAt 𝓘(ℝ, ℝ) I (fun s : ℝ ↦ (extChartAt I x).symm (c + s • d)) t
+      ((1 : ℝ →L[ℝ] ℝ).smulRight
+        (mfderivWithin 𝓘(ℝ, E) I (extChartAt I x).symm (Set.range I) (c + t • d) d)) := by
+  have hseg : HasDerivAt (fun s : ℝ ↦ c + s • d) d t := by
+    simpa using ((hasDerivAt_id t).smul_const d).const_add c
+  refine hasMFDerivWithinAt_univ.1 ?_
+  exact hasMFDerivWithinAt_extChartAt_symm_comp (mem_of_mem_nhds ht)
+    (eventually_nhdsWithin_of_eventually_nhds
+      ((hseg.continuousAt.eventually_mem ht).mono fun _ hs ↦ extChartAt_target_subset_range x hs))
+    hseg.hasDerivWithinAt
+
+end ExtChartAtSymm
 
 end TauCeti.Manifold

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.L2Space
-import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.Lebesgue.DominatedConvergence
 
 /-!
@@ -62,24 +61,23 @@ theorem MemLp.integral_sq_le_sq_add_integral_indicator [IsProbabilityMeasure P]
         rw [integral_add (integrable_const _) h]
         simp
 
-/-- For a square-integrable real function `X`, the truncated second moment
-`∫ ω, ({ω | R ≤ |X ω|}.indicator fun ω ↦ X ω ^ 2) ω ∂P` tends to `0` as `R → ∞`. -/
-theorem MemLp.tendsto_integral_indicator_sq_atTop (hX : MemLp X 2 P) :
-    Filter.Tendsto (fun R : ℝ ↦ ∫ ω, ({ω | R ≤ |X ω|}.indicator fun ω ↦ X ω ^ 2) ω ∂P)
-      Filter.atTop (nhds 0) := by
-  have h := tendsto_integral_filter_of_dominated_convergence
-    (F := fun (R : ℝ) (ω : Ω) ↦ ({ω | R ≤ |X ω|}.indicator fun ω ↦ X ω ^ 2) ω)
-    (f := fun _ ↦ 0) (fun ω ↦ X ω ^ 2)
-    (.of_forall fun R ↦ (hX.integrable_indicator_sq R).aestronglyMeasurable)
-    (.of_forall fun R ↦ .of_forall fun ω ↦ by
-      by_cases h : R ≤ |X ω|
-      · rw [indicator_of_mem (s := {ω | R ≤ |X ω|}) h, Real.norm_of_nonneg (sq_nonneg _)]
-      · rw [indicator_of_notMem (s := {ω | R ≤ |X ω|}) h, norm_zero]
-        exact sq_nonneg _)
-    hX.integrable_sq (.of_forall fun ω ↦ tendsto_const_nhds.congr' <| by
-      filter_upwards [Filter.eventually_gt_atTop |X ω|] with R hR
-      exact (indicator_of_notMem (s := {ω | R ≤ |X ω|}) (not_le.mpr hR) _).symm)
-  rwa [integral_zero] at h
+/-- Cutting off an almost-everywhere strongly measurable function at a real norm level
+preserves almost-everywhere strong measurability. -/
+theorem AEStronglyMeasurable.ite_norm_le
+    {E : Type*} [SeminormedAddCommGroup E] {f : Ω → E}
+    (hf : AEStronglyMeasurable f P) (R : ℝ) :
+    AEStronglyMeasurable (fun x ↦ if ‖f x‖ ≤ R then f x else 0) P := by
+  exact (hf.indicator₀ (hf.norm.nullMeasurableSet_le aestronglyMeasurable_const)).congr
+    (Filter.Eventually.of_forall fun x ↦ Set.indicator_apply _ _ x)
+
+/-- Cutting off an `Lᵖ` function at a real norm level preserves `Lᵖ` membership,
+including for infinite measures and arbitrary exponents. -/
+theorem MemLp.ite_norm_le
+    {E : Type*} [SeminormedAddCommGroup E] {p : ℝ≥0∞} {f : Ω → E}
+    (hf : MemLp f p P) (R : ℝ) :
+    MemLp (fun x ↦ if ‖f x‖ ≤ R then f x else 0) p P := by
+  apply hf.of_le_eNorm (hf.aestronglyMeasurable.ite_norm_le R)
+  exact Filter.Eventually.of_forall fun x ↦ by split_ifs <;> simp
 
 /-- Cutting off an `Lᵖ` function above increasing real norm levels gives errors whose
 `p`-th norm-power integrals tend to zero, for finite positive `p`. No finiteness assumption
@@ -91,11 +89,8 @@ theorem MemLp.tendsto_lintegral_eNorm_ite_sub_rpow
       ‖(if ‖f x‖ ≤ R then f x else 0) - f x‖ₑ ^ p.toReal ∂P) Filter.atTop (nhds 0) := by
   have hp_pos := ENNReal.toReal_pos hp0 hp
   have hmeas (R : ℝ) : AEStronglyMeasurable
-      (fun x ↦ (if ‖f x‖ ≤ R then f x else 0) - f x) P := by
-    simpa only [Pi.sub_def, Set.indicator_apply, mem_ofPred_eq] using
-      (hf.aestronglyMeasurable.indicator₀
-        (nullMeasurableSet_le hf.aestronglyMeasurable.norm.aemeasurable aemeasurable_const)).sub
-          hf.aestronglyMeasurable
+      (fun x ↦ (if ‖f x‖ ≤ R then f x else 0) - f x) P :=
+    (hf.aestronglyMeasurable.ite_norm_le R).sub hf.aestronglyMeasurable
   have hdom (R : ℝ) (x : Ω) :
       ‖(if ‖f x‖ ≤ R then f x else 0) - f x‖ₑ ^ p.toReal ≤ ‖f x‖ₑ ^ p.toReal := by
     split_ifs <;> simp [ENNReal.zero_rpow_of_pos hp_pos]
@@ -111,5 +106,46 @@ theorem MemLp.tendsto_lintegral_eNorm_ite_sub_rpow
     (Filter.Eventually.of_forall fun R ↦ (hmeas R).eNorm.pow_const p.toReal)
     (Filter.Eventually.of_forall fun R ↦ Filter.Eventually.of_forall (hdom R))
     hfinite.ne (Filter.Eventually.of_forall hlim)
+
+/-- The Bochner integral of the `p`-th power of the norm error from a norm cutoff
+converges to zero for finite positive `p`, on an arbitrary measure space. -/
+theorem MemLp.tendsto_integral_norm_ite_sub_rpow
+    {E : Type*} [SeminormedAddCommGroup E] {p : ℝ≥0∞} {f : Ω → E}
+    (hf : MemLp f p P) (hp0 : p ≠ 0) (hp : p ≠ ∞) :
+    Filter.Tendsto (fun R : ℝ ↦ ∫ x,
+      ‖(if ‖f x‖ ≤ R then f x else 0) - f x‖ ^ p.toReal ∂P) Filter.atTop (nhds 0) := by
+  have h := (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp
+    (hf.tendsto_lintegral_eNorm_ite_sub_rpow hp0 hp)
+  simp only [Function.comp_def, ENNReal.toReal_zero] at h
+  convert h using 1
+  ext R
+  rw [integral_eq_lintegral_of_nonneg_ae
+    (Filter.Eventually.of_forall fun _ ↦ Real.rpow_nonneg (norm_nonneg _) _) ?_]
+  · congr 1
+    apply lintegral_congr
+    intro x
+    rw [← ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) ENNReal.toReal_nonneg, ofReal_norm]
+  · exact (Real.continuous_rpow_const ENNReal.toReal_nonneg).comp_aestronglyMeasurable
+      ((hf.aestronglyMeasurable.ite_norm_le R).sub hf.aestronglyMeasurable).norm
+
+/-- For a square-integrable real function `X`, the truncated second moment
+`∫ ω, ({ω | R ≤ |X ω|}.indicator fun ω ↦ X ω ^ 2) ω ∂P` tends to `0` as `R → ∞`. -/
+theorem MemLp.tendsto_integral_indicator_sq_atTop (hX : MemLp X 2 P) :
+    Filter.Tendsto (fun R : ℝ ↦ ∫ ω, ({ω | R ≤ |X ω|}.indicator fun ω ↦ X ω ^ 2) ω ∂P)
+      Filter.atTop (nhds 0) := by
+  have h : Filter.Tendsto (fun R : ℝ ↦
+      ∫ x, ((if ‖X x‖ ≤ R - 1 then X x else 0) - X x) ^ 2 ∂P) Filter.atTop (nhds 0) := by
+    simpa [Function.comp_def, sub_eq_add_neg, ENNReal.toReal_ofNat, Real.rpow_two, sq_abs] using
+      (hX.tendsto_integral_norm_ite_sub_rpow (by norm_num) (by norm_num)).comp
+        (Filter.tendsto_atTop_add_const_right Filter.atTop (-1 : ℝ) Filter.tendsto_id)
+  refine squeeze_zero
+    (fun R ↦ integral_nonneg fun _ ↦ indicator_nonneg (fun _ _ ↦ sq_nonneg _) _)
+    (fun R ↦ integral_mono (hX.integrable_indicator_sq R)
+      ((hX.ite_norm_le (R - 1)).sub hX).integrable_sq fun ω ↦ ?_) h
+  by_cases hω : R ≤ |X ω|
+  · have hlt : ¬|X ω| ≤ R - 1 := by linarith
+    simp [indicator_of_mem (s := {ω | R ≤ |X ω|}) hω, hlt]
+  · rw [indicator_of_notMem (s := {ω | R ≤ |X ω|}) hω]
+    exact sq_nonneg _
 
 end MeasureTheory
