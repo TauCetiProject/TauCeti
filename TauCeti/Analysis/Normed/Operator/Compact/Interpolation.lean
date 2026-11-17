@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Operator.Compact.Basic
+public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 public import Mathlib.MeasureTheory.Function.LpSpace.Complete
 import TauCeti.Data.ENNReal.Inv
@@ -33,6 +34,8 @@ Rellich–Kondrachov compactness from `Lᵖ` to every subcritical target exponen
 ## Main declarations
 
 * `IsCompactOperator.of_norm_le_mul_rpow_mul_rpow`: compactness by interpolation.
+* `IsCompactOperator.of_adjoint_comp_self`: a bounded operator between Hilbert spaces is compact
+  when `T† T` is, by the interpolation inequality `‖T x‖ ≤ ‖T† T x‖ ^ (1 / 2) ‖x‖ ^ (1 / 2)`.
 * `IsCompactOperator.of_forall_ae_eq_of_interpolation`: compactness into `L^{p₀}` and boundedness
   into `L^{p₁}` give compactness into the intermediate `Lᵖ`.
 * `IsCompactOperator.of_forall_ae_eq_of_le`: on a finite measure space, compactness into `L^{p₀}`
@@ -98,6 +101,26 @@ theorem of_norm_le_mul_rpow_mul_rpow {T₀ : X →ₗ[𝕜] Y₀} (hT₀ : IsCom
         mul_le_mul (mul_le_mul_of_nonneg_right (le_abs_self C) (by positivity))
           (Real.rpow_le_rpow (norm_nonneg _) h₁ hθ₀) (by positivity) (by positivity)
     _ < ε := hε'
+
+/-- **Compactness from the Gram operator.** A bounded operator `T` between Hilbert spaces is
+compact as soon as `T† T` is, since `‖T x‖² = re ⟪T† T x, x⟫ ≤ ‖T† T x‖ ‖x‖` is an interpolation
+inequality with `θ = 1 / 2`. For a self-adjoint `T` this says that `T` is compact when `T²` is. -/
+theorem of_adjoint_comp_self {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E]
+    [InnerProductSpace 𝕜 E] [CompleteSpace E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+    [CompleteSpace F] {T : E →L[𝕜] F} (hT : IsCompactOperator (T.adjoint ∘L T)) :
+    IsCompactOperator T := by
+  refine IsCompactOperator.of_norm_le_mul_rpow_mul_rpow
+    (T₀ := ((T.adjoint ∘L T : E →L[𝕜] E) : E →ₗ[𝕜] E)) hT (ContinuousLinearMap.id 𝕜 E)
+    (T := (T : E →ₗ[𝕜] F)) (C := 1) (θ := 1 / 2) (by norm_num) (by norm_num) fun x => ?_
+  have hsq : ‖T x‖ ^ 2 ≤ ‖T.adjoint (T x)‖ * ‖x‖ := by
+    rw [@norm_sq_eq_re_inner 𝕜, ← ContinuousLinearMap.adjoint_inner_left]
+    exact (RCLike.re_le_norm _).trans (norm_inner_le_norm _ _)
+  have h12 : (1 : ℝ) - 1 / 2 = 1 / 2 := by norm_num
+  simp only [ContinuousLinearMap.coe_coe, ContinuousLinearMap.coe_comp, Function.comp_apply,
+    ContinuousLinearMap.id_apply, one_mul, h12]
+  rw [← Real.mul_rpow (norm_nonneg _) (norm_nonneg _), ← Real.sqrt_eq_rpow,
+    ← Real.sqrt_sq (norm_nonneg (T x))]
+  exact Real.sqrt_le_sqrt hsq
 
 section Lp
 
