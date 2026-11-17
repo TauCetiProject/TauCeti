@@ -38,7 +38,8 @@ finiteness: a morphism or class into or out of a biproduct is determined by its 
 * `TauCeti.ExactStructure.isDualizingForm_of_isAlmostSplit`: a linear form not vanishing on an
   almost-split class is dualizing.
 * `TauCeti.ExactStructure.isDualizingForm_zero`,
-  `TauCeti.ExactStructure.IsDualizingForm.comp_pullback` and
+  `TauCeti.ExactStructure.IsDualizingForm.comp_pullback`,
+  `TauCeti.ExactStructure.IsDualizingForm.comp_pushout` and
   `TauCeti.ExactStructure.IsDualizingForm.biproduct`: the closure properties.
 * `TauCeti.ExactStructure.exists_isDualizingForm`: in a Krull–Schmidt category with almost-split
   conflations ending at every indecomposable non-projective object, every object carries a
@@ -106,15 +107,24 @@ theorem IsDualizingForm.comp_pullback {Z Z' T : C} {φ : E.Ext1 Z T →ₗ[R] Q}
       simp [Ext1.pushout_pullback]
     rw [this]
     exact (LinearEquiv.bijective _).comp (hφ.bijective_costablePairing X)
-  · have : ⇑(stablePairing (φ ∘ₗ Ext1.pullbackLinearMap R e.hom) B) =
-        ⇑(stablePairing φ B) ∘
-          ⇑((E.projectivelyTrivialIdeal.quotientFunctor.mapIso e).symm.homCongr (Iso.refl _)) := by
-      funext x
-      obtain ⟨c, rfl⟩ := E.projectivelyTrivialIdeal.quotientFunctor.map_surjective x
-      ext η
-      simp [Iso.homCongr_apply, ← Functor.map_comp]
-    rw [this]
-    exact (hφ.bijective_stablePairing B).comp (Equiv.bijective _)
+  · exact bijective_stablePairing_comp_pullback (hφ.bijective_stablePairing B) inferInstance
+
+/-- **Transport along an isomorphism.** If `φ : Ext¹_E(Z, T) → Q` is dualizing and `e : T' ≅ T`,
+then `ξ ↦ φ(e_* ξ)` on `Ext¹_E(Z, T')` is dualizing. -/
+theorem IsDualizingForm.comp_pushout {Z T T' : C} {φ : E.Ext1 Z T →ₗ[R] Q}
+    (hφ : IsDualizingForm φ) (e : T' ≅ T) :
+    IsDualizingForm (φ ∘ₗ Ext1.pushoutLinearMap R e.hom) := by
+  refine ⟨fun X ↦ bijective_costablePairing_comp_pushout (hφ.bijective_costablePairing X)
+    inferInstance, fun B ↦ ?_⟩
+  have : ⇑(stablePairing (φ ∘ₗ Ext1.pushoutLinearMap R e.hom) B) =
+      ⇑(LinearEquiv.arrowCongr (Ext1.pushoutLinearEquiv R (Z := B) e.symm)
+        (LinearEquiv.refl R Q)) ∘ ⇑(stablePairing φ B) := by
+    funext x
+    obtain ⟨c, rfl⟩ := E.projectivelyTrivialIdeal.quotientFunctor.map_surjective x
+    ext η
+    simp [Ext1.pushout_pullback]
+  rw [this]
+  exact (LinearEquiv.bijective _).comp (hφ.bijective_stablePairing B)
 
 /-! ### Assembly over a finite biproduct -/
 
@@ -253,7 +263,8 @@ theorem exists_isDualizingForm [HasFiniteBiproducts C] [IsKrullSchmidt C]
     · exact ⟨0, 0, isDualizingForm_zero hproj (E.isInjective.prop_of_isZero (isZero_zero C))⟩
     · obtain ⟨T, e, he⟩ := hAR P ((IsKrullSchmidt.indecomposable_iff_isLocalRing_end P).mpr hP)
         hproj
-      obtain ⟨φ, hφ⟩ := exists_apply_mk_ne_zero_of_isAlmostSplit hQ e he
+      obtain ⟨φ, hφ⟩ :=
+        exists_apply_mk_ne_zero_of_isAlmostSplit (nontrivial_linearMap_of_isMaximal hQ) e he
       exact ⟨T, φ, isDualizingForm_of_isAlmostSplit hQ e he hφ (fun B ↦ hfin B T)
         (fun X ↦ hfin P X)⟩
   obtain ⟨n, P, hP, ⟨i⟩⟩ := IsKrullSchmidt.exists_iso_biproduct Z

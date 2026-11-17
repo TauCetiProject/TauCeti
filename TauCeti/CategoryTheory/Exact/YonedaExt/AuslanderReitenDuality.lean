@@ -142,6 +142,13 @@ theorem costablePairing_costableEquiv_symm (Z X : C) (f : E.Ext1 Z X →ₗ[R] Q
     costablePairing (D.form Z) X ((D.costableEquiv Z X).symm f) = f :=
   (D.costableEquiv Z X).apply_symm_apply f
 
+@[simp]
+theorem costableEquiv_symm_costablePairing (Z X : C)
+    (x : E.injectivelyTrivialIdeal.quotientFunctor.obj X ⟶
+      E.injectivelyTrivialIdeal.quotientFunctor.obj (D.obj Z)) :
+    (D.costableEquiv Z X).symm (costablePairing (D.form Z) X x) = x :=
+  (D.costableEquiv Z X).symm_apply_apply x
+
 /-- The translate on morphisms: `τ u : T_Z ⟶ T_{Z'}` is the morphism corresponding to the linear
 form `ζ ↦ φ_Z(u^* ζ)` on `Ext¹_E(Z', T_Z)`. -/
 noncomputable def translateMap {Z Z' : C} (u : Z ⟶ Z') :
@@ -218,6 +225,24 @@ instance : D.translate.Additive where
 
 instance : D.translate.Linear R where
   map_smul u r := D.translateMap_smul r u
+
+@[simp]
+theorem translateMap_zero (Z Z' : C) : D.translateMap (0 : Z ⟶ Z') = 0 :=
+  D.translate.map_zero Z Z'
+
+@[simp]
+theorem translateMap_neg {Z Z' : C} (u : Z ⟶ Z') : D.translateMap (-u) = -D.translateMap u :=
+  D.translate.map_neg
+
+@[simp]
+theorem translateMap_sub {Z Z' : C} (u u' : Z ⟶ Z') :
+    D.translateMap (u - u') = D.translateMap u - D.translateMap u' :=
+  D.translate.map_sub
+
+@[simp]
+theorem translateMap_sum {Z Z' : C} {ι : Type*} (u : ι → (Z ⟶ Z')) (s : Finset ι) :
+    D.translateMap (∑ i ∈ s, u i) = ∑ i ∈ s, D.translateMap (u i) :=
+  D.translate.map_sum u s
 
 theorem projectivelyTrivialIdeal_le_kerIdeal_translate :
     E.projectivelyTrivialIdeal ≤ D.translate.kerIdeal := fun _ _ _ hu ↦
@@ -355,7 +380,8 @@ theorem essSurj_functor [HasFiniteBiproducts C] [IsKrullSchmidt C]
           ((id_mem_injectivelyTrivialIdeal_iff _).mpr hinj))⟩⟩
     · obtain ⟨Z, e, he⟩ := hleft (P k)
         ((IsKrullSchmidt.indecomposable_iff_isLocalRing_end _).mpr (hP k)) hinj
-      obtain ⟨φ, hφ⟩ := exists_apply_mk_ne_zero_of_isAlmostSplit hQ e he
+      obtain ⟨φ, hφ⟩ :=
+        exists_apply_mk_ne_zero_of_isAlmostSplit (nontrivial_linearMap_of_isMaximal hQ) e he
       exact ⟨Z, ⟨costableIsoOfBijective ((D.isDualizingForm Z).bijective_costablePairing)
         fun X' ↦ (bijective_costablePairing_of_isAlmostSplit hQ e he hφ (hfin Z X')).1⟩⟩
   choose Z hZ using hk
@@ -457,14 +483,12 @@ pairing of `A.form Z` at `B` is bijective when `Ext¹_E(B, τ Z)` has finite len
 theorem bijective_stablePairing_form {Z B : C}
     (hBZ : IsFiniteLength R (E.Ext1 B (A.translateObj Z))) :
     Function.Bijective (stablePairing (A.form Z) B) := by
-  have hflip : ⇑(stablePairing (A.form Z) B) =
-      ⇑(A.linearEquiv B (A.translateObj Z)).toLinearMap.flip ∘ A.functor.map :=
-    funext fun x ↦ LinearMap.ext fun η ↦ A.stablePairing_form Z B x η
-  rw [hflip]
-  exact (bijective_of_injective_of_injective_flip hQ
-    (injective_flip_of_surjective (nontrivial_linearMap_of_isMaximal hQ)
-      (A.linearEquiv B (A.translateObj Z)).surjective)
-    (A.linearEquiv B (A.translateObj Z)).injective hBZ).2.1.comp
+  have h : ⇑(stablePairing (A.form Z) B) =
+      ⇑(costablePairing (A.form B) (A.translateObj Z)) ∘ A.functor.map :=
+    funext fun x ↦ LinearMap.ext fun η ↦ by
+      rw [Function.comp_apply, A.stablePairing_form, A.costablePairing_form]
+  rw [h]
+  exact (A.bijective_costablePairing_form hQ hBZ).comp
     ((Functor.FullyFaithful.ofFullyFaithful A.functor).map_bijective _ _)
 
 /-- **The universal element of an Auslander–Reiten duality is dualizing**, when every `Ext¹` out
@@ -482,7 +506,8 @@ noncomputable def isoTranslateOfIsAlmostSplit {Z T : C} (hZ : ∀ X, IsFiniteLen
       A.functor.obj (E.projectivelyTrivialIdeal.quotientFunctor.obj Z) :=
   costableIsoOfBijective
     (fun X ↦ (bijective_costablePairing_of_isAlmostSplit hQ e he
-      (exists_apply_mk_ne_zero_of_isAlmostSplit hQ e he).choose_spec (hZ X)).1)
+      (exists_apply_mk_ne_zero_of_isAlmostSplit
+        (nontrivial_linearMap_of_isMaximal hQ) e he).choose_spec (hZ X)).1)
     fun X ↦ A.bijective_costablePairing_form hQ (hZ X)
 
 variable [HasFiniteBiproducts C] [IsKrullSchmidt C]
