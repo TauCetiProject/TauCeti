@@ -48,8 +48,9 @@ upper convex hull hypograph of `{(finrank K U, weight L c U)}`.
   supporting-line upper bounds and interval containment on equality.
 * `TauCeti.eq_of_mem_twistedFiltration_of_finrank_eq_of_le_weight`,
   `TauCeti.weight_le_of_mem_twistedFiltration_of_finrank_eq`: unique weight maximization by rank.
-* `TauCeti.extremePoints_convexHull_finrank_le_weight`, `TauCeti.mem_twistedFiltration_iff`:
-  extreme-point and strict-supporting-slope characterizations of `twistedFiltration L c`.
+* `TauCeti.extremePoints_convexHull_hypograph_weight_eq_image_twistedFiltration`,
+  `TauCeti.mem_twistedFiltration_iff`: extreme-point and strict-supporting-slope characterizations
+  of `twistedFiltration L c`.
 * `TauCeti.twistedFiltration_fin_two_proj_of_lt`: two-coordinate evaluation `[⊥, K ∙ e₂, ⊤]`.
 
 ## References
@@ -153,8 +154,7 @@ theorem map_twistedFiltration_comp_linearEquiv (L : Ω → ι → Module.Dual K 
     {M : Type*} [AddCommGroup M] [Module K M] [FiniteDimensional K M] (e : M ≃ₗ[K] V) :
     (twistedFiltration (fun v i ↦ (L v i).comp e.toLinearMap) c).map
       (Submodule.map e.toLinearMap) = twistedFiltration L c := by
-  have htop : (⊤ : Submodule K M).map e.toLinearMap = ⊤ := by rw [Submodule.map_top, e.range]
-  simpa only [twistedFiltration, htop] using
+  simpa only [twistedFiltration, Submodule.map_top, LinearEquiv.range] using
     map_twistedFiltrationAux_comp_of_injective L c e.injective ⊤
 
 /-- Pulling forms back along a linear equivalence transports every subspace in
@@ -270,6 +270,20 @@ private theorem getElem_length_sub_two_twistedFiltrationAux
   exact (getElem_twistedFiltrationAux_of_lt L c hW (by omega)).trans
     (getElem_length_sub_one_twistedFiltrationAux L c (nextSubspace L c W))
 
+private theorem getElem_twistedFiltrationAux_of_eq_length_sub_one
+    (L : Ω → ι → Module.Dual K V) (c : Ω → ι → ℝ) (W : Submodule K V)
+    {j : ℕ} {hj : j < (twistedFiltrationAux L c W).length}
+    (hjeq : j = (twistedFiltrationAux L c W).length - 1) :
+    (twistedFiltrationAux L c W)[j]'hj = W := by
+  subst hjeq; exact getElem_length_sub_one_twistedFiltrationAux L c W
+
+private theorem getElem_twistedFiltrationAux_of_eq_length_sub_two
+    (L : Ω → ι → Module.Dual K V) (c : Ω → ι → ℝ) {W : Submodule K V} (hW : W ≠ ⊥)
+    {j : ℕ} {hj : j < (twistedFiltrationAux L c W).length}
+    (hjeq : j = (twistedFiltrationAux L c W).length - 2) :
+    (twistedFiltrationAux L c W)[j]'hj = nextSubspace L c W := by
+  subst hjeq; exact getElem_length_sub_two_twistedFiltrationAux L c hW
+
 /-- The last term of `twistedFiltration L c` is `⊤`. -/
 @[simp]
 theorem getLast_twistedFiltration (L : Ω → ι → Module.Dual K V) (c : Ω → ι → ℝ) :
@@ -370,13 +384,8 @@ private theorem nextSubspace_getElem_succ_twistedFiltrationAux
     · rw [getElem_twistedFiltrationAux_of_lt L c hW hilt,
         getElem_twistedFiltrationAux_of_lt L c hW (Nat.lt_of_succ_lt hilt)]
       exact nextSubspace_getElem_succ_twistedFiltrationAux L c (nextSubspace L c W) hilt
-    · have hi1 : i + 1 = (twistedFiltrationAux L c W).length - 1 := by omega
-      have hi0 : i = (twistedFiltrationAux L c W).length - 2 := by omega
-      have h1 : (twistedFiltrationAux L c W)[i + 1]'hi = W := by
-        simp only [hi1, getElem_length_sub_one_twistedFiltrationAux]
-      have h0 : (twistedFiltrationAux L c W)[i]'(Nat.lt_of_succ_lt hi) = nextSubspace L c W := by
-        simp only [hi0, getElem_length_sub_two_twistedFiltrationAux L c hW]
-      rw [h1, h0]
+    · rw [getElem_twistedFiltrationAux_of_eq_length_sub_one L c W (by omega),
+        getElem_twistedFiltrationAux_of_eq_length_sub_two L c hW (by omega)]
 termination_by finrank K W
 decreasing_by exact finrank_nextSubspace_lt L c hW
 
@@ -414,11 +423,8 @@ private theorem twistedFiltrationAux_getElem_eq_take (L : Ω → ι → Module.D
     · rw [getElem_twistedFiltrationAux_of_lt L c hW hklt,
         twistedFiltrationAux_getElem_eq_take L c (nextSubspace L c W) hklt,
         twistedFiltrationAux_of_ne_bot L c hW, List.take_append_of_le_length hklt]
-    · have hkeq : k = (twistedFiltrationAux L c W).length - 1 := by omega
-      have hk1 : k + 1 = (twistedFiltrationAux L c W).length := by omega
-      have hget : (twistedFiltrationAux L c W)[k]'hk = W := by
-        simp only [hkeq, getElem_length_sub_one_twistedFiltrationAux]
-      rw [hget, hk1, List.take_length]
+    · rw [getElem_twistedFiltrationAux_of_eq_length_sub_one L c W (by omega),
+        List.take_of_length_le (by omega)]
 termination_by finrank K W
 decreasing_by exact finrank_nextSubspace_lt L c hW
 
@@ -623,10 +629,6 @@ private theorem supporting_line_twistedFiltrationAux
     have hlT_pos : 0 < lT.length := length_twistedFiltrationAux_pos L c T
     have hlen : (twistedFiltrationAux L c W).length = lT.length + 1 :=
       length_twistedFiltrationAux_of_ne_bot L c hW
-    have hlast0 : (twistedFiltrationAux L c W)[(twistedFiltrationAux L c W).length - 2]'(by
-        omega) = T := getElem_length_sub_two_twistedFiltrationAux L c hW
-    have hlast1 : (twistedFiltrationAux L c W)[(twistedFiltrationAux L c W).length - 1]'(by
-        omega) = W := getElem_length_sub_one_twistedFiltrationAux L c W
     have hi := i.isLt
     have hi_le : i.val ≤ lT.length - 1 := by omega
     rcases lt_or_eq_of_le hi_le with hilt | hieq
@@ -639,9 +641,9 @@ private theorem supporting_line_twistedFiltrationAux
         have hanti := strictAnti_weightSlope_twistedFiltrationAux hL hc W
           (a := i) (b := ⟨(twistedFiltrationAux L c W).length - 2, by omega⟩)
           (Fin.lt_def.mpr (by dsimp only; omega))
-        have heq_idx : (twistedFiltrationAux L c W).length - 2 + 1 =
-            (twistedFiltrationAux L c W).length - 1 := by omega
-        simpa only [h0, h1, hlast0, heq_idx, hlast1] using hanti
+        dsimp only at hanti
+        rwa [h0, h1, getElem_length_sub_two_twistedFiltrationAux L c hW,
+          getElem_twistedFiltrationAux_of_eq_length_sub_one L c W (by omega)] at hanti
       have hIH_inf := (supporting_line_twistedFiltrationAux hL hc T ⟨i.val, hilt⟩
         (inf_le_right : U ⊓ T ≤ T)).1
       have hsup_T : weight L c (U ⊔ T) - weightSlope L c T W * finrank K ↥(U ⊔ T) ≤
@@ -652,11 +654,8 @@ private theorem supporting_line_twistedFiltrationAux
       rw [h0, h1]
       exact ⟨hub, fun hge ↦ (supporting_line_twistedFiltrationAux hL hc T ⟨i.val, hilt⟩
         (heqT hge)).2 hge⟩
-    · have hi0 : i.val = (twistedFiltrationAux L c W).length - 2 := by omega
-      have hi1 : i.val + 1 = (twistedFiltrationAux L c W).length - 1 := by omega
-      have h0 : (twistedFiltrationAux L c W)[i.val]'(by omega) = T := by simp only [hi0, hlast0]
-      have h1 : (twistedFiltrationAux L c W)[i.val + 1]'(by omega) = W := by simp only [hi1, hlast1]
-      rw [h0, h1]
+    · rw [getElem_twistedFiltrationAux_of_eq_length_sub_two L c hW (by omega),
+        getElem_twistedFiltrationAux_of_eq_length_sub_one L c W (by omega)]
       exact ⟨weight_sub_weightSlope_nextSubspace_le hL hc hW hUW,
         fun hge ↦ ⟨nextSubspace_le_of_weight_sub_weightSlope_ge hL hc hW hUW hge, hUW⟩⟩
 termination_by finrank K W
@@ -716,16 +715,14 @@ theorem eq_of_mem_twistedFiltration_of_finrank_eq_of_le_weight
     (hT : T ∈ twistedFiltration L c) (hdim : finrank K U = finrank K T)
     (hw : weight L c T ≤ weight L c U) : U = T := by
   obtain ⟨k, hk, rfl⟩ := List.mem_iff_getElem.mp hT
-  by_cases hk0 : k = 0
-  · subst hk0; rw [getElem_zero_twistedFiltration, finrank_bot] at hdim
+  rcases k with _ | i
+  · rw [getElem_zero_twistedFiltration, finrank_bot] at hdim
     exact (Submodule.finrank_eq_zero.mp hdim).trans (getElem_zero_twistedFiltration L c).symm
-  · let i : Fin ((twistedFiltration L c).length - 1) := ⟨k - 1, by omega⟩
-    have hTk : (twistedFiltration L c)[i.val + 1]'(by dsimp [i]; omega) =
-        (twistedFiltration L c)[k]'hk := by congr 1; dsimp [i]; omega
-    have hle := weight_sub_weightSlope_twistedFiltration_mul_finrank_le hL hc i U
+  · let j : Fin ((twistedFiltration L c).length - 1) := ⟨i, by omega⟩
+    have hle := weight_sub_weightSlope_twistedFiltration_mul_finrank_le hL hc j U
     have hUT := (getElem_twistedFiltration_le_and_le_of_weight_sub_weightSlope_mul_finrank_eq
-      hL hc i (le_antisymm hle (by rw [hTk, hdim]; linarith))).2
-    rw [hTk] at hUT; exact Submodule.eq_of_le_of_finrank_eq hUT hdim
+      hL hc j (le_antisymm hle (by rw [hdim]; linarith))).2
+    exact Submodule.eq_of_le_of_finrank_eq hUT hdim
 
 /-- Every subspace `T` in `twistedFiltration L c` maximizes `weight L c` among all subspaces of
 its dimension. -/
@@ -739,6 +736,36 @@ theorem weight_le_of_mem_twistedFiltration_of_finrank_eq
 
 /-! ### Exact upper convex hull characterization -/
 
+private theorem weight_sub_mul_finrank_lt_succ_of_finrank_lt
+    {L : Ω → ι → Module.Dual K V} (hL : ∀ v, span K (range (L v)) = ⊤)
+    {c : Ω → ι → ℝ} (hc : HasFiniteSupport c)
+    (i : Fin ((twistedFiltration L c).length - 1)) {U : Submodule K V} {μ : ℝ}
+    (hμ : μ < weightSlope L c ((twistedFiltration L c)[i.val]'(by omega))
+      ((twistedFiltration L c)[i.val + 1]'(by omega)))
+    (hd : finrank K U < finrank K ((twistedFiltration L c)[i.val + 1]'(by omega))) :
+    weight L c U - μ * finrank K U <
+      weight L c ((twistedFiltration L c)[i.val + 1]'(by omega)) -
+        μ * finrank K ((twistedFiltration L c)[i.val + 1]'(by omega)) := by
+  have hle := weight_sub_weightSlope_twistedFiltration_mul_finrank_le hL hc i U
+  have hmul := mul_lt_mul_of_pos_right hμ (sub_pos.mpr ((Nat.cast_lt (α := ℝ)).mpr hd))
+  rw [mul_sub, mul_sub] at hmul
+  linarith
+
+private theorem weight_sub_mul_finrank_lt_of_finrank_gt
+    {L : Ω → ι → Module.Dual K V} (hL : ∀ v, span K (range (L v)) = ⊤)
+    {c : Ω → ι → ℝ} (hc : HasFiniteSupport c)
+    (i : Fin ((twistedFiltration L c).length - 1)) {U : Submodule K V} {μ : ℝ}
+    (hμ : weightSlope L c ((twistedFiltration L c)[i.val]'(by omega))
+      ((twistedFiltration L c)[i.val + 1]'(by omega)) < μ)
+    (hd : finrank K ((twistedFiltration L c)[i.val]'(by omega)) < finrank K U) :
+    weight L c U - μ * finrank K U <
+      weight L c ((twistedFiltration L c)[i.val]'(by omega)) -
+        μ * finrank K ((twistedFiltration L c)[i.val]'(by omega)) := by
+  have hle := weight_sub_weightSlope_twistedFiltration_mul_finrank_le_left hL hc i U
+  have hmul := mul_lt_mul_of_pos_right hμ (sub_pos.mpr ((Nat.cast_lt (α := ℝ)).mpr hd))
+  rw [mul_sub, mul_sub] at hmul
+  linarith
+
 private theorem exists_strict_supporting_slope_of_mem_twistedFiltration
     {L : Ω → ι → Module.Dual K V} (hL : ∀ v, span K (range (L v)) = ⊤)
     {c : Ω → ι → ℝ} (hc : HasFiniteSupport c) (k : Fin (twistedFiltration L c).length) :
@@ -750,54 +777,31 @@ private theorem exists_strict_supporting_slope_of_mem_twistedFiltration
   · exact ⟨0, fun U hne ↦
       (hne (congrArg (fun W : Submodule K V ↦ finrank K W) (Subsingleton.elim U _))).elim⟩
   · have h2 := two_le_length_twistedFiltration L c
-    by_cases hk0 : k.val = 0
+    rcases k with ⟨_ | i, hk⟩
     · let i0 : Fin ((twistedFiltration L c).length - 1) := ⟨0, by omega⟩
-      set μ₀ := weightSlope L c ((twistedFiltration L c)[i0.val]'(by omega))
-        ((twistedFiltration L c)[i0.val + 1]'(by omega)) with hμ₀
-      refine ⟨μ₀ + 1, fun U hne ↦ ?_⟩
-      have hTk : (twistedFiltration L c)[k.val] =
-          (twistedFiltration L c)[i0.val]'(by omega) := by simp only [hk0]; rfl
-      have h0 : (twistedFiltration L c)[k.val] = ⊥ := by
-        simpa only [hk0] using getElem_zero_twistedFiltration L c
-      have hd : finrank K (twistedFiltration L c)[k.val] < finrank K U := by
-        rw [h0, finrank_bot] at hne ⊢; exact Nat.pos_of_ne_zero hne
-      have hle := weight_sub_weightSlope_twistedFiltration_mul_finrank_le_left hL hc i0 U
-      rw [← hμ₀, ← hTk] at hle
-      nlinarith [(Nat.cast_lt (α := ℝ)).mpr hd, hle]
-    · by_cases hklast : k.val = (twistedFiltration L c).length - 1
-      · let ir : Fin ((twistedFiltration L c).length - 1) :=
-          ⟨(twistedFiltration L c).length - 2, by omega⟩
-        set μᵣ := weightSlope L c ((twistedFiltration L c)[ir.val]'(by omega))
-          ((twistedFiltration L c)[ir.val + 1]'(by omega)) with hμᵣ
-        refine ⟨μᵣ - 1, fun U hne ↦ ?_⟩
-        have hTk : (twistedFiltration L c)[k.val] =
-            (twistedFiltration L c)[ir.val + 1]'(by omega) := by congr 1; dsimp [ir]; omega
-        have hTr : (twistedFiltration L c)[k.val] = ⊤ := by
-          simpa only [hklast] using getElem_length_sub_one_twistedFiltration L c
-        have hd : finrank K U < finrank K (twistedFiltration L c)[k.val] :=
-          lt_of_le_of_ne (by rw [hTr, finrank_top]; exact Submodule.finrank_le U) hne
-        have hle := weight_sub_weightSlope_twistedFiltration_mul_finrank_le hL hc ir U
-        rw [← hμᵣ, ← hTk] at hle
-        nlinarith [(Nat.cast_lt (α := ℝ)).mpr hd, hle]
-      · have hk_lt : k.val < (twistedFiltration L c).length - 1 := by have := k.isLt; omega
-        let iL : Fin ((twistedFiltration L c).length - 1) := ⟨k.val - 1, by omega⟩
-        let iR : Fin ((twistedFiltration L c).length - 1) := ⟨k.val, hk_lt⟩
-        set μL := weightSlope L c ((twistedFiltration L c)[iL.val]'(by omega))
-          ((twistedFiltration L c)[iL.val + 1]'(by omega)) with hμL
-        set μR := weightSlope L c ((twistedFiltration L c)[iR.val]'(by omega))
-          ((twistedFiltration L c)[iR.val + 1]'(by omega)) with hμR
-        have hμ : μR < μL := strictAnti_weightSlope_twistedFiltration L c
-          (a := iL) (b := iR) (Fin.mk_lt_mk.mpr (by omega))
-        refine ⟨(μL + μR) / 2, fun U hne ↦ ?_⟩
-        rcases lt_or_gt_of_ne hne with hlt | hgt
-        · have hTk : (twistedFiltration L c)[k.val] =
-              (twistedFiltration L c)[iL.val + 1]'(by omega) := by congr 1; dsimp [iL]; omega
-          have hle := weight_sub_weightSlope_twistedFiltration_mul_finrank_le hL hc iL U
-          rw [← hμL, ← hTk] at hle
-          nlinarith [(Nat.cast_lt (α := ℝ)).mpr hlt, hμ, hle]
-        · have hle := weight_sub_weightSlope_twistedFiltration_mul_finrank_le_left hL hc iR U
-          rw [← hμR] at hle
-          nlinarith [(Nat.cast_lt (α := ℝ)).mpr hgt, hμ, hle]
+      refine ⟨weightSlope L c ((twistedFiltration L c)[0]'(by omega))
+        ((twistedFiltration L c)[1]'(by omega)) + 1, fun U hne ↦
+        weight_sub_mul_finrank_lt_of_finrank_gt hL hc i0 (lt_add_one _) ?_⟩
+      rw [getElem_zero_twistedFiltration, finrank_bot] at hne ⊢
+      exact Nat.pos_of_ne_zero hne
+    · let iL : Fin ((twistedFiltration L c).length - 1) := ⟨i, by omega⟩
+      by_cases hlast : i + 1 = (twistedFiltration L c).length - 1
+      · refine ⟨weightSlope L c ((twistedFiltration L c)[i]'(by omega))
+          ((twistedFiltration L c)[i + 1]'hk) - 1, fun U hne ↦
+          weight_sub_mul_finrank_lt_succ_of_finrank_lt hL hc iL (sub_one_lt _) ?_⟩
+        have hTr : (twistedFiltration L c)[i + 1]'hk = ⊤ :=
+          getElem_twistedFiltrationAux_of_eq_length_sub_one L c ⊤ hlast
+        exact lt_of_le_of_ne (by rw [hTr, finrank_top]; exact Submodule.finrank_le U) hne
+      · let iR : Fin ((twistedFiltration L c).length - 1) := ⟨i + 1, by omega⟩
+        have hμ := strictAnti_weightSlope_twistedFiltration L c
+          (a := iL) (b := iR) (Fin.mk_lt_mk.mpr (Nat.lt_succ_self i))
+        refine ⟨(weightSlope L c ((twistedFiltration L c)[i]'(by omega))
+            ((twistedFiltration L c)[i + 1]'hk) +
+          weightSlope L c ((twistedFiltration L c)[i + 1]'hk)
+            ((twistedFiltration L c)[i + 2]'(by omega))) / 2,
+          fun U hne ↦ (lt_or_gt_of_ne hne).elim
+            (weight_sub_mul_finrank_lt_succ_of_finrank_lt hL hc iL (by linarith))
+            (weight_sub_mul_finrank_lt_of_finrank_gt hL hc iR (by linarith))⟩
 
 private theorem exists_strict_supporting_slope_of_mem
     {L : Ω → ι → Module.Dual K V} (hL : ∀ v, span K (range (L v)) = ⊤)
@@ -917,7 +921,7 @@ private theorem mem_extremePoints_hypograph_of_strict_supporting {L : Ω → ι 
 /-- The vertices (extreme points) of the upper convex hull hypograph of
 `{(finrank K U, weight L c U)}` are precisely the pairs `(finrank K T, weight L c T)` for
 `T ∈ twistedFiltration L c` (Evertse--Ferretti, §15, Lemma 15.4). -/
-theorem extremePoints_convexHull_finrank_le_weight
+theorem extremePoints_convexHull_hypograph_weight_eq_image_twistedFiltration
     {L : Ω → ι → Module.Dual K V} (hL : ∀ v, span K (range (L v)) = ⊤)
     {c : Ω → ι → ℝ} (hc : HasFiniteSupport c) :
     (convexHull ℝ {p : ℝ × ℝ | ∃ U : Submodule K V,
@@ -955,7 +959,7 @@ theorem mem_twistedFiltration_iff
       weight L c U - μ * finrank K U < weight L c T - μ * finrank K T := by
   refine ⟨exists_strict_supporting_slope_of_mem hL hc, fun ⟨μ, hμ⟩ ↦ ?_⟩
   have hextr := mem_extremePoints_hypograph_of_strict_supporting hμ
-  rw [extremePoints_convexHull_finrank_le_weight hL hc] at hextr
+  rw [extremePoints_convexHull_hypograph_weight_eq_image_twistedFiltration hL hc] at hextr
   obtain ⟨S, hS, hEq⟩ := hextr
   exact eq_of_mem_twistedFiltration_of_finrank_eq_of_le_weight hL hc hS
     (Nat.cast_inj.mp (congrArg Prod.fst hEq).symm) (congrArg Prod.snd hEq).le ▸ hS

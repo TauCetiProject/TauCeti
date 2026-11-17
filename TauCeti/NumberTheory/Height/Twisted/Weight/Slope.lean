@@ -128,10 +128,9 @@ theorem weightSlope_comp_of_injective (L : Ω → ι → Module.Dual K V) (c : �
     (hf : Function.Injective f) (A B : Submodule K M) :
     weightSlope (fun v i ↦ (L v i).comp f) c A B =
       weightSlope L c (A.map f) (B.map f) := by
-  rw [weightSlope_def, weightSlope_def, weight_comp_of_injective L c hf A,
-    weight_comp_of_injective L c hf B,
-    (Submodule.equivMapOfInjective f hf A).finrank_eq,
-    (Submodule.equivMapOfInjective f hf B).finrank_eq]
+  have hfin (U : Submodule K M) : finrank K (U.map f) = finrank K U :=
+    (Submodule.equivMapOfInjective f hf U).finrank_eq.symm
+  simp only [weightSlope_def, weight_comp_of_injective L c hf, hfin]
 
 /-- Restricting forms to a subspace `W` identifies the weight slope with that of the ambient image
 subspaces. -/

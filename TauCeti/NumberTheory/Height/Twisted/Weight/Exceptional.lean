@@ -79,11 +79,8 @@ theorem weightRatio_comp_linearEquiv (L : Ω → ι → Module.Dual K V) (c : Ω
     {W : Type*} [AddCommGroup W] [Module K W] (e : W ≃ₗ[K] V) (U : Submodule K W) :
     weightRatio (fun v i ↦ (L v i).comp e.toLinearMap) c U =
       weightRatio L c (U.map e.toLinearMap) := by
-  have htop : (⊤ : Submodule K W).map e.toLinearMap = ⊤ := by
-    rw [Submodule.map_top, e.range]
-  rw [weightRatio_def, weightRatio_def, weight_comp_of_injective L c e.injective U,
-    weight_comp_of_injective L c e.injective ⊤, htop, e.finrank_eq,
-    (Submodule.equivMapOfInjective e.toLinearMap e.injective U).finrank_eq]
+  simp only [weightRatio_def, weight_comp_of_injective L c e.injective, Submodule.map_top,
+    LinearEquiv.range, e.finrank_eq, e.finrank_map_eq]
 
 variable [FiniteDimensional K V]
 
@@ -361,17 +358,15 @@ theorem map_exceptionalSubspace_comp_linearEquiv (L : Ω → ι → Module.Dual 
         have hmap (U : Submodule K V) : (U.comap e.toLinearMap).map e.toLinearMap = U :=
           Submodule.map_comap_eq_of_surjective e.surjective U
         have hcomap_ne_top {U : Submodule K V} (hU : U ≠ ⊤) : U.comap e.toLinearMap ≠ ⊤ :=
-          fun h ↦ hU (by rw [← hmap U, h, Submodule.map_top, e.range])
+          (Submodule.map_ne_top_iff (e := e)).mp (by rwa [hmap U])
         refine (eq_exceptionalSubspace_iff hL hc _).mpr
           ⟨(Submodule.map_ne_top_iff (e := e)).mpr hE, fun U hU ↦ ?_, fun U hU heq ↦ ?_⟩
         · simpa only [L', weightRatio_comp_linearEquiv, hmap U] using hmax _ (hcomap_ne_top hU)
         · have heq' : weightRatio L' c (U.comap e.toLinearMap) =
               weightRatio L' c (exceptionalSubspace L' c) := by
             simpa only [L', weightRatio_comp_linearEquiv, hmap U] using heq
-          have hle := hmin _ (hcomap_ne_top hU) heq'
-          rwa [(Submodule.equivMapOfInjective e.toLinearMap e.injective _).finrank_eq,
-            (Submodule.equivMapOfInjective e.toLinearMap e.injective
-              (U.comap e.toLinearMap)).finrank_eq, hmap U] at hle
+          rw [e.finrank_map_eq, ← hmap U, e.finrank_map_eq]
+          exact hmin _ (hcomap_ne_top hU) heq'
       · simp [exceptionalSubspace_eq_bot_of_not_hasFiniteSupport hc]
     · have hL' : ¬∀ v, span K (range (L' v)) = ⊤ := fun h ↦ hL fun v ↦ by
         have hcomp : (fun i ↦ (L' v i).comp e.symm.toLinearMap) = L v := by
@@ -393,6 +388,89 @@ theorem exceptionalSubspace_comp_linearEquiv (L : Ω → ι → Module.Dual K V)
 
 section FinTwo
 
+private theorem linearIndependent_fin_two_proj (K : Type*) [Field K] :
+    LinearIndependent K (fun i : Fin 2 ↦ (LinearMap.proj i : Module.Dual K (Fin 2 → K))) :=
+  Fintype.linearIndependent_iff.mpr fun g hg i ↦ by
+    have := LinearMap.congr_fun hg (Pi.single i 1)
+    fin_cases i <;> simpa [Pi.single_apply] using this
+
+private theorem span_range_fin_two_proj (K : Type*) [Field K] :
+    span K (range fun i : Fin 2 ↦ (LinearMap.proj i : Module.Dual K (Fin 2 → K))) = ⊤ :=
+  (linearIndependent_fin_two_proj K).span_eq_top_of_card_eq_finrank'
+    (by simp [Subspace.dual_finrank_eq])
+
+private theorem finsum_apply_eq_sum_toFinset {Ω : Type*} {c : Ω → Fin 2 → ℝ}
+    (hc : HasFiniteSupport c) (i : Fin 2) :
+    ∑ᶠ v, c v i = ∑ v ∈ hc.toFinset, c v i :=
+  finsum_eq_sum_of_support_subset _ fun v hv ↦
+    hc.mem_toFinset.mpr fun hcv ↦ hv (by simp [hcv])
+
+private theorem weight_fin_two_proj_top {K Ω : Type*} [Field K]
+    {c : Ω → Fin 2 → ℝ} (hc : HasFiniteSupport c) :
+    weight (fun (_ : Ω) (i : Fin 2) ↦ (LinearMap.proj i : Module.Dual K (Fin 2 → K))) c ⊤ =
+      (∑ᶠ v, c v 0) + ∑ᶠ v, c v 1 := by
+  rw [weight_eq_sum_of_support_subset _ c ⊤ hc.coe_toFinset.ge,
+    finsum_apply_eq_sum_toFinset hc 0, finsum_apply_eq_sum_toFinset hc 1,
+    ← Finset.sum_add_distrib]
+  exact Finset.sum_congr rfl fun v _ ↦ by
+    rw [localWeight_top (linearIndependent_fin_two_proj K) (span_range_fin_two_proj K),
+      Fin.sum_univ_two]
+
+private theorem weightRatio_fin_two_proj_single_one {K Ω : Type*} [Field K]
+    {c : Ω → Fin 2 → ℝ} (hc : HasFiniteSupport c) :
+    weightRatio (fun (_ : Ω) (i : Fin 2) ↦ (LinearMap.proj i : Module.Dual K (Fin 2 → K))) c
+      (K ∙ Pi.single (1 : Fin 2) (1 : K)) = -∑ᶠ v, c v 0 := by
+  let e₁ : Fin 2 → K := Pi.single 1 1
+  have he₁ : e₁ ≠ 0 := Pi.single_eq_zero_iff.not.mpr one_ne_zero
+  have hwtE : weight (fun (_ : Ω) (i : Fin 2) ↦ (LinearMap.proj i : Module.Dual K (Fin 2 → K))) c
+      (K ∙ e₁) = ∑ᶠ v, c v 1 := by
+    rw [weight_eq_sum_of_support_subset _ c _ hc.coe_toFinset.ge, finsum_apply_eq_sum_toFinset hc 1]
+    refine Finset.sum_congr rfl fun v _ ↦ ?_
+    have hset : {i : Fin 2 | (LinearMap.proj i : Module.Dual K (Fin 2 → K)) e₁ ≠ 0} = {1} := by
+      ext i; fin_cases i <;> simp [e₁]
+    rw [localWeight_span_singleton _ (c v) he₁, hset, Set.image_singleton, csInf_singleton]
+  rw [weightRatio_def, hwtE, weight_fin_two_proj_top hc, finrank_span_singleton he₁,
+    Module.finrank_fin_fun]
+  ring
+
+private theorem weightRatio_fin_two_proj_lt_single_one {K Ω : Type*} [Field K]
+    {c : Ω → Fin 2 → ℝ} (hc : HasFiniteSupport c) (hlt : ∑ᶠ v, c v 0 < ∑ᶠ v, c v 1)
+    {U : Submodule K (Fin 2 → K)} (hU : U ≠ ⊤)
+    (hne : U ≠ K ∙ Pi.single (1 : Fin 2) (1 : K)) :
+    weightRatio (fun (_ : Ω) (i : Fin 2) ↦ (LinearMap.proj i : Module.Dual K (Fin 2 → K))) c U <
+      weightRatio (fun (_ : Ω) (i : Fin 2) ↦ (LinearMap.proj i : Module.Dual K (Fin 2 → K))) c
+        (K ∙ Pi.single (1 : Fin 2) (1 : K)) := by
+  let L : Ω → Fin 2 → Module.Dual K (Fin 2 → K) := fun _ i ↦ LinearMap.proj i
+  let e₁ : Fin 2 → K := Pi.single 1 1
+  have hdimE : finrank K (K ∙ e₁) = 1 :=
+    finrank_span_singleton (Pi.single_eq_zero_iff.not.mpr one_ne_zero)
+  by_cases hUbot : U = ⊥
+  · subst U
+    rw [weightRatio_bot, weight_fin_two_proj_top hc, weightRatio_fin_two_proj_single_one hc,
+      Module.finrank_fin_fun]
+    linarith
+  · have hdimU : finrank K U = 1 := by
+      have := Nat.pos_of_ne_zero fun h ↦ hUbot (Submodule.finrank_eq_zero.mp h)
+      have := finrank_lt hU; simp only [Module.finrank_fin_fun] at this; omega
+    obtain ⟨x, hxU, hxE⟩ := IsConcreteLE.not_le_iff_exists.mp fun hle ↦
+      hne (Submodule.eq_of_le_of_finrank_eq hle (hdimU.trans hdimE.symm))
+    have hx0 : x 0 ≠ 0 := fun h0 ↦ hxE <| Submodule.mem_span_singleton.mpr
+      ⟨x 1, funext fun i ↦ by fin_cases i <;> simp [h0]⟩
+    have hx : x ≠ 0 := fun h ↦ hx0 (by simp [h])
+    have hUx : K ∙ x = U := Submodule.eq_of_le_of_finrank_eq
+      ((Submodule.span_singleton_le_iff_mem x U).mpr hxU)
+      ((finrank_span_singleton hx).trans hdimU.symm)
+    have hwtU : weight L c U ≤ ∑ᶠ v, c v 0 := by
+      rw [weight_eq_sum_of_support_subset L c U hc.coe_toFinset.ge,
+        finsum_apply_eq_sum_toFinset hc 0]
+      refine Finset.sum_le_sum fun v _ ↦ ?_
+      have h0mem : ({0} : Finset (Fin 2)) ∈ localWeightBases (L v) U := by
+        rw [← hUx, singleton_mem_localWeightBases_span_singleton (L v) hx 0]; exact hx0
+      simpa using localWeight_le_sum (c v) h0mem
+    rw [weightRatio_def, weight_fin_two_proj_top hc, hdimU, weightRatio_fin_two_proj_single_one hc,
+      Module.finrank_fin_fun]
+    linarith
+
 /-- For the two coordinate forms on `K²` with finitely supported weights satisfying
 `∑ᶠ v, c v 0 < ∑ᶠ v, c v 1`, the exceptional subspace is the second coordinate axis `K ∙ e₂`. -/
 theorem exceptionalSubspace_fin_two_proj_of_lt {K Ω : Type*} [Field K]
@@ -401,60 +479,18 @@ theorem exceptionalSubspace_fin_two_proj_of_lt {K Ω : Type*} [Field K]
       (LinearMap.proj i : Module.Dual K (Fin 2 → K))) c =
       K ∙ Pi.single (1 : Fin 2) (1 : K) := by
   classical
-  let L : Ω → Fin 2 → Module.Dual K (Fin 2 → K) := fun _ i ↦ LinearMap.proj i
-  let s : Finset Ω := hc.toFinset
-  have hLi (v : Ω) : LinearIndependent K (L v) :=
-    Fintype.linearIndependent_iff.mpr fun g hg i ↦ by
-      have := LinearMap.congr_fun hg (Pi.single i 1)
-      fin_cases i <;> simpa [L, Pi.single_apply] using this
-  have hL (v : Ω) : span K (range (L v)) = ⊤ :=
-    (hLi v).span_eq_top_of_card_eq_finrank' (by simp [Subspace.dual_finrank_eq])
-  have hcsum (i : Fin 2) : ∑ᶠ v, c v i = ∑ v ∈ s, c v i :=
-    finsum_eq_sum_of_support_subset _ fun v hv ↦
-      hc.mem_toFinset.mpr fun hcv ↦ hv (by simp [hcv])
-  have hwt (U : Submodule K (Fin 2 → K)) : weight L c U = ∑ v ∈ s, localWeight (L v) (c v) U :=
-    weight_eq_sum_of_support_subset L c U hc.coe_toFinset.ge
-  have htop : weight L c ⊤ = (∑ᶠ v, c v 0) + ∑ᶠ v, c v 1 := by
-    rw [hwt, hcsum 0, hcsum 1, ← Finset.sum_add_distrib]
-    exact Finset.sum_congr rfl fun v _ ↦ by rw [localWeight_top (hLi v) (hL v), Fin.sum_univ_two]
   let e₁ : Fin 2 → K := Pi.single 1 1
-  have he₁ : e₁ ≠ 0 := Pi.single_eq_zero_iff.not.mpr one_ne_zero
-  have hdimE : finrank K (K ∙ e₁) = 1 := finrank_span_singleton he₁
   have hE_ne_top : (K ∙ e₁) ≠ ⊤ := fun h ↦ by
-    have := hdimE; rw [h, finrank_top, Module.finrank_fin_fun] at this; omega
-  have hratioE : weightRatio L c (K ∙ e₁) = -∑ᶠ v, c v 0 := by
-    have hwtE : weight L c (K ∙ e₁) = ∑ᶠ v, c v 1 := by
-      rw [hwt, hcsum 1]
-      refine Finset.sum_congr rfl fun v _ ↦ ?_
-      have hset : {i : Fin 2 | L v i e₁ ≠ 0} = {1} := by ext i; fin_cases i <;> simp [L, e₁]
-      rw [localWeight_span_singleton (L v) (c v) he₁, hset, Set.image_singleton, csInf_singleton]
-    rw [weightRatio_def, hwtE, htop, hdimE, Module.finrank_fin_fun]; ring
-  have hlt_of_ne (U : Submodule K (Fin 2 → K)) (hU : U ≠ ⊤) (hne : U ≠ K ∙ e₁) :
-      weightRatio L c U < weightRatio L c (K ∙ e₁) := by
-    by_cases hUbot : U = ⊥
-    · subst U; rw [weightRatio_bot, htop, hratioE, Module.finrank_fin_fun]; linarith
-    · have hdimU : finrank K U = 1 := by
-        have := Nat.pos_of_ne_zero fun h ↦ hUbot (Submodule.finrank_eq_zero.mp h)
-        have := finrank_lt hU; simp only [Module.finrank_fin_fun] at this; omega
-      obtain ⟨x, hxU, hxE⟩ := IsConcreteLE.not_le_iff_exists.mp fun hle ↦
-        hne (Submodule.eq_of_le_of_finrank_eq hle (hdimU.trans hdimE.symm))
-      have hx0 : x 0 ≠ 0 := fun h0 ↦ hxE <| Submodule.mem_span_singleton.mpr
-        ⟨x 1, funext fun i ↦ by fin_cases i <;> simp [e₁, h0]⟩
-      have hx : x ≠ 0 := fun h ↦ hx0 (by simp [h])
-      have hUx : K ∙ x = U := Submodule.eq_of_le_of_finrank_eq
-        ((Submodule.span_singleton_le_iff_mem x U).mpr hxU)
-        ((finrank_span_singleton hx).trans hdimU.symm)
-      have hwtU : weight L c U ≤ ∑ᶠ v, c v 0 := by
-        rw [hwt, hcsum 0]
-        refine Finset.sum_le_sum fun v _ ↦ ?_
-        have h0mem : ({0} : Finset (Fin 2)) ∈ localWeightBases (L v) U := by
-          rw [← hUx, singleton_mem_localWeightBases_span_singleton (L v) hx 0]; exact hx0
-        simpa using localWeight_le_sum (c v) h0mem
-      rw [weightRatio_def, htop, hdimU, hratioE, Module.finrank_fin_fun]; linarith
-  refine ((eq_exceptionalSubspace_iff hL hc _).mpr
+    have hdim : finrank K (K ∙ e₁) = 1 :=
+      finrank_span_singleton (Pi.single_eq_zero_iff.not.mpr one_ne_zero)
+    rw [h, finrank_top, Module.finrank_fin_fun] at hdim
+    omega
+  refine ((eq_exceptionalSubspace_iff (fun _ ↦ span_range_fin_two_proj K) hc _).mpr
     ⟨hE_ne_top, fun U hU ↦ ?_, fun U hU heq ↦ ?_⟩).symm
-  · exact if h : U = K ∙ e₁ then h ▸ le_rfl else (hlt_of_ne U hU h).le
-  · exact if h : U = K ∙ e₁ then h ▸ le_rfl else ((hlt_of_ne U hU h).ne heq).elim
+  · exact if h : U = K ∙ e₁ then h ▸ le_rfl
+      else (weightRatio_fin_two_proj_lt_single_one hc hlt hU h).le
+  · exact if h : U = K ∙ e₁ then h ▸ le_rfl
+      else ((weightRatio_fin_two_proj_lt_single_one hc hlt hU h).ne heq).elim
 
 end FinTwo
 
