@@ -12,6 +12,7 @@ import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
 import TauCeti.NumberTheory.BinaryQuadraticForm.Content
 import TauCeti.NumberTheory.ModularForms.LevelOne.WeaklyHolomorphic
 import TauCeti.NumberTheory.ModularForms.QExpansion.Order
+import TauCeti.RingTheory.HahnSeries.Multiplication
 
 /-!
 # The diagonal modular polynomial and integrality of `j` at imaginary quadratic points
@@ -106,12 +107,9 @@ private theorem orderTop_and_leadingCoeff_laurentQExpansion_j_pow (k : ℕ) :
     rw [HahnSeries.leadingCoeff_eq,
       WithTop.coe_injective ((HahnSeries.order_eq_orderTop_of_ne_zero hne).trans hJ_ord),
       laurentQExpansion_j_coeff_neg_one]
-  induction k with
-  | zero => simp [HahnSeries.leadingCoeff_one]
-  | succ k ih =>
-    rw [pow_succ, HahnSeries.orderTop_mul, ih.1, hJ_ord, HahnSeries.leadingCoeff_mul,
-      ih.2, hJ_lc, mul_one, ← WithTop.coe_add]
-    exact ⟨WithTop.coe_inj.2 (by push_cast; ring), rfl⟩
+  refine ⟨?_, ?_⟩
+  · rw [TauCeti.hahnSeries_orderTop_pow, hJ_ord, ← WithTop.coe_nsmul, nsmul_eq_mul, mul_neg_one]
+  · rw [TauCeti.hahnSeries_leadingCoeff_pow, hJ_lc, one_pow]
 
 /-- For a nonzero polynomial `P : ℤ[X]`, the leading coefficient of the width-one Laurent
 `q`-expansion of `P(j)` is `(P.leadingCoeff : ℂ)`. -/
