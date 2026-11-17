@@ -13,7 +13,6 @@ public import TauCeti.Algebra.AlgebraicGroup.Smooth.CharZero
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.FiniteType
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.BaseChange
 public import TauCeti.Algebra.Lie.Killing.Perfect
-import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Dimension
 
 /-!
 # Homomorphisms determined by their differentials
@@ -44,7 +43,8 @@ trivial: its differential maps a perfect Lie algebra to an abelian one. This sup
 vanishing of commutative images for semisimple groups.
 
 The equalizer comparison uses `HopfIdeal.mem_lieSubalgebra_equalizer_iff` and the smooth
-closed-subgroup criterion `HopfIdeal.eq_bot_of_lieSubalgebra_eq_top_of_geometricallyConnected`.
+closed-subgroup criterion `HopfIdeal.eq_bot_of_lieSubalgebra_eq_top_of_geometricallyConnected`
+from `HopfIdeal.Smooth.LieAlgebra`.
 
 ## References
 
@@ -56,28 +56,6 @@ closed-subgroup criterion `HopfIdeal.eq_bot_of_lieSubalgebra_eq_top_of_geometric
 public section
 
 open CategoryTheory
-
-namespace TauCeti.HopfIdeal
-
-universe u v
-
-/-- Over any field of characteristic zero, a closed subgroup scheme of a geometrically connected
-finite-type affine group with the full ambient Lie algebra is the whole group (`I = ⊥`). -/
-theorem eq_bot_of_lieSubalgebra_eq_top_of_geometricallyConnected
-    {k : Type u} [Field k] [CharZero k] {K : _root_.CommHopfAlgCat.{v} k} [Algebra.FiniteType k K]
-    (hK : geometricallyConnectedCommHopfAlgProperty k K) (I : HopfIdeal k K)
-    (hI : I.lieSubalgebra (B := k) = ⊤) : I = ⊥ := by
-  by_contra hne
-  let _ : Algebra.Smooth k K :=
-    (smoothCommHopfAlgProperty_iff K).mp (smoothCommHopfAlgProperty_of_charZero k K)
-  let _ : Algebra.Smooth k (K ⧸ I.toIdeal) := (smoothCommHopfAlgProperty_iff _).mp
-    (smoothCommHopfAlgProperty_of_charZero k (_root_.CommHopfAlgCat.of k (K ⧸ I.toIdeal)))
-  have hlt := I.finrank_quotientLie_lt hK hne
-  rw [(quotientLieEquiv (B := k) I).toLinearEquiv.finrank_eq, hI,
-    LieSubalgebra.topEquiv.toLinearEquiv.finrank_eq] at hlt
-  exact lt_irrefl _ hlt
-
-end TauCeti.HopfIdeal
 
 namespace CommHopfAlgCat.Hom
 

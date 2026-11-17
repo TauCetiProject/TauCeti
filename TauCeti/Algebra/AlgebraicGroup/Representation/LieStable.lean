@@ -11,7 +11,6 @@ public import TauCeti.Algebra.AlgebraicGroup.Representation.Stabilizer
 public import TauCeti.Algebra.AlgebraicGroup.Smooth.CharZero
 public import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive
 import TauCeti.Algebra.AlgebraicGroup.Connected.AlgebraicallyClosed
-import TauCeti.Algebra.AlgebraicGroup.Tangent.Rigidity
 
 /-!
 # Lie-stable subspaces in characteristic zero

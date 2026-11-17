@@ -49,13 +49,15 @@ section PolynomialDifferential
 
 variable {R : Type u} [CommRing R]
 
-private theorem algEquivSelf_coeff_two
+private theorem coord_differential_standard_two
     (x : Derivation R (coordinateHopfAlgebra R 2)
       (Bialgebra.CounitAlgebra R (coordinateHopfAlgebra R 2) R)) (i j : Fin 2) :
-    Bialgebra.CounitAlgebra.algEquivSelf R (coordinateHopfAlgebra R 2) R
-        (x (Comodule.coefficientMatrix (C := coordinateHopfAlgebra R 2)
-          (Pi.basisFun R (Fin 2)) i j)) = (tangentMatrix 2 x : Matrix (Fin 2) (Fin 2) R) i j := by
-  rw [coefficientMatrix_basisFun, Matrix.map_apply, GeneralLinear.genericMatrix_apply,
+    (Pi.basisFun R (Fin 2)).coord i
+        (Comodule.differential (R := R) (H := coordinateHopfAlgebra R 2) x
+          (Pi.basisFun R (Fin 2) j)) =
+      (tangentMatrix 2 x : Matrix (Fin 2) (Fin 2) R) i j := by
+  rw [← Derivation.apply_matrixCoefficient, ← Comodule.coefficientMatrix_apply,
+    coefficientMatrix_basisFun, Matrix.map_apply, GeneralLinear.genericMatrix_apply,
     tangentMatrix_apply]
 
 /-- **Infinitesimal action of `SL₂` on `X 0`**: `x` with matrix `A` sends `X 0` to
@@ -69,16 +71,9 @@ theorem differential_polynomialComodule_X_zero
       -((tangentMatrix 2 x : Matrix (Fin 2) (Fin 2) R) 0 0) • X 0 -
         ((tangentMatrix 2 x : Matrix (Fin 2) (Fin 2) R) 0 1) • X 1 := by
   let _ := polynomialComodule R 2
-  have htr : Matrix.trace (tangentMatrix 2 x : Matrix (Fin 2) (Fin 2) R) = 0 :=
-    (tangentMatrix 2 x).property
-  rw [Matrix.trace_fin_two] at htr
-  rw [Comodule.differential_apply, polynomialComodule_coact, AlgHom.toLinearMap_apply,
-    Comodule.polynomialCoact_X, Fin.sum_univ_two]
-  simp only [← Comodule.coefficientMatrix_apply, map_add, LinearMap.tensorComponent_tmul,
-    LinearMap.comp_apply, Derivation.coeFn_coe, AlgEquiv.toLinearMap_apply]
-  rw [antipode_coefficientMatrix_zero_zero, antipode_coefficientMatrix_zero_one, map_neg, map_neg,
-    algEquivSelf_coeff_two, algEquivSelf_coeff_two, eq_neg_of_add_eq_zero_right htr, neg_smul,
-    neg_smul, sub_eq_add_neg]
+  rw [ComoduleAlgebra.differential_polynomial_X (Pi.basisFun R (Fin 2)) x 0, Fin.sum_univ_two,
+    coord_differential_standard_two, coord_differential_standard_two, neg_add, neg_smul,
+    sub_eq_add_neg]
 
 /-- **Infinitesimal action of `SL₂` on `X 1`**: `x` with matrix `A` sends `X 1` to
 `-A₁₀ X 0 + A₀₀ X 1`. -/
@@ -91,12 +86,12 @@ theorem differential_polynomialComodule_X_one
       -((tangentMatrix 2 x : Matrix (Fin 2) (Fin 2) R) 1 0) • X 0 +
         ((tangentMatrix 2 x : Matrix (Fin 2) (Fin 2) R) 0 0) • X 1 := by
   let _ := polynomialComodule R 2
-  rw [Comodule.differential_apply, polynomialComodule_coact, AlgHom.toLinearMap_apply,
-    Comodule.polynomialCoact_X, Fin.sum_univ_two]
-  simp only [← Comodule.coefficientMatrix_apply, map_add, LinearMap.tensorComponent_tmul,
-    LinearMap.comp_apply, Derivation.coeFn_coe, AlgEquiv.toLinearMap_apply]
-  rw [antipode_coefficientMatrix_one_zero, antipode_coefficientMatrix_one_one, map_neg, map_neg,
-    algEquivSelf_coeff_two, algEquivSelf_coeff_two, neg_smul]
+  have htr : Matrix.trace (tangentMatrix 2 x : Matrix (Fin 2) (Fin 2) R) = 0 :=
+    (tangentMatrix 2 x).property
+  rw [Matrix.trace_fin_two] at htr
+  rw [ComoduleAlgebra.differential_polynomial_X (Pi.basisFun R (Fin 2)) x 1, Fin.sum_univ_two,
+    coord_differential_standard_two, coord_differential_standard_two,
+    eq_neg_of_add_eq_zero_right htr, neg_add, neg_smul, neg_smul, neg_neg]
 
 end PolynomialDifferential
 
