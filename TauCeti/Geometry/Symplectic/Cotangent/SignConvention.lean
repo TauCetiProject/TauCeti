@@ -40,12 +40,12 @@ On `T*ℝ`, with position `q = x.1` and momentum `p = x.2 1`, the canonical form
 checked on two Hamiltonians.
 
 * For the kinetic energy `H = p² / 2`, the field with `dλ(X, ·) = -dH` is `p ∂_q`
-  (`TauCeti.hamiltonianVectorField_rescale_neg_one_real_momentum_sq_div_two`). Its image under
+  (`TauCeti.hamiltonianVectorField_rescale_neg_one_neg_real_momentum_sq_div_two`). Its image under
   `ν` is the Hamiltonian vector field of `-H ∘ ν⁻¹ = -p² / 2` for `ω`
   (`TauCeti.cotangentFiberNeg_hamiltonianVectorField_real_momentum_sq_div_two`), which is `-p ∂_q`
   (`TauCeti.hamiltonianVectorField_neg_real_momentum_sq_div_two`).
 * For the harmonic oscillator `H = (q² + p²) / 2`, the field is `p ∂_q - q ∂_p`
-  (`TauCeti.hamiltonianVectorField_rescale_neg_one_real_sq_add_momentum_sq_div_two`), and its
+  (`TauCeti.hamiltonianVectorField_rescale_neg_one_neg_real_sq_add_momentum_sq_div_two`), and its
   image under `ν`
   (`TauCeti.cotangentFiberNeg_hamiltonianVectorField_real_sq_add_momentum_sq_div_two`) is
   `-p ∂_q + q ∂_p`
@@ -144,10 +144,6 @@ private theorem hasFDerivAt_momentum (x : ℝ × StrongDual ℝ ℝ) :
   ((ContinuousLinearMap.apply ℝ ℝ (1 : ℝ)).comp
     (ContinuousLinearMap.snd ℝ ℝ (StrongDual ℝ ℝ))).hasFDerivAt
 
-/-- A covector on `ℝ` evaluated at `c` is `c` times its value at `1`. -/
-private theorem strongDual_real_apply (β : StrongDual ℝ ℝ) (c : ℝ) : β c = c * β 1 := by
-  rw [← smul_eq_mul c (β 1), ← β.map_smul, smul_eq_mul, mul_one]
-
 /-- The derivative of a function of `(q, p)` with partial derivatives `a` in `q` and `c` in `p`
 is `(δq, δp) ↦ a δq + δp(c)`, the form used in Hamilton's equations. -/
 private theorem hasFDerivAt_real_of_partials {H : ℝ × StrongDual ℝ ℝ → ℝ}
@@ -161,7 +157,7 @@ private theorem hasFDerivAt_real_of_partials {H : ℝ × StrongDual ℝ ℝ → 
   convert hH using 1
   ext v
   · simp
-  · simp [strongDual_real_apply _ c]
+  · simpa [mul_comm] using (Dual.apply_one_mul_eq (v : Module.Dual ℝ ℝ) c).symm
 
 /-- The kinetic energy `p² / 2` has partial derivatives `0` in `q` and `p` in `p`. -/
 private theorem hasFDerivAt_momentum_sq_div_two (x : ℝ × StrongDual ℝ ℝ) :
@@ -181,7 +177,8 @@ private theorem hasFDerivAt_momentum_sq_div_two (x : ℝ × StrongDual ℝ ℝ) 
 
 /-- **The kinetic energy in the convention of `dλ`.** For `H = p² / 2` on `T*ℝ`, the field `X`
 with `dλ(X, ·) = -dH` is `p ∂_q`. -/
-theorem hamiltonianVectorField_rescale_neg_one_real_momentum_sq_div_two (x : ℝ × StrongDual ℝ ℝ) :
+theorem hamiltonianVectorField_rescale_neg_one_neg_real_momentum_sq_div_two
+    (x : ℝ × StrongDual ℝ ℝ) :
     (strongDualCotangentSymplecticForm.rescale (-1) (by norm_num)).hamiltonianVectorField
         (-fun y : ℝ × StrongDual ℝ ℝ ↦ y.2 1 ^ 2 / 2) x =
       (x.2 1, 0) := by
@@ -233,7 +230,7 @@ private theorem hasFDerivAt_sq_add_momentum_sq_div_two (x : ℝ × StrongDual �
 
 /-- **The harmonic oscillator in the convention of `dλ`.** For `H = (q² + p²) / 2` on `T*ℝ`, the
 field `X` with `dλ(X, ·) = -dH` is `p ∂_q - q ∂_p`. -/
-theorem hamiltonianVectorField_rescale_neg_one_real_sq_add_momentum_sq_div_two
+theorem hamiltonianVectorField_rescale_neg_one_neg_real_sq_add_momentum_sq_div_two
     (x : ℝ × StrongDual ℝ ℝ) :
     (strongDualCotangentSymplecticForm.rescale (-1) (by norm_num)).hamiltonianVectorField
         (-fun y : ℝ × StrongDual ℝ ℝ ↦ (y.1 ^ 2 + y.2 1 ^ 2) / 2) x =
