@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Curve.GeodesicCurvature
 public import TauCeti.Geometry.Manifold.Riemannian.Curve.OrientedNormal
-import TauCeti.Geometry.Manifold.ContMDiff.Defs
 
 /-!
 # Reparametrization of signed geodesic curvature
@@ -25,14 +24,15 @@ without any regularity assumption on the original curve.
 
 The signed density `k_g ‖γ'‖` pulls back by the parameter derivative, including where that
 derivative vanishes. Its integral change-of-variables laws are in
-`TauCeti.Geometry.Manifold.Riemannian.Curve.GeodesicCurvature.Integral`. The volume-form,
-continuity, germ-invariance and periodicity results are in the sibling `OrientedNormal` module.
+`TauCeti.Geometry.Manifold.Riemannian.Curve.GeodesicCurvature.Integral`. The volume-form formula,
+`C^n` regularity,
+continuity, and oriented-unit-normal germ-invariance and periodicity results are in
+`TauCeti.Geometry.Manifold.Riemannian.Curve.GeodesicCurvature.OrientedNormal`.
+General germ invariance and the arbitrary-normal reparametrization, reflection, translation and
+periodicity laws live in `TauCeti.Geometry.Manifold.Riemannian.Curve.GeodesicCurvature`.
 
 ## Main results
 
-* `TauCeti.Manifold.geodesicCurvature_comp`: invariance relative to a transported normal field.
-* `TauCeti.Manifold.geodesicCurvature_comp_add_const` and
-  `Function.Periodic.geodesicCurvature`: translation and periodicity for arbitrary normal fields.
 * `TauCeti.Manifold.geodesicCurvature_orientedUnitNormal_comp`: the sign law for a general
   reparametrization, including at zero derivative.
 * `TauCeti.Manifold.geodesicCurvature_orientedUnitNormal_comp_const_sub`: reflecting a curve
@@ -61,24 +61,6 @@ variable
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
   {γ : ℝ → M} {φ : ℝ → ℝ} {t : ℝ}
-
-/-- **Reparametrization invariance of the geodesic curvature.** Let `γ` be `C²` at `φ t` and
-let `φ` be a change of parameter with `φ'(t) ≠ 0` and `φ'` differentiable at `t`. If `n (φ t)`
-is orthogonal to the velocity of `γ` at `φ t`, then the geodesic curvature of `γ ∘ φ` relative to
-`n ∘ φ` at `t` is that of `γ` relative to `n` at `φ t`. -/
-theorem geodesicCurvature_comp (n : ∀ r, TangentSpace I (γ r)) (hγ : ContMDiffAt 𝓘(ℝ) I 2 γ (φ t))
-    (hφ' : DifferentiableAt ℝ (deriv φ) t) (hφ₀ : deriv φ t ≠ 0)
-    (hn : ⟪n (φ t), curveVelocity I γ (φ t)⟫_ℝ = 0) :
-    geodesicCurvature (γ ∘ φ) (fun r ↦ n (φ r)) t = geodesicCurvature γ n (φ t) := by
-  have hφ : ∀ᶠ r in 𝓝 t, DifferentiableAt ℝ φ r :=
-    (hφ'.continuousAt.eventually_ne hφ₀).mono fun _ hr ↦ differentiableAt_of_deriv_ne_zero hr
-  rw [geodesicCurvature_def, geodesicCurvature_def,
-    acceleration_comp _ γ hφ hφ' (hγ.eventually_mdifferentiableAt two_ne_zero)
-      hγ.differentiableAt_sectionCoord_curveVelocity,
-    curveVelocity_comp hφ.self_of_nhds.hasDerivAt (hγ.mdifferentiableAt two_ne_zero)]
-  simp only [inner_add_left, real_inner_smul_left, (real_inner_comm _ _).trans hn,
-    mul_zero, zero_add, norm_smul, Real.norm_eq_abs, mul_pow, sq_abs]
-  exact mul_div_mul_left _ _ (pow_ne_zero 2 hφ₀)
 
 /-- Reparametrization multiplies signed geodesic curvature relative to the oriented unit
 normal by the sign of the derivative. At zero derivative both sides vanish. -/
@@ -122,34 +104,6 @@ theorem geodesicCurvature_orientedUnitNormal_comp_of_deriv_neg (o : Orientation 
   rw [geodesicCurvature_orientedUnitNormal_comp o hγ
     (differentiableAt_of_deriv_ne_zero hφ₀.ne) hφ']
   simp [hφ₀]
-
-/-- Reflecting the parameter `r ↦ d - r` preserves geodesic curvature relative to the
-transported normal field `r ↦ n (d - r)`.
-The normal need not be orthogonal to the velocity, and no regularity is assumed. -/
-theorem geodesicCurvature_comp_const_sub (γ : ℝ → M)
-    (n : ∀ r, TangentSpace I (γ r)) (d t : ℝ) :
-    geodesicCurvature (fun r ↦ γ (d - r)) (fun r ↦ n (d - r)) t =
-      geodesicCurvature γ n (d - t) := by
-  rw [geodesicCurvature_def, geodesicCurvature_def, acceleration_comp_const_sub,
-    curveVelocity_comp_const_sub, norm_neg]
-
-/-- Translating the parameter translates geodesic curvature relative to a transported normal
-field. No regularity or orthogonality is assumed. -/
-theorem geodesicCurvature_comp_add_const (γ : ℝ → M)
-    (n : ∀ r, TangentSpace I (γ r)) (a t : ℝ) :
-    geodesicCurvature (fun r ↦ γ (r + a)) (fun r ↦ n (r + a)) t =
-      geodesicCurvature γ n (t + a) := by
-  rw [geodesicCurvature_def, geodesicCurvature_def, acceleration_comp_add_const,
-    curveVelocity_comp_add_right]
-
-/-- Geodesic curvature of a periodic curve with a periodic normal field has the same period.
-Normal vectors are compared in the model space, and no regularity is assumed. -/
-theorem _root_.Function.Periodic.geodesicCurvature {a : ℝ}
-    {n : ∀ r, TangentSpace I (γ r)} (hper : Function.Periodic γ a)
-    (hn : ∀ t, (n (t + a) : E) = n t) : Function.Periodic (geodesicCurvature γ n) a := by
-  intro t
-  have h : (fun r ↦ γ (r + a)) =ᶠ[𝓝 t] γ := Filter.Eventually.of_forall hper
-  exact (geodesicCurvature_comp_add_const γ n a t).symm.trans (h.geodesicCurvature_eq (hn t))
 
 /-- Reflecting the parameter via `r ↦ γ (d - r)` negates signed geodesic curvature relative to
 the oriented unit normal, without any regularity assumption on the original curve. -/

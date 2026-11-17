@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Curve.GeodesicCurvature
 public import TauCeti.Geometry.Manifold.Riemannian.Curve.OrientedNormal
-import TauCeti.Geometry.Manifold.Riemannian.Curve.GeodesicCurvature.Reparametrization
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.Trivial
@@ -82,13 +81,13 @@ theorem _root_.Filter.EventuallyEq.geodesicCurvature_orientedUnitNormal_eq
 /-- The geodesic curvature of a periodic curve relative to its oriented unit normal is
 periodic, with the same period. No regularity is assumed. -/
 theorem _root_.Function.Periodic.geodesicCurvature_orientedUnitNormal
-    {a : ℝ} (hper : Function.Periodic γ a) :
+    {a : ℝ} (hper : Function.Periodic γ a) (o : Orientation I M (Fin 2)) :
     Function.Periodic (geodesicCurvature γ (orientedUnitNormal o γ)) a :=
   hper.geodesicCurvature (hper.orientedUnitNormal o)
 
-/-- On a `C^m` manifold with a `C^k` metric, the geodesic curvature of a regular
-`C^(n+2)` curve relative to its oriented unit normal is `C^n` at the tested parameter, provided
-`n + 2 ≤ m` and `n + 1 ≤ k`. -/
+/-- On a `C^m` manifold with a `C^k` metric, if a curve is `C^(n+2)` at a parameter with
+nonzero velocity, its geodesic curvature relative to the oriented unit normal is `C^n` there,
+provided `n + 2 ≤ m` and `n + 1 ≤ k`. -/
 theorem contDiffAt_geodesicCurvature_orientedUnitNormal {n m k : ℕ∞ω}
     [IsManifold I m M]
     [IsContMDiffRiemannianBundle I k E (fun x : M ↦ TangentSpace I x)]

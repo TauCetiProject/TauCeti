@@ -454,11 +454,18 @@ theorem contMDiffWithinAt_accelerationWithin_leviCivitaConnection
     ContMDiffWithinAt 𝓘(ℝ, ℝ) I.tangent n
       (fun r ↦ TotalSpace.mk' E (γ r)
         (accelerationWithin (leviCivitaConnection I M) γ s r)) s t := by
-  simp only [accelerationWithin_def]
-  apply contMDiffWithinAt_alongCurveWithin_leviCivitaConnection hm hk hs ht
-  rw [← funext (curveVelocityLiftWithin_apply (I := I) γ s)]
-  exact hγ.contMDiffWithinAt_curveVelocityLiftWithin ht
-    (by simp only [add_assoc, one_add_one_eq_two, le_refl]) hs.uniqueMDiffOn
+  let : IsManifold I (n + 1 + 1) M :=
+    IsManifold.of_le (n := m) (by rwa [add_assoc, one_add_one_eq_two])
+  let : IsManifold I (n + 1) M := IsManifold.of_le (n := n + 1 + 1) le_self_add
+  let : ContMDiffVectorBundle (n + 1) E (TangentSpace I : M → Type _) I :=
+    TangentBundle.contMDiffVectorBundle
+  let : ContMDiffCovariantDerivativeOn E n (leviCivitaConnection I M).toFun
+      (trivializationAt E (TangentSpace I) (γ t)).baseSet :=
+    contMDiffCovariantDerivativeOn_leviCivitaConnection (m := m) (k := k)
+      (trivializationAt E (TangentSpace I) (γ t)).open_baseSet hm hk
+  exact CovariantDerivative.contMDiffWithinAt_accelerationWithin
+    (leviCivitaConnection I M) γ hs ht
+    (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t)) hγ
 
 /-- The Levi-Civita acceleration of a curve that is `C^(n+2)` at a parameter has a `C^n`
 tangent-bundle lift there, for a `C^m` manifold and `C^k` metric with `n + 2 ≤ m`, `n + 1 ≤ k`. -/
