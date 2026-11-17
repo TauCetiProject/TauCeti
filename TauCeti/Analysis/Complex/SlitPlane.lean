@@ -34,13 +34,19 @@ For `x ∈ slitPlane ∪ {0}`, the quotient `a / (t + x)` is continuous for `t >
 
 These criteria feed logarithm evaluations of index integrals: a curve piece confined to a
 half-plane about the winding point has slit-compatible chord ratios, so its index integral
-is a principal logarithm. Scaling `z` by `t ∈ [0, 1]` preserves `1 - z ∈ slitPlane`, so the
-pullback `{z : ℂ | 1 - z ^ m ∈ slitPlane}` is open, star-convex about `0`, and connected for
-`0 < m`.
+is a principal logarithm. The principal cut plane `{z : ℂ | 1 - z ∈ slitPlane}` is open,
+star-convex about every real point `x < 1` (in particular about `0`), and preconnected, and is
+preserved under scaling by `[0, 1]`. So, for every `m`, the pullback
+`{z : ℂ | 1 - z ^ m ∈ slitPlane}` is open, star-convex about `0`, and connected for `0 < m`.
 
 ## Main declarations
 
-* `Complex.one_sub_mul_ofReal_mem_slitPlane`
+* `Complex.one_sub_mul_ofReal_mem_slitPlane`, `Complex.one_sub_ofReal_mul_mem_slitPlane`
+* `Complex.isOpen_setOf_one_sub_mem_slitPlane`,
+  `Complex.starConvex_setOf_one_sub_mem_slitPlane`,
+  `Complex.starConvex_ofReal_setOf_one_sub_mem_slitPlane`,
+  `Complex.starConvex_zero_setOf_one_sub_mem_slitPlane`,
+  `Complex.isPreconnected_setOf_one_sub_mem_slitPlane`
 * `Complex.isOpen_setOf_one_sub_pow_mem_slitPlane`,
   `Complex.starConvex_zero_setOf_one_sub_pow_mem_slitPlane`,
   `Complex.isConnected_setOf_one_sub_pow_mem_slitPlane`
@@ -307,6 +313,44 @@ theorem one_sub_mul_ofReal_mem_slitPlane {z : ℂ} (hz : 1 - z ∈ slitPlane)
   convert h using 1
   simp only [real_smul]
   ring
+
+/-- Left-multiplying `z` by a real number in `[0, 1]` preserves slit-plane membership of `1 - z`. -/
+theorem one_sub_ofReal_mul_mem_slitPlane {z : ℂ} (hz : 1 - z ∈ slitPlane)
+    {t : ℝ} (ht : t ∈ Set.Icc 0 1) : 1 - t * z ∈ slitPlane := by
+  rw [mul_comm]
+  exact one_sub_mul_ofReal_mem_slitPlane hz ht
+
+/-- The principal cut plane `{z : ℂ | 1 - z ∈ slitPlane}` is open. -/
+theorem isOpen_setOf_one_sub_mem_slitPlane : IsOpen {z : ℂ | 1 - z ∈ slitPlane} :=
+  isOpen_slitPlane.preimage (continuous_const.sub continuous_id)
+
+open scoped ComplexOrder in
+/-- The principal cut plane `{w : ℂ | 1 - w ∈ slitPlane}` is star-convex about every `z < 1` in
+the complex partial order. -/
+theorem starConvex_setOf_one_sub_mem_slitPlane {z : ℂ} (hz : z < 1) :
+    StarConvex ℝ z {w : ℂ | 1 - w ∈ slitPlane} := by
+  have heq : (Set.Ici (1 : ℂ))ᶜ = {w : ℂ | 1 - w ∈ slitPlane} := by
+    ext w
+    simp [Complex.mem_slitPlane_iff_not_le_zero]
+  exact heq ▸ starConvex_compl_Ici hz
+
+/-- The principal cut plane `{w : ℂ | 1 - w ∈ slitPlane}` is star-convex about every real number
+`x < 1`. -/
+theorem starConvex_ofReal_setOf_one_sub_mem_slitPlane {x : ℝ} (hx : x < 1) :
+    StarConvex ℝ (x : ℂ) {w : ℂ | 1 - w ∈ slitPlane} := by
+  open scoped ComplexOrder in
+  exact starConvex_setOf_one_sub_mem_slitPlane (by exact_mod_cast hx)
+
+/-- The principal cut plane `{w : ℂ | 1 - w ∈ slitPlane}` is star-convex about `0`. -/
+theorem starConvex_zero_setOf_one_sub_mem_slitPlane :
+    StarConvex ℝ (0 : ℂ) {w : ℂ | 1 - w ∈ slitPlane} := by
+  open scoped ComplexOrder in
+  exact starConvex_setOf_one_sub_mem_slitPlane one_pos
+
+/-- The principal cut plane `{z : ℂ | 1 - z ∈ slitPlane}` is preconnected. -/
+theorem isPreconnected_setOf_one_sub_mem_slitPlane :
+    IsPreconnected {z : ℂ | 1 - z ∈ slitPlane} :=
+  (starConvex_zero_setOf_one_sub_mem_slitPlane.isPathConnected (by simp)).isConnected.isPreconnected
 
 /-- The pullback `{z : ℂ | 1 - z ^ m ∈ slitPlane}` is open for every `m : ℕ`. -/
 theorem isOpen_setOf_one_sub_pow_mem_slitPlane (m : ℕ) : IsOpen {z : ℂ | 1 - z ^ m ∈ slitPlane} :=
