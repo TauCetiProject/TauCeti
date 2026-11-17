@@ -31,7 +31,7 @@ order-one file, which take the planar change of variables and chain rule as hypo
 
 ## Main declarations
 
-* `TauCeti.MemWkpLoc.comp_chart_transition`: for `1 ≤ p < ∞` and every order, precomposition with
+* `TauCeti.MemWkpLoc.comp_chart_transition`: for `1 ≤ p ≤ ∞` and every order, precomposition with
   the transition map between two holomorphic charts preserves the planar classes of maps into a
   finite-dimensional space.
 * `TauCeti.memWkpLocMapOn_iff_of_subset_maximalAtlas_of_two_lt`: **chart independence** at every
@@ -78,10 +78,10 @@ variable {X : Type*} [TopologicalSpace X] [ChartedSpace ℂ X]
 /-! ### Change of holomorphic chart -/
 
 omit [FiniteDimensional ℝ F] in
-/-- **Change of holomorphic chart at every order.** For `1 ≤ p < ∞` and every order `k`,
+/-- **Change of holomorphic chart at every order.** For `1 ≤ p ≤ ∞` and every order `k`,
 precomposition with the transition map `φ ∘ φ'⁻¹` between two holomorphic charts preserves the
 local classes of order `k` of maps into a finite-dimensional space. -/
-theorem MemWkpLoc.comp_chart_transition [Fact (1 ≤ p)] (hp' : p ≠ ⊤)
+theorem MemWkpLoc.comp_chart_transition [Fact (1 ≤ p)]
     {φ φ' : OpenPartialHomeomorph X ℂ}
     (hφ : φ ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X) (hφ' : φ' ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X)
     {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] {g : ℂ → E}
@@ -97,7 +97,7 @@ theorem MemWkpLoc.comp_chart_transition [Fact (1 ≤ p)] (hp' : p ≠ ⊤)
   have hΦ : ContDiffOn ℝ k (φ ∘ φ'.symm) W := fun z hz ↦ by
     simpa only [OpenPartialHomeomorph.coe_trans] using
       (contDiffAt_symm_trans_of_mem_maximalAtlas hφ'R hφR (hW' hz)).contDiffWithinAt
-  exact hg.comp_contDiffOn (U := ⟨W, hWo⟩) (V := ⟨U, hU⟩) hp' hk hΦ (fun z hz ↦ by
+  exact hg.comp_contDiffOn (U := ⟨W, hWo⟩) (V := ⟨U, hU⟩) hk hΦ (fun z hz ↦ by
     obtain ⟨A, hA⟩ := exists_hasFDerivAt_symm_trans (by exact_mod_cast hk.ne') hφ'R hφR (hW' hz)
     rw [OpenPartialHomeomorph.coe_trans] at hA
     rw [hA.fderiv]
@@ -124,7 +124,7 @@ theorem memWkpLocMapOn_iff_of_subset_maximalAtlas_of_two_lt (hp : 2 < p) (hp' : 
   have : Fact (1 ≤ p) := ⟨one_le_two.trans hp.le⟩
   memWkpLocMapOn_iff_of_subset_maximalAtlas_of_planar
     (fun _ _ _ hφ hφ' _ _ _ hU hW hg hWs hmaps ↦
-      hg.comp_chart_transition hp' hφ hφ' hU hW hWs hmaps)
+      hg.comp_chart_transition hφ hφ' hU hW hWs hmaps)
     (fun hk _ _ _ _ hW hv hvc hO hg hmaps ↦
       hv.contDiffOn_comp_of_one_le hp hp' hk hW hvc hO hg hmaps)
     hs hA hAs hB hBs

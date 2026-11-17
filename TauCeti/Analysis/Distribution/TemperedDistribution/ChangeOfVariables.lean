@@ -194,12 +194,12 @@ theorem compCLM_toTemperedDistribution_eq_compOfMapLeSmul [CompleteSpace F] {p :
     (hψ : (φ.symm : E → E).HasTemperateGrowth) (hC : C ≠ ∞) (hmap : μ.map φ ≤ C • μ)
     (u : Lp F p μ) :
     compCLM F φ hφ hψ (u : 𝓢'(E, F)) =
-      (Lp.compOfMapLeSmul ℂ hφ.1.continuous.measurable hC hmap u : 𝓢'(E, F)) := by
+      (Lp.compOfMapLeSmul ℂ hφ.1.continuous.aemeasurable hC hmap u : 𝓢'(E, F)) := by
   ext f
   rw [compCLM_apply_apply, Lp.toTemperedDistribution_apply, Lp.toTemperedDistribution_apply,
     SchwartzMap.integral_pushforwardCLM_smul]
   refine integral_congr_ae
-    ((Lp.coeFn_compOfMapLeSmul (𝕜 := ℂ) hφ.1.continuous.measurable hC hmap u).mono fun x hx ↦ ?_)
+    ((Lp.coeFn_compOfMapLeSmul (𝕜 := ℂ) hφ.1.continuous.aemeasurable hC hmap u).mono fun x hx ↦ ?_)
   dsimp only
   rw [hx, Function.comp_apply]
 

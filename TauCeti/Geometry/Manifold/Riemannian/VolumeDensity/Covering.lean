@@ -208,7 +208,7 @@ def normalizedPullbackLp (hq : IsQuotientCoveringMap q G)
     (hinner : ∀ x (v w : TangentSpace I x),
       ⟪mfderiv I I' q x v, mfderiv I I' q x w⟫_ℝ = ⟪v, w⟫_ℝ) :
     Lp F p (riemannianVolume I' N) →ₗᵢ[𝕜] Lp F p (riemannianVolume I M) :=
-  Lp.normalizedCompOfMapEqSmul 𝕜 hq.continuous.measurable (Nat.cast_ne_zero.2 Nat.card_pos.ne')
+  Lp.normalizedCompOfMapEqSmul 𝕜 hq.continuous.aemeasurable (Nat.cast_ne_zero.2 Nat.card_pos.ne')
     (ENNReal.natCast_ne_top _) (hq.map_riemannianVolume hinner)
 
 variable {𝕜 p}
@@ -221,7 +221,7 @@ theorem coeFn_normalizedPullbackLp (hq : IsQuotientCoveringMap q G)
     normalizedPullbackLp 𝕜 p hq hinner g =ᵐ[riemannianVolume I M]
       fun x ↦ algebraMap ℝ 𝕜 ((Nat.card G : ℝ) ^ (-(1 / p).toReal)) • g (q x) := by
   simpa only [normalizedPullbackLp, ENNReal.toReal_natCast] using Lp.coeFn_normalizedCompOfMapEqSmul
-    hq.continuous.measurable (Nat.cast_ne_zero.2 Nat.card_pos.ne') (ENNReal.natCast_ne_top _)
+    hq.continuous.aemeasurable (Nat.cast_ne_zero.2 Nat.card_pos.ne') (ENNReal.natCast_ne_top _)
     (hq.map_riemannianVolume hinner) g
 
 end Lp
