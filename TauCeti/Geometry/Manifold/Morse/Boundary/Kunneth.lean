@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Morse.Boundary.Prod
 public import TauCeti.Algebra.Homology.Monoidal.Tensor.Differential
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth.Basic
 public import TauCeti.Algebra.Homology.Semisimple
+public import TauCeti.Algebra.Module.ZMod.Sign
 
 /-!
 # The Künneth theorem for mod-two Morse homology
@@ -31,7 +32,11 @@ point `(p, q)` has index `ind p + ind q`, so in degree `n` the comparison sends 
 `Cₙ(f ∘ Prod.fst + g ∘ Prod.snd)` of the product by `p ⊗ q ↦ (p, q)`. These maps assemble into
 an isomorphism of chain complexes
 (`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.morseComplexTensorIso`); over `ZMod 2` the Koszul
-sign `(-1)ᵖ` of the tensor product differential is `1`.
+sign `(-1)ᵖ` of the tensor product differential is `1` (`TauCeti.ZModModule.neg_one_pow_zsmul`).
+The construction follows `TauCeti.koszulComplex.tensorIso` in
+`TauCeti.RingTheory.KoszulComplex.Tensor`: summand-wise comparison maps out of the tensor product
+complex, assembled degreewise by `HomologicalComplex.Hom.isoOfComponents`, with an evaluation lemma
+on `p ⊗ q`.
 
 Over the field `ZMod 2` the algebraic Künneth theorem
 (`HomologicalComplex.isIso_homologyKunneth_of_isSplitMono_of_isSplitEpi`) then gives the
@@ -42,7 +47,9 @@ Over the field `ZMod 2` the algebraic Künneth theorem
 induced by the homology cross product
 (`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.morseHomologyKunnethIso`), and the formula
 `bₙ(M × N) = ∑_{p + q = n} bₚ(M) b_q(N)` for the dimensions of the mod-two Morse homology
-(`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.finrank_homology_morseComplex_prod`).
+(`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.finrank_homology_morseComplex_prod`), read off from
+the Künneth isomorphism by `CategoryTheory.GradedObject.Monoidal.finrank_tensorObj` as in the
+singular-homology count `TopCat.finrank_singularHomology_tensor`.
 
 The manifolds are taken in `Type`, the universe of the coefficient ring `ZMod 2`, where Mathlib's
 category of modules is monoidal.
@@ -260,13 +267,6 @@ private def degreeIso (n : ℕ) : (𝒦 ⊗ ℒ).X n ≅ 𝒞[n] where
 
 /-! ### The comparison commutes with the differentials -/
 
-/-- Over `ZMod 2` the Koszul sign of the tensor product differential is `1`. -/
-private theorem neg_one_pow_zsmul {A B : ModuleCat.{0} (ZMod 2)} (φ : A ⟶ B) (r : ℕ) :
-    ((-1 : ℤ) ^ r) • φ = φ := by
-  rcases neg_one_pow_eq_or ℤ r with hr | hr
-  · rw [hr, one_smul]
-  · rw [hr, neg_one_zsmul, ZModModule.neg_eq_self]
-
 variable (hX hY) in
 /-- The graded Morse chains of index `n` of the product, included into all Morse chains of the
 product and read as the tensor product of the Morse chains of the factors. -/
@@ -314,16 +314,6 @@ private theorem totalChains_d (n : ℕ) (w : ℐ[n + 1] →₀ ZMod 2) :
     (hf.comp_fst_add_comp_snd_chartedSpaceProd hg) w)).trans
     (LinearMap.congr_fun (morseChainProdEquiv_comp_morseBoundary hXs hYs hf hg) _)
 
-/-- The Morse boundary of a chain of critical points of index zero vanishes. -/
-private theorem morseBoundary_mapDomain_eq_zero_of_index_zero (x : ℐ₁[0] →₀ ZMod 2) :
-    hXs.morseBoundary hf (x.mapDomain Subtype.val) = 0 := by
-  ext r
-  rw [morseBoundary_apply, Finsupp.sum_mapDomain_index (fun _ ↦ zero_mul _)
-    fun _ _ _ ↦ add_mul ..]
-  refine Finset.sum_eq_zero fun p _ ↦ ?_
-  dsimp only
-  rw [hXs.morseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one hf (by rw [p.2]; omega), mul_zero]
-
 /-- Read on all Morse chains, the comparison map carries `∂ x ⊗ y` to `∂ x ⊗ y`. -/
 private theorem totalChains_toProd_whiskerRight (r q n : ℕ) (h : r + q = n)
     (x : ℐ₁[r + 1] →₀ ZMod 2) (y : ℐ₂[q] →₀ ZMod 2) :
@@ -331,6 +321,12 @@ private theorem totalChains_toProd_whiskerRight (r q n : ℕ) (h : r + q = n)
         (((𝒦).d (r + 1) r ▷ (ℒ).X q).hom
           (x ⊗ₜ y : (ℐ₁[r + 1] →₀ ZMod 2) ⊗[ZMod 2] (ℐ₂[q] →₀ ZMod 2))))) =
       hXs.morseBoundary hf (x.mapDomain Subtype.val) ⊗ₜ y.mapDomain Subtype.val := by
+  -- The chains `x` and `y` are elements of the free modules on critical points, which are the terms
+  -- of `𝒦` and `ℒ` only by definition. The lemmas used here state chains at one or the other of
+  -- these types (`morseComplex_d_apply` at the free module, `whiskerRight_apply` at the term of the
+  -- complex), so with either type for `x` some `rw` or `simp only` step fails to match or produces
+  -- an ill-typed motive. The steps are therefore chained with `congrArg` and `Eq.trans`, which
+  -- compare these types up to unfolding.
   refine (congrArg (fun z ↦ totalChains hX hY n ((toProd hXs hYs hf hg n).hom
     ((ιTensorObj 𝒦 ℒ r q n h).hom z)))
       ((ModuleCat.MonoidalCategory.whiskerRight_apply _ _ _ _).trans
@@ -346,6 +342,8 @@ private theorem totalChains_toProd_whiskerLeft (p s n : ℕ) (h : p + s = n)
         (((𝒦).X p ◁ (ℒ).d (s + 1) s).hom
           (x ⊗ₜ y : (ℐ₁[p] →₀ ZMod 2) ⊗[ZMod 2] (ℐ₂[s + 1] →₀ ZMod 2))))) =
       x.mapDomain Subtype.val ⊗ₜ hYs.morseBoundary hg (y.mapDomain Subtype.val) := by
+  -- As in `totalChains_toProd_whiskerRight`, the chains live at two definitionally equal types, so
+  -- the steps are chained with `congrArg` and `Eq.trans` rather than rewritten.
   refine (congrArg (fun z ↦ totalChains hX hY n ((toProd hXs hYs hf hg n).hom
     ((ιTensorObj 𝒦 ℒ p s n h).hom z)))
       ((ModuleCat.MonoidalCategory.whiskerLeft_apply _ _ _ _).trans
@@ -373,7 +371,7 @@ private theorem totalChains_toProd_d (p q n : ℕ) (h : p + q = n + 1) (a : ℐ�
   · omega
   · obtain rfl : s = n := by omega
     rw [ChainComplex.ιTensorObj_D₁_zero_assoc, Limits.zero_comp, zero_add,
-      ChainComplex.ιTensorObj_D₂_succ_assoc, neg_one_pow_zsmul]
+      ChainComplex.ιTensorObj_D₂_succ_assoc, ZModModule.neg_one_pow_zsmul]
     refine (totalChains_toProd_whiskerLeft 0 s s (by omega) _ _).trans ?_
     rw [Finsupp.mapDomain_single, Finsupp.mapDomain_single, ← Finsupp.mapDomain_single,
       morseBoundary_mapDomain_eq_zero_of_index_zero, TensorProduct.zero_tmul, zero_add]
@@ -385,7 +383,10 @@ private theorem totalChains_toProd_d (p q n : ℕ) (h : p + q = n + 1) (a : ℐ�
       ← Finsupp.mapDomain_single (f := Subtype.val) (a := b),
       morseBoundary_mapDomain_eq_zero_of_index_zero, TensorProduct.tmul_zero, add_zero]
   · rw [ChainComplex.ιTensorObj_D₁_succ_assoc, ChainComplex.ιTensorObj_D₂_succ_assoc,
-      neg_one_pow_zsmul, ModuleCat.hom_add]
+      ZModModule.neg_one_pow_zsmul, ModuleCat.hom_add]
+    -- The two terms are rewritten separately by `congrArg₂`: the whiskering lemmas apply to them
+    -- only up to unfolding the terms of the Morse complexes
+    -- (see `totalChains_toProd_whiskerRight`).
     refine (congrArg (totalChains hX hY n) (LinearMap.add_apply _ _ _)).trans <|
       (map_add _ _ _).trans <| congrArg₂ (· + ·)
         ((totalChains_toProd_whiskerRight r (s + 1) n (by omega) _ _).trans ?_)
@@ -399,6 +400,9 @@ private theorem toProd_comm (n : ℕ) :
   refine tensor_hom_ext fun p q h a b ↦ totalChains_injective (hX := hX) (hY := hY) n ?_
   refine (totalChains_d (hXs := hXs) (hYs := hYs) (hf := hf) (hg := hg) n _).trans <|
     Eq.trans ?_ (totalChains_toProd_d p q n h a b).symm
+  -- `toProd_ιTensorObj_apply` states the summand at the tensor product of the free modules on
+  -- critical points, which is the term of `𝒦 ⊗ ℒ` only by definition, so it is applied under
+  -- `congrArg` rather than rewritten (see `totalChains_toProd_whiskerRight`).
   refine (congrArg _ ((congrArg (totalChains hX hY (n + 1))
     (toProd_ιTensorObj_apply p q (n + 1) h _)).trans <|
       (totalChains_toProdLinear p q (n + 1) h _).trans (TensorProduct.map_tmul _ _ _ _))).trans ?_
@@ -456,15 +460,6 @@ theorem ι_morseHomologyKunnethIso_hom (p q n : ℕ) (h : p + q = n) :
   -- up to unfolding.
   ι_homologyKunneth_assoc 𝒦 ℒ n p q h _
 
-variable (hXs hYs hf hg) in
-/-- The Künneth isomorphism with its source written as a direct sum of modules. -/
-private def morseHomologyKunnethDirectSumIso (n : ℕ) :
-    ModuleCat.of (ZMod 2) (DirectSum ((fun x : ℕ × ℕ ↦ x.1 + x.2) ⁻¹' {n}) fun i ↦
-      TensorProduct (ZMod 2) ((𝒦).homology i.1.1) ((ℒ).homology i.1.2)) ≅ (𝒫).homology n :=
-  -- The source of the Künneth map is by definition the coproduct of the summands.
-  (ModuleCat.coprodIsoDirectSum fun i : ((fun x : ℕ × ℕ ↦ x.1 + x.2) ⁻¹' {n}) ↦
-    (𝒦).homology i.1.1 ⊗ (ℒ).homology i.1.2).symm ≪≫ morseHomologyKunnethIso hXs hYs hf hg n
-
 /-- **The Künneth formula for the dimensions of mod-two Morse homology.** The mod-two Morse
 homology of `M × N` in degree `n`, for the separated sum `f ∘ Prod.fst + g ∘ Prod.snd` and the
 product field `(X, Y)`, has dimension `∑_{p + q = n} bₚ(f, X) b_q(g, Y)`, where `bₚ` is the
@@ -472,13 +467,9 @@ dimension of the mod-two Morse homology in degree `p`. -/
 theorem finrank_homology_morseComplex_prod (n : ℕ) :
     finrank (ZMod 2) ((𝒫).homology n) =
       ∑ x ∈ Finset.antidiagonal n,
-        finrank (ZMod 2) ((𝒦).homology x.1) * finrank (ZMod 2) ((ℒ).homology x.2) := by
-  let e : ((fun x : ℕ × ℕ ↦ x.1 + x.2) ⁻¹' {n}) ≃ Finset.antidiagonal n :=
-    Equiv.subtypeEquivRight fun x ↦ by simp
-  have := Fintype.ofEquiv _ e.symm
-  rw [← (morseHomologyKunnethDirectSumIso hXs hYs hf hg n).toLinearEquiv.finrank_eq,
-    Module.finrank_directSum, ← Finset.sum_coe_sort (Finset.antidiagonal n)]
-  exact Fintype.sum_equiv e _ _ fun x ↦ Module.finrank_tensorProduct
+        finrank (ZMod 2) ((𝒦).homology x.1) * finrank (ZMod 2) ((ℒ).homology x.2) :=
+  (morseHomologyKunnethIso hXs hYs hf hg n).toLinearEquiv.finrank_eq.symm.trans
+    (GradedObject.Monoidal.finrank_tensorObj _ _ n)
 
 end IsMorseSmale
 
