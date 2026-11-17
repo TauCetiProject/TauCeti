@@ -12,7 +12,7 @@ public import Mathlib.Probability.Distributions.Gaussian.IsGaussianProcess.Def
 public import Mathlib.Data.Nat.Factorial.DoubleFactorial
 
 import TauCeti.MeasureTheory.Measure.ProjectiveLimit.Countable
-import TauCeti.Probability.Process.Kolmogorov
+import TauCeti.Probability.Process.Kolmogorov.Basic
 import Mathlib.Probability.Distributions.Gaussian.HasGaussianLaw.Basic
 
 /-!
