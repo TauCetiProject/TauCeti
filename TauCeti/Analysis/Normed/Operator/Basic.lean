@@ -84,6 +84,12 @@ A continuous bilinear map satisfies a Young-type bound
 `‖B u v‖ ≤ ‖B‖ * ((c⁻¹ * ‖u‖ ^ 2 + c * ‖v‖ ^ 2) / 2)` for every `c > 0`
 (`ContinuousLinearMap.norm_apply_apply_le_mul_add_sq`).
 
+For a continuous linear map `c` valued in a normed algebra `𝕜'` over the scalars and a vector `f`
+of a normed `𝕜'`-space, the rank-one map `c.smulRight f : x ↦ c x • f` has norm at most `‖c‖ ‖f‖`
+(`ContinuousLinearMap.norm_smulRight_le`). Mathlib's `ContinuousLinearMap.norm_smulRight_apply`
+is the equality for scalar-valued `c`; the inequality applies for instance to the real-linear maps
+`(ContinuousLinearMap.id ℝ ℂ).smulRight f` into a complex normed space.
+
 A **metric quotient map**, an operator `q` with `‖q‖ ≤ 1` lifting every vector of norm less than
 `r` to a vector of norm less than `r`, maps each open ball about `0` onto the open ball of the same
 radius (`ContinuousLinearMap.image_ball_eq_ball`).
@@ -446,6 +452,21 @@ theorem norm_apply_apply_le_mul_add_sq (B : X →L[𝕜] Y →L[𝕜] Z) {c : �
   linarith
 
 end Young
+
+section SmulRight
+
+variable {𝕜 𝕜' E F : Type*} [NontriviallyNormedField 𝕜] [NormedField 𝕜'] [NormedAlgebra 𝕜 𝕜']
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+  [NormedSpace 𝕜' F] [IsScalarTower 𝕜 𝕜' F]
+
+/-- The rank-one map `x ↦ c x • f` has norm at most `‖c‖ ‖f‖`. -/
+theorem norm_smulRight_le (c : E →L[𝕜] 𝕜') (f : F) : ‖c.smulRight f‖ ≤ ‖c‖ * ‖f‖ :=
+  opNorm_le_bound _ (by positivity) fun x ↦ by
+    rw [smulRight_apply, norm_smul, mul_right_comm]
+    gcongr
+    exact c.le_opNorm x
+
+end SmulRight
 
 section Net
 

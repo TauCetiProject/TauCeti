@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Complex.Pompeiu.Basic
 public import TauCeti.Analysis.Complex.Pompeiu.Holder.Gain
 public import TauCeti.Analysis.Holder.Normed
 import TauCeti.Topology.MetricSpace.Holder
@@ -22,6 +23,11 @@ Their product `cauchyTransformCLM` carries the local `C^{1,α}` norm
 `max ‖T f‖_∞ (‖D T f‖_∞ + [D T f]_α)`. All three operators are bounded and real linear,
 so continuous source families remain continuous in their target norms. These targets are complete
 when the target of the source functions is complete, in particular for the derivative operators.
+
+For a finite-dimensional complex target, the Cauchy transform `TauCeti.cauchyTransform f` of a
+source `f` is `C¹` on all of `ℂ`
+(`TauCeti.contDiff_cauchyTransform_of_mem_supportedHolderSubmodule`) and inverts `\bar∂` there
+(`TauCeti.conjWirtingerDeriv_cauchyTransform_of_mem_supportedHolderSubmodule`).
 -/
 
 public noncomputable section
@@ -217,6 +223,38 @@ theorem cauchyDerivativeCLM_apply [FiniteDimensional ℂ F]
       fderiv ℝ (fun w : ℂ ↦ (Real.pi : ℂ)⁻¹ • ∫ z, (w - z)⁻¹ •
         (f : HolderSpace α ℂ F) z) (x : ℂ) := by
   exact cauchyDerivativeHolder_apply hα hα1 hr hR f x
+
+/-- The Cauchy transform of a bounded `α`-Hölder function supported in a closed disc is `C¹`. -/
+theorem contDiff_cauchyTransform_of_mem_supportedHolderSubmodule [FiniteDimensional ℂ F]
+    {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1) {c : ℂ} {r : ℝ} (hr : 0 ≤ r)
+    {f : HolderSpace α ℂ F} (hf : f ∈ supportedHolderSubmodule α (closedBall c r)) :
+    ContDiff ℝ 1 (cauchyTransform f) := by
+  -- The integral in `cauchyTransform` uses the real action induced by the complex one.
+  cases NormedSpace.restrictScalars_eq (𝕜 := ℝ) (𝕜' := ℂ) (E := F)
+  rw [contDiff_iff_contDiffAt]
+  intro x
+  -- The gain on the output disc `closedBall c (dist x c)` covers a neighbourhood of `x`.
+  obtain ⟨C, hC⟩ := exists_contDiffOn_holderOnWith_fderiv_pi_inv_smul_integral_sub_inv_smul
+    (F := F) hα hα1 c hr (dist_nonneg (x := x) (y := c))
+  obtain ⟨hcd, -, -, -⟩ := hC (support_subset_of_mem_supportedHolderSubmodule hf) f.holderWith
+    (source_bound f)
+  rw [funext (cauchyTransform_apply f)]
+  exact hcd.contDiffAt (isOpen_ball.mem_nhds (mem_ball.mpr (lt_add_one _)))
+
+/-- The Cauchy transform inverts `\bar∂` on bounded `α`-Hölder functions supported in a closed
+disc: `\bar∂ (T f) = f`. -/
+theorem conjWirtingerDeriv_cauchyTransform_of_mem_supportedHolderSubmodule [FiniteDimensional ℂ F]
+    {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1) {c : ℂ} {r : ℝ} (hr : 0 ≤ r)
+    {f : HolderSpace α ℂ F} (hf : f ∈ supportedHolderSubmodule α (closedBall c r)) (w : ℂ) :
+    conjWirtingerDeriv (cauchyTransform f) w 1 = f w := by
+  -- The integral in `cauchyTransform` uses the real action induced by the complex one.
+  cases NormedSpace.restrictScalars_eq (𝕜 := ℝ) (𝕜' := ℂ) (E := F)
+  obtain ⟨C, hC⟩ := exists_contDiffOn_holderOnWith_fderiv_pi_inv_smul_integral_sub_inv_smul
+    (F := F) hα hα1 c hr (dist_nonneg (x := w) (y := c))
+  obtain ⟨-, -, -, hbar⟩ := hC (support_subset_of_mem_supportedHolderSubmodule hf) f.holderWith
+    (source_bound f)
+  rw [funext (cauchyTransform_apply f)]
+  exact hbar w (mem_ball.mpr (lt_add_one _))
 
 private def cauchyValue {α : ℝ≥0} (hα : 0 < α) {c : ℂ} {r R : ℝ}
     (hr : 0 ≤ r) (hR : 0 ≤ R) (f : supportedHolderSubmodule (Y := F) α (closedBall c r)) :
