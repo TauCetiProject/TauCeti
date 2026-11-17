@@ -197,17 +197,19 @@ section Action
 variable {G : Type*} [Group G] [MulAction G M] [ContMDiffConstSMul I ∞ G M] [IsManifold I 2 M]
 variable {I J}
 
-/-- If `f` is invariant under `G`, then `g • (x, p)` is related to a covector exactly when `(x, p)`
-is: the pullbacks along `f` do not see the cotangent-lifted action. -/
-theorem cotangentRel_smul_iff {f : M → N} (hinv : ∀ (g : G) x, f (g • x) = f x)
-    (hf : ∀ x, MDifferentiableAt I J f x) (g : G) (z : CotangentBundle I M)
+/-- If `f` is invariant under `g` and differentiable at `g • x`, then `g • (x, p)` is related to a
+covector exactly when `(x, p)` is: the pullbacks along `f` do not see the cotangent-lifted
+action. -/
+theorem cotangentRel_smul_iff {f : M → N} (g : G) (hinv : ∀ x, f (g • x) = f x)
+    (z : CotangentBundle I M) (hf : MDifferentiableAt I J f (g • z.proj))
     (w : CotangentBundle J N) :
     cotangentRel I J f (g • z) w ↔ cotangentRel I J f z w := by
   have hcomp : f ∘ (Diffeomorph.constSmul I ∞ g : M ≃ₘ⟮I, I⟯ M) = f := by
     rw [Diffeomorph.coe_constSmul]
-    exact funext fun x ↦ hinv g x
-  have h := cotangentRel_comp_iff I I J z w
-    ((Diffeomorph.constSmul I ∞ g).mdifferentiable (by simp) _) (hf _)
+    exact funext hinv
+  have h := cotangentRel_comp_iff I I J z w (g := f)
+    ((Diffeomorph.constSmul I ∞ g).mdifferentiable (by simp) _)
+    (by rwa [Diffeomorph.coe_constSmul])
   rw [hcomp] at h
   rw [h]
   simp only [Relation.Comp, cotangentRel_diffeomorph_iff, ← smul_def, exists_eq_left']

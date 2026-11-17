@@ -366,7 +366,7 @@ theorem exists_momentMap_eq_zero_and_reductionMap_eq
   exact ⟨z, (momentMap_eq_zero_iff_exists_cotangentRel (hker q) (hρ q)).2 ⟨_, h⟩,
     (eq_reductionMap_of_cotangentRel (hρ q) h).symm⟩
 
-variable [ContMDiffConstSMul I ∞ G Q] [IsManifold I 2 Q]
+variable [ContMDiffConstSMul I ∞ G Q]
 
 /-- **The reduction map is invariant on the zero level.** For a `G`-invariant map `ρ` whose
 differentials have continuous right inverses and whose vertical tangent vectors are the orbit
@@ -377,7 +377,7 @@ theorem reductionMap_smul
     (hρ : ∀ q, (mfderiv I IB ρ q).HasRightInverse) {z : CotangentBundle I Q}
     (hz : momentMap IG G z = 0) (g : G) :
     reductionMap I IB ρ (g • z) = reductionMap I IB ρ z :=
-  (eq_reductionMap_of_cotangentRel (hρ _) ((cotangentRel_smul_iff hinv hρd g z _).2
+  (eq_reductionMap_of_cotangentRel (hρ _) ((cotangentRel_smul_iff g (hinv g) z (hρd _) _).2
     (cotangentRel_reductionMap (hρ _) ((momentMap_eq_zero_iff (hker z.proj)).1 hz)))).symm
 
 /-- **The fibres of the reduction map on the zero level are the orbits.** Let the differentials
@@ -396,7 +396,7 @@ theorem reductionMap_eq_reductionMap_iff
   refine ⟨g, ?_⟩
   -- Both `g • z` and `z'` are pullbacks of the same covector at `ρ q'`, with base point `q'`.
   have h₁ : cotangentRel I IB ρ (g • z) (reductionMap I IB ρ z') :=
-    (cotangentRel_smul_iff hinv hρd g z _).2
+    (cotangentRel_smul_iff g (hinv g) z (hρd _) _).2
       (h ▸ cotangentRel_reductionMap (hρ _) ((momentMap_eq_zero_iff (hker z.proj)).1 hz))
   have h₂ : cotangentRel I IB ρ z' (reductionMap I IB ρ z') :=
     cotangentRel_reductionMap (hρ _) ((momentMap_eq_zero_iff (hker z'.proj)).1 hz')
