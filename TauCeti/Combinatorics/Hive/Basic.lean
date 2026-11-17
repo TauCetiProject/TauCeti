@@ -564,7 +564,10 @@ theorem exists_boundaryLinear_eq_iff_sum_eq_zero [AddCommGroup R] (B : Fin 3 →
     · rcases Nat.lt_or_ge k n with hkn | hkn
       · rcases k with _ | k
         · simp [f, P, hkn.ne']
-        · simp [f, show n - (k + 1) ≠ 0 by omega]
+        · -- This interior point of edge `C → A` has `z`-coordinate `n - (k + 1) ≠ 0`, so `f`
+          -- skips its first (`z = 0`) branch and takes the third (`y = 0`) one.
+          have hz : n - (k + 1) ≠ 0 := by omega
+          simp [f, hz]
       · obtain rfl : k = n := by omega
         simpa [f, P] using hB.symm
   refine ⟨f, ?_⟩

@@ -44,10 +44,9 @@ with integer data is solvable over `K` exactly when some dilation `A *ᵥ x ≤ 
 with `0 < N` has an integer solution
 (`Matrix.exists_mulVec_le_and_mulVec_eq_intCast_iff_exists_nsmul`).
 
-Each result has a specialization to systems `A *ᵥ x ≤ b` without equality rows
-(`Matrix.forall_dotProduct_le_iff_exists_vecMul_eq`,
-`Matrix.forall_dotProduct_nonpos_iff_exists_vecMul_eq`, `Matrix.not_exists_mulVec_le_iff`,
-`Matrix.exists_mulVec_le_map_iff`, `Matrix.exists_mulVec_le_intCast_iff_exists_nsmul`).
+Systems `A *ᵥ x ≤ b` without equality rows are the case `E := (0 : Matrix (Fin 0) ι K)`,
+`d := 0`; the homogeneous form is stated for them directly
+(`Matrix.forall_dotProduct_nonpos_iff_exists_vecMul_eq`).
 
 ## Implementation notes
 
@@ -287,43 +286,11 @@ theorem exists_mulVec_le_and_mulVec_eq_intCast_iff_exists_nsmul [Finite I] [Fini
 
 The special case of the results above in which there are no equality rows. -/
 
-/-- **Farkas' lemma** for a nonempty solution set of `A *ᵥ x ≤ b`: the inequality `c ⬝ᵥ x ≤ δ`
-holds on it exactly when `c = y ᵥ* A` and `y ⬝ᵥ b ≤ δ` for some nonnegative `y`. -/
-theorem forall_dotProduct_le_iff_exists_vecMul_eq [Fintype I] (A : Matrix I ι K) (b : I → K)
-    (c : ι → K) (δ : K) (hfeas : ∃ x, A *ᵥ x ≤ b) :
-    (∀ x, A *ᵥ x ≤ b → c ⬝ᵥ x ≤ δ) ↔ ∃ y, 0 ≤ y ∧ y ᵥ* A = c ∧ y ⬝ᵥ b ≤ δ := by
-  simpa using forall_dotProduct_le_iff_exists_vecMul_add_vecMul_eq A b
-    (0 : Matrix (Fin 0) ι K) 0 c δ (by simpa using hfeas)
-
 /-- **Farkas' lemma**, homogeneous form without equality rows. The inequality `c ⬝ᵥ x ≤ 0` holds on
 the polyhedral cone `A *ᵥ x ≤ 0` exactly when `c = y ᵥ* A` for some nonnegative `y`. -/
 theorem forall_dotProduct_nonpos_iff_exists_vecMul_eq [Fintype I] (A : Matrix I ι K)
     (c : ι → K) : (∀ x, A *ᵥ x ≤ 0 → c ⬝ᵥ x ≤ 0) ↔ ∃ y, 0 ≤ y ∧ y ᵥ* A = c := by
   simpa using forall_dotProduct_nonpos_iff_exists_vecMul_add_vecMul_eq A
     (0 : Matrix (Fin 0) ι K) c
-
-/-- **Farkas' lemma**, infeasibility form without equality rows. The system `A *ᵥ x ≤ b` has no
-solution exactly when `y ᵥ* A = 0` and `y ⬝ᵥ b < 0` for some nonnegative `y`. -/
-theorem not_exists_mulVec_le_iff [Fintype I] (A : Matrix I ι K) (b : I → K) :
-    (¬∃ x, A *ᵥ x ≤ b) ↔ ∃ y, 0 ≤ y ∧ y ᵥ* A = 0 ∧ y ⬝ᵥ b < 0 := by
-  simpa using not_exists_mulVec_le_and_mulVec_eq_iff A b (0 : Matrix (Fin 0) ι K) 0
-
-/-- Feasibility of a finite system of linear inequalities does not change under an
-order-preserving ring homomorphism out of a linearly ordered field. -/
-theorem exists_mulVec_le_map_iff [Finite I] {L : Type*} [Semiring L] [PartialOrder L]
-    [IsOrderedRing L] [Nontrivial L] (f : K →+* L) (hf : Monotone f) (A : Matrix I ι K)
-    (b : I → K) : (∃ x, A.map f *ᵥ x ≤ f ∘ b) ↔ ∃ x, A *ᵥ x ≤ b := by
-  simpa [eq_iff_true_of_subsingleton] using
-    exists_mulVec_le_and_mulVec_eq_map_iff f hf A b (0 : Matrix (Fin 0) ι K) 0
-
-/-- **Clearing denominators** for a finite system `A *ᵥ x ≤ b` of linear inequalities with integer
-coefficients: it is solvable over a linearly ordered field `K` exactly when for some positive `N`
-the dilated system `A *ᵥ x ≤ N • b` has an integer solution. -/
-theorem exists_mulVec_le_intCast_iff_exists_nsmul [Finite I] (A : Matrix I ι ℤ) (b : I → ℤ) :
-    (∃ x : ι → K, A.map (Int.cast : ℤ → K) *ᵥ x ≤ Int.cast ∘ b) ↔
-      ∃ N : ℕ, 0 < N ∧ ∃ x : ι → ℤ, A *ᵥ x ≤ N • b := by
-  simpa [eq_iff_true_of_subsingleton] using
-    exists_mulVec_le_and_mulVec_eq_intCast_iff_exists_nsmul (K := K) A b
-    (0 : Matrix (Fin 0) ι ℤ) 0
 
 end Matrix
