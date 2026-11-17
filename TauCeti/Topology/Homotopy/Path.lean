@@ -73,6 +73,12 @@ endpoints composes the cast images of the factors (`Path.Homotopic.Quotient.map_
 `Path.refl_trans_eq_reparam`, the left counterpart of Mathlib's
 `Path.Homotopy.trans_refl_reparam`, and `map_trans_cast` are used by the gluing of caps along a
 pair of pants in `Geometry/Symplectic/Floer/Cap/Loop.lean`.
+
+Every point of a path lies in the path component of its source (`Path.mem_pathComponent`). So the
+paths in a subspace `S` starting at a point whose path component lies in `S` are the paths of the
+ambient space: the inclusion of `S` induces a homeomorphism of path spaces
+(`Path.subtypeValHomeomorph`). In particular a path component, with the subspace topology, has
+the loop space of the ambient space at each of its points.
 -/
 
 public section
@@ -202,6 +208,34 @@ theorem mem_pathComponent {a b : X} (γ : Path a b) (t : I) : γ t ∈ pathCompo
 theorem mem_pathComponent_of_mem {a b x₀ : X} (γ : Path a b) (ha : a ∈ pathComponent x₀)
     (t : I) : γ t ∈ pathComponent x₀ :=
   Joined.mem_pathComponent (γ.mem_pathComponent t) ha
+
+/-- **Paths in a subspace containing a path component.** If the path component of `a` lies in a
+subspace `S`, the inclusion of `S` induces a homeomorphism from the paths in `S` from `a` to `b`
+to the paths in the ambient space from `a` to `b`: every such path stays in the path component of
+`a`, hence in `S`. -/
+def subtypeValHomeomorph {S : Set X} {a b : S} (hS : pathComponent (a : X) ⊆ S) :
+    Path a b ≃ₜ Path (a : X) b where
+  toFun γ := γ.map continuous_subtype_val
+  invFun γ := γ.codRestrict fun t ↦ hS (γ.mem_pathComponent t)
+  left_inv _ := rfl
+  right_inv _ := rfl
+  continuous_toFun := continuous_induced_rng.2 <|
+    (ContinuousMap.continuous_postcomp ⟨Subtype.val, continuous_subtype_val⟩).comp
+      continuous_induced_dom
+  continuous_invFun := continuous_induced_rng.2 <|
+    (ContinuousMap.isEmbedding_postcomp ⟨Subtype.val, continuous_subtype_val⟩
+      IsEmbedding.subtypeVal).isInducing.continuous_iff.2 continuous_induced_dom
+
+@[simp]
+theorem subtypeValHomeomorph_apply {S : Set X} {a b : S} (hS : pathComponent (a : X) ⊆ S)
+    (γ : Path a b) (t : I) : subtypeValHomeomorph hS γ t = γ t :=
+  (rfl)
+
+@[simp]
+theorem coe_subtypeValHomeomorph_symm_apply {S : Set X} {a b : S}
+    (hS : pathComponent (a : X) ⊆ S) (γ : Path (a : X) b) (t : I) :
+    ((subtypeValHomeomorph hS).symm γ t : X) = γ t :=
+  (rfl)
 
 theorem continuous_initialSegmentFamily_uncurry {a b : X} (γ : Path a b) :
     Continuous ↿(initialSegmentFamily γ) := by
