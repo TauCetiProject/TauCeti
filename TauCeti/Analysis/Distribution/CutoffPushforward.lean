@@ -179,7 +179,7 @@ theorem dsupport_comp_cutoffPullbackCLM_subset [AddCommMonoid V]
 
 /-- **The support of a proper pushforward**: if `Φ` is proper from `Ω` to `Ω'`, the support of
 `Φ_# T = T ∘ Φ^*` lies in the closure of the image under `Φ` of the support of `T` in `Ω`. -/
-theorem dsupport_comp_pullbackCLM_subset [FiniteDimensional ℝ E] [AddCommMonoid V]
+theorem dsupport_comp_pullbackCLM_subset [AddCommMonoid V]
     [FunLike 𝓕 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) V] [AddMonoidHomClass 𝓕 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) V]
     (T : 𝓕) {hΦp : ∀ K : Set E', IsCompact K → K ⊆ Ω' → IsCompact ((Ω : Set E) ∩ Φ ⁻¹' K)} :
     dsupport (T ∘ (pullbackCLM Φ hΦ hΦp : 𝓓(Ω', E' [⋀^Fin k]→L[ℝ] F) →L[ℝ] _)) ⊆
