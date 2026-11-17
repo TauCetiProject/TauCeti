@@ -351,12 +351,15 @@ theorem norm_restrictComplSingletonStarAlgEquiv [CommRing S]
   F.1.norm_restrictComplSingleton (mem_evalKerSubalgebra.mp F.2)
 
 /-- `restrictComplSingletonStarAlgEquiv` is an isometry. -/
-theorem isometry_restrictComplSingletonStarAlgEquiv [CommRing S]
-    [NonUnitalSeminormedRing E] [StarAddMonoid E] [ContinuousStar E] [Module S E]
-    [ContinuousConstSMul S E] (x₀ : K) :
-    Isometry (restrictComplSingletonStarAlgEquiv S E x₀) :=
-  AddMonoidHomClass.isometry_of_norm (restrictComplSingletonStarAlgEquiv S E x₀)
-    (norm_restrictComplSingletonStarAlgEquiv x₀)
+theorem isometry_restrictComplSingletonStarAlgEquiv [CommSemiring S]
+    [NonUnitalNonAssocSemiring A] [PseudoMetricSpace A] [IsTopologicalSemiring A]
+    [StarAddMonoid A] [ContinuousStar A] [Module S A] [ContinuousConstSMul S A] (x₀ : K) :
+    Isometry (restrictComplSingletonStarAlgEquiv S A x₀) :=
+  Isometry.of_dist_eq fun F G ↦ by
+    have h := (ZeroAtInftyContinuousMap.isometry_extendZero x₀ (β := A)).dist_eq
+      (restrictComplSingletonStarAlgEquiv S A x₀ F)
+      (restrictComplSingletonStarAlgEquiv S A x₀ G)
+    simpa [Subtype.dist_eq, ZeroAtInftyContinuousMap.extendZero_restrictComplSingleton] using h.symm
 
 end RestrictComplEquiv
 

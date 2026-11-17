@@ -315,6 +315,7 @@ instance instCompactSpaceCharacterSpaceUnitization [ProperSpace 𝕜] [CompleteS
   rw [← isCompact_iff_compactSpace]
   let sndCLM : Unitization 𝕜 A →L[𝕜] A :=
     { Unitization.sndHom 𝕜 𝕜 A with cont := Unitization.continuous_snd }
+  have hsnd (u : Unitization 𝕜 A) : sndCLM u = u.snd := rfl
   let g : WeakDual 𝕜 A → WeakDual 𝕜 (Unitization 𝕜 A) := fun ψ ↦
     StrongDual.toWeakDual
       (toCLM (Unitization.augmentation 𝕜 A) + (WeakDual.toStrongDual ψ).comp sndCLM)
@@ -323,17 +324,25 @@ instance instCompactSpaceCharacterSpaceUnitization [ProperSpace 𝕜] [CompleteS
       continuous_const.add (WeakDual.eval_continuous u.snd)
   have hg0 : g 0 = (Unitization.augmentation 𝕜 A).1 :=
     DFunLike.ext _ _ fun u ↦ by simp [g, sndCLM]
+  have hg_extend (χ : characterSpace 𝕜 A) : g χ.1 = (unitizationExtend χ).1.1 :=
+    DFunLike.ext _ _ fun u ↦ by
+      rw [StrongDual.toWeakDual_apply, add_apply, ContinuousLinearMap.comp_apply,
+        WeakDual.toStrongDual_apply, CharacterSpace.coe_coe, CharacterSpace.coe_coe,
+        unitizationExtend_apply, hsnd]
+      simp
   have himg : g '' (characterSpace 𝕜 A ∪ {0}) = characterSpace 𝕜 (Unitization 𝕜 A) := by
     ext φ
     refine ⟨?_, fun hφ ↦ ?_⟩
     · rintro ⟨ψ, hψ | rfl, rfl⟩
-      · exact (unitizationExtend ⟨ψ, hψ⟩).1.2
+      · rw [hg_extend ⟨ψ, hψ⟩]
+        exact (unitizationExtend ⟨ψ, hψ⟩).1.2
       · rw [hg0]
         exact (Unitization.augmentation 𝕜 A).2
     · by_cases haug : (⟨φ, hφ⟩ : characterSpace 𝕜 (Unitization 𝕜 A)) = Unitization.augmentation 𝕜 A
       · exact ⟨0, Or.inr rfl, hg0.trans (congrArg Subtype.val haug.symm)⟩
       · refine ⟨(unitizationRestrict ⟨⟨φ, hφ⟩, haug⟩).1,
           Or.inl (unitizationRestrict ⟨⟨φ, hφ⟩, haug⟩).2, ?_⟩
+        rw [hg_extend]
         exact congrArg (Subtype.val ∘ Subtype.val)
           (unitizationExtend_unitizationRestrict ⟨⟨φ, hφ⟩, haug⟩)
   rw [← himg]
