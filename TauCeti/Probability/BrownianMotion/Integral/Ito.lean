@@ -428,12 +428,8 @@ theorem isItoIntegral_of_ae_eq_l2Integral
         (fun k ↦ ((Finance.isStronglyPredictable_simpleHolding (ha k)).sub
           hH.isStronglyPredictable).mono ℱ.predictable_le_prod) t (herr t) hε,
       tendstoInMeasure_of_tendsto_eLpNorm (p := 2) (by norm_num) ?_⟩
-    have heq (k : ℕ) : eLpNorm (Finance.simpleGains (τ k) (n k) (a k) W t - I t) 2 P =
-        eLpNorm (fun p ↦ Finance.simpleHolding (τ k) (n k) (a k) p.1 p.2 - H p.1 p.2) 2
-          ((timeMeasure t).prod P) :=
-      (eLpNorm_congr_ae (EventuallyEq.rfl.sub (hI t))).trans
-        (hW.eLpNorm_simpleGains_sub_l2Integral hH (hτ k).monotoneOn (ha k) (ha₂ k) t)
-    simpa only [heq] using herr t
+    exact hW.tendsto_eLpNorm_simpleGains_sub_of_ae_eq_l2Integral
+      (fun _ ↦ hH) (fun _ ↦ hI t) (fun k ↦ (hτ k).monotoneOn) ha ha₂ (herr t)
 
 private theorem isItoIntegral_of_localized_stages
     (hW : IsFilteredPreBrownianReal ℱ W P) (hH : IsStronglyPredictable ℱ H)
@@ -479,15 +475,9 @@ private theorem isItoIntegral_of_localized_stages
     · have hG_stage : TendstoInMeasure P
           (fun k ω ↦ Finance.simpleGains (grid k) (n k) (a k) W t ω - U k t ω) atTop 0 := by
         refine tendstoInMeasure_of_tendsto_eLpNorm (p := 2) (by norm_num) ?_
-        have heq (k : ℕ) : eLpNorm
-            ((fun ω ↦ Finance.simpleGains (grid k) (n k) (a k) W t ω - U k t ω) - 0) 2 P =
-            eLpNorm (fun p ↦ Finance.simpleHolding (grid k) (n k) (a k) p.1 p.2 -
-              Hstage k p.1 p.2) 2 ((timeMeasure t).prod P) := by
-          rw [sub_zero]
-          exact (eLpNorm_congr_ae (EventuallyEq.rfl.sub (hUae k t))).trans
-            (hW.eLpNorm_simpleGains_sub_l2Integral (hHstage k) (hgrid k).monotoneOn
-              (ha k) (ha₂ k) t)
-        simpa only [heq] using herr_lim
+        simpa only [Pi.sub_def, sub_zero] using
+          hW.tendsto_eLpNorm_simpleGains_sub_of_ae_eq_l2Integral
+            hHstage (fun k ↦ hUae k t) (fun k ↦ (hgrid k).monotoneOn) ha ha₂ herr_lim
       have hG_ε := (tendstoInMeasure_iff_norm.mp hG_stage) ε hε
       simp only [Pi.zero_apply, sub_zero] at hG_ε
       exact hloc.tendsto_measure_of_ae_imp_of_lt t hG_ε fun k ↦

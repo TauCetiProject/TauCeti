@@ -7,13 +7,18 @@ module
 
 public import Mathlib.Probability.Process.Adapted
 public import Mathlib.MeasureTheory.Integral.Prod
+public import TauCeti.Probability.Process.TimeMeasure
+import TauCeti.MeasureTheory.Measure.NNReal
 
 /-!
 # Progressive time integrals
 
 Time integration of a strongly progressive process remains strongly progressive on the
-original filtration. This applies to signed and Banach-valued drift integrals, without
-integrability in the sample variable or usual conditions on the filtration.
+original filtration (`MeasureTheory.IsStronglyProgressive.integral_Ioc`), in particular when
+integrated against finite-horizon Lebesgue time measure
+(`MeasureTheory.IsStronglyProgressive.integral_timeMeasure`). This applies to signed and
+Banach-valued drift integrals, without integrability in the sample variable or usual conditions
+on the filtration.
 
 The integral is the ordinary Bochner integral, including its zero value for nonintegrable
 sections. Path regularity requires pathwise integrability; measurability alone makes no
@@ -28,6 +33,7 @@ continuity assertion.
 public section
 
 open Set MeasureTheory
+open scoped NNReal
 
 namespace MeasureTheory
 
@@ -62,5 +68,15 @@ theorem IsStronglyProgressive.integral_Ioc (hH : IsStronglyProgressive F H)
   by_cases hs : s ∈ Ioc a (p.1 : ι)
   · simp only [G, indicator_of_mem hs, min_eq_left (hs.2.trans p.1.prop)]
   · simp only [G, indicator_of_notMem hs]
+
+/-- Integrating a strongly progressive process against `TauCeti.Probability.timeMeasure`
+preserves strong progressivity. No pathwise or expected integrability is required. -/
+theorem IsStronglyProgressive.integral_timeMeasure {Ω E : Type*}
+    [MeasurableSpace Ω] [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {F : Filtration ℝ≥0 ‹MeasurableSpace Ω›} {H : ℝ≥0 → Ω → E}
+    (hH : IsStronglyProgressive F H) :
+    IsStronglyProgressive F (fun t ω ↦ ∫ s, H s ω ∂TauCeti.Probability.timeMeasure t) := by
+  simpa only [TauCeti.Probability.timeMeasure_def, ← TauCeti.nnvolume_def] using
+    hH.integral_Ioc TauCeti.nnvolume 0
 
 end MeasureTheory

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Probability.Process.LocalProperty
 public import Mathlib.MeasureTheory.Constructions.Polish.StronglyMeasurable
+import Mathlib.MeasureTheory.Integral.Indicator
 import TauCeti.Probability.Process.Stopping
 
 /-!
@@ -64,29 +65,12 @@ theorem IsPreLocalizingSequence.tendsto_measure_le {ι Ω : Type*}
     {mΩ : MeasurableSpace Ω} {ℱ : Filtration ι mΩ} {P : Measure Ω} [IsFiniteMeasure P]
     {τ : ℕ → Ω → WithTop ι} (hτ : IsPreLocalizingSequence ℱ τ P) (t : ι) :
     Tendsto (fun k ↦ P {ω | τ k ω ≤ (t : WithTop ι)}) atTop (𝓝 0) := by
-  let B (k : ℕ) : Set Ω := ⋃ j ∈ Set.Ici k, {ω | τ j ω ≤ (t : WithTop ι)}
-  have hB_anti : Antitone B := fun _ _ hij ↦
-    Set.biUnion_subset_biUnion_left fun _ hm ↦ hij.trans hm
-  have hB_meas (k : ℕ) : NullMeasurableSet (B k) P :=
-    (MeasurableSet.biUnion (Set.to_countable _) fun j _ ↦
-      ℱ.le t _ ((hτ.isStoppingTime j) t)).nullMeasurableSet
-  have hB_inter : P (⋂ k, B k) = 0 := by
-    have hopen : IsOpen (Set.Ioi (t : WithTop ι)) := by
-      rw [OrderTopology.topology_eq_generate_intervals (α := WithTop ι)]
-      exact .basic _ ⟨t, Or.inl rfl⟩
-    refine measure_mono_null (s := ⋂ k, B k)
-      (t := {ω | ¬ Tendsto (τ · ω) atTop (𝓝 ⊤)}) (fun ω hω htend ↦ ?_)
-      (ae_iff.mp hτ.tendsto_top)
-    obtain ⟨k, hk⟩ := eventually_atTop.mp
-      (htend.eventually (hopen.mem_nhds (WithTop.coe_lt_top t)))
-    rcases Set.mem_iUnion₂.mp (Set.mem_iInter.mp hω k) with ⟨j, hkj, hle⟩
-    exact not_le_of_gt (hk j hkj) hle
-  have hB_tend : Tendsto (fun k ↦ P (B k)) atTop (𝓝 0) := by
-    simpa only [Function.comp_def, hB_inter] using
-      tendsto_measure_iInter_atTop hB_meas hB_anti ⟨0, measure_ne_top P _⟩
-  exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hB_tend (fun _ ↦ bot_le)
-    fun k ↦ measure_mono (Set.subset_biUnion_of_mem (u := fun j ↦ {ω | τ j ω ≤ (t : WithTop ι)})
-      Set.self_mem_Ici)
+  simpa only [measure_empty] using
+    tendsto_measure_of_ae_tendsto_indicator_of_isFiniteMeasure (A := ∅) atTop .empty
+      (fun k ↦ ℱ.le t _ ((hτ.isStoppingTime k) t)) <|
+      hτ.tendsto_top.mono fun ω hω ↦
+        (hω.eventually (lt_mem_nhds (WithTop.coe_lt_top t))).mono fun k hk ↦ by
+          simpa using not_le_of_gt hk
 
 /-- If events `A k` are almost surely contained in `B k` on `{t < τ k}` along a pre-localizing
 sequence and `P (B k) → 0`, then `P (A k) → 0` as well. Neither monotonicity nor a bottom time

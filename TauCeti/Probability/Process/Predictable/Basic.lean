@@ -32,7 +32,9 @@ version.
 
 The time projection is measurable for the predictable sigma-algebra, so deterministic Borel
 time dependence can be combined with predictable processes. A predictably measurable function
-remains strongly predictable when extended by zero outside a measurable set of times.
+remains strongly predictable when extended by zero outside a measurable set of times. Likewise,
+an `ℱ s`-strongly measurable random variable held on `(s, u]` is predictably strongly measurable
+(`MeasureTheory.StronglyMeasurable.predictable_indicator_Ioc_prod`).
 
 ## References
 
@@ -366,3 +368,20 @@ theorem Measurable.isStronglyPredictable_ite_zero {ι Ω E : Type*}
     {P : ι → Prop} [DecidablePred P] (hP : MeasurableSet {t | P t}) :
     IsStronglyPredictable ℱ (fun t ω => if P t then f (t, ω) else 0) :=
   (hf.ite (hP.preimage ℱ.measurable_fst_predictable) measurable_const).stronglyMeasurable
+
+/-- An `ℱ s`-strongly measurable random variable held on the time interval `(s, u]` is
+predictably strongly measurable. -/
+theorem MeasureTheory.StronglyMeasurable.predictable_indicator_Ioc_prod
+    {ι Ω E : Type*} [LinearOrder ι] [OrderBot ι] {m : MeasurableSpace Ω}
+    [TopologicalSpace E] [Zero E] {ℱ : Filtration ι m} {s : ι}
+    {ξ : Ω → E} (hξ : StronglyMeasurable[ℱ s] ξ) (u : ι) :
+    StronglyMeasurable[ℱ.predictable] ((Ioc s u ×ˢ (univ : Set Ω)).indicator fun p ↦ ξ p.2) := by
+  let : MeasurableSpace (ι × Ω) := ℱ.predictable
+  refine stronglyMeasurable_of_restrict_of_restrict_compl
+    (measurableSet_predictable_Ioc_prod s u MeasurableSet.univ) ?_ ?_
+  · have hm : @Measurable (↥(Ioc s u ×ˢ (univ : Set Ω))) Ω _ (ℱ s) (fun x ↦ x.1.2) :=
+      fun A hA ↦ ⟨Ioc s u ×ˢ A, measurableSet_predictable_Ioc_prod s u hA, by
+        ext ⟨⟨t, ω⟩, ht, _⟩; simp [ht]⟩
+    convert hξ.comp_measurable hm using 1; ext ⟨p, hp⟩; simp [Set.domRestrict, hp]
+  · convert stronglyMeasurable_const (b := (0 : E)) using 1
+    ext ⟨p, hp⟩; exact Set.indicator_of_notMem hp _
