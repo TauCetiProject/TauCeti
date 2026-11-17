@@ -45,11 +45,6 @@ Small pieces of product-measure theory with no `L²` or inner-product content.
 * `TauCeti.integrable_and_integral_prod_le` deduces product-measure integrability and an integral
   bound for an a.e.-nonnegative kernel from a.e. slice integrability and an integrable slice
   majorant.
-* `TauCeti.measurePreserving_prodProdProdComm`: exchanging the two middle coordinates preserves the
-  product of two product measures whenever the three factors moved across a product are s-finite.
-* `TauCeti.prodProdSndComm` and `TauCeti.measurePreserving_prodProdSndComm`: exchanging the second
-  coordinates of two pairs is a measurable equivalence preserving the product of two product
-  measures whenever the three factors moved across a product are s-finite.
 -/
 
 public section
@@ -58,8 +53,6 @@ namespace TauCeti
 
 open MeasureTheory Set
 open scoped ENNReal ProbabilityTheory
-
-section
 
 variable {α β γ E : Type*} {mα : MeasurableSpace α} {mβ : MeasurableSpace β}
   {mγ : MeasurableSpace γ} {μ : Measure α} {ν : Measure β} {κ : Measure γ}
@@ -282,71 +275,5 @@ theorem integrable_and_integral_prod_le [SFinite μ] [SFinite ν] {G : α × β 
     exact h.2
   exact ⟨hG_int, (integral_prod G hG_int).trans_le
     (integral_mono_ae hG_int.integral_prod_left hH_int (hslice.mono fun _ h ↦ h.2))⟩
-
-/-- Exchanging the two middle coordinates preserves the product of two product measures; only the
-three factors moved across a product must be s-finite. -/
-theorem measurePreserving_prodProdProdComm {α' β' : Type*}
-    [MeasurableSpace α'] [MeasurableSpace β'] {μ' : Measure α'} {ν' : Measure β'}
-    [SFinite ν] [SFinite μ'] [SFinite ν'] :
-    MeasurePreserving (Equiv.prodProdProdComm α β α' β')
-      ((μ.prod ν).prod (μ'.prod ν')) ((μ.prod μ').prod (ν.prod ν')) := by
-  let f : β × α' × β' → α' × β × β' :=
-    MeasurableEquiv.prodAssoc ∘ Prod.map Prod.swap id ∘ MeasurableEquiv.prodAssoc.symm
-  have hf : MeasurePreserving f (ν.prod (μ'.prod ν')) (μ'.prod (ν.prod ν')) :=
-    (measurePreserving_prodAssoc μ' ν ν').comp <|
-      (Measure.measurePreserving_swap.prod (MeasurePreserving.id ν')).comp
-        (measurePreserving_prodAssoc ν μ' ν').symm
-  have hidf : MeasurePreserving (Prod.map (id : α → α) f)
-      (μ.prod (ν.prod (μ'.prod ν'))) (μ.prod (μ'.prod (ν.prod ν'))) :=
-    ⟨measurable_id.prodMap hf.measurable, by
-      rw [← Measure.map_prod_map _ _ measurable_id hf.measurable, Measure.map_id, hf.map_eq]⟩
-  exact ((measurePreserving_prodAssoc μ μ' (ν.prod ν')).symm.comp <|
-    hidf.comp (measurePreserving_prodAssoc μ ν (μ'.prod ν'))).congr
-      (by dsimp [Equiv.prodProdProdComm]; fun_prop) (ae_of_all _ fun ⟨⟨_, _⟩, ⟨_, _⟩⟩ ↦ rfl)
-
-end
-
-section ProdProdSndComm
-
-variable {α β α' β' : Type*} [MeasurableSpace α] [MeasurableSpace β]
-  [MeasurableSpace α'] [MeasurableSpace β']
-
-/-- The measurable equivalence exchanging the second coordinates of two pairs:
-`((a, b), (a', b')) ↦ ((a, b'), (a', b))`. -/
-def prodProdSndComm : (α × β) × (α' × β') ≃ᵐ (α × β') × (α' × β) where
-  toFun q := ((q.1.1, q.2.2), (q.2.1, q.1.2))
-  invFun q := ((q.1.1, q.2.2), (q.2.1, q.1.2))
-  left_inv _ := rfl
-  right_inv _ := rfl
-  measurable_toFun := by dsimp; fun_prop
-  measurable_invFun := by dsimp; fun_prop
-
-/-- `prodProdSndComm` exchanges the second coordinates of two pairs. -/
-@[simp]
-theorem prodProdSndComm_apply (q : (α × β) × (α' × β')) :
-    prodProdSndComm q = ((q.1.1, q.2.2), (q.2.1, q.1.2)) := (rfl)
-
-/-- The inverse of `prodProdSndComm` is `prodProdSndComm` with the second-coordinate types
-exchanged. -/
-@[simp]
-theorem prodProdSndComm_symm :
-    (prodProdSndComm (α := α) (β := β) (α' := α') (β' := β')).symm = prodProdSndComm := (rfl)
-
-/-- Exchanging the second coordinates of two pairs preserves the product of two product measures;
-only the three factors moved across a product must be s-finite. -/
-theorem measurePreserving_prodProdSndComm {μ : Measure α} {ν : Measure β} {μ' : Measure α'}
-    {ν' : Measure β'} [SFinite ν] [SFinite μ'] [SFinite ν'] :
-    MeasurePreserving (prodProdSndComm (α := α) (β := β) (α' := α') (β' := β'))
-      ((μ.prod ν).prod (μ'.prod ν')) ((μ.prod ν').prod (μ'.prod ν)) := by
-  have hid : MeasurePreserving (Prod.map (id : α × α' → α × α') Prod.swap)
-      ((μ.prod μ').prod (ν.prod ν')) ((μ.prod μ').prod (ν'.prod ν)) :=
-    ⟨measurable_id.prodMap measurable_swap, by
-      rw [← Measure.map_prod_map _ _ measurable_id measurable_swap, Measure.map_id,
-        Measure.prod_swap]⟩
-  exact ((measurePreserving_prodProdProdComm (μ := μ) (ν := μ') (μ' := ν') (ν' := ν)).comp <|
-    hid.comp (measurePreserving_prodProdProdComm (μ := μ) (ν := ν) (μ' := μ') (ν' := ν'))).congr
-    prodProdSndComm.measurable (ae_of_all _ fun ⟨⟨_, _⟩, ⟨_, _⟩⟩ ↦ rfl)
-
-end ProdProdSndComm
 
 end TauCeti

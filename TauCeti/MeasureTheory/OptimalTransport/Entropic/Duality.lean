@@ -625,7 +625,7 @@ theorem exists_entropicDualValue_eq_toReal_entropicTransportCost_of_lintegral_ne
       (((integrable_toReal_of_lintegral_ne_top hc hc_int).div_const _).neg)
       ((integrable_congr (llr_self _)).2 (integrable_zero _ _ _)) hexp
       ((hc.ennreal_toReal.div_const _).neg)
-  obtain ⟨hφ₀_int, hψ₀_int⟩ := hπ.integrable_of_eq_withDensity_exp_add
+  obtain ⟨hφ₀_int, hψ₀_int⟩ := hπ.integrable_and_integrable_of_eq_withDensity_exp_add
     (tilted_absolutelyContinuous _ _) (absolutelyContinuous_tilted hexp) hllr_int
     hKL_ne_top hφ₀ hψ₀ hπ_wd
   set Z := ∫ z, Real.exp (-((c z).toReal / ε)) ∂μ.prod ν

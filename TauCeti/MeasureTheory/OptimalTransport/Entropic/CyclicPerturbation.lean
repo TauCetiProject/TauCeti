@@ -9,6 +9,7 @@ public import TauCeti.MeasureTheory.OptimalTransport.Entropic.Basic
 
 import TauCeti.InformationTheory.KullbackLeibler.Basic
 import TauCeti.MeasureTheory.Measure.Decomposition.Prod
+import TauCeti.MeasureTheory.Measure.Prod
 import TauCeti.Probability.Density
 
 /-!

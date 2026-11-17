@@ -45,9 +45,9 @@ separately as a subtype of `MeasureTheory.ProbabilityMeasure (X × Y)`.
   `TauCeti.IsCoupling.integral_comp_fst`, and `TauCeti.IsCoupling.integral_comp_snd` — projection
   and integral-transfer forms of the marginal conditions;
 * `TauCeti.IsCoupling.integrable_and_integrable_of_ae_add_nonneg` and
-  `TauCeti.IsCoupling.integrable_of_integrable_add_of_integrable_max` — deducing marginal
-  integrability of `f` and `g` from integrability of their split sum `f x + g y` or its positive
-  part;
+  `TauCeti.IsCoupling.integrable_and_integrable_of_integrable_add_of_integrable_max` — deducing
+  marginal integrability of `f` and `g` from integrability of their split sum `f x + g y` or its
+  positive part;
 * `TauCeti.IsCoupling.smul`, `TauCeti.IsCoupling.add`, `TauCeti.IsCoupling.sum` and
   `TauCeti.isCoupling_zero` — the relation is compatible with the additive and scalar structure
   of measures, which is what mixtures of transport problems use;
@@ -344,7 +344,7 @@ theorem integrable_and_integrable_of_ae_add_nonneg (hπ : IsCoupling π μ ν) {
 Let `μ` be a finite measure and `π` a coupling of `μ` and `ν`. If `f` and `g` are a.e. strongly
 measurable with `f x + g y` integrable against `π` and `max (f x + g y) 0` integrable against
 `μ.prod ν`, then `f` is `μ`-integrable and `g` is `ν`-integrable. -/
-theorem integrable_of_integrable_add_of_integrable_max [IsFiniteMeasure μ]
+theorem integrable_and_integrable_of_integrable_add_of_integrable_max [IsFiniteMeasure μ]
     (hπ : IsCoupling π μ ν) {f : X → ℝ} {g : Y → ℝ}
     (hf : AEStronglyMeasurable f μ) (hg : AEStronglyMeasurable g ν)
     (hsum : Integrable (fun z ↦ f z.1 + g z.2) π)

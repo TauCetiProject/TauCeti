@@ -36,9 +36,9 @@ bounds in `L¹(μ)` and `L¹(ν)` that combine with `φ ⊕ ψ ∈ L¹(γ)` to p
 * `TauCeti.exists_isCoupling_eq_withDensity_exp_add_of_schroedingerValue_ne_top`: when
   `schroedingerValue R μ ν ≠ ∞` and `R ∼ μ ⊗ ν`, the Schrödinger problem is attained by a coupling
   of product exponential density against `R`.
-* `TauCeti.IsCoupling.integrable_of_eq_withDensity_exp_add`: if `R ∼ μ ⊗ ν` has `μ ⊗ ν`-integrable
-  log-density `llr R (μ.prod ν)`, any finite-entropy coupling `π` with density `exp (φ(x) + ψ(y))`
-  against `R` has `φ ∈ L¹(μ)` and `ψ ∈ L¹(ν)`.
+* `TauCeti.IsCoupling.integrable_and_integrable_of_eq_withDensity_exp_add`: if `R ∼ μ ⊗ ν` has
+  `μ ⊗ ν`-integrable log-density `llr R (μ.prod ν)`, any finite-entropy coupling `π` with density
+  `exp (φ(x) + ψ(y))` against `R` has `φ ∈ L¹(μ)` and `ψ ∈ L¹(ν)`.
 
 ## References
 
@@ -130,7 +130,7 @@ theorem exists_isCoupling_eq_withDensity_exp_add_of_schroedingerValue_ne_top
 relative entropy against `R` whose density against `R` is `exp (φ(x) + ψ(y))`, where `R ∼ μ ⊗ ν`
 has integrable log-density `llr R (μ.prod ν)` against `μ.prod ν`. Then `φ ∈ L¹(μ)` and
 `ψ ∈ L¹(ν)`. -/
-theorem IsCoupling.integrable_of_eq_withDensity_exp_add
+theorem IsCoupling.integrable_and_integrable_of_eq_withDensity_exp_add
     [IsFiniteMeasure μ] [IsFiniteMeasure R]
     (hπ : IsCoupling π μ ν) (hRμν : R ≪ μ.prod ν) (hμνR : μ.prod ν ≪ R)
     (hllr : Integrable (llr R (μ.prod ν)) (μ.prod ν)) (hKL : klDiv π R ≠ ∞)
@@ -159,7 +159,7 @@ theorem IsCoupling.integrable_of_eq_withDensity_exp_add
       (ae_of_all _ fun _ ↦ (exp_pos _).le)).1 ?_
     rw [← setLIntegral_univ, ← withDensity_apply _ MeasurableSet.univ, hπ_P]
     exact measure_ne_top π univ
-  refine hπ.integrable_of_integrable_add_of_integrable_max
+  refine hπ.integrable_and_integrable_of_integrable_add_of_integrable_max
     hφ.aestronglyMeasurable hψ.aestronglyMeasurable ((integrable_congr hllr_eq).1 hllr_πR) ?_
   refine (hexp_int.add hllr.abs).mono' (by fun_prop) (ae_of_all _ fun z ↦ ?_)
   simp only [Pi.add_apply, Real.norm_eq_abs, abs_of_nonneg (le_max_right (φ z.1 + ψ z.2) 0)]

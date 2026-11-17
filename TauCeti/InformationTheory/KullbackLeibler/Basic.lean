@@ -84,8 +84,8 @@ theorem integrable_klFun_of_ae_eq_or_le [IsFiniteMeasure ν] {f g : α → ℝ} 
       (norm_nonneg _)))
 
 /-- For a finite reference measure `ν` and a nonnegative almost everywhere measurable density `g`
-with `klFun ∘ g` integrable, the weighted measure `ν.withDensity (ENNReal.ofReal ∘ g)` is finite
-and its relative entropy against `ν` is `ENNReal.ofReal (∫ x, klFun (g x) ∂ν)`. -/
+with `klFun ∘ g` integrable, the relative entropy of `ν.withDensity (ENNReal.ofReal ∘ g)` against
+`ν` is `ENNReal.ofReal (∫ x, klFun (g x) ∂ν)`. -/
 theorem klDiv_withDensity_ofReal_eq [IsFiniteMeasure ν] {g : α → ℝ}
     (hg : AEMeasurable g ν) (hg0 : 0 ≤ᵐ[ν] g)
     (hkl : Integrable (fun x ↦ klFun (g x)) ν) :
