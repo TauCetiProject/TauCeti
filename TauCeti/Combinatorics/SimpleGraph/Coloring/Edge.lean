@@ -29,9 +29,9 @@ At any vertex `v`, the edges incident with `v` form a clique in `G.lineGraph` in
 `G.neighborSet v`. Every proper edge-colouring is therefore injective on the incident edges at `v`,
 and `(G.neighborSet v).encard ≤ G.chromaticIndex` holds without any finiteness or decidability
 assumptions on `G` or its vertex type. Restricting to any vertex set containing `G.support` induces
-an isomorphism of line graphs, and a graph with finitely many edges has finite support. Finally,
-edge-colourings correspond bijectively to indexed partitions of `G.edgeSet` into matching subgraphs
-(`SimpleGraph.Subgraph.IsMatching`), with empty matchings allowed so unused colours are retained.
+an isomorphism of line graphs. Finally, edge-colourings correspond bijectively to indexed
+partitions of `G.edgeSet` into matching subgraphs (`SimpleGraph.Subgraph.IsMatching`), with empty
+matchings allowed so unused colours are retained.
 
 ## Main definitions
 
@@ -56,14 +56,16 @@ edge-colourings correspond bijectively to indexed partitions of `G.edgeSet` into
 * `SimpleGraph.encard_neighborSet_le_chromaticIndex`,
   `SimpleGraph.ncard_neighborSet_le_chromaticIndex`, `SimpleGraph.degree_le_chromaticIndex`,
   `SimpleGraph.maxDegree_le_chromaticIndex`: degree lower bounds on the chromatic index.
-* `SimpleGraph.finite_support_of_finite_edgeSet`: a graph with finitely many edges has finite
-  support.
 * `SimpleGraph.nonempty_edgeColoring_iff_exists_matchings` and
   `SimpleGraph.edgeColorable_iff_exists_matchings`: edge-colourability as a disjoint union of
   matchings covering `G.edgeSet`.
 
 ## References
 
+* S. Broshi, *feat(Combinatorics/SimpleGraph/Coloring/Edge): create a basic edge-coloring API*,
+  [mathlib4#33313](https://github.com/leanprover-community/mathlib4/pull/33313). The module path
+  and line-graph interface design (`SimpleGraph.EdgeColoring`, `SimpleGraph.EdgeColorable`, and
+  `SimpleGraph.chromaticIndex`) follow this PR, independently implemented here.
 * D. Kőnig, *Gráfok és alkalmazásuk a determinánsok és a halmazok elméletére*, Mat. Természett.
   Ért. 34 (1916), 104--119.
 * V. G. Vizing, *On an estimate of the chromatic class of a p-graph*, Diskret. Analiz 3 (1964),
@@ -123,31 +125,6 @@ theorem coe_lineGraphInduceIsoOfSupportSubset_apply {s : Set V} (hs : G.support 
     (e : (G.induce s).edgeSet) :
     (G.lineGraphInduceIsoOfSupportSubset hs e : Sym2 V) = (e : Sym2 s).map Subtype.val :=
   (rfl)
-
-/-- A simple graph with finitely many edges has finite vertex support, since every vertex in
-`G.support` belongs to the two-element vertex set of some edge. -/
-theorem finite_support_of_finite_edgeSet (G : SimpleGraph V) [Finite G.edgeSet] :
-    G.support.Finite := by
-  have hcov : G.support = ⋃ e : G.edgeSet, (e : Set V) := by
-    ext v
-    simp only [mem_support, mem_iUnion]
-    exact ⟨fun ⟨w, hvw⟩ ↦ ⟨⟨s(v, w), hvw⟩, Sym2.mem_mk_left v w⟩, fun ⟨⟨e, he⟩, hve⟩ ↦ by
-      obtain ⟨w, rfl⟩ := Sym2.mem_iff_exists.1 hve
-      exact ⟨w, he⟩⟩
-  rw [hcov]
-  refine finite_iUnion fun ⟨e, _⟩ ↦ ?_
-  induction e using Sym2.ind with
-  | _ x y =>
-    have hpair : (s(x, y) : Set V) = {x, y} := by
-      ext z
-      simp
-    rw [hpair]
-    exact (finite_singleton y).insert x
-
-/-- In a simple graph with finitely many edges, every vertex has finitely many neighbours. -/
-theorem finite_neighborSet_of_finite_edgeSet (G : SimpleGraph V) [Finite G.edgeSet] (v : V) :
-    (G.neighborSet v).Finite :=
-  G.finite_support_of_finite_edgeSet.subset (G.neighborSet_subset_support v)
 
 /-! ### Proper edge-colourings -/
 

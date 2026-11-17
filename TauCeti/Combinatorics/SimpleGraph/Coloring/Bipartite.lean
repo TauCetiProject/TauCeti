@@ -17,8 +17,8 @@ and only if every vertex is incident with at most `k` edges, so its chromatic in
 supremum of its vertex degrees.
 
 This file proves Kőnig's theorem for arbitrary bipartite simple graphs — without finiteness or
-decidability assumptions on the vertex or edge sets — together with its locally finite,
-finite-edge, and finite specializations:
+decidability assumptions on the vertex or edge sets — together with its locally finite (`degree`
+and `ncard`) and finite (`maxDegree`) specializations:
 
 1. **Locally finite regular bipartite graphs** (`SimpleGraph.IsRegularOfDegree.edgeColorable` and
    `SimpleGraph.IsRegularOfDegree.chromaticIndex_eq`): on a locally finite `k`-regular bipartite
@@ -29,8 +29,10 @@ finite-edge, and finite specializations:
    `SimpleGraph.IsBipartite.chromaticIndex_eq_iSup_encard_neighborSet`): for any bipartite simple
    graph `G`, `G.EdgeColorable k` holds iff `(G.neighborSet v).encard ≤ k` for every `v`, and
    `G.chromaticIndex = ⨆ v, (G.neighborSet v).encard`. Specialising yields the `degree` formulation
-   under `[G.LocallyFinite]`, the `ncard` formulation under `[Finite G.edgeSet]`, and the
-   `maxDegree` formulation (`χ'(G) = G.maxDegree`) on finite graphs.
+   under `[G.LocallyFinite]`, the `ncard` formulation under `[∀ v : V, Finite (G.neighborSet v)]`
+   (which requires no `Fintype` or `DecidableRel` instances and automatically covers both
+   `[G.LocallyFinite]` and `[Finite V]`), and the `maxDegree` formulation
+   (`χ'(G) = G.maxDegree`) on finite graphs.
 
 As applications, we compute the chromatic index of `completeBipartiteGraph V W` (for arbitrary
 nonempty `V` and `W`, finite or infinite), even `cycleGraph n`, and `pathGraph n`.
@@ -60,7 +62,7 @@ finite theorem, from which the unrestricted `encard` theorem follows because a f
   `SimpleGraph.IsBipartite.chromaticIndex_eq_iSup_degree`: locally finite `degree` formulations.
 * `SimpleGraph.IsBipartite.edgeColorable_iff_forall_ncard_neighborSet_le` and
   `SimpleGraph.IsBipartite.chromaticIndex_eq_iSup_ncard_neighborSet`: `ncard` formulations under
-  `[Finite G.edgeSet]`.
+  `[∀ v : V, Finite (G.neighborSet v)]`.
 * `SimpleGraph.IsBipartite.edgeColorable_iff_maxDegree_le`,
   `SimpleGraph.IsBipartite.edgeColorable_maxDegree`, and
   `SimpleGraph.IsBipartite.chromaticIndex_eq_maxDegree`: finite `maxDegree` formulations.
@@ -274,36 +276,38 @@ theorem chromaticIndex_eq_iSup_degree [G.LocallyFinite] (hbip : G.IsBipartite) :
   refine iSup_congr fun v ↦ ?_
   rw [← G.ncard_neighborSet v, (toFinite (G.neighborSet v)).cast_ncard_eq]
 
-/-- A bipartite simple graph with finitely many edges is `k`-edge-colourable if and only if every
-vertex has at most `k` neighbours. -/
-theorem edgeColorable_iff_forall_ncard_neighborSet_le [Finite G.edgeSet] (hbip : G.IsBipartite) :
+/-- A bipartite simple graph whose vertices have finitely many neighbours is `k`-edge-colourable if
+and only if every vertex has at most `k` neighbours. -/
+theorem edgeColorable_iff_forall_ncard_neighborSet_le [∀ v : V, Finite (G.neighborSet v)]
+    (hbip : G.IsBipartite) :
     G.EdgeColorable k ↔ ∀ v : V, (G.neighborSet v).ncard ≤ k := by
   rw [hbip.edgeColorable_iff_forall_encard_neighborSet_le]
   refine forall_congr' fun v ↦ ?_
-  rw [← (G.finite_neighborSet_of_finite_edgeSet v).cast_ncard_eq, Nat.cast_le]
+  rw [← (G.neighborSet v).toFinite.cast_ncard_eq, Nat.cast_le]
 
-/-- In a bipartite simple graph with finitely many edges, `G.edgeSet` is the pairwise disjoint
-union of `k` matchings if and only if every vertex has at most `k` neighbours. -/
-theorem exists_matching_partition_iff_forall_ncard_neighborSet_le [Finite G.edgeSet]
-    (hbip : G.IsBipartite) :
+/-- In a bipartite simple graph whose vertices have finitely many neighbours, `G.edgeSet` is the
+pairwise disjoint union of `k` matchings if and only if every vertex has at most `k` neighbours. -/
+theorem exists_matching_partition_iff_forall_ncard_neighborSet_le
+    [∀ v : V, Finite (G.neighborSet v)] (hbip : G.IsBipartite) :
     (∃ M : Fin k → G.Subgraph, (∀ i, (M i).IsMatching) ∧
       Pairwise (Disjoint on fun i ↦ (M i).edgeSet) ∧ ⋃ i, (M i).edgeSet = G.edgeSet) ↔
       ∀ v : V, (G.neighborSet v).ncard ≤ k := by
   rw [← G.edgeColorable_iff_exists_matchings, hbip.edgeColorable_iff_forall_ncard_neighborSet_le]
 
-/-- For a bipartite simple graph with finitely many edges, `G.chromaticIndex ≤ k` iff every vertex
-has at most `k` neighbours. -/
-theorem chromaticIndex_le_iff_forall_ncard_neighborSet_le [Finite G.edgeSet]
+/-- For a bipartite simple graph whose vertices have finitely many neighbours,
+`G.chromaticIndex ≤ k` iff every vertex has at most `k` neighbours. -/
+theorem chromaticIndex_le_iff_forall_ncard_neighborSet_le [∀ v : V, Finite (G.neighborSet v)]
     (hbip : G.IsBipartite) :
     G.chromaticIndex ≤ k ↔ ∀ v : V, (G.neighborSet v).ncard ≤ k := by
   rw [G.chromaticIndex_le_iff_edgeColorable, hbip.edgeColorable_iff_forall_ncard_neighborSet_le]
 
-/-- For a bipartite simple graph with finitely many edges, `G.chromaticIndex` equals the supremum
-of `(G.neighborSet v).ncard` over `v : V`. -/
-theorem chromaticIndex_eq_iSup_ncard_neighborSet [Finite G.edgeSet] (hbip : G.IsBipartite) :
+/-- For a bipartite simple graph whose vertices have finitely many neighbours, `G.chromaticIndex`
+equals the supremum of `(G.neighborSet v).ncard` over `v : V`. -/
+theorem chromaticIndex_eq_iSup_ncard_neighborSet [∀ v : V, Finite (G.neighborSet v)]
+    (hbip : G.IsBipartite) :
     G.chromaticIndex = ⨆ v : V, ((G.neighborSet v).ncard : ℕ∞) := by
   rw [hbip.chromaticIndex_eq_iSup_encard_neighborSet]
-  exact iSup_congr fun v ↦ (G.finite_neighborSet_of_finite_edgeSet v).cast_ncard_eq.symm
+  exact iSup_congr fun v ↦ (G.neighborSet v).toFinite.cast_ncard_eq.symm
 
 /-- For a finite bipartite simple graph, `G` is `k`-edge-colourable iff `G.maxDegree ≤ k`. -/
 theorem edgeColorable_iff_maxDegree_le [Fintype V] [DecidableRel G.Adj] (hbip : G.IsBipartite) :

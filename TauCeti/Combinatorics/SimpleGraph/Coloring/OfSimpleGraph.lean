@@ -60,14 +60,6 @@ namespace SimpleGraph
 
 variable {V : Type u} {C : Type w} {H : SimpleGraph V}
 
-/-- The inverse of `Graph.lineGraphOfSimpleGraphIso H` preserves the underlying unordered pair. -/
-@[simp]
-theorem _root_.Graph.coe_lineGraphOfSimpleGraphIso_symm_apply (H : SimpleGraph V) (e : H.edgeSet) :
-    ((Graph.lineGraphOfSimpleGraphIso H).symm e : Sym2 V) = e := by
-  have h := Graph.coe_lineGraphOfSimpleGraphIso_apply H
-    ((Graph.lineGraphOfSimpleGraphIso H).symm e)
-  simpa using h.symm
-
 /-- Equivalence between proper multigraph edge-colourings of `Graph.ofSimpleGraph H` and proper
 edge-colourings of the simple graph `H`. -/
 def ofSimpleGraphEdgeColoringEquiv (H : SimpleGraph V) (C : Type w) :
