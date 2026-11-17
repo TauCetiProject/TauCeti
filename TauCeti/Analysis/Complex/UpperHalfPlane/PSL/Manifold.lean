@@ -23,6 +23,10 @@ as `ContMDiffConstSMul` instances, so each transformation is packaged by the gen
 through `SetLike.contMDiffConstSMul`, which is the input needed to put complex or smooth charts on
 their free orbit quotients.
 
+Viewing `ℍ` as a real manifold, every element of `GL(2, ℝ)` and of `PGL(2, ℝ)` acts by `C^n`
+maps for every `n`, including the elements of negative determinant, which act
+antiholomorphically.
+
 ## Main declarations
 
 * `UpperHalfPlane.instContMDiffConstSMulPSL2`: the action of each element of `PSL(2, ℝ)` is
