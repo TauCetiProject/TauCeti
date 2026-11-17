@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Positive
 public import Mathlib.Analysis.InnerProductSpace.Trace
+import Mathlib.LinearAlgebra.Center
 
 /-!
 # Elementary inequalities for positive operators
@@ -104,15 +105,13 @@ theorem forall_nonneg_mul_nonneg_iff {T : E →L[𝕜] E} :
     have hT0 : 0 ≤ T := by
       simpa only [mul_one] using h 1 (nonneg_iff_isPositive.mpr isPositive_one)
     have hT : T.IsPositive := nonneg_iff_isPositive.mp hT0
-    have hvec (x : E) : ∃ d : 𝕜, T x = d • x := by
+    have hdep (x : E) : ¬ LinearIndependent 𝕜 ![x, T.toLinearMap x] := by
+      rw [LinearIndependent.pair_iff]
+      intro hlin
       rcases eq_or_ne x 0 with rfl | hx
-      · exact ⟨0, by simp⟩
-      let P : E →L[𝕜] E := (innerSL 𝕜 x).smulRight x
-      have hP : P.IsPositive :=
-        ⟨fun y z => by simp [P, inner_smul_left, inner_smul_right, mul_comm], fun y => by
-          rw [reApplyInnerSelf, smulRight_apply, innerSL_apply_apply, inner_smul_left,
-            RCLike.conj_mul, ← RCLike.ofReal_pow, RCLike.ofReal_re]
-          positivity⟩
+      · exact one_ne_zero (hlin 1 0 (by simp)).1
+      let P : E →L[𝕜] E := InnerProductSpace.rankOne 𝕜 x x
+      have hP : P.IsPositive := InnerProductSpace.isPositive_rankOne_self x
       have hTP : (T * P).IsPositive := nonneg_iff_isPositive.mp (h P (nonneg_iff_isPositive.mpr hP))
       have hcomm : T (P x) = P (T x) := ext_inner_right 𝕜 fun z => by
         calc ⟪T (P x), z⟫_𝕜 = ⟪(T * P) x, z⟫_𝕜 := rfl
@@ -120,38 +119,13 @@ theorem forall_nonneg_mul_nonneg_iff {T : E →L[𝕜] E} :
           _ = ⟪T x, P z⟫_𝕜 := (hT.isSymmetric x (P z)).symm
           _ = ⟪P (T x), z⟫_𝕜 := (hP.isSymmetric (T x) z).symm
       have hmul : ⟪x, x⟫_𝕜 • T x = ⟪x, T x⟫_𝕜 • x := by
-        simpa [P, map_smul] using hcomm
-      refine ⟨(⟪x, x⟫_𝕜)⁻¹ * ⟪x, T x⟫_𝕜, ?_⟩
-      rw [mul_smul, ← hmul, inv_smul_smul₀ ((inner_self_ne_zero (𝕜 := 𝕜)).mpr hx)]
-    obtain ⟨u, hu⟩ : ∃ u : E, ⟪u, u⟫_𝕜 = 1 := by
-      obtain ⟨x₀, hx₀⟩ := exists_ne (0 : E)
-      refine ⟨(‖x₀‖⁻¹ : 𝕜) • x₀, ?_⟩
-      have hnu : ‖(‖x₀‖⁻¹ : 𝕜) • x₀‖ = 1 := by
-        simp [norm_smul, inv_mul_cancel₀ (norm_ne_zero_iff.mpr hx₀)]
-      rw [inner_self_eq_norm_sq_to_K, hnu]; simp
-    obtain ⟨c, hTu⟩ := hvec u
-    have hT_eq : T = c • 1 := by
-      ext y
-      let w : E := y - ⟪u, y⟫_𝕜 • u
-      have huw : ⟪u, w⟫_𝕜 = 0 := by
-        rw [inner_sub_right, inner_smul_right, hu, mul_one, sub_self]
-      obtain ⟨d, hTw⟩ := hvec w
-      obtain ⟨e, hTuw⟩ := hvec (u + w)
-      have hcomb : e • (u + w) = c • u + d • w := by rw [← hTuw, map_add, hTu, hTw]
-      have hec : e = c := by
-        have hinner := congrArg (inner 𝕜 u) hcomb
-        simp only [inner_smul_right, inner_add_right, hu, huw, mul_one, mul_zero,
-          add_zero] at hinner
-        exact hinner
-      have hTwc : T w = c • w := by
-        rw [hTw]
-        have := hcomb
-        rw [hec, smul_add] at this
-        exact (add_left_cancel this).symm
-      have hy : y = w + ⟪u, y⟫_𝕜 • u := by simp [w]
-      conv_lhs => rw [hy]
-      rw [map_add, map_smul, hTwc, hTu, smul_comm, ← smul_add, ← hy]
-      simp
+        simpa [P, InnerProductSpace.rankOne_apply, map_smul] using hcomm
+      have hcomb : (-⟪x, T x⟫_𝕜) • x + ⟪x, x⟫_𝕜 • T.toLinearMap x = 0 := by
+        rw [neg_smul, neg_add_eq_zero]
+        exact hmul.symm
+      exact (inner_self_ne_zero (𝕜 := 𝕜)).mpr hx (hlin (-⟪x, T x⟫_𝕜) ⟪x, x⟫_𝕜 hcomb).2
+    obtain ⟨c, hc⟩ := T.toLinearMap.exists_eq_smul_id_of_forall_notLinearIndependent hdep
+    have hT_eq : T = c • 1 := ContinuousLinearMap.coe_injective hc
     exact ⟨c, smul_one_nonneg_iff.mp (hT_eq ▸ hT0), hT_eq⟩
   · rintro ⟨c, hc, rfl⟩ a ha
     rw [smul_mul_assoc, one_mul]
