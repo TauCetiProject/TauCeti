@@ -100,8 +100,7 @@ variable {R S}
 /-- The projection to `R[q]/(f)` reads off the coordinate of the compatible family at `f`. -/
 theorem proj_apply (f : cycloIndex R S) (x : CycloCompletion R S) :
     proj R S f x = (x : ∀ f : cycloIndex R S, AdjoinRoot (f : R[X])) f := by
-  rw [proj]
-  rfl
+  simp [proj]
 
 /-- The transition equation: for `f ∣ g`, reducing the coordinate at `g` modulo `f` gives the
 coordinate at `f`. -/
@@ -130,8 +129,7 @@ variable {R S}
 @[simp]
 theorem proj_fromPoly (f : cycloIndex R S) (p : R[X]) :
     proj R S f (fromPoly R S p) = AdjoinRoot.mk (f : R[X]) p := by
-  rw [proj_apply, fromPoly]
-  rfl
+  simp [proj_apply, fromPoly]
 
 /-- `proj_fromPoly` as an equality of algebra maps out of `R[q]`. -/
 theorem proj_comp_fromPoly (f : cycloIndex R S) :
@@ -165,9 +163,7 @@ theorem not_isUnit_fromPoly_cyclotomic [Nontrivial R] {n : ℕ} (hn : n ∈ S) (
   have hu' := hu.map (proj R S ⟨cyclotomic n R, cyclotomic_mem_cycloIndex hn⟩)
   rw [proj_fromPoly, AdjoinRoot.mk_self, isUnit_zero_iff, eq_comm, ← map_one (AdjoinRoot.mk _),
     AdjoinRoot.mk_eq_zero, ← isUnit_iff_dvd_one, (cyclotomic.monic n R).isUnit_iff] at hu'
-  have hdeg := degree_cyclotomic_pos n R hpos
-  rw [hu', degree_one] at hdeg
-  exact lt_irrefl _ hdeg
+  exact cyclotomic_ne_one hpos hu'
 
 /-- If `S` contains a positive order, the polynomial map `R[q] → R[q]^S` is injective. -/
 theorem fromPoly_injective {n : ℕ} (hn : n ∈ S) (hpos : 0 < n) :

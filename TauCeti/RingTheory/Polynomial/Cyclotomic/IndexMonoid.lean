@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Polynomial.Cyclotomic.Basic
+import Mathlib.Algebra.Group.Submonoid.Finsupp
 
 /-!
 # The monoid of cyclotomic products
@@ -37,7 +38,7 @@ of `∏ n ∈ s, cyclotomic n R` are already cofinal.
 * `TauCeti.mem_cycloIndex_iff`: the indices are the finite products of cyclotomic powers of
   orders in `S`.
 * `TauCeti.monic_of_mem_cycloIndex`: every index is monic.
-* `TauCeti.cycloIndex_mono`, `TauCeti.map_cycloIndex`: monotonicity in `S` and transport along a
+* `TauCeti.cycloIndex_monotone`, `TauCeti.map_cycloIndex`: monotonicity in `S` and transport along a
   coefficient ring homomorphism.
 * `TauCeti.exists_dvd_cycloChain`: every index divides some member of the cofinal chain.
 * `TauCeti.exists_dvd_prod_cyclotomic_pow`: for finite `s`, every index divides a power of
@@ -108,7 +109,7 @@ theorem monic_of_mem_cycloIndex (hf : f ∈ cycloIndex R S) : f.Monic := by
   | gen n _ => exact cyclotomic.monic n R
   | mul f g _ _ hf hg => exact hf.mul hg
 
-theorem cycloIndex_mono : Monotone (cycloIndex R) :=
+theorem cycloIndex_monotone : Monotone (cycloIndex R) :=
   fun _ _ hST ↦ Submonoid.closure_mono (Set.image_mono hST)
 
 /-- If every order in `S` is zero, the only index is `1`, as `cyclotomic 0 R = 1`. -/
@@ -122,14 +123,17 @@ theorem cycloIndex_eq_bot_of_subset_zero (hS : S ⊆ {0}) : cycloIndex R S = ⊥
 theorem cycloIndex_empty : cycloIndex R ∅ = ⊥ :=
   cycloIndex_eq_bot_of_subset_zero (Set.empty_subset _)
 
+/-- Over a nonzero ring, a cyclotomic polynomial of positive order is not `1`, as it has positive
+degree. -/
+theorem cyclotomic_ne_one [Nontrivial R] (hn : 0 < n) : cyclotomic n R ≠ 1 := fun h ↦ by
+  simpa [h] using degree_cyclotomic_pos n R hn
+
 /-- Over a nonzero ring, the index monoid is trivial exactly when every order in `S` is zero. -/
 theorem cycloIndex_eq_bot_iff [Nontrivial R] : cycloIndex R S = ⊥ ↔ S ⊆ {0} := by
   refine ⟨fun h n hn ↦ ?_, cycloIndex_eq_bot_of_subset_zero⟩
   have hmem : cyclotomic n R ∈ (⊥ : Submonoid R[X]) := h ▸ cyclotomic_mem_cycloIndex hn
   by_contra h0
-  have hdeg := degree_cyclotomic_pos n R (Nat.pos_of_ne_zero h0)
-  rw [Submonoid.mem_bot.mp hmem, degree_one] at hdeg
-  exact lt_irrefl _ hdeg
+  exact cyclotomic_ne_one (Nat.pos_of_ne_zero h0) (Submonoid.mem_bot.mp hmem)
 
 /-- Changing coefficients along a ring homomorphism carries the index monoid over `R` onto the index
 monoid over `R'`. -/
@@ -155,17 +159,15 @@ supported in `S`. -/
 theorem mem_cycloIndex_iff :
     f ∈ cycloIndex R S ↔
       ∃ e : ℕ →₀ ℕ, ↑e.support ⊆ S ∧ f = e.prod fun n k ↦ cyclotomic n R ^ k := by
+  classical
   refine ⟨fun hf ↦ ?_, ?_⟩
-  · induction hf using cycloIndex_induction with
-    | one => exact ⟨0, by simp, by simp⟩
-    | gen n hn => exact ⟨Finsupp.single n 1, by simpa using hn, by simp⟩
-    | mul f g _ _ hf hg =>
-      obtain ⟨e₁, he₁, rfl⟩ := hf
-      obtain ⟨e₂, he₂, rfl⟩ := hg
-      refine ⟨e₁ + e₂, fun n hn ↦ ?_, (Finsupp.prod_add_index' (by simp) (by simp [pow_add])).symm⟩
-      classical
-      rcases Finset.mem_union.mp (Finsupp.support_add hn) with hn | hn
-      exacts [he₁ hn, he₂ hn]
+  · rw [cycloIndex_def, Set.image_eq_range] at hf
+    obtain ⟨a, rfl⟩ := Submonoid.exists_finsupp_of_mem_closure_range _ _ hf
+    refine ⟨a.mapDomain Subtype.val, fun n hn ↦ ?_, ?_⟩
+    · obtain ⟨m, -, rfl⟩ := Finset.mem_image.mp (Finsupp.mapDomain_support hn)
+      exact m.2
+    · exact (Finsupp.prod_mapDomain_index (h := fun n k ↦ cyclotomic n R ^ k) (fun _ ↦ pow_zero _)
+        fun _ _ _ ↦ pow_add _ _ _).symm
   · rintro ⟨e, he, rfl⟩
     exact Submonoid.prod_mem _ fun n hn ↦ cyclotomic_pow_mem_cycloIndex (he hn) _
 
