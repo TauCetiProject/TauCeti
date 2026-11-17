@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
+-- Private: `canonicalCovariantTensor_eq_sum` is used only inside `sum_apply_self_eq`.
+import Mathlib.Analysis.InnerProductSpace.CanonicalTensor
 
 /-!
 # Expansions and contractions against orthonormal bases
@@ -108,23 +110,11 @@ theorem sum_apply_self_eq {V M : Type*} [NormedAddCommGroup V] [InnerProductSpac
     [AddCommMonoid M] [Module ℝ M] (b : OrthonormalBasis ι ℝ V) (b' : OrthonormalBasis κ ℝ V)
     (B : V →ₗ[ℝ] V →ₗ[ℝ] M) :
     ∑ k, B (b k) (b k) = ∑ i, B (b' i) (b' i) := by
-  classical
-  have hexp (k : ι) :
-      B (b k) (b k) = ∑ i, ∑ j, (⟪b' i, b k⟫_ℝ * ⟪b k, b' j⟫_ℝ) • B (b' i) (b' j) := by
-    conv_lhs => rw [← b'.sum_repr' (b k)]
-    simp only [map_sum, map_smul, LinearMap.sum_apply, LinearMap.smul_apply, Finset.smul_sum,
-      smul_smul]
-    rw [Finset.sum_comm]
-    refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
-    rw [mul_comm, real_inner_comm (b' j) (b k)]
-  simp_rw [hexp]
-  rw [Finset.sum_comm]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [Finset.sum_comm]
-  have hsum (j : κ) : (∑ k, (⟪b' i, b k⟫_ℝ * ⟪b k, b' j⟫_ℝ) • B (b' i) (b' j)) =
-      ⟪b' i, b' j⟫_ℝ • B (b' i) (b' j) := by
-    rw [← Finset.sum_smul, b.sum_inner_mul_inner]
-  simp [hsum, orthonormal_iff_ite.1 b'.orthonormal]
+  have : FiniteDimensional ℝ V := Module.Finite.of_basis b.toBasis
+  have h := congrArg (TensorProduct.lift B)
+    ((InnerProductSpace.canonicalCovariantTensor_eq_sum V b).symm.trans
+      (InnerProductSpace.canonicalCovariantTensor_eq_sum V b'))
+  simpa [map_sum] using h
 
 end OrthonormalBasis
 

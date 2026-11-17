@@ -153,10 +153,25 @@ theorem normalCoord_im (v : V) : (normalCoord e v).im = ⟪e 3, v⟫ := by
 theorem normalCoord_apply (v : V) : normalCoord e v = ⟪e 2, v⟫ + ⟪e 3, v⟫ * I := by
   apply Complex.ext <;> simp
 
+/-- The normal coordinate of `e₀` is `0`. -/
+@[simp]
+theorem normalCoord_apply_zero : normalCoord e (e 0) = 0 := by
+  simp [normalCoord_apply, orthonormal_iff_ite.1 e.orthonormal]
+
+/-- The normal coordinate of `e₁` is `0`. -/
+@[simp]
+theorem normalCoord_apply_one : normalCoord e (e 1) = 0 := by
+  simp [normalCoord_apply, orthonormal_iff_ite.1 e.orthonormal]
+
 /-- The normal coordinate of `e₂` is `1`. -/
 @[simp]
 theorem normalCoord_apply_two : normalCoord e (e 2) = 1 := by
   apply Complex.ext <;> simp [e.orthonormal.inner_eq_zero (by decide : (3 : Fin 4) ≠ 2)]
+
+/-- The normal coordinate of `e₃` is `i`. -/
+@[simp]
+theorem normalCoord_apply_three : normalCoord e (e 3) = I := by
+  simp [normalCoord_apply, orthonormal_iff_ite.1 e.orthonormal]
 
 /-- In a unitary frame the normal coordinate is complex linear: `z (J v) = i z (v)`. -/
 theorem normalCoord_apply_apply (h₀ : J (e 0) = e 1) (h₂₃ : J (e 2) = e 3) (v : V) :

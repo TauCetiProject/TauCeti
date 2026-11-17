@@ -59,6 +59,8 @@ skew endomorphism `u ↦ u ⌟ F` of a two-vector `F`, the operator that represe
   `exteriorPower.norm_ιMulti_update_smul`: the volume of a frame is invariant under linear
   isometries and reorderings, and scales by `|c|` when one vector is multiplied by `c`.
 * `Orthonormal.norm_ιMulti`: orthonormal frames, the empty frame among them, have volume one.
+* `Orthonormal.inner_ιMulti_two`: inner product of two wedges `v i ∧ v j` and `v k ∧ v l` from an
+  orthonormal family as the Kronecker-delta determinant `δ_{ik} δ_{jl} - δ_{il} δ_{jk}`.
 * `ContinuousLinearMap.inner_gradientWedge_ιMulti`: for a real-linear `P : E → ℂ`, the two-form
   `Im (conj (P u) P w)` is represented by `p₁ ∧ p₂`, `⟪p₁ ∧ p₂, u ∧ w⟫ = Im (conj (P u) P w)`,
   and `ContinuousLinearMap.norm_gradientWedge_le`: `‖p₁ ∧ p₂‖ ≤ ‖P‖ ^ 2`.
@@ -222,6 +224,16 @@ theorem _root_.Orthonormal.norm_ιMulti {v : Fin n → E} (hv : Orthonormal ℝ 
     ‖ιMulti ℝ n v‖ = 1 := by
   rw [← pow_left_inj₀ (norm_nonneg _) zero_le_one two_ne_zero, norm_ιMulti_sq,
     Matrix.gram_eq_one_iff_orthonormal.mpr hv, Matrix.det_one, one_pow]
+
+/-- The inner product of two wedges `v i ∧ v j` and `v k ∧ v l` from an orthonormal family is the
+`2 × 2` Kronecker-delta determinant `δ_{ik} δ_{jl} - δ_{il} δ_{jk}`. -/
+theorem _root_.Orthonormal.inner_ιMulti_two {ι : Type*} [DecidableEq ι] {v : ι → E}
+    (hv : Orthonormal ℝ v) (i j k l : ι) :
+    ⟪ιMulti ℝ 2 ![v i, v j], ιMulti ℝ 2 ![v k, v l]⟫ =
+      (if i = k then (1 : ℝ) else 0) * (if j = l then 1 else 0) -
+        (if i = l then 1 else 0) * (if j = k then 1 else 0) := by
+  rw [exteriorPower.inner_ιMulti_two]
+  simp [orthonormal_iff_ite.1 hv]
 
 end exteriorPower
 

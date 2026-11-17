@@ -220,7 +220,7 @@ theorem MemLp.integral_inner_toLp_left {p : ℝ≥0∞} {f : α → E} (hf : Mem
 
 /-- The `L²` inner product of the class of a square-integrable function `f` with an `L²` function
 `g` is the integral of their pointwise inner product. -/
-theorem L2.toLp_inner {f : α → E} (hf : MemLp f 2 μ) (g : Lp E 2 μ) :
+theorem L2.inner_toLp_left {f : α → E} (hf : MemLp f 2 μ) (g : Lp E 2 μ) :
     ⟪hf.toLp f, g⟫_𝕜 = ∫ x, ⟪f x, g x⟫_𝕜 ∂μ :=
   (L2.inner_def (hf.toLp f) g).trans (hf.integral_inner_toLp_left g)
 
