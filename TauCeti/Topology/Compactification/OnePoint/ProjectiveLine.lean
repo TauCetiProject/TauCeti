@@ -367,7 +367,7 @@ theorem exists_smul_eq_self [IsAlgClosed K] (g : PSL(2, K)) : ∃ p : OnePoint K
     refine ⟨c, ?_⟩
     rw [pslMk_smul, ← GeneralLinearGroup.fixpointPolynomial_aeval_eq_zero_iff,
       Polynomial.coe_aeval_eq_eval]
-    exact hc
+    exact hc.eq_zero
 
 /-- The fixed point of a parabolic element of `PSL(2, K)`, well defined because the formula
 `Matrix.GeneralLinearGroup.parabolicFixedPoint` is unchanged by negating the representative. For a
