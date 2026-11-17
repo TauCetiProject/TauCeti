@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.ExponentialDecay
 public import TauCeti.Geometry.Symplectic.Floer.Trajectory
+import TauCeti.Algebra.Order.Floor.Ring
+import TauCeti.Analysis.SpecificLimits.ShiftDoubling
 import TauCeti.Geometry.Symplectic.Floer.Translation.Basic
 
 /-!
@@ -40,9 +42,10 @@ nondegenerate orbit, `|g(s)|` is at most a constant `K` times the energy of the 
 (`TauCeti.SymplecticForm.exists_abs_hamiltonianAction_sub_le_mul_setIntegral_floerEnergyDensity`).
 Integrating this over `[s, s + K]` and over `[s - K, s]` and using monotonicity gives
 `2 g(s) ≤ g(s + K)` and `g(s - K) ≤ 2 g(s)`, so a nonzero value of `g` would grow geometrically in
-one of the two directions, contradicting boundedness. Hence `g = 0`, the energy is zero and `u` is
-stationary (`TauCeti.SymplecticForm.lintegral_floerEnergyDensity_eq_zero_iff`). Its loop is then
-an orbit near `x`, which is `x` itself by
+one of the two directions, contradicting boundedness. Hence `g = 0`
+(`TauCeti.eq_of_monotone_of_abs_sub_le_mul`), the energy is zero and `u` is stationary
+(`TauCeti.SymplecticForm.lintegral_floerEnergyDensity_eq_zero_iff`). Its loop is then an orbit
+near `x`, which is `x` itself by
 `TauCeti.SymplecticForm.exists_forall_norm_sub_le_mul_integral_of_nondegenerate`.
 
 ## References
@@ -61,67 +64,6 @@ namespace TauCeti.SymplecticForm
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   {ω : SymplecticForm V} {H : ℝ → V → ℝ} {x : ℝ → V} {c M : ℝ}
 
-/-- A real function which is bounded and at least doubles under the shift by `K` in both
-directions, `2 g(s) ≤ g(s + K)` and `g(s - K) ≤ 2 g(s)`, vanishes identically: a positive value
-would grow geometrically to the right, a negative one to the left. -/
-private theorem eq_zero_of_two_mul_le {g : ℝ → ℝ} {K B₀ B₁ : ℝ} (hup : ∀ s, g s ≤ B₁)
-    (hlow : ∀ s, B₀ ≤ g s) (hfw : ∀ s, 2 * g s ≤ g (s + K)) (hbw : ∀ s, g (s - K) ≤ 2 * g s)
-    (s : ℝ) : g s = 0 := by
-  have hfw' (n : ℕ) : 2 ^ n * g s ≤ g (s + n * K) := by
-    induction n with
-    | zero => simp
-    | succ n ih =>
-      calc 2 ^ (n + 1) * g s = 2 * (2 ^ n * g s) := by ring
-        _ ≤ 2 * g (s + n * K) := by linarith
-        _ ≤ g (s + n * K + K) := hfw _
-        _ = g (s + (n + 1 : ℕ) * K) := by congr 1; push_cast; ring
-  have hbw' (n : ℕ) : g (s - n * K) ≤ 2 ^ n * g s := by
-    induction n with
-    | zero => simp
-    | succ n ih =>
-      calc g (s - (n + 1 : ℕ) * K) = g (s - n * K - K) := by congr 1; push_cast; ring
-        _ ≤ 2 * g (s - n * K) := hbw _
-        _ ≤ 2 * (2 ^ n * g s) := by linarith
-        _ = 2 ^ (n + 1) * g s := by ring
-  by_contra hne
-  rcases lt_or_gt_of_ne hne with hneg | hpos
-  · obtain ⟨n, hn⟩ := pow_unbounded_of_one_lt (B₀ / g s) one_lt_two
-    rw [div_lt_iff_of_neg hneg] at hn
-    linarith [(hlow (s - n * K)).trans (hbw' n)]
-  · obtain ⟨n, hn⟩ := pow_unbounded_of_one_lt (B₁ / g s) one_lt_two
-    rw [div_lt_iff₀ hpos] at hn
-    linarith [(hfw' n).trans (hup (s + n * K))]
-
-/-- A monotone bounded function `A` whose distance to `a₀` is controlled by a density `σ`,
-`|A(s) - a₀| ≤ K σ(s)`, whose integral over `[a, a + K]` is the increment `A(a + K) - A(a)`, is the
-constant `a₀`. Integrating the control over `[s, s + K]` and `[s - K, s]` shows that `A - a₀` at
-least doubles under the shift by `K` in both directions. -/
-private theorem eq_of_monotone_of_abs_sub_le_mul {A σ : ℝ → ℝ} {a₀ K B₀ B₁ : ℝ} (hK : 0 < K)
-    (hmono : Monotone A) (hup : ∀ s, A s ≤ B₁) (hlow : ∀ s, B₀ ≤ A s)
-    (hσ : ∀ s, |A s - a₀| ≤ K * σ s)
-    (hint : ∀ a, IntegrableOn σ (Icc a (a + K)) ∧ ∫ r in Icc a (a + K), σ r = A (a + K) - A a)
-    (s : ℝ) : A s = a₀ := by
-  -- The increment over `[a, a + K]` is at least `m` as soon as `m ≤ K σ` there.
-  have hstep (a m : ℝ) (hm : ∀ r ∈ Icc a (a + K), m ≤ K * σ r) : m ≤ A (a + K) - A a := by
-    obtain ⟨hσint, hdiff⟩ := hint a
-    have hlow' : ∫ _ in Icc a (a + K), m / K ≤ ∫ r in Icc a (a + K), σ r :=
-      setIntegral_mono_on (integrableOn_const (by simp)) hσint measurableSet_Icc fun r hr ↦
-        (div_le_iff₀' hK).2 (hm r hr)
-    rw [setIntegral_const, Real.volume_real_Icc_of_le (by linarith), smul_eq_mul,
-      add_sub_cancel_left, mul_div_cancel₀ _ hK.ne'] at hlow'
-    exact hlow'.trans_eq hdiff
-  refine sub_eq_zero.1 (eq_zero_of_two_mul_le (g := fun s ↦ A s - a₀) (K := K)
-    (fun s ↦ sub_le_sub_right (hup s) _) (fun s ↦ sub_le_sub_right (hlow s) _)
-    (fun s ↦ ?_) (fun s ↦ ?_) s)
-  · have h := hstep s (A s - a₀) fun r hr ↦
-      (sub_le_sub_right (hmono hr.1) _).trans ((le_abs_self _).trans (hσ r))
-    linarith
-  · have h := hstep (s - K) (-(A s - a₀)) fun r hr ↦
-      (neg_le_neg (sub_le_sub_right (hmono (by linarith [hr.2])) _)).trans
-        ((neg_le_abs _).trans (hσ r))
-    rw [sub_add_cancel] at h
-    linarith
-
 variable {u : ℝ × ℝ → V} {J : ℝ × ℝ → AlmostComplexStructure V}
 
 /-- A stationary Floer trajectory `u(s, t) = u(0, t)` whose loop is close enough to `x` to fall
@@ -137,15 +79,13 @@ private theorem eq_of_forall_eq_apply_zero {C δ : ℝ} (hu : ContDiff ℝ 2 u)
       γ 1 = γ 0 → (∀ t ∈ Icc (0 : ℝ) 1, ‖γ t - x t‖ ≤ δ) → ∀ t ∈ Icc (0 : ℝ) 1,
       ‖γ t - x t‖ ≤ C * ∫ s in (0 : ℝ)..1, ‖γ' s - ω.hamiltonianVectorField (H s) (γ s)‖)
     (hclose : ∀ t, ‖u (0, t) - x t‖ ≤ δ) (s t : ℝ) : u (s, t) = x t := by
-  -- By periodicity it suffices to compare the loops at `t - ⌊t⌋ ∈ [0, 1)`.
-  have hfract (t : ℝ) : t - ⌊t⌋ * 1 ∈ Icc (0 : ℝ) 1 := by
-    rw [mul_one, Int.self_sub_floor]
-    exact ⟨Int.fract_nonneg t, (Int.fract_lt_one t).le⟩
+  -- By periodicity it suffices to compare the loops at `Int.fract t ∈ [0, 1)`.
+  have hfract (t : ℝ) : Int.fract t ∈ Icc (0 : ℝ) 1 := ⟨Int.fract_nonneg t, (Int.fract_lt_one t).le⟩
   set γ : ℝ → V := fun t ↦ u (0, t)
   have hustat : u = fun w ↦ γ w.2 := funext fun ⟨s, t⟩ ↦
-    calc u (s, t) = u (s, t - ⌊t⌋ * 1) := ((hper s).sub_int_mul_eq ⌊t⌋).symm
-      _ = u (0, t - ⌊t⌋ * 1) := hstat s _ (hfract t)
-      _ = γ t := (hper 0).sub_int_mul_eq ⌊t⌋
+    calc u (s, t) = u (s, Int.fract t) := ((hper s).apply_fract t).symm
+      _ = u (0, Int.fract t) := hstat s _ (hfract t)
+      _ = γ t := (hper 0).apply_fract t
   set γ' : ℝ → V := fun t ↦ fderiv ℝ u (0, t) (0, 1)
   have hγ'c : Continuous γ' :=
     ((hu.continuous_fderiv (by norm_num)).comp (continuous_const.prodMk continuous_id)).clm_apply
@@ -166,9 +106,9 @@ private theorem eq_of_forall_eq_apply_zero {C δ : ℝ} (hu : ContDiff ℝ 2 u)
       simp only [horbit s hs, norm_zero], intervalIntegral.integral_zero, mul_zero] at h
     exact sub_eq_zero.1 (norm_le_zero_iff.1 h)
   calc u (s, t) = γ t := congrFun hustat (s, t)
-    _ = γ (t - ⌊t⌋ * 1) := ((hper 0).sub_int_mul_eq ⌊t⌋).symm
-    _ = x (t - ⌊t⌋ * 1) := hγx _ (hfract t)
-    _ = x t := hxper.sub_int_mul_eq ⌊t⌋
+    _ = γ (Int.fract t) := ((hper 0).apply_fract t).symm
+    _ = x (Int.fract t) := hγx _ (hfract t)
+    _ = x t := hxper.apply_fract t
 
 /-- **Floer trajectories near a nondegenerate orbit are stationary.** Let `H` be a `C²`
 Hamiltonian, `1`-periodic in time, and let `x` be a `1`-periodic orbit of its Hamiltonian vector
@@ -216,10 +156,11 @@ theorem exists_pos_forall_eq_of_floer (hH : ContDiff ℝ 2 (uncurry H)) (hHper :
   -- Near `x` the action defect of a loop is at most `K` times the energy of its slice, so every
   -- loop has the action of `x`.
   have hAx (s : ℝ) : ω.hamiltonianAction H (fun t ↦ u (s, t)) = ω.hamiltonianAction H x := by
-    refine eq_of_monotone_of_abs_sub_le_mul hK hmono (hmono.ge_of_tendsto hlim₁)
-      (hmono.le_of_tendsto hlim₀) (fun s ↦ ?_) (fun a ↦
-        integrableOn_and_integral_setIntegral_floerEnergyDensity_eq hH1 isOpen_univ hu.contDiffOn
-          (by linarith) (subset_univ _) fun r _ ↦ by simpa using hper r 0) s
+    refine eq_of_monotone_of_abs_sub_le_mul hK hmono
+      ⟨_, forall_mem_range.2 (hmono.ge_of_tendsto hlim₁)⟩
+      ⟨_, forall_mem_range.2 (hmono.le_of_tendsto hlim₀)⟩ (fun s ↦ ?_) (fun a ↦
+        ω.integrableOn_and_integral_setIntegral_floerEnergyDensity_eq hH1 isOpen_univ
+          hu.contDiffOn (by linarith) (subset_univ _) fun r _ ↦ by simpa using hper r 0) s
     have hsub : ∀ z ∈ Ioi (s - 1) ×ˢ Icc (0 : ℝ) 1, z ∈ (univ : Set ℝ) ×ˢ Icc 0 1 :=
       fun z hz ↦ ⟨mem_univ _, hz.2⟩
     exact hslice (a := s - 1) (hu.of_le one_le_two).contDiffOn (fun s _ ↦ hper s)

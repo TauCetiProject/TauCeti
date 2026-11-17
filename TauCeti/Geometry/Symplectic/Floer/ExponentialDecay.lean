@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Symplectic.Floer.CylindricalEnd
 import TauCeti.Analysis.Normed.Operator.Prod
 import TauCeti.Analysis.Calculus.FDeriv.Remainder
 import TauCeti.Analysis.SpecificLimits.DiscreteGronwall
+import TauCeti.Analysis.SpecificLimits.ShiftDoubling
 import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.CauchySchwarz
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.FiniteDimensional
@@ -430,34 +431,6 @@ theorem exists_forall_norm_sub_le_mul_sqrt_setIntegral_floerEnergyDensity
     _ = _ := by
         rw [Real.sqrt_mul (by positivity), mul_assoc]
 
-/-- **The energy identity in slices.** Let `u` be a `C²` map on an open set containing
-`[a, b] × [0, 1]` whose loops satisfy `u(s, 1) = u(s, 0)`, and let `H` be a `C¹` Hamiltonian. For
-the cylindrical perturbation `K = H_t dt`, the energy `∫₀¹ e(r, t) dt` of the slice at `r` is
-integrable over `[a, b]`, and its integral is the change `A_H(u(b, ·)) - A_H(u(a, ·))` of the
-action. This is `TauCeti.SymplecticForm.integral_floerEnergyDensity_eq_hamiltonianAction_sub` read
-through Fubini's theorem. -/
-theorem integrableOn_and_integral_setIntegral_floerEnergyDensity_eq {U : Set (ℝ × ℝ)} {b : ℝ}
-    (hH : ContDiff ℝ 1 (uncurry H)) (hU : IsOpen U) (hu : ContDiffOn ℝ 2 u U) (hab : a ≤ b)
-    (hRU : Icc a b ×ˢ Icc 0 1 ⊆ U) (hper : ∀ s ∈ Icc a b, u (s, 1) = u (s, 0)) :
-    IntegrableOn (fun r ↦ ∫ t in Icc (0 : ℝ) 1,
-        ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u (r, t)) (Icc a b) ∧
-      ∫ r in Icc a b, ∫ t in Icc (0 : ℝ) 1,
-          ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u (r, t) =
-        ω.hamiltonianAction H (fun t ↦ u (b, t)) - ω.hamiltonianAction H (fun t ↦ u (a, t)) := by
-  set e : ℝ × ℝ → ℝ := ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u with he
-  have hRint : IntegrableOn e (Icc a b ×ˢ Icc (0 : ℝ) 1) :=
-    ((ω.continuousOn_floerEnergyDensity hU (hu.of_le one_le_two) contDiffOn_const
-      (contDiff_uncurry_cylindrical hH).contDiffOn).mono hRU).integrableOn_compact
-      (isCompact_Icc.prod isCompact_Icc)
-  have hdiff := ω.integral_floerEnergyDensity_eq_hamiltonianAction_sub hH hU hu hab hRU hper
-  rw [← he, Measure.volume_eq_prod,
-    setIntegral_prod e (by rwa [Measure.volume_eq_prod] at hRint)] at hdiff
-  refine ⟨?_, hdiff⟩
-  have h : Integrable e ((volume.restrict (Icc a b)).prod (volume.restrict (Icc (0 : ℝ) 1))) := by
-    rw [Measure.prod_restrict]
-    exact hRint
-  exact h.integral_prod_left
-
 /-- **Exponential decay of the energy at a nondegenerate end.** Let `H` be a `C²` Hamiltonian,
 `1`-periodic in time, and let `u` be a `C²` solution of the Floer equation
 `∂_s u + J (∂_t u - X_{H_t}(u)) = 0` on the half-cylinder `s > a`, with `1`-periodic loops,
@@ -535,18 +508,13 @@ theorem exists_pos_eventually_setLIntegral_floerEnergyDensity_Ici_le_exp
   -- `r ∈ [s, s + K]` gives `K f (s + K) ≤ K (f s - f (s + K))`.
   have hstep (s : ℝ) (hs : s₀ ≤ s) : f (s + K) ≤ 1 / 2 * f s := by
     have hsa : a < s := hs₀a.trans_le hs
-    obtain ⟨hgint, hdiff⟩ := integrableOn_and_integral_setIntegral_floerEnergyDensity_eq hH1 hopen
-      hu (by linarith : s ≤ s + K) (prod_mono (fun r hr ↦ hsa.trans_le hr.1) (subset_univ _))
+    obtain ⟨hgint, hdiff⟩ := ω.integrableOn_and_integral_setIntegral_floerEnergyDensity_eq hH1
+      hopen hu (by linarith : s ≤ s + K) (prod_mono (fun r hr ↦ hsa.trans_le hr.1) (subset_univ _))
       fun r hr ↦ by simpa using hper r (hsa.trans_le hr.1) 0
     rw [← he] at hgint hdiff
-    have hlow : ∫ _ in Icc s (s + K), f (s + K) / K ≤
-        ∫ r in Icc s (s + K), ∫ t in Icc (0 : ℝ) 1, e (r, t) :=
-      setIntegral_mono_on (integrableOn_const (by simp)) hgint measurableSet_Icc fun r hr ↦ by
-        rw [div_le_iff₀' hKpos]
-        exact (hfanti (mem_Ici.2 (hs.trans hr.1)) (mem_Ici.2 (by linarith)) hr.2).trans
-          (hfle r (hs.trans hr.1))
-    rw [setIntegral_const, Real.volume_real_Icc_of_le (by linarith), smul_eq_mul,
-      add_sub_cancel_left, mul_div_cancel₀ _ hKpos.ne'] at hlow
+    have hlow := le_setIntegral_Icc_add_of_le_mul hKpos hgint fun r hr ↦
+      (hfanti (mem_Ici.2 (hs.trans hr.1)) (mem_Ici.2 (by linarith)) hr.2).trans
+        (hfle r (hs.trans hr.1))
     have : f s - f (s + K) = A (s + K) - A s := by simp only [hfdef]; ring
     linarith
   -- Halving over every step of length `K` is exponential decay at the rate `log 2 / K`.
