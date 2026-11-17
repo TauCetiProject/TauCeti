@@ -144,17 +144,21 @@ theorem exists_path_polarFactor_fst_comp_comp {X : Type*} [TopologicalSpace X]
     (A x ∘L L x t).injective_fst_comp_of_norm_snd_lt fun u hu ↦ hA x _ <| by
       simpa [L] using (C x).norm_smul_snd_lt_norm_segment_polarFactor (hC x) t.2.1 t.2.2 hu
   refine ⟨fun x t ↦ iso _ (hTinj x t), ?_, fun x ↦ ?_, fun x ↦ ?_⟩
-  · exact continuousOn_polarFactor.comp_continuous
+  · refine (continuousOn_polarFactor.comp_continuous
       (continuous_const.clm_comp ((hAc.comp continuous_fst).clm_comp hLc))
-      fun q ↦ isUnit_modulus_iff_injective.2 (hTinj q.1 q.2)
+      fun q ↦ isUnit_modulus_iff_injective.2 (hTinj q.1 q.2)).congr fun q ↦ ?_
+    ext u
+    simp [iso]
   · -- At `t = 0` the operator is `(fst ∘ A x ∘ inl) ∘ g x`, with `g x` orthogonal.
     have h0 : fst ℝ E F ∘L A x ∘L L x 0 =
         (fst ℝ E F ∘L A x ∘L inl ℝ E F) ∘L (iso _ (hNinj x) : E →L[ℝ] E) := by
       ext u
       simp [L, iso]
-    change ⇑(fst ℝ E F ∘L A x ∘L L x 0).polarFactor = _
+    simp only [iso, LinearIsometry.coe_toLinearIsometryEquiv, coe_polarIsometry,
+      Set.Icc.coe_zero]
     rw [h0, polarFactor_comp_linearIsometryEquiv]
-    rfl
+    ext u
+    simp [iso]
   · simp [iso, L]
 
 end ContinuousLinearMap

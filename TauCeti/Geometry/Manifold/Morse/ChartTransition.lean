@@ -138,29 +138,30 @@ variable {V H M E F : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [Topolog
 include hn hx₀ hx₁ hψ₀ hψ₁ hf₀ hf₁
 
 private theorem split_transition_data :
-    DifferentiableAt ℝ (fun z ↦ ψ₀ (ψ₁.symm z)) 0 ∧ ψ₀ (ψ₁.symm 0) = 0 ∧
+    (0 : E × F) ∈ ψ₀.target ∧ (0 : E × F) ∈ ψ₁.target ∧ ψ₀.symm 0 = ψ₁.symm 0 ∧
+      DifferentiableAt ℝ (fun z ↦ ψ₀ (ψ₁.symm z)) 0 ∧ ψ₀ (ψ₁.symm 0) = 0 ∧
       ∀ᶠ z in 𝓝 0,
         ‖(ψ₀ (ψ₁.symm z)).1‖ ^ 2 - ‖(ψ₀ (ψ₁.symm z)).2‖ ^ 2 =
           ‖z.1‖ ^ 2 - ‖z.2‖ ^ 2 := by
-  have hinv₀ : ψ₀.symm 0 = x := hψ₀ ▸ ψ₀.left_inv hx₀
+  have h₀ : (0 : E × F) ∈ ψ₀.target := hψ₀ ▸ ψ₀.map_source hx₀
+  have h₁ : (0 : E × F) ∈ ψ₁.target := hψ₁ ▸ ψ₁.map_source hx₁
   have hinv : ψ₁.symm 0 = x := hψ₁ ▸ ψ₁.left_inv hx₁
+  have hp : ψ₀.symm 0 = ψ₁.symm 0 := (hψ₀ ▸ ψ₀.left_inv hx₀).trans hinv.symm
   have hn' : n ≠ 0 := (zero_lt_one.trans_le hn).ne'
   have hdiff := ψ₀.differentiableAt_comp_symm ψ₁ hn' hx₀ hx₁
   rw [hψ₁] at hdiff
-  exact ⟨hdiff, hinv ▸ hψ₀, ψ₀.toOpenPartialHomeomorph.eventually_norm_sq_sub_comp_symm
-    ψ₁.toOpenPartialHomeomorph hf₀ hf₁ (hψ₀ ▸ ψ₀.map_source hx₀) (hψ₁ ▸ ψ₁.map_source hx₁)
-    (hinv₀.trans hinv.symm)⟩
+  exact ⟨h₀, h₁, hp, hdiff, hinv ▸ hψ₀, ψ₀.toOpenPartialHomeomorph.eventually_norm_sq_sub_comp_symm
+    ψ₁.toOpenPartialHomeomorph hf₀ hf₁ h₀ h₁ hp⟩
 
 /-- The derivative of a transition between two split Morse charts preserves the signed
 sum of squared norms. Only a neighbourhood of the common centre is used. -/
 theorem norm_sq_sub_fderiv_transition (z : E × F) :
     ‖(fderiv ℝ (fun w ↦ ψ₀ (ψ₁.symm w)) 0 z).1‖ ^ 2 -
         ‖(fderiv ℝ (fun w ↦ ψ₀ (ψ₁.symm w)) 0 z).2‖ ^ 2 =
-      ‖z.1‖ ^ 2 - ‖z.2‖ ^ 2 :=
-  ψ₀.toOpenPartialHomeomorph.norm_sq_sub_apply_of_hasFDerivAt ψ₁.toOpenPartialHomeomorph hf₀ hf₁
-    (hψ₀ ▸ ψ₀.map_source hx₀) (hψ₁ ▸ ψ₁.map_source hx₁)
-    ((hψ₀ ▸ ψ₀.left_inv hx₀).trans (hψ₁ ▸ ψ₁.left_inv hx₁).symm)
-    (ψ₀.split_transition_data ψ₁ hn hx₀ hx₁ hψ₀ hψ₁ hf₀ hf₁).1.hasFDerivAt z
+      ‖z.1‖ ^ 2 - ‖z.2‖ ^ 2 := by
+  obtain ⟨h₀, h₁, hp, hreg, -⟩ := ψ₀.split_transition_data ψ₁ hn hx₀ hx₁ hψ₀ hψ₁ hf₀ hf₁
+  exact ψ₀.toOpenPartialHomeomorph.norm_sq_sub_apply_of_hasFDerivAt ψ₁.toOpenPartialHomeomorph
+    hf₀ hf₁ h₀ h₁ hp hreg.hasFDerivAt z
 
 /-- The negative-to-negative block of the derivative of a transition between split Morse
 charts is invertible. No finite-dimensionality assumption on the positive factor is needed. -/
@@ -168,7 +169,7 @@ theorem isInvertible_fst_fderiv_transition_inl [FiniteDimensional ℝ E] :
     ((ContinuousLinearMap.fst ℝ E F).comp
       ((fderiv ℝ (fun w ↦ ψ₀ (ψ₁.symm w)) 0).comp
         (ContinuousLinearMap.inl ℝ E F))).IsInvertible := by
-  obtain ⟨hreg, hzero, hQ⟩ := ψ₀.split_transition_data ψ₁ hn hx₀ hx₁ hψ₀ hψ₁ hf₀ hf₁
+  obtain ⟨-, -, -, hreg, hzero, hQ⟩ := ψ₀.split_transition_data ψ₁ hn hx₀ hx₁ hψ₀ hψ₁ hf₀ hf₁
   exact hreg.isInvertible_fst_fderiv_inl hzero hQ
 
 /-- **The small negative disks of two split Morse charts are homotopic** (Milnor, *Morse
@@ -184,9 +185,8 @@ theorem exists_negative_disk_homotopy_polarFactor [CompleteSpace E] {W : Set M} 
         ((fderiv ℝ (fun w ↦ ψ₀ (ψ₁.symm w)) 0).comp
           (ContinuousLinearMap.inl ℝ E F))).polarFactor u, 0)) ∧
       ∀ p, G p ∈ W ∧ f (G p) ≤ f x - ‖(p.2 : E)‖ ^ 2 := by
-  obtain ⟨hreg, hzero, hQ⟩ := ψ₀.split_transition_data ψ₁ hn hx₀ hx₁ hψ₀ hψ₁ hf₀ hf₁
-  have htarget₀ : (0 : E × F) ∈ ψ₀.target := hψ₀ ▸ ψ₀.map_source hx₀
-  have htarget₁ : (0 : E × F) ∈ ψ₁.target := hψ₁ ▸ ψ₁.map_source hx₁
+  obtain ⟨htarget₀, htarget₁, -, hreg, hzero, hQ⟩ :=
+    ψ₀.split_transition_data ψ₁ hn hx₀ hx₁ hψ₀ hψ₁ hf₀ hf₁
   have hinv₀ : ψ₀.toPartialEquiv.symm 0 = x := hψ₀ ▸ ψ₀.left_inv hx₀
   have hinv₁ : ψ₁.toPartialEquiv.symm 0 = x := hψ₁ ▸ ψ₁.left_inv hx₁
   have hcont₀ := ψ₀.contMDiffOn.continuousOn

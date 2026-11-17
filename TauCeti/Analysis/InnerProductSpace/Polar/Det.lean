@@ -54,7 +54,7 @@ theorem det_polarFactor_mul_det_modulus : T.polarFactor.det * T.modulus.det = T.
 absolute value one. -/
 theorem abs_det_polarFactor (hT : Injective T) : |T.polarFactor.det| = 1 := by
   rw [ContinuousLinearMap.det, ← LinearMap.normDet_eq_abs_det]
-  exact (T.polarIsometry hT).normDet_eq_one
+  simpa using (T.polarIsometry hT).normDet_eq_one
 
 /-- The determinant of the polar factor of an endomorphism is the sign of its determinant. -/
 theorem det_polarFactor_eq_sign : T.polarFactor.det = SignType.sign T.det := by

@@ -121,14 +121,19 @@ theorem norm_polarFactor_apply_of_injective (hT : Function.Injective T) (x : E) 
 
 /-- The polar factor of an injective operator, bundled as a linear isometry. This is the
 bounded-operator counterpart of `LinearMap.polarIsometry`. -/
-@[expose] def polarIsometry (hT : Function.Injective T) : E →ₗᵢ[𝕜] F where
+def polarIsometry (hT : Function.Injective T) : E →ₗᵢ[𝕜] F where
   toLinearMap := T.polarFactor.toLinearMap
   norm_map' := T.norm_polarFactor_apply_of_injective hT
 
 @[simp]
+theorem polarIsometry_toLinearMap (hT : Function.Injective T) :
+    (T.polarIsometry hT).toLinearMap = T.polarFactor.toLinearMap :=
+  (rfl)
+
+@[simp]
 theorem coe_polarIsometry (hT : Function.Injective T) :
     ⇑(T.polarIsometry hT) = T.polarFactor :=
-  rfl
+  (rfl)
 
 /-- The polar factor is a partial isometry. -/
 @[simp]
