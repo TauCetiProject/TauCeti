@@ -25,8 +25,10 @@ where the cutoff `χ` is a test function on `Ω` equal to one near `Ω ∩ supp 
 characterized by `⟨Φ_* T, f⟩ = ⟨T, g⟩` for every test function `g` on `Ω` that agrees with `f ∘ Φ`
 near each point of the support of `T` in `Ω` (`Distribution.pushforward_apply_of_eventuallyEq`), so
 it does not depend on the cutoffs. This extends the pushforward of compactly supported
-distributions, `Distribution.cutoffPushforwardCLM`, for which every smooth map is proper on the
-support (`Distribution.pushforward_eq_cutoffPushforwardCLM`); on the other hand every map proper
+distributions, `Distribution.cutoffPushforwardCLM`
+(`Distribution.pushforward_eq_cutoffPushforwardCLM`), since every map continuous on `Ω` is proper
+on the support of a compactly supported distribution
+(`Distribution.isProperOnSupport_of_isCompact_dsupport`); on the other hand every map proper
 from `Ω` to `Ω'` is proper on the support of every distribution
 (`Distribution.isProperOnSupport_of_isCompact_inter_preimage`), whatever its support.
 
@@ -37,7 +39,9 @@ in a locally convex space.
 
 ## Main declarations
 
-* `Distribution.IsProperOnSupport`: `Φ` is proper on the support of `T`.
+* `Distribution.IsProperOnSupport`: `Φ` is proper on the support of `T`, and
+  `Distribution.isProperOnSupport_of_isCompact_dsupport`: every continuous map is proper on the
+  support of a compactly supported distribution.
 * `Distribution.pushforward`: the pushforward `Φ_* T`.
 * `Distribution.pushforward_apply_of_eventuallyEq` and
   `Distribution.pushforward_apply_eq_cutoffCompCLM`: its values.
@@ -140,14 +144,24 @@ theorem IsProperOnSupport.mono {G : Type*} [AddCommGroup G] [Module ℝ G] [Topo
     inter_subset_inter_left _ (inter_subset_inter_right _ hST),
     inter_subset_inter_left _ inter_subset_left⟩
 
+omit [TopologicalSpace E'] in
+/-- If the support of `U` lies in the union of those of `S` and `T`, then over every `K` the part
+`Ω ∩ supp U ∩ Φ⁻¹(K)` of the support of `U` lies in the union of the corresponding parts for `S`
+and `T`. -/
+private theorem inter_dsupport_inter_preimage_subset_union {S T U : 𝓓'(Ω, F)}
+    (h : dsupport U ⊆ dsupport S ∪ dsupport T) (K : Set E') :
+    (Ω : Set E) ∩ dsupport U ∩ Φ ⁻¹' K ⊆
+      (Ω : Set E) ∩ dsupport S ∩ Φ ⁻¹' K ∪ (Ω : Set E) ∩ dsupport T ∩ Φ ⁻¹' K := by
+  rw [← union_inter_distrib_right, ← inter_union_distrib_left]
+  exact inter_subset_inter_left _ (inter_subset_inter_right _ h)
+
 /-- If `Φ` is proper on the supports of `S` and `T`, it is proper on the support of `S + T`. -/
 theorem IsProperOnSupport.add [IsTopologicalAddGroup F] {S T : 𝓓'(Ω, F)}
     (hS : IsProperOnSupport S Φ Ω') (hT : IsProperOnSupport T Φ Ω') :
     IsProperOnSupport (S + T) Φ Ω' :=
   -- Over `K`, the support of `S + T` in `Ω` lies in the union of those of `S` and `T`.
   of_forall_subset fun K hK hKΩ' ↦ ⟨_, (hS K hK hKΩ').union (hT K hK hKΩ'),
-    fun _ ⟨⟨hxΩ, hx⟩, hxK⟩ ↦ (dsupport_add_subset (⇑S) (⇑T) hx).imp
-      (fun h ↦ ⟨⟨hxΩ, h⟩, hxK⟩) fun h ↦ ⟨⟨hxΩ, h⟩, hxK⟩,
+    inter_dsupport_inter_preimage_subset_union (dsupport_add_subset (⇑S) (⇑T)) K,
     union_subset (inter_subset_inter_left _ inter_subset_left)
       (inter_subset_inter_left _ inter_subset_left)⟩
 
@@ -334,9 +348,7 @@ theorem pushforward_add {S : 𝓓'(Ω, F)} (hS : IsProperOnSupport S Φ Ω')
       (inter_subset_left.trans inter_subset_left))
   have hsub (U : 𝓓'(Ω, F)) (hU : dsupport U ⊆ dsupport S ∪ dsupport T) :
       ∀ᶠ x in 𝓝ˢ ((Ω : Set E) ∩ dsupport U ∩ Φ ⁻¹' tsupport f), χ x = 1 :=
-    hχ.filter_mono <| nhdsSet_mono
-      fun x (hx : x ∈ (Ω : Set E) ∩ dsupport U ∩ Φ ⁻¹' tsupport f) ↦
-        (hU hx.1.2).imp (fun h ↦ ⟨⟨hx.1.1, h⟩, hx.2⟩) fun h ↦ ⟨⟨hx.1.1, h⟩, hx.2⟩
+    hχ.filter_mono <| nhdsSet_mono <| inter_dsupport_inter_preimage_subset_union hU _
   rw [add_apply,
     pushforward_apply_eq_cutoffCompCLM f (hsub _ (dsupport_add_subset ⇑S ⇑T)),
     pushforward_apply_eq_cutoffCompCLM f (hsub S subset_union_left),
@@ -350,11 +362,10 @@ theorem pushforward_smul {R : Type*} [Monoid R] [DistribMulAction R F] [SMulComm
     pushforward (c • T) Φ hΦ hcT = c • pushforward T Φ hΦ hT := by
   ext f
   obtain ⟨χ, hχ⟩ := hT.exists_eventually_eq_one f.hasCompactSupport f.tsupport_subset
+  have hcT' : dsupport (c • T) ⊆ dsupport T := dsupport_smul_subset c (⇑T)
   rw [smul_apply, pushforward_apply_eq_cutoffCompCLM f hχ,
-    pushforward_apply_eq_cutoffCompCLM f (hχ.filter_mono <| nhdsSet_mono
-      fun x (hx : x ∈ (Ω : Set E) ∩ dsupport (c • T) ∩ Φ ⁻¹' tsupport f) ↦
-        (⟨⟨hx.1.1, dsupport_smul_subset c (⇑T) hx.1.2⟩, hx.2⟩ :
-          x ∈ (Ω : Set E) ∩ dsupport T ∩ Φ ⁻¹' tsupport f)),
+    pushforward_apply_eq_cutoffCompCLM f (hχ.filter_mono <| nhdsSet_mono <|
+      inter_subset_inter_left _ (inter_subset_inter_right _ hcT')),
     smul_apply]
 
 /-! ### Functoriality -/
