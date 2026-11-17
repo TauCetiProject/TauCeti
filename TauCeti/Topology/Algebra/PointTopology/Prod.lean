@@ -20,9 +20,10 @@ algebras.
 
 When the source is a `k`-bialgebra `H`, the algebraic convolution-monoid splittings from
 `TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints.Prod` upgrade to topological monoid (hence
-topological group, when `H` is a Hopf algebra) isomorphisms on `WithConv`, and the factor
-inclusions `inlPoints` and `inrPoints` are closed topological embeddings. Over a number field `F`,
-these splittings decompose full adelic points `G(𝔸_F) = G(F_∞ × 𝔸_{F,f})` into
+topological group, when `H` is a Hopf algebra) isomorphisms on `WithConv`. The factor inclusions
+`inlPoints` and `inrPoints` are continuous in general, and are closed topological embeddings when
+the complementary factor is T1 (`T1Space R₂` for `inlPoints`, `T1Space R₁` for `inrPoints`). Over a
+number field `F`, these splittings decompose full adelic points `G(𝔸_F) = G(F_∞ × 𝔸_{F,f})` into
 `G(F_∞) × G(𝔸_{F,f})` and archimedean points `G(F_∞)` into the product of `G(F_w)` over infinite
 places `w`.
 
@@ -34,8 +35,10 @@ places `w`.
 * `TauCeti.AlgHom.prodPointsContinuousMulEquiv`, `TauCeti.AlgHom.piPointsContinuousMulEquiv`:
   topological convolution-monoid isomorphisms for binary and indexed products of coefficient
   algebras, upgrading `prodPointsMulEquiv` and `piPointsMulEquiv`.
-* `TauCeti.AlgHom.isClosedEmbedding_inlPoints`, `TauCeti.AlgHom.isClosedEmbedding_inrPoints`:
-  closed-embedding theorems for the factor homomorphisms `inlPoints` and `inrPoints`.
+* `TauCeti.AlgHom.continuous_inlPoints`, `TauCeti.AlgHom.continuous_inrPoints`,
+  `TauCeti.AlgHom.isClosedEmbedding_inlPoints`, `TauCeti.AlgHom.isClosedEmbedding_inrPoints`:
+  continuity of the factor homomorphisms `inlPoints` and `inrPoints`, and closed-embedding theorems
+  under `T1Space R₂` (for `inlPoints`) and `T1Space R₁` (for `inrPoints`).
 
 ## References
 

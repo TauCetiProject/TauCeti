@@ -188,13 +188,11 @@ private theorem exists_continuous_adele_eval_baseChange (M : IntegralModel F H S
         (A₂ := fun v ↦ (v.adicCompletionIntegers F : Set (v.adicCompletion F)))
         id tendsto_id (fun _ g ↦ g.ofConv (M.toBase a)) hmaps
         (fun _ ↦ continuous_eval_ofConv (M.toBase a))
-    refine ⟨fun y ↦ algebraMap F (FiniteAdeleRing (𝓞 F) F) c * φ₀ y,
-      continuous_const.mul hφ₀_cont, fun y v ↦ ?_⟩
-    rw [FiniteAdeleRing.mul_apply, FiniteAdeleRing.algebraMap_apply,
-      M.baseChangeIso_hom_tmul, map_smul, Algebra.smul_def,
-      HeightOneSpectrum.algebraMap_adicCompletion, Function.comp_apply,
-      Algebra.algebraMap_self, RingHom.id_apply]
-    exact congrArg _ (RestrictedProduct.map_apply _ hmaps y v)
+    refine ⟨fun y ↦ c • φ₀ y,
+      (continuous_const.mul hφ₀_cont).congr fun y ↦ (Algebra.smul_def c (φ₀ y)).symm,
+      fun y v ↦ ?_⟩
+    rw [FiniteAdeleRing.smul_apply, M.baseChangeIso_hom_tmul, map_smul]
+    exact congrArg (c • ·) (RestrictedProduct.map_apply _ hmaps y v)
   | add t₁ t₂ ih₁ ih₂ =>
     obtain ⟨φ₁, hcont₁, hφ₁⟩ := ih₁
     obtain ⟨φ₂, hcont₂, hφ₂⟩ := ih₂
@@ -236,9 +234,7 @@ private noncomputable def fromRestrictedProductFun (M : IntegralModel F H S)
         rw [adeleEval_apply, map_add, FiniteAdeleRing.add_apply,
           adeleEval_apply, adeleEval_apply]
       commutes' c := FiniteAdeleRing.ext F fun v ↦ by
-        simp only [adeleEval_apply, AlgHom.commutes, FiniteAdeleRing.algebraMap_apply,
-          HeightOneSpectrum.algebraMap_adicCompletion, Function.comp_apply,
-          Algebra.algebraMap_self, RingHom.id_apply] }
+        rw [adeleEval_apply, AlgHom.commutes, FiniteAdeleRing.algebraMap_apply_eq_algebraMap] }
 
 private theorem fromRestrictedProductFun_ofConv_apply (M : IntegralModel F H S)
     (y : Πʳ v, [LocalPoints F H v, M.level v]) (h : H) (v : HeightOneSpectrum (𝓞 F)) :
@@ -386,8 +382,7 @@ private theorem eventually_eval_baseChange_mem_integers (M : IntegralModel F H S
     filter_upwards [(algebraMap F (FiniteAdeleRing (𝓞 F) F) c).cofinite_mem_adicCompletionIntegers]
       with v hc hv g hg
     have hc_int : algebraMap F (v.adicCompletion F) c ∈ v.adicCompletionIntegers F := by
-      simpa only [FiniteAdeleRing.algebraMap_apply, HeightOneSpectrum.algebraMap_adicCompletion,
-        Function.comp_apply, Algebra.algebraMap_self, RingHom.id_apply] using hc
+      rwa [FiniteAdeleRing.algebraMap_apply_eq_algebraMap] at hc
     rw [M.baseChangeIso_hom_tmul, map_smul, Algebra.smul_def]
     exact mul_mem hc_int ((M.mem_localPoints_iff v hv).mp hg a)
   | add t₁ t₂ ih₁ ih₂ =>

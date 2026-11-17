@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.AdelicPoints.Basic
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.BaseChange
+public import TauCeti.NumberTheory.NumberField.SInteger.Completion
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
-public import TauCeti.RingTheory.DedekindDomain.SInteger.Completion
 public import TauCeti.Topology.Algebra.PointTopology.BaseChange
 
 /-!
@@ -59,6 +59,7 @@ From an integral model `M` away from `S`, this file constructs and characterizes
   `TauCeti.IntegralModel.mem_globalPoints_iff_forall_localPoints`: global `T`-integral points and
   their local-global characterization.
 * `TauCeti.IntegralModel.enlarge`, `TauCeti.IntegralModel.enlargeCoordinateIso`,
+  `TauCeti.IntegralModel.enlarge_baseChangeIso_hom_tmul`,
   `TauCeti.IntegralModel.enlarge_toBase_tmul`: base change of an integral model from `S` to
   `T ⊇ S` and its coordinate identification.
 
@@ -152,10 +153,11 @@ theorem pointsMulEquiv_symm_ofConv_apply (M : IntegralModel F H S) {R : Type*} [
     ((M.pointsMulEquiv R hR).symm g).ofConv a = g.ofConv (M.toBase a) := by
   let _ : @IsScalarTower (SIntegers F S) F R Algebra.toSMul Algebra.toSMul Algebra.toSMul :=
     IsScalarTower.of_algebraMap_eq' hR.symm
-  rw [pointsMulEquiv, MulEquiv.symm_trans_apply,
-    TauCeti.AlgHom.baseChangePointsMulEquiv_symm_apply, BialgEquiv.mapDomainMulEquiv_symm_apply,
-    BialgHom.mapDomain_apply, ofConv_toConv, AlgHom.comp_apply, M.toBase_apply]
-  exact congrArg g.ofConv (_root_.CommHopfAlgCat.ofIso_symm_apply M.baseChangeIso.symm _)
+  have hbase : (_root_.CommHopfAlgCat.ofIso M.baseChangeIso.symm).symm
+      ((1 : F) ⊗ₜ[SIntegers F S] a) = M.toBase a := by
+    rw [M.toBase_apply]
+    exact _root_.CommHopfAlgCat.ofIso_symm_apply M.baseChangeIso.symm _
+  simp [pointsMulEquiv, hbase]
 
 @[simp]
 theorem pointsMulEquiv_ofConv_toBase (M : IntegralModel F H S) {R : Type*} [CommRing R]
@@ -722,6 +724,22 @@ theorem enlarge_baseChangeIso (M : IntegralModel F H S)
   dsimp only [enlarge, enlargeCoordinateIso]
   rw [Functor.mapIso_refl, Iso.refl_trans]
 
+/-- Pointwise evaluation of `(M.enlarge hST).baseChangeIso.hom` on a pure tensor in terms of
+`enlargeCoordinateIso`, `baseChangeTowerIso`, and `M.baseChangeIso`. -/
+theorem enlarge_baseChangeIso_hom_tmul (M : IntegralModel F H S)
+    {T : Finset (HeightOneSpectrum (𝓞 F))} (hST : S ⊆ T)
+    (c : F) (x : (M.enlarge hST).coordinate) :
+    letI : Algebra (SIntegers F S) (SIntegers F T) := sIntegersAlgebraOfSubset hST
+    letI := sIntegersTowerOfSubset hST
+    (M.enlarge hST).baseChangeIso.hom.hom (c ⊗ₜ[SIntegers F T] x) =
+      M.baseChangeIso.hom.hom
+        ((TauCeti.CommHopfAlgCat.baseChangeTowerIso (SIntegers F S) F M.coordinate).hom.hom
+          (c ⊗ₜ[SIntegers F T] (M.enlargeCoordinateIso hST).hom.hom x)) := by
+  let _ : Algebra (SIntegers F S) (SIntegers F T) := sIntegersAlgebraOfSubset hST
+  let _ := sIntegersTowerOfSubset hST
+  rw [M.enlarge_baseChangeIso hST]
+  simp
+
 /-- Under `enlargeCoordinateIso`, `(M.enlarge hST).toBase` sends a pure tensor `r ⊗ₜ a` to
 `(r : F) • M.toBase a`. -/
 @[simp]
@@ -734,15 +752,10 @@ theorem enlarge_toBase_tmul (M : IntegralModel F H S)
       (r : F) • M.toBase a := by
   let _ : Algebra (SIntegers F S) (SIntegers F T) := sIntegersAlgebraOfSubset hST
   let _ := sIntegersTowerOfSubset hST
-  rw [(M.enlarge hST).toBase_apply, M.enlarge_baseChangeIso hST,
-    Iso.trans_hom, Iso.trans_hom, _root_.CommHopfAlgCat.hom_comp, _root_.CommHopfAlgCat.hom_comp,
-    _root_.BialgHom.comp_apply, _root_.BialgHom.comp_apply, Functor.mapIso_hom,
-    TauCeti.CommHopfAlgCat.baseChangeFunctor_map, TauCeti.CommHopfAlgCat.baseChangeMap_apply_tmul,
+  rw [(M.enlarge hST).toBase_apply, M.enlarge_baseChangeIso_hom_tmul hST,
     (M.enlargeCoordinateIso hST).inv_hom_id_apply,
     TauCeti.CommHopfAlgCat.baseChangeTowerIso_hom_apply, M.baseChangeIso_hom_tmul]
-  have hr : r • (1 : F) = (r : F) := by
-    simp [Algebra.smul_def]
-  rw [hr]
+  simp [Algebra.smul_def]
 
 /-- Enlarging the exceptional set from `S` to `T` does not change the local integral subgroup at
 any place `v ∉ T`. -/

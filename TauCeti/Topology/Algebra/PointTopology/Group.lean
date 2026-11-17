@@ -48,8 +48,6 @@ whenever `ψ` is, and an open embedding when `ψ` is and the coordinate algebra 
   Hopf algebra is continuous.
 * `TauCeti.PointTopology.isTopologicalGroup`: the points of a Hopf algebra form a topological
   group.
-* `TauCeti.PointTopology.instDiscreteTopologyWithConv`: points of a finite-type algebra over a
-  discrete coefficient semiring form a discrete space.
 * `BialgHom.continuous_mapDomain`, `BialgEquiv.mapDomainContinuousMulEquiv`, and
   `AlgHom.continuous_mapValue`: functoriality of the points is continuous in the coordinate algebra
   and in continuous maps of coefficients.
@@ -68,26 +66,6 @@ public section
 open Coalgebra WithConv
 
 namespace TauCeti.PointTopology
-
-section Discrete
-
-variable {k A R : Type*} [CommSemiring k] [Semiring A] [Algebra k A] [Algebra.FiniteType k A]
-  [Semiring R] [Algebra k R] [TopologicalSpace R] [DiscreteTopology R]
-
-/-- Points of a finite-type `k`-algebra `A` (not necessarily commutative) with values in a discrete
-coefficient `k`-algebra `R` carry the discrete point topology. -/
-instance instDiscreteTopologyWithConv : DiscreteTopology (WithConv (A →ₐ[k] R)) := by
-  obtain ⟨s, hs⟩ := Algebra.FiniteType.out (R := k) (A := A)
-  refine DiscreteTopology.of_continuous_injective
-    (f := fun (x : WithConv (A →ₐ[k] R)) (i : s) ↦ x.ofConv i.1)
-    (continuous_pi fun i ↦ continuous_eval_ofConv i.1) fun x y hxy ↦ ofConv_injective ?_
-  have hle : (⊤ : Subalgebra k A) ≤ AlgHom.equalizer x.ofConv y.ofConv := by
-    rw [← hs, Algebra.adjoin_le_iff]
-    intro a ha
-    exact congrFun hxy ⟨a, ha⟩
-  exact AlgHom.ext fun a ↦ hle Algebra.mem_top
-
-end Discrete
 
 variable {k H R : Type*} [CommSemiring k] [Semiring H] [CommSemiring R] [Algebra k R]
   [TopologicalSpace R]
