@@ -52,29 +52,6 @@ public section
 
 namespace TauCeti.DynkinType
 
-/-! ### Membership of the standard graph permutations -/
-
-/-- Chain reversal lies in the diagram symmetry group of `Aₙ`. -/
-@[simp]
-theorem graphPermA_mem_diagramSymmetry (n : ℕ) : graphPermA n ∈ (A n).diagramSymmetry :=
-  mem_diagramSymmetry_iff.mpr (cartanMatrix_A_graphPermA n)
-
-/-- Exchanging the two fork nodes lies in the diagram symmetry group of `Dₙ` for `4 ≤ n`. -/
-@[simp]
-theorem graphPermD_mem_diagramSymmetry {n : ℕ} (hn : 4 ≤ n) :
-    graphPermD n (by omega) ∈ (D n).diagramSymmetry :=
-  mem_diagramSymmetry_iff.mpr (cartanMatrix_D_graphPermD n hn)
-
-/-- The order-two symmetry lies in the diagram symmetry group of `E₆`. -/
-@[simp]
-theorem graphPermE6_mem_diagramSymmetry : graphPermE6 ∈ E6.diagramSymmetry :=
-  mem_diagramSymmetry_iff.mpr cartanMatrix_E6_graphPermE6
-
-/-- Triality lies in the diagram symmetry group of `D₄`. -/
-@[simp]
-theorem trialityPermD4_mem_diagramSymmetry : trialityPermD4 ∈ (D 4).diagramSymmetry :=
-  mem_diagramSymmetry_iff.mpr cartanMatrix_D4_trialityPermD4
-
 /-! ### Type `Aₙ` -/
 
 /-- Off-diagonal `-1` entries of `CartanMatrix.A n` occur precisely at consecutive indices. -/
