@@ -66,6 +66,22 @@ theorem fiberMap_comp_apply (f : E → F) (g : F → G) (hf : q ∘ f = p) (hg :
       fiberMap g hg x (fiberMap f hf x e) :=
   (Subtype.map_comp f (mapsTo_fiber f hf x) g (mapsTo_fiber g hg x)).symm
 
+/-- An involution over the base restricts to an involution of each fibre. -/
+theorem fiberMap_fiberMap_of_involutive {f : E → E} (hff : Involutive f) (hf : p ∘ f = p)
+    (x : X) (e : p ⁻¹' {x}) :
+    fiberMap f hf x (fiberMap f hf x e) = e :=
+  Subtype.ext (by simp only [fiberMap_apply_coe]; exact hff e)
+
+/-- An involution over the base is injective on each fibre. -/
+theorem injective_fiberMap_of_involutive {f : E → E} (hff : Involutive f) (hf : p ∘ f = p)
+    (x : X) : Injective (fiberMap f hf x) :=
+  LeftInverse.injective (fiberMap_fiberMap_of_involutive hff hf x)
+
+/-- A map over the base without fixed points has no fixed points on any fibre. -/
+theorem fiberMap_ne_self {f : E → E} (hfix : ∀ e, f e ≠ e) (hf : p ∘ f = p) (x : X)
+    (e : p ⁻¹' {x}) : fiberMap f hf x e ≠ e :=
+  fun h ↦ hfix e ((fiberMap_apply_coe f hf x e).symm.trans (congrArg Subtype.val h))
+
 end Function
 
 namespace Equiv
