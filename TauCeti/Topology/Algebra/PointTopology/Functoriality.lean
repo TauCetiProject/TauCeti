@@ -153,14 +153,21 @@ theorem quotientNilradicalHomeomorph_apply (x : A ⧸ nilradical A →ₐ[k] R) 
     quotientNilradicalHomeomorph k A R x = x.comp (Ideal.Quotient.mkₐ k (nilradical A)) :=
   (rfl)
 
+/-- The inverse of `quotientNilradicalHomeomorph` is the lift of a point to the quotient by the
+nilradical. -/
+theorem quotientNilradicalHomeomorph_symm_apply (x : A →ₐ[k] R) :
+    (quotientNilradicalHomeomorph k A R).symm x = Ideal.Quotient.liftₐ (nilradical A) x
+      fun _ ha ↦ IsReduced.eq_zero _ ((mem_nilradical.mp ha).map x) :=
+  (rfl)
+
 /-- The inverse of `quotientNilradicalHomeomorph` sends a point to the map it induces on
 the quotient by the nilradical. -/
 @[simp]
 theorem quotientNilradicalHomeomorph_symm_apply_mk (x : A →ₐ[k] R) (a : A) :
     (quotientNilradicalHomeomorph k A R).symm x (Ideal.Quotient.mk (nilradical A) a) = x a := by
-  rw [quotientNilradicalHomeomorph, Homeomorph.homeomorph_mk_coe_symm, Equiv.coe_fn_symm_mk,
-    Ideal.Quotient.liftₐ_apply]
+  rw [quotientNilradicalHomeomorph_symm_apply, Ideal.Quotient.liftₐ_apply]
   exact Ideal.Quotient.lift_mk _ _ _
+
 end Nilradical
 
 /-- For a family of algebra maps out of a tensor product, continuity of evaluation on pure

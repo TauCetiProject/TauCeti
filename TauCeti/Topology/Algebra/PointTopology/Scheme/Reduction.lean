@@ -134,11 +134,18 @@ private theorem reductionLift_comp_chartPoint (A : CommAlgCat.{u} k) (i : Spec (
     funext fun x ↦ reductionMap_injective f ?_⟩
   rw [Function.comp_apply, reductionMap_reductionLift, Function.comp_apply, reductionMap,
     map_chartPoint]
-  apply Subtype.ext
-  conv_lhs => rw [← (PointTopology.quotientNilradicalHomeomorph k A R).apply_symm_apply x]
-  rw [chartPoint_val, chartPoint_val, hy, PointTopology.quotientNilradicalHomeomorph_apply,
-    AlgHom.toRingHom_eq_coe, AlgHom.comp_toRingHom, CommRingCat.ofHom_comp, Spec.map_comp_assoc]
-  simp only [AlgHom.toRingHom_eq_coe]
+  have h' : (Spec.map (CommRingCat.ofHom (Ideal.Quotient.mkₐ k (nilradical A)).toRingHom) ≫ i) ≫
+      f = Spec.algebraMap k (CommAlgCat.of k (A ⧸ nilradical A)) := by
+    rw [← hy, Category.assoc]
+    exact y.property
+  -- Write `x` as the composite of its lift `z` with the quotient map, and move the quotient map
+  -- into the chart.
+  let z := (PointTopology.quotientNilradicalHomeomorph k A R).symm x
+  have hx : x = z.comp (Ideal.Quotient.mkₐ k (nilradical A)) := by
+    rw [← PointTopology.quotientNilradicalHomeomorph_apply, Homeomorph.apply_symm_apply]
+  conv_lhs => rw [hx, ← chartPoint_spec_map_comp (A := CommAlgCat.of k (A ⧸ nilradical A))
+    (C := A) f i hi (Ideal.Quotient.mkₐ k (nilradical A)) h' z]
+  exact Subtype.ext (by rw [chartPoint_val, chartPoint_val, hy])
 
 /-- Over a reduced topological ring, lifting points to the reduction is continuous. -/
 @[continuity, fun_prop]
