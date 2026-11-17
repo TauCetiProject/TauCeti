@@ -322,12 +322,7 @@ theorem cliffordInvariant_mk_binary_add (a b : Kˣ) {x : RegularFormClass K} (hx
         cliffordInvariant (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => -(a * b)⟩ * x) := by
   have hsq : (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => -(a * b)⟩ : RegularFormClass K) =
       Quotient.mk _ ⟨1, fun _ => -(a⁻¹ * b⁻¹)⟩ := by
-    have h : -(a * b) = -(a⁻¹ * b⁻¹) * (a * b) * (a * b) := by
-      ext
-      simp only [Units.val_neg, Units.val_mul, Units.val_inv_eq_inv_val]
-      field_simp
-    rw [h, ← mk_rankOne_mul_mk_rankOne, ← mk_rankOne_mul_mk_rankOne, mul_assoc,
-      mk_rankOne_mul_self, mul_one]
+    rw [show -(a⁻¹ * b⁻¹) = (-(a * b))⁻¹ by simp [mul_comm], mk_rankOne_inv]
   rw [hsq]
   induction x using Quotient.inductionOn with
   | h p =>
@@ -352,12 +347,7 @@ theorem cliffordInvariant_add_mk_rankOne (a : Kˣ) {x : RegularFormClass K} (hx 
       cliffordInvariant (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => -a⟩ * x) := by
   have hsq : (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => -a⟩ : RegularFormClass K) =
       Quotient.mk _ ⟨1, fun _ => -a⁻¹⟩ := by
-    have h : -a = -a⁻¹ * a * a := by
-      ext
-      simp only [Units.val_neg, Units.val_mul, Units.val_inv_eq_inv_val]
-      field_simp
-    rw [h, ← mk_rankOne_mul_mk_rankOne, ← mk_rankOne_mul_mk_rankOne, mul_assoc,
-      mk_rankOne_mul_self, mul_one]
+    rw [show -a⁻¹ = (-a)⁻¹ by simp, mk_rankOne_inv]
   rw [hsq]
   induction x using Quotient.inductionOn with
   | h p =>

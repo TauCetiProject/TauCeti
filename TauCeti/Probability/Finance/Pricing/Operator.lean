@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Parabolic.Holder.Weight
+public import TauCeti.Analysis.PDE.Parabolic.Holder.Weight.Basic
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Backward
 public import TauCeti.Probability.Finance.WeightedLogSpot
 import TauCeti.Analysis.Normed.Operator.Bilinear
