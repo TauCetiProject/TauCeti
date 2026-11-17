@@ -72,7 +72,11 @@ noncomputable def conjugateCP (V : Matrix n m ℂ) :
     convert hB using 1
     simp only [B, Matrix.conjTranspose_sum, Matrix.conjTranspose_mul,
       Matrix.sum_mul, Matrix.mul_sum]
-    -- Expand the block product through the canonical matrix wrapper.
+    -- Representation boundary: `ofMatrix` is `Equiv.refl _`, and the multiplication, `star` and
+    -- `CStarMatrix.map` of `CStarMatrix` are the entrywise `Matrix` operations, so this sum of block
+    -- entries is definitionally the matrix expression stated below (the matching rewriting lemmas are
+    -- `CStarMatrix.mul_apply`, `ofMatrix_symm_mul` and `ofMatrix_symm_star`). `change` states that
+    -- target directly; it depends only on those definitions.
     change (∑ i, ∑ j, (ofMatrix.symm (x i))ᴴ *
       (Vᴴ * (∑ l, (ofMatrix.symm (R l i))ᴴ * ofMatrix.symm (R l j)) * V) *
       ofMatrix.symm (x j)) = _
@@ -104,10 +108,15 @@ noncomputable def krausMap (V : ι → Matrix n m ℂ) :
         map_zero' := rfl
         map_add' := fun _ _ => rfl }
     ext i j p q
+    -- `ev i j p q` is defined by `toFun := fun A => A i j p q`, so the `show` below is its defining
+    -- equation, proved by `rfl`; it lets `map_sum` move the evaluation inside the finite sum.
     rw [← show (ev i j p q) (∑ d, M.map (conjugateCP (V d))) =
         (∑ d, M.map (conjugateCP (V d))) i j p q from rfl, map_sum]
     simp only [CStarMatrix.map, LinearMap.sum_apply]
-    -- Evaluate the sum of linear maps, then the sum of its matrix entries.
+    -- Coercion reductions: `M.map f i j` is `f (M i j)` (`CStarMatrix.map_apply`), and a
+    -- `CompletelyPositiveMap` coerces to a function through its `toLinearMap`, so applying
+    -- `conjugateCP (V d)` is applying `(conjugateCP (V d)).toLinearMap`. `change` records both; the
+    -- entry evaluation `entry` below then commutes with the sum by `map_sum`.
     change (∑ d, (conjugateCP (V d)).toLinearMap (M i j)) p q = _
     let entry : CStarMatrix m m ℂ →+ ℂ :=
       { toFun := fun A => A p q
@@ -116,20 +125,26 @@ noncomputable def krausMap (V : ι → Matrix n m ℂ) :
     exact map_sum entry _ _
 
 
-/-- Evaluation of a Kraus map. -/
-@[simp] theorem krausMap_apply (V : ι → Matrix n m ℂ) (a : CStarMatrix n n ℂ) :
+/-- Evaluation of a Kraus map. It is not `@[simp]`, so that unitality `krausMap V 1 = 1` stays the
+simp normal form recorded by `krausMap_unital_iff`; evaluate with `simp [krausMap_apply]`. -/
+theorem krausMap_apply (V : ι → Matrix n m ℂ) (a : CStarMatrix n n ℂ) :
     krausMap V a = ofMatrix (∑ i, (V i)ᴴ * ofMatrix.symm a * V i) := by
-  -- Evaluation commutes with the sum of linear maps.
+  -- Representation equality: `krausMap V` is built from
+  -- `toLinearMap := ∑ i, (conjugateCP (V i)).toLinearMap`, and a `CompletelyPositiveMap` coerces to a
+  -- function through its `toLinearMap`, so this application is definitionally that of the sum of
+  -- linear maps. `change` states it; `LinearMap.sum_apply` and `conjugateCP_apply` evaluate it.
   change (∑ i, (conjugateCP (V i)).toLinearMap) a = _
   simp only [LinearMap.sum_apply]
   rfl
 
 /-- A Kraus map is unital precisely when its normalization sum is one. -/
-theorem krausMap_unital_iff [DecidableEq n] [DecidableEq m]
+@[simp] theorem krausMap_unital_iff [DecidableEq n] [DecidableEq m]
     (V : ι → Matrix n m ℂ) :
     krausMap V 1 = 1 ↔ ∑ i, (V i)ᴴ * V i = 1 := by
   rw [krausMap_apply]
-  -- The unit is transported by the canonical ring equivalence.
+  -- `ofMatrix` is `Equiv.refl _`, so `ofMatrix.symm 1` is the identity matrix and the unit of
+  -- `CStarMatrix m m ℂ` is `ofMatrix 1`. `change` records both; `ofMatrix.injective` then compares
+  -- the underlying matrices.
   change ofMatrix (∑ i, (V i)ᴴ * (1 : Matrix n n ℂ) * V i) = ofMatrix 1 ↔ _
   simp only [Matrix.mul_one, ofMatrix.injective.eq_iff]
 
@@ -157,7 +172,8 @@ theorem trace_krausTraceDual_mul (V : ι → Matrix n m ℂ)
   rw [Matrix.mul_assoc, Matrix.mul_assoc, trace_mul_comm]
   simp only [Matrix.mul_assoc]
 
-/-- Trace preservation is equivalent to Kraus normalization. -/
+/-- Trace preservation is equivalent to Kraus normalization. It is not `@[simp]`: the simp lemma
+`krausTraceDual_apply` already rewrites its left-hand side, so that side is not a simp normal form. -/
 theorem krausTraceDual_trace_preserving_iff [DecidableEq m]
     (V : ι → Matrix n m ℂ) :
     (∀ ρ, trace (krausTraceDual V ρ) = trace ρ) ↔ ∑ i, (V i)ᴴ * V i = 1 := by
@@ -176,14 +192,15 @@ theorem krausTraceDual_trace_preserving_iff [DecidableEq m]
   · intro h ρ
     simp [h]
 
-/-- The trace dual preserves trace exactly when the Kraus map is unital. -/
+/-- The trace dual preserves trace exactly when the Kraus map is unital. Like
+`krausTraceDual_trace_preserving_iff`, whose left-hand side it shares, it is not `@[simp]`. -/
 theorem krausTraceDual_trace_preserving_iff_unital [DecidableEq n] [DecidableEq m]
     (V : ι → Matrix n m ℂ) :
     (∀ ρ, trace (krausTraceDual V ρ) = trace ρ) ↔ krausMap V 1 = 1 := by
   rw [krausTraceDual_trace_preserving_iff, krausMap_unital_iff]
 
 /-- An isometric change of the indexing family preserves its Kraus map. -/
-theorem krausMap_isometry [DecidableEq ι] (V : ι → Matrix n m ℂ)
+theorem krausMap_apply_eq_of_isometry [DecidableEq ι] (V : ι → Matrix n m ℂ)
     (u : Matrix κ ι ℂ) (hu : uᴴ * u = 1) (a : CStarMatrix n n ℂ) :
     krausMap (fun j => ∑ i, u j i • V i) a = krausMap V a := by
   have hu' (i l : ι) : ∑ j, star (u j i) * u j l = if i = l then 1 else 0 := by
@@ -200,9 +217,9 @@ theorem krausMap_isometry [DecidableEq ι] (V : ι → Matrix n m ℂ)
   simp
 
 /-- A unitary change of Kraus family preserves the associated map. -/
-theorem krausMap_unitary [DecidableEq ι] (V : ι → Matrix n m ℂ)
+theorem krausMap_apply_eq_of_unitary [DecidableEq ι] (V : ι → Matrix n m ℂ)
     (u : unitary (Matrix ι ι ℂ)) (a : CStarMatrix n n ℂ) :
     krausMap (fun j => ∑ i, (u : Matrix ι ι ℂ) j i • V i) a = krausMap V a :=
-  krausMap_isometry V (u : Matrix ι ι ℂ) (Unitary.coe_star_mul_self u) a
+  krausMap_apply_eq_of_isometry V (u : Matrix ι ι ℂ) (Unitary.coe_star_mul_self u) a
 
 end Matrix
