@@ -52,6 +52,8 @@ quadratic forms with the subgroup preserving both summands.
   `LinearMap.fiberProductAssoc_symm_apply_fst`, `LinearMap.fiberProductAssoc_symm_apply_snd`.
 * `LinearMap.injective_prodMap`: a product of injective linear maps is injective, stated for the
   coercion of `f.prodMap g`.
+* `LinearMap.prodMap_comp_append`: `f.prodMap g` sends an appended family of vectors of the two
+  factors to the appended family of their images.
 * `LinearMap.surjective_coprod_of_comp_left`, `LinearMap.surjective_coprod_of_comp_right`,
   `LinearMap.surjective_coprod_neg_of_comp_right`: surjectivity of `f.coprod g` survives
   removing a precomposition from either map. In particular transversality passes from `α ∘ h`
@@ -231,6 +233,15 @@ variable {M₄ : Type*} [AddCommMonoid M₄] [Module R M₄]
 theorem injective_prodMap {f : M₁ →ₗ[R] M₃} {g : M₂ →ₗ[R] M₄} (hf : Function.Injective f)
     (hg : Function.Injective g) : Function.Injective (f.prodMap g) :=
   hf.prodMap hg
+
+/-- The product map `f × g` sends an appended family of vectors of the two factors to the appended
+family of their images. -/
+theorem prodMap_comp_append (f : M₁ →ₗ[R] M₃) (g : M₂ →ₗ[R] M₄) {m n : ℕ} (p : Fin m → M₁)
+    (q : Fin n → M₂) :
+    ⇑(f.prodMap g) ∘ Fin.append (inl R M₁ M₂ ∘ p) (inr R M₁ M₂ ∘ q) =
+      Fin.append (inl R M₃ M₄ ∘ f ∘ p) (inr R M₃ M₄ ∘ g ∘ q) := by
+  funext i
+  induction i using Fin.addCases <;> simp
 
 /-- If `(x, y) ↦ f (h x) + g y` is surjective, then so is `(x, y) ↦ f x + g y`. -/
 theorem surjective_coprod_of_comp_left {f : M₁ →ₗ[R] M₃} {g : M₂ →ₗ[R] M₃} {h : M₄ →ₗ[R] M₁}
