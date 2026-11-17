@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Fourier.Hardy.Basic
 public import TauCeti.MeasureTheory.Function.Lp.ContinuousFunctions
+import TauCeti.Analysis.InnerProductSpace.Compression
 
 /-!
 # Toeplitz operators on boundary Hardy space
@@ -334,61 +335,22 @@ theorem norm_toeplitz_le (a : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1))) :
     ‖toeplitz a‖ ≤ ‖a‖ :=
   norm_compress_multiplicationOperator_le a
 
-/-- On trigonometric polynomials, the matrix coefficients of multiplication by `a` are bounded by
-the norm of `T_a`: multiplying by a high Fourier mode is unitary, commutes with multiplication by
-`a`, and moves both vectors into Hardy space, where `M_a` is compressed to `T_a`. -/
-private theorem norm_inner_smul_le_of_mem_span (a : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1)))
-    {f g : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1))}
-    (hf : f ∈ Submodule.span ℂ (Set.range (fourierBasis (T := 1))))
-    (hg : g ∈ Submodule.span ℂ (Set.range (fourierBasis (T := 1)))) :
-    ‖⟪f, a • g⟫_ℂ‖ ≤ ‖toeplitz a‖ * ‖f‖ * ‖g‖ := by
-  obtain ⟨N, hfN, hgN⟩ := ((eventually_fourierLp_smul_mem_hardySubmodule hf).and
-    (eventually_fourierLp_smul_mem_hardySubmodule hg)).exists
-  have hu := ae_norm_fourierLp_eq_one (T := 1) ∞ N
-  have hcomm := congrArg (· g)
-    (Lp.commute_multiplicationOperator (E := ℂ) (fourierLp (T := 1) ∞ N) a).eq
-  simp only [mul_apply_eq_comp, Lp.multiplicationOperator_apply] at hcomm
-  have hinner : ⟪f, a • g⟫_ℂ = ⟪(⟨_, hfN⟩ : HardySpace), toeplitz a ⟨_, hgN⟩⟫_ℂ := by
-    rw [inner_toeplitz_apply, Submodule.coe_mk, Submodule.coe_mk, ← hcomm]
-    simp only [← Lp.multiplicationOperator_apply]
-    exact ((LinearMap.norm_map_iff_inner_map_map
-      (Lp.multiplicationOperator (E := ℂ) (fourierLp (T := 1) ∞ N))).1
-        (Lp.norm_multiplicationOperator_apply_of_ae_norm_eq_one hu) f
-          (Lp.multiplicationOperator a g)).symm
-  have hnorm (h : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1))) :
-      ‖(fourierLp (T := 1) ∞ N • h : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1)))‖ = ‖h‖ := by
-    rw [← Lp.multiplicationOperator_apply,
-      Lp.norm_multiplicationOperator_apply_of_ae_norm_eq_one hu]
-  calc ‖⟪f, a • g⟫_ℂ‖ ≤ ‖(⟨_, hfN⟩ : HardySpace)‖ * (‖toeplitz a‖ * ‖(⟨_, hgN⟩ : HardySpace)‖) := by
-        rw [hinner]
-        exact (norm_inner_le_norm _ _).trans (by gcongr; exact ContinuousLinearMap.le_opNorm _ _)
-    _ = ‖toeplitz a‖ * ‖f‖ * ‖g‖ := by
-        rw [← Submodule.norm_coe, ← Submodule.norm_coe, Submodule.coe_mk, Submodule.coe_mk,
-          hnorm, hnorm]
-        ring
-
 /-- Multiplication by `a` on circle `L²` has norm at most the norm of `T_a`. -/
 private theorem norm_multiplicationOperator_le_norm_toeplitz
     (a : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1))) :
     ‖Lp.multiplicationOperator (E := ℂ) a‖ ≤ ‖toeplitz a‖ := by
-  have hD : Dense (Submodule.span ℂ (Set.range (fourierBasis (T := 1))) :
-      Set (Lp ℂ 2 (AddCircle.haarAddCircle (T := 1)))) :=
-    Submodule.dense_iff_topologicalClosure_eq_top.2 (fourierBasis (T := 1)).dense_span
-  -- The bound on matrix coefficients is a closed condition, so it extends from trigonometric
-  -- polynomials to all pairs of `L²` functions.
-  have hbound : ∀ p : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1)) ×
-      Lp ℂ 2 (AddCircle.haarAddCircle (T := 1)),
-      ‖⟪p.1, Lp.multiplicationOperator a p.2⟫_ℂ‖ ≤ ‖toeplitz a‖ * ‖p.1‖ * ‖p.2‖ := by
-    refine (hD.prod hD).induction (fun p hp ↦ ?_) (isClosed_le (by fun_prop) (by fun_prop))
-    rw [Lp.multiplicationOperator_apply]
-    exact norm_inner_smul_le_of_mem_span a hp.1 hp.2
-  refine ContinuousLinearMap.opNorm_le_of_re_inner_le (norm_nonneg (toeplitz a)) ?_
-  intro x y hx hy
-  calc
-    RCLike.re ⟪Lp.multiplicationOperator a x, y⟫_ℂ ≤
-        ‖⟪Lp.multiplicationOperator a x, y⟫_ℂ‖ := RCLike.re_le_norm _
-    _ = ‖⟪y, Lp.multiplicationOperator a x⟫_ℂ‖ := norm_inner_symm _ _
-    _ ≤ ‖toeplitz a‖ := by simpa only [hx, hy, mul_one] using hbound (y, x)
+  rw [toeplitz_apply]
+  refine hardySubmodule.norm_le_norm_orthogonalProjectionOnto_comp_comp_subtypeL
+    (Lp.multiplicationOperator a) (l := Filter.atTop)
+    (fun N : ℤ ↦ ⟨(Lp.multiplicationOperator (fourierLp (T := 1) ∞ N)).toLinearMap,
+      Lp.norm_multiplicationOperator_apply_of_ae_norm_eq_one
+        (ae_norm_fourierLp_eq_one (T := 1) ∞ N)⟩)
+    (Submodule.dense_iff_topologicalClosure_eq_top.2 (fourierBasis (T := 1)).dense_span)
+    (fun _ hg ↦ ?_) fun N g ↦ ?_
+  · simpa only [LinearIsometry.coe_mk, ContinuousLinearMap.coe_coe, Lp.multiplicationOperator_apply]
+      using eventually_fourierLp_smul_mem_hardySubmodule hg
+  · simpa only [LinearIsometry.coe_mk, ContinuousLinearMap.coe_coe, mul_apply_eq_comp] using
+      congrArg (· g) (Lp.commute_multiplicationOperator (E := ℂ) (fourierLp (T := 1) ∞ N) a).eq.symm
 
 /-- **Symbol norm.** The operator norm of the Toeplitz operator `T_a` is the `L∞` norm of its
 symbol. -/

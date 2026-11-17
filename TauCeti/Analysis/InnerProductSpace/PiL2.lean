@@ -13,6 +13,7 @@ public import Mathlib.Topology.Algebra.Module.Equiv.Pi
 public import Mathlib.Topology.Algebra.Module.Equiv.Prod
 public import Mathlib.Topology.Algebra.Monoid.FunOnFinite
 public import TauCeti.Algebra.BigOperators.Finset.Fiber
+public import TauCeti.Analysis.Normed.Lp.PiLp
 
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 
@@ -60,6 +61,12 @@ Borel measurable structure on the scalar field.
   (`EuclideanSpace.adjoint_piLpExtendByZero_castLEEmb_apply`).
 * `EuclideanSpace.finCastLEEquiv`: the first `m` coordinates of `𝕜ⁿ`, indexed by `Fin m`, as the
   first factor of the splitting along `j < m`.
+* `PiLp.inner_single_left`, `PiLp.inner_single_right`: the inner product against `PiLp.single 2 i v`
+  extracts the `i`-th coordinate inner product.
+* `LinearIsometryEquiv.submodulePiLp_orthogonalProjectionOnto`,
+  `LinearIsometryEquiv.map_starProjection_apply`, and
+  `LinearIsometryEquiv.mem_orthogonal_iff_forall_mem_orthogonal`: coordinatewise orthogonal
+  projections and orthogonal complements under a linear isometry equivalence into `PiLp 2 F`.
 -/
 
 public section
@@ -537,3 +544,73 @@ theorem injOn_comp_euclideanSpace_proj_preimage {ι : Type*} [Unique ι] {α : T
   exact hg.comp hinj.injOn (Set.mapsTo_preimage _ _)
 
 end TauCeti
+
+namespace PiLp
+
+open scoped InnerProductSpace
+
+variable {ι 𝕜 : Type*} [Fintype ι] [DecidableEq ι] [RCLike 𝕜] {F : ι → Type*}
+  [∀ i, NormedAddCommGroup (F i)] [∀ i, InnerProductSpace 𝕜 (F i)]
+
+/-- The inner product of `PiLp.single 2 i v` with `w` picks out the `i`-th coordinate. -/
+@[simp] theorem inner_single_left (i : ι) (v : F i) (w : PiLp 2 F) :
+    ⟪PiLp.single 2 i v, w⟫_𝕜 = ⟪v, w i⟫_𝕜 := by
+  rw [PiLp.inner_apply, Finset.sum_eq_single i (fun k _ hki ↦ by simp [hki]) (by simp),
+    PiLp.single_eq_same]
+
+/-- The inner product of `w` with `PiLp.single 2 i v` picks out the `i`-th coordinate. -/
+@[simp] theorem inner_single_right (i : ι) (v : F i) (w : PiLp 2 F) :
+    ⟪w, PiLp.single 2 i v⟫_𝕜 = ⟪w i, v⟫_𝕜 := by
+  rw [← inner_conj_symm, inner_single_left, inner_conj_symm]
+
+end PiLp
+
+namespace LinearIsometryEquiv
+
+open scoped InnerProductSpace
+
+variable {ι 𝕜 X : Type*} [Fintype ι] [RCLike 𝕜] [NormedAddCommGroup X] [InnerProductSpace 𝕜 X]
+  {F : ι → Type*} [∀ i, NormedAddCommGroup (F i)] [∀ i, InnerProductSpace 𝕜 (F i)]
+  (e : X ≃ₗᵢ[𝕜] PiLp 2 F)
+
+/-- Under `e.submodulePiLp M N hMN`, orthogonal projection onto `M` acts coordinatewise as
+orthogonal projection onto each `N i`. -/
+@[simp] theorem submodulePiLp_orthogonalProjectionOnto (M : Submodule 𝕜 X)
+    (N : ∀ i, Submodule 𝕜 (F i)) (hMN : ∀ x, x ∈ M ↔ ∀ i, e x i ∈ N i)
+    [M.HasOrthogonalProjection] [∀ i, (N i).HasOrthogonalProjection] (x : X) (i : ι) :
+    e.submodulePiLp M N hMN (M.orthogonalProjectionOnto x) i =
+      (N i).orthogonalProjectionOnto (e x i) := by
+  let p : PiLp 2 (fun j ↦ ↥(N j)) := WithLp.toLp 2 fun j ↦ (N j).orthogonalProjectionOnto (e x j)
+  suffices h : M.orthogonalProjectionOnto x = (e.submodulePiLp M N hMN).symm p by
+    rw [h, LinearIsometryEquiv.apply_symm_apply, PiLp.toLp_apply]
+  refine ext_inner_left 𝕜 fun w ↦ ?_
+  rw [Submodule.inner_orthogonalProjectionOnto_eq_of_mem_left, Submodule.coe_inner,
+    ← e.inner_map_map, PiLp.inner_apply, ← e.inner_map_map, PiLp.inner_apply]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  rw [e.apply_coe_submodulePiLp_symm M N hMN, PiLp.toLp_apply,
+    Submodule.coe_orthogonalProjectionOnto_apply, ← (N j).inner_starProjection_left_eq_right,
+    (N j).starProjection_eq_self_iff.mpr ((hMN w.1).mp w.2 j)]
+
+/-- If `e : X ≃ₗᵢ[𝕜] PiLp 2 F` characterizes `M` coordinatewise by `N`, then `M.starProjection`
+acts coordinatewise as `(N i).starProjection`. -/
+theorem map_starProjection_apply {M : Submodule 𝕜 X} {N : ∀ i, Submodule 𝕜 (F i)}
+    (hMN : ∀ x, x ∈ M ↔ ∀ i, e x i ∈ N i) [M.HasOrthogonalProjection]
+    [∀ i, (N i).HasOrthogonalProjection] (x : X) (i : ι) :
+    e (M.starProjection x) i = (N i).starProjection (e x i) := by
+  simp only [← Submodule.coe_orthogonalProjectionOnto_apply,
+    ← e.coe_submodulePiLp_apply M N hMN, e.submodulePiLp_orthogonalProjectionOnto M N hMN]
+
+/-- If `e : X ≃ₗᵢ[𝕜] PiLp 2 F` characterizes `M` coordinatewise by `N`, then `e` characterizes
+`Mᗮ` coordinatewise by `(N i)ᗮ`. -/
+theorem mem_orthogonal_iff_forall_mem_orthogonal {M : Submodule 𝕜 X} {N : ∀ i, Submodule 𝕜 (F i)}
+    (hMN : ∀ x, x ∈ M ↔ ∀ i, e x i ∈ N i) (x : X) : x ∈ Mᗮ ↔ ∀ i, e x i ∈ (N i)ᗮ := by
+  classical
+  refine ⟨fun hx i ↦ (Submodule.mem_orthogonal _ _).mpr fun v hv ↦ ?_,
+    fun hx ↦ (Submodule.mem_orthogonal _ _).mpr fun y hy ↦ ?_⟩
+  · have hy : e.symm (PiLp.single 2 i v) ∈ M := (hMN _).mpr fun j ↦ by
+      rw [e.apply_symm_apply]; rcases eq_or_ne j i with rfl | hji <;> simp [*]
+    simpa [← e.inner_map_map] using (Submodule.mem_orthogonal _ _).mp hx _ hy
+  · rw [← e.inner_map_map, PiLp.inner_apply]
+    exact Finset.sum_eq_zero fun i _ ↦ (Submodule.mem_orthogonal _ _).mp (hx i) _ ((hMN y).mp hy i)
+
+end LinearIsometryEquiv
