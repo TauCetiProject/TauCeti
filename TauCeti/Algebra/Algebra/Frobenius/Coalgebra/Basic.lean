@@ -211,6 +211,27 @@ omit [Module.Finite R A] [Module.Projective R A] in
   classical
   simp [traceDualBasis]
 
+omit [Module.Finite R A] [Module.Projective R A] in
+/-- Taking the trace-dual basis twice on a commutative algebra recovers the original basis. -/
+@[simp] theorem traceDualBasis_traceDualBasis {ι : Type*} [Finite ι] (b : Module.Basis ι R A) :
+    traceDualBasis ε (traceDualBasis ε b) = b := by
+  ext i : 1; apply (traceDualBasis ε b).repr.injective; ext j
+  rw [traceDualBasis_repr, traceDualBasis_mul, traceDualBasis_repr, mul_comm, traceDualBasis_repr]
+
+omit [Module.Finite R A] [Module.Projective R A] in
+/-- Expansion of an algebra element in the trace-dual basis, with coefficients given by trace
+pairings against the primal basis. -/
+theorem sum_apply_mul_smul_traceDualBasis {ι : Type*} [Fintype ι]
+    (b : Module.Basis ι R A) (a : A) : ∑ i, ε (a * b i) • traceDualBasis ε b i = a := by
+  simpa only [traceDualBasis_repr] using (traceDualBasis ε b).sum_repr a
+
+omit [Module.Finite R A] [Module.Projective R A] in
+/-- Expansion of an algebra element in the primal basis, with coefficients given by trace pairings
+against the trace-dual basis. -/
+theorem sum_traceDualBasis_mul_smul {ι : Type*} [Fintype ι]
+    (b : Module.Basis ι R A) (a : A) : ∑ i, ε (traceDualBasis ε b i * a) • b i = a := by
+  simpa only [traceDualBasis_mul] using b.sum_repr a
+
 /-- The dual-basis formula for the reconstructed coproduct, valid for every
 finite basis, not just a chosen one. -/
 theorem frobeniusCoalgebra_comul_eq_sum {ι : Type*} [Fintype ι]

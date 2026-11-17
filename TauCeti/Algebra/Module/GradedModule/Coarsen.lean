@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.ZMod.IntUnitsPower
 public import Mathlib.LinearAlgebra.FreeModule.Basic
 public import TauCeti.Algebra.Module.GradedModule.Internal
+public import TauCeti.Algebra.Module.GradedModule.Trivial
 import Mathlib.LinearAlgebra.DirectSum.Basis
 import TauCeti.Algebra.DirectSum.Component
 import TauCeti.Algebra.DirectSum.Internal
@@ -45,10 +46,13 @@ super (parity-graded) object, for example when Koszul signs only depend on parit
 * `TauCeti.LinearMap.IsHomogeneous.coarsenGrading` and
   `TauCeti.LinearMap.IsHomogeneous.coarsenGrading_zero`: homogeneity of linear maps under
   coarsened gradings.
-* `TauCeti.parityGrading_zero`, `TauCeti.parityGrading_one`,
-  `TauCeti.mem_parityGrading_zero_of_odd_eq_bot`, `TauCeti.mem_parityGrading_one_of_even_eq_bot`,
-  and `TauCeti.coe_decompose_zero_add_coe_decompose_one`: the even and odd pieces, single-parity
-  concentration, and the two-term decomposition for `ZMod 2`-gradings.
+* `TauCeti.parityGrading_zero`, `TauCeti.parityGrading_one`, `TauCeti.parityGrading_one_eq_bot_iff`,
+  `TauCeti.eq_bot_of_parityGrading_one_eq_bot_of_odd`, `TauCeti.parityGrading_trivialGrading_one`,
+  and `TauCeti.parityGrading_one_eq_bot_iff_of_isHomogeneous_zero`: the even and odd pieces and
+  even-support preservation.
+* `TauCeti.mem_parityGrading_zero_of_odd_eq_bot`, `TauCeti.mem_parityGrading_one_of_even_eq_bot`,
+  and `TauCeti.coe_decompose_zero_add_coe_decompose_one`: single-parity concentration and the
+  two-term decomposition for `ZMod 2`-gradings.
 -/
 
 public section
@@ -371,6 +375,51 @@ theorem coe_decompose_zero_add_coe_decompose_one {σ : Type*} [SetLike σ M] [Ad
   have huniv : (Finset.univ : Finset (ZMod 2)) = {0, 1} := by decide
   rw [huniv, Finset.sum_pair (by decide : (0 : ZMod 2) ≠ 1)] at h
   simpa using h
+
+/-- An integer-indexed family of submodules is supported in even degrees (`parityGrading ℳ 1 = ⊥`)
+if and only if every odd-degree piece `ℳ (2 * k + 1)` vanishes. -/
+theorem parityGrading_one_eq_bot_iff {ℳ : ℤ → Submodule R M} :
+    parityGrading ℳ 1 = ⊥ ↔ ∀ k : ℤ, ℳ (2 * k + 1) = ⊥ := by
+  rw [parityGrading_one, iSup_eq_bot]
+
+/-- In an even-supported family (`parityGrading ℳ 1 = ⊥`), every piece of odd degree vanishes. -/
+theorem eq_bot_of_parityGrading_one_eq_bot_of_odd {ℳ : ℤ → Submodule R M}
+    (h : parityGrading ℳ 1 = ⊥) {n : ℤ} (hn : Odd n) : ℳ n = ⊥ := by
+  obtain ⟨k, rfl⟩ := hn
+  exact parityGrading_one_eq_bot_iff.mp h k
+
+variable (R M) in
+/-- The trivial integer grading is concentrated in degree `0`, hence supported in even degrees. -/
+@[simp] theorem parityGrading_trivialGrading_one : parityGrading (trivialGrading R M) 1 = ⊥ :=
+  parityGrading_one_eq_bot_iff.mpr fun _ => trivialGrading_eq_bot R M (by omega)
+
+/-- A degree-zero homogeneous linear equivalence transfers vanishing of the odd parity piece from
+target to source. -/
+theorem parityGrading_one_eq_bot_of_isHomogeneous_zero {S N : Type*} [Semiring S]
+    [Module S M] [AddCommMonoid N] [Module R N] [Module S N]
+    {ℳ : ℤ → Submodule R M} {𝒩 : ℤ → Submodule R N} {e : M ≃ₗ[S] N}
+    (he : LinearMap.IsHomogeneous e.toLinearMap ℳ 𝒩 0) (hN : parityGrading 𝒩 1 = ⊥) :
+    parityGrading ℳ 1 = ⊥ := by
+  rw [parityGrading_one_eq_bot_iff] at hN ⊢
+  refine fun k => (Submodule.eq_bot_iff _).mpr fun x hx => e.injective ?_
+  have hex : e x ∈ 𝒩 (2 * k + 1) := by simpa using he.map_mem hx
+  simpa [hN k] using hex
+
+/-- Even support (`parityGrading · 1 = ⊥`) is invariant under degree-zero homogeneous linear
+equivalences of internally graded modules. -/
+theorem parityGrading_one_eq_bot_iff_of_isHomogeneous_zero {S N : Type*} [Semiring S]
+    [Module S M] [AddCommMonoid N] [Module R N] [Module S N]
+    {ℳ : ℤ → Submodule R M} {𝒩 : ℤ → Submodule R N}
+    [DirectSum.Decomposition ℳ] [DirectSum.Decomposition 𝒩] {e : M ≃ₗ[S] N}
+    (he : LinearMap.IsHomogeneous e.toLinearMap ℳ 𝒩 0) :
+    parityGrading ℳ 1 = ⊥ ↔ parityGrading 𝒩 1 = ⊥ := by
+  have he' : LinearMap.IsHomogeneous e.toLinearMap
+      (InternalGrading.ofDecomposition ℳ).piece (InternalGrading.ofDecomposition 𝒩).piece 0 := by
+    simpa using he
+  have hsymm : LinearMap.IsHomogeneous e.symm.toLinearMap 𝒩 ℳ 0 := by
+    simpa using he'.linearEquiv_symm
+  exact ⟨parityGrading_one_eq_bot_of_isHomogeneous_zero hsymm,
+    parityGrading_one_eq_bot_of_isHomogeneous_zero he⟩
 
 end Parity
 

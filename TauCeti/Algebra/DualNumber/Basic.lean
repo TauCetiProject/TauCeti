@@ -160,6 +160,11 @@ theorem dualNumberBasis_one : dualNumberBasis R 1 = eps :=
 instance dualNumberModuleFinite : Module.Finite R (DualNumber R) :=
   Module.Finite.of_basis (dualNumberBasis R)
 
+/-- The dual numbers are a free module of rank two over their coefficient ring, with basis
+`1, ε`. -/
+instance dualNumberModuleFree : Module.Free R (DualNumber R) :=
+  Module.Free.of_basis (dualNumberBasis R)
+
 variable {R}
 
 /-- The coordinate of `x` along `1` is its scalar part. -/
