@@ -20,10 +20,9 @@ A semilinear map into a normed space with bounded values vanishes
 (`LinearMap.eq_zero_of_forall_norm_apply_le`). For continuous semilinear maps from a seminormed
 space to a normed space, zero operator norm forces the map to vanish. The corresponding normed
 group structure is available as an explicit construction, including for strong duals of
-seminormed spaces. Every continuous semilinear map over nontrivially normed fields along an
-isometric ring homomorphism (`ContinuousLinearMap.exists_norm_apply_le`), and every right
-scalar-multiplication map `toSpanSingleton R e` under a bounded scalar action of a seminormed ring
-(`ContinuousLinearMap.exists_norm_toSpanSingleton_apply_le`), admits a uniform linear norm bound.
+seminormed spaces. Every right scalar-multiplication map `toSpanSingleton R e` under a bounded
+scalar action of a seminormed ring (`ContinuousLinearMap.exists_norm_toSpanSingleton_apply_le`)
+admits a uniform linear norm bound.
 
 This file also records a shared uniform-bound lemma for continuous linear maps between seminormed
 spaces. It lets an evaluation `T i (g i)` pass to the limit when the operators `T i` are eventually
@@ -188,15 +187,6 @@ noncomputable abbrev normedAddCommGroup : NormedAddCommGroup (E →SL[σ] F) :=
   .ofSeparation fun f ↦ f.opNorm_zero_iff'.mp
 
 end Semilinear
-
-/-- Every continuous semilinear map between seminormed spaces over nontrivially normed fields along
-an isometric ring homomorphism is uniformly bounded. -/
-theorem exists_norm_apply_le {𝕜₁ 𝕜₂ E F : Type*}
-    [NontriviallyNormedField 𝕜₁] [NontriviallyNormedField 𝕜₂] {σ₁₂ : 𝕜₁ →+* 𝕜₂}
-    [RingHomIsometric σ₁₂] [SeminormedAddCommGroup E] [NormedSpace 𝕜₁ E]
-    [SeminormedAddCommGroup F] [NormedSpace 𝕜₂ F] (f : E →SL[σ₁₂] F) :
-    ∃ C, ∀ x : E, ‖f x‖ ≤ C * ‖x‖ :=
-  ⟨‖f‖, f.le_opNorm⟩
 
 /-- Right scalar multiplication `r ↦ r • e` by `e : E` under a bounded scalar action of a
 seminormed ring `R` is uniformly bounded. -/

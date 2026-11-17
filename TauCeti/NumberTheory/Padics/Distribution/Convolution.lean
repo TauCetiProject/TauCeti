@@ -176,15 +176,15 @@ instance : Nontrivial (LocallyAnalyticDistribution p K) :=
 noncomputable instance : Mul (LocallyAnalyticDistribution p K) where
   mul μ ν := stagesEquiv.symm
     ⟨fun h ↦ (prodFunctional (stage h μ) (stage h ν)
-      (stage h ν).exists_norm_apply_le).comp (comul K),
+      ((stage h ν).bound.imp fun _ hb ↦ hb.2)).comp (comul K),
       mem_compatibleStageFunctionals_iff.mpr fun h ↦ by
         ext c
         simp only [ContinuousLinearMap.comp_apply, prodFunctional_apply, curryEquiv_comul]
         rw [← transition_compLeft_transition_comulCurried K c]
-        have hrow : compLeft (stage (h + 1) ν) (stage (h + 1) ν).exists_norm_apply_le
+        have hrow : compLeft (stage (h + 1) ν) ((stage (h + 1) ν).bound.imp fun _ hb ↦ hb.2)
               (transition K (compLeft (transition K) (exists_norm_transition_le K)
                 (comulCurried K c))) =
-            transition K (compLeft (stage h ν) (stage h ν).exists_norm_apply_le
+            transition K (compLeft (stage h ν) ((stage h ν).bound.imp fun _ hb ↦ hb.2)
               (comulCurried K c)) := by
           rw [← transition_compLeft K]
           refine congrArg (transition (p := p) (h := h) (E := K) K) ?_
@@ -205,14 +205,15 @@ theorem stage_one (h : ℕ) :
 theorem stage_mul (h : ℕ) (μ ν : LocallyAnalyticDistribution p K) :
     stage h (μ * ν) =
       (prodFunctional (stage h μ) (stage h ν)
-        (stage h ν).exists_norm_apply_le).comp (comul K) :=
+        ((stage h ν).bound.imp fun _ hb ↦ hb.2)).comp (comul K) :=
   stage_stagesEquiv_symm _ h
 
 /-- Pointwise form of `stage_mul` in terms of `comulCurried`: `μ * ν` applies `stage h ν` to each
 row of `comulCurried K c` and `stage h μ` to the resulting column. -/
 theorem stage_mul_apply (h : ℕ) (μ ν : LocallyAnalyticDistribution p K) (c : AnalyticStage p h K) :
     stage h (μ * ν) c =
-      stage h μ (compLeft (stage h ν) (stage h ν).exists_norm_apply_le (comulCurried K c)) := by
+      stage h μ (compLeft (stage h ν)
+        ((stage h ν).bound.imp fun _ hb ↦ hb.2) (comulCurried K c)) := by
   rw [stage_mul, ContinuousLinearMap.comp_apply, prodFunctional_apply, curryEquiv_comul]
 
 /-- **Submultiplicativity of the stage seminorms** under additive convolution. -/
@@ -237,7 +238,8 @@ noncomputable instance : MulZeroClass (LocallyAnalyticDistribution p K) where
 noncomputable instance : Distrib (LocallyAnalyticDistribution p K) where
   left_distrib μ ν₁ ν₂ := LocallyAnalyticDistribution.ext fun h ↦ ContinuousLinearMap.ext fun c ↦ by
     simp only [stage_mul_apply, map_add, _root_.add_apply,
-      compLeft_add _ _ (stage h ν₁).exists_norm_apply_le (stage h ν₂).exists_norm_apply_le]
+      compLeft_add _ _ ((stage h ν₁).bound.imp fun _ hb ↦ hb.2)
+        ((stage h ν₂).bound.imp fun _ hb ↦ hb.2)]
   right_distrib μ₁ μ₂ ν :=
     LocallyAnalyticDistribution.ext fun h ↦ ContinuousLinearMap.ext fun c ↦ by
       simp only [stage_mul_apply, map_add, _root_.add_apply]
@@ -267,8 +269,9 @@ noncomputable instance : Ring (LocallyAnalyticDistribution p K) where
 noncomputable instance : CommRing (LocallyAnalyticDistribution p K) where
   mul_comm μ ν := LocallyAnalyticDistribution.ext fun h ↦ ContinuousLinearMap.ext fun c ↦ by
     simp only [stage_mul, ContinuousLinearMap.comp_apply]
-    rw [← prodFunctional_comp_congrLeft_prodComm (stage h ν) (stage h ν).exists_norm_apply_le
-      (stage h μ) (stage h μ).exists_norm_apply_le]
+    rw [← prodFunctional_comp_congrLeft_prodComm (stage h ν)
+      ((stage h ν).bound.imp fun _ hb ↦ hb.2) (stage h μ)
+      ((stage h μ).bound.imp fun _ hb ↦ hb.2)]
     simp
 
 /-- Locally analytic distributions form a commutative `K`-algebra under additive convolution, with
