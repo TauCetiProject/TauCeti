@@ -356,16 +356,6 @@ private theorem exists_sum_dart_pair_cut_eq_two_mul
     rw [ha.apply d e, hsw0 d e, hsw1 d e,
       zigzagTrace_mul_comm k G hns (ψ (subword k (fun t ↦ 𝔞 (W d e t)) 2 2))]
 
-omit [Finite V] in
-private theorem sum_mul_sub_sub_eq (a : Matrix G.Dart G.Dart k)
-    (D₁ Q₁ D₂ Q₂ : G.Dart → G.Dart → k) :
-    (∑ d, ∑ e, a d e * ((D₁ d e - Q₁ d e) - (D₂ d e - Q₂ d e))) =
-      (∑ d, ∑ e, a d e * (D₁ d e - D₂ d e)) -
-        (∑ d, ∑ e, a d e * Q₁ d e) + (∑ d, ∑ e, a d e * Q₂ d e) := by
-  have h (d e : G.Dart) : a d e * ((D₁ d e - Q₁ d e) - (D₂ d e - Q₂ d e)) =
-      a d e * (D₁ d e - D₂ d e) - a d e * Q₁ d e + a d e * Q₂ d e := by ring
-  simp_rw [h, Finset.sum_add_distrib, Finset.sum_sub_distrib]
-
 /-- **Balanced backtrack pairings map formal quartic zigzag obstructions into `2 k`.** Let `𝒜` be a
 minimal `A∞` algebra with the grading and binary operation of `𝒵` and `m₃ = 0`, and let `a` be a
 symmetric matrix of weights on pairs of darts vanishing on pairs with distinct heads and satisfying
@@ -409,8 +399,9 @@ theorem exists_zigzagBacktrackPairing_obstruction_eq_two_mul_of_isFormal
   obtain ⟨y2, hy2⟩ := exists_sum_dart_pair_cut_eq_two_mul ha hψ
     (fun d e t ↦ zigzagBacktrackWalk G e.symm d t) hswap2
   refine ⟨y2 - y1, ?_⟩
-  simp_rw [heval]
-  rw [sum_mul_sub_sub_eq, hcob, zero_sub, hy1, hy2]
+  simp_rw [mul_sub, Finset.sum_sub_distrib] at hcob
+  simp_rw [heval, mul_sub, Finset.sum_sub_distrib]
+  rw [sub_eq_zero.1 hcob, hy1, hy2]
   ring
 
 end BacktrackParity
