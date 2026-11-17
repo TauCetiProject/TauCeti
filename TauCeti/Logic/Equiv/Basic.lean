@@ -24,7 +24,9 @@ functions identifying two given points, as in collision bounds for uniform sampl
 
 Equivalences `e : α ≃ β` intertwining maps `f : α → γ` and `g : β → γ` correspond to families of
 fiber equivalences `{a // f a = c} ≃ {b // g b = c}` (`Equiv.fiberEquiv`), upgrading
-`Equiv.ofFiberEquiv` to a two-way equivalence.
+`Equiv.ofFiberEquiv` to a two-way equivalence; specializing to `Sigma.fst` identifies equivalences
+`α ≃ Σ i, β i` with prescribed first projection `f` as families `{a // f a = i} ≃ β i`
+(`Equiv.fiberEquivSigma`).
 
 The file also records that the transposition of two points of a linear order is the transposition
 of their minimum and maximum (`Equiv.swap_min_max`).
@@ -132,5 +134,47 @@ theorem coe_fiberEquiv_symm_apply {α β γ : Type*} (f : α → γ) (g : β →
     (e : ∀ c : γ, {a // f a = c} ≃ {b // g b = c}) :
     ((fiberEquiv f g).symm e : α ≃ β) = ofFiberEquiv e :=
   (rfl)
+
+/-- Equivalences `e : α ≃ Σ i, β i` whose first projection agrees with `f : α → ι` correspond to
+families of fiber equivalences `{a // f a = i} ≃ β i`. -/
+def fiberEquivSigma {α ι : Type*} {β : ι → Type*} (f : α → ι) :
+    {e : α ≃ Σ i, β i // ∀ a, (e a).1 = f a} ≃ ∀ i : ι, {a // f a = i} ≃ β i :=
+  (fiberEquiv f Sigma.fst).trans <|
+    piCongrRight fun i ↦ equivCongr (Equiv.refl _) (sigmaSubtype i)
+
+/-- Reconstructing the sigma pair from `Equiv.fiberEquivSigma` recovers the image under the
+underlying equivalence `e`. -/
+@[simp]
+theorem sigma_mk_fiberEquivSigma_apply_apply {α ι : Type*} {β : ι → Type*} (f : α → ι)
+    (e : {e : α ≃ Σ i, β i // ∀ a, (e a).1 = f a}) (i : ι) (a : {a // f a = i}) :
+    (⟨i, fiberEquivSigma f e i a⟩ : Σ i, β i) = e.1 a.1 := by
+  have h : ∀ s : {p : Σ i, β i // p.1 = i}, (⟨i, sigmaSubtype i s⟩ : Σ i, β i) = s.1 :=
+    fun ⟨⟨_, _⟩, rfl⟩ ↦ rfl
+  simpa [fiberEquivSigma] using (h _).trans (coe_fiberEquiv_apply_apply f Sigma.fst e i a)
+
+/-- The inverse of the fiber equivalence `Equiv.fiberEquivSigma f e i` applies the inverse of the
+underlying equivalence `e` on the `i`-th fiber. -/
+@[simp]
+theorem coe_fiberEquivSigma_apply_symm_apply {α ι : Type*} {β : ι → Type*} (f : α → ι)
+    (e : {e : α ≃ Σ i, β i // ∀ a, (e a).1 = f a}) (i : ι) (b : β i) :
+    (((fiberEquivSigma f e i).symm b : {a // f a = i}) : α) = e.1.symm ⟨i, b⟩ :=
+  (rfl)
+
+/-- Applying the equivalence reconstructed by `(Equiv.fiberEquivSigma f).symm e` to `a` places
+`e (f a) ⟨a, rfl⟩` in fiber `f a`. -/
+@[simp]
+theorem coe_fiberEquivSigma_symm_apply_apply {α ι : Type*} {β : ι → Type*} (f : α → ι)
+    (e : ∀ i : ι, {a // f a = i} ≃ β i) (a : α) :
+    ((fiberEquivSigma f).symm e : α ≃ Σ i, β i) a = ⟨f a, e (f a) ⟨a, rfl⟩⟩ :=
+  (rfl)
+
+/-- Applying the inverse of the equivalence reconstructed by `(Equiv.fiberEquivSigma f).symm e` to
+`p` applies `(e p.1).symm` to `p.2`. -/
+@[simp]
+theorem coe_fiberEquivSigma_symm_apply_symm_apply {α ι : Type*} {β : ι → Type*} (f : α → ι)
+    (e : ∀ i : ι, {a // f a = i} ≃ β i) (p : Σ i, β i) :
+    ((fiberEquivSigma f).symm e : α ≃ Σ i, β i).symm p = ((e p.1).symm p.2).1 := by
+  rcases p with ⟨i, b⟩
+  rfl
 
 end Equiv

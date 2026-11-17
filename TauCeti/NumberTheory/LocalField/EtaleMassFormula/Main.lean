@@ -76,28 +76,6 @@ section SplittingSymbolFiber
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] {n : ℕ}
 
-private theorem restrictBlock_splittingSymbol_eq {m : ℕ} {d : Fin m → ℕ}
-    (ρ₀ : GaloisSet K n) (b : Fin n ≃ Σ i : Fin m, Fin (d i))
-    (hb : ∀ (σ : Gal(SeparableClosure K/K)) (j : Fin n), (b (ρ₀.val σ j)).1 = (b j).1)
-    (hd : ∀ i, 0 < d i)
-    (hfib : ∀ (i : Fin m) (j₁ j₂ : Fin n),
-      (b j₁).1 = i → (b j₂).1 = i →
-        ∃ σ : Gal(SeparableClosure K/K), ρ₀.val σ j₁ = j₂)
-    (i : Fin m) :
-    (ρ₀.restrictBlock b hb i).splittingSymbol =
-      {(let := ρ₀.mulAction
-        ρ₀.orbitSymbol (Quotient.mk'' (b.symm ⟨i, ⟨0, hd i⟩⟩)))} := by
-  let x₀ : Fin (d i) := ⟨0, hd i⟩
-  have htrans : (ρ₀.restrictBlock b hb i).IsTransitive := by
-    rw [GaloisSet.isTransitive_iff]
-    intro x y
-    obtain ⟨σ, hσ⟩ := hfib i (b.symm ⟨i, x⟩) (b.symm ⟨i, y⟩) (by simp) (by simp)
-    exact ⟨σ, by simp [hσ]⟩
-  rw [(ρ₀.restrictBlock b hb i).splittingSymbol_of_isTransitive htrans x₀,
-    ρ₀.orbitSymbol_mk]
-  dsimp only [x₀]
-  rw [GaloisSet.stabilizer_restrictBlock]
-
 private def splittingBlockTotal (K : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
     [IsNonarchimedeanLocalField K] (n : ℕ) (σ : Multiset (ℕ × ℕ)) :=
   (Fin n ≃ Σ i : Fin σ.toList.length, Fin (σ.toList[i].1 * σ.toList[i].2)) ×
@@ -119,16 +97,6 @@ private theorem coe_splittingBlockMap (n : ℕ) (σ : Multiset (ℕ × ℕ))
     (p : splittingBlockTotal K n σ) :
     (splittingBlockMap n σ p).1 = GaloisSet.sigma p.1 (fun i ↦ (p.2 i).1) :=
   rfl
-
-private def blockFiberEquiv {m : ℕ} {d : Fin m → ℕ} {Q : Type*} (q : Fin n → Q)
-    (e : Fin m ≃ Q) :
-    {b : Fin n ≃ Σ i : Fin m, Fin (d i) // ∀ j, (b j).1 = e.symm (q j)} ≃
-      ∀ i : Fin m, {j : Fin n // q j = e i} ≃ Fin (d i) :=
-  (Equiv.fiberEquiv (fun j ↦ e.symm (q j)) Sigma.fst).trans <|
-    Equiv.piCongrRight fun i ↦
-      Equiv.equivCongr
-        (Equiv.subtypeEquivRight fun _ ↦ e.symm_apply_eq)
-        (Equiv.sigmaSubtype i)
 
 private theorem splittingBlock_hQ_mk {n : ℕ} {σ : Multiset (ℕ × ℕ)}
     (hσ : ∀ x ∈ σ, 0 < x.1 ∧ 0 < x.2)
@@ -212,33 +180,6 @@ private theorem splittingBlock_fib_eq {n : ℕ} {σ : Multiset (ℕ × ℕ)}
           (splittingBlock_hQ_mk hσ ρ₀ hΦ _ _).symm
     _ = Quotient.mk'' j := by simp [Sigma.eta]
 
-omit [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
-private theorem block_preserve_of_orbit_eq {m : ℕ} {d : Fin m → ℕ} (ρ : GaloisSet K n)
-    (e : Fin m ≃ let := ρ.mulAction; orbitRel.Quotient Gal(SeparableClosure K/K) (Fin n))
-    (b : Fin n ≃ Σ i : Fin m, Fin (d i))
-    (hb_fib : ∀ j, (b j).1 = e.symm (let := ρ.mulAction; Quotient.mk'' j))
-    (g : Gal(SeparableClosure K/K)) (j : Fin n) :
-    (b (ρ.val g j)).1 = (b j).1 := by
-  let := ρ.mulAction
-  rw [hb_fib, hb_fib]
-  congr 1
-  exact Quotient.sound' ⟨g, rfl⟩
-
-omit [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
-private theorem exists_smul_of_block_eq {m : ℕ} {d : Fin m → ℕ} (ρ : GaloisSet K n)
-    (e : Fin m ≃ let := ρ.mulAction; orbitRel.Quotient Gal(SeparableClosure K/K) (Fin n))
-    (b : Fin n ≃ Σ i : Fin m, Fin (d i))
-    (hb_fib : ∀ j, (b j).1 = e.symm (let := ρ.mulAction; Quotient.mk'' j))
-    (i : Fin m) (j₁ j₂ : Fin n) (h₁ : (b j₁).1 = i) (h₂ : (b j₂).1 = i) :
-    ∃ g : Gal(SeparableClosure K/K), ρ.val g j₁ = j₂ := by
-  let := ρ.mulAction
-  have hq : (Quotient.mk'' j₁ : orbitRel.Quotient Gal(SeparableClosure K/K) (Fin n)) =
-      Quotient.mk'' j₂ := by
-    rw [e.symm_apply_eq.1 ((hb_fib j₁).symm.trans h₁),
-      e.symm_apply_eq.1 ((hb_fib j₂).symm.trans h₂)]
-  obtain ⟨g, hg⟩ := Quotient.exact' hq.symm
-  exact ⟨g, by simpa using hg⟩
-
 private theorem restrictBlock_eq_of_splittingBlockMap_eq {n : ℕ} {σ : Multiset (ℕ × ℕ)}
     {ρ₀ : {ρ : GaloisSet K n // ρ.splittingSymbol = σ}}
     {p : splittingBlockTotal K n σ} (hΦ : splittingBlockMap n σ p = ρ₀)
@@ -265,34 +206,37 @@ private theorem splittingBlockToE_eq_of_fib {n : ℕ} {σ : Multiset (ℕ × ℕ
   rw [splittingBlockToE_apply]
   exact e.1.symm_apply_eq.1 ((hbp _).symm.trans (by simp))
 
-private theorem sigma_blockFiberEquiv_eq {n : ℕ} {σ : Multiset (ℕ × ℕ)}
+private theorem sigma_fiberEquivSigma_eq {n : ℕ} {σ : Multiset (ℕ × ℕ)}
     (ρ₀ : {ρ : GaloisSet K n // ρ.splittingSymbol = σ})
     {e' e : {e : Fin σ.toList.length ≃
         (let := ρ₀.1.mulAction; orbitRel.Quotient Gal(SeparableClosure K/K) (Fin n)) //
         ∀ i, ρ₀.1.orbitSymbol (e i) = σ.toList[i]}}
     (he : e' = e)
     (β : ∀ i : Fin σ.toList.length,
-      {j : Fin n // (let := ρ₀.1.mulAction; Quotient.mk'' j) = e.1 i} ≃
+      {j : Fin n // e.1.symm (let := ρ₀.1.mulAction; Quotient.mk'' j) = i} ≃
         Fin (σ.toList[i].1 * σ.toList[i].2))
     {b : Fin n ≃ Σ i : Fin σ.toList.length, Fin (σ.toList[i].1 * σ.toList[i].2)}
     (hfib' : ∀ j, (b j).1 = e'.1.symm (letI := ρ₀.1.mulAction; Quotient.mk'' j))
-    (hb : b = ((blockFiberEquiv (letI := ρ₀.1.mulAction; Quotient.mk'') e.1).symm β).1) :
-    (⟨e', blockFiberEquiv (letI := ρ₀.1.mulAction; Quotient.mk'') e'.1 ⟨b, hfib'⟩⟩ :
+    (hb : b = ((Equiv.fiberEquivSigma
+        (fun j ↦ e.1.symm (letI := ρ₀.1.mulAction; Quotient.mk'' j))).symm β).1) :
+    (⟨e', Equiv.fiberEquivSigma
+        (fun j ↦ e'.1.symm (letI := ρ₀.1.mulAction; Quotient.mk'' j)) ⟨b, hfib'⟩⟩ :
       Σ e : {e : Fin σ.toList.length ≃
           (let := ρ₀.1.mulAction; orbitRel.Quotient Gal(SeparableClosure K/K) (Fin n)) //
           ∀ i, ρ₀.1.orbitSymbol (e i) = σ.toList[i]},
         ∀ i : Fin σ.toList.length,
-          {j : Fin n // (let := ρ₀.1.mulAction; Quotient.mk'' j) = e.1 i} ≃
+          {j : Fin n // e.1.symm (let := ρ₀.1.mulAction; Quotient.mk'' j) = i} ≃
             Fin (σ.toList[i].1 * σ.toList[i].2)) = ⟨e, β⟩ := by
   subst he
   subst hb
   exact congrArg (Sigma.mk e')
-    ((blockFiberEquiv (letI := ρ₀.1.mulAction; Quotient.mk'') e'.1).apply_symm_apply β)
+    ((Equiv.fiberEquivSigma
+      (fun j ↦ e'.1.symm (letI := ρ₀.1.mulAction; Quotient.mk'' j))).apply_symm_apply β)
 
 -- A block decomposition `(b, ρᵢ)` of `ρ₀` determines an orbit-symbol-preserving bijection `e`
 -- from block indices to orbits of `ρ₀` (`splittingBlockToE`) together with bijections `β i` on
--- each orbit fibre (`blockFiberEquiv`); conversely, `(e, β)` reconstructs `b` and restricts `ρ₀`
--- to each block via `GaloisSet.restrictBlock`.
+-- each orbit fibre (`Equiv.fiberEquivSigma`); conversely, `(e, β)` reconstructs `b` and restricts
+-- `ρ₀` to each block via `GaloisSet.restrictBlock`.
 private def splittingBlockFiberEquiv {n : ℕ} {σ : Multiset (ℕ × ℕ)}
     (hσ : ∀ x ∈ σ, 0 < x.1 ∧ 0 < x.2)
     (ρ₀ : {ρ : GaloisSet K n // ρ.splittingSymbol = σ}) :
@@ -301,37 +245,46 @@ private def splittingBlockFiberEquiv {n : ℕ} {σ : Multiset (ℕ × ℕ)}
           (let := ρ₀.1.mulAction; orbitRel.Quotient Gal(SeparableClosure K/K) (Fin n)) //
           ∀ i, ρ₀.1.orbitSymbol (e i) = σ.toList[i]},
         ∀ i : Fin σ.toList.length,
-          {j : Fin n // (let := ρ₀.1.mulAction; Quotient.mk'' j) = e.1 i} ≃
+          {j : Fin n // e.1.symm (let := ρ₀.1.mulAction; Quotient.mk'' j) = i} ≃
             Fin (σ.toList[i].1 * σ.toList[i].2) :=
   letI := ρ₀.1.mulAction
   let d (i : Fin σ.toList.length) : ℕ := σ.toList[i].1 * σ.toList[i].2
   let hd (i : Fin σ.toList.length) : 0 < d i := toList_getElem_mul_pos hσ i
   { toFun := fun ⟨p, hΦ⟩ ↦
       ⟨splittingBlockToE hσ ρ₀ p hΦ,
-        blockFiberEquiv Quotient.mk'' (splittingBlockToE hσ ρ₀ p hΦ).1
+        Equiv.fiberEquivSigma (fun j ↦ (splittingBlockToE hσ ρ₀ p hΦ).1.symm (Quotient.mk'' j))
           ⟨p.1, splittingBlock_fib_eq hσ ρ₀ p hΦ⟩⟩
     invFun := fun ⟨e, β⟩ ↦
-      let ⟨b, hb_fib⟩ := (blockFiberEquiv Quotient.mk'' e.1).symm β
-      have hb := block_preserve_of_orbit_eq ρ₀.1 e.1 b hb_fib
-      have hfib := exists_smul_of_block_eq ρ₀.1 e.1 b hb_fib
+      let ⟨b, hb_fib⟩ := (Equiv.fiberEquivSigma (fun j ↦ e.1.symm (Quotient.mk'' j))).symm β
+      have hb : ∀ (g : Gal(SeparableClosure K/K)) (j : Fin n),
+          (b (ρ₀.1.val g j)).1 = (b j).1 := fun g j ↦ by
+        rw [hb_fib, hb_fib]
+        exact congrArg e.1.symm (Quotient.sound' ⟨g, rfl⟩)
       let ρᵢ : ∀ i : Fin σ.toList.length,
           {r : GaloisSet K (d i) // r.splittingSymbol = {σ.toList[i]}} := fun i ↦
         ⟨ρ₀.1.restrictBlock b hb i, by
-          rw [restrictBlock_splittingSymbol_eq ρ₀.1 b hb hd hfib i]
+          have htrans := ρ₀.1.isTransitive_restrictBlock_of_injective b hb e.1.symm
+            e.1.symm.injective hb_fib i
           have hq : Quotient.mk'' (b.symm ⟨i, ⟨0, hd i⟩⟩) = e.1 i :=
             e.1.symm_apply_eq.1 ((hb_fib _).symm.trans (by simp))
-          dsimp only at hq ⊢
-          rw [hq, e.2 i]⟩
+          have hstab := ρ₀.1.stabilizer_restrictBlock b hb i ⟨0, hd i⟩
+          rw [(ρ₀.1.restrictBlock b hb i).splittingSymbol_of_isTransitive htrans ⟨0, hd i⟩,
+            Multiset.singleton_inj]
+          dsimp only at hstab ⊢
+          rw [hstab]
+          exact (ρ₀.1.orbitSymbol_mk (b.symm ⟨i, ⟨0, hd i⟩⟩)).symm.trans (by rw [hq, e.2 i])⟩
       ⟨⟨b, ρᵢ⟩, Subtype.ext (ρ₀.1.sigma_restrictBlock b hb)⟩
     left_inv := fun ⟨p, hΦ⟩ ↦ by
       have hleft := congrArg Subtype.val
-        ((blockFiberEquiv Quotient.mk'' (splittingBlockToE hσ ρ₀ p hΦ).1).symm_apply_apply
+        ((Equiv.fiberEquivSigma
+            (fun j ↦ (splittingBlockToE hσ ρ₀ p hΦ).1.symm (Quotient.mk'' j))).symm_apply_apply
           ⟨p.1, splittingBlock_fib_eq hσ ρ₀ p hΦ⟩)
       exact Subtype.ext (Prod.ext hleft
         (funext fun i ↦ Subtype.ext (restrictBlock_eq_of_splittingBlockMap_eq hΦ hleft _ i)))
     right_inv := fun ⟨e, β⟩ ↦
-      sigma_blockFiberEquiv_eq ρ₀
-        (splittingBlockToE_eq_of_fib hσ ρ₀ e ((blockFiberEquiv Quotient.mk'' e.1).symm β).2)
+      sigma_fiberEquivSigma_eq ρ₀
+        (splittingBlockToE_eq_of_fib hσ ρ₀ e
+          ((Equiv.fiberEquivSigma (fun j ↦ e.1.symm (Quotient.mk'' j))).symm β).2)
         β _ rfl }
 
 private theorem natCard_splittingBlockFiber {n : ℕ} {σ : Multiset (ℕ × ℕ)}
@@ -350,15 +303,16 @@ private theorem natCard_splittingBlockFiber {n : ℕ} {σ : Multiset (ℕ × ℕ
         orbitRel.Quotient Gal(SeparableClosure K/K) (Fin n) //
         ∀ i, ρ₀.1.orbitSymbol (e i) = σ.toList[i]},
       Nat.card (∀ i : Fin σ.toList.length,
-        {j : Fin n // Quotient.mk'' j = e.1 i} ≃
+        {j : Fin n // e.1.symm (Quotient.mk'' j) = i} ≃
           Fin (σ.toList[i].1 * σ.toList[i].2)) =
         ∏ i : Fin σ.toList.length, (σ.toList[i].1 * σ.toList[i].2)! := by
     intro e
     rw [Nat.card_eq_fintype_card, Fintype.card_pi]
     refine Finset.prod_congr rfl fun i _ ↦ ?_
-    have hc : Fintype.card {j : Fin n // Quotient.mk'' j = e.1 i} =
+    have hc : Fintype.card {j : Fin n // e.1.symm (Quotient.mk'' j) = i} =
         σ.toList[i].1 * σ.toList[i].2 := by
-      rw [← Nat.card_eq_fintype_card, ← ρ₀.1.fst_mul_snd_orbitSymbol_eq_card_fiber, e.2 i]
+      rw [Fintype.card_congr (Equiv.subtypeEquivRight fun _ ↦ e.1.symm_apply_eq),
+        ← Nat.card_eq_fintype_card, ← ρ₀.1.fst_mul_snd_orbitSymbol_eq_card_fiber, e.2 i]
     rw [Fintype.card_equiv (Fintype.equivFinOfCardEq hc), hc]
   simp_rw [hfib_card, Finset.sum_const, Finset.card_univ, smul_eq_mul,
     ← Nat.card_eq_fintype_card]

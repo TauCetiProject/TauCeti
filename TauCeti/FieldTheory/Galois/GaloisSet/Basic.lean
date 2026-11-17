@@ -33,7 +33,9 @@ disjoint-union Galois set (`TauCeti.GaloisSet.sigma`) preserving point stabilize
 (`TauCeti.GaloisSet.stabilizer_sigma_symm_apply`); conversely, an action preserving the blocks
 restricts to each block (`TauCeti.GaloisSet.restrictBlock`,
 `TauCeti.GaloisSet.sigma_restrictBlock`, `TauCeti.GaloisSet.restrictBlock_sigma`,
-`TauCeti.GaloisSet.stabilizer_restrictBlock`).
+`TauCeti.GaloisSet.stabilizer_restrictBlock`,
+`TauCeti.GaloisSet.isTransitive_restrictBlock_iff`,
+`TauCeti.GaloisSet.isTransitive_restrictBlock_of_injective`).
 
 Conversely, an open subgroup `H` of index `n` and a labelling `Fin n ≃ G ⧸ H` of its cosets
 give a transitive Galois set (`TauCeti.GaloisSet.ofQuotient`). For a subextension `L` of degree
@@ -409,6 +411,59 @@ theorem stabilizer_restrictBlock {ι : Type*} {d : ι → ℕ} (ρ : GaloisSet K
   have hstab := stabilizer_sigma_symm_apply b (ρ.restrictBlock b hb) i x
   rw [sigma_restrictBlock] at hstab
   exact hstab.symm
+
+/-- The `i`-th block restriction of `ρ` along an invariant decomposition `b` is transitive if and
+only if every two labels in block `i` lie in the same orbit of `ρ`. -/
+theorem isTransitive_restrictBlock_iff {ι : Type*} {d : ι → ℕ} (ρ : GaloisSet K n)
+    (b : Fin n ≃ Σ i, Fin (d i))
+    (hb : ∀ (σ : SeparableClosure K ≃ₐ[K] SeparableClosure K) (j : Fin n),
+      (b (ρ.val σ j)).1 = (b j).1)
+    (i : ι) :
+    (ρ.restrictBlock b hb i).IsTransitive ↔
+      ∀ j₁ j₂ : Fin n, (b j₁).1 = i → (b j₂).1 = i →
+        ∃ σ : SeparableClosure K ≃ₐ[K] SeparableClosure K, ρ.val σ j₁ = j₂ := by
+  rw [isTransitive_iff]
+  constructor
+  · intro h j₁ j₂ h₁ h₂
+    rcases hb₁ : b j₁ with ⟨i₁, x₁⟩
+    rcases hb₂ : b j₂ with ⟨i₂, x₂⟩
+    rw [hb₁] at h₁
+    rw [hb₂] at h₂
+    cases h₁
+    cases h₂
+    obtain ⟨σ, hσ⟩ := h x₁ x₂
+    refine ⟨σ, ?_⟩
+    have hsmul := ρ.symm_apply_smul_restrictBlock b hb i₁ σ x₁
+    rw [smul_def, smul_def, hσ, b.symm_apply_eq.mpr hb₁.symm,
+      b.symm_apply_eq.mpr hb₂.symm] at hsmul
+    exact hsmul.symm
+  · intro h x y
+    obtain ⟨σ, hσ⟩ := h (b.symm ⟨i, x⟩) (b.symm ⟨i, y⟩) (by simp) (by simp)
+    refine ⟨σ, ?_⟩
+    have hsmul := ρ.symm_apply_smul_restrictBlock b hb i σ x
+    rw [smul_def, smul_def, hσ] at hsmul
+    exact eq_of_heq (Sigma.mk.inj_iff.mp (b.symm.injective hsmul)).2
+
+/-- If the block projection `(b j).1` factors injectively through the orbit quotient of `ρ`, then
+every block restriction `ρ.restrictBlock b hb i` is transitive. -/
+theorem isTransitive_restrictBlock_of_injective {ι : Type*} {d : ι → ℕ} (ρ : GaloisSet K n)
+    (b : Fin n ≃ Σ i, Fin (d i))
+    (hb : ∀ (σ : SeparableClosure K ≃ₐ[K] SeparableClosure K) (j : Fin n),
+      (b (ρ.val σ j)).1 = (b j).1)
+    (f : (let := ρ.mulAction; MulAction.orbitRel.Quotient
+      (SeparableClosure K ≃ₐ[K] SeparableClosure K) (Fin n)) → ι)
+    (hf : Function.Injective f)
+    (hbf : ∀ j, (b j).1 = f (let := ρ.mulAction; Quotient.mk'' j))
+    (i : ι) :
+    (ρ.restrictBlock b hb i).IsTransitive := by
+  rw [isTransitive_restrictBlock_iff]
+  intro j₁ j₂ h₁ h₂
+  let := ρ.mulAction
+  have hq : (Quotient.mk'' j₁ : MulAction.orbitRel.Quotient
+      (SeparableClosure K ≃ₐ[K] SeparableClosure K) (Fin n)) = Quotient.mk'' j₂ :=
+    hf (by rw [← hbf, ← hbf, h₁, h₂])
+  obtain ⟨σ, hσ⟩ := Quotient.exact' hq.symm
+  exact ⟨σ, by simpa using hσ⟩
 
 /-! ### Transitive Galois sets from open subgroups -/
 
