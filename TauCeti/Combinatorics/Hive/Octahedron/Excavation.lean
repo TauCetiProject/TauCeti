@@ -10,6 +10,7 @@ public import TauCeti.Topology.PL.Map
 import Mathlib.Tactic.Abel
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
+import Mathlib.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # Unit-cell excavation schedules, linear branches, and piecewise-affineness
@@ -451,18 +452,6 @@ private theorem branchSumContLinear_apply (hn : 1 ≤ n) (b : Bool) (x₀ y₀ :
     branchSumContLinear hn b x₀ y₀ F = branchSum hn b F x₀ y₀ := by
   simp [branchSumContLinear, gridEvalContLinear, branchSum_apply]
 
-private def stepBranchContLinear (hn : 1 ≤ n) (x₀ y₀ : Fin (n + 1)) (b : Bool) :
-    (Fin (n + 1) → Fin (n + 1) → ℝ) →L[ℝ] (Fin (n + 1) → Fin (n + 1) → ℝ) :=
-  ContinuousLinearMap.pi fun x => ContinuousLinearMap.pi fun y =>
-    if x = x₀ ∧ y = y₀ then branchSumContLinear hn b x₀ y₀ - gridEvalContLinear x₀ y₀
-    else gridEvalContLinear x y
-
-private theorem stepBranchContLinear_apply (hn : 1 ≤ n) (x₀ y₀ : Fin (n + 1)) (b : Bool)
-    (F : Fin (n + 1) → Fin (n + 1) → ℝ) (x y : Fin (n + 1)) :
-    stepBranchContLinear hn x₀ y₀ b F x y = stepBranchLinear ℝ hn x₀ y₀ b F x y := by
-  simp only [stepBranchContLinear, ContinuousLinearMap.pi_apply, stepBranchLinear_apply]
-  split_ifs <;> simp [branchSumContLinear_apply, gridEvalContLinear]
-
 /-- Every single unit-cell excavation step over `ℝ` satisfies `TauCeti.IsPiecewiseAffineOn` on
 `Set.univ`. -/
 theorem isPiecewiseAffineOn_excavateData (hn : 1 ≤ n) (x₀ y₀ : Fin (n + 1)) :
@@ -475,7 +464,8 @@ theorem isPiecewiseAffineOn_excavateData (hn : 1 ≤ n) (x₀ y₀ : Fin (n + 1)
     | true => {F | (L_f - L_t).toContinuousAffineMap F ≤ 0}
     | false => {F | (L_t - L_f).toContinuousAffineMap F ≤ 0}
   let A : Bool → ((Fin (n + 1) → Fin (n + 1) → ℝ) →ᴬ[ℝ] (Fin (n + 1) → Fin (n + 1) → ℝ)) :=
-    fun b => (stepBranchContLinear hn x₀ y₀ b).toContinuousAffineMap
+    fun b =>
+      (LinearMap.toContinuousLinearMap (stepBranchLinear ℝ hn x₀ y₀ b)).toContinuousAffineMap
   refine TauCeti.isPiecewiseAffineOn_of_finite (ι := Bool) (C := C) (A := A) ?_ ?_ ?_
   · intro b; cases b <;> exact TauCeti.isConvexPolyhedron_setOf_le _
   · intro F _
@@ -487,10 +477,10 @@ theorem isPiecewiseAffineOn_excavateData (hn : 1 ≤ n) (x₀ y₀ : Fin (n + 1)
     cases b
     · have hle : branchSum hn true F x₀ y₀ ≤ branchSum hn false F x₀ y₀ := by
         simpa [C, L_t, L_f, branchSumContLinear_apply] using hFC
-      simp [A, stepBranchContLinear_apply, excavateData_apply, spatialSup_def, max_eq_right hle]
+      simp [A, excavateData_apply, spatialSup_def, max_eq_right hle]
     · have hle : branchSum hn false F x₀ y₀ ≤ branchSum hn true F x₀ y₀ := by
         simpa [C, L_t, L_f, branchSumContLinear_apply] using hFC
-      simp [A, stepBranchContLinear_apply, excavateData_apply, spatialSup_def, max_eq_left hle]
+      simp [A, excavateData_apply, spatialSup_def, max_eq_left hle]
 
 /-- Every legal excavation schedule defines a globally piecewise-affine map on `Set.univ`. -/
 theorem ExcavationSchedule.isPiecewiseAffineOn_eval (hn : 1 ≤ n) {τ₁ τ₂ : Section n}

@@ -359,21 +359,13 @@ section GluingGroup
 
 variable {n : ℕ} {R : Type*} [AddCommGroup R]
 
-private theorem apply_edgePoint_two_rev [PartialOrder R] (h : Hive n R) (k : Fin (n + 1)) :
-    h (Vertex.edgePoint n 2 k.rev) =
-      ∑ i : Fin n with i.val < k.val, -h.boundary 2 i.rev := by
-  have hp : Vertex.edgePoint n 2 k.rev = (Vertex.edgePoint n 0 k).reflect :=
-    (Vertex.reflect_edgePoint n 0 k).symm
-  rw [hp, ← Hive.reflect_apply, h.reflect.apply_edgePoint_zero]
-  exact Finset.sum_congr rfl fun i _ => h.boundary_reflect 0 i
-
 /-- Two hives whose shared boundary satisfies `h₁.boundary 2 i = -h₂.boundary 0 i.rev` agree
 identically along the matched edge (`A, C` of `h₁` matched with `A, B` of `h₂`, both vanishing at
 `A`). -/
 theorem shared_input_edge_eq [PartialOrder R] {h₁ h₂ : Hive n R}
     (hb : ∀ i : Fin n, h₁.boundary 2 i = -h₂.boundary 0 i.rev) (k : Fin (n + 1)) :
     h₁ (Vertex.edgePoint n 2 k.rev) = h₂ (Vertex.edgePoint n 0 k) := by
-  rw [apply_edgePoint_two_rev, h₂.apply_edgePoint_zero]
+  rw [h₁.apply_edgePoint_two_rev, h₂.apply_edgePoint_zero]
   exact Finset.sum_congr rfl fun i _ => by rw [hb i.rev, Fin.rev_rev, neg_neg]
 
 theorem shared_input_edge_eq_of_productBoundary {lam μ σ ν π : DominantWeight n}
@@ -579,7 +571,7 @@ theorem shared_output_edge_eq [PartialOrder R] {g₁ g₂ : Hive n R}
       eq_comm] at h
   have h1 : g₁ (Vertex.edgePoint n 2 k.rev) =
       ∑ i : Fin n with i.val < k.val, g₂.boundary 1 i := by
-    rw [apply_edgePoint_two_rev]
+    rw [g₁.apply_edgePoint_two_rev]
     exact Finset.sum_congr rfl fun i _ => by rw [hb i.rev, Fin.rev_rev, neg_neg]
   rw [hB, h1, g₂.apply_edgePoint_one]
 
