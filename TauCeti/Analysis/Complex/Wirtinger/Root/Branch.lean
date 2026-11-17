@@ -48,9 +48,13 @@ union of graphs of solutions of `D_C`, that is, of pseudoholomorphic sections of
   `v(x) = v₀` (implicit function theorem).
 * `TauCeti.exists_root_branch_conjWirtingerDeriv_add_add_eq_zero`: if the `b_j` are `Cⁿ`, `n ≠ 0`,
   and the equation holds with zero remainder near `x`, this branch solves `D_C v = 0` near `x`.
+* `TauCeti.exists_root_branches_conjWirtingerDeriv_add_add_eq_zero_of_nodup`: if all the roots of
+  `P_x` are simple, these branches, one through each root, list the roots of `P_y` for `y` near
+  `x`.
 
-The collisions of roots, where `P'` vanishes and the branches must be normalized, are not treated
-here.
+The collisions of roots, where `P'` vanishes, are shown to be isolated in
+`TauCeti.Analysis.Complex.Wirtinger.Root.Collision`; the normalization of the branches across them
+is not treated here.
 
 ## References
 
@@ -300,5 +304,62 @@ theorem exists_root_branch_conjWirtingerDeriv_add_add_eq_zero [CompleteSpace V]
   have hmem : v y ∈ R y := mem_of_pow_add_sum_eq_zero hcard hbR hry
   exact conjWirtingerDeriv_add_add_eq_zero_of_prod_ne_zero hby hvy hry' hcard hbR
     (hGprod y hcard hbR hmem ▸ hGy) (ν y) (μ y) hy
+
+/-- **Root branches near simple roots.** Let `b₁, …, b_m` be `C¹` at `x`, with `b_j(y) = e_j(R(y))`
+for multisets `R(y)` of `m` points near `x`, solving near `x` the equation of the elementary
+symmetric functions of `m` solutions of `D_C = \bar∂ + ν W + μ \bar W`. If `R(x)` has no repeated
+point, there are functions `v w`, one through each root `w ∈ R(x)`, which are `C¹` at `x`, solve
+`D_C (v w) = 0` near `x`, and list the roots near `x`: `R(y) = {v w (y) | w ∈ R(x)}`. -/
+theorem exists_root_branches_conjWirtingerDeriv_add_add_eq_zero_of_nodup [CompleteSpace V] {m : ℕ}
+    {b : ℕ → V → ℂ} {R : V → Multiset ℂ} {x : V} (hb : ∀ j ∈ Icc 1 m, ContDiffAt ℝ 1 (b j) x)
+    (hR : ∀ᶠ y in 𝓝 x, Multiset.card (R y) = m ∧ ∀ j ∈ Icc 1 m, b j y = (R y).esymm j)
+    (hx : (R x).Nodup) (ν μ : V → V →L⋆[ℂ] ℂ)
+    (heq : ∀ᶠ y in 𝓝 x, ∀ j ∈ Icc 1 m, conjWirtingerDeriv (b j) y + (j * b j y) • ν y +
+      ((R y).map fun w ↦ conj w * ((R y).erase w).esymm (j - 1)).sum • μ y = 0) :
+    ∃ v : ℂ → V → ℂ, (∀ w ∈ R x, v w x = w ∧ ContDiffAt ℝ 1 (v w) x ∧
+      ∀ᶠ y in 𝓝 x, conjWirtingerDeriv (v w) y + v w y • ν y + conj (v w y) • μ y = 0) ∧
+      ∀ᶠ y in 𝓝 x, R y = (R x).map fun w ↦ v w y := by
+  classical
+  -- Through each root `w` passes a root branch `v w` solving `D_C (v w) = 0` near `x`.
+  have hbr : ∀ w ∈ R x, ∃ v : V → ℂ, v x = w ∧ ContDiffAt ℝ 1 v x ∧
+      (∀ᶠ p in 𝓝 (x, w),
+        p.2 ^ m + ∑ j ∈ Icc 1 m, (-1) ^ j * b j p.1 * p.2 ^ (m - j) = 0 ↔ v p.1 = p.2) ∧
+      ∀ᶠ y in 𝓝 x, conjWirtingerDeriv v y + v y • ν y + conj (v y) • μ y = 0 :=
+    fun w hw ↦ exists_root_branch_conjWirtingerDeriv_add_add_eq_zero one_ne_zero hb hR
+      (Multiset.count_eq_one_of_mem hx hw) ν μ heq
+  choose! v hvx hvc hgraph hvD using hbr
+  refine ⟨v, fun w hw ↦ ⟨hvx w hw, hvc w hw, hvD w hw⟩, ?_⟩
+  set s : Finset ℂ := (R x).toFinset
+  have hsval : s.val = R x := by rw [Multiset.toFinset_val, hx.dedup]
+  -- Near `x`, every branch value is a root.
+  have hall : ∀ w ∈ s, ∀ᶠ y in 𝓝 x,
+      v w y ^ m + ∑ j ∈ Icc 1 m, (-1) ^ j * b j y * v w y ^ (m - j) = 0 := fun w hw ↦ by
+    rw [← Finset.mem_val, hsval] at hw
+    have hc : Tendsto (v w) (𝓝 x) (𝓝 w) := by
+      simpa only [hvx w hw] using (hvc w hw).continuousAt.tendsto
+    exact ((tendsto_id.prodMk_nhds hc).eventually (hgraph w hw)).mono fun y hy ↦ hy.2 rfl
+  -- Near `x`, distinct branches take distinct values.
+  have hdist : ∀ w ∈ s, ∀ u ∈ s, ∀ᶠ y in 𝓝 x, w ≠ u → v w y ≠ v u y := by
+    intro w hw u hu
+    rw [← Finset.mem_val, hsval] at hw hu
+    by_cases hwu : w = u
+    · exact .of_forall fun _ h ↦ absurd hwu h
+    · have hne : v w x ≠ v u x := by rw [hvx w hw, hvx u hu]; exact hwu
+      exact (((hvc w hw).continuousAt.sub (hvc u hu).continuousAt).eventually_ne
+        (sub_ne_zero.2 hne)).mono fun y hy _ ↦ sub_ne_zero.1 hy
+  -- Hence near `x` the roots are exactly the branch values.
+  filter_upwards [hR, (eventually_all_finset s).2 hall,
+    (eventually_all_finset s).2 fun w hw ↦ (eventually_all_finset s).2 (hdist w hw)] with
+    y hy hroot hdisty
+  rw [← hsval]
+  have hnd : (s.val.map fun w ↦ v w y).Nodup :=
+    Multiset.Nodup.map_on (fun w hw u hu h ↦ by_contra fun hwu ↦ hdisty w hw u hu hwu h) s.nodup
+  refine (Multiset.eq_of_le_of_card_le ((Multiset.le_iff_subset hnd).2 fun z hz ↦ ?_)
+    (by rw [hy.1, Multiset.card_map, hsval, hR.self_of_nhds.1])).symm
+  obtain ⟨w, hw, rfl⟩ := Multiset.mem_map.1 hz
+  have h := hroot w hw
+  rw [Finset.sum_congr rfl fun j hj ↦ by rw [hy.2 j hj],
+    ← Multiset.prod_map_sub_eq_pow_add_sum_esymm hy.1] at h
+  exact Multiset.prod_map_sub_eq_zero_iff.1 h
 
 end TauCeti

@@ -6,12 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.CauchyRiemann.Similarity
-public import TauCeti.Analysis.Complex.Wirtinger.RootBranch
+public import TauCeti.Analysis.Complex.Wirtinger.Root.Branch
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
-import TauCeti.Analysis.Calculus.ContDiff.Matrix
 import TauCeti.Analysis.Complex.Wirtinger.FinsetProd
+import TauCeti.Analysis.Polynomial.Discriminant
 import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
-import TauCeti.RingTheory.Polynomial.Vieta
 
 /-!
 # Collisions of the roots of the Newton coefficient equation are isolated
@@ -50,13 +49,12 @@ it vanishes identically
 the roots are simple at one point of a connected open set `U ⊆ ℂ`, they are simple off a discrete
 subset of `U`** (`TauCeti.setOf_nodup_mem_codiscreteWithin`). Away from that discrete set the
 root multigraph of `P` is a union of graphs of solutions of `D_C`, and the remaining collisions are
-isolated points across which the branches are to be normalized. When the roots coincide
-everywhere, as for a multiply covered curve, the discriminant vanishes identically and the
-statement is empty.
+isolated points across which the branches are to be normalized. When two of the roots coincide on
+all of `U`, for instance along a multiply covered component, the discriminant vanishes identically
+and the statement is empty.
 
 ## Main results
 
-* `TauCeti.contDiffOn_discr_prod_X_sub_C`: the discriminant is as regular as the coefficients.
 * `TauCeti.norm_conjWirtingerDeriv_discr_le_of_nodup`,
   `TauCeti.norm_conjWirtingerDeriv_discr_le`: the differential inequality for the discriminant.
 * `TauCeti.setOf_nodup_mem_codiscreteWithin`: the collisions are isolated.
@@ -75,83 +73,6 @@ open Finset Filter Topology ComplexConjugate Polynomial MeasureTheory
 
 namespace TauCeti
 
-/-! ### Regularity of the discriminant -/
-
-section Regularity
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-
-/-- An entry of the Sylvester matrix of two families of polynomials whose coefficients are `C^n`
-on a set is `C^n` there. -/
-private theorem contDiffOn_sylvester_apply {n : WithTop ℕ∞} {s : Set E} {f g : E → ℂ[X]}
-    (hf : ∀ k, ContDiffOn ℝ n (fun y ↦ (f y).coeff k) s)
-    (hg : ∀ k, ContDiffOn ℝ n (fun y ↦ (g y).coeff k) s) (p q : ℕ) (i j : Fin (p + q)) :
-    ContDiffOn ℝ n (fun y ↦ sylvester (f y) (g y) p q i j) s := by
-  induction j using Fin.addCases with
-  | left j =>
-    by_cases h : (i : ℕ) ∈ Set.Icc (j : ℕ) (j + q)
-    · simpa only [sylvester, Matrix.of_apply, Fin.addCases_left, h, ↓reduceIte] using hg _
-    · simpa only [sylvester, Matrix.of_apply, Fin.addCases_left, h, ↓reduceIte] using
-        contDiffOn_const
-  | right j =>
-    by_cases h : (i : ℕ) ∈ Set.Icc (j : ℕ) (j + p)
-    · simpa only [sylvester, Matrix.of_apply, Fin.addCases_right, h, ↓reduceIte] using hf _
-    · simpa only [sylvester, Matrix.of_apply, Fin.addCases_right, h, ↓reduceIte] using
-        contDiffOn_const
-
-/-- **Regularity of the discriminant.** If `b₁, …, b_m` are `C^n` on `s` and `b_j(y) = e_j(R(y))`
-for a multiset `R(y)` of `m` points, then the discriminant of `∏_{w ∈ R(y)} (X - w)` is `C^n` on
-`s`. It is a polynomial in the coefficients of that product, which are `±b_j` and `1`. -/
-theorem contDiffOn_discr_prod_X_sub_C {n : WithTop ℕ∞} {s : Set E} {m : ℕ} {b : ℕ → E → ℂ}
-    {R : E → Multiset ℂ} (hb : ∀ j ∈ Icc 1 m, ContDiffOn ℝ n (b j) s)
-    (hR : ∀ y ∈ s, Multiset.card (R y) = m ∧ ∀ j ∈ Icc 1 m, b j y = (R y).esymm j) :
-    ContDiffOn ℝ n (fun y ↦ ((R y).map fun w ↦ X - C w).prod.discr) s := by
-  set P : E → ℂ[X] := fun y ↦ ((R y).map fun w ↦ X - C w).prod with hP
-  -- The coefficients of `P y`, read off Vieta's formulas.
-  set c : ℕ → E → ℂ := fun k y ↦
-    if k < m then (-1) ^ (m - k) * b (m - k) y else if k = m then 1 else 0 with hc
-  have hcd : ∀ k, ContDiffOn ℝ n (c k) s := by
-    intro k
-    by_cases hk : k < m
-    · simpa only [hc, hk, ↓reduceIte] using
-        contDiffOn_const.mul (hb (m - k) (mem_Icc.2 ⟨by omega, by omega⟩))
-    · by_cases hk' : k = m
-      · simpa only [hc, hk, hk', ↓reduceIte, lt_irrefl] using contDiffOn_const
-      · simpa only [hc, hk, hk', ↓reduceIte] using contDiffOn_const
-  have hPc : ∀ y ∈ s, ∀ k, (P y).coeff k = c k y := by
-    intro y hy k
-    obtain ⟨hcard, hbR⟩ := hR y hy
-    by_cases hk : k ≤ m
-    · rw [hP, Multiset.prod_X_sub_C_coeff _ (hcard ▸ hk), hcard]
-      rcases hk.lt_or_eq with hk | rfl
-      · simp only [hc, hk, ↓reduceIte, hbR (m - k) (mem_Icc.2 ⟨by omega, by omega⟩)]
-      · simp [hc]
-    · rw [coeff_eq_zero_of_natDegree_lt (by
-        rw [hP, natDegree_multiset_prod_X_sub_C_eq_card, hcard]; omega)]
-      simp [hc, show ¬k < m by omega, show k ≠ m by omega]
-  have hPd : ∀ k, ContDiffOn ℝ n (fun y ↦ (P y).coeff k) s :=
-    fun k ↦ (hcd k).congr fun y hy ↦ hPc y hy k
-  have hP'd : ∀ k, ContDiffOn ℝ n (fun y ↦ (P y).derivative.coeff k) s := fun k ↦ by
-    simpa only [coeff_derivative] using (hPd (k + 1)).mul contDiffOn_const
-  -- The discriminant of the monic `P y` is a sign times the resultant of `P y` and its derivative.
-  have hdiscr : ∀ y ∈ s, (P y).discr =
-      (-1) ^ (m * (m - 1) / 2) * (sylvester (P y) (P y).derivative m (m - 1)).det := by
-    intro y hy
-    have hmon : (P y).Monic := monic_multisetProd_X_sub_C (R y)
-    have hdeg : (P y).natDegree = m := by
-      rw [hP, natDegree_multiset_prod_X_sub_C_eq_card, (hR y hy).1]
-    have h := hmon.resultant_deriv
-    rw [hdeg] at h
-    have hsq : ((-1 : ℂ) ^ (m * (m - 1) / 2)) ^ 2 = 1 := by
-      rw [← pow_mul, mul_comm, pow_mul, neg_one_sq, one_pow]
-    calc (P y).discr = ((-1 : ℂ) ^ (m * (m - 1) / 2)) ^ 2 * (P y).discr := by rw [hsq, one_mul]
-      _ = (-1) ^ (m * (m - 1) / 2) * ((-1) ^ (m * (m - 1) / 2) * (P y).discr) := by ring
-      _ = _ := by rw [← h, resultant]
-  exact (contDiffOn_const.mul (ContDiffOn.matrix_det fun i j ↦
-    contDiffOn_sylvester_apply hPd hP'd m (m - 1) i j)).congr hdiscr
-
-end Regularity
-
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
 
 /-! ### The differential inequality for the discriminant -/
@@ -165,7 +86,7 @@ private theorem norm_conjWirtingerDeriv_sub_le {v v' : V → ℂ} {x : V}
     ‖conjWirtingerDeriv (fun y ↦ v y - v' y) x‖ ≤ (‖ν‖ + ‖μ‖) * ‖v x - v' x‖ := by
   have h : conjWirtingerDeriv (fun y ↦ v y - v' y) x =
       -((v x - v' x) • ν + conj (v x - v' x) • μ) := by
-    rw [show (fun y ↦ v y - v' y) = v - v' from rfl, conjWirtingerDeriv_sub hv hv', map_sub]
+    rw [conjWirtingerDeriv_fun_sub hv hv', map_sub]
     linear_combination (norm := module) hD - hD'
   rw [h, norm_neg]
   calc ‖(v x - v' x) • ν + conj (v x - v' x) • μ‖
@@ -173,82 +94,6 @@ private theorem norm_conjWirtingerDeriv_sub_le {v v' : V → ℂ} {x : V}
         refine (norm_add_le _ _).trans ?_
         rw [norm_smul, norm_smul, Complex.norm_conj]
     _ = (‖ν‖ + ‖μ‖) * ‖v x - v' x‖ := by ring
-
-/-- **Root branches near simple roots.** Let `b₁, …, b_m` be `C¹` at `x`, with `b_j(y) = e_j(R(y))`
-for multisets `R(y)` of `m` points near `x`, solving near `x` the equation of the elementary
-symmetric functions of `m` solutions of `D_C = \bar∂ + ν W + μ \bar W`. If `R(x)` has no repeated
-point, there are functions `v w`, one through each root `w ∈ R(x)`, which are `C¹` at `x`, solve
-`D_C (v w) = 0` near `x`, and list the roots near `x`: `R(y) = {v w (y) | w ∈ R(x)}`. -/
-private theorem exists_root_branches_of_nodup [CompleteSpace V] {m : ℕ} {b : ℕ → V → ℂ}
-    {R : V → Multiset ℂ} {x : V} (hb : ∀ j ∈ Icc 1 m, ContDiffAt ℝ 1 (b j) x)
-    (hR : ∀ᶠ y in 𝓝 x, Multiset.card (R y) = m ∧ ∀ j ∈ Icc 1 m, b j y = (R y).esymm j)
-    (hx : (R x).Nodup) (ν μ : V → V →L⋆[ℂ] ℂ)
-    (heq : ∀ᶠ y in 𝓝 x, ∀ j ∈ Icc 1 m, conjWirtingerDeriv (b j) y + (j * b j y) • ν y +
-      ((R y).map fun w ↦ conj w * ((R y).erase w).esymm (j - 1)).sum • μ y = 0) :
-    ∃ v : ℂ → V → ℂ, (∀ w ∈ R x, v w x = w ∧ ContDiffAt ℝ 1 (v w) x ∧
-      ∀ᶠ y in 𝓝 x, conjWirtingerDeriv (v w) y + v w y • ν y + conj (v w y) • μ y = 0) ∧
-      ∀ᶠ y in 𝓝 x, R y = (R x).map fun w ↦ v w y := by
-  classical
-  -- Through each root `w` passes a root branch `v w` solving `D_C (v w) = 0` near `x`.
-  have hbr : ∀ w ∈ R x, ∃ v : V → ℂ, v x = w ∧ ContDiffAt ℝ 1 v x ∧
-      (∀ᶠ p in 𝓝 (x, w),
-        p.2 ^ m + ∑ j ∈ Icc 1 m, (-1) ^ j * b j p.1 * p.2 ^ (m - j) = 0 ↔ v p.1 = p.2) ∧
-      ∀ᶠ y in 𝓝 x, conjWirtingerDeriv v y + v y • ν y + conj (v y) • μ y = 0 :=
-    fun w hw ↦ exists_root_branch_conjWirtingerDeriv_add_add_eq_zero one_ne_zero hb hR
-      (Multiset.count_eq_one_of_mem hx hw) ν μ heq
-  choose! v hvx hvc hgraph hvD using hbr
-  refine ⟨v, fun w hw ↦ ⟨hvx w hw, hvc w hw, hvD w hw⟩, ?_⟩
-  set s : Finset ℂ := (R x).toFinset
-  have hsval : s.val = R x := by rw [Multiset.toFinset_val, hx.dedup]
-  -- Near `x`, every branch value is a root.
-  have hall : ∀ w ∈ s, ∀ᶠ y in 𝓝 x,
-      v w y ^ m + ∑ j ∈ Icc 1 m, (-1) ^ j * b j y * v w y ^ (m - j) = 0 := fun w hw ↦ by
-    rw [← Finset.mem_val, hsval] at hw
-    have hc : Tendsto (v w) (𝓝 x) (𝓝 w) := by
-      simpa only [hvx w hw] using (hvc w hw).continuousAt.tendsto
-    exact ((tendsto_id.prodMk_nhds hc).eventually (hgraph w hw)).mono fun y hy ↦ hy.2 rfl
-  -- Near `x`, distinct branches take distinct values.
-  have hdist : ∀ w ∈ s, ∀ u ∈ s, ∀ᶠ y in 𝓝 x, w ≠ u → v w y ≠ v u y := by
-    intro w hw u hu
-    rw [← Finset.mem_val, hsval] at hw hu
-    by_cases hwu : w = u
-    · exact .of_forall fun _ h ↦ absurd hwu h
-    · have hne : v w x ≠ v u x := by rw [hvx w hw, hvx u hu]; exact hwu
-      exact (((hvc w hw).continuousAt.sub (hvc u hu).continuousAt).eventually_ne
-        (sub_ne_zero.2 hne)).mono fun y hy _ ↦ sub_ne_zero.1 hy
-  -- Hence near `x` the roots are exactly the branch values.
-  filter_upwards [hR, (eventually_all_finset s).2 hall,
-    (eventually_all_finset s).2 fun w hw ↦ (eventually_all_finset s).2 (hdist w hw)] with
-    y hy hroot hdisty
-  rw [← hsval]
-  have hnd : (s.val.map fun w ↦ v w y).Nodup :=
-    Multiset.Nodup.map_on (fun w hw u hu h ↦ by_contra fun hwu ↦ hdisty w hw u hu hwu h) s.nodup
-  refine (Multiset.eq_of_le_of_card_le ((Multiset.le_iff_subset hnd).2 fun z hz ↦ ?_)
-    (by rw [hy.1, Multiset.card_map, hsval, hR.self_of_nhds.1])).symm
-  obtain ⟨w, hw, rfl⟩ := Multiset.mem_map.1 hz
-  have h := hroot w hw
-  rw [Finset.sum_congr rfl fun j hj ↦ by rw [hy.2 j hj],
-    ← Multiset.prod_map_sub_eq_pow_add_sum_esymm hy.1] at h
-  exact Multiset.prod_map_sub_eq_zero_iff.1 h
-
-/-- The discriminant of `∏_{w ∈ s} (X - g w)`, for a finite set `s` and values `g w`, is
-`(-1)^(#s (#s - 1) / 2) ∏_{w ∈ s} ∏_{u ∈ s ∖ w} (g w - g u)`. -/
-private theorem discr_prod_X_sub_C_map_eq (s : Finset ℂ) (g : ℂ → ℂ) :
-    ((s.val.map g).map fun w ↦ X - C w).prod.discr =
-      (-1) ^ (#s * (#s - 1) / 2) * ∏ w ∈ s, ∏ u ∈ s.erase w, (g w - g u) := by
-  classical
-  have h := Multiset.prod_map_prod_map_sub_erase_eq_neg_one_pow_mul_discr (s.val.map g)
-  rw [Multiset.card_map, Finset.card_val] at h
-  have hprod : ((s.val.map g).map fun w ↦ (((s.val.map g).erase w).map fun u ↦ w - u).prod).prod =
-      ∏ w ∈ s, ∏ u ∈ s.erase w, (g w - g u) := by
-    rw [Multiset.map_map, Finset.prod_eq_multiset_prod]
-    refine congrArg Multiset.prod (Multiset.map_congr rfl fun w hw ↦ ?_)
-    rw [Function.comp_apply, ← Multiset.map_erase_of_mem _ _ hw, Multiset.map_map,
-      Finset.prod_eq_multiset_prod, Finset.erase_val, Function.comp_def]
-  have hσ : ((-1 : ℂ) ^ (#s * (#s - 1) / 2)) * (-1) ^ (#s * (#s - 1) / 2) = 1 := by
-    rw [← pow_add, ← two_mul, pow_mul, neg_one_sq, one_pow]
-  rw [hprod] at h
-  rw [h, ← mul_assoc, hσ, one_mul]
 
 /-- **The differential inequality for the discriminant at simple roots.** Let `b₁, …, b_m` be `C¹`
 at `x`, with `b_j(y) = e_j(R(y))` for multisets `R(y)` of `m` points near `x`, and suppose that
@@ -266,7 +111,8 @@ theorem norm_conjWirtingerDeriv_discr_le_of_nodup [CompleteSpace V] {m : ℕ} {b
     ‖conjWirtingerDeriv (fun y ↦ ((R y).map fun w ↦ X - C w).prod.discr) x‖ ≤
       ((m * (m - 1) : ℕ) * (‖ν x‖ + ‖μ x‖)) * ‖((R x).map fun w ↦ X - C w).prod.discr‖ := by
   classical
-  obtain ⟨v, hv, hRv⟩ := exists_root_branches_of_nodup hb hR hx ν μ heq
+  obtain ⟨v, hv, hRv⟩ :=
+    exists_root_branches_conjWirtingerDeriv_add_add_eq_zero_of_nodup hb hR hx ν μ heq
   set s : Finset ℂ := (R x).toFinset
   have hsval : s.val = R x := by rw [Multiset.toFinset_val, hx.dedup]
   have hcard : #s = m := by rw [← Finset.card_val, hsval, hR.self_of_nhds.1]
@@ -277,7 +123,11 @@ theorem norm_conjWirtingerDeriv_discr_le_of_nodup [CompleteSpace V] {m : ℕ} {b
   set F : V → ℂ := fun y ↦ ∏ w ∈ s, ∏ u ∈ s.erase w, (v w y - v u y)
   have hΔ : (fun y ↦ ((R y).map fun w ↦ X - C w).prod.discr) =ᶠ[𝓝 x] σ • F := by
     filter_upwards [hRv] with y hRy
-    rw [Pi.smul_apply, smul_eq_mul, hRy, ← hsval, discr_prod_X_sub_C_map_eq, hcard]
+    have h := Finset.prod_prod_erase_sub_eq_neg_one_pow_mul_discr s fun w ↦ v w y
+    rw [hcard, Finset.prod_eq_multiset_prod (f := fun w ↦ X - C (v w y))] at h
+    rw [Pi.smul_apply, smul_eq_mul, hRy, ← hsval, Multiset.map_map, Function.comp_def]
+    simp only [F]
+    rw [h, ← mul_assoc, hσ, ← pow_add, ← two_mul, pow_mul, neg_one_sq, one_pow, one_mul]
   have hΔx : ((R x).map fun w ↦ X - C w).prod.discr = σ * F x := by
     simpa using hΔ.self_of_nhds
   -- Each difference `v w - v u` solves `D_C`, so the logarithmic derivative bound applies.

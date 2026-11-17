@@ -71,7 +71,8 @@ Their comparison with the Levi form is in `TauCeti.Analysis.Complex.Wirtinger.Le
   commute with complex scalar multiplication.
 * `TauCeti.conjWirtingerDeriv_eq_sum_smul`: `\bar∂` depends complex-linearly on the real
   derivative.
-* `TauCeti.conjWirtingerDeriv_fun_sum`: `\bar∂` of a finite sum of real-differentiable functions.
+* `TauCeti.conjWirtingerDeriv_fun_sub`, `TauCeti.conjWirtingerDeriv_fun_sum`: `\bar∂` of a
+  pointwise difference and of a finite sum of real-differentiable functions.
 * `TauCeti.conjWirtingerDeriv_comp`: the chain rule `\bar∂(φ ∘ g) = Dφ(g x) ∘ \bar∂g` after a
   holomorphic map `φ`.
 * `TauCeti.conjWirtingerDeriv_fun_mul`, `TauCeti.conjWirtingerDeriv_fun_pow`: the Leibniz and
@@ -254,6 +255,14 @@ theorem conjWirtingerDeriv_sub {g₁ g₂ : V → W} {x : V} (h₁ : Differentia
   ext v
   simp only [conjWirtingerDeriv_apply, fderiv_sub h₁ h₂, sub_apply]
   module
+
+/-- The conjugate Wirtinger derivative commutes with pointwise subtraction of real-differentiable
+functions. -/
+theorem conjWirtingerDeriv_fun_sub {g₁ g₂ : V → W} {x : V} (h₁ : DifferentiableAt ℝ g₁ x)
+    (h₂ : DifferentiableAt ℝ g₂ x) :
+    conjWirtingerDeriv (fun y ↦ g₁ y - g₂ y) x =
+      conjWirtingerDeriv g₁ x - conjWirtingerDeriv g₂ x :=
+  conjWirtingerDeriv_sub h₁ h₂
 
 /-- The conjugate Wirtinger derivative commutes with multiplication by a complex constant. -/
 theorem conjWirtingerDeriv_const_smul {g : V → W} {x : V} (c : ℂ) :

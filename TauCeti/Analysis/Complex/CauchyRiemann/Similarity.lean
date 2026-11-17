@@ -61,10 +61,11 @@ Weyl's lemma, and `ξ = Ψ⁻¹ σ`.
   `TauCeti.Analysis.Complex.CauchyRiemann.UniqueContinuation`.
 * `TauCeti.eqOn_zero_of_contDiffOn_of_forall_isBigO`: unique continuation from a zero of infinite
   order.
-* `TauCeti.setOf_ne_zero_mem_codiscreteWithin_of_norm_conjWirtingerDeriv_le`: the same for a
-  scalar function satisfying the differential inequality `‖\bar∂ f‖ ≤ K ‖f‖`.
 * `TauCeti.setOf_ne_zero_mem_codiscreteWithin_of_contDiffOn`: a solution that is not identically
   zero on a connected open set has isolated zeros.
+* `TauCeti.setOf_ne_zero_mem_codiscreteWithin_of_norm_conjWirtingerDeriv_le`: isolated zeros of a
+  scalar `C¹` function satisfying `‖\bar∂ f‖ ≤ K ‖f‖` that is not identically zero on a connected
+  open set.
 
 ## References
 

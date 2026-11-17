@@ -84,9 +84,11 @@ depressed specialization of that formula is used to compare a quartic with its c
 * `Polynomial.discr_ne_zero_iff`: over a field, a nonzero polynomial that need not be monic is
   separable exactly when its discriminant is nonzero.
 * `Multiset.discr_prod_X_sub_C_ne_zero_iff`,
-  `Multiset.prod_map_prod_map_sub_erase_eq_neg_one_pow_mul_discr`: for a multiset `R` over a
-  field, the discriminant of `∏_{w ∈ R} (X - w)` vanishes exactly when `R` has a repeated element,
-  and up to sign it is the product `∏_{w ∈ R} ∏_{u ∈ R ∖ w} (w - u)` of the differences.
+  `Multiset.prod_map_prod_map_sub_erase_eq_neg_one_pow_mul_discr`: for a multiset `R` over an
+  integral domain, the discriminant of `∏_{w ∈ R} (X - w)` vanishes exactly when `R` has a repeated
+  element, and up to sign it is the product `∏_{w ∈ R} ∏_{u ∈ R ∖ w} (w - u)` of the differences.
+* `Finset.prod_prod_erase_sub_eq_neg_one_pow_mul_discr`: the same product formula for
+  `∏_{w ∈ s} (X - g w)`, indexed by a finite set.
 * `Squarefree.discr_ne_zero`: a squarefree polynomial over a GCD domain of characteristic zero
   has nonzero discriminant.
 * `Polynomial.separable_map_iff_map_discr_ne_zero`,
@@ -1091,22 +1093,7 @@ end TauCeti
 
 namespace Multiset
 
-variable {K : Type*} [Field K]
-
-/-- A product of linear factors splits. -/
-private theorem splits_prod_X_sub_C (R : Multiset K) : (R.map fun w ↦ X - C w).prod.Splits :=
-  Splits.multisetProd fun f hf ↦ by
-    obtain ⟨w, -, rfl⟩ := Multiset.mem_map.1 hf
-    exact Splits.X_sub_C w
-
-/-- The discriminant of `∏_{w ∈ R} (X - w)` is nonzero exactly when `R` has no repeated
-element. -/
-theorem discr_prod_X_sub_C_ne_zero_iff (R : Multiset K) :
-    (R.map fun w ↦ X - C w).prod.discr ≠ 0 ↔ R.Nodup := by
-  have hmon := monic_multisetProd_X_sub_C R
-  have hsplits := splits_prod_X_sub_C R
-  rw [hmon.discr_ne_zero_iff, ← nodup_roots_iff_of_splits hmon.ne_zero hsplits,
-    roots_multiset_prod_X_sub_C]
+variable {K : Type*} [CommRing K] [IsDomain K]
 
 /-- **The discriminant as a product of differences.** For a multiset `R` of `m` elements,
 `∏_{w ∈ R} ∏_{u ∈ R ∖ w} (w - u) = (-1)^(m (m - 1) / 2) discr (∏_{w ∈ R} (X - w))`. The left side
@@ -1114,12 +1101,46 @@ is the product of the derivative of `∏_{w ∈ R} (X - w)` over its roots. -/
 theorem prod_map_prod_map_sub_erase_eq_neg_one_pow_mul_discr [DecidableEq K] (R : Multiset K) :
     (R.map fun w ↦ ((R.erase w).map fun u ↦ w - u).prod).prod =
       (-1) ^ (card R * (card R - 1) / 2) * (R.map fun w ↦ X - C w).prod.discr := by
-  have hmon := monic_multisetProd_X_sub_C R
-  have hsplits := splits_prod_X_sub_C R
-  have h := hmon.prod_roots_eval_derivative hsplits
+  have h := (monic_multisetProd_X_sub_C R).prod_roots_eval_derivative (by simp)
   rw [roots_multiset_prod_X_sub_C, natDegree_multiset_prod_X_sub_C_eq_card] at h
   rw [← h]
   exact congrArg Multiset.prod
     (Multiset.map_congr rfl fun w hw ↦ (eval_multiset_prod_X_sub_C_derivative hw).symm)
 
+/-- The discriminant of `∏_{w ∈ R} (X - w)` is nonzero exactly when `R` has no repeated
+element. -/
+theorem discr_prod_X_sub_C_ne_zero_iff (R : Multiset K) :
+    (R.map fun w ↦ X - C w).prod.discr ≠ 0 ↔ R.Nodup := by
+  classical
+  -- Up to a sign, the discriminant is the product of the differences `w - u`, `u ∈ R ∖ w`.
+  rw [← mul_ne_zero_iff_left (pow_ne_zero _ (neg_ne_zero.2 one_ne_zero)),
+    ← prod_map_prod_map_sub_erase_eq_neg_one_pow_mul_discr]
+  simp only [ne_eq, Multiset.prod_eq_zero_iff, Multiset.mem_map, sub_eq_zero]
+  refine ⟨fun h ↦ Multiset.nodup_iff_count_le_one.2 fun w ↦ ?_, fun hR ⟨w, _, u, hu, hwu⟩ ↦
+    hR.notMem_erase (by subst hwu; exact hu)⟩
+  by_contra hw
+  exact h ⟨w, Multiset.count_pos.1 (by omega), w,
+    Multiset.count_pos.1 (by rw [Multiset.count_erase_self]; omega), rfl⟩
+
 end Multiset
+
+namespace Finset
+
+variable {K ι : Type*} [CommRing K] [IsDomain K] [DecidableEq ι]
+
+/-- **The discriminant as a product of differences, indexed by a finite set.** For a finite set
+`s` and values `g w`,
+`∏_{w ∈ s} ∏_{u ∈ s ∖ w} (g w - g u) = (-1)^(#s (#s - 1) / 2) discr (∏_{w ∈ s} (X - g w))`. -/
+theorem prod_prod_erase_sub_eq_neg_one_pow_mul_discr (s : Finset ι) (g : ι → K) :
+    ∏ w ∈ s, ∏ u ∈ s.erase w, (g w - g u) =
+      (-1) ^ (#s * (#s - 1) / 2) * (∏ w ∈ s, (X - C (g w))).discr := by
+  classical
+  have h := Multiset.prod_map_prod_map_sub_erase_eq_neg_one_pow_mul_discr (s.val.map g)
+  rw [Multiset.card_map, Finset.card_val, Multiset.map_map, Multiset.map_map] at h
+  refine Eq.trans ?_ h
+  rw [Finset.prod_eq_multiset_prod]
+  refine congrArg Multiset.prod (Multiset.map_congr rfl fun w hw ↦ ?_)
+  rw [Function.comp_apply, ← Multiset.map_erase_of_mem _ _ hw, Multiset.map_map,
+    Finset.prod_eq_multiset_prod, Finset.erase_val, Function.comp_def]
+
+end Finset
