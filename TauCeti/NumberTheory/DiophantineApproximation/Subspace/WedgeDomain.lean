@@ -79,7 +79,7 @@ open Finset Module NumberField NumberField.mixedEmbedding Set.powersetCard
 
 namespace TauCeti.NumberField
 
-variable {K : Type*} [Field K] {ι : Type*} [Fintype ι] [LinearOrder ι]
+variable {K : Type*} [Field K] {ι : Type*} [Fintype ι]
 
 open scoped Classical in
 /-- **The exponents of the wedge domain** `S(Q)` (Bombieri–Gubler 7.5.30). Given exponents `c`,
@@ -153,7 +153,6 @@ theorem rpow_wedgeExponent_of_not_isNonarchimedean (hv : ¬IsNonarchimedean v) (
 
 variable [NumberField K]
 
-omit [LinearOrder ι] in
 /-- **Evertse's lemma for a basis of an approximation module.** There is `C₁ ≥ 0`, depending only
 on `K` and `ι`, such that linearly independent vectors `x l` of `approxModule S₀ L c Q`, `0 < Q`,
 with `|L v i (x l)|_v ≤ μ l · Q ^ c v i` at the infinite places, for nondecreasing `μ`, have
@@ -198,7 +197,8 @@ private theorem exists_evertse_approxModule :
       simpa [μ', v.not_isNonarchimedean] using hμm i.2 j.2 (Fin.le_iff_val_le_val.1 hij))
     (fun v _ ↦ by simp [μ', hna v, monotone_const])
     (fun v m j ↦ by
-      simpa [μ', v.not_isNonarchimedean, hb, mul_comm] using hxinf v (e m) j)
+      simp only [μ', v.not_isNonarchimedean, ↓reduceIte, hb]
+      exact (hxinf v (e m) j).trans_eq (mul_comm _ _))
     (fun v hv m j ↦ by
       simpa [μ', hna v, hb, abs_of_pos hQ₀] using (hxΛ' j).1 v hv (e m))
   simp only [hb] at hinf hfin
@@ -233,7 +233,7 @@ positive nondecreasing `μ`. Then there are vectors `y` with `y j - x j` in the 
 with `l < j`, and bijections `σ v` from the indices of the minima to the forms, such that for
 every `k` and every `p`-subset `J` meeting `{0, …, k - 1}`, the Plücker vector of the `y j`,
 `j ∈ J`, lies in the approximation domain of the wedge forms with the wedge exponents. -/
-theorem exists_plucker_mem_approxDomain_wedgeForms :
+theorem exists_plucker_mem_approxDomain_wedgeForms [LinearOrder ι] :
     ∃ C : ℝ, 0 < C ∧ ∀ (S₀ : Finset (FinitePlace K)) (L : AbsoluteValue K ℝ → ι → Dual K (ι → K))
       (c : AbsoluteValue K ℝ → ι → ℝ) (Q : ℝ) (x : Fin (Fintype.card ι) → ι → K) (μ : ℕ → ℝ),
       (∀ v : InfinitePlace K, LinearIndependent K (L v.1)) →
@@ -265,7 +265,8 @@ theorem exists_plucker_mem_approxDomain_wedgeForms :
       T).trans_eq ?_
     rw [rpow_wedgeExponent_of_not_isNonarchimedean w.not_isNonarchimedean hQ₀ hQ₁
       (by positivity) hμp hp]
-    ring
+    -- The two gains decide the same top-block condition, through possibly different instances.
+    split_ifs <;> ring
   · -- At a place of `S₀`: the wedge of row bounds, with no constant.
     rw [rpow_wedgeExponent_of_isNonarchimedean (hna v) hQ₀]
     exact AbsoluteValue.apply_wedgeForms_plucker_le_prod v.1 (hna v) (L v.1) _
@@ -287,12 +288,11 @@ private theorem prod_wedgeGain (σ : Fin (Fintype.card ι) ≃ ι) (hp : 0 < p)
       C ^ (Fintype.card ι).choose p *
         (∏ l : Fin (Fintype.card ι), μ l) ^ (Fintype.card ι - 1).choose (p - 1) *
           (μ (k - 1) / μ k) := by
-  classical
-  rw [prod_mul_distrib, prod_mul_distrib, prod_const, card_univ, ← Nat.card_eq_fintype_card,
-    Set.powersetCard.card, Nat.card_eq_fintype_card,
+  rw [prod_mul_distrib, prod_mul_distrib, prod_const, card_univ, Set.powersetCard.fintypeCard,
     Set.powersetCard.prod_prod hp fun t ↦ μ (σ.symm t), Equiv.prod_comp σ.symm fun l ↦ μ l]
   have hite : ∏ T : Set.powersetCard ι p, (if ∀ t ∈ (T : Finset ι), k ≤ (σ.symm t : ℕ) then
       μ (k - 1) / μ k else 1) = μ (k - 1) / μ k := by
+    classical
     simp_rw [forall_le_symm_iff_eq_map_topBlock σ hkp]
     simp
   rw [hite]
@@ -372,21 +372,18 @@ theorem rpow_approxWeight_wedgeExponent (S₀ : Finset (FinitePlace K))
         (C ^ (Fintype.card ι).choose p *
           (∏ l : Fin (Fintype.card ι), μ l) ^ (Fintype.card ι - 1).choose (p - 1) *
             (μ (k - 1) / μ k)) ^ finrank ℚ K := by
-  have hk : k < Fintype.card ι := by omega
-  have hX : 0 < C ^ (Fintype.card ι).choose p *
-      (∏ l : Fin (Fintype.card ι), μ l) ^ (Fintype.card ι - 1).choose (p - 1) *
-        (μ (k - 1) / μ k) :=
-    mul_pos (mul_pos (pow_pos hC _) (pow_pos (prod_pos fun (l : Fin _) _ ↦ hμ l l.2) _))
-      (div_pos (hμ _ (by omega)) (hμ _ hk))
-  have hd : Q ^ ((finrank ℚ K : ℝ) * Real.logb Q (C ^ (Fintype.card ι).choose p *
-      (∏ l : Fin (Fintype.card ι), μ l) ^ (Fintype.card ι - 1).choose (p - 1) *
-        (μ (k - 1) / μ k))) =
-      (C ^ (Fintype.card ι).choose p *
-        (∏ l : Fin (Fintype.card ι), μ l) ^ (Fintype.card ι - 1).choose (p - 1) *
-          (μ (k - 1) / μ k)) ^ finrank ℚ K := by
-    rw [mul_comm, Real.rpow_mul hQ.le, Real.rpow_logb hQ hQ₁ hX, Real.rpow_natCast]
   rw [approxWeight_wedgeExponent S₀ c hp hkp σ (fun l hl ↦ (hμ l hl).ne') hC.ne',
-    Real.rpow_add hQ, hd]
+    Real.rpow_add hQ]
+  set X := C ^ (Fintype.card ι).choose p *
+    (∏ l : Fin (Fintype.card ι), μ l) ^ (Fintype.card ι - 1).choose (p - 1) *
+      (μ (k - 1) / μ k) with hX_def
+  -- `X` is the product over the wedge forms of the constant times the minima attached to them.
+  have hX : 0 < X := by
+    rw [hX_def, ← prod_wedgeGain (Fintype.equivFin ι).symm hp hkp μ C]
+    exact prod_pos fun T _ ↦ mul_pos hC
+      (wedgeGain_pos hμ _ (card_pos.1 (by rw [card_eq]; exact hp)))
+  rw [mul_comm (finrank ℚ K : ℝ), Real.rpow_mul hQ.le (Real.logb Q X), Real.rpow_logb hQ hQ₁ hX,
+    Real.rpow_natCast]
 
 /-- **The wedge domain of the successive minima is small after a large jump** (Bombieri–Gubler
 7.5.30, toward Lemma 7.5.31). Let `μ` be the successive minima over `K` of an approximation domain

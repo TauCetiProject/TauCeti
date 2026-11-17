@@ -245,8 +245,10 @@ theorem forall_le_symm_iff_eq_map_topBlock {ι : Type*} (σ : Fin N ≃ ι) {k :
   · intro hT
     rw [eq_iff_subset]
     intro t ht
+    rw [Set.powersetCard.val_map]
     exact Finset.mem_map.2 ⟨σ.symm t, (mem_topBlock h).2 (hT t ht), by simp⟩
   · rintro rfl t ht
+    rw [Set.powersetCard.val_map] at ht
     obtain ⟨j, hj, rfl⟩ := Finset.mem_map.1 ht
     simpa using (mem_topBlock h).1 hj
 

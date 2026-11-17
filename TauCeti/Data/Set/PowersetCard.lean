@@ -20,6 +20,7 @@ these induced maps respect identities and composition of embeddings.
 `Set.powersetCard.coe_ofSingleton` identifies the finite set underlying the singleton
 equivalence. It lets computations with fixed-cardinality subsets use the usual singleton API.
 
+`Set.powersetCard.fintypeCard` counts the `n`-element subsets of a finite type, and
 `Set.powersetCard.finChooseEquiv m j` enumerates the `j`-element subsets of `Fin m` by
 `Fin (m.choose j)`.
 
@@ -55,11 +56,14 @@ theorem map_map {α β γ : Type*} (n : ℕ) (f : α ↪ β) (g : β ↪ γ) (s 
 theorem coe_ofSingleton {α : Type*} (a : α) :
     ((ofSingleton a : powersetCard α 1) : Finset α) = {a} := rfl
 
+/-- The number of `n`-element subsets of a finite type `α` is `(card α).choose n`. -/
+theorem fintypeCard {α : Type*} [Fintype α] (n : ℕ) :
+    Fintype.card (powersetCard α n) = (Fintype.card α).choose n := by
+  rw [← Nat.card_eq_fintype_card, powersetCard.card, Nat.card_eq_fintype_card]
+
 /-- An enumeration of the `j`-element subsets of `Fin m` by `Fin (m.choose j)`. -/
 noncomputable def finChooseEquiv (m j : ℕ) : powersetCard (Fin m) j ≃ Fin (m.choose j) :=
-  Fintype.equivFinOfCardEq <| by
-    rw [← Nat.card_eq_fintype_card, powersetCard.card, Nat.card_eq_fintype_card,
-      Fintype.card_fin]
+  Fintype.equivFinOfCardEq <| by rw [fintypeCard, Fintype.card_fin]
 
 /-- **Double counting over the `n`-element subsets of a finite type**: for `0 < n`, the product
 over the `n`-element subsets of the products over their elements is
