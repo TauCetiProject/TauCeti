@@ -277,19 +277,26 @@ theorem hasSum_latticeBump_sub (x : EuclideanSpace ℝ (Fin n)) :
   obtain ⟨i, hi⟩ : ∃ i, j i ∉ t i := by simpa [Fintype.mem_piFinset] using hj
   exact prod_eq_zero (mem_univ i) (by simpa using latticeBump₁_sub_eq_zero (x i) hi)
 
+/-- If a set `s` contains every lattice point of norm less than `R`, then the translate of
+`latticeBump n` centred at a lattice point outside `s` vanishes on the ball of radius `R - √n`. -/
+theorem latticeBump_sub_eq_zero_of_notMem {s : Set (Fin n → ℤ)} {R : ℝ}
+    (hs : ∀ j, ‖latticePoint j‖ < R → j ∈ s) {y : EuclideanSpace ℝ (Fin n)} (hy : ‖y‖ + √n < R)
+    {j : Fin n → ℤ} (hj : j ∉ s) : latticeBump n (y - latticePoint j) = 0 := by
+  by_contra hne
+  have hy' := mem_closedBall_of_latticeBump_sub_ne_zero hne
+  rw [Metric.mem_closedBall, dist_eq_norm] at hy'
+  refine hj (hs j ?_)
+  calc ‖latticePoint j‖ = ‖y - (y - latticePoint j)‖ := by rw [sub_sub_cancel]
+    _ ≤ ‖y‖ + ‖y - latticePoint j‖ := norm_sub_le _ _
+    _ < R := by linarith
+
 /-- A finite sum of integer translates of `latticeBump n` that contains every lattice point of
 norm less than `R` sums to `1` on the ball of radius `R - √n`. -/
 theorem sum_latticeBump_sub_eq_one {s : Finset (Fin n → ℤ)} {R : ℝ}
     (hs : ∀ j, ‖latticePoint j‖ < R → j ∈ s) {y : EuclideanSpace ℝ (Fin n)} (hy : ‖y‖ + √n < R) :
     ∑ j ∈ s, latticeBump n (y - latticePoint j) = 1 :=
-  ((hasSum_latticeBump_sub y).unique (hasSum_sum_of_ne_finset_zero fun j hj ↦ by
-    by_contra hne
-    have hy' := mem_closedBall_of_latticeBump_sub_ne_zero hne
-    rw [Metric.mem_closedBall, dist_eq_norm] at hy'
-    refine hj (hs j ?_)
-    calc ‖latticePoint j‖ = ‖y - (y - latticePoint j)‖ := by rw [sub_sub_cancel]
-      _ ≤ ‖y‖ + ‖y - latticePoint j‖ := norm_sub_le _ _
-      _ < R := by linarith)).symm
+  ((hasSum_latticeBump_sub y).unique (hasSum_sum_of_ne_finset_zero fun _ hj ↦
+    latticeBump_sub_eq_zero_of_notMem (s := (s : Set (Fin n → ℤ))) hs hy hj)).symm
 
 /-! ### A summable weight on the lattice -/
 

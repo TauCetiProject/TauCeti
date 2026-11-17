@@ -994,14 +994,8 @@ private theorem hasSum_coefficient_sharpTerm_latticePiece (p : Symbol n W U m')
   refine hasSum_sum_of_ne_finset_zero fun j hj ↦
     coefficient_sharpTerm_eq_zero_of_eventually ?_ p k ξ
   filter_upwards [hnear] with y hy η
-  rw [coefficient_latticePiece]
-  by_contra hne
-  have hy' := mem_closedBall.1
-    (mem_closedBall_of_latticeBump_sub_ne_zero (left_ne_zero_of_smul hne))
-  refine hj (hs j ?_)
-  calc ‖latticePoint j‖ = ‖y - (y - latticePoint j)‖ := by rw [sub_sub_cancel]
-    _ ≤ ‖y‖ + ‖y - latticePoint j‖ := norm_sub_le _ _
-    _ < R := by rw [← dist_eq_norm]; linarith
+  rw [coefficient_latticePiece,
+    latticeBump_sub_eq_zero_of_notMem (s := (hfin.toFinset : Set (Fin n → ℤ))) hs hy hj, zero_smul]
 
 /-- **The asymptotic expansion of the composition of uniform symbols.** Let `p` and `a` be symbols
 of orders `m'` and `m` whose estimates hold uniformly in the position, and let `c` be the symbol of
