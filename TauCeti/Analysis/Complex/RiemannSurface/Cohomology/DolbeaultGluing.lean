@@ -137,25 +137,24 @@ theorem exists_mdifferentiableOn_cocycle_eq_add_smul_sub_of_chart_eball [IsManif
   have : IsManifold 𝓘(ℝ, ℂ) ∞ X := IsManifold.restrictScalars_of_ne_zero ∞ one_ne_zero ‹_›
   have hUo (l : ι) : IsOpen (U l) := hU l ▸ (e l).isOpen_inter_preimage isOpen_eball
   -- A smooth splitting `ξ i j = ψ i j • g j - g i` of the cocycle.
-  have hξs (i j : ι) : ContMDiffOn 𝓘(ℝ, ℂ) 𝓘(ℝ, W) (⊤ : ℕ∞) (ξ i j) (V i ∩ V j) := by
-    simpa only [modelWithCornersSelf_restrictScalars] using
-      ((hξ i j).contMDiffOn ((hV i).inter (hV j)) (n := ∞)).restrictScalars ℝ
-  obtain ⟨g, hg, hξg, hgC⟩ := exists_contMDiffOn_eq_smul_sub_of_cocycle hV hVcov hξs hcocycle
-  -- On each disc `U i`, one smooth `f i` with every `f i - ψ i k • g k` holomorphic: the
+  obtain ⟨g, hg, hξg, hgC⟩ := exists_contMDiffOn_eq_smul_sub_of_cocycle (n := ⊤) hV hVcov
+    (fun i j ↦ by simpa only [modelWithCornersSelf_restrictScalars] using
+      ((hξ i j).contMDiffOn ((hV i).inter (hV j)) (n := ∞)).restrictScalars ℝ) hcocycle
+  -- On each disc `U i`, one smooth `f i` with every `f i - ψ i k • g k` holomorphic, as the
   -- differences `ψ i k • g k - ψ i l • g l = -ψ i k • ξ k l` are holomorphic.
-  have hψs (i k : ι) : ContMDiffOn 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (⊤ : ℕ∞) (ψ i k) (U i ∩ U k) := by
-    simpa only [modelWithCornersSelf_restrictScalars] using
-      ((hψ i k).contMDiffOn ((hUo i).inter (hUo k)) (n := ∞)).restrictScalars ℝ
-  have hsmul : ContDiff ℝ ∞ fun p : ℂ × W ↦ p.1 • p.2 :=
-    (isBoundedBilinearMap_smul (𝕜 := ℝ)).contDiff
-  have hgψ (i k : ι) : ContMDiffOn 𝓘(ℝ, ℂ) 𝓘(ℝ, W) ∞ (fun y ↦ ψ i k y • g k y) (U i ∩ V k) :=
-    hsmul.contMDiff.comp_contMDiffOn (((hψs i k).mono fun y (hy : y ∈ U i ∩ V k) ↦
-      ⟨hy.1, hVU k hy.2⟩).prodMk_space ((hg k).mono inter_subset_right))
+  have hgψ (i k : ι) : ContMDiffOn 𝓘(ℝ, ℂ) 𝓘(ℝ, W) ∞ (fun y ↦ ψ i k y • g k y) (U i ∩ V k) := by
+    have hψs : ContMDiffOn 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (⊤ : ℕ∞) (ψ i k) (U i ∩ V k) := by
+      simpa only [modelWithCornersSelf_restrictScalars] using
+        (((hψ i k).mono (inter_subset_inter_right _ (hVU k))).contMDiffOn
+          ((hUo i).inter (hV k)) (n := ∞)).restrictScalars ℝ
+    exact (isBoundedBilinearMap_smul (𝕜 := ℝ)).contDiff.contMDiff.comp_contMDiffOn
+      (hψs.prodMk_space ((hg k).mono inter_subset_right))
   have hggψ (i k l : ι) : MDifferentiableOn 𝓘(ℂ) 𝓘(ℂ, W)
       ((fun y ↦ ψ i k y • g k y) - fun y ↦ ψ i l y • g l y) (U i ∩ V k ∩ (U i ∩ V l)) := by
-    have hsub : U i ∩ V k ∩ (U i ∩ V l) ⊆ U i ∩ U k := fun y hy ↦ ⟨hy.1.1, hVU k hy.1.2⟩
-    refine (MDifferentiableOn.smul ((hψ i k).mono hsub)
-      ((hξ k l).mono fun y hy ↦ ⟨hy.1.2, hy.2.2⟩)).neg.congr fun y hy ↦ ?_
+    refine (MDifferentiableOn.smul ((hψ i k).mono
+      (inter_subset_left.trans (inter_subset_inter_right _ (hVU k))))
+      ((hξ k l).mono (inter_subset_inter inter_subset_right inter_subset_right))).neg.congr
+        fun y hy ↦ ?_
     simp only [Pi.sub_apply, Pi.neg_apply, Pi.smul_apply', hξg k l y ⟨hy.1.2, hy.2.2⟩,
       smul_sub, smul_smul, hψ_mul i k l y ⟨⟨hy.1.1, hVU k hy.1.2⟩, hVU l hy.2.2⟩, neg_sub]
   have hf (i : ι) := exists_contMDiffOn_mdifferentiableOn_sub_of_chart_eball (he i)
@@ -169,14 +168,11 @@ theorem exists_mdifferentiableOn_cocycle_eq_add_smul_sub_of_chart_eball [IsManif
       fun y hy ↦ by simp [hψ_one i y hy], fun i j y hy ↦ ?_, fun i C hC hVc hVU' ↦ ?_⟩
   · -- Near `y ∈ V k`, `ψ i j • f j - f i = ψ i j • (f j - ψ j k • g k) - (f i - ψ i k • g k)`.
     obtain ⟨k, hk⟩ := mem_iUnion.1 (hVcov.ge (mem_univ y))
-    have hs : U i ∩ U j ∩ V k ∈ 𝓝 y := (((hUo i).inter (hUo j)).inter (hV k)).mem_nhds ⟨hy, hk⟩
-    have hd : MDifferentiableOn 𝓘(ℂ) 𝓘(ℂ, W)
-        (ψ i j • (f j - fun z ↦ ψ j k z • g k z) - (f i - fun z ↦ ψ i k z • g k z))
-        (U i ∩ U j ∩ V k) :=
-      (MDifferentiableOn.smul ((hψ i j).mono fun z (hz : z ∈ U i ∩ U j ∩ V k) ↦ hz.1)
-        ((hfg j k).mono fun z (hz : z ∈ U i ∩ U j ∩ V k) ↦ ⟨hz.1.2, hz.1.2, hz.2⟩)).sub
-        ((hfg i k).mono fun z (hz : z ∈ U i ∩ U j ∩ V k) ↦ ⟨hz.1.1, hz.1.1, hz.2⟩)
-    refine ((hd.congr fun z hz ↦ ?_).mdifferentiableAt hs).mdifferentiableWithinAt
+    have hd := (MDifferentiableOn.smul ((hψ i j).mono fun z (hz : z ∈ U i ∩ U j ∩ V k) ↦ hz.1)
+      ((hfg j k).mono fun z (hz : z ∈ U i ∩ U j ∩ V k) ↦ ⟨hz.1.2, hz.1.2, hz.2⟩)).sub
+      ((hfg i k).mono fun z (hz : z ∈ U i ∩ U j ∩ V k) ↦ ⟨hz.1.1, hz.1.1, hz.2⟩)
+    refine ((hd.congr fun z hz ↦ ?_).mdifferentiableAt ((((hUo i).inter (hUo j)).inter
+      (hV k)).mem_nhds ⟨hy, hk⟩)).mdifferentiableWithinAt
     simp only [Pi.sub_apply, Pi.smul_apply', smul_sub, smul_smul,
       hψ_mul i j k z ⟨hz.1, hVU k hz.2⟩]
     abel
