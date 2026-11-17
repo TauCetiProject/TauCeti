@@ -62,6 +62,9 @@ coefficient rings here may have nilpotents.
 * `PowerSeries.evalAt_hasseDeriv_coe`: the value at `a` of a Hasse derivative of a polynomial is a
   coefficient of its Taylor expansion at `a`.
 * `PowerSeries.evalAt_hasseDeriv_X_sub_C_pow`: the Hasse derivatives of `(X - a) ^ m` at `a`.
+* `PowerSeries.evalAt_iterate_derivative` and `PowerSeries.evalAt_iterate_derivative_eq_zero_iff`:
+  over a semifield, `(d⁄dX^[k] f)(b) = k! • (D⁽ᵏ⁾ f)(b)`, so in characteristic zero the two vanish
+  together.
 * `PowerSeries.evalAt_map_algebraMap`: evaluation is compatible with extension of scalars.
 * `PowerSeries.evalAt_rescale`: rescaling the variable rescales the point of evaluation.
 * `PowerSeries.commute_evalAt`: the values of a series at `b` commute with `b`.
@@ -214,6 +217,33 @@ theorem evalAt_hasseDeriv_X_sub_C_pow [TopologicalSpace R] (a : R) (i m : ℕ) :
   rw [hP, evalAt_hasseDeriv_coe, Polynomial.taylor_coeff, Polynomial.eval_hasseDeriv_X_sub_C_pow]
 
 end Ring
+
+section Semifield
+
+variable {K A : Type*} [Semifield K] [Semiring A] [Algebra K A] [TopologicalSpace A]
+  [ContinuousConstSMul K A] [T2Space A]
+
+/-- Over a semifield `K`, the `k`-th iterated formal derivative of a power series `f` evaluates at
+any point `b` of a Hausdorff topological `K`-algebra with continuous scalar multiplication to `k!`
+times the value of the `k`-th Hasse derivative `(D⁽ᵏ⁾ f)(b)`. No convergence hypothesis is needed:
+when `(k! : K) ≠ 0`, `d⁄dX^[k] f` and `D⁽ᵏ⁾ f` converge or diverge at `b` together (both taking the
+junk value `0` if they diverge), while when `(k! : K) = 0` both sides are `0`. -/
+theorem evalAt_iterate_derivative (f : K⟦X⟧) (k : ℕ) (b : A) :
+    (d⁄dX^[k] f).evalAt b = k.factorial • (hasseDeriv k f).evalAt b := by
+  rw [← factorial_smul_hasseDeriv, ← Nat.cast_smul_eq_nsmul K, evalAt_def, evalAt_def,
+    ← Nat.cast_smul_eq_nsmul K]
+  simp_rw [coeff_smul, smul_assoc]
+  exact tsum_const_smul'' (k.factorial : K)
+
+/-- Over a semifield `K` of characteristic zero, the `k`-th iterated formal derivative of a power
+series vanishes at a point `b` of a Hausdorff topological `K`-algebra with continuous scalar
+multiplication if and only if the `k`-th Hasse derivative vanishes at `b`. -/
+theorem evalAt_iterate_derivative_eq_zero_iff [CharZero K] (f : K⟦X⟧) (k : ℕ) (b : A) :
+    (d⁄dX^[k] f).evalAt b = 0 ↔ (hasseDeriv k f).evalAt b = 0 := by
+  rw [evalAt_iterate_derivative, ← Nat.cast_smul_eq_nsmul K,
+    ((Nat.cast_ne_zero.mpr k.factorial_ne_zero).isUnit).smul_eq_zero]
+
+end Semifield
 
 section Scalar
 
