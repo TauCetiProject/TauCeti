@@ -67,6 +67,7 @@ open scoped NNReal ENNReal Manifold
 namespace TauCeti.SymplecticForm
 
 open CylinderSobolev
+open StripSobolev (stripMeasure jet jet_apply coeFn_jetLp jetLp_mem_jetClosure)
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
 

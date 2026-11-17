@@ -42,11 +42,8 @@ namespace TauCeti.StripSobolev
 
 open MeasureTheory Set
 open scoped RealInnerProductSpace
-open CylinderSobolev (stripMeasure jet jet_apply sq_norm_jet_le coeFn_jetLp sq_norm_jetLp
-  jetLp_mem_jetClosure jetClosure_subset_of_isClosed)
-
-variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
-variable {ω : SymplecticForm V} {J : AlmostComplexStructure V} {L₀ L₁ : Submodule ℝ V}
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+variable {J : AlmostComplexStructure V} {L₀ L₁ : Submodule ℝ V}
 
 /-- The coefficient `(v, v_s, v_t) ↦ v_s + J v_t` of the Cauchy--Riemann operator `∂s + J ∂t`
 on jets. -/
@@ -107,6 +104,11 @@ theorem sq_norm_cauchyRiemann_jetₗ (ξ : testSection L₀ L₁) :
   filter_upwards [cauchyRiemann_jetₗ_ae_eq (J := J) ξ] with z hz
   rw [hz]
 
+section InnerProductSpace
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+variable {ω : SymplecticForm V} {J : AlmostComplexStructure V} {L₀ L₁ : Submodule ℝ V}
+
 /-- The Cauchy--Riemann estimate on the jets of test sections: with transverse isotropic boundary
 conditions, `‖ξ‖_{W^{1,2}} ≤ C ‖∂s ξ + J ∂t ξ‖_{L²}` for every test section `ξ`, with `C`
 independent of `ξ`. -/
@@ -145,14 +147,17 @@ theorem exists_norm_le_mul_norm_cauchyRiemann (hg : ∀ v w, ω v (J w) = ⟪v, 
     (hL₀ : ω.IsIsotropic L₀) (hL₁ : ω.IsIsotropic L₁) (hL : Disjoint L₀ L₁) :
     ∃ C, ∀ x : H1 L₀ L₁, ‖x‖ ≤ C * ‖cauchyRiemann J L₀ L₁ x‖ := by
   obtain ⟨C, hC⟩ := exists_norm_jetₗ_le_mul_norm_cauchyRiemann_jetₗ hg hL₀ hL₁ hL
-  set D := (cauchyRiemannJetCoeff J).compLpL 2 stripMeasure
+  set D := (cauchyRiemannJetCoeff J).compLpL 2 stripMeasure with hD
   -- The estimate on the jets of test sections passes to their closure `H1`.
   refine ⟨C, fun x ↦ ?_⟩
   have hsub := jetClosure_subset_of_isClosed (S := testSection L₀ L₁)
     (s := {f | ‖f‖ ≤ C * ‖D f‖})
     (isClosed_le continuous_norm (continuous_const.mul (continuous_norm.comp D.continuous)))
-    (by rintro _ ⟨ξ, rfl⟩; exact hC ξ)
-  exact hsub x.2
+    (by
+      rintro _ ⟨ξ, rfl⟩
+      simpa only [mem_ofPred_eq, hD, cauchyRiemann_apply, Submodule.coe_mk] using hC ξ)
+  have hx := hsub x.2
+  rwa [mem_ofPred_eq, hD, ← cauchyRiemann_apply, Submodule.norm_coe] at hx
 
 /-- With transverse isotropic boundary conditions the Cauchy--Riemann operator on `W^{1,2}` of the
 strip is injective. -/
@@ -174,5 +179,7 @@ theorem isClosed_range_cauchyRiemann (hg : ∀ v w, ω v (J w) = ⟪v, w⟫)
   refine ((cauchyRiemann J L₀ L₁).antilipschitz_of_bound (K := C.toNNReal) fun x ↦
     (hC x).trans ?_).isClosed_range (cauchyRiemann J L₀ L₁).uniformContinuous
   exact mul_le_mul_of_nonneg_right (Real.le_coe_toNNReal C) (norm_nonneg _)
+
+end InnerProductSpace
 
 end TauCeti.StripSobolev

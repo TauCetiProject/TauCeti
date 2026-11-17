@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.Cylinder
+public import TauCeti.Analysis.Sobolev.StripJet
 
 /-!
 # The Sobolev space `W^{1,2}` on the strip with linear boundary conditions
@@ -19,15 +19,15 @@ sections, the strip counterpart of `TauCeti.CylinderSobolev.H1`.
 * **Test sections** (`TauCeti.StripSobolev.testSection L₀ L₁`) are the compactly supported `C²`
   maps `ξ : ℝ × ℝ → V` with `ξ (s, 0) ∈ L₀` and `ξ (s, 1) ∈ L₁` for every `s`. Only their values on
   the strip matter below.
-* The jet `(ξ, ∂s ξ, ∂t ξ)` (`TauCeti.CylinderSobolev.jet`) of a test section is square integrable
+* The jet `(ξ, ∂s ξ, ∂t ξ)` (`TauCeti.StripSobolev.jet`) of a test section is square integrable
   on the strip (`TauCeti.StripSobolev.memLp_jet`), for the Lebesgue measure
-  `TauCeti.CylinderSobolev.stripMeasure` of `ℝ × [0, 1]`. This gives the linear map
+  `TauCeti.StripSobolev.stripMeasure` of `ℝ × [0, 1]`. This gives the linear map
   `TauCeti.StripSobolev.jetₗ` into `L²(ℝ × [0, 1], V × V × V)`, whose norm is the `W^{1,2}` norm
   up to a factor between `1` and `√3`.
 * `TauCeti.StripSobolev.H1 L₀ L₁` is the closure of the jets of test sections: the completion of
   the test sections in the `W^{1,2}` norm, realized inside `L²` as a closed subspace, hence
   complete when `V` is. The `L²` jets and their closure are the constructions
-  `TauCeti.CylinderSobolev.jetLp` and `TauCeti.CylinderSobolev.jetClosure` shared with the cylinder,
+  `TauCeti.StripSobolev.jetLp` and `TauCeti.StripSobolev.jetClosure` shared with the cylinder,
   applied to the test sections of the strip.
 * **Translation invariance.** Translation in the `s` direction, `ξ ↦ ξ (· + a, ·)`, preserves the
   test sections and acts on `L²` jets as an isometry
@@ -72,10 +72,6 @@ open scoped ENNReal
 
 namespace TauCeti.StripSobolev
 
-open CylinderSobolev (stripMeasure jet jet_comp_add_right measurePreserving_add_right_stripMeasure
-  HasL2Jets jetLp jetClosure coeFn_jetLp jetLp_mem_jetClosure isClosed_jetClosure
-  jetClosure_subset_of_isClosed)
-
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {L₀ L₁ : Submodule ℝ V}
 
 variable (L₀ L₁) in
@@ -105,8 +101,8 @@ variable {ξ η : ℝ × ℝ → V}
 /-- The jet of a test section is square integrable on the strip. -/
 theorem memLp_jet (hξ : ξ ∈ testSection L₀ L₁) : MemLp (jet ξ) 2 stripMeasure := by
   obtain ⟨hξ2, hc, -⟩ := mem_testSection_iff.1 hξ
-  exact (CylinderSobolev.continuous_jet (hξ2.of_le (by norm_num))).memLp_of_hasCompactSupport
-    (CylinderSobolev.hasCompactSupport_jet hc)
+  exact (continuous_jet (hξ2.of_le (by norm_num))).memLp_of_hasCompactSupport
+    (hasCompactSupport_jet hc)
 
 /-- The test sections are differentiable with square integrable jets. -/
 instance : HasL2Jets (testSection L₀ L₁) :=
@@ -156,21 +152,21 @@ theorem norm_translateL (a : ℝ) (f : Lp (V × V × V) 2 stripMeasure) :
 /-- Translation by `a + b` is translation by `b` followed by translation by `a`. -/
 theorem translateL_add (a b : ℝ) (f : Lp (V × V × V) 2 stripMeasure) :
     translateL V (a + b) f = translateL V a (translateL V b f) := by
-  refine Lp.ext_iff.2 ?_
-  filter_upwards [coeFn_translateL (a + b) f, coeFn_translateL a (translateL V b f),
-    (measurePreserving_add_right_stripMeasure a).quasiMeasurePreserving.ae_eq_comp
-      (coeFn_translateL b f)] with z h₁ h₂ h₃
-  simp only [Function.comp_apply] at h₃
-  rw [h₁, h₂, h₃]
-  congr 1
+  change Lp.compMeasurePreserving _ _ f =
+    Lp.compMeasurePreserving _ _ (Lp.compMeasurePreserving _ _ f)
+  rw [← Lp.compMeasurePreserving_comp_apply]
+  congr 2
+  funext z
   ext <;> simp [add_assoc]
 
 /-- Translation by `0` is the identity. -/
 @[simp]
 theorem translateL_zero (f : Lp (V × V × V) 2 stripMeasure) : translateL V 0 f = f := by
-  refine Lp.ext_iff.2 ?_
-  filter_upwards [coeFn_translateL 0 f] with z h
-  rw [h, Prod.mk_zero_zero, add_zero]
+  change Lp.compMeasurePreserving _ _ f = f
+  conv_rhs => rw [← Lp.compMeasurePreserving_id_apply f]
+  congr 2
+  funext z
+  simp
 
 /-- The translate of the `L²` jet of a test section is the `L²` jet of its translate. -/
 theorem translateL_jetₗ (a : ℝ) (ξ : testSection L₀ L₁) :
