@@ -13,6 +13,7 @@ public import TauCeti.Analysis.MvPolynomial.TaylorPolynomial
 public import TauCeti.MeasureTheory.Function.Lp.Restriction
 import Mathlib.Analysis.Calculus.FDeriv.WithLp
 import Mathlib.MeasureTheory.Function.Holder
+import TauCeti.LinearAlgebra.Multilinear.Basis
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Integral.OddSymmetric
 
@@ -292,18 +293,6 @@ theorem averagedTaylorKernel_mem_polynomialsDegLE {φ : EuclideanSpace ℝ ι �
 
 end Kernel
 
-/-- Every bounded-degree polynomial function belongs to `Lᵖ(μ.restrict Ω)` on any bounded set `Ω`
-under any Borel measure `μ` finite on compact sets and any exponent `p : ℝ≥0∞`. -/
-theorem memLp_restrict_of_mem_polynomialsDegLE_of_isBounded
-    {ι : Type*} [Finite ι] {μ : Measure (EuclideanSpace ℝ ι)} [IsFiniteMeasureOnCompacts μ]
-    {m : ℕ} {q : EuclideanSpace ℝ ι → ℝ} (hq : q ∈ polynomialsDegLE ι m)
-    {Ω : Set (EuclideanSpace ℝ ι)} (hΩ : Bornology.IsBounded Ω) (p : ℝ≥0∞) :
-    MemLp q p (μ.restrict Ω) := by
-  have := Fintype.ofFinite ι
-  have hq_cont : Continuous q := (contDiff_of_mem_polynomialsDegLE (n := 0) hq).continuous
-  exact (hq_cont.continuousOn.memLp_restrict_of_subset_isCompact hΩ.isCompact_closure
-    measurableSet_closure Subset.rfl p).mono_measure (Measure.restrict_mono subset_closure le_rfl)
-
 section Operator
 
 variable {ι : Type*} [Fintype ι]
@@ -514,16 +503,6 @@ private theorem integral_mul_averagedTaylorKernel_eq_sum_ibp
     integrable_mul_iteratedFDerivAlong_kernelTestTerm hφ hsupp hu
       (Nat.lt_succ_iff.mp (Finset.mem_range.mp hj)) x I]
 
-/-- Coordinate expansion of the `j`-th Fréchet derivative evaluated on the diagonal `x - y`. -/
-private theorem iteratedFDeriv_apply_const_sub_eq_sum {j : ℕ} (u : EuclideanSpace ℝ ι → ℝ)
-    (y x : EuclideanSpace ℝ ι) :
-    iteratedFDeriv ℝ j u y (fun _ ↦ x - y) =
-      ∑ I : Fin j → ι, (∏ l : Fin j, (x (I l) - y (I l))) *
-        iteratedFDeriv ℝ j u y (fun l ↦ EuclideanSpace.basisFun ι ℝ (I l)) := by
-  set b := EuclideanSpace.basisFun ι ℝ
-  conv_lhs => rw [← b.sum_repr (x - y), ContinuousMultilinearMap.map_sum]
-  simp [ContinuousMultilinearMap.map_smul_univ, b]
-
 /-- **Kernel-adjoint identity for the averaged Taylor kernel.** On `EuclideanSpace ℝ ι` with an
 additive Haar measure `μ`, if `φ` is `C^m` with compact support and `u` is `C^m` at every point of
 `tsupport φ`, then pairing `u` against `averagedTaylorKernel φ m x` recovers the cutoff average of
@@ -564,7 +543,15 @@ theorem integral_mul_averagedTaylorKernel_eq_integral_taylorPolynomial
     _ = ∫ y, taylorPolynomial ℝ m u y x * φ y ∂μ := by
         congr 1; ext y; rw [taylorPolynomial_apply, Finset.sum_mul]
         refine Finset.sum_congr rfl fun j _ ↦ ?_
-        rw [smul_eq_mul, iteratedFDeriv_apply_const_sub_eq_sum, Finset.mul_sum, Finset.sum_mul]
+        have hcoord : iteratedFDeriv ℝ j u y (fun _ ↦ x - y) =
+            ∑ I : Fin j → ι, (∏ l : Fin j, (x (I l) - y (I l))) *
+              iteratedFDeriv ℝ j u y (fun l ↦ EuclideanSpace.basisFun ι ℝ (I l)) := by
+          simpa only [OrthonormalBasis.coe_toBasis_repr_apply, OrthonormalBasis.coe_toBasis,
+            EuclideanSpace.basisFun_repr, PiLp.sub_apply, ContinuousMultilinearMap.coe_coe,
+            smul_eq_mul] using
+            (iteratedFDeriv ℝ j u y).toMultilinearMap.apply_eq_sum_prod_repr_smul
+              (fun _ ↦ (EuclideanSpace.basisFun ι ℝ).toBasis) (fun _ ↦ x - y)
+        rw [smul_eq_mul, hcoord, Finset.mul_sum, Finset.sum_mul]
         exact Finset.sum_congr rfl fun I _ ↦ by simp only [kernelTestTerm]; ring
 
 /-- **Integration-by-parts identity for `averagedTaylorPolynomial` on `L¹(μ)`.** If `u` is `C^m` at
