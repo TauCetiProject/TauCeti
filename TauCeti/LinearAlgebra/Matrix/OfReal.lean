@@ -26,6 +26,8 @@ by the same congruence.
 * `Matrix.map_ofReal_mul_transpose_map_ofReal_eq_one`: an orthogonal real matrix `O` satisfies
   `O Oᵀ = 1` as a complex matrix.
 * `Matrix.map_ofReal_mem_unitaryGroup`: an orthogonal real matrix is unitary.
+* `Matrix.map_ofReal_mul_transpose_eq_one`: an orthogonal real matrix `O` satisfies `O Oᵀ = 1`
+  as a complex matrix.
 * `Matrix.IsHermitian.map_ofReal`: a real symmetric matrix is Hermitian.
 * `Matrix.map_re_conjTranspose_mul_self_mul_map_ofReal`: the real Gram matrix of `M N` for a real
   matrix `N` is `Nᵀ Re (Mᴴ M) N`.
@@ -60,6 +62,14 @@ theorem map_ofReal_mem_unitaryGroup [Fintype n] [DecidableEq n] {O : Matrix n n 
     ← conjTranspose_map _ fun _ ↦ (Complex.conj_ofReal _).symm,
     conjTranspose_eq_transpose_of_trivial, transpose_map]
   exact map_ofReal_mul_transpose_map_ofReal_eq_one hO
+
+/-- An orthogonal real matrix `O` satisfies `O Oᵀ = 1` as a complex matrix. -/
+theorem map_ofReal_mul_transpose_eq_one [Fintype n] [DecidableEq n] {O : Matrix n n ℝ}
+    (hO : O ∈ orthogonalGroup n ℝ) :
+    O.map ((↑) : ℝ → ℂ) * (O.map ((↑) : ℝ → ℂ))ᵀ = 1 := by
+  rw [mem_orthogonalGroup_iff] at hO
+  rw [← transpose_map, ← funext Complex.ofRealHom_eq_coe, ← Matrix.map_mul, hO]
+  simp
 
 /-- A real symmetric matrix is Hermitian as a complex matrix. -/
 theorem IsHermitian.map_ofReal {A : Matrix n n ℝ} (hA : A.IsHermitian) :
