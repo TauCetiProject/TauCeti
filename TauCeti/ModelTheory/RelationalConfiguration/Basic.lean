@@ -84,6 +84,12 @@ variable {L : Language} {V W X : Type*}
 /-- The atom with relation symbol `R` and argument tuple `x`. -/
 def atom {n : ℕ} (R : L.Relations n) (x : Fin n → V) : Atom L V := ⟨n, R, x⟩
 
+/-- Two atoms of the same arity agree exactly when their relation symbols and tuples do. -/
+theorem atom_inj {n : ℕ} {R S : L.Relations n} {x y : Fin n → V} :
+    atom R x = atom S y ↔ R = S ∧ x = y := by
+  refine ⟨fun h => ?_, fun h => h.1 ▸ h.2 ▸ rfl⟩
+  exact Prod.mk.inj (eq_of_heq (Sigma.mk.inj_iff.1 h).2)
+
 /-- Every atom is `atom R x` for its relation symbol and tuple. -/
 @[elab_as_elim]
 theorem Atom.induction_atom {motive : Atom L V → Prop}

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.ModelTheory.RelationalConfiguration.Basic
 public import TauCeti.ModelTheory.RelationalConfiguration.Structure
+public import TauCeti.ModelTheory.RelationalConfiguration.Topology
 public import Mathlib.ModelTheory.Graph
 public import Mathlib.MeasureTheory.Constructions.SimpleGraph
 public import Mathlib.MeasureTheory.Measure.Typeclasses.Probability
@@ -41,7 +42,8 @@ is its adjacency array.
 
 * `SimpleGraph.measurableEmbedding_toRelationalConfiguration` — on a countable vertex type, the
   encoding is a measurable embedding onto the simple-graph configurations
-  (`SimpleGraph.range_toRelationalConfiguration`);
+  (`SimpleGraph.range_toRelationalConfiguration`), which is closed
+  (`SimpleGraph.isClosed_range_toRelationalConfiguration`);
 * `SimpleGraph.map_comap_toRelationalConfiguration` — a law on configurations concentrated on
   simple graphs is the encoding of its pullback to simple graphs;
 * `SimpleGraph.toRelationalConfiguration_comap` — encoding a pulled-back graph is restricting its
@@ -131,6 +133,15 @@ theorem measurableSet_setOf_isSimpleGraph [Countable V] :
       ((measurable_eval (adjAtom u v)).prodMk (measurable_eval (adjAtom v u)))
         (.of_discrete : MeasurableSet {p : Bool × Bool | p.1 = p.2})).inter
     (MeasurableSet.iInter fun v => measurable_eval (adjAtom v v) (measurableSet_singleton false))
+
+/-- The simple-graph configurations form a closed set: an intersection of conditions on one or two
+atoms. -/
+theorem isClosed_setOf_isSimpleGraph :
+    IsClosed {c : RelationalConfiguration Language.graph V | IsSimpleGraph c} := by
+  simp only [IsSimpleGraph, Set.ofPred_and, Set.ofPred_forall]
+  exact (isClosed_iInter fun u => isClosed_iInter fun v =>
+      isClosed_eq (continuous_eval (adjAtom u v)) (continuous_eval (adjAtom v u))).inter
+    (isClosed_iInter fun v => isClosed_eq (continuous_eval (adjAtom v v)) continuous_const)
 
 /-- Restricting a law concentrated on simple graphs gives a law concentrated on simple graphs. -/
 theorem ae_isSimpleGraph_map_restrict [Countable V] (f : V → W)
@@ -278,6 +289,13 @@ theorem range_toRelationalConfiguration :
   refine Set.Subset.antisymm (Set.range_subset_iff.2 isSimpleGraph_toRelationalConfiguration)
     fun c hc => ⟨relationalConfigurationEquiv.symm ⟨c, hc⟩,
       congrArg Subtype.val (relationalConfigurationEquiv.apply_symm_apply ⟨c, hc⟩)⟩
+
+/-- The configurations of simple graphs form a closed set. -/
+theorem isClosed_range_toRelationalConfiguration :
+    IsClosed (Set.range
+      (toRelationalConfiguration : SimpleGraph V → RelationalConfiguration Language.graph V)) := by
+  rw [range_toRelationalConfiguration]
+  exact isClosed_setOf_isSimpleGraph
 
 /-- Encoding simple graphs as configurations is injective. -/
 theorem toRelationalConfiguration_injective :
