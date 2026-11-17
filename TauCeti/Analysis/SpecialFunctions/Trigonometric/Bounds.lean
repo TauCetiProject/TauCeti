@@ -14,8 +14,8 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 
 The sine of `π / x` is positive for real `x > 1`, and the cosine of `π / x` for real `x > 2`.
 The sine of `π * x` is nonzero for nonzero `x ∈ (-1, 1)`, a criterion used to detect nonflat
-Schwarz–Christoffel turns. The sine is
-nonpositive on `[π, 2π]`. For real `a < 1` the quantity `1 - a sin² θ` is positive, a bound
+Schwarz–Christoffel turns. The sine is nonpositive on `[π, 2π]` and negative on `(π, 2π)`. For
+real `a < 1` the quantity `1 - a sin² θ` is positive, a bound
 `a sin² φ < 1` with `φ ≤ π / 2` gives `a sin² θ < 1` for `|θ| ≤ φ`, and
 `1 - k² ≤ 1 - k² sin² θ ≤ 1` for every real `k`. Jordan's inequality gives `θ ≤ π / 2 * sin θ` on
 `[0, π / 2]`. Cosine is positive strictly between two
@@ -61,6 +61,11 @@ theorem cos_pos_of_mem_uIoo {a b θ : ℝ}
 theorem sin_nonpos_of_pi_le_of_le_two_pi {x : ℝ} (hpx : π ≤ x) (hxp : x ≤ 2 * π) : sin x ≤ 0 := by
   rw [← sin_sub_two_pi]
   exact sin_nonpos_of_nonpos_of_neg_pi_le (by linarith) (by linarith)
+
+/-- The sine is negative on `(π, 2π)`. -/
+theorem sin_neg_of_pi_lt_of_lt_two_pi {x : ℝ} (hpx : π < x) (hxp : x < 2 * π) : sin x < 0 := by
+  rw [← sin_sub_two_pi]
+  exact sin_neg_of_neg_of_neg_pi_lt (by linarith) (by linarith)
 
 /-- A step of nonnegative length whose direction `x` lies in `[θ, θ + π]` does not lower the
 height. -/
