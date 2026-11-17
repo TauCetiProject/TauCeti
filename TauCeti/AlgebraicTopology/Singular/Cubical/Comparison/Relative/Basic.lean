@@ -214,6 +214,35 @@ theorem exists_isCubicalRepresentative (P : TopPair.{u}) {n : ℕ}
   obtain ⟨c, hc⟩ := surjective_cokernel_π_f k P n (((P.cubicalChainComplex k).iCycles n).hom r)
   exact ⟨c, r, hc, rfl⟩
 
+/-- **The relative class of a cycle is represented by any chain agreeing with it modulo the
+subspace.** Let `z` be an `n`-cycle of the ambient space `X` of a pair `(X, A)`, and `c` an
+`n`-chain of `X` whose difference with `z` is a chain of `A`. If `c` represents the relative class
+`μ ∈ Hₙ(X, A)`, then `μ` is the image of the class of `z` under `Hₙ(X) → Hₙ(X, A)`. -/
+theorem homologyMap_homologyπ_eq_of_isCubicalRepresentative (P : TopPair.{u}) {n : ℕ}
+    (z : ((normalizedCubicalChainComplex k).obj P.fst).cycles n)
+    {c : NormalizedCubicalChain P.fst k n} {μ : (P.cubicalChainComplex k).homology n}
+    (hc : P.IsCubicalRepresentative k c μ)
+    (hzc : normalizedCubicalChainComplexXEquiv P.fst n
+        ((((normalizedCubicalChainComplex k).obj P.fst).iCycles n).hom z) - c ∈
+      LinearMap.range (NormalizedCubicalChain.map k P.map.hom n)) :
+    (HomologicalComplex.homologyMap (cokernel.π ((normalizedCubicalChainComplex k).map P.map))
+      n).hom ((((normalizedCubicalChainComplex k).obj P.fst).homologyπ n).hom z) = μ := by
+  obtain ⟨r, hcr, rfl⟩ := hc
+  obtain ⟨a, ha⟩ := hzc
+  rw [HomologicalComplex.moduleCat_homologyMap_homologyπ]
+  congr 1
+  -- The images of `z` and `c` in the relative chains differ by the image of a chain of `A`.
+  have h₀ : ((cokernel.π ((normalizedCubicalChainComplex k).map P.map)).f n).hom
+      ((normalizedCubicalChainComplexXEquiv P.fst n).symm
+        (NormalizedCubicalChain.map k P.map.hom n a)) = 0 := by
+    rw [normalizedCubicalChainComplexXEquiv_symm_apply, ← normalizedCubicalChainComplex_map_f_apply]
+    exact congr(ModuleCat.Hom.hom $(cubicalChainComplex_condition_f k P n) _)
+  rw [ha, map_sub, LinearEquiv.symm_apply_apply, map_sub,
+    normalizedCubicalChainComplexXEquiv_symm_apply, sub_eq_zero] at h₀
+  refine (P.cubicalChainComplex k).moduleCat_iCycles_injective n ?_
+  rw [HomologicalComplex.moduleCat_iCycles_cyclesMap_apply, ← hcr]
+  exact h₀
+
 /-- **A cycle with vanishing relative class is a boundary when relative classes determine
 absolute ones.** Let `s, s'` be normalized cubical `n`-chains of `X` which are relative cycles
 representing the same class of `Hₙ(X, A)`, and `a` an `n`-chain of `A` such that `s - s' + a` is

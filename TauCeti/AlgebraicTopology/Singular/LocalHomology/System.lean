@@ -41,7 +41,9 @@ compatibility with composition characterizes the transport
   the long exact sequence of the pair `(M, M ∖ {x})`
   (`TauCeti.singularHomologyToLocalHomology_eq_singularHomologyπ`), vanishing on classes pushed
   forward from subsets avoiding `x`
-  (`TauCeti.singularHomologyToLocalHomology_map_subtypeVal_eq_zero_of_notMem`).
+  (`TauCeti.singularHomologyToLocalHomology_map_subtypeVal_eq_zero_of_notMem`). For `x ∈ S` it
+  factors through the local homology along `S`
+  (`TauCeti.singularHomologyToLocalHomology_eq_localHomologyRestriction`).
 * `TauCeti.singularHomologyπ_compl_univ_bijective`: the quotient map `Hₖ(M) → Hₖ(M, M ∖ M)` is
   bijective.
 * `TauCeti.localHomologySingletonLinearEquiv`: with coefficients `N ≃ₗ[Λ] Λ`, the local homology
@@ -268,6 +270,19 @@ def localHomologySingletonLinearEquiv [T1Space M] {E : Type w} [NormedAddCommGro
     (localHomology N ({x} : Set M) n : ModuleCat.{w} Λ) ≃ₗ[Λ] Λ :=
   ((hn ▸ singularHomologyComplSingletonFinrankIso N (chartAt E x) (mem_chart_source E x) :
     localHomology N ({x} : Set M) n ≅ N).toLinearEquiv).trans eN
+
+/-- The local class of `μ` at a point `x` of a set `S` is the restriction to `x` of the image of
+`μ` in the local homology `Hₖ(M, M ∖ S; N)` along `S`. -/
+theorem singularHomologyToLocalHomology_eq_localHomologyRestriction {S : Set M} {x : M}
+    (hx : x ∈ S) {k : ℕ}
+    (μ : ((TopCat.toSSet.obj (TopCat.of M)).homology N k : ModuleCat.{w} Λ)) :
+    singularHomologyToLocalHomology N x k μ =
+      localHomologyRestriction N (singleton_subset_iff.2 hx) k
+        (((TopPair.ofSubset (Sᶜ : Set (TopCat.of M))).singularHomologyπ
+          (C := ModuleCat.{w} Λ) N k).hom μ) := by
+  rw [singularHomologyToLocalHomology_eq_singularHomologyπ]
+  exact congrArg (fun φ ↦ ModuleCat.Hom.hom φ μ)
+    (singularHomologyπ_localHomologyRestriction N (singleton_subset_iff.2 hx) k).symm
 
 end SingularHomology
 
